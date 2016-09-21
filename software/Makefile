@@ -44,7 +44,7 @@ tools: lib
 lib: ..check_pslse
 
 ..check_pslse:
-	if [ ! -d ../pslse ]; then			\
+	@if [ ! -d ../pslse ]; then			\
 		echo "Please install pslse in ..";	\
 		echo "  git clone https://github.com/ibm-capi/pslse"; \
 		echo;					\
