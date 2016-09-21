@@ -1,0 +1,17 @@
+sudo: required
+dist: trusty
+language: c
+compiler: gcc
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get --assume-yes install gcc help2man git make
+  - wget http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/plain/include/uapi/misc/cxl.h
+  - sudo mkdir -p /usr/include/misc/
+  - sudo mv cxl.h /usr/include/misc/
+  - git clone https://github.com/ibm-capi/pslse ../pslse
+  - make -C ../pslse/libcxl
+  - sudo cp ../pslse/libcxl/libcxl.a /usr/lib
+  - sudo cp ../pslse/libcxl/libcxl.h /usr/include
+script:
+  - make
+  - make test

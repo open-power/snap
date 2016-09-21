@@ -14,8 +14,6 @@
 # limitations under the License.
 #
 
-include config.mk
-
 # Verbose level:
 #   V=0 means completely silent
 #   V=1 means brief output

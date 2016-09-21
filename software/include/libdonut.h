@@ -4,7 +4,7 @@
 /**
  * Copyright 2016 International Business Machines
  * Copyright 2016 Rackspace Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,29 +22,29 @@
 
 /**
  * CAPI Streaming Framework - Example
- * 
+ *
  * @author Kenneth Wilke, Frank Haverkamp, Eberhard Amann et. al.
- * 
+ *
  * DRAFT 0.5
- * 
+ *
  * During the workshop we discovered that there are two potential
  * application use-cases:
  *  1. Job-execution mode
  *  2. Data-streaming mode with fixed compute kernel assignment
- * 
+ *
  * 1. Job-execution mode
- * 
+ *
  * The first one, which we originally proposed
  * is very similar to what we did with CAPI gzip. It uses AFU directed
  * CAPI mode to allow different processes to attach to the card.
  * A job-queue with a request and a completion part is attached to
  * each AFU context. The cards job-manager schedules jobs, which are
  * executed by the next free kernel.
- * 
+ *
  * This model supports multi-threaded and multi-process applications by
  * offering best hardware utilization due to the build in job scheduling
  * mechanism.
- * 
+ *
  * When using this mode ,some design assumptions are imposed on the
  * compute kernels:
  *  - Software sets up jobs and the job-manager hardware takes care
@@ -57,17 +57,17 @@
  *    interrupts while they are running
  *
  * 2. Fixed compute kernel assignment/data-streaming mode
- * 
+ *
  * In this mode compute kernels do not execute one job and can be
  * reused after that. Instead they run for the whole application lifetime.
  * An example is a video processing application, looking for a specific
  * pattern e.g. a person with a baguette. In this mode a kernel can
  * be assigned to an AFU context, and can be started and stopped. MMIO
- * and interrupts are possible during runtime to allow communication 
+ * and interrupts are possible during runtime to allow communication
  * with the kernel.
- * 
+ *
  * A data send and receive queue could be a useful extension.
- * 
+ *
  * Since the kernels are assigned fixed, multiprocessing is restricted
  * to the available number of compute kernels.
  */
@@ -118,7 +118,7 @@ int dnut_mmio_write32(struct dnut_card *card, uint64_t offset,
 			uint32_t data);
 int dnut_mmio_read32(struct dnut_card *card, uint64_t offset,
 			uint32_t *data);
-				
+
 int dnut_mmio_write64(struct dnut_card *card, uint64_t offset,
 			uint64_t data);
 int dnut_mmio_read64(struct dnut_card *card, uint64_t offset,
@@ -149,13 +149,13 @@ typedef struct dnut_job {
  * Workitem build up by the calling code as follows:
  * {
  *   { .address = 0xXXXX, .size = 0xYYYY, .type = DRAM,
- * 		.flags = DNUT_TARGET_FLAGS_ADDR },
+ *		.flags = DNUT_TARGET_FLAGS_ADDR },
  *   { .address = 0xXXXX, .size = 0xYYYY, .type = DRAM,
- * 		.flags = DNUT_TARGET_FLAGS_ADDR },
+ *		.flags = DNUT_TARGET_FLAGS_ADDR },
  *   ...
  *   { .address = 0xXXXX, .size = 0xYYYY, .type = DRAM,
- * 		.flags = DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_END }
- * 
+ *		.flags = DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_END }
+ *
  *   uint8_t data[DATA_SIZE]; // Data: format depends on dnut_job.action
  * }
  *
@@ -164,55 +164,55 @@ typedef struct dnut_job {
  * and therefore improves the design. One could even
  * embedd struct dnut_job in the AFU specific structure to keep the
  * data together e.g. if dynamic allocation/deallocation is desired.
- * 
+ *
  * Each AFU.action has to define its own special workitem structure.
  * We can help the AFU to do data prefetching/mapping, if we start
  * the workitem structure with an architected address list. The list
  * ends when flags & DNUT_TARGET_FLAGS_END is not 0.
- * 
+ *
  * AFU.action specific data can follow. I think the AFU.action
  * itself will know how large the data must be. For compression that
  * was for example compression-window data, position in data stream,
- * not fully written symbols or data which did not fit into the 
- * provided too small output buffer, etc. Versioning, or size hints, 
+ * not fully written symbols or data which did not fit into the
+ * provided too small output buffer, etc. Versioning, or size hints,
  * maybe ...
- * 
+ *
  * So e.g.
- * 
+ *
  * struct flash_job {
- * 	struct dnut_addr src;	// just one for this application,
- * 	struct dnut_addr dst;	// could be more if needed
- * 	uint64_t block_size;	// application specific data ...
- * 	uint64_t special_state;
- * 	uint64_t special_errcode;
- * 				// to keep allocation simple
+ *	struct dnut_addr src;	// just one for this application,
+ *	struct dnut_addr dst;	// could be more if needed
+ *	uint64_t block_size;	// application specific data ...
+ *	uint64_t special_state;
+ *	uint64_t special_errcode;
+ *				// to keep allocation simple
  * };
- * 
+ *
  * struct flash_job fjob;
  * struct dnut_job cjob;
- * 
+ *
  * fjob.src = { .addr = 0x234234000, size = 4096, .type = DNUT_TYPE_DRAM,
- * 		.flags = DNUT_TARGET_FLAGS_ADDR };
+ *		.flags = DNUT_TARGET_FLAGS_ADDR };
  * fjob.dst = { .addr = 0xffff34000, size = 4096, .type = DNUT_TYPE_NVME,
- * 		.flags = DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_END };
+ *		.flags = DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_END };
  * fjob.lba = 0x...;
  * ...
- * 
+ *
  * cjob_setup(&cjob, NVME_AFU_WRITE, 0xf00baa, 0x0, &fjob, sizeof(fjob));
- * 		cjob->action = NVME_AFU_WRITE;
- * 		cjob->retc = 0x00000000;
+ *		cjob->action = NVME_AFU_WRITE;
+ *		cjob->retc = 0x00000000;
  *		cjob->dnut_addr_items = 2;
- * 		cjob->workitem_addr = (uint64_t)(unsigned long)&fjob;
- * 		cjob->workitem_size = sizeof(fjob);
- * 
+ *		cjob->workitem_addr = (uint64_t)(unsigned long)&fjob;
+ *		cjob->workitem_size = sizeof(fjob);
+ *
  * rc = dnut_execute_job(queue, &cjob);
  * ...
  */
 
 /**
- * I suggest here to use a contiguous memory area for the worktitem 
- * provided by the user. It consists of an array of struct dnut_addr, 
- * followed by a user-definable data area. If the user does not need the 
+ * I suggest here to use a contiguous memory area for the worktitem
+ * provided by the user. It consists of an array of struct dnut_addr,
+ * followed by a user-definable data area. If the user does not need the
  * struct dnut_addr, it can just be a data region.
  */
 
@@ -220,9 +220,9 @@ typedef struct dnut_job {
  * Get a streaming framework queue handle.
  * @path	Device to use, "autoselect" to randomly select one
  * @kernel_id	Use special kernel_type for the queue. DNUT_QUEUE_GENERIC
- * 		allows to put requests to different kernels on the queue.
+ *		allows to put requests to different kernels on the queue.
  * @return	0 success
- * 		DNUT_ENODEV no matching capi device found
+ *		DNUT_ENODEV no matching capi device found
  */
 #define DNUT_DEV_AUTOSELECT	"autoselect"
 #define DNUT_QUEUE_GENERIC	0xffffffff /* TODO what is kernel_id? */
@@ -237,13 +237,13 @@ int dnut_queue_mmio_write32(struct dnut_queue *queue, uint64_t offset,
 			uint32_t data);
 int dnut_queue_mmio_read32(struct dnut_queue *queue, uint64_t offset,
 			uint32_t *data);
-				
+
 int dnut_queue_mmio_write64(struct dnut_queue *queue, uint64_t offset,
 			uint64_t data);
 int dnut_queue_mmio_read64(struct dnut_queue *queue, uint64_t offset,
 			uint64_t *data);
-				
-int dnut_queue_free(struct dnut_queue *queue);
+
+void dnut_queue_free(struct dnut_queue *queue);
 
 /**
  * Synchronous way to send a job away. Blocks until job is done.
@@ -269,23 +269,23 @@ int dnut_async_execute_job(struct dnut_queue *queue, struct dnut_job *cjob,
 /**********************************************************************
  * FIXED KERNEL ASSIGNMENT MODE
  * E.g. for data streaming if kernel must stay alive for the whole
- *      program runtime.
+ *	program runtime.
  *********************************************************************/
 
 /**
  * Proposal: There is a suggested use-case which requires to tie an
  *	FPGA kernel/action directly to an AFU context. This allows
- * 	the FPGA kernel to stay active until it is stopped again.
- * 	When an FPGA kernel is assigned to an AFU context, it can
- * 	in the first version not used by other AFU contexts.
- * 
- * 	We propose to let the job-manager select a free kernel and attach
- * 	that to the AFU context requesting it. That allows a to
- * 	manage free resources (computing kernels) at a central
- * 	spot, so that we can support multi-process easily.
- * 
- * 	We attach one kernel to one AFU context, not more to keep things
- * 	simple.
+ *	the FPGA kernel to stay active until it is stopped again.
+ *	When an FPGA kernel is assigned to an AFU context, it can
+ *	in the first version not used by other AFU contexts.
+ *
+ *	We propose to let the job-manager select a free kernel and attach
+ *	that to the AFU context requesting it. That allows a to
+ *	manage free resources (computing kernels) at a central
+ *	spot, so that we can support multi-process easily.
+ *
+ *	We attach one kernel to one AFU context, not more to keep things
+ *	simple.
  */
 
 struct dnut_kernel;
@@ -293,9 +293,9 @@ struct dnut_kernel;
 /**
  * Attach compute kernel fix to context.
  * @return	0 success
- * 		DNUT_EBUSY all kernels are currently in use, try again
- * 		DNUT_ENODEV no matching capi device found
- * 		DNUT_ENOENT tried to attach non existing kernel
+ *		DNUT_EBUSY all kernels are currently in use, try again
+ *		DNUT_ENODEV no matching capi device found
+ *		DNUT_ENOENT tried to attach non existing kernel
  */
 struct dnut_kernel *dnut_kernel_attach_dev(const char *path,
 			uint16_t vendor_id, uint16_t device_id,
@@ -305,7 +305,7 @@ int dnut_kernel_start(struct dnut_kernel *kernel);
 
 int dnut_kernel_stop(struct dnut_kernel *kernel);
 
-int dnut_kernel_free(struct dnut_kernel *kernel);
+void dnut_kernel_free(struct dnut_kernel *kernel);
 
 /**
  * Allow the kernel to use interrupts to signal results back to the
@@ -364,12 +364,12 @@ int dnut_kernel_rcv(struct dnut_kernel *kernel, uint8_t *data,
  *    is there need for this?
  *
  * Job-queue for dedicated kernel: Eberhard
- *  
+ *
  * Connect job-queue from above mode with fixed assigned kernel. This
- * is useful when there is the need to assign the compute kernel in a 
+ * is useful when there is the need to assign the compute kernel in a
  * fixed mannor such that MMIO becomes possible e.g. for debugging or
  * to implement interfaces which can alter its state during runtime.
- * 
+ *
  * While at the same time there is a use-case for our job-queue. In
  * this mode the job-manager has not to select the kernel, but can use
  * it directly to execute a job.
@@ -381,7 +381,7 @@ struct dnut_queue *dnut_queue_connect(struct dnut_kernel *kernel,
 /**
  * FIXME Proposal Discussion (not in plan)
  *    is there need for this?
- * 
+ *
  * Doorbell: Proposal by Paul
  */
 struct dnut_doorbell *dnut_doorbell_connect(struct dnut_kernel *kernel,
@@ -393,6 +393,6 @@ int dnut_doorbell_send(struct dnut_doorbell *doorbell, const uint8_t *msg,
 int dnut_doorbell_rcv(struct dnut_doorbell *doorbell, uint8_t *msg,
 			unsigned int msg_size);
 
-int dnut_doorbell_free(struct dnut_doorbell *doorbell);
+void dnut_doorbell_free(struct dnut_doorbell *doorbell);
 
 #endif /*__LIBDONUT_H__ */
