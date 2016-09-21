@@ -43,6 +43,16 @@ all: $(subdirs)
 # Rules for the recursive build
 tools: lib
 
+lib: ..check_pslse
+
+..check_pslse:
+	if [ ! -d ../pslse ]; then			\
+		echo "Please install pslse in ..";	\
+		echo "  git clone https://github.com/ibm-capi/pslse"; \
+		echo;					\
+		exit 1;					\
+	fi
+
 # Only build if the subdirectory is really existent
 .PHONY: $(subdirs) install
 $(subdirs):
