@@ -1,6 +1,6 @@
 # CAPI Donut Framework Hardware and Software
 
-The CAPI Donut Framework is helping you to adopt to IBM CAPI technology quick and efficiently. It is providing example use-cases for hardware acceleration.
+The CAPI Donut Framework is helping you to adopt to IBM CAPI technology quickly and efficiently. It is providing example use-cases for hardware acceleration.
 
 The framework hardware consists of a CAPI PSL-AXI bridge unit, PSL control and a job management unit.
 It interfaces with a user-written action (a.k.a. kernel) through an AXI lite control interface, and gives coherent access to host memory through an AXI slave.
