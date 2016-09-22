@@ -16,4 +16,4 @@ This work started as a sub-group of the OpenPOWER Foundation Accelerator Workgro
 
 Please see here for more details:
 * https://members.openpowerfoundation.org/wg/ACLWG/dashboard
-
+* http://openpowerfoundation.org/blogs/capi-drives-business-performance/
