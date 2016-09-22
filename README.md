@@ -13,5 +13,7 @@ Related components are the Power Service Layer (PSL) from a CAPI Hardware Develo
 As of Sept. 2016, the functionality is limited to CAPI interface, AXI lite control, software and simulation setup. The next stage 2 is going to deliver DMA access from the action to host memory.
 
 This work started as a sub-group of the OpenPOWER Foundation Accelerator Workgroup.
-https://members.openpowerfoundation.org/wg/ACLWG/dashboard
+
+Please see here for more details:
+* https://members.openpowerfoundation.org/wg/ACLWG/dashboard
 
