@@ -17,3 +17,8 @@ This work started as a sub-group of the OpenPOWER Foundation Accelerator Workgro
 Please see here for more details:
 * https://members.openpowerfoundation.org/wg/ACLWG/dashboard
 * http://openpowerfoundation.org/blogs/capi-drives-business-performance/
+
+# Previous Work
+
+Before we created the CAPI Donut Framework we created a CAPI driven DEFLAGE compression/decompression solution. The software to use this can be found here:
+* https://github.com/ibm-genwqe/genwqe-user
