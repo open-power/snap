@@ -41,7 +41,9 @@ all: $(subdirs)
 # Rules for the recursive build
 tools: lib
 
+ifdef BUILD_SIMCODE
 lib: ..check_pslse
+endif
 
 ..check_pslse:
 	@if [ ! -d ../pslse ]; then			\
