@@ -40,8 +40,8 @@
 #define	ACTION_4		(ACTION_BASE + 0x04)
 #define	ACTION_8		(ACTION_BASE + 0x08)
 #define	ACTION_CONFIG		(ACTION_BASE + 0x10)
-#define ACTION_CONFIG_COUNT	0x1
-#define	ACTION_CONFIG_COPY	0x2
+#define	ACTION_CONFIG_COUNT	0x1		/* Count Mode */
+#define	ACTION_CONFIG_COPY	0x2		/* Memcopy Mode */
 #define	ACTION_SRC_LOW		(ACTION_BASE + 0x14)
 #define	ACTION_SRC_HIGH		(ACTION_BASE + 0x18)
 #define	ACTION_DEST_LOW		(ACTION_BASE + 0x1c)
@@ -49,9 +49,10 @@
 #define	ACTION_CNT		(ACTION_BASE + 0x24)	/* Count Register */
 
 /*	defaults */
-#define	START_DELAY	200
-#define	END_DELAY	2000
-#define	STEP_DELAY	200
+#define	START_DELAY		200
+#define	END_DELAY		2000
+#define	STEP_DELAY		200
+#define	DEFAULT_MEMCPY_SIZE	4096
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
@@ -126,7 +127,7 @@ static void action_wait_idle(struct dnut_card* h)
 	return;
 }
 
-static void action_count_setup(struct dnut_card* h, int delay_ms)
+static void action_count(struct dnut_card* h, int delay_ms)
 {
 	if (verbose_level > 0)
 		printf("Action Expect %d msec to wait...\n",
@@ -135,7 +136,7 @@ static void action_count_setup(struct dnut_card* h, int delay_ms)
 	action_write(h, ACTION_CNT, msec_2_ticks(delay_ms));
 }
 
-static void action_memcpy_setup(struct dnut_card* h, void *dest, const void *src, size_t n)
+static void action_memcpy(struct dnut_card* h, void *dest, const void *src, size_t n)
 {
 	uint64_t addr;
 
@@ -154,15 +155,17 @@ static void action_memcpy_setup(struct dnut_card* h, void *dest, const void *src
 static void usage(const char *prog)
 {
 	printf("Usage: %s\n"
-		"  -h, --help           print usage information\n"
-		"  -v, --verbose        verbose mode\n"
-		"  -C, --card <cardno>  use this card for operation\n"
-		"  -V, --version\n"
-		"  -q, --quiet          quiece output\n"
-		"  -s, --start          Start delay in msec (default %d)\n"
-		"  -e, --end            End delay time in msec (default %d)\n"
-		"  -i, --interval       Inrcrement steps in msec (default %d)\n"
-		"  -m, --mode           Mode (default = 1 ,Count Mode)\n"
+		"    -h, --help           print usage information\n"
+		"    -v, --verbose        verbose mode\n"
+		"    -C, --card <cardno>  use this card for operation\n"
+		"    -V, --version\n"
+		"    -q, --quiet          quiece output\n"
+		"    -s, --start          Start delay in msec (default %d)\n"
+		"    -e, --end            End delay time in msec (default %d)\n"
+		"    -i, --interval       Inrcrement steps in msec (default %d)\n"
+		"    -m, --mode           Mode (default 1 Count Mode, 2 Memcopy Mode)\n"
+		"    -S, --size           Size in Bytes for Memcopy (mode must be 2)\n"
+		"\tTool to check Stage 1 FPGA or Stage 2 FPGA Mode (-m) for donut bringup.\n"
 		, prog, START_DELAY, END_DELAY, STEP_DELAY);
 }
 
@@ -177,9 +180,10 @@ int main(int argc, char *argv[])
 	int card_no = 0;
 	int cmd;
 	int mode = 1;
-	char src[256];
-	char dest[256];
-	int len = 256;
+	uint8_t *src;
+	uint8_t *dest;
+	int len = DEFAULT_MEMCPY_SIZE;
+	int rc = 1;
 
 	while (1) {
                 int option_index = 0;
@@ -193,9 +197,10 @@ int main(int argc, char *argv[])
 			{ "end",      required_argument, NULL, 'e' },
 			{ "interval", required_argument, NULL, 'i' },
 			{ "mode",     required_argument, NULL, 'm' },
-			{ 0,               no_argument,       NULL, 0   },
+			{ "size",     required_argument, NULL, 'S' },
+			{ 0,          no_argument,       NULL, 0   },
 		};
-		cmd = getopt_long(argc, argv, "C:s:e:i:m:qvVh",
+		cmd = getopt_long(argc, argv, "C:s:e:i:m:S:qvVh",
 			long_options, &option_index);
 		if (cmd == -1)  /* all params processed ? */
 			break;
@@ -224,6 +229,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'm':
 			mode = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'S':
+			len = strtol(optarg, (char **)NULL, 0);
 			break;
 		default:
 			usage(argv[0]);
@@ -256,21 +264,37 @@ int main(int argc, char *argv[])
 	switch (mode) {
 	case 1:
 		for(delay = start_delay; delay <= end_delay; delay += step_delay) {
-			action_count_setup(dn, delay);
+			action_count(dn, delay);
 			action_wait_idle(dn);
 		}
+		rc = 0;
 		break;
 	case 2:
-		action_memcpy_setup(dn, &dest, &src, len);
-		//action_wait_idle(dn);
+		if (posix_memalign((void **)&src, 4096, len) != 0) {
+			perror("FAILED:posix_memalign");
+			goto done;
+		}
+		memset(src, 2, len);
+		if (posix_memalign((void **)&dest, 4096, len) != 0) {
+			perror("FAILED:posix_memalign");
+			goto done;
+		}
+		memset(dest, 1, len);
+		action_memcpy(dn, dest, src, len);
+		action_wait_idle(dn);
+		rc = memcmp(src, dest, len);
+		free(src);
+		free(dest);
 		break;
 	default:
 		break;
 	}
 
+done:
 	// Unmap AFU MMIO registers, if previously mapped
 	dnut_card_free(dn);
 	if (verbose_level > 0)
-		printf("End of Test free(%p)...\n", dn);
-	return 0;
+		printf("End of Test rc: %d free Card Handle: %p...\n",
+			rc, dn);
+	return rc;
 }
