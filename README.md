@@ -20,5 +20,5 @@ Please see here for more details:
 
 # Previous Work
 
-Before we created the CAPI Donut Framework we created a CAPI driven DEFLAGE compression/decompression solution. The software to use this can be found here:
+Before we created the CAPI Donut Framework, we created a CAPI driven DEFLAGE compression/decompression solution. The software to use this can be found here:
 * https://github.com/ibm-genwqe/genwqe-user
