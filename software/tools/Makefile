@@ -23,7 +23,7 @@ LDLIBS += $(libs) -lpthread
 ifdef BUILD_SIMCODE
 libs += ../../pslse/libcxl/libcxl.a
 else
-libs += -lcxl
+LDLIBS += -lcxl
 endif
 
 dnut_peek_objs = force_cpu.o
