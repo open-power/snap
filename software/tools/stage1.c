@@ -20,8 +20,11 @@
 #include <string.h>
 #include <errno.h>
 #include <malloc.h>
-
 #include <libdonut.h>
+#include "dnut_tools.h"
+
+int verbose_flag = 0;
+static const char *version = GIT_VERSION;
 
 #define CACHELINE_BYTES 128
 
@@ -58,7 +61,7 @@ static uint64_t fw_read(struct dnut_card* h, uint64_t addr)
 	uint64_t reg;
 
 	dnut_mmio_read64(h, addr,&reg);
-	printf("FW Read: 0x%016llx 0x%016llx\n",	
+	printf("FW Read: 0x%016llx 0x%016llx\n",
 		(long long)addr, (long long)reg);
 	return reg;
 }
@@ -87,21 +90,79 @@ static uint32_t action_read(struct dnut_card* h, uint32_t addr)
 	return reg;
 }
 
-int main(void)
+/**
+ * @brief Prints valid command line options
+ *
+ * @param prog	current program name
+ */
+static void usage(const char *prog)
+{
+	printf("Usage: %s [-h] [-v,--verbose]\n"
+	       "  -C,--card <cardno> can be (0...3)\n"
+	       "  -V, --version             print version.\n"
+	       "\n",
+	       prog);
+}
+
+
+int main(int argc, char *argv[])
 {
 	char     device[64];
 	uint64_t fw_addr;
 	uint32_t action_addr, action_data;
-	uint     i, len;
+	uint     i, len, card_no = 0;
 	struct dnut_card *dn;
+	int ch;
 
-	sprintf(device, "/dev/cxl/afu%d.0m", 0);
-	dn = dnut_card_alloc_dev(device, 0, 0);
+	while (1) {
+		int option_index = 0;
+		static struct option long_options[] = {
+			/* options */
+			{ "card",	required_argument, NULL, 'C' },
+
+			/* misc/support */
+			{ "version",	no_argument,	   NULL, 'V' },
+			{ "verbose",	no_argument,	   NULL, 'v' },
+			{ "help",	no_argument,	   NULL, 'h' },
+
+			{ 0,		no_argument,	   NULL, 0   },
+		};
+
+		ch = getopt_long(argc, argv, "C:Vvh",
+				 long_options, &option_index);
+		if (ch == -1)	/* all params processed ? */
+			break;
+
+		switch (ch) {
+			/* which card to use */
+		case 'C':
+			card_no = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'V':
+			printf("%s\n", version);
+			exit(EXIT_SUCCESS);
+		case 'v':
+			verbose_flag++;
+			break;
+		case 'h':
+			usage(argv[0]);
+			exit(EXIT_SUCCESS);
+			break;
+		default:
+			usage(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	sprintf(device, "/dev/cxl/afu%d.0m", card_no);
+	dn = dnut_card_alloc_dev(device,
+				 DNUT_VENDOR_ID_ANY,
+				 DNUT_DEVICE_ID_ANY);
 	if (NULL == dn) {
 		perror("dnut_card_alloc_dev()");
 		return -1;
 	}
-	
+
 	printf("*** test framework register at 100 and 108 \n");
 	fw_write(dn, FW_BASE_ADDR,  0xaaff0011);
 	fw_write(dn, FW_BASE_ADDR8, 0xaaff0033);
