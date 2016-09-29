@@ -62,6 +62,7 @@ struct dnut_data {
 	uint16_t vendor_id;
 	uint16_t device_id;
 	int afu_fd;
+	struct wed *wed;
 };
 
 struct dnut_card *dnut_card_alloc_dev(const char *path,
@@ -92,6 +93,7 @@ struct dnut_card *dnut_card_alloc_dev(const char *path,
 		goto __dnut_alloc_err;
 	}
 
+	dn->wed = wed;	/* Save */
 	dn->afu_h = afu_h;
 	dn->afu_fd = cxl_afu_fd(dn->afu_h);
 	rc = cxl_afu_attach(dn->afu_h, (uint64_t)wed);
@@ -166,8 +168,11 @@ void dnut_card_free(struct dnut_card *_card)
 {
 	struct dnut_data *card = (struct dnut_data *)_card;
 
-	cxl_mmio_unmap(card->afu_h);
-	cxl_afu_free(card->afu_h);
+	if (card) {
+		cxl_afu_free(card->afu_h);
+		free(card->wed);
+		free(card);
+	}
 }
 
 static void action_write(struct dnut_card *h, uint32_t addr, uint32_t data)

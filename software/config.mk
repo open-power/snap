@@ -84,7 +84,8 @@ CFLAGS += -DGIT_VERSION=\"$(VERSION)\" \
 #
 ifeq ($(PLATFORM),x86_64)
 BUILD_SIMCODE=1
-CFLAGS += -I ../../pslse/libcxl -I ../../pslse/common
+PSLSE_DIR = ../../../pslse
+CFLAGS += -I $(PSLSE_DIR)/libcxl -I $(PSLSE_DIR)/common
 FORCE_32BIT     ?= 0
 ifeq ($(FORCE_32BIT),1)
 CFLAGS += -m32

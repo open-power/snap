@@ -21,7 +21,7 @@ libs = ../lib/libdonut.a
 LDLIBS += $(libs) -lpthread
 
 ifdef BUILD_SIMCODE
-libs += ../../pslse/libcxl/libcxl.a
+libs += ../../../pslse/libcxl/libcxl.a
 else
 LDLIBS += -lcxl
 endif
@@ -29,7 +29,7 @@ endif
 dnut_peek_objs = force_cpu.o
 dnut_poke_objs = force_cpu.o
 
-projs = dnut_peek dnut_poke stage1
+projs = dnut_peek dnut_poke stage1 stage2
 objs = force_cpu.o $(projs:=.o)
 
 all: $(projs)
