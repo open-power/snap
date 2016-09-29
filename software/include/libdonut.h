@@ -318,6 +318,8 @@ int dnut_kernel_register_irq(struct dnut_kernel *kernel,
 			dnut_kernel_irq_t *irq_handler,
 			int irq);
 
+int dnut_kernel_enable_irq(struct dnut_kernel *kernel, int irq);
+int dnut_kernel_disable_irq(struct dnut_kernel *kernel, int irq);
 int dnut_kernel_free_irq(struct dnut_kernel *kernel, int irq);
 
 /**
