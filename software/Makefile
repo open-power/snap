@@ -42,13 +42,14 @@ all: $(subdirs)
 tools: lib
 
 ifdef BUILD_SIMCODE
+PSLSE_DIR = ../../pslse
 lib: ..check_pslse
 endif
 
 ..check_pslse:
-	@if [ ! -d ../pslse ]; then			\
-		echo "Please install pslse in ..";	\
-		echo "  git clone https://github.com/ibm-capi/pslse"; \
+	@if [ ! -d $(PSLSE_DIR) ]; then			\
+		echo "Please install pslse in $(PSLSE_DIR)";	\
+		echo "  use: git clone https://github.com/ibm-capi/pslse"; \
 		echo;					\
 		exit 1;					\
 	fi
