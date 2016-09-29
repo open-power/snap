@@ -349,36 +349,18 @@ int dnut_kernel_mmio_read32(struct dnut_kernel *kernel, uint32_t offset,
  * with?
  */
 int dnut_kernel_setup_data_queue(struct dnut_kernel *kernel,
-			unsigned int send_queue_len,
-			unsigned int rcv_qeue_len,
-			unsigned int rcv_buf_size);
+				 unsigned int send_queue_len,
+				 unsigned int rcv_qeue_len,
+				 unsigned int rcv_buf_size,
+				 int irq);
 
 void dnut_kernel_free_data_queue(struct dnut_kernel *kernel);
 
 int dnut_kernel_send(struct dnut_kernel *kernel, const uint8_t *data,
-			unsigned int len);
+		     unsigned int len);
 
 int dnut_kernel_rcv(struct dnut_kernel *kernel, uint8_t *data,
-			unsigned int len);
-
-/**
- * FIXME Proposal Discussion (not in plan)
- *    is there need for this?
- *
- * Job-queue for dedicated kernel: Eberhard
- *
- * Connect job-queue from above mode with fixed assigned kernel. This
- * is useful when there is the need to assign the compute kernel in a
- * fixed mannor such that MMIO becomes possible e.g. for debugging or
- * to implement interfaces which can alter its state during runtime.
- *
- * While at the same time there is a use-case for our job-queue. In
- * this mode the job-manager has not to select the kernel, but can use
- * it directly to execute a job.
- */
-struct dnut_queue *dnut_queue_connect(struct dnut_kernel *kernel,
-			unsigned int queue_length);
-
+		    unsigned int len);
 
 /**
  * FIXME Proposal Discussion (not in plan)
