@@ -86,15 +86,34 @@ if { $action_example == 1 } {
 }
 
 # IMPORT PSL CHECKPOINT FILE
-add_files -norecurse $card_dir/Checkpoint/b_route_design.dcp
+read_checkpoint -cell b $card_dir/Checkpoint/b_route_design.dcp -strict
+#add_files -norecurse $card_dir/Checkpoint/b_route_design.dcp
 update_compile_order -fileset sources_1
+add_files -fileset constrs_1 -norecurse $card_dir/Sources/xdc/b_xilinx_capi_pcie_gen3_alphadata_brd_topimp.xdc
 
 # EXPORT SIMULATION
+# for ncsim (IES)
 export_simulation  -lib_map_path "$ies_libs/viv2015_4/ies14.10.s14" -force -directory "$root_dir/sim" -simulator ies
 exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/ies/top.sh
-
+#for xsim
 export_simulation  -force -directory "$root_dir/sim" -simulator xsim
 exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/xsim/top.sh
 exec sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" $root_dir/sim/xsim/top.sh
+
+# SET Synthesis Properties
+set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT 400 [get_runs synth_1]
+set_property STEPS.SYNTH_DESIGN.ARGS.FSM_EXTRACTION one_hot [get_runs synth_1]
+set_property STEPS.SYNTH_DESIGN.ARGS.RESOURCE_SHARING off [get_runs synth_1]
+set_property STEPS.SYNTH_DESIGN.ARGS.SHREG_MIN_SIZE 5 [get_runs synth_1]
+set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS true [get_runs synth_1]
+set_property STEPS.SYNTH_DESIGN.ARGS.NO_LC true [get_runs synth_1]
+# SET Implementation Properties
+set_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
+set_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
+set_property STEPS.PHYS_OPT_DESIGN.IS_ENABLED true [get_runs impl_1]
+set_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
+set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
+# SET Bitstream Properties
+set_property STEPS.WRITE_BITSTREAM.ARGS.BIN_FILE true [get_runs impl_1]
 
 close_project
