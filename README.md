@@ -28,3 +28,46 @@ Before we created the CAPI Donut Framework, we created a CAPI driven DEFLAGE com
 To flash the card bitstream, you should try using the new tool available on:
 
 * https://github.com/ibm-capi/capi-utils
+
+Here how it should look like:
+
+    ~/capi-utils$ sudo ./capi-flash-script.sh ../capi/fw_stage2_0929-0_ku3.bin 
+    Current date:
+    Tue Oct  4 14:44:55 CEST 2016
+    
+    #       Card                  Flashed                       by      Image
+    card0    Nallatech Altera     Fri Jun 10 10:55:49 CEST 2016 tsfuchs /home/tsfuchs/capi/cgzip.603_8.20160609.r890-000.rbf
+    card1    Nallatech Altera     Fri Jun 10 10:59:32 CEST 2016 tsfuchs /home/tsfuchs/capi/cgzip.603_8.20160609.r890-000.rbf
+    card2    AlphaDataKU60 Xilinx                                                             
+    
+    Which card do you want to flash? [0-2] 2
+    
+    Do you want to continue to flash ../capi/fw_stage2_0929-0_ku3.bin to card2? [y/n] y
+
+    Device ID: 0477
+    Vendor ID: 1014
+      VSEC Length/VSEC Rev/VSEC ID: 0x08001280
+        Version 0.12
+
+    Programming User Partition with ../capi/fw_stage2_0929-0_ku3.bin
+      Program ->  for Size: 37 in blocks (32K Words or 128K Bytes)
+    
+    Erasing Flash
+    ....
+
+    Programming Flash
+    Writing Buffer: 9727        
+
+    Port not ready 5505113 times
+
+    Verifying Flash
+    Reading Block: 37        
+    
+    Erase Time:   29 seconds
+    Program Time: 20 seconds
+    Verify Time:  6 seconds
+    Total Time:   55 seconds
+    
+    Preparing to reset card
+    Resetting card
+    Reset complete
