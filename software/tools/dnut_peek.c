@@ -181,6 +181,7 @@ int main(int argc, char *argv[])
 		switch (width) {
 		case 32: {
 			rc = dnut_mmio_read32(card, offs, (uint32_t *)&val);
+			val &= 0xffffffff; /* mask off obsolete bits ... */
 			break;
 		}
 		default:
