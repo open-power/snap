@@ -52,17 +52,18 @@
 #define	START_DELAY		200
 #define	END_DELAY		2000
 #define	STEP_DELAY		200
-#define	DEFAULT_MEMCPY_SIZE	4096
+#define	DEFAULT_MEMCPY_BLOCK	4096
+#define	DEFAULT_MEMCPY_ITER	1
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
 
-static uint64_t get_msec(void)
+static uint64_t get_usec(void)
 {
         struct timeval t;
 
         gettimeofday(&t, NULL);
-        return t.tv_sec * 1000 + t.tv_usec/1000;
+        return t.tv_sec * 1000000 + t.tv_usec;
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
@@ -102,28 +103,38 @@ static uint32_t msec_2_ticks(int msec)
 	return fpga_ticks;
 }
 
-static void action_wait_idle(struct dnut_card* h)
+/*
+ *	Start Action and wait for Idle.
+ */
+static void action_wait_idle(struct dnut_card* h, int timeout_ms)
 {
-	uint64_t t_start;	/* time in msec */
 	uint32_t action_data;
-	int td;
+	int n = 0;
+	uint64_t t_start;	/* time in usec */
+	uint64_t tout = (uint64_t)timeout_ms * 1000;
+	uint64_t td;		/* Diff time in usec */
 
 	action_write(h, ACTION_CONTROL, 0);
 	action_write(h, ACTION_CONTROL, ACTION_CONTROL_START);
 
 	/* Wait for Action to go back to Idle */
-	t_start = get_msec();
+	t_start = get_usec();
 	do {
+		n++;
 		action_data = action_read(h, ACTION_CONTROL);
-		td = (int)(get_msec() - t_start);
-		if (td > 20000) {
+		td = get_usec() - t_start;
+		if (td > tout) {
 			printf("Error. Timeout while Waiting for Idle\n");
 			break;
 		}
 	} while ((action_data & ACTION_CONTROL_IDLE) == 0);
 
-	if (verbose_level > 0)
-		printf("Action Time was was %d msec\n" ,td);
+	if (verbose_level > 0) {
+		printf("Action Time was was ");
+		if (td < 100000) 
+			printf("%d usec after %d loops\n" , (int)td, n);
+		else	printf("%d msec after %d loops\n" , (int)td/1000, n);
+	}
 	return;
 }
 
@@ -152,6 +163,82 @@ static void action_memcpy(struct dnut_card* h, void *dest, const void *src, size
 	action_write(h, ACTION_CNT, n);
 }
 
+static int memcpy_test(struct dnut_card* dnc,
+			int block4k,
+			int input_o,
+			int output_o,
+			int align,
+			int iter)
+{
+	int i, rc;
+	uint8_t *src_a = NULL, *src;
+	uint8_t *dest_a = NULL, *dest;
+
+	rc = 0;
+	/* align can be 16, 32, 64 .. 4096 */
+	if (align < 64) {
+		printf("align=%d must be 64 or higher\n", align);
+		return 1;
+	}
+	if ((align & 0xf) != 0) {
+		printf("align=%d must be a multible of 64KB\n", align);
+		return 1;
+	}
+	if (align > DEFAULT_MEMCPY_BLOCK) {
+		printf("align=%d is to much for me\n", align);
+		return 1;
+	}
+	/* Allocate aligned src buffer including offset bytes */
+	if (posix_memalign((void **)&src_a, align, block4k + input_o) != 0) {
+		perror("FAILED: posix_memalign source");
+		return 1;
+	}
+	src = src_a + input_o;	/* Add offset */
+	if (verbose_level > 0)
+		printf("  Src:  %p Size: %d Align: %d offset: %d\n",
+			src, block4k, align, output_o);
+	memset(src, 2, block4k);
+
+	/* Allocate aligned dest buffer including offset bytes */
+	if (posix_memalign((void **)&dest_a, align, block4k + output_o) != 0) {
+		perror("FAILED: posix_memalign destination");
+		free(src_a);
+		return 1;
+	}
+	dest  = dest_a + output_o;
+	if (verbose_level > 0)
+		printf("  Dest: %p Size: %d Align: %d offset: %d\n",
+			dest, block4k, align, output_o);
+	memset(dest, 1, block4k);
+
+	/* Memcpy */
+	for (i = 0; i < iter; i++) {
+		action_memcpy(dnc, dest, src, block4k);
+		action_wait_idle(dnc, 1000);
+		rc = memcmp(src, dest, block4k);
+		if (rc) break;
+	}
+	if (rc) {
+		for (i = 0; i < block4k; i++) {
+			if (src[i] != dest[i])
+				printf("Error offset: %d: SRC: %x Dest: %x\n",
+					i, src[i], dest[i]);
+		}
+	}
+
+	if (src_a) {
+		if (verbose_level > 0)
+			printf("Free Src:  %p\n", src_a);
+		free(src_a);
+	}
+	if (dest_a) {
+		if (verbose_level > 0)
+			printf("Free Dest: %p\n", dest_a);
+		free(dest_a);
+	}
+	return rc;
+}
+
 static void usage(const char *prog)
 {
 	printf("Usage: %s\n"
@@ -160,18 +247,24 @@ static void usage(const char *prog)
 		"    -C, --card <cardno>  use this card for operation\n"
 		"    -V, --version\n"
 		"    -q, --quiet          quiece output\n"
+		"    -m, --mode           Mode (default 1 Count Mode, 2 Memcpy Mode)\n"
+		"    ----- Mode 1 Settings -------------------------\n"
 		"    -s, --start          Start delay in msec (default %d)\n"
 		"    -e, --end            End delay time in msec (default %d)\n"
 		"    -i, --interval       Inrcrement steps in msec (default %d)\n"
-		"    -m, --mode           Mode (default 1 Count Mode, 2 Memcopy Mode)\n"
-		"    -S, --size           Size in Bytes for Memcopy (mode must be 2)\n"
+		"    ----- Mode 2 Settings -------------------------\n"
+		"    -S, --size           Number of 4KB Blocks for Memcopy (default 1)\n"
+		"    -N, --iter           Memcpy Iterations (default 1)\n"
+		"    -A, --align          Memcpy alignemend (default 4 KB)\n"
+		"    -I, --ioff           Memcpy input offset (default 0)\n"
+		"    -O, --ooff           Memcpy output offset (default 0)\n"
 		"\tTool to check Stage 1 FPGA or Stage 2 FPGA Mode (-m) for donut bringup.\n"
 		, prog, START_DELAY, END_DELAY, STEP_DELAY);
 }
 
 int main(int argc, char *argv[])
 {
-	char     device[64];
+	char device[64];
 	struct dnut_card *dn;
 	int start_delay = START_DELAY;
 	int end_delay = END_DELAY;
@@ -180,10 +273,11 @@ int main(int argc, char *argv[])
 	int card_no = 0;
 	int cmd;
 	int mode = 1;
-	uint8_t *src;
-	uint8_t *dest;
-	int len = DEFAULT_MEMCPY_SIZE;
+	int block4k = DEFAULT_MEMCPY_BLOCK;	/* 1 x 4 KB */
 	int rc = 1;
+	int memcpy_iter = DEFAULT_MEMCPY_ITER;
+	int memcpy_align = DEFAULT_MEMCPY_BLOCK;
+	int input_o = 0, output_o = 0;
 
 	while (1) {
                 int option_index = 0;
@@ -198,40 +292,62 @@ int main(int argc, char *argv[])
 			{ "interval", required_argument, NULL, 'i' },
 			{ "mode",     required_argument, NULL, 'm' },
 			{ "size",     required_argument, NULL, 'S' },
+			{ "iter",     required_argument, NULL, 'N' },
+			{ "align",    required_argument, NULL, 'A' },
+			{ "ioff",     required_argument, NULL, 'I' },
+			{ "ooff",     required_argument, NULL, 'O' },
 			{ 0,          no_argument,       NULL, 0   },
 		};
-		cmd = getopt_long(argc, argv, "C:s:e:i:m:S:qvVh",
+		cmd = getopt_long(argc, argv, "C:s:e:i:m:S:N:A:I:O:qvVh",
 			long_options, &option_index);
 		if (cmd == -1)  /* all params processed ? */
 			break;
 
 		switch (cmd) {
-		case 'v':		/* --verbose */
+		case 'v':	/* verbose */
 			verbose_level++;
 			break;
-		case 'V':		/* --version */
+		case 'V':	/* version */
 			printf("%s\n", version);
 			exit(EXIT_SUCCESS);;
-		case 'h':		/* --help */
+		case 'h':	/* help */
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);;
-		case 'C':		/* --card */
+		case 'C':	/* card */
 			card_no = strtol(optarg, (char **)NULL, 0);
 			break;
+		case 'm':	/* mode */
+			mode = strtol(optarg, (char **)NULL, 0);
+			break;
+		/* Mode 1 Options */
 		case 's':
 			start_delay = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 'e':
 			end_delay = strtol(optarg, (char **)NULL, 0);
 			break;
-		case 'i':
+		case 'i':	/* interval  */
 			step_delay = strtol(optarg, (char **)NULL, 0);
 			break;
-		case 'm':
-			mode = strtol(optarg, (char **)NULL, 0);
+		/* Mode 2 Options */
+		case 'S':	/* block */
+			block4k = DEFAULT_MEMCPY_BLOCK * strtol(optarg, (char **)NULL, 0);
 			break;
-		case 'S':
-			len = strtol(optarg, (char **)NULL, 0);
+		case 'N':	/* iter */
+			memcpy_iter = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'A':	/* align */
+			memcpy_align = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'I':	/* iffo */
+			input_o = strtol(optarg, (char **)NULL, 0);
+			printf("This option is under Work !\n");
+			input_o = 0;
+			break;
+		case 'O':	/* offo */
+			output_o = strtol(optarg, (char **)NULL, 0);
+			printf("This option is under Work !\n");
+			output_o = 0;
 			break;
 		default:
 			usage(argv[0]);
@@ -259,42 +375,30 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	if (verbose_level > 0)
-		printf("Start of Test Handle(%p)...\n", dn);
+		printf("Start of Test %d. Card Handle: %p\n", mode, dn);
 
 	switch (mode) {
 	case 1:
 		for(delay = start_delay; delay <= end_delay; delay += step_delay) {
 			action_count(dn, delay);
-			action_wait_idle(dn);
+			action_wait_idle(dn, delay + 10);
 		}
 		rc = 0;
 		break;
 	case 2:
-		if (posix_memalign((void **)&src, 4096, len) != 0) {
-			perror("FAILED:posix_memalign");
-			goto done;
-		}
-		memset(src, 2, len);
-		if (posix_memalign((void **)&dest, 4096, len) != 0) {
-			perror("FAILED:posix_memalign");
-			goto done;
-		}
-		memset(dest, 1, len);
-		action_memcpy(dn, dest, src, len);
-		action_wait_idle(dn);
-		rc = memcmp(src, dest, len);
-		free(src);
-		free(dest);
+		rc = memcpy_test(dn, block4k, input_o, output_o,
+				memcpy_align, memcpy_iter);
 		break;
 	default:
 		break;
 	}
 
-done:
 	// Unmap AFU MMIO registers, if previously mapped
-	dnut_card_free(dn);
 	if (verbose_level > 0)
-		printf("End of Test rc: %d free Card Handle: %p...\n",
-			rc, dn);
+		printf("Free Card Handle: %p\n", dn);
+	dnut_card_free(dn);
+
+	if (verbose_level > 0)
+		printf("End of Test rc: %d\n", rc);
 	return rc;
 }
