@@ -326,7 +326,7 @@ PACKAGE afu_types IS
   END RECORD;
 
   CONSTANT AFU_CFG_INI : AFU_CFG_T :=
-    (AFU_DEVICE_ID   => x"0206",                  -- CAPI accelerated GZIP compression adapter
+    (AFU_DEVICE_ID   => x"FECA",                  -- TODO: device id for CAPI accelerated adapter
      AFU_VENDOR_ID   => x"1410",                  -- IBM
      AFU_CLASS_CODE  => x"000012",                -- accelerator
      AFU_REVISION_ID => x"01"                     -- TODO: value
