@@ -105,8 +105,7 @@ struct dnut_card *dnut_card_alloc_dev(const char *path,
 
 	return (struct dnut_card *)dn;
 
-__dnut_alloc_err:
-	perror ("Error in dnut_card_alloc_dev()\n");
+ __dnut_alloc_err:
 	if (afu_h)
 		cxl_afu_free(afu_h);
 	if (wed)

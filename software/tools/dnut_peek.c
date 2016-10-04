@@ -40,7 +40,6 @@ static void usage(const char *prog)
 {
 	printf("Usage: %s [-h] [-v,--verbose]\n"
 	       "  -C,--card <cardno> can be (0...3)\n"
-	       "for System p\n"
 	       "  -V, --version             print version.\n"
 	       "  -q, --quiet               quiece output.\n"
 	       "  -w, --width <32|64>       access width, 64: default\n"
@@ -169,11 +168,12 @@ int main(int argc, char *argv[])
 
 	switch_cpu(cpu, verbose_flag);
 
-	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%dm", card_no);
+	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
 	card = dnut_card_alloc_dev(device, DNUT_VENDOR_ID_ANY,
 				DNUT_DEVICE_ID_ANY);
 	if (card == NULL) {
-		fprintf(stderr, "err: failed to open card %u\n", card_no);
+		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
+			strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
