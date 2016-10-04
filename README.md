@@ -18,10 +18,18 @@ Please see here for more details:
 * https://members.openpowerfoundation.org/wg/ACLWG/dashboard
 * http://openpowerfoundation.org/blogs/capi-drives-business-performance/
 
-# Previous Work
+# Related Work
 
 Before we created the CAPI Donut Framework, we created a CAPI driven DEFLAGE compression/decompression solution. The software to use this can be found here:
 * https://github.com/ibm-genwqe/genwqe-user
+
+This code uses libcxl to access the CAPI hardware. Normally your Linux distribution should have an installation package containing your library. If not, please look here and build and install manually:
+
+* https://github.com/ibm-capi/libcxl
+
+This code does not compile for Intel sytems, who do not support CAPI. If you like to do build checks consider using the simulation version of libcxl, which is contained in the pslse simulation package:
+
+* https://github.com/ibm-capi/pslse
 
 # Flashing the CAPI bitstream
 
