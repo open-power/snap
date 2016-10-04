@@ -22,3 +22,9 @@ Please see here for more details:
 
 Before we created the CAPI Donut Framework, we created a CAPI driven DEFLAGE compression/decompression solution. The software to use this can be found here:
 * https://github.com/ibm-genwqe/genwqe-user
+
+# Flashing the CAPI bitstream
+
+To flash the card bitstream, you should try using the new tool available on:
+
+* https://github.com/ibm-capi/capi-utils
