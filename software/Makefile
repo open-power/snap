@@ -42,13 +42,20 @@ all: $(subdirs)
 tools: lib
 
 ifdef BUILD_SIMCODE
+ifdef PSLSE_ROOT
+# environment variable PSLSE_ROOT defined by hardware setup scripts
+PSLSE_DIR = $(PSLSE_ROOT)
+else
+# use default path if PSLSE_ROOT is not defined
 PSLSE_DIR = ../../pslse
+endif
 lib: ..check_pslse
 endif
 
 ..check_pslse:
-	@if [ ! -d $(PSLSE_DIR) ]; then			\
-		echo "Please install pslse in $(PSLSE_DIR)";	\
+	@echo "Set PSLSE_DIR to $(PSLSE_DIR)"; \
+	if [ ! -d $(PSLSE_DIR) ]; then			\
+ 		echo "Please install pslse in $(PSLSE_DIR)";	\
 		echo "  use: git clone https://github.com/ibm-capi/pslse"; \
 		echo;					\
 		exit 1;					\
