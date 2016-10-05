@@ -150,10 +150,10 @@
    echo "directory $DONUT_HARDWARE_ROOT doesnt exist";maxrc+=1;
  fi
 
- if [ ! -d ${DONUT_SOFTWARE_ROOT}/../pslse ]; then
-   echo "linking ${PSLSE_ROOT} to ${DONUT_SOFTWARE_ROOT}/../pslse"
-   ln -s ${PSLSE_ROOT} ${DONUT_SOFTWARE_ROOT}/../pslse
- fi
+#if [ ! -d ${DONUT_SOFTWARE_ROOT}/../pslse ]; then
+#  echo "linking ${PSLSE_ROOT} to ${DONUT_SOFTWARE_ROOT}/../pslse"
+#  ln -s ${PSLSE_ROOT} ${DONUT_SOFTWARE_ROOT}/../pslse
+#fi
 
  if [[ $maxrc > 0 ]];then exit;fi
 
@@ -170,6 +170,10 @@
  dir='.'             ; make         $DEBUG $CLEAN all       >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
 
  source="hw";cd ${DONUT_HARDWARE_ROOT};
+ if [ "$CLEAN" == "clean" ];then
+   rm -rf sim/ies
+   rm -rf sim/xsim
+ fi
  if [ ! -d ${DONUT_HARDWARE_ROOT}/sim/ies ];then
    cd ${DONUT_HARDWARE_ROOT}/setup; echo "run Vivado setup scripts"
    vivado -mode batch -source create_ip.tcl        || exit "error in create_ip"
