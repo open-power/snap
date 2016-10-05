@@ -16,7 +16,11 @@
 ###############################################################################
 version
 #source xsaet.tcl				;# enabled through run_sim
+ open_vcd {dump.vcd}
+ log_vcd *
  set myrc [run 2000 ns]; puts "run2000 rc= $myrc" ;# assertions off until after 2800ns
  run 50000 ns
 #run 						;# runforever, until application closes sim
+ flush_vcd
+ close_vcd
  exit

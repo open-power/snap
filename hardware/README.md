@@ -11,7 +11,7 @@ Recommended directory structure:
 A script to set up the corresponding environment variables for a given FRAMEWORK_ROOT can be
 found here:
 
-    ./setup/donut_settings
+    . ./setup/donut_settings
 
 Create the environment after environment variables are set (e.g. via ./setup/donut_settings):
 
@@ -24,4 +24,4 @@ If you want to include the memcopy action example you need to pass option -e to 
 Kick off simulation from subdirectory sim using the script run_sim
 For a memcopy example (after creating the environment with option -e) call:
 
-    run_sim -app "tools/stage2 -m 2"
+    ./run_sim -app "tools/stage2 -m 2"

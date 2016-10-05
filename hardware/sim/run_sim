@@ -18,32 +18,23 @@
 #
 # entry point for simulation, after model has been built
 #
-#echo "simulator0=$SIMULATOR simtop=$SIMTOP"
  if [ -z $SIMDIR ];then
    if [ -z $SIMULATOR ];then SIMDIR="ies"; SIMULATOR="ncsim";
    elif [ $SIMULATOR == "ncsim" ];then SIMDIR="ies"
    elif [ $SIMULATOR == "xsim" ];then SIMDIR="xsim"
    fi
  fi
-#echo "simulator1=$SIMULATOR simtop=$SIMTOP"
-
  if [ "$SIMULATOR" == "ncsim" ];then
+   if [ -z $CDS_INST_DIR ]; then echo "CDS_INST_DIR not defined for ncsim"; exit 1; fi
    SIM_INIT='-ncinitialize x' 			# default init value for simulator
    if [ -z $SIMTOP ];then SIMTOP="work.top";fi	# default top structure
-   echo "simulator=$SIMULATOR simdir=$SIMDIR simtop=$SIMTOP sim_init=$SIM_INIT"
  elif [ "$SIMULATOR" == "xsim" ];then
    SIMDIR=$SIMULATOR
    SIM_INIT='' 					# default init value for simulator
    if [ -z $SIMTOP ];then SIMTOP="top";fi	# default top structure
-   echo "simulator=$SIMULATOR simdir=$SIMDIR simtop=$SIMTOP sim_init=$SIM_INIT"
  else echo "simulator=$SIMULATOR is not supported"; exit 1; fi
+ echo "simulator=$SIMULATOR simdir=$SIMDIR simtop=$SIMTOP sim_init=$SIM_INIT"
 
- if [ -z $CDS_INST_DIR ]; then 	# set environment variable, if it doesnt exist already
-   export CDS_INST_DIR=$CTEPATH/tools/cds/Incisiv/14.10.s14
-   export PATH=$PATH:$CDS_INST_DIR/tools/bin:$CDS_INST_DIR/tools/inca/files
-   export LD_LIBRARY_PATH=.:$CDS_INST_DIR/tools/lib:$LD_LIBRARY_PATH
-   export LM_LICENSE_FILE='5280@hdlic4.boeblingen.de.ibm.com'
- fi
  TST_NAME='XTERM'		# default=open xterm
  TST_ARG="-A CAPI"		# default test arguments
  PARM_FILE=""			# overwrite pslse.parms
