@@ -26,7 +26,7 @@ USE ieee.numeric_std.all;
 USE work.std_ulogic_function_support.all;
 USE work.std_ulogic_unsigned.all;
 
-USE work.afu_types.all;
+USE work.donut_types.all;
 
 ENTITY mmio IS
   GENERIC (

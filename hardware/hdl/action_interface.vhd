@@ -24,7 +24,7 @@ USE ieee.numeric_std.all;
 
 
 
-USE work.afu_types.ALL;
+USE work.psl_accel_types.ALL;
 
 ENTITY action_interface IS
   PORT (

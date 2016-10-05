@@ -24,6 +24,8 @@ use work.std_ulogic_function_support.all;
 use work.std_ulogic_support.all;
 use work.std_ulogic_unsigned.all;
 
+USE work.psl_accel_types.ALL;
+
 ENTITY psl_accel IS
   PORT(
     -- Accelerator Command Interface
@@ -178,7 +180,7 @@ END psl_accel;
 
 ARCHITECTURE psl_accel OF psl_accel IS
 
-  component afu
+  component donut
     port (
       ah_cvalid      : out std_ulogic;
       ah_ctag        : out std_ulogic_vector(0 to 7);
@@ -234,70 +236,159 @@ ARCHITECTURE psl_accel OF psl_accel IS
       ha_jeapar      : in  std_ulogic;
       ha_jcompar     : in  std_ulogic;
       ah_paren       : out std_ulogic;
-      ha_pclock      : in  std_ulogic);
+      ha_pclock      : in  std_ulogic;
+      --
+      -- ACTION Interface
+      --
+      -- misc
+      action_reset   : OUT std_ulogic;
+      --
+      -- Kernel AXI Master Interface
+      xk_d_o         : OUT XK_D_T;
+      kx_d_i         : IN  KX_D_T;
+      --
+      -- Kernel AXI Slave Interface
+      sk_d_o         : OUT SK_D_T;
+      ks_d_i         : IN  KS_D_T
+      );
   end component;
 
-begin
+  component action_interface
+    port (
+      -- misc
+      clk_fw         : IN  std_ulogic;
+      clk_app        : IN  std_ulogic;
+      rst            : IN  std_ulogic;
+      --
+      -- Kernel AXI Master Interface
+      xk_d_i         : IN  XK_D_T;
+      kx_d_o         : OUT KX_D_T;
+      --
+      -- Kernel AXI Slave Interface
+      sk_d_i         : IN  SK_D_T;
+      ks_d_o         : OUT KS_D_T
+    );
+  end component;
 
 
 
-     afu0: afu
-       port map (
-         ah_cvalid      => ah_cvalid,
-         ah_ctag        => ah_ctag,
-         ah_com         => ah_com,
-         ah_cabt        => ah_cabt,
-         ah_cea         => ah_cea,
-         ah_cch         => ah_cch,
-         ah_csize       => ah_csize,
-         ha_croom       => ha_croom,
-         ah_ctagpar     => ah_ctagpar,
-         ah_compar      => ah_compar,
-         ah_ceapar      => ah_ceapar,
-         ha_brvalid     => ha_brvalid,
-         ha_brtag       => ha_brtag,
-         ha_brad        => ha_brad,
-         ah_brlat       => ah_brlat,
-         ah_brdata      => ah_brdata,
-         ah_brpar       => ah_brpar,
-         ha_bwvalid     => ha_bwvalid,
-         ha_bwtag       => ha_bwtag,
-         ha_bwad        => ha_bwad,
-         ha_bwdata      => ha_bwdata,
-         ha_bwpar       => ha_bwpar,
-         ha_brtagpar    => ha_brtagpar,
-         ha_bwtagpar    => ha_bwtagpar,
-         ha_rvalid      => ha_rvalid,
-         ha_rtag        => ha_rtag,
-         ha_response    => ha_response,
-         ha_rcredits    => ha_rcredits,
-         ha_rcachestate => ha_rcachestate,
-         ha_rcachepos   => ha_rcachepos,
-         ha_rtagpar     => ha_rtagpar,
-         ha_mmval       => ha_mmval,
-         ha_mmrnw       => ha_mmrnw,
-         ha_mmdw        => ha_mmdw,
-         ha_mmad        => ha_mmad,
-         ha_mmdata      => ha_mmdata,
-         ha_mmcfg       => ha_mmcfg,
-         ah_mmack       => ah_mmack,
-         ah_mmdata      => ah_mmdata,
-         ha_mmadpar     => ha_mmadpar,
-         ha_mmdatapar   => ha_mmdatapar,
-         ah_mmdatapar   => ah_mmdatapar,
-         ha_jval        => ha_jval,
-         ha_jcom        => ha_jcom,
-         ha_jea         => ha_jea,
-         ah_jrunning    => ah_jrunning,
-         ah_jdone       => ah_jdone,
-         ah_jcack       => ah_jcack,
-         ah_jerror      => ah_jerror,
-         ah_tbreq       => ah_tbreq,
-         ah_jyield      => ah_jyield,
-         ha_jeapar      => ha_jeapar,
-         ha_jcompar     => ha_jcompar,
-         ah_paren       => ah_paren,
-         ha_pclock      => ha_pclock);
+      
+  SIGNAL action_reset : std_ulogic;
+  SIGNAL xk_d         : XK_D_T;
+  SIGNAL kx_d         : KX_D_T;
+  SIGNAL sk_d         : SK_D_T;
+  SIGNAL ks_d         : KS_D_T;
+                   
+                   
+BEGIN              
+  --               
+  --
+  -- 
+  donut: donut
+    port map (
+      --
+      -- PSL Interface
+      -- 
+      -- Command interface
+      ah_cvalid      => ah_cvalid,
+      ah_ctag        => ah_ctag,
+      ah_com         => ah_com,
+      ah_cabt        => ah_cabt,
+      ah_cea         => ah_cea,
+      ah_cch         => ah_cch,
+      ah_csize       => ah_csize,
+      ha_croom       => ha_croom,
+      ah_ctagpar     => ah_ctagpar,
+      ah_compar      => ah_compar,
+      ah_ceapar      => ah_ceapar,
+      --
+      -- Buffer interface
+      ha_brvalid     => ha_brvalid,
+      ha_brtag       => ha_brtag,
+      ha_brad        => ha_brad,
+      ah_brlat       => ah_brlat,
+      ah_brdata      => ah_brdata,
+      ah_brpar       => ah_brpar,
+      ha_bwvalid     => ha_bwvalid,
+      ha_bwtag       => ha_bwtag,
+      ha_bwad        => ha_bwad,
+      ha_bwdata      => ha_bwdata,
+      ha_bwpar       => ha_bwpar,
+      ha_brtagpar    => ha_brtagpar,
+      ha_bwtagpar    => ha_bwtagpar,
+      --
+      --  Response interface
+      ha_rvalid      => ha_rvalid,
+      ha_rtag        => ha_rtag,
+      ha_response    => ha_response,
+      ha_rcredits    => ha_rcredits,
+      ha_rcachestate => ha_rcachestate,
+      ha_rcachepos   => ha_rcachepos,
+      ha_rtagpar     => ha_rtagpar,
+      --
+      -- MMIO interface
+      ha_mmval       => ha_mmval,
+      ha_mmrnw       => ha_mmrnw,
+      ha_mmdw        => ha_mmdw,
+      ha_mmad        => ha_mmad,
+      ha_mmdata      => ha_mmdata,
+      ha_mmcfg       => ha_mmcfg,
+      ah_mmack       => ah_mmack,
+      ah_mmdata      => ah_mmdata,
+      ha_mmadpar     => ha_mmadpar,
+      ha_mmdatapar   => ha_mmdatapar,
+      ah_mmdatapar   => ah_mmdatapar,
+      --
+      -- Control interface
+      ha_jval        => ha_jval,
+      ha_jcom        => ha_jcom,
+      ha_jea         => ha_jea,
+      ah_jrunning    => ah_jrunning,
+      ah_jdone       => ah_jdone,
+      ah_jcack       => ah_jcack,
+      ah_jerror      => ah_jerror,
+      ah_tbreq       => ah_tbreq,
+      ah_jyield      => ah_jyield,
+      ha_jeapar      => ha_jeapar,
+      ha_jcompar     => ha_jcompar,
+      ah_paren       => ah_paren,
+      ha_pclock      => ha_pclock,
+      --
+      -- ACTION Interface
+      --
+      -- misc
+      action_reset   => action_reset,
+      --
+      -- Kernel AXI Master Interface
+      xk_d_o         => xk_d,
+      kx_d_i         => kx_d,
+      --
+      -- Kernel AXI Slave Interface
+      sk_d_o         => sk_d,
+      ks_d_i         => ks_d
+    );
+
+  --
+  --
+  -- 
+  action_interface: action_interface
+    port map (
+      clk_fw         => ha_pclock,
+      clk_app        => ha_pclock,
+      rst            => action_reset,
+
+      xk_d_i         => xk_d,
+      kx_d_o         => kx_d,
+
+      sk_d_i         => sk_d,
+      ks_d_o         => ks_d
+    );
+
+
+      --
+      -- DDR3 Interface
+      -- 
+
 
      -- Input into PSL is not used
     ah_cpad <= (others => '0');

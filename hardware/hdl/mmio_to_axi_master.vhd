@@ -22,7 +22,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-USE work.afu_types.all;
+USE work.psl_accel_types.ALL;
+USE work.donut_types.all;
 
 
 -- @TODO! conversion between std_logic(_vector) and std_ulogic(_vector) for

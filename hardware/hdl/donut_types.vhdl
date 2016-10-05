@@ -25,13 +25,14 @@ USE ieee.numeric_std.all;
 USE work.std_ulogic_support.all;
 USE work.std_ulogic_function_support.all;
 use work.std_ulogic_unsigned.all;
+USE work.psl_accel_types.ALL;
 
-PACKAGE afu_types IS
+PACKAGE donut_types IS
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- ******************************************************
--- ***** AFU FUNCTION DEFINITION                    *****
+-- ***** DONUT FUNCTION DEFINITION                  *****
 -- ******************************************************
 --
 --------------------------------------------------------------------------------
@@ -61,7 +62,7 @@ PACKAGE afu_types IS
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- ******************************************************
--- ***** GLOBAL AFU CONSTANT                        *****
+-- ***** GLOBAL DONUT CONSTANT                      *****
 -- ******************************************************
 --
 --------------------------------------------------------------------------------
@@ -235,11 +236,6 @@ PACKAGE afu_types IS
   CONSTANT MMIO_ADDR_PARITY_ERR       : integer :=  1;     -- MMIO_FIR
   CONSTANT MMIO_DATA_PARITY_ERR       : integer :=  0;     -- MMIO_FIR
 
-  -- AXI Slave constants
-  constant C_S_AXI_ID_WIDTH     : integer   := 20;
-  constant C_S_AXI_DATA_WIDTH   : integer   := 128;
-  constant C_S_AXI_ADDR_WIDTH   : integer   := 64;
-
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   -- Context Control
@@ -265,7 +261,7 @@ PACKAGE afu_types IS
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
-  -- AFU Commands
+  -- DONUT Commands
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   --
@@ -691,46 +687,12 @@ PACKAGE afu_types IS
       rd_data_ack       : std_ulogic;                                           --
     END RECORD SD_D_T;
 
-    --
-    -- sk_d
-    --
-    TYPE SK_D_T IS RECORD
-      S_AXI_AWREADY : std_logic;
-      S_AXI_WREADY  : std_logic;
-      S_AXI_BID         : std_logic_vector(C_S_AXI_ID_WIDTH-1 downto 0);
-      S_AXI_BRESP   : std_logic_vector(1 downto 0);
-      S_AXI_BVALID  : std_logic;
-      S_AXI_RID         : std_logic_vector(C_S_AXI_ID_WIDTH-1 downto 0);
-      S_AXI_RDATA   : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-      S_AXI_RRESP   : std_logic_vector(1 downto 0);
-      S_AXI_RLAST   : std_logic;
-      S_AXI_RVALID  : std_logic;
-      S_AXI_ARREADY : std_logic;
-    END RECORD SK_D_T;
-
 
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
   --  AXI MASTER Interface
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
-    --
-    -- xk_d
-    --
-    TYPE XK_D_T is RECORD
-      M_AXI_AWADDR    : std_logic_vector(31 downto 0);
-      M_AXI_AWPROT    : std_logic_vector(2 downto 0);
-      M_AXI_AWVALID   : std_logic;
-      M_AXI_WDATA         : std_logic_vector(31 downto 0);
-      M_AXI_WSTRB         : std_logic_vector(3 downto 0);
-      M_AXI_WVALID    : std_logic;
-      M_AXI_BREADY    : std_logic;
-      M_AXI_ARADDR    : std_logic_vector(31 downto 0);
-      M_AXI_ARPROT    : std_logic_vector(2 downto 0);
-      M_AXI_ARVALID   : std_logic;
-      M_AXI_RREADY    : std_logic;
-    end RECORD XK_D_T;
-
     --
     -- xmm_d
     --
@@ -739,64 +701,10 @@ PACKAGE afu_types IS
       ack                 : std_ulogic;
       error               : std_ulogic_vector( 1 DOWNTO 0);
     END RECORD XMM_D_T;
+END donut_types;
 
 
-  ----------------------------------------------------------------------------
-  ----------------------------------------------------------------------------
-  --  Action Wrapper Interface
-  ----------------------------------------------------------------------------
-  ----------------------------------------------------------------------------
-    --
-    -- kx_d
-    --
-    TYPE KX_D_T is RECORD
-      M_AXI_AWREADY   : std_logic;
-      M_AXI_WREADY    : std_logic;
-      M_AXI_BRESP         : std_logic_vector(1 downto 0);
-      M_AXI_BVALID    : std_logic;
-      M_AXI_ARREADY   : std_logic;
-      M_AXI_RDATA         : std_logic_vector(31 downto 0);
-      M_AXI_RRESP         : std_logic_vector(1 downto 0);
-      M_AXI_RVALID    : std_logic;
-    end RECORD KX_D_T;
-
-    --
-    -- ks_d
-    --
-    TYPE KS_D_T IS RECORD
-      S_AXI_AWID          : std_logic_vector(C_S_AXI_ID_WIDTH-1 downto 0);
-      S_AXI_AWADDR    : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
-      S_AXI_AWLEN         : std_logic_vector(7 downto 0);
-      S_AXI_AWSIZE    : std_logic_vector(2 downto 0);
-      S_AXI_AWBURST   : std_logic_vector(1 downto 0);
-    --   S_AXI_AWLOCK  : std_logic;
-      S_AXI_AWCACHE   : std_logic_vector(3 downto 0);
-      S_AXI_AWPROT    : std_logic_vector(2 downto 0);
-      S_AXI_AWQOS         : std_logic_vector(3 downto 0);
-      S_AXI_AWREGION  : std_logic_vector(3 downto 0);
-      S_AXI_AWVALID   : std_logic;
-      S_AXI_WDATA         : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-      S_AXI_WSTRB         : std_logic_vector((C_S_AXI_DATA_WIDTH/8)-1 downto 0);
-      S_AXI_WLAST         : std_logic;
-      S_AXI_WVALID    : std_logic;
-      S_AXI_BREADY    : std_logic;
-      S_AXI_ARID          : std_logic_vector(C_S_AXI_ID_WIDTH-1 downto 0);
-      S_AXI_ARADDR    : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
-      S_AXI_ARLEN         : std_logic_vector(7 downto 0);
-      S_AXI_ARSIZE    : std_logic_vector(2 downto 0);
-      S_AXI_ARBURST   : std_logic_vector(1 downto 0);
-   --   S_AXI_ARLOCK  : std_logic;
-      S_AXI_ARCACHE   : std_logic_vector(3 downto 0);
-      S_AXI_ARPROT    : std_logic_vector(2 downto 0);
-      S_AXI_ARQOS         : std_logic_vector(3 downto 0);
-      S_AXI_ARREGION  : std_logic_vector(3 downto 0);
-      S_AXI_ARVALID   : std_logic;
-      S_AXI_RREADY    : std_logic;
-    END RECORD KS_D_T;
-END afu_types;
-
-
-PACKAGE BODY afu_types IS
+PACKAGE BODY donut_types IS
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -948,4 +856,4 @@ PACKAGE BODY afu_types IS
       return z(0);
     end function AC_PPARITH;
 
-END afu_types;
+END donut_types;

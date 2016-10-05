@@ -26,7 +26,7 @@ USE ieee.numeric_std.ALL;
 USE work.std_ulogic_function_support.all;
 USE work.std_ulogic_unsigned.ALL;
 
-USE work.afu_types.ALL;
+USE work.donut_types.ALL;
 
 ENTITY ctrl_mgr IS
   PORT (

@@ -26,10 +26,13 @@ USE ieee.numeric_std.all;
 --USE ibm.std_ulogic_function_support.all;
 --USE ibm.std_ulogic_support.all;
 
-USE work.afu_types.ALL;
+USE work.psl_accel_types.ALL;
+USE work.donut_types.ALL;
 
-ENTITY afu IS
+ENTITY donut IS
   PORT (
+    --
+    -- PSL Interface
     --
     -- Command interface
     ah_cvalid       : OUT std_ulogic;                  -- Command valid
@@ -94,12 +97,24 @@ ENTITY afu IS
     ah_jyield       : OUT std_ulogic;                  -- Job yield
     ah_tbreq        : OUT std_ulogic := '0';           -- Timebase command request
     ah_paren        : OUT std_ulogic;                  -- Parity enable
-    ha_pclock       : IN  std_ulogic                   -- clock
---    ungated_clock   : IN  std_ulogic                   -- non-gated clock to feed pll
+    ha_pclock       : IN  std_ulogic;                  -- clock
+    --
+    -- ACTION Interface
+    -- misc
+    action_reset   : OUT std_ulogic;
+    --
+    -- Kernel AXI Master Interface
+    xk_d_o         : OUT XK_D_T;
+    kx_d_i         : IN  KX_D_T;
+    --
+    -- Kernel AXI Slave Interface
+    sk_d_o         : OUT SK_D_T;
+    ks_d_i         : IN  KS_D_T
+    
   );
-END afu;
+END donut;
 
-ARCHITECTURE afu OF afu IS
+ARCHITECTURE donut OF donut IS
   --
   -- CONSTANT
 
@@ -252,7 +267,7 @@ BEGIN
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- ******************************************************
--- ***** AFU ENTITIES                               *****
+-- ***** DONUT ENTITIES                             *****
 -- ******************************************************
 --
 --------------------------------------------------------------------------------
@@ -374,8 +389,8 @@ BEGIN
       xmm_d_o                => xmm_d,
 
       -- Application / Kernel Interface
-      xk_d_o                 => xk_d,   -- axi master lite
-      kx_d_i                 => kx_d
+      xk_d_o                 => xk_d_o,   -- axi master lite
+      kx_d_i                 => kx_d_i
     );
 
 
@@ -391,25 +406,10 @@ BEGIN
       ds_c_i                       => ds_c,
       ds_d_i                       => ds_d,
 
-      sk_d_o                       => sk_d,  -- axi slave full interface
-      ks_d_i                       => ks_d
+      sk_d_o                       => sk_d_o,  -- axi slave full interface
+      ks_d_i                       => ks_d_i
      );
 
-
-    action_interface: entity work.action_interface
-    port map (
-      clk_fw                 => ha_pclock,
-      clk_app                => ha_pclock,
-      rst                    => afu_reset,
-
-      xk_d_i                 => xk_d,
-      kx_d_o                 => kx_d,
-
-      sk_d_i                 => sk_d,
-      ks_d_o                 => ks_d
-    );
-
-
-
+    action_reset <= afu_reset;
 END ARCHITECTURE;
 

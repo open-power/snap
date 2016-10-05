@@ -43,4 +43,14 @@ set_property generate_synth_checkpoint false [get_files  $ip_dir/ram_160to640x25
 generate_target all [get_files  $ip_dir/ram_160to640x256_2p/ram_160to640x256_2p.xci]
 export_ip_user_files -of_objects [get_files $ip_dir/ram_160to640x256_2p/ram_160to640x256_2p.xci] -no_script -force -quiet
 export_simulation -of_objects [get_files $ip_dir/ram_160to640x256_2p/ram_160to640x256_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
+
+#create ddr3sdramm
+create_ip -name ddr3 -vendor xilinx.com -library ip -version 1.1 -module_name ddr3sdram -dir $ip_dir
+set_property -dict [list CONFIG.C0.DDR3_TimePeriod {1250} CONFIG.C0.DDR3_InputClockPeriod {2500} CONFIG.C0.DDR3_MemoryType {SODIMMs} CONFIG.C0.DDR3_MemoryPart {MT16KTF1G64HZ-1G6} CONFIG.C0.DDR3_AxiSelection {true} CONFIG.Simulation_Mode {Unisim} CONFIG.Internal_Vref {false} CONFIG.C0.DDR3_DataWidth {64} CONFIG.C0.DDR3_CasLatency {11} CONFIG.C0.DDR3_CasWriteLatency {8} CONFIG.C0.DDR3_AxiDataWidth {512} CONFIG.C0.DDR3_AxiAddressWidth {33}] [get_ips ddr3sdram]
+generate_target {instantiation_template} [get_files $ip_dir/ddr3sdram/ddr3sdram.xci]
+generate_target all [get_files $ip_dir/ddr3sdram/ddr3sdram.xci]
+export_ip_user_files -of_objects [get_files  $ip_dir/ddr3sdram/ddr3sdram.xci] -no_script -force -quiet
+export_simulation -of_objects [get_files  $ip_dir/ddr3sdram/ddr3sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
+
+
 close_project

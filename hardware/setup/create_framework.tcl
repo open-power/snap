@@ -48,12 +48,14 @@ set_property library ibm  [get_files $card_dir/Sources/top/synthesis_support.vhd
 
 add_files            -scan_for_includes $root_dir/hdl/
 remove_files                            $root_dir/hdl/action_wrapper.vhd
+remove_files                            $root_dir/hdl/psl_accel_sim.vhd
 update_compile_order -fileset sources_1
 
 #add sim files
 set_property SOURCE_SET sources_1 [get_filesets sim_1]
 add_files -fileset sim_1 -norecurse -scan_for_includes $pslse_dir/afu_driver/verilog/top.v
 set_property file_type SystemVerilog [get_files  $pslse_dir/afu_driver/verilog/top.v]
+add_files -fileset sim_1 -norecurse -scan_for_includes $root_dir/hdl/psl_accel_sim.vhd
 update_compile_order -fileset sim_1
 
 add_files -norecurse "$root_dir/ip/ram_576to144x64_2p/ram_576to144x64_2p.xci $root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci"
