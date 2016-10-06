@@ -1,23 +1,3 @@
-----------------------------------------------------------------------------
-----------------------------------------------------------------------------
---
--- Copyright 2016 International Business Machines
---
--- Licensed under the Apache License, Version 2.0 (the "License");
--- you may not use this file except in compliance with the License.
--- You may obtain a copy of the License at
---
---     http://www.apache.org/licenses/LICENSE-2.0
---
--- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS,
--- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--- See the License for the specific language governing permissions AND
--- limitations under the License.
---
-----------------------------------------------------------------------------
-----------------------------------------------------------------------------
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -63,7 +43,7 @@ entity action_axi_master is
                 dma_wr_addr_i       : in  std_logic_vector( C_M_AXI_ADDR_WIDTH - 1 downto 0);
                 dma_wr_len_i        : in  std_logic_vector(  7 downto 0);
                 dma_wr_data_i       : in  std_logic_vector(C_M_AXI_DATA_WIDTH -1  downto 0);
-                dma_wr_data_valid_i : in  std_logic;                     
+                dma_wr_data_strobe_i: in  std_logic_vector(C_M_AXI_DATA_WIDTH/8-1 downto 0);                     
                 dma_wr_data_last_i  : in  std_logic;                     
                 dma_wr_ready_o      : out  std_logic;                     
                 dma_wr_done_o       : out  std_logic;                     
@@ -138,7 +118,18 @@ architecture action_axi_master of action_axi_master is
 	 	   end if;                                                            
 	   end loop;                                                             
 	   return(count);        	                                              
-	 end;                                                                    
+	 end;
+
+        function or_reduce (signal arg : std_logic_vector) return std_logic is
+          variable result : std_logic;
+        
+        begin
+          result := '0';
+          for i in arg'low to arg'high loop
+            result := result or arg(i);
+          end loop;  -- i
+          return result;
+        end or_reduce;
 
 
 	signal axi_awaddr	: std_logic_vector(C_M_AXI_ADDR_WIDTH-1 downto 0);
@@ -146,12 +137,14 @@ architecture action_axi_master of action_axi_master is
 	signal axi_wdata	: std_logic_vector(C_M_AXI_DATA_WIDTH-1 downto 0);
 	signal axi_wlast	: std_logic;
 	signal axi_wvalid	: std_logic;
+	signal axi_wstrb	: std_logic_vector(C_M_AXI_DATA_WIDTH/8-1 downto 0);
 	signal axi_bready	: std_logic;
 	signal axi_araddr	: std_logic_vector(C_M_AXI_ADDR_WIDTH-1 downto 0);
 	signal axi_arvalid	: std_logic;
 	signal axi_rready	: std_logic;
 	signal axi_awlen	: std_logic_vector(7 downto 0);
 	signal axi_arlen	: std_logic_vector(7 downto 0);
+        signal write_pending    : std_ulogic;        
 
 
 begin
@@ -171,7 +164,7 @@ begin
 	M_AXI_AWUSER	<= (others => '1');
 	M_AXI_AWVALID	<= axi_awvalid;
 	M_AXI_WDATA	<= axi_wdata;
-	M_AXI_WSTRB	<= (others => '1');
+	M_AXI_WSTRB	<= axi_wstrb;
 	M_AXI_WLAST	<= axi_wlast;
 	M_AXI_WUSER	<= (others => '0');
 	M_AXI_WVALID	<= axi_wvalid;
@@ -197,8 +190,9 @@ axi_w:	process(M_AXI_ACLK)
              
              dma_wr_done_o  <= '0';
              if M_AXI_ARESETN = '0'  then
-               axi_awvalid  <= '0';
-               axi_bready   <= '0';
+               axi_awvalid    <= '0';
+               axi_bready     <= '0';
+               write_pending  <= '0';
              else
                if dma_wr_req_i = '1' then
                  axi_awaddr  <= dma_wr_addr_i;
@@ -206,12 +200,15 @@ axi_w:	process(M_AXI_ACLK)
                  axi_awvalid <= '1';
                end if;
                if axi_awvalid = '1' and M_AXI_AWREADY = '1' then
-                 axi_awvalid <= '0';
+                 axi_awvalid   <= '0';
+                 write_pending <= '1';
                end if;
                if dma_wr_data_last_i = '1' then
-                   axi_bready  <= '1';
+                   axi_bready    <= '1';
+                   write_pending <= '0';
                 end if;
                if axi_bready = '1' and M_AXI_BVALID = '1' then
+                 
                  axi_bready     <= '0';
                  dma_wr_done_o  <= '1';
                end if;
@@ -223,13 +220,13 @@ axi_w:	process(M_AXI_ACLK)
 
 
            axi_wdata      <= dma_wr_data_i;
-           axi_wvalid     <= dma_wr_data_valid_i;
+           axi_wvalid     <= or_reduce(dma_wr_data_strobe_i);
+           axi_wstrb      <= dma_wr_data_strobe_i;
         
-wr_data: process(axi_wvalid, M_AXI_WREADY, dma_wr_data_last_i)
+wr_data: process(axi_wvalid, M_AXI_WREADY, dma_wr_data_last_i, write_pending)
          begin
-           dma_wr_ready_o  <= '0';
            axi_wlast       <= '0';
-           dma_wr_ready_o  <= M_AXI_WREADY;
+           dma_wr_ready_o  <= M_AXI_WREADY and write_pending;
            if  axi_wvalid = '1' and  M_AXI_WREADY = '1' then
              
              if dma_wr_data_last_i = '1' then
