@@ -201,7 +201,8 @@ struct dnut_queue *dnut_queue_alloc_dev(const char *path,
  * @return	0 on success.
  */
 int dnut_sync_execute_job(struct dnut_queue *queue,
-			  struct dnut_job *cjob)
+			  struct dnut_job *cjob,
+			  unsigned int timeout_sec __unused)
 {
 	int rc;
 	unsigned int i;

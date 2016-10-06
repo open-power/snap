@@ -251,7 +251,8 @@ void dnut_queue_free(struct dnut_queue *queue);
  * @cjob	streaming framework job
  * @return	0 on success.
  */
-int dnut_sync_execute_job(struct dnut_queue *queue, struct dnut_job *cjob);
+int dnut_sync_execute_job(struct dnut_queue *queue, struct dnut_job *cjob,
+			  unsigned int timeout_sec);
 
 /**
  * Asynchronous way to send a job away.
