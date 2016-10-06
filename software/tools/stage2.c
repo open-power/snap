@@ -40,8 +40,11 @@
 #define	ACTION_4		(ACTION_BASE + 0x04)
 #define	ACTION_8		(ACTION_BASE + 0x08)
 #define	ACTION_CONFIG		(ACTION_BASE + 0x10)
-#define	ACTION_CONFIG_COUNT	0x1		/* Count Mode */
-#define	ACTION_CONFIG_COPY	0x2		/* Memcopy Mode */
+#define	ACTION_CONFIG_COUNT	1	/* Count Mode */
+#define	ACTION_CONFIG_COPY_HH	2	/* Memcopy Host to Host */
+#define	ACTION_CONFIG_COPY_HD	3	/* Memcopy Host to DDR */
+#define	ACTION_CONFIG_COPY_DH	4	/* Memcopy DDR to Host */
+#define	ACTION_CONFIG_COPY_DD	5	/* Memcopy DDR to DDR */
 #define	ACTION_SRC_LOW		(ACTION_BASE + 0x14)
 #define	ACTION_SRC_HIGH		(ACTION_BASE + 0x18)
 #define	ACTION_DEST_LOW		(ACTION_BASE + 0x1c)
@@ -147,13 +150,26 @@ static void action_count(struct dnut_card* h, int delay_ms)
 	action_write(h, ACTION_CNT, msec_2_ticks(delay_ms));
 }
 
-static void action_memcpy(struct dnut_card* h, void *dest, const void *src, size_t n)
+static void action_memcpy(struct dnut_card* h,
+		int mode,	/* Mode can be 2,3,4,5  see ACTION_CONFIG_COPY_ */
+		void *dest, const void *src, size_t n)
 {
 	uint64_t addr;
 
-	if (verbose_level > 0)
-		printf("memcpy(%p, %p, %d)\n", dest, src, (int)n);
-	action_write(h, ACTION_CONFIG, ACTION_CONFIG_COPY);
+	if (verbose_level > 0) {
+		switch (mode) {
+		case 2: printf("Host 2 Host"); break;
+		case 3: printf("Host 2 DDR"); break;
+		case 4: printf("DDR 2 Host"); break;
+		case 5: printf("DDR 2 DDR"); break;
+		default:
+			printf("Invalid\n");
+			return;
+			break;
+		}
+		printf(" memcpy(%p, %p, %d)\n", dest, src, (int)n);
+	}
+	action_write(h, ACTION_CONFIG, mode);
 	addr = (uint64_t)dest;
 	action_write(h, ACTION_DEST_LOW, (uint32_t)(addr & 0xffffffff));
 	action_write(h, ACTION_DEST_HIGH, (uint32_t)(addr >> 32));
@@ -164,6 +180,7 @@ static void action_memcpy(struct dnut_card* h, void *dest, const void *src, size
 }
 
 static int memcpy_test(struct dnut_card* dnc,
+			int mode,
 			int block4k,
 			int input_o,
 			int output_o,
@@ -171,8 +188,8 @@ static int memcpy_test(struct dnut_card* dnc,
 			int iter)
 {
 	int i, rc;
-	uint8_t *src_a = NULL, *src;
-	uint8_t *dest_a = NULL, *dest;
+	uint8_t *src_a = NULL, *src = NULL;
+	uint8_t *dest_a = NULL, *dest = NULL;
 
 	rc = 0;
 	/* align can be 16, 32, 64 .. 4096 */
@@ -188,35 +205,56 @@ static int memcpy_test(struct dnut_card* dnc,
 		printf("align=%d is to much for me\n", align);
 		return 1;
 	}
-	/* Allocate aligned src buffer including offset bytes */
-	if (posix_memalign((void **)&src_a, align, block4k + input_o) != 0) {
-		perror("FAILED: posix_memalign source");
-		return 1;
-	}
-	src = src_a + input_o;	/* Add offset */
-	if (verbose_level > 0)
-		printf("  Src:  %p Size: %d Align: %d offset: %d\n",
-			src, block4k, align, output_o);
-	memset(src, 2, block4k);
 
-	/* Allocate aligned dest buffer including offset bytes */
-	if (posix_memalign((void **)&dest_a, align, block4k + output_o) != 0) {
-		perror("FAILED: posix_memalign destination");
-		free(src_a);
-		return 1;
+	/* Allocate Src Buffer if in Host 2 Host or Host 2 DDR Mode */
+	if ((ACTION_CONFIG_COPY_HH == mode) || (ACTION_CONFIG_COPY_HD == mode)) {
+		/* Allocate aligned src buffer including offset bytes */
+		if (posix_memalign((void **)&src_a, align, block4k + input_o) != 0) {
+			perror("FAILED: posix_memalign source");
+			return 1;
+		}
+		src = src_a + input_o;	/* Add offset */
+		if (verbose_level > 0)
+			printf("  Src:  %p Size: %d Align: %d offset: %d\n",
+				src, block4k, align, output_o);
+		memset(src, 2, block4k);
 	}
-	dest  = dest_a + output_o;
-	if (verbose_level > 0)
-		printf("  Dest: %p Size: %d Align: %d offset: %d\n",
-			dest, block4k, align, output_o);
-	memset(dest, 1, block4k);
+	/* Assume Src Buffer if in DDR 2 Host or DDR 2 DDR Mode */
+	if ((ACTION_CONFIG_COPY_DH == mode) || (ACTION_CONFIG_COPY_DD == mode)) {
+		src = 0;
+	}
+
+	/* Allocate Dest Buffer if in Host 2 Host or DDR 2 Host Mode */
+	if ((ACTION_CONFIG_COPY_HH == mode) || (ACTION_CONFIG_COPY_DH == mode)) {
+		/* Allocate aligned dest buffer including offset bytes */
+		if (posix_memalign((void **)&dest_a, align, block4k + output_o) != 0) {
+			perror("FAILED: posix_memalign destination");
+			if (src_a)
+				free(src_a);
+			return 1;
+		}
+		dest  = dest_a + output_o;
+		if (verbose_level > 0)
+			printf("  Dest: %p Size: %d Align: %d offset: %d\n",
+				dest, block4k, align, output_o);
+		memset(dest, 1, block4k);
+	}
+
+	/* Assume Dest Buffer if in Host 2 DDR */
+	if (ACTION_CONFIG_COPY_HD == mode)
+		dest = 0;
+	/* Set Dest Buffer for DDR 2 DDR Mode */
+	if (ACTION_CONFIG_COPY_DD)
+		dest = src + block4k;
 
 	/* Memcpy */
 	for (i = 0; i < iter; i++) {
-		action_memcpy(dnc, dest, src, block4k);
+		action_memcpy(dnc, mode, dest, src, block4k);
 		action_wait_idle(dnc, 1000);
-		rc = memcmp(src, dest, block4k);
-		if (rc) break;
+		if (ACTION_CONFIG_COPY_HH == mode) {
+			rc = memcmp(src, dest, block4k);
+			if (rc) break;
+		}
 	}
 	if (rc) {
 		for (i = 0; i < block4k; i++) {
@@ -386,7 +424,10 @@ int main(int argc, char *argv[])
 		rc = 0;
 		break;
 	case 2:
-		rc = memcpy_test(dn, block4k, input_o, output_o,
+	case 3:
+	case 4:
+	case 5:
+		rc = memcpy_test(dn, mode, block4k, input_o, output_o,
 				memcpy_align, memcpy_iter);
 		break;
 	default:
