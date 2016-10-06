@@ -84,7 +84,7 @@ CFLAGS += -DGIT_VERSION=\"$(VERSION)\" \
 #
 ifeq ($(PLATFORM),x86_64)
 BUILD_SIMCODE=1
-ifdef $(PSLSE_ROOT)
+ifdef PSLSE_ROOT
 # environment variable PSLSE_ROOT defined by hardware setup scripts
 PSLSE_DIR = $(PSLSE_ROOT)
 else
