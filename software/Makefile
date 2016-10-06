@@ -34,7 +34,7 @@ MAKE		+= -s
 endif
 
 distro = $(shell lsb_release -d | cut -f2)
-subdirs += lib tools
+subdirs += lib tools examples
 
 all: $(subdirs)
 
@@ -53,12 +53,12 @@ lib: ..check_pslse
 endif
 
 ..check_pslse:
-	@echo "Set PSLSE_DIR to $(PSLSE_DIR)"; \
-	if [ ! -d $(PSLSE_DIR) ]; then			\
- 		echo "Please install pslse in $(PSLSE_DIR)";	\
-		echo "  use: git clone https://github.com/ibm-capi/pslse"; \
-		echo;					\
-		exit 1;					\
+	@echo "Set PSLSE_DIR to $(PSLSE_DIR)"; 					\
+	if [ ! -d $(PSLSE_DIR) ]; then						\
+		echo "Please install pslse in $(PSLSE_DIR)";			\
+		echo "  use: git clone https://github.com/ibm-capi/pslse"; 	\
+		echo;								\
+		exit 1;								\
 	fi
 
 # Only build if the subdirectory is really existent

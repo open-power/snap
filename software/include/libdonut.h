@@ -251,7 +251,8 @@ void dnut_queue_free(struct dnut_queue *queue);
  * @cjob	streaming framework job
  * @return	0 on success.
  */
-int dnut_sync_execute_job(struct dnut_queue *queue, struct dnut_job *cjob);
+int dnut_sync_execute_job(struct dnut_queue *queue, struct dnut_job *cjob,
+			  unsigned int timeout_sec);
 
 /**
  * Asynchronous way to send a job away.
@@ -261,7 +262,8 @@ int dnut_sync_execute_job(struct dnut_queue *queue, struct dnut_job *cjob);
  * @return	0 on success.
  */
 /* NOTE: Discuss if such a construct as suggested below really works ok */
-typedef int (*dnut_job_finished_t)(struct dnut_queue *queue, struct dnut_job *cjob);
+typedef int (*dnut_job_finished_t)(struct dnut_queue *queue,
+				   struct dnut_job *cjob);
 
 int dnut_async_execute_job(struct dnut_queue *queue, struct dnut_job *cjob,
 			dnut_job_finished_t finished);
@@ -304,6 +306,11 @@ struct dnut_kernel *dnut_kernel_attach_dev(const char *path,
 int dnut_kernel_start(struct dnut_kernel *kernel);
 
 int dnut_kernel_stop(struct dnut_kernel *kernel);
+int dnut_kernel_completed(struct dnut_kernel *kernel, int *rc);
+
+int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
+				 struct dnut_job *cjob,
+				 unsigned int timeout_sec);
 
 void dnut_kernel_free(struct dnut_kernel *kernel);
 

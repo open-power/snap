@@ -19,9 +19,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <sys/time.h>
+
 #include <libdonut.h>
 #include <libcxl.h>
 #include <donut_queue.h>
+
+#define timediff_usec(t0, t1)						\
+	((double)(((t0)->tv_sec * 1000000 + (t0)->tv_usec) -		\
+		  ((t1)->tv_sec * 1000000 + (t1)->tv_usec)))
 
 #define	CACHELINE_BYTES		128
 
@@ -34,17 +41,17 @@
 /* General ACTION registers */
 #define	ACTION_BASE		0x10000
 #define	ACTION_CONTROL		ACTION_BASE
-#define	ACTION_CONTROL_START	  0x01
-#define	ACTION_CONTROL_IDLE	  0x04
-#define	ACTION_CONTROL_RUN	  0x08
+#define	ACTION_CONTROL_START	  0x00000001
+#define	ACTION_CONTROL_IDLE	  0x00000004
+#define	ACTION_CONTROL_RUN	  0x00000008
 
 /* ACTION Specific register setup */
 #define	ACTION_4		(ACTION_BASE + 0x04)
 #define	ACTION_8		(ACTION_BASE + 0x08)
 
 #define	ACTION_CONFIG		(ACTION_BASE + 0x10)
-#define ACTION_CONFIG_COUNT	  0x01
-#define	ACTION_CONFIG_COPY	  0x02
+#define ACTION_CONFIG_COUNT	  0x00000001
+#define	ACTION_CONFIG_COPY	  0x00000002
 
 #define	ACTION_SRC_LOW		(ACTION_BASE + 0x14)
 #define	ACTION_SRC_HIGH		(ACTION_BASE + 0x18)
@@ -76,6 +83,7 @@ struct dnut_card *dnut_card_alloc_dev(const char *path,
 	dn = malloc(sizeof(*dn));
 	if (NULL == dn)
 		goto __dnut_alloc_err;
+
 	dn->priv = NULL;
 	dn->vendor_id = vendor_id;
 	dn->device_id = device_id;
@@ -174,29 +182,6 @@ void dnut_card_free(struct dnut_card *_card)
 	}
 }
 
-static void action_write(struct dnut_card *h, uint32_t addr, uint32_t data)
-{
-	int rc;
-
-	printf("Action Write: 0x%08x 0x%08x\n", addr, data);
-	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
-	if (0 != rc)
-		printf("Write MMIO 32 Err\n");
-	return;
-}
-
-static uint32_t action_read(struct dnut_card *h, uint32_t addr)
-{
-	int rc;
-	uint32_t reg = 0x11;
-
-	rc = dnut_mmio_read32(h, (uint64_t)addr, &reg);
-	if (0 != rc)
-		printf("Read MMIO 32 Err\n");
-	printf("Action Read: 0x%08x 0x%08x\n", addr, reg);
-	return reg;
-}
-
 struct dnut_queue *dnut_queue_alloc_dev(const char *path,
 					uint16_t vendor_id, uint16_t device_id,
 					uint16_t kernel_id __unused,
@@ -216,28 +201,37 @@ struct dnut_queue *dnut_queue_alloc_dev(const char *path,
  * @return	0 on success.
  */
 int dnut_sync_execute_job(struct dnut_queue *queue,
-			  struct dnut_job *cjob)
+			  struct dnut_job *cjob,
+			  unsigned int timeout_sec __unused)
 {
+	int rc;
 	unsigned int i;
 	struct dnut_card *card = (struct dnut_card *)queue;
 	uint32_t action_data, action_addr;
 	uint32_t *job_data = (uint32_t *)(unsigned long)cjob->workitem_addr;
 
-	printf("*** Action registers setup\n");
+	/* Action registers setup */
 	for (i = 0, action_addr = ACTION_CONFIG;
 	     i < cjob->workitem_size/sizeof(uint32_t);
 	     i++, action_addr += sizeof(uint32_t)) {
 
-		action_write(card, action_addr, job_data[i]);
+		rc = dnut_mmio_write32(card, action_addr, job_data[i]);
+		if (rc != 0)
+			return rc;
 	}
 
-	printf("*** start Action and wait for finish\n");
-	action_write(card, ACTION_CONTROL, ACTION_CONTROL_START);
+	/* Start Action and wait for finish */
+	rc = dnut_mmio_write32(card, ACTION_CONTROL, ACTION_CONTROL_START);
+	if (rc != 0)
+		return rc;
 
 	/* FIXME Timeout missing */
 	/* Wait for Action to go back to Idle */
 	do {
-		action_data = action_read(card, ACTION_CONTROL);
+		rc = dnut_mmio_read32(card, ACTION_CONTROL, &action_data);
+		if (rc != 0)
+			return rc;
+
 	} while ((action_data & ACTION_CONTROL_IDLE) == 0);
 
 	return 0;
@@ -247,3 +241,133 @@ void dnut_queue_free(struct dnut_queue *queue)
 {
 	dnut_card_free((struct dnut_card *)queue);
 }
+
+/**********************************************************************
+ * FIXED KERNEL ASSIGNMENT MODE
+ * E.g. for data streaming if kernel must stay alive for the whole
+ *	program runtime.
+ *********************************************************************/
+
+struct dnut_kernel *dnut_kernel_attach_dev(const char *path,
+					   uint16_t vendor_id,
+					   uint16_t device_id,
+					   uint16_t kernel_id __unused)
+{
+	return (struct dnut_kernel *)
+		dnut_card_alloc_dev(path, vendor_id, device_id);
+}
+
+int dnut_kernel_start(struct dnut_kernel *kernel)
+{
+	struct dnut_card *card = (struct dnut_card *)kernel;
+
+	return dnut_mmio_write32(card, ACTION_CONTROL, ACTION_CONTROL_START);
+}
+
+int dnut_kernel_stop(struct dnut_kernel *kernel __unused)
+{
+	/* FIXME Missing */
+	return 0;
+}
+
+int dnut_kernel_completed(struct dnut_kernel *kernel, int *rc)
+{
+	int _rc;
+	uint32_t action_data = 0;
+	struct dnut_card *card = (struct dnut_card *)kernel;
+
+	_rc = dnut_mmio_read32(card, ACTION_CONTROL, &action_data);
+	if (rc)
+		*rc = _rc;
+
+	return (action_data & ACTION_CONTROL_IDLE) == ACTION_CONTROL_IDLE;
+}
+
+/**
+ * Synchronous way to send a job away. Blocks until job is done.
+ *
+ * FIXME Example Code not working yet. Needs fixups and discussion.
+ *
+ * @kernel	handle to streaming framework kernel/action
+ * @cjob	streaming framework job
+ * @return	0 on success.
+ */
+int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
+				 struct dnut_job *cjob,
+				 unsigned int timeout_sec)
+{
+	int rc;
+	unsigned int i;
+	struct dnut_card *card = (struct dnut_card *)kernel;
+	uint32_t action_addr;
+	uint32_t *job_data = (uint32_t *)(unsigned long)cjob->workitem_addr;
+	struct timeval etime, stime;
+
+	/* Action registers setup */
+	for (i = 0, action_addr = ACTION_CONFIG;
+	     i < cjob->workitem_size/sizeof(uint32_t);
+	     i++, action_addr += sizeof(uint32_t)) {
+
+		rc = dnut_mmio_write32(card, action_addr, job_data[i]);
+		if (rc != 0)
+			return rc;
+	}
+
+	/* Start Action and wait for finish */
+	rc = dnut_kernel_start(kernel);
+	if (rc != 0)
+		return rc;
+
+	/* Wait for Action to go back to Idle */
+	gettimeofday(&stime, NULL);
+	do {
+		int completed;
+
+		completed = dnut_kernel_completed(kernel, &rc);
+		if (completed || rc != 0)
+			return rc;
+
+		gettimeofday(&etime, NULL);
+	} while (timediff_usec(&etime, &stime) < timeout_sec * 1000000);
+	/* FIXME Is the condition correct? */
+
+	return rc;
+}
+
+void dnut_kernel_free(struct dnut_kernel *kernel)
+{
+	dnut_card_free((struct dnut_card *)kernel);
+}
+
+int dnut_kernel_mmio_write64(struct dnut_kernel *kernel, uint64_t offset,
+			     uint64_t data)
+{
+	struct dnut_card *card = (struct dnut_card *)kernel;
+
+	return dnut_mmio_write64(card, offset, data);
+}
+
+int dnut_kernel_mmio_read64(struct dnut_kernel *kernel, uint64_t offset,
+			    uint64_t *data)
+{
+	struct dnut_card *card = (struct dnut_card *)kernel;
+
+	return dnut_mmio_read64(card, offset, data);
+}
+
+int dnut_kernel_mmio_write32(struct dnut_kernel *kernel, uint32_t offset,
+			     uint32_t data)
+{
+	struct dnut_card *card = (struct dnut_card *)kernel;
+
+	return dnut_mmio_write32(card, offset, data);
+}
+
+int dnut_kernel_mmio_read32(struct dnut_kernel *kernel, uint32_t offset,
+			    uint32_t *data)
+{
+	struct dnut_card *card = (struct dnut_card *)kernel;
+
+	return dnut_mmio_read32(card, offset, data);
+}
+
