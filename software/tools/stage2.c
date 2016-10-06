@@ -58,6 +58,8 @@
 #define	DEFAULT_MEMCPY_BLOCK	4096
 #define	DEFAULT_MEMCPY_ITER	1
 
+#define DDR_MEM_SIZE	(8*1024*1024*1024ull)	/* 8 GiB */
+
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
 
@@ -158,10 +160,10 @@ static void action_memcpy(struct dnut_card* h,
 
 	if (verbose_level > 0) {
 		switch (mode) {
-		case 2: printf("Host 2 Host"); break;
-		case 3: printf("Host 2 DDR"); break;
-		case 4: printf("DDR 2 Host"); break;
-		case 5: printf("DDR 2 DDR"); break;
+		case 2: printf("[Host -> Host]"); break;
+		case 3: printf("[Host -> DDR]"); break;
+		case 4: printf("[DDR -> Host]"); break;
+		case 5: printf("[DDR -> DDR]"); break;
 		default:
 			printf("Invalid\n");
 			return;
@@ -244,19 +246,38 @@ static int memcpy_test(struct dnut_card* dnc,
 	if (ACTION_CONFIG_COPY_HD == mode)
 		dest = 0;
 	/* Set Dest Buffer for DDR 2 DDR Mode */
-	if (ACTION_CONFIG_COPY_DD)
+	if (ACTION_CONFIG_COPY_DD == mode)
 		dest = src + block4k;
 
 	/* Memcpy */
 	for (i = 0; i < iter; i++) {
 		action_memcpy(dnc, mode, dest, src, block4k);
-		action_wait_idle(dnc, 1000);
+		//action_wait_idle(dnc, 1000);
 		if (ACTION_CONFIG_COPY_HH == mode) {
 			rc = memcmp(src, dest, block4k);
 			if (rc) break;
 		}
+		/* Modify dest or src address depending on action */
+		if (ACTION_CONFIG_COPY_HD == mode) {
+			dest += block4k;
+			if ((uint64_t)dest >= DDR_MEM_SIZE)
+				dest = 0;
+		}
+		if (ACTION_CONFIG_COPY_DH == mode) {
+			src += block4k;
+			if ((uint64_t)src >= DDR_MEM_SIZE)
+				src = 0;
+		}
+		if (ACTION_CONFIG_COPY_DD == mode) {
+			src = dest;
+			dest += block4k;
+			if ((uint64_t)dest >= DDR_MEM_SIZE) {
+				src = NULL;
+				dest = src + block4k;
+			}
+		}
 	}
-	if (rc) {
+	if ((ACTION_CONFIG_COPY_HH == mode) && (0 != rc)) {
 		for (i = 0; i < block4k; i++) {
 			if (src[i] != dest[i])
 				printf("Error offset: %d: SRC: %x Dest: %x\n",
@@ -285,7 +306,7 @@ static void usage(const char *prog)
 		"    -C, --card <cardno>  use this card for operation\n"
 		"    -V, --version\n"
 		"    -q, --quiet          quiece output\n"
-		"    -m, --mode           Mode (default 1 Count Mode, 2 Memcpy Mode)\n"
+		"    -a, --action         Action to execute (default 1)\n"
 		"    ----- Mode 1 Settings -------------------------\n"
 		"    -s, --start          Start delay in msec (default %d)\n"
 		"    -e, --end            End delay time in msec (default %d)\n"
@@ -296,21 +317,26 @@ static void usage(const char *prog)
 		"    -A, --align          Memcpy alignemend (default 4 KB)\n"
 		"    -I, --ioff           Memcpy input offset (default 0)\n"
 		"    -O, --ooff           Memcpy output offset (default 0)\n"
-		"\tTool to check Stage 1 FPGA or Stage 2 FPGA Mode (-m) for donut bringup.\n"
+		"\tTool to check Stage 1 FPGA or Stage 2 FPGA Mode (-a) for donut bringup.\n"
+		"\t-a 1: Count down mode\n"
+		"\t-a 2: Copy from Host Memory to Host Memory.\n"
+		"\t-a 3: Copy from Host Memory to DDR Memory (FPGA Card).\n"
+		"\t-a 4: Copy from DDR Memory (FPGA Card) to Host Memory.\n"
+		"\t-a 5: Copy from DDR Memory to DDR Memory (both on FPGA Card).\n"
 		, prog, START_DELAY, END_DELAY, STEP_DELAY);
 }
 
 int main(int argc, char *argv[])
 {
 	char device[64];
-	struct dnut_card *dn;
+	struct dnut_card *dn;	/* lib dnut handle */
 	int start_delay = START_DELAY;
 	int end_delay = END_DELAY;
 	int step_delay = STEP_DELAY;
 	int delay;
 	int card_no = 0;
 	int cmd;
-	int mode = 1;
+	int action = ACTION_CONFIG_COUNT;
 	int block4k = DEFAULT_MEMCPY_BLOCK;	/* 1 x 4 KB */
 	int rc = 1;
 	int memcpy_iter = DEFAULT_MEMCPY_ITER;
@@ -328,7 +354,7 @@ int main(int argc, char *argv[])
 			{ "start",    required_argument, NULL, 's' },
 			{ "end",      required_argument, NULL, 'e' },
 			{ "interval", required_argument, NULL, 'i' },
-			{ "mode",     required_argument, NULL, 'm' },
+			{ "action",   required_argument, NULL, 'a' },
 			{ "size",     required_argument, NULL, 'S' },
 			{ "iter",     required_argument, NULL, 'N' },
 			{ "align",    required_argument, NULL, 'A' },
@@ -336,7 +362,7 @@ int main(int argc, char *argv[])
 			{ "ooff",     required_argument, NULL, 'O' },
 			{ 0,          no_argument,       NULL, 0   },
 		};
-		cmd = getopt_long(argc, argv, "C:s:e:i:m:S:N:A:I:O:qvVh",
+		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:N:A:I:O:qvVh",
 			long_options, &option_index);
 		if (cmd == -1)  /* all params processed ? */
 			break;
@@ -354,10 +380,10 @@ int main(int argc, char *argv[])
 		case 'C':	/* card */
 			card_no = strtol(optarg, (char **)NULL, 0);
 			break;
-		case 'm':	/* mode */
-			mode = strtol(optarg, (char **)NULL, 0);
+		case 'a':	/* action */
+			action = strtol(optarg, (char **)NULL, 0);
 			break;
-		/* Mode 1 Options */
+		/* Action 1 Options */
 		case 's':
 			start_delay = strtol(optarg, (char **)NULL, 0);
 			break;
@@ -367,7 +393,7 @@ int main(int argc, char *argv[])
 		case 'i':	/* interval  */
 			step_delay = strtol(optarg, (char **)NULL, 0);
 			break;
-		/* Mode 2 Options */
+		/* Action 2 3, 4, 5 Options */
 		case 'S':	/* block */
 			block4k = DEFAULT_MEMCPY_BLOCK * strtol(optarg, (char **)NULL, 0);
 			break;
@@ -413,9 +439,9 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 	if (verbose_level > 0)
-		printf("Start of Test %d. Card Handle: %p\n", mode, dn);
+		printf("Start of Action: %d Card Handle: %p\n", action, dn);
 
-	switch (mode) {
+	switch (action) {
 	case 1:
 		for(delay = start_delay; delay <= end_delay; delay += step_delay) {
 			action_count(dn, delay);
@@ -427,10 +453,11 @@ int main(int argc, char *argv[])
 	case 3:
 	case 4:
 	case 5:
-		rc = memcpy_test(dn, mode, block4k, input_o, output_o,
+		rc = memcpy_test(dn, action, block4k, input_o, output_o,
 				memcpy_align, memcpy_iter);
 		break;
 	default:
+		printf("Invalid Action\n");
 		break;
 	}
 
