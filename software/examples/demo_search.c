@@ -22,6 +22,7 @@
 #include <getopt.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 
 #include "dnut_tools.h"
 #include <libdonut.h>
@@ -29,6 +30,10 @@
 int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
+
+#define timediff_usec(t0, t1)						\
+	((double)(((t0)->tv_sec * 1000000 + (t0)->tv_usec) -		\
+		  ((t1)->tv_sec * 1000000 + (t1)->tv_usec)))
 
 /**
  * @brief	prints valid command line options
@@ -57,8 +62,9 @@ int main(int argc, char *argv[])
 	uint32_t offs;
 	uint32_t val32;
 	unsigned int i;
-	struct dnut_card *card;
+	struct dnut_kernel *kernel;
 	char device[128];
+	struct timeval etime, stime;
 
 	while (1) {
 		int option_index = 0;
@@ -109,16 +115,22 @@ int main(int argc, char *argv[])
 	}
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
-	card = dnut_card_alloc_dev(device, DNUT_VENDOR_ID_ANY,
-				DNUT_DEVICE_ID_ANY);
-	if (card == NULL) {
+
+	/*
+	 * Apply for exclusive kernel access for kernel type 0xC0FE.
+	 * Once granted, MMIO to that kernel will work.
+	 */
+	kernel = dnut_kernel_attach_dev(device, DNUT_VENDOR_ID_ANY,
+					DNUT_DEVICE_ID_ANY, 0xC0FE);
+	if (kernel == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
 			strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
+	/* Let us setup the registers here manually for now */
 	for (i = 0, offs = 0x10000; i < 10; i++, offs += 4) {
-		rc = dnut_mmio_read32(card, offs, &val32);
+		rc = dnut_kernel_mmio_read32(kernel, offs, &val32);
 		if (rc != 0) {
 			fprintf(stderr, "err: failed read mmio %x %s\n",
 				offs, strerror(errno));
@@ -127,6 +139,38 @@ int main(int argc, char *argv[])
 		fprintf(stdout, " MMIO %08x = %08x\n", offs, val32);
 	}
 
-	dnut_card_free(card);
+	/* We can consider using dnut_kernel_sync_execute_job() once, we
+	   know that the register layout is like what we proposed. Until
+	   than, we can open-code this and setup the MMIOs as we need it
+	   to make it work. The code here is basically what is in the lib
+	   too.*/
+
+	rc = dnut_kernel_start(kernel);
+	if (rc != 0)
+		goto out_error;
+
+	gettimeofday(&stime, NULL);
+	do {
+		int completed;
+
+		completed = dnut_kernel_completed(kernel, &rc);
+		if (completed || rc != 0)
+			break;
+
+		gettimeofday(&etime, NULL);
+	} while (timediff_usec(&etime, &stime) < 10000000);
+	/* FIXME Condition correct? */
+
+	if (rc == 0) {
+		fprintf(stderr, "err: timeout!\n");
+		goto out_error;
+	}
+
+	dnut_kernel_free(kernel);
 	exit(EXIT_SUCCESS);
+
+ out_error:
+	dnut_kernel_stop(kernel);
+	dnut_kernel_free(kernel);
+	exit(EXIT_FAILURE);
 }
