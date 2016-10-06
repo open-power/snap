@@ -1,0 +1,85 @@
+CAPI (Coherent Accelerator Processor Interface) is used to attach processors and other devices like FPGAs to a POWER P8 host.
+It features coherent memory access and uses the CAPP unit on the P8 chip and the PSL unit on the FPGA to secure the CAPI protocol.
+For Simulation the PSL functionality is substituted by the PSLSE behavior simulation.
+
+The CAPI STREAMING FRAMEWORK allows the user to divide a program into its software 'application' and an accellerated FPGA 'action'.
+application and action work together through the CAPI interface, the interfaces are described in libraries
+  - libcxl     the basic calls to open/close the card and read/write data
+  - libdonut   more function calls to hide some of the Framework complexity from the user
+The application can be written in C/C++ or other high lvl languages (openCL, GO,...)
+The action is extracted from the application via openCL or other compilers, or it is directly written in RTL language (VHDL,Verilog,...)
+
+The FPGA binary image is built by the Xilinx Vivado toolset.
+Vivado is used to
+  - create or implement RTL code, IP sources, block designs
+  - compile libraries, which can be included by the code
+  - build scripts for Compile, Elaboration, Simulation
+  - analyze floorplan and timing and build the binary image
+
+Vivado uses following definitions, which need to be adopted to your installation:
+  - export XILINX_VIVADO=                                                 # e.g. .../xilinx/Vivado/2015.4
+  - export XILINXD_LICENSE_FILE=                                          # see lmstat -a -c 2100@<license_server>
+  - see also: source $XILINX_VIVADO/settings64.sh # settings for SDK+HLS+docnav+vivado, does all of the above
+
+Shell variables used within the build and simulation 
+  - export FRAMEWORK_ROOT=<local workspace>                               # customize your workspace
+  - export USERHOME=$FRAMEWORK_ROOT/$USER                                 # each user has his own space for sim+build
+  - export PSLSE_ROOT=$USERHOME/pslse                                     # location for PSLSE (simulation behavioral representing CAPP/PSL functionality)
+  - export DONUT_ROOT=$USERHOME/donut                                     # root directory for the donut hardware and software code
+  - export FPGACARD=$FRAMEWORK_ROOT/cards/adku060_capi_1_1_release        # HDK required by Vivado
+
+If Xilinx XSIM is used, it knows all necessary libraries from the Vivado insall point.
+If Cadence NCSIM is used, you have to compile the Vivado libraries for ncsim. It is recommended to share this libraries amongst different users.
+Once Vivado has compiled the libraries, the libpath is added to cds.lib
+  - see $FRAMEWORK_ROOT/ies_libs
+
+Each user can do his own unit simulation by building a testbench around the units and stimulate/monitor the traffic.
+This unit simulation is NOT part of this description and can be seen in the Xilinx documentation.
+
+The focus in this description is an end2end Simulation
+by running the application on the host together with the FPGA action through PSL and the CAPI STREAMING FRAMEWORK.
+For this task you have to install
+  - PSLSE (representing the CAPP/PSL functionality)
+      retrieved via                              git clone https://github.com/ibm-capi/pslse $PSLSE_ROOT
+      the local repository is shown in           export PSLSE_ROOT=$USERHOME/pslse
+  - hardware model (containing the Framework, action, local memory, optional some more flash or IO interfaces)
+      retrieved via                              git clone git@github.com:open-power/donut.git $DONUT_ROOT
+      the local repository is shown in           export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/hardware
+  - software  (containing the testcases or applications, which stimulate the CAPI FPGA adapter)
+      retrieved together with the hardware via   git clone git@github.com:open-power/donut.git $DONUT_ROOT
+      the local repository is shown in           export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/hardware
+
+You decide, which simulator you want to use
+  export SIMULATOR=xsim         # xsim and ncsim are currently supported
+
+you build your model
+  cd $DONUT_HARDWARE_ROOT/setup
+  ./create_environment -clone        # create clones, if not avail. Then compile
+  ./create_environment -pull         # get updates from git before compilation
+  ./create_environment -clean        # clean compile
+  ./create_environment               # normal compile
+in order to include the memcopy example as action you need to additionally pass the option -e 
+
+This script compiles all three pieces: SW application, PSLSE and HW model.
+result files can be seen in $DONUT_HARDWARE_ROOT/sim/compile*.log
+
+Note: if you use PSLSE branch=master, your top.v needs to be compiled with '-sv' in ies/top.sh (ncsim) or 'sv' in xsim/vlog.prj (xsim)
+      Otherwise, you'll receive errors like
+        file: ./../../pslse/afu_driver/verilog/top.v
+        import "DPI-C" function void psl_bfm_init( );
+             |
+        ncvlog: *E,EXPLPA (./../../pslse/afu_driver/verilog/top.v,23|16): expecting a left parenthesis ('(') [12.1.2][7.1(IEEE)].
+
+Now you can run your ncsim model (export SIMULATOR=ncsim)
+  cd $DONUT_HARDWARE_ROOT/sim
+  ./run_sim -app mmio/app0	# $DONUT_SOFTWARE_ROOT branch=test0  (obsolete)
+  ./run_sim -app tools/stage1   # $DONUT_SOFTWARE_ROOT branch=master
+results are seen in $DONUT_HARDWARE_ROOT/sim/ies/2016*/ (latest run in $DONUT_HARDWARE_ROOT/sim/ies/latest/ )
+After the first run_sim execution you can also start the simulation script in $DONUT_HARDWARE_ROOT/sim/ies or rerun from $DONUT_HARDWARE_ROOT/sim/ies/latest
+
+Or you run your xsim model (export SIMULATOR=xsim)
+  cd $DONUT_HARDWARE_ROOT/sim
+  ./run_sim -app mmio/app0	# $DONUT_SOFTWARE_ROOT branch=test0  (obsolete)
+  ./run_sim -app tools/stage1   # $DONUT_SOFTWARE_ROOT branch=master
+results are seen in $DONUT_HARDWARE_ROOT/sim/xsim/2016*/ (latest run in $DONUT_HARDWARE_ROOT/sim/xsim/latest/ )
+After the first run_sim execution you can also start the simulation script in $DONUT_HARDWARE_ROOT/sim/xsim or rerun from $DONUT_HARDWARE_ROOT/sim/xsim/latest

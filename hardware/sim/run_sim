@@ -1,0 +1,424 @@
+#!/bin/bash
+#
+# Copyright 2016, International Business Machines
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+###############################################################################
+#
+# entry point for simulation, after model has been built
+#
+ if [ -z $SIMDIR ];then
+   if [ -z $SIMULATOR ];then SIMDIR="ies"; SIMULATOR="ncsim";
+   elif [ $SIMULATOR == "ncsim" ];then SIMDIR="ies"
+   elif [ $SIMULATOR == "xsim" ];then SIMDIR="xsim"
+   fi
+ fi
+ if [ "$SIMULATOR" == "ncsim" ];then
+   if [ -z $CDS_INST_DIR ]; then echo "CDS_INST_DIR not defined for ncsim"; exit 1; fi
+   SIM_INIT='-ncinitialize x' 			# default init value for simulator
+   if [ -z $SIMTOP ];then SIMTOP="work.top";fi	# default top structure
+ elif [ "$SIMULATOR" == "xsim" ];then
+   SIMDIR=$SIMULATOR
+   SIM_INIT='' 					# default init value for simulator
+   if [ -z $SIMTOP ];then SIMTOP="top";fi	# default top structure
+ else echo "simulator=$SIMULATOR is not supported"; exit 1; fi
+ echo "simulator=$SIMULATOR simdir=$SIMDIR simtop=$SIMTOP sim_init=$SIM_INIT"
+
+ TST_NAME='XTERM'		# default=open xterm
+ TST_ARG="-A CAPI"		# default test arguments
+ PARM_FILE=""			# overwrite pslse.parms
+ TST_TITLE=""			# suffix for simout_directory to identify testcase
+ LOCAL=0			# 1=create simout locally in /data
+ AET=1   			# 1=create AET
+ VERBOSE="-v"			# verbosity for testcases
+ CLEAN=0			# 1=wipe simout directory, if all tests succesful
+ TCL_SEED=0			# 0=use random seed, others are set into random.tcl
+ SH_INJECT=0  			# 1=inject error in run_sim
+ TCL_INJECT=0  			# 1=activate error inject in run.tcl
+ TSTNUM="-1"			# testnumber to run in selected test lists (parallel_echo,exec_*complist, ...)
+ PAR=1				# number of parallel runs for AFU directed mode
+ RNDMASK=0			# frequently change aggravator values with randmask.sh
+ TCRC=0				# testcase RC
+#set -u				# warn for uninitialized variables
+
+# ARGUMENTS #############
+ HOSTNAME=`hostname -s`; echo "hostname=$HOSTNAME arguments=$@"
+ runsim_args=$@
+ while [[ $# > 0 ]]; do         # consume multiple args per loop with shift
+#  echo "arg=$1"
+   case $1 in				
+     -app)		TST_NAME="$2";shift;;	
+     -list)		TST_NAME='LIST';;
+     -x|xterm|XTERM)	TST_NAME='XTERM';;
+     -quiet)		VERBOSE="";;	
+     -verbose)		VERBOSE="-vvv";;	
+     -v1)		VERBOSE="-v";;		
+     -v2)		VERBOSE="-vv";;	
+     -v3)		VERBOSE="-vvv";;	
+     -v4)		VERBOSE="-vvvv";;	
+     -v5)		VERBOSE="-vvvvv";;	
+     -v6)		VERBOSE="-vvvvvv";;	# can lead to files >1GB
+     -clean)		CLEAN=1;;	
+     -keep)		CLEAN=0;;	
+     -local)		LOCAL=1;;	
+     -inject)		TCL_INJECT=1;;	
+     -seed)		TCL_SEED="$2";shift;;	
+     -rndmask)		RNDMASK=1;;
+     -tn)		TSTNUM="$2";shift;;	
+     -par)		PAR="$2";shift;;	
+     -t)		TST_TITLE="$2";shift;;	
+     -p)		PARM_FILE="$2";shift;;	
+     -arg)		TST_ARG="${TST_ARG} $2";shift;;
+     -aet)		AET=1;;
+     -noaet)		AET=0;;
+     -init0)		SIM_INIT='-ncinitialize 0';;
+     -initx)		SIM_INIT='-ncinitialize x';;
+     -h | *) 	printf "Unknown option %s\n" "$1"
+		echo "Usage: $0 -cdemx"
+		echo "  -list        : handwritten testlist with selected testcases"
+		echo "  -x | xterm   : open xterm for manual testcases(default)"
+		echo "  -t <text>    : title text for XTERM and simout_suffix"
+		echo "  -p <file>    : use different parms file"
+		echo "  -par <n>     : number of parallel runs (default=1)"
+		echo "  -tn <n>      : testnumber to run in selected test lists (parallel_echo,exec_*complist, ...)"
+		echo "  -arg '-x y'  : passing additional args to test pgm (-i 1, -R, -vvv ...)"
+		echo "  -aet|-noaet  : generate waveform during simulation (default)"
+		echo "  -clean|-keep : remove succesful simout directories after run (default=keep)"
+		echo "  -local       : create simout directory locally under /data (default=AFS)"
+		echo "  -verbose|-quiet|-v<n>: verbosity -v .. -vvvvvv n=1..6  (default=-v)"
+		echo "  -init0|-initx: initialize signals to 0 or X (default)"
+		echo "  -tree [0..7] : manually select a specific tree for compression"
+		echo "  -aggr <x> <y>: x= -1=no aggravator used(default), 0..6= throttle regs,       7=all regs,            >7= one random adr"
+		echo "               : y= -1=no aggravator used(default), 0..6= 0/1/12/50/88/99/100% 7=50% 0xAA 8=50% 0x0FA >8= one random value"
+		echo "  -inject      : enable error injects with inject.tcl"
+		exit -1
+		;;
+   esac
+   shift
+ done
+
+##### function declaration
+
+##### main program
+ TS=`date +%Y%m%d_%H%M%S`; if [ "$TST_TITLE" != "" ];then TS="${TS}_${TST_TITLE}";fi
+ if [ ! -d "$USERHOME" ]; then echo "variable USERHOME is not pointing to a directory: $USERHOME, leaving"; exit 11; fi
+ if [ -z ${DONUT_SOFTWARE_ROOT} ];then DONUT_SOFTWARE_ROOT=`readlink -e ../../jobq_software`; fi 	# set environment variable, in case not already set
+ if [ -z ${PSLSE_ROOT} ];then PSLSE_ROOT="$USERHOME/pslse"; fi 				# set environment variable, in case not already set
+ P3=`basename $PWD`
+ if [ $P3 == "sim" ]; then   			# contains sim scripts for GIT
+   echo "in sim_script subdirectory"
+   if [ -d "$SIMDIR" ];then cd $SIMDIR;		# ies or xsim directory should have been generated by Vivado scripts (see setup directory)
+   else echo "cannot change to $SIMDIR"; exit -1;fi
+   ln -s ../run_sim . 2>/dev/null
+ fi
+ P3=`basename $PWD`
+ if [ $P3 == "ies" ] || [ $P3 == "xsim" ]; then	# contains files from Vivado and sim output, no GIT release
+   echo "prepare simout directory"
+   SIMBASE=$PWD;
+   if [ "$LOCAL" == "1" ]; then
+     SIMOUT=/data/${IAM}_${TS};mkdir -p $SIMOUT;# use a local name, that can be mapped back to the user
+     ln -s $SIMOUT ${TS}_${HOSTNAME}		# and have a symbolic link in AFS, which shows the hostname
+   else
+     SIMOUT=$TS; mkdir -p $SIMOUT		# only timestamp, mapping to user is clear
+   fi
+   unlink latest 2>/dev/null;ln -s $SIMOUT latest; # last generated output directory
+   if [ $SIMULATOR == "ncsim" ];then
+     cp run_* cds.lib hdl.var $SIMOUT;
+     cp ../nc*.tcl  	      $SIMOUT
+#    cp nc*.log		      $SIMOUT 		# compile output in case of debug questions
+   elif [ "$SIMULATOR" == "xsim" ];then
+     cp ../xs*.tcl  	      $SIMOUT
+   fi
+   cd $SIMOUT
+#  ln -s $DONUT_HARDWARE_ROOT/support  support  	# to easier get to waveform signallists
+   if [ $SIMULATOR == "ncsim" ];then  ln -s $DONUT_HARDWARE_ROOT/sim/ies/ies        # point to compiled model
+   elif [ $SIMULATOR == "xsim" ];then ln -s $DONUT_HARDWARE_ROOT/sim/xsim/xsim.dir
+   fi
+#  ln -s $DONUT_SOFTWARE_ROOT          jobq_software
+   cp $PSLSE_ROOT/pslse/pslse.parms   .		# default pslse.parms file
+ elif [ ${P3:0:3} == "201" ] || [ $P3 == "latest" ]; then # already in simout i.e. 20160101_235959
+   echo "in simout"
+   LIBNAME=`readlink libraries`; SIMBASE=$(dirname $LIBNAME); echo "simbase= $SIMBASE" # get simbase from libraries in case of local dirs
+   SIMOUT=$PWD; P5=`readlink -e $SIMOUT`; P6=`dirname $P5`
+   if [ "$P6" == "/data" ];then LOCAL=1;else LOCAL=0;fi
+   echo "simout= $SIMOUT $P6 local=$LOCAL"
+   mv $SIMULATOR.log $SIMULATOR.log~ 2>/dev/null  # retain 1 lvl of old log files
+   mv debug.log  debug.log~ 2>/dev/null
+   mv pslse.log  pslse.log~ 2>/dev/null
+   mv stim.log   stim.log~  2>/dev/null
+   mv sim.log    sim.log~   2>/dev/null
+ else
+   echo "dont know where I am, leaving $P3 $PWD"; exit 12;
+ fi
+ if [ "$PARM_FILE" != "" ];then cp ${SIMBASE}/${PARM_FILE} pslse.parms;fi	# overwrite with specified parms file
+
+ export LD_LIBRARY_PATH=$PSLSE_ROOT/afu_driver/src	# to find libvpi.so
+ if [ $SIMULATOR == "ncsim" ];then
+   SIM_INIT='-ncinitialize x' 	# default init value for simulator
+#  SIM_OPT='-gui' 		# interactive, stop @cyc0
+#  SIM_OPT='-gui -tcl'		# interactive with simvision
+#  SIM_OPT='-gui -run -tcl' 	# non_interactive, with simvision
+#  SIM_OPT='-run -tcl'		# non_interactive, no exit at end
+   SIM_OPT='-batch'		# -batch overrides -tcl
+#  if [ "$CDS_COVERAGE" == "1" ];then 	# coverage options in ncsim based on envvariable
+   if [ -z ${CDS_COVERAGE+x} ];then :	# coverage options in ncsim based on envvariable, works with set -u
+#    echo "env_var CDS_COVERAGE is unset"
+   else
+     echo "env_var CDS_COVERAGE is set to ${CDS_COVERAGE}"
+     SIM_OPT+=" -covworkdir $SIMBASE/cov_work -covtest $TS"
+   fi
+#  VPI_OPT='libvpi.so'
+   SIM_OPT+=" -64bit -input ncrun.tcl"
+   if [ "$VERBOSE" == "-vvvvv" -o "$VERBOSE" == "-vvvvvv" ];then :		# null cmd in case of just comments in clause
+     `sed -i "s/ assertion -off -all/#assertion -off -all/g" ncrun.tcl`		# show assertions from cycle 0
+   else
+     `sed -i "s/#assertion -off -all/ assertion -off -all/g" ncrun.tcl`		# disable assertions at cycle 0
+   fi
+   if [ "$AET" == "1" ];then
+     `sed -i "s/#input ncaet.tcl/ input ncaet.tcl/g" ncrun.tcl`			# enable/uncomment AET generation in ncrun.tcl
+   else
+     `sed -i "s/ input ncaet.tcl/#input ncaet.tcl/g" ncrun.tcl`			# disable/comment AET generation in ncrun.tcl
+   fi
+   if [ "$LOCAL" == "1" ];then
+     `sed -i "s/-incfiles/;#-incfiles/g" ncaet.tcl`				# no AET size limit locally
+   else                                                   	
+     `sed -i "s/;#-incfiles/-incfiles/g" ncaet.tcl`				# limit AET size for AFS
+   fi
+   if [ "$TCL_SEED" != "0" ];then
+     `sed -i "s/set startseed [0-9]* /set startseed $TCL_SEED /g" ncrun.tcl` 	# set start seed
+     `sed -i "s/#set startseed $TCL_SEED/ set startseed $TCL_SEED/g" ncrun.tcl`	# enable start seed
+   else
+     `sed -i "s/ set startseed /#set startseed /g" ncrun.tcl`			# disable start seed
+   fi
+   if [ "$TCL_INJECT" == "1" ];then
+     `sed -i "s/#input ncinject.tcl/ input ncinject.tcl/g" ncrun.tcl` 		# enable/uncomment error injection in ncrun.tcl
+   else
+     `sed -i "s/ input ncinject.tcl/#input ncinject.tcl/g" ncrun.tcl` 		# disable/comment  error injection in ncrun.tcl
+   fi
+ elif [ $SIMULATOR == "xsim" ];then
+   SIM_INIT=''		 	# default init value for simulator
+   SIM_OPT=''			# -batch overrides -tcl
+   VPI_OPT='libdpi.so'
+   SIM_OPT+=" -t xsrun.tcl"
+ fi
+
+ SIM_OPT="$SIM_INIT $SIM_OPT"
+ TST_ARG+=" -T ${TST_NAME}"
+ if [[ "$TST_ARG" =~ "-v" ]];then
+   echo "tst_arg already contains verbose $TST_ARG"
+ else
+#  echo "add $VERBOSE to tst_arg $TST_ARG"
+   TST_ARG+=" ${VERBOSE}"
+ fi
+ echo "SW root= ${DONUT_SOFTWARE_ROOT}"	|tee sim.log
+ echo "HW root= ${DONUT_HARDWARE_ROOT}"	|tee -a sim.log
+ echo "pslse=   $PSLSE_ROOT"		|tee -a sim.log
+ echo "simbase= $SIMBASE"		|tee -a sim.log
+ echo "simout=  $SIMOUT"		|tee -a sim.log
+ echo "run_sim arguments=${runsim_args}, sim_opt= ${SIM_OPT}, tst_arg= ${TST_ARG}, AET= $AET"|tee -a sim.log
+
+ echo "**** call simulator=$SIMULATOR in background, args=${SIM_OPT}, wait for socket in $SIMULATOR.log->shim_host.dat"|tee -a sim.log &
+ $SIMULATOR $SIM_OPT $SIMTOP           |tee -a sim.log &	# sim.log records 1st socket
+#ncsim $SIM_OPT top:v -loadvpi $VPI_OPT|tee -a sim.log &	
+ SIMLOG_PID=$!	
+ SIMLOG_PPID=`ps -ef|grep $SIMLOG_PID |grep tee  |awk '{print $3}'`
+ for i in {1..10};do 				# wait for SIM_PID to show up
+   SIM_PID=`ps -ef|grep $SIMLOG_PPID|grep $SIMULATOR|awk '{print $2}'`
+   if [ "$SIM_PID" == "" ];then sleep 1;else break;fi
+ done
+ echo "tee sim.log PID=$SIMLOG_PID ppid=$SIMLOG_PPID sim_pid=$SIM_PID after $i sec"|tee -a sim.log
+#ps -efl |grep $SIMLOG_PPID
+ if [ "$SIM_PID" == "" ];then echo "could not start $SIMULATOR"; TCRC=-1
+ else for i in {1..200};do
+   grep 'waiting for connection' sim.log >/dev/null 2>&1 # returns 2=filenotfound 1=notfound 0=found
+   if [ "$?" -eq "0" ];then
+     echo "$SIMULATOR socket avail after $i sec";
+     grep 'waiting for connection' sim.log |awk '{print $8}'|awk '{printf("afu0.0,%s\n",$0);}'|tee shim_host.dat
+     break
+   fi
+   if [ "$i" -eq "30" ];then
+     echo "**** timeout $i sec waiting for $SIMULATOR $SIM_PID socket";
+     kill -9 $SIM_PID
+     TCRC=-2; break
+   fi
+   sleep 1
+ done;fi
+
+ if [ "$TCRC" == "0" ];then
+   echo "**** call pslse in background, wait for socket in pslse.log->pslse_server.dat"
+   $PSLSE_ROOT/pslse/pslse >pslse.log 2>&1 &
+   PSLSELOG_PID=$!;
+   for i in {1..30};do 				# wait for pslse pid to show up
+     PSLSE_PID=`ps -ef|grep $SIMLOG_PPID|grep '/pslse'|awk '{print $2}'`
+     if [ "$PSLSE_PID" == "" ];then sleep 1;else break;fi	
+   done
+   echo "tee pslse.log PID=$PSLSELOG_PID ppid=$SIMLOG_PPID pslse_pid=$PSLSE_PID after $i sec"|tee -a sim.log
+#  ps -efl |grep $SIMLOG_PPID
+   if [ "$PSLSE_PID" == "" ];then echo "could not start pslse"; kill -9 $SIM_PID; TCRC=-3
+   else for i in {1..200};do
+     grep listening pslse.log >/dev/null 2>&1	# returns 2=filenotfound 1=notfound 0=found
+     if [ "$?" -eq "0" ];then
+       PSLSE_SOCKET=`grep listening pslse.log |sed 's/\(.* listening on \)\(.*\)/\2/'`
+       echo $PSLSE_SOCKET >pslse_server.dat
+       echo "pslse socket=$PSLSE_SOCKET avail after $i sec"
+       break
+     fi
+     if [ "$i" -eq "30" ];then echo "**** timeout $i sec waiting for pslse $PSLSE_PID socket ";
+       kill -SIGINT $PSLSE_PID;			
+#      kill -9 $SIM_PID; 			# killing pslse should also stop the simulator
+       TCRC=-4; break
+     fi
+     sleep 1
+   done;fi
+ fi
+
+ if [ "$TCRC" == "0" ];then
+   if [ "$TCL_SEED" != "0" ];then RANDOM=$TCL_SEED;fi		# work with seed
+   ts0=$(date +%s);failed=0;rc=0
+   set -o pipefail 					# highest RC in pipe, if set -o pipefail
+   randnum=$((RANDOM%1));
+   echo "**** run $PAR $TST_NAME app timeout=${DDCB_TIMEOUT} seed=${TCL_SEED} randnum=$randnum"|tee stim.log
+   for i in `seq 1 $PAR`;do					# start testcase
+     prc[$i]=0
+     if [ "$PAR" == "1" ];then STIMLOG="stim.log";else STIMLOG="stim${i}.log";fi
+     if [ "$TST_NAME" == "XTERM" ];then
+       xterm -title "testcase window, use >script ${STIMLOG}< to log input" & 	# tee+RC doesnt work here, use script instead
+     elif [ "$TST_NAME" == "EBERHARD" ];then
+       $DONUT_SOFTWARE_ROOT/mmio/app0 -vv 2>&1 |tee -a $STIMLOG &  # for Eberhard
+     else
+       $DONUT_SOFTWARE_ROOT/${TST_NAME} -vv 2>&1 |tee -a $STIMLOG &
+     fi
+     pid[$i]=$(jobs -p|tail -n1);
+     ts4=$(date +%T); echo "$ts4 app $i started, pid=${pid[$i]}"|tee -a stim.log
+#    sleep 1	# here we may delay apps for timing variation
+   done
+#  lsof ./stim* |tee -a stim.log				# list open stim files
+#  ps -efl |grep $SIMLOG_PPID
+
+   # new loop: check in sleep_loop, that apps+pslse+$SIMULATOR+rndmask are running. When finished, check return code
+   ts1=$(date +%s); # start timer
+   until [[ $num = 0 ]];do
+     runjobs=`jobs -rp`; array=(${runjobs});num=${#array[@]}
+#    echo "$num jobs running, pids=${array[@]}"|tee -a stim.log
+#    for i in "${!array[@]}"; do echo "element $i = ${array[i]}"|tee -a stim.log ; done
+     for i in `seq 1 $PAR`;do
+       if [[ ${pid[$i]} == "0" ]];then :
+#        echo "app=$i already checked"|tee -a stim.log;
+       elif [[ "${array[@]}" == *"${pid[$i]}"* ]];then :
+#        echo "app=$i ${pid[$i]} still running"|tee -a stim.log;
+       else
+         wait ${pid[$i]};prc[$i]=$?;				# wait for process to get RC, should have ended already
+         if [ "${prc[$i]}" -ne "0" ];then failed=`expr $failed + 1`;fi
+         if [[ ${prc[$i]} > $TCRC ]];then TCRC=${prc[$i]};fi	# collect maximum RC from all apps, return code from xterm always 0
+         ts2=$(date +%s); sec=`expr $ts2 - $ts1`
+         ts4=$(date +%T); echo "$ts4 app $i pid=${pid[$i]} RC=${prc[$i]} after $sec seconds, max_RC=$TCRC"|tee -a stim.log
+         pid[$i]="0";ts1=$(date +%s); 				# dont wait for this pid anymore, start new timer
+       fi
+     done
+     if [[ "$num" == 0 ]];then echo "execution finished"|tee -a stim.log; break; fi	
+     if [[ "${array[@]}" == *"$SIM_PID"* ]];then missing="0";
+     else missing="1";echo "$SIMULATOR not running anymore"|tee -a stim.log;
+     fi
+     if [[ "${array[@]}" == *"$PSLSE_PID"* ]];then missing+="0";
+     else missing+="2";echo "pslse not running anymore"|tee -a stim.log;
+     fi
+     if [[ "$missing" -ne "00" ]];then 				# sim/pslse missing
+       echo "kill remaining apps ${array[@]}"|tee -a stim.log
+       `kill -SIGKILL ${array[@]}`; sleep 10; TCRC=-5;break;
+     fi
+     if [[ "$num" -lt 4  &&  "$rndmask_pid" -ne "0" ]];then 	# stop rndmask
+       for i in -15 -2 -3 -9; do	# try stopping with different signals: term,int,quit,kill
+         ts4=$(date +%T); echo "$ts4 stop rndmask with kill $i pid=${rndmask_pid}"|tee -a stim.log; kill $i ${rndmask_pid}
+         sleep 8;runjobs=`jobs -rp`;array=(${runjobs});num=${#array[@]};if [[ "$num" -lt 3 ]];then break;fi # allow enough time to get rid of child processes
+         sleep 8;runjobs=`jobs -rp`;array=(${runjobs});num=${#array[@]};if [[ "$num" -lt 3 ]];then break;fi
+         sleep 8;runjobs=`jobs -rp`;array=(${runjobs});num=${#array[@]};if [[ "$num" -lt 3 ]];then break;fi
+       done
+       rndmask_pid=0						# prevent multiple kills on the same pid
+     fi
+     if [[ "$num" -lt 3 ]];then					# no app process, leave the loop
+       echo "execution finished,remaining pid=${pid[@]}"|tee -a stim.log; break;
+     fi	
+     sleep 5;
+   done
+   if [ "$PAR" -ne "1" ] ;then					# generate Runtime timestamp, in case you dont have one
+     echo "$PAR tests executed. $failed failed, $TCRC is highest RC"|tee -a stim.log  # marker for directory cleaning, $EXECUTED, $FAILED
+   fi
+#  if [ "$PAR" -ne "1" ] || [ "$TST_NAME" == "AFU" ];then	# generate Runtime timestamp, in case you dont have one
+     ts3=$(date +%s); diff1=`expr $ts3 - $ts0`; diff2=$((diff1 / PAR)) 	# elapsed time for all apps / per app
+     mm1=$(($diff1 / 60)); ss1=$(($diff1 % 60)); hh1=$(($mm1 / 60)); mm1=$(($mm1 % 60))
+     mm2=$(($diff2 / 60)); ss2=$(($diff2 % 60)); hh2=$(($mm2 / 60)); mm2=$(($mm2 % 60))
+     echo "**** Runtime: ${hh1}:${mm1}:${ss1}  per app: ${hh2}:${mm2}:${ss2} [H:M:S]"|tee -a stim.log	# marker for $RUNTIME
+#  fi
+ fi
+
+ if [ "${PSLSE_PID}." != "." ] ;then			# variable exists, PSLSE started
+   echo "stop PSLSE $PSLSE_PID"
+   kill -SIGINT ${PSLSE_PID};rc=$?; 			# killing pslse should also stop the simulator
+   echo "**** testcase RC=${TCRC}, pslse ${PSLSE_PID} +sim $SIM_PID stopped RC=${rc}, wait for processes to complete" |tee -a stim.log
+#  sleep 1; ps -efl |grep $SIMLOG_PPID;psrc=$?;echo "ps rc=$psrc";
+   for i in {1..2};do                          		# wait for processes to end
+     for j in {1..20};do
+       ps -p $PSLSE_PID $SIM_PID >/dev/null;rc=$?;
+#      echo "ps $j rc=$rc";
+       if [ "$rc" -eq "1" ];then break 2;fi 		# process is not avail anymore, exit both loops
+       sleep 1
+     done
+     kill -SIGINT ${PSLSE_PID};rc=$?; 			# kill pslse again, but stopping may take a while due to coverage
+     echo "kill pslse loop=$i rc=$rc"
+   done
+ fi
+
+ echo "**** append msgs from sim.log"  |tee -a stim.log; grep -i -E "error=|error:|FIR:|assertion" sim.log |grep -v LOADLB |tee -a stim.log
+#echo "**** append msgs from $SIMULATOR.log"|tee -a stim.log; grep -i "error" $SIMULATOR.log|grep -v LOADLB |tee -a stim.log # duplicate info to sim.log
+ cd $DONUT_HARDWARE_ROOT; 	HWVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
+ cd $DONUT_SOFTWARE_ROOT; 	SWVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
+ if [ "${PSLSE_PID}." != "." ] ;then			# variable exists, PSLSE started
+   echo "**** append msgs from pslse.log"|tee -a stim.log; grep -i "error" pslse.log|tee -a stim.log
+   cd $PSLSE_ROOT;	  	PSLSEVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
+#  cd $PSLSE_ROOT;        	PSLSEVERS=`git describe --all --long`;cd - >/dev/null
+   if [ "$AET" == "1" ];then $PSLSE_ROOT/debug/debug >debug.lst;fi # assume you need debug info
+ else PSLSEVERS="N/A"
+ fi
+ if [ "$PAR" -ne "1" ] ;then	
+   EXECUTED=`grep --text 'executed\.' stim1.log|tail -n1|awk '{print $1}'`
+   FAILED=`grep   --text 'executed\.' stim1.log|tail -n1|awk '{print $4}'`
+ else
+   EXECUTED=`grep --text 'executed\.' stim.log|tail -n1|awk '{print $1}'`
+   FAILED=`grep   --text 'executed\.' stim.log|tail -n1|awk '{print $4}'`
+ fi
+ RUNTIME=`grep --text 'Runtime:'   stim.log|tail -n1|awk '{print $3}'`
+ SIMTIME=`grep --text 'Simulation complete via' sim.log|sed 's/\(.* at time\)\(.*\)\(\+.*\)/\2/'|sed 's/ //g'`
+ SPEED=`cat /proc/cpuinfo|grep -i mhz|tail -n 1|sed 's/\./ /g'|awk '{print $4}'`
+ CPUS=`cat /proc/cpuinfo|grep processor|wc -l`			
+ LOAD=`uptime|awk '{print $12}'|sed 's/,/ /g'`	# remove eventual commas
+ if [ "$LOCAL" == "1" ];then
+   PERCUSED=`df -k 2>/dev/null|grep '\/data'|tail -n1|awk '{print $5}'`
+ else
+   PERCUSED=`fs lq |tail -n1|awk '{print $4}'`	
+ fi
+ USED=`du -sk . |awk '{print $1}'`				
+ echo "**** RC=$TCRC parallel=$PAR executed=$EXECUTED failed=$FAILED runtime=$RUNTIME simtime=$SIMTIME cpus=$CPUS speed=$SPEED load=$LOAD local=$LOCAL used_kB=$USED percused=$PERCUSED"
+ echo "**** Versions: HW=$HWVERS SW=$SWVERS pslse=$PSLSEVERS"
+ echo "$HWVERS,$SWVERS,$PSLSEVERS,$TS,$TCRC,$PAR,$EXECUTED,$FAILED,$RUNTIME,$SIMTIME,$DDCB_TIMEOUT,$HOSTNAME,$SPEED,$CPUS,$LOAD,$USED,$PERCUSED,$TST_ARG" >>$USERHOME/status.csv
+ grep --text -iE "error|errno|warning|retc|return|genwqe_|time|finished|loop|failed|script|tmp_pid" stim.log >>../summary.log
+ sleep 5
+ if [ $CLEAN == 1 ];then
+   echo "**** clean output directory $SIMOUT, in case it is successful"
+   cd $SIMBASE; sleep 5; grep --text -Hi 'tests executed. 0' $SIMOUT/stim.log|sed 's/\// /g'|awk '{print $1}'|xargs -i{} echo rm1 -fr "{}"|tee -a stim.log 	# show in LSF log
+   cd $SIMBASE; sleep 5; grep --text -Hi 'tests executed. 0' $SIMOUT/stim.log|sed 's/\// /g'|awk '{print $1}'|xargs -i{} rm -fr "{}" 2>/dev/null 		# remove directories with 0 errors
+   cd $SIMBASE; sleep 5; grep --text -Hi 'testcase RC=0, '   $SIMOUT/stim.log|sed 's/\// /g'|awk '{print $1}'|xargs -i{} echo rm2 -fr "{}"|tee -a stim.log 	# show in LSF log
+   cd $SIMBASE; sleep 5; grep --text -Hi 'testcase RC=0, '   $SIMOUT/stim.log|sed 's/\// /g'|awk '{print $1}'|xargs -i{} rm -fr "{}" 2>/dev/null 		# remove directories with 0 errors
+ fi
+#echo "*** leftover processes on this machine:"; ps -ef|grep -E "$SIMULATOR|pslse|genwqe"|grep $IAM|grep -v grep
+ exit $TCRC

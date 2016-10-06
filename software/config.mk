@@ -84,7 +84,13 @@ CFLAGS += -DGIT_VERSION=\"$(VERSION)\" \
 #
 ifeq ($(PLATFORM),x86_64)
 BUILD_SIMCODE=1
+ifdef $(PSLSE_ROOT)
+# environment variable PSLSE_ROOT defined by hardware setup scripts
+PSLSE_DIR = $(PSLSE_ROOT)
+else
+# use default path if PSLSE_ROOT is not defined
 PSLSE_DIR = ../../../pslse
+endif
 CFLAGS += -I $(PSLSE_DIR)/libcxl -I $(PSLSE_DIR)/common
 FORCE_32BIT     ?= 0
 ifeq ($(FORCE_32BIT),1)

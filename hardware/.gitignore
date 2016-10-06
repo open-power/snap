@@ -1,0 +1,8 @@
+hdl/*~
+sim/ies/
+sim/xsim/
+viv_project/
+ip/
+action/memcopy.*
+sim/*.log
+sim/20*
