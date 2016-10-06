@@ -308,8 +308,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
       c0_ddr3_s_axi_awqos : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
       c0_ddr3_s_axi_awvalid : IN STD_LOGIC;
       c0_ddr3_s_axi_awready : OUT STD_LOGIC;
-      c0_ddr3_s_axi_wdata : IN STD_LOGIC_VECTOR(511 DOWNTO 0);
-      c0_ddr3_s_axi_wstrb : IN STD_LOGIC_VECTOR(63 DOWNTO 0);
+      c0_ddr3_s_axi_wdata : IN STD_LOGIC_VECTOR(127 DOWNTO 0);
+      c0_ddr3_s_axi_wstrb : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
       c0_ddr3_s_axi_wlast : IN STD_LOGIC;
       c0_ddr3_s_axi_wvalid : IN STD_LOGIC;
       c0_ddr3_s_axi_wready : OUT STD_LOGIC;
@@ -333,7 +333,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       c0_ddr3_s_axi_rvalid : OUT STD_LOGIC;
       c0_ddr3_s_axi_rresp : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
       c0_ddr3_s_axi_rid : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
-      c0_ddr3_s_axi_rdata : OUT STD_LOGIC_VECTOR(511 DOWNTO 0);
+      c0_ddr3_s_axi_rdata : OUT STD_LOGIC_VECTOR(127 DOWNTO 0);
       sys_rst : IN STD_LOGIC
     );
   END COMPONENT;  
