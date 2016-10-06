@@ -21,7 +21,7 @@ libs = ../lib/libdonut.a
 LDLIBS += $(libs) -lpthread
 
 ifdef BUILD_SIMCODE
-libs += ../../../pslse/libcxl/libcxl.a
+libs += $(PSLSE_DIR)/libcxl/libcxl.a
 else
 LDLIBS += -lcxl
 endif
