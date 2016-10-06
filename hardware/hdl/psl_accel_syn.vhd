@@ -269,8 +269,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
       ks_d_o         : OUT KS_D_T;
       --
       -- Kernel to DDR3 AXI Interface
-      ddrk_i         : IN  DDRK_D_T;
-      kddr_o         : OUT KDDR_D_T
+      ddrk_i         : IN  DDRK_T;
+      kddr_o         : OUT KDDR_T
     );
   end component;
 
@@ -376,7 +376,7 @@ BEGIN
   --               
   -- DONUT 
   -- 
-  donut: donut
+  donut_i: donut
     port map (
       --
       -- PSL Interface
@@ -463,7 +463,7 @@ BEGIN
   --
   -- ACTION
   -- 
-  action_interface: action_interface
+  action_i: action_interface
     port map (
       clk_fw         => ha_pclock,
       clk_app        => ha_pclock,
@@ -532,7 +532,7 @@ BEGIN
       c0_ddr3_s_axi_bresp    => ddrk.axi_bresp(1 downto 0), 
       c0_ddr3_s_axi_bvalid   => ddrk.axi_bvalid,              
       c0_ddr3_s_axi_rdata    => ddrk.axi_rdata,  
-      c0_ddr3_s_axi_rid      => ddrk.axi_rid,
+      c0_ddr3_s_axi_rid      => open, -- c0_ddr3_s_axi_rid,
       c0_ddr3_s_axi_rlast    => ddrk.axi_rlast,               
       c0_ddr3_s_axi_rready   => kddr.axi_rready,              
       c0_ddr3_s_axi_rresp    => ddrk.axi_rresp(1 downto 0),   
