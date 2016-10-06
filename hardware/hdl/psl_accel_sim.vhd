@@ -186,6 +186,30 @@ ARCHITECTURE afu OF afu IS
   SIGNAL kx_d         : KX_D_T;
   SIGNAL sk_d         : SK_D_T;
   SIGNAL ks_d         : KS_D_T;
+  SIGNAL kddr         : KDDR_T;
+  SIGNAL ddrk         : DDRK_T;
+  SIGNAL c0_init_calib_complete :   STD_LOGIC;
+  SIGNAL c0_sys_clk_p :   STD_LOGIC;
+  SIGNAL c0_sys_clk_n :   STD_LOGIC;
+  SIGNAL c0_ddr3_addr :   STD_LOGIC_VECTOR(15 DOWNTO 0);
+  SIGNAL c0_ddr3_ba :   STD_LOGIC_VECTOR(2 DOWNTO 0);
+  SIGNAL c0_ddr3_cas_n :   STD_LOGIC;
+  SIGNAL c0_ddr3_cke :   STD_LOGIC_VECTOR(1 DOWNTO 0);
+  SIGNAL c0_ddr3_ck_n :   STD_LOGIC_VECTOR(1 DOWNTO 0);
+  SIGNAL c0_ddr3_ck_p :   STD_LOGIC_VECTOR(1 DOWNTO 0);
+  SIGNAL c0_ddr3_cs_n :   STD_LOGIC_VECTOR(1 DOWNTO 0);
+  SIGNAL c0_ddr3_dm :   STD_LOGIC_VECTOR(7 DOWNTO 0);
+  SIGNAL c0_ddr3_dq :    STD_LOGIC_VECTOR(63 DOWNTO 0);
+  SIGNAL c0_ddr3_dqs_n :    STD_LOGIC_VECTOR(7 DOWNTO 0);
+  SIGNAL c0_ddr3_dqs_p :    STD_LOGIC_VECTOR(7 DOWNTO 0);
+  SIGNAL c0_ddr3_odt :   STD_LOGIC_VECTOR(1 DOWNTO 0);
+  SIGNAL c0_ddr3_ras_n :   STD_LOGIC;
+  SIGNAL c0_ddr3_reset_n :   STD_LOGIC;
+  SIGNAL c0_ddr3_we_n :   STD_LOGIC;
+  SIGNAL c0_ddr3_ui_clk :   STD_LOGIC;
+  SIGNAL c0_ddr3_ui_clk_sync_rst :   STD_LOGIC;
+  SIGNAL c0_ddr3_aresetn :   STD_LOGIC;
+  SIGNAL sys_rst :   STD_LOGIC;
                    
                    
 BEGIN              
@@ -277,7 +301,7 @@ BEGIN
     );
 
   --
-  --
+  -- ACTION
   -- 
   action_interface: ENTITY work.action_interface
     port map (
@@ -289,13 +313,77 @@ BEGIN
       kx_d_o         => kx_d,
 
       sk_d_i         => sk_d,
-      ks_d_o         => ks_d
+      ks_d_o         => ks_d,
+      kddr_o         => kddr,
+      ddrk_i         => ddrk
     );
 
 
       --
-      -- DDR3 Interface
+  -- DDR3
       -- 
+  ddr3sdram_bank0 : ENTITY work.ddr3sdram
+    PORT MAP (
+      c0_init_calib_complete => c0_init_calib_complete,
+      c0_sys_clk_p => c0_sys_clk_p,
+      c0_sys_clk_n => c0_sys_clk_n,
+      c0_ddr3_addr => c0_ddr3_addr,
+      c0_ddr3_ba => c0_ddr3_ba,
+      c0_ddr3_cas_n => c0_ddr3_cas_n,
+      c0_ddr3_cke => c0_ddr3_cke,
+      c0_ddr3_ck_n => c0_ddr3_ck_n,
+      c0_ddr3_ck_p => c0_ddr3_ck_p,
+      c0_ddr3_cs_n => c0_ddr3_cs_n,
+      c0_ddr3_dm => c0_ddr3_dm,
+      c0_ddr3_dq => c0_ddr3_dq,
+      c0_ddr3_dqs_n => c0_ddr3_dqs_n,
+      c0_ddr3_dqs_p => c0_ddr3_dqs_p,
+      c0_ddr3_odt => c0_ddr3_odt,
+      c0_ddr3_ras_n => c0_ddr3_ras_n,
+      c0_ddr3_reset_n => c0_ddr3_reset_n,
+      c0_ddr3_we_n => c0_ddr3_we_n,
+      c0_ddr3_ui_clk => c0_ddr3_ui_clk,
+      c0_ddr3_ui_clk_sync_rst => c0_ddr3_ui_clk_sync_rst,
+      c0_ddr3_aresetn => c0_ddr3_aresetn,
+      c0_ddr3_s_axi_araddr   => kddr.axi_araddr(32 downto 0), 
+      c0_ddr3_s_axi_arburst  => kddr.axi_arburst(1 downto 0), 
+      c0_ddr3_s_axi_arcache  => kddr.axi_arcache(3 downto 0), 
+      c0_ddr3_s_axi_arid     => "0000", -- c0_ddr3_s_axi_arid,
+      c0_ddr3_s_axi_arlen    => kddr.axi_arlen(7 downto 0),   
+      c0_ddr3_s_axi_arlock   => kddr.axi_arlock(0 DOWNTO 0),           
+      c0_ddr3_s_axi_arprot   => kddr.axi_arprot(2 downto 0),  
+      c0_ddr3_s_axi_arqos    => kddr.axi_arqos(3 downto 0),   
+      c0_ddr3_s_axi_arready  => ddrk.axi_arready,             
+      c0_ddr3_s_axi_arsize   => kddr.axi_arsize(2 downto 0), 
+      c0_ddr3_s_axi_arvalid  => kddr.axi_arvalid,             
+      c0_ddr3_s_axi_awaddr   => kddr.axi_awaddr(32 downto 0), 
+      c0_ddr3_s_axi_awburst  => kddr.axi_awburst(1 downto 0), 
+      c0_ddr3_s_axi_awcache  => kddr.axi_awcache(3 downto 0), 
+      c0_ddr3_s_axi_awid     => "0000", -- c0_ddr3_s_axi_awid,
+      c0_ddr3_s_axi_awlen    => kddr.axi_awlen(7 downto 0),   
+      c0_ddr3_s_axi_awlock   => kddr.axi_awlock(0 DOWNTO 0),           
+      c0_ddr3_s_axi_awprot   => kddr.axi_awprot(2 downto 0),  
+      c0_ddr3_s_axi_awqos    => kddr.axi_awqos(3 downto 0),   
+      c0_ddr3_s_axi_awready  => ddrk.axi_awready,             
+      c0_ddr3_s_axi_awsize   => kddr.axi_awsize(2 downto 0),
+      c0_ddr3_s_axi_awvalid  => kddr.axi_awvalid,           
+      c0_ddr3_s_axi_bid      => open,--ddrk.axi_bid,
+      c0_ddr3_s_axi_bready   => kddr.axi_bready,  
+      c0_ddr3_s_axi_bresp    => ddrk.axi_bresp(1 downto 0), 
+      c0_ddr3_s_axi_bvalid   => ddrk.axi_bvalid,              
+      c0_ddr3_s_axi_rdata    => ddrk.axi_rdata,  
+      c0_ddr3_s_axi_rid      => open, -- c0_ddr3_s_axi_rid,
+      c0_ddr3_s_axi_rlast    => ddrk.axi_rlast,               
+      c0_ddr3_s_axi_rready   => kddr.axi_rready,              
+      c0_ddr3_s_axi_rresp    => ddrk.axi_rresp(1 downto 0),   
+      c0_ddr3_s_axi_rvalid   => ddrk.axi_rvalid,              
+      c0_ddr3_s_axi_wdata    => kddr.axi_wdata,  
+      c0_ddr3_s_axi_wlast    => kddr.axi_wlast,               
+      c0_ddr3_s_axi_wready   => ddrk.axi_wready,              
+      c0_ddr3_s_axi_wstrb    => kddr.axi_wstrb,   
+      c0_ddr3_s_axi_wvalid   => kddr.axi_wvalid,               
+      sys_rst => sys_rst
+    );
 
 
 --     -- Input into PSL is not used

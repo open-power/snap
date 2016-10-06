@@ -58,8 +58,13 @@ set_property file_type SystemVerilog [get_files  $pslse_dir/afu_driver/verilog/t
 add_files -fileset sim_1 -norecurse -scan_for_includes $root_dir/hdl/psl_accel_sim.vhd
 update_compile_order -fileset sim_1
 
-add_files -norecurse "$root_dir/ip/ram_576to144x64_2p/ram_576to144x64_2p.xci $root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci"
-export_ip_user_files -of_objects  [get_files  "$root_dir/ip/ram_576to144x64_2p/ram_576to144x64_2p.xci $root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci"] -force -quiet
+#add IPs
+add_files -norecurse $root_dir/ip/ram_576to144x64_2p/ram_576to144x64_2p.xci
+export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_576to144x64_2p/ram_576to144x64_2p.xci"] -force -quiet
+add_files -norecurse $root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci
+export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci"] -force -quiet
+add_files -norecurse $root_dir/ip/ddr3sdram/ddr3sdram.xci
+export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr3sdram/ddr3sdram.xci"] -force -quiet
 update_compile_order -fileset sources_1
 
 # default sim property
