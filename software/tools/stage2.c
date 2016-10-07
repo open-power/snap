@@ -252,7 +252,7 @@ static int memcpy_test(struct dnut_card* dnc,
 	/* Memcpy */
 	for (i = 0; i < iter; i++) {
 		action_memcpy(dnc, mode, dest, src, block4k);
-		//action_wait_idle(dnc, 1000);
+		action_wait_idle(dnc, 1000);
 		if (ACTION_CONFIG_COPY_HH == mode) {
 			rc = memcmp(src, dest, block4k);
 			if (rc) break;
@@ -277,7 +277,7 @@ static int memcpy_test(struct dnut_card* dnc,
 			}
 		}
 	}
-	if ((ACTION_CONFIG_COPY_HH == mode) && (0 != rc)) {
+	if (ACTION_CONFIG_COPY_HH == mode) {
 		for (i = 0; i < block4k; i++) {
 			if (src[i] != dest[i])
 				printf("Error offset: %d: SRC: %x Dest: %x\n",
