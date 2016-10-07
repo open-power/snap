@@ -133,7 +133,7 @@
      SIMOUT=$TS; mkdir -p $SIMOUT		# only timestamp, mapping to user is clear
    fi
    unlink latest 2>/dev/null;ln -s $SIMOUT latest; # last generated output directory
-   if [ $SIMDIR == "ncsim" ];then
+   if [ $SIMDIR == "ies" ];then
      cp run_* cds.lib hdl.var $SIMOUT
      cp ../nc*.tcl  	      $SIMOUT
 #    cp nc*.log		      $SIMOUT 		# compile output in case of debug questions
