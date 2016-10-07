@@ -81,22 +81,23 @@
 #define DNUT_EIO			-3 /* Problem accessing the card */
 #define DNUT_ENOENT			-4 /* Entry not found */
 #define DNUT_EFAULT			-5 /* Illegal address */
+#define DNUT_ETIMEDOUT			-6 /* Timeout error */
 
 #define DNUT_TARGET_TYPE_UNUSED		0xffff
 #define DNUT_TARGET_TYPE_HOST_DRAM	0x0000 /* this is fine, always there */
-#define DNUT_TARGET_TYPE_CARD_DRAM	0x0001 /* card specific, does that belong here? */
-#define DNUT_TARGET_TYPE_NVME		0x0002 /* card specific, does that belong here? */
+#define DNUT_TARGET_TYPE_CARD_DRAM	0x0001 /* card specific */
+#define DNUT_TARGET_TYPE_NVME		0x0002 /* card specific */
 #define DNUT_TARGET_TYPE_zzz		0x0003 /* ? */
 
 #define DNUT_TARGET_FLAGS_END		0x0001 /* last element in the list */
 #define DNUT_TARGET_FLAGS_ADDR		0x0002 /* this one is an address */
-#define DNUT_TARGET_FLAGS_DATA		0x0004 /* no pointer, but just a 64-bit number */
-#define DNUT_TARGET_FLAGS_EXTEND	0x0008 /* reserved for extension pointer */
+#define DNUT_TARGET_FLAGS_DATA		0x0004 /* 64-bit address */
+#define DNUT_TARGET_FLAGS_EXTEND	0x0008 /* reserved for extension */
 #define DNUT_TARGET_FLAGS_SOURCE	0x0010 /* data source */
 #define DNUT_TARGET_FLAGS_DESTINATION	0x0020 /* data destination */
 
 typedef struct dnut_addr {
-	uint64_t address;
+	uint64_t addr;
 	uint32_t size;
 	uint16_t type;			/* DRAM, NVME, ... */
 	uint16_t flags;

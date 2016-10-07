@@ -41,40 +41,41 @@
  * Hardware designers suggested this to be one cacheline 128 bytes
  * @action	Identifies kernel type to execute workitem
  * @extension	If the workitem does not fit into the user available
- * 		memory in size tze queue_workitem, the extension pointer
- * 		is used to continue the workitem. That means, first 96
- * 		bytes are stored in the queue_workitem for speed, and the
- * 		remaining bytes are referenced to, by the extension.
- * 		If type == DNUT_TARGET_TYPE_UNUSED there is no extension.
- * 		extension is intentionally a dnut_addr, to have always
- * 		the array in place. If there is no dnut_addr required
- * 		by the kernel, at least the extension entry is there
- * 		where the DNUT_TARGET_FLAGS_END flag can be set to
- * 		indicate the end of the list. Otherwise directly starting
- * 		with data would not work.
+ *		memory in size tze queue_workitem, the extension pointer
+ *		is used to continue the workitem. That means, first 96
+ *		bytes are stored in the queue_workitem for speed, and the
+ *		remaining bytes are referenced to, by the extension.
+ *		If type == DNUT_TARGET_TYPE_UNUSED there is no extension.
+ *		extension is intentionally a dnut_addr, to have always
+ *		the array in place. If there is no dnut_addr required
+ *		by the kernel, at least the extension entry is there
+ *		where the DNUT_TARGET_FLAGS_END flag can be set to
+ *		indicate the end of the list. Otherwise directly starting
+ *		with data would not work.
  *
  * What we should do in the library, is to copy the first 96 bytes from
  * the request into the 96 bytes in the struct queue_workitem (hardware
- * view of the request). Basically this piece is fastpath and prefetched 
+ * view of the request). Basically this piece is fastpath and prefetched
  * by the hardware. If the job is larger than those 96 bytes,
  * the lib will setup the extension pointer which points to the rest of
  * the job information in memory. The size of the job varies for
  * different kernels, so I would have to setup the size field in the
  * extension too.
- * 
+ *
  * The user would not see the cache-line detail of the hardware
  * implementation.
  */
 
 struct queue_workitem {
-	uint64_t action;
-	uint32_t retc;
+	uint8_t action;
+	uint8_t flags;
 	uint16_t seq;
-	uint16_t reserved;			// 16 bytes
-	struct dnut_addr extension;		// 16 bytes set if job is > 96 bytes
+	uint32_t retc;
+	uint64_t priv_data;
 	union {
-		struct dnut_addr addr[6];	// 16 * 6 = 96 bytes
-		uint8_t data[96];
+		struct dnut_addr ext;     /* 16 bytes if job > 112 bytes */
+		struct dnut_addr addr[7]; /* 16 * 7 = 112 bytes */
+		uint8_t data[112];
 	} user;
 };
 
