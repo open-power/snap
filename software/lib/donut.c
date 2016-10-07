@@ -30,6 +30,12 @@
 	((double)(((t0)->tv_sec * 1000000 + (t0)->tv_usec) -		\
 		  ((t1)->tv_sec * 1000000 + (t1)->tv_usec)))
 
+#ifndef MIN
+#  define MIN(a,b)	({ __typeof__ (a) _a = (a); \
+			   __typeof__ (b) _b = (b); \
+			_a < _b ? _a : _b; })
+#endif
+
 #define	CACHELINE_BYTES		128
 
 #define	FW_BASE_ADDR		0x00100
@@ -45,7 +51,16 @@
 #define	ACTION_CONTROL_IDLE	  0x00000004
 #define	ACTION_CONTROL_RUN	  0x00000008
 
-/* ACTION Specific register setup */
+/* ACTION Specific register setup: Input */
+#define ACTION_PARAMS_IN	(ACTION_BASE + 0x80) /* 0x80 - 0x90 */
+#define ACTION_JOB_IN		(ACTION_BASE + 0x90) /* 0x90 - 0xfc */
+
+/* ACTION Specific register setup: Output */
+#define ACTION_PARAMS_OUT	(ACTION_BASE + 0x100) /* 0x100 - 0x110 */
+#define ACTION_RETC		(ACTION_BASE + 0x104) /* 0x104 */
+#define ACTION_JOB_OUT		(ACTION_BASE + 0x110) /* 0x110 - 0x1fc */
+
+/* TO BE REMOVED ACTION Specific register setup */
 #define	ACTION_4		(ACTION_BASE + 0x04)
 #define	ACTION_8		(ACTION_BASE + 0x08)
 
@@ -300,12 +315,38 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	unsigned int i;
 	struct dnut_card *card = (struct dnut_card *)kernel;
 	uint32_t action_addr;
-	uint32_t *job_data = (uint32_t *)(unsigned long)cjob->workitem_addr;
 	struct timeval etime, stime;
+	struct queue_workitem job; /* one cacheline job description and data */
+	uint32_t *job_data;
+	int completed;
+	unsigned int mmio_in, mmio_out;
 
-	/* Action registers setup */
-	for (i = 0, action_addr = ACTION_CONFIG;
-	     i < cjob->workitem_size/sizeof(uint32_t);
+	memset(&job, 0, sizeof(job));
+	job.action = cjob->action;
+	job.flags = 0x00;
+	job.seq = 0xbeef;
+	job.retc = 0x0;
+	job.priv_data = 0x0ull;
+
+	/* Fill workqueue cacheline which we need to transfert to the action */
+	if (cjob->workitem_size <= 112) {
+		memcpy(&job.user, (void *)(unsigned long)cjob->workitem_addr,
+		       MIN(cjob->workitem_size, sizeof(job.user)));
+		mmio_out = cjob->workitem_size / sizeof(uint32_t);
+	} else {
+		job.user.ext.addr  = cjob->workitem_addr;
+		job.user.ext.size  = cjob->workitem_size;
+		job.user.ext.type  = DNUT_TARGET_TYPE_HOST_DRAM;
+		job.user.ext.flags = (DNUT_TARGET_FLAGS_EXTEND |
+				      DNUT_TARGET_FLAGS_END);
+		mmio_out = sizeof(job.user.ext) / sizeof(uint32_t);
+	}
+	mmio_in = 16 / sizeof(uint32_t) + mmio_out;
+
+	/* Pass action control and job to the action, should be 128
+	   bytes or a little less */
+	job_data = (uint32_t *)(unsigned long)&job;
+	for (i = 0, action_addr = ACTION_PARAMS_IN; i < mmio_in;
 	     i++, action_addr += sizeof(uint32_t)) {
 
 		rc = dnut_mmio_write32(card, action_addr, job_data[i]);
@@ -321,16 +362,30 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	/* Wait for Action to go back to Idle */
 	gettimeofday(&stime, NULL);
 	do {
-		int completed;
-
 		completed = dnut_kernel_completed(kernel, &rc);
 		if (completed || rc != 0)
-			return rc;
+			break;
 
 		gettimeofday(&etime, NULL);
 	} while (timediff_usec(&etime, &stime) < timeout_sec * 1000000);
-	/* FIXME Is the condition correct? */
 
+	if (completed != 0)
+		return (rc != 0) ? rc : DNUT_ETIMEDOUT;
+
+	/* Get RETC back to the caller */
+	rc = dnut_mmio_read32(card, ACTION_RETC, &cjob->retc);
+	if (rc != 0)
+		return rc;
+
+	/* Get job results max 112 bytes back to the caller */
+	job_data = (uint32_t *)(unsigned long)&job.user;
+	for (i = 0, action_addr = ACTION_JOB_OUT; i < mmio_out;
+	     i++, action_addr += sizeof(uint32_t)) {
+
+		rc = dnut_mmio_read32(card, action_addr, &job_data[i]);
+		if (rc != 0)
+			return rc;
+	}
 	return rc;
 }
 
