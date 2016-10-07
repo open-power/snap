@@ -319,6 +319,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	struct queue_workitem job; /* one cacheline job description and data */
 	uint32_t *job_data;
 	int completed;
+	unsigned int mmio_in, mmio_out;
 
 	memset(&job, 0, sizeof(job));
 	job.action = cjob->action;
@@ -330,19 +331,22 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	/* Fill workqueue cacheline which we need to transfert to the action */
 	if (cjob->workitem_size <= 112) {
 		memcpy(&job.user, (void *)(unsigned long)cjob->workitem_addr,
-			MIN(cjob->workitem_size, sizeof(job.user)));
+		       MIN(cjob->workitem_size, sizeof(job.user)));
+		mmio_out = cjob->workitem_size / sizeof(uint32_t);
 	} else {
 		job.user.ext.addr  = cjob->workitem_addr;
 		job.user.ext.size  = cjob->workitem_size;
 		job.user.ext.type  = DNUT_TARGET_TYPE_HOST_DRAM;
 		job.user.ext.flags = (DNUT_TARGET_FLAGS_EXTEND |
 				      DNUT_TARGET_FLAGS_END);
+		mmio_out = sizeof(job.user.ext) / sizeof(uint32_t);
 	}
+	mmio_in = 16 / sizeof(uint32_t) + mmio_out;
 
-	/* Pass action control and job to the action, should be 128 bytes */
+	/* Pass action control and job to the action, should be 128
+	   bytes or a little less */
 	job_data = (uint32_t *)(unsigned long)&job;
-	for (i = 0, action_addr = ACTION_PARAMS_IN;
-	     i < sizeof(job)/sizeof(uint32_t);
+	for (i = 0, action_addr = ACTION_PARAMS_IN; i < mmio_in;
 	     i++, action_addr += sizeof(uint32_t)) {
 
 		rc = dnut_mmio_write32(card, action_addr, job_data[i]);
@@ -373,10 +377,9 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	if (rc != 0)
 		return rc;
 
-	/* Get job results 112 bytes back to the caller */
+	/* Get job results max 112 bytes back to the caller */
 	job_data = (uint32_t *)(unsigned long)&job.user;
-	for (i = 0, action_addr = ACTION_PARAMS_OUT;
-	     i < sizeof(job.user)/sizeof(uint32_t);
+	for (i = 0, action_addr = ACTION_JOB_OUT; i < mmio_out;
 	     i++, action_addr += sizeof(uint32_t)) {
 
 		rc = dnut_mmio_read32(card, action_addr, &job_data[i]);
