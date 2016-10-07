@@ -97,6 +97,9 @@ add_files -fileset constrs_1 -norecurse $card_dir/Sources/xdc/b_xilinx_capi_pcie
 # for ncsim (IES)
 export_simulation  -lib_map_path "$ies_libs/viv2015_4/ies14.10.s14" -force -directory "$root_dir/sim" -simulator ies
 exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/ies/top.sh
+#for questa
+export_simulation  -lib_map_path "$ies_libs/viv2015_4/mentor13.5" -force -directory "$root_dir/sim" -simulator questa
+exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/questa/top.sh
 #for xsim
 export_simulation  -force -directory "$root_dir/sim" -simulator xsim
 exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/xsim/top.sh
