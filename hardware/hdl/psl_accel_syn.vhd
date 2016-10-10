@@ -259,6 +259,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
       clk_fw         : IN  std_ulogic;
       clk_app        : IN  std_ulogic;
       rst            : IN  std_ulogic;
+      ddr3_clk       : IN  std_ulogic;
+      ddr3_rst       : IN  std_ulogic;
       --
       -- Kernel AXI Master Interface
       xk_d_i         : IN  XK_D_T;
@@ -373,8 +375,9 @@ ARCHITECTURE psl_accel OF psl_accel IS
                    
                    
 BEGIN              
+  action_reset_n <= NOT action_reset;
   --               
-  -- DONUT 
+  --
   -- 
   donut_i: donut
     port map (
@@ -468,6 +471,8 @@ BEGIN
       clk_fw         => ha_pclock,
       clk_app        => ha_pclock,
       rst            => action_reset,
+      ddr3_clk       => c0_ddr3_ui_clk,
+      ddr3_rst       => c0_ddr3_ui_clk_sync_rst,
 
       xk_d_i         => xk_d,
       kx_d_o         => kx_d,
@@ -504,7 +509,7 @@ BEGIN
       c0_ddr3_we_n => c0_ddr3_we_n,
       c0_ddr3_ui_clk => c0_ddr3_ui_clk,
       c0_ddr3_ui_clk_sync_rst => c0_ddr3_ui_clk_sync_rst,
-      c0_ddr3_aresetn => c0_ddr3_aresetn,
+      c0_ddr3_aresetn => action_reset_n,
       c0_ddr3_s_axi_araddr   => kddr.axi_araddr(32 downto 0), 
       c0_ddr3_s_axi_arburst  => kddr.axi_arburst(1 downto 0), 
       c0_ddr3_s_axi_arcache  => kddr.axi_arcache(3 downto 0), 
@@ -542,7 +547,7 @@ BEGIN
       c0_ddr3_s_axi_wready   => ddrk.axi_wready,              
       c0_ddr3_s_axi_wstrb    => kddr.axi_wstrb,   
       c0_ddr3_s_axi_wvalid   => kddr.axi_wvalid,               
-      sys_rst => sys_rst          
+      sys_rst => action_reset
     );
 
 

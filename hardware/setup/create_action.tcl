@@ -110,14 +110,17 @@ set_property -dict [list CONFIG.DATA_WIDTH {128}] [get_bd_intf_ports c0_ddr3]
 connect_bd_intf_net [get_bd_intf_ports c0_ddr3] -boundary_type upper [get_bd_intf_pins axi_interconnect_3/M00_AXI]
 connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_3/ARESETN]
 connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_3/S00_ARESETN]
-connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_3/M00_ARESETN]
 connect_bd_net [get_bd_ports rstn] [get_bd_pins action_memcopy_0/m01_axi_aresetn]
 connect_bd_net [get_bd_ports clk] [get_bd_pins axi_interconnect_3/ACLK]
 connect_bd_net [get_bd_ports clk] [get_bd_pins axi_interconnect_3/S00_ACLK]
-connect_bd_net [get_bd_ports clk] [get_bd_pins axi_interconnect_3/M00_ACLK]
 connect_bd_net [get_bd_ports clk] [get_bd_pins action_memcopy_0/m01_axi_aclk]
 connect_bd_intf_net [get_bd_intf_pins action_memcopy_0/m01_axi] -boundary_type upper [get_bd_intf_pins axi_interconnect_3/S00_AXI]
 
+create_bd_port -dir I -type rst ddr3_rst_n
+create_bd_port -dir I -type clk ddr3_clk
+set_property CONFIG.FREQ_HZ 200000000 [get_bd_ports ddr3_clk]
+connect_bd_net [get_bd_ports ddr3_rst_n] [get_bd_pins axi_interconnect_3/M00_ARESETN]
+connect_bd_net [get_bd_ports ddr3_clk] [get_bd_pins axi_interconnect_3/M00_ACLK]
 assign_bd_address
 save_bd_design
 
