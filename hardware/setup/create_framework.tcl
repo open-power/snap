@@ -56,6 +56,7 @@ set_property SOURCE_SET sources_1 [get_filesets sim_1]
 add_files -fileset sim_1 -norecurse -scan_for_includes $pslse_dir/afu_driver/verilog/top.v
 set_property file_type SystemVerilog [get_files  $pslse_dir/afu_driver/verilog/top.v]
 add_files -fileset sim_1 -norecurse -scan_for_includes $root_dir/hdl/psl_accel_sim.vhd
+add_files  -fileset sim_1          -scan_for_includes /afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/tsfuchs/dimm_test-admpcieku3-v3_0_0/fpga/lib/ddr3_sdram_model-v1_1_0/src/
 update_compile_order -fileset sim_1
 
 #add IPs
