@@ -11,7 +11,7 @@ Recommended directory structure:
 A script to set up the corresponding environment variables for a given FRAMEWORK_ROOT can be
 found here:
 
-    . ./setup/donut_settings
+    ./setup/donut_settings
 
 Create the environment after environment variables are set (e.g. via ./setup/donut_settings):
 
@@ -20,6 +20,13 @@ Create the environment after environment variables are set (e.g. via ./setup/don
 If you want to include the memcopy action example you need to pass option -e to this script:
 
     ./setup/create_environment -e
+
+Instead of calling create_environment you may also call make from within ./setup. Pre-requisite
+for this is that the environment variables for this project are defined (e.g. by calling the
+donut_settings script). If you call make w/o any targets then the image build is kicked off.
+The memcopy example will be included if the environment variable EXAMPLE is defined.
+
+    make EXAMPLE=1
 
 Kick off simulation from subdirectory sim using the script run_sim
 For a memcopy example (after creating the environment with option -e) call:
