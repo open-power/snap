@@ -23,12 +23,21 @@ If you want to include the memcopy action example you need to pass option -e to 
 
 Instead of calling create_environment you may also call make from within ./setup. Pre-requisite
 for this is that the environment variables for this project are defined (e.g. by calling the
-donut_settings script). If you call make w/o any targets then the image build is kicked off.
-The memcopy example will be included if the environment variable EXAMPLE is defined.
+donut_settings script). The memcopy example will be included if the environment variable EXAMPLE
+is defined.
+
+    make create_environment
+
+The memcopy action example will be included if the environment variable EXAMPLE is defined.
+
+    make create_environment EXAMPLE=1
+
+If you call make w/o any targets then the image build is kicked off. In order to build an image
+including the memcopy action example call
 
     make EXAMPLE=1
 
-Kick off simulation from subdirectory sim using the script run_sim
+Kick off simulation from subdirectory sim using the script run_sim.
 For a memcopy example (after creating the environment with option -e) call:
 
     ./run_sim -app "tools/stage2 -m 2"
