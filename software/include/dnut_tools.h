@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <limits.h>
 #include <time.h>		/* clock_gettime and friends */
 #include <sys/types.h>
 #include <sys/types.h>
@@ -112,5 +113,34 @@ extern int verbose_flag;
 #ifndef CLOCK_MONOTONIC_RAW
 #define   clock_gettime(clk_id, tp) ({ int val = 0; val; })
 #endif
+
+/**
+ * str_to_num - Convert string into number and cope with endings like
+ *              KiB for kilobyte
+ *              MiB for megabyte
+ *              GiB for gigabyte
+ */
+static inline uint64_t __str_to_num(char *str)
+{
+	char *s = str;
+	uint64_t num = strtoull(s, &s, 0);
+
+	if (*s == '\0')
+		return num;
+
+	if (strcmp(s, "KiB") == 0)
+		num *= 1024;
+	else if (strcmp(s, "MiB") == 0)
+		num *= 1024 * 1024;
+	else if (strcmp(s, "GiB") == 0)
+		num *= 1024 * 1024 * 1024;
+	else {
+		pr_err("--size or -s out of range, use KiB/MiB or GiB only\n");
+		num = ULLONG_MAX;
+		errno = ERANGE;
+		exit(EXIT_FAILURE);
+	}
+	return num;
+}
 
 #endif		/* __DNUT_TOOLS_H__ */

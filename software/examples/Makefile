@@ -26,7 +26,7 @@ else
 LDLIBS += -lcxl
 endif
 
-projs = demo_search
+projs = demo_search demo_memcopy
 
 all: $(projs)
 
