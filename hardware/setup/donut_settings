@@ -82,7 +82,7 @@ else
 fi
 
 if [ -z "$SIMULATOR" ]; then
-  export SIMULATOR=xsim                                      # xsim and ncsim currently supported
+  export SIMULATOR=xsim                                      # xsim, questa and ncsim are supported, currently
   echo "Setting SIMULATOR           to \"$SIMULATOR\""
 else
   echo "SIMULATOR            is set to \"$SIMULATOR\""

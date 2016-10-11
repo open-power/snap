@@ -1,4 +1,4 @@
-Recommended directory structure:
+# Recommended directory structure:
 
     FRAMEWORK_ROOT      = <your local workspace base>
     USERHOME            = $FRAMEWORK_ROOT/$USER           # each user has his own workspace
@@ -13,31 +13,39 @@ found here:
 
     ./setup/donut_settings
 
-Create the environment after environment variables are set (e.g. via ./setup/donut_settings):
+# Image and model build
 
-    ./setup/create_environment
-
-If you want to include the memcopy action example you need to pass option -e to this script:
-
-    ./setup/create_environment -e
-
-Instead of calling create_environment you may also call make from within ./setup. Pre-requisite
-for this is that the environment variables for this project are defined (e.g. by calling the
-donut_settings script). The memcopy example will be included if the environment variable EXAMPLE
-is defined.
+In order to prepare the vivado environment for this project call
 
     make create_environment
 
-The memcopy action example will be included if the environment variable EXAMPLE is defined.
+from within ./setup. Pre-requisite for this is that the environment variables for this project
+are defined (e.g. by calling the donut_settings script). The variable SIMULATOR is used by
+create_environment in order to determine for which of the simulators xsim, questa or ncsim
+the environment will be prepared. 
+
+The memcopy action example will be included if the environment variable EXAMPLE is defined:
 
     make create_environment EXAMPLE=1
 
-If you call make w/o any targets then the image build is kicked off. In order to build an image
-including the memcopy action example call
+If you call make w/o any targets then the environment is created and an image build is kicked off.
+In order to build an image including the memcopy action example call:
 
     make EXAMPLE=1
 
-Kick off simulation from subdirectory sim using the script run_sim.
+If you want to build an image when the environment is already prepared you may skip the step
+create_environment and call make with target build:
+
+    make build
+
+(Note: the decision if the memcopy action example gets included is made in the create_environment
+step.)
+
+Please refer to ./setup/Makefile for the more supported targets like clean, config, copy, ...
+
+# Simulation
+
+You may kick off simulation from within subdirectory sim using the script run_sim.
 For a memcopy example (after creating the environment with option -e) call:
 
-    ./run_sim -app "tools/stage2 -m 2"
+    ./run_sim -app "tools/stage2 -a 2"
