@@ -205,12 +205,13 @@ axi_w:	process(M_AXI_ACLK)
                end if;
                if dma_wr_data_last_i = '1' then
                    axi_bready    <= '1';
-                   write_pending <= '0';
-                end if;
+               end if;
                if axi_bready = '1' and M_AXI_BVALID = '1' then
-                 
                  axi_bready     <= '0';
                  dma_wr_done_o  <= '1';
+               end if;
+               if axi_wlast = '1' then
+                 write_pending <= '0';
                end if;
 
              end if;  
@@ -228,9 +229,8 @@ wr_data: process(axi_wvalid, M_AXI_WREADY, dma_wr_data_last_i, write_pending)
            axi_wlast       <= '0';
            dma_wr_ready_o  <= M_AXI_WREADY and write_pending;
            if  axi_wvalid = '1' and  M_AXI_WREADY = '1' then
-             
              if dma_wr_data_last_i = '1' then
-               axi_wlast   <= '1';
+               axi_wlast     <= '1';
              end if;  
            end if;  
            
