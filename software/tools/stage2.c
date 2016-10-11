@@ -223,7 +223,7 @@ static int memcpy_test(struct dnut_card* dnc,
 	}
 	/* Assume Src Buffer if in DDR 2 Host or DDR 2 DDR Mode */
 	if ((ACTION_CONFIG_COPY_DH == mode) || (ACTION_CONFIG_COPY_DD == mode)) {
-		src = 0;
+	  src = (void*) 0x44A0000;
 	}
 
 	/* Allocate Dest Buffer if in Host 2 Host or DDR 2 Host Mode */
@@ -244,7 +244,7 @@ static int memcpy_test(struct dnut_card* dnc,
 
 	/* Assume Dest Buffer if in Host 2 DDR */
 	if (ACTION_CONFIG_COPY_HD == mode)
-		dest = 0;
+	  dest = (void* )0x44A00000;
 	/* Set Dest Buffer for DDR 2 DDR Mode */
 	if (ACTION_CONFIG_COPY_DD == mode)
 		dest = src + block4k;
@@ -252,7 +252,7 @@ static int memcpy_test(struct dnut_card* dnc,
 	/* Memcpy */
 	for (i = 0; i < iter; i++) {
 		action_memcpy(dnc, mode, dest, src, block4k);
-		action_wait_idle(dnc, 1000);
+		action_wait_idle(dnc, 10000);
 		if (ACTION_CONFIG_COPY_HH == mode) {
 			rc = memcmp(src, dest, block4k);
 			if (rc) break;

@@ -536,6 +536,16 @@ BEGIN
       --
   c0_sys_clk_p <= transport not c0_sys_clk_p after sys_clk_period / 2;
   c0_sys_clk_n <= not c0_sys_clk_p;
+
+  c0_ddr3_s_axi_ctrl_awvalid <= '0';
+  c0_ddr3_s_axi_ctrl_awaddr <= (others => '0');
+  c0_ddr3_s_axi_ctrl_wvalid <= '0';
+  c0_ddr3_s_axi_ctrl_wdata <= (others => '0');
+  c0_ddr3_s_axi_ctrl_bready <= '0';
+  c0_ddr3_s_axi_ctrl_arvalid <= '0';
+  c0_ddr3_s_axi_ctrl_araddr <= (others => '0');
+  c0_ddr3_s_axi_ctrl_rready <= '0';
+  
   ddr3sdram_bank0 : ddr3sdram
     PORT MAP (
       c0_init_calib_complete => c0_init_calib_complete,
