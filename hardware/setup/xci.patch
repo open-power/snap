@@ -1,0 +1,19 @@
+*** ../viv_nonproject/psl_fpga.tcl	2016-10-10 13:32:45.000000002 +0200
+--- ../viv_nonproject/psl_fpga.tcl.org	2016-07-29 10:30:28.000000002 +0200
+***************
+*** 70,75 ****
+--- 70,83 ----
+  set_attribute module $top    synth         ${run.topSynth}
+  set_attribute module $top    synth_options "-flatten_hierarchy rebuilt -fanout_limit 400 -fsm_extraction one_hot -keep_equivalent_registers -resource_sharing off -no_lc -shreg_min_size 5 -no_iobuf"
+  
++ set_attribute module $top ip           [list \
++ 					   ./../ip/ram_576to144x64_2p/ram_576to144x64_2p.xci                                                            \
++ 					   ./../ip/ram_160to640x256_2p/ram_160to640x256_2p.xci                                                          \
++ 					   ./../action/memcopy.srcs/sources_1/bd/action/ip/action_action_memcopy_0_0/action_action_memcopy_0_0.xci      \
++ 					   ./../action/memcopy.srcs/sources_1/bd/action/ip/action_axi_interconnect_0_0/action_axi_interconnect_0_0.xci  \
++ 					   ./../action/memcopy.srcs/sources_1/bd/action/ip/action_axi_interconnect_1_0/action_axi_interconnect_1_0.xci  \
++ 					   ]
++ 
+  add_implementation $top
+  set_attribute impl $top      top           $top
+  set_attribute impl $top      linkXDC       [list $xdcDir/b_xilinx_capi_pcie_gen3_alphadata_brd_topimp.xdc] 

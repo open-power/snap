@@ -24,17 +24,17 @@ if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ] || [ ! -d "$FRAME
   echo "Note: the following site specific variables are used by the build and sim tools"
   echo "and should be be set prior to sourcing this file:"
   echo
-  echo "\$XILINX_VIVADO          # path to Vivado tool"
-  echo "\$XILINXD_LICENSE_FILE"
-  echo "\$FRAMEWORK_ROOT         # path to CAPI STREAMING FRAMEWORK root directory"
+  echo "XILINX_VIVADO          # path to Vivado tool"
+  echo "XILINXD_LICENSE_FILE"
+  echo "FRAMEWORK_ROOT         # path to CAPI STREAMING FRAMEWORK root directory"
   echo
   echo "Recommended directory structure:"
-  echo "FRAMEWORK_ROOT      = <your local workspace base>
-  echo "USERHOME            = $FRAMEWORK_ROOT/$USER  # each user has his own workspace"
-  echo "PSLSE_ROOT          = $USERHOME/pslse        # PSLSE clone from github"
-  echo "DONUT_ROOT          = $USERHOME/donut        # donut clone from github"
-  echo "DONUT_SOFTWARE_ROOT = $DONUT_ROOT/software   # path to donut software "
-  echo "DONUT_HARDWARE_ROOT = $DONUT_ROOT/hardware   # path to donut hardware "
+  echo "FRAMEWORK_ROOT      = <your local workspace base> "
+  echo "USERHOME            = \$FRAMEWORK_ROOT/$USER  # each user has his own workspace"
+  echo "PSLSE_ROOT          = \$USERHOME/pslse        # PSLSE clone from github"
+  echo "DONUT_ROOT          = \$USERHOME/donut        # donut clone from github"
+  echo "DONUT_SOFTWARE_ROOT = \$DONUT_ROOT/software   # path to donut software "
+  echo "DONUT_HARDWARE_ROOT = \$DONUT_ROOT/hardware   # path to donut hardware "
 fi
 
 ####### Xilinx settings before running VIVADO and XSIM
@@ -48,58 +48,58 @@ fi
 ####### user settings for CAPI STREAMING FRAMEWORK
 if [ ! -d "$USERHOME" ]; then
   export USERHOME=$FRAMEWORK_ROOT/$USER
-  echo "Setting \$USERHOME            to \"$USERHOME\""
+  echo "Setting USERHOME            to \"$USERHOME\""
 else
-  echo "\$USERHOME             is set to \"$USERHOME\""
+  echo "USERHOME             is set to \"$USERHOME\""
 fi
 
 if [ ! -d "$PSLSE_ROOT" ]; then
   export PSLSE_ROOT=$USERHOME/pslse                          # used with git clone https://github.com/ibm-capi/pslse     $PSLSE_ROOT
-  echo "Setting \$PSLSE_ROOT          to \"$PSLSE_ROOT\""
+  echo "Setting PSLSE_ROOT          to \"$PSLSE_ROOT\""
 else
-  echo "\$PSLSE_ROOT           is set to \"$PSLSE_ROOT\""
+  echo "PSLSE_ROOT           is set to \"$PSLSE_ROOT\""
 fi
 
 if [ ! -d "$DONUT_ROOT" ]; then
   export DONUT_ROOT=$USERHOME/donut                          # used with git clone git@github.com:open-power/donut.git   $DONUT_ROOT
-  echo "Setting \$DONUT_ROOT          to \"$DONUT_ROOT\""
+  echo "Setting DONUT_ROOT          to \"$DONUT_ROOT\""
 else
-  echo "\$DONUT_ROOT           is set to \"$DONUT_ROOT\""
+  echo "DONUT_ROOT           is set to \"$DONUT_ROOT\""
 fi
 
 if [ ! -d "$FPGACARD" ]; then
   export FPGACARD=$FRAMEWORK_ROOT/cards/adku060_capi_1_1_release
-  echo "Setting \$FPGACARD            to \"$FPGACARD\""
+  echo "Setting FPGACARD            to \"$FPGACARD\""
 else
-  echo "\$FPGACARD             is set to \"$FPGACARD\""
+  echo "FPGACARD             is set to \"$FPGACARD\""
 fi
 
 if [ -z "$FPGACHIP" ]; then
   export FPGACHIP=xcku060-ffva1156-2-e
-  echo "Setting \$FPGACHIP            to \"$FPGACHIP\""
+  echo "Setting FPGACHIP            to \"$FPGACHIP\""
 else
-  echo "\$FPGACHIP             is set to \"$FPGACHIP\""
+  echo "FPGACHIP             is set to \"$FPGACHIP\""
 fi
 
 if [ -z "$SIMULATOR" ]; then
   export SIMULATOR=xsim                                      # xsim and ncsim currently supported
-  echo "Setting \$SIMULATOR           to \"$SIMULATOR\""
+  echo "Setting SIMULATOR           to \"$SIMULATOR\""
 else
-  echo "\$SIMULATOR            is set to \"$SIMULATOR\""
+  echo "SIMULATOR            is set to \"$SIMULATOR\""
 fi
 
 if [ ! -d "$DONUT_SOFTWARE_ROOT" ]; then
   export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software
-  echo "Setting \$DONUT_SOFTWARE_ROOT to \"$DONUT_SOFTWARE_ROOT\""
+  echo "Setting DONUT_SOFTWARE_ROOT to \"$DONUT_SOFTWARE_ROOT\""
 else
-  echo "\$DONUT_SOFTWARE_ROOT  is set to \"$DONUT_SOFTWARE_ROOT\""
+  echo "DONUT_SOFTWARE_ROOT  is set to \"$DONUT_SOFTWARE_ROOT\""
 fi
 
 if [ ! -d "$DONUT_HARDWARE_ROOT" ]; then
   export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware
-  echo "Setting \$DONUT_HARDWARE_ROOT to \"$DONUT_HARDWARE_ROOT\""
+  echo "Setting DONUT_HARDWARE_ROOT to \"$DONUT_HARDWARE_ROOT\""
 else
-  echo "\$DONUT_HARDWARE_ROOT  is set to \"$DONUT_HARDWARE_ROOT\""
+  echo "DONUT_HARDWARE_ROOT  is set to \"$DONUT_HARDWARE_ROOT\""
 fi
 
 echo
