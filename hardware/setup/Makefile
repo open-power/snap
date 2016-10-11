@@ -54,4 +54,10 @@ build:
 	@echo -e "\t[BUILD] start ($(shell date))"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
 clean:
-	@echo -e "\t[CLEAN] build"; rm -rf build
+	@echo -e "\t[CLEAN] build"; 
+	rm -rf  $(BUILD_DIR)
+	rm -rf  $(DONUT_HARDWARE_ROOT)/viv_project
+	rm -rf  $(DONUT_HARDWARE_ROOT)/ip
+	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/ies
+	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/xsim
+	rm -rf  $(DONUT_HARDWARE_ROOT)/action/memcopy*
