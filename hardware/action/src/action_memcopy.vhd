@@ -540,6 +540,13 @@ action_ddr_axi_master_inst : entity work.action_axi_master
                         fsm_app_q  <= WAIT_FOR_MEMCOPY_DONE;
                         src_ddr    <= '1';
                         dest_host  <= '1';
+                        start_copy <= '1';
+                        
+                       when x"5" =>
+                        -- DDR to DDR memory
+                        fsm_app_q  <= WAIT_FOR_MEMCOPY_DONE;
+                        src_ddr    <= '1';
+                        dest_ddr   <= '1';
                         start_copy <= '1'; 
                      
                        when others => 
@@ -629,14 +636,15 @@ action_ddr_axi_master_inst : entity work.action_axi_master
                   if (dma_wr_ready = '1' and dest_host = '1') or
                      (ddr_wr_ready = '1' and dest_ddr = '1')  then
                      mem_rd_addr       <= mem_rd_addr + '1';
-                    counter           <= counter - '1';
-                    if or_reduce(counter) = '0' then
-                       counter           <= counter;
-                      -- burst write done
-                      -- dma_wr_data_last <= dest_host;
-                      -- ddr_wr_data_last <= dest_ddr;
-                      fsm_copy_q       <= WAIT_FOR_WRITE_DONE;
-                    end if;  
+                     counter           <= counter - '1';
+                  end if;
+                  
+                  if or_reduce(counter) = '0' then
+                     counter           <= counter;
+                    -- burst write done
+                    -- dma_wr_data_last <= dest_host;
+                    -- ddr_wr_data_last <= dest_ddr;
+                    fsm_copy_q       <= WAIT_FOR_WRITE_DONE;
                   end if;  
 
                  when WAIT_FOR_WRITE_DONE =>
@@ -670,8 +678,8 @@ action_ddr_axi_master_inst : entity work.action_axi_master
 
 
   wr_data            <= mem_rd_data;
-  dma_wr_data_valid  <= dma_wr_ready and dest_host       when  fsm_copy_q = WRITE_DATA  else '0';
-  ddr_wr_data_valid  <= ddr_wr_ready and dest_ddr        when  fsm_copy_q = WRITE_DATA  else '0';
+  dma_wr_data_valid  <= dest_host       when  fsm_copy_q = WRITE_DATA  else '0';
+  ddr_wr_data_valid  <= dest_ddr        when  fsm_copy_q = WRITE_DATA  else '0';
   dma_wr_data_last   <= dest_host and dma_wr_data_valid  when  or_reduce(counter) = '0' else '0';
   ddr_wr_data_last   <= dest_ddr  and ddr_wr_data_valid  when  or_reduce(counter) = '0' else '0';
   ddr_wr_data_strobe <= x"ffff" when ddr_wr_data_valid = '1' else x"0000";    

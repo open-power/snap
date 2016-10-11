@@ -45,6 +45,7 @@
 #define	ACTION_CONFIG_COPY_HD	3	/* Memcopy Host to DDR */
 #define	ACTION_CONFIG_COPY_DH	4	/* Memcopy DDR to Host */
 #define	ACTION_CONFIG_COPY_DD	5	/* Memcopy DDR to DDR */
+#define	ACTION_CONFIG_COPY_HDH	6	/* Memcopy Host to DDR to Host */
 #define	ACTION_SRC_LOW		(ACTION_BASE + 0x14)
 #define	ACTION_SRC_HIGH		(ACTION_BASE + 0x18)
 #define	ACTION_DEST_LOW		(ACTION_BASE + 0x1c)
@@ -57,8 +58,10 @@
 #define	STEP_DELAY		200
 #define	DEFAULT_MEMCPY_BLOCK	4096
 #define	DEFAULT_MEMCPY_ITER	1
+#define ACTION_WAIT_TIME	50000	/* in msec */
 
 #define DDR_MEM_SIZE	(8*1024*1024*1024ull)	/* 8 GiB */
+#define DDR_MEM_BASE_ADDR	0x44A00000	/* Start of FPGA Interconnect */
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
@@ -69,6 +72,14 @@ static uint64_t get_usec(void)
 
         gettimeofday(&t, NULL);
         return t.tv_sec * 1000000 + t.tv_usec;
+}
+static void memset2(void *a, int size)
+{
+	int i;
+	uint16_t *a16 = a;
+
+	for (i = 0; i < size; i+=2)
+		*a16++ = (uint16_t)i;
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
@@ -111,10 +122,10 @@ static uint32_t msec_2_ticks(int msec)
 /*
  *	Start Action and wait for Idle.
  */
-static void action_wait_idle(struct dnut_card* h, int timeout_ms)
+static int action_wait_idle(struct dnut_card* h, int timeout_ms)
 {
 	uint32_t action_data;
-	int n = 0;
+	int rc = 0;
 	uint64_t t_start;	/* time in usec */
 	uint64_t tout = (uint64_t)timeout_ms * 1000;
 	uint64_t td;		/* Diff time in usec */
@@ -125,22 +136,22 @@ static void action_wait_idle(struct dnut_card* h, int timeout_ms)
 	/* Wait for Action to go back to Idle */
 	t_start = get_usec();
 	do {
-		n++;
 		action_data = action_read(h, ACTION_CONTROL);
 		td = get_usec() - t_start;
 		if (td > tout) {
 			printf("Error. Timeout while Waiting for Idle\n");
+			rc = ETIME;
 			break;
 		}
 	} while ((action_data & ACTION_CONTROL_IDLE) == 0);
 
 	if (verbose_level > 0) {
-		printf("Action Time was was ");
+		printf("Action Time was: ");
 		if (td < 100000) 
-			printf("%d usec after %d loops\n" , (int)td, n);
-		else	printf("%d msec after %d loops\n" , (int)td/1000, n);
+			printf("%d usec\n" , (int)td);
+		else	printf("%d msec\n" , (int)td/1000);
 	}
-	return;
+	return(rc);
 }
 
 static void action_count(struct dnut_card* h, int delay_ms)
@@ -153,25 +164,25 @@ static void action_count(struct dnut_card* h, int delay_ms)
 }
 
 static void action_memcpy(struct dnut_card* h,
-		int mode,	/* Mode can be 2,3,4,5  see ACTION_CONFIG_COPY_ */
+		int action,	/* Action can be 2,3,4,5,6  see ACTION_CONFIG_COPY_ */
 		void *dest, const void *src, size_t n)
 {
 	uint64_t addr;
 
 	if (verbose_level > 0) {
-		switch (mode) {
-		case 2: printf("[Host -> Host]"); break;
-		case 3: printf("[Host -> DDR]"); break;
-		case 4: printf("[DDR -> Host]"); break;
-		case 5: printf("[DDR -> DDR]"); break;
+		switch (action) {
+		case 2: printf("[Host <- Host]"); break;
+		case 3: printf("[DDR <- Host]"); break;
+		case 4: printf("[Host <- DDR]"); break;
+		case 5: printf("[DDR <- DDR]"); break;
 		default:
-			printf("Invalid\n");
+			printf("Invalid Action\n");
 			return;
 			break;
 		}
 		printf(" memcpy(%p, %p, %d)\n", dest, src, (int)n);
 	}
-	action_write(h, ACTION_CONFIG, mode);
+	action_write(h, ACTION_CONFIG,  action);
 	addr = (uint64_t)dest;
 	action_write(h, ACTION_DEST_LOW, (uint32_t)(addr & 0xffffffff));
 	action_write(h, ACTION_DEST_HIGH, (uint32_t)(addr >> 32));
@@ -182,7 +193,7 @@ static void action_memcpy(struct dnut_card* h,
 }
 
 static int memcpy_test(struct dnut_card* dnc,
-			int mode,
+			int action,
 			int block4k,
 			int input_o,
 			int output_o,
@@ -190,8 +201,9 @@ static int memcpy_test(struct dnut_card* dnc,
 			int iter)
 {
 	int i, rc;
-	uint8_t *src_a = NULL, *src = NULL;
-	uint8_t *dest_a = NULL, *dest = NULL;
+	void *src_a = NULL, *src = NULL;
+	void *dest_a = NULL, *dest = NULL;
+	void *ddr3;
 
 	rc = 0;
 	/* align can be 16, 32, 64 .. 4096 */
@@ -208,81 +220,97 @@ static int memcpy_test(struct dnut_card* dnc,
 		return 1;
 	}
 
-	/* Allocate Src Buffer if in Host 2 Host or Host 2 DDR Mode */
-	if ((ACTION_CONFIG_COPY_HH == mode) || (ACTION_CONFIG_COPY_HD == mode)) {
-		/* Allocate aligned src buffer including offset bytes */
-		if (posix_memalign((void **)&src_a, align, block4k + input_o) != 0) {
-			perror("FAILED: posix_memalign source");
-			return 1;
-		}
-		src = src_a + input_o;	/* Add offset */
-		if (verbose_level > 0)
-			printf("  Src:  %p Size: %d Align: %d offset: %d\n",
-				src, block4k, align, output_o);
-		memset(src, 2, block4k);
+	/* Allocate Src Buffer if in Host->Host or Host->DDR Mode or Host->DDR->Host*/
+	if (posix_memalign((void **)&src_a, align, block4k + input_o) != 0) {
+		perror("FAILED: posix_memalign source");
+		return 1;
 	}
-	/* Assume Src Buffer if in DDR 2 Host or DDR 2 DDR Mode */
-	if ((ACTION_CONFIG_COPY_DH == mode) || (ACTION_CONFIG_COPY_DD == mode)) {
-		src = 0;
+	src = src_a + input_o;	/* Add offset */
+	if (verbose_level > 0)
+		printf("  Src:  %p Size: %d Align: %d offset: %d\n",
+			src, block4k, align, output_o);
+	memset2(src_a, block4k);
+
+	/* Allocate Dest Buffer if in Host->Host or DDR->Host Mode */
+	if (posix_memalign((void **)&dest_a, align, block4k + output_o) != 0) {
+		perror("FAILED: posix_memalign destination");
+		if (src_a)
+			free(src_a);
+		return 1;
 	}
+	dest  = dest_a + output_o;
+	if (verbose_level > 0)
+		printf("  Dest: %p Size: %d Align: %d offset: %d\n",
+			dest, block4k, align, output_o);
 
-	/* Allocate Dest Buffer if in Host 2 Host or DDR 2 Host Mode */
-	if ((ACTION_CONFIG_COPY_HH == mode) || (ACTION_CONFIG_COPY_DH == mode)) {
-		/* Allocate aligned dest buffer including offset bytes */
-		if (posix_memalign((void **)&dest_a, align, block4k + output_o) != 0) {
-			perror("FAILED: posix_memalign destination");
-			if (src_a)
-				free(src_a);
-			return 1;
-		}
-		dest  = dest_a + output_o;
-		if (verbose_level > 0)
-			printf("  Dest: %p Size: %d Align: %d offset: %d\n",
-				dest, block4k, align, output_o);
-		memset(dest, 1, block4k);
-	}
-
-	/* Assume Dest Buffer if in Host 2 DDR */
-	if (ACTION_CONFIG_COPY_HD == mode)
-		dest = 0;
-	/* Set Dest Buffer for DDR 2 DDR Mode */
-	if (ACTION_CONFIG_COPY_DD == mode)
-		dest = src + block4k;
-
-	/* Memcpy */
-	for (i = 0; i < iter; i++) {
-		action_memcpy(dnc, mode, dest, src, block4k);
-		action_wait_idle(dnc, 50000);
-		if (ACTION_CONFIG_COPY_HH == mode) {
+	switch (action) {
+	case ACTION_CONFIG_COPY_HH:
+		for (i = 0; i < iter; i++) {
+			action_memcpy(dnc, action, dest, src, block4k);
+			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != rc) break;
 			rc = memcmp(src, dest, block4k);
-			if (rc) break;
+			if (rc) {
+				printf("Error Memcmp failed rc: %d\n", rc);
+				break;
+			}
 		}
-		/* Modify dest or src address depending on action */
-		if (ACTION_CONFIG_COPY_HD == mode) {
+		break;
+	case ACTION_CONFIG_COPY_HD:
+		dest = (void*)DDR_MEM_BASE_ADDR;
+		for (i = 0; i < iter; i++) {
+			action_memcpy(dnc, action, dest, src, block4k);
+			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != rc) break;
 			dest += block4k;
 			if ((uint64_t)dest >= DDR_MEM_SIZE)
-				dest = 0;
+				dest = NULL;
 		}
-		if (ACTION_CONFIG_COPY_DH == mode) {
+		break;
+	case ACTION_CONFIG_COPY_DH:
+		src = (void*)DDR_MEM_BASE_ADDR;
+		for (i = 0; i < iter; i++) {
+			action_memcpy(dnc, action, dest, src, block4k);
+			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != rc) break;
 			src += block4k;
 			if ((uint64_t)src >= DDR_MEM_SIZE)
-				src = 0;
+				src = NULL;
 		}
-		if (ACTION_CONFIG_COPY_DD == mode) {
+		break;
+	case ACTION_CONFIG_COPY_DD:
+		src = (void*)DDR_MEM_BASE_ADDR;
+		dest = src + block4k;
+		for (i = 0; i < iter; i++) {
+			action_memcpy(dnc, action, dest, src, block4k);
+			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != rc) break;
 			src = dest;
 			dest += block4k;
 			if ((uint64_t)dest >= DDR_MEM_SIZE) {
-				src = NULL;
+				src = (void*)DDR_MEM_BASE_ADDR;
 				dest = src + block4k;
 			}
 		}
-	}
-	if (ACTION_CONFIG_COPY_HH == mode) {
-		for (i = 0; i < block4k; i++) {
-			if (src[i] != dest[i])
-				printf("Error offset: %d: SRC: %x Dest: %x\n",
-					i, src[i], dest[i]);
+		break;
+	case ACTION_CONFIG_COPY_HDH:	/* Host -> DDR -> Host */
+		ddr3 = (void*)DDR_MEM_BASE_ADDR;
+		for (i = 0; i < iter; i++) {
+			action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
+				ddr3, src, block4k);
+			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != rc) break;
+			action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
+				dest, ddr3, block4k);
+			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != rc) break;
+			rc = memcmp(src, dest, block4k);
+			if (rc) {
+				printf("Error Memcmp failed\n");
+				break;
+			}
 		}
+		break;
 	}
 
 	if (src_a) {
@@ -307,22 +335,23 @@ static void usage(const char *prog)
 		"    -V, --version\n"
 		"    -q, --quiet          quiece output\n"
 		"    -a, --action         Action to execute (default 1)\n"
-		"    ----- Mode 1 Settings -------------------------\n"
+		"    ----- Action 1 Settings -------------- (-a) ----\n"
 		"    -s, --start          Start delay in msec (default %d)\n"
 		"    -e, --end            End delay time in msec (default %d)\n"
 		"    -i, --interval       Inrcrement steps in msec (default %d)\n"
-		"    ----- Mode 2 Settings -------------------------\n"
+		"    ----- Action 2,3,4,5,6 Settings ------ (-a) -----\n"
 		"    -S, --size           Number of 4KB Blocks for Memcopy (default 1)\n"
 		"    -N, --iter           Memcpy Iterations (default 1)\n"
 		"    -A, --align          Memcpy alignemend (default 4 KB)\n"
 		"    -I, --ioff           Memcpy input offset (default 0)\n"
 		"    -O, --ooff           Memcpy output offset (default 0)\n"
 		"\tTool to check Stage 1 FPGA or Stage 2 FPGA Mode (-a) for donut bringup.\n"
-		"\t-a 1: Count down mode\n"
+		"\t-a 1: Count down mode (Stage 1)\n"
 		"\t-a 2: Copy from Host Memory to Host Memory.\n"
 		"\t-a 3: Copy from Host Memory to DDR Memory (FPGA Card).\n"
 		"\t-a 4: Copy from DDR Memory (FPGA Card) to Host Memory.\n"
 		"\t-a 5: Copy from DDR Memory to DDR Memory (both on FPGA Card).\n"
+		"\t-a 6: Copy from Host -> DDR -> Host.\n"
 		, prog, START_DELAY, END_DELAY, STEP_DELAY);
 }
 
@@ -445,7 +474,7 @@ int main(int argc, char *argv[])
 	case 1:
 		for(delay = start_delay; delay <= end_delay; delay += step_delay) {
 			action_count(dn, delay);
-			action_wait_idle(dn, 50000);
+			action_wait_idle(dn, delay + 10);
 		}
 		rc = 0;
 		break;
@@ -453,6 +482,7 @@ int main(int argc, char *argv[])
 	case 3:
 	case 4:
 	case 5:
+	case 6:
 		rc = memcpy_test(dn, action, block4k, input_o, output_o,
 				memcpy_align, memcpy_iter);
 		break;
