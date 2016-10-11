@@ -224,10 +224,11 @@ axi_w:	process(M_AXI_ACLK)
            axi_wvalid     <= or_reduce(dma_wr_data_strobe_i);
            axi_wstrb      <= dma_wr_data_strobe_i;
         
-wr_data: process(axi_wvalid, M_AXI_WREADY, dma_wr_data_last_i, write_pending)
+-- wr_data: process(axi_wvalid, M_AXI_WREADY, dma_wr_data_last_i, write_pending)
+wr_data: process(axi_wvalid, M_AXI_WREADY, dma_wr_data_last_i)
          begin
            axi_wlast       <= '0';
-           dma_wr_ready_o  <= M_AXI_WREADY and write_pending;
+           dma_wr_ready_o  <= M_AXI_WREADY; --  and write_pending;
            if  axi_wvalid = '1' and  M_AXI_WREADY = '1' then
              if dma_wr_data_last_i = '1' then
                axi_wlast     <= '1';
