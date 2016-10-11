@@ -18,6 +18,7 @@
 
 set root_dir   $::env(DONUT_HARDWARE_ROOT)
 set fpga_part  $::env(FPGACHIP)
+set dimm_dir   $::env(DIMMTEST)
 set ip_dir     $root_dir/ip
 
 exec rm -rf $ip_dir
@@ -46,7 +47,7 @@ export_simulation -of_objects [get_files $ip_dir/ram_160to640x256_2p/ram_160to64
 
 #create ddr3sdramm with ECC
 create_ip -name ddr3 -vendor xilinx.com -library ip -version 1.1 -module_name ddr3sdram -dir $ip_dir
-set_property -dict [list CONFIG.C0.DDR3_TimePeriod {1250} CONFIG.C0.DDR3_InputClockPeriod {2500} CONFIG.C0.DDR3_MemoryType {SODIMMs} CONFIG.C0.DDR3_MemoryPart {CUSTOM_MT18KSF1G72HZ-1G6} CONFIG.C0.DDR3_AxiSelection {true} CONFIG.C0.DDR3_AxiDataWidth {128} CONFIG.C0.DDR3_CustomParts {/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/tsfuchs/dimm_test-admpcieku3-v3_0_0/example/dimm_test-admpcieku3-v3_0_0/fpga/ip-2015.3/custom_parts.csv} CONFIG.C0.DDR3_isCustom {true} CONFIG.Simulation_Mode {Unisim} CONFIG.Internal_Vref {false} CONFIG.C0.DDR3_DataWidth {72} CONFIG.C0.DDR3_DataMask {false} CONFIG.C0.DDR3_Ecc {true} CONFIG.C0.DDR3_CasLatency {11} CONFIG.C0.DDR3_CasWriteLatency {8} CONFIG.C0.DDR3_AxiAddressWidth {33}] [get_ips ddr3sdram]
+set_property -dict [list CONFIG.C0.DDR3_TimePeriod {1250} CONFIG.C0.DDR3_InputClockPeriod {2500} CONFIG.C0.DDR3_MemoryType {SODIMMs} CONFIG.C0.DDR3_MemoryPart {CUSTOM_MT18KSF1G72HZ-1G6} CONFIG.C0.DDR3_AxiSelection {true} CONFIG.C0.DDR3_AxiDataWidth {128} CONFIG.C0.DDR3_CustomParts $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/ip-2015.3/custom_parts.csv CONFIG.C0.DDR3_isCustom {true} CONFIG.Simulation_Mode {Unisim} CONFIG.Internal_Vref {false} CONFIG.C0.DDR3_DataWidth {72} CONFIG.C0.DDR3_DataMask {false} CONFIG.C0.DDR3_Ecc {true} CONFIG.C0.DDR3_CasLatency {11} CONFIG.C0.DDR3_CasWriteLatency {8} CONFIG.C0.DDR3_AxiAddressWidth {33}] [get_ips ddr3sdram]
 generate_target {instantiation_template} [get_files $ip_dir/ddr3sdram/ddr3sdram.xci]
 set_property generate_synth_checkpoint false [get_files  $ip_dir/ddr3sdram/ddr3sdram.xci]
 generate_target all [get_files  $ip_dir/ddr3sdram/ddr3sdram.xci]
