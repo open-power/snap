@@ -125,31 +125,37 @@ set_property -dict [list CONFIG.NUM_MI {1}] [get_bd_cells axi_interconnect_2]
 connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_2/ARESETN]
 connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_2/S00_ARESETN]
 connect_bd_net [get_bd_ports rstn] [get_bd_pins action_memcopy_0/m01_axi_aresetn]
-connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_2/M00_ARESETN]
+connect_bd_net [get_bd_ports ddr3_rst_n] [get_bd_pins axi_interconnect_2/M00_ARESETN]
 connect_bd_net [get_bd_ports clk] [get_bd_pins axi_interconnect_2/ACLK]
 connect_bd_net [get_bd_ports clk] [get_bd_pins axi_interconnect_2/S00_ACLK]
 connect_bd_net [get_bd_ports clk] [get_bd_pins action_memcopy_0/m01_axi_aclk]
-connect_bd_net [get_bd_ports clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
+connect_bd_net [get_bd_ports ddr3_clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
 connect_bd_intf_net [get_bd_intf_pins action_memcopy_0/m01_axi] -boundary_type upper [get_bd_intf_pins axi_interconnect_2/S00_AXI]
+connect_bd_intf_net [get_bd_intf_pins axi_interconnect_2/M00_AXI] [get_bd_intf_ports c0_ddr3]
 
 
 #AXI Clock Converter
-startgroup
-create_bd_cell -type ip -vlnv xilinx.com:ip:axi_clock_converter:2.1 axi_clock_converter_0
-endgroup
-connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_2/M00_AXI] [get_bd_intf_pins axi_clock_converter_0/S_AXI]
-connect_bd_intf_net [get_bd_intf_ports c0_ddr3] [get_bd_intf_pins axi_clock_converter_0/M_AXI]
-connect_bd_net [get_bd_ports ddr3_clk] [get_bd_pins axi_clock_converter_0/m_axi_aclk]
-connect_bd_net [get_bd_ports ddr3_rst_n] [get_bd_pins axi_clock_converter_0/m_axi_aresetn]
-connect_bd_net [get_bd_ports clk] [get_bd_pins axi_clock_converter_0/s_axi_aclk]
-connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_clock_converter_0/s_axi_aresetn]
-startgroup
-set_property -dict [list CONFIG.ACLK_ASYNC.VALUE_SRC PROPAGATED] [get_bd_cells axi_clock_converter_0]
-endgroup
-
-
+#startgroup
+#create_bd_cell -type ip -vlnv xilinx.com:ip:axi_clock_converter:2.1 axi_clock_converter_0
+#endgroup
+#connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_2/M00_AXI] [get_bd_intf_pins axi_clock_converter_0/S_AXI]
+#connect_bd_intf_net [get_bd_intf_ports c0_ddr3] [get_bd_intf_pins axi_clock_converter_0/M_AXI]
+#connect_bd_net [get_bd_ports ddr3_clk] [get_bd_pins axi_clock_converter_0/m_axi_aclk]
+#connect_bd_net [get_bd_ports ddr3_rst_n] [get_bd_pins axi_clock_converter_0/m_axi_aresetn]
+#connect_bd_net [get_bd_ports clk] [get_bd_pins axi_clock_converter_0/s_axi_aclk]
+#connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_clock_converter_0/s_axi_aresetn]
+#startgroup
+#set_property -dict [list CONFIG.ACLK_ASYNC.VALUE_SRC PROPAGATED] [get_bd_cells axi_clock_converter_0]
+#endgroup
 
 assign_bd_address
+set_property offset 0x00000000 [get_bd_addr_segs {s_axi/SEG_action_memcopy_0_reg0}]
+set_property offset 0x000000000 [get_bd_addr_segs {action_memcopy_0/m01_axi/SEG_c0_ddr3_Reg}]
+set_property offset 0x0000000000000000 [get_bd_addr_segs {action_memcopy_0/m00_axi/SEG_m_axi_Reg}]
+set_property range 4G [get_bd_addr_segs {s_axi/SEG_action_memcopy_0_reg0}]
+set_property range 8G [get_bd_addr_segs {action_memcopy_0/m01_axi/SEG_c0_ddr3_Reg}]
+set_property range 8E [get_bd_addr_segs {action_memcopy_0/m00_axi/SEG_m_axi_Reg}]
+
 save_bd_design
 
 close_project
