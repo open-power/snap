@@ -247,8 +247,8 @@ static int memcpy_test(struct dnut_card* dnc,
 	case ACTION_CONFIG_COPY_HH:
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, action, dest, src, block4k);
-			if (0 != action_wait_idle(dnc, ACTION_WAIT_TIME))
-				break;
+			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != rc) break;
 			rc = memcmp(src, dest, block4k);
 			if (rc) {
 				printf("Error Memcmp failed rc: %d\n", rc);
@@ -260,8 +260,8 @@ static int memcpy_test(struct dnut_card* dnc,
 		dest = (void*)DDR_MEM_BASE_ADDR;
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, action, dest, src, block4k);
-			if (0 != action_wait_idle(dnc, ACTION_WAIT_TIME))
-				break;
+			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != rc) break;
 			dest += block4k;
 			if ((uint64_t)dest >= DDR_MEM_SIZE)
 				dest = NULL;
@@ -271,8 +271,8 @@ static int memcpy_test(struct dnut_card* dnc,
 		src = (void*)DDR_MEM_BASE_ADDR;
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, action, dest, src, block4k);
-			if (0 != action_wait_idle(dnc, ACTION_WAIT_TIME))
-				break;
+			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != rc) break;
 			src += block4k;
 			if ((uint64_t)src >= DDR_MEM_SIZE)
 				src = NULL;
@@ -283,8 +283,8 @@ static int memcpy_test(struct dnut_card* dnc,
 		dest = src + block4k;
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, action, dest, src, block4k);
-			if (0 != action_wait_idle(dnc, ACTION_WAIT_TIME))
-				break;
+			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != rc) break;
 			src = dest;
 			dest += block4k;
 			if ((uint64_t)dest >= DDR_MEM_SIZE) {
@@ -293,17 +293,17 @@ static int memcpy_test(struct dnut_card* dnc,
 			}
 		}
 		break;
-	case ACTION_CONFIG_COPY_HDH:
+	case ACTION_CONFIG_COPY_HDH:	/* Host -> DDR -> Host */
 		ddr3 = (void*)DDR_MEM_BASE_ADDR;
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 				ddr3, src, block4k);
-			if (0 != action_wait_idle(dnc, ACTION_WAIT_TIME))
-				break;
+			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != rc) break;
 			action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
 				dest, ddr3, block4k);
-			if (0 != action_wait_idle(dnc, ACTION_WAIT_TIME))
-				break;
+			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != rc) break;
 			rc = memcmp(src, dest, block4k);
 			if (rc) {
 				printf("Error Memcmp failed\n");
