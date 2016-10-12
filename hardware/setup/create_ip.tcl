@@ -54,4 +54,13 @@ generate_target all [get_files  $ip_dir/ddr3sdram/ddr3sdram.xci]
 export_ip_user_files -of_objects [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -no_script -force -quiet
 export_simulation -of_objects [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
 
+#create PLL for ddr3 clock
+#create_ip -name clk_wiz -vendor xilinx.com -library ip -version 5.2 -module_name ddr3_pll -dir $ip_dir
+#set_property -dict [list CONFIG.PRIMITIVE {PLL} CONFIG.PRIM_SOURCE {Global_buffer} CONFIG.PRIM_IN_FREQ {250.000} CONFIG.PRIMARY_PORT {ha_pclock} CONFIG.CLK_OUT1_PORT {ddr3_clk_p} CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {200.000} CONFIG.USE_PHASE_ALIGNMENT {false} CONFIG.SECONDARY_SOURCE {Single_ended_clock_capable_pin} CONFIG.CLKIN1_JITTER_PS {40.0} CONFIG.CLKOUT1_DRIVES {BUFG} CONFIG.CLKOUT2_DRIVES {BUFG} CONFIG.CLKOUT3_DRIVES {BUFG} CONFIG.CLKOUT4_DRIVES {BUFG} CONFIG.CLKOUT5_DRIVES {BUFG} CONFIG.CLKOUT6_DRIVES {BUFG} CONFIG.CLKOUT7_DRIVES {BUFG} CONFIG.FEEDBACK_SOURCE {FDBK_AUTO} CONFIG.MMCM_DIVCLK_DIVIDE {1} CONFIG.MMCM_CLKFBOUT_MULT_F {4} CONFIG.MMCM_CLKIN1_PERIOD {4.0} CONFIG.MMCM_COMPENSATION {AUTO} CONFIG.MMCM_CLKOUT0_DIVIDE_F {5} CONFIG.CLKOUT1_JITTER {93.521} CONFIG.CLKOUT1_PHASE_ERROR {85.928}] [get_ips ddr3_pll]
+#generate_target {instantiation_template} [get_files $ip_dir/ddr3_pll/ddr3_pll.xci]
+#set_property generate_synth_checkpoint false [get_files  $ip_dir/ddr3_pll/ddr3_pll.xci]
+#generate_target all [get_files  $ip_dir/ddr3_pll/ddr3_pll.xci]
+#export_ip_user_files -of_objects [get_files $ip_dir/ddr3_pll/ddr3_pll.xci] -no_script -force -quiet
+#export_simulation -of_objects    [get_files $ip_dir/ddr3_pll/ddr3_pll.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
+
 close_project

@@ -21,7 +21,7 @@ check_donut_settings:
 	fi
 
 create_environment:
-	./create_environment $(CE_PARMS)
+#	./create_environment $(CE_PARMS)
 
 copy $(BUILD_DIR)/psl_fpga.tcl:
 	@echo -e "\t[COPY] psl build env"; cp -a $(PSL_SOURCE_ENV) $(BUILD_DIR)
