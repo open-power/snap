@@ -36,6 +36,7 @@ int verbose_flag = 0;
 static const char *version = GIT_VERSION;
 
 #define SEARCH_ACTION_TYPE	0xC0FE
+
 #define MMIO_DIN_DEFAULT	0x0ull
 #define MMIO_DOUT_DEFAULT	0x0ull
 
@@ -265,6 +266,14 @@ int main(int argc, char *argv[])
 			strerror(errno));
 		goto out_error1;
 	}
+
+#if 0				/* config tweak needed? */
+	/* FIXME Setup tweak */
+	dnut_kernel_mmio_write32(kernel, 0x10010, 0x00000000); /* up */
+	dnut_kernel_mmio_write32(kernel, 0x10014, 0x00000000); /* low */
+	dnut_kernel_mmio_write32(kernel, 0x1001C, 0x00000000); /* up */
+	dnut_kernel_mmio_write32(kernel, 0x10020, 0x00000000); /* low */
+#endif
 
 	rc = dnut_kernel_start(kernel);
 	if (rc != 0)
