@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <limits.h>
 #include <time.h>		/* clock_gettime and friends */
 #include <sys/types.h>
 #include <sys/types.h>
@@ -112,5 +113,70 @@ extern int verbose_flag;
 #ifndef CLOCK_MONOTONIC_RAW
 #define   clock_gettime(clk_id, tp) ({ int val = 0; val; })
 #endif
+
+/**
+ * str_to_num - Convert string into number and cope with endings like
+ *              KiB for kilobyte
+ *              MiB for megabyte
+ *              GiB for gigabyte
+ */
+static inline uint64_t __str_to_num(char *str)
+{
+	char *s = str;
+	uint64_t num = strtoull(s, &s, 0);
+
+	if (*s == '\0')
+		return num;
+
+	if (strcmp(s, "KiB") == 0)
+		num *= 1024;
+	else if (strcmp(s, "MiB") == 0)
+		num *= 1024 * 1024;
+	else if (strcmp(s, "GiB") == 0)
+		num *= 1024 * 1024 * 1024;
+	else {
+		pr_err("--size or -s out of range, use KiB/MiB or GiB only\n");
+		num = ULLONG_MAX;
+		errno = ERANGE;
+		exit(EXIT_FAILURE);
+	}
+	return num;
+}
+
+static inline void __hexdump(FILE *fp, const void *buff, unsigned int size)
+{
+	unsigned int i;
+	const uint8_t *b = (uint8_t *)buff;
+	char ascii[17];
+	char str[2] = { 0x0, };
+
+	if (size == 0)
+		return;
+
+	for (i = 0; i < size; i++) {
+		if ((i & 0x0f) == 0x00) {
+			fprintf(fp, " %08x:", i);
+			memset(ascii, 0, sizeof(ascii));
+		}
+		fprintf(fp, " %02x", b[i]);
+		str[0] = isalnum(b[i]) ? b[i] : '.';
+		str[1] = '\0';
+		strncat(ascii, str, sizeof(ascii) - 1);
+
+		if ((i & 0x0f) == 0x0f)
+			fprintf(fp, " | %s\n", ascii);
+	}
+	/* print trailing up to a 16 byte boundary. */
+	for (; i < ((size + 0xf) & ~0xf); i++) {
+		fprintf(fp, "   ");
+		str[0] = ' ';
+		str[1] = '\0';
+		strncat(ascii, str, sizeof(ascii) - 1);
+
+		if ((i & 0x0f) == 0x0f)
+			fprintf(fp, " | %s\n", ascii);
+	}
+	fprintf(fp, "\n");
+}
 
 #endif		/* __DNUT_TOOLS_H__ */

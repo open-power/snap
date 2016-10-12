@@ -337,7 +337,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 		job.user.ext.addr  = cjob->workitem_addr;
 		job.user.ext.size  = cjob->workitem_size;
 		job.user.ext.type  = DNUT_TARGET_TYPE_HOST_DRAM;
-		job.user.ext.flags = (DNUT_TARGET_FLAGS_EXTEND |
+		job.user.ext.flags = (DNUT_TARGET_FLAGS_EXT |
 				      DNUT_TARGET_FLAGS_END);
 		mmio_out = sizeof(job.user.ext) / sizeof(uint32_t);
 	}
