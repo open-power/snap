@@ -33,12 +33,14 @@
 # DEFAULTS ##############
  CLONE=0                 # do git clone, if root doesn't exist
  PULL=""                 # git pull before compile
+ UPDATE=0                # no repository update
  CLEAN=""                # clean compile
  export CDS_COVERAGE=0   # compile with/without coverage information
- UPDATE=0                # no repository update
  DEBUG=""                # compile with debug options
  SOFE=1                  # stop on first error
  export ACTION_EXAMPLE=0 # do not prepare action example
+ PREPARE_ENV=0           # do not prepare environment
+ BUILD_MODEL=0           # do not build simulation model
 #set -u                  # warn for uninitialized variables
 
 
@@ -72,7 +74,9 @@
    echo "  -pull | pull     : use GIT PULL to update repositories before compilation"
    echo "  -cov|-nocov      : set/unset CDS_COVERAGE to compile with/without coverage information (default: no coverage info)"
    echo "  -sofe, -continue : stop on first error, continue on error (default: stop on first error)"
+   echo "  -p | prep_env    : prepare environment"
    echo "  -e | example     : prepare action example"
+   echo "  -b | build_model : build simulation model"
    echo "  -h | help        : print this help message"
 }
 
@@ -91,7 +95,9 @@
      -nocov|nocoverage)   unset CDS_COVERAGE;;            # remove CDS_COVERAGE to compile without coverage information
      -sofe|sofe)          SOFE=1;;                        # stop on first error
      -continue|continue)  SOFE=0;;                        # continue on error
+     -p|prep_env)         PREPARE_ENV=1;;                 # prepare environment
      -e|example)          export ACTION_EXAMPLE=1;;       # prepare action example
+     -b|build_model)      BUILD_MODEL=1;;                 # build simulation model
      -h|help)             print_help_msg; exit;;
       *)                  echo "Unknown option $1"; print_help_msg; exit -1;;
    esac;shift
@@ -106,97 +112,105 @@
 
  if [[ -z ${AFU_CONNECT_TYPE} || ${SIMULATOR} == "xsim" ]]  ;then AFU_CONNECT_TYPE='DPI'; fi
  if [ -z ${SIMULATOR} ]         ;then SIMULATOR="xsim"; fi
- if [[ "$SIMULATOR" != "ncsim" && "$SIMULATOR" != "xsim" && "$SIMULATOR" != "questa" ]];then echo "unknown simulator=$SIMULATOR";maxrc+=1;fi
 
  if [[ $maxrc > 0 ]];then exit;fi
- echo "compile for simulator=$SIMULATOR afu_connnect_type=${AFU_CONNECT_TYPE}"
 
- if [ -d ${PSLSE_ROOT} ]    ;then           # directory exists
-   echo "directory $PSLSE_ROOT exists"
-   source="pslse";cd ${PSLSE_ROOT};
-   if [ $UPDATE == 1 ]; then
-     git branch
-#    if [ ${AFU_CONNECT_TYPE} == "DPI" ] ;then # todo: check if you are in the master branch
-#    else;                                     # todo: check if you are in the afudirected branch
-#    fi
-     git pull
-   fi
- else
-   if [ $CLONE == 1 ]; then
-     if [ ${AFU_CONNECT_TYPE} == "DPI" ] ;then
-       echo "clone -b master to $PSLSE_ROOT"
-       git clone -b master      git@github.com:ibm-capi/pslse.git ${PSLSE_ROOT} # VPI+DPI works from the master branch
-     else
-       echo "clone -b afudirected to $PSLSE_ROOT"
-       git clone -b afudirected git@github.com:ibm-capi/pslse.git ${PSLSE_ROOT} # VPI works from the afudirected branch
+ if [ $PREPARE_ENV == 1 ]; then
+   if [ -d ${PSLSE_ROOT} ]    ;then           # directory exists
+     echo "directory $PSLSE_ROOT exists"
+     source="pslse";cd ${PSLSE_ROOT};
+     if [ $UPDATE == 1 ]; then
+       git branch
+#      if [ ${AFU_CONNECT_TYPE} == "DPI" ] ;then # todo: check if you are in the master branch
+#      else;                                     # todo: check if you are in the afudirected branch
+#      fi
+       git pull
      fi
-   else echo "directory $PSLSE_ROOT doesnt exist";maxrc+=1;fi
- fi
-
- if [ -d ${DONUT_SOFTWARE_ROOT} ]   ;then
-   echo "directory $DONUT_SOFTWARE_ROOT exists"
-   source="SW";cd ${DONUT_SOFTWARE_ROOT};
-   if [ $UPDATE == 1 ]; then git branch;git pull;fi
- else
-   if [ $CLONE == 1 ]; then
-     echo "clone -b master to $DONUT_ROOT"
-     git clone -b master      git@github.com:open-power/donut.git ${DONUT_SOFTWARE_ROOT}
-   else echo "directory $DONUT_SOFTWARE_ROOT doesnt exist";maxrc+=1;fi
- fi
-
- if [ -d ${DONUT_HARDWARE_ROOT} ]   ;then
-   echo "directory $DONUT_HARDWARE_ROOT exists"
-   source="hw";cd ${DONUT_HARDWARE_ROOT};
-   if [ $UPDATE == 1 ]; then git branch;git pull;fi
- else
-   echo "directory $DONUT_HARDWARE_ROOT doesnt exist";maxrc+=1;
- fi
-
-#if [ ! -d ${DONUT_SOFTWARE_ROOT}/../pslse ]; then
-#  echo "linking ${PSLSE_ROOT} to ${DONUT_SOFTWARE_ROOT}/../pslse"
-#  ln -s ${PSLSE_ROOT} ${DONUT_SOFTWARE_ROOT}/../pslse
-#fi
-
- if [[ $maxrc > 0 ]];then exit;fi
-
-
- # Compile local repositories in the order: pslse, SW, HW
- source='pslse';cd ${PSLSE_ROOT};
- dir="afu_driver/src"; make -C $dir $DEBUG $CLEAN all        >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
- dir="pslse"         ; make -C $dir $DEBUG FINISH=1 $CLEAN all  >>${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
- dir="libcxl"        ; make -C $dir $DEBUG $CLEAN all       >>${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
- dir="debug"         ; make -C $dir $DEBUG $CLEAN all       >>${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
-
- source="sw";cd ${DONUT_SOFTWARE_ROOT};
-#dir="mmio"          ; make -C $dir $DEBUG $CLEAN all       >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
- dir='.'             ; make         $DEBUG $CLEAN all       >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
-
- source="hw";cd ${DONUT_HARDWARE_ROOT};
- if [ "$CLEAN" == "clean" ];then
-   rm -rf sim/ies
-   rm -rf sim/xsim
-   rm -rf sim/questa
- fi
- if [ ! -d ${DONUT_HARDWARE_ROOT}/sim/ies ];then
-   cd ${DONUT_HARDWARE_ROOT}/setup; echo "run Vivado setup scripts"
-   vivado -mode batch -source create_ip.tcl        || exit "error in create_ip"
-   if [ $ACTION_EXAMPLE == 1 ]; then
-     vivado -mode batch -source create_action.tcl    || exit "error in create_action"
+   else
+     if [ $CLONE == 1 ]; then
+       if [ ${AFU_CONNECT_TYPE} == "DPI" ] ;then
+         echo "clone -b master to $PSLSE_ROOT"
+         git clone -b master      git@github.com:ibm-capi/pslse.git ${PSLSE_ROOT} # VPI+DPI works from the master branch
+       else
+         echo "clone -b afudirected to $PSLSE_ROOT"
+         git clone -b afudirected git@github.com:ibm-capi/pslse.git ${PSLSE_ROOT} # VPI works from the afudirected branch
+       fi
+     else echo "directory $PSLSE_ROOT doesn't exist";maxrc+=1;fi
    fi
-   vivado -mode batch -source create_framework.tcl || exit "error in create_framework"
- fi
- if [ -z $SIMULATOR ] || [ $SIMULATOR == "ncsim" ]; then
-   cd ${DONUT_HARDWARE_ROOT}/sim/ies;  dir="."   ;
-   ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
-   ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
- fi
- if [ -z $SIMULATOR ] || [ $SIMULATOR == "xsim" ]; then
-   cd ${DONUT_HARDWARE_ROOT}/sim/xsim;  dir="."   ;
-   ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
-   ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
- fi
- if [ -z $SIMULATOR ] || [ $SIMULATOR == "questa" ]; then
-   cd ${DONUT_HARDWARE_ROOT}/sim/questa;  dir="."   ;
-   ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
-   ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
- fi
+
+   if [ -d ${DONUT_SOFTWARE_ROOT} ]   ;then
+     echo "directory $DONUT_SOFTWARE_ROOT exists"
+     source="SW";cd ${DONUT_SOFTWARE_ROOT};
+     if [ $UPDATE == 1 ]; then git branch;git pull;fi
+   else
+     if [ $CLONE == 1 ]; then
+       echo "clone -b master to $DONUT_ROOT"
+       git clone -b master      git@github.com:open-power/donut.git ${DONUT_ROOT}
+     else echo "directory $DONUT_SOFTWARE_ROOT doesn't exist";maxrc+=1;fi
+   fi
+
+   if [ -d ${DONUT_HARDWARE_ROOT} ]   ;then
+     echo "directory $DONUT_HARDWARE_ROOT exists"
+     source="hw";cd ${DONUT_HARDWARE_ROOT};
+     if [ $UPDATE == 1 ]; then git branch;git pull;fi
+   else
+     echo "directory $DONUT_HARDWARE_ROOT doesn't exist";maxrc+=1;
+   fi
+
+###if [ ! -d ${DONUT_SOFTWARE_ROOT}/../pslse ]; then
+###  echo "linking ${PSLSE_ROOT} to ${DONUT_SOFTWARE_ROOT}/../pslse"
+###  ln -s ${PSLSE_ROOT} ${DONUT_SOFTWARE_ROOT}/../pslse
+###fi
+
+   if [[ $maxrc > 0 ]];then exit;fi
+
+
+   # Compile local repositories in the order: pslse, SW, HW
+   source='pslse';cd ${PSLSE_ROOT};
+   dir="afu_driver/src"; make -C $dir $DEBUG $CLEAN all        >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
+   dir="pslse"         ; make -C $dir $DEBUG FINISH=1 $CLEAN all  >>${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
+   dir="libcxl"        ; make -C $dir $DEBUG $CLEAN all       >>${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
+   dir="debug"         ; make -C $dir $DEBUG $CLEAN all       >>${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
+
+   source="sw";cd ${DONUT_SOFTWARE_ROOT};
+###dir="mmio"          ; make -C $dir $DEBUG $CLEAN all       >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
+   dir='.'             ; make         $DEBUG $CLEAN all       >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
+
+   source="hw";cd ${DONUT_HARDWARE_ROOT};
+   if [ "$CLEAN" == "clean" ];then
+     rm -rf sim/ies
+     rm -rf sim/xsim
+     rm -rf sim/questa
+   fi
+   if [ ! -d ${DONUT_HARDWARE_ROOT}/sim/ies ];then
+     cd ${DONUT_HARDWARE_ROOT}/setup; echo "run Vivado setup scripts"
+     vivado -mode batch -source create_ip.tcl        || exit "error in create_ip"
+     if [ $ACTION_EXAMPLE == 1 ]; then
+       vivado -mode batch -source create_action.tcl    || exit "error in create_action"
+     fi
+     vivado -mode batch -source create_framework.tcl || exit "error in create_framework"
+   fi
+ fi # PREPARE_ENV == 1
+
+ if [ $BUILD_MODEL == 1 ]; then
+   if [[ "$SIMULATOR" != "ncsim" && "$SIMULATOR" != "xsim" && "$SIMULATOR" != "questa" ]];then echo "unknown simulator=$SIMULATOR";maxrc+=1;fi
+
+   if [[ $maxrc > 0 ]];then exit;fi
+   echo "compile for simulator=$SIMULATOR afu_connnect_type=${AFU_CONNECT_TYPE}"
+
+   if [ -z $SIMULATOR ] || [ $SIMULATOR == "ncsim" ]; then
+     cd ${DONUT_HARDWARE_ROOT}/sim/ies;  dir="."   ;
+     ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
+     ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
+   fi
+   if [ -z $SIMULATOR ] || [ $SIMULATOR == "xsim" ]; then
+     cd ${DONUT_HARDWARE_ROOT}/sim/xsim;  dir="."   ;
+     ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
+     ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
+   fi
+   if [ -z $SIMULATOR ] || [ $SIMULATOR == "questa" ]; then
+     cd ${DONUT_HARDWARE_ROOT}/sim/questa;  dir="."   ;
+     ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
+     ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
+   fi
+ fi # BUILD_MODEL == 1
