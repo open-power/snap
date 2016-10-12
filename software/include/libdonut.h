@@ -92,9 +92,9 @@
 #define DNUT_TARGET_FLAGS_END		0x0001 /* last element in the list */
 #define DNUT_TARGET_FLAGS_ADDR		0x0002 /* this one is an address */
 #define DNUT_TARGET_FLAGS_DATA		0x0004 /* 64-bit address */
-#define DNUT_TARGET_FLAGS_EXTEND	0x0008 /* reserved for extension */
-#define DNUT_TARGET_FLAGS_SOURCE	0x0010 /* data source */
-#define DNUT_TARGET_FLAGS_DESTINATION	0x0020 /* data destination */
+#define DNUT_TARGET_FLAGS_EXT		0x0008 /* reserved for extension */
+#define DNUT_TARGET_FLAGS_SRC		0x0010 /* data source */
+#define DNUT_TARGET_FLAGS_DST		0x0020 /* data destination */
 
 typedef struct dnut_addr {
 	uint64_t addr;

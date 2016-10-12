@@ -143,4 +143,40 @@ static inline uint64_t __str_to_num(char *str)
 	return num;
 }
 
+static inline void __hexdump(FILE *fp, const void *buff, unsigned int size)
+{
+	unsigned int i;
+	const uint8_t *b = (uint8_t *)buff;
+	char ascii[17];
+	char str[2] = { 0x0, };
+
+	if (size == 0)
+		return;
+
+	for (i = 0; i < size; i++) {
+		if ((i & 0x0f) == 0x00) {
+			fprintf(fp, " %08x:", i);
+			memset(ascii, 0, sizeof(ascii));
+		}
+		fprintf(fp, " %02x", b[i]);
+		str[0] = isalnum(b[i]) ? b[i] : '.';
+		str[1] = '\0';
+		strncat(ascii, str, sizeof(ascii) - 1);
+
+		if ((i & 0x0f) == 0x0f)
+			fprintf(fp, " | %s\n", ascii);
+	}
+	/* print trailing up to a 16 byte boundary. */
+	for (; i < ((size + 0xf) & ~0xf); i++) {
+		fprintf(fp, "   ");
+		str[0] = ' ';
+		str[1] = '\0';
+		strncat(ascii, str, sizeof(ascii) - 1);
+
+		if ((i & 0x0f) == 0x0f)
+			fprintf(fp, " | %s\n", ascii);
+	}
+	fprintf(fp, "\n");
+}
+
 #endif		/* __DNUT_TOOLS_H__ */
