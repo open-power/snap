@@ -122,10 +122,10 @@ static uint32_t msec_2_ticks(int msec)
 /*
  *	Start Action and wait for Idle.
  */
-static void action_wait_idle(struct dnut_card* h, int timeout_ms)
+static int action_wait_idle(struct dnut_card* h, int timeout_ms)
 {
 	uint32_t action_data;
-	int n = 0;
+	int rc = 0;
 	uint64_t t_start;	/* time in usec */
 	uint64_t tout = (uint64_t)timeout_ms * 1000;
 	uint64_t td;		/* Diff time in usec */
@@ -136,22 +136,22 @@ static void action_wait_idle(struct dnut_card* h, int timeout_ms)
 	/* Wait for Action to go back to Idle */
 	t_start = get_usec();
 	do {
-		n++;
 		action_data = action_read(h, ACTION_CONTROL);
 		td = get_usec() - t_start;
 		if (td > tout) {
 			printf("Error. Timeout while Waiting for Idle\n");
+			rc = ETIME;
 			break;
 		}
 	} while ((action_data & ACTION_CONTROL_IDLE) == 0);
 
 	if (verbose_level > 0) {
-		printf("Action Time was was ");
+		printf("Action Time was: ");
 		if (td < 100000) 
-			printf("%d usec after %d loops\n" , (int)td, n);
-		else	printf("%d msec after %d loops\n" , (int)td/1000, n);
+			printf("%d usec\n" , (int)td);
+		else	printf("%d msec\n" , (int)td/1000);
 	}
-	return;
+	return(rc);
 }
 
 static void action_count(struct dnut_card* h, int delay_ms)
@@ -247,10 +247,11 @@ static int memcpy_test(struct dnut_card* dnc,
 	case ACTION_CONFIG_COPY_HH:
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, action, dest, src, block4k);
-			action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != action_wait_idle(dnc, ACTION_WAIT_TIME))
+				break;
 			rc = memcmp(src, dest, block4k);
 			if (rc) {
-				printf("Error Memcmp failed\n");
+				printf("Error Memcmp failed rc: %d\n", rc);
 				break;
 			}
 		}
@@ -259,7 +260,8 @@ static int memcpy_test(struct dnut_card* dnc,
 		dest = (void*)DDR_MEM_BASE_ADDR;
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, action, dest, src, block4k);
-			action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != action_wait_idle(dnc, ACTION_WAIT_TIME))
+				break;
 			dest += block4k;
 			if ((uint64_t)dest >= DDR_MEM_SIZE)
 				dest = NULL;
@@ -269,7 +271,8 @@ static int memcpy_test(struct dnut_card* dnc,
 		src = (void*)DDR_MEM_BASE_ADDR;
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, action, dest, src, block4k);
-			action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != action_wait_idle(dnc, ACTION_WAIT_TIME))
+				break;
 			src += block4k;
 			if ((uint64_t)src >= DDR_MEM_SIZE)
 				src = NULL;
@@ -280,7 +283,8 @@ static int memcpy_test(struct dnut_card* dnc,
 		dest = src + block4k;
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, action, dest, src, block4k);
-			action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != action_wait_idle(dnc, ACTION_WAIT_TIME))
+				break;
 			src = dest;
 			dest += block4k;
 			if ((uint64_t)dest >= DDR_MEM_SIZE) {
@@ -294,10 +298,12 @@ static int memcpy_test(struct dnut_card* dnc,
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 				ddr3, src, block4k);
-			action_wait_idle(dnc, 10000);
+			if (0 != action_wait_idle(dnc, ACTION_WAIT_TIME))
+				break;
 			action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
 				dest, ddr3, block4k);
-			action_wait_idle(dnc, 10000);
+			if (0 != action_wait_idle(dnc, ACTION_WAIT_TIME))
+				break;
 			rc = memcmp(src, dest, block4k);
 			if (rc) {
 				printf("Error Memcmp failed\n");
