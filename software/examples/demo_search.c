@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 	int card_no = 0;
 	struct dnut_kernel *kernel;
 	char device[128];
-	const char *fname;
+	const char *fname = NULL;
 	uint64_t pattern = 0x0011223344556677ull;
 	struct dnut_job cjob;
 	struct search_job sjob;
