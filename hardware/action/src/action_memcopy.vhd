@@ -636,15 +636,14 @@ action_ddr_axi_master_inst : entity work.action_axi_master
                   if (dma_wr_ready = '1' and dest_host = '1') or
                      (ddr_wr_ready = '1' and dest_ddr = '1')  then
                      mem_rd_addr       <= mem_rd_addr + '1';
-                     counter           <= counter - '1';
-                  end if;
-                  
-                  if or_reduce(counter) = '0' then
-                     counter           <= counter;
-                    -- burst write done
-                    -- dma_wr_data_last <= dest_host;
-                    -- ddr_wr_data_last <= dest_ddr;
-                    fsm_copy_q       <= WAIT_FOR_WRITE_DONE;
+                    counter           <= counter - '1';
+                    if or_reduce(counter) = '0' then
+                       counter           <= counter;
+                      -- burst write done
+                      -- dma_wr_data_last <= dest_host;
+                      -- ddr_wr_data_last <= dest_ddr;
+                      fsm_copy_q       <= WAIT_FOR_WRITE_DONE;
+                    end if;  
                   end if;  
 
                  when WAIT_FOR_WRITE_DONE =>

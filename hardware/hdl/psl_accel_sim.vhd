@@ -278,6 +278,17 @@ ARCHITECTURE afu OF afu IS
     );
   end component;
 
+--  component ddr3_pll
+--  port
+--   (-- Clock in ports
+--    ha_pclock           : in     std_logic;
+--    -- Clock out ports
+--    ddr3_clk_p          : out    std_logic;
+--    -- Status and control signals
+--    reset             : in     std_logic;
+--    locked            : out    std_logic
+--   );
+--  end component;
   COMPONENT ddr3sdram
     PORT (
       c0_init_calib_complete : OUT STD_LOGIC;
@@ -373,6 +384,8 @@ ARCHITECTURE afu OF afu IS
   constant sys_clk_period : time := 2.5 ns;
   SIGNAL action_reset : std_ulogic;
   SIGNAL action_reset_n : std_ulogic;
+  SIGNAL ddr3_clk_p     : std_ulogic;
+  SIGNAL locked         : std_ulogic;
   SIGNAL xk_d         : XK_D_T;
   SIGNAL kx_d         : KX_D_T;
   SIGNAL sk_d         : SK_D_T;
@@ -380,7 +393,7 @@ ARCHITECTURE afu OF afu IS
   SIGNAL kddr         : KDDR_T;
   SIGNAL ddrk         : DDRK_T;
   SIGNAL c0_init_calib_complete :   STD_LOGIC;
-  SIGNAL c0_sys_clk_p :   STD_LOGIC := '0';
+  SIGNAL c0_sys_clk_p :   STD_LOGIC;
   SIGNAL c0_sys_clk_n :   STD_LOGIC;
   SIGNAL c0_ddr3_addr :   STD_LOGIC_VECTOR(15 DOWNTO 0);
   SIGNAL c0_ddr3_ba :   STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -529,9 +542,21 @@ BEGIN
       ddrk_i         => ddrk
     );
 
-
-      --
-  -- DDR3
+--  --
+--      --
+--  --
+--  ddr3_pll_i : ddr3_pll
+--    port map ( 
+--     -- Clock in ports
+--     ha_pclock => ha_pclock,
+--    -- Clock out ports  
+--     ddr3_clk_p => ddr3_clk_p,
+--    -- Status and control signals                
+--     reset => action_reset,
+--     locked => locked            
+--    );  
+--  --
+--  -- DDR3
       -- 
       --
   c0_sys_clk_p <= transport not c0_sys_clk_p after sys_clk_period / 2;
@@ -558,6 +583,7 @@ BEGIN
       c0_ddr3_ck_n => c0_ddr3_ck_n,
       c0_ddr3_ck_p => c0_ddr3_ck_p,
       c0_ddr3_cs_n => c0_ddr3_cs_n,
+      -- c0_ddr3_dm => open, -- ECC DIMM, don't use dm. dm is assigned above.
       c0_ddr3_dq => c0_ddr3_dq,
       c0_ddr3_dqs_n => c0_ddr3_dqs_n,
       c0_ddr3_dqs_p => c0_ddr3_dqs_p,
