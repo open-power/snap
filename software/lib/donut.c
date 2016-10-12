@@ -30,6 +30,16 @@
 	((double)(((t0)->tv_sec * 1000000 + (t0)->tv_usec) -		\
 		  ((t1)->tv_sec * 1000000 + (t1)->tv_usec)))
 
+/* Trace hardware implementation */
+static int dnut_trace = 0x0;
+#define trace_enabled()       (dnut_trace & 0x1)
+#define reg_trace_enabled()   (dnut_trace & 0x2)
+
+#define reg_trace(fmt, ...) do {					\
+		if (reg_trace_enabled())				\
+			fprintf(stderr, "R " fmt, ## __VA_ARGS__);	\
+	} while (0)
+
 #ifndef MIN
 #  define MIN(a,b)	({ __typeof__ (a) _a = (a); \
 			   __typeof__ (b) _b = (b); \
@@ -145,6 +155,9 @@ int dnut_mmio_write32(struct dnut_card *_card,
 	int rc = -1;
 	struct dnut_data *card = (struct dnut_data *)_card;
 
+	reg_trace("  %s(%p, %llx, %lx)\n", __func__, _card,
+		  (long long)offset, (long)data);
+
 	if ((card) && (card->afu_h))
 		rc = cxl_mmio_write32(card->afu_h, offset, data);
 	return rc;
@@ -159,6 +172,10 @@ int dnut_mmio_read32(struct dnut_card *_card,
 
 	if ((card) && (card->afu_h))
 		rc = cxl_mmio_read32(card->afu_h, offset, data);
+
+	reg_trace("  %s(%p, %llx, %lx) %d\n", __func__, _card,
+		  (long long)offset, (long)*data, rc);
+
 	return rc;
 }
 
@@ -168,6 +185,9 @@ int dnut_mmio_write64(struct dnut_card *_card,
 {
 	int rc = -1;
 	struct dnut_data *card = (struct dnut_data *)_card;
+
+	reg_trace("  %s(%p, %llx, %llx)\n", __func__, _card,
+		  (long long)offset, (long long)data);
 
 	if ((card) && (card->afu_h))
 		rc = cxl_mmio_write64(card->afu_h, offset, data);
@@ -183,6 +203,10 @@ int dnut_mmio_read64(struct dnut_card *_card,
 
 	if ((card) && (card->afu_h))
 		rc = cxl_mmio_read64(card->afu_h, offset, data);
+
+	reg_trace("  %s(%p, %llx, %llx) %d\n", __func__, _card,
+		  (long long)offset, (long long)*data, rc);
+
 	return rc;
 }
 
@@ -426,3 +450,13 @@ int dnut_kernel_mmio_read32(struct dnut_kernel *kernel, uint32_t offset,
 	return dnut_mmio_read32(card, offset, data);
 }
 
+static void _init(void) __attribute__((constructor));
+
+static void _init(void)
+{
+	const char *trace_env;
+
+	trace_env = getenv("DNUT_TRACE");
+	if (trace_env != NULL)
+		dnut_trace = strtol(trace_env, (char **)NULL, 0);
+}

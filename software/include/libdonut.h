@@ -83,6 +83,7 @@
 #define DNUT_EFAULT			-5 /* Illegal address */
 #define DNUT_ETIMEDOUT			-6 /* Timeout error */
 
+/* FIXME Constants are too long, I like to type less */
 #define DNUT_TARGET_TYPE_UNUSED		0xffff
 #define DNUT_TARGET_TYPE_HOST_DRAM	0x0000 /* this is fine, always there */
 #define DNUT_TARGET_TYPE_CARD_DRAM	0x0001 /* card specific */
@@ -102,6 +103,16 @@ typedef struct dnut_addr {
 	uint16_t type;			/* DRAM, NVME, ... */
 	uint16_t flags;
 } *dnut_addr_t;				/* 16 bytes */
+
+static inline void dnut_addr_set(struct dnut_addr *da,
+				 const void *addr, uint32_t size,
+				 uint16_t type, uint16_t flags)
+{
+	da->addr = (unsigned long)addr;
+	da->size = size;
+	da->type = type;				\
+	da->flags = flags;				\
+}
 
 /**********************************************************************
  * MMIO ACCESS in AFU MASTER MODE
@@ -145,6 +156,16 @@ typedef struct dnut_job {
 	uint64_t workitem_addr;		/* ro */
 	uint32_t workitem_size;		/* ro */
 } *dnut_job_t;
+
+static inline void dnut_job_set(struct dnut_job *djob, uint64_t action,
+				void *waddr, unsigned int wsize)
+{
+	djob->action = action;
+	djob->retc = 0x00000000;
+	djob->dnut_addr_items = -1; /* FIXME Do we need this? */
+	djob->workitem_addr = (unsigned long)waddr;
+	djob->workitem_size = wsize;
+}
 
 /**
  * Workitem build up by the calling code as follows:
