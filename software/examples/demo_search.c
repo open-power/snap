@@ -35,6 +35,7 @@
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
 
+#define SEARCH_ACTION_TYPE	0xC0FE
 #define MMIO_DIN_DEFAULT	0x0ull
 #define MMIO_DOUT_DEFAULT	0x0ull
 
@@ -94,14 +95,15 @@ static void dnut_prepare_search(struct dnut_job *cjob, struct search_job *sjob,
 				uint64_t *offs, unsigned int items,
 				uint64_t pattern)
 {
-	sjob->input.addr   = (unsigned long)buff;
-	sjob->input.size   = size;
-	sjob->input.flags  = (DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
+	dnut_addr_set(&sjob->input, buff, size,
+		      DNUT_TARGET_TYPE_HOST_DRAM,
+		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
+	dnut_addr_set(&sjob->output, offs, items * sizeof(*offs),
+		      DNUT_TARGET_TYPE_HOST_DRAM,
+		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
+		      DNUT_TARGET_FLAGS_END);
 
-	sjob->output.addr  = (unsigned long)offs;
-	sjob->output.size  = items * sizeof(*offs);
-	sjob->output.flags = (DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
-			      DNUT_TARGET_FLAGS_END);
+	/* FIXME remove ... */
 	memset(offs, 0xAB, items * sizeof(*offs));
 
 	sjob->pattern = pattern;
@@ -110,9 +112,7 @@ static void dnut_prepare_search(struct dnut_job *cjob, struct search_job *sjob,
 	sjob->mmio_din = MMIO_DIN_DEFAULT;
 	sjob->mmio_dout = MMIO_DOUT_DEFAULT;
 
-	cjob->retc = 0x00000000;
-	cjob->workitem_addr = (unsigned long)sjob;
-	cjob->workitem_size = sizeof(*sjob);
+	dnut_job_set(cjob, SEARCH_ACTION_TYPE, sjob, sizeof(*sjob));
 }
 
 static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
@@ -256,8 +256,10 @@ int main(int argc, char *argv[])
 	 * Once granted, MMIO to that kernel will work.
 	 */
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
-	kernel = dnut_kernel_attach_dev(device, DNUT_VENDOR_ID_ANY,
-					DNUT_DEVICE_ID_ANY, 0xC0FE);
+	kernel = dnut_kernel_attach_dev(device,
+					DNUT_VENDOR_ID_ANY,
+					DNUT_DEVICE_ID_ANY,
+					SEARCH_ACTION_TYPE);
 	if (kernel == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
 			strerror(errno));
