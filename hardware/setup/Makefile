@@ -1,17 +1,18 @@
 PSL_SOURCE_ENV=$(FPGACARD)
-BUILD_DIR=$(DONUT_HARDWARE_ROOT)/viv_nonproject
+BUILD_DIR=$(DONUT_HARDWARE_ROOT)/build
 
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/ies/filelist.f
 SOURCE_FILES_HDL     = $(shell grep '\/hdl\/' $(PROJECT_COMPILE_LIST))
 SOURCE_FILES_VHDL    = $(SOURCE_FILES_HDL:../%=%)
 
+CE_PARMS := -p
 ifdef EXAMPLE
-CE_PARMS := -e
+CE_PARMS += -e
 endif
 
 .PHONY: all build check_donut_settings create_environment copy clean config
 
-all: config build
+all: config build_image build_model
 
 check_donut_settings:
 	@if [ ! -d "$(DONUT_HARDWARE_ROOT)" ]; then \
@@ -21,7 +22,8 @@ check_donut_settings:
 	fi
 
 create_environment:
-#	./create_environment $(CE_PARMS)
+	./create_environment $(CE_PARMS)
+	@echo -e "\t[CREATE_ENVIRONMENT] done ($(shell date))"
 
 copy $(BUILD_DIR)/psl_fpga.tcl:
 	@echo -e "\t[COPY] psl build env"; cp -a $(PSL_SOURCE_ENV) $(BUILD_DIR)
@@ -33,7 +35,8 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 
 $(BUILD_DIR)/Sources/prj/top.prj: $(BUILD_DIR)/psl_fpga.tcl 
 	@cp $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
-	@echo "PATCH .xci FILES" && patch -p0 < xci.patch
+	@echo "PATCH .xci FILES" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/xci.patch
+	@echo "PATCH .vhdl FILES" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/vhdl.patch
 
 $(BUILD_DIR)/Sources/prj/afu.prj: $(BUILD_DIR)/Sources/prj/top.prj
 	@echo -e "\t[CREATE] $@"
@@ -50,11 +53,16 @@ $(BUILD_DIR)/Sources/prj/afu.prj: $(BUILD_DIR)/Sources/prj/top.prj
 config: check_donut_settings create_environment $(BUILD_DIR)/Sources/prj/afu.prj
 	@echo -e "\t[CONFIG] done ($(shell date))"
 
-build:
-	@echo -e "\t[BUILD] start ($(shell date))"
+build_model:
+	./create_environment -b
+	@echo -e "\t[CREATE_ENVIRONMENT] done ($(shell date))"
+
+build_image:
+	@echo -e "\t[BUILD_IMAGE] start ($(shell date))"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
+
 clean:
-	@echo -e "\t[CLEAN] build"; 
+	@echo -e "\t[CLEAN] build environment"; 
 	rm -rf  $(BUILD_DIR)
 	rm -rf  $(DONUT_HARDWARE_ROOT)/viv_project
 	rm -rf  $(DONUT_HARDWARE_ROOT)/ip
