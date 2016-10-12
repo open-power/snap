@@ -35,12 +35,17 @@
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
 
+#define MMIO_DIN_DEFAULT	0x0ull
+#define MMIO_DOUT_DEFAULT	0x0ull
+
 struct search_job {
 	struct dnut_addr input;	 /* input data */
 	struct dnut_addr output; /* offset table */
 	uint64_t pattern;
 	uint64_t nb_of_occurances;
 	uint64_t next_input_addr;
+	uint64_t mmio_din;	/* private settins for this action */
+	uint64_t mmio_dout;	/* private settins for this action */
 };
 
 static inline
@@ -102,6 +107,8 @@ static void dnut_prepare_search(struct dnut_job *cjob, struct search_job *sjob,
 	sjob->pattern = pattern;
 	sjob->nb_of_occurances = 0;
 	sjob->next_input_addr = 0;
+	sjob->mmio_din = MMIO_DIN_DEFAULT;
+	sjob->mmio_dout = MMIO_DOUT_DEFAULT;
 
 	cjob->retc = 0x00000000;
 	cjob->workitem_addr = (unsigned long)sjob;
