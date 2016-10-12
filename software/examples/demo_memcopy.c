@@ -67,8 +67,8 @@ int main(int argc, char *argv[])
 	struct dnut_kernel *kernel;
 	char device[128];
 	struct dnut_job cjob;
-	const char *input;
-	const char *output;
+	const char *input = NULL;
+	const char *output = NULL;
 	size_t size = 0;
 	unsigned long timeout = 10;
 	unsigned int mode = 0x0;
