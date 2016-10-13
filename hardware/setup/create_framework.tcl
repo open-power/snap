@@ -48,7 +48,6 @@ add_files -norecurse -scan_for_includes $card_dir/Sources/top/synthesis_support.
 set_property library ibm  [get_files $card_dir/Sources/top/synthesis_support.vhdl]
 
 add_files            -scan_for_includes $root_dir/hdl/
-remove_files                            $root_dir/hdl/action_wrapper.vhd
 remove_files                            $root_dir/hdl/psl_accel_sim.vhd
 update_compile_order -fileset sources_1
 
@@ -92,6 +91,7 @@ if { $action_example == 1 } {
   export_ip_user_files -of_objects  [get_files  $root_dir/action/memcopy.srcs/sources_1/bd/action/action.bd] -force -quiet
   update_compile_order -fileset sources_1
   make_wrapper -files [get_files $root_dir/action/memcopy.srcs/sources_1/bd/action/action.bd] -top
+  remove_files $root_dir/hdl/action_wrapper.vhd
   add_files -norecurse $root_dir/action/memcopy.srcs/sources_1/bd/action/hdl/action_wrapper.vhd
   update_compile_order -fileset sources_1
   generate_target all [get_files  $root_dir/action/memcopy.srcs/sources_1/bd/action/action.bd]
