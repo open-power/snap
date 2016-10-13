@@ -43,7 +43,7 @@ static const char *version = GIT_VERSION;
 struct search_job {
 	struct dnut_addr input;	 /* input data */
 	struct dnut_addr output; /* offset table */
-	uint64_t pattern;
+	struct dnut_addr pattern;
 	uint64_t nb_of_occurances;
 	uint64_t next_input_addr;
 	uint64_t mmio_din;	/* private settins for this action */
@@ -92,22 +92,21 @@ file_read(const char *fname, uint8_t *buff, size_t len)
 }
 
 static void dnut_prepare_search(struct dnut_job *cjob, struct search_job *sjob,
-				const uint8_t *buff, ssize_t size,
+				const uint8_t *dbuff, ssize_t dsize,
 				uint64_t *offs, unsigned int items,
-				uint64_t pattern)
+				const uint8_t *pbuff, unsigned int psize)
 {
-	dnut_addr_set(&sjob->input, buff, size,
+	dnut_addr_set(&sjob->input, dbuff, dsize,
 		      DNUT_TARGET_TYPE_HOST_DRAM,
 		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
 	dnut_addr_set(&sjob->output, offs, items * sizeof(*offs),
 		      DNUT_TARGET_TYPE_HOST_DRAM,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
+		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
+	dnut_addr_set(&sjob->pattern, pbuff, psize,
+		      DNUT_TARGET_TYPE_HOST_DRAM,
+		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC |
 		      DNUT_TARGET_FLAGS_END);
 
-	/* FIXME remove ... */
-	memset(offs, 0xAB, items * sizeof(*offs));
-
-	sjob->pattern = pattern;
 	sjob->nb_of_occurances = 0;
 	sjob->next_input_addr = 0;
 	sjob->mmio_din = MMIO_DIN_DEFAULT;
@@ -131,6 +130,10 @@ static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
 	__hexdump(stdout, (void *)(unsigned long)sjob->output.addr,
 		  sjob->output.size);
 
+	printf("Pattern:\n");
+	__hexdump(stdout, (void *)(unsigned long)sjob->pattern.addr,
+		  sjob->pattern.size);
+
 	printf("Items found:  %016llx\n", (long long)sjob->nb_of_occurances);
 	printf("Next input:   %016llx\n", (long long)sjob->next_input_addr);
 }
@@ -146,7 +149,7 @@ static void usage(const char *prog)
 	       "  -C, --card <cardno> can be (0...3)\n"
 	       "  -i, --input <data.bin>     Input data.\n"
 	       "  -I, --items <items>        Max items to find.\n"
-	       "  -p, --pattern <data_64bit> 64-bit pattern to search for\n"
+	       "  -p, --pattern <str>        Pattern to search for\n"
 	       "\n"
 	       "Example:\n"
 	       "  demo_search ...\n"
@@ -159,17 +162,18 @@ static void usage(const char *prog)
  */
 int main(int argc, char *argv[])
 {
-	int ch, run, rc = 0;
+	int ch, run, psize = 0, rc = 0;
 	int card_no = 0;
 	struct dnut_kernel *kernel = NULL;
 	char device[128];
 	const char *fname = NULL;
-	uint64_t pattern = 0x0011223344556677ull;
+	const char *pattern_str = "Donut";
 	struct dnut_job cjob;
 	struct search_job sjob;
-	ssize_t size;
-	uint8_t *buff;
-	uint64_t *offs;
+	ssize_t dsize;
+	uint8_t *pbuff;		/* pattern buffer */
+	uint8_t *dbuff;		/* data buffer */
+	uint64_t *offs;		/* offset buffer */
 	unsigned int timeout = 10;
 	unsigned int items = 1024;
 	unsigned int page_size = sysconf(_SC_PAGESIZE);
@@ -204,7 +208,7 @@ int main(int argc, char *argv[])
 			fname = optarg;
 			break;
 		case 'p':
-			pattern = __str_to_num(optarg);
+			pattern_str = optarg;
 			break;
 		case 'I':
 			items = strtol(optarg, (char **)NULL, 0);
@@ -234,23 +238,31 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	size = file_size(fname);
-	if (size < 0)
+	dsize = file_size(fname);
+	if (dsize < 0)
 		goto out_error;
 
-	buff = memalign(page_size, size);
-	if (buff == NULL)
+	dbuff = memalign(page_size, dsize);
+	if (dbuff == NULL)
 		goto out_error;
 
-	rc = file_read(fname, buff, size);
-	if (rc < 0)
+	psize = strlen(pattern_str);
+	pbuff = memalign(page_size, psize);
+	if (pbuff == NULL)
 		goto out_error0;
+	memcpy(pbuff, pattern_str, psize);
+
+	rc = file_read(fname, dbuff, dsize);
+	if (rc < 0)
+		goto out_errorX;
 
 	offs = memalign(page_size, items * sizeof(*offs));
 	if (offs == NULL)
-		goto out_error0;
+		goto out_errorX;
+	memset(offs, 0xAB, items * sizeof(*offs));
 
-	dnut_prepare_search(&cjob, &sjob, buff, size, offs, items, pattern);
+	dnut_prepare_search(&cjob, &sjob, dbuff, dsize,
+			    offs, items, pbuff, psize);
 	dnut_print_search_results(&cjob, 0xffffffff);
 
 	/*
@@ -311,7 +323,8 @@ int main(int argc, char *argv[])
 	dnut_kernel_stop(kernel);
 	dnut_kernel_free(kernel);
 
-	free(buff);
+	free(dbuff);
+	free(pbuff);
 	free(offs);
 	exit(EXIT_SUCCESS);
 
@@ -320,8 +333,10 @@ int main(int argc, char *argv[])
 	dnut_kernel_free(kernel);
  out_error1:
 	free(offs);
+ out_errorX:
+	free(pbuff);
  out_error0:
-	free(buff);
+	free(dbuff);
  out_error:
 	exit(EXIT_FAILURE);
 }
