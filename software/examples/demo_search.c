@@ -280,20 +280,7 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
-#if 0				/* config tweak needed? */
-	/* FIXME Setup tweak */
-	dnut_kernel_mmio_write32(kernel, 0x10010, 0x00000000); /* up */
-	dnut_kernel_mmio_write32(kernel, 0x10014, 0x00000000); /* low */
-	dnut_kernel_mmio_write32(kernel, 0x1001C, 0x00000000); /* up */
-	dnut_kernel_mmio_write32(kernel, 0x10020, 0x00000000); /* low */
-#endif
-
-	rc = dnut_kernel_start(kernel);
-	if (rc != 0)
-		goto out_error2;
-
 	run = 0;
-
 	gettimeofday(&stime, NULL);
 	do {
 		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
@@ -320,16 +307,15 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "searching took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
-	dnut_kernel_stop(kernel);
 	dnut_kernel_free(kernel);
 
 	free(dbuff);
 	free(pbuff);
 	free(offs);
+
 	exit(EXIT_SUCCESS);
 
  out_error2:
-	dnut_kernel_stop(kernel);
 	dnut_kernel_free(kernel);
  out_error1:
 	free(offs);
