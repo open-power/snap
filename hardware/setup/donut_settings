@@ -83,7 +83,7 @@ fi
 
 if [ ! -d "$DIMMTEST" ]; then
   export DIMMTEST=$FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0
-  echo "Setting CARDDIMM            to \"$DIMMTEST\""
+  echo "Setting DIMMTEST            to \"$DIMMTEST\""
 else
   echo "DIMMTEST             is set to \"$DIMMTEST\""
 fi

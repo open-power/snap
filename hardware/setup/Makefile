@@ -2,7 +2,7 @@ PSL_SOURCE_ENV=$(FPGACARD)
 BUILD_DIR=$(DONUT_HARDWARE_ROOT)/build
 
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/ies/filelist.f
-SOURCE_FILES_HDL     = $(shell grep '\/hdl\/' $(PROJECT_COMPILE_LIST))
+SOURCE_FILES_HDL     = $(shell grep '\/hdl\/' $(PROJECT_COMPILE_LIST) | grep -v 'action_auto_cc' | sed 's/psl_accel_sim/psl_accel_syn/')
 SOURCE_FILES_VHDL    = $(SOURCE_FILES_HDL:../%=%)
 
 CE_PARMS := -p
@@ -10,9 +10,9 @@ ifdef EXAMPLE
 CE_PARMS += -e
 endif
 
-.PHONY: all build check_donut_settings create_environment copy clean config
+.PHONY: all image model check_donut_settings create_environment copy clean config
 
-all: config build_image build_model
+all: config image model
 
 check_donut_settings:
 	@if [ ! -d "$(DONUT_HARDWARE_ROOT)" ]; then \
@@ -53,11 +53,11 @@ $(BUILD_DIR)/Sources/prj/afu.prj: $(BUILD_DIR)/Sources/prj/top.prj
 config: check_donut_settings create_environment $(BUILD_DIR)/Sources/prj/afu.prj
 	@echo -e "\t[CONFIG] done ($(shell date))"
 
-build_model:
+model:
 	./create_environment -b
 	@echo -e "\t[CREATE_ENVIRONMENT] done ($(shell date))"
 
-build_image:
+image:
 	@echo -e "\t[BUILD_IMAGE] start ($(shell date))"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
 

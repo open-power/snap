@@ -17,17 +17,17 @@
 #-----------------------------------------------------------
 
 set root_dir  $::env(DONUT_HARDWARE_ROOT)
-set card_dir  $::env(FPGACARD)
 set fpga_part $::env(FPGACHIP)
 set pslse_dir $::env(PSLSE_ROOT)
 set dimm_dir  $::env(DIMMTEST)
 set ies_libs  $::env(FRAMEWORK_ROOT)/ies_libs
+set build_dir $::env(DONUT_HARDWARE_ROOT)/build
 set action_example $::env(ACTION_EXAMPLE)
 
 puts $root_dir
-puts $card_dir
 puts $pslse_dir
 puts $ies_libs
+puts $build_dir
 
 exec rm -rf $root_dir/viv_project
 
@@ -40,12 +40,12 @@ set_property default_lib work [current_project]
 
 
 #add HDL files
-add_files -norecurse -scan_for_includes $card_dir/Sources/top/std_ulogic_support.vhdl
-add_files -norecurse -scan_for_includes $card_dir/Sources/top/psl_fpga.vhdl
-add_files -norecurse -scan_for_includes $card_dir/Sources/top/std_ulogic_function_support.vhdl
-add_files -norecurse -scan_for_includes $card_dir/Sources/top/std_ulogic_unsigned.vhdl
-add_files -norecurse -scan_for_includes $card_dir/Sources/top/synthesis_support.vhdl
-set_property library ibm  [get_files $card_dir/Sources/top/synthesis_support.vhdl]
+add_files -norecurse -scan_for_includes $build_dir/Sources/top/std_ulogic_support.vhdl
+add_files -norecurse -scan_for_includes $build_dir/Sources/top/psl_fpga.vhdl
+add_files -norecurse -scan_for_includes $build_dir/Sources/top/std_ulogic_function_support.vhdl
+add_files -norecurse -scan_for_includes $build_dir/Sources/top/std_ulogic_unsigned.vhdl
+add_files -norecurse -scan_for_includes $build_dir/Sources/top/synthesis_support.vhdl
+set_property library ibm  [get_files $build_dir/Sources/top/synthesis_support.vhdl]
 
 add_files            -scan_for_includes $root_dir/hdl/
 remove_files                            $root_dir/hdl/psl_accel_sim.vhd
@@ -100,10 +100,10 @@ if { $action_example == 1 } {
 }
 
 # IMPORT PSL CHECKPOINT FILE
-read_checkpoint -cell b $card_dir/Checkpoint/b_route_design.dcp -strict
-#add_files -norecurse $card_dir/Checkpoint/b_route_design.dcp
+read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict
+#add_files -norecurse $build_dir/Checkpoint/b_route_design.dcp
 update_compile_order -fileset sources_1
-add_files -fileset constrs_1 -norecurse $card_dir/Sources/xdc/b_xilinx_capi_pcie_gen3_alphadata_brd_topimp.xdc
+add_files -fileset constrs_1 -norecurse $build_dir/Sources/xdc/b_xilinx_capi_pcie_gen3_alphadata_brd_topimp.xdc
 
 # IMPORT DDR3 XDCs 
 add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc
