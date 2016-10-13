@@ -171,8 +171,8 @@ ENTITY psl_accel IS
        as_refclk_sfp_fs    : out std_ulogic;
        as_refclk_sfp_fs_en : out std_ulogic;
 
-       c0_sys_clk_p : IN STD_LOGIC;
-       c0_sys_clk_n : IN STD_LOGIC;
+       c0_sys_clk_p       : IN STD_LOGIC;
+       c0_sys_clk_n       : IN STD_LOGIC;
        c0_ddr3_addr       : out   std_logic_vector(15 downto 0);
        c0_ddr3_ba         : out   std_logic_vector(2 downto 0);
        c0_ddr3_ras_n      : out   std_logic;
@@ -189,6 +189,8 @@ ENTITY psl_accel IS
        c0_ddr3_dqs_n      : inout std_logic_vector(8 downto 0);
        c0_ddr3_odt        : out   std_logic_vector(1 downto 0);
 
+       c1_sys_clk_p       : IN STD_LOGIC;
+       c1_sys_clk_n       : IN STD_LOGIC;
        c1_ddr3_addr       : out   std_logic_vector(15 downto 0);
        c1_ddr3_ba         : out   std_logic_vector(2 downto 0);
        c1_ddr3_ras_n      : out   std_logic;
@@ -581,23 +583,23 @@ BEGIN
   ddr3sdram_bank0 : ddr3sdram
     PORT MAP (
       c0_init_calib_complete => c0_init_calib_complete,
-      c0_sys_clk_p => c0_sys_clk_p,
-      c0_sys_clk_n => c0_sys_clk_n,
-      c0_ddr3_addr => c0_ddr3_addr,
-      c0_ddr3_ba => c0_ddr3_ba,
-      c0_ddr3_cas_n => c0_ddr3_cas_n,
-      c0_ddr3_cke => c0_ddr3_cke,
-      c0_ddr3_ck_n => c0_ddr3_ck_n,
-      c0_ddr3_ck_p => c0_ddr3_ck_p,
-      c0_ddr3_cs_n => c0_ddr3_cs_n,
+      c0_sys_clk_p => c1_sys_clk_p,
+      c0_sys_clk_n => c1_sys_clk_n,
+      c0_ddr3_addr => c1_ddr3_addr,
+      c0_ddr3_ba => c1_ddr3_ba,
+      c0_ddr3_cas_n => c1_ddr3_cas_n,
+      c0_ddr3_cke => c1_ddr3_cke,
+      c0_ddr3_ck_n => c1_ddr3_ck_n,
+      c0_ddr3_ck_p => c1_ddr3_ck_p,
+      c0_ddr3_cs_n => c1_ddr3_cs_n,
       -- c0_ddr3_dm => open, -- ECC DIMM, don't use dm. dm is assigned above.
-      c0_ddr3_dq => c0_ddr3_dq,
-      c0_ddr3_dqs_n => c0_ddr3_dqs_n,
-      c0_ddr3_dqs_p => c0_ddr3_dqs_p,
-      c0_ddr3_odt => c0_ddr3_odt,
-      c0_ddr3_ras_n => c0_ddr3_ras_n,
-      c0_ddr3_reset_n => c0_ddr3_reset_n,
-      c0_ddr3_we_n => c0_ddr3_we_n,
+      c0_ddr3_dq => c1_ddr3_dq,
+      c0_ddr3_dqs_n => c1_ddr3_dqs_n,
+      c0_ddr3_dqs_p => c1_ddr3_dqs_p,
+      c0_ddr3_odt => c1_ddr3_odt,
+      c0_ddr3_ras_n => c1_ddr3_ras_n,
+      c0_ddr3_reset_n => c1_ddr3_reset_n,
+      c0_ddr3_we_n => c1_ddr3_we_n,
       c0_ddr3_ui_clk => c0_ddr3_ui_clk,
       c0_ddr3_ui_clk_sync_rst => c0_ddr3_ui_clk_sync_rst,
       c0_ddr3_aresetn => action_reset_n,
