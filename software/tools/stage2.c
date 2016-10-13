@@ -252,7 +252,7 @@ static int memcpy_test(struct dnut_card* dnc,
 	/* Memcpy */
 	for (i = 0; i < iter; i++) {
 		action_memcpy(dnc, mode, dest, src, block4k);
-		action_wait_idle(dnc, 1000);
+		action_wait_idle(dnc, 50000);
 		if (ACTION_CONFIG_COPY_HH == mode) {
 			rc = memcmp(src, dest, block4k);
 			if (rc) break;
@@ -445,7 +445,7 @@ int main(int argc, char *argv[])
 	case 1:
 		for(delay = start_delay; delay <= end_delay; delay += step_delay) {
 			action_count(dn, delay);
-			action_wait_idle(dn, delay + 10);
+			action_wait_idle(dn, 50000);
 		}
 		rc = 0;
 		break;
