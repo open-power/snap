@@ -50,7 +50,7 @@ $(BUILD_DIR)/Sources/prj/afu.prj: $(BUILD_DIR)/Sources/prj/top.prj
 	@echo -e "\t[CREATE] $(BUILD_DIR)/Sources/prj/psl_fpga.prj"
 	@cat $(BUILD_DIR)/Sources/prj/top.prj $(BUILD_DIR)/Sources/prj/afu.prj > $(BUILD_DIR)/Sources/prj/psl_fpga.prj
 
-config: check_donut_settings create_environment $(BUILD_DIR)/Sources/prj/afu.prj
+config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl create_environment $(BUILD_DIR)/Sources/prj/afu.prj
 	@echo -e "\t[CONFIG] done ($(shell date))"
 
 model:
