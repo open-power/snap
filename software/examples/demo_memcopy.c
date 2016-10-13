@@ -31,10 +31,6 @@ int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
 
-#define timediff_usec(t0, t1)						\
-	((double)(((t0)->tv_sec * 1000000 + (t0)->tv_usec) -		\
-		  ((t1)->tv_sec * 1000000 + (t1)->tv_usec)))
-
 /**
  * @brief	prints valid command line options
  *

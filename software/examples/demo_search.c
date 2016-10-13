@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 {
 	int ch, run, rc = 0;
 	int card_no = 0;
-	struct dnut_kernel *kernel;
+	struct dnut_kernel *kernel = NULL;
 	char device[128];
 	const char *fname = NULL;
 	uint64_t pattern = 0x0011223344556677ull;
@@ -173,6 +173,7 @@ int main(int argc, char *argv[])
 	unsigned int timeout = 10;
 	unsigned int items = 1024;
 	unsigned int page_size = sysconf(_SC_PAGESIZE);
+	struct timeval etime, stime;
 
 	while (1) {
 		int option_index = 0;
@@ -280,6 +281,8 @@ int main(int argc, char *argv[])
 		goto out_error2;
 
 	run = 0;
+
+	gettimeofday(&stime, NULL);
 	do {
 		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
 		if (rc != 0) {
@@ -300,6 +303,10 @@ int main(int argc, char *argv[])
 		}
 		run++;
 	} while (sjob.next_input_addr != 0x0);
+	gettimeofday(&etime, NULL);
+
+	fprintf(stdout, "searching took %lld usec\n",
+		(long long)timediff_usec(&etime, &stime));
 
 	dnut_kernel_stop(kernel);
 	dnut_kernel_free(kernel);
