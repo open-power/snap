@@ -44,7 +44,7 @@ struct search_job {
 	struct dnut_addr input;	 /* input data */
 	struct dnut_addr output; /* offset table */
 	struct dnut_addr pattern;
-	uint64_t nb_of_occurances;
+	uint64_t nb_of_occurences;
 	uint64_t next_input_addr;
 	uint64_t mmio_din;	/* private settins for this action */
 	uint64_t mmio_dout;	/* private settins for this action */
@@ -107,7 +107,7 @@ static void dnut_prepare_search(struct dnut_job *cjob, struct search_job *sjob,
 		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC |
 		      DNUT_TARGET_FLAGS_END);
 
-	sjob->nb_of_occurances = 0;
+	sjob->nb_of_occurences = 0;
 	sjob->next_input_addr = 0;
 	sjob->mmio_din = MMIO_DIN_DEFAULT;
 	sjob->mmio_dout = MMIO_DOUT_DEFAULT;
@@ -134,7 +134,7 @@ static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
 	__hexdump(stdout, (void *)(unsigned long)sjob->pattern.addr,
 		  sjob->pattern.size);
 
-	printf("Items found:  %016llx\n", (long long)sjob->nb_of_occurances);
+	printf("Items found:  %016llx\n", (long long)sjob->nb_of_occurences);
 	printf("Next input:   %016llx\n", (long long)sjob->next_input_addr);
 }
 
