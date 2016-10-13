@@ -410,6 +410,8 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 		if (rc != 0)
 			return rc;
 	}
+
+	dnut_kernel_stop(kernel);
 	return rc;
 }
 

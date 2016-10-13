@@ -322,10 +322,6 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
-	rc = dnut_kernel_start(kernel);
-	if (rc != 0)
-		goto out_error2;
-
 	dnut_prepare_memcopy(&cjob, &mjob,
 			     (void *)addr_in, size, type_in,
 			     (void *)addr_out, size, type_out);
@@ -348,14 +344,14 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "memcopy took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
-	dnut_kernel_stop(kernel);
 	dnut_kernel_free(kernel);
+
 	free(obuff);
 	free(ibuff);
+
 	exit(EXIT_SUCCESS);
 
  out_error2:
-	dnut_kernel_stop(kernel);
 	dnut_kernel_free(kernel);
  out_error1:
 	free(obuff);

@@ -44,7 +44,7 @@ struct search_job {
 	struct dnut_addr input;	 /* input data */
 	struct dnut_addr output; /* offset table */
 	struct dnut_addr pattern;
-	uint64_t nb_of_occurances;
+	uint64_t nb_of_occurrences;
 	uint64_t next_input_addr;
 	uint64_t mmio_din;	/* private settins for this action */
 	uint64_t mmio_dout;	/* private settins for this action */
@@ -107,7 +107,7 @@ static void dnut_prepare_search(struct dnut_job *cjob, struct search_job *sjob,
 		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC |
 		      DNUT_TARGET_FLAGS_END);
 
-	sjob->nb_of_occurances = 0;
+	sjob->nb_of_occurrences = 0;
 	sjob->next_input_addr = 0;
 	sjob->mmio_din = MMIO_DIN_DEFAULT;
 	sjob->mmio_dout = MMIO_DOUT_DEFAULT;
@@ -134,7 +134,7 @@ static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
 	__hexdump(stdout, (void *)(unsigned long)sjob->pattern.addr,
 		  sjob->pattern.size);
 
-	printf("Items found:  %016llx\n", (long long)sjob->nb_of_occurances);
+	printf("Items found:  %016llx\n", (long long)sjob->nb_of_occurrences);
 	printf("Next input:   %016llx\n", (long long)sjob->next_input_addr);
 }
 
@@ -280,20 +280,7 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
-#if 0				/* config tweak needed? */
-	/* FIXME Setup tweak */
-	dnut_kernel_mmio_write32(kernel, 0x10010, 0x00000000); /* up */
-	dnut_kernel_mmio_write32(kernel, 0x10014, 0x00000000); /* low */
-	dnut_kernel_mmio_write32(kernel, 0x1001C, 0x00000000); /* up */
-	dnut_kernel_mmio_write32(kernel, 0x10020, 0x00000000); /* low */
-#endif
-
-	rc = dnut_kernel_start(kernel);
-	if (rc != 0)
-		goto out_error2;
-
 	run = 0;
-
 	gettimeofday(&stime, NULL);
 	do {
 		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
@@ -320,16 +307,15 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "searching took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
-	dnut_kernel_stop(kernel);
 	dnut_kernel_free(kernel);
 
 	free(dbuff);
 	free(pbuff);
 	free(offs);
+
 	exit(EXIT_SUCCESS);
 
  out_error2:
-	dnut_kernel_stop(kernel);
 	dnut_kernel_free(kernel);
  out_error1:
 	free(offs);
