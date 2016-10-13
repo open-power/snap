@@ -393,7 +393,7 @@ ARCHITECTURE afu OF afu IS
   SIGNAL kddr         : KDDR_T;
   SIGNAL ddrk         : DDRK_T;
   SIGNAL c0_init_calib_complete :   STD_LOGIC;
-  SIGNAL c0_sys_clk_p :   STD_LOGIC;
+  SIGNAL c0_sys_clk_p :   STD_LOGIC := '0';
   SIGNAL c0_sys_clk_n :   STD_LOGIC;
   SIGNAL c0_ddr3_addr :   STD_LOGIC_VECTOR(15 DOWNTO 0);
   SIGNAL c0_ddr3_ba :   STD_LOGIC_VECTOR(2 DOWNTO 0);
