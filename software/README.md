@@ -12,6 +12,8 @@ Libdonut is planed to provide 3 different modes of operation:
 
 Here a simple example for the action-assignment mode.
 
+    #include <libdonut.h>
+    
     struct search_job {
       struct dnut_addr input;
       struct dnut_addr output;
@@ -44,6 +46,8 @@ Here a simple example for the action-assignment mode.
    
     int main(int argc, char *argv[])
     {
+      struct dnut_job cjob;
+      struct search_job sjob;
       const char *pattern_str = "Donut";
       dsize = file_size(fname);
       dbuff = memalign(page_size, dsize);
