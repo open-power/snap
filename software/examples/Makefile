@@ -26,11 +26,12 @@ else
 LDLIBS += -lcxl
 endif
 
+demo_search_objs = action_search.o
+objs += action_search.o
+
 projs = demo_search demo_memcopy
 
-all: $(projs)
-
-$(projs): $(objs) $(libs)
+all: $(objs) $(projs)
 
 ### Deactivate existing implicit rule
 %: %.c

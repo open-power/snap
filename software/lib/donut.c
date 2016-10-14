@@ -557,7 +557,7 @@ static int dnut_map_funcs(uint16_t action_type)
 			errno = ENOENT;
 			return -1;
 		}
-		df = &a->funcs;
+		df = a->funcs;
 	}
 	return 0;
 }

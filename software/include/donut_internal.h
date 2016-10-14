@@ -34,7 +34,7 @@ struct dnut_action {
 	uint16_t device_id;
 	uint16_t action_type;
 	unsigned int instances;
-	struct dnut_funcs funcs;
+	struct dnut_funcs *funcs;
 	struct dnut_action *next;
 };
 
