@@ -330,7 +330,7 @@ struct dnut_kernel;
  */
 struct dnut_kernel *dnut_kernel_attach_dev(const char *path,
 			uint16_t vendor_id, uint16_t device_id,
-			uint16_t kernel_id);
+			uint16_t action_type);
 
 int dnut_kernel_start(struct dnut_kernel *kernel);
 

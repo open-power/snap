@@ -38,7 +38,7 @@ struct dnut_action {
 	struct dnut_action *next;
 };
 
-void dnut_action_register(struct dnut_action *action);
+int dnut_action_register(struct dnut_action *action);
 
 #ifdef __cplusplus
 }

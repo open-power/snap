@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <errno.h>
 #include <sys/time.h>
 
 #include <libdonut.h>
@@ -32,7 +33,10 @@
 		  ((t1)->tv_sec * 1000000 + (t1)->tv_usec)))
 
 /* Trace hardware implementation */
-static int dnut_trace = 0x0;
+static unsigned int dnut_trace = 0x0;
+static unsigned int dnut_config = 0x0;
+static struct dnut_action *actions = NULL;
+
 #define trace_enabled()       (dnut_trace & 0x1)
 #define reg_trace_enabled()   (dnut_trace & 0x2)
 
@@ -236,6 +240,9 @@ static struct dnut_funcs hardware_funcs = {
 /* We access the hardware via this function pointer struct */
 static struct dnut_funcs *df = &hardware_funcs;
 
+/* To be used for software simulation, use funcs provided by action */
+static int dnut_map_funcs(uint16_t action_type);
+
 struct dnut_card *dnut_card_alloc_dev(const char *path,
 					uint16_t vendor_id,
 					uint16_t device_id)
@@ -272,7 +279,6 @@ void dnut_card_free(struct dnut_card *_card)
 {
 	df->card_free(_card);
 }
-
 
 /**********************************************************************
  * JOB QUEUE MODE
@@ -349,8 +355,10 @@ void dnut_queue_free(struct dnut_queue *queue)
 struct dnut_kernel *dnut_kernel_attach_dev(const char *path,
 					   uint16_t vendor_id,
 					   uint16_t device_id,
-					   uint16_t kernel_id __unused)
+					   uint16_t action_type __unused)
 {
+	dnut_map_funcs(action_type);
+
 	return (struct dnut_kernel *)
 		dnut_card_alloc_dev(path, vendor_id, device_id);
 }
@@ -511,13 +519,114 @@ int dnut_kernel_mmio_read32(struct dnut_kernel *kernel, uint32_t offset,
 	return dnut_mmio_read32(card, offset, data);
 }
 
+/**********************************************************************
+ * SOFTWARE EMULATION OF FPGA ACTIONS
+ *********************************************************************/
+
+static struct dnut_card *__sw_card_alloc_dev(const char *path,
+					     uint16_t vendor_id,
+					     uint16_t device_id)
+{
+	return df->card_alloc_dev(path, vendor_id, device_id);
+}
+
+static int __sw_mmio_write32(struct dnut_card *_card,
+			     uint64_t offset, uint32_t data)
+{
+	return df->mmio_write32(_card, offset, data);
+}
+
+static int __sw_mmio_read32(struct dnut_card *_card,
+			    uint64_t offset, uint32_t *data)
+{
+	return df->mmio_read32(_card, offset, data);
+}
+
+static int __sw_mmio_write64(struct dnut_card *_card,
+			     uint64_t offset, uint64_t data)
+{
+	return df->mmio_write64(_card, offset, data);
+}
+
+static int __sw_mmio_read64(struct dnut_card *_card,
+			    uint64_t offset, uint64_t *data)
+{
+	return df->mmio_read64(_card, offset, data);
+}
+
+static void __sw_card_free(struct dnut_card *_card)
+{
+	df->card_free(_card);
+}
+
+/* Hardware version of the lowlevel functions */
+static struct dnut_funcs software_funcs = {
+	.card_alloc_dev = __sw_card_alloc_dev,
+	.mmio_write32 = __sw_mmio_write32,
+	.mmio_read32 = __sw_mmio_read32,
+	.mmio_write64 = __sw_mmio_write64,
+	.mmio_read64 = __sw_mmio_read64,
+	.card_free = __sw_card_free,
+};
+
+int dnut_action_register(struct dnut_action *new_action)
+{
+	if (new_action == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+	new_action->next = actions;
+	actions = new_action;
+	return 0;
+}
+
+static struct dnut_action *find_action(uint16_t action_type)
+{
+	struct dnut_action *a;
+
+	for (a = actions; a != NULL; a = a->next) {
+		if (a->action_type == action_type)
+			return a;
+	}
+	return NULL;
+}
+
+/* FIXME Not thread, safe since it uses the global variable df! */
+static int dnut_map_funcs(uint16_t action_type)
+{
+	struct dnut_action *a;
+
+	if (dnut_config & 0x1) {
+		/* search action and map in its mmios */
+		a = find_action(action_type);
+		if (a == NULL) {
+			errno = ENOENT;
+			return -1;
+		}
+		df = &a->funcs;
+	}
+	return 0;
+}
+
+/**********************************************************************
+ * LIBRARY INITIALIZATION
+ *********************************************************************/
+
 static void _init(void) __attribute__((constructor));
 
 static void _init(void)
 {
 	const char *trace_env;
+	const char *config_env;
 
 	trace_env = getenv("DNUT_TRACE");
 	if (trace_env != NULL)
 		dnut_trace = strtol(trace_env, (char **)NULL, 0);
+
+	config_env = getenv("DNUT_CONFIG");
+	if (config_env != NULL)
+		dnut_config = strtol(config_env, (char **)NULL, 0);
+
+	if (dnut_config & 0x1)
+		df = &software_funcs;
 }
