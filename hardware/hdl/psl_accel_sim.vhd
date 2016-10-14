@@ -383,7 +383,9 @@ ARCHITECTURE afu OF afu IS
   constant usodimm_part : usodimm_part_t :=  OWN_W16ESB8G8M; --choice(mig_ranks = 2, W16ESB8G8M, W16ESB8G8M_AS_1_RANK);
   constant sys_clk_period : time := 2.5 ns;
   SIGNAL action_reset : std_ulogic;
-  SIGNAL action_reset_n : std_ulogic;
+  SIGNAL action_reset_q : std_ulogic;
+  SIGNAL ddr3_reset_q   : std_ulogic;
+  SIGNAL ddr3_reset_n_q : std_ulogic;
   SIGNAL ddr3_clk_p     : std_ulogic;
   SIGNAL locked         : std_ulogic;
   SIGNAL xk_d         : XK_D_T;
@@ -395,6 +397,8 @@ ARCHITECTURE afu OF afu IS
   SIGNAL c0_init_calib_complete :   STD_LOGIC;
   SIGNAL c0_sys_clk_p :   STD_LOGIC := '0';
   SIGNAL c0_sys_clk_n :   STD_LOGIC;
+  SIGNAL c1_sys_clk_p :   STD_LOGIC := '0';
+  SIGNAL c1_sys_clk_n :   STD_LOGIC;
   SIGNAL c0_ddr3_addr :   STD_LOGIC_VECTOR(15 DOWNTO 0);
   SIGNAL c0_ddr3_ba :   STD_LOGIC_VECTOR(2 DOWNTO 0);
   SIGNAL c0_ddr3_cas_n :   STD_LOGIC;
@@ -434,7 +438,25 @@ ARCHITECTURE afu OF afu IS
                    
                    
 BEGIN              
-  action_reset_n <= NOT action_reset;
+  registers : PROCESS (ha_pclock)
+  BEGIN
+    IF (rising_edge(ha_pclock)) THEN
+      action_reset_q <= action_reset;
+    END IF;
+  END PROCESS registers;
+  ddr3_reset : PROCESS (c1_sys_clk_p)
+  BEGIN  -- PROCESS
+    IF (rising_edge(c1_sys_clk_p)) THEN
+      IF ((action_reset   = '1') OR
+          (action_reset_q = '1')) THEN
+        ddr3_reset_q   <= '1';
+        ddr3_reset_n_q <= '0';
+      ELSE
+        ddr3_reset_q   <= '0';
+        ddr3_reset_n_q <= '1';
+      END IF;
+    END IF;
+  END PROCESS ddr3_reset;
   --               
   --
   -- 
@@ -562,6 +584,9 @@ BEGIN
   c0_sys_clk_p <= transport not c0_sys_clk_p after sys_clk_period / 2;
   c0_sys_clk_n <= not c0_sys_clk_p;
 
+  c1_sys_clk_p <=     c0_sys_clk_p;
+  c1_sys_clk_n <= not c0_sys_clk_p;
+
   c0_ddr3_s_axi_ctrl_awvalid <= '0';
   c0_ddr3_s_axi_ctrl_awaddr <= (others => '0');
   c0_ddr3_s_axi_ctrl_wvalid <= '0';
@@ -593,7 +618,7 @@ BEGIN
       c0_ddr3_we_n => c0_ddr3_we_n,
       c0_ddr3_ui_clk => c0_ddr3_ui_clk,
       c0_ddr3_ui_clk_sync_rst => c0_ddr3_ui_clk_sync_rst,
-      c0_ddr3_aresetn => action_reset_n,
+      c0_ddr3_aresetn => ddr3_reset_n_q,
       c0_ddr3_s_axi_ctrl_awvalid => c0_ddr3_s_axi_ctrl_awvalid,
       c0_ddr3_s_axi_ctrl_awready => c0_ddr3_s_axi_ctrl_awready,
       c0_ddr3_s_axi_ctrl_awaddr => c0_ddr3_s_axi_ctrl_awaddr,
@@ -648,7 +673,7 @@ BEGIN
       c0_ddr3_s_axi_wready   => ddrk.axi_wready,              
       c0_ddr3_s_axi_wstrb    => kddr.axi_wstrb,   
       c0_ddr3_s_axi_wvalid   => kddr.axi_wvalid,               
-      sys_rst => action_reset
+      sys_rst => ddr3_reset_q
     );
  
    bank0_model : ddr3_sdram_usodimm

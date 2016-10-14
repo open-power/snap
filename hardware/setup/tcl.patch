@@ -1,5 +1,5 @@
 *** ./psl_fpga.tcl	2016-07-29 10:30:28.000000002 +0200
---- ./psl_fpga.tcl	2016-10-13 09:11:04.000000002 +0200
+--- ./psl_fpga.tcl	2016-10-14 11:16:10.000000002 +0200
 ***************
 *** 53,58 ****
 --- 53,60 ----
@@ -12,14 +12,26 @@
   ####Source required Tcl Procs
   source $tclDir/design_utils.tcl
 ***************
-*** 67,75 ****
---- 69,92 ----
+*** 67,78 ****
+  add_module $top
+  set_attribute module $top    top_level     1
+  set_attribute module $top    prj           $prjDir/$top.prj
+  set_attribute module $top    synth         ${run.topSynth}
+  set_attribute module $top    synth_options "-flatten_hierarchy rebuilt -fanout_limit 400 -fsm_extraction one_hot -keep_equivalent_registers -resource_sharing off -no_lc -shreg_min_size 5 -no_iobuf"
+  
+  add_implementation $top
+  set_attribute impl $top      top           $top
+- set_attribute impl $top      linkXDC       [list $xdcDir/b_xilinx_capi_pcie_gen3_alphadata_brd_topimp.xdc] 
+  set_attribute impl $top      impl          ${run.topImpl}
+  set_attribute impl $top      hd.impl       1
+  set_attribute impl $top      opt_directive Explore
+--- 69,94 ----
   add_module $top
   set_attribute module $top    top_level     1
   set_attribute module $top    prj           $prjDir/$top.prj
 + set_attribute module $top    xdc           [list \
-+                                             $dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b0_8g_x72ecc.xdc \
-+                                             $dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc \
++                                             $dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc \
++                                             $dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc \
 + 					    ]
   set_attribute module $top    synth         ${run.topSynth}
   set_attribute module $top    synth_options "-flatten_hierarchy rebuilt -fanout_limit 400 -fsm_extraction one_hot -keep_equivalent_registers -resource_sharing off -no_lc -shreg_min_size 5 -no_iobuf"
@@ -37,4 +49,6 @@
 + 
   add_implementation $top
   set_attribute impl $top      top           $top
-  set_attribute impl $top      linkXDC       [list $xdcDir/b_xilinx_capi_pcie_gen3_alphadata_brd_topimp.xdc] 
+  set_attribute impl $top      impl          ${run.topImpl}
+  set_attribute impl $top      hd.impl       1
+  set_attribute impl $top      opt_directive Explore

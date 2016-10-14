@@ -409,7 +409,10 @@ ARCHITECTURE psl_accel OF psl_accel IS
 
       
   SIGNAL action_reset   : std_ulogic;
-  SIGNAL action_reset_n : std_ulogic;
+  SIGNAL action_reset_q : std_ulogic;
+  SIGNAL ddr3_reset_q   : std_ulogic;
+  SIGNAL ddr3_reset_m   : std_ulogic;
+  SIGNAL ddr3_reset_n_q : std_ulogic;
   SIGNAL ddr3_clk_p     : std_ulogic;
   SIGNAL locked         : std_ulogic;
   SIGNAL xk_d         : XK_D_T;
@@ -442,8 +445,29 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL c0_ddr3_interrupt          : STD_LOGIC;
                    
                    
-BEGIN              
-  action_reset_n <= NOT action_reset;
+BEGIN
+  registers : PROCESS (ha_pclock)
+  BEGIN
+    IF (rising_edge(ha_pclock)) THEN
+      action_reset_q <= action_reset;
+    END IF;
+  END PROCESS registers;
+
+  ddr3_reset : PROCESS (c0_ddr3_ui_clk)
+  BEGIN  -- PROCESS
+    IF (rising_edge(c0_ddr3_ui_clk)) THEN
+      IF ((action_reset   = '1') OR
+          (action_reset_q = '1')) THEN
+        ddr3_reset_m <= '1';
+      ELSE
+        ddr3_reset_m <= '0';
+      END IF;
+
+      ddr3_reset_q   <=     ddr3_reset_m;
+      ddr3_reset_n_q <= NOT ddr3_reset_m;
+    END IF;
+  END PROCESS ddr3_reset;
+
   --               
   --
   -- 
@@ -559,7 +583,6 @@ BEGIN
 -- --
 -- ddr3_pll_i : ddr3_pll
 --   port map ( 
---  
 --    -- Clock in ports
 --    ha_pclock => ha_pclock,
 --   -- Clock out ports  
@@ -602,7 +625,7 @@ BEGIN
       c0_ddr3_we_n => c1_ddr3_we_n,
       c0_ddr3_ui_clk => c0_ddr3_ui_clk,
       c0_ddr3_ui_clk_sync_rst => c0_ddr3_ui_clk_sync_rst,
-      c0_ddr3_aresetn => action_reset_n,
+      c0_ddr3_aresetn => ddr3_reset_n_q,
       c0_ddr3_s_axi_ctrl_awvalid => c0_ddr3_s_axi_ctrl_awvalid,
       c0_ddr3_s_axi_ctrl_awready => c0_ddr3_s_axi_ctrl_awready,
       c0_ddr3_s_axi_ctrl_awaddr => c0_ddr3_s_axi_ctrl_awaddr,
@@ -657,7 +680,7 @@ BEGIN
       c0_ddr3_s_axi_wready   => ddrk.axi_wready,              
       c0_ddr3_s_axi_wstrb    => kddr.axi_wstrb,   
       c0_ddr3_s_axi_wvalid   => kddr.axi_wvalid,               
-      sys_rst => action_reset
+      sys_rst => ddr3_reset_q
     );
 
 

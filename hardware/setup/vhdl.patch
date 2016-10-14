@@ -10,7 +10,7 @@
          attribute secure_config : string;
          attribute secure_config of psl_fpga : entity is "PROTECT";
          attribute secure_netlist : string;       
---- 59,105 ----
+--- 59,107 ----
          pci0_o_txn_out6: out std_logic;
          pci0_o_txp_out7: out std_logic;
          pci0_o_txn_out7: out std_logic;
@@ -21,8 +21,8 @@
 + --       user_sw_l          : in    std_logic;
 + --       led_l              : out   std_logic_vector(2 downto 0);
 + 
-+        c0_sys_clk_p : IN STD_LOGIC;
-+        c0_sys_clk_n : IN STD_LOGIC;
++        c0_sys_clk_p       : IN STD_LOGIC;
++        c0_sys_clk_n       : IN STD_LOGIC;
 +        c0_ddr3_addr       : out   std_logic_vector(15 downto 0);
 +        c0_ddr3_ba         : out   std_logic_vector(2 downto 0);
 +        c0_ddr3_ras_n      : out   std_logic;
@@ -39,6 +39,8 @@
 +        c0_ddr3_dqs_n      : inout std_logic_vector(8 downto 0);
 +        c0_ddr3_odt        : out   std_logic_vector(1 downto 0);
 + 
++        c1_sys_clk_p       : IN STD_LOGIC;
++        c1_sys_clk_n       : IN STD_LOGIC;
 +        c1_ddr3_addr       : out   std_logic_vector(15 downto 0);
 +        c1_ddr3_ba         : out   std_logic_vector(2 downto 0);
 +        c1_ddr3_ras_n      : out   std_logic;
@@ -67,7 +69,7 @@
   End Component psl_accel;
   
   Component base_img
---- 182,227 ----
+--- 182,229 ----
          ha_jeapar: in std_ulogic;
          ha_jcompar: in std_ulogic;
          ah_paren: out std_ulogic;
@@ -77,8 +79,8 @@
 !        -- connected to Xilinx memory controllers
 ! --       user_sw_l          : in    std_logic;
 ! --       led_l              : out   std_logic_vector(2 downto 0);
-!        c0_sys_clk_p : IN STD_LOGIC;
-!        c0_sys_clk_n : IN STD_LOGIC;
+!        c0_sys_clk_p       : IN STD_LOGIC;
+!        c0_sys_clk_n       : IN STD_LOGIC;
 !        c0_ddr3_addr       : out   std_logic_vector(15 downto 0);
 !        c0_ddr3_ba         : out   std_logic_vector(2 downto 0);
 !        c0_ddr3_ras_n      : out   std_logic;
@@ -95,6 +97,8 @@
 !        c0_ddr3_dqs_n      : inout std_logic_vector(8 downto 0);
 !        c0_ddr3_odt        : out   std_logic_vector(1 downto 0);
 ! 
+!        c1_sys_clk_p       : IN STD_LOGIC;
+!        c1_sys_clk_n       : IN STD_LOGIC;
 !        c1_ddr3_addr       : out   std_logic_vector(15 downto 0);
 !        c1_ddr3_ba         : out   std_logic_vector(2 downto 0);
 !        c1_ddr3_ras_n      : out   std_logic;
@@ -123,7 +127,7 @@
       );
   
       gold_factory <= '1'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
---- 455,495 ----
+--- 455,497 ----
            ha_jeapar => ha0_jeapar,
            ha_jcompar => ha0_jcompar,
            ah_paren => a0h_paren,
@@ -147,6 +151,8 @@
 !          c0_ddr3_dqs_n   => c0_ddr3_dqs_n,
 !          c0_ddr3_odt     => c0_ddr3_odt,
 ! 
+!          c1_sys_clk_p    => c1_sys_clk_p,
+!          c1_sys_clk_n    => c1_sys_clk_n,
 !          c1_ddr3_addr    => c1_ddr3_addr,
 !          c1_ddr3_ba      => c1_ddr3_ba,
 !          c1_ddr3_ras_n   => c1_ddr3_ras_n,
