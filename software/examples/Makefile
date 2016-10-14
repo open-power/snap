@@ -27,11 +27,16 @@ LDLIBS += -lcxl
 endif
 
 demo_search_objs = action_search.o
-objs += action_search.o
 
 projs = demo_search demo_memcopy
 
 all: $(objs) $(projs)
+
+demo_search: action_search.o
+
+$(projs): $(libs)
+
+objs += action_search.o
 
 ### Deactivate existing implicit rule
 %: %.c

@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <malloc.h>
+#include <errno.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -32,14 +33,75 @@
 #include <libdonut.h>
 #include <donut_internal.h>
 
+enum action_state {
+	ACTION_IDLE = 0,
+	ACTION_RUNNING,
+	ACTION_ERROR,
+};
+
+struct dnut_card {
+	enum action_state state;
+};
+
+struct dnut_card card = {
+	.state = ACTION_IDLE,
+};
+
+static struct dnut_card *card_alloc_dev(const char *path __unused,
+					uint16_t vendor_id __unused,
+					uint16_t device_id __unused)
+{
+	return &card;
+}
+
+static int mmio_write32(struct dnut_card *_card __unused,
+			uint64_t offset __unused,
+			uint32_t data __unused)
+{
+	printf("%s(%p, %llx, %x)\n", __func__, _card,
+	       (long long)offset, data);
+	return 0;
+}
+
+static int mmio_read32(struct dnut_card *_card __unused,
+		       uint64_t offset __unused,
+		       uint32_t *data __unused)
+{
+	*data = ACTION_CONTROL_IDLE;
+
+	printf("%s(%p, %llx, %x)\n", __func__, _card,
+	       (long long)offset, *data);
+	return 0;
+}
+
+static int mmio_write64(struct dnut_card *_card __unused,
+			uint64_t offset __unused,
+			uint64_t data __unused)
+{
+	return 0;
+}
+
+static int mmio_read64(struct dnut_card *_card __unused,
+		       uint64_t offset __unused,
+		       uint64_t *data __unused)
+{
+	return 0;
+}
+
+
+static void card_free(struct dnut_card *_card __unused)
+{
+	return;
+}
+
 /* Hardware version of the lowlevel functions */
 static struct dnut_funcs funcs = {
-	.card_alloc_dev = NULL,
-	.mmio_write32 = NULL,
-	.mmio_read32 = NULL,
-	.mmio_write64 = NULL,
-	.mmio_read64 = NULL,
-	.card_free = NULL,
+	.card_alloc_dev = card_alloc_dev,
+	.mmio_write32 = mmio_write32,
+	.mmio_read32 = mmio_read32,
+	.mmio_write64 = mmio_write64,
+	.mmio_read64 = mmio_read64,
+	.card_free = card_free,
 };
 
 static struct dnut_action action = {

@@ -7,6 +7,26 @@
 extern "C" {
 #endif
 
+#ifndef __unused
+#  define __unused __attribute__((unused))
+#endif
+
+/* General ACTION registers */
+#define	ACTION_BASE		0x10000
+#define	ACTION_CONTROL		ACTION_BASE
+#define	ACTION_CONTROL_START	  0x00000001
+#define	ACTION_CONTROL_IDLE	  0x00000004
+#define	ACTION_CONTROL_RUN	  0x00000008
+
+/* ACTION Specific register setup: Input */
+#define ACTION_PARAMS_IN	(ACTION_BASE + 0x80) /* 0x80 - 0x90 */
+#define ACTION_JOB_IN		(ACTION_BASE + 0x90) /* 0x90 - 0xfc */
+
+/* ACTION Specific register setup: Output */
+#define ACTION_PARAMS_OUT	(ACTION_BASE + 0x100) /* 0x100 - 0x110 */
+#define ACTION_RETC		(ACTION_BASE + 0x104) /* 0x104 */
+#define ACTION_JOB_OUT		(ACTION_BASE + 0x110) /* 0x110 - 0x1fc */
+
 struct dnut_funcs {
 	struct dnut_card * (* card_alloc_dev)(const char *path,
 					      uint16_t vendor_id,

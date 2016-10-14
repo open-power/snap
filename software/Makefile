@@ -41,6 +41,8 @@ all: $(subdirs)
 # Rules for the recursive build
 tools: lib
 
+examples: lib
+
 ifdef BUILD_SIMCODE
 ifdef PSLSE_ROOT
 # environment variable PSLSE_ROOT defined by hardware setup scripts
