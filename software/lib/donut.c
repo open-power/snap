@@ -24,6 +24,7 @@
 
 #include <libdonut.h>
 #include <libcxl.h>
+#include <donut_internal.h>
 #include <donut_queue.h>
 
 #define timediff_usec(t0, t1)						\
@@ -97,8 +98,13 @@ struct dnut_data {
 	struct wed *wed;
 };
 
-struct dnut_card *dnut_card_alloc_dev(const char *path,
-			uint16_t vendor_id, uint16_t device_id)
+/**********************************************************************
+ * DIRECT CARD ACCESS
+ *********************************************************************/
+
+static struct dnut_card *__dnut_card_alloc_dev(const char *path,
+					       uint16_t vendor_id,
+					       uint16_t device_id)
 {
 	struct dnut_data *dn;
 	struct cxl_afu_h *afu_h = NULL;
@@ -148,9 +154,8 @@ struct dnut_card *dnut_card_alloc_dev(const char *path,
 	return NULL;
 }
 
-int dnut_mmio_write32(struct dnut_card *_card,
-			uint64_t offset,
-			uint32_t data)
+static int __dnut_mmio_write32(struct dnut_card *_card,
+			       uint64_t offset, uint32_t data)
 {
 	int rc = -1;
 	struct dnut_data *card = (struct dnut_data *)_card;
@@ -163,9 +168,8 @@ int dnut_mmio_write32(struct dnut_card *_card,
 	return rc;
 }
 
-int dnut_mmio_read32(struct dnut_card *_card,
-			uint64_t offset,
-			uint32_t *data)
+static int __dnut_mmio_read32(struct dnut_card *_card,
+			      uint64_t offset, uint32_t *data)
 {
 	int rc = -1;
 	struct dnut_data *card = (struct dnut_data *)_card;
@@ -179,9 +183,8 @@ int dnut_mmio_read32(struct dnut_card *_card,
 	return rc;
 }
 
-int dnut_mmio_write64(struct dnut_card *_card,
-			uint64_t offset,
-			uint64_t data)
+static int __dnut_mmio_write64(struct dnut_card *_card,
+			       uint64_t offset, uint64_t data)
 {
 	int rc = -1;
 	struct dnut_data *card = (struct dnut_data *)_card;
@@ -194,9 +197,8 @@ int dnut_mmio_write64(struct dnut_card *_card,
 	return rc;
 }
 
-int dnut_mmio_read64(struct dnut_card *_card,
-			uint64_t offset,
-			uint64_t *data)
+static int __dnut_mmio_read64(struct dnut_card *_card,
+			      uint64_t offset, uint64_t *data)
 {
 	int rc = -1;
 	struct dnut_data *card = (struct dnut_data *)_card;
@@ -210,7 +212,7 @@ int dnut_mmio_read64(struct dnut_card *_card,
 	return rc;
 }
 
-void dnut_card_free(struct dnut_card *_card)
+static void __dnut_card_free(struct dnut_card *_card)
 {
 	struct dnut_data *card = (struct dnut_data *)_card;
 
@@ -220,6 +222,61 @@ void dnut_card_free(struct dnut_card *_card)
 		free(card);
 	}
 }
+
+/* Hardware version of the lowlevel functions */
+static struct dnut_funcs hardware_funcs = {
+	.card_alloc_dev = __dnut_card_alloc_dev,
+	.mmio_write32 = __dnut_mmio_write32,
+	.mmio_read32 = __dnut_mmio_read32,
+	.mmio_write64 = __dnut_mmio_write64,
+	.mmio_read64 = __dnut_mmio_read64,
+	.card_free = __dnut_card_free,
+};
+
+/* We access the hardware via this function pointer struct */
+static struct dnut_funcs *df = &hardware_funcs;
+
+struct dnut_card *dnut_card_alloc_dev(const char *path,
+					uint16_t vendor_id,
+					uint16_t device_id)
+{
+	return df->card_alloc_dev(path, vendor_id, device_id);
+}
+
+int dnut_mmio_write32(struct dnut_card *_card,
+		      uint64_t offset, uint32_t data)
+{
+	return df->mmio_write32(_card, offset, data);
+}
+
+int dnut_mmio_read32(struct dnut_card *_card,
+		     uint64_t offset, uint32_t *data)
+{
+	return df->mmio_read32(_card, offset, data);
+}
+
+int dnut_mmio_write64(struct dnut_card *_card,
+			uint64_t offset, uint64_t data)
+{
+	return df->mmio_write64(_card, offset, data);
+}
+
+int dnut_mmio_read64(struct dnut_card *_card,
+		       uint64_t offset, uint64_t *data)
+{
+	return df->mmio_read64(_card, offset, data);
+}
+
+
+void dnut_card_free(struct dnut_card *_card)
+{
+	df->card_free(_card);
+}
+
+
+/**********************************************************************
+ * JOB QUEUE MODE
+ *********************************************************************/
 
 struct dnut_queue *dnut_queue_alloc_dev(const char *path,
 					uint16_t vendor_id, uint16_t device_id,
@@ -234,6 +291,8 @@ struct dnut_queue *dnut_queue_alloc_dev(const char *path,
  * Synchronous way to send a job away. Blocks until job is done.
  *
  * FIXME Example Code not working yet. Needs fixups and discussion.
+ *       Makes most sense if the job-manager is really implemented in the
+ *       FPGA.
  *
  * @queue	handle to streaming framework queue
  * @cjob	streaming framework job
@@ -282,7 +341,7 @@ void dnut_queue_free(struct dnut_queue *queue)
 }
 
 /**********************************************************************
- * FIXED KERNEL ASSIGNMENT MODE
+ * FIXED ACTION ASSIGNMENT MODE
  * E.g. for data streaming if kernel must stay alive for the whole
  *	program runtime.
  *********************************************************************/

@@ -72,9 +72,16 @@
  * to the available number of compute kernels.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DONUT_VERSION			"0.0.5"
 
-/* Error codes */
+/*
+ * Error codes FIXME alternaternatively we could use the errno codes
+ * and return -1 in case of error. This would be similar to libcxl.h.
+ */
 #define DNUT_OK				0  /* Everything great */
 #define DNUT_EBUSY			-1 /* Resource is busy */
 #define DNUT_ENODEV			-2 /* No such device */
@@ -407,5 +414,9 @@ int dnut_doorbell_rcv(struct dnut_doorbell *doorbell, uint8_t *msg,
 			unsigned int msg_size);
 
 void dnut_doorbell_free(struct dnut_doorbell *doorbell);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*__LIBDONUT_H__ */

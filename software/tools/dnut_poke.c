@@ -22,9 +22,9 @@
 #include <asm/byteorder.h>
 #include <sys/mman.h>
 
-#include "dnut_tools.h"
-#include "force_cpu.h"
+#include <donut_tools.h>
 #include <libdonut.h>
+#include "force_cpu.h"
 
 int verbose_flag = 0;
 static int quiet = 0;

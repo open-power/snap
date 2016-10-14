@@ -35,6 +35,10 @@
 
 #include <sysexits.h>		/* standart application exit codes */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DNUT_TOOL_VERS_STRING	"3.0.25"
 
 /*****************************************************************************/
@@ -182,5 +186,9 @@ static inline void __hexdump(FILE *fp, const void *buff, unsigned int size)
 	}
 	fprintf(fp, "\n");
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif		/* __DNUT_TOOLS_H__ */
