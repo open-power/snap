@@ -503,9 +503,9 @@ BEGIN
     port map (
       clk_fw         => ha_pclock,
       clk_app        => ha_pclock,
-      rst            => action_reset,
+      rst            => action_reset_q,
       ddr3_clk       => ha_pclock,
-      ddr3_rst       => action_reset,
+      ddr3_rst       => action_reset_q,
 
       xk_d_i         => xk_d,
       kx_d_o         => kx_d,
@@ -522,7 +522,7 @@ BEGIN
   --
   --
 
-  action_reset_n <= NOT action_reset;
+  action_reset_n <= NOT action_reset_q;
   block_ram_i : block_RAM
     PORT MAP (
       s_aresetn      => action_reset_n,
