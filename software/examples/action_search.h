@@ -28,8 +28,8 @@ struct search_job {
 	struct dnut_addr pattern;
 	uint64_t nb_of_occurrences;
 	uint64_t next_input_addr;
-	uint64_t mmio_din;	/* private settins for this action */
-	uint64_t mmio_dout;	/* private settins for this action */
+	uint64_t mmio_din;	/* private settings for this action */
+	uint64_t mmio_dout;	/* private settings for this action */
 };
 
 #endif	/* __ACTION_SEARCH_H__ */
