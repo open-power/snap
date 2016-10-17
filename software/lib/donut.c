@@ -359,9 +359,10 @@ struct dnut_kernel *dnut_kernel_attach_dev(const char *path,
 			errno = ENODEV;
 		return NULL;
 	}
-	if (simulation_enabled())
-		dnut_map_funcs((struct dnut_data *)card, action_type);
-
+	if (simulation_enabled()) {
+		struct dnut_data *_card = (struct dnut_data *)card;
+		dnut_map_funcs(_card, action_type);
+	}
 	return (struct dnut_kernel *)card;
 }
 

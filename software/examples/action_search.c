@@ -28,21 +28,6 @@
 #include <donut_internal.h>
 #include <action_search.h>
 
-struct dnut_card {
-	uint32_t reserved;
-};
-
-struct dnut_card card = {
-	.reserved = 0xdeadbeef,
-};
-
-static void *card_alloc_dev(const char *path __unused,
-			    uint16_t vendor_id __unused,
-			    uint16_t device_id __unused)
-{
-	return &card;
-}
-
 static int mmio_write32(void *_card, uint64_t offs, uint32_t data)
 {
 	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
@@ -60,11 +45,6 @@ static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
 		  (long long)offs, *data);
 	return 0;
-}
-
-static void card_free(void *_card __unused)
-{
-	return;
 }
 
 static int action_main(struct dnut_action *action,
@@ -114,12 +94,8 @@ static int action_main(struct dnut_action *action,
 
 /* Hardware version of the lowlevel functions */
 static struct dnut_funcs funcs = {
-	.card_alloc_dev = card_alloc_dev,
 	.mmio_write32 = mmio_write32,
 	.mmio_read32 = mmio_read32,
-	.mmio_write64 = NULL,
-	.mmio_read64 = NULL,
-	.card_free = card_free,
 };
 
 static struct dnut_action action = {
@@ -129,7 +105,7 @@ static struct dnut_action action = {
 	.retc = 0x104,		/* preset value, should be 0 on success */
 	.state = ACTION_IDLE,
 	.main = action_main,
-	.priv_data = &card,	/* this is passed back as void *card */
+	.priv_data = NULL,	/* this is passed back as void *card */
 	.funcs = &funcs,
 	.next = NULL,
 };
