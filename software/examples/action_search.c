@@ -18,18 +18,11 @@
  * Example to use the FPGA to find patterns in a byte-stream.
  */
 
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <unistd.h>
-#include <getopt.h>
-#include <malloc.h>
 #include <errno.h>
 #include <string.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/time.h>
 
 #include <libdonut.h>
 #include <donut_internal.h>
@@ -50,28 +43,22 @@ static void *card_alloc_dev(const char *path __unused,
 	return &card;
 }
 
-static int mmio_write32(void *_card __unused,
-			uint64_t offset __unused,
-			uint32_t data __unused)
+static int mmio_write32(void *_card, uint64_t offs, uint32_t data)
 {
 	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
-		  (long long)offset, data);
+		  (long long)offs, data);
 	return 0;
 }
 
-static int mmio_read32(void *_card __unused,
-		       uint64_t offset __unused,
-		       uint32_t *data __unused)
+static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 {
 	struct dnut_action *action = (struct dnut_action *)_card;
 
-	*data = 0x12345678;
-
-	if (offset == ACTION_RETC)
+	if (offs == ACTION_RETC)
 		*data = action->retc;
 
 	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
-		  (long long)offset, *data);
+		  (long long)offs, *data);
 	return 0;
 }
 
@@ -142,7 +129,6 @@ static struct dnut_action action = {
 	.retc = 0x104,		/* preset value, should be 0 on success */
 	.state = ACTION_IDLE,
 	.main = action_main,
-
 	.priv_data = &card,	/* this is passed back as void *card */
 	.funcs = &funcs,
 	.next = NULL,
