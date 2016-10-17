@@ -63,6 +63,9 @@ static int mmio_read32(void *_card __unused,
 {
 	*data = 0x12345678;
 
+	if (offset == ACTION_RETC)
+		*data = 0;
+
 	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
 		  (long long)offset, *data);
 	return 0;
