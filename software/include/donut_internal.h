@@ -11,6 +11,8 @@ extern "C" {
 #  define __unused __attribute__((unused))
 #endif
 
+#define	CACHELINE_BYTES		128
+
 /* General ACTION registers */
 #define	ACTION_BASE		0x10000
 #define	ACTION_CONTROL		ACTION_BASE
@@ -28,20 +30,21 @@ extern "C" {
 #define ACTION_JOB_OUT		(ACTION_BASE + 0x110) /* 0x110 - 0x1fc */
 
 struct dnut_funcs {
-	struct dnut_card * (* card_alloc_dev)(const char *path,
-					      uint16_t vendor_id,
-					      uint16_t device_id);
-	int (* mmio_write32)(struct dnut_card *card,
-			     uint64_t offset,
-			     uint32_t data);
-	int (* mmio_read32)(struct dnut_card *card, uint64_t offset,
-			    uint32_t *data);
-	int (* mmio_write64)(struct dnut_card *card, uint64_t offset,
-			     uint64_t data);
-	int (* mmio_read64)(struct dnut_card *card, uint64_t offset,
-			    uint64_t *data);
-	void (* card_free)(struct dnut_card *card);
+	void * (* card_alloc_dev)(const char *path, uint16_t vendor_id,
+				  uint16_t device_id);
+	int (* mmio_write32)(void *card, uint64_t offset, uint32_t data);
+	int (* mmio_read32)(void *card, uint64_t offset, uint32_t *data);
+	int (* mmio_write64)(void *card, uint64_t offset, uint64_t data);
+	int (* mmio_read64)(void *card, uint64_t offset, uint64_t *data);
+	void (* card_free)(void *card);
 };
+
+int action_trace_enabled(void);
+
+#define act_trace(fmt, ...) do {					\
+		if (action_trace_enabled())				\
+			fprintf(stderr, "A " fmt, ## __VA_ARGS__);	\
+	} while (0)
 
 /**
  * Register a software version of the FPGA action to enable us
@@ -49,12 +52,27 @@ struct dnut_funcs {
  * implement the host applications even before the real hardware
  * implementation is completely working.
  */
+enum dnut_action_state {
+	ACTION_IDLE = 0,
+	ACTION_RUNNING,
+	ACTION_ERROR,
+};
+
+struct dnut_action;
+
+typedef int (*action_main_t)(struct dnut_action *action,
+			     void *job, unsigned int job_len);
+
 struct dnut_action {
 	uint16_t vendor_id;
 	uint16_t device_id;
 	uint16_t action_type;
-	unsigned int instances;
+	enum dnut_action_state state;
 	struct dnut_funcs *funcs;
+	void *priv_data;
+	uint8_t job[CACHELINE_BYTES];
+	action_main_t main;
+
 	struct dnut_action *next;
 };
 

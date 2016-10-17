@@ -33,55 +33,49 @@
 #include <libdonut.h>
 #include <donut_internal.h>
 
-enum action_state {
-	ACTION_IDLE = 0,
-	ACTION_RUNNING,
-	ACTION_ERROR,
-};
-
 struct dnut_card {
-	enum action_state state;
+	uint32_t reserved;
 };
 
 struct dnut_card card = {
-	.state = ACTION_IDLE,
+	.reserved = 0xdeadbeef,
 };
 
-static struct dnut_card *card_alloc_dev(const char *path __unused,
-					uint16_t vendor_id __unused,
-					uint16_t device_id __unused)
+static void *card_alloc_dev(const char *path __unused,
+			    uint16_t vendor_id __unused,
+			    uint16_t device_id __unused)
 {
 	return &card;
 }
 
-static int mmio_write32(struct dnut_card *_card __unused,
+static int mmio_write32(void *_card __unused,
 			uint64_t offset __unused,
 			uint32_t data __unused)
 {
-	printf("%s(%p, %llx, %x)\n", __func__, _card,
-	       (long long)offset, data);
+	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
+		  (long long)offset, data);
 	return 0;
 }
 
-static int mmio_read32(struct dnut_card *_card __unused,
+static int mmio_read32(void *_card __unused,
 		       uint64_t offset __unused,
 		       uint32_t *data __unused)
 {
-	*data = ACTION_CONTROL_IDLE;
+	*data = 0x12345678;
 
-	printf("%s(%p, %llx, %x)\n", __func__, _card,
-	       (long long)offset, *data);
+	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
+		  (long long)offset, *data);
 	return 0;
 }
 
-static int mmio_write64(struct dnut_card *_card __unused,
+static int mmio_write64(void *_card __unused,
 			uint64_t offset __unused,
 			uint64_t data __unused)
 {
 	return 0;
 }
 
-static int mmio_read64(struct dnut_card *_card __unused,
+static int mmio_read64(void *_card __unused,
 		       uint64_t offset __unused,
 		       uint64_t *data __unused)
 {
@@ -89,9 +83,16 @@ static int mmio_read64(struct dnut_card *_card __unused,
 }
 
 
-static void card_free(struct dnut_card *_card __unused)
+static void card_free(void *_card __unused)
 {
 	return;
+}
+
+static int action_main(struct dnut_action *action,
+		       void *job, unsigned int job_len)
+{
+	fprintf(stderr, "%s(%p, %p, %d)\n", __func__, action, job, job_len);
+	return 0;
 }
 
 /* Hardware version of the lowlevel functions */
@@ -108,7 +109,10 @@ static struct dnut_action action = {
 	.vendor_id = DNUT_VENDOR_ID_ANY,
 	.device_id = DNUT_DEVICE_ID_ANY,
 	.action_type = 0xC0FE,
-	.instances = 1,
+	.state = ACTION_IDLE,
+	.main = action_main,
+
+	.priv_data = &card,	/* this is passed back as void *card */
 	.funcs = &funcs,
 	.next = NULL,
 };
