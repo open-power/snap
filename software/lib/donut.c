@@ -115,7 +115,7 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 	struct wed *wed = NULL;
 	int rc;
 
-	dn = malloc(sizeof(*dn));
+	dn = calloc(1, sizeof(*dn));
 	if (NULL == dn)
 		goto __dnut_alloc_err;
 
@@ -581,7 +581,7 @@ static void *sw_card_alloc_dev(const char *path __unused,
 {
 	struct dnut_data *dn;
 
-	dn = malloc(sizeof(*dn));
+	dn = calloc(1, sizeof(*dn));
 	if (NULL == dn)
 		goto __dnut_alloc_err;
 
