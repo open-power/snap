@@ -62,5 +62,5 @@ uninstall:
 	done
 
 clean distclean:
-	$(RM) $(objs) $(projs)
+	$(RM) $(objs) $(projs) *.log
 
