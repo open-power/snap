@@ -11,6 +11,26 @@ extern "C" {
 #  define __unused __attribute__((unused))
 #endif
 
+#ifndef ARRAY_SIZE
+#  define ARRAY_SIZE(a)  (sizeof((a)) / sizeof((a)[0]))
+#endif
+
+#ifndef ABS
+#  define ABS(a)	 (((a) < 0) ? -(a) : (a))
+#endif
+
+#ifndef MAX
+#  define MAX(a,b)	({ __typeof__ (a) _a = (a); \
+			   __typeof__ (b) _b = (b); \
+			   (_a) > (_b) ? (_a) : (_b); })
+#endif
+
+#ifndef MIN
+#  define MIN(a,b)	({ __typeof__ (a) _a = (a); \
+			   __typeof__ (b) _b = (b); \
+			   (_a) < (_b) ? (_a) : (_b); })
+#endif
+
 #define	CACHELINE_BYTES		128
 
 /* General ACTION registers */
@@ -67,10 +87,12 @@ struct dnut_action {
 	uint16_t vendor_id;
 	uint16_t device_id;
 	uint16_t action_type;
+
 	enum dnut_action_state state;
 	struct dnut_funcs *funcs;
 	void *priv_data;
 	uint8_t job[CACHELINE_BYTES];
+	uint32_t retc;
 	action_main_t main;
 
 	struct dnut_action *next;

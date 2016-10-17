@@ -26,12 +26,14 @@
 #include <getopt.h>
 #include <malloc.h>
 #include <errno.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 
 #include <libdonut.h>
 #include <donut_internal.h>
+#include <action_search.h>
 
 struct dnut_card {
 	uint32_t reserved;
@@ -61,30 +63,17 @@ static int mmio_read32(void *_card __unused,
 		       uint64_t offset __unused,
 		       uint32_t *data __unused)
 {
+	struct dnut_action *action = (struct dnut_action *)_card;
+
 	*data = 0x12345678;
 
 	if (offset == ACTION_RETC)
-		*data = 0;
+		*data = action->retc;
 
 	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
 		  (long long)offset, *data);
 	return 0;
 }
-
-static int mmio_write64(void *_card __unused,
-			uint64_t offset __unused,
-			uint64_t data __unused)
-{
-	return 0;
-}
-
-static int mmio_read64(void *_card __unused,
-		       uint64_t offset __unused,
-		       uint64_t *data __unused)
-{
-	return 0;
-}
-
 
 static void card_free(void *_card __unused)
 {
@@ -94,7 +83,45 @@ static void card_free(void *_card __unused)
 static int action_main(struct dnut_action *action,
 		       void *job, unsigned int job_len)
 {
-	fprintf(stderr, "%s(%p, %p, %d)\n", __func__, action, job, job_len);
+	struct search_job *js = (struct search_job *)job;
+	char *needle, *haystack;
+	unsigned int needle_len, haystack_len, offs_used, offs_max;
+	uint64_t *offs;
+
+	act_trace("%s(%p, %p, %d)\n", __func__, action, job, job_len);
+	memset((uint8_t *)js->output.addr, 0, js->output.size);
+
+	offs = (uint64_t *)(unsigned long)js->output.addr;
+	offs_max = js->output.size / sizeof(uint64_t);
+	offs_used = 0;
+
+	haystack = (char *)(unsigned long)js->input.addr;
+	haystack_len = js->input.size;
+
+	needle = (char *)(unsigned long)js->pattern.addr;
+	needle_len = js->pattern.size;
+
+	js->next_input_addr = 0;
+	while (haystack_len != 0) {
+		if (needle_len > haystack_len) {
+			js->next_input_addr = 0;
+			break;	/* cannot find more */
+		}
+		if (strncmp(haystack, needle, needle_len) == 0) {
+			if (offs_used == offs_max) {
+				js->next_input_addr = (unsigned long)haystack;
+				break;	/* cannot put more in result array */
+			}
+			/* write down result */
+			offs[offs_used] = (unsigned long)haystack;
+			offs_used++;
+		}
+		haystack++;	/* uuh, is that performing badly ;-) */
+		haystack_len--;
+	}
+
+	js->nb_of_occurrences = offs_used;
+	action->retc = 0x0;
 	return 0;
 }
 
@@ -103,8 +130,8 @@ static struct dnut_funcs funcs = {
 	.card_alloc_dev = card_alloc_dev,
 	.mmio_write32 = mmio_write32,
 	.mmio_read32 = mmio_read32,
-	.mmio_write64 = mmio_write64,
-	.mmio_read64 = mmio_read64,
+	.mmio_write64 = NULL,
+	.mmio_read64 = NULL,
 	.card_free = card_free,
 };
 
@@ -112,6 +139,7 @@ static struct dnut_action action = {
 	.vendor_id = DNUT_VENDOR_ID_ANY,
 	.device_id = DNUT_DEVICE_ID_ANY,
 	.action_type = 0xC0FE,
+	.retc = 0x104,		/* preset value, should be 0 on success */
 	.state = ACTION_IDLE,
 	.main = action_main,
 

@@ -168,7 +168,7 @@ static inline void dnut_job_set(struct dnut_job *djob, uint64_t action,
 				void *waddr, unsigned int wsize)
 {
 	djob->action = action;
-	djob->retc = 0x00000000;
+	djob->retc = 0xffffffff;
 	djob->dnut_addr_items = -1; /* FIXME Do we need this? */
 	djob->workitem_addr = (unsigned long)waddr;
 	djob->workitem_size = wsize;
