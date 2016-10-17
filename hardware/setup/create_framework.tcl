@@ -56,9 +56,9 @@ set_property SOURCE_SET sources_1 [get_filesets sim_1]
 add_files    -fileset sim_1 -norecurse -scan_for_includes $pslse_dir/afu_driver/verilog/top.v
 set_property file_type SystemVerilog [get_files  $pslse_dir/afu_driver/verilog/top.v]
 add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/hdl/psl_accel_sim.vhd
-add_files    -fileset sim_1            -scan_for_includes $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/
-remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_twindie.vhd
-remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_lwb.vhd
+#DDR3 add_files    -fileset sim_1            -scan_for_includes $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/
+#DDR3 remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_twindie.vhd
+#DDR3 remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_lwb.vhd
 
 update_compile_order -fileset sim_1
 
@@ -67,10 +67,10 @@ add_files -norecurse $root_dir/ip/ram_576to144x64_2p/ram_576to144x64_2p.xci
 export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_576to144x64_2p/ram_576to144x64_2p.xci"] -force -quiet
 add_files -norecurse $root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci
 export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci"] -force -quiet
-add_files -norecurse $root_dir/ip/ddr3sdram/ddr3sdram.xci
-export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr3sdram/ddr3sdram.xci"] -force -quiet
-#add_files -norecurse $root_dir/ip/ddr3_pll/ddr3_pll.xci
-#export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr3_pll/ddr3_pll.xci"] -force -quiet
+#DDR3 add_files -norecurse $root_dir/ip/ddr3sdram/ddr3sdram.xci
+#DDR3 export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr3sdram/ddr3sdram.xci"] -force -quiet
+add_files -norecurse $root_dir/ip/block_RAM/block_RAM.xci
+export_ip_user_files -of_objects  [get_files "$root_dir/ip/block_RAM/block_RAM.xci"] -force -quiet
 update_compile_order -fileset sources_1
 
 # default sim property
@@ -103,13 +103,13 @@ if { $action_example == 1 } {
 read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict
 #add_files -norecurse $build_dir/Checkpoint/b_route_design.dcp
 update_compile_order -fileset sources_1
-add_files -fileset constrs_1 -norecurse $build_dir/Sources/xdc/b_xilinx_capi_pcie_gen3_alphadata_brd_topimp.xdc
+#add_files -fileset constrs_1 -norecurse $build_dir/Sources/xdc/b_xilinx_capi_pcie_gen3_alphadata_brd_topimp.xdc
 
 # IMPORT DDR3 XDCs 
-add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc
-add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc
-add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b0_8g_x72ecc.xdc
-add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc
+#add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc
+#add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc
+#add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b0_8g_x72ecc.xdc
+#add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc
 
 
 # EXPORT SIMULATION

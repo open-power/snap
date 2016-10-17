@@ -56,17 +56,17 @@ startgroup
 create_bd_port -dir I -type clk clk
 set_property CONFIG.FREQ_HZ 250000000 [get_bd_ports clk]
 endgroup
-create_bd_port -dir I -type rst ddr3_rst_n
-create_bd_port -dir I -type clk ddr3_clk
-set_property CONFIG.FREQ_HZ 200000000 [get_bd_ports ddr3_clk]
+#create_bd_port -dir I -type rst ddr3_rst_n
+#create_bd_port -dir I -type clk ddr3_clk
+#set_property CONFIG.FREQ_HZ 200000000 [get_bd_ports ddr3_clk]
 startgroup
 create_bd_port -dir I -type rst rstn
 endgroup
 create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 c0_ddr3
 set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {64}] [get_bd_intf_ports c0_ddr3]
 set_property -dict [list CONFIG.DATA_WIDTH {128}] [get_bd_intf_ports c0_ddr3]
-set_property CONFIG.ASSOCIATED_BUSIF {c0_ddr3} [get_bd_ports /ddr3_clk]
-set_property CONFIG.ASSOCIATED_RESET {ddr3_rst_n} [get_bd_ports /ddr3_clk]
+set_property CONFIG.ASSOCIATED_BUSIF {c0_ddr3} [get_bd_ports /clk]
+#set_property CONFIG.ASSOCIATED_RESET {ddr3_rst_n} [get_bd_ports /ddr3_clk]
 set_property CONFIG.ASSOCIATED_RESET {rstn} [get_bd_ports /clk]
 set_property CONFIG.ASSOCIATED_BUSIF {s_axi:m_axi} [get_bd_ports /clk]
 
@@ -125,14 +125,24 @@ set_property -dict [list CONFIG.NUM_MI {1}] [get_bd_cells axi_interconnect_2]
 connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_2/ARESETN]
 connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_2/S00_ARESETN]
 connect_bd_net [get_bd_ports rstn] [get_bd_pins action_memcopy_0/m01_axi_aresetn]
-connect_bd_net [get_bd_ports ddr3_rst_n] [get_bd_pins axi_interconnect_2/M00_ARESETN]
+#connect_bd_net [get_bd_ports ddr3_rst_n] [get_bd_pins axi_interconnect_2/M00_ARESETN]
+connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_2/M00_ARESETN]
 connect_bd_net [get_bd_ports clk] [get_bd_pins axi_interconnect_2/ACLK]
 connect_bd_net [get_bd_ports clk] [get_bd_pins axi_interconnect_2/S00_ACLK]
 connect_bd_net [get_bd_ports clk] [get_bd_pins action_memcopy_0/m01_axi_aclk]
-connect_bd_net [get_bd_ports ddr3_clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
+#connect_bd_net [get_bd_ports ddr3_clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
+connect_bd_net [get_bd_ports clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
 connect_bd_intf_net [get_bd_intf_pins action_memcopy_0/m01_axi] -boundary_type upper [get_bd_intf_pins axi_interconnect_2/S00_AXI]
 connect_bd_intf_net [get_bd_intf_pins axi_interconnect_2/M00_AXI] [get_bd_intf_ports c0_ddr3]
 
+#AXI SLICE Register
+#startgroup
+#create_bd_cell -type ip -vlnv xilinx.com:ip:axi_register_slice:2.1 axi_register_slice_0
+#endgroup
+#connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_2/M00_AXI] [get_bd_intf_pins axi_register_slice_0/S_AXI]
+#connect_bd_intf_net [get_bd_intf_ports c0_ddr3] [get_bd_intf_pins axi_register_slice_0/M_AXI]
+#connect_bd_net [get_bd_ports ddr3_clk] [get_bd_pins axi_register_slice_0/aclk]
+#connect_bd_net [get_bd_ports ddr3_rst_n] [get_bd_pins axi_register_slice_0/aresetn]
 
 #AXI Clock Converter
 #startgroup
