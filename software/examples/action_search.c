@@ -92,21 +92,18 @@ static int action_main(struct dnut_action *action,
 	return 0;
 }
 
-/* Hardware version of the lowlevel functions */
-static struct dnut_funcs funcs = {
-	.mmio_write32 = mmio_write32,
-	.mmio_read32 = mmio_read32,
-};
-
 static struct dnut_action action = {
 	.vendor_id = DNUT_VENDOR_ID_ANY,
 	.device_id = DNUT_DEVICE_ID_ANY,
 	.action_type = 0xC0FE,
+
 	.retc = 0x104,		/* preset value, should be 0 on success */
 	.state = ACTION_IDLE,
 	.main = action_main,
 	.priv_data = NULL,	/* this is passed back as void *card */
-	.funcs = &funcs,
+	.mmio_write32 = mmio_write32,
+	.mmio_read32 = mmio_read32,
+
 	.next = NULL,
 };
 

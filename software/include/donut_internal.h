@@ -89,11 +89,15 @@ struct dnut_action {
 	uint16_t action_type;
 
 	enum dnut_action_state state;
-	struct dnut_funcs *funcs;
 	void *priv_data;
 	uint8_t job[CACHELINE_BYTES];
 	uint32_t retc;
 	action_main_t main;
+
+	int (* mmio_write32)(void *card, uint64_t offset, uint32_t data);
+	int (* mmio_read32)(void *card, uint64_t offset, uint32_t *data);
+	int (* mmio_write64)(void *card, uint64_t offset, uint64_t data);
+	int (* mmio_read64)(void *card, uint64_t offset, uint64_t *data);
 
 	struct dnut_action *next;
 };
