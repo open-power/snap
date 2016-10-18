@@ -321,6 +321,12 @@ ARCHITECTURE afu OF afu IS
   constant sys_clk_period : time := 2.5 ns;
   SIGNAL action_reset : std_ulogic;
   SIGNAL action_reset_n : std_ulogic;
+  SIGNAL action_reset_q : std_ulogic;
+  SIGNAL ddr3_reset_q   : std_ulogic;
+  SIGNAL ddr3_reset_m   : std_ulogic;
+  SIGNAL ddr3_reset_n_q : std_ulogic;
+  SIGNAL ddr3_clk_p     : std_ulogic;
+  SIGNAL locked         : std_ulogic;
   SIGNAL xk_d         : XK_D_T;
   SIGNAL kx_d         : KX_D_T;
   SIGNAL sk_d         : SK_D_T;
@@ -370,7 +376,25 @@ ARCHITECTURE afu OF afu IS
   
                    
 BEGIN              
-  action_reset_n <= NOT action_reset;
+  registers : PROCESS (ha_pclock)
+  BEGIN
+    IF (rising_edge(ha_pclock)) THEN
+      action_reset_q <= action_reset;
+    END IF;
+  END PROCESS registers;
+  ddr3_reset : PROCESS (c0_ddr3_ui_clk)
+  BEGIN  -- PROCESS
+    IF (rising_edge(c0_ddr3_ui_clk)) THEN
+      IF ((action_reset   = '1') OR
+          (action_reset_q = '1')) THEN
+        ddr3_reset_m <= '1';
+      ELSE
+        ddr3_reset_m <= '0';
+      END IF;
+      ddr3_reset_q   <=     ddr3_reset_m;
+      ddr3_reset_n_q <= NOT ddr3_reset_m;
+    END IF;
+  END PROCESS ddr3_reset;
   --               
   --
   -- 
@@ -465,9 +489,9 @@ BEGIN
     port map (
       clk_fw         => ha_pclock,
       clk_app        => ha_pclock,
-      rst            => action_reset,
-      ddr3_clk       => c0_sys_clk_p,
-      ddr3_rst       => action_reset,
+      rst            => action_reset_q,
+      ddr3_clk       => ha_pclock,
+      ddr3_rst       => action_reset_q,
 
       xk_d_i         => xk_d,
       kx_d_o         => kx_d,
@@ -495,12 +519,12 @@ BEGIN
   c0_ddr3_s_axi_ctrl_araddr <= (others => '0');
   c0_ddr3_s_axi_ctrl_rready <= '0';
 
-  c0_sys_clk_p <= transport not c0_sys_clk_p after sys_clk_period / 2;
-  
+  action_reset_n <= NOT action_reset_q;
+
     block_ram_i : block_RAM
     PORT MAP (
       s_aresetn      => action_reset_n,
-      s_aclk         => c0_sys_clk_p,
+      s_aclk         => ha_pclock,
       s_axi_araddr   => kddr.axi_araddr(31 downto 0), 
       s_axi_arburst  => kddr.axi_arburst(1 downto 0), 
       s_axi_arid     => "0000",
