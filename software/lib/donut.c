@@ -608,7 +608,6 @@ static int sw_mmio_write32(void *_card __unused,
 	int rc = 0;
 	struct dnut_data *card = (struct dnut_data *)_card;
 	struct dnut_action *a = card->action;
-	struct dnut_funcs *f = a->funcs;
 	struct queue_workitem *w = (struct queue_workitem *)a->job;
 
 	dnut_trace("  %s(%p, %llx, %x)\n", __func__, _card,
@@ -634,8 +633,8 @@ static int sw_mmio_write32(void *_card __unused,
 		*(uint32_t *)&a->job[offs - ACTION_PARAMS_IN] = data;
 	}
 
-	if (f->mmio_write32)
-		rc = f->mmio_write32(a, offs, data);
+	if (a->mmio_write32)
+		rc = a->mmio_write32(a, offs, data);
 
 	return rc;
 }
@@ -647,7 +646,6 @@ static int sw_mmio_read32(void *_card __unused,
 	int rc = 0;
 	struct dnut_data *card = (struct dnut_data *)_card;
 	struct dnut_action *a = card->action;
-	struct dnut_funcs *f = a->funcs;
 	struct queue_workitem *w = (struct queue_workitem *)a->job;
 
 	if ((offs % 0x4) != 0x0) {
@@ -676,8 +674,8 @@ static int sw_mmio_read32(void *_card __unused,
 			*data = *(uint32_t *)
 				&w->user.data[idx];
 			break;
-		} else if (f->mmio_read32)
-			rc = f->mmio_read32(a, offs, data);
+		} else if (a->mmio_read32)
+			rc = a->mmio_read32(a, offs, data);
 	}
 
 	dnut_trace("  %s(%p, %llx, %x) rc=%d\n", __func__, _card,
@@ -690,10 +688,9 @@ static int sw_mmio_write64(void *_card, uint64_t offs, uint64_t data)
 	int rc = 0;
 	struct dnut_data *card = (struct dnut_data *)_card;
 	struct dnut_action *a = card->action;
-	struct dnut_funcs *f = a->funcs;
 
-	if (f->mmio_write64)
-		rc = f->mmio_write64(a, offs, data);
+	if (a->mmio_write64)
+		rc = a->mmio_write64(a, offs, data);
 
 	return rc;
 }
@@ -703,10 +700,9 @@ static int sw_mmio_read64(void *_card, uint64_t offs, uint64_t *data)
 	int rc = 0;
 	struct dnut_data *card = (struct dnut_data *)_card;
 	struct dnut_action *a = card->action;
-	struct dnut_funcs *f = a->funcs;
 
-	if (f->mmio_read64)
-		rc = f->mmio_read64(a, offs, data);
+	if (a->mmio_read64)
+		rc = a->mmio_read64(a, offs, data);
 
 	return rc;
 }
