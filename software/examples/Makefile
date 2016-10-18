@@ -26,11 +26,17 @@ else
 LDLIBS += -lcxl
 endif
 
+demo_search_objs = action_search.o
+
 projs = demo_search demo_memcopy
 
-all: $(projs)
+all: $(objs) $(projs)
 
-$(projs): $(objs) $(libs)
+demo_search: action_search.o
+
+$(projs): $(libs)
+
+objs += action_search.o
 
 ### Deactivate existing implicit rule
 %: %.c
@@ -56,5 +62,5 @@ uninstall:
 	done
 
 clean distclean:
-	$(RM) $(objs) $(projs)
+	$(RM) $(objs) $(projs) *.log
 

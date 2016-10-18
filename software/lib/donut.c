@@ -20,10 +20,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <errno.h>
 #include <sys/time.h>
 
 #include <libdonut.h>
 #include <libcxl.h>
+#include <donut_internal.h>
+#include <donut_tools.h>
 #include <donut_queue.h>
 
 #define timediff_usec(t0, t1)						\
@@ -31,44 +34,41 @@
 		  ((t1)->tv_sec * 1000000 + (t1)->tv_usec)))
 
 /* Trace hardware implementation */
-static int dnut_trace = 0x0;
-#define trace_enabled()       (dnut_trace & 0x1)
+static unsigned int dnut_trace = 0x0;
+static unsigned int dnut_config = 0x0;
+static struct dnut_action *actions = NULL;
+
+#define dnut_trace_enabled()  (dnut_trace & 0x1)
 #define reg_trace_enabled()   (dnut_trace & 0x2)
+#define sim_trace_enabled()   (dnut_trace & 0x4)
+
+int action_trace_enabled(void)
+{
+	return dnut_trace & 0x8;
+}
+
+#define simulation_enabled()  (dnut_config & 0x1)
+
+#define dnut_trace(fmt, ...) do {					\
+		if (dnut_trace_enabled())				\
+			fprintf(stderr, "D " fmt, ## __VA_ARGS__);	\
+	} while (0)
 
 #define reg_trace(fmt, ...) do {					\
 		if (reg_trace_enabled())				\
 			fprintf(stderr, "R " fmt, ## __VA_ARGS__);	\
 	} while (0)
 
-#ifndef MIN
-#  define MIN(a,b)	({ __typeof__ (a) _a = (a); \
-			   __typeof__ (b) _b = (b); \
-			_a < _b ? _a : _b; })
-#endif
-
-#define	CACHELINE_BYTES		128
+#define sim_trace(fmt, ...) do {					\
+		if (sim_trace_enabled())				\
+			fprintf(stderr, "S " fmt, ## __VA_ARGS__);	\
+	} while (0)
 
 #define	FW_BASE_ADDR		0x00100
 #define	FW_BASE_ADDR8		0x00108
 
 /* FIXME Some of those addresses will be hidden in libdonut on future
    releases. */
-
-/* General ACTION registers */
-#define	ACTION_BASE		0x10000
-#define	ACTION_CONTROL		ACTION_BASE
-#define	ACTION_CONTROL_START	  0x00000001
-#define	ACTION_CONTROL_IDLE	  0x00000004
-#define	ACTION_CONTROL_RUN	  0x00000008
-
-/* ACTION Specific register setup: Input */
-#define ACTION_PARAMS_IN	(ACTION_BASE + 0x80) /* 0x80 - 0x90 */
-#define ACTION_JOB_IN		(ACTION_BASE + 0x90) /* 0x90 - 0xfc */
-
-/* ACTION Specific register setup: Output */
-#define ACTION_PARAMS_OUT	(ACTION_BASE + 0x100) /* 0x100 - 0x110 */
-#define ACTION_RETC		(ACTION_BASE + 0x104) /* 0x104 */
-#define ACTION_JOB_OUT		(ACTION_BASE + 0x110) /* 0x110 - 0x1fc */
 
 /* TO BE REMOVED ACTION Specific register setup */
 #define	ACTION_4		(ACTION_BASE + 0x04)
@@ -93,19 +93,29 @@ struct dnut_data {
 	struct cxl_afu_h *afu_h;
 	uint16_t vendor_id;
 	uint16_t device_id;
+	uint16_t action_type;
 	int afu_fd;
+
 	struct wed *wed;
+	struct dnut_action *action; /* software simulation mode */
 };
 
-struct dnut_card *dnut_card_alloc_dev(const char *path,
-			uint16_t vendor_id, uint16_t device_id)
+/* To be used for software simulation, use funcs provided by action */
+static int dnut_map_funcs(struct dnut_data *card, uint16_t action_type);
+
+/**********************************************************************
+ * DIRECT CARD ACCESS
+ *********************************************************************/
+
+static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
+				    uint16_t device_id)
 {
 	struct dnut_data *dn;
 	struct cxl_afu_h *afu_h = NULL;
 	struct wed *wed = NULL;
 	int rc;
 
-	dn = malloc(sizeof(*dn));
+	dn = calloc(1, sizeof(*dn));
 	if (NULL == dn)
 		goto __dnut_alloc_err;
 
@@ -148,9 +158,7 @@ struct dnut_card *dnut_card_alloc_dev(const char *path,
 	return NULL;
 }
 
-int dnut_mmio_write32(struct dnut_card *_card,
-			uint64_t offset,
-			uint32_t data)
+static int hw_dnut_mmio_write32(void *_card, uint64_t offset, uint32_t data)
 {
 	int rc = -1;
 	struct dnut_data *card = (struct dnut_data *)_card;
@@ -163,9 +171,8 @@ int dnut_mmio_write32(struct dnut_card *_card,
 	return rc;
 }
 
-int dnut_mmio_read32(struct dnut_card *_card,
-			uint64_t offset,
-			uint32_t *data)
+static int hw_dnut_mmio_read32(void *_card,
+			      uint64_t offset, uint32_t *data)
 {
 	int rc = -1;
 	struct dnut_data *card = (struct dnut_data *)_card;
@@ -179,9 +186,7 @@ int dnut_mmio_read32(struct dnut_card *_card,
 	return rc;
 }
 
-int dnut_mmio_write64(struct dnut_card *_card,
-			uint64_t offset,
-			uint64_t data)
+static int hw_dnut_mmio_write64(void *_card, uint64_t offset, uint64_t data)
 {
 	int rc = -1;
 	struct dnut_data *card = (struct dnut_data *)_card;
@@ -194,9 +199,7 @@ int dnut_mmio_write64(struct dnut_card *_card,
 	return rc;
 }
 
-int dnut_mmio_read64(struct dnut_card *_card,
-			uint64_t offset,
-			uint64_t *data)
+static int hw_dnut_mmio_read64(void *_card, uint64_t offset, uint64_t *data)
 {
 	int rc = -1;
 	struct dnut_data *card = (struct dnut_data *)_card;
@@ -210,7 +213,7 @@ int dnut_mmio_read64(struct dnut_card *_card,
 	return rc;
 }
 
-void dnut_card_free(struct dnut_card *_card)
+static void hw_dnut_card_free(void *_card)
 {
 	struct dnut_data *card = (struct dnut_data *)_card;
 
@@ -220,6 +223,60 @@ void dnut_card_free(struct dnut_card *_card)
 		free(card);
 	}
 }
+
+/* Hardware version of the lowlevel functions */
+static struct dnut_funcs hardware_funcs = {
+	.card_alloc_dev = hw_dnut_card_alloc_dev,
+	.mmio_write32 = hw_dnut_mmio_write32,
+	.mmio_read32 = hw_dnut_mmio_read32,
+	.mmio_write64 = hw_dnut_mmio_write64,
+	.mmio_read64 = hw_dnut_mmio_read64,
+	.card_free = hw_dnut_card_free,
+};
+
+/* We access the hardware via this function pointer struct */
+static struct dnut_funcs *df = &hardware_funcs;
+
+struct dnut_card *dnut_card_alloc_dev(const char *path,
+				      uint16_t vendor_id,
+				      uint16_t device_id)
+{
+	return df->card_alloc_dev(path, vendor_id, device_id);
+}
+
+int dnut_mmio_write32(struct dnut_card *_card,
+		      uint64_t offset, uint32_t data)
+{
+	return df->mmio_write32(_card, offset, data);
+}
+
+int dnut_mmio_read32(struct dnut_card *_card,
+		     uint64_t offset, uint32_t *data)
+{
+	return df->mmio_read32(_card, offset, data);
+}
+
+int dnut_mmio_write64(struct dnut_card *_card,
+			uint64_t offset, uint64_t data)
+{
+	return df->mmio_write64(_card, offset, data);
+}
+
+int dnut_mmio_read64(struct dnut_card *_card,
+		       uint64_t offset, uint64_t *data)
+{
+	return df->mmio_read64(_card, offset, data);
+}
+
+
+void dnut_card_free(struct dnut_card *_card)
+{
+	df->card_free(_card);
+}
+
+/**********************************************************************
+ * JOB QUEUE MODE
+ *********************************************************************/
 
 struct dnut_queue *dnut_queue_alloc_dev(const char *path,
 					uint16_t vendor_id, uint16_t device_id,
@@ -234,6 +291,8 @@ struct dnut_queue *dnut_queue_alloc_dev(const char *path,
  * Synchronous way to send a job away. Blocks until job is done.
  *
  * FIXME Example Code not working yet. Needs fixups and discussion.
+ *       Makes most sense if the job-manager is really implemented in the
+ *       FPGA.
  *
  * @queue	handle to streaming framework queue
  * @cjob	streaming framework job
@@ -282,7 +341,7 @@ void dnut_queue_free(struct dnut_queue *queue)
 }
 
 /**********************************************************************
- * FIXED KERNEL ASSIGNMENT MODE
+ * FIXED ACTION ASSIGNMENT MODE
  * E.g. for data streaming if kernel must stay alive for the whole
  *	program runtime.
  *********************************************************************/
@@ -290,10 +349,21 @@ void dnut_queue_free(struct dnut_queue *queue)
 struct dnut_kernel *dnut_kernel_attach_dev(const char *path,
 					   uint16_t vendor_id,
 					   uint16_t device_id,
-					   uint16_t kernel_id __unused)
+					   uint16_t action_type __unused)
 {
-	return (struct dnut_kernel *)
-		dnut_card_alloc_dev(path, vendor_id, device_id);
+	struct dnut_card *card;
+
+	card = dnut_card_alloc_dev(path, vendor_id, device_id);
+	if (card == NULL) {
+		if (errno == 0)
+			errno = ENODEV;
+		return NULL;
+	}
+	if (simulation_enabled()) {
+		struct dnut_data *_card = (struct dnut_data *)card;
+		dnut_map_funcs(_card, action_type);
+	}
+	return (struct dnut_kernel *)card;
 }
 
 int dnut_kernel_start(struct dnut_kernel *kernel)
@@ -367,6 +437,8 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	}
 	mmio_in = 16 / sizeof(uint32_t) + mmio_out;
 
+	dnut_trace("%s: PASS PARAMETERS\n", __func__);
+
 	/* Pass action control and job to the action, should be 128
 	   bytes or a little less */
 	job_data = (uint32_t *)(unsigned long)&job;
@@ -379,6 +451,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	}
 
 	/* Start Action and wait for finish */
+	dnut_trace("%s: START KERNEL\n", __func__);
 	rc = dnut_kernel_start(kernel);
 	if (rc != 0)
 		return rc;
@@ -386,6 +459,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	/* Wait for Action to go back to Idle */
 	gettimeofday(&stime, NULL);
 	do {
+		dnut_trace("%s: CHECK COMPLETION\n", __func__);
 		completed = dnut_kernel_completed(kernel, &rc);
 		if (completed || rc != 0)
 			break;
@@ -393,22 +467,30 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 		gettimeofday(&etime, NULL);
 	} while (timediff_usec(&etime, &stime) < timeout_sec * 1000000);
 
-	if (completed != 0)
+	if (completed == 0) {
+		dnut_trace("%s: rc=%d completed=%d\n", __func__,
+			   rc, completed);
 		return (rc != 0) ? rc : DNUT_ETIMEDOUT;
+	}
 
 	/* Get RETC back to the caller */
 	rc = dnut_mmio_read32(card, ACTION_RETC, &cjob->retc);
 	if (rc != 0)
 		return rc;
 
+	dnut_trace("%s: RETURN RESULTS %ld bytes (%d)\n", __func__,
+		   mmio_out * sizeof(uint32_t), mmio_out);
+
 	/* Get job results max 112 bytes back to the caller */
-	job_data = (uint32_t *)(unsigned long)&job.user;
+	job_data = (uint32_t *)(unsigned long)cjob->workitem_addr;
 	for (i = 0, action_addr = ACTION_JOB_OUT; i < mmio_out;
 	     i++, action_addr += sizeof(uint32_t)) {
 
 		rc = dnut_mmio_read32(card, action_addr, &job_data[i]);
 		if (rc != 0)
 			return rc;
+
+		dnut_trace("  %s: i=%d data=%x\n", __func__, i, job_data[i]);
 	}
 
 	dnut_kernel_stop(kernel);
@@ -452,13 +534,212 @@ int dnut_kernel_mmio_read32(struct dnut_kernel *kernel, uint32_t offset,
 	return dnut_mmio_read32(card, offset, data);
 }
 
+/**********************************************************************
+ * SOFTWARE EMULATION OF FPGA ACTIONS
+ *********************************************************************/
+
+int dnut_action_register(struct dnut_action *new_action)
+{
+	if (new_action == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+	new_action->next = actions;
+	actions = new_action;
+	return 0;
+}
+
+static struct dnut_action *find_action(uint16_t action_type)
+{
+	struct dnut_action *a;
+
+	for (a = actions; a != NULL; a = a->next) {
+		if (a->action_type == action_type)
+			return a;
+	}
+	return NULL;
+}
+
+static int dnut_map_funcs(struct dnut_data *card, uint16_t action_type)
+{
+	struct dnut_action *a;
+
+	card->action_type = action_type;
+
+	/* search action and map in its mmios */
+	a = find_action(action_type);
+	if (a == NULL) {
+		errno = ENOENT;
+		return -1;
+	}
+
+	card->action = a;
+	return 0;
+}
+
+static void *sw_card_alloc_dev(const char *path __unused,
+			       uint16_t vendor_id __unused,
+			       uint16_t device_id __unused)
+{
+	struct dnut_data *dn;
+
+	dn = calloc(1, sizeof(*dn));
+	if (NULL == dn)
+		goto __dnut_alloc_err;
+
+	dn->priv = NULL;
+	dn->vendor_id = vendor_id;
+	dn->device_id = device_id;
+	return (struct dnut_card *)dn;
+
+ __dnut_alloc_err:
+	return NULL;
+}
+
+static void sw_card_free(void *card)
+{
+	free(card);
+}
+
+static int sw_mmio_write32(void *_card __unused,
+			   uint64_t offs __unused,
+			   uint32_t data __unused)
+{
+	int rc = 0;
+	struct dnut_data *card = (struct dnut_data *)_card;
+	struct dnut_action *a = card->action;
+	struct dnut_funcs *f = a->funcs;
+	struct queue_workitem *w = (struct queue_workitem *)a->job;
+
+	dnut_trace("  %s(%p, %llx, %x)\n", __func__, _card,
+		   (long long)offs, data);
+
+	if ((offs % 0x4) != 0x0) {
+		errno = EFAULT;
+		return -1;
+	}
+
+	if (offs == ACTION_CONTROL) {
+		dnut_trace("  starting action!!\n");
+		a->state = ACTION_RUNNING;
+		__hexdump(stdout, &w->user, sizeof(w->user));
+		a->main(a, &w->user, sizeof(w->user));
+		a->state = ACTION_IDLE;
+
+		return 0;
+	}
+
+	if ((offs >= ACTION_PARAMS_IN) &&
+	    (offs < ACTION_PARAMS_IN + CACHELINE_BYTES)) {
+		*(uint32_t *)&a->job[offs - ACTION_PARAMS_IN] = data;
+	}
+
+	if (f->mmio_write32)
+		rc = f->mmio_write32(a, offs, data);
+
+	return rc;
+}
+
+static int sw_mmio_read32(void *_card __unused,
+			  uint64_t offs __unused,
+			  uint32_t *data __unused)
+{
+	int rc = 0;
+	struct dnut_data *card = (struct dnut_data *)_card;
+	struct dnut_action *a = card->action;
+	struct dnut_funcs *f = a->funcs;
+	struct queue_workitem *w = (struct queue_workitem *)a->job;
+
+	if ((offs % 0x4) != 0x0) {
+		errno = EFAULT;
+		return -1;
+	}
+
+	*data = 0x0;
+
+	switch (offs) {
+	case ACTION_CONTROL:
+		switch (a->state) {
+		case ACTION_IDLE:
+			*data = ACTION_CONTROL_IDLE; break;
+		case ACTION_RUNNING:
+			*data = ACTION_CONTROL_RUN; break;
+		case ACTION_ERROR:
+			*data = 0x0; break;
+		}
+		break;
+	default:
+		if ((offs >= ACTION_JOB_OUT) &&
+		    (offs < ACTION_JOB_OUT + sizeof(w->user))) {
+			unsigned int idx = offs - ACTION_JOB_OUT;
+
+			*data = *(uint32_t *)
+				&w->user.data[idx];
+			break;
+		} else if (f->mmio_read32)
+			rc = f->mmio_read32(a, offs, data);
+	}
+
+	dnut_trace("  %s(%p, %llx, %x) rc=%d\n", __func__, _card,
+		   (long long)offs, *data, rc);
+	return rc;
+}
+
+static int sw_mmio_write64(void *_card, uint64_t offs, uint64_t data)
+{
+	int rc = 0;
+	struct dnut_data *card = (struct dnut_data *)_card;
+	struct dnut_action *a = card->action;
+	struct dnut_funcs *f = a->funcs;
+
+	if (f->mmio_write64)
+		rc = f->mmio_write64(a, offs, data);
+
+	return rc;
+}
+
+static int sw_mmio_read64(void *_card, uint64_t offs, uint64_t *data)
+{
+	int rc = 0;
+	struct dnut_data *card = (struct dnut_data *)_card;
+	struct dnut_action *a = card->action;
+	struct dnut_funcs *f = a->funcs;
+
+	if (f->mmio_read64)
+		rc = f->mmio_read64(a, offs, data);
+
+	return rc;
+}
+
+/* Hardware version of the lowlevel functions */
+static struct dnut_funcs software_funcs = {
+	.card_alloc_dev = sw_card_alloc_dev,
+	.mmio_write32 = sw_mmio_write32,
+	.mmio_read32 = sw_mmio_read32,
+	.mmio_write64 = sw_mmio_write64,
+	.mmio_read64 = sw_mmio_read64,
+	.card_free = sw_card_free,
+};
+
+/**********************************************************************
+ * LIBRARY INITIALIZATION
+ *********************************************************************/
+
 static void _init(void) __attribute__((constructor));
 
 static void _init(void)
 {
 	const char *trace_env;
+	const char *config_env;
 
 	trace_env = getenv("DNUT_TRACE");
 	if (trace_env != NULL)
 		dnut_trace = strtol(trace_env, (char **)NULL, 0);
+
+	config_env = getenv("DNUT_CONFIG");
+	if (config_env != NULL)
+		dnut_config = strtol(config_env, (char **)NULL, 0);
+
+	if (simulation_enabled())
+		df = &software_funcs;
 }

@@ -29,26 +29,15 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include "dnut_tools.h"
+#include <donut_tools.h>
 #include <libdonut.h>
+#include <action_search.h>
 
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
 
-#define SEARCH_ACTION_TYPE	0xC0FE
-
 #define MMIO_DIN_DEFAULT	0x0ull
 #define MMIO_DOUT_DEFAULT	0x0ull
-
-struct search_job {
-	struct dnut_addr input;	 /* input data */
-	struct dnut_addr output; /* offset table */
-	struct dnut_addr pattern;
-	uint64_t nb_of_occurrences;
-	uint64_t next_input_addr;
-	uint64_t mmio_din;	/* private settins for this action */
-	uint64_t mmio_dout;	/* private settins for this action */
-};
 
 static inline
 ssize_t file_size(const char *fname)
@@ -117,24 +106,40 @@ static void dnut_prepare_search(struct dnut_job *cjob, struct search_job *sjob,
 
 static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
 {
+	unsigned int i;
 	struct search_job *sjob = (struct search_job *)
 		(unsigned long)cjob->workitem_addr;
+	uint64_t *offs;
+	unsigned long offs_max;
 
 	printf("RUN:          %08x\n", run);
 	printf("RETC:         %08lx\n", (long)cjob->retc);
-	printf("Input Data:\n");
-	__hexdump(stdout, (void *)(unsigned long)sjob->input.addr,
-		  sjob->input.size);
+	printf("Input Data:   %016llx - %016llx\n",
+	       (long long)sjob->input.addr,
+	       (long long)sjob->input.addr + sjob->input.size);
 
-	printf("Output Data:\n");
-	__hexdump(stdout, (void *)(unsigned long)sjob->output.addr,
-		  sjob->output.size);
+	/* __hexdump(stdout, (void *)(unsigned long)sjob->input.addr,
+	   sjob->input.size); */
 
-	printf("Pattern:\n");
-	__hexdump(stdout, (void *)(unsigned long)sjob->pattern.addr,
-		  sjob->pattern.size);
+	printf("Output Data:  %016llx - %016llx\n",
+	       (long long)sjob->output.addr,
+	       (long long)sjob->output.addr + sjob->output.size);
 
-	printf("Items found:  %016llx\n", (long long)sjob->nb_of_occurrences);
+	/* __hexdump(stdout, (void *)(unsigned long)sjob->output.addr,
+	   sjob->output.size); */
+	offs = (uint64_t *)(unsigned long)sjob->output.addr;
+	offs_max = sjob->output.size / sizeof(uint64_t);
+	for (i = 0; i < MIN(sjob->nb_of_occurrences, offs_max); i++) {
+		printf("%3d: %16llx\n", i, (long long)offs[i]);
+	}
+
+	printf("Pattern:      %016llx\n", (long long)sjob->pattern.addr);
+	/* __hexdump(stdout, (void *)(unsigned long)sjob->pattern.addr,
+	   sjob->pattern.size); */
+
+	printf("Items found:  %016llx/%lld\n",
+	       (long long)sjob->nb_of_occurrences,
+	       (long long)sjob->nb_of_occurrences);
 	printf("Next input:   %016llx\n", (long long)sjob->next_input_addr);
 }
 
@@ -175,7 +180,7 @@ int main(int argc, char *argv[])
 	uint8_t *dbuff;		/* data buffer */
 	uint64_t *offs;		/* offset buffer */
 	unsigned int timeout = 10;
-	unsigned int items = 1024;
+	unsigned int items = 42;
 	unsigned int page_size = sysconf(_SC_PAGESIZE);
 	struct timeval etime, stime;
 

@@ -26,10 +26,6 @@
 
 /* private to the library */
 
-#ifndef __unused
-#define __unused __attribute__((unused))
-#endif
-
 /**
  * Talking to Joerg-Stephan from my team I learned that he insists of
  * using a cacheline-sized entry for the hardware-queue. For the

@@ -72,9 +72,16 @@
  * to the available number of compute kernels.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DONUT_VERSION			"0.0.5"
 
-/* Error codes */
+/*
+ * Error codes FIXME alternaternatively we could use the errno codes
+ * and return -1 in case of error. This would be similar to libcxl.h.
+ */
 #define DNUT_OK				0  /* Everything great */
 #define DNUT_EBUSY			-1 /* Resource is busy */
 #define DNUT_ENODEV			-2 /* No such device */
@@ -161,7 +168,7 @@ static inline void dnut_job_set(struct dnut_job *djob, uint64_t action,
 				void *waddr, unsigned int wsize)
 {
 	djob->action = action;
-	djob->retc = 0x00000000;
+	djob->retc = 0xffffffff;
 	djob->dnut_addr_items = -1; /* FIXME Do we need this? */
 	djob->workitem_addr = (unsigned long)waddr;
 	djob->workitem_size = wsize;
@@ -323,7 +330,7 @@ struct dnut_kernel;
  */
 struct dnut_kernel *dnut_kernel_attach_dev(const char *path,
 			uint16_t vendor_id, uint16_t device_id,
-			uint16_t kernel_id);
+			uint16_t action_type);
 
 int dnut_kernel_start(struct dnut_kernel *kernel);
 
@@ -407,5 +414,9 @@ int dnut_doorbell_rcv(struct dnut_doorbell *doorbell, uint8_t *msg,
 			unsigned int msg_size);
 
 void dnut_doorbell_free(struct dnut_doorbell *doorbell);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*__LIBDONUT_H__ */

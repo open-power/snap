@@ -25,7 +25,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include "dnut_tools.h"
+#include <donut_tools.h>
 #include <libdonut.h>
 
 int verbose_flag = 0;

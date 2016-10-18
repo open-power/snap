@@ -21,19 +21,18 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <termios.h>
 #include <getopt.h>
 #include <errno.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <ctype.h>
 #include <limits.h>
 #include <time.h>		/* clock_gettime and friends */
-#include <sys/types.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
 #include <sysexits.h>		/* standart application exit codes */
+#include <sys/types.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define DNUT_TOOL_VERS_STRING	"3.0.25"
 
@@ -182,5 +181,9 @@ static inline void __hexdump(FILE *fp, const void *buff, unsigned int size)
 	}
 	fprintf(fp, "\n");
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif		/* __DNUT_TOOLS_H__ */

@@ -20,8 +20,9 @@
 #include <string.h>
 #include <errno.h>
 #include <malloc.h>
+
 #include <libdonut.h>
-#include "dnut_tools.h"
+#include <donut_tools.h>
 
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;

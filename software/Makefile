@@ -41,6 +41,8 @@ all: $(subdirs)
 # Rules for the recursive build
 tools: lib
 
+examples: lib
+
 ifdef BUILD_SIMCODE
 ifdef PSLSE_ROOT
 # environment variable PSLSE_ROOT defined by hardware setup scripts
@@ -79,6 +81,8 @@ install uninstall:
 test: all
 	./tools/dnut_peek --help > /dev/null || exit 1;
 	./tools/dnut_poke --help > /dev/null || exit 1;
+	./examples/demo_search -C0 -i examples/demo_search.txt -p dnut > \
+		examples/demo_search.log  2>&1
 	@echo "Test OK"
 
 help:

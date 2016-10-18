@@ -1,0 +1,2115 @@
+/*
+ * Copyright 2016, International Business Machines
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <getopt.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+
+#include <donut_tools.h>
+#include <libdonut.h>
+#include "force_cpu.h"
+
+int verbose_flag = 0;
+
+static const char *version = GIT_VERSION;
+
+/**
+ * @brief	prints valid command line options
+ *
+ * @param prog	current program's name
+ */
+static void usage(const char *prog)
+{
+	printf("Usage: %s [-h] [-v,--verbose]\n"
+	       "  -C,--card <cardno> can be (0...3)\n"
+	       "  -V, --version             print version.\n"
+	       "  -q, --quiet               quiece output.\n"
+	       "  -w, --width <32|64>       access width, 64: default\n"
+	       "  -X, --cpu <id>            only run on this CPU.\n"
+	       "  -i, --interval <intv>     interval in usec, 0: default.\n"
+	       "  -c, --count <num>         number of peeks do be done, 1: default.\n"
+	       "  -e, --must-be <value>     compare and exit if not equal.\n"
+	       "  -n, --must-not-be <value> compare and exit if equal.\n"
+	       "  <addr>\n"
+	       "\n"
+	       "Example:\n"
+	       "  dnut_peek 0x0000\n"
+	       "  [00000000] 000000021032a178\n\n"
+	       "\n",
+	       prog);
+}
+
+/**
+ * Read accelerator specific registers. Must be called as root!
+ */
+int main(int argc, char *argv[])
+{
+	int ch, rc = 0;
+	int card_no = 0;
+	struct dnut_card *card;
+	int cpu = -1;
+	int width = 64;
+	uint32_t offs;
+	uint64_t val = 0xffffffffffffffffull;
+	uint64_t and_mask = 0xffffffffffffffffull;
+	uint64_t equal_val = val;
+	uint64_t not_equal_val = val;
+	int equal = 0, not_equal = 0;
+	int quiet = 0;
+	unsigned long i, count = 1;
+	unsigned long interval = 0;
+	char device[128];
+
+	while (1) {
+		int option_index = 0;
+		static struct option long_options[] = {
+			/* options */
+			{ "card",	 required_argument, NULL, 'C' },
+			{ "cpu",	 required_argument, NULL, 'X' },
+
+			{ "width",	 required_argument, NULL, 'w' },
+			{ "interval",	 required_argument, NULL, 'i' },
+			{ "count",	 required_argument, NULL, 'c' },
+			{ "must-be",	 required_argument, NULL, 'e' },
+			{ "must-not-be", required_argument, NULL, 'n' },
+			{ "and-mask",    required_argument, NULL, 'a' },
+
+			/* misc/support */
+			{ "version",	 no_argument,	    NULL, 'V' },
+			{ "quiet",	 no_argument,	    NULL, 'q' },
+			{ "verbose",	 no_argument,	    NULL, 'v' },
+			{ "help",	 no_argument,	    NULL, 'h' },
+			{ 0,		 no_argument,	    NULL, 0   },
+		};
+
+		ch = getopt_long(argc, argv,
+				 "C:X:w:i:c:e:n:a:Vqvh",
+				 long_options, &option_index);
+		if (ch == -1)	/* all params processed ? */
+			break;
+
+		switch (ch) {
+		/* which card to use */
+		case 'C':
+			card_no = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'X':
+			cpu = strtoul(optarg, NULL, 0);
+			break;
+		case 'w':
+			width = strtoul(optarg, NULL, 0);
+			break;
+		case 'i':		/* interval */
+			interval = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'c':		/* loop count */
+			count = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'e':
+			equal = 1;
+			equal_val = strtoull(optarg, NULL, 0);
+			break;
+		case 'n':
+			not_equal = 1;
+			not_equal_val = strtoull(optarg, NULL, 0);
+			break;
+		case 'a':
+			and_mask = strtoull(optarg, NULL, 0);
+			break;
+
+		case 'V':
+			printf("%s\n", version);
+			exit(EXIT_SUCCESS);
+		case 'q':
+			quiet++;
+			break;
+		case 'v':
+			verbose_flag = 1;
+			break;
+		case 'h':
+			usage(argv[0]);
+			exit(EXIT_SUCCESS);
+			break;
+
+		default:
+			usage(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (optind + 1 != argc) {
+		usage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+	offs = strtoull(argv[optind], NULL, 0);
+
+	if (equal && not_equal) {
+		usage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	switch_cpu(cpu, verbose_flag);
+
+	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
+	card = dnut_card_alloc_dev(device, DNUT_VENDOR_ID_ANY,
+				DNUT_DEVICE_ID_ANY);
+	if (card == NULL) {
+		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
+			strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	for (i = 0; i < count; i++) {
+		switch (width) {
+		case 32: {
+			rc = dnut_mmio_read32(card, offs, (uint32_t *)&val);
+			val &= 0xffffffff; /* mask off obsolete bits ... */
+			break;
+		}
+		default:
+		case 64:
+			rc = dnut_mmio_read64(card, offs, &val);
+			break;
+		}
+
+		if (rc != 0) {
+			fprintf(stderr, "err: could not read [%08x] rc=%d\n",
+				offs, rc);
+			dnut_card_free(card);
+			exit(EXIT_FAILURE);
+		}
+		if ((equal) &&
+		    (equal_val != (val & and_mask))) {
+			fprintf(stderr, "err: [%08x] %016llx != %016llx\n",
+				offs, (long long)val, (long long)equal_val);
+			dnut_card_free(card);
+			exit(EX_ERR_DATA);
+		}
+		if ((not_equal) &&
+		    (not_equal_val == (val & and_mask))) {
+			fprintf(stderr, "err: [%08x] %016llx == %016llx\n",
+				offs, (long long)val,
+				(long long)not_equal_val);
+			dnut_card_free(card);
+			exit(EX_ERR_DATA);
+		}
+
+		if (interval)
+			usleep(interval);
+	}
+
+	dnut_card_free(card);
+
+	if (!quiet)
+		printf("[%08x] %016llx\n", offs, (long long)val);
+
+	exit(EXIT_SUCCESS);
+}
+/*
+ * Copyright 2016, International Business Machines
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <endian.h>
+#include <asm/byteorder.h>
+#include <sys/mman.h>
+
+#include <donut_tools.h>
+#include <libdonut.h>
+#include "force_cpu.h"
+
+int verbose_flag = 0;
+static int quiet = 0;
+static const char *version = GIT_VERSION;
+
+/**
+ * @brief Prints valid command line options
+ *
+ * @param prog	current program name
+ */
+static void usage(const char *prog)
+{
+	printf("Usage: %s [-h] [-v,--verbose]\n"
+	       "  -C,--card <cardno> can be (0...3)\n"
+	       "  -V, --version             print version.\n"
+	       "  -q, --quiet               quiece output.\n"
+	       "  -w, --width <32|64>       access width, 64: default\n"
+	       "  -X, --cpu <id>            only run on this CPU.\n"
+	       "  -i, --interval <intv>     interval in usec, 0: default.\n"
+	       "  -c, --count <mum>         number of pokes, 1: default\n"
+	       "  -r, --read-back           read back and verify.\n"
+	       "  <addr> <val>\n"
+	       "\n"
+	       "Example:\n"
+	       "  dnut_poke 0x0000000 0xdeadbeef\n"
+	       "\n",
+	       prog);
+}
+
+/**
+ * @brief Tool to write to zEDC registers. Must be called as root!
+ */
+int main(int argc, char *argv[])
+{
+	int ch, rc, rbrc = 0;
+	int card_no = 0;
+	struct dnut_card *card;
+	int cpu = -1;
+	int width = 64;
+	int rd_back = 0;
+	uint32_t offs;
+	uint64_t val, rbval;
+	unsigned long i, count = 1;
+	unsigned long interval = 0;
+	int xerrno;
+	char device[128];
+
+	while (1) {
+		int option_index = 0;
+		static struct option long_options[] = {
+			/* options */
+			{ "card",	required_argument, NULL, 'C' },
+			{ "cpu",	required_argument, NULL, 'X' },
+
+			{ "width",	required_argument, NULL, 'w' },
+			{ "interval",	required_argument, NULL, 'i' },
+			{ "count",	required_argument, NULL, 'c' },
+			{ "rd-back",	no_argument,       NULL, 'r' },
+
+			/* misc/support */
+			{ "version",	no_argument,	   NULL, 'V' },
+			{ "quiet",	no_argument,	   NULL, 'q' },
+			{ "verbose",	no_argument,	   NULL, 'v' },
+			{ "help",	no_argument,	   NULL, 'h' },
+
+			{ 0,		no_argument,	   NULL, 0   },
+		};
+
+		ch = getopt_long(argc, argv, "p:C:X:w:i:c:Vqrvh",
+				 long_options, &option_index);
+		if (ch == -1)	/* all params processed ? */
+			break;
+
+		switch (ch) {
+		/* which card to use */
+		case 'C':
+			card_no = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'X':
+			cpu = strtoul(optarg, NULL, 0);
+			break;
+		case 'w':
+			width = strtoul(optarg, NULL, 0);
+			break;
+		case 'i':		/* interval */
+			interval = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'c':		/* loop count */
+			count = strtol(optarg, (char **)NULL, 0);
+			break;
+
+		case 'V':
+			printf("%s\n", version);
+			exit(EXIT_SUCCESS);
+		case 'q':
+			quiet++;
+			break;
+		case 'r':
+			rd_back++;
+			break;
+		case 'v':
+			verbose_flag++;
+			break;
+		case 'h':
+			usage(argv[0]);
+			exit(EXIT_SUCCESS);
+			break;
+
+		default:
+			usage(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (optind + 2 != argc) {
+		usage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	offs = strtoull(argv[optind++], NULL, 0);
+	val  = strtoull(argv[optind++], NULL, 0);
+	rbval = ~val;
+	switch_cpu(cpu, verbose_flag);
+
+	if ((card_no < 0) || (card_no > 4)) {
+		fprintf(stderr, "err: (%d) is a invalid card number!\n",
+			card_no);
+		usage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
+	card = dnut_card_alloc_dev(device, DNUT_VENDOR_ID_ANY,
+				DNUT_DEVICE_ID_ANY);
+	if (card == NULL) {
+		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
+			strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	for (i = 0; i < count; i++) {
+		switch (width) {
+		case 32:
+			rc = dnut_mmio_write32(card, offs, (uint32_t)val);
+			xerrno = errno;
+			if (rd_back)
+				rbrc = dnut_mmio_read32(card, offs,
+							(uint32_t *)&rbval);
+			break;
+		default:
+		case 64:
+			rc = dnut_mmio_write64(card, offs, val);
+			xerrno = errno;
+			if (rd_back)
+				rbrc = dnut_mmio_read64(card, offs, &rbval);
+			break;
+		}
+
+		if (rc != 0) {
+			fprintf(stderr, "err: could not write "
+				"%016llx to [%08x]\n"
+				"  %s\n", (unsigned long long)val, offs,
+				strerror(xerrno));
+			dnut_card_free(card);
+			exit(EXIT_FAILURE);
+		}
+		if (rd_back) {
+			if (rbrc != 0) {
+				fprintf(stderr, "err: read back failed (%d)\n",
+					rbrc);
+				dnut_card_free(card);
+				exit(EXIT_FAILURE);
+			}
+			if (val != rbval) {
+				fprintf(stderr, "err: post verify failed "
+					"%016llx/%016llx\n",
+					(unsigned long long)val,
+					(unsigned long long)rbval);
+				dnut_card_free(card);
+				exit(EXIT_FAILURE);
+			}
+		}
+
+		if (interval)
+			usleep(interval);
+	}
+
+	dnut_card_free(card);
+
+	if (!quiet)
+		printf("[%08x] %016llx\n", offs, (long long)val);
+
+	exit(EXIT_SUCCESS);
+}
+/*
+ * Copyright 2016, International Business Machines
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <time.h>
+#include <signal.h>
+#include <sys/time.h>
+
+#include <sched.h>
+#include <utmpx.h>
+#include "force_cpu.h"
+
+/* FIXME Fake this for old RHEL verions e.g. RHEL5.6 */
+#ifndef CPU_ALLOC
+#define	  CPU_ALLOC(cpus)		      ({ void *ptr = NULL; ptr; })
+#define	  CPU_ALLOC_SIZE(cpus)		      ({ int val = 0; val; })
+#define	  CPU_ISSET_S(cpu, size, cpusetp)     ({ int val = 0; val; })
+#define	  CPU_FREE(cpusetp)
+#define	  CPU_ZERO_S(size, cpusetp)
+#define	  CPU_SET_S(run_cpu, size, cpusetp)
+#define	  sched_getcpu()		      ({ int val = 0; val; })
+#define	  sched_setaffinity(x, size, cpusetp) ({ int val = 0; val; })
+#endif
+
+void print_cpu_mask(void)
+{
+	cpu_set_t *cpusetp;
+	size_t size;
+	int num_cpus, cpu;
+
+	num_cpus = CPU_SETSIZE; /* take default, currently 1024 */
+	cpusetp = CPU_ALLOC(num_cpus);
+	if (cpusetp == NULL)
+		return;
+	size = CPU_ALLOC_SIZE(num_cpus);
+
+	/* figure out on which cpus we might run now after change */
+	CPU_ZERO_S(size, cpusetp);
+	if (sched_getaffinity(0, size, cpusetp) < 0) {
+		CPU_FREE(cpusetp);
+		return;
+	}
+	for (cpu = 0; cpu < num_cpus; cpu += 1) {
+		if (!CPU_ISSET_S(cpu, size, cpusetp)) {
+			printf("\n");
+			break;
+		}
+		printf(" CPU: %4d = %s", cpu,
+		       CPU_ISSET_S(cpu, size, cpusetp)?"yes":"no ");
+
+		if ((cpu & 0x3) == 0x3)
+			printf("\n");
+
+	}
+	CPU_FREE(cpusetp);
+}
+
+/**
+ * Try to ping process to a specific CPU. Returns the CPU we are
+ * currently running on.
+ */
+int pin_to_cpu(int run_cpu)
+{
+	cpu_set_t *cpusetp;
+	size_t size;
+	int num_cpus;
+
+	num_cpus = CPU_SETSIZE; /* take default, currently 1024 */
+	cpusetp = CPU_ALLOC(num_cpus);
+	if (cpusetp == NULL) {
+		return sched_getcpu();
+	}
+	size = CPU_ALLOC_SIZE(num_cpus);
+
+	CPU_ZERO_S(size, cpusetp);
+	CPU_SET_S(run_cpu, size, cpusetp);
+	if (sched_setaffinity(0, size, cpusetp) < 0) {
+		CPU_FREE(cpusetp);
+		return sched_getcpu();
+	}
+
+	/* figure out on which cpus we actually run */
+	CPU_FREE(cpusetp);
+	return run_cpu;
+}
+
+int switch_cpu(int cpu, int verbose)
+{
+	int new_cpu;
+
+	/* pin to specific CPU to get more precise performance measurements */
+	if (cpu < 0)
+		return 0;
+
+	if (verbose) {
+		printf("Default possible CPUs:\n");
+		print_cpu_mask();
+		printf("Running on CPU %d, want to run on CPU %d...\n",
+		       sched_getcpu(), cpu);
+	}
+	new_cpu = pin_to_cpu(cpu);
+	if (new_cpu != cpu) {
+		fprintf(stderr, "err: desired CPU %d does not match current "
+			"CPU %d\n", cpu, new_cpu);
+		return -1;
+	}
+	if (verbose) {
+		printf("New possible CPUs:\n");
+		print_cpu_mask();
+		printf("Running on CPU %d\n", new_cpu);
+	}
+	return 0;
+}
+/*
+ * Copyright 2016, International Business Machines
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <malloc.h>
+
+#include <libdonut.h>
+#include <donut_tools.h>
+
+int verbose_flag = 0;
+static const char *version = GIT_VERSION;
+
+#define CACHELINE_BYTES 128
+
+#define	FW_BASE_ADDR	0x00100
+#define	FW_BASE_ADDR8	0x00108
+
+/*	Memcopy Action */
+#define	ACTION_BASE		0x10000
+#define	ACTION_CONTROL		ACTION_BASE
+#define	ACTION_CONTROL_START	0x01
+#define	ACTION_CONTROL_IDLE	0x04
+#define	ACTION_CONTROL_RUN	0x08
+#define	ACTION_4		(ACTION_BASE + 0x04)
+#define	ACTION_8		(ACTION_BASE + 0x08)
+#define	ACTION_CONFIG		(ACTION_BASE + 0x10)
+#define ACTION_CONFIG_COUNT	0x1
+#define	ACTION_CONFIG_COPY	0x2
+#define	ACTION_SRC_LOW		(ACTION_BASE + 0x14)
+#define	ACTION_SRC_HIGH		(ACTION_BASE + 0x18)
+#define	ACTION_DEST_LOW		(ACTION_BASE + 0x1c)
+#define	ACTION_DEST_HIGH	(ACTION_BASE + 0x20)
+#define	ACTION_CNT		(ACTION_BASE + 0x24)	/* Count Register */
+
+/* Framework Write and Read are 64 bit MMIO */
+static void fw_write(struct dnut_card* h, uint64_t addr, uint64_t data)
+{
+	printf("FW Write: 0x%016llx 0x%016llx\n",
+		(long long)addr, (long long)data);
+	dnut_mmio_write64(h, addr, data);
+}
+
+static uint64_t fw_read(struct dnut_card* h, uint64_t addr)
+{
+	uint64_t reg;
+
+	dnut_mmio_read64(h, addr,&reg);
+	printf("FW Read: 0x%016llx 0x%016llx\n",
+		(long long)addr, (long long)reg);
+	return reg;
+}
+
+/* Action or Kernel Write and Read are 32 bit MMIO */
+static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
+{
+	int rc;
+
+	printf("Action Write: 0x%08x 0x%08x\n", addr, data);
+	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
+	if (0 != rc)
+		printf("Write MMIO 32 Err\n");
+	return;
+}
+
+static uint32_t action_read(struct dnut_card* h, uint32_t addr)
+{
+	int rc;
+	uint32_t reg = 0x11;
+
+	rc = dnut_mmio_read32(h, (uint64_t)addr, &reg);
+	if (0 != rc)
+		printf("Read MMIO 32 Err\n");
+	printf("Action Read: 0x%08x 0x%08x\n", addr, reg);
+	return reg;
+}
+
+/**
+ * @brief Prints valid command line options
+ *
+ * @param prog	current program name
+ */
+static void usage(const char *prog)
+{
+	printf("Usage: %s [-h] [-v,--verbose]\n"
+	       "  -C,--card <cardno> can be (0...3)\n"
+	       "  -V, --version             print version.\n"
+	       "\n",
+	       prog);
+}
+
+
+int main(int argc, char *argv[])
+{
+	char     device[64];
+	uint64_t fw_addr;
+	uint32_t action_addr, action_data;
+	uint     i, len, card_no = 0;
+	struct dnut_card *dn;
+	int ch;
+
+	while (1) {
+		int option_index = 0;
+		static struct option long_options[] = {
+			/* options */
+			{ "card",	required_argument, NULL, 'C' },
+
+			/* misc/support */
+			{ "version",	no_argument,	   NULL, 'V' },
+			{ "verbose",	no_argument,	   NULL, 'v' },
+			{ "help",	no_argument,	   NULL, 'h' },
+
+			{ 0,		no_argument,	   NULL, 0   },
+		};
+
+		ch = getopt_long(argc, argv, "C:Vvh",
+				 long_options, &option_index);
+		if (ch == -1)	/* all params processed ? */
+			break;
+
+		switch (ch) {
+			/* which card to use */
+		case 'C':
+			card_no = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'V':
+			printf("%s\n", version);
+			exit(EXIT_SUCCESS);
+		case 'v':
+			verbose_flag++;
+			break;
+		case 'h':
+			usage(argv[0]);
+			exit(EXIT_SUCCESS);
+			break;
+		default:
+			usage(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	sprintf(device, "/dev/cxl/afu%d.0m", card_no);
+	dn = dnut_card_alloc_dev(device,
+				 DNUT_VENDOR_ID_ANY,
+				 DNUT_DEVICE_ID_ANY);
+	if (NULL == dn) {
+		perror("dnut_card_alloc_dev()");
+		return -1;
+	}
+
+	printf("*** test framework register at 100 and 108 \n");
+	fw_write(dn, FW_BASE_ADDR,  0xaaff0011);
+	fw_write(dn, FW_BASE_ADDR8, 0xaaff0033);
+
+
+	printf("*** framework registers\n");
+	fw_addr = FW_BASE_ADDR;
+	len = 4;
+	for (i = 0;i < len; i++) {
+		fw_read(dn, fw_addr);
+		fw_addr += 8;
+	}
+	printf("\n");
+
+	printf("*** Action registers before setup\n");
+	action_addr = ACTION_BASE;
+	len = 4;
+	for (i = 0; i < len; i++) {
+		action_data = action_read(dn, action_addr);
+		action_addr += 8;
+	}
+	printf("\n");
+
+	printf("*** Action setup\n");
+	action_write(dn, ACTION_CONFIG, ACTION_CONFIG_COUNT);
+	action_write(dn, ACTION_CNT, 128);	// Count 128 x 250 Mhz (128 x 4ns)
+
+	printf("*** Action registers after setup\n");
+	action_addr = ACTION_BASE;
+	len = 10;
+	for (i = 0; i < len; i++) {
+		action_data = action_read(dn, action_addr);
+		action_addr += 4;
+	}
+	printf("\n");
+
+	printf("*** start Action and wait for finish\n");
+	action_write(dn, ACTION_CONTROL, ACTION_CONTROL_START);
+
+	/* Wait for Action to go back to Idle */
+	do {
+		action_data = action_read(dn, ACTION_CONTROL);
+	} while ((action_data & ACTION_CONTROL_IDLE) == 0);
+
+	printf("*** Action registers at the end\n");
+	action_addr = ACTION_BASE;
+	len = 10;
+	for (i = 0; i < len; i++) {
+		action_data = action_read(dn, action_addr);
+		action_addr += 4;
+	}
+	printf("\n");
+
+	printf("*** framework registers\n");
+	fw_addr = FW_BASE_ADDR;
+	len = 8;
+	for (i = 0; i < len; i++) {
+		fw_read(dn, fw_addr);
+		fw_addr += 8;
+	}
+	printf("\n");
+
+	// Unmap AFU MMIO registers, if previously mapped
+	dnut_card_free(dn);
+	printf("End of Test...\n");
+	return 0;
+}
+/*
+ * Copyright 2016, International Business Machines
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <malloc.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <getopt.h>
+
+#include <libdonut.h>
+
+#define CACHELINE_BYTES 128
+
+#define	FW_BASE_ADDR	0x00100
+#define	FW_BASE_ADDR8	0x00108
+
+/*	Memcopy Action */
+#define	ACTION_BASE		0x10000
+#define	ACTION_CONTROL		ACTION_BASE
+#define	ACTION_CONTROL_START	0x01
+#define	ACTION_CONTROL_IDLE	0x04
+#define	ACTION_CONTROL_RUN	0x08
+#define	ACTION_4		(ACTION_BASE + 0x04)
+#define	ACTION_8		(ACTION_BASE + 0x08)
+#define	ACTION_CONFIG		(ACTION_BASE + 0x10)
+#define	ACTION_CONFIG_COUNT	1	/* Count Mode */
+#define	ACTION_CONFIG_COPY_HH	2	/* Memcopy Host to Host */
+#define	ACTION_CONFIG_COPY_HD	3	/* Memcopy Host to DDR */
+#define	ACTION_CONFIG_COPY_DH	4	/* Memcopy DDR to Host */
+#define	ACTION_CONFIG_COPY_DD	5	/* Memcopy DDR to DDR */
+#define	ACTION_SRC_LOW		(ACTION_BASE + 0x14)
+#define	ACTION_SRC_HIGH		(ACTION_BASE + 0x18)
+#define	ACTION_DEST_LOW		(ACTION_BASE + 0x1c)
+#define	ACTION_DEST_HIGH	(ACTION_BASE + 0x20)
+#define	ACTION_CNT		(ACTION_BASE + 0x24)	/* Count Register */
+
+/*	defaults */
+#define	START_DELAY		200
+#define	END_DELAY		2000
+#define	STEP_DELAY		200
+#define	DEFAULT_MEMCPY_BLOCK	4096
+#define	DEFAULT_MEMCPY_ITER	1
+
+#define DDR_MEM_SIZE	(8*1024*1024*1024ull)	/* 8 GiB */
+
+static const char *version = GIT_VERSION;
+static	int verbose_level = 0;
+
+static uint64_t get_usec(void)
+{
+        struct timeval t;
+
+        gettimeofday(&t, NULL);
+        return t.tv_sec * 1000000 + t.tv_usec;
+}
+
+/* Action or Kernel Write and Read are 32 bit MMIO */
+static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
+{
+	int rc;
+
+	if (verbose_level > 1)
+		printf("MMIO Write %08x ----> %08x\n", data, addr);
+	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
+	if (0 != rc)
+		printf("Write MMIO 32 Err\n");
+	return;
+}
+
+static uint32_t action_read(struct dnut_card* h, uint32_t addr)
+{
+	int rc;
+	uint32_t data;
+
+	rc = dnut_mmio_read32(h, (uint64_t)addr, &data);
+	if (0 != rc)
+		printf("Read MMIO 32 Err\n");
+	if (verbose_level > 1)
+		printf("MMIO Read  %08x ----> %08x\n", addr, data);
+	return data;
+}
+
+/*	Calculate msec to FPGA ticks.
+ *	we run at 250 Mhz on FPGA so 4 ns per tick
+ */
+static uint32_t msec_2_ticks(int msec)
+{
+	uint32_t fpga_ticks = msec;
+
+	fpga_ticks = fpga_ticks / 4 * 1000 * 1000;
+	return fpga_ticks;
+}
+
+/*
+ *	Start Action and wait for Idle.
+ */
+static void action_wait_idle(struct dnut_card* h, int timeout_ms)
+{
+	uint32_t action_data;
+	int n = 0;
+	uint64_t t_start;	/* time in usec */
+	uint64_t tout = (uint64_t)timeout_ms * 1000;
+	uint64_t td;		/* Diff time in usec */
+
+	action_write(h, ACTION_CONTROL, 0);
+	action_write(h, ACTION_CONTROL, ACTION_CONTROL_START);
+
+	/* Wait for Action to go back to Idle */
+	t_start = get_usec();
+	do {
+		n++;
+		action_data = action_read(h, ACTION_CONTROL);
+		td = get_usec() - t_start;
+		if (td > tout) {
+			printf("Error. Timeout while Waiting for Idle\n");
+			break;
+		}
+	} while ((action_data & ACTION_CONTROL_IDLE) == 0);
+
+	if (verbose_level > 0) {
+		printf("Action Time was was ");
+		if (td < 100000) 
+			printf("%d usec after %d loops\n" , (int)td, n);
+		else	printf("%d msec after %d loops\n" , (int)td/1000, n);
+	}
+	return;
+}
+
+static void action_count(struct dnut_card* h, int delay_ms)
+{
+	if (verbose_level > 0)
+		printf("Action Expect %d msec to wait...\n",
+			delay_ms);
+	action_write(h, ACTION_CONFIG, ACTION_CONFIG_COUNT);
+	action_write(h, ACTION_CNT, msec_2_ticks(delay_ms));
+}
+
+static void action_memcpy(struct dnut_card* h,
+		int mode,	/* Mode can be 2,3,4,5  see ACTION_CONFIG_COPY_ */
+		void *dest, const void *src, size_t n)
+{
+	uint64_t addr;
+
+	if (verbose_level > 0) {
+		switch (mode) {
+		case 2: printf("[Host -> Host]"); break;
+		case 3: printf("[Host -> DDR]"); break;
+		case 4: printf("[DDR -> Host]"); break;
+		case 5: printf("[DDR -> DDR]"); break;
+		default:
+			printf("Invalid\n");
+			return;
+			break;
+		}
+		printf(" memcpy(%p, %p, %d)\n", dest, src, (int)n);
+	}
+	action_write(h, ACTION_CONFIG, mode);
+	addr = (uint64_t)dest;
+	action_write(h, ACTION_DEST_LOW, (uint32_t)(addr & 0xffffffff));
+	action_write(h, ACTION_DEST_HIGH, (uint32_t)(addr >> 32));
+	addr = (uint64_t)src;
+	action_write(h, ACTION_SRC_LOW, (uint32_t)(addr & 0xffffffff));
+	action_write(h, ACTION_SRC_HIGH, (uint32_t)(addr >> 32));
+	action_write(h, ACTION_CNT, n);
+}
+
+static int memcpy_test(struct dnut_card* dnc,
+			int mode,
+			int block4k,
+			int input_o,
+			int output_o,
+			int align,
+			int iter)
+{
+	int i, rc;
+	uint8_t *src_a = NULL, *src = NULL;
+	uint8_t *dest_a = NULL, *dest = NULL;
+
+	rc = 0;
+	/* align can be 16, 32, 64 .. 4096 */
+	if (align < 64) {
+		printf("align=%d must be 64 or higher\n", align);
+		return 1;
+	}
+	if ((align & 0xf) != 0) {
+		printf("align=%d must be a multible of 64KB\n", align);
+		return 1;
+	}
+	if (align > DEFAULT_MEMCPY_BLOCK) {
+		printf("align=%d is to much for me\n", align);
+		return 1;
+	}
+
+	/* Allocate Src Buffer if in Host 2 Host or Host 2 DDR Mode */
+	if ((ACTION_CONFIG_COPY_HH == mode) || (ACTION_CONFIG_COPY_HD == mode)) {
+		/* Allocate aligned src buffer including offset bytes */
+		if (posix_memalign((void **)&src_a, align, block4k + input_o) != 0) {
+			perror("FAILED: posix_memalign source");
+			return 1;
+		}
+		src = src_a + input_o;	/* Add offset */
+		if (verbose_level > 0)
+			printf("  Src:  %p Size: %d Align: %d offset: %d\n",
+				src, block4k, align, output_o);
+		memset(src, 2, block4k);
+	}
+	/* Assume Src Buffer if in DDR 2 Host or DDR 2 DDR Mode */
+	if ((ACTION_CONFIG_COPY_DH == mode) || (ACTION_CONFIG_COPY_DD == mode)) {
+		src = 0;
+	}
+
+	/* Allocate Dest Buffer if in Host 2 Host or DDR 2 Host Mode */
+	if ((ACTION_CONFIG_COPY_HH == mode) || (ACTION_CONFIG_COPY_DH == mode)) {
+		/* Allocate aligned dest buffer including offset bytes */
+		if (posix_memalign((void **)&dest_a, align, block4k + output_o) != 0) {
+			perror("FAILED: posix_memalign destination");
+			if (src_a)
+				free(src_a);
+			return 1;
+		}
+		dest  = dest_a + output_o;
+		if (verbose_level > 0)
+			printf("  Dest: %p Size: %d Align: %d offset: %d\n",
+				dest, block4k, align, output_o);
+		memset(dest, 1, block4k);
+	}
+
+	/* Assume Dest Buffer if in Host 2 DDR */
+	if (ACTION_CONFIG_COPY_HD == mode)
+		dest = 0;
+	/* Set Dest Buffer for DDR 2 DDR Mode */
+	if (ACTION_CONFIG_COPY_DD == mode)
+		dest = src + block4k;
+
+	/* Memcpy */
+	for (i = 0; i < iter; i++) {
+		action_memcpy(dnc, mode, dest, src, block4k);
+		action_wait_idle(dnc, 50000);
+		if (ACTION_CONFIG_COPY_HH == mode) {
+			rc = memcmp(src, dest, block4k);
+			if (rc) break;
+		}
+		/* Modify dest or src address depending on action */
+		if (ACTION_CONFIG_COPY_HD == mode) {
+			dest += block4k;
+			if ((uint64_t)dest >= DDR_MEM_SIZE)
+				dest = 0;
+		}
+		if (ACTION_CONFIG_COPY_DH == mode) {
+			src += block4k;
+			if ((uint64_t)src >= DDR_MEM_SIZE)
+				src = 0;
+		}
+		if (ACTION_CONFIG_COPY_DD == mode) {
+			src = dest;
+			dest += block4k;
+			if ((uint64_t)dest >= DDR_MEM_SIZE) {
+				src = NULL;
+				dest = src + block4k;
+			}
+		}
+	}
+	if (ACTION_CONFIG_COPY_HH == mode) {
+		for (i = 0; i < block4k; i++) {
+			if (src[i] != dest[i])
+				printf("Error offset: %d: SRC: %x Dest: %x\n",
+					i, src[i], dest[i]);
+		}
+	}
+
+	if (src_a) {
+		if (verbose_level > 0)
+			printf("Free Src:  %p\n", src_a);
+		free(src_a);
+	}
+	if (dest_a) {
+		if (verbose_level > 0)
+			printf("Free Dest: %p\n", dest_a);
+		free(dest_a);
+	}
+	return rc;
+}
+
+static void usage(const char *prog)
+{
+	printf("Usage: %s\n"
+		"    -h, --help           print usage information\n"
+		"    -v, --verbose        verbose mode\n"
+		"    -C, --card <cardno>  use this card for operation\n"
+		"    -V, --version\n"
+		"    -q, --quiet          quiece output\n"
+		"    -a, --action         Action to execute (default 1)\n"
+		"    ----- Mode 1 Settings -------------------------\n"
+		"    -s, --start          Start delay in msec (default %d)\n"
+		"    -e, --end            End delay time in msec (default %d)\n"
+		"    -i, --interval       Inrcrement steps in msec (default %d)\n"
+		"    ----- Mode 2 Settings -------------------------\n"
+		"    -S, --size           Number of 4KB Blocks for Memcopy (default 1)\n"
+		"    -N, --iter           Memcpy Iterations (default 1)\n"
+		"    -A, --align          Memcpy alignemend (default 4 KB)\n"
+		"    -I, --ioff           Memcpy input offset (default 0)\n"
+		"    -O, --ooff           Memcpy output offset (default 0)\n"
+		"\tTool to check Stage 1 FPGA or Stage 2 FPGA Mode (-a) for donut bringup.\n"
+		"\t-a 1: Count down mode\n"
+		"\t-a 2: Copy from Host Memory to Host Memory.\n"
+		"\t-a 3: Copy from Host Memory to DDR Memory (FPGA Card).\n"
+		"\t-a 4: Copy from DDR Memory (FPGA Card) to Host Memory.\n"
+		"\t-a 5: Copy from DDR Memory to DDR Memory (both on FPGA Card).\n"
+		, prog, START_DELAY, END_DELAY, STEP_DELAY);
+}
+
+int main(int argc, char *argv[])
+{
+	char device[64];
+	struct dnut_card *dn;	/* lib dnut handle */
+	int start_delay = START_DELAY;
+	int end_delay = END_DELAY;
+	int step_delay = STEP_DELAY;
+	int delay;
+	int card_no = 0;
+	int cmd;
+	int action = ACTION_CONFIG_COUNT;
+	int block4k = DEFAULT_MEMCPY_BLOCK;	/* 1 x 4 KB */
+	int rc = 1;
+	int memcpy_iter = DEFAULT_MEMCPY_ITER;
+	int memcpy_align = DEFAULT_MEMCPY_BLOCK;
+	int input_o = 0, output_o = 0;
+
+	while (1) {
+                int option_index = 0;
+		static struct option long_options[] = {
+			{ "card",     required_argument, NULL, 'C' },
+			{ "verbose",  no_argument,       NULL, 'v' },
+			{ "help",     no_argument,       NULL, 'h' },
+			{ "version",  no_argument,       NULL, 'V' },
+			{ "quiet",    no_argument,       NULL, 'q' },
+			{ "start",    required_argument, NULL, 's' },
+			{ "end",      required_argument, NULL, 'e' },
+			{ "interval", required_argument, NULL, 'i' },
+			{ "action",   required_argument, NULL, 'a' },
+			{ "size",     required_argument, NULL, 'S' },
+			{ "iter",     required_argument, NULL, 'N' },
+			{ "align",    required_argument, NULL, 'A' },
+			{ "ioff",     required_argument, NULL, 'I' },
+			{ "ooff",     required_argument, NULL, 'O' },
+			{ 0,          no_argument,       NULL, 0   },
+		};
+		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:N:A:I:O:qvVh",
+			long_options, &option_index);
+		if (cmd == -1)  /* all params processed ? */
+			break;
+
+		switch (cmd) {
+		case 'v':	/* verbose */
+			verbose_level++;
+			break;
+		case 'V':	/* version */
+			printf("%s\n", version);
+			exit(EXIT_SUCCESS);;
+		case 'h':	/* help */
+			usage(argv[0]);
+			exit(EXIT_SUCCESS);;
+		case 'C':	/* card */
+			card_no = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'a':	/* action */
+			action = strtol(optarg, (char **)NULL, 0);
+			break;
+		/* Action 1 Options */
+		case 's':
+			start_delay = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'e':
+			end_delay = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'i':	/* interval  */
+			step_delay = strtol(optarg, (char **)NULL, 0);
+			break;
+		/* Action 2 3, 4, 5 Options */
+		case 'S':	/* block */
+			block4k = DEFAULT_MEMCPY_BLOCK * strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'N':	/* iter */
+			memcpy_iter = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'A':	/* align */
+			memcpy_align = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'I':	/* iffo */
+			input_o = strtol(optarg, (char **)NULL, 0);
+			printf("This option is under Work !\n");
+			input_o = 0;
+			break;
+		case 'O':	/* offo */
+			output_o = strtol(optarg, (char **)NULL, 0);
+			printf("This option is under Work !\n");
+			output_o = 0;
+			break;
+		default:
+			usage(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (end_delay > 16000) {
+		usage(argv[0]);
+		exit(1);
+	}
+	if (start_delay >= end_delay) {
+		usage(argv[0]);
+		exit(1);
+	}
+	if (card_no > 4) {
+		usage(argv[0]);
+		exit(1);
+	}
+
+	sprintf(device, "/dev/cxl/afu%d.0m", card_no);
+	dn = dnut_card_alloc_dev(device, 0, 0);
+	if (NULL == dn) {
+		perror("dnut_card_alloc_dev()");
+		return -1;
+	}
+	if (verbose_level > 0)
+		printf("Start of Action: %d Card Handle: %p\n", action, dn);
+
+	switch (action) {
+	case 1:
+		for(delay = start_delay; delay <= end_delay; delay += step_delay) {
+			action_count(dn, delay);
+			action_wait_idle(dn, 50000);
+		}
+		rc = 0;
+		break;
+	case 2:
+	case 3:
+	case 4:
+	case 5:
+		rc = memcpy_test(dn, action, block4k, input_o, output_o,
+				memcpy_align, memcpy_iter);
+		break;
+	default:
+		printf("Invalid Action\n");
+		break;
+	}
+
+	// Unmap AFU MMIO registers, if previously mapped
+	if (verbose_level > 0)
+		printf("Free Card Handle: %p\n", dn);
+	dnut_card_free(dn);
+
+	if (verbose_level > 0)
+		printf("End of Test rc: %d\n", rc);
+	return rc;
+}
+/*
+ * Copyright 2016, International Business Machines
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
+ * Example to use the FPGA to find patterns in a byte-stream.
+ */
+
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <getopt.h>
+#include <malloc.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+
+#include <libdonut.h>
+#include <donut_internal.h>
+#include <action_search.h>
+
+struct dnut_card {
+	uint32_t reserved;
+};
+
+struct dnut_card card = {
+	.reserved = 0xdeadbeef,
+};
+
+static void *card_alloc_dev(const char *path __unused,
+			    uint16_t vendor_id __unused,
+			    uint16_t device_id __unused)
+{
+	return &card;
+}
+
+static int mmio_write32(void *_card __unused,
+			uint64_t offset __unused,
+			uint32_t data __unused)
+{
+	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
+		  (long long)offset, data);
+	return 0;
+}
+
+static int mmio_read32(void *_card __unused,
+		       uint64_t offset __unused,
+		       uint32_t *data __unused)
+{
+	struct dnut_action *action = (struct dnut_action *)_card;
+
+	*data = 0x12345678;
+
+	if (offset == ACTION_RETC)
+		*data = action->retc;
+
+	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
+		  (long long)offset, *data);
+	return 0;
+}
+
+static void card_free(void *_card __unused)
+{
+	return;
+}
+
+static int action_main(struct dnut_action *action,
+		       void *job, unsigned int job_len)
+{
+	struct search_job *js = (struct search_job *)job;
+	char *needle, *haystack;
+	unsigned int needle_len, haystack_len, offs_used, offs_max;
+	uint64_t *offs;
+
+	act_trace("%s(%p, %p, %d)\n", __func__, action, job, job_len);
+	memset((uint8_t *)js->output.addr, 0, js->output.size);
+
+	offs = (uint64_t *)(unsigned long)js->output.addr;
+	offs_max = js->output.size / sizeof(uint64_t);
+	offs_used = 0;
+
+	haystack = (char *)(unsigned long)js->input.addr;
+	haystack_len = js->input.size;
+
+	needle = (char *)(unsigned long)js->pattern.addr;
+	needle_len = js->pattern.size;
+
+	js->nb_of_occurrences = 0;
+	while (haystack_len != 0) {
+		if (needle_len > haystack_len) {
+			js->next_input_addr = 0;
+			break;	/* cannot find more */
+		}
+		if (strncmp(haystack, needle, needle_len) == 0) {
+			if (offs_used == offs_max) {
+				js->next_input_addr = (unsigned long)haystack;
+				break;	/* cannot put more in result array */
+			}
+			/* write down result */
+			offs[offs_used] = (unsigned long)haystack;
+			offs_used++;
+		}
+		haystack++;	/* uuh, is that performing badly ;-) */
+		haystack_len--;
+	}
+
+	js->nb_of_occurrences = offs_used;
+	js->next_input_addr = 0;
+	action->retc = 0x0;
+	return 0;
+}
+
+/* Hardware version of the lowlevel functions */
+static struct dnut_funcs funcs = {
+	.card_alloc_dev = card_alloc_dev,
+	.mmio_write32 = mmio_write32,
+	.mmio_read32 = mmio_read32,
+	.mmio_write64 = NULL,
+	.mmio_read64 = NULL,
+	.card_free = card_free,
+};
+
+static struct dnut_action action = {
+	.vendor_id = DNUT_VENDOR_ID_ANY,
+	.device_id = DNUT_DEVICE_ID_ANY,
+	.action_type = 0xC0FE,
+	.retc = 0x104,		/* preset value, should be 0 on success */
+	.state = ACTION_IDLE,
+	.main = action_main,
+
+	.priv_data = &card,	/* this is passed back as void *card */
+	.funcs = &funcs,
+	.next = NULL,
+};
+
+static void _init(void) __attribute__((constructor));
+
+static void _init(void)
+{
+	dnut_action_register(&action);
+}
+/*
+ * Copyright 2016, International Business Machines
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <getopt.h>
+#include <malloc.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+
+#include <donut_tools.h>
+#include <libdonut.h>
+
+int verbose_flag = 0;
+
+static const char *version = GIT_VERSION;
+
+#define MEMCOPY_ACTION_TYPE 0xBEEF
+
+#define MMIO_DIN_DEFAULT	0x0ull
+#define MMIO_DOUT_DEFAULT	0x0ull
+
+struct memcopy_job {
+	struct dnut_addr in;	/* input data */
+	struct dnut_addr out;   /* offset table */
+	uint64_t mmio_din;	/* private settins for this action */
+	uint64_t mmio_dout;	/* private settins for this action */
+};
+
+/**
+ * @brief	prints valid command line options
+ *
+ * @param prog	current program's name
+ */
+static void usage(const char *prog)
+{
+	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
+	       "  -C, --card <cardno> can be (0...3)\n"
+	       "  -i, --input <file.bin>    input file.\n"
+	       "  -o, --output <file.bin>   output file.\n"
+	       "  -A, --type-in <CARD_RAM, HOST_RAM, ...>.\n"
+	       "  -a, --addr-in <addr>      address e.g. in CARD_RAM.\n"
+	       "  -D, --type-out <CARD_RAM, HOST_RAM, ...>.\n"
+	       "  -d, --addr-out <addr>     address e.g. in CARD_RAM.\n"
+	       "  -s, --size <size>         size of data.\n"
+	       "  -m, --mode <mode>         mode filags.\n"
+	       "\n"
+	       "Example:\n"
+	       "  demo_memcopy ...\n"
+	       "\n",
+	       prog);
+}
+
+static void dnut_prepare_memcopy(struct dnut_job *cjob,
+				 struct memcopy_job *mjob,
+				 void *addr_in,
+				 uint32_t size_in,
+				 uint8_t type_in,
+				 void *addr_out,
+				 uint32_t size_out,
+				 uint8_t type_out)
+{
+	dnut_addr_set(&mjob->in, addr_in, size_in, type_in,
+		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
+	dnut_addr_set(&mjob->out, addr_out, size_out, type_out,
+		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
+		      DNUT_TARGET_FLAGS_END);
+
+	mjob->mmio_din = MMIO_DIN_DEFAULT;
+	mjob->mmio_dout = MMIO_DOUT_DEFAULT;
+
+	dnut_job_set(cjob, MEMCOPY_ACTION_TYPE, mjob, sizeof(*mjob));
+}
+
+static inline
+ssize_t file_size(const char *fname)
+{
+	int rc;
+	struct stat s;
+
+	rc = lstat(fname, &s);
+	if (rc != 0) {
+		fprintf(stderr, "err: Cannot find %s!\n", fname);
+		return rc;
+	}
+	return s.st_size;
+}
+
+static inline ssize_t
+file_read(const char *fname, uint8_t *buff, size_t len)
+{
+	int rc;
+	FILE *fp;
+
+	if ((fname == NULL) || (buff == NULL) || (len == 0))
+		return -EINVAL;
+
+	fp = fopen(fname, "r");
+	if (!fp) {
+		fprintf(stderr, "err: Cannot open file %s: %s\n",
+			fname, strerror(errno));
+		return -ENODEV;
+	}
+	rc = fread(buff, len, 1, fp);
+	if (rc == -1) {
+		fprintf(stderr, "err: Cannot read from %s: %s\n",
+			fname, strerror(errno));
+		fclose(fp);
+		return -EIO;
+	}
+	fclose(fp);
+	return rc;
+}
+
+static inline ssize_t
+file_write(const char *fname, const uint8_t *buff, size_t len)
+{
+	int rc;
+	FILE *fp;
+
+	if ((fname == NULL) || (buff == NULL) || (len == 0))
+		return -EINVAL;
+
+	fp = fopen(fname, "w+");
+	if (!fp) {
+		fprintf(stderr, "err: Cannot open file %s: %s\n",
+			fname, strerror(errno));
+		return -ENODEV;
+	}
+	rc = fwrite(buff, len, 1, fp);
+	if (rc == -1) {
+		fprintf(stderr, "err: Cannot write to %s: %s\n",
+			fname, strerror(errno));
+		fclose(fp);
+		return -EIO;
+	}
+	fclose(fp);
+	return rc;
+}
+
+/**
+ * Read accelerator specific registers. Must be called as root!
+ */
+int main(int argc, char *argv[])
+{
+	int ch, rc = 0;
+	int card_no = 0;
+	struct dnut_kernel *kernel = NULL;
+	char device[128];
+	struct dnut_job cjob;
+	struct memcopy_job mjob;
+	const char *input = NULL;
+	const char *output = NULL;
+	unsigned long timeout = 10;
+	unsigned int mode = 0x0;
+	const char *space = "CARD_RAM";
+	struct timeval etime, stime;
+	ssize_t size = 1024 * 1024;
+	uint8_t *ibuff = NULL, *obuff = NULL;
+	unsigned int page_size = sysconf(_SC_PAGESIZE);
+	uint8_t type_in = DNUT_TARGET_TYPE_HOST_DRAM;
+	uint64_t addr_in = 0x0ull;
+	uint8_t type_out = DNUT_TARGET_TYPE_HOST_DRAM;
+	uint64_t addr_out = 0x0ull;
+
+	while (1) {
+		int option_index = 0;
+		static struct option long_options[] = {
+			{ "card",	 required_argument, NULL, 'C' },
+			{ "input",	 required_argument, NULL, 'i' },
+			{ "output",	 required_argument, NULL, 'o' },
+			{ "src-type",	 required_argument, NULL, 'A' },
+			{ "src-addr",	 required_argument, NULL, 'a' },
+			{ "dst-type",	 required_argument, NULL, 'D' },
+			{ "dst-addr",	 required_argument, NULL, 'd' },
+			{ "size",	 required_argument, NULL, 's' },
+			{ "mode",	 required_argument, NULL, 'm' },
+			{ "timeout",	 required_argument, NULL, 't' },
+			{ "version",	 no_argument,	    NULL, 'V' },
+			{ "verbose",	 no_argument,	    NULL, 'v' },
+			{ "help",	 no_argument,	    NULL, 'h' },
+			{ 0,		 no_argument,	    NULL, 0   },
+		};
+
+		ch = getopt_long(argc, argv,
+				 "C:i:o:a:S:D:d:x:s:t:Vqvh",
+				 long_options, &option_index);
+		if (ch == -1)
+			break;
+
+		switch (ch) {
+		case 'C':
+			card_no = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'i':
+			input = optarg;
+			break;
+		case 'o':
+			output = optarg;
+			break;
+		case 's':
+			size = __str_to_num(optarg);
+			break;
+		case 't':
+			timeout = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'm':
+			mode = strtol(optarg, (char **)NULL, 0);
+			break;
+			/* input data */
+		case 'A':
+			space = optarg;
+			if (strcmp(space, "CARD_DRAM") == 0)
+				type_in = DNUT_TARGET_TYPE_CARD_DRAM;
+			else if (strcmp(space, "HOST_DRAM") == 0)
+				type_in = DNUT_TARGET_TYPE_HOST_DRAM;
+			break;
+		case 'a':
+			addr_in = strtol(optarg, (char **)NULL, 0);
+			break;
+			/* output data */
+		case 'D':
+			space = optarg;
+			if (strcmp(space, "CARD_DRAM") == 0)
+				type_out = DNUT_TARGET_TYPE_CARD_DRAM;
+			else if (strcmp(space, "HOST_DRAM") == 0)
+				type_out = DNUT_TARGET_TYPE_HOST_DRAM;
+			break;
+		case 'd':
+			addr_out = strtol(optarg, (char **)NULL, 0);
+			break;
+
+			/* service */
+		case 'V':
+			printf("%s\n", version);
+			exit(EXIT_SUCCESS);
+		case 'v':
+			verbose_flag = 1;
+			break;
+		case 'h':
+			usage(argv[0]);
+			exit(EXIT_SUCCESS);
+			break;
+		default:
+			usage(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (optind + 1 != argc) {
+		usage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	printf("PARAMETERS:\n"
+	       "  input:    %s\n"
+	       "  output:   %s\n"
+	       "  type_in:  %x\n"
+	       "  addr_in:  %016llx\n"
+	       "  type_out: %x\n"
+	       "  addr_out: %016llx\n"
+	       "  size:     %08lx\n"
+	       "  mode:     %08x\n",
+	       input, output,
+	       type_in, (long long)addr_in,
+	       type_out, (long long)addr_out,
+	       size, mode);
+
+	/* source buffer */
+	ibuff = memalign(page_size, size);
+	if (ibuff == NULL)
+		goto out_error;
+	memset(ibuff, 0, size);
+
+	/* destination buffer */
+	obuff = memalign(page_size, size);
+	if (obuff == NULL)
+		goto out_error0;
+	memset(obuff, 0, size);
+
+	/* if input file is defined, use that as input */
+	if (input != NULL) {
+		rc = file_read(input, ibuff, size);
+		if (rc < 0)
+			goto out_error1;
+
+		type_in = DNUT_TARGET_TYPE_HOST_DRAM;
+		addr_in = (unsigned long)ibuff;
+	}
+
+	/* if output file is defined, use that as output */
+	if (output != NULL) {
+		type_out = DNUT_TARGET_TYPE_HOST_DRAM;
+		addr_out = (unsigned long)obuff;
+	}
+
+	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
+	kernel = dnut_kernel_attach_dev(device,
+					DNUT_VENDOR_ID_ANY,
+					DNUT_DEVICE_ID_ANY,
+					MEMCOPY_ACTION_TYPE);
+	if (kernel == NULL) {
+		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
+			strerror(errno));
+		goto out_error1;
+	}
+
+	dnut_prepare_memcopy(&cjob, &mjob,
+			     (void *)addr_in, size, type_in,
+			     (void *)addr_out, size, type_out);
+
+	gettimeofday(&stime, NULL);
+	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
+	if (rc != 0) {
+		fprintf(stderr, "err: job execution %d!\n", rc);
+		goto out_error2;
+	}
+	gettimeofday(&etime, NULL);
+
+	/* If the output buffer is in host DRAM we can write it to a file */
+	if (output != NULL) {
+		rc = file_write(output, obuff, size);
+		if (rc < 0)
+			goto out_error2;
+	}
+
+	fprintf(stdout, "memcopy took %lld usec\n",
+		(long long)timediff_usec(&etime, &stime));
+
+	dnut_kernel_free(kernel);
+
+	free(obuff);
+	free(ibuff);
+
+	exit(EXIT_SUCCESS);
+
+ out_error2:
+	dnut_kernel_free(kernel);
+ out_error1:
+	free(obuff);
+ out_error0:
+	free(ibuff);
+ out_error:
+	exit(EXIT_FAILURE);
+}
+/*
+ * Copyright 2016, International Business Machines
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
+ * Example to use the FPGA to find patterns in a byte-stream.
+ */
+
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <getopt.h>
+#include <malloc.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+
+#include <donut_tools.h>
+#include <libdonut.h>
+#include <action_search.h>
+
+int verbose_flag = 0;
+static const char *version = GIT_VERSION;
+
+#define MMIO_DIN_DEFAULT	0x0ull
+#define MMIO_DOUT_DEFAULT	0x0ull
+
+static inline
+ssize_t file_size(const char *fname)
+{
+	int rc;
+	struct stat s;
+
+	rc = lstat(fname, &s);
+	if (rc != 0) {
+		fprintf(stderr, "err: Cannot find %s!\n", fname);
+		return rc;
+	}
+	return s.st_size;
+}
+
+static inline ssize_t
+file_read(const char *fname, uint8_t *buff, size_t len)
+{
+	int rc;
+	FILE *fp;
+
+	if ((fname == NULL) || (buff == NULL) || (len == 0))
+		return -EINVAL;
+
+	fp = fopen(fname, "r");
+	if (!fp) {
+		fprintf(stderr, "err: Cannot open file %s: %s\n",
+			fname, strerror(errno));
+		return -ENODEV;
+	}
+	rc = fread(buff, len, 1, fp);
+	if (rc == -1) {
+		fprintf(stderr, "err: Cannot read from %s: %s\n",
+			fname, strerror(errno));
+		fclose(fp);
+		return -EIO;
+	}
+
+	fclose(fp);
+	return rc;
+}
+
+static void dnut_prepare_search(struct dnut_job *cjob, struct search_job *sjob,
+				const uint8_t *dbuff, ssize_t dsize,
+				uint64_t *offs, unsigned int items,
+				const uint8_t *pbuff, unsigned int psize)
+{
+	dnut_addr_set(&sjob->input, dbuff, dsize,
+		      DNUT_TARGET_TYPE_HOST_DRAM,
+		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
+	dnut_addr_set(&sjob->output, offs, items * sizeof(*offs),
+		      DNUT_TARGET_TYPE_HOST_DRAM,
+		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
+	dnut_addr_set(&sjob->pattern, pbuff, psize,
+		      DNUT_TARGET_TYPE_HOST_DRAM,
+		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC |
+		      DNUT_TARGET_FLAGS_END);
+
+	sjob->nb_of_occurrences = 0;
+	sjob->next_input_addr = 0;
+	sjob->mmio_din = MMIO_DIN_DEFAULT;
+	sjob->mmio_dout = MMIO_DOUT_DEFAULT;
+
+	dnut_job_set(cjob, SEARCH_ACTION_TYPE, sjob, sizeof(*sjob));
+}
+
+static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
+{
+	struct search_job *sjob = (struct search_job *)
+		(unsigned long)cjob->workitem_addr;
+
+	printf("RUN:          %08x\n", run);
+	printf("RETC:         %08lx\n", (long)cjob->retc);
+	printf("Input Data:   %016llx\n", (long long)sjob->input.addr);
+	/* __hexdump(stdout, (void *)(unsigned long)sjob->input.addr,
+	   sjob->input.size); */
+
+	printf("Output Data:  %016llx\n", (long long)sjob->output.addr);
+	/* __hexdump(stdout, (void *)(unsigned long)sjob->output.addr,
+	   sjob->output.size); */
+
+	printf("Pattern:      %016llx\n", (long long)sjob->pattern.addr);
+	/* __hexdump(stdout, (void *)(unsigned long)sjob->pattern.addr,
+	   sjob->pattern.size); */
+
+	printf("Items found:  %016llx\n", (long long)sjob->nb_of_occurrences);
+	printf("Next input:   %016llx\n", (long long)sjob->next_input_addr);
+}
+
+/**
+ * @brief	prints valid command line options
+ *
+ * @param prog	current program's name
+ */
+static void usage(const char *prog)
+{
+	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
+	       "  -C, --card <cardno> can be (0...3)\n"
+	       "  -i, --input <data.bin>     Input data.\n"
+	       "  -I, --items <items>        Max items to find.\n"
+	       "  -p, --pattern <str>        Pattern to search for\n"
+	       "\n"
+	       "Example:\n"
+	       "  demo_search ...\n"
+	       "\n",
+	       prog);
+}
+
+/**
+ * Read accelerator specific registers. Must be called as root!
+ */
+int main(int argc, char *argv[])
+{
+	int ch, run, psize = 0, rc = 0;
+	int card_no = 0;
+	struct dnut_kernel *kernel = NULL;
+	char device[128];
+	const char *fname = NULL;
+	const char *pattern_str = "Donut";
+	struct dnut_job cjob;
+	struct search_job sjob;
+	ssize_t dsize;
+	uint8_t *pbuff;		/* pattern buffer */
+	uint8_t *dbuff;		/* data buffer */
+	uint64_t *offs;		/* offset buffer */
+	unsigned int timeout = 10;
+	unsigned int items = 42;
+	unsigned int page_size = sysconf(_SC_PAGESIZE);
+	struct timeval etime, stime;
+
+	while (1) {
+		int option_index = 0;
+		static struct option long_options[] = {
+			{ "card",	 required_argument, NULL, 'C' },
+			{ "input",	 required_argument, NULL, 'i' },
+			{ "pattern",	 required_argument, NULL, 'p' },
+			{ "items",	 required_argument, NULL, 'I' },
+			{ "timeout",	 required_argument, NULL, 't' },
+			{ "version",	 no_argument,	    NULL, 'V' },
+			{ "verbose",	 no_argument,	    NULL, 'v' },
+			{ "help",	 no_argument,	    NULL, 'h' },
+			{ 0,		 no_argument,	    NULL, 0   },
+		};
+
+		ch = getopt_long(argc, argv,
+				 "C:i:p:I:t:Vvh",
+				 long_options, &option_index);
+		if (ch == -1)	/* all params processed ? */
+			break;
+
+		switch (ch) {
+		/* which card to use */
+		case 'C':
+			card_no = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'i':
+			fname = optarg;
+			break;
+		case 'p':
+			pattern_str = optarg;
+			break;
+		case 'I':
+			items = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 't':
+			timeout = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'V':
+			printf("%s\n", version);
+			exit(EXIT_SUCCESS);
+		case 'v':
+			verbose_flag = 1;
+			break;
+		case 'h':
+			usage(argv[0]);
+			exit(EXIT_SUCCESS);
+			break;
+
+		default:
+			usage(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (optind != argc) {
+		usage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	dsize = file_size(fname);
+	if (dsize < 0)
+		goto out_error;
+
+	dbuff = memalign(page_size, dsize);
+	if (dbuff == NULL)
+		goto out_error;
+
+	psize = strlen(pattern_str);
+	pbuff = memalign(page_size, psize);
+	if (pbuff == NULL)
+		goto out_error0;
+	memcpy(pbuff, pattern_str, psize);
+
+	rc = file_read(fname, dbuff, dsize);
+	if (rc < 0)
+		goto out_errorX;
+
+	offs = memalign(page_size, items * sizeof(*offs));
+	if (offs == NULL)
+		goto out_errorX;
+	memset(offs, 0xAB, items * sizeof(*offs));
+
+	dnut_prepare_search(&cjob, &sjob, dbuff, dsize,
+			    offs, items, pbuff, psize);
+	dnut_print_search_results(&cjob, 0xffffffff);
+
+	/*
+	 * Apply for exclusive kernel access for kernel type 0xC0FE.
+	 * Once granted, MMIO to that kernel will work.
+	 */
+	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
+	kernel = dnut_kernel_attach_dev(device,
+					DNUT_VENDOR_ID_ANY,
+					DNUT_DEVICE_ID_ANY,
+					SEARCH_ACTION_TYPE);
+	if (kernel == NULL) {
+		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
+			strerror(errno));
+		goto out_error1;
+	}
+
+	run = 0;
+	gettimeofday(&stime, NULL);
+	do {
+		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
+		if (rc != 0) {
+			fprintf(stderr, "err: job execution %d!\n", rc);
+			goto out_error2;
+		}
+		if (cjob.retc != 0x00000000)  {
+			fprintf(stderr, "err: job retc %x!\n", cjob.retc);
+			goto out_error2;
+		}
+		dnut_print_search_results(&cjob, run);
+
+		/* trigger repeat if search was not complete */
+		if (sjob.next_input_addr != 0x0) {
+			sjob.input.size -= (sjob.next_input_addr -
+					    sjob.input.addr);
+			sjob.input.addr = sjob.next_input_addr;
+		}
+		run++;
+	} while (sjob.next_input_addr != 0x0);
+	gettimeofday(&etime, NULL);
+
+	fprintf(stdout, "searching took %lld usec\n",
+		(long long)timediff_usec(&etime, &stime));
+
+	dnut_kernel_free(kernel);
+
+	free(dbuff);
+	free(pbuff);
+	free(offs);
+
+	exit(EXIT_SUCCESS);
+
+ out_error2:
+	dnut_kernel_free(kernel);
+ out_error1:
+	free(offs);
+ out_errorX:
+	free(pbuff);
+ out_error0:
+	free(dbuff);
+ out_error:
+	exit(EXIT_FAILURE);
+}
