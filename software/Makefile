@@ -55,12 +55,12 @@ lib: ..check_pslse
 endif
 
 ..check_pslse:
-	@echo "Set PSLSE_DIR to $(PSLSE_DIR)"; 					\
-	if [ ! -d $(PSLSE_DIR) ]; then						\
-		echo "Please install pslse in $(PSLSE_DIR)";			\
-		echo "  use: git clone https://github.com/ibm-capi/pslse"; 	\
-		echo;								\
-		exit 1;								\
+	@echo "Set PSLSE_DIR to $(PSLSE_DIR)"; 				\
+	if [ ! -d $(PSLSE_DIR) ]; then					\
+		echo "Please install pslse in $(PSLSE_DIR)";		\
+		echo "  use: git clone https://github.com/ibm-capi/pslse";\
+		echo;							\
+		exit 1;							\
 	fi
 
 # Only build if the subdirectory is really existent
@@ -81,7 +81,8 @@ install uninstall:
 test: all
 	./tools/dnut_peek --help > /dev/null || exit 1;
 	./tools/dnut_poke --help > /dev/null || exit 1;
-	./examples/demo_search -C0 -i examples/demo_search.txt -p dnut > \
+	DNUT_CONFIG=0x1 ./examples/demo_search -C0 	\
+		-i examples/demo_search.txt -p dnut > 	\
 		examples/demo_search.log  2>&1
 	@echo "Test OK"
 
