@@ -95,7 +95,7 @@ static int action_main(struct dnut_action *action,
 static struct dnut_action action = {
 	.vendor_id = DNUT_VENDOR_ID_ANY,
 	.device_id = DNUT_DEVICE_ID_ANY,
-	.action_type = 0xC0FE,
+	.action_type = SEARCH_ACTION_TYPE,
 
 	.retc = 0x104,		/* preset value, should be 0 on success */
 	.state = ACTION_IDLE,
