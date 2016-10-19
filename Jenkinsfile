@@ -38,7 +38,7 @@ node {
     // add Maven to executable path
     //env.PATH = "${mvnHome}/bin:${env.PATH}"  	
     // run the Maven tool
-    sh "${mvnHome}/bin/mvn -B verify		
+    sh "${mvnHome}/bin/mvn -B verify"
   }
 
   stage('build and test'){
