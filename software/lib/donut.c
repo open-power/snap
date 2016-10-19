@@ -651,12 +651,17 @@ static int sw_mmio_read32(void *_card __unused,
 	int rc = 0;
 	struct dnut_data *card = (struct dnut_data *)_card;
 	struct dnut_action *a = card->action;
-	struct queue_workitem *w = (struct queue_workitem *)a->job;
+	struct queue_workitem *w;
 
+	if (a == NULL) {
+		errno = EFAULT;
+		return -1;
+	}
 	if ((offs % 0x4) != 0x0) {
 		errno = EFAULT;
 		return -1;
 	}
+	w =  (struct queue_workitem *)a->job;
 
 	*data = 0x0;
 
@@ -694,6 +699,10 @@ static int sw_mmio_write64(void *_card, uint64_t offs, uint64_t data)
 	struct dnut_data *card = (struct dnut_data *)_card;
 	struct dnut_action *a = card->action;
 
+	if (a == NULL) {
+		errno = EFAULT;
+		return -1;
+	}
 	if (a->mmio_write64)
 		rc = a->mmio_write64(a, offs, data);
 
@@ -706,6 +715,10 @@ static int sw_mmio_read64(void *_card, uint64_t offs, uint64_t *data)
 	struct dnut_data *card = (struct dnut_data *)_card;
 	struct dnut_action *a = card->action;
 
+	if (a == NULL) {
+		errno = EFAULT;
+		return -1;
+	}
 	if (a->mmio_read64)
 		rc = a->mmio_read64(a, offs, data);
 
