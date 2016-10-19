@@ -46,9 +46,9 @@ node {
       echo "Starting build in `pwd` branch_name=${BRANCH_NAME} build_tag=${BUILD_TAG}"
       . /afs/bb/proj/fpga/framework/ibm_settings_for_donut
       export SIMULATOR=ncsim
+      export DONUT_ROOT=$PWD
       export PSLSE_ROOT=$PWD/pslse
-      export DONUT_ROOT=$PWD/donut
-      . donut/hardware/setup/donut_settings
+      . hardware/setup/donut_settings
 
       echo "Get and build Simulation Software ..."
       rm -rf pslse
