@@ -51,8 +51,8 @@ component action_wrapper is
     port (
     clk : in STD_LOGIC;
     rstn                : in STD_LOGIC;
-    ddr3_clk            : in STD_LOGIC;
-    ddr3_rst_n          : in STD_LOGIC;
+--    ddr3_clk            : in STD_LOGIC;
+--    ddr3_rst_n          : in STD_LOGIC;
 
     --
     -- Slave Interface
@@ -130,6 +130,7 @@ component action_wrapper is
     c0_ddr3_awsize      : out STD_LOGIC_VECTOR ( 2 downto 0 );
     c0_ddr3_awburst     : out STD_LOGIC_VECTOR ( 1 downto 0 );
     c0_ddr3_awlock      : out STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+--    c0_ddr3_awlock      : out STD_LOGIC;
     c0_ddr3_rid         : IN  STD_LOGIC_VECTOR(0 DOWNTO 0);
     c0_ddr3_buser       : IN  STD_LOGIC_VECTOR(0 DOWNTO 0);
     c0_ddr3_ruser       : IN  STD_LOGIC_VECTOR(0 DOWNTO 0);
@@ -152,6 +153,7 @@ component action_wrapper is
     c0_ddr3_arsize      : out STD_LOGIC_VECTOR ( 2 downto 0 );
     c0_ddr3_arburst     : out STD_LOGIC_VECTOR ( 1 downto 0 );
     c0_ddr3_arlock      : out STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+--    c0_ddr3_arlock      : out STD_LOGIC;
     c0_ddr3_arcache     : out STD_LOGIC_VECTOR ( 3 downto 0 );
     c0_ddr3_arprot      : out STD_LOGIC_VECTOR ( 2 downto 0 );
     c0_ddr3_arqos       : out STD_LOGIC_VECTOR ( 3 downto 0 );
@@ -174,14 +176,14 @@ begin
 
 
   rstn <= not rst;
-  ddr3_rst_n <= not ddr3_rst;
+--  ddr3_rst_n <= not ddr3_rst;
 
 action: component action_wrapper
   port map (
     clk  => clk_app,
     rstn => rstn,
-    ddr3_clk  =>  ddr3_clk,
-    ddr3_rst_n => ddr3_rst_n,
+    --ddr3_clk  =>  ddr3_clk,
+    --ddr3_rst_n => ddr3_rst_n,
      
     s_axi_araddr    =>  xk_d_i.m_axi_araddr , 
     s_axi_arprot    =>  xk_d_i.m_axi_arprot , 
