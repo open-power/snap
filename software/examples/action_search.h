@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <libdonut.h>
 
-#define SEARCH_ACTION_TYPE	0x0004 // 0xC0FE
+#define SEARCH_ACTION_TYPE	0x0005 // 0xC0FE
 
 struct search_job {
 	struct dnut_addr input;	 /* input data */

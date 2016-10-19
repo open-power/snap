@@ -418,7 +418,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	memset(&job, 0, sizeof(job));
 	job.action = cjob->action;
 	job.flags = 0x00;
-	job.seq = 0xbeef;
+	job.seq = 0x0;
 	job.retc = 0x0;
 	job.priv_data = 0x0ull;
 
