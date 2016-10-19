@@ -133,16 +133,16 @@ connect_bd_net [get_bd_ports clk] [get_bd_pins action_memcopy_0/m01_axi_aclk]
 #connect_bd_net [get_bd_ports ddr3_clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
 connect_bd_net [get_bd_ports clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
 connect_bd_intf_net [get_bd_intf_pins action_memcopy_0/m01_axi] -boundary_type upper [get_bd_intf_pins axi_interconnect_2/S00_AXI]
-connect_bd_intf_net [get_bd_intf_pins axi_interconnect_2/M00_AXI] [get_bd_intf_ports c0_ddr3]
+#connect_bd_intf_net [get_bd_intf_pins axi_interconnect_2/M00_AXI] [get_bd_intf_ports c0_ddr3]
 
 #AXI SLICE Register
-#startgroup
-#create_bd_cell -type ip -vlnv xilinx.com:ip:axi_register_slice:2.1 axi_register_slice_0
-#endgroup
-#connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_2/M00_AXI] [get_bd_intf_pins axi_register_slice_0/S_AXI]
-#connect_bd_intf_net [get_bd_intf_ports c0_ddr3] [get_bd_intf_pins axi_register_slice_0/M_AXI]
-#connect_bd_net [get_bd_ports ddr3_clk] [get_bd_pins axi_register_slice_0/aclk]
-#connect_bd_net [get_bd_ports ddr3_rst_n] [get_bd_pins axi_register_slice_0/aresetn]
+startgroup
+create_bd_cell -type ip -vlnv xilinx.com:ip:axi_register_slice:2.1 axi_register_slice_0
+endgroup
+connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_2/M00_AXI] [get_bd_intf_pins axi_register_slice_0/S_AXI]
+connect_bd_intf_net [get_bd_intf_ports c0_ddr3] [get_bd_intf_pins axi_register_slice_0/M_AXI]
+connect_bd_net [get_bd_ports clk] [get_bd_pins axi_register_slice_0/aclk]
+connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_register_slice_0/aresetn]
 
 #AXI Clock Converter
 #startgroup
