@@ -32,10 +32,14 @@ ENTITY action_interface IS
     clk_fw   : in  std_ulogic;   
     clk_app  : in  std_ulogic; 
     rst      : in  std_ulogic; 
+    ddr3_clk   : in  std_ulogic; 
+    ddr3_rst   : in  std_ulogic; 
     xk_d_i   : in  XK_D_T;
     kx_d_o   : out KX_D_T;        
     sk_d_i   : in  SK_D_T; 
-    ks_d_o   : out KS_D_T
+    ks_d_o   : out KS_D_T;
+    kddr_o   : OUT KDDR_T;
+    ddrk_i   : IN  DDRK_T
   
   );
 END action_interface;
@@ -46,6 +50,12 @@ ARCHITECTURE action_interface OF action_interface IS
 component action_wrapper is
     port (
     clk : in STD_LOGIC;
+    rstn                : in STD_LOGIC;
+    ddr3_clk            : in STD_LOGIC;
+    ddr3_rst_n          : in STD_LOGIC;
+
+    --
+    -- Slave Interface
     m_axi_araddr        : out STD_LOGIC_VECTOR ( 63 downto 0 );
     m_axi_arburst       : out STD_LOGIC_VECTOR ( 1 downto 0 );
     m_axi_arcache       : out STD_LOGIC_VECTOR ( 3 downto 0 );
@@ -92,9 +102,8 @@ component action_wrapper is
     m_axi_rid           : in  STD_LOGIC_VECTOR ( 0 to 0);
     m_axi_buser         : in  STD_LOGIC_VECTOR ( 0 to 0);
     m_axi_ruser         : in  STD_LOGIC_VECTOR ( 0 to 0);
-    
-    
-    rstn                : in STD_LOGIC;
+    --
+    -- Slave Interface
     s_axi_araddr        : in STD_LOGIC_VECTOR ( 31 downto 0 );
     s_axi_arprot        : in STD_LOGIC_VECTOR ( 2 downto 0 );
     s_axi_arready       : out STD_LOGIC;
@@ -113,26 +122,66 @@ component action_wrapper is
     s_axi_wdata         : in STD_LOGIC_VECTOR ( 31 downto 0 );
     s_axi_wready        : out STD_LOGIC;
     s_axi_wstrb         : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    s_axi_wvalid        : in STD_LOGIC
-    
+    s_axi_wvalid        : in STD_LOGIC;
+    --
+    -- DDR3 Interface
+    c0_ddr3_awaddr      : out STD_LOGIC_VECTOR ( 32 downto 0 );
+    c0_ddr3_awlen       : out STD_LOGIC_VECTOR ( 7 downto 0 );
+    c0_ddr3_awsize      : out STD_LOGIC_VECTOR ( 2 downto 0 );
+    c0_ddr3_awburst     : out STD_LOGIC_VECTOR ( 1 downto 0 );
+    c0_ddr3_awlock      : out STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+    c0_ddr3_rid         : IN  STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c0_ddr3_buser       : IN  STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c0_ddr3_ruser       : IN  STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c0_ddr3_bid         : IN  STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c0_ddr3_awcache     : out STD_LOGIC_VECTOR ( 3 downto 0 );
+    c0_ddr3_awprot      : out STD_LOGIC_VECTOR ( 2 downto 0 );
+    c0_ddr3_awqos       : out STD_LOGIC_VECTOR ( 3 downto 0 );
+    c0_ddr3_awvalid     : out STD_LOGIC;
+    c0_ddr3_awready     : in STD_LOGIC;
+    c0_ddr3_wdata       : out STD_LOGIC_VECTOR (127 downto 0 );
+    c0_ddr3_wstrb       : out STD_LOGIC_VECTOR (15 downto 0 );
+    c0_ddr3_wlast       : out STD_LOGIC;
+    c0_ddr3_wvalid      : out STD_LOGIC;
+    c0_ddr3_wready      : in STD_LOGIC;
+    c0_ddr3_bresp       : in STD_LOGIC_VECTOR ( 1 downto 0 );
+    c0_ddr3_bvalid      : in STD_LOGIC;
+    c0_ddr3_bready      : out STD_LOGIC;
+    c0_ddr3_araddr      : out STD_LOGIC_VECTOR ( 32 downto 0 );
+    c0_ddr3_arlen       : out STD_LOGIC_VECTOR ( 7 downto 0 );
+    c0_ddr3_arsize      : out STD_LOGIC_VECTOR ( 2 downto 0 );
+    c0_ddr3_arburst     : out STD_LOGIC_VECTOR ( 1 downto 0 );
+    c0_ddr3_arlock      : out STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+    c0_ddr3_arcache     : out STD_LOGIC_VECTOR ( 3 downto 0 );
+    c0_ddr3_arprot      : out STD_LOGIC_VECTOR ( 2 downto 0 );
+    c0_ddr3_arqos       : out STD_LOGIC_VECTOR ( 3 downto 0 );
+    c0_ddr3_arvalid     : out STD_LOGIC;
+    c0_ddr3_arready     : in STD_LOGIC;
+    c0_ddr3_rdata       : in STD_LOGIC_VECTOR (127 downto 0 );
+    c0_ddr3_rresp       : in STD_LOGIC_VECTOR ( 1 downto 0 );
+    c0_ddr3_rlast       : in STD_LOGIC;
+    c0_ddr3_rvalid      : in STD_LOGIC;
+    c0_ddr3_rready      : out STD_LOGIC   
+--    c0_ddr3_arregion    : out STD_LOGIC_VECTOR ( 3 downto 0 );
+--    c0_ddr3_awregion    : out STD_LOGIC_VECTOR ( 3 downto 0 )    
  ) ;  
  end component action_wrapper  ;
-  
 
   signal rstn                : std_logic;
- 
+  signal ddr3_rst_n          : std_logic;
 
-
-    
 begin
 
 
   rstn <= not rst;
+  ddr3_rst_n <= not ddr3_rst;
 
 action: component action_wrapper
   port map (
     clk  => clk_app,
     rstn => rstn,
+    ddr3_clk  =>  ddr3_clk,
+    ddr3_rst_n => ddr3_rst_n,
      
     s_axi_araddr    =>  xk_d_i.m_axi_araddr , 
     s_axi_arprot    =>  xk_d_i.m_axi_arprot , 
@@ -197,7 +246,46 @@ action: component action_wrapper
     m_axi_buser(0)  => '0'  ,
     m_axi_ruser(0)  => '0'  ,
     m_axi_rid(0)    => sk_d_i.s_axi_rid(0) ,
-    m_axi_wuser     => open     
+    m_axi_wuser     => open,
+    c0_ddr3_araddr(32 downto 0)   => kddr_o.axi_araddr(32 downto 0),
+    c0_ddr3_arburst(1 downto 0)   => kddr_o.axi_arburst(1 downto 0),
+    c0_ddr3_arcache(3 downto 0)   => kddr_o.axi_arcache(3 downto 0),
+    c0_ddr3_arlen(7 downto 0)     => kddr_o.axi_arlen(7 downto 0),
+    c0_ddr3_arlock(0)             => kddr_o.axi_arlock(0),
+    c0_ddr3_rid                   => ddrk_i.axi_rid,
+    c0_ddr3_buser                 => ddrk_i.axi_buser,
+    c0_ddr3_ruser                 => ddrk_i.axi_ruser,
+    c0_ddr3_arprot(2 downto 0)    => kddr_o.axi_arprot(2 downto 0),
+    c0_ddr3_arqos(3 downto 0)     => kddr_o.axi_arqos(3 downto 0),
+    c0_ddr3_arready               => ddrk_i.axi_arready,
+--    c0_ddr3_arregion(3 downto 0)  => kddr_o.axi_arregion(3 downto 0),
+    c0_ddr3_arsize(2 downto 0)    => kddr_o.axi_arsize(2 downto 0),
+    c0_ddr3_arvalid               => kddr_o.axi_arvalid,
+    c0_ddr3_awaddr(32 downto 0)   => kddr_o.axi_awaddr(32 downto 0),
+    c0_ddr3_awburst(1 downto 0)   => kddr_o.axi_awburst(1 downto 0),
+    c0_ddr3_awcache(3 downto 0)   => kddr_o.axi_awcache(3 downto 0),
+    c0_ddr3_awlen(7 downto 0)     => kddr_o.axi_awlen(7 downto 0),
+    c0_ddr3_awlock(0)             => kddr_o.axi_awlock(0), 
+    c0_ddr3_awprot(2 downto 0)    => kddr_o.axi_awprot(2 downto 0),
+    c0_ddr3_awqos(3 downto 0)     => kddr_o.axi_awqos(3 downto 0),
+    c0_ddr3_awready               => ddrk_i.axi_awready,
+--    c0_ddr3_awregion(3 downto 0)  => kddr_o.axi_awregion(3 downto 0),
+    c0_ddr3_awsize(2 downto 0)    => kddr_o.axi_awsize(2 downto 0),
+    c0_ddr3_awvalid               => kddr_o.axi_awvalid,
+    c0_ddr3_bid                   => ddrk_i.axi_bid,
+    c0_ddr3_bready                => kddr_o.axi_bready,
+    c0_ddr3_bresp(1 downto 0)     => ddrk_i.axi_bresp(1 downto 0),
+    c0_ddr3_bvalid                => ddrk_i.axi_bvalid,
+    c0_ddr3_rdata(127 downto 0)   => ddrk_i.axi_rdata(127 downto 0),
+    c0_ddr3_rlast                 => ddrk_i.axi_rlast,
+    c0_ddr3_rready                => kddr_o.axi_rready,
+    c0_ddr3_rresp(1 downto 0)     => ddrk_i.axi_rresp(1 downto 0),
+    c0_ddr3_rvalid                => ddrk_i.axi_rvalid,
+    c0_ddr3_wdata(127 downto 0)    => kddr_o.axi_wdata(127 downto 0),
+    c0_ddr3_wlast                 => kddr_o.axi_wlast,
+    c0_ddr3_wready                => ddrk_i.axi_wready,
+    c0_ddr3_wstrb(15 downto 0)    => kddr_o.axi_wstrb(15 downto 0),
+    c0_ddr3_wvalid                => kddr_o.axi_wvalid
   );
   
 END ARCHITECTURE;

@@ -40,20 +40,38 @@ close_project -delete
 set_property  ip_repo_paths  $action_dir/src [current_project]
 update_ip_catalog
 create_bd_cell -type ip -vlnv IP:user:action_memcopy:1.0 action_memcopy_0
+
+#create interconnect_0 and interconnect_1
 startgroup
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_0
 endgroup
+
 set_property location {1 37 106} [get_bd_cells axi_interconnect_0]
 set_property -dict [list CONFIG.NUM_MI {1}] [get_bd_cells axi_interconnect_0]
 create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 s_axi
 set_property CONFIG.CLK_DOMAIN action_clk [get_bd_intf_ports s_axi]
+
+#create IOs
 startgroup
 create_bd_port -dir I -type clk clk
-set_property CONFIG.FREQ_HZ 100000000 [get_bd_ports clk]
+set_property CONFIG.FREQ_HZ 250000000 [get_bd_ports clk]
 endgroup
+create_bd_port -dir I -type rst ddr3_rst_n
+create_bd_port -dir I -type clk ddr3_clk
+set_property CONFIG.FREQ_HZ 200000000 [get_bd_ports ddr3_clk]
 startgroup
 create_bd_port -dir I -type rst rstn
 endgroup
+create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 c0_ddr3
+set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {64}] [get_bd_intf_ports c0_ddr3]
+set_property -dict [list CONFIG.DATA_WIDTH {128}] [get_bd_intf_ports c0_ddr3]
+set_property CONFIG.ASSOCIATED_BUSIF {c0_ddr3} [get_bd_ports /ddr3_clk]
+set_property CONFIG.ASSOCIATED_RESET {ddr3_rst_n} [get_bd_ports /ddr3_clk]
+set_property CONFIG.ASSOCIATED_RESET {rstn} [get_bd_ports /clk]
+set_property CONFIG.ASSOCIATED_BUSIF {s_axi:m_axi} [get_bd_ports /clk]
+
+
+#connect
 connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_0/S00_ARESETN]
 connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_0/ARESETN]
 connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_0/M00_ARESETN]
@@ -65,6 +83,8 @@ connect_bd_net [get_bd_ports clk] [get_bd_pins axi_interconnect_0/S00_ACLK]
 connect_bd_net [get_bd_ports clk] [get_bd_pins axi_interconnect_0/ACLK]
 connect_bd_net [get_bd_ports clk] [get_bd_pins action_memcopy_0/m00_axi_aclk]
 connect_bd_net [get_bd_ports clk] [get_bd_pins action_memcopy_0/s00_axi_aclk]
+
+#AXI MASTER HOST MMIO Interface
 startgroup
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_1
 endgroup
@@ -83,6 +103,7 @@ set_property CONFIG.ASSOCIATED_BUSIF {s_axi} [get_bd_ports /clk]
 set_property CONFIG.SUPPORTS_NARROW_BURST 0 [get_bd_intf_ports s_axi]
 set_property CONFIG.PROTOCOL AXI4LITE [get_bd_intf_ports s_axi]
 
+#AXI MASTER HOST DMA Interface
 connect_bd_intf_net [get_bd_intf_ports m_axi] -boundary_type upper [get_bd_intf_pins axi_interconnect_1/M00_AXI]
 set_property location {1143 156} [get_bd_intf_ports m_axi]
 set_property location {1143 114} [get_bd_intf_ports m_axi]
@@ -95,6 +116,49 @@ connect_bd_net [get_bd_ports clk] [get_bd_pins axi_interconnect_1/ACLK]
 connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_1/M00_ARESETN]
 connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_1/S00_ARESETN]
 connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_1/ARESETN]
+
+#AXI MASTER DDR3 Interface
+startgroup
+create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_2
+endgroup
+set_property -dict [list CONFIG.NUM_MI {1}] [get_bd_cells axi_interconnect_2]
+connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_2/ARESETN]
+connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_2/S00_ARESETN]
+connect_bd_net [get_bd_ports rstn] [get_bd_pins action_memcopy_0/m01_axi_aresetn]
+connect_bd_net [get_bd_ports ddr3_rst_n] [get_bd_pins axi_interconnect_2/M00_ARESETN]
+connect_bd_net [get_bd_ports clk] [get_bd_pins axi_interconnect_2/ACLK]
+connect_bd_net [get_bd_ports clk] [get_bd_pins axi_interconnect_2/S00_ACLK]
+connect_bd_net [get_bd_ports clk] [get_bd_pins action_memcopy_0/m01_axi_aclk]
+connect_bd_net [get_bd_ports ddr3_clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
+connect_bd_intf_net [get_bd_intf_pins action_memcopy_0/m01_axi] -boundary_type upper [get_bd_intf_pins axi_interconnect_2/S00_AXI]
+connect_bd_intf_net [get_bd_intf_pins axi_interconnect_2/M00_AXI] [get_bd_intf_ports c0_ddr3]
+
+
+#AXI Clock Converter
+#startgroup
+#create_bd_cell -type ip -vlnv xilinx.com:ip:axi_clock_converter:2.1 axi_clock_converter_0
+#endgroup
+#connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_2/M00_AXI] [get_bd_intf_pins axi_clock_converter_0/S_AXI]
+#connect_bd_intf_net [get_bd_intf_ports c0_ddr3] [get_bd_intf_pins axi_clock_converter_0/M_AXI]
+#connect_bd_net [get_bd_ports ddr3_clk] [get_bd_pins axi_clock_converter_0/m_axi_aclk]
+#connect_bd_net [get_bd_ports ddr3_rst_n] [get_bd_pins axi_clock_converter_0/m_axi_aresetn]
+#connect_bd_net [get_bd_ports clk] [get_bd_pins axi_clock_converter_0/s_axi_aclk]
+#connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_clock_converter_0/s_axi_aresetn]
+#startgroup
+#set_property -dict [list CONFIG.ACLK_ASYNC.VALUE_SRC PROPAGATED] [get_bd_cells axi_clock_converter_0]
+#endgroup
+
 assign_bd_address
+set_property offset 0x00000000 [get_bd_addr_segs {s_axi/SEG_action_memcopy_0_reg0}]
+set_property offset 0x000000000 [get_bd_addr_segs {action_memcopy_0/m01_axi/SEG_c0_ddr3_Reg}]
+set_property offset 0x0000000000000000 [get_bd_addr_segs {action_memcopy_0/m00_axi/SEG_m_axi_Reg}]
+set_property range 4G [get_bd_addr_segs {s_axi/SEG_action_memcopy_0_reg0}]
+set_property range 8G [get_bd_addr_segs {action_memcopy_0/m01_axi/SEG_c0_ddr3_Reg}]
+set_property range 8E [get_bd_addr_segs {action_memcopy_0/m00_axi/SEG_m_axi_Reg}]
+
 save_bd_design
+
 close_project
+
+
+

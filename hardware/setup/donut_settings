@@ -81,6 +81,13 @@ else
   echo "FPGACHIP             is set to \"$FPGACHIP\""
 fi
 
+if [ ! -d "$DIMMTEST" ]; then
+  export DIMMTEST=$FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0
+  echo "Setting DIMMTEST            to \"$DIMMTEST\""
+else
+  echo "DIMMTEST             is set to \"$DIMMTEST\""
+fi
+
 if [ -z "$SIMULATOR" ]; then
   export SIMULATOR=xsim                                      # xsim, questa and ncsim are supported, currently
   echo "Setting SIMULATOR           to \"$SIMULATOR\""

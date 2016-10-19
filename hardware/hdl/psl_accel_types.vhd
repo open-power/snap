@@ -63,14 +63,17 @@ PACKAGE psl_accel_types IS
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
     ----------------------------------------------------------------------------
-    -- AXI Slave constants
+    -- AXI Constants
     ----------------------------------------------------------------------------
     --
     -- 
     --
-    constant C_S_AXI_ID_WIDTH     : integer   := 20;
-    constant C_S_AXI_DATA_WIDTH   : integer   := 128;
-    constant C_S_AXI_ADDR_WIDTH   : integer   := 64;
+    constant C_S_AXI_ID_WIDTH       : integer   := 20;
+    constant C_S_AXI_DATA_WIDTH     : integer   := 128;
+    constant C_S_AXI_ADDR_WIDTH     : integer   := 64;
+    constant C_DDR_AXI_ID_WIDTH     : integer   := 1;
+    constant C_DDR_AXI_DATA_WIDTH   : integer   := 128;
+    constant C_DDR_AXI_ADDR_WIDTH   : integer   := 33;
 
 
 
@@ -102,11 +105,14 @@ PACKAGE psl_accel_types IS
 -- ***** AFU INTERNAL INTERFACE TYPES               *****
 -- ******************************************************
 --
---  kx_d : action(kernel) -> AXI_Master     : Data Interface
---  xk_d : AXI_Master     -> action(kernel) : Data Interface
--- 
---  ks_d : action(kernel) -> AXI_Slave      : Data Interface
---  sk_d : AXI_Slave      -> action(kernel) : Data Interface
+--  kx_d   : action(kernel) -> AXI_Master     : Data Interface
+--  xk_d   : AXI_Master     -> action(kernel) : Data Interface
+--          
+--  ks_d   : action(kernel) -> AXI_Slave      : Data Interface
+--  sk_d   : AXI_Slave      -> action(kernel) : Data Interface
+--  
+--  kddr_d : action(kernel) -> DDR3           : AXI Interface
+--  ddrk_d : DDR3           -> action(kernel) : AXI Interface
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
   ----------------------------------------------------------------------------
@@ -195,6 +201,61 @@ PACKAGE psl_accel_types IS
       S_AXI_RVALID  : std_logic;
       S_AXI_ARREADY : std_logic;
     END RECORD SK_D_T;
+
+
+    --
+    -- kddr
+    --
+    TYPE KDDR_T IS RECORD
+      AXI_AWID          : std_logic_vector(C_DDR_AXI_ID_WIDTH-1 downto 0);
+      AXI_AWADDR        : std_logic_vector(C_DDR_AXI_ADDR_WIDTH-1 downto 0);
+      AXI_AWLEN         : std_logic_vector(7 downto 0);
+      AXI_AWSIZE        : std_logic_vector(2 downto 0);
+      AXI_AWBURST       : std_logic_vector(1 downto 0);
+      AXI_AWLOCK        : std_logic_vector(0 DOWNTO 0);
+      AXI_AWCACHE       : std_logic_vector(3 downto 0);
+      AXI_AWPROT        : std_logic_vector(2 downto 0);
+      AXI_AWQOS         : std_logic_vector(3 downto 0);
+--      AXI_AWREGION      : std_logic_vector(3 downto 0);
+      AXI_AWVALID       : std_logic;
+      AXI_WDATA         : std_logic_vector(C_DDR_AXI_DATA_WIDTH-1 downto 0);
+      AXI_WSTRB         : std_logic_vector((C_DDR_AXI_DATA_WIDTH/8)-1 downto 0);
+      AXI_WLAST         : std_logic;
+      AXI_WVALID        : std_logic;
+      AXI_BREADY        : std_logic;
+      AXI_ARID          : std_logic_vector(C_DDR_AXI_ID_WIDTH-1 downto 0);
+      AXI_ARADDR        : std_logic_vector(C_DDR_AXI_ADDR_WIDTH-1 downto 0);
+      AXI_ARLEN         : std_logic_vector(7 downto 0);
+      AXI_ARSIZE        : std_logic_vector(2 downto 0);
+      AXI_ARBURST       : std_logic_vector(1 downto 0);
+      AXI_ARLOCK        : std_logic_vector(0 DOWNTO 0);
+      AXI_ARCACHE       : std_logic_vector(3 downto 0);
+      AXI_ARPROT        : std_logic_vector(2 downto 0);
+      AXI_ARQOS         : std_logic_vector(3 downto 0);
+  --    AXI_ARREGION      : std_logic_vector(3 downto 0);
+      AXI_ARVALID       : std_logic;
+      AXI_RREADY        : std_logic;
+    END RECORD KDDR_T;
+
+    --
+    -- ddrk_d
+    --
+    TYPE DDRK_T IS RECORD
+      AXI_AWREADY : std_logic;
+      AXI_WREADY  : std_logic;
+      AXI_BID     : std_logic_vector(C_DDR_AXI_ID_WIDTH-1 downto 0);
+      AXI_BUSER   : std_logic_vector(C_DDR_AXI_ID_WIDTH-1 downto 0);
+      AXI_RUSER   : std_logic_vector(C_DDR_AXI_ID_WIDTH-1 downto 0);
+      AXI_BRESP   : std_logic_vector(1 downto 0);
+      AXI_BVALID  : std_logic;
+      AXI_RID     : std_logic_vector(C_DDR_AXI_ID_WIDTH-1 downto 0);
+      AXI_RDATA   : std_logic_vector(C_DDR_AXI_DATA_WIDTH-1 downto 0);
+      AXI_RRESP   : std_logic_vector(1 downto 0);
+      AXI_RLAST   : std_logic;
+      AXI_RVALID  : std_logic;
+      AXI_ARREADY : std_logic;
+    END RECORD DDRK_T;
+
 END psl_accel_types;
 
 
