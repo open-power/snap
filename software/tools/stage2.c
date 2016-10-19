@@ -289,52 +289,57 @@ static int memcpy_test(struct dnut_card* dnc,
 			action_memcpy(dnc, action, dest, src, block4k);
 			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
 			if (0 != rc) break;
+			if (verbose_level > 1) {
+				printf("---------- dest Buffer: %p\n", dest);
+				hexdump(stderr, dest, block4k);
+			}
 			rc = memcmp(src, dest, block4k);
 			if (rc) {
 				printf("Error Memcmp failed rc: %d\n", rc);
+				printf("---------- src Buffer: %p\n", src);
+				hexdump(stderr, src, block4k);
+				printf("---------- dest Buffer: %p\n", dest);
+				hexdump(stderr, dest, block4k);
 				break;
 			}
 		}
 		break;
-	case ACTION_CONFIG_COPY_HD:
-		dest = (void*)DDR_MEM_BASE_ADDR;
+	case ACTION_CONFIG_COPY_HD:	/* Host to Card RAM */
+		dest = (void*)card_ram_base;
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, action, dest, src, block4k);
 			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
 			if (0 != rc) break;
-			dest += block4k;
-			if ((uint64_t)dest >= DDR_MEM_SIZE)
-				dest = NULL;
 		}
 		break;
 	case ACTION_CONFIG_COPY_DH:
-		src = (void*)DDR_MEM_BASE_ADDR;
+		src = (void*)card_ram_base;
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, action, dest, src, block4k);
 			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
 			if (0 != rc) break;
-			src += block4k;
-			if ((uint64_t)src >= DDR_MEM_SIZE)
-				src = NULL;
-		}
-		break;
-	case ACTION_CONFIG_COPY_DD:
-		src = (void*)DDR_MEM_BASE_ADDR;
-		dest = src + block4k;
-		for (i = 0; i < iter; i++) {
-			action_memcpy(dnc, action, dest, src, block4k);
-			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
-			if (0 != rc) break;
-			src = dest;
-			dest += block4k;
-			if ((uint64_t)dest >= DDR_MEM_SIZE) {
-				src = (void*)DDR_MEM_BASE_ADDR;
-				dest = src + block4k;
+			if (verbose_level > 1) {
+				printf("---------- dest Buffer: %p\n", dest);
+				hexdump(stderr, dest, block4k);
 			}
 		}
 		break;
+	case ACTION_CONFIG_COPY_DD:
+		src = (void*)card_ram_base;
+		dest = src + block4k;	/* Need to check */
+		if ((uint64_t)(dest + block4k) > DDR_MEM_SIZE) {
+			printf("Error Size 0x%x and Offset 0x%llx Exceed Memory\n",
+				block4k, (long long)card_ram_base);
+			break;
+		}
+		for (i = 0; i < iter; i++) {
+			action_memcpy(dnc, action, dest, src, block4k);
+			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != rc) break;
+		}
+		break;
 	case ACTION_CONFIG_COPY_HDH:	/* Host -> DDR -> Host */
-		ddr3 = (void*)DDR_MEM_BASE_ADDR;
+		ddr3 = (void*)card_ram_base;
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 				ddr3, src, block4k);
@@ -345,6 +350,10 @@ static int memcpy_test(struct dnut_card* dnc,
 			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
 			if (0 != rc) break;
 			rc = memcmp(src, dest, block4k);
+			if ((verbose_level > 1) || rc) {
+				printf("---------- %p\n", dest);
+				hexdump(stderr, dest, block4k);
+			}
 			if (rc) {
 				printf("Error Memcmp failed\n");
 				break;
