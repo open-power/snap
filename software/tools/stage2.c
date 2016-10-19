@@ -238,7 +238,8 @@ static int memcpy_test(struct dnut_card* dnc,
 			int input_o,
 			int output_o,
 			int align,
-			int iter)
+			int iter,
+			uint64_t card_ram_base)
 {
 	int i, rc;
 	void *src_a = NULL, *src = NULL;
@@ -257,6 +258,13 @@ static int memcpy_test(struct dnut_card* dnc,
 	}
 	if (align > DEFAULT_MEMCPY_BLOCK) {
 		printf("align=%d is to much for me\n", align);
+		return 1;
+	}
+
+	/* Check Card Ram base and Size */
+	if (((uint64_t)block4k > DDR_MEM_SIZE) || ((card_ram_base + block4k) > DDR_MEM_SIZE)) {
+		printf("Size: 0x%x exceeds: 0x%llx Offset: 0x%llx\n",
+			block4k, (long long)DDR_MEM_SIZE, (long long)card_ram_base);
 		return 1;
 	}
 
@@ -394,6 +402,7 @@ static void usage(const char *prog)
 		"    -A, --align          Memcpy alignemend (default 4 KB)\n"
 		"    -I, --ioff           Memcpy input offset (default 0)\n"
 		"    -O, --ooff           Memcpy output offset (default 0)\n"
+		"    -D, --dest           Memcpy destination address in Card RAM (default 0)\n"
 		"\tTool to check Stage 1 FPGA or Stage 2 FPGA Mode (-a) for donut bringup.\n"
 		"\t-a 1: Count down mode (Stage 1)\n"
 		"\t-a 2: Copy from Host Memory to Host Memory.\n"
@@ -420,6 +429,7 @@ int main(int argc, char *argv[])
 	int memcpy_iter = DEFAULT_MEMCPY_ITER;
 	int memcpy_align = DEFAULT_MEMCPY_BLOCK;
 	int input_o = 0, output_o = 0;
+	uint64_t card_ram_base = DDR_MEM_BASE_ADDR;	/* Base of Card DDR or Block Ram */
 
 	while (1) {
                 int option_index = 0;
@@ -438,9 +448,10 @@ int main(int argc, char *argv[])
 			{ "align",    required_argument, NULL, 'A' },
 			{ "ioff",     required_argument, NULL, 'I' },
 			{ "ooff",     required_argument, NULL, 'O' },
+			{ "dest",     required_argument, NULL, 'D' },
 			{ 0,          no_argument,       NULL, 0   },
 		};
-		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:N:A:I:O:qvVh",
+		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:N:A:I:O:D:qvVh",
 			long_options, &option_index);
 		if (cmd == -1)  /* all params processed ? */
 			break;
@@ -491,6 +502,9 @@ int main(int argc, char *argv[])
 			printf("This option is under Work !\n");
 			output_o = 0;
 			break;
+		case 'D':	/* dest */
+			card_ram_base = strtol(optarg, (char **)NULL, 0);
+			break;
 		default:
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
@@ -533,7 +547,7 @@ int main(int argc, char *argv[])
 	case 5:
 	case 6:
 		rc = memcpy_test(dn, action, block4k, input_o, output_o,
-				memcpy_align, memcpy_iter);
+				memcpy_align, memcpy_iter, card_ram_base);
 		break;
 	default:
 		printf("Invalid Action\n");
