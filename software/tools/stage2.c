@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <getopt.h>
+#include <ctype.h>
 
 #include <libdonut.h>
 
@@ -60,8 +61,10 @@
 #define	DEFAULT_MEMCPY_ITER	1
 #define ACTION_WAIT_TIME	50000	/* in msec */
 
-#define DDR_MEM_SIZE	(8*1024*1024*1024ull)	/* 8 GiB */
-#define DDR_MEM_BASE_ADDR	0x44A00000	/* Start of FPGA Interconnect */
+#define	MEGAB		(1024*1024ull)
+#define	GIGAB		(1024 * MEGAB)
+#define DDR_MEM_SIZE	(512 * MEGAB)	/* 512 MiB (Block RAM) */
+#define DDR_MEM_BASE_ADDR	0x00000000	/* Start of FPGA Interconnect */
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
@@ -73,6 +76,43 @@ static uint64_t get_usec(void)
         gettimeofday(&t, NULL);
         return t.tv_sec * 1000000 + t.tv_usec;
 }
+
+static void hexdump(FILE *fp, const void *buff, unsigned int size)
+{
+        unsigned int i;
+        const uint8_t *b = (uint8_t *)buff;
+        char ascii[17];
+        char str[2] = { 0x0, };
+
+        if (size == 0)
+                return;
+
+        for (i = 0; i < size; i++) {
+                if ((i & 0x0f) == 0x00) {
+                        fprintf(fp, " %08x:", i);
+                        memset(ascii, 0, sizeof(ascii));
+                }
+                fprintf(fp, " %02x", b[i]);
+                str[0] = isalnum(b[i]) ? b[i] : '.';
+                str[1] = '\0';
+                strncat(ascii, str, sizeof(ascii) - 1);
+
+                if ((i & 0x0f) == 0x0f)
+                        fprintf(fp, " | %s\n", ascii);
+        }
+        /* print trailing up to a 16 byte boundary. */
+        for (; i < ((size + 0xf) & ~0xf); i++) {
+                fprintf(fp, "   ");
+                str[0] = ' ';
+                str[1] = '\0';
+                strncat(ascii, str, sizeof(ascii) - 1);
+
+                if ((i & 0x0f) == 0x0f)
+                        fprintf(fp, " | %s\n", ascii);
+        }
+        fprintf(fp, "\n");
+}
+
 static void memset2(void *a, int size)
 {
 	int i;
@@ -198,7 +238,8 @@ static int memcpy_test(struct dnut_card* dnc,
 			int input_o,
 			int output_o,
 			int align,
-			int iter)
+			int iter,
+			uint64_t card_ram_base)
 {
 	int i, rc;
 	void *src_a = NULL, *src = NULL;
@@ -217,6 +258,13 @@ static int memcpy_test(struct dnut_card* dnc,
 	}
 	if (align > DEFAULT_MEMCPY_BLOCK) {
 		printf("align=%d is to much for me\n", align);
+		return 1;
+	}
+
+	/* Check Card Ram base and Size */
+	if (((uint64_t)block4k > DDR_MEM_SIZE) || ((card_ram_base + block4k) > DDR_MEM_SIZE)) {
+		printf("Size: 0x%x exceeds: 0x%llx Offset: 0x%llx\n",
+			block4k, (long long)DDR_MEM_SIZE, (long long)card_ram_base);
 		return 1;
 	}
 
@@ -249,52 +297,57 @@ static int memcpy_test(struct dnut_card* dnc,
 			action_memcpy(dnc, action, dest, src, block4k);
 			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
 			if (0 != rc) break;
+			if (verbose_level > 1) {
+				printf("---------- dest Buffer: %p\n", dest);
+				hexdump(stderr, dest, block4k);
+			}
 			rc = memcmp(src, dest, block4k);
 			if (rc) {
 				printf("Error Memcmp failed rc: %d\n", rc);
+				printf("---------- src Buffer: %p\n", src);
+				hexdump(stderr, src, block4k);
+				printf("---------- dest Buffer: %p\n", dest);
+				hexdump(stderr, dest, block4k);
 				break;
 			}
 		}
 		break;
-	case ACTION_CONFIG_COPY_HD:
-		dest = (void*)DDR_MEM_BASE_ADDR;
+	case ACTION_CONFIG_COPY_HD:	/* Host to Card RAM */
+		dest = (void*)card_ram_base;
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, action, dest, src, block4k);
 			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
 			if (0 != rc) break;
-			dest += block4k;
-			if ((uint64_t)dest >= DDR_MEM_SIZE)
-				dest = NULL;
 		}
 		break;
 	case ACTION_CONFIG_COPY_DH:
-		src = (void*)DDR_MEM_BASE_ADDR;
+		src = (void*)card_ram_base;
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, action, dest, src, block4k);
 			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
 			if (0 != rc) break;
-			src += block4k;
-			if ((uint64_t)src >= DDR_MEM_SIZE)
-				src = NULL;
-		}
-		break;
-	case ACTION_CONFIG_COPY_DD:
-		src = (void*)DDR_MEM_BASE_ADDR;
-		dest = src + block4k;
-		for (i = 0; i < iter; i++) {
-			action_memcpy(dnc, action, dest, src, block4k);
-			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
-			if (0 != rc) break;
-			src = dest;
-			dest += block4k;
-			if ((uint64_t)dest >= DDR_MEM_SIZE) {
-				src = (void*)DDR_MEM_BASE_ADDR;
-				dest = src + block4k;
+			if (verbose_level > 1) {
+				printf("---------- dest Buffer: %p\n", dest);
+				hexdump(stderr, dest, block4k);
 			}
 		}
 		break;
+	case ACTION_CONFIG_COPY_DD:
+		src = (void*)card_ram_base;
+		dest = src + block4k;	/* Need to check */
+		if ((uint64_t)(dest + block4k) > DDR_MEM_SIZE) {
+			printf("Error Size 0x%x and Offset 0x%llx Exceed Memory\n",
+				block4k, (long long)card_ram_base);
+			break;
+		}
+		for (i = 0; i < iter; i++) {
+			action_memcpy(dnc, action, dest, src, block4k);
+			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
+			if (0 != rc) break;
+		}
+		break;
 	case ACTION_CONFIG_COPY_HDH:	/* Host -> DDR -> Host */
-		ddr3 = (void*)DDR_MEM_BASE_ADDR;
+		ddr3 = (void*)card_ram_base;
 		for (i = 0; i < iter; i++) {
 			action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 				ddr3, src, block4k);
@@ -305,6 +358,10 @@ static int memcpy_test(struct dnut_card* dnc,
 			rc = action_wait_idle(dnc, ACTION_WAIT_TIME);
 			if (0 != rc) break;
 			rc = memcmp(src, dest, block4k);
+			if ((verbose_level > 1) || rc) {
+				printf("---------- %p\n", dest);
+				hexdump(stderr, dest, block4k);
+			}
 			if (rc) {
 				printf("Error Memcmp failed\n");
 				break;
@@ -345,6 +402,7 @@ static void usage(const char *prog)
 		"    -A, --align          Memcpy alignemend (default 4 KB)\n"
 		"    -I, --ioff           Memcpy input offset (default 0)\n"
 		"    -O, --ooff           Memcpy output offset (default 0)\n"
+		"    -D, --dest           Memcpy destination address in Card RAM (default 0)\n"
 		"\tTool to check Stage 1 FPGA or Stage 2 FPGA Mode (-a) for donut bringup.\n"
 		"\t-a 1: Count down mode (Stage 1)\n"
 		"\t-a 2: Copy from Host Memory to Host Memory.\n"
@@ -371,6 +429,7 @@ int main(int argc, char *argv[])
 	int memcpy_iter = DEFAULT_MEMCPY_ITER;
 	int memcpy_align = DEFAULT_MEMCPY_BLOCK;
 	int input_o = 0, output_o = 0;
+	uint64_t card_ram_base = DDR_MEM_BASE_ADDR;	/* Base of Card DDR or Block Ram */
 
 	while (1) {
                 int option_index = 0;
@@ -389,9 +448,10 @@ int main(int argc, char *argv[])
 			{ "align",    required_argument, NULL, 'A' },
 			{ "ioff",     required_argument, NULL, 'I' },
 			{ "ooff",     required_argument, NULL, 'O' },
+			{ "dest",     required_argument, NULL, 'D' },
 			{ 0,          no_argument,       NULL, 0   },
 		};
-		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:N:A:I:O:qvVh",
+		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:N:A:I:O:D:qvVh",
 			long_options, &option_index);
 		if (cmd == -1)  /* all params processed ? */
 			break;
@@ -442,6 +502,9 @@ int main(int argc, char *argv[])
 			printf("This option is under Work !\n");
 			output_o = 0;
 			break;
+		case 'D':	/* dest */
+			card_ram_base = strtol(optarg, (char **)NULL, 0);
+			break;
 		default:
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
@@ -484,7 +547,7 @@ int main(int argc, char *argv[])
 	case 5:
 	case 6:
 		rc = memcpy_test(dn, action, block4k, input_o, output_o,
-				memcpy_align, memcpy_iter);
+				memcpy_align, memcpy_iter, card_ram_base);
 		break;
 	default:
 		printf("Invalid Action\n");
