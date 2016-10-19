@@ -26,23 +26,15 @@
 #include <sys/time.h>
 
 #include <donut_tools.h>
+#include <action_memcopy.h>
 #include <libdonut.h>
 
 int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
 
-#define MEMCOPY_ACTION_TYPE 0xBEEF
-
 #define MMIO_DIN_DEFAULT	0x0ull
 #define MMIO_DOUT_DEFAULT	0x0ull
-
-struct memcopy_job {
-	struct dnut_addr in;	/* input data */
-	struct dnut_addr out;   /* offset table */
-	uint64_t mmio_din;	/* private settins for this action */
-	uint64_t mmio_dout;	/* private settins for this action */
-};
 
 /**
  * @brief	prints valid command line options
@@ -264,7 +256,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (optind + 1 != argc) {
+	if (optind != argc) {
 		usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
@@ -297,6 +289,13 @@ int main(int argc, char *argv[])
 
 	/* if input file is defined, use that as input */
 	if (input != NULL) {
+		size = file_size(input);
+		if (size < 0)
+			goto out_error1;
+
+		fprintf(stdout, "reading input data %d bytes from %s\n",
+			(int)size, input);
+
 		rc = file_read(input, ibuff, size);
 		if (rc < 0)
 			goto out_error1;
@@ -329,13 +328,17 @@ int main(int argc, char *argv[])
 	gettimeofday(&stime, NULL);
 	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
 	if (rc != 0) {
-		fprintf(stderr, "err: job execution %d!\n", rc);
+		fprintf(stderr, "err: job execution %d: %s!\n", rc,
+			strerror(errno));
 		goto out_error2;
 	}
 	gettimeofday(&etime, NULL);
 
 	/* If the output buffer is in host DRAM we can write it to a file */
 	if (output != NULL) {
+		fprintf(stdout, "writing output data %d bytes to %s\n",
+			(int)size, output);
+
 		rc = file_write(output, obuff, size);
 		if (rc < 0)
 			goto out_error2;

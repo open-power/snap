@@ -290,7 +290,8 @@ int main(int argc, char *argv[])
 	do {
 		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
 		if (rc != 0) {
-			fprintf(stderr, "err: job execution %d!\n", rc);
+			fprintf(stderr, "err: job execution %d: %s!\n", rc,
+				strerror(errno));
 			goto out_error2;
 		}
 		if (cjob.retc != 0x00000000)  {

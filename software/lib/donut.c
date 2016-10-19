@@ -610,8 +610,8 @@ static int sw_mmio_write32(void *_card __unused,
 	struct dnut_action *a = card->action;
 	struct queue_workitem *w;
 
-	dnut_trace("  %s(%p, %llx, %x)\n", __func__, _card,
-		   (long long)offs, data);
+	dnut_trace("  %s(%p, %llx, %x) a=%p\n", __func__, _card,
+		   (long long)offs, data, a);
 
 	if (a == NULL) {
 		errno = EFAULT;
