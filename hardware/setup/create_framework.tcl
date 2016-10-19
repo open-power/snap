@@ -103,7 +103,7 @@ if { $action_example == 1 } {
 read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict
 #add_files -norecurse $build_dir/Checkpoint/b_route_design.dcp
 update_compile_order -fileset sources_1
-#add_files -fileset constrs_1 -norecurse $build_dir/Sources/xdc/b_xilinx_capi_pcie_gen3_alphadata_brd_topimp.xdc
+add_files -fileset constrs_1 -norecurse $root_dir/setup/donut.xdc
 
 # IMPORT DDR3 XDCs 
 #add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc
