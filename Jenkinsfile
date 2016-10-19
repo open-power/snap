@@ -48,19 +48,23 @@ node {
       export SIMULATOR=ncsim
       export DONUT_ROOT=$PWD
       export PSLSE_ROOT=$PWD/pslse
+      echo "pslse_root1=${PSLSE_ROOT}"
       . hardware/setup/donut_settings
 
       echo "Get and build Simulation Software ..."
       rm -rf pslse
       git clone -b master https://github.com/ibm-capi/pslse pslse
+      echo "pslse_root2=${PSLSE_ROOT}"
       make -C pslse/afu_driver/src
       make -C pslse/pslse
       make -C pslse/libcxl
       make -C pslse/debug
 
       echo "Build Donut Software ..."
+      echo "pslse_root3=${PSLSE_ROOT}"
       make -C ${DONUT_ROOT}
       make -C ${DONUT_ROOT} test
+      echo "pslse_root4=${PSLSE_ROOT}"
 
       echo "Build Donut Hardware ..."
       pushd .
