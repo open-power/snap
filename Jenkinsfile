@@ -34,7 +34,7 @@ node {
     checkout scm
     // NOTE: This 'M3' maven tool must be configured in the global configuration.
     // ensure M3 is installed
-    def mvnHome = tool 'M3			
+    def mvnHome = tool 'M3'
     // add Maven to executable path
     //env.PATH = "${mvnHome}/bin:${env.PATH}"  	
     // run the Maven tool
