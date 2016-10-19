@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <getopt.h>
+#include <ctype.h>
 
 #include <libdonut.h>
 
@@ -75,6 +76,43 @@ static uint64_t get_usec(void)
         gettimeofday(&t, NULL);
         return t.tv_sec * 1000000 + t.tv_usec;
 }
+
+static void hexdump(FILE *fp, const void *buff, unsigned int size)
+{
+        unsigned int i;
+        const uint8_t *b = (uint8_t *)buff;
+        char ascii[17];
+        char str[2] = { 0x0, };
+
+        if (size == 0)
+                return;
+
+        for (i = 0; i < size; i++) {
+                if ((i & 0x0f) == 0x00) {
+                        fprintf(fp, " %08x:", i);
+                        memset(ascii, 0, sizeof(ascii));
+                }
+                fprintf(fp, " %02x", b[i]);
+                str[0] = isalnum(b[i]) ? b[i] : '.';
+                str[1] = '\0';
+                strncat(ascii, str, sizeof(ascii) - 1);
+
+                if ((i & 0x0f) == 0x0f)
+                        fprintf(fp, " | %s\n", ascii);
+        }
+        /* print trailing up to a 16 byte boundary. */
+        for (; i < ((size + 0xf) & ~0xf); i++) {
+                fprintf(fp, "   ");
+                str[0] = ' ';
+                str[1] = '\0';
+                strncat(ascii, str, sizeof(ascii) - 1);
+
+                if ((i & 0x0f) == 0x0f)
+                        fprintf(fp, " | %s\n", ascii);
+        }
+        fprintf(fp, "\n");
+}
+
 static void memset2(void *a, int size)
 {
 	int i;
