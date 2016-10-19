@@ -27,12 +27,14 @@ LDLIBS += -lcxl
 endif
 
 demo_search_objs = action_search.o
+demo_memcopy_objs = action_memcopy.o
 
 projs = demo_search demo_memcopy
 
 all: $(objs) $(projs)
 
 demo_search: action_search.o
+demo_memcopy: action_memcopy.o
 
 $(projs): $(libs)
 
@@ -62,5 +64,5 @@ uninstall:
 	done
 
 clean distclean:
-	$(RM) $(objs) $(projs) *.log
+	$(RM) $(objs) $(projs) *.log *.out
 
