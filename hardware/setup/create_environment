@@ -51,9 +51,9 @@
 # FUNCTIONS ###################
  function check_rc() {
 #  local i j k
-           grep -i error ${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log
-   errors=`grep -i error ${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log|wc -l`  # you cannot trust the RC alone, better grep for errors in the log
-   echo "compile $source args=$DEBUG $CLEAN pwd=$PWD subdir=$dir RC=$rc errors=$errors";
+           grep -i error ${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log|grep -v "errors: 0"
+   errors=`grep -i error ${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log|grep -v "errors: 0"|wc -l`  # you cannot trust the RC alone, better grep for errors in the log
+   echo "compile $source args=$DEBUG $CLEAN pwd=$PWD subdir=$dir RC=$rc error lines=$errors";
    git branch -a >>${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log
    git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2 " " $3}'>>${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log
    if [[ $rc > $maxrc ]];then
@@ -199,17 +199,17 @@
    echo "compile for simulator=$SIMULATOR afu_connnect_type=${AFU_CONNECT_TYPE}"
 
    if [ -z $SIMULATOR ] || [ $SIMULATOR == "ncsim" ]; then
-     cd ${DONUT_HARDWARE_ROOT}/sim/ies;  dir="."   ;
+     cd ${DONUT_HARDWARE_ROOT}/sim/ies;dir=.;source="ncsim"
      ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
      ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
    fi
    if [ -z $SIMULATOR ] || [ $SIMULATOR == "xsim" ]; then
-     cd ${DONUT_HARDWARE_ROOT}/sim/xsim;  dir="."   ;
+     cd ${DONUT_HARDWARE_ROOT}/sim/xsim;dir=.;source="xsim"
      ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
      ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
    fi
    if [ -z $SIMULATOR ] || [ $SIMULATOR == "questa" ]; then
-     cd ${DONUT_HARDWARE_ROOT}/sim/questa;  dir="."   ;
+     cd ${DONUT_HARDWARE_ROOT}/sim/questa;dir=.;source="questa"
      ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
      ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
    fi

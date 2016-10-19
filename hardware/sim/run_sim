@@ -113,8 +113,8 @@
 ##### main program
  TS=`date +%Y%m%d_%H%M%S`; if [ "$TST_TITLE" != "" ];then TS="${TS}_${TST_TITLE}";fi
  if [ ! -d "$USERHOME" ]; then echo "variable USERHOME is not pointing to a directory: $USERHOME, leaving"; exit 11; fi
- if [ -z ${DONUT_SOFTWARE_ROOT} ];then DONUT_SOFTWARE_ROOT=`readlink -e ../../jobq_software`; fi 	# set environment variable, in case not already set
- if [ -z ${PSLSE_ROOT} ];then PSLSE_ROOT="$USERHOME/pslse"; fi 				# set environment variable, in case not already set
+ if [ -z $DONUT_ROOT ]; then echo "variable DONUT_ROOT not found, leaving"; exit 11; fi
+ if [ -z $PSLSE_ROOT ]; then echo "variable PSLSE_ROOT not found, leaving"; exit 11; fi
  P3=`basename $PWD`
  if [ "$P3" == "sim" ]; then   			# contains sim scripts for GIT
    echo "in sim_script subdirectory"
@@ -143,16 +143,16 @@
      cp ../qu*.tcl  	      $SIMOUT 2>/dev/null
    else echo "cannot prepare simout for simdir=$SIMDIR"; exit 1; fi
    cd $SIMOUT
-#  ln -s $DONUT_HARDWARE_ROOT/support  support  	# to easier get to waveform signallists
+#  ln -s $DONUT_ROOT/hardware/support  support  	# to easier get to waveform signallists
    if   [ "$SIMDIR" == "ies" ];    then
-     ln -s $DONUT_HARDWARE_ROOT/sim/ies/ies        # point to compiled model
+     ln -s $DONUT_ROOT/hardware/sim/ies/ies        # point to compiled model
    elif [ "$SIMDIR" == "xsim" ];   then
-     ln -s $DONUT_HARDWARE_ROOT/sim/xsim/xsim.dir
+     ln -s $DONUT_ROOT/hardware/sim/xsim/xsim.dir
    elif [ "$SIMDIR" == "questa" ]; then
-     ln -s $DONUT_HARDWARE_ROOT/sim/questa/msim
-     ln -s $DONUT_HARDWARE_ROOT/sim/questa/work
+     ln -s $DONUT_ROOT/hardware/sim/questa/msim
+     ln -s $DONUT_ROOT/hardware/sim/questa/work
    else echo "dont know model pointer for simdir=$SIMDIR"; exit 1; fi
-#  ln -s $DONUT_SOFTWARE_ROOT          jobq_software
+#  ln -s $DONUT_ROOT/software          jobq_software
    cp $PSLSE_ROOT/pslse/pslse.parms   .		# default pslse.parms file
  elif [ "${P3:0:3}" == "201" ] || [ "$P3" == "latest" ]; then # already in simout i.e. 20160101_235959
    echo "in simout"
@@ -233,8 +233,9 @@
 #  echo "add $VERBOSE to tst_arg $TST_ARG"
    TST_ARG+=" ${VERBOSE}"
  fi
- echo "SW root= ${DONUT_SOFTWARE_ROOT}"	|tee sim.log
- echo "HW root= ${DONUT_HARDWARE_ROOT}"	|tee -a sim.log
+ echo "DONUT root= $DONUT_ROOT"		|tee sim.log
+#echo "SW root= ${DONUT_ROOT}/software"	|tee sim.log
+#echo "HW root= ${DONUT_ROOT}/hardware"	|tee -a sim.log
  echo "pslse=   $PSLSE_ROOT"		|tee -a sim.log
  echo "simbase= $SIMBASE"		|tee -a sim.log
  echo "simout=  $SIMOUT"		|tee -a sim.log
@@ -306,9 +307,9 @@
      if [ "$TST_NAME" == "XTERM" ];then
        xterm -title "testcase window, use >script ${STIMLOG}< to log input" & 	# tee+RC doesnt work here, use script instead
      elif [ "$TST_NAME" == "EBERHARD" ];then
-       $DONUT_SOFTWARE_ROOT/mmio/app0 -vv 2>&1 |tee -a $STIMLOG &  # for Eberhard
+       $DONUT_ROOT/software/mmio/app0 -vv 2>&1 |tee -a $STIMLOG &  # for Eberhard
      else
-       $DONUT_SOFTWARE_ROOT/${TST_NAME} -vv 2>&1 |tee -a $STIMLOG &
+       $DONUT_ROOT/software/${TST_NAME} -vv 2>&1 |tee -a $STIMLOG &
      fi
      pid[$i]=$(jobs -p|tail -n1);
      ts4=$(date +%T); echo "$ts4 app $i started, pid=${pid[$i]}"|tee -a stim.log
@@ -392,8 +393,9 @@
 
  echo "**** append msgs from sim.log"  |tee -a stim.log; grep -i -E "error=|error:|FIR:|assertion" sim.log |grep -v LOADLB |tee -a stim.log
 #echo "**** append msgs from $SIMULATOR.log"|tee -a stim.log; grep -i "error" $SIMULATOR.log|grep -v LOADLB |tee -a stim.log # duplicate info to sim.log
- cd $DONUT_HARDWARE_ROOT; 	HWVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
- cd $DONUT_SOFTWARE_ROOT; 	SWVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
+#cd $DONUT_ROOT/hardware; 	HWVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
+#cd $DONUT_ROOT/software; 	SWVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
+ cd $DONUT_ROOT;          	DOVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
  if [ "${PSLSE_PID}." != "." ] ;then			# variable exists, PSLSE started
    echo "**** append msgs from pslse.log"|tee -a stim.log; grep -i "error" pslse.log|tee -a stim.log
    cd $PSLSE_ROOT;	  	PSLSEVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
@@ -420,8 +422,10 @@
  fi
  USED=`du -sk . |awk '{print $1}'`				
  echo "**** RC=$TCRC parallel=$PAR executed=$EXECUTED failed=$FAILED runtime=$RUNTIME simtime=$SIMTIME cpus=$CPUS speed=$SPEED load=$LOAD local=$LOCAL used_kB=$USED percused=$PERCUSED"
- echo "**** Versions: HW=$HWVERS SW=$SWVERS pslse=$PSLSEVERS"
- echo "$HWVERS,$SWVERS,$PSLSEVERS,$TS,$TCRC,$PAR,$EXECUTED,$FAILED,$RUNTIME,$SIMTIME,$DDCB_TIMEOUT,$HOSTNAME,$SPEED,$CPUS,$LOAD,$USED,$PERCUSED,$TST_ARG" >>$USERHOME/status.csv
+#echo "**** Versions: HW=$HWVERS SW=$SWVERS pslse=$PSLSEVERS"
+ echo "**** Versions: DONUT=$DOVERS pslse=$PSLSEVERS"
+#echo "$HWVERS,$SWVERS,$PSLSEVERS,$TS,$TCRC,$PAR,$EXECUTED,$FAILED,$RUNTIME,$SIMTIME,$DDCB_TIMEOUT,$HOSTNAME,$SPEED,$CPUS,$LOAD,$USED,$PERCUSED,$TST_ARG" >>$USERHOME/status.csv
+ echo "$DOVERS,$PSLSEVERS,$TS,$TCRC,$PAR,$EXECUTED,$FAILED,$RUNTIME,$SIMTIME,$DDCB_TIMEOUT,$HOSTNAME,$SPEED,$CPUS,$LOAD,$USED,$PERCUSED,$TST_ARG" >>$USERHOME/status.csv
  grep --text -iE "error|errno|warning|retc|return|genwqe_|time|finished|loop|failed|script|tmp_pid" stim.log >>../summary.log
  sleep 5
  if [ "$CLEAN" == "1" ];then
