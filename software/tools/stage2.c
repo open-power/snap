@@ -60,8 +60,10 @@
 #define	DEFAULT_MEMCPY_ITER	1
 #define ACTION_WAIT_TIME	50000	/* in msec */
 
-#define DDR_MEM_SIZE	(8*1024*1024*1024ull)	/* 8 GiB */
-#define DDR_MEM_BASE_ADDR	0x44A00000	/* Start of FPGA Interconnect */
+#define	MEGAB		(1024*1024ull)
+#define	GIGAB		(1024 * MEGAB)
+#define DDR_MEM_SIZE	(512 * MEGAB)	/* 512 MiB (Block RAM) */
+#define DDR_MEM_BASE_ADDR	0x00000000	/* Start of FPGA Interconnect */
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
