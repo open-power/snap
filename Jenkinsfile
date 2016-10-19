@@ -33,9 +33,12 @@ node {
   stage('checkout'){
     checkout scm
     // NOTE: This 'M3' maven tool must be configured in the global configuration.
-    def mvnHome = tool 'M3			// ensure M3 is installed
-    //env.PATH = "${mvnHome}/bin:${env.PATH}"  	// add Maven to executable path
-    sh "${mvnHome}/bin/mvn -B verify		// run the Maven tool
+    // ensure M3 is installed
+    def mvnHome = tool 'M3			
+    // add Maven to executable path
+    //env.PATH = "${mvnHome}/bin:${env.PATH}"  	
+    // run the Maven tool
+    sh "${mvnHome}/bin/mvn -B verify		
   }
 
   stage('build and test'){
