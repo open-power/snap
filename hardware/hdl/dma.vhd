@@ -274,7 +274,6 @@ ARCHITECTURE dma OF dma IS
       dout : OUT STD_LOGIC_VECTOR(128 DOWNTO 0);
       full : OUT STD_LOGIC;
       empty : OUT STD_LOGIC;
-      valid : OUT STD_LOGIC;
       prog_full : OUT STD_LOGIC;
       wr_rst_busy : OUT STD_LOGIC;
       rd_rst_busy : OUT STD_LOGIC
