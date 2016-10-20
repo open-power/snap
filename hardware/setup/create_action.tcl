@@ -172,8 +172,9 @@ connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_0/M01_ARESETN]
 
 assign_bd_address
 set_property range 4K [get_bd_addr_segs {s_axi/SEG_memcopy_0_reg0}]
-set_property range 4K [get_bd_addr_segs {s_axi/SEG_opencldesign_wrapper_0_reg0}]
 set_property offset 0x00001000 [get_bd_addr_segs {s_axi/SEG_memcopy_0_reg0}]
+set_property range 4K [get_bd_addr_segs {s_axi/SEG_opencldesign_wrapper_0_reg0}]
+set_property offset 0x00000000 [get_bd_addr_segs {s_axi/SEG_opencldesign_wrapper_0_reg0}]
 set_property range 512K [get_bd_addr_segs {memcopy_0/m01_axi/SEG_c0_ddr3_Reg}]
 set_property offset 0x000000000 [get_bd_addr_segs {memcopy_0/m01_axi/SEG_c0_ddr3_Reg}]
 set_property offset 0x0000000000000000 [get_bd_addr_segs {memcopy_0/m00_axi/SEG_m_axi_Reg}]
