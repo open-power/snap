@@ -109,4 +109,11 @@ else
   echo "DONUT_HARDWARE_ROOT  is set to \"$DONUT_HARDWARE_ROOT\""
 fi
 
+if [ -z "$EXAMPLE" ]; then
+  echo
+  echo "Variable EXAMPLE is not set. Please set to 1 if you want to add the memcopy action example to your project."
+else
+  echo "EXAMPLE              is set to \"$EXAMPLE\""
+fi
+
 echo

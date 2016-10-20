@@ -69,3 +69,7 @@ clean:
 	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/ies
 	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/xsim
 	rm -rf  $(DONUT_HARDWARE_ROOT)/action/memcopy*
+	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/questa
+	rm -rf  $(DONUT_HARDWARE_ROOT)/action/memcopy*
+	rm -f   ./*.log
+	rm -f   ./*.jou
