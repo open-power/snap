@@ -67,6 +67,8 @@ add_files -norecurse $root_dir/ip/ram_576to144x64_2p/ram_576to144x64_2p.xci
 export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_576to144x64_2p/ram_576to144x64_2p.xci"] -force -quiet
 add_files -norecurse $root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci
 export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci"] -force -quiet
+add_files -norecurse  $root_dir/ip/fifo_129x512/fifo_129x512.xci
+export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_129x512/fifo_129x512.xci"] -force -quiet
 #DDR3 add_files -norecurse $root_dir/ip/ddr3sdram/ddr3sdram.xci
 #DDR3 export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr3sdram/ddr3sdram.xci"] -force -quiet
 add_files -norecurse $root_dir/ip/block_RAM/block_RAM.xci
@@ -84,19 +86,18 @@ update_compile_order -fileset sim_1
 set_property  ip_repo_paths  $root_dir/action [current_project]
 update_ip_catalog
 
-
 # add action block design and connect it to the rest
 if { $action_example == 1 } {
-  add_files -norecurse $root_dir/action/memcopy.srcs/sources_1/bd/action/action.bd
-  export_ip_user_files -of_objects  [get_files  $root_dir/action/memcopy.srcs/sources_1/bd/action/action.bd] -force -quiet
+  add_files -norecurse $root_dir/action/action.srcs/sources_1/bd/action/action.bd
+  export_ip_user_files -of_objects  [get_files  $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -force -quiet
   update_compile_order -fileset sources_1
-  make_wrapper -files [get_files $root_dir/action/memcopy.srcs/sources_1/bd/action/action.bd] -top
+  make_wrapper -files [get_files $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -top
   remove_files $root_dir/hdl/action_wrapper.vhd
-  add_files -norecurse $root_dir/action/memcopy.srcs/sources_1/bd/action/hdl/action_wrapper.vhd
+  add_files -norecurse $root_dir/action/action.srcs/sources_1/bd/action/hdl/action_wrapper.vhd
   update_compile_order -fileset sources_1
-  generate_target all [get_files  $root_dir/action/memcopy.srcs/sources_1/bd/action/action.bd]
-  export_ip_user_files -of_objects [get_files $root_dir/action/memcopy.srcs/sources_1/bd/action/action.bd] -no_script -force -quiet
-  export_simulation -of_objects [get_files $root_dir/action/memcopy.srcs/sources_1/bd/action/action.bd] -directory $root_dir/viv_project/framework.ip_user_files/sim_scripts -force -quiet
+  generate_target all [get_files  $root_dir/action/action.srcs/sources_1/bd/action/action.bd]
+  export_ip_user_files -of_objects [get_files $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -no_script -force -quiet
+  export_simulation -of_objects [get_files $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -directory $root_dir/viv_project/framework.ip_user_files/sim_scripts -force -quiet
 }
 
 # IMPORT PSL CHECKPOINT FILE
