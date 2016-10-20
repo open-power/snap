@@ -90,6 +90,10 @@ extern "C" {
 #define DNUT_EFAULT			-5 /* Illegal address */
 #define DNUT_ETIMEDOUT			-6 /* Timeout error */
 
+/* Standardized, non-zero return codes to be expected from FPGA actions */
+#define DNUT_RETC_SUCCESS		0x0102
+#define DNUT_RETC_FAILURE		0x0104
+
 /* FIXME Constants are too long, I like to type less */
 #define DNUT_TARGET_TYPE_UNUSED		0xffff
 #define DNUT_TARGET_TYPE_HOST_DRAM	0x0000 /* this is fine, always there */

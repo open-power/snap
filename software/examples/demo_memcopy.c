@@ -261,20 +261,6 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	printf("PARAMETERS:\n"
-	       "  input:    %s\n"
-	       "  output:   %s\n"
-	       "  type_in:  %x\n"
-	       "  addr_in:  %016llx\n"
-	       "  type_out: %x\n"
-	       "  addr_out: %016llx\n"
-	       "  size:     %08lx\n"
-	       "  mode:     %08x\n",
-	       input, output,
-	       type_in, (long long)addr_in,
-	       type_out, (long long)addr_out,
-	       size, mode);
-
 	/* source buffer */
 	ibuff = memalign(page_size, size);
 	if (ibuff == NULL)
@@ -310,6 +296,18 @@ int main(int argc, char *argv[])
 		addr_out = (unsigned long)obuff;
 	}
 
+	printf("PARAMETERS:\n"
+	       "  input:    %s\n"
+	       "  output:   %s\n"
+	       "  type_in:  %x\n"
+	       "  addr_in:  %016llx\n"
+	       "  type_out: %x\n"
+	       "  addr_out: %016llx\n"
+	       "  size:     %08lx\n"
+	       "  mode:     %08x\n",
+	       input, output, type_in, (long long)addr_in,
+	       type_out, (long long)addr_out, size, mode);
+
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
 	kernel = dnut_kernel_attach_dev(device,
 					DNUT_VENDOR_ID_ANY,
@@ -320,6 +318,13 @@ int main(int argc, char *argv[])
 			strerror(errno));
 		goto out_error1;
 	}
+
+	/* FIXME Temporary setting to define memory base address */
+	dnut_kernel_mmio_write32(kernel, 0x10010,0);
+	dnut_kernel_mmio_write32(kernel, 0x10014,0);
+	dnut_kernel_mmio_write32(kernel, 0x1001c,0);
+	dnut_kernel_mmio_write32(kernel, 0x10020,0);
+	dnut_kernel_mmio_write32(kernel, 0x10080,0);
 
 	dnut_prepare_memcopy(&cjob, &mjob,
 			     (void *)addr_in, size, type_in,

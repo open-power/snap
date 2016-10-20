@@ -61,7 +61,7 @@ static int action_main(struct dnut_action *action,
 	dst = (void *)js->out.addr;
 	memcpy(dst, src, len);
 
-	action->retc = 0x0;
+	action->retc = DNUT_RETC_SUCCESS;
 	return 0;
 }
 
@@ -70,7 +70,7 @@ static struct dnut_action action = {
 	.device_id = DNUT_DEVICE_ID_ANY,
 	.action_type = MEMCOPY_ACTION_TYPE,
 
-	.retc = 0x104,		/* preset value, should be 0 on success */
+	.retc = DNUT_RETC_FAILURE, /* preset value, should be 0 on success */
 	.state = ACTION_IDLE,
 	.main = action_main,
 	.priv_data = NULL,	/* this is passed back as void *card */
