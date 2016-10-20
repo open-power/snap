@@ -317,6 +317,7 @@ int main(int argc, char *argv[])
 	} while (sjob.next_input_addr != 0x0);
 	gettimeofday(&etime, NULL);
 
+	fprintf(stdout, "RETC=%x\n", cjob.retc);
 	fprintf(stdout, "searching took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 

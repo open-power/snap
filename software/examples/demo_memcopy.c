@@ -349,6 +349,7 @@ int main(int argc, char *argv[])
 			goto out_error2;
 	}
 
+	fprintf(stdout, "RETC=%x\n", cjob.retc);
 	fprintf(stdout, "memcopy took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 

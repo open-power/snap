@@ -87,7 +87,7 @@ test: all
 	DNUT_CONFIG=0x1 ./examples/demo_memcopy -C0 	\
 		-i examples/demo_search.txt 		\
 		-o examples/demo_search.out >	 	\
-		examples/demo_search.log  2>&1
+		examples/demo_memcopy.log  2>&1
 	diff examples/demo_search.txt examples/demo_search.out || exit 1
 
 	@echo "Test OK"
