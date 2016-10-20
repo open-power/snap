@@ -418,9 +418,9 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	memset(&job, 0, sizeof(job));
 	job.action = cjob->action;
 	job.flags = 0x00;
-	job.seq = 0x0;
+	job.seq = 0xbeef;
 	job.retc = 0x0;
-	job.priv_data = 0x0ull;
+	job.priv_data = 0xdeadbeefc0febabeull;
 
 	/* Fill workqueue cacheline which we need to transfert to the action */
 	if (cjob->workitem_size <= 112) {
@@ -438,6 +438,8 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	mmio_in = 16 / sizeof(uint32_t) + mmio_out;
 
 	dnut_trace("%s: PASS PARAMETERS\n", __func__);
+
+	__hexdump(stderr, &job, sizeof(job));
 
 	/* Pass action control and job to the action, should be 128
 	   bytes or a little less */

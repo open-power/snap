@@ -285,6 +285,13 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
+	/* FIXME Temporary setting to define memory base address */
+	dnut_kernel_mmio_write32(kernel, 0x10010,0);
+	dnut_kernel_mmio_write32(kernel, 0x10014,0);
+	dnut_kernel_mmio_write32(kernel, 0x1001c,0);
+	dnut_kernel_mmio_write32(kernel, 0x10020,0);
+	dnut_kernel_mmio_write32(kernel, 0x10080,0);
+
 	run = 0;
 	gettimeofday(&stime, NULL);
 	do {
@@ -294,7 +301,7 @@ int main(int argc, char *argv[])
 				strerror(errno));
 			goto out_error2;
 		}
-		if (cjob.retc != 0x00000000)  {
+		if (cjob.retc != DNUT_RETC_SUCCESS)  {
 			fprintf(stderr, "err: job retc %x!\n", cjob.retc);
 			goto out_error2;
 		}
