@@ -27,54 +27,102 @@
   test_platform("Mac",     true)
   test_platform("Linux",   true
 */
-node {
-  // a node is a step that schedules a task to run by the Jenkins build queue
-  // a node allocates a workspace for the duration of the task
+node(viv154) {
   stage('checkout'){
     checkout scm
-    // NOTE: This 'M3' maven tool must be configured in the global configuration.
-    // ensure M3 is installed
-    //def mvnHome = tool 'M3'
-    // add Maven to executable path
-    //env.PATH = "${mvnHome}/bin:${env.PATH}"  	
-    // run the Maven tool
-    //sh "${mvnHome}/bin/mvn -B verify"
   }
-
-  stage('build and test'){
+  stage('build vivado'){
     sh '''
-      echo "Starting build in `pwd` branch_name=${BRANCH_NAME} build_tag=${BUILD_TAG}"
-      . /afs/bb/proj/fpga/framework/ibm_settings_for_donut
-      export SIMULATOR=ncsim
+      export XILINX_ROOT=/afs/bb/proj/fpga/xilinx
+      source $XILINX_ROOT/Vivado/2015.4/settings64.sh		
+      export XILINXD_LICENSE_FILE=2100@pokwinlic1.pok.ibm.com	
+
+      export CDS_INST_DIR=$CTEPATH/tools/cds/Incisiv/14.10.s14	
+      export PATH=$CDS_INST_DIR/tools/bin:$PATH
+      export LD_LIBRARY_PATH=$CDS_INST_DIR/tools/lib/64bit:$LD_LIBRARY_PATH
+      export LM_LICENSE_FILE=5280@hdlic4.boeblingen.de.ibm.com	
+
+      export FRAMEWORK_ROOT=/afs/bb/proj/fpga/framework
       export DONUT_ROOT=$PWD
       export PSLSE_ROOT=$PWD/pslse
-      echo "pslse_root1=${PSLSE_ROOT}"
-      . hardware/setup/donut_settings
-
-      echo "Get and build Simulation Software ..."
-      rm -rf pslse
-      git clone -b master https://github.com/ibm-capi/pslse pslse
-      echo "pslse_root2=${PSLSE_ROOT}"
-      make -C pslse/afu_driver/src
-      make -C pslse/pslse
-      make -C pslse/libcxl
-      make -C pslse/debug
-
-      echo "Build Donut Software ..."
-      echo "pslse_root3=${PSLSE_ROOT}"
-      make -C ${DONUT_ROOT}
-      make -C ${DONUT_ROOT} test
-      echo "pslse_root4=${PSLSE_ROOT}"
-
-      echo "Build Donut Hardware ..."
-      pushd .
       cd ${DONUT_ROOT}/hardware/setup
+      . donut_settings
       export EXAMPLE=1
-      make config model
+      make clean config
+    '''
+  }
+  stage('build for ncsim'){
+    sh '''
+      cd ${DONUT_ROOT}/hardware/setup
+      SIMULATOR=ncsim make model
+    '''
+  }
+  stage('simulate ncsim'){
+    sh '''
+      cd ${DONUT_ROOT}/hardware/sim
+      SIMULATOR=ncsim run_sim -app "tools/stage2 -a 2"
+    '''
+  }
+  stage('build for xsim'){
+    sh '''
+      cd ${DONUT_ROOT}/hardware/setup
+      SIMULATOR=xsim make model
+    '''
+  }
+  stage('simulate xsim'){
+    sh '''
+      cd ${DONUT_ROOT}/hardware/sim
+      SIMULATOR=xsim run_sim -app "tools/stage2 -a 2"
+    '''
+  }
+}
 
-      echo "Run Simulation"
-      cd ../sim
-      ./run_sim -app "tools/stage2 -a 2"
+node(viv163) {
+  stage('checkout'){
+    checkout scm
+  }
+  stage('build vivado'){
+    sh '''
+      export XILINX_ROOT=/afs/bb/proj/fpga/xilinx
+      source $XILINX_ROOT/Vivado/2016.3/settings64.sh		
+      export XILINXD_LICENSE_FILE=2100@pokwinlic1.pok.ibm.com	
+
+      export CDS_INST_DIR=$CTEPATH/tools/cds/Incisiv/14.10.s14	
+      export PATH=$CDS_INST_DIR/tools/bin:$PATH
+      export LD_LIBRARY_PATH=$CDS_INST_DIR/tools/lib/64bit:$LD_LIBRARY_PATH
+      export LM_LICENSE_FILE=5280@hdlic4.boeblingen.de.ibm.com	
+
+      export FRAMEWORK_ROOT=/afs/bb/proj/fpga/framework
+      export DONUT_ROOT=$PWD
+      export PSLSE_ROOT=$PWD/pslse
+      cd ${DONUT_ROOT}/hardware/setup
+      . donut_settings
+      export EXAMPLE=1
+      make clean config
+    '''
+  }
+  stage('build for ncsim'){
+    sh '''
+      cd ${DONUT_ROOT}/hardware/setup
+      SIMULATOR=ncsim make model
+    '''
+  }
+  stage('simulate ncsim'){
+    sh '''
+      cd ${DONUT_ROOT}/hardware/sim
+      SIMULATOR=ncsim run_sim -app "tools/stage2 -a 2"
+    '''
+  }
+  stage('build for xsim'){
+    sh '''
+      cd ${DONUT_ROOT}/hardware/setup
+      SIMULATOR=xsim make model
+    '''
+  }
+  stage('simulate xsim'){
+    sh '''
+      cd ${DONUT_ROOT}/hardware/sim
+      SIMULATOR=xsim run_sim -app "tools/stage2 -a 2"
     '''
   }
 }
