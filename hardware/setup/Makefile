@@ -5,7 +5,7 @@ PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/ies/filelist.f
 SOURCE_FILES_HDL     = $(shell grep '\/hdl\/' $(PROJECT_COMPILE_LIST) | grep -v 'action_auto_cc' | sed 's/psl_accel_sim/psl_accel_syn/')
 SOURCE_FILES_VHDL    = $(SOURCE_FILES_HDL:../%=%)
 
-CE_PARMS := -p
+CE_PARMS := -p -clone
 ifdef EXAMPLE
 CE_PARMS += -e
 endif
