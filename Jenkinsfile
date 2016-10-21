@@ -56,7 +56,5 @@ for (x in versions) {
     }
   }
 }
-    }
-  }
 /* parallel run */
 parallel builders
