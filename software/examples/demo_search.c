@@ -25,6 +25,8 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <malloc.h>
+#include <endian.h>
+#include <asm/byteorder.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -112,7 +114,7 @@ static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
 	uint64_t *offs;
 	unsigned long offs_max;
 
-	printf("RUN:          %08x\n", run);
+	printf("RUN:          %08x/%d\n", run, run);
 	printf("RETC:         %08lx\n", (long)cjob->retc);
 	printf("Input Data:   %016llx - %016llx\n",
 	       (long long)sjob->input.addr,
@@ -130,7 +132,7 @@ static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
 	offs = (uint64_t *)(unsigned long)sjob->output.addr;
 	offs_max = sjob->output.size / sizeof(uint64_t);
 	for (i = 0; i < MIN(sjob->nb_of_occurrences, offs_max); i++) {
-		printf("%3d: %16llx\n", i, (long long)offs[i]);
+		printf("%3d: %16llx\n", i, (long long)__be64_to_cpu(offs[i]));
 	}
 
 	printf("Pattern:      %016llx\n", (long long)sjob->pattern.addr);
@@ -179,8 +181,11 @@ int main(int argc, char *argv[])
 	uint8_t *pbuff;		/* pattern buffer */
 	uint8_t *dbuff;		/* data buffer */
 	uint64_t *offs;		/* offset buffer */
+	uint8_t *input_addr;
+	uint32_t input_size;
 	unsigned int timeout = 10;
 	unsigned int items = 42;
+	unsigned int total_found = 0;
 	unsigned int page_size = sysconf(_SC_PAGESIZE);
 	struct timeval etime, stime;
 
@@ -266,6 +271,8 @@ int main(int argc, char *argv[])
 		goto out_errorX;
 	memset(offs, 0xAB, items * sizeof(*offs));
 
+	input_addr = dbuff;
+	input_size = dsize;
 	dnut_prepare_search(&cjob, &sjob, dbuff, dsize,
 			    offs, items, pbuff, psize);
 	dnut_print_search_results(&cjob, 0xffffffff);
@@ -305,19 +312,33 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "err: job retc %x!\n", cjob.retc);
 			goto out_error2;
 		}
-		dnut_print_search_results(&cjob, run);
 
 		/* trigger repeat if search was not complete */
 		if (sjob.next_input_addr != 0x0) {
-			sjob.input.size -= (sjob.next_input_addr -
-					    sjob.input.addr);
-			sjob.input.addr = sjob.next_input_addr;
+			input_size -= (sjob.next_input_addr - (unsigned long)input_addr);
+			input_addr = (uint8_t *)(unsigned long)sjob.next_input_addr;
+
+			/* FIXME I normally expect the data back, which I passed */
+			dnut_addr_set(&sjob.input, input_addr, input_size,
+				DNUT_TARGET_TYPE_HOST_DRAM,
+				DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
 		}
+		dnut_addr_set(&sjob.output, offs, items * sizeof(*offs),
+			DNUT_TARGET_TYPE_HOST_DRAM,
+			DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
+		dnut_addr_set(&sjob.pattern, pbuff, psize,
+			DNUT_TARGET_TYPE_HOST_DRAM,
+			DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC |
+			DNUT_TARGET_FLAGS_END);
+		total_found += sjob.nb_of_occurrences;
+
+		dnut_print_search_results(&cjob, run);
 		run++;
 	} while (sjob.next_input_addr != 0x0);
 	gettimeofday(&etime, NULL);
 
 	fprintf(stdout, "RETC=%x\n", cjob.retc);
+	fprintf(stdout, "%d patterns found.\n", total_found);
 	fprintf(stdout, "searching took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
