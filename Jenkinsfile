@@ -1,7 +1,7 @@
-def versions = ['154','163']	// versions to test
-def executions = [:]
-def create_execution(String version) {
-  cmd = {
+//def versions = ['154','163']	// versions to test
+//def executions = [:]
+//def create_execution(String version) {
+//  cmd = {
     node {
       sh "echo working with version=${version}"
       stage('checkout'){
@@ -10,8 +10,9 @@ def create_execution(String version) {
       stage('build vivado'){
         sh '''
           export XILINX_ROOT=/afs/bb/proj/fpga/xilinx
-          if ${version}=="154" ( source $XILINX_ROOT/Vivado/2015.4/settings64.sh )
-          if ${version}=="163" ( source $XILINX_ROOT/Vivado/2016.3/settings64.sh )
+          source $XILINX_ROOT/Vivado/2015.4/settings64.sh
+//        if ${version}=="154" ( source $XILINX_ROOT/Vivado/2015.4/settings64.sh )
+//        if ${version}=="163" ( source $XILINX_ROOT/Vivado/2016.3/settings64.sh )
           export XILINXD_LICENSE_FILE=2100@pokwinlic1.pok.ibm.com	
 
           export CDS_INST_DIR=$CTEPATH/tools/cds/Incisiv/14.10.s14	
@@ -53,10 +54,10 @@ def create_execution(String version) {
         '''
       }
     }
-  }
-  return cmd
-}
-for(int i = 0; i < versions.size(); i++) {
-  executions[domains[i]] = create_execution(versions[i])
-}
-parallel execution
+//  }
+//  return cmd
+//}
+//for(int i = 0; i < versions.size(); i++) {
+//  executions[domains[i]] = create_execution(versions[i])
+//}
+//parallel execution
