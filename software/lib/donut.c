@@ -472,6 +472,8 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	if (completed == 0) {
 		dnut_trace("%s: rc=%d completed=%d\n", __func__,
 			   rc, completed);
+		if (rc == 0)
+			errno = ETIME;
 		return (rc != 0) ? rc : DNUT_ETIMEDOUT;
 	}
 
