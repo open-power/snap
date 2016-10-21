@@ -1,18 +1,17 @@
-/* skeleton for serial+parallel execution */
 def versions = ['154','163']	// versions to test
-def builders = [:]		// allow parallel execution
-for (x in versions) {
-  def label = x
-  builders[label] = {		// map to pass parallel steps
-    node(label) {
+def executions = [:]
+def create_execution(String version) {
+  cmd = {
+    node {
+      sh "echo working with version=${version}"
       stage('checkout'){
         checkout scm
       }
       stage('build vivado'){
         sh '''
           export XILINX_ROOT=/afs/bb/proj/fpga/xilinx
-          if label=="154" (source $XILINX_ROOT/Vivado/2015.4/settings64.sh)
-          if label=="163" (source $XILINX_ROOT/Vivado/2016.3/settings64.sh)
+          if ${version}=="154" ( source $XILINX_ROOT/Vivado/2015.4/settings64.sh )
+          if ${version}=="163" ( source $XILINX_ROOT/Vivado/2016.3/settings64.sh )
           export XILINXD_LICENSE_FILE=2100@pokwinlic1.pok.ibm.com	
 
           export CDS_INST_DIR=$CTEPATH/tools/cds/Incisiv/14.10.s14	
@@ -53,8 +52,11 @@ for (x in versions) {
           SIMULATOR=xsim run_sim -app "tools/stage2 -a 2"
         '''
       }
-    }	// end node
-  }	// end builders map
-}	// end for
-/* parallel run */
-parallel builders
+    }
+  }
+  return cmd
+}
+for(int i = 0; i < versions.size(); i++) {
+  executions[domains[i]] = create_execution(versions[i])
+}
+parallel execution
