@@ -106,23 +106,23 @@ component action_wrapper is
     -- Slave Interface
     s_axi_araddr        : in STD_LOGIC_VECTOR ( 31 downto 0 );
     s_axi_arprot        : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    s_axi_arready       : out STD_LOGIC_VECTOR ( 0 to 0);
-    s_axi_arvalid       : in STD_LOGIC_VECTOR ( 0 to 0);
+    s_axi_arready       : out STD_LOGIC;
+    s_axi_arvalid       : in STD_LOGIC;
     s_axi_awaddr        : in STD_LOGIC_VECTOR ( 31 downto 0 );
     s_axi_awprot        : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    s_axi_awready       : out STD_LOGIC_VECTOR ( 0 to 0);
-    s_axi_awvalid       : in STD_LOGIC_VECTOR ( 0 to 0);
-    s_axi_bready        : in STD_LOGIC_VECTOR ( 0 to 0);
+    s_axi_awready       : out STD_LOGIC;
+    s_axi_awvalid       : in STD_LOGIC;
+    s_axi_bready        : in STD_LOGIC;
     s_axi_bresp         : out STD_LOGIC_VECTOR ( 1 downto 0 );
-    s_axi_bvalid        : out STD_LOGIC_VECTOR ( 0 to 0);
+    s_axi_bvalid        : out STD_LOGIC;
     s_axi_rdata         : out STD_LOGIC_VECTOR ( 31 downto 0 );
-    s_axi_rready        : in STD_LOGIC_VECTOR ( 0 to 0);
+    s_axi_rready        : in STD_LOGIC;
     s_axi_rresp         : out STD_LOGIC_VECTOR ( 1 downto 0 );
-    s_axi_rvalid        : out STD_LOGIC_VECTOR ( 0 to 0);
+    s_axi_rvalid        : out STD_LOGIC;
     s_axi_wdata         : in STD_LOGIC_VECTOR ( 31 downto 0 );
-    s_axi_wready        : out STD_LOGIC_VECTOR ( 0 to 0);
+    s_axi_wready        : out STD_LOGIC;
     s_axi_wstrb         : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    s_axi_wvalid        : in STD_LOGIC_VECTOR ( 0 to 0);
+    s_axi_wvalid        : in STD_LOGIC;
     --
     -- DDR3 Interface
     c0_ddr3_awaddr      : out STD_LOGIC_VECTOR ( 32 downto 0 );
@@ -187,23 +187,23 @@ action: component action_wrapper
      
     s_axi_araddr    =>  xk_d_i.m_axi_araddr , 
     s_axi_arprot    =>  xk_d_i.m_axi_arprot , 
-    s_axi_arready(0)=>  kx_d_o.m_axi_arready, 
-    s_axi_arvalid(0)=>  xk_d_i.m_axi_arvalid, 
+    s_axi_arready   =>  kx_d_o.m_axi_arready, 
+    s_axi_arvalid   =>  xk_d_i.m_axi_arvalid, 
     s_axi_awaddr    =>  xk_d_i.m_axi_awaddr , 
     s_axi_awprot    =>  (others => '0')     , 
-    s_axi_awready(0)=>  kx_d_o.m_axi_awready, 
-    s_axi_awvalid(0)=>  xk_d_i.m_axi_awvalid, 
-    s_axi_bready(0) =>  xk_d_i.m_axi_bready , 
+    s_axi_awready   =>  kx_d_o.m_axi_awready, 
+    s_axi_awvalid   =>  xk_d_i.m_axi_awvalid, 
+    s_axi_bready    =>  xk_d_i.m_axi_bready , 
     s_axi_bresp     =>  kx_d_o.m_axi_bresp  , 
-    s_axi_bvalid(0) =>  kx_d_o.m_axi_bvalid , 
+    s_axi_bvalid    =>  kx_d_o.m_axi_bvalid , 
     s_axi_rdata     =>  kx_d_o.m_axi_rdata  , 
-    s_axi_rready(0) =>  xk_d_i.m_axi_rready , 
+    s_axi_rready    =>  xk_d_i.m_axi_rready , 
     s_axi_rresp     =>  kx_d_o.m_axi_rresp  , 
-    s_axi_rvalid(0) =>  kx_d_o.m_axi_rvalid , 
+    s_axi_rvalid    =>  kx_d_o.m_axi_rvalid , 
     s_axi_wdata     =>  xk_d_i.m_axi_wdata  , 
-    s_axi_wready(0) =>  kx_d_o.m_axi_wready , 
+    s_axi_wready    =>  kx_d_o.m_axi_wready , 
     s_axi_wstrb     =>  xk_d_i.m_axi_wstrb  , 
-    s_axi_wvalid(0) =>  xk_d_i.m_axi_wvalid , 
+    s_axi_wvalid    =>  xk_d_i.m_axi_wvalid , 
 
     m_axi_araddr    => ks_d_o.s_axi_araddr  , 
     m_axi_arburst   => ks_d_o.s_axi_arburst , 
