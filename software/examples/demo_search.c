@@ -297,12 +297,14 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
+#if 1 /* Circumvention should go away */
 	/* FIXME Temporary setting to define memory base address */
 	dnut_kernel_mmio_write32(kernel, 0x10010,0);
 	dnut_kernel_mmio_write32(kernel, 0x10014,0);
 	dnut_kernel_mmio_write32(kernel, 0x1001c,0);
 	dnut_kernel_mmio_write32(kernel, 0x10020,0);
 	dnut_kernel_mmio_write32(kernel, 0x10080,0);
+#endif
 
 	run = 0;
 	gettimeofday(&stime, NULL);
@@ -327,6 +329,11 @@ int main(int argc, char *argv[])
 			sjob_in.nb_of_occurrences = sjob_out.nb_of_occurrences;
 			sjob_in.next_input_addr = sjob_out.next_input_addr;
 
+#if 0 /* Circumvention should go away */
+			/* FIXME alignment issue ... */
+			memmove(dbuff, input_addr, input_size);
+			input_addr = dbuff;
+#endif
 			dnut_addr_set(&sjob_in.input, input_addr, input_size,
 				DNUT_TARGET_TYPE_HOST_DRAM,
 				DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
