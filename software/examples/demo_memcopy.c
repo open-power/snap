@@ -78,7 +78,8 @@ static void dnut_prepare_memcopy(struct dnut_job *cjob,
 	mjob->mmio_din = MMIO_DIN_DEFAULT;
 	mjob->mmio_dout = MMIO_DOUT_DEFAULT;
 
-	dnut_job_set(cjob, MEMCOPY_ACTION_TYPE, mjob, sizeof(*mjob));
+	dnut_job_set(cjob, MEMCOPY_ACTION_TYPE, mjob, sizeof(*mjob),
+		     NULL, 0);
 }
 
 static inline

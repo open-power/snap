@@ -306,11 +306,11 @@ int dnut_sync_execute_job(struct dnut_queue *queue,
 	unsigned int i;
 	struct dnut_card *card = (struct dnut_card *)queue;
 	uint32_t action_data, action_addr;
-	uint32_t *job_data = (uint32_t *)(unsigned long)cjob->workitem_addr;
+	uint32_t *job_data = (uint32_t *)(unsigned long)cjob->win_addr;
 
 	/* Action registers setup */
 	for (i = 0, action_addr = ACTION_CONFIG;
-	     i < cjob->workitem_size/sizeof(uint32_t);
+	     i < cjob->win_size/sizeof(uint32_t);
 	     i++, action_addr += sizeof(uint32_t)) {
 
 		rc = dnut_mmio_write32(card, action_addr, job_data[i]);
@@ -415,6 +415,11 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	int completed;
 	unsigned int mmio_in, mmio_out;
 
+	if (cjob->wout_size > 112) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	memset(&job, 0, sizeof(job));
 	job.action = cjob->action;
 	job.flags = 0x00;
@@ -422,14 +427,14 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	job.retc = 0x0;
 	job.priv_data = 0xdeadbeefc0febabeull;
 
-	/* Fill workqueue cacheline which we need to transfert to the action */
-	if (cjob->workitem_size <= 112) {
-		memcpy(&job.user, (void *)(unsigned long)cjob->workitem_addr,
-		       MIN(cjob->workitem_size, sizeof(job.user)));
-		mmio_out = cjob->workitem_size / sizeof(uint32_t);
+	/* Fill workqueue cacheline which we need to transfer to the action */
+	if (cjob->win_size <= 112) {
+		memcpy(&job.user, (void *)(unsigned long)cjob->win_addr,
+		       MIN(cjob->win_size, sizeof(job.user)));
+		mmio_out = cjob->win_size / sizeof(uint32_t);
 	} else {
-		job.user.ext.addr  = cjob->workitem_addr;
-		job.user.ext.size  = cjob->workitem_size;
+		job.user.ext.addr  = cjob->win_addr;
+		job.user.ext.size  = cjob->win_size;
 		job.user.ext.type  = DNUT_TARGET_TYPE_HOST_DRAM;
 		job.user.ext.flags = (DNUT_TARGET_FLAGS_EXT |
 				      DNUT_TARGET_FLAGS_END);
@@ -486,7 +491,13 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 		   mmio_out * sizeof(uint32_t), mmio_out);
 
 	/* Get job results max 112 bytes back to the caller */
-	job_data = (uint32_t *)(unsigned long)cjob->workitem_addr;
+	if (cjob->wout_addr == 0) {
+		job_data = (uint32_t *)(unsigned long)cjob->win_addr;
+	} else {
+		job_data = (uint32_t *)(unsigned long)cjob->wout_addr;
+		mmio_out = cjob->wout_size / sizeof(uint32_t);
+	}
+
 	for (i = 0, action_addr = ACTION_JOB_OUT; i < mmio_out;
 	     i++, action_addr += sizeof(uint32_t)) {
 
