@@ -102,6 +102,8 @@ static void dnut_prepare_search(struct dnut_job *cjob,
 
 	sjob_out->nb_of_occurrences = 0;
 	sjob_out->next_input_addr = 0;
+	sjob_out->mmio_din = 0;
+	sjob_out->mmio_dout = 0;
 	sjob_out->action_version = 0;
 
 	dnut_job_set(cjob, SEARCH_ACTION_TYPE,
