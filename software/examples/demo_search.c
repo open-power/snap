@@ -102,8 +102,7 @@ static void dnut_prepare_search(struct dnut_job *cjob,
 
 	sjob_out->nb_of_occurrences = 0;
 	sjob_out->next_input_addr = 0;
-	sjob_in->mmio_din = MMIO_DIN_DEFAULT;
-	sjob_in->mmio_dout = MMIO_DOUT_DEFAULT;
+	sjob_out->action_version = 0;
 
 	dnut_job_set(cjob, SEARCH_ACTION_TYPE,
 		sjob_in, sizeof(*sjob_in), sjob_out, sizeof(*sjob_out));
@@ -147,6 +146,7 @@ static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
 	       (long long)sjob->nb_of_occurrences,
 	       (long long)sjob->nb_of_occurrences);
 	printf("Next input:   %016llx\n", (long long)sjob->next_input_addr);
+	printf("Version:      %016llx\n", (long long)sjob->action_version);
 }
 
 /**
@@ -328,6 +328,7 @@ int main(int argc, char *argv[])
 			/* Fixup input address and size for next search */
 			sjob_in.nb_of_occurrences = sjob_out.nb_of_occurrences;
 			sjob_in.next_input_addr = sjob_out.next_input_addr;
+			sjob_in.action_version = sjob_out.action_version;
 
 #if 0 /* Circumvention should go away */
 			/* FIXME alignment issue ... */
