@@ -82,28 +82,31 @@ file_read(const char *fname, uint8_t *buff, size_t len)
 	return rc;
 }
 
-static void dnut_prepare_search(struct dnut_job *cjob, struct search_job *sjob,
+static void dnut_prepare_search(struct dnut_job *cjob,
+				struct search_job *sjob_in,
+				struct search_job *sjob_out,
 				const uint8_t *dbuff, ssize_t dsize,
 				uint64_t *offs, unsigned int items,
 				const uint8_t *pbuff, unsigned int psize)
 {
-	dnut_addr_set(&sjob->input, dbuff, dsize,
+	dnut_addr_set(&sjob_in->input, dbuff, dsize,
 		      DNUT_TARGET_TYPE_HOST_DRAM,
 		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-	dnut_addr_set(&sjob->output, offs, items * sizeof(*offs),
+	dnut_addr_set(&sjob_in->output, offs, items * sizeof(*offs),
 		      DNUT_TARGET_TYPE_HOST_DRAM,
 		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
-	dnut_addr_set(&sjob->pattern, pbuff, psize,
+	dnut_addr_set(&sjob_in->pattern, pbuff, psize,
 		      DNUT_TARGET_TYPE_HOST_DRAM,
 		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC |
 		      DNUT_TARGET_FLAGS_END);
 
-	sjob->nb_of_occurrences = 0;
-	sjob->next_input_addr = 0;
-	sjob->mmio_din = MMIO_DIN_DEFAULT;
-	sjob->mmio_dout = MMIO_DOUT_DEFAULT;
+	sjob_out->nb_of_occurrences = 0;
+	sjob_out->next_input_addr = 0;
+	sjob_in->mmio_din = MMIO_DIN_DEFAULT;
+	sjob_in->mmio_dout = MMIO_DOUT_DEFAULT;
 
-	dnut_job_set(cjob, SEARCH_ACTION_TYPE, sjob, sizeof(*sjob), NULL, 0);
+	dnut_job_set(cjob, SEARCH_ACTION_TYPE,
+		sjob_in, sizeof(*sjob_in), sjob_out, sizeof(*sjob_out));
 }
 
 static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
@@ -177,7 +180,8 @@ int main(int argc, char *argv[])
 	const char *fname = NULL;
 	const char *pattern_str = "Donut";
 	struct dnut_job cjob;
-	struct search_job sjob;
+	struct search_job sjob_in;
+	struct search_job sjob_out;
 	ssize_t dsize;
 	uint8_t *pbuff;		/* pattern buffer */
 	uint8_t *dbuff;		/* data buffer */
@@ -274,7 +278,7 @@ int main(int argc, char *argv[])
 
 	input_addr = dbuff;
 	input_size = dsize;
-	dnut_prepare_search(&cjob, &sjob, dbuff, dsize,
+	dnut_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
 			    offs, items, pbuff, psize);
 	dnut_print_search_results(&cjob, 0xffffffff);
 
@@ -315,27 +319,23 @@ int main(int argc, char *argv[])
 		}
 
 		/* trigger repeat if search was not complete */
-		if (sjob.next_input_addr != 0x0) {
-			input_size -= (sjob.next_input_addr - (unsigned long)input_addr);
-			input_addr = (uint8_t *)(unsigned long)sjob.next_input_addr;
+		if (sjob_out.next_input_addr != 0x0) {
+			input_size -= (sjob_out.next_input_addr - (unsigned long)input_addr);
+			input_addr = (uint8_t *)(unsigned long)sjob_out.next_input_addr;
 
-			/* FIXME I normally expect the data back, which I passed */
-			dnut_addr_set(&sjob.input, input_addr, input_size,
+			/* Fixup input address and size for next search */
+			sjob_in.nb_of_occurrences = sjob_out.nb_of_occurrences;
+			sjob_in.next_input_addr = sjob_out.next_input_addr;
+
+			dnut_addr_set(&sjob_in.input, input_addr, input_size,
 				DNUT_TARGET_TYPE_HOST_DRAM,
 				DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
 		}
-		dnut_addr_set(&sjob.output, offs, items * sizeof(*offs),
-			DNUT_TARGET_TYPE_HOST_DRAM,
-			DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
-		dnut_addr_set(&sjob.pattern, pbuff, psize,
-			DNUT_TARGET_TYPE_HOST_DRAM,
-			DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC |
-			DNUT_TARGET_FLAGS_END);
-		total_found += sjob.nb_of_occurrences;
+		total_found += sjob_out.nb_of_occurrences;
 
 		dnut_print_search_results(&cjob, run);
 		run++;
-	} while (sjob.next_input_addr != 0x0);
+	} while (sjob_out.next_input_addr != 0x0);
 	gettimeofday(&etime, NULL);
 
 	fprintf(stdout, "RETC=%x\n", cjob.retc);
