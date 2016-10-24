@@ -163,19 +163,30 @@ void dnut_card_free(struct dnut_card *card);
 typedef struct dnut_job {
 	uint64_t action;		/* ro */
 	uint32_t retc;			/* rw */
-	uint32_t dnut_addr_items;	/* # of struct dnut_addr */
-	uint64_t workitem_addr;		/* ro */
-	uint32_t workitem_size;		/* ro */
+	uint64_t win_addr;		/* rw writing to MMIO 0x090 */
+	uint32_t win_size;		/* rw read from MMIO 0x110 if wout 0*/
+	uint64_t wout_addr;		/* wr read from MMIO 0x110 */
+	uint32_t wout_size;		/* wr */
 } *dnut_job_t;
 
+/**
+ * dnut_job_set - helper function to more easily setup the job request.
+ *
+ * @win_addr   input address of specific job
+ * @win_size   input size (use extension ptr if larger than 112 bytes)
+ * @wout_addr  output address of specific job
+ * @wout_addr  output size (maximum 112 bytes)
+ */
 static inline void dnut_job_set(struct dnut_job *djob, uint64_t action,
-				void *waddr, unsigned int wsize)
+				void *win_addr, uint32_t win_size,
+				void *wout_addr, uint32_t wout_size)
 {
 	djob->action = action;
 	djob->retc = 0xffffffff;
-	djob->dnut_addr_items = -1; /* FIXME Do we need this? */
-	djob->workitem_addr = (unsigned long)waddr;
-	djob->workitem_size = wsize;
+	djob->win_addr = (unsigned long)win_addr;
+	djob->win_size = win_size;
+	djob->wout_addr = (unsigned long)wout_addr;
+	djob->wout_size = wout_size;
 }
 
 /**
@@ -341,6 +352,16 @@ int dnut_kernel_start(struct dnut_kernel *kernel);
 int dnut_kernel_stop(struct dnut_kernel *kernel);
 int dnut_kernel_completed(struct dnut_kernel *kernel, int *rc);
 
+/**
+ * Synchronous way to send a job away. Blocks until job is done.
+ * @queue	handle to streaming framework queue
+ * @cjob	streaming framework job
+ * @cjob->win_addr   input address of specific job
+ * @cjob->win_size   input size (use extension ptr if larger than 112 bytes)
+ * @cjob->wout_addr  output address of specific job
+ * @cjob->wout_addr  output size (maximum 112 bytes)
+ * @return	0 on success.
+ */
 int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 				 struct dnut_job *cjob,
 				 unsigned int timeout_sec);

@@ -103,17 +103,18 @@ static void dnut_prepare_search(struct dnut_job *cjob, struct search_job *sjob,
 	sjob->mmio_din = MMIO_DIN_DEFAULT;
 	sjob->mmio_dout = MMIO_DOUT_DEFAULT;
 
-	dnut_job_set(cjob, SEARCH_ACTION_TYPE, sjob, sizeof(*sjob));
+	dnut_job_set(cjob, SEARCH_ACTION_TYPE, sjob, sizeof(*sjob), NULL, 0);
 }
 
 static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
 {
 	unsigned int i;
 	struct search_job *sjob = (struct search_job *)
-		(unsigned long)cjob->workitem_addr;
+		(unsigned long)cjob->win_addr;
 	uint64_t *offs;
 	unsigned long offs_max;
 
+	printf("sjob:         %p\n", sjob);
 	printf("RUN:          %08x/%d\n", run, run);
 	printf("RETC:         %08lx\n", (long)cjob->retc);
 	printf("Input Data:   %016llx - %016llx\n",
