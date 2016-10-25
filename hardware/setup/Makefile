@@ -10,7 +10,7 @@ ifdef EXAMPLE
 CE_PARMS += -e
 endif
 
-.PHONY: all image model check_donut_settings create_environment copy clean config
+.PHONY: all image model check_donut_settings create_environment copy clean config gitclean
 
 all: config image model
 
@@ -72,3 +72,7 @@ clean:
 	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/questa
 	rm -f   ./*.log
 	rm -f   ./*.jou
+
+gitclean:
+	@echo -e "\t[GITCLEAN] cleaning donut git clone";
+	@cd $(DONUT_HARDWARE_ROOT) && git clean -f -d -x
