@@ -1,5 +1,5 @@
 *** ./psl_fpga.tcl	2016-07-29 10:30:28.000000002 +0200
---- ./psl_fpga.tcl	2016-10-24 13:22:32.000000002 +0200
+--- ./psl_fpga.tcl	2016-10-25 09:03:18.000000002 +0200
 ***************
 *** 53,58 ****
 --- 53,60 ----
@@ -12,7 +12,7 @@
   ####Source required Tcl Procs
   source $tclDir/design_utils.tcl
 ***************
-*** 70,84 ****
+*** 70,83 ****
   set_attribute module $top    synth         ${run.topSynth}
   set_attribute module $top    synth_options "-flatten_hierarchy rebuilt -fanout_limit 400 -fsm_extraction one_hot -keep_equivalent_registers -resource_sharing off -no_lc -shreg_min_size 5 -no_iobuf"
   
@@ -21,14 +21,13 @@
 - set_attribute impl $top      linkXDC       [list $xdcDir/b_xilinx_capi_pcie_gen3_alphadata_brd_topimp.xdc] 
   set_attribute impl $top      impl          ${run.topImpl}
   set_attribute impl $top      hd.impl       1
-! set_attribute impl $top      opt_directive Explore
-! set_attribute impl $top      place_directive Explore
+  set_attribute impl $top      opt_directive Explore
+  set_attribute impl $top      place_directive Explore
 ! set_attribute impl $top      phys_directive Explore
-! set_attribute impl $top      route_directive Explore
+  set_attribute impl $top      route_directive Explore
   set_attribute impl $top      place.pre     [list pre_place.tcl             \
                                              ]
-  set_attribute impl $top      bitstream     1
---- 72,119 ----
+--- 72,115 ----
   set_attribute module $top    synth         ${run.topSynth}
   set_attribute module $top    synth_options "-flatten_hierarchy rebuilt -fanout_limit 400 -fsm_extraction one_hot -keep_equivalent_registers -resource_sharing off -no_lc -shreg_min_size 5 -no_iobuf"
   
@@ -56,9 +55,6 @@
 +                                            $rootDir/action/action.srcs/sources_1/bd/action/ip/action_auto_cc_0/action_auto_cc_0.xci				  \
 +                                            $rootDir/action/action.srcs/sources_1/bd/action/ip/action_auto_cc_1/action_auto_cc_1.xci				  \
 +                                            $rootDir/action/action.srcs/sources_1/bd/action/ip/action_auto_cc_2/action_auto_cc_2.xci				  \
-+                                            $rootDir/action/action.srcs/sources_1/bd/action/ip/action_auto_ds_0/action_auto_ds_0.xci				  \
-+                                            $rootDir/action/action.srcs/sources_1/bd/action/ip/action_auto_us_0/action_auto_us_0.xci				  \
-+                                            $rootDir/action/action.srcs/sources_1/bd/action/ip/action_auto_rs_w_0/action_auto_rs_w_0.xci				  \
 +                                            $rootDir/action/action.srcs/sources_1/bd/action/ip/action_auto_cc_3/action_auto_cc_3.xci				  \
 + 					   ]
 + 
@@ -70,10 +66,9 @@
   set_attribute impl $top      impl          ${run.topImpl}
 + #set_attribute impl $top      phys_options  "-force_replication_on_nets [get_nets -hierarchical -top_net_of_hierarchical_group -filter { NAME =~  "*action_reset*" } ]"
   set_attribute impl $top      hd.impl       1
-! #set_attribute impl $top      opt_directive Explore
-! #set_attribute impl $top      place_directive Explore
+  set_attribute impl $top      opt_directive Explore
+  set_attribute impl $top      place_directive Explore
 ! set_attribute impl $top      phys_directive AggressiveExplore
-! #set_attribute impl $top      route_directive Explore
+  set_attribute impl $top      route_directive Explore
   set_attribute impl $top      place.pre     [list pre_place.tcl             \
                                              ]
-  set_attribute impl $top      bitstream     1
