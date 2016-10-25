@@ -98,10 +98,10 @@ component action_wrapper is
 --    m_axi_wuser         : out STD_LOGIC_VECTOR ( 0 to 0 );
     m_axi_wstrb         : out STD_LOGIC_VECTOR ( 15 downto 0 );
     m_axi_wvalid        : out STD_LOGIC;
---    m_axi_bid           : in  STD_LOGIC_VECTOR ( 1 downto 0);
---    m_axi_rid           : in  STD_LOGIC_VECTOR ( 1 downto 0);
---    m_axi_buser         : in  STD_LOGIC_VECTOR ( 0 to 0);
---    m_axi_ruser         : in  STD_LOGIC_VECTOR ( 0 to 0);
+    m_axi_bid           : in  STD_LOGIC_VECTOR ( 1 downto 0);
+    m_axi_rid           : in  STD_LOGIC_VECTOR ( 1 downto 0);
+    m_axi_buser         : in  STD_LOGIC_VECTOR ( 0 to 0);
+    m_axi_ruser         : in  STD_LOGIC_VECTOR ( 0 to 0);
     --
     -- Slave Interface
     s_axi_araddr        : in STD_LOGIC_VECTOR ( 31 downto 0 );
@@ -244,10 +244,10 @@ action: component action_wrapper
     m_axi_wready    => sk_d_i.s_axi_wready  , 
     m_axi_wstrb     => ks_d_o.s_axi_wstrb   , 
     m_axi_wvalid    => ks_d_o.s_axi_wvalid  ,
---    m_axi_bid       => sk_d_i.s_axi_bid(1 DOWNTO 0),
---    m_axi_buser(0)  => '0'  ,
---    m_axi_ruser(0)  => '0'  ,
---    m_axi_rid       => sk_d_i.s_axi_rid(1 DOWNTO 0) ,
+    m_axi_bid       => sk_d_i.s_axi_bid(1 DOWNTO 0),
+    m_axi_buser(0)  => '0'  ,
+    m_axi_ruser(0)  => '0'  ,
+    m_axi_rid       => sk_d_i.s_axi_rid(1 DOWNTO 0) ,
 --    m_axi_wuser     => open,
     c0_ddr3_araddr(32 downto 0)   => kddr_o.axi_araddr(32 downto 0),
     c0_ddr3_arburst(1 downto 0)   => kddr_o.axi_arburst(1 downto 0),
