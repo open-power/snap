@@ -2446,9 +2446,9 @@ BEGIN
         --
         force_rfifo_empty_q <= force_rfifo_empty_q;
         
-        IF ((rfifo_rdata(128) = '1' AND) 
-            (rfifo_empty_tmp  = '0' AND)
-            (sd_d_i.rd_data_ack = '1'  )) THEN                 
+        IF ((rfifo_rdata(128)   = '1') AND 
+            (rfifo_empty_tmp    = '0') AND
+            (sd_d_i.rd_data_ack = '1')) THEN                 
           force_rfifo_empty_q  <= '1';
         ELSE
           IF (aln_rdata_v = '1') THEN 
