@@ -307,12 +307,14 @@ int main(int argc, char *argv[])
 	}
 
 #if 1 /* Circumvention should go away */
+	pr_info("FIXME Wait a sec ...\n");
+	sleep(1);
+
 	pr_info("FIXME Temporary setting to define memory base address\n");
 	dnut_kernel_mmio_write32(kernel, 0x10010,0);
 	dnut_kernel_mmio_write32(kernel, 0x10014,0);
 	dnut_kernel_mmio_write32(kernel, 0x1001c,0);
 	dnut_kernel_mmio_write32(kernel, 0x10020,0);
-	dnut_kernel_mmio_write32(kernel, 0x10080,0);
 #endif
 
 	run = 0;
