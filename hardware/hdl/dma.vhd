@@ -562,8 +562,11 @@ BEGIN
               END LOOP;  -- i
 
               IF buf_active_v = FALSE THEN
-                read_ctrl_fsm_q   <= ST_IDLE;
-                read_fsm_req_q    <= NONE;
+                read_fsm_req_q <= NONE;
+                
+                IF rfifo_empty = '1' THEN
+                  read_ctrl_fsm_q <= ST_IDLE;
+                END IF;
               END IF;
 
             --------------------------------------------------------------------
