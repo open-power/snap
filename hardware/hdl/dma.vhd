@@ -223,6 +223,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL read_rsp_err_valid_q   : boolean;
   SIGNAL restart_active_q       : boolean;
   SIGNAL rfifo_empty            : std_ulogic;
+  SIGNAL rfifo_empty_tmp        : std_ulogic;
   SIGNAL rfifo_full             : std_ulogic;
   SIGNAL rfifo_prog_full        : std_ulogic;
   SIGNAL rfifo_rd_rst_busy      : std_ulogic;
@@ -2041,11 +2042,13 @@ BEGIN
       rd_en                    => std_logic(sd_d_i.rd_data_ack),
       std_ulogic_vector(dout)  => rfifo_rdata,
       std_ulogic(full)         => rfifo_full,
-      std_ulogic(empty)        => rfifo_empty,
+      std_ulogic(empty)        => rfifo_empty_tmp,
       std_ulogic(prog_full)    => rfifo_prog_full,
       std_ulogic(wr_rst_busy)  => rfifo_wr_rst_busy,
       std_ulogic(rd_rst_busy)  => rfifo_rd_rst_busy
     );
+
+     rfifo_empty  <= '1' WHEN read_ctrl_fsm_q  = ST_IDLE  ELSE rfifo_empty_tmp;
 
 ----------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------
