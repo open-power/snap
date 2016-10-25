@@ -59,8 +59,7 @@ model:
 
 image:
 	@echo -e "\t[BUILD_IMAGE] start ($(shell date))"
-	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
-#	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
+	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
 
 clean:
 	@echo -e "\t[CLEAN] build environment"; 
