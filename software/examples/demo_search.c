@@ -294,6 +294,7 @@ int main(int argc, char *argv[])
 	 * Apply for exclusive kernel access for kernel type 0xC0FE.
 	 * Once granted, MMIO to that kernel will work.
 	 */
+	pr_info("Opening device ...\n");
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
 	kernel = dnut_kernel_attach_dev(device,
 					DNUT_VENDOR_ID_ANY,
@@ -306,7 +307,7 @@ int main(int argc, char *argv[])
 	}
 
 #if 1 /* Circumvention should go away */
-	/* FIXME Temporary setting to define memory base address */
+	pr_info("FIXME Temporary setting to define memory base address\n");
 	dnut_kernel_mmio_write32(kernel, 0x10010,0);
 	dnut_kernel_mmio_write32(kernel, 0x10014,0);
 	dnut_kernel_mmio_write32(kernel, 0x1001c,0);
