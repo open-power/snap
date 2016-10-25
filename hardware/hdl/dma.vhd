@@ -224,6 +224,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL restart_active_q       : boolean;
   SIGNAL rfifo_empty            : std_ulogic;
   SIGNAL rfifo_empty_tmp        : std_ulogic;
+  SIGNAL force_rfifo_empty_q    : std_ulogic;
   SIGNAL rfifo_full             : std_ulogic;
   SIGNAL rfifo_prog_full        : std_ulogic;
   SIGNAL rfifo_rd_rst_busy      : std_ulogic;
@@ -2048,7 +2049,7 @@ BEGIN
       std_ulogic(rd_rst_busy)  => rfifo_rd_rst_busy
     );
 
-     rfifo_empty  <= '1' WHEN read_ctrl_fsm_q  = ST_IDLE  ELSE rfifo_empty_tmp;
+     rfifo_empty  <= '1' WHEN force_rfifo_empty_q = '1' ELSE rfifo_empty_tmp;
 
 ----------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------
@@ -2382,9 +2383,12 @@ BEGIN
                                    (OTHERS => '0'), (OTHERS => '0'),(OTHERS => '0'));
           rflush_q             <= '0';
           wflush_pulse_q       <= '0';
-        sd_c_q               <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
-                                 '0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'));
+          sd_c_q               <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
+                                   '0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'));
           mmd_i_q              <= (OTHERS => ('0'));
+
+          force_rfifo_empty_q  <= '1';
+            
         ELSE
           --
           -- defaults
@@ -2434,6 +2438,21 @@ BEGIN
             rflush_q <=  '0';
           ELSE
         --  rflush_q <= rflush_q OR bd_c_q.rflush;
+          END IF;
+        END IF;
+
+        --
+        -- force empty logic
+        --
+        force_rfifo_empty_q <= force_rfifo_empty_q;
+        
+        IF ((rfifo_rdata(128) = '1' AND) 
+            (rfifo_empty_tmp  = '0' AND)
+            (sd_d_i.rd_data_ack = '1'  )) THEN                 
+          force_rfifo_empty_q  <= '1';
+        ELSE
+          IF (aln_rdata_v = '1') THEN 
+           force_rfifo_empty_q <= '0';
           END IF;
         END IF;
       END IF;
