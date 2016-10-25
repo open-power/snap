@@ -35,7 +35,7 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 
 $(BUILD_DIR)/Sources/prj/top.prj: $(BUILD_DIR)/psl_fpga.tcl 
 	@cp $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
-	@echo "PATCH .tcl FILES"  && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/tcl.patch
+	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
 	@echo "PATCH .vhdl FILES" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/vhdl.patch
 
 $(BUILD_DIR)/Sources/prj/afu.prj: $(BUILD_DIR)/Sources/prj/top.prj
@@ -59,7 +59,8 @@ model:
 
 image:
 	@echo -e "\t[BUILD_IMAGE] start ($(shell date))"
-	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
+	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
+#	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
 
 clean:
 	@echo -e "\t[CLEAN] build environment"; 

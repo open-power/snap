@@ -2404,6 +2404,12 @@ BEGIN
             sd_c_q.wr_req <= '0';
           END IF;
 
+          IF read_ctrl_fsm_q = ST_IDLE THEN
+            sd_c_q.rd_req <= sd_c_i.rd_req;
+          ELSE
+            sd_c_q.rd_req <= '0';
+          END IF;
+          
           mmd_i_q              <= (OTHERS => '0'); --mmd_i_i;
           wflush_pulse_q       <= '0';
 
