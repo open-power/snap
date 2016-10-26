@@ -64,8 +64,8 @@ component action_wrapper is
 --    m_axi_arlock        : out STD_LOGIC;
     m_axi_arprot        : out STD_LOGIC_VECTOR ( 2 downto 0 );
     m_axi_arqos         : out STD_LOGIC_VECTOR ( 3 downto 0 );
---    m_axi_arid          : out STD_LOGIC_VECTOR ( 1 downto 0 );
---    m_axi_awid          : out STD_LOGIC_VECTOR ( 1 downto 0 );
+    m_axi_arid          : out STD_LOGIC_VECTOR ( 1 downto 0 );
+    m_axi_awid          : out STD_LOGIC_VECTOR ( 1 downto 0 );
 --    m_axi_aruser        : out STD_LOGIC_VECTOR ( 0 to 0 );
 --    m_axi_awuser        : out STD_LOGIC_VECTOR ( 0 to 0 );
     m_axi_arready       : in STD_LOGIC;
@@ -215,9 +215,9 @@ action: component action_wrapper
     m_axi_arready   => sk_d_i.s_axi_arready , 
     -- m_axi_arregion  => open,        -- ks_d_o.s_axi_arregio , 
     m_axi_arsize    => ks_d_o.s_axi_arsize  , 
---    m_axi_arid      => ks_d_o.s_axi_arid(1 DOWNTO 0),
+    m_axi_arid      => ks_d_o.s_axi_arid(1 DOWNTO 0),
 --    m_axi_aruser    => open , --ks_d_o.s_axi_aruser  , 
---    m_axi_awid      => ks_d_o.s_axi_awid(1 DOWNTO 0),
+    m_axi_awid      => ks_d_o.s_axi_awid(1 DOWNTO 0),
 --    m_axi_awuser    => open , --ks_d_o.s_axi_awuser  , 
     m_axi_arvalid   => ks_d_o.s_axi_arvalid , 
     m_axi_awaddr    => ks_d_o.s_axi_awaddr  , 

@@ -2,7 +2,7 @@ PSL_SOURCE_ENV=$(FPGACARD)
 BUILD_DIR=$(DONUT_HARDWARE_ROOT)/build
 
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/ies/filelist.f
-SOURCE_FILES_HDL     = $(shell grep '\/hdl\/' $(PROJECT_COMPILE_LIST) | grep -v 'action_auto_' | grep -v 'viv_project_' | sed 's/psl_accel_sim/psl_accel_syn/')
+SOURCE_FILES_HDL     = $(shell grep '\/hdl\/' $(PROJECT_COMPILE_LIST) | grep -v 'action_auto_' | grep -v 'viv_project' | sed 's/psl_accel_sim/psl_accel_syn/')
 SOURCE_FILES_VHDL    = $(SOURCE_FILES_HDL:../%=%)
 
 CE_PARMS := -p -clone
@@ -10,7 +10,7 @@ ifdef EXAMPLE
 CE_PARMS += -e
 endif
 
-.PHONY: all image model check_donut_settings create_environment copy clean config
+.PHONY: all image model check_donut_settings create_environment copy clean config gitclean
 
 all: config image model
 
@@ -72,3 +72,7 @@ clean:
 	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/questa
 	rm -f   ./*.log
 	rm -f   ./*.jou
+
+gitclean:
+	@echo -e "\t[GITCLEAN] cleaning donut git clone";
+	@cd $(DONUT_HARDWARE_ROOT) && git clean -f -d -x
