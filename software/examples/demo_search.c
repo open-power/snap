@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
 	input_size = dsize;
 	dnut_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
 			    offs, items, pbuff, psize);
-	dnut_print_search_results(&cjob, 0xffffffff);
+	/* dnut_print_search_results(&cjob, 0xffffffff); */
 
 	/*
 	 * Apply for exclusive kernel access for kernel type 0xC0FE.
@@ -331,24 +331,26 @@ int main(int argc, char *argv[])
 			goto out_error2;
 		}
 
+		sjob_in.nb_of_occurrences = sjob_out.nb_of_occurrences;
+		sjob_in.next_input_addr = sjob_out.next_input_addr;
+		sjob_in.action_version = sjob_out.action_version;
+
 		/* trigger repeat if search was not complete */
 		if (sjob_out.next_input_addr != 0x0) {
-			input_size -= (sjob_out.next_input_addr - (unsigned long)input_addr);
-			input_addr = (uint8_t *)(unsigned long)sjob_out.next_input_addr;
+			input_size -= (sjob_out.next_input_addr -
+				       (unsigned long)input_addr);
+			input_addr = (uint8_t *)(unsigned long)
+				sjob_out.next_input_addr;
 
-			/* Fixup input address and size for next search */
-			sjob_in.nb_of_occurrences = sjob_out.nb_of_occurrences;
-			sjob_in.next_input_addr = sjob_out.next_input_addr;
-			sjob_in.action_version = sjob_out.action_version;
 
 #if 0 /* Circumvention should go away */
 			/* FIXME alignment issue ... */
 			memmove(dbuff, input_addr, input_size);
 			input_addr = dbuff;
 #endif
-			dnut_addr_set(&sjob_in.input, input_addr, input_size,
-				DNUT_TARGET_TYPE_HOST_DRAM,
-				DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
+			/* Fixup input address and size for next search */
+			sjob_in.input.addr = (unsigned long)input_addr;
+			sjob_in.input.size = input_size;
 		}
 		total_found += sjob_out.nb_of_occurrences;
 
