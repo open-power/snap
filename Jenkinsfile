@@ -59,14 +59,14 @@
           cd donut/hardware/setup
           ls
           source "./donut_settings"
-          export PSLSE_ROOT=\$PWD/pslse		# set after donut_settings, not there yet
+          export PSLSE_ROOT=\$PWD/pslse		// set after donut_settings, not there yet
           export EXAMPLE=1
-          make clean config			# how to download PSLSE from GIT ? different token
+          make clean config			// how to download PSLSE from GIT ? different token
         """
         }
 /*
 *       stage('build for ncsim'){ sh '''
-*         /!/usr/bin/bash			# enforce bash, default=bourne
+*         /!/usr/bin/bash			// enforce bash, default=bourne
 *         cd ${DONUT_ROOT}/hardware/setup
 *         SIMULATOR=ncsim make model
 *       ''' }
@@ -83,6 +83,8 @@
 *         SIMULATOR=xsim run_sim -app "tools/stage2 -a 2"
 *       ''' }
 */
+//      deleteDir()				// cleanup after execution
+        step([$class: 'WsCleanup'])		// with plugin
       }		 // end node
     }		 // end cmd
     return cmd
