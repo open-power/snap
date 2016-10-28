@@ -11,7 +11,7 @@
     echo "in branch function"
   }
 
-  def create_execution(String version) {
+  def create_execution(String version, String simulator) {
     cmd = {
       node {
         stage('checkout'){
@@ -19,10 +19,10 @@
             checkout scm	// checkout donut already done by Jenkins
           }
           dir('pslse') {	// switch to subdir
-            git url: "https://github.com/ibm-capi/pslse"	// checkout pslse
+//          git url: "https://github.com/ibm-capi/pslse"	// checkout pslse
             git checkout(url: 'https://github.com/ibm-capi/pslse') // checkout pslse
           }
-	  if (env.BRANCH_NAME == "master") {
+	  if (${env.BRANCH_NAME} == "master") {
   	    echo "on master"
             master()
           }
@@ -34,7 +34,8 @@
 
         stage('build pslse'){
           echo 'hello world'
-          pwd
+          pwd()
+          sh 'pwd'
           sh 'ls'
           dir('pslse') {	// switch to subdir
             git url: "https://github.com/ibm-capi/pslse"	// checkout pslse
@@ -65,23 +66,23 @@
         """
         }
 /*
-*       stage('build for ncsim'){ sh '''
+*       stage('build for ncsim'){ sh """
 *         /!/usr/bin/bash			// enforce bash, default=bourne
 *         cd ${DONUT_ROOT}/hardware/setup
 *         SIMULATOR=ncsim make model
-*       ''' }
-*       stage('simulate ncsim'){ sh '''
+*       """ }
+*       stage('simulate ncsim'){ sh """
 *         cd ${DONUT_ROOT}/hardware/sim
 *         SIMULATOR=ncsim run_sim -app "tools/stage2 -a 2"
-*       ''' }
-*       stage('build for xsim'){ sh '''
+*       """ }
+*       stage('build for xsim'){ sh """
 *         cd ${DONUT_ROOT}/hardware/setup
 *         SIMULATOR=xsim make model
-*       ''' }
-*       stage('simulate xsim'){ sh '''
+*       """ }
+*       stage('simulate xsim'){ sh """
 *         cd ${DONUT_ROOT}/hardware/sim
 *         SIMULATOR=xsim run_sim -app "tools/stage2 -a 2"
-*       ''' }
+*       """ }
 */
 //      deleteDir()				// cleanup after execution
         step([$class: 'WsCleanup'])		// with plugin
@@ -90,11 +91,8 @@
     return cmd
   }		 // end def create_execution
   for(int i = 0; i < versions.size(); i++) {
-      executions[versions[i]] = create_execution(versions[i])
+    for(int j = 0; j < simulators.size(); j++) {
+      executions[versions[i]] = create_execution(versions[i],simulators[j])
+    }
   }
   parallel executions
-
-/*
-    for(int j = 0; i < simulators.size(); j++) {
-    }
-*/
