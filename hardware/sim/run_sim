@@ -59,7 +59,7 @@
 #  echo "arg=$1"
    case $1 in				
      -app)		TST_NAME="$2";shift;;	
-     -list)		TST_NAME='LIST';;
+     -list)		TST_NAME='LIST';LISTNAME="$2";shift;;	
      -x|xterm|XTERM)	TST_NAME='XTERM';;
      -quiet)		VERBOSE="";;	
      -verbose)		VERBOSE="-vvv";;	
@@ -86,7 +86,8 @@
      -initx)		SIM_INIT='-ncinitialize x';;
      -h | *) 	printf "Unknown option %s\n" "$1"
 		echo "Usage: $0 -cdemx"
-		echo "  -list        : handwritten testlist with selected testcases"
+		echo "  -app "pgm args": single program including arguments"
+		echo "  -list <file> : handwritten testlist with selected testcases"
 		echo "  -x | xterm   : open xterm for manual testcases(default)"
 		echo "  -t <text>    : title text for XTERM and simout_suffix"
 		echo "  -p <file>    : use different parms file"
@@ -133,6 +134,12 @@
      SIMOUT=$TS; mkdir -p $SIMOUT		# only timestamp, mapping to user is clear
    fi
    unlink latest 2>/dev/null;ln -s $SIMOUT latest; # last generated output directory
+   if [ "$TST_NAME" == "LIST" ];then
+     filename="${LISTNAME%.*}"
+     if [ -f ../${filename}.sh ];then cp ../${filename}* $SIMOUT
+     else echo "cannot find list=${filename}.sh";exit 1
+     fi
+   fi
    if [ "$SIMDIR" == "ies" ];then
      cp run_* cds.lib hdl.var $SIMOUT
      cp ../nc*.tcl  	      $SIMOUT
@@ -300,12 +307,20 @@
    ts0=$(date +%s);failed=0;rc=0
    set -o pipefail 					# highest RC in pipe, if set -o pipefail
    randnum=$((RANDOM%1));
-   echo "**** run $PAR $TST_NAME app timeout=${DDCB_TIMEOUT} seed=${TCL_SEED} randnum=$randnum"|tee stim.log
+   echo "**** run $PAR $TST_NAME app(s) timeout=${DDCB_TIMEOUT} seed=${TCL_SEED} randnum=$randnum"|tee stim.log
    for i in `seq 1 $PAR`;do					# start testcase
      prc[$i]=0
      if [ "$PAR" == "1" ];then STIMLOG="stim.log";else STIMLOG="stim${i}.log";fi
      if [ "$TST_NAME" == "XTERM" ];then
        xterm -title "testcase window, use >script ${STIMLOG}< to log input" & 	# tee+RC doesnt work here, use script instead
+     elif [ "$TST_NAME" == "LIST" ];then
+       filename="${LISTNAME%.*}"; parfilename="${LISTNAME%.*}${i}";echo "listname=${LISTNAME}"|tee -a stim.log
+        if [ -f "${parfilename}.sh" ]; then
+         sh  ${parfilename}.sh 2>&1|tee -a ${parfilename}.log &
+       elif [ -f  "${filename}.sh" ]; then
+         cp  ${filename}.sh ${parfilename}.sh;
+         sh  ${parfilename}.sh 2>&1|tee -a ${parfilename}.log &
+       else echo "cannot start list for par=$PAR"|tee -a stim.log; fi
      elif [ "$TST_NAME" == "EBERHARD" ];then
        $DONUT_SOFTWARE_ROOT/mmio/app0 -vv 2>&1 |tee -a $STIMLOG &  # for Eberhard
      else
@@ -325,16 +340,19 @@
 #    echo "$num jobs running, pids=${array[@]}"|tee -a stim.log
 #    for i in "${!array[@]}"; do echo "element $i = ${array[i]}"|tee -a stim.log ; done
      for i in `seq 1 $PAR`;do
+#      echo "checking app=$i ${pid[$i]}"|tee -a stim.log;
        if [[ "${pid[$i]}" == "0" ]];then :
 #        echo "app=$i already checked"|tee -a stim.log;
        elif [[ "${array[@]}" == *"${pid[$i]}"* ]];then :
 #        echo "app=$i ${pid[$i]} still running"|tee -a stim.log;
        else
+#        echo "wait for pid=${pid[$i]}"|tee -a stim.log;
          wait ${pid[$i]};prc[$i]=$?;				# wait for process to get RC, should have ended already
+#        echo "pid=${pid[$i]} rc=${prc[$i]}"|tee -a stim.log;
          if [ "${prc[$i]}" -ne "0" ];then failed=`expr $failed + 1`;fi
          if [[ ${prc[$i]} > $TCRC ]];then TCRC=${prc[$i]};fi	# collect maximum RC from all apps, return code from xterm always 0
-         ts2=$(date +%s); sec=`expr $ts2 - $ts1`
-         ts4=$(date +%T); echo "$ts4 app $i pid=${pid[$i]} RC=${prc[$i]} after $sec seconds, max_RC=$TCRC"|tee -a stim.log
+         ts2=$(date +%s); sec=`expr $ts2 - $ts1`; ts4=$(date +%T);
+         echo "$ts4 app $i pid=${pid[$i]} RC=${prc[$i]} after $sec seconds, max_RC=$TCRC"|tee -a stim.log
          pid[$i]="0";ts1=$(date +%s); 				# dont wait for this pid anymore, start new timer
        fi
      done
@@ -418,7 +436,9 @@
  if [ "$LOCAL" == "1" ];then
    PERCUSED=`df -k 2>/dev/null|grep '\/data'|tail -n1|awk '{print $5}'`
  else
-   PERCUSED=`fs lq |tail -n1|awk '{print $4}'`	
+   afs_exist=`df|grep AFS|wc -l`; if [ "$afs_exist" == "1" ];then
+     PERCUSED=`fs lq |tail -n1|awk '{print $4}'`	
+   else PERCUSED="N/A";fi
  fi
  USED=`du -sk . |awk '{print $1}'`				
  echo "**** RC=$TCRC parallel=$PAR executed=$EXECUTED failed=$FAILED runtime=$RUNTIME simtime=$SIMTIME cpus=$CPUS speed=$SPEED load=$LOAD local=$LOCAL used_kB=$USED percused=$PERCUSED"
