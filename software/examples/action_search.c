@@ -88,6 +88,7 @@ static int action_main(struct dnut_action *action,
 	}
 
 	js->nb_of_occurrences = offs_used;
+	js->action_version = 0xC0FEBABEBABEBABEull;
 	action->retc = DNUT_RETC_SUCCESS;
 	return 0;
 }
