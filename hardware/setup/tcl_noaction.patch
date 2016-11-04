@@ -8,30 +8,30 @@
   set netlistDir "$srcDir/netlist"
 + set rootDir    $::env(DONUT_HARDWARE_ROOT)
 + set dimmDir    $::env(DIMMTEST)
-
+  
   ####Source required Tcl Procs
   source $tclDir/design_utils.tcl
 ***************
 *** 70,78 ****
   set_attribute module $top    synth         ${run.topSynth}
   set_attribute module $top    synth_options "-flatten_hierarchy rebuilt -fanout_limit 400 -fsm_extraction one_hot -keep_equivalent_registers -resource_sharing off -no_lc -shreg_min_size 5 -no_iobuf"
-
+  
   add_implementation $top
   set_attribute impl $top      top           $top
-- set_attribute impl $top      linkXDC       [list $xdcDir/b_xilinx_capi_pcie_gen3_alphadata_brd_topimp.xdc]
+- set_attribute impl $top      linkXDC       [list $xdcDir/b_xilinx_capi_pcie_gen3_alphadata_brd_topimp.xdc] 
   set_attribute impl $top      impl          ${run.topImpl}
   set_attribute impl $top      hd.impl       1
   set_attribute impl $top      opt_directive Explore
 --- 72,88 ----
   set_attribute module $top    synth         ${run.topSynth}
   set_attribute module $top    synth_options "-flatten_hierarchy rebuilt -fanout_limit 400 -fsm_extraction one_hot -keep_equivalent_registers -resource_sharing off -no_lc -shreg_min_size 5 -no_iobuf"
-
+  
 + set_attribute module $top ip           [list \
 + 					   $rootDir/ip/ram_576to144x64_2p/ram_576to144x64_2p.xci                                                            \
 + 					   $rootDir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci                                                          \
 + 					   $rootDir/ip/block_RAM/block_RAM.xci                                                          \
 + 					   ]
-+
++ 
   add_implementation $top
 + set_attribute impl $top      linkXDC       [list \
 +                                             $rootDir/setup/donut.xdc \
