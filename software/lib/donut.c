@@ -449,7 +449,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 
 	dnut_trace("%s: PASS PARAMETERS\n", __func__);
 
-	__hexdump(stderr, &job, sizeof(job));
+	/* __hexdump(stderr, &job, sizeof(job)); */
 
 	/* Pass action control and job to the action, should be 128
 	   bytes or a little less */
@@ -646,7 +646,7 @@ static int sw_mmio_write32(void *_card __unused,
 	if (offs == ACTION_CONTROL) {
 		dnut_trace("  starting action!!\n");
 		a->state = ACTION_RUNNING;
-		__hexdump(stdout, &w->user, sizeof(w->user));
+		/* __hexdump(stdout, &w->user, sizeof(w->user)); */
 		a->main(a, &w->user, sizeof(w->user));
 		a->state = ACTION_IDLE;
 
