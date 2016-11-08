@@ -128,13 +128,14 @@ component action_wrapper is
     c0_ddr3_awaddr      : out STD_LOGIC_VECTOR ( 32 downto 0 );
     c0_ddr3_awlen       : out STD_LOGIC_VECTOR ( 7 downto 0 );
     c0_ddr3_awsize      : out STD_LOGIC_VECTOR ( 2 downto 0 );
+    c0_ddr3_awid        : out STD_LOGIC_VECTOR(1 DOWNTO 0);
     c0_ddr3_awburst     : out STD_LOGIC_VECTOR ( 1 downto 0 );
     c0_ddr3_awlock      : out STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
 --    c0_ddr3_awlock      : out STD_LOGIC;
-    c0_ddr3_rid         : IN  STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr3_buser       : IN  STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr3_ruser       : IN  STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr3_bid         : IN  STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c0_ddr3_rid         : IN  STD_LOGIC_VECTOR(1 DOWNTO 0);
+    c0_ddr3_buser       : IN  STD_LOGIC_VECTOR(0 TO  0);
+    c0_ddr3_ruser       : IN  STD_LOGIC_VECTOR(0 TO  0);
+    c0_ddr3_bid         : IN  STD_LOGIC_VECTOR(1 DOWNTO 0);
     c0_ddr3_awcache     : out STD_LOGIC_VECTOR ( 3 downto 0 );
     c0_ddr3_awprot      : out STD_LOGIC_VECTOR ( 2 downto 0 );
     c0_ddr3_awqos       : out STD_LOGIC_VECTOR ( 3 downto 0 );
@@ -151,6 +152,7 @@ component action_wrapper is
     c0_ddr3_araddr      : out STD_LOGIC_VECTOR ( 32 downto 0 );
     c0_ddr3_arlen       : out STD_LOGIC_VECTOR ( 7 downto 0 );
     c0_ddr3_arsize      : out STD_LOGIC_VECTOR ( 2 downto 0 );
+    c0_ddr3_arid        : out STD_LOGIC_VECTOR ( 1 downto 0 );
     c0_ddr3_arburst     : out STD_LOGIC_VECTOR ( 1 downto 0 );
     c0_ddr3_arlock      : out STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
 --    c0_ddr3_arlock      : out STD_LOGIC;
@@ -250,6 +252,7 @@ action: component action_wrapper
     m_axi_rid       => sk_d_i.s_axi_rid(1 DOWNTO 0) ,
 --    m_axi_wuser     => open,
     c0_ddr3_araddr(32 downto 0)   => kddr_o.axi_araddr(32 downto 0),
+    c0_ddr3_arid(1 downto 0)      => kddr_o.axi_arid(1 downto 0),
     c0_ddr3_arburst(1 downto 0)   => kddr_o.axi_arburst(1 downto 0),
     c0_ddr3_arcache(3 downto 0)   => kddr_o.axi_arcache(3 downto 0),
     c0_ddr3_arlen(7 downto 0)     => kddr_o.axi_arlen(7 downto 0),
@@ -264,6 +267,7 @@ action: component action_wrapper
     c0_ddr3_arsize(2 downto 0)    => kddr_o.axi_arsize(2 downto 0),
     c0_ddr3_arvalid               => kddr_o.axi_arvalid,
     c0_ddr3_awaddr(32 downto 0)   => kddr_o.axi_awaddr(32 downto 0),
+    c0_ddr3_awid(1 downto 0)      => kddr_o.axi_awid(1 downto 0),
     c0_ddr3_awburst(1 downto 0)   => kddr_o.axi_awburst(1 downto 0),
     c0_ddr3_awcache(3 downto 0)   => kddr_o.axi_awcache(3 downto 0),
     c0_ddr3_awlen(7 downto 0)     => kddr_o.axi_awlen(7 downto 0),

@@ -207,7 +207,7 @@ PACKAGE psl_accel_types IS
     -- kddr
     --
     TYPE KDDR_T IS RECORD
-      AXI_AWID          : std_logic_vector(C_DDR_AXI_ID_WIDTH-1 downto 0);
+      AXI_AWID          : std_logic_vector(1 downto 0);
       AXI_AWADDR        : std_logic_vector(C_DDR_AXI_ADDR_WIDTH-1 downto 0);
       AXI_AWLEN         : std_logic_vector(7 downto 0);
       AXI_AWSIZE        : std_logic_vector(2 downto 0);
@@ -223,7 +223,7 @@ PACKAGE psl_accel_types IS
       AXI_WLAST         : std_logic;
       AXI_WVALID        : std_logic;
       AXI_BREADY        : std_logic;
-      AXI_ARID          : std_logic_vector(C_DDR_AXI_ID_WIDTH-1 downto 0);
+      AXI_ARID          : std_logic_vector(1 downto 0);
       AXI_ARADDR        : std_logic_vector(C_DDR_AXI_ADDR_WIDTH-1 downto 0);
       AXI_ARLEN         : std_logic_vector(7 downto 0);
       AXI_ARSIZE        : std_logic_vector(2 downto 0);
@@ -243,12 +243,12 @@ PACKAGE psl_accel_types IS
     TYPE DDRK_T IS RECORD
       AXI_AWREADY : std_logic;
       AXI_WREADY  : std_logic;
-      AXI_BID     : std_logic_vector(C_DDR_AXI_ID_WIDTH-1 downto 0);
+      AXI_BID     : std_logic_vector(1 downto 0);
       AXI_BUSER   : std_logic_vector(C_DDR_AXI_ID_WIDTH-1 downto 0);
       AXI_RUSER   : std_logic_vector(C_DDR_AXI_ID_WIDTH-1 downto 0);
       AXI_BRESP   : std_logic_vector(1 downto 0);
       AXI_BVALID  : std_logic;
-      AXI_RID     : std_logic_vector(C_DDR_AXI_ID_WIDTH-1 downto 0);
+      AXI_RID     : std_logic_vector(1 downto 0);
       AXI_RDATA   : std_logic_vector(C_DDR_AXI_DATA_WIDTH-1 downto 0);
       AXI_RRESP   : std_logic_vector(1 downto 0);
       AXI_RLAST   : std_logic;
