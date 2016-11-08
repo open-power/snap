@@ -6,8 +6,10 @@ SOURCE_FILES_HDL     = $(shell grep '\/hdl\/' $(PROJECT_COMPILE_LIST) | grep -v 
 SOURCE_FILES_VHDL    = $(SOURCE_FILES_HDL:../%=%)
 
 CE_PARMS := -p -clone
+TCL_PATCH := tcl_noaction.patch
 ifdef EXAMPLE
 CE_PARMS += -e
+TCL_PATCH := tcl.patch
 endif
 
 .PHONY: all image model check_donut_settings create_environment copy clean config
@@ -33,9 +35,9 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 	@sed -i 's/run.topImpl.*0/run.topImpl 1/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topSynth.*0/run.topSynth 1/' $(BUILD_DIR)/psl_fpga.tcl
 
-$(BUILD_DIR)/Sources/prj/top.prj: $(BUILD_DIR)/psl_fpga.tcl 
+$(BUILD_DIR)/Sources/prj/top.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@cp $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
-	@echo "PATCH .tcl FILES"  && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/tcl.patch
+	@echo "PATCH .tcl FILES"  && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/$(TCL_PATCH)
 	@echo "PATCH .vhdl FILES" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/vhdl.patch
 
 $(BUILD_DIR)/Sources/prj/afu.prj: $(BUILD_DIR)/Sources/prj/top.prj
@@ -62,7 +64,7 @@ image:
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
 
 clean:
-	@echo -e "\t[CLEAN] build environment"; 
+	@echo -e "\t[CLEAN] build environment";
 	rm -rf  $(BUILD_DIR)
 	rm -rf  $(DONUT_HARDWARE_ROOT)/viv_project
 	rm -rf  $(DONUT_HARDWARE_ROOT)/ip
