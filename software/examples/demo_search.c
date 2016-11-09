@@ -143,7 +143,7 @@ static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
 	offs = (uint64_t *)(unsigned long)sjob->output.addr;
 	offs_max = sjob->output.size / sizeof(uint64_t);
 	for (i = 0; i < MIN(sjob->nb_of_occurrences, offs_max); i++) {
-		printf("%3d: %16llx\n", i, (long long)__be64_to_cpu(offs[i]));
+		printf("%3d: %16llx\n", i, (long long)__le64_to_cpu(offs[i]));
 	}
 
 	printf("Pattern:      %016llx\n", (long long)sjob->pattern.addr);
