@@ -314,7 +314,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
     PORT (
     s_aclk : IN STD_LOGIC;
     s_aresetn : IN STD_LOGIC;
-    s_axi_awid : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+    s_axi_awid : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
     s_axi_awaddr : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
     s_axi_awlen : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
     s_axi_awsize : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -326,18 +326,18 @@ ARCHITECTURE psl_accel OF psl_accel IS
     s_axi_wlast : IN STD_LOGIC;
     s_axi_wvalid : IN STD_LOGIC;
     s_axi_wready : OUT STD_LOGIC;
-    s_axi_bid : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+    s_axi_bid : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
     s_axi_bresp : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
     s_axi_bvalid : OUT STD_LOGIC;
     s_axi_bready : IN STD_LOGIC;
-    s_axi_arid : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+    s_axi_arid : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
     s_axi_araddr : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
     s_axi_arlen : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
     s_axi_arsize : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
     s_axi_arburst : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
     s_axi_arvalid : IN STD_LOGIC;
     s_axi_arready : OUT STD_LOGIC;
-    s_axi_rid : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+    s_axi_rid : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
     s_axi_rdata : OUT STD_LOGIC_VECTOR(127 DOWNTO 0);
     s_axi_rresp : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
     s_axi_rlast : OUT STD_LOGIC;
@@ -530,25 +530,25 @@ BEGIN
       s_aclk         => ha_pclock,
       s_axi_araddr   => kddr.axi_araddr(31 downto 0), 
       s_axi_arburst  => kddr.axi_arburst(1 downto 0), 
-      s_axi_arid     => "0000",
+      s_axi_arid     => kddr.axi_arid(1 downto 0),
       s_axi_arlen    => kddr.axi_arlen(7 downto 0),   
       s_axi_arready  => ddrk.axi_arready,             
       s_axi_arsize   => kddr.axi_arsize(2 downto 0), 
       s_axi_arvalid  => kddr.axi_arvalid,             
       s_axi_awaddr   => kddr.axi_awaddr(31 downto 0), 
       s_axi_awburst  => kddr.axi_awburst(1 downto 0), 
-      s_axi_awid     => "0000",
+      s_axi_awid     => kddr.axi_awid(1 downto 0),
       s_axi_awlen    => kddr.axi_awlen(7 downto 0),   
   --    s_axi_awqos    => kddr.axi_awqos(3 downto 0),   
       s_axi_awready  => ddrk.axi_awready,             
       s_axi_awsize   => kddr.axi_awsize(2 downto 0),
       s_axi_awvalid  => kddr.axi_awvalid,           
-      s_axi_bid      => open, --ddrk.axi_bid,
+      s_axi_bid      => ddrk.axi_bid,
       s_axi_bready   => kddr.axi_bready,  
       s_axi_bresp    => ddrk.axi_bresp(1 downto 0), 
       s_axi_bvalid   => ddrk.axi_bvalid,              
       s_axi_rdata    => ddrk.axi_rdata,  
-      s_axi_rid      => open, -- c0_ddr3_s_axi_rid,
+      s_axi_rid      => ddrk.axi_rid, -- c0_ddr3_s_axi_rid,
       s_axi_rlast    => ddrk.axi_rlast,               
       s_axi_rready   => kddr.axi_rready,              
       s_axi_rresp    => ddrk.axi_rresp(1 downto 0),   

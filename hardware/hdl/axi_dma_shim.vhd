@@ -282,7 +282,7 @@ axi_rd:   process(ha_pclock)
 
 
       sk_d_o.S_AXI_RLAST         <= '1' when ds_d_i.rd_last = '1' or temp_counter = "000000001" else '0';          
-axi_rd2:  process(ds_d_i.rd_data, ds_d_i.rd_id, ds_d_i.rd_data_strobe,ks_d_i.S_AXI_RREADY  )
+axi_rd2:  process(ds_d_i.rd_data, ds_d_i.rd_id, ds_d_i.rd_data_strobe,ks_d_i.S_AXI_RREADY, temp_counter)
           begin
             -- reverse the byte order 
             for i in 1 to 16 loop

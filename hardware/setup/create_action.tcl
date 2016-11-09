@@ -47,7 +47,8 @@ update_compile_order -fileset sim_1
 set_property display_name opencldesign [ipx::current_core]
 set_property description opencldesign [ipx::current_core]
 set_property core_revision 2 [ipx::current_core]
-ipx::associate_bus_interfaces -busif m_axi_gmem -clock ap_clk [ipx::current_core]
+ipx::associate_bus_interfaces -busif m_axi_gmem    -clock ap_clk [ipx::current_core]
+ipx::associate_bus_interfaces -busif m_axi_ddrmem  -clock ap_clk [ipx::current_core]
 ipx::associate_bus_interfaces -busif s_axi_control -clock ap_clk [ipx::current_core]
 ipx::create_xgui_files [ipx::current_core]
 ipx::update_checksums [ipx::current_core]
@@ -113,10 +114,7 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
 
 #AXI MASTER DDR3 Interface (interconnect_2)
  create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_2
- set_property -dict [list CONFIG.NUM_MI {1}] [get_bd_cells axi_interconnect_2]
-
-#AXI SLICE Register
- create_bd_cell -type ip -vlnv xilinx.com:ip:axi_register_slice:2.1 axi_register_slice_0
+ set_property -dict [list CONFIG.NUM_SI {2} CONFIG.M00_HAS_REGSLICE {4} CONFIG.S00_HAS_REGSLICE {4} CONFIG.S01_HAS_REGSLICE {4} CONFIG.NUM_MI {1}] [get_bd_cells axi_interconnect_2]
 
 #connections
  connect_bd_net [get_bd_ports clk] [get_bd_pins clk_wiz_0/clk_in1]
@@ -141,10 +139,7 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins memcopy_0/m01_axi_aclk]
  connect_bd_net [get_bd_ports /clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
  connect_bd_intf_net [get_bd_intf_pins memcopy_0/m01_axi] -boundary_type upper [get_bd_intf_pins axi_interconnect_2/S00_AXI]
- connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_2/M00_AXI] [get_bd_intf_pins axi_register_slice_0/S_AXI]
- connect_bd_intf_net [get_bd_intf_ports c0_ddr3] [get_bd_intf_pins axi_register_slice_0/M_AXI]
- connect_bd_net [get_bd_ports /clk] [get_bd_pins axi_register_slice_0/aclk]
- connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_register_slice_0/aresetn]
+ connect_bd_intf_net [get_bd_intf_ports c0_ddr3] -boundary_type upper [get_bd_intf_pins axi_interconnect_2/M00_AXI]
  connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_0/S00_ARESETN]
  connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_0/ARESETN]
  connect_bd_net [get_bd_pins proc_sys_reset_0/interconnect_aresetn] [get_bd_pins axi_interconnect_0/M00_ARESETN]
@@ -158,6 +153,9 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
  connect_bd_intf_net [get_bd_intf_pins memcopy_0/m00_axi] -boundary_type upper [get_bd_intf_pins axi_interconnect_1/S00_AXI]
  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M01_AXI] [get_bd_intf_pins opencldesign_wrapper_0/s_axi_control]
  connect_bd_intf_net [get_bd_intf_pins opencldesign_wrapper_0/m_axi_gmem] -boundary_type upper [get_bd_intf_pins axi_interconnect_1/S01_AXI]
+ connect_bd_intf_net [get_bd_intf_pins opencldesign_wrapper_0/m_axi_ddrmem] -boundary_type upper [get_bd_intf_pins axi_interconnect_2/S01_AXI]
+ connect_bd_net [get_bd_pins axi_interconnect_2/S01_ACLK] [get_bd_pins axi_interconnect_2/S00_ACLK] -boundary_type upper
+ connect_bd_net [get_bd_pins axi_interconnect_2/S01_ARESETN] [get_bd_pins axi_interconnect_2/S00_ARESETN] -boundary_type upper
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins axi_interconnect_1/S01_ACLK]
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins opencldesign_wrapper_0/ap_clk]
  connect_bd_net [get_bd_pins proc_sys_reset_0/peripheral_aresetn] [get_bd_pins opencldesign_wrapper_0/ap_rst_n]
