@@ -36,6 +36,8 @@ static const char *version = GIT_VERSION;
 #define MMIO_DIN_DEFAULT	0x0ull
 #define MMIO_DOUT_DEFAULT	0x0ull
 
+static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME" };
+
 /**
  * @brief	prints valid command line options
  *
@@ -193,7 +195,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-				 "C:i:o:a:S:D:d:x:s:t:Vqvh",
+				 "A:C:i:o:a:S:D:d:x:s:t:Vqvh",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -300,14 +302,17 @@ int main(int argc, char *argv[])
 	printf("PARAMETERS:\n"
 	       "  input:    %s\n"
 	       "  output:   %s\n"
-	       "  type_in:  %x\n"
+	       "  type_in:  %x %s\n"
 	       "  addr_in:  %016llx\n"
-	       "  type_out: %x\n"
+	       "  type_out: %x %s\n"
 	       "  addr_out: %016llx\n"
 	       "  size:     %08lx\n"
 	       "  mode:     %08x\n",
-	       input, output, type_in, (long long)addr_in,
-	       type_out, (long long)addr_out, size, mode);
+	       input  ? input  : "unknown",
+	       output ? output : "unknown",
+	       type_in,  mem_tab[type_in],  (long long)addr_in,
+	       type_out, mem_tab[type_out], (long long)addr_out,
+	       size, mode);
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
 	kernel = dnut_kernel_attach_dev(device,

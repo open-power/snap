@@ -55,7 +55,19 @@ static int action_main(struct dnut_action *action,
 	size_t len;
 
 	/* No error checking ... */
-	act_trace("%s(%p, %p, %d)\n", __func__, action, job, job_len);
+	act_trace("%s(%p, %p, %d) type_in=%d type_out=%d\n",
+		  __func__, action, job, job_len, js->in.type, js->out.type);
+
+	/* checking parameters ... */
+	if (js->in.type != DNUT_TARGET_TYPE_HOST_DRAM) {
+		action->retc = DNUT_RETC_FAILURE;
+		return 0;
+	}
+	if (js->out.type != DNUT_TARGET_TYPE_HOST_DRAM) {
+		action->retc = DNUT_RETC_FAILURE;
+		return 0;
+	}
+
 	src = (void *)js->in.addr;
 	len = js->out.size;
 	dst = (void *)js->out.addr;
