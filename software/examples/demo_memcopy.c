@@ -52,7 +52,7 @@ static void usage(const char *prog)
 	       "  -D, --type-out <CARD_RAM, HOST_RAM, ...>.\n"
 	       "  -d, --addr-out <addr>     address e.g. in CARD_RAM.\n"
 	       "  -s, --size <size>         size of data.\n"
-	       "  -m, --mode <mode>         mode filags.\n"
+	       "  -m, --mode <mode>         mode flags.\n"
 	       "\n"
 	       "Example:\n"
 	       "  demo_memcopy ...\n"
@@ -321,14 +321,14 @@ int main(int argc, char *argv[])
 	}
 
 #if 1 /* Circumvention should go away */
-        pr_info("FIXME Wait a sec ...\n");
-        sleep(1);
+	pr_info("FIXME Wait a sec ...\n");
+	sleep(1);
 
-        pr_info("FIXME Temporary setting to define memory base address\n");
-        dnut_kernel_mmio_write32(kernel, 0x10010,0);
-        dnut_kernel_mmio_write32(kernel, 0x10014,0);
-        dnut_kernel_mmio_write32(kernel, 0x1001c,0);
-        dnut_kernel_mmio_write32(kernel, 0x10020,0);
+	pr_info("FIXME Temporary setting to define memory base address\n");
+	dnut_kernel_mmio_write32(kernel, 0x10010,0);
+	dnut_kernel_mmio_write32(kernel, 0x10014,0);
+	dnut_kernel_mmio_write32(kernel, 0x1001c,0);
+	dnut_kernel_mmio_write32(kernel, 0x10020,0);
 #endif
 
 	dnut_prepare_memcopy(&cjob, &mjob,
