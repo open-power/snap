@@ -46,6 +46,7 @@ static void usage(const char *prog)
 	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
 	       "  -C, --card <cardno> can be (0...3)\n"
 	       "  -i, --input <file.bin>    input file.\n"
+	       "  -S, --start-value <checksum_start> checksum start value.\n"
 	       "  -A, --type-in <CARD_RAM, HOST_RAM, ...>.\n"
 	       "  -a, --addr-in <addr>      address e.g. in CARD_RAM.\n"
 	       "  -s, --size <size>         size of data.\n"
@@ -165,6 +166,7 @@ int main(int argc, char *argv[])
 	uint8_t type_in = DNUT_TARGET_TYPE_HOST_DRAM;
 	uint64_t addr_in = 0x0ull;
 	int mode = CHECKSUM_CRC32;
+	uint64_t checksum_start = 0ull;
 
 	while (1) {
 		int option_index = 0;
@@ -174,6 +176,7 @@ int main(int argc, char *argv[])
 			{ "src-type",	 required_argument, NULL, 'A' },
 			{ "src-addr",	 required_argument, NULL, 'a' },
 			{ "size",	 required_argument, NULL, 's' },
+			{ "start-value", required_argument, NULL, 'S' },
 			{ "mode",	 required_argument, NULL, 'm' },
 			{ "timeout",	 required_argument, NULL, 't' },
 			{ "version",	 no_argument,	    NULL, 'V' },
@@ -197,6 +200,9 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			size = __str_to_num(optarg);
+			break;
+		case 'S':
+			checksum_start = __str_to_num(optarg);
 			break;
 		case 't':
 			timeout = strtol(optarg, (char **)NULL, 0);
@@ -238,17 +244,16 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	/* source buffer */
-	ibuff = memalign(page_size, size);
-	if (ibuff == NULL)
-		goto out_error;
-	memset(ibuff, 0, size);
-
 	/* if input file is defined, use that as input */
 	if (input != NULL) {
 		size = file_size(input);
 		if (size < 0)
 			goto out_error1;
+
+		/* source buffer */
+		ibuff = memalign(page_size, size);
+		if (ibuff == NULL)
+			goto out_error;
 
 		fprintf(stdout, "reading input data %d bytes from %s\n",
 			(int)size, input);
@@ -260,15 +265,22 @@ int main(int argc, char *argv[])
 		type_in = DNUT_TARGET_TYPE_HOST_DRAM;
 		addr_in = (unsigned long)ibuff;
 	}
+	if ((type_in == DNUT_TARGET_TYPE_HOST_DRAM) &&
+	    (addr_in == 0ull)) {
+		fprintf(stdout, "err: type_in=%x addr_in=%016llx\n",
+			type_in, (long long)addr_in);
+		goto out_error;
+	}
 
 	printf("PARAMETERS:\n"
 	       "  input:    %s\n"
 	       "  type_in:  %x\n"
 	       "  addr_in:  %016llx\n"
 	       "  size:     %08lx\n"
+	       "  checksum_start: %016llx\n"
 	       "  mode:     %08x\n",
 	       input, type_in, (long long)addr_in,
-	       size, mode);
+	       size, (long long)checksum_start, mode);
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
 	kernel = dnut_kernel_attach_dev(device,
@@ -294,7 +306,7 @@ int main(int argc, char *argv[])
 
 	dnut_prepare_checksum(&cjob, &mjob_in, &mjob_out,
 			     (void *)addr_in, size, type_in,
-			      CHECKSUM_CRC32, 0);
+			      CHECKSUM_CRC32, checksum_start);
 
 	gettimeofday(&stime, NULL);
 	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
