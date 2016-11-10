@@ -20,6 +20,7 @@ set root_dir   $::env(DONUT_HARDWARE_ROOT)
 set fpga_part  $::env(FPGACHIP)
 set dimm_dir   $::env(DIMMTEST)
 set ip_dir     $root_dir/ip
+set ddr3_used  $::env(DDR3_USED)
 
 exec rm -rf $ip_dir
 
@@ -56,22 +57,24 @@ create_ip_run [get_files -of_objects [get_fileset sources_1] $ip_dir/fifo_129x51
 launch_run -jobs 6 fifo_129x512_synth_1
 export_simulation -of_objects [get_files $ip_dir/fifo_129x512/fifo_129x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
 
-#DDR3 create ddr3sdramm with ECC
-#DDR3 create_ip -name ddr3 -vendor xilinx.com -library ip -version 1.* -module_name ddr3sdram -dir $ip_dir
-#DDR3 set_property -dict [list CONFIG.C0.DDR3_TimePeriod {1250} CONFIG.C0.DDR3_InputClockPeriod {2500} CONFIG.C0.DDR3_MemoryType {SODIMMs} CONFIG.C0.DDR3_MemoryPart {CUSTOM_MT18KSF1G72HZ-1G6} CONFIG.C0.DDR3_AxiSelection {true} CONFIG.C0.DDR3_AxiDataWidth {128} CONFIG.C0.DDR3_CustomParts $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/ip-2015.3/custom_parts.csv CONFIG.C0.DDR3_isCustom {true} CONFIG.Simulation_Mode {Unisim} CONFIG.Internal_Vref {false} CONFIG.C0.DDR3_DataWidth {72} CONFIG.C0.DDR3_DataMask {false} CONFIG.C0.DDR3_Ecc {true} CONFIG.C0.DDR3_CasLatency {11} CONFIG.C0.DDR3_CasWriteLatency {8} CONFIG.C0.DDR3_AxiAddressWidth {33}] [get_ips ddr3sdram]
-#DDR3 generate_target {instantiation_template} [get_files $ip_dir/ddr3sdram/ddr3sdram.xci]
-#DDR3 set_property generate_synth_checkpoint false [get_files  $ip_dir/ddr3sdram/ddr3sdram.xci]
-#DDR3 generate_target all [get_files  $ip_dir/ddr3sdram/ddr3sdram.xci]
-#DDR3 export_ip_user_files -of_objects [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -no_script -force -quiet
-#DDR3 export_simulation -of_objects [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
-
-#create BlockRAM
-create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name block_RAM -dir  $ip_dir
-set_property -dict [list CONFIG.Interface_Type {AXI4} CONFIG.Write_Width_A {128} CONFIG.AXI_ID_Width {2} CONFIG.Write_Depth_A {32768} CONFIG.Use_AXI_ID {true} CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Use_Byte_Write_Enable {true} CONFIG.Byte_Size {8} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Read_Width_A {128} CONFIG.Operating_Mode_A {READ_FIRST} CONFIG.Write_Width_B {128} CONFIG.Read_Width_B {128} CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Use_RSTB_Pin {true} CONFIG.Reset_Type {ASYNC} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}] [get_ips block_RAM]
-generate_target {instantiation_template} [get_files $ip_dir/block_RAM/block_RAM.xci]
-set_property generate_synth_checkpoint false [get_files $ip_dir/block_RAM/block_RAM.xci]
-generate_target all [get_files $ip_dir/block_RAM/block_RAM.xci]
-export_ip_user_files -of_objects [get_files $ip_dir/block_RAM/block_RAM.xci] -no_script -force -quiet
-export_simulation -of_objects [get_files $ip_dir/block_RAM/block_RAM.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
-
+#choose type of RAm that will be connected to the DDR3 AXI Interface
+if { $ddr3_used == TRUE } {
+  #DDR3 create ddr3sdramm with ECC
+  create_ip -name ddr3 -vendor xilinx.com -library ip -version 1.* -module_name ddr3sdram -dir $ip_dir
+  set_property -dict [list CONFIG.C0.DDR3_TimePeriod {1250} CONFIG.C0.DDR3_InputClockPeriod {2500} CONFIG.C0.DDR3_MemoryType {SODIMMs} CONFIG.C0.DDR3_MemoryPart {CUSTOM_MT18KSF1G72HZ-1G6} CONFIG.C0.DDR3_AxiSelection {true} CONFIG.C0.DDR3_AxiDataWidth {128} CONFIG.C0.DDR3_CustomParts $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/ip-2015.3/custom_parts.csv CONFIG.C0.DDR3_isCustom {true} CONFIG.Simulation_Mode {Unisim} CONFIG.Internal_Vref {false} CONFIG.C0.DDR3_DataWidth {72} CONFIG.C0.DDR3_DataMask {false} CONFIG.C0.DDR3_Ecc {true} CONFIG.C0.DDR3_CasLatency {11} CONFIG.C0.DDR3_CasWriteLatency {8} CONFIG.C0.DDR3_AxiAddressWidth {33} CONFIG.C0.DDR3_AxiIDWidth {2}] [get_ips ddr3sdram]
+  generate_target {instantiation_template} [get_files $ip_dir/ddr3sdram/ddr3sdram.xci]
+  set_property generate_synth_checkpoint false [get_files  $ip_dir/ddr3sdram/ddr3sdram.xci]
+  generate_target all [get_files  $ip_dir/ddr3sdram/ddr3sdram.xci]
+  export_ip_user_files -of_objects [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -no_script -force -quiet
+  export_simulation -of_objects [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
+} else {
+  #create BlockRAM
+  create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name block_RAM -dir  $ip_dir
+  set_property -dict [list CONFIG.Interface_Type {AXI4} CONFIG.Write_Width_A {128} CONFIG.AXI_ID_Width {2} CONFIG.Write_Depth_A {32768} CONFIG.Use_AXI_ID {true} CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Use_Byte_Write_Enable {true} CONFIG.Byte_Size {8} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Read_Width_A {128} CONFIG.Operating_Mode_A {READ_FIRST} CONFIG.Write_Width_B {128} CONFIG.Read_Width_B {128} CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Enable_B {Use_ENB_Pin} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Use_RSTB_Pin {true} CONFIG.Reset_Type {ASYNC} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}] [get_ips block_RAM]
+  generate_target {instantiation_template} [get_files $ip_dir/block_RAM/block_RAM.xci]
+  set_property generate_synth_checkpoint false [get_files $ip_dir/block_RAM/block_RAM.xci]
+  generate_target all [get_files $ip_dir/block_RAM/block_RAM.xci]
+  export_ip_user_files -of_objects [get_files $ip_dir/block_RAM/block_RAM.xci] -no_script -force -quiet
+  export_simulation -of_objects [get_files $ip_dir/block_RAM/block_RAM.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
+}
 close_project
