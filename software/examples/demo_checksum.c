@@ -330,7 +330,8 @@ int main(int argc, char *argv[])
  out_error2:
 	dnut_kernel_free(kernel);
  out_error1:
-	free(ibuff);
+	if (ibuff)
+		free(ibuff);
  out_error:
 	exit(EXIT_FAILURE);
 }
