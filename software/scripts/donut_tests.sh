@@ -66,7 +66,7 @@ fi
 echo "ok"
 
 echo -n "Searching X in 1024 bytes ... "
-python -c 'print("X" * 1024)' > examples/1KiB_X.bin
+python3 -c 'print("X" * 1024, end="")' > examples/1KiB_X.bin
 cmd="./examples/demo_search -C${dnut_card}	\
 	-i examples/1KiB_X.bin -p X >		\
 	examples/demo_search2.log 2>&1"
@@ -87,7 +87,7 @@ fi
 echo "ok"
 
 echo -n "Searching more X ... "
-python -c 'print("A" * 1024)' > examples/1KiB_A.bin
+python3 -c 'print("A" * 1024, end="")' > examples/1KiB_A.bin
 cat examples/1KiB_X.bin examples/1KiB_A.bin examples/1KiB_X.bin > \
 	examples/3KiB.bin
 
@@ -111,7 +111,7 @@ echo "ok"
 
 #### MEMCOPY###########################################################
 
-python -c 'print("A" * 1024)' > examples/1KiB_A.bin
+python3 -c 'print("A" * 1024, end="")' > examples/1KiB_A.bin
 
 echo -n "Doing demo_memcopy (aligned)... "
 cmd="./examples/demo_memcopy -C${dnut_card}	\
