@@ -1,6 +1,5 @@
 #!/bin/bash
 cd $1
-cp -p $FRAMEWORK_ROOT/cards/adku060_capi_1_1_release/psl_fpga.tcl $2
 
 sed -i '/set netlistDir/ a\
 set rootDir    \$::env(DONUT_HARDWARE_ROOT)\
