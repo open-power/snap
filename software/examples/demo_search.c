@@ -166,9 +166,11 @@ static void usage(const char *prog)
 {
 	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
 	       "  -C, --card <cardno> can be (0...3)\n"
-	       "  -i, --input <data.bin>     Input data.\n"
-	       "  -I, --items <items>        Max items to find.\n"
-	       "  -p, --pattern <str>        Pattern to search for\n"
+	       "  -i, --input <data.bin> Input data.\n"
+	       "  -I, --items <items>    Max items to find.\n"
+	       "  -p, --pattern <str>    Pattern to search for\n"
+	       "  -E, --expected <num>   Expected # of patterns to find, "
+	       "for verification\n"
 	       "\n"
 	       "Example:\n"
 	       "  demo_search ...\n"
@@ -201,6 +203,8 @@ int main(int argc, char *argv[])
 	unsigned int total_found = 0;
 	unsigned int page_size = sysconf(_SC_PAGESIZE);
 	struct timeval etime, stime;
+	long int expected_patterns = -1;
+	int exit_code = EXIT_SUCCESS;
 
 	while (1) {
 		int option_index = 0;
@@ -210,6 +214,7 @@ int main(int argc, char *argv[])
 			{ "pattern",	 required_argument, NULL, 'p' },
 			{ "items",	 required_argument, NULL, 'I' },
 			{ "timeout",	 required_argument, NULL, 't' },
+			{ "expected",	 required_argument, NULL, 'E' },
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
@@ -217,7 +222,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-				 "C:i:p:I:t:Vvh",
+				 "C:E:i:p:I:t:Vvh",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -238,6 +243,9 @@ int main(int argc, char *argv[])
 			break;
 		case 't':
 			timeout = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'E':
+			expected_patterns = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 'V':
 			printf("%s\n", version);
@@ -361,6 +369,17 @@ int main(int argc, char *argv[])
 
 	fprintf(stdout, "RETC=%x\n", cjob.retc);
 	fprintf(stdout, "%d patterns found.\n", total_found);
+
+	/* Post action verification, simplifies test-scripts */
+	if (expected_patterns >= 0) {
+		if (total_found != expected_patterns) {
+			fprintf(stderr, "warn: Verification failed expected "
+				"%ld but found %d patterns\n",
+				expected_patterns, total_found);
+			exit_code = EX_ERR_DATA;
+		}
+	}
+
 	fprintf(stdout, "searching took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
@@ -370,7 +389,7 @@ int main(int argc, char *argv[])
 	free(pbuff);
 	free(offs);
 
-	exit(EXIT_SUCCESS);
+	exit(exit_code);
 
  out_error2:
 	dnut_kernel_free(kernel);

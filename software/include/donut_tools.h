@@ -89,6 +89,7 @@ extern "C" {
 #define EX_COMPRESS	85 /* compression did not work */
 #define EX_DECOMPRESS	86 /* decompression failed */
 #define EX_ERR_DICT     87 /* dictionary compare failed */
+#define EX_ERR_VERIFY   88 /* verification failed */
 
 /** common error printf */
 #define pr_err(fmt, ...) do {					\

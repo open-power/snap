@@ -174,6 +174,8 @@ int main(int argc, char *argv[])
 	uint64_t addr_in = 0x0ull;
 	uint8_t type_out = DNUT_TARGET_TYPE_HOST_DRAM;
 	uint64_t addr_out = 0x0ull;
+	int verify = 0;
+	int exit_code = EXIT_SUCCESS;
 
 	while (1) {
 		int option_index = 0;
@@ -188,6 +190,7 @@ int main(int argc, char *argv[])
 			{ "size",	 required_argument, NULL, 's' },
 			{ "mode",	 required_argument, NULL, 'm' },
 			{ "timeout",	 required_argument, NULL, 't' },
+			{ "verfy",	 no_argument,	    NULL, 'X' },
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
@@ -195,7 +198,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-				 "A:C:i:o:a:S:D:d:x:s:t:Vqvh",
+				 "A:C:i:o:a:S:D:d:x:s:t:XVqvh",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -241,7 +244,9 @@ int main(int argc, char *argv[])
 		case 'd':
 			addr_out = strtol(optarg, (char **)NULL, 0);
 			break;
-
+		case 'X':
+			verify++;
+			break;
 			/* service */
 		case 'V':
 			printf("%s\n", version);
@@ -360,6 +365,16 @@ int main(int argc, char *argv[])
 	}
 
 	fprintf(stdout, "RETC=%x\n", cjob.retc);
+	if (verify) {
+		if ((type_in  == DNUT_TARGET_TYPE_HOST_DRAM) &&
+		    (type_out == DNUT_TARGET_TYPE_HOST_DRAM)) {
+			rc = memcmp(ibuff,obuff, size);
+			if (rc != 0)
+				exit_code = EX_ERR_VERIFY;
+		} else
+			fprintf(stderr, "warn: Verification works currently "
+				"only with HOST_DRAM\n");
+	}
 	fprintf(stdout, "memcopy took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
@@ -368,7 +383,7 @@ int main(int argc, char *argv[])
 	free(obuff);
 	free(ibuff);
 
-	exit(EXIT_SUCCESS);
+	exit(exit_code);
 
  out_error2:
 	dnut_kernel_free(kernel);
