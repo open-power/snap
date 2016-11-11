@@ -317,15 +317,21 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
-#if 1 /* Circumvention should go away */
+#if 1				/* FIXME Circumvention should go away */
 	pr_info("FIXME Wait a sec ...\n");
 	sleep(1);
-
+#endif
+#if 1				/* FIXME Circumvention should go away */
 	pr_info("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x10010,0);
-	dnut_kernel_mmio_write32(kernel, 0x10014,0);
-	dnut_kernel_mmio_write32(kernel, 0x1001c,0);
-	dnut_kernel_mmio_write32(kernel, 0x10020,0);
+	dnut_kernel_mmio_write32(kernel, 0x10010, 0);
+	dnut_kernel_mmio_write32(kernel, 0x10014, 0);
+	dnut_kernel_mmio_write32(kernel, 0x1001c, 0);
+	dnut_kernel_mmio_write32(kernel, 0x10020, 0);
+#endif
+#if 0				/* FIXME Circumvention should go away */
+	pr_info("FIXME Temporary setting to enable DDR on the card\n");
+	dnut_kernel_mmio_write32(kernel, 0x10028, 0);
+	dnut_kernel_mmio_write32(kernel, 0x1002c, 0);
 #endif
 
 	run = 0;
