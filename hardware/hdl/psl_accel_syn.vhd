@@ -28,7 +28,7 @@ USE work.psl_accel_types.ALL;
 
 ENTITY psl_accel IS
   GENERIC (
-    DDR3_USED  : BOOLEAN := TRUE 
+    DDR3_USED  : BOOLEAN := TRUE
   );
   PORT(
     -- Accelerator Command Interface
@@ -437,19 +437,19 @@ ARCHITECTURE psl_accel OF psl_accel IS
       sys_rst : IN STD_LOGIC
     );
   END COMPONENT;  
-  constant OWN_W16ESB8G8M : usodimm_part_t := (
-    base_chip => (
-      -- Generic DDR3-1600 x8 chip, 4 Gbit, 260 ns tRFC, CL11
-      part_size              => M64_X_B8_X_D8,
-      speed_grade_cl_cwl_min => MT41K_125E_CL_CWL_MIN,  -- 125E with CL=5,6,7,8,9,10,11
-      speed_grade_cl_cwl_max => MT41K_125E_CL_CWL_MAX,  -- 125E with CL=5,6,7,8,9,10,11
-      speed_grade            => MT41K_125E,             -- 125E
-      check_timing           => false),
-    geometry  => USODIMM_2x72);
-  constant W16ESB8G8M_AS_2_RANK : usodimm_part_t := (
-    base_chip => W16ESB8G8M.base_chip, -- Base chip characteristics retained.
-    geometry  => USODIMM_2x64);        -- Using only one of the two ranks.
-  constant usodimm_part : usodimm_part_t :=  OWN_W16ESB8G8M; --choice(mig_ranks = 2, W16ESB8G8M, W16ESB8G8M_AS_1_RANK);
+--  constant OWN_W16ESB8G8M : usodimm_part_t := (
+--    base_chip => (
+--      -- Generic DDR3-1600 x8 chip, 4 Gbit, 260 ns tRFC, CL11
+--      part_size              => M64_X_B8_X_D8,
+--      speed_grade_cl_cwl_min => MT41K_125E_CL_CWL_MIN,  -- 125E with CL=5,6,7,8,9,10,11
+--      speed_grade_cl_cwl_max => MT41K_125E_CL_CWL_MAX,  -- 125E with CL=5,6,7,8,9,10,11
+--      speed_grade            => MT41K_125E,             -- 125E
+--      check_timing           => false),
+--    geometry  => USODIMM_2x72);
+--  constant W16ESB8G8M_AS_2_RANK : usodimm_part_t := (
+--    base_chip => W16ESB8G8M.base_chip, -- Base chip characteristics retained.
+--    geometry  => USODIMM_2x64);        -- Using only one of the two ranks.
+--  constant usodimm_part : usodimm_part_t :=  OWN_W16ESB8G8M; --choice(mig_ranks = 2, W16ESB8G8M, W16ESB8G8M_AS_1_RANK);
   constant sys_clk_period : time := 2.5 ns;
 
   --
@@ -518,6 +518,8 @@ BEGIN
   --
   -- 
   c0_ddr3_dm <= (others => '0');
+  c1_ddr3_dm <= (others => '0');
+  
   donut_i: donut
     port map (
       --

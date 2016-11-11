@@ -147,4 +147,13 @@ set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 # SET Bitstream Properties
 set_property STEPS.WRITE_BITSTREAM.ARGS.BIN_FILE true [get_runs impl_1]
 
+
+if { $ddr3_used == TRUE } {
+  exec sed -i "/DDR3_USED  : BOOLEAN/c\\    DDR3_USED  : BOOLEAN := TRUE" $root_dir/hdl/psl_accel_sim.vhd
+  exec sed -i "/DDR3_USED  : BOOLEAN/c\\    DDR3_USED  : BOOLEAN := TRUE" $root_dir/hdl/psl_accel_syn.vhd
+} else {
+  exec sed -i "/DDR3_USED  : BOOLEAN/c\\    DDR3_USED  : BOOLEAN := FALSE" $root_dir/hdl/psl_accel_sim.vhd
+  exec sed -i "/DDR3_USED  : BOOLEAN/c\\    DDR3_USED  : BOOLEAN := FALSE" $root_dir/hdl/psl_accel_syn.vhd
+}
+
 close_project

@@ -31,7 +31,7 @@ use work.ddr3_sdram_usodimm_pkg.all;
 
 ENTITY afu IS
   GENERIC (
-    DDR3_USED  : BOOLEAN := TRUE 
+    DDR3_USED  : BOOLEAN := TRUE
   );
   PORT(
     -- Accelerator Command Interface
