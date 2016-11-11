@@ -38,6 +38,12 @@ static const char *version = GIT_VERSION;
 
 static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME" };
 
+static void __free(void *ptr)
+{
+	if (ptr)
+		free(ptr);
+}
+
 /**
  * @brief	prints valid command line options
  *
@@ -269,30 +275,24 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	/* source buffer */
-	ibuff = memalign(page_size, size);
-	if (ibuff == NULL)
-		goto out_error;
-	memset(ibuff, 0, size);
-
-	/* destination buffer */
-	obuff = memalign(page_size, size);
-	if (obuff == NULL)
-		goto out_error0;
-	memset(obuff, 0, size);
-
 	/* if input file is defined, use that as input */
 	if (input != NULL) {
+		/* source buffer */
+		ibuff = memalign(page_size, size);
+		if (ibuff == NULL)
+			goto out_error;
+		memset(ibuff, 0, size);
+
 		size = file_size(input);
 		if (size < 0)
-			goto out_error1;
+			goto out_error;
 
 		fprintf(stdout, "reading input data %d bytes from %s\n",
 			(int)size, input);
 
 		rc = file_read(input, ibuff, size);
 		if (rc < 0)
-			goto out_error1;
+			goto out_error;
 
 		type_in = DNUT_TARGET_TYPE_HOST_DRAM;
 		addr_in = (unsigned long)ibuff;
@@ -300,6 +300,12 @@ int main(int argc, char *argv[])
 
 	/* if output file is defined, use that as output */
 	if (output != NULL) {
+		/* destination buffer */
+		obuff = memalign(page_size, size);
+		if (obuff == NULL)
+			goto out_error;
+		memset(obuff, 0, size);
+
 		type_out = DNUT_TARGET_TYPE_HOST_DRAM;
 		addr_out = (unsigned long)obuff;
 	}
@@ -327,7 +333,7 @@ int main(int argc, char *argv[])
 	if (kernel == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
 			strerror(errno));
-		goto out_error1;
+		goto out_error;
 	}
 
 #if 1				/* FIXME Circumvention should go away */
@@ -386,17 +392,15 @@ int main(int argc, char *argv[])
 
 	dnut_kernel_free(kernel);
 
-	free(obuff);
-	free(ibuff);
-
+	__free(obuff);
+	__free(ibuff);
 	exit(exit_code);
 
  out_error2:
 	dnut_kernel_free(kernel);
- out_error1:
-	free(obuff);
- out_error0:
-	free(ibuff);
+
  out_error:
+	__free(obuff);
+	__free(ibuff);
 	exit(EXIT_FAILURE);
 }
