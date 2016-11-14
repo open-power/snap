@@ -25,13 +25,13 @@ use work.std_ulogic_support.all;
 use work.std_ulogic_unsigned.all;
 
 USE work.psl_accel_types.ALL;
-use work.ddr3_sdram_pkg.all;
-use work.ddr3_sdram_usodimm_pkg.all;
+--DDR3 use work.ddr3_sdram_pkg.all;
+--DDR3 use work.ddr3_sdram_usodimm_pkg.all;
 
 
 ENTITY afu IS
   GENERIC (
-    DDR3_USED  : BOOLEAN := TRUE
+    DDR3_USED  : BOOLEAN := FALSE
   );
   PORT(
     -- Accelerator Command Interface
@@ -335,19 +335,19 @@ ARCHITECTURE afu OF afu IS
       sys_rst : IN STD_LOGIC
     );
   END COMPONENT;  
-  constant OWN_W16ESB8G8M : usodimm_part_t := (
-    base_chip => (
-      -- Generic DDR3-1600 x8 chip, 4 Gbit, 260 ns tRFC, CL11
-      part_size              => M64_X_B8_X_D8,
-      speed_grade_cl_cwl_min => MT41K_125E_CL_CWL_MIN,  -- 125E with CL=5,6,7,8,9,10,11
-      speed_grade_cl_cwl_max => MT41K_125E_CL_CWL_MAX,  -- 125E with CL=5,6,7,8,9,10,11
-      speed_grade            => MT41K_125E,             -- 125E
-      check_timing           => false),
-    geometry  => USODIMM_2x72);
-  constant W16ESB8G8M_AS_2_RANK : usodimm_part_t := (
-    base_chip => W16ESB8G8M.base_chip, -- Base chip characteristics retained.
-    geometry  => USODIMM_2x64);        -- Using only one of the two ranks.
-  constant usodimm_part : usodimm_part_t :=  OWN_W16ESB8G8M; --choice(mig_ranks = 2, W16ESB8G8M, W16ESB8G8M_AS_1_RANK);
+--DDR3  constant OWN_W16ESB8G8M : usodimm_part_t := (
+--DDR3    base_chip => (
+--DDR3      -- Generic DDR3-1600 x8 chip, 4 Gbit, 260 ns tRFC, CL11
+--DDR3      part_size              => M64_X_B8_X_D8,
+--DDR3      speed_grade_cl_cwl_min => MT41K_125E_CL_CWL_MIN,  -- 125E with CL=5,6,7,8,9,10,11
+--DDR3      speed_grade_cl_cwl_max => MT41K_125E_CL_CWL_MAX,  -- 125E with CL=5,6,7,8,9,10,11
+--DDR3      speed_grade            => MT41K_125E,             -- 125E
+--DDR3      check_timing           => false),
+--DDR3    geometry  => USODIMM_2x72);
+--DDR3  constant W16ESB8G8M_AS_2_RANK : usodimm_part_t := (
+--DDR3    base_chip => W16ESB8G8M.base_chip, -- Base chip characteristics retained.
+--DDR3    geometry  => USODIMM_2x64);        -- Using only one of the two ranks.
+--DDR3  constant usodimm_part : usodimm_part_t :=  OWN_W16ESB8G8M; --choice(mig_ranks = 2, W16ESB8G8M, W16ESB8G8M_AS_1_RANK);
   constant sys_clk_period : time := 2.5 ns;
 
   --
@@ -676,29 +676,29 @@ BEGIN
     --
     -- DDR3 RAM model
     -- 
-    bank1_model : ddr3_sdram_usodimm
-       generic map(
-         message_level  => 0,
-         part           => usodimm_part,
-         short_init_dly => true,
-         read_undef_val => 'U'
-       )
-       port map(
-         ck => c1_ddr3_ck_p,
-         ck_l => c1_ddr3_ck_n,
-         reset_l => c1_ddr3_reset_n,
-         cke => c1_ddr3_cke,
-         cs_l => c1_ddr3_cs_n,
-         ras_l => c1_ddr3_ras_n,
-         cas_l => c1_ddr3_cas_n,
-         we_l => c1_ddr3_we_n,
-         odt => c1_ddr3_odt,
-         dm => c1_ddr3_dm,
-         ba => c1_ddr3_ba,
-         a => c1_ddr3_addr,
-         dq => c1_ddr3_dq,
-         dqs => c1_ddr3_dqs_p,
-         dqs_l => c1_ddr3_dqs_n
-       );
+--DDR3    bank1_model : ddr3_sdram_usodimm
+--DDR3       generic map(
+--DDR3         message_level  => 0,
+--DDR3         part           => usodimm_part,
+--DDR3         short_init_dly => true,
+--DDR3         read_undef_val => 'U'
+--DDR3       )
+--DDR3       port map(
+--DDR3         ck => c1_ddr3_ck_p,
+--DDR3         ck_l => c1_ddr3_ck_n,
+--DDR3         reset_l => c1_ddr3_reset_n,
+--DDR3         cke => c1_ddr3_cke,
+--DDR3         cs_l => c1_ddr3_cs_n,
+--DDR3         ras_l => c1_ddr3_ras_n,
+--DDR3         cas_l => c1_ddr3_cas_n,
+--DDR3         we_l => c1_ddr3_we_n,
+--DDR3         odt => c1_ddr3_odt,
+--DDR3         dm => c1_ddr3_dm,
+--DDR3         ba => c1_ddr3_ba,
+--DDR3         a => c1_ddr3_addr,
+--DDR3         dq => c1_ddr3_dq,
+--DDR3         dqs => c1_ddr3_dqs_p,
+--DDR3         dqs_l => c1_ddr3_dqs_n
+--DDR3       );
   END GENERATE; 
 END afu;

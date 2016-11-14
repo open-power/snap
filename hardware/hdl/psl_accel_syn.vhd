@@ -28,7 +28,7 @@ USE work.psl_accel_types.ALL;
 
 ENTITY psl_accel IS
   GENERIC (
-    DDR3_USED  : BOOLEAN := TRUE
+    DDR3_USED  : BOOLEAN := FALSE
   );
   PORT(
     -- Accelerator Command Interface
