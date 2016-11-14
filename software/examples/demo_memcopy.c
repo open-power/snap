@@ -61,6 +61,7 @@ static void usage(const char *prog)
 	       "  -d, --addr-out <addr>     address e.g. in CARD_RAM.\n"
 	       "  -s, --size <size>         size of data.\n"
 	       "  -m, --mode <mode>         mode flags.\n"
+	       "  -X, --verify              verify result if possible\n"
 	       "\n"
 	       "Example:\n"
 	       "  demo_memcopy ...\n"
