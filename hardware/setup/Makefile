@@ -10,6 +10,12 @@ ifdef EXAMPLE
 CE_PARMS += -e
 endif
 
+ifdef DDR3_USED
+export DDR3_USED=TRUE
+else 
+export DDR3_USED=FALSE
+endif
+
 .PHONY: all image model check_donut_settings create_environment copy clean config gitclean
 
 all: config image model

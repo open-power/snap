@@ -25,9 +25,14 @@ use work.std_ulogic_support.all;
 use work.std_ulogic_unsigned.all;
 
 USE work.psl_accel_types.ALL;
+--DDR3 use work.ddr3_sdram_pkg.all;
+--DDR3 use work.ddr3_sdram_usodimm_pkg.all;
 
 
 ENTITY afu IS
+  GENERIC (
+    DDR3_USED  : BOOLEAN := FALSE
+  );
   PORT(
     -- Accelerator Command Interface
     ah_cvalid : out std_ulogic;  -- A valid command is present
@@ -101,87 +106,15 @@ ENTITY afu IS
     ah_paren    : out std_ulogic;
     ha_pclock   : in  std_ulogic
     );  
-
---       -- SFP+ Phy 0 Interface
---       as_sfp0_phy_mgmt_clk_reset   : out std_ulogic;
---       as_sfp0_phy_mgmt_address     : out std_ulogic_vector(0 to 8);
---       as_sfp0_phy_mgmt_read        : out std_ulogic;
---       sa_sfp0_phy_mgmt_readdata    : in  std_ulogic_vector(0 to 31);
---       sa_sfp0_phy_mgmt_waitrequest : in  std_ulogic;
---       as_sfp0_phy_mgmt_write       : out std_ulogic;
---       as_sfp0_phy_mgmt_writedata   : out std_ulogic_vector(0 to 31);
---       sa_sfp0_tx_ready             : in  std_ulogic;
---       sa_sfp0_rx_ready             : in  std_ulogic;
---       as_sfp0_tx_forceelecidle     : out std_ulogic;
---       sa_sfp0_pll_locked           : in  std_ulogic;
---       sa_sfp0_rx_is_lockedtoref    : in  std_ulogic;
---       sa_sfp0_rx_is_lockedtodata   : in  std_ulogic;
---       sa_sfp0_rx_signaldetect      : in  std_ulogic;
---       as_sfp0_tx_coreclk           : out std_ulogic;
---       sa_sfp0_tx_clk               : in  std_ulogic;
---       sa_sfp0_rx_clk               : in  std_ulogic;
---       as_sfp0_tx_parallel_data     : out std_ulogic_vector(39 downto 0);
---       sa_sfp0_rx_parallel_data     : in  std_ulogic_vector(39 downto 0);
--- 
---       -- SFP+ 0 Sideband Signals
---       sa_sfp0_tx_fault   : in  std_ulogic;
---       sa_sfp0_mod_abs    : in  std_ulogic;
---       sa_sfp0_rx_los     : in  std_ulogic;
---       as_sfp0_tx_disable : out std_ulogic;
---       as_sfp0_rs0        : out std_ulogic;
---       as_sfp0_rs1        : out std_ulogic;
---       as_sfp0_scl        : out std_ulogic;
---       as_sfp0_en         : out std_ulogic;
---       sa_sfp0_sda        : in  std_ulogic;
---       as_sfp0_sda        : out std_ulogic;
---       as_sfp0_sda_oe     : out std_ulogic;
--- 
---       -- SFP+ Phy 1 Interface
---       as_sfp1_phy_mgmt_clk_reset   : out std_ulogic;
---       as_sfp1_phy_mgmt_address     : out std_ulogic_vector(0 to 8);
---       as_sfp1_phy_mgmt_read        : out std_ulogic;
---       sa_sfp1_phy_mgmt_readdata    : in  std_ulogic_vector(0 to 31);
---       sa_sfp1_phy_mgmt_waitrequest : in  std_ulogic;
---       as_sfp1_phy_mgmt_write       : out std_ulogic;
---       as_sfp1_phy_mgmt_writedata   : out std_ulogic_vector(0 to 31);
---       sa_sfp1_tx_ready             : in  std_ulogic;
---       sa_sfp1_rx_ready             : in  std_ulogic;
---       as_sfp1_tx_forceelecidle     : out std_ulogic;
---       sa_sfp1_pll_locked           : in  std_ulogic;
---       sa_sfp1_rx_is_lockedtoref    : in  std_ulogic;
---       sa_sfp1_rx_is_lockedtodata   : in  std_ulogic;
---       sa_sfp1_rx_signaldetect      : in  std_ulogic;
---       as_sfp1_tx_coreclk           : out std_ulogic;
---       sa_sfp1_tx_clk               : in  std_ulogic;
---       sa_sfp1_rx_clk               : in  std_ulogic;
---       as_sfp1_tx_parallel_data     : out std_ulogic_vector(39 downto 0);
---       sa_sfp1_rx_parallel_data     : in  std_ulogic_vector(39 downto 0);
--- 
---       -- SFP+ 1 Sideband Signals
---       sa_sfp1_tx_fault   : in  std_ulogic;
---       sa_sfp1_mod_abs    : in  std_ulogic;
---       sa_sfp1_rx_los     : in  std_ulogic;
---       as_sfp1_tx_disable : out std_ulogic;
---       as_sfp1_rs0        : out std_ulogic;
---       as_sfp1_rs1        : out std_ulogic;
---       as_sfp1_scl        : out std_ulogic;
---       as_sfp1_en         : out std_ulogic;
---       sa_sfp1_sda        : in  std_ulogic;
---       as_sfp1_sda        : out std_ulogic;
---       as_sfp1_sda_oe     : out std_ulogic;
--- 
---       as_refclk_sfp_fs    : out std_ulogic;
---       as_refclk_sfp_fs_en : out std_ulogic;
--- 
---       as_red_led   : out std_ulogic_vector(0 to 3);
---       as_green_led : out std_ulogic_vector(0 to 3));
-  
 END afu;
 
 
 
 ARCHITECTURE afu OF afu IS
 
+  --
+  -- DONUT
+  --
   component donut
     port (
       ah_cvalid      : out std_ulogic;
@@ -254,6 +187,10 @@ ARCHITECTURE afu OF afu IS
       ks_d_i         : IN  KS_D_T
       );
   end component;
+
+  --
+  -- ACTION
+  -- 
   component action_interface
     port (
       -- misc
@@ -275,10 +212,11 @@ ARCHITECTURE afu OF afu IS
       ddrk_i         : IN  DDRK_T;
       kddr_o         : OUT KDDR_T
     );
-  end component;
+  END COMPONENT;
 
-
-
+  --
+  -- BLOCK RAM
+  -- 
   COMPONENT block_RAM
     PORT (
     s_aclk              : IN STD_LOGIC;
@@ -311,21 +249,116 @@ ARCHITECTURE afu OF afu IS
     s_axi_rresp         : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
     s_axi_rlast         : OUT STD_LOGIC;
     s_axi_rvalid        : OUT STD_LOGIC;
-    s_axi_rready        : IN STD_LOGIC     
-    
+    s_axi_rready        : IN STD_LOGIC         
+    );
+  END COMPONENT;
+
+  --
+  -- DDR3 RAM
+  --
+  COMPONENT ddr3sdram
+    PORT (
+      c0_init_calib_complete : OUT STD_LOGIC;
+      c0_sys_clk_p : IN STD_LOGIC;
+      c0_sys_clk_n : IN STD_LOGIC;
+      c0_ddr3_addr : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+      c0_ddr3_ba : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+      c0_ddr3_cas_n : OUT STD_LOGIC;
+      c0_ddr3_cke : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      c0_ddr3_ck_n : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      c0_ddr3_ck_p : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      c0_ddr3_cs_n : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      c0_ddr3_dq : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
+      c0_ddr3_dqs_n : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+      c0_ddr3_dqs_p : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+      c0_ddr3_odt : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      c0_ddr3_ras_n : OUT STD_LOGIC;
+      c0_ddr3_reset_n : OUT STD_LOGIC;
+      c0_ddr3_we_n : OUT STD_LOGIC;
+      c0_ddr3_ui_clk : OUT STD_LOGIC;
+      c0_ddr3_ui_clk_sync_rst : OUT STD_LOGIC;
+      c0_ddr3_aresetn : IN STD_LOGIC;
+      c0_ddr3_s_axi_ctrl_awvalid : IN STD_LOGIC;
+      c0_ddr3_s_axi_ctrl_awready : OUT STD_LOGIC;
+      c0_ddr3_s_axi_ctrl_awaddr : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+      c0_ddr3_s_axi_ctrl_wvalid : IN STD_LOGIC;
+      c0_ddr3_s_axi_ctrl_wready : OUT STD_LOGIC;
+      c0_ddr3_s_axi_ctrl_wdata : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+      c0_ddr3_s_axi_ctrl_bvalid : OUT STD_LOGIC;
+      c0_ddr3_s_axi_ctrl_bready : IN STD_LOGIC;
+      c0_ddr3_s_axi_ctrl_bresp : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      c0_ddr3_s_axi_ctrl_arvalid : IN STD_LOGIC;
+      c0_ddr3_s_axi_ctrl_arready : OUT STD_LOGIC;
+      c0_ddr3_s_axi_ctrl_araddr : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+      c0_ddr3_s_axi_ctrl_rvalid : OUT STD_LOGIC;
+      c0_ddr3_s_axi_ctrl_rready : IN STD_LOGIC;
+      c0_ddr3_s_axi_ctrl_rdata : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+      c0_ddr3_s_axi_ctrl_rresp : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      c0_ddr3_interrupt : OUT STD_LOGIC;
+      c0_ddr3_s_axi_awid : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
+      c0_ddr3_s_axi_awaddr : IN STD_LOGIC_VECTOR(32 DOWNTO 0);
+      c0_ddr3_s_axi_awlen : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+      c0_ddr3_s_axi_awsize : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+      c0_ddr3_s_axi_awburst : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
+      c0_ddr3_s_axi_awlock : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+      c0_ddr3_s_axi_awcache : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+      c0_ddr3_s_axi_awprot : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+      c0_ddr3_s_axi_awqos : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+      c0_ddr3_s_axi_awvalid : IN STD_LOGIC;
+      c0_ddr3_s_axi_awready : OUT STD_LOGIC;
+      c0_ddr3_s_axi_wdata : IN STD_LOGIC_VECTOR(127 DOWNTO 0);
+      c0_ddr3_s_axi_wstrb : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+      c0_ddr3_s_axi_wlast : IN STD_LOGIC;
+      c0_ddr3_s_axi_wvalid : IN STD_LOGIC;
+      c0_ddr3_s_axi_wready : OUT STD_LOGIC;
+      c0_ddr3_s_axi_bready : IN STD_LOGIC;
+      c0_ddr3_s_axi_bid : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      c0_ddr3_s_axi_bresp : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      c0_ddr3_s_axi_bvalid : OUT STD_LOGIC;
+      c0_ddr3_s_axi_arid : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
+      c0_ddr3_s_axi_araddr : IN STD_LOGIC_VECTOR(32 DOWNTO 0);
+      c0_ddr3_s_axi_arlen : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+      c0_ddr3_s_axi_arsize : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+      c0_ddr3_s_axi_arburst : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
+      c0_ddr3_s_axi_arlock : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+      c0_ddr3_s_axi_arcache : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+      c0_ddr3_s_axi_arprot : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+      c0_ddr3_s_axi_arqos : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+      c0_ddr3_s_axi_arvalid : IN STD_LOGIC;
+      c0_ddr3_s_axi_arready : OUT STD_LOGIC;
+      c0_ddr3_s_axi_rready : IN STD_LOGIC;
+      c0_ddr3_s_axi_rlast : OUT STD_LOGIC;
+      c0_ddr3_s_axi_rvalid : OUT STD_LOGIC;
+      c0_ddr3_s_axi_rresp : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      c0_ddr3_s_axi_rid : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      c0_ddr3_s_axi_rdata : OUT STD_LOGIC_VECTOR(127 DOWNTO 0);
+      sys_rst : IN STD_LOGIC
     );
   END COMPONENT;  
-
-  
-
+--DDR3  constant OWN_W16ESB8G8M : usodimm_part_t := (
+--DDR3    base_chip => (
+--DDR3      -- Generic DDR3-1600 x8 chip, 4 Gbit, 260 ns tRFC, CL11
+--DDR3      part_size              => M64_X_B8_X_D8,
+--DDR3      speed_grade_cl_cwl_min => MT41K_125E_CL_CWL_MIN,  -- 125E with CL=5,6,7,8,9,10,11
+--DDR3      speed_grade_cl_cwl_max => MT41K_125E_CL_CWL_MAX,  -- 125E with CL=5,6,7,8,9,10,11
+--DDR3      speed_grade            => MT41K_125E,             -- 125E
+--DDR3      check_timing           => false),
+--DDR3    geometry  => USODIMM_2x72);
+--DDR3  constant W16ESB8G8M_AS_2_RANK : usodimm_part_t := (
+--DDR3    base_chip => W16ESB8G8M.base_chip, -- Base chip characteristics retained.
+--DDR3    geometry  => USODIMM_2x64);        -- Using only one of the two ranks.
+--DDR3  constant usodimm_part : usodimm_part_t :=  OWN_W16ESB8G8M; --choice(mig_ranks = 2, W16ESB8G8M, W16ESB8G8M_AS_1_RANK);
   constant sys_clk_period : time := 2.5 ns;
+
+  --
+  -- SIGNALS
+  --
   SIGNAL action_reset : std_ulogic;
   SIGNAL action_reset_n : std_ulogic;
   SIGNAL action_reset_q : std_ulogic;
   SIGNAL ddr3_reset_q   : std_ulogic;
   SIGNAL ddr3_reset_m   : std_ulogic;
   SIGNAL ddr3_reset_n_q : std_ulogic;
-  SIGNAL ddr3_clk_p     : std_ulogic;
   SIGNAL locked         : std_ulogic;
   SIGNAL xk_d         : XK_D_T;
   SIGNAL kx_d         : KX_D_T;
@@ -333,45 +366,45 @@ ARCHITECTURE afu OF afu IS
   SIGNAL ks_d         : KS_D_T;
   SIGNAL kddr         : KDDR_T;
   SIGNAL ddrk         : DDRK_T;
-  SIGNAL c0_init_calib_complete :   STD_LOGIC;
-  SIGNAL c0_sys_clk_p :   STD_LOGIC := '0';
-  SIGNAL c0_sys_clk_n :   STD_LOGIC;
-  SIGNAL c0_ddr3_addr :   STD_LOGIC_VECTOR(15 DOWNTO 0);
-  SIGNAL c0_ddr3_ba :   STD_LOGIC_VECTOR(2 DOWNTO 0);
-  SIGNAL c0_ddr3_cas_n :   STD_LOGIC;
-  SIGNAL c0_ddr3_cke :   STD_LOGIC_VECTOR(1 DOWNTO 0);
-  SIGNAL c0_ddr3_ck_n :   STD_LOGIC_VECTOR(1 DOWNTO 0);
-  SIGNAL c0_ddr3_ck_p :   STD_LOGIC_VECTOR(1 DOWNTO 0);
-  SIGNAL c0_ddr3_cs_n :   STD_LOGIC_VECTOR(1 DOWNTO 0);
-  SIGNAL c0_ddr3_dm :   STD_LOGIC_VECTOR(8 DOWNTO 0):= (OTHERS => '0');
-  SIGNAL c0_ddr3_dq :    STD_LOGIC_VECTOR(71 DOWNTO 0);
-  SIGNAL c0_ddr3_dqs_n :    STD_LOGIC_VECTOR(8 DOWNTO 0);
-  SIGNAL c0_ddr3_dqs_p :    STD_LOGIC_VECTOR(8 DOWNTO 0);
-  SIGNAL c0_ddr3_odt :   STD_LOGIC_VECTOR(1 DOWNTO 0);
-  SIGNAL c0_ddr3_ras_n :   STD_LOGIC;
-  SIGNAL c0_ddr3_reset_n :   STD_LOGIC;
-  SIGNAL c0_ddr3_we_n :   STD_LOGIC;
-  SIGNAL c0_ddr3_ui_clk :   STD_LOGIC;
-  SIGNAL c0_ddr3_ui_clk_sync_rst :   STD_LOGIC;
-  SIGNAL c0_ddr3_aresetn :   STD_LOGIC;
+  SIGNAL c1_init_calib_complete :   STD_LOGIC;
+  SIGNAL c1_sys_clk_p :   STD_LOGIC := '0';
+  SIGNAL c1_sys_clk_n :   STD_LOGIC;
+  SIGNAL c1_ddr3_addr :   STD_LOGIC_VECTOR(15 DOWNTO 0);
+  SIGNAL c1_ddr3_ba :   STD_LOGIC_VECTOR(2 DOWNTO 0);
+  SIGNAL c1_ddr3_cas_n :   STD_LOGIC;
+  SIGNAL c1_ddr3_cke :   STD_LOGIC_VECTOR(1 DOWNTO 0);
+  SIGNAL c1_ddr3_ck_n :   STD_LOGIC_VECTOR(1 DOWNTO 0);
+  SIGNAL c1_ddr3_ck_p :   STD_LOGIC_VECTOR(1 DOWNTO 0);
+  SIGNAL c1_ddr3_cs_n :   STD_LOGIC_VECTOR(1 DOWNTO 0);
+  SIGNAL c1_ddr3_dm :   STD_LOGIC_VECTOR(8 DOWNTO 0):= (OTHERS => '0');
+  SIGNAL c1_ddr3_dq :    STD_LOGIC_VECTOR(71 DOWNTO 0);
+  SIGNAL c1_ddr3_dqs_n :    STD_LOGIC_VECTOR(8 DOWNTO 0);
+  SIGNAL c1_ddr3_dqs_p :    STD_LOGIC_VECTOR(8 DOWNTO 0);
+  SIGNAL c1_ddr3_odt :   STD_LOGIC_VECTOR(1 DOWNTO 0);
+  SIGNAL c1_ddr3_ras_n :   STD_LOGIC;
+  SIGNAL c1_ddr3_reset_n :   STD_LOGIC;
+  SIGNAL c1_ddr3_we_n :   STD_LOGIC;
+  SIGNAL c1_ddr3_ui_clk :   STD_LOGIC;
+  SIGNAL c1_ddr3_ui_clk_sync_rst :   STD_LOGIC;
+  SIGNAL c1_ddr3_aresetn :   STD_LOGIC;
   SIGNAL sys_rst :   STD_LOGIC;
-  SIGNAL c0_ddr3_s_axi_ctrl_awvalid : STD_LOGIC;
-  SIGNAL c0_ddr3_s_axi_ctrl_awready : STD_LOGIC;
-  SIGNAL c0_ddr3_s_axi_ctrl_awaddr  : STD_LOGIC_VECTOR(31 DOWNTO 0);
-  SIGNAL c0_ddr3_s_axi_ctrl_wvalid  : STD_LOGIC;
-  SIGNAL c0_ddr3_s_axi_ctrl_wready  : STD_LOGIC;
-  SIGNAL c0_ddr3_s_axi_ctrl_wdata   : STD_LOGIC_VECTOR(31 DOWNTO 0);
-  SIGNAL c0_ddr3_s_axi_ctrl_bvalid  : STD_LOGIC;
-  SIGNAL c0_ddr3_s_axi_ctrl_bready  : STD_LOGIC;
-  SIGNAL c0_ddr3_s_axi_ctrl_bresp   : STD_LOGIC_VECTOR(1 DOWNTO 0);
-  SIGNAL c0_ddr3_s_axi_ctrl_arvalid : STD_LOGIC;
-  SIGNAL c0_ddr3_s_axi_ctrl_arready : STD_LOGIC;
-  SIGNAL c0_ddr3_s_axi_ctrl_araddr  : STD_LOGIC_VECTOR(31 DOWNTO 0);
-  SIGNAL c0_ddr3_s_axi_ctrl_rvalid  : STD_LOGIC;
-  SIGNAL c0_ddr3_s_axi_ctrl_rready  : STD_LOGIC;
-  SIGNAL c0_ddr3_s_axi_ctrl_rdata   : STD_LOGIC_VECTOR(31 DOWNTO 0);
-  SIGNAL c0_ddr3_s_axi_ctrl_rresp   : STD_LOGIC_VECTOR(1 DOWNTO 0);
-  SIGNAL c0_ddr3_interrupt          : STD_LOGIC;
+  SIGNAL c1_ddr3_s_axi_ctrl_awvalid : STD_LOGIC;
+  SIGNAL c1_ddr3_s_axi_ctrl_awready : STD_LOGIC;
+  SIGNAL c1_ddr3_s_axi_ctrl_awaddr  : STD_LOGIC_VECTOR(31 DOWNTO 0);
+  SIGNAL c1_ddr3_s_axi_ctrl_wvalid  : STD_LOGIC;
+  SIGNAL c1_ddr3_s_axi_ctrl_wready  : STD_LOGIC;
+  SIGNAL c1_ddr3_s_axi_ctrl_wdata   : STD_LOGIC_VECTOR(31 DOWNTO 0);
+  SIGNAL c1_ddr3_s_axi_ctrl_bvalid  : STD_LOGIC;
+  SIGNAL c1_ddr3_s_axi_ctrl_bready  : STD_LOGIC;
+  SIGNAL c1_ddr3_s_axi_ctrl_bresp   : STD_LOGIC_VECTOR(1 DOWNTO 0);
+  SIGNAL c1_ddr3_s_axi_ctrl_arvalid : STD_LOGIC;
+  SIGNAL c1_ddr3_s_axi_ctrl_arready : STD_LOGIC;
+  SIGNAL c1_ddr3_s_axi_ctrl_araddr  : STD_LOGIC_VECTOR(31 DOWNTO 0);
+  SIGNAL c1_ddr3_s_axi_ctrl_rvalid  : STD_LOGIC;
+  SIGNAL c1_ddr3_s_axi_ctrl_rready  : STD_LOGIC;
+  SIGNAL c1_ddr3_s_axi_ctrl_rdata   : STD_LOGIC_VECTOR(31 DOWNTO 0);
+  SIGNAL c1_ddr3_s_axi_ctrl_rresp   : STD_LOGIC_VECTOR(1 DOWNTO 0);
+  SIGNAL c1_ddr3_interrupt          : STD_LOGIC;
 
   
                    
@@ -382,22 +415,24 @@ BEGIN
       action_reset_q <= action_reset;
     END IF;
   END PROCESS registers;
-  ddr3_reset : PROCESS (c0_ddr3_ui_clk)
+  
+  ddr3_reset : PROCESS (ha_pclock)
   BEGIN  -- PROCESS
-    IF (rising_edge(c0_ddr3_ui_clk)) THEN
+    IF (rising_edge(ha_pclock)) THEN
       IF ((action_reset   = '1') OR
           (action_reset_q = '1')) THEN
-        ddr3_reset_m <= '1';
+        ddr3_reset_q   <= '1';
+        ddr3_reset_n_q <= '0';
       ELSE
-        ddr3_reset_m <= '0';
+        ddr3_reset_q   <= '0';
+        ddr3_reset_n_q <= '1';
       END IF;
-      ddr3_reset_q   <=     ddr3_reset_m;
-      ddr3_reset_n_q <= NOT ddr3_reset_m;
     END IF;
   END PROCESS ddr3_reset;
   --               
   --
   -- 
+  c1_ddr3_dm <= (others => '0');
   donut_i: donut
     port map (
       --
@@ -490,8 +525,8 @@ BEGIN
       clk_fw         => ha_pclock,
       clk_app        => ha_pclock,
       rst            => action_reset_q,
-      ddr3_clk       => ha_pclock,
-      ddr3_rst       => action_reset_q,
+      ddr3_clk       => c1_ddr3_ui_clk,
+      ddr3_rst       => c1_ddr3_ui_clk_sync_rst,
 
       xk_d_i         => xk_d,
       kx_d_o         => kx_d,
@@ -503,24 +538,24 @@ BEGIN
     );
 
 
-      --
+  --
   -- DDR3
-      -- 
-      --
-  c0_sys_clk_p <= transport not c0_sys_clk_p after sys_clk_period / 2;
-  c0_sys_clk_n <= not c0_sys_clk_p;
+  -- 
+  c1_sys_clk_p <= transport not c1_sys_clk_p after sys_clk_period / 2;
+  c1_sys_clk_n <= not c1_sys_clk_p;
 
-  c0_ddr3_s_axi_ctrl_awvalid <= '0';
-  c0_ddr3_s_axi_ctrl_awaddr <= (others => '0');
-  c0_ddr3_s_axi_ctrl_wvalid <= '0';
-  c0_ddr3_s_axi_ctrl_wdata <= (others => '0');
-  c0_ddr3_s_axi_ctrl_bready <= '0';
-  c0_ddr3_s_axi_ctrl_arvalid <= '0';
-  c0_ddr3_s_axi_ctrl_araddr <= (others => '0');
-  c0_ddr3_s_axi_ctrl_rready <= '0';
+  c1_ddr3_s_axi_ctrl_awvalid <= '0';
+  c1_ddr3_s_axi_ctrl_awaddr <= (others => '0');
+  c1_ddr3_s_axi_ctrl_wvalid <= '0';
+  c1_ddr3_s_axi_ctrl_wdata <= (others => '0');
+  c1_ddr3_s_axi_ctrl_bready <= '0';
+  c1_ddr3_s_axi_ctrl_arvalid <= '0';
+  c1_ddr3_s_axi_ctrl_araddr <= (others => '0');
+  c1_ddr3_s_axi_ctrl_rready <= '0';
 
   action_reset_n <= NOT action_reset_q;
 
+  block_ram_used: IF DDR3_USED = FALSE GENERATE
     block_ram_i : block_RAM
     PORT MAP (
       s_aresetn      => action_reset_n,
@@ -555,84 +590,115 @@ BEGIN
       s_axi_wstrb    => kddr.axi_wstrb,   
       s_axi_wvalid   => kddr.axi_wvalid
     );
+  END GENERATE;
  
-  
+  ddr3_ram_used: IF DDR3_USED = TRUE GENERATE
+    ddr3sdram_bank1 : ddr3sdram
+      PORT MAP (
+        c0_init_calib_complete => c1_init_calib_complete,
+        c0_sys_clk_p => c1_sys_clk_p,
+        c0_sys_clk_n => c1_sys_clk_n,
+        c0_ddr3_addr => c1_ddr3_addr,
+        c0_ddr3_ba => c1_ddr3_ba,
+        c0_ddr3_cas_n => c1_ddr3_cas_n,
+        c0_ddr3_cke => c1_ddr3_cke,
+        c0_ddr3_ck_n => c1_ddr3_ck_n,
+        c0_ddr3_ck_p => c1_ddr3_ck_p,
+        c0_ddr3_cs_n => c1_ddr3_cs_n,
+        -- c0_ddr3_dm => open, -- ECC DIMM, don't use dm. dm is assigned above.
+        c0_ddr3_dq => c1_ddr3_dq,
+        c0_ddr3_dqs_n => c1_ddr3_dqs_n,
+        c0_ddr3_dqs_p => c1_ddr3_dqs_p,
+        c0_ddr3_odt => c1_ddr3_odt,
+        c0_ddr3_ras_n => c1_ddr3_ras_n,
+        c0_ddr3_reset_n => c1_ddr3_reset_n,
+        c0_ddr3_we_n => c1_ddr3_we_n,
+        c0_ddr3_ui_clk => c1_ddr3_ui_clk,
+        c0_ddr3_ui_clk_sync_rst => c1_ddr3_ui_clk_sync_rst,
+        c0_ddr3_aresetn => ddr3_reset_n_q,
+        c0_ddr3_s_axi_ctrl_awvalid => c1_ddr3_s_axi_ctrl_awvalid,
+        c0_ddr3_s_axi_ctrl_awready => c1_ddr3_s_axi_ctrl_awready,
+        c0_ddr3_s_axi_ctrl_awaddr => c1_ddr3_s_axi_ctrl_awaddr,
+        c0_ddr3_s_axi_ctrl_wvalid => c1_ddr3_s_axi_ctrl_wvalid,
+        c0_ddr3_s_axi_ctrl_wready => c1_ddr3_s_axi_ctrl_wready,
+        c0_ddr3_s_axi_ctrl_wdata => c1_ddr3_s_axi_ctrl_wdata,
+        c0_ddr3_s_axi_ctrl_bvalid => c1_ddr3_s_axi_ctrl_bvalid,
+        c0_ddr3_s_axi_ctrl_bready => c1_ddr3_s_axi_ctrl_bready,
+        c0_ddr3_s_axi_ctrl_bresp => c1_ddr3_s_axi_ctrl_bresp,
+        c0_ddr3_s_axi_ctrl_arvalid => c1_ddr3_s_axi_ctrl_arvalid,
+        c0_ddr3_s_axi_ctrl_arready => c1_ddr3_s_axi_ctrl_arready,
+        c0_ddr3_s_axi_ctrl_araddr => c1_ddr3_s_axi_ctrl_araddr,
+        c0_ddr3_s_axi_ctrl_rvalid => c1_ddr3_s_axi_ctrl_rvalid,
+        c0_ddr3_s_axi_ctrl_rready => c1_ddr3_s_axi_ctrl_rready,
+        c0_ddr3_s_axi_ctrl_rdata => c1_ddr3_s_axi_ctrl_rdata,
+        c0_ddr3_s_axi_ctrl_rresp => c1_ddr3_s_axi_ctrl_rresp,
+        c0_ddr3_interrupt => c1_ddr3_interrupt,
+        c0_ddr3_s_axi_araddr   => kddr.axi_araddr(32 downto 0), 
+        c0_ddr3_s_axi_arburst  => kddr.axi_arburst(1 downto 0), 
+        c0_ddr3_s_axi_arcache  => kddr.axi_arcache(3 downto 0), 
+        c0_ddr3_s_axi_arid     => kddr.axi_arid(1 downto 0),
+        c0_ddr3_s_axi_arlen    => kddr.axi_arlen(7 downto 0),   
+        c0_ddr3_s_axi_arlock   => kddr.axi_arlock(0 DOWNTO 0),           
+        c0_ddr3_s_axi_arprot   => kddr.axi_arprot(2 downto 0),  
+        c0_ddr3_s_axi_arqos    => kddr.axi_arqos(3 downto 0),   
+        c0_ddr3_s_axi_arready  => ddrk.axi_arready,             
+        c0_ddr3_s_axi_arsize   => kddr.axi_arsize(2 downto 0), 
+        c0_ddr3_s_axi_arvalid  => kddr.axi_arvalid,             
+        c0_ddr3_s_axi_awaddr   => kddr.axi_awaddr(32 downto 0), 
+        c0_ddr3_s_axi_awburst  => kddr.axi_awburst(1 downto 0), 
+        c0_ddr3_s_axi_awcache  => kddr.axi_awcache(3 downto 0), 
+        c0_ddr3_s_axi_awid     => kddr.axi_awid(1 downto 0),
+        c0_ddr3_s_axi_awlen    => kddr.axi_awlen(7 downto 0),   
+        c0_ddr3_s_axi_awlock   => kddr.axi_awlock(0 DOWNTO 0),           
+        c0_ddr3_s_axi_awprot   => kddr.axi_awprot(2 downto 0),  
+        c0_ddr3_s_axi_awqos    => kddr.axi_awqos(3 downto 0),   
+        c0_ddr3_s_axi_awready  => ddrk.axi_awready,             
+        c0_ddr3_s_axi_awsize   => kddr.axi_awsize(2 downto 0),
+        c0_ddr3_s_axi_awvalid  => kddr.axi_awvalid,           
+        c0_ddr3_s_axi_bid      => ddrk.axi_bid,
+        c0_ddr3_s_axi_bready   => kddr.axi_bready,  
+        c0_ddr3_s_axi_bresp    => ddrk.axi_bresp(1 downto 0), 
+        c0_ddr3_s_axi_bvalid   => ddrk.axi_bvalid,              
+        c0_ddr3_s_axi_rdata    => ddrk.axi_rdata,  
+        c0_ddr3_s_axi_rid      => ddrk.axi_rid,
+        c0_ddr3_s_axi_rlast    => ddrk.axi_rlast,               
+        c0_ddr3_s_axi_rready   => kddr.axi_rready,              
+        c0_ddr3_s_axi_rresp    => ddrk.axi_rresp(1 downto 0),   
+        c0_ddr3_s_axi_rvalid   => ddrk.axi_rvalid,              
+        c0_ddr3_s_axi_wdata    => kddr.axi_wdata,  
+        c0_ddr3_s_axi_wlast    => kddr.axi_wlast,               
+        c0_ddr3_s_axi_wready   => ddrk.axi_wready,              
+        c0_ddr3_s_axi_wstrb    => kddr.axi_wstrb,   
+        c0_ddr3_s_axi_wvalid   => kddr.axi_wvalid,               
+        sys_rst                => ddr3_reset_q
+      );
 
---     -- Input into PSL is not used
---    ah_cpad <= (others => '0');
--- 
---     -- SFP+ Phy 0 Interface
---    as_sfp0_phy_mgmt_clk_reset <= '0' ;
--- 
---    as_sfp0_phy_mgmt_address <= (others => '0') ;
--- 
---    as_sfp0_phy_mgmt_read <= '0' ;
--- 
---    as_sfp0_phy_mgmt_write <= '0' ;
--- 
---    as_sfp0_phy_mgmt_writedata <= (others => '0') ;
--- 
---    as_sfp0_tx_forceelecidle <= '0' ;
--- 
---    as_sfp0_tx_coreclk <= '0' ;
--- 
---    as_sfp0_tx_parallel_data <= (others => '0') ;
--- 
---    -- SFP+ 0 Sideband Signals
---    as_sfp0_tx_disable <= '0' ;
--- 
---    as_sfp0_rs0 <= '0' ;
--- 
---    as_sfp0_rs1 <= '0' ;
--- 
---    as_sfp0_scl <= '0' ;
--- 
---    as_sfp0_en <= '0' ;
--- 
-----    bool     sa_sfp0_sda,
---    as_sfp0_sda <= '0' ;
--- 
---    as_sfp0_sda_oe <= '0' ;
--- 
---    -- SFP+ Phy 1 Interface
---    as_sfp1_phy_mgmt_clk_reset <= '0' ;
--- 
---    as_sfp1_phy_mgmt_address <= (others => '0') ;
--- 
---    as_sfp1_phy_mgmt_read <= '0' ;
--- 
---    as_sfp1_phy_mgmt_write <= '0' ;
--- 
---    as_sfp1_phy_mgmt_writedata <= (others => '0') ;
--- 
---    as_sfp1_tx_forceelecidle <= '0' ;
--- 
---    as_sfp1_tx_coreclk <= '0' ;
--- 
---    as_sfp1_tx_parallel_data <= (others => '0') ;
--- 
---    -- SFP+ 1 Sideband Signals
---    as_sfp1_tx_disable <= '0' ;
--- 
---    as_sfp1_rs0 <= '0' ;
--- 
---    as_sfp1_rs1 <= '0' ;
--- 
---    as_sfp1_scl <= '0' ;
--- 
---    as_sfp1_en <= '0' ;
--- 
---    as_sfp1_sda <= '0' ;
--- 
---    as_sfp1_sda_oe <= '0' ;
--- 
---    as_refclk_sfp_fs <= '0' ;
--- 
---    as_refclk_sfp_fs_en <= '0' ;
--- 
---    as_red_led <= (others => '0') ;
--- 
---    as_green_led <= (others => '0') ;
-
-
+    --
+    -- DDR3 RAM model
+    -- 
+--DDR3    bank1_model : ddr3_sdram_usodimm
+--DDR3       generic map(
+--DDR3         message_level  => 0,
+--DDR3         part           => usodimm_part,
+--DDR3         short_init_dly => true,
+--DDR3         read_undef_val => 'U'
+--DDR3       )
+--DDR3       port map(
+--DDR3         ck => c1_ddr3_ck_p,
+--DDR3         ck_l => c1_ddr3_ck_n,
+--DDR3         reset_l => c1_ddr3_reset_n,
+--DDR3         cke => c1_ddr3_cke,
+--DDR3         cs_l => c1_ddr3_cs_n,
+--DDR3         ras_l => c1_ddr3_ras_n,
+--DDR3         cas_l => c1_ddr3_cas_n,
+--DDR3         we_l => c1_ddr3_we_n,
+--DDR3         odt => c1_ddr3_odt,
+--DDR3         dm => c1_ddr3_dm,
+--DDR3         ba => c1_ddr3_ba,
+--DDR3         a => c1_ddr3_addr,
+--DDR3         dq => c1_ddr3_dq,
+--DDR3         dqs => c1_ddr3_dqs_p,
+--DDR3         dqs_l => c1_ddr3_dqs_n
+--DDR3       );
+  END GENERATE; 
 END afu;

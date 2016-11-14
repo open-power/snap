@@ -31,7 +31,7 @@ USE work.donut_types.all;
 ENTITY mmio IS
   GENERIC (
     -- Version register content
-    IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0) := x"0000_4650_1606_0100";
+    IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0) := x"0000_4650_1611_1100";
     APP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0) := x"CAFE_0003_475A_4950";
     -- Time slice register
     TSR_RESET_VALUE        : std_ulogic_vector(63 DOWNTO 0) := x"0000_0000_0002_0000";
@@ -488,6 +488,12 @@ BEGIN
         -- MMIO READ
         -- valid write request that is not targeting the action
         --
+        dbg_regs_q(14)     <= IMP_VERSION_DAT;
+        dbg_regs_par_q(14) <= parity_gen_odd(IMP_VERSION_DAT);
+        dbg_regs_q(15)     <= APP_VERSION_DAT;
+        dbg_regs_par_q(15) <= parity_gen_odd(APP_VERSION_DAT);
+
+        
         IF (mmio_write_access_q AND NOT mmio_write_action_access_q) = '1' THEN
           CASE to_integer(unsigned(ha_mm_w_q.ad(13 DOWNTO 5))) IS
 --            --

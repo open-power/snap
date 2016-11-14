@@ -19,6 +19,7 @@
 set root_dir   $::env(DONUT_HARDWARE_ROOT)
 set fpga_part  $::env(FPGACHIP)
 set action_dir $root_dir/action
+set ddr3_used  $::env(DDR3_USED)
 
 create_project action $action_dir -part $fpga_part -force
 set_property target_language VHDL [current_project]
@@ -65,9 +66,9 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
  set_property CONFIG.FREQ_HZ 250000000 [get_bd_ports clk]
  create_bd_port -dir I -type rst rstn
  set_property CONFIG.ASSOCIATED_RESET {rstn} [get_bd_ports /clk]
- #create_bd_port -dir I -type rst ddr3_rst_n
- #create_bd_port -dir I -type clk ddr3_clk
- #set_property CONFIG.FREQ_HZ 200000000 [get_bd_ports ddr3_clk]
+ create_bd_port -dir I -type rst ddr3_rst_n
+ create_bd_port -dir I -type clk ddr3_clk
+ set_property CONFIG.FREQ_HZ 200000000 [get_bd_ports ddr3_clk]
 #s_axi port
  create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 s_axi
  set_property -dict [list CONFIG.FREQ_HZ {250000000}] [get_bd_intf_ports s_axi]
@@ -93,7 +94,11 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
  set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {64}] [get_bd_intf_ports c0_ddr3]
  set_property -dict [list CONFIG.DATA_WIDTH {128}] [get_bd_intf_ports c0_ddr3]
  set_property -dict [list CONFIG.FREQ_HZ {250000000}] [get_bd_intf_ports c0_ddr3]
- set_property CONFIG.ASSOCIATED_BUSIF {c0_ddr3} [get_bd_ports /clk]
+ if { $ddr3_used == TRUE } {
+   set_property CONFIG.ASSOCIATED_BUSIF {c0_ddr3} [get_bd_ports /ddr3_clk]
+ } else { 
+   set_property CONFIG.ASSOCIATED_BUSIF {c0_ddr3} [get_bd_ports /clk]
+ }
 
 # create internal clock and system reset IP
  create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:5.2 clk_wiz_0
@@ -130,14 +135,20 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
  connect_bd_net [get_bd_pins proc_sys_reset_0/interconnect_aresetn] [get_bd_pins axi_interconnect_1/ARESETN]
  connect_bd_net [get_bd_pins proc_sys_reset_0/interconnect_aresetn] [get_bd_pins axi_interconnect_2/ARESETN]
  connect_bd_net [get_bd_pins proc_sys_reset_0/interconnect_aresetn] [get_bd_pins axi_interconnect_2/S00_ARESETN]
- connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_2/M00_ARESETN]
  connect_bd_net [get_bd_pins proc_sys_reset_0/peripheral_aresetn] [get_bd_pins memcopy_0/s00_axi_aresetn]
  connect_bd_net [get_bd_pins proc_sys_reset_0/peripheral_aresetn] [get_bd_pins memcopy_0/m00_axi_aresetn]
  connect_bd_net [get_bd_pins proc_sys_reset_0/peripheral_aresetn] [get_bd_pins memcopy_0/m01_axi_aresetn]
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins axi_interconnect_2/ACLK]
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins axi_interconnect_2/S00_ACLK]
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins memcopy_0/m01_axi_aclk]
- connect_bd_net [get_bd_ports /clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
+
+ if { $ddr3_used == TRUE } {
+   connect_bd_net [get_bd_ports /ddr3_clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
+   connect_bd_net [get_bd_ports ddr3_rst_n] [get_bd_pins axi_interconnect_2/M00_ARESETN]
+ } else {
+   connect_bd_net [get_bd_ports /clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
+   connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_2/M00_ARESETN]
+ }
  connect_bd_intf_net [get_bd_intf_pins memcopy_0/m01_axi] -boundary_type upper [get_bd_intf_pins axi_interconnect_2/S00_AXI]
  connect_bd_intf_net [get_bd_intf_ports c0_ddr3] -boundary_type upper [get_bd_intf_pins axi_interconnect_2/M00_AXI]
  connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_0/S00_ARESETN]

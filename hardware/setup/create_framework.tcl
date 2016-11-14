@@ -23,6 +23,7 @@ set dimm_dir  $::env(DIMMTEST)
 set ies_libs  $::env(FRAMEWORK_ROOT)/ies_libs
 set build_dir $::env(DONUT_HARDWARE_ROOT)/build
 set action_example $::env(ACTION_EXAMPLE)
+set ddr3_used $::env(DDR3_USED)
 
 puts $root_dir
 puts $pslse_dir
@@ -56,10 +57,11 @@ set_property SOURCE_SET sources_1 [get_filesets sim_1]
 add_files    -fileset sim_1 -norecurse -scan_for_includes $pslse_dir/afu_driver/verilog/top.v
 set_property file_type SystemVerilog [get_files  $pslse_dir/afu_driver/verilog/top.v]
 add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/hdl/psl_accel_sim.vhd
-#DDR3 add_files    -fileset sim_1            -scan_for_includes $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/
-#DDR3 remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_twindie.vhd
-#DDR3 remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_lwb.vhd
-
+if { $ddr3_used == TRUE } {
+  add_files    -fileset sim_1            -scan_for_includes $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/
+  remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_twindie.vhd
+  remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_lwb.vhd
+}
 update_compile_order -fileset sim_1
 
 #add IPs
@@ -69,10 +71,13 @@ add_files -norecurse $root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci
 export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci"] -force -quiet
 add_files -norecurse  $root_dir/ip/fifo_129x512/fifo_129x512.xci
 export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_129x512/fifo_129x512.xci"] -force -quiet
-#DDR3 add_files -norecurse $root_dir/ip/ddr3sdram/ddr3sdram.xci
-#DDR3 export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr3sdram/ddr3sdram.xci"] -force -quiet
+if { $ddr3_used == TRUE } {
+  add_files -norecurse $root_dir/ip/ddr3sdram/ddr3sdram.xci
+  export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr3sdram/ddr3sdram.xci"] -force -quiet
+} else {
 add_files -norecurse $root_dir/ip/block_RAM/block_RAM.xci
 export_ip_user_files -of_objects  [get_files "$root_dir/ip/block_RAM/block_RAM.xci"] -force -quiet
+}
 update_compile_order -fileset sources_1
 
 # default sim property
@@ -107,11 +112,12 @@ update_compile_order -fileset sources_1
 add_files -fileset constrs_1 -norecurse $root_dir/setup/donut.xdc
 
 # IMPORT DDR3 XDCs 
-#add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc
-#add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc
-#add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b0_8g_x72ecc.xdc
-#add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc
-
+if { $ddr3_used == TRUE } {
+  add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc
+  add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc
+  add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b0_8g_x72ecc.xdc
+  add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc
+}
 
 # EXPORT SIMULATION
 # for ncsim (IES)
@@ -140,5 +146,14 @@ set_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 # SET Bitstream Properties
 set_property STEPS.WRITE_BITSTREAM.ARGS.BIN_FILE true [get_runs impl_1]
+
+
+if { $ddr3_used == TRUE } {
+  exec sed -i "/DDR3_USED  : BOOLEAN/c\\    DDR3_USED  : BOOLEAN := TRUE" $root_dir/hdl/psl_accel_sim.vhd
+  exec sed -i "/DDR3_USED  : BOOLEAN/c\\    DDR3_USED  : BOOLEAN := TRUE" $root_dir/hdl/psl_accel_syn.vhd
+} else {
+  exec sed -i "/DDR3_USED  : BOOLEAN/c\\    DDR3_USED  : BOOLEAN := FALSE" $root_dir/hdl/psl_accel_sim.vhd
+  exec sed -i "/DDR3_USED  : BOOLEAN/c\\    DDR3_USED  : BOOLEAN := FALSE" $root_dir/hdl/psl_accel_syn.vhd
+}
 
 close_project

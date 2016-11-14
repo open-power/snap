@@ -89,6 +89,7 @@ extern "C" {
 #define EX_COMPRESS	85 /* compression did not work */
 #define EX_DECOMPRESS	86 /* decompression failed */
 #define EX_ERR_DICT     87 /* dictionary compare failed */
+#define EX_ERR_VERIFY   88 /* verification failed */
 
 /** common error printf */
 #define pr_err(fmt, ...) do {					\
@@ -181,6 +182,32 @@ static inline void __hexdump(FILE *fp, const void *buff, unsigned int size)
 	}
 	fprintf(fp, "\n");
 }
+
+/* ANSI sequences for terminal IO */
+#define	 PR_STD			"\x1b[0m"
+#define	 PR_STD_BOLD		"\x1b[1m"
+
+#define	 PR_STD_BLINK		"\x1b[5m"
+#define	 PR_INVERS		"\x1b[7m"
+
+#define	 PR_RED			"\x1b[0;31m"
+#define	 PR_RED_BOLD		"\x1b[1;31m"
+
+#define	 PR_CYAN		"\x1b[0;36m"
+#define	 PR_CYAN_BOLD		"\x1b[1;36m"
+
+#define	 PR_BLUE		"\x1b[0;34m"
+#define	 PR_BLUE_BOLD		"\x1b[1;34m"
+
+#define	 PR_GREEN		"\x1b[0;32m"
+#define	 PR_GREEN_BOLD		"\x1b[1;32m"
+
+#define	 PR_MAGENTA		"\x1b[0;35m"
+#define	 PR_MAGENTA_BOLD	"\x1b[1;35m"
+
+#define	 ANSI_ERASE		"\x1b[2J"
+#define	 ANSI_HOME		"\x1b[1;1H"
+#define	 ANSI_INIT		ANSI_ERASE ANSI_HOME
 
 #ifdef __cplusplus
 }

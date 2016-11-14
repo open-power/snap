@@ -32,8 +32,8 @@ ENTITY action_interface IS
     clk_fw   : in  std_ulogic;   
     clk_app  : in  std_ulogic; 
     rst      : in  std_ulogic; 
-    ddr3_clk   : in  std_ulogic; 
-    ddr3_rst   : in  std_ulogic; 
+    ddr3_clk : in  std_ulogic; 
+    ddr3_rst : in  std_ulogic; 
     xk_d_i   : in  XK_D_T;
     kx_d_o   : out KX_D_T;        
     sk_d_i   : in  SK_D_T; 
@@ -51,8 +51,8 @@ component action_wrapper is
     port (
     clk : in STD_LOGIC;
     rstn                : in STD_LOGIC;
---    ddr3_clk            : in STD_LOGIC;
---    ddr3_rst_n          : in STD_LOGIC;
+    ddr3_clk            : in STD_LOGIC;
+    ddr3_rst_n          : in STD_LOGIC;
 
     --
     -- Slave Interface
@@ -177,15 +177,15 @@ component action_wrapper is
 begin
 
 
-  rstn <= not rst;
---  ddr3_rst_n <= not ddr3_rst;
+  rstn       <= not rst;
+  ddr3_rst_n <= not ddr3_rst;
 
 action: component action_wrapper
   port map (
-    clk  => clk_app,
-    rstn => rstn,
-    --ddr3_clk  =>  ddr3_clk,
-    --ddr3_rst_n => ddr3_rst_n,
+    clk             => clk_app,
+    rstn            => rstn,
+    ddr3_clk        => ddr3_clk,
+    ddr3_rst_n      => ddr3_rst_n,
      
     s_axi_araddr    =>  xk_d_i.m_axi_araddr , 
     s_axi_arprot    =>  xk_d_i.m_axi_arprot , 

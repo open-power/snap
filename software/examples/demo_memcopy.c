@@ -38,6 +38,12 @@ static const char *version = GIT_VERSION;
 
 static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME" };
 
+static void __free(void *ptr)
+{
+	if (ptr)
+		free(ptr);
+}
+
 /**
  * @brief	prints valid command line options
  *
@@ -55,6 +61,7 @@ static void usage(const char *prog)
 	       "  -d, --addr-out <addr>     address e.g. in CARD_RAM.\n"
 	       "  -s, --size <size>         size of data.\n"
 	       "  -m, --mode <mode>         mode flags.\n"
+	       "  -X, --verify              verify result if possible\n"
 	       "\n"
 	       "Example:\n"
 	       "  demo_memcopy ...\n"
@@ -174,6 +181,8 @@ int main(int argc, char *argv[])
 	uint64_t addr_in = 0x0ull;
 	uint8_t type_out = DNUT_TARGET_TYPE_HOST_DRAM;
 	uint64_t addr_out = 0x0ull;
+	int verify = 0;
+	int exit_code = EXIT_SUCCESS;
 
 	while (1) {
 		int option_index = 0;
@@ -188,6 +197,7 @@ int main(int argc, char *argv[])
 			{ "size",	 required_argument, NULL, 's' },
 			{ "mode",	 required_argument, NULL, 'm' },
 			{ "timeout",	 required_argument, NULL, 't' },
+			{ "verfy",	 no_argument,	    NULL, 'X' },
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
@@ -195,7 +205,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-				 "A:C:i:o:a:S:D:d:x:s:t:Vqvh",
+				 "A:C:i:o:a:S:D:d:x:s:t:XVqvh",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -241,7 +251,9 @@ int main(int argc, char *argv[])
 		case 'd':
 			addr_out = strtol(optarg, (char **)NULL, 0);
 			break;
-
+		case 'X':
+			verify++;
+			break;
 			/* service */
 		case 'V':
 			printf("%s\n", version);
@@ -264,30 +276,24 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	/* source buffer */
-	ibuff = memalign(page_size, size);
-	if (ibuff == NULL)
-		goto out_error;
-	memset(ibuff, 0, size);
-
-	/* destination buffer */
-	obuff = memalign(page_size, size);
-	if (obuff == NULL)
-		goto out_error0;
-	memset(obuff, 0, size);
-
 	/* if input file is defined, use that as input */
 	if (input != NULL) {
+		/* source buffer */
+		ibuff = memalign(page_size, size);
+		if (ibuff == NULL)
+			goto out_error;
+		memset(ibuff, 0, size);
+
 		size = file_size(input);
 		if (size < 0)
-			goto out_error1;
+			goto out_error;
 
 		fprintf(stdout, "reading input data %d bytes from %s\n",
 			(int)size, input);
 
 		rc = file_read(input, ibuff, size);
 		if (rc < 0)
-			goto out_error1;
+			goto out_error;
 
 		type_in = DNUT_TARGET_TYPE_HOST_DRAM;
 		addr_in = (unsigned long)ibuff;
@@ -295,6 +301,12 @@ int main(int argc, char *argv[])
 
 	/* if output file is defined, use that as output */
 	if (output != NULL) {
+		/* destination buffer */
+		obuff = memalign(page_size, size);
+		if (obuff == NULL)
+			goto out_error;
+		memset(obuff, 0, size);
+
 		type_out = DNUT_TARGET_TYPE_HOST_DRAM;
 		addr_out = (unsigned long)obuff;
 	}
@@ -322,18 +334,24 @@ int main(int argc, char *argv[])
 	if (kernel == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
 			strerror(errno));
-		goto out_error1;
+		goto out_error;
 	}
 
-#if 1 /* Circumvention should go away */
+#if 1				/* FIXME Circumvention should go away */
 	pr_info("FIXME Wait a sec ...\n");
 	sleep(1);
-
+#endif
+#if 1				/* FIXME Circumvention should go away */
 	pr_info("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x10010,0);
-	dnut_kernel_mmio_write32(kernel, 0x10014,0);
-	dnut_kernel_mmio_write32(kernel, 0x1001c,0);
-	dnut_kernel_mmio_write32(kernel, 0x10020,0);
+	dnut_kernel_mmio_write32(kernel, 0x10010, 0);
+	dnut_kernel_mmio_write32(kernel, 0x10014, 0);
+	dnut_kernel_mmio_write32(kernel, 0x1001c, 0);
+	dnut_kernel_mmio_write32(kernel, 0x10020, 0);
+#endif
+#if 0				/* FIXME Circumvention should go away */
+	pr_info("FIXME Temporary setting to enable DDR on the card\n");
+	dnut_kernel_mmio_write32(kernel, 0x10028, 0);
+	dnut_kernel_mmio_write32(kernel, 0x1002c, 0);
 #endif
 
 	dnut_prepare_memcopy(&cjob, &mjob,
@@ -360,22 +378,30 @@ int main(int argc, char *argv[])
 	}
 
 	fprintf(stdout, "RETC=%x\n", cjob.retc);
+	if (verify) {
+		if ((type_in  == DNUT_TARGET_TYPE_HOST_DRAM) &&
+		    (type_out == DNUT_TARGET_TYPE_HOST_DRAM)) {
+			rc = memcmp(ibuff,obuff, size);
+			if (rc != 0)
+				exit_code = EX_ERR_VERIFY;
+		} else
+			fprintf(stderr, "warn: Verification works currently "
+				"only with HOST_DRAM\n");
+	}
 	fprintf(stdout, "memcopy took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
 	dnut_kernel_free(kernel);
 
-	free(obuff);
-	free(ibuff);
-
-	exit(EXIT_SUCCESS);
+	__free(obuff);
+	__free(ibuff);
+	exit(exit_code);
 
  out_error2:
 	dnut_kernel_free(kernel);
- out_error1:
-	free(obuff);
- out_error0:
-	free(ibuff);
+
  out_error:
+	__free(obuff);
+	__free(ibuff);
 	exit(EXIT_FAILURE);
 }

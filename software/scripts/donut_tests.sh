@@ -54,8 +54,8 @@ done
 #### SEARCH ###########################################################
 
 echo -n "Trying demo_search ... "
-cmd="./examples/demo_search -C${dnut_card}	\
-	-i examples/demo_search.txt -p dnut >	\
+cmd="./examples/demo_search -C${dnut_card} -E 84		\
+	-i examples/demo_search.txt -p dnut >			\
 	examples/demo_search.log 2>&1"
 eval ${cmd}
 if [ $? -ne 0 ]; then
@@ -67,8 +67,8 @@ echo "ok"
 
 echo -n "Searching X in 1024 bytes ... "
 python3 -c 'print("X" * 1024, end="")' > examples/1KiB_X.bin
-cmd="./examples/demo_search -C${dnut_card}	\
-	-i examples/1KiB_X.bin -p X >		\
+cmd="./examples/demo_search -C${dnut_card} -E 1024	\
+	-i examples/1KiB_X.bin -p X >			\
 	examples/demo_search2.log 2>&1"
 eval ${cmd}
 if [ $? -ne 0 ]; then
@@ -91,8 +91,8 @@ python3 -c 'print("A" * 1024, end="")' > examples/1KiB_A.bin
 cat examples/1KiB_X.bin examples/1KiB_A.bin examples/1KiB_X.bin > \
 	examples/3KiB.bin
 
-cmd="./examples/demo_search -C${dnut_card}	\
-	-i examples/3KiB.bin -p X >		\
+cmd="./examples/demo_search -C${dnut_card} -E 2048	\
+	-i examples/3KiB.bin -p X > 			\
 	examples/demo_search3.log 2>&1"
 eval ${cmd}
 if [ $? -ne 0 ]; then
@@ -114,7 +114,7 @@ echo "ok"
 python3 -c 'print("A" * 1024, end="")' > examples/1KiB_A.bin
 
 echo -n "Doing demo_memcopy (aligned)... "
-cmd="./examples/demo_memcopy -C${dnut_card}	\
+cmd="./examples/demo_memcopy -C${dnut_card} -X	\
 	-i examples/1KiB_A.bin			\
 	-o examples/1KiB_A.out >		\
 	examples/demo_memcopy.log 2>&1"
@@ -136,7 +136,7 @@ fi
 echo "ok"
 
 echo -n "Doing demo_memcopy (unaligned)... "
-cmd="./examples/demo_memcopy -C${dnut_card}		\
+cmd="./examples/demo_memcopy -C${dnut_card} -X	\
 	-i examples/demo_search.txt		\
 	-o examples/demo_search.out >		\
 	examples/demo_memcopy.log 2>&1"
