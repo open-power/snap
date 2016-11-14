@@ -28,17 +28,19 @@ endif
 
 demo_search_objs = action_search.o
 demo_memcopy_objs = action_memcopy.o
+demo_checksum_objs = action_checksum.o
 
-projs = demo_search demo_memcopy
+projs = demo_search demo_memcopy demo_checksum
 
 all: $(objs) $(projs)
 
 demo_search: action_search.o
 demo_memcopy: action_memcopy.o
+demo_checksum: action_checksum.o
 
 $(projs): $(libs)
 
-objs += action_search.o
+objs += action_search.o action_memcopy.o action_checksum.o
 
 ### Deactivate existing implicit rule
 %: %.c

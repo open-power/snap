@@ -78,31 +78,13 @@ install uninstall:
 		fi					\
 	done
 
-test: all
-	./tools/dnut_peek --help > /dev/null || exit 1;
-	./tools/dnut_poke --help > /dev/null || exit 1;
-	DNUT_CONFIG=0x1 ./examples/demo_search -C0 	\
-		-i examples/demo_search.txt -p dnut > 	\
-		examples/demo_search.log  2>&1
-	DNUT_CONFIG=0x1 ./examples/demo_memcopy -C0 	\
-		-i examples/demo_search.txt 		\
-		-o examples/demo_search.out >	 	\
-		examples/demo_memcopy.log  2>&1
-	diff examples/demo_search.txt examples/demo_search.out || exit 1
-	python -c 'print("X" * 1024)' > examples/1KiB_X.bin
-	DNUT_CONFIG=0x1 ./examples/demo_search -C0 	\
-		-i examples/1KiB_X.bin -p X > 	\
-		examples/demo_search2.log  2>&1
-	grep '1024 patterns' ./examples/demo_search2.log || exit 1
-	python -c 'print("A" * 1024)' > examples/1KiB_A.bin
-	cat examples/1KiB_X.bin examples/1KiB_A.bin examples/1KiB_X.bin > \
-		examples/3KiB.bin
-	DNUT_CONFIG=0x1 ./examples/demo_search -C0 	\
-		-i examples/3KiB.bin -p X > 	\
-		examples/demo_search3.log  2>&1
-	grep '2048 patterns' ./examples/demo_search3.log || exit 1
-	$(RM) examples/*.bin
-	@echo "Test OK"
+test: test_software
+
+test_software: all
+	DNUT_CONFIG=0x1 ./scripts/donut_tests.sh
+
+test_hardware:
+	./scripts/donut_tests.sh
 
 help:
 	@echo "Build Donut/CAPI hardware accelerator tools"

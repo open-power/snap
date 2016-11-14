@@ -10,6 +10,12 @@ Libdonut is planed to provide 3 different modes of operation:
 2. *FIXME Not fully in plan yet* Action-assignment mode: A process requests the connection between an AFU-context to an FPGA-action. This connection is managed by the job-manager and supports as many assignments as FPGA-actions are available. Once connected the process can use FPGA-action MMIOs to do further work e.g. implement door-bells, or data-send/receive queues. Interrupts can be used for error or completion notification.
 3. Direct access cards AFU-master/slave contexts. This mode is for debugging and global configuration tasks.
 
+## Environment Variables
+
+To debug libdonut functionality or associated actions, there are currently some environment variables available:
+- ***DNUT_CONFIG***: 0x1 Enable software action emulation for those actions which we use for trying out.
+- ***DNUT_TRACE***: 0x1 General libdonut trace, 0x2 Enable register read/write trace, 0x4 Enable simulation specific trace, 0x8 Enable action traces.
+
 Here a simple example for the action-assignment mode.
 
     #include <libdonut.h>
