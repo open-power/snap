@@ -10,15 +10,11 @@ ifdef EXAMPLE
 CE_PARMS += -e
 endif
 
-ifdef DDR3_USED
-export DDR3_USED=TRUE
-else 
+ifndef DDR3_USED
 export DDR3_USED=FALSE
 endif
 
-ifdef ILA_DEBUG
-export ILA_DEBUG=TRUE
-else
+ifndef ILA_DEBUG
 export ILA_DEBUG=FALSE
 endif
 
@@ -74,7 +70,7 @@ image:
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
 
 clean:
-	@echo -e "\t[CLEAN] build environment"; 
+	@echo -e "\t[CLEAN] build environment";
 	rm -rf  $(BUILD_DIR)
 	rm -rf  $(DONUT_HARDWARE_ROOT)/viv_project
 	rm -rf  $(DONUT_HARDWARE_ROOT)/ip
