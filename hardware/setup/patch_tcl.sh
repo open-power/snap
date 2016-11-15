@@ -1,9 +1,6 @@
 #!/bin/bash
 cd $1
 
-set ddr3_used $::env(DDR3_USED)
-set ila_dbg   $::env(ILA_DEBUG)
-
 sed -i '/set netlistDir/ a\
 set rootDir    \$::env(DONUT_HARDWARE_ROOT)\
 set dimmDir    \$::env(DIMMTEST)' $2
@@ -18,23 +15,23 @@ done
 sed -i '/top    synth_options/ a\
 set_attribute module \$top    ip            \[list \\' $2
 
-if { $ddr3_used == TRUE } {
+if [ $DDR3_USED="TRUE" ]; then
 sed -i '/top    synth_options/ a\
 set_attribute module $top    xdc           \[list \\\
                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc \\\
                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc \\\
                                            \]' $2
-}
+fi
 
 sed -i '/linkXDC/ d' $2
 
 sed -i '/top      top/ a\
                                            \]' $2
 
-if { $ila_dbg == TRUE } {
+if [ $ILA_DEBUG="TRUE" ]; then
 sed -i '/top      top/ a\
                                              \$rootDir/setup/debug.xdc \\' $2
-}
+fi
 
 sed -i '/top      top/ a\
 set_attribute impl \$top      linkXDC       \[list \\\
