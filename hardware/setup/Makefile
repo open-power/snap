@@ -16,6 +16,12 @@ else
 export DDR3_USED=FALSE
 endif
 
+ifdef ILA_DEBUG
+export ILA_DEBUG=TRUE
+else
+export ILA_DEBUG=FALSE
+endif
+
 .PHONY: all image model check_donut_settings create_environment copy clean config gitclean
 
 all: config image model

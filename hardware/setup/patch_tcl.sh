@@ -2,6 +2,7 @@
 cd $1
 
 set ddr3_used $::env(DDR3_USED)
+set ila_dbg   $::env(ILA_DEBUG)
 
 sed -i '/set netlistDir/ a\
 set rootDir    \$::env(DONUT_HARDWARE_ROOT)\
@@ -28,9 +29,16 @@ set_attribute module $top    xdc           \[list \\\
 sed -i '/linkXDC/ d' $2
 
 sed -i '/top      top/ a\
-set_attribute impl \$top      linkXDC       \[list \\\
-                                             \$rootDir/setup/donut.xdc \\\
                                            \]' $2
+
+if { $ila_dbg == TRUE } {
+sed -i '/top      top/ a\
+                                             \$rootDir/setup/debug.xdc \\' $2
+}
+
+sed -i '/top      top/ a\
+set_attribute impl \$top      linkXDC       \[list \\\
+                                             \$rootDir/setup/donut.xdc \\' $2
 
 sed -i '/top      impl/ a\
 #set_attribute impl \$top      phys_options  "-force_replication_on_nets \[get_nets -hierarchical -top_net_of_hierarchical_group -filter { NAME =~  "\*action_reset\*" } \]"' $2
