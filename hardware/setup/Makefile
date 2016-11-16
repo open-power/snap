@@ -11,7 +11,7 @@ CE_PARMS += -e
 endif
 
 ifndef DDR3_USED
-export DDR3_USED=FALSE
+export DDR3_USED=TRUE
 endif
 
 ifndef ILA_DEBUG
