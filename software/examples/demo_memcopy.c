@@ -183,6 +183,7 @@ int main(int argc, char *argv[])
 	uint64_t addr_out = 0x0ull;
 	int verify = 0;
 	int exit_code = EXIT_SUCCESS;
+	uint8_t trailing_zeros[1024] = { 0, };
 
 	while (1) {
 		int option_index = 0;
@@ -301,25 +302,25 @@ int main(int argc, char *argv[])
 
 	/* if output file is defined, use that as output */
 	if (output != NULL) {
-		/* destination buffer */
-		obuff = memalign(page_size, size);
+		/* destination buffer/FIXME 1024 more for debugging ... */
+		obuff = memalign(page_size, size + 1024);
 		if (obuff == NULL)
 			goto out_error;
-		memset(obuff, 0, size);
+		memset(obuff, 0, size + 1024); /* FIXME */
 
 		type_out = DNUT_TARGET_TYPE_HOST_DRAM;
 		addr_out = (unsigned long)obuff;
 	}
 
 	printf("PARAMETERS:\n"
-	       "  input:    %s\n"
-	       "  output:   %s\n"
-	       "  type_in:  %x %s\n"
-	       "  addr_in:  %016llx\n"
-	       "  type_out: %x %s\n"
-	       "  addr_out: %016llx\n"
-	       "  size:     %08lx\n"
-	       "  mode:     %08x\n",
+	       "  input:       %s\n"
+	       "  output:      %s\n"
+	       "  type_in:     %x %s\n"
+	       "  addr_in:     %016llx\n"
+	       "  type_out:    %x %s\n"
+	       "  addr_out:    %016llx\n"
+	       "  size_in/out: %08lx\n"
+	       "  mode:        %08x\n",
 	       input  ? input  : "unknown",
 	       output ? output : "unknown",
 	       type_in,  mem_tab[type_in],  (long long)addr_in,
@@ -355,7 +356,7 @@ int main(int argc, char *argv[])
 #endif
 
 	dnut_prepare_memcopy(&cjob, &mjob,
-			     (void *)addr_in, size, type_in,
+			     (void *)addr_in,  size, type_in,
 			     (void *)addr_out, size, type_out);
 
 	gettimeofday(&stime, NULL);
@@ -377,13 +378,21 @@ int main(int argc, char *argv[])
 			goto out_error2;
 	}
 
+	/* obuff[size] = 0xff; */
 	fprintf(stdout, "RETC=%x\n", cjob.retc);
 	if (verify) {
 		if ((type_in  == DNUT_TARGET_TYPE_HOST_DRAM) &&
 		    (type_out == DNUT_TARGET_TYPE_HOST_DRAM)) {
-			rc = memcmp(ibuff,obuff, size);
+			rc = memcmp(ibuff, obuff, size);
 			if (rc != 0)
 				exit_code = EX_ERR_VERIFY;
+
+			rc = memcmp(obuff + size, trailing_zeros, 1024);
+			if (rc != 0) {
+				__hexdump(stderr, obuff + size, 1024);
+				exit_code = EX_ERR_VERIFY;
+			}
+
 		} else
 			fprintf(stderr, "warn: Verification works currently "
 				"only with HOST_DRAM\n");
