@@ -181,11 +181,16 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
  set_property offset 0x00001000 [get_bd_addr_segs {s_axi/SEG_memcopy_0_reg0}]
  set_property range 4K [get_bd_addr_segs {s_axi/SEG_opencldesign_wrapper_0_reg0}]
  set_property offset 0x00000000 [get_bd_addr_segs {s_axi/SEG_opencldesign_wrapper_0_reg0}]
- set_property range 512K [get_bd_addr_segs {memcopy_0/m01_axi/SEG_c0_ddr3_Reg}]
- set_property offset 0x000000000 [get_bd_addr_segs {memcopy_0/m01_axi/SEG_c0_ddr3_Reg}]
  set_property offset 0x0000000000000000 [get_bd_addr_segs {memcopy_0/m00_axi/SEG_m_axi_Reg}]
  set_property range 8E [get_bd_addr_segs {memcopy_0/m00_axi/SEG_m_axi_Reg}]
  set_property offset 0x0000000000000000 [get_bd_addr_segs {opencldesign_wrapper_0/m_axi_gmem/SEG_m_axi_Reg}]
  set_property range 8E [get_bd_addr_segs {opencldesign_wrapper_0/m_axi_gmem/SEG_m_axi_Reg}]
+
+ set_property offset 0x0000000000000000 [get_bd_addr_segs {memcopy_0/m01_axi/SEG_c0_ddr3_Reg}]
+ set_property offset 0x0000000000000000 [get_bd_addr_segs {opencldesign_wrapper_0/m_axi_ddrmem/SEG_c0_ddr3_Reg}]
+ set_property range 8G [get_bd_addr_segs {opencldesign_wrapper_0/m_axi_ddrmem/SEG_c0_ddr3_Reg}]
+ set_property range 8G [get_bd_addr_segs {memcopy_0/m01_axi/SEG_c0_ddr3_Reg}]
+
+
  save_bd_design
  close_project
