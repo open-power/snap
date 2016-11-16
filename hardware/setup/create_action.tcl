@@ -61,44 +61,43 @@ update_ip_catalog
 create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrapper_0
 
 #create IOs
-#clk + rstn port
- create_bd_port -dir I -type clk clk
- set_property CONFIG.FREQ_HZ 250000000 [get_bd_ports clk]
- create_bd_port -dir I -type rst rstn
- set_property CONFIG.ASSOCIATED_RESET {rstn} [get_bd_ports /clk]
- create_bd_port -dir I -type rst ddr3_rst_n
- create_bd_port -dir I -type clk ddr3_clk
- set_property CONFIG.FREQ_HZ 200000000 [get_bd_ports ddr3_clk]
-#s_axi port
- create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 s_axi
- set_property -dict [list CONFIG.FREQ_HZ {250000000}] [get_bd_intf_ports s_axi]
- set_property CONFIG.CLK_DOMAIN action_clk [get_bd_intf_ports s_axi]
- set_property CONFIG.MAX_BURST_LENGTH 1 [get_bd_intf_ports s_axi]
- set_property CONFIG.ASSOCIATED_BUSIF {s_axi} [get_bd_ports /clk]
- set_property CONFIG.SUPPORTS_NARROW_BURST 0 [get_bd_intf_ports s_axi]
- set_property CONFIG.PROTOCOL AXI4LITE [get_bd_intf_ports s_axi]
-#m_axi port
- create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 m_axi
- set_property CONFIG.ADDR_WIDTH 64 [get_bd_intf_ports m_axi]
- set_property -dict [list CONFIG.FREQ_HZ {250000000}] [get_bd_intf_ports m_axi]
- set_property CONFIG.DATA_WIDTH 128 [get_bd_intf_ports m_axi]
- set_property CONFIG.CLK_DOMAIN action_clk [get_bd_intf_ports m_axi]
- set_property CONFIG.HAS_REGION 0 [get_bd_intf_ports m_axi]
- set_property CONFIG.NUM_READ_OUTSTANDING 2 [get_bd_intf_ports m_axi]
- set_property CONFIG.NUM_WRITE_OUTSTANDING 2 [get_bd_intf_ports m_axi]
- set_property location {1143 156} [get_bd_intf_ports m_axi]
- set_property location {1143 114} [get_bd_intf_ports m_axi]
- set_property location {1143 132} [get_bd_intf_ports m_axi]
-#c0_ddr3 port
- create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 c0_ddr3
- set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {64}] [get_bd_intf_ports c0_ddr3]
- set_property -dict [list CONFIG.DATA_WIDTH {128}] [get_bd_intf_ports c0_ddr3]
- set_property -dict [list CONFIG.FREQ_HZ {250000000}] [get_bd_intf_ports c0_ddr3]
- if { $ddr3_used == TRUE } {
-   set_property CONFIG.ASSOCIATED_BUSIF {c0_ddr3} [get_bd_ports /ddr3_clk]
- } else { 
-   set_property CONFIG.ASSOCIATED_BUSIF {c0_ddr3} [get_bd_ports /clk]
- }
+#action_clk + action_rst_n port
+ create_bd_port -dir I -type clk action_clk
+ set_property CONFIG.FREQ_HZ 250000000 [get_bd_ports action_clk]
+ create_bd_port -dir I -type rst action_rst_n
+ set_property CONFIG.ASSOCIATED_RESET {action_rst_n} [get_bd_ports /action_clk]
+ create_bd_port -dir I -type rst card_mem0_rst_n
+ create_bd_port -dir I -type clk card_mem0_clk
+ set_property CONFIG.FREQ_HZ 200000000 [get_bd_ports card_mem0_clk]
+#axi_ctrl_reg port
+ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 axi_ctrl_reg
+ set_property -dict [list CONFIG.FREQ_HZ {250000000}] [get_bd_intf_ports axi_ctrl_reg]
+ set_property CONFIG.CLK_DOMAIN action_clk [get_bd_intf_ports axi_ctrl_reg]
+ set_property CONFIG.MAX_BURST_LENGTH 1 [get_bd_intf_ports axi_ctrl_reg]
+ set_property CONFIG.ASSOCIATED_BUSIF {axi_ctrl_reg} [get_bd_ports /action_clk]
+ set_property CONFIG.SUPPORTS_NARROW_BURST 0 [get_bd_intf_ports axi_ctrl_reg]
+ set_property CONFIG.PROTOCOL AXI4LITE [get_bd_intf_ports axi_ctrl_reg]
+#axi_host_mem port
+ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 axi_host_mem
+ set_property CONFIG.ADDR_WIDTH 64 [get_bd_intf_ports axi_host_mem]
+ set_property -dict [list CONFIG.FREQ_HZ {250000000}] [get_bd_intf_ports axi_host_mem]
+ set_property CONFIG.DATA_WIDTH 128 [get_bd_intf_ports axi_host_mem]
+ set_property CONFIG.CLK_DOMAIN action_clk [get_bd_intf_ports axi_host_mem]
+ set_property CONFIG.ASSOCIATED_BUSIF {axi_host_mem} [get_bd_ports /action_clk]
+ set_property CONFIG.HAS_REGION 0 [get_bd_intf_ports axi_host_mem]
+ set_property CONFIG.NUM_READ_OUTSTANDING 2 [get_bd_intf_ports axi_host_mem]
+ set_property CONFIG.NUM_WRITE_OUTSTANDING 2 [get_bd_intf_ports axi_host_mem]
+ set_property location {1143 156} [get_bd_intf_ports axi_host_mem]
+ set_property location {1143 114} [get_bd_intf_ports axi_host_mem]
+ set_property location {1143 132} [get_bd_intf_ports axi_host_mem]
+#axi_card_mem0 port
+ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 axi_card_mem0
+ set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {64}] [get_bd_intf_ports axi_card_mem0]
+ set_property -dict [list CONFIG.DATA_WIDTH {128}] [get_bd_intf_ports axi_card_mem0]
+ set_property -dict [list CONFIG.FREQ_HZ {250000000}] [get_bd_intf_ports axi_card_mem0]
+ set_property CONFIG.ASSOCIATED_BUSIF {axi_card_mem0:axi_host_mem} [get_bd_ports /action_clk]
+ set_property CONFIG.ASSOCIATED_BUSIF {axi_card_mem0} [get_bd_ports /card_mem0_clk]
+
 
 # create internal clock and system reset IP
  create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:5.2 clk_wiz_0
@@ -122,14 +121,14 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
  set_property -dict [list CONFIG.NUM_SI {2} CONFIG.M00_HAS_REGSLICE {4} CONFIG.S00_HAS_REGSLICE {4} CONFIG.S01_HAS_REGSLICE {4} CONFIG.NUM_MI {1}] [get_bd_cells axi_interconnect_2]
 
 #connections
- connect_bd_net [get_bd_ports clk] [get_bd_pins clk_wiz_0/clk_in1]
+ connect_bd_net [get_bd_ports action_clk] [get_bd_pins clk_wiz_0/clk_in1]
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins proc_sys_reset_0/slowest_sync_clk]
- connect_bd_net [get_bd_ports rstn] [get_bd_pins proc_sys_reset_0/ext_reset_in]
- connect_bd_intf_net [get_bd_intf_ports m_axi] -boundary_type upper [get_bd_intf_pins axi_interconnect_1/M00_AXI]
- connect_bd_net [get_bd_ports /clk] [get_bd_pins axi_interconnect_1/M00_ACLK]
+ connect_bd_net [get_bd_ports action_rst_n] [get_bd_pins proc_sys_reset_0/ext_reset_in]
+ connect_bd_intf_net [get_bd_intf_ports axi_host_mem] -boundary_type upper [get_bd_intf_pins axi_interconnect_1/M00_AXI]
+ connect_bd_net [get_bd_ports /action_clk] [get_bd_pins axi_interconnect_1/M00_ACLK]
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins axi_interconnect_1/S00_ACLK]
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins axi_interconnect_1/ACLK]
- connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_1/M00_ARESETN]
+ connect_bd_net [get_bd_ports action_rst_n] [get_bd_pins axi_interconnect_1/M00_ARESETN]
  connect_bd_net [get_bd_pins proc_sys_reset_0/interconnect_aresetn] [get_bd_pins axi_interconnect_1/S00_ARESETN]
  connect_bd_net [get_bd_pins proc_sys_reset_0/interconnect_aresetn] [get_bd_pins axi_interconnect_1/S01_ARESETN]
  connect_bd_net [get_bd_pins proc_sys_reset_0/interconnect_aresetn] [get_bd_pins axi_interconnect_1/ARESETN]
@@ -141,23 +140,17 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins axi_interconnect_2/ACLK]
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins axi_interconnect_2/S00_ACLK]
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins memcopy_0/m01_axi_aclk]
-
- if { $ddr3_used == TRUE } {
-   connect_bd_net [get_bd_ports /ddr3_clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
-   connect_bd_net [get_bd_ports ddr3_rst_n] [get_bd_pins axi_interconnect_2/M00_ARESETN]
- } else {
-   connect_bd_net [get_bd_ports /clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
-   connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_2/M00_ARESETN]
- }
+ connect_bd_net [get_bd_ports card_mem0_clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
+ connect_bd_net [get_bd_ports card_mem0_rst_n] [get_bd_pins axi_interconnect_2/M00_ARESETN]
  connect_bd_intf_net [get_bd_intf_pins memcopy_0/m01_axi] -boundary_type upper [get_bd_intf_pins axi_interconnect_2/S00_AXI]
- connect_bd_intf_net [get_bd_intf_ports c0_ddr3] -boundary_type upper [get_bd_intf_pins axi_interconnect_2/M00_AXI]
- connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_0/S00_ARESETN]
- connect_bd_net [get_bd_ports rstn] [get_bd_pins axi_interconnect_0/ARESETN]
+ connect_bd_intf_net [get_bd_intf_ports axi_card_mem0] -boundary_type upper [get_bd_intf_pins axi_interconnect_2/M00_AXI]
+ connect_bd_net [get_bd_ports action_rst_n] [get_bd_pins axi_interconnect_0/S00_ARESETN]
+ connect_bd_net [get_bd_ports action_rst_n] [get_bd_pins axi_interconnect_0/ARESETN]
  connect_bd_net [get_bd_pins proc_sys_reset_0/interconnect_aresetn] [get_bd_pins axi_interconnect_0/M00_ARESETN]
- connect_bd_intf_net [get_bd_intf_ports s_axi] -boundary_type upper [get_bd_intf_pins axi_interconnect_0/S00_AXI]
+ connect_bd_intf_net [get_bd_intf_ports axi_ctrl_reg] -boundary_type upper [get_bd_intf_pins axi_interconnect_0/S00_AXI]
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins axi_interconnect_0/M00_ACLK]
- connect_bd_net [get_bd_ports /clk] [get_bd_pins axi_interconnect_0/S00_ACLK]
- connect_bd_net [get_bd_ports /clk] [get_bd_pins axi_interconnect_0/ACLK]
+ connect_bd_net [get_bd_ports /action_clk] [get_bd_pins axi_interconnect_0/S00_ACLK]
+ connect_bd_net [get_bd_ports /action_clk] [get_bd_pins axi_interconnect_0/ACLK]
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins memcopy_0/m00_axi_aclk]
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins memcopy_0/s00_axi_aclk]
  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M00_AXI] [get_bd_intf_pins memcopy_0/s00_axi]
@@ -177,15 +170,22 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
 
 #AXI Address mapping
  assign_bd_address
- set_property range 4K [get_bd_addr_segs {s_axi/SEG_memcopy_0_reg0}]
- set_property offset 0x00001000 [get_bd_addr_segs {s_axi/SEG_memcopy_0_reg0}]
- set_property range 4K [get_bd_addr_segs {s_axi/SEG_opencldesign_wrapper_0_reg0}]
- set_property offset 0x00000000 [get_bd_addr_segs {s_axi/SEG_opencldesign_wrapper_0_reg0}]
- set_property range 512K [get_bd_addr_segs {memcopy_0/m01_axi/SEG_c0_ddr3_Reg}]
- set_property offset 0x000000000 [get_bd_addr_segs {memcopy_0/m01_axi/SEG_c0_ddr3_Reg}]
- set_property offset 0x0000000000000000 [get_bd_addr_segs {memcopy_0/m00_axi/SEG_m_axi_Reg}]
- set_property range 8E [get_bd_addr_segs {memcopy_0/m00_axi/SEG_m_axi_Reg}]
- set_property offset 0x0000000000000000 [get_bd_addr_segs {opencldesign_wrapper_0/m_axi_gmem/SEG_m_axi_Reg}]
- set_property range 8E [get_bd_addr_segs {opencldesign_wrapper_0/m_axi_gmem/SEG_m_axi_Reg}]
+ set_property range 4K [get_bd_addr_segs {axi_ctrl_reg/SEG_memcopy_0_reg0}]
+ set_property offset 0x00001000 [get_bd_addr_segs {axi_ctrl_reg/SEG_memcopy_0_reg0}]
+ set_property range 4K [get_bd_addr_segs {axi_ctrl_reg/SEG_opencldesign_wrapper_0_reg0}]
+ set_property offset 0x00000000 [get_bd_addr_segs {axi_ctrl_reg/SEG_opencldesign_wrapper_0_reg0}]
+ set_property range 512K [get_bd_addr_segs {memcopy_0/m01_axi/SEG_axi_card_mem0_Reg}]
+ set_property offset 0x000000000 [get_bd_addr_segs {memcopy_0/m01_axi/SEG_axi_card_mem0_Reg}]
+ set_property offset 0x0000000000000000 [get_bd_addr_segs {opencldesign_wrapper_0/m_axi_ddrmem/SEG_axi_card_mem0_Reg}]
+ set_property range 512K [get_bd_addr_segs {opencldesign_wrapper_0/m_axi_ddrmem/SEG_axi_card_mem0_Reg}]
+ set_property offset 0x0000000000000000 [get_bd_addr_segs {memcopy_0/m00_axi/SEG_axi_host_mem_Reg}]
+ set_property range 8E [get_bd_addr_segs {memcopy_0/m00_axi/SEG_axi_host_mem_Reg}]
+ set_property offset 0x0000000000000000 [get_bd_addr_segs {opencldesign_wrapper_0/m_axi_gmem/SEG_axi_host_mem_Reg}]
+ set_property range 8E [get_bd_addr_segs {opencldesign_wrapper_0/m_axi_gmem/SEG_axi_host_mem_Reg}]
+ save_bd_design
+ 
+
+
  save_bd_design
  close_project
+
