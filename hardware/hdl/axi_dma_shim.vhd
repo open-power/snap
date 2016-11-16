@@ -213,7 +213,9 @@ axi_wr: process(ha_pclock)
 
                   when DMA_WR_DATA =>
                     if ks_d_i.S_AXI_WVALID = '1' then
-                      sd_d_o.wr_strobe <= std_ulogic_vector(ks_d_i.S_AXI_WSTRB);
+                      for i in 0 to 15 loop
+                        sd_d_o.wr_strobe(15 - i) <= std_ulogic(ks_d_i.S_AXI_WSTRB(i));
+                      end loop;   
                       if ks_d_i.S_AXI_WLAST = '1' then
                         sd_d_o.wr_last <= '1';
                         axi_wready_q      <= '0';
