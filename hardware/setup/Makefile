@@ -82,5 +82,5 @@ clean:
 	rm -f   ./*.jou
 
 gitclean:
-	@echo -e "\t[GITCLEAN] cleaning donut git clone";
-	@cd $(DONUT_HARDWARE_ROOT) && git clean -f -d -x
+	@echo -e "\t[GITCLEAN] cleaning donut git";
+	@git clean -f -d -x
