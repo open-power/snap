@@ -15,7 +15,7 @@ done
 sed -i '/top    synth_options/ a\
 set_attribute module \$top    ip            \[list \\' $2
 
-if [ $DDR3_USED="TRUE" ]; then
+if [ $DDR3_USED == "TRUE" ]; then
 sed -i '/top    synth_options/ a\
 set_attribute module $top    xdc           \[list \\\
                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc \\\
@@ -28,7 +28,7 @@ sed -i '/linkXDC/ d' $2
 sed -i '/top      top/ a\
                                            \]' $2
 
-if [ $ILA_DEBUG="TRUE" ]; then
+if [ $ILA_DEBUG == "TRUE" ]; then
 sed -i '/top      top/ a\
                                              \$rootDir/setup/debug.xdc \\' $2
 fi
