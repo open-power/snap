@@ -94,12 +94,12 @@ update_ip_catalog
 # add action block design and connect it to the rest
 if { $action_example == 1 } {
   add_files -norecurse $root_dir/action/action.srcs/sources_1/bd/action/action.bd
-  export_ip_user_files -of_objects  [get_files  $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -force -quiet
-  update_compile_order -fileset sources_1
-  make_wrapper -files [get_files $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -top
-  remove_files $root_dir/hdl/action_wrapper.vhd
-  add_files -norecurse $root_dir/action/action.srcs/sources_1/bd/action/hdl/action_wrapper.vhd
-  update_compile_order -fileset sources_1
+#  export_ip_user_files -of_objects  [get_files  $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -force -quiet
+#  update_compile_order -fileset sources_1
+#  make_wrapper -files [get_files $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -top
+#  remove_files $root_dir/hdl/action_wrapper.vhd
+#  add_files -norecurse $root_dir/action/action.srcs/sources_1/bd/action/hdl/action_wrapper.vhd
+#  update_compile_order -fileset sources_1
   generate_target all [get_files  $root_dir/action/action.srcs/sources_1/bd/action/action.bd]
   export_ip_user_files -of_objects [get_files $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -no_script -force -quiet
   export_simulation -of_objects [get_files $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -directory $root_dir/viv_project/framework.ip_user_files/sim_scripts -force -quiet
