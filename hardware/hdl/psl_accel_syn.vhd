@@ -363,6 +363,24 @@ ARCHITECTURE psl_accel OF psl_accel IS
       c0_init_calib_complete : OUT STD_LOGIC;
       c0_sys_clk_p : IN STD_LOGIC;
       c0_sys_clk_n : IN STD_LOGIC;
+      dbg_rd_data_cmp : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
+      dbg_expected_data : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
+      dbg_cal_seq : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+      dbg_cal_seq_cnt : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+      dbg_cal_seq_rd_cnt : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+      dbg_rd_valid : OUT STD_LOGIC;
+      dbg_cmp_byte : OUT STD_LOGIC_VECTOR(5 DOWNTO 0);
+      dbg_rd_data : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
+      dbg_cplx_config : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+      dbg_cplx_status : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      dbg_io_address : OUT STD_LOGIC_VECTOR(27 DOWNTO 0);
+      dbg_pllGate : OUT STD_LOGIC;
+      dbg_phy2clb_fixdly_rdy_low : OUT STD_LOGIC_VECTOR(19 DOWNTO 0);
+      dbg_phy2clb_fixdly_rdy_upp : OUT STD_LOGIC_VECTOR(19 DOWNTO 0);
+      dbg_phy2clb_phy_rdy_low : OUT STD_LOGIC_VECTOR(19 DOWNTO 0);
+      dbg_phy2clb_phy_rdy_upp : OUT STD_LOGIC_VECTOR(19 DOWNTO 0);
+      win_status : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+      cal_r0_status : OUT STD_LOGIC_VECTOR(53 DOWNTO 0);
       c0_ddr3_addr : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
       c0_ddr3_ba : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
       c0_ddr3_cas_n : OUT STD_LOGIC;
@@ -523,6 +541,26 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL c1_ddr3_ui_clk_sync_rst :   STD_LOGIC;
   SIGNAL c1_ddr3_aresetn :   STD_LOGIC;
   SIGNAL sys_rst :   STD_LOGIC;
+  SIGNAL dbg_rd_data_cmp            : STD_LOGIC_VECTOR(63 DOWNTO 0);
+  SIGNAL dbg_expected_data          : STD_LOGIC_VECTOR(63 DOWNTO 0);
+  SIGNAL dbg_cal_seq                : STD_LOGIC_VECTOR(2 DOWNTO 0);
+  SIGNAL dbg_cal_seq_cnt            : STD_LOGIC_VECTOR(31 DOWNTO 0);
+  SIGNAL dbg_cal_seq_rd_cnt         : STD_LOGIC_VECTOR(7 DOWNTO 0);
+  SIGNAL dbg_rd_valid               : STD_LOGIC;
+  SIGNAL dbg_cmp_byte               : STD_LOGIC_VECTOR(5 DOWNTO 0);
+  SIGNAL dbg_rd_data                : STD_LOGIC_VECTOR(63 DOWNTO 0);
+  SIGNAL dbg_cplx_config            : STD_LOGIC_VECTOR(15 DOWNTO 0);
+  SIGNAL dbg_cplx_status            : STD_LOGIC_VECTOR(1 DOWNTO 0);
+  SIGNAL dbg_io_address             : STD_LOGIC_VECTOR(27 DOWNTO 0);
+  SIGNAL dbg_pllGate                : STD_LOGIC;
+  SIGNAL dbg_phy2clb_fixdly_rdy_low : STD_LOGIC_VECTOR(19 DOWNTO 0);
+  SIGNAL dbg_phy2clb_fixdly_rdy_upp : STD_LOGIC_VECTOR(19 DOWNTO 0);
+  SIGNAL dbg_phy2clb_phy_rdy_low    : STD_LOGIC_VECTOR(19 DOWNTO 0);
+  SIGNAL dbg_phy2clb_phy_rdy_upp    : STD_LOGIC_VECTOR(19 DOWNTO 0);
+  SIGNAL win_status                 : STD_LOGIC_VECTOR(31 DOWNTO 0);
+  SIGNAL cal_r0_status              : STD_LOGIC_VECTOR(53 DOWNTO 0);
+  SIGNAL win_status_q                 : STD_LOGIC_VECTOR(31 DOWNTO 0);
+  SIGNAL cal_r0_status_q              : STD_LOGIC_VECTOR(53 DOWNTO 0);
   SIGNAL c1_ddr3_s_axi_ctrl_awvalid : STD_LOGIC;
   SIGNAL c1_ddr3_s_axi_ctrl_awready : STD_LOGIC;
   SIGNAL c1_ddr3_s_axi_ctrl_awaddr  : STD_LOGIC_VECTOR(31 DOWNTO 0);
@@ -561,6 +599,8 @@ BEGIN
       ELSE
         ddr3_reset_q   <= '0';
         ddr3_reset_n_q <= '1';
+        win_status_q    <= win_status;
+        cal_r0_status_q <= cal_r0_status_q;
       END IF;
     END IF;
   END PROCESS ddr3_reset;
@@ -841,6 +881,24 @@ BEGIN
         c0_init_calib_complete => c1_init_calib_complete,
         c0_sys_clk_p => c1_sys_clk_p,
         c0_sys_clk_n => c1_sys_clk_n,
+        dbg_rd_data_cmp => dbg_rd_data_cmp,
+        dbg_expected_data => dbg_expected_data,
+        dbg_cal_seq => dbg_cal_seq,
+        dbg_cal_seq_cnt => dbg_cal_seq_cnt,
+        dbg_cal_seq_rd_cnt => dbg_cal_seq_rd_cnt,
+        dbg_rd_valid => dbg_rd_valid,
+        dbg_cmp_byte => dbg_cmp_byte,
+        dbg_rd_data => dbg_rd_data,
+        dbg_cplx_config => dbg_cplx_config,
+        dbg_cplx_status => dbg_cplx_status,
+        dbg_io_address => dbg_io_address,
+        dbg_pllGate => dbg_pllGate,
+        dbg_phy2clb_fixdly_rdy_low => dbg_phy2clb_fixdly_rdy_low,
+        dbg_phy2clb_fixdly_rdy_upp => dbg_phy2clb_fixdly_rdy_upp,
+        dbg_phy2clb_phy_rdy_low => dbg_phy2clb_phy_rdy_low,
+        dbg_phy2clb_phy_rdy_upp => dbg_phy2clb_phy_rdy_upp,
+        win_status => win_status,
+        cal_r0_status => cal_r0_status,
         c0_ddr3_addr => c1_ddr3_addr,
         c0_ddr3_ba => c1_ddr3_ba,
         c0_ddr3_cas_n => c1_ddr3_cas_n,
