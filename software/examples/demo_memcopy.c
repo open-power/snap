@@ -38,12 +38,6 @@ static const char *version = GIT_VERSION;
 
 static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME" };
 
-static void __free(void *ptr)
-{
-	if (ptr)
-		free(ptr);
-}
-
 /**
  * @brief	prints valid command line options
  *
@@ -55,9 +49,9 @@ static void usage(const char *prog)
 	       "  -C, --card <cardno> can be (0...3)\n"
 	       "  -i, --input <file.bin>    input file.\n"
 	       "  -o, --output <file.bin>   output file.\n"
-	       "  -A, --type-in <CARD_RAM, HOST_RAM, ...>.\n"
+	       "  -A, --type-in <CARD_DRAM, HOST_DRAM, ...>.\n"
 	       "  -a, --addr-in <addr>      address e.g. in CARD_RAM.\n"
-	       "  -D, --type-out <CARD_RAM, HOST_RAM, ...>.\n"
+	       "  -D, --type-out <CARD_DRAM, HOST_DRAM, ...>.\n"
 	       "  -d, --addr-out <addr>     address e.g. in CARD_RAM.\n"
 	       "  -s, --size <size>         size of data.\n"
 	       "  -m, --mode <mode>         mode flags.\n"
@@ -89,72 +83,6 @@ static void dnut_prepare_memcopy(struct dnut_job *cjob,
 
 	dnut_job_set(cjob, MEMCOPY_ACTION_TYPE, mjob, sizeof(*mjob),
 		     NULL, 0);
-}
-
-static inline
-ssize_t file_size(const char *fname)
-{
-	int rc;
-	struct stat s;
-
-	rc = lstat(fname, &s);
-	if (rc != 0) {
-		fprintf(stderr, "err: Cannot find %s!\n", fname);
-		return rc;
-	}
-	return s.st_size;
-}
-
-static inline ssize_t
-file_read(const char *fname, uint8_t *buff, size_t len)
-{
-	int rc;
-	FILE *fp;
-
-	if ((fname == NULL) || (buff == NULL) || (len == 0))
-		return -EINVAL;
-
-	fp = fopen(fname, "r");
-	if (!fp) {
-		fprintf(stderr, "err: Cannot open file %s: %s\n",
-			fname, strerror(errno));
-		return -ENODEV;
-	}
-	rc = fread(buff, len, 1, fp);
-	if (rc == -1) {
-		fprintf(stderr, "err: Cannot read from %s: %s\n",
-			fname, strerror(errno));
-		fclose(fp);
-		return -EIO;
-	}
-	fclose(fp);
-	return rc;
-}
-
-static inline ssize_t
-file_write(const char *fname, const uint8_t *buff, size_t len)
-{
-	int rc;
-	FILE *fp;
-
-	if ((fname == NULL) || (buff == NULL) || (len == 0))
-		return -EINVAL;
-
-	fp = fopen(fname, "w+");
-	if (!fp) {
-		fprintf(stderr, "err: Cannot open file %s: %s\n",
-			fname, strerror(errno));
-		return -ENODEV;
-	}
-	rc = fwrite(buff, len, 1, fp);
-	if (rc == -1) {
-		fprintf(stderr, "err: Cannot write to %s: %s\n",
-			fname, strerror(errno));
-		fclose(fp);
-		return -EIO;
-	}
-	fclose(fp);
-	return rc;
 }
 
 /**
@@ -237,6 +165,10 @@ int main(int argc, char *argv[])
 				type_in = DNUT_TARGET_TYPE_CARD_DRAM;
 			else if (strcmp(space, "HOST_DRAM") == 0)
 				type_in = DNUT_TARGET_TYPE_HOST_DRAM;
+			else {
+				usage(argv[0]);
+				exit(EXIT_FAILURE);
+			}
 			break;
 		case 'a':
 			addr_in = strtol(optarg, (char **)NULL, 0);
@@ -248,6 +180,10 @@ int main(int argc, char *argv[])
 				type_out = DNUT_TARGET_TYPE_CARD_DRAM;
 			else if (strcmp(space, "HOST_DRAM") == 0)
 				type_out = DNUT_TARGET_TYPE_HOST_DRAM;
+			else {
+				usage(argv[0]);
+				exit(EXIT_FAILURE);
+			}
 			break;
 		case 'd':
 			addr_out = strtol(optarg, (char **)NULL, 0);
@@ -285,14 +221,14 @@ int main(int argc, char *argv[])
 			goto out_error;
 		memset(ibuff, 0, size);
 
-		size = file_size(input);
+		size = __file_size(input);
 		if (size < 0)
 			goto out_error;
 
 		fprintf(stdout, "reading input data %d bytes from %s\n",
 			(int)size, input);
 
-		rc = file_read(input, ibuff, size);
+		rc = __file_read(input, ibuff, size);
 		if (rc < 0)
 			goto out_error;
 
@@ -373,7 +309,7 @@ int main(int argc, char *argv[])
 		fprintf(stdout, "writing output data %d bytes to %s\n",
 			(int)size, output);
 
-		rc = file_write(output, obuff, size);
+		rc = __file_write(output, obuff, size);
 		if (rc < 0)
 			goto out_error2;
 	}

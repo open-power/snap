@@ -21,12 +21,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <errno.h>
 #include <string.h>
-
+#include <endian.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <libdonut.h>
+#include <linux/types.h>	/* __be64 */
+#include <asm/byteorder.h>
+
 #include <donut_internal.h>
+#include <donut_tools.h>
 #include <action_memcopy.h>
+
+/* Name is defined by address and size */
+#define MEMORY_FILE "action_memory_%016llx_%016llx.bin"
 
 static int mmio_write32(void *_card, uint64_t offs, uint32_t data)
 {
@@ -50,30 +60,64 @@ static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 static int action_main(struct dnut_action *action,
 		       void *job, unsigned int job_len)
 {
+	int rc;
 	struct memcopy_job *js = (struct memcopy_job *)job;
 	void *src, *dst;
 	size_t len;
+	void *ibuf = NULL;
+	void *obuf = NULL;
+	char ifname[128];
+	char ofname[128];
 
 	/* No error checking ... */
 	act_trace("%s(%p, %p, %d) type_in=%d type_out=%d\n",
 		  __func__, action, job, job_len, js->in.type, js->out.type);
 
-	/* checking parameters ... */
-	if (js->in.type != DNUT_TARGET_TYPE_HOST_DRAM) {
-		action->retc = DNUT_RETC_FAILURE;
-		return 0;
-	}
-	if (js->out.type != DNUT_TARGET_TYPE_HOST_DRAM) {
-		action->retc = DNUT_RETC_FAILURE;
-		return 0;
-	}
-
-	src = (void *)js->in.addr;
 	len = js->out.size;
 	dst = (void *)js->out.addr;
-	memcpy(dst, src, len);
+	if (js->in.size != js->out.size) {
+		act_trace("  err: size does not match!\n");
+		goto out_err;
+	}
+	/* checking parameters ... */
+	if (js->in.type != DNUT_TARGET_TYPE_HOST_DRAM) {
+		snprintf(ifname, sizeof(ifname), MEMORY_FILE,
+			 (long long)js->in.addr, (long long)js->in.size);
 
+		act_trace("  loading input data from %s\n", ifname);
+		ibuf = malloc(len);
+		if (ibuf == NULL)
+			goto out_err;
+
+		rc = __file_read(ifname, ibuf, len);
+		if (rc < 0)
+			goto out_err;
+
+		src = ibuf;
+	} else
+		src = (void *)js->in.addr;
+
+	if (js->out.type != DNUT_TARGET_TYPE_HOST_DRAM) {
+		snprintf(ofname, sizeof(ofname), MEMORY_FILE,
+			 (long long)js->out.addr, (long long)js->out.size);
+
+		act_trace("  writing output data to %s\n", ofname);
+		rc = __file_write(ofname, src, len);
+		if (rc < 0)
+			goto out_err;
+
+		goto out_ok;
+	} else
+		memcpy(dst, src, len);
+
+ out_ok:
 	action->retc = DNUT_RETC_SUCCESS;
+	return 0;
+
+ out_err:
+	__free(ibuf);
+	__free(obuf);
+	action->retc = DNUT_RETC_FAILURE;
 	return 0;
 }
 

@@ -51,7 +51,7 @@ done
 ./tools/dnut_peek --help > /dev/null || exit 1;
 ./tools/dnut_poke --help > /dev/null || exit 1;
 
-#### SEARCH ###########################################################
+#### SEARCH ###################################################################
 
 echo -n "Trying demo_search ... "
 cmd="./examples/demo_search -C${dnut_card} -E 84		\
@@ -109,7 +109,7 @@ if [ $? -ne 0 ]; then
 fi
 echo "ok"
 
-#### MEMCOPY###########################################################
+#### MEMCOPY ##################################################################
 
 python3 -c 'print("A" * 1024, end="")' > examples/1KiB_A.bin
 
@@ -157,6 +157,44 @@ if [ $? -ne 0 ]; then
 fi
 echo "ok"
 
-rm -f examples/*.bin
+### Trying DRAM on card ...
+size=`ls -l examples/demo_search.txt | cut -d' ' -f5`
+
+echo -n "Doing demo_memcopy (unaligned, CARD_DRAM) ${size} bytes to card ... "
+cmd="./examples/demo_memcopy -C${dnut_card}	\
+	-i examples/demo_search.txt		\
+	-D CARD_DRAM -d 0x00000000 >		\
+	examples/demo_memcopy_card.log 2>&1"
+eval ${cmd}
+if [ $? -ne 0 ]; then
+	echo "cmd: ${cmd}"
+	echo "failed"
+	exit 1
+fi
+echo "ok"
+
+echo -n "Doing demo_memcopy (unaligned, CARD_DRAM) ${size} bytes from card... "
+cmd="./examples/demo_memcopy -C${dnut_card}	\
+	-A CARD_DRAM -a 0x00000000 -s ${size}		\
+	-o examples/demo_search.out >>		\
+	examples/demo_memcopy_card.log 2>&1"
+eval ${cmd}
+if [ $? -ne 0 ]; then
+	echo "cmd: ${cmd}"
+	echo "failed"
+	exit 1
+fi
+echo "ok"
+
+echo -n "Check results ... "
+diff examples/demo_search.txt examples/demo_search.out 2>&1 > /dev/null
+if [ $? -ne 0 ]; then
+	echo "failed"
+	echo "  examples/demo_search.txt examples/demo_search.out are different!"
+	exit 1
+fi
+echo "ok"
+
+rm -f *.bin examples/*.bin
 echo "Test OK"
 exit 0
