@@ -20,16 +20,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <string.h>
-#include <getopt.h>
-#include <errno.h>
-#include <unistd.h>
 #include <ctype.h>
-#include <limits.h>
-#include <time.h>		/* clock_gettime and friends */
+#include <string.h>
+#include <errno.h>
 #include <sysexits.h>		/* standart application exit codes */
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
+#include <limits.h>
 
 #ifdef __cplusplus
 extern "C" {

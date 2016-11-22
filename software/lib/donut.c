@@ -25,8 +25,8 @@
 
 #include <libdonut.h>
 #include <libcxl.h>
-#include <donut_internal.h>
 #include <donut_tools.h>
+#include <donut_internal.h>
 #include <donut_queue.h>
 
 #define timediff_usec(t0, t1)						\
