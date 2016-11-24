@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
 	dnut_kernel_mmio_write32(kernel, 0x1001c, 0);
 	dnut_kernel_mmio_write32(kernel, 0x10020, 0);
 #endif
-#if 0				/* FIXME Circumvention should go away */
+#if 1				/* FIXME Circumvention should go away */
 	pr_info("FIXME Temporary setting to enable DDR on the card\n");
 	dnut_kernel_mmio_write32(kernel, 0x10028, 0);
 	dnut_kernel_mmio_write32(kernel, 0x1002c, 0);
