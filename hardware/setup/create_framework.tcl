@@ -16,14 +16,14 @@
 #
 #-----------------------------------------------------------
 
-set root_dir  $::env(DONUT_HARDWARE_ROOT)
-set fpga_part $::env(FPGACHIP)
-set pslse_dir $::env(PSLSE_ROOT)
-set dimm_dir  $::env(DIMMTEST)
-set ies_libs  $::env(FRAMEWORK_ROOT)/ies_libs
-set build_dir $::env(DONUT_HARDWARE_ROOT)/build
-set action_example $::env(ACTION_EXAMPLE)
-set ddr3_used $::env(DDR3_USED)
+set root_dir   $::env(DONUT_HARDWARE_ROOT)
+set fpga_part  $::env(FPGACHIP)
+set pslse_dir  $::env(PSLSE_ROOT)
+set dimm_dir   $::env(DIMMTEST)
+set ies_libs   $::env(FRAMEWORK_ROOT)/ies_libs
+set build_dir  $::env(DONUT_HARDWARE_ROOT)/build
+set action_dir $::env(ACTION_PATH)
+set ddr3_used  $::env(DDR3_USED)
 
 puts $root_dir
 puts $pslse_dir
@@ -87,23 +87,25 @@ set_property compxlib.ies_compiled_library_dir $ies_libs/viv2015_4/ies14.10.s14 
 set_property export.sim.base_dir $root_dir [current_project]
 set_property -name {xsim.elaborate.xelab.more_options} -value {-sv_lib libdpi -sv_root .} -objects [current_fileset -simset]
 
-update_compile_order -fileset sim_1
-set_property  ip_repo_paths  $root_dir/action [current_project]
-update_ip_catalog
+add_files            -fileset sources_1 -scan_for_includes $action_dir/
+update_compile_order -fileset sources_1
 
-# add action block design and connect it to the rest
-if { $action_example == 1 } {
-  add_files -norecurse $root_dir/action/action.srcs/sources_1/bd/action/action.bd
-#  export_ip_user_files -of_objects  [get_files  $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -force -quiet
-#  update_compile_order -fileset sources_1
-#  make_wrapper -files [get_files $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -top
-#  remove_files $root_dir/hdl/action_wrapper.vhd
-#  add_files -norecurse $root_dir/action/action.srcs/sources_1/bd/action/hdl/action_wrapper.vhd
-#  update_compile_order -fileset sources_1
-  generate_target all [get_files  $root_dir/action/action.srcs/sources_1/bd/action/action.bd]
-  export_ip_user_files -of_objects [get_files $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -no_script -force -quiet
-  export_simulation -of_objects [get_files $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -directory $root_dir/viv_project/framework.ip_user_files/sim_scripts -force -quiet
-}
+##action##set_property  ip_repo_paths  $root_dir/action [current_project]
+##action##update_ip_catalog
+
+##action### add action block design and connect it to the rest
+##action##if { $action_example == 1 } {
+##action##  add_files -norecurse $root_dir/action/action.srcs/sources_1/bd/action/action.bd
+##action###  export_ip_user_files -of_objects  [get_files  $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -force -quiet
+##action###  update_compile_order -fileset sources_1
+##action###  make_wrapper -files [get_files $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -top
+##action###  remove_files $root_dir/hdl/action_wrapper.vhd
+##action###  add_files -norecurse $root_dir/action/action.srcs/sources_1/bd/action/hdl/action_wrapper.vhd
+##action###  update_compile_order -fileset sources_1
+##action##  generate_target all [get_files  $root_dir/action/action.srcs/sources_1/bd/action/action.bd]
+##action##  export_ip_user_files -of_objects [get_files $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -no_script -force -quiet
+##action##  export_simulation -of_objects [get_files $root_dir/action/action.srcs/sources_1/bd/action/action.bd] -directory $root_dir/viv_project/framework.ip_user_files/sim_scripts -force -quiet
+##action##}
 
 # IMPORT PSL CHECKPOINT FILE
 read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict

@@ -6,9 +6,9 @@ SOURCE_FILES_HDL     = $(shell grep '\/hdl\/' $(PROJECT_COMPILE_LIST) | grep -v 
 SOURCE_FILES_VHDL    = $(SOURCE_FILES_HDL:../%=%)
 
 CE_PARMS := -p -clone
-ifdef EXAMPLE
-CE_PARMS += -e
-endif
+###ifdef EXAMPLE
+###CE_PARMS += -e
+###endif
 
 ifndef DDR3_USED
 export DDR3_USED=FALSE
@@ -76,7 +76,7 @@ clean:
 	rm -rf  $(DONUT_HARDWARE_ROOT)/ip
 	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/ies
 	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/xsim
-	rm -rf  $(DONUT_HARDWARE_ROOT)/action/*.*
+###	rm -rf  $(DONUT_HARDWARE_ROOT)/action/*.*
 	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/questa
 	rm -f   ./*.log
 	rm -f   ./*.jou

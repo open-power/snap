@@ -38,10 +38,8 @@
  export CDS_COVERAGE=0   # compile with/without coverage information
  DEBUG=""                # compile with debug options
  SOFE=1                  # stop on first error
- export ACTION_EXAMPLE=0 # do not prepare action example
  PREPARE_ENV=0           # do not prepare environment
  BUILD_MODEL=0           # do not build simulation model
-#set -u                  # warn for uninitialized variables
 
 
 # VARIABLES ###################
@@ -50,7 +48,6 @@
 
 # FUNCTIONS ###################
  function check_rc() {
-#  local i j k
            grep -i error ${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log|grep -v "errors: 0"
    errors=`grep -i error ${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log|grep -v "errors: 0"|wc -l`  # you cannot trust the RC alone, better grep for errors in the log
    echo "compile $source args=$DEBUG $CLEAN pwd=$PWD subdir=$dir RC=$rc error lines=$errors";
@@ -60,7 +57,6 @@
      maxrc=$rc;
      if [[ $SOFE > 0 ]];then
        less         ${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log
-#      ${MY_EDITOR} ${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log
        exit 1;
      fi
    fi
@@ -75,7 +71,6 @@
    echo "  -cov|-nocov      : set/unset CDS_COVERAGE to compile with/without coverage information (default: no coverage info)"
    echo "  -sofe, -continue : stop on first error, continue on error (default: stop on first error)"
    echo "  -p | prep_env    : prepare environment"
-   echo "  -e | example     : prepare action example"
    echo "  -b | build_model : build simulation model"
    echo "  -h | help        : print this help message"
 }
@@ -96,7 +91,6 @@
      -sofe|sofe)          SOFE=1;;                        # stop on first error
      -continue|continue)  SOFE=0;;                        # continue on error
      -p|prep_env)         PREPARE_ENV=1;;                 # prepare environment
-     -e|example)          export ACTION_EXAMPLE=1;;       # prepare action example
      -b|build_model)      BUILD_MODEL=1;;                 # build simulation model
      -h|help)             print_help_msg; exit;;
       *)                  echo "Unknown option $1"; print_help_msg; exit -1;;
@@ -157,11 +151,6 @@
      echo "directory $DONUT_HARDWARE_ROOT doesn't exist";maxrc+=1;
    fi
 
-###if [ ! -d ${DONUT_SOFTWARE_ROOT}/../pslse ]; then
-###  echo "linking ${PSLSE_ROOT} to ${DONUT_SOFTWARE_ROOT}/../pslse"
-###  ln -s ${PSLSE_ROOT} ${DONUT_SOFTWARE_ROOT}/../pslse
-###fi
-
    if [[ $maxrc > 0 ]];then exit;fi
 
 
@@ -173,7 +162,6 @@
    dir="debug"         ; make -C $dir $DEBUG $CLEAN all       >>${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
 
    source="sw";cd ${DONUT_SOFTWARE_ROOT};
-###dir="mmio"          ; make -C $dir $DEBUG $CLEAN all       >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
    dir='.'             ; make         $DEBUG $CLEAN all       >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
 
    source="hw";cd ${DONUT_HARDWARE_ROOT};
@@ -185,9 +173,9 @@
    if [ ! -d ${DONUT_HARDWARE_ROOT}/sim/ies ];then
      cd ${DONUT_HARDWARE_ROOT}/setup; echo "run Vivado setup scripts"
      vivado -mode batch -source create_ip.tcl        || exit "error in create_ip"
-     if [ $ACTION_EXAMPLE == 1 ]; then
-       vivado -mode batch -source create_action.tcl    || exit "error in create_action"
-     fi
+###     if [ $ACTION_EXAMPLE == 1 ]; then
+###       vivado -mode batch -source create_action.tcl    || exit "error in create_action"
+###     fi
      vivado -mode batch -source create_framework.tcl || exit "error in create_framework"
    fi
  fi # PREPARE_ENV == 1
