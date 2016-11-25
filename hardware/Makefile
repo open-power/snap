@@ -6,9 +6,6 @@ SOURCE_FILES_HDL     = $(shell grep -E "(\/hdl\/|\/action_examples\/)" $(PROJECT
 SOURCE_FILES_VHDL    = $(SOURCE_FILES_HDL:../%=%)
 
 CE_PARMS := -p -clone
-###ifdef EXAMPLE
-###CE_PARMS += -e
-###endif
 
 ifndef DDR3_USED
 export DDR3_USED=FALSE
@@ -45,7 +42,7 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 	@sed -i 's/run.topImpl.*0/run.topImpl 1/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topSynth.*0/run.topSynth 1/' $(BUILD_DIR)/psl_fpga.tcl
 
-$(BUILD_DIR)/Sources/prj/top.prj: $(BUILD_DIR)/psl_fpga.tcl 
+$(BUILD_DIR)/Sources/prj/top.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@cp $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
 	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
 	@echo "PATCH .vhdl FILES" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/vhdl.patch
@@ -83,11 +80,10 @@ clean:
 	rm -rf  $(DONUT_HARDWARE_ROOT)/ip
 	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/ies
 	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/xsim
-###	rm -rf  $(DONUT_HARDWARE_ROOT)/action/*.*
 	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/questa
 	rm -f   ./*.log
 	rm -f   ./*.jou
 
 gitclean:
 	@echo -e "\t[GITCLEAN] cleaning donut git";
-	@git clean -f -d -x
+	git clean -f -d -x
