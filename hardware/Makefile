@@ -30,7 +30,7 @@ check_donut_settings:
 	fi
 
 create_environment:
-	./create_environment $(CE_PARMS)
+	$(DONUT_HARDWARE_ROOT)/setup/create_environment $(CE_PARMS)
 	@echo -e "\t[CREATE_ENVIRONMENT] done ($(shell date))"
 
 copy $(BUILD_DIR)/psl_fpga.tcl:
@@ -45,6 +45,7 @@ $(BUILD_DIR)/Sources/prj/top.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@cp $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
 	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
 	@echo "PATCH .vhdl FILES" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/vhdl.patch
+	@echo "SBT DEBUG: PATH = "`pwd`
 
 $(BUILD_DIR)/Sources/prj/afu.prj: $(BUILD_DIR)/Sources/prj/top.prj
 	@echo -e "\t[CREATE] $@"
@@ -62,12 +63,14 @@ config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl create_environment $(BUIL
 	@echo -e "\t[CONFIG] done ($(shell date))"
 
 model:
-	./create_environment -b
-	@echo -e "\t[CREATE_ENVIRONMENT] done ($(shell date))"
+	@echo -e "\t[BUILD MODEL] start ($(shell date))"
+	./setup/create_environment -b
+	@echo -e "\t[BUILD MODEL] done ($(shell date))"
 
 image:
-	@echo -e "\t[BUILD_IMAGE] start ($(shell date))"
+	@echo -e "\t[BUILD IMAGE] start ($(shell date))"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
+	@echo -e "\t[BUILD IMAGE] done ($(shell date))"
 
 clean:
 	@echo -e "\t[CLEAN] build environment";
