@@ -20,6 +20,18 @@
 #   V=2 means full output
 #
 V		?= 1
+
+ifeq ($(V),0)
+Q		:= @
+MAKEFLAGS	+= --silent
+MAKE		+= -s
+endif
+
+ifeq ($(V),1)
+MAKEFLAGS	+= --silent
+MAKE		+= -s
+endif
+
 CC		= $(CROSS)gcc
 AS		= $(CROSS)as
 LD		= $(CROSS)ld
@@ -58,14 +70,19 @@ endif
 #
 HAS_GIT = $(shell git describe > /dev/null 2>&1 && echo y || echo n)
 
+# Change this with care
+
+VERSION=0.1.2
+MAJOR_VERSION=$(shell echo $(VERSION) | cut -d'.' -f1)
+MINOR_VERSION=$(shell echo $(VERSION) | cut -d'.' -f2)
+PATCH_VERSION=$(shell echo $(VERSION) | cut -d'.' -f3)
+EXTRA_VERSION=$(GIT_BRANCH)
+
 ifeq (${HAS_GIT},y)
-VERSION ?= $(shell git describe --abbrev=4 --always --tags | sed -e 's/v//g')
-RPMVERSION ?= $(shell git describe --abbrev=0 --tags | cut -c 2-7)
-else
-VERSION=0.0.1
-RPMVERSION=$(VERSION)
+GIT_BRANCH=$(shell git describe --abbrev=4 --always --tags | sed -e 's/v//g')
+#GIT_BRANCH=$(shell git describe --abbrev=0 --tags | cut -c 2-7)
+VERSION:=$(VERSION)-$(GIT_BRANCH)
 endif
-MAJOR_VERS=$(shell echo $(VERSION) | cut -d'.' -f1)
 
 PLATFORM ?= $(shell uname -i)
 
@@ -84,13 +101,16 @@ CFLAGS += -DGIT_VERSION=\"$(VERSION)\" \
 #
 ifeq ($(PLATFORM),x86_64)
 BUILD_SIMCODE=1
+
 ifndef PSLSE_ROOT
-# environment variable PSLSE_ROOT defined by hardware setup scripts
-# use default path if PSLSE_ROOT is not defined
-PSLSE_ROOT = ../../../pslse
+# Environment variable PSLSE_ROOT defined by hardware setup scripts.
+# Use default path if PSLSE_ROOT is not defined.
+PSLSE_ROOT=$(abspath ../../../pslse)
 endif
+
 CFLAGS += -I $(PSLSE_ROOT)/libcxl -I $(PSLSE_ROOT)/common
 FORCE_32BIT     ?= 0
+
 ifeq ($(FORCE_32BIT),1)
 CFLAGS += -m32
 LDFLAGS += -m32

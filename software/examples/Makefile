@@ -20,6 +20,7 @@ DESTDIR ?= /usr
 libs = ../lib/libdonut.a
 LDLIBS += $(libs) -lpthread
 
+# Link statically for PSLSE simulation and dynamically for real version
 ifdef BUILD_SIMCODE
 libs += $(PSLSE_ROOT)/libcxl/libcxl.a
 else
