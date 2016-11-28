@@ -1,5 +1,21 @@
 open_checkpoint ../build/Implement/psl_fpga/psl_fpga_route_design.dcp
 
+#set_property SEVERITY {Warning} [get_drc_checks UCIO-1]
+#set_property SEVERITY {Warning} [get_drc_checks NSTD-1]
+
+
+# workaround for missing properties in checkpoint
+place_ports pci_pi_refclk_p0 AB6
+place_ports pci0_i_rxp_in0 AB2
+place_ports pci0_i_rxp_in1 AD2
+place_ports pci0_i_rxp_in2 AF2
+place_ports pci0_i_rxp_in3 AH2
+place_ports pci0_i_rxp_in4 AJ4
+place_ports pci0_i_rxp_in5 AK2
+place_ports pci0_i_rxp_in6 AM2
+place_ports pci0_i_rxp_in7 AP2
+
+
 add_files ../ip/ddr3sdram/sw/microblaze_mcs_ddr.bmm
 set_property SCOPED_TO_REF   ddr3sdram                                [get_files ../ip/ddr3sdram/sw/microblaze_mcs_ddr.bmm ]
 set_property SCOPED_TO_CELLS inst/u_ddr3_mem_intfc/u_ddr_cal_riu/mcs0 [get_files ../ip/ddr3sdram/sw/microblaze_mcs_ddr.bmm ]
