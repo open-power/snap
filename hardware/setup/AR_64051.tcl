@@ -1,4 +1,4 @@
-read_checkpoint ../build/Implement/psl_fpga/psl_fpga_route_design.dcp
+open_checkpoint ../build/Implement/psl_fpga/psl_fpga_route_design.dcp
 
 add_files ../ip/ddr3sdram/sw/microblaze_mcs_ddr.bmm
 set_property SCOPED_TO_REF   ddr3sdram                                [get_files ../ip/ddr3sdram/sw/microblaze_mcs_ddr.bmm ]

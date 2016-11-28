@@ -68,7 +68,7 @@ model:
 image:
 	@echo -e "\t[BUILD_IMAGE] start ($(shell date))"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
-	@cd - && vivado -mode batch -source AR_64051.tcl -notrace
+	@vivado -mode batch -source AR_64051.tcl -notrace
 
 clean:
 	@echo -e "\t[CLEAN] build environment";
