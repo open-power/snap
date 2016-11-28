@@ -18,20 +18,13 @@
 #   V=0 means completely silent
 #   V=1 means brief output
 #   V=2 means full output
-V ?= 2
 
-include config.mk
-
-ifeq ($(V),0)
-Q		:= @
-MAKEFLAGS	+= --silent
-MAKE		+= -s
-endif
-
-ifeq ($(V),1)
-MAKEFLAGS	+= --silent
-MAKE		+= -s
-endif
+#
+# Let us not include config.mk in this file, but just in the subdirectories
+# where the code is located and finally build. That helps to deal with
+# relative path settings nicely. If that does not work for some valid reason,
+# we should discuss creating a new generic.mk or alike file.
+#
 
 distro = $(shell lsb_release -d | cut -f2)
 subdirs += lib tools examples
@@ -44,12 +37,7 @@ tools: lib
 examples: lib
 
 ifdef BUILD_SIMCODE
-ifndef PSLSE_ROOT
-# use default path if PSLSE_ROOT is not defined
-PSLSE_ROOT = ../../pslse
-endif
 lib: ..check_pslse
-endif
 
 ..check_pslse:
 	@echo "PSLSE_ROOT is $(PSLSE_ROOT)"; 				\
@@ -59,6 +47,7 @@ endif
 		echo;							\
 		exit 1;							\
 	fi
+endif
 
 # Only build if the subdirectory is really existent
 .PHONY: $(subdirs) install
