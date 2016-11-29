@@ -84,8 +84,6 @@ GIT_BRANCH=$(shell git describe --abbrev=4 --always --tags | sed -e 's/v//g')
 VERSION:=$(VERSION)-$(GIT_BRANCH)
 endif
 
-PLATFORM ?= $(shell uname -i)
-
 CFLAGS ?= -W -Wall -Werror -Wwrite-strings -Wextra -O2 -g \
 	-Wmissing-prototypes # -Wstrict-prototypes -Warray-bounds
 CFLAGS += -DGIT_VERSION=\"$(VERSION)\" \
@@ -99,6 +97,7 @@ CFLAGS += -DGIT_VERSION=\"$(VERSION)\" \
 #   FORCE_32BIT=0  Use machine default
 #   FORCE_32BIT=1  Enforce 32-bit build
 #
+PLATFORM ?= $(shell uname -i)
 ifeq ($(PLATFORM),x86_64)
 BUILD_SIMCODE=1
 
