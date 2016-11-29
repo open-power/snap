@@ -64,6 +64,6 @@ install: all
 	$(CC) -MM $(CPPFLAGS) $(CFLAGS) $< > $*.d
 
 clean distclean:
-	$(RM) *.o *.d $(projs) *.so
+	$(RM) *.o *.d $(projs) *.so *.so.*
 
 -include $(objs:.o=.d)

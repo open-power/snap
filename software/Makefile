@@ -18,19 +18,23 @@
 #   V=0 means completely silent
 #   V=1 means brief output
 #   V=2 means full output
-V ?= 2
 
-include config.mk
+#
+# Let us not include config.mk in this file, but just in the subdirectories
+# where the code is located and finally build. That helps to deal with
+# relative path settings nicely. If that does not work for some valid reason,
+# we should discuss creating a new generic.mk or alike file.
+#
+PLATFORM ?= $(shell uname -i)
 
-ifeq ($(V),0)
-Q		:= @
-MAKEFLAGS	+= --silent
-MAKE		+= -s
+ifeq ($(PLATFORM),x86_64)
+BUILD_SIMCODE=1
+
+ifndef PSLSE_ROOT
+# Environment variable PSLSE_ROOT defined by hardware setup scripts.
+# Use default path if PSLSE_ROOT is not defined.
+PSLSE_ROOT=$(abspath ../../pslse)
 endif
-
-ifeq ($(V),1)
-MAKEFLAGS	+= --silent
-MAKE		+= -s
 endif
 
 distro = $(shell lsb_release -d | cut -f2)
@@ -43,25 +47,23 @@ tools: lib
 
 examples: lib
 
-ifdef BUILD_SIMCODE
-ifdef PSLSE_ROOT
-# environment variable PSLSE_ROOT defined by hardware setup scripts
-PSLSE_DIR = $(PSLSE_ROOT)
-else
-# use default path if PSLSE_ROOT is not defined
-PSLSE_DIR = ../../pslse
-endif
-lib: ..check_pslse
+PLATFORM ?= $(shell uname -i)
+ifeq ($(PLATFORM),x86_64)
+BUILD_SIMCODE=1
 endif
 
+ifdef BUILD_SIMCODE
+lib: ..check_pslse
+
 ..check_pslse:
-	@echo "Set PSLSE_DIR to $(PSLSE_DIR)"; 				\
-	if [ ! -d $(PSLSE_DIR) ]; then					\
-		echo "Please install pslse in $(PSLSE_DIR)";		\
+	@echo "PSLSE_ROOT is $(PSLSE_ROOT)"; 				\
+	if [ ! -f $(PSLSE_ROOT)/libcxl/libcxl.h ]; then			\
+		echo "Please install pslse in $(PSLSE_ROOT)";		\
 		echo "  use: git clone https://github.com/ibm-capi/pslse";\
 		echo;							\
 		exit 1;							\
 	fi
+endif
 
 # Only build if the subdirectory is really existent
 .PHONY: $(subdirs) install

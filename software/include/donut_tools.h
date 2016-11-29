@@ -20,15 +20,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <string.h>
-#include <getopt.h>
-#include <errno.h>
-#include <unistd.h>
 #include <ctype.h>
-#include <limits.h>
-#include <time.h>		/* clock_gettime and friends */
+#include <string.h>
+#include <errno.h>
 #include <sysexits.h>		/* standart application exit codes */
+#include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
+#include <limits.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -181,6 +180,78 @@ static inline void __hexdump(FILE *fp, const void *buff, unsigned int size)
 			fprintf(fp, " | %s\n", ascii);
 	}
 	fprintf(fp, "\n");
+}
+
+static inline ssize_t
+__file_size(const char *fname)
+{
+	int rc;
+	struct stat s;
+
+	rc = lstat(fname, &s);
+	if (rc != 0) {
+		fprintf(stderr, "err: Cannot find %s!\n", fname);
+		return rc;
+	}
+	return s.st_size;
+}
+
+static inline ssize_t
+__file_read(const char *fname, uint8_t *buff, size_t len)
+{
+	int rc;
+	FILE *fp;
+
+	if ((fname == NULL) || (buff == NULL) || (len == 0))
+		return -EINVAL;
+
+	fp = fopen(fname, "r");
+	if (!fp) {
+		fprintf(stderr, "err: Cannot open file %s: %s\n",
+			fname, strerror(errno));
+		return -ENODEV;
+	}
+	rc = fread(buff, len, 1, fp);
+	if (rc == -1) {
+		fprintf(stderr, "err: Cannot read from %s: %s\n",
+			fname, strerror(errno));
+		fclose(fp);
+		return -EIO;
+	}
+	fclose(fp);
+	return rc;
+}
+
+static inline ssize_t
+__file_write(const char *fname, const uint8_t *buff, size_t len)
+{
+	int rc;
+	FILE *fp;
+
+	if ((fname == NULL) || (buff == NULL) || (len == 0))
+		return -EINVAL;
+
+	fp = fopen(fname, "w+");
+	if (!fp) {
+		fprintf(stderr, "err: Cannot open file %s: %s\n",
+			fname, strerror(errno));
+		return -ENODEV;
+	}
+	rc = fwrite(buff, len, 1, fp);
+	if (rc == -1) {
+		fprintf(stderr, "err: Cannot write to %s: %s\n",
+			fname, strerror(errno));
+		fclose(fp);
+		return -EIO;
+	}
+	fclose(fp);
+	return rc;
+}
+
+static inline void __free(void *ptr)
+{
+	if (ptr)
+		free(ptr);
 }
 
 /* ANSI sequences for terminal IO */

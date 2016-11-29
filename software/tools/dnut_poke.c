@@ -21,7 +21,7 @@
 #include <endian.h>
 #include <asm/byteorder.h>
 #include <sys/mman.h>
-
+#include <getopt.h>
 #include <donut_tools.h>
 #include <libdonut.h>
 #include "force_cpu.h"
