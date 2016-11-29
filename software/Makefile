@@ -25,6 +25,17 @@
 # relative path settings nicely. If that does not work for some valid reason,
 # we should discuss creating a new generic.mk or alike file.
 #
+PLATFORM ?= $(shell uname -i)
+
+ifeq ($(PLATFORM),x86_64)
+BUILD_SIMCODE=1
+
+ifndef PSLSE_ROOT
+# Environment variable PSLSE_ROOT defined by hardware setup scripts.
+# Use default path if PSLSE_ROOT is not defined.
+PSLSE_ROOT=$(abspath ../../pslse)
+endif
+endif
 
 distro = $(shell lsb_release -d | cut -f2)
 subdirs += lib tools examples
@@ -36,12 +47,17 @@ tools: lib
 
 examples: lib
 
+PLATFORM ?= $(shell uname -i)
+ifeq ($(PLATFORM),x86_64)
+BUILD_SIMCODE=1
+endif
+
 ifdef BUILD_SIMCODE
 lib: ..check_pslse
 
 ..check_pslse:
 	@echo "PSLSE_ROOT is $(PSLSE_ROOT)"; 				\
-	if [ ! -d $(PSLSE_ROOT) ]; then					\
+	if [ ! -f $(PSLSE_ROOT)/libcxl/libcxl.h ]; then			\
 		echo "Please install pslse in $(PSLSE_ROOT)";		\
 		echo "  use: git clone https://github.com/ibm-capi/pslse";\
 		echo;							\
