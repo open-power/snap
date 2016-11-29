@@ -21,7 +21,7 @@ endif
 
 .PHONY: all image model check_donut_settings create_environment copy clean config gitclean
 
-all: config image model
+all: config model image
 
 check_donut_settings:
 	@if [ ! -d "$(DONUT_HARDWARE_ROOT)" ]; then \
