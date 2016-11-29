@@ -28,5 +28,4 @@ set_property SCOPED_TO_CELLS inst/u_ddr3_mem_intfc/u_ddr_cal_riu/mcs0/microblaze
 link_design -top psl_fpga -part xcku060-ffva1156-2-e -quiet
 
 write_bitstream -force ../build/psl_fpga
-
-write_cfgmem -format bin -loadbit "up 0x0 ../build/psl_fpga.bit" -file ../build/psl_fpga -force
+write_cfgmem -format bin -loadbit "up 0x0 ../build/psl_fpga.bit" -file ../build/psl_fpga -size 128 -interface  BPIx16 -force
