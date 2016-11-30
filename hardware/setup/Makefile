@@ -11,7 +11,7 @@ CE_PARMS += -e
 endif
 
 ifndef DDR3_USED
-export DDR3_USED=FALSE
+export DDR3_USED=TRUE
 endif
 
 ifndef ILA_DEBUG
@@ -68,6 +68,7 @@ model:
 image:
 	@echo -e "\t[BUILD_IMAGE] start ($(shell date))"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
+	@vivado -mode batch -source AR_64051.tcl -notrace
 
 clean:
 	@echo -e "\t[CLEAN] build environment";
