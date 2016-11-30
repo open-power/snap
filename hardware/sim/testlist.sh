@@ -4,46 +4,9 @@
   max=1
   stimfile=$(basename "$0");logfile="${stimfile%.*}.log";ts0=$(date +%s);echo "executing $stimfile, logging $logfile maxloop=$max";
   for((i=1;i<=max;i++)) do l="loop=$i of $max"; ts1=$(date +%s);                                                                         #     sec
-#   t="$DONUT_ROOT/software/examples/demo_memcopy            -i ../../1KB.txt -o 1KB.out -t160      ";echo -e "$del\n$l test=$t";time $t #     5..7
-#   t="$DONUT_ROOT/software/examples/demo_memcopy        -C0 -i ../../1KB.txt -o 1KB.out -t10       ";echo -e "$del\n$l test=$t";time $t #     5..7
-#   t="$DONUT_ROOT/software/examples/demo_search  -p'A'  -C0 -i ../../1KB.txt            -t100      ";echo -e "$del\n$l test=$t";time $t #    31..34
-#   t="$DONUT_ROOT/software/examples/demo_search  -pX        -i ../../1KB.txt            -t100      ";echo -e "$del\n$l test=$t";time $t #    32..35
-#   t="$DONUT_ROOT/software/examples/demo_search  -p0123     -i ../../1KB.txt            -t500      ";echo -e "$del\n$l test=$t";time $t #    33
-#   t="$DONUT_ROOT/software/examples/demo_search  -p0123     -i ../../1KB.txt            -t500  -vvv";echo -e "$del\n$l test=$t";time $t #    36
-#   t="$DONUT_ROOT/software/examples/demo_search  -ph        -i ../../1KB.txt            -t100      ";echo -e "$del\n$l test=$t";time $t #    31..32
-#   t="$DONUT_ROOT/software/examples/demo_search  -ph        -i ../../1KB.txt            -t100  -vvv";echo -e "$del\n$l test=$t";time $t #    33
-#   t="$DONUT_ROOT/software/examples/demo_search  -p'x'      -i ../../fox1.txt           -t30   -v  ";echo -e "$del\n$l test=$t";time $t #     9       result=0   ok
-#   t="$DONUT_ROOT/software/examples/demo_search  -px        -i ../../fox1.txt           -t30   -v  ";echo -e "$del\n$l test=$t";time $t #     7       result=1   ok
-#   t="$DONUT_ROOT/software/examples/demo_search  -pfox      -i ../../fox1.txt           -t30   -v  ";echo -e "$del\n$l test=$t";time $t #     8       result=1   ok
-
-    t="$DONUT_ROOT/software/examples/demo_search  -pt        -i ../../fox1.txt           -t30   -v  ";echo -e "$del\n$l test=$t";time $t #     9..13   result=2   ok
-    t="$DONUT_ROOT/software/examples/demo_search  -pthe      -i ../../fox10.txt          -t80   -v  ";echo -e "$del\n$l test=$t";time $t #    17       result=20  ok
-    t="$DONUT_ROOT/software/examples/demo_search  -pthe      -i ../../fox20.txt          -t200  -v  ";echo -e "$del\n$l test=$t";time $t #    43       result=40  ok
-    t="$DONUT_ROOT/software/examples/demo_search  -pt        -i ../../fox40.txt          -t900  -v  ";echo -e "$del\n$l test=$t";time $t #   104..253  result=80  ok
-    t="$DONUT_ROOT/software/examples/demo_search  -pt        -i ../../fox80.txt          -t1000 -v  ";echo -e "$del\n$l test=$t";time $t #
-#   t="$DONUT_ROOT/software/examples/demo_search  -pt        -i ../../fox100.txt         -t2000 -v  ";echo -e "$del\n$l test=$t";time $t #   490..681  result=200 ok
-#   t="$DONUT_ROOT/software/examples/demo_search  -pt        -i ../../fox160.txt         -t3600 -v  ";echo -e "$del\n$l test=$t";time $t #
-#   t="$DONUT_ROOT/software/examples/demo_search  -pt        -i ../../fox320.txt         -t7200 -v  ";echo -e "$del\n$l test=$t";time $t #
-
-    t="$DONUT_ROOT/software/examples/demo_search  -p.        -i ../../fox1.txt           -t30   -v  ";echo -e "$del\n$l test=$t";time $t #
-    t="$DONUT_ROOT/software/examples/demo_search  -p.        -i ../../fox10.txt          -t80   -v  ";echo -e "$del\n$l test=$t";time $t #
-    t="$DONUT_ROOT/software/examples/demo_search  -p.        -i ../../fox20.txt          -t200  -v  ";echo -e "$del\n$l test=$t";time $t #
-    t="$DONUT_ROOT/software/examples/demo_search  -p.        -i ../../fox40.txt          -t900  -v  ";echo -e "$del\n$l test=$t";time $t #
-    t="$DONUT_ROOT/software/examples/demo_search  -p.        -i ../../fox80.txt          -t1000 -v  ";echo -e "$del\n$l test=$t";time $t #
-#   t="$DONUT_ROOT/software/examples/demo_search  -p.        -i ../../fox100.txt         -t2000 -v  ";echo -e "$del\n$l test=$t";time $t #
-#   t="$DONUT_ROOT/software/examples/demo_search  -p.        -i ../../fox160.txt         -t3600 -v  ";echo -e "$del\n$l test=$t";time $t #
-#   t="$DONUT_ROOT/software/examples/demo_search  -p.        -i ../../fox320.txt         -t7200 -v  ";echo -e "$del\n$l test=$t";time $t #
-
-#   t="$DONUT_ROOT/software/examples/demo_search  -pf        -i ../../in.txt             -t2000 -v  ";echo -e "$del\n$l test=$t";time $t #  3055
-#   t="$DONUT_ROOT/software/examples/demo_search  -p1234     -i ../../in.txt             -t5000 -v  ";echo -e "$del\n$l test=$t";time $t #
-#   t="$DONUT_ROOT/software/examples/demo_search  -pCopy     -i ../../in.txt             -t5000 -v  ";echo -e "$del\n$l test=$t";time $t #
-#   t="$DONUT_ROOT/software/examples/demo_search  -ph        -i ../../in.txt             -t5000 -v  ";echo -e "$del\n$l test=$t";time $t #
-#   t="$DONUT_ROOT/software/examples/demo_search  -phhh      -i ../../in.txt             -t5000 -v  ";echo -e "$del\n$l test=$t";time $t #
-#   t="$DONUT_ROOT/software/examples/demo_search  -psh       -i ../../in.txt             -t5000 -v  ";echo -e "$del\n$l test=$t";time $t #
-
-#   t="$DONUT_ROOT/software/tools/dnut_peek       0000                                              ";echo -e "$del\n$l test=$t";time $t #     1
-#   t="$DONUT_ROOT/software/tools/dnut_peek       1000                                              ";echo -e "$del\n$l test=$t";time $t #     1
-#   t="$DONUT_ROOT/software/tools/dnut_peek       10000                                             ";echo -e "$del\n$l test=$t";time $t #     1
+    t="$DONUT_ROOT/software/tools/dnut_peek       0000                                              ";echo -e "$del\n$l test=$t";time $t #     1
+    t="$DONUT_ROOT/software/tools/dnut_peek       1000                                              ";echo -e "$del\n$l test=$t";time $t #     1
+    t="$DONUT_ROOT/software/tools/dnut_peek       10000                                             ";echo -e "$del\n$l test=$t";time $t #     1
 
 #   t="$DONUT_ROOT/software/tools/stage1                                                        -v  ";echo -e "$del\n$l test=$t";time $t #     4..timeout endless
 #e  t="$DONUT_ROOT/software/tools/stage1                                                 -t10   -v  ";echo -e "$del\n$l test=$t";time $t # invalid option -t
@@ -55,7 +18,6 @@
 #   t="$DONUT_ROOT/software/tools/stage2          -a1 -s2  -e8  -i1                      -t10       ";echo -e "$del\n$l test=$t";time $t #     5..11
 #e  t="$DONUT_ROOT/software/tools/stage2          -a2                                           -vvv";echo -e "$del\n$l test=$t";time $t # memcmp failed
 #e  t="$DONUT_ROOT/software/tools/stage2          -a2 -z0                                -t50   -v  ";echo -e "$del\n$l test=$t";time $t # memcmp failed
-#   t="$DONUT_ROOT/software/tools/stage2          -a2 -z1                                -t10       ";echo -e "$del\n$l test=$t";time $t #     4..timeout
 #   t="$DONUT_ROOT/software/tools/stage2          -a2 -z1                                -t100      ";echo -e "$del\n$l test=$t";time $t #     4
 #t  t="$DONUT_ROOT/software/tools/stage2          -a2 -z2                                -t500  -v  ";echo -e "$del\n$l test=$t";time $t # timeout
 #   t="$DONUT_ROOT/software/tools/stage2          -a3                                    -t10       ";echo -e "$del\n$l test=$t";time $t #     1
@@ -63,6 +25,47 @@
 #   t="$DONUT_ROOT/software/tools/stage2          -a5                                    -t10       ";echo -e "$del\n$l test=$t";time $t #     1..3
 #   t="$DONUT_ROOT/software/tools/stage2          -a6 -z1                                -t100      ";echo -e "$del\n$l test=$t";time $t #     6..10
 #e  t="$DONUT_ROOT/software/tools/stage2          -a6                                           -vvv";echo -e "$del\n$l test=$t";time $t # memcmp error
+
+#   t="$DONUT_ROOT/software/examples/demo_memcopy        -C0 -i ../../1KB.txt -o 1KB.out -t10       ";echo -e "$del\n$t $l";time $t #     5..7
+    #### select 1 selection loop
+    # for size in 2 83; do   			# strill error with 83B ?
+    # for size in 2 20 200; do   		# 16B unaligned
+      for size in 2 8 16 64 128 256; do		# 16B aligned
+    # for size in 2 20 30 31 32 33 80 81 255 256 257 1024 1025 4096 4097; do
+      t="$DONUT_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -t20"; echo -e "$del\n$t $l";	# memcopy without checking behind buffer
+      #### select 1 type of data generation
+      # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo				# same char mult times
+      # cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w ${size}|head -n 1 >${size}.in;head ${size}.in	# random data alphanumeric, includes EOF
+      # dd if=/dev/urandom bs=${size} count=1 >${size}.in;						# random data any char, no echo due to unprintable char
+        cmd='print("A" * '${size}', end="")'; python3 -c "$cmd" >${size}.in;head ${size}.in;echo	# data generated with python
+      time $t;rc=$?;if diff ${size}.in ${size}.out>/dev/null; then echo "$t RC=$rc file_diff ok";rm ${size}.*;else echo "$t RC=$rc file_diff is wrong"; exit 1;fi
+    done
+
+#   t="$DONUT_ROOT/software/examples/demo_search  -p'A'  -C0 -i ../../1KB.txt            -t100      ";echo -e "$del\n$l test=$t";time $t #    31..34
+#   t="$DONUT_ROOT/software/examples/demo_search  -pX        -i ../../1KB.txt            -t100      ";echo -e "$del\n$l test=$t";time $t #    32..35
+#   t="$DONUT_ROOT/software/examples/demo_search  -p0123     -i ../../1KB.txt            -t500      ";echo -e "$del\n$l test=$t";time $t #    33
+#   t="$DONUT_ROOT/software/examples/demo_search  -ph        -i ../../1KB.txt            -t100      ";echo -e "$del\n$l test=$t";time $t #    31..32
+#   t="$DONUT_ROOT/software/examples/demo_search  -ph        -i ../../1KB.txt            -t100  -vvv";echo -e "$del\n$l test=$t";time $t #    33
+#   t="$DONUT_ROOT/software/examples/demo_search  -p.        -i ../../fox1.txt           -t30   -v  ";echo -e "$del\n$l test=$t";time $t #
+#   t="$DONUT_ROOT/software/examples/demo_search  -p.        -i ../../fox10.txt          -t80   -v  ";echo -e "$del\n$l test=$t";time $t #
+    #### select one selection loop
+    # for size in 2000; do
+      for size in 20 83; do
+    # for size in {1..5}; do
+    # for size in 2 20 30 31 32 33 80 81 255 256 257 1024 1025 4096 4097; do
+      echo -e "$del\n"; to=$((size/3+20))							# rough timeout dependent on filesize
+      #### select 1 search char
+      # char=$(cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w 1|head -n 1)				# one random ASCII  char to search for
+        char='A'                                                          			# one deterministic char to search for
+      #### select 1 type of data generation
+      # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo				# same char mult times
+      # cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w ${size}|head -n 1 >${size}.in;head ${size}.in	# random data alphanumeric, includes EOF
+      # dd if=/dev/urandom bs=${size} count=1 >${size}.in;						# random data any char, no echo due to unprintable char
+        cmd='print("A" * '${size}', end="")'; python3 -c "$cmd" >${size}.in;head ${size}.in;echo	# data generated with python
+      count=$(fgrep -o $char ${size}.in|wc -l);							# expected occurence of char in file
+      t="$DONUT_ROOT/software/examples/demo_search -p${char} -i${size}.in -E${count} -t$to -v"; echo -e "$t $l";time $t;echo "$t RC=$?"
+    done
+
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"
   done; l=""; ts3=$(date +%s); totaltime=`expr $ts3 - $ts0`; echo "loops=$max total_time=$totaltime"
 
