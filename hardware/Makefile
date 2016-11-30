@@ -31,7 +31,7 @@ check_donut_settings:
 	fi
 
 create_environment:
-	$(DONUT_HARDWARE_ROOT)/setup/create_environment $(CE_PARMS)
+	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment $(CE_PARMS)
 	@echo -e "\t[CREATE_ENVIRONMENT] done ($(shell date))"
 
 copy $(BUILD_DIR)/psl_fpga.tcl:
@@ -65,7 +65,7 @@ config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl create_environment $(BUIL
 
 model:
 	@echo -e "\t[BUILD MODEL] start ($(shell date))"
-	./setup/create_environment -b
+	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
 	@echo -e "\t[BUILD MODEL] done ($(shell date))"
 
 image:
