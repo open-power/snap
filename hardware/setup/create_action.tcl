@@ -92,9 +92,8 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
  set_property location {1143 132} [get_bd_intf_ports axi_host_mem]
 #axi_card_mem0 port
  create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 axi_card_mem0
- set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {64}] [get_bd_intf_ports axi_card_mem0]
- set_property -dict [list CONFIG.DATA_WIDTH {128}] [get_bd_intf_ports axi_card_mem0]
- set_property -dict [list CONFIG.FREQ_HZ {250000000}] [get_bd_intf_ports axi_card_mem0]
+ set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {2} ] [get_bd_intf_ports axi_card_mem0]
+ set_property -dict [list CONFIG.FREQ_HZ {200000000}] [get_bd_intf_ports axi_card_mem0]
  set_property CONFIG.ASSOCIATED_BUSIF {axi_card_mem0:axi_host_mem} [get_bd_ports /action_clk]
  set_property CONFIG.ASSOCIATED_BUSIF {axi_card_mem0} [get_bd_ports /card_mem0_clk]
 
