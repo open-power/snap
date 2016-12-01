@@ -31,6 +31,14 @@ The environment variable DIMMTEST needs to point to the directory containing tha
 
 The path to the set of actions that shall be included is defined via the environment variable ACTION_ROOT.
 Currently it has to point to a directory within $DONUT_HARDWARE_ROOT/action_examples.
+This directory needs to contain an action_wrapper entity as interface between the actions and the SNAP framework.
+Corresponding to the ports that the SNAP framework provides:  
+* an AXI master port for MMIO based control
+* an AXI slave port for host DMA traffic
+* an optional AXI slave port for on card DDR3 RAM traffic
+the port map of the action_wrapper has to consist of the correspondig counterparts.  
+Examples for actions together with their wrappers may be found in $DONUT_HARDWARE_ROOT/action_examples/empty and in $DONUT_HARDWARE_ROOT/action_examples.
+
 
 # Image and model build
 
@@ -51,7 +59,8 @@ As usual you may set the variable with the call of make:
 
     make config ACTION_ROOT=$DONUT_HARDWARE_ROOT/action_examples/memcopy
 
-If you call make w/o any targets then the environment is created and model build as well as an image build are kicked off.
+If you call make w/o any targets then the environment is created and a simulation model build
+as well as a card image build are kicked off.
 In order to build a model and an image including the memcopy action example call:
 
     make ACTION_ROOT=$DONUT_HARDWARE_ROOT/action_examples/memcopy
