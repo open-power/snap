@@ -38,7 +38,7 @@ Corresponding to the ports that the SNAP framework provides:
 * an optional AXI slave port for on card DDR3 RAM traffic
 
 the port map of the action_wrapper has to consist of the correspondig counterparts.  
-Examples for actions together with their wrappers may be found in $DONUT_HARDWARE_ROOT/action_examples/empty and in $DONUT_HARDWARE_ROOT/action_examples.
+Examples for actions together with their wrappers may be found in $DONUT_HARDWARE_ROOT/action_examples/empty and in $DONUT_HARDWARE_ROOT/action_examples/memcopy.
 
 
 # Image and model build
