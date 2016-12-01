@@ -57,6 +57,18 @@ create_ip_run [get_files -of_objects [get_fileset sources_1] $ip_dir/fifo_129x51
 launch_run -jobs 6 fifo_129x512_synth_1
 export_simulation -of_objects [get_files $ip_dir/fifo_129x512/fifo_129x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
 
+#create clock converter for axi_card_mem
+create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir
+set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {1}] [get_ips axi_clock_converter]
+generate_target {instantiation_template} [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci]
+generate_target all [get_files  $ip_dir/axi_clock_converter/axi_clock_converter.xci]
+export_ip_user_files -of_objects [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] -no_script -force -quiet
+create_ip_run [get_files -of_objects [get_fileset sources_1] $ip_dir/axi_clock_converter/axi_clock_converter.xci]
+launch_run -jobs 6 axi_clock_converter_synth_1
+export_simulation -of_objects [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
+
+
+
 #choose type of RAm that will be connected to the DDR3 AXI Interface
 if { $ddr3_used == TRUE } {
   #DDR3 create ddr3sdramm with ECC

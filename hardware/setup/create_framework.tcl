@@ -71,6 +71,9 @@ add_files -norecurse $root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci
 export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci"] -force -quiet
 add_files -norecurse  $root_dir/ip/fifo_129x512/fifo_129x512.xci
 export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_129x512/fifo_129x512.xci"] -force -quiet
+add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci
+export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force -quiet
+
 if { $ddr3_used == TRUE } {
   add_files -norecurse $root_dir/ip/ddr3sdram/ddr3sdram.xci
   export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr3sdram/ddr3sdram.xci"] -force -quiet

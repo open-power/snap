@@ -66,15 +66,11 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
  set_property CONFIG.FREQ_HZ 250000000 [get_bd_ports action_clk]
  create_bd_port -dir I -type rst action_rst_n
  set_property CONFIG.ASSOCIATED_RESET {action_rst_n} [get_bd_ports /action_clk]
- create_bd_port -dir I -type rst card_mem0_rst_n
- create_bd_port -dir I -type clk card_mem0_clk
- set_property CONFIG.FREQ_HZ 200000000 [get_bd_ports card_mem0_clk]
 #axi_ctrl_reg port
  create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 axi_ctrl_reg
  set_property -dict [list CONFIG.FREQ_HZ {250000000}] [get_bd_intf_ports axi_ctrl_reg]
  set_property CONFIG.CLK_DOMAIN action_clk [get_bd_intf_ports axi_ctrl_reg]
  set_property CONFIG.MAX_BURST_LENGTH 1 [get_bd_intf_ports axi_ctrl_reg]
- set_property CONFIG.ASSOCIATED_BUSIF {axi_ctrl_reg} [get_bd_ports /action_clk]
  set_property CONFIG.SUPPORTS_NARROW_BURST 0 [get_bd_intf_ports axi_ctrl_reg]
  set_property CONFIG.PROTOCOL AXI4LITE [get_bd_intf_ports axi_ctrl_reg]
 #axi_host_mem port
@@ -83,7 +79,6 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
  set_property -dict [list CONFIG.FREQ_HZ {250000000}] [get_bd_intf_ports axi_host_mem]
  set_property CONFIG.DATA_WIDTH 128 [get_bd_intf_ports axi_host_mem]
  set_property CONFIG.CLK_DOMAIN action_clk [get_bd_intf_ports axi_host_mem]
- set_property CONFIG.ASSOCIATED_BUSIF {axi_host_mem} [get_bd_ports /action_clk]
  set_property CONFIG.HAS_REGION 0 [get_bd_intf_ports axi_host_mem]
  set_property CONFIG.NUM_READ_OUTSTANDING 2 [get_bd_intf_ports axi_host_mem]
  set_property CONFIG.NUM_WRITE_OUTSTANDING 2 [get_bd_intf_ports axi_host_mem]
@@ -94,9 +89,7 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
  create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 axi_card_mem0
  set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {2} ] [get_bd_intf_ports axi_card_mem0]
  set_property -dict [list CONFIG.FREQ_HZ {200000000}] [get_bd_intf_ports axi_card_mem0]
- set_property CONFIG.ASSOCIATED_BUSIF {axi_card_mem0:axi_host_mem} [get_bd_ports /action_clk]
- set_property CONFIG.ASSOCIATED_BUSIF {axi_card_mem0} [get_bd_ports /card_mem0_clk]
-
+ set_property CONFIG.ASSOCIATED_BUSIF {axi_card_mem0:axi_ctrl_reg:axi_host_mem} [get_bd_ports /action_clk]
 
 # create internal clock and system reset IP
  create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:5.2 clk_wiz_0
@@ -139,13 +132,13 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins axi_interconnect_2/ACLK]
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins axi_interconnect_2/S00_ACLK]
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins memcopy_0/m01_axi_aclk]
- connect_bd_net [get_bd_ports card_mem0_clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
- connect_bd_net [get_bd_ports card_mem0_rst_n] [get_bd_pins axi_interconnect_2/M00_ARESETN]
+ connect_bd_net [get_bd_ports /action_clk] [get_bd_pins axi_interconnect_2/M00_ACLK]
+ connect_bd_net [get_bd_pins axi_interconnect_2/M00_ARESETN] [get_bd_pins axi_interconnect_1/M00_ARESETN] -boundary_type upper
  connect_bd_intf_net [get_bd_intf_pins memcopy_0/m01_axi] -boundary_type upper [get_bd_intf_pins axi_interconnect_2/S00_AXI]
  connect_bd_intf_net [get_bd_intf_ports axi_card_mem0] -boundary_type upper [get_bd_intf_pins axi_interconnect_2/M00_AXI]
  connect_bd_net [get_bd_ports action_rst_n] [get_bd_pins axi_interconnect_0/S00_ARESETN]
  connect_bd_net [get_bd_ports action_rst_n] [get_bd_pins axi_interconnect_0/ARESETN]
- connect_bd_net [get_bd_pins proc_sys_reset_0/interconnect_aresetn] [get_bd_pins axi_interconnect_0/M00_ARESETN]
+ connect_bd_net [get_bd_pins axi_interconnect_0/M00_ARESETN] [get_bd_pins proc_sys_reset_0/interconnect_aresetn]
  connect_bd_intf_net [get_bd_intf_ports axi_ctrl_reg] -boundary_type upper [get_bd_intf_pins axi_interconnect_0/S00_AXI]
  connect_bd_net [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins axi_interconnect_0/M00_ACLK]
  connect_bd_net [get_bd_ports /action_clk] [get_bd_pins axi_interconnect_0/S00_ACLK]

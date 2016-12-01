@@ -28,8 +28,6 @@ entity action_wrapper is
   port (
     action_clk : in STD_LOGIC;
     action_rst_n : in STD_LOGIC;
-    card_mem0_clk : in STD_LOGIC;
-    card_mem0_rst_n : in STD_LOGIC;
     --
     -- AXI DDR3 Interface
     axi_card_mem0_araddr : out STD_LOGIC_VECTOR ( 32 downto 0 );
@@ -146,8 +144,6 @@ architecture STRUCTURE of action_wrapper is
   port (
     action_clk : in STD_LOGIC;
     action_rst_n : in STD_LOGIC;
-    card_mem0_clk : in STD_LOGIC;
-    card_mem0_rst_n : in STD_LOGIC;
     axi_card_mem0_awaddr : out STD_LOGIC_VECTOR ( 32 downto 0 );
     axi_card_mem0_awlen : out STD_LOGIC_VECTOR ( 7 downto 0 );
     axi_card_mem0_awsize : out STD_LOGIC_VECTOR ( 2 downto 0 );
@@ -358,8 +354,6 @@ action_i: component action
       axi_host_mem_wready => axi_host_mem_wready,
       axi_host_mem_wstrb(15 downto 0) => axi_host_mem_wstrb(15 downto 0),
       axi_host_mem_wuser(0) => axi_host_mem_wuser(0),
-      axi_host_mem_wvalid => axi_host_mem_wvalid,
-      card_mem0_clk => card_mem0_clk,
-      card_mem0_rst_n => card_mem0_rst_n
+      axi_host_mem_wvalid => axi_host_mem_wvalid
     );
 end STRUCTURE;
