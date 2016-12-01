@@ -32,10 +32,11 @@ The environment variable DIMMTEST needs to point to the directory containing tha
 The path to the set of actions that shall be included is defined via the environment variable ACTION_ROOT.
 Currently it has to point to a directory within $DONUT_HARDWARE_ROOT/action_examples.
 This directory needs to contain an action_wrapper entity as interface between the actions and the SNAP framework.
-Corresponding to the ports that the SNAP framework provides:  
+Corresponding to the ports that the SNAP framework provides:
 * an AXI master port for MMIO based control
 * an AXI slave port for host DMA traffic
 * an optional AXI slave port for on card DDR3 RAM traffic
+
 the port map of the action_wrapper has to consist of the correspondig counterparts.  
 Examples for actions together with their wrappers may be found in $DONUT_HARDWARE_ROOT/action_examples/empty and in $DONUT_HARDWARE_ROOT/action_examples.
 
