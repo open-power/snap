@@ -22,7 +22,7 @@ set pslse_dir  $::env(PSLSE_ROOT)
 set dimm_dir   $::env(DIMMTEST)
 set ies_libs   $::env(FRAMEWORK_ROOT)/ies_libs
 set build_dir  $::env(DONUT_HARDWARE_ROOT)/build
-set action_dir $::env(ACTION_PATH)
+set action_dir $::env(ACTION_ROOT)
 set ddr3_used  $::env(DDR3_USED)
 
 puts $root_dir

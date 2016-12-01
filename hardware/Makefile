@@ -15,8 +15,8 @@ ifndef ILA_DEBUG
 export ILA_DEBUG=FALSE
 endif
 
-ifndef ACTION_PATH
-export ACTION_PATH=$(DONUT_HARDWARE_ROOT)/action_examples/empty
+ifndef ACTION_ROOT
+export ACTION_ROOT=$(DONUT_HARDWARE_ROOT)/action_examples/empty
 endif
 
 .PHONY: all image model check_donut_settings create_environment copy clean config gitclean

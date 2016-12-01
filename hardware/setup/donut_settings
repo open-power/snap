@@ -109,11 +109,11 @@ else
   echo "DONUT_HARDWARE_ROOT  is set to \"$DONUT_HARDWARE_ROOT\""
 fi
 
-if [ -z "$ACTION_PATH" ]; then
+if [ -z "$ACTION_ROOT" ]; then
   echo
-  echo "Variable ACTION_PATH is not set. Please let it point to your action source if you want to add an action to your project."
+  echo "Variable ACTION_ROOT is not set. Please let it point to your action source if you want to add an action to your project."
 else
-  echo "ACTION_PATH          is set to \"$ACTION_PATH\""
+  echo "ACTION_ROOT          is set to \"$ACTION_ROOT\""
 fi
 
 echo
