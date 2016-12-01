@@ -18,15 +18,16 @@
 
 set root_dir  $::env(DONUT_HARDWARE_ROOT)
 set fpga_part $::env(FPGACHIP)
-set pslse_dir $::env(PSLSE_ROOT)
+set pslse_root $::env(PSLSE_ROOT)
 set dimm_dir  $::env(DIMMTEST)
 set ies_libs  $::env(FRAMEWORK_ROOT)/ies_libs
 set build_dir $::env(DONUT_HARDWARE_ROOT)/build
 set action_example $::env(ACTION_EXAMPLE)
 set ddr3_used $::env(DDR3_USED)
+set simulator $::env(SIMULATOR)
 
 puts $root_dir
-puts $pslse_dir
+puts $pslse_root
 puts $ies_libs
 puts $build_dir
 
@@ -54,8 +55,8 @@ update_compile_order -fileset sources_1
 
 #add sim files
 set_property SOURCE_SET sources_1 [get_filesets sim_1]
-add_files    -fileset sim_1 -norecurse -scan_for_includes $pslse_dir/afu_driver/verilog/top.v
-set_property file_type SystemVerilog [get_files  $pslse_dir/afu_driver/verilog/top.v]
+add_files    -fileset sim_1 -norecurse -scan_for_includes $pslse_root/afu_driver/verilog/top.v
+set_property file_type SystemVerilog [get_files  $pslse_root/afu_driver/verilog/top.v]
 add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/hdl/psl_accel_sim.vhd
 if { $ddr3_used == TRUE } {
   add_files    -fileset sim_1            -scan_for_includes $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/
@@ -111,7 +112,7 @@ read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict
 update_compile_order -fileset sources_1
 add_files -fileset constrs_1 -norecurse $root_dir/setup/donut.xdc
 
-# IMPORT DDR3 XDCs 
+# IMPORT DDR3 XDCs
 if { $ddr3_used == TRUE } {
   add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc
   add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc
@@ -121,15 +122,19 @@ if { $ddr3_used == TRUE } {
 
 # EXPORT SIMULATION
 # for ncsim (IES)
-export_simulation  -lib_map_path "$ies_libs/viv2015_4/ies14.10.s14" -force -directory "$root_dir/sim" -simulator ies
-exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/ies/top.sh
+if { $simulator == "irun" } {
+  export_simulation  -lib_map_path "$ies_libs/viv2015_4/ies14.10.s14" -force -single_step -directory "$root_dir/sim" -simulator ies
+} else {
+  export_simulation  -lib_map_path "$ies_libs/viv2015_4/ies14.10.s14" -force -directory "$root_dir/sim" -simulator ies
+}
+# exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/ies/top.sh
 #for questa
 export_simulation  -lib_map_path "$ies_libs/viv2015_4/mentor13.5" -force -directory "$root_dir/sim" -simulator questa
-exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/questa/top.sh
+# exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/questa/top.sh
 #for xsim
 export_simulation  -force -directory "$root_dir/sim" -simulator xsim
-exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/xsim/top.sh
-exec sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" $root_dir/sim/xsim/top.sh
+# exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/xsim/top.sh
+# exec sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" $root_dir/sim/xsim/top.sh
 
 # SET Synthesis Properties
 set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT 400 [get_runs synth_1]
