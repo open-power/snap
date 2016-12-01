@@ -10,6 +10,7 @@ sed -i '/top    synth_options/ a\
                                              \$rootDir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci \\\
                                              \$rootDir/ip/fifo_129x512/fifo_129x512.xci \\\
                                              \$rootDir/ip/ddr3sdram/ddr3sdram.xci \\\
+                                             \$rootDir/ip/axi_clock_converter/axi_clock_converter.xci \\\
                                            \]' $2
 
 for i in `find . \( ! -regex '.*/\..*' \) -type f -name *.xci | sed 's:./:$rootDir/:' | grep action`; do
