@@ -25,13 +25,17 @@ LDLIBS += -lpthread
 libname=libdonut
 projA = $(libname).a \
 	$(libname).so \
-	$(libname).so.$(MAJOR_VERS) \
+	$(libname).so.$(MAJOR_VERSION) \
 	$(libname).so.$(libversion)
 
 src = donut.c
 objs = $(src:.c=.o)
-
 projs += $(projA)
+
+# Link statically for PSLSE simulation and dynamically for real version
+ifndef BUILD_SIMCODE
+LDLIBS += -lcxl
+endif
 
 all: $(projs)
 
@@ -45,10 +49,10 @@ $(libname).a: __$(libname).o
 $(libname).so:  $(libname).so.$(libversion)
 	ln -sf $< $@
 
-$(libname).so.$(MAJOR_VERS): $(libname).so.$(libversion)
+$(libname).so.$(MAJOR_VERSION): $(libname).so.$(libversion)
 	ln -sf $< $@
 
-# SONAME=-Wl,-soname,$(libname).so.$(MAJOR_VERS)
+# SONAME=-Wl,-soname,$(libname).so.$(MAJOR_VERSION)
 
 $(libname).so.$(libversion): __$(libname).o
 	$(CC) $(LDFLAGS) -shared  $(SONAME) \
