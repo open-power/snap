@@ -65,12 +65,12 @@ if { $ddr3_used == TRUE } {
 update_compile_order -fileset sim_1
 
 #add IPs
-add_files -norecurse $root_dir/ip/ram_576to144x64_2p/ram_576to144x64_2p.xci
-export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_576to144x64_2p/ram_576to144x64_2p.xci"] -force -quiet
-add_files -norecurse $root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci
-export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci"] -force -quiet
-add_files -norecurse  $root_dir/ip/fifo_129x512/fifo_129x512.xci
-export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_129x512/fifo_129x512.xci"] -force -quiet
+add_files -norecurse $root_dir/ip/ram_520x64_2p/ram_520x64_2p.xci
+export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_520x64_2p/ram_520x64_2p.xci"] -force -quiet
+add_files -norecurse $root_dir/ip/ram_584x64_2p/ram_584x64_2p.xci
+export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_584x64_2p/ram_584x64_2p.xci"] -force -quiet
+#add_files -norecurse  $root_dir/ip/fifo_129x512/fifo_129x512.xci
+#export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_129x512/fifo_129x512.xci"] -force -quiet
 add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci
 export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force -quiet
 

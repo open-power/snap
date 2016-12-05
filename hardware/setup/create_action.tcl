@@ -77,7 +77,7 @@ create_bd_cell -type ip -vlnv IP:user:opencldesign_wrapper:1.0 opencldesign_wrap
  create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 axi_host_mem
  set_property CONFIG.ADDR_WIDTH 64 [get_bd_intf_ports axi_host_mem]
  set_property -dict [list CONFIG.FREQ_HZ {250000000}] [get_bd_intf_ports axi_host_mem]
- set_property CONFIG.DATA_WIDTH 128 [get_bd_intf_ports axi_host_mem]
+ set_property CONFIG.DATA_WIDTH 512 [get_bd_intf_ports axi_host_mem]
  set_property CONFIG.CLK_DOMAIN action_clk [get_bd_intf_ports axi_host_mem]
  set_property CONFIG.HAS_REGION 0 [get_bd_intf_ports axi_host_mem]
  set_property CONFIG.NUM_READ_OUTSTANDING 2 [get_bd_intf_ports axi_host_mem]

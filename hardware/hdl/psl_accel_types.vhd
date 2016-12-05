@@ -69,10 +69,10 @@ PACKAGE psl_accel_types IS
     -- 
     --
     constant C_S_AXI_ID_WIDTH       : integer   := 20;
-    constant C_S_AXI_DATA_WIDTH     : integer   := 128;
+    constant C_S_AXI_DATA_WIDTH     : integer   := 512;
     constant C_S_AXI_ADDR_WIDTH     : integer   := 64;
     constant C_DDR_AXI_ID_WIDTH     : integer   := 1;
-    constant C_DDR_AXI_DATA_WIDTH   : integer   := 128;
+    constant C_DDR_AXI_DATA_WIDTH   : integer   := 512;
     constant C_DDR_AXI_ADDR_WIDTH   : integer   := 33;
 
 
