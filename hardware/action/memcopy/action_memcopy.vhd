@@ -31,8 +31,6 @@ entity action_memcopy is
 		-- Users to add parameters here
 
 		-- User parameters ends
-		-- Do not modify the parameters beyond this line
-
 
 		-- Parameters of Axi Slave Bus Interface S00_AXI
 		C_S00_AXI_DATA_WIDTH	: integer	:= 32;
@@ -41,7 +39,7 @@ entity action_memcopy is
 		-- Parameters of Axi Master Bus Interface M00_AXI ; to Host memory 
 		C_M00_AXI_ID_WIDTH	: integer	:= 1;
 		C_M00_AXI_ADDR_WIDTH	: integer	:= 64;
-		C_M00_AXI_DATA_WIDTH	: integer	:= 128;
+		C_M00_AXI_DATA_WIDTH	: integer	:= 512;
 		C_M00_AXI_AWUSER_WIDTH	: integer	:= 1;
 		C_M00_AXI_ARUSER_WIDTH	: integer	:= 1;
 		C_M00_AXI_WUSER_WIDTH	: integer	:= 1;
@@ -51,7 +49,7 @@ entity action_memcopy is
 		-- Parameters of Axi Master Bus Interface M01_AXI ; to DDR memory
 		C_M01_AXI_ID_WIDTH	: integer	:= 1;
 		C_M01_AXI_ADDR_WIDTH	: integer	:= 33;
-		C_M01_AXI_DATA_WIDTH	: integer	:= 128;
+		C_M01_AXI_DATA_WIDTH	: integer	:= 512;
 		C_M01_AXI_AWUSER_WIDTH	: integer	:= 1;
 		C_M01_AXI_ARUSER_WIDTH	: integer	:= 1;
 		C_M01_AXI_WUSER_WIDTH	: integer	:= 1;
@@ -190,11 +188,8 @@ architecture action_memcopy of action_memcopy is
 
 
 
-        type mem_256x128_2p_type  is array (0 to 255) of std_logic_vector(127 downto 0);
-        signal mem_256x128_2p   : mem_256x128_2p_type;
- 
         type   fsm_app_t    is (IDLE, JUST_COUNT_DOWN, WAIT_FOR_MEMCOPY_DONE);
-        type   fsm_copy_t    is (IDLE, WAIT_FOR_DATA, WRITE_DATA, WAIT_FOR_WRITE_DONE);
+        type   fsm_copy_t    is (IDLE, PROCESS_REQUESTS, WAIT_FOR_WRITE_DONE);
         
         signal fsm_app_q        : fsm_app_t;
         signal fsm_copy_q       : fsm_copy_t;
@@ -211,27 +206,28 @@ architecture action_memcopy of action_memcopy is
         signal app_idle         : std_logic;
         signal counter          : std_logic_vector( 7 downto 0);
         signal counter_q        : std_logic_vector(31 downto 0);
-        signal blocks_to_copy   : std_logic_vector(31 downto 12);
+        signal blocks_to_copy   : std_logic_vector(31 downto 6);
         signal mem_wr           : std_logic;
         signal mem_wr_addr      : std_logic_vector(  7 downto 0);
         signal mem_rd_addr      : std_logic_vector(  7 downto 0);
         signal mem_rd_addr_real : std_logic_vector(  7 downto 0);
-        signal mem_wr_data      : std_logic_vector(127 downto 0);
-        signal mem_rd_data      : std_logic_vector(127 downto 0);
+        signal mem_wr_data      : std_logic_vector(511 downto 0);
+        signal mem_rd_data      : std_logic_vector(511 downto 0);
 
         signal dma_rd_req        : std_logic;
         signal dma_rd_req_ack    : std_logic;       
         signal rd_addr           : std_logic_vector( 63 downto 0);      
         signal rd_len            : std_logic_vector(  7 downto 0);
-        signal dma_rd_data       : std_logic_vector(127 downto 0);
+        signal dma_rd_data       : std_logic_vector(511 downto 0);
         signal dma_rd_data_valid : std_logic;
-        signal dma_rd_data_last  : std_logic;
+        signal dma_rd_data_taken : std_logic;
   
         signal dma_wr_req        : std_logic;
+        signal dma_wr_req_ack    : std_logic;
         signal wr_addr           : std_logic_vector( 63 downto 0);      
         signal wr_len            : std_logic_vector(  7 downto 0);
-        signal wr_data           : std_logic_vector(127 downto 0);
-        signal dma_wr_data_strobe: std_logic_vector(15  downto 0);
+        signal wr_data           : std_logic_vector(511 downto 0);
+        signal dma_wr_data_strobe: std_logic_vector( 63  downto 0);
         signal dma_wr_data_valid : std_logic;
         signal dma_wr_data_last  : std_logic;
         signal dma_wr_ready      : std_logic;
@@ -239,14 +235,14 @@ architecture action_memcopy of action_memcopy is
 
         signal ddr_rd_req        : std_logic;
         signal ddr_rd_req_ack    : std_logic;       
-        signal ddr_rd_len        : std_logic_vector(  7 downto 0);
-        signal ddr_rd_data       : std_logic_vector(127 downto 0);
+        signal ddr_rd_data       : std_logic_vector(511 downto 0);
         signal ddr_rd_data_valid : std_logic;
-        signal ddr_rd_data_last  : std_logic;
+        signal ddr_rd_data_taken : std_logic;
                
         signal ddr_wr_req        : std_logic;
         signal ddr_wr_ready      : std_logic;
-        signal ddr_wr_data_strobe: std_logic_vector(15 downto 0);
+        signal ddr_wr_req_ack    : std_logic;
+        signal ddr_wr_data_strobe: std_logic_vector(63 downto 0);
         signal ddr_wr_data_valid : std_logic;
         signal ddr_wr_data_last  : std_logic;
         signal ddr_wr_done       : std_logic;        
@@ -257,6 +253,27 @@ architecture action_memcopy of action_memcopy is
         signal src_ddr           : std_logic;
         signal dest_host         : std_logic;
         signal dest_ddr          : std_logic;
+
+        signal blocks_to_write   : std_logic_vector(31 downto 0);
+        signal blocks_to_read    : std_logic_vector(31 downto 0);
+        signal write_counter_up  : std_logic_vector(25 downto 0);
+        signal write_counter_dn  : std_logic_vector(25 downto 0);
+        signal head              : integer range 0 to 2;
+        signal tail              : integer range 0 to 2;
+        signal reg0_valid        : std_logic;
+        signal reg1_valid        : std_logic;
+        signal reg2_valid        : std_logic;
+        signal reg0_data         : std_logic_vector(511 downto 0);
+        signal reg1_data         : std_logic_vector(511 downto 0);
+        signal reg2_data         : std_logic_vector(511 downto 0);
+        signal wr_req_count      : integer;
+        signal wr_done_count     : integer;
+        signal rd_data_taken     : std_logic;
+        signal rd_req_ack        : std_logic;
+        signal wr_req_ack        : std_logic;
+        signal rd_requests_done  : std_logic;
+        signal wr_requests_done  : std_logic;
+        
         
         
 
@@ -290,16 +307,7 @@ begin
   
   
   
-  process(s00_axi_aclk)
-    begin
-     if rising_edge(s00_axi_aclk) then
-       mem_rd_data <= mem_256x128_2p(to_integer(unsigned(mem_rd_addr_real)));
-       if mem_wr = '1' then
-          mem_256x128_2p(to_integer(unsigned(mem_wr_addr))) <= mem_wr_data;
-       end if;
-     end if;  
-
-    end process;  
+ 
 
 -- Instantiation of Axi Bus Interface S00_AXI
 action_axi_slave_inst : entity work.action_axi_slave
@@ -371,11 +379,12 @@ action_dma_axi_master_inst : entity work.action_axi_master
                 dma_rd_req_ack_o        => dma_rd_req_ack,
                 dma_rd_data_o           => dma_rd_data,
                 dma_rd_data_valid_o     => dma_rd_data_valid,
-                dma_rd_data_last_o      => dma_rd_data_last,
-
+                dma_rd_data_taken_i     => dma_rd_data_taken,
+       
                 dma_wr_req_i            => dma_wr_req,
                 dma_wr_addr_i           => wr_addr,
                 dma_wr_len_i            => wr_len,
+                dma_wr_req_ack_o        => dma_wr_req_ack,
                 dma_wr_data_i           => wr_data,
                 dma_wr_data_strobe_i    => dma_wr_data_strobe,
                 dma_wr_data_last_i      => dma_wr_data_last,
@@ -451,11 +460,12 @@ action_ddr_axi_master_inst : entity work.action_axi_master
                 dma_rd_req_ack_o        => ddr_rd_req_ack,
                 dma_rd_data_o           => ddr_rd_data,
                 dma_rd_data_valid_o     => ddr_rd_data_valid,
-                dma_rd_data_last_o      => ddr_rd_data_last,
-
+                dma_rd_data_taken_i     => ddr_rd_data_taken,
+                
                 dma_wr_req_i            => ddr_wr_req,
                 dma_wr_addr_i           => wr_addr(C_M01_AXI_ADDR_WIDTH -1 downto 0),
                 dma_wr_len_i            => wr_len,
+                dma_wr_req_ack_o        => ddr_wr_req_ack,
                 dma_wr_data_i           => wr_data,
                 dma_wr_data_strobe_i    => ddr_wr_data_strobe,
                 dma_wr_data_last_i      => ddr_wr_data_last,
@@ -529,13 +539,14 @@ action_ddr_axi_master_inst : entity work.action_axi_master
                   app_idle <= '1';
                   
                   if app_start = '1' then
-                    src_ddr   <= '0';
-                    src_host  <= '0';
-                    dest_ddr  <= '0';
-                    dest_host <= '0';
+
+                    src_ddr       <= '0';
+                    src_host      <= '0';
+                    dest_ddr      <= '0';
+                    dest_host     <= '0';
                     case reg_0x10(3 downto 0) is
  
-                      when x"1" =>
+                       when x"1" =>
                         fsm_app_q  <= JUST_COUNT_DOWN;
                         counter_q  <= reg_0x24;
 
@@ -594,96 +605,113 @@ action_ddr_axi_master_inst : entity work.action_axi_master
 	  end if;
 	end process;
 
+  rd_req_ack <= dma_rd_req_ack when src_host  = '1' else ddr_rd_req_ack;
+  wr_req_ack <= dma_wr_req_ack when dest_host = '1' else ddr_wr_req_ack;
+    
         process(s00_axi_aclk ) is
  	begin
 	  if (rising_edge (s00_axi_aclk)) then
-            dma_rd_req        <= '0';
-            ddr_rd_req        <= '0';
-            ddr_wr_req        <= '0';
-            dma_wr_req        <= '0';
-    --        dma_wr_data_valid <= '0';
-    --        ddr_wr_data_valid <= '0';
-    --         dma_wr_data_last  <= '0';
-    --        ddr_wr_data_last  <= '0';
+            
+
+            
+ 
             last_write_done   <= '0';
             mem_wr            <= '0';
 	    if ( s00_axi_aresetn = '0' ) then
               fsm_copy_q         <= IDLE;
+              dma_rd_req         <= '0';
+              dma_wr_req         <= '0';
+              ddr_rd_req         <= '0';
+              ddr_wr_req         <= '0';
      	    else
               case fsm_copy_q is
                 when IDLE =>
-                  mem_rd_addr    <= (others => '0');
-                  mem_wr_addr    <= (others => '1');
-                  blocks_to_copy <= reg_0x24(31 downto 12) - '1';
-                  rd_addr        <= reg_0x18 & reg_0x14;
-                  wr_addr        <= reg_0x20 & reg_0x1c;
-                  rd_len         <= x"ff";  -- burst with 256 cycles                  ;
-                  wr_len         <= x"ff";  -- burst with 256 cycles                  ;
+                  wr_req_count     <= 0;
+                  wr_done_count    <= 0;
+                  blocks_to_read   <= "000000" & reg_0x24(31 downto 6);
+                  blocks_to_write  <= "000000" & reg_0x24(31 downto 6);
+                  rd_addr          <= reg_0x18 & reg_0x14;
+                  wr_addr          <= reg_0x20 & reg_0x1c;
+                  rd_requests_done <= '0';
+                  wr_requests_done <= '0';
                   if start_copy = '1' then
+                    if blocks_to_write >  x"0000_0040" then
+                      rd_len     <= x"3f";
+                      wr_len     <= x"3f";
+                      blocks_to_read  <= blocks_to_read - x"40";
+                      blocks_to_write <= blocks_to_write - x"40";
+                    else
+                      rd_len          <= blocks_to_read (7 downto 0) - '1';
+                      wr_len          <= blocks_to_write(7 downto 0) - '1';
+                      blocks_to_read  <= (others => '0');
+                      blocks_to_write <= (others => '0');
+                    end if;
+                    
                     -- request data either from host or 
                     dma_rd_req <= src_host;
                     ddr_rd_req <= src_ddr;
-                    fsm_copy_q <= WAIT_FOR_DATA; 
+                    dma_wr_req <= dest_host;
+                    ddr_wr_req <= dest_ddr;
+                    fsm_copy_q <= PROCESS_REQUESTS; 
                   end if;
 
-                when WAIT_FOR_DATA =>
-                  if src_host = '1' then
-                    mem_wr_data <= dma_rd_data;
-                    mem_wr      <= dma_rd_data_valid;
-                    mem_wr_addr <= mem_wr_addr + dma_rd_data_valid;
-                  end if;
-                  if src_ddr = '1' then
-                     mem_wr_data <= ddr_rd_data;
-                     mem_wr <= ddr_rd_data_valid;
-                     mem_wr_addr <= mem_wr_addr + ddr_rd_data_valid;
-                  end if;
-                  if (dma_rd_data_last = '1' and src_host = '1') or
-                     (ddr_rd_data_last = '1' and src_ddr  = '1')  then
-                    -- 4k data has been received
-                     dma_wr_req <= dest_host;
-                     ddr_wr_req <= dest_ddr;
-                     counter    <= x"ff";
-                     fsm_copy_q <= WRITE_DATA;
-                  end if;  
+                when PROCESS_REQUESTS =>
+
                   
-                when WRITE_DATA =>
-                  
-                 -- wr_data           <= mem_rd_data;
-                 -- dma_wr_data_valid <= dma_wr_ready and dest_host;
-                 -- ddr_wr_data_valid <= ddr_wr_ready and dest_ddr;
-                  if (dma_wr_ready = '1' and dest_host = '1') or
-                     (ddr_wr_ready = '1' and dest_ddr = '1')  then
-                     mem_rd_addr       <= mem_rd_addr + '1';
-                    counter           <= counter - '1';
-                    if or_reduce(counter) = '0' then
-                       counter           <= counter;
-                      -- burst write done
-                      -- dma_wr_data_last <= dest_host;
-                      -- ddr_wr_data_last <= dest_ddr;
-                      fsm_copy_q       <= WAIT_FOR_WRITE_DONE;
-                    end if;  
+                  if rd_req_ack = '1' and or_reduce(blocks_to_read) = '1' then
+                    rd_addr          <= rd_addr + x"1000";
+                    dma_rd_req       <= src_host;
+                    ddr_rd_req       <= src_ddr;
+                    if blocks_to_read >  x"0000_0040" then
+                      rd_len         <= x"3f";
+                      blocks_to_read <= blocks_to_read - x"40";
+                    else
+                      rd_len         <= blocks_to_read(7 downto 0) - '1';
+                      blocks_to_read <= (others => '0');
+                    end if;
+                  end if;
+                  if rd_req_ack = '1' and or_reduce(blocks_to_read) = '0' then
+                    dma_rd_req       <= '0';
+                    ddr_rd_req       <= '0';
+                    rd_requests_done <= '1';
                   end if;  
+
+                  if wr_req_ack = '1' and or_reduce(blocks_to_write) = '1' then
+                    wr_addr         <= wr_addr + x"1000";
+                    dma_wr_req      <= dest_host;
+                    ddr_wr_req      <= dest_ddr;
+                    if blocks_to_write >  x"0000_0040" then
+                      wr_len     <= x"3f";
+                      blocks_to_write <= blocks_to_write - x"40";
+                    else
+                      wr_len         <= blocks_to_write(7 downto 0) - '1';
+                      blocks_to_write <= (others => '0');
+                    end if;
+                  end if;
+                  if wr_req_ack = '1' and or_reduce(blocks_to_write) = '0' then
+                    dma_wr_req       <= '0';
+                    ddr_wr_req       <= '0';
+                    wr_requests_done <= '1';
+                    
+                  end if;
+                  if rd_requests_done = '1' and wr_requests_done = '1' then
+                    fsm_copy_q      <= WAIT_FOR_WRITE_DONE; 
+                  end if;
 
                  when WAIT_FOR_WRITE_DONE =>
-                   if (dma_wr_done = '1' and dest_host = '1') or
-                      (ddr_wr_done = '1' and dest_ddr  = '1') then
-                     blocks_to_copy <= blocks_to_copy - '1';
-                     if or_reduce(blocks_to_copy) = '0' then
-                       -- all blocks have been copied
-                       last_write_done <= '1';
-                       fsm_copy_q      <= IDLE;
-                     else
-                       -- request next block
-                       dma_rd_req  <= src_host;
-                       ddr_rd_req  <= src_ddr;
-                       rd_addr     <= rd_addr + x"1000";
-                       wr_addr     <= wr_addr + x"1000";
-                       fsm_copy_q  <= WAIT_FOR_DATA; 
-                     end if;  
-                   end if;  
-
-                                        
-              end case;
+                   if or_reduce(write_counter_dn) = '0' and wr_req_count = wr_done_count then
+                     last_write_done <= '1';
+                     fsm_copy_q      <= IDLE;
+                   end if;
+                        
+               end case;
+               if (dma_wr_done = '1' and dest_host = '1') or (ddr_wr_done = '1' and dest_ddr = '1') then
+                 wr_done_count <= wr_done_count + 1;
+               end if;
+               if (dma_wr_req = '1' and dma_wr_req_ack = '1' and dest_host = '1') or
+                  (ddr_wr_req = '1' and ddr_wr_req_ack = '1' and dest_ddr  = '1')   then
+                 wr_req_count <= wr_req_count + 1;
+               end if;    
             end if;
           end if;
 
@@ -693,29 +721,134 @@ action_ddr_axi_master_inst : entity work.action_axi_master
         end process;
 	-- User logic ends
 
+  rd_data_taken <= '1' when (head = 0 and reg0_valid = '0') or
+                            (head = 1 and reg1_valid = '0') or
+                            (head = 2 and reg2_valid = '0')     else '0';
+  dma_rd_data_taken <= rd_data_taken and src_host;
+  ddr_rd_data_taken <= rd_data_taken and src_ddr;
+  
+read_write_process:
+      process(s00_axi_aclk ) is
+ 	begin
+	  if (rising_edge (s00_axi_aclk)) then
+            if start_copy = '1' or s00_axi_aresetn = '0' then
+             
+              tail             <= 0;
+              head             <= 0;
+              reg0_valid       <= '0';
+              reg1_valid       <= '0';
+              reg2_valid       <= '0';
+              write_counter_up <= (25 downto 1 => '0') & '1';
+              write_counter_dn <= blocks_to_write(25 downto 0);
+            else
+              if head = 0 and reg0_valid = '0' then
+                if src_host = '1' then
+                  if dma_rd_data_valid = '1' then
+                    reg0_data  <= dma_rd_data;
+                    reg0_valid <= '1';
+                    head       <= 1;
+                  end if;
+                end if;
+                if src_ddr = '1' then
+                  if ddr_rd_data_valid = '1' then
+                    reg0_data  <= ddr_rd_data;
+                    reg0_valid <= '1';
+                    head       <= 1;
+                  end if;
+                end if;
+              end if;
+              if head = 1 and reg1_valid = '0' then
+                if src_host = '1' then
+                   if dma_rd_data_valid = '1' then
+                     reg1_data  <= dma_rd_data;
+                     reg1_valid <= '1';
+                     head            <= 2;
+                   end if;
+                end if;
+                if src_ddr = '1' then
+                  if ddr_rd_data_valid = '1' then
+                    reg1_data  <= ddr_rd_data;
+                    reg1_valid <= '1';
+                    head       <= 2;
+                  end if;
+                end if;
+              end if;
 
-  wr_data            <= mem_rd_data;
-  dma_wr_data_valid  <= dest_host       when  fsm_copy_q = WRITE_DATA  else '0';
-  ddr_wr_data_valid  <= dest_ddr        when  fsm_copy_q = WRITE_DATA  else '0';
-  dma_wr_data_last   <= dest_host and dma_wr_data_valid  when  or_reduce(counter) = '0' else '0';
-  ddr_wr_data_last   <= dest_ddr  and ddr_wr_data_valid  when  or_reduce(counter) = '0' else '0';
-  ddr_wr_data_strobe <= x"ffff" when ddr_wr_data_valid = '1' else x"0000";    
-  dma_wr_data_strobe <= x"ffff" when dma_wr_data_valid = '1' else x"0000";    
+              if head = 2 and reg2_valid = '0' then
+                if src_host = '1' then
+                   if dma_rd_data_valid = '1' then
+                     reg2_data  <= dma_rd_data;
+                     reg2_valid <= '1';
+                     head       <= 0;
+                   end if;
+                end if;
+                if src_ddr = '1' then
+                  if ddr_rd_data_valid = '1' then
+                    reg2_data  <= ddr_rd_data;
+                    reg2_valid <= '1';
+                    head       <= 0;
+                  end if;
+                end if;
+              end if;
+            end if;
+            if (dma_wr_data_valid = '1' and dma_wr_ready = '1' and dest_host = '1') or
+               (ddr_wr_data_valid = '1' and ddr_wr_ready = '1' and dest_ddr  = '1')    then
+              write_counter_up <= write_counter_up + '1';
+              write_counter_dn <= write_counter_dn - '1';
+              if tail = 0 then
+                tail <= 1;
+                reg0_valid <= '0';
+              end if;
+              if tail = 1 then
+                tail <= 2;
+                reg1_valid <= '0';
+              end if;
+              if tail = 2 then
+                tail <= 0;
+                reg2_valid <= '0';
+              end if;
+            end if;
+            
+          end if;                       -- rising edge
+        end process;  
+  
+write_data_process:
+  process(reg0_data, reg1_data, reg2_data, reg0_valid, reg1_valid, reg2_valid,
+          write_counter_up, reg_0x24, dest_host, dest_ddr  ) is
+    begin
+      case tail is
+        when 0 =>
+          wr_data           <= reg0_data;
+          dma_wr_data_valid <= reg0_valid and dest_host;
+          ddr_wr_data_valid <= reg0_valid and dest_ddr;
+        when 1 => 
+          wr_data           <= reg1_data;
+          dma_wr_data_valid <= reg1_valid and dest_host;
+          ddr_wr_data_valid <= reg1_valid and dest_ddr;
+        when 2 =>
+          wr_data           <= reg2_data;
+          dma_wr_data_valid <= reg2_valid and dest_host;
+          ddr_wr_data_valid <= reg2_valid and dest_ddr;
+        when others => null;
+      end case;
+      if (write_counter_up(25 downto 0) = reg_0x24(31 downto 6)) or
+          or_reduce(write_counter_up(5 downto 0)) = '0'                 then
+        dma_wr_data_last <= '1' and dest_host;
+        ddr_wr_data_last <= '1' and dest_ddr;
+      else
+        dma_wr_data_last <= '0';
+        ddr_wr_data_last <= '0';
+      end if;                                                                 
+
+    end process;
+
+  
+  ddr_wr_data_strobe <= (63 downto 0 => '1') when ddr_wr_data_valid = '1' else (63 downto 0 => '0');    
+  dma_wr_data_strobe <= (63 downto 0 => '1') when dma_wr_data_valid = '1' else (63 downto 0 => '0');    
+  
       
       
-  addr: process ( mem_rd_addr, fsm_copy_q, dma_wr_ready, ddr_wr_ready, dest_ddr, dest_host   )  
-  begin
-    mem_rd_addr_real <= mem_rd_addr;
-    if fsm_copy_q = WRITE_DATA then
-      if (dma_wr_ready = '1' and dest_host = '1') or
-         (ddr_wr_ready = '1' and dest_ddr  = '1')    then
-         mem_rd_addr_real <= mem_rd_addr + '1';
-         
-      end if;
-    end if;
-    
-    
-  end process;
+
       
     
 end action_memcopy;
