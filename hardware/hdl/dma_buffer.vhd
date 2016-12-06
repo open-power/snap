@@ -198,20 +198,12 @@ BEGIN
     rram_waddr            <= ha_b_q.wtag(4 DOWNTO 0) & ha_b_q.wad(0);
     rram_raddr            <= rram_raddr_q(5 DOWNTO 0);
 
-    --128 buf_rrdreq <=  '1' WHEN or_reduce(buf_rrdreq_i & rram_raddr_q(2 DOWNTO 0)) = '1' ELSE '0';
-
     rram_raddr_d     <=               rram_raddr_q       +          "0000001"        WHEN buf_rrdreq_i = '1' AND (read_ctrl_buf_full_i(buf_rtag) = '1') else rram_raddr_q;
     rram_raddr_p_d   <= AC_PPARITH(1, rram_raddr_q, rram_raddr_p_q, "0000001", '0')  WHEN buf_rrdreq_i = '1' AND (read_ctrl_buf_full_i(buf_rtag) = '1') else rram_raddr_p_q;
     rram_rdata_vld_d <=                                                          '1' WHEN buf_rrdreq_i = '1' AND (read_ctrl_buf_full_i(buf_rtag) = '1') else '0';
 
     -- rram_wen only reacts on read tags
     rram_wen                   <= ha_b_q.wvalid when (ha_b_q.wtag(7 DOWNTO 5) = "000") else '0';
-
-    data: FOR i IN 0 TO 3 GENERATE
-    --128  rram_wdata(144*i)                        <=   ha_b_q.wdata(511-(128*i+127)) XOR inject_dma_read_error_i;  -- parity injection into read RAM
-    --128  rram_wdata((144*i+127) DOWNTO 144*i+1)   <=   ha_b_q.wdata(511-(128*i) DOWNTO 512-127 - (128*i));
-    --128  rram_wdata((144*i+143) DOWNTO 144*i+128) <= gen_parity_odd_128(ha_b_q.wdata(511-(128*i) DOWNTO 511-(128*i+127)));
-    END GENERATE;  -- i
     rram_wdata(511 DOWNTO   0) <= ha_b_q.wdata;
     rram_wdata(519 DOWNTO 512) <= ha_b_q.wpar;
 
@@ -358,9 +350,9 @@ BEGIN
         ELSE
           parity_error_fir_q <= '0';
           if buf_wdata_v_i = '1' then
---128            if  gen_parity_odd_128(buf_wdata_i) /= (buf_wdata_p_i xor buf_wdata_be_i) then
---128              parity_error_fir_q <= '1';
---128            end if;
+--512            if  gen_parity_odd_128(buf_wdata_i) /= (buf_wdata_p_i xor buf_wdata_be_i) then
+--512              parity_error_fir_q <= '1';
+--512            end if;
           end if;
           IF wflush = '1' THEN
             --
@@ -409,14 +401,14 @@ BEGIN
             --
             wram_rdata_q   <= wram_rmdata_v;
             wram_rdata_p_q <= (OTHERS => '0');
---            wram_rdata_p_q <= parity_gen_odd(wram_rmdata_p_v(63 DOWNTO 56) & inject_ah_b_rpar_error_i) &
---                              parity_gen_odd(wram_rmdata_p_v(55 DOWNTO 48)                           ) &
---                              parity_gen_odd(wram_rmdata_p_v(47 DOWNTO 40)                           ) &
---                              parity_gen_odd(wram_rmdata_p_v(39 DOWNTO 32)                           ) &
---                              parity_gen_odd(wram_rmdata_p_v(31 DOWNTO 24)                           ) &
---                              parity_gen_odd(wram_rmdata_p_v(23 DOWNTO 16)                           ) &
---                              parity_gen_odd(wram_rmdata_p_v(15 DOWNTO  8)                           ) &
---                              parity_gen_odd(wram_rmdata_p_v( 7 DOWNTO  0)                           );
+--512            wram_rdata_p_q <= parity_gen_odd(wram_rmdata_p_v(63 DOWNTO 56) & inject_ah_b_rpar_error_i) &
+--512                              parity_gen_odd(wram_rmdata_p_v(55 DOWNTO 48)                           ) &
+--512                              parity_gen_odd(wram_rmdata_p_v(47 DOWNTO 40)                           ) &
+--512                              parity_gen_odd(wram_rmdata_p_v(39 DOWNTO 32)                           ) &
+--512                              parity_gen_odd(wram_rmdata_p_v(31 DOWNTO 24)                           ) &
+--512                              parity_gen_odd(wram_rmdata_p_v(23 DOWNTO 16)                           ) &
+--512                              parity_gen_odd(wram_rmdata_p_v(15 DOWNTO  8)                           ) &
+--512                              parity_gen_odd(wram_rmdata_p_v( 7 DOWNTO  0)                           );
           END IF;
         END IF;
       END IF;
