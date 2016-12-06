@@ -337,7 +337,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
     PORT (
       s_axi_aclk      : IN STD_LOGIC;
       s_axi_aresetn   : IN STD_LOGIC;
-      s_axi_awid      : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+      s_axi_awid      : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
       s_axi_awaddr    : IN STD_LOGIC_VECTOR(32 DOWNTO 0);
       s_axi_awlen     : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
       s_axi_awsize    : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -354,11 +354,11 @@ ARCHITECTURE psl_accel OF psl_accel IS
       s_axi_wlast     : IN STD_LOGIC;
       s_axi_wvalid    : IN STD_LOGIC;
       s_axi_wready    : OUT STD_LOGIC;
-      s_axi_bid       : OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
+      s_axi_bid       : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
       s_axi_bresp     : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
       s_axi_bvalid    : OUT STD_LOGIC;
       s_axi_bready    : IN STD_LOGIC;
-      s_axi_arid      : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+      s_axi_arid      : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
       s_axi_araddr    : IN STD_LOGIC_VECTOR(32 DOWNTO 0);
       s_axi_arlen     : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
       s_axi_arsize    : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -370,7 +370,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       s_axi_arqos     : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
       s_axi_arvalid   : IN STD_LOGIC;
       s_axi_arready   : OUT STD_LOGIC;
-      s_axi_rid       : OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
+      s_axi_rid       : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
       s_axi_rdata     : OUT STD_LOGIC_VECTOR(511 DOWNTO 0);
       s_axi_rresp     : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
       s_axi_rlast     : OUT STD_LOGIC;
@@ -378,7 +378,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       s_axi_rready    : IN STD_LOGIC;
       m_axi_aclk      : IN STD_LOGIC;
       m_axi_aresetn   : IN STD_LOGIC;
-      m_axi_awid      : OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
+      m_axi_awid      : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
       m_axi_awaddr    : OUT STD_LOGIC_VECTOR(32 DOWNTO 0);
       m_axi_awlen     : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
       m_axi_awsize    : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -395,11 +395,11 @@ ARCHITECTURE psl_accel OF psl_accel IS
       m_axi_wlast     : OUT STD_LOGIC;
       m_axi_wvalid    : OUT STD_LOGIC;
       m_axi_wready    : IN STD_LOGIC;
-      m_axi_bid       : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+      m_axi_bid       : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
       m_axi_bresp     : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
       m_axi_bvalid    : IN STD_LOGIC;
       m_axi_bready    : OUT STD_LOGIC;
-      m_axi_arid      : OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
+      m_axi_arid      : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
       m_axi_araddr    : OUT STD_LOGIC_VECTOR(32 DOWNTO 0);
       m_axi_arlen     : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
       m_axi_arsize    : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -411,7 +411,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       m_axi_arqos     : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
       m_axi_arvalid   : OUT STD_LOGIC;
       m_axi_arready   : IN STD_LOGIC;
-      m_axi_rid       : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+      m_axi_rid       : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
       m_axi_rdata     : IN STD_LOGIC_VECTOR(511 DOWNTO 0);
       m_axi_rresp     : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
       m_axi_rlast     : IN STD_LOGIC;
@@ -461,7 +461,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       c0_ddr3_s_axi_ctrl_rdata : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
       c0_ddr3_s_axi_ctrl_rresp : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
       c0_ddr3_interrupt : OUT STD_LOGIC;
-      c0_ddr3_s_axi_awid : IN STD_LOGIC_VECTOR(0 TO 0);
+      c0_ddr3_s_axi_awid : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
       c0_ddr3_s_axi_awaddr : IN STD_LOGIC_VECTOR(32 DOWNTO 0);
       c0_ddr3_s_axi_awlen : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
       c0_ddr3_s_axi_awsize : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -478,10 +478,10 @@ ARCHITECTURE psl_accel OF psl_accel IS
       c0_ddr3_s_axi_wvalid : IN STD_LOGIC;
       c0_ddr3_s_axi_wready : OUT STD_LOGIC;
       c0_ddr3_s_axi_bready : IN STD_LOGIC;
-      c0_ddr3_s_axi_bid : OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
+      c0_ddr3_s_axi_bid : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
       c0_ddr3_s_axi_bresp : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
       c0_ddr3_s_axi_bvalid : OUT STD_LOGIC;
-      c0_ddr3_s_axi_arid : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+      c0_ddr3_s_axi_arid : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
       c0_ddr3_s_axi_araddr : IN STD_LOGIC_VECTOR(32 DOWNTO 0);
       c0_ddr3_s_axi_arlen : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
       c0_ddr3_s_axi_arsize : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -496,7 +496,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       c0_ddr3_s_axi_rlast : OUT STD_LOGIC;
       c0_ddr3_s_axi_rvalid : OUT STD_LOGIC;
       c0_ddr3_s_axi_rresp : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
-      c0_ddr3_s_axi_rid : OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
+      c0_ddr3_s_axi_rid : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
       c0_ddr3_s_axi_rdata : OUT STD_LOGIC_VECTOR(511 DOWNTO 0);
       sys_rst : IN STD_LOGIC
     );
@@ -571,10 +571,10 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL axi_card_mem0_rlast     : STD_LOGIC;
   SIGNAL axi_card_mem0_rvalid    : STD_LOGIC;
   SIGNAL axi_card_mem0_rready    : STD_LOGIC;
-  SIGNAL axi_card_mem0_arid      : STD_LOGIC_VECTOR ( 0 to 0 );
-  SIGNAL axi_card_mem0_awid      : STD_LOGIC_VECTOR ( 0 to 0 );
-  SIGNAL axi_card_mem0_bid       : STD_LOGIC_VECTOR ( 0 to 0 );
-  SIGNAL axi_card_mem0_rid       : STD_LOGIC_VECTOR ( 0 to 0 );
+  SIGNAL axi_card_mem0_arid      : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+  SIGNAL axi_card_mem0_awid      : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+  SIGNAL axi_card_mem0_bid       : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+  SIGNAL axi_card_mem0_rid       : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
   --
   -- CLOCK CONVERTER <-> DDR3 Interface
   SIGNAL c0_ddr3_axi_awaddr    : STD_LOGIC_VECTOR ( 32 downto 0 );
@@ -612,10 +612,10 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL c0_ddr3_axi_rlast     : STD_LOGIC;
   SIGNAL c0_ddr3_axi_rvalid    : STD_LOGIC;
   SIGNAL c0_ddr3_axi_rready    : STD_LOGIC;
-  SIGNAL c0_ddr3_axi_arid      : STD_LOGIC_VECTOR ( 0 to 0 );
-  SIGNAL c0_ddr3_axi_awid      : STD_LOGIC_VECTOR ( 0 to 0 );
-  SIGNAL c0_ddr3_axi_bid       : STD_LOGIC_VECTOR ( 0 to 0 );
-  SIGNAL c0_ddr3_axi_rid       : STD_LOGIC_VECTOR ( 0 to 0 );
+  SIGNAL c0_ddr3_axi_arid      : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+  SIGNAL c0_ddr3_axi_awid      : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+  SIGNAL c0_ddr3_axi_bid       : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+  SIGNAL c0_ddr3_axi_rid       : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
   --
   -- DDR3 Bank1 Interace
   SIGNAL c1_init_calib_complete :   STD_LOGIC;
@@ -856,17 +856,17 @@ BEGIN
       axi_host_mem_bresp(1 downto 0)     => sk_d.s_axi_bresp(1 downto 0),
       axi_host_mem_buser(0)              => '0',
       axi_host_mem_bvalid                => sk_d.s_axi_bvalid,
-      axi_host_mem_rdata(127 downto 0)   => sk_d.s_axi_rdata(127 downto 0),
+      axi_host_mem_rdata                 => sk_d.s_axi_rdata,
       axi_host_mem_rid(1 downto 0)       => sk_d.s_axi_rid(1 downto 0),
       axi_host_mem_rlast                 => sk_d.s_axi_rlast,
       axi_host_mem_rready                => ks_d.s_axi_rready,
       axi_host_mem_rresp(1 downto 0)     => sk_d.s_axi_rresp(1 downto 0),
       axi_host_mem_ruser(0)              => '0',
       axi_host_mem_rvalid                => sk_d.s_axi_rvalid,
-      axi_host_mem_wdata(127 downto 0)   => ks_d.s_axi_wdata(127 downto 0),
+      axi_host_mem_wdata                 => ks_d.s_axi_wdata,
       axi_host_mem_wlast                 => ks_d.s_axi_wlast,
       axi_host_mem_wready                => sk_d.s_axi_wready,
-      axi_host_mem_wstrb(15 downto 0)    => ks_d.s_axi_wstrb(15 downto 0),
+      axi_host_mem_wstrb                 => ks_d.s_axi_wstrb,
       axi_host_mem_wuser                 => open,
       axi_host_mem_wvalid                => ks_d.s_axi_wvalid
     );

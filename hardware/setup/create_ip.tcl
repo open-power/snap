@@ -46,16 +46,16 @@ generate_target all [get_files  $ip_dir/ram_584x64_2p/ram_584x64_2p.xci]
 export_ip_user_files -of_objects [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] -no_script -force -quiet
 export_simulation -of_objects [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
 
-##create fifo_129x512
+#create fifo_513x512
 # 
-#create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.0 -module_name fifo_129x512 -dir $ip_dir
-#set_property -dict [list CONFIG.INTERFACE_TYPE {Native} CONFIG.Input_Data_Width {129} CONFIG.Input_Depth {512} CONFIG.Valid_Flag {false} CONFIG.Performance_Options {First_Word_Fall_Through} CONFIG.Write_Acknowledge_Flag {false} CONFIG.Programmable_Full_Type {Single_Programmable_Full_Threshold_Constant} CONFIG.Full_Threshold_Assert_Value {490} CONFIG.Output_Data_Width {129} CONFIG.Output_Depth {512} CONFIG.Reset_Type {Synchronous_Reset} CONFIG.Data_Count_Width {9} CONFIG.Write_Data_Count_Width {9} CONFIG.Read_Data_Count_Width {9} CONFIG.Full_Threshold_Negate_Value {489} CONFIG.FIFO_Implementation_wach {Common_Clock_Distributed_RAM} CONFIG.Full_Threshold_Assert_Value_wach {15} CONFIG.Empty_Threshold_Assert_Value_wach {14} CONFIG.FIFO_Implementation_wdch {Common_Clock_Block_RAM} CONFIG.Input_Depth_wdch {1024} CONFIG.Full_Threshold_Assert_Value_wdch {511} CONFIG.Empty_Threshold_Assert_Value_wdch {510} CONFIG.FIFO_Implementation_wrch {Common_Clock_Distributed_RAM} CONFIG.Full_Threshold_Assert_Value_wrch {15} CONFIG.Empty_Threshold_Assert_Value_wrch {14} CONFIG.FIFO_Implementation_rach {Common_Clock_Distributed_RAM} CONFIG.Full_Threshold_Assert_Value_rach {15} CONFIG.Empty_Threshold_Assert_Value_rach {14} CONFIG.FIFO_Implementation_rdch {Common_Clock_Block_RAM} CONFIG.Input_Depth_rdch {1024} CONFIG.Full_Threshold_Assert_Value_rdch {511} CONFIG.Empty_Threshold_Assert_Value_rdch {510} CONFIG.FIFO_Implementation_axis {Common_Clock_Block_RAM} CONFIG.Input_Depth_axis {1024} CONFIG.Full_Threshold_Assert_Value_axis {511} CONFIG.Empty_Threshold_Assert_Value_axis {510}] [get_ips fifo_129x512]
-#generate_target {instantiation_template} [get_files $ip_dir/fifo_129x512/fifo_129x512.xci]
-#generate_target all [get_files  $ip_dir/fifo_129x512/fifo_129x512.xci]
-#export_ip_user_files -of_objects [get_files $ip_dir/fifo_129x512/fifo_129x512.xci] -no_script -force -quiet
-#create_ip_run [get_files -of_objects [get_fileset sources_1] $ip_dir/fifo_129x512/fifo_129x512.xci]
-#launch_run -jobs 6 fifo_129x512_synth_1
-#export_simulation -of_objects [get_files $ip_dir/fifo_129x512/fifo_129x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
+create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_513x512 -dir $ip_dir
+set_property -dict [list CONFIG.INTERFACE_TYPE {Native} CONFIG.Input_Data_Width {513} CONFIG.Input_Depth {512} CONFIG.Valid_Flag {false} CONFIG.Performance_Options {First_Word_Fall_Through} CONFIG.Write_Acknowledge_Flag {false} CONFIG.Programmable_Full_Type {Single_Programmable_Full_Threshold_Constant} CONFIG.Full_Threshold_Assert_Value {490} CONFIG.Output_Data_Width {513} CONFIG.Output_Depth {512} CONFIG.Reset_Type {Synchronous_Reset} CONFIG.Data_Count_Width {9} CONFIG.Write_Data_Count_Width {9} CONFIG.Read_Data_Count_Width {9} CONFIG.Full_Threshold_Negate_Value {489} CONFIG.FIFO_Implementation_wach {Common_Clock_Distributed_RAM} CONFIG.Full_Threshold_Assert_Value_wach {15} CONFIG.Empty_Threshold_Assert_Value_wach {14} CONFIG.FIFO_Implementation_wdch {Common_Clock_Block_RAM} CONFIG.Input_Depth_wdch {1024} CONFIG.Full_Threshold_Assert_Value_wdch {511} CONFIG.Empty_Threshold_Assert_Value_wdch {510} CONFIG.FIFO_Implementation_wrch {Common_Clock_Distributed_RAM} CONFIG.Full_Threshold_Assert_Value_wrch {15} CONFIG.Empty_Threshold_Assert_Value_wrch {14} CONFIG.FIFO_Implementation_rach {Common_Clock_Distributed_RAM} CONFIG.Full_Threshold_Assert_Value_rach {15} CONFIG.Empty_Threshold_Assert_Value_rach {14} CONFIG.FIFO_Implementation_rdch {Common_Clock_Block_RAM} CONFIG.Input_Depth_rdch {1024} CONFIG.Full_Threshold_Assert_Value_rdch {511} CONFIG.Empty_Threshold_Assert_Value_rdch {510} CONFIG.FIFO_Implementation_axis {Common_Clock_Block_RAM} CONFIG.Input_Depth_axis {1024} CONFIG.Full_Threshold_Assert_Value_axis {511} CONFIG.Empty_Threshold_Assert_Value_axis {510}] [get_ips fifo_513x512]
+generate_target {instantiation_template} [get_files $ip_dir/fifo_513x512/fifo_513x512.xci]
+generate_target all [get_files  $ip_dir/fifo_513x512/fifo_513x512.xci]
+export_ip_user_files -of_objects [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] -no_script -force -quiet
+create_ip_run [get_files -of_objects [get_fileset sources_1] $ip_dir/fifo_513x512/fifo_513x512.xci]
+launch_run -jobs 6 fifo_513x512_synth_1
+export_simulation -of_objects [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
 
 #create clock converter for axi_card_mem
 create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir

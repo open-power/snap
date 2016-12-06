@@ -228,7 +228,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL rfifo_full             : std_ulogic;
   SIGNAL rfifo_prog_full        : std_ulogic;
   SIGNAL rfifo_rd_rst_busy      : std_ulogic;
-  SIGNAL rfifo_rdata            : std_ulogic_vector(128 DOWNTO 0);
+  SIGNAL rfifo_rdata            : std_ulogic_vector(512 DOWNTO 0);
   SIGNAL rfifo_wr_rst_busy      : std_ulogic;
   SIGNAL rflush_q               : std_ulogic;
   SIGNAL rsp_rtag_next_q        : std_ulogic_vector(  5 DOWNTO  0);
@@ -266,14 +266,14 @@ ARCHITECTURE dma OF dma IS
 
   --
   -- COMPONENT
-  COMPONENT fifo_129x512
+  COMPONENT fifo_513x512
     PORT (
       clk : IN STD_LOGIC;
       srst : IN STD_LOGIC;
-      din : IN STD_LOGIC_VECTOR(128 DOWNTO 0);
+      din : IN STD_LOGIC_VECTOR(512 DOWNTO 0);
       wr_en : IN STD_LOGIC;
       rd_en : IN STD_LOGIC;
-      dout : OUT STD_LOGIC_VECTOR(128 DOWNTO 0);
+      dout : OUT STD_LOGIC_VECTOR(512 DOWNTO 0);
       full : OUT STD_LOGIC;
       empty : OUT STD_LOGIC;
       prog_full : OUT STD_LOGIC;
@@ -793,8 +793,8 @@ BEGIN
              (read_ctrl_fsm_q = ST_IDLE) THEN
             --
             -- calculate the amount of Clt
-            cl_calc_v := ((32 DOWNTO 12 => '0') & sd_c_q.rd_len(7 DOWNTO 0) & (3 DOWNTO 0 => '0')) +  -- rd_len * 16
-                         ((32 DOWNTO 5  => '0') & '1'                       & (3 DOWNTO 0 => '0')) +  -- rd_len + 16
+            cl_calc_v := ((32 DOWNTO 14 => '0') & sd_c_q.rd_len(7 DOWNTO 0) & (5 DOWNTO 0 => '0')) +  -- rd_len * 64
+                         ((32 DOWNTO 7  => '0') & '1'                       & (5 DOWNTO 0 => '0')) +  -- rd_len + 64
                          ((32 DOWNTO 7  => '0') & sd_c_q.rd_addr(6 DOWNTO 0)                     );  
 
             IF cl_calc_v(6 DOWNTO 0) = "0000000" THEN
@@ -1221,10 +1221,10 @@ BEGIN
               IF buf_active_v = FALSE THEN
                 write_fsm_req_q   <= NONE;
 
-                IF aln_wfsm_idle = '1' THEN
+            --512    IF aln_wfsm_idle = '1' THEN
                   write_ctrl_fsm_q    <= ST_IDLE;
                   wr_id_valid_q    <= '1';
-                END IF;
+            --512    END IF;
               END IF;
 
             --------------------------------------------------------------------
@@ -1527,8 +1527,8 @@ BEGIN
                 (write_ctrl_fsm_q = ST_IDLE) THEN
               --
               -- calculate the amount of Clt
-              cl_calc_v := ((32 DOWNTO 12 => '0') & sd_c_q.wr_len(7 DOWNTO 0) & (3 DOWNTO 0 => '0')) +  -- wr_len * 16
-                           ((32 DOWNTO 5  => '0') & '1'                       & (3 DOWNTO 0 => '0')) +  -- wr_len + 16
+              cl_calc_v := ((32 DOWNTO 14 => '0') & sd_c_q.wr_len(7 DOWNTO 0) & (5 DOWNTO 0 => '0')) +  -- wr_len * 64
+                           ((32 DOWNTO 7  => '0') & '1'                       & (5 DOWNTO 0 => '0')) +  -- wr_len + 64
                            ((32 DOWNTO 7  => '0') & sd_c_q.wr_addr(6 DOWNTO 0)                     );  
 
               IF cl_calc_v(6 DOWNTO 0) = "0000000" THEN
@@ -1981,7 +1981,7 @@ BEGIN
     );
 
     dmm_e_q.write_data_p_err <= buf_wdata_parity_err;
-    buf_rrdreq               <= '1';-- nOT rfifo_prog_full;
+    buf_rrdreq               <= NOT rfifo_prog_full;
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -2034,6 +2034,30 @@ BEGIN
     --  aln_read_fsm_err_o     => dmm_e_q.aln_read_fsm_err,
     --  aln_write_fsm_err_o    => dmm_e_q.aln_write_fsm_err
     --);
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- DMA READ OUTPUT FIFO
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+    ----------------------------------------------------------------------------
+    -- FIFO: fifo_513x512
+    ----------------------------------------------------------------------------
+    --
+    dma_read_fifo : fifo_513x512
+    PORT MAP (
+      clk                      => std_logic(ha_pclock),
+      srst                     => std_logic(afu_reset),
+      din(511 DOWNTO 0)        => std_logic_vector(aln_rdata),
+      din(512)                 => std_logic(aln_rdata_e),
+      wr_en                    => std_logic(aln_rdata_v),
+      rd_en                    => std_logic(sd_d_i.rd_data_ack),
+      std_ulogic_vector(dout)  => rfifo_rdata,
+      std_ulogic(full)         => rfifo_full,
+      std_ulogic(empty)        => rfifo_empty_tmp,
+      std_ulogic(prog_full)    => rfifo_prog_full,
+      std_ulogic(wr_rst_busy)  => rfifo_wr_rst_busy,
+      std_ulogic(rd_rst_busy)  => rfifo_rd_rst_busy
+    );
 
      rfifo_empty  <= '1' WHEN force_rfifo_empty_q = '1' ELSE rfifo_empty_tmp;
 
@@ -2341,9 +2365,9 @@ BEGIN
     --
     -- AXI SLAVE CONNECTION
     --
-    ds_d_o.rd_data_strobe  <= aln_rdata_v;
-    ds_d_o.rd_last         <= aln_rdata_e;
-    ds_d_o.rd_data         <= aln_rdata;
+    ds_d_o.rd_data_strobe  <= NOT rfifo_empty;
+    ds_d_o.rd_last         <= rfifo_rdata(512) AND NOT rfifo_empty;
+    ds_d_o.rd_data         <= rfifo_rdata(511 DOWNTO 0);
     ds_d_o.rd_id           <= raddr_id_q;
 
     ds_c_o.wr_req_ack  <= '1' WHEN write_ctrl_fsm_q = ST_SEND_WR_REQ_ACK ELSE '0';
@@ -2438,7 +2462,7 @@ BEGIN
         --
         force_rfifo_empty_q <= force_rfifo_empty_q;
         
-        IF ((rfifo_rdata(128)   = '1') AND 
+        IF ((rfifo_rdata(512)   = '1') AND 
             (rfifo_empty_tmp    = '0') AND
             (sd_d_i.rd_data_ack = '1')) THEN                 
           force_rfifo_empty_q  <= '1';

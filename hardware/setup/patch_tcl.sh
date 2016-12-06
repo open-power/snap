@@ -6,9 +6,9 @@ set rootDir    \$::env(DONUT_HARDWARE_ROOT)\
 set dimmDir    \$::env(DIMMTEST)' $2
 
 sed -i '/top    synth_options/ a\
-                                             \$rootDir/ip/ram_576to144x64_2p/ram_576to144x64_2p.xci \\\
-                                             \$rootDir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci \\\
-                                             \$rootDir/ip/fifo_129x512/fifo_129x512.xci \\\
+                                             \$rootDir/ip/ram_520x64_2p/ram_520x64_2p.xci \\\
+                                             \$rootDir/ip/ram_584x64_2p/ram_584x64_2p.xci \\\
+                                             \$rootDir/ip/fifo_513x512/fifo_513x512.xci \\\
                                              \$rootDir/ip/ddr3sdram/ddr3sdram.xci \\\
                                              \$rootDir/ip/axi_clock_converter/axi_clock_converter.xci \\\
                                            \]' $2

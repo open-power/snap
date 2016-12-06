@@ -323,7 +323,7 @@ BEGIN
     wram_waddr_d               <=               wram_waddr_q       +          "0000001"       when buf_wdata_v_i = '1' else wram_waddr_q;
     wram_waddr_p_d             <= AC_PPARITH(1, wram_waddr_q, wram_waddr_p_q, "0000001", '0') when buf_wdata_v_i = '1' else wram_waddr_p_q;
     wram_waddr                 <= wram_waddr_q(5 DOWNTO 0);
-    wram_wdata(             0) <= buf_wdata_p_i(0) XOR inject_dma_write_error_i;
+    wram_wdata(             0) <= buf_wdata_i(0) XOR inject_dma_write_error_i;
     wram_wdata(511 DOWNTO   1) <= buf_wdata_i(511 DOWNTO 1);
     wram_wdata(519 DOWNTO 512) <= buf_wdata_p_i;
     wram_wdata(583 DOWNTO 520) <= buf_wdata_be_i;
