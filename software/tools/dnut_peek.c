@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 			quiet++;
 			break;
 		case 'v':
-			verbose_flag = 1;
+			verbose_flag++;
 			break;
 		case 'h':
 			usage(argv[0]);
@@ -169,6 +169,8 @@ int main(int argc, char *argv[])
 	switch_cpu(cpu, verbose_flag);
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
+	if (verbose_flag)
+		printf("[%s] Open CAPI Card: %s\n", argv[0], device);
 	card = dnut_card_alloc_dev(device, DNUT_VENDOR_ID_ANY,
 				DNUT_DEVICE_ID_ANY);
 	if (card == NULL) {
@@ -176,16 +178,24 @@ int main(int argc, char *argv[])
 			strerror(errno));
 		exit(EXIT_FAILURE);
 	}
+	if (verbose_flag)
+		printf("[%s] Open CAPI Card Got handle: %p\n", argv[0], card);
 
 	for (i = 0; i < count; i++) {
 		switch (width) {
 		case 32: {
+			if (verbose_flag > 1)
+				printf("[%s] dnut_mmio_read32(%p, %x)\n",
+					argv[0], card, offs);
 			rc = dnut_mmio_read32(card, offs, (uint32_t *)&val);
 			val &= 0xffffffff; /* mask off obsolete bits ... */
 			break;
 		}
 		default:
 		case 64:
+			if (verbose_flag > 1)
+				printf("[%s] dnut_mmio_read64(%p, %x)\n",
+					argv[0], card, offs);
 			rc = dnut_mmio_read64(card, offs, &val);
 			break;
 		}
@@ -216,10 +226,16 @@ int main(int argc, char *argv[])
 			usleep(interval);
 	}
 
+	if (verbose_flag)
+		printf("[%s] Close CAPI Card: %p\n", argv[0], card);
 	dnut_card_free(card);
 
-	if (!quiet)
-		printf("[%08x] %016llx\n", offs, (long long)val);
-
+	if (!quiet) {
+		if (32 == width)
+			printf("[%08x] %08lx\n", offs, (long)val);
+		else	printf("[%08x] %016llx\n", offs, (long long)val);
+	}
+	if (verbose_flag)
+		printf("[%s] Exit OK\n", argv[0]);
 	exit(EXIT_SUCCESS);
 }
