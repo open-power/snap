@@ -172,10 +172,7 @@ architecture action_axi_master of action_axi_master is
         signal wr_req_ack        : std_logic;
         
 
-
 begin
-
-  
 
 
 	M_AXI_AWID	<= (others => '0');
@@ -209,8 +206,7 @@ begin
 	M_AXI_RREADY	<= axi_rready;
 
 
-	
-axi_w:	process(M_AXI_ACLK)                                                          
+axi_w:	process(M_AXI_ACLK)                
 	begin                                                                             
 	  if (rising_edge (M_AXI_ACLK)) then
              dma_wr_req_ack_o <= '0';
@@ -238,8 +234,8 @@ axi_w:	process(M_AXI_ACLK)
                  axi_bready     <= '0';
                  dma_wr_done_o  <= '1';
                end if;
-             end if;  
-            
+             end if;
+
           end if;
         end process;
 
@@ -247,7 +243,7 @@ axi_w:	process(M_AXI_ACLK)
            axi_wdata      <= dma_wr_data_i;
            axi_wvalid     <= or_reduce(dma_wr_data_strobe_i);
            axi_wstrb      <= dma_wr_data_strobe_i;
-        
+
 -- wr_data: process(axi_wvalid, M_AXI_WREADY, dma_wr_data_last_i, write_pending)
 wr_data: process(axi_wvalid, M_AXI_WREADY, dma_wr_data_last_i)
          begin
@@ -256,18 +252,19 @@ wr_data: process(axi_wvalid, M_AXI_WREADY, dma_wr_data_last_i)
            if  axi_wvalid = '1' and  M_AXI_WREADY = '1' then
              if dma_wr_data_last_i = '1' then
                axi_wlast     <= '1';
-             end if;  
-           end if;  
-           
-         end process;  
+             end if;
+           end if;
+
+         end process;
         
-axi_rready   <= dma_rd_data_taken_i;
-axi_r:	process(M_AXI_ACLK)                                                          
-	begin                                                                             
-	  if (rising_edge (M_AXI_ACLK)) then 
-             dma_rd_data_o       <= M_AXI_RDATA;
-             dma_rd_data_valid_o <= '0';
-             dma_rd_data_last_o  <= '0';
+axi_rready          <= dma_rd_data_taken_i;
+dma_rd_data_last_o  <= M_AXI_RLAST;
+dma_rd_data_valid_o <= M_AXI_RVALID;
+dma_rd_data_o       <= M_AXI_RDATA;
+
+axi_r:	 process(M_AXI_ACLK)
+	     begin
+	       if (rising_edge (M_AXI_ACLK)) then
              dma_rd_req_ack_o    <= '0';
              if (M_AXI_ARESETN = '0' ) then
                axi_arvalid       <= '0';
@@ -283,16 +280,10 @@ axi_r:	process(M_AXI_ACLK)
                  axi_arvalid       <= '0';
                  dma_rd_req_ack_o  <= '1';
                  rd_req_wait_cycle <= '1';
-               end if;  
-               if M_AXI_RVALID = '1' then
-                 dma_rd_data_valid_o <= '1';
-                 if M_AXI_RLAST = '1' then
-                    dma_rd_data_last_o <= '1';
-                 end if;  
                end if;
-             end if;  
-            
-          end if;
-        end process;   
+             end if;
+
+           end if;
+         end process;
 
 end action_axi_master;
