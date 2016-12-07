@@ -25,13 +25,15 @@ use work.std_ulogic_support.all;
 use work.std_ulogic_unsigned.all;
 
 USE work.psl_accel_types.ALL;
---DDR3 use work.ddr3_sdram_pkg.all;
---DDR3 use work.ddr3_sdram_usodimm_pkg.all;
+use work.ddr3_sdram_pkg.all;
+use work.ddr3_sdram_usodimm_pkg.all;
 
 
 ENTITY afu IS
   GENERIC (
-    DDR3_USED  : BOOLEAN := FALSE
+    BRAM_USED  : BOOLEAN := FALSE
+    ;
+    DDR3_USED  : BOOLEAN := TRUE
   );
   PORT(
     -- Accelerator Command Interface
@@ -107,7 +109,6 @@ ENTITY afu IS
     ha_pclock   : in  std_ulogic
     );  
 END afu;
-
 
 
 ARCHITECTURE afu OF afu IS
@@ -188,32 +189,6 @@ ARCHITECTURE afu OF afu IS
       );
   end component;
 
---  --
---  -- ACTION
---  -- 
---  component action_interface
---    port (
---      -- misc
---      clk_fw         : IN  std_ulogic;
---      clk_app        : IN  std_ulogic;
---      rst            : IN  std_ulogic;
---      ddr3_clk       : IN  std_ulogic;
---      ddr3_rst       : IN  std_ulogic;
---      --
---      -- Kernel AXI Master Interface
---      xk_d_i         : IN  XK_D_T;
---      kx_d_o         : OUT KX_D_T;
---      --
---      -- Kernel AXI Slave Interface
---      sk_d_i         : IN  SK_D_T;
---      ks_d_o         : OUT KS_D_T;
---      --
---      -- Kernel to DDR3 AXI Interface
---      ddrk_i         : IN  DDRK_T;
---      kddr_o         : OUT KDDR_T
---    );
---END COMPONENT;
-
   --
   -- BLOCK RAM
   -- 
@@ -249,7 +224,97 @@ ARCHITECTURE afu OF afu IS
     s_axi_rresp         : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
     s_axi_rlast         : OUT STD_LOGIC;
     s_axi_rvalid        : OUT STD_LOGIC;
-    s_axi_rready        : IN STD_LOGIC         
+    s_axi_rready        : IN STD_LOGIC
+    );
+  END COMPONENT;
+
+  --
+  -- AXI Clock converter
+  -- 
+  COMPONENT axi_clock_converter
+    PORT (
+      s_axi_aclk      : IN STD_LOGIC;
+      s_axi_aresetn   : IN STD_LOGIC;
+      s_axi_awid      : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
+      s_axi_awaddr    : IN STD_LOGIC_VECTOR(32 DOWNTO 0);
+      s_axi_awlen     : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+      s_axi_awsize    : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+      s_axi_awburst   : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
+      s_axi_awlock    : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+      s_axi_awcache   : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+      s_axi_awprot    : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+      s_axi_awregion  : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+      s_axi_awqos     : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+      s_axi_awvalid   : IN STD_LOGIC;
+      s_axi_awready   : OUT STD_LOGIC;
+      s_axi_wdata     : IN STD_LOGIC_VECTOR(511 DOWNTO 0);
+      s_axi_wstrb     : IN STD_LOGIC_VECTOR(63 DOWNTO 0);
+      s_axi_wlast     : IN STD_LOGIC;
+      s_axi_wvalid    : IN STD_LOGIC;
+      s_axi_wready    : OUT STD_LOGIC;
+      s_axi_bid       : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      s_axi_bresp     : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      s_axi_bvalid    : OUT STD_LOGIC;
+      s_axi_bready    : IN STD_LOGIC;
+      s_axi_arid      : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
+      s_axi_araddr    : IN STD_LOGIC_VECTOR(32 DOWNTO 0);
+      s_axi_arlen     : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+      s_axi_arsize    : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+      s_axi_arburst   : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
+      s_axi_arlock    : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+      s_axi_arcache   : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+      s_axi_arprot    : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+      s_axi_arregion  : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+      s_axi_arqos     : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+      s_axi_arvalid   : IN STD_LOGIC;
+      s_axi_arready   : OUT STD_LOGIC;
+      s_axi_rid       : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      s_axi_rdata     : OUT STD_LOGIC_VECTOR(511 DOWNTO 0);
+      s_axi_rresp     : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      s_axi_rlast     : OUT STD_LOGIC;
+      s_axi_rvalid    : OUT STD_LOGIC;
+      s_axi_rready    : IN STD_LOGIC;
+      m_axi_aclk      : IN STD_LOGIC;
+      m_axi_aresetn   : IN STD_LOGIC;
+      m_axi_awid      : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      m_axi_awaddr    : OUT STD_LOGIC_VECTOR(32 DOWNTO 0);
+      m_axi_awlen     : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+      m_axi_awsize    : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+      m_axi_awburst   : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      m_axi_awlock    : OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
+      m_axi_awcache   : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+      m_axi_awprot    : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+      m_axi_awregion  : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+      m_axi_awqos     : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+      m_axi_awvalid   : OUT STD_LOGIC;
+      m_axi_awready   : IN STD_LOGIC;
+      m_axi_wdata     : OUT STD_LOGIC_VECTOR(511 DOWNTO 0);
+      m_axi_wstrb     : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
+      m_axi_wlast     : OUT STD_LOGIC;
+      m_axi_wvalid    : OUT STD_LOGIC;
+      m_axi_wready    : IN STD_LOGIC;
+      m_axi_bid       : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
+      m_axi_bresp     : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
+      m_axi_bvalid    : IN STD_LOGIC;
+      m_axi_bready    : OUT STD_LOGIC;
+      m_axi_arid      : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      m_axi_araddr    : OUT STD_LOGIC_VECTOR(32 DOWNTO 0);
+      m_axi_arlen     : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+      m_axi_arsize    : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+      m_axi_arburst   : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      m_axi_arlock    : OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
+      m_axi_arcache   : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+      m_axi_arprot    : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+      m_axi_arregion  : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+      m_axi_arqos     : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+      m_axi_arvalid   : OUT STD_LOGIC;
+      m_axi_arready   : IN STD_LOGIC;
+      m_axi_rid       : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
+      m_axi_rdata     : IN STD_LOGIC_VECTOR(511 DOWNTO 0);
+      m_axi_rresp     : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
+      m_axi_rlast     : IN STD_LOGIC;
+      m_axi_rvalid    : IN STD_LOGIC;
+      m_axi_rready    : OUT STD_LOGIC
     );
   END COMPONENT;
 
@@ -306,8 +371,8 @@ ARCHITECTURE afu OF afu IS
       c0_ddr3_s_axi_awqos : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
       c0_ddr3_s_axi_awvalid : IN STD_LOGIC;
       c0_ddr3_s_axi_awready : OUT STD_LOGIC;
-      c0_ddr3_s_axi_wdata : IN STD_LOGIC_VECTOR(127 DOWNTO 0);
-      c0_ddr3_s_axi_wstrb : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+      c0_ddr3_s_axi_wdata : IN STD_LOGIC_VECTOR(511 DOWNTO 0);
+      c0_ddr3_s_axi_wstrb : IN STD_LOGIC_VECTOR( 63 DOWNTO 0);
       c0_ddr3_s_axi_wlast : IN STD_LOGIC;
       c0_ddr3_s_axi_wvalid : IN STD_LOGIC;
       c0_ddr3_s_axi_wready : OUT STD_LOGIC;
@@ -331,88 +396,126 @@ ARCHITECTURE afu OF afu IS
       c0_ddr3_s_axi_rvalid : OUT STD_LOGIC;
       c0_ddr3_s_axi_rresp : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
       c0_ddr3_s_axi_rid : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
-      c0_ddr3_s_axi_rdata : OUT STD_LOGIC_VECTOR(127 DOWNTO 0);
+      c0_ddr3_s_axi_rdata : OUT STD_LOGIC_VECTOR(511 DOWNTO 0);
       sys_rst : IN STD_LOGIC
     );
-  END COMPONENT;  
---DDR3  constant OWN_W16ESB8G8M : usodimm_part_t := (
---DDR3    base_chip => (
---DDR3      -- Generic DDR3-1600 x8 chip, 4 Gbit, 260 ns tRFC, CL11
---DDR3      part_size              => M64_X_B8_X_D8,
---DDR3      speed_grade_cl_cwl_min => MT41K_125E_CL_CWL_MIN,  -- 125E with CL=5,6,7,8,9,10,11
---DDR3      speed_grade_cl_cwl_max => MT41K_125E_CL_CWL_MAX,  -- 125E with CL=5,6,7,8,9,10,11
---DDR3      speed_grade            => MT41K_125E,             -- 125E
---DDR3      check_timing           => false),
---DDR3    geometry  => USODIMM_2x72);
---DDR3  constant W16ESB8G8M_AS_2_RANK : usodimm_part_t := (
---DDR3    base_chip => W16ESB8G8M.base_chip, -- Base chip characteristics retained.
---DDR3    geometry  => USODIMM_2x64);        -- Using only one of the two ranks.
---DDR3  constant usodimm_part : usodimm_part_t :=  OWN_W16ESB8G8M; --choice(mig_ranks = 2, W16ESB8G8M, W16ESB8G8M_AS_1_RANK);
+  END COMPONENT;
+
+  constant OWN_W16ESB8G8M : usodimm_part_t := (
+    base_chip => (
+      -- Generic DDR3-1600 x8 chip, 4 Gbit, 260 ns tRFC, CL11
+      part_size              => M64_X_B8_X_D8,
+      speed_grade_cl_cwl_min => MT41K_125E_CL_CWL_MIN,  -- 125E with CL=5,6,7,8,9,10,11
+      speed_grade_cl_cwl_max => MT41K_125E_CL_CWL_MAX,  -- 125E with CL=5,6,7,8,9,10,11
+      speed_grade            => MT41K_125E,             -- 125E
+      check_timing           => false),
+    geometry  => USODIMM_2x72);
+  constant W16ESB8G8M_AS_2_RANK : usodimm_part_t := (
+    base_chip => W16ESB8G8M.base_chip, -- Base chip characteristics retained.
+    geometry  => USODIMM_2x64);        -- Using only one of the two ranks.
+  constant usodimm_part : usodimm_part_t :=  OWN_W16ESB8G8M; --choice(mig_ranks = 2, W16ESB8G8M, W16ESB8G8M_AS_1_RANK);
+
   constant sys_clk_period : time := 2.5 ns;
 
   --
   -- SIGNALS
   --
+
   SIGNAL action_reset     : std_ulogic;
   SIGNAL action_reset_n_q : std_ulogic;
   SIGNAL action_reset_q   : std_ulogic;
-  SIGNAL card_mem0_clk    : std_ulogic;
-  SIGNAL card_mem0_rst_n  : std_ulogic;
-  SIGNAL ddr3_reset_q     : std_ulogic;
-  SIGNAL ddr3_reset_m     : std_ulogic;
-  SIGNAL ddr3_reset_n_q   : std_ulogic;
-  SIGNAL locked           : std_ulogic;
   SIGNAL xk_d             : XK_D_T;
   SIGNAL kx_d             : KX_D_T;
   SIGNAL sk_d             : SK_D_T;
   SIGNAL ks_d             : KS_D_T;
 
+  SIGNAL card_mem0_clk    : std_ulogic;
+  SIGNAL card_mem0_rst_n  : std_ulogic;
+  SIGNAL ddr3_reset_q     : std_ulogic;
+  SIGNAL ddr3_reset_n_q   : std_ulogic;
+
   --
-  -- ACTION <-> DDR3 Interface
-  SIGNAL axi_card_mem_awaddr    : STD_LOGIC_VECTOR ( 32 downto 0 );
-  SIGNAL axi_card_mem_awlen     : STD_LOGIC_VECTOR ( 7 downto 0 );
-  SIGNAL axi_card_mem_awsize    : STD_LOGIC_VECTOR ( 2 downto 0 );
-  SIGNAL axi_card_mem_awburst   : STD_LOGIC_VECTOR ( 1 downto 0 );
-  SIGNAL axi_card_mem_awlock    : STD_LOGIC_VECTOR ( 0 to 0 );
-  SIGNAL axi_card_mem_awcache   : STD_LOGIC_VECTOR ( 3 downto 0 );
-  SIGNAL axi_card_mem_awprot    : STD_LOGIC_VECTOR ( 2 downto 0 );
-  SIGNAL axi_card_mem_awregion  : STD_LOGIC_VECTOR ( 3 downto 0 );
-  SIGNAL axi_card_mem_awqos     : STD_LOGIC_VECTOR ( 3 downto 0 );
-  SIGNAL axi_card_mem_awvalid   : STD_LOGIC;
-  SIGNAL axi_card_mem_awready   : STD_LOGIC;
-  SIGNAL axi_card_mem_wdata     : STD_LOGIC_VECTOR ( 127 downto 0 );
-  SIGNAL axi_card_mem_wstrb     : STD_LOGIC_VECTOR ( 15 downto 0 );
-  SIGNAL axi_card_mem_wlast     : STD_LOGIC;
-  SIGNAL axi_card_mem_wvalid    : STD_LOGIC;
-  SIGNAL axi_card_mem_wready    : STD_LOGIC;
-  SIGNAL axi_card_mem_bresp     : STD_LOGIC_VECTOR ( 1 downto 0 );
-  SIGNAL axi_card_mem_bvalid    : STD_LOGIC;
-  SIGNAL axi_card_mem_bready    : STD_LOGIC;
-  SIGNAL axi_card_mem_araddr    : STD_LOGIC_VECTOR ( 32 downto 0 );
-  SIGNAL axi_card_mem_arlen     : STD_LOGIC_VECTOR ( 7 downto 0 );
-  SIGNAL axi_card_mem_arsize    : STD_LOGIC_VECTOR ( 2 downto 0 );
-  SIGNAL axi_card_mem_arburst   : STD_LOGIC_VECTOR ( 1 downto 0 );
-  SIGNAL axi_card_mem_arlock    : STD_LOGIC_VECTOR ( 0 to 0 );
-  SIGNAL axi_card_mem_arcache   : STD_LOGIC_VECTOR ( 3 downto 0 );
-  SIGNAL axi_card_mem_arprot    : STD_LOGIC_VECTOR ( 2 downto 0 );
-  SIGNAL axi_card_mem_arregion  : STD_LOGIC_VECTOR ( 3 downto 0 );
-  SIGNAL axi_card_mem_arqos     : STD_LOGIC_VECTOR ( 3 downto 0 );
-  SIGNAL axi_card_mem_arvalid   : STD_LOGIC;
-  SIGNAL axi_card_mem_arready   : STD_LOGIC;
-  SIGNAL axi_card_mem_rdata     : STD_LOGIC_VECTOR ( 127 downto 0 );
-  SIGNAL axi_card_mem_rresp     : STD_LOGIC_VECTOR ( 1 downto 0 );
-  SIGNAL axi_card_mem_rlast     : STD_LOGIC;
-  SIGNAL axi_card_mem_rvalid    : STD_LOGIC;
-  SIGNAL axi_card_mem_rready    : STD_LOGIC;
-  SIGNAL axi_card_mem_arid      : STD_LOGIC_VECTOR ( 1 downto 0 );
-  SIGNAL axi_card_mem_aruser    : STD_LOGIC_VECTOR ( 0 to 0 );
-  SIGNAL axi_card_mem_awid      : STD_LOGIC_VECTOR ( 1 downto 0 );
-  SIGNAL axi_card_mem_awuser    : STD_LOGIC_VECTOR ( 0 to 0 );
-  SIGNAL axi_card_mem_bid       : STD_LOGIC_VECTOR ( 1 downto 0 );
-  SIGNAL axi_card_mem_buser     : STD_LOGIC_VECTOR ( 0 to 0 );
-  SIGNAL axi_card_mem_rid       : STD_LOGIC_VECTOR ( 1 downto 0 );
-  SIGNAL axi_card_mem_ruser     : STD_LOGIC_VECTOR ( 0 to 0 );
-  SIGNAL axi_card_mem_wuser     : STD_LOGIC_VECTOR ( 0 to 0 );
+  -- ACTION <-> CLOCK CONVERTER Interface
+  SIGNAL axi_card_mem0_awaddr    : STD_LOGIC_VECTOR ( 32 downto 0 );
+  SIGNAL axi_card_mem0_awlen     : STD_LOGIC_VECTOR ( 7 downto 0 );
+  SIGNAL axi_card_mem0_awsize    : STD_LOGIC_VECTOR ( 2 downto 0 );
+  SIGNAL axi_card_mem0_awburst   : STD_LOGIC_VECTOR ( 1 downto 0 );
+  SIGNAL axi_card_mem0_awlock    : STD_LOGIC_VECTOR ( 0 downto 0 );
+  SIGNAL axi_card_mem0_awcache   : STD_LOGIC_VECTOR ( 3 downto 0 );
+  SIGNAL axi_card_mem0_awprot    : STD_LOGIC_VECTOR ( 2 downto 0 );
+  SIGNAL axi_card_mem0_awregion  : STD_LOGIC_VECTOR ( 3 downto 0 );
+  SIGNAL axi_card_mem0_awqos     : STD_LOGIC_VECTOR ( 3 downto 0 );
+  SIGNAL axi_card_mem0_awvalid   : STD_LOGIC;
+  SIGNAL axi_card_mem0_awready   : STD_LOGIC;
+  SIGNAL axi_card_mem0_wdata     : STD_LOGIC_VECTOR ( 511 downto 0 );
+  SIGNAL axi_card_mem0_wstrb     : STD_LOGIC_VECTOR (  63 downto 0 );
+  SIGNAL axi_card_mem0_wlast     : STD_LOGIC;
+  SIGNAL axi_card_mem0_wvalid    : STD_LOGIC;
+  SIGNAL axi_card_mem0_wready    : STD_LOGIC;
+  SIGNAL axi_card_mem0_bresp     : STD_LOGIC_VECTOR ( 1 downto 0 );
+  SIGNAL axi_card_mem0_bvalid    : STD_LOGIC;
+  SIGNAL axi_card_mem0_bready    : STD_LOGIC;
+  SIGNAL axi_card_mem0_araddr    : STD_LOGIC_VECTOR ( 32 downto 0 );
+  SIGNAL axi_card_mem0_arlen     : STD_LOGIC_VECTOR ( 7 downto 0 );
+  SIGNAL axi_card_mem0_arsize    : STD_LOGIC_VECTOR ( 2 downto 0 );
+  SIGNAL axi_card_mem0_arburst   : STD_LOGIC_VECTOR ( 1 downto 0 );
+  SIGNAL axi_card_mem0_arlock    : STD_LOGIC_VECTOR ( 0 downto 0 );
+  SIGNAL axi_card_mem0_arcache   : STD_LOGIC_VECTOR ( 3 downto 0 );
+  SIGNAL axi_card_mem0_arprot    : STD_LOGIC_VECTOR ( 2 downto 0 );
+  SIGNAL axi_card_mem0_arregion  : STD_LOGIC_VECTOR ( 3 downto 0 );
+  SIGNAL axi_card_mem0_arqos     : STD_LOGIC_VECTOR ( 3 downto 0 );
+  SIGNAL axi_card_mem0_arvalid   : STD_LOGIC;
+  SIGNAL axi_card_mem0_arready   : STD_LOGIC;
+  SIGNAL axi_card_mem0_rdata     : STD_LOGIC_VECTOR ( 511 downto 0 );
+  SIGNAL axi_card_mem0_rresp     : STD_LOGIC_VECTOR ( 1 downto 0 );
+  SIGNAL axi_card_mem0_rlast     : STD_LOGIC;
+  SIGNAL axi_card_mem0_rvalid    : STD_LOGIC;
+  SIGNAL axi_card_mem0_rready    : STD_LOGIC;
+  SIGNAL axi_card_mem0_arid      : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+  SIGNAL axi_card_mem0_awid      : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+  SIGNAL axi_card_mem0_bid       : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+  SIGNAL axi_card_mem0_rid       : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+  --
+  -- CLOCK CONVERTER <-> DDR3 Interface
+  SIGNAL c0_ddr3_axi_awaddr    : STD_LOGIC_VECTOR ( 32 downto 0 );
+  SIGNAL c0_ddr3_axi_awlen     : STD_LOGIC_VECTOR ( 7 downto 0 );
+  SIGNAL c0_ddr3_axi_awsize    : STD_LOGIC_VECTOR ( 2 downto 0 );
+  SIGNAL c0_ddr3_axi_awburst   : STD_LOGIC_VECTOR ( 1 downto 0 );
+  SIGNAL c0_ddr3_axi_awlock    : STD_LOGIC_VECTOR ( 0 downto 0 );
+  SIGNAL c0_ddr3_axi_awcache   : STD_LOGIC_VECTOR ( 3 downto 0 );
+  SIGNAL c0_ddr3_axi_awprot    : STD_LOGIC_VECTOR ( 2 downto 0 );
+  SIGNAL c0_ddr3_axi_awregion  : STD_LOGIC_VECTOR ( 3 downto 0 );
+  SIGNAL c0_ddr3_axi_awqos     : STD_LOGIC_VECTOR ( 3 downto 0 );
+  SIGNAL c0_ddr3_axi_awvalid   : STD_LOGIC;
+  SIGNAL c0_ddr3_axi_awready   : STD_LOGIC;
+  SIGNAL c0_ddr3_axi_wdata     : STD_LOGIC_VECTOR ( 511 downto 0 );
+  SIGNAL c0_ddr3_axi_wstrb     : STD_LOGIC_VECTOR (  63 downto 0 );
+  SIGNAL c0_ddr3_axi_wlast     : STD_LOGIC;
+  SIGNAL c0_ddr3_axi_wvalid    : STD_LOGIC;
+  SIGNAL c0_ddr3_axi_wready    : STD_LOGIC;
+  SIGNAL c0_ddr3_axi_bresp     : STD_LOGIC_VECTOR ( 1 downto 0 );
+  SIGNAL c0_ddr3_axi_bvalid    : STD_LOGIC;
+  SIGNAL c0_ddr3_axi_bready    : STD_LOGIC;
+  SIGNAL c0_ddr3_axi_araddr    : STD_LOGIC_VECTOR ( 32 downto 0 );
+  SIGNAL c0_ddr3_axi_arlen     : STD_LOGIC_VECTOR ( 7 downto 0 );
+  SIGNAL c0_ddr3_axi_arsize    : STD_LOGIC_VECTOR ( 2 downto 0 );
+  SIGNAL c0_ddr3_axi_arburst   : STD_LOGIC_VECTOR ( 1 downto 0 );
+  SIGNAL c0_ddr3_axi_arlock    : STD_LOGIC_VECTOR ( 0 downto 0 );
+  SIGNAL c0_ddr3_axi_arcache   : STD_LOGIC_VECTOR ( 3 downto 0 );
+  SIGNAL c0_ddr3_axi_arprot    : STD_LOGIC_VECTOR ( 2 downto 0 );
+  SIGNAL c0_ddr3_axi_arregion  : STD_LOGIC_VECTOR ( 3 downto 0 );
+  SIGNAL c0_ddr3_axi_arqos     : STD_LOGIC_VECTOR ( 3 downto 0 );
+  SIGNAL c0_ddr3_axi_arvalid   : STD_LOGIC;
+  SIGNAL c0_ddr3_axi_arready   : STD_LOGIC;
+  SIGNAL c0_ddr3_axi_rdata     : STD_LOGIC_VECTOR ( 511 downto 0 );
+  SIGNAL c0_ddr3_axi_rresp     : STD_LOGIC_VECTOR ( 1 downto 0 );
+  SIGNAL c0_ddr3_axi_rlast     : STD_LOGIC;
+  SIGNAL c0_ddr3_axi_rvalid    : STD_LOGIC;
+  SIGNAL c0_ddr3_axi_rready    : STD_LOGIC;
+  SIGNAL c0_ddr3_axi_arid      : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+  SIGNAL c0_ddr3_axi_awid      : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+  SIGNAL c0_ddr3_axi_bid       : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+  SIGNAL c0_ddr3_axi_rid       : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
   --
   -- DDR3 Bank1 Interace
   SIGNAL c1_init_calib_complete :   STD_LOGIC;
@@ -455,8 +558,7 @@ ARCHITECTURE afu OF afu IS
   SIGNAL c1_ddr3_s_axi_ctrl_rresp   : STD_LOGIC_VECTOR(1 DOWNTO 0);
   SIGNAL c1_ddr3_interrupt          : STD_LOGIC;
 
-  
-                   
+
 BEGIN              
   registers : PROCESS (ha_pclock)
   BEGIN
@@ -465,7 +567,8 @@ BEGIN
       action_reset_n_q <= NOT action_reset;
     END IF;
   END PROCESS registers;
-  
+
+ddr3_reset_generation: IF DDR3_USED = TRUE GENERATE
   ddr3_reset : PROCESS (ha_pclock)
   BEGIN  -- PROCESS
     IF (rising_edge(ha_pclock)) THEN
@@ -479,10 +582,12 @@ BEGIN
       END IF;
     END IF;
   END PROCESS ddr3_reset;
+END GENERATE ddr3_reset_generation;
   --               
   --
   -- 
   c1_ddr3_dm <= (others => '0');
+
   donut_i: donut
     port map (
       --
@@ -567,63 +672,59 @@ BEGIN
       ks_d_i         => ks_d
     );
 
- 
-  
   --
   -- ACTION
-  -- 
+  --
   action_w: ENTITY work.action_wrapper
     port map (
       action_clk                         => ha_pclock,
       action_rst_n                       => action_reset_n_q,
-      card_mem0_clk                      => card_mem0_clk,
-      card_mem0_rst_n                    => card_mem0_rst_n,
       --
       -- AXI DDR3 Interface
-      axi_card_mem0_araddr(32 downto 0)  => axi_card_mem_araddr(32 downto 0),
-      axi_card_mem0_arburst(1 downto 0)  => axi_card_mem_arburst(1 downto 0),
-      axi_card_mem0_arcache(3 downto 0)  => axi_card_mem_arcache(3 downto 0),
-      axi_card_mem0_arid(1 downto 0)     => axi_card_mem_arid(1 downto 0),
-      axi_card_mem0_arlen(7 downto 0)    => axi_card_mem_arlen(7 downto 0),
-      axi_card_mem0_arlock(0)            => axi_card_mem_arlock(0),
-      axi_card_mem0_arprot(2 downto 0)   => axi_card_mem_arprot(2 downto 0),
-      axi_card_mem0_arqos(3 downto 0)    => axi_card_mem_arqos(3 downto 0),
-      axi_card_mem0_arready              => axi_card_mem_arready,
-      axi_card_mem0_arregion(3 downto 0) => axi_card_mem_arregion(3 downto 0),
-      axi_card_mem0_arsize(2 downto 0)   => axi_card_mem_arsize(2 downto 0),
-      axi_card_mem0_aruser(0)            => axi_card_mem_aruser(0),
-      axi_card_mem0_arvalid              => axi_card_mem_arvalid,
-      axi_card_mem0_awaddr(32 downto 0)  => axi_card_mem_awaddr(32 downto 0),
-      axi_card_mem0_awburst(1 downto 0)  => axi_card_mem_awburst(1 downto 0),
-      axi_card_mem0_awcache(3 downto 0)  => axi_card_mem_awcache(3 downto 0),
-      axi_card_mem0_awid(1 downto 0)     => axi_card_mem_awid(1 downto 0),
-      axi_card_mem0_awlen(7 downto 0)    => axi_card_mem_awlen(7 downto 0),
-      axi_card_mem0_awlock(0)            => axi_card_mem_awlock(0),
-      axi_card_mem0_awprot(2 downto 0)   => axi_card_mem_awprot(2 downto 0),
-      axi_card_mem0_awqos(3 downto 0)    => axi_card_mem_awqos(3 downto 0),
-      axi_card_mem0_awready              => axi_card_mem_awready,
-      axi_card_mem0_awregion(3 downto 0) => axi_card_mem_awregion(3 downto 0),
-      axi_card_mem0_awsize(2 downto 0)   => axi_card_mem_awsize(2 downto 0),
-      axi_card_mem0_awuser(0)            => axi_card_mem_awuser(0),
-      axi_card_mem0_awvalid              => axi_card_mem_awvalid,
-      axi_card_mem0_bid(1 downto 0)      => axi_card_mem_bid(1 downto 0),
-      axi_card_mem0_bready               => axi_card_mem_bready,
-      axi_card_mem0_bresp(1 downto 0)    => axi_card_mem_bresp(1 downto 0),
-      axi_card_mem0_buser(0)             => axi_card_mem_buser(0),
-      axi_card_mem0_bvalid               => axi_card_mem_bvalid,
-      axi_card_mem0_rdata(127 downto 0)  => axi_card_mem_rdata(127 downto 0),
-      axi_card_mem0_rid(1 downto 0)      => axi_card_mem_rid(1 downto 0),
-      axi_card_mem0_rlast                => axi_card_mem_rlast,
-      axi_card_mem0_rready               => axi_card_mem_rready,
-      axi_card_mem0_rresp(1 downto 0)    => axi_card_mem_rresp(1 downto 0),
-      axi_card_mem0_ruser(0)             => axi_card_mem_ruser(0),
-      axi_card_mem0_rvalid               => axi_card_mem_rvalid,
-      axi_card_mem0_wdata(127 downto 0)  => axi_card_mem_wdata(127 downto 0),
-      axi_card_mem0_wlast                => axi_card_mem_wlast,
-      axi_card_mem0_wready               => axi_card_mem_wready,
-      axi_card_mem0_wstrb(15 downto 0)   => axi_card_mem_wstrb(15 downto 0),
-      axi_card_mem0_wuser(0)             => axi_card_mem_wuser(0),
-      axi_card_mem0_wvalid               => axi_card_mem_wvalid,
+      axi_card_mem0_araddr(32 downto 0)  => axi_card_mem0_araddr(32 downto 0),
+      axi_card_mem0_arburst(1 downto 0)  => axi_card_mem0_arburst(1 downto 0),
+      axi_card_mem0_arcache(3 downto 0)  => axi_card_mem0_arcache(3 downto 0),
+      axi_card_mem0_arid                 => axi_card_mem0_arid,
+      axi_card_mem0_arlen(7 downto 0)    => axi_card_mem0_arlen(7 downto 0),
+      axi_card_mem0_arlock               => axi_card_mem0_arlock,
+      axi_card_mem0_arprot(2 downto 0)   => axi_card_mem0_arprot(2 downto 0),
+      axi_card_mem0_arqos(3 downto 0)    => axi_card_mem0_arqos(3 downto 0),
+      axi_card_mem0_arready              => axi_card_mem0_arready,
+      axi_card_mem0_arregion(3 downto 0) => axi_card_mem0_arregion(3 downto 0),
+      axi_card_mem0_arsize(2 downto 0)   => axi_card_mem0_arsize(2 downto 0),
+      axi_card_mem0_aruser               => open,
+      axi_card_mem0_arvalid              => axi_card_mem0_arvalid,
+      axi_card_mem0_awaddr(32 downto 0)  => axi_card_mem0_awaddr(32 downto 0),
+      axi_card_mem0_awburst(1 downto 0)  => axi_card_mem0_awburst(1 downto 0),
+      axi_card_mem0_awcache(3 downto 0)  => axi_card_mem0_awcache(3 downto 0),
+      axi_card_mem0_awid                 => axi_card_mem0_awid,
+      axi_card_mem0_awlen(7 downto 0)    => axi_card_mem0_awlen(7 downto 0),
+      axi_card_mem0_awlock               => axi_card_mem0_awlock,
+      axi_card_mem0_awprot(2 downto 0)   => axi_card_mem0_awprot(2 downto 0),
+      axi_card_mem0_awqos(3 downto 0)    => axi_card_mem0_awqos(3 downto 0),
+      axi_card_mem0_awready              => axi_card_mem0_awready,
+      axi_card_mem0_awregion(3 downto 0) => axi_card_mem0_awregion(3 downto 0),
+      axi_card_mem0_awsize(2 downto 0)   => axi_card_mem0_awsize(2 downto 0),
+      axi_card_mem0_awuser               => open,
+      axi_card_mem0_awvalid              => axi_card_mem0_awvalid,
+      axi_card_mem0_bid                  => axi_card_mem0_bid,
+      axi_card_mem0_bready               => axi_card_mem0_bready,
+      axi_card_mem0_bresp(1 downto 0)    => axi_card_mem0_bresp(1 downto 0),
+      axi_card_mem0_buser(0)             => '0',
+      axi_card_mem0_bvalid               => axi_card_mem0_bvalid,
+      axi_card_mem0_rdata(511 downto 0)  => axi_card_mem0_rdata(511 downto 0),
+      axi_card_mem0_rid                  => axi_card_mem0_rid,
+      axi_card_mem0_rlast                => axi_card_mem0_rlast,
+      axi_card_mem0_rready               => axi_card_mem0_rready,
+      axi_card_mem0_rresp(1 downto 0)    => axi_card_mem0_rresp(1 downto 0),
+      axi_card_mem0_ruser(0)             => '0',
+      axi_card_mem0_rvalid               => axi_card_mem0_rvalid,
+      axi_card_mem0_wdata(511 downto 0)  => axi_card_mem0_wdata(511 downto 0),
+      axi_card_mem0_wlast                => axi_card_mem0_wlast,
+      axi_card_mem0_wready               => axi_card_mem0_wready,
+      axi_card_mem0_wstrb(63 downto 0)   => axi_card_mem0_wstrb(63 downto 0),
+      axi_card_mem0_wuser                => open,
+      axi_card_mem0_wvalid               => axi_card_mem0_wvalid,
       --
       -- AXI Control Register Interface 
       axi_ctrl_reg_araddr(31 downto 0)   => xk_d.m_axi_araddr(31 downto 0),
@@ -678,38 +779,22 @@ BEGIN
       axi_host_mem_bresp(1 downto 0)     => sk_d.s_axi_bresp(1 downto 0),
       axi_host_mem_buser(0)              => '0',
       axi_host_mem_bvalid                => sk_d.s_axi_bvalid,
-      axi_host_mem_rdata(127 downto 0)   => sk_d.s_axi_rdata(127 downto 0),
+      axi_host_mem_rdata                 => sk_d.s_axi_rdata,
       axi_host_mem_rid(1 downto 0)       => sk_d.s_axi_rid(1 downto 0),
       axi_host_mem_rlast                 => sk_d.s_axi_rlast,
       axi_host_mem_rready                => ks_d.s_axi_rready,
       axi_host_mem_rresp(1 downto 0)     => sk_d.s_axi_rresp(1 downto 0),
       axi_host_mem_ruser(0)              => '0',
       axi_host_mem_rvalid                => sk_d.s_axi_rvalid,
-      axi_host_mem_wdata(127 downto 0)   => ks_d.s_axi_wdata(127 downto 0),
+      axi_host_mem_wdata                 => ks_d.s_axi_wdata,
       axi_host_mem_wlast                 => ks_d.s_axi_wlast,
       axi_host_mem_wready                => sk_d.s_axi_wready,
-      axi_host_mem_wstrb(15 downto 0)    => ks_d.s_axi_wstrb(15 downto 0),
+      axi_host_mem_wstrb                 => ks_d.s_axi_wstrb,
       axi_host_mem_wuser                 => open,
       axi_host_mem_wvalid                => ks_d.s_axi_wvalid
     );
 
-
-  --
-  -- DDR3
-  -- 
-  c1_sys_clk_p <= transport not c1_sys_clk_p after sys_clk_period / 2;
-  c1_sys_clk_n <= not c1_sys_clk_p;
-
-  c1_ddr3_s_axi_ctrl_awvalid <= '0';
-  c1_ddr3_s_axi_ctrl_awaddr <= (others => '0');
-  c1_ddr3_s_axi_ctrl_wvalid <= '0';
-  c1_ddr3_s_axi_ctrl_wdata <= (others => '0');
-  c1_ddr3_s_axi_ctrl_bready <= '0';
-  c1_ddr3_s_axi_ctrl_arvalid <= '0';
-  c1_ddr3_s_axi_ctrl_araddr <= (others => '0');
-  c1_ddr3_s_axi_ctrl_rready <= '0';
-
-  block_ram_used: IF DDR3_USED = FALSE GENERATE
+  block_ram_used: IF BRAM_USED = TRUE GENERATE
     card_mem0_clk   <=     ha_pclock;
     card_mem0_rst_n <= NOT action_reset_q;
 
@@ -717,41 +802,146 @@ BEGIN
     PORT MAP (
       s_aresetn      => action_reset_n_q,
       s_aclk         => ha_pclock,
-      s_axi_araddr   => axi_card_mem_araddr(31 downto 0), 
-      s_axi_arburst  => axi_card_mem_arburst(1 downto 0), 
-      s_axi_arid     => axi_card_mem_arid(1 downto 0), 
-      s_axi_arlen    => axi_card_mem_arlen(7 downto 0),   
-      s_axi_arready  => axi_card_mem_arready,             
-      s_axi_arsize   => axi_card_mem_arsize(2 downto 0), 
-      s_axi_arvalid  => axi_card_mem_arvalid,             
-      s_axi_awaddr   => axi_card_mem_awaddr(31 downto 0), 
-      s_axi_awburst  => axi_card_mem_awburst(1 downto 0), 
-      s_axi_awid     => axi_card_mem_awid(1 downto 0),
-      s_axi_awlen    => axi_card_mem_awlen(7 downto 0),   
-      s_axi_awready  => axi_card_mem_awready,             
-      s_axi_awsize   => axi_card_mem_awsize(2 downto 0),
-      s_axi_awvalid  => axi_card_mem_awvalid,           
-      s_axi_bid      => axi_card_mem_bid,
-      s_axi_bready   => axi_card_mem_bready,  
-      s_axi_bresp    => axi_card_mem_bresp(1 downto 0), 
-      s_axi_bvalid   => axi_card_mem_bvalid,              
-      s_axi_rdata    => axi_card_mem_rdata,  
-      s_axi_rid      => axi_card_mem_rid, 
-      s_axi_rlast    => axi_card_mem_rlast,               
-      s_axi_rready   => axi_card_mem_rready,              
-      s_axi_rresp    => axi_card_mem_rresp(1 downto 0),   
-      s_axi_rvalid   => axi_card_mem_rvalid,              
-      s_axi_wdata    => axi_card_mem_wdata,  
-      s_axi_wlast    => axi_card_mem_wlast,               
-      s_axi_wready   => axi_card_mem_wready,              
-      s_axi_wstrb    => axi_card_mem_wstrb,   
-      s_axi_wvalid   => axi_card_mem_wvalid
+      s_axi_araddr   => axi_card_mem0_araddr(31 downto 0), 
+      s_axi_arburst  => axi_card_mem0_arburst(1 downto 0), 
+      s_axi_arid     => axi_card_mem0_arid,
+      s_axi_arlen    => axi_card_mem0_arlen(7 downto 0),   
+      s_axi_arready  => axi_card_mem0_arready,             
+      s_axi_arsize   => axi_card_mem0_arsize(2 downto 0), 
+      s_axi_arvalid  => axi_card_mem0_arvalid,             
+      s_axi_awaddr   => axi_card_mem0_awaddr(31 downto 0), 
+      s_axi_awburst  => axi_card_mem0_awburst(1 downto 0), 
+      s_axi_awid     => axi_card_mem0_awid,
+      s_axi_awlen    => axi_card_mem0_awlen(7 downto 0),   
+      s_axi_awready  => axi_card_mem0_awready,             
+      s_axi_awsize   => axi_card_mem0_awsize(2 downto 0),
+      s_axi_awvalid  => axi_card_mem0_awvalid,           
+      s_axi_bid      => axi_card_mem0_bid,
+      s_axi_bready   => axi_card_mem0_bready,  
+      s_axi_bresp    => axi_card_mem0_bresp(1 downto 0), 
+      s_axi_bvalid   => axi_card_mem0_bvalid,              
+      s_axi_rdata    => axi_card_mem0_rdata,  
+      s_axi_rid      => axi_card_mem0_rid, 
+      s_axi_rlast    => axi_card_mem0_rlast,               
+      s_axi_rready   => axi_card_mem0_rready,              
+      s_axi_rresp    => axi_card_mem0_rresp(1 downto 0),   
+      s_axi_rvalid   => axi_card_mem0_rvalid,              
+      s_axi_wdata    => axi_card_mem0_wdata,  
+      s_axi_wlast    => axi_card_mem0_wlast,               
+      s_axi_wready   => axi_card_mem0_wready,              
+      s_axi_wstrb    => axi_card_mem0_wstrb,   
+      s_axi_wvalid   => axi_card_mem0_wvalid
     );
   END GENERATE;
- 
+
   ddr3_ram_used: IF DDR3_USED = TRUE GENERATE
+    --
+    -- DDR3
+    --
+    c1_sys_clk_p <= transport not c1_sys_clk_p after sys_clk_period / 2;
+    c1_sys_clk_n <= not c1_sys_clk_p;
+
+    c1_ddr3_s_axi_ctrl_awvalid <= '0';
+    c1_ddr3_s_axi_ctrl_awaddr <= (others => '0');
+    c1_ddr3_s_axi_ctrl_wvalid <= '0';
+    c1_ddr3_s_axi_ctrl_wdata <= (others => '0');
+    c1_ddr3_s_axi_ctrl_bready <= '0';
+    c1_ddr3_s_axi_ctrl_arvalid <= '0';
+    c1_ddr3_s_axi_ctrl_araddr <= (others => '0');
+    c1_ddr3_s_axi_ctrl_rready <= '0';
+
     card_mem0_clk   <=     c1_ddr3_ui_clk;
     card_mem0_rst_n <= NOT c1_ddr3_ui_clk_sync_rst;
+
+    axi_clock_converter_i : axi_clock_converter
+    PORT MAP (
+      s_axi_aclk      => ha_pclock,
+      s_axi_aresetn   => action_reset_n_q,
+      m_axi_aclk      => card_mem0_clk,
+      m_axi_aresetn   => card_mem0_rst_n,
+      --
+      -- FROM ACTION
+      s_axi_araddr    => axi_card_mem0_araddr(32 downto 0),      
+      s_axi_arburst   => axi_card_mem0_arburst(1 downto 0),      
+      s_axi_arcache   => axi_card_mem0_arcache(3 downto 0),      
+      s_axi_arid      => axi_card_mem0_arid,                     
+      s_axi_arlen     => axi_card_mem0_arlen(7 downto 0),        
+      s_axi_arlock    => axi_card_mem0_arlock,                
+      s_axi_arprot    => axi_card_mem0_arprot(2 downto 0),       
+      s_axi_arqos     => axi_card_mem0_arqos(3 downto 0),        
+      s_axi_arready   => axi_card_mem0_arready,                  
+      s_axi_arregion  => axi_card_mem0_arregion(3 downto 0),     
+      s_axi_arsize    => axi_card_mem0_arsize(2 downto 0),       
+      s_axi_arvalid   => axi_card_mem0_arvalid,                  
+      s_axi_awaddr    => axi_card_mem0_awaddr(32 downto 0),      
+      s_axi_awburst   => axi_card_mem0_awburst(1 downto 0),      
+      s_axi_awcache   => axi_card_mem0_awcache(3 downto 0),      
+      s_axi_awid      => axi_card_mem0_awid,                     
+      s_axi_awlen     => axi_card_mem0_awlen(7 downto 0),        
+      s_axi_awlock    => axi_card_mem0_awlock,                
+      s_axi_awprot    => axi_card_mem0_awprot(2 downto 0),       
+      s_axi_awqos     => axi_card_mem0_awqos(3 downto 0),        
+      s_axi_awready   => axi_card_mem0_awready,                  
+      s_axi_awregion  => axi_card_mem0_awregion(3 downto 0),     
+      s_axi_awsize    => axi_card_mem0_awsize(2 downto 0),       
+      s_axi_awvalid   => axi_card_mem0_awvalid,                  
+      s_axi_bid       => axi_card_mem0_bid,                      
+      s_axi_bready    => axi_card_mem0_bready,                   
+      s_axi_bresp     => axi_card_mem0_bresp(1 downto 0),        
+      s_axi_bvalid    => axi_card_mem0_bvalid,                   
+      s_axi_rdata     => axi_card_mem0_rdata(511 downto 0),      
+      s_axi_rid       => axi_card_mem0_rid,                      
+      s_axi_rlast     => axi_card_mem0_rlast,                    
+      s_axi_rready    => axi_card_mem0_rready,                   
+      s_axi_rresp     => axi_card_mem0_rresp(1 downto 0),        
+      s_axi_rvalid    => axi_card_mem0_rvalid,                   
+      s_axi_wdata     => axi_card_mem0_wdata(511 downto 0),      
+      s_axi_wlast     => axi_card_mem0_wlast,                    
+      s_axi_wready    => axi_card_mem0_wready,                   
+      s_axi_wstrb     => axi_card_mem0_wstrb(63 downto 0),       
+      s_axi_wvalid    => axi_card_mem0_wvalid,                   
+      --
+      -- TO DDR3
+      m_axi_araddr    => c0_ddr3_axi_araddr,
+      m_axi_arburst   => c0_ddr3_axi_arburst,
+      m_axi_arcache   => c0_ddr3_axi_arcache,
+      m_axi_arid      => c0_ddr3_axi_arid,
+      m_axi_arlen     => c0_ddr3_axi_arlen,
+      m_axi_arlock    => c0_ddr3_axi_arlock,
+      m_axi_arprot    => c0_ddr3_axi_arprot,
+      m_axi_arqos     => c0_ddr3_axi_arqos,
+      m_axi_arready   => c0_ddr3_axi_arready,
+      m_axi_arregion  => c0_ddr3_axi_arregion,
+      m_axi_arsize    => c0_ddr3_axi_arsize,
+      m_axi_arvalid   => c0_ddr3_axi_arvalid,
+      m_axi_awaddr    => c0_ddr3_axi_awaddr,
+      m_axi_awburst   => c0_ddr3_axi_awburst,
+      m_axi_awcache   => c0_ddr3_axi_awcache,
+      m_axi_awid      => c0_ddr3_axi_awid,
+      m_axi_awlen     => c0_ddr3_axi_awlen,
+      m_axi_awlock    => c0_ddr3_axi_awlock,
+      m_axi_awprot    => c0_ddr3_axi_awprot,
+      m_axi_awqos     => c0_ddr3_axi_awqos,
+      m_axi_awready   => c0_ddr3_axi_awready,
+      m_axi_awregion  => c0_ddr3_axi_awregion,
+      m_axi_awsize    => c0_ddr3_axi_awsize,
+      m_axi_awvalid   => c0_ddr3_axi_awvalid,
+      m_axi_bid       => c0_ddr3_axi_bid,
+      m_axi_bready    => c0_ddr3_axi_bready,
+      m_axi_bresp     => c0_ddr3_axi_bresp,
+      m_axi_bvalid    => c0_ddr3_axi_bvalid,
+      m_axi_rdata     => c0_ddr3_axi_rdata,
+      m_axi_rid       => c0_ddr3_axi_rid,
+      m_axi_rlast     => c0_ddr3_axi_rlast,
+      m_axi_rready    => c0_ddr3_axi_rready,
+      m_axi_rresp     => c0_ddr3_axi_rresp,
+      m_axi_rvalid    => c0_ddr3_axi_rvalid,
+      m_axi_wdata     => c0_ddr3_axi_wdata,
+      m_axi_wlast     => c0_ddr3_axi_wlast,
+      m_axi_wready    => c0_ddr3_axi_wready,
+      m_axi_wstrb     => c0_ddr3_axi_wstrb,
+      m_axi_wvalid    => c0_ddr3_axi_wvalid
+    );
 
     ddr3sdram_bank1 : ddr3sdram
       PORT MAP (
@@ -793,72 +983,72 @@ BEGIN
         c0_ddr3_s_axi_ctrl_rready => c1_ddr3_s_axi_ctrl_rready,
         c0_ddr3_s_axi_ctrl_rdata => c1_ddr3_s_axi_ctrl_rdata,
         c0_ddr3_s_axi_ctrl_rresp => c1_ddr3_s_axi_ctrl_rresp,
-        c0_ddr3_s_axi_araddr     => axi_card_mem_araddr(32 downto 0), 
-        c0_ddr3_s_axi_arburst    => axi_card_mem_arburst(1 downto 0), 
-        c0_ddr3_s_axi_arcache    => axi_card_mem_arcache(3 downto 0), 
-        c0_ddr3_s_axi_arid       => axi_card_mem_arid(1 downto 0),
-        c0_ddr3_s_axi_arlen      => axi_card_mem_arlen(7 downto 0),   
-        c0_ddr3_s_axi_arlock(0)  => axi_card_mem_arlock(0 ),           
-        c0_ddr3_s_axi_arprot     => axi_card_mem_arprot(2 downto 0),  
-        c0_ddr3_s_axi_arqos      => axi_card_mem_arqos(3 downto 0),   
-        c0_ddr3_s_axi_arready    => axi_card_mem_arready,             
-        c0_ddr3_s_axi_arsize     => axi_card_mem_arsize(2 downto 0), 
-        c0_ddr3_s_axi_arvalid    => axi_card_mem_arvalid,             
-        c0_ddr3_s_axi_awaddr     => axi_card_mem_awaddr(32 downto 0), 
-        c0_ddr3_s_axi_awburst    => axi_card_mem_awburst(1 downto 0), 
-        c0_ddr3_s_axi_awcache    => axi_card_mem_awcache(3 downto 0), 
-        c0_ddr3_s_axi_awid       => axi_card_mem_awid(1 downto 0),
-        c0_ddr3_s_axi_awlen      => axi_card_mem_awlen(7 downto 0),   
-        c0_ddr3_s_axi_awlock(0)  => axi_card_mem_awlock(0),           
-        c0_ddr3_s_axi_awprot     => axi_card_mem_awprot(2 downto 0),  
-        c0_ddr3_s_axi_awqos      => axi_card_mem_awqos(3 downto 0),   
-        c0_ddr3_s_axi_awready    => axi_card_mem_awready,             
-        c0_ddr3_s_axi_awsize     => axi_card_mem_awsize(2 downto 0),
-        c0_ddr3_s_axi_awvalid    => axi_card_mem_awvalid,           
-        c0_ddr3_s_axi_bid        => axi_card_mem_bid,
-        c0_ddr3_s_axi_bready     => axi_card_mem_bready,  
-        c0_ddr3_s_axi_bresp      => axi_card_mem_bresp(1 downto 0), 
-        c0_ddr3_s_axi_bvalid     => axi_card_mem_bvalid,              
-        c0_ddr3_s_axi_rdata      => axi_card_mem_rdata,  
-        c0_ddr3_s_axi_rid        => axi_card_mem_rid,
-        c0_ddr3_s_axi_rlast      => axi_card_mem_rlast,               
-        c0_ddr3_s_axi_rready     => axi_card_mem_rready,              
-        c0_ddr3_s_axi_rresp      => axi_card_mem_rresp(1 downto 0),   
-        c0_ddr3_s_axi_rvalid     => axi_card_mem_rvalid,              
-        c0_ddr3_s_axi_wdata      => axi_card_mem_wdata,  
-        c0_ddr3_s_axi_wlast      => axi_card_mem_wlast,               
-        c0_ddr3_s_axi_wready     => axi_card_mem_wready,              
-        c0_ddr3_s_axi_wstrb      => axi_card_mem_wstrb,   
-        c0_ddr3_s_axi_wvalid     => axi_card_mem_wvalid,
+        c0_ddr3_s_axi_araddr     => c0_ddr3_axi_araddr(32 downto 0), 
+        c0_ddr3_s_axi_arburst    => c0_ddr3_axi_arburst(1 downto 0), 
+        c0_ddr3_s_axi_arcache    => c0_ddr3_axi_arcache(3 downto 0), 
+        c0_ddr3_s_axi_arid       => c0_ddr3_axi_arid,
+        c0_ddr3_s_axi_arlen      => c0_ddr3_axi_arlen(7 downto 0),   
+        c0_ddr3_s_axi_arlock     => c0_ddr3_axi_arlock,
+        c0_ddr3_s_axi_arprot     => c0_ddr3_axi_arprot(2 downto 0),  
+        c0_ddr3_s_axi_arqos      => c0_ddr3_axi_arqos(3 downto 0),   
+        c0_ddr3_s_axi_arready    => c0_ddr3_axi_arready,             
+        c0_ddr3_s_axi_arsize     => c0_ddr3_axi_arsize(2 downto 0), 
+        c0_ddr3_s_axi_arvalid    => c0_ddr3_axi_arvalid,             
+        c0_ddr3_s_axi_awaddr     => c0_ddr3_axi_awaddr(32 downto 0), 
+        c0_ddr3_s_axi_awburst    => c0_ddr3_axi_awburst(1 downto 0), 
+        c0_ddr3_s_axi_awcache    => c0_ddr3_axi_awcache(3 downto 0), 
+        c0_ddr3_s_axi_awid       => c0_ddr3_axi_awid,
+        c0_ddr3_s_axi_awlen      => c0_ddr3_axi_awlen(7 downto 0),   
+        c0_ddr3_s_axi_awlock     => c0_ddr3_axi_awlock,           
+        c0_ddr3_s_axi_awprot     => c0_ddr3_axi_awprot(2 downto 0),  
+        c0_ddr3_s_axi_awqos      => c0_ddr3_axi_awqos(3 downto 0),   
+        c0_ddr3_s_axi_awready    => c0_ddr3_axi_awready,             
+        c0_ddr3_s_axi_awsize     => c0_ddr3_axi_awsize(2 downto 0),
+        c0_ddr3_s_axi_awvalid    => c0_ddr3_axi_awvalid,           
+        c0_ddr3_s_axi_bid        => c0_ddr3_axi_bid,
+        c0_ddr3_s_axi_bready     => c0_ddr3_axi_bready,  
+        c0_ddr3_s_axi_bresp      => c0_ddr3_axi_bresp(1 downto 0), 
+        c0_ddr3_s_axi_bvalid     => c0_ddr3_axi_bvalid,              
+        c0_ddr3_s_axi_rdata      => c0_ddr3_axi_rdata,  
+        c0_ddr3_s_axi_rid        => c0_ddr3_axi_rid,
+        c0_ddr3_s_axi_rlast      => c0_ddr3_axi_rlast,               
+        c0_ddr3_s_axi_rready     => c0_ddr3_axi_rready,              
+        c0_ddr3_s_axi_rresp      => c0_ddr3_axi_rresp(1 downto 0),   
+        c0_ddr3_s_axi_rvalid     => c0_ddr3_axi_rvalid,              
+        c0_ddr3_s_axi_wdata      => c0_ddr3_axi_wdata,  
+        c0_ddr3_s_axi_wlast      => c0_ddr3_axi_wlast,               
+        c0_ddr3_s_axi_wready     => c0_ddr3_axi_wready,              
+        c0_ddr3_s_axi_wstrb      => c0_ddr3_axi_wstrb,   
+        c0_ddr3_s_axi_wvalid     => c0_ddr3_axi_wvalid,
         sys_rst                  => ddr3_reset_q
       );
 
     --
     -- DDR3 RAM model
     -- 
---DDR3    bank1_model : ddr3_sdram_usodimm
---DDR3       generic map(
---DDR3         message_level  => 0,
---DDR3         part           => usodimm_part,
---DDR3         short_init_dly => true,
---DDR3         read_undef_val => 'U'
---DDR3       )
---DDR3       port map(
---DDR3         ck => c1_ddr3_ck_p,
---DDR3         ck_l => c1_ddr3_ck_n,
---DDR3         reset_l => c1_ddr3_reset_n,
---DDR3         cke => c1_ddr3_cke,
---DDR3         cs_l => c1_ddr3_cs_n,
---DDR3         ras_l => c1_ddr3_ras_n,
---DDR3         cas_l => c1_ddr3_cas_n,
---DDR3         we_l => c1_ddr3_we_n,
---DDR3         odt => c1_ddr3_odt,
---DDR3         dm => c1_ddr3_dm,
---DDR3         ba => c1_ddr3_ba,
---DDR3         a => c1_ddr3_addr,
---DDR3         dq => c1_ddr3_dq,
---DDR3         dqs => c1_ddr3_dqs_p,
---DDR3         dqs_l => c1_ddr3_dqs_n
---DDR3       );
-  END GENERATE; 
+    bank1_model : ddr3_sdram_usodimm
+       generic map(
+         message_level  => 0,
+         part           => usodimm_part,
+         short_init_dly => true,
+         read_undef_val => 'U'
+       )
+       port map(
+         ck => c1_ddr3_ck_p,
+         ck_l => c1_ddr3_ck_n,
+         reset_l => c1_ddr3_reset_n,
+         cke => c1_ddr3_cke,
+         cs_l => c1_ddr3_cs_n,
+         ras_l => c1_ddr3_ras_n,
+         cas_l => c1_ddr3_cas_n,
+         we_l => c1_ddr3_we_n,
+         odt => c1_ddr3_odt,
+         dm => c1_ddr3_dm,
+         ba => c1_ddr3_ba,
+         a => c1_ddr3_addr,
+         dq => c1_ddr3_dq,
+         dqs => c1_ddr3_dqs_p,
+         dqs_l => c1_ddr3_dqs_n
+       );
+  END GENERATE ddr3_ram_used;
 END afu;

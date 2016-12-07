@@ -35,7 +35,7 @@ entity action_axi_master is
 		-- Width of Address Bus
 		C_M_AXI_ADDR_WIDTH	: integer	:= 64;
 		-- Width of Data Bus
-		C_M_AXI_DATA_WIDTH	: integer	:= 128;
+		C_M_AXI_DATA_WIDTH	: integer	:= 512;
 		-- Width of User Write Address Bus
 		C_M_AXI_AWUSER_WIDTH	: integer	:= 0;
 		-- Width of User Read Address Bus
@@ -57,10 +57,13 @@ entity action_axi_master is
                 dma_rd_data_o       : out  std_logic_vector(C_M_AXI_DATA_WIDTH - 1 downto 0);
                 dma_rd_data_valid_o : out  std_logic;                     
                 dma_rd_data_last_o  : out  std_logic;                     
+                dma_rd_data_taken_i : in   std_logic;
+                
                                                                    
                 dma_wr_req_i        : in  std_logic;                     
                 dma_wr_addr_i       : in  std_logic_vector( C_M_AXI_ADDR_WIDTH - 1 downto 0);
                 dma_wr_len_i        : in  std_logic_vector(  7 downto 0);
+                dma_wr_req_ack_o    : out std_logic;
                 dma_wr_data_i       : in  std_logic_vector(C_M_AXI_DATA_WIDTH -1  downto 0);
                 dma_wr_data_strobe_i: in  std_logic_vector(C_M_AXI_DATA_WIDTH/8-1 downto 0);                     
                 dma_wr_data_last_i  : in  std_logic;                     
@@ -151,19 +154,23 @@ architecture action_axi_master of action_axi_master is
         end or_reduce;
 
 
-	signal axi_awaddr	: std_logic_vector(C_M_AXI_ADDR_WIDTH-1 downto 0);
-	signal axi_awvalid	: std_logic;
-	signal axi_wdata	: std_logic_vector(C_M_AXI_DATA_WIDTH-1 downto 0);
-	signal axi_wlast	: std_logic;
-	signal axi_wvalid	: std_logic;
-	signal axi_wstrb	: std_logic_vector(C_M_AXI_DATA_WIDTH/8-1 downto 0);
-	signal axi_bready	: std_logic;
-	signal axi_araddr	: std_logic_vector(C_M_AXI_ADDR_WIDTH-1 downto 0);
-	signal axi_arvalid	: std_logic;
-	signal axi_rready	: std_logic;
-	signal axi_awlen	: std_logic_vector(7 downto 0);
-	signal axi_arlen	: std_logic_vector(7 downto 0);
-        signal write_pending    : std_ulogic;        
+	signal axi_awaddr        : std_logic_vector(C_M_AXI_ADDR_WIDTH-1 downto 0);
+	signal axi_awvalid       : std_logic;
+	signal axi_wdata         : std_logic_vector(C_M_AXI_DATA_WIDTH-1 downto 0);
+	signal axi_wlast         : std_logic;
+	signal axi_wvalid        : std_logic;
+	signal axi_wstrb         : std_logic_vector(C_M_AXI_DATA_WIDTH/8-1 downto 0);
+	signal axi_bready        : std_logic;
+	signal axi_araddr        : std_logic_vector(C_M_AXI_ADDR_WIDTH-1 downto 0);
+	signal axi_arvalid       : std_logic;
+	signal axi_rready        : std_logic;
+	signal axi_awlen         : std_logic_vector(7 downto 0);
+	signal axi_arlen       	 : std_logic_vector(7 downto 0);
+        signal wr_req_wait_cycle : std_logic;
+        signal rd_req_wait_cycle : std_logic;
+        signal rd_req_ack        : std_logic;
+        signal wr_req_ack        : std_logic;
+        
 
 
 begin
@@ -206,21 +213,23 @@ begin
 axi_w:	process(M_AXI_ACLK)                                                          
 	begin                                                                             
 	  if (rising_edge (M_AXI_ACLK)) then
-             
-             dma_wr_done_o  <= '0';
+             dma_wr_req_ack_o <= '0';
+             dma_wr_done_o    <= '0';
              if M_AXI_ARESETN = '0'  then
                axi_awvalid    <= '0';
                axi_bready     <= '0';
-               write_pending  <= '0';
+               wr_req_wait_cycle <= '0';
              else
-               if dma_wr_req_i = '1' then
+               wr_req_wait_cycle <= '0';
+               if dma_wr_req_i = '1' and wr_req_wait_cycle = '0' then
                  axi_awaddr  <= dma_wr_addr_i;
                  axi_awlen   <= dma_wr_len_i;
                  axi_awvalid <= '1';
                end if;
                if axi_awvalid = '1' and M_AXI_AWREADY = '1' then
-                 axi_awvalid   <= '0';
-                 write_pending <= '1';
+                 dma_wr_req_ack_o  <= '1';
+                 axi_awvalid       <= '0';
+                 wr_req_wait_cycle <= '1';
                end if;
                if dma_wr_data_last_i = '1' then
                    axi_bready    <= '1';
@@ -229,10 +238,6 @@ axi_w:	process(M_AXI_ACLK)
                  axi_bready     <= '0';
                  dma_wr_done_o  <= '1';
                end if;
-               if axi_wlast = '1' then
-                 write_pending <= '0';
-               end if;
-
              end if;  
             
           end if;
@@ -256,7 +261,7 @@ wr_data: process(axi_wvalid, M_AXI_WREADY, dma_wr_data_last_i)
            
          end process;  
         
-
+axi_rready   <= dma_rd_data_taken_i;
 axi_r:	process(M_AXI_ACLK)                                                          
 	begin                                                                             
 	  if (rising_edge (M_AXI_ACLK)) then 
@@ -265,19 +270,19 @@ axi_r:	process(M_AXI_ACLK)
              dma_rd_data_last_o  <= '0';
              dma_rd_req_ack_o    <= '0';
              if (M_AXI_ARESETN = '0' ) then
-               axi_arvalid  <= '0';
-               axi_rready   <= '0';
-               
+               axi_arvalid       <= '0';
+               rd_req_wait_cycle <= '0';
              else
-               axi_rready    <= '1';
-               if dma_rd_req_i = '1' then
+               rd_req_wait_cycle <= '0';
+               if dma_rd_req_i = '1' and rd_req_wait_cycle = '0' then
                  axi_arvalid  <= '1';
                  axi_araddr   <= dma_rd_addr_i;
                  axi_arlen    <= dma_rd_len_i;
                end if;
                if axi_arvalid  = '1' and M_AXI_ARREADY = '1' then
-                 axi_arvalid      <= '0';
-                 dma_rd_req_ack_o <= '1';
+                 axi_arvalid       <= '0';
+                 dma_rd_req_ack_o  <= '1';
+                 rd_req_wait_cycle <= '1';
                end if;  
                if M_AXI_RVALID = '1' then
                  dma_rd_data_valid_o <= '1';

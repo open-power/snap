@@ -155,20 +155,20 @@ ARCHITECTURE dma OF dma IS
   SIGNAL ah_rc_q                : AH_RWC_T;
   SIGNAL ah_wc_q                : AH_RWC_T;
   SIGNAL aln_db_wb_rdreq        : std_ulogic;
-  SIGNAL aln_rdata              : std_ulogic_vector(127 DOWNTO  0);
+  SIGNAL aln_rdata              : std_ulogic_vector(511 DOWNTO  0);
   SIGNAL aln_rdata_e            : std_ulogic;
-  SIGNAL aln_rdata_p            : std_ulogic_vector( 15 DOWNTO  0);
+  SIGNAL aln_rdata_p            : std_ulogic_vector(  7 DOWNTO  0);
   SIGNAL aln_rdata_v            : std_ulogic;
   SIGNAL aln_wbusy              : std_ulogic;
-  SIGNAL aln_wdata              : std_ulogic_vector(127 DOWNTO  0);
-  SIGNAL aln_wdata_be           : std_ulogic_vector( 15 DOWNTO  0);
+  SIGNAL aln_wdata              : std_ulogic_vector(511 DOWNTO  0);
+  SIGNAL aln_wdata_be           : std_ulogic_vector( 63 DOWNTO  0);
   SIGNAL aln_wdata_flush        : std_ulogic;
-  SIGNAL aln_wdata_p            : std_ulogic_vector( 15 DOWNTO  0);
+  SIGNAL aln_wdata_p            : std_ulogic_vector(  7 DOWNTO  0);
   SIGNAL aln_wdata_v            : std_ulogic;
   SIGNAL aln_wfsm_idle          : std_ulogic;
-  SIGNAL buf_rdata              : std_ulogic_vector(127 DOWNTO  0);
+  SIGNAL buf_rdata              : std_ulogic_vector(511 DOWNTO  0);
   SIGNAL buf_rdata_e_q          : std_ulogic;
-  SIGNAL buf_rdata_p            : std_ulogic_vector( 15 DOWNTO  0);
+  SIGNAL buf_rdata_p            : std_ulogic_vector(  7 DOWNTO  0);
   SIGNAL buf_rdata_vld          : std_ulogic;
   SIGNAL buf_rrdreq             : std_ulogic;
   SIGNAL buf_rtag_p_q           : std_ulogic;
@@ -228,7 +228,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL rfifo_full             : std_ulogic;
   SIGNAL rfifo_prog_full        : std_ulogic;
   SIGNAL rfifo_rd_rst_busy      : std_ulogic;
-  SIGNAL rfifo_rdata            : std_ulogic_vector(128 DOWNTO 0);
+  SIGNAL rfifo_rdata            : std_ulogic_vector(512 DOWNTO 0);
   SIGNAL rfifo_wr_rst_busy      : std_ulogic;
   SIGNAL rflush_q               : std_ulogic;
   SIGNAL rsp_rtag_next_q        : std_ulogic_vector(  5 DOWNTO  0);
@@ -266,14 +266,14 @@ ARCHITECTURE dma OF dma IS
 
   --
   -- COMPONENT
-  COMPONENT fifo_129x512
+  COMPONENT fifo_513x512
     PORT (
       clk : IN STD_LOGIC;
       srst : IN STD_LOGIC;
-      din : IN STD_LOGIC_VECTOR(128 DOWNTO 0);
+      din : IN STD_LOGIC_VECTOR(512 DOWNTO 0);
       wr_en : IN STD_LOGIC;
       rd_en : IN STD_LOGIC;
-      dout : OUT STD_LOGIC_VECTOR(128 DOWNTO 0);
+      dout : OUT STD_LOGIC_VECTOR(512 DOWNTO 0);
       full : OUT STD_LOGIC;
       empty : OUT STD_LOGIC;
       prog_full : OUT STD_LOGIC;
@@ -793,8 +793,8 @@ BEGIN
              (read_ctrl_fsm_q = ST_IDLE) THEN
             --
             -- calculate the amount of Clt
-            cl_calc_v := ((32 DOWNTO 12 => '0') & sd_c_q.rd_len(7 DOWNTO 0) & (3 DOWNTO 0 => '0')) +  -- rd_len * 16
-                         ((32 DOWNTO 5  => '0') & '1'                       & (3 DOWNTO 0 => '0')) +  -- rd_len + 16
+            cl_calc_v := ((32 DOWNTO 14 => '0') & sd_c_q.rd_len(7 DOWNTO 0) & (5 DOWNTO 0 => '0')) +  -- rd_len * 64
+                         ((32 DOWNTO 7  => '0') & '1'                       & (5 DOWNTO 0 => '0')) +  -- rd_len + 64
                          ((32 DOWNTO 7  => '0') & sd_c_q.rd_addr(6 DOWNTO 0)                     );  
 
             IF cl_calc_v(6 DOWNTO 0) = "0000000" THEN
@@ -1221,10 +1221,10 @@ BEGIN
               IF buf_active_v = FALSE THEN
                 write_fsm_req_q   <= NONE;
 
-                IF aln_wfsm_idle = '1' THEN
+            --512    IF aln_wfsm_idle = '1' THEN
                   write_ctrl_fsm_q    <= ST_IDLE;
                   wr_id_valid_q    <= '1';
-                END IF;
+            --512    END IF;
               END IF;
 
             --------------------------------------------------------------------
@@ -1527,8 +1527,8 @@ BEGIN
                 (write_ctrl_fsm_q = ST_IDLE) THEN
               --
               -- calculate the amount of Clt
-              cl_calc_v := ((32 DOWNTO 12 => '0') & sd_c_q.wr_len(7 DOWNTO 0) & (3 DOWNTO 0 => '0')) +  -- wr_len * 16
-                           ((32 DOWNTO 5  => '0') & '1'                       & (3 DOWNTO 0 => '0')) +  -- wr_len + 16
+              cl_calc_v := ((32 DOWNTO 14 => '0') & sd_c_q.wr_len(7 DOWNTO 0) & (5 DOWNTO 0 => '0')) +  -- wr_len * 64
+                           ((32 DOWNTO 7  => '0') & '1'                       & (5 DOWNTO 0 => '0')) +  -- wr_len + 64
                            ((32 DOWNTO 7  => '0') & sd_c_q.wr_addr(6 DOWNTO 0)                     );  
 
               IF cl_calc_v(6 DOWNTO 0) = "0000000" THEN
@@ -1988,57 +1988,67 @@ BEGIN
   -- DMA ALIGNER
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
-    dma_aligner: ENTITY work.dma_aligner
-    PORT MAP (
-      --
-      -- pervasive
-      ha_pclock              => ha_pclock,
-      afu_reset              => afu_reset,
-      --
-      -- Alinger Conrol
-      sd_c_i                 => sd_c_q,
-      aln_wbusy_o            => aln_wbusy,
-      aln_wfsm_idle_o        => aln_wfsm_idle,
-      --
-      -- Unaligned Data
-      buf_rdata_i            => buf_rdata,
-      buf_rdata_p_i          => buf_rdata_p,
-      buf_rdata_v_i          => buf_rdata_vld,
-      buf_rdata_e_i          => buf_rdata_e_q,
-      aln_wdata_o            => aln_wdata,
-      aln_wdata_p_o          => aln_wdata_p,
-      aln_wdata_be_o         => aln_wdata_be,
-      aln_wdata_v_o          => aln_wdata_v,
-      aln_wdata_flush_o      => aln_wdata_flush,
-      --
-      -- Aligned Data
-      sd_d_i                 => sd_d_i,
-      aln_rdata_o            => aln_rdata,
-      aln_rdata_p_o          => aln_rdata_p,
-      aln_rdata_v_o          => aln_rdata_v,
-      aln_rdata_e_o          => aln_rdata_e,
-      --
-      -- Error Checker
-      aln_read_fsm_err_o     => dmm_e_q.aln_read_fsm_err,
-      aln_write_fsm_err_o    => dmm_e_q.aln_write_fsm_err
-    );
-
-
+    --512 bypass aligner for the first 512 version
+    aln_rdata       <= buf_rdata;
+    aln_rdata_p     <= buf_rdata_p;
+    aln_rdata_v     <= buf_rdata_vld;
+    aln_rdata_e     <= buf_rdata_e_q;
+                     
+    aln_wdata       <=  sd_d_i.wr_data;
+    aln_wdata_p     <=  (OTHERS => '0');
+    aln_wdata_be    <=  sd_d_i.wr_strobe;
+    aln_wdata_v     <=  or_reduce(sd_d_i.wr_strobe);
+    aln_wdata_flush <=  sd_d_i.wr_last;
+    
+    --512 dma_aligner: ENTITY work.dma_aligner
+    --512 PORT MAP (
+    --512   --
+    --512   -- pervasive
+    --512   ha_pclock              => ha_pclock,
+    --512   afu_reset              => afu_reset,
+    --512   --
+    --512   -- Alinger Conrol
+    --512   sd_c_i                 => sd_c_q,
+    --512   aln_wbusy_o            => aln_wbusy,
+    --512   aln_wfsm_idle_o        => aln_wfsm_idle,
+    --512   --
+    --512   -- Unaligned Data
+    --512   buf_rdata_i            => buf_rdata,
+    --512   buf_rdata_p_i          => buf_rdata_p,
+    --512   buf_rdata_v_i          => buf_rdata_vld,
+    --512   buf_rdata_e_i          => buf_rdata_e_q,
+    --512   aln_wdata_o            => aln_wdata,
+    --512   aln_wdata_p_o          => aln_wdata_p,
+    --512   aln_wdata_be_o         => aln_wdata_be,
+    --512   aln_wdata_v_o          => aln_wdata_v,
+    --512   aln_wdata_flush_o      => aln_wdata_flush,
+    --512   --
+    --512   -- Aligned Data
+    --512   sd_d_i                 => sd_d_i,
+    --512   aln_rdata_o            => aln_rdata,
+    --512   aln_rdata_p_o          => aln_rdata_p,
+    --512   aln_rdata_v_o          => aln_rdata_v,
+    --512   aln_rdata_e_o          => aln_rdata_e,
+    --512   --
+    --512   -- Error Checker
+    --512   aln_read_fsm_err_o     => dmm_e_q.aln_read_fsm_err,
+    --512   aln_write_fsm_err_o    => dmm_e_q.aln_write_fsm_err
+    --512 );
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   -- DMA READ OUTPUT FIFO
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
     ----------------------------------------------------------------------------
-    -- FIFO: fifo_129x512
+    -- FIFO: fifo_513x512
     ----------------------------------------------------------------------------
     --
-    dma_read_fifo : fifo_129x512
+    dma_read_fifo : fifo_513x512
     PORT MAP (
       clk                      => std_logic(ha_pclock),
       srst                     => std_logic(afu_reset),
-      din(127 DOWNTO 0)        => std_logic_vector(aln_rdata),
-      din(128)                 => std_logic(aln_rdata_e),
+      din(511 DOWNTO 0)        => std_logic_vector(aln_rdata),
+      din(512)                 => std_logic(aln_rdata_e),
       wr_en                    => std_logic(aln_rdata_v),
       rd_en                    => std_logic(sd_d_i.rd_data_ack),
       std_ulogic_vector(dout)  => rfifo_rdata,
@@ -2356,8 +2366,8 @@ BEGIN
     -- AXI SLAVE CONNECTION
     --
     ds_d_o.rd_data_strobe  <= NOT rfifo_empty;
-    ds_d_o.rd_last         <= rfifo_rdata(128) AND NOT rfifo_empty;
-    ds_d_o.rd_data         <= rfifo_rdata(127 DOWNTO 0);
+    ds_d_o.rd_last         <= rfifo_rdata(512) AND NOT rfifo_empty;
+    ds_d_o.rd_data         <= rfifo_rdata(511 DOWNTO 0);
     ds_d_o.rd_id           <= raddr_id_q;
 
     ds_c_o.wr_req_ack  <= '1' WHEN write_ctrl_fsm_q = ST_SEND_WR_REQ_ACK ELSE '0';
@@ -2452,7 +2462,7 @@ BEGIN
         --
         force_rfifo_empty_q <= force_rfifo_empty_q;
         
-        IF ((rfifo_rdata(128)   = '1') AND 
+        IF ((rfifo_rdata(512)   = '1') AND 
             (rfifo_empty_tmp    = '0') AND
             (sd_d_i.rd_data_ack = '1')) THEN                 
           force_rfifo_empty_q  <= '1';

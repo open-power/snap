@@ -8,7 +8,7 @@ SOURCE_FILES_VHDL    = $(SOURCE_FILES_HDL:../%=%)
 CE_PARMS := -p -clone
 
 ifndef DDR3_USED
-export DDR3_USED=FALSE
+export DDR3_USED=TRUE
 endif
 
 ifndef ILA_DEBUG
@@ -72,6 +72,8 @@ image:
 	@echo -e "\t[BUILD IMAGE] start ($(shell date))"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
 	@echo -e "\t[BUILD IMAGE] done ($(shell date))"
+	@cd $(DONUT_HARDWARE_ROOT)/setup && vivado -mode batch -source AR_64051.tcl -notrace
+	@echo -e "\t[BUILD IMAGE] patch for ar_64051 done ($(shell date))"
 
 clean:
 	@echo -e "\t[CLEAN] build environment";

@@ -24,6 +24,7 @@ set ies_libs   $::env(FRAMEWORK_ROOT)/ies_libs
 set build_dir  $::env(DONUT_HARDWARE_ROOT)/build
 set action_dir $::env(ACTION_ROOT)
 set ddr3_used  $::env(DDR3_USED)
+set simulator  $::env(SIMULATOR)
 
 puts $root_dir
 puts $pslse_dir
@@ -65,12 +66,15 @@ if { $ddr3_used == TRUE } {
 update_compile_order -fileset sim_1
 
 #add IPs
-add_files -norecurse $root_dir/ip/ram_576to144x64_2p/ram_576to144x64_2p.xci
-export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_576to144x64_2p/ram_576to144x64_2p.xci"] -force -quiet
-add_files -norecurse $root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci
-export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_160to640x256_2p/ram_160to640x256_2p.xci"] -force -quiet
-add_files -norecurse  $root_dir/ip/fifo_129x512/fifo_129x512.xci
-export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_129x512/fifo_129x512.xci"] -force -quiet
+add_files -norecurse $root_dir/ip/ram_520x64_2p/ram_520x64_2p.xci
+export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_520x64_2p/ram_520x64_2p.xci"] -force -quiet
+add_files -norecurse $root_dir/ip/ram_584x64_2p/ram_584x64_2p.xci
+export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_584x64_2p/ram_584x64_2p.xci"] -force -quiet
+add_files -norecurse  $root_dir/ip/fifo_513x512/fifo_513x512.xci
+export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_513x512/fifo_513x512.xci"] -force -quiet
+add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci
+export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force -quiet
+
 if { $ddr3_used == TRUE } {
   add_files -norecurse $root_dir/ip/ddr3sdram/ddr3sdram.xci
   export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr3sdram/ddr3sdram.xci"] -force -quiet
@@ -113,7 +117,7 @@ read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict
 update_compile_order -fileset sources_1
 add_files -fileset constrs_1 -norecurse $root_dir/setup/donut.xdc
 
-# IMPORT DDR3 XDCs 
+# IMPORT DDR3 XDCs
 if { $ddr3_used == TRUE } {
   add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc
   add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc
@@ -123,15 +127,19 @@ if { $ddr3_used == TRUE } {
 
 # EXPORT SIMULATION
 # for ncsim (IES)
-export_simulation  -lib_map_path "$ies_libs/viv2015_4/ies14.10.s14" -force -directory "$root_dir/sim" -simulator ies
-exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/ies/top.sh
+if { $simulator == "irun" } {
+  export_simulation  -lib_map_path "$ies_libs/viv2015_4/ies14.10.s14" -force -single_step -directory "$root_dir/sim" -simulator ies
+} else {
+  export_simulation  -lib_map_path "$ies_libs/viv2015_4/ies14.10.s14" -force -directory "$root_dir/sim" -simulator ies
+}
+# exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/ies/top.sh
 #for questa
 export_simulation  -lib_map_path "$ies_libs/viv2015_4/mentor13.5" -force -directory "$root_dir/sim" -simulator questa
-exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/questa/top.sh
+# exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/questa/top.sh
 #for xsim
 export_simulation  -force -directory "$root_dir/sim" -simulator xsim
-exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/xsim/top.sh
-exec sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" $root_dir/sim/xsim/top.sh
+# exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/xsim/top.sh
+# exec sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" $root_dir/sim/xsim/top.sh
 
 # SET Synthesis Properties
 set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT 400 [get_runs synth_1]
