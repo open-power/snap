@@ -454,6 +454,7 @@ action_ddr_axi_master_inst : entity work.action_axi_master
                 dma_wr_req_i            => ddr_wr_req,
                 dma_wr_addr_i           => wr_addr(C_AXI_CARD_MEM0_ADDR_WIDTH -1 downto 0),
                 dma_wr_len_i            => wr_len,
+                dma_wr_req_ack_o        => ddr_wr_req_ack,
                 dma_wr_data_i           => wr_data,
                 dma_wr_data_strobe_i    => ddr_wr_data_strobe,
                 dma_wr_data_last_i      => ddr_wr_data_last,
