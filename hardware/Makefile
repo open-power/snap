@@ -4,6 +4,8 @@ BUILD_DIR=$(DONUT_HARDWARE_ROOT)/build
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/ies/filelist.f
 SOURCE_FILES_HDL     = $(shell grep -E "(\/hdl\/|\/action_examples\/)" $(PROJECT_COMPILE_LIST) | grep -v 'action_auto_' | grep -v 'viv_project' | sed 's/psl_accel_sim/psl_accel_syn/')
 SOURCE_FILES_VHDL    = $(SOURCE_FILES_HDL:../%=%)
+VHD_FILES_RELATIVE   = $(shell grep -E "(\/hdl\/|\/action_examples\/)" $(PROJECT_COMPILE_LIST) | grep -v 'action_auto_' | grep -v 'viv_project' | grep 'vhd') $(shell grep "psl_accel_sim.vhd" $(PROJECT_COMPILE_LIST) | sed 's/psl_accel_sim/psl_accel_syn/')
+VHD_FILES            = $(VHD_FILES_RELATIVE:../..%=%)
 
 CE_PARMS := -p -clone
 
@@ -45,8 +47,8 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 $(BUILD_DIR)/Sources/prj/top.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@cp $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
 	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
-	@echo "PATCH .vhdl FILES" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/vhdl.patch
-	@echo "SBT DEBUG: PATH = "`pwd`
+	@echo "PATCH .vhd FILES"  && for vhd_file in $(VHD_FILES); do $(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; done
+	@if [ $(DDR3_USED) == "TRUE" ]; then echo "PATCH .vhd FILES for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/vhdl.patch; fi
 
 $(BUILD_DIR)/Sources/prj/afu.prj: $(BUILD_DIR)/Sources/prj/top.prj
 	@echo -e "\t[CREATE] $@"
