@@ -588,7 +588,7 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
     begin
       if (rising_edge (action_clk)) then
             last_write_done   <= '0';
-            mem_wr            <= '0';
+            mem_wr            <= '0';                                                    -- only for DDR3_USED=TRUE
         if ( action_rst_n = '0' ) then
               fsm_copy_q         <= IDLE;
               dma_rd_req         <= '0';
