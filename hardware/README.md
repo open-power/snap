@@ -40,6 +40,19 @@ Corresponding to the ports that the SNAP framework provides:
 the port map of the action_wrapper has to consist of the correspondig counterparts.  
 Examples for actions together with their wrappers may be found in $DONUT_HARDWARE_ROOT/action_examples/empty and in $DONUT_HARDWARE_ROOT/action_examples/memcopy.
 
+# DDR3 Card Memory
+
+The SNAP framework supports the usage of the on-card DDR3 memory. It is accessible for the actions via the action wrapper through an AXI master interface. The existence of that interface is configurable via the environment variable DDR3_USED. When setting
+
+    DDR3_USED=TRUE
+
+the interface will be instantiated and the access to the DDR3 memory will be provided.
+
+The examples in $DONUT_HARDWARE_ROOT/action_examples/empty and in $DONUT_HARDWARE_ROOT/action_examples/memcopy show how the card memory can be connected via the action_wrapper. When DDR3_USED is not set to true all the lines containing the comment
+
+    -- only for DDR3_USED=TRUE
+
+will be removed in the build process during the step build config. If DDR3_USED is set to TRUE then these lines will stay active and the connection to the card memory will be established.
 
 # Image and model build
 
