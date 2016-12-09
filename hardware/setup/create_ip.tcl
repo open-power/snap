@@ -32,18 +32,20 @@ set_property target_simulator IES [current_project]
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name ram_520x64_2p -dir $ip_dir
 set_property -dict [list CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A {520} CONFIG.Write_Depth_A {64} CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Enable_A {Always_Enabled} CONFIG.Write_Width_B {520} CONFIG.Enable_B {Always_Enabled} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Read_Width_A {520} CONFIG.Read_Width_B {520} CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}] [get_ips ram_520x64_2p]
 generate_target {instantiation_template} [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci]
-set_property generate_synth_checkpoint false [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci]
 generate_target all [get_files  $ip_dir/ram_520x64_2p/ram_520x64_2p.xci]
 export_ip_user_files -of_objects [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci] -no_script -force -quiet
+create_ip_run [get_files -of_objects [get_fileset sources_1] $ip_dir/ram_520x64_2p/ram_520x64_2p.xci]
+launch_run -jobs 2 ram_520x64_2p_synth_1
 export_simulation -of_objects [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
 
 #create ram_584x64_2p  
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name ram_584x64_2p -dir $ip_dir
 set_property -dict [list CONFIG.Memory_Type {Simple_Dual_Port_RAM} CONFIG.Assume_Synchronous_Clk {true} CONFIG.Write_Width_A {584} CONFIG.Write_Depth_A {64} CONFIG.Operating_Mode_A {NO_CHANGE} CONFIG.Enable_A {Always_Enabled} CONFIG.Write_Width_B {584} CONFIG.Enable_B {Always_Enabled} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Read_Width_A {584} CONFIG.Read_Width_B {584} CONFIG.Operating_Mode_B {READ_FIRST} CONFIG.Register_PortB_Output_of_Memory_Primitives {true} CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}] [get_ips ram_584x64_2p]
 generate_target {instantiation_template} [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci]
-set_property generate_synth_checkpoint false [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci]
 generate_target all [get_files  $ip_dir/ram_584x64_2p/ram_584x64_2p.xci]
 export_ip_user_files -of_objects [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] -no_script -force -quiet
+create_ip_run [get_files -of_objects [get_fileset sources_1] $ip_dir//ram_584x64_2p/ram_584x64_2p.xci]
+launch_run -jobs 2 ram_584x64_2p_synth_1
 export_simulation -of_objects [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
 
 #create fifo_513x512
@@ -54,7 +56,7 @@ generate_target {instantiation_template} [get_files $ip_dir/fifo_513x512/fifo_51
 generate_target all [get_files  $ip_dir/fifo_513x512/fifo_513x512.xci]
 export_ip_user_files -of_objects [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] -no_script -force -quiet
 create_ip_run [get_files -of_objects [get_fileset sources_1] $ip_dir/fifo_513x512/fifo_513x512.xci]
-launch_run -jobs 6 fifo_513x512_synth_1
+launch_run -jobs 1 fifo_513x512_synth_1
 export_simulation -of_objects [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
 
 #create clock converter for axi_card_mem
@@ -64,7 +66,7 @@ generate_target {instantiation_template} [get_files $ip_dir/axi_clock_converter/
 generate_target all [get_files  $ip_dir/axi_clock_converter/axi_clock_converter.xci]
 export_ip_user_files -of_objects [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] -no_script -force -quiet
 create_ip_run [get_files -of_objects [get_fileset sources_1] $ip_dir/axi_clock_converter/axi_clock_converter.xci]
-launch_run -jobs 6 axi_clock_converter_synth_1
+launch_run -jobs 1 axi_clock_converter_synth_1
 export_simulation -of_objects [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
 
 
@@ -78,7 +80,7 @@ if { $ddr3_used == TRUE } {
   generate_target all [get_files  $ip_dir/ddr3sdram/ddr3sdram.xci]
   export_ip_user_files -of_objects [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -no_script -force -quiet
   create_ip_run [get_files -of_objects [get_fileset sources_1] $ip_dir/ddr3sdram/ddr3sdram.xci]
-  launch_run -jobs 6 ddr3sdram_synth_1
+  launch_run -jobs 10 ddr3sdram_synth_1
   export_simulation -of_objects [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
 } else {
   #create BlockRAM
