@@ -579,10 +579,12 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
       end if;
     end process;
 
-  rd_req_ack <= dma_rd_req_ack;                                                          -- only for DDR3_USED!=TRUE
-  wr_req_ack <= dma_wr_req_ack;                                                          -- only for DDR3_USED!=TRUE
-  rd_req_ack <= dma_rd_req_ack when src_host  = '1' else ddr_rd_req_ack;                 -- only for DDR3_USED=TRUE
-  wr_req_ack <= dma_wr_req_ack when dest_host = '1' else ddr_wr_req_ack;                 -- only for DDR3_USED=TRUE
+  rd_req_ack <= dma_rd_req_ack
+                when src_host  = '1' else ddr_rd_req_ack                                 -- only for DDR3_USED=TRUE
+                ;
+  wr_req_ack <= dma_wr_req_ack
+                when dest_host = '1' else ddr_wr_req_ack                                 -- only for DDR3_USED=TRUE
+                ;
 
         process(action_clk ) is
     begin
