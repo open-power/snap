@@ -6,12 +6,19 @@ set rootDir    \$::env(DONUT_HARDWARE_ROOT)\
 set dimmDir    \$::env(DIMMTEST)' $2
 
 sed -i '/top    synth_options/ a\
+                                           \]' $2
+
+if [ $DDR3_USED == "TRUE" ]; then
+sed -i '/top    synth_options/ a\
+                                             \$rootDir/ip/ddr3sdram/ddr3sdram.xci \\\
+                                             \$rootDir/ip/axi_clock_converter/axi_clock_converter.xci \\' $2
+fi
+
+sed -i '/top    synth_options/ a\
                                              \$rootDir/ip/ram_520x64_2p/ram_520x64_2p.xci \\\
                                              \$rootDir/ip/ram_584x64_2p/ram_584x64_2p.xci \\\
-                                             \$rootDir/ip/fifo_513x512/fifo_513x512.xci \\\
-                                             \$rootDir/ip/ddr3sdram/ddr3sdram.xci \\\
-                                             \$rootDir/ip/axi_clock_converter/axi_clock_converter.xci \\\
-                                           \]' $2
+                                             \$rootDir/ip/fifo_513x512/fifo_513x512.xci \\' $2
+
 
 for i in `find . \( ! -regex '.*/\..*' \) -type f -name *.xci | sed 's:./:$rootDir/:' | grep action`; do
 sed -i '/top    synth_options/ a\

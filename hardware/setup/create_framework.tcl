@@ -24,6 +24,7 @@ set ies_libs   $::env(FRAMEWORK_ROOT)/ies_libs
 set build_dir  $::env(DONUT_HARDWARE_ROOT)/build
 set action_dir $::env(ACTION_ROOT)
 set ddr3_used  $::env(DDR3_USED)
+set bram_used  $::env(BRAM_USED)
 set simulator  $::env(SIMULATOR)
 
 puts $root_dir
@@ -72,15 +73,18 @@ add_files -norecurse $root_dir/ip/ram_584x64_2p/ram_584x64_2p.xci
 export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_584x64_2p/ram_584x64_2p.xci"] -force -quiet
 add_files -norecurse  $root_dir/ip/fifo_513x512/fifo_513x512.xci
 export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_513x512/fifo_513x512.xci"] -force -quiet
-add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci
-export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force -quiet
 
 if { $ddr3_used == TRUE } {
-  add_files -norecurse $root_dir/ip/ddr3sdram/ddr3sdram.xci
-  export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr3sdram/ddr3sdram.xci"] -force -quiet
-} else {
-add_files -norecurse $root_dir/ip/block_RAM/block_RAM.xci
-export_ip_user_files -of_objects  [get_files "$root_dir/ip/block_RAM/block_RAM.xci"] -force -quiet
+  add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci
+  export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force -quiet
+
+  if { $bram_used == TRUE } {  
+    add_files -norecurse $root_dir/ip/block_RAM/block_RAM.xci
+    export_ip_user_files -of_objects  [get_files "$root_dir/ip/block_RAM/block_RAM.xci"] -force -quiet
+  } else {
+    add_files -norecurse $root_dir/ip/ddr3sdram/ddr3sdram.xci
+    export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr3sdram/ddr3sdram.xci"] -force -quiet
+  }
 }
 update_compile_order -fileset sources_1
 
