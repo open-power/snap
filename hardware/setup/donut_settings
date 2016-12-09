@@ -116,4 +116,11 @@ else
   echo "ACTION_ROOT          is set to \"$ACTION_ROOT\""
 fi
 
+if [ -z "$DDR3_USED" ]; then
+  echo
+  echo "Variable DDR3_USED   is not set. Will default to \"TRUE\""
+else
+  echo "DDR3_USED            is set to \"$DDR3_USED\""
+fi
+
 echo
