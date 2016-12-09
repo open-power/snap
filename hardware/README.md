@@ -88,6 +88,10 @@ If the configuration step was already executed you may just call:
 
     make image
 
+To build a binfile to program into a flash module, run the `write_bitstream.tcl` script from the `donut/hardware/build` directory:
+
+    vivado -mode batch -source write_bitstream.tcl
+
 A simulation model (for the simulator defined by the environment variable `SIMULATOR`) may be created
 via the target model:
 
