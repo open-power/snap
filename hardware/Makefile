@@ -13,6 +13,10 @@ ifndef DDR3_USED
 export DDR3_USED=TRUE
 endif
 
+ifndef BRAM_USED
+export BRAM_USED=FALSE
+endif
+
 ifndef ILA_DEBUG
 export ILA_DEBUG=FALSE
 endif
