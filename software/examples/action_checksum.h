@@ -1,5 +1,5 @@
-#ifndef __ACTION_SEARCH_H__
-#define __ACTION_SEARCH_H__
+#ifndef __ACTION_CHECKSUM_H__
+#define __ACTION_CHECKSUM_H__
 
 /*
  * Copyright 2016, International Business Machines
@@ -20,17 +20,15 @@
 #include <stdint.h>
 #include <libdonut.h>
 
-#define SEARCH_ACTION_TYPE	0x0005 // 0xC0FE
+#define CHECKSUM_CRC32		0x1
+#define CHECKSUM_ADDLER32	0x2
+#define CHECKSUM_ACTION_TYPE	0x0006
 
-struct search_job {
-	struct dnut_addr input;	 /* input data */
-	struct dnut_addr output; /* offset table */
-	struct dnut_addr pattern;
-	uint64_t nb_of_occurrences;
-	uint64_t next_input_addr;
-	uint64_t action_version;
-	uint64_t mmio_din;	/* private settings for this action */
-	uint64_t mmio_dout;	/* private settings for this action */
+struct checksum_job {
+	struct dnut_addr in;	/* input data */
+	uint64_t chk_type;	/* CRC32, ADDLER32 */
+	uint64_t chk_in;	/* checksum input */
+	uint64_t chk_out;	/* checksum output */
 };
 
-#endif	/* __ACTION_SEARCH_H__ */
+#endif	/* __ACTION_CHECKSUM_H__ */

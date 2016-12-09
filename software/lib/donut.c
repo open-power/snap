@@ -25,8 +25,8 @@
 
 #include <libdonut.h>
 #include <libcxl.h>
-#include <donut_internal.h>
 #include <donut_tools.h>
+#include <donut_internal.h>
 #include <donut_queue.h>
 
 #define timediff_usec(t0, t1)						\
@@ -145,6 +145,11 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 
 	if (cxl_mmio_map(dn->afu_h, CXL_MMIO_BIG_ENDIAN) == -1)
 		goto __dnut_alloc_err;
+
+	/* TEMPFIX JK: Wait to get action reset done */
+	usleep(1000*1000);	// wait one second
+//	gettimeofday(&stime, NULL);
+//	do {gettimeofday(&etime, NULL)} while (timediff_usec(&etime, &stime) < timeout_sec * 1000000);
 
 	return (struct dnut_card *)dn;
 
@@ -444,7 +449,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 
 	dnut_trace("%s: PASS PARAMETERS\n", __func__);
 
-	__hexdump(stderr, &job, sizeof(job));
+	/* __hexdump(stderr, &job, sizeof(job)); */
 
 	/* Pass action control and job to the action, should be 128
 	   bytes or a little less */
@@ -641,7 +646,7 @@ static int sw_mmio_write32(void *_card __unused,
 	if (offs == ACTION_CONTROL) {
 		dnut_trace("  starting action!!\n");
 		a->state = ACTION_RUNNING;
-		__hexdump(stdout, &w->user, sizeof(w->user));
+		/* __hexdump(stdout, &w->user, sizeof(w->user)); */
 		a->main(a, &w->user, sizeof(w->user));
 		a->state = ACTION_IDLE;
 

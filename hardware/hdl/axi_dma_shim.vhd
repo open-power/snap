@@ -52,18 +52,7 @@ end axi_dma_shim;
 
 architecture arch_imp of axi_dma_shim is
 
---component mem_32_20 is
---
---port (
---    clk         : IN STD_LOGIC;
---    a           : IN STD_LOGIC_VECTOR(4 DOWNTO 0);
---    d           : IN STD_LOGIC_VECTOR(19 DOWNTO 0);
---    we          : IN STD_LOGIC;
---    dpra        : IN STD_LOGIC_VECTOR(4 DOWNTO 0);
---    dpo         : OUT STD_LOGIC_VECTOR(19 DOWNTO 0)
---);
 
--- end component;
 
 
 
@@ -78,14 +67,7 @@ architecture arch_imp of axi_dma_shim is
 	signal axi_awaddr	: std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
 	signal axi_awready_q	: std_logic;
 	signal axi_wready_q	: std_logic;
---	signal axi_buser	: std_logic_vector(C_S_AXI_BUSER_WIDTH-1 downto 0);
---	signal axi_bvalid	: std_logic;
---	signal axi_araddr	: std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
 	signal axi_arready_q	: std_logic;
---	signal axi_rdata	: std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
---	signal axi_rresp	: std_logic_vector(1 downto 0);
---	signal axi_rlast	: std_logic;
---	signal axi_ruser	: std_logic_vector(C_S_AXI_RUSER_WIDTH-1 downto 0);
 	signal axi_rvalid	: std_logic;
 
 	signal axi_awlen          : std_logic_vector(8-1 downto 0);
@@ -97,6 +79,8 @@ architecture arch_imp of axi_dma_shim is
         signal force_fifo_empty_q : std_logic;
         signal fifo_wr_addr_q     : std_logic_vector(4 downto 0);
         signal fifo_rd_addr_q     : std_logic_vector(4 downto 0);
+
+        signal temp_counter       : std_logic_vector(8 downto 0);
 	--------------------------------------------------
 
 begin
@@ -144,15 +128,6 @@ fifo_logic: process(ha_pclock)
 
 
 
---memory: component mem_32_20
---      port  map (
---        clk             => ha_pclock,
---        a               => fifo_wr_addr_q,
---        d               => id_fifo_wr_id_q,
---        we              => id_fifo_wr_q,
---        dpra            => fifo_rd_addr_q,
---        dpo             => id_fifo_data
---      );
 
 
           sk_d_o.S_AXI_BID     <= id_fifo_data;
@@ -175,7 +150,11 @@ axi_wr: process(ha_pclock)
             if rising_edge(ha_pclock) then
               sd_d_o.wr_strobe  <= (others => '0');
               sd_d_o.wr_last    <= '0';
-              sd_d_o.wr_data    <= std_ulogic_vector(ks_d_i.S_AXI_WDATA);
+              -- reverse the byte order 
+              for i in 1 to C_S_AXI_DATA_WIDTH / 8  loop
+                 sd_d_o.wr_data(i * 8 - 1 downto (i-1) *8)         <= std_ulogic_vector(ks_d_i.S_AXI_WDATA((C_S_AXI_DATA_WIDTH + 7)- i*8 downto C_S_AXI_DATA_WIDTH -  i*8));
+              end loop;  -- i
+          --    sd_d_o.wr_data    <= std_ulogic_vector(ks_d_i.S_AXI_WDATA);
               if afu_reset = '1' then
                 fsm_write_q     <= IDLE;
                 axi_awready_q   <= '0';
@@ -207,7 +186,9 @@ axi_wr: process(ha_pclock)
 
                   when DMA_WR_DATA =>
                     if ks_d_i.S_AXI_WVALID = '1' then
-                      sd_d_o.wr_strobe <= std_ulogic_vector(ks_d_i.S_AXI_WSTRB);
+                      for i in 0 to (C_S_AXI_DATA_WIDTH / 8) -1 LOOP
+                        sd_d_o.wr_strobe(((C_S_AXI_DATA_WIDTH / 8) -1) - i) <= std_ulogic(ks_d_i.S_AXI_WSTRB(i));
+                      end loop;   
                       if ks_d_i.S_AXI_WLAST = '1' then
                         sd_d_o.wr_last <= '1';
                         axi_wready_q      <= '0';
@@ -259,25 +240,42 @@ axi_rd:   process(ha_pclock)
                     if ds_c_i.rd_req_ack = '1' then
                       sd_c_o.rd_req     <= '0';
                       fsm_read_q       <= IDLE;
+
+                      temp_counter     <= ('0' & ks_d_i.S_AXI_ARLEN) +  '1';
                     end if;
 
                   when others   =>
                 end case;
               end if;                   -- end reset
+              if ds_d_i.rd_data_strobe = '1' and ks_d_i.S_AXI_RREADY = '1' then
+                if temp_counter /= "000000000" then
+                  temp_counter <= temp_counter - '1';
+                end if;  
+              end if;  
             end if;                     -- end clock
           end process;
 
-axi_rd2:  process(ds_d_i.rd_data, ds_d_i.rd_id,ds_d_i.rd_last, ds_d_i.rd_data_strobe,ks_d_i.S_AXI_RREADY  )
+
+      sk_d_o.S_AXI_RLAST         <= '1' when ds_d_i.rd_last = '1' or temp_counter = "000000001" else '0';          
+axi_rd2:  process(ds_d_i.rd_data, ds_d_i.rd_id, ds_d_i.rd_data_strobe,ks_d_i.S_AXI_RREADY, temp_counter)
           begin
-            sk_d_o.S_AXI_RDATA         <= std_logic_vector(ds_d_i.rd_data);
+            -- reverse the byte order 
+            for i in 1 to C_S_AXI_DATA_WIDTH / 8 loop
+              sk_d_o.S_AXI_RDATA(i * 8 - 1 downto (i-1) *8)         <= std_logic_vector(ds_d_i.rd_data((C_S_AXI_DATA_WIDTH + 7) - i*8 downto C_S_AXI_DATA_WIDTH -  i*8));
+            end loop;  -- i
+              
+           
+           -- sk_d_o.S_AXI_RDATA         <= std_logic_vector(ds_d_i.rd_data);
             sk_d_o.S_AXI_RID           <= std_logic_vector(ds_d_i.rd_id);
-            sk_d_o.S_AXI_RLAST         <= std_logic(ds_d_i.rd_last);
+            
             sk_d_o.S_AXI_RRESP         <= "00";
             sk_d_o.S_AXI_RVALID        <= '0';
 
             sd_d_o.rd_data_ack         <= '0';
             if ds_d_i.rd_data_strobe = '1' and ks_d_i.S_AXI_RREADY = '1' then
-              sk_d_o.S_AXI_RVALID      <= '1';
+              if temp_counter /= "000000000" then
+                 sk_d_o.S_AXI_RVALID      <= '1';
+              end if;
               sd_d_o.rd_data_ack       <= '1';
             end if;
           end process;

@@ -82,28 +82,38 @@ file_read(const char *fname, uint8_t *buff, size_t len)
 	return rc;
 }
 
-static void dnut_prepare_search(struct dnut_job *cjob, struct search_job *sjob,
+static void dnut_prepare_search(struct dnut_job *cjob,
+				struct search_job *sjob_in,
+				struct search_job *sjob_out,
 				const uint8_t *dbuff, ssize_t dsize,
 				uint64_t *offs, unsigned int items,
 				const uint8_t *pbuff, unsigned int psize)
 {
-	dnut_addr_set(&sjob->input, dbuff, dsize,
+	dnut_addr_set(&sjob_in->input, dbuff, dsize,
 		      DNUT_TARGET_TYPE_HOST_DRAM,
 		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-	dnut_addr_set(&sjob->output, offs, items * sizeof(*offs),
+	dnut_addr_set(&sjob_in->output, offs, items * sizeof(*offs),
 		      DNUT_TARGET_TYPE_HOST_DRAM,
 		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
-	dnut_addr_set(&sjob->pattern, pbuff, psize,
+	dnut_addr_set(&sjob_in->pattern, pbuff, psize,
 		      DNUT_TARGET_TYPE_HOST_DRAM,
 		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC |
 		      DNUT_TARGET_FLAGS_END);
 
-	sjob->nb_of_occurrences = 0;
-	sjob->next_input_addr = 0;
-	sjob->mmio_din = MMIO_DIN_DEFAULT;
-	sjob->mmio_dout = MMIO_DOUT_DEFAULT;
+	sjob_in->nb_of_occurrences = 0;
+	sjob_in->next_input_addr = 0;
+	sjob_in->mmio_din = 0;
+	sjob_in->mmio_dout = 0;
+	sjob_in->action_version = 0;
 
-	dnut_job_set(cjob, SEARCH_ACTION_TYPE, sjob, sizeof(*sjob), NULL, 0);
+	sjob_out->nb_of_occurrences = 0;
+	sjob_out->next_input_addr = 0;
+	sjob_out->mmio_din = 0;
+	sjob_out->mmio_dout = 0;
+	sjob_out->action_version = 0;
+
+	dnut_job_set(cjob, SEARCH_ACTION_TYPE,
+		sjob_in, sizeof(*sjob_in), sjob_out, sizeof(*sjob_out));
 }
 
 static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
@@ -113,37 +123,42 @@ static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
 		(unsigned long)cjob->win_addr;
 	uint64_t *offs;
 	unsigned long offs_max;
+	static const char *mem_tab[] = { "HOST_DRAM",
+					 "CARD_DRAM",
+					 "TYPE_NVME" };
 
-	printf("sjob:         %p\n", sjob);
-	printf("RUN:          %08x/%d\n", run, run);
-	printf("RETC:         %08lx\n", (long)cjob->retc);
-	printf("Input Data:   %016llx - %016llx\n",
-	       (long long)sjob->input.addr,
-	       (long long)sjob->input.addr + sjob->input.size);
-
-	/* __hexdump(stdout, (void *)(unsigned long)sjob->input.addr,
-	   sjob->input.size); */
-
-	printf("Output Data:  %016llx - %016llx\n",
-	       (long long)sjob->output.addr,
-	       (long long)sjob->output.addr + sjob->output.size);
-
-	/* __hexdump(stdout, (void *)(unsigned long)sjob->output.addr,
-	   sjob->output.size); */
-	offs = (uint64_t *)(unsigned long)sjob->output.addr;
-	offs_max = sjob->output.size / sizeof(uint64_t);
-	for (i = 0; i < MIN(sjob->nb_of_occurrences, offs_max); i++) {
-		printf("%3d: %16llx\n", i, (long long)__be64_to_cpu(offs[i]));
+	if (verbose_flag > 1) {
+		printf(PR_MAGENTA);
+		printf("SEARCH: %p (%d) RETC: %08lx\n",
+		       sjob, run, (long)cjob->retc);
+		printf(PR_GREEN);
+		printf(" Input:  %016llx - %016llx %s\n",
+		       (long long)sjob->input.addr,
+		       (long long)sjob->input.addr + sjob->input.size,
+		       mem_tab[sjob->input.type]);
+		printf(" Output: %016llx - %016llx %s\n",
+		       (long long)sjob->output.addr,
+		       (long long)sjob->output.addr + sjob->output.size,
+		       mem_tab[sjob->output.type]);
+		printf(PR_STD);
 	}
-
-	printf("Pattern:      %016llx\n", (long long)sjob->pattern.addr);
-	/* __hexdump(stdout, (void *)(unsigned long)sjob->pattern.addr,
-	   sjob->pattern.size); */
-
-	printf("Items found:  %016llx/%lld\n",
-	       (long long)sjob->nb_of_occurrences,
-	       (long long)sjob->nb_of_occurrences);
-	printf("Next input:   %016llx\n", (long long)sjob->next_input_addr);
+	if (verbose_flag > 2) {
+		offs = (uint64_t *)(unsigned long)sjob->output.addr;
+		offs_max = sjob->output.size / sizeof(uint64_t);
+		for (i = 0; i < MIN(sjob->nb_of_occurrences, offs_max); i++) {
+			printf("%3d: %016llx", i,
+			       (long long)__le64_to_cpu(offs[i]));
+			if (((i+1) % 3) == 0)
+				printf("\n");
+		}
+	}
+	if (verbose_flag > 1) {
+		printf(PR_RED "Found: %016llx/%lld" PR_STD
+		       " Next: %016llx\n",
+		       (long long)sjob->nb_of_occurrences,
+		       (long long)sjob->nb_of_occurrences,
+		       (long long)sjob->next_input_addr);
+	}
 }
 
 /**
@@ -155,9 +170,11 @@ static void usage(const char *prog)
 {
 	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
 	       "  -C, --card <cardno> can be (0...3)\n"
-	       "  -i, --input <data.bin>     Input data.\n"
-	       "  -I, --items <items>        Max items to find.\n"
-	       "  -p, --pattern <str>        Pattern to search for\n"
+	       "  -i, --input <data.bin> Input data.\n"
+	       "  -I, --items <items>    Max items to find.\n"
+	       "  -p, --pattern <str>    Pattern to search for\n"
+	       "  -E, --expected <num>   Expected # of patterns to find, "
+	       "for verification\n"
 	       "\n"
 	       "Example:\n"
 	       "  demo_search ...\n"
@@ -177,7 +194,8 @@ int main(int argc, char *argv[])
 	const char *fname = NULL;
 	const char *pattern_str = "Donut";
 	struct dnut_job cjob;
-	struct search_job sjob;
+	struct search_job sjob_in;
+	struct search_job sjob_out;
 	ssize_t dsize;
 	uint8_t *pbuff;		/* pattern buffer */
 	uint8_t *dbuff;		/* data buffer */
@@ -189,6 +207,8 @@ int main(int argc, char *argv[])
 	unsigned int total_found = 0;
 	unsigned int page_size = sysconf(_SC_PAGESIZE);
 	struct timeval etime, stime;
+	long int expected_patterns = -1;
+	int exit_code = EXIT_SUCCESS;
 
 	while (1) {
 		int option_index = 0;
@@ -198,6 +218,7 @@ int main(int argc, char *argv[])
 			{ "pattern",	 required_argument, NULL, 'p' },
 			{ "items",	 required_argument, NULL, 'I' },
 			{ "timeout",	 required_argument, NULL, 't' },
+			{ "expected",	 required_argument, NULL, 'E' },
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
@@ -205,7 +226,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-				 "C:i:p:I:t:Vvh",
+				 "C:E:i:p:I:t:Vvh",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -227,11 +248,14 @@ int main(int argc, char *argv[])
 		case 't':
 			timeout = strtol(optarg, (char **)NULL, 0);
 			break;
+		case 'E':
+			expected_patterns = strtol(optarg, (char **)NULL, 0);
+			break;
 		case 'V':
 			printf("%s\n", version);
 			exit(EXIT_SUCCESS);
 		case 'v':
-			verbose_flag = 1;
+			verbose_flag++;
 			break;
 		case 'h':
 			usage(argv[0]);
@@ -274,14 +298,14 @@ int main(int argc, char *argv[])
 
 	input_addr = dbuff;
 	input_size = dsize;
-	dnut_prepare_search(&cjob, &sjob, dbuff, dsize,
+	dnut_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
 			    offs, items, pbuff, psize);
-	dnut_print_search_results(&cjob, 0xffffffff);
 
 	/*
 	 * Apply for exclusive kernel access for kernel type 0xC0FE.
 	 * Once granted, MMIO to that kernel will work.
 	 */
+	pr_info("Opening device ...\n");
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
 	kernel = dnut_kernel_attach_dev(device,
 					DNUT_VENDOR_ID_ANY,
@@ -293,12 +317,22 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
-	/* FIXME Temporary setting to define memory base address */
-	dnut_kernel_mmio_write32(kernel, 0x10010,0);
-	dnut_kernel_mmio_write32(kernel, 0x10014,0);
-	dnut_kernel_mmio_write32(kernel, 0x1001c,0);
-	dnut_kernel_mmio_write32(kernel, 0x10020,0);
-	dnut_kernel_mmio_write32(kernel, 0x10080,0);
+#if 1				/* FIXME Circumvention should go away */
+	pr_info("FIXME Wait a sec ...\n");
+	sleep(1);
+#endif
+#if 1				/* FIXME Circumvention should go away */
+	pr_info("FIXME Temporary setting to define memory base address\n");
+	dnut_kernel_mmio_write32(kernel, 0x10010, 0);
+	dnut_kernel_mmio_write32(kernel, 0x10014, 0);
+	dnut_kernel_mmio_write32(kernel, 0x1001c, 0);
+	dnut_kernel_mmio_write32(kernel, 0x10020, 0);
+#endif
+#if 1				/* FIXME Circumvention should go away */
+	pr_info("FIXME Temporary setting to enable DDR on the card\n");
+	dnut_kernel_mmio_write32(kernel, 0x10028, 0);
+	dnut_kernel_mmio_write32(kernel, 0x1002c, 0);
+#endif
 
 	run = 0;
 	gettimeofday(&stime, NULL);
@@ -314,33 +348,43 @@ int main(int argc, char *argv[])
 			goto out_error2;
 		}
 
-		/* trigger repeat if search was not complete */
-		if (sjob.next_input_addr != 0x0) {
-			input_size -= (sjob.next_input_addr - (unsigned long)input_addr);
-			input_addr = (uint8_t *)(unsigned long)sjob.next_input_addr;
-
-			/* FIXME I normally expect the data back, which I passed */
-			dnut_addr_set(&sjob.input, input_addr, input_size,
-				DNUT_TARGET_TYPE_HOST_DRAM,
-				DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-		}
-		dnut_addr_set(&sjob.output, offs, items * sizeof(*offs),
-			DNUT_TARGET_TYPE_HOST_DRAM,
-			DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
-		dnut_addr_set(&sjob.pattern, pbuff, psize,
-			DNUT_TARGET_TYPE_HOST_DRAM,
-			DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC |
-			DNUT_TARGET_FLAGS_END);
-		total_found += sjob.nb_of_occurrences;
+		sjob_in.nb_of_occurrences = sjob_out.nb_of_occurrences;
+		sjob_in.next_input_addr = sjob_out.next_input_addr;
+		sjob_in.action_version = sjob_out.action_version;
 
 		dnut_print_search_results(&cjob, run);
+
+		/* trigger repeat if search was not complete */
+		if (sjob_out.next_input_addr != 0x0) {
+			input_size -= (sjob_out.next_input_addr -
+				       (unsigned long)input_addr);
+			input_addr = (uint8_t *)(unsigned long)
+				sjob_out.next_input_addr;
+
+			/* Fixup input address and size for next search */
+			sjob_in.input.addr = (unsigned long)input_addr;
+			sjob_in.input.size = input_size;
+		}
+		total_found += sjob_out.nb_of_occurrences;
 		run++;
-	} while (sjob.next_input_addr != 0x0);
+	} while (sjob_out.next_input_addr != 0x0);
 	gettimeofday(&etime, NULL);
 
-	fprintf(stdout, "RETC=%x\n", cjob.retc);
-	fprintf(stdout, "%d patterns found.\n", total_found);
-	fprintf(stdout, "searching took %lld usec\n",
+	fprintf(stdout, PR_RED "%d patterns found.\n" PR_STD, total_found);
+
+	/* Post action verification, simplifies test-scripts */
+	if (expected_patterns >= 0) {
+		if (total_found != expected_patterns) {
+			fprintf(stderr, "warn: Verification failed expected "
+				"%ld but found %d patterns\n",
+				expected_patterns, total_found);
+			exit_code = EX_ERR_DATA;
+		}
+	}
+
+	fprintf(stdout, "Action version: %llx\n"
+		"Searching took %lld usec\n",
+		(long long)sjob_out.action_version,
 		(long long)timediff_usec(&etime, &stime));
 
 	dnut_kernel_free(kernel);
@@ -349,7 +393,7 @@ int main(int argc, char *argv[])
 	free(pbuff);
 	free(offs);
 
-	exit(EXIT_SUCCESS);
+	exit(exit_code);
 
  out_error2:
 	dnut_kernel_free(kernel);

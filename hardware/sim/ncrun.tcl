@@ -15,7 +15,7 @@
 #
  version 					;# show ncsim version
  assertion -off -all 				;# Disable all assertion fails prior to reset done.
- input ncaet.tcl					;# enabled through run_sim
+ input ncaet.tcl				;# enabled through run_sim
  set  intovf_severity_level {warning};
  set myrc [run 2000 ns]; puts "run2000 rc= $myrc" ;# assertions off until after 2800ns
 #assertion -on  -all 				;# Turn assertions back on after reset is done.
@@ -24,4 +24,3 @@
 #run 50000 ns					;# limit test length
  run 						;# runforever, until application closes sim
  exit
-

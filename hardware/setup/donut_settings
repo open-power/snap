@@ -109,11 +109,18 @@ else
   echo "DONUT_HARDWARE_ROOT  is set to \"$DONUT_HARDWARE_ROOT\""
 fi
 
-if [ -z "$EXAMPLE" ]; then
+if [ -z "$ACTION_ROOT" ]; then
   echo
-  echo "Variable EXAMPLE is not set. Please set to 1 if you want to add the memcopy action example to your project."
+  echo "Variable ACTION_ROOT is not set. Please let it point to your action source if you want to add an action to your project."
 else
-  echo "EXAMPLE              is set to \"$EXAMPLE\""
+  echo "ACTION_ROOT          is set to \"$ACTION_ROOT\""
+fi
+
+if [ -z "$DDR3_USED" ]; then
+  echo
+  echo "Variable DDR3_USED   is not set. Will default to \"TRUE\""
+else
+  echo "DDR3_USED            is set to \"$DDR3_USED\""
 fi
 
 echo

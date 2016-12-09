@@ -20,7 +20,7 @@
 #include <string.h>
 #include <errno.h>
 #include <malloc.h>
-
+#include <getopt.h>
 #include <libdonut.h>
 #include <donut_tools.h>
 
