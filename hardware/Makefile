@@ -78,8 +78,13 @@ image:
 	@echo -e "\t[BUILD IMAGE] start ($(shell date))"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
 	@echo -e "\t[BUILD IMAGE] done ($(shell date))"
-	@cd $(DONUT_HARDWARE_ROOT)/setup && vivado -mode batch -source AR_64051.tcl -notrace
-	@echo -e "\t[BUILD IMAGE] patch for ar_64051 done ($(shell date))"
+	@if [ $(DDR3_USED) = "TRUE" ]; then\
+		cd $(DONUT_HARDWARE_ROOT)/setup && vivado -mode batch -source AR_64051.tcl -notrace;\
+		echo -e "\t[BUILD IMAGE] patch for ar_64051 done ($(shell date))";\
+	else\
+		cd $(BUILD_DIR) && vivado -mode batch -source write_bitstream.tcl;\
+		mv $(BUILD_DIR)/Implement/psl_fpga/psl_fpga.bit $(BUILD_DIR)/psl_fpga_flash.bit;\
+	fi
 
 clean:
 	@echo -e "\t[CLEAN] build environment";
