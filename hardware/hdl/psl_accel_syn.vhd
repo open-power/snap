@@ -645,13 +645,13 @@ ARCHITECTURE psl_accel OF psl_accel IS
 
 
 BEGIN
-  registers : PROCESS (ha_pclock)                                                        -- only for DDR3_USED=TRUE
-  BEGIN                                                                                  -- only for DDR3_USED=TRUE
-    IF (rising_edge(ha_pclock)) THEN                                                     -- only for DDR3_USED=TRUE
-      action_reset_q   <=     action_reset;                                              -- only for DDR3_USED=TRUE
-      action_reset_n_q <= NOT action_reset;                                              -- only for DDR3_USED=TRUE
-    END IF;                                                                              -- only for DDR3_USED=TRUE
-  END PROCESS registers;                                                                 -- only for DDR3_USED=TRUE
+  action_reset_reg : PROCESS (ha_pclock)
+  BEGIN
+    IF (rising_edge(ha_pclock)) THEN
+      action_reset_q   <=     action_reset;
+      action_reset_n_q <= NOT action_reset;
+    END IF;
+  END PROCESS action_reset_reg;
 
   ddr3_reset : PROCESS (ha_pclock)                                                       -- only for DDR3_USED=TRUE
   BEGIN  -- PROCESS                                                                      -- only for DDR3_USED=TRUE
