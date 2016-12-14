@@ -1,0 +1,133 @@
+#!/bin/bash
+#
+# Copyright 2016, International Business Machines
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+###############################################################################
+#
+# important environment variables for running tools
+# the goal is to be able to source this file and have everything set as needed
+
+
+if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ] || [ ! -d "$FRAMEWORK_ROOT" ]; then
+  echo "Note: the following site specific variables are used by the build and sim tools"
+  echo "and should be be set prior to sourcing this file:"
+  echo
+  echo "XILINX_VIVADO          # path to Vivado tool"
+  echo "XILINXD_LICENSE_FILE"
+  echo "FRAMEWORK_ROOT         # path to CAPI STREAMING FRAMEWORK root directory"
+  echo
+  echo "Recommended directory structure:"
+  echo "FRAMEWORK_ROOT      = <your local workspace base> "
+  echo "USERHOME            = \$FRAMEWORK_ROOT/$USER  # each user has his own workspace"
+  echo "PSLSE_ROOT          = \$USERHOME/pslse        # PSLSE clone from github"
+  echo "DONUT_ROOT          = \$USERHOME/donut        # donut clone from github"
+  echo "DONUT_SOFTWARE_ROOT = \$DONUT_ROOT/software   # path to donut software "
+  echo "DONUT_HARDWARE_ROOT = \$DONUT_ROOT/hardware   # path to donut hardware "
+fi
+
+####### Xilinx Vivado calls:
+#source $XILINX_VIVADO/settings64.sh                         # settings for SDK+HLS+docnav+vivado, does all of the above
+# vivado &                                                   # run Vivado GUI
+  which vivado                                               # checking version
+  vivado -version|head -n1
+# vivado -mode tcl                                           # run Vivado GUI, start at linux cmd prompt
+# vivado -mode batch -source run.tcl                         # run Vivado in batch mode
+####### Cadence IES calls:
+  which ncsim                                                # checking version
+  ncsim -version
+
+
+####### user settings for CAPI STREAMING FRAMEWORK
+if [ ! -d "$USERHOME" ]; then
+  export USERHOME=$FRAMEWORK_ROOT/$USER
+  echo "Setting USERHOME            to \"$USERHOME\""
+else
+  echo "USERHOME             is set to \"$USERHOME\""
+fi
+
+if [ ! -d "$PSLSE_ROOT" ]; then
+  export PSLSE_ROOT=$USERHOME/pslse                          # used with git clone https://github.com/ibm-capi/pslse     $PSLSE_ROOT
+  echo "Setting PSLSE_ROOT          to \"$PSLSE_ROOT\""
+else
+  echo "PSLSE_ROOT           is set to \"$PSLSE_ROOT\""
+fi
+
+dir=`dirname $PWD`; name=`basename $PWD`
+# echo "pwd=$dir $name"
+if [ $name = "hardware" ];then
+  if [ "$DONUT_ROOT" != "$dir" ]; then
+    export DONUT_ROOT=$dir
+    export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware
+    export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software
+    echo "Setting DONUT_ROOT          to \"$DONUT_ROOT\""
+  else
+    echo "DONUT_ROOT           is set to \"$DONUT_ROOT\""
+  fi
+else
+  if [ "$DONUT_ROOT" != "$PWD" ]; then
+    export DONUT_ROOT=$PWD
+    export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware
+    export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software
+    echo "Setting DONUT_ROOT          to \"$DONUT_ROOT\""
+  else
+    echo "DONUT_ROOT           is set to \"$DONUT_ROOT\""
+  fi
+fi
+
+if [ -z "$ACTION_ROOT" ]; then
+  echo
+  echo "Variable ACTION_ROOT is not set. Please let it point to your action source if you want to add an action to your project."
+else
+  echo "ACTION_ROOT          is set to \"$ACTION_ROOT\""
+fi
+echo "ACTION_EXAMPLE=$ACTION_EXAMPLE"
+echo "       EXAMPLE=$EXAMPLE"
+
+if [ ! -d "$FPGACARD" ]; then
+  export FPGACARD=$FRAMEWORK_ROOT/cards/adku060_capi_1_1_release
+  echo "Setting FPGACARD            to \"$FPGACARD\""
+else
+  echo "FPGACARD             is set to \"$FPGACARD\""
+fi
+
+if [ -z "$FPGACHIP" ]; then
+  export FPGACHIP=xcku060-ffva1156-2-e
+  echo "Setting FPGACHIP            to \"$FPGACHIP\""
+else
+  echo "FPGACHIP             is set to \"$FPGACHIP\""
+fi
+
+if [ ! -d "$DIMMTEST" ]; then
+  export DIMMTEST=$FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0
+  echo "Setting DIMMTEST            to \"$DIMMTEST\""
+else
+  echo "DIMMTEST             is set to \"$DIMMTEST\""
+fi
+
+if [ -z "$SIMULATOR" ]; then
+  export SIMULATOR=xsim                                      # xsim, questa and ncsim are supported, currently
+  echo "Setting SIMULATOR           to \"$SIMULATOR\""
+else
+  echo "SIMULATOR            is set to \"$SIMULATOR\""
+fi
+
+if [ -z "$DDR3_USED" ]; then
+  echo
+  echo "Variable DDR3_USED   is not set. Will default to \"TRUE\""
+else
+  echo "DDR3_USED            is set to \"$DDR3_USED\""
+fi
+
+echo
