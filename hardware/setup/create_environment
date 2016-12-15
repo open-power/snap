@@ -24,7 +24,7 @@
 # export DONUT_ROOT=$USERHOME/donut                   # donut clone from github
 # export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software     # path to donut software
 # export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware     # path to donut hardware
-# export SIMULATOR=xsim                               # ncsim and xsim are supported
+# export SIMULATOR=xsim                               # ncsim,irun,xsim and questa are supported
 #
 # This script may download code from GIT:
 # git clone git@github.com:ibm-capi/pslse             $PSLSE_ROOT
@@ -113,9 +113,6 @@
      source="pslse";cd ${PSLSE_ROOT};
      if [ $UPDATE == 1 ]; then
        git branch
-#      if [ ${AFU_CONNECT_TYPE} == "DPI" ] ;then # todo: check if you are in the master branch
-#      else;                                     # todo: check if you are in the afudirected branch
-#      fi
        git pull
      fi
    else
@@ -171,9 +168,6 @@
    if [ ! -d ${DONUT_HARDWARE_ROOT}/sim/ies ];then
      cd ${DONUT_HARDWARE_ROOT}/setup; echo "run Vivado setup scripts"
      vivado -mode batch -source create_ip.tcl        || (echo "error in create_ip";exit -1)
-###     if [ $ACTION_EXAMPLE == 1 ]; then
-###       vivado -mode batch -source create_action.tcl    || (echo "error in create_action";exit -1)
-###     fi
      vivado -mode batch -source create_framework.tcl || (echo "error in create_framework";exit -1)
      ## patches for irun
      cd ${DONUT_HARDWARE_ROOT}/sim/ies
@@ -198,31 +192,18 @@
    if [[ $maxrc > 0 ]];then exit;fi
    echo "compile for simulator=$SIMULATOR afu_connnect_type=${AFU_CONNECT_TYPE}"
    if [ $SIMULATOR == "ncsim" ] || [ $SIMULATOR == "irun" ]; then
-     cd ${DONUT_HARDWARE_ROOT}/sim/ies;dir=.;
-#    pwd
+     cd ${DONUT_HARDWARE_ROOT}/sim/ies;dir=.;source=$SIMULATOR
      ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
-#    if [ $SIMULATOR == "irun" ]; then
-#      source="irun"
-#      perl -i.ori -pe 's/(.*\/verilog\/top.v)/ -sv $1/mg' run.f 	# compile top.v with system verilog
-#      sed -i "s/irun -V93/irun -elaborate -V93/g" top.sh 		# run up to elaboration, skip execution
-#      perl -i.ori -pe 'BEGIN{undef $/;} s/(^-makelib.*\n.*glbl.v.*\n.*endlib)//mg' run.f # remove glbl.v from compile list
-#    else
-#      source="ncsim"
-#      sed -i "s/  simulate/# simulate/g" top.sh			# run up to elaboration, skip execution
-#    fi
      ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
    fi
    if [ $SIMULATOR == "xsim" ]; then
      cd ${DONUT_HARDWARE_ROOT}/sim/xsim;dir=.;source="xsim"
      ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
-#    sed -i "s/  simulate/# simulate/g" top.sh               		# run up to elaboration, skip execution
-#    sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" top.sh
      ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
    fi
    if [ $SIMULATOR == "questa" ]; then
      cd ${DONUT_HARDWARE_ROOT}/sim/questa;dir=.;source="questa"
      ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
-#    sed -i "s/  simulate/# simulate/g" top.sh            		# run up to elaboration, skip execution
      ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
    fi
  fi # BUILD_MODEL == 1

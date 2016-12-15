@@ -21,8 +21,6 @@
 called=$_                          # can be path+name, absolut or relative
 script=$(readlink -f "$called")    # absolute path+name
 scriptdir=$(dirname  "$script")    # just path
-scriptnam=$(basename "$script")    # just name
-#[[ $called != $0 ]] && echo "Script is being sourced" || echo "Script is being run"
 
 if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ] || [ ! -d "$FRAMEWORK_ROOT" ]; then
   echo "Note: the following site specific variables are used by the build and sim tools"
@@ -72,6 +70,8 @@ export DONUT_ROOT=$(dirname "$scriptdir")
 export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware
 export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software
 echo "Setting DONUT_ROOT          to \"$DONUT_ROOT\""
+echo "Setting DONUT_HARDWARE_ROOT to \"$DONUT_HARDWARE_ROOT\""
+echo "Setting DONUT_SOFTWARE_ROOT to \"$DONUT_SOFTWARE_ROOT\""
 
 if [ -z "$ACTION_ROOT" ]; then
   echo
@@ -79,8 +79,6 @@ if [ -z "$ACTION_ROOT" ]; then
 else
   echo "ACTION_ROOT          is set to \"$ACTION_ROOT\""
 fi
-echo "ACTION_EXAMPLE=$ACTION_EXAMPLE"
-echo "       EXAMPLE=$EXAMPLE"
 
 if [ ! -d "$FPGACARD" ]; then
   export FPGACARD=$FRAMEWORK_ROOT/cards/adku060_capi_1_1_release
@@ -115,6 +113,13 @@ if [ -z "$DDR3_USED" ]; then
   echo "Variable DDR3_USED   is not set. Will default to \"TRUE\""
 else
   echo "DDR3_USED            is set to \"$DDR3_USED\""
+fi
+
+if [ -z "$ILA_DEBUG" ]; then
+  echo
+  echo "Variable ILA_DEBUG   is not set. Will default to \"FALSE\""
+else
+  echo "ILA_DEBUG            is set to \"$ILA_DEBUG\""
 fi
 
 echo
