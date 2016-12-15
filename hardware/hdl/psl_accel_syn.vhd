@@ -670,7 +670,6 @@ BEGIN
   --                                                                                     -- only for DDR3_USED=TRUE
   --                                                                                     -- only for DDR3_USED=TRUE
   --                                                                                     -- only for DDR3_USED=TRUE
-  c0_ddr3_dm <= (others => '0');                                                         -- only for DDR3_USED=TRUE
   c1_ddr3_dm <= (others => '0');                                                         -- only for DDR3_USED=TRUE
 
   donut_i: donut
