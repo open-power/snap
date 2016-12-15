@@ -18,7 +18,11 @@
 #
 # important environment variables for running tools
 # the goal is to be able to source this file and have everything set as needed
-
+called=$_                          # can be path+name, absolut or relative
+script=$(readlink -f "$called")    # absolute path+name
+scriptdir=$(dirname  "$script")    # just path
+scriptnam=$(basename "$script")    # just name
+#[[ $called != $0 ]] && echo "Script is being sourced" || echo "Script is being run"
 
 if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ] || [ ! -d "$FRAMEWORK_ROOT" ]; then
   echo "Note: the following site specific variables are used by the build and sim tools"
@@ -37,13 +41,13 @@ if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ] || [ ! -d "$FRAME
   echo "DONUT_HARDWARE_ROOT = \$DONUT_ROOT/hardware   # path to donut hardware "
 fi
 
+if [ ! -d "$XILINX_VIVADO" ]; then
+  echo "XILINX_VIVADO is not set, please run $XILINX_ROOT/Vivado/<version>/settings64.sh"
+  exit
+fi
 ####### Xilinx Vivado calls:
-#source $XILINX_VIVADO/settings64.sh                         # settings for SDK+HLS+docnav+vivado, does all of the above
-# vivado &                                                   # run Vivado GUI
   which vivado                                               # checking version
   vivado -version|head -n1
-# vivado -mode tcl                                           # run Vivado GUI, start at linux cmd prompt
-# vivado -mode batch -source run.tcl                         # run Vivado in batch mode
 ####### Cadence IES calls:
   which ncsim                                                # checking version
   ncsim -version
@@ -64,27 +68,10 @@ else
   echo "PSLSE_ROOT           is set to \"$PSLSE_ROOT\""
 fi
 
-dir=`dirname $PWD`; name=`basename $PWD`
-# echo "pwd=$dir $name"
-if [ $name = "hardware" ];then
-  if [ "$DONUT_ROOT" != "$dir" ]; then
-    export DONUT_ROOT=$dir
-    export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware
-    export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software
-    echo "Setting DONUT_ROOT          to \"$DONUT_ROOT\""
-  else
-    echo "DONUT_ROOT           is set to \"$DONUT_ROOT\""
-  fi
-else
-  if [ "$DONUT_ROOT" != "$PWD" ]; then
-    export DONUT_ROOT=$PWD
-    export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware
-    export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software
-    echo "Setting DONUT_ROOT          to \"$DONUT_ROOT\""
-  else
-    echo "DONUT_ROOT           is set to \"$DONUT_ROOT\""
-  fi
-fi
+export DONUT_ROOT=$(dirname "$scriptdir")
+export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware
+export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software
+echo "Setting DONUT_ROOT          to \"$DONUT_ROOT\""
 
 if [ -z "$ACTION_ROOT" ]; then
   echo
