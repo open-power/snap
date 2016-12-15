@@ -1,10 +1,11 @@
 # Recommended directory structure
 
-You need to define the environment variable `FRAMEWORK_ROOT` pointing to your local workspace base.
-A script that may be sourced in order to set up the required environment variables
-for a given `FRAMEWORK_ROOT` can be found here:
+You need to define 
+    the environment variable `FRAMEWORK_ROOT` pointing to your local workspace base
+    
+In order to set up the required environment variables for a given `FRAMEWORK_ROOT` you may source the script `./donut_settings`:
 
-    ./setup/donut_settings
+    . ./donut_settings
 
 This script will define the following environment variables (if they are not already pre-defined
 differently):
