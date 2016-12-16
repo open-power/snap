@@ -169,13 +169,14 @@
      cd ${DONUT_HARDWARE_ROOT}/setup; echo "run Vivado setup scripts"
      vivado -mode batch -source create_ip.tcl        || (echo "error in create_ip";exit -1)
      vivado -mode batch -source create_framework.tcl || (echo "error in create_framework";exit -1)
-     ## patches for irun
+     ## patches for irun/ncsim.  NOTE: if simulator is not specified, it defaults to ncsim in 2015.4 and irun in 2016.3
      cd ${DONUT_HARDWARE_ROOT}/sim/ies
-     perl -i.ori -pe 's/(.*\/verilog\/top.v)/ -sv $1/mg' run.f                          # compile top.v with system verilog
-     sed -i "s/irun -V93/irun -elaborate -V93/g" top.sh                                 # run up to elaboration, skip execution
-     perl -i.ori -pe 'BEGIN{undef $/;} s/(^-makelib.*\n.*glbl.v.*\n.*endlib)//mg' run.f # remove glbl.v from compile list
-     ## patches for ncsim
-     sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh           # run up to elaboration, skip execution
+     sed -i "s/irun -V93/irun -elaborate -V93/g" top.sh                                 # run irun up to elaboration, skip execution
+     sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh           # run ncsim up to elaboration, skip execution
+     if [ -f run.f ]; then
+       perl -i.ori -pe 's/(.*\/verilog\/top.v)/ -sv $1/mg' run.f                          # compile top.v with system verilog
+       perl -i.ori -pe 'BEGIN{undef $/;} s/(^-makelib.*\n.*glbl.v.*\n.*endlib)//mg' run.f # remove glbl.v from compile list
+     fi
      ## patches for questa
      sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/questa/top.sh        # run up to elaboration, skip execution
      ## patches for xsim

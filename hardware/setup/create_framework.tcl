@@ -78,7 +78,7 @@ if { $ddr3_used == TRUE } {
   add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci
   export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force -quiet
 
-  if { $bram_used == TRUE } {  
+  if { $bram_used == TRUE } {
     add_files -norecurse $root_dir/ip/block_RAM/block_RAM.xci
     export_ip_user_files -of_objects  [get_files "$root_dir/ip/block_RAM/block_RAM.xci"] -force -quiet
   } else {
@@ -136,14 +136,10 @@ if { $simulator == "irun" } {
 } else {
   export_simulation  -lib_map_path "$ies_libs/viv2015_4/ies14.10.s14" -force -directory "$root_dir/sim" -simulator ies
 }
-# exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/ies/top.sh
 #for questa
 export_simulation  -lib_map_path "$ies_libs/viv2015_4/mentor13.5" -force -directory "$root_dir/sim" -simulator questa
-# exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/questa/top.sh
 #for xsim
 export_simulation  -force -directory "$root_dir/sim" -simulator xsim
-# exec sed -i "s/  simulate/# simulate/g" $root_dir/sim/xsim/top.sh
-# exec sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" $root_dir/sim/xsim/top.sh
 
 # SET Synthesis Properties
 set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT 400 [get_runs synth_1]
@@ -160,7 +156,6 @@ set_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 # SET Bitstream Properties
 set_property STEPS.WRITE_BITSTREAM.ARGS.BIN_FILE true [get_runs impl_1]
-
 
 if { $ddr3_used == TRUE } {
   exec sed -i "/DDR3_USED  : BOOLEAN/c\\    DDR3_USED  : BOOLEAN := TRUE" $root_dir/hdl/psl_accel_sim.vhd
