@@ -103,123 +103,124 @@ ENTITY psl_accel IS
     ah_paren    : out std_ulogic;
     ha_pclock   : in  std_ulogic;
 
-       -- SFP+ Phy 0 Interface
-       as_sfp0_phy_mgmt_clk_reset   : out std_ulogic;
-       as_sfp0_phy_mgmt_address     : out std_ulogic_vector(0 to 8);
-       as_sfp0_phy_mgmt_read        : out std_ulogic;
-       sa_sfp0_phy_mgmt_readdata    : in  std_ulogic_vector(0 to 31);
-       sa_sfp0_phy_mgmt_waitrequest : in  std_ulogic;
-       as_sfp0_phy_mgmt_write       : out std_ulogic;
-       as_sfp0_phy_mgmt_writedata   : out std_ulogic_vector(0 to 31);
-       sa_sfp0_tx_ready             : in  std_ulogic;
-       sa_sfp0_rx_ready             : in  std_ulogic;
-       as_sfp0_tx_forceelecidle     : out std_ulogic;
-       sa_sfp0_pll_locked           : in  std_ulogic;
-       sa_sfp0_rx_is_lockedtoref    : in  std_ulogic;
-       sa_sfp0_rx_is_lockedtodata   : in  std_ulogic;
-       sa_sfp0_rx_signaldetect      : in  std_ulogic;
-       as_sfp0_tx_coreclk           : out std_ulogic;
-       sa_sfp0_tx_clk               : in  std_ulogic;
-       sa_sfp0_rx_clk               : in  std_ulogic;
-       as_sfp0_tx_parallel_data     : out std_ulogic_vector(39 downto 0);
-       sa_sfp0_rx_parallel_data     : in  std_ulogic_vector(39 downto 0);
+    -- SFP+ Phy 0 Interface
+    as_sfp0_phy_mgmt_clk_reset   : out std_ulogic;
+    as_sfp0_phy_mgmt_address     : out std_ulogic_vector(0 to 8);
+    as_sfp0_phy_mgmt_read        : out std_ulogic;
+    sa_sfp0_phy_mgmt_readdata    : in  std_ulogic_vector(0 to 31);
+    sa_sfp0_phy_mgmt_waitrequest : in  std_ulogic;
+    as_sfp0_phy_mgmt_write       : out std_ulogic;
+    as_sfp0_phy_mgmt_writedata   : out std_ulogic_vector(0 to 31);
+    sa_sfp0_tx_ready             : in  std_ulogic;
+    sa_sfp0_rx_ready             : in  std_ulogic;
+    as_sfp0_tx_forceelecidle     : out std_ulogic;
+    sa_sfp0_pll_locked           : in  std_ulogic;
+    sa_sfp0_rx_is_lockedtoref    : in  std_ulogic;
+    sa_sfp0_rx_is_lockedtodata   : in  std_ulogic;
+    sa_sfp0_rx_signaldetect      : in  std_ulogic;
+    as_sfp0_tx_coreclk           : out std_ulogic;
+    sa_sfp0_tx_clk               : in  std_ulogic;
+    sa_sfp0_rx_clk               : in  std_ulogic;
+    as_sfp0_tx_parallel_data     : out std_ulogic_vector(39 downto 0);
+    sa_sfp0_rx_parallel_data     : in  std_ulogic_vector(39 downto 0);
 
-       -- SFP+ 0 Sideband Signals
-       sa_sfp0_tx_fault   : in  std_ulogic;
-       sa_sfp0_mod_abs    : in  std_ulogic;
-       sa_sfp0_rx_los     : in  std_ulogic;
-       as_sfp0_tx_disable : out std_ulogic;
-       as_sfp0_rs0        : out std_ulogic;
-       as_sfp0_rs1        : out std_ulogic;
-       as_sfp0_scl        : out std_ulogic;
-       as_sfp0_en         : out std_ulogic;
-       sa_sfp0_sda        : in  std_ulogic;
-       as_sfp0_sda        : out std_ulogic;
-       as_sfp0_sda_oe     : out std_ulogic;
+    -- SFP+ 0 Sideband Signals
+    sa_sfp0_tx_fault   : in  std_ulogic;
+    sa_sfp0_mod_abs    : in  std_ulogic;
+    sa_sfp0_rx_los     : in  std_ulogic;
+    as_sfp0_tx_disable : out std_ulogic;
+    as_sfp0_rs0        : out std_ulogic;
+    as_sfp0_rs1        : out std_ulogic;
+    as_sfp0_scl        : out std_ulogic;
+    as_sfp0_en         : out std_ulogic;
+    sa_sfp0_sda        : in  std_ulogic;
+    as_sfp0_sda        : out std_ulogic;
+    as_sfp0_sda_oe     : out std_ulogic;
 
-       -- SFP+ Phy 1 Interface
-       as_sfp1_phy_mgmt_clk_reset   : out std_ulogic;
-       as_sfp1_phy_mgmt_address     : out std_ulogic_vector(0 to 8);
-       as_sfp1_phy_mgmt_read        : out std_ulogic;
-       sa_sfp1_phy_mgmt_readdata    : in  std_ulogic_vector(0 to 31);
-       sa_sfp1_phy_mgmt_waitrequest : in  std_ulogic;
-       as_sfp1_phy_mgmt_write       : out std_ulogic;
-       as_sfp1_phy_mgmt_writedata   : out std_ulogic_vector(0 to 31);
-       sa_sfp1_tx_ready             : in  std_ulogic;
-       sa_sfp1_rx_ready             : in  std_ulogic;
-       as_sfp1_tx_forceelecidle     : out std_ulogic;
-       sa_sfp1_pll_locked           : in  std_ulogic;
-       sa_sfp1_rx_is_lockedtoref    : in  std_ulogic;
-       sa_sfp1_rx_is_lockedtodata   : in  std_ulogic;
-       sa_sfp1_rx_signaldetect      : in  std_ulogic;
-       as_sfp1_tx_coreclk           : out std_ulogic;
-       sa_sfp1_tx_clk               : in  std_ulogic;
-       sa_sfp1_rx_clk               : in  std_ulogic;
-       as_sfp1_tx_parallel_data     : out std_ulogic_vector(39 downto 0);
-       sa_sfp1_rx_parallel_data     : in  std_ulogic_vector(39 downto 0);
+    -- SFP+ Phy 1 Interface
+    as_sfp1_phy_mgmt_clk_reset   : out std_ulogic;
+    as_sfp1_phy_mgmt_address     : out std_ulogic_vector(0 to 8);
+    as_sfp1_phy_mgmt_read        : out std_ulogic;
+    sa_sfp1_phy_mgmt_readdata    : in  std_ulogic_vector(0 to 31);
+    sa_sfp1_phy_mgmt_waitrequest : in  std_ulogic;
+    as_sfp1_phy_mgmt_write       : out std_ulogic;
+    as_sfp1_phy_mgmt_writedata   : out std_ulogic_vector(0 to 31);
+    sa_sfp1_tx_ready             : in  std_ulogic;
+    sa_sfp1_rx_ready             : in  std_ulogic;
+    as_sfp1_tx_forceelecidle     : out std_ulogic;
+    sa_sfp1_pll_locked           : in  std_ulogic;
+    sa_sfp1_rx_is_lockedtoref    : in  std_ulogic;
+    sa_sfp1_rx_is_lockedtodata   : in  std_ulogic;
+    sa_sfp1_rx_signaldetect      : in  std_ulogic;
+    as_sfp1_tx_coreclk           : out std_ulogic;
+    sa_sfp1_tx_clk               : in  std_ulogic;
+    sa_sfp1_rx_clk               : in  std_ulogic;
+    as_sfp1_tx_parallel_data     : out std_ulogic_vector(39 downto 0);
+    sa_sfp1_rx_parallel_data     : in  std_ulogic_vector(39 downto 0);
 
-       -- SFP+ 1 Sideband Signals
-       sa_sfp1_tx_fault   : in  std_ulogic;
-       sa_sfp1_mod_abs    : in  std_ulogic;
-       sa_sfp1_rx_los     : in  std_ulogic;
-       as_sfp1_tx_disable : out std_ulogic;
-       as_sfp1_rs0        : out std_ulogic;
-       as_sfp1_rs1        : out std_ulogic;
-       as_sfp1_scl        : out std_ulogic;
-       as_sfp1_en         : out std_ulogic;
-       sa_sfp1_sda        : in  std_ulogic;
-       as_sfp1_sda        : out std_ulogic;
-       as_sfp1_sda_oe     : out std_ulogic;
+    -- SFP+ 1 Sideband Signals
+    sa_sfp1_tx_fault   : in  std_ulogic;
+    sa_sfp1_mod_abs    : in  std_ulogic;
+    sa_sfp1_rx_los     : in  std_ulogic;
+    as_sfp1_tx_disable : out std_ulogic;
+    as_sfp1_rs0        : out std_ulogic;
+    as_sfp1_rs1        : out std_ulogic;
+    as_sfp1_scl        : out std_ulogic;
+    as_sfp1_en         : out std_ulogic;
+    sa_sfp1_sda        : in  std_ulogic;
+    as_sfp1_sda        : out std_ulogic;
+    as_sfp1_sda_oe     : out std_ulogic;
 
-       as_refclk_sfp_fs    : out std_ulogic;
-       as_refclk_sfp_fs_en : out std_ulogic;
+    as_refclk_sfp_fs    : out std_ulogic;
+    as_refclk_sfp_fs_en : out std_ulogic;
 
-       c0_sys_clk_p       : IN STD_LOGIC;                                                -- only for DDR3_USED=TRUE
-       c0_sys_clk_n       : IN STD_LOGIC;                                                -- only for DDR3_USED=TRUE
-       c0_ddr3_addr       : out   std_logic_vector(15 downto 0);                         -- only for DDR3_USED=TRUE
-       c0_ddr3_ba         : out   std_logic_vector(2 downto 0);                          -- only for DDR3_USED=TRUE
-       c0_ddr3_ras_n      : out   std_logic;                                             -- only for DDR3_USED=TRUE
-       c0_ddr3_cas_n      : out   std_logic;                                             -- only for DDR3_USED=TRUE
-       c0_ddr3_reset_n    : out   std_logic;                                             -- only for DDR3_USED=TRUE
-       c0_ddr3_cs_n       : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
-       c0_ddr3_cke        : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
-       c0_ddr3_ck_p       : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
-       c0_ddr3_ck_n       : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
-       c0_ddr3_we_n       : out   std_logic;                                             -- only for DDR3_USED=TRUE
-       c0_ddr3_dm         : out   std_logic_vector(8 downto 0);                          -- only for DDR3_USED=TRUE
-       c0_ddr3_dq         : inout std_logic_vector(71 downto 0);                         -- only for DDR3_USED=TRUE
-       c0_ddr3_dqs_p      : inout std_logic_vector(8 downto 0);                          -- only for DDR3_USED=TRUE
-       c0_ddr3_dqs_n      : inout std_logic_vector(8 downto 0);                          -- only for DDR3_USED=TRUE
-       c0_ddr3_odt        : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
-       c1_sys_clk_p       : IN STD_LOGIC;                                                -- only for DDR3_USED=TRUE
-       c1_sys_clk_n       : IN STD_LOGIC;                                                -- only for DDR3_USED=TRUE
-       c1_ddr3_addr       : out   std_logic_vector(15 downto 0);                         -- only for DDR3_USED=TRUE
-       c1_ddr3_ba         : out   std_logic_vector(2 downto 0);                          -- only for DDR3_USED=TRUE
-       c1_ddr3_ras_n      : out   std_logic;                                             -- only for DDR3_USED=TRUE
-       c1_ddr3_cas_n      : out   std_logic;                                             -- only for DDR3_USED=TRUE
-       c1_ddr3_reset_n    : out   std_logic;                                             -- only for DDR3_USED=TRUE
-       c1_ddr3_cs_n       : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
-       c1_ddr3_cke        : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
-       c1_ddr3_ck_p       : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
-       c1_ddr3_ck_n       : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
-       c1_ddr3_we_n       : out   std_logic;                                             -- only for DDR3_USED=TRUE
-       c1_ddr3_dm         : out   std_logic_vector(8 downto 0);                          -- only for DDR3_USED=TRUE
-       c1_ddr3_dq         : inout std_logic_vector(71 downto 0);                         -- only for DDR3_USED=TRUE
-       c1_ddr3_dqs_p      : inout std_logic_vector(8 downto 0);                          -- only for DDR3_USED=TRUE
-       c1_ddr3_dqs_n      : inout std_logic_vector(8 downto 0);                          -- only for DDR3_USED=TRUE
-       c1_ddr3_odt        : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
+    c0_sys_clk_p       : IN STD_LOGIC;                                                -- only for DDR3_USED=TRUE
+    c0_sys_clk_n       : IN STD_LOGIC;                                                -- only for DDR3_USED=TRUE
+    c0_ddr3_addr       : out   std_logic_vector(15 downto 0);                         -- only for DDR3_USED=TRUE
+    c0_ddr3_ba         : out   std_logic_vector(2 downto 0);                          -- only for DDR3_USED=TRUE
+    c0_ddr3_ras_n      : out   std_logic;                                             -- only for DDR3_USED=TRUE
+    c0_ddr3_cas_n      : out   std_logic;                                             -- only for DDR3_USED=TRUE
+    c0_ddr3_reset_n    : out   std_logic;                                             -- only for DDR3_USED=TRUE
+    c0_ddr3_cs_n       : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
+    c0_ddr3_cke        : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
+    c0_ddr3_ck_p       : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
+    c0_ddr3_ck_n       : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
+    c0_ddr3_we_n       : out   std_logic;                                             -- only for DDR3_USED=TRUE
+    c0_ddr3_dm         : out   std_logic_vector(8 downto 0);                          -- only for DDR3_USED=TRUE
+    c0_ddr3_dq         : inout std_logic_vector(71 downto 0);                         -- only for DDR3_USED=TRUE
+    c0_ddr3_dqs_p      : inout std_logic_vector(8 downto 0);                          -- only for DDR3_USED=TRUE
+    c0_ddr3_dqs_n      : inout std_logic_vector(8 downto 0);                          -- only for DDR3_USED=TRUE
+    c0_ddr3_odt        : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
+    c1_sys_clk_p       : IN STD_LOGIC;                                                -- only for DDR3_USED=TRUE
+    c1_sys_clk_n       : IN STD_LOGIC;                                                -- only for DDR3_USED=TRUE
+    c1_ddr3_addr       : out   std_logic_vector(15 downto 0);                         -- only for DDR3_USED=TRUE
+    c1_ddr3_ba         : out   std_logic_vector(2 downto 0);                          -- only for DDR3_USED=TRUE
+    c1_ddr3_ras_n      : out   std_logic;                                             -- only for DDR3_USED=TRUE
+    c1_ddr3_cas_n      : out   std_logic;                                             -- only for DDR3_USED=TRUE
+    c1_ddr3_reset_n    : out   std_logic;                                             -- only for DDR3_USED=TRUE
+    c1_ddr3_cs_n       : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
+    c1_ddr3_cke        : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
+    c1_ddr3_ck_p       : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
+    c1_ddr3_ck_n       : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
+    c1_ddr3_we_n       : out   std_logic;                                             -- only for DDR3_USED=TRUE
+    c1_ddr3_dm         : out   std_logic_vector(8 downto 0);                          -- only for DDR3_USED=TRUE
+    c1_ddr3_dq         : inout std_logic_vector(71 downto 0);                         -- only for DDR3_USED=TRUE
+    c1_ddr3_dqs_p      : inout std_logic_vector(8 downto 0);                          -- only for DDR3_USED=TRUE
+    c1_ddr3_dqs_n      : inout std_logic_vector(8 downto 0);                          -- only for DDR3_USED=TRUE
+    c1_ddr3_odt        : out   std_logic_vector(1 downto 0);                          -- only for DDR3_USED=TRUE
 
-       as_red_led   : out std_ulogic_vector(0 to 3);
-       as_green_led : out std_ulogic_vector(0 to 3));
-
+    as_red_led   : out std_ulogic_vector(0 to 3);
+    as_green_led : out std_ulogic_vector(0 to 3)
+  );
 END psl_accel;
 
 
-
 ARCHITECTURE psl_accel OF psl_accel IS
-
-  component donut
-    port (
+  --
+  -- DONUT
+  --
+  COMPONENT donut
+    PORT (
       ah_cvalid      : out std_ulogic;
       ah_ctag        : out std_ulogic_vector(0 to 7);
       ah_com         : out std_ulogic_vector(0 to 12);
@@ -288,45 +289,168 @@ ARCHITECTURE psl_accel OF psl_accel IS
       -- Kernel AXI Slave Interface
       sk_d_o         : OUT SK_D_T;
       ks_d_i         : IN  KS_D_T
-      );
-  end component;
+    );
+  END COMPONENT;
+
+  --
+  -- ACTION WRAPPER
+  --
+  COMPONENT action_wrapper
+    PORT (
+      action_clk : in STD_LOGIC;
+      action_rst_n : in STD_LOGIC;
+      --                                                                                 -- only for DDR3_USED=TRUE
+      -- AXI DDR3 Interface                                                              -- only for DDR3_USED=TRUE
+      axi_card_mem0_araddr : out STD_LOGIC_VECTOR ( 32 downto 0 );                       -- only for DDR3_USED=TRUE
+      axi_card_mem0_arburst : out STD_LOGIC_VECTOR ( 1 downto 0 );                       -- only for DDR3_USED=TRUE
+      axi_card_mem0_arcache : out STD_LOGIC_VECTOR ( 3 downto 0 );                       -- only for DDR3_USED=TRUE
+      axi_card_mem0_arid : out STD_LOGIC_VECTOR ( 1 downto 0 );                          -- only for DDR3_USED=TRUE
+      axi_card_mem0_arlen : out STD_LOGIC_VECTOR ( 7 downto 0 );                         -- only for DDR3_USED=TRUE
+      axi_card_mem0_arlock : out STD_LOGIC_VECTOR ( 0 downto 0 );                        -- only for DDR3_USED=TRUE
+      axi_card_mem0_arprot : out STD_LOGIC_VECTOR ( 2 downto 0 );                        -- only for DDR3_USED=TRUE
+      axi_card_mem0_arqos : out STD_LOGIC_VECTOR ( 3 downto 0 );                         -- only for DDR3_USED=TRUE
+      axi_card_mem0_arready : in STD_LOGIC;                                              -- only for DDR3_USED=TRUE
+      axi_card_mem0_arregion : out STD_LOGIC_VECTOR ( 3 downto 0 );                      -- only for DDR3_USED=TRUE
+      axi_card_mem0_arsize : out STD_LOGIC_VECTOR ( 2 downto 0 );                        -- only for DDR3_USED=TRUE
+      axi_card_mem0_aruser : out STD_LOGIC_VECTOR ( 0 downto 0 );                        -- only for DDR3_USED=TRUE
+      axi_card_mem0_arvalid : out STD_LOGIC;                                             -- only for DDR3_USED=TRUE
+      axi_card_mem0_awaddr : out STD_LOGIC_VECTOR ( 32 downto 0 );                       -- only for DDR3_USED=TRUE
+      axi_card_mem0_awburst : out STD_LOGIC_VECTOR ( 1 downto 0 );                       -- only for DDR3_USED=TRUE
+      axi_card_mem0_awcache : out STD_LOGIC_VECTOR ( 3 downto 0 );                       -- only for DDR3_USED=TRUE
+      axi_card_mem0_awid : out STD_LOGIC_VECTOR ( 1 downto 0 );                          -- only for DDR3_USED=TRUE
+      axi_card_mem0_awlen : out STD_LOGIC_VECTOR ( 7 downto 0 );                         -- only for DDR3_USED=TRUE
+      axi_card_mem0_awlock : out STD_LOGIC_VECTOR ( 0 downto 0 );                        -- only for DDR3_USED=TRUE
+      axi_card_mem0_awprot : out STD_LOGIC_VECTOR ( 2 downto 0 );                        -- only for DDR3_USED=TRUE
+      axi_card_mem0_awqos : out STD_LOGIC_VECTOR ( 3 downto 0 );                         -- only for DDR3_USED=TRUE
+      axi_card_mem0_awready : in STD_LOGIC;                                              -- only for DDR3_USED=TRUE
+      axi_card_mem0_awregion : out STD_LOGIC_VECTOR ( 3 downto 0 );                      -- only for DDR3_USED=TRUE
+      axi_card_mem0_awsize : out STD_LOGIC_VECTOR ( 2 downto 0 );                        -- only for DDR3_USED=TRUE
+      axi_card_mem0_awuser : out STD_LOGIC_VECTOR ( 0 downto 0 );                        -- only for DDR3_USED=TRUE
+      axi_card_mem0_awvalid : out STD_LOGIC;                                             -- only for DDR3_USED=TRUE
+      axi_card_mem0_bid : in STD_LOGIC_VECTOR ( 1 downto 0 );                            -- only for DDR3_USED=TRUE
+      axi_card_mem0_bready : out STD_LOGIC;                                              -- only for DDR3_USED=TRUE
+      axi_card_mem0_bresp : in STD_LOGIC_VECTOR ( 1 downto 0 );                          -- only for DDR3_USED=TRUE
+      axi_card_mem0_buser : in STD_LOGIC_VECTOR ( 0 downto 0 );                          -- only for DDR3_USED=TRUE
+      axi_card_mem0_bvalid : in STD_LOGIC;                                               -- only for DDR3_USED=TRUE
+      axi_card_mem0_rdata : in STD_LOGIC_VECTOR ( 511 downto 0 );                        -- only for DDR3_USED=TRUE
+      axi_card_mem0_rid : in STD_LOGIC_VECTOR ( 1 downto 0 );                            -- only for DDR3_USED=TRUE
+      axi_card_mem0_rlast : in STD_LOGIC;                                                -- only for DDR3_USED=TRUE
+      axi_card_mem0_rready : out STD_LOGIC;                                              -- only for DDR3_USED=TRUE
+      axi_card_mem0_rresp : in STD_LOGIC_VECTOR ( 1 downto 0 );                          -- only for DDR3_USED=TRUE
+      axi_card_mem0_ruser : in STD_LOGIC_VECTOR ( 0 downto 0 );                          -- only for DDR3_USED=TRUE
+      axi_card_mem0_rvalid : in STD_LOGIC;                                               -- only for DDR3_USED=TRUE
+      axi_card_mem0_wdata : out STD_LOGIC_VECTOR ( 511 downto 0 );                       -- only for DDR3_USED=TRUE
+      axi_card_mem0_wlast : out STD_LOGIC;                                               -- only for DDR3_USED=TRUE
+      axi_card_mem0_wready : in STD_LOGIC;                                               -- only for DDR3_USED=TRUE
+      axi_card_mem0_wstrb : out STD_LOGIC_VECTOR ( 63 downto 0 );                        -- only for DDR3_USED=TRUE
+      axi_card_mem0_wuser : out STD_LOGIC_VECTOR ( 0 downto 0 );                         -- only for DDR3_USED=TRUE
+      axi_card_mem0_wvalid : out STD_LOGIC;                                              -- only for DDR3_USED=TRUE
+      --
+      -- AXI Control Register Interface
+      axi_ctrl_reg_araddr : in STD_LOGIC_VECTOR ( 31 downto 0 );
+      axi_ctrl_reg_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
+      axi_ctrl_reg_arready : out STD_LOGIC;
+      axi_ctrl_reg_arvalid : in STD_LOGIC;
+      axi_ctrl_reg_awaddr : in STD_LOGIC_VECTOR ( 31 downto 0 );
+      axi_ctrl_reg_awprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
+      axi_ctrl_reg_awready : out STD_LOGIC;
+      axi_ctrl_reg_awvalid : in STD_LOGIC;
+      axi_ctrl_reg_bready : in STD_LOGIC;
+      axi_ctrl_reg_bresp : out STD_LOGIC_VECTOR ( 1 downto 0 );
+      axi_ctrl_reg_bvalid : out STD_LOGIC;
+      axi_ctrl_reg_rdata : out STD_LOGIC_VECTOR ( 31 downto 0 );
+      axi_ctrl_reg_rready : in STD_LOGIC;
+      axi_ctrl_reg_rresp : out STD_LOGIC_VECTOR ( 1 downto 0 );
+      axi_ctrl_reg_rvalid : out STD_LOGIC;
+      axi_ctrl_reg_wdata : in STD_LOGIC_VECTOR ( 31 downto 0 );
+      axi_ctrl_reg_wready : out STD_LOGIC;
+      axi_ctrl_reg_wstrb : in STD_LOGIC_VECTOR ( 3 downto 0 );
+      axi_ctrl_reg_wvalid : in STD_LOGIC;
+      --
+      -- AXI Host Memory Interface
+      axi_host_mem_araddr : out STD_LOGIC_VECTOR ( 63 downto 0 );
+      axi_host_mem_arburst : out STD_LOGIC_VECTOR ( 1 downto 0 );
+      axi_host_mem_arcache : out STD_LOGIC_VECTOR ( 3 downto 0 );
+      axi_host_mem_arid : out STD_LOGIC_VECTOR ( 1 downto 0 );
+      axi_host_mem_arlen : out STD_LOGIC_VECTOR ( 7 downto 0 );
+      axi_host_mem_arlock : out STD_LOGIC_VECTOR ( 0 downto 0 );
+      axi_host_mem_arprot : out STD_LOGIC_VECTOR ( 2 downto 0 );
+      axi_host_mem_arqos : out STD_LOGIC_VECTOR ( 3 downto 0 );
+      axi_host_mem_arready : in STD_LOGIC;
+      axi_host_mem_arregion : out STD_LOGIC_VECTOR ( 3 downto 0 );
+      axi_host_mem_arsize : out STD_LOGIC_VECTOR ( 2 downto 0 );
+      axi_host_mem_aruser : out STD_LOGIC_VECTOR ( 0 downto 0 );
+      axi_host_mem_arvalid : out STD_LOGIC;
+      axi_host_mem_awaddr : out STD_LOGIC_VECTOR ( 63 downto 0 );
+      axi_host_mem_awburst : out STD_LOGIC_VECTOR ( 1 downto 0 );
+      axi_host_mem_awcache : out STD_LOGIC_VECTOR ( 3 downto 0 );
+      axi_host_mem_awid : out STD_LOGIC_VECTOR ( 1 downto 0 );
+      axi_host_mem_awlen : out STD_LOGIC_VECTOR ( 7 downto 0 );
+      axi_host_mem_awlock : out STD_LOGIC_VECTOR ( 0 downto 0 );
+      axi_host_mem_awprot : out STD_LOGIC_VECTOR ( 2 downto 0 );
+      axi_host_mem_awqos : out STD_LOGIC_VECTOR ( 3 downto 0 );
+      axi_host_mem_awready : in STD_LOGIC;
+      axi_host_mem_awregion : out STD_LOGIC_VECTOR ( 3 downto 0 );
+      axi_host_mem_awsize : out STD_LOGIC_VECTOR ( 2 downto 0 );
+      axi_host_mem_awuser : out STD_LOGIC_VECTOR ( 0 downto 0 );
+      axi_host_mem_awvalid : out STD_LOGIC;
+      axi_host_mem_bid : in STD_LOGIC_VECTOR ( 1 downto 0 );
+      axi_host_mem_bready : out STD_LOGIC;
+      axi_host_mem_bresp : in STD_LOGIC_VECTOR ( 1 downto 0 );
+      axi_host_mem_buser : in STD_LOGIC_VECTOR ( 0 downto 0 );
+      axi_host_mem_bvalid : in STD_LOGIC;
+      axi_host_mem_rdata : in STD_LOGIC_VECTOR ( 511 downto 0 );
+      axi_host_mem_rid : in STD_LOGIC_VECTOR ( 1 downto 0 );
+      axi_host_mem_rlast : in STD_LOGIC;
+      axi_host_mem_rready : out STD_LOGIC;
+      axi_host_mem_rresp : in STD_LOGIC_VECTOR ( 1 downto 0 );
+      axi_host_mem_ruser : in STD_LOGIC_VECTOR ( 0 downto 0 );
+      axi_host_mem_rvalid : in STD_LOGIC;
+      axi_host_mem_wdata : out STD_LOGIC_VECTOR ( 511 downto 0 );
+      axi_host_mem_wlast : out STD_LOGIC;
+      axi_host_mem_wready : in STD_LOGIC;
+      axi_host_mem_wstrb : out STD_LOGIC_VECTOR ( 63 downto 0 );
+      axi_host_mem_wuser : out STD_LOGIC_VECTOR ( 0 downto 0 );
+      axi_host_mem_wvalid : out STD_LOGIC
+    );
+  END COMPONENT;
 
   --                                                                                     -- only for DDR3_USED=TRUE
   -- BLOCK RAM                                                                           -- only for DDR3_USED=TRUE
   --                                                                                     -- only for DDR3_USED=TRUE
   COMPONENT block_RAM                                                                    -- only for DDR3_USED=TRUE
     PORT (                                                                               -- only for DDR3_USED=TRUE
-    s_aclk              : IN STD_LOGIC;                                                  -- only for DDR3_USED=TRUE
-    s_aresetn           : IN STD_LOGIC;                                                  -- only for DDR3_USED=TRUE
-    s_axi_awid          : IN STD_LOGIC_VECTOR(1 DOWNTO 0);                               -- only for DDR3_USED=TRUE
-    s_axi_awaddr        : IN STD_LOGIC_VECTOR(31 DOWNTO 0);                              -- only for DDR3_USED=TRUE
-    s_axi_awlen         : IN STD_LOGIC_VECTOR(7 DOWNTO 0);                               -- only for DDR3_USED=TRUE
-    s_axi_awsize        : IN STD_LOGIC_VECTOR(2 DOWNTO 0);                               -- only for DDR3_USED=TRUE
-    s_axi_awburst       : IN STD_LOGIC_VECTOR(1 DOWNTO 0);                               -- only for DDR3_USED=TRUE
-    s_axi_awvalid       : IN STD_LOGIC;                                                  -- only for DDR3_USED=TRUE
-    s_axi_awready       : OUT STD_LOGIC;                                                 -- only for DDR3_USED=TRUE
-    s_axi_wdata         : IN STD_LOGIC_VECTOR(127 DOWNTO 0);                             -- only for DDR3_USED=TRUE
-    s_axi_wstrb         : IN STD_LOGIC_VECTOR(15 DOWNTO 0);                              -- only for DDR3_USED=TRUE
-    s_axi_wlast         : IN STD_LOGIC;                                                  -- only for DDR3_USED=TRUE
-    s_axi_wvalid        : IN STD_LOGIC;                                                  -- only for DDR3_USED=TRUE
-    s_axi_wready        : OUT STD_LOGIC;                                                 -- only for DDR3_USED=TRUE
-    s_axi_bid           : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);                              -- only for DDR3_USED=TRUE
-    s_axi_bresp         : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);                              -- only for DDR3_USED=TRUE
-    s_axi_bvalid        : OUT STD_LOGIC;                                                 -- only for DDR3_USED=TRUE
-    s_axi_bready        : IN STD_LOGIC;                                                  -- only for DDR3_USED=TRUE
-    s_axi_arid          : IN STD_LOGIC_VECTOR(1 DOWNTO 0);                               -- only for DDR3_USED=TRUE
-    s_axi_araddr        : IN STD_LOGIC_VECTOR(31 DOWNTO 0);                              -- only for DDR3_USED=TRUE
-    s_axi_arlen         : IN STD_LOGIC_VECTOR(7 DOWNTO 0);                               -- only for DDR3_USED=TRUE
-    s_axi_arsize        : IN STD_LOGIC_VECTOR(2 DOWNTO 0);                               -- only for DDR3_USED=TRUE
-    s_axi_arburst       : IN STD_LOGIC_VECTOR(1 DOWNTO 0);                               -- only for DDR3_USED=TRUE
-    s_axi_arvalid       : IN STD_LOGIC;                                                  -- only for DDR3_USED=TRUE
-    s_axi_arready       : OUT STD_LOGIC;                                                 -- only for DDR3_USED=TRUE
-    s_axi_rid           : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);                              -- only for DDR3_USED=TRUE
-    s_axi_rdata         : OUT STD_LOGIC_VECTOR(127 DOWNTO 0);                            -- only for DDR3_USED=TRUE
-    s_axi_rresp         : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);                              -- only for DDR3_USED=TRUE
-    s_axi_rlast         : OUT STD_LOGIC;                                                 -- only for DDR3_USED=TRUE
-    s_axi_rvalid        : OUT STD_LOGIC;                                                 -- only for DDR3_USED=TRUE
-    s_axi_rready        : IN STD_LOGIC                                                   -- only for DDR3_USED=TRUE
+      s_aclk              : IN STD_LOGIC;                                                -- only for DDR3_USED=TRUE
+      s_aresetn           : IN STD_LOGIC;                                                -- only for DDR3_USED=TRUE
+      s_axi_awid          : IN STD_LOGIC_VECTOR(1 DOWNTO 0);                             -- only for DDR3_USED=TRUE
+      s_axi_awaddr        : IN STD_LOGIC_VECTOR(31 DOWNTO 0);                            -- only for DDR3_USED=TRUE
+      s_axi_awlen         : IN STD_LOGIC_VECTOR(7 DOWNTO 0);                             -- only for DDR3_USED=TRUE
+      s_axi_awsize        : IN STD_LOGIC_VECTOR(2 DOWNTO 0);                             -- only for DDR3_USED=TRUE
+      s_axi_awburst       : IN STD_LOGIC_VECTOR(1 DOWNTO 0);                             -- only for DDR3_USED=TRUE
+      s_axi_awvalid       : IN STD_LOGIC;                                                -- only for DDR3_USED=TRUE
+      s_axi_awready       : OUT STD_LOGIC;                                               -- only for DDR3_USED=TRUE
+      s_axi_wdata         : IN STD_LOGIC_VECTOR(127 DOWNTO 0);                           -- only for DDR3_USED=TRUE
+      s_axi_wstrb         : IN STD_LOGIC_VECTOR(15 DOWNTO 0);                            -- only for DDR3_USED=TRUE
+      s_axi_wlast         : IN STD_LOGIC;                                                -- only for DDR3_USED=TRUE
+      s_axi_wvalid        : IN STD_LOGIC;                                                -- only for DDR3_USED=TRUE
+      s_axi_wready        : OUT STD_LOGIC;                                               -- only for DDR3_USED=TRUE
+      s_axi_bid           : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);                            -- only for DDR3_USED=TRUE
+      s_axi_bresp         : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);                            -- only for DDR3_USED=TRUE
+      s_axi_bvalid        : OUT STD_LOGIC;                                               -- only for DDR3_USED=TRUE
+      s_axi_bready        : IN STD_LOGIC;                                                -- only for DDR3_USED=TRUE
+      s_axi_arid          : IN STD_LOGIC_VECTOR(1 DOWNTO 0);                             -- only for DDR3_USED=TRUE
+      s_axi_araddr        : IN STD_LOGIC_VECTOR(31 DOWNTO 0);                            -- only for DDR3_USED=TRUE
+      s_axi_arlen         : IN STD_LOGIC_VECTOR(7 DOWNTO 0);                             -- only for DDR3_USED=TRUE
+      s_axi_arsize        : IN STD_LOGIC_VECTOR(2 DOWNTO 0);                             -- only for DDR3_USED=TRUE
+      s_axi_arburst       : IN STD_LOGIC_VECTOR(1 DOWNTO 0);                             -- only for DDR3_USED=TRUE
+      s_axi_arvalid       : IN STD_LOGIC;                                                -- only for DDR3_USED=TRUE
+      s_axi_arready       : OUT STD_LOGIC;                                               -- only for DDR3_USED=TRUE
+      s_axi_rid           : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);                            -- only for DDR3_USED=TRUE
+      s_axi_rdata         : OUT STD_LOGIC_VECTOR(127 DOWNTO 0);                          -- only for DDR3_USED=TRUE
+      s_axi_rresp         : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);                            -- only for DDR3_USED=TRUE
+      s_axi_rlast         : OUT STD_LOGIC;                                               -- only for DDR3_USED=TRUE
+      s_axi_rvalid        : OUT STD_LOGIC;                                               -- only for DDR3_USED=TRUE
+      s_axi_rready        : IN STD_LOGIC                                                 -- only for DDR3_USED=TRUE
     );                                                                                   -- only for DDR3_USED=TRUE
   END COMPONENT;                                                                         -- only for DDR3_USED=TRUE
 
@@ -503,7 +627,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
     );                                                                                   -- only for DDR3_USED=TRUE
   END COMPONENT;                                                                         -- only for DDR3_USED=TRUE
 
---DDR3 - constants used in sim:  constant OWN_W16ESB8G8M : usodimm_part_t := (                                                                          -- only for DDR3_USED=TRUE
+--DDR3 - constants used in sim:  CONSTANT OWN_W16ESB8G8M : usodimm_part_t := (                                                                          -- only for DDR3_USED=TRUE
 --DDR3 - constants used in sim:    base_chip => (                                                                                                       -- only for DDR3_USED=TRUE
 --DDR3 - constants used in sim:      -- Generic DDR3-1600 x8 chip, 4 Gbit, 260 ns tRFC, CL11                                                            -- only for DDR3_USED=TRUE
 --DDR3 - constants used in sim:      part_size              => M64_X_B8_X_D8,                                                                           -- only for DDR3_USED=TRUE
@@ -512,12 +636,12 @@ ARCHITECTURE psl_accel OF psl_accel IS
 --DDR3 - constants used in sim:      speed_grade            => MT41K_125E,             -- 125E                                                          -- only for DDR3_USED=TRUE
 --DDR3 - constants used in sim:      check_timing           => false),                                                                                  -- only for DDR3_USED=TRUE
 --DDR3 - constants used in sim:    geometry  => USODIMM_2x72);                                                                                          -- only for DDR3_USED=TRUE
---DDR3 - constants used in sim:  constant W16ESB8G8M_AS_2_RANK : usodimm_part_t := (                                                                    -- only for DDR3_USED=TRUE
+--DDR3 - constants used in sim:  CONSTANT W16ESB8G8M_AS_2_RANK : usodimm_part_t := (                                                                    -- only for DDR3_USED=TRUE
 --DDR3 - constants used in sim:    base_chip => W16ESB8G8M.base_chip, -- Base chip characteristics retained.                                            -- only for DDR3_USED=TRUE
 --DDR3 - constants used in sim:    geometry  => USODIMM_2x64);        -- Using only one of the two ranks.                                               -- only for DDR3_USED=TRUE
---DDR3 - constants used in sim:  constant usodimm_part : usodimm_part_t :=  OWN_W16ESB8G8M; --choice(mig_ranks = 2, W16ESB8G8M, W16ESB8G8M_AS_1_RANK);  -- only for DDR3_USED=TRUE
+--DDR3 - constants used in sim:  CONSTANT usodimm_part : usodimm_part_t :=  OWN_W16ESB8G8M; --choice(mig_ranks = 2, W16ESB8G8M, W16ESB8G8M_AS_1_RANK);  -- only for DDR3_USED=TRUE
 
-  constant sys_clk_period : time := 2.5 ns;                                                                                                             -- only for DDR3_USED=TRUE
+  CONSTANT sys_clk_period : time := 2.5 ns;                                                                                                             -- only for DDR3_USED=TRUE
 
   --
   -- SIGNALS
@@ -670,11 +794,10 @@ BEGIN
   --                                                                                     -- only for DDR3_USED=TRUE
   --                                                                                     -- only for DDR3_USED=TRUE
   --                                                                                     -- only for DDR3_USED=TRUE
-  c0_ddr3_dm <= (others => '0');                                                         -- only for DDR3_USED=TRUE
   c1_ddr3_dm <= (others => '0');                                                         -- only for DDR3_USED=TRUE
 
   donut_i: donut
-    port map (
+    PORT MAP (
       --
       -- PSL Interface
       --
@@ -760,8 +883,8 @@ BEGIN
   --
   -- ACTION
   --
-  action_w: ENTITY work.action_wrapper
-    port map (
+  action_w: action_wrapper
+    PORT MAP (
       action_clk                         => ha_pclock,
       action_rst_n                       => action_reset_n_q,
       --                                                                                 -- only for DDR3_USED=TRUE
@@ -884,39 +1007,39 @@ BEGIN
     card_mem0_rst_n <= NOT action_reset_q;                                               -- only for DDR3_USED=TRUE
 
     block_ram_i : block_RAM                                                              -- only for DDR3_USED=TRUE
-    PORT MAP (                                                                           -- only for DDR3_USED=TRUE
-      s_aresetn      => action_reset_n_q,                                                -- only for DDR3_USED=TRUE
-      s_aclk         => ha_pclock,                                                       -- only for DDR3_USED=TRUE
-      s_axi_araddr   => axi_card_mem0_araddr(31 downto 0),                               -- only for DDR3_USED=TRUE
-      s_axi_arburst  => axi_card_mem0_arburst(1 downto 0),                               -- only for DDR3_USED=TRUE
-      s_axi_arid     => axi_card_mem0_arid,                                              -- only for DDR3_USED=TRUE
-      s_axi_arlen    => axi_card_mem0_arlen(7 downto 0),                                 -- only for DDR3_USED=TRUE
-      s_axi_arready  => axi_card_mem0_arready,                                           -- only for DDR3_USED=TRUE
-      s_axi_arsize   => axi_card_mem0_arsize(2 downto 0),                                -- only for DDR3_USED=TRUE
-      s_axi_arvalid  => axi_card_mem0_arvalid,                                           -- only for DDR3_USED=TRUE
-      s_axi_awaddr   => axi_card_mem0_awaddr(31 downto 0),                               -- only for DDR3_USED=TRUE
-      s_axi_awburst  => axi_card_mem0_awburst(1 downto 0),                               -- only for DDR3_USED=TRUE
-      s_axi_awid     => axi_card_mem0_awid,                                              -- only for DDR3_USED=TRUE
-      s_axi_awlen    => axi_card_mem0_awlen(7 downto 0),                                 -- only for DDR3_USED=TRUE
-      s_axi_awready  => axi_card_mem0_awready,                                           -- only for DDR3_USED=TRUE
-      s_axi_awsize   => axi_card_mem0_awsize(2 downto 0),                                -- only for DDR3_USED=TRUE
-      s_axi_awvalid  => axi_card_mem0_awvalid,                                           -- only for DDR3_USED=TRUE
-      s_axi_bid      => axi_card_mem0_bid,                                               -- only for DDR3_USED=TRUE
-      s_axi_bready   => axi_card_mem0_bready,                                            -- only for DDR3_USED=TRUE
-      s_axi_bresp    => axi_card_mem0_bresp(1 downto 0),                                 -- only for DDR3_USED=TRUE
-      s_axi_bvalid   => axi_card_mem0_bvalid,                                            -- only for DDR3_USED=TRUE
-      s_axi_rdata    => axi_card_mem0_rdata,                                             -- only for DDR3_USED=TRUE
-      s_axi_rid      => axi_card_mem0_rid,                                               -- only for DDR3_USED=TRUE
-      s_axi_rlast    => axi_card_mem0_rlast,                                             -- only for DDR3_USED=TRUE
-      s_axi_rready   => axi_card_mem0_rready,                                            -- only for DDR3_USED=TRUE
-      s_axi_rresp    => axi_card_mem0_rresp(1 downto 0),                                 -- only for DDR3_USED=TRUE
-      s_axi_rvalid   => axi_card_mem0_rvalid,                                            -- only for DDR3_USED=TRUE
-      s_axi_wdata    => axi_card_mem0_wdata,                                             -- only for DDR3_USED=TRUE
-      s_axi_wlast    => axi_card_mem0_wlast,                                             -- only for DDR3_USED=TRUE
-      s_axi_wready   => axi_card_mem0_wready,                                            -- only for DDR3_USED=TRUE
-      s_axi_wstrb    => axi_card_mem0_wstrb,                                             -- only for DDR3_USED=TRUE
-      s_axi_wvalid   => axi_card_mem0_wvalid                                             -- only for DDR3_USED=TRUE
-    );                                                                                   -- only for DDR3_USED=TRUE
+      PORT MAP (                                                                         -- only for DDR3_USED=TRUE
+        s_aresetn      => action_reset_n_q,                                              -- only for DDR3_USED=TRUE
+        s_aclk         => ha_pclock,                                                     -- only for DDR3_USED=TRUE
+        s_axi_araddr   => axi_card_mem0_araddr(31 downto 0),                             -- only for DDR3_USED=TRUE
+        s_axi_arburst  => axi_card_mem0_arburst(1 downto 0),                             -- only for DDR3_USED=TRUE
+        s_axi_arid     => axi_card_mem0_arid,                                            -- only for DDR3_USED=TRUE
+        s_axi_arlen    => axi_card_mem0_arlen(7 downto 0),                               -- only for DDR3_USED=TRUE
+        s_axi_arready  => axi_card_mem0_arready,                                         -- only for DDR3_USED=TRUE
+        s_axi_arsize   => axi_card_mem0_arsize(2 downto 0),                              -- only for DDR3_USED=TRUE
+        s_axi_arvalid  => axi_card_mem0_arvalid,                                         -- only for DDR3_USED=TRUE
+        s_axi_awaddr   => axi_card_mem0_awaddr(31 downto 0),                             -- only for DDR3_USED=TRUE
+        s_axi_awburst  => axi_card_mem0_awburst(1 downto 0),                             -- only for DDR3_USED=TRUE
+        s_axi_awid     => axi_card_mem0_awid,                                            -- only for DDR3_USED=TRUE
+        s_axi_awlen    => axi_card_mem0_awlen(7 downto 0),                               -- only for DDR3_USED=TRUE
+        s_axi_awready  => axi_card_mem0_awready,                                         -- only for DDR3_USED=TRUE
+        s_axi_awsize   => axi_card_mem0_awsize(2 downto 0),                              -- only for DDR3_USED=TRUE
+        s_axi_awvalid  => axi_card_mem0_awvalid,                                         -- only for DDR3_USED=TRUE
+        s_axi_bid      => axi_card_mem0_bid,                                             -- only for DDR3_USED=TRUE
+        s_axi_bready   => axi_card_mem0_bready,                                          -- only for DDR3_USED=TRUE
+        s_axi_bresp    => axi_card_mem0_bresp(1 downto 0),                               -- only for DDR3_USED=TRUE
+        s_axi_bvalid   => axi_card_mem0_bvalid,                                          -- only for DDR3_USED=TRUE
+        s_axi_rdata    => axi_card_mem0_rdata,                                           -- only for DDR3_USED=TRUE
+        s_axi_rid      => axi_card_mem0_rid,                                             -- only for DDR3_USED=TRUE
+        s_axi_rlast    => axi_card_mem0_rlast,                                           -- only for DDR3_USED=TRUE
+        s_axi_rready   => axi_card_mem0_rready,                                          -- only for DDR3_USED=TRUE
+        s_axi_rresp    => axi_card_mem0_rresp(1 downto 0),                               -- only for DDR3_USED=TRUE
+        s_axi_rvalid   => axi_card_mem0_rvalid,                                          -- only for DDR3_USED=TRUE
+        s_axi_wdata    => axi_card_mem0_wdata,                                           -- only for DDR3_USED=TRUE
+        s_axi_wlast    => axi_card_mem0_wlast,                                           -- only for DDR3_USED=TRUE
+        s_axi_wready   => axi_card_mem0_wready,                                          -- only for DDR3_USED=TRUE
+        s_axi_wstrb    => axi_card_mem0_wstrb,                                           -- only for DDR3_USED=TRUE
+        s_axi_wvalid   => axi_card_mem0_wvalid                                           -- only for DDR3_USED=TRUE
+      );                                                                                 -- only for DDR3_USED=TRUE
   END GENERATE;                                                                          -- only for DDR3_USED=TRUE
 
   --                                                                                     -- only for DDR3_USED=TRUE
