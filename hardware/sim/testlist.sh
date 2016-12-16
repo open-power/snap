@@ -28,7 +28,7 @@
 
 #   t="$DONUT_ROOT/software/examples/demo_memcopy        -C0 -i ../../1KB.txt -o 1KB.out -t10       ";echo -e "$del\n$t $l";time $t #     5..7
     #### select 1 selection loop
-    # for size in 2 83; do   			# strill error with 83B ?
+    # for size in 2 83; do   			# still error with 83B ?
     # for size in 2 20 200; do   		# 16B unaligned
       for size in 2 8 16 64 128 256; do		# 16B aligned
     # for size in 2 20 30 31 32 33 80 81 255 256 257 1024 1025 4096 4097; do
