@@ -192,7 +192,7 @@
      if [ ! -f ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh ]; then                              # modbld script doesnt exist yet
        vivado -mode batch -source export_irun.tcl        || (echo "error in export_irun";exit -1)
        ## patches for irun.  NOTE: if simulator is not specified, it defaults to ncsim in 2015.4 and irun in 2016.3
-       sed -i "s/irun -V93/irun -elaborate -V93/g" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh  # run irun up to elaboration, skip execution
+       sed -i "s/93 -relax/93 -elaborate -relax/gI" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh # run irun up to elaboration, skip execution
        sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh           # run ncsim up to elaboration, skip execution
        if [ -f ${DONUT_HARDWARE_ROOT}/sim/ies/run.f ]; then
          perl -i.ori -pe 's/(.*\/verilog\/top.v)/ -sv $1/mg' ${DONUT_HARDWARE_ROOT}/sim/ies/run.f                          # compile top.v with system verilog
