@@ -34,7 +34,6 @@ ENTITY dma_buffer IS
     -- pervasive
     ha_pclock                : IN  std_ulogic;
     afu_reset                : IN  std_ulogic;
-    wflush                   : IN  std_ulogic;
     --
     -- PSL IOs
     ha_b_i                   : IN  HA_B_T;
@@ -354,62 +353,49 @@ BEGIN
 --512              parity_error_fir_q <= '1';
 --512            end if;
           end if;
-          IF wflush = '1' THEN
-            --
-            -- initial values
-            --
-            buf_wtag_q       <= (OTHERS => '0');
-            buf_wtag_p_q     <= '1';
-            buf_wtag_valid_q <= FALSE;
-            wram_rdata_q     <= (OTHERS => '0');
-            wram_rdata_p_q   <= (OTHERS => '1');
-            wram_waddr_q     <= (OTHERS => '0');
-            wram_waddr_p_q   <= '1';
-          ELSE
-            --
-            -- defaults
-            --
-            buf_wtag_q       <= wram_waddr_q(6 DOWNTO 1);
-            buf_wtag_p_q     <= parity_gen_even(wram_waddr_p_q & wram_waddr_q(2 DOWNTO 0));
-            buf_wtag_valid_q <= FALSE;
-            wram_waddr_q     <= wram_waddr_d;
-            wram_waddr_p_q   <= wram_waddr_p_d;
+          --
+          -- defaults
+          --
+          buf_wtag_q       <= wram_waddr_q(6 DOWNTO 1);
+          buf_wtag_p_q     <= parity_gen_even(wram_waddr_p_q & wram_waddr_q(2 DOWNTO 0));
+          buf_wtag_valid_q <= FALSE;
+          wram_waddr_q     <= wram_waddr_d;
+          wram_waddr_p_q   <= wram_waddr_p_d;
 
-            IF (wram_waddr_d(1) /= wram_waddr_q(1))  THEN
-              buf_wtag_valid_q <= TRUE;
-            END IF;
-
-            --
-            -- RAM output wiring
-            wram_rdata_v   (511 DOWNTO 0) := wram_rdata(511 DOWNTO 0  );
-            wram_rdata_p_v (  7 DOWNTO 0) := wram_rdata(519 DOWNTO 512);
-            wram_rdata_be_v( 63 DOWNTO 0) := wram_rdata(583 DOWNTO 520);
-
-            --
-            -- wram read and modified data
-            FOR i IN 63 DOWNTO 0 LOOP
-              IF wram_rdata_be_v(i) = '1' THEN
-                wram_rmdata_v(i*8+7 DOWNTO i*8) :=     wram_rdata_v(i*8+7 DOWNTO i*8);
---                wram_rmdata_p_v(i)              := NOT wram_rdata_p_v(i);
-              ELSE
-                wram_rmdata_v(i*8+7 DOWNTO i*8) := wback_data_q(i*8+7 DOWNTO i*8);
---                wram_rmdata_p_v(i)              := wback_data_p_q(i);
-              END IF;
-            END LOOP;  -- i
-
-            --
-            --
-            wram_rdata_q   <= wram_rmdata_v;
-            wram_rdata_p_q <= (OTHERS => '0');
---512            wram_rdata_p_q <= parity_gen_odd(wram_rmdata_p_v(63 DOWNTO 56) & inject_ah_b_rpar_error_i) &
---512                              parity_gen_odd(wram_rmdata_p_v(55 DOWNTO 48)                           ) &
---512                              parity_gen_odd(wram_rmdata_p_v(47 DOWNTO 40)                           ) &
---512                              parity_gen_odd(wram_rmdata_p_v(39 DOWNTO 32)                           ) &
---512                              parity_gen_odd(wram_rmdata_p_v(31 DOWNTO 24)                           ) &
---512                              parity_gen_odd(wram_rmdata_p_v(23 DOWNTO 16)                           ) &
---512                              parity_gen_odd(wram_rmdata_p_v(15 DOWNTO  8)                           ) &
---512                              parity_gen_odd(wram_rmdata_p_v( 7 DOWNTO  0)                           );
+          IF (wram_waddr_d(1) /= wram_waddr_q(1))  THEN
+            buf_wtag_valid_q <= TRUE;
           END IF;
+
+          --
+          -- RAM output wiring
+          wram_rdata_v   (511 DOWNTO 0) := wram_rdata(511 DOWNTO 0  );
+          wram_rdata_p_v (  7 DOWNTO 0) := wram_rdata(519 DOWNTO 512);
+          wram_rdata_be_v( 63 DOWNTO 0) := wram_rdata(583 DOWNTO 520);
+
+          --
+          -- wram read and modified data
+          FOR i IN 63 DOWNTO 0 LOOP
+            IF wram_rdata_be_v(i) = '1' THEN
+              wram_rmdata_v(i*8+7 DOWNTO i*8) :=     wram_rdata_v(i*8+7 DOWNTO i*8);
+--              wram_rmdata_p_v(i)              := NOT wram_rdata_p_v(i);
+            ELSE
+              wram_rmdata_v(i*8+7 DOWNTO i*8) := wback_data_q(i*8+7 DOWNTO i*8);
+--              wram_rmdata_p_v(i)              := wback_data_p_q(i);
+            END IF;
+          END LOOP;  -- i
+
+          --
+          --
+          wram_rdata_q   <= wram_rmdata_v;
+          wram_rdata_p_q <= (OTHERS => '0');
+--512          wram_rdata_p_q <= parity_gen_odd(wram_rmdata_p_v(63 DOWNTO 56) & inject_ah_b_rpar_error_i) &
+--512                            parity_gen_odd(wram_rmdata_p_v(55 DOWNTO 48)                           ) &
+--512                            parity_gen_odd(wram_rmdata_p_v(47 DOWNTO 40)                           ) &
+--512                            parity_gen_odd(wram_rmdata_p_v(39 DOWNTO 32)                           ) &
+--512                            parity_gen_odd(wram_rmdata_p_v(31 DOWNTO 24)                           ) &
+--512                            parity_gen_odd(wram_rmdata_p_v(23 DOWNTO 16)                           ) &
+--512                            parity_gen_odd(wram_rmdata_p_v(15 DOWNTO  8)                           ) &
+--512                            parity_gen_odd(wram_rmdata_p_v( 7 DOWNTO  0)                           );
         END IF;
       END IF;
     END PROCESS wram_ctrl_clk;
