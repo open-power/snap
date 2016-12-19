@@ -49,7 +49,22 @@ fi
 ####### Cadence IES calls:
   which ncsim                                                # checking version
   ncsim -version
-
+  if [ -f "$IES_LIBS/cds.lib" ]; then
+    echo "IES_LIBS found in $IES_LIBS"
+  else
+    echo "WARNING: cannot find IES_LIBS=$IES_LIBS, Cadence compilation won't work"
+  fi
+  echo
+####### MentorGraphics QUESTA calls, not tested yet
+# which vsim                                                 # checking version
+# vsim -version
+  if [ -z "$MENTOR_LIBS" ]; then export MENTOR_LIBS="";fi
+# if [ -f "$MENTOR_LIBS/xxx" ]; then
+#   echo "MENTOR_LIBS found in $MENTOR_LIBS"
+# else
+#   echo "WARNING: cannot find MENTOR_LIBS=$MENTOR_LIBS, Mentor compilation won't work"
+# fi
+# echo
 
 ####### user settings for CAPI STREAMING FRAMEWORK
 if [ ! -d "$USERHOME" ]; then
