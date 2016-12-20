@@ -1,11 +1,7 @@
 PSL_SOURCE_ENV=$(FPGACARD)
 BUILD_DIR=$(DONUT_HARDWARE_ROOT)/build
 
-PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/ies/filelist.f
-SOURCE_FILES_HDL     = $(shell grep -E "(\/hdl\/|\/action_examples\/)" $(PROJECT_COMPILE_LIST) | grep -v 'action_auto_' | grep -v 'viv_project' | sed 's/psl_accel_sim/psl_accel_syn/')
-SOURCE_FILES_VHDL    = $(SOURCE_FILES_HDL:../%=%)
-VHD_FILES_RELATIVE   = $(shell grep -E "(\/hdl\/|\/action_examples\/)" $(PROJECT_COMPILE_LIST) | grep -v 'action_auto_' | grep -v 'viv_project' | grep 'vhd') $(shell grep "psl_accel_sim.vhd" $(PROJECT_COMPILE_LIST) | sed 's/psl_accel_sim/psl_accel_syn/')
-VHD_FILES            = $(VHD_FILES_RELATIVE:../..%=%)
+PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone
 
@@ -47,26 +43,35 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 	@sed -i 's/run.oocImpl.*1/run.oocImpl 0/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topImpl.*0/run.topImpl 1/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topSynth.*0/run.topSynth 1/' $(BUILD_DIR)/psl_fpga.tcl
+	@mv -f $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
 
-$(BUILD_DIR)/Sources/prj/top.prj: $(BUILD_DIR)/psl_fpga.tcl
-	@cp $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
-	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
-	@echo "PATCH .vhd FILES"  && for vhd_file in $(VHD_FILES); do $(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; done
-	@if [ $(DDR3_USED) = "TRUE" ]; then echo "PATCH .vhd FILES for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/vhdl.patch; fi
-
-$(BUILD_DIR)/Sources/prj/afu.prj: $(BUILD_DIR)/Sources/prj/top.prj
+$(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@echo -e "\t[CREATE] $@"
-	@for i in $(SOURCE_FILES_VHDL); do\
-		if echo $$i | grep -q '\.vhd'; then\
-			echo "vhdl work \"$$i\"" >> $@; \
-		elif echo $$i | grep -q '\.v'; then\
-			echo "verilog work \"$$i\"" >> $@; \
-		fi;\
-	done
+# Vivado 2015.4 file_info.txt has a different format than 2016.3. 
+# if 2015.4, else 2016.3
+# FIXME: Hack for 2016 to remove more ../ than really expected. Find out why export_simulation does this in 2016.
+	@if grep -q 'Language       File-Name' $(PROJECT_COMPILE_LIST); then\
+		cut -d "," -f "1 4 5" $(PROJECT_COMPILE_LIST) | sed 's/, */ /g' | \
+		grep -E "(\/hdl\/|\/action_examples\/)" | \
+		grep -Ev '\/ip\/|action_auto_|viv_project' | sed 's/ ..\// /' | \
+		sed 's/[ ]*$$//' |sed 's/psl_accel_sim/psl_accel_syn/' > $(BUILD_DIR)/Sources/prj/afu.prj;\
+	else cut -d "," -f "2 3 4" $(PROJECT_COMPILE_LIST) | sed 's/, */ /g' | \
+		grep -E "(\/hdl\/|\/action_examples\/)" | \
+		grep -Ev '\/ip\/|action_auto_|viv_project' | sed 's/ ..\/..\/..\// /' | \
+		sed 's/psl_accel_sim/psl_accel_syn/' > $(BUILD_DIR)/Sources/prj/afu.prj;\
+	fi
 	@echo -e "\t[CREATE] $(BUILD_DIR)/Sources/prj/psl_fpga.prj"
 	@cat $(BUILD_DIR)/Sources/prj/top.prj $(BUILD_DIR)/Sources/prj/afu.prj > $(BUILD_DIR)/Sources/prj/psl_fpga.prj
 
-config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl create_environment $(BUILD_DIR)/Sources/prj/afu.prj
+	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
+
+	@echo "PATCH .vhd FILES" && VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\///' | sed 's/\(^.*psl_accel_s\)yn.vhd/\1yn.vhd\n\1im.vhd/'`; \
+	for vhd_file in $$VHD_FILES; do \
+		$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; \
+	done
+	@if [ $(DDR3_USED) = "TRUE" ]; then echo "PATCH .vhd FILES for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/vhdl.patch; fi
+
+config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj
 	@echo -e "\t[CONFIG] done ($(shell date))"
 
 model:
@@ -78,6 +83,7 @@ image:
 	@echo -e "\t[BUILD IMAGE] start ($(shell date))"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
 	@echo -e "\t[BUILD IMAGE] done ($(shell date))"
+# FIXME: check if vivado was successful
 	@if [ $(DDR3_USED) = "TRUE" ]; then\
 		cd $(DONUT_HARDWARE_ROOT)/setup && vivado -mode batch -source AR_64051.tcl -notrace;\
 		echo -e "\t[BUILD IMAGE] patch for ar_64051 done ($(shell date))";\

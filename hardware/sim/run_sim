@@ -55,6 +55,7 @@
 
 # ARGUMENTS #############
  TS=`date +%Y%m%d_%H%M%S`; if [ "$TST_TITLE" != "" ];then TS="${TS}_${TST_TITLE}";fi
+ if [ ! -d "$USERHOME" ];then echo "variable USERHOME is not pointing to a directory: $USERHOME, leaving"; exit 11; fi
  if [ -z $DONUT_ROOT ];then echo "variable DONUT_ROOT not found, leaving"; exit 11; fi
  if [ -z $DONUT_SOFTWARE_ROOT ];then echo "variable DONUT_SOFTWARE_ROOT not found, leaving"; exit 11; fi
  if [ -z $DONUT_HARDWARE_ROOT ];then echo "variable DONUT_HARDWARE_ROOT not found, leaving"; exit 11; fi
@@ -456,11 +457,9 @@
  echo "**** RC=$TCRC parallel=$PAR executed=$EXECUTED failed=$FAILED runtime=$RUNTIME simtime=$SIMTIME cpus=$CPUS speed=$SPEED load=$LOAD local=$LOCAL used_kB=$USED percused=$PERCUSED"
 #echo "**** Versions: HW=$HWVERS SW=$SWVERS PSLSE=$PSLSEVERS"
  echo "**** Versions: DONUT=$DOVERS PSLSE=$PSLSEVERS"
- if [ ! -d "$USERHOME" ];then echo "variable USERHOME is not pointing to a directory: $USERHOME"      # no collection for statistics
- else                                                                                                 # collect statistics in USERHOME
-   echo "$DOVERS,$PSLSEVERS,$SIMBASE,$TS,$TCRC,$PAR,$EXECUTED,$FAILED,$RUNTIME,$SIMTIME,$DDCB_TIMEOUT,$HOSTNAME,$SPEED,$CPUS,$LOAD,$USED,$PERCUSED,$TST_NAME $LISTNAME,$TST_ARG" >>$USERHOME/status.csv
- fi
- grep --text -iE "error|errno|warning|retc|return|genwqe_|time|finished|loop|failed|script|tmp_pid" stim.log >>../summary.log # collect short summary over all jobs in this checkout
+#echo "$HWVERS,$SWVERS,$PSLSEVERS,$TS,$TCRC,$PAR,$EXECUTED,$FAILED,$RUNTIME,$SIMTIME,$DDCB_TIMEOUT,$HOSTNAME,$SPEED,$CPUS,$LOAD,$USED,$PERCUSED,$TST_ARG" >>$USERHOME/status.csv
+ echo "$DOVERS,$PSLSEVERS,$SIMBASE,$TS,$TCRC,$PAR,$EXECUTED,$FAILED,$RUNTIME,$SIMTIME,$DDCB_TIMEOUT,$HOSTNAME,$SPEED,$CPUS,$LOAD,$USED,$PERCUSED,$TST_NAME $LISTNAME,$TST_ARG" >>$USERHOME/status.csv
+ grep --text -iE "error|errno|warning|retc|return|genwqe_|time|finished|loop|failed|script|tmp_pid" stim.log >>../summary.log
  sleep 5
  if [ "$CLEAN" == "1" ];then
    echo "**** clean output directory $SIMOUT, in case it is successful"
