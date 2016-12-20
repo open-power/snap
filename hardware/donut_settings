@@ -18,7 +18,9 @@
 #
 # important environment variables for running tools
 # the goal is to be able to source this file and have everything set as needed
-
+called=$_                          # can be path+name, absolut or relative
+script=$(readlink -f "$called")    # absolute path+name
+scriptdir=$(dirname  "$script")    # just path
 
 if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ] || [ ! -d "$FRAMEWORK_ROOT" ]; then
   echo "Note: the following site specific variables are used by the build and sim tools"
@@ -37,13 +39,17 @@ if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ] || [ ! -d "$FRAME
   echo "DONUT_HARDWARE_ROOT = \$DONUT_ROOT/hardware   # path to donut hardware "
 fi
 
-####### Xilinx settings before running VIVADO and XSIM
- source $XILINX_VIVADO/settings64.sh                        # settings for SDK+HLS+docnav+vivado, does all of the above
-
+if [ ! -d "$XILINX_VIVADO" ]; then
+  echo "XILINX_VIVADO is not set, please run $XILINX_ROOT/Vivado/<version>/settings64.sh"
+  exit
+fi
 ####### Xilinx Vivado calls:
-# vivado &                                                   # run Vivado GUI
-# vivado -mode tcl                                           # run Vivado GUI, start at linux cmd prompt
-# vivado -mode batch -source run.tcl                         # run Vivado in batch mode
+  which vivado                                               # checking version
+  vivado -version|head -n1
+####### Cadence IES calls:
+  which ncsim                                                # checking version
+  ncsim -version
+
 
 ####### user settings for CAPI STREAMING FRAMEWORK
 if [ ! -d "$USERHOME" ]; then
@@ -60,11 +66,18 @@ else
   echo "PSLSE_ROOT           is set to \"$PSLSE_ROOT\""
 fi
 
-if [ ! -d "$DONUT_ROOT" ]; then
-  export DONUT_ROOT=$USERHOME/donut                          # used with git clone git@github.com:open-power/donut.git   $DONUT_ROOT
-  echo "Setting DONUT_ROOT          to \"$DONUT_ROOT\""
+export DONUT_ROOT=$(dirname "$scriptdir")
+export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware
+export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software
+echo "Setting DONUT_ROOT          to \"$DONUT_ROOT\""
+echo "Setting DONUT_HARDWARE_ROOT to \"$DONUT_HARDWARE_ROOT\""
+echo "Setting DONUT_SOFTWARE_ROOT to \"$DONUT_SOFTWARE_ROOT\""
+
+if [ -z "$ACTION_ROOT" ]; then
+  echo
+  echo "Variable ACTION_ROOT is not set. Please let it point to your action source if you want to add an action to your project."
 else
-  echo "DONUT_ROOT           is set to \"$DONUT_ROOT\""
+  echo "ACTION_ROOT          is set to \"$ACTION_ROOT\""
 fi
 
 if [ ! -d "$FPGACARD" ]; then
@@ -95,32 +108,18 @@ else
   echo "SIMULATOR            is set to \"$SIMULATOR\""
 fi
 
-if [ ! -d "$DONUT_SOFTWARE_ROOT" ]; then
-  export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software
-  echo "Setting DONUT_SOFTWARE_ROOT to \"$DONUT_SOFTWARE_ROOT\""
-else
-  echo "DONUT_SOFTWARE_ROOT  is set to \"$DONUT_SOFTWARE_ROOT\""
-fi
-
-if [ ! -d "$DONUT_HARDWARE_ROOT" ]; then
-  export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware
-  echo "Setting DONUT_HARDWARE_ROOT to \"$DONUT_HARDWARE_ROOT\""
-else
-  echo "DONUT_HARDWARE_ROOT  is set to \"$DONUT_HARDWARE_ROOT\""
-fi
-
-if [ -z "$ACTION_ROOT" ]; then
-  echo
-  echo "Variable ACTION_ROOT is not set. Please let it point to your action source if you want to add an action to your project."
-else
-  echo "ACTION_ROOT          is set to \"$ACTION_ROOT\""
-fi
-
 if [ -z "$DDR3_USED" ]; then
   echo
   echo "Variable DDR3_USED   is not set. Will default to \"TRUE\""
 else
   echo "DDR3_USED            is set to \"$DDR3_USED\""
+fi
+
+if [ -z "$ILA_DEBUG" ]; then
+  echo
+  echo "Variable ILA_DEBUG   is not set. Will default to \"FALSE\""
+else
+  echo "ILA_DEBUG            is set to \"$ILA_DEBUG\""
 fi
 
 echo

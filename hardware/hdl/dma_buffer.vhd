@@ -15,6 +15,8 @@
 -- See the License for the specific language governing permissions AND
 -- limitations under the License.
 --
+-- change log:
+-- 12/20/2016 R. Rieke add flip bit for rad bit to circumvent page flip
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 
@@ -131,6 +133,9 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL wram_wdata                       : std_ulogic_vector(583 DOWNTO 0);
   SIGNAL wram_wen                         : std_ulogic;
   SIGNAL parity_error_fir_q               : std_ulogic := '0';
+
+  signal flip_bit_q                       : std_ulogic;
+  signal flip_bit_valid_q                 : std_ulogic;
 
   COMPONENT ram_520x64_2p
     PORT(
@@ -318,7 +323,7 @@ BEGIN
     wram_wdata(511 DOWNTO   1) <= buf_wdata_i(511 DOWNTO 1);
     wram_wdata(519 DOWNTO 512) <= buf_wdata_p_i;
     wram_wdata(583 DOWNTO 520) <= buf_wdata_be_i;
-    wram_raddr                 <= ha_b_q.rtag(4 DOWNTO 0) & ha_b_q.rad(0);
+    wram_raddr                 <= ha_b_q.rtag(4 DOWNTO 0) & (ha_b_q.rad(0) xor flip_bit_q) ;
     wram_wen                   <= buf_wdata_v_i;
 
 
@@ -533,8 +538,15 @@ BEGIN
           rram_rdata_vld_q    <= '0';
           rram_rdata_vld_qq   <= '0';
           rram_rdata_vld_qqq  <= '0';
+          flip_bit_valid_q    <= '0';
 
         ELSE
+          -- capture state of first rad bit and use the bit to
+          -- circumvent page flip issue
+          if ha_b_i.rvalid = '1' and flip_bit_valid_q = '0' then
+            flip_bit_valid_q <= '1';
+            flip_bit_q       <=  ha_b_i.rad(0);
+          end if;  
           ha_b_q             <= ha_b_i;
           ha_b_rad_q         <= ha_b_q.rad(0);
           ha_b_rad_qq        <= ha_b_rad_q;
