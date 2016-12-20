@@ -801,7 +801,7 @@ BEGIN
               --         => 4 or 5 CLs needed dependent from the start address
               rclen_q <= ('0' &  sd_c_q.rd_len(5 DOWNTO 1))               +  
                          (                    (5 DOWNTO 1  => '0') & '1') +
-                         (                    (5 DOWNTO 1  => '0') & sd_c_q.rd_addr(0));
+                         (                    (5 DOWNTO 1  => '0') & sd_c_q.rd_addr(6));
             END IF;
           END IF;
 
@@ -1463,7 +1463,7 @@ BEGIN
             clt_wtag_p_q    <= AC_PPARITH(1, clt_wtag_q, clt_wtag_p_q,
                                              "000001"  , '0');
 
-            IF clt_wtag_q = "000000" THEN
+            IF write_ctrl_fsm_q = ST_SETUP_WRITE_CTRL_REG THEN
               --
               -- first CL is allways a partial line
               write_ctrl_q(clt_wtag_v).clt <= PARTIAL_DATA;
@@ -1498,7 +1498,7 @@ BEGIN
               --         => 4 or 5 CLs needed dependent from the start address
               wclen_q <= ('0' &  sd_c_q.wr_len(5 DOWNTO 1))               +  
                          (                    (5 DOWNTO 1  => '0') & '1') +
-                         (                    (5 DOWNTO 1  => '0') & sd_c_q.wr_addr(0));
+                         (                    (5 DOWNTO 1  => '0') & sd_c_q.wr_addr(6));
             END IF;
           END IF;
 

@@ -152,12 +152,13 @@ BEGIN
             IF buf_rdata_v_i = '1' THEN
               aln_rdata_v_o <= '1';            
               read_count_q  <= read_count_q - 1;
+
+              IF read_count_q = x"00" THEN
+                aligner_read_fsm_q <= ST_IDLE;
+                aln_rdata_e_o      <= '1';
+              END IF;
             END IF;
 
-            IF read_count_q = x"00" THEN
-              aligner_read_fsm_q <= ST_IDLE;
-              aln_rdata_e_o      <= '1';
-            END IF;
           
 
           WHEN ST_FSM_ERROR =>
