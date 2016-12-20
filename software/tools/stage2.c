@@ -243,7 +243,8 @@ static void action_memcpy(struct dnut_card* h,
 
 static int memcpy_test(struct dnut_card* dnc,
 			int action,
-			int blocks,	/* Number of DEFAULT_MEMCPY_BLOCK */
+			int blocks_4k,	/* Number of DEFAULT_MEMCPY_BLOCK */
+			int blocks_64,	/* Number of 64 Bytes Blocks */
 			int input_o,
 			int output_o,
 			int align,
@@ -255,16 +256,17 @@ static int memcpy_test(struct dnut_card* dnc,
 	void *src_a = NULL, *src = NULL;
 	void *dest_a = NULL, *dest = NULL;
 	void *ddr3;
+	int blocks;
 	unsigned int memsize;
 
 	rc = 0;
-	/* align can be 16, 32, 64 .. 4096 */
+	/* align can be 64 .. 4096 */
 	if (align < 64) {
 		printf("align=%d must be 64 or higher\n", align);
 		return 1;
 	}
-	if ((align & 0xf) != 0) {
-		printf("align=%d must be a multible of 64KB\n", align);
+	if ((align & 0x3f) != 0) {
+		printf("align=%d must be a multible of 64\n", align);
 		return 1;
 	}
 	if (align > DEFAULT_MEMCPY_BLOCK) {
@@ -272,14 +274,17 @@ static int memcpy_test(struct dnut_card* dnc,
 		return 1;
 	}
 
+	/* Number of 64 Bytes Blocks */
+	blocks = (blocks_4k * 64) + blocks_64;
+
 	/* Check Size */
-	if (blocks > (int)(DDR_MEM_SIZE / DEFAULT_MEMCPY_BLOCK / 2)) {
+	if (blocks > (int)(DDR_MEM_SIZE / 64 / 2)) {
 		printf("Error: Number of Blocks: %d exceeds: %d\n",
 			blocks, (int)(DDR_MEM_SIZE/DEFAULT_MEMCPY_BLOCK/2));
 		return 1;
 	}
 
-	memsize = blocks * DEFAULT_MEMCPY_BLOCK;
+	memsize = blocks * 64;
 	/* Check Card Ram base and Size */
 	if ((card_ram_base + memsize) > DDR_MEM_SIZE) {
 		printf("Error: Size: 0x%8.8x exceeds DDR3 Limit: 0x%llx for Offset: 0x%llx\n",
@@ -294,8 +299,8 @@ static int memcpy_test(struct dnut_card* dnc,
 	}
 	src = src_a + input_o;	/* Add offset */
 	if (verbose_level > 0)
-		printf("  Src:  %p Size: 0x%x Align: %d offset: %d\n",
-			src, memsize, align, output_o);
+		printf("  Src:  %p Size: 0x%x (%d/%d) Align: %d offset: %d\n",
+			src, memsize, blocks_4k, blocks_64, align, output_o);
 	memset2(src_a, card_ram_base, memsize);
 
 	/* Allocate Dest Buffer if in Host->Host or DDR->Host Mode */
@@ -418,7 +423,8 @@ static void usage(const char *prog)
 		"    -e, --end            End delay time in msec (default %d)\n"
 		"    -i, --interval       Inrcrement steps in msec (default %d)\n"
 		"    ----- Action 2,3,4,5,6 Settings ------ (-a) -----\n"
-		"    -S, --size           Number of 4KB Blocks for Memcopy (default 1)\n"
+		"    -S, --size4k         Number of 4KB Blocks for Memcopy (default 1)\n"
+		"    -B, --size64         Number of 64 Bytes Blocks for Memcopy (default 0)\n"
 		"    -N, --iter           Memcpy Iterations (default 1)\n"
 		"    -A, --align          Memcpy alignemend (default 4 KB)\n"
 		"    -I, --ioff           Memcpy input offset (default 0)\n"
@@ -445,7 +451,8 @@ int main(int argc, char *argv[])
 	int card_no = 0;
 	int cmd;
 	int action = ACTION_CONFIG_COUNT;
-	int memcpy_num_blocks = 1;	/* Default is 1 Block */
+	int num_4k = 1;	/* Default is 1 4 K Blocks */
+	int num_64 = 0;	/* Default is 0 64 Bytes Blocks */
 	int rc = 1;
 	int memcpy_iter = DEFAULT_MEMCPY_ITER;
 	int memcpy_align = DEFAULT_MEMCPY_BLOCK;
@@ -465,7 +472,8 @@ int main(int argc, char *argv[])
 			{ "end",      required_argument, NULL, 'e' },
 			{ "interval", required_argument, NULL, 'i' },
 			{ "action",   required_argument, NULL, 'a' },
-			{ "size",     required_argument, NULL, 'S' },
+			{ "size4k",   required_argument, NULL, 'S' },
+			{ "size64",   required_argument, NULL, 'B' },
 			{ "iter",     required_argument, NULL, 'N' },
 			{ "align",    required_argument, NULL, 'A' },
 			{ "ioff",     required_argument, NULL, 'I' },
@@ -475,7 +483,7 @@ int main(int argc, char *argv[])
 			{ "timeout",  required_argument, NULL, 't' },
 			{ 0,          no_argument,       NULL, 0   },
 		};
-		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:N:A:I:O:D:z:t:qvVh",
+		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:B:N:A:I:O:D:z:t:qvVh",
 			long_options, &option_index);
 		if (cmd == -1)  /* all params processed ? */
 			break;
@@ -507,8 +515,11 @@ int main(int argc, char *argv[])
 			step_delay = strtol(optarg, (char **)NULL, 0);
 			break;
 		/* Action 2 3, 4, 5 Options */
-		case 'S':	/* block */
-			memcpy_num_blocks = strtol(optarg, (char **)NULL, 0);
+		case 'S':	/* size4k */
+			num_4k = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'B':	/* size64 */
+			num_64 = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 'N':	/* iter */
 			memcpy_iter = strtol(optarg, (char **)NULL, 0);
@@ -576,7 +587,7 @@ int main(int argc, char *argv[])
 	case 4:
 	case 5:
 	case 6:
-		rc = memcpy_test(dn, action, memcpy_num_blocks, input_o, output_o,
+		rc = memcpy_test(dn, action, num_4k, num_64, input_o, output_o,
 				memcpy_align, memcpy_iter, card_ram_base,
 				timeout_ms);
 		break;
