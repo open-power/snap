@@ -16,6 +16,7 @@
 #
 #-----------------------------------------------------------
 
+set xilinx_vivado $::env(XILINX_VIVADO)
 set root_dir    $::env(DONUT_HARDWARE_ROOT)
 set mentor_libs $::env(MENTOR_LIBS)
 puts $root_dir
