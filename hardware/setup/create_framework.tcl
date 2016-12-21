@@ -16,6 +16,7 @@
 #
 #-----------------------------------------------------------
 
+set xilinx_vivado $::env(XILINX_VIVADO)
 set root_dir    $::env(DONUT_HARDWARE_ROOT)
 set fpga_part   $::env(FPGACHIP)
 set pslse_dir   $::env(PSLSE_ROOT)
@@ -130,8 +131,14 @@ if { $ddr3_used == TRUE } {
   add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc
 }
 
-# EXPORT SIMULATION
-export_simulation  -force -directory "$root_dir/sim" -simulator xsim -ip_user_files_dir   "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs
+# EXPORT SIMULATION new
+if { [string first 2016 $xilinx_vivado] > 0 } {
+  puts "export_simulation 2016 syntax"
+  export_simulation  -force -directory "$root_dir/sim" -simulator xsim -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs
+} else {
+  puts "export_simulation 2015 syntax"
+  export_simulation  -force -directory "$root_dir/sim" -simulator xsim
+}
 ## rest is done with export*tcl
 # if { $simulator == "irun" } {
 #   export_simulation  -lib_map_path "$ies_libs" -force -single_step -directory "$root_dir/sim" -simulator ies
