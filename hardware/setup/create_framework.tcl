@@ -16,16 +16,18 @@
 #
 #-----------------------------------------------------------
 
-set root_dir   $::env(DONUT_HARDWARE_ROOT)
-set fpga_part  $::env(FPGACHIP)
-set pslse_dir  $::env(PSLSE_ROOT)
-set dimm_dir   $::env(DIMMTEST)
-set ies_libs   $::env(FRAMEWORK_ROOT)/ies_libs
-set build_dir  $::env(DONUT_HARDWARE_ROOT)/build
-set action_dir $::env(ACTION_ROOT)
-set ddr3_used  $::env(DDR3_USED)
-set bram_used  $::env(BRAM_USED)
-set simulator  $::env(SIMULATOR)
+set xilinx_vivado $::env(XILINX_VIVADO)
+set root_dir    $::env(DONUT_HARDWARE_ROOT)
+set fpga_part   $::env(FPGACHIP)
+set pslse_dir   $::env(PSLSE_ROOT)
+set dimm_dir    $::env(DIMMTEST)
+set ies_libs    $::env(IES_LIBS)
+set mentor_libs $::env(MENTOR_LIBS)
+set build_dir   $::env(DONUT_HARDWARE_ROOT)/build
+set action_dir  $::env(ACTION_ROOT)
+set ddr3_used   $::env(DDR3_USED)
+set bram_used   $::env(BRAM_USED)
+set simulator   $::env(SIMULATOR)
 
 puts $root_dir
 puts $pslse_dir
@@ -91,7 +93,7 @@ update_compile_order -fileset sources_1
 # default sim property
 set_property target_simulator IES [current_project]
 set_property top top [get_filesets sim_1]
-set_property compxlib.ies_compiled_library_dir $ies_libs/viv2015_4/ies14.10.s14 [current_project]
+set_property compxlib.ies_compiled_library_dir $ies_libs [current_project]
 set_property export.sim.base_dir $root_dir [current_project]
 set_property -name {xsim.elaborate.xelab.more_options} -value {-sv_lib libdpi -sv_root .} -objects [current_fileset -simset]
 
@@ -129,17 +131,22 @@ if { $ddr3_used == TRUE } {
   add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc
 }
 
-# EXPORT SIMULATION
-# for ncsim (IES)
-if { $simulator == "irun" } {
-  export_simulation  -lib_map_path "$ies_libs/viv2015_4/ies14.10.s14" -force -single_step -directory "$root_dir/sim" -simulator ies
+# EXPORT SIMULATION new
+if { [string first 2016 $xilinx_vivado] > 0 } {
+  puts "export_simulation 2016 syntax"
+  export_simulation  -force -directory "$root_dir/sim" -simulator xsim -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs
 } else {
-  export_simulation  -lib_map_path "$ies_libs/viv2015_4/ies14.10.s14" -force -directory "$root_dir/sim" -simulator ies
+  puts "export_simulation 2015 syntax"
+  export_simulation  -force -directory "$root_dir/sim" -simulator xsim
 }
-#for questa
-export_simulation  -lib_map_path "$ies_libs/viv2015_4/mentor13.5" -force -directory "$root_dir/sim" -simulator questa
-#for xsim
-export_simulation  -force -directory "$root_dir/sim" -simulator xsim
+## rest is done with export*tcl
+# if { $simulator == "irun" } {
+#   export_simulation  -lib_map_path "$ies_libs" -force -single_step -directory "$root_dir/sim" -simulator ies
+# } else {
+#   export_simulation  -lib_map_path "$ies_libs" -force -directory "$root_dir/sim" -simulator ies
+# }
+# export_simulation  -lib_map_path "$mentor_libs" -force -directory "$root_dir/sim" -simulator questa
+# export_simulation  -force -directory "$root_dir/sim" -simulator xsim
 
 # SET Synthesis Properties
 set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT 400 [get_runs synth_1]

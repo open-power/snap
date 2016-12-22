@@ -169,17 +169,7 @@
      cd ${DONUT_HARDWARE_ROOT}/setup; echo "run Vivado setup scripts"
      vivado -mode batch -source create_ip.tcl        || (echo "error in create_ip";exit -1)
      vivado -mode batch -source create_framework.tcl || (echo "error in create_framework";exit -1)
-     ## patches for irun/ncsim.  NOTE: if simulator is not specified, it defaults to ncsim in 2015.4 and irun in 2016.3
-     cd ${DONUT_HARDWARE_ROOT}/sim/ies
-     sed -i "s/irun -V93/irun -elaborate -V93/g" top.sh                                 # run irun up to elaboration, skip execution
-     sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh           # run ncsim up to elaboration, skip execution
-     if [ -f run.f ]; then
-       perl -i.ori -pe 's/(.*\/verilog\/top.v)/ -sv $1/mg' run.f                          # compile top.v with system verilog
-       perl -i.ori -pe 'BEGIN{undef $/;} s/(^-makelib.*\n.*glbl.v.*\n.*endlib)//mg' run.f # remove glbl.v from compile list
-     fi
-     ## patches for questa
-     sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/questa/top.sh        # run up to elaboration, skip execution
-     ## patches for xsim
+     # patches for xsim only, rest is done in separate tcl scripts
      sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/xsim/top.sh          # run up to elaboration, skip execution
      sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" ${DONUT_HARDWARE_ROOT}/sim/xsim/top.sh
    fi
@@ -189,21 +179,45 @@
    if [[ "$SIMULATOR" != "ncsim" && "$SIMULATOR" != "irun" && "$SIMULATOR" != "xsim" && "$SIMULATOR" != "questa" ]];then
      echo "unknown simulator=$SIMULATOR";maxrc+=1
    fi
-
    if [[ $maxrc > 0 ]];then exit;fi
+
    echo "compile for simulator=$SIMULATOR afu_connnect_type=${AFU_CONNECT_TYPE}"
-   if [ $SIMULATOR == "ncsim" ] || [ $SIMULATOR == "irun" ]; then
-     cd ${DONUT_HARDWARE_ROOT}/sim/ies;dir=.;source=$SIMULATOR
-     ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
-     ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
-   fi
    if [ $SIMULATOR == "xsim" ]; then
      cd ${DONUT_HARDWARE_ROOT}/sim/xsim;dir=.;source="xsim"
      ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
      ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
    fi
+
+   if [ $SIMULATOR == "ncsim" ]; then
+     if [ ! -f ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh ]; then                              # modbld script doesnt exist yet
+       vivado -mode batch -source export_ncsim.tcl       || (echo "error in export_ncsim";exit -1)
+     fi
+     sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh           # run ncsim up to elaboration, skip execution
+     cd ${DONUT_HARDWARE_ROOT}/sim/ies;dir=.;source=$SIMULATOR
+     ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
+     ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
+   fi
+
+   if [ $SIMULATOR == "irun" ]; then
+     if [ ! -f ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh ]; then                              # modbld script doesnt exist yet
+       vivado -mode batch -source export_irun.tcl        || (echo "error in export_irun";exit -1)
+     fi
+     sed -i "s/93 -relax/93 -elaborate -relax/gI" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh # run irun up to elaboration, skip execution
+     if [ -f ${DONUT_HARDWARE_ROOT}/sim/ies/run.f ]; then
+       perl -i.ori -pe 's/(.*\/verilog\/top.v)/ -sv $1/mg' ${DONUT_HARDWARE_ROOT}/sim/ies/run.f                          # compile top.v with system verilog
+       perl -i.ori -pe 'BEGIN{undef $/;} s/(^-makelib.*\n.*glbl.v.*\n.*endlib)//mg' ${DONUT_HARDWARE_ROOT}/sim/ies/run.f # remove glbl.v from compile list
+     fi
+     cd ${DONUT_HARDWARE_ROOT}/sim/ies;dir=.;source=$SIMULATOR
+     ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
+     ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
+   fi
+
    if [ $SIMULATOR == "questa" ]; then
-     cd ${DONUT_HARDWARE_ROOT}/sim/questa;dir=.;source="questa"
+     if [ ! -f ${DONUT_HARDWARE_ROOT}/sim/questa/top.sh ]; then                           # modbld script doesnt exist yet
+       vivado -mode batch -source export_questa.tcl        || (echo "error in export_questa";exit -1)
+       sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/questa/top.sh        # run up to elaboration, skip execution
+     fi
+     cd ${DONUT_HARDWARE_ROOT}/sim/questa;dir=.;source=$SIMULATOR
      ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
      ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
    fi
