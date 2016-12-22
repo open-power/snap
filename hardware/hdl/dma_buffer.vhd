@@ -98,8 +98,6 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL ha_b_rad_q                       : std_ulogic;
   SIGNAL ha_b_rad_qq                      : std_ulogic;
   SIGNAL ha_b_wvalid_q                    : std_ulogic;
-  SIGNAL ha_b_wvalid_qq                   : std_ulogic;
-  SIGNAL ha_b_wpar_q                      : std_ulogic_vector(7 DOWNTO 0);
   SIGNAL ha_b_rtag_err_q                  : std_ulogic := '0';
   SIGNAL ha_b_wdata_err_q                 : std_ulogic_vector(7 DOWNTO 0) := (OTHERS => '0') ;
   SIGNAL ha_b_wtag_err_q                  : std_ulogic := '0';
@@ -119,7 +117,6 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL rram_waddr                       : std_ulogic_vector(  5 DOWNTO 0);
   SIGNAL rram_wdata                       : std_ulogic_vector(519 DOWNTO 0);
   SIGNAL rram_wdata_p_q                   : std_ulogic_vector(  7 DOWNTO 0);
-  SIGNAL rram_wdata_p_qq                  : std_ulogic_vector(  7 DOWNTO 0);
   SIGNAL rram_wen                         : std_ulogic;
   SIGNAL wback_data_p_q                   : std_ulogic_vector(  7 DOWNTO 0);
   SIGNAL wback_data_q                     : std_ulogic_vector(511 DOWNTO 0);
@@ -439,7 +436,6 @@ BEGIN
           ha_b_rtag_err_q  <= '0';
           ha_b_wtag_err_q  <= '0';
           ha_b_wdata_err_q <= (OTHERS => '0');
-          rram_wdata_p_qq  <= rram_wdata_p_q;
 
           --
           -- read tag checker
@@ -462,15 +458,18 @@ BEGIN
           --
           -- write data checker
           --
-          IF ha_b_wvalid_qq  = '1' THEN
-             ha_b_wdata_err_q <= (rram_wdata_p_qq(0) XOR ha_b_wpar_q(0)) &
-                                 (rram_wdata_p_qq(1) XOR ha_b_wpar_q(1)) &
-                                 (rram_wdata_p_qq(2) XOR ha_b_wpar_q(2)) &
-                                 (rram_wdata_p_qq(3) XOR ha_b_wpar_q(3)) &
-                                 (rram_wdata_p_qq(4) XOR ha_b_wpar_q(4)) &
-                                 (rram_wdata_p_qq(5) XOR ha_b_wpar_q(5)) &
-                                 (rram_wdata_p_qq(6) XOR ha_b_wpar_q(6)) &
-                                 (rram_wdata_p_qq(7) XOR ha_b_wpar_q(7));
+          -- ha_b.wpar have a one cycle delay
+          rram_wdata_p_q <= AC_GENPARITY(ha_b_q.wdata, 64);
+          
+          IF ha_b_wvalid_q  = '1' THEN
+             ha_b_wdata_err_q <= (rram_wdata_p_q(0) XOR ha_b_q.wpar(0)) &
+                                 (rram_wdata_p_q(1) XOR ha_b_q.wpar(1)) &
+                                 (rram_wdata_p_q(2) XOR ha_b_q.wpar(2)) &
+                                 (rram_wdata_p_q(3) XOR ha_b_q.wpar(3)) &
+                                 (rram_wdata_p_q(4) XOR ha_b_q.wpar(4)) &
+                                 (rram_wdata_p_q(5) XOR ha_b_q.wpar(5)) &
+                                 (rram_wdata_p_q(6) XOR ha_b_q.wpar(6)) &
+                                 (rram_wdata_p_q(7) XOR ha_b_q.wpar(7));
 
           END IF;
         END IF;
@@ -532,7 +531,6 @@ BEGIN
           ha_b_rad_q          <= '0';
           ha_b_rad_qq         <= '0';
           ha_b_wvalid_q       <= '0';
-          ha_b_wvalid_qq      <= '0';
           rram_raddr_q        <= (OTHERS => '0');
           rram_raddr_p_q      <= '1';
           rram_rdata_vld_q    <= '0';
@@ -551,8 +549,6 @@ BEGIN
           ha_b_rad_q         <= ha_b_q.rad(0);
           ha_b_rad_qq        <= ha_b_rad_q;
           ha_b_wvalid_q      <= ha_b_q.wvalid;
-          ha_b_wvalid_qq     <= ha_b_wvalid_q;
-          ha_b_wpar_q        <= ha_b_q.wpar;
           rram_raddr_q       <= rram_raddr_d;
           rram_raddr_p_q     <= rram_raddr_p_d;
           rram_rdata_vld_q   <= rram_rdata_vld_d;
