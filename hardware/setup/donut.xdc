@@ -4,7 +4,7 @@ resize_pblock [get_pblocks donut] -add {CLOCKREGION_X3Y3:CLOCKREGION_X5Y3}
 #set_property EXCLUDE_PLACEMENT 1 [get_pblocks baseimag]
 #set_property CONTAIN_ROUTING   1 [get_pblocks baseimag]
 
-create_generated_clock   -name ha_pclock  [get_pins b/pcihip0/psl_pcihip0_inst/inst/gt_top_i/phy_clk_i/bufg_gt_userclk/O]
+#create_generated_clock   -name ha_pclock  [get_pins b/pcihip0/psl_pcihip0_inst/inst/gt_top_i/phy_clk_i/bufg_gt_userclk/O]
 
 set_clock_groups -name clkddr_2_clkpsl -asynchronous -group [get_clocks mmcm_clkout0] -group [get_clocks ha_pclock]
 

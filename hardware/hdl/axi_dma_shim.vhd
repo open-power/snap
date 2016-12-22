@@ -15,6 +15,8 @@
 -- See the License for the specific language governing permissions AND
 -- limitations under the License.
 --
+-- change log:
+-- 12/20/2016  R. Rieke removed fix for DMA overrun issue
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 
@@ -80,7 +82,6 @@ architecture arch_imp of axi_dma_shim is
         signal fifo_wr_addr_q     : std_logic_vector(4 downto 0);
         signal fifo_rd_addr_q     : std_logic_vector(4 downto 0);
 
-        signal temp_counter       : std_logic_vector(8 downto 0);
 	--------------------------------------------------
 
 begin
@@ -240,24 +241,18 @@ axi_rd:   process(ha_pclock)
                     if ds_c_i.rd_req_ack = '1' then
                       sd_c_o.rd_req     <= '0';
                       fsm_read_q       <= IDLE;
-
-                      temp_counter     <= ('0' & ks_d_i.S_AXI_ARLEN) +  '1';
                     end if;
 
                   when others   =>
                 end case;
               end if;                   -- end reset
-              if ds_d_i.rd_data_strobe = '1' and ks_d_i.S_AXI_RREADY = '1' then
-                if temp_counter /= "000000000" then
-                  temp_counter <= temp_counter - '1';
-                end if;  
-              end if;  
             end if;                     -- end clock
           end process;
 
 
-      sk_d_o.S_AXI_RLAST         <= '1' when ds_d_i.rd_last = '1' or temp_counter = "000000001" else '0';          
-axi_rd2:  process(ds_d_i.rd_data, ds_d_i.rd_id, ds_d_i.rd_data_strobe,ks_d_i.S_AXI_RREADY, temp_counter)
+
+      sk_d_o.S_AXI_RLAST         <=  ds_d_i.rd_last;
+axi_rd2:  process(ds_d_i.rd_data, ds_d_i.rd_id, ds_d_i.rd_data_strobe,ks_d_i.S_AXI_RREADY)
           begin
             -- reverse the byte order 
             for i in 1 to C_S_AXI_DATA_WIDTH / 8 loop
@@ -265,17 +260,15 @@ axi_rd2:  process(ds_d_i.rd_data, ds_d_i.rd_id, ds_d_i.rd_data_strobe,ks_d_i.S_A
             end loop;  -- i
               
            
-           -- sk_d_o.S_AXI_RDATA         <= std_logic_vector(ds_d_i.rd_data);
+
             sk_d_o.S_AXI_RID           <= std_logic_vector(ds_d_i.rd_id);
             
             sk_d_o.S_AXI_RRESP         <= "00";
             sk_d_o.S_AXI_RVALID        <= '0';
 
             sd_d_o.rd_data_ack         <= '0';
+            sk_d_o.S_AXI_RVALID      <= ds_d_i.rd_data_strobe;
             if ds_d_i.rd_data_strobe = '1' and ks_d_i.S_AXI_RREADY = '1' then
-              if temp_counter /= "000000000" then
-                 sk_d_o.S_AXI_RVALID      <= '1';
-              end if;
               sd_d_o.rd_data_ack       <= '1';
             end if;
           end process;

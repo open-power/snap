@@ -15,6 +15,8 @@
 -- See the License for the specific language governing permissions AND
 -- limitations under the License.
 --
+-- change log:
+-- 12/20/2016 R. Rieke fixed case statement issue
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 
@@ -794,7 +796,7 @@ write_data_process:
   process(reg0_data, reg1_data, reg2_data, reg0_valid, reg1_valid, reg2_valid,
           write_counter_up, reg_0x24,
           dest_ddr,                                                                      -- only for DDR3_USED=TRUE
-          dest_host  ) is
+          dest_host, tail  ) is
     begin
       case tail is
         when 0 =>
@@ -805,11 +807,10 @@ write_data_process:
           wr_data           <= reg1_data;
           dma_wr_data_valid <= reg1_valid and dest_host;
           ddr_wr_data_valid <= reg1_valid and dest_ddr;                                  -- only for DDR3_USED=TRUE
-        when 2 =>
+        when others =>
           wr_data           <= reg2_data;
           dma_wr_data_valid <= reg2_valid and dest_host;
           ddr_wr_data_valid <= reg2_valid and dest_ddr;                                  -- only for DDR3_USED=TRUE
-        when others => null;
       end case;
       if (write_counter_up(25 downto 0) = reg_0x24(31 downto 6)) or
           or_reduce(write_counter_up(5 downto 0)) = '0'                 then

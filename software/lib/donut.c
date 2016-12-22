@@ -146,11 +146,6 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 	if (cxl_mmio_map(dn->afu_h, CXL_MMIO_BIG_ENDIAN) == -1)
 		goto __dnut_alloc_err;
 
-	/* TEMPFIX JK: Wait to get action reset done */
-	usleep(1000*1000);	// wait one second
-//	gettimeofday(&stime, NULL);
-//	do {gettimeofday(&etime, NULL)} while (timediff_usec(&etime, &stime) < timeout_sec * 1000000);
-
 	return (struct dnut_card *)dn;
 
  __dnut_alloc_err:
