@@ -18,9 +18,10 @@
 #
 # important environment variables for running tools
 # the goal is to be able to source this file and have everything set as needed
-called=$_                          # can be path+name, absolut or relative
+called=$BASH_SOURCE                # can be path+name, absolut or relative
 script=$(readlink -f "$called")    # absolute path+name
 scriptdir=$(dirname  "$script")    # just path
+donutdir=$(dirname "$scriptdir")
 
 if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ] || [ ! -d "$FRAMEWORK_ROOT" ]; then
   echo "Note: the following site specific variables are used by the build and sim tools"
@@ -81,15 +82,28 @@ else
   echo "PSLSE_ROOT           is set to \"$PSLSE_ROOT\""
 fi
 
-export DONUT_ROOT=$(dirname "$scriptdir")
+if [ "$DONUT_ROOT" = "$donutdir" ]; then
+  echo "DONUT_ROOT           is set to \"$DONUT_ROOT\""
+else
+  echo "Setting DONUT_ROOT          to \"$donutdir\""
+fi
+export DONUT_ROOT=$donutdir
+
+if [ "$DONUT_HARDWARE_ROOT" = "$DONUT_ROOT/hardware" ]; then
+  echo "DONUT_HARDWARE_ROOT  is set to \"$DONUT_HARDWARE_ROOT\""
+else
+  echo "Setting DONUT_HARDWARE_ROOT to \"$DONUT_ROOT/hardware\""
+fi
 export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware
+
+if [ "$DONUT_SOFTWARE_ROOT" = "$DONUT_ROOT/software" ]; then
+  echo "DONUT_SOFTWARE_ROOT  is set to \"$DONUT_SOFTWARE_ROOT\""
+else
+  echo "Setting DONUT_SOFTWARE_ROOT to \"$DONUT_ROOT/software\""
+fi
 export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software
-echo "Setting DONUT_ROOT          to \"$DONUT_ROOT\""
-echo "Setting DONUT_HARDWARE_ROOT to \"$DONUT_HARDWARE_ROOT\""
-echo "Setting DONUT_SOFTWARE_ROOT to \"$DONUT_SOFTWARE_ROOT\""
 
 if [ -z "$ACTION_ROOT" ]; then
-  echo
   echo "Variable ACTION_ROOT is not set. Please let it point to your action source if you want to add an action to your project."
 else
   echo "ACTION_ROOT          is set to \"$ACTION_ROOT\""
@@ -124,14 +138,12 @@ else
 fi
 
 if [ -z "$DDR3_USED" ]; then
-  echo
   echo "Variable DDR3_USED   is not set. Will default to \"TRUE\""
 else
   echo "DDR3_USED            is set to \"$DDR3_USED\""
 fi
 
 if [ -z "$ILA_DEBUG" ]; then
-  echo
   echo "Variable ILA_DEBUG   is not set. Will default to \"FALSE\""
 else
   echo "ILA_DEBUG            is set to \"$ILA_DEBUG\""
