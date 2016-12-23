@@ -125,9 +125,6 @@ add_files -fileset constrs_1 -norecurse $root_dir/setup/donut_link.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/donut_link.xdc]
 update_compile_order -fileset sources_1
 
-set_property used_in_synthesis false [get_files  /afs/bb/proj/fpga/framework/cards/dimm_test-admpcieku3-v3_0_0/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc]
-set_property used_in_synthesis false [get_files  /afs/bb/proj/fpga/framework/cards/dimm_test-admpcieku3-v3_0_0/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc]
-
 # IMPORT DDR3 XDCs
 if { $ddr3_used == TRUE } {
 #  add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc
