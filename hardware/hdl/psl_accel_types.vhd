@@ -19,12 +19,12 @@
 ----------------------------------------------------------------------------
 
 LIBRARY ieee;-- ibm, ibm_asic;
-USE ieee.std_logic_1164.all;
-USE ieee.numeric_std.all;
---USE ieee.std_logic_arith.all;
-USE work.std_ulogic_support.all;
-USE work.std_ulogic_function_support.all;
-use work.std_ulogic_unsigned.all;
+USE ieee.std_logic_1164.ALL;
+USE ieee.numeric_std.ALL;
+--USE ieee.std_logic_arith.ALL;
+USE work.std_ulogic_support.ALL;
+USE work.std_ulogic_function_support.ALL;
+USE work.std_ulogic_unsigned.ALL;
 
 PACKAGE psl_accel_types IS
 
@@ -68,12 +68,12 @@ PACKAGE psl_accel_types IS
     --
     -- 
     --
-    constant C_S_AXI_ID_WIDTH       : integer   := 20;
-    constant C_S_AXI_DATA_WIDTH     : integer   := 512;
-    constant C_S_AXI_ADDR_WIDTH     : integer   := 64;
-    constant C_DDR_AXI_ID_WIDTH     : integer   := 1;
-    constant C_DDR_AXI_DATA_WIDTH   : integer   := 512;
-    constant C_DDR_AXI_ADDR_WIDTH   : integer   := 33;
+    CONSTANT C_S_AXI_ID_WIDTH       : integer   := 20;
+    CONSTANT C_S_AXI_DATA_WIDTH     : integer   := 512;
+    CONSTANT C_S_AXI_ADDR_WIDTH     : integer   := 64;
+    CONSTANT C_DDR_AXI_ID_WIDTH     : integer   := 1;
+    CONSTANT C_DDR_AXI_DATA_WIDTH   : integer   := 512;
+    CONSTANT C_DDR_AXI_ADDR_WIDTH   : integer   := 33;
 
 
 
@@ -123,64 +123,64 @@ PACKAGE psl_accel_types IS
     --
     -- kx_d
     --
-    TYPE KX_D_T is RECORD
+    TYPE KX_D_T IS RECORD
       M_AXI_AWREADY   : std_logic;
       M_AXI_WREADY    : std_logic;
-      M_AXI_BRESP         : std_logic_vector(1 downto 0);
+      M_AXI_BRESP     : std_logic_vector(1 DOWNTO 0);
       M_AXI_BVALID    : std_logic;
       M_AXI_ARREADY   : std_logic;
-      M_AXI_RDATA         : std_logic_vector(31 downto 0);
-      M_AXI_RRESP         : std_logic_vector(1 downto 0);
+      M_AXI_RDATA     : std_logic_vector(31 DOWNTO 0);
+      M_AXI_RRESP     : std_logic_vector(1 DOWNTO 0);
       M_AXI_RVALID    : std_logic;
-    end RECORD KX_D_T;
+    END RECORD KX_D_T;
 
     --
     -- xk_d
     --
-    TYPE XK_D_T is RECORD
-      M_AXI_AWADDR    : std_logic_vector(31 downto 0);
-      M_AXI_AWPROT    : std_logic_vector(2 downto 0);
+    TYPE XK_D_T IS RECORD
+      M_AXI_AWADDR    : std_logic_vector(31 DOWNTO 0);
+      M_AXI_AWPROT    : std_logic_vector(2 DOWNTO 0);
       M_AXI_AWVALID   : std_logic;
-      M_AXI_WDATA         : std_logic_vector(31 downto 0);
-      M_AXI_WSTRB         : std_logic_vector(3 downto 0);
+      M_AXI_WDATA     : std_logic_vector(31 DOWNTO 0);
+      M_AXI_WSTRB     : std_logic_vector(3 DOWNTO 0);
       M_AXI_WVALID    : std_logic;
       M_AXI_BREADY    : std_logic;
-      M_AXI_ARADDR    : std_logic_vector(31 downto 0);
-      M_AXI_ARPROT    : std_logic_vector(2 downto 0);
+      M_AXI_ARADDR    : std_logic_vector(31 DOWNTO 0);
+      M_AXI_ARPROT    : std_logic_vector(2 DOWNTO 0);
       M_AXI_ARVALID   : std_logic;
       M_AXI_RREADY    : std_logic;
-    end RECORD XK_D_T;
+    END RECORD XK_D_T;
 
     --
     -- ks_d
     --
     TYPE KS_D_T IS RECORD
-      S_AXI_AWID          : std_logic_vector(C_S_AXI_ID_WIDTH-1 downto 0);
-      S_AXI_AWADDR    : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
-      S_AXI_AWLEN         : std_logic_vector(7 downto 0);
-      S_AXI_AWSIZE    : std_logic_vector(2 downto 0);
-      S_AXI_AWBURST   : std_logic_vector(1 downto 0);
+      S_AXI_AWID      : std_logic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
+      S_AXI_AWADDR    : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 DOWNTO 0);
+      S_AXI_AWLEN     : std_logic_vector(7 DOWNTO 0);
+      S_AXI_AWSIZE    : std_logic_vector(2 DOWNTO 0);
+      S_AXI_AWBURST   : std_logic_vector(1 DOWNTO 0);
     --   S_AXI_AWLOCK  : std_logic;
-      S_AXI_AWCACHE   : std_logic_vector(3 downto 0);
-      S_AXI_AWPROT    : std_logic_vector(2 downto 0);
-      S_AXI_AWQOS         : std_logic_vector(3 downto 0);
-      S_AXI_AWREGION  : std_logic_vector(3 downto 0);
+      S_AXI_AWCACHE   : std_logic_vector(3 DOWNTO 0);
+      S_AXI_AWPROT    : std_logic_vector(2 DOWNTO 0);
+      S_AXI_AWQOS     : std_logic_vector(3 DOWNTO 0);
+      S_AXI_AWREGION  : std_logic_vector(3 DOWNTO 0);
       S_AXI_AWVALID   : std_logic;
-      S_AXI_WDATA         : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-      S_AXI_WSTRB         : std_logic_vector((C_S_AXI_DATA_WIDTH/8)-1 downto 0);
-      S_AXI_WLAST         : std_logic;
+      S_AXI_WDATA     : std_logic_vector(C_S_AXI_DATA_WIDTH-1 DOWNTO 0);
+      S_AXI_WSTRB     : std_logic_vector((C_S_AXI_DATA_WIDTH/8)-1 DOWNTO 0);
+      S_AXI_WLAST     : std_logic;
       S_AXI_WVALID    : std_logic;
       S_AXI_BREADY    : std_logic;
-      S_AXI_ARID          : std_logic_vector(C_S_AXI_ID_WIDTH-1 downto 0);
-      S_AXI_ARADDR    : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
-      S_AXI_ARLEN         : std_logic_vector(7 downto 0);
-      S_AXI_ARSIZE    : std_logic_vector(2 downto 0);
-      S_AXI_ARBURST   : std_logic_vector(1 downto 0);
+      S_AXI_ARID      : std_logic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
+      S_AXI_ARADDR    : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 DOWNTO 0);
+      S_AXI_ARLEN     : std_logic_vector(7 DOWNTO 0);
+      S_AXI_ARSIZE    : std_logic_vector(2 DOWNTO 0);
+      S_AXI_ARBURST   : std_logic_vector(1 DOWNTO 0);
    --   S_AXI_ARLOCK  : std_logic;
-      S_AXI_ARCACHE   : std_logic_vector(3 downto 0);
-      S_AXI_ARPROT    : std_logic_vector(2 downto 0);
-      S_AXI_ARQOS         : std_logic_vector(3 downto 0);
-      S_AXI_ARREGION  : std_logic_vector(3 downto 0);
+      S_AXI_ARCACHE   : std_logic_vector(3 DOWNTO 0);
+      S_AXI_ARPROT    : std_logic_vector(2 DOWNTO 0);
+      S_AXI_ARQOS     : std_logic_vector(3 DOWNTO 0);
+      S_AXI_ARREGION  : std_logic_vector(3 DOWNTO 0);
       S_AXI_ARVALID   : std_logic;
       S_AXI_RREADY    : std_logic;
     END RECORD KS_D_T;
@@ -191,12 +191,12 @@ PACKAGE psl_accel_types IS
     TYPE SK_D_T IS RECORD
       S_AXI_AWREADY : std_logic;
       S_AXI_WREADY  : std_logic;
-      S_AXI_BID         : std_logic_vector(C_S_AXI_ID_WIDTH-1 downto 0);
-      S_AXI_BRESP   : std_logic_vector(1 downto 0);
+      S_AXI_BID     : std_logic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
+      S_AXI_BRESP   : std_logic_vector(1 DOWNTO 0);
       S_AXI_BVALID  : std_logic;
-      S_AXI_RID         : std_logic_vector(C_S_AXI_ID_WIDTH-1 downto 0);
-      S_AXI_RDATA   : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-      S_AXI_RRESP   : std_logic_vector(1 downto 0);
+      S_AXI_RID     : std_logic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
+      S_AXI_RDATA   : std_logic_vector(C_S_AXI_DATA_WIDTH-1 DOWNTO 0);
+      S_AXI_RRESP   : std_logic_vector(1 DOWNTO 0);
       S_AXI_RLAST   : std_logic;
       S_AXI_RVALID  : std_logic;
       S_AXI_ARREADY : std_logic;
