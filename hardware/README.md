@@ -46,8 +46,8 @@ Corresponding to the ports that the SNAP framework provides
 * an optional AXI slave port for on card DDR3 RAM traffic
 
 the port map of the `action_wrapper` has to consist of the correspondig counterparts.
-Note that the ID widths of the AXI interfaces to host memory and to the on card DRAM has to be large enough to support the number of actions that shall be instantiated.
-For the build process this is controlled via the environment variable `NUM_OF_ACTIONS` which defaults to 1 if not set differently.
+Note that the ID widths of the AXI interfaces to host memory and to the on card DRAM have to be large enough to support the number of actions that shall be instantiated.
+For the build process this is controlled via the environment variable `NUM_OF_ACTIONS` which defaults to `1` if not set differently.
 
 Examples for actions together with their wrappers may be found in `$DONUT_HARDWARE_ROOT/action_examples/empty` and in `$DONUT_HARDWARE_ROOT/action_examples/memcopy`.
 
