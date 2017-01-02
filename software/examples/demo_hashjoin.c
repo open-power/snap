@@ -322,6 +322,11 @@ int main(int argc, char *argv[])
 
 	gettimeofday(&etime, NULL);
 
+	if (jout.rc == 0) {
+		ht_dump(&hashtable);
+		table3_dump(t3, jout.t3_produced);
+	}
+
 	fprintf(stdout, "Action version: %llx\n"
 		"Checkpoint: %016llx\n"
 		"ReturnCode: %lld\n"
@@ -330,11 +335,6 @@ int main(int argc, char *argv[])
 		(long long)jout.checkpoint,
 		(long long)jout.rc,
 		(long long)timediff_usec(&etime, &stime));
-
-	if (jout.rc == 0) {
-		ht_dump(&hashtable);
-		table3_dump(t3, jout.t3_produced);
-	}
 
 	dnut_kernel_free(kernel);
 	exit(exit_code);
