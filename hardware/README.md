@@ -7,39 +7,50 @@ In order to set up the required environment variables for a given `FRAMEWORK_ROO
 
     . ./donut_settings
 
+The script depends on the following environment variables to be already defined:
+
+    FRAMEWORK_ROOT      = <your local workspace base>
+    XILINX_VIVADO       = <path to Vivado tool>
+
 This script will define the following environment variables (if they are not already pre-defined
 differently):
 
-    FRAMEWORK_ROOT      = <your local workspace base>
-    USERHOME            = $FRAMEWORK_ROOT/$USER                  # each user has his own workspace
-    PSLSE_ROOT          = $USERHOME/pslse                        # PSLSE clone from github
-    DONUT_ROOT          = $USERHOME/donut                        # donut clone from github
-    DONUT_SOFTWARE_ROOT = $DONUT_ROOT/software                   # path to donut software
-    DONUT_HARDWARE_ROOT = $DONUT_ROOT/hardware                   # path to donut hardware
-    FPGACARD            = $FRAMEWORK_ROOT/card/<your hdk>        # path to card HDK
-
-    SIMULATOR           = xsim                                   # currently supported simulators are xsim, ncsim
+    USERHOME            = $FRAMEWORK_ROOT/$USER                                                 # each user has his own workspace
+    PSLSE_ROOT          = $USERHOME/pslse                                                       # PSLSE clone from github
+    DONUT_ROOT          = <parent of the directory containing the script donut_settings>        # donut clone from github
+    DONUT_SOFTWARE_ROOT = $DONUT_ROOT/software                                                  # path to donut software
+    DONUT_HARDWARE_ROOT = $DONUT_ROOT/hardware                                                  # path to donut hardware
+    FPGACARD            = $FRAMEWORK_ROOT/cards/adku060_capi_1_1_release                        # path to card HDK
+    FPGACHIP            = xcku060-ffva1156-2-e                                                  # version of the FPGA chip
+    DIMMTEST            = $FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0                     # path to DRAM model for simulation
+    SIMULATOR           = xsim                                                                  # currently supported simulators are xsim, ncsim, irun
 
 Besides the HDK for the card a DIMM test project is required which can be obtained from
 the Alpha Data Support Portal:
 `https://support.alpha-data.com/Portals/0/Downloads/dimm_test-admpcieku3-v3_0_0.tar.gz`
 
-The environment variable `DIMMTEST` needs to point to the directory containing that project:
-
-    DIMMTEST            = <path to dimm test project>
+The environment variable `DIMMTEST` needs to point to the directory containing that project.
 
 # Action wrapper
 
-The path to the set of actions that shall be included is defined via the environment variable ACTION_ROOT.
-Currently it has to point to a directory within `$DONUT_HARDWARE_ROOT/action_examples`.
+The path to the set of actions that shall be included is defined via the environment variable `ACTION_ROOT`.
+**Currently it has to point to a directory within**
+
+    `$DONUT_HARDWARE_ROOT/action_examples`.
+
 This directory needs to contain an action_wrapper entity as interface between the actions and the SNAP framework.
-Corresponding to the ports that the SNAP framework provides:
+
+Corresponding to the ports that the SNAP framework provides
 * an AXI master port for MMIO based control
 * an AXI slave port for host DMA traffic
 * an optional AXI slave port for on card DDR3 RAM traffic
 
-the port map of the action_wrapper has to consist of the correspondig counterparts.  
+the port map of the `action_wrapper` has to consist of the correspondig counterparts.
+Note that the ID widths of the AXI interfaces to host memory and to the on card DRAM has to be large enough to support the number of actions that shall be instantiated.
+For the build process this is controlled via the environment variable `NUM_OF_ACTIONS` which defaults to 1 if not set differently.
+
 Examples for actions together with their wrappers may be found in `$DONUT_HARDWARE_ROOT/action_examples/empty` and in `$DONUT_HARDWARE_ROOT/action_examples/memcopy`.
+
 
 # DDR3 Card Memory
 
