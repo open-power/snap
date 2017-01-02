@@ -21,7 +21,7 @@ Please see here for more details:
 
 # Related Work
 
-Before we created the CAPI Donut Framework, we created a CAPI driven DEFLAGE compression/decompression solution. The software to use this can be found here:
+Before we created the SNAP Framework, we created a CAPI driven DEFLAGE compression/decompression solution. The software to use this can be found here:
 * https://github.com/ibm-genwqe/genwqe-user
 
 This code uses libcxl to access the CAPI hardware. Normally your Linux distribution should have an installation package containing your library. If not, please look here and build and install manually:
