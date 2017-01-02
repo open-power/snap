@@ -15,15 +15,15 @@ The script depends on the following environment variables to be already defined:
 This script will define the following environment variables (if they are not already pre-defined
 differently):
 
-    USERHOME            = $FRAMEWORK_ROOT/$USER                                                 # each user has his own workspace
-    PSLSE_ROOT          = $USERHOME/pslse                                                       # PSLSE clone from github
-    DONUT_ROOT          = <parent of the directory containing the script donut_settings>        # donut clone from github
-    DONUT_SOFTWARE_ROOT = $DONUT_ROOT/software                                                  # path to donut software
-    DONUT_HARDWARE_ROOT = $DONUT_ROOT/hardware                                                  # path to donut hardware
-    FPGACARD            = $FRAMEWORK_ROOT/cards/adku060_capi_1_1_release                        # path to card HDK
-    FPGACHIP            = xcku060-ffva1156-2-e                                                  # version of the FPGA chip
-    DIMMTEST            = $FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0                     # path to DRAM model for simulation
-    SIMULATOR           = xsim                                                                  # currently supported simulators are xsim, ncsim, irun
+    USERHOME            = $FRAMEWORK_ROOT/$USER                                             # each user has his own workspace
+    PSLSE_ROOT          = $USERHOME/pslse                                                   # PSLSE clone from github
+    DONUT_ROOT          = <parent of the directory containing the script donut_settings>    # donut clone from github
+    DONUT_SOFTWARE_ROOT = $DONUT_ROOT/software                                              # path to donut software
+    DONUT_HARDWARE_ROOT = $DONUT_ROOT/hardware                                              # path to donut hardware
+    FPGACARD            = $FRAMEWORK_ROOT/cards/adku060_capi_1_1_release                    # path to card HDK
+    FPGACHIP            = xcku060-ffva1156-2-e                                              # version of the FPGA chip
+    DIMMTEST            = $FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0                 # path to DRAM model for simulation
+    SIMULATOR           = xsim                                                              # currently supported simulators are xsim, ncsim, irun
 
 Besides the HDK for the card a DIMM test project is required which can be obtained from
 the Alpha Data Support Portal:
@@ -36,7 +36,7 @@ The environment variable `DIMMTEST` needs to point to the directory containing t
 The path to the set of actions that shall be included is defined via the environment variable `ACTION_ROOT`.
 **Currently it has to point to a directory within**
 
-    `$DONUT_HARDWARE_ROOT/action_examples`.
+    $DONUT_HARDWARE_ROOT/action_examples
 
 This directory needs to contain an action_wrapper entity as interface between the actions and the SNAP framework.
 
