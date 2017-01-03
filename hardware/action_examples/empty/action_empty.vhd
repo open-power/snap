@@ -63,7 +63,7 @@ entity action_empty is
     axi_card_mem0_awlen     : out std_logic_vector(7 downto 0);                                    -- only for DDR3_USED=TRUE
     axi_card_mem0_awsize    : out std_logic_vector(2 downto 0);                                    -- only for DDR3_USED=TRUE
     axi_card_mem0_awburst   : out std_logic_vector(1 downto 0);                                    -- only for DDR3_USED=TRUE
-    axi_card_mem0_awlock    : out std_logic_vector(0 downto 0);                                    -- only for DDR3_USED=TRUE
+    axi_card_mem0_awlock    : out std_logic_vector(1 downto 0);                                    -- only for DDR3_USED=TRUE
     axi_card_mem0_awcache   : out std_logic_vector(3 downto 0);                                    -- only for DDR3_USED=TRUE
     axi_card_mem0_awprot    : out std_logic_vector(2 downto 0);                                    -- only for DDR3_USED=TRUE
     axi_card_mem0_awregion  : out std_logic_vector(3 downto 0);                                    -- only for DDR3_USED=TRUE
@@ -82,7 +82,7 @@ entity action_empty is
     axi_card_mem0_arlen     : out std_logic_vector(7 downto 0);                                    -- only for DDR3_USED=TRUE
     axi_card_mem0_arsize    : out std_logic_vector(2 downto 0);                                    -- only for DDR3_USED=TRUE
     axi_card_mem0_arburst   : out std_logic_vector(1 downto 0);                                    -- only for DDR3_USED=TRUE
-    axi_card_mem0_arlock    : out std_logic_vector(0 downto 0);                                    -- only for DDR3_USED=TRUE
+    axi_card_mem0_arlock    : out std_logic_vector(1 downto 0);                                    -- only for DDR3_USED=TRUE
     axi_card_mem0_arcache   : out std_logic_vector(3 downto 0);                                    -- only for DDR3_USED=TRUE
     axi_card_mem0_arprot    : out std_logic_vector(2 downto 0);                                    -- only for DDR3_USED=TRUE
     axi_card_mem0_arregion  : out std_logic_vector(3 downto 0);                                    -- only for DDR3_USED=TRUE
@@ -133,7 +133,7 @@ entity action_empty is
     axi_host_mem_awlen      : out std_logic_vector(7 downto 0);
     axi_host_mem_awsize     : out std_logic_vector(2 downto 0);
     axi_host_mem_awburst    : out std_logic_vector(1 downto 0);
-    axi_host_mem_awlock     : out std_logic_vector(0 downto 0);
+    axi_host_mem_awlock     : out std_logic_vector(1 downto 0);
     axi_host_mem_awcache    : out std_logic_vector(3 downto 0);
     axi_host_mem_awprot     : out std_logic_vector(2 downto 0);
     axi_host_mem_awregion   : out std_logic_vector(3 downto 0);
@@ -152,7 +152,7 @@ entity action_empty is
     axi_host_mem_arlen      : out std_logic_vector(7 downto 0);
     axi_host_mem_arsize     : out std_logic_vector(2 downto 0);
     axi_host_mem_arburst    : out std_logic_vector(1 downto 0);
-    axi_host_mem_arlock     : out std_logic_vector(0 downto 0);
+    axi_host_mem_arlock     : out std_logic_vector(1 downto 0);
     axi_host_mem_arcache    : out std_logic_vector(3 downto 0);
     axi_host_mem_arprot     : out std_logic_vector(2 downto 0);
     axi_host_mem_arregion   : out std_logic_vector(3 downto 0);
@@ -265,7 +265,7 @@ begin
   axi_card_mem0_awlen          <= (OTHERS => '0');                                       -- only for DDR3_USED=TRUE
   axi_card_mem0_awsize         <= (OTHERS => '0');                                       -- only for DDR3_USED=TRUE
   axi_card_mem0_awburst        <= (OTHERS => '0');                                       -- only for DDR3_USED=TRUE
-  axi_card_mem0_awlock(0)      <= '0';                                                   -- only for DDR3_USED=TRUE
+  axi_card_mem0_awlock         <= (OTHERS => '0');                                                   -- only for DDR3_USED=TRUE
   axi_card_mem0_awcache        <= (OTHERS => '0');                                       -- only for DDR3_USED=TRUE
   axi_card_mem0_awprot         <= (OTHERS => '0');                                       -- only for DDR3_USED=TRUE
   axi_card_mem0_awregion       <= (OTHERS => '0');                                       -- only for DDR3_USED=TRUE
@@ -280,7 +280,7 @@ begin
   axi_card_mem0_arlen          <= (OTHERS => '0');                                       -- only for DDR3_USED=TRUE
   axi_card_mem0_arsize         <= (OTHERS => '0');                                       -- only for DDR3_USED=TRUE
   axi_card_mem0_arburst        <= (OTHERS => '0');                                       -- only for DDR3_USED=TRUE
-  axi_card_mem0_arlock(0)      <= '0';                                                   -- only for DDR3_USED=TRUE
+  axi_card_mem0_arlock         <= (OTHERS => '0');                                                   -- only for DDR3_USED=TRUE
   axi_card_mem0_arcache        <= (OTHERS => '0');                                       -- only for DDR3_USED=TRUE
   axi_card_mem0_arprot         <= (OTHERS => '0');                                       -- only for DDR3_USED=TRUE
   axi_card_mem0_arregion       <= (OTHERS => '0');                                       -- only for DDR3_USED=TRUE
@@ -305,7 +305,7 @@ begin
   axi_host_mem_awlen           <= (OTHERS => '0');
   axi_host_mem_awsize          <= (OTHERS => '0');
   axi_host_mem_awburst         <= (OTHERS => '0');
-  axi_host_mem_awlock(0)       <= '0';
+  axi_host_mem_awlock          <= (OTHERS => '0');
   axi_host_mem_awcache         <= (OTHERS => '0');
   axi_host_mem_awprot          <= (OTHERS => '0');
   axi_host_mem_awregion        <= (OTHERS => '0');
@@ -320,7 +320,7 @@ begin
   axi_host_mem_arlen           <= (OTHERS => '0');
   axi_host_mem_arsize          <= (OTHERS => '0');
   axi_host_mem_arburst         <= (OTHERS => '0');
-  axi_host_mem_arlock(0)       <= '0';
+  axi_host_mem_arlock          <= (OTHERS => '0');
   axi_host_mem_arcache         <= (OTHERS => '0');
   axi_host_mem_arprot          <= (OTHERS => '0');
   axi_host_mem_arregion        <= (OTHERS => '0');

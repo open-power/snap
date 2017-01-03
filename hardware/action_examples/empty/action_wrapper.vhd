@@ -61,7 +61,7 @@ ENTITY action_wrapper IS
     m_axi_card_mem0_arcache    : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_arid       : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );         -- only for DDR3_USED=TRUE
     m_axi_card_mem0_arlen      : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
-    m_axi_card_mem0_arlock     : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
+    m_axi_card_mem0_arlock     : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_arprot     : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_arqos      : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_arready    : IN  STD_LOGIC;                                                        -- only for DDR3_USED=TRUE
@@ -74,7 +74,7 @@ ENTITY action_wrapper IS
     m_axi_card_mem0_awcache    : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_awid       : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );         -- only for DDR3_USED=TRUE
     m_axi_card_mem0_awlen      : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
-    m_axi_card_mem0_awlock     : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
+    m_axi_card_mem0_awlock     : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_awprot     : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_awqos      : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_awready    : IN  STD_LOGIC;                                                        -- only for DDR3_USED=TRUE
@@ -129,7 +129,7 @@ ENTITY action_wrapper IS
     m_axi_host_mem_arcache     : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
     m_axi_host_mem_arid        : OUT STD_LOGIC_VECTOR ( C_M_AXI_HOST_MEM_ID_WIDTH-1 DOWNTO 0 );
     m_axi_host_mem_arlen       : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );
-    m_axi_host_mem_arlock      : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+    m_axi_host_mem_arlock      : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
     m_axi_host_mem_arprot      : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
     m_axi_host_mem_arqos       : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
     m_axi_host_mem_arready     : IN  STD_LOGIC;
@@ -142,7 +142,7 @@ ENTITY action_wrapper IS
     m_axi_host_mem_awcache     : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
     m_axi_host_mem_awid        : OUT STD_LOGIC_VECTOR ( C_M_AXI_HOST_MEM_ID_WIDTH-1 DOWNTO 0 );
     m_axi_host_mem_awlen       : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );
-    m_axi_host_mem_awlock      : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+    m_axi_host_mem_awlock      : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
     m_axi_host_mem_awprot      : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
     m_axi_host_mem_awqos       : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
     m_axi_host_mem_awready     : IN  STD_LOGIC;
@@ -209,7 +209,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       axi_card_mem0_awlen      : OUT std_logic_vector(7 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
       axi_card_mem0_awsize     : OUT std_logic_vector(2 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
       axi_card_mem0_awburst    : OUT std_logic_vector(1 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
-      axi_card_mem0_awlock     : OUT std_logic_vector(0 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
+      axi_card_mem0_awlock     : OUT std_logic_vector(1 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
       axi_card_mem0_awcache    : OUT std_logic_vector(3 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
       axi_card_mem0_awprot     : OUT std_logic_vector(2 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
       axi_card_mem0_awregion   : OUT std_logic_vector(3 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
@@ -228,7 +228,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       axi_card_mem0_arlen      : OUT std_logic_vector(7 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
       axi_card_mem0_arsize     : OUT std_logic_vector(2 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
       axi_card_mem0_arburst    : OUT std_logic_vector(1 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
-      axi_card_mem0_arlock     : OUT std_logic_vector(0 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
+      axi_card_mem0_arlock     : OUT std_logic_vector(1 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
       axi_card_mem0_arcache    : OUT std_logic_vector(3 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
       axi_card_mem0_arprot     : OUT std_logic_vector(2 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
       axi_card_mem0_arregion   : OUT std_logic_vector(3 DOWNTO 0);                                 -- only for DDR3_USED=TRUE
@@ -278,7 +278,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       axi_host_mem_awlen       : OUT std_logic_vector(7 DOWNTO 0);
       axi_host_mem_awsize      : OUT std_logic_vector(2 DOWNTO 0);
       axi_host_mem_awburst     : OUT std_logic_vector(1 DOWNTO 0);
-      axi_host_mem_awlock      : OUT std_logic_vector(0 DOWNTO 0);
+      axi_host_mem_awlock      : OUT std_logic_vector(1 DOWNTO 0);
       axi_host_mem_awcache     : OUT std_logic_vector(3 DOWNTO 0);
       axi_host_mem_awprot      : OUT std_logic_vector(2 DOWNTO 0);
       axi_host_mem_awregion    : OUT std_logic_vector(3 DOWNTO 0);
@@ -297,7 +297,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       axi_host_mem_arlen       : OUT std_logic_vector(7 DOWNTO 0);
       axi_host_mem_arsize      : OUT std_logic_vector(2 DOWNTO 0);
       axi_host_mem_arburst     : OUT std_logic_vector(1 DOWNTO 0);
-      axi_host_mem_arlock      : OUT std_logic_vector(0 DOWNTO 0);
+      axi_host_mem_arlock      : OUT std_logic_vector(1 DOWNTO 0);
       axi_host_mem_arcache     : OUT std_logic_vector(3 DOWNTO 0);
       axi_host_mem_arprot      : OUT std_logic_vector(2 DOWNTO 0);
       axi_host_mem_arregion    : OUT std_logic_vector(3 DOWNTO 0);

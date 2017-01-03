@@ -61,7 +61,7 @@ ENTITY action_wrapper IS
     m_axi_card_mem0_arcache    : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_arid       : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );         -- only for DDR3_USED=TRUE
     m_axi_card_mem0_arlen      : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
-    m_axi_card_mem0_arlock     : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
+    m_axi_card_mem0_arlock     : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_arprot     : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_arqos      : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_arready    : IN  STD_LOGIC;                                                        -- only for DDR3_USED=TRUE
@@ -74,7 +74,7 @@ ENTITY action_wrapper IS
     m_axi_card_mem0_awcache    : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_awid       : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );         -- only for DDR3_USED=TRUE
     m_axi_card_mem0_awlen      : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
-    m_axi_card_mem0_awlock     : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
+    m_axi_card_mem0_awlock     : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_awprot     : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_awqos      : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                  -- only for DDR3_USED=TRUE
     m_axi_card_mem0_awready    : IN  STD_LOGIC;                                                        -- only for DDR3_USED=TRUE
@@ -129,7 +129,7 @@ ENTITY action_wrapper IS
     m_axi_host_mem_arcache     : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
     m_axi_host_mem_arid        : OUT STD_LOGIC_VECTOR ( C_M_AXI_HOST_MEM_ID_WIDTH-1 DOWNTO 0 );
     m_axi_host_mem_arlen       : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );
-    m_axi_host_mem_arlock      : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+    m_axi_host_mem_arlock      : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
     m_axi_host_mem_arprot      : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
     m_axi_host_mem_arqos       : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
     m_axi_host_mem_arready     : IN  STD_LOGIC;
@@ -142,7 +142,7 @@ ENTITY action_wrapper IS
     m_axi_host_mem_awcache     : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
     m_axi_host_mem_awid        : OUT STD_LOGIC_VECTOR ( C_M_AXI_HOST_MEM_ID_WIDTH-1 DOWNTO 0 );
     m_axi_host_mem_awlen       : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );
-    m_axi_host_mem_awlock      : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+    m_axi_host_mem_awlock      : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
     m_axi_host_mem_awprot      : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
     m_axi_host_mem_awqos       : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
     m_axi_host_mem_awready     : IN  STD_LOGIC;
@@ -356,7 +356,7 @@ action_0: COMPONENT action_memcopy
     axi_card_mem0_arcache      => m_axi_card_mem0_arcache,                               -- only for DDR3_USED=TRUE
     axi_card_mem0_arid         => m_axi_card_mem0_arid,                                  -- only for DDR3_USED=TRUE
     axi_card_mem0_arlen        => m_axi_card_mem0_arlen,                                 -- only for DDR3_USED=TRUE
-    axi_card_mem0_arlock       => m_axi_card_mem0_arlock,                                -- only for DDR3_USED=TRUE
+    axi_card_mem0_arlock       => m_axi_card_mem0_arlock(0 DOWNTO 0),                    -- only for DDR3_USED=TRUE
     axi_card_mem0_arprot       => m_axi_card_mem0_arprot,                                -- only for DDR3_USED=TRUE
     axi_card_mem0_arqos        => m_axi_card_mem0_arqos,                                 -- only for DDR3_USED=TRUE
     axi_card_mem0_arready      => m_axi_card_mem0_arready,                               -- only for DDR3_USED=TRUE
@@ -369,7 +369,7 @@ action_0: COMPONENT action_memcopy
     axi_card_mem0_awcache      => m_axi_card_mem0_awcache,                               -- only for DDR3_USED=TRUE
     axi_card_mem0_awid         => m_axi_card_mem0_awid,                                  -- only for DDR3_USED=TRUE
     axi_card_mem0_awlen        => m_axi_card_mem0_awlen,                                 -- only for DDR3_USED=TRUE
-    axi_card_mem0_awlock       => m_axi_card_mem0_awlock,                                -- only for DDR3_USED=TRUE
+    axi_card_mem0_awlock       => m_axi_card_mem0_awlock(0 DOWNTO 0),                    -- only for DDR3_USED=TRUE
     axi_card_mem0_awprot       => m_axi_card_mem0_awprot,                                -- only for DDR3_USED=TRUE
     axi_card_mem0_awqos        => m_axi_card_mem0_awqos,                                 -- only for DDR3_USED=TRUE
     axi_card_mem0_awready      => m_axi_card_mem0_awready,                               -- only for DDR3_USED=TRUE
@@ -420,7 +420,7 @@ action_0: COMPONENT action_memcopy
     axi_host_mem_arcache       => m_axi_host_mem_arcache,
     axi_host_mem_arid          => m_axi_host_mem_arid,
     axi_host_mem_arlen         => m_axi_host_mem_arlen,
-    axi_host_mem_arlock        => m_axi_host_mem_arlock,
+    axi_host_mem_arlock        => m_axi_host_mem_arlock(0 DOWNTO 0),
     axi_host_mem_arprot        => m_axi_host_mem_arprot,
     axi_host_mem_arqos         => m_axi_host_mem_arqos,
     axi_host_mem_arready       => m_axi_host_mem_arready,
@@ -433,7 +433,7 @@ action_0: COMPONENT action_memcopy
     axi_host_mem_awcache       => m_axi_host_mem_awcache,
     axi_host_mem_awid          => m_axi_host_mem_awid,
     axi_host_mem_awlen         => m_axi_host_mem_awlen,
-    axi_host_mem_awlock        => m_axi_host_mem_awlock,
+    axi_host_mem_awlock        => m_axi_host_mem_awlock(0 DOWNTO 0),
     axi_host_mem_awprot        => m_axi_host_mem_awprot,
     axi_host_mem_awqos         => m_axi_host_mem_awqos,
     axi_host_mem_awready       => m_axi_host_mem_awready,

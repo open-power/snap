@@ -250,7 +250,7 @@ ARCHITECTURE afu OF afu IS
       m_axi_card_mem0_arcache    : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                -- only for DDR3_USED=TRUE
       m_axi_card_mem0_arid       : OUT STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );       -- only for DDR3_USED=TRUE
       m_axi_card_mem0_arlen      : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );                                -- only for DDR3_USED=TRUE
-      m_axi_card_mem0_arlock     : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );                                -- only for DDR3_USED=TRUE
+      m_axi_card_mem0_arlock     : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                -- only for DDR3_USED=TRUE
       m_axi_card_mem0_arprot     : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                -- only for DDR3_USED=TRUE
       m_axi_card_mem0_arqos      : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                -- only for DDR3_USED=TRUE
       m_axi_card_mem0_arready    : IN  STD_LOGIC;                                                      -- only for DDR3_USED=TRUE
@@ -263,7 +263,7 @@ ARCHITECTURE afu OF afu IS
       m_axi_card_mem0_awcache    : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                -- only for DDR3_USED=TRUE
       m_axi_card_mem0_awid       : OUT STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );       -- only for DDR3_USED=TRUE
       m_axi_card_mem0_awlen      : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );                                -- only for DDR3_USED=TRUE
-      m_axi_card_mem0_awlock     : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );                                -- only for DDR3_USED=TRUE
+      m_axi_card_mem0_awlock     : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                -- only for DDR3_USED=TRUE
       m_axi_card_mem0_awprot     : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                -- only for DDR3_USED=TRUE
       m_axi_card_mem0_awqos      : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                -- only for DDR3_USED=TRUE
       m_axi_card_mem0_awready    : IN  STD_LOGIC;                                                      -- only for DDR3_USED=TRUE
@@ -318,7 +318,7 @@ ARCHITECTURE afu OF afu IS
       m_axi_host_mem_arcache     : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
       m_axi_host_mem_arid        : OUT STD_LOGIC_VECTOR ( C_AXI_HOST_MEM_ID_WIDTH-1 DOWNTO 0 );
       m_axi_host_mem_arlen       : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );
-      m_axi_host_mem_arlock      : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+      m_axi_host_mem_arlock      : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
       m_axi_host_mem_arprot      : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
       m_axi_host_mem_arqos       : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
       m_axi_host_mem_arready     : IN  STD_LOGIC;
@@ -331,7 +331,7 @@ ARCHITECTURE afu OF afu IS
       m_axi_host_mem_awcache     : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
       m_axi_host_mem_awid        : OUT STD_LOGIC_VECTOR ( C_AXI_HOST_MEM_ID_WIDTH-1 DOWNTO 0 );
       m_axi_host_mem_awlen       : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );
-      m_axi_host_mem_awlock      : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+      m_axi_host_mem_awlock      : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
       m_axi_host_mem_awprot      : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
       m_axi_host_mem_awqos       : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
       m_axi_host_mem_awready     : IN  STD_LOGIC;
@@ -613,7 +613,7 @@ ARCHITECTURE afu OF afu IS
   SIGNAL axi_card_mem0_awlen        : STD_LOGIC_VECTOR ( 7 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
   SIGNAL axi_card_mem0_awsize       : STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
   SIGNAL axi_card_mem0_awburst      : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
-  SIGNAL axi_card_mem0_awlock       : STD_LOGIC_VECTOR ( 0 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
+  SIGNAL axi_card_mem0_awlock       : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
   SIGNAL axi_card_mem0_awcache      : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
   SIGNAL axi_card_mem0_awprot       : STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
   SIGNAL axi_card_mem0_awregion     : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
@@ -632,7 +632,7 @@ ARCHITECTURE afu OF afu IS
   SIGNAL axi_card_mem0_arlen        : STD_LOGIC_VECTOR ( 7 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
   SIGNAL axi_card_mem0_arsize       : STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
   SIGNAL axi_card_mem0_arburst      : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
-  SIGNAL axi_card_mem0_arlock       : STD_LOGIC_VECTOR ( 0 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
+  SIGNAL axi_card_mem0_arlock       : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
   SIGNAL axi_card_mem0_arcache      : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
   SIGNAL axi_card_mem0_arprot       : STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
   SIGNAL axi_card_mem0_arregion     : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                       -- only for DDR3_USED=TRUE
@@ -1063,7 +1063,7 @@ BEGIN
       s_axi_arcache   => axi_card_mem0_arcache,                                          -- only for DDR3_USED=TRUE
       s_axi_arid      => axi_card_mem0_arid,                                             -- only for DDR3_USED=TRUE
       s_axi_arlen     => axi_card_mem0_arlen,                                            -- only for DDR3_USED=TRUE
-      s_axi_arlock    => axi_card_mem0_arlock,                                           -- only for DDR3_USED=TRUE
+      s_axi_arlock    => axi_card_mem0_arlock(0 DOWNTO 0),                               -- only for DDR3_USED=TRUE
       s_axi_arprot    => axi_card_mem0_arprot,                                           -- only for DDR3_USED=TRUE
       s_axi_arqos     => axi_card_mem0_arqos,                                            -- only for DDR3_USED=TRUE
       s_axi_arready   => axi_card_mem0_arready,                                          -- only for DDR3_USED=TRUE
@@ -1075,7 +1075,7 @@ BEGIN
       s_axi_awcache   => axi_card_mem0_awcache,                                          -- only for DDR3_USED=TRUE
       s_axi_awid      => axi_card_mem0_awid,                                             -- only for DDR3_USED=TRUE
       s_axi_awlen     => axi_card_mem0_awlen,                                            -- only for DDR3_USED=TRUE
-      s_axi_awlock    => axi_card_mem0_awlock,                                           -- only for DDR3_USED=TRUE
+      s_axi_awlock    => axi_card_mem0_awlock(0 DOWNTO 0),                               -- only for DDR3_USED=TRUE
       s_axi_awprot    => axi_card_mem0_awprot,                                           -- only for DDR3_USED=TRUE
       s_axi_awqos     => axi_card_mem0_awqos,                                            -- only for DDR3_USED=TRUE
       s_axi_awready   => axi_card_mem0_awready,                                          -- only for DDR3_USED=TRUE
