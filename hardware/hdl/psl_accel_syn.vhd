@@ -322,28 +322,28 @@ ARCHITECTURE psl_accel OF psl_accel IS
   COMPONENT action_wrapper
     GENERIC (
       -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory
-      C_AXI_CARD_MEM0_ID_WIDTH       : integer;
-      C_AXI_CARD_MEM0_ADDR_WIDTH     : integer;
-      C_AXI_CARD_MEM0_DATA_WIDTH     : integer;
-      C_AXI_CARD_MEM0_AWUSER_WIDTH   : integer;
-      C_AXI_CARD_MEM0_ARUSER_WIDTH   : integer;
-      C_AXI_CARD_MEM0_WUSER_WIDTH    : integer;
-      C_AXI_CARD_MEM0_RUSER_WIDTH    : integer;
-      C_AXI_CARD_MEM0_BUSER_WIDTH    : integer;
+      C_M_AXI_CARD_MEM0_ID_WIDTH       : integer;
+      C_M_AXI_CARD_MEM0_ADDR_WIDTH     : integer;
+      C_M_AXI_CARD_MEM0_DATA_WIDTH     : integer;
+      C_M_AXI_CARD_MEM0_AWUSER_WIDTH   : integer;
+      C_M_AXI_CARD_MEM0_ARUSER_WIDTH   : integer;
+      C_M_AXI_CARD_MEM0_WUSER_WIDTH    : integer;
+      C_M_AXI_CARD_MEM0_RUSER_WIDTH    : integer;
+      C_M_AXI_CARD_MEM0_BUSER_WIDTH    : integer;
 
       -- Parameters for Axi Slave Bus Interface AXI_CTRL_REG
-      C_AXI_CTRL_REG_DATA_WIDTH      : integer;
-      C_AXI_CTRL_REG_ADDR_WIDTH      : integer;
+      C_S_AXI_CTRL_REG_DATA_WIDTH      : integer;
+      C_S_AXI_CTRL_REG_ADDR_WIDTH      : integer;
 
       -- Parameters for Axi Master Bus Interface AXI_HOST_MEM : to Host memory
-      C_AXI_HOST_MEM_ID_WIDTH        : integer;
-      C_AXI_HOST_MEM_ADDR_WIDTH      : integer;
-      C_AXI_HOST_MEM_DATA_WIDTH      : integer;
-      C_AXI_HOST_MEM_AWUSER_WIDTH    : integer;
-      C_AXI_HOST_MEM_ARUSER_WIDTH    : integer;
-      C_AXI_HOST_MEM_WUSER_WIDTH     : integer;
-      C_AXI_HOST_MEM_RUSER_WIDTH     : integer;
-      C_AXI_HOST_MEM_BUSER_WIDTH     : integer
+      C_M_AXI_HOST_MEM_ID_WIDTH        : integer;
+      C_M_AXI_HOST_MEM_ADDR_WIDTH      : integer;
+      C_M_AXI_HOST_MEM_DATA_WIDTH      : integer;
+      C_M_AXI_HOST_MEM_AWUSER_WIDTH    : integer;
+      C_M_AXI_HOST_MEM_ARUSER_WIDTH    : integer;
+      C_M_AXI_HOST_MEM_WUSER_WIDTH     : integer;
+      C_M_AXI_HOST_MEM_RUSER_WIDTH     : integer;
+      C_M_AXI_HOST_MEM_BUSER_WIDTH     : integer
     );
 
     PORT (
@@ -939,28 +939,28 @@ BEGIN
   action_w: action_wrapper
     GENERIC MAP (
       -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory
-      C_AXI_CARD_MEM0_ID_WIDTH       => C_AXI_CARD_MEM0_ID_WIDTH,
-      C_AXI_CARD_MEM0_ADDR_WIDTH     => C_AXI_CARD_MEM0_ADDR_WIDTH,
-      C_AXI_CARD_MEM0_DATA_WIDTH     => C_AXI_CARD_MEM0_DATA_WIDTH,
-      C_AXI_CARD_MEM0_AWUSER_WIDTH   => C_AXI_CARD_MEM0_AWUSER_WIDTH,
-      C_AXI_CARD_MEM0_ARUSER_WIDTH   => C_AXI_CARD_MEM0_ARUSER_WIDTH,
-      C_AXI_CARD_MEM0_WUSER_WIDTH    => C_AXI_CARD_MEM0_WUSER_WIDTH,
-      C_AXI_CARD_MEM0_RUSER_WIDTH    => C_AXI_CARD_MEM0_RUSER_WIDTH,
-      C_AXI_CARD_MEM0_BUSER_WIDTH    => C_AXI_CARD_MEM0_BUSER_WIDTH,
+      C_M_AXI_CARD_MEM0_ID_WIDTH       => C_AXI_CARD_MEM0_ID_WIDTH,
+      C_M_AXI_CARD_MEM0_ADDR_WIDTH     => C_AXI_CARD_MEM0_ADDR_WIDTH,
+      C_M_AXI_CARD_MEM0_DATA_WIDTH     => C_AXI_CARD_MEM0_DATA_WIDTH,
+      C_M_AXI_CARD_MEM0_AWUSER_WIDTH   => C_AXI_CARD_MEM0_AWUSER_WIDTH,
+      C_M_AXI_CARD_MEM0_ARUSER_WIDTH   => C_AXI_CARD_MEM0_ARUSER_WIDTH,
+      C_M_AXI_CARD_MEM0_WUSER_WIDTH    => C_AXI_CARD_MEM0_WUSER_WIDTH,
+      C_M_AXI_CARD_MEM0_RUSER_WIDTH    => C_AXI_CARD_MEM0_RUSER_WIDTH,
+      C_M_AXI_CARD_MEM0_BUSER_WIDTH    => C_AXI_CARD_MEM0_BUSER_WIDTH,
 
       -- Parameters for Axi Slave Bus Interface AXI_CTRL_REG
-      C_AXI_CTRL_REG_DATA_WIDTH      => C_AXI_CTRL_REG_DATA_WIDTH,
-      C_AXI_CTRL_REG_ADDR_WIDTH      => C_AXI_CTRL_REG_ADDR_WIDTH,
+      C_S_AXI_CTRL_REG_DATA_WIDTH      => C_AXI_CTRL_REG_DATA_WIDTH,
+      C_S_AXI_CTRL_REG_ADDR_WIDTH      => C_AXI_CTRL_REG_ADDR_WIDTH,
 
       -- Parameters for Axi Master Bus Interface AXI_HOST_MEM : to Host memory
-      C_AXI_HOST_MEM_ID_WIDTH        => C_AXI_HOST_MEM_ID_WIDTH,
-      C_AXI_HOST_MEM_ADDR_WIDTH      => C_AXI_HOST_MEM_ADDR_WIDTH,
-      C_AXI_HOST_MEM_DATA_WIDTH      => C_AXI_HOST_MEM_DATA_WIDTH,
-      C_AXI_HOST_MEM_AWUSER_WIDTH    => C_AXI_HOST_MEM_AWUSER_WIDTH,
-      C_AXI_HOST_MEM_ARUSER_WIDTH    => C_AXI_HOST_MEM_ARUSER_WIDTH,
-      C_AXI_HOST_MEM_WUSER_WIDTH     => C_AXI_HOST_MEM_WUSER_WIDTH,
-      C_AXI_HOST_MEM_RUSER_WIDTH     => C_AXI_HOST_MEM_RUSER_WIDTH,
-      C_AXI_HOST_MEM_BUSER_WIDTH     => C_AXI_HOST_MEM_BUSER_WIDTH
+      C_M_AXI_HOST_MEM_ID_WIDTH        => C_AXI_HOST_MEM_ID_WIDTH,
+      C_M_AXI_HOST_MEM_ADDR_WIDTH      => C_AXI_HOST_MEM_ADDR_WIDTH,
+      C_M_AXI_HOST_MEM_DATA_WIDTH      => C_AXI_HOST_MEM_DATA_WIDTH,
+      C_M_AXI_HOST_MEM_AWUSER_WIDTH    => C_AXI_HOST_MEM_AWUSER_WIDTH,
+      C_M_AXI_HOST_MEM_ARUSER_WIDTH    => C_AXI_HOST_MEM_ARUSER_WIDTH,
+      C_M_AXI_HOST_MEM_WUSER_WIDTH     => C_AXI_HOST_MEM_WUSER_WIDTH,
+      C_M_AXI_HOST_MEM_RUSER_WIDTH     => C_AXI_HOST_MEM_RUSER_WIDTH,
+      C_M_AXI_HOST_MEM_BUSER_WIDTH     => C_AXI_HOST_MEM_BUSER_WIDTH
     )
     PORT MAP (
       ap_clk                               => ha_pclock,
