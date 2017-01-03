@@ -40,12 +40,77 @@
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
 
-#define MMIO_DIN_DEFAULT	0x0ull
-#define MMIO_DOUT_DEFAULT	0x0ull
+/*
+ * table1 = [(27, "Jonah"),
+ *           (18, "Alan"),
+ *           (28, "Glory"),
+ *           (18, "Popeye"),
+ *           (28, "Alan")]
+ * table2 = [("Jonah", "Whales"),
+ *           ("Jonah", "Spiders"),
+ *           ("Alan", "Ghosts"),
+ *           ("Alan", "Zombies"),
+ *           ("Glory", "Buffy")]
+ */
+static table1_t t1[TABLE1_SIZE] = {
+	{ /* .age = */ 27, /* .name = */ "Jonah"  },
+	{ /* .age = */ 18, /* .name = */ "Alan"   },
+	{ /* .age = */ 28, /* .name = */ "Glory"  },
+	{ /* .age = */ 18, /* .name = */ "Popeye" },
+	{ /* .age = */ 28, /* .name = */ "Alan"   },
+	{ /* .age = */ 38, /* .name = */ "Alan"   },
+	{ /* .age = */ 48, /* .name = */ "Alan"   },
+	{ /* .age = */ 58, /* .name = */ "Alan"   },
+	{ /* .age = */ 68, /* .name = */ "Adam"   },
+	{ /* .age = */ 23, /* .name = */ "Anton"  },
+	{ /* .age = */ 24, /* .name = */ "Anton"  },
+	{ /* .age = */ 25, /* .name = */ "Dieter" },
+	{ /* .age = */ 26, /* .name = */ "Joerg"  },
+	{ /* .age = */ 22, /* .name = */ "Thomas" },
+	{ /* .age = */ 20, /* .name = */ "Frank"  },
+	{ /* .age = */ 12, /* .name = */ "Bruno"  },
+	{ /* .age = */ 15, /* .name = */ "Blumi"  },
+	{ /* .age = */ 15, /* .name = */ "Mikey"  },
+	{ /* .age = */ 14, /* .name = */ "Blong"  },
+	{ /* .age = */ 13, /* .name = */ "Tiffy"  },
+	{ /* .age = */ 12, /* .name = */ "Tiffy"  },
+};
 
-static const table1_t t1[1024];                      /* small */
-static const table2_t t2[4096];                      /* large */
-static table3_t t3[ARRAY_SIZE(t1) * ARRAY_SIZE(t2)]; /* larger ;-) */
+/*
+ * Decouple the entries to maintain the multihash table from the data
+ * in table1, since we do not want to transfer empty entries over the
+ * PCIe bus to the card.
+ */
+static table2_t t2[TABLE2_SIZE] = {
+	{ /* .name = */ "Jonah", /* .animal = */ "Whales"   },
+	{ /* .name = */ "Jonah", /* .animal = */ "Spiders"  },
+	{ /* .name = */ "Alan",  /* .animal = */ "Ghosts"   },
+	{ /* .name = */ "Alan",  /* .animal = */ "Zombies"  },
+	{ /* .name = */ "Glory", /* .animal = */ "Buffy"    },
+	{ /* .name = */ "Grobi", /* .animal = */ "Giraffe"  },
+	{ /* .name = */ "Doofy", /* .animal = */ "Lion"     },
+	{ /* .name = */ "Mumie", /* .animal = */ "Gepard"   },
+	{ /* .name = */ "Blumi", /* .animal = */ "Cow"      },
+	{ /* .name = */ "Doofy", /* .animal = */ "Ape"      },
+	{ /* .name = */ "Goofy", /* .animal = */ "Fish"     },
+	{ /* .name = */ "Mikey", /* .animal = */ "Trout"    },
+	{ /* .name = */ "Mikey", /* .animal = */ "Greyling" },
+	{ /* .name = */ "Anton", /* .animal = */ "Eagle"    },
+	{ /* .name = */ "Thomy", /* .animal = */ "Austrich" },
+	{ /* .name = */ "Blomy", /* .animal = */ "Sharks"   },
+	{ /* .name = */ "Groof", /* .animal = */ "Fly"      },
+	{ /* .name = */ "Blimb", /* .animal = */ "Birds"    },
+	{ /* .name = */ "Blong", /* .animal = */ "Buffy"    },
+	{ /* .name = */ "Frank", /* .animal = */ "Turtles"  },
+	{ /* .name = */ "Frank", /* .animal = */ "Gorillas" },
+	{ /* .name = */ "Toffy", /* .animal = */ "Buffy"    },
+	{ /* .name = */ "Tuffy", /* .animal = */ "Buffy"    },
+	{ /* .name = */ "Frank", /* .animal = */ "Buffy"    },
+	{ /* .name = */ "Bruno", /* .animal = */ "Buffy"    },
+};
+
+static table3_t t3[TABLE3_SIZE];       /* large++ */
+static hashtable_t hashtable;
 
 static inline
 ssize_t file_size(const char *fname)
@@ -93,7 +158,8 @@ static void dnut_prepare_hashjoin(struct dnut_job *cjob,
 				  struct hashjoin_job *jout,
 				  const table1_t *t1, ssize_t t1_size,
 				  const table2_t *t2, size_t t2_size,
-				  table3_t *t3, size_t t3_size)
+				  table3_t *t3, size_t t3_size,
+				  hashtable_t *h, size_t h_size)
 {
 	dnut_addr_set(&jin->t1, t1, t1_size,
 		      DNUT_TARGET_TYPE_HOST_DRAM,
@@ -106,7 +172,7 @@ static void dnut_prepare_hashjoin(struct dnut_job *cjob,
 		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
 
 	/* FIXME Assumptions where there is free DRAM on the card ... */
-	dnut_addr_set(&jin->multihash, 0, t1_size * t1_size,
+	dnut_addr_set(&jin->hashtable, h, h_size,
 		      DNUT_TARGET_TYPE_CARD_DRAM,
 		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
 		      DNUT_TARGET_FLAGS_END);
@@ -114,6 +180,8 @@ static void dnut_prepare_hashjoin(struct dnut_job *cjob,
 	jin->t1_processed = 0;
 	jin->t2_processed = 0;
 	jin->t3_produced = 0;
+	jin->checkpoint = 0xABCD;
+	jin->rc = 0;
 	jin->action_version = 0;
 
 	dnut_job_set(cjob, HASHJOIN_ACTION_TYPE,
@@ -207,7 +275,8 @@ int main(int argc, char *argv[])
 	dnut_prepare_hashjoin(&cjob, &jin, &jout,
 			      t1, sizeof(t1),
 			      t2, sizeof(t2),
-			      t3, sizeof(t3));
+			      t3, sizeof(t3),
+			      &hashtable, sizeof(hashtable));
 
 	/*
 	 * Apply for exclusive kernel access for kernel type 0xC0FE.
@@ -253,9 +322,18 @@ int main(int argc, char *argv[])
 
 	gettimeofday(&etime, NULL);
 
+	if (jout.rc == 0) {
+		ht_dump(&hashtable);
+		table3_dump(t3, jout.t3_produced);
+	}
+
 	fprintf(stdout, "Action version: %llx\n"
-		"Searching took %lld usec\n",
+		"Checkpoint: %016llx\n"
+		"ReturnCode: %lld\n"
+		"HashJoin took %lld usec\n",
 		(long long)jout.action_version,
+		(long long)jout.checkpoint,
+		(long long)jout.rc,
 		(long long)timediff_usec(&etime, &stime));
 
 	dnut_kernel_free(kernel);

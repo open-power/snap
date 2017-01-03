@@ -76,7 +76,7 @@
 extern "C" {
 #endif
 
-#define DONUT_VERSION			"0.0.5"
+#define DONUT_VERSION			"0.0.6"
 
 /*
  * Error codes FIXME alternaternatively we could use the errno codes
@@ -89,6 +89,7 @@ extern "C" {
 #define DNUT_ENOENT			-4 /* Entry not found */
 #define DNUT_EFAULT			-5 /* Illegal address */
 #define DNUT_ETIMEDOUT			-6 /* Timeout error */
+#define DNUT_EINVAL			-7 /* Invalid parameters */
 
 /* Standardized, non-zero return codes to be expected from FPGA actions */
 #define DNUT_RETC_SUCCESS		0x0102
