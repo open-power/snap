@@ -37,10 +37,10 @@ entity action_axi_slave is
 		S_AXI_ARESETN	: in std_logic;
 		-- Write address (issued by master, acceped by Slave)
 		S_AXI_AWADDR	: in std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
-		-- Write channel Protection type. This signal indicates the
-    		-- privilege and security level of the transaction, and whether
-    		-- the transaction is a data access or an instruction access.
-		S_AXI_AWPROT	: in std_logic_vector(2 downto 0);
+--		-- Write channel Protection type. This signal indicates the
+--    		-- privilege and security level of the transaction, and whether
+--    		-- the transaction is a data access or an instruction access.
+--		S_AXI_AWPROT	: in std_logic_vector(2 downto 0);
 		-- Write address valid. This signal indicates that the master signaling
     		-- valid write address and control information.
 		S_AXI_AWVALID	: in std_logic;
@@ -70,10 +70,10 @@ entity action_axi_slave is
 		S_AXI_BREADY	: in std_logic;
 		-- Read address (issued by master, acceped by Slave)
 		S_AXI_ARADDR	: in std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
-		-- Protection type. This signal indicates the privilege
-    		-- and security level of the transaction, and whether the
-    		-- transaction is a data access or an instruction access.
-		S_AXI_ARPROT	: in std_logic_vector(2 downto 0);
+--		-- Protection type. This signal indicates the privilege
+--    		-- and security level of the transaction, and whether the
+--    		-- transaction is a data access or an instruction access.
+--		S_AXI_ARPROT	: in std_logic_vector(2 downto 0);
 		-- Read address valid. This signal indicates that the channel
     		-- is signaling valid read address and control information.
 		S_AXI_ARVALID	: in std_logic;

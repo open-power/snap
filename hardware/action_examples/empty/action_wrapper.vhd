@@ -103,11 +103,9 @@ ENTITY action_wrapper IS
     --
     -- AXI Control Register Interface
     s_axi_ctrl_reg_araddr      : IN  STD_LOGIC_VECTOR ( C_S_AXI_CTRL_REG_ADDR_WIDTH-1 DOWNTO 0 );
-    s_axi_ctrl_reg_arprot      : IN  STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
     s_axi_ctrl_reg_arready     : OUT STD_LOGIC;
     s_axi_ctrl_reg_arvalid     : IN  STD_LOGIC;
     s_axi_ctrl_reg_awaddr      : IN  STD_LOGIC_VECTOR ( C_S_AXI_CTRL_REG_ADDR_WIDTH-1 DOWNTO 0 );
-    s_axi_ctrl_reg_awprot      : IN  STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
     s_axi_ctrl_reg_awready     : OUT STD_LOGIC;
     s_axi_ctrl_reg_awvalid     : IN  STD_LOGIC;
     s_axi_ctrl_reg_bready      : IN  STD_LOGIC;
@@ -252,7 +250,6 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
 
       -- Ports of Axi Slave Bus Interface AXI_CTRL_REG
       axi_ctrl_reg_awaddr      : IN  std_logic_vector(C_S_AXI_CTRL_REG_ADDR_WIDTH-1 DOWNTO 0);
-      axi_ctrl_reg_awprot      : IN  std_logic_vector(2 DOWNTO 0);
       axi_ctrl_reg_awvalid     : IN  std_logic;
       axi_ctrl_reg_awready     : OUT std_logic;
       axi_ctrl_reg_wdata       : IN  std_logic_vector(C_S_AXI_CTRL_REG_DATA_WIDTH-1 DOWNTO 0);
@@ -263,7 +260,6 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       axi_ctrl_reg_bvalid      : OUT std_logic;
       axi_ctrl_reg_bready      : IN  std_logic;
       axi_ctrl_reg_araddr      : IN  std_logic_vector(C_S_AXI_CTRL_REG_ADDR_WIDTH-1 DOWNTO 0);
-      axi_ctrl_reg_arprot      : IN  std_logic_vector(2 DOWNTO 0);
       axi_ctrl_reg_arvalid     : IN  std_logic;
       axi_ctrl_reg_arready     : OUT std_logic;
       axi_ctrl_reg_rdata       : OUT std_logic_vector(C_S_AXI_CTRL_REG_DATA_WIDTH-1 DOWNTO 0);
@@ -396,11 +392,9 @@ action_e: COMPONENT action_empty
     axi_card_mem0_wuser        => m_axi_card_mem0_wuser,                                 -- only for DDR3_USED=TRUE
     axi_card_mem0_wvalid       => m_axi_card_mem0_wvalid,                                -- only for DDR3_USED=TRUE
     axi_ctrl_reg_araddr        => s_axi_ctrl_reg_araddr,
-    axi_ctrl_reg_arprot        => s_axi_ctrl_reg_arprot,
     axi_ctrl_reg_arready       => s_axi_ctrl_reg_arready,
     axi_ctrl_reg_arvalid       => s_axi_ctrl_reg_arvalid,
     axi_ctrl_reg_awaddr        => s_axi_ctrl_reg_awaddr,
-    axi_ctrl_reg_awprot        => s_axi_ctrl_reg_awprot,
     axi_ctrl_reg_awready       => s_axi_ctrl_reg_awready,
     axi_ctrl_reg_awvalid       => s_axi_ctrl_reg_awvalid,
     axi_ctrl_reg_bready        => s_axi_ctrl_reg_bready,

@@ -107,7 +107,6 @@ entity action_empty is
 
     -- Ports of Axi Slave Bus Interface AXI_CTRL_REG
     axi_ctrl_reg_awaddr     : in  std_logic_vector(C_AXI_CTRL_REG_ADDR_WIDTH-1 downto 0);
-    axi_ctrl_reg_awprot     : in  std_logic_vector(2 downto 0);
     axi_ctrl_reg_awvalid    : in  std_logic;
     axi_ctrl_reg_awready    : out std_logic;
     axi_ctrl_reg_wdata      : in  std_logic_vector(C_AXI_CTRL_REG_DATA_WIDTH-1 downto 0);
@@ -118,7 +117,6 @@ entity action_empty is
     axi_ctrl_reg_bvalid     : out std_logic;
     axi_ctrl_reg_bready     : in  std_logic;
     axi_ctrl_reg_araddr     : in  std_logic_vector(C_AXI_CTRL_REG_ADDR_WIDTH-1 downto 0);
-    axi_ctrl_reg_arprot     : in  std_logic_vector(2 downto 0);
     axi_ctrl_reg_arvalid    : in  std_logic;
     axi_ctrl_reg_arready    : out std_logic;
     axi_ctrl_reg_rdata      : out std_logic_vector(C_AXI_CTRL_REG_DATA_WIDTH-1 downto 0);
@@ -195,14 +193,12 @@ architecture action_empty of action_empty is
   signal in_axi_card_mem0_rid          : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ID_WIDTH-1 downto 0 );           -- only for DDR3_USED=TRUE
   signal in_axi_card_mem0_ruser        : STD_LOGIC_VECTOR ( 0 downto 0 );                                    -- only for DDR3_USED=TRUE
   signal in_axi_ctrl_reg_awaddr        : STD_LOGIC_VECTOR ( C_AXI_CTRL_REG_ADDR_WIDTH-1 downto 0 );
-  signal in_axi_ctrl_reg_awprot        : STD_LOGIC_VECTOR ( 2 downto 0 );
   signal in_axi_ctrl_reg_awvalid       : STD_LOGIC;
   signal in_axi_ctrl_reg_wdata         : STD_LOGIC_VECTOR ( C_AXI_CTRL_REG_DATA_WIDTH-1 downto 0 );
   signal in_axi_ctrl_reg_wstrb         : STD_LOGIC_VECTOR ( 3 downto 0 );
   signal in_axi_ctrl_reg_wvalid        : STD_LOGIC;
   signal in_axi_ctrl_reg_bready        : STD_LOGIC;
   signal in_axi_ctrl_reg_araddr        : STD_LOGIC_VECTOR ( C_AXI_CTRL_REG_ADDR_WIDTH-1 downto 0 );
-  signal in_axi_ctrl_reg_arprot        : STD_LOGIC_VECTOR ( 2 downto 0 );
   signal in_axi_ctrl_reg_arvalid       : STD_LOGIC;
   signal in_axi_ctrl_reg_rready        : STD_LOGIC;
   signal in_axi_host_mem_awready       : STD_LOGIC;
@@ -237,14 +233,12 @@ begin
   in_axi_card_mem0_rid         <= axi_card_mem0_rid;                                     -- only for DDR3_USED=TRUE
   in_axi_card_mem0_ruser       <= axi_card_mem0_ruser;                                   -- only for DDR3_USED=TRUE
   in_axi_ctrl_reg_awaddr       <= axi_ctrl_reg_awaddr;
-  in_axi_ctrl_reg_awprot       <= axi_ctrl_reg_awprot;
   in_axi_ctrl_reg_awvalid      <= axi_ctrl_reg_awvalid;
   in_axi_ctrl_reg_wdata        <= axi_ctrl_reg_wdata;
   in_axi_ctrl_reg_wstrb        <= axi_ctrl_reg_wstrb;
   in_axi_ctrl_reg_wvalid       <= axi_ctrl_reg_wvalid;
   in_axi_ctrl_reg_bready       <= axi_ctrl_reg_bready;
   in_axi_ctrl_reg_araddr       <= axi_ctrl_reg_araddr;
-  in_axi_ctrl_reg_arprot       <= axi_ctrl_reg_arprot;
   in_axi_ctrl_reg_arvalid      <= axi_ctrl_reg_arvalid;
   in_axi_ctrl_reg_rready       <= axi_ctrl_reg_rready;
   in_axi_host_mem_awready      <= axi_host_mem_awready;

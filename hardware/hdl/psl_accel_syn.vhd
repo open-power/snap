@@ -398,11 +398,9 @@ ARCHITECTURE psl_accel OF psl_accel IS
       --
       -- AXI Control Register Interface
       s_axi_ctrl_reg_araddr      : IN  STD_LOGIC_VECTOR ( C_AXI_CTRL_REG_ADDR_WIDTH-1 DOWNTO 0 );
-      s_axi_ctrl_reg_arprot      : IN  STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
       s_axi_ctrl_reg_arready     : OUT STD_LOGIC;
       s_axi_ctrl_reg_arvalid     : IN  STD_LOGIC;
       s_axi_ctrl_reg_awaddr      : IN  STD_LOGIC_VECTOR ( C_AXI_CTRL_REG_ADDR_WIDTH-1 DOWNTO 0 );
-      s_axi_ctrl_reg_awprot      : IN  STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
       s_axi_ctrl_reg_awready     : OUT STD_LOGIC;
       s_axi_ctrl_reg_awvalid     : IN  STD_LOGIC;
       s_axi_ctrl_reg_bready      : IN  STD_LOGIC;
@@ -1014,11 +1012,9 @@ BEGIN
       --
       -- AXI Control Register Interface
       s_axi_ctrl_reg_araddr                => xk_d.m_axi_araddr,
-      s_axi_ctrl_reg_arprot                => xk_d.m_axi_arprot,
       s_axi_ctrl_reg_arready               => kx_d.m_axi_arready,
       s_axi_ctrl_reg_arvalid               => xk_d.m_axi_arvalid,
       s_axi_ctrl_reg_awaddr                => xk_d.m_axi_awaddr,
-      s_axi_ctrl_reg_awprot                => (OTHERS => '0'),
       s_axi_ctrl_reg_awready               => kx_d.m_axi_awready,
       s_axi_ctrl_reg_awvalid               => xk_d.m_axi_awvalid,
       s_axi_ctrl_reg_bready                => xk_d.m_axi_bready,

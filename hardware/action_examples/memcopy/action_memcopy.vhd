@@ -108,7 +108,7 @@ entity action_memcopy is
 
         -- Ports of Axi Slave Bus Interface AXI_CTRL_REG
         axi_ctrl_reg_awaddr : in std_logic_vector(C_AXI_CTRL_REG_ADDR_WIDTH-1 downto 0);
-        axi_ctrl_reg_awprot : in std_logic_vector(2 downto 0);
+        -- axi_ctrl_reg_awprot : in std_logic_vector(2 downto 0);
         axi_ctrl_reg_awvalid    : in std_logic;
         axi_ctrl_reg_awready    : out std_logic;
         axi_ctrl_reg_wdata  : in std_logic_vector(C_AXI_CTRL_REG_DATA_WIDTH-1 downto 0);
@@ -119,7 +119,7 @@ entity action_memcopy is
         axi_ctrl_reg_bvalid : out std_logic;
         axi_ctrl_reg_bready : in std_logic;
         axi_ctrl_reg_araddr : in std_logic_vector(C_AXI_CTRL_REG_ADDR_WIDTH-1 downto 0);
-        axi_ctrl_reg_arprot : in std_logic_vector(2 downto 0);
+        -- axi_ctrl_reg_arprot : in std_logic_vector(2 downto 0);
         axi_ctrl_reg_arvalid    : in std_logic;
         axi_ctrl_reg_arready    : out std_logic;
         axi_ctrl_reg_rdata  : out std_logic_vector(C_AXI_CTRL_REG_DATA_WIDTH-1 downto 0);
@@ -316,7 +316,7 @@ action_axi_slave_inst : entity work.action_axi_slave
         S_AXI_ACLK  => action_clk,
         S_AXI_ARESETN   => action_rst_n,
         S_AXI_AWADDR    => axi_ctrl_reg_awaddr,
-        S_AXI_AWPROT    => axi_ctrl_reg_awprot,
+        -- S_AXI_AWPROT    => axi_ctrl_reg_awprot,
         S_AXI_AWVALID   => axi_ctrl_reg_awvalid,
         S_AXI_AWREADY   => axi_ctrl_reg_awready,
         S_AXI_WDATA => axi_ctrl_reg_wdata,
@@ -327,7 +327,7 @@ action_axi_slave_inst : entity work.action_axi_slave
         S_AXI_BVALID    => axi_ctrl_reg_bvalid,
         S_AXI_BREADY    => axi_ctrl_reg_bready,
         S_AXI_ARADDR    => axi_ctrl_reg_araddr,
-        S_AXI_ARPROT    => axi_ctrl_reg_arprot,
+        -- S_AXI_ARPROT    => axi_ctrl_reg_arprot,
         S_AXI_ARVALID   => axi_ctrl_reg_arvalid,
         S_AXI_ARREADY   => axi_ctrl_reg_arready,
         S_AXI_RDATA => axi_ctrl_reg_rdata,
