@@ -52,8 +52,8 @@ ENTITY action_wrapper IS
   );
 
   PORT (
-    action_clk                 : IN STD_LOGIC;
-    action_rst_n               : IN STD_LOGIC;
+    ap_clk                     : IN STD_LOGIC;
+    ap_rst_n                   : IN STD_LOGIC;
     --                                                                                                 -- only for DDR3_USED=TRUE
     -- AXI DDR3 Interface                                                                              -- only for DDR3_USED=TRUE
     m_axi_card_mem0_araddr     : OUT STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );       -- only for DDR3_USED=TRUE
@@ -121,6 +121,7 @@ ENTITY action_wrapper IS
     s_axi_ctrl_reg_wready      : OUT STD_LOGIC;
     s_axi_ctrl_reg_wstrb       : IN  STD_LOGIC_VECTOR ( (C_AXI_CTRL_REG_DATA_WIDTH/8)-1 DOWNTO 0 );
     s_axi_ctrl_reg_wvalid      : IN  STD_LOGIC;
+    interrupt                  : OUT STD_LOGIC;
     --
     -- AXI Host Memory Interface
     m_axi_host_mem_araddr      : OUT STD_LOGIC_VECTOR ( C_AXI_HOST_MEM_ADDR_WIDTH-1 DOWNTO 0 );
@@ -269,6 +270,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       axi_ctrl_reg_rresp       : OUT std_logic_vector(1 DOWNTO 0);
       axi_ctrl_reg_rvalid      : OUT std_logic;
       axi_ctrl_reg_rready      : IN  std_logic;
+      interrupt                : OUT std_logic;
 
       -- Ports of Axi Master Bus Interface AXI_HOST_MEM
       --       to HOST memory
@@ -347,8 +349,8 @@ action_e: COMPONENT action_empty
     C_AXI_HOST_MEM_BUSER_WIDTH     => C_AXI_HOST_MEM_BUSER_WIDTH
   )
   PORT MAP (
-    action_clk                 => action_clk,
-    action_rst_n               => action_rst_n,
+    action_clk                 => ap_clk,
+    action_rst_n               => ap_rst_n,
     axi_card_mem0_araddr       => m_axi_card_mem0_araddr,                                -- only for DDR3_USED=TRUE
     axi_card_mem0_arburst      => m_axi_card_mem0_arburst,                               -- only for DDR3_USED=TRUE
     axi_card_mem0_arcache      => m_axi_card_mem0_arcache,                               -- only for DDR3_USED=TRUE
@@ -412,6 +414,7 @@ action_e: COMPONENT action_empty
     axi_ctrl_reg_wready        => s_axi_ctrl_reg_wready,
     axi_ctrl_reg_wstrb         => s_axi_ctrl_reg_wstrb,
     axi_ctrl_reg_wvalid        => s_axi_ctrl_reg_wvalid,
+    interrupt                  => interrupt,
     axi_host_mem_araddr        => m_axi_host_mem_araddr,
     axi_host_mem_arburst       => m_axi_host_mem_arburst,
     axi_host_mem_arcache       => m_axi_host_mem_arcache,

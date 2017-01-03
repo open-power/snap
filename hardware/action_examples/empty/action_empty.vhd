@@ -125,6 +125,7 @@ entity action_empty is
     axi_ctrl_reg_rresp      : out std_logic_vector(1 downto 0);
     axi_ctrl_reg_rvalid     : out std_logic;
     axi_ctrl_reg_rready     : in  std_logic;
+    interrupt               : out std_logic;
 
     -- Ports of Axi Master Bus Interface AXI_HOST_MEM
             -- to HOST memory
@@ -299,6 +300,7 @@ begin
   axi_ctrl_reg_rdata           <= (OTHERS => '0');
   axi_ctrl_reg_rresp           <= (OTHERS => '0');
   axi_ctrl_reg_rvalid          <= '0';
+  interrupt                    <= '0';
   axi_host_mem_awaddr          <= (OTHERS => '0');
   axi_host_mem_awlen           <= (OTHERS => '0');
   axi_host_mem_awsize          <= (OTHERS => '0');

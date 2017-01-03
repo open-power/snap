@@ -126,6 +126,7 @@ entity action_memcopy is
         axi_ctrl_reg_rresp  : out std_logic_vector(1 downto 0);
         axi_ctrl_reg_rvalid : out std_logic;
         axi_ctrl_reg_rready : in std_logic;
+        interrupt           : out std_logic;
 
         -- Ports of Axi Master Bus Interface AXI_HOST_MEM
                 -- to HOST memory
@@ -827,6 +828,6 @@ write_data_process:
   dma_wr_data_strobe <= (63 downto 0 => '1') when dma_wr_data_valid = '1' else (63 downto 0 => '0');
   ddr_wr_data_strobe <= (63 downto 0 => '1') when ddr_wr_data_valid = '1' else (63 downto 0 => '0');         -- only for DDR3_USED=TRUE
 
-
+  interrupt <= '0';                               -- interrupt line not used
 
 end action_memcopy;

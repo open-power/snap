@@ -241,8 +241,8 @@ ARCHITECTURE afu OF afu IS
     );
 
     PORT (
-      action_clk                 : IN STD_LOGIC;
-      action_rst_n               : IN STD_LOGIC;
+      ap_clk                     : IN STD_LOGIC;
+      ap_rst_n                   : IN STD_LOGIC;
       --                                                                                               -- only for DDR3_USED=TRUE
       -- AXI DDR3 Interface                                                                            -- only for DDR3_USED=TRUE
       m_axi_card_mem0_araddr     : OUT STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );     -- only for DDR3_USED=TRUE
@@ -310,6 +310,7 @@ ARCHITECTURE afu OF afu IS
       s_axi_ctrl_reg_wready      : OUT STD_LOGIC;
       s_axi_ctrl_reg_wstrb       : IN  STD_LOGIC_VECTOR ( (C_AXI_CTRL_REG_DATA_WIDTH/8)-1 DOWNTO 0 );
       s_axi_ctrl_reg_wvalid      : IN  STD_LOGIC;
+      interrupt                  : OUT STD_LOGIC;
       --
       -- AXI Host Memory Interface
       m_axi_host_mem_araddr      : OUT STD_LOGIC_VECTOR ( C_AXI_HOST_MEM_ADDR_WIDTH-1 DOWNTO 0 );
@@ -873,8 +874,8 @@ BEGIN
       C_AXI_HOST_MEM_BUSER_WIDTH     => C_AXI_HOST_MEM_BUSER_WIDTH
     )
     PORT MAP (
-      action_clk                           => ha_pclock,
-      action_rst_n                         => action_reset_n_q,
+      ap_clk                               => ha_pclock,
+      ap_rst_n                             => action_reset_n_q,
       --                                                                                 -- only for DDR3_USED=TRUE
       -- AXI DDR3 Interface                                                              -- only for DDR3_USED=TRUE
       m_axi_card_mem0_araddr               => axi_card_mem0_araddr,                      -- only for DDR3_USED=TRUE
@@ -942,6 +943,7 @@ BEGIN
       s_axi_ctrl_reg_wready                => kx_d.m_axi_wready,
       s_axi_ctrl_reg_wstrb                 => xk_d.m_axi_wstrb,
       s_axi_ctrl_reg_wvalid                => xk_d.m_axi_wvalid,
+      interrupt                            => OPEN,
       --
       -- AXI Host Memory Interface
       m_axi_host_mem_araddr                => ks_d.s_axi_araddr(C_AXI_HOST_MEM_ADDR_WIDTH-1 DOWNTO 0),
