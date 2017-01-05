@@ -70,83 +70,90 @@ fi
 ####### user settings for CAPI STREAMING FRAMEWORK
 if [ ! -d "$USERHOME" ]; then
   export USERHOME=$FRAMEWORK_ROOT/$USER
-  echo "Setting USERHOME            to \"$USERHOME\""
+  echo "Setting USERHOME               to \"$USERHOME\""
 else
-  echo "USERHOME             is set to \"$USERHOME\""
+  echo "USERHOME                is set to \"$USERHOME\""
 fi
 
 if [ ! -d "$PSLSE_ROOT" ]; then
   export PSLSE_ROOT=$USERHOME/pslse                          # used with git clone https://github.com/ibm-capi/pslse     $PSLSE_ROOT
-  echo "Setting PSLSE_ROOT          to \"$PSLSE_ROOT\""
+  echo "Setting PSLSE_ROOT             to \"$PSLSE_ROOT\""
 else
-  echo "PSLSE_ROOT           is set to \"$PSLSE_ROOT\""
+  echo "PSLSE_ROOT              is set to \"$PSLSE_ROOT\""
 fi
 
 if [ "$DONUT_ROOT" = "$donutdir" ]; then
-  echo "DONUT_ROOT           is set to \"$DONUT_ROOT\""
+  echo "DONUT_ROOT              is set to \"$DONUT_ROOT\""
 else
-  echo "Setting DONUT_ROOT          to \"$donutdir\""
+  echo "Setting DONUT_ROOT             to \"$donutdir\""
 fi
 export DONUT_ROOT=$donutdir
 
 if [ "$DONUT_HARDWARE_ROOT" = "$DONUT_ROOT/hardware" ]; then
-  echo "DONUT_HARDWARE_ROOT  is set to \"$DONUT_HARDWARE_ROOT\""
+  echo "DONUT_HARDWARE_ROOT     is set to \"$DONUT_HARDWARE_ROOT\""
 else
-  echo "Setting DONUT_HARDWARE_ROOT to \"$DONUT_ROOT/hardware\""
+  echo "Setting DONUT_HARDWARE_ROOT    to \"$DONUT_ROOT/hardware\""
 fi
 export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware
 
 if [ "$DONUT_SOFTWARE_ROOT" = "$DONUT_ROOT/software" ]; then
-  echo "DONUT_SOFTWARE_ROOT  is set to \"$DONUT_SOFTWARE_ROOT\""
+  echo "DONUT_SOFTWARE_ROOT     is set to \"$DONUT_SOFTWARE_ROOT\""
 else
-  echo "Setting DONUT_SOFTWARE_ROOT to \"$DONUT_ROOT/software\""
+  echo "Setting DONUT_SOFTWARE_ROOT    to \"$DONUT_ROOT/software\""
 fi
 export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software
 
 if [ -z "$ACTION_ROOT" ]; then
-  echo "Variable ACTION_ROOT is not set. Please let it point to your action source if you want to add an action to your project."
+  echo "Variable ACTION_ROOT    is not set. Please let it point to your action source if you want to add an action to your project."
 else
-  echo "ACTION_ROOT          is set to \"$ACTION_ROOT\""
+  echo "ACTION_ROOT             is set to \"$ACTION_ROOT\""
 fi
 
 if [ ! -d "$FPGACARD" ]; then
   export FPGACARD=$FRAMEWORK_ROOT/cards/adku060_capi_1_1_release
-  echo "Setting FPGACARD            to \"$FPGACARD\""
+  echo "Setting FPGACARD               to \"$FPGACARD\""
 else
-  echo "FPGACARD             is set to \"$FPGACARD\""
+  echo "FPGACARD                is set to \"$FPGACARD\""
 fi
 
 if [ -z "$FPGACHIP" ]; then
   export FPGACHIP=xcku060-ffva1156-2-e
-  echo "Setting FPGACHIP            to \"$FPGACHIP\""
+  echo "Setting FPGACHIP               to \"$FPGACHIP\""
 else
-  echo "FPGACHIP             is set to \"$FPGACHIP\""
+  echo "FPGACHIP                is set to \"$FPGACHIP\""
 fi
 
 if [ ! -d "$DIMMTEST" ]; then
   export DIMMTEST=$FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0
-  echo "Setting DIMMTEST            to \"$DIMMTEST\""
+  echo "Setting DIMMTEST               to \"$DIMMTEST\""
 else
-  echo "DIMMTEST             is set to \"$DIMMTEST\""
+  echo "DIMMTEST                is set to \"$DIMMTEST\""
 fi
 
 if [ -z "$SIMULATOR" ]; then
   export SIMULATOR=xsim                                      # xsim, questa and ncsim are supported, currently
-  echo "Setting SIMULATOR           to \"$SIMULATOR\""
+  echo "Setting SIMULATOR              to \"$SIMULATOR\""
 else
-  echo "SIMULATOR            is set to \"$SIMULATOR\""
+  echo "SIMULATOR               is set to \"$SIMULATOR\""
 fi
 
 if [ -z "$DDR3_USED" ]; then
-  echo "Variable DDR3_USED   is not set. Will default to \"TRUE\""
+  echo "Variable DDR3_USED      is not set. Will default to \"TRUE\""
 else
-  echo "DDR3_USED            is set to \"$DDR3_USED\""
+  echo "DDR3_USED               is set to \"$DDR3_USED\""
 fi
 
 if [ -z "$ILA_DEBUG" ]; then
-  echo "Variable ILA_DEBUG   is not set. Will default to \"FALSE\""
+  echo "Variable ILA_DEBUG      is not set. Will default to \"FALSE\""
 else
-  echo "ILA_DEBUG            is set to \"$ILA_DEBUG\""
+  echo "ILA_DEBUG               is set to \"$ILA_DEBUG\""
+fi
+
+if [ -z "$NUM_OF_ACTIONS" ]; then
+  echo
+  echo "Variable NUM_OF_ACTIONS is not set. Will default to \"1\""
+else
+  echo "NUM_OF_ACTIONS          is set to \"$NUM_OF_ACTIONS\""
 fi
 
 echo

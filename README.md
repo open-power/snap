@@ -1,6 +1,7 @@
-# CAPI Donut Framework Hardware and Software
+# SNAP Framework Hardware and Software
 
-The CAPI Donut Framework is helping you to adopt to IBM CAPI technology quickly and efficiently. It is providing example use-cases for hardware acceleration.
+The SNAP (**S**torage, **N**etwork, and **A**nalytics **P**rogramming) Framework is helping you to adopt to IBM CAPI technology quickly and efficiently.
+It is providing example use-cases for hardware acceleration.
 
 The framework hardware consists of a CAPI PSL-AXI bridge unit, PSL control and a job management unit.
 It interfaces with a user-written action (a.k.a. kernel) through an AXI lite control interface, and gives coherent access to host memory through an AXI slave.
@@ -20,7 +21,7 @@ Please see here for more details:
 
 # Related Work
 
-Before we created the CAPI Donut Framework, we created a CAPI driven DEFLAGE compression/decompression solution. The software to use this can be found here:
+Before we created the SNAP Framework, we created a CAPI driven DEFLAGE compression/decompression solution. The software to use this can be found here:
 * https://github.com/ibm-genwqe/genwqe-user
 
 This code uses libcxl to access the CAPI hardware. Normally your Linux distribution should have an installation package containing your library. If not, please look here and build and install manually:
@@ -31,7 +32,17 @@ This code does not compile for Intel sytems, who do not support CAPI. If you lik
 
 * https://github.com/ibm-capi/pslse
 
-# Flashing the CAPI bitstream
+# Generating and Flashing the Bitstream
+
+## Generating the Bitstream
+
+The resources for generating an FPGA image using the SNAP framework are located in the [hardware](hardware) subdirectory of this repository. For information on how to use them please refer to the documentation in the
+
+* [README.md](hardware/README.md)
+
+file within that directory.
+
+## Flashing the Bitstream
 
 To flash the card bitstream, you should try using the new tool available on:
 

@@ -17,6 +17,10 @@ ifndef ILA_DEBUG
 export ILA_DEBUG=FALSE
 endif
 
+ifndef NUM_OF_ACTIONS
+export NUM_OF_ACTIONS=1
+endif
+
 ifndef ACTION_ROOT
 export ACTION_ROOT=$(DONUT_HARDWARE_ROOT)/action_examples/empty
 endif
