@@ -716,8 +716,11 @@ read_write_process:
               tail             <= 0;
               head             <= 0;
               reg0_valid       <= '0';
+              reg0_data        <= dma_rd_data;
               reg1_valid       <= '0';
+              reg1_data        <= dma_rd_data;
               reg2_valid       <= '0';
+              reg2_data        <= dma_rd_data;
               write_counter_up <= (25 downto 1 => '0') & '1';
               write_counter_dn <= blocks_to_write(25 downto 0);
             else
