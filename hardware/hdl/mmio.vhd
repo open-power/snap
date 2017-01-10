@@ -31,7 +31,7 @@ USE work.donut_types.all;
 ENTITY mmio IS
   GENERIC (
     -- Version register content
-    IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0) := x"0000_4650_1612_0600";
+    IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0) := x"0000_4650_1701_1000";
     APP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0) := x"CAFE_0003_475A_4950";
     -- Time slice register
     TSR_RESET_VALUE        : std_ulogic_vector(63 DOWNTO 0) := x"0000_0000_0002_0000";
