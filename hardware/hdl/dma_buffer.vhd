@@ -89,8 +89,14 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL buf_rrdreq                       : std_ulogic;
   SIGNAL buf_rtag                         : integer RANGE 0 TO 31;
   SIGNAL buf_rtag_q                       : std_ulogic_vector(  5 DOWNTO 0);
+  SIGNAL buf_rtag_qq                      : std_ulogic_vector(  5 DOWNTO 0);
+  SIGNAL buf_rtag_qqq                     : std_ulogic_vector(  5 DOWNTO 0);
   SIGNAL buf_rtag_p_q                     : std_ulogic;
+  SIGNAL buf_rtag_p_qq                    : std_ulogic;
+  SIGNAL buf_rtag_p_qqq                   : std_ulogic;
   SIGNAL buf_rtag_valid_q                 : boolean;
+  SIGNAL buf_rtag_valid_qq                : boolean;
+  SIGNAL buf_rtag_valid_qqq               : boolean;
   SIGNAL buf_wtag_q                       : std_ulogic_vector(  5 DOWNTO 0);
   SIGNAL buf_wtag_p_q                     : std_ulogic;
   SIGNAL buf_wtag_valid_q                 : boolean;
@@ -217,11 +223,17 @@ BEGIN
         --
         -- defaults
         --
-        buf_rtag_q       <= rram_raddr_q(6 DOWNTO 1);
-        buf_rtag_p_q     <= parity_gen_even(rram_raddr_p_q & rram_raddr_q(2 DOWNTO 0));
-        buf_rtag_valid_q <= FALSE;
-        rram_rdata_q     <= rram_rdata(511 DOWNTO   0);
-        rram_rdata_p_q   <= rram_rdata(519 DOWNTO 512);
+        buf_rtag_q         <= rram_raddr_q(6 DOWNTO 1);
+        buf_rtag_qq        <= buf_rtag_q;
+        buf_rtag_qqq       <= buf_rtag_qq;
+        buf_rtag_p_q       <= parity_gen_even(rram_raddr_p_q & rram_raddr_q(2 DOWNTO 0));
+        buf_rtag_p_qq      <= buf_rtag_p_q;
+        buf_rtag_p_qqq     <= buf_rtag_p_qq;
+        buf_rtag_valid_q   <= FALSE;
+        buf_rtag_valid_qq  <= buf_rtag_valid_q;
+        buf_rtag_valid_qqq <= buf_rtag_valid_qq;
+        rram_rdata_q       <= rram_rdata(511 DOWNTO   0);
+        rram_rdata_p_q     <= rram_rdata(519 DOWNTO 512);
 
         IF (rram_raddr_d(1) /= rram_raddr_q(1))  THEN
           buf_rtag_valid_q <= TRUE;
@@ -496,9 +508,9 @@ BEGIN
     ah_b_o.rpar  <= wram_rdata_p_q(7 DOWNTO 0);
     ah_b_o.rlat  <= x"3";
 
-    buf_rtag_o       <= buf_rtag_q;
-    buf_rtag_p_o     <= buf_rtag_p_q;
-    buf_rtag_valid_o <= buf_rtag_valid_q;
+    buf_rtag_o       <= buf_rtag_qqq;
+    buf_rtag_p_o     <= buf_rtag_p_qqq;
+    buf_rtag_valid_o <= buf_rtag_valid_qqq;
     buf_wtag_o       <= buf_wtag_q;
     buf_wtag_p_o     <= buf_wtag_p_q;
     buf_wtag_valid_o <= buf_wtag_valid_q;
