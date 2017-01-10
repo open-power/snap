@@ -31,8 +31,8 @@ USE work.donut_types.all;
 ENTITY mmio IS
   GENERIC (
     -- Version register content
-    IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0) := x"0000_4650_1701_1000";
-    APP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0) := x"CAFE_0003_475A_4950";
+    IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0) := x"00VV_VVVV_SSSS_SSSS";  -- Will be modified by build process
+    BUILD_DATE_DAT         : std_ulogic_vector(63 DOWNTO 0) := x"0000_0000_20YY_MMDD";  -- Will be modified by build process
     -- Time slice register
     TSR_RESET_VALUE        : std_ulogic_vector(63 DOWNTO 0) := x"0000_0000_0002_0000";
     -- DDCB Timeout register
@@ -122,6 +122,8 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL afu_des_p                            : std_ulogic_vector(15 DOWNTO 0);
   SIGNAL afu_cfg                              : REG64_ARRAY_T(AFU_CFG_SPACE_SIZE-1 DOWNTO 0);
   SIGNAL afu_cfg_p                            : std_ulogic_vector(AFU_CFG_SPACE_SIZE-1 DOWNTO 0);
+  SIGNAL afu_regs_q                           : REG64_ARRAY_T(MAX_AFU_REG DOWNTO 0) := (OTHERS => (OTHERS => '0'));
+  SIGNAL afu_regs_par_q                       : std_ulogic_vector(MAX_AFU_REG DOWNTO 0) := (OTHERS => '1');
   SIGNAL ctrl_mgr_err_q                       : std_ulogic_vector(31 DOWNTO 0) := (OTHERS => '0');
   SIGNAL mmio_err_q                           : std_ulogic_vector(31 DOWNTO 0) := (OTHERS => '0');
   SIGNAL non_fatal_master_rd_errors_q         : std_ulogic_vector(NFE_L DOWNTO NFE_R);
@@ -386,6 +388,19 @@ BEGIN
               mmio_read_data_q0    <= dbg_regs_q(mmio_read_reg_offset_q);
               mmio_read_datapar_q0 <= dbg_regs_par_q(mmio_read_reg_offset_q);
 
+            --
+            -- GENERAL AFU REGISTER READ
+            --
+            WHEN AFU_REG_BASE =>
+              IF mmio_read_reg_offset_q < afu_regs_q'LENGTH THEN
+                mmio_read_data_q0    <= afu_regs_q(mmio_read_reg_offset_q);
+                mmio_read_datapar_q0 <= afu_regs_par_q(mmio_read_reg_offset_q);
+              ELSE
+                -- invalid address
+                non_fatal_master_rd_errors_q(NFE_INV_RD_ADDRESS) <= mmio_read_master_access_q;
+                non_fatal_slave_rd_errors_q(NFE_INV_RD_ADDRESS)  <= NOT mmio_read_master_access_q;
+              END IF;
+
             WHEN OTHERS =>
               -- invalid address
               non_fatal_master_rd_errors_q(NFE_INV_RD_ADDRESS) <= mmio_read_master_access_q;
@@ -430,8 +445,19 @@ BEGIN
       IF afu_reset = '1' THEN
         --
         --reset registers
+        afu_regs_q                      <= (OTHERS => (OTHERS => '0'));
+        afu_regs_par_q                  <= (OTHERS => '1');
+        afu_regs_q(IMP_VERSION_REG)     <= IMP_VERSION_DAT;
+        afu_regs_par_q(IMP_VERSION_REG) <= parity_gen_odd(IMP_VERSION_DAT);
+        afu_regs_q(BUILD_DATE_REG)      <= BUILD_DATE_DAT;
+        afu_regs_par_q(BUILD_DATE_REG)  <= parity_gen_odd(BUILD_DATE_DAT);
+
         dbg_regs_q                      <= (OTHERS => (OTHERS => '0'));
         dbg_regs_par_q                  <= (OTHERS => '1');
+        dbg_regs_q(14)                  <= IMP_VERSION_DAT;
+        dbg_regs_par_q(14)              <= parity_gen_odd(IMP_VERSION_DAT);
+        dbg_regs_q(15)                  <= BUILD_DATE_DAT;
+        dbg_regs_par_q(15)              <= parity_gen_odd(BUILD_DATE_DAT);
 
         mm_e_q.wr_data_parity_err       <= '0';
 
@@ -445,6 +471,8 @@ BEGIN
         -- default
         dbg_regs_q                      <= dbg_regs_q;
         dbg_regs_par_q                  <= dbg_regs_par_q;
+        afu_regs_q                      <= afu_regs_q;
+        afu_regs_par_q                  <= afu_regs_par_q;
 
         mm_e_q.wr_data_parity_err       <= '0';
 
@@ -488,12 +516,6 @@ BEGIN
         -- MMIO READ
         -- valid write request that is not targeting the action
         --
-        dbg_regs_q(14)     <= IMP_VERSION_DAT;
-        dbg_regs_par_q(14) <= parity_gen_odd(IMP_VERSION_DAT);
-        dbg_regs_q(15)     <= APP_VERSION_DAT;
-        dbg_regs_par_q(15) <= parity_gen_odd(APP_VERSION_DAT);
-
-        
         IF (mmio_write_access_q AND NOT mmio_write_action_access_q) = '1' THEN
           CASE to_integer(unsigned(ha_mm_w_q.ad(13 DOWNTO 5))) IS
 --            --

@@ -197,11 +197,15 @@ PACKAGE donut_types IS
   CONSTANT DEBUG_REG_BASE             : integer := 16#002#;  -- 0x0100
 
   -- Register offset (bits 4 downto 1 of the address - note: bit 0 of addr is always '0')
---  CONSTANT FIRREG_CTRL_MGR  --          : integer := 16#0#;
---  CONSTANT FIRREG_JOB_MGR   --          : integer := 16#1#;
---  CONSTANT FIRREG_MMIO      --          : integer := 16#2#;
---  CONSTANT FIRREG_DMA       --          : integer := 16#3#;
---  CONSTANT MAX_FIR_REG      --          : integer := 16#3#;
+  CONSTANT IMP_VERSION_REG            : integer := 16#0#;
+  CONSTANT BUILD_DATE_REG             : integer := 16#1#;
+  CONSTANT AFU_CMD_REG                : integer := 16#3#;
+  CONSTANT MAX_AFU_REG                : integer := 16#3#;
+--  CONSTANT FIRREG_CTRL_MGR            : integer := 16#0#;
+--  CONSTANT FIRREG_JOB_MGR             : integer := 16#1#;
+--  CONSTANT FIRREG_MMIO                : integer := 16#2#;
+--  CONSTANT FIRREG_DMA                 : integer := 16#3#;
+--  CONSTANT MAX_FIR_REG                : integer := 16#3#;
 
   -- Specific bits of selected registers
   CONSTANT NFE_L                      : integer := 23;     -- DDCBQ_STAT_REG
