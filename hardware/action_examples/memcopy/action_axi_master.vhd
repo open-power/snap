@@ -227,10 +227,11 @@ axi_w:	process(M_AXI_ACLK)
                  axi_awvalid       <= '0';
                  wr_req_wait_cycle <= '1';
                end if;
-               if dma_wr_data_last_i = '1' then
+--               if dma_wr_data_last_i = '1' then
                    axi_bready    <= '1';
-               end if;
-               if axi_bready = '1' and M_AXI_BVALID = '1' then
+--               end if;
+--               if axi_bready = '1' and M_AXI_BVALID = '1' then
+               if M_AXI_BVALID = '1' then
                  axi_bready     <= '0';
                  dma_wr_done_o  <= '1';
                end if;

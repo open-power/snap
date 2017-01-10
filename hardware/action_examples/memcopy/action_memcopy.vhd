@@ -183,7 +183,7 @@ architecture action_memcopy of action_memcopy is
 
 
         type   fsm_app_t    is (IDLE, JUST_COUNT_DOWN, WAIT_FOR_MEMCOPY_DONE);
-        type   fsm_copy_t    is (IDLE, PROCESS_REQUESTS, WAIT_FOR_WRITE_DONE);
+        type   fsm_copy_t   is (IDLE, PROCESS_REQUESTS, WAIT_FOR_WRITE_DONE);
 
         signal fsm_app_q        : fsm_app_t;
         signal fsm_copy_q       : fsm_copy_t;
@@ -200,7 +200,6 @@ architecture action_memcopy of action_memcopy is
         signal app_idle         : std_logic;
         signal counter          : std_logic_vector( 7 downto 0);
         signal counter_q        : std_logic_vector(31 downto 0);
-        signal blocks_to_copy   : std_logic_vector(31 downto 6);
         signal mem_wr           : std_logic;                                             -- only for DDR3_USED=TRUE
         signal mem_wr_addr      : std_logic_vector(  7 downto 0);                        -- only for DDR3_USED=TRUE
         signal mem_rd_addr      : std_logic_vector(  7 downto 0);                        -- only for DDR3_USED=TRUE
@@ -250,7 +249,12 @@ architecture action_memcopy of action_memcopy is
 
         signal blocks_to_write   : std_logic_vector(31 downto 0);
         signal blocks_to_read    : std_logic_vector(31 downto 0);
+        signal first_max_blk_r   : std_logic_vector(31 downto 0);
+        signal first_blk_r       : std_logic_vector(31 downto 0);
+        signal first_max_blk_w   : std_logic_vector(31 downto 0);
+        signal first_blk_w       : std_logic_vector(31 downto 0);
         signal write_counter_up  : std_logic_vector(25 downto 0);
+        signal total_write_count : std_logic_vector(25 downto 0);
         signal write_counter_dn  : std_logic_vector(25 downto 0);
         signal head              : integer range 0 to 2;
         signal tail              : integer range 0 to 2;
@@ -267,6 +271,8 @@ architecture action_memcopy of action_memcopy is
         signal wr_req_ack        : std_logic;
         signal rd_requests_done  : std_logic;
         signal wr_requests_done  : std_logic;
+        signal rd_addr_adder     : std_logic_vector(15 downto 0);
+        signal wr_addr_adder     : std_logic_vector(15 downto 0);
 
 
 
@@ -605,25 +611,40 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
                 when IDLE =>
                   wr_req_count     <= 0;
                   wr_done_count    <= 0;
-                  blocks_to_read   <= "000000" & reg_0x24(31 downto 6);
-                  blocks_to_write  <= "000000" & reg_0x24(31 downto 6);
+                  blocks_to_read   <= "000000"   & reg_0x24(31 downto 6);
+                  blocks_to_write  <= "000000"   & reg_0x24(31 downto 6);
+                  first_max_blk_r  <= x"0000_00" & (x"40" - reg_0x14(11 downto 6));
+                  first_max_blk_w  <= x"0000_00" & (x"40" - reg_0x1c(11 downto 6));
+                  if first_max_blk_r < blocks_to_read then
+                    first_blk_r      <= first_max_blk_r;
+                  else
+                    first_blk_r      <= blocks_to_read;
+                  end if;
+                  if first_max_blk_w < blocks_to_read then
+                    first_blk_w      <= first_max_blk_w;
+                  else
+                    first_blk_w      <= blocks_to_write ;
+                  end if;
                   rd_addr          <= reg_0x18 & reg_0x14;
                   wr_addr          <= reg_0x20 & reg_0x1c;
                   rd_requests_done <= '0';
                   wr_requests_done <= '0';
+                  rd_len          <= first_blk_r (7 downto 0) - '1';
+                  wr_len          <= first_blk_w (7 downto 0) - '1';
+                  
+                  rd_addr_adder   <= x"1000" - (reg_0x14(11 downto 6) & (5 downto 0 =>'0')); 
+                  wr_addr_adder   <= x"1000" - (reg_0x1c(11 downto 6) & (5 downto 0 =>'0'));
                   if start_copy = '1' then
-                    if blocks_to_write >  x"0000_0040" then
-                      rd_len     <= x"3f";
-                      wr_len     <= x"3f";
-                      blocks_to_read  <= blocks_to_read - x"40";
-                      blocks_to_write <= blocks_to_write - x"40";
-                    else
-                      rd_len          <= blocks_to_read (7 downto 0) - '1';
-                      wr_len          <= blocks_to_write(7 downto 0) - '1';
-                      blocks_to_read  <= (others => '0');
-                      blocks_to_write <= (others => '0');
-                    end if;
+            --        if blocks_to_write >  x"0000_0040" then
+            --        rd_len          <= x"3f";
+            --        wr_len          <= x"3f";
+            --        blocks_to_read  <= blocks_to_read - x"40";
+            --        blocks_to_write <= blocks_to_write - x"40";
+            --        else
 
+            --       end if;
+                    blocks_to_read  <= blocks_to_read  -first_blk_r (7 downto 0) ;
+                    blocks_to_write <= blocks_to_write -first_blk_w (7 downto 0) ;
                     -- request data either from host or
                     dma_rd_req <= src_host;
                     ddr_rd_req <= src_ddr;                                               -- only for DDR3_USED=TRUE
@@ -636,7 +657,8 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
 
 
                   if rd_req_ack = '1' and or_reduce(blocks_to_read) = '1' then
-                    rd_addr          <= rd_addr + x"1000";
+                    rd_addr          <= rd_addr + rd_addr_adder;
+                    rd_addr_adder    <= x"1000";
                     dma_rd_req       <= src_host;
                     ddr_rd_req       <= src_ddr;                                         -- only for DDR3_USED=TRUE
                     if blocks_to_read >  x"0000_0040" then
@@ -654,7 +676,8 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
                   end if;
 
                   if wr_req_ack = '1' and or_reduce(blocks_to_write) = '1' then
-                    wr_addr         <= wr_addr + x"1000";
+                    wr_addr         <= wr_addr + wr_addr_adder;
+                    wr_addr_adder   <= x"1000";
                     dma_wr_req      <= dest_host;
                     ddr_wr_req      <= dest_ddr;                                         -- only for DDR3_USED=TRUE
                     if blocks_to_write >  x"0000_0040" then
@@ -713,16 +736,17 @@ read_write_process:
       if (rising_edge (action_clk)) then
             if start_copy = '1' or action_rst_n = '0' then
 
-              tail             <= 0;
-              head             <= 0;
-              reg0_valid       <= '0';
-              reg0_data        <= dma_rd_data;    -- assigning reset value in order to get around 'partial antenna' problems
-              reg1_valid       <= '0';
-              reg1_data        <= dma_rd_data;    -- assigning reset value in order to get around 'partial antenna' problems
-              reg2_valid       <= '0';
-              reg2_data        <= dma_rd_data;    -- assigning reset value in order to get around 'partial antenna' problems
-              write_counter_up <= (25 downto 1 => '0') & '1';
-              write_counter_dn <= blocks_to_write(25 downto 0);
+              tail              <= 0;
+              head              <= 0;
+              reg0_valid        <= '0';
+	      reg0_data         <= dma_rd_data;   -- assigning reset value in order to get around 'partial antenna' problems
+              reg1_valid        <= '0';
+	      reg1_data        <= dma_rd_data;    -- assigning reset value in order to get around 'partial antenna' problems
+              reg2_valid        <= '0';
+	      reg2_data        <= dma_rd_data;    -- assigning reset value in order to get around 'partial antenna' problems
+              total_write_count <=(25 downto 1 => '0') & '1';
+              write_counter_up  <=(25 downto 0 => '0' ) + reg_0x1c(11 downto 6) + 1;
+              write_counter_dn  <= blocks_to_write(25 downto 0);
             else
               if head = 0 and reg0_valid = '0' then
                 if src_host = '1' then
@@ -777,8 +801,9 @@ read_write_process:
             if (dma_wr_data_valid = '1' and dma_wr_ready = '1' and dest_host = '1')
                or (ddr_wr_data_valid = '1' and ddr_wr_ready = '1' and dest_ddr  = '1')   -- only for DDR3_USED=TRUE
             then
-              write_counter_up <= write_counter_up + '1';
-              write_counter_dn <= write_counter_dn - '1';
+              total_write_count <= total_write_count + '1';
+              write_counter_up  <= write_counter_up  + '1';
+              write_counter_dn  <= write_counter_dn  - '1';
               if tail = 0 then
                 tail <= 1;
                 reg0_valid <= '0';
@@ -798,7 +823,7 @@ read_write_process:
 
 write_data_process:
   process(reg0_data, reg1_data, reg2_data, reg0_valid, reg1_valid, reg2_valid,
-          write_counter_up, reg_0x24,
+          write_counter_up, total_write_count, reg_0x24,
           dest_ddr,                                                                      -- only for DDR3_USED=TRUE
           dest_host, tail  ) is
     begin
@@ -816,7 +841,7 @@ write_data_process:
           dma_wr_data_valid <= reg2_valid and dest_host;
           ddr_wr_data_valid <= reg2_valid and dest_ddr;                                  -- only for DDR3_USED=TRUE
       end case;
-      if (write_counter_up(25 downto 0) = reg_0x24(31 downto 6)) or
+      if (total_write_count(25 downto 0) = reg_0x24(31 downto 6)) or
           or_reduce(write_counter_up(5 downto 0)) = '0'                 then
         dma_wr_data_last <= '1' and dest_host;
         ddr_wr_data_last <= '1' and dest_ddr;                                            -- only for DDR3_USED=TRUE

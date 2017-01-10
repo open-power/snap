@@ -231,6 +231,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL rfifo_rd_rst_busy      : std_ulogic;
   SIGNAL rfifo_rdata            : std_ulogic_vector(512 DOWNTO 0);
   SIGNAL rfifo_wr_rst_busy      : std_ulogic;
+  SIGNAL rfifo_wr_in_process_q  : std_ulogic_vector(1 DOWNTO 0);
   SIGNAL rsp_rtag_next_q        : std_ulogic_vector(  5 DOWNTO  0);
   SIGNAL rsp_rtag_p_q           : std_ulogic;
   SIGNAL rsp_rtag_q             : std_ulogic_vector(  5 DOWNTO  0);
@@ -248,7 +249,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL waddr_p_q              : std_ulogic;
   SIGNAL waddr_q                : std_ulogic_vector( 63 DOWNTO  7);
   SIGNAL wclen_q                : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL wr_id_valid_q            : std_ulogic;
+  SIGNAL wr_id_valid_q          : std_ulogic;
   SIGNAL write_ctrl_fsm_q       : WRITE_CTRL_FSM_T;
   SIGNAL write_ctrl_q           : ARR_DMA_CTL_T;
   SIGNAL write_ctrl_q_err_q     : std_ulogic_vector( 31 DOWNTO  0);
@@ -561,8 +562,12 @@ BEGIN
 
               IF buf_active_v = FALSE THEN
                 read_fsm_req_q <= NONE;
-                
-                IF rfifo_empty = '1' THEN
+
+                --
+                -- 
+                -- 
+                IF (rfifo_empty           = '1') AND
+                   (rfifo_wr_in_process_q = "00") THEN
                   read_ctrl_fsm_q <= ST_IDLE;
                 END IF;
               END IF;
@@ -1939,18 +1944,6 @@ BEGIN
   -- DMA ALIGNER
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
-    --512 bypass aligner for the first 512 version
-    --aln_rdata       <= buf_rdata;
-    --aln_rdata_p     <= buf_rdata_p;
-    --aln_rdata_v     <= buf_rdata_vld;
-    --aln_rdata_e     <= buf_rdata_e_q;
-    --                 
-    --aln_wdata       <=  sd_d_i.wr_data;
-    --aln_wdata_p     <=  (OTHERS => '0');
-    --aln_wdata_be    <=  sd_d_i.wr_strobe;
-    --aln_wdata_v     <=  or_reduce(sd_d_i.wr_strobe);
-    --aln_wdata_flush <=  sd_d_i.wr_last;
-    
     dma_aligner: ENTITY work.dma_aligner
     PORT MAP (
       --
@@ -2385,6 +2378,12 @@ BEGIN
            force_rfifo_empty_q <= '0';
           END IF;
         END IF;
+
+        --
+        -- force empty logic
+        --
+        rfifo_wr_in_process_q(1 DOWNTO 0) <= rfifo_wr_in_process_q(0) & buf_rdata_vld; 
+
       END IF;
     END PROCESS registers;
 
