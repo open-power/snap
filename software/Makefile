@@ -56,8 +56,7 @@ ifdef BUILD_SIMCODE
 lib: ..check_pslse
 
 ..check_pslse:
-	@echo "PSLSE_ROOT is $(PSLSE_ROOT)"; 				\
-	if [ ! -f $(PSLSE_ROOT)/libcxl/libcxl.h ]; then			\
+	@if [ ! -f $(PSLSE_ROOT)/libcxl/libcxl.h ]; then		\
 		echo "Please install pslse in $(PSLSE_ROOT)";		\
 		echo "  use: git clone https://github.com/ibm-capi/pslse";\
 		echo;							\
