@@ -11,7 +11,7 @@ All issues should have one of the labels
 The default is normal priority. Add the `blocker` or `nice to have` labels for highest or lower priority.
 
 After opening an issue, assign it to people to work on, preferrably a single person. 
-Once the assigned person has reviewed the issue, they can assign the "in progress" label to show that they are working on the issue.
+Once the assigned person has reviewed the issue, they can assign the `in progress` label to show that they are working on the issue.
 After fixing the issue, assign the `verify` label to indicate that the fix is ready for testing. Once testing completed successfully, the tester or originator of the issue close the issue again.
 In some cases the issue may be rejected because it is `invalid`, a `duplicate` of another issue, or it was decided `wont fix`, and closed.
 
