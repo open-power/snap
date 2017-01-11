@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -308,6 +308,11 @@ int main(int argc, char *argv[])
 #endif
 
 	gettimeofday(&stime, NULL);
+
+	if (verbose_flag) {
+		pr_info("Job Input:\n");
+		__hexdump(stderr, &jin, sizeof(jin));
+	}
 
 	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
 	if (rc != 0) {
