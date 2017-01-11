@@ -14,10 +14,9 @@ if ([ "$NAME" == "psl_accel_sim.vhd" ] || [ "$NAME" == "psl_accel_syn.vhd" ]); t
 fi
 
 if [ "$NAME" == "mmio.vhd"  ]; then
-  SNAP_VERSION=`git describe --tag | sed 's/.*\([0-9][0-9]*\)\.\([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\1 \2 \3/' | awk '{printf("%02X_%02X%02X\n",$1,$2,$3) }'`
-  GIT_DIRTY="00"`git describe --tag --dirty=FF | sed -n 's/.*FF$/FF/p'`
-  GIT_DIRTY=`echo $GIT_DIRTY | sed 's/00FF/FF/'`
+  SNAP_RELEASE=`git describe --tags --match v[0-9]*.[0-9]*.[0-9]* | sed 's/.*\([0-9][0-9]*\)\.\([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\1 \2 \3/' | awk '{printf("%02X%02X_%02X\n",$1,$2,$3)}'`
+  GIT_DIST=`git describe --tags --match v[0-9]*.[0-9]*.[0-9]* | awk '{printf("%s-0\n",$1)}' | sed 's/.*\.[0-9][0-9]*-\([0-9][0-9]*\).*/\1/' | awk '{printf("%02X\n",$1)}'`
   GIT_SHA=`git log -1 --format="%H" | cut -c 1-4 | sed y/abcdef/ABCDEF/`"_"`git log -1 --format="%H" | cut -c 5-8 | sed y/abcdef/ABCDEF/`
   sed -i '/ IMP_VERSION_DAT[ ^I]*:[ ^I]std_ulogic_vector/ c\
-    IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0) := x\"'$GIT_DIRTY$SNAP_VERSION'_'$GIT_SHA'\";' $1/$2
+    IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0) := x\"'$SNAP_RELEASE$GIT_DIST'_'$GIT_SHA'\";' $1/$2
 fi
