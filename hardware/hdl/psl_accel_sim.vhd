@@ -711,7 +711,7 @@ ARCHITECTURE afu OF afu IS
   SIGNAL c1_ddr3_ras_n              : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
   SIGNAL c1_ddr3_reset_n            : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
   SIGNAL c1_ddr3_we_n               : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
-  SIGNAL refclk200_p                : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
+  SIGNAL refclk200_p                : STD_LOGIC:= '0';                                                       -- only for DDR3_USED=TRUE
   SIGNAL refclk200_n                : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
   SIGNAL c1_ddr3_ui_clk             : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
   SIGNAL c1_ddr3_ui_clk_sync_rst    : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
