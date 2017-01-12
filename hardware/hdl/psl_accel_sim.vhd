@@ -23,6 +23,8 @@ USE ieee.std_logic_1164.ALL;
 USE work.std_ulogic_function_support.ALL;
 USE work.std_ulogic_support.ALL;
 USE work.std_ulogic_unsigned.ALL;
+library unisim;
+use unisim.vcomponents.all;
 
 USE work.psl_accel_types.ALL;
 USE work.ddr3_sdram_pkg.ALL;                                                             -- only for DDR3_USED=TRUE
@@ -587,6 +589,7 @@ ARCHITECTURE afu OF afu IS
   CONSTANT usodimm_part : usodimm_part_t :=  OWN_W16ESB8G8M; --choice(mig_ranks = 2, W16ESB8G8M, W16ESB8G8M_AS_1_RANK);    -- only for DDR3_USED=TRUE
 
   CONSTANT sys_clk_period : time := 2.5 ns;                                                                                -- only for DDR3_USED=TRUE
+  CONSTANT ref_clk_period : time := 5.0 ns;                                                                                -- only for DDR3_USED=TRUE
 
   --
   -- SIGNALS
@@ -595,6 +598,7 @@ ARCHITECTURE afu OF afu IS
   SIGNAL action_reset               : STD_ULOGIC;
   SIGNAL action_reset_n_q           : STD_ULOGIC;
   SIGNAL action_reset_q             : STD_ULOGIC;
+  SIGNAL action_reset_qq            : STD_ULOGIC;
   SIGNAL xk_d                       : XK_D_T;
   SIGNAL kx_d                       : KX_D_T;
   SIGNAL sk_d                       : SK_D_T;
@@ -707,6 +711,8 @@ ARCHITECTURE afu OF afu IS
   SIGNAL c1_ddr3_ras_n              : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
   SIGNAL c1_ddr3_reset_n            : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
   SIGNAL c1_ddr3_we_n               : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
+  SIGNAL refclk200_p                : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
+  SIGNAL refclk200_n                : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
   SIGNAL c1_ddr3_ui_clk             : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
   SIGNAL c1_ddr3_ui_clk_sync_rst    : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
   SIGNAL c1_ddr3_aresetn            : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
@@ -729,30 +735,48 @@ ARCHITECTURE afu OF afu IS
   SIGNAL c1_ddr3_s_axi_ctrl_rresp   : STD_LOGIC_VECTOR(1 DOWNTO 0);                                          -- only for DDR3_USED=TRUE
   SIGNAL c1_ddr3_interrupt          : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
 
+  SIGNAL refclk200_ibuf             : std_logic;                                                             -- only for DDR3_USED=TRUE   
+  signal ddr3_reset_m               : std_logic;                                                             -- only for DDR3_USED=TRUE
 
 BEGIN
   action_reset_reg : PROCESS (ha_pclock)
   BEGIN
     IF (rising_edge(ha_pclock)) THEN
       action_reset_q   <=     action_reset;
+      action_reset_qq  <=     action_reset_q;
       action_reset_n_q <= NOT action_reset;
     END IF;
   END PROCESS action_reset_reg;
 
-  ddr3_reset : PROCESS (ha_pclock)                                                       -- only for DDR3_USED=TRUE
-  BEGIN  -- PROCESS                                                                      -- only for DDR3_USED=TRUE
-    IF (rising_edge(ha_pclock)) THEN                                                     -- only for DDR3_USED=TRUE
-      IF ((action_reset   = '1') OR                                                      -- only for DDR3_USED=TRUE
-          (action_reset_q = '1')) THEN                                                   -- only for DDR3_USED=TRUE
-        ddr3_reset_q   <= '1';                                                           -- only for DDR3_USED=TRUE
-        ddr3_reset_n_q <= '0';                                                           -- only for DDR3_USED=TRUE
-      ELSE                                                                               -- only for DDR3_USED=TRUE
-        ddr3_reset_q   <= '0';                                                           -- only for DDR3_USED=TRUE
-        ddr3_reset_n_q <= '1';                                                           -- only for DDR3_USED=TRUE
-      END IF;                                                                            -- only for DDR3_USED=TRUE
-    END IF;                                                                              -- only for DDR3_USED=TRUE
-  END PROCESS ddr3_reset;                                                                -- only for DDR3_USED=TRUE
 
+
+  ddr3_reset : PROCESS (refclk200_ibuf)          -- only for DDR3_USED=TRUE         
+  BEGIN  -- PROCESS                              -- only for DDR3_USED=TRUE
+    IF (rising_edge(refclk200_ibuf)) THEN        -- only for DDR3_USED=TRUE
+      IF ((action_reset   = '1') OR              -- only for DDR3_USED=TRUE
+          (action_reset_q = '1') or              -- only for DDR3_USED=TRUE
+          (action_reset_qq= '1')) THEN           -- only for DDR3_USED=TRUE
+        ddr3_reset_m <= '1';                     -- only for DDR3_USED=TRUE
+      ELSE                                       -- only for DDR3_USED=TRUE
+        ddr3_reset_m <= '0';                     -- only for DDR3_USED=TRUE
+      END IF;                                    -- only for DDR3_USED=TRUE
+                                                 -- only for DDR3_USED=TRUE
+      ddr3_reset_q   <=     ddr3_reset_m;        -- only for DDR3_USED=TRUE
+      ddr3_reset_n_q <= NOT ddr3_reset_m;        -- only for DDR3_USED=TRUE
+    END IF;                                      -- only for DDR3_USED=TRUE
+  END PROCESS ddr3_reset;                        -- only for DDR3_USED=TRUE
+                                                 -- only for DDR3_USED=TRUE
+                                                 -- only for DDR3_USED=TRUE
+  ibuf_refclk200 : IBUFGDS                       -- only for DDR3_USED=TRUE
+  port map(                                      -- only for DDR3_USED=TRUE
+    I  => refclk200_p,                           -- only for DDR3_USED=TRUE
+    IB => refclk200_n,                           -- only for DDR3_USED=TRUE
+    O => refclk200_ibuf                          -- only for DDR3_USED=TRUE
+  );                                             -- only for DDR3_USED=TRUE
+                                                 
+                                                
+                                                 
+  
   --                                                                                     -- only for DDR3_USED=TRUE
   --                                                                                     -- only for DDR3_USED=TRUE
   --                                                                                     -- only for DDR3_USED=TRUE
@@ -1033,6 +1057,8 @@ BEGIN
   --                                                                                     -- only for DDR3_USED=TRUE
   c1_sys_clk_p <= TRANSPORT NOT c1_sys_clk_p AFTER sys_clk_period / 2;                   -- only for DDR3_USED=TRUE
   c1_sys_clk_n <= NOT c1_sys_clk_p;                                                      -- only for DDR3_USED=TRUE
+  refclk200_p  <= TRANSPORT NOT refclk200_p AFTER ref_clk_period / 2;                    -- only for DDR3_USED=TRUE
+  refclk200_n <= NOT refclk200_p;                                                        -- only for DDR3_USED=TRUE
 
   c1_ddr3_s_axi_ctrl_awvalid   <= '0';                                                   -- only for DDR3_USED=TRUE
   c1_ddr3_s_axi_ctrl_awaddr    <= (OTHERS => '0');                                       -- only for DDR3_USED=TRUE

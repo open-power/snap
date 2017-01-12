@@ -1,6 +1,6 @@
-*** ./Sources/top/psl_fpga.vhdl 2016-07-29 10:30:30.000000002 +0200
---- ./Sources/top/psl_fpga.vhdl 2016-10-12 08:20:34.000000002 +0200
-***************
+*** ./Sources/top/psl_fpga.vhdl	2016-07-29 10:30:30.000000002 +0200
+--- ./Sources/top/psl_fpga.vhdl	2017-01-12 14:32:43.000000002 +0100
+*************** ENTITY psl_fpga IS
 *** 59,66 ****
          pci0_o_txn_out6: out std_logic;
          pci0_o_txp_out7: out std_logic;
@@ -10,7 +10,7 @@
          attribute secure_config : string;
          attribute secure_config of psl_fpga : entity is "PROTECT";
          attribute secure_netlist : string;       
---- 59,107 ----
+--- 59,108 ----
          pci0_o_txn_out6: out std_logic;
          pci0_o_txp_out7: out std_logic;
          pci0_o_txn_out7: out std_logic;
@@ -20,7 +20,8 @@
 +        -- connected to Xilinx memory controllers
 + --       user_sw_l          : in    std_logic;
 + --       led_l              : out   std_logic_vector(2 downto 0);
-+ 
++        refclk200_p        : in      std_logic;
++        refclk200_n        : in      std_logic;
 +        c0_sys_clk_p       : IN STD_LOGIC;
 +        c0_sys_clk_n       : IN STD_LOGIC;
 +        c0_ddr3_addr       : out   std_logic_vector(15 downto 0);
@@ -36,7 +37,7 @@
 +        c0_ddr3_dm         : out   std_logic_vector(8 downto 0);
 +        c0_ddr3_dq         : inout std_logic_vector(71 downto 0);
 +        c0_ddr3_dqs_p      : inout std_logic_vector(8 downto 0);
-+        c0_ddr3_dqs_n      : inout std_logic_vector(8 downto 0);
++        c0_ddr3_dqs_n      : inout std_logic_vector(8 downto 0); 
 +        c0_ddr3_odt        : out   std_logic_vector(1 downto 0);
 + 
 +        c1_sys_clk_p       : IN STD_LOGIC;
@@ -60,7 +61,7 @@
          attribute secure_config : string;
          attribute secure_config of psl_fpga : entity is "PROTECT";
          attribute secure_netlist : string;       
-***************
+*************** Component psl_accel
 *** 143,149 ****
          ha_jeapar: in std_ulogic;
          ha_jcompar: in std_ulogic;
@@ -69,7 +70,7 @@
   End Component psl_accel;
   
   Component base_img
---- 182,229 ----
+--- 185,234 ----
          ha_jeapar: in std_ulogic;
          ha_jcompar: in std_ulogic;
          ah_paren: out std_ulogic;
@@ -79,6 +80,8 @@
 !        -- connected to Xilinx memory controllers
 ! --       user_sw_l          : in    std_logic;
 ! --       led_l              : out   std_logic_vector(2 downto 0);
+!        refclk200_p        : in      std_logic;
+!        refclk200_n        : in      std_logic;
 !        c0_sys_clk_p       : IN STD_LOGIC;
 !        c0_sys_clk_n       : IN STD_LOGIC;
 !        c0_ddr3_addr       : out   std_logic_vector(15 downto 0);
@@ -118,7 +121,7 @@
   End Component psl_accel;
   
   Component base_img
-***************
+*************** begin
 *** 377,383 ****
            ha_jeapar => ha0_jeapar,
            ha_jcompar => ha0_jcompar,
@@ -127,12 +130,14 @@
       );
   
       gold_factory <= '1'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
---- 455,497 ----
+--- 462,506 ----
            ha_jeapar => ha0_jeapar,
            ha_jcompar => ha0_jcompar,
            ah_paren => a0h_paren,
 !          ha_pclock => ha0_pclock,
 ! 
+!          refclk200_n     => refclk200_n,
+!          refclk200_p     => refclk200_p,
 !          c0_sys_clk_p    => c0_sys_clk_p,
 !          c0_sys_clk_n    => c0_sys_clk_n,
 !          c0_ddr3_addr    => c0_ddr3_addr,
