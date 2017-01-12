@@ -264,7 +264,7 @@ static int hash_join(table1_t *table1, table2_t *table2, table3_t *table3,
 		ht_set(h, t1->name, t1);
 	}
 
-	ht_dump(h);
+	/* ht_dump(h); */
 
 	table3_init(table3_idx);
 	for (i = 0; i < TABLE2_SIZE; i++) {
