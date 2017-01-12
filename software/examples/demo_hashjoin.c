@@ -52,7 +52,7 @@ static const char *version = GIT_VERSION;
  *           ("Alan", "Zombies"),
  *           ("Glory", "Buffy")]
  */
-static table1_t t1[TABLE1_SIZE] __attribute__((aligned(64))) = {
+static table1_t t1[TABLE1_SIZE] __attribute__((aligned(HASHJOIN_ALIGN))) = {
 	{ /* .name = */ "Jonah",  /* .age = */ 27, { 0x0, } },
 	{ /* .name = */ "Alan",   /* .age = */ 18, { 0x0, } },
 	{ /* .name = */ "Glory",  /* .age = */ 28, { 0x0, } },
@@ -81,7 +81,7 @@ static table1_t t1[TABLE1_SIZE] __attribute__((aligned(64))) = {
  * in table1, since we do not want to transfer empty entries over the
  * PCIe bus to the card.
  */
-static table2_t t2[TABLE2_SIZE] __attribute__((aligned(64))) = {
+static table2_t t2[TABLE2_SIZE] __attribute__((aligned(HASHJOIN_ALIGN))) = {
 	{ /* .name = */ "Jonah", /* .animal = */ "Whales"   },
 	{ /* .name = */ "Jonah", /* .animal = */ "Spiders"  },
 	{ /* .name = */ "Alan",  /* .animal = */ "Ghosts"   },
