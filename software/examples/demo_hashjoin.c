@@ -52,7 +52,6 @@ static const char *version = GIT_VERSION;
  *           ("Alan", "Zombies"),
  *           ("Glory", "Buffy")]
  */
-<<<<<<< HEAD
 static table1_t t1[TABLE1_SIZE] __attribute__((aligned(HASHJOIN_ALIGN))) = {
 	{ /* .name = */ "Jonah",  /* .age = */ 27, { 0x0, } },
 	{ /* .name = */ "Alan",   /* .age = */ 18, { 0x0, } },
@@ -75,30 +74,6 @@ static table1_t t1[TABLE1_SIZE] __attribute__((aligned(HASHJOIN_ALIGN))) = {
 	{ /* .name = */ "Blong",  /* .age = */ 14, { 0x0, } },
 	{ /* .name = */ "Tiffy",  /* .age = */ 13, { 0x0, } },
 	{ /* .name = */ "Tiffy",  /* .age = */ 12, { 0x0, } },
-=======
-static table1_t t1[TABLE1_SIZE] __attribute__((aligned(64))) = {
-	{ /* .age = */ 27, /* .name = */ "Jonah"  },
-	{ /* .age = */ 18, /* .name = */ "Alan"   },
-	{ /* .age = */ 28, /* .name = */ "Glory"  },
-	{ /* .age = */ 18, /* .name = */ "Popeye" },
-	{ /* .age = */ 28, /* .name = */ "Alan"   },
-	{ /* .age = */ 38, /* .name = */ "Alan"   },
-	{ /* .age = */ 48, /* .name = */ "Alan"   },
-	{ /* .age = */ 58, /* .name = */ "Alan"   },
-	{ /* .age = */ 68, /* .name = */ "Adam"   },
-	{ /* .age = */ 23, /* .name = */ "Anton"  },
-	{ /* .age = */ 24, /* .name = */ "Anton"  },
-	{ /* .age = */ 25, /* .name = */ "Dieter" },
-	{ /* .age = */ 26, /* .name = */ "Joerg"  },
-	{ /* .age = */ 22, /* .name = */ "Thomas" },
-	{ /* .age = */ 20, /* .name = */ "Frank"  },
-	{ /* .age = */ 12, /* .name = */ "Bruno"  },
-	{ /* .age = */ 15, /* .name = */ "Blumi"  },
-	{ /* .age = */ 15, /* .name = */ "Mikey"  },
-	{ /* .age = */ 14, /* .name = */ "Blong"  },
-	{ /* .age = */ 13, /* .name = */ "Tiffy"  },
-	{ /* .age = */ 12, /* .name = */ "Tiffy"  },
->>>>>>> 1abd68c9f1f957269b7b1701dbea23bae11a5181
 };
 
 /*
@@ -106,11 +81,7 @@ static table1_t t1[TABLE1_SIZE] __attribute__((aligned(64))) = {
  * in table1, since we do not want to transfer empty entries over the
  * PCIe bus to the card.
  */
-<<<<<<< HEAD
 static table2_t t2[TABLE2_SIZE] __attribute__((aligned(HASHJOIN_ALIGN))) = {
-=======
-static table2_t t2[TABLE2_SIZE] __attribute__((aligned(64))) = {
->>>>>>> 1abd68c9f1f957269b7b1701dbea23bae11a5181
 	{ /* .name = */ "Jonah", /* .animal = */ "Whales"   },
 	{ /* .name = */ "Jonah", /* .animal = */ "Spiders"  },
 	{ /* .name = */ "Alan",  /* .animal = */ "Ghosts"   },
