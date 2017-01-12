@@ -51,14 +51,15 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 
 $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@echo -e "\t[CREATE] $@"
-# Vivado 2015.4 file_info.txt has a different format than 2016.3. 
-# if 2015.4, else 2016.3
-# FIXME: Hack for 2016 to remove more ../ than really expected. Find out why export_simulation does this in 2016.
+# Vivado 2015.4 file_info.txt has a format different from that in Vivado 2016.3. 
+# 2015.4:
 	@if grep -q 'Language       File-Name' $(PROJECT_COMPILE_LIST); then\
 		cut -d "," -f "1 4 5" $(PROJECT_COMPILE_LIST) | sed 's/, */ /g' | \
 		grep -E "(\/hdl\/|\/action_examples\/)" | \
 		grep -Ev '\/ip\/|action_auto_|viv_project' | sed 's/ ..\// /' | \
 		sed 's/[ ]*$$//' |sed 's/psl_accel_sim/psl_accel_syn/' > $(BUILD_DIR)/Sources/prj/afu.prj;\
+# 2016.3:
+# FIXME: Hack for 2016 to remove more ../ than really expected. Find out why export_simulation does this in 2016.
 	else cut -d "," -f "2 3 4" $(PROJECT_COMPILE_LIST) | sed 's/, */ /g' | \
 		grep -E "(\/hdl\/|\/action_examples\/)" | \
 		grep -Ev '\/ip\/|action_auto_|viv_project' | sed 's/ ..\/..\/..\// /' | \
@@ -102,14 +103,14 @@ image: patch_build_date
 
 clean:
 	@echo -e "\t[CLEAN] build environment";
-	rm -rf  $(BUILD_DIR)
-	rm -rf  $(DONUT_HARDWARE_ROOT)/viv_project
-	rm -rf  $(DONUT_HARDWARE_ROOT)/ip
-	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/ies
-	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/xsim
-	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/questa
-	rm -f   ./*.log
-	rm -f   ./*.jou
+	rm -r -f  $(BUILD_DIR)
+	rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
+	rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
+	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
+	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
+	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
+	rm -f   ./setup/*.log
+	rm -f   ./setup/*.jou
 
 gitclean:
 	@echo -e "\t[GITCLEAN] cleaning donut git";
