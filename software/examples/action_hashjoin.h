@@ -32,6 +32,8 @@ typedef char hashkey_t[64];
 typedef char hashdata_t[256];
 
 /* FIXME Make tables entry size a multiple of 64 bytes */
+#define HASHJOIN_ALIGNMENT 128
+
 typedef struct table1_s {
 	hashkey_t name;         /* 64 bytes */
 	uint32_t age;           /*  4 bytes */
