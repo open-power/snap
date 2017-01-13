@@ -31,20 +31,25 @@
 typedef char hashkey_t[64];
 typedef char hashdata_t[256];
 
+/* FIXME Make tables entry size a multiple of 64 bytes */
+#define HASHJOIN_ALIGN 128
+
 typedef struct table1_s {
-	unsigned int age;
-	hashkey_t name;
+	hashkey_t name;         /* 64 bytes */
+	uint32_t age;           /*  4 bytes */
+	uint8_t reserved[60];   /* 60 bytes */
 } table1_t;
 
 typedef struct table2_s {
-	hashkey_t name;
-	hashkey_t animal;
+	hashkey_t name;         /* 64 bytes */
+	hashkey_t animal;       /* 64 bytes */
 } table2_t;
 
 typedef struct table3_s {
-	hashkey_t animal;
-	hashkey_t name;
-	unsigned int age;
+	hashkey_t animal;       /* 64 bytes */
+	hashkey_t name;         /* 64 bytes */
+	uint32_t age;           /*  4 bytes */
+	uint8_t reserved[60];   /* 60 bytes */
 } table3_t;
 
 typedef struct entry_s {
