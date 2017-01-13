@@ -50,22 +50,22 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 	@mv -f $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
 
 $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
-	@echo -e "\t[CREATE] $@"
+	@echo -e "\t[CREATE] $(BUILD_DIR)/Sources/prj/afu.prj"
 # Vivado 2015.4 file_info.txt has a format different from that in Vivado 2016.3. 
-# 2015.4:
+# if:   2015.4
+# else: 2016.3
+# FIXME: Hack for 2016 to remove more ../ than really expected. Find out why export_simulation does this in 2016.
 	@if grep -q 'Language       File-Name' $(PROJECT_COMPILE_LIST); then\
 		cut -d "," -f "1 4 5" $(PROJECT_COMPILE_LIST) | sed 's/, */ /g' | \
 		grep -E "(\/hdl\/|\/action_examples\/)" | \
 		grep -Ev '\/ip\/|action_auto_|viv_project' | sed 's/ ..\// /' | \
 		sed 's/[ ]*$$//' |sed 's/psl_accel_sim/psl_accel_syn/' > $(BUILD_DIR)/Sources/prj/afu.prj;\
-# 2016.3:
-# FIXME: Hack for 2016 to remove more ../ than really expected. Find out why export_simulation does this in 2016.
 	else cut -d "," -f "2 3 4" $(PROJECT_COMPILE_LIST) | sed 's/, */ /g' | \
 		grep -E "(\/hdl\/|\/action_examples\/)" | \
 		grep -Ev '\/ip\/|action_auto_|viv_project' | sed 's/ ..\/..\/..\// /' | \
 		sed 's/psl_accel_sim/psl_accel_syn/' > $(BUILD_DIR)/Sources/prj/afu.prj;\
 	fi
-	@echo -e "\t[CREATE] $(BUILD_DIR)/Sources/prj/psl_fpga.prj"
+	@echo -e "\t[CREATE] $@"
 	@cat $(BUILD_DIR)/Sources/prj/top.prj $(BUILD_DIR)/Sources/prj/afu.prj > $(BUILD_DIR)/Sources/prj/psl_fpga.prj
 
 	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
