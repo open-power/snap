@@ -92,8 +92,7 @@
      -noaet)		AET=0;;
      -init0)		SIM_INIT='-ncinitialize 0';;
      -initx)		SIM_INIT='-ncinitialize x';;
-     -h) 	printf "Unknown option %s\n" "$1"
-		echo "Usage: $0 -cdemx"
+     -h) 		echo "Usage: $0 -cdemx"
 		echo "  -app "pgm"   : single program (arguments should be passed with -arg)"
 		echo "  -list <file> : handwritten testlist with selected testcases"
 		echo "  -x | xterm   : open xterm for manual testcases(default)"
@@ -448,7 +447,7 @@
  if [ "$LOCAL" == "1" ];then
    PERCUSED=`df -k 2>/dev/null|grep '\/data'|tail -n1|awk '{print $5}'`
  else
-   afs_exist=`df|grep AFS|wc -l`; if [ "$afs_exist" == "1" ];then
+   afs_exist=`df -k 2>/dev/null|grep AFS|wc -l`; if [ "$afs_exist" == "1" ];then
      PERCUSED=`fs lq |tail -n1|awk '{print $4}'`	
    else PERCUSED="N/A";fi
  fi
