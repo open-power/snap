@@ -76,7 +76,7 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	done
 	@if [ $(DDR3_USED) = "TRUE" ]; then echo "PATCH .vhd FILES for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/vhdl.patch; fi
 
-patch_build_date: $(BUILD_DIR)/Sources/prj/psl_fpga.prj
+patch_build_date:
 	@echo "PATCH build date" && MMIO_VHD_FILE=`grep -i "mmio.vhd" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\///'`; \
 	$(DONUT_HARDWARE_ROOT)/setup/patch_build_date.sh $(DONUT_HARDWARE_ROOT) $$MMIO_VHD_FILE
 
