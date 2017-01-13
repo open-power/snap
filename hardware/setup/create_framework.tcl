@@ -28,11 +28,13 @@ set action_dir  $::env(ACTION_ROOT)
 set ddr3_used   $::env(DDR3_USED)
 set bram_used   $::env(BRAM_USED)
 set simulator   $::env(SIMULATOR)
+set vivadoVer [version -short]
 
 puts $root_dir
 puts $pslse_dir
 puts $ies_libs
 puts $build_dir
+puts $vivadoVer
 
 exec rm -rf $root_dir/viv_project
 
@@ -62,9 +64,11 @@ add_files    -fileset sim_1 -norecurse -scan_for_includes $pslse_dir/afu_driver/
 set_property file_type SystemVerilog [get_files  $pslse_dir/afu_driver/verilog/top.v]
 add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/hdl/psl_accel_sim.vhd
 if { $ddr3_used == TRUE } {
-  add_files    -fileset sim_1            -scan_for_includes $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/
-  remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_twindie.vhd
-  remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_lwb.vhd
+  if { $bram_used != TRUE } {
+    add_files    -fileset sim_1            -scan_for_includes $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/
+    remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_twindie.vhd
+    remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_lwb.vhd
+  }
 }
 update_compile_order -fileset sim_1
 
@@ -79,7 +83,6 @@ export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_513x512/fifo_51
 if { $ddr3_used == TRUE } {
   add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci
   export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force -quiet
-
   if { $bram_used == TRUE } {
     add_files -norecurse $root_dir/ip/block_RAM/block_RAM.xci
     export_ip_user_files -of_objects  [get_files "$root_dir/ip/block_RAM/block_RAM.xci"] -force -quiet
@@ -127,14 +130,16 @@ update_compile_order -fileset sources_1
 
 # IMPORT DDR3 XDCs
 if { $ddr3_used == TRUE } {
-#  add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc
-#  set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc]
-#  add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b0_8g_x72ecc.xdc
-#  set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b0_8g_x72ecc.xdc] 
-  add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc
-  set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc]
-  add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc
-  set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc]
+  if { $bram_used != TRUE } {
+#    add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc
+#    set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc]
+#    add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b0_8g_x72ecc.xdc
+#    set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b0_8g_x72ecc.xdc] 
+    add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc
+    set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc]
+    add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc
+    set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc]
+  }
 }
 
 # EXPORT SIMULATION new
@@ -169,13 +174,4 @@ set_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 # SET Bitstream Properties
 set_property STEPS.WRITE_BITSTREAM.ARGS.BIN_FILE true [get_runs impl_1]
-
-if { $ddr3_used == TRUE } {
-  exec sed -i "/DDR3_USED  : BOOLEAN/c\\    DDR3_USED  : BOOLEAN := TRUE" $root_dir/hdl/psl_accel_sim.vhd
-  exec sed -i "/DDR3_USED  : BOOLEAN/c\\    DDR3_USED  : BOOLEAN := TRUE" $root_dir/hdl/psl_accel_syn.vhd
-} else {
-  exec sed -i "/DDR3_USED  : BOOLEAN/c\\    DDR3_USED  : BOOLEAN := FALSE" $root_dir/hdl/psl_accel_sim.vhd
-  exec sed -i "/DDR3_USED  : BOOLEAN/c\\    DDR3_USED  : BOOLEAN := FALSE" $root_dir/hdl/psl_accel_syn.vhd
-}
-
 close_project

@@ -92,7 +92,7 @@ image: patch_build_date
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
 	@echo -e "\t[BUILD IMAGE] done ($(shell date))"
 # FIXME: check if vivado was successful
-	@if [ $(DDR3_USED) = "TRUE" ]; then\
+	@if [ $(DDR3_USED) = "TRUE" ] && [$(BRAM=USED != "TRUE"]; then\
 		cd $(DONUT_HARDWARE_ROOT)/setup && vivado -mode batch -source AR_64051.tcl -notrace;\
 		echo -e "\t[BUILD IMAGE] patch for ar_64051 done ($(shell date))";\
 	else\
