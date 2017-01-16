@@ -1,8 +1,8 @@
 # Recommended directory structure
 
-You need to define 
+You need to define
     the environment variable `FRAMEWORK_ROOT` pointing to your local workspace base
-    
+
 In order to set up the required environment variables for a given `FRAMEWORK_ROOT` you may source the script `./donut_settings`:
 
     . ./donut_settings
@@ -75,7 +75,7 @@ In order to prepare the vivado environment for this project call:
 from within `$DONUT_HARDWARE_ROOT`. Pre-requisite for this is that the environment variables for this project
 are defined (e.g. by sourcing the ./setup/donut_settings script).
 The variable `SIMULATOR` is used to determine for which of the simulators xsim or ncsim
-the environment will be prepared. 
+the environment will be prepared.
 
 If the variable `ACTION_ROOT` is not set the make process will set it to `$DONUT_HARDWARE_ROOT/action_examples/empty`
 containing a dummy action wrapper file that drives zeros on all interfaces.
@@ -116,4 +116,6 @@ Please refer to `$DONUT_HARDWARE_ROOT/Makefile` for more supported targets like 
 You may kick off simulation from within subdirectory sim using the script run_sim.
 For the memcopy example (`ACTION_ROOT=$DONUT_HARDWARE_ROOT/action_examples/memcopy`) call:
 
-    ./run_sim -app "tools/stage2 -a 2"
+    ./run_sim -app tools/stage2 -a2          # -a2 option passed to application by default
+    ./run_sim -app tools/stage2 -a2 -t title # -t is a simulator option
+    ./run_sim -app tools/stage2 -arg "-t"    # force argument being passed to application
