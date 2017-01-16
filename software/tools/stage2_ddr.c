@@ -77,6 +77,31 @@ static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
 static int context_offset = 0;
 
+#define PRINTF0(fmt, ...) do {		\
+		printf(fmt, ## __VA_ARGS__);	\
+	} while (0)
+
+#define PRINTF1(fmt, ...) do {		\
+		if (verbose_level > 0)	\
+			printf(fmt, ## __VA_ARGS__);	\
+	} while (0)
+
+#define PRINTF2(fmt, ...) do {		\
+		if (verbose_level > 1)	\
+			printf(fmt, ## __VA_ARGS__);	\
+	} while (0)
+
+
+#define PRINTF3(fmt, ...) do {		\
+		if (verbose_level > 2)	\
+			printf(fmt, ## __VA_ARGS__);	\
+	} while (0)
+
+#define PRINTF4(fmt, ...) do {		\
+		if (verbose_level > 3)	\
+			printf(fmt, ## __VA_ARGS__);	\
+	} while (0)
+
 static uint64_t get_usec(void)
 {
         struct timeval t;
@@ -87,11 +112,9 @@ static uint64_t get_usec(void)
 
 static void print_time(uint64_t elapsed)
 {
-	if (verbose_level > 0) {
-		if (elapsed > 10000)
-			printf("%d msec\n" ,(int)elapsed/1000);
-		else	printf("%d usec\n", (int)elapsed);
-	}
+	if (elapsed > 10000)
+		PRINTF2("%d msec\n" ,(int)elapsed/1000);
+	else	PRINTF2("%d usec\n", (int)elapsed);
 }
 
 static void memset2(void *a, uint64_t pattern, int size, int mode)
@@ -100,9 +123,8 @@ static void memset2(void *a, uint64_t pattern, int size, int mode)
 	uint64_t *a64 = a;
 	uint32_t *a32 = a;
 
-	if (verbose_level > 2)
-		printf("%s Addr: %p Pattern: 0x%llx Size: 0x%x Mode: %d\n",
-			__func__, a, (long long)pattern, size, mode);
+	PRINTF3("%s Addr: %p Pattern: 0x%llx Size: 0x%x Mode: %d\n",
+		__func__, a, (long long)pattern, size, mode);
 	switch (mode) {
 	case RND_DATA_MODE:
 		for (i = 0; i < size; i+=4) {
@@ -148,9 +170,8 @@ static void memcmp2(void *b0, void *b1, uint64_t pattern, int size, int mode)
 	uint64_t data;		/* Data Value */
 	uint64_t comp = 0;	/* Compare Value */
 
-	if (verbose_level > 2)
-		printf("%s Addr: %p /%p Pattern: 0x%llx Size: 0x%x Mode: %d\n",
-			__func__, b0, b1, (long long)pattern, size, mode);
+	PRINTF3("%s Addr: %p / %p Pattern: 0x%llx Size: 0x%x Mode: %d\n",
+		__func__, b0, b1, (long long)pattern, size, mode);
 	for (i = 0; i < size; i += 8) {
 		data = *a64;	/* Get data */
 		switch (mode) {
@@ -173,7 +194,7 @@ static void memcmp2(void *b0, void *b1, uint64_t pattern, int size, int mode)
 			break;
 		}
 		if (data != comp) {
-			printf("Error@: 0x%016llx Expect: 0x%016llx Read: 0x%016llx\n",
+			PRINTF0("Error@: 0x%016llx Expect: 0x%016llx Read: 0x%016llx\n",
 				(long long)pattern,	/* Address */
 				(long long)comp,	/* What i expect */
 				(long long)data);	/* Waht i got */
@@ -190,11 +211,9 @@ static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
 	int rc;
 
 	addr += context_offset * ACTION_CONTEXT_OFFSET;
-	if (verbose_level > 3)
-		printf("MMIO Write %08x ----> %08x\n", data, addr);
 	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
-		printf("Write MMIO 32 Err\n");
+		PRINTF0("Write MMIO 32 Err\n");
 	return;
 }
 
@@ -206,9 +225,7 @@ static uint32_t action_read(struct dnut_card* h, uint32_t addr)
 	addr += context_offset * ACTION_CONTEXT_OFFSET;
 	rc = dnut_mmio_read32(h, (uint64_t)addr, &data);
 	if (0 != rc)
-		printf("Read MMIO 32 Err\n");
-	if (verbose_level > 3)
-		printf("MMIO Read  %08x ----> %08x\n", addr, data);
+		PRINTF0("Read MMIO 32 Err\n");
 	return data;
 }
 
@@ -232,7 +249,7 @@ static int action_wait_idle(struct dnut_card* h, int timeout_ms, uint64_t *elaps
 		action_data = action_read(h, ACTION_CONTROL);
 		td = get_usec() - t_start;
 		if (td > tout) {
-			printf("Error. Timeout while Waiting for Idle\n");
+			PRINTF0("Error. Timeout while Waiting for Idle\n");
 			rc = ETIME;
 			errno = ETIME;
 			break;
@@ -251,21 +268,22 @@ static void action_memcpy(struct dnut_card* h,
 {
 	uint64_t addr;
 
-	if (verbose_level > 1) {
-		switch (action) {
-		case ACTION_CONFIG_COPY_HD:
-			printf("[Card <- Host]"); break;
-		case ACTION_CONFIG_COPY_DH:
-			printf("[Host <- Card]"); break;
-		case ACTION_CONFIG_COPY_DD:
-			printf("[Card <- Card]"); break;
-		default:
-			printf("Invalid Action\n");
-			return;
-			break;
-		}
-		printf(" memcpy(%p, %p, 0x%8.8lx)\n", dest, src, n);
+	switch (action) {
+	case ACTION_CONFIG_COPY_HD:
+		PRINTF3("[Card <- Host]"); break;
+		break;
+	case ACTION_CONFIG_COPY_DH:
+		PRINTF3("[Host <- Card]"); break;
+		break;
+	case ACTION_CONFIG_COPY_DD:
+		PRINTF3("[Card <- Card]"); break;
+		break;
+	default:
+		PRINTF0("Invalid Action\n");
+		return;
+		break;
 	}
+	PRINTF3(" memcpy(%p, %p, 0x%8.8lx)\n", dest, src, n);
 	action_write(h, ACTION_CONFIG,  action);
 	addr = (uint64_t)dest;
 	action_write(h, ACTION_DEST_LOW, (uint32_t)(addr & 0xffffffff));
@@ -292,15 +310,14 @@ static int check_parms(
 	/* Check */
 	if (ram_start_addr >= ram_end_addr) {
 		errno = EFAULT;
-		printf("FAILED: Start: 0x%llx < End: 0x%llx Address\n",
+		PRINTF0("FAILED: Start: 0x%llx < End: 0x%llx Address\n",
 			(long long)ram_start_addr,
 			(long long)ram_end_addr);
 		return -1;
 	}
-	if ((ram_start_addr + ram_end_addr) > DDR_MEM_SIZE) {
+	if (ram_end_addr > DDR_MEM_SIZE) {
 		errno = EFAULT;
-		printf("FAILED: Start: 0x%llx + End: 0x%llx > Size: 0x%llx\n",
-			(long long)ram_start_addr,
+		PRINTF0("FAILED: End: 0x%llx > Size: 0x%llx\n",
 			(long long)ram_end_addr,
 			(long long)DDR_MEM_SIZE);
 		return -1;
@@ -308,7 +325,7 @@ static int check_parms(
 	ram_mem_size = ram_end_addr - ram_start_addr;
 	if (ram_mem_size < host_mem_size) {
 		errno = EFAULT;
-		printf("FAILED: Size: 0x%llx < Host Buffer: 0x%llx\n",
+		PRINTF0("FAILED: Size: 0x%llx < Host Buffer: 0x%llx\n",
 			(long long)ram_mem_size,
 			(long long)host_mem_size);
 		return -1;
@@ -325,14 +342,13 @@ static int check_parms(
 
 static void ram_test_free(void *buffer)
 {
-	if (verbose_level > 2)
-		printf("Free Host Buffer: %p\n", buffer);
+	PRINTF3("Free Host Buffer: %p\n", buffer);
 	if (buffer)
 		free(buffer);
 }
 
 static int ram_test(struct dnut_card* dnc,
-			int mode,			/* TRUE if Inverse mode */
+			int mode,			/* AD_MODE or NOT_AD_MODE */
 			unsigned int host_mem_size,	/* Size for Host Buffer */
 			void *host_buffer,		/* ptr to Host buffer */
 			uint64_t ram_start_addr,	/* Start of Card Mem */
@@ -345,20 +361,17 @@ static int ram_test(struct dnut_card* dnc,
 
 	rc = -1;
 	ram_blocks = (ram_end_addr - ram_start_addr) / host_mem_size;
-	if (verbose_level > 0) {
-		printf("  Host Buffer Size: 0x%x KU3 ",
-			host_mem_size);
-		printf("Start/End: 0x%llx / 0x%llx Blocks: %d\n",
-			(long long)ram_start_addr,
-			(long long)ram_end_addr,
-			ram_blocks);
-	}
+	PRINTF2("  Host Buffer Size: 0x%x KU3 ",
+		host_mem_size);
+	PRINTF2("Start/End: 0x%llx / 0x%llx Blocks: %d\n",
+		(long long)ram_start_addr,
+		(long long)ram_end_addr,
+		ram_blocks);
 
 	t_sum = 0;
 	card_ram_addr = ram_start_addr;
 	/* Fill DDR3 Memory */
-	if (verbose_level > 0)
-		printf("    Host -> FPGA: ");
+	PRINTF2("    Host -> FPGA: ");
 	for (block = 0; block < ram_blocks; block++) {
 		memset2(host_buffer, card_ram_addr, host_mem_size, mode);
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
@@ -372,8 +385,7 @@ static int ram_test(struct dnut_card* dnc,
 
 	t_sum = 0;
 	/* Read DDR3 Mem Back to host and Check */
-	if (verbose_level > 0)
-		printf("    FPGA -> Host: ");
+	PRINTF2("    FPGA -> Host: ");
 	card_ram_addr = ram_start_addr;
 	for (block = 0; block < ram_blocks; block++) {
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
@@ -386,8 +398,7 @@ static int ram_test(struct dnut_card* dnc,
 	}
 	print_time(t_sum);
 
-	if (verbose_level > 0)
-		printf("    FPGA -> FPGA: ");
+	PRINTF2("    FPGA -> FPGA: ");
 	card_ram_addr = ram_start_addr;
 	for (block = 1; block < ram_blocks; block++) {
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DD,
@@ -413,7 +424,7 @@ static int ram_test(struct dnut_card* dnc,
 }
 
 static int ram_test_rnd(struct dnut_card* dnc,
-			int mode,			/* Mode */
+			int mode,			/* RND_DATA_MODE, ALL_0_MODE or ALL_1_MODE */
 			unsigned int host_mem_size,	/* Size for Host Buffer */
 			void *host_buffer,		/* ptr to Host buffer */
 			void *host_buffer2,		/* ptr to 2nd Host buffer */
@@ -427,22 +438,19 @@ static int ram_test_rnd(struct dnut_card* dnc,
 	int rc = -1;
 
 	ram_blocks = (ram_end_addr - ram_start_addr) / host_mem_size;
-	if (verbose_level > 0) {
-		printf("  Host Buffer Size: 0x%x KU3 ",
-			host_mem_size);
-		printf("Start/End: 0x%llx / 0x%llx Blocks: %d\n",
-			(long long)ram_start_addr,
-			(long long)ram_end_addr,
-			ram_blocks);
-	}
+	PRINTF2("  Host Buffer Size: 0x%x KU3 ",
+		host_mem_size);
+	PRINTF2("Start/End: 0x%llx / 0x%llx Blocks: %d\n",
+		(long long)ram_start_addr,
+		(long long)ram_end_addr,
+		ram_blocks);
 
 	/* Create Random Host Buffer */
 	memset2(host_buffer, 0, host_mem_size, mode);
 	t_sum = 0;
 	card_ram_addr = ram_start_addr;
 	/* Fill DDR3 Memory */
-	if (verbose_level > 0)
-		printf("    Host -> FPGA: ");
+	PRINTF2("    Host -> FPGA: ");
 	for (block = 0; block < ram_blocks; block++) {
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 			(void *)card_ram_addr, host_buffer, host_mem_size);
@@ -455,8 +463,7 @@ static int ram_test_rnd(struct dnut_card* dnc,
 
 	t_sum = 0;
 	/* Read Back to host and Check */
-	if (verbose_level > 0)
-		printf("    FPGA -> Host: ");
+	PRINTF2("    FPGA -> Host: ");
 	card_ram_addr = ram_start_addr;
 	for (block = 0; block < ram_blocks; block++) {
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
@@ -476,7 +483,7 @@ static int ram_test_rnd(struct dnut_card* dnc,
 
 static void usage(const char *prog)
 {
-	printf("Usage: %s\n"
+	PRINTF0("Usage: %s\n"
 		"    -h, --help           print usage information\n"
 		"    -v, --verbose        verbose mode\n"
 		"    -C, --card <cardno>  use this card for operation\n"
@@ -535,7 +542,7 @@ int main(int argc, char *argv[])
 			verbose_level++;
 			break;
 		case 'V':	/* version */
-			printf("%s\n", version);
+			PRINTF0("%s\n", version);
 			exit(EXIT_SUCCESS);;
 		case 'h':	/* help */
 			usage(argv[0]);
@@ -553,10 +560,10 @@ int main(int argc, char *argv[])
 			timeout_ms = strtol(optarg, (char **)NULL, 0) * 1000;
 			break;
 		case 's':	/* start */
-			start_addr = strtol(optarg, (char **)NULL, 0);
+			start_addr = strtoll(optarg, (char **)NULL, 0);
 			break;
 		case 'e':	/* end */
-			end_addr = strtol(optarg, (char **)NULL, 0);
+			end_addr = strtoll(optarg, (char **)NULL, 0);
 			break;
 		case 'b':	/* buffer */
 			mem_size = strtol(optarg, (char **)NULL, 0);
@@ -573,9 +580,8 @@ int main(int argc, char *argv[])
 	}
 
 	sprintf(device, "/dev/cxl/afu%d.0m", card_no);
-	if (verbose_level > 0)
-		printf("Start KU3 Memory Test. Timeout: %d msec Device: %s\n",
-			timeout_ms, device);
+	PRINTF1("Start KU3 Memory Test. Timeout: %d msec Device: %s\n",
+		timeout_ms, device);
 
 	dn = dnut_card_alloc_dev(device, 0, 0);
 	if (NULL == dn) {
@@ -583,6 +589,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	PRINTF1("Test Ram on FPGA Card from 0x%016llx to 0x%016llx\n", (long long)start_addr, (long long)end_addr);
 	if (0 != check_parms(mem_size, start_addr, end_addr)) {
 		rc = -1;
 		goto __exit;
@@ -602,43 +609,36 @@ int main(int argc, char *argv[])
 	}
 
 	for (i = 0; i < iter; i++) {
-		if (verbose_level > 0)
-			printf("[%d/%d] Test Card RAM Address = Data\n",
-				i+1, iter);
+		PRINTF1("[%d/%d] Test Card RAM Address = Data\n",
+			i+1, iter);
 		rc = ram_test(dn, AD_MODE, mem_size, host_buffer1, start_addr, end_addr, timeout_ms);
 		if (rc) break;
 
-		if (verbose_level > 0)
-			printf("[%d/%d] Test Card RAM Address = (not)Data\n",
-				i+1, iter);
+		PRINTF1("[%d/%d] Test Card RAM Address = (not)Data\n",
+			i+1, iter);
 		rc = ram_test(dn, NOT_AD_MODE, mem_size, host_buffer1, start_addr, end_addr, timeout_ms);
 		if (rc) break;
 
-		if (verbose_level > 0)
-			printf("[%d/%d] Test Random Data\n",
-				i+1, iter);
+		PRINTF1("[%d/%d] Test Random Data\n",
+			i+1, iter);
 		rc = ram_test_rnd(dn, RND_DATA_MODE, mem_size, host_buffer1, host_buffer2, start_addr, end_addr, timeout_ms);
 
-		if (verbose_level > 0)
-			printf("[%d/%d] Test 1 Data\n",
-				i+1, iter);
+		PRINTF1("[%d/%d] Test 1 Data\n",
+			i+1, iter);
 		rc = ram_test_rnd(dn, ALL_1_MODE, mem_size, host_buffer1, host_buffer2, start_addr, end_addr, timeout_ms);
 
-		if (verbose_level > 0)
-			printf("[%d/%d] Test 0 Data\n",
-				i+1, iter);
+		PRINTF1("[%d/%d] Test 0 Data\n",
+			i+1, iter);
 		rc = ram_test_rnd(dn, ALL_0_MODE, mem_size, host_buffer1, host_buffer2, start_addr, end_addr, timeout_ms);
 		if (rc) break;
 	}
 
 	__exit:
-	if (verbose_level > 1)
-		printf("Close Card Handle: %p\n", dn);
+	PRINTF3("Close Card Handle: %p\n", dn);
 	dnut_card_free(dn);
 	ram_test_free(host_buffer1);
 	ram_test_free(host_buffer2);
 
-	if (verbose_level > 0)
-		printf("Exit: %d\n", rc);
+	PRINTF2("Exit rc: %d\n", rc);
 	return rc;
 }
