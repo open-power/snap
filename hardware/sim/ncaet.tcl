@@ -14,5 +14,5 @@
 # limitations under the License.
 #
 database -open   capiWave -incsize 20M -incfiles 2
-probe    -create -memories -depth 2
+probe    -create -memories -all -depth 2
 probe    -create -all -depth 10       ;# depth3 is 6x smaller than depth7
