@@ -25,7 +25,7 @@ puts $ies_libs
 open_project $root_dir/viv_project/framework.xpr
 if { [string first 2016 $xilinx_vivado] > 0 } {
   puts "export_simulation 2016 syntax"
-  export_simulation  -force -single_step -directory "$root_dir/sim" -simulator ies -lib_map_path "$ies_libs" -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs
+  export_simulation  -force -directory "$root_dir/sim" -simulator ies -lib_map_path "$ies_libs" -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs
 } else {
   puts "export_simulation 2015 syntax"
   export_simulation  -force -single_step -directory "$root_dir/sim" -simulator ies
