@@ -99,6 +99,7 @@ set_property top top [get_filesets sim_1]
 set_property compxlib.ies_compiled_library_dir $ies_libs [current_project]
 set_property export.sim.base_dir $root_dir [current_project]
 set_property -name {xsim.elaborate.xelab.more_options} -value {-sv_lib libdpi -sv_root .} -objects [current_fileset -simset]
+set_property -name {ies.elaborate.ncelab.more_options} -value {-access +rwc} -objects [current_fileset -simset]
 
 add_files            -fileset sources_1 -scan_for_includes $action_dir/
 update_compile_order -fileset sources_1

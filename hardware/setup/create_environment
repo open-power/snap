@@ -192,7 +192,8 @@
      if [ ! -f ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh ]; then                              # modbld script doesnt exist yet
        vivado -mode batch -source export_ncsim.tcl -notrace      || (echo "error in export_ncsim";exit -1)
      fi
-     sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh           # run ncsim up to elaboration, skip execution
+     sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh             # run ncsim up to elaboration, skip execution
+     sed -i "s/opts_ver=/set -e\nopts_ver=/g" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh       # use set -e to stop compilation on first error
      cd ${DONUT_HARDWARE_ROOT}/sim/ies;dir=.;source=$SIMULATOR
      ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
      ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
@@ -202,7 +203,8 @@
      if [ ! -f ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh ]; then                              # modbld script doesnt exist yet
        vivado -mode batch -source export_irun.tcl -notrace        || (echo "error in export_irun";exit -1)
      fi
-     sed -i "s/93 -relax/93 -elaborate -relax/gI" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh # run irun up to elaboration, skip execution
+     sed -i "s/93 -relax/93 -elaborate -relax/gI"        ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh # run irun up to elaboration, skip execution
+     sed -i "s/-top xil_defaultlib.top/-top work.top/gI" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh # build top in work library
      if [ -f ${DONUT_HARDWARE_ROOT}/sim/ies/run.f ]; then
        perl -i.ori -pe 's/(.*\/verilog\/top.v)/ -sv $1/mg' ${DONUT_HARDWARE_ROOT}/sim/ies/run.f                          # compile top.v with system verilog
        perl -i.ori -pe 'BEGIN{undef $/;} s/(^-makelib.*\n.*glbl.v.*\n.*endlib)//mg' ${DONUT_HARDWARE_ROOT}/sim/ies/run.f # remove glbl.v from compile list

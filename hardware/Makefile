@@ -50,9 +50,10 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 	@mv -f $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
 
 $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
-	@echo -e "\t[CREATE] $@"
-# Vivado 2015.4 file_info.txt has a different format than 2016.3. 
-# if 2015.4, else 2016.3
+	@echo -e "\t[CREATE] $(BUILD_DIR)/Sources/prj/afu.prj"
+# Vivado 2015.4 file_info.txt has a format different from that in Vivado 2016.3. 
+# if:   2015.4
+# else: 2016.3
 # FIXME: Hack for 2016 to remove more ../ than really expected. Find out why export_simulation does this in 2016.
 	@if grep -q 'Language       File-Name' $(PROJECT_COMPILE_LIST); then\
 		cut -d "," -f "1 4 5" $(PROJECT_COMPILE_LIST) | sed 's/, */ /g' | \
@@ -64,7 +65,7 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 		grep -Ev '\/ip\/|action_auto_|viv_project' | sed 's/ ..\/..\/..\// /' | \
 		sed 's/psl_accel_sim/psl_accel_syn/' > $(BUILD_DIR)/Sources/prj/afu.prj;\
 	fi
-	@echo -e "\t[CREATE] $(BUILD_DIR)/Sources/prj/psl_fpga.prj"
+	@echo -e "\t[CREATE] $@"
 	@cat $(BUILD_DIR)/Sources/prj/top.prj $(BUILD_DIR)/Sources/prj/afu.prj > $(BUILD_DIR)/Sources/prj/psl_fpga.prj
 
 	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
@@ -75,7 +76,7 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	done
 	@if [ $(DDR3_USED) = "TRUE" ]; then echo "PATCH .vhd FILES for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/vhdl.patch; fi
 
-patch_build_date: 
+patch_build_date:
 	@echo "PATCH build date" && MMIO_VHD_FILE=`grep -i "mmio.vhd" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\///'`; \
 	$(DONUT_HARDWARE_ROOT)/setup/patch_build_date.sh $(DONUT_HARDWARE_ROOT) $$MMIO_VHD_FILE
 
@@ -98,14 +99,14 @@ image: patch_build_date
 
 clean:
 	@echo -e "\t[CLEAN] build environment";
-	rm -rf  $(BUILD_DIR)
-	rm -rf  $(DONUT_HARDWARE_ROOT)/viv_project
-	rm -rf  $(DONUT_HARDWARE_ROOT)/ip
-	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/ies
-	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/xsim
-	rm -rf  $(DONUT_HARDWARE_ROOT)/sim/questa
-	rm -f   ./*.log
-	rm -f   ./*.jou
+	rm -r -f  $(BUILD_DIR)
+	rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
+	rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
+	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
+	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
+	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
+	rm -f   ./setup/*.log
+	rm -f   ./setup/*.jou
 
 gitclean:
 	@echo -e "\t[GITCLEAN] cleaning donut git";
