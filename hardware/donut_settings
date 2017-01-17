@@ -42,8 +42,9 @@ fi
 
 if [ ! -d "$XILINX_VIVADO" ]; then
   echo "XILINX_VIVADO is not set, please run $XILINX_ROOT/Vivado/<version>/settings64.sh"
-  exit
-fi
+  # don't use exit here, as it will exit the shell when sourced, and the output is no longer visible
+else
+
 ####### Xilinx Vivado calls:
   which vivado                                               # checking version
   vivado -version|head -n1
@@ -156,4 +157,5 @@ else
   echo "NUM_OF_ACTIONS          is set to \"$NUM_OF_ACTIONS\""
 fi
 
+fi # [ -d "$XILINX_VIVADO" ]
 echo
