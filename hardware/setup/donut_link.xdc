@@ -11,9 +11,9 @@ set_max_delay -from [get_pins a0/*ddr3_reset_n_q_reg/C] -to [get_pins {a0/*ddr3s
 set_min_delay -from [get_pins a0/*ddr3_reset_n_q_reg/C] -to [get_pins {a0/*ddr3sdram_bank1/inst/axi_ctrl_top_0/axi_ctrl_reg_bank_0/inst_reg[3].axi_ctrl_reg/data_reg*/S}] -0.5
 
 ## 
-set_false_path -from [get_pins a0/donut_i/ctrl_mgr/afu_reset_*_reg/C] -to [get_pins a0/ddr3_reset_m_reg_inv/D]
-set_false_path -from [get_pins a0/action_reset_q_reg/C] -to [get_pins a0/ddr3_reset_m_reg_inv/D]
-set_false_path -from [get_pins a0/action_reset_qq_reg/C] -to [get_pins a0/ddr3_reset_m_reg_inv/D]
+set_false_path -from [get_pins a0/donut_i/ctrl_mgr/afu_reset_q_reg/C] -to [get_pins a0/ddr3_reset_m_reg*/D]
+set_false_path -from [get_pins a0/action_reset_q_reg/C] -to [get_pins a0/ddr3_reset_m_reg*/D]
+set_false_path -from [get_pins a0/action_reset_qq_reg/C] -to [get_pins a0/ddr3_reset_m_reg*/D]
 
 ###############################################################################################################
 
