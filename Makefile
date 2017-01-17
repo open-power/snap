@@ -15,6 +15,7 @@
 #
 
 subdirs += software
+hardware_subdirs += hardware
 
 all: $(subdirs)
 
@@ -33,8 +34,16 @@ test install uninstall:
 		fi					\
 	done
 
+# Model build and config
+config model image:
+	@for dir in $(hardware_subdirs); do		\
+        	if [ -d $$dir ]; then			\
+			$(MAKE) -C $$dir $@ || exit 1;	\
+                fi					\
+	done
+
 clean:
-	@for dir in $(subdirs); do 			\
+	@for dir in $(subdirs) $(hardware_subdirs); do	\
 		if [ -d $$dir ]; then			\
 			$(MAKE) -C $$dir $@ || exit 1;	\
 		fi					\
