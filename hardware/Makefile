@@ -75,7 +75,7 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	done
 	@if [ $(DDR3_USED) = "TRUE" ]; then echo "PATCH .vhd FILES for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/vhdl.patch; fi
 
-patch_build_date: $(BUILD_DIR)/Sources/prj/psl_fpga.prj
+patch_build_date: 
 	@echo "PATCH build date" && MMIO_VHD_FILE=`grep -i "mmio.vhd" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\///'`; \
 	$(DONUT_HARDWARE_ROOT)/setup/patch_build_date.sh $(DONUT_HARDWARE_ROOT) $$MMIO_VHD_FILE
 
@@ -88,17 +88,13 @@ model: patch_build_date
 	@echo -e "\t[BUILD MODEL] done ($(shell date))"
 
 image: patch_build_date
-	@echo -e "\t[BUILD IMAGE] start ($(shell date))"
+	@echo -e "\t[BUILD IMAGE (BIT)] start ($(shell date))"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
-	@echo -e "\t[BUILD IMAGE] done ($(shell date))"
-# FIXME: check if vivado was successful
-	@if [ $(DDR3_USED) = "TRUE" ] && [$(BRAM=USED != "TRUE"]; then\
-		cd $(DONUT_HARDWARE_ROOT)/setup && vivado -mode batch -source AR_64051.tcl -notrace;\
-		echo -e "\t[BUILD IMAGE] patch for ar_64051 done ($(shell date))";\
-	else\
-		cd $(BUILD_DIR) && vivado -mode batch -source write_bitstream.tcl;\
-		mv $(BUILD_DIR)/Implement/psl_fpga/psl_fpga.bit $(BUILD_DIR)/psl_fpga_flash.bit;\
-	fi
+	@mv $(BUILD_DIR)/Implement/psl_fpga/psl_fpga.bit $(BUILD_DIR)/psl_fpga_flash.bit
+	@echo -e "\t[BUILD IMAGE(BIT)] done ($(shell date))"
+	@echo -e "\t[BUILD IMAGE (BIN)] start ($(shell date))"
+	@cd $(BUILD_DIR) && vivado -mode batch -source write_bitstream.tcl -notrace
+	@echo -e "\t[BUILD IMAGE (BIN)] done ($(shell date))"
 
 clean:
 	@echo -e "\t[CLEAN] build environment";
