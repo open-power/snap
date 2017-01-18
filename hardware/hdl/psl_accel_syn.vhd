@@ -1125,7 +1125,7 @@ BEGIN
   c1_ddr3_s_axi_ctrl_rready    <= '0';                                                   -- only for DDR3_USED=TRUE
 
    c0_ddr3_axi_clk   <= c1_ddr3_ui_clk;                                                     -- only for DDR3_USED=TRUE                     -- only for BRAM_USED!=TRUE
-   c0_ddr3_axi_rst_n <= c1_ddr3_ui_clk_sync_rst;                                            -- only for DDR3_USED=TRUE-- only for BRAM_USED!=TRUE
+   c0_ddr3_axi_rst_n <= NOT c1_ddr3_ui_clk_sync_rst;                                        -- only for DDR3_USED=TRUE -- only for BRAM_USED!=TRUE
 -- only for BRAM_USED=TRUE   c0_ddr3_axi_clk   <= refclk200_ibuf;                                                     -- only for DDR3_USED=TRUE 
 -- only for BRAM_USED=TRUE   c0_ddr3_axi_rst_n <= ddr3_reset_n_q;                                                     -- only for DDR3_USED=TRUE 
 

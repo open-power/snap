@@ -38,7 +38,7 @@ check_donut_settings:
 
 create_environment:
 	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment $(CE_PARMS)
-	@echo -e "\t[CREATE_ENVIRONMENT] done ($(shell date))"
+	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
 
 copy $(BUILD_DIR)/psl_fpga.tcl:
 	@echo -e "\t[COPY] psl build env"; cp -a $(PSL_SOURCE_ENV) $(BUILD_DIR)
@@ -81,21 +81,21 @@ patch_build_date:
 	$(DONUT_HARDWARE_ROOT)/setup/patch_build_date.sh $(DONUT_HARDWARE_ROOT) $$MMIO_VHD_FILE
 
 config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_build_date
-	@echo -e "\t[CONFIG] done ($(shell date))"
+	@echo -e "\t[CONFIG] done `date`"
 
 model: patch_build_date
-	@echo -e "\t[BUILD MODEL] start ($(shell date))"
+	@echo -e "\t[BUILD MODEL] start `date`"
 	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
-	@echo -e "\t[BUILD MODEL] done ($(shell date))"
+	@echo -e "\t[BUILD MODEL] done `date`"
 
 image: patch_build_date
-	@echo -e "\t[BUILD IMAGE (BIT)] start ($(shell date))"
+	@echo -e "\t[BUILD IMAGE (BIT)] start `date`"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
-	@mv $(BUILD_DIR)/Implement/psl_fpga/psl_fpga.bit $(BUILD_DIR)/psl_fpga_flash.bit
-	@echo -e "\t[BUILD IMAGE(BIT)] done ($(shell date))"
-	@echo -e "\t[BUILD IMAGE (BIN)] start ($(shell date))"
+	@cp -rp $(BUILD_DIR)/Implement/psl_fpga/psl_fpga.bit $(BUILD_DIR)/psl_fpga_flash.bit
+	@echo -e "\t[BUILD IMAGE (BIT)] done  `date`"
+	@echo -e "\t[BUILD IMAGE (BIN)] start `date`"
 	@cd $(BUILD_DIR) && vivado -mode batch -source write_bitstream.tcl -notrace
-	@echo -e "\t[BUILD IMAGE (BIN)] done ($(shell date))"
+	@echo -e "\t[BUILD IMAGE (BIN)] done  `date`"
 
 clean:
 	@echo -e "\t[CLEAN] build environment";

@@ -54,8 +54,8 @@ fi
 
 if [ $DDR3_USED == "TRUE" ] && [ $BRAM_USED != "TRUE"  ] ; then
 sed -i '/top      top/ a\
-                                         \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc \\\
-                                         \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc \\' $2
+                                              \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc \\\
+                                              \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc \\' $2
 fi
 
 sed -i '/top      top/ a\

@@ -383,7 +383,7 @@ ARCHITECTURE afu OF afu IS
 -- only for BRAM_USED=TRUE      s_axi_bresp         : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);                             
 -- only for BRAM_USED=TRUE      s_axi_bvalid        : OUT STD_LOGIC;                                                
 -- only for BRAM_USED=TRUE      s_axi_bready        : IN  STD_LOGIC;                                                
-      s_axi_arid          : IN  STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);    -- only for DDR3_USED=TRUE
+-- only for BRAM_USED=TRUE      s_axi_arid          : IN  STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);   
 -- only for BRAM_USED=TRUE      s_axi_araddr        : IN  STD_LOGIC_VECTOR(31 DOWNTO 0);                            
 -- only for BRAM_USED=TRUE      s_axi_arlen         : IN  STD_LOGIC_VECTOR(7 DOWNTO 0);                             
 -- only for BRAM_USED=TRUE      s_axi_arsize        : IN  STD_LOGIC_VECTOR(2 DOWNTO 0);                             
@@ -1026,11 +1026,11 @@ BEGIN
    c1_ddr3_s_axi_ctrl_araddr    <= (OTHERS => '0');                                         -- only for DDR3_USED=TRUE
    c1_ddr3_s_axi_ctrl_rready    <= '0';                                                     -- only for DDR3_USED=TRUE
 
-   c0_ddr3_axi_clk   <= c1_ddr3_ui_clk;                                                     -- only for DDR3_USED=TRUE                     -- only for BRAM_USED!=TRUE
-   c0_ddr3_axi_rst_n <= c1_ddr3_ui_clk_sync_rst;                                            -- only for DDR3_USED=TRUE-- only for BRAM_USED!=TRUE
+   c0_ddr3_axi_clk   <=     c1_ddr3_ui_clk;                                                 -- only for DDR3_USED=TRUE -- only for BRAM_USED!=TRUE
+   c0_ddr3_axi_rst_n <= NOT c1_ddr3_ui_clk_sync_rst;                                        -- only for DDR3_USED=TRUE -- only for BRAM_USED!=TRUE
 
--- only for BRAM_USED=TRUE   c0_ddr3_axi_clk   <= refclk200_ibuf;                                                     -- only for DDR3_USED=TRUE 
--- only for BRAM_USED=TRUE   c0_ddr3_axi_rst_n <= ddr3_reset_n_q;                                                     -- only for DDR3_USED=TRUE 
+-- only for BRAM_USED=TRUE   c0_ddr3_axi_clk   <= refclk200_ibuf;                                                      -- only for DDR3_USED=TRUE 
+-- only for BRAM_USED=TRUE   c0_ddr3_axi_rst_n <= ddr3_reset_n_q;                                                      -- only for DDR3_USED=TRUE 
 
    axi_clock_converter_i : axi_clock_converter                                              -- only for DDR3_USED=TRUE
      PORT MAP (                                                                             -- only for DDR3_USED=TRUE
