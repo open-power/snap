@@ -31,7 +31,7 @@ symlinks=vhdl verilog systemc report
 
 all: $(syn_dir) $(symlinks)
 
-$(syn_dir): $(srcs) $(srcs) run_hls_script.tcl
+$(syn_dir): $(srcs) run_hls_script.tcl
 	vivado_hls -f run_hls_script.tcl
 
 # Create symlink for simpler access
@@ -39,7 +39,7 @@ vhdl verilog systemc report:
 	ln -sf $(syn_dir)/$@ $@
 
 run_hls_script.tcl:
-	./create_run_hls_script.sh	\
+	../create_run_hls_script.sh	\
 		-n $(SOLUTION_NAME)	\
 		-d $(SOLUTION_DIR) 	\
 		-w $(WRAPPER)		\
