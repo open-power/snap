@@ -25,9 +25,9 @@
 #      build-system as required.
 #
 
-include ../hls.mk
-
 # This is solution specific. Check if we can replace this by generics too.
 SOLUTION_NAME ?= memcopy
 SOLUTION_DIR ?= hlsMemcopy
 srcs += kernel.cpp
+
+include ../hls.mk
