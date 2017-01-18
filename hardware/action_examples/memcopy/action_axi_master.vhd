@@ -227,12 +227,8 @@ axi_w:	process(M_AXI_ACLK)
                  axi_awvalid       <= '0';
                  wr_req_wait_cycle <= '1';
                end if;
---               if dma_wr_data_last_i = '1' then
-                   axi_bready    <= '1';
---               end if;
---               if axi_bready = '1' and M_AXI_BVALID = '1' then
+               axi_bready    <= '1';
                if M_AXI_BVALID = '1' then
-                 axi_bready     <= '0';
                  dma_wr_done_o  <= '1';
                end if;
              end if;
@@ -241,27 +237,15 @@ axi_w:	process(M_AXI_ACLK)
         end process;
 
 
-           axi_wdata      <= dma_wr_data_i;
-           axi_wvalid     <= or_reduce(dma_wr_data_strobe_i);
-           axi_wstrb      <= dma_wr_data_strobe_i;
-
--- wr_data: process(axi_wvalid, M_AXI_WREADY, dma_wr_data_last_i, write_pending)
-wr_data: process(axi_wvalid, M_AXI_WREADY, dma_wr_data_last_i)
-         begin
-           axi_wlast       <= '0';
-           dma_wr_ready_o  <= M_AXI_WREADY; --  and write_pending;
-           if  axi_wvalid = '1' and  M_AXI_WREADY = '1' then
-             if dma_wr_data_last_i = '1' then
-               axi_wlast     <= '1';
-             end if;
-           end if;
-
-         end process;
-        
-axi_rready          <= dma_rd_data_taken_i;
-dma_rd_data_last_o  <= M_AXI_RLAST;
-dma_rd_data_valid_o <= M_AXI_RVALID;
-dma_rd_data_o       <= M_AXI_RDATA;
+    axi_wdata           <= dma_wr_data_i;
+    axi_wvalid          <= or_reduce(dma_wr_data_strobe_i);
+    axi_wstrb           <= dma_wr_data_strobe_i;
+    axi_wlast           <= dma_wr_data_last_i;
+    dma_wr_ready_o      <= M_AXI_WREADY; --  and write_pending;
+    axi_rready          <= dma_rd_data_taken_i;
+    dma_rd_data_last_o  <= M_AXI_RLAST;
+    dma_rd_data_valid_o <= M_AXI_RVALID;
+    dma_rd_data_o       <= M_AXI_RDATA;
 
 axi_r:	 process(M_AXI_ACLK)
 	     begin
