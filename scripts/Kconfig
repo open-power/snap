@@ -142,4 +142,28 @@ config ACTION_DIR
         help
           Use this git to download the action code.
 
+config HLS_MEMOPY
+        bool "HLS MemCopy"
+        depends on KU3 || FLASH_GT
+        default n
+        help
+          HLS written simple example for memcopy. Use demo_memcopy to
+          call the action.
+
+config HLS_SEARCH
+        bool "HLS Search"
+        depends on KU3 || FLASH_GT
+        default n
+        help
+          HLS written simple example for searching a byte in a buffer.
+          Use demo_search to call the action.
+
+config HLS_HASHJOIN
+        bool "HLS HashJoin"
+        depends on KU3 || FLASH_GT
+        default n
+        help
+          HLS written simple example for a hash join operation. Use 
+          demo_hashjoin to call the action.
+
 endmenu
