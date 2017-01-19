@@ -47,7 +47,7 @@ function usage() {
   echo "    [-h] Print this help message."
   echo "    <path-to-bit-file>"
   echo
-  echo "Utility to generat vivado_hls tcl configuration file."
+  echo "Utility to generate vivado_hls tcl configuration file."
   echo
 }
 
