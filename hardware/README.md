@@ -8,7 +8,7 @@ In order to set up the required environment variables for a given `FRAMEWORK_ROO
 
 The script depends on the following environment variables to be already defined:
 
-```bash
+```
     FRAMEWORK_ROOT       = <your local workspace base>
     XILINX_VIVADO        = <path to Vivado tool>
     XILINXD_LICENSE_FILE = <name of the Vivado license file>
@@ -17,7 +17,7 @@ The script depends on the following environment variables to be already defined:
 This script will define the following environment variables (if they are not already pre-defined
 differently):
 
-```bash
+```
     USERHOME            = $FRAMEWORK_ROOT/$USER                                             # each user has his own workspace
     PSLSE_ROOT          = $USERHOME/pslse                                                   # PSLSE clone from github
     DONUT_ROOT          = <parent of the directory containing the script donut_settings>    # donut clone from github
@@ -49,7 +49,7 @@ Furthermore, the environment variables `PATH` and `LD_LIBRARY_PATH` need to cont
 to the Cadence tools and libraries. In case `SIMULATOR=ncsim` or `SIMULATOR=irun` the script
 [./donut_settings](./donut_settings) will set the Cadence specific environment variable
 
-```bash
+```
    CDS_INST_DIR         = <Cadence Installation Directory>                                  # path to Cadence installation
 ```
 
