@@ -6,27 +6,27 @@ In order to set up the required environment variables for a given `FRAMEWORK_ROO
     . ./donut_settings
 ```
 
-The script depends on the following environment variables to be already defined:
+The following commands need to be executed before calling this script:
 
 ```
-    FRAMEWORK_ROOT       = <your local workspace base>
-    XILINX_VIVADO        = <path to Vivado tool>
-    XILINXD_LICENSE_FILE = <name of the Vivado license file>
+    export FRAMEWORK_ROOT       = <your local workspace base>
+    source <xilinx_root>/Vivado/<version>/settings64.sh
+    export XILINXD_LICENSE_FILE = <pointer to Xilinx license>
 ```
 
 This script will define the following environment variables (if they are not already pre-defined
 differently):
 
 ```
-    USERHOME            = $FRAMEWORK_ROOT/$USER                                             # each user has his own workspace
-    PSLSE_ROOT          = $USERHOME/pslse                                                   # PSLSE clone from github
-    DONUT_ROOT          = <parent of the directory containing the script donut_settings>    # donut clone from github
-    DONUT_SOFTWARE_ROOT = $DONUT_ROOT/software                                              # path to donut software
-    DONUT_HARDWARE_ROOT = $DONUT_ROOT/hardware                                              # path to donut hardware
-    FPGACARD            = $FRAMEWORK_ROOT/cards/adku060_capi_1_1_release                    # path to card HDK
-    FPGACHIP            = xcku060-ffva1156-2-e                                              # version of the FPGA chip
-    DIMMTEST            = $FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0                 # path to DRAM model for simulation
-    SIMULATOR           = xsim                                                              # currently supported simulators are xsim, ncsim, irun
+    USERHOME            = $FRAMEWORK_ROOT/$USER                                  # each user has his own workspace
+    PSLSE_ROOT          = $USERHOME/pslse                                        # PSLSE clone from github
+    DONUT_ROOT          = <parent of the directory containing donut_settings>    # donut clone from github
+    DONUT_SOFTWARE_ROOT = $DONUT_ROOT/software                                   # path to donut software
+    DONUT_HARDWARE_ROOT = $DONUT_ROOT/hardware                                   # path to donut hardware
+    FPGACARD            = $FRAMEWORK_ROOT/cards/adku060_capi_1_1_release         # path to card HDK
+    FPGACHIP            = xcku060-ffva1156-2-e                                   # version of the FPGA chip
+    DIMMTEST            = $FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0      # path to DRAM model for simulation
+    SIMULATOR           = xsim                                                   # currently supported simulators are xsim, ncsim, irun
 ```
 
 Besides the HDK for the card a DIMM test project is required which can be obtained from
@@ -40,7 +40,8 @@ The environment variable `DIMMTEST` needs to point to the directory containing t
 If you want to use Cadence tools (i.e. ncsim or irun) for simulation you need to compile the Xilinx IP and let the environment variable
 
 ```
-   IES_LIBS
+   export IES_LIBS      = <pointer to precompiled Xilinx IP for Cadence tools>
+   export CDS_LIC_FILE  = <pointer to Cadence license>
 ```
 
 point to the resulting compiled library.
@@ -50,7 +51,7 @@ to the Cadence tools and libraries. In case `SIMULATOR=ncsim` or `SIMULATOR=irun
 [./donut_settings](./donut_settings) will set the Cadence specific environment variable
 
 ```
-   CDS_INST_DIR         = <Cadence Installation Directory>                                  # path to Cadence installation
+   CDS_INST_DIR         = <Cadence Installation Directory>                       # path to Cadence installation
 ```
 
 if it is not already pre-defined.
@@ -79,7 +80,7 @@ Examples for actions together with their wrappers may be found in `$DONUT_HARDWA
 and in `$DONUT_HARDWARE_ROOT/action_examples/memcopy`.
 
 
-# DDR3 Card Memory and BRAM
+# DDR3 Card Memory
 
 The SNAP framework supports the usage of the on-card DRAM. It is accessible for the actions via the action wrapper
 through an AXI master interface. The existence of that interface is configurable via the environment variable `DDR3_USED`.

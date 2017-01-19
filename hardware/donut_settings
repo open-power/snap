@@ -26,14 +26,14 @@ donutdir=$(dirname "$scriptdir")
 unset SETUP_DONE;
 while [ -z "$SETUP_DONE" ]; do
   if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ] || [ ! -d "$FRAMEWORK_ROOT" ]; then
-    echo "Note: the following site specific variables are used by the build and sim tools"
-    echo "and should be be set prior to sourcing this file:"
+    echo "Note: The following commands need to be executed before calling this script:"
     echo
-    echo "XILINX_VIVADO          # path to Vivado tool"
-    echo "XILINXD_LICENSE_FILE"
-    echo "FRAMEWORK_ROOT         # path to CAPI STREAMING FRAMEWORK root directory"
+    echo "export FRAMEWORK_ROOT       = <your local workspace base>"
+    echo "source <xilinx_root>/Vivado/<version>/settings64.sh"
+    echo "export XILINXD_LICENSE_FILE = <pointer to Vivado license>"
     echo
     echo "For more information see also README.md"
+    break
   fi
   echo
 
@@ -41,7 +41,7 @@ while [ -z "$SETUP_DONE" ]; do
   echo "Checking Xilinx Vivado:"
   echo "======================="
   if [ ! -d "$XILINX_VIVADO" ]; then
-    echo "XILINX_VIVADO is not set, please run $XILINX_ROOT/Vivado/<version>/settings64.sh"
+    echo "XILINX_VIVADO is not set, please source settings64.sh from your Vivado installation"
     break
   fi
   if [ -z `which vivado 2> /dev/null` ]; then
@@ -51,16 +51,6 @@ while [ -z "$SETUP_DONE" ]; do
   # checking Vivado version
   echo "Path to vivado: `which vivado`"
   echo "Vivado version: `vivado -version|head -n1`"
-
-  ####### MentorGraphics QUESTA calls, not tested yet
-  # which vsim                                                 # checking version
-  # vsim -version
-  # if [ -z "$MENTOR_LIBS" ]; then export MENTOR_LIBS="";fi
-  # if [ -f "$MENTOR_LIBS/xxx" ]; then
-  #   echo "MENTOR_LIBS found in $MENTOR_LIBS"
-  # else
-  #   echo "WARNING: cannot find MENTOR_LIBS=$MENTOR_LIBS, Mentor compilation won't work"
-  # fi
 
   ####### user settings for CAPI STREAMING FRAMEWORK
   echo
@@ -157,6 +147,9 @@ while [ -z "$SETUP_DONE" ]; do
       echo "cds.lib found in IES_LIBS=$IES_LIBS"
     else
       echo "### WARNING ### cannot find cds.lib in IES_LIBS=$IES_LIBS, Cadence compilation won't work"
+    fi
+    if [ -z "$CDS_LIC_FILE" ] && [ -z "$LM_LICENSE_FILE" ]; then
+      echo "### WARNING ### Cadence license not defined with CDS_LIC_FILE or LM_LICENSE_FILE, simulation may not work"
     fi
   fi
 
