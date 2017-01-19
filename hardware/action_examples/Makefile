@@ -1,5 +1,5 @@
 #
-# Copyright 2016, International Business Machines
+# Copyright 2017, International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +14,7 @@
 # limitations under the License.
 #
 
-subdirs += software
-hardware_subdirs += hardware
-action_subdirs += hardware/action_examples
+subdirs += $(wildcard hls_*)
 
 all: $(subdirs)
 
@@ -27,24 +25,8 @@ $(subdirs):
 		$(MAKE) -C $@ || exit 1;		\
 	fi
 
-# Install/uninstall
-test install uninstall:
-	@for dir in $(subdirs); do 			\
-		if [ -d $$dir ]; then			\
-			$(MAKE) -C $$dir $@ || exit 1;	\
-		fi					\
-	done
-
-# Model build and config
-config model image:
-	@for dir in $(hardware_subdirs); do		\
-	       	if [ -d $$dir ]; then			\
-			$(MAKE) -C $$dir $@ || exit 1;	\
-                fi					\
-	done
-
 clean:
-	@for dir in $(subdirs) $(hardware_subdirs) $(action_subdirs); do \
+	@for dir in $(subdirs) $(hardware_subdirs); do	\
 		if [ -d $$dir ]; then			\
 			$(MAKE) -C $$dir $@ || exit 1;	\
 		fi					\
