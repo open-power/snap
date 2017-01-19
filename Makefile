@@ -16,6 +16,7 @@
 
 subdirs += software
 hardware_subdirs += hardware
+action_subdirs += hardware/action_examples
 
 all: $(subdirs)
 
@@ -43,11 +44,10 @@ config model image:
 	done
 
 clean:
-	@for dir in $(subdirs) $(hardware_subdirs); do	\
+	@for dir in $(subdirs) $(hardware_subdirs) $(action_subdirs); do \
 		if [ -d $$dir ]; then			\
 			$(MAKE) -C $$dir $@ || exit 1;	\
 		fi					\
 	done
 	@find . -depth -name '*~'  -exec rm -rf '{}' \; -print
 	@find . -depth -name '.#*' -exec rm -rf '{}' \; -print
-
