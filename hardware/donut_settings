@@ -23,139 +23,159 @@ script=$(readlink -f "$called")    # absolute path+name
 scriptdir=$(dirname  "$script")    # just path
 donutdir=$(dirname "$scriptdir")
 
-if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ] || [ ! -d "$FRAMEWORK_ROOT" ]; then
-  echo "Note: the following site specific variables are used by the build and sim tools"
-  echo "and should be be set prior to sourcing this file:"
-  echo
-  echo "XILINX_VIVADO          # path to Vivado tool"
-  echo "XILINXD_LICENSE_FILE"
-  echo "FRAMEWORK_ROOT         # path to CAPI STREAMING FRAMEWORK root directory"
-  echo
-  echo "Recommended directory structure:"
-  echo "FRAMEWORK_ROOT      = <your local workspace base> "
-  echo "USERHOME            = \$FRAMEWORK_ROOT/$USER  # each user has his own workspace"
-  echo "PSLSE_ROOT          = \$USERHOME/pslse        # PSLSE clone from github"
-  echo "DONUT_ROOT          = \$USERHOME/donut        # donut clone from github"
-  echo "DONUT_SOFTWARE_ROOT = \$DONUT_ROOT/software   # path to donut software "
-  echo "DONUT_HARDWARE_ROOT = \$DONUT_ROOT/hardware   # path to donut hardware "
-fi
-
-if [ ! -d "$XILINX_VIVADO" ]; then
-  echo "XILINX_VIVADO is not set, please run $XILINX_ROOT/Vivado/<version>/settings64.sh"
-  # don't use exit here, as it will exit the shell when sourced, and the output is no longer visible
-else
-
-####### Xilinx Vivado calls:
-  which vivado                                               # checking version
-  vivado -version|head -n1
-####### Cadence IES calls:
-  which ncsim                                                # checking version
-  ncsim -version
-  if [ -f "$IES_LIBS/cds.lib" ]; then
-    echo "IES_LIBS found in $IES_LIBS"
-  else
-    echo "WARNING: cannot find IES_LIBS=$IES_LIBS, Cadence compilation won't work"
+unset SETUP_DONE;
+while [ -z "$SETUP_DONE" ]; do
+  if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ] || [ ! -d "$FRAMEWORK_ROOT" ]; then
+    echo "Note: The following commands need to be executed before calling this script:"
+    echo
+    echo "export FRAMEWORK_ROOT       = <your local workspace base>"
+    echo "source <xilinx_root>/Vivado/<version>/settings64.sh"
+    echo "export XILINXD_LICENSE_FILE = <pointer to Vivado license>"
+    echo
+    echo "For more information see also README.md"
+    break
   fi
   echo
-####### MentorGraphics QUESTA calls, not tested yet
-# which vsim                                                 # checking version
-# vsim -version
-  if [ -z "$MENTOR_LIBS" ]; then export MENTOR_LIBS="";fi
-# if [ -f "$MENTOR_LIBS/xxx" ]; then
-#   echo "MENTOR_LIBS found in $MENTOR_LIBS"
-# else
-#   echo "WARNING: cannot find MENTOR_LIBS=$MENTOR_LIBS, Mentor compilation won't work"
-# fi
-# echo
 
-####### user settings for CAPI STREAMING FRAMEWORK
-if [ ! -d "$USERHOME" ]; then
-  export USERHOME=$FRAMEWORK_ROOT/$USER
-  echo "Setting USERHOME               to \"$USERHOME\""
-else
-  echo "USERHOME                is set to \"$USERHOME\""
-fi
+  ####### Checking Xilinx Vivado:
+  echo "Checking Xilinx Vivado:"
+  echo "======================="
+  if [ ! -d "$XILINX_VIVADO" ]; then
+    echo "XILINX_VIVADO is not set, please source settings64.sh from your Vivado installation"
+    break
+  fi
+  if [ -z `which vivado 2> /dev/null` ]; then
+    echo "Path to vivado not set, please add to environment variable \$PATH"
+    break
+  fi
+  # checking Vivado version
+  echo "Path to vivado: `which vivado`"
+  echo "Vivado version: `vivado -version|head -n1`"
 
-if [ ! -d "$PSLSE_ROOT" ]; then
-  export PSLSE_ROOT=$USERHOME/pslse                          # used with git clone https://github.com/ibm-capi/pslse     $PSLSE_ROOT
-  echo "Setting PSLSE_ROOT             to \"$PSLSE_ROOT\""
-else
-  echo "PSLSE_ROOT              is set to \"$PSLSE_ROOT\""
-fi
-
-if [ "$DONUT_ROOT" = "$donutdir" ]; then
-  echo "DONUT_ROOT              is set to \"$DONUT_ROOT\""
-else
-  echo "Setting DONUT_ROOT             to \"$donutdir\""
-fi
-export DONUT_ROOT=$donutdir
-
-if [ "$DONUT_HARDWARE_ROOT" = "$DONUT_ROOT/hardware" ]; then
-  echo "DONUT_HARDWARE_ROOT     is set to \"$DONUT_HARDWARE_ROOT\""
-else
-  echo "Setting DONUT_HARDWARE_ROOT    to \"$DONUT_ROOT/hardware\""
-fi
-export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware
-
-if [ "$DONUT_SOFTWARE_ROOT" = "$DONUT_ROOT/software" ]; then
-  echo "DONUT_SOFTWARE_ROOT     is set to \"$DONUT_SOFTWARE_ROOT\""
-else
-  echo "Setting DONUT_SOFTWARE_ROOT    to \"$DONUT_ROOT/software\""
-fi
-export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software
-
-if [ -z "$ACTION_ROOT" ]; then
-  echo "Variable ACTION_ROOT    is not set. Please let it point to your action source if you want to add an action to your project."
-else
-  echo "ACTION_ROOT             is set to \"$ACTION_ROOT\""
-fi
-
-if [ ! -d "$FPGACARD" ]; then
-  export FPGACARD=$FRAMEWORK_ROOT/cards/adku060_capi_1_1_release
-  echo "Setting FPGACARD               to \"$FPGACARD\""
-else
-  echo "FPGACARD                is set to \"$FPGACARD\""
-fi
-
-if [ -z "$FPGACHIP" ]; then
-  export FPGACHIP=xcku060-ffva1156-2-e
-  echo "Setting FPGACHIP               to \"$FPGACHIP\""
-else
-  echo "FPGACHIP                is set to \"$FPGACHIP\""
-fi
-
-if [ ! -d "$DIMMTEST" ]; then
-  export DIMMTEST=$FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0
-  echo "Setting DIMMTEST               to \"$DIMMTEST\""
-else
-  echo "DIMMTEST                is set to \"$DIMMTEST\""
-fi
-
-if [ -z "$SIMULATOR" ]; then
-  export SIMULATOR=xsim                                      # xsim, questa and ncsim are supported, currently
-  echo "Setting SIMULATOR              to \"$SIMULATOR\""
-else
-  echo "SIMULATOR               is set to \"$SIMULATOR\""
-fi
-
-if [ -z "$DDR3_USED" ]; then
-  echo "Variable DDR3_USED      is not set. Will default to \"TRUE\""
-else
-  echo "DDR3_USED               is set to \"$DDR3_USED\""
-fi
-
-if [ -z "$ILA_DEBUG" ]; then
-  echo "Variable ILA_DEBUG      is not set. Will default to \"FALSE\""
-else
-  echo "ILA_DEBUG               is set to \"$ILA_DEBUG\""
-fi
-
-if [ -z "$NUM_OF_ACTIONS" ]; then
+  ####### user settings for CAPI STREAMING FRAMEWORK
   echo
-  echo "Variable NUM_OF_ACTIONS is not set. Will default to \"1\""
-else
-  echo "NUM_OF_ACTIONS          is set to \"$NUM_OF_ACTIONS\""
-fi
+  echo "Setting environment variables that are not pre-defined:"
+  echo "======================================================="
+  if [ ! -d "$USERHOME" ]; then
+    export USERHOME=$FRAMEWORK_ROOT/$USER
+    echo "Setting USERHOME               to \"$USERHOME\""
+  else
+    echo "USERHOME                is set to \"$USERHOME\""
+  fi
 
-fi # [ -d "$XILINX_VIVADO" ]
-echo
+  if [ ! -d "$PSLSE_ROOT" ]; then
+    export PSLSE_ROOT=$USERHOME/pslse                          # used with git clone https://github.com/ibm-capi/pslse     $PSLSE_ROOT
+    echo "Setting PSLSE_ROOT             to \"$PSLSE_ROOT\""
+  else
+    echo "PSLSE_ROOT              is set to \"$PSLSE_ROOT\""
+  fi
+
+  if [ "$DONUT_ROOT" = "$donutdir" ]; then
+    echo "DONUT_ROOT              is set to \"$DONUT_ROOT\""
+  else
+    echo "Setting DONUT_ROOT             to \"$donutdir\""
+  fi
+  export DONUT_ROOT=$donutdir
+
+  if [ "$DONUT_HARDWARE_ROOT" = "$DONUT_ROOT/hardware" ]; then
+    echo "DONUT_HARDWARE_ROOT     is set to \"$DONUT_HARDWARE_ROOT\""
+  else
+    echo "Setting DONUT_HARDWARE_ROOT    to \"$DONUT_ROOT/hardware\""
+  fi
+  export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware
+
+  if [ "$DONUT_SOFTWARE_ROOT" = "$DONUT_ROOT/software" ]; then
+    echo "DONUT_SOFTWARE_ROOT     is set to \"$DONUT_SOFTWARE_ROOT\""
+  else
+    echo "Setting DONUT_SOFTWARE_ROOT    to \"$DONUT_ROOT/software\""
+  fi
+  export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software
+
+  if [ -z "$ACTION_ROOT" ]; then
+    echo "Variable ACTION_ROOT    is not set. Please let it point to your action source if you want to add an action to your project."
+  else
+    echo "ACTION_ROOT             is set to \"$ACTION_ROOT\""
+  fi
+
+  if [ ! -d "$FPGACARD" ]; then
+    export FPGACARD=$FRAMEWORK_ROOT/cards/adku060_capi_1_1_release
+    echo "Setting FPGACARD               to \"$FPGACARD\""
+  else
+    echo "FPGACARD                is set to \"$FPGACARD\""
+  fi
+
+  if [ -z "$FPGACHIP" ]; then
+    export FPGACHIP=xcku060-ffva1156-2-e
+    echo "Setting FPGACHIP               to \"$FPGACHIP\""
+  else
+    echo "FPGACHIP                is set to \"$FPGACHIP\""
+  fi
+
+  if [ ! -d "$DIMMTEST" ]; then
+    export DIMMTEST=$FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0
+    echo "Setting DIMMTEST               to \"$DIMMTEST\""
+  else
+    echo "DIMMTEST                is set to \"$DIMMTEST\""
+  fi
+
+  if [ -z "$SIMULATOR" ]; then
+    export SIMULATOR=xsim                                      # xsim, questa and ncsim are supported, currently
+    echo "Setting SIMULATOR              to \"$SIMULATOR\""
+  else
+    echo "SIMULATOR               is set to \"$SIMULATOR\""
+  fi
+  echo
+
+  ####### Cadence simulation setup:
+  if [ "$SIMULATOR" == "ncsim" ] || [ "$SIMULATOR" == "irun" ]; then
+    echo "Cadence simulation setup for pslse:"
+    echo "==================================="
+    if [ -z `which ncsim 2> /dev/null` ]; then
+      echo "### WARNING ### Path to ncsim not set. Cadence simulation won't work"
+    else
+      echo "Path to ncsim: `which ncsim`"
+      # checking version
+      ncsim -version
+      if [ -z "$CDS_INST_DIR" ]; then
+        export CDS_INST_DIR=$(dirname $(dirname `which ncsim`))
+        echo "Setting CDS_INST_DIR           to \"$CDS_INST_DIR\""
+      else
+        echo "CDS_INST_DIR            is set to \"$CDS_INST_DIR\""
+      fi
+    fi
+    if [ -f "$IES_LIBS/cds.lib" ]; then
+      echo "cds.lib found in IES_LIBS=$IES_LIBS"
+    else
+      echo "### WARNING ### cannot find cds.lib in IES_LIBS=$IES_LIBS, Cadence compilation won't work"
+    fi
+    if [ -z "$CDS_LIC_FILE" ] && [ -z "$LM_LICENSE_FILE" ]; then
+      echo "### WARNING ### Cadence license not defined with CDS_LIC_FILE or LM_LICENSE_FILE, simulation may not work"
+    fi
+  fi
+
+  echo
+  echo "Environment variables that will be evaluated by the make process:"
+  echo "================================================================="
+
+  if [ -z "$NUM_OF_ACTIONS" ]; then
+    echo "Variable NUM_OF_ACTIONS is not set. Will default to \"1\""
+  else
+    echo "NUM_OF_ACTIONS          is set to \"$NUM_OF_ACTIONS\""
+  fi
+
+  if [ -z "$DDR3_USED" ]; then
+    echo "Variable DDR3_USED      is not set. Will default to \"TRUE\""
+  else
+    echo "DDR3_USED               is set to \"$DDR3_USED\""
+  fi
+
+  if [ -z "$ILA_DEBUG" ]; then
+    echo "Variable ILA_DEBUG      is not set. Will default to \"FALSE\""
+  else
+    echo "ILA_DEBUG               is set to \"$ILA_DEBUG\""
+  fi
+
+  echo
+
+  SETUP_DONE="1"
+done
