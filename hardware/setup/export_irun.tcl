@@ -16,7 +16,7 @@
 #
 #-----------------------------------------------------------
 
-set xilinx_vivado $::env(XILINX_VIVADO)
+set xilinx_vivado [version -short]
 set root_dir      $::env(DONUT_HARDWARE_ROOT)
 set ies_libs      $::env(IES_LIBS)
 puts $root_dir

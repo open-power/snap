@@ -91,10 +91,12 @@ model: patch_build_date
 image: patch_build_date
 	@echo -e "\t[BUILD IMAGE (BIT)] start `date`"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
-	@cp -rp $(BUILD_DIR)/Implement/psl_fpga/psl_fpga.bit $(BUILD_DIR)/psl_fpga_flash.bit
-	@echo -e "\t[BUILD IMAGE (BIT)] done  `date`"
-	@echo -e "\t[BUILD IMAGE (BIN)] start `date`"
-	@cd $(BUILD_DIR) && vivado -mode batch -source write_bitstream.tcl -notrace
+	@if [ $(shell vivado -version |head -n1  |cut -c 9-12) = "2015" ] && [ $(DDR3_USED) = "TRUE" ] && [ $(BRAM_USED) = "FALSE" ]; then\
+	  cd $(DONUT_HARDWARE_ROOT)/setup && vivado -mode batch -source AR_64051.tcl -notrace;\
+	else\
+	  cd $(BUILD_DIR) && vivado -mode batch -source write_bitstream.tcl;\
+	  mv $(BUILD_DIR)/Implement/psl_fpga/psl_fpga.bit $(BUILD_DIR)/psl_fpga_flash.bit;\
+	fi
 	@echo -e "\t[BUILD IMAGE (BIN)] done  `date`"
 
 clean:

@@ -26,7 +26,7 @@ set action_dir  $::env(ACTION_ROOT)
 set ddr3_used   $::env(DDR3_USED)
 set bram_used   $::env(BRAM_USED)
 set simulator   $::env(SIMULATOR)
-set vivadoVer [version -short]
+set vivadoVer   [version -short]
 
 #debug information
 #puts $root_dir
@@ -146,6 +146,13 @@ if { $ddr3_used == TRUE } {
 }
  
 # EXPORT SIMULATION for xsim
-export_simulation  -force -directory "$root_dir/sim" -simulator xsim -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs
+if { [string first 2016 $vivadoVer] > 0 } {
+  puts "export_simulation 2016 syntax"
+  export_simulation  -force -directory "$root_dir/sim" -simulator xsim -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/fra
+mework.ip_user_files/ipstatic" -use_ip_compiled_libs
+} else {
+  puts "export_simulation 2015 syntax"
+  export_simulation  -force -directory "$root_dir/sim" -simulator xsim
+}
 
 close_project
