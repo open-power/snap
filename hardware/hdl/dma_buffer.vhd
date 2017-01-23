@@ -226,7 +226,7 @@ BEGIN
         buf_rtag_q         <= rram_raddr_q(6 DOWNTO 1);
         buf_rtag_qq        <= buf_rtag_q;
         buf_rtag_qqq       <= buf_rtag_qq;
-        buf_rtag_p_q       <= parity_gen_even(rram_raddr_p_q & rram_raddr_q(2 DOWNTO 0));
+        buf_rtag_p_q       <= parity_gen_even(rram_raddr_p_q & rram_raddr_q(0));
         buf_rtag_p_qq      <= buf_rtag_p_q;
         buf_rtag_p_qqq     <= buf_rtag_p_qq;
         buf_rtag_valid_q   <= FALSE;
@@ -371,7 +371,7 @@ BEGIN
           -- defaults
           --
           buf_wtag_q       <= wram_waddr_q(6 DOWNTO 1);
-          buf_wtag_p_q     <= parity_gen_even(wram_waddr_p_q & wram_waddr_q(2 DOWNTO 0));
+          buf_wtag_p_q     <= parity_gen_even(wram_waddr_p_q & wram_waddr_q(0));
           buf_wtag_valid_q <= FALSE;
           wram_waddr_q     <= wram_waddr_d;
           wram_waddr_p_q   <= wram_waddr_p_d;
@@ -472,16 +472,17 @@ BEGIN
           --
           -- ha_b.wpar have a one cycle delay
           rram_wdata_p_q <= AC_GENPARITY(ha_b_q.wdata, 64);
-          
+
+          -- FIXME: please fix the bit swap in the AC_GENPARITY function
           IF ha_b_wvalid_q  = '1' THEN
-             ha_b_wdata_err_q <= (rram_wdata_p_q(0) XOR ha_b_q.wpar(0)) &
-                                 (rram_wdata_p_q(1) XOR ha_b_q.wpar(1)) &
-                                 (rram_wdata_p_q(2) XOR ha_b_q.wpar(2)) &
-                                 (rram_wdata_p_q(3) XOR ha_b_q.wpar(3)) &
-                                 (rram_wdata_p_q(4) XOR ha_b_q.wpar(4)) &
-                                 (rram_wdata_p_q(5) XOR ha_b_q.wpar(5)) &
-                                 (rram_wdata_p_q(6) XOR ha_b_q.wpar(6)) &
-                                 (rram_wdata_p_q(7) XOR ha_b_q.wpar(7));
+             ha_b_wdata_err_q <= (rram_wdata_p_q(7) XOR ha_b_q.wpar(0)) &
+                                 (rram_wdata_p_q(6) XOR ha_b_q.wpar(1)) &
+                                 (rram_wdata_p_q(5) XOR ha_b_q.wpar(2)) &
+                                 (rram_wdata_p_q(4) XOR ha_b_q.wpar(3)) &
+                                 (rram_wdata_p_q(3) XOR ha_b_q.wpar(4)) &
+                                 (rram_wdata_p_q(2) XOR ha_b_q.wpar(5)) &
+                                 (rram_wdata_p_q(1) XOR ha_b_q.wpar(6)) &
+                                 (rram_wdata_p_q(0) XOR ha_b_q.wpar(7));
 
           END IF;
         END IF;
