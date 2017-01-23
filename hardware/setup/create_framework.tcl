@@ -37,7 +37,7 @@ set vivadoVer   [version -short]
 
 # Create a new Vivado Project
 exec rm -rf $root_dir/viv_project
-create_project framework $root_dir/viv_project -part $fpga_part
+create_project framework $root_dir/viv_project -part $fpga_part -force 
 
 # Project Settings
 # General
@@ -50,6 +50,8 @@ set_property compxlib.ies_compiled_library_dir $ies_libs [current_project]
 set_property export.sim.base_dir $root_dir [current_project]
 set_property -name {xsim.elaborate.xelab.more_options} -value {-sv_lib libdpi -sv_root .} -objects [current_fileset -simset]
 set_property -name {ies.elaborate.ncelab.more_options} -value {-access +rwc} -objects [current_fileset -simset]
+# Elaboration
+set_property elab_link_dcps false [current_fileset]
 # Synthesis
 set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT 400 [get_runs synth_1]
 set_property STEPS.SYNTH_DESIGN.ARGS.FSM_EXTRACTION one_hot [get_runs synth_1]
