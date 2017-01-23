@@ -167,8 +167,10 @@
    fi
    if [ ! -d ${DONUT_HARDWARE_ROOT}/sim/ies ];then
      cd ${DONUT_HARDWARE_ROOT}/setup; echo "run Vivado setup scripts"
-     vivado -mode batch -source create_ip.tcl -notrace        || (echo "error in create_ip";exit -1)
-     vivado -mode batch -source create_framework.tcl -notrace || (echo "error in create_framework";exit -1)
+     vivado -mode batch -source create_ip.tcl -notrace
+     if [[ $? != 0 ]];then echo "error in create_ip.tcl";exit -1;fi
+     vivado -mode batch -source create_framework.tcl -notrace
+     if [[ $? != 0 ]];then echo "error in create_framework.tcl";exit -1;fi
      # patches for xsim only, rest is done in separate tcl scripts
      sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/xsim/top.sh          # run up to elaboration, skip execution
      sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" ${DONUT_HARDWARE_ROOT}/sim/xsim/top.sh
@@ -190,7 +192,8 @@
 
    if [ $SIMULATOR == "ncsim" ]; then
      if [ ! -f ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh ]; then                              # modbld script doesnt exist yet
-       vivado -mode batch -source export_ncsim.tcl -notrace      || (echo "error in export_ncsim";exit -1)
+       vivado -mode batch -source export_ncsim.tcl -notrace 
+       if [[ $? != 0 ]];then echo "error in export_ncsim.tcl";exit -1;fi
      fi
      sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh             # run ncsim up to elaboration, skip execution
      sed -i "s/opts_ver=/set -e\nopts_ver=/g" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh       # use set -e to stop compilation on first error
@@ -201,7 +204,8 @@
 
    if [ $SIMULATOR == "irun" ]; then
      if [ ! -f ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh ]; then                              # modbld script doesnt exist yet
-       vivado -mode batch -source export_irun.tcl -notrace        || (echo "error in export_irun";exit -1)
+       vivado -mode batch -source export_irun.tcl -notrace
+       if [[ $? != 0 ]];then echo "error in export_irun.tcl";exit -1;fi
      fi
      sed -i "s/93 -relax/93 -elaborate -relax/gI"        ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh # run irun up to elaboration, skip execution
      sed -i "s/-top xil_defaultlib.top/-top work.top/gI" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh # build top in work library
@@ -216,7 +220,8 @@
 
    if [ $SIMULATOR == "questa" ]; then
      if [ ! -f ${DONUT_HARDWARE_ROOT}/sim/questa/top.sh ]; then                           # modbld script doesnt exist yet
-       vivado -mode batch -source export_questa.tcl -notrace       || (echo "error in export_questa";exit -1)
+       vivado -mode batch -source export_questa.tcl -notrace 
+       if [[ $? != 0 ]];then echo "error in export_irun.tcl";exit -1;fi
        sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/questa/top.sh        # run up to elaboration, skip execution
      fi
      cd ${DONUT_HARDWARE_ROOT}/sim/questa;dir=.;source=$SIMULATOR

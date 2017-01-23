@@ -23,7 +23,7 @@ puts $root_dir
 puts $mentor_libs
 
 open_project $root_dir/viv_project/framework.xpr
-if { [string first 2016 $xilinx_vivado] > 0 } {
+if { [string equal -length 4 2016 $xilinx_vivado] > 0 } {
   puts "export_simulation 2016 syntax"
   export_simulation -force -directory "$root_dir/sim" -simulator questa -lib_map_path "$mentor_libs" -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs
 } else {

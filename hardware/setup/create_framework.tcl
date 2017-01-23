@@ -146,7 +146,7 @@ if { $ddr3_used == TRUE } {
 }
  
 # EXPORT SIMULATION for xsim
-if { [string first 2016 $vivadoVer] > 0 } {
+if { [string equal -length 4 2016 $vivadoVer] > 0 } {
   puts "export_simulation 2016 syntax"
   export_simulation  -force -directory "$root_dir/sim" -simulator xsim -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/fra
 mework.ip_user_files/ipstatic" -use_ip_compiled_libs
