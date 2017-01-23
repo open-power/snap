@@ -97,6 +97,7 @@ image: patch_build_date
 	  cd $(BUILD_DIR) && vivado -mode batch -source write_bitstream.tcl;\
 	  mv $(BUILD_DIR)/Implement/psl_fpga/psl_fpga.bit $(BUILD_DIR)/psl_fpga_flash.bit;\
 	fi
+	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Implement/psl_fpga/reports/psl_fpga_timing_summary.rpt | egrep -v "^$|^\-\-"
 	@echo -e "\t[BUILD IMAGE (BIN)] done  `date`"
 
 clean:
