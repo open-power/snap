@@ -31,8 +31,8 @@ USE work.donut_types.all;
 ENTITY mmio IS
   GENERIC (
     -- Version register content
-    IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0) := x"0006_0109_A476_F5E0";
-    BUILD_DATE_DAT         : std_ulogic_vector(63 DOWNTO 0) := x"0000_2017_0123_0756";
+    IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0) := x"00VV_VVVV_SSSS_SSSS";  -- Will be modified by build process
+    BUILD_DATE_DAT         : std_ulogic_vector(63 DOWNTO 0) := x"0000_0000_20YY_MMDD";  -- Will be modified by build process
     -- Time slice register
     TSR_RESET_VALUE        : std_ulogic_vector(63 DOWNTO 0) := x"0000_0000_0002_0000";
     -- DDCB Timeout register
