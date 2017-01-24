@@ -1,0 +1,106 @@
+#!/bin/bash
+
+#
+# Copyright 2017, International Business Machines
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#
+# Figure out SNAP supported cards in the system. We have KU3 and
+# FLASH_GT cards. This script should help automatic testing of
+# any available cards in one system. It should print out a list of
+# available cards of each type.
+#
+
+# output formatting
+bold=$(tput bold)
+normal=$(tput sgr0)
+
+version=1.0
+accel=UNKNOWN
+
+# Print usage message helper function
+function usage() {
+	echo "Usage of $PROGRAM:"
+	echo "    [-A] <accelerator> use either KU3 or FLASH_GT"
+	echo "  prints out a list of cards found for the type."
+	echo "  The numbers reflect /dev/cxl/afu<n>.0."
+}
+
+# Parse any options given on the command line
+while getopts ":A:Vvh" opt; do
+	case ${opt} in
+		A)
+		accel=${OPTARG};
+		;;
+		V)
+		echo "${version}" >&2
+		exit 0
+		;;
+		h)
+		usage;
+		exit 0;
+		;;
+		\?)
+		printf "${bold}ERROR:${normal} Invalid option: -${OPTARG}\n" >&2
+		exit 1
+		;;
+		:)
+		printf "${bold}ERROR:${normal} Option -$OPTARG requires an argument.\n" >&2
+		exit 1
+		;;
+	esac
+done
+
+shift $((OPTIND-1))
+# now do something with $@
+
+#
+# We need to take into account that there might be other CAPI cards
+# in our system. Therefore we check the psl_revision, which identifies
+# the card hardware and the device id in the configuration record cr0
+# which is the unique id the card has. The combination of both, should
+# be more or less bullet prove.
+#
+function detect_ku3_cards() {
+	# We have MAX 4 CAPI cards in one system
+	for card in `seq 0 3` ; do
+		if [ ! -d /sys/class/cxl/card${card} ]; then
+			continue
+		fi
+		psl_revision=`cat /sys/class/cxl/card${card}/psl_revision`
+		if [ $psl_revision != 12291 ] ; then
+			continue
+		fi
+		device=`cat /sys/class/cxl/card${card}/afu${card}.0/cr0/device`
+		if [ $device = 0xcafe ]; then
+			echo -n "${card} "
+		fi
+	done
+}
+
+case ${accel} in
+	# KU3 Card from Alpha Data
+	"KU3")
+	detect_ku3_cards
+	;;
+	# Set one or the other, but not miss to set the accelerator
+	"UNKNOWN")
+	usage
+	exit 1
+	;;
+esac
+
+exit 0
+
