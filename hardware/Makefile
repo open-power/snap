@@ -91,7 +91,7 @@ model: patch_build_date
 image: patch_build_date
 	@echo -e "\t[BUILD IMAGE (BIT)] start `date`"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
-	@if [ $(shell vivado -version |head -n1  |cut -c 9-12) = "2015" ] && [ $(DDR3_USED) = "TRUE" ] && [ $(BRAM_USED) = "FALSE" ]; then\
+	@if [ "`vivado -version |head -n1  |cut -c 9-12`" = "2015" ] && [ $(DDR3_USED) = "TRUE" ] && [ $(BRAM_USED) = "FALSE" ]; then\
 	  cd $(DONUT_HARDWARE_ROOT)/setup && vivado -mode batch -source AR_64051.tcl -notrace;\
 	else\
 	  cd $(BUILD_DIR) && vivado -mode batch -source write_bitstream.tcl;\
