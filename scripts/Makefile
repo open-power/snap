@@ -21,7 +21,7 @@ help:
 	@echo "  prepare    - generate configuration specific header."
 	@echo
 
-.PHONY += menuconfig gconfig xconfig config oldconfig prepare
+.PHONY += menuconfig gconfig xconfig config oldconfig prepare clean distclean
 menuconfig gconfig xconfig config oldconfig prepare:
 	./snap_config -o $@
 
@@ -30,4 +30,7 @@ install:
 uninstall:
 
 clean:
-	$(RM) -r build autoconf.h .config *~
+	$(RM) -r build *~
+
+distclean: clean
+	$(RM) ../.config ../software/include/autoconf.h
