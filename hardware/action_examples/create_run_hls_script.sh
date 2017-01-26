@@ -101,7 +101,9 @@ open_project "${directory}_${part_number}"
 set_top ${wrapper}
 
 # Can that be a list?
-add_files ${files}
+foreach file [ list ${files} ] {
+  add_files \${file}
+}
 
 open_solution "${name}"
 set_part ${part_number}
