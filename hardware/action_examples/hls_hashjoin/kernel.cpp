@@ -61,8 +61,9 @@ void write_results_in_HJ_regs(action_output_reg *Action_Output, action_input_reg
   Action_Output->Data.t2_processed   = field2;
   Action_Output->Data.t3_produced    = field3;
   Action_Output->Data.checkpoint     = field4;
-  Action_Output->Data.rc(31,0)       = (ap_uint<32>) ReturnCode;
-  Action_Output->Data.rc(63,32)      = 0;
+//  Action_Output->Data.rc(31,0)       = (ap_uint<32>) ReturnCode;
+//  Action_Output->Data.rc(63,32)      = 0;
+  Action_Output->Data.rc             = 0;
   Action_Output->Data.action_version =  RELEASE_VERSION;
 
   // Registers unchanged
