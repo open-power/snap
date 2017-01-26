@@ -2,7 +2,7 @@
 # Makefile
 #
 
-all: help
+all:
 
 .PHONY += help
 help:
@@ -24,6 +24,10 @@ help:
 .PHONY += menuconfig gconfig xconfig config oldconfig prepare
 menuconfig gconfig xconfig config oldconfig prepare:
 	./snap_config -o $@
+
+install:
+
+uninstall:
 
 clean:
 	$(RM) -r build autoconf.h .config *~
