@@ -15,7 +15,7 @@
 #
 PLATFORM ?= $(shell uname -i)
 
-software_subdirs += software
+software_subdirs += software scripts
 hardware_subdirs += hardware
 action_subdirs += actions
 
