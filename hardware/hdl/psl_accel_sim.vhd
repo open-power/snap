@@ -735,6 +735,7 @@ ARCHITECTURE afu OF afu IS
   SIGNAL c1_ddr3_s_axi_ctrl_rresp   : STD_LOGIC_VECTOR(1 DOWNTO 0);                                          -- only for DDR3_USED=TRUE
   SIGNAL c1_ddr3_interrupt          : STD_LOGIC;                                                             -- only for DDR3_USED=TRUE
   SIGNAL refclk200_ibuf             : std_logic;                                                             -- only for DDR3_USED=TRUE   
+  SIGNAL refclk200_bufg             : std_logic;                                                             -- only for DDR3_USED=TRUE   
   signal ddr3_reset_m               : std_logic;                                                             -- only for DDR3_USED=TRUE
 
 BEGIN
@@ -747,9 +748,9 @@ BEGIN
     END IF;
   END PROCESS action_reset_reg;
 
-  ddr3_reset : PROCESS (refclk200_ibuf)          -- only for DDR3_USED=TRUE         
+  ddr3_reset : PROCESS (refclk200_bufg)          -- only for DDR3_USED=TRUE         
   BEGIN  -- PROCESS                              -- only for DDR3_USED=TRUE
-    IF (rising_edge(refclk200_ibuf)) THEN        -- only for DDR3_USED=TRUE
+    IF (rising_edge(refclk200_bufg)) THEN        -- only for DDR3_USED=TRUE
       IF ((action_reset   = '1') OR              -- only for DDR3_USED=TRUE
           (action_reset_q = '1') or              -- only for DDR3_USED=TRUE
           (action_reset_qq= '1')) THEN           -- only for DDR3_USED=TRUE
@@ -770,14 +771,19 @@ BEGIN
     IB => refclk200_n,                           -- only for DDR3_USED=TRUE
     O => refclk200_ibuf                          -- only for DDR3_USED=TRUE
   );                                             -- only for DDR3_USED=TRUE
-                                                 
+                                                 -- only for DDR3_USED=TRUE 
+  bufg_clk : BUFG                                -- only for DDR3_USED=TRUE 
+  port map(                                      -- only for DDR3_USED=TRUE 
+    I => refclk200_ibuf,                         -- only for DDR3_USED=TRUE 
+    O => refclk200_bufg                          -- only for DDR3_USED=TRUE 
+  );                                             -- only for DDR3_USED=TRUE  
                                                 
                                                  
   
   --                                                                                     -- only for DDR3_USED=TRUE
   --                                                                                     -- only for DDR3_USED=TRUE
   --                                                                                     -- only for DDR3_USED=TRUE
-  c1_ddr3_dm <= (OTHERS => '0');                                                         -- only for DDR3_USED=TRUE
+  c1_ddr3_dm <= (OTHERS => '0');                                                         -- only for DDR3_USED=TRUE --only for BRAM_USED!=TRUE 
 
   donut_i: donut
     PORT MAP (
@@ -1029,7 +1035,7 @@ BEGIN
    c0_ddr3_axi_clk   <=     c1_ddr3_ui_clk;                                                 -- only for DDR3_USED=TRUE -- only for BRAM_USED!=TRUE
    c0_ddr3_axi_rst_n <= NOT c1_ddr3_ui_clk_sync_rst;                                        -- only for DDR3_USED=TRUE -- only for BRAM_USED!=TRUE
 
--- only for BRAM_USED=TRUE   c0_ddr3_axi_clk   <= refclk200_ibuf;                                                      -- only for DDR3_USED=TRUE 
+-- only for BRAM_USED=TRUE   c0_ddr3_axi_clk   <= refclk200_bufg;                                                      -- only for DDR3_USED=TRUE 
 -- only for BRAM_USED=TRUE   c0_ddr3_axi_rst_n <= ddr3_reset_n_q;                                                      -- only for DDR3_USED=TRUE 
 
    axi_clock_converter_i : axi_clock_converter                                              -- only for DDR3_USED=TRUE
