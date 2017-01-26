@@ -24,8 +24,8 @@ normal=$(tput sgr0)
 
 # Name of global config file
 kconfig="`pwd`/Kconfig"
-config=.config
-autoconf=autoconf.h
+config=../.config
+autoconf=../software/include/autoconf.h
 linux_dir="/usr/src/kernels/`uname -r`"
 build_dir="`pwd`/build"
 option=menuconfig
