@@ -33,7 +33,7 @@ accel=UNKNOWN
 # Print usage message helper function
 function usage() {
 	echo "Usage of $PROGRAM:"
-	echo "    [-A] <accelerator> use either KU3 or FLASH_GT"
+	echo "    [-A] <accelerator> use either GZIP, KU3 or FLASH_GT"
 	echo "  prints out a list of cards found for the type."
 	echo "  The numbers reflect /dev/cxl/afu<n>.0."
 }
@@ -90,7 +90,35 @@ function detect_ku3_cards() {
 	done
 }
 
+#
+# We need to take into account that there might be other CAPI cards
+# in our system. Therefore we check the psl_revision, which identifies
+# the card hardware and the device id in the configuration record cr0
+# which is the unique id the card has. The combination of both, should
+# be more or less bullet prove.
+#
+function detect_gzip_cards() {
+	# We have MAX 4 CAPI cards in one system
+	for card in `seq 0 3` ; do
+		if [ ! -d /sys/class/cxl/card${card} ]; then
+			continue
+		fi
+		psl_revision=`cat /sys/class/cxl/card${card}/psl_revision`
+		if [ $psl_revision != 1 ] ; then
+			continue
+		fi
+		device=`cat /sys/class/cxl/card${card}/afu${card}.0/cr0/device`
+		if [ $device = 0x0602 ]; then
+			echo -n "${card} "
+		fi
+	done
+}
+
 case ${accel} in
+	# GZIP Card from Nallatech
+	"GZIP")
+	detect_gzip_cards
+	;;
 	# KU3 Card from Alpha Data
 	"KU3")
 	detect_ku3_cards
