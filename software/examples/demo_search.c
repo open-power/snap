@@ -151,6 +151,7 @@ static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
 			if (((i+1) % 3) == 0)
 				printf("\n");
 		}
+		printf("\n");
 	}
 	if (verbose_flag > 1) {
 		printf(PR_RED "Found: %016llx/%lld" PR_STD
