@@ -20,7 +20,6 @@ set root_dir    $::env(DONUT_HARDWARE_ROOT)
 set fpga_part   $::env(FPGACHIP)
 set pslse_dir   $::env(PSLSE_ROOT)
 set dimm_dir    $::env(DIMMTEST)
-set ies_libs    $::env(IES_LIBS)
 set build_dir   $::env(DONUT_HARDWARE_ROOT)/build
 set action_dir  $::env(ACTION_ROOT)
 set ddr3_used   $::env(DDR3_USED)
@@ -31,9 +30,9 @@ set vivadoVer   [version -short]
 #debug information
 #puts $root_dir
 #puts $pslse_dir
-#puts $ies_libs
 #puts $build_dir
 #puts $vivadoVer
+#puts $simulator
 
 # Create a new Vivado Project
 exec rm -rf $root_dir/viv_project
@@ -44,14 +43,15 @@ create_project framework $root_dir/viv_project -part $fpga_part -force
 set_property target_language VHDL [current_project]
 set_property default_lib work [current_project]
 # Simulation
-set_property target_simulator IES [current_project]
-set_property top top [get_filesets sim_1]
-set_property compxlib.ies_compiled_library_dir $ies_libs [current_project]
+if { ( $simulator == "ncsim" ) || ( $simulator == "irun" ) } {
+  set_property target_simulator IES [current_project]
+  set_property top top [get_filesets sim_1]
+  set_property compxlib.ies_compiled_library_dir $::env(IES_LIBS) [current_project]
+  set_property -name {ies.elaborate.ncelab.more_options} -value {-access +rwc} -objects [current_fileset -simset]
+} else {
+  set_property -name {xsim.elaborate.xelab.more_options} -value {-sv_lib libdpi -sv_root .} -objects [current_fileset -simset]
+}
 set_property export.sim.base_dir $root_dir [current_project]
-set_property -name {xsim.elaborate.xelab.more_options} -value {-sv_lib libdpi -sv_root .} -objects [current_fileset -simset]
-set_property -name {ies.elaborate.ncelab.more_options} -value {-access +rwc} -objects [current_fileset -simset]
-# Elaboration
-set_property elab_link_dcps false [current_fileset]
 # Synthesis
 set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT 400 [get_runs synth_1]
 set_property STEPS.SYNTH_DESIGN.ARGS.FSM_EXTRACTION one_hot [get_runs synth_1]
