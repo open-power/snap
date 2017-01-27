@@ -11,9 +11,15 @@ sed -i '/top    synth_options/ a\
                                            \]' $2
 
 if [ $DDR3_USED == "TRUE" ]; then
-sed -i '/top    synth_options/ a\
+  if [ $BRAM_USED == "TRUE" ]; then
+    sed -i '/top    synth_options/ a\
+                                             \$rootDir/ip/block_RAM/block_RAM.xci \\\
+                                             \$rootDir/ip/axi_clock_converter/axi_clock_converter.xci \\' $2
+  else 
+    sed -i '/top    synth_options/ a\
                                              \$rootDir/ip/ddr3sdram/ddr3sdram.xci \\\
                                              \$rootDir/ip/axi_clock_converter/axi_clock_converter.xci \\' $2
+  fi
 fi
 
 sed -i '/top    synth_options/ a\
@@ -45,15 +51,22 @@ if [ $ILA_DEBUG == "TRUE" ]; then
 sed -i '/top      top/ a\
                                              \$rootDir/setup/debug.xdc \\' $2
 fi
-if [ $DDR3_USED == "TRUE" ]; then
+
+if [ $DDR3_USED == "TRUE" ] && [ $BRAM_USED != "TRUE"  ] ; then
 sed -i '/top      top/ a\
-                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc \\\
-                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc \\\
-                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc \\' $2
+                                              \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc \\\
+                                              \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc \\' $2
 fi
 
 sed -i '/top      top/ a\
-set_attribute impl \$top      linkXDC       \[list \\\
                                              \$rootDir/setup/donut_link.xdc \\' $2
+
+if [ $DDR3_USED == "TRUE" ]; then
+sed -i '/top      top/ a\
+                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc \\' $2
+fi
+
+sed -i '/top      top/ a\
+set_attribute impl \$top      linkXDC       \[list \\' $2
 
 sed -i 's/top      phys_directive Explore/top      phys_directive AggressiveExplore/' $2

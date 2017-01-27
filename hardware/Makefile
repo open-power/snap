@@ -38,7 +38,7 @@ check_donut_settings:
 
 create_environment:
 	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment $(CE_PARMS)
-	@echo -e "\t[CREATE_ENVIRONMENT] done ($(shell date))"
+	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
 
 copy $(BUILD_DIR)/psl_fpga.tcl:
 	@echo -e "\t[COPY] psl build env"; cp -a $(PSL_SOURCE_ENV) $(BUILD_DIR)
@@ -48,6 +48,9 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 	@sed -i 's/run.topImpl.*0/run.topImpl 1/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topSynth.*0/run.topSynth 1/' $(BUILD_DIR)/psl_fpga.tcl
 	@mv -f $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
+	@if [ $(DDR3_USED) = "TRUE" ]; then echo "PATCH .vhd FILES for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/vhdl.patch; fi
+	@$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT)/hdl psl_accel_sim.vhd
+	@$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT)/hdl psl_accel_syn.vhd
 
 $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@echo -e "\t[CREATE] $(BUILD_DIR)/Sources/prj/afu.prj"
@@ -74,32 +77,30 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	for vhd_file in $$VHD_FILES; do \
 		$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; \
 	done
-	@if [ $(DDR3_USED) = "TRUE" ]; then echo "PATCH .vhd FILES for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/vhdl.patch; fi
 
 patch_build_date:
 	@echo "PATCH build date" && MMIO_VHD_FILE=`grep -i "mmio.vhd" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\///'`; \
 	$(DONUT_HARDWARE_ROOT)/setup/patch_build_date.sh $(DONUT_HARDWARE_ROOT) $$MMIO_VHD_FILE
 
 config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_build_date
-	@echo -e "\t[CONFIG] done ($(shell date))"
+	@echo -e "\t[CONFIG] done `date`"
 
 model: patch_build_date
-	@echo -e "\t[BUILD MODEL] start ($(shell date))"
+	@echo -e "\t[BUILD MODEL] start `date`"
 	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
-	@echo -e "\t[BUILD MODEL] done ($(shell date))"
+	@echo -e "\t[BUILD MODEL] done `date`"
 
 image: patch_build_date
-	@echo -e "\t[BUILD IMAGE] start ($(shell date))"
+	@echo -e "\t[BUILD IMAGE (BIT)] start `date`"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
-	@echo -e "\t[BUILD IMAGE] done ($(shell date))"
-# FIXME: check if vivado was successful
-	@if [ $(DDR3_USED) = "TRUE" ]; then\
-		cd $(DONUT_HARDWARE_ROOT)/setup && vivado -mode batch -source AR_64051.tcl -notrace;\
-		echo -e "\t[BUILD IMAGE] patch for ar_64051 done ($(shell date))";\
+	@if [ "`vivado -version |head -n1  |cut -c 9-12`" = "2015" ] && [ $(DDR3_USED) = "TRUE" ] && [ $(BRAM_USED) = "FALSE" ]; then\
+	  cd $(DONUT_HARDWARE_ROOT)/setup && vivado -mode batch -source AR_64051.tcl -notrace;\
 	else\
-		cd $(BUILD_DIR) && vivado -mode batch -source write_bitstream.tcl;\
-		mv $(BUILD_DIR)/Implement/psl_fpga/psl_fpga.bit $(BUILD_DIR)/psl_fpga_flash.bit;\
+	  cd $(BUILD_DIR) && vivado -mode batch -source write_bitstream.tcl;\
+	  mv $(BUILD_DIR)/Implement/psl_fpga/psl_fpga.bit $(BUILD_DIR)/psl_fpga_flash.bit;\
 	fi
+	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Implement/psl_fpga/reports/psl_fpga_timing_summary.rpt | egrep -v "^$|^\-\-"
+	@echo -e "\t[BUILD IMAGE (BIN)] done  `date`"
 
 clean:
 	@echo -e "\t[CLEAN] build environment";

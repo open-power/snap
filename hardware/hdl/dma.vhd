@@ -230,6 +230,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL rfifo_prog_full        : std_ulogic;
   SIGNAL rfifo_rd_rst_busy      : std_ulogic;
   SIGNAL rfifo_rdata            : std_ulogic_vector(512 DOWNTO 0);
+  SIGNAL rfifo_wdata            : std_ulogic_vector(512 DOWNTO 0);
   SIGNAL rfifo_wr_rst_busy      : std_ulogic;
   SIGNAL rfifo_wr_in_process_q  : std_ulogic_vector(1 DOWNTO 0);
   SIGNAL rsp_rtag_next_q        : std_ulogic_vector(  5 DOWNTO  0);
@@ -1986,12 +1987,13 @@ BEGIN
     -- FIFO: fifo_513x512
     ----------------------------------------------------------------------------
     --
+    rfifo_wdata <= aln_rdata_e & aln_rdata;
+    
     dma_read_fifo : fifo_513x512
     PORT MAP (
       clk                      => std_logic(ha_pclock),
       srst                     => std_logic(afu_reset),
-      din(511 DOWNTO 0)        => std_logic_vector(aln_rdata),
-      din(512)                 => std_logic(aln_rdata_e),
+      din                      => std_logic_vector(rfifo_wdata),
       wr_en                    => std_logic(aln_rdata_v),
       rd_en                    => std_logic(sd_d_i.rd_data_ack),
       std_ulogic_vector(dout)  => rfifo_rdata,
