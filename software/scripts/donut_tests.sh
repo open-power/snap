@@ -46,7 +46,7 @@ while getopts ":C:t:aMSHh" opt; do
 	dnut_card=$OPTARG;
 	;;
 	t)
-	DNUT_TRACE=$OPTARG;
+	export DNUT_TRACE=$OPTARG;
 	;;
 	a)
 	search=1
@@ -183,7 +183,7 @@ fi
 if [ $memcopy -eq 1 -a $memcopy_cardram -eq 1 ]; then
 	### Trying DRAM on card ...
 	test_data=examples/LARGE_A.bin
-	python3 -c 'print("A" * (16 * 1024 * 1024), end="")' > $test_data
+	python3 -c 'print("A" * (1 * 1024 * 1024), end="")' > $test_data
 	# examples/demo_search.txt
 	
 	size=`ls -l $test_data | cut -d' ' -f5`
