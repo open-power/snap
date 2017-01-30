@@ -25,6 +25,7 @@ donutdir=$(dirname "$scriptdir")
 
 unset SETUP_DONE;
 while [ -z "$SETUP_DONE" ]; do
+  SETUP_WARNINGS=""
   if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ] || [ ! -d "$FRAMEWORK_ROOT" ]; then
     echo "Note: The following commands need to be executed before calling this script:"
     echo
@@ -131,7 +132,7 @@ while [ -z "$SETUP_DONE" ]; do
     echo "Cadence simulation setup for pslse:"
     echo "==================================="
     if [ -z `which ncsim 2> /dev/null` ]; then
-      echo "### WARNING ### Path to ncsim not set. Cadence simulation won't work"
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to ncsim not set. Cadence simulation won't work"
     else
       echo "Path to ncsim: `which ncsim`"
       # checking version
@@ -146,10 +147,10 @@ while [ -z "$SETUP_DONE" ]; do
     if [ -f "$IES_LIBS/cds.lib" ]; then
       echo "cds.lib found in IES_LIBS=$IES_LIBS"
     else
-      echo "### WARNING ### cannot find cds.lib in IES_LIBS=$IES_LIBS, Cadence compilation won't work"
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Cannot find cds.lib in IES_LIBS=$IES_LIBS, Cadence compilation won't work"
     fi
     if [ -z "$CDS_LIC_FILE" ] && [ -z "$LM_LICENSE_FILE" ]; then
-      echo "### WARNING ### Cadence license not defined with CDS_LIC_FILE or LM_LICENSE_FILE, simulation may not work"
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Cadence license not defined with CDS_LIC_FILE or LM_LICENSE_FILE, simulation may not work"
     fi
   fi
 
@@ -164,15 +165,31 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
   if [ -z "$DDR3_USED" ]; then
-    echo "Variable DDR3_USED      is not set. Will default to \"TRUE\""
+    echo "Variable DDR3_USED      is not set. Will default to \"FALSE\""
+    DDR3_USED="FALSE"
   else
     echo "DDR3_USED               is set to \"$DDR3_USED\""
+  fi
+
+  if [ -z "$DDR4_USED" ]; then
+    echo "Variable DDR4_USED      is not set. Will default to \"TRUE\""
+    DDR4_USED="TRUE"
+  else
+    echo "DDR4_USED               is set to \"$DDR4_USED\""
+  fi
+
+  if [ "$DDR3_USED" == "TRUE" ] && [ "$DDR4_USED" == "TRUE" ]; then
+    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of DDR3_USED and DDR4_USED is conflicting!"
   fi
 
   if [ -z "$ILA_DEBUG" ]; then
     echo "Variable ILA_DEBUG      is not set. Will default to \"FALSE\""
   else
     echo "ILA_DEBUG               is set to \"$ILA_DEBUG\""
+  fi
+
+  if [ ! -z "$SETUP_WARNING" ]; then
+    echo -e "$SETUP_WARNING"
   fi
 
   echo

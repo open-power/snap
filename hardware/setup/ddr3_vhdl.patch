@@ -37,9 +37,9 @@
 +        c0_ddr3_dm         : out   std_logic_vector(8 downto 0);
 +        c0_ddr3_dq         : inout std_logic_vector(71 downto 0);
 +        c0_ddr3_dqs_p      : inout std_logic_vector(8 downto 0);
-+        c0_ddr3_dqs_n      : inout std_logic_vector(8 downto 0); 
++        c0_ddr3_dqs_n      : inout std_logic_vector(8 downto 0);
 +        c0_ddr3_odt        : out   std_logic_vector(1 downto 0);
-+ 
++
 +        c1_sys_clk_p       : IN STD_LOGIC;
 +        c1_sys_clk_n       : IN STD_LOGIC;
 +        c1_ddr3_addr       : out   std_logic_vector(15 downto 0);
@@ -51,7 +51,7 @@
 +        c1_ddr3_cke        : out   std_logic_vector(1 downto 0);
 +        c1_ddr3_ck_p       : out   std_logic_vector(1 downto 0);
 +        c1_ddr3_ck_n       : out   std_logic_vector(1 downto 0);
-+        c1_ddr3_we_n       : out   std_logic;  
++        c1_ddr3_we_n       : out   std_logic;
 +        c1_ddr3_dm         : out   std_logic_vector(8 downto 0);
 +        c1_ddr3_dq         : inout std_logic_vector(71 downto 0);
 +        c1_ddr3_dqs_p      : inout std_logic_vector(8 downto 0);
@@ -75,7 +75,7 @@
          ha_jcompar: in std_ulogic;
          ah_paren: out std_ulogic;
 !        ha_pclock: in std_ulogic;
-! 
+!
 !        -- Alpha-Data KU3 card has two DDR3 SO-DIMMs
 !        -- connected to Xilinx memory controllers
 ! --       user_sw_l          : in    std_logic;
@@ -99,7 +99,7 @@
 !        c0_ddr3_dqs_p      : inout std_logic_vector(8 downto 0);
 !        c0_ddr3_dqs_n      : inout std_logic_vector(8 downto 0);
 !        c0_ddr3_odt        : out   std_logic_vector(1 downto 0);
-! 
+!
 !        c1_sys_clk_p       : IN STD_LOGIC;
 !        c1_sys_clk_n       : IN STD_LOGIC;
 !        c1_ddr3_addr       : out   std_logic_vector(15 downto 0);
@@ -111,7 +111,7 @@
 !        c1_ddr3_cke        : out   std_logic_vector(1 downto 0);
 !        c1_ddr3_ck_p       : out   std_logic_vector(1 downto 0);
 !        c1_ddr3_ck_n       : out   std_logic_vector(1 downto 0);
-!        c1_ddr3_we_n       : out   std_logic;  
+!        c1_ddr3_we_n       : out   std_logic;
 !        c1_ddr3_dm         : out   std_logic_vector(8 downto 0);
 !        c1_ddr3_dq         : inout std_logic_vector(71 downto 0);
 !        c1_ddr3_dqs_p      : inout std_logic_vector(8 downto 0);
@@ -135,7 +135,7 @@
            ha_jcompar => ha0_jcompar,
            ah_paren => a0h_paren,
 !          ha_pclock => ha0_pclock,
-! 
+!
 !          refclk200_n     => refclk200_n,
 !          refclk200_p     => refclk200_p,
 !          c0_sys_clk_p    => c0_sys_clk_p,
@@ -150,12 +150,12 @@
 !          c0_ddr3_ck_p    => c0_ddr3_ck_p,
 !          c0_ddr3_ck_n    => c0_ddr3_ck_n,
 !          c0_ddr3_we_n    => c0_ddr3_we_n,
-!          c0_ddr3_dm      => c0_ddr3_dm, 
+!          c0_ddr3_dm      => c0_ddr3_dm,
 !          c0_ddr3_dq      => c0_ddr3_dq,
 !          c0_ddr3_dqs_p   => c0_ddr3_dqs_p,
 !          c0_ddr3_dqs_n   => c0_ddr3_dqs_n,
 !          c0_ddr3_odt     => c0_ddr3_odt,
-! 
+!
 !          c1_sys_clk_p    => c1_sys_clk_p,
 !          c1_sys_clk_n    => c1_sys_clk_n,
 !          c1_ddr3_addr    => c1_ddr3_addr,
@@ -168,7 +168,7 @@
 !          c1_ddr3_ck_p    => c1_ddr3_ck_p,
 !          c1_ddr3_ck_n    => c1_ddr3_ck_n,
 !          c1_ddr3_we_n    => c1_ddr3_we_n,
-!          c1_ddr3_dm      => c1_ddr3_dm, 
+!          c1_ddr3_dm      => c1_ddr3_dm,
 !          c1_ddr3_dq      => c1_ddr3_dq,
 !          c1_ddr3_dqs_p   => c1_ddr3_dqs_p,
 !          c1_ddr3_dqs_n   => c1_ddr3_dqs_n,

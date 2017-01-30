@@ -1,18 +1,42 @@
 #!/bin/bash
-if [ $DDR3_USED == "TRUE" ]; then
-  sed -i 's/^\(-- only for DDR3_USED=TRUE\)\(.*\)/\2\1/' $1/$2
+if [ "$DDRI_USED" == "TRUE" ]; then
+  sed -i 's/\(.*\)\(-- only for DDRI_USED=TRUE\)\(.*\)/\1\3\2/' $1/$2
+  sed -i 's/\(.*\)\(-- only for DDRI_USED!=TRUE\)\(.*\)/\2\1\3/' $1/$2
+else
+  sed -i 's/\(.*\)\(-- only for DDRI_USED!=TRUE\)\(.*\)/\1\3\2/' $1/$2
+  sed -i 's/\(.*\)\(-- only for DDRI_USED=TRUE\)\(.*\)/\2\1\3/' $1/$2
+fi
+
+if [ "$DDR3_USED" == "TRUE" ]; then
+  sed -i 's/\(.*\)\(-- only for DDR3_USED=TRUE\)\(.*\)/\1\3\2/' $1/$2
   sed -i 's/\(.*\)\(-- only for DDR3_USED!=TRUE\)\(.*\)/\2\1\3/' $1/$2
 else
-  sed -i 's/^\(-- only for DDR3_USED!=TRUE\)\(.*\)/\2\1/' $1/$2
+  sed -i 's/\(.*\)\(-- only for DDR3_USED!=TRUE\)\(.*\)/\1\3\2/' $1/$2
   sed -i 's/\(.*\)\(-- only for DDR3_USED=TRUE\)\(.*\)/\2\1\3/' $1/$2
 fi
 
-if [ $BRAM_USED == "TRUE" ]; then
-  sed -i 's/^\(-- only for BRAM_USED=TRUE\)\(.*\)/\2\1/' $1/$2
+if [ "$DDR4_USED" == "TRUE" ]; then
+  sed -i 's/\(.*\)\(-- only for DDR4_USED=TRUE\)\(.*\)/\1\3\2/' $1/$2
+  sed -i 's/\(.*\)\(-- only for DDR4_USED!=TRUE\)\(.*\)/\2\1\3/' $1/$2
+else
+  sed -i 's/\(.*\)\(-- only for DDR4_USED!=TRUE\)\(.*\)/\1\3\2/' $1/$2
+  sed -i 's/\(.*\)\(-- only for DDR4_USED=TRUE\)\(.*\)/\2\1\3/' $1/$2
+fi
+
+if [ "$BRAM_USED" == "TRUE" ]; then
+  sed -i 's/\(.*\)\(-- only for BRAM_USED=TRUE\)\(.*\)/\1\3\2/' $1/$2
   sed -i 's/\(.*\)\(-- only for BRAM_USED!=TRUE\)\(.*\)/\2\1\3/' $1/$2
 else
-  sed -i 's/^\(-- only for BRAM_USED!=TRUE\)\(.*\)/\2\1/' $1/$2
+  sed -i 's/\(.*\)\(-- only for BRAM_USED!=TRUE\)\(.*\)/\1\3\2/' $1/$2
   sed -i 's/\(.*\)\(-- only for BRAM_USED=TRUE\)\(.*\)/\2\1\3/' $1/$2
+fi
+
+if [ "$SIM" == "TRUE" ]; then
+  sed -i 's/\(.*\)\(-- only for SIM=TRUE\)\(.*\)/\1\3\2/' $1/$2
+  sed -i 's/\(.*\)\(-- only for SIM!=TRUE\)\(.*\)/\2\1\3/' $1/$2
+else
+  sed -i 's/\(.*\)\(-- only for SIM!=TRUE\)\(.*\)/\1\3\2/' $1/$2
+  sed -i 's/\(.*\)\(-- only for SIM=TRUE\)\(.*\)/\2\1\3/' $1/$2
 fi
 
 NAME=`basename $2`
