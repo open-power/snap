@@ -94,6 +94,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ -z "$ACTION_ROOT" ]; then
     echo "Variable ACTION_ROOT    is not set. Please let it point to your action source if you want to add an action to your project."
+    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Variable ACTION_ROOT is not set (see above)."
   else
     echo "ACTION_ROOT             is set to \"$ACTION_ROOT\""
   fi
