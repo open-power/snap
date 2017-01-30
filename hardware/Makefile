@@ -1,6 +1,7 @@
 PSL_SOURCE_ENV=$(FPGACARD)
 BUILD_DIR=$(DONUT_HARDWARE_ROOT)/build
 
+PSL_ACCEL_FILES=$(DONUT_HARDWARE_ROOT)/hdl/psl_accel_sim.vhd $(DONUT_HARDWARE_ROOT)/hdl/psl_accel_syn.vhd
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone
@@ -84,6 +85,9 @@ $(BUILD_DIR)/Sources/top/psl_fpga.vhd: $(BUILD_DIR)/psl_fpga.tcl
 	@if [ $(DDR3_USED) = "TRUE" ]; then echo "PATCH $(BUILD_DIR)/Sources/top/psl_fpga.vhd for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr3_vhdl.patch; fi
 	@if [ $(DDR4_USED) = "TRUE" ]; then echo "PATCH $(BUILD_DIR)/Sources/top/psl_fpga.vhd for DDR4 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr4_vhdl.patch; fi
 
+$(PSL_ACCEL_FILES):
+	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/create_psl_accel.sh $(DONUT_HARDWARE_ROOT)/hdl/psl_accel.vhd_source $@
+
 patch_tcl_files:
 	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
 
@@ -97,7 +101,7 @@ patch_build_date:
 	@echo "PATCH build date"; \
 	$(DONUT_HARDWARE_ROOT)/setup/patch_build_date.sh $(DONUT_HARDWARE_ROOT)/hdl mmio.vhd
 
-config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_build_date
+config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(PSL_ACCEL_FILES) create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_build_date
 	@echo -e "\t[CONFIG] done `date`"
 
 model: patch_build_date
@@ -125,9 +129,11 @@ clean:
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
-	rm -f   ./setup/*.log
-	rm -f   ./setup/*.jou
+	rm -f     $(PSL_ACCEL_FILES)
+	rm -f     ./setup/*.log
+	rm -f     ./setup/*.jou
 
 gitclean:
-	@echo -e "\t[GITCLEAN] cleaning donut git";
+	@echo -e "\t[GITCLEAN] cleaning and resetting donut git";
 	git clean -f -d -x
+	git reset --hard
