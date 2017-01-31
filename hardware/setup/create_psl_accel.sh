@@ -34,7 +34,7 @@ fi
 
 grep -v "$SIM_FILTER" $1 | grep -v "$DDRI_FILTER" | grep -v "$DDR3_FILTER" | grep -v "$DDR4_FILTER" | grep -v "$BRAM_FILTER" > $2
 if [ -z "$CHECK_FOR_SIM" ]; then
-  sed -i "s/psl_accel_afu/psl_accel/" $2
+  sed -i "s/psl_accel_afu/psl_accel/g" $2
 else
-  sed -i "s/psl_accel_afu/afu/" $2
+  sed -i "s/psl_accel_afu/afu/g" $2
 fi

@@ -15,10 +15,10 @@ export DDR4_USED=TRUE
 endif
 
 export DDRI_USED=FALSE
-ifeq "$DDR3_USED" "TRUE"
+ifeq "$(DDR3_USED)" "TRUE"
 export DDRI_USED=TRUE
 endif
-ifeq "$DDR4_USED" "TRUE"
+ifeq "$(DDR4_USED)" "TRUE"
 export DDRI_USED=TRUE
 endif
 
