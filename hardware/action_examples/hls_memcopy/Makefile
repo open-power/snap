@@ -28,6 +28,6 @@
 # This is solution specific. Check if we can replace this by generics too.
 SOLUTION_NAME ?= memcopy
 SOLUTION_DIR ?= hlsMemcopy
-srcs += kernel.cpp
+srcs += kernel.cpp action_memcopy_fct_hls.cpp 
 
 include ../hls.mk
