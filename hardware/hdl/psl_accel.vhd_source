@@ -26,11 +26,11 @@
 
   USE work.psl_accel_types.ALL;
 
-  LIBRARY unisim;                                                                        -- only for DDR3_USED=TRUE-- only for SIM=TRUE
-  USE unisim.vcomponents.all;                                                            -- only for DDR3_USED=TRUE-- only for SIM=TRUE
-
   USE work.ddr3_sdram_pkg.ALL;                                                           -- only for DDR3_USED=TRUE-- only for BRAM_USED!=TRUE-- only for SIM=TRUE
   USE work.ddr3_sdram_usodimm_pkg.ALL;                                                   -- only for DDR3_USED=TRUE-- only for BRAM_USED!=TRUE-- only for SIM=TRUE
+
+  LIBRARY unisim;                                                                        -- only for DDRI_USED=TRUE
+  USE unisim.vcomponents.all;                                                            -- only for DDRI_USED=TRUE
 
 
 ENTITY psl_accel_afu IS
@@ -1625,7 +1625,7 @@ BEGIN
   as_sfp1_sda_oe               <= '0' ;                                                 -- only for SIM!=TRUE
   as_refclk_sfp_fs             <= '0' ;                                                 -- only for SIM!=TRUE
   as_refclk_sfp_fs_en          <= '0' ;                                                 -- only for SIM!=TRUE
-  as_red_led                   <= (OTHERS => '0') ;                                     -- only for SIM!=TRUE
-  as_green_led                 <= (OTHERS => '0') ;                                     -- only for SIM!=TRUE
+  as_red_led                   <= (OTHERS => '0') ;                                     -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
+  as_green_led                 <= (OTHERS => '0') ;                                     -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
 
 END psl_accel_afu;
