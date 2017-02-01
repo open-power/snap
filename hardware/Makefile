@@ -38,7 +38,7 @@ ifndef ACTION_ROOT
 export ACTION_ROOT=$(DONUT_HARDWARE_ROOT)/action_examples/empty
 endif
 
-.PHONY: all image model check_donut_settings create_environment copy clean config gitclean patch_build_date
+.PHONY: all image model check_donut_settings create_environment copy clean config gitclean patch_version patch_vhd_files patch_tcl_files
 
 all: config model image
 
@@ -97,19 +97,19 @@ patch_vhd_files:
 		$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; \
 	done
 
-patch_build_date:
-	@echo "PATCH build date"; \
-	$(DONUT_HARDWARE_ROOT)/setup/patch_build_date.sh $(DONUT_HARDWARE_ROOT)/hdl mmio.vhd
+patch_version:
+	@echo "PATCH SNAP version and build date registers"; \
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl mmio.vhd
 
-config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(PSL_ACCEL_FILES) create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_build_date
+config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(PSL_ACCEL_FILES) create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_vhd_files patch_version
 	@echo -e "\t[CONFIG] done `date`"
 
-model: patch_build_date
+model: patch_version
 	@echo -e "\t[BUILD MODEL] start `date`"
 	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
 	@echo -e "\t[BUILD MODEL] done `date`"
 
-image: patch_build_date
+image: patch_version
 	@echo -e "\t[BUILD IMAGE (BIT)] start `date`"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
 	@if [ "`vivado -version |head -n1  |cut -c 9-12`" = "2015" ] && [ $(DDR3_USED) = "TRUE" ] && [ $(BRAM_USED) = "FALSE" ]; then\
