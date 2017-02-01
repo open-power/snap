@@ -13,9 +13,9 @@ resize_pblock [get_pblocks donut] -add {CLOCKREGION_X3Y3:CLOCKREGION_X5Y3}
 
 
 ## 
-set_false_path -from [get_pins a0/donut_i/ctrl_mgr/afu_reset_q_reg/C] -to [get_pins a0/ddr3_reset_m_reg*/D]
-set_false_path -from [get_pins a0/action_reset_q_reg/C] -to [get_pins a0/ddr3_reset_m_reg*/D]
-set_false_path -from [get_pins a0/action_reset_qq_reg/C] -to [get_pins a0/ddr3_reset_m_reg*/D]
+set_false_path -from [get_pins a0/donut_i/ctrl_mgr/afu_reset_q_reg/C] -to [get_pins a0/sdram_reset_m_reg*/D]
+set_false_path -from [get_pins a0/action_reset_q_reg/C] -to [get_pins a0/sdram_reset_m_reg*/D]
+set_false_path -from [get_pins a0/action_reset_qq_reg/C] -to [get_pins a0/sdram_reset_m_reg*/D]
 
 ###############################################################################################################
 
