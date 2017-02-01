@@ -31,14 +31,6 @@ else
   sed -i 's/\(.*\)\(-- only for BRAM_USED=TRUE\)\(.*\)/\2\1\3/' $1/$2
 fi
 
-if [ "$SIM" == "TRUE" ]; then
-  sed -i 's/\(.*\)\(-- only for SIM=TRUE\)\(.*\)/\1\3\2/' $1/$2
-  sed -i 's/\(.*\)\(-- only for SIM!=TRUE\)\(.*\)/\2\1\3/' $1/$2
-else
-  sed -i 's/\(.*\)\(-- only for SIM!=TRUE\)\(.*\)/\1\3\2/' $1/$2
-  sed -i 's/\(.*\)\(-- only for SIM=TRUE\)\(.*\)/\2\1\3/' $1/$2
-fi
-
 NAME=`basename $2`
 
 if ([ "$NAME" == "psl_accel_sim.vhd" ] || [ "$NAME" == "psl_accel_syn.vhd" ]); then
