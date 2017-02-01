@@ -27,9 +27,6 @@
 
 #define __unused __attribute__((unused))
 
-int quiet = 0;
-int check = 1;
-
 #else
 
 #include <string.h>
@@ -56,9 +53,8 @@ ap_uint<MEMDW> buffer_mem[MAX_NB_OF_BYTES_READ/BPERDW];   // if MEMDW=512 : 128*
 
 #endif  /* NO_SYNTH */
 
-
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
-#define ARRAY_SIZE(a) (sizeof((a))/sizeof((a)[0]))
+int quiet = 0;
+int check = 1;
 
 typedef char hashkey_t[64];
 typedef char hashdata_t[256];

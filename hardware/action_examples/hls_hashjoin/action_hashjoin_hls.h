@@ -17,6 +17,9 @@
  * limitations under the License.
  */
 
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
+#define ARRAY_SIZE(a) (sizeof((a))/sizeof((a)[0]))
+
 #if !defined(NO_SYNTH)
 
 #include "ap_int.h"
