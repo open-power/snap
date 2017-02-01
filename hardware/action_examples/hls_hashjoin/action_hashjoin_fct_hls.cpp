@@ -14,37 +14,11 @@
  * limitations under the License.
  */
 
-/* #define NO_SYNTH */
-
-#if defined(NO_SYNTH)
-
-#include <stdlib.h> /* malloc, free, atoi */
-#include <stdio.h>  /* printf */
-#include <limits.h> /* ULONG_MAX = 0xFFFFFFFFUL */
-#include "action_hashjoin_hls.h"
-
-#define __unused __attribute__((unused))
-
-#else
+#if !defined(NO_SYNTH)
 
 #include <string.h>
-#include "ap_int.h"
 #include "action_hashjoin_hls.h"
 
-#define __unused
-
-/*
- * Hardware implementation is lacking some libc functions. So let us
- * replace those.
- */
-#ifndef ULONG_MAX
-#  define ULONG_MAX 0xFFFFFFFFUL /* gcc compiler but not HLS compiler */
-#endif
-#ifndef NULL
-#  define NULL 0                 /* gcc compiler but not HLS compiler */
-#endif
-
-#endif  /* NO_SYNTH */
 //---------------------------------------------------------------------
 // WRITE DATA TO MEMORY
 short write_burst_of_data_to_mem(ap_uint<MEMDW> *dout_gmem, ap_uint<MEMDW> *d_ddrmem,
@@ -123,3 +97,4 @@ void convert_DWTable_to_64charTable(ap_uint<MEMDW> *buffer, char *SixtyFourBytes
      }
 }
 
+#endif /* !defined(NO_SYNTH) */

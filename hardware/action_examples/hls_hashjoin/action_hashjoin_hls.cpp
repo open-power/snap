@@ -27,6 +27,9 @@
 
 #define __unused __attribute__((unused))
 
+int quiet = 0;
+int check = 1;
+
 #else
 
 #include <string.h>
@@ -163,10 +166,6 @@ typedef struct hashtable_s {
         entry_t table[HT_SIZE]; /* fixed size */
 } hashtable_t;
 
-static int quiet = 0;
-static int check = 1;
-static unsigned int iterations = 1;
-
 static hashtable_t hashtable;
 static unsigned int table3_idx = 0;
 static table3_t table3[ARRAY_SIZE(table1) * ARRAY_SIZE(table2)];
@@ -246,11 +245,11 @@ void table1_cpy(table1_t *dest, table1_t *src)
 static inline void print_hex(table1_t *buf, size_t len)
 {
         unsigned int x;
-        //char *d = buf;
+        char *d = (char *)buf;
 
         printf("{ ");
         for (x = 0; x < len; x++)
-                printf("%02x, ", buf[x]);
+                printf("%02x, ", d[x]);
         printf("}");
 }
 void ht_dump(hashtable_t *ht)
@@ -645,74 +644,3 @@ short action_hashjoin_hls(ap_uint<MEMDW> *din_gmem,
         return rc;
 }
 
-#if defined(NO_SYNTH)
-#include <getopt.h>
-
-static void usage(char *prog)
-{
-        printf("Usage: %s [-h] [-q] [-i <iterations>] [-c <check>]\n", prog);
-}
-
-int main(int argc, char *argv[])
-{
-        int rc = 0;
-        unsigned int i;
-
-        while (1) {
-                int ch;
-                int option_index = 0;
-                static struct option long_options[] = {
-                        { "quiet", no_argument, NULL, 'q' },
-                        { "check", required_argument, NULL, 'c' },
-                        { "iterations", required_argument, NULL, 'i' },
-                        { "help", no_argument, NULL, 'h' },
-                };
-
-                ch = getopt_long(argc, argv, "c:qi:h",
-                                long_options, &option_index);
-                if (ch == -1)
-                        break;
-                switch (ch) {
-                case 'q':
-                        quiet = 1;
-                        break;
-                case 'c':
-                        check = atoi(optarg);
-                        break;
-                case 'i':
-                        iterations = atoi(optarg);
-                        break;
-                case 'h':
-                        usage(argv[0]);
-                        return 0;
-                }
-        }
-
-        /* Iterations are needed to get the profiler working right
-           ... memory leaks? */
-        for (i = 0; i < iterations; i++) {
-                /* ht_testcase(); */
-                rc = action_hashjoin_hls();
-                if (rc != 0)
-                        return 1;
-        }
-        return 0;
-}
-#else
-int main(void)
-{
-        int rc = 0;
-        unsigned int i;
-
-        for (i = 0; i < iterations; i++) {
-                //rc = action_hashjoin_hls(din_gmem, dout_gmem, d_ddrmem, Action_Input,
-                //              T1_address, T2_address, T3_address, T3_produced);
-                //
-                return rc;
-                //if (rc != 0)
-                //      return 1;
-        }
-        return 0;
-}
-#endif
-     

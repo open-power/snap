@@ -21,7 +21,19 @@
 
 #include "ap_int.h"
 
-// Specific Hardware declarations
+/*
+ * Hardware implementation is lacking some libc functions. So let us
+ * replace those.
+ */
+
+#define __unused
+
+#ifndef ULONG_MAX
+#  define ULONG_MAX 0xFFFFFFFFUL /* gcc compiler but not HLS compiler */
+#endif
+#ifndef NULL
+#  define NULL 0                 /* gcc compiler but not HLS compiler */
+#endif
 
 // General memory Data Width is set as a parameter
 #define MEMDW 512              // 512 or 128   // Data bus width in bits for General Host memory
@@ -108,6 +120,13 @@ short action_hashjoin_hls(ap_uint<MEMDW> *din_gmem,
 			  ap_uint<64> T2_address,
 			  ap_uint<64> T3_address,
 			  ap_uint<64> *T3_produced);
+
+#else
+
+extern int quiet;
+extern int check;
+
+int action_hashjoin_hls(void);
 
 #endif /* NO_SYNTH END_IF Specific Hardware declarations */
 
