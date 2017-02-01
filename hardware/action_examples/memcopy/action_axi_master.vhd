@@ -68,6 +68,7 @@ entity action_axi_master is
                 dma_wr_data_strobe_i: in  std_logic_vector(C_M_AXI_DATA_WIDTH/8-1 downto 0);                     
                 dma_wr_data_last_i  : in  std_logic;                     
                 dma_wr_ready_o      : out  std_logic;                     
+                dma_wr_bready_i     : in   std_logic;                     
                 dma_wr_done_o       : out  std_logic;                     
 
 	     	M_AXI_ACLK	: in std_logic;
@@ -227,7 +228,7 @@ axi_w:	process(M_AXI_ACLK)
                  axi_awvalid       <= '0';
                  wr_req_wait_cycle <= '1';
                end if;
-               axi_bready    <= '1';
+               axi_bready    <= dma_wr_bready_i;
                if M_AXI_BVALID = '1' then
                  dma_wr_done_o  <= '1';
                end if;
