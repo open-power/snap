@@ -17,11 +17,6 @@
  * limitations under the License.
  */
 
-#ifdef __cplusplus
-namespace hls {
-extern "C" {
-#endif
-
 #if !defined(NO_SYNTH)
 
 #include "ap_int.h"
@@ -115,11 +110,6 @@ short action_hashjoin_hls(ap_uint<MEMDW> *din_gmem,
 			  ap_uint<64> *T3_produced);
 
 #endif /* NO_SYNTH END_IF Specific Hardware declarations */
-
-#ifdef __cplusplus
-}
-}
-#endif
 
 #endif  /* __ACTION_HASHJOIN_HLS_H__ */
 
