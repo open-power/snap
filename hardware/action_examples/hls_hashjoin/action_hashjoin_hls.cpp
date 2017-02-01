@@ -560,13 +560,15 @@ short table3_dump(table3_t *table3, unsigned int table3_idx, ap_uint<64> output_
 #if defined(NO_SYNTH)
 int action_hashjoin_hls(void)
 #else
-short action_hashjoin_hls(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
-        ap_uint<MEMDW> *d_ddrmem,
-        action_input_reg *Action_Input,
-        ap_uint<64> T1_address, ap_uint<64> T2_address, ap_uint<64> T3_address,
-        ap_uint<64> *T3_produced)
+short action_hashjoin_hls(ap_uint<MEMDW> *din_gmem,
+			  ap_uint<MEMDW> *dout_gmem,
+			  ap_uint<MEMDW> *d_ddrmem,
+			  action_input_reg *Action_Input,
+			  ap_uint<64> T1_address,
+			  ap_uint<64> T2_address,
+			  ap_uint<64> T3_address,
+			  ap_uint<64> *T3_produced)
 #endif
-
 {
         unsigned int i, j;
         table1_t *t1;

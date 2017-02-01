@@ -36,13 +36,6 @@
 //                                                : + test string+int conversion
 
 
-short action_hashjoin_hls(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
-        ap_uint<MEMDW> *d_ddrmem,
-        action_input_reg *Action_Input,
-        ap_uint<64> T1_address, ap_uint<64> T2_address, ap_uint<64> T3_address,
-        ap_uint<64> *T3_produced);
-
-
 // WRITE RESULTS IN MMIO REGS
 void write_results_in_HJ_regs(action_output_reg *Action_Output, action_input_reg *Action_Input,
                    ap_uint<32> ReturnCode, ap_uint<64> field1, ap_uint<64> field2,
@@ -76,9 +69,11 @@ void write_results_in_HJ_regs(action_output_reg *Action_Output, action_input_reg
 //--------------------------------------------------------------------------------------------
 //--- MAIN PROGRAM ---------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
-void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
-           ap_uint<MEMDW> *d_ddrmem,
-           action_input_reg *Action_Input, action_output_reg *Action_Output)
+void action_wrapper(ap_uint<MEMDW> *din_gmem,
+		    ap_uint<MEMDW> *dout_gmem,
+		    ap_uint<MEMDW> *d_ddrmem,
+		    action_input_reg *Action_Input,
+		    action_output_reg *Action_Output)
 {
 
 // Host Memory AXI Interface
@@ -128,9 +123,17 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
                 ... memory leaks? */
 
       for (i = 0; i < 1; i++) {
-                rc = action_hashjoin_hls(din_gmem, dout_gmem, d_ddrmem, Action_Input,
-                        T1_address, T2_address, T3_address, &T3_produced);
-                if(rc!=0) ReturnCode = RET_CODE_FAILURE;
+                rc = action_hashjoin_hls(din_gmem,
+					 dout_gmem,
+					 d_ddrmem,
+					 Action_Input,
+					 T1_address,
+					 T2_address,
+					 T3_address,
+					 &T3_produced);
+
+                if(rc!=0)
+			ReturnCode = RET_CODE_FAILURE;
       }
 
   }

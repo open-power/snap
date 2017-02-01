@@ -17,12 +17,16 @@
  * limitations under the License.
  */
 
+#ifdef __cplusplus
+namespace hls {
+extern "C" {
+#endif
 
+#if !defined(NO_SYNTH)
 
-#if defined(NO_SYNTH)
+#include "ap_int.h"
 
-#else
- // Specific Hardware declarations
+// Specific Hardware declarations
 
 // General memory Data Width is set as a parameter
 #define MEMDW 512              // 512 or 128   // Data bus width in bits for General Host memory
@@ -101,8 +105,21 @@ typedef struct {
         DATA_HJ       Data; // 112 bytes
 } action_output_reg;
 
+short action_hashjoin_hls(ap_uint<MEMDW> *din_gmem,
+			  ap_uint<MEMDW> *dout_gmem,
+			  ap_uint<MEMDW> *d_ddrmem,
+			  action_input_reg *Action_Input,
+			  ap_uint<64> T1_address,
+			  ap_uint<64> T2_address,
+			  ap_uint<64> T3_address,
+			  ap_uint<64> *T3_produced);
 
-#endif // END_IF Specific Hardware declarations
+#endif /* NO_SYNTH END_IF Specific Hardware declarations */
+
+#ifdef __cplusplus
+}
+}
+#endif
 
 #endif  /* __ACTION_HASHJOIN_HLS_H__ */
 
