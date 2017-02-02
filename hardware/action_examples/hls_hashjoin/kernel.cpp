@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-
 #include <string.h>
 #include <stdio.h>
-#include "ap_int.h"
+#include <stdlib.h>
 #include "action_hashjoin_hls.h"
+
+#if !defined(NO_SYNTH)
 
 #define HASHJOIN_ACTION_TYPE 0x0022
 
@@ -34,13 +35,6 @@
 // v1.1 : 12/08/2016 :  adding 2nd C code         : HJ2 for real hash table creation
 // v1.0 : 12/05/2016 :  creation from search V1.8 : HJ1 used for RD/WR database value
 //                                                : + test string+int conversion
-
-
-short action_hashjoin_hls(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
-        ap_uint<MEMDW> *d_ddrmem,
-        action_input_reg *Action_Input,
-        ap_uint<64> T1_address, ap_uint<64> T2_address, ap_uint<64> T3_address,
-        ap_uint<64> *T3_produced);
 
 
 // WRITE RESULTS IN MMIO REGS
@@ -73,12 +67,14 @@ void write_results_in_HJ_regs(action_output_reg *Action_Output, action_input_reg
   Action_Output->Data.hash_table = Action_Input->Data.hash_table;
 }
 
-//--------------------------------------------------------------------------------------------
-//--- MAIN PROGRAM ---------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------
-void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
-           ap_uint<MEMDW> *d_ddrmem,
-           action_input_reg *Action_Input, action_output_reg *Action_Output)
+//-----------------------------------------------------------------------------
+//--- MAIN PROGRAM ------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void action_wrapper(ap_uint<MEMDW> *din_gmem,
+		    ap_uint<MEMDW> *dout_gmem,
+		    ap_uint<MEMDW> *d_ddrmem,
+		    action_input_reg *Action_Input,
+		    action_output_reg *Action_Output)
 {
 
 // Host Memory AXI Interface
@@ -128,9 +124,17 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
                 ... memory leaks? */
 
       for (i = 0; i < 1; i++) {
-                rc = action_hashjoin_hls(din_gmem, dout_gmem, d_ddrmem, Action_Input,
-                        T1_address, T2_address, T3_address, &T3_produced);
-                if(rc!=0) ReturnCode = RET_CODE_FAILURE;
+                rc = action_hashjoin_hls(din_gmem,
+					 dout_gmem,
+					 d_ddrmem,
+					 Action_Input,
+					 T1_address,
+					 T2_address,
+					 T3_address,
+					 &T3_produced);
+
+                if(rc!=0)
+			ReturnCode = RET_CODE_FAILURE;
       }
 
   }
@@ -143,6 +147,66 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
   return;
 }
 
+#endif /* !defined(NO_SYNTH) */
 
+//-----------------------------------------------------------------------------
+//--- TESTBENCH ---------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
+#if defined(NO_SYNTH)
+#include <getopt.h>
 
+static unsigned int iterations = 1;
+
+static void usage(char *prog)
+{
+        printf("Usage: %s [-h] [-q] [-i <iterations>] [-c <check>]\n", prog);
+}
+
+int main(int argc, char *argv[])
+{
+        int rc = 0;
+        unsigned int i;
+
+        while (1) {
+                int ch;
+                int option_index = 0;
+                static struct option long_options[] = {
+                        { "quiet", no_argument, NULL, 'q' },
+                        { "check", required_argument, NULL, 'c' },
+                        { "iterations", required_argument, NULL, 'i' },
+                        { "help", no_argument, NULL, 'h' },
+                };
+
+                ch = getopt_long(argc, argv, "c:qi:h",
+                                long_options, &option_index);
+                if (ch == -1)
+                        break;
+                switch (ch) {
+                case 'q':
+                        quiet = 1;
+                        break;
+                case 'c':
+                        check = atoi(optarg);
+                        break;
+                case 'i':
+                        iterations = atoi(optarg);
+                        break;
+                case 'h':
+                        usage(argv[0]);
+                        return 0;
+                }
+        }
+
+        /* Iterations are needed to get the profiler working right
+           ... memory leaks? */
+        for (i = 0; i < iterations; i++) {
+                /* ht_testcase(); */
+                rc = action_hashjoin_hls();
+                if (rc != 0)
+                        return 1;
+        }
+        return 0;
+}
+
+#endif /* NO_SYNTH */

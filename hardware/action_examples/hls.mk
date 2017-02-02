@@ -29,6 +29,11 @@ WRAPPER ?= action_wrapper
 syn_dir=$(SOLUTION_DIR)_$(PART_NUMBER)/$(SOLUTION_NAME)/syn
 symlinks=vhdl verilog systemc report
 
+# gcc test-bench stuff
+objs = $(srcs:.cpp=.o)
+CXX = g++
+CXXFLAGS = -Wall -W -O2 -DNO_SYNTH -Wno-unknown-pragmas
+
 all: $(syn_dir) $(symlinks)
 
 $(syn_dir): $(srcs) run_hls_script.tcl
@@ -46,5 +51,9 @@ run_hls_script.tcl:
 		-p $(PART_NUMBER)	\
 		-f "$(srcs)" > $@
 
+$(SOLUTION_NAME): $(objs)
+	$(CXX) -o $@ $^
+
 clean:
-	$(RM) -r $(SOLUTION_DIR)* run_hls_script.tcl *~ *.log $(symlinks)
+	$(RM) -r $(SOLUTION_DIR)* run_hls_script.tcl *~ *.log \
+		$(symlinks) $(objs) $(SOLUTION_NAME)
