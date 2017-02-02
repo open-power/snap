@@ -200,6 +200,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL com_wtag_valid_q       : boolean;
   SIGNAL context_handle_q       : std_ulogic_vector(15 DOWNTO 0);
   SIGNAL dmm_e_q                : DMM_E_T := (OTHERS => '0');
+  SIGNAL first_cl_is_partial_q  : boolean;
   SIGNAL ha_c_q                 : HA_C_T;
   SIGNAL ha_r_q                 : HA_R_T;
   SIGNAL intreq_active_q        : boolean;
@@ -1449,6 +1450,7 @@ BEGIN
           com_wtag_qq           <= to_integer(com_wtag_q(4 DOWNTO 0));
           rsp_wtag_qq           <= to_integer(rsp_wtag_q(4 DOWNTO 0));
           wclen_q               <= wclen_q;
+          first_cl_is_partial_q <= FALSE;
 
           buf_wtag_v            := to_integer(buf_wtag_q     (4 DOWNTO 0));
           clt_wtag_v            := to_integer(clt_wtag_q     (4 DOWNTO 0));
@@ -1469,7 +1471,7 @@ BEGIN
             clt_wtag_p_q    <= AC_PPARITH(1, clt_wtag_q, clt_wtag_p_q,
                                              "000001"  , '0');
 
-            IF write_ctrl_fsm_q = ST_SETUP_WRITE_CTRL_REG THEN
+            IF first_cl_is_partial_q = TRUE THEN
               --
               -- first CL is allways a partial line
               write_ctrl_q(clt_wtag_v).clt <= PARTIAL_DATA;
@@ -1483,9 +1485,15 @@ BEGIN
               -- normal CL
               write_ctrl_q(clt_wtag_v).clt <= COMPLETE_DATA;
             END IF;
+          END IF;
 
-          ELSIF (sd_c_q.wr_req    = '1'    ) AND
-                (write_ctrl_fsm_q = ST_IDLE) THEN
+          --
+          -- request
+          IF (sd_c_q.wr_req    = '1'    ) AND
+             (write_ctrl_fsm_q = ST_IDLE) THEN
+
+            first_cl_is_partial_q <= TRUE;
+            
             --
             -- calculate the amount of CLT
             IF sd_c_q.wr_len(0) = '0' THEN
