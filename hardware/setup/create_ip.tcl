@@ -67,11 +67,16 @@ export_simulation -of_objects [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] 
 #choose type of RAM that will be connected to the DDR AXI Interface
 # BRAM_USED=TRUE 500KB BRAM
 # DDR3_USED=TRUE 8GB KU3     DDR3 RAM
-# DDR4_USED=TRUE ?GB FlashGT DDR4 RAM
+# DDR4_USED=TRUE 8GB FlashGT DDR4 RAM
 if { $ddri_used == TRUE } {
   #create clock converter for axi_card_mem
   create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir
-  set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH $axi_id_width] [get_ips axi_clock_converter]
+
+  if { $ddr3_used == TRUE } {
+    set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH $axi_id_width] [get_ips axi_clock_converter]
+  } else {
+    set_property -dict [list CONFIG.ADDR_WIDTH {32} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH $axi_id_width] [get_ips axi_clock_converter]
+  }
   set_property generate_synth_checkpoint false [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci]
   generate_target {instantiation_template}     [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci]
   generate_target all                          [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci]
@@ -99,7 +104,7 @@ if { $ddri_used == TRUE } {
   } elseif { $ddr4_used == TRUE } {
     #DDR4 create ddr4sdramm with ECC
     create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.1 -module_name ddr4sdram -dir $ip_dir
-    set_property -dict [list CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-083E} CONFIG.C0.DDR4_TimePeriod {938} CONFIG.C0.DDR4_InputClockPeriod {3752} CONFIG.C0.DDR4_CLKOUT0_DIVIDE {4} CONFIG.C0.DDR4_CasLatency {15} CONFIG.C0.DDR4_CasWriteLatency {11} CONFIG.C0.DDR4_DataWidth {72} CONFIG.C0.DDR4_AxiSelection {true} CONFIG.C0.DDR4_CustomParts $dimm_dir/MT40A512M16HA-083E.csv CONFIG.C0.DDR4_isCustom {true} CONFIG.Simulation_Mode {Unisim} CONFIG.C0.DDR4_DataMask {NO_DM_NO_DBI} CONFIG.C0.DDR4_Ecc {true} CONFIG.C0.DDR4_AxiDataWidth {512} CONFIG.C0.DDR4_AxiAddressWidth {32} CONFIG.C0.BANK_GROUP_WIDTH {1}] [get_ips ddr4sdram]
+    set_property -dict [list CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-083E} CONFIG.C0.DDR4_TimePeriod {938} CONFIG.C0.DDR4_InputClockPeriod {3752} CONFIG.C0.DDR4_CLKOUT0_DIVIDE {4} CONFIG.C0.DDR4_CasLatency {15} CONFIG.C0.DDR4_CasWriteLatency {11} CONFIG.C0.DDR4_DataWidth {72} CONFIG.C0.DDR4_AxiSelection {true} CONFIG.C0.DDR4_CustomParts $dimm_dir/MT40A512M16HA-083E.csv CONFIG.C0.DDR4_isCustom {true} CONFIG.Simulation_Mode {Unisim} CONFIG.C0.DDR4_DataMask {NO_DM_NO_DBI} CONFIG.C0.DDR4_Ecc {true} CONFIG.C0.DDR4_AxiDataWidth {512} CONFIG.C0.DDR4_AxiAddressWidth {32} CONFIG.C0.DDR4_AxiIDWidth $axi_id_width CONFIG.C0.BANK_GROUP_WIDTH {1}] [get_ips ddr4sdram]
     set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
     generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
     generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
