@@ -17,8 +17,8 @@
 !        o_debug: out std_logic_vector(0 to 3);
   
 +        -- FlashGT i/o for DDR4 SDRAM
-+ -- TODO:       refclk200_p        : IN    STD_LOGIC;
-+ -- TODO:       refclk200_n        : IN    STD_LOGIC;
++        refclk200_p        : IN    STD_LOGIC;
++        refclk200_n        : IN    STD_LOGIC;
 +        c0_sys_clk_p       : IN    STD_LOGIC;
 +        c0_sys_clk_n       : IN    STD_LOGIC;
 + -- TODO:       dbg_bus            : OUT   STD_LOGIC_VECTOR(511 DOWNTO 0);
@@ -58,8 +58,8 @@
 !        ha_pclock: in std_ulogic;
 !
 !        -- FlashGT i/o for DDR4 SDRAM
-! -- TODO:       refclk200_p      : IN    STD_LOGIC;
-! -- TODO:       refclk200_n      : IN    STD_LOGIC;
+!        refclk200_p      : IN    STD_LOGIC;
+!        refclk200_n      : IN    STD_LOGIC;
 !        c0_sys_clk_p     : IN    STD_LOGIC;
 !        c0_sys_clk_n     : IN    STD_LOGIC;
 ! -- TODO:       dbg_bus          : OUT   STD_LOGIC_VECTOR(511 DOWNTO 0);
@@ -109,8 +109,8 @@
            ah_paren => a0h_paren,
 !          ha_pclock => ha0_pclock,
 !
-! -- TODO:       refclk200_p        => refclk200_p,
-! -- TODO:       refclk200_n        => refclk200_n,
+!        refclk200_p        => refclk200_p,
+!        refclk200_n        => refclk200_n,
 !        c0_sys_clk_p       => c0_sys_clk_p,
 !        c0_sys_clk_n       => c0_sys_clk_n,
 ! -- TODO:       dbg_bus            => dbg_bus,
