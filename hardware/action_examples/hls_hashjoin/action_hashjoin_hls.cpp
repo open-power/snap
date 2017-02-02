@@ -194,7 +194,7 @@ int hashkey_cmp(hashkey_t s1, hashkey_t s2)
         size_t i;
 
         for (i = 0; i < sizeof(hashkey_t); i++) {
-        #pragma HLS UNROLL
+		// FIXME TIMING #pragma HLS UNROLL
                 if (*s1 == 0 || *s2 == 0)
                         break;
 
@@ -212,7 +212,7 @@ void hashkey_cpy(hashkey_t dst, hashkey_t src)
         size_t i;
 
         for (i = 0; i < sizeof(hashkey_t); i++) {
-        //#pragma HLS UNROLL
+		//#pragma HLS UNROLL
                 *dst = *src;
                 src++;
                 dst++;
@@ -281,7 +281,7 @@ unsigned int ht_count(hashtable_t *ht)
         unsigned int count = 0;
 
         for (i = 0; i < HT_SIZE; i++) {
-        //#pragma HLS UNROLL
+		//#pragma HLS UNROLL
                 entry_t *entry = &ht->table[i];
 
                 if (!entry->used)
@@ -298,7 +298,7 @@ void ht_init(hashtable_t *ht)
         unsigned int i;
 
         for (i = 0; i < HT_SIZE; i++) {
-        //#pragma HLS UNROLL
+		//#pragma HLS UNROLL
                 entry_t *entry = &ht->table[i];
 
                 entry->used = 0;
@@ -314,7 +314,7 @@ int ht_hash(hashkey_t key)
 
         /* Convert our string to an integer */
         for (i = 0; hashval < ULONG_MAX && i < len; i++) {
-       //#pragma HLS UNROLL // Cannot unroll loop completely: variable loop bound.
+		//#pragma HLS UNROLL // Cannot unroll loop completely: variable loop bound.
                 hashval = hashval << 8;
                 hashval += key[i];
         }
@@ -388,7 +388,7 @@ int ht_get(hashtable_t *ht, char *key)
 
         /* search if entry exists already */
         for (i = 0; i < HT_SIZE; i++) {
-       //#pragma HLS UNROLL
+		//#pragma HLS UNROLL
                 entry = &ht->table[bin];
 
                 if (entry->used == 0)   /* key not there */
@@ -454,7 +454,7 @@ short read_table1(ap_uint<64> input_address,
                 input_address, buffer_mem, 128*21); //Action_Input->Data.t1.size);
 
         for (i = 0; i < ARRAY_SIZE(table1); i++) {
-        //#pragma HLS UNROLL -- unset to fit timing
+		//#pragma HLS UNROLL -- unset to fit timing
                  //limitation : consider that all fields are aligned on 64 Bytes
                 convert_DWTable_to_64charTable( &buffer_mem[ (i*2*WPERDW) ],
                          table1[i].name );
@@ -476,7 +476,7 @@ short read_table2(ap_uint<64> input_address,
                 input_address, buffer_mem, 128*25); //Action_Input->Data.t2.size);
 
         for (i = 0; i < ARRAY_SIZE(table2); i++) {
-        //#pragma HLS UNROLL -- unset to fit timing
+		//#pragma HLS UNROLL -- unset to fit timing
                 convert_DWTable_to_64charTable( &buffer_mem[ (i*2*WPERDW)             ],
                          table2[i].name );
                 convert_DWTable_to_64charTable( &buffer_mem[ (i*2*WPERDW)+WPERDW ],
@@ -498,7 +498,7 @@ short table3_dump(table3_t *table3, unsigned int table3_idx, ap_uint<64> output_
         current_address = output_address;
 
         for (i = 0; i < table3_idx; i++) {
-        //#pragma HLS UNROLL    cannot completely unroll a loop with a variable trip count
+		//#pragma HLS UNROLL    cannot completely unroll a loop with a variable trip count
                 t3 = &table3[i];
 
                 // Following writes are done sequentially for debug purpose (i.e. no perf)
@@ -582,7 +582,7 @@ short action_hashjoin_hls(ap_uint<MEMDW> *din_gmem,
         rc |= read_table1(T1_address, din_gmem, d_ddrmem, Action_Input);
 #endif
         for (i = 0; i < ARRAY_SIZE(table1); i++) {
-        #pragma HLS UNROLL
+		// FIXME TIMING #pragma HLS UNROLL
                 t1 = &table1[i];
                 printf("Inserting %s ...\n", t1->name);
                 ht_set(h, t1->name, t1);
@@ -599,7 +599,7 @@ short action_hashjoin_hls(ap_uint<MEMDW> *din_gmem,
         table3_init(&table3_idx);
         for (i = 0; i < ARRAY_SIZE(table2); i++) {
         //for (i = 0; i < 25; i++) {
-        #pragma HLS UNROLL
+		// FIXME TIMING  #pragma HLS UNROLL
                 int bin;
                 entry_t *entry;
                 table2_t *t2 = &table2[i];
@@ -610,7 +610,7 @@ short action_hashjoin_hls(ap_uint<MEMDW> *din_gmem,
 
                 entry = &h->table[bin];
                 for (j = 0; j < entry->used; j++) {
-                //#pragma HLS UNROLL
+			//#pragma HLS UNROLL
                         table1_t *m = &entry->multi[j];
 
                         table3_append(table3, &table3_idx,

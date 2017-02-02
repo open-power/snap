@@ -77,9 +77,9 @@ void convert_64charTable_to_DWTable(ap_uint<MEMDW> *buffer, char *SixtyFourBytes
     int i, j;
 
      for ( i = 0; i < WPERDW; i++ )  {          //if MEMDW = 512 => WPERDW = 1
-     #pragma HLS UNROLL
+	     // FIXME TIMING #pragma HLS UNROLL
         for ( j = 0; j < BPERDW; j++ ) {        //if MEMDW = 512 => BPERDW = 64
-         #pragma HLS UNROLL
+		// FIXME TIMING #pragma HLS UNROLL
                 buffer[i]( (j+1)*8-1, j*8) = SixtyFourBytesWordToWrite[(i*BPERDW)+j];
         }
      }
@@ -89,9 +89,9 @@ void convert_DWTable_to_64charTable(ap_uint<MEMDW> *buffer, char *SixtyFourBytes
     int i, j;
 
      for ( i = 0; i < WPERDW; i++ )  {          //if MEMDW = 512 => WPERDW = 1
-     #pragma HLS UNROLL
+	     // FIXME TIMING #pragma HLS UNROLL
         for ( j = 0; j < BPERDW; j++ ) {        //if MEMDW = 512 => BPERDW = 64
-        #pragma HLS UNROLL
+		// FIXME TIMING #pragma HLS UNROLL
                 SixtyFourBytesWordRead[(i*BPERDW)+j] = buffer[i]( (j+1)*8-1, j*8);
         }
      }
