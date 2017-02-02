@@ -811,8 +811,9 @@ ARCHITECTURE psl_accel_afu OF psl_accel_afu IS
     );                                                                                                                          -- only for DDR3_USED=TRUE-- only for BRAM_USED!=TRUE-- only for SIM=TRUE
     CONSTANT usodimm_part : usodimm_part_t :=  OWN_W16ESB8G8M; --choice(mig_ranks = 2, W16ESB8G8M, W16ESB8G8M_AS_1_RANK);       -- only for DDR3_USED=TRUE-- only for BRAM_USED!=TRUE-- only for SIM=TRUE
 
-  CONSTANT sys_clk_period : time := 2.5 ns;                                                                                     -- only for DDR3_USED=TRUE
+  CONSTANT sys_clk_period : time := 2.5 ns;                                                                                     -- only for DDRI_USED=TRUE
   CONSTANT ref_clk_period : time := 5.0 ns;                                                                                     -- only for DDR3_USED=TRUE
+  CONSTANT ref_clk_period : time := 3.75 ns;                                                                                    -- only for DDR4_USED=TRUE
 
   --
   -- SIGNALS
@@ -936,8 +937,6 @@ ARCHITECTURE psl_accel_afu OF psl_accel_afu IS
   SIGNAL c1_ddr3_ras_n              : STD_LOGIC;                                                            -- only for DDR3_USED=TRUE-- only for SIM=TRUE
   SIGNAL c1_ddr3_reset_n            : STD_LOGIC;                                                            -- only for DDR3_USED=TRUE-- only for SIM=TRUE
   SIGNAL c1_ddr3_we_n               : STD_LOGIC;                                                            -- only for DDR3_USED=TRUE-- only for SIM=TRUE
-  SIGNAL refclk200_p                : STD_LOGIC := '0';                                                     -- only for DDR3_USED=TRUE-- only for SIM=TRUE
-  SIGNAL refclk200_n                : STD_LOGIC;                                                            -- only for DDR3_USED=TRUE-- only for SIM=TRUE
 
   --
   --
@@ -963,6 +962,8 @@ ARCHITECTURE psl_accel_afu OF psl_accel_afu IS
   SIGNAL sdram_interrupt            : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
   SIGNAL refclk200_ibuf             : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
   SIGNAL refclk200_bufg             : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL refclk200_p                : STD_LOGIC := '0';                                                     -- only for DDRI_USED=TRUE-- only for SIM=TRUE
+  SIGNAL refclk200_n                : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE-- only for SIM=TRUE
 
   --                                                                                                        -- only for DDR4_USED=TRUE
   -- DDR4 SDRAM Interface                                                                                   -- only for DDR4_USED=TRUE
