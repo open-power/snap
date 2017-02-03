@@ -121,7 +121,7 @@ static void memset2(void *a, uint64_t pattern, int size)
 	uint64_t *a64 = a;
 
 	for (i = 0; i < size; i+=8) {
-		*a64 = pattern;
+		*a64 = (pattern & 0xffffffff) | (~pattern << 32ull);
 		a64++;
 		pattern += 8;
 	}
@@ -262,16 +262,16 @@ static int memcpy_test(struct dnut_card* dnc,
 	rc = 0;
 	/* align can be 64 .. 4096 */
 	if (align < 64) {
-		printf("align=%d must be 64 or higher\n", align);
-		return 1;
+		printf("align: %d must be 64 or higher\n", align);
+		return 0;
 	}
 	if ((align & 0x3f) != 0) {
-		printf("align=%d must be a multible of 64\n", align);
-		return 1;
+		printf("align: %d must be a multible of 64\n", align);
+		return 0;
 	}
 	if (align > DEFAULT_MEMCPY_BLOCK) {
 		printf("align=%d is to much for me\n", align);
-		return 1;
+		return 0;
 	}
 
 	/* Number of 64 Bytes Blocks */
@@ -281,7 +281,7 @@ static int memcpy_test(struct dnut_card* dnc,
 	if (blocks > (int)(DDR_MEM_SIZE / 64 / 2)) {
 		printf("Error: Number of Blocks: %d exceeds: %d\n",
 			blocks, (int)(DDR_MEM_SIZE/DEFAULT_MEMCPY_BLOCK/2));
-		return 1;
+		return 0;
 	}
 
 	memsize = blocks * 64;
@@ -289,7 +289,11 @@ static int memcpy_test(struct dnut_card* dnc,
 	if ((card_ram_base + memsize) > DDR_MEM_SIZE) {
 		printf("Error: Size: 0x%8.8x exceeds DDR3 Limit: 0x%llx for Offset: 0x%llx\n",
 			memsize, (long long)DDR_MEM_SIZE, (long long)card_ram_base);
-		return 1;
+		return 0;
+	}
+	if (0 == memsize) {
+		printf("Error: blocks_4k: %d and blocks_64: %d is not valid\n", blocks_4k, blocks_64);
+		return 0;
 	}
 
 	/* Allocate Src Buffer if in Host->Host or Host->DDR Mode or Host->DDR->Host*/
