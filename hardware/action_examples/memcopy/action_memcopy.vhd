@@ -656,14 +656,14 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
     end process;
 
 
-    process(action_clk ) is
+    block_diff <= "000000" & ((reg_0x20 & reg_0x1c(31 downto 6)) - (reg_0x18 & reg_0x14(31 downto 6)));
 
+    process(action_clk ) is
+     variable temp64 : std_logic_vector(63 downto 0);
     begin
       if (rising_edge (action_clk)) then
         last_write_done   <= '0';
         mem_wr            <= '0';                                                        -- only for DDRI_USED=TRUE
-        block_diff        <= "000000"   & ((reg_0x20 & reg_0x1c(31 downto 6)) - (reg_0x18 & reg_0x14(31 downto 6)));
-
         if ( action_rst_n = '0' ) then
               fsm_copy_q         <= IDLE;
               dma_rd_req         <= '0';
@@ -692,7 +692,6 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
                     first_max_blk_w    <= x"0000_00" & (x"40" - reg_0x14(11 downto 6));
                   end if;
                   first_max_blk_r    <= x"0000_00" & (x"40" - reg_0x14(11 downto 6));
-
 
                   if first_max_blk_r < blocks_to_read then
                     first_blk_r      <= first_max_blk_r;
@@ -851,11 +850,11 @@ read_write_process:
               tail              <= 0;
               head              <= 0;
               reg0_valid        <= '0';
-          reg0_data         <= dma_rd_data;   -- assigning reset value in order to get around 'partial antenna' problems
+              reg0_data         <= dma_rd_data;   -- assigning reset value in order to get around 'partial antenna' problems
               reg1_valid        <= '0';
-          reg1_data         <= dma_rd_data;   -- assigning reset value in order to get around 'partial antenna' problems
+              reg1_data         <= dma_rd_data;   -- assigning reset value in order to get around 'partial antenna' problems
               reg2_valid        <= '0';
-          reg2_data         <= dma_rd_data;   -- assigning reset value in order to get around 'partial antenna' problems
+              reg2_data         <= dma_rd_data;   -- assigning reset value in order to get around 'partial antenna' problems
               total_write_count <=(31 downto 1 => '0') & '1';
               if memcopy then
                 write_counter_up  <=(31 downto 0 => '0' ) + reg_0x1c(11 downto 6) + 1;
@@ -867,7 +866,11 @@ read_write_process:
               last_write_q      <= '0';
               first_write_q     <= '1';
             else
-              last_write_q      <= (last_write and ddr_wr_ready and ( dma_wr_data_valid or  ddr_wr_data_valid)) or last_write_q;
+              if dest_ddr = '1' then
+                last_write_q      <= (last_write and ddr_wr_ready and ( dma_wr_data_valid or  ddr_wr_data_valid)) or last_write_q;
+              else
+                last_write_q      <= (last_write and dma_wr_ready and ( dma_wr_data_valid or  ddr_wr_data_valid)) or last_write_q;
+              end if;
                if head = 0 and reg0_valid = '0' then
                 if src_host = '1' then
                   if dma_rd_data_valid = '1' then

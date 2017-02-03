@@ -17,40 +17,6 @@
  * limitations under the License.
  */
 
-//#include <stdint.h>
-//#include <libdonut.h>
-
-#define MEMCOPY_ACTION_TYPE	0x0004
-
-#define RELEASE_VERSION 0xFEEDA00400000018
-// ----------------------------------------------------------------------------
-// Known Limitations => Issue #39 & #45 
-// 	=> Transfers must be 64 byte aligned and a size of multiples of 64 bytes
-// ----------------------------------------------------------------------------
-// v1.8 : 01/17/2017 : cleaning code and separating mem_copy from men_search
-// 			HLS_SYN_MEM=75,HLS_SYN_DSP=0,HLS_SYN_FF=8282,HLS_SYN_LUT=9981
-// v1.7 : 12/xx/2016 : removing L1 UNROLL
-//           128 bits:  HLS_SYN_MEM=24,HLS_SYN_DSP=0,HLS_SYN_FF=12365,HLS_SYN_LUT=14125
-//           512 bits:  HLS_SYN_MEM=75,HLS_SYN_DSP=0,HLS_SYN_FF=25495,HLS_SYN_LUT=42527
-// v1.6 : 11/21/2016 : Cancelling V1.4 correction since patch is not relevant 
-// 			=> does DMA support unaligned size ?
-//                     Replacing bits shiftings by structures for MMIO regs infos extraction 
-//                     + reformatting code
-//                      HLS_SYN_MEM=20,HLS_SYN_DSP=0,HLS_SYN_FF=242470,HLS_SYN_LUT=316543
-// v1.5 : 11/11/2016 : V1.4 correction shouldn't be apply to DDR interface 
-// 			=> may need to understand why only on host
-//                      HLS_SYN_MEM=20,HLS_SYN_DSP=0,HLS_SYN_FF=16246,HLS_SYN_LUT=19971
-// v1.4 : 11/09/2016 : corrrected memcpy bug alignement adding MEMDW to output_size so 
-// 			that 1 more word is written
-// v1.3 : 11/07/2016 : read haystack in search process and remove buffering + reduce 
-// 			buffering of memcopy + add DDR interface
-// v1.2 : 11/03/2016 : bugs correction + add optimization pragmas + manage address 
-// 			alignment for search function
-// v1.1 : 10/24/2016 : creation - 128b interface
-//
-
-
-//
 
 #if defined(NO_SYNTH)
 
@@ -63,6 +29,9 @@
 #define BPERDW (MEMDW/8)        // Bytes per Data Word     if MEMDW=512 => BPERDW = 64
 #define WPERDW (64/BPERDW)      // Number of words per DW  if MEMDW=512 => WPERDW =  1
 
+#define MAX_NB_OF_BYTES_READ  (4 * 1024)			// Value should be X*BPERDW
+#define CARD_DRAM_SIZE (1 * 1024 *1024 * 1024)
+
 #if MEMDW == 512
 #define ADDR_RIGHT_SHIFT 6
 #elif MEMDW == 256
@@ -73,8 +42,6 @@
 #error "Data Bus width out of bounds"
 #endif
 
-#define MAX_NB_OF_BYTES_READ    1024			// Value should be X*BPERDW
-ap_uint<MEMDW> buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];	// if MEMDW=512 => 16 words 
  
 // enum definitions should stay in sync with include/libdonut.h
 enum {
@@ -129,56 +96,6 @@ typedef struct {
         ap_uint<64>   Reserved; //  4 bytes
         DATA_MC       Data; // 112 bytes
 } action_output_reg;
-
-//struct memcopy_job {
-//	struct dnut_addr in;	/* input data */
-//	struct dnut_addr out;   /* offset table */
-//	uint64_t mmio_din;	/* private settins for this action */
-//	uint64_t mmio_dout;	/* private settins for this action */
-//};
-
-// WRITE DATA TO MEMORY
-short write_burst_of_data_to_mem(ap_uint<MEMDW> *dout_gmem, ap_uint<MEMDW> *d_ddrmem,
-         ap_uint<16> memory_type, ap_uint<64> output_address,
-         ap_uint<MEMDW> *buffer, ap_uint<64> size_in_bytes_to_transfer)
-{
-    short rc;
-    if(memory_type == HOST_DRAM) {
-       memcpy((ap_uint<MEMDW> *) (dout_gmem + output_address), buffer, size_in_bytes_to_transfer);
-       rc =  0;
-    } else if(memory_type == CARD_DRAM) {
-       memcpy((ap_uint<MEMDW> *) (d_ddrmem + output_address), buffer, size_in_bytes_to_transfer);
-       rc =  0;
-    } else // unknown output_type
-       rc =  1;
-    return rc;
-}
-
-// READ DATA FROM MEMORY
-short read_burst_of_data_from_mem(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *d_ddrmem,
-         ap_uint<16> memory_type, ap_uint<64> input_address,
-         ap_uint<MEMDW> *buffer, ap_uint<64> size_in_bytes_to_transfer)
-{
-     short rc;
-     if(memory_type == HOST_DRAM) {
-        memcpy(buffer, (ap_uint<MEMDW> *) (din_gmem + input_address), size_in_bytes_to_transfer);
-       rc = 0;
-     } else if(memory_type == CARD_DRAM) {
-        memcpy(buffer, (ap_uint<MEMDW> *) (d_ddrmem + input_address), size_in_bytes_to_transfer);
-       rc = 0;
-    } else // unknown input_type
-       rc = 1;
-    return rc;
-}
-
-
-// FUNCTION MIN32b
-ap_uint<32> MIN32b(ap_uint<32> A, ap_uint<32> B)
-{
-  ap_uint<32> min;
-  min = A < B ? A : B;
-  return min;
-}
 
 
 #endif
