@@ -28,6 +28,7 @@
 #include <linux/random.h>
 
 #include <libdonut.h>
+#include <donut_tools.h>
 
 #define CACHELINE_BYTES 128
 
@@ -67,11 +68,10 @@
 #define DDR_MEM_BASE_ADDR	0x00000000	/* Start of FPGA Interconnect */
 #define	HOST_BUFFER_SIZE	(1 * MEGA_BYTE)	/* Size for Host Buffers */
 
-#define	AD_MODE		1
-#define	NOT_AD_MODE	2
-#define	RND_DATA_MODE	3
-#define	ALL_0_MODE	4
-#define	ALL_1_MODE	5
+#define	AD_MODE		1	/* Address = Data Mode */
+#define	NOT_AD_MODE	2	/* Not Address = Data Mode */
+#define	RND_DATA_MODE	3	/* Random Data Mode */
+#define	P_MODE		4	/* Pattern Mode */
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
@@ -113,96 +113,120 @@ static uint64_t get_usec(void)
 static void print_time(uint64_t elapsed)
 {
 	if (elapsed > 10000)
-		PRINTF2("%d msec\n" ,(int)elapsed/1000);
-	else	PRINTF2("%d usec\n", (int)elapsed);
+		PRINTF2(" T = %d msec\n" ,(int)elapsed/1000);
+	else	PRINTF2(" T = %d usec\n", (int)elapsed);
 }
 
-static void memset2(void *a, uint64_t pattern, int size, int mode)
+/*
+ *	Set Pattern in Buffer
+ */
+static void memset_ad(void *a, uint64_t pattern, int size)
 {
 	int i;
 	uint64_t *a64 = a;
-	uint32_t *a32 = a;
-
-	PRINTF3("%s Addr: %p Pattern: 0x%llx Size: 0x%x Mode: %d\n",
-		__func__, a, (long long)pattern, size, mode);
-	switch (mode) {
-	case RND_DATA_MODE:
-		for (i = 0; i < size; i+=4) {
-			*a32 = rand();
-			a32++;
-		}
-		break;
-	case AD_MODE:
-		for (i = 0; i < size; i += 8) {
-			*a64 = pattern;
-			pattern += 8;
-			a64++;
-		}
-		break;
-	case NOT_AD_MODE:
-		for (i = 0; i < size; i += 8) {
-			*a64 = ~pattern;
-			pattern += 8;
-			a64++;
-		}
-		break;
-	case ALL_0_MODE:
-		for (i = 0; i < size; i += 8) {
-			*a64 = 0x0000000000000000ull;
-			a64++;
-		}
-		break;
-	case ALL_1_MODE:
-	default:
-		for (i = 0; i < size; i += 8) {
-			*a64 = 0xffffffffffffffffull;
-			a64++;
-		}
-		break;
+	PRINTF0("memset %p Pattern: 0x%llx Size %d\n", a, (long long)pattern, size);
+	for (i = 0; i < size; i += 8) {
+		*a64 = (pattern & 0xffffffff) | (~pattern << 32ull);
+		pattern += 8;
+		a64++;
 	}
 }
 
-static void memcmp2(void *b0, void *b1, uint64_t pattern, int size, int mode)
+/*
+ *	Set Pattern in Buffer
+ */
+static void memset_pat(void *a, uint64_t pattern, int size)
 {
 	int i;
-	uint64_t *a64 = b0;
-	uint64_t *a64_1 = b1;	/* 2nd compare bufer in RND mode */
-	uint64_t data;		/* Data Value */
-	uint64_t comp = 0;	/* Compare Value */
+	uint64_t *a64 = a;
 
-	PRINTF3("%s Addr: %p / %p Pattern: 0x%llx Size: 0x%x Mode: %d\n",
-		__func__, b0, b1, (long long)pattern, size, mode);
 	for (i = 0; i < size; i += 8) {
-		data = *a64;	/* Get data */
-		switch (mode) {
-		case AD_MODE:
-			comp = pattern;
-			break;
-		case NOT_AD_MODE:
-			comp = ~pattern;
-			break;
-		case RND_DATA_MODE:
-			comp = *a64_1;
-			a64_1++;
-			break;
-		case ALL_0_MODE: 
-			comp = 0x0000000000000000ull;
-			break;
-		case ALL_1_MODE: 
-		default:
-			comp = 0xffffffffffffffffull;
-			break;
-		}
-		if (data != comp) {
-			PRINTF0("Error@: 0x%016llx Expect: 0x%016llx Read: 0x%016llx\n",
-				(long long)pattern,	/* Address */
-				(long long)comp,	/* What i expect */
-				(long long)data);	/* Waht i got */
+		*a64 = pattern;
+		a64++;
+	}
+}
+
+/*
+ *	Set Random Data in Buffer
+ */
+static void memset_rnd(void *a, int size)
+{
+	int i;
+	uint64_t *a64 = a;
+
+	for (i = 0; i < size; i += 8) {
+		*a64 = (uint64_t)(((uint64_t)rand() << 32ul) | rand());
+		a64++;
+	}
+}
+
+/*
+ *	Compare 2 Buffers
+ */
+static int memcmp2(void *b0,		/* Data from RAM */
+		void *b1,		/* Expect Data Buffer */
+		uint64_t address,	/* RAM Address */
+		int size)
+{
+	int i;
+	int rc, bad;
+	uint64_t *a64 = b0;
+	uint64_t *a64_1 = b1;	/* 2nd compare bufer */
+	uint64_t data;		/* Data Value */
+	uint64_t expect;	/* Compare Value */
+
+	PRINTF0("\nCompare %p - %p at 0x%llx", b0, b1, (long long)address);
+	rc = bad = 0;
+	for (i = 0; i < size; i += 8) {
+		data = *a64;		/* Get data from 1st Host Buffer */
+		expect = *a64_1;	/* Get expect Value from 2nd Host Buffer */
+		if (data != expect) {
+			PRINTF0("\nError@: 0x%016llx Expect: 0x%016llx Read: 0x%016llx",
+				(long long)address,	/* Address */
+				(long long)expect,	/* What i expect */
+				(long long)data);	/* What i got */
+			bad++;
+			if (bad > 10) rc = 1;		/* Exit */
 		}
 		a64++;
-		pattern += 8;
+		a64_1++;
+		address += 8;
+		if (rc) break;
 	}
-	return;
+	PRINTF0("\nCompare Exit: %d\n", rc);
+	return rc;
+}
+
+/*
+ *	Compare 2 Buffers
+ */
+static int memcmp_pat(void *b0,		/* Host Buffer */
+		uint64_t address,	/* Pattern */
+		int size)
+{
+	int i;
+	int rc, bad;
+	uint64_t *a64 = b0;
+	uint64_t data;		/* Data Value */
+	uint64_t expect;	/* Compare Value */
+
+	rc = bad = 0;
+	for (i = 0; i < size; i += 8) {
+		data = *a64;	/* Get data */
+		expect = (address & 0xffffffff) | (~address << 32ul);
+		if (data != expect) {
+			PRINTF0("\nError@: 0x%016llx Expect: 0x%016llx Read: 0x%016llx",
+				(long long)address,	/* Address */
+				(long long)expect,	/* What i expect */
+				(long long)data);	/* What i got */
+			bad++;
+			if (bad > 10) rc = 1;		/* Exit */
+		}
+		if (rc) break;
+		address += 8;
+		a64++;
+	}
+	return rc;
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
@@ -269,21 +293,24 @@ static void action_memcpy(struct dnut_card* h,
 	uint64_t addr;
 
 	switch (action) {
+	case ACTION_CONFIG_COPY_HH:
+		PRINTF0("\n[Host <- Host]");
+		break;
 	case ACTION_CONFIG_COPY_HD:
-		PRINTF3("[Card <- Host]"); break;
+		PRINTF3("\n[Card <- Host]");
 		break;
 	case ACTION_CONFIG_COPY_DH:
-		PRINTF3("[Host <- Card]"); break;
+		PRINTF3("\n[Host <- Card]");
 		break;
 	case ACTION_CONFIG_COPY_DD:
-		PRINTF3("[Card <- Card]"); break;
+		PRINTF3("\n[Card <- Card]");
 		break;
 	default:
-		PRINTF0("Invalid Action\n");
+		PRINTF0("\nInvalid Action\n");
 		return;
 		break;
 	}
-	PRINTF3(" memcpy(%p, %p, 0x%8.8lx)\n", dest, src, n);
+	PRINTF0(" memcpy(%p, %p, 0x%8.8lx)\n", dest, src, n);
 	action_write(h, ACTION_CONFIG,  action);
 	addr = (uint64_t)dest;
 	action_write(h, ACTION_DEST_LOW, (uint32_t)(addr & 0xffffffff));
@@ -347,10 +374,12 @@ static void ram_test_free(void *buffer)
 		free(buffer);
 }
 
-static int ram_test(struct dnut_card* dnc,
-			int mode,			/* AD_MODE or NOT_AD_MODE */
-			unsigned int host_mem_size,	/* Size for Host Buffer */
-			void *host_buffer,		/* ptr to Host buffer */
+void *g_hbz = NULL;
+/*
+ *	Set Card Ram to 0
+ */
+static int ram_zero(struct dnut_card* dnc,
+			unsigned int mem_size,		/* Size for Host Buffer */
 			uint64_t ram_start_addr,	/* Start of Card Mem */
 			uint64_t ram_end_addr,		/* End of Card Mem */
 			int timeout_ms)			/* Timeout to wait in ms */
@@ -358,76 +387,118 @@ static int ram_test(struct dnut_card* dnc,
 	int rc, ram_blocks, block;
 	uint64_t card_ram_addr;
 	uint64_t us_elappsed, t_sum;
+	void *hb1 = NULL;
+	//uint8_t *b = NULL;
 
 	rc = -1;
-	ram_blocks = (ram_end_addr - ram_start_addr) / host_mem_size;
-	PRINTF2("  Host Buffer Size: 0x%x KU3 ",
-		host_mem_size);
-	PRINTF2("Start/End: 0x%llx / 0x%llx Blocks: %d\n",
+	t_sum = 0;
+	ram_blocks = (ram_end_addr - ram_start_addr) / mem_size;
+	PRINTF2("  Host -> FPGA ");
+	PRINTF2("Start/End: 0x%llx / 0x%llx (%d Blocks @ 0x%x Bytes timeout: %d ms) ",
 		(long long)ram_start_addr,
 		(long long)ram_end_addr,
-		ram_blocks);
+		ram_blocks, mem_size, timeout_ms);
+	/* Allocate 1st Host Buffer to Write data */
+	if (posix_memalign((void **)&hb1, 4096, mem_size) != 0) {
+		perror("FAILED: posix_memalign source");
+		goto __ram_zero_exit;
+	}
 
-	t_sum = 0;
+	memset_pat(hb1, 0, mem_size);
 	card_ram_addr = ram_start_addr;
-	/* Fill DDR3 Memory */
-	PRINTF2("    Host -> FPGA: ");
 	for (block = 0; block < ram_blocks; block++) {
-		memset2(host_buffer, card_ram_addr, host_mem_size, mode);
+		/* Copy Data from Host to Card */
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
-			(void *)card_ram_addr, host_buffer, host_mem_size);
+			(void *)card_ram_addr, hb1, mem_size);
 		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
-			goto __ram_test_exit;
-		card_ram_addr += host_mem_size;
+			goto __ram_zero_exit;
+		card_ram_addr += mem_size;
 		t_sum += us_elappsed;
 	}
-	print_time(t_sum);
-
-	t_sum = 0;
-	/* Read DDR3 Mem Back to host and Check */
-	PRINTF2("    FPGA -> Host: ");
-	card_ram_addr = ram_start_addr;
-	for (block = 0; block < ram_blocks; block++) {
-		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
-			host_buffer, (void *)card_ram_addr, host_mem_size);
-		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
-			goto __ram_test_exit;
-		memcmp2(host_buffer, NULL, card_ram_addr, host_mem_size, mode);
-		card_ram_addr += host_mem_size;
-		t_sum += us_elappsed;
-	}
-	print_time(t_sum);
-
-	PRINTF2("    FPGA -> FPGA: ");
-	card_ram_addr = ram_start_addr;
-	for (block = 1; block < ram_blocks; block++) {
-		action_memcpy(dnc, ACTION_CONFIG_COPY_DD,
-			(void *)(card_ram_addr + host_mem_size),	/* Dest */
-			(void *)card_ram_addr,				/* Src */
-			host_mem_size);
-		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
-			goto __ram_test_exit;
-		card_ram_addr += host_mem_size;
-		t_sum += us_elappsed;
-	}
-	/* Check Last Memory block if ok */
-	card_ram_addr = ram_end_addr - host_mem_size;
-	action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
-		host_buffer, (void*)card_ram_addr, host_mem_size);
-	if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
-		goto __ram_test_exit;
-	memcmp2(host_buffer, NULL, ram_start_addr, host_mem_size, mode);
-	print_time(t_sum);
 	rc = 0;
-  __ram_test_exit:
+__ram_zero_exit:
+	print_time(t_sum);
+	//ram_test_free(hb1);
+	//hb1=NULL;
+	g_hbz = hb1;
+	//ram_test_free(hb1);
+			__hexdump(stdout, hb1, 128);
 	return rc;
 }
 
-static int ram_test_rnd(struct dnut_card* dnc,
-			int mode,			/* RND_DATA_MODE, ALL_0_MODE or ALL_1_MODE */
-			unsigned int host_mem_size,	/* Size for Host Buffer */
-			void *host_buffer,		/* ptr to Host buffer */
-			void *host_buffer2,		/* ptr to 2nd Host buffer */
+static int ram_test_ad(struct dnut_card* dnc,
+			unsigned int mem_size,		/* Size for Host Buffer */
+			uint64_t ram_start_addr,	/* Start of Card Mem */
+			uint64_t ram_end_addr,		/* End of Card Mem */
+			int timeout_ms,			/* Timeout to wait in ms */
+			bool inverse)
+{
+	int rc, ram_blocks, block;
+	uint64_t card_ram_addr;
+	uint64_t us_elappsed, t_sum;
+	void *hb1 = NULL;
+
+	rc = -1;
+	t_sum = 0;
+	ram_blocks = (ram_end_addr - ram_start_addr) / mem_size;
+	if (inverse)
+		PRINTF2("  A = DI : Host -> FPGA ");
+	else	PRINTF2("  A = D  : Host -> FPGA ");
+	PRINTF2("Start/End: 0x%llx / 0x%llx (%d Blocks @ 0x%x Bytes)",
+		(long long)ram_start_addr,
+		(long long)ram_end_addr,
+		ram_blocks, mem_size);
+
+	/* Allocate Host Buffer to Write data */
+	if (posix_memalign((void **)&hb1, 4096, mem_size) != 0) {
+		perror("FAILED: posix_memalign source");
+		goto __ram_test_ad_exit;
+	}
+	card_ram_addr = ram_start_addr;
+	for (block = 0; block < ram_blocks; block++) {
+		if (inverse)
+			memset_ad(hb1, ~card_ram_addr, mem_size);
+		else	memset_ad(hb1, card_ram_addr, mem_size);
+		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
+			(void *)card_ram_addr, hb1, mem_size);
+		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
+			goto __ram_test_ad_exit;
+		card_ram_addr += mem_size;
+		t_sum += us_elappsed;
+	}
+	rc = 0;
+	print_time(t_sum);
+
+	if (inverse)
+		PRINTF2("  A = DI : FPGA -> Host ");
+	else	PRINTF2("  A = D  : FPGA -> Host ");
+	PRINTF2("Start/End: 0x%llx / 0x%llx (%d Blocks @ 0x%x Bytes)",
+		(long long)ram_start_addr,
+		(long long)ram_end_addr,
+		ram_blocks, mem_size);
+	t_sum = 0;
+	card_ram_addr = ram_start_addr;
+	for (block = 0; block < ram_blocks; block++) {
+		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
+			hb1, (void *)card_ram_addr, mem_size);
+		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
+			goto __ram_test_ad_exit;
+		if (inverse)
+			rc = memcmp_pat(hb1, ~card_ram_addr, mem_size);
+		else	rc = memcmp_pat(hb1, card_ram_addr, mem_size);
+		if (rc) goto __ram_test_ad_exit;
+		card_ram_addr += mem_size;
+		t_sum += us_elappsed;
+	}
+	rc = 0;
+__ram_test_ad_exit:
+	print_time(t_sum);
+	ram_test_free(hb1);
+	return rc;
+}
+
+static int ram_test_rnd1(struct dnut_card* dnc,
+			unsigned int mem_size,		/* Size for Host Buffer */
 			uint64_t ram_start_addr,	/* Start of Card Mem */
 			uint64_t ram_end_addr,		/* End of Card Mem */
 			int timeout_ms)			/* Timeout to wait in ms */
@@ -436,48 +507,151 @@ static int ram_test_rnd(struct dnut_card* dnc,
 	uint64_t card_ram_addr;
 	uint64_t us_elappsed, t_sum;
 	int rc = -1;
+	void *hb1 = NULL;
+	void *hb2 = NULL;
 
-	ram_blocks = (ram_end_addr - ram_start_addr) / host_mem_size;
-	PRINTF2("  Host Buffer Size: 0x%x KU3 ",
-		host_mem_size);
-	PRINTF2("Start/End: 0x%llx / 0x%llx Blocks: %d\n",
+	ram_blocks = (ram_end_addr - ram_start_addr) / mem_size;
+	PRINTF2("  Host -> FPGA ");
+	PRINTF2("Start/End: 0x%llx / 0x%llx (%d Blocks @ 0x%x Bytes)",
 		(long long)ram_start_addr,
 		(long long)ram_end_addr,
-		ram_blocks);
+		ram_blocks, mem_size);
 
-	/* Create Random Host Buffer */
-	memset2(host_buffer, 0, host_mem_size, mode);
+	/* Allocate 1st Host Buffer to Write data */
+	if (posix_memalign((void **)&hb1, 4096, mem_size) != 0) {
+		perror("FAILED: posix_memalign source");
+		goto __ram_test_rnd1_exit;
+	}
+	/* Allocate 2nd Host Buffer to Read data */
+	if (posix_memalign((void **)&hb2, 4096, mem_size) != 0) {
+		perror("FAILED: posix_memalign source");
+		goto __ram_test_rnd1_exit;
+	}
+
+	rc = 0;
+	memset_rnd(hb2, mem_size);
 	t_sum = 0;
 	card_ram_addr = ram_start_addr;
 	/* Fill DDR3 Memory */
-	PRINTF2("    Host -> FPGA: ");
 	for (block = 0; block < ram_blocks; block++) {
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
-			(void *)card_ram_addr, host_buffer, host_mem_size);
-		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
-			goto __ram_test_rnd_exit;
-		card_ram_addr += host_mem_size;
+			(void *)card_ram_addr, hb2, mem_size);
+		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed)) {
+			rc = 1;
+			goto __ram_test_rnd1_exit;
+		}
 		t_sum += us_elappsed;
+		card_ram_addr += mem_size;
+		t_sum += us_elappsed;
+		if (rc) break;
 	}
 	print_time(t_sum);
 
+	PRINTF2("  FPGA -> HOST ");
+	PRINTF2("Start/End: 0x%llx / 0x%llx (%d Blocks @ 0x%x Bytes)",
+		(long long)ram_start_addr,
+		(long long)ram_end_addr,
+		ram_blocks, mem_size);
+	memset(hb1, 1, mem_size);
 	t_sum = 0;
-	/* Read Back to host and Check */
-	PRINTF2("    FPGA -> Host: ");
 	card_ram_addr = ram_start_addr;
+	/* Read Memory */
 	for (block = 0; block < ram_blocks; block++) {
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
-			host_buffer2, (void *)card_ram_addr, host_mem_size);
-		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
-			goto __ram_test_rnd_exit;
-		memcmp2(host_buffer, host_buffer2, card_ram_addr, host_mem_size, mode);
-		card_ram_addr += host_mem_size;
+			hb1, (void *)card_ram_addr, mem_size);
+		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed)) {
+			rc = 1;
+			goto __ram_test_rnd1_exit;
+		}
+		rc = memcmp2(hb1, hb2, card_ram_addr, mem_size);
+		card_ram_addr += mem_size;
+		t_sum += us_elappsed;
+		if (rc) break;
+	}
+	print_time(t_sum);
+__ram_test_rnd1_exit:
+	ram_test_free(hb1);
+	ram_test_free(hb2);
+	return rc;
+}
+
+static int ram_test_rnd2(struct dnut_card* dnc,
+			unsigned int mem_size,		/* Size for Host Buffer */
+			uint64_t ram_start_addr,	/* Start of Card Mem */
+			uint64_t ram_end_addr,		/* End of Card Mem */
+			int timeout_ms)			/* Timeout to wait in ms */
+{
+	int ram_blocks, block;
+	uint64_t card_ram_addr;
+	uint64_t us_elappsed, t_sum;
+	int rc = -1;
+	void *hbs = NULL;
+	void *hbd = NULL;
+	void *hb1s = NULL;
+
+	//ram_test_free(g_hbz);
+
+	ram_blocks = (ram_end_addr - ram_start_addr) / mem_size;
+	PRINTF2("  Host <-> FPGA ");
+	PRINTF2("Start/End: 0x%llx / 0x%llx (%d Blocks @ 0x%x Bytes)",
+		(long long)ram_start_addr,
+		(long long)ram_end_addr,
+		ram_blocks, mem_size);
+
+	/* Allocate 1st Host Buffer to Write data */
+	if (posix_memalign((void **)&hbs, 4096, 4*mem_size) != 0) {
+		perror("FAILED: posix_memalign source");
+		goto __ram_test_rnd2_exit;
+	}
+	ram_test_free(g_hbz);
+
+	hb1s=hbs;
+	memset(hbs, 1, mem_size);
+	memset(hbs+mem_size, 2, mem_size);
+	memset(hbs+2*mem_size, 3, mem_size);
+	memset(hbs+3*mem_size, 4, mem_size);
+	//hbs=hbs+mem_size;
+	hbd=hbs+2*mem_size; //+mem_size-64;
+	PRINTF0("\nSrc: %p Dest: %p timeout: %d\n", hbs, hbd, timeout_ms);
+	/* Allocate 2nd Host Buffer to Read data */
+	//if (posix_memalign((void **)&hb2, 4096, mem_size) != 0) {
+		//perror("FAILED: posix_memalign source");
+		//goto __ram_test_rnd2_exit;
+	//}
+
+	rc = 0;
+	memset_ad(hbs, ram_start_addr, mem_size);
+	t_sum = 0;
+	card_ram_addr = ram_start_addr;
+	for (block = 0; block < ram_blocks; block++) {
+		/* Write DDR3 Memory */
+		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
+			(void *)card_ram_addr, hbs, mem_size);
+		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed)) {
+			rc = 1;
+			goto __ram_test_rnd2_exit;
+		}
+		t_sum += us_elappsed;
+		/* Read DDR3 Memory */
+		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
+			hbd, (void *)card_ram_addr, mem_size);
+		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed)) {
+			rc = 1;
+			goto __ram_test_rnd2_exit;
+		}
+		rc = memcmp2(hbd, hbs, card_ram_addr, mem_size);
+		if (rc) {
+			PRINTF0("Dest Buffer hbd: %p\n", hbd);
+			PRINTF0("Src Buffer hbs: %p\n", hbs);
+			break;
+		}
+		card_ram_addr += mem_size;
 		t_sum += us_elappsed;
 	}
 	print_time(t_sum);
-	rc = 0;
-
-	__ram_test_rnd_exit:
+__ram_test_rnd2_exit:
+	//ram_test_free(hb2);
+	ram_test_free(hb1s);
 	return rc;
 }
 
@@ -513,8 +687,6 @@ int main(int argc, char *argv[])
 	uint64_t start_addr = DDR_MEM_BASE_ADDR;
 	uint64_t end_addr = DDR_MEM_SIZE;
 	unsigned int mem_size = HOST_BUFFER_SIZE; 
-	void *host_buffer1 = NULL;
-	void *host_buffer2 = NULL;
 
 	while (1) {
                 int option_index = 0;
@@ -589,55 +761,37 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	PRINTF1("Test Ram on FPGA Card from 0x%016llx to 0x%016llx\n", (long long)start_addr, (long long)end_addr);
+	PRINTF1("Test Ram on FPGA Card from 0x%016llx to 0x%016llx\n",
+		(long long)start_addr, (long long)end_addr);
 	if (0 != check_parms(mem_size, start_addr, end_addr)) {
 		rc = -1;
 		goto __exit;
 	}
 
-	/* Allocate 1st Host Buffer to Write data */
-	if (posix_memalign((void **)&host_buffer1, 4096, mem_size) != 0) {
-		perror("FAILED: posix_memalign source");
-		rc = -1;
-		goto __exit;
-	}
-	/* Allocate 2nd Host Buffer to Read data back */
-	if (posix_memalign((void **)&host_buffer2, 4096, mem_size) != 0) {
-		perror("FAILED: posix_memalign source");
-		rc = -1;
-		goto __exit;
-	}
-
 	for (i = 0; i < iter; i++) {
-		PRINTF1("[%d/%d] Test Card RAM Address = Data\n",
-			i+1, iter);
-		rc = ram_test(dn, AD_MODE, mem_size, host_buffer1, start_addr, end_addr, timeout_ms);
-		if (rc) break;
+		PRINTF1("[%d/%d] Clear Ram\n", i+1, iter);
+		rc = ram_zero(dn, mem_size, start_addr, end_addr, timeout_ms);
+goto ran1;
+		PRINTF1("[%d/%d] Test Address = Data\n", i+1, iter);
+		rc = ram_test_ad(dn, mem_size, start_addr, end_addr, timeout_ms, false);
+		//if (rc) break;
 
-		PRINTF1("[%d/%d] Test Card RAM Address = (not)Data\n",
-			i+1, iter);
-		rc = ram_test(dn, NOT_AD_MODE, mem_size, host_buffer1, start_addr, end_addr, timeout_ms);
-		if (rc) break;
-
-		PRINTF1("[%d/%d] Test Random Data\n",
-			i+1, iter);
-		rc = ram_test_rnd(dn, RND_DATA_MODE, mem_size, host_buffer1, host_buffer2, start_addr, end_addr, timeout_ms);
-
-		PRINTF1("[%d/%d] Test 1 Data\n",
-			i+1, iter);
-		rc = ram_test_rnd(dn, ALL_1_MODE, mem_size, host_buffer1, host_buffer2, start_addr, end_addr, timeout_ms);
-
-		PRINTF1("[%d/%d] Test 0 Data\n",
-			i+1, iter);
-		rc = ram_test_rnd(dn, ALL_0_MODE, mem_size, host_buffer1, host_buffer2, start_addr, end_addr, timeout_ms);
-		if (rc) break;
+		//continue;
+		PRINTF1("[%d/%d] Test Address = (not)Data\n", i+1, iter);
+		rc = ram_test_ad(dn, mem_size,  start_addr, end_addr, timeout_ms, true);
+		//if (rc) break;
+		//continue;
+		PRINTF1("[%d/%d] Test Random Mode 1\n", i+1, iter);
+		rc = ram_test_rnd1(dn, mem_size, start_addr, end_addr, timeout_ms);
+ran1:
+		PRINTF1("[%d/%d] Test Random Mode 2\n", i+1, iter);
+		rc = ram_test_rnd2(dn, mem_size, start_addr, end_addr, timeout_ms);
+		//if (rc) break;
 	}
 
-	__exit:
+__exit:
 	PRINTF3("Close Card Handle: %p\n", dn);
 	dnut_card_free(dn);
-	ram_test_free(host_buffer1);
-	ram_test_free(host_buffer2);
 
 	PRINTF2("Exit rc: %d\n", rc);
 	return rc;
