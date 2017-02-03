@@ -1362,14 +1362,14 @@ BEGIN
       s_axi_arid     => sdram_axi_arid,                                                 -- only for BRAM_USED=TRUE
       s_axi_arlen    => sdram_axi_arlen(7 DOWNTO 0),                                    -- only for BRAM_USED=TRUE
       s_axi_arready  => sdram_axi_arready,                                              -- only for BRAM_USED=TRUE
-      s_axi_arsize   => sdram_axi_arsize(2 DOWNTO 0),                                   -- only for BRAM_USED=TRUE
+      s_axi_arsize   => "101",                                                          -- only for BRAM_USED=TRUE
       s_axi_arvalid  => sdram_axi_arvalid,                                              -- only for BRAM_USED=TRUE
       s_axi_awaddr   => sdram_axi_awaddr(31 DOWNTO 0),                                  -- only for BRAM_USED=TRUE
       s_axi_awburst  => sdram_axi_awburst(1 DOWNTO 0),                                  -- only for BRAM_USED=TRUE
       s_axi_awid     => sdram_axi_awid,                                                 -- only for BRAM_USED=TRUE
       s_axi_awlen    => sdram_axi_awlen(7 DOWNTO 0),                                    -- only for BRAM_USED=TRUE
       s_axi_awready  => sdram_axi_awready,                                              -- only for BRAM_USED=TRUE
-      s_axi_awsize   => sdram_axi_awsize(2 DOWNTO 0),                                   -- only for BRAM_USED=TRUE
+      s_axi_awsize   => "101",                                                          -- only for BRAM_USED=TRUE
       s_axi_awvalid  => sdram_axi_awvalid,                                              -- only for BRAM_USED=TRUE
       s_axi_bid      => sdram_axi_bid,                                                  -- only for BRAM_USED=TRUE
       s_axi_bready   => sdram_axi_bready,                                               -- only for BRAM_USED=TRUE
@@ -1397,14 +1397,14 @@ BEGIN
       s_axi_arid     => sdram_axi_arid,                                                                             -- only for BRAM_USED=TRUE
       s_axi_arlen    => sdram_axi_arlen(7 DOWNTO 0),                                                                -- only for BRAM_USED=TRUE
       s_axi_arready  => open,                                                                                       -- only for BRAM_USED=TRUE
-      s_axi_arsize   => sdram_axi_arsize(2 DOWNTO 0),                                                               -- only for BRAM_USED=TRUE
+      s_axi_arsize   => "101",                                                                                      -- only for BRAM_USED=TRUE
       s_axi_arvalid  => sdram_axi_arvalid,                                                                          -- only for BRAM_USED=TRUE
       s_axi_awaddr   => sdram_axi_awaddr(31 DOWNTO 0),                                                              -- only for BRAM_USED=TRUE
       s_axi_awburst  => sdram_axi_awburst(1 DOWNTO 0),                                                              -- only for BRAM_USED=TRUE
       s_axi_awid     => sdram_axi_awid,                                                                             -- only for BRAM_USED=TRUE
       s_axi_awlen    => sdram_axi_awlen(7 DOWNTO 0),                                                                -- only for BRAM_USED=TRUE
       s_axi_awready  => open,                                                                                       -- only for BRAM_USED=TRUE
-      s_axi_awsize   => sdram_axi_awsize(2 DOWNTO 0),                                                               -- only for BRAM_USED=TRUE
+      s_axi_awsize   => "101",                                                                                      -- only for BRAM_USED=TRUE
       s_axi_awvalid  => sdram_axi_awvalid,                                                                          -- only for BRAM_USED=TRUE
       s_axi_bid      => open,                                                                                       -- only for BRAM_USED=TRUE
       s_axi_bready   => sdram_axi_bready,                                                                           -- only for BRAM_USED=TRUE
