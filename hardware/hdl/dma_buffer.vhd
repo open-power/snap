@@ -58,6 +58,7 @@ ENTITY dma_buffer IS
     buf_rtag_valid_o         : OUT boolean;
     buf_wtag_o               : OUT std_ulogic_vector(5 DOWNTO 0);
     buf_wtag_p_o             : OUT std_ulogic;
+    buf_wtag_cl_partial_o    : OUT boolean;
     buf_wtag_valid_o         : OUT boolean;
     --
     -- Error Inject
@@ -135,6 +136,9 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL wram_waddr_p_d, wram_waddr_p_q   : std_ulogic;
   SIGNAL wram_wdata                       : std_ulogic_vector(583 DOWNTO 0);
   SIGNAL wram_wen                         : std_ulogic;
+  SIGNAL even_wdata_complete_q            : boolean;
+  SIGNAL odd_wdata_complete_q             : boolean;
+  SIGNAL buf_wtag_cl_partial_q            : boolean;
   SIGNAL parity_error_fir_q               : std_ulogic := '0';
 
   signal flip_bit_q                       : std_ulogic;
@@ -340,11 +344,12 @@ BEGIN
     -- clk process
     ----------------------------------------------------------------------------
     wram_ctrl_clk : PROCESS (ha_pclock)
-      VARIABLE wram_rdata_v    : std_ulogic_vector(511 DOWNTO 0);
-      VARIABLE wram_rdata_p_v  : std_ulogic_vector(  7 DOWNTO 0);
-      VARIABLE wram_rdata_be_v : std_ulogic_vector( 63 DOWNTO 0);
-      VARIABLE wram_rmdata_v   : std_ulogic_vector(511 DOWNTO 0);
-      VARIABLE wram_rmdata_p_v : std_ulogic_vector( 63 DOWNTO 0);
+      VARIABLE odd_wdata_complete_v : boolean;
+      VARIABLE wram_rdata_v         : std_ulogic_vector(511 DOWNTO 0);
+      VARIABLE wram_rdata_p_v       : std_ulogic_vector(  7 DOWNTO 0);
+      VARIABLE wram_rdata_be_v      : std_ulogic_vector( 63 DOWNTO 0);
+      VARIABLE wram_rmdata_v        : std_ulogic_vector(511 DOWNTO 0);
+      VARIABLE wram_rmdata_p_v      : std_ulogic_vector( 63 DOWNTO 0);
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
         IF afu_reset = '1' THEN
@@ -361,21 +366,45 @@ BEGIN
           parity_error_fir_q <= '0';
 
         ELSE
-          parity_error_fir_q <= '0';
+          --
+          -- defaults
+          --
+          buf_wtag_q            <= wram_waddr_q(6 DOWNTO 1);
+          buf_wtag_p_q          <= parity_gen_even(wram_waddr_p_q & wram_waddr_q(0));
+          buf_wtag_valid_q      <= FALSE;
+          buf_wtag_cl_partial_q <= TRUE;
+          parity_error_fir_q    <= '0';
+          wram_waddr_q          <= wram_waddr_d;
+          wram_waddr_p_q        <= wram_waddr_p_d;
+
+          --
+          -- wdata
           if buf_wdata_v_i = '1' then
 --512            if  gen_parity_odd_128(buf_wdata_i) /= (buf_wdata_p_i xor buf_wdata_be_i) then
 --512              parity_error_fir_q <= '1';
 --512            end if;
-          end if;
-          --
-          -- defaults
-          --
-          buf_wtag_q       <= wram_waddr_q(6 DOWNTO 1);
-          buf_wtag_p_q     <= parity_gen_even(wram_waddr_p_q & wram_waddr_q(0));
-          buf_wtag_valid_q <= FALSE;
-          wram_waddr_q     <= wram_waddr_d;
-          wram_waddr_p_q   <= wram_waddr_p_d;
+            IF (wram_waddr_q(0) = '0') THEN
+              IF (and_reduce(buf_wdata_be_i) = '1') THEN
+                even_wdata_complete_q <= TRUE;
+              ELSE
+                even_wdata_complete_q <= FALSE;
+              END IF;  
+            END IF;
 
+            IF (wram_waddr_q(0) = '1') THEN
+              IF (and_reduce(buf_wdata_be_i) = '1') THEN
+                odd_wdata_complete_v := TRUE;
+              ELSE
+                odd_wdata_complete_v := FALSE;
+              END IF;  
+            END IF;
+          end if;
+
+          IF (even_wdata_complete_q = TRUE) AND
+             (odd_wdata_complete_v  = TRUE) THEN
+            buf_wtag_cl_partial_q <= FALSE;
+          END IF;
+          
           IF (wram_waddr_d(1) /= wram_waddr_q(1))  THEN
             buf_wtag_valid_q <= TRUE;
           END IF;
@@ -509,12 +538,13 @@ BEGIN
     ah_b_o.rpar  <= wram_rdata_p_q(7 DOWNTO 0);
     ah_b_o.rlat  <= x"3";
 
-    buf_rtag_o       <= buf_rtag_qqq;
-    buf_rtag_p_o     <= buf_rtag_p_qqq;
-    buf_rtag_valid_o <= buf_rtag_valid_qqq;
-    buf_wtag_o       <= buf_wtag_q;
-    buf_wtag_p_o     <= buf_wtag_p_q;
-    buf_wtag_valid_o <= buf_wtag_valid_q;
+    buf_rtag_o            <= buf_rtag_qqq;
+    buf_rtag_p_o          <= buf_rtag_p_qqq;
+    buf_rtag_valid_o      <= buf_rtag_valid_qqq;
+    buf_wtag_o            <= buf_wtag_q;
+    buf_wtag_p_o          <= buf_wtag_p_q;
+    buf_wtag_valid_o      <= buf_wtag_valid_q;
+    buf_wtag_cl_partial_o <= buf_wtag_cl_partial_q;
 
 
     buf_rdata_vld_o  <= rram_rdata_vld_qqq;

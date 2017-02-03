@@ -92,7 +92,7 @@ ARCHITECTURE dma OF dma IS
   -- TYPE
   TYPE COM_INDICATION_T IS (ACTIVE, INACTIVE);
   TYPE BUF_INDICATION_T IS (EMPTY, FULL);
-  TYPE CLT_INDICATION_T IS (NOT_USED, PARTIAL_DATA, COMPLETE_DATA);
+  TYPE CLT_INDICATION_T IS (NOT_USED, IN_USE, PARTIAL_DATA, COMPLETE_DATA);
   TYPE GATE_INDICATION_T IS (OPENED, CLOSED);
   TYPE FSM_REQ_T IS (NONE, RESTART, COMMAND);
 
@@ -181,7 +181,11 @@ ARCHITECTURE dma OF dma IS
   SIGNAL buf_wfull_cnt_q        : integer RANGE 0 TO 32;
   SIGNAL buf_wtag_p_q           : std_ulogic;
   SIGNAL buf_wtag_q             : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL buf_wtag_hold_q        : integer RANGE 0 TO 31;
+  SIGNAL buf_wtag_cl_partial_q  : boolean;
+  SIGNAL buf_wtag_cl_partial_hold_q  : boolean;
   SIGNAL buf_wtag_valid_q       : boolean;
+  SIGNAL buf_wtag_valid_hold_q  : boolean;
   SIGNAL clt_rtag_next_q        : std_ulogic_vector(  5 DOWNTO  0);
   SIGNAL clt_rtag_p_q           : std_ulogic;
   SIGNAL clt_rtag_q             : std_ulogic_vector(  5 DOWNTO  0);
@@ -200,7 +204,6 @@ ARCHITECTURE dma OF dma IS
   SIGNAL com_wtag_valid_q       : boolean;
   SIGNAL context_handle_q       : std_ulogic_vector(15 DOWNTO 0);
   SIGNAL dmm_e_q                : DMM_E_T := (OTHERS => '0');
-  SIGNAL first_cl_is_partial_q  : boolean;
   SIGNAL ha_c_q                 : HA_C_T;
   SIGNAL ha_r_q                 : HA_R_T;
   SIGNAL intreq_active_q        : boolean;
@@ -1444,13 +1447,13 @@ BEGIN
           write_ctrl_q          <= write_ctrl_q;
           buf_wfull_cnt_q       <= buf_wfull_cnt_q;
           buf_walmost_full_q    <= buf_walmost_full_q;
+          buf_wtag_valid_hold_q <= buf_wtag_valid_hold_q;
           clt_wtag_q            <= clt_wtag_q;
           clt_wtag_next_q       <= clt_wtag_next_q;
           clt_wtag_p_q          <= clt_wtag_p_q;
           com_wtag_qq           <= to_integer(com_wtag_q(4 DOWNTO 0));
           rsp_wtag_qq           <= to_integer(rsp_wtag_q(4 DOWNTO 0));
           wclen_q               <= wclen_q;
-          first_cl_is_partial_q <= FALSE;
 
           buf_wtag_v            := to_integer(buf_wtag_q     (4 DOWNTO 0));
           clt_wtag_v            := to_integer(clt_wtag_q     (4 DOWNTO 0));
@@ -1471,20 +1474,7 @@ BEGIN
             clt_wtag_p_q    <= AC_PPARITH(1, clt_wtag_q, clt_wtag_p_q,
                                              "000001"  , '0');
 
-            IF first_cl_is_partial_q = TRUE THEN
-              --
-              -- first CL is allways a partial line
-              write_ctrl_q(clt_wtag_v).clt <= PARTIAL_DATA;
-
-            ELSIF wclen_q = ((5 DOWNTO 1 => '0') & '1') THEN
-              --
-              -- last CL is allways a partial line
-              write_ctrl_q(clt_wtag_v).clt <= PARTIAL_DATA;
-            ELSE
-              --
-              -- normal CL
-              write_ctrl_q(clt_wtag_v).clt <= COMPLETE_DATA;
-            END IF;
+            write_ctrl_q(clt_wtag_v).clt <= IN_USE;
           END IF;
 
           --
@@ -1492,8 +1482,6 @@ BEGIN
           IF (sd_c_q.wr_req    = '1'    ) AND
              (write_ctrl_fsm_q = ST_IDLE) THEN
 
-            first_cl_is_partial_q <= TRUE;
-            
             --
             -- calculate the amount of CLT
             IF sd_c_q.wr_len(0) = '0' THEN
@@ -1519,11 +1507,46 @@ BEGIN
           --
           -- BUF: BUFFER TAG is valid
           --
-          IF buf_wtag_valid_q = TRUE THEN
-            write_ctrl_q(buf_wtag_v).buf <= FULL;
+          IF (buf_wtag_valid_q = TRUE) THEN
 
-            IF rsp_wtag_valid_q = FALSE THEN
-              buf_wfull_cnt_q <= buf_wfull_cnt_q + 1;
+            
+            IF (write_ctrl_q(buf_wtag_v).clt = IN_USE) THEN
+              buf_wtag_valid_hold_q        <= FALSE;
+              write_ctrl_q(buf_wtag_v).buf <= FULL;
+   
+              IF buf_wtag_cl_partial_q = TRUE THEN
+                write_ctrl_q(buf_wtag_v).clt <= PARTIAL_DATA;
+              ELSE
+                write_ctrl_q(buf_wtag_v).clt <= COMPLETE_DATA;
+              END IF;
+   
+              IF rsp_wtag_valid_q = FALSE THEN
+                buf_wfull_cnt_q <= buf_wfull_cnt_q + 1;
+              END IF;
+            ELSE
+              buf_wtag_valid_hold_q      <= TRUE;
+              buf_wtag_cl_partial_hold_q <= buf_wtag_cl_partial_q;
+              buf_wtag_hold_q            <= buf_wtag_v;
+            END IF;
+          END IF;
+
+
+          IF (buf_wtag_valid_hold_q = TRUE) THEN
+            IF (write_ctrl_q(buf_wtag_hold_q).clt = IN_USE) THEN
+
+              buf_wtag_valid_hold_q             <= FALSE;
+              write_ctrl_q(buf_wtag_hold_q).buf <= FULL;
+   
+              IF buf_wtag_cl_partial_hold_q = TRUE THEN
+                write_ctrl_q(buf_wtag_hold_q).clt <= PARTIAL_DATA;
+              ELSE
+                write_ctrl_q(buf_wtag_hold_q).clt <= COMPLETE_DATA;
+              END IF;
+   
+              IF rsp_wtag_valid_q = FALSE THEN
+                buf_wfull_cnt_q <= buf_wfull_cnt_q + 1;
+              END IF;
+            ELSE
             END IF;
           END IF;
 
@@ -1932,6 +1955,7 @@ BEGIN
       buf_rtag_valid_o         => buf_rtag_valid_q,
       buf_wtag_o               => buf_wtag_q,
       buf_wtag_p_o             => buf_wtag_p_q,
+      buf_wtag_cl_partial_o    => buf_wtag_cl_partial_q,
       buf_wtag_valid_o         => buf_wtag_valid_q,
       --
       -- Error Inject
