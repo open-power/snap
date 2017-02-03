@@ -140,27 +140,54 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem,
 	T3_size    = Action_Input->Data.t3.size;
 	ReturnCode = RET_CODE_OK;
 
+    /*
 	memcpy((ap_uint<MEMDW> *)__table1,
 	       (ap_uint<MEMDW> *)(T1_type == HOST_DRAM) ?
 	       (dout_gmem + (T1_address >> ADDR_RIGHT_SHIFT)) :
 	       (d_ddrmem  + (T1_address >> ADDR_RIGHT_SHIFT)),
-	       T1_size);
+	       T1_size); 	*/
 
+    (T1_type == HOST_DRAM) ?
+    		(memcpy((ap_uint<MEMDW> *)__table1,
+    	       (ap_uint<MEMDW> *)(din_gmem + (T1_address >> ADDR_RIGHT_SHIFT)),
+    	       T1_size)) :
+			(memcpy((ap_uint<MEMDW> *)__table1,
+    	       (ap_uint<MEMDW> *)(d_ddrmem + (T1_address >> ADDR_RIGHT_SHIFT)),
+    	       T1_size));
+    /*
 	memcpy((ap_uint<MEMDW> *)__table2,
 	       (ap_uint<MEMDW> *)(T2_type == HOST_DRAM) ?
 	       (dout_gmem + (T2_address >> ADDR_RIGHT_SHIFT)) :
 	       (d_ddrmem  + (T2_address >> ADDR_RIGHT_SHIFT)),
-	       T2_size);
-	
+	       T2_size);	*/
+    (T2_type == HOST_DRAM) ?
+    	(memcpy((ap_uint<MEMDW> *)__table2,
+    	       (ap_uint<MEMDW> *)(din_gmem + (T2_address >> ADDR_RIGHT_SHIFT)),
+    	       T2_size)) :
+    	(memcpy((ap_uint<MEMDW> *)__table2,
+    	       (ap_uint<MEMDW> *)(d_ddrmem + (T2_address >> ADDR_RIGHT_SHIFT)),
+    	       T2_size));
+
+
 	rc = action_hashjoin_hls(__table1, T1_size / sizeof(table1_t),
 				 __table2, T2_size / sizeof(table2_t),
 				 __table3, &__table3_idx, 1);
 	if (rc == 0) {
+
+	    /*
 		memcpy((ap_uint<MEMDW> *)(T3_type == HOST_DRAM) ?
 		       (dout_gmem + (T3_address >> ADDR_RIGHT_SHIFT)) :
 		       (d_ddrmem  + (T3_address >> ADDR_RIGHT_SHIFT)),
 		       (ap_uint<MEMDW> *)__table3,
-		       __table3_idx * sizeof(table3_t));
+		       __table3_idx * sizeof(table3_t));	*/
+	    (T3_type == HOST_DRAM) ?
+			(memcpy((ap_uint<MEMDW> *)(dout_gmem + (T3_address >> ADDR_RIGHT_SHIFT)),
+			       (ap_uint<MEMDW> *)__table3,
+			       __table3_idx * sizeof(table3_t))) :
+			(memcpy((ap_uint<MEMDW> *)(d_ddrmem + (T3_address >> ADDR_RIGHT_SHIFT)),
+			       (ap_uint<MEMDW> *)__table3,
+			       __table3_idx * sizeof(table3_t)));
+
 	} else
 		ReturnCode = RET_CODE_FAILURE;
 
