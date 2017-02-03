@@ -137,7 +137,6 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL wram_wdata                       : std_ulogic_vector(583 DOWNTO 0);
   SIGNAL wram_wen                         : std_ulogic;
   SIGNAL even_wdata_complete_q            : boolean;
-  SIGNAL odd_wdata_complete_q             : boolean;
   SIGNAL buf_wtag_cl_partial_q            : boolean;
   SIGNAL parity_error_fir_q               : std_ulogic := '0';
 
@@ -383,6 +382,10 @@ BEGIN
 --512            if  gen_parity_odd_128(buf_wdata_i) /= (buf_wdata_p_i xor buf_wdata_be_i) then
 --512              parity_error_fir_q <= '1';
 --512            end if;
+
+            --
+            -- check that the first 64 bytes of a CL are written into the buffer
+            -- 
             IF (wram_waddr_q(0) = '0') THEN
               IF (and_reduce(buf_wdata_be_i) = '1') THEN
                 even_wdata_complete_q <= TRUE;
@@ -391,6 +394,9 @@ BEGIN
               END IF;  
             END IF;
 
+            --
+            -- check that the second 64 bytes of a CL are written into the buffer
+            -- 
             IF (wram_waddr_q(0) = '1') THEN
               IF (and_reduce(buf_wdata_be_i) = '1') THEN
                 odd_wdata_complete_v := TRUE;
@@ -400,6 +406,9 @@ BEGIN
             END IF;
           end if;
 
+          --
+          -- check that the full CL is written into the buffer
+          -- 
           IF (even_wdata_complete_q = TRUE) AND
              (odd_wdata_complete_v  = TRUE) THEN
             buf_wtag_cl_partial_q <= FALSE;
