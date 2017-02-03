@@ -1,7 +1,6 @@
 #!/bin/bash
-
 #
-# Copyright 2016, International Business Machines
+# Copyright 2017, International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,9 +23,119 @@ verbose=0
 dnut_card=0
 iteration=1
 
+function test () # $1 = card, $2 = 4k or 64, $3 = action
+{
+	local card=$1
+	local size=$2
+	local action=$3
+
+	for a in 4096 2048 1024 512 256 128 64 ; do
+		echo "Testing Action $action Align $a for (1...64) $2 Byte"
+		for ln in ` seq 1 64 `; do
+			if [ $size == 64 ] ; then
+				cmd="./tools/stage2 -a $action -A $a -C ${card} -S 0 -B $ln"
+			else
+				cmd="./tools/stage2 -a $action -A $a -C ${card} -S $ln -B 0"
+			fi
+			eval ${cmd}
+			if [ $? -ne 0 ]; then
+        			echo "cmd: ${cmd}"
+        			echo "failed"
+        			exit 1
+			fi
+		done
+	done
+}
+
+function test_sb () # $1 = card, $2=action
+{
+	local card=$1
+	local action=$2
+
+	for a in 4096 2048 1024 512 256 128 64 ; do		# Align
+		echo -n "Testing Action $action Align $a  4K=(1..16) 64B=(1..16)"
+		for  s in ` seq 1 16 `; do		# 4 K Blocks
+			echo -n "."
+			for b in ` seq 1 16 `; do	# 64 Byte Blocks
+				cmd="./tools/stage2 -a $action -A $a -C ${card} -S $s -B $b"
+				eval ${cmd}
+				if [ $? -ne 0 ]; then
+        				echo "cmd: ${cmd}"
+        				echo "failed"
+        				exit 1
+				fi
+			done
+		done
+		echo " done"
+	done
+}
+
+function test_bs () # $1 = card, $2 = action
+{
+	local card=$1
+	local action=$2
+
+	for a in 4096 2048 1024 512 256 128 64 ; do		# Align
+		echo -n "Testing Action $action Align $a  64B=(1..16) 4K=(1..16)"
+		for b in ` seq 1 16 `; do		# 64 Bytes Blocks
+			echo -n "."
+			for  s in ` seq 1 16 `; do	# 4K Blocks
+				cmd="./tools/stage2 -a $action -A $a -C ${card} -S $s -B $b"
+				eval ${cmd}
+				if [ $? -ne 0 ]; then
+        				echo "cmd: ${cmd}"
+        				echo "failed"
+        				exit 1
+				fi
+			done
+		done
+		echo " done"
+	done
+}
+
+function test_rnd () # $1 = card, $2 = action
+{
+	local card=$1
+	local action=$2
+
+	for a in 4096 1024 2048 512 256 128 64 ; do
+		echo -n "Testing Action $action Align $a 1000 x 64B=RND 4K=RND"
+		for n in ` seq 1 1000 `; do
+			local size=$(( $RANDOM % 64 ))
+			local block=$(( $RANDOM % 64 ))
+			if [ $size = 0 ] && [ $block = 0 ] ; then
+				continue	# ignore 0 0 combinations
+			fi
+			cmd="./tools/stage2 -a $action -A $a -C ${card} -S $size -B $block"
+			eval ${cmd}
+			if [ $? -ne 0 ]; then
+				echo "cmd: ${cmd}"
+				echo "failed"
+				exit 1
+			fi
+		done
+		echo " done"
+	done
+}
+
+function test_ddr ()	# $1 = card, $2 = start address, $3 = end address
+{
+	local card=$1
+	local astart=$2
+	local aend=$3
+
+	cmd="./tools/stage2_ddr -v -C ${card} -s $astart -e $aend"
+	eval ${cmd}
+	if [ $? -ne 0 ]; then
+       		echo "cmd: ${cmd}"
+       		echo "failed"
+       		exit 1
+	fi
+}
+
 function usage() {
 	echo "Usage:"
-	echo "  donut_tools.sh"
+	echo "  a_test.sh"
 	echo "    [-C <card>]        card to be used for the test"
 	echo "    [-t <trace_level>]"
 	echo "    [-i <iteration>]"
@@ -61,12 +170,10 @@ if [ $rev != "0x0605" ]; then
 	exit 1
 fi
 
-# ----------------------------#
-
 for ((iter=1;iter <= iteration;iter++))
 {
 	echo "Iteration $iter of $iteration"
-	echo "Testing Action 1 from 200 msec to 2 sec in 200 msec steps"
+	echo "Testing Action 1 from 200 msec to 1 sec in 200 msec steps"
 	cmd="./tools/stage2 -a 1 -C${dnut_card} -e 1000 -t 2"
 	eval ${cmd}
 	if [ $? -ne 0 ]; then
@@ -75,137 +182,22 @@ for ((iter=1;iter <= iteration;iter++))
        		exit 1
 	fi
 
-	for a in 4096 1024 512 256 128 64 ; do
-		echo "Testing Action 2 Align $a for (1...128) 4K Blocks"
-		for s in ` seq 1 128 `; do
-			cmd="./tools/stage2 -a 2 -A $a -C ${dnut_card} -S $s -B 0"
-			eval ${cmd}
-			if [ $? -ne 0 ]; then
-        			echo "cmd: ${cmd}"
-        			echo "failed"
-        			exit 1
-			fi
-		done
-	done
+	test "${dnut_card}" "4k" "2"
+	test "${dnut_card}" "64" "2"
+	test_sb "${dnut_card}" "2" "2"
+	test_bs "${dnut_card}" "2"
+	test_rnd "$dnut_card" "2"
 
-	for a in 4096 1024 512 256 128 64 ; do
-		echo "Testing Action 2 Align $a for (1..64) 64 Bytes Blocks"
-		for b in ` seq 1 64 `; do
-			cmd="./tools/stage2 -a 2 -A $a -C ${dnut_card} -S 0 -B $b"
-			eval ${cmd}
-			if [ $? -ne 0 ]; then
-        			echo "cmd: ${cmd}"
-        			echo "failed"
-        			exit 1
-			fi
-		done
-	done
-
-	for a in 4096 1024 512 256 128 64 ; do		# Align
-		echo -n "Testing Action 2 Align=$a  4K=(1..64) 64B=(1..64)"
-		for  s in ` seq 1 64 `; do		# 4 K Blocks
-			echo -n "."
-			for b in ` seq 1 64 `; do	# 64 Byte Blocks
-				cmd="./tools/stage2 -a 2 -A $a -C ${dnut_card} -S $s -B $b"
-				eval ${cmd}
-				if [ $? -ne 0 ]; then
-        				echo "cmd: ${cmd}"
-        				echo "failed"
-        				exit 1
-				fi
-			done
-		done
-		echo " done"
-	done
-
-	for a in 4096 1024 512 256 128 64 ; do		# Align
-		echo -n "Testing Action 2 Align=$a  64B=(1..64) 4K=(1..64)"
-		for b in ` seq 1 64 `; do		# 64 Bytes Blocks
-			echo -n "."
-			for  s in ` seq 1 64 `; do	# 4K Blocks
-				cmd="./tools/stage2 -a 2 -A $a -C ${dnut_card} -S $s -B $b"
-				eval ${cmd}
-				if [ $? -ne 0 ]; then
-        				echo "cmd: ${cmd}"
-        				echo "failed"
-        				exit 1
-				fi
-			done
-		done
-		echo " done"
-	done
-
-	for a in 4096 1024 512 256 128 64 ; do
-		echo -n "Testing Action 6 Align $a 4K=(1..64) 64B=(1..64)"
-		for s in ` seq 1 64 `; do
-			echo -n "."
-			for b in ` seq 1 64 `; do
-				cmd="./tools/stage2 -a 6 -A $a -C ${dnut_card} -S $s -B $b"
-				eval ${cmd}
-				if [ $? -ne 0 ]; then
-        				echo "cmd: ${cmd}"
-        				echo "failed"
-        				exit 1
-				fi
-			done
-		done
-		echo " done"
-	done
-
-	for a in 4096 1024 512 256 128 64 ; do
-		echo -n "Testing Action 6 Align $a 64B=(1..64) 4K=(1..64)"
-		for b in ` seq 1 64 `; do
-			echo -n "."
-			for s in ` seq 1 64 `; do
-				cmd="./tools/stage2 -a 6 -A $a -C ${dnut_card} -S $s -B $b"
-				eval ${cmd}
-				if [ $? -ne 0 ]; then
-        				echo "cmd: ${cmd}"
-        				echo "failed"
-        				exit 1
-				fi
-			done
-		done
-		echo " done"
-	done
-
-exit 0
+	test "$dnut_card" "4k" "6"
+	test "$dnut_card" "64" "6"
+	test_sb "${dnut_card}" "6"
+	test_bs "${dnut_card}" "6"
+	test_rnd "$dnut_card" "6"
+	exit 1
 	echo "Testing DDR Memory on KU3 Card (this takes a while)"
-	s=0x0
-	e=0x80000000
-	cmd="./tools/stage2_ddr -v -C ${dnut_card} -s $s -e $e"
-	eval ${cmd}
-	if [ $? -ne 0 ]; then
-       		echo "cmd: ${cmd}"
-       		echo "failed"
-       		exit 1
-	fi
-	s=0x080000000
-	e=0x100000000
-	cmd="./tools/stage2_ddr -v -C ${dnut_card} -s $s -e $e"
-	eval ${cmd}
-	if [ $? -ne 0 ]; then
-       		echo "cmd: ${cmd}"
-       		echo "failed"
-       		exit 1
-	fi
-	s=0x100000000
-	e=0x180000000
-	cmd="./tools/stage2_ddr -v -C ${dnut_card} -s $s -e $e"
-	eval ${cmd}
-	if [ $? -ne 0 ]; then
-       		echo "cmd: ${cmd}"
-       		echo "failed"
-       		exit 1
-	fi
-	s=0x180000000
-	e=0x200000000
-	cmd="./tools/stage2_ddr -v -C ${dnut_card} -s $s -e $e"
-	eval ${cmd}
-	if [ $? -ne 0 ]; then
-       		echo "cmd: ${cmd}"
-       		echo "failed"
-       		exit 1
-	fi
+	test_ddr "${dnut_card}" "0x000000000" "0x080000000"
+	test_ddr "${dnut_card}" "0x080000000" "0x100000000"
+	test_ddr "${dnut_card}" "0x100000000" "0x180000000"
+	test_ddr "${dnut_card}" "0x180000000" "0x200000000"
 }
 exit 0
