@@ -118,21 +118,6 @@ function test_rnd () # $1 = card, $2 = action
 	done
 }
 
-function test_ddr ()	# $1 = card, $2 = start address, $3 = end address
-{
-	local card=$1
-	local astart=$2
-	local aend=$3
-
-	cmd="./tools/stage2_ddr -v -C ${card} -s $astart -e $aend"
-	eval ${cmd}
-	if [ $? -ne 0 ]; then
-       		echo "cmd: ${cmd}"
-       		echo "failed"
-       		exit 1
-	fi
-}
-
 function usage() {
 	echo "Usage:"
 	echo "  a_test.sh"
@@ -193,11 +178,5 @@ for ((iter=1;iter <= iteration;iter++))
 	test_sb "${dnut_card}" "6"
 	test_bs "${dnut_card}" "6"
 	test_rnd "$dnut_card" "6"
-	exit 1
-	echo "Testing DDR Memory on KU3 Card (this takes a while)"
-	test_ddr "${dnut_card}" "0x000000000" "0x080000000"
-	test_ddr "${dnut_card}" "0x080000000" "0x100000000"
-	test_ddr "${dnut_card}" "0x100000000" "0x180000000"
-	test_ddr "${dnut_card}" "0x180000000" "0x200000000"
 }
 exit 0
