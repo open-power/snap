@@ -17,13 +17,19 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "action_hashjoin_hls.h"
+#include "action_hashjoin_hls.H"
+
+/* Define memory buffers to keep the data we read from CARD or HOST DRAM */
+static table1_t __table1[TABLE1_SIZE];
+static table2_t __table2[TABLE2_SIZE];
+static unsigned int __table3_idx = 0;
+static table3_t __table3[TABLE1_SIZE * TABLE2_SIZE]; /* worst case size */
 
 #if !defined(NO_SYNTH)
 
 #define HASHJOIN_ACTION_TYPE 0x0022
+#define RELEASE_VERSION 0xFEEDA02200000015 //contains Action and Release numbers
 
-#define RELEASE_VERSION 0xFEEDA02200000014 //contains Action and Release numbers
 // ----------------------------------------------------------------------------
 // Known Limitations => Issue #39 & #45
 //      => Transfers must be 64 byte aligned and a size of multiples of 64 bytes
@@ -36,35 +42,38 @@
 // v1.0 : 12/05/2016 :  creation from search V1.8 : HJ1 used for RD/WR database value
 //                                                : + test string+int conversion
 
-
-// WRITE RESULTS IN MMIO REGS
-void write_results_in_HJ_regs(action_output_reg *Action_Output, action_input_reg *Action_Input,
-                   ap_uint<32> ReturnCode, ap_uint<64> field1, ap_uint<64> field2,
-                   ap_uint<64> field3, ap_uint<64> field4)
+/*
+ * WRITE RESULTS IN MMIO REGS
+ *
+ * Always check that ALL Outputs are tied to a value or HLS will generate a
+ * Action_Output_i and a Action_Output_o registers and address to read results
+ * will be shifted ...and wrong
+ * => easy checking in generated files : grep 0x184 action_wrapper_ctrl_reg_s_axi.vhd
+ * this grep should return nothing if no duplication of registers (which is expected)
+ */
+void write_results_in_HJ_regs(action_output_reg *Action_Output,
+			      action_input_reg *Action_Input,
+			      ap_uint<32> ReturnCode,
+			      ap_uint<64> field1,
+			      ap_uint<64> field2,
+			      ap_uint<64> field3,
+			      ap_uint<64> field4)
 {
-// Always check that ALL Outputs are tied to a value or HLS will generate a
-// Action_Output_i and a Action_Output_o registers and address to read results
-// will be shifted ...and wrong
-// => easy checking in generated files : grep 0x184 action_wrapper_ctrl_reg_s_axi.vhd
-// this grep should return nothing if no duplication of registers (which is expected)
-//
-  Action_Output->Retc = (ap_uint<32>) ReturnCode;
-  Action_Output->Reserved = (ap_uint<64>) 0x0;
+	Action_Output->Retc = (ap_uint<32>) ReturnCode;
+	Action_Output->Reserved = (ap_uint<64>) 0x0;
 
-  Action_Output->Data.t1_processed   = field1;
-  Action_Output->Data.t2_processed   = field2;
-  Action_Output->Data.t3_produced    = field3;
-  Action_Output->Data.checkpoint     = field4;
-//  Action_Output->Data.rc(31,0)       = (ap_uint<32>) ReturnCode;
-//  Action_Output->Data.rc(63,32)      = 0;
-  Action_Output->Data.rc             = 0;
-  Action_Output->Data.action_version =  RELEASE_VERSION;
+	Action_Output->Data.t1_processed   = field1;
+	Action_Output->Data.t2_processed   = field2;
+	Action_Output->Data.t3_produced    = field3;
+	Action_Output->Data.checkpoint     = field4;
+	Action_Output->Data.rc             = 0;
+	Action_Output->Data.action_version =  RELEASE_VERSION;
 
-  // Registers unchanged
-  Action_Output->Data.t1 = Action_Input->Data.t1;
-  Action_Output->Data.t2 = Action_Input->Data.t2;
-  Action_Output->Data.t3 = Action_Input->Data.t3;
-  Action_Output->Data.hash_table = Action_Input->Data.hash_table;
+	// Registers unchanged
+	Action_Output->Data.t1 = Action_Input->Data.t1;
+	Action_Output->Data.t2 = Action_Input->Data.t2;
+	Action_Output->Data.t3 = Action_Input->Data.t3;
+	Action_Output->Data.hash_table = Action_Input->Data.hash_table;
 }
 
 //-----------------------------------------------------------------------------
@@ -76,75 +85,87 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem,
 		    action_input_reg *Action_Input,
 		    action_output_reg *Action_Output)
 {
-
-// Host Memory AXI Interface
+	// Host Memory AXI Interface
 #pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem
 #pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg
 
-//DDR memory Interface
+	//DDR memory Interface
 #pragma HLS INTERFACE m_axi port=d_ddrmem    bundle=card_mem0 offset=slave
 #pragma HLS INTERFACE s_axilite port=d_ddrmem    bundle=ctrl_reg
 
-// Host Memory AXI Lite Master Interface
+	// Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Input
 #pragma HLS INTERFACE s_axilite port=Action_Input offset=0x080 bundle=ctrl_reg
 #pragma HLS DATA_PACK variable=Action_Output
 #pragma HLS INTERFACE s_axilite port=Action_Output offset=0x104 bundle=ctrl_reg
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
+	// VARIABLES
+	ap_uint<16> i, j;
+	short rc;
+	ap_uint<32> ReturnCode = 0;
+	ap_uint<64> T1_address;
+	ap_uint<64> T2_address;
+	ap_uint<64> T3_address;
+	ap_uint<64> T3_produced;
+	ap_uint<16> T1_type;
+	ap_uint<16> T2_type;
+	ap_uint<16> T3_type;
+	ap_uint<32> T1_size;
+	ap_uint<32> T2_size;
+	ap_uint<32> T3_size;
+	
+	//== Parameters fetched in memory ==
+	//==================================
+	
+	/* FIXME Please check if the data alignment matches the expectations */
+	if (Action_Input->Control.action != HASHJOIN_ACTION_TYPE) {
+		ReturnCode = RET_CODE_FAILURE;
+		write_results_in_HJ_regs(Action_Output, Action_Input, ReturnCode,
+					 0, 0, 0, 0);
+		return;
+	}
 
+	// byte address received need to be aligned with port width
+	T1_address = Action_Input->Data.t1.address;
+	T1_type    = Action_Input->Data.t1.type;
+	T1_size    = Action_Input->Data.t1.size;
+	T2_address = Action_Input->Data.t2.address;
+	T2_type    = Action_Input->Data.t2.type;
+	T2_size    = Action_Input->Data.t2.size;
+	T3_address = Action_Input->Data.t3.address;
+	T3_type    = Action_Input->Data.t3.type;
+	T3_size    = Action_Input->Data.t3.size;
+	ReturnCode = RET_CODE_OK;
 
-  // VARIABLES
-  ap_uint<16> i, j;
-  short rc;
+	memcpy((ap_uint<MEMDW> *)__table1,
+	       (ap_uint<MEMDW> *)(T1_type == HOST_DRAM) ?
+	       (dout_gmem + (T1_address >> ADDR_RIGHT_SHIFT)) :
+	       (d_ddrmem  + (T1_address >> ADDR_RIGHT_SHIFT)),
+	       T1_size);
 
-  ap_uint<32> ReturnCode;
+	memcpy((ap_uint<MEMDW> *)__table2,
+	       (ap_uint<MEMDW> *)(T2_type == HOST_DRAM) ?
+	       (dout_gmem + (T2_address >> ADDR_RIGHT_SHIFT)) :
+	       (d_ddrmem  + (T2_address >> ADDR_RIGHT_SHIFT)),
+	       T2_size);
+	
+	rc = action_hashjoin_hls(__table1, T1_size / sizeof(table1_t),
+				 __table2, T2_size / sizeof(table2_t),
+				 __table3, &__table3_idx, 1);
+	if (rc == 0) {
+		memcpy((ap_uint<MEMDW> *)(T3_type == HOST_DRAM) ?
+		       (dout_gmem + (T3_address >> ADDR_RIGHT_SHIFT)) :
+		       (d_ddrmem  + (T3_address >> ADDR_RIGHT_SHIFT)),
+		       (ap_uint<MEMDW> *)__table3,
+		       __table3_idx * sizeof(table3_t));
+	} else
+		ReturnCode = RET_CODE_FAILURE;
 
-  ap_uint<64> T1_address;
-  ap_uint<64> T2_address;
-  ap_uint<64> T3_address;
-  ap_uint<64> T3_produced;
-
-  //== Parameters fetched in memory ==
-  //==================================
-
-
-  // byte address received need to be aligned with port width
-  T1_address = (Action_Input->Data.t1.address) >> ADDR_RIGHT_SHIFT;
-  T2_address = (Action_Input->Data.t2.address) >> ADDR_RIGHT_SHIFT;
-  T3_address = (Action_Input->Data.t3.address) >> ADDR_RIGHT_SHIFT;
-
-  ReturnCode = RET_CODE_OK;
-
-  if(Action_Input->Control.action == HASHJOIN_ACTION_TYPE) {
-
-        /* Iterations are needed to get the profiler working right
-                ... memory leaks? */
-
-      for (i = 0; i < 1; i++) {
-                rc = action_hashjoin_hls(din_gmem,
-					 dout_gmem,
-					 d_ddrmem,
-					 Action_Input,
-					 T1_address,
-					 T2_address,
-					 T3_address,
-					 &T3_produced);
-
-                if(rc!=0)
-			ReturnCode = RET_CODE_FAILURE;
-      }
-
-  }
-
-  else  // unknown action
-        ReturnCode = RET_CODE_FAILURE;
-
-  write_results_in_HJ_regs(Action_Output, Action_Input, ReturnCode, 0, 0, T3_produced, 0);
-
-  return;
+	write_results_in_HJ_regs(Action_Output, Action_Input, ReturnCode, 0, 0,
+				 __table3_idx, 0);
 }
 
 #endif /* !defined(NO_SYNTH) */
@@ -154,58 +175,79 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem,
 //-----------------------------------------------------------------------------
 
 #if defined(NO_SYNTH)
-#include <getopt.h>
 
-static unsigned int iterations = 1;
+/* table1 is initialized as constant for test code */
+static table1_t table1[] = {
+	{ /* .name = */ "ronah",  /* .age = */127, { 0x0, } },
+        { /* .name = */ "rlan",   /* .age = */118, { 0x0, } },
+        { /* .name = */ "rlory",  /* .age = */128, { 0x0, } },
+        { /* .name = */ "ropeye", /* .age = */118, { 0x0, } },
+        { /* .name = */ "rlan",   /* .age = */128, { 0x0, } },
+        { /* .name = */ "rlan",   /* .age = */138, { 0x0, } },
+        { /* .name = */ "rlan",   /* .age = */148, { 0x0, } },
+        { /* .name = */ "rlan",   /* .age = */158, { 0x0, } },
+        { /* .name = */ "rdam",   /* .age = */168, { 0x0, } },
+        { /* .name = */ "rnton",  /* .age = */123, { 0x0, } },
+        { /* .name = */ "rnton",  /* .age = */124, { 0x0, } },
+        { /* .name = */ "rieter", /* .age = */125, { 0x0, } },
+        { /* .name = */ "roerg",  /* .age = */126, { 0x0, } },
+        { /* .name = */ "rhomas", /* .age = */122, { 0x0, } },
+        { /* .name = */ "rrank",  /* .age = */120, { 0x0, } },
+        { /* .name = */ "Bruno" , /* .age = */112, { 0x0, } },
+        { /* .name = */ "rlumi" , /* .age = */115, { 0x0, } },
+        { /* .name = */ "rikey",  /* .age = */115, { 0x0, } },
+        { /* .name = */ "rlong",  /* .age = */114, { 0x0, } },
+        { /* .name = */ "riffy",  /* .age = */113, { 0x0, } },
+        { /* .name = */ "riffy",  /* .age = */112, { 0x0, } },
+};
 
-static void usage(char *prog)
+/*
+ * Decouple the entries to maintain the multihash table from the data
+ * in table1, since we do not want to transfer empty entries over the
+ * PCIe bus to the card.
+ */
+static table2_t table2[] = {
+        { /* .name = */ "ronah", /* .animal = */ "Whales"   },
+        { /* .name = */ "ronah", /* .animal = */ "Spiders"  },
+        { /* .name = */ "rlan",  /* .animal = */ "Ghosts"   },
+        { /* .name = */ "rlan",  /* .animal = */ "Zombies"  },
+        { /* .name = */ "rlory", /* .animal = */ "Buffy"    },
+        { /* .name = */ "rrobi", /* .animal = */ "Giraffe"  },
+        { /* .name = */ "roofy", /* .animal = */ "Lion"     },
+        { /* .name = */ "rumie", /* .animal = */ "Gepard"   },
+        { /* .name = */ "rlumi", /* .animal = */ "Cow"      },
+        { /* .name = */ "roofy", /* .animal = */ "Ape"      },
+        { /* .name = */ "roofy", /* .animal = */ "Fish"     },
+        { /* .name = */ "rikey", /* .animal = */ "Trout"    },
+        { /* .name = */ "rikey", /* .animal = */ "Greyling" },
+        { /* .name = */ "rnton", /* .animal = */ "Eagle"    },
+        { /* .name = */ "rhomy", /* .animal = */ "Austrich" },
+        { /* .name = */ "rlomy", /* .animal = */ "Sharks"   },
+        { /* .name = */ "rroof", /* .animal = */ "Fly"      },
+        { /* .name = */ "rlimb", /* .animal = */ "Birds"    },
+        { /* .name = */ "rlong", /* .animal = */ "Buffy"    },
+        { /* .name = */ "rrank", /* .animal = */ "Turtles"  },
+        { /* .name = */ "rrank", /* .animal = */ "Gorillas" },
+        { /* .name = */ "roffy", /* .animal = */ "Buffy"    },
+        { /* .name = */ "ruffy", /* .animal = */ "Buffy"    },
+        { /* .name = */ "rrank", /* .animal = */ "Buffy"    },
+        { /* .name = */ "Bruno", /* .animal = */ "Buffy"    },
+};
+
+int main(int argc __unused, char *argv[] __unused)
 {
-        printf("Usage: %s [-h] [-q] [-i <iterations>] [-c <check>]\n", prog);
-}
+        int rc;
 
-int main(int argc, char *argv[])
-{
-        int rc = 0;
-        unsigned int i;
+	memcpy(__table1, table1, sizeof(table1));
+	memcpy(__table2, table2, sizeof(table2));
+	memset(__table3, 0, sizeof(__table3));
 
-        while (1) {
-                int ch;
-                int option_index = 0;
-                static struct option long_options[] = {
-                        { "quiet", no_argument, NULL, 'q' },
-                        { "check", required_argument, NULL, 'c' },
-                        { "iterations", required_argument, NULL, 'i' },
-                        { "help", no_argument, NULL, 'h' },
-                };
+	rc = action_hashjoin_hls(__table1, ARRAY_SIZE(table1),
+				 __table2, ARRAY_SIZE(table2),
+				 __table3, &__table3_idx, 1);
+	if (rc != 0)
+		return rc;
 
-                ch = getopt_long(argc, argv, "c:qi:h",
-                                long_options, &option_index);
-                if (ch == -1)
-                        break;
-                switch (ch) {
-                case 'q':
-                        quiet = 1;
-                        break;
-                case 'c':
-                        check = atoi(optarg);
-                        break;
-                case 'i':
-                        iterations = atoi(optarg);
-                        break;
-                case 'h':
-                        usage(argv[0]);
-                        return 0;
-                }
-        }
-
-        /* Iterations are needed to get the profiler working right
-           ... memory leaks? */
-        for (i = 0; i < iterations; i++) {
-                /* ht_testcase(); */
-                rc = action_hashjoin_hls();
-                if (rc != 0)
-                        return 1;
-        }
         return 0;
 }
 

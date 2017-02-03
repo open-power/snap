@@ -17,10 +17,61 @@
  * limitations under the License.
  */
 
+#include <stdint.h>
+
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #define ARRAY_SIZE(a) (sizeof((a))/sizeof((a)[0]))
 
-#if !defined(NO_SYNTH)
+typedef char hashkey_t[64];
+typedef char hashdata_t[256];
+
+typedef struct table1_s {
+        hashkey_t name;             /* 64 bytes */
+        unsigned int age;           /*  4 bytes */
+        unsigned int reserved[60];  /* 60 bytes */
+} table1_t;
+
+typedef struct table2_s {
+        hashkey_t name;             /* 64 bytes */
+        hashkey_t animal;           /* 64 bytes */
+} table2_t;
+
+typedef struct table3_s {
+        hashkey_t animal;           /* 64 bytes */
+        hashkey_t name;             /* 64 bytes */
+        unsigned int age;           /*  4 bytes */
+        unsigned int reserved[60];  /* 60 bytes */
+} table3_t;
+
+#define TABLE1_SIZE    64                          /* build multihash from this */
+#define TABLE2_SIZE    128                         /* combine with table1 */
+#define TABLE3_SIZE    (TABLE1_SIZE * TABLE2_SIZE) /* worst case */
+#define HT_SIZE        (TABLE1_SIZE * 4)           /* size of hashtable */
+#define HT_MULTI       TABLE1_SIZE                 /* multihash */
+
+typedef struct entry_s {
+        hashkey_t key;          /* key */
+        unsigned int used;      /* list entries used */
+        table1_t multi[HT_MULTI];/* fixed size */
+} entry_t;
+
+typedef struct hashtable_s {
+        entry_t table[HT_SIZE]; /* fixed size */
+} hashtable_t;
+
+/*****************************************************************************/
+
+#if defined(NO_SYNTH)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <limits.h>
+
+#define __unused __attribute__((unused))
+
+#else
 
 #include "ap_int.h"
 
@@ -28,8 +79,8 @@
  * Hardware implementation is lacking some libc functions. So let us
  * replace those.
  */
-
 #define __unused
+#define printf(fmt, args...)
 
 #ifndef ULONG_MAX
 #  define ULONG_MAX 0xFFFFFFFFUL /* gcc compiler but not HLS compiler */
@@ -39,9 +90,9 @@
 #endif
 
 // General memory Data Width is set as a parameter
-#define MEMDW 512              // 512 or 128   // Data bus width in bits for General Host memory
-#define BPERDW (MEMDW/8)        // Bytes per Data Word    if MEMDW=512 => BPERDW = 64
-#define WPERDW (64/BPERDW)      // Number of words per DW if MEMDW=512 => WPERDW =  1
+#define MEMDW 512          // 512 or 128 // Bus width in bits for Host memory
+#define BPERDW (MEMDW/8)   // Bytes per Data Word    if MEMDW=512 => BPERDW = 64
+#define WPERDW (64/BPERDW) // Number of words per DW if MEMDW=512 => WPERDW =  1
 
 #if MEMDW == 512
 #define ADDR_RIGHT_SHIFT 6
@@ -115,23 +166,39 @@ typedef struct {
         DATA_HJ       Data; // 112 bytes
 } action_output_reg;
 
-short action_hashjoin_hls(ap_uint<MEMDW> *din_gmem,
-			  ap_uint<MEMDW> *dout_gmem,
-			  ap_uint<MEMDW> *d_ddrmem,
-			  action_input_reg *Action_Input,
-			  ap_uint<64> T1_address,
-			  ap_uint<64> T2_address,
-			  ap_uint<64> T3_address,
-			  ap_uint<64> *T3_produced);
+//---------------------------------------------------------------------
+short write_burst_of_data_to_mem(ap_uint<MEMDW> *dout_gmem,
+			ap_uint<MEMDW> *d_ddrmem,
+			ap_uint<16> memory_type,
+			ap_uint<64> output_address,
+			ap_uint<MEMDW> *buffer,
+			ap_uint<64> size_in_bytes_to_transfer);
 
-#else
+short read_burst_of_data_from_mem(ap_uint<MEMDW> *din_gmem,
+			ap_uint<MEMDW> *d_ddrmem,
+			ap_uint<16> memory_type,
+			ap_uint<64> input_address,
+			ap_uint<MEMDW> *buffer,
+			ap_uint<64> size_in_bytes_to_transfer);
 
-extern int quiet;
-extern int check;
+short read_single_word_of_data_from_mem(ap_uint<MEMDW> *din_gmem,
+			ap_uint<MEMDW> *d_ddrmem,
+			ap_uint<16> memory_type,
+			ap_uint<64> input_address,
+			ap_uint<MEMDW> *buffer);
 
-int action_hashjoin_hls(void);
+void convert_64charTable_to_DWTable(ap_uint<MEMDW> *buffer,
+			char *SixtyFourBytesWordToWrite);
+
+void convert_DWTable_to_64charTable(ap_uint<MEMDW> *buffer,
+			char *SixtyFourBytesWordRead);
 
 #endif /* NO_SYNTH END_IF Specific Hardware declarations */
+
+int action_hashjoin_hls(table1_t table1[TABLE1_SIZE], unsigned int table1_used,
+			table2_t table2[TABLE2_SIZE], unsigned int table2_used,
+			table3_t table3[TABLE3_SIZE], unsigned int *table3_used,
+			int check);
 
 #endif  /* __ACTION_HASHJOIN_HLS_H__ */
 

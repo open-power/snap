@@ -32,7 +32,7 @@ symlinks=vhdl verilog systemc report
 # gcc test-bench stuff
 objs = $(srcs:.cpp=.o)
 CXX = g++
-CXXFLAGS = -Wall -W -O2 -DNO_SYNTH -Wno-unknown-pragmas
+CXXFLAGS = -Wall -W -Wextra -Werror -O2 -DNO_SYNTH -Wno-unknown-pragmas
 
 all: $(syn_dir) $(symlinks)
 
