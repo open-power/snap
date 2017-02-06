@@ -88,8 +88,8 @@
     logic_crc_code <= X"0000000000";
   
 +   -- DDR4 ties
-+   c0_ddr4_dm_dbi_n_9 <= '1';                      -- Disable sampling of data bits 79-72
-+   c0_ddr4_ten        <= '0';                      -- Disable DDR4 connectivity test mode
++ --  c0_ddr4_dm_dbi_n_9 <= '1';                      -- Disable sampling of data bits 79-72
++ --  c0_ddr4_ten        <= '0';                      -- Disable DDR4 connectivity test mode
 +
        a0: psl_accel
         PORT MAP (
