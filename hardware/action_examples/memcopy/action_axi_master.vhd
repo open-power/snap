@@ -238,15 +238,37 @@ axi_w:	process(M_AXI_ACLK)
         end process;
 
 
-    axi_wdata           <= dma_wr_data_i;
-    axi_wvalid          <= or_reduce(dma_wr_data_strobe_i);
-    axi_wstrb           <= dma_wr_data_strobe_i;
-    axi_wlast           <= dma_wr_data_last_i;
-    dma_wr_ready_o      <= M_AXI_WREADY; --  and write_pending;
+    
+   
     axi_rready          <= dma_rd_data_taken_i;
     dma_rd_data_last_o  <= M_AXI_RLAST;
     dma_rd_data_valid_o <= M_AXI_RVALID;
     dma_rd_data_o       <= M_AXI_RDATA;
+
+
+axi_write_buffer:
+ process(M_AXI_ACLK,M_AXI_WREADY, axi_wvalid )
+     begin
+       if (rising_edge (M_AXI_ACLK)) then
+         if M_AXI_ARESETN = '0'  then
+            axi_wvalid         <= '0';
+         else
+           if M_AXI_WREADY = '1' or axi_wvalid = '0' then
+             axi_wdata           <= dma_wr_data_i;
+             axi_wvalid          <= or_reduce(dma_wr_data_strobe_i);
+             axi_wstrb           <= dma_wr_data_strobe_i;
+             axi_wlast           <= dma_wr_data_last_i;
+           end if;
+         end if;
+         
+       end if;
+       dma_wr_ready_o     <= '1';
+       if  M_AXI_WREADY = '0' and axi_wvalid = '1' then
+         dma_wr_ready_o   <= '0';
+       end if;  
+     end process;    
+
+        
 
 axi_r:	 process(M_AXI_ACLK)
 	     begin
