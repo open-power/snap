@@ -25,7 +25,7 @@ donutdir=$(dirname "$scriptdir")
 
 unset SETUP_DONE;
 while [ -z "$SETUP_DONE" ]; do
-  SETUP_WARNINGS=""
+  SETUP_WARNING=""
   if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ] || [ ! -d "$FRAMEWORK_ROOT" ]; then
     echo "Note: The following commands need to be executed before calling this script:"
     echo
@@ -167,14 +167,14 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ -z "$DDR3_USED" ]; then
     echo "Variable DDR3_USED      is not set. Will default to \"TRUE\""
-    DDR3_USED="FALSE"
+    DDR3_USED="TRUE"
   else
     echo "DDR3_USED               is set to \"$DDR3_USED\""
   fi
 
   if [ -z "$DDR4_USED" ]; then
     echo "Variable DDR4_USED      is not set. Will default to \"FALSE\""
-    DDR4_USED="TRUE"
+    DDR4_USED="FALSE"
   else
     echo "DDR4_USED               is set to \"$DDR4_USED\""
   fi
