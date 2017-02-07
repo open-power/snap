@@ -21,7 +21,7 @@
 #if !defined(NO_SYNTH)
 
 #define MAX_NB_OF_BYTES_READ    (128 * 128)             // Value should be X*BPERDW
-ap_uint<MEMDW> buffer_mem[MAX_NB_OF_BYTES_READ/BPERDW]; // if MEMDW=512 : 128*128=>256 words
+snap_membus_t buffer_mem[MAX_NB_OF_BYTES_READ/BPERDW]; // if MEMDW=512 : 128*128=>256 words
 
 #endif  /* NO_SYNTH */
 
@@ -76,9 +76,11 @@ size_t hashkey_len(hashkey_t str)
 }
 
 /* FIXME We need to use the HLS built in version instead of this */
-void table1_cpy(table1_t *dest, table1_t *src)
+void table1_cpy(table1_t *dst, table1_t *src)
 {
-        *dest = *src;
+	/* FIXME memcpy(dst, src, sizeof(*dest)); did not work! */
+	hashkey_cpy(dst->name, src->name);
+	dst->age = src->age;
 }
 
 #if defined(NO_SYNTH)

@@ -51,16 +51,16 @@ static table3_t __table3[TABLE1_SIZE * TABLE2_SIZE]; /* worst case size */
  * => easy checking in generated files : grep 0x184 action_wrapper_ctrl_reg_s_axi.vhd
  * this grep should return nothing if no duplication of registers (which is expected)
  */
-void write_results_in_HJ_regs(action_output_reg *Action_Output,
+static void write_results_in_HJ_regs(action_output_reg *Action_Output,
 			      action_input_reg *Action_Input,
-			      ap_uint<32> ReturnCode,
-			      ap_uint<64> field1,
-			      ap_uint<64> field2,
-			      ap_uint<64> field3,
-			      ap_uint<64> field4)
+			      snapu32_t ReturnCode,
+			      snapu64_t field1,
+			      snapu64_t field2,
+			      snapu64_t field3,
+			      snapu64_t field4)
 {
-	Action_Output->Retc = (ap_uint<32>) ReturnCode;
-	Action_Output->Reserved = (ap_uint<64>) 0x0;
+	Action_Output->Retc     = (snapu32_t)ReturnCode;
+	Action_Output->Reserved = (snapu64_t)0x0;
 
 	Action_Output->Data.t1_processed   = field1;
 	Action_Output->Data.t2_processed   = field2;
@@ -76,12 +76,62 @@ void write_results_in_HJ_regs(action_output_reg *Action_Output,
 	Action_Output->Data.hash_table = Action_Input->Data.hash_table;
 }
 
+/**
+ * FIXME We like to get rid of this bit cutting out code. The tool should solve
+ * this problem and avoid the user to make mistakes there.
+ */
+static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
+			uint32_t t1_used_bytes)
+{
+	unsigned int i, j;
+
+	/* extract data into target table1, or FIFO maybe? */
+	j = 0;
+	for (i = 0; i < t1_used_bytes/sizeof(table1_t); i++) {
+		*t1[i].name = mem[j](0, 511);
+		t1[i].age   = mem[j + 1](0, 31);
+		j += 2;
+	}
+}
+
+static void read_table2(snap_membus_t *mem, table2_t t2[TABLE2_SIZE],
+			uint32_t t2_used_bytes)
+{
+	unsigned int i, j;
+
+	/* extract data into target table2, or FIFO maybe? */
+	j = 0;
+	for (i = 0; i < t2_used_bytes/sizeof(table2_t); i++) {
+		*t2[i].name   = mem[j](0, 511);
+		*t2[i].animal = mem[j + 1](0, 511);
+		j += 2;
+	}
+}
+
+static void write_table3(snap_membus_t *mem, table3_t t3[TABLE3_SIZE],
+			 uint32_t t3_used_bytes)
+{
+	unsigned int i, j;
+
+	/* extract data into target table3, or FIFO maybe? */
+	j = 0;
+	for (i = 0; i < t3_used_bytes/sizeof(table3_t); i++) {
+		snap_membus_t dmem;
+		
+		dmem(0, 31) = t3[i].age;
+		mem[j]      = *t3[i].name;
+		mem[j + 1]  = *t3[i].animal;
+		mem[j + 2]  = dmem;
+		j += 3;
+	}
+}
+
 //-----------------------------------------------------------------------------
 //--- MAIN PROGRAM ------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void action_wrapper(ap_uint<MEMDW> *din_gmem,
-		    ap_uint<MEMDW> *dout_gmem,
-		    ap_uint<MEMDW> *d_ddrmem,
+void action_wrapper(snap_membus_t *din_gmem,
+		    snap_membus_t *dout_gmem,
+		    snap_membus_t *d_ddrmem,
 		    action_input_reg *Action_Input,
 		    action_output_reg *Action_Output)
 {
@@ -103,19 +153,19 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem,
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
 	// VARIABLES
-	ap_uint<16> i, j;
+	snapu16_t i, j;
 	short rc;
-	ap_uint<32> ReturnCode = 0;
-	ap_uint<64> T1_address;
-	ap_uint<64> T2_address;
-	ap_uint<64> T3_address;
-	ap_uint<64> T3_produced;
-	ap_uint<16> T1_type;
-	ap_uint<16> T2_type;
-	ap_uint<16> T3_type;
-	ap_uint<32> T1_size;
-	ap_uint<32> T2_size;
-	ap_uint<32> T3_size;
+	snapu32_t ReturnCode = 0;
+	snapu64_t T1_address;
+	snapu64_t T2_address;
+	snapu64_t T3_address;
+	snapu64_t T3_produced;
+	snapu16_t T1_type;
+	snapu16_t T2_type;
+	snapu16_t T3_type;
+	snapu32_t T1_size;
+	snapu32_t T2_size;
+	snapu32_t T3_size;
 	
 	//== Parameters fetched in memory ==
 	//==================================
@@ -140,27 +190,42 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem,
 	T3_size    = Action_Input->Data.t3.size;
 	ReturnCode = RET_CODE_OK;
 
-	memcpy((ap_uint<MEMDW> *)__table1,
-	       (ap_uint<MEMDW> *)(T1_type == HOST_DRAM) ?
-	       (dout_gmem + (T1_address >> ADDR_RIGHT_SHIFT)) :
+#if defined(CONFIG_QUESTION_MARK_VERSION)
+	memcpy((snap_membus_t *)__table1,
+	       (snap_membus_t *)(T1_type == HOST_DRAM) ?
+	       (din_gmem + (T1_address >> ADDR_RIGHT_SHIFT)) :
 	       (d_ddrmem  + (T1_address >> ADDR_RIGHT_SHIFT)),
 	       T1_size);
 
-	memcpy((ap_uint<MEMDW> *)__table2,
-	       (ap_uint<MEMDW> *)(T2_type == HOST_DRAM) ?
-	       (dout_gmem + (T2_address >> ADDR_RIGHT_SHIFT)) :
+	memcpy((snap_membus_t *)__table2,
+	       (snap_membus_t *)(T2_type == HOST_DRAM) ?
+	       (din_gmem + (T2_address >> ADDR_RIGHT_SHIFT)) :
 	       (d_ddrmem  + (T2_address >> ADDR_RIGHT_SHIFT)),
 	       T2_size);
+#else
+	/* FIXME Just Host DDRAM for now */
+	read_table1(din_gmem + (T1_address >> ADDR_RIGHT_SHIFT),
+		    __table1, T1_size / sizeof(table1_t));
+
+	read_table2(din_gmem + (T2_address >> ADDR_RIGHT_SHIFT),
+		    __table2, T2_size / sizeof(table2_t));
+#endif
 	
 	rc = action_hashjoin_hls(__table1, T1_size / sizeof(table1_t),
 				 __table2, T2_size / sizeof(table2_t),
 				 __table3, &__table3_idx, 1);
 	if (rc == 0) {
-		memcpy((ap_uint<MEMDW> *)(T3_type == HOST_DRAM) ?
+#if defined(CONFIG_QUESTION_MARK_VERSION)
+		memcpy((snap_membus_t *)(T3_type == HOST_DRAM) ?
 		       (dout_gmem + (T3_address >> ADDR_RIGHT_SHIFT)) :
 		       (d_ddrmem  + (T3_address >> ADDR_RIGHT_SHIFT)),
-		       (ap_uint<MEMDW> *)__table3,
+		       (snap_membus_t *)__table3,
 		       __table3_idx * sizeof(table3_t));
+#else
+		/* FIXME Just Host DDRAM for now */
+		write_table3(dout_gmem+(T3_address>>ADDR_RIGHT_SHIFT),
+			     __table3, __table3_idx * sizeof(table3_t));
+#endif
 	} else
 		ReturnCode = RET_CODE_FAILURE;
 

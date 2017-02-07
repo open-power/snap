@@ -18,6 +18,7 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #define ARRAY_SIZE(a) (sizeof((a))/sizeof((a)[0]))
@@ -28,7 +29,7 @@ typedef char hashdata_t[256];
 typedef struct table1_s {
         hashkey_t name;             /* 64 bytes */
         unsigned int age;           /*  4 bytes */
-        unsigned int reserved[60];  /* 60 bytes */
+        unsigned char reserved[60]; /* 64 bytes */
 } table1_t;
 
 typedef struct table2_s {
@@ -40,7 +41,7 @@ typedef struct table3_s {
         hashkey_t animal;           /* 64 bytes */
         hashkey_t name;             /* 64 bytes */
         unsigned int age;           /*  4 bytes */
-        unsigned int reserved[60];  /* 60 bytes */
+        unsigned char reserved[60]; /* 60 bytes */
 } table3_t;
 
 #define TABLE1_SIZE    64                          /* build multihash from this */
@@ -70,6 +71,11 @@ typedef struct hashtable_s {
 #include <limits.h>
 
 #define __unused __attribute__((unused))
+
+typedef uint64_t snapu64_t;
+typedef uint32_t snapu32_t;
+typedef uint16_t snapu16_t;
+typedef uint8_t  snapu8_t;
 
 #else
 
@@ -104,6 +110,12 @@ typedef struct hashtable_s {
 #error "Data Bus width out of bounds"
 #endif
 
+typedef ap_uint<MEMDW>     snap_membus_t;  /* snap memory access */
+typedef ap_uint<64>        snapu64_t;
+typedef ap_uint<32>        snapu32_t;
+typedef ap_uint<16>        snapu16_t;
+typedef ap_uint<8>         snapu8_t;
+
 // enum definitions should stay in sync with include/libdonut.h
 enum {
       RET_CODE_OK      = 0x00000102,
@@ -123,19 +135,19 @@ enum {
 };
 
 typedef struct {
-        ap_uint<8>  action;
-        ap_uint<8>  flags;
-        ap_uint<16> seq;
-        ap_uint<32> Retc;
-        ap_uint<64> Reserved;//Priv_data
+        snapu8_t  action;
+        snapu8_t  flags;
+        snapu16_t seq;
+        snapu32_t Retc;
+        snapu64_t Reserved; // Priv_data
 } CONTROL;
 
 typedef struct {
-        ap_uint<64> address;
-        ap_uint<32> size;
-        ap_uint<16> type;
-        ap_uint<16> flags;
-} dnut_addr; //128 bits=16B
+        snapu64_t address;
+        snapu32_t size;
+        snapu16_t type;
+        snapu16_t flags;
+} dnut_addr; // 128 bits=16B
 
 typedef struct {//Names of the fields can be changed by User. Should serve as a template
         dnut_addr t1; /* IN: input table1 for multihash */
@@ -143,54 +155,33 @@ typedef struct {//Names of the fields can be changed by User. Should serve as a 
         dnut_addr t3; /* OUT: resulting table3 */
         dnut_addr hash_table; /* CACHE: multihash table */
 
-        ap_uint<64> t1_processed; /* #entries cached, repeat if not all */
-        ap_uint<64> t2_processed; /* #entries processed, repeat if not all */
-        ap_uint<64> t3_produced;  /* #entries produced store them away */
-        ap_uint<64> checkpoint;
-        ap_uint<64> rc;
-        ap_uint<64> action_version;
+        snapu64_t t1_processed; /* #entries cached, repeat if not all */
+        snapu64_t t2_processed; /* #entries processed, repeat if not all */
+        snapu64_t t3_produced;  /* #entries produced store them away */
+        snapu64_t checkpoint;
+        snapu64_t rc;
+        snapu64_t action_version;
 } DATA_HJ; // DATA = 112 Bytes
 
 //---------------------------------------------------------------------
 typedef struct {
-        CONTROL  Control; //  16 bytes
-        DATA_HJ  Data; // 112 bytes
+        CONTROL  Control;   //  16 bytes
+        DATA_HJ  Data;      // 112 bytes
 } action_input_reg;
 
 // ISSUE #44
 // => IMPOSSIBLE TO HAVE action_output_reg contiguous to action_input_reg
 // => Retc is at 0x104 but action field is not copied to action_output_reg
 typedef struct {
-        ap_uint<32>   Retc; //   4 bytes
-        ap_uint<64>   Reserved; //  4 bytes
-        DATA_HJ       Data; // 112 bytes
+        snapu32_t Retc;     //   4 bytes
+        snapu64_t Reserved; //   8 bytes
+        DATA_HJ   Data;     // 112 bytes
 } action_output_reg;
 
-//---------------------------------------------------------------------
-short write_burst_of_data_to_mem(ap_uint<MEMDW> *dout_gmem,
-			ap_uint<MEMDW> *d_ddrmem,
-			ap_uint<16> memory_type,
-			ap_uint<64> output_address,
-			ap_uint<MEMDW> *buffer,
-			ap_uint<64> size_in_bytes_to_transfer);
-
-short read_burst_of_data_from_mem(ap_uint<MEMDW> *din_gmem,
-			ap_uint<MEMDW> *d_ddrmem,
-			ap_uint<16> memory_type,
-			ap_uint<64> input_address,
-			ap_uint<MEMDW> *buffer,
-			ap_uint<64> size_in_bytes_to_transfer);
-
-short read_single_word_of_data_from_mem(ap_uint<MEMDW> *din_gmem,
-			ap_uint<MEMDW> *d_ddrmem,
-			ap_uint<16> memory_type,
-			ap_uint<64> input_address,
-			ap_uint<MEMDW> *buffer);
-
-void convert_64charTable_to_DWTable(ap_uint<MEMDW> *buffer,
+void convert_64charTable_to_DWTable(snap_membus_t *buffer,
 			char *SixtyFourBytesWordToWrite);
 
-void convert_DWTable_to_64charTable(ap_uint<MEMDW> *buffer,
+void convert_DWTable_to_64charTable(snap_membus_t *buffer,
 			char *SixtyFourBytesWordRead);
 
 #endif /* NO_SYNTH END_IF Specific Hardware declarations */
