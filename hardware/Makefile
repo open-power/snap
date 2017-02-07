@@ -7,11 +7,11 @@ PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 CE_PARMS := -p -clone
 
 ifndef DDR3_USED
-export DDR3_USED=FALSE
+export DDR3_USED=TRUE
 endif
 
 ifndef DDR4_USED
-export DDR4_USED=TRUE
+export DDR4_USED=FALSE
 endif
 
 export DDRI_USED=FALSE

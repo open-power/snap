@@ -32,7 +32,7 @@ demo_memcopy_objs = action_memcopy.o
 demo_checksum_objs = action_checksum.o
 demo_hashjoin_objs = action_hashjoin.o
 
-projs = demo_search demo_memcopy demo_checksum demo_hashjoin
+projs = demo_search demo_memcopy demo_checksum demo_hashjoin demo_bfs
 
 all: $(objs) $(projs)
 

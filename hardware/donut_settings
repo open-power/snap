@@ -166,14 +166,14 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
   if [ -z "$DDR3_USED" ]; then
-    echo "Variable DDR3_USED      is not set. Will default to \"FALSE\""
+    echo "Variable DDR3_USED      is not set. Will default to \"TRUE\""
     DDR3_USED="FALSE"
   else
     echo "DDR3_USED               is set to \"$DDR3_USED\""
   fi
 
   if [ -z "$DDR4_USED" ]; then
-    echo "Variable DDR4_USED      is not set. Will default to \"TRUE\""
+    echo "Variable DDR4_USED      is not set. Will default to \"FALSE\""
     DDR4_USED="TRUE"
   else
     echo "DDR4_USED               is set to \"$DDR4_USED\""
