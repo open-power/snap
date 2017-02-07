@@ -196,7 +196,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 	       (ap_uint<MEMDW> *)(T1_type == HOST_DRAM) ?
 	       (dout_gmem + (T1_address >> ADDR_RIGHT_SHIFT)) :
 	       (d_ddrmem  + (T1_address >> ADDR_RIGHT_SHIFT)),
-	       T1_size); 	*/
+	       T1_size);
 
 	memcpy((snap_membus_t *)__table2,
 	       (snap_membus_t *)(T2_type == HOST_DRAM) ?
