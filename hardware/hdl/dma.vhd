@@ -92,7 +92,7 @@ ARCHITECTURE dma OF dma IS
   -- TYPE
   TYPE COM_INDICATION_T IS (ACTIVE, INACTIVE);
   TYPE BUF_INDICATION_T IS (EMPTY, FULL);
-  TYPE CLT_INDICATION_T IS (NOT_USED, PARTIAL_DATA, COMPLETE_DATA);
+  TYPE CLT_INDICATION_T IS (NOT_USED, IN_USE, PARTIAL_DATA, COMPLETE_DATA);
   TYPE GATE_INDICATION_T IS (OPENED, CLOSED);
   TYPE FSM_REQ_T IS (NONE, RESTART, COMMAND);
 
@@ -142,125 +142,126 @@ ARCHITECTURE dma OF dma IS
 
   --
   -- SIGNAL
-  SIGNAL ah_c_counter_q         : integer RANGE 0 TO 255;
-  SIGNAL ah_c_fsm_q             : AH_C_FSM_T;
-  SIGNAL ah_c_max_q             : std_ulogic_vector(7 DOWNTO 0);
-  SIGNAL ah_c_max_reached_q     : boolean;
-  SIGNAL ah_c_q                 : AH_C_T;
-  SIGNAL ah_c_rgate_q           : GATE_INDICATION_T;
-  SIGNAL ah_c_rsp_err_addr_p_q  : std_ulogic;
-  SIGNAL ah_c_rsp_err_addr_q    : std_ulogic_vector(63 DOWNTO 0);
-  SIGNAL ah_c_rsp_err_first_q   : boolean;
-  SIGNAL ah_c_rsp_err_type_q    : RSP_CODES_T;
-  SIGNAL ah_c_rsp_err_valid_q   : boolean;
-  SIGNAL ah_c_wgate_q           : GATE_INDICATION_T;
-  SIGNAL ah_rc_q                : AH_RWC_T;
-  SIGNAL ah_wc_q                : AH_RWC_T;
-  SIGNAL aln_db_wb_rdreq        : std_ulogic;
-  SIGNAL aln_rdata              : std_ulogic_vector(511 DOWNTO  0);
-  SIGNAL aln_rdata_e            : std_ulogic;
-  SIGNAL aln_rdata_p            : std_ulogic_vector(  7 DOWNTO  0);
-  SIGNAL aln_rdata_v            : std_ulogic;
-  SIGNAL aln_wbusy              : std_ulogic;
-  SIGNAL aln_wdata              : std_ulogic_vector(511 DOWNTO  0);
-  SIGNAL aln_wdata_be           : std_ulogic_vector( 63 DOWNTO  0);
-  SIGNAL aln_wdata_p            : std_ulogic_vector(  7 DOWNTO  0);
-  SIGNAL aln_wdata_v            : std_ulogic;
-  SIGNAL aln_wfsm_idle          : std_ulogic;
-  SIGNAL buf_rdata              : std_ulogic_vector(511 DOWNTO  0);
-  SIGNAL buf_rdata_e_q          : std_ulogic;
-  SIGNAL buf_rdata_p            : std_ulogic_vector(  7 DOWNTO  0);
-  SIGNAL buf_rdata_vld          : std_ulogic;
-  SIGNAL buf_rrdreq             : std_ulogic;
-  SIGNAL buf_rtag_p_q           : std_ulogic;
-  SIGNAL buf_rtag_q             : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL buf_rtag_valid_q       : boolean;
-  SIGNAL buf_wactive_q          : boolean;
-  SIGNAL buf_walmost_full_q     : std_ulogic;
-  SIGNAL buf_wdata_parity_err   : std_ulogic;
-  SIGNAL buf_wfull_cnt_q        : integer RANGE 0 TO 32;
-  SIGNAL buf_wtag_p_q           : std_ulogic;
-  SIGNAL buf_wtag_q             : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL buf_wtag_valid_q       : boolean;
-  SIGNAL clt_rtag_next_q        : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL clt_rtag_p_q           : std_ulogic;
-  SIGNAL clt_rtag_q             : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL clt_wtag_next_q        : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL clt_wtag_p_q           : std_ulogic;
-  SIGNAL clt_wtag_q             : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL com_rtag_next_q        : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL com_rtag_p_q           : std_ulogic;
-  SIGNAL com_rtag_q             : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL com_rtag_qq            : integer RANGE 0 TO 31;
-  SIGNAL com_rtag_valid_q       : boolean;
-  SIGNAL com_wtag_next_q        : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL com_wtag_p_q           : std_ulogic;
-  SIGNAL com_wtag_q             : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL com_wtag_qq            : integer RANGE 0 TO 31;
-  SIGNAL com_wtag_valid_q       : boolean;
-  SIGNAL context_handle_q       : std_ulogic_vector(15 DOWNTO 0);
-  SIGNAL dmm_e_q                : DMM_E_T := (OTHERS => '0');
-  SIGNAL ha_c_q                 : HA_C_T;
-  SIGNAL ha_r_q                 : HA_R_T;
-  SIGNAL intreq_active_q        : boolean;
-  SIGNAL mmd_a_q                : MMD_A_T;
-  SIGNAL mmd_i_q                : MMD_I_T;
-  SIGNAL raddr_id_q             : std_ulogic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
-  SIGNAL raddr_offset_p_q       : std_ulogic;
-  SIGNAL raddr_offset_q         : std_ulogic_vector( 12 DOWNTO  7);
-  SIGNAL raddr_p_q              : std_ulogic;
-  SIGNAL raddr_q                : std_ulogic_vector( 63 DOWNTO  7);
-  SIGNAL rclen_q                : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL read_ctrl_buf_full_q   : std_ulogic_vector( 31 DOWNTO  0);
-  SIGNAL read_ctrl_fsm_q        : READ_CTRL_FSM_T;
-  SIGNAL read_ctrl_q            : ARR_DMA_CTL_T;
-  SIGNAL read_ctrl_q_err_q      : std_ulogic_vector( 31 DOWNTO  0);
-  SIGNAL read_ctrl_rsp_rtag_q   : DMA_CTL_T;
-  SIGNAL read_fsm_req_q         : FSM_REQ_T;
-  SIGNAL read_rsp_err_addr_p_q  : std_ulogic;
-  SIGNAL read_rsp_err_addr_q    : std_ulogic_vector(63 DOWNTO 0);
-  SIGNAL read_rsp_err_first_q   : boolean;
-  SIGNAL read_rsp_err_type_q    : RSP_CODES_T;
-  SIGNAL read_rsp_err_valid_q   : boolean;
-  SIGNAL restart_active_q       : boolean;
-  SIGNAL rfifo_empty            : std_ulogic;
-  SIGNAL rfifo_empty_tmp        : std_ulogic;
-  SIGNAL force_rfifo_empty_q    : std_ulogic;
-  SIGNAL rfifo_full             : std_ulogic;
-  SIGNAL rfifo_prog_full        : std_ulogic;
-  SIGNAL rfifo_rd_rst_busy      : std_ulogic;
-  SIGNAL rfifo_rdata            : std_ulogic_vector(512 DOWNTO 0);
-  SIGNAL rfifo_wdata            : std_ulogic_vector(512 DOWNTO 0);
-  SIGNAL rfifo_wr_rst_busy      : std_ulogic;
-  SIGNAL rfifo_wr_in_process_q  : std_ulogic_vector(1 DOWNTO 0);
-  SIGNAL rsp_rtag_next_q        : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL rsp_rtag_p_q           : std_ulogic;
-  SIGNAL rsp_rtag_q             : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL rsp_rtag_qq            : integer RANGE 0 TO 31;
-  SIGNAL rsp_rtag_valid_q       : boolean;
-  SIGNAL rsp_wtag_next_q        : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL rsp_wtag_p_q           : std_ulogic;
-  SIGNAL rsp_wtag_q             : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL rsp_wtag_qq            : integer RANGE 0 TO 31;
-  SIGNAL rsp_wtag_valid_q       : boolean;
-  SIGNAL sd_c_q                 : SD_C_T;
-  SIGNAL waddr_id_q             : std_ulogic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
-  SIGNAL waddr_offset_p_q       : std_ulogic;
-  SIGNAL waddr_offset_q         : std_ulogic_vector( 12 DOWNTO  7);
-  SIGNAL waddr_p_q              : std_ulogic;
-  SIGNAL waddr_q                : std_ulogic_vector( 63 DOWNTO  7);
-  SIGNAL wclen_q                : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL wr_id_valid_q          : std_ulogic;
-  SIGNAL write_ctrl_fsm_q       : WRITE_CTRL_FSM_T;
-  SIGNAL write_ctrl_q           : ARR_DMA_CTL_T;
-  SIGNAL write_ctrl_q_err_q     : std_ulogic_vector( 31 DOWNTO  0);
-  SIGNAL write_ctrl_rsp_wtag_q  : DMA_CTL_T;
-  SIGNAL write_fsm_req_q        : FSM_REQ_T;
-  SIGNAL write_rsp_err_addr_p_q : std_ulogic;
-  SIGNAL write_rsp_err_addr_q   : std_ulogic_vector(63 DOWNTO 0);
-  SIGNAL write_rsp_err_first_q  : boolean;
-  SIGNAL write_rsp_err_type_q   : RSP_CODES_T;
-  SIGNAL write_rsp_err_valid_q  : boolean;
+  SIGNAL ah_c_counter_q              : integer RANGE 0 TO 255;
+  SIGNAL ah_c_fsm_q                  : AH_C_FSM_T;
+  SIGNAL ah_c_max_q                  : std_ulogic_vector(7 DOWNTO 0);
+  SIGNAL ah_c_max_reached_q          : boolean;
+  SIGNAL ah_c_q                      : AH_C_T;
+  SIGNAL ah_c_rgate_q                : GATE_INDICATION_T;
+  SIGNAL ah_c_rsp_err_addr_p_q       : std_ulogic;
+  SIGNAL ah_c_rsp_err_addr_q         : std_ulogic_vector(63 DOWNTO 0);
+  SIGNAL ah_c_rsp_err_first_q        : boolean;
+  SIGNAL ah_c_rsp_err_type_q         : RSP_CODES_T;
+  SIGNAL ah_c_rsp_err_valid_q        : boolean;
+  SIGNAL ah_c_wgate_q                : GATE_INDICATION_T;
+  SIGNAL ah_rc_q                     : AH_RWC_T;
+  SIGNAL ah_wc_q                     : AH_RWC_T;
+  SIGNAL aln_db_wb_rdreq             : std_ulogic;
+  SIGNAL aln_rdata                   : std_ulogic_vector(511 DOWNTO  0);
+  SIGNAL aln_rdata_e                 : std_ulogic;
+  SIGNAL aln_rdata_p                 : std_ulogic_vector(  7 DOWNTO  0);
+  SIGNAL aln_rdata_v                 : std_ulogic;
+  SIGNAL aln_wbusy                   : std_ulogic;
+  SIGNAL aln_wdata                   : std_ulogic_vector(511 DOWNTO  0);
+  SIGNAL aln_wdata_be                : std_ulogic_vector( 63 DOWNTO  0);
+  SIGNAL aln_wdata_p                 : std_ulogic_vector(  7 DOWNTO  0);
+  SIGNAL aln_wdata_v                 : std_ulogic;
+  SIGNAL aln_wfsm_idle               : std_ulogic;
+  SIGNAL buf_rdata                   : std_ulogic_vector(511 DOWNTO  0);
+  SIGNAL buf_rdata_e_q               : std_ulogic;
+  SIGNAL buf_rdata_p                 : std_ulogic_vector(  7 DOWNTO  0);
+  SIGNAL buf_rdata_vld               : std_ulogic;
+  SIGNAL buf_rrdreq                  : std_ulogic;
+  SIGNAL buf_rtag_p_q                : std_ulogic;
+  SIGNAL buf_rtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL buf_rtag_valid_q            : boolean;
+  SIGNAL buf_wactive_q               : boolean;
+  SIGNAL buf_walmost_full_q          : std_ulogic;
+  SIGNAL buf_wdata_parity_err        : std_ulogic;
+  SIGNAL buf_wfull_cnt_q             : integer RANGE 0 TO 32;
+  SIGNAL buf_wtag_cl_partial_q       : boolean;
+  SIGNAL buf_wtag_p_q                : std_ulogic;
+  SIGNAL buf_wtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL buf_wtag_valid_q            : boolean;
+  SIGNAL clt_rtag_next_q             : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL clt_rtag_p_q                : std_ulogic;
+  SIGNAL clt_rtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL clt_wtag_next_q             : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL clt_wtag_p_q                : std_ulogic;
+  SIGNAL clt_wtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL com_rtag_next_q             : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL com_rtag_p_q                : std_ulogic;
+  SIGNAL com_rtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL com_rtag_qq                 : integer RANGE 0 TO 31;
+  SIGNAL com_rtag_valid_q            : boolean;
+  SIGNAL com_wtag_next_q             : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL com_wtag_p_q                : std_ulogic;
+  SIGNAL com_wtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL com_wtag_qq                 : integer RANGE 0 TO 31;
+  SIGNAL com_wtag_valid_q            : boolean;
+  SIGNAL context_handle_q            : std_ulogic_vector(15 DOWNTO 0);
+  SIGNAL dmm_e_q                     : DMM_E_T := (OTHERS => '0');
+  SIGNAL force_rfifo_empty_q         : std_ulogic;
+  SIGNAL ha_c_q                      : HA_C_T;
+  SIGNAL ha_r_q                      : HA_R_T;
+  SIGNAL intreq_active_q             : boolean;
+  SIGNAL mmd_a_q                     : MMD_A_T;
+  SIGNAL mmd_i_q                     : MMD_I_T;
+  SIGNAL raddr_id_q                  : std_ulogic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
+  SIGNAL raddr_offset_p_q            : std_ulogic;
+  SIGNAL raddr_offset_q              : std_ulogic_vector( 12 DOWNTO  7);
+  SIGNAL raddr_p_q                   : std_ulogic;
+  SIGNAL raddr_q                     : std_ulogic_vector( 63 DOWNTO  7);
+  SIGNAL rclen_q                     : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL read_ctrl_buf_full_q        : std_ulogic_vector( 31 DOWNTO  0);
+  SIGNAL read_ctrl_fsm_q             : READ_CTRL_FSM_T;
+  SIGNAL read_ctrl_q                 : ARR_DMA_CTL_T;
+  SIGNAL read_ctrl_q_err_q           : std_ulogic_vector( 31 DOWNTO  0);
+  SIGNAL read_ctrl_rsp_rtag_q        : DMA_CTL_T;
+  SIGNAL read_fsm_req_q              : FSM_REQ_T;
+  SIGNAL read_rsp_err_addr_p_q       : std_ulogic;
+  SIGNAL read_rsp_err_addr_q         : std_ulogic_vector(63 DOWNTO 0);
+  SIGNAL read_rsp_err_first_q        : boolean;
+  SIGNAL read_rsp_err_type_q         : RSP_CODES_T;
+  SIGNAL read_rsp_err_valid_q        : boolean;
+  SIGNAL restart_active_q            : boolean;
+  SIGNAL rfifo_empty                 : std_ulogic;
+  SIGNAL rfifo_empty_tmp             : std_ulogic;
+  SIGNAL rfifo_full                  : std_ulogic;
+  SIGNAL rfifo_prog_full             : std_ulogic;
+  SIGNAL rfifo_rd_rst_busy           : std_ulogic;
+  SIGNAL rfifo_rdata                 : std_ulogic_vector(512 DOWNTO 0);
+  SIGNAL rfifo_wdata                 : std_ulogic_vector(512 DOWNTO 0);
+  SIGNAL rfifo_wr_in_process_q       : std_ulogic_vector(1 DOWNTO 0);
+  SIGNAL rfifo_wr_rst_busy           : std_ulogic;
+  SIGNAL rsp_rtag_next_q             : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL rsp_rtag_p_q                : std_ulogic;
+  SIGNAL rsp_rtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL rsp_rtag_qq                 : integer RANGE 0 TO 31;
+  SIGNAL rsp_rtag_valid_q            : boolean;
+  SIGNAL rsp_wtag_next_q             : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL rsp_wtag_p_q                : std_ulogic;
+  SIGNAL rsp_wtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL rsp_wtag_qq                 : integer RANGE 0 TO 31;
+  SIGNAL rsp_wtag_valid_q            : boolean;
+  SIGNAL sd_c_q                      : SD_C_T;
+  SIGNAL waddr_id_q                  : std_ulogic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
+  SIGNAL waddr_offset_p_q            : std_ulogic;
+  SIGNAL waddr_offset_q              : std_ulogic_vector( 12 DOWNTO  7);
+  SIGNAL waddr_p_q                   : std_ulogic;
+  SIGNAL waddr_q                     : std_ulogic_vector( 63 DOWNTO  7);
+  SIGNAL wclen_q                     : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL wr_id_valid_q               : std_ulogic;
+  SIGNAL write_ctrl_fsm_q            : WRITE_CTRL_FSM_T;
+  SIGNAL write_ctrl_q                : ARR_DMA_CTL_T;
+  SIGNAL write_ctrl_q_err_q          : std_ulogic_vector( 31 DOWNTO  0);
+  SIGNAL write_ctrl_rsp_wtag_q       : DMA_CTL_T;
+  SIGNAL write_fsm_req_q             : FSM_REQ_T;
+  SIGNAL write_rsp_err_addr_p_q      : std_ulogic;
+  SIGNAL write_rsp_err_addr_q        : std_ulogic_vector(63 DOWNTO 0);
+  SIGNAL write_rsp_err_first_q       : boolean;
+  SIGNAL write_rsp_err_type_q        : RSP_CODES_T;
+  SIGNAL write_rsp_err_valid_q       : boolean;
 
   --
   -- COMPONENT
@@ -411,16 +412,8 @@ BEGIN
             WHEN ST_SETUP_READ_CTRL_REG =>
               --
               -- wait until a CL is active
-              buf_active_v := FALSE;
-
-              FOR i IN 0 TO 31 LOOP
-                IF read_ctrl_q(i).clt /= NOT_USED THEN
-                  buf_active_v := TRUE;
-                END IF;
-              END LOOP;  -- i
-
-              IF buf_active_v = TRUE THEN
-                read_ctrl_fsm_q    <= ST_SEND_RD_REQ_ACK;
+              IF (com_rtag_q /= clt_rtag_q) THEN
+                read_ctrl_fsm_q <= ST_SEND_RD_REQ_ACK;
               END IF;
               
             --
@@ -537,7 +530,7 @@ BEGIN
                 read_ctrl_fsm_q <= ST_READ_RSP;
 
               -- new buffer available
-              ELSIF (read_ctrl_q(com_rtag_v).clt /= NOT_USED) THEN
+              ELSIF (com_rtag_q /= clt_rtag_q) THEN
                 read_fsm_req_q <= COMMAND;
 
                 IF (ah_c_rgate_q   = OPENED ) AND
@@ -593,8 +586,8 @@ BEGIN
             -- STATE COMMAND: READ_CL_NA
             --
             WHEN ST_COM_READ_CL_NA =>
-              IF (ah_c_rgate_q                      = OPENED  ) AND
-                 (read_ctrl_q(com_rtag_next_v).clt /= NOT_USED) THEN
+              IF (ah_c_rgate_q     = OPENED    ) AND
+                 (com_rtag_next_q /= clt_rtag_q) THEN
                 read_ctrl_fsm_q <= ST_COM_READ_CL_NA;
               ELSE
                 read_ctrl_fsm_q <= ST_WAIT_4_CTRL_UPDTAE;
@@ -770,13 +763,8 @@ BEGIN
           --
           -- CLT: CACHE LINE TYPE TAG IS VALID
           --
-          --
-          -- Note: The read side did only complete cache line reads.
-          --       ClT stops after 31 tags, this makes the read_ctrl_fsm_q
-          --       easier
-          --
-          IF (read_ctrl_q(clt_rtag_next_v).clt  = NOT_USED) AND
-             (rclen_q                          /= 0       ) THEN
+          IF (read_ctrl_q(clt_rtag_v).clt  = NOT_USED) AND
+             (rclen_q                     /= 0       ) THEN
             read_ctrl_q(clt_rtag_v).clt <= COMPLETE_DATA;
             clt_rtag_q                  <= clt_rtag_q      + 1;
             clt_rtag_next_q             <= clt_rtag_next_q + 1;
@@ -997,15 +985,7 @@ BEGIN
             WHEN ST_SETUP_WRITE_CTRL_REG =>
               --
               -- wait unitl a CL is active
-              buf_active_v := FALSE;
-
-              FOR i IN 0 TO 31 LOOP
-                IF write_ctrl_q(i).clt /= NOT_USED THEN
-                  buf_active_v := TRUE;
-                END IF;
-              END LOOP;  -- i
-
-              IF buf_active_v = TRUE THEN
+             IF (com_wtag_q /= clt_wtag_q) THEN
                 write_ctrl_fsm_q <= ST_SEND_WR_REQ_ACK;
               END IF;
 
@@ -1169,12 +1149,9 @@ BEGIN
               --
               -- new buffer available
               --
-              -- Note: A full buffer can also be NOT_USED. This is the
-              -- case if all 31 buffers are in use and the dma_aligner is
-              -- filling up the last partial cache line. The dma_aligner not
-              -- reacts on buf_walmost_full_q!
-              ELSIF (write_ctrl_q(com_wtag_v).buf  = FULL    ) AND
-                    (write_ctrl_q(com_wtag_v).clt /= NOT_USED) THEN
+              ELSIF (write_ctrl_q(com_wtag_v).buf = FULL      ) AND   
+                    (com_wtag_q                  /= buf_wtag_q) THEN
+                
                 write_fsm_req_q  <= COMMAND;
 
                 --
@@ -1279,9 +1256,9 @@ BEGIN
             -- STATE COMMAND: WRITE_NA
             --
             WHEN ST_COM_WRITE_NA =>
-              IF (ah_c_wgate_q                      = OPENED       ) AND
-                 (write_ctrl_q(com_wtag_next_v).buf = FULL         ) AND
-                 (write_ctrl_q(com_wtag_next_v).clt = COMPLETE_DATA) THEN
+              IF (ah_c_wgate_q                       = OPENED       ) AND
+                 (write_ctrl_q(com_wtag_next_v).clt  = COMPLETE_DATA) AND
+                 (com_wtag_next_q                   /= buf_wtag_q   ) THEN
                 write_ctrl_fsm_q <= ST_COM_WRITE_NA;
               ELSE
                 write_ctrl_fsm_q <= ST_WAIT_4_CTRL_UPDTAE;
@@ -1458,10 +1435,8 @@ BEGIN
           --
           -- CLT: CACHE LINE TYPE TAG IS VALID
           --
-          -- Note: Clt stops after 31 tags, this makes the write_ctrl_fsm_q
-          --       easier
-          IF (write_ctrl_q(clt_wtag_next_v).clt  = NOT_USED) AND
-             (wclen_q                           /= 0       ) THEN
+          IF (write_ctrl_q(clt_wtag_v).clt  = NOT_USED) AND
+             (wclen_q                      /= 0       ) THEN
 
             wclen_q         <= wclen_q         - 1;
             clt_wtag_q      <= clt_wtag_q      + 1;
@@ -1469,23 +1444,14 @@ BEGIN
             clt_wtag_p_q    <= AC_PPARITH(1, clt_wtag_q, clt_wtag_p_q,
                                              "000001"  , '0');
 
-            IF write_ctrl_fsm_q = ST_SETUP_WRITE_CTRL_REG THEN
-              --
-              -- first CL is allways a partial line
-              write_ctrl_q(clt_wtag_v).clt <= PARTIAL_DATA;
+            write_ctrl_q(clt_wtag_v).clt <= IN_USE;
+          END IF;
 
-            ELSIF wclen_q = ((5 DOWNTO 1 => '0') & '1') THEN
-              --
-              -- last CL is allways a partial line
-              write_ctrl_q(clt_wtag_v).clt <= PARTIAL_DATA;
-            ELSE
-              --
-              -- normal CL
-              write_ctrl_q(clt_wtag_v).clt <= COMPLETE_DATA;
-            END IF;
+          --
+          -- request
+          IF (sd_c_q.wr_req    = '1'    ) AND
+             (write_ctrl_fsm_q = ST_IDLE) THEN
 
-          ELSIF (sd_c_q.wr_req    = '1'    ) AND
-                (write_ctrl_fsm_q = ST_IDLE) THEN
             --
             -- calculate the amount of CLT
             IF sd_c_q.wr_len(0) = '0' THEN
@@ -1511,9 +1477,15 @@ BEGIN
           --
           -- BUF: BUFFER TAG is valid
           --
-          IF buf_wtag_valid_q = TRUE THEN
+          IF (buf_wtag_valid_q = TRUE) THEN
             write_ctrl_q(buf_wtag_v).buf <= FULL;
-
+   
+            IF buf_wtag_cl_partial_q = TRUE THEN
+              write_ctrl_q(buf_wtag_v).clt <= PARTIAL_DATA;
+            ELSE
+              write_ctrl_q(buf_wtag_v).clt <= COMPLETE_DATA;
+            END IF;
+   
             IF rsp_wtag_valid_q = FALSE THEN
               buf_wfull_cnt_q <= buf_wfull_cnt_q + 1;
             END IF;
@@ -1924,6 +1896,7 @@ BEGIN
       buf_rtag_valid_o         => buf_rtag_valid_q,
       buf_wtag_o               => buf_wtag_q,
       buf_wtag_p_o             => buf_wtag_p_q,
+      buf_wtag_cl_partial_o    => buf_wtag_cl_partial_q,
       buf_wtag_valid_o         => buf_wtag_valid_q,
       --
       -- Error Inject

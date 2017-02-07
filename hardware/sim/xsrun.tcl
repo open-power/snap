@@ -15,12 +15,23 @@
 #
 ###############################################################################
 version
-#source xsaet.tcl				;# enabled through run_sim
- open_vcd {dump.vcd}
- log_vcd *
+#source xsaet.tcl                                 ;# enabled through run_sim
+##### use native format
+#open_wave_database native
+#get_objects -verbose -recursive -filter { type == internal_signal } *fsm*
+ add_wave -r *
+##### use VCD format
+#open_vcd {dump.vcd}
+#log_vcd *
+#log_vcd -verbose *
+#log_vcd -level 9 -verbose *
+#log_vcd -level 5 [get_objects -filter { type == port } /* ]
+#log_vcd          [get_objects -filter { type == internal_signal } * ]
+#limit_vcd 200000000
  set myrc [run 2000 ns]; puts "run2000 rc= $myrc" ;# assertions off until after 2800ns
 #run 50000 ns
- run -all					;# run forever, until application closes sim
- flush_vcd
- close_vcd
+ run -all                                         ;# run forever, until application closes sim
+#save_wave_config
+#flush_vcd
+#close_vcd
  exit
