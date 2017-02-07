@@ -90,7 +90,6 @@ static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
 	for (i = 0; i < t1_used_bytes/sizeof(table1_t); i++) {
 		*t1[i].name = mem[j](0, 511);
 		t1[i].age   = mem[j + 1](0, 31);
-		memset(t1[i].reserved, 0, sizeof(t1[i].reserved));
 		j += 2;
 	}
 }
