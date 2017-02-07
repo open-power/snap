@@ -158,6 +158,8 @@ if { $ddri_used == TRUE } {
     }
   } elseif { $ddr4_used == TRUE } {
     add_files -fileset constrs_1 -norecurse $dimm_dir/snap_refclk200.xdc
+    add_files -fileset constrs_1 -norecurse $dimm_dir/snap_ddr4pins_flash_gt.xdc
+    set_property used_in_synthesis false [get_files $dimm_dir/snap_ddr4pins_flash_gt.xdc]
 
   } else {
     puts "no DDR RAM was specified"
