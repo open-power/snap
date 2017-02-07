@@ -90,6 +90,7 @@ static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
 	for (i = 0; i < t1_used_bytes/sizeof(table1_t); i++) {
 		*t1[i].name = mem[j](0, 511);
 		t1[i].age   = mem[j + 1](0, 31);
+		memset(t1[i].reserved, 0, sizeof(t1[i].reserved));
 		j += 2;
 	}
 }
@@ -191,11 +192,11 @@ void action_wrapper(snap_membus_t *din_gmem,
 	ReturnCode = RET_CODE_OK;
 
 #if defined(CONFIG_QUESTION_MARK_VERSION)
-	memcpy((snap_membus_t *)__table1,
-	       (snap_membus_t *)(T1_type == HOST_DRAM) ?
-	       (din_gmem + (T1_address >> ADDR_RIGHT_SHIFT)) :
+	memcpy((ap_uint<MEMDW> *)__table1,
+	       (ap_uint<MEMDW> *)(T1_type == HOST_DRAM) ?
+	       (dout_gmem + (T1_address >> ADDR_RIGHT_SHIFT)) :
 	       (d_ddrmem  + (T1_address >> ADDR_RIGHT_SHIFT)),
-	       T1_size);
+	       T1_size); 	*/
 
 	memcpy((snap_membus_t *)__table2,
 	       (snap_membus_t *)(T2_type == HOST_DRAM) ?
@@ -210,7 +211,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 	read_table2(din_gmem + (T2_address >> ADDR_RIGHT_SHIFT),
 		    __table2, T2_size / sizeof(table2_t));
 #endif
-	
+
 	rc = action_hashjoin_hls(__table1, T1_size / sizeof(table1_t),
 				 __table2, T2_size / sizeof(table2_t),
 				 __table3, &__table3_idx, 1);
