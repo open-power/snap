@@ -87,6 +87,7 @@ static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
 	/* extract data into target table1, or FIFO maybe? */
 	j = 0;
 	for (i = 0; i < t1_used_bytes/sizeof(table1_t); i++) {
+		printf("reading table1 entry %d\n", i);
 		*t1[i].name = mem[j](0, 511);
 		t1[i].age   = mem[j + 1](0, 31);
 		j += 2;
@@ -101,6 +102,7 @@ static void read_table2(snap_membus_t *mem, table2_t t2[TABLE2_SIZE],
 	/* extract data into target table2, or FIFO maybe? */
 	j = 0;
 	for (i = 0; i < t2_used_bytes/sizeof(table2_t); i++) {
+		printf("reading table2 entry %d\n", i);
 		*t2[i].name   = mem[j](0, 511);
 		*t2[i].animal = mem[j + 1](0, 511);
 		j += 2;
@@ -117,6 +119,7 @@ static void write_table3(snap_membus_t *mem, table3_t t3[TABLE3_SIZE],
 	for (i = 0; i < t3_used_bytes/sizeof(table3_t); i++) {
 		snap_membus_t dmem;
 		
+		printf("writing table3 entry %d\n", i);
 		dmem(0, 31) = t3[i].age;
 		mem[j]      = *t3[i].name;
 		mem[j + 1]  = *t3[i].animal;
@@ -311,9 +314,11 @@ int main(void)
 
 	cout << "HOSTMEMORY INPUT" << endl;
 	for (unsigned int i = 0; i < 2048; i++)
-		cout << setw(4)  << setfill('0') << i << ": "
-		     << setw(32) << setfill('0') << hex << din_gmem[i] << endl;
-
+		if (din_gmem[i] != 0)
+			cout << setw(4)  << setfill('0') << i << ": "
+			     << setw(32) << setfill('0') << hex << din_gmem[i]
+			     << endl;
+	
 	Action_Input.Data.t1.address = 0;
 	Action_Input.Data.t1.size = sizeof(table1);
 	Action_Input.Data.t1.type = HOST_DRAM;
@@ -327,12 +332,15 @@ int main(void)
 
 	cout << "HOSTMEMORY OUTPUT" << endl;
 	for (unsigned int i = 0; i < 2048; i++)
-		cout << setw(4)  << setfill('0') << i << ": "
-		     << setw(32) << setfill('0') << hex << dout_gmem[i] << endl;
+		if (dout_gmem[i] != 0)
+			cout << setw(4)  << setfill('0') << i << ": "
+			     << setw(32) << setfill('0') << hex << dout_gmem[i]
+			     << endl;
 	
 	printf("Number of entries in t3: %d\n", (int)Action_Output.Data.t3_produced);
-	if (Action_Output.Data.t3_produced != 23)
+	if (Action_Output.Data.t3_produced != 23) {
 		return 1;
+	}
 
         return 0;
 }
