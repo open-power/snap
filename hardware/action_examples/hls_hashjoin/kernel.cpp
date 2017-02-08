@@ -92,7 +92,7 @@ static void write_results_in_HJ_regs(action_output_reg *Action_Output,
 static void copy_hashkey(snap_membus_t mem, hashkey_t key)
 {
 	for (unsigned int k = 0; k < sizeof(hashkey_t); k++)
-		key[k] = mem(511 - 8 * k,  8 * k);
+		key[k] = mem(8 * (k+1) - 1,  8 * k);
 }
 
 static snap_membus_t hashkey_to_mbus(hashkey_t key)
@@ -100,7 +100,7 @@ static snap_membus_t hashkey_to_mbus(hashkey_t key)
 	snap_membus_t res = 0, mem;
 
 	for (unsigned int k = 0; k < sizeof(hashkey_t); k++) {
-		mem(511 - 8 * k,  8 * k) = key[k];
+		mem(8 * (k+1) - 1,  8 * k) = key[k];
 		res |= mem;
 	}
 	return res;
