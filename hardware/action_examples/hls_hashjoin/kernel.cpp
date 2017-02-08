@@ -20,6 +20,8 @@
 #include <iostream>
 #include "action_hashjoin_hls.H"
 
+using namespace std;
+
 /* Define memory buffers to keep the data we read from CARD or HOST DRAM */
 static table1_t __table1[TABLE1_SIZE];
 static table2_t __table2[TABLE2_SIZE];
@@ -80,29 +82,42 @@ static void write_results_in_HJ_regs(action_output_reg *Action_Output,
  * this problem and avoid the user to make mistakes there.
  */
 static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
-			uint32_t t1_used_bytes)
+			uint32_t t1_used)
 {
 	unsigned int i, j;
 
+	fprintf(stderr, "TABLE1 %d elements @ %p\n", t1_used, mem);
+
 	/* extract data into target table1, or FIFO maybe? */
 	j = 0;
-	for (i = 0; i < t1_used_bytes/sizeof(table1_t); i++) {
-		printf("reading table1 entry %d\n", i);
-		*t1[i].name = mem[j](0, 511);
+	for (i = 0; i < t1_used; i++) {
+		fprintf(stderr, "  reading table1 entry %d\n", i);
+#ifdef NO_SYNTH
+		cout << setw(4)  << j << ": "
+		     << setw(32) << hex << mem[j]
+		     << endl
+		     << setw(4)  << j + 1 << ": "
+		     << setw(32) << hex << mem[j + 1]
+		     << endl;
+#endif
+		
+		*t1[i].name = mem[j](511, 0);
 		t1[i].age   = mem[j + 1](0, 31);
 		j += 2;
 	}
 }
 
 static void read_table2(snap_membus_t *mem, table2_t t2[TABLE2_SIZE],
-			uint32_t t2_used_bytes)
+			uint32_t t2_used)
 {
 	unsigned int i, j;
 
+	fprintf(stderr, "TABLE2 %d elements\n", t2_used);
+
 	/* extract data into target table2, or FIFO maybe? */
 	j = 0;
-	for (i = 0; i < t2_used_bytes/sizeof(table2_t); i++) {
-		printf("reading table2 entry %d\n", i);
+	for (i = 0; i < t2_used; i++) {
+		printf("  reading table2 entry %d\n", i);
 		*t2[i].name   = mem[j](0, 511);
 		*t2[i].animal = mem[j + 1](0, 511);
 		j += 2;
@@ -110,13 +125,15 @@ static void read_table2(snap_membus_t *mem, table2_t t2[TABLE2_SIZE],
 }
 
 static void write_table3(snap_membus_t *mem, table3_t t3[TABLE3_SIZE],
-			 uint32_t t3_used_bytes)
+			 uint32_t t3_used)
 {
 	unsigned int i, j;
 
+	fprintf(stderr, "TABLE3 %d elements\n", t3_used);
+
 	/* extract data into target table3, or FIFO maybe? */
 	j = 0;
-	for (i = 0; i < t3_used_bytes/sizeof(table3_t); i++) {
+	for (i = 0; i < t3_used; i++) {
 		snap_membus_t dmem;
 		
 		printf("writing table3 entry %d\n", i);
@@ -168,9 +185,14 @@ void action_wrapper(snap_membus_t *din_gmem,
 	snapu32_t T1_size;
 	snapu32_t T2_size;
 	snapu32_t T3_size;
+	unsigned int T1_items = 0;
+	unsigned int T2_items = 0;
 	
 	//== Parameters fetched in memory ==
 	//==================================
+
+	fprintf(stderr, "din_gmem  = %p\n", din_gmem);
+	fprintf(stderr, "dout_gmem = %p\n", dout_gmem);
 	
 	/* FIXME Please check if the data alignment matches the expectations */
 	if (Action_Input->Control.action != HASHJOIN_ACTION_TYPE) {
@@ -184,13 +206,17 @@ void action_wrapper(snap_membus_t *din_gmem,
 	T1_address = Action_Input->Data.t1.address;
 	T1_type    = Action_Input->Data.t1.type;
 	T1_size    = Action_Input->Data.t1.size;
+	T1_items   = T1_size / sizeof(table1_t);
 	T2_address = Action_Input->Data.t2.address;
 	T2_type    = Action_Input->Data.t2.type;
 	T2_size    = Action_Input->Data.t2.size;
+	T2_items   = T2_size / sizeof(table2_t);
 	T3_address = Action_Input->Data.t3.address;
 	T3_type    = Action_Input->Data.t3.type;
 	T3_size    = Action_Input->Data.t3.size;
 	ReturnCode = RET_CODE_OK;
+
+	fprintf(stderr, "t1: %016lx t2: %016lx\n", (long)T1_address, (long)T2_address);
 
 #if defined(CONFIG_QUESTION_MARK_VERSION)
 	memcpy((ap_uint<MEMDW> *)__table1,
@@ -201,20 +227,18 @@ void action_wrapper(snap_membus_t *din_gmem,
 
 	memcpy((snap_membus_t *)__table2,
 	       (snap_membus_t *)(T2_type == HOST_DRAM) ?
-	       (din_gmem + (T2_address >> ADDR_RIGHT_SHIFT)) :
+	       (din_gmem  + (T2_address >> ADDR_RIGHT_SHIFT)) :
 	       (d_ddrmem  + (T2_address >> ADDR_RIGHT_SHIFT)),
 	       T2_size);
 #else
 	/* FIXME Just Host DDRAM for now */
 	read_table1(din_gmem + (T1_address >> ADDR_RIGHT_SHIFT),
-		    __table1, T1_size / sizeof(table1_t));
-
+		    __table1, T1_items);
 	read_table2(din_gmem + (T2_address >> ADDR_RIGHT_SHIFT),
-		    __table2, T2_size / sizeof(table2_t));
+		    __table2, T2_items);
 #endif
 
-	rc = action_hashjoin_hls(__table1, T1_size / sizeof(table1_t),
-				 __table2, T2_size / sizeof(table2_t),
+	rc = action_hashjoin_hls(__table1, T1_items, __table2, T2_items,
 				 __table3, &__table3_idx, 1);
 	if (rc == 0) {
 #if defined(CONFIG_QUESTION_MARK_VERSION)
@@ -226,7 +250,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 #else
 		/* FIXME Just Host DDRAM for now */
 		write_table3(dout_gmem+(T3_address>>ADDR_RIGHT_SHIFT),
-			     __table3, __table3_idx * sizeof(table3_t));
+			     __table3, __table3_idx);
 #endif
 	} else
 		ReturnCode = RET_CODE_FAILURE;
@@ -241,11 +265,9 @@ void action_wrapper(snap_membus_t *din_gmem,
 
 #if defined(NO_SYNTH)
 
-using namespace std;
-
 /* table1 is initialized as constant for test code */
 static table1_t table1[] = {
-	{ /* .name = */ "ronah",  /* .age = */127, { 0x0, } },
+	{ /* .name = */ "ronah",  /* .age = */127, { 0x0, } }, /* 1 */
         { /* .name = */ "rlan",   /* .age = */118, { 0x0, } },
         { /* .name = */ "rlory",  /* .age = */128, { 0x0, } },
         { /* .name = */ "ropeye", /* .age = */118, { 0x0, } },
@@ -265,7 +287,7 @@ static table1_t table1[] = {
         { /* .name = */ "rikey",  /* .age = */115, { 0x0, } },
         { /* .name = */ "rlong",  /* .age = */114, { 0x0, } },
         { /* .name = */ "riffy",  /* .age = */113, { 0x0, } },
-        { /* .name = */ "riffy",  /* .age = */112, { 0x0, } },
+        { /* .name = */ "riffy",  /* .age = */112, { 0x0, } }, /* 21 */
 };
 
 /*
@@ -274,7 +296,7 @@ static table1_t table1[] = {
  * PCIe bus to the card.
  */
 static table2_t table2[] = {
-        { /* .name = */ "ronah", /* .animal = */ "Whales"   },
+        { /* .name = */ "ronah", /* .animal = */ "Whales"   }, /* 1 */
         { /* .name = */ "ronah", /* .animal = */ "Spiders"  },
         { /* .name = */ "rlan",  /* .animal = */ "Ghosts"   },
         { /* .name = */ "rlan",  /* .animal = */ "Zombies"  },
@@ -298,7 +320,7 @@ static table2_t table2[] = {
         { /* .name = */ "roffy", /* .animal = */ "Buffy"    },
         { /* .name = */ "ruffy", /* .animal = */ "Buffy"    },
         { /* .name = */ "rrank", /* .animal = */ "Buffy"    },
-        { /* .name = */ "Bruno", /* .animal = */ "Buffy"    },
+        { /* .name = */ "Bruno", /* .animal = */ "Buffy"    }, /* 25 */
 };
 
 static table3_t table3[TABLE1_SIZE * TABLE2_SIZE]; /* worst case size */
@@ -311,48 +333,41 @@ int main(void)
 	action_input_reg Action_Input;
 	action_output_reg Action_Output;
 
-	Action_Input.Control.action = 0x22;
+	/* Show width of the memory interface */
+	din_gmem[2047] = -1;
+
+	Action_Input.Control.action = HASHJOIN_ACTION_TYPE;
 
 	Action_Input.Data.t1.type = HOST_DRAM;
-	Action_Input.Data.t1.address = (unsigned long)(uint8_t *)din_gmem;
+	Action_Input.Data.t1.address = 0;
 	Action_Input.Data.t1.size = sizeof(table1);
 
 	Action_Input.Data.t2.type = HOST_DRAM;
-	Action_Input.Data.t2.address = (unsigned long)(uint8_t *)din_gmem +
-		sizeof(table1);
+	Action_Input.Data.t2.address = sizeof(table1);
 	Action_Input.Data.t2.size = sizeof(table2);
 
 	Action_Input.Data.t3.type = HOST_DRAM;
-	Action_Input.Data.t3.address = (unsigned long)(uint8_t *)din_gmem +
-		sizeof(table1) + sizeof(table2);
+	Action_Input.Data.t3.address = sizeof(table1) + sizeof(table2);
 	Action_Input.Data.t3.size = sizeof(table3);
 
-	memcpy((uint8_t *)dout_gmem,                  table1, sizeof(table1));
-	memcpy((uint8_t *)dout_gmem + sizeof(table1), table2, sizeof(table2));
+	memcpy((uint8_t *)din_gmem,                  table1, sizeof(table1));
+	memcpy((uint8_t *)din_gmem + sizeof(table1), table2, sizeof(table2));
 
-	cout << "HOSTMEMORY INPUT" << endl;
+	printf("HOSTMEMORY INPUT %p\n", din_gmem);
 	for (unsigned int i = 0; i < 2048; i++)
 		if (din_gmem[i] != 0)
-			cout << setw(4)  << setfill('0') << i << ": "
-			     << setw(32) << setfill('0') << hex << din_gmem[i]
+			cout << setw(4)  << i << ": "
+			     << setw(32) << hex << din_gmem[i]
 			     << endl;
 	
-	Action_Input.Data.t1.address = 0;
-	Action_Input.Data.t1.size = sizeof(table1);
-	Action_Input.Data.t1.type = HOST_DRAM;
-	
-	Action_Input.Data.t2.address = sizeof(table1);
-	Action_Input.Data.t2.size = sizeof(table2);
-	Action_Input.Data.t2.type = HOST_DRAM;
-
 	action_wrapper(din_gmem, dout_gmem, d_ddrmem,
 		       &Action_Input, &Action_Output);
 
-	cout << "HOSTMEMORY OUTPUT" << endl;
+	printf("HOSTMEMORY OUTPUT %p\n", dout_gmem);
 	for (unsigned int i = 0; i < 2048; i++)
 		if (dout_gmem[i] != 0)
-			cout << setw(4)  << setfill('0') << i << ": "
-			     << setw(32) << setfill('0') << hex << dout_gmem[i]
+			cout << setw(4)  << i << ": "
+			     << setw(32) << hex << dout_gmem[i]
 			     << endl;
 	
 	printf("Number of entries in t3: %d\n", (int)Action_Output.Data.t3_produced);

@@ -34,6 +34,7 @@
 
 #if !defined(NO_SYNTH)
 #  define printf(fmt, args...)
+#  define fprintf(file, fmt, args...)
 #  define __unused
 #endif
 
