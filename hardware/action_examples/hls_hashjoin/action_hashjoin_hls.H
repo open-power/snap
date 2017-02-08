@@ -161,6 +161,8 @@ typedef struct {
         DATA_HJ   Data;     // 112 bytes
 } action_output_reg;
 
+void hashkey_cpy(hashkey_t dst, hashkey_t src);
+
 int action_hashjoin_hls(table1_t table1[TABLE1_SIZE], unsigned int table1_used,
 			table2_t table2[TABLE2_SIZE], unsigned int table2_used,
 			table3_t table3[TABLE3_SIZE], unsigned int *table3_used,

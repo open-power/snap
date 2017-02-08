@@ -77,10 +77,35 @@ static void write_results_in_HJ_regs(action_output_reg *Action_Output,
 	Action_Output->Data.hash_table = Action_Input->Data.hash_table;
 }
 
-/**
+/*
+ * FIXME The table1, 2, 3 read and write code, I consider a problem. We
+ *       are doing what the HLS tool should do for us in a less error
+ *       prone way. We need to know about the bit positions and byte
+ *       ordering of the individual fields. Those details should be known
+ *       to the tool. Once the table format changes, there is a lot of code
+ *       to be reviewed or worse to be changed, e.g. if one adds an element
+ *       before the existing ones.
+ *
  * FIXME We like to get rid of this bit cutting out code. The tool should solve
- * this problem and avoid the user to make mistakes there.
+ *       this problem and avoid the user to make mistakes there.
  */
+static void copy_hashkey(snap_membus_t mem, hashkey_t key)
+{
+	for (unsigned int k = 0; k < sizeof(hashkey_t); k++)
+		key[k] = mem(511 - 8 * k,  8 * k);
+}
+
+static snap_membus_t hashkey_to_mbus(hashkey_t key)
+{
+	snap_membus_t res = 0, mem;
+
+	for (unsigned int k = 0; k < sizeof(hashkey_t); k++) {
+		mem(511 - 8 * k,  8 * k) = key[k];
+		res |= mem;
+	}
+	return res;
+}
+
 static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
 			uint32_t t1_used)
 {
@@ -91,18 +116,11 @@ static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
 	/* extract data into target table1, or FIFO maybe? */
 	j = 0;
 	for (i = 0; i < t1_used; i++) {
-		fprintf(stderr, "  reading table1 entry %d\n", i);
-#ifdef NO_SYNTH
-		cout << setw(4)  << j << ": "
-		     << setw(32) << hex << mem[j]
-		     << endl
-		     << setw(4)  << j + 1 << ": "
-		     << setw(32) << hex << mem[j + 1]
-		     << endl;
-#endif
-		
-		*t1[i].name = mem[j](511, 0);
-		t1[i].age   = mem[j + 1](0, 31);
+		/* copy the string ... */
+		copy_hashkey(mem[j], t1[i].name);
+		t1[i].age = mem[j + 1](31, 0);
+
+		fprintf(stderr, "  %d name: %s age: %d\n", i, t1[i].name, t1[i].age);
 		j += 2;
 	}
 }
@@ -118,8 +136,8 @@ static void read_table2(snap_membus_t *mem, table2_t t2[TABLE2_SIZE],
 	j = 0;
 	for (i = 0; i < t2_used; i++) {
 		printf("  reading table2 entry %d\n", i);
-		*t2[i].name   = mem[j](0, 511);
-		*t2[i].animal = mem[j + 1](0, 511);
+		copy_hashkey(mem[j],     t2[i].name);
+		copy_hashkey(mem[j + 1], t2[i].animal);
 		j += 2;
 	}
 }
@@ -134,13 +152,10 @@ static void write_table3(snap_membus_t *mem, table3_t t3[TABLE3_SIZE],
 	/* extract data into target table3, or FIFO maybe? */
 	j = 0;
 	for (i = 0; i < t3_used; i++) {
-		snap_membus_t dmem;
-		
 		printf("writing table3 entry %d\n", i);
-		dmem(0, 31) = t3[i].age;
-		mem[j]      = *t3[i].name;
-		mem[j + 1]  = *t3[i].animal;
-		mem[j + 2]  = dmem;
+		mem[j]     = hashkey_to_mbus(t3[i].name);
+		mem[j + 1] = hashkey_to_mbus(t3[i].animal);
+		mem[j + 2](31, 0) = t3[i].age;
 		j += 3;
 	}
 }
@@ -267,7 +282,8 @@ void action_wrapper(snap_membus_t *din_gmem,
 
 /* table1 is initialized as constant for test code */
 static table1_t table1[] = {
-	{ /* .name = */ "ronah",  /* .age = */127, { 0x0, } }, /* 1 */
+	{ /* .name = */ "ABCDEFGHIJKLMNOPQRSTUVWXYZ", 16, { 0x0, } }, /* 1 */
+	{ /* .name = */ "ronah",  /* .age = */127, { 0x0, } },
         { /* .name = */ "rlan",   /* .age = */118, { 0x0, } },
         { /* .name = */ "rlory",  /* .age = */128, { 0x0, } },
         { /* .name = */ "ropeye", /* .age = */118, { 0x0, } },
@@ -287,7 +303,7 @@ static table1_t table1[] = {
         { /* .name = */ "rikey",  /* .age = */115, { 0x0, } },
         { /* .name = */ "rlong",  /* .age = */114, { 0x0, } },
         { /* .name = */ "riffy",  /* .age = */113, { 0x0, } },
-        { /* .name = */ "riffy",  /* .age = */112, { 0x0, } }, /* 21 */
+        { /* .name = */ "riffy",  /* .age = */112, { 0x0, } }, /* 22 */
 };
 
 /*
@@ -320,7 +336,9 @@ static table2_t table2[] = {
         { /* .name = */ "roffy", /* .animal = */ "Buffy"    },
         { /* .name = */ "ruffy", /* .animal = */ "Buffy"    },
         { /* .name = */ "rrank", /* .animal = */ "Buffy"    },
-        { /* .name = */ "Bruno", /* .animal = */ "Buffy"    }, /* 25 */
+        { /* .name = */ "Bruno", /* .animal = */ "Buffy"    },
+	{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }, /* 26 */
+
 };
 
 static table3_t table3[TABLE1_SIZE * TABLE2_SIZE]; /* worst case size */
@@ -370,8 +388,9 @@ int main(void)
 			     << setw(32) << hex << dout_gmem[i]
 			     << endl;
 	
+	/* The 24 entries are a manually determined value */
 	printf("Number of entries in t3: %d\n", (int)Action_Output.Data.t3_produced);
-	if (Action_Output.Data.t3_produced != 23) {
+	if (Action_Output.Data.t3_produced != 24) {
 		return 1;
 	}
 
