@@ -18,13 +18,6 @@
 
 #include "action_hashjoin_hls.H"
 
-#if !defined(NO_SYNTH)
-
-#define MAX_NB_OF_BYTES_READ    (128 * 128)             // Value should be X*BPERDW
-snap_membus_t buffer_mem[MAX_NB_OF_BYTES_READ/BPERDW]; // if MEMDW=512 : 128*128=>256 words
-
-#endif  /* NO_SYNTH */
-
 static hashtable_t __hashtable;
 
 /*

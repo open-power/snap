@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
 #include "action_hashjoin_hls.H"
 
 /* Define memory buffers to keep the data we read from CARD or HOST DRAM */
@@ -24,8 +25,6 @@ static table1_t __table1[TABLE1_SIZE];
 static table2_t __table2[TABLE2_SIZE];
 static unsigned int __table3_idx = 0;
 static table3_t __table3[TABLE1_SIZE * TABLE2_SIZE]; /* worst case size */
-
-#if !defined(NO_SYNTH)
 
 #define HASHJOIN_ACTION_TYPE 0x0022
 #define RELEASE_VERSION 0xFEEDA02200000015 //contains Action and Release numbers
@@ -233,13 +232,13 @@ void action_wrapper(snap_membus_t *din_gmem,
 				 __table3_idx, 0);
 }
 
-#endif /* !defined(NO_SYNTH) */
-
 //-----------------------------------------------------------------------------
 //--- TESTBENCH ---------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 #if defined(NO_SYNTH)
+
+using namespace std;
 
 /* table1 is initialized as constant for test code */
 static table1_t table1[] = {
@@ -299,19 +298,41 @@ static table2_t table2[] = {
         { /* .name = */ "Bruno", /* .animal = */ "Buffy"    },
 };
 
-int main(int argc __unused, char *argv[] __unused)
+int main(void)
 {
-        int rc;
+	snap_membus_t din_gmem[2048];    /* content is here */
+	snap_membus_t dout_gmem[2048];   /* output goes here, empty */
+	snap_membus_t d_ddrmem[2048];    /* card memory is empty */
+	action_input_reg Action_Input;
+	action_output_reg Action_Output;
 
-	memcpy(__table1, table1, sizeof(table1));
-	memcpy(__table2, table2, sizeof(table2));
-	memset(__table3, 0, sizeof(__table3));
+	memcpy((uint8_t *)din_gmem,                  table1, sizeof(table1));
+	memcpy((uint8_t *)din_gmem + sizeof(table1), table2, sizeof(table2));
 
-	rc = action_hashjoin_hls(__table1, ARRAY_SIZE(table1),
-				 __table2, ARRAY_SIZE(table2),
-				 __table3, &__table3_idx, 1);
-	if (rc != 0)
-		return rc;
+	cout << "HOSTMEMORY INPUT" << endl;
+	for (unsigned int i = 0; i < 2048; i++)
+		cout << setw(4)  << setfill('0') << i << ": "
+		     << setw(32) << setfill('0') << hex << din_gmem[i] << endl;
+
+	Action_Input.Data.t1.address = 0;
+	Action_Input.Data.t1.size = sizeof(table1);
+	Action_Input.Data.t1.type = HOST_DRAM;
+	
+	Action_Input.Data.t2.address = sizeof(table1);
+	Action_Input.Data.t2.size = sizeof(table2);
+	Action_Input.Data.t2.type = HOST_DRAM;
+
+	action_wrapper(din_gmem, dout_gmem, d_ddrmem,
+		       &Action_Input, &Action_Output);
+
+	cout << "HOSTMEMORY OUTPUT" << endl;
+	for (unsigned int i = 0; i < 2048; i++)
+		cout << setw(4)  << setfill('0') << i << ": "
+		     << setw(32) << setfill('0') << hex << dout_gmem[i] << endl;
+	
+	printf("Number of entries in t3: %d\n", (int)Action_Output.Data.t3_produced);
+	if (Action_Output.Data.t3_produced != 23)
+		return 1;
 
         return 0;
 }

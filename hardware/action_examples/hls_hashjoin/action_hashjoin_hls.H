@@ -19,6 +19,23 @@
 
 #include <stdint.h>
 #include <string.h>
+#include "ap_int.h"
+
+/*
+ * Hardware implementation is lacking some libc functions. So let us
+ * replace those.
+ */
+#ifndef ULONG_MAX
+#  define ULONG_MAX 0xFFFFFFFFUL /* gcc compiler but not HLS compiler */
+#endif
+#ifndef NULL
+#  define NULL 0                 /* gcc compiler but not HLS compiler */
+#endif
+
+#if !defined(NO_SYNTH)
+#  define printf(fmt, args...)
+#  define __unused
+#endif
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #define ARRAY_SIZE(a) (sizeof((a))/sizeof((a)[0]))
@@ -59,41 +76,6 @@ typedef struct entry_s {
 typedef struct hashtable_s {
         entry_t table[HT_SIZE]; /* fixed size */
 } hashtable_t;
-
-/*****************************************************************************/
-
-#if defined(NO_SYNTH)
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <limits.h>
-
-#define __unused __attribute__((unused))
-
-typedef uint64_t snapu64_t;
-typedef uint32_t snapu32_t;
-typedef uint16_t snapu16_t;
-typedef uint8_t  snapu8_t;
-
-#else
-
-#include "ap_int.h"
-
-/*
- * Hardware implementation is lacking some libc functions. So let us
- * replace those.
- */
-#define __unused
-#define printf(fmt, args...)
-
-#ifndef ULONG_MAX
-#  define ULONG_MAX 0xFFFFFFFFUL /* gcc compiler but not HLS compiler */
-#endif
-#ifndef NULL
-#  define NULL 0                 /* gcc compiler but not HLS compiler */
-#endif
 
 // General memory Data Width is set as a parameter
 #define MEMDW 512          // 512 or 128 // Bus width in bits for Host memory
@@ -177,14 +159,6 @@ typedef struct {
         snapu64_t Reserved; //   8 bytes
         DATA_HJ   Data;     // 112 bytes
 } action_output_reg;
-
-void convert_64charTable_to_DWTable(snap_membus_t *buffer,
-			char *SixtyFourBytesWordToWrite);
-
-void convert_DWTable_to_64charTable(snap_membus_t *buffer,
-			char *SixtyFourBytesWordRead);
-
-#endif /* NO_SYNTH END_IF Specific Hardware declarations */
 
 int action_hashjoin_hls(table1_t table1[TABLE1_SIZE], unsigned int table1_used,
 			table2_t table2[TABLE2_SIZE], unsigned int table2_used,
