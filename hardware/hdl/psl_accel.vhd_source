@@ -210,21 +210,6 @@ ENTITY psl_accel_afu IS
     as_green_led                       : OUT   STD_ULOGIC_VECTOR(0 TO 3);               -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
 
     -- DDR3 SDRAM Interface
-    c0_ddr3_addr                       : OUT   STD_LOGIC_VECTOR(15 DOWNTO 0);           -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
-    c0_ddr3_ba                         : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);            -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
-    c0_ddr3_ras_n                      : OUT   STD_LOGIC;                               -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
-    c0_ddr3_cas_n                      : OUT   STD_LOGIC;                               -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
-    c0_ddr3_reset_n                    : OUT   STD_LOGIC;                               -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
-    c0_ddr3_cs_n                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);            -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
-    c0_ddr3_cke                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);            -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
-    c0_ddr3_ck_p                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);            -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
-    c0_ddr3_ck_n                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);            -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
-    c0_ddr3_we_n                       : OUT   STD_LOGIC;                               -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
-    c0_ddr3_dm                         : OUT   STD_LOGIC_VECTOR(8 DOWNTO 0);            -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
-    c0_ddr3_dq                         : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);           -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
-    c0_ddr3_dqs_p                      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);            -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
-    c0_ddr3_dqs_n                      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);            -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
-    c0_ddr3_odt                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);            -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
     c1_sys_clk_p                       : IN    STD_LOGIC;                               -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
     c1_sys_clk_n                       : IN    STD_LOGIC;                               -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
     c1_ddr3_addr                       : OUT   STD_LOGIC_VECTOR(15 DOWNTO 0);           -- only for DDR3_USED=TRUE-- only for SIM!=TRUE
@@ -245,6 +230,8 @@ ENTITY psl_accel_afu IS
 
     -- DDR4 SDRAM Interface
 -- TODO:    dbg_bus                            : OUT   STD_LOGIC_VECTOR(511 DOWNTO 0);          -- only for DDR4_USED=TRUE-- only for SIM!=TRUE
+    c0_sys_clk_p                       : IN    STD_LOGIC;                               -- only for DDR4_USED=TRUE-- only for SIM!=TRUE
+    c0_sys_clk_n                       : IN    STD_LOGIC;                               -- only for DDR4_USED=TRUE-- only for SIM!=TRUE
     c0_ddr4_adr                        : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);           -- only for DDR4_USED=TRUE-- only for SIM!=TRUE
     c0_ddr4_ba                         : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);            -- only for DDR4_USED=TRUE-- only for SIM!=TRUE
     c0_ddr4_cke                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            -- only for DDR4_USED=TRUE-- only for SIM!=TRUE
@@ -262,8 +249,6 @@ ENTITY psl_accel_afu IS
 -- TODO:    c0_ddr4_ten                        : OUT   STD_LOGIC;                               -- only for DDR4_USED=TRUE-- only for SIM!=TRUE
 
     -- Clock inputs for SDRAM
-    c0_sys_clk_p                       : IN    STD_LOGIC;                               -- only for DDRI_USED=TRUE-- only for SIM!=TRUE
-    c0_sys_clk_n                       : IN    STD_LOGIC;                               -- only for DDRI_USED=TRUE-- only for SIM!=TRUE
     refclk200_p                        : IN    STD_LOGIC;                               -- only for DDRI_USED=TRUE-- only for SIM!=TRUE
     refclk200_n                        : IN    STD_LOGIC;                               -- only for DDRI_USED=TRUE-- only for SIM!=TRUE
 
