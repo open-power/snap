@@ -301,6 +301,8 @@ static table2_t table2[] = {
         { /* .name = */ "Bruno", /* .animal = */ "Buffy"    },
 };
 
+static table3_t table3[TABLE1_SIZE * TABLE2_SIZE]; /* worst case size */
+
 int main(void)
 {
 	snap_membus_t din_gmem[2048];    /* content is here */
@@ -309,8 +311,24 @@ int main(void)
 	action_input_reg Action_Input;
 	action_output_reg Action_Output;
 
-	memcpy((uint8_t *)din_gmem,                  table1, sizeof(table1));
-	memcpy((uint8_t *)din_gmem + sizeof(table1), table2, sizeof(table2));
+	Action_Input.Control.action = 0x22;
+
+	Action_Input.Data.t1.type = HOST_DRAM;
+	Action_Input.Data.t1.address = (unsigned long)(uint8_t *)din_gmem;
+	Action_Input.Data.t1.size = sizeof(table1);
+
+	Action_Input.Data.t2.type = HOST_DRAM;
+	Action_Input.Data.t2.address = (unsigned long)(uint8_t *)din_gmem +
+		sizeof(table1);
+	Action_Input.Data.t2.size = sizeof(table2);
+
+	Action_Input.Data.t3.type = HOST_DRAM;
+	Action_Input.Data.t3.address = (unsigned long)(uint8_t *)din_gmem +
+		sizeof(table1) + sizeof(table2);
+	Action_Input.Data.t3.size = sizeof(table3);
+
+	memcpy((uint8_t *)dout_gmem,                  table1, sizeof(table1));
+	memcpy((uint8_t *)dout_gmem + sizeof(table1), table2, sizeof(table2));
 
 	cout << "HOSTMEMORY INPUT" << endl;
 	for (unsigned int i = 0; i < 2048; i++)
