@@ -111,16 +111,11 @@ static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
 {
 	unsigned int i, j;
 
-	fprintf(stderr, "TABLE1 %d elements @ %p\n", t1_used, mem);
-
-	/* extract data into target table1, or FIFO maybe? */
 	j = 0;
 	for (i = 0; i < t1_used; i++) {
 		/* copy the string ... */
 		copy_hashkey(mem[j], t1[i].name);
 		t1[i].age = mem[j + 1](31, 0);
-
-		fprintf(stderr, "  %d name: %s age: %d\n", i, t1[i].name, t1[i].age);
 		j += 2;
 	}
 }
@@ -130,12 +125,8 @@ static void read_table2(snap_membus_t *mem, table2_t t2[TABLE2_SIZE],
 {
 	unsigned int i, j;
 
-	fprintf(stderr, "TABLE2 %d elements\n", t2_used);
-
-	/* extract data into target table2, or FIFO maybe? */
 	j = 0;
 	for (i = 0; i < t2_used; i++) {
-		printf("  reading table2 entry %d\n", i);
 		copy_hashkey(mem[j],     t2[i].name);
 		copy_hashkey(mem[j + 1], t2[i].animal);
 		j += 2;
