@@ -62,8 +62,8 @@ typedef struct table3_s {
         unsigned char reserved[60]; /* 60 bytes */
 } table3_t;
 
-#define TABLE1_SIZE    64                          /* build multihash from this */
-#define TABLE2_SIZE    128                         /* combine with table1 */
+#define TABLE1_SIZE    32                          /* build multihash from this */
+#define TABLE2_SIZE    32                          /* combine with table1 */
 #define TABLE3_SIZE    (TABLE1_SIZE * TABLE2_SIZE) /* worst case */
 #define HT_SIZE        (TABLE1_SIZE * 4)           /* size of hashtable */
 #define HT_MULTI       TABLE1_SIZE                 /* multihash */
