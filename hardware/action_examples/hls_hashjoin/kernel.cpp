@@ -158,6 +158,8 @@ static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
 	snap_4KiB_t buf;
 
 	snap_4KiB_init(&buf, mem);
+
+ read_table1_loop:
 	for (i = 0; i < t1_used; i++) {
 		snap_membus_t b[2];
 
@@ -176,6 +178,8 @@ static void read_table2(snap_membus_t *mem, table2_t t2[TABLE2_SIZE],
 	snap_4KiB_t buf;
 
 	snap_4KiB_init(&buf, mem);
+
+ read_table2_loop:
 	for (i = 0; i < t2_used; i++) {
 		snap_membus_t b[2];
 
