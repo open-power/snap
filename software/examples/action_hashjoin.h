@@ -22,8 +22,8 @@
 
 #define HASHJOIN_ACTION_TYPE 0x0022
 
-#define TABLE1_SIZE 256
-#define TABLE2_SIZE 512
+#define TABLE1_SIZE 32
+#define TABLE2_SIZE 32
 #define TABLE3_SIZE (TABLE1_SIZE * TABLE2_SIZE)
 #define HT_SIZE (TABLE1_SIZE * 16) /* size of hashtable */
 #define HT_MULTI TABLE1_SIZE /* multihash entries depends on table1 */
