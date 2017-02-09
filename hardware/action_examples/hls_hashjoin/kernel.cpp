@@ -113,7 +113,6 @@ static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
 
 	j = 0;
 	for (i = 0; i < t1_used; i++) {
-		/* copy the string ... */
 		copy_hashkey(mem[j], t1[i].name);
 		t1[i].age = mem[j + 1](31, 0);
 		j += 2;
