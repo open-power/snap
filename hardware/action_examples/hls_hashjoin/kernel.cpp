@@ -31,6 +31,9 @@ static table3_t __table3[TABLE1_SIZE * TABLE2_SIZE]; /* worst case size */
 #define TABLE1_BYTES         (sizeof(table1_t) * TABLE1_SIZE)
 #define TABLE2_BYTES         (sizeof(table2_t) * TABLE2_SIZE)
 
+#define TABLE1_IN_4KiB       (4096 / sizeof(table1_t))
+#define TABLE2_IN_4KiB       (4096 / sizeof(table2_t))
+
 #define TABLE1_MEMBUS_WORDS  (TABLE1_BYTES / sizeof(snap_membus_t))
 #define TABLE2_MEMBUS_WORDS  (TABLE2_BYTES / sizeof(snap_membus_t))
 
@@ -112,33 +115,75 @@ static snap_membus_t hashkey_to_mbus(hashkey_t key)
 	return res;
 }
 
+/*
+ * Instead of reading each snap_membus_t line individually, we try to
+ * read always a 4KiB block and return the line from the internal buffer.
+ * if the buffer is empty, we read the following 4KiB block from the bus
+ * in a burst.
+ *
+ * FIXME No underrun or access out of bounds protection.
+ */
+#define SNAP_4KiB_WORDS (4096 / sizeof(snap_membus_t))
+
+typedef struct snap_4KiB_t {
+	snap_membus_t buf[SNAP_4KiB_WORDS];
+	snap_membus_t *mem;
+	unsigned int m_idx;
+	unsigned int b_idx;
+} snap_4KiB_t;
+
+static void snap_4KiB_init(snap_4KiB_t *buf, snap_membus_t *mem)
+{
+	buf->mem = mem;
+	buf->m_idx = 0;
+	buf->b_idx = SNAP_4KiB_WORDS;
+}
+
+static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
+{
+	/* buffer is empty, read in the next 4KiB */
+	if (buf->b_idx == SNAP_4KiB_WORDS) {
+		memcpy(buf->buf, buf->mem + buf->m_idx, sizeof(buf->buf));
+		buf->m_idx += SNAP_4KiB_WORDS;
+		buf->b_idx = 0; /* buffer is full again */
+	}
+	*line = buf->buf[buf->b_idx];
+	buf->b_idx++;
+}
+
 static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
 			uint32_t t1_used)
 {
-	unsigned int i, j;
-	snap_membus_t buf[TABLE1_MEMBUS_WORDS];
+	unsigned int i, k;
+	snap_4KiB_t buf;
 
-	memcpy(buf, mem, TABLE1_BYTES);
-	j = 0;
+	snap_4KiB_init(&buf, mem);
 	for (i = 0; i < t1_used; i++) {
-		copy_hashkey(buf[j], t1[i].name);
-		t1[i].age = buf[j + 1](31, 0);
-		j += 2;
+		snap_membus_t b[2];
+
+		for (k = 0; k < ARRAY_SIZE(b); k++)
+			snap_4KiB_get(&buf, &b[k]);
+
+		copy_hashkey(b[0], t1[i].name);
+		t1[i].age = b[1](31, 0);
 	}
 }
 
 static void read_table2(snap_membus_t *mem, table2_t t2[TABLE2_SIZE],
 			uint32_t t2_used)
 {
-	unsigned int i, j;
-	snap_membus_t buf[TABLE2_MEMBUS_WORDS];
+	unsigned int i, k;
+	snap_4KiB_t buf;
 
-	memcpy(buf, mem, TABLE2_BYTES);
-	j = 0;
+	snap_4KiB_init(&buf, mem);
 	for (i = 0; i < t2_used; i++) {
-		copy_hashkey(buf[j],     t2[i].name);
-		copy_hashkey(buf[j + 1], t2[i].animal);
-		j += 2;
+		snap_membus_t b[2];
+
+		for (k = 0; k < ARRAY_SIZE(b); k++)
+			snap_4KiB_get(&buf, &b[k]);
+
+		copy_hashkey(b[0], t2[i].name);
+		copy_hashkey(b[1], t2[i].animal);
 	}
 }
 
