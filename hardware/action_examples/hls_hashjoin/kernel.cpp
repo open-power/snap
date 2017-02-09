@@ -28,8 +28,14 @@ static table2_t __table2[TABLE2_SIZE];
 static unsigned int __table3_idx = 0;
 static table3_t __table3[TABLE1_SIZE * TABLE2_SIZE]; /* worst case size */
 
+#define TABLE1_BYTES         (sizeof(table1_t) * TABLE1_SIZE)
+#define TABLE2_BYTES         (sizeof(table2_t) * TABLE2_SIZE)
+
+#define TABLE1_MEMBUS_WORDS  (TABLE1_BYTES / sizeof(snap_membus_t))
+#define TABLE2_MEMBUS_WORDS  (TABLE2_BYTES / sizeof(snap_membus_t))
+
 #define HASHJOIN_ACTION_TYPE 0x0022
-#define RELEASE_VERSION 0xFEEDA02200000015 //contains Action and Release numbers
+#define RELEASE_VERSION      0xFEEDA02200000015 /* Action/Release numbers */
 
 // ----------------------------------------------------------------------------
 // Known Limitations => Issue #39 & #45
@@ -110,11 +116,13 @@ static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
 			uint32_t t1_used)
 {
 	unsigned int i, j;
+	snap_membus_t buf[TABLE1_MEMBUS_WORDS];
 
+	memcpy(buf, mem, TABLE1_BYTES);
 	j = 0;
 	for (i = 0; i < t1_used; i++) {
-		copy_hashkey(mem[j], t1[i].name);
-		t1[i].age = mem[j + 1](31, 0);
+		copy_hashkey(buf[j], t1[i].name);
+		t1[i].age = buf[j + 1](31, 0);
 		j += 2;
 	}
 }
@@ -123,11 +131,13 @@ static void read_table2(snap_membus_t *mem, table2_t t2[TABLE2_SIZE],
 			uint32_t t2_used)
 {
 	unsigned int i, j;
+	snap_membus_t buf[TABLE2_MEMBUS_WORDS];
 
+	memcpy(buf, mem, TABLE2_BYTES);
 	j = 0;
 	for (i = 0; i < t2_used; i++) {
-		copy_hashkey(mem[j],     t2[i].name);
-		copy_hashkey(mem[j + 1], t2[i].animal);
+		copy_hashkey(buf[j],     t2[i].name);
+		copy_hashkey(buf[j + 1], t2[i].animal);
 		j += 2;
 	}
 }
