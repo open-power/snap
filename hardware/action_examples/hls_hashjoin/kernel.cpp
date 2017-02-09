@@ -126,10 +126,10 @@ static snap_membus_t hashkey_to_mbus(hashkey_t key)
 #define SNAP_4KiB_WORDS (4096 / sizeof(snap_membus_t))
 
 typedef struct snap_4KiB_t {
-	snap_membus_t buf[SNAP_4KiB_WORDS];
-	snap_membus_t *mem;
-	unsigned int m_idx;
-	unsigned int b_idx;
+	snap_membus_t buf[SNAP_4KiB_WORDS]; /* temporary storage buffer */
+	snap_membus_t *mem;                 /* source where data comes from */
+	unsigned int m_idx;                 /* read position for source */
+	unsigned int b_idx;                 /* read position for buffer */
 } snap_4KiB_t;
 
 static void snap_4KiB_init(snap_4KiB_t *buf, snap_membus_t *mem)
