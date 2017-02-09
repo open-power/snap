@@ -154,7 +154,7 @@ static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
 static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
 			uint32_t t1_used)
 {
-	unsigned int i, k;
+	unsigned int i;
 	snap_4KiB_t buf;
 
 	snap_4KiB_init(&buf, mem);
@@ -163,10 +163,10 @@ static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
 	for (i = 0; i < t1_used; i++) {
 		snap_membus_t b[2];
 
-		for (k = 0; k < ARRAY_SIZE(b); k++)
-			snap_4KiB_get(&buf, &b[k]);
-
+		snap_4KiB_get(&buf, &b[0]);
 		copy_hashkey(b[0], t1[i].name);
+
+		snap_4KiB_get(&buf, &b[1]);
 		t1[i].age = b[1](31, 0);
 	}
 }
@@ -174,7 +174,7 @@ static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
 static void read_table2(snap_membus_t *mem, table2_t t2[TABLE2_SIZE],
 			uint32_t t2_used)
 {
-	unsigned int i, k;
+	unsigned int i;
 	snap_4KiB_t buf;
 
 	snap_4KiB_init(&buf, mem);
@@ -183,10 +183,10 @@ static void read_table2(snap_membus_t *mem, table2_t t2[TABLE2_SIZE],
 	for (i = 0; i < t2_used; i++) {
 		snap_membus_t b[2];
 
-		for (k = 0; k < ARRAY_SIZE(b); k++)
-			snap_4KiB_get(&buf, &b[k]);
-
+		snap_4KiB_get(&buf, &b[0]);
 		copy_hashkey(b[0], t2[i].name);
+
+		snap_4KiB_get(&buf, &b[1]);
 		copy_hashkey(b[1], t2[i].animal);
 	}
 }
@@ -200,6 +200,7 @@ static void write_table3(snap_membus_t *mem, table3_t t3[TABLE3_SIZE],
 
 	/* extract data into target table3, or FIFO maybe? */
 	j = 0;
+ write_table3_loop:
 	for (i = 0; i < t3_used; i++) {
 		printf("writing table3 entry %d\n", i);
 		mem[j]     = hashkey_to_mbus(t3[i].name);
