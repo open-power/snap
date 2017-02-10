@@ -124,7 +124,7 @@ static inline void table3_dump(table3_t *table3, unsigned int table3_idx)
 		printf("  { .name = \"%s\", .animal = \"%s\", .age=%d }\n",
 		       t3->name, t3->animal, t3->age);
 	}
-	printf("};\n");
+	printf("}; /* table3_idx=%d\n", table3_idx);
 }
 
 static inline void set_checkpoint(struct hashjoin_job *hj, uint64_t cp)
