@@ -100,7 +100,9 @@ static void write_results_in_HJ_regs(action_output_reg *Action_Output,
  */
 static void copy_hashkey(snap_membus_t mem, hashkey_t key)
 {
+ loop_copy_hashkey:
 	for (unsigned int k = 0; k < sizeof(hashkey_t); k++)
+#pragma UNROLL
 		key[k] = mem(8 * (k+1) - 1,  8 * k);
 }
 
@@ -108,7 +110,9 @@ static snap_membus_t hashkey_to_mbus(hashkey_t key)
 {
 	snap_membus_t res = 0, mem;
 
+ loop_hashkey_to_mbus:
 	for (unsigned int k = 0; k < sizeof(hashkey_t); k++) {
+#pragma UNROLL
 		mem(8 * (k+1) - 1,  8 * k) = key[k];
 		res |= mem;
 	}
