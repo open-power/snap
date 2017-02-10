@@ -20,11 +20,13 @@ set root_dir     $::env(DONUT_HARDWARE_ROOT)
 set fpga_part    $::env(FPGACHIP)
 set dimm_dir     $::env(DIMMTEST)
 set ip_dir       $root_dir/ip
+set ddri_used    $::env(DDRI_USED)
 set ddr3_used    $::env(DDR3_USED)
+set ddr4_used    $::env(DDR4_USED)
 set bram_used    $::env(BRAM_USED)
 set axi_id_width $::env(NUM_OF_ACTIONS)
 
-# Create a new Vivado IP Project
+## Create a new Vivado IP Project
 exec rm -rf $ip_dir
 create_project managed_ip_project $ip_dir/managed_ip_project -part $fpga_part -ip
 
@@ -62,11 +64,19 @@ export_ip_user_files -of_objects             [get_files $ip_dir/fifo_513x512/fif
 export_simulation -of_objects [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
 
 
-#choose type of RAm that will be connected to the DDR3 AXI Interface
-if { $ddr3_used == TRUE } {
+#choose type of RAM that will be connected to the DDR AXI Interface
+# BRAM_USED=TRUE 500KB BRAM
+# DDR3_USED=TRUE 8GB KU3     DDR3 RAM
+# DDR4_USED=TRUE 8GB FlashGT DDR4 RAM
+if { $ddri_used == TRUE } {
   #create clock converter for axi_card_mem
   create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir
-  set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH $axi_id_width] [get_ips axi_clock_converter]
+
+  if { $ddr3_used == TRUE } {
+    set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH $axi_id_width] [get_ips axi_clock_converter]
+  } else {
+    set_property -dict [list CONFIG.ADDR_WIDTH {32} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH $axi_id_width] [get_ips axi_clock_converter]
+  }
   set_property generate_synth_checkpoint false [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci]
   generate_target {instantiation_template}     [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci]
   generate_target all                          [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci]
@@ -82,7 +92,7 @@ if { $ddr3_used == TRUE } {
     generate_target all                          [get_files $ip_dir/block_RAM/block_RAM.xci]
     export_ip_user_files -of_objects             [get_files $ip_dir/block_RAM/block_RAM.xci] -no_script -force -quiet
     export_simulation -of_objects [get_files $ip_dir/block_RAM/block_RAM.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
-  } else {
+  } elseif { $ddr3_used == TRUE } {
     #DDR3 create ddr3sdramm with ECC
     create_ip -name ddr3 -vendor xilinx.com -library ip -version 1.* -module_name ddr3sdram -dir $ip_dir
     set_property -dict [list CONFIG.C0.DDR3_TimePeriod {1250} CONFIG.C0.DDR3_InputClockPeriod {2500} CONFIG.C0.DDR3_MemoryType {SODIMMs} CONFIG.C0.DDR3_MemoryPart {CUSTOM_MT18KSF1G72HZ-1G6} CONFIG.C0.DDR3_AxiSelection {true} CONFIG.C0.DDR3_AxiDataWidth {512} CONFIG.C0.DDR3_CustomParts $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/ip-2015.3/custom_parts.csv CONFIG.C0.DDR3_isCustom {true} CONFIG.Simulation_Mode {Unisim} CONFIG.Internal_Vref {false} CONFIG.C0.DDR3_DataWidth {72} CONFIG.C0.DDR3_DataMask {false} CONFIG.C0.DDR3_Ecc {true} CONFIG.C0.DDR3_CasLatency {11} CONFIG.C0.DDR3_CasWriteLatency {8} CONFIG.C0.DDR3_AxiAddressWidth {33} CONFIG.C0.DDR3_AxiIDWidth $axi_id_width] [get_ips ddr3sdram]
@@ -91,6 +101,19 @@ if { $ddr3_used == TRUE } {
     generate_target all                          [get_files $ip_dir/ddr3sdram/ddr3sdram.xci]
     export_ip_user_files -of_objects             [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -no_script -force -quiet
     export_simulation -of_objects [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
+  } elseif { $ddr4_used == TRUE } {
+    #DDR4 create ddr4sdramm with ECC
+    create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.1 -module_name ddr4sdram -dir $ip_dir
+    set_property -dict [list CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-083E} CONFIG.C0.DDR4_TimePeriod {938} CONFIG.C0.DDR4_InputClockPeriod {3752} CONFIG.C0.DDR4_CLKOUT0_DIVIDE {4} CONFIG.C0.DDR4_CasLatency {15} CONFIG.C0.DDR4_CasWriteLatency {11} CONFIG.C0.DDR4_DataWidth {72} CONFIG.C0.DDR4_AxiSelection {true} CONFIG.C0.DDR4_CustomParts $dimm_dir/MT40A512M16HA-083E.csv CONFIG.C0.DDR4_isCustom {true} CONFIG.Simulation_Mode {Unisim} CONFIG.C0.DDR4_DataMask {NO_DM_NO_DBI} CONFIG.C0.DDR4_Ecc {true} CONFIG.C0.DDR4_AxiDataWidth {512} CONFIG.C0.DDR4_AxiAddressWidth {32} CONFIG.C0.DDR4_AxiIDWidth $axi_id_width CONFIG.C0.BANK_GROUP_WIDTH {1}] [get_ips ddr4sdram]
+    set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
+    generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
+    generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
+    export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -no_script -force -quiet
+    export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
+#    open_example_project -force -dir $ip_dir     [get_ips ddr4sdram]
+  } else {
+      puts "no DDR RAM was specified"
+      exit
   }
 }
 close_project
