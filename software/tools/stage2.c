@@ -69,7 +69,6 @@
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
-static int context_offset = 0;
 
 static uint64_t get_usec(void)
 {
@@ -132,7 +131,6 @@ static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
 {
 	int rc;
 
-	addr += context_offset * ACTION_CONTEXT_OFFSET;
 	if (verbose_level > 1)
 		printf("MMIO Write %08x ----> %08x\n", data, addr);
 	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
@@ -146,7 +144,6 @@ static uint32_t action_read(struct dnut_card* h, uint32_t addr)
 	int rc;
 	uint32_t data;
 
-	addr += context_offset * ACTION_CONTEXT_OFFSET;
 	rc = dnut_mmio_read32(h, (uint64_t)addr, &data);
 	if (0 != rc)
 		printf("Read MMIO 32 Err\n");
@@ -245,16 +242,14 @@ static int memcpy_test(struct dnut_card* dnc,
 			int action,
 			int blocks_4k,	/* Number of DEFAULT_MEMCPY_BLOCK */
 			int blocks_64,	/* Number of 64 Bytes Blocks */
-			int input_o,
-			int output_o,
 			int align,
 			int iter,
 			uint64_t card_ram_base,
 			int timeout_ms)		/* Timeout to wait in ms */
 {
 	int i, rc;
-	void *src_a = NULL, *src = NULL;
-	void *dest_a = NULL, *dest = NULL;
+	void *src = NULL;
+	void *dest = NULL;
 	void *ddr3;
 	int blocks;
 	unsigned int memsize;
@@ -301,7 +296,6 @@ static int memcpy_test(struct dnut_card* dnc,
 		perror("FAILED: posix_memalign source");
 		return 1;
 	}
-	src = src_a + input_o;	/* Add offset */
 	if (verbose_level > 0)
 		printf("  Src:  %p Size: 0x%x (%d/%d) Align: %d offset: %d\n",
 			src, memsize, blocks_4k, blocks_64, align, output_o);
@@ -314,7 +308,6 @@ static int memcpy_test(struct dnut_card* dnc,
 			free(src_a);
 		return 1;
 	}
-	dest  = dest_a + output_o;
 	if (verbose_level > 0)
 		printf("  Dest: %p Size: 0x%x Align: %d offset: %d timeout: %d msec\n",
 			dest, memsize, align, output_o, timeout_ms);
@@ -431,8 +424,6 @@ static void usage(const char *prog)
 		"    -B, --size64         Number of 64 Bytes Blocks for Memcopy (default 0)\n"
 		"    -N, --iter           Memcpy Iterations (default 1)\n"
 		"    -A, --align          Memcpy alignemend (default 4 KB)\n"
-		"    -I, --ioff           Memcpy input offset (default 0)\n"
-		"    -O, --ooff           Memcpy output offset (default 0)\n"
 		"    -D, --dest           Memcpy Card RAM base Address (default 0)\n"
 		"\tTool to check Stage 1 FPGA or Stage 2 FPGA Mode (-a) for donut bringup.\n"
 		"\t-a 1: Count down mode (Stage 1)\n"
@@ -460,7 +451,6 @@ int main(int argc, char *argv[])
 	int rc = 1;
 	int memcpy_iter = DEFAULT_MEMCPY_ITER;
 	int memcpy_align = DEFAULT_MEMCPY_BLOCK;
-	int input_o = 0, output_o = 0;
 	uint64_t card_ram_base = DDR_MEM_BASE_ADDR;	/* Base of Card DDR or Block Ram */
 	int timeout_ms = ACTION_WAIT_TIME;
 
@@ -480,14 +470,11 @@ int main(int argc, char *argv[])
 			{ "size64",   required_argument, NULL, 'B' },
 			{ "iter",     required_argument, NULL, 'N' },
 			{ "align",    required_argument, NULL, 'A' },
-			{ "ioff",     required_argument, NULL, 'I' },
-			{ "ooff",     required_argument, NULL, 'O' },
 			{ "dest",     required_argument, NULL, 'D' },
-			{ "context",  required_argument, NULL, 'z' },
 			{ "timeout",  required_argument, NULL, 't' },
 			{ 0,          no_argument,       NULL, 0   },
 		};
-		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:B:N:A:I:O:D:z:t:qvVh",
+		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:B:N:A:D:t:qvVh",
 			long_options, &option_index);
 		if (cmd == -1)  /* all params processed ? */
 			break;
@@ -531,21 +518,8 @@ int main(int argc, char *argv[])
 		case 'A':	/* align */
 			memcpy_align = strtol(optarg, (char **)NULL, 0);
 			break;
-		case 'I':	/* iffo */
-			input_o = strtol(optarg, (char **)NULL, 0);
-			printf("This option is under Work !\n");
-			input_o = 0;
-			break;
-		case 'O':	/* offo */
-			output_o = strtol(optarg, (char **)NULL, 0);
-			printf("This option is under Work !\n");
-			output_o = 0;
-			break;
 		case 'D':	/* dest */
 			card_ram_base = strtol(optarg, (char **)NULL, 0);
-			break;
-		case 'z':	/* context */
-			context_offset = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 't':
 			timeout_ms = strtol(optarg, (char **)NULL, 0) * 1000; /* Make msec */
@@ -591,7 +565,7 @@ int main(int argc, char *argv[])
 	case 4:
 	case 5:
 	case 6:
-		rc = memcpy_test(dn, action, num_4k, num_64, input_o, output_o,
+		rc = memcpy_test(dn, action, num_4k, num_64,
 				memcpy_align, memcpy_iter, card_ram_base,
 				timeout_ms);
 		break;
