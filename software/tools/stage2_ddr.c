@@ -104,11 +104,21 @@ static uint64_t get_usec(void)
         return t.tv_sec * 1000000 + t.tv_usec;
 }
 
-static void print_time(uint64_t elapsed)
+static void print_time(uint64_t elapsed, uint64_t size)
 {
-	if (elapsed > 10000)
-		VERBOSE2(" T = %d msec " ,(int)elapsed/1000);
-	else	VERBOSE2(" T = %d usec ", (int)elapsed);
+	int t;
+	float fsize = (float)size/(1024*1024);
+	float ft;
+
+	if (elapsed > 10000) {
+		t = (int)elapsed/1000;
+		ft = (1000 / (float)t) * fsize;
+		VERBOSE2(" in %d msec (%f MB/sec) " , t, ft);
+	} else {
+		t = (int)elapsed;
+		ft = (1000000 / (float)t) * fsize;
+		VERBOSE2(" in %d usec (%f MB/sec) ", t, ft);
+	}
 }
 
 /*
@@ -404,93 +414,93 @@ static void free_mem(void *buffer)
  */
 static int ram_clear(struct dnut_card* dnc,
 			void *src,
-			unsigned int mem_size,		/* Size for Host Buffer */
-			uint64_t ram_start_addr,	/* Start of Card Mem */
-			uint64_t ram_end_addr,		/* End of Card Mem */
-			int timeout_ms)			/* Timeout to wait in ms */
+			unsigned int mem_size,	/* Size for Host Buffer */
+			uint64_t start_addr,	/* Start of Card Mem */
+			uint64_t end_addr,	/* End of Card Mem */
+			int timeout_ms)		/* Timeout to wait in ms */
 {
-	int rc, ram_blocks, block;
-	uint64_t card_ram_addr;
+	int rc, blocks, block;
+	uint64_t card_addr;
 	uint64_t us_elappsed, t_sum;
 
 	rc = -1;
 	t_sum = 0;
-	ram_blocks = (ram_end_addr - ram_start_addr) / mem_size;
+	blocks = (end_addr - start_addr) / mem_size;
 	VERBOSE2("\n    Write FPGA: 0x%llx ... 0x%llx (%d Blocks @ 0x%x Bytes) ",
-		(long long)ram_start_addr,
-		(long long)ram_end_addr,
-		ram_blocks, mem_size);
+		(long long)start_addr,
+		(long long)end_addr,
+		blocks, mem_size);
 
 	memset_pat(src, 0, mem_size);
-	card_ram_addr = ram_start_addr;
-	for (block = 0; block < ram_blocks; block++) {
+	card_addr = start_addr;
+	for (block = 0; block < blocks; block++) {
 		/* Copy Data from Host to Card */
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
-			(void *)card_ram_addr, src, mem_size);
+			(void *)card_addr, src, mem_size);
 		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
 			goto __ram_zero_exit;
-		card_ram_addr += mem_size;
+		card_addr += mem_size;
 		t_sum += us_elappsed;
 	}
 	rc = 0;
 __ram_zero_exit:
-	print_time(t_sum);
+	print_time(t_sum, (end_addr - start_addr));
 	return rc;
 }
 
 static int ram_test_ad(struct dnut_card* dnc,
 			void *src,
 			void *dest,
-			unsigned int mem_size,		/* Size for Host Buffer */
-			uint64_t ram_start_addr,	/* Start of Card Mem */
-			uint64_t ram_end_addr,		/* End of Card Mem */
-			int timeout_ms,			/* Timeout to wait in ms */
+			unsigned int mem_size,	/* Size for Host Buffer */
+			uint64_t start_addr,	/* Start of Card Mem */
+			uint64_t end_addr,	/* End of Card Mem */
+			int timeout_ms,		/* Timeout to wait in ms */
 			bool inverse)
 {
 	int rc = -1;
-	int ram_blocks, block;
-	uint64_t card_ram_addr;
+	int blocks, block;
+	uint64_t card_addr;
 	uint64_t us_elappsed, t_sum;
 
 	t_sum = 0;
-	ram_blocks = (ram_end_addr - ram_start_addr) / mem_size;
+	blocks = (end_addr - start_addr) / mem_size;
 	VERBOSE2("\n    Write FPGA: 0x%llx ... 0x%llx (%d Blocks @ 0x%x Bytes)",
-		(long long)ram_start_addr,
-		(long long)ram_end_addr,
-		ram_blocks, mem_size);
+		(long long)start_addr,
+		(long long)end_addr,
+		blocks, mem_size);
 	fflush(stdout);
 
-	card_ram_addr = ram_start_addr;
-	for (block = 0; block < ram_blocks; block++) {
+	card_addr = start_addr;
+	for (block = 0; block < blocks; block++) {
 		if (inverse)
-			memset_ad(src, ~card_ram_addr, mem_size);
-		else	memset_ad(src, card_ram_addr, mem_size);
+			memset_ad(src, ~card_addr, mem_size);
+		else	memset_ad(src, card_addr, mem_size);
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
-			(void *)card_ram_addr, src, mem_size);
+			(void *)card_addr, src, mem_size);
 		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
 			goto __ram_test_ad_exit;
-		card_ram_addr += mem_size;
+		card_addr += mem_size;
 		t_sum += us_elappsed;
 	}
-	print_time(t_sum);
+	print_time(t_sum, (end_addr - start_addr));
 
 	VERBOSE2("\n    Read  FPGA: 0x%llx ... 0x%llx (%d Blocks @ 0x%x Bytes)",
-		(long long)ram_start_addr,
-		(long long)ram_end_addr,
-		ram_blocks, mem_size);
+		(long long)start_addr,
+		(long long)end_addr,
+		blocks, mem_size);
 	fflush(stdout);
 	t_sum = 0;
-	card_ram_addr = ram_start_addr;
-	for (block = 0; block < ram_blocks; block++) {
+	card_addr = start_addr;
+	for (block = 0; block < blocks; block++) {
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
-			dest, (void *)card_ram_addr, mem_size);
+			dest, (void *)card_addr, mem_size);
 		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
 			goto __ram_test_ad_exit;
 		t_sum += us_elappsed;
 		if (inverse)
-			rc = memcmp_pat(dest, ~card_ram_addr, mem_size);
-		else	rc = memcmp_pat(dest, card_ram_addr, mem_size);
-		card_ram_addr += mem_size;
+			rc = memcmp_pat(dest, ~card_addr, mem_size);
+		else	rc = memcmp_pat(dest, card_addr, mem_size);
+		card_addr += mem_size;
 		if (rc) {
 			dump_regs(dnc);
 			goto __ram_test_ad_exit;
@@ -498,59 +508,59 @@ static int ram_test_ad(struct dnut_card* dnc,
 	}
 	rc = 0;
 __ram_test_ad_exit:
-	print_time(t_sum);
+	print_time(t_sum, (end_addr - start_addr));
 	return rc;
 }
 
 static int ram_test_rnd1(struct dnut_card* dnc,
 			void *src,
 			void *dest,
-			unsigned int mem_size,		/* Size for Host Buffer */
-			uint64_t ram_start_addr,	/* Start of Card Mem */
-			uint64_t ram_end_addr,		/* End of Card Mem */
-			int timeout_ms)			/* Timeout to wait in ms */
+			unsigned int mem_size,	/* Size for Host Buffer */
+			uint64_t start_addr,	/* Start of Card Mem */
+			uint64_t end_addr,	/* End of Card Mem */
+			int timeout_ms)		/* Timeout to wait in ms */
 {
-	int ram_blocks, block;
-	uint64_t card_ram_addr;
+	int blocks, block;
+	uint64_t card_addr;
 	uint64_t us_elappsed, t_sum = 0;
 	int rc = -1;
 
-	ram_blocks = (ram_end_addr - ram_start_addr) / mem_size;
+	blocks = (end_addr - start_addr) / mem_size;
 	VERBOSE2("\n    Write FPGA: 0x%llx ... 0x%llx (%d Blocks @ 0x%x Bytes)",
-		(long long)ram_start_addr,
-		(long long)ram_end_addr,
-		ram_blocks, mem_size);
+		(long long)start_addr,
+		(long long)end_addr,
+		blocks, mem_size);
 	fflush(stdout);
 
 	memset_rnd(src, mem_size);
-	card_ram_addr = ram_start_addr;
+	card_addr = start_addr;
 	/* Fill DDR3 Memory */
-	for (block = 0; block < ram_blocks; block++) {
+	for (block = 0; block < blocks; block++) {
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
-			(void *)card_ram_addr, src, mem_size);
+			(void *)card_addr, src, mem_size);
 		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
 			goto __ram_test_rnd1_exit;
 		t_sum += us_elappsed;
-		card_ram_addr += mem_size;
+		card_addr += mem_size;
 	}
-	print_time(t_sum);
+	print_time(t_sum, (end_addr - start_addr));
 
 	VERBOSE2("\n    Read  FPGA: 0x%llx ... 0x%llx (%d Blocks @ 0x%x Bytes)",
-		(long long)ram_start_addr,
-		(long long)ram_end_addr,
-		ram_blocks, mem_size);
+		(long long)start_addr,
+		(long long)end_addr,
+		blocks, mem_size);
 	fflush(stdout);
 	t_sum = 0;
-	card_ram_addr = ram_start_addr;
+	card_addr = start_addr;
 	/* Read Memory */
-	for (block = 0; block < ram_blocks; block++) {
+	for (block = 0; block < blocks; block++) {
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
-			dest, (void *)card_ram_addr, mem_size);
+			dest, (void *)card_addr, mem_size);
 		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
 			goto __ram_test_rnd1_exit;
 		t_sum += us_elappsed;
-		rc = memcmp2(dest, src, card_ram_addr, mem_size);
-		card_ram_addr += mem_size;
+		rc = memcmp2(dest, src, card_addr, mem_size);
+		card_addr += mem_size;
 		if (rc) {
 			dump_regs(dnc);
 			goto __ram_test_rnd1_exit;
@@ -558,7 +568,7 @@ static int ram_test_rnd1(struct dnut_card* dnc,
 	}
 	rc = 0;
 __ram_test_rnd1_exit:
-	print_time(t_sum);
+	print_time(t_sum, (end_addr - start_addr));
 	return rc;
 }
 
@@ -566,45 +576,45 @@ static int ram_test_rnd2(struct dnut_card* dnc,
 			void *src,
 			void *dest,
 			unsigned int mem_size,		/* Size for Host Buffer */
-			uint64_t ram_start_addr,	/* Start of Card Mem */
-			uint64_t ram_end_addr,		/* End of Card Mem */
+			uint64_t start_addr,	/* Start of Card Mem */
+			uint64_t end_addr,		/* End of Card Mem */
 			int timeout_ms)			/* Timeout to wait in ms */
 {
-	int ram_blocks, block;
-	uint64_t card_ram_addr;
+	int blocks, block;
+	uint64_t card_addr;
 	uint64_t us_elappsed, t_sum = 0;
 	int rc = -1;
 
-	ram_blocks = (ram_end_addr - ram_start_addr) / mem_size;
+	blocks = (end_addr - start_addr) / mem_size;
 	VERBOSE2("\n    W R   FPGA: 0x%llx ... 0x%llx (%d Blocks @ 0x%x Bytes)",
-		(long long)ram_start_addr,
-		(long long)ram_end_addr,
-		ram_blocks, mem_size);
+		(long long)start_addr,
+		(long long)end_addr,
+		blocks, mem_size);
 	fflush(stdout);
 
 	memset_rnd(src, mem_size);
-	card_ram_addr = ram_start_addr;
-	for (block = 0; block < ram_blocks; block++) {
+	card_addr = start_addr;
+	for (block = 0; block < blocks; block++) {
 		/* Write DDR3 Memory */
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
-			(void *)card_ram_addr, src, mem_size);
+			(void *)card_addr, src, mem_size);
 		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
 			goto __ram_test_rnd2_exit;
 		t_sum += us_elappsed;
 		/* Read DDR3 Memory */
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
-			dest, (void *)card_ram_addr, mem_size);
+			dest, (void *)card_addr, mem_size);
 		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
 			goto __ram_test_rnd2_exit;
 		t_sum += us_elappsed;
-		rc = memcmp2(dest, src, card_ram_addr, mem_size);
+		rc = memcmp2(dest, src, card_addr, mem_size);
 		if (rc)
 			goto __ram_test_rnd2_exit;
-		card_ram_addr += mem_size;
+		card_addr += mem_size;
 	}
 	rc = 0;		/* OK */
 __ram_test_rnd2_exit:
-	print_time(t_sum);
+	print_time(t_sum, 2*(end_addr - start_addr));
 	return rc;
 }
 
@@ -711,12 +721,14 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	VERBOSE1("Test Ram on FPGA Card from 0x%016llx to 0x%016llx",
-		(long long)start_addr, (long long)end_addr);
 	if (0 != check_parms(mem_size, start_addr, end_addr)) {
 		rc = -1;
 		goto __exit;
 	}
+	VERBOSE1("Test Ram on FPGA Card from 0x%016llx to 0x%016llx (%d * 0x%x Bytes) ",
+		(long long)start_addr, (long long)end_addr,
+		(int)((end_addr - start_addr)/(long)mem_size), mem_size);
+
 	src_buf = get_mem(mem_size);
 	if (NULL == src_buf)
 		goto __exit;
