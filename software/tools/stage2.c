@@ -26,6 +26,7 @@
 #include <ctype.h>
 
 #include <libdonut.h>
+#include <donut_tools.h>
 
 #define CACHELINE_BYTES 128
 
@@ -64,12 +65,36 @@
 
 #define	MEGAB		(1024*1024ull)
 #define	GIGAB		(1024 * MEGAB)
-#define DDR_MEM_SIZE	(8 * GIGAB)	/* 8 GB (DDR RAM) */
+#define DDR_MEM_SIZE	(4 * GIGAB)		/* 4 GB (DDR RAM) */
 #define DDR_MEM_BASE_ADDR	0x00000000	/* Start of FPGA Interconnect */
+
+#define VERBOSE0(fmt, ...) do {			\
+		printf(fmt, ## __VA_ARGS__);    \
+} while (0)
+
+#define VERBOSE1(fmt, ...) do {			\
+	if (verbose_level > 0)			\
+		printf(fmt, ## __VA_ARGS__);    \
+} while (0)
+
+#define VERBOSE2(fmt, ...) do {			\
+	if (verbose_level > 1)			\
+		printf(fmt, ## __VA_ARGS__);    \
+} while (0)
+
+
+#define VERBOSE3(fmt, ...) do {			\
+	if (verbose_level > 2)			\
+		printf(fmt, ## __VA_ARGS__);    \
+} while (0)
+
+#define VERBOSE4(fmt, ...) do {			\
+	if (verbose_level > 3)			\
+		printf(fmt, ## __VA_ARGS__);	\
+} while (0)
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
-static int context_offset = 0;
 
 static uint64_t get_usec(void)
 {
@@ -79,40 +104,39 @@ static uint64_t get_usec(void)
         return t.tv_sec * 1000000 + t.tv_usec;
 }
 
-static void hexdump(FILE *fp, const void *buff, unsigned int size)
+static void print_time(uint64_t elapsed, uint64_t size)
 {
-        unsigned int i;
-        const uint8_t *b = (uint8_t *)buff;
-        char ascii[17];
-        char str[2] = { 0x0, };
+	int t;
+	float fsize = (float)size/(1024*1024);
+	float ft;
 
-        if (size == 0)
-                return;
+	if (elapsed > 10000) {
+		t = (int)elapsed/1000;
+		ft = (1000 / (float)t) * fsize;
+		VERBOSE1(" end after %d msec (%0.3f MB/sec)\n" , t, ft);
+	} else {
+		t = (int)elapsed;
+		ft = (1000000 / (float)t) * fsize;
+		VERBOSE1(" end after %d usec (%0.3f MB/sec)\n", t, ft);
+	}
+}
 
-        for (i = 0; i < size; i++) {
-                if ((i & 0x0f) == 0x00) {
-                        fprintf(fp, " %08x:", i);
-                        memset(ascii, 0, sizeof(ascii));
-                }
-                fprintf(fp, " %02x", b[i]);
-                str[0] = isalnum(b[i]) ? b[i] : '.';
-                str[1] = '\0';
-                strncat(ascii, str, sizeof(ascii) - 1);
+static void *alloc_mem(int align, int size)
+{
+	void *a;
 
-                if ((i & 0x0f) == 0x0f)
-                        fprintf(fp, " | %s\n", ascii);
-        }
-        /* print trailing up to a 16 byte boundary. */
-        for (; i < ((size + 0xf) & ~0xf); i++) {
-                fprintf(fp, "   ");
-                str[0] = ' ';
-                str[1] = '\0';
-                strncat(ascii, str, sizeof(ascii) - 1);
+	if (posix_memalign((void **)&a, align, size ) != 0) {
+		perror("FAILED: posix_memalign");
+		return NULL;
+	}
+	return a;
+}
 
-                if ((i & 0x0f) == 0x0f)
-                        fprintf(fp, " | %s\n", ascii);
-        }
-        fprintf(fp, "\n");
+static void free_mem(void *a)
+{
+	VERBOSE2("Free Mem %p\n", a);
+	if (a)
+		free(a);
 }
 
 static void memset2(void *a, uint64_t pattern, int size)
@@ -132,12 +156,10 @@ static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
 {
 	int rc;
 
-	addr += context_offset * ACTION_CONTEXT_OFFSET;
-	if (verbose_level > 1)
-		printf("MMIO Write %08x ----> %08x\n", data, addr);
+	VERBOSE3("MMIO Write %08x ----> %08x\n", data, addr);
 	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
-		printf("Write MMIO 32 Err\n");
+		VERBOSE0("Write MMIO 32 Err\n");
 	return;
 }
 
@@ -146,12 +168,10 @@ static uint32_t action_read(struct dnut_card* h, uint32_t addr)
 	int rc;
 	uint32_t data;
 
-	addr += context_offset * ACTION_CONTEXT_OFFSET;
 	rc = dnut_mmio_read32(h, (uint64_t)addr, &data);
 	if (0 != rc)
-		printf("Read MMIO 32 Err\n");
-	if (verbose_level > 1)
-		printf("MMIO Read  %08x ----> %08x\n", addr, data);
+		VERBOSE0("Read MMIO 32 Err\n");
+	VERBOSE3("MMIO Read  %08x ----> %08x\n", addr, data);
 	return data;
 }
 
@@ -169,7 +189,7 @@ static uint32_t msec_2_ticks(int msec)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct dnut_card* h, int timeout_ms)
+static int action_wait_idle(struct dnut_card* h, int timeout_ms, uint64_t *elapsed)
 {
 	uint32_t action_data;
 	int rc = 0;
@@ -177,7 +197,6 @@ static int action_wait_idle(struct dnut_card* h, int timeout_ms)
 	uint64_t tout = (uint64_t)timeout_ms * 1000;
 	uint64_t td;		/* Diff time in usec */
 
-	action_write(h, ACTION_CONTROL, 0);
 	action_write(h, ACTION_CONTROL, ACTION_CONTROL_START);
 
 	/* Wait for Action to go back to Idle */
@@ -186,51 +205,52 @@ static int action_wait_idle(struct dnut_card* h, int timeout_ms)
 		action_data = action_read(h, ACTION_CONTROL);
 		td = get_usec() - t_start;
 		if (td > tout) {
-			printf("Error. Timeout while Waiting for Idle\n");
+			VERBOSE0("Error. Timeout while Waiting for Idle\n");
 			rc = ETIME;
 			break;
 		}
 	} while ((action_data & ACTION_CONTROL_IDLE) == 0);
 
-	if (verbose_level > 0) {
-		printf("Action Time was: ");
-		if (td < 100000)
-			printf("%d usec\n" ,(int)td);
-		else	printf("%d msec\n" ,(int)td/1000);
-	}
-	return(rc);
+	*elapsed = td;
+	return rc;
 }
 
-static void action_count(struct dnut_card* h, int delay_ms)
+static void action_count(struct dnut_card* h, int delay_ms, int timeout)
 {
-	if (verbose_level > 0)
-		printf("Action Expect: %d msec to wait...\n",
+	uint64_t td;
+
+	VERBOSE1("       Expect %d msec to wait...",
 			delay_ms);
+	fflush(stdout);
 	action_write(h, ACTION_CONFIG, ACTION_CONFIG_COUNT);
 	action_write(h, ACTION_CNT, msec_2_ticks(delay_ms));
+
+	action_wait_idle(h, timeout+delay_ms, &td);
+	print_time(td, 0);
 }
 
-static void action_memcpy(struct dnut_card* h,
+static int action_memcpy(struct dnut_card* h,
 		int action,	/* Action can be 2,3,4,5,6  see ACTION_CONFIG_COPY_ */
 		void *dest,
 		const void *src,
-		size_t n)
+		size_t n,
+		int timeout)
 {
 	uint64_t addr;
+	uint64_t td;
+	int rc;
 
-	if (verbose_level > 0) {
-		switch (action) {
-		case 2: printf("[Host <- Host]"); break;
-		case 3: printf("[DDR <- Host]"); break;
-		case 4: printf("[Host <- DDR]"); break;
-		case 5: printf("[DDR <- DDR]"); break;
-		default:
-			printf("Invalid Action\n");
-			return;
-			break;
-		}
-		printf(" memcpy(%p, %p, 0x%8.8lx)\n", dest, src, n);
+	switch (action) {
+	case 2: VERBOSE1("[Host <- Host]"); break;
+	case 3: VERBOSE1("[DDR <- Host]"); break;
+	case 4: VERBOSE1("[Host <- DDR]"); break;
+	case 5: VERBOSE1("[DDR <- DDR]"); break;
+	default:
+		VERBOSE0("Invalid Action\n");
+		return 1;
+		break;
 	}
+	VERBOSE1(" memcpy(%p, %p, 0x%8.8lx) ", dest, src, n);
 	action_write(h, ACTION_CONFIG,  action);
 	addr = (uint64_t)dest;
 	action_write(h, ACTION_DEST_LOW, (uint32_t)(addr & 0xffffffff));
@@ -239,22 +259,24 @@ static void action_memcpy(struct dnut_card* h,
 	action_write(h, ACTION_SRC_LOW, (uint32_t)(addr & 0xffffffff));
 	action_write(h, ACTION_SRC_HIGH, (uint32_t)(addr >> 32));
 	action_write(h, ACTION_CNT, n);
+
+	rc = action_wait_idle(h, timeout, &td);
+	print_time(td, n);
+	return rc;
 }
 
 static int memcpy_test(struct dnut_card* dnc,
 			int action,
 			int blocks_4k,	/* Number of DEFAULT_MEMCPY_BLOCK */
 			int blocks_64,	/* Number of 64 Bytes Blocks */
-			int input_o,
-			int output_o,
 			int align,
 			int iter,
 			uint64_t card_ram_base,
 			int timeout_ms)		/* Timeout to wait in ms */
 {
 	int i, rc;
-	void *src_a = NULL, *src = NULL;
-	void *dest_a = NULL, *dest = NULL;
+	void *src = NULL;
+	void *dest = NULL;
 	void *ddr3;
 	int blocks;
 	unsigned int memsize;
@@ -262,15 +284,15 @@ static int memcpy_test(struct dnut_card* dnc,
 	rc = 0;
 	/* align can be 64 .. 4096 */
 	if (align < 64) {
-		printf("align: %d must be 64 or higher\n", align);
+		VERBOSE0("align: %d must be 64 or higher\n", align);
 		return 0;
 	}
 	if ((align & 0x3f) != 0) {
-		printf("align: %d must be a multible of 64\n", align);
+		VERBOSE0("align: %d must be a multible of 64\n", align);
 		return 0;
 	}
 	if (align > DEFAULT_MEMCPY_BLOCK) {
-		printf("align=%d is to much for me\n", align);
+		VERBOSE0("align=%d is to much for me\n", align);
 		return 0;
 	}
 
@@ -279,7 +301,7 @@ static int memcpy_test(struct dnut_card* dnc,
 
 	/* Check Size */
 	if (blocks > (int)(DDR_MEM_SIZE / 64 / 2)) {
-		printf("Error: Number of Blocks: %d exceeds: %d\n",
+		VERBOSE0("Error: Number of Blocks: %d exceeds: %d\n",
 			blocks, (int)(DDR_MEM_SIZE/DEFAULT_MEMCPY_BLOCK/2));
 		return 0;
 	}
@@ -287,53 +309,46 @@ static int memcpy_test(struct dnut_card* dnc,
 	memsize = blocks * 64;
 	/* Check Card Ram base and Size */
 	if ((card_ram_base + memsize) > DDR_MEM_SIZE) {
-		printf("Error: Size: 0x%8.8x exceeds DDR3 Limit: 0x%llx for Offset: 0x%llx\n",
+		VERBOSE0("Error: Size: 0x%8.8x exceeds DDR3 Limit: 0x%llx for Offset: 0x%llx\n",
 			memsize, (long long)DDR_MEM_SIZE, (long long)card_ram_base);
 		return 0;
 	}
 	if (0 == memsize) {
-		printf("Error: blocks_4k: %d and blocks_64: %d is not valid\n", blocks_4k, blocks_64);
+		VERBOSE0("Error: blocks_4k: %d and blocks_64: %d is not valid\n", blocks_4k, blocks_64);
 		return 0;
 	}
 
 	/* Allocate Src Buffer if in Host->Host or Host->DDR Mode or Host->DDR->Host*/
-	if (posix_memalign((void **)&src_a, align, memsize + input_o) != 0) {
-		perror("FAILED: posix_memalign source");
+	src = alloc_mem(align, memsize);
+	if (NULL == src)
 		return 1;
-	}
-	src = src_a + input_o;	/* Add offset */
-	if (verbose_level > 0)
-		printf("  Src:  %p Size: 0x%x (%d/%d) Align: %d offset: %d\n",
-			src, memsize, blocks_4k, blocks_64, align, output_o);
-	memset2(src_a, card_ram_base, memsize);
+	VERBOSE1("  Src:  %p Size: 0x%x (%d * 4K + %d * 64 Byte) Align: %d\n",
+		src, memsize, blocks_4k, blocks_64, align);
+	memset2(src, card_ram_base, memsize);
 
 	/* Allocate Dest Buffer if in Host->Host or DDR->Host Mode */
-	if (posix_memalign((void **)&dest_a, align, memsize + output_o) != 0) {
-		perror("FAILED: posix_memalign destination");
-		if (src_a)
-			free(src_a);
+	dest = alloc_mem(align, memsize);
+	if (NULL == dest) {
+		free_mem(src);
 		return 1;
 	}
-	dest  = dest_a + output_o;
-	if (verbose_level > 0)
-		printf("  Dest: %p Size: 0x%x Align: %d offset: %d timeout: %d msec\n",
-			dest, memsize, align, output_o, timeout_ms);
+	VERBOSE1("  Dest: %p timeout: %d msec\n",
+			dest, timeout_ms);
 
 	switch (action) {
 	case ACTION_CONFIG_COPY_HH:
 		for (i = 0; i < iter; i++) {
-			action_memcpy(dnc, action, dest, src, memsize);
-			rc = action_wait_idle(dnc, timeout_ms);
+			rc = action_memcpy(dnc, action, dest, src, memsize, timeout_ms);
 			if (0 != rc) break;
 			rc = memcmp(src, dest, memsize);
 			if ((verbose_level > 1) || rc) {
-				printf("---------- src Buffer: %p\n", src);
-				hexdump(stdout, src, memsize);
-				printf("---------- dest Buffer: %p\n", dest);
-				hexdump(stdout, dest, memsize);
+				VERBOSE0("---------- src Buffer: %p\n", src);
+				__hexdump(stdout, src, memsize);
+				VERBOSE0("---------- dest Buffer: %p\n", dest);
+				__hexdump(stdout, dest, memsize);
 			}
 			if (rc) {
-				printf("Error Memcmp failed rc: %d\n", rc);
+				VERBOSE0("Error Memcmp failed rc: %d\n", rc);
 				break;
 			}
 		}
@@ -341,20 +356,18 @@ static int memcpy_test(struct dnut_card* dnc,
 	case ACTION_CONFIG_COPY_HD:	/* Host to Card RAM */
 		dest = (void*)card_ram_base;
 		for (i = 0; i < iter; i++) {
-			action_memcpy(dnc, action, dest, src, memsize);
-			rc = action_wait_idle(dnc, timeout_ms);
+			rc = action_memcpy(dnc, action, dest, src, memsize, timeout_ms);
 			if (0 != rc) break;
 		}
 		break;
 	case ACTION_CONFIG_COPY_DH:
 		src = (void*)card_ram_base;
 		for (i = 0; i < iter; i++) {
-			action_memcpy(dnc, action, dest, src, memsize);
-			rc = action_wait_idle(dnc, timeout_ms);
+			rc = action_memcpy(dnc, action, dest, src, memsize, timeout_ms);
 			if (0 != rc) break;
 			if (verbose_level > 1) {
-				printf("---------- dest Buffer: %p\n", dest);
-				hexdump(stdout, dest, memsize);
+				VERBOSE0("---------- dest Buffer: %p\n", dest);
+				__hexdump(stdout, dest, memsize);
 			}
 		}
 		break;
@@ -362,58 +375,47 @@ static int memcpy_test(struct dnut_card* dnc,
 		src = (void*)card_ram_base;
 		dest = src + memsize;	/* Need to check */
 		if ((uint64_t)(dest + memsize) > DDR_MEM_SIZE) {
-			printf("Error Size 0x%x and Offset 0x%llx Exceed Memory\n",
+			VERBOSE0("Error Size 0x%x and Offset 0x%llx Exceed Memory\n",
 				memsize, (long long)card_ram_base);
 			break;
 		}
 		for (i = 0; i < iter; i++) {
-			action_memcpy(dnc, action, dest, src, memsize);
-			rc = action_wait_idle(dnc, timeout_ms);
+			rc = action_memcpy(dnc, action, dest, src, memsize, timeout_ms);
 			if (0 != rc) break;
 		}
 		break;
 	case ACTION_CONFIG_COPY_HDH:	/* Host -> DDR -> Host */
 		ddr3 = (void*)card_ram_base;
 		for (i = 0; i < iter; i++) {
-			action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
-				ddr3, src, memsize);
-			rc = action_wait_idle(dnc, timeout_ms);
+			rc = action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
+				ddr3, src, memsize, timeout_ms);
 			if (0 != rc) break;
-			action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
-				dest, ddr3, memsize);
-			rc = action_wait_idle(dnc, timeout_ms);
+			rc = action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
+				dest, ddr3, memsize, timeout_ms);
 			if (0 != rc) break;
 			rc = memcmp(src, dest, memsize);
 			if ((verbose_level > 1) || rc) {
-				printf("---------- src Buffer: %p\n", src);
-				hexdump(stdout, src, memsize);
-				printf("---------- dest Buffer: %p\n", dest);
-				hexdump(stdout, dest, memsize);
+				VERBOSE0("---------- src Buffer: %p\n", src);
+				__hexdump(stdout, src, memsize);
+				VERBOSE0("---------- dest Buffer: %p\n", dest);
+				__hexdump(stdout, dest, memsize);
 			}
 			if (rc) {
-				printf("Error Memcmp failed rc: %d\n", rc);
+				VERBOSE0("Error Memcmp failed rc: %d\n", rc);
 				break;
 			}
 		}
 		break;
 	}
 
-	if (src_a) {
-		if (verbose_level > 0)
-			printf("Free Src:  %p\n", src_a);
-		free(src_a);
-	}
-	if (dest_a) {
-		if (verbose_level > 0)
-			printf("Free Dest: %p\n", dest_a);
-		free(dest_a);
-	}
+	free_mem(src);
+	free_mem(dest);
 	return rc;
 }
 
 static void usage(const char *prog)
 {
-	printf("Usage: %s\n"
+	VERBOSE0("Usage: %s\n"
 		"    -h, --help           print usage information\n"
 		"    -v, --verbose        verbose mode\n"
 		"    -C, --card <cardno>  use this card for operation\n"
@@ -431,8 +433,6 @@ static void usage(const char *prog)
 		"    -B, --size64         Number of 64 Bytes Blocks for Memcopy (default 0)\n"
 		"    -N, --iter           Memcpy Iterations (default 1)\n"
 		"    -A, --align          Memcpy alignemend (default 4 KB)\n"
-		"    -I, --ioff           Memcpy input offset (default 0)\n"
-		"    -O, --ooff           Memcpy output offset (default 0)\n"
 		"    -D, --dest           Memcpy Card RAM base Address (default 0)\n"
 		"\tTool to check Stage 1 FPGA or Stage 2 FPGA Mode (-a) for donut bringup.\n"
 		"\t-a 1: Count down mode (Stage 1)\n"
@@ -460,7 +460,6 @@ int main(int argc, char *argv[])
 	int rc = 1;
 	int memcpy_iter = DEFAULT_MEMCPY_ITER;
 	int memcpy_align = DEFAULT_MEMCPY_BLOCK;
-	int input_o = 0, output_o = 0;
 	uint64_t card_ram_base = DDR_MEM_BASE_ADDR;	/* Base of Card DDR or Block Ram */
 	int timeout_ms = ACTION_WAIT_TIME;
 
@@ -480,14 +479,11 @@ int main(int argc, char *argv[])
 			{ "size64",   required_argument, NULL, 'B' },
 			{ "iter",     required_argument, NULL, 'N' },
 			{ "align",    required_argument, NULL, 'A' },
-			{ "ioff",     required_argument, NULL, 'I' },
-			{ "ooff",     required_argument, NULL, 'O' },
 			{ "dest",     required_argument, NULL, 'D' },
-			{ "context",  required_argument, NULL, 'z' },
 			{ "timeout",  required_argument, NULL, 't' },
 			{ 0,          no_argument,       NULL, 0   },
 		};
-		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:B:N:A:I:O:D:z:t:qvVh",
+		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:B:N:A:D:t:qvVh",
 			long_options, &option_index);
 		if (cmd == -1)  /* all params processed ? */
 			break;
@@ -497,7 +493,7 @@ int main(int argc, char *argv[])
 			verbose_level++;
 			break;
 		case 'V':	/* version */
-			printf("%s\n", version);
+			VERBOSE0("%s\n", version);
 			exit(EXIT_SUCCESS);;
 		case 'h':	/* help */
 			usage(argv[0]);
@@ -531,21 +527,8 @@ int main(int argc, char *argv[])
 		case 'A':	/* align */
 			memcpy_align = strtol(optarg, (char **)NULL, 0);
 			break;
-		case 'I':	/* iffo */
-			input_o = strtol(optarg, (char **)NULL, 0);
-			printf("This option is under Work !\n");
-			input_o = 0;
-			break;
-		case 'O':	/* offo */
-			output_o = strtol(optarg, (char **)NULL, 0);
-			printf("This option is under Work !\n");
-			output_o = 0;
-			break;
 		case 'D':	/* dest */
 			card_ram_base = strtol(optarg, (char **)NULL, 0);
-			break;
-		case 'z':	/* context */
-			context_offset = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 't':
 			timeout_ms = strtol(optarg, (char **)NULL, 0) * 1000; /* Make msec */
@@ -575,14 +558,12 @@ int main(int argc, char *argv[])
 		perror("dnut_card_alloc_dev()");
 		return -1;
 	}
-	if (verbose_level > 0)
-		printf("Start of Action: %d Card Handle: %p\n", action, dn);
+	VERBOSE1("Start of Action: %d Card Handle: %p\n", action, dn);
 
 	switch (action) {
 	case 1:
 		for(delay = start_delay; delay <= end_delay; delay += step_delay) {
-			action_count(dn, delay);
-			action_wait_idle(dn, timeout_ms);
+			action_count(dn, delay, timeout_ms);
 		}
 		rc = 0;
 		break;
@@ -591,21 +572,19 @@ int main(int argc, char *argv[])
 	case 4:
 	case 5:
 	case 6:
-		rc = memcpy_test(dn, action, num_4k, num_64, input_o, output_o,
+		rc = memcpy_test(dn, action, num_4k, num_64,
 				memcpy_align, memcpy_iter, card_ram_base,
 				timeout_ms);
 		break;
 	default:
-		printf("Invalid Action\n");
+		VERBOSE0("%d Invalid Action\n", action);
 		break;
 	}
 
 	// Unmap AFU MMIO registers, if previously mapped
-	if (verbose_level > 0)
-		printf("Free Card Handle: %p\n", dn);
+	VERBOSE2("Free Card Handle: %p\n", dn);
 	dnut_card_free(dn);
 
-	if (verbose_level > 0)
-		printf("End of Test rc: %d\n", rc);
+	VERBOSE1("End of Test rc: %d\n", rc);
 	return rc;
 }
