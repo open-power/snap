@@ -128,30 +128,50 @@ static snap_membus_t hashkey_to_mbus(hashkey_t key)
 typedef struct snap_4KiB_t {
 	snap_membus_t buf[SNAP_4KiB_WORDS]; /* temporary storage buffer */
 	snap_membus_t *mem;                 /* source where data comes from */
+	unsigned int max_lines;             /* size of the memory buffer */
 	unsigned int m_idx;                 /* read position for source */
 	unsigned int b_idx;                 /* read position for buffer */
 } snap_4KiB_t;
 
-static void snap_4KiB_rinit(snap_4KiB_t *buf, snap_membus_t *mem)
+static void snap_4KiB_rinit(snap_4KiB_t *buf, snap_membus_t *mem,
+			    unsigned int max_lines)
 {
 	buf->mem = mem;
+	buf->max_lines = max_lines;
 	buf->m_idx = 0;
 	buf->b_idx = SNAP_4KiB_WORDS;
 }
 
-static void snap_4KiB_winit(snap_4KiB_t *buf, snap_membus_t *mem)
+static void snap_4KiB_winit(snap_4KiB_t *buf, snap_membus_t *mem,
+			    unsigned int max_lines)
 {
 	buf->mem = mem;
+	buf->max_lines = max_lines;
 	buf->m_idx = 0;
 	buf->b_idx = 0;
 }
 
 static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
 {
+	/* reading beyond the available memory is blocked, buffer filling
+	   is returned to keep code simple, and contains unuseable data. */
+	if ((buf->m_idx == buf->max_lines) && (buf->b_idx == SNAP_4KiB_WORDS)) {
+		*line = (snap_membus_t)-1;
+		return;
+	}
 	/* buffer is empty, read in the next 4KiB */
 	if (buf->b_idx == SNAP_4KiB_WORDS) {
-		memcpy(buf->buf, buf->mem + buf->m_idx, sizeof(buf->buf));
-		buf->m_idx += SNAP_4KiB_WORDS;
+		unsigned int tocopy =
+			MIN(SNAP_4KiB_WORDS, buf->max_lines - buf->m_idx);
+
+		if (tocopy == SNAP_4KiB_WORDS)
+			memcpy(buf->buf, buf->mem + buf->m_idx,
+			       SNAP_4KiB_WORDS * sizeof(snap_membus_t));
+		else
+			memcpy(buf->buf, buf->mem + buf->m_idx,
+			       tocopy * sizeof(snap_membus_t));
+		
+		buf->m_idx += tocopy;
 		buf->b_idx = 0; /* buffer is full again */
 	}
 	*line = buf->buf[buf->b_idx];
@@ -162,6 +182,7 @@ static void snap_4KiB_flush(snap_4KiB_t *buf)
 {
 	memcpy(buf->mem + buf->m_idx, buf->buf,
 	       buf->b_idx * sizeof(snap_membus_t));
+
 	buf->m_idx += buf->b_idx;
 	buf->b_idx = 0;
 }
@@ -176,12 +197,13 @@ static void snap_4KiB_put(snap_4KiB_t *buf, snap_membus_t line)
 	buf->b_idx++;
 }
 
-static void read_table1(snap_membus_t *mem, t1_fifo_t *fifo1, uint32_t t1_used)
+static void read_table1(snap_membus_t *mem, unsigned int max_lines,
+			t1_fifo_t *fifo1, uint32_t t1_used)
 {
 	unsigned int i;
 	snap_4KiB_t buf;
 
-	snap_4KiB_rinit(&buf, mem);
+	snap_4KiB_rinit(&buf, mem, max_lines);
 
  read_table1_loop:
 	for (i = 0; i < t1_used; i++) {
@@ -200,12 +222,13 @@ static void read_table1(snap_membus_t *mem, t1_fifo_t *fifo1, uint32_t t1_used)
 	}
 }
 
-static void read_table2(snap_membus_t *mem, t2_fifo_t *fifo2, uint32_t t2_used)
+static void read_table2(snap_membus_t *mem, unsigned int max_lines,
+			t2_fifo_t *fifo2, uint32_t t2_used)
 {
 	unsigned int i;
 	snap_4KiB_t buf;
 
-	snap_4KiB_rinit(&buf, mem);
+	snap_4KiB_rinit(&buf, mem, max_lines);
 
  read_table2_loop:
 	for (i = 0; i < t2_used; i++) {
@@ -224,13 +247,13 @@ static void read_table2(snap_membus_t *mem, t2_fifo_t *fifo2, uint32_t t2_used)
 	}
 }
 
-static void write_table3(snap_membus_t *mem, t3_fifo_t *fifo3,
-			 uint32_t t3_used)
+static void write_table3(snap_membus_t *mem, unsigned int max_lines,
+			 t3_fifo_t *fifo3, uint32_t t3_used)
 {
 	unsigned int i;
 	snap_4KiB_t buf;
 
-	snap_4KiB_winit(&buf, mem);
+	snap_4KiB_winit(&buf, mem, max_lines);
 
 	/* extract data into target table3, or FIFO maybe? */
  write_table3_loop:
@@ -336,8 +359,10 @@ void action_wrapper(snap_membus_t *din_gmem,
 
 		/* FIXME Just Host DDRAM for now */
 		read_table1(din_gmem + (T1_address >> ADDR_RIGHT_SHIFT),
+			    T1_size / sizeof(snap_membus_t),
 			    &t1_fifo, T1_items);
 		read_table2(din_gmem + (T2_address >> ADDR_RIGHT_SHIFT),
+			    T2_size / sizeof(snap_membus_t),
 			    &t2_fifo, T2_items);
 
 		rc = action_hashjoin_hls(&t1_fifo, T1_items,
@@ -346,6 +371,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 		if (rc == 0) {
 			/* FIXME Just Host DDRAM for now */
 			write_table3(dout_gmem+(T3_address>>ADDR_RIGHT_SHIFT),
+				     T3_size / sizeof(snap_membus_t),
 				     &t3_fifo, __table3_idx);
 		} else
 			ReturnCode = RET_CODE_FAILURE;
