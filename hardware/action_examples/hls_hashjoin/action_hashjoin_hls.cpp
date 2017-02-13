@@ -250,21 +250,6 @@ void table3_init(unsigned int *table3_idx)
         *table3_idx = 0;
 }
 
-int table3_append(table3_t *table3, unsigned int *table3_idx,
-                  hashkey_t name, hashkey_t animal,
-                  unsigned int age)
-{
-        table3_t *t3;
-
-        t3 = &table3[*table3_idx];
-        hashkey_cpy(t3->name, name);
-        hashkey_cpy(t3->animal, animal);
-        t3->age = age;
-        *table3_idx = *table3_idx + 1;
-
-        return *table3_idx;
-}
-
 #if defined(NO_SYNTH)
 void table3_dump(table3_t *table3, unsigned int table3_idx)
 {
@@ -281,13 +266,29 @@ void table3_dump(table3_t *table3, unsigned int table3_idx)
 }
 #endif
 
-int action_hashjoin_hls(table1_t __table1[TABLE1_SIZE], unsigned int table1_used,
-			table2_t __table2[TABLE2_SIZE],	unsigned int table2_used,
-			table3_t __table3[TABLE3_SIZE],	unsigned int *table3_used,
+int table3_append(t3_fifo_t *fifo3, unsigned int *table3_idx,
+                  hashkey_t name, hashkey_t animal,
+                  unsigned int age)
+{
+        table3_t t3;
+
+        hashkey_cpy(t3.name, name);
+        hashkey_cpy(t3.animal, animal);
+        t3.age = age;
+        *table3_idx = *table3_idx + 1;
+
+	fifo3->write(t3);
+
+        return *table3_idx;
+}
+
+int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
+			t2_fifo_t *fifo2, unsigned int table2_used,
+			t3_fifo_t *fifo3, unsigned int *table3_used,
 			int check)
 {
         unsigned int i, j;
-	table1_t *t1;
+	table1_t t1;
         hashtable_t *h = &__hashtable;
 	unsigned int __table3_idx = 0;
 
@@ -295,21 +296,28 @@ int action_hashjoin_hls(table1_t __table1[TABLE1_SIZE], unsigned int table1_used
 
         /* hash phase */
         for (i = 0; i < table1_used; i++) {
+		/* #pragma HLS PIPELINE */
 		// FIXME TIMING #pragma HLS UNROLL
-                t1 = &__table1[i];
-                printf("Inserting %s ...\n", t1->name);
-                ht_set(h, t1->name, t1);
+                t1 = fifo1->read();
+
+		fprintf(stderr, "fifo1->read(%d, %s)\n", i, t1.name);
+                ht_set(h, t1.name, &t1);
         }
         ht_dump(h);
 
+	fprintf(stderr, "SYNC SYNC SYNC\n");
+
         table3_init(&__table3_idx);
         for (i = 0; i < table2_used; i++) {
+		/* #pragma HLS PIPELINE */
 		// FIXME TIMING  #pragma HLS UNROLL
                 int bin;
                 entry_t *entry;
-                table2_t *t2 = &__table2[i];
+                table2_t t2 = fifo2->read();
 
-                bin = ht_get(h, t2->name);
+		fprintf(stderr, "fifo2->read(%d, %s)\n", i, t2.name);
+
+                bin = ht_get(h, t2.name);
                 if (bin == -1)
                         continue;       /* nothing found */
 
@@ -317,15 +325,15 @@ int action_hashjoin_hls(table1_t __table1[TABLE1_SIZE], unsigned int table1_used
                 for (j = 0; j < entry->used; j++) {
 			//#pragma HLS UNROLL
                         table1_t *m = &entry->multi[j];
+			table3_t t3;
 
-                        table3_append(__table3, &__table3_idx,
-                                      t2->name, t2->animal, m->age);
+			hashkey_cpy(t3.name, t2.name);
+			hashkey_cpy(t3.animal, t2.animal);
+			t3.age = m->age;
+			__table3_idx++;
+			fifo3->write(t3);
                 }
         }
-
-#if defined(NO_SYNTH)
-	table3_dump(__table3, __table3_idx);
-#endif
 
 	*table3_used = __table3_idx;
 

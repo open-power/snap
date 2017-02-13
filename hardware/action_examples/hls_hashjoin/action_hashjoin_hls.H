@@ -19,7 +19,8 @@
 
 #include <stdint.h>
 #include <string.h>
-#include "ap_int.h"
+#include <ap_int.h>
+#include <hls_stream.h>
 
 /*
  * Hardware implementation is lacking some libc functions. So let us
@@ -61,6 +62,10 @@ typedef struct table3_s {
         unsigned int age;           /*  4 bytes */
         unsigned char reserved[60]; /* 60 bytes */
 } table3_t;
+
+typedef hls::stream<table1_t> t1_fifo_t; 
+typedef hls::stream<table2_t> t2_fifo_t; 
+typedef hls::stream<table3_t> t3_fifo_t; 
 
 #define TABLE1_SIZE    32                          /* build multihash from this */
 #define TABLE2_SIZE    32                          /* combine with table1 */
@@ -163,9 +168,9 @@ typedef struct {
 
 void hashkey_cpy(hashkey_t dst, hashkey_t src);
 
-int action_hashjoin_hls(table1_t table1[TABLE1_SIZE], unsigned int table1_used,
-			table2_t table2[TABLE2_SIZE], unsigned int table2_used,
-			table3_t table3[TABLE3_SIZE], unsigned int *table3_used,
+int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
+			t2_fifo_t *fifo2, unsigned int table2_used,
+			t3_fifo_t *fifo3, unsigned int *table3_used,
 			int check);
 
 #endif  /* __ACTION_HASHJOIN_HLS_H__ */

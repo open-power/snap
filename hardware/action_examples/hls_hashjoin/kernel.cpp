@@ -23,8 +23,6 @@
 using namespace std;
 
 /* Define memory buffers to keep the data we read from CARD or HOST DRAM */
-static table1_t __table1[TABLE1_SIZE];
-static table2_t __table2[TABLE2_SIZE];
 static unsigned int __table3_idx = 0;
 static table3_t __table3[TABLE1_SIZE * TABLE2_SIZE]; /* worst case size */
 
@@ -178,8 +176,7 @@ static void snap_4KiB_put(snap_4KiB_t *buf, snap_membus_t line)
 	buf->b_idx++;
 }
 
-static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
-			uint32_t t1_used)
+static void read_table1(snap_membus_t *mem, t1_fifo_t *fifo1, uint32_t t1_used)
 {
 	unsigned int i;
 	snap_4KiB_t buf;
@@ -188,18 +185,22 @@ static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
 
  read_table1_loop:
 	for (i = 0; i < t1_used; i++) {
+#pragma HLS PIPELINE
 		snap_membus_t b[2];
+		table1_t t1;
 
 		snap_4KiB_get(&buf, &b[0]);
-		copy_hashkey(b[0], t1[i].name);
+		copy_hashkey(b[0], t1.name);
 
 		snap_4KiB_get(&buf, &b[1]);
-		t1[i].age = b[1](31, 0);
+		t1.age = b[1](31, 0);
+
+		fifo1->write(t1);
+		fprintf(stderr, "fifo1->write(%d, %s)\n", i, t1.name);
 	}
 }
 
-static void read_table2(snap_membus_t *mem, table2_t t2[TABLE2_SIZE],
-			uint32_t t2_used)
+static void read_table2(snap_membus_t *mem, t2_fifo_t *fifo2, uint32_t t2_used)
 {
 	unsigned int i;
 	snap_4KiB_t buf;
@@ -208,17 +209,22 @@ static void read_table2(snap_membus_t *mem, table2_t t2[TABLE2_SIZE],
 
  read_table2_loop:
 	for (i = 0; i < t2_used; i++) {
+#pragma HLS PIPELINE
 		snap_membus_t b[2];
+		table2_t t2;
 
 		snap_4KiB_get(&buf, &b[0]);
-		copy_hashkey(b[0], t2[i].name);
+		copy_hashkey(b[0], t2.name);
 
 		snap_4KiB_get(&buf, &b[1]);
-		copy_hashkey(b[1], t2[i].animal);
+		copy_hashkey(b[1], t2.animal);
+
+		fifo2->write(t2);
+		fprintf(stderr, "fifo2->write(%d, %s)\n", i, t2.name);
 	}
 }
 
-static void write_table3(snap_membus_t *mem, table3_t t3[TABLE3_SIZE],
+static void write_table3(snap_membus_t *mem, t3_fifo_t *fifo3,
 			 uint32_t t3_used)
 {
 	unsigned int i;
@@ -230,10 +236,13 @@ static void write_table3(snap_membus_t *mem, table3_t t3[TABLE3_SIZE],
  write_table3_loop:
 	for (i = 0; i < t3_used; i++) {
 		snap_membus_t d;
+		table3_t t3 = fifo3->read();
 
-		d(31, 0) = t3[i].age;
-		snap_4KiB_put(&buf, hashkey_to_mbus(t3[i].name));
-		snap_4KiB_put(&buf, hashkey_to_mbus(t3[i].animal)); 
+		fprintf(stderr, "fifo3->read(%d, %s)\n", i, t3.name);
+
+		d(31, 0) = t3.age;
+		snap_4KiB_put(&buf, hashkey_to_mbus(t3.name));
+		snap_4KiB_put(&buf, hashkey_to_mbus(t3.animal)); 
 		snap_4KiB_put(&buf, d);
 	}
 	snap_4KiB_flush(&buf);
@@ -281,7 +290,15 @@ void action_wrapper(snap_membus_t *din_gmem,
 	snapu32_t T3_size;
 	unsigned int T1_items = 0;
 	unsigned int T2_items = 0;
-	
+
+#define pragma HLS DATAFLOW
+	t1_fifo_t t1_fifo;
+	t2_fifo_t t2_fifo;
+	t3_fifo_t t3_fifo;
+#pragma HLS stream variable=t1_fifo depth=4
+#pragma HLS stream variable=t2_fifo depth=4
+#pragma HLS stream variable=t3_fifo depth=4
+
 	//== Parameters fetched in memory ==
 	//==================================
 
@@ -317,41 +334,19 @@ void action_wrapper(snap_membus_t *din_gmem,
 		fprintf(stderr, "t1: %016lx t2: %016lx\n",
 			(long)T1_address, (long)T2_address);
 
-#if defined(CONFIG_QUESTION_MARK_VERSION)
-		memcpy((ap_uint<MEMDW> *)__table1,
-		       (ap_uint<MEMDW> *)(T1_type == HOST_DRAM) ?
-		       (dout_gmem + (T1_address >> ADDR_RIGHT_SHIFT)) :
-		       (d_ddrmem  + (T1_address >> ADDR_RIGHT_SHIFT)),
-		       T1_size);
-
-		memcpy((snap_membus_t *)__table2,
-		       (snap_membus_t *)(T2_type == HOST_DRAM) ?
-		       (din_gmem  + (T2_address >> ADDR_RIGHT_SHIFT)) :
-		       (d_ddrmem  + (T2_address >> ADDR_RIGHT_SHIFT)),
-		       T2_size);
-#else
 		/* FIXME Just Host DDRAM for now */
 		read_table1(din_gmem + (T1_address >> ADDR_RIGHT_SHIFT),
-			    __table1, T1_items);
+			    &t1_fifo, T1_items);
 		read_table2(din_gmem + (T2_address >> ADDR_RIGHT_SHIFT),
-			    __table2, T2_items);
-#endif
+			    &t2_fifo, T2_items);
 
-		rc = action_hashjoin_hls(__table1, T1_items,
-					 __table2, T2_items,
-					 __table3, &__table3_idx, 1);
+		rc = action_hashjoin_hls(&t1_fifo, T1_items,
+					 &t2_fifo, T2_items,
+					 &t3_fifo, &__table3_idx, 1);
 		if (rc == 0) {
-#if defined(CONFIG_QUESTION_MARK_VERSION)
-			memcpy((snap_membus_t *)(T3_type == HOST_DRAM) ?
-			       (dout_gmem + (T3_address >> ADDR_RIGHT_SHIFT)) :
-			       (d_ddrmem  + (T3_address >> ADDR_RIGHT_SHIFT)),
-			       (snap_membus_t *)__table3,
-			       __table3_idx * sizeof(table3_t));
-#else
 			/* FIXME Just Host DDRAM for now */
 			write_table3(dout_gmem+(T3_address>>ADDR_RIGHT_SHIFT),
-				     __table3, __table3_idx);
-#endif
+				     &t3_fifo, __table3_idx);
 		} else
 			ReturnCode = RET_CODE_FAILURE;
 	} while (0);
