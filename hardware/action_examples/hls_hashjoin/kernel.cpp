@@ -102,7 +102,6 @@ static void copy_hashkey(snap_membus_t mem, hashkey_t key)
 {
  loop_copy_hashkey:
 	for (unsigned int k = 0; k < sizeof(hashkey_t); k++)
-#pragma UNROLL
 		key[k] = mem(8 * (k+1) - 1,  8 * k);
 }
 
@@ -112,7 +111,6 @@ static snap_membus_t hashkey_to_mbus(hashkey_t key)
 
  loop_hashkey_to_mbus:
 	for (unsigned int k = 0; k < sizeof(hashkey_t); k++) {
-#pragma UNROLL
 		mem(8 * (k+1) - 1,  8 * k) = key[k];
 		res |= mem;
 	}
@@ -136,11 +134,18 @@ typedef struct snap_4KiB_t {
 	unsigned int b_idx;                 /* read position for buffer */
 } snap_4KiB_t;
 
-static void snap_4KiB_init(snap_4KiB_t *buf, snap_membus_t *mem)
+static void snap_4KiB_rinit(snap_4KiB_t *buf, snap_membus_t *mem)
 {
 	buf->mem = mem;
 	buf->m_idx = 0;
 	buf->b_idx = SNAP_4KiB_WORDS;
+}
+
+static void snap_4KiB_winit(snap_4KiB_t *buf, snap_membus_t *mem)
+{
+	buf->mem = mem;
+	buf->m_idx = 0;
+	buf->b_idx = 0;
 }
 
 static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
@@ -155,13 +160,31 @@ static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
 	buf->b_idx++;
 }
 
+static void snap_4KiB_flush(snap_4KiB_t *buf)
+{
+	memcpy(buf->mem + buf->m_idx, buf->buf,
+	       buf->b_idx * sizeof(snap_membus_t));
+	buf->m_idx += buf->b_idx;
+	buf->b_idx = 0;
+}
+
+static void snap_4KiB_put(snap_4KiB_t *buf, snap_membus_t line)
+{
+	/* buffer is full, flush the gathered 4KiB */
+	if (buf->b_idx == SNAP_4KiB_WORDS) {
+		snap_4KiB_flush(buf);
+	}
+	buf->buf[buf->b_idx] = line;
+	buf->b_idx++;
+}
+
 static void read_table1(snap_membus_t *mem, table1_t t1[TABLE1_SIZE],
 			uint32_t t1_used)
 {
 	unsigned int i;
 	snap_4KiB_t buf;
 
-	snap_4KiB_init(&buf, mem);
+	snap_4KiB_rinit(&buf, mem);
 
  read_table1_loop:
 	for (i = 0; i < t1_used; i++) {
@@ -181,7 +204,7 @@ static void read_table2(snap_membus_t *mem, table2_t t2[TABLE2_SIZE],
 	unsigned int i;
 	snap_4KiB_t buf;
 
-	snap_4KiB_init(&buf, mem);
+	snap_4KiB_rinit(&buf, mem);
 
  read_table2_loop:
 	for (i = 0; i < t2_used; i++) {
@@ -198,20 +221,22 @@ static void read_table2(snap_membus_t *mem, table2_t t2[TABLE2_SIZE],
 static void write_table3(snap_membus_t *mem, table3_t t3[TABLE3_SIZE],
 			 uint32_t t3_used)
 {
-	unsigned int i, j;
+	unsigned int i;
+	snap_4KiB_t buf;
 
-	fprintf(stderr, "TABLE3 %d elements\n", t3_used);
+	snap_4KiB_winit(&buf, mem);
 
 	/* extract data into target table3, or FIFO maybe? */
-	j = 0;
  write_table3_loop:
 	for (i = 0; i < t3_used; i++) {
-		printf("writing table3 entry %d\n", i);
-		mem[j]     = hashkey_to_mbus(t3[i].name);
-		mem[j + 1] = hashkey_to_mbus(t3[i].animal);
-		mem[j + 2](31, 0) = t3[i].age;
-		j += 3;
+		snap_membus_t d;
+
+		d(31, 0) = t3[i].age;
+		snap_4KiB_put(&buf, hashkey_to_mbus(t3[i].name));
+		snap_4KiB_put(&buf, hashkey_to_mbus(t3[i].animal)); 
+		snap_4KiB_put(&buf, d);
 	}
+	snap_4KiB_flush(&buf);
 }
 
 //-----------------------------------------------------------------------------
@@ -263,66 +288,73 @@ void action_wrapper(snap_membus_t *din_gmem,
 	fprintf(stderr, "din_gmem  = %p\n", din_gmem);
 	fprintf(stderr, "dout_gmem = %p\n", dout_gmem);
 	
-	/* FIXME Please check if the data alignment matches the expectations */
-	if (Action_Input->Control.action != HASHJOIN_ACTION_TYPE) {
-		ReturnCode = RET_CODE_FAILURE;
-		write_results_in_HJ_regs(Action_Output, Action_Input, ReturnCode,
-					 0, 0, 0, 0);
-		return;
-	}
+	/*
+	 * FIXME We added the do { } while (0) construct to avoid MMIO
+	 * register duplication which we observed happening when we
+	 * called write_results_in_HJ_regs() multiple times.
+	 */
+	do {
+		/* FIXME Please check if the data alignment matches the expectations */
+		if (Action_Input->Control.action != HASHJOIN_ACTION_TYPE) {
+			ReturnCode = RET_CODE_FAILURE;
+			break;
+		}
 
-	// byte address received need to be aligned with port width
-	T1_address = Action_Input->Data.t1.address;
-	T1_type    = Action_Input->Data.t1.type;
-	T1_size    = Action_Input->Data.t1.size;
-	T1_items   = T1_size / sizeof(table1_t);
-	T2_address = Action_Input->Data.t2.address;
-	T2_type    = Action_Input->Data.t2.type;
-	T2_size    = Action_Input->Data.t2.size;
-	T2_items   = T2_size / sizeof(table2_t);
-	T3_address = Action_Input->Data.t3.address;
-	T3_type    = Action_Input->Data.t3.type;
-	T3_size    = Action_Input->Data.t3.size;
-	ReturnCode = RET_CODE_OK;
+		// byte address received need to be aligned with port width
+		T1_address = Action_Input->Data.t1.address;
+		T1_type    = Action_Input->Data.t1.type;
+		T1_size    = Action_Input->Data.t1.size;
+		T1_items   = T1_size / sizeof(table1_t);
+		T2_address = Action_Input->Data.t2.address;
+		T2_type    = Action_Input->Data.t2.type;
+		T2_size    = Action_Input->Data.t2.size;
+		T2_items   = T2_size / sizeof(table2_t);
+		T3_address = Action_Input->Data.t3.address;
+		T3_type    = Action_Input->Data.t3.type;
+		T3_size    = Action_Input->Data.t3.size;
+		ReturnCode = RET_CODE_OK;
 
-	fprintf(stderr, "t1: %016lx t2: %016lx\n", (long)T1_address, (long)T2_address);
+		fprintf(stderr, "t1: %016lx t2: %016lx\n",
+			(long)T1_address, (long)T2_address);
 
 #if defined(CONFIG_QUESTION_MARK_VERSION)
-	memcpy((ap_uint<MEMDW> *)__table1,
-	       (ap_uint<MEMDW> *)(T1_type == HOST_DRAM) ?
-	       (dout_gmem + (T1_address >> ADDR_RIGHT_SHIFT)) :
-	       (d_ddrmem  + (T1_address >> ADDR_RIGHT_SHIFT)),
-	       T1_size);
+		memcpy((ap_uint<MEMDW> *)__table1,
+		       (ap_uint<MEMDW> *)(T1_type == HOST_DRAM) ?
+		       (dout_gmem + (T1_address >> ADDR_RIGHT_SHIFT)) :
+		       (d_ddrmem  + (T1_address >> ADDR_RIGHT_SHIFT)),
+		       T1_size);
 
-	memcpy((snap_membus_t *)__table2,
-	       (snap_membus_t *)(T2_type == HOST_DRAM) ?
-	       (din_gmem  + (T2_address >> ADDR_RIGHT_SHIFT)) :
-	       (d_ddrmem  + (T2_address >> ADDR_RIGHT_SHIFT)),
-	       T2_size);
-#else
-	/* FIXME Just Host DDRAM for now */
-	read_table1(din_gmem + (T1_address >> ADDR_RIGHT_SHIFT),
-		    __table1, T1_items);
-	read_table2(din_gmem + (T2_address >> ADDR_RIGHT_SHIFT),
-		    __table2, T2_items);
-#endif
-
-	rc = action_hashjoin_hls(__table1, T1_items, __table2, T2_items,
-				 __table3, &__table3_idx, 1);
-	if (rc == 0) {
-#if defined(CONFIG_QUESTION_MARK_VERSION)
-		memcpy((snap_membus_t *)(T3_type == HOST_DRAM) ?
-		       (dout_gmem + (T3_address >> ADDR_RIGHT_SHIFT)) :
-		       (d_ddrmem  + (T3_address >> ADDR_RIGHT_SHIFT)),
-		       (snap_membus_t *)__table3,
-		       __table3_idx * sizeof(table3_t));
+		memcpy((snap_membus_t *)__table2,
+		       (snap_membus_t *)(T2_type == HOST_DRAM) ?
+		       (din_gmem  + (T2_address >> ADDR_RIGHT_SHIFT)) :
+		       (d_ddrmem  + (T2_address >> ADDR_RIGHT_SHIFT)),
+		       T2_size);
 #else
 		/* FIXME Just Host DDRAM for now */
-		write_table3(dout_gmem+(T3_address>>ADDR_RIGHT_SHIFT),
-			     __table3, __table3_idx);
+		read_table1(din_gmem + (T1_address >> ADDR_RIGHT_SHIFT),
+			    __table1, T1_items);
+		read_table2(din_gmem + (T2_address >> ADDR_RIGHT_SHIFT),
+			    __table2, T2_items);
 #endif
-	} else
-		ReturnCode = RET_CODE_FAILURE;
+
+		rc = action_hashjoin_hls(__table1, T1_items,
+					 __table2, T2_items,
+					 __table3, &__table3_idx, 1);
+		if (rc == 0) {
+#if defined(CONFIG_QUESTION_MARK_VERSION)
+			memcpy((snap_membus_t *)(T3_type == HOST_DRAM) ?
+			       (dout_gmem + (T3_address >> ADDR_RIGHT_SHIFT)) :
+			       (d_ddrmem  + (T3_address >> ADDR_RIGHT_SHIFT)),
+			       (snap_membus_t *)__table3,
+			       __table3_idx * sizeof(table3_t));
+#else
+			/* FIXME Just Host DDRAM for now */
+			write_table3(dout_gmem+(T3_address>>ADDR_RIGHT_SHIFT),
+				     __table3, __table3_idx);
+#endif
+		} else
+			ReturnCode = RET_CODE_FAILURE;
+	} while (0);
 
 	write_results_in_HJ_regs(Action_Output, Action_Input, ReturnCode, 0, 0,
 				 __table3_idx, 0);
