@@ -1,4 +1,8 @@
+*~
 hdl/*~
+hdl/psl_accel_sim.vhd
+hdl/psl_accel_syn.vhd
+setup/*~
 sim/ies/
 sim/xsim/
 viv_project/

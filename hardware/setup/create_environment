@@ -169,8 +169,10 @@
      cd ${DONUT_HARDWARE_ROOT}/setup; echo "run Vivado setup scripts"
      vivado -mode batch -source create_ip.tcl -notrace
      if [[ $? != 0 ]];then echo "error in create_ip.tcl";exit -1;fi
+
      vivado -mode batch -source create_framework.tcl -notrace
      if [[ $? != 0 ]];then echo "error in create_framework.tcl";exit -1;fi
+
      # patches for xsim only, rest is done in separate tcl scripts
      sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/xsim/top.sh          # run up to elaboration, skip execution
      sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" ${DONUT_HARDWARE_ROOT}/sim/xsim/top.sh

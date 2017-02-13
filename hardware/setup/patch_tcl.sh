@@ -10,15 +10,18 @@ sed -i 's/top    synth_options "-flatten_hierarchy rebuilt/top    synth_options 
 sed -i '/top    synth_options/ a\
                                            \]' $2
 
-if [ $DDR3_USED == "TRUE" ]; then
+if [ $DDRI_USED == "TRUE" ]; then
+    sed -i '/top    synth_options/ a\
+                                             \$rootDir/ip/axi_clock_converter/axi_clock_converter.xci \\' $2
   if [ $BRAM_USED == "TRUE" ]; then
     sed -i '/top    synth_options/ a\
-                                             \$rootDir/ip/block_RAM/block_RAM.xci \\\
-                                             \$rootDir/ip/axi_clock_converter/axi_clock_converter.xci \\' $2
+                                             \$rootDir/ip/block_RAM/block_RAM.xci \\' $2
+  elif [ $DDR3_USED == "TRUE" ]; then
+    sed -i '/top    synth_options/ a\
+                                             \$rootDir/ip/ddr3sdram/ddr3sdram.xci \\' $2
   else 
     sed -i '/top    synth_options/ a\
-                                             \$rootDir/ip/ddr3sdram/ddr3sdram.xci \\\
-                                             \$rootDir/ip/axi_clock_converter/axi_clock_converter.xci \\' $2
+                                             \$rootDir/ip/ddr4sdram/ddr4sdram.xci \\' $2
   fi
 fi
 
@@ -29,14 +32,14 @@ sed -i '/top    synth_options/ a\
 
 
 for i in `find . \( ! -regex '.*/\..*' \) -type f -name *.xci | sed 's:./:$rootDir/:' | grep action`; do
-sed -i '/top    synth_options/ a\
+  sed -i '/top    synth_options/ a\
                                              '"$i"' \\' $2
 done
 sed -i '/top    synth_options/ a\
 set_attribute module \$top    ip            \[list \\' $2
 
-if [ $DDR3_USED == "TRUE" ]; then
-sed -i '/top    synth_options/ a\
+if [ $DDRI_USED == "TRUE" ]; then
+  sed -i '/top    synth_options/ a\
 set_attribute module $top    synthXDC      \[list \\\
                                              \$rootDir/setup/donut_synth.xdc \\\
                                            \]' $2
@@ -48,22 +51,32 @@ sed -i '/top      top/ a\
                                            \]' $2
 
 if [ $ILA_DEBUG == "TRUE" ]; then
-sed -i '/top      top/ a\
+  sed -i '/top      top/ a\
                                              \$rootDir/setup/debug.xdc \\' $2
 fi
 
 if [ $DDR3_USED == "TRUE" ] && [ $BRAM_USED != "TRUE"  ] ; then
-sed -i '/top      top/ a\
+  sed -i '/top      top/ a\
                                               \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc \\\
                                               \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc \\' $2
+fi
+
+if [ $DDR4_USED == "TRUE" ] && [ $BRAM_USED != "TRUE"  ]; then
+  sed -i '/top      top/ a\
+                                             \$dimmDir/snap_ddr4pins_flash_gt.xdc \\' $2
 fi
 
 sed -i '/top      top/ a\
                                              \$rootDir/setup/donut_link.xdc \\' $2
 
 if [ $DDR3_USED == "TRUE" ]; then
-sed -i '/top      top/ a\
+  sed -i '/top      top/ a\
                                              \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc \\' $2
+fi
+
+if [ $DDR4_USED == "TRUE" ]; then
+  sed -i '/top      top/ a\
+                                             \$dimmDir/snap_refclk200.xdc \\' $2
 fi
 
 sed -i '/top      top/ a\

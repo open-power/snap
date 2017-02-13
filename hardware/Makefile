@@ -1,12 +1,25 @@
 PSL_SOURCE_ENV=$(FPGACARD)
 BUILD_DIR=$(DONUT_HARDWARE_ROOT)/build
 
+PSL_ACCEL_FILES=$(DONUT_HARDWARE_ROOT)/hdl/psl_accel_sim.vhd $(DONUT_HARDWARE_ROOT)/hdl/psl_accel_syn.vhd
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone
 
 ifndef DDR3_USED
 export DDR3_USED=TRUE
+endif
+
+ifndef DDR4_USED
+export DDR4_USED=FALSE
+endif
+
+export DDRI_USED=FALSE
+ifeq "$(DDR3_USED)" "TRUE"
+export DDRI_USED=TRUE
+endif
+ifeq "$(DDR4_USED)" "TRUE"
+export DDRI_USED=TRUE
 endif
 
 ifndef BRAM_USED
@@ -25,7 +38,7 @@ ifndef ACTION_ROOT
 export ACTION_ROOT=$(DONUT_HARDWARE_ROOT)/action_examples/empty
 endif
 
-.PHONY: all image model check_donut_settings create_environment copy clean config gitclean patch_build_date
+.PHONY: all image model check_donut_settings create_environment copy clean config gitclean patch_version patch_vhd_files patch_tcl_files
 
 all: config model image
 
@@ -48,9 +61,6 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 	@sed -i 's/run.topImpl.*0/run.topImpl 1/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topSynth.*0/run.topSynth 1/' $(BUILD_DIR)/psl_fpga.tcl
 	@mv -f $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
-	@if [ $(DDR3_USED) = "TRUE" ]; then echo "PATCH .vhd FILES for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 < $(DONUT_HARDWARE_ROOT)/setup/vhdl.patch; fi
-	@$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT)/hdl psl_accel_sim.vhd
-	@$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT)/hdl psl_accel_syn.vhd
 
 $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@echo -e "\t[CREATE] $(BUILD_DIR)/Sources/prj/afu.prj"
@@ -71,26 +81,35 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@echo -e "\t[CREATE] $@"
 	@cat $(BUILD_DIR)/Sources/prj/top.prj $(BUILD_DIR)/Sources/prj/afu.prj > $(BUILD_DIR)/Sources/prj/psl_fpga.prj
 
+$(BUILD_DIR)/Sources/top/psl_fpga.vhd: $(BUILD_DIR)/psl_fpga.tcl
+	@if [ $(DDR3_USED) = "TRUE" ]; then echo "PATCH $(BUILD_DIR)/Sources/top/psl_fpga.vhd for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr3_vhdl.patch; fi
+	@if [ $(DDR4_USED) = "TRUE" ]; then echo "PATCH $(BUILD_DIR)/Sources/top/psl_fpga.vhd for DDR4 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr4_vhdl.patch; fi
+
+$(PSL_ACCEL_FILES):
+	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/create_psl_accel.sh $(DONUT_HARDWARE_ROOT)/hdl/psl_accel.vhd_source $@
+
+patch_tcl_files:
 	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
 
+patch_vhd_files:
 	@echo "PATCH .vhd FILES" && VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\///' | sed 's/\(^.*psl_accel_s\)yn.vhd/\1yn.vhd\n\1im.vhd/'`; \
 	for vhd_file in $$VHD_FILES; do \
 		$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; \
 	done
 
-patch_build_date:
-	@echo "PATCH build date" && MMIO_VHD_FILE=`grep -i "mmio.vhd" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\///'`; \
-	$(DONUT_HARDWARE_ROOT)/setup/patch_build_date.sh $(DONUT_HARDWARE_ROOT) $$MMIO_VHD_FILE
+patch_version:
+	@echo "PATCH SNAP version and build date registers"; \
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl mmio.vhd
 
-config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_build_date
+config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(PSL_ACCEL_FILES) create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_vhd_files patch_version
 	@echo -e "\t[CONFIG] done `date`"
 
-model: patch_build_date
+model: patch_version
 	@echo -e "\t[BUILD MODEL] start `date`"
 	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
 	@echo -e "\t[BUILD MODEL] done `date`"
 
-image: patch_build_date
+image: patch_version
 	@echo -e "\t[BUILD IMAGE (BIT)] start `date`"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
 	@if [ "`vivado -version |head -n1  |cut -c 9-12`" = "2015" ] && [ $(DDR3_USED) = "TRUE" ] && [ $(BRAM_USED) = "FALSE" ]; then\
@@ -110,9 +129,11 @@ clean:
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
-	rm -f   ./setup/*.log
-	rm -f   ./setup/*.jou
+	rm -f     $(PSL_ACCEL_FILES)
+	rm -f     ./setup/*.log
+	rm -f     ./setup/*.jou
 
 gitclean:
-	@echo -e "\t[GITCLEAN] cleaning donut git";
+	@echo -e "\t[GITCLEAN] cleaning and resetting donut git";
 	git clean -f -d -x
+	git reset --hard
