@@ -113,11 +113,11 @@ static void print_time(uint64_t elapsed, uint64_t size)
 	if (elapsed > 10000) {
 		t = (int)elapsed/1000;
 		ft = (1000 / (float)t) * fsize;
-		VERBOSE2(" in %d msec (%f MB/sec) " , t, ft);
+		VERBOSE2(" in %d msec (%0.3f MB/sec) " , t, ft);
 	} else {
 		t = (int)elapsed;
 		ft = (1000000 / (float)t) * fsize;
-		VERBOSE2(" in %d usec (%f MB/sec) ", t, ft);
+		VERBOSE2(" in %d usec (%0.3f MB/sec) ", t, ft);
 	}
 }
 
@@ -191,12 +191,14 @@ static int memcmp2(void *b0,		/* Data from RAM */
 				(long long)data);	/* What i got */
 			rc++;
 			if (rc > 10)
-				return rc;		/* Exit */
+				goto __memcmp2_exit;	/* Exit */
 		}
 		a64++;
 		a64_1++;
 		address += 8;
 	}
+	rc = 0;
+__memcmp2_exit:
 	VERBOSE3("  Exit: %d ", rc);
 	return rc;
 }
@@ -227,11 +229,13 @@ static int memcmp_pat(void *h_buf,	/* Host Buffer */
 				(long long)expect,	/* What i expect */
 				(long long)data);	/* What i got */
 			if (rc > 10)
-				return(rc);		/* Exit */
+				goto __memcmp_pat_exit;	/* Exit */
 		}
 		addr += 8;
 		a64++;
 	}
+	rc = 0;
+__memcmp_pat_exit:
 	VERBOSE3("  Exit: %d ", rc);
 	return rc;
 }

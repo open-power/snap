@@ -23,26 +23,20 @@ verbose=0
 dnut_card=0
 iteration=1
 
-function test_ddr ()	# $1 = card, $2 = end address, $3 = block size
+function test_ddr ()	# $1 = card, $2 = start, $2 = end, $3 = block size
 {
 	local card=$1
-	local start_address=$2
-	local block_size=$3
+	local start=$2
+	local end=$3
+	local block_size=$4
 
-	for  n in ` seq 0 31 `; do
-		address=$(($start_address + $n*0x1000))
-		block=$((block_size + $n*0x1000))
-		if [ $address = 0 ] && [ $block = 0 ] ; then
-			continue	# ignore 0 0 combinations
-		fi
-		cmd="./tools/stage2_ddr -v -C ${card} -e $address -b $block"
-		eval ${cmd}
-		if [ $? -ne 0 ]; then
-			echo "cmd: ${cmd}"
-			echo "failed"
-			exit 1
-		fi
-	done
+	cmd="./tools/stage2_ddr -v -C ${card} -s $start -e $end -b $block_size"
+	eval ${cmd}
+	if [ $? -ne 0 ]; then
+		echo -n "Error: cmd: <${cmd}>"
+		echo " failed"
+		#exit 1
+	fi
 }
 
 function usage() {
@@ -82,12 +76,45 @@ if [ $rev != "0x0605" ]; then
 	exit 1
 fi
 
+bl=$((1024*1024))
+
 for ((iter=1;iter <= iteration;iter++))
 {
-	echo -n "Memory Test "
-	echo -n "$iter of $iteration"
+	echo "Memory Test $iter of $iteration (4 x 1GB)"
+	# (1) 4 GB in 4 step's
+	start=0
+	ends=$((1*1024*$bl))
+	end=${ends}
+	test_ddr "${dnut_card}" "${start}" "${end}" "${bl}"
 
-	test_ddr "${dnut_card}" "0x000000000" "0x000000000"
-	#test_ddr "${dnut_card}" "0x000020000" "0x000020000"
+	start=${end}
+	end=$(($start+$ends))
+	test_ddr "${dnut_card}" "${start}" "${end}" "${bl}"
+
+	start=${end}
+	end=$(($start+$ends))
+	test_ddr "${dnut_card}" "${start}" "${end}" "${bl}"
+
+	start=${end}
+	end=$(($start+$ends))
+	test_ddr "${dnut_card}" "${start}" "${end}" "${bl}"
+
+	# (2) 4 GB in 2 step's
+	echo "Memory Test $iter of $iteration (2 x 2GB)"
+	start=0
+	ends=$((2*1024*$bl))
+	end=${ends}
+	test_ddr "${dnut_card}" "${start}" "${end}" "${bl}"
+
+	start=${end}
+	end=$(($start+2*$ends))
+	test_ddr "${dnut_card}" "${start}" "${end}" "${bl}"
+
+	# (3) 4 GB in one step
+	echo "Memory Test $iter of $iteration (1 x 4GB)"
+	start=0
+	ends=$((4*1024*$bl))
+	end=${ends}
+	test_ddr "${dnut_card}" "${start}" "${end}" "${bl}"
 }
 exit 0
