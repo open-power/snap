@@ -151,10 +151,12 @@ static void snap_4KiB_winit(snap_4KiB_t *buf, snap_membus_t *mem,
 	buf->b_idx = 0;
 }
 
+/**
+ * Reading beyond the available memory is blocked, buffer filling
+ * is returned to keep code simple, and contains unuseable data.
+ */
 static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
 {
-	/* reading beyond the available memory is blocked, buffer filling
-	   is returned to keep code simple, and contains unuseable data. */
 	if ((buf->m_idx == buf->max_lines) && (buf->b_idx == SNAP_4KiB_WORDS)) {
 		*line = (snap_membus_t)-1;
 		return;
@@ -174,12 +176,19 @@ static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
 	buf->b_idx++;
 }
 
+/**
+ * Writing beyond the available memory is blocked, still we accept
+ * data in the local buffer, but that will not be written out.
+ */
 static void snap_4KiB_flush(snap_4KiB_t *buf)
 {
-	memcpy(buf->mem + buf->m_idx, buf->buf,
-	       buf->b_idx * sizeof(snap_membus_t));
+	unsigned int free_lines = buf->max_lines - buf->m_idx;
+	unsigned int tocopy = MIN(free_lines, buf->b_idx);
 
-	buf->m_idx += buf->b_idx;
+	memcpy(buf->mem + buf->m_idx, buf->buf,
+	       tocopy * sizeof(snap_membus_t));
+
+	buf->m_idx += tocopy;
 	buf->b_idx = 0;
 }
 
