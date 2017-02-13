@@ -82,33 +82,37 @@ static inline void print_hex(table1_t *buf, size_t len)
         unsigned int x;
         char *d = (char *)buf;
 
-        printf("{ ");
+        fprintf(stderr, "{ ");
         for (x = 0; x < len; x++)
-                printf("%02x, ", d[x]);
-        printf("}");
+                fprintf(stderr, "%02x, ", d[x]);
+        fprintf(stderr, "}");
 }
 void ht_dump(hashtable_t *ht)
 {
         unsigned int i, j;
+	static int printed = 0;
 
-        printf("hashtable = {\n");
+	if (printed++)
+		return;
+
+        fprintf(stderr, "hashtable = {\n");
         for (i = 0; i < HT_SIZE; i++) {
                 entry_t *entry = &ht->table[i];
 
                 if (!entry->used)
                         continue;
 
-                printf("  .ht[%d].key = \"%s\" = {\n", i, entry->key);
+                fprintf(stderr, "  .ht[%d].key = \"%s\" = {\n", i, entry->key);
                 for (j = 0; j < entry->used; j++) {
                         table1_t *multi = &entry->multi[j];
 
-                        printf("    { .val = { ");
+                        fprintf(stderr, "    { .val = { ");
                         print_hex(multi, sizeof(*multi));
-                        printf(" },\n");
+                        fprintf(stderr, " },\n");
                 }
-                printf("  },\n");
+		fprintf(stderr, "  },\n");
         }
-        printf("};\n");
+        fprintf(stderr, "};\n");
 }
 #else
 #  define ht_dump(ht)
@@ -245,54 +249,34 @@ int ht_get(hashtable_t *ht, char *key)
         return -1;
 }
 
-void table3_init(unsigned int *table3_idx)
-{
-        *table3_idx = 0;
-}
-
 #if defined(NO_SYNTH)
 void table3_dump(table3_t *table3, unsigned int table3_idx)
 {
         unsigned int i;
         table3_t *t3;
 
-        printf("table3_t table3[] = { \n");
+        fprintf(stderr, "table3_t table3[] = { \n");
         for (i = 0; i < table3_idx; i++) {
                 t3 = &table3[i];
-                printf("  { .name = \"%s\", .animal = \"%s\", .age=%d }\n",
+                fprintf(stderr, "  { .name = \"%s\", .animal = \"%s\", .age=%d }\n",
                        t3->name, t3->animal, t3->age);
         }
-        printf("}; /* %d lines */\n", table3_idx);
+        fprintf(stderr, "}; /* %d lines */\n", table3_idx);
 }
 #endif
 
-int table3_append(t3_fifo_t *fifo3, unsigned int *table3_idx,
-                  hashkey_t name, hashkey_t animal,
-                  unsigned int age)
-{
-        table3_t t3;
-
-        hashkey_cpy(t3.name, name);
-        hashkey_cpy(t3.animal, animal);
-        t3.age = age;
-        *table3_idx = *table3_idx + 1;
-
-	fifo3->write(t3);
-
-        return *table3_idx;
-}
-
 int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
 			t2_fifo_t *fifo2, unsigned int table2_used,
-			t3_fifo_t *fifo3, unsigned int *table3_used,
-			int check)
+			t3_fifo_t *fifo3, unsigned int *table3_used)
 {
         unsigned int i, j;
 	table1_t t1;
         hashtable_t *h = &__hashtable;
-	unsigned int __table3_idx = 0;
+	unsigned int table3_idx = 0;
 
-        ht_init(h);
+	/* preserve hashtable if table1 is not passed */
+	if (table1_used)
+		ht_init(h);
 
         /* hash phase */
         for (i = 0; i < table1_used; i++) {
@@ -300,14 +284,13 @@ int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
 		// FIXME TIMING #pragma HLS UNROLL
                 t1 = fifo1->read();
 
+#if defined(CONFIG_FIFO_DEBUG)
 		fprintf(stderr, "fifo1->read(%d, %s)\n", i, t1.name);
+#endif
                 ht_set(h, t1.name, &t1);
         }
         ht_dump(h);
 
-	fprintf(stderr, "SYNC SYNC SYNC\n");
-
-        table3_init(&__table3_idx);
         for (i = 0; i < table2_used; i++) {
 		/* #pragma HLS PIPELINE */
 		// FIXME TIMING  #pragma HLS UNROLL
@@ -315,8 +298,9 @@ int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
                 entry_t *entry;
                 table2_t t2 = fifo2->read();
 
+#if defined(CONFIG_FIFO_DEBUG)
 		fprintf(stderr, "fifo2->read(%d, %s)\n", i, t2.name);
-
+#endif
                 bin = ht_get(h, t2.name);
                 if (bin == -1)
                         continue;       /* nothing found */
@@ -330,20 +314,16 @@ int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
 			hashkey_cpy(t3.name, t2.name);
 			hashkey_cpy(t3.animal, t2.animal);
 			t3.age = m->age;
-			__table3_idx++;
 			fifo3->write(t3);
+#if defined(CONFIG_FIFO_DEBUG)
+			fprintf(stderr, "fifo3->write(%d, %d/%d, %s)\n",
+				table3_idx, i, j, t3.name);
+#endif
+			table3_idx++;
                 }
         }
 
-	*table3_used = __table3_idx;
-
-        /*
-         * Sanity check, elements in multihash table must match
-         * elements in table1.
-         */
-	if (check)
-		return ht_count(h) != table1_used;
-
+	*table3_used = table3_idx;
 	return 0;
 }
 

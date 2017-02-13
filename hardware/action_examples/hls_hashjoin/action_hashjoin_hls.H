@@ -170,8 +170,11 @@ void hashkey_cpy(hashkey_t dst, hashkey_t src);
 
 int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
 			t2_fifo_t *fifo2, unsigned int table2_used,
-			t3_fifo_t *fifo3, unsigned int *table3_used,
-			int check);
+			t3_fifo_t *fifo3, unsigned int *table3_used);
+
+void table3_dump(table3_t *table3, unsigned int table3_idx);
+
+#define CONFIG_FIFO_DEBUG
 
 #endif  /* __ACTION_HASHJOIN_HLS_H__ */
 

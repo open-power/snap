@@ -23,9 +23,6 @@
 using namespace std;
 
 /* Define memory buffers to keep the data we read from CARD or HOST DRAM */
-static unsigned int __table3_idx = 0;
-static table3_t __table3[TABLE1_SIZE * TABLE2_SIZE]; /* worst case size */
-
 #define TABLE1_BYTES         (sizeof(table1_t) * TABLE1_SIZE)
 #define TABLE2_BYTES         (sizeof(table2_t) * TABLE2_SIZE)
 
@@ -223,7 +220,9 @@ static void read_table1(snap_membus_t *mem, unsigned int max_lines,
 		t1.age = b[1](31, 0);
 
 		fifo1->write(t1);
-		fprintf(stderr, "fifo1->write(%d, %s)\n", i, t1.name);
+#if defined(CONFIG_FIFO_DEBUG)
+		fprintf(stderr, "(K) fifo1->write(%d, %s)\n", i, t1.name);
+#endif
 	}
 }
 
@@ -248,7 +247,9 @@ static void read_table2(snap_membus_t *mem, unsigned int max_lines,
 		copy_hashkey(b[1], t2.animal);
 
 		fifo2->write(t2);
-		fprintf(stderr, "fifo2->write(%d, %s)\n", i, t2.name);
+#if defined(CONFIG_FIFO_DEBUG)
+		fprintf(stderr, "(K) fifo2->write(%d, %s)\n", i, t2.name);
+#endif
 	}
 }
 
@@ -266,7 +267,9 @@ static void write_table3(snap_membus_t *mem, unsigned int max_lines,
 		snap_membus_t d;
 		table3_t t3 = fifo3->read();
 
-		fprintf(stderr, "fifo3->read(%d, %s)\n", i, t3.name);
+#if defined(CONFIG_FIFO_DEBUG)
+		fprintf(stderr, "(K) fifo3->read(%d, %s)\n", i, t3.name);
+#endif
 
 		d(31, 0) = t3.age;
 		snap_4KiB_put(&buf, hashkey_to_mbus(t3.name));
@@ -318,6 +321,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 	snapu32_t T3_size;
 	unsigned int T1_items = 0;
 	unsigned int T2_items = 0;
+	unsigned int __table3_idx = 0;
 
 #define pragma HLS DATAFLOW
 	t1_fifo_t t1_fifo;
@@ -330,9 +334,6 @@ void action_wrapper(snap_membus_t *din_gmem,
 	//== Parameters fetched in memory ==
 	//==================================
 
-	fprintf(stderr, "din_gmem  = %p\n", din_gmem);
-	fprintf(stderr, "dout_gmem = %p\n", dout_gmem);
-	
 	/*
 	 * FIXME We added the do { } while (0) construct to avoid MMIO
 	 * register duplication which we observed happening when we
@@ -359,8 +360,9 @@ void action_wrapper(snap_membus_t *din_gmem,
 		T3_size    = Action_Input->Data.t3.size;
 		ReturnCode = RET_CODE_OK;
 
-		fprintf(stderr, "t1: %016lx t2: %016lx\n",
-			(long)T1_address, (long)T2_address);
+		fprintf(stderr, "t1: %016lx/%08x t2: %016lx/%08x\n",
+			(long)T1_address, (int)T1_size,
+			(long)T2_address, (int)T2_size);
 
 		/* FIXME Just Host DDRAM for now */
 		read_table1(din_gmem + (T1_address >> ADDR_RIGHT_SHIFT),
@@ -370,9 +372,11 @@ void action_wrapper(snap_membus_t *din_gmem,
 			    T2_size / sizeof(snap_membus_t),
 			    &t2_fifo, T2_items);
 
+		__table3_idx = 0;
 		rc = action_hashjoin_hls(&t1_fifo, T1_items,
 					 &t2_fifo, T2_items,
-					 &t3_fifo, &__table3_idx, 1);
+					 &t3_fifo, &__table3_idx);
+		fprintf(stderr, "rc = %d __table3_idx = %d\n", rc, __table3_idx);
 		if (rc == 0) {
 			/* FIXME Just Host DDRAM for now */
 			write_table3(dout_gmem+(T3_address>>ADDR_RIGHT_SHIFT),
@@ -382,6 +386,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 			ReturnCode = RET_CODE_FAILURE;
 	} while (0);
 
+	fprintf(stderr, "  table3_idx = %d\n", __table3_idx);
 	write_results_in_HJ_regs(Action_Output, Action_Input, ReturnCode, 0, 0,
 				 __table3_idx, 0);
 }
@@ -453,18 +458,21 @@ static table2_t table2[] = {
 
 };
 
-static table3_t table3[TABLE1_SIZE * TABLE2_SIZE]; /* worst case size */
+#undef CONFIG_MEMDEBUG
+#define TABLE2_N 2
+
+static table3_t table3[TABLE1_SIZE * TABLE2_SIZE * TABLE2_N]; /* worst case size */
 
 int main(void)
 {
+	unsigned int i;
+	unsigned int table2_entries = 0;
+	unsigned int table3_found = 0;
 	snap_membus_t din_gmem[2048];    /* content is here */
 	snap_membus_t dout_gmem[2048];   /* output goes here, empty */
 	snap_membus_t d_ddrmem[2048];    /* card memory is empty */
 	action_input_reg Action_Input;
 	action_output_reg Action_Output;
-
-	/* Show width of the memory interface */
-	din_gmem[2047] = -1;
 
 	Action_Input.Control.action = HASHJOIN_ACTION_TYPE;
 
@@ -472,37 +480,66 @@ int main(void)
 	Action_Input.Data.t1.address = 0;
 	Action_Input.Data.t1.size = sizeof(table1);
 
+	table2_entries = ARRAY_SIZE(table2) * TABLE2_N;
 	Action_Input.Data.t2.type = HOST_DRAM;
-	Action_Input.Data.t2.address = sizeof(table1);
-	Action_Input.Data.t2.size = sizeof(table2);
 
 	Action_Input.Data.t3.type = HOST_DRAM;
-	Action_Input.Data.t3.address = sizeof(table1) + sizeof(table2);
+	Action_Input.Data.t3.address = sizeof(table1) * TABLE2_N + sizeof(table2);
 	Action_Input.Data.t3.size = sizeof(table3);
 
-	memcpy((uint8_t *)din_gmem,                  table1, sizeof(table1));
-	memcpy((uint8_t *)din_gmem + sizeof(table1), table2, sizeof(table2));
+	memcpy((uint8_t *)din_gmem, table1, sizeof(table1));
 
+	/* Create a copy of table2 TABLE2_N times */
+	for (i = 0; i < TABLE2_N; i++) {
+		memcpy((uint8_t *)din_gmem + sizeof(table1) + i * sizeof(table2),
+		       table2, sizeof(table2));
+	}
+
+#if defined(CONFIG_MEMDEBUG)
 	printf("HOSTMEMORY INPUT %p\n", din_gmem);
 	for (unsigned int i = 0; i < 2048; i++)
 		if (din_gmem[i] != 0)
 			cout << setw(4)  << i << ": "
 			     << setw(32) << hex << din_gmem[i]
 			     << endl;
-	
-	action_wrapper(din_gmem, dout_gmem, d_ddrmem,
-		       &Action_Input, &Action_Output);
+#endif
+	i = 0;
+	while (table2_entries != 0) {
+		unsigned int todo = MIN(table2_entries, TABLE2_SIZE);
+		
+		Action_Input.Data.t3_produced = 0;
+		Action_Input.Data.t2.address = sizeof(table1) + i * sizeof(table2);
+		Action_Input.Data.t2.size = todo * sizeof(table2_t);
 
+		fprintf(stderr, "Processing %d table2 entries ...\n", todo);
+		action_wrapper(din_gmem, dout_gmem, d_ddrmem,
+			       &Action_Input, &Action_Output);
+
+		Action_Input.Data.t1.address = 0; /* do not need to process t1 */
+		Action_Input.Data.t1.size = 0;
+		Action_Input.Data.t3.address +=
+			(int)Action_Output.Data.t3_produced * sizeof(table3_t);
+
+		table3_found += (int)Action_Output.Data.t3_produced;
+		table2_entries -= todo;
+		i++;
+	}
+
+#if defined(CONFIG_MEMDEBUG)
 	printf("HOSTMEMORY OUTPUT %p\n", dout_gmem);
 	for (unsigned int i = 0; i < 2048; i++)
 		if (dout_gmem[i] != 0)
 			cout << setw(4)  << i << ": "
 			     << setw(32) << hex << dout_gmem[i]
 			     << endl;
+#endif
 	
 	/* The 24 entries are a manually determined value */
-	printf("Number of entries in t3: %d\n", (int)Action_Output.Data.t3_produced);
-	if (Action_Output.Data.t3_produced != 24) {
+	printf("Number of entries in t3: %d\n", table3_found);
+	if (table3_found != 24 * TABLE2_N) {
+		table3_dump((table3_t *)((uint8_t *)dout_gmem +
+					 sizeof(table1) + TABLE2_N * sizeof(table2)),
+			    table3_found);
 		return 1;
 	}
 
