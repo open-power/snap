@@ -164,12 +164,8 @@ static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
 		unsigned int tocopy =
 			MIN(SNAP_4KiB_WORDS, buf->max_lines - buf->m_idx);
 
-		if (tocopy == SNAP_4KiB_WORDS)
-			memcpy(buf->buf, buf->mem + buf->m_idx,
-			       SNAP_4KiB_WORDS * sizeof(snap_membus_t));
-		else
-			memcpy(buf->buf, buf->mem + buf->m_idx,
-			       tocopy * sizeof(snap_membus_t));
+		memcpy(buf->buf, buf->mem + buf->m_idx,
+		       tocopy * sizeof(snap_membus_t));
 		
 		buf->m_idx += tocopy;
 		buf->b_idx = 0; /* buffer is full again */
