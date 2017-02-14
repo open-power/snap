@@ -108,12 +108,18 @@ static snap_membus_t hashkey_to_mbus(hashkey_t key)
  */
 #define SNAP_4KiB_WORDS (4096 / sizeof(snap_membus_t))
 
+/*
+ * We found that having the indexes here too large we got synthesis
+ * warnings about critical path problems. So reducing this to
+ * smaller values helped, but reduced the possible buffer memory
+ * sizes.
+ */
 typedef struct snap_4KiB_t {
 	snap_membus_t buf[SNAP_4KiB_WORDS]; /* temporary storage buffer */
 	snap_membus_t *mem;                 /* source where data comes from */
-	unsigned int max_lines;             /* size of the memory buffer */
-	unsigned int m_idx;                 /* read position for source */
-	unsigned int b_idx;                 /* read position for buffer */
+	unsigned short max_lines;           /* size of the memory buffer */
+	unsigned short m_idx;               /* read position for source */
+	unsigned char b_idx;                /* read position for buffer */
 } snap_4KiB_t;
 
 static void snap_4KiB_rinit(snap_4KiB_t *buf, snap_membus_t *mem,
@@ -195,7 +201,7 @@ static void read_table1(snap_membus_t *mem, unsigned int max_lines,
 
  read_table1_loop:
 	for (i = 0; i < t1_used; i++) {
-#pragma HLS PIPELINE
+/* #pragma HLS PIPELINE */
 		snap_membus_t b[2];
 		table1_t t1;
 
@@ -222,7 +228,7 @@ static void read_table2(snap_membus_t *mem, unsigned int max_lines,
 
  read_table2_loop:
 	for (i = 0; i < t2_used; i++) {
-#pragma HLS PIPELINE
+/* #pragma HLS PIPELINE */
 		snap_membus_t b[2];
 		table2_t t2;
 
@@ -309,11 +315,14 @@ void action_wrapper(snap_membus_t *din_gmem,
 	snapu32_t T1_size;
 	snapu32_t T2_size;
 	snapu32_t T3_size;
+	snapu32_t T1_lines;
+	snapu32_t T2_lines;
+	snapu32_t T3_lines;
 	unsigned int T1_items = 0;
 	unsigned int T2_items = 0;
 	unsigned int __table3_idx = 0;
 
-#define pragma HLS DATAFLOW
+/* #define pragma HLS DATAFLOW */
 	t1_fifo_t t1_fifo;
 	t2_fifo_t t2_fifo;
 	t3_fifo_t t3_fifo;
@@ -341,13 +350,18 @@ void action_wrapper(snap_membus_t *din_gmem,
 		T1_type    = Action_Input->Data.t1.type;
 		T1_size    = Action_Input->Data.t1.size;
 		T1_items   = T1_size / sizeof(table1_t);
+		T1_lines   = T1_size / sizeof(snap_membus_t);
+
 		T2_address = Action_Input->Data.t2.address;
 		T2_type    = Action_Input->Data.t2.type;
 		T2_size    = Action_Input->Data.t2.size;
 		T2_items   = T2_size / sizeof(table2_t);
+		T2_lines   = T2_size / sizeof(snap_membus_t);
+
 		T3_address = Action_Input->Data.t3.address;
 		T3_type    = Action_Input->Data.t3.type;
 		T3_size    = Action_Input->Data.t3.size;
+		T3_lines   = T2_size / sizeof(snap_membus_t);
 		ReturnCode = RET_CODE_OK;
 
 		fprintf(stderr, "t1: %016lx/%08x t2: %016lx/%08x t3: %016lx/%08x\n",
@@ -357,11 +371,9 @@ void action_wrapper(snap_membus_t *din_gmem,
 
 		/* FIXME Just Host DDRAM for now */
 		read_table1(din_gmem + (T1_address >> ADDR_RIGHT_SHIFT),
-			    T1_size / sizeof(snap_membus_t),
-			    &t1_fifo, T1_items);
+			    T1_lines, &t1_fifo, T1_items);
 		read_table2(din_gmem + (T2_address >> ADDR_RIGHT_SHIFT),
-			    T2_size / sizeof(snap_membus_t),
-			    &t2_fifo, T2_items);
+			    T2_lines, &t2_fifo, T2_items);
 
 		__table3_idx = 0;
 		rc = action_hashjoin_hls(&t1_fifo, T1_items,
@@ -370,8 +382,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 		if (rc == 0) {
 			/* FIXME Just Host DDRAM for now */
 			write_table3(dout_gmem + (T3_address>>ADDR_RIGHT_SHIFT),
-				     T3_size / sizeof(snap_membus_t),
-				     &t3_fifo, __table3_idx);
+				     T3_lines, &t3_fifo, __table3_idx);
 		} else
 			ReturnCode = RET_CODE_FAILURE;
 	} while (0);
