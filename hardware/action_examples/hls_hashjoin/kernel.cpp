@@ -380,7 +380,6 @@ void action_wrapper(snap_membus_t *din_gmem,
 		rc = action_hashjoin_hls(&t1_fifo, T1_items,
 					 &t2_fifo, T2_items,
 					 &t3_fifo, &__table3_idx);
-		fprintf(stderr, "rc = %d __table3_idx = %d\n", rc, __table3_idx);
 		if (rc == 0) {
 			/* FIXME Just Host DDRAM for now */
 			write_table3(dout_gmem + (T3_address>>ADDR_RIGHT_SHIFT),
@@ -390,7 +389,6 @@ void action_wrapper(snap_membus_t *din_gmem,
 			ReturnCode = RET_CODE_FAILURE;
 	} while (0);
 
-	fprintf(stderr, "  table3_idx = %d\n", __table3_idx);
 	write_results_in_HJ_regs(Action_Output, Action_Input, ReturnCode, 0, 0,
 				 __table3_idx, 0);
 }
@@ -462,7 +460,7 @@ static table2_t table2[] = {
 
 };
 
-#define TABLE2_N 2
+#define TABLE2_N 8
 
 /* worst case size */
 static table3_t table3[TABLE1_SIZE * TABLE2_SIZE * TABLE2_N];
