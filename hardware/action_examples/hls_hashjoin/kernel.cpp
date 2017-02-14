@@ -22,19 +22,6 @@
 
 using namespace std;
 
-/* Define memory buffers to keep the data we read from CARD or HOST DRAM */
-#define TABLE1_BYTES         (sizeof(table1_t) * TABLE1_SIZE)
-#define TABLE2_BYTES         (sizeof(table2_t) * TABLE2_SIZE)
-
-#define TABLE1_IN_4KiB       (4096 / sizeof(table1_t))
-#define TABLE2_IN_4KiB       (4096 / sizeof(table2_t))
-
-#define TABLE1_MEMBUS_WORDS  (TABLE1_BYTES / sizeof(snap_membus_t))
-#define TABLE2_MEMBUS_WORDS  (TABLE2_BYTES / sizeof(snap_membus_t))
-
-#define HASHJOIN_ACTION_TYPE 0x0022
-#define RELEASE_VERSION      0xFEEDA02200000015 /* Action/Release numbers */
-
 // ----------------------------------------------------------------------------
 // Known Limitations => Issue #39 & #45
 //      => Transfers must be 64 byte aligned and a size of multiples of 64 bytes

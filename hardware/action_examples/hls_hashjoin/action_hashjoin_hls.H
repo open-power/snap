@@ -73,6 +73,19 @@ typedef hls::stream<table3_t> t3_fifo_t;
 #define HT_SIZE        (TABLE1_SIZE * 4)           /* size of hashtable */
 #define HT_MULTI       TABLE1_SIZE                 /* multihash */
 
+/* Define memory buffers to keep the data we read from CARD or HOST DRAM */
+#define TABLE1_BYTES         (sizeof(table1_t) * TABLE1_SIZE)
+#define TABLE2_BYTES         (sizeof(table2_t) * TABLE2_SIZE)
+
+#define TABLE1_IN_4KiB       (4096 / sizeof(table1_t))
+#define TABLE2_IN_4KiB       (4096 / sizeof(table2_t))
+
+#define TABLE1_MEMBUS_WORDS  (TABLE1_BYTES / sizeof(snap_membus_t))
+#define TABLE2_MEMBUS_WORDS  (TABLE2_BYTES / sizeof(snap_membus_t))
+
+#define HASHJOIN_ACTION_TYPE 0x0022
+#define RELEASE_VERSION      0xFEEDA02200000015 /* Action/Release numbers */
+
 typedef struct entry_s {
         hashkey_t key;          /* key */
         unsigned int used;      /* list entries used */
