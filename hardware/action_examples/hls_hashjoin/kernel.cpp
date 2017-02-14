@@ -464,12 +464,14 @@ static table2_t table2[] = {
 
 #define TABLE2_N 2
 
-static table3_t table3[TABLE1_SIZE * TABLE2_SIZE * TABLE2_N]; /* worst case size */
+/* worst case size */
+static table3_t table3[TABLE1_SIZE * TABLE2_SIZE * TABLE2_N];
 
 int main(void)
 {
 	unsigned int i;
 	unsigned int table2_entries = 0;
+	unsigned int t3_found;
 	unsigned int table3_found = 0;
 	snap_membus_t din_gmem[2048];    /* content is here */
 	snap_membus_t dout_gmem[2048];   /* output goes here, empty */
@@ -489,6 +491,7 @@ int main(void)
 
 	table2_entries = ARRAY_SIZE(table2) * TABLE2_N;
 	Action_Input.Data.t2.type = HOST_DRAM;
+	Action_Input.Data.t2.address = sizeof(table1);
 
 	Action_Input.Data.t3.type = HOST_DRAM;
 	Action_Input.Data.t3.address = sizeof(table1) + TABLE2_N * sizeof(table2);
@@ -512,22 +515,25 @@ int main(void)
 #endif
 	i = 0;
 	while (table2_entries != 0) {
+		unsigned int t3_data;
 		unsigned int todo = MIN(table2_entries, TABLE2_SIZE);
-		
-		Action_Input.Data.t3_produced = 0;
-		Action_Input.Data.t2.address = sizeof(table1) + i * sizeof(table2);
-		Action_Input.Data.t2.size = todo * sizeof(table2_t);
 
+		Action_Input.Data.t2.size = todo * sizeof(table2_t);
+		
 		fprintf(stderr, "Processing %d table2 entries ...\n", todo);
 		action_wrapper(din_gmem, dout_gmem, d_ddrmem,
 			       &Action_Input, &Action_Output);
 
-		Action_Input.Data.t1.address = 0; /* do not need to process t1 */
+		Action_Input.Data.t1.address = 0; /* no need to process t1 */
 		Action_Input.Data.t1.size = 0;
-		Action_Input.Data.t3.address +=
-			(int)Action_Output.Data.t3_produced * sizeof(table3_t);
+		Action_Input.Data.t2.address += todo * sizeof(table2_t);
 
-		table3_found += (int)Action_Output.Data.t3_produced;
+		t3_found = (int)Action_Output.Data.t3_produced;
+		t3_data = t3_found * sizeof(table3_t);
+		Action_Input.Data.t3.address += t3_data;
+		Action_Input.Data.t3.size -= t3_data;
+
+		table3_found += t3_found;
 		table2_entries -= todo;
 		i++;
 	}
