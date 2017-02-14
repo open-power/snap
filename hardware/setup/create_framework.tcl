@@ -20,7 +20,7 @@ set root_dir    $::env(DONUT_HARDWARE_ROOT)
 set fpga_part   $::env(FPGACHIP)
 set pslse_dir   $::env(PSLSE_ROOT)
 set dimm_dir    $::env(DIMMTEST)
-set build_dir   $::env(DONUT_HARDWARE_ROOT)/build
+set build_dir   $::env(BUILD_DIR)
 set ip_dir      $root_dir/ip
 set action_dir  $::env(ACTION_ROOT)
 set ddri_used   $::env(DDRI_USED)
@@ -79,7 +79,7 @@ add_files -norecurse -scan_for_includes $build_dir/Sources/top/std_ulogic_functi
 add_files -norecurse -scan_for_includes $build_dir/Sources/top/std_ulogic_unsigned.vhdl
 add_files -norecurse -scan_for_includes $build_dir/Sources/top/synthesis_support.vhdl
 set_property library ibm              [get_files $build_dir/Sources/top/synthesis_support.vhdl]
-set_property used_in_simulation false [get_files $root_dir/build/Sources/top/psl_fpga.vhdl]
+set_property used_in_simulation false [get_files $build_dir/Sources/top/psl_fpga.vhdl]
 # HDL Files
 add_files -scan_for_includes $root_dir/hdl/
 set_property used_in_simulation false [get_files  $root_dir/hdl/psl_accel_syn.vhd]
