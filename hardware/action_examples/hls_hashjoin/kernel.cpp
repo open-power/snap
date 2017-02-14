@@ -22,6 +22,8 @@
 
 using namespace std;
 
+#define MEMORY_LINES 1024
+
 // ----------------------------------------------------------------------------
 // Known Limitations => Issue #39 & #45
 //      => Transfers must be 64 byte aligned and a size of multiples of 64 bytes
@@ -278,9 +280,9 @@ static void write_table3(snap_membus_t *mem, unsigned int max_lines,
 //-----------------------------------------------------------------------------
 //--- MAIN PROGRAM ------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void action_wrapper(snap_membus_t *din_gmem,
-		    snap_membus_t *dout_gmem,
-		    snap_membus_t *d_ddrmem,
+void action_wrapper(snap_membus_t din_gmem[MEMORY_LINES],
+		    snap_membus_t dout_gmem[MEMORY_LINES],
+		    snap_membus_t d_ddrmem[MEMORY_LINES],
 		    action_input_reg *Action_Input,
 		    action_output_reg *Action_Output)
 {
@@ -322,7 +324,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 	unsigned int T2_items = 0;
 	unsigned int __table3_idx = 0;
 
-/* #define pragma HLS DATAFLOW */
+#define pragma HLS DATAFLOW
 	t1_fifo_t t1_fifo;
 	t2_fifo_t t2_fifo;
 	t3_fifo_t t3_fifo;
@@ -462,6 +464,11 @@ static table2_t table2[] = {
 
 /* worst case size */
 static table3_t table3[TABLE1_SIZE * TABLE2_SIZE * TABLE2_N];
+static snap_membus_t din_gmem[MEMORY_LINES];    /* content is here */
+static snap_membus_t dout_gmem[MEMORY_LINES];   /* output goes here, empty */
+static snap_membus_t d_ddrmem[MEMORY_LINES];    /* card memory is empty */
+static action_input_reg Action_Input;
+static action_output_reg Action_Output;
 
 int main(void)
 {
@@ -469,11 +476,6 @@ int main(void)
 	unsigned int table2_entries = 0;
 	unsigned int t3_found;
 	unsigned int table3_found = 0;
-	snap_membus_t din_gmem[2048];    /* content is here */
-	snap_membus_t dout_gmem[2048];   /* output goes here, empty */
-	snap_membus_t d_ddrmem[2048];    /* card memory is empty */
-	action_input_reg Action_Input;
-	action_output_reg Action_Output;
 
 	memset(din_gmem,  0, sizeof(din_gmem));
 	memset(dout_gmem, 0, sizeof(dout_gmem));
