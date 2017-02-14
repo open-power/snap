@@ -102,14 +102,13 @@ static void copy_hashkey(snap_membus_t mem, hashkey_t key)
 
 static snap_membus_t hashkey_to_mbus(hashkey_t key)
 {
-	snap_membus_t res = 0, mem;
+	snap_membus_t mem = 0;
 
  loop_hashkey_to_mbus:
 	for (unsigned int k = 0; k < sizeof(hashkey_t); k++) {
 		mem(8 * (k+1) - 1,  8 * k) = key[k];
-		res |= mem;
 	}
-	return res;
+	return mem;
 }
 
 /*
@@ -264,17 +263,21 @@ static void write_table3(snap_membus_t *mem, unsigned int max_lines,
 	/* extract data into target table3, or FIFO maybe? */
  write_table3_loop:
 	for (i = 0; i < t3_used; i++) {
-		snap_membus_t d;
+		snap_membus_t d[3];
 		table3_t t3 = fifo3->read();
 
 #if defined(CONFIG_FIFO_DEBUG)
-		fprintf(stderr, "(K) fifo3->read(%d, %s)\n", i, t3.name);
+		fprintf(stderr, "(K) fifo3->read(%d, %s %s %d)\n",
+			i, t3.name, t3.animal, t3.age);
 #endif
+		d[0] = hashkey_to_mbus(t3.animal);
+		d[1] = hashkey_to_mbus(t3.name);
+		d[2](511, 32) = 0;
+		d[2](31, 0) = t3.age;
 
-		d(31, 0) = t3.age;
-		snap_4KiB_put(&buf, hashkey_to_mbus(t3.name));
-		snap_4KiB_put(&buf, hashkey_to_mbus(t3.animal)); 
-		snap_4KiB_put(&buf, d);
+		snap_4KiB_put(&buf, d[0]);
+		snap_4KiB_put(&buf, d[1]); 
+		snap_4KiB_put(&buf, d[2]);
 	}
 	snap_4KiB_flush(&buf);
 }
@@ -360,9 +363,10 @@ void action_wrapper(snap_membus_t *din_gmem,
 		T3_size    = Action_Input->Data.t3.size;
 		ReturnCode = RET_CODE_OK;
 
-		fprintf(stderr, "t1: %016lx/%08x t2: %016lx/%08x\n",
+		fprintf(stderr, "t1: %016lx/%08x t2: %016lx/%08x t3: %016lx/%08x\n",
 			(long)T1_address, (int)T1_size,
-			(long)T2_address, (int)T2_size);
+			(long)T2_address, (int)T2_size,
+			(long)T3_address, (int)T3_size);
 
 		/* FIXME Just Host DDRAM for now */
 		read_table1(din_gmem + (T1_address >> ADDR_RIGHT_SHIFT),
@@ -379,7 +383,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 		fprintf(stderr, "rc = %d __table3_idx = %d\n", rc, __table3_idx);
 		if (rc == 0) {
 			/* FIXME Just Host DDRAM for now */
-			write_table3(dout_gmem+(T3_address>>ADDR_RIGHT_SHIFT),
+			write_table3(dout_gmem + (T3_address>>ADDR_RIGHT_SHIFT),
 				     T3_size / sizeof(snap_membus_t),
 				     &t3_fifo, __table3_idx);
 		} else
@@ -458,7 +462,6 @@ static table2_t table2[] = {
 
 };
 
-#undef CONFIG_MEMDEBUG
 #define TABLE2_N 2
 
 static table3_t table3[TABLE1_SIZE * TABLE2_SIZE * TABLE2_N]; /* worst case size */
@@ -474,6 +477,10 @@ int main(void)
 	action_input_reg Action_Input;
 	action_output_reg Action_Output;
 
+	memset(din_gmem,  0, sizeof(din_gmem));
+	memset(dout_gmem, 0, sizeof(dout_gmem));
+	memset(d_ddrmem,  0, sizeof(d_ddrmem));
+
 	Action_Input.Control.action = HASHJOIN_ACTION_TYPE;
 
 	Action_Input.Data.t1.type = HOST_DRAM;
@@ -484,7 +491,7 @@ int main(void)
 	Action_Input.Data.t2.type = HOST_DRAM;
 
 	Action_Input.Data.t3.type = HOST_DRAM;
-	Action_Input.Data.t3.address = sizeof(table1) * TABLE2_N + sizeof(table2);
+	Action_Input.Data.t3.address = sizeof(table1) + TABLE2_N * sizeof(table2);
 	Action_Input.Data.t3.size = sizeof(table3);
 
 	memcpy((uint8_t *)din_gmem, table1, sizeof(table1));
@@ -495,11 +502,11 @@ int main(void)
 		       table2, sizeof(table2));
 	}
 
-#if defined(CONFIG_MEMDEBUG)
+#if defined(CONFIG_MEM_DEBUG)
 	printf("HOSTMEMORY INPUT %p\n", din_gmem);
 	for (unsigned int i = 0; i < 2048; i++)
 		if (din_gmem[i] != 0)
-			cout << setw(4)  << i << ": "
+			cout << setw(4)  << i * sizeof(snap_membus_t) << ": "
 			     << setw(32) << hex << din_gmem[i]
 			     << endl;
 #endif
@@ -525,11 +532,11 @@ int main(void)
 		i++;
 	}
 
-#if defined(CONFIG_MEMDEBUG)
+#if defined(CONFIG_MEM_DEBUG)
 	printf("HOSTMEMORY OUTPUT %p\n", dout_gmem);
 	for (unsigned int i = 0; i < 2048; i++)
 		if (dout_gmem[i] != 0)
-			cout << setw(4)  << i << ": "
+			cout << setw(4)  << i * sizeof(snap_membus_t) << ": "
 			     << setw(32) << hex << dout_gmem[i]
 			     << endl;
 #endif

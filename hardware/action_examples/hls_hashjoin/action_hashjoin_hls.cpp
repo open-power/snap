@@ -87,6 +87,7 @@ static inline void print_hex(table1_t *buf, size_t len)
                 fprintf(stderr, "%02x, ", d[x]);
         fprintf(stderr, "}");
 }
+
 void ht_dump(hashtable_t *ht)
 {
         unsigned int i, j;
@@ -258,8 +259,9 @@ void table3_dump(table3_t *table3, unsigned int table3_idx)
         fprintf(stderr, "table3_t table3[] = { \n");
         for (i = 0; i < table3_idx; i++) {
                 t3 = &table3[i];
-                fprintf(stderr, "  { .name = \"%s\", .animal = \"%s\", .age=%d }\n",
-                       t3->name, t3->animal, t3->age);
+                fprintf(stderr,
+			"  { .name = \"%s\", .animal = \"%s\", .age=%d } /* #%d */\n",
+			t3->name, t3->animal, t3->age, i);
         }
         fprintf(stderr, "}; /* %d lines */\n", table3_idx);
 }
@@ -289,7 +291,10 @@ int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
 #endif
                 ht_set(h, t1.name, &t1);
         }
+
+#if defined(CONFIG_HASHTABLE_DEBUG)
         ht_dump(h);
+#endif
 
         for (i = 0; i < table2_used; i++) {
 		/* #pragma HLS PIPELINE */
