@@ -203,7 +203,7 @@ static void read_table1(snap_membus_t *mem, unsigned int max_lines,
 
  read_table1_loop:
 	for (i = 0; i < t1_used; i++) {
-/* #pragma HLS PIPELINE */
+#pragma HLS PIPELINE
 		snap_membus_t b[2];
 		table1_t t1;
 
@@ -230,7 +230,7 @@ static void read_table2(snap_membus_t *mem, unsigned int max_lines,
 
  read_table2_loop:
 	for (i = 0; i < t2_used; i++) {
-/* #pragma HLS PIPELINE */
+#pragma HLS PIPELINE
 		snap_membus_t b[2];
 		table2_t t2;
 
@@ -258,6 +258,7 @@ static void write_table3(snap_membus_t *mem, unsigned int max_lines,
 	/* extract data into target table3, or FIFO maybe? */
  write_table3_loop:
 	for (i = 0; i < t3_used; i++) {
+#pragma HLS PIPELINE
 		snap_membus_t d[3];
 		table3_t t3 = fifo3->read();
 
