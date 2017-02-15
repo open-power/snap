@@ -48,8 +48,8 @@
 #endif
 
 // BFS defines VEX_WIDTH = log2(MAX_VEX_NUM) The necessary bits to hold vex index
-#define MAX_VEX_NUM 100
-#define VEX_WIDTH   7  
+#define MAX_VEX_NUM 2048
+#define VEX_WIDTH   11  
 
 #define VNODE_SIZE  16
 //vnode = (*edgelink_ptr, *data_ptr)

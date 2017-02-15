@@ -20,7 +20,7 @@
 #include <hls_stream.h>
 #include "bfs.h"
 
-typedef ap_uint<32> Q_t;
+typedef ap_uint<VEX_WIDTH> Q_t;
 //--------------------------------------------------------------------------------------------
 
 
@@ -114,11 +114,15 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
    
   L0: for (root = 0; root < vex_num; root ++)
       {
+
           hls::stream <Q_t> Q;
-          #pragma HLS stream depth=20 variable=Q
+          #pragma HLS stream depth=2048 variable=Q
+
 
           for (i = 0; i < vex_num; i ++)
+          {
               visited[i] = 0;
+          }
 
           buf_out[0] = 0;
           vnode_cnt = 0;
@@ -153,7 +157,7 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
                   (fetch_address>>ADDR_RIGHT_SHIFT), buf_node, BPERDW);
 
                   edgelink_ptr = (ap_uint<64>)(buf_node[0](128*idx + 63, 128*idx));
-                  adjvex       = (ap_uint<64>)(buf_node[0](128*idx + 95, 128*idx + 64));
+                  adjvex       = (ap_uint<32>)(buf_node[0](128*idx + 95, 128*idx + 64));
 
                   if(!visited[adjvex])
                   {
