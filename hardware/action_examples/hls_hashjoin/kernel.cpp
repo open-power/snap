@@ -384,14 +384,15 @@ void action_wrapper(snap_membus_t din_gmem[MEMORY_LINES],
 		    action_output_reg *Action_Output)
 {
 	// Host Memory AXI Interface
-#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem
-#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem
-#pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg
+#pragma HLS INTERFACE m_axi port=din_gmem  bundle=host_mem num_write_outstanding=64 num_read_outstanding=64 max_write_burst_length=256 max_read_burst_length=256
+#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem num_write_outstanding=64 num_read_outstanding=64 max_write_burst_length=256 max_read_burst_length=256
+
+#pragma HLS INTERFACE s_axilite port=din_gmem  bundle=ctrl_reg
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg
 
 	//DDR memory Interface
-#pragma HLS INTERFACE m_axi port=d_ddrmem    bundle=card_mem0 offset=slave
-#pragma HLS INTERFACE s_axilite port=d_ddrmem    bundle=ctrl_reg
+#pragma HLS INTERFACE m_axi port=d_ddrmem     bundle=card_mem0 offset=slave
+#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg
 
 	// Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Input
