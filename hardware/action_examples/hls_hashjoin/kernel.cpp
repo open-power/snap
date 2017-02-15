@@ -281,30 +281,13 @@ static void write_table3(snap_membus_t *mem, unsigned int max_lines,
 //-----------------------------------------------------------------------------
 //--- MAIN PROGRAM ------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void action_wrapper(snap_membus_t din_gmem[MEMORY_LINES],
+
+static void __do_the_work(snap_membus_t din_gmem[MEMORY_LINES],
 		    snap_membus_t dout_gmem[MEMORY_LINES],
 		    snap_membus_t d_ddrmem[MEMORY_LINES],
 		    action_input_reg *Action_Input,
 		    action_output_reg *Action_Output)
 {
-	// Host Memory AXI Interface
-#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem
-#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem
-#pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg
-#pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg
-
-	//DDR memory Interface
-#pragma HLS INTERFACE m_axi port=d_ddrmem    bundle=card_mem0 offset=slave
-#pragma HLS INTERFACE s_axilite port=d_ddrmem    bundle=ctrl_reg
-
-	// Host Memory AXI Lite Master Interface
-#pragma HLS DATA_PACK variable=Action_Input
-#pragma HLS INTERFACE s_axilite port=Action_Input offset=0x080 bundle=ctrl_reg
-#pragma HLS DATA_PACK variable=Action_Output
-#pragma HLS INTERFACE s_axilite port=Action_Output offset=0x104 bundle=ctrl_reg
-#pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
-
-	// VARIABLES
 	snapu16_t i, j;
 	short rc;
 	snapu32_t ReturnCode = 0;
@@ -392,6 +375,33 @@ void action_wrapper(snap_membus_t din_gmem[MEMORY_LINES],
 
 	write_results_in_HJ_regs(Action_Output, Action_Input, ReturnCode, 0, 0,
 				 __table3_idx, 0);
+}
+
+void action_wrapper(snap_membus_t din_gmem[MEMORY_LINES],
+		    snap_membus_t dout_gmem[MEMORY_LINES],
+		    snap_membus_t d_ddrmem[MEMORY_LINES],
+		    action_input_reg *Action_Input,
+		    action_output_reg *Action_Output)
+{
+	// Host Memory AXI Interface
+#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem
+#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem
+#pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg
+#pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg
+
+	//DDR memory Interface
+#pragma HLS INTERFACE m_axi port=d_ddrmem    bundle=card_mem0 offset=slave
+#pragma HLS INTERFACE s_axilite port=d_ddrmem    bundle=ctrl_reg
+
+	// Host Memory AXI Lite Master Interface
+#pragma HLS DATA_PACK variable=Action_Input
+#pragma HLS INTERFACE s_axilite port=Action_Input offset=0x080 bundle=ctrl_reg
+#pragma HLS DATA_PACK variable=Action_Output
+#pragma HLS INTERFACE s_axilite port=Action_Output offset=0x104 bundle=ctrl_reg
+#pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
+
+	__do_the_work(din_gmem, dout_gmem, d_ddrmem,
+		      Action_Input, Action_Output);
 }
 
 //-----------------------------------------------------------------------------
