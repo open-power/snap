@@ -132,7 +132,7 @@ static inline void table2_dump(table2_t *table2, unsigned int table2_idx)
 	unsigned int i;
 	table2_t *t2;
 
-	printf("table3_t table2[] = {\n");
+	printf("table2_t table2[] = {\n");
 	for (i = 0; i < table2_idx; i++) {
 		t2 = &table2[i];
 		printf("  { .name = \"%s\", .animal = \"%s\" }\n",
