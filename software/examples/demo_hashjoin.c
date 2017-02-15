@@ -321,12 +321,17 @@ int main(int argc, char *argv[])
 	dnut_kernel_mmio_write32(kernel, 0x1002c, 0);
 #endif
 
+	table1_fill(t1, t1_entries);
+	if (verbose_flag)
+		table1_dump(t1, t1_entries);
+
 	gettimeofday(&stime, NULL);
 	while (t2_entries != 0) {
 		t2_tocopy = MIN(ARRAY_SIZE(t2), t2_entries);
 
-		table1_fill(t1, t1_entries);
 		table2_fill(t2, t2_tocopy);
+		if (verbose_flag)
+			table2_dump(t2, t2_entries);
 
 		dnut_prepare_hashjoin(&cjob, &jin, &jout,
 				      t1, t1_entries * sizeof(table1_t),
@@ -350,10 +355,8 @@ int main(int argc, char *argv[])
 			goto out_error2;
 		}
 
-		if (jout.rc == 0) {
-			/* ht_dump(&hashtable); */
+		if (verbose_flag || (jout.rc == 0))
 			table3_dump(t3, jout.t3_produced);
-		}
 
 		t1_entries = 0; /* no need to process this twice,
 				   ht stores the values« */

@@ -43,7 +43,6 @@
 #define ARRAY_SIZE(a) (sizeof((a))/sizeof((a)[0]))
 
 typedef char hashkey_t[64];
-typedef char hashdata_t[256];
 
 typedef struct table1_s {
         hashkey_t name;             /* 64 bytes */
