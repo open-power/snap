@@ -193,7 +193,7 @@ static void snap_4KiB_put(snap_4KiB_t *buf, snap_membus_t line)
 	buf->b_idx++;
 }
 
-static void read_table1(snap_membus_t *mem, unsigned int max_lines,
+static inline void read_table1(snap_membus_t *mem, unsigned int max_lines,
 			t1_fifo_t *fifo1, uint32_t t1_used)
 {
 	unsigned int i;
@@ -220,7 +220,7 @@ static void read_table1(snap_membus_t *mem, unsigned int max_lines,
 	}
 }
 
-static void read_table2(snap_membus_t *mem, unsigned int max_lines,
+static inline void read_table2(snap_membus_t *mem, unsigned int max_lines,
 			t2_fifo_t *fifo2, uint32_t t2_used)
 {
 	unsigned int i;
@@ -247,7 +247,7 @@ static void read_table2(snap_membus_t *mem, unsigned int max_lines,
 	}
 }
 
-static void write_table3(snap_membus_t *mem, unsigned int max_lines,
+static inline void write_table3(snap_membus_t *mem, unsigned int max_lines,
 			 t3_fifo_t *fifo3, uint32_t t3_used)
 {
 	unsigned int i;
