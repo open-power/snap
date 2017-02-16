@@ -312,9 +312,9 @@ static void __do_the_work(snap_membus_t din_gmem[MEMORY_LINES],
 	t1_fifo_t t1_fifo;
 	t2_fifo_t t2_fifo;
 	t3_fifo_t t3_fifo;
-#pragma HLS stream variable=t1_fifo depth=4
-#pragma HLS stream variable=t2_fifo depth=4
-#pragma HLS stream variable=t3_fifo depth=4
+#pragma HLS stream variable=t1_fifo depth=32
+#pragma HLS stream variable=t2_fifo depth=32
+#pragma HLS stream variable=t3_fifo depth=32
 
 	//== Parameters fetched in memory ==
 	//==================================
