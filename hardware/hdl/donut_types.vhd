@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 --
--- Copyright 2016 International Business Machines
+-- Copyright 2016,2017 International Business Machines
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -187,21 +187,38 @@ PACKAGE donut_types IS
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
 
-  CONSTANT MASTER_BOUNDARY            : integer := 18;
-  CONSTANT ACTION_BIT                 : integer := 14;
-  
+  -- PSL host address space (host addresses are 4B word adresses - i.e. you need to add lower two bit to obtain the complete byte address)
+--  CONSTANT MASTER_BOUNDARY            : integer := 15;
+  CONSTANT MASTER_ACTION_ACCESS_BIT   : integer := 14;  -- Action space for master access starts at 0x10000 (16 x 4KB)
+  CONSTANT NVME_SPACE_START_BIT       : integer := 15;  -- NVME space starts at address 0x20000
+  CONSTANT SLAVE_SPACE_BIT            : integer := 23;  -- Slave (context) space starts at 0x2000000
+  CONSTANT PSL_HOST_ADDR_MAXBIT       : integer := 23;
+  CONSTANT PSL_HOST_CTX_ID_L          : integer := 22;
+  CONSTANT PSL_HOST_CTX_ID_R          : integer := 14;
+  CONSTANT SLAVE_ACTION_OFFSET_L      : integer := 13;
+  CONSTANT SLAVE_ACTION_OFFSET_R      : integer := 10;
+  CONSTANT SLAVE_ACTION_OFFSET_VAL    : std_ulogic_vector(13 DOWNTO 10) := "1111"; -- only bits 13 downto 10 of the PSL address are checked for action ACCESS
 
   -- Register base address (bits 13 downto 5 of the address)
   CONSTANT AFU_REG_BASE               : integer := 16#000#;  -- 0x0000
-  CONSTANT FIR_REG_BASE               : integer := 16#020#;  -- 0x1000
---  CONSTANT DEBUG_REG_BASE             : integer := 16#1FE#;  -- 0xFF00
-  CONSTANT DEBUG_REG_BASE             : integer := 16#002#;  -- 0x0100
+  CONSTANT DEBUG_REG_BASE             : integer := 16#002#;  -- 0x0100 TODO: remove!!
+  CONSTANT CONTEXT_REG_BASE           : integer := 16#020#;  -- 0x1000
+  CONSTANT FIR_REG_BASE               : integer := 16#1C0#;  -- 0xE000
+
 
   -- Register offset (bits 4 downto 1 of the address - note: bit 0 of addr is always '0')
+  -- AFU registers
   CONSTANT IMP_VERSION_REG            : integer := 16#0#;
   CONSTANT BUILD_DATE_REG             : integer := 16#1#;
   CONSTANT AFU_CMD_REG                : integer := 16#3#;
   CONSTANT MAX_AFU_REG                : integer := 16#3#;
+
+  -- Context registers
+  CONSTANT CONTEXT_CONFIG_REG         : integer := 16#0#;
+  CONSTANT CONTEXT_STATUS_REG         : integer := 16#1#;
+
+
+  -- FIR registers
 --  CONSTANT FIRREG_CTRL_MGR            : integer := 16#0#;
 --  CONSTANT FIRREG_JOB_MGR             : integer := 16#1#;
 --  CONSTANT FIRREG_MMIO                : integer := 16#2#;
@@ -209,8 +226,71 @@ PACKAGE donut_types IS
 --  CONSTANT MAX_FIR_REG                : integer := 16#3#;
 
   -- Specific bits of selected registers
+  CONSTANT CTX_CFG_SIZE_INT           : integer := 37;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_SEQNO_L      : integer := 63;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_SEQNO_R      : integer := 48;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_IDX_L        : integer := 31;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_IDX_R        : integer := 24;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_IDX_L          : integer := 23;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_IDX_R          : integer := 16;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_SAT_L              : integer := 15;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_SAT_R              : integer := 12;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_EXEC_MODE          : integer :=  0;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_SEQNO_INT_L  : integer := 36;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_SEQNO_INT_R  : integer := 21;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_IDX_INT_L    : integer := 20;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_IDX_INT_R    : integer := 13;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_IDX_INT_L      : integer := 12;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_IDX_INT_R      : integer :=  5;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_SAT_INT_L          : integer :=  4;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
+  CONSTANT CTX_CFG_SAT_INT_R          : integer :=  1;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
+  CONSTANT CTX_CFG_EXEC_MODE_INT      : integer :=  0;     -- CONTEXT_CONFIG_REG
+
+  CONSTANT CTX_SEQNO_SIZE_INT         : integer := 40;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_CURRENT_L        : integer := 63;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_CURRENT_R        : integer := 48;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_LAST_L           : integer := 47;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_LAST_R           : integer := 32;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_IDX_L            : integer := 31;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_IDX_R            : integer := 24;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_CURRENT_INT_L    : integer := 39;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_CURRENT_INT_R    : integer := 24;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_LAST_INT_L       : integer := 23;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_LAST_INT_R       : integer :=  8;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_IDX_INT_L        : integer :=  7;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_IDX_INT_R        : integer :=  0;     -- CONTEXT_STATUS_REG
+
+  CONSTANT CTX_STAT_SIZE_INT          : integer := 16;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_SAT_L             : integer := 15;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_SAT_R             : integer := 12;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_SAT_VALID         : integer :=  7;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_ACTION_ID_L       : integer := 11;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_ACTION_ID_R       : integer :=  8;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_ACTION_VALID      : integer :=  6;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_JOB_ACTIVE        : integer :=  1;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_CTX_ACTIVE        : integer :=  0;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_ACTION_ID_INT_L   : integer :=  7;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_ACTION_ID_INT_R   : integer :=  4;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_SAT_VALID_INT     : integer :=  3;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_ACTION_VALID_INT  : integer :=  2;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_JOB_ACTIVE_INT    : integer :=  1;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_CTX_ACTIVE_INT    : integer :=  0;     -- CONTEXT_STATUS_REG
+
+  CONSTANT CTX_CMD_SIZE_INT           : integer := 20;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_ARG_L              : integer := 63;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_ARG_R              : integer := 48;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_CODE_L             : integer :=  3;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_CODE_R             : integer :=  0;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_ARG_INT_L          : integer := 19;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_ARG_INT_R          : integer :=  4;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_CODE_INT_L         : integer :=  3;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_CODE_INT_R         : integer :=  0;     -- CONTEXT_COMMAND_REG
+
+
   CONSTANT NFE_L                      : integer := 23;     -- DDCBQ_STAT_REG
   CONSTANT NFE_R                      : integer :=  8;     -- DDCBQ_STAT_REG
+  CONSTANT NFE_CFG_ACTIVE             : integer := 15;     -- DDCBQ_STAT_REG
+  CONSTANT NFE_ILLEGAL_CMD            : integer := 14;     -- DDCBQ_STAT_REG
   CONSTANT NFE_CFG_WR_ACCESS          : integer := 13;     -- DDCBQ_STAT_REG
   CONSTANT NFE_INV_WR_ACCESS          : integer := 12;     -- DDCBQ_STAT_REG
   CONSTANT NFE_INV_WR_ADDRESS         : integer := 11;     -- DDCBQ_STAT_REG
@@ -248,8 +328,9 @@ PACKAGE donut_types IS
   ------------------------------------------------------------------------------
   --
   -- CONSTANT
---  CONSTANT CONTEXTS_NUM                    : integer := 512;      -- total number of supported contexts
---  CONSTANT CONTEXT_BITS                    : integer :=   9;      -- number of bits required to represent the supported contexts as integer
+  CONSTANT NUM_OF_CONTEXTS                 : integer := 512;      -- total number of supported contexts
+  CONSTANT CONTEXT_BITS                    : integer :=   9;      -- number of bits required to represent the supported contexts as integer
+
 --  CONSTANT ACTIVE_CONTEXTS_REGIONS_NUM     : integer :=  16;      -- number of active context regions
 --  CONSTANT ACTIVE_CONTEXTS_REGION_BITS     : integer :=   5;      -- number of bits required to represent active context within the region as integer
 --  CONSTANT ACTIVE_CONTEXTS_REGION_SIZE     : integer :=  2**ACTIVE_CONTEXTS_REGION_BITS; -- size in bits of each active context region
@@ -263,6 +344,19 @@ PACKAGE donut_types IS
   -- TYPE
 --  TYPE ACTIVE_CONTEXTS_ARRAY_T   IS ARRAY (natural RANGE <>) OF std_ulogic_vector(ACTIVE_CONTEXTS_REGION_SIZE-1 DOWNTO 0);
 --  TYPE ATTACHED_CONTEXTS_ARRAY_T IS ARRAY (natural RANGE <>) OF std_ulogic_vector(ATTACHED_CONTEXTS_REGISTER_SIZE-1 DOWNTO 0);
+
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- Context Commands
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  --
+  -- CONSTANT
+  CONSTANT CTX_NOP            : std_ulogic_vector(3 DOWNTO 0) := x"0";  -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_START          : std_ulogic_vector(3 DOWNTO 0) := x"1";  -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_STOP           : std_ulogic_vector(3 DOWNTO 0) := x"2";  -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_ABORT          : std_ulogic_vector(3 DOWNTO 0) := x"4";  -- CONTEXT_COMMAND_REG
+
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -296,18 +390,18 @@ PACKAGE donut_types IS
     AFU_EB_OFFSET          : std_ulogic_vector(63 DOWNTO 0);
   END RECORD;
 
-  CONSTANT AFU_DES_INI : AFU_DES_T :=
-    (NUM_INTS_PER_PROCESS  => x"0002",                  -- x'00'  0:15
-     NUM_OF_PROCESSES      => x"0200",                  -- x'00' 16:31
-     NUM_OF_AFU_CRS        => x"0001",                  -- x'00' 32:47
-     REG_PROG_MODEL        => x"0004",                  -- x'00' 48:63
-     AFU_CR_LEN            =>   x"00_0000_0000_0001",   -- x'20'  8:63
-     AFU_CR_OFFSET         => x"0000_0000_0000_0100",   -- x'28'  0:63
-     PERPROCESSPSA_CONTROL => x"03",                    -- x'30'  0: 7
-     PERPROCESSPSA_LENGTH  =>   x"00_0000_0000_0010",   -- x'30'  8:63
-     PERPROCESSPSA_OFFSET  => x"0000_0000_0002_0000",   -- x'38'  0:63
-     AFU_EB_LEN            =>   x"00_0000_0000_0001",   -- x'40'  8:63
-     AFU_EB_OFFSET         => x"0000_0000_0000_1000"    -- x'48'  0:63
+  CONSTANT AFU_DES_INI : AFU_DES_T :=             -- see Coherent Accelerator Interface Architecture (CAIA) spec for definition of AFU Descriptor
+    (NUM_INTS_PER_PROCESS  => x"0002",                  -- x'00'  0:15 SNAP requires two interrupts per context (need more?)
+     NUM_OF_PROCESSES      => x"0200",                  -- x'00' 16:31 SNAP supports 512 contexts
+     NUM_OF_AFU_CRS        => x"0001",                  -- x'00' 32:47 SNAP provides one config record
+     REG_PROG_MODEL        => x"0004",                  -- x'00' 48:63 SNAP requires directed mode programming model
+     AFU_CR_LEN            =>   x"00_0000_0000_0001",   -- x'20'  8:63 SNAP provides one 256 bytes config record
+     AFU_CR_OFFSET         => x"0000_0000_0000_0100",   -- x'28'  0:63 The config record starts at address 0x100 of the config space (directly behind the descripter)
+     PERPROCESSPSA_CONTROL => x"03",                    -- x'30'  0: 7 Per process PSA (MMIO space for each context) required
+     PERPROCESSPSA_LENGTH  =>   x"00_0000_0000_0010",   -- x'30'  8:63 Each per process PSA is 16 * 4KB = 64KB in size
+     PERPROCESSPSA_OFFSET  => x"0000_0000_0200_0000",   -- x'38'  0:63 Per process PSA starts at 0x2000000
+     AFU_EB_LEN            =>   x"00_0000_0000_0001",   -- x'40'  8:63 A 4 KB error buffer is supported (not yet used)
+     AFU_EB_OFFSET         => x"0000_0000_0000_1000"    -- x'48'  0:63 The error buffer starts at address 0x1000 of the config space
     );
 
   ------------------------------------------------------------------------------
