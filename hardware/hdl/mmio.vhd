@@ -31,12 +31,8 @@ USE work.donut_types.all;
 ENTITY mmio IS
   GENERIC (
     -- Version register content
-    IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0) := x"00VV_VVVV_SSSS_SSSS";  -- Will be modified by build process
-    BUILD_DATE_DAT         : std_ulogic_vector(63 DOWNTO 0) := x"0000_0000_20YY_MMDD";  -- Will be modified by build process
-    -- Time slice register
-    TSR_RESET_VALUE        : std_ulogic_vector(63 DOWNTO 0) := x"0000_0000_0002_0000";
-    -- DDCB Timeout register
-    DTR_RESET_VALUE        : std_ulogic_vector(63 DOWNTO 0) := x"8000_0000_1575_2A00"
+    IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0);
+    BUILD_DATE_DAT         : std_ulogic_vector(63 DOWNTO 0);
   );
   PORT (
     --
@@ -54,6 +50,10 @@ ENTITY mmio IS
     -- CTRL MGR Interface
     cmm_e_i                : IN  CMM_E_T;
     mmc_e_o                : OUT MMC_E_T;
+    --
+    -- JOB MGR Interface
+    jmm_c_i                : IN  JMM_C_T;
+    mmj_c_o                : OUT MMJ_C_T;
     --
     -- DMA Interface
     dmm_e_i                : IN  DMM_E_T;

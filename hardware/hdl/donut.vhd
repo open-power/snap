@@ -30,6 +30,12 @@ USE work.psl_accel_types.ALL;
 USE work.donut_types.ALL;
 
 ENTITY donut IS
+  GENERIC(
+    IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0);
+    BUILD_DATE_DAT         : std_ulogic_vector(63 DOWNTO 0);
+    NUM_OF_ACTION_TYPES    : integer := 16;
+    NUM_OF_ACTIONS         : integer :=  1
+  );
   PORT (
     --
     -- PSL Interface
@@ -110,7 +116,6 @@ ENTITY donut IS
     -- Kernel AXI Slave Interface
     sk_d_o         : OUT SK_D_T;
     ks_d_i         : IN  KS_D_T
-    
   );
 END donut;
 
@@ -338,6 +343,32 @@ BEGIN
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
+  -- JOB MANAGER Entity
+  --
+  --
+  -- shortcut = j
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+    job_mgr: ENTITY work.job_manager
+    GENERIC MAP (
+      NUM_OF_ACTION_TYPES => NUM_OF_ACTION_TYPES,
+      NUM_OF_ACTIONS      => NUM_OF_ACTIONS
+    )
+    PORT MAP (
+      --
+      -- pervasive
+      ha_pclock              => ha_pclock,
+      afu_reset              => afu_reset,
+
+      --
+      -- MMIO IOs
+      mmj_c_i                => mmj_c,
+      jmm_c_o                => jmm_c
+    );
+
+
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
   -- MMIO Entity
   --
   --
@@ -345,6 +376,10 @@ BEGIN
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
     mmio: ENTITY work.mmio
+    GENERIC MAP (
+      IMP_VERSION_DAT => IMP_VERSION_DAT,
+      BUILD_DATE_DAT  => BUILD_DATE_DAT
+    )
     PORT MAP (
       --
       -- pervasive
@@ -361,6 +396,10 @@ BEGIN
       -- CTRL MGR Interface
       cmm_e_i                => cmm_e,
       mmc_e_o                => mmc_e,
+      --
+      -- JOB MGR Interface
+      jmm_c_i                => jmm_c,
+      mmj_c_o                => mmj_c,
       --
       -- DMA Interface
       dmm_e_i                => dmm_e,
