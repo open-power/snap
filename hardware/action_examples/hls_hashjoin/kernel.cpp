@@ -85,7 +85,8 @@ static void write_results_in_HJ_regs(action_output_reg *Action_Output,
 static void copy_hashkey(snap_membus_t mem, hashkey_t key)
 {
  loop_copy_hashkey:
-	for (unsigned int k = 0; k < sizeof(hashkey_t); k++)
+	for (unsigned char k = 0; k < sizeof(hashkey_t); k++)
+#pragma HLS UNROLL
 		key[k] = mem(8 * (k+1) - 1,  8 * k);
 }
 
@@ -95,6 +96,7 @@ static snap_membus_t hashkey_to_mbus(hashkey_t key)
 
  loop_hashkey_to_mbus:
 	for (unsigned int k = 0; k < sizeof(hashkey_t); k++) {
+#pragma HLS UNROLL
 		mem(8 * (k+1) - 1,  8 * k) = key[k];
 	}
 	return mem;
@@ -282,7 +284,7 @@ static inline void write_table3(snap_membus_t *mem, unsigned int max_lines,
 //--- MAIN PROGRAM ------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-static void __do_the_work(snap_membus_t din_gmem[MEMORY_LINES],
+static void do_the_work(snap_membus_t din_gmem[MEMORY_LINES],
 		    snap_membus_t dout_gmem[MEMORY_LINES],
 		    snap_membus_t d_ddrmem[MEMORY_LINES],
 		    action_input_reg *Action_Input,
@@ -401,8 +403,8 @@ void action_wrapper(snap_membus_t din_gmem[MEMORY_LINES],
 #pragma HLS INTERFACE s_axilite port=Action_Output offset=0x104 bundle=ctrl_reg
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
-	__do_the_work(din_gmem, dout_gmem, d_ddrmem,
-		      Action_Input, Action_Output);
+	do_the_work(din_gmem, dout_gmem, d_ddrmem,
+		    Action_Input, Action_Output);
 }
 
 //-----------------------------------------------------------------------------
@@ -472,7 +474,7 @@ static table2_t table2[] = {
 
 };
 
-#define TABLE2_N 8
+#define TABLE2_N 2
 
 /* worst case size */
 static table3_t table3[TABLE1_SIZE * TABLE2_SIZE * TABLE2_N];

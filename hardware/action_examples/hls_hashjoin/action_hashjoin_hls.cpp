@@ -18,6 +18,10 @@
 
 #include "action_hashjoin_hls.H"
 
+/*
+ * Keeping hashtable statically 
+ *
+ */
 static hashtable_t __hashtable;
 
 /*
@@ -28,10 +32,10 @@ static hashtable_t __hashtable;
  */
 int hashkey_cmp(hashkey_t s1, hashkey_t s2)
 {
-        size_t i;
+        unsigned char i;
 
         for (i = 0; i < sizeof(hashkey_t); i++) {
-		// FIXME TIMING #pragma HLS UNROLL
+#pragma HLS UNROLL
                 if (*s1 == 0 || *s2 == 0)
                         break;
 
@@ -46,10 +50,10 @@ int hashkey_cmp(hashkey_t s1, hashkey_t s2)
 
 void hashkey_cpy(hashkey_t dst, hashkey_t src)
 {
-        size_t i;
+        unsigned char i;
 
         for (i = 0; i < sizeof(hashkey_t); i++) {
-		//#pragma HLS UNROLL
+#pragma HLS UNROLL
                 *dst = *src;
                 src++;
                 dst++;
@@ -58,9 +62,10 @@ void hashkey_cpy(hashkey_t dst, hashkey_t src)
 
 size_t hashkey_len(hashkey_t str)
 {
-        size_t len;
+        unsigned char len;
 
         for (len = 0; len < sizeof(hashkey_t); len++) {
+#pragma HLS UNROLL
                 if (*str == 0)
                         break;
                 str++;
@@ -79,7 +84,7 @@ void table1_cpy(table1_t *dst, table1_t *src)
 #if defined(NO_SYNTH)
 static inline void print_hex(table1_t *buf, size_t len)
 {
-        unsigned int x;
+        unsigned char x;
         char *d = (char *)buf;
 
         fprintf(stderr, "{ ");
@@ -90,7 +95,7 @@ static inline void print_hex(table1_t *buf, size_t len)
 
 void ht_dump(hashtable_t *ht)
 {
-        unsigned int i, j;
+        unsigned short i, j;
 	static int printed = 0;
 
 	if (printed++)
@@ -142,9 +147,8 @@ void ht_init(hashtable_t *ht)
         unsigned int i;
 
         for (i = 0; i < HT_SIZE; i++) {
-		//#pragma HLS UNROLL
+#pragma HLS UNROLL
                 entry_t *entry = &ht->table[i];
-
                 entry->used = 0;
         }
 }
@@ -183,7 +187,7 @@ int ht_set(hashtable_t *ht, hashkey_t key,
 
         /* search if entry exists already */
         for (i = 0; i < HT_SIZE; i++) {
-		//#pragma HLS UNROLL
+#pragma HLS UNROLL
                 table1_t *multi;
                 entry_t *entry = &ht->table[bin];
 
@@ -232,7 +236,7 @@ int ht_get(hashtable_t *ht, char *key)
 
         /* search if entry exists already */
         for (i = 0; i < HT_SIZE; i++) {
-		//#pragma HLS UNROLL
+#pragma HLS UNROLL
                 entry = &ht->table[bin];
 
                 if (entry->used == 0)   /* key not there */
@@ -283,7 +287,6 @@ int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
         /* hash phase */
         for (i = 0; i < table1_used; i++) {
 		/* #pragma HLS PIPELINE */
-		// FIXME TIMING #pragma HLS UNROLL
                 t1 = fifo1->read();
 
 #if defined(CONFIG_FIFO_DEBUG)
@@ -298,7 +301,6 @@ int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
 
         for (i = 0; i < table2_used; i++) {
 		/* #pragma HLS PIPELINE */
-		// FIXME TIMING  #pragma HLS UNROLL
                 int bin;
                 entry_t *entry;
                 table2_t t2 = fifo2->read();
