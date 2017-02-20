@@ -427,6 +427,7 @@ int main(int argc, char *argv[])
     fprintf(stdout, "DEBUG: page_size is %d\n", page_size);
     fprintf(stdout, "DEBUG: timeout is %ld\n",timeout);
 
+    fprintf(stdout, "input_file is %s\n", input_file);
  //   if(input_file != NULL)
    //     rc = create_file_graph (/*&adj, input_file*/); // TODO dummy function
     //else 
