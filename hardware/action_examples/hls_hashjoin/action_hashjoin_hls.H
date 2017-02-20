@@ -190,5 +190,7 @@ void table3_dump(table3_t *table3, unsigned int table3_idx);
 #undef CONFIG_FIFO_DEBUG
 #undef CONFIG_MEM_DEBUG
 
+#define CONFIG_HOSTSTYLE_ALGO
+
 #endif  /* __ACTION_HASHJOIN_HLS_H__ */
 

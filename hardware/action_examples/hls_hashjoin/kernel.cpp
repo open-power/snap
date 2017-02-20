@@ -310,7 +310,7 @@ static void do_the_work(snap_membus_t din_gmem[MEMORY_LINES],
 	unsigned int T2_items = 0;
 	unsigned int __table3_idx = 0;
 
-/* #pragma HLS DATAFLOW */
+#pragma HLS DATAFLOW /* 3.5ns timing without this, 3.5n with it, ok ... */
 	t1_fifo_t t1_fifo;
 	t2_fifo_t t2_fifo;
 	t3_fifo_t t3_fifo;

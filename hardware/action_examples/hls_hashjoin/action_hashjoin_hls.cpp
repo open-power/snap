@@ -19,23 +19,17 @@
 #include "action_hashjoin_hls.H"
 
 /*
- * Keeping hashtable statically 
- *
- */
-static hashtable_t __hashtable;
-
-/*
  * The strcmp() function compares the two strings s1 and s2. It
  * returns an integer less than, equal to, or greater than zero if s1
  * is found, respectively, to be less than, to match, or be greater
  * than s2.
  */
-int hashkey_cmp(hashkey_t s1, hashkey_t s2)
+static int hashkey_cmp(hashkey_t s1, hashkey_t s2)
 {
         unsigned char i;
 
         for (i = 0; i < sizeof(hashkey_t); i++) {
-#pragma HLS UNROLL
+/* #pragma HLS UNROLL */
                 if (*s1 == 0 || *s2 == 0)
                         break;
 
@@ -48,24 +42,32 @@ int hashkey_cmp(hashkey_t s1, hashkey_t s2)
         return *s1 - *s2;
 }
 
+static void hashkey_zero(hashkey_t s)
+{
+        unsigned char i;
+
+        for (i = 0; i < sizeof(hashkey_t); i++)
+		s[i] = 0;
+}
+
 void hashkey_cpy(hashkey_t dst, hashkey_t src)
 {
         unsigned char i;
 
         for (i = 0; i < sizeof(hashkey_t); i++) {
-#pragma HLS UNROLL
+/* #pragma HLS UNROLL */
                 *dst = *src;
                 src++;
                 dst++;
         }
 }
 
-size_t hashkey_len(hashkey_t str)
+static size_t hashkey_len(hashkey_t str)
 {
         unsigned char len;
 
         for (len = 0; len < sizeof(hashkey_t); len++) {
-#pragma HLS UNROLL
+/* #pragma HLS UNROLL */
                 if (*str == 0)
                         break;
                 str++;
@@ -74,7 +76,7 @@ size_t hashkey_len(hashkey_t str)
 }
 
 /* FIXME We need to use the HLS built in version instead of this */
-void table1_cpy(table1_t *dst, table1_t *src)
+static void table1_cpy(table1_t *dst, table1_t *src)
 {
 	/* FIXME memcpy(dst, src, sizeof(*dest)); did not work! */
 	hashkey_cpy(dst->name, src->name);
@@ -130,7 +132,6 @@ unsigned int ht_count(hashtable_t *ht)
         unsigned int count = 0;
 
         for (i = 0; i < HT_SIZE; i++) {
-/* #pragma HLS UNROLL */
                 entry_t *entry = &ht->table[i];
 
                 if (!entry->used)
@@ -147,7 +148,7 @@ void ht_init(hashtable_t *ht)
         unsigned int i;
 
         for (i = 0; i < HT_SIZE; i++) {
-/* #pragma HLS UNROLL */
+/* #pragma HLS UNROLL*/
                 entry_t *entry = &ht->table[i];
                 entry->used = 0;
         }
@@ -271,12 +272,15 @@ void table3_dump(table3_t *table3, unsigned int table3_idx)
 }
 #endif
 
+#if defined(CONFIG_HOSTSTYLE_ALGO)
+
 int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
 			t2_fifo_t *fifo2, unsigned int table2_used,
 			t3_fifo_t *fifo3, unsigned int *table3_used)
 {
         unsigned int i, j;
 	table1_t t1;
+	static hashtable_t __hashtable;
         hashtable_t *h = &__hashtable;
 	unsigned int table3_idx = 0;
 
@@ -316,7 +320,7 @@ int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
                 entry = &h->table[bin];
 	multihash_entry_processing:
                 for (j = 0; j < entry->used; j++) {
-/* #pragma HLS UNROLL */
+/* #pragma HLS UNROLL factor=8 */
                         table1_t *m = &entry->multi[j];
 			table3_t t3;
 
@@ -336,3 +340,61 @@ int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
 	return 0;
 }
 
+#else
+
+/*
+ * Alternate version of the algorithm not using the multihash table.
+ * According to recent discussions, this must not necesarrilly help
+ * to get the performance/optimizations better. But it is there as
+ * way to try out different things.
+ */
+int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
+			t2_fifo_t *fifo2, unsigned int table2_used,
+			t3_fifo_t *fifo3, unsigned int *table3_used)
+{
+        unsigned int i, j;
+	static table1_t t1[TABLE1_SIZE];
+	static unsigned int t1_idx = 0;
+	unsigned int table3_idx = 0;
+
+        /* do not use a hash phase */
+	if (t1_idx == 0) {
+		for (i = 0; i < table1_used; i++)
+			t1[i] = fifo1->read();
+		for (; i < TABLE1_SIZE; i++) {
+			hashkey_zero(t1[i].name);
+			t1[i].age = 0;
+		}
+		t1_idx = table1_used;
+	}
+
+	/* Simle O(n2) loop which should be flattened by HLS optimizer */
+        for (i = 0; i < table2_used; i++) {
+                table2_t t2 = fifo2->read();
+
+#if defined(CONFIG_FIFO_DEBUG)
+		fprintf(stderr, "fifo2->read(%d, %s)\n", i, t2.name);
+#endif
+                for (j = 0; j < TABLE1_SIZE; j++) {
+#pragma HLS UNROLL factor=8
+			table3_t t3;
+
+			if (hashkey_cmp(t1[j].name, t2.name) == 0) {
+				hashkey_cpy(t3.name, t2.name);
+				hashkey_cpy(t3.animal, t2.animal);
+				t3.age = t1[j].age;
+				fifo3->write(t3);
+#if defined(CONFIG_FIFO_DEBUG)
+				fprintf(stderr, "fifo3->write(%d, %d/%d, %s)\n",
+					table3_idx, i, j, t3.name);
+#endif
+				table3_idx++;
+			}
+		}
+        }
+
+	*table3_used = table3_idx;
+	return 0;
+}
+
+#endif /* CONFIG_HOSTSTYLE_ALGO */
