@@ -130,7 +130,7 @@ unsigned int ht_count(hashtable_t *ht)
         unsigned int count = 0;
 
         for (i = 0; i < HT_SIZE; i++) {
-		//#pragma HLS UNROLL
+/* #pragma HLS UNROLL */
                 entry_t *entry = &ht->table[i];
 
                 if (!entry->used)
@@ -147,7 +147,7 @@ void ht_init(hashtable_t *ht)
         unsigned int i;
 
         for (i = 0; i < HT_SIZE; i++) {
-#pragma HLS UNROLL
+/* #pragma HLS UNROLL */
                 entry_t *entry = &ht->table[i];
                 entry->used = 0;
         }
@@ -162,7 +162,7 @@ int ht_hash(hashkey_t key)
 
         /* Convert our string to an integer */
         for (i = 0; hashval < ULONG_MAX && i < len; i++) {
-		//#pragma HLS UNROLL // Cannot unroll loop completely: variable loop bound.
+/* #pragma HLS UNROLL */ // Cannot unroll loop completely: variable loop bound.
                 hashval = hashval << 8;
                 hashval += key[i];
         }
@@ -187,7 +187,7 @@ int ht_set(hashtable_t *ht, hashkey_t key,
 
         /* search if entry exists already */
         for (i = 0; i < HT_SIZE; i++) {
-#pragma HLS UNROLL
+/* #pragma HLS UNROLL */
                 table1_t *multi;
                 entry_t *entry = &ht->table[bin];
 
@@ -236,7 +236,7 @@ int ht_get(hashtable_t *ht, char *key)
 
         /* search if entry exists already */
         for (i = 0; i < HT_SIZE; i++) {
-#pragma HLS UNROLL
+/* #pragma HLS UNROLL */
                 entry = &ht->table[bin];
 
                 if (entry->used == 0)   /* key not there */
@@ -286,7 +286,7 @@ int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
 
         /* hash phase */
         for (i = 0; i < table1_used; i++) {
-		/* #pragma HLS PIPELINE */
+/* #pragma HLS PIPELINE */
                 t1 = fifo1->read();
 
 #if defined(CONFIG_FIFO_DEBUG)
@@ -299,8 +299,9 @@ int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
         ht_dump(h);
 #endif
 
+ table2_inserting:
         for (i = 0; i < table2_used; i++) {
-		/* #pragma HLS PIPELINE */
+/* #pragma HLS PIPELINE */
                 int bin;
                 entry_t *entry;
                 table2_t t2 = fifo2->read();
@@ -313,8 +314,9 @@ int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
                         continue;       /* nothing found */
 
                 entry = &h->table[bin];
+	multihash_entry_processing:
                 for (j = 0; j < entry->used; j++) {
-			//#pragma HLS UNROLL
+/* #pragma HLS UNROLL */
                         table1_t *m = &entry->multi[j];
 			table3_t t3;
 

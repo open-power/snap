@@ -86,7 +86,7 @@ static void copy_hashkey(snap_membus_t mem, hashkey_t key)
 {
  loop_copy_hashkey:
 	for (unsigned char k = 0; k < sizeof(hashkey_t); k++)
-#pragma HLS UNROLL
+/* #pragma HLS UNROLL */
 		key[k] = mem(8 * (k+1) - 1,  8 * k);
 }
 
@@ -96,7 +96,7 @@ static snap_membus_t hashkey_to_mbus(hashkey_t key)
 
  loop_hashkey_to_mbus:
 	for (unsigned int k = 0; k < sizeof(hashkey_t); k++) {
-#pragma HLS UNROLL
+/* #pragma HLS UNROLL */
 		mem(8 * (k+1) - 1,  8 * k) = key[k];
 	}
 	return mem;
@@ -127,7 +127,7 @@ typedef struct snap_4KiB_t {
 } snap_4KiB_t;
 
 static void snap_4KiB_rinit(snap_4KiB_t *buf, snap_membus_t *mem,
-			    unsigned int max_lines)
+			    unsigned short max_lines)
 {
 	buf->mem = mem;
 	buf->max_lines = max_lines;
@@ -136,7 +136,7 @@ static void snap_4KiB_rinit(snap_4KiB_t *buf, snap_membus_t *mem,
 }
 
 static void snap_4KiB_winit(snap_4KiB_t *buf, snap_membus_t *mem,
-			    unsigned int max_lines)
+			    unsigned short max_lines)
 {
 	buf->mem = mem;
 	buf->max_lines = max_lines;
@@ -156,7 +156,7 @@ static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
 	}
 	/* buffer is empty, read in the next 4KiB */
 	if (buf->b_idx == SNAP_4KiB_WORDS) {
-		unsigned int tocopy =
+		unsigned short tocopy =
 			MIN(SNAP_4KiB_WORDS, buf->max_lines - buf->m_idx);
 
 		memcpy(buf->buf, buf->mem + buf->m_idx,
@@ -175,8 +175,8 @@ static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
  */
 static void snap_4KiB_flush(snap_4KiB_t *buf)
 {
-	unsigned int free_lines = buf->max_lines - buf->m_idx;
-	unsigned int tocopy = MIN(free_lines, buf->b_idx);
+	unsigned short free_lines = buf->max_lines - buf->m_idx;
+	unsigned short tocopy = MIN(free_lines, buf->b_idx);
 
 	memcpy(buf->mem + buf->m_idx, buf->buf,
 	       tocopy * sizeof(snap_membus_t));
@@ -195,7 +195,7 @@ static void snap_4KiB_put(snap_4KiB_t *buf, snap_membus_t line)
 	buf->b_idx++;
 }
 
-static inline void read_table1(snap_membus_t *mem, unsigned int max_lines,
+static void read_table1(snap_membus_t *mem, unsigned int max_lines,
 			t1_fifo_t *fifo1, uint32_t t1_used)
 {
 	unsigned int i;
@@ -205,7 +205,7 @@ static inline void read_table1(snap_membus_t *mem, unsigned int max_lines,
 
  read_table1_loop:
 	for (i = 0; i < t1_used; i++) {
-#pragma HLS PIPELINE
+/* #pragma HLS PIPELINE */
 		snap_membus_t b[2];
 		table1_t t1;
 
@@ -222,7 +222,7 @@ static inline void read_table1(snap_membus_t *mem, unsigned int max_lines,
 	}
 }
 
-static inline void read_table2(snap_membus_t *mem, unsigned int max_lines,
+static void read_table2(snap_membus_t *mem, unsigned int max_lines,
 			t2_fifo_t *fifo2, uint32_t t2_used)
 {
 	unsigned int i;
@@ -232,7 +232,7 @@ static inline void read_table2(snap_membus_t *mem, unsigned int max_lines,
 
  read_table2_loop:
 	for (i = 0; i < t2_used; i++) {
-#pragma HLS PIPELINE
+/* #pragma HLS PIPELINE */
 		snap_membus_t b[2];
 		table2_t t2;
 
@@ -249,7 +249,7 @@ static inline void read_table2(snap_membus_t *mem, unsigned int max_lines,
 	}
 }
 
-static inline void write_table3(snap_membus_t *mem, unsigned int max_lines,
+static void write_table3(snap_membus_t *mem, unsigned int max_lines,
 			 t3_fifo_t *fifo3, uint32_t t3_used)
 {
 	unsigned int i;
@@ -260,7 +260,7 @@ static inline void write_table3(snap_membus_t *mem, unsigned int max_lines,
 	/* extract data into target table3, or FIFO maybe? */
  write_table3_loop:
 	for (i = 0; i < t3_used; i++) {
-#pragma HLS PIPELINE
+/* #pragma HLS PIPELINE */
 		snap_membus_t d[3];
 		table3_t t3 = fifo3->read();
 
@@ -310,7 +310,7 @@ static void do_the_work(snap_membus_t din_gmem[MEMORY_LINES],
 	unsigned int T2_items = 0;
 	unsigned int __table3_idx = 0;
 
-#pragma HLS DATAFLOW
+/* #pragma HLS DATAFLOW */
 	t1_fifo_t t1_fifo;
 	t2_fifo_t t2_fifo;
 	t3_fifo_t t3_fifo;
