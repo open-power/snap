@@ -86,7 +86,7 @@ static void copy_hashkey(snap_membus_t mem, hashkey_t key)
 {
  loop_copy_hashkey:
 	for (unsigned char k = 0; k < sizeof(hashkey_t); k++)
-/* #pragma HLS UNROLL */
+#pragma HLS UNROLL factor=2
 		key[k] = mem(8 * (k+1) - 1,  8 * k);
 }
 
@@ -95,8 +95,8 @@ static snap_membus_t hashkey_to_mbus(hashkey_t key)
 	snap_membus_t mem = 0;
 
  loop_hashkey_to_mbus:
-	for (unsigned int k = 0; k < sizeof(hashkey_t); k++) {
-/* #pragma HLS UNROLL */
+	for (unsigned char k = 0; k < sizeof(hashkey_t); k++) {
+#pragma HLS UNROLL factor=2
 		mem(8 * (k+1) - 1,  8 * k) = key[k];
 	}
 	return mem;

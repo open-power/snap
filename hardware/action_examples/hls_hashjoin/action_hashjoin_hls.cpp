@@ -29,7 +29,7 @@ static int hashkey_cmp(hashkey_t s1, hashkey_t s2)
         unsigned char i;
 
         for (i = 0; i < sizeof(hashkey_t); i++) {
-/* #pragma HLS UNROLL */
+#pragma HLS UNROLL factor=2
                 if (*s1 == 0 || *s2 == 0)
                         break;
 
@@ -47,6 +47,7 @@ static void hashkey_zero(hashkey_t s)
         unsigned char i;
 
         for (i = 0; i < sizeof(hashkey_t); i++)
+#pragma HLS UNROLL factor=2
 		s[i] = 0;
 }
 
@@ -55,7 +56,7 @@ void hashkey_cpy(hashkey_t dst, hashkey_t src)
         unsigned char i;
 
         for (i = 0; i < sizeof(hashkey_t); i++) {
-/* #pragma HLS UNROLL */
+#pragma HLS UNROLL factor=2
                 *dst = *src;
                 src++;
                 dst++;
@@ -67,7 +68,7 @@ static size_t hashkey_len(hashkey_t str)
         unsigned char len;
 
         for (len = 0; len < sizeof(hashkey_t); len++) {
-/* #pragma HLS UNROLL */
+#pragma HLS UNROLL factor=2
                 if (*str == 0)
                         break;
                 str++;
