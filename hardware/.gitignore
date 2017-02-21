@@ -2,6 +2,7 @@
 hdl/*~
 hdl/psl_accel_sim.vhd
 hdl/psl_accel_syn.vhd
+*build
 setup/*~
 sim/ies/
 sim/xsim/
