@@ -398,7 +398,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 {
 	// Host Memory AXI Interface
 #pragma HLS INTERFACE m_axi depth=256 port=din_gmem bundle=host_mem
-#pragma HLS INTERFACE m_axi depth=256 port=dout_gmem bundle=host_mems
+#pragma HLS INTERFACE m_axi depth=256 port=dout_gmem bundle=host_mem
 
 #pragma HLS INTERFACE s_axilite depth=256 port=din_gmem bundle=ctrl_reg
 #pragma HLS INTERFACE s_axilite depth=256 port=dout_gmem bundle=ctrl_reg
