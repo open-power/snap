@@ -1,5 +1,23 @@
+#-----------------------------------------------------------
+#
+# Copyright 2016, International Business Machines
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-----------------------------------------------------------
+
 PSL_SOURCE_ENV=$(FPGACARD)
-BUILD_DIR=$(DONUT_HARDWARE_ROOT)/build
+export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/HDK_build
 
 PSL_ACCEL_FILES=$(DONUT_HARDWARE_ROOT)/hdl/psl_accel_sim.vhd $(DONUT_HARDWARE_ROOT)/hdl/psl_accel_syn.vhd
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
@@ -38,6 +56,11 @@ ifndef ACTION_ROOT
 export ACTION_ROOT=$(DONUT_HARDWARE_ROOT)/action_examples/empty
 endif
 
+ifndef MSG_LEVEL
+export MSG_LEVEL=-quiet
+endif
+
+
 .PHONY: all image model check_donut_settings create_environment copy clean config gitclean patch_version patch_vhd_files patch_tcl_files
 
 all: config model image
@@ -61,6 +84,7 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 	@sed -i 's/run.topImpl.*0/run.topImpl 1/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topSynth.*0/run.topSynth 1/' $(BUILD_DIR)/psl_fpga.tcl
 	@mv -f $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
+	@ln -s $(BUILD_DIR) $(DONUT_HARDWARE_ROOT)/build
 
 $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@echo -e "\t[CREATE] $(BUILD_DIR)/Sources/prj/afu.prj"
