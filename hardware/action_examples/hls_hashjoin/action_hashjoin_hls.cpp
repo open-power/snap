@@ -42,15 +42,6 @@ static int hashkey_cmp(hashkey_t s1, hashkey_t s2)
         return *s1 - *s2;
 }
 
-static void hashkey_zero(hashkey_t s)
-{
-        unsigned char i;
-
-        for (i = 0; i < sizeof(hashkey_t); i++)
-#pragma HLS UNROLL factor=2
-		s[i] = 0;
-}
-
 void hashkey_cpy(hashkey_t dst, hashkey_t src)
 {
         unsigned char i;
@@ -342,6 +333,15 @@ int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
 }
 
 #else
+
+static void hashkey_zero(hashkey_t s)
+{
+        unsigned char i;
+
+        for (i = 0; i < sizeof(hashkey_t); i++)
+#pragma HLS UNROLL factor=2
+		s[i] = 0;
+}
 
 /*
  * Alternate version of the algorithm not using the multihash table.

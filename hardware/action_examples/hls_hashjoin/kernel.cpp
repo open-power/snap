@@ -572,10 +572,12 @@ int main(void)
 	
 	/* The 24 entries are a manually determined value */
 	printf("Number of entries in t3: %d\n", table3_found);
+
+	table3_dump((table3_t *)((uint8_t *)dout_gmem +
+				 sizeof(table1) + TABLE2_N * sizeof(table2)),
+		    table3_found);
+
 	if (table3_found != 24 * TABLE2_N) {
-		table3_dump((table3_t *)((uint8_t *)dout_gmem +
-					 sizeof(table1) + TABLE2_N * sizeof(table2)),
-			    table3_found);
 		return 1;
 	}
 
