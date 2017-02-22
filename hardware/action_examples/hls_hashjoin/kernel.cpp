@@ -84,10 +84,14 @@ static void write_results_in_HJ_regs(action_output_reg *Action_Output,
  */
 static void copy_hashkey(snap_membus_t mem, hashkey_t key)
 {
+	snap_membus_t tmp = mem;
+
  loop_copy_hashkey:
-	for (unsigned char k = 0; k < sizeof(hashkey_t); k++)
-#pragma HLS UNROLL factor=2
-		key[k] = mem(8 * (k+1) - 1,  8 * k);
+	for (unsigned char k = 0; k < sizeof(hashkey_t); k++) {
+#pragma HLS UNROLL /* factor=2 */
+		key[k] = tmp(7, 0);
+		tmp = tmp >> 8;
+	}
 }
 
 static snap_membus_t hashkey_to_mbus(hashkey_t key)
@@ -96,8 +100,9 @@ static snap_membus_t hashkey_to_mbus(hashkey_t key)
 
  loop_hashkey_to_mbus:
 	for (unsigned char k = 0; k < sizeof(hashkey_t); k++) {
-#pragma HLS UNROLL factor=2
-		mem(8 * (k+1) - 1,  8 * k) = key[k];
+#pragma HLS UNROLL /* factor=2 */
+		mem(7, 0) = key[k];
+		mem = mem << 8;
 	}
 	return mem;
 }
