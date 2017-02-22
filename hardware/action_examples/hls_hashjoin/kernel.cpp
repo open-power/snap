@@ -289,11 +289,11 @@ static void write_table3(snap_membus_t *mem, unsigned int max_lines,
 //--- MAIN PROGRAM ------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-static void do_the_work(snap_membus_t din_gmem[MEMORY_LINES],
-		    snap_membus_t dout_gmem[MEMORY_LINES],
-		    snap_membus_t d_ddrmem[MEMORY_LINES],
-		    action_input_reg *Action_Input,
-		    action_output_reg *Action_Output)
+static void do_the_work(snap_membus_t *din_gmem,
+			snap_membus_t *dout_gmem,
+			snap_membus_t *d_ddrmem,
+			action_input_reg *Action_Input,
+			action_output_reg *Action_Output)
 {
 	snapu16_t i, j;
 	short rc;
@@ -384,22 +384,28 @@ static void do_the_work(snap_membus_t din_gmem[MEMORY_LINES],
 				 __table3_idx, 0);
 }
 
-void action_wrapper(snap_membus_t din_gmem[MEMORY_LINES],
-		    snap_membus_t dout_gmem[MEMORY_LINES],
-		    snap_membus_t d_ddrmem[MEMORY_LINES],
+/**
+ * Remarks: Using pointers for the din_gmem, ... parameters is requiring to
+ * to set the depth=... parameter via the pragma below. If missing to do this
+ * the cosimulation will not work, since the width of the interface cannot
+ * be determined. Using an array din_gmem[...] works too to fix that.
+ */
+void action_wrapper(snap_membus_t *din_gmem,
+		    snap_membus_t *dout_gmem,
+		    snap_membus_t *d_ddrmem,
 		    action_input_reg *Action_Input,
 		    action_output_reg *Action_Output)
 {
 	// Host Memory AXI Interface
-#pragma HLS INTERFACE m_axi port=din_gmem  bundle=host_mem num_write_outstanding=64 num_read_outstanding=64 max_write_burst_length=256 max_read_burst_length=256
-#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem num_write_outstanding=64 num_read_outstanding=64 max_write_burst_length=256 max_read_burst_length=256
+#pragma HLS INTERFACE m_axi depth=256 port=din_gmem bundle=host_mem
+#pragma HLS INTERFACE m_axi depth=256 port=dout_gmem bundle=host_mems
 
-#pragma HLS INTERFACE s_axilite port=din_gmem  bundle=ctrl_reg
-#pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg
+#pragma HLS INTERFACE s_axilite depth=256 port=din_gmem bundle=ctrl_reg
+#pragma HLS INTERFACE s_axilite depth=256 port=dout_gmem bundle=ctrl_reg
 
 	//DDR memory Interface
-#pragma HLS INTERFACE m_axi port=d_ddrmem     bundle=card_mem0 offset=slave
-#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg
+#pragma HLS INTERFACE m_axi depth=256 port=d_ddrmem offset=slave bundle=card_mem0
+#pragma HLS INTERFACE s_axilite depth=256 port=d_ddrmem bundle=ctrl_reg
 
 	// Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Input
