@@ -29,10 +29,6 @@
 #include <donut_internal.h>
 #include <donut_queue.h>
 
-#define timediff_usec(t0, t1)						\
-	((double)(((t0)->tv_sec * 1000000 + (t0)->tv_usec) -		\
-		  ((t1)->tv_sec * 1000000 + (t1)->tv_usec)))
-
 /* Trace hardware implementation */
 static unsigned int dnut_trace = 0x0;
 static unsigned int dnut_config = 0x0;
@@ -102,6 +98,18 @@ struct dnut_data {
 
 /* To be used for software simulation, use funcs provided by action */
 static int dnut_map_funcs(struct dnut_data *card, uint16_t action_type);
+
+/*	Get Time in msec */
+static unsigned int tget_ms(void)
+{
+	struct timeval now;
+	unsigned int tms;
+
+	gettimeofday(&now, NULL);
+	tms = (unsigned int)(now.tv_sec * 1000) +
+		(unsigned int)(now.tv_usec / 1000);
+	return tms;
+}
 
 /**********************************************************************
  * DIRECT CARD ACCESS
@@ -409,7 +417,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	unsigned int i;
 	struct dnut_card *card = (struct dnut_card *)kernel;
 	uint32_t action_addr;
-	struct timeval etime, stime;
+	unsigned int t_start, t_now;
 	struct queue_workitem job; /* one cacheline job description and data */
 	uint32_t *job_data;
 	int completed;
@@ -464,15 +472,17 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 		return rc;
 
 	/* Wait for Action to go back to Idle */
-	gettimeofday(&stime, NULL);
+	t_start = tget_ms();
 	do {
 		dnut_trace("%s: CHECK COMPLETION\n", __func__);
 		completed = dnut_kernel_completed(kernel, &rc);
 		if (completed || rc != 0)
 			break;
 
-		gettimeofday(&etime, NULL);
-	} while (timediff_usec(&etime, &stime) < timeout_sec * 1000000);
+		t_now = tget_ms();
+		if (0xffffffff == timeout_sec)
+			continue;	/* forever */
+	} while ((t_now - t_start) < (timeout_sec * 1000));
 
 	if (completed == 0) {
 		dnut_trace("%s: rc=%d completed=%d\n", __func__,
