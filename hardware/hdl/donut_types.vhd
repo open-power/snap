@@ -187,8 +187,9 @@ PACKAGE donut_types IS
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
 
-  CONSTANT MASTER_BOUNDARY            : integer := 15;
+  CONSTANT MASTER_BOUNDARY            : integer := 18;
   CONSTANT ACTION_BIT                 : integer := 14;
+  
 
   -- Register base address (bits 13 downto 5 of the address)
   CONSTANT AFU_REG_BASE               : integer := 16#000#;  -- 0x0000
@@ -549,6 +550,10 @@ PACKAGE donut_types IS
 --  xmm_d: AXI master  -> mmio        : Data Interface
 --  xmm_c: AXI master  -> mmio        : Control Interface
 --
+--  xj_c: AXI master   -> job_mgr     : Control Interface
+--
+--  xn_d: AXI master   -> NVMe        : Data Interface
+--  nx_d: NVMe         -> AXI master  : Data Interface
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
   ----------------------------------------------------------------------------
@@ -705,6 +710,44 @@ PACKAGE donut_types IS
       ack                 : std_ulogic;
       error               : std_ulogic_vector( 1 DOWNTO 0);
     END RECORD XMM_D_T;
+
+    TYPE XJ_C_T IS RECORD
+      valid               : std_ulogic;
+      action              : std_ulogic_vector(3 downto 0);
+    END RECORD XJ_C_T;
+
+    --
+    -- nx_d
+    --
+    TYPE NX_D_T IS RECORD
+      M_AXI_AWREADY   : std_logic;
+      M_AXI_WREADY    : std_logic;
+      M_AXI_BRESP     : std_logic_vector(1 DOWNTO 0);
+      M_AXI_BVALID    : std_logic;
+      M_AXI_ARREADY   : std_logic;
+      M_AXI_RDATA     : std_logic_vector(31 DOWNTO 0);
+      M_AXI_RRESP     : std_logic_vector(1 DOWNTO 0);
+      M_AXI_RVALID    : std_logic;
+    END RECORD NX_D_T;
+
+    --
+    -- xn_d
+    --
+    TYPE XN_D_T IS RECORD
+      M_AXI_AWADDR    : std_logic_vector(31 DOWNTO 0);
+      M_AXI_AWPROT    : std_logic_vector(2 DOWNTO 0);
+      M_AXI_AWVALID   : std_logic;
+      M_AXI_WDATA     : std_logic_vector(31 DOWNTO 0);
+      M_AXI_WSTRB     : std_logic_vector(3 DOWNTO 0);
+      M_AXI_WVALID    : std_logic;
+      M_AXI_BREADY    : std_logic;
+      M_AXI_ARADDR    : std_logic_vector(31 DOWNTO 0);
+      M_AXI_ARPROT    : std_logic_vector(2 DOWNTO 0);
+      M_AXI_ARVALID   : std_logic;
+      M_AXI_RREADY    : std_logic;
+    END RECORD XN_D_T;
+
+  
 END donut_types;
 
 

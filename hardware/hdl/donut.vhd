@@ -153,6 +153,10 @@ ARCHITECTURE donut OF donut IS
   signal sd_d                : SD_D_T;
   signal ds_c                : DS_C_T;
   signal ds_d                : DS_D_T;
+  signal xn_d                : XN_D_T;
+  signal nx_d                : NX_D_T := ('1', '1', "00", '1', '1',
+                                          (31 downto 0 => '0'), "00", '1');
+  signal xj_c                : XJ_C_T;
 
 
 BEGIN
@@ -390,7 +394,12 @@ BEGIN
 
       -- Application / Kernel Interface
       xk_d_o                 => xk_d_o,   -- axi master lite
-      kx_d_i                 => kx_d_i
+      kx_d_i                 => kx_d_i,
+
+      xj_c_o                 => xj_c,
+
+      xn_d_o                 => xn_d,
+      nx_d_i                 => nx_d
     );
 
 
