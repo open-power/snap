@@ -113,8 +113,6 @@ ARCHITECTURE job_manager OF job_manager IS
   SIGNAL action_fifo_wrb               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL action_fifo_rrb               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
 
-  SIGNAL exploration_done_q            : std_ulogic;
-
   --
   -- COMPONENT
   COMPONENT fifo_9x512
@@ -161,6 +159,7 @@ BEGIN
     SIGNAL complete_ctx_q               : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
     SIGNAL complete_require_mmio_q      : std_ulogic;
     SIGNAL current_contexts_q           : CONTEXT_ID_ARRAY(NUM_OF_ACTIONS-1 DOWNTO 0);  -- Keeping the current context for each action
+    SIGNAL exploration_done_q           : std_ulogic;
     SIGNAL init_action_counter_q        : std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
 
   BEGIN
