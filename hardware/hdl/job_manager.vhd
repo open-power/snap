@@ -124,7 +124,6 @@ ARCHITECTURE job_manager OF job_manager IS
       dout         : OUT std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
       full         : OUT std_logic;
       empty        : OUT std_logic;
-      prog_full    : OUT std_logic;
       wr_rst_busy  : OUT std_logic;
       rd_rst_busy  : OUT std_logic
     );
@@ -132,7 +131,7 @@ ARCHITECTURE job_manager OF job_manager IS
 
   --
   -- COMPONENT
-  COMPONENT fifo_4x16
+  COMPONENT fifo_4x512
     PORT (
       clk          : IN  std_logic;
       srst         : IN  std_logic;
@@ -142,7 +141,6 @@ ARCHITECTURE job_manager OF job_manager IS
       dout         : OUT std_logic_vector(ACTION_BITS-1 DOWNTO 0);
       full         : OUT std_logic;
       empty        : OUT std_logic;
-      prog_full    : OUT std_logic;
       wr_rst_busy  : OUT std_logic;
       rd_rst_busy  : OUT std_logic
     );
@@ -178,7 +176,7 @@ BEGIN
       std_ulogic(rd_rst_busy)  => ctx_fifo_rrb(sat_id)
     );    
 
-    action_completed_fifo: fifo_4x16
+    action_completed_fifo: fifo_4x512
     PORT MAP (
       clk                      => std_logic(ha_pclock),
       srst                     => std_logic(afu_reset),
@@ -192,7 +190,7 @@ BEGIN
       std_ulogic(rd_rst_busy)  => action_completed_fifo_rrb(sat_id)
     );    
 
-    action_fifo: fifo_4x16
+    action_fifo: fifo_4x512
     PORT MAP (
       clk                      => std_logic(ha_pclock),
       srst                     => std_logic(afu_reset),
