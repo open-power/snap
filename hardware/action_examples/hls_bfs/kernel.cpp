@@ -20,13 +20,13 @@
 #include <hls_stream.h>
 #include "bfs.h"
 
-typedef ap_uint<32> Q_t;
+typedef ap_uint<VEX_WIDTH> Q_t;
 //--------------------------------------------------------------------------------------------
 
 
 // WRITE RESULTS IN MMIO REGS
 void write_results_in_BFS_regs(action_output_reg *Action_Output, action_input_reg *Action_Input, 
-                   ap_uint<32>ReturnCode)
+                   ap_uint<32>ReturnCode, ap_uint<VEX_WIDTH> current_vex, ap_uint<32> current_pos)
 {
 // Always check that ALL Outputs are tied to a value or HLS will generate a 
 // Action_Output_i and a Action_Output_o registers and address to read results 
@@ -45,8 +45,11 @@ void write_results_in_BFS_regs(action_output_reg *Action_Output, action_input_re
   Action_Output->Data.input_vex_num          = Action_Input->Data.input_vex_num;
   Action_Output->Data.output_address         = Action_Input->Data.output_address;
   Action_Output->Data.output_type            = Action_Input->Data.output_type;
-  Action_Output->Data.output_size            = Action_Input->Data.output_size;
   Action_Output->Data.output_flags           = Action_Input->Data.output_flags;
+
+  Action_Output->Data.status_pos             = current_pos;
+  Action_Output->Data.status_vex             = current_vex;
+  
   Action_Output->Data.unused = 0;
  }
 
@@ -114,11 +117,15 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
    
   L0: for (root = 0; root < vex_num; root ++)
       {
+
           hls::stream <Q_t> Q;
-          #pragma HLS stream depth=20 variable=Q
+          #pragma HLS stream depth=2048 variable=Q
+
 
           for (i = 0; i < vex_num; i ++)
+          {
               visited[i] = 0;
+          }
 
           buf_out[0] = 0;
           vnode_cnt = 0;
@@ -153,7 +160,7 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
                   (fetch_address>>ADDR_RIGHT_SHIFT), buf_node, BPERDW);
 
                   edgelink_ptr = (ap_uint<64>)(buf_node[0](128*idx + 63, 128*idx));
-                  adjvex       = (ap_uint<64>)(buf_node[0](128*idx + 95, 128*idx + 64));
+                  adjvex       = (ap_uint<32>)(buf_node[0](128*idx + 95, 128*idx + 64));
 
                   if(!visited[adjvex])
                   {
@@ -186,14 +193,17 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
           buf_out[0] = 0;
           vnode_place = 0;
           commit_address += BPERDW;
+          write_results_in_BFS_regs(Action_Output, Action_Input, ReturnCode, root, commit_address(31,0) ); 
       }
   }
   else  // unknown action
     ReturnCode = RET_CODE_FAILURE;
  
-  if(rc!=0) ReturnCode = RET_CODE_FAILURE;
-  write_results_in_BFS_regs(Action_Output, Action_Input, ReturnCode); 
-
+  if(rc!=0)
+      ReturnCode = RET_CODE_FAILURE;
+  
+  
+  write_results_in_BFS_regs(Action_Output, Action_Input, ReturnCode, root, commit_address(31,0)); 
   return;
 }
 
