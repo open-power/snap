@@ -149,6 +149,8 @@ ARCHITECTURE donut OF donut IS
   SIGNAL mmx_d               : MMX_D_T;
   SIGNAL xmm_d               : XMM_D_T;
 
+  signal xj_c                : XJ_C_T;
+
   signal xk_d                : XK_D_T;
   signal kx_d                : KX_D_T;
   signal sk_d                : SK_D_T;
@@ -161,7 +163,6 @@ ARCHITECTURE donut OF donut IS
   signal xn_d                : XN_D_T;
   signal nx_d                : NX_D_T := ('1', '1', "00", '1', '1',
                                           (31 downto 0 => '0'), "00", '1');
-  signal xj_c                : XJ_C_T;
 
 
 BEGIN
@@ -359,13 +360,15 @@ BEGIN
       -- pervasive
       ha_pclock              => ha_pclock,
       afu_reset              => afu_reset,
-
       --
-      -- MMIO IOs
+      -- MMIO Interface
       mmj_c_i                => mmj_c,
       mmj_d_i                => mmj_d,
       jmm_c_o                => jmm_c,
-      jmm_d_o                => jmm_d
+      jmm_d_o                => jmm_d,
+      --
+      -- AXI MASTER Interface
+      xj_c_i                 => xj_c
     );
 
 
@@ -435,13 +438,15 @@ BEGIN
       -- MMIO Interface
       mmx_d_i                => mmx_d,
       xmm_d_o                => xmm_d,
-
+      --
       -- Application / Kernel Interface
       xk_d_o                 => xk_d_o,   -- axi master lite
       kx_d_i                 => kx_d_i,
-
+      --
+      -- Job Manager Interface
       xj_c_o                 => xj_c,
-
+      --
+      -- NVME Interface
       xn_d_o                 => xn_d,
       nx_d_i                 => nx_d
     );

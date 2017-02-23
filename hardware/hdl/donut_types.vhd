@@ -828,7 +828,6 @@ PACKAGE donut_types IS
     -- mmj_c
     TYPE MMJ_C_T IS RECORD
       ctx_fifo_we               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
-      action_completed_we       : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);  -- TODO: To be removed
       exploration_done          : std_ulogic;
       max_sat                   : integer RANGE 0 TO NUM_OF_ACTION_TYPES-1;
       last_seqno                : std_ulogic;
@@ -838,7 +837,6 @@ PACKAGE donut_types IS
     TYPE MMJ_D_T IS RECORD
       context_id                : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
       sat                       : ACTION_TYPE_ARRAY(NUM_OF_ACTIONS-1 DOWNTO 0);
-      action_id                 : std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);  -- TODO: To be removed
       current_seqno             : std_ulogic_vector(CTX_SEQNO_CURRENT_L DOWNTO CTX_SEQNO_CURRENT_R);
     END RECORD;
 
@@ -897,7 +895,7 @@ PACKAGE donut_types IS
 
     TYPE XJ_C_T IS RECORD
       valid               : std_ulogic;
-      action              : std_ulogic_vector(3 downto 0);
+      action              : std_ulogic_vector(ACTION_BITS-1 downto 0);
     END RECORD XJ_C_T;
 
     --

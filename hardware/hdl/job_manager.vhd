@@ -38,11 +38,14 @@ ENTITY job_manager IS
     ha_pclock              : IN  std_ulogic;
     afu_reset              : IN  std_ulogic;
     --
-    -- MMIO IOs
+    -- MMIO Interface
     mmj_c_i                : IN  MMJ_C_T;
     mmj_d_i                : IN  MMJ_D_T;
     jmm_c_o                : OUT JMM_C_T;
-    jmm_d_o                : OUT JMM_D_T
+    jmm_d_o                : OUT JMM_D_T;
+    --
+    -- AXI MASTER Interface
+    xj_c_i                 : IN  XJ_C_T
   );
 END job_manager;
 
@@ -314,8 +317,11 @@ BEGIN
           action_fifo_we(sat_id)             <= '0';
           action_fifo_din(sat_id)            <= action_completed_fifo_dout(sat_id);
           action_completed_fifo_re(sat_id)   <= '0';
-          action_completed_fifo_we(sat_id)   <= mmj_c_i.action_completed_we(sat_id);  -- TODO: use signal from AXI Master
-          action_completed_fifo_din(sat_id)  <= mmj_d_i.action_id;                    -- TODO: use signal from AXI Master
+          action_completed_fifo_we(sat_id)   <= '0';
+          IF (unsigned(mmj_d_i.sat(to_integer(unsigned(xj_c_i.action)))) = to_unsigned(sat_id, ACTION_BITS-1)) THEN
+            action_completed_fifo_we(sat_id) <= xj_c_i.valid;
+          END IF;
+          action_completed_fifo_din(sat_id)  <= xj_c_i.action;
           complete_ctx_q                     <= complete_ctx_q;
           complete_next_seqno_q(sat_id)      <= complete_next_seqno_q(sat_id);
           complete_seqno_we_q(sat_id)        <= '0';
