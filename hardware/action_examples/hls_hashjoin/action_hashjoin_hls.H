@@ -189,6 +189,7 @@ void table3_dump(table3_t *table3, unsigned int table3_idx);
 #undef CONFIG_HASHTABLE_DEBUG
 #undef CONFIG_FIFO_DEBUG
 #undef CONFIG_MEM_DEBUG
+#undef CONFIG_4KIB_DEBUG
 
 #define CONFIG_HOSTSTYLE_ALGO
 

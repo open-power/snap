@@ -22,8 +22,6 @@
 
 using namespace std;
 
-#define MEMORY_LINES 1024
-
 // ----------------------------------------------------------------------------
 // Known Limitations => Issue #39 & #45
 //      => Transfers must be 64 byte aligned and a size of multiples of 64 bytes
@@ -82,6 +80,10 @@ static void write_results_in_HJ_regs(action_output_reg *Action_Output,
  * FIXME We like to get rid of this bit cutting out code. The tool should solve
  *       this problem and avoid the user to make mistakes there.
  */
+
+#undef CONFIG_SUGGESTED_OPTIMIZATION
+#if defined(CONFIG_SUGGESTED_OPTIMIZATION)
+
 static void copy_hashkey(snap_membus_t mem, hashkey_t key)
 {
 	snap_membus_t tmp = mem;
@@ -106,6 +108,28 @@ static snap_membus_t hashkey_to_mbus(hashkey_t key)
 	}
 	return mem;
 }
+
+#else
+static void copy_hashkey(snap_membus_t mem, hashkey_t key)
+{
+ loop_copy_hashkey:
+	for (unsigned char k = 0; k < sizeof(hashkey_t); k++)
+#pragma HLS UNROLL factor=2
+		key[k] = mem(8 * (k+1) - 1,  8 * k);
+}
+
+static snap_membus_t hashkey_to_mbus(hashkey_t key)
+{
+	snap_membus_t mem = 0;
+
+ loop_hashkey_to_mbus:
+	for (unsigned char k = 0; k < sizeof(hashkey_t); k++) {
+#pragma HLS UNROLL factor=2
+		mem(8 * (k+1) - 1,  8 * k) = key[k];
+	}
+	return mem;
+}
+#endif
 
 /*
  * Instead of reading each snap_membus_t line individually, we try to
@@ -164,6 +188,10 @@ static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
 		unsigned short tocopy =
 			MIN(SNAP_4KiB_WORDS, buf->max_lines - buf->m_idx);
 
+#if defined(CONFIG_4KIB_DEBUG)
+		fprintf(stderr, "4KiB buffer %d lines, reading %d bytes\n",
+			tocopy, tocopy * sizeof(snap_membus_t));
+#endif
 		memcpy(buf->buf, buf->mem + buf->m_idx,
 		       tocopy * sizeof(snap_membus_t));
 		
@@ -183,6 +211,12 @@ static void snap_4KiB_flush(snap_4KiB_t *buf)
 	unsigned short free_lines = buf->max_lines - buf->m_idx;
 	unsigned short tocopy = MIN(free_lines, buf->b_idx);
 
+#if defined(CONFIG_4KIB_DEBUG)
+	fprintf(stderr, "4KiB buffer %d lines, writing %d bytes "
+		"free: %d bmax: %d mmax: %d\n",
+		tocopy, tocopy * sizeof(snap_membus_t),
+		free_lines, SNAP_4KiB_WORDS, buf->max_lines);
+#endif
 	memcpy(buf->mem + buf->m_idx, buf->buf,
 	       tocopy * sizeof(snap_membus_t));
 
@@ -354,7 +388,7 @@ static void do_the_work(snap_membus_t *din_gmem,
 		T3_address = Action_Input->Data.t3.address;
 		T3_type    = Action_Input->Data.t3.type;
 		T3_size    = Action_Input->Data.t3.size;
-		T3_lines   = T2_size / sizeof(snap_membus_t);
+		T3_lines   = T3_size / sizeof(snap_membus_t);
 		ReturnCode = RET_CODE_OK;
 
 		fprintf(stderr, "t1: %016lx/%08x t2: %016lx/%08x t3: %016lx/%08x\n",
@@ -485,6 +519,7 @@ static table2_t table2[] = {
 
 };
 
+#define MEMORY_LINES 1024 /* 64 KiB */
 #define TABLE2_N 2
 
 /* worst case size */
@@ -529,8 +564,8 @@ int main(void)
 	}
 
 #if defined(CONFIG_MEM_DEBUG)
-	printf("HOSTMEMORY INPUT %p\n", din_gmem);
-	for (unsigned int i = 0; i < 2048; i++)
+	fprintf(stderr, "HOSTMEMORY INPUT %p\n", din_gmem);
+	for (unsigned int i = 0; i < ARRAY_SIZE(dout_gmem); i++)
 		if (din_gmem[i] != 0)
 			cout << setw(4)  << i * sizeof(snap_membus_t) << ": "
 			     << setw(32) << hex << din_gmem[i]
@@ -553,17 +588,30 @@ int main(void)
 
 		t3_found = (int)Action_Output.Data.t3_produced;
 		t3_data = t3_found * sizeof(table3_t);
+
+		fprintf(stderr, "Found %d entries for table3 %d bytes\n",
+			t3_found, t3_data);
+
 		Action_Input.Data.t3.address += t3_data;
 		Action_Input.Data.t3.size -= t3_data;
 
 		table3_found += t3_found;
 		table2_entries -= todo;
 		i++;
+
+
+		/* DEBUG The 24 entries are a manually determined value */
+		fprintf(stderr, "Temporary number of entries in t3: %d\n",
+			table3_found);
+		table3_dump((table3_t *)((uint8_t *)dout_gmem +
+					 sizeof(table1) + TABLE2_N * sizeof(table2)),
+			    table3_found);
 	}
 
 #if defined(CONFIG_MEM_DEBUG)
-	printf("HOSTMEMORY OUTPUT %p\n", dout_gmem);
-	for (unsigned int i = 0; i < 2048; i++)
+	fprintf(stderr, "HOSTMEMORY OUTPUT %p %d bytes (%x)\n", dout_gmem,
+	       sizeof(dout_gmem), sizeof(dout_gmem));
+	for (unsigned int i = 0; i < ARRAY_SIZE(dout_gmem); i++)
 		if (dout_gmem[i] != 0)
 			cout << setw(4)  << i * sizeof(snap_membus_t) << ": "
 			     << setw(32) << hex << dout_gmem[i]
@@ -571,8 +619,7 @@ int main(void)
 #endif
 	
 	/* The 24 entries are a manually determined value */
-	printf("Number of entries in t3: %d\n", table3_found);
-
+	fprintf(stderr, "Final number of entries in t3: %d\n", table3_found);
 	table3_dump((table3_t *)((uint8_t *)dout_gmem +
 				 sizeof(table1) + TABLE2_N * sizeof(table2)),
 		    table3_found);
