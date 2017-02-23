@@ -149,7 +149,7 @@ image: patch_version
 clean:
 	@echo -e "\t[CLEAN] build environment";
 	rm -r -f  $(BUILD_DIR)
-	unlink    build
+	rm    -f  build
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
