@@ -101,10 +101,10 @@ static snap_membus_t hashkey_to_mbus(hashkey_t key)
 	snap_membus_t mem = 0;
 
  loop_hashkey_to_mbus:
-	for (unsigned char k = 0; k < sizeof(hashkey_t); k++) {
+	for (char k = sizeof(hashkey_t)-1; k >= 0; k--) {
 #pragma HLS UNROLL /* factor=2 */
-		mem(7, 0) = key[k];
 		mem = mem << 8;
+		mem(7, 0) = key[k];
 	}
 	return mem;
 }
