@@ -90,7 +90,7 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
   ap_uint<64> commit_address;
 
   ap_uint<1>         visited[MAX_VEX_NUM];
-  ap_uint<VEX_WIDTH> i, root, current, vex_num;
+  ap_uint<VEX_WIDTH> i,j, root, current, vex_num;
 
   ap_uint<VEX_WIDTH> vnode_cnt;
   ap_uint<32> vnode_place;
@@ -115,8 +115,24 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
 
   if(Action_Input->Control.action == BFS_ACTION_TYPE) {
    
+  //define a local BRAM to hold VNODE: 
+  // MAX_VEX_NUM * VNODE_SIZE
+
+  ap_uint<MEMDW> vnode_array[MAX_VEX_NUM/(BPERDW/VNODE_SIZE)]; 
+  //Initialize it with burst read
+  //It will improve the performance a lot.
+  rc = read_burst_of_data_from_mem(din_gmem, d_ddrmem, Action_Input->Data.input_type, 
+      (INPUT_ADDRESS>>ADDR_RIGHT_SHIFT), vnode_array, vex_num*VNODE_SIZE);
+  // A 512*512bits only takes 15 BRAM_18K,  XCKU060 has 2160 in total. Less than 1%
+  // But It may harm the timing when this array size increased.
+ 
+
   L0: for (root = 0; root < vex_num; root ++)
       {
+#if defined(NO_SYNTH)
+          printf("***Handling root = %d ***\n", root);
+#endif
+          
 
           hls::stream <Q_t> Q;
           #pragma HLS stream depth=2048 variable=Q
@@ -124,6 +140,7 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
 
           for (i = 0; i < vex_num; i ++)
           {
+              #pragma HLS UNROLL factor=128
               visited[i] = 0;
           }
 
@@ -141,14 +158,9 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
           while (!Q.empty())
           {
               current = Q.read();
+              idx = current (1,0);
+              edgelink_ptr = (ap_uint<64>)(vnode_array[current/4](128*idx+63, 128*idx+0));
 
-              fetch_address = INPUT_ADDRESS + (current*VNODE_SIZE);
-              idx = fetch_address(5,3);
-              rc = read_burst_of_data_from_mem(din_gmem, d_ddrmem, Action_Input->Data.input_type, 
-                  (fetch_address>>ADDR_RIGHT_SHIFT), buf_node, BPERDW);
-              
-
-              edgelink_ptr = (ap_uint<64>)(buf_node[0](64*idx+63, 64*idx));
               while (edgelink_ptr != 0) //judge with NULL
               {
                   //Update fetch address
