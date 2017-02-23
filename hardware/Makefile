@@ -96,10 +96,12 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@if grep -q 'Language       File-Name' $(PROJECT_COMPILE_LIST); then\
 		cut -d "," -f "1 4 5" $(PROJECT_COMPILE_LIST) | sed 's/, */ /g' | \
 		grep -E "(\/hdl\/|\/action_examples\/)" | \
-		grep -Ev '\/ip\/|action_auto_|viv_project' | sed 's/ ..\// /' ; \
+		grep -Ev '\/ip\/|action_auto_|viv_project' | sed 's/ ..\// /'| \
+                grep -v ddr3_dimm | grep -v top.sv | > $(BUILD_DIR)/Sources/prj/afu.prj; \
 	else cut -d "," -f "2 3 4" $(PROJECT_COMPILE_LIST) | sed 's/, */ /g' | \
 		grep -E "(\/hdl\/|\/action_examples\/)" | \
-		grep -Ev '\/ip\/|action_auto_|viv_project' | sed 's/ ..\/..\/..\// /' ; \
+		grep -Ev '\/ip\/|action_auto_|viv_project' | sed 's/ ..\/..\/..\// /' | \
+		grep -v ddr3_dimm | grep -v top.sv  > $(BUILD_DIR)/Sources/prj/afu.prj; \
 	fi
 	@echo -e "\t[CREATE] $@"
 	@cat $(BUILD_DIR)/Sources/prj/top.prj $(BUILD_DIR)/Sources/prj/afu.prj > $(BUILD_DIR)/Sources/prj/psl_fpga.prj

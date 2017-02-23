@@ -26,9 +26,6 @@
 
   USE work.psl_accel_types.ALL;
 
-  USE work.ddr3_sdram_pkg.ALL;                                                           -- only for DDR3_USED=TRUE-- only for BRAM_USED!=TRUE-- only for SIM=TRUE
-  USE work.ddr3_sdram_usodimm_pkg.ALL;                                                   -- only for DDR3_USED=TRUE-- only for BRAM_USED!=TRUE-- only for SIM=TRUE
-
   LIBRARY unisim;                                                                        -- only for DDRI_USED=TRUE
   USE unisim.vcomponents.all;                                                            -- only for DDRI_USED=TRUE
 
