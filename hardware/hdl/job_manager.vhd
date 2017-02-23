@@ -29,8 +29,8 @@ USE work.donut_types.all;
 
 ENTITY job_manager IS
   GENERIC (
-    NUM_OF_ACTION_TYPES : integer := 16;
-    NUM_OF_ACTIONS      : integer :=  1
+    NUM_OF_ACTION_TYPES : integer RANGE 0 TO 16 := 16;
+    NUM_OF_ACTIONS      : integer RANGE 0 TO 16 :=  1
   );
   PORT (
     --
@@ -39,8 +39,10 @@ ENTITY job_manager IS
     afu_reset              : IN  std_ulogic;
     --
     -- MMIO IOs
-    mmj_c                  : IN  MMJ_C_T;
-    jmm_c                  : OUT JMM_C_T
+    mmj_c_i                : IN  MMJ_C_T;
+    mmj_d_i                : IN  MMJ_D_T;
+    jmm_c_o                : OUT JMM_C_T;
+    jmm_d_o                : OUT JMM_D_T
   );
 END job_manager;
 
@@ -51,30 +53,64 @@ ARCHITECTURE job_manager OF job_manager IS
 
   --
   -- TYPE
+  TYPE ASSIGN_ACTION_FSM_T IS (ST_RESET, ST_WAIT_FREE_ACTION, ST_WAIT_CONTEXT, ST_ASSIGN_ACTION, ST_WAIT_MMIO_GRANT, ST_RETURN_MMIO_LOCK);
+  TYPE COMPLETE_ACTION_FSM_T IS (ST_WAIT_COMPLETION, ST_GET_CTX, ST_WAIT_MMIO_GRANT, ST_PUSH_CTX, ST_RETURN_MMIO_LOCK, ST_INIT_ACTIONS);
+  TYPE REQUEST_MMIO_INTERFACE_FSM_T IS (ST_WAIT_GRANT, ST_ASSIGN_MMIO_GRANTED, ST_COMPLETE_MMIO_GRANTED, ST_RETURN_GRANT);
 
   --
   -- ATTRIBUTE
+  ATTRIBUTE syn_encoding                                 : string;
+  ATTRIBUTE syn_encoding OF ASSIGN_ACTION_FSM_T          : TYPE IS "safe";
+  ATTRIBUTE syn_encoding OF COMPLETE_ACTION_FSM_T        : TYPE IS "safe";
+  ATTRIBUTE syn_encoding OF REQUEST_MMIO_INTERFACE_FSM_T : TYPE IS "safe";
 
 
   --
   -- SIGNAL
-  SIGNAL ctx_fifo_we         : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic;
-  SIGNAL ctx_fifo_re         : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic;
-  SIGNAL ctx_fifo_empty      : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic;
-  SIGNAL ctx_fifo_full       : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic;
-  SIGNAL ctx_fifo_din        : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0)
-  SIGNAL ctx_fifo_dout       : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0)
-  SIGNAL ctx_fifo_wrb        : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic;
-  SIGNAL ctx_fifo_rrb        : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic;
+  SIGNAL grant_mmio_interface_q        : integer RANGE 0 TO NUM_OF_ACTION_TYPES-1;
+  SIGNAL wait_lock_q                   : std_ulogic;
+  SIGNAL lock_mmio_interface_q         : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL mmio_ctx_q                    : CONTEXT_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL assign_grant_mmio_q           : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL assign_action_id_q            : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL assign_attach_action_q        : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL assign_context_active_q       : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL assign_status_we_q            : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL complete_grant_mmio_q         : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL complete_next_seqno_q         : SEQNO_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL complete_seqno_we_q           : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL complete_detach_action_q      : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL complete_context_active_q     : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL complete_status_we_q          : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
 
-  SIGNAL action_fifo_we      : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic;
-  SIGNAL action_fifo_re      : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic;
-  SIGNAL action_fifo_empty   : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic;
-  SIGNAL action_fifo_full    : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic;
-  SIGNAL action_fifo_din     : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic_vector(ACTION_BITS-1 DOWNTO 0)
-  SIGNAL action_fifo_dout    : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic_vector(ACTION_BITS-1 DOWNTO 0)
-  SIGNAL action_fifo_wrb     : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic;
-  SIGNAL action_fifo_rrb     : array(NUM_OF_ACTION_TYPES-1 DOWNTO 0) OF std_ulogic;
+  SIGNAL ctx_fifo_we                   : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL ctx_fifo_re                   : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL ctx_fifo_empty                : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL ctx_fifo_full                 : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL ctx_fifo_din                  : CONTEXT_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL ctx_fifo_dout                 : CONTEXT_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL ctx_fifo_wrb                  : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL ctx_fifo_rrb                  : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+
+  SIGNAL action_completed_fifo_we      : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_completed_fifo_re      : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_completed_fifo_empty   : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_completed_fifo_full    : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_completed_fifo_din     : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_completed_fifo_dout    : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_completed_fifo_wrb     : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_completed_fifo_rrb     : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+
+  SIGNAL action_fifo_we                : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_fifo_re                : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_fifo_empty             : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_fifo_full              : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_fifo_din               : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_fifo_dout              : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_fifo_wrb               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_fifo_rrb               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+
+  SIGNAL exploration_done_q            : std_ulogic;
 
   --
   -- COMPONENT
@@ -116,12 +152,22 @@ BEGIN
 
   action_type_handling: FOR sat_id IN 0 TO NUM_OF_ACTION_TYPES-1 GENERATE
 
-    SIGNAL current_ctx_q : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    SIGNAL assign_action_fsm_q          : ASSIGN_ACTION_FSM_T;
+    SIGNAL complete_action_fsm_q        : COMPLETE_ACTION_FSM_T;
+    SIGNAL request_mmio_interface_fsm_q : REQUEST_MMIO_INTERFACE_FSM_T;
+    SIGNAL assign_ctx_q                 : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    SIGNAL assign_require_mmio_q        : std_ulogic;
+    SIGNAL complete_ctx_q               : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    SIGNAL complete_require_mmio_q      : std_ulogic;
+    SIGNAL current_contexts_q           : CONTEXT_ID_ARRAY(NUM_OF_ACTIONS-1 DOWNTO 0);  -- Keeping the current context for each action
+    SIGNAL init_action_counter_q        : std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
+
+  BEGIN
 
     ctx_fifo: fifo_9x512
     PORT MAP (
       clk                      => std_logic(ha_pclock),
-      srxt                     => std_logic(afu_reset),
+      srst                     => std_logic(afu_reset),
       din                      => std_logic_vector(ctx_fifo_din(sat_id)),
       wr_en                    => std_logic(ctx_fifo_we(sat_id)),
       rd_en                    => std_logic(ctx_fifo_re(sat_id)),
@@ -132,10 +178,24 @@ BEGIN
       std_ulogic(rd_rst_busy)  => ctx_fifo_rrb(sat_id)
     );    
 
+    action_completed_fifo: fifo_4x16
+    PORT MAP (
+      clk                      => std_logic(ha_pclock),
+      srst                     => std_logic(afu_reset),
+      din                      => std_logic_vector(action_completed_fifo_din(sat_id)),
+      wr_en                    => std_logic(action_completed_fifo_we(sat_id)),
+      rd_en                    => std_logic(action_completed_fifo_re(sat_id)),
+      std_ulogic_vector(dout)  => action_completed_fifo_dout(sat_id),
+      std_ulogic(full)         => action_completed_fifo_full(sat_id),
+      std_ulogic(empty)        => action_completed_fifo_empty(sat_id),
+      std_ulogic(wr_rst_busy)  => action_completed_fifo_wrb(sat_id),
+      std_ulogic(rd_rst_busy)  => action_completed_fifo_rrb(sat_id)
+    );    
+
     action_fifo: fifo_4x16
     PORT MAP (
       clk                      => std_logic(ha_pclock),
-      srxt                     => std_logic(afu_reset),
+      srst                     => std_logic(afu_reset),
       din                      => std_logic_vector(action_fifo_din(sat_id)),
       wr_en                    => std_logic(action_fifo_we(sat_id)),
       rd_en                    => std_logic(action_fifo_re(sat_id)),
@@ -150,34 +210,42 @@ BEGIN
     BEGIN  -- PROCESS
       IF rising_edge(ha_pclock) THEN
         IF afu_reset = '1' THEN
-          ctx_fifo_we(sat_id)        <= '0';
-          ctx_fifo_re(sat_id)        <= '0';
-          action_fifo_re(sat_id)     <= '0';
-          action_fifo_we(sat_id)     <= '0';
-          assign_action_fsm_q        <= ST_RESET;
+          ctx_fifo_re(sat_id)             <= '0';
+          action_fifo_re(sat_id)          <= '0';
+          assign_action_id_q(sat_id)      <= (OTHERS => '0');
+          assign_attach_action_q(sat_id)  <= '0';
+          assign_context_active_q(sat_id) <= '0';
+          assign_status_we_q(sat_id)      <= '0';
+          assign_require_mmio_q           <= '0';
+          assign_ctx_q                    <= (OTHERS => '0');
+          assign_action_fsm_q             <= ST_RESET;
+          current_contexts_q              <= (OTHERS => (OTHERS => '0'));
 
-          current_ctx_q              <= (OTHERS => '0');
         ELSE
           -- defaults
-          ctx_fifo_we(sat_id)        <= mmj_d_i.ctx_fifo_we(sat_id);
-          ctx_fifo_re(sat_id)        <= '0';
-          ctx_fifo_din(sat_id)       <= mmj_d_i.ctx_fifo_dat(sat_id);
-          action_fifo_re(sat_id)     <= '0';
-          action_fifo_we(sat_id)     <= '0';
-
+          ctx_fifo_re(sat_id)             <= '0';
+          action_fifo_re(sat_id)          <= '0';
+          assign_action_id_q(sat_id)      <= assign_action_id_q(sat_id);
+          assign_attach_action_q(sat_id)  <= '0';
+          assign_context_active_q(sat_id) <= '0';
+          assign_status_we_q(sat_id)      <= '0';
+          assign_require_mmio_q           <= assign_require_mmio_q;
+          assign_ctx_q                    <= assign_ctx_q;
+          assign_action_fsm_q             <= assign_action_fsm_q;
+          current_contexts_q              <= current_contexts_q;
           
           --
           -- F S M
           --
           CASE assign_action_fsm_q IS
             WHEN ST_RESET =>
-              IF NOT (ctx_fifo_wrb(sat_id) OR ctx_fifo_rrb(sat_id) OR action_fifo_wrb(sat_id) OR action_fifo_rrb(sat_id)) THEN
+              IF NOT (ctx_fifo_wrb(sat_id) OR ctx_fifo_rrb(sat_id) OR action_fifo_wrb(sat_id) OR action_fifo_rrb(sat_id)) = '1' THEN
                 assign_action_fsm_q <= ST_WAIT_FREE_ACTION;
               END IF;
 
             WHEN ST_WAIT_FREE_ACTION =>
-              IF NOT action_fifo_empty(sat_id) THEN
-                IF ctx_fifo_empty(sat_id) THEN
+              IF NOT action_fifo_empty(sat_id) = '1' THEN
+                IF ctx_fifo_empty(sat_id) = '1' THEN
                   assign_action_fsm_q <= ST_WAIT_CONTEXT;
                 ELSE
                   assign_action_fsm_q <= ST_ASSIGN_ACTION;                    
@@ -185,67 +253,258 @@ BEGIN
               END IF;
 
             WHEN ST_WAIT_CONTEXT =>
-              IF NOT ctx_fifo_empty(sat_id) THEN
+              IF NOT ctx_fifo_empty(sat_id) = '1' THEN
                 ctx_fifo_re(sat_id)    <= '1';
                 action_fifo_re(sat_id) <= '1';
                 assign_action_fsm_q    <= ST_ASSIGN_ACTION;
               END IF;
 
             WHEN ST_ASSIGN_ACTION =>
-              current_ctx_q(sat_id)       <= ctx_fifo_dout(sat_id);
-              current_action_id_q(sat_id) <= action_fifo_dout(sat_id);
-              assign_action_fsm_q         <= ST_WAIT_FOR_MMIO_INTERFACE;
+              assign_ctx_q                 <= ctx_fifo_dout(sat_id);
+              assign_action_id_q(sat_id)   <= action_fifo_dout(sat_id);
+              assign_require_mmio_q        <= '1';
+              assign_action_fsm_q          <= ST_WAIT_MMIO_GRANT;
 
-            WHEN ST_WAIT_FOR_MMIO_INTERFACE =>
-              IF grant_mmio_interface_q = sat_id THEN
-                lock_mmio_interface_q(sat_id) <= '1';
-                assign_action_fsm_q <= ST_READ_MMIO_INTERFACE;
+            WHEN ST_WAIT_MMIO_GRANT =>
+              current_contexts_q(to_integer(unsigned(assign_action_id_q(sat_id)))) <= assign_ctx_q;
+              IF assign_grant_mmio_q(sat_id) = '1' THEN
+                assign_attach_action_q(sat_id)  <= '1';
+                assign_context_active_q(sat_id) <= '1';
+                assign_status_we_q(sat_id)      <= '1';
+                assign_action_fsm_q             <= ST_RETURN_MMIO_LOCK;
               END IF;
 
-            WHEN ST_READ_MMIO_INTERFACE =>
-              current_seqno_q(sat_id) <= mmj_d_i.current_senqo + 1;
-              executing_job_q(sat_id) <= '1';
-              status_we_q(sat_id)     <= '1';
-              IF mmj_d_i.current_seqno = mmj_d_i.last_seqno THEN
-                assign_action_fsm_q <= ST_WAIT_FREE_ACTION;
-              ELSE
-                assign_action_fsm_q <= ST_PUSH_CTX;
+            WHEN ST_RETURN_MMIO_LOCK =>
+              assign_require_mmio_q   <= '0';     -- TODO: remove state or need ack from mmio?
+              assign_action_fsm_q     <= ST_WAIT_FREE_ACTION;
+
+            WHEN OTHERS => NULL;
+          END CASE;                               -- assign_action_fsm_q
+        END IF;                                   -- afu_reset
+      END IF;                                     -- rising_edge(ha_pclock)
+    END PROCESS assign_action_fsm;
+
+
+    complete_action_fsm : PROCESS (ha_pclock)
+    BEGIN  -- PROCESS
+      IF rising_edge(ha_pclock) THEN
+        IF afu_reset = '1' THEN
+          complete_require_mmio_q            <= '0';
+          ctx_fifo_we(sat_id)                <= '0';
+          ctx_fifo_din(sat_id)               <= (OTHERS => '0');
+          action_fifo_we(sat_id)             <= '0';
+          action_fifo_din(sat_id)            <= (OTHERS => '0');
+          action_completed_fifo_re(sat_id)   <= '0';
+          action_completed_fifo_we(sat_id)   <= '0';
+          action_completed_fifo_din(sat_id)  <= (OTHERS => '0');
+          complete_ctx_q                     <= (OTHERS => '0');
+          complete_next_seqno_q(sat_id)      <= (OTHERS => '0');
+          complete_seqno_we_q(sat_id)        <= '0';
+          complete_detach_action_q(sat_id)   <= '0';
+          complete_context_active_q(sat_id)  <= '0';
+          complete_status_we_q(sat_id)       <= '0';
+          exploration_done_q                 <= '0';
+          init_action_counter_q              <= (OTHERS => '0');
+
+          complete_action_fsm_q              <= ST_WAIT_COMPLETION;
+
+        ELSE
+          -- defaults
+          complete_require_mmio_q            <= complete_require_mmio_q;
+          ctx_fifo_we(sat_id)                <= mmj_c_i.ctx_fifo_we(sat_id);
+          ctx_fifo_din(sat_id)               <= mmj_d_i.context_id;
+          action_fifo_we(sat_id)             <= '0';
+          action_fifo_din(sat_id)            <= action_completed_fifo_dout(sat_id);
+          action_completed_fifo_re(sat_id)   <= '0';
+          action_completed_fifo_we(sat_id)   <= mmj_c_i.action_completed_we(sat_id);  -- TODO: use signal from AXI Master
+          action_completed_fifo_din(sat_id)  <= mmj_d_i.action_id;                    -- TODO: use signal from AXI Master
+          complete_ctx_q                     <= complete_ctx_q;
+          complete_next_seqno_q(sat_id)      <= complete_next_seqno_q(sat_id);
+          complete_seqno_we_q(sat_id)        <= '0';
+          complete_detach_action_q(sat_id)   <= complete_detach_action_q(sat_id);
+          complete_context_active_q(sat_id)  <= '0';
+          complete_status_we_q(sat_id)       <= '0';
+          complete_action_fsm_q              <= complete_action_fsm_q;
+
+          exploration_done_q                 <= exploration_done_q OR mmj_c_i.exploration_done;
+          init_action_counter_q              <= init_action_counter_q;
+
+          --
+          -- F S M
+          --
+          CASE complete_action_fsm_q IS
+            WHEN ST_WAIT_COMPLETION =>
+              IF NOT action_completed_fifo_empty(sat_id) = '1' THEN
+                action_completed_fifo_re(sat_id) <= '1';
+                complete_action_fsm_q            <= ST_GET_CTX;
+              ELSIF (exploration_done_q AND action_fifo_empty(sat_id)) = '1' THEN
+                exploration_done_q     <= '0';
+                init_action_counter_q  <= (OTHERS => '0');
+                complete_action_fsm_q  <= ST_INIT_ACTIONS;
               END IF;
 
-            WHEN ST_PUSH_CTX =>
-              IF mmj_c_i.ctx_fifo_we(sat_id) = '0' THEN
-                ctx_fifo_we(sat_id)  <= '1';
-                ctx_fifo_din(sat_id) <= current_seqno_q(sat_id);
-                IF action_fifo_empty(sat_id) THEN
-                  assign_action_fsm_q <= ST_WAIT_FREE_ACTION;
+            WHEN ST_GET_CTX =>
+              action_fifo_we(sat_id)  <= '1';
+              complete_ctx_q          <= current_contexts_q(to_integer(unsigned(action_completed_fifo_dout(sat_id))));
+              complete_require_mmio_q <= '1';
+              complete_action_fsm_q   <= ST_WAIT_MMIO_GRANT;
+
+            WHEN ST_WAIT_MMIO_GRANT =>
+              IF complete_grant_mmio_q(sat_id) = '1' THEN
+                complete_next_seqno_q(sat_id)       <= mmj_d_i.current_seqno + 1;
+                complete_seqno_we_q(sat_id)         <= '1';
+                complete_detach_action_q(sat_id)    <= '1';
+                complete_status_we_q(sat_id)        <= '1';
+                IF mmj_c_i.last_seqno = '0' THEN
+                  complete_context_active_q(sat_id) <= '1';
+                  complete_action_fsm_q             <= ST_PUSH_CTX;
                 ELSE
-                  assign_action_fsm_q <= ST_WAIT_CONTEXT;
+                  complete_action_fsm_q             <= ST_RETURN_MMIO_LOCK;
                 END IF;
               END IF;
 
-            WHEN OTHERS => NULL;
-          END CASE;
-        END IF;
-      END IF;  
-    END PROCESS;
+            WHEN ST_PUSH_CTX =>
+              complete_require_mmio_q <= '0';
+              IF mmj_c_i.ctx_fifo_we(sat_id) = '0' THEN
+                ctx_fifo_we(sat_id)  <= '1';
+                ctx_fifo_din(sat_id) <= complete_ctx_q;
+                complete_action_fsm_q <= ST_WAIT_COMPLETION;
+              END IF;
 
+            WHEN ST_RETURN_MMIO_LOCK =>
+              complete_require_mmio_q <= '0';
+              complete_action_fsm_q   <= ST_WAIT_COMPLETION;
+
+            WHEN ST_INIT_ACTIONS =>
+              IF unsigned(mmj_d_i.sat(to_integer(unsigned(init_action_counter_q)))) = to_unsigned(sat_id, ACTION_BITS-1) THEN
+                action_fifo_we(sat_id)  <= '1';
+                action_fifo_din(sat_id) <= init_action_counter_q;
+              END IF;
+              IF to_integer(unsigned(init_action_counter_q)) = NUM_OF_ACTIONS-1 THEN
+                complete_action_fsm_q <= ST_WAIT_COMPLETION;
+              ELSE
+                init_action_counter_q <= init_action_counter_q + 1;
+              END IF;
+
+            WHEN OTHERS => NULL;
+          END CASE;                               -- complete_action_fsm_q
+        END IF;                                   -- afu_reset
+      END IF;                                     -- rising_edge(ha_pclock)
+    END PROCESS complete_action_fsm;
+
+
+    request_mmio_interface_fsm : PROCESS (ha_pclock)
+    BEGIN  -- PROCESS
+      IF rising_edge(ha_pclock) THEN
+        IF afu_reset = '1' THEN
+          lock_mmio_interface_q(sat_id) <= '0';
+          mmio_ctx_q(sat_id)            <= (OTHERS => '0');
+          assign_grant_mmio_q(sat_id)   <= '0';
+          complete_grant_mmio_q(sat_id) <= '0';
+          request_mmio_interface_fsm_q  <= ST_WAIT_GRANT;
+
+        ELSE
+          -- defaults
+          lock_mmio_interface_q(sat_id) <= lock_mmio_interface_q(sat_id);
+          mmio_ctx_q(sat_id)            <= mmio_ctx_q(sat_id);
+          assign_grant_mmio_q(sat_id)   <= assign_grant_mmio_q(sat_id);
+          complete_grant_mmio_q(sat_id) <= complete_grant_mmio_q(sat_id);
+          request_mmio_interface_fsm_q  <= request_mmio_interface_fsm_q;
+
+          --
+          -- F S M
+          --
+          CASE request_mmio_interface_fsm_q IS
+            WHEN ST_WAIT_GRANT =>
+              IF grant_mmio_interface_q = sat_id THEN
+                IF assign_require_mmio_q = '1' THEN
+                  lock_mmio_interface_q(sat_id) <= '1';
+                  mmio_ctx_q(sat_id)            <= assign_ctx_q;
+                  assign_grant_mmio_q(sat_id)   <= '1';
+                  request_mmio_interface_fsm_q  <= ST_ASSIGN_MMIO_GRANTED;
+                ELSIF complete_require_mmio_q = '1' THEN
+                  lock_mmio_interface_q(sat_id) <= '1';
+                  mmio_ctx_q(sat_id)            <= complete_ctx_q;
+                  complete_grant_mmio_q(sat_id) <= '1';
+                  request_mmio_interface_fsm_q  <= ST_COMPLETE_MMIO_GRANTED;
+                ELSE
+                  request_mmio_interface_fsm_q  <= ST_RETURN_GRANT;
+                END IF;
+              END IF;
+
+            WHEN ST_ASSIGN_MMIO_GRANTED =>
+              IF assign_require_mmio_q = '0' THEN
+                assign_grant_mmio_q(sat_id) <= '0';
+                IF complete_require_mmio_q = '1' THEN
+                  lock_mmio_interface_q(sat_id) <= '1';
+                  mmio_ctx_q(sat_id)            <= complete_ctx_q;
+                  complete_grant_mmio_q(sat_id) <= '1';
+                  request_mmio_interface_fsm_q  <= ST_COMPLETE_MMIO_GRANTED;
+                ELSE
+                  lock_mmio_interface_q(sat_id) <= '0';
+                  request_mmio_interface_fsm_q  <= ST_RETURN_GRANT;
+                END IF;
+              END IF;
+
+            WHEN ST_COMPLETE_MMIO_GRANTED =>
+              IF complete_require_mmio_q = '0' THEN
+                complete_grant_mmio_q(sat_id) <= '0';
+                lock_mmio_interface_q(sat_id) <= '0';
+                request_mmio_interface_fsm_q  <= ST_RETURN_GRANT;
+              END IF;
+
+            WHEN ST_RETURN_GRANT =>
+              request_mmio_interface_fsm_q <= ST_WAIT_GRANT;
+
+            WHEN OTHERS => NULL;
+
+          END CASE;                               -- request_mmio_interface_fsm_q
+        END IF;                                   -- afu_reset
+      END IF;                                     -- rising_edge(ha_pclock)
+    END PROCESS request_mmio_interface_fsm;
+    
   END GENERATE action_type_handling;
 
-  arbitrate_mmio_access: PROCESS (ha_pclock)
-  BEGIN  -- PROCESS arbitrate_mmio_access
+
+  grant_mmio_access: PROCESS (ha_pclock)
+  VARIABLE
+    sat_v : integer RANGE 0 TO NUM_OF_ACTION_TYPES-1;
+  BEGIN  -- PROCESS grant_mmio_access
     IF rising_edge(ha_pclock) THEN
       IF afu_reset = '1' THEN
-        grant_mmio_interface_q <= 0;
-        wait_lock_q            <= '1';
+        grant_mmio_interface_q     <= 0;
+        wait_lock_q                <= '1';
       ELSE
-        wait_lock_q <= '0';
-        IF NOT (lock_mmio_interface_q(grant_mmio_interface_q) OR wait_lock_q) THEN
-          wait_lock_q <= '1';
-          grant_mmio_interface_q <= 0 WHEN grant_mmio_interface_q = max_sat_q
-                                      ELSE grant_mmio_interface_q + 1;
-        END IF;
-      END IF;
-    END IF;
+        sat_v := grant_mmio_interface_q;
 
-  END PROCESS arbitrate_mmio_access;
+        wait_lock_q <= '0';
+        IF NOT (lock_mmio_interface_q(sat_v) OR wait_lock_q) = '1' THEN
+          wait_lock_q <= '1';
+          IF sat_v = mmj_c_i.max_sat THEN
+            sat_v := 0;
+          ELSE
+            sat_v := sat_v + 1;
+          END IF;
+        END IF;
+        grant_mmio_interface_q     <= sat_v;
+      END IF;                                   -- afu_reset
+    END IF;                                     -- rising_edge(ha_pclock)
+  END PROCESS grant_mmio_access;
+
+  
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  --  Interfaces
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+
+  -- to MMIO
+  jmm_c_o.context_id         <= mmio_ctx_q(grant_mmio_interface_q);
+  jmm_c_o.seqno_we           <= complete_seqno_we_q(grant_mmio_interface_q);
+  jmm_c_o.status_we          <= assign_status_we_q(grant_mmio_interface_q) OR complete_status_we_q(grant_mmio_interface_q);
+  jmm_d_o.seqno              <= complete_next_seqno_q(grant_mmio_interface_q);
+  jmm_d_o.action_id          <= assign_action_id_q(grant_mmio_interface_q) WHEN (assign_grant_mmio_q(grant_mmio_interface_q) = '1') ELSE action_completed_fifo_dout(grant_mmio_interface_q);
+  jmm_d_o.attached_to_action <= assign_attach_action_q(grant_mmio_interface_q) WHEN (assign_grant_mmio_q(grant_mmio_interface_q) = '1') ELSE NOT complete_detach_action_q(grant_mmio_interface_q);
+  jmm_d_o.context_active     <= assign_context_active_q(grant_mmio_interface_q) WHEN (assign_grant_mmio_q(grant_mmio_interface_q) = '1') ELSE complete_context_active_q(grant_mmio_interface_q);
+
 END ARCHITECTURE;

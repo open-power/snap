@@ -22,7 +22,7 @@ LIBRARY ieee; -- ibm, ibm_asic;
 USE ieee.std_logic_1164.all;
 USE ieee.numeric_std.all;
 --USE ieee.std_logic_arith.all;
---USE ibm.std_ulogic_support.all;
+USE work.std_ulogic_support.all;
 USE work.std_ulogic_function_support.all;
 USE work.std_ulogic_unsigned.all;
 
@@ -33,6 +33,7 @@ ENTITY mmio IS
     -- Version register content
     IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0);
     BUILD_DATE_DAT         : std_ulogic_vector(63 DOWNTO 0);
+    NUM_OF_ACTIONS         : integer RANGE 0 TO 16
   );
   PORT (
     --
@@ -53,7 +54,9 @@ ENTITY mmio IS
     --
     -- JOB MGR Interface
     jmm_c_i                : IN  JMM_C_T;
+    jmm_d_i                : IN  JMM_D_T;
     mmj_c_o                : OUT MMJ_C_T;
+    mmj_d_o                : OUT MMJ_D_T;
     --
     -- DMA Interface
     dmm_e_i                : IN  DMM_E_T;
@@ -98,7 +101,6 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL mmio_read_action_access_q            : std_ulogic;
   SIGNAL mmio_read_cfg_access_q               : std_ulogic;
   SIGNAL mmio_read_access_q                   : std_ulogic;
-  SIGNAL mmio_read_context_id_q               : integer RANGE 0 TO NUM_OF_CONTEXTS-1;
   SIGNAL mmio_read_reg_offset_q               : integer RANGE 0 TO 15;
   SIGNAL mmio_read_data_q0                    : std_ulogic_vector(63 DOWNTO 0);
   SIGNAL mmio_read_datapar_q0                 : std_ulogic;
@@ -117,15 +119,16 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL mmio_write_action_access_q           : std_ulogic;
   SIGNAL mmio_write_cfg_access_q              : std_ulogic;
   SIGNAL mmio_write_access_q                  : std_ulogic;
-  SIGNAL mmio_write_context_id_q              : integer RANGE 0 TO NUM_OF_CONTEXTS-1;
   SIGNAL mmio_write_reg_offset_q              : integer RANGE 0 TO 15;
   SIGNAL mmio_cfg_space_access_q              : boolean;
   SIGNAL afu_des                              : REG64_ARRAY_T(15 DOWNTO 0);
   SIGNAL afu_des_p                            : std_ulogic_vector(15 DOWNTO 0);
   SIGNAL afu_cfg                              : REG64_ARRAY_T(AFU_CFG_SPACE_SIZE-1 DOWNTO 0);
   SIGNAL afu_cfg_p                            : std_ulogic_vector(AFU_CFG_SPACE_SIZE-1 DOWNTO 0);
-  SIGNAL afu_regs_q                           : REG64_ARRAY_T(MAX_AFU_REG DOWNTO 0) := (OTHERS => (OTHERS => '0'));
-  SIGNAL afu_regs_par_q                       : std_ulogic_vector(MAX_AFU_REG DOWNTO 0) := (OTHERS => '1');
+  SIGNAL snap_regs_q                          : REG64_ARRAY_T(MAX_SNAP_REG DOWNTO 0) := (OTHERS => (OTHERS => '0'));
+  SIGNAL snap_regs_par_q                      : std_ulogic_vector(MAX_SNAP_REG DOWNTO 0) := (OTHERS => '1');
+  SIGNAL action_type_regs_q                   : REG64_ARRAY_T(MAX_ACTION_TYPE_REG DOWNTO 0) := (OTHERS => (OTHERS => '0'));
+  SIGNAL action_type_regs_par_q               : std_ulogic_vector(MAX_ACTION_TYPE_REG DOWNTO 0) := (OTHERS => '1');
   SIGNAL ctrl_mgr_err_q                       : std_ulogic_vector(31 DOWNTO 0) := (OTHERS => '0');
   SIGNAL mmio_err_q                           : std_ulogic_vector(31 DOWNTO 0) := (OTHERS => '0');
   SIGNAL non_fatal_master_rd_errors_q         : std_ulogic_vector(NFE_L DOWNTO NFE_R);
@@ -136,8 +139,11 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL non_fatal_slave_errors_reset_q       : std_ulogic_vector(NFE_L DOWNTO NFE_R);
   SIGNAL mmc_e_q                              : MMC_E_T;
   SIGNAL mm_e_q                               : MM_E_T := ('0', '0',(OTHERS => '0'));
+  SIGNAL jmm_c_q                              : JMM_C_T;
+  SIGNAL jmm_d_q                              : JMM_D_T;
   SIGNAL dbg_regs_q                           : REG64_ARRAY_T(15 DOWNTO 0);
   SIGNAL dbg_regs_par_q                       : std_ulogic_vector(15 DOWNTO 0);
+  SIGNAL exploration_done_q                   : std_ulogic;
 
   -- Registers
   SIGNAL context_config_mmio_we        : std_ulogic;
@@ -147,6 +153,17 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL context_config_hw_addr        : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
   SIGNAL context_config_hw_dout        : std_ulogic_vector(CTX_CFG_SIZE_INT-1 DOWNTO 0);
 
+  SIGNAL context_seqno_conflict_q      : std_ulogic;  -- handle conflict between HW and MMIO write access
+  SIGNAL context_seqno_mmio_we         : std_ulogic;
+  SIGNAL context_seqno_mmio_addr       : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL context_seqno_mmio_din        : std_ulogic_vector(CTX_SEQNO_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_seqno_mmio_dout       : std_ulogic_vector(CTX_SEQNO_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_seqno_hw_we           : std_ulogic;
+  SIGNAL context_seqno_hw_addr         : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL context_seqno_hw_din          : std_ulogic_vector(CTX_SEQNO_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_seqno_hw_dout         : std_ulogic_vector(CTX_SEQNO_SIZE_INT-1 DOWNTO 0);
+
+  SIGNAL context_status_conflict_q     : std_ulogic;  -- handle conflict between HW and MMIO write access
   SIGNAL context_status_mmio_we        : std_ulogic;
   SIGNAL context_status_mmio_addr      : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
   SIGNAL context_status_mmio_din       : std_ulogic_vector(CTX_STAT_SIZE_INT-1 DOWNTO 0);
@@ -160,6 +177,8 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL context_command_mmio_addr     : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
   SIGNAL context_command_mmio_din      : std_ulogic_vector(CTX_CMD_SIZE_INT-1 DOWNTO 0);
   SIGNAL context_command_mmio_dout     : std_ulogic_vector(CTX_CMD_SIZE_INT-1 DOWNTO 0);
+
+  SIGNAL context_fifo_we_q             : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
 
 BEGIN
 
@@ -191,7 +210,7 @@ BEGIN
       ADDR_WIDTH => CONTEXT_BITS)
     PORT MAP (
       clk    => ha_pclock,
-      we_a   => context_seqno_mmio_din,
+      we_a   => context_seqno_mmio_we,
       addr_a => context_seqno_mmio_addr,
       din_a  => context_seqno_mmio_din,
       dout_a => context_seqno_mmio_dout,
@@ -209,7 +228,7 @@ BEGIN
       ADDR_WIDTH => CONTEXT_BITS)
     PORT MAP (
       clk    => ha_pclock,
-      we_a   => context_status_mmio_din,
+      we_a   => context_status_mmio_we,
       addr_a => context_status_mmio_addr,
       din_a  => context_status_mmio_din,
       dout_a => context_status_mmio_dout,
@@ -222,7 +241,7 @@ BEGIN
 
   context_command_ram : ENTITY work.mmio_register_1w1r
     GENERIC MAP (
-      WIDTH      => CTX_STAT_SIZE_INT,
+      WIDTH      => CTX_CMD_SIZE_INT,
       SIZE       => NUM_OF_CONTEXTS,
       ADDR_WIDTH => CONTEXT_BITS)
     PORT MAP (
@@ -483,12 +502,25 @@ BEGIN
               mmio_read_datapar_q0 <= dbg_regs_par_q(mmio_read_reg_offset_q);
 
             --
-            -- GENERAL AFU REGISTER READ
+            -- GENERAL SNAP REGISTER READ
             --
-            WHEN AFU_REG_BASE =>
-              IF mmio_read_reg_offset_q < afu_regs_q'LENGTH THEN
-                mmio_read_data_q0    <= afu_regs_q(mmio_read_reg_offset_q);
-                mmio_read_datapar_q0 <= afu_regs_par_q(mmio_read_reg_offset_q);
+            WHEN SNAP_REG_BASE =>
+              IF mmio_read_reg_offset_q < snap_regs_q'LENGTH THEN
+                mmio_read_data_q0    <= snap_regs_q(mmio_read_reg_offset_q);
+                mmio_read_datapar_q0 <= snap_regs_par_q(mmio_read_reg_offset_q);
+              ELSE
+                -- invalid address
+                non_fatal_master_rd_errors_q(NFE_INV_RD_ADDRESS) <= mmio_read_master_access_q;
+                non_fatal_slave_rd_errors_q(NFE_INV_RD_ADDRESS)  <= NOT mmio_read_master_access_q;
+              END IF;
+
+            --
+            -- GENERAL SNAP REGISTER READ
+            --
+            WHEN ACTION_TYPE_REG_BASE =>
+              IF mmio_read_reg_offset_q < action_type_regs_q'LENGTH THEN
+                mmio_read_data_q0    <= action_type_regs_q(mmio_read_reg_offset_q);
+                mmio_read_datapar_q0 <= action_type_regs_par_q(mmio_read_reg_offset_q);
               ELSE
                 -- invalid address
                 non_fatal_master_rd_errors_q(NFE_INV_RD_ADDRESS) <= mmio_read_master_access_q;
@@ -513,11 +545,11 @@ BEGIN
                   mmio_read_data_q0 <= (OTHERS => '0');
 
                   mmio_read_data_q0(CTX_STAT_SAT_L DOWNTO CTX_STAT_SAT_R)                 <= context_config_mmio_dout(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R);
-                  mmio_read_data_q0(CTX_STAT_SAT_VALID)                                   <= context_config_mmio_dout(CTX_STAT_SAT_VALID_INT);
-                  mmio_read_data_q0(CTX_STAT_ACTION_ID_L DOWNTO CTX_STAT_ACTION_ID_R)     <= context_config_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R);
-                  mmio_read_data_q0(CTX_STAT_ACTION_VALID)                                <= context_config_mmio_dout(CTX_STAT_ACTION_VALID_INT);
-                  mmio_read_data_q0(CTX_STAT_JOB_ACTIVE)                                  <= context_config_mmio_dout(CTX_STAT_JOB_ACTIVE_INT);
-                  mmio_read_data_q0(CTX_STAT_CTX_ACTIVE)                                  <= context_config_mmio_dout(CTX_STAT_CTX_ACTIVE_INT);
+                  mmio_read_data_q0(CTX_STAT_SAT_VALID)                                   <= context_status_mmio_dout(CTX_STAT_SAT_VALID_INT);
+                  mmio_read_data_q0(CTX_STAT_ACTION_ID_L DOWNTO CTX_STAT_ACTION_ID_R)     <= context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R);
+                  mmio_read_data_q0(CTX_STAT_ACTION_VALID)                                <= context_status_mmio_dout(CTX_STAT_ACTION_VALID_INT);
+                  mmio_read_data_q0(CTX_STAT_JOB_ACTIVE)                                  <= context_status_mmio_dout(CTX_STAT_JOB_ACTIVE_INT);
+                  mmio_read_data_q0(CTX_STAT_CTX_ACTIVE)                                  <= context_status_mmio_dout(CTX_STAT_CTX_ACTIVE_INT);
 
 
                 WHEN OTHERS =>
@@ -564,57 +596,73 @@ BEGIN
   ------------------------------------------------------------------------------
   --
   mmio_w : PROCESS (ha_pclock)
---    VARIABLE ah_paren_mm_v        : std_ulogic;                    -- for DEBUG (TODO: remove)
   BEGIN
     IF (rising_edge(ha_pclock)) THEN
       IF afu_reset = '1' THEN
         --
         --reset registers
-        afu_regs_q                      <= (OTHERS => (OTHERS => '0'));
-        afu_regs_par_q                  <= (OTHERS => '1');
-        afu_regs_q(IMP_VERSION_REG)     <= IMP_VERSION_DAT;
-        afu_regs_par_q(IMP_VERSION_REG) <= parity_gen_odd(IMP_VERSION_DAT);
-        afu_regs_q(BUILD_DATE_REG)      <= BUILD_DATE_DAT;
-        afu_regs_par_q(BUILD_DATE_REG)  <= parity_gen_odd(BUILD_DATE_DAT);
+        snap_regs_q                      <= (OTHERS => (OTHERS => '0'));
+        snap_regs_par_q                  <= (OTHERS => '1');
+        snap_regs_q(IMP_VERSION_REG)     <= IMP_VERSION_DAT;
+        snap_regs_par_q(IMP_VERSION_REG) <= parity_gen_odd(IMP_VERSION_DAT);
+        snap_regs_q(BUILD_DATE_REG)      <= BUILD_DATE_DAT;
+        snap_regs_par_q(BUILD_DATE_REG)  <= parity_gen_odd(BUILD_DATE_DAT);
 
-        dbg_regs_q                      <= (OTHERS => (OTHERS => '0'));
-        dbg_regs_par_q                  <= (OTHERS => '1');
-        dbg_regs_q(14)                  <= IMP_VERSION_DAT;
-        dbg_regs_par_q(14)              <= parity_gen_odd(IMP_VERSION_DAT);
-        dbg_regs_q(15)                  <= BUILD_DATE_DAT;
-        dbg_regs_par_q(15)              <= parity_gen_odd(BUILD_DATE_DAT);
+        snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_ACTION_ID_L DOWNTO SNAP_STAT_MAX_ACTION_ID_R) <= std_ulogic_vector(to_unsigned(NUM_OF_ACTIONS-1, ACTION_BITS));
+        snap_regs_par_q(SNAP_STATUS_REG) <= parity_gen_odd(std_ulogic_vector(to_unsigned(NUM_OF_ACTIONS-1, ACTION_BITS)));
 
-        context_config_mmio_din         <= (OTHERS => '0');
-        context_seqno_mmio_din          <= (OTHERS => '0');
-        context_status__mmio_din        <= (OTHERS => '0');
-        context_command_mmio_din        <= (OTHERS => '0');
+        action_type_regs_q               <= (OTHERS => (OTHERS => '0'));
+        action_type_regs_par_q           <= (OTHERS => '1');
 
-        context_config_mmio_we          <= '0';
-        context_seqno_mmio_we           <= '0';
-        context_status_mmio_we          <= '0';
-        context_command_mmio_we         <= '0';
+        dbg_regs_q                       <= (OTHERS => (OTHERS => '0'));
+        dbg_regs_par_q                   <= (OTHERS => '1');
+        dbg_regs_q(14)                   <= IMP_VERSION_DAT;
+        dbg_regs_par_q(14)               <= parity_gen_odd(IMP_VERSION_DAT);
+        dbg_regs_q(15)                   <= BUILD_DATE_DAT;
+        dbg_regs_par_q(15)               <= parity_gen_odd(BUILD_DATE_DAT);
 
-        mm_e_q.wr_data_parity_err       <= '0';
+        exploration_done_q               <= '0';
 
-        non_fatal_master_wr_errors_q    <= (OTHERS => '0');
-        non_fatal_master_errors_reset_q <= (OTHERS => '0');
-        non_fatal_slave_wr_errors_q     <= (OTHERS => '0');
-        non_fatal_slave_errors_reset_q  <= (OTHERS => '0');
+        context_config_mmio_din          <= (OTHERS => '0');
+        context_seqno_mmio_din           <= (OTHERS => '0');
+        context_status_mmio_din          <= (OTHERS => '0');
+        context_command_mmio_din         <= (OTHERS => '0');
+
+        context_config_mmio_we           <= '0';
+        context_seqno_mmio_we            <= '0';
+        context_status_mmio_we           <= '0';
+        context_command_mmio_we          <= '0';
+
+        context_seqno_conflict_q         <= '0';
+        context_status_conflict_q        <= '0';
+
+        context_fifo_we_q                <= (OTHERS => '0');
+
+        mm_e_q.wr_data_parity_err        <= '0';
+
+        non_fatal_master_wr_errors_q     <= (OTHERS => '0');
+        non_fatal_master_errors_reset_q  <= (OTHERS => '0');
+        non_fatal_slave_wr_errors_q      <= (OTHERS => '0');
+        non_fatal_slave_errors_reset_q   <= (OTHERS => '0');
 
       ELSE
         --
         -- default
-        dbg_regs_q                      <= dbg_regs_q;
-        dbg_regs_par_q                  <= dbg_regs_par_q;
-        afu_regs_q                      <= afu_regs_q;
-        afu_regs_par_q                  <= afu_regs_par_q;
+        snap_regs_q                      <= snap_regs_q;
+        snap_regs_par_q                  <= snap_regs_par_q;
+        action_type_regs_q               <= action_type_regs_q;
+        action_type_regs_par_q           <= action_type_regs_par_q;
+        dbg_regs_q                       <= dbg_regs_q;
+        dbg_regs_par_q                   <= dbg_regs_par_q;
 
-        mm_e_q.wr_data_parity_err       <= '0';
+        exploration_done_q               <= '0';
 
-        non_fatal_master_wr_errors_q    <= (OTHERS => '0');
-        non_fatal_master_errors_reset_q <= (OTHERS => '0');
-        non_fatal_slave_wr_errors_q     <= (OTHERS => '0');
-        non_fatal_slave_errors_reset_q  <= (OTHERS => '0');
+        mm_e_q.wr_data_parity_err        <= '0';
+
+        non_fatal_master_wr_errors_q     <= (OTHERS => '0');
+        non_fatal_master_errors_reset_q  <= (OTHERS => '0');
+        non_fatal_slave_wr_errors_q      <= (OTHERS => '0');
+        non_fatal_slave_errors_reset_q   <= (OTHERS => '0');
 
         -- Register inputs
         context_config_mmio_din(CTX_CFG_FIRST_SEQNO_INT_L DOWNTO CTX_CFG_FIRST_SEQNO_INT_R)  <= ha_mm_w_q.data(CTX_CFG_FIRST_SEQNO_L DOWNTO CTX_CFG_FIRST_SEQNO_R);
@@ -632,9 +680,13 @@ BEGIN
         context_command_mmio_din(CTX_CMD_ARG_INT_L DOWNTO CTX_CMD_ARG_INT_R)                 <= ha_mm_w_q.data(CTX_CMD_ARG_L DOWNTO CTX_CMD_ARG_R);
         context_command_mmio_din(CTX_CMD_CODE_INT_L DOWNTO CTX_CMD_CODE_INT_R)               <= ha_mm_w_q.data(CTX_CMD_CODE_L DOWNTO CTX_CMD_CODE_R);
 
-        context_config_mmio_we          <= '0';
-        context_command_mmio_we         <= '0';
+        context_config_mmio_we           <= '0';
+        context_command_mmio_we          <= '0';
 
+        context_seqno_conflict_q         <= '0';
+        context_status_conflict_q        <= '0';
+
+        context_fifo_we_q                <= (OTHERS => '0');
 
         --
         -- MMIO Write parity error
@@ -685,6 +737,48 @@ BEGIN
 --                non_fatal_slave_wr_errors_q(NFE_INV_WR_ADDRESS)  <= NOT mmio_write_master_access_q;
 --              END IF;
 
+            --
+            -- SNAP REGISTERs
+            --
+            WHEN SNAP_REG_BASE =>
+              IF mmio_write_master_access_q = '1' THEN
+                CASE mmio_write_reg_offset_q IS
+                  WHEN SNAP_CMD_REG =>
+                    snap_regs_q(SNAP_CMD_REG)     <= ha_mm_w_q.data;
+                    snap_regs_par_q(SNAP_CMD_REG) <= ha_mm_w_q.datapar;
+
+                    CASE ha_mm_w_q.data(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) IS
+                      WHEN EXPLORATION_DONE =>
+                        exploration_done_q                                                           <= '1';
+                        snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_EXPLORATION_DONE)                     <= '1';
+                        snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_SAT_L DOWNTO SNAP_STAT_MAX_SAT_R) <= ha_mm_w_q.data(SNAP_CMD_MAX_SAT_L DOWNTO SNAP_CMD_MAX_SAT_R);
+                        snap_regs_par_q(SNAP_STATUS_REG)                                             <= parity_gen_odd(ha_mm_w_q.data(SNAP_CMD_MAX_SAT_L DOWNTO SNAP_CMD_MAX_SAT_R)) XOR parity_gen_odd(snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_ACTION_ID_L DOWNTO SNAP_STAT_MAX_ACTION_ID_R));
+
+                      WHEN OTHERS =>
+                        non_fatal_master_wr_errors_q(NFE_ILLEGAL_CMD) <= '1';
+                    END CASE;
+
+                  WHEN OTHERS =>
+                    -- invalid (master) address
+                    non_fatal_master_wr_errors_q(NFE_INV_WR_ADDRESS) <= '1';
+                END CASE;
+              ELSE
+                non_fatal_slave_wr_errors_q(NFE_INV_WR_ADDRESS)  <= '1';
+              END IF;
+
+
+            --
+            -- ACTION_TYPE REGISTERs
+            --
+            WHEN ACTION_TYPE_REG_BASE =>
+              IF mmio_write_master_access_q = '1' THEN
+                action_type_regs_q(mmio_write_reg_offset_q)     <= ha_mm_w_q.data;
+                action_type_regs_par_q(mmio_write_reg_offset_q) <= ha_mm_w_q.datapar;
+              ELSE
+                non_fatal_slave_wr_errors_q(NFE_INV_WR_ADDRESS) <= '1';
+              END IF;
+
+
             -- for DEBUG (TODO: remove)
             --
             -- AFU DEBUG REGISTER WRITE
@@ -698,6 +792,10 @@ BEGIN
                 non_fatal_slave_wr_errors_q(NFE_INV_WR_ACCESS) <= '1';
               END IF;
 
+
+            --
+            -- Context specific registers
+            --
             WHEN CONTEXT_REG_BASE =>
               IF mmio_write_master_access_q = '1' THEN
                 -- invalid (master) address
@@ -707,9 +805,15 @@ BEGIN
                 CASE mmio_write_reg_offset_q IS
                   WHEN CONTEXT_CONFIG_REG =>
                     IF context_status_mmio_dout(CTX_STAT_CTX_ACTIVE_INT) = '0' THEN
-                      context_config_mmio_we <= '1';
-                      context_seqno_mmio_we  <= '1';
-                      context_status_mmio_we <= '1';
+                      context_config_mmio_we    <= '1';
+                      context_seqno_mmio_we     <= '1';
+                      context_status_mmio_we    <= '1';
+                      IF (context_seqno_mmio_addr = jmm_c_i.context_id) THEN
+                        context_seqno_conflict_q <= '1';
+                      END IF;
+                      IF (context_status_mmio_addr = jmm_c_i.context_id) THEN
+                        context_status_conflict_q <= '1';
+                      END IF;
                     ELSE
                       non_fatal_slave_wr_errors_q(NFE_CFG_ACTIVE) <= '1';
                     END IF;
@@ -719,9 +823,12 @@ BEGIN
                     CASE ha_mm_w_q.data(CTX_CMD_CODE_L DOWNTO CTX_CMD_CODE_R) IS
                       WHEN CTX_START =>
                         context_status_mmio_we <= '1';
-                        context_status_mmio_din(CTX_STAT_CTX_ACTIVE_INT) <= '0' WHEN (ha_mm_w_q.data(CTX_CMD_ARG_L DOWNTO CTX_CMD_ARG_R) = context_seqno_mmio_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R) - 1)
-                                                                                ELSE '1';
-                        -- TODO: Add to queue
+                        IF (ha_mm_w_q.data(CTX_CMD_ARG_L DOWNTO CTX_CMD_ARG_R) /= context_seqno_mmio_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R) - 1) THEN
+                          context_status_mmio_din(CTX_STAT_CTX_ACTIVE_INT) <= '1';
+                        END IF;
+                        IF (context_status_mmio_dout(CTX_STAT_CTX_ACTIVE_INT) = '0') AND (ha_mm_w_q.data(CTX_CMD_ARG_L DOWNTO CTX_CMD_ARG_R) /= context_seqno_mmio_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R) - 1) THEN
+                          context_fifo_we_q(to_integer(unsigned(context_config_mmio_dout(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R)))) <= '1';
+                        END IF;
 
                       WHEN OTHERS =>
                         -- invalid command
@@ -734,6 +841,7 @@ BEGIN
                 END CASE;
               END IF;
 
+
             WHEN OTHERS =>
               -- invalid address
               non_fatal_master_wr_errors_q(NFE_INV_WR_ADDRESS) <= mmio_write_master_access_q;
@@ -745,6 +853,33 @@ BEGIN
       END IF;                                     -- afu_reset = '1'
     END IF;                                       -- rising_edge(ha_pclock)
   END PROCESS mmio_w;
+
+
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- HARDWARE WRITE PROCESS
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  --
+  hw_w : PROCESS (ha_pclock)
+  BEGIN
+    IF (rising_edge(ha_pclock)) THEN
+      IF afu_reset = '1' THEN
+        jmm_c_q.seqno_we   <= '0';
+        jmm_c_q.status_we  <= '0';
+        jmm_c_q.context_id <= (OTHERS => '0');
+      ELSE
+        jmm_c_q           <= jmm_c_q;
+        jmm_c_q.seqno_we  <= jmm_c_q.seqno_we AND context_seqno_conflict_q;
+        jmm_c_q.status_we <= jmm_c_q.status_we AND context_status_conflict_q;
+        jmm_d_q           <= jmm_d_q;
+        IF (jmm_c_i.seqno_we = '1') OR (jmm_c_i.status_we = '1') THEN
+          jmm_c_q <= jmm_c_i;
+          jmm_d_q <= jmm_d_i;
+        END IF;
+      END IF;                                     -- afu_reset = '1'
+    END IF;                                       -- rising_edge(ha_pclock)
+  END PROCESS hw_w;
 
 
   ------------------------------------------------------------------------------
@@ -803,6 +938,25 @@ BEGIN
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
+  --  Input Connection
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+    --
+    -- Hardware Register
+    --
+    context_seqno_hw_we    <= jmm_c_q.seqno_we AND NOT context_seqno_conflict_q;
+    context_seqno_hw_addr  <= jmm_c_q.context_id;
+    context_seqno_hw_din   <= jmm_d_q.seqno & context_seqno_hw_dout(CTX_SEQNO_CURRENT_INT_R-1 DOWNTO 0);
+    context_status_hw_we   <= jmm_c_q.status_we AND NOT context_status_conflict_q;
+    context_status_hw_addr <= jmm_c_q.context_id;
+    context_status_hw_din  <= jmm_d_q.action_id &
+                              context_status_hw_dout(CTX_STAT_SAT_VALID_INT) &
+                              jmm_d_q.attached_to_action &
+                              jmm_d_q.attached_to_action &  -- TODO: Remove this bit due to redundancy???
+                              jmm_d_q.context_active;
+
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
   --  Output Connection
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -816,13 +970,32 @@ BEGIN
     --
     -- MMX
     --
-    mmx_d_o.addr(31 DOWNTO 16) <= (OTHERS => '0');
+    mmx_d_o.addr(31 DOWNTO 18) <= (OTHERS => '0');
+    mmx_d_o.addr(17 DOWNTO 16) <= ha_mm_w_q.ad(15 DOWNTO 14) WHEN mmio_write_master_access_q = '1' ELSE "01";
     mmx_d_o.addr(15 DOWNTO 12) <= ha_mm_w_q.ad(13 DOWNTO 10) WHEN mmio_write_master_access_q = '1' ELSE context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R);
     mmx_d_o.addr(11 DOWNTO  2) <= ha_mm_w_q.ad(9 DOWNTO 0);
     mmx_d_o.addr( 1 DOWNTO  0) <= (OTHERS => '0');
     mmx_d_o.data               <= ha_mm_w_q.data(31 DOWNTO 0);
     mmx_d_o.wr_strobe          <= mmio_write_action_access_q AND NOT mmio_write_alignment_error_q;
     mmx_d_o.rd_strobe          <= mmio_read_action_access_q AND NOT mmio_read_alignment_error_q;
+
+    --
+    -- MMJ
+    --
+    mmj_c_o.ctx_fifo_we        <= context_fifo_we_q;
+
+    mmj_c_o.exploration_done   <= exploration_done_q;
+    mmj_c_o.max_sat            <= to_integer(unsigned(snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_SAT_L DOWNTO SNAP_STAT_MAX_SAT_R)));
+    mmj_c_o.last_seqno         <= '1' WHEN context_seqno_hw_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R) = context_seqno_hw_dout(CTX_SEQNO_LAST_INT_L DOWNTO CTX_SEQNO_LAST_INT_R)
+                                      ELSE '0';
+
+    mmj_d_o.context_id         <= context_status_mmio_addr;
+
+    action_type_list_gen : FOR action_id IN 0 TO NUM_OF_ACTIONS-1 GENERATE
+      mmj_d_o.sat(action_id)   <= action_type_regs_q(action_id)(ATR_SAT_L DOWNTO ATR_SAT_R);
+    END GENERATE;
+
+    mmj_d_o.current_seqno      <= context_seqno_hw_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R);
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -831,6 +1004,8 @@ BEGIN
   ------------------------------------------------------------------------------
   --
   host_interface : PROCESS (ha_pclock)
+  VARIABLE
+    context_id_v : std_ulogic_vector(PSL_HOST_CTX_ID_L DOWNTO PSL_HOST_CTX_ID_R);
   BEGIN
     IF (rising_edge(ha_pclock)) THEN
       IF afu_reset = '1' THEN
@@ -844,14 +1019,12 @@ BEGIN
         mmio_read_invalid_address_q         <= '0';
         mmio_read_cfg_access_q              <= '0';
         mmio_read_access_q                  <= '0';
-        mmio_read_context_id_q              <=  0;
         mmio_read_reg_offset_q              <=  0;
         mmio_write_parity_error_q           <= '0';
         mmio_write_alignment_error_q        <= '0';
         mmio_write_invalid_address_q        <= '0';
         mmio_write_cfg_access_q             <= '0';
         mmio_write_access_q                 <= '0';
-        mmio_read_context_id_q              <=  0;
         mmio_write_reg_offset_q             <=  0;
         mmio_cfg_space_access_q             <= FALSE;
         mm_e_q.wr_addr_parity_err           <= '0';
@@ -916,7 +1089,7 @@ BEGIN
         mmio_write_master_access_q   <= mmio_write_master_access_q;
         mmio_write_action_access_q   <= '0';
         IF (ha_mm_r_q0.valid = '1') AND (ha_mm_w_q0.rnw = '0') THEN
-          mmio_write_master_access_q <= NOT or_reduce(ha_mm_q0.ad(PSL_HOST_ADDR_MAXBIT DOWNTO MASTER_BOUNDARY));
+          mmio_write_master_access_q <= NOT ha_mm_q0.ad(SLAVE_SPACE_BIT);
           mmio_write_action_access_q <= mmio_write_action_access_q0 AND
                                         (context_status_mmio_dout(CTX_STAT_ACTION_VALID) OR NOT ha_mm_q0.ad(SLAVE_SPACE_BIT));
         END IF;
@@ -932,17 +1105,14 @@ BEGIN
         --
         -- Context IDs and Context register addresses
         --
-        mmio_read_context_id_q       <= mmio_read_context_id_q;
+        context_id_v                 := ha_mm_i.ad(PSL_HOST_CTX_ID_L DOWNTO PSL_HOST_CTX_ID_R);
         context_config_mmio_addr     <= context_config_mmio_addr;
+        context_seqno_mmio_addr      <= context_seqno_mmio_addr;
         context_status_mmio_addr     <= context_status_mmio_addr;
         IF (ha_mm_i.valid = '1') THEN
-          IF (ha_mm_i.rnw = '1') THEN
-            mmio_read_context_id_q <= to_integer(unsigned(ha_mm_r_q0.ad(PSL_HOST_CTX_ID_L DOWNTO PSL_HOST_CTX_ID_R)));
-          ELSE
-            mmio_write_context_id_q <= to_integer(unsigned(ha_mm_r_q0.ad(PSL_HOST_CTX_ID_L DOWNTO PSL_HOST_CTX_ID_R)));
-          END IF;
-          context_config_mmio_addr   <= ha_mm_i.addr(PSL_HOST_CTX_ID_L DOWNTO PSL_HOST_CTX_ID_R);
-          context_status_mmio_addr   <= ha_mm_i.addr(PSL_HOST_CTX_ID_L DOWNTO PSL_HOST_CTX_ID_R);
+          context_config_mmio_addr   <= context_id_v;
+          context_seqno_mmio_addr    <= context_id_v;
+          context_status_mmio_addr   <= context_id_v;
         END IF;
       END IF;
     END IF;

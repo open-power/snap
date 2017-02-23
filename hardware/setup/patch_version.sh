@@ -2,7 +2,7 @@
 
 NAME=`basename $2`
 
-if [ "$NAME" == "mmio.vhd"  ]; then
+if [ "$NAME" == "donut.vhd"  ]; then
   SNAP_BUILD_DATE=`date "+%Y_%m%d_%H%M"`
   SNAP_RELEASE=`git describe --tags --match v[0-9]*.[0-9]*.[0-9]* | sed 's/.*\([0-9][0-9]*\)\.\([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\1 \2 \3/' | awk '{printf("%02X%02X_%02X\n",$1,$2,$3)}'`
   GIT_DIST=`git describe --tags --match v[0-9]*.[0-9]*.[0-9]* | awk '{printf("%s-0\n",$1)}' | sed 's/.*\.[0-9][0-9]*-\([0-9][0-9]*\).*/\1/' | awk '{printf("%02X\n",$1)}'`

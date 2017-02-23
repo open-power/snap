@@ -18,11 +18,13 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 
+-- True dual port, single clocked register
 LIBRARY ieee;
 USE ieee.std_logic_1164.all;
+USE ieee.numeric_std.all;
+USE work.std_ulogic_function_support.all;
 USE work.std_ulogic_unsigned.all;
 
--- True dual port, single clocked register
 ENTITY mmio_register_2w2r IS
   GENERIC (
     WIDTH      : integer := 16;
@@ -55,13 +57,13 @@ BEGIN
   BEGIN  -- PROCESS mmio_register
     IF (rising_edge(clk)) THEN
       IF (we_b = '1') THEN
-        mem_t(conv_integer(addr_b)) <= din_b;
+        mem(to_integer(unsigned(addr_b))) <= din_b;
       END IF;
       IF (we_a = '1') THEN
-        mem_t(conv_integer(addr_a)) <= din_a;
+        mem(to_integer(unsigned(addr_a))) <= din_a;
       END IF;
-      dout_b <= mem_t(conv_integer(addr_b));
-      dout_a <= mem_t(conv_integer(addr_a));
+      dout_b <= mem(to_integer(unsigned(addr_b)));
+      dout_a <= mem(to_integer(unsigned(addr_a)));
     END IF;
   END PROCESS mmio_register_2w2r;
 
@@ -70,6 +72,12 @@ END ARCHITECTURE;
 
 
 -- Single write / dual read port, single clocked register
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+USE ieee.numeric_std.all;
+USE work.std_ulogic_function_support.all;
+USE work.std_ulogic_unsigned.all;
+
 ENTITY mmio_register_1w2r IS
   GENERIC (
     WIDTH      : integer := 16;
@@ -100,10 +108,10 @@ BEGIN
   BEGIN  -- PROCESS mmio_register
     IF (rising_edge(clk)) THEN
       IF (we_a = '1') THEN
-        mem_t(conv_integer(addr_a)) <= din_a;
+        mem(to_integer(unsigned(addr_a))) <= din_a;
       END IF;
-      dout_a <= mem_t(conv_integer(addr_a));
-      dout_b <= mem_t(conv_integer(addr_b));
+      dout_a <= mem(to_integer(unsigned(addr_a)));
+      dout_b <= mem(to_integer(unsigned(addr_b)));
     END IF;
   END PROCESS mmio_register_1w2r;
 
@@ -111,6 +119,12 @@ END ARCHITECTURE;
 
 
 -- Single port register
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+USE ieee.numeric_std.all;
+USE work.std_ulogic_function_support.all;
+USE work.std_ulogic_unsigned.all;
+
 ENTITY mmio_register_1w1r IS
   GENERIC (
     WIDTH      : integer := 16;
@@ -138,9 +152,9 @@ BEGIN
   BEGIN  -- PROCESS mmio_register
     IF (rising_edge(clk)) THEN
       IF (we = '1') THEN
-        mem_t(conv_integer(addr)) <= din;
+        mem(to_integer(unsigned(addr))) <= din;
       END IF;
-      dout <= mem_t(conv_integer(addr));
+      dout <= mem(to_integer(unsigned(addr)));
     END IF;
   END PROCESS mmio_register_1w1r;
 

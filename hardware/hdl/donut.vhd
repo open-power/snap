@@ -22,10 +22,6 @@ LIBRARY ieee;--, ibm, ibm_asic;
 USE ieee.std_logic_1164.all;
 USE ieee.numeric_std.all;
 
---USE ibm_asic.std_ulogic_asic_function_support.all;
---USE ibm.std_ulogic_function_support.all;
---USE ibm.std_ulogic_support.all;
-
 USE work.psl_accel_types.ALL;
 USE work.donut_types.ALL;
 
@@ -33,8 +29,8 @@ ENTITY donut IS
   GENERIC(
     IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0);
     BUILD_DATE_DAT         : std_ulogic_vector(63 DOWNTO 0);
-    NUM_OF_ACTION_TYPES    : integer := 16;
-    NUM_OF_ACTIONS         : integer :=  1
+    NUM_OF_ACTION_TYPES    : integer RANGE 0 TO 16 := 16;
+    NUM_OF_ACTIONS         : integer RANGE 0 TO 16 :=  1
   );
   PORT (
     --
@@ -143,9 +139,13 @@ ARCHITECTURE donut OF donut IS
   SIGNAL ha_j                : HA_J_T;
   SIGNAL ha_mm               : HA_MM_T;
   SIGNAL ha_r                : HA_R_T;
+  SIGNAL jmm_c               : JMM_C_T;
+  SIGNAL jmm_d               : JMM_D_T;
   SIGNAL mmc_e               : MMC_E_T;
   SIGNAL mmd_a               : MMD_A_T;
   SIGNAL mmd_i               : MMD_I_T;
+  SIGNAL mmj_c               : MMJ_C_T;
+  SIGNAL mmj_d               : MMJ_D_T;
   SIGNAL mmx_d               : MMX_D_T;
   SIGNAL xmm_d               : XMM_D_T;
 
@@ -363,7 +363,9 @@ BEGIN
       --
       -- MMIO IOs
       mmj_c_i                => mmj_c,
-      jmm_c_o                => jmm_c
+      mmj_d_i                => mmj_d,
+      jmm_c_o                => jmm_c,
+      jmm_d_o                => jmm_d
     );
 
 
@@ -378,7 +380,8 @@ BEGIN
     mmio: ENTITY work.mmio
     GENERIC MAP (
       IMP_VERSION_DAT => IMP_VERSION_DAT,
-      BUILD_DATE_DAT  => BUILD_DATE_DAT
+      BUILD_DATE_DAT  => BUILD_DATE_DAT,
+      NUM_OF_ACTIONS  => NUM_OF_ACTIONS
     )
     PORT MAP (
       --
@@ -399,7 +402,9 @@ BEGIN
       --
       -- JOB MGR Interface
       jmm_c_i                => jmm_c,
+      jmm_d_i                => jmm_d,
       mmj_c_o                => mmj_c,
+      mmj_d_o                => mmj_d,
       --
       -- DMA Interface
       dmm_e_i                => dmm_e,
@@ -460,4 +465,3 @@ BEGIN
 
     action_reset <= afu_reset;
 END ARCHITECTURE;
-
