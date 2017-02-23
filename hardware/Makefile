@@ -17,7 +17,8 @@
 #-----------------------------------------------------------
 
 PSL_SOURCE_ENV=$(FPGACARD)
-export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/HDK_build
+export BUILD_NAME=HDK_build
+export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
 
 PSL_ACCEL_FILES=$(DONUT_HARDWARE_ROOT)/hdl/psl_accel_sim.vhd $(DONUT_HARDWARE_ROOT)/hdl/psl_accel_syn.vhd
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
@@ -84,7 +85,7 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 	@sed -i 's/run.topImpl.*0/run.topImpl 1/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topSynth.*0/run.topSynth 1/' $(BUILD_DIR)/psl_fpga.tcl
 	@mv -f $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
-	@ln -s $(BUILD_DIR) $(DONUT_HARDWARE_ROOT)/build
+	@ln -s $(BUILD_NAME) build
 
 $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@echo -e "\t[CREATE] $(BUILD_DIR)/Sources/prj/afu.prj"
@@ -148,6 +149,7 @@ image: patch_version
 clean:
 	@echo -e "\t[CLEAN] build environment";
 	rm -r -f  $(BUILD_DIR)
+	unlink    build
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
