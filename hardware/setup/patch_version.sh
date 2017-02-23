@@ -1,4 +1,20 @@
 #!/bin/bash
+#
+# Copyright 2016, International Business Machines
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+###############################################################################
 
 NAME=`basename $2`
 
@@ -11,4 +27,6 @@ if [ "$NAME" == "mmio.vhd"  ]; then
     IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0) := x\"'$SNAP_RELEASE$GIT_DIST'_'$GIT_SHA'\";' $1/$2
   sed -i '/ BUILD_DATE_DAT[^I]*:[ ^I]std_ulogic_vector/ c\
     BUILD_DATE_DAT         : std_ulogic_vector(63 DOWNTO 0) := x\"0000_'$SNAP_BUILD_DATE'\";' $1/$2
+
+  echo "fw_$SNAP_RELEASE.$SNAP_BUILD_DATE" >.bitstream_name.txt
 fi
