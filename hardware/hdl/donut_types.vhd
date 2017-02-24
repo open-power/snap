@@ -189,6 +189,8 @@ PACKAGE donut_types IS
   -- PSL host address space (host addresses are 4B word adresses - i.e. you need to add lower two bit to obtain the complete byte address)
 --  CONSTANT MASTER_BOUNDARY            : integer := 15;
   CONSTANT MASTER_ACTION_ACCESS_BIT   : integer := 14;  -- Action space for master access starts at 0x10000 (16 x 4KB)
+  CONSTANT MASTER_ACTION_ID_L         : integer := 13;  -- Action ID is encoded in bits 15:12 of the real address
+  CONSTANT MASTER_ACTION_ID_R         : integer := 10;  -- Action ID is encoded in bits 15:12 of the real address  
   CONSTANT NVME_SPACE_START_BIT       : integer := 15;  -- NVME space starts at address 0x20000
   CONSTANT SLAVE_SPACE_BIT            : integer := 23;  -- Slave (context) space starts at 0x2000000
   CONSTANT PSL_HOST_ADDR_MAXBIT       : integer := 23;
