@@ -44,18 +44,18 @@
 #define	ACTION_CONTROL_RUN	0x08
 #define	ACTION_4		(ACTION_BASE + 0x04)
 #define	ACTION_8		(ACTION_BASE + 0x08)
-#define	ACTION_CONFIG		(ACTION_BASE + 0x10)
+#define	ACTION_CONFIG		(ACTION_BASE + 0x20)
 #define	ACTION_CONFIG_COUNT	1	/* Count Mode */
 #define	ACTION_CONFIG_COPY_HH	2	/* Memcopy Host to Host */
 #define	ACTION_CONFIG_COPY_HD	3	/* Memcopy Host to DDR */
 #define	ACTION_CONFIG_COPY_DH	4	/* Memcopy DDR to Host */
 #define	ACTION_CONFIG_COPY_DD	5	/* Memcopy DDR to DDR */
 #define	ACTION_CONFIG_COPY_HDH	6	/* Memcopy Host to DDR to Host */
-#define	ACTION_SRC_LOW		(ACTION_BASE + 0x14)
-#define	ACTION_SRC_HIGH		(ACTION_BASE + 0x18)
-#define	ACTION_DEST_LOW		(ACTION_BASE + 0x1c)
-#define	ACTION_DEST_HIGH	(ACTION_BASE + 0x20)
-#define	ACTION_CNT		(ACTION_BASE + 0x24)	/* Count Register */
+#define	ACTION_SRC_LOW		(ACTION_BASE + 0x24)
+#define	ACTION_SRC_HIGH		(ACTION_BASE + 0x28)
+#define	ACTION_DEST_LOW		(ACTION_BASE + 0x2c)
+#define	ACTION_DEST_HIGH	(ACTION_BASE + 0x30)
+#define	ACTION_CNT		(ACTION_BASE + 0x34)	/* Count Register */
 
 /*	defaults */
 #define	DEFAULT_MEMCPY_ITER	1
@@ -384,7 +384,7 @@ static int check_parms(
 			(long long)host_mem_size);
 		return -1;
 	}
-	ram_blocks = ram_mem_size / host_mem_size; 
+	ram_blocks = ram_mem_size / host_mem_size;
 	if (((uint64_t)ram_blocks * (uint64_t)host_mem_size) != ram_mem_size) {
 		errno = EFAULT;
 		perror("FAILED: Invalid (3) End or Start Address (-e, -s)");
@@ -652,7 +652,7 @@ int main(int argc, char *argv[])
 	int timeout_ms = ACTION_WAIT_TIME;
 	uint64_t start_addr = DDR_MEM_BASE_ADDR;
 	uint64_t end_addr = DDR_MEM_SIZE;
-	unsigned int mem_size = HOST_BUFFER_SIZE; 
+	unsigned int mem_size = HOST_BUFFER_SIZE;
 	void *src_buf = NULL;
 	void *dest_buf = NULL;
 

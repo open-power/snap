@@ -44,7 +44,7 @@
 #define	ACTION_CONTROL_RUN	0x08
 #define	ACTION_4		(ACTION_BASE + 0x04)
 #define	ACTION_8		(ACTION_BASE + 0x08)
-#define	ACTION_CONFIG		(ACTION_BASE + 0x10)
+#define	ACTION_CONFIG		(ACTION_BASE + 0x20)
 #define	ACTION_CONFIG_COUNT	1	/* Count Mode */
 #define	ACTION_CONFIG_COPY_HH	2	/* Memcopy Host to Host */
 #define	ACTION_CONFIG_COPY_HD	3	/* Memcopy Host to DDR */
@@ -54,11 +54,11 @@
 #define	ACTION_CONFIG_MEMSET_H	8	/* Memset Host Memory */
 #define	ACTION_CONFIG_MEMSET_F	9	/* Memset FPGA Memory */
 
-#define	ACTION_SRC_LOW		(ACTION_BASE + 0x14)
-#define	ACTION_SRC_HIGH		(ACTION_BASE + 0x18)
-#define	ACTION_DEST_LOW		(ACTION_BASE + 0x1c)
-#define	ACTION_DEST_HIGH	(ACTION_BASE + 0x20)
-#define	ACTION_CNT		(ACTION_BASE + 0x24)	/* Count Register */
+#define	ACTION_SRC_LOW		(ACTION_BASE + 0x24)
+#define	ACTION_SRC_HIGH		(ACTION_BASE + 0x28)
+#define	ACTION_DEST_LOW		(ACTION_BASE + 0x2c)
+#define	ACTION_DEST_HIGH	(ACTION_BASE + 0x30)
+#define	ACTION_CNT		(ACTION_BASE + 0x34)	/* Count Register */
 
 /*	defaults */
 #define	DEFAULT_MEMCPY_ITER	1
@@ -126,7 +126,7 @@ static int check_buffer(uint8_t *hb,	/* Host Buffer */
 	uint8_t data;
 
 	PRINTF2("\nCheck %d bytes in Buffer Start at: %d for Pattern: 0x%02x",
-		size, begin, pattern); 
+		size, begin, pattern);
 	rc = bad = 0;
 	for (i = 0; i < begin; i++) {
 		data = *hb;	/* Get data */
