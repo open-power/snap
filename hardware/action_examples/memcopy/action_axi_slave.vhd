@@ -16,12 +16,14 @@ entity action_axi_slave is
 	);
 	port (
 		-- Users to add ports here
-                reg_0x10_o      : out std_logic_vector(31 downto 0);
-                reg_0x14_o      : out std_logic_vector(31 downto 0);
-                reg_0x18_o      : out std_logic_vector(31 downto 0);
-                reg_0x1c_o      : out std_logic_vector(31 downto 0);
+                reg_0x10_i      : in  std_logic_vector(31 downto 0);
+                reg_0x14_i      : in  std_logic_vector(31 downto 0);
                 reg_0x20_o      : out std_logic_vector(31 downto 0);
                 reg_0x24_o      : out std_logic_vector(31 downto 0);
+                reg_0x28_o      : out std_logic_vector(31 downto 0);
+                reg_0x2c_o      : out std_logic_vector(31 downto 0);
+                reg_0x30_o      : out std_logic_vector(31 downto 0);
+                reg_0x34_o      : out std_logic_vector(31 downto 0);
                 app_start_o     : out std_logic;
                 app_done_i      : in  std_logic;
                 app_ready_i     : in  std_logic;
@@ -499,37 +501,37 @@ begin
 	    case loc_addr is
 	      when b"0000" =>
 	       -- reg_data_out <= slv_reg0;
-	        reg_data_out <= slv_reg0_new;
+	        reg_data_out <= slv_reg0_new;  -- 0x00
 	      when b"0001" =>
-	        reg_data_out <= slv_reg1;
+	        reg_data_out <= slv_reg1;      -- 0x04
 	      when b"0010" =>
-	        reg_data_out <= slv_reg2;
+	        reg_data_out <= slv_reg2;      -- 0x08
 	      when b"0011" =>
-	        reg_data_out <= slv_reg3;
+	        reg_data_out <= slv_reg3;      -- 0x0c
 	      when b"0100" =>
-	        reg_data_out <= slv_reg4;
+	        reg_data_out <= reg_0x10_i;    -- 0x10    
 	      when b"0101" =>
-	        reg_data_out <= slv_reg5;
-	      when b"0110" =>
-	        reg_data_out <= slv_reg6;
-	      when b"0111" =>
-	        reg_data_out <= slv_reg7;
-	      when b"1000" =>
-	        reg_data_out <= slv_reg8;
-	      when b"1001" =>
-	        reg_data_out <= slv_reg9;
+	        reg_data_out <= reg_0x14_i;    -- 0x14
+	      when b"0110" =>                  
+	        reg_data_out <= slv_reg6;      -- 0x18
+	      when b"0111" =>                  
+	        reg_data_out <= slv_reg7;      -- 0x1c 
+	      when b"1000" =>                  
+	        reg_data_out <= slv_reg8;      -- 0x20
+	      when b"1001" =>                  
+	        reg_data_out <= slv_reg9;      -- 0x24
 	      when b"1010" =>
-	        reg_data_out <= slv_reg10;
-	      when b"1011" =>
-	        reg_data_out <= slv_reg11;
-	      when b"1100" =>
-	        reg_data_out <= slv_reg12;
-	      when b"1101" =>
-	        reg_data_out <= slv_reg13;
-	      when b"1110" =>
-	        reg_data_out <= slv_reg14;
-	      when b"1111" =>
-	        reg_data_out <= slv_reg15;
+	        reg_data_out <= slv_reg10;     -- 0x28
+	      when b"1011" =>                  
+	        reg_data_out <= slv_reg11;     -- 0x2c 
+	      when b"1100" =>                  
+	        reg_data_out <= slv_reg12;     -- 0x30
+	      when b"1101" =>                  
+	        reg_data_out <= slv_reg13;     -- 0x34
+	      when b"1110" =>                  
+	        reg_data_out <= slv_reg14;     -- 0x38
+	      when b"1111" =>                  
+	        reg_data_out <= slv_reg15;     -- 0x3c
 	      when others =>
 	        reg_data_out  <= (others => '0');
 	    end case;
@@ -559,12 +561,12 @@ begin
         -- Reiner
 
         app_start_o     <= app_start_q;
-        reg_0x10_o      <= slv_reg4;
-        reg_0x14_o      <= slv_reg5;
-        reg_0x18_o      <= slv_reg6;
-        reg_0x1c_o      <= slv_reg7;
         reg_0x20_o      <= slv_reg8;
         reg_0x24_o      <= slv_reg9;
+        reg_0x28_o      <= slv_reg10;
+        reg_0x2c_o      <= slv_reg11;
+        reg_0x30_o      <= slv_reg12;
+        reg_0x34_o      <= slv_reg13;
         process( S_AXI_ACLK ) is
           variable app_done_i_q    : std_logic;
           
