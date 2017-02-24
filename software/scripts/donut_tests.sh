@@ -25,7 +25,7 @@ dnut_card=0
 
 search=0
 memcopy=0
-memcopy_unaligned=0
+memcopy_unaligned=0 # FIXME breaks the machine
 memcopy_cardram=1
 hashjoin=0
 
@@ -38,6 +38,7 @@ function usage() {
 	echo "    [-M]               run memcopy tests"
 	echo "    [-S]               run search tests"
 	echo "    [-H]               run hashjoin tests"
+	echo
 }
 
 while getopts ":C:t:aMSHh" opt; do
