@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
 
 		table2_fill(t2, t2_tocopy);
 		if (verbose_flag)
-			table2_dump(t2, t2_entries);
+			table2_dump(t2, t2_tocopy);
 
 		dnut_prepare_hashjoin(&cjob, &jin, &jout,
 				      t1, t1_entries * sizeof(table1_t),

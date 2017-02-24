@@ -121,8 +121,8 @@ static inline void table1_dump(table1_t *table1, unsigned int table1_idx)
 	printf("table1_t table1[] = {\n");
 	for (i = 0; i < table1_idx; i++) {
 		t1 = &table1[i];
-		printf("  { .name = \"%s\", .age=%d }\n",
-		       t1->name, t1->age);
+		printf("  { .name = \"%s\", .age=%d } /* %d. */\n",
+		       t1->name, t1->age, i);
 	}
 	printf("}; /* table1_idx=%d\n", table1_idx);
 }
@@ -135,8 +135,8 @@ static inline void table2_dump(table2_t *table2, unsigned int table2_idx)
 	printf("table2_t table2[] = {\n");
 	for (i = 0; i < table2_idx; i++) {
 		t2 = &table2[i];
-		printf("  { .name = \"%s\", .animal = \"%s\" }\n",
-		       t2->name, t2->animal);
+		printf("  { .name = \"%s\", .animal = \"%s\" } "
+		       "/* %d. */\n", t2->name, t2->animal, i);
 	}
 	printf("}; /* table2_idx=%d\n", table2_idx);
 }
@@ -149,8 +149,8 @@ static inline void table3_dump(table3_t *table3, unsigned int table3_idx)
 	printf("table3_t table3[] = {\n");
 	for (i = 0; i < table3_idx; i++) {
 		t3 = &table3[i];
-		printf("  { .name = \"%s\", .animal = \"%s\", .age=%d }\n",
-		       t3->name, t3->animal, t3->age);
+		printf("  { .name = \"%s\", .animal = \"%s\", .age=%d } "
+		       "/* %d. */\n", t3->name, t3->animal, t3->age, i);
 	}
 	printf("}; /* table3_idx=%d\n", table3_idx);
 }
