@@ -98,6 +98,8 @@ struct dnut_data {
 
 	struct wed *wed;
 	struct dnut_action *action; /* software simulation mode */
+	size_t errinfo_size;
+	void *errinfo;		/* Err info Buffer */
 };
 
 /* To be used for software simulation, use funcs provided by action */
@@ -114,18 +116,53 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 	struct cxl_afu_h *afu_h = NULL;
 	struct wed *wed = NULL;
 	int rc;
+	long id = 0;
 
 	dn = calloc(1, sizeof(*dn));
 	if (NULL == dn)
 		goto __dnut_alloc_err;
 
 	dn->priv = NULL;
-	dn->vendor_id = vendor_id;
-	dn->device_id = device_id;
 
 	afu_h = cxl_afu_open_dev((char*)path);
 	if (NULL == afu_h)
 		goto __dnut_alloc_err;
+
+	dn->device_id = 0;
+	/* Read and check Device id if it was given by caller */
+	if (0 != device_id) {
+		rc = cxl_get_cr_device(afu_h, 0, &id);
+		if ((0 != rc) || ((uint16_t)id != device_id)) {
+			dnut_trace("  %s: ERR 0x%ux Invalid Device ID\n", __func__, (int)id);
+			goto __dnut_alloc_err;
+		}
+		dn->device_id = (uint16_t)id;
+        }
+
+	dn->vendor_id = 0;
+	/* Read and check Vendor id if it was given by caller */
+	if (0 != vendor_id) {
+		rc = cxl_get_cr_vendor(afu_h, 0, &id);
+		if ((0 != rc) || ((uint16_t)id != vendor_id)) {
+			dnut_trace("  %s: ERR 0x%x Invalid Vendor ID\n", __func__, (int)id);
+			goto __dnut_alloc_err;
+		}
+		dn->vendor_id = (uint16_t)id;
+	}
+
+	/* Create Err Buffer, If we cannot get it, continue with warning ... */
+	dn->errinfo_size = 0;
+	dn->errinfo = NULL;
+	rc = cxl_errinfo_size(afu_h, &dn->errinfo_size);
+	if (0 == rc) {
+		dn->errinfo = malloc(dn->errinfo_size);
+                if (NULL == dn->errinfo) {
+			dnut_trace("  %s: ERR Alloc buffer\n", __func__);
+			goto __dnut_alloc_err;
+                }
+        } else
+		dnut_trace("  %s: WARN Can not detect Err buffer\n", __func__);
+
 
 	/* FIXME Why is wed not part of dn and dn not allocated with
 	   alignment in that case? Can we have wed to be NULL to save
@@ -149,6 +186,8 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 	return (struct dnut_card *)dn;
 
  __dnut_alloc_err:
+	if (dn->errinfo)
+		free(dn->errinfo);
 	if (afu_h)
 		cxl_afu_free(afu_h);
 	if (wed)
@@ -218,6 +257,8 @@ static void hw_dnut_card_free(void *_card)
 	struct dnut_data *card = (struct dnut_data *)_card;
 
 	if (card) {
+		if (card->errinfo)
+			free(card->errinfo);
 		cxl_afu_free(card->afu_h);
 		free(card->wed);
 		free(card);
