@@ -80,7 +80,10 @@
 // Action Read Registers
 `define ACTION_R_STATUS   0
 `define ACTION_R_TRACK_0  1
-`define ACTION_R_NUM_REGS 17
+`define ACTION_R_TRACK_15 16
+`define ACTION_R_SQ_LEVEL 17
+`define ACTION_R_SQ_SPACE 18
+`define ACTION_R_NUM_REGS 19
 
 // Admin Regs
 `define ADMIN_CONTROL     0
@@ -134,4 +137,3 @@
 `define ADMIN_STAT_SSD1_DONE      3
 `define ADMIN_STAT_SQ_OVRFLW      4
 `define ADMIN_STAT_TRACK_OVRFLW   5
-

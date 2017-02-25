@@ -89,6 +89,7 @@ module nvme_host_slave #
   logic [SQ_BITS-1:0] sq_head[`TOTAL_NUM_QUEUES];
   logic [SQ_BITS-1:0] sq_tail[`TOTAL_NUM_QUEUES];
   logic [SQ_BITS-1:0] sq_level[`TOTAL_NUM_QUEUES];
+  logic [SQ_BITS-1:0] sq_space[`TOTAL_NUM_QUEUES];
 
   logic  sq_full[`TOTAL_NUM_QUEUES];
   localparam SQ_INDEX_BITS = $clog2(`TOTAL_NUM_QUEUES);
@@ -173,6 +174,7 @@ module nvme_host_slave #
       for (int i=0; i<`TOTAL_NUM_QUEUES; i++) begin
         sq_head[i] <= 'd0;
         sq_level[i] <= 'd0;
+        sq_space[i] <= 'd0;
         sq_full[i] <= 'd0;
         cq_head[i] <= 'd0;
       end
@@ -185,12 +187,14 @@ module nvme_host_slave #
           sq_full[i] <= 1'b0;
         end
       end
-      // Calculate levels
+      // Calculate levels and space
       for (int i=0; i<`TOTAL_NUM_QUEUES; i++) begin
         if (sq_tail[i]>=sq_head[i]) begin
           sq_level[i] = sq_tail[i] - sq_head[i];
+          sq_space[i] = sq_size[i] - (sq_tail[i] - sq_head[i]) - 1;
         end else begin
-          sq_level[i] = sq_size[i] - sq_head[i] + sq_tail[i];
+          sq_level[i] = sq_size[i] + (sq_tail[i] - sq_head[i]);
+          sq_space[i] = 0 - (sq_tail[i] - sq_head[i]) - 1;
         end
       end
       // Update cq and sq heads based on recieved data
@@ -620,22 +624,34 @@ module nvme_host_slave #
           end
         end
         READ_ACTION_REGS: begin
+          host_s_axi_rresp <= 2'b00;
+          host_s_axi_rdata <= 'd0;
           if (host_action_index==`ACTION_R_STATUS) begin
-            host_s_axi_rdata <= 'd0;
+            host_s_axi_rvalid <= 1'b1;
             // Set submission queue full status
             for (int i=0; i<`TOTAL_NUM_QUEUES; i++) begin
               host_s_axi_rdata[`STATUS_SQ_FULL + i] <= sq_full[i];
             end
             // Set completion queue info status
             host_s_axi_rdata[`STATUS_TRACK_INFO +: 2**`CMD_ACTION_ID_BITS] <= track_status;
-            host_s_axi_rresp <= 2'b00;
+          end else if (host_action_index==`ACTION_R_SQ_LEVEL) begin
             host_s_axi_rvalid <= 1'b1;
+            // Send submission queue levels
+            for (int i=0; i<4; i++) begin
+              host_s_axi_rdata[8*i +: 8] <= sq_level[i];
+            end
+          end else if (host_action_index==`ACTION_R_SQ_SPACE) begin
+            host_s_axi_rvalid <= 1'b1;
+            // Send submission queue space
+            for (int i=0; i<4; i++) begin
+              host_s_axi_rdata[8*i +: 8] <= sq_space[i];
+            end
           end else if (host_action_index < `ACTION_R_NUM_REGS) begin
             track_update <= 1'b1;
             track_update_id <= host_action_index - `ACTION_R_TRACK_0;
             read_state <= READ_TRACK;
           end else begin
-            host_s_axi_rdata <= 'd0;
+            // Address out of range, respond with error
             host_s_axi_rresp <= 2'b01;
             host_s_axi_rvalid <= 1'b1;
           end
