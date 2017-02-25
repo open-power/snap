@@ -126,13 +126,7 @@ module nvme_io_track #
       track_write <= 1'b0;
       track_rwrite <= 1'b0;
       track_read <= 1'b0;
-      // Need to check for reading and writing to same location
-      // Block the read since the status will be updated based on write data
-      if (track_write && (track_waddr==track_raddr)) begin
-        track_read_valid <= 1'b0;
-      end else begin
-        track_read_valid <= track_read;
-      end
+      track_read_valid <= 1'b0;
       // Need to clear memory after reset
       if (!track_init) begin
         track_write <= 1'b1;
@@ -171,10 +165,22 @@ module nvme_io_track #
           // Send read for next entry
           track_read <= 1'b1;
           track_raddr <= {track_update_id, track_index_array[track_update_id]};
+        // Set the read valid indicator
+        end else if (track_read) begin
+          // Check for speical case where the write is occuring same time as the read
+          if (track_write && (track_waddr==track_raddr)) begin
+            // Use write data and finish
+            track_update_done <= 1'b1;
+            track_update_data <= track_wdata;
+            // track_update_id should not change and can be used here
+            track_status[track_update_id] <= track_wdata[0];
+          end else begin
+            track_read_valid <= 1'b1;
+          end
         // Update status on read
         end else if (track_read_valid) begin
           track_update_done <= 1'b1;
-          // Check for writing the current location
+          // Check for special case of write in progress to the current location
           if (track_write && (track_waddr==track_raddr)) begin
             // Use write data
             track_update_data <= track_wdata;
