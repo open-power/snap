@@ -116,6 +116,7 @@ module nvme_host_slave #
   logic [7:0] sq_opcode;
   logic [15:0] sq_id;
   logic [`CMD_ACTION_ID_BITS-1:0] sq_action_id;
+	logic sq_overflow;
 
   // Host Write FSM
   enum {WRITE_IDLE, WRITE_DECODE, WRITE_BUFFER, WRITE_PCIE, WRITE_ADMIN_REGS, WRITE_ACTION_REGS, WRITE_SQ, WRITE_SQ_DOORBELL, WRITE_CQ_DOORBELL, WRITE_PCIE_WAIT} write_state;
@@ -142,6 +143,7 @@ module nvme_host_slave #
 
   // Tracking logic
   logic track_init;
+  logic track_overflow;
   localparam integer TRACK_INFO_BITS = 2;
   logic [2**`CMD_ACTION_ID_BITS-1:0] track_status;
   logic track_update;
@@ -151,6 +153,12 @@ module nvme_host_slave #
   logic                               track_error_clear;
   logic                              track_error;
   logic [127:0]                      track_error_data;
+
+  // System info
+  logic system_init;
+  logic system_error;
+  assign system_init = init_done & track_init;
+  assign system_error = track_overflow;
 
   // Admin status
   logic admin_status_clear;
@@ -235,6 +243,7 @@ module nvme_host_slave #
       for (int i=0; i<2**`CMD_ACTION_ID_BITS; i++) begin
         sq_index_array[i] <= 'd0;
       end
+      sq_overflow <= 1'b0;
       track_error_clear <= 1'b0;
       admin_status_update <= 1'b0;
     end else begin
@@ -247,7 +256,7 @@ module nvme_host_slave #
         admin_regs[`ADMIN_BUFFER_ADDR] <= admin_regs[`ADMIN_BUFFER_ADDR] + 1;
       end
       // Set admin ready status
-      admin_regs[`ADMIN_STATUS][`ADMIN_STAT_READY] <= init_done & track_init;
+      admin_regs[`ADMIN_STATUS][`ADMIN_STAT_READY] <= system_init;
       // Admin command status, need to check if we are updating
       if (admin_status_clear && !admin_status_update) begin
           admin_regs[`ADMIN_STATUS][`ADMIN_STAT_ERROR] <= 1'b0;
@@ -267,6 +276,8 @@ module nvme_host_slave #
       if (track_error) begin
         admin_regs[`ADMIN_STATUS][`ADMIN_STAT_ERROR] <= 1'b1;
       end
+      admin_regs[`ADMIN_STATUS][`ADMIN_STAT_SQ_OVRFLW] <= sq_overflow;
+      admin_regs[`ADMIN_STATUS][`ADMIN_STAT_TRACK_OVRFLW] <= track_overflow;
       // Set
       // FSM
       case (write_state)
@@ -393,6 +404,7 @@ module nvme_host_slave #
         WRITE_SQ: begin
           // Check for space
           if (host_s_axi_bvalid || (sq_count==0 && sq_full[sq_index])) begin
+          	sq_overflow <= 1'b1;
             host_s_axi_bresp <= 2'b01;
             host_s_axi_bvalid <= 1'b1;
             if (host_s_axi_bvalid && host_s_axi_bready) begin

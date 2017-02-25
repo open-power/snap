@@ -131,3 +131,6 @@
 `define ADMIN_STAT_ERROR          1
 `define ADMIN_STAT_SSD0_DONE      2
 `define ADMIN_STAT_SSD1_DONE      3
+`define ADMIN_STAT_SQ_OVRFLW      4
+`define ADMIN_STAT_TRACK_OVRFLW   5
+

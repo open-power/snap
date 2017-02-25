@@ -31,6 +31,8 @@ module nvme_io_track #
   input wire [127:0]                  rx_wdata,
 
   output logic                        track_init,
+  output logic                        track_overflow,
+
   // FIFO Read IF
   input wire                            track_update,
   input wire [`CMD_ACTION_ID_BITS-1:0]  track_update_id,
@@ -102,6 +104,7 @@ module nvme_io_track #
   begin : TRACK_P
     if (!axi_aresetn) begin
       track_init <= 1'b0;
+      track_overflow <= 1'b0;
       track_write <= 1'b0;
       track_waddr <= 'd0;
       track_wdata <= 'd0;
@@ -123,7 +126,13 @@ module nvme_io_track #
       track_write <= 1'b0;
       track_rwrite <= 1'b0;
       track_read <= 1'b0;
-      track_read_valid <= track_read;
+      // Need to check for reading and writing to same location
+      // Block the read since the status will be updated based on write data
+      if (track_write && (track_waddr==track_raddr)) begin
+        track_read_valid <= 1'b0;
+      end else begin
+        track_read_valid <= track_read;
+      end
       // Need to clear memory after reset
       if (!track_init) begin
         track_write <= 1'b1;
@@ -145,6 +154,8 @@ module nvme_io_track #
             track_update_done <= 1'b1;
             track_update_data <= 'd0;
           end else begin
+            // Clear status bit while checking next location
+            track_status[track_update_id] <= 1'b0;
             // Clear current enty
             track_rwrite <= 1'b1;
             track_raddr <= {track_update_id, track_index_array[track_update_id]};
@@ -160,14 +171,20 @@ module nvme_io_track #
           // Send read for next entry
           track_read <= 1'b1;
           track_raddr <= {track_update_id, track_index_array[track_update_id]};
-        // Old data is the first fifo read
-        end else if (track_read) begin
-          track_update_data <= track_rdata;
         // Update status on read
         end else if (track_read_valid) begin
           track_update_done <= 1'b1;
-          // track_update_id should not change and can be used here
-          track_status[track_update_id] <= track_rdata[0];
+          // Check for writing the current location
+          if (track_write && (track_waddr==track_raddr)) begin
+            // Use write data
+            track_update_data <= track_wdata;
+            // track_update_id should not change and can be used here
+            track_status[track_update_id] <= track_wdata[0];
+          end else begin
+            track_update_data <= track_rdata;
+            // track_update_id should not change and can be used here
+            track_status[track_update_id] <= track_rdata[0];
+          end
         end
         // Update tracking based on recieved data
         if (rx_write_valid && rx_waddr < DATA_CQ_ADDR) begin
@@ -184,6 +201,10 @@ module nvme_io_track #
             // Check for status update
             if (rx_req_id == track_index_array[rx_action_id]) begin
               track_status[rx_action_id] <= 1'b1;
+              // If the status is already '1' then overflow has occurred
+              if (track_status[rx_action_id]) begin
+                track_overflow <= 1'b1;
+              end
             end
           end
         end
