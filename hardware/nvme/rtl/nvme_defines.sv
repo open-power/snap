@@ -90,9 +90,10 @@
 `define ADMIN_NUM_REGS    4
 
 // Control Reg Bits
-`define CONTROL_ENABLE      0
-`define CONTROL_AUTO_INCR   1
-`define CONTROL_CLEAR_ERROR 2
+`define CONTROL_ENABLE          0
+`define CONTROL_AUTO_INCR       1
+`define CONTROL_CLEAR_ERROR     2
+`define CONTROL_ERROR_SQ_FULL   3
 
 // Action command bits
 `define CMD_TYPE            0

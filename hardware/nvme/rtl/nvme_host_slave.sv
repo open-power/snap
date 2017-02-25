@@ -88,6 +88,8 @@ module nvme_host_slave #
   localparam SQ_BITS = $clog2(`IO_SQ_NUM);
   logic [SQ_BITS-1:0] sq_head[`TOTAL_NUM_QUEUES];
   logic [SQ_BITS-1:0] sq_tail[`TOTAL_NUM_QUEUES];
+  logic [SQ_BITS-1:0] sq_level[`TOTAL_NUM_QUEUES];
+
   logic  sq_full[`TOTAL_NUM_QUEUES];
   localparam SQ_INDEX_BITS = $clog2(`TOTAL_NUM_QUEUES);
   logic [SQ_INDEX_BITS-1:0] sq_index;
@@ -116,7 +118,7 @@ module nvme_host_slave #
   logic [7:0] sq_opcode;
   logic [15:0] sq_id;
   logic [`CMD_ACTION_ID_BITS-1:0] sq_action_id;
-	logic sq_overflow;
+  logic sq_overflow;
 
   // Host Write FSM
   enum {WRITE_IDLE, WRITE_DECODE, WRITE_BUFFER, WRITE_PCIE, WRITE_ADMIN_REGS, WRITE_ACTION_REGS, WRITE_SQ, WRITE_SQ_DOORBELL, WRITE_CQ_DOORBELL, WRITE_PCIE_WAIT} write_state;
@@ -158,7 +160,7 @@ module nvme_host_slave #
   logic system_init;
   logic system_error;
   assign system_init = init_done & track_init;
-  assign system_error = track_overflow;
+  assign system_error = track_overflow | sq_overflow;
 
   // Admin status
   logic admin_status_clear;
@@ -170,6 +172,7 @@ module nvme_host_slave #
       cq_update <= 'd0;
       for (int i=0; i<`TOTAL_NUM_QUEUES; i++) begin
         sq_head[i] <= 'd0;
+        sq_level[i] <= 'd0;
         sq_full[i] <= 'd0;
         cq_head[i] <= 'd0;
       end
@@ -180,6 +183,14 @@ module nvme_host_slave #
           sq_full[i] <= 1'b1;
         end else begin
           sq_full[i] <= 1'b0;
+        end
+      end
+      // Calculate levels
+      for (int i=0; i<`TOTAL_NUM_QUEUES; i++) begin
+        if (sq_tail[i]>=sq_head[i]) begin
+          sq_level[i] = sq_tail[i] - sq_head[i];
+        end else begin
+          sq_level[i] = sq_size[i] - sq_head[i] + sq_tail[i];
         end
       end
       // Update cq and sq heads based on recieved data
@@ -404,12 +415,17 @@ module nvme_host_slave #
         WRITE_SQ: begin
           // Check for space
           if (host_s_axi_bvalid || (sq_count==0 && sq_full[sq_index])) begin
-          	sq_overflow <= 1'b1;
-            host_s_axi_bresp <= 2'b01;
-            host_s_axi_bvalid <= 1'b1;
-            if (host_s_axi_bvalid && host_s_axi_bready) begin
-              host_s_axi_bvalid <= 1'b0;
-              write_state <= WRITE_IDLE;
+            // Respond with error if sq is full and error function is enabled
+            if (admin_regs[`ADMIN_CONTROL][`CONTROL_ERROR_SQ_FULL]) begin
+              sq_overflow <= 1'b1;
+              host_s_axi_bresp <= 2'b01;
+              host_s_axi_bvalid <= 1'b1;
+              if (host_s_axi_bvalid && host_s_axi_bready) begin
+                host_s_axi_bvalid <= 1'b0;
+                write_state <= WRITE_IDLE;
+              end
+            // Wait for queue to have space
+            end else begin
             end
           end else begin
             sq_opcode = (action_w_regs[`ACTION_W_COMMAND][`CMD_TYPE +: `CMD_TYPE_BITS]==0) ? `CMD_NVME_READ : `CMD_NVME_WRITE;
