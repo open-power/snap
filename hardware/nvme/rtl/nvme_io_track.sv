@@ -144,13 +144,14 @@ module nvme_io_track #
         end
         // Update pointer when action fifo read
         if (track_update) begin
+          // If status bit isn't set then return 0 and finish
           if (!track_status[track_update_id]) begin
             track_update_done <= 1'b1;
             track_update_data <= 'd0;
           end else begin
             // Clear status bit while checking next location
             track_status[track_update_id] <= 1'b0;
-            // Clear current enty
+            // Get data and clear current enty
             track_rwrite <= 1'b1;
             track_raddr <= {track_update_id, track_index_array[track_update_id]};
             // Increment address
@@ -167,27 +168,26 @@ module nvme_io_track #
           track_raddr <= {track_update_id, track_index_array[track_update_id]};
         // Set the read valid indicator
         end else if (track_read) begin
+          // Update data is always the read from old address
+          track_update_data <= track_rdata;
           // Check for speical case where the write is occuring same time as the read
           if (track_write && (track_waddr==track_raddr)) begin
             // Use write data and finish
-            track_update_done <= 1'b1;
-            track_update_data <= track_wdata;
             // track_update_id should not change and can be used here
             track_status[track_update_id] <= track_wdata[0];
+            track_update_done <= 1'b1;
           end else begin
             track_read_valid <= 1'b1;
           end
-        // Update status on read
+        // Update status on read from next address
         end else if (track_read_valid) begin
           track_update_done <= 1'b1;
           // Check for special case of write in progress to the current location
           if (track_write && (track_waddr==track_raddr)) begin
             // Use write data
-            track_update_data <= track_wdata;
             // track_update_id should not change and can be used here
             track_status[track_update_id] <= track_wdata[0];
           end else begin
-            track_update_data <= track_rdata;
             // track_update_id should not change and can be used here
             track_status[track_update_id] <= track_rdata[0];
           end
