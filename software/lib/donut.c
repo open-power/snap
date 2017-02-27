@@ -130,10 +130,10 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 
 	dn->device_id = 0;
 	/* Read and check Device id if it was given by caller */
-	if (0 != device_id) {
+	if (0xffff != device_id) {
 		rc = cxl_get_cr_device(afu_h, 0, &id);
 		if ((0 != rc) || ((uint16_t)id != device_id)) {
-			dnut_trace("  %s: ERR 0x%ux Invalid Device ID\n", __func__, (int)id);
+			dnut_trace("  %s: ERR 0x%x Invalid Device ID 0x%x\n", __func__, (int)id, (int)device_id);
 			goto __dnut_alloc_err;
 		}
 		dn->device_id = (uint16_t)id;
@@ -141,7 +141,7 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 
 	dn->vendor_id = 0;
 	/* Read and check Vendor id if it was given by caller */
-	if (0 != vendor_id) {
+	if (0xffff != vendor_id) {
 		rc = cxl_get_cr_vendor(afu_h, 0, &id);
 		if ((0 != rc) || ((uint16_t)id != vendor_id)) {
 			dnut_trace("  %s: ERR 0x%x Invalid Vendor ID\n", __func__, (int)id);
