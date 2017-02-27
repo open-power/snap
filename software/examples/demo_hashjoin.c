@@ -361,7 +361,7 @@ int main(int argc, char *argv[])
 	}
 	gettimeofday(&etime, NULL);
 
-	fprintf(stdout, "Action version: %llx\n"
+	fprintf(stderr, "Action version: %llx\n"
 		"Checkpoint: %016llx\n"
 		"ReturnCode: %lld\n"
 		"HashJoin took %lld usec\n",
