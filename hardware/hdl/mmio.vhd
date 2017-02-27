@@ -668,7 +668,7 @@ BEGIN
         context_seqno_mmio_din(CTX_SEQNO_LAST_INT_L DOWNTO CTX_SEQNO_LAST_INT_R)             <= ha_mm_w_q.data(CTX_CFG_FIRST_SEQNO_L DOWNTO CTX_CFG_FIRST_SEQNO_R) - 1;
         context_seqno_mmio_din(CTX_SEQNO_IDX_INT_L DOWNTO CTX_SEQNO_IDX_INT_R)               <= ha_mm_w_q.data(CTX_CFG_FIRST_IDX_L DOWNTO CTX_CFG_FIRST_IDX_R);
 
-        context_status_mmio_din <= (OTHERS => '0');
+        context_status_mmio_din <= context_status_mmio_dout;
 
         context_command_mmio_din(CTX_CMD_ARG_INT_L DOWNTO CTX_CMD_ARG_INT_R)                 <= ha_mm_w_q.data(CTX_CMD_ARG_L DOWNTO CTX_CMD_ARG_R);
         context_command_mmio_din(CTX_CMD_CODE_INT_L DOWNTO CTX_CMD_CODE_INT_R)               <= ha_mm_w_q.data(CTX_CMD_CODE_L DOWNTO CTX_CMD_CODE_R);
@@ -794,6 +794,11 @@ BEGIN
                       context_config_mmio_we    <= '1';
                       context_seqno_mmio_we     <= '1';
                       context_status_mmio_we    <= '1';
+                      IF (ha_mm_r_q.data(CTX_CFG_SAT_L DOWNTO CTX_CFG_SAT_R) < snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_SAT_L DOWNTO SNAP_STAT_MAX_SAT_R) + 1) THEN
+                        context_status_mmio_din(CTX_STAT_SAT_VALID_INT) <= '1';
+                      ELSE
+                        context_status_mmio_din(CTX_STAT_SAT_VALID_INT) <= '0';
+                      END IF;
                       IF (context_seqno_mmio_addr = jmm_c_i.context_id) THEN
                         context_seqno_conflict_q <= '1';
                       END IF;
@@ -1056,7 +1061,7 @@ BEGIN
         IF (ha_mm_r_q0.valid = '1') AND (ha_mm_r_q0.rnw = '1') THEN
           mmio_read_master_access_q <= NOT ha_mm_q0.ad(SLAVE_SPACE_BIT);
           mmio_read_action_access_q <= mmio_read_action_access_q0 AND
-                                       ((context_status_mmio_dout(CTX_STAT_ACTION_VALID) AND ha_mm_q0.ad(SLAVE_SPACE_BIT)) OR (mmio_action_id_valid_q0 AND NOT ha_mm_q0.ad(SLAVE_SPACE_BIT)));
+                                       ((context_status_mmio_dout(CTX_STAT_ACTION_VALID_INT) AND ha_mm_q0.ad(SLAVE_SPACE_BIT)) OR (mmio_action_id_valid_q0 AND NOT ha_mm_q0.ad(SLAVE_SPACE_BIT)));
         END IF;
 
         --
@@ -1074,10 +1079,10 @@ BEGIN
         mmio_write_reg_offset_q      <= to_integer(unsigned(ha_mm_w_q0.ad(4 DOWNTO 1)));
         mmio_write_master_access_q   <= mmio_write_master_access_q;
         mmio_write_action_access_q   <= '0';
-        IF (ha_mm_r_q0.valid = '1') AND (ha_mm_w_q0.rnw = '0') THEN
+        IF (ha_mm_w_q0.valid = '1') AND (ha_mm_w_q0.rnw = '0') THEN
           mmio_write_master_access_q <= NOT ha_mm_q0.ad(SLAVE_SPACE_BIT);
           mmio_write_action_access_q <= mmio_write_action_access_q0 AND
-                                        ((context_status_mmio_dout(CTX_STAT_ACTION_VALID) AND ha_mm_q0.ad(SLAVE_SPACE_BIT)) OR (mmio_action_id_valid_q0 AND NOT ha_mm_q0.ad(SLAVE_SPACE_BIT)));
+                                        ((context_status_mmio_dout(CTX_STAT_ACTION_VALID_INT) AND ha_mm_q0.ad(SLAVE_SPACE_BIT)) OR (mmio_action_id_valid_q0 AND NOT ha_mm_q0.ad(SLAVE_SPACE_BIT)));
         END IF;
 
         mmio_cfg_space_access_q      <= to_integer(unsigned(ha_mm_q0.ad(13 DOWNTO 6) & '0')) = AFU_CFG_SPACE0_BASE;
