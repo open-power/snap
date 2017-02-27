@@ -200,7 +200,7 @@ module nvme_host_slave #
       // Update cq and sq heads based on recieved data
       if (rx_write_valid && rx_waddr < DATA_CQ_ADDR) begin
         // Update current submission queue head with received head
-        sq_head[rx_q_index] <= rx_wdata[64 +: SQ_BITS] + 1;
+        sq_head[rx_q_index] <= rx_wdata[64 +: SQ_BITS];
         if (rx_wdata[64 +: SQ_BITS]==sq_size[rx_q_index]-1) begin
           sq_head[rx_q_index] <= 'd0;
         end
