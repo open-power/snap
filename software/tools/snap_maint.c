@@ -92,7 +92,8 @@ static int snap_open(struct mdev_ctx *mctx)
 
 	sprintf(device, "/dev/cxl/afu%d.0m", mctx->card);
 	VERBOSE3("[%s] Enter: %s\n", __func__, device);
-	mctx->handle = dnut_card_alloc_dev(device, 0xcafe, 0x1014);
+	//mctx->handle = dnut_card_alloc_dev(device, 0xcafe, 0x1014);
+	mctx->handle = dnut_card_alloc_dev(device, 0xffff, 0xffff);
 	if (NULL == mctx->handle)
 		rc = -1;
 	VERBOSE3("[%s] Exit %d\n", __func__, rc);

@@ -124,11 +124,12 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 
 	dn->priv = NULL;
 
+	dnut_trace("cxl_afu_open_dev %s\n", path);
 	afu_h = cxl_afu_open_dev((char*)path);
 	if (NULL == afu_h)
 		goto __dnut_alloc_err;
 
-	dn->device_id = 0;
+	dn->device_id = device_id;
 	/* Read and check Device id if it was given by caller */
 	if (0xffff != device_id) {
 		rc = cxl_get_cr_device(afu_h, 0, &id);
@@ -139,7 +140,7 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 		dn->device_id = (uint16_t)id;
         }
 
-	dn->vendor_id = 0;
+	dn->vendor_id = vendor_id;
 	/* Read and check Vendor id if it was given by caller */
 	if (0xffff != vendor_id) {
 		rc = cxl_get_cr_vendor(afu_h, 0, &id);
@@ -153,6 +154,7 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 	/* Create Err Buffer, If we cannot get it, continue with warning ... */
 	dn->errinfo_size = 0;
 	dn->errinfo = NULL;
+/*
 	rc = cxl_errinfo_size(afu_h, &dn->errinfo_size);
 	if (0 == rc) {
 		dn->errinfo = malloc(dn->errinfo_size);
@@ -162,7 +164,7 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
                 }
         } else
 		dnut_trace("  %s: WARN Can not detect Err buffer\n", __func__);
-
+*/
 
 	/* FIXME Why is wed not part of dn and dn not allocated with
 	   alignment in that case? Can we have wed to be NULL to save
