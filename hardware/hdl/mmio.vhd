@@ -671,6 +671,7 @@ BEGIN
 
         context_config_mmio_we           <= '0';
         context_command_mmio_we          <= '0';
+        context_status_mmio_we           <= '0';
 
         context_seqno_conflict_q         <= '0';
         context_status_conflict_q        <= '0';
