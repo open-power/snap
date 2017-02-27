@@ -17,9 +17,10 @@
 #-----------------------------------------------------------
 
 PSL_SOURCE_ENV=$(FPGACARD)
-export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/HDK_build
+export BUILD_NAME=HDK_build
+export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
 
-PSL_ACCEL_FILES=$(DONUT_HARDWARE_ROOT)/hdl/psl_accel_sim.vhd $(DONUT_HARDWARE_ROOT)/hdl/psl_accel_syn.vhd
+SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/hdl/top.sv 
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone
@@ -84,7 +85,7 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 	@sed -i 's/run.topImpl.*0/run.topImpl 1/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topSynth.*0/run.topSynth 1/' $(BUILD_DIR)/psl_fpga.tcl
 	@mv -f $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
-	@ln -s $(BUILD_DIR) $(DONUT_HARDWARE_ROOT)/build
+	@ln -s $(BUILD_NAME) build
 
 $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@echo -e "\t[CREATE] $(BUILD_DIR)/Sources/prj/afu.prj"
@@ -95,12 +96,12 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@if grep -q 'Language       File-Name' $(PROJECT_COMPILE_LIST); then\
 		cut -d "," -f "1 4 5" $(PROJECT_COMPILE_LIST) | sed 's/, */ /g' | \
 		grep -E "(\/hdl\/|\/action_examples\/)" | \
-		grep -Ev '\/ip\/|action_auto_|viv_project' | sed 's/ ..\// /' | \
-		sed 's/[ ]*$$//' |sed 's/psl_accel_sim/psl_accel_syn/' > $(BUILD_DIR)/Sources/prj/afu.prj;\
+		grep -Ev '\/ip\/|action_auto_|viv_project' | sed 's/ ..\// /'| \
+                grep -v ddr3_dimm | grep -v top.sv | > $(BUILD_DIR)/Sources/prj/afu.prj; \
 	else cut -d "," -f "2 3 4" $(PROJECT_COMPILE_LIST) | sed 's/, */ /g' | \
 		grep -E "(\/hdl\/|\/action_examples\/)" | \
 		grep -Ev '\/ip\/|action_auto_|viv_project' | sed 's/ ..\/..\/..\// /' | \
-		sed 's/psl_accel_sim/psl_accel_syn/' > $(BUILD_DIR)/Sources/prj/afu.prj;\
+		grep -v ddr3_dimm | grep -v top.sv  > $(BUILD_DIR)/Sources/prj/afu.prj; \
 	fi
 	@echo -e "\t[CREATE] $@"
 	@cat $(BUILD_DIR)/Sources/prj/top.prj $(BUILD_DIR)/Sources/prj/afu.prj > $(BUILD_DIR)/Sources/prj/psl_fpga.prj
@@ -109,8 +110,8 @@ $(BUILD_DIR)/Sources/top/psl_fpga.vhd: $(BUILD_DIR)/psl_fpga.tcl
 	@if [ $(DDR3_USED) = "TRUE" ]; then echo "PATCH $(BUILD_DIR)/Sources/top/psl_fpga.vhd for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr3_vhdl.patch; fi
 	@if [ $(DDR4_USED) = "TRUE" ]; then echo "PATCH $(BUILD_DIR)/Sources/top/psl_fpga.vhd for DDR4 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr4_vhdl.patch; fi
 
-$(PSL_ACCEL_FILES):
-	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/create_psl_accel.sh $(DONUT_HARDWARE_ROOT)/hdl/psl_accel.vhd_source $@
+$(SNAP_CONFIG_FILES):
+	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 patch_tcl_files:
 	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
@@ -125,7 +126,7 @@ patch_version:
 	@echo "PATCH SNAP version and build date registers"; \
 	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl mmio.vhd
 
-config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(PSL_ACCEL_FILES) create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_vhd_files patch_version
+config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(SNAP_CONFIG_FILES) create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_vhd_files patch_version
 	@echo -e "\t[CONFIG] done `date`"
 
 model: patch_version
@@ -148,12 +149,13 @@ image: patch_version
 clean:
 	@echo -e "\t[CLEAN] build environment";
 	rm -r -f  $(BUILD_DIR)
+	rm    -f  build
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
 	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
-	rm -f     $(PSL_ACCEL_FILES)
+	rm -f     $(SNAP_CONFIG_FILES)
 	rm -f     ./setup/*.log
 	rm -f     ./setup/*.jou
 
