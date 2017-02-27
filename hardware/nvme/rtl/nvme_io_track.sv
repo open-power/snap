@@ -75,9 +75,9 @@ module nvme_io_track #
   logic [`REQ_ID_BITS-1:0] rx_req_id;
   logic [14:0] rx_status_field;
 
-  assign rx_q_index = rx_wdata[64 + 16 +: SQ_INDEX_BITS];
-  assign rx_action_id = rx_wdata[64 + 16  + `CMD_QUEUE_ID_BITS +: `CMD_ACTION_ID_BITS];
-  assign rx_req_id = rx_wdata[64 + 16  + `CMD_QUEUE_ID_BITS + `CMD_ACTION_ID_BITS +: `REQ_ID_BITS];
+  assign rx_q_index = rx_wdata[96 +: SQ_INDEX_BITS];
+  assign rx_action_id = rx_wdata[96  + `CMD_QUEUE_ID_BITS +: `CMD_ACTION_ID_BITS];
+  assign rx_req_id = rx_wdata[96  + `CMD_QUEUE_ID_BITS + `CMD_ACTION_ID_BITS +: `REQ_ID_BITS];
   assign rx_status_field = rx_wdata[96+17 +: 15];
 
   logic renable;

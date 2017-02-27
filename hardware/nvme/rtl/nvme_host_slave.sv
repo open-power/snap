@@ -117,7 +117,7 @@ module nvme_host_slave #
   logic write_addr_inc, read_addr_inc;
   logic [1:0] sq_count;
   logic [7:0] sq_opcode;
-  logic [15:0] sq_id;
+  logic [15:0] sq_cid;
   logic [`CMD_ACTION_ID_BITS-1:0] sq_action_id;
   logic sq_overflow;
 
@@ -139,9 +139,9 @@ module nvme_host_slave #
   logic [`REQ_ID_BITS-1:0] rx_req_id;
   logic [14:0] rx_status_field;
 
-  assign rx_q_index = rx_wdata[64 + 16 +: SQ_INDEX_BITS];
-  assign rx_action_id = rx_wdata[64 + 16  + `CMD_QUEUE_ID_BITS +: `CMD_ACTION_ID_BITS];
-  assign rx_req_id = rx_wdata[64 + 16  + `CMD_QUEUE_ID_BITS + `CMD_ACTION_ID_BITS +: `REQ_ID_BITS];
+  assign rx_q_index = rx_wdata[96 +: SQ_INDEX_BITS];
+  assign rx_action_id = rx_wdata[96  + `CMD_QUEUE_ID_BITS +: `CMD_ACTION_ID_BITS];
+  assign rx_req_id = rx_wdata[96  + `CMD_QUEUE_ID_BITS + `CMD_ACTION_ID_BITS +: `REQ_ID_BITS];
   assign rx_status_field = rx_wdata[96+17 +: 15];
 
   // Tracking logic
@@ -435,10 +435,10 @@ module nvme_host_slave #
             sq_opcode = (action_w_regs[`ACTION_W_COMMAND][`CMD_TYPE +: `CMD_TYPE_BITS]==0) ? `CMD_NVME_READ : `CMD_NVME_WRITE;
             sq_action_id = action_w_regs[`ACTION_W_COMMAND][`CMD_ACTION_ID +: `CMD_ACTION_ID_BITS];
             // index_id (8 bits), action_id (4 bits), q_id (4 bits)
-            sq_id = {sq_index_array[sq_action_id], action_w_regs[`ACTION_W_COMMAND][`CMD_QUEUE_ID +: 8]};
+            sq_cid = {sq_index_array[sq_action_id], action_w_regs[`ACTION_W_COMMAND][`CMD_QUEUE_ID +: 8]};
             unique case (sq_count)
             // DW3-0: RSV(8 bytes), NSID(4 bytes), 31:16 CMD_ID, 15:14 PRP 13:10 RSV, 9:8 FUSE, 7:0 OPC
-            0: tx_wdata <= {64'd0, 32'd0, sq_id, 2'b00, 4'b0000, 2'b00, sq_opcode};
+            0: tx_wdata <= {64'd0, 32'd0, sq_cid, 2'b00, 4'b0000, 2'b00, sq_opcode};
             // DW7-4:  PRP1(8 bytes), MPTR(8 bytes)
             1: tx_wdata <= {{action_w_regs[`ACTION_W_DPTR_HIGH], action_w_regs[`ACTION_W_DPTR_LOW]}, 64'd0};
             // DW11-8: Start LBA(8 bytes), PRP2(8 bytes)
