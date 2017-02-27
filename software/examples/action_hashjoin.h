@@ -18,6 +18,7 @@
  */
 
 #include <stdint.h>
+#include <stdio.h>
 #include <libdonut.h>
 
 #define HASHJOIN_ACTION_TYPE 0x0022
@@ -81,36 +82,36 @@ static inline void print_hex(void *buf, size_t len)
 	unsigned int x;
 	char *d = buf;
 
-	printf("{ ");
+	fprintf(stderr, "{ ");
 	for (x = 0; x < len; x++)
-		printf("%02x, ", d[x]);
-	printf("}");
+		fprintf(stderr, "%02x, ", d[x]);
+	fprintf(stderr, "}");
 }
 
 static inline void ht_dump(hashtable_t *ht)
 {
 	unsigned int i, j;
 
-	printf("hashtable = {\n");
+	fprintf(stderr, "hashtable = {\n");
 	for (i = 0; i < HT_SIZE; i++) {
 		entry_t *entry = &ht->table[i];
 
 		if (!entry->used)
 			continue;
 
-		printf("  { .ht[%d].key = \"%s\", .used = %d, .multi = {\n",
+		fprintf(stderr, "  { .ht[%d].key = \"%s\", .used = %d, .multi = {\n",
 		       i, entry->key, entry->used);
 		for (j = 0; j < entry->used; j++) {
 			table1_t *multi = &entry->multi[j];
 
-			printf("      { .val = ");
+			fprintf(stderr, "      { .val = ");
 			print_hex(multi, sizeof(*multi));
-			printf(" },\n");
+			fprintf(stderr, " },\n");
 		}
-		printf("    },\n"
+		fprintf(stderr, "    },\n"
 		       "  },\n");
 	}
-	printf("};\n");
+	fprintf(stderr, "};\n");
 }
 
 static inline void table1_dump(table1_t *table1, unsigned int table1_idx)
@@ -118,13 +119,13 @@ static inline void table1_dump(table1_t *table1, unsigned int table1_idx)
 	unsigned int i;
 	table1_t *t1;
 
-	printf("table1_t table1[] = {\n");
+	fprintf(stderr, "table1_t table1[] = {\n");
 	for (i = 0; i < table1_idx; i++) {
 		t1 = &table1[i];
-		printf("  { .name = \"%s\", .age=%d } /* %d. */\n",
+		fprintf(stderr, "  { .name = \"%s\", .age=%d } /* %d. */\n",
 		       t1->name, t1->age, i);
 	}
-	printf("}; /* table1_idx=%d\n", table1_idx);
+	fprintf(stderr, "}; /* table1_idx=%d\n", table1_idx);
 }
 
 static inline void table2_dump(table2_t *table2, unsigned int table2_idx)
@@ -132,13 +133,13 @@ static inline void table2_dump(table2_t *table2, unsigned int table2_idx)
 	unsigned int i;
 	table2_t *t2;
 
-	printf("table2_t table2[] = {\n");
+	fprintf(stderr, "table2_t table2[] = {\n");
 	for (i = 0; i < table2_idx; i++) {
 		t2 = &table2[i];
-		printf("  { .name = \"%s\", .animal = \"%s\" } "
+		fprintf(stderr, "  { .name = \"%s\", .animal = \"%s\" } "
 		       "/* %d. */\n", t2->name, t2->animal, i);
 	}
-	printf("}; /* table2_idx=%d\n", table2_idx);
+	fprintf(stderr, "}; /* table2_idx=%d\n", table2_idx);
 }
 
 static inline void table3_dump(table3_t *table3, unsigned int table3_idx)
@@ -146,13 +147,13 @@ static inline void table3_dump(table3_t *table3, unsigned int table3_idx)
 	unsigned int i;
 	table3_t *t3;
 
-	printf("table3_t table3[] = {\n");
+	fprintf(stderr, "table3_t table3[] = {\n");
 	for (i = 0; i < table3_idx; i++) {
 		t3 = &table3[i];
-		printf("  { .name = \"%s\", .animal = \"%s\", .age=%d } "
+		fprintf(stderr, "  { .name = \"%s\", .animal = \"%s\", .age=%d } "
 		       "/* %d. */\n", t3->name, t3->animal, t3->age, i);
 	}
-	printf("}; /* table3_idx=%d\n", table3_idx);
+	fprintf(stderr, "}; /* table3_idx=%d\n", table3_idx);
 }
 
 static inline void set_checkpoint(struct hashjoin_job *hj, uint64_t cp)

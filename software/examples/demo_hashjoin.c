@@ -330,9 +330,6 @@ int main(int argc, char *argv[])
 		t2_tocopy = MIN(ARRAY_SIZE(t2), t2_entries);
 
 		table2_fill(t2, t2_tocopy);
-		if (verbose_flag)
-			table2_dump(t2, t2_tocopy);
-
 		dnut_prepare_hashjoin(&cjob, &jin, &jout,
 				      t1, t1_entries * sizeof(table1_t),
 				      t2, t2_tocopy * sizeof(table2_t),
@@ -341,8 +338,8 @@ int main(int argc, char *argv[])
 		if (verbose_flag) {
 			pr_info("Job Input:\n");
 			__hexdump(stderr, &jin, sizeof(jin));
+			table2_dump(t2, t2_tocopy);
 		}
-
 
 		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
 		if (rc != 0) {
@@ -359,7 +356,7 @@ int main(int argc, char *argv[])
 			table3_dump(t3, jout.t3_produced);
 
 		t1_entries = 0; /* no need to process this twice,
-				   ht stores the values« */
+				   ht stores the values */
 		t2_entries -= t2_tocopy;
 	}
 	gettimeofday(&etime, NULL);

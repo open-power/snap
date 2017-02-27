@@ -256,17 +256,24 @@ fi
 #### HASHJOIN #########################################################
 
 if [ $hashjoin -eq 1 ]; then
-	echo -n "Doing demo_hashjoin ... "
-	cmd="./examples/demo_hashjoin -C${dnut_card}	\
-		> examples/demo_hashjoin.log 2>&1"
-	eval ${cmd}
-	if [ $? -ne 0 ]; then
-		cat examples/demo_hashjoin.log
-		echo "cmd: ${cmd}"
-		echo "failed"
-		exit 1
-	fi
-	echo "ok"
+	echo "Doing demo_hashjoin ... "
+	rm -f examples/demo_hashjoin.log
+	touch examples/demo_hashjoin.log
+	for t2_entries in 24 64 65 128 512 666 888 999 1024 2048 2049 ; do
+		echo -n "  ${t2_entries} entries for T2 ... "
+		cmd="./examples/demo_hashjoin -C${dnut_card} -T ${t2_entries} -v \
+			>> examples/demo_hashjoin.log 2>&1"
+		echo "$cmd" >> examples/demo_hashjoin.log
+		eval ${cmd}
+		if [ $? -ne 0 ]; then
+			cat examples/demo_hashjoin.log
+			echo
+			echo "cmd: ${cmd}"
+			echo "failed"
+			exit 1
+		fi
+		echo "ok"
+	done
 fi
 
 rm -f *.bin examples/*.bin examples/*.out
