@@ -31,6 +31,7 @@ dnut_peek_objs = force_cpu.o
 dnut_poke_objs = force_cpu.o
 
 projs = dnut_peek dnut_poke stage1 stage2 stage2_ddr stage2_set
+projs += snap_maint
 objs = force_cpu.o $(projs:=.o)
 
 all: $(projs)

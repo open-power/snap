@@ -32,7 +32,10 @@
 #include <sys/stat.h>
 
 #include <libcxl.h>
-#include <libcxl.h>
+
+#include <libdonut.h>
+#include <donut_tools.h>
+#include <snap_m_regs.h>
 
 static const char *version = GIT_VERSION;
 static int verbose = 0;
@@ -69,8 +72,7 @@ struct mdev_ctx {
 	pid_t pid;
 	pid_t my_sid;		/* for sid */
 	int mode;		/* See below */
-
-	uint64_t fir[MMIO_FIR_REGS_NUM];
+	uint64_t fir[SNAP_M_FIR_NUM];
 };
 
 struct cgzip_afu_fir {
@@ -90,7 +92,7 @@ static int snap_open(struct mdev_ctx *mctx)
 
 	sprintf(device, "/dev/cxl/afu%d.0m", mctx->card);
 	VERBOSE3("[%s] Enter: %s\n", __func__, device);
-	mctx->handle = dnut_card_alloc_dev(device, 0, 0);
+	mctx->handle = dnut_card_alloc_dev(device, 0xcafe, 0x1014);
 	if (NULL == mctx->handle)
 		rc = -1;
 	VERBOSE3("[%s] Exit %d\n", __func__, rc);
@@ -108,21 +110,7 @@ static void snap_close(struct mdev_ctx *mctx)
 		mctx->handle = NULL;
 	}
 	VERBOSE3("[%s] Exit %d\n", __func__, rc);
-	return rc;
-}
-
-static uint32_t snap_read64(void *handle, int ctx, int offset)
-{
-	uint32_t addr;
-	uint32_t reg;
-	int rc;
-
-	addr = offset;
-	if (ctx) addr += SNAP_S_BASE + (ctx * SNAP_S_SIZE);
-	rc = dnut_mmio_read64(handle, (uint64_t)addr, &reg);
-	if (0 != rc)
-		VERBOSE3("[%s] Error Reading MMIO %x\n", __func__, addr);
-	return reg;
+	return;
 }
 
 static uint64_t snap_read64(void *handle, int ctx, int offset)
@@ -139,17 +127,6 @@ static uint64_t snap_read64(void *handle, int ctx, int offset)
 	return reg;
 }
 
-static int snap_write32(void *handle, int ctx, int offset, uint32_t data)
-{
-	uint32_t addr;
-	int rc;
-
-	addr = offset;
-	if (ctx) addr += SNAP_S_BASE + (ctx * SNAP_S_SIZE);
-	rc = dnut_mmio_write32(handle, (uint64_t)addr, data);
-	return rc;
-}
-
 static int snap_write64(void *handle, int ctx, int offset, uint64_t data)
 {
 	uint32_t addr;
@@ -161,8 +138,34 @@ static int snap_write64(void *handle, int ctx, int offset, uint64_t data)
 	return rc;
 }
 
+static uint32_t snap_read32(void *handle, int ctx, int offset)
+{
+	uint32_t addr;
+	uint32_t reg;
+	int rc;
 
-static int afu_check_stime(struct mdev_ctx *mctx)
+	addr = offset;
+	if (ctx) addr += SNAP_S_BASE + (ctx * SNAP_S_SIZE);
+	rc = dnut_mmio_read32(handle, (uint64_t)addr, &reg);
+	if (0 != rc)
+		VERBOSE3("[%s] Error Reading MMIO %x\n", __func__, addr);
+	return reg;
+}
+
+#ifdef UW
+static int snap_write32(void *handle, int ctx, int offset, uint32_t data)
+{
+	uint32_t addr;
+	int rc;
+
+	addr = offset;
+	if (ctx) addr += SNAP_S_BASE + (ctx * SNAP_S_SIZE);
+	rc = dnut_mmio_write32(handle, (uint64_t)addr, data);
+	return rc;
+}
+#endif
+
+static int snap_check_stime(struct mdev_ctx *mctx)
 {
 #ifdef underwork
 	int	gsel, bsel = 0, ctx = 0;
@@ -251,9 +254,9 @@ static int afu_check_stime(struct mdev_ctx *mctx)
 	return mctx->dt;
 }
 
+#ifdef underwork
 static void snap_dump_mfirs(struct mdev_ctx *mctx)
 {
-#ifdef underwork
 	unsigned int i;
 	struct cgzip_afu_fir *fir;
 
@@ -272,8 +275,8 @@ static void snap_dump_mfirs(struct mdev_ctx *mctx)
 			 be32toh(fir[i].fir_addr),
 			 (long long)mctx->fir[i]);
 	}
-#endif
 }
+#endif
 
 /*
  * Print FIRs only if they have changed. Always collect them.
@@ -330,8 +333,7 @@ static int snap_check_firs(struct mdev_ctx *mctx)
 
 static void snap_version(void *handle)
 {
-	int	rc;
-	uint64_t reeg;
+	uint64_t reg;
 
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_IVR);
 	VERBOSE1("SNAP Release %d/%d:%d Distance: %d GIT: 0x%8.8x\n",
@@ -342,7 +344,7 @@ static void snap_version(void *handle)
 		(uint32_t)reg);
 
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_BDR);
-	VERBOSE1("SNAP Build Y/M/D %d/%d/%d Time (H/M) %d/%d\n",
+	VERBOSE1("SNAP Build Y/M/D %x/%x/%x Time (H:M) %x:%x\n",
 		(int)(reg >> 32ll) & 0xffff,
 		(int)(reg >> 24ll) & 0xff,
 		(int)(reg >> 16) & 0xff,
@@ -350,25 +352,27 @@ static void snap_version(void *handle)
 		(int)(reg) & 0xff);
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_CIR);
 	VERBOSE1("SNAP CIR Master: %d My ID: %d\n",
-		(int(reg >> 63ll), (int)(reg & 0x1ff));
+		(int)(reg >> 63ll), (int)(reg & 0x1ff));
 	return;
 }
 
 /*	Master Init */
 static int snap_m_init(void *handle)
 {
-	uint64_t reg, ssr, data;
+	uint64_t reg, ssr, data, base;
 	uint32_t atype, atype_next;
-	int mat = 0;	/* Maximum Short Action Type */
+	int msat, mact;
 	int i, sai;
 
-	VERBOSE1("%s  Enter Card[%d] Master Init.\n", __func__);
+	VERBOSE1("%s  Enter Card Master Init.\n", __func__);
 	ssr = snap_read64(handle, SNAP_M_CTX, SNAP_M_SSR);
-	msat = (int)(ssr >> 4)& 0xf + 1;	/* Get Maximum Short ID */
-	mact = (int)ssr & 0xf + 1;		/* Get Maximum Action ID */
+	msat = (int)(ssr >> 4)& 0xf;	/* Get Maximum Short ID */
+	msat++;
+	mact = (int)ssr & 0xf;		/* Get Maximum Action ID */
+	mact++;
 	if (0x100 == (ssr &  0x100)) {
 		VERBOSE1("%s  Exit Setup already done before MSAT: %d MAID: %d\n", __func__,
-			mast, mact);
+			msat, mact);
 		return 0;
 	}
 
@@ -376,12 +380,12 @@ static int snap_m_init(void *handle)
 	sai = 0;	/* Short Action Index start */
 	base = SNAP_M_ACT_OFFSET + 0x10;	/* Action Type */
 	atype = snap_read32(handle, SNAP_M_CTX, base);
-	for (i = 0; i < mact, i++) {
+	for (i = 0; i < mact; i++) {
 		reg = base + SNAP_M_ACT_SIZE * i;
 		atype_next = snap_read32(handle, SNAP_M_CTX, reg);
 		VERBOSE1("%s Explore %d Max: %d found AT: 0x%8.8x Short Index: %d\n", __func__,
-			i, mact. atype_next, sai);
-		reg = SNAP_M_CASV + i * 8;
+			i, mact, atype_next, sai);
+		reg = SNAP_M_ATRI + i * 8;
 		data = (uint64_t)sai << 32ll | (uint64_t)atype_next;
 		snap_write64(handle,SNAP_M_CTX, reg, data);
 		if (atype != atype_next)
@@ -390,12 +394,13 @@ static int snap_m_init(void *handle)
 	}
 
 	/* Set Command Register (SCR) */
-	reg = 0x10 + (mat << 48ll);	/* Exploration Done + Maximum Short Action Type */
+	reg = 0x10 + ((uint64_t)sai << 48ll);	/* Exploration Done + Maximum Short Action Type */
 	snap_write64(handle, SNAP_M_CTX, SNAP_M_SCR, reg);
-	VERBOSE1("%s  Exit Card[%d] Master Init rc %d.\n", __func__, rc);
+	VERBOSE1("%s  Exit Card Master Init\n", __func__);
+	return 0;
 }
 
-static int do_master(struct mdev_ctx *mctx)
+static int snap_do_master(struct mdev_ctx *mctx)
 {
 	int dt = mctx->dt;
 
@@ -404,11 +409,8 @@ static int do_master(struct mdev_ctx *mctx)
 		mctx->card, mctx->loop,
 		mctx->dt, mctx->mode, mctx->count);
 
-	if (CHECK_FIRS_MODE == (CHECK_FIRS_MODE & mctx->mode))
-		dt = snap_check_mfirs(mctx);
-
-	if (CHECK_TIME_MODE == (CHECK_TIME_MODE & mctx->mode))
-		dt = snap_check_stime(mctx);
+	dt = snap_check_firs(mctx);
+	dt = snap_check_stime(mctx);
 
 	return dt;
 }
@@ -477,7 +479,7 @@ int main(int argc, char *argv[])
 	mctx->mode = 0;		/* Default, nothing to watch */
 	mctx->daemon = false;	/* Not in Daemon mode */
 
-	for (i = 0; i < MMIO_FIR_REGS_NUM; i++)
+	for (i = 0; i < SNAP_M_FIR_NUM; i++)
 		mctx->fir[i] = -1;
 
 	rc = EXIT_SUCCESS;
@@ -532,8 +534,8 @@ int main(int argc, char *argv[])
 		case 'm':	/* --mode */
 			mode = strtoul(optarg, NULL, 0);
 			switch (mode) {
-			case 1: mctx->mode |= CHECK_FIRS_MODE; break;
-			case 2: mctx->mode |= CHECK_TIME_MODE; break;
+			case 1: mctx->mode |= 1; break;
+			case 2: mctx->mode |= 2; break;
 			default:
 				fprintf(stderr, "Please provide correct "
 					"Mode Option (1..2)\n");
@@ -549,9 +551,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if ((mctx->card < 0) || (mctx->card >= NUM_CARDS)) {
+	if ((mctx->card < 0) || (mctx->card >= 4)) {
 		fprintf(stderr, "Err: %d for option -C is invalid, please provide "
-			"0..%d!\n", mctx->card, NUM_CARDS-1);
+			"0..%d!\n", mctx->card, 3);
 		exit(EXIT_FAILURE);
 	}
 
