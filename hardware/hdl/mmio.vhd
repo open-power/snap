@@ -193,6 +193,7 @@ BEGIN
       ADDR_WIDTH => CONTEXT_BITS)
     PORT MAP (
       clk    => ha_pclock,
+      rst    => afu_reset,
       we_a   => context_config_mmio_we,
       addr_a => context_config_mmio_addr,
       din_a  => context_config_mmio_din,
@@ -209,6 +210,7 @@ BEGIN
       ADDR_WIDTH => CONTEXT_BITS)
     PORT MAP (
       clk    => ha_pclock,
+      rst    => afu_reset,
       we_a   => context_seqno_mmio_we,
       addr_a => context_seqno_mmio_addr,
       din_a  => context_seqno_mmio_din,
@@ -227,6 +229,7 @@ BEGIN
       ADDR_WIDTH => CONTEXT_BITS)
     PORT MAP (
       clk    => ha_pclock,
+      rst    => afu_reset,
       we_a   => context_status_mmio_we,
       addr_a => context_status_mmio_addr,
       din_a  => context_status_mmio_din,
@@ -245,6 +248,7 @@ BEGIN
       ADDR_WIDTH => CONTEXT_BITS)
     PORT MAP (
       clk    => ha_pclock,
+      rst    => afu_reset,
       we     => context_command_mmio_we,
       addr   => context_command_mmio_addr,
       din    => context_command_mmio_din,
