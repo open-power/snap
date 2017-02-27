@@ -467,9 +467,9 @@ static int snap_config(void *handle, uint32_t action)
 	snap_write(handle, SNAP_S_JCR, data);
 
 	for (i =0 ; i < 5; i++) {
-		VERBOSE0("Wait for Action Attach............\n");
 		data = snap_read(handle, SNAP_S_CSR);
-		if (data & 0xC0) return 0;
+		VERBOSE1("Wait for Action Attach..... 0x%16llx\n", (long long)data);
+		if (0xc0 == (data & 0xC0)) return 0;
 		sleep(1);
 	}
 	return -1;
@@ -615,7 +615,8 @@ int main(int argc, char *argv[])
 	}
 
 	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
-	dn = dnut_card_alloc_dev(device, 0xcafe, 0x1014);
+	//dn = dnut_card_alloc_dev(device, 0xcafe, 0x1014);
+	dn = dnut_card_alloc_dev(device, 0xffff, 0xffff);
 	if (NULL == dn) {
 		perror("dnut_card_alloc_dev()");
 		return -1;
