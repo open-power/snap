@@ -17,10 +17,12 @@
 #-----------------------------------------------------------
 
 PSL_SOURCE_ENV=$(FPGACARD)
-export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/noHDK_build
+
+export BUILD_NAME=noHDK_build
+export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
 export LOGS_DIR=$(BUILD_DIR)/Logs
 
-PSL_ACCEL_FILES=$(DONUT_HARDWARE_ROOT)/hdl/psl_accel_sim.vhd $(DONUT_HARDWARE_ROOT)/hdl/psl_accel_syn.vhd
+SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/hdl/top.sv 
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone
@@ -89,8 +91,8 @@ $(BUILD_DIR)/Sources/top/psl_fpga.vhd: $(BUILD_DIR)/Checkpoint/b_route_design.dc
 	@if [ $(DDR3_USED) = "TRUE" ]; then echo -e "\t[PATCH.............] psl_fpga.vhdl for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr3_vhdl.patch; fi
 	@if [ $(DDR4_USED) = "TRUE" ]; then echo -e "\t[PATCH.............] psl_fpga.vhdl for DDR4 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr4_vhdl.patch; fi
 
-$(PSL_ACCEL_FILES):
-	@$(DONUT_HARDWARE_ROOT)/setup/create_psl_accel.sh $(DONUT_HARDWARE_ROOT)/hdl/psl_accel.vhd_source $@
+$(SNAP_CONFIG_FILES):
+	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 create_environment:
 	@echo -e "\t[CREATE_ENVIRONMENT] start `date`";
@@ -99,7 +101,7 @@ create_environment:
 	@cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/vivado_create_framework_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_frame_work_$(BUILD_DATE).jou 
 	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
 
-config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(PSL_ACCEL_FILES) create_environment
+config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(SNAP_CONFIG_FILES) create_environment
 	@echo -e "\t[CONFIG............] done `date`"
 
 patch_version:
@@ -132,12 +134,15 @@ model: patch_version
 clean:
 	@echo -e "\t[CLEAN.............] build environment";
 	@rm -r -f  $(BUILD_DIR)
+	rm    -f  build
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
-	@rm -f     $(PSL_ACCEL_FILES)
+	@rm -f     $(SNAP_CONFIG_FILES)
+	rm -f     ./setup/*.log
+	rm -f     ./setup/*.jou
 
 gitclean:
 	@echo -e "\t[GITCLEAN] cleaning and resetting donut git";
