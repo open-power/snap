@@ -83,7 +83,7 @@ typedef hls::stream<table3_t> t3_fifo_t;
 #define TABLE2_MEMBUS_WORDS  (TABLE2_BYTES / sizeof(snap_membus_t))
 
 #define HASHJOIN_ACTION_TYPE 0x0022
-#define RELEASE_VERSION      0xFEEDA02200000015 /* Action/Release numbers */
+#define RELEASE_VERSION      0xFEEDA02227022017 /* Action/Release numbers */
 
 typedef struct entry_s {
         hashkey_t key;          /* key */
@@ -188,7 +188,7 @@ void table3_dump(table3_t *table3, unsigned int table3_idx);
 
 #undef CONFIG_HASHTABLE_DEBUG
 #undef CONFIG_FIFO_DEBUG
-#undef CONFIG_MEM_DEBUG
+#define CONFIG_MEM_DEBUG
 #undef CONFIG_4KIB_DEBUG
 
 #define CONFIG_HOSTSTYLE_ALGO

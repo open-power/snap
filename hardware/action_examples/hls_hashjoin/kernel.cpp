@@ -192,8 +192,10 @@ static void snap_4KiB_flush(snap_4KiB_t *buf)
 		tocopy, tocopy * sizeof(snap_membus_t),
 		free_lines, SNAP_4KiB_WORDS, buf->max_lines);
 #endif
-	memcpy(buf->mem + buf->m_idx, buf->buf,
-	       tocopy * sizeof(snap_membus_t));
+	/* FIXME Tryout for 0 entries ... */
+	if (tocopy != 0)
+		memcpy(buf->mem + buf->m_idx, buf->buf,
+		       tocopy * sizeof(snap_membus_t));
 
 	buf->m_idx += tocopy;
 	buf->b_idx = 0;
@@ -491,7 +493,6 @@ static table2_t table2[] = {
         { /* .name = */ "rrank", /* .animal = */ "Buffy"    },
         { /* .name = */ "Bruno", /* .animal = */ "Buffy"    },
 	{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }, /* 26 */
-
 };
 
 #define MEMORY_LINES 1024 /* 64 KiB */
@@ -599,6 +600,7 @@ int main(void)
 				 sizeof(table1) + TABLE2_N * sizeof(table2)),
 		    table3_found);
 
+	/* FIXME 24 is determined by visual inspection ... */
 	if (table3_found != 24 * TABLE2_N) {
 		return 1;
 	}
