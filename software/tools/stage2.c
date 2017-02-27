@@ -27,6 +27,7 @@
 
 #include <libdonut.h>
 #include <donut_tools.h>
+#include <snap_s_regs.h>
 
 #define CACHELINE_BYTES 128
 
@@ -34,8 +35,9 @@
 #define	FW_BASE_ADDR8	0x00108
 
 /*	Memcopy Action */
-#define	ACTION_BASE		0x10000
-#define ACTION_CONTEXT_OFFSET	0x01000	/* Add 4 KB for the next Action */
+#define	ACTION_TYPE_EXAMPLE	0x000000001
+
+#define	ACTION_BASE		0x0F000
 #define	ACTION_CONTROL		ACTION_BASE
 #define	ACTION_CONTROL_START	0x01
 #define	ACTION_CONTROL_IDLE	0x04
@@ -172,6 +174,30 @@ static uint32_t action_read(struct dnut_card* h, uint32_t addr)
 	if (0 != rc)
 		VERBOSE0("Read MMIO 32 Err\n");
 	VERBOSE3("MMIO Read  %08x ----> %08x\n", addr, data);
+	return data;
+}
+
+/* Config Write and Read are 64 bit MMIO */
+static void snap_write(struct dnut_card* h, uint32_t addr, uint64_t data)
+{
+	int rc;
+
+	VERBOSE3("MMIO-64 Write %016llx ----> %08x\n", (long long)data, addr);
+	rc = dnut_mmio_write64(h, (uint64_t)addr, data);
+	if (0 != rc)
+		VERBOSE0("Write MMIO 64 Err\n");
+	return;
+}
+
+static uint64_t snap_read(struct dnut_card* h, uint32_t addr)
+{
+	int rc;
+	uint64_t data;
+
+	rc = dnut_mmio_read64(h, (uint64_t)addr, &data);
+	if (0 != rc)
+		VERBOSE0("Read MMIO 64 Err\n");
+	VERBOSE3("MMIO64 Read  %08x ----> %016llx\n", addr, (long long)data);
 	return data;
 }
 
@@ -413,6 +439,42 @@ static int memcpy_test(struct dnut_card* dnc,
 	return rc;
 }
 
+static int snap_config(void *handle, uint32_t action)
+{
+	uint64_t data;
+	uint32_t sat = 0xffffffff;	/* Inavlid Short Action Type */
+	int maid;	/* Max Action Id */
+	int i;
+
+	data = snap_read(handle, SNAP_S_SSR);
+	if (0x100 != (data & 0x100)) {
+		VERBOSE0("Error Device is not connfigured with snap_maint tool\n");
+		return -1;
+	}
+	maid = (int)(data & 0xf) + 1;
+	for (i = 0; i < maid; i++) {
+		data = snap_read(handle, (SNAP_S_ATRI + i*8));
+		if (action == (uint32_t)(data & 0xffffffff)) {
+			sat = (uint32_t)(data >>  32ll);	/* Short Action Type */
+		}
+	}
+	if (0xffffffff == sat)
+		return -1;
+	data = ((uint64_t)0xf000 << 48ll);
+	data |= (sat << 12) | 1;	/* Short Action Type and Direct Access */
+	snap_write(handle, SNAP_S_CCR, data);
+	data = ((uint64_t)0xf000 << 48ll) | 1,
+	snap_write(handle, SNAP_S_JCR, data);
+
+	for (i =0 ; i < 5; i++) {
+		VERBOSE0("Wait for Action Attach............\n");
+		data = snap_read(handle, SNAP_S_CSR);
+		if (data & 0xC0) return 0;
+		sleep(1);
+	}
+	return -1;
+}
+
 static void usage(const char *prog)
 {
 	VERBOSE0("Usage: %s\n"
@@ -552,13 +614,17 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	sprintf(device, "/dev/cxl/afu%d.0m", card_no);
-	dn = dnut_card_alloc_dev(device, 0, 0);
+	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
+	dn = dnut_card_alloc_dev(device, 0xcafe, 0x1014);
 	if (NULL == dn) {
 		perror("dnut_card_alloc_dev()");
 		return -1;
 	}
 	VERBOSE1("Start of Action: %d Card Handle: %p\n", action, dn);
+	if (0 != snap_config(dn, ACTION_TYPE_EXAMPLE)) {
+		VERBOSE0("Can Not attach Action 0x%x\n", ACTION_TYPE_EXAMPLE);
+		goto __main_exit;
+	}
 
 	switch (action) {
 	case 1:
@@ -581,6 +647,7 @@ int main(int argc, char *argv[])
 		break;
 	}
 
+__main_exit:
 	// Unmap AFU MMIO registers, if previously mapped
 	VERBOSE2("Free Card Handle: %p\n", dn);
 	dnut_card_free(dn);
