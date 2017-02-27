@@ -192,10 +192,8 @@ static void snap_4KiB_flush(snap_4KiB_t *buf)
 		tocopy, tocopy * sizeof(snap_membus_t),
 		free_lines, SNAP_4KiB_WORDS, buf->max_lines);
 #endif
-	/* FIXME Tryout for 0 entries ... */
-	if (tocopy != 0)
-		memcpy(buf->mem + buf->m_idx, buf->buf,
-		       tocopy * sizeof(snap_membus_t));
+	memcpy(buf->mem + buf->m_idx, buf->buf,
+	       tocopy * sizeof(snap_membus_t));
 
 	buf->m_idx += tocopy;
 	buf->b_idx = 0;
@@ -293,7 +291,9 @@ static void write_table3(snap_membus_t *mem, unsigned int max_lines,
 		snap_4KiB_put(&buf, d[1]); 
 		snap_4KiB_put(&buf, d[2]);
 	}
-	snap_4KiB_flush(&buf);
+	/* FIXME Tryout for 0 entries ... */
+	if (t3_used != 0) 
+		snap_4KiB_flush(&buf);
 }
 
 //-----------------------------------------------------------------------------
