@@ -259,7 +259,7 @@ if [ $hashjoin -eq 1 ]; then
 	echo "Doing demo_hashjoin ... "
 	rm -f examples/demo_hashjoin.log
 	touch examples/demo_hashjoin.log
-	for t2_entries in `seq 1 128` 512 666 888 999 1024 2048 2049 ; do
+	for t2_entries in `seq 1 128` 512 666 888 999 1024 2048 2049 5015 7007 8088 123123 ; do
 		echo -n "  ${t2_entries} entries for T2 ... "
 		cmd="./examples/demo_hashjoin -C${dnut_card} -T ${t2_entries} -v \
 			>> examples/demo_hashjoin.log 2>&1"
