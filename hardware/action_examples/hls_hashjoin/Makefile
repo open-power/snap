@@ -28,6 +28,9 @@
 # This is solution specific. Check if we can replace this by generics too.
 SOLUTION_NAME ?= hashjoin
 SOLUTION_DIR ?= hlsHashJoin
-srcs += kernel.cpp action_hashjoin_fct_hls.cpp action_hashjoin_hls.cpp
+srcs += kernel.cpp action_hashjoin_hls.cpp
+
+# FIXME Remove this once it is not needed anymore
+# srcs += action_hashjoin_fct_hls.cpp
 
 include ../hls.mk

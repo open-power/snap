@@ -16,172 +16,7 @@
  *   - No pointer chasing - use multidimensional tables (memory ...) instead
  */
 
-/* #define NO_SYNTH */
-
-#if defined(NO_SYNTH)
-
-#include <stdlib.h> /* malloc, free, atoi */
-#include <stdio.h>  /* printf */
-#include <limits.h> /* ULONG_MAX = 0xFFFFFFFFUL */
-#include "action_hashjoin_hls.h"
-
-#define __unused __attribute__((unused))
-
-#else
-
-#include <string.h>
-#include "ap_int.h"
-#include "action_hashjoin_hls.h"
-
-#define __unused
-
-/*
- * Hardware implementation is lacking some libc functions. So let us
- * replace those.
- */
-#ifndef ULONG_MAX
-#  define ULONG_MAX 0xFFFFFFFFUL /* gcc compiler but not HLS compiler */
-#endif
-#ifndef NULL
-#  define NULL 0                 /* gcc compiler but not HLS compiler */
-#endif
-
-#define printf(fmt, args...)
-
-#define MAX_NB_OF_BYTES_READ    128*128                    // Value should be X*BPERDW
-ap_uint<MEMDW> buffer_mem[MAX_NB_OF_BYTES_READ/BPERDW];   // if MEMDW=512 : 128*128=>256 words
-
-#endif  /* NO_SYNTH */
-
-int quiet = 0;
-int check = 1;
-
-typedef char hashkey_t[64];
-typedef char hashdata_t[256];
-
-typedef struct table1_s {
-        hashkey_t name;             /* 64 bytes */
-        unsigned int age;           /*  4 bytes */
-        unsigned int reserved[60];  /* 60 bytes */
-} table1_t;
-
-typedef struct table2_s {
-        hashkey_t name;             /* 64 bytes */
-        hashkey_t animal;           /* 64 bytes */
-} table2_t;
-
-typedef struct table3_s {
-        hashkey_t animal;           /* 64 bytes */
-        hashkey_t name;             /* 64 bytes */
-        unsigned int age;           /*  4 bytes */
-        unsigned int reserved[60];  /* 60 bytes */
-} table3_t;
-
-//#if defined(NO_SYNTH)
-    // table1 is initialized as constant for software
-  static table1_t table1[] = {
-        { /* .name = */ "ronah",  /* .age = */127, { 0x0, } },
-        { /* .name = */ "rlan",   /* .age = */118, { 0x0, } },
-        { /* .name = */ "rlory",  /* .age = */128, { 0x0, } },
-        { /* .name = */ "ropeye", /* .age = */118, { 0x0, } },
-        { /* .name = */ "rlan",   /* .age = */128, { 0x0, } },
-        { /* .name = */ "rlan",   /* .age = */138, { 0x0, } },
-        { /* .name = */ "rlan",   /* .age = */148, { 0x0, } },
-        { /* .name = */ "rlan",   /* .age = */158, { 0x0, } },
-        { /* .name = */ "rdam",   /* .age = */168, { 0x0, } },
-        { /* .name = */ "rnton",  /* .age = */123, { 0x0, } },
-        { /* .name = */ "rnton",  /* .age = */124, { 0x0, } },
-        { /* .name = */ "rieter", /* .age = */125, { 0x0, } },
-        { /* .name = */ "roerg",  /* .age = */126, { 0x0, } },
-        { /* .name = */ "rhomas", /* .age = */122, { 0x0, } },
-        { /* .name = */ "rrank",  /* .age = */120, { 0x0, } },
-        { /* .name = */ "Bruno" , /* .age = */112, { 0x0, } },
-        { /* .name = */ "rlumi" , /* .age = */115, { 0x0, } },
-        { /* .name = */ "rikey",  /* .age = */115, { 0x0, } },
-        { /* .name = */ "rlong",  /* .age = */114, { 0x0, } },
-        { /* .name = */ "riffy",  /* .age = */113, { 0x0, } },
-        { /* .name = */ "riffy",  /* .age = */112, { 0x0, } },
-};
-//#else
-//       // table1 is read from host mem for hardware
-//  //#define TABLE1_SIZE 256
-//  #define TABLE1_SIZE 25
-//  static table1_t table1[TABLE1_SIZE] ;
-//#endif
-/*
- * Decouple the entries to maintain the multihash table from the data
- * in table1, since we do not want to transfer empty entries over the
- * PCIe bus to the card.
- */
-//#if defined(NO_SYNTH)
-       // table2 is initialized as constant for software
-   static table2_t table2[] = {
-        { /* .name = */ "ronah", /* .animal = */ "Whales"   },
-        { /* .name = */ "ronah", /* .animal = */ "Spiders"  },
-        { /* .name = */ "rlan",  /* .animal = */ "Ghosts"   },
-        { /* .name = */ "rlan",  /* .animal = */ "Zombies"  },
-        { /* .name = */ "rlory", /* .animal = */ "Buffy"    },
-        { /* .name = */ "rrobi", /* .animal = */ "Giraffe"  },
-        { /* .name = */ "roofy", /* .animal = */ "Lion"     },
-        { /* .name = */ "rumie", /* .animal = */ "Gepard"   },
-        { /* .name = */ "rlumi", /* .animal = */ "Cow"      },
-        { /* .name = */ "roofy", /* .animal = */ "Ape"      },
-        { /* .name = */ "roofy", /* .animal = */ "Fish"     },
-        { /* .name = */ "rikey", /* .animal = */ "Trout"    },
-        { /* .name = */ "rikey", /* .animal = */ "Greyling" },
-        { /* .name = */ "rnton", /* .animal = */ "Eagle"    },
-        { /* .name = */ "rhomy", /* .animal = */ "Austrich" },
-        { /* .name = */ "rlomy", /* .animal = */ "Sharks"   },
-        { /* .name = */ "rroof", /* .animal = */ "Fly"      },
-        { /* .name = */ "rlimb", /* .animal = */ "Birds"    },
-        { /* .name = */ "rlong", /* .animal = */ "Buffy"    },
-        { /* .name = */ "rrank", /* .animal = */ "Turtles"  },
-        { /* .name = */ "rrank", /* .animal = */ "Gorillas" },
-        { /* .name = */ "roffy", /* .animal = */ "Buffy"    },
-        { /* .name = */ "ruffy", /* .animal = */ "Buffy"    },
-        { /* .name = */ "rrank", /* .animal = */ "Buffy"    },
-        { /* .name = */ "Bruno", /* .animal = */ "Buffy"    },
-};
-//#else
-     // table2 is read from host mem for hardware
-//  //#define TABLE2_SIZE 512
-//  #define TABLE2_SIZE 25
-//  static table2_t table2[TABLE2_SIZE] ;
-//#endif
-
-#define HT_SIZE 128             /* size of hashtable */
-#define HT_MULTI ARRAY_SIZE(table1) /* multihash entries = ARRAY_SIZE(table1) */
-
-typedef struct entry_s {
-        hashkey_t key;          /* key */
-        unsigned int used;      /* list entries used */
-        table1_t multi[HT_MULTI];/* fixed size */
-} entry_t;
-//
-typedef struct hashtable_s {
-        entry_t table[HT_SIZE]; /* fixed size */
-} hashtable_t;
-
-static hashtable_t hashtable;
-static unsigned int table3_idx = 0;
-static table3_t table3[ARRAY_SIZE(table1) * ARRAY_SIZE(table2)];
-
-
-#if defined(NO_SYNTH)
-#else
-//---------------------------------------------------------------------
-short write_burst_of_data_to_mem(ap_uint<MEMDW> *dout_gmem, ap_uint<MEMDW> *d_ddrmem,
-         ap_uint<16> memory_type, ap_uint<64> output_address,
-         ap_uint<MEMDW> *buffer, ap_uint<64> size_in_bytes_to_transfer);
-short read_burst_of_data_from_mem(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *d_ddrmem,
-         ap_uint<16> memory_type, ap_uint<64> input_address,
-         ap_uint<MEMDW> *buffer, ap_uint<64> size_in_bytes_to_transfer);
-short read_single_word_of_data_from_mem(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *d_ddrmem,
-         ap_uint<16> memory_type, ap_uint<64> input_address, ap_uint<MEMDW> *buffer);
-void convert_64charTable_to_DWTable(ap_uint<MEMDW> *buffer, char *SixtyFourBytesWordToWrite);
-void convert_DWTable_to_64charTable(ap_uint<MEMDW> *buffer, char *SixtyFourBytesWordRead);
-#endif
-
+#include "action_hashjoin_hls.H"
 
 /*
  * The strcmp() function compares the two strings s1 and s2. It
@@ -189,12 +24,12 @@ void convert_DWTable_to_64charTable(ap_uint<MEMDW> *buffer, char *SixtyFourBytes
  * is found, respectively, to be less than, to match, or be greater
  * than s2.
  */
-int hashkey_cmp(hashkey_t s1, hashkey_t s2)
+static int hashkey_cmp(hashkey_t s1, hashkey_t s2)
 {
-        size_t i;
+        unsigned char i;
 
         for (i = 0; i < sizeof(hashkey_t); i++) {
-        #pragma HLS UNROLL
+#pragma HLS UNROLL factor=2
                 if (*s1 == 0 || *s2 == 0)
                         break;
 
@@ -209,21 +44,22 @@ int hashkey_cmp(hashkey_t s1, hashkey_t s2)
 
 void hashkey_cpy(hashkey_t dst, hashkey_t src)
 {
-        size_t i;
+        unsigned char i;
 
         for (i = 0; i < sizeof(hashkey_t); i++) {
-        //#pragma HLS UNROLL
+#pragma HLS UNROLL factor=2
                 *dst = *src;
                 src++;
                 dst++;
         }
 }
 
-size_t hashkey_len(hashkey_t str)
+static size_t hashkey_len(hashkey_t str)
 {
-        size_t len;
+        unsigned char len;
 
         for (len = 0; len < sizeof(hashkey_t); len++) {
+#pragma HLS UNROLL factor=2
                 if (*str == 0)
                         break;
                 str++;
@@ -232,44 +68,51 @@ size_t hashkey_len(hashkey_t str)
 }
 
 /* FIXME We need to use the HLS built in version instead of this */
-void table1_cpy(table1_t *dest, table1_t *src)
+static void table1_cpy(table1_t *dst, table1_t *src)
 {
-        *dest = *src;
+	/* FIXME memcpy(dst, src, sizeof(*dest)); did not work! */
+	hashkey_cpy(dst->name, src->name);
+	dst->age = src->age;
 }
 
 #if defined(NO_SYNTH)
 static inline void print_hex(table1_t *buf, size_t len)
 {
-        unsigned int x;
+        unsigned char x;
         char *d = (char *)buf;
 
-        printf("{ ");
+        fprintf(stderr, "{ ");
         for (x = 0; x < len; x++)
-                printf("%02x, ", d[x]);
-        printf("}");
+                fprintf(stderr, "%02x, ", d[x]);
+        fprintf(stderr, "}");
 }
+
 void ht_dump(hashtable_t *ht)
 {
-        unsigned int i, j;
+        unsigned short i, j;
+	static int printed = 0;
 
-        printf("hashtable = {\n");
+	if (printed++)
+		return;
+
+        fprintf(stderr, "hashtable = {\n");
         for (i = 0; i < HT_SIZE; i++) {
                 entry_t *entry = &ht->table[i];
 
                 if (!entry->used)
                         continue;
 
-                printf("  .ht[%d].key = \"%s\" = {\n", i, entry->key);
+                fprintf(stderr, "  .ht[%d].key = \"%s\" = {\n", i, entry->key);
                 for (j = 0; j < entry->used; j++) {
                         table1_t *multi = &entry->multi[j];
 
-                        printf("    { .val = { ");
+                        fprintf(stderr, "    { .val = { ");
                         print_hex(multi, sizeof(*multi));
-                        printf(" },\n");
+                        fprintf(stderr, " },\n");
                 }
-                printf("  },\n");
+		fprintf(stderr, "  },\n");
         }
-        printf("};\n");
+        fprintf(stderr, "};\n");
 }
 #else
 #  define ht_dump(ht)
@@ -281,7 +124,6 @@ unsigned int ht_count(hashtable_t *ht)
         unsigned int count = 0;
 
         for (i = 0; i < HT_SIZE; i++) {
-        //#pragma HLS UNROLL
                 entry_t *entry = &ht->table[i];
 
                 if (!entry->used)
@@ -298,9 +140,8 @@ void ht_init(hashtable_t *ht)
         unsigned int i;
 
         for (i = 0; i < HT_SIZE; i++) {
-        //#pragma HLS UNROLL
+/* #pragma HLS UNROLL*/
                 entry_t *entry = &ht->table[i];
-
                 entry->used = 0;
         }
 }
@@ -314,7 +155,7 @@ int ht_hash(hashkey_t key)
 
         /* Convert our string to an integer */
         for (i = 0; hashval < ULONG_MAX && i < len; i++) {
-       //#pragma HLS UNROLL // Cannot unroll loop completely: variable loop bound.
+/* #pragma HLS UNROLL */ // Cannot unroll loop completely: variable loop bound.
                 hashval = hashval << 8;
                 hashval += key[i];
         }
@@ -339,7 +180,7 @@ int ht_set(hashtable_t *ht, hashkey_t key,
 
         /* search if entry exists already */
         for (i = 0; i < HT_SIZE; i++) {
-       //#pragma HLS UNROLL
+/* #pragma HLS UNROLL */
                 table1_t *multi;
                 entry_t *entry = &ht->table[bin];
 
@@ -388,7 +229,7 @@ int ht_get(hashtable_t *ht, char *key)
 
         /* search if entry exists already */
         for (i = 0; i < HT_SIZE; i++) {
-       //#pragma HLS UNROLL
+/* #pragma HLS UNROLL */
                 entry = &ht->table[bin];
 
                 if (entry->used == 0)   /* key not there */
@@ -406,237 +247,155 @@ int ht_get(hashtable_t *ht, char *key)
         return -1;
 }
 
-void table3_init(unsigned int *table3_idx)
-{
-        *table3_idx = 0;
-}
-
-int table3_append(table3_t *table3, unsigned int *table3_idx,
-                  hashkey_t name, hashkey_t animal,
-                  unsigned int age)
-{
-        table3_t *t3;
-
-        t3 = &table3[*table3_idx];
-        hashkey_cpy(t3->name, name);
-        hashkey_cpy(t3->animal, animal);
-        t3->age = age;
-        *table3_idx = *table3_idx + 1;
-
-        return *table3_idx;
-}
-
 #if defined(NO_SYNTH)
 void table3_dump(table3_t *table3, unsigned int table3_idx)
 {
         unsigned int i;
         table3_t *t3;
 
-        printf("table3_t table3[] = { \n");
+        fprintf(stderr, "table3_t table3[] = { \n");
         for (i = 0; i < table3_idx; i++) {
                 t3 = &table3[i];
-                printf("  { .name = \"%s\", .animal = \"%s\", .age=%d }\n",
-                       t3->name, t3->animal, t3->age);
+                fprintf(stderr,
+			"  { .name = \"%s\", .animal = \"%s\", .age=%d } /* #%d */\n",
+			t3->name, t3->animal, t3->age, i);
         }
-        printf("}; (%d lines)\n", table3_idx);
+        fprintf(stderr, "}; /* %d lines */\n", table3_idx);
 }
-#else
-short read_table1(ap_uint<64> input_address,
-        ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *d_ddrmem,
-        action_input_reg *Action_Input)
-{
-        unsigned int i;
-        short rc = 0;
-        hashkey_t word_read;
-
-        ///FIXME Need to manage the size of the buffer tightly
-        rc = read_burst_of_data_from_mem(din_gmem, d_ddrmem, Action_Input->Data.t1.type,
-                input_address, buffer_mem, 128*21); //Action_Input->Data.t1.size);
-
-        for (i = 0; i < ARRAY_SIZE(table1); i++) {
-        //#pragma HLS UNROLL -- unset to fit timing
-                 //limitation : consider that all fields are aligned on 64 Bytes
-                convert_DWTable_to_64charTable( &buffer_mem[ (i*2*WPERDW) ],
-                         table1[i].name );
-                table1[i].age  = (unsigned int) buffer_mem[ (i*2*WPERDW) + WPERDW ](31, 0);
-        }
-        return rc;
-}
-
-
-short read_table2(ap_uint<64> input_address,
-        ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *d_ddrmem,
-        action_input_reg *Action_Input)
-{
-        unsigned int i;
-        short rc = 0;
-
-        ///FIXME Need to manage the size of the buffer tightly
-        rc = read_burst_of_data_from_mem(din_gmem, d_ddrmem, Action_Input->Data.t2.type,
-                input_address, buffer_mem, 128*25); //Action_Input->Data.t2.size);
-
-        for (i = 0; i < ARRAY_SIZE(table2); i++) {
-        //#pragma HLS UNROLL -- unset to fit timing
-                convert_DWTable_to_64charTable( &buffer_mem[ (i*2*WPERDW)             ],
-                         table2[i].name );
-                convert_DWTable_to_64charTable( &buffer_mem[ (i*2*WPERDW)+WPERDW ],
-                         table2[i].animal );
-
-        }
-        return rc;
-}
-
-short table3_dump(table3_t *table3, unsigned int table3_idx, ap_uint<64> output_address,
-        ap_uint<MEMDW> *dout_gmem, ap_uint<MEMDW> *d_ddrmem,
-        action_input_reg *Action_Input)
-{
-        unsigned int i;
-        table3_t *t3;
-        short rc = 0;
-        ap_uint<64> current_address;
-
-        current_address = output_address;
-
-        for (i = 0; i < table3_idx; i++) {
-        //#pragma HLS UNROLL    cannot completely unroll a loop with a variable trip count
-                t3 = &table3[i];
-
-                // Following writes are done sequentially for debug purpose (i.e. no perf)
-                // A filter will reduce number of data sent back to host
-
-                convert_64charTable_to_DWTable(buffer_mem, t3->animal);
-                rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem, Action_Input->Data.t3.type,
-                        current_address, buffer_mem, 64);
-                current_address += WPERDW;
-
-                convert_64charTable_to_DWTable(buffer_mem, t3->name);
-                rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem, Action_Input->Data.t3.type,
-                        current_address, buffer_mem, 64);
-                current_address += WPERDW;
-
-                // write MEMDW bits words to avoid unaligned address issue (bug#39/#45)
-                buffer_mem[0]( 31, 0) = t3->age;
-                buffer_mem[0](MEMDW-1,32) = 0;
-
-                rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem, Action_Input->Data.t3.type,
-                        current_address, buffer_mem, BPERDW);
-                current_address += 1;
-
-        }
-        return rc;
-}
-
 #endif
 
-/*
- * #!/usr/bin/python
- * from collections import defaultdict
- *
- * def hashJoin(table1, index1, table2, index2):
- *     h = defaultdict(list)
- *     # hash phase
- *     for s in table1:
- *        h[s[index1]].append(s)
- *     # join phase
- *     return [(s, r) for r in table2 for s in h[r[index2]]]
- *
- * for row in hashJoin(table1, 1, table2, 0):
- *     print(row)
- *
- * Output:
- *   ((27, 'Jonah'), ('Jonah', 'Whales'))
- *   ((27, 'Jonah'), ('Jonah', 'Spiders'))
- *   ((18, 'Alan'), ('Alan', 'Ghosts'))
- *   ((28, 'Alan'), ('Alan', 'Ghosts'))
- *   ((18, 'Alan'), ('Alan', 'Zombies'))
- *   ((28, 'Alan'), ('Alan', 'Zombies'))
- *   ((28, 'Glory'), ('Glory', 'Buffy'))
- */
-#if defined(NO_SYNTH)
-int action_hashjoin_hls(void)
-#else
-short action_hashjoin_hls(ap_uint<MEMDW> *din_gmem,
-			  ap_uint<MEMDW> *dout_gmem,
-			  ap_uint<MEMDW> *d_ddrmem,
-			  action_input_reg *Action_Input,
-			  ap_uint<64> T1_address,
-			  ap_uint<64> T2_address,
-			  ap_uint<64> T3_address,
-			  ap_uint<64> *T3_produced)
-#endif
+#if defined(CONFIG_HOSTSTYLE_ALGO)
+
+int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
+			t2_fifo_t *fifo2, unsigned int table2_used,
+			t3_fifo_t *fifo3, unsigned int *table3_used)
 {
         unsigned int i, j;
-        table1_t *t1;
-        hashtable_t *h = &hashtable;
-        short rc = 0;
+	table1_t t1;
+	static hashtable_t __hashtable;
+        hashtable_t *h = &__hashtable;
+	unsigned int table3_idx = 0;
 
-        ht_init(h);
-
+	/* preserve hashtable if table1 is not passed */
+	if (table1_used)
+		ht_init(h);
 
         /* hash phase */
+        for (i = 0; i < table1_used; i++) {
+/* #pragma HLS PIPELINE */
+                t1 = fifo1->read();
 
-#if defined(NO_SYNTH)
-       // table1 is defined as constant for software
-#else
-       // table1 is read from host mem for hardware
-        rc |= read_table1(T1_address, din_gmem, d_ddrmem, Action_Input);
+#if defined(CONFIG_FIFO_DEBUG)
+		fprintf(stderr, "fifo1->read(%d, %s)\n", i, t1.name);
 #endif
-        for (i = 0; i < ARRAY_SIZE(table1); i++) {
-        #pragma HLS UNROLL
-                t1 = &table1[i];
-                printf("Inserting %s ...\n", t1->name);
-                ht_set(h, t1->name, t1);
+                ht_set(h, t1.name, &t1);
         }
-        ht_dump(h);
 
-#if defined(NO_SYNTH)
-       // table2 is defined as constant for software
-#else
-       // table2 is read from host mem for hardware
-        rc |= read_table2(T2_address, din_gmem, d_ddrmem, Action_Input);
+#if defined(CONFIG_HASHTABLE_DEBUG)
+        ht_dump(h);
 #endif
 
-        table3_init(&table3_idx);
-        for (i = 0; i < ARRAY_SIZE(table2); i++) {
-        //for (i = 0; i < 25; i++) {
-        #pragma HLS UNROLL
+ table2_inserting:
+        for (i = 0; i < table2_used; i++) {
+/* #pragma HLS PIPELINE */
                 int bin;
                 entry_t *entry;
-                table2_t *t2 = &table2[i];
+                table2_t t2 = fifo2->read();
 
-                bin = ht_get(h, t2->name);
+#if defined(CONFIG_FIFO_DEBUG)
+		fprintf(stderr, "fifo2->read(%d, %s)\n", i, t2.name);
+#endif
+                bin = ht_get(h, t2.name);
                 if (bin == -1)
                         continue;       /* nothing found */
 
                 entry = &h->table[bin];
+	multihash_entry_processing:
                 for (j = 0; j < entry->used; j++) {
-                //#pragma HLS UNROLL
+/* #pragma HLS UNROLL factor=8 */
                         table1_t *m = &entry->multi[j];
+			table3_t t3;
 
-                        table3_append(table3, &table3_idx,
-                                      t2->name, t2->animal, m->age);
+			hashkey_cpy(t3.name, t2.name);
+			hashkey_cpy(t3.animal, t2.animal);
+			t3.age = m->age;
+			fifo3->write(t3);
+#if defined(CONFIG_FIFO_DEBUG)
+			fprintf(stderr, "fifo3->write(%d, %d/%d, %s)\n",
+				table3_idx, i, j, t3.name);
+#endif
+			table3_idx++;
                 }
         }
 
-        if (!quiet) {
-                //ht_dump(h); //commented this line since dump already done above
-#if defined(NO_SYNTH)
-                table3_dump(table3, table3_idx);
-#else
-                // write table 3 back to the host memory
-                rc = table3_dump(table3, table3_idx, T3_address,
-                        dout_gmem, d_ddrmem, Action_Input);
-
-                *T3_produced = (ap_uint<32>) table3_idx;
-#endif
-        }
-        /*
-         * Sanity check, elements in multihash table must match
-         * elements in table1.
-         */
-        if (check)
-                return ht_count(h) != ARRAY_SIZE(table1);
-
-        return rc;
+	*table3_used = table3_idx;
+	return 0;
 }
 
+#else
+
+static void hashkey_zero(hashkey_t s)
+{
+        unsigned char i;
+
+        for (i = 0; i < sizeof(hashkey_t); i++)
+#pragma HLS UNROLL factor=2
+		s[i] = 0;
+}
+
+/*
+ * Alternate version of the algorithm not using the multihash table.
+ * According to recent discussions, this must not necesarrilly help
+ * to get the performance/optimizations better. But it is there as
+ * way to try out different things.
+ */
+int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
+			t2_fifo_t *fifo2, unsigned int table2_used,
+			t3_fifo_t *fifo3, unsigned int *table3_used)
+{
+        unsigned int i, j;
+	static table1_t t1[TABLE1_SIZE];
+	static unsigned int t1_idx = 0;
+	unsigned int table3_idx = 0;
+
+        /* do not use a hash phase */
+	if (t1_idx == 0) {
+		for (i = 0; i < table1_used; i++)
+			t1[i] = fifo1->read();
+		for (; i < TABLE1_SIZE; i++) {
+			hashkey_zero(t1[i].name);
+			t1[i].age = 0;
+		}
+		t1_idx = table1_used;
+	}
+
+	/* Simle O(n2) loop which should be flattened by HLS optimizer */
+        for (i = 0; i < table2_used; i++) {
+                table2_t t2 = fifo2->read();
+
+#if defined(CONFIG_FIFO_DEBUG)
+		fprintf(stderr, "fifo2->read(%d, %s)\n", i, t2.name);
+#endif
+                for (j = 0; j < TABLE1_SIZE; j++) {
+#pragma HLS UNROLL factor=8
+			table3_t t3;
+
+			if (hashkey_cmp(t1[j].name, t2.name) == 0) {
+				hashkey_cpy(t3.name, t2.name);
+				hashkey_cpy(t3.animal, t2.animal);
+				t3.age = t1[j].age;
+				fifo3->write(t3);
+#if defined(CONFIG_FIFO_DEBUG)
+				fprintf(stderr, "fifo3->write(%d, %d/%d, %s)\n",
+					table3_idx, i, j, t3.name);
+#endif
+				table3_idx++;
+			}
+		}
+        }
+
+	*table3_used = table3_idx;
+	return 0;
+}
+
+#endif /* CONFIG_HOSTSTYLE_ALGO */
