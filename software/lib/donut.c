@@ -124,53 +124,56 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 
 	dn->priv = NULL;
 
-	dnut_trace("cxl_afu_open_dev %s\n", path);
+	dnut_trace("%s Enter %s\n", __func__, path);
 	afu_h = cxl_afu_open_dev((char*)path);
 	if (NULL == afu_h)
 		goto __dnut_alloc_err;
-
-	dn->device_id = device_id;
-	/* Read and check Device id if it was given by caller */
-	if (0xffff != device_id) {
-		rc = cxl_get_cr_device(afu_h, 0, &id);
-		if ((0 != rc) || ((uint16_t)id != device_id)) {
-			dnut_trace("  %s: ERR 0x%x Invalid Device ID 0x%x\n", __func__, (int)id, (int)device_id);
-			goto __dnut_alloc_err;
-		}
-		dn->device_id = (uint16_t)id;
-        }
 
 	dn->vendor_id = vendor_id;
 	/* Read and check Vendor id if it was given by caller */
 	if (0xffff != vendor_id) {
 		rc = cxl_get_cr_vendor(afu_h, 0, &id);
 		if ((0 != rc) || ((uint16_t)id != vendor_id)) {
-			dnut_trace("  %s: ERR 0x%x Invalid Vendor ID\n", __func__, (int)id);
+			dnut_trace("  %s: ERR 0x%x Invalid vendor_id 0x%x\n", __func__,
+				(int)id, (int)device_id);
 			goto __dnut_alloc_err;
 		}
 		dn->vendor_id = (uint16_t)id;
 	}
 
+	dn->device_id = device_id;
+	/* Read and check Device id if it was given by caller */
+	if (0xffff != device_id) {
+		rc = cxl_get_cr_device(afu_h, 0, &id);
+		if ((0 != rc) || ((uint16_t)id != device_id)) {
+			dnut_trace("  %s: ERR 0x%x Invalid device_id 0x%x\n", __func__,
+				(int)id, (int)device_id);
+			goto __dnut_alloc_err;
+		}
+		dn->device_id = (uint16_t)id;
+        }
+
 	/* Create Err Buffer, If we cannot get it, continue with warning ... */
 	dn->errinfo_size = 0;
 	dn->errinfo = NULL;
-/*
 	rc = cxl_errinfo_size(afu_h, &dn->errinfo_size);
 	if (0 == rc) {
 		dn->errinfo = malloc(dn->errinfo_size);
                 if (NULL == dn->errinfo) {
-			dnut_trace("  %s: ERR Alloc buffer\n", __func__);
+			errno = ENOMEM;
+			perror("malloc");
 			goto __dnut_alloc_err;
                 }
         } else
 		dnut_trace("  %s: WARN Can not detect Err buffer\n", __func__);
-*/
 
+	dnut_trace("  %s: %d %x %x\n", __func__, (int)dn->errinfo_size, (int)vendor_id, (int)device_id);
 	/* FIXME Why is wed not part of dn and dn not allocated with
 	   alignment in that case? Can we have wed to be NULL to save
 	   that step? */
 	if (posix_memalign((void **)&wed, CACHELINE_BYTES,
 			   sizeof(struct wed))) {
+		errno = ENOMEM;
 		perror("posix_memalign");
 		goto __dnut_alloc_err;
 	}
@@ -182,9 +185,12 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 	if (0 != rc)
 		goto __dnut_alloc_err;
 
-	if (cxl_mmio_map(dn->afu_h, CXL_MMIO_BIG_ENDIAN) == -1)
+	if (cxl_mmio_map(dn->afu_h, CXL_MMIO_BIG_ENDIAN) == -1) {
+		dnut_trace("  %s: Error Can not mmap\n", __func__);
 		goto __dnut_alloc_err;
+	}
 
+	dnut_trace("%s Exit OK %p\n", __func__, dn);
 	return (struct dnut_card *)dn;
 
  __dnut_alloc_err:
@@ -196,6 +202,7 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 		free(wed);
 	if (dn)
 		free(dn);
+	dnut_trace("%s Exit Err\n", __func__);
 	return NULL;
 }
 

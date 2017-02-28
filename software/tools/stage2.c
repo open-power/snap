@@ -208,7 +208,11 @@ static uint32_t msec_2_ticks(int msec)
 {
 	uint32_t fpga_ticks = msec;
 
-	fpga_ticks = fpga_ticks / 4 * 1000 * 1000;
+	fpga_ticks = fpga_ticks * 250;
+#ifndef _SIM_
+	fpga_ticks = fpga_ticks * 1000;
+#endif
+	printf(" fpga Ticks = %d (0x%x)", fpga_ticks, fpga_ticks);
 	return fpga_ticks;
 }
 
@@ -241,19 +245,22 @@ static int action_wait_idle(struct dnut_card* h, int timeout_ms, uint64_t *elaps
 	return rc;
 }
 
-static void action_count(struct dnut_card* h, int delay_ms, int timeout)
+static int action_count(struct dnut_card* h, int delay_ms, int timeout)
 {
 	uint64_t td;
+	int rc;
 
-	VERBOSE1("       Expect %d msec to wait...",
-			delay_ms);
+	VERBOSE1("       Expect %d msec to wait...", delay_ms);
 	fflush(stdout);
 	action_write(h, ACTION_CONFIG, ACTION_CONFIG_COUNT);
 	action_write(h, ACTION_CNT, msec_2_ticks(delay_ms));
 
-	action_wait_idle(h, timeout+delay_ms, &td);
+	rc = action_wait_idle(h, timeout+delay_ms, &td);
 	print_time(td, 0);
+	return rc;
 }
+
+static int snap_attach(void *handle, uint32_t action);
 
 static int action_memcpy(struct dnut_card* h,
 		int action,	/* Action can be 2,3,4,5,6  see ACTION_CONFIG_COPY_ */
@@ -276,6 +283,10 @@ static int action_memcpy(struct dnut_card* h,
 		return 1;
 		break;
 	}
+	if (0 != snap_attach(h, ACTION_TYPE_EXAMPLE)) {
+		VERBOSE0("Can Not attach Action 0x%x\n", ACTION_TYPE_EXAMPLE);
+		return -1;
+	}
 	VERBOSE1(" memcpy(%p, %p, 0x%8.8lx) ", dest, src, n);
 	action_write(h, ACTION_CONFIG,  action);
 	addr = (uint64_t)dest;
@@ -288,6 +299,7 @@ static int action_memcpy(struct dnut_card* h,
 
 	rc = action_wait_idle(h, timeout, &td);
 	print_time(td, n);
+	sleep(1);
 	return rc;
 }
 
@@ -439,40 +451,48 @@ static int memcpy_test(struct dnut_card* dnc,
 	return rc;
 }
 
-static int snap_config(void *handle, uint32_t action)
+static int snap_attach(void *handle, uint32_t action)
 {
 	uint64_t data;
 	uint32_t sat = 0xffffffff;	/* Inavlid Short Action Type */
 	int maid;	/* Max Action Id */
 	int i;
+	//int rc = 0;
 
+	VERBOSE1("    [%s] Enter Action: %x handle: %p\n", __func__,
+		action, handle);
 	data = snap_read(handle, SNAP_S_SSR);
 	if (0x100 != (data & 0x100)) {
-		VERBOSE0("Error Device is not connfigured with snap_maint tool\n");
-		return -1;
+		VERBOSE0("    [%s] Error You must run snap_maint to configure\n", __func__);
+		return ENODEV;
 	}
 	maid = (int)(data & 0xf) + 1;
 	for (i = 0; i < maid; i++) {
 		data = snap_read(handle, (SNAP_S_ATRI + i*8));
 		if (action == (uint32_t)(data & 0xffffffff)) {
 			sat = (uint32_t)(data >>  32ll);	/* Short Action Type */
+			break;		/* Found */
 		}
 	}
+	/* Check Short Action Type */
 	if (0xffffffff == sat)
-		return -1;
+		return ENODEV;
+
 	data = ((uint64_t)0xf000 << 48ll);
 	data |= (sat << 12) | 1;	/* Short Action Type and Direct Access */
 	snap_write(handle, SNAP_S_CCR, data);
 	data = ((uint64_t)0xf000 << 48ll) | 1,
 	snap_write(handle, SNAP_S_JCR, data);
 
-	for (i =0 ; i < 5; i++) {
+	for (i = 0; i < 20; i++) {
 		data = snap_read(handle, SNAP_S_CSR);
-		VERBOSE1("Wait for Action Attach..... 0x%16llx\n", (long long)data);
-		if (0xc0 == (data & 0xC0)) return 0;
-		sleep(1);
+		VERBOSE1("    [%s] Wait %d 0x%x\n", __func__, i, (int)data);
+		if (0xC0 == (data & 0xC0))
+			return 0;
+		usleep(100000);
 	}
-	return -1;
+	VERBOSE1("    [%s] Wait Busy\n", __func__);
+	return EBUSY;
 }
 
 static void usage(const char *prog)
@@ -615,22 +635,27 @@ int main(int argc, char *argv[])
 	}
 
 	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
-	//dn = dnut_card_alloc_dev(device, 0xcafe, 0x1014);
-	dn = dnut_card_alloc_dev(device, 0xffff, 0xffff);
+	dn = dnut_card_alloc_dev(device, 0x1014, 0xcafe);
 	if (NULL == dn) {
 		perror("dnut_card_alloc_dev()");
 		return -1;
 	}
 	VERBOSE1("Start of Action: %d Card Handle: %p\n", action, dn);
-	if (0 != snap_config(dn, ACTION_TYPE_EXAMPLE)) {
-		VERBOSE0("Can Not attach Action 0x%x\n", ACTION_TYPE_EXAMPLE);
-		goto __main_exit;
-	}
+	//if (0 != snap_attach(dn, ACTION_TYPE_EXAMPLE)) {
+		//VERBOSE0("Can Not attach Action 0x%x\n", ACTION_TYPE_EXAMPLE);
+		//goto __main_exit;
+	//}
 
 	switch (action) {
 	case 1:
 		for(delay = start_delay; delay <= end_delay; delay += step_delay) {
-			action_count(dn, delay, timeout_ms);
+			if (0 != snap_attach(dn, ACTION_TYPE_EXAMPLE)) {
+				VERBOSE0("Can Not attach Action 0x%x\n", ACTION_TYPE_EXAMPLE);
+				goto __main_exit;
+			}
+			rc = action_count(dn, delay, timeout_ms);
+			if (0 != rc) break;
+			sleep(2);
 		}
 		rc = 0;
 		break;
