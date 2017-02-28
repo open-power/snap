@@ -126,7 +126,6 @@ typedef struct snap_4KiB_t {
 	snap_membus_t buf[SNAP_4KiB_WORDS]; /* temporary storage buffer */
 	snap_membus_t *mem;                 /* source where data comes from */
 	unsigned short max_lines;           /* size of the memory buffer */
-	unsigned short free_lines;
 	unsigned short m_idx;               /* read position for source */
 	unsigned char b_idx;                /* read position for buffer */
 } snap_4KiB_t;
@@ -141,7 +140,6 @@ static void snap_4KiB_rinit(snap_4KiB_t *buf, snap_membus_t *mem,
 {
 	buf->mem = mem;
 	buf->max_lines = max_lines;
-	buf->free_lines = max_lines;
 	buf->m_idx = 0;
 	buf->b_idx = SNAP_4KiB_WORDS;
 }
@@ -151,7 +149,6 @@ static void snap_4KiB_winit(snap_4KiB_t *buf, snap_membus_t *mem,
 {
 	buf->mem = mem;
 	buf->max_lines = max_lines;
-	buf->free_lines = max_lines;
 	buf->m_idx = 0;
 	buf->b_idx = 0;
 }
@@ -193,8 +190,15 @@ static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
  */
 static void snap_4KiB_flush(snap_4KiB_t *buf)
 {
-	unsigned short tocopy = MIN(buf->b_idx, buf->free_lines);
+	unsigned short free_lines = buf->max_lines - buf->m_idx;
+	unsigned short tocopy = MIN(free_lines, buf->b_idx);
 
+#if defined(CONFIG_4KIB_DEBUG)
+	fprintf(stderr, "4KiB buffer %d lines, writing %d bytes "
+		"free: %d bmax: %d mmax: %d\n",
+		tocopy, tocopy * sizeof(snap_membus_t),
+		free_lines, SNAP_4KiB_WORDS, buf->max_lines);
+#endif
 	switch (tocopy) {
 	case 0:
 		break;
@@ -207,7 +211,6 @@ static void snap_4KiB_flush(snap_4KiB_t *buf)
 		       tocopy * sizeof(snap_membus_t));
 		break;
 	}
-	buf->free_lines -= tocopy;
 	buf->m_idx += tocopy;
 	buf->b_idx = 0;
 }
