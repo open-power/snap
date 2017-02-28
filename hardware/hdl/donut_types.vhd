@@ -244,19 +244,19 @@ PACKAGE donut_types IS
   CONSTANT CTX_CFG_SIZE_INT           : integer := 37;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_SEQNO_L      : integer := 63;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_SEQNO_R      : integer := 48;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_FIRST_IDX_L        : integer := 31;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_FIRST_IDX_R        : integer := 24;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_MAX_IDX_L          : integer := 23;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_MAX_IDX_R          : integer := 16;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_JQIDX_L      : integer := 31;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_JQIDX_R      : integer := 24;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_JQIDX_L        : integer := 23;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_JQIDX_R        : integer := 16;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_SAT_L              : integer := 15;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_SAT_R              : integer := 12;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_EXEC_MODE          : integer :=  0;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_SEQNO_INT_L  : integer := 36;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_SEQNO_INT_R  : integer := 21;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_FIRST_IDX_INT_L    : integer := 20;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_FIRST_IDX_INT_R    : integer := 13;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_MAX_IDX_INT_L      : integer := 12;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_MAX_IDX_INT_R      : integer :=  5;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_JQIDX_INT_L  : integer := 20;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_JQIDX_INT_R  : integer := 13;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_JQIDX_INT_L    : integer := 12;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_JQIDX_INT_R    : integer :=  5;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_SAT_INT_L          : integer :=  4;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
   CONSTANT CTX_CFG_SAT_INT_R          : integer :=  1;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
   CONSTANT CTX_CFG_EXEC_MODE_INT      : integer :=  0;     -- CONTEXT_CONFIG_REG
@@ -266,14 +266,14 @@ PACKAGE donut_types IS
   CONSTANT CTX_SEQNO_CURRENT_R        : integer := 48;     -- CONTEXT_STATUS_REG
   CONSTANT CTX_SEQNO_LAST_L           : integer := 47;     -- CONTEXT_STATUS_REG
   CONSTANT CTX_SEQNO_LAST_R           : integer := 32;     -- CONTEXT_STATUS_REG
-  CONSTANT CTX_SEQNO_IDX_L            : integer := 31;     -- CONTEXT_STATUS_REG
-  CONSTANT CTX_SEQNO_IDX_R            : integer := 24;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_JQIDX_L          : integer := 31;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_JQIDX_R          : integer := 24;     -- CONTEXT_STATUS_REG
   CONSTANT CTX_SEQNO_CURRENT_INT_L    : integer := 39;     -- CONTEXT_STATUS_REG
   CONSTANT CTX_SEQNO_CURRENT_INT_R    : integer := 24;     -- CONTEXT_STATUS_REG
   CONSTANT CTX_SEQNO_LAST_INT_L       : integer := 23;     -- CONTEXT_STATUS_REG
   CONSTANT CTX_SEQNO_LAST_INT_R       : integer :=  8;     -- CONTEXT_STATUS_REG
-  CONSTANT CTX_SEQNO_IDX_INT_L        : integer :=  7;     -- CONTEXT_STATUS_REG
-  CONSTANT CTX_SEQNO_IDX_INT_R        : integer :=  0;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_JQIDX_INT_L      : integer :=  7;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_JQIDX_INT_R      : integer :=  0;     -- CONTEXT_STATUS_REG
 
   CONSTANT CTX_STAT_SIZE_INT          : integer :=  8;     -- CONTEXT_STATUS_REG
   CONSTANT CTX_STAT_SAT_L             : integer := 15;     -- CONTEXT_STATUS_REG
@@ -348,6 +348,7 @@ PACKAGE donut_types IS
   CONSTANT NUM_OF_CONTEXTS                 : integer := 512;      -- total number of supported contexts
   CONSTANT CONTEXT_BITS                    : integer :=   9;      -- number of bits required to represent the supported contexts as integer
   CONSTANT SEQNO_BITS                      : integer :=  16;      -- number of bits required to represent a valid sequence number
+  CONSTANT JQIDX_BITS                      : integer :=   8;      -- number of bits required to represent a valid job queue index
 
 --  CONSTANT ACTIVE_CONTEXTS_REGIONS_NUM     : integer :=  16;      -- number of active context regions
 --  CONSTANT ACTIVE_CONTEXTS_REGION_BITS     : integer :=   5;      -- number of bits required to represent active context within the region as integer
@@ -480,6 +481,7 @@ PACKAGE donut_types IS
   TYPE ACTION_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
   TYPE CONTEXT_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
   TYPE SEQNO_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(SEQNO_BITS-1 DOWNTO 0);
+  TYPE JQIDX_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(JQIDX_BITS-1 DOWNTO 0);
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -790,6 +792,7 @@ PACKAGE donut_types IS
     --
     TYPE JMM_D_T IS RECORD
       seqno              : std_ulogic_vector(CTX_SEQNO_CURRENT_L DOWNTO CTX_SEQNO_CURRENT_R);
+      jqidx              : std_ulogic_vector(CTX_SEQNO_JQIDX_L DOWNTO CTX_SEQNO_JQIDX_R);
       action_id          : std_ulogic_vector(CTX_STAT_ACTION_ID_L DOWNTO CTX_STAT_ACTION_ID_R);
       attached_to_action : std_ulogic;
       context_active     : std_ulogic;
@@ -840,6 +843,7 @@ PACKAGE donut_types IS
       context_id                : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
       sat                       : ACTION_TYPE_ARRAY(NUM_OF_ACTIONS-1 DOWNTO 0);
       current_seqno             : std_ulogic_vector(CTX_SEQNO_CURRENT_L DOWNTO CTX_SEQNO_CURRENT_R);
+      current_jqidx             : std_ulogic_vector(CTX_SEQNO_JQIDX_L DOWNTO CTX_SEQNO_JQIDX_R);
     END RECORD;
 
     -- mmx_d

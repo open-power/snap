@@ -529,14 +529,17 @@ BEGIN
                   mmio_read_data_q0 <= (OTHERS => '0');
 
                   mmio_read_data_q0(CTX_CFG_FIRST_SEQNO_L DOWNTO CTX_CFG_FIRST_SEQNO_R)   <= context_config_mmio_dout(CTX_CFG_FIRST_SEQNO_INT_L DOWNTO CTX_CFG_FIRST_SEQNO_INT_R);
-                  mmio_read_data_q0(CTX_CFG_FIRST_IDX_L DOWNTO CTX_CFG_FIRST_IDX_R)       <= context_config_mmio_dout(CTX_CFG_FIRST_IDX_INT_L DOWNTO CTX_CFG_FIRST_IDX_INT_R);
-                  mmio_read_data_q0(CTX_CFG_MAX_IDX_L DOWNTO CTX_CFG_MAX_IDX_R)           <= context_config_mmio_dout(CTX_CFG_MAX_IDX_INT_L DOWNTO CTX_CFG_MAX_IDX_INT_R);
+                  mmio_read_data_q0(CTX_CFG_FIRST_JQIDX_L DOWNTO CTX_CFG_FIRST_JQIDX_R)   <= context_config_mmio_dout(CTX_CFG_FIRST_JQIDX_INT_L DOWNTO CTX_CFG_FIRST_JQIDX_INT_R);
+                  mmio_read_data_q0(CTX_CFG_MAX_JQIDX_L DOWNTO CTX_CFG_MAX_JQIDX_R)       <= context_config_mmio_dout(CTX_CFG_MAX_JQIDX_INT_L DOWNTO CTX_CFG_MAX_JQIDX_INT_R);
                   mmio_read_data_q0(CTX_CFG_SAT_L DOWNTO CTX_CFG_SAT_R)                   <= context_config_mmio_dout(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R);
                   mmio_read_data_q0(CTX_CFG_EXEC_MODE)                                    <= context_config_mmio_dout(CTX_CFG_EXEC_MODE_INT);
 
                 WHEN CONTEXT_STATUS_REG =>
                   mmio_read_data_q0 <= (OTHERS => '0');
 
+                  mmio_read_data_q0(CTX_SEQNO_CURRENT_L DOWNTO CTX_SEQNO_CURRENT_R)       <= context_seqno_mmio_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R);
+                  mmio_read_data_q0(CTX_SEQNO_LAST_L DOWNTO CTX_SEQNO_LAST_R)             <= context_seqno_mmio_dout(CTX_SEQNO_LAST_INT_L DOWNTO CTX_SEQNO_LAST_INT_R);
+                  mmio_read_data_q0(CTX_SEQNO_JQIDX_L DOWNTO CTX_SEQNO_JQIDX_R)           <= context_seqno_mmio_dout(CTX_SEQNO_JQIDX_INT_L DOWNTO CTX_SEQNO_JQIDX_INT_R);
                   mmio_read_data_q0(CTX_STAT_SAT_L DOWNTO CTX_STAT_SAT_R)                 <= context_config_mmio_dout(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R);
                   mmio_read_data_q0(CTX_STAT_SAT_VALID)                                   <= context_status_mmio_dout(CTX_STAT_SAT_VALID_INT);
                   mmio_read_data_q0(CTX_STAT_ACTION_ID_L DOWNTO CTX_STAT_ACTION_ID_R)     <= context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R);
@@ -659,14 +662,12 @@ BEGIN
 
         -- Register inputs
         context_config_mmio_din(CTX_CFG_FIRST_SEQNO_INT_L DOWNTO CTX_CFG_FIRST_SEQNO_INT_R)  <= ha_mm_w_q.data(CTX_CFG_FIRST_SEQNO_L DOWNTO CTX_CFG_FIRST_SEQNO_R);
-        context_config_mmio_din(CTX_CFG_FIRST_IDX_INT_L DOWNTO CTX_CFG_FIRST_IDX_INT_R)      <= ha_mm_w_q.data(CTX_CFG_FIRST_IDX_L DOWNTO CTX_CFG_FIRST_IDX_R);
-        context_config_mmio_din(CTX_CFG_MAX_IDX_INT_L DOWNTO CTX_CFG_MAX_IDX_INT_R)          <= ha_mm_w_q.data(CTX_CFG_MAX_IDX_L DOWNTO CTX_CFG_MAX_IDX_R);
+        context_config_mmio_din(CTX_CFG_FIRST_JQIDX_INT_L DOWNTO CTX_CFG_FIRST_JQIDX_INT_R)  <= ha_mm_w_q.data(CTX_CFG_FIRST_JQIDX_L DOWNTO CTX_CFG_FIRST_JQIDX_R);
+        context_config_mmio_din(CTX_CFG_MAX_JQIDX_INT_L DOWNTO CTX_CFG_MAX_JQIDX_INT_R)      <= ha_mm_w_q.data(CTX_CFG_MAX_JQIDX_L DOWNTO CTX_CFG_MAX_JQIDX_R);
         context_config_mmio_din(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R)                  <= ha_mm_w_q.data(CTX_CFG_SAT_L DOWNTO CTX_CFG_SAT_R);
         context_config_mmio_din(CTX_CFG_EXEC_MODE_INT)                                       <= ha_mm_w_q.data(CTX_CFG_EXEC_MODE);
 
-        context_seqno_mmio_din(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R)       <= ha_mm_w_q.data(CTX_CFG_FIRST_SEQNO_L DOWNTO CTX_CFG_FIRST_SEQNO_R);
-        context_seqno_mmio_din(CTX_SEQNO_LAST_INT_L DOWNTO CTX_SEQNO_LAST_INT_R)             <= ha_mm_w_q.data(CTX_CFG_FIRST_SEQNO_L DOWNTO CTX_CFG_FIRST_SEQNO_R) - 1;
-        context_seqno_mmio_din(CTX_SEQNO_IDX_INT_L DOWNTO CTX_SEQNO_IDX_INT_R)               <= ha_mm_w_q.data(CTX_CFG_FIRST_IDX_L DOWNTO CTX_CFG_FIRST_IDX_R);
+        context_seqno_mmio_din                                                               <= context_seqno_mmio_dout;
 
         context_status_mmio_din <= context_status_mmio_dout;
 
@@ -674,8 +675,9 @@ BEGIN
         context_command_mmio_din(CTX_CMD_CODE_INT_L DOWNTO CTX_CMD_CODE_INT_R)               <= ha_mm_w_q.data(CTX_CMD_CODE_L DOWNTO CTX_CMD_CODE_R);
 
         context_config_mmio_we           <= '0';
-        context_command_mmio_we          <= '0';
+        context_seqno_mmio_we            <= '0';
         context_status_mmio_we           <= '0';
+        context_command_mmio_we          <= '0';
 
         context_seqno_conflict_q         <= '0';
         context_status_conflict_q        <= '0';
@@ -794,6 +796,9 @@ BEGIN
                       context_config_mmio_we    <= '1';
                       context_seqno_mmio_we     <= '1';
                       context_status_mmio_we    <= '1';
+                      context_seqno_mmio_din(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R)       <= ha_mm_w_q.data(CTX_CFG_FIRST_SEQNO_L DOWNTO CTX_CFG_FIRST_SEQNO_R);
+                      context_seqno_mmio_din(CTX_SEQNO_LAST_INT_L DOWNTO CTX_SEQNO_LAST_INT_R)             <= ha_mm_w_q.data(CTX_CFG_FIRST_SEQNO_L DOWNTO CTX_CFG_FIRST_SEQNO_R) - 1;
+                      context_seqno_mmio_din(CTX_SEQNO_JQIDX_INT_L DOWNTO CTX_SEQNO_JQIDX_INT_R)           <= ha_mm_w_q.data(CTX_CFG_FIRST_JQIDX_L DOWNTO CTX_CFG_FIRST_JQIDX_R);
                       IF (ha_mm_r_q.data(CTX_CFG_SAT_L DOWNTO CTX_CFG_SAT_R) < snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_SAT_L DOWNTO SNAP_STAT_MAX_SAT_R) + 1) THEN
                         context_status_mmio_din(CTX_STAT_SAT_VALID_INT) <= '1';
                       ELSE
@@ -813,7 +818,9 @@ BEGIN
                     context_command_mmio_we <= '1';
                     CASE ha_mm_w_q.data(CTX_CMD_CODE_L DOWNTO CTX_CMD_CODE_R) IS
                       WHEN CTX_START =>
+                        context_seqno_mmio_we  <= '1';
                         context_status_mmio_we <= '1';
+                        context_seqno_mmio_din(CTX_SEQNO_LAST_INT_L DOWNTO CTX_SEQNO_LAST_INT_R)             <= ha_mm_w_q.data(CTX_CMD_ARG_L DOWNTO CTX_CMD_ARG_R);
                         IF (ha_mm_w_q.data(CTX_CMD_ARG_L DOWNTO CTX_CMD_ARG_R) /= context_seqno_mmio_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R) - 1) THEN
                           context_status_mmio_din(CTX_STAT_CTX_ACTIVE_INT) <= '1';
                         END IF;
@@ -937,7 +944,9 @@ BEGIN
     --
     context_seqno_hw_we    <= jmm_c_q.seqno_we AND NOT context_seqno_conflict_q;
     context_seqno_hw_addr  <= jmm_c_q.context_id;
-    context_seqno_hw_din   <= jmm_d_q.seqno & context_seqno_hw_dout(CTX_SEQNO_CURRENT_INT_R-1 DOWNTO 0);
+    context_seqno_hw_din   <= jmm_d_q.seqno &
+                              context_seqno_hw_dout(CTX_SEQNO_LAST_INT_L DOWNTO CTX_SEQNO_LAST_INT_R) &
+                              jmm_d_q.jqidx;
     context_status_hw_we   <= jmm_c_q.status_we AND NOT context_status_conflict_q;
     context_status_hw_addr <= jmm_c_q.context_id;
     context_status_hw_din  <= jmm_d_q.action_id &
@@ -987,6 +996,7 @@ BEGIN
     END GENERATE;
 
     mmj_d_o.current_seqno      <= context_seqno_hw_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R);
+    mmj_d_o.current_jqidx      <= context_seqno_hw_dout(CTX_SEQNO_JQIDX_INT_L DOWNTO CTX_SEQNO_JQIDX_INT_R);
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
