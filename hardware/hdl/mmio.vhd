@@ -95,6 +95,7 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL xmm_ack_q                            : std_ulogic;
   SIGNAL mmio_action_access_q                 : std_ulogic;
   SIGNAL mmio_action_id_valid_q               : std_ulogic;
+  SIGNAL mmio_invalid_action_read_q           : std_ulogic;
   SIGNAL mmio_read_access_q                   : std_ulogic;
   SIGNAL mmio_read_alignment_error_q          : std_ulogic;
   SIGNAL mmio_read_cfg_access_q               : std_ulogic;
@@ -380,6 +381,16 @@ BEGIN
         IF mmio_read_alignment_error_q = '1' THEN
           non_fatal_master_rd_errors_q(NFE_MMIO_BAD_RD_AL) <= mmio_read_master_access_q;
           non_fatal_slave_rd_errors_q(NFE_MMIO_BAD_RD_AL)  <= NOT mmio_read_master_access_q;
+          -- acknowledge read request
+          ah_mm_read_ack_q                                 <= '1';
+        END IF;
+
+        --
+        -- MMIO invalid action read error
+        --
+        IF mmio_invalid_action_read_q = '1' THEN
+          non_fatal_master_rd_errors_q(NFE_INV_RD_ADDRESS) <= mmio_read_master_access_q;
+          non_fatal_slave_rd_errors_q(NFE_INV_RD_ADDRESS)  <= NOT mmio_read_master_access_q;
           -- acknowledge read request
           ah_mm_read_ack_q                                 <= '1';
         END IF;
@@ -1020,6 +1031,7 @@ BEGIN
 
         mmio_action_access_q                <= '0';
         mmio_action_id_valid_q              <= '0';
+        mmio_invalid_action_read_q          <= '0';
 
         mmio_read_access_q                  <= '0';
         mmio_read_alignment_error_q         <= '0';
@@ -1051,15 +1063,19 @@ BEGIN
 
         mmio_action_access_q   <= mmio_action_access_q;
         mmio_action_id_valid_q <= mmio_action_id_valid_q;
-        IF ha_mm_i.valid = '1' THEN
-          mmio_action_access_q <= (ha_mm_i.ad(MASTER_ACTION_ACCESS_BIT) AND NOT or_reduce(ha_mm_i.ad(PSL_HOST_ADDR_MAXBIT DOWNTO MASTER_ACTION_ACCESS_BIT+1))) OR
-                                  (ha_mm_i.ad(SLAVE_SPACE_BIT) AND (ha_mm_i.ad(SLAVE_ACTION_OFFSET_L DOWNTO SLAVE_ACTION_OFFSET_R) = SLAVE_ACTION_OFFSET_VAL));
+        IF (ha_mm_i.valid = '1') THEN
+          mmio_action_access_q <= ((ha_mm_i.ad(MASTER_ACTION_ACCESS_BIT) AND NOT or_reduce(ha_mm_i.ad(PSL_HOST_ADDR_MAXBIT DOWNTO MASTER_ACTION_ACCESS_BIT+1))) OR
+                                   (ha_mm_i.ad(SLAVE_SPACE_BIT) AND (ha_mm_i.ad(SLAVE_ACTION_OFFSET_L DOWNTO SLAVE_ACTION_OFFSET_R) = SLAVE_ACTION_OFFSET_VAL))) AND
+                                  NOT (ha_mm_i.cfg OR ha_mm_i.dw);
           IF to_integer(unsigned(ha_mm_i.ad(MASTER_ACTION_ID_L DOWNTO MASTER_ACTION_ID_R))) < (to_integer(unsigned(snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_ACTION_ID_L DOWNTO SNAP_STAT_MAX_ACTION_ID_L))) + 1) THEN
             mmio_action_id_valid_q <= '1';
           ELSE
             mmio_action_id_valid_q <= '0';
           END IF;
         END IF;
+
+        mmio_invalid_action_read_q <= mmio_action_access_q AND ha_mm_r_q.valid AND
+                                      NOT ((mmio_action_id_valid_q OR ha_mm_r_q.ad(SLAVE_SPACE_BIT)) AND (context_status_mmio_dout(CTX_STAT_ACTION_VALID_INT) OR NOT ha_mm_r_q.ad(SLAVE_SPACE_BIT)));
 
         mmio_cfg_space_access_q <= mmio_cfg_space_access_q;
         IF (ha_mm_q0.valid = '1') THEN
@@ -1082,7 +1098,7 @@ BEGIN
           mmio_read_reg_offset_q    <= to_integer(unsigned(ha_mm_r_q0.ad(4 DOWNTO 1)));
         END IF;
 
-        mmio_read_action_access_q <= mmio_action_access_q AND (ha_mm_r_q.valid AND ha_mm_r_q.rnw AND NOT(ha_mm_r_q.dw OR ha_mm_r_q.cfg)) AND
+        mmio_read_action_access_q <= mmio_action_access_q AND (ha_mm_r_q.valid AND ha_mm_r_q.rnw) AND
                                      ((mmio_action_id_valid_q AND NOT ha_mm_r_q.ad(SLAVE_SPACE_BIT)) OR
                                       (context_status_mmio_dout(CTX_STAT_ACTION_VALID_INT) AND ha_mm_r_q.ad(SLAVE_SPACE_BIT)));
 
@@ -1103,7 +1119,7 @@ BEGIN
           mmio_write_reg_offset_q    <= to_integer(unsigned(ha_mm_w_q0.ad(4 DOWNTO 1)));
         END IF;
 
-        mmio_write_action_access_q <= mmio_action_access_q AND (ha_mm_w_q.valid AND NOT( ha_mm_w_q.rnw OR ha_mm_w_q.dw OR ha_mm_w_q.cfg)) AND
+        mmio_write_action_access_q <= mmio_action_access_q AND (ha_mm_w_q.valid AND NOT( ha_mm_w_q.rnw)) AND
                                       ((mmio_action_id_valid_q AND NOT ha_mm_w_q.ad(SLAVE_SPACE_BIT)) OR
                                        (context_status_mmio_dout(CTX_STAT_ACTION_VALID_INT) AND ha_mm_w_q.ad(SLAVE_SPACE_BIT)));
 
