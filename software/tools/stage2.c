@@ -655,7 +655,8 @@ int main(int argc, char *argv[])
 			}
 			rc = action_count(dn, delay, timeout_ms);
 			if (0 != rc) break;
-			sleep(2);
+			VERBOSE0("Sleep 10 sec...\n");
+			sleep(10);
 		}
 		rc = 0;
 		break;
