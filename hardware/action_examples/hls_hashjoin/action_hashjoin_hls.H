@@ -21,26 +21,7 @@
 #include <string.h>
 #include <ap_int.h>
 #include <hls_stream.h>
-
-/*
- * Hardware implementation is lacking some libc functions. So let us
- * replace those.
- */
-#ifndef ULONG_MAX
-#  define ULONG_MAX 0xFFFFFFFFUL /* gcc compiler but not HLS compiler */
-#endif
-#ifndef NULL
-#  define NULL 0                 /* gcc compiler but not HLS compiler */
-#endif
-
-#if !defined(NO_SYNTH)
-#  define printf(fmt, args...)
-#  define fprintf(file, fmt, args...)
-#  define __unused
-#endif
-
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
-#define ARRAY_SIZE(a) (sizeof((a))/sizeof((a)[0]))
+#include "hls_snap.H"
 
 typedef char hashkey_t[64];
 
@@ -95,61 +76,8 @@ typedef struct hashtable_s {
         entry_t table[HT_SIZE]; /* fixed size */
 } hashtable_t;
 
-// General memory Data Width is set as a parameter
-#define MEMDW 512          // 512 or 128 // Bus width in bits for Host memory
-#define BPERDW (MEMDW/8)   // Bytes per Data Word    if MEMDW=512 => BPERDW = 64
-#define WPERDW (64/BPERDW) // Number of words per DW if MEMDW=512 => WPERDW =  1
-
-#if MEMDW == 512
-#define ADDR_RIGHT_SHIFT 6
-#elif MEMDW == 256
-#define ADDR_RIGHT_SHIFT 5
-#elif MEMDW == 128
-#define ADDR_RIGHT_SHIFT 4
-#else
-#error "Data Bus width out of bounds"
-#endif
-
-typedef ap_uint<MEMDW>     snap_membus_t;  /* snap memory access */
-typedef ap_uint<64>        snapu64_t;
-typedef ap_uint<32>        snapu32_t;
-typedef ap_uint<16>        snapu16_t;
-typedef ap_uint<8>         snapu8_t;
-
-// enum definitions should stay in sync with include/libdonut.h
-enum {
-      RET_CODE_OK      = 0x00000102,
-      RET_CODE_FAILURE = 0x00000104,
-
-      HOST_DRAM        = 0x0000, /* this is fine, always there */
-      CARD_DRAM        = 0x0001, /* card specific */
-      NVME             = 0x0002, /* card specific */
-      UNUSED_MEM       = 0xFFFF,
-
-      F_END            = 0x0001, /* last element in the list */
-      F_ADDR           = 0x0002, /* this one is an address */
-      F_DATA           = 0x0004, /* 64-bit address */
-      F_EXT            = 0x0008, /* reserved for extension */
-      F_SOURCE         = 0x0010, /* data source */
-      F_DEST           = 0x0020  /* data destination */
-};
-
+/* Names of the fields can be changed by User. Should serve as a template */
 typedef struct {
-        snapu8_t  action;
-        snapu8_t  flags;
-        snapu16_t seq;
-        snapu32_t Retc;
-        snapu64_t Reserved; // Priv_data
-} CONTROL;
-
-typedef struct {
-        snapu64_t address;
-        snapu32_t size;
-        snapu16_t type;
-        snapu16_t flags;
-} dnut_addr; // 128 bits=16B
-
-typedef struct {//Names of the fields can be changed by User. Should serve as a template
         dnut_addr t1; /* IN: input table1 for multihash */
         dnut_addr t2; /* IN: 2nd table2 to do join with */
         dnut_addr t3; /* OUT: resulting table3 */
@@ -188,10 +116,9 @@ void table3_dump(table3_t *table3, unsigned int table3_idx);
 
 #undef CONFIG_HASHTABLE_DEBUG
 #undef CONFIG_FIFO_DEBUG
-#define CONFIG_MEM_DEBUG
+#undef CONFIG_MEM_DEBUG
 #undef CONFIG_4KIB_DEBUG
 
 #define CONFIG_HOSTSTYLE_ALGO
 
 #endif  /* __ACTION_HASHJOIN_HLS_H__ */
-

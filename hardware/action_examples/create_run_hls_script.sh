@@ -102,7 +102,7 @@ set_top ${wrapper}
 
 # Can that be a list?
 foreach file [ list ${files} ] {
-  add_files \${file}
+  add_files \${file} -cflags "-I../include"
 }
 
 open_solution "${name}"

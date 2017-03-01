@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+
 #include "action_hashjoin_hls.H"
 
 using namespace std;
@@ -172,8 +173,18 @@ static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
 		fprintf(stderr, "4KiB buffer %d lines, reading %d bytes\n",
 			tocopy, tocopy * sizeof(snap_membus_t));
 #endif
-		memcpy(buf->buf, buf->mem + buf->m_idx,
-		       tocopy * sizeof(snap_membus_t));
+		switch (tocopy) {
+		case 0: /* NOTE: Avoid read/write 0 bytes, HLS bug */
+			break;
+		case  SNAP_4KiB_WORDS:
+			memcpy(buf->buf, buf->mem + buf->m_idx,
+			       SNAP_4KiB_WORDS * sizeof(snap_membus_t));
+			break;
+		default:
+			memcpy(buf->buf, buf->mem + buf->m_idx,
+			       tocopy * sizeof(snap_membus_t));
+			break;
+		}
 		
 		buf->m_idx += tocopy;
 		buf->b_idx = 0; /* buffer is full again */
@@ -200,7 +211,7 @@ static void snap_4KiB_flush(snap_4KiB_t *buf)
 		free_lines, SNAP_4KiB_WORDS, buf->max_lines);
 #endif
 	switch (tocopy) {
-	case 0:
+	case 0: /* NOTE: Avoid read/write 0 bytes, HLS bug */
 		break;
 	case SNAP_4KiB_WORDS:
 		memcpy(buf->mem + buf->m_idx, buf->buf,
