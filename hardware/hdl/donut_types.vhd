@@ -681,6 +681,7 @@ PACKAGE donut_types IS
 --
 --  jmm_c: job_manager -> mmio        : Control Interface
 --  jmm_d: job_manager -> mmio        : Data Interface
+--  jx_c : job_manager -> AXI master  : Control Interface
 --
 --  mmc_e: mmio        -> ctrl_mgr    : Error Interface
 --  mmd_a: mmio        -> dma         : Aggravater Interface
@@ -690,16 +691,16 @@ PACKAGE donut_types IS
 --  mmx_d: mmio        -> AXI master  : Data Interface
 --  mmx_c: mmio        -> AXI master  : Control Interface
 --
+--  nx_d : NVMe        -> AXI master  : Data Interface
+--
 --  sd_c : AXI slave   -> dma         : Control Interface
 --  sd_d : AXI slave   -> dma         : Data Interface
 --
 --  xmm_d: AXI master  -> mmio        : Data Interface
 --  xmm_c: AXI master  -> mmio        : Control Interface
+--  xj_c : AXI master  -> job_mgr     : Control Interface
+--  xn_d : AXI master  -> NVMe        : Data Interface
 --
---  xj_c: AXI master   -> job_mgr     : Control Interface
---
---  xn_d: AXI master   -> NVMe        : Data Interface
---  nx_d: NVMe         -> AXI master  : Data Interface
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
   ----------------------------------------------------------------------------
@@ -798,6 +799,13 @@ PACKAGE donut_types IS
       context_active     : std_ulogic;
     END RECORD;
 
+    --
+    -- jx_c
+    --
+    TYPE JX_C_T IS RECORD
+      check_for_idle     : std_ulogic_vector(ACTION_BITS-1 downto 0);
+    END RECORD JX_C_T;
+
 
   ---------------------------------------------------------------------------
   ----------------------------------------------------------------------------
@@ -820,7 +828,9 @@ PACKAGE donut_types IS
       thr_cmd_fsm         : std_ulogic;
     END RECORD MMD_A_T;
 
+    --
     -- mmd_i
+    --
     TYPE MMD_I_T IS RECORD
       inject_dma_write_error    : std_ulogic;
       inject_dma_read_error     : std_ulogic;
@@ -830,7 +840,9 @@ PACKAGE donut_types IS
       inject_ah_c_tagpar_error  : std_ulogic;
     END RECORD;
 
+    --
     -- mmj_c
+    --
     TYPE MMJ_C_T IS RECORD
       ctx_fifo_we               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
       exploration_done          : std_ulogic;
@@ -838,7 +850,9 @@ PACKAGE donut_types IS
       last_seqno                : std_ulogic;
     END RECORD;
 
+    --
     -- mmj_d
+    --
     TYPE MMJ_D_T IS RECORD
       context_id                : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
       sat                       : ACTION_TYPE_ARRAY(NUM_OF_ACTIONS-1 DOWNTO 0);
@@ -846,7 +860,9 @@ PACKAGE donut_types IS
       current_jqidx             : std_ulogic_vector(CTX_SEQNO_JQIDX_L DOWNTO CTX_SEQNO_JQIDX_R);
     END RECORD;
 
+    --
     -- mmx_d
+    --
     TYPE MMX_D_T IS RECORD
       addr                : std_ulogic_vector(31 DOWNTO 0);
       data                : std_ulogic_vector(31 DOWNTO 0);
@@ -899,6 +915,9 @@ PACKAGE donut_types IS
       error               : std_ulogic_vector( 1 DOWNTO 0);
     END RECORD XMM_D_T;
 
+    --
+    -- xj_c
+    --
     TYPE XJ_C_T IS RECORD
       valid               : std_ulogic;
       action              : std_ulogic_vector(ACTION_BITS-1 downto 0);

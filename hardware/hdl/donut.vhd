@@ -141,6 +141,7 @@ ARCHITECTURE donut OF donut IS
   SIGNAL ha_r                : HA_R_T;
   SIGNAL jmm_c               : JMM_C_T;
   SIGNAL jmm_d               : JMM_D_T;
+  SIGNAL jx_c                : JX_C_T;
   SIGNAL mmc_e               : MMC_E_T;
   SIGNAL mmd_a               : MMD_A_T;
   SIGNAL mmd_i               : MMD_I_T;
@@ -368,7 +369,8 @@ BEGIN
       jmm_d_o                => jmm_d,
       --
       -- AXI MASTER Interface
-      xj_c_i                 => xj_c
+      xj_c_i                 => xj_c,
+      jx_c_o                 => jx_c
     );
 
 
@@ -445,6 +447,7 @@ BEGIN
       --
       -- Job Manager Interface
       xj_c_o                 => xj_c,
+      jx_c_i                 => jx_c,
       --
       -- NVME Interface
       xn_d_o                 => xn_d,

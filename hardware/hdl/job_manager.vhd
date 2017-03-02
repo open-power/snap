@@ -45,7 +45,8 @@ ENTITY job_manager IS
     jmm_d_o                : OUT JMM_D_T;
     --
     -- AXI MASTER Interface
-    xj_c_i                 : IN  XJ_C_T
+    xj_c_i                 : IN  XJ_C_T;
+    jx_c_o                 : OUT JX_C_T
   );
 END job_manager;
 
@@ -86,6 +87,8 @@ ARCHITECTURE job_manager OF job_manager IS
   SIGNAL complete_detach_action_q      : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL complete_context_active_q     : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL complete_status_we_q          : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL check_for_idle_q              : std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
+  SIGNAL enable_check_for_idle_q       : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
 
   SIGNAL ctx_fifo_we                   : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL ctx_fifo_re                   : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
@@ -219,6 +222,7 @@ BEGIN
           assign_require_mmio_q           <= '0';
           assign_action_fsm_q             <= ST_RESET;
           current_contexts_q              <= (OTHERS => (OTHERS => '0'));
+          enable_check_for_idle_q(sat_id) <= (OTHERS => '0')
 
         ELSE
           -- defaults
@@ -231,6 +235,7 @@ BEGIN
           assign_require_mmio_q           <= assign_require_mmio_q;
           assign_action_fsm_q             <= assign_action_fsm_q;
           current_contexts_q              <= current_contexts_q;
+          enable_check_for_idle_q(sat_id) <= (OTHERS => '0')
           
           --
           -- F S M
@@ -273,8 +278,9 @@ BEGIN
               END IF;
 
             WHEN ST_RETURN_MMIO_LOCK =>
-              assign_require_mmio_q   <= '0';     -- TODO: remove state or need ack from mmio?
-              assign_action_fsm_q     <= ST_WAIT_FREE_ACTION;
+              enable_check_for_idle_q(sat_id)(to_integer(unsigned(assign_action_id_q(sat_id)))) <= mmj_d_i.job_queue_mode;
+              assign_require_mmio_q                                                             <= '0';     -- TODO: remove state or need ack from mmio?
+              assign_action_fsm_q                                                               <= ST_WAIT_FREE_ACTION;
 
             WHEN OTHERS => NULL;
           END CASE;                               -- assign_action_fsm_q
@@ -495,7 +501,25 @@ BEGIN
     END IF;                                     -- rising_edge(ha_pclock)
   END PROCESS grant_mmio_access;
 
-  
+
+  set_check_for_idle: PROCESS (ha_pclock)
+    VARIABLE check_for_idle_v : std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
+  BEGIN  -- PROCESS check_for_idle
+    IF rising_edge(ha_pclock) THEN
+      IF afu_reset = '1' THEN
+        check_for_idle_q <= (OTHERS => '0');
+      ELSE
+        check_for_idle_v := check_for_idle_q;
+        FOR sat_id IN 0 TO NUM_OF_ACTION_TYPES-1 LOOP
+          check_for_idle_v := check_for_idle_v OR enable_check_for_idle_q(sat_id);
+        END LOOP;  -- action_id
+        check_for_idle_v(to_integer(unsigned(xj_c_i.action))) := check_for_idle_v(to_integer(unsigned(xj_c_i.action))) AND NOT xj_c_i.valid;
+
+        check_for_idle_q <= check_for_idle_v;
+      END IF;                                   -- afu_reset
+    END IF;                                     -- rising_edge(ha_pclock)
+  END PROCESS set_check_for_idle;
+
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   --  Interfaces
@@ -511,5 +535,8 @@ BEGIN
   jmm_d_o.action_id          <= assign_action_id_q(grant_mmio_interface_q) WHEN (assign_grant_mmio_q(grant_mmio_interface_q) = '1') ELSE action_completed_fifo_dout(grant_mmio_interface_q);
   jmm_d_o.attached_to_action <= assign_attach_action_q(grant_mmio_interface_q) WHEN (assign_grant_mmio_q(grant_mmio_interface_q) = '1') ELSE NOT complete_detach_action_q(grant_mmio_interface_q);
   jmm_d_o.context_active     <= assign_context_active_q(grant_mmio_interface_q) WHEN (assign_grant_mmio_q(grant_mmio_interface_q) = '1') ELSE complete_context_active_q(grant_mmio_interface_q);
+
+  -- to AXI MASTER
+  jx_c_o.check_for_idle      <= check_for_idle_q;
 
 END ARCHITECTURE;

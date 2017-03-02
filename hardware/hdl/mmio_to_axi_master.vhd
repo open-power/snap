@@ -37,7 +37,7 @@ entity mmio_to_axi_master is
  
        clk             : IN  std_ulogic;
        rst             : IN  std_ulogic;
-          
+
        mmx_d_i         : IN  MMX_D_T;
        xmm_d_o         : OUT XMM_D_T;
 
@@ -45,11 +45,10 @@ entity mmio_to_axi_master is
        kx_d_i          : in  KX_D_T;
 
        xj_c_o          : out XJ_C_T;
+       jx_c_i          : in  JX_C_T;
 
-       xn_d_o          : out XN_D_T;         
-       nx_d_i          : in  NX_D_T         
-
-       
+       xn_d_o          : out XN_D_T;
+       nx_d_i          : in  NX_D_T
  
 	);
 end mmio_to_axi_master;
@@ -163,32 +162,32 @@ begin
               rd_pending_q      <= '0';
               nvme_q            <= '0';
             else
-              
-               if mmx_d_i.wr_strobe = '1' then
-                 if mmx_d_i.addr(17 downto 16 ) = "11" then
-                   -- indirect write
-                   if mmx_d_i.addr(2) = '0' then
-                     saved_address_q <= std_logic_vector(mmx_d_i.data);
-                     mmio_ack_q      <= '1';
-                   else
-                     wr_pending_q <= '1';
-                   end if;  
-                   -- write address register
-                      addr_32b_q <= true;
-                 else
-                    -- direct write
+
+              if mmx_d_i.wr_strobe = '1' then
+                if mmx_d_i.addr(17 downto 16 ) = "11" then
+                  -- indirect write
+                  if mmx_d_i.addr(2) = '0' then
+                    saved_address_q <= std_logic_vector(mmx_d_i.data);
+                    mmio_ack_q      <= '1';
+                  else
                     wr_pending_q <= '1';
-                    addr_32b_q   <= false;
-                 end if;
-               end if;
-               if mmx_d_i.rd_strobe = '1' then
-                 rd_pending_q <= '1';
-                 if mmx_d_i.addr(11 downto 8 ) = x"2" then
-                   addr_32b_q <= true;
-                 else
-                   addr_32b_q <= false;
-                 end if;  
-               end if; 
+                  end if;  
+                  -- write address register
+                     addr_32b_q <= true;
+                else
+                   -- direct write
+                   wr_pending_q <= '1';
+                   addr_32b_q   <= false;
+                end if;
+              end if;
+              if mmx_d_i.rd_strobe = '1' then
+                rd_pending_q <= '1';
+                if mmx_d_i.addr(11 downto 8 ) = x"2" then
+                  addr_32b_q <= true;
+                else
+                  addr_32b_q <= false;
+                end if;  
+              end if; 
                  
               case axi_master_fsm_q is
                 when AXI_IDLE  =>
@@ -219,7 +218,7 @@ begin
                     -- mmio read 
                     axi_master_fsm_q <= AXI_RD_REQ;
                     axi_arvalid_q    <= '1';
-                  elsif  running_status_q /= x"0000" then 
+                  elsif  (running_status_q /= x"0000") and (jx_c_i.check_for_idle(to_integer(unsigned(poll_addr_q))) = '1') then 
                     -- poll idle bit when no rd request is pending
                     axi_master_fsm_q <= AXI_RD_REQ;
                     axi_arvalid_q    <= '1';
@@ -285,6 +284,15 @@ begin
                   end if;
                 when others => null;
               end case;
+
+              if jx_c_i.check_for_idle(to_integer(unsigned(poll_addr_q))) = '0' then
+                if poll_addr_q = max_actions then
+                  poll_addr_q <= (others => '0');
+                else
+                  poll_addr_q <= poll_addr_q + '1';
+                end if;
+              end if;
+
             end if;                     -- rst
           end if;                       -- clk
         end process;  
@@ -312,7 +320,7 @@ begin
                  -- turn off the running bit 
                  running_status_q(to_integer(unsigned(axi_address_q(15 downto 12)))) <= '0';                    
                  -- valid pulse
-                 idle_vector_q(4)          <= '1';
+                 idle_vector_q(4)          <= jx_c_i.check_for_idle(to_integer(unsigned(axi_address_q(15 downto 19))));
                  idle_vector_q(3 downto 0) <= axi_address_q(15 downto 12);
                end if;                      
              end if;  
