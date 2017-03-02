@@ -245,29 +245,30 @@ BEGIN
               END IF;
 
             WHEN ST_WAIT_FREE_ACTION =>
-              IF NOT action_fifo_empty(sat_id) = '1' THEN
+              IF action_fifo_empty(sat_id) = '0' THEN
+                action_fifo_re(sat_id) <= '1';
                 IF ctx_fifo_empty(sat_id) = '1' THEN
                   assign_action_fsm_q <= ST_WAIT_CONTEXT;
                 ELSE
+                  ctx_fifo_re(sat_id) <= '1';
                   assign_action_fsm_q <= ST_ASSIGN_ACTION;                    
                 END IF;
               END IF;
 
             WHEN ST_WAIT_CONTEXT =>
-              IF NOT ctx_fifo_empty(sat_id) = '1' THEN
+              IF ctx_fifo_empty(sat_id) = '0' THEN
                 ctx_fifo_re(sat_id)    <= '1';
-                action_fifo_re(sat_id) <= '1';
                 assign_action_fsm_q    <= ST_ASSIGN_ACTION;
               END IF;
 
             WHEN ST_ASSIGN_ACTION =>
-              assign_ctx_q                 <= ctx_fifo_dout(sat_id);
-              assign_action_id_q(sat_id)   <= action_fifo_dout(sat_id);
               assign_require_mmio_q        <= '1';
               assign_action_fsm_q          <= ST_WAIT_MMIO_GRANT;
 
             WHEN ST_WAIT_MMIO_GRANT =>
-              current_contexts_q(to_integer(unsigned(assign_action_id_q(sat_id)))) <= assign_ctx_q;
+              assign_ctx_q                                                         <= ctx_fifo_dout(sat_id);
+              current_contexts_q(to_integer(unsigned(assign_action_id_q(sat_id)))) <= ctx_fifo_dout(sat_id);
+              assign_action_id_q(sat_id)                                           <= action_fifo_dout(sat_id);
               IF assign_grant_mmio_q(sat_id) = '1' THEN
                 assign_attach_action_q(sat_id)  <= '1';
                 assign_context_active_q(sat_id) <= '1';
@@ -319,7 +320,7 @@ BEGIN
           action_fifo_din(sat_id)            <= action_completed_fifo_dout(sat_id);
           action_completed_fifo_re(sat_id)   <= '0';
           action_completed_fifo_we(sat_id)   <= '0';
-          IF (unsigned(mmj_d_i.sat(to_integer(unsigned(xj_c_i.action)))) = to_unsigned(sat_id, ACTION_BITS-1)) THEN
+          IF (unsigned(mmj_d_i.sat(to_integer(unsigned(xj_c_i.action)))) = to_unsigned(sat_id, ACTION_BITS)) THEN
             action_completed_fifo_we(sat_id) <= xj_c_i.valid;
           END IF;
           action_completed_fifo_din(sat_id)  <= xj_c_i.action;
@@ -340,7 +341,7 @@ BEGIN
           --
           CASE complete_action_fsm_q IS
             WHEN ST_WAIT_COMPLETION =>
-              IF NOT action_completed_fifo_empty(sat_id) = '1' THEN
+              IF action_completed_fifo_empty(sat_id) = '0' THEN
                 action_completed_fifo_re(sat_id) <= '1';
                 complete_action_fsm_q            <= ST_GET_CTX;
               ELSIF (exploration_done_q AND action_fifo_empty(sat_id)) = '1' THEN
@@ -350,13 +351,13 @@ BEGIN
               END IF;
 
             WHEN ST_GET_CTX =>
-              action_fifo_we(sat_id)  <= '1';
-              complete_ctx_q          <= current_contexts_q(to_integer(unsigned(action_completed_fifo_dout(sat_id))));
               complete_require_mmio_q <= '1';
               complete_action_fsm_q   <= ST_WAIT_MMIO_GRANT;
 
             WHEN ST_WAIT_MMIO_GRANT =>
+              complete_ctx_q <= current_contexts_q(to_integer(unsigned(action_completed_fifo_dout(sat_id))));
               IF complete_grant_mmio_q(sat_id) = '1' THEN
+                action_fifo_we(sat_id)  <= '1';
                 complete_next_seqno_q(sat_id)       <= mmj_d_i.current_seqno + 1;
                 complete_next_jqidx_q(sat_id)       <= mmj_d_i.current_jqidx + 1;
                 complete_seqno_we_q(sat_id)         <= '1';
@@ -383,7 +384,7 @@ BEGIN
               complete_action_fsm_q   <= ST_WAIT_COMPLETION;
 
             WHEN ST_INIT_ACTIONS =>
-              IF unsigned(mmj_d_i.sat(to_integer(unsigned(init_action_counter_q)))) = to_unsigned(sat_id, ACTION_BITS-1) THEN
+              IF unsigned(mmj_d_i.sat(to_integer(unsigned(init_action_counter_q)))) = to_unsigned(sat_id, ACTION_BITS) THEN
                 action_fifo_we(sat_id)  <= '1';
                 action_fifo_din(sat_id) <= init_action_counter_q;
               END IF;
@@ -485,7 +486,7 @@ BEGIN
         sat_v := grant_mmio_interface_q;
 
         wait_lock_q <= '0';
-        IF NOT (lock_mmio_interface_q(sat_v) OR wait_lock_q) = '1' THEN
+        IF (lock_mmio_interface_q(sat_v) OR wait_lock_q) = '0' THEN
           wait_lock_q <= '1';
           IF sat_v = mmj_c_i.max_sat THEN
             sat_v := 0;
