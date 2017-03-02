@@ -32,9 +32,9 @@ symlinks=vhdl verilog systemc report
 # gcc test-bench stuff
 objs = $(srcs:.cpp=.o)
 CXX = g++
-CXXFLAGS = -Wall -W -Wextra -Werror -O2 -DNO_SYNTH -Wno-unknown-pragmas
+CXXFLAGS = -Wall -W -Wextra -Werror -O2 -DNO_SYNTH -Wno-unknown-pragmas -I../include
 
-all: $(syn_dir) $(symlinks)
+all: $(syn_dir) $(symlinks) check
 
 $(syn_dir): $(srcs) run_hls_script.tcl
 	vivado_hls -f run_hls_script.tcl
@@ -53,6 +53,18 @@ run_hls_script.tcl:
 
 $(SOLUTION_NAME): $(objs)
 	$(CXX) -o $@ $^
+
+# FIXME That those things are not resulting in an error is problematic.
+#      If we get critical warnings we stay away from continuing now,
+#      since that will according to our experience with vivado_hls, lead
+#      to strange problems later on. So let us work on fixing the design
+#      if they occur. Rather than challenging our luck.
+#
+# Check for critical warnings and exit if those occur. Add more if needed.
+#
+check: $(symlinks)
+	@grep -A8 critical $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ; \
+		test $$? = 1
 
 clean:
 	$(RM) -r $(SOLUTION_DIR)* run_hls_script.tcl *~ *.log \
