@@ -56,8 +56,8 @@ ARCHITECTURE job_manager OF job_manager IS
 
   --
   -- TYPE
-  TYPE ASSIGN_ACTION_FSM_T IS (ST_RESET, ST_WAIT_FREE_ACTION, ST_WAIT_CONTEXT, ST_ASSIGN_ACTION, ST_WAIT_MMIO_GRANT, ST_RETURN_MMIO_LOCK);
-  TYPE COMPLETE_ACTION_FSM_T IS (ST_WAIT_COMPLETION, ST_GET_CTX, ST_WAIT_MMIO_GRANT, ST_PUSH_CTX, ST_RETURN_MMIO_LOCK, ST_INIT_ACTIONS);
+  TYPE ASSIGN_ACTION_FSM_T IS (ST_RESET, ST_WAIT_FREE_ACTION, ST_WAIT_CONTEXT, ST_REQUEST_MMIO, ST_WAIT_MMIO_GRANT, ST_RETURN_MMIO_LOCK);
+  TYPE COMPLETE_ACTION_FSM_T IS (ST_WAIT_COMPLETION, ST_REQUEST_MMIO, ST_WAIT_MMIO_GRANT, ST_PUSH_CTX, ST_RETURN_MMIO_LOCK, ST_INIT_ACTIONS);
   TYPE REQUEST_MMIO_INTERFACE_FSM_T IS (ST_WAIT_GRANT, ST_ASSIGN_MMIO_GRANTED, ST_COMPLETE_MMIO_GRANTED, ST_RETURN_GRANT);
 
   --
@@ -155,7 +155,6 @@ BEGIN
     SIGNAL assign_action_fsm_q          : ASSIGN_ACTION_FSM_T;
     SIGNAL complete_action_fsm_q        : COMPLETE_ACTION_FSM_T;
     SIGNAL request_mmio_interface_fsm_q : REQUEST_MMIO_INTERFACE_FSM_T;
-    SIGNAL assign_ctx_q                 : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
     SIGNAL assign_require_mmio_q        : std_ulogic;
     SIGNAL complete_ctx_q               : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
     SIGNAL complete_require_mmio_q      : std_ulogic;
@@ -218,7 +217,6 @@ BEGIN
           assign_context_active_q(sat_id) <= '0';
           assign_status_we_q(sat_id)      <= '0';
           assign_require_mmio_q           <= '0';
-          assign_ctx_q                    <= (OTHERS => '0');
           assign_action_fsm_q             <= ST_RESET;
           current_contexts_q              <= (OTHERS => (OTHERS => '0'));
 
@@ -231,7 +229,6 @@ BEGIN
           assign_context_active_q(sat_id) <= '0';
           assign_status_we_q(sat_id)      <= '0';
           assign_require_mmio_q           <= assign_require_mmio_q;
-          assign_ctx_q                    <= assign_ctx_q;
           assign_action_fsm_q             <= assign_action_fsm_q;
           current_contexts_q              <= current_contexts_q;
           
@@ -251,22 +248,21 @@ BEGIN
                   assign_action_fsm_q <= ST_WAIT_CONTEXT;
                 ELSE
                   ctx_fifo_re(sat_id) <= '1';
-                  assign_action_fsm_q <= ST_ASSIGN_ACTION;                    
+                  assign_action_fsm_q <= ST_REQUEST_MMIO;
                 END IF;
               END IF;
 
             WHEN ST_WAIT_CONTEXT =>
               IF ctx_fifo_empty(sat_id) = '0' THEN
                 ctx_fifo_re(sat_id)    <= '1';
-                assign_action_fsm_q    <= ST_ASSIGN_ACTION;
+                assign_action_fsm_q    <= ST_REQUEST_MMIO;
               END IF;
 
-            WHEN ST_ASSIGN_ACTION =>
+            WHEN ST_REQUEST_MMIO =>
               assign_require_mmio_q        <= '1';
               assign_action_fsm_q          <= ST_WAIT_MMIO_GRANT;
 
             WHEN ST_WAIT_MMIO_GRANT =>
-              assign_ctx_q                                                         <= ctx_fifo_dout(sat_id);
               current_contexts_q(to_integer(unsigned(assign_action_id_q(sat_id)))) <= ctx_fifo_dout(sat_id);
               assign_action_id_q(sat_id)                                           <= action_fifo_dout(sat_id);
               IF assign_grant_mmio_q(sat_id) = '1' THEN
@@ -343,14 +339,14 @@ BEGIN
             WHEN ST_WAIT_COMPLETION =>
               IF action_completed_fifo_empty(sat_id) = '0' THEN
                 action_completed_fifo_re(sat_id) <= '1';
-                complete_action_fsm_q            <= ST_GET_CTX;
+                complete_action_fsm_q            <= ST_REQUEST_MMIO;
               ELSIF (exploration_done_q AND action_fifo_empty(sat_id)) = '1' THEN
                 exploration_done_q     <= '0';
                 init_action_counter_q  <= (OTHERS => '0');
                 complete_action_fsm_q  <= ST_INIT_ACTIONS;
               END IF;
 
-            WHEN ST_GET_CTX =>
+            WHEN ST_REQUEST_MMIO =>
               complete_require_mmio_q <= '1';
               complete_action_fsm_q   <= ST_WAIT_MMIO_GRANT;
 
@@ -427,12 +423,12 @@ BEGIN
               IF grant_mmio_interface_q = sat_id THEN
                 IF assign_require_mmio_q = '1' THEN
                   lock_mmio_interface_q(sat_id) <= '1';
-                  mmio_ctx_q(sat_id)            <= assign_ctx_q;
+                  mmio_ctx_q(sat_id)            <= ctx_fifo_dout(sat_id);
                   assign_grant_mmio_q(sat_id)   <= '1';
                   request_mmio_interface_fsm_q  <= ST_ASSIGN_MMIO_GRANTED;
                 ELSIF complete_require_mmio_q = '1' THEN
                   lock_mmio_interface_q(sat_id) <= '1';
-                  mmio_ctx_q(sat_id)            <= complete_ctx_q;
+                  mmio_ctx_q(sat_id)            <= current_contexts_q(to_integer(unsigned(action_completed_fifo_dout(sat_id))));
                   complete_grant_mmio_q(sat_id) <= '1';
                   request_mmio_interface_fsm_q  <= ST_COMPLETE_MMIO_GRANTED;
                 ELSE
@@ -445,7 +441,7 @@ BEGIN
                 assign_grant_mmio_q(sat_id) <= '0';
                 IF complete_require_mmio_q = '1' THEN
                   lock_mmio_interface_q(sat_id) <= '1';
-                  mmio_ctx_q(sat_id)            <= complete_ctx_q;
+                  mmio_ctx_q(sat_id)            <= current_contexts_q(to_integer(unsigned(action_completed_fifo_dout(sat_id))));
                   complete_grant_mmio_q(sat_id) <= '1';
                   request_mmio_interface_fsm_q  <= ST_COMPLETE_MMIO_GRANTED;
                 ELSE
