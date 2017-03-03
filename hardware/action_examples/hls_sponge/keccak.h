@@ -19,7 +19,7 @@
 int keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen);
 
 // update the state
-void keccakf(uint64_t st[25], int norounds);
+void keccakf(uint64_t st_in[25], uint64_t st_out[25], int norounds);
 
 #endif
 

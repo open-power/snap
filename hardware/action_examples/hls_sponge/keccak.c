@@ -30,15 +30,17 @@ const int keccakf_piln[24] =
 
 // update the state with given number of rounds
 
-void keccakf(uint64_t st[25], int rounds)
+void keccakf(uint64_t st_in[25], uint64_t st_out[25],int rounds)
 {
     int i, j, round;
     uint64_t t, bc[5];
+    uint64_t st[25];
 
+    *st = *st_in;
     for (round = 0; round < rounds; round++) {
-
+#pragma HLS PIPELINE
         // Theta
-        for (i = 0; i < 5; i++)     
+        for (i = 0; i < 5; i++)
             bc[i] = st[i] ^ st[i + 5] ^ st[i + 10] ^ st[i + 15] ^ st[i + 20];
 
         for (i = 0; i < 5; i++) {
@@ -67,6 +69,7 @@ void keccakf(uint64_t st[25], int rounds)
         //  Iota
         st[0] ^= keccakf_rndc[round];
     }
+    *st_out = *st;
 }
 
 // compute a keccak hash (md) of given byte length from "in"
@@ -85,7 +88,7 @@ int keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen)
     for ( ; inlen >= rsiz; inlen -= rsiz, in += rsiz) {
         for (i = 0; i < rsizw; i++)
             st[i] ^= ((uint64_t *) in)[i];
-        keccakf(st, KECCAK_ROUNDS);
+        keccakf(st, st, KECCAK_ROUNDS);
     }
     
     // last block and padding
@@ -97,7 +100,7 @@ int keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen)
     for (i = 0; i < rsizw; i++)
         st[i] ^= ((uint64_t *) temp)[i];
 
-    keccakf(st, KECCAK_ROUNDS);
+    keccakf(st, st, KECCAK_ROUNDS);
 
     memcpy(md, st, mdlen);
 
