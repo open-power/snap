@@ -85,19 +85,16 @@ static struct mdev_ctx	master_ctx;
 /*
  * Open AFU Master Device
  */
-static int snap_open(struct mdev_ctx *mctx)
+static void *snap_open(struct mdev_ctx *mctx)
 {
-	int rc = 0;
 	char device[64];
+	void *handle = NULL;
 
 	sprintf(device, "/dev/cxl/afu%d.0m", mctx->card);
 	VERBOSE3("[%s] Enter: %s\n", __func__, device);
-	//mctx->handle = dnut_card_alloc_dev(device, 0xcafe, 0x1014);
-	mctx->handle = dnut_card_alloc_dev(device, 0xffff, 0xffff);
-	if (NULL == mctx->handle)
-		rc = -1;
-	VERBOSE3("[%s] Exit %d\n", __func__, rc);
-	return rc;
+	handle = dnut_card_alloc_dev(device, 0xffff, 0xffff);
+	VERBOSE3("[%s] Exit %p\n", __func__, handle);
+	return handle;
 }
 
 static void snap_close(struct mdev_ctx *mctx)
@@ -168,7 +165,7 @@ static int snap_write32(void *handle, int ctx, int offset, uint32_t data)
 
 static int snap_check_stime(struct mdev_ctx *mctx)
 {
-#ifdef underwork
+#ifdef UW
 	int	gsel, bsel = 0, ctx = 0;
 	uint64_t gmask = 0, qstat_reg, err_reg, mstat_reg;
 	uint64_t wtime;
@@ -255,7 +252,7 @@ static int snap_check_stime(struct mdev_ctx *mctx)
 	return mctx->dt;
 }
 
-#ifdef underwork
+#ifdef UW
 static void snap_dump_mfirs(struct mdev_ctx *mctx)
 {
 	unsigned int i;
@@ -284,7 +281,7 @@ static void snap_dump_mfirs(struct mdev_ctx *mctx)
  */
 static int snap_check_firs(struct mdev_ctx *mctx)
 {
-#ifdef underwork
+#ifdef UW
 	int i;
 	uint64_t data;
 	uint32_t offs;
@@ -372,8 +369,8 @@ static int snap_m_init(void *handle)
 	mact = (int)ssr & 0xf;		/* Get Maximum Action ID */
 	mact++;
 	if (0x100 == (ssr &  0x100)) {
-		VERBOSE1("%s  Exit Setup already done before MSAT: %d MAID: %d\n", __func__,
-			msat, mact);
+		VERBOSE1("%s  Exit Setup already done before (SSR: 0x%016llx)\n", __func__,
+			(long long)ssr);
 		return 0;
 	}
 
@@ -384,8 +381,8 @@ static int snap_m_init(void *handle)
 	for (i = 0; i < mact; i++) {
 		reg = base + SNAP_M_ACT_SIZE * i;
 		atype_next = snap_read32(handle, SNAP_M_CTX, reg);
-		VERBOSE1("%s Explore %d Max: %d found AT: 0x%8.8x Short Index: %d\n", __func__,
-			i, mact, atype_next, sai);
+		VERBOSE1("%s Explore Index: %d Max Index: %d found Action Type: 0x%8.8x Short Action Type: %d\n",
+			__func__, i, mact, atype_next, sai);
 		reg = SNAP_M_ATRI + i * 8;
 		data = (uint64_t)sai << 32ll | (uint64_t)atype_next;
 		snap_write64(handle,SNAP_M_CTX, reg, data);
@@ -616,14 +613,16 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	rc = snap_open(mctx);
-	if (0 != rc)
+	mctx->handle = snap_open(mctx);
+	if (NULL == mctx->handle) {
+		rc = ENODEV;
 		goto __main_exit;
+	}
 	snap_version(mctx->handle);
 	/* Init Master */
 	rc = snap_m_init(mctx->handle);
-	if (0 != rc)
-		goto __main_exit;
+	//if (0 != rc)
+	goto __main_exit;	/* Exit here.... for now */
 
 	while (1) {
 		dt = snap_do_master(mctx);		/* Process */
