@@ -177,32 +177,6 @@ static uint32_t action_read(struct dnut_card* h, uint32_t addr)
 	return data;
 }
 
-#ifdef XX
-/* Config Write and Read are 64 bit MMIO */
-static void snap_write(struct dnut_card* h, uint32_t addr, uint64_t data)
-{
-	int rc;
-
-	VERBOSE3("MMIO-64 Write %016llx ----> %08x\n", (long long)data, addr);
-	rc = dnut_mmio_write64(h, (uint64_t)addr, data);
-	if (0 != rc)
-		VERBOSE0("Write MMIO 64 Err\n");
-	return;
-}
-
-static uint64_t snap_read(struct dnut_card* h, uint32_t addr)
-{
-	int rc;
-	uint64_t data;
-
-	rc = dnut_mmio_read64(h, (uint64_t)addr, &data);
-	if (0 != rc)
-		VERBOSE0("Read MMIO 64 Err\n");
-	VERBOSE3("MMIO64 Read  %08x ----> %016llx\n", addr, (long long)data);
-	return data;
-}
-#endif
-
 /*	Calculate msec to FPGA ticks.
  *	we run at 250 Mhz on FPGA so 4 ns per tick
  */
@@ -253,10 +227,11 @@ static int action_count(struct dnut_card* h, int delay_ms, int timeout)
 	int rc;
 
 	while (1) {
-		if (0 == dnut_attach_action(h, ACTION_TYPE_EXAMPLE, 0))
-			break;
-		VERBOSE0("Retry attach....\n");
-		sleep(1);
+		rc = dnut_attach_action(h, ACTION_TYPE_EXAMPLE, 0);
+		if (0 == rc) break;
+		if (EBUSY == rc)
+			usleep(100);
+		else return -1;
 	}
 	VERBOSE1("       Expect %d msec to wait...", delay_ms);
 	fflush(stdout);
@@ -268,8 +243,6 @@ static int action_count(struct dnut_card* h, int delay_ms, int timeout)
 	dnut_detach_action(h, ACTION_TYPE_EXAMPLE);
 	return rc;
 }
-
-//static int snap_attach(void *handle, uint32_t action);
 
 static int action_memcpy(struct dnut_card* h,
 		int action,	/* Action can be 2,3,4,5,6  see ACTION_CONFIG_COPY_ */
@@ -294,10 +267,14 @@ static int action_memcpy(struct dnut_card* h,
 	}
 
 	while (1) {
-		if (0 == dnut_attach_action(h, ACTION_TYPE_EXAMPLE, 0))
-			break;
-		VERBOSE0("Retry attach....\n");
-		sleep(1);
+		rc = dnut_attach_action(h, ACTION_TYPE_EXAMPLE, 0);
+		if (0 == rc) break;
+		if (EBUSY == rc)
+			usleep(100);
+		else {
+			VERBOSE0("dnut_attach_action for Action Type 0x%x returns %d\n", ACTION_TYPE_EXAMPLE, rc);
+			return -1;
+		}
 	}
 	VERBOSE1(" memcpy(%p, %p, 0x%8.8lx) ", dest, src, n);
 	action_write(h, ACTION_CONFIG,  action);
@@ -463,52 +440,6 @@ static int memcpy_test(struct dnut_card* dnc,
 	free_mem(dest);
 	return rc;
 }
-
-#ifdef XX
-static int snap_attach(void *handle, uint32_t action)
-{
-	uint64_t data;
-	uint32_t sat = 0xffffffff;	/* Inavlid Short Action Type */
-	int maid;	/* Max Action Id */
-	int i;
-	//int rc = 0;
-
-	VERBOSE1("    [%s] Enter Action: %x handle: %p\n", __func__,
-		action, handle);
-	data = snap_read(handle, SNAP_S_SSR);
-	if (0x100 != (data & 0x100)) {
-		VERBOSE0("    [%s] Error You must run snap_maint to configure\n", __func__);
-		return ENODEV;
-	}
-	maid = (int)(data & 0xf) + 1;
-	for (i = 0; i < maid; i++) {
-		data = snap_read(handle, (SNAP_S_ATRI + i*8));
-		if (action == (uint32_t)(data & 0xffffffff)) {
-			sat = (uint32_t)(data >>  32ll);	/* Short Action Type */
-			break;		/* Found */
-		}
-	}
-	/* Check Short Action Type */
-	if (0xffffffff == sat)
-		return ENODEV;
-
-	data = ((uint64_t)0xf000 << 48ll);
-	data |= (sat << 12) | 1;	/* Short Action Type and Direct Access */
-	snap_write(handle, SNAP_S_CCR, data);
-	data = ((uint64_t)0xf000 << 48ll) | 1,
-	snap_write(handle, SNAP_S_JCR, data);
-
-	for (i = 0; i < 50; i++) {
-		data = snap_read(handle, SNAP_S_CSR);
-		VERBOSE1("    [%s] Wait %d 0x%x\n", __func__, i, (int)data);
-		if (0xC0 == (data & 0xC0))
-			return 0;
-		usleep(100000);
-	}
-	VERBOSE1("    [%s] Wait Busy\n", __func__);
-	return EBUSY;
-}
-#endif
 
 static void usage(const char *prog)
 {
