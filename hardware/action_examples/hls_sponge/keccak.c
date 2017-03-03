@@ -36,12 +36,13 @@ void keccakf(uint64_t st_in[25], uint64_t st_out[25],int rounds)
     uint64_t t, bc[5];
     uint64_t st[25];
 
+    //memcpy(st, st_in, 25 * sizeof(uint64_t));
     for (i = 0; i < 25; i++)
 #pragma HLS UNROLL
     	st[i] = st_in[i];
 
     for (round = 0; round < rounds; round++) {
-#pragma HLS PIPELINE
+//#pragma HLS PIPELINE -- useful to reduce latency to min(2) when just keccakf is synthesized
         // Theta
         for (i = 0; i < 5; i++)
             bc[i] = st[i] ^ st[i + 5] ^ st[i + 10] ^ st[i + 15] ^ st[i + 20];
@@ -73,6 +74,7 @@ void keccakf(uint64_t st_in[25], uint64_t st_out[25],int rounds)
         st[0] ^= keccakf_rndc[round];
 
     }
+    //memcpy(st_out, st, 25 * sizeof(uint64_t));
     for (i = 0; i < 25; i++)
 #pragma HLS UNROLL
         st_out[i] = st[i];
@@ -80,27 +82,52 @@ void keccakf(uint64_t st_in[25], uint64_t st_out[25],int rounds)
 
 // compute a keccak hash (md) of given byte length from "in"
 
-int keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen)
+int keccak(const uint64_t *in64, int inlen, uint64_t *md64, int mdlen)
 {
     uint64_t st[25];
     uint8_t temp[144];
     int i, rsiz, rsizw;
+    int j;
+    uint64_t tmp;
+    uint8_t in[64],md[64];
 
+    //Casting from uint64_t to uint8_t
+    for( i = 0; i < 8; i++ ) {
+  	  tmp = in64[i];
+  	  for( j = 0; j < 8; j++ ) {
+#pragma HLS UNROLL
+  		  in[i*8+j] = (uint8_t)tmp;
+  		  tmp = (tmp >> 8);
+  	  }
+    }
     rsiz = 200 - 2 * mdlen;
     rsizw = rsiz / 8;
     
-    memset(st, 0, sizeof(st));
+    //memset(st, 0, sizeof(st));
+    for( i = 0; i < 25; i++ )
+#pragma HLS UNROLL
+  	  st[i] = 0;
 
-    for ( ; inlen >= rsiz; inlen -= rsiz, in += rsiz) {
+    for ( ; inlen >= rsiz; inlen -= rsiz, in64 += rsiz) {
+    //for ( ; inlen >= rsiz; inlen -= rsiz, in += rsiz) {
         for (i = 0; i < rsizw; i++)
-            st[i] ^= ((uint64_t *) in)[i];
+            //st[i] ^= ((uint64_t *) in)[i];
+        	st[i] ^= ((uint64_t *) in64)[i];
         keccakf(st, st, KECCAK_ROUNDS);
     }
-    
+
     // last block and padding
-    memcpy(temp, in, inlen);
+    //memcpy(temp, in, inlen);
+    for( i = 0; i < inlen; i++ )
+#pragma HLS UNROLL
+  	  temp[i] = in[i];
+
     temp[inlen++] = 1;
-    memset(temp + inlen, 0, rsiz - inlen);
+    //memset(temp + inlen, 0, rsiz - inlen);
+    for( i = inlen; i < rsiz; i++ )
+#pragma HLS UNROLL
+  	  temp[i] = 0;
+
     temp[rsiz - 1] |= 0x80;
 
     for (i = 0; i < rsizw; i++)
@@ -108,7 +135,11 @@ int keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen)
 
     keccakf(st, st, KECCAK_ROUNDS);
 
-    memcpy(md, st, mdlen);
+    //memcpy(md, st, mdlen);
+    //memcpy(md64, st, mdlen);
+    for( i = 0; i < mdlen/8; i++ )
+#pragma HLS UNROLL
+  	  md64[i] = st[i];
 
     return 0;
 }
