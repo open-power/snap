@@ -36,7 +36,10 @@ void keccakf(uint64_t st_in[25], uint64_t st_out[25],int rounds)
     uint64_t t, bc[5];
     uint64_t st[25];
 
-    *st = *st_in;
+    for (i = 0; i < 25; i++)
+#pragma HLS UNROLL
+    	st[i] = st_in[i];
+
     for (round = 0; round < rounds; round++) {
 #pragma HLS PIPELINE
         // Theta
@@ -68,15 +71,18 @@ void keccakf(uint64_t st_in[25], uint64_t st_out[25],int rounds)
 
         //  Iota
         st[0] ^= keccakf_rndc[round];
+
     }
-    *st_out = *st;
+    for (i = 0; i < 25; i++)
+#pragma HLS UNROLL
+        st_out[i] = st[i];
 }
 
 // compute a keccak hash (md) of given byte length from "in"
 
 int keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen)
 {
-    uint64_t st[25];    
+    uint64_t st[25];
     uint8_t temp[144];
     int i, rsiz, rsizw;
 
