@@ -28,6 +28,7 @@
 #include <donut_tools.h>
 #include <donut_internal.h>
 #include <donut_queue.h>
+#include <snap_s_regs.h>	/* Include SNAP Slave Regs */
 
 #define timediff_usec(t0, t1)						\
 	((double)(((t0)->tv_sec * 1000000 + (t0)->tv_usec) -		\
@@ -64,26 +65,10 @@ int action_trace_enabled(void)
 			fprintf(stderr, "S " fmt, ## __VA_ARGS__);	\
 	} while (0)
 
-#define	FW_BASE_ADDR		0x00100
-#define	FW_BASE_ADDR8		0x00108
-
-/* FIXME Some of those addresses will be hidden in libdonut on future
-   releases. */
-
-/* TO BE REMOVED ACTION Specific register setup */
-#define	ACTION_4		(ACTION_BASE + 0x04)
-#define	ACTION_8		(ACTION_BASE + 0x08)
-
 #define	ACTION_CONFIG		(ACTION_BASE + 0x10)
 #define ACTION_CONFIG_COUNT	  0x00000001
 #define	ACTION_CONFIG_COPY	  0x00000002
-
-#define	ACTION_SRC_LOW		(ACTION_BASE + 0x14)
-#define	ACTION_SRC_HIGH		(ACTION_BASE + 0x18)
-#define	ACTION_DEST_LOW		(ACTION_BASE + 0x1c)
-#define	ACTION_DEST_HIGH	(ACTION_BASE + 0x20)
-#define	ACTION_CNT		(ACTION_BASE + 0x24)	/* Count Register */
-
+#define	INVALID_SAT 0x0ffffffff
 struct wed {
 	uint64_t res[16];
 };
@@ -93,7 +78,10 @@ struct dnut_data {
 	struct cxl_afu_h *afu_h;
 	uint16_t vendor_id;
 	uint16_t device_id;
-	uint16_t action_type;
+	uint32_t action_type;	/* Action Type */
+	uint32_t sat;		/* short Action Type */
+	int mode;
+	uint16_t seq;		/* Seq Number */
 	int afu_fd;
 
 	struct wed *wed;
@@ -129,6 +117,8 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 	if (NULL == afu_h)
 		goto __dnut_alloc_err;
 
+	dn->sat = INVALID_SAT;	/* Invalid Short Action Type stands for not attached */
+	dn->action_type = 0xffffffff;
 	dn->vendor_id = vendor_id;
 	/* Read and check Vendor id if it was given by caller */
 	if (0xffff != vendor_id) {
@@ -274,9 +264,74 @@ static void hw_dnut_card_free(void *_card)
 	}
 }
 
+static int hw_attach_action(void *_card, uint32_t action, int flags)
+{
+	struct dnut_data *card = (struct dnut_data *)_card;
+	int i;
+	uint64_t data;
+	uint32_t sat = INVALID_SAT;	/* Invalid short Action type */
+	int maid;			/* Max Acition Id's */
+
+	dnut_trace("%s Enter for Action: 0x%x Card Action: 0x%x\n", __func__,
+		action, card->action_type);
+	if (action != card->action_type) {
+		/* Need to configure if not set */
+		hw_dnut_mmio_read64(card, SNAP_S_SSR, &data);
+		if (0x100 != (data & 0x100)) {
+			dnut_trace("%s Error need setup\n", __func__);
+			return ENODEV;
+		}
+		maid = (int)(data & 0xf) + 1;	/* Max Actions */
+		/* Search action to get Short Action type */
+		for (i = 0; i < maid; i++) {
+			hw_dnut_mmio_read64(card, SNAP_S_ATRI + i*8, &data);
+			if (action == (uint32_t)(data & 0xffffffff)) {
+				sat = (uint32_t)(data >>  32ll); /* Short Action Type */
+				break;	/* Found */
+			}
+		}
+		if (INVALID_SAT == sat) {
+			dnut_trace("%s Error Can not find Action\n",  __func__);
+			return ENODEV;
+		}
+		if (0 == flags) card->mode = 1;	/* Direct Access */
+		else card-> mode = 0;	/* Job mode */
+		card->sat = sat;	/* Save short Action Type */
+		card->seq = 0xf000;
+		card->action_type = action;
+		data = ((uint64_t)card->seq << 48ll);
+		data |= (card->sat << 12) | card->mode;	/* Short Action Type and Direct Access */
+		hw_dnut_mmio_write64(card, SNAP_S_CCR, data);
+	}
+	data = ((uint64_t)card->seq << 48ll) | 1;	/* Start: Attach action to context */
+	hw_dnut_mmio_write64(card, SNAP_S_JCR, data);
+
+	hw_dnut_mmio_read64(card, SNAP_S_CSR, &data);
+	if (0xC0 != (data & 0xC0)) {
+		dnut_trace("%s Action Busy\n", __func__);
+		return EBUSY;
+	}
+	card->seq++;
+	dnut_trace("%s Exit OK\n", __func__);
+	return 0;
+}
+
+static int hw_detach_action(void *_card, uint32_t action)
+{
+	struct dnut_data *card = (struct dnut_data *)_card;
+	int rc = 0;
+
+	dnut_trace("%s Enter 0x%x\n", __func__, action);
+	hw_dnut_mmio_write64(card, SNAP_S_JCR, 2);	/* Stop:  Detach action */
+	dnut_trace("%s Exit %d\n", __func__, rc);
+	return rc;
+}
+
 /* Hardware version of the lowlevel functions */
 static struct dnut_funcs hardware_funcs = {
 	.card_alloc_dev = hw_dnut_card_alloc_dev,
+	.attach_action = hw_attach_action,	/* attach Action */
+	.detach_action = hw_detach_action,	/* dettach Action */
 	.mmio_write32 = hw_dnut_mmio_write32,
 	.mmio_read32 = hw_dnut_mmio_read32,
 	.mmio_write64 = hw_dnut_mmio_write64,
@@ -292,6 +347,18 @@ struct dnut_card *dnut_card_alloc_dev(const char *path,
 				      uint16_t device_id)
 {
 	return df->card_alloc_dev(path, vendor_id, device_id);
+}
+
+int dnut_attach_action(struct dnut_card *_card,
+		      uint32_t action, int flags)
+{
+	return df->attach_action(_card, action, flags);
+}
+
+int dnut_detach_action(struct dnut_card *_card,
+		      uint32_t action)
+{
+	return df->detach_action(_card, action);
 }
 
 int dnut_mmio_write32(struct dnut_card *_card,
@@ -790,9 +857,23 @@ static int sw_mmio_read64(void *_card, uint64_t offs, uint64_t *data)
 	return rc;
 }
 
-/* Hardware version of the lowlevel functions */
+static int sw_attach_action(void *_card, uint32_t action, int flags)
+{
+	dnut_trace("  %s(%p, %x %d)\n", __func__, _card, action, flags);
+	return 0;
+}
+
+static int sw_detach_action(void *_card, uint32_t action)
+{
+	dnut_trace("  %s(%p, %x)\n", __func__, _card, action);
+	return 0;
+}
+
+/* Software version of the lowlevel functions */
 static struct dnut_funcs software_funcs = {
 	.card_alloc_dev = sw_card_alloc_dev,
+	.attach_action = sw_attach_action,	/* attach Action */
+	.detach_action = sw_detach_action,	/* detach Action */
 	.mmio_write32 = sw_mmio_write32,
 	.mmio_read32 = sw_mmio_read32,
 	.mmio_write64 = sw_mmio_write64,

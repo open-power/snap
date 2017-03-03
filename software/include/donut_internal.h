@@ -69,6 +69,8 @@ extern "C" {
 struct dnut_funcs {
 	void * (* card_alloc_dev)(const char *path, uint16_t vendor_id,
 				  uint16_t device_id);
+	int (* attach_action)(void *card, uint32_t action, int flags);
+	int (* detach_action)(void *card, uint32_t action);
 	int (* mmio_write32)(void *card, uint64_t offset, uint32_t data);
 	int (* mmio_read32)(void *card, uint64_t offset, uint32_t *data);
 	int (* mmio_write64)(void *card, uint64_t offset, uint64_t data);
