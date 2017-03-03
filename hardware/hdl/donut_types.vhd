@@ -250,7 +250,7 @@ PACKAGE donut_types IS
   CONSTANT CTX_CFG_MAX_JQIDX_R        : integer := 16;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_SAT_L              : integer := 15;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_SAT_R              : integer := 12;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_EXEC_MODE          : integer :=  0;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_DIRECT_MODE        : integer :=  0;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_SEQNO_INT_L  : integer := 36;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_SEQNO_INT_R  : integer := 21;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_JQIDX_INT_L  : integer := 20;     -- CONTEXT_CONFIG_REG
@@ -259,7 +259,7 @@ PACKAGE donut_types IS
   CONSTANT CTX_CFG_MAX_JQIDX_INT_R    : integer :=  5;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_SAT_INT_L          : integer :=  4;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
   CONSTANT CTX_CFG_SAT_INT_R          : integer :=  1;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
-  CONSTANT CTX_CFG_EXEC_MODE_INT      : integer :=  0;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_DIRECT_MODE_INT    : integer :=  0;     -- CONTEXT_CONFIG_REG
 
   CONSTANT CTX_SEQNO_SIZE_INT         : integer := 40;     -- CONTEXT_STATUS_REG
   CONSTANT CTX_SEQNO_CURRENT_L        : integer := 63;     -- CONTEXT_STATUS_REG
@@ -845,6 +845,7 @@ PACKAGE donut_types IS
     --
     TYPE MMJ_C_T IS RECORD
       ctx_fifo_we               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+      ctx_stop                  : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
       exploration_done          : std_ulogic;
       max_sat                   : integer RANGE 0 TO NUM_OF_ACTION_TYPES-1;
       last_seqno                : std_ulogic;
@@ -855,9 +856,11 @@ PACKAGE donut_types IS
     --
     TYPE MMJ_D_T IS RECORD
       context_id                : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+      action_id                 : std_ulogic_vector(CTX_STAT_ACTION_ID_L DOWNTO CTX_STAT_ACTION_ID_R);
       sat                       : ACTION_TYPE_ARRAY(NUM_OF_ACTIONS-1 DOWNTO 0);
       current_seqno             : std_ulogic_vector(CTX_SEQNO_CURRENT_L DOWNTO CTX_SEQNO_CURRENT_R);
       current_jqidx             : std_ulogic_vector(CTX_SEQNO_JQIDX_L DOWNTO CTX_SEQNO_JQIDX_R);
+      job_queue_mode            : std_ulogic;
     END RECORD;
 
     --

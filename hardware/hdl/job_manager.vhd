@@ -99,6 +99,15 @@ ARCHITECTURE job_manager OF job_manager IS
   SIGNAL ctx_fifo_wrb                  : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL ctx_fifo_rrb                  : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
 
+  SIGNAL action_fifo_we                : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_fifo_re                : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_fifo_empty             : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_fifo_full              : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_fifo_din               : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_fifo_dout              : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_fifo_wrb               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_fifo_rrb               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+
   SIGNAL action_completed_fifo_we      : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL action_completed_fifo_re      : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL action_completed_fifo_empty   : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
@@ -108,14 +117,14 @@ ARCHITECTURE job_manager OF job_manager IS
   SIGNAL action_completed_fifo_wrb     : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL action_completed_fifo_rrb     : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
 
-  SIGNAL action_fifo_we                : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
-  SIGNAL action_fifo_re                : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
-  SIGNAL action_fifo_empty             : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
-  SIGNAL action_fifo_full              : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
-  SIGNAL action_fifo_din               : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
-  SIGNAL action_fifo_dout              : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
-  SIGNAL action_fifo_wrb               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
-  SIGNAL action_fifo_rrb               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL ctx_completed_fifo_we         : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL ctx_completed_fifo_re         : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL ctx_completed_fifo_empty      : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL ctx_completed_fifo_full       : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL ctx_completed_fifo_din        : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL ctx_completed_fifo_dout       : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL ctx_completed_fifo_wrb        : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL ctx_completed_fifo_rrb        : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
 
   --
   -- COMPONENT
@@ -160,6 +169,7 @@ BEGIN
     SIGNAL request_mmio_interface_fsm_q : REQUEST_MMIO_INTERFACE_FSM_T;
     SIGNAL assign_require_mmio_q        : std_ulogic;
     SIGNAL complete_ctx_q               : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    SIGNAL ctx_completed_fifo_busy_q    : std_ulogic;
     SIGNAL complete_require_mmio_q      : std_ulogic;
     SIGNAL current_contexts_q           : CONTEXT_ID_ARRAY(NUM_OF_ACTIONS-1 DOWNTO 0);  -- Keeping the current context for each action
     SIGNAL exploration_done_q           : std_ulogic;
@@ -179,21 +189,7 @@ BEGIN
       std_ulogic(empty)        => ctx_fifo_empty(sat_id),
       std_ulogic(wr_rst_busy)  => ctx_fifo_wrb(sat_id),
       std_ulogic(rd_rst_busy)  => ctx_fifo_rrb(sat_id)
-    );    
-
-    action_completed_fifo: fifo_4x512
-    PORT MAP (
-      clk                      => std_logic(ha_pclock),
-      srst                     => std_logic(afu_reset),
-      din                      => std_logic_vector(action_completed_fifo_din(sat_id)),
-      wr_en                    => std_logic(action_completed_fifo_we(sat_id)),
-      rd_en                    => std_logic(action_completed_fifo_re(sat_id)),
-      std_ulogic_vector(dout)  => action_completed_fifo_dout(sat_id),
-      std_ulogic(full)         => action_completed_fifo_full(sat_id),
-      std_ulogic(empty)        => action_completed_fifo_empty(sat_id),
-      std_ulogic(wr_rst_busy)  => action_completed_fifo_wrb(sat_id),
-      std_ulogic(rd_rst_busy)  => action_completed_fifo_rrb(sat_id)
-    );    
+    );
 
     action_fifo: fifo_4x512
     PORT MAP (
@@ -207,8 +203,36 @@ BEGIN
       std_ulogic(empty)        => action_fifo_empty(sat_id),
       std_ulogic(wr_rst_busy)  => action_fifo_wrb(sat_id),
       std_ulogic(rd_rst_busy)  => action_fifo_rrb(sat_id)
-    );    
-    
+    );
+
+    action_completed_fifo: fifo_4x512
+    PORT MAP (
+      clk                      => std_logic(ha_pclock),
+      srst                     => std_logic(afu_reset),
+      din                      => std_logic_vector(action_completed_fifo_din(sat_id)),
+      wr_en                    => std_logic(action_completed_fifo_we(sat_id)),
+      rd_en                    => std_logic(action_completed_fifo_re(sat_id)),
+      std_ulogic_vector(dout)  => action_completed_fifo_dout(sat_id),
+      std_ulogic(full)         => action_completed_fifo_full(sat_id),
+      std_ulogic(empty)        => action_completed_fifo_empty(sat_id),
+      std_ulogic(wr_rst_busy)  => action_completed_fifo_wrb(sat_id),
+      std_ulogic(rd_rst_busy)  => action_completed_fifo_rrb(sat_id)
+    );
+
+    ctx_completed_fifo: fifo_4x512
+    PORT MAP (
+      clk                      => std_logic(ha_pclock),
+      srst                     => std_logic(afu_reset),
+      din                      => std_logic_vector(ctx_completed_fifo_din(sat_id)),
+      wr_en                    => std_logic(ctx_completed_fifo_we(sat_id)),
+      rd_en                    => std_logic(ctx_completed_fifo_re(sat_id)),
+      std_ulogic_vector(dout)  => ctx_completed_fifo_dout(sat_id),
+      std_ulogic(full)         => ctx_completed_fifo_full(sat_id),
+      std_ulogic(empty)        => ctx_completed_fifo_empty(sat_id),
+      std_ulogic(wr_rst_busy)  => ctx_completed_fifo_wrb(sat_id),
+      std_ulogic(rd_rst_busy)  => ctx_completed_fifo_rrb(sat_id)
+    );
+
     assign_action_fsm : PROCESS (ha_pclock)
     BEGIN  -- PROCESS
       IF rising_edge(ha_pclock) THEN
@@ -222,7 +246,7 @@ BEGIN
           assign_require_mmio_q           <= '0';
           assign_action_fsm_q             <= ST_RESET;
           current_contexts_q              <= (OTHERS => (OTHERS => '0'));
-          enable_check_for_idle_q(sat_id) <= (OTHERS => '0')
+          enable_check_for_idle_q(sat_id) <= (OTHERS => '0');
 
         ELSE
           -- defaults
@@ -235,8 +259,8 @@ BEGIN
           assign_require_mmio_q           <= assign_require_mmio_q;
           assign_action_fsm_q             <= assign_action_fsm_q;
           current_contexts_q              <= current_contexts_q;
-          enable_check_for_idle_q(sat_id) <= (OTHERS => '0')
-          
+          enable_check_for_idle_q(sat_id) <= (OTHERS => '0');
+
           --
           -- F S M
           --
@@ -279,7 +303,7 @@ BEGIN
 
             WHEN ST_RETURN_MMIO_LOCK =>
               enable_check_for_idle_q(sat_id)(to_integer(unsigned(assign_action_id_q(sat_id)))) <= mmj_d_i.job_queue_mode;
-              assign_require_mmio_q                                                             <= '0';     -- TODO: remove state or need ack from mmio?
+              assign_require_mmio_q                                                             <= '0';     -- TODO: switch to a remove state or need ack from mmio?
               assign_action_fsm_q                                                               <= ST_WAIT_FREE_ACTION;
 
             WHEN OTHERS => NULL;
@@ -290,6 +314,7 @@ BEGIN
 
 
     complete_action_fsm : PROCESS (ha_pclock)
+      VARIABLE action_completed_v : std_ulogic;
     BEGIN  -- PROCESS
       IF rising_edge(ha_pclock) THEN
         IF afu_reset = '1' THEN
@@ -301,6 +326,10 @@ BEGIN
           action_completed_fifo_re(sat_id)   <= '0';
           action_completed_fifo_we(sat_id)   <= '0';
           action_completed_fifo_din(sat_id)  <= (OTHERS => '0');
+          ctx_completed_fifo_re(sat_id)      <= '0';
+          ctx_completed_fifo_we(sat_id)      <= '0';
+          ctx_completed_fifo_din(sat_id)     <= (OTHERS => '0');
+          ctx_completed_fifo_busy_q          <= '0';
           complete_ctx_q                     <= (OTHERS => '0');
           complete_next_seqno_q(sat_id)      <= (OTHERS => '0');
           complete_next_jqidx_q(sat_id)      <= (OTHERS => '0');
@@ -318,14 +347,35 @@ BEGIN
           complete_require_mmio_q            <= complete_require_mmio_q;
           ctx_fifo_we(sat_id)                <= mmj_c_i.ctx_fifo_we(sat_id);
           ctx_fifo_din(sat_id)               <= mmj_d_i.context_id;
+
           action_fifo_we(sat_id)             <= '0';
           action_fifo_din(sat_id)            <= action_completed_fifo_dout(sat_id);
           action_completed_fifo_re(sat_id)   <= '0';
           action_completed_fifo_we(sat_id)   <= '0';
+          action_completed_v                 := '0';
           IF (unsigned(mmj_d_i.sat(to_integer(unsigned(xj_c_i.action)))) = to_unsigned(sat_id, ACTION_BITS)) THEN
-            action_completed_fifo_we(sat_id) <= xj_c_i.valid;
+            action_completed_fifo_we(sat_id)  <= xj_c_i.valid;
+            action_completed_fifo_din(sat_id) <= xj_c_i.action;
+            action_completed_v                :=  '1';
           END IF;
-          action_completed_fifo_din(sat_id)  <= xj_c_i.action;
+
+          ctx_completed_fifo_re(sat_id)      <= '0';
+          ctx_completed_fifo_we(sat_id)      <= '0';
+          ctx_completed_fifo_busy_q          <= ctx_completed_fifo_busy_q;
+          IF mmj_c_i.ctx_stop(sat_id) = '1' THEN
+            ctx_completed_fifo_we(sat_id)  <= '1';
+            ctx_completed_fifo_din(sat_id) <= mmj_d_i.action_id;
+          END IF;
+          IF (ctx_completed_fifo_busy_q OR ctx_completed_fifo_empty(sat_id)) = '0' THEN
+            ctx_completed_fifo_re(sat_id) <= '1';
+            ctx_completed_fifo_busy_q     <= '1';
+          END IF;
+          IF (ctx_completed_fifo_busy_q AND NOT (ctx_completed_fifo_re(sat_id) OR action_completed_v)) = '1' THEN
+            action_completed_fifo_we(sat_id)  <= '1';
+            action_completed_fifo_din(sat_id) <= ctx_completed_fifo_dout(sat_id);
+            ctx_completed_fifo_busy_q         <= '0';
+          END IF;
+
           complete_ctx_q                     <= complete_ctx_q;
           complete_next_seqno_q(sat_id)      <= complete_next_seqno_q(sat_id);
           complete_next_jqidx_q(sat_id)      <= complete_next_jqidx_q(sat_id);
@@ -477,8 +527,7 @@ BEGIN
 
 
   grant_mmio_access: PROCESS (ha_pclock)
-  VARIABLE
-    sat_v : integer RANGE 0 TO NUM_OF_ACTION_TYPES-1;
+  VARIABLE sat_v : integer RANGE 0 TO NUM_OF_ACTION_TYPES-1;
   BEGIN  -- PROCESS grant_mmio_access
     IF rising_edge(ha_pclock) THEN
       IF afu_reset = '1' THEN

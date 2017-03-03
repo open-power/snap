@@ -177,6 +177,7 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL context_command_mmio_dout     : std_ulogic_vector(CTX_CMD_SIZE_INT-1 DOWNTO 0);
 
   SIGNAL context_fifo_we_q             : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL context_stop_q                : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
 
 BEGIN
 
@@ -541,7 +542,7 @@ BEGIN
                   mmio_read_data_q0(CTX_CFG_FIRST_JQIDX_L DOWNTO CTX_CFG_FIRST_JQIDX_R)   <= context_config_mmio_dout(CTX_CFG_FIRST_JQIDX_INT_L DOWNTO CTX_CFG_FIRST_JQIDX_INT_R);
                   mmio_read_data_q0(CTX_CFG_MAX_JQIDX_L DOWNTO CTX_CFG_MAX_JQIDX_R)       <= context_config_mmio_dout(CTX_CFG_MAX_JQIDX_INT_L DOWNTO CTX_CFG_MAX_JQIDX_INT_R);
                   mmio_read_data_q0(CTX_CFG_SAT_L DOWNTO CTX_CFG_SAT_R)                   <= context_config_mmio_dout(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R);
-                  mmio_read_data_q0(CTX_CFG_EXEC_MODE)                                    <= context_config_mmio_dout(CTX_CFG_EXEC_MODE_INT);
+                  mmio_read_data_q0(CTX_CFG_DIRECT_MODE)                                  <= context_config_mmio_dout(CTX_CFG_DIRECT_MODE_INT);
 
                 WHEN CONTEXT_STATUS_REG =>
                   mmio_read_data_q0 <= (OTHERS => '0');
@@ -556,6 +557,11 @@ BEGIN
                   mmio_read_data_q0(CTX_STAT_JOB_ACTIVE)                                  <= context_status_mmio_dout(CTX_STAT_JOB_ACTIVE_INT);
                   mmio_read_data_q0(CTX_STAT_CTX_ACTIVE)                                  <= context_status_mmio_dout(CTX_STAT_CTX_ACTIVE_INT);
 
+                WHEN CONTEXT_COMMAND_REG =>
+                  mmio_read_data_q0 <= (OTHERS => '0');
+
+                  mmio_read_data_q0(CTX_CMD_ARG_L DOWNTO CTX_CMD_ARG_R)                   <= context_command_mmio_dout(CTX_CMD_ARG_INT_L DOWNTO CTX_CMD_ARG_INT_R);
+                  mmio_read_data_q0(CTX_CMD_CODE_L DOWNTO CTX_CMD_CODE_R)                 <= context_command_mmio_dout(CTX_CMD_CODE_INT_L DOWNTO CTX_CMD_CODE_INT_R);
 
                 WHEN OTHERS =>
                   -- invalid address
@@ -642,6 +648,7 @@ BEGIN
         context_status_conflict_q        <= '0';
 
         context_fifo_we_q                <= (OTHERS => '0');
+        context_stop_q                   <= (OTHERS => '0');
 
         mm_e_q.wr_data_parity_err        <= '0';
 
@@ -674,7 +681,7 @@ BEGIN
         context_config_mmio_din(CTX_CFG_FIRST_JQIDX_INT_L DOWNTO CTX_CFG_FIRST_JQIDX_INT_R)  <= ha_mm_w_q.data(CTX_CFG_FIRST_JQIDX_L DOWNTO CTX_CFG_FIRST_JQIDX_R);
         context_config_mmio_din(CTX_CFG_MAX_JQIDX_INT_L DOWNTO CTX_CFG_MAX_JQIDX_INT_R)      <= ha_mm_w_q.data(CTX_CFG_MAX_JQIDX_L DOWNTO CTX_CFG_MAX_JQIDX_R);
         context_config_mmio_din(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R)                  <= ha_mm_w_q.data(CTX_CFG_SAT_L DOWNTO CTX_CFG_SAT_R);
-        context_config_mmio_din(CTX_CFG_EXEC_MODE_INT)                                       <= ha_mm_w_q.data(CTX_CFG_EXEC_MODE);
+        context_config_mmio_din(CTX_CFG_DIRECT_MODE_INT)                                     <= ha_mm_w_q.data(CTX_CFG_DIRECT_MODE);
 
         context_seqno_mmio_din                                                               <= context_seqno_mmio_dout;
 
@@ -692,6 +699,7 @@ BEGIN
         context_status_conflict_q        <= '0';
 
         context_fifo_we_q                <= (OTHERS => '0');
+        context_stop_q                   <= (OTHERS => '0');
 
         --
         -- MMIO Write parity error
@@ -836,6 +844,9 @@ BEGIN
                         IF (context_status_mmio_dout(CTX_STAT_CTX_ACTIVE_INT) = '0') AND (ha_mm_w_q.data(CTX_CMD_ARG_L DOWNTO CTX_CMD_ARG_R) /= context_seqno_mmio_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R) - 1) THEN
                           context_fifo_we_q(to_integer(unsigned(context_config_mmio_dout(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R)))) <= '1';
                         END IF;
+
+                      WHEN CTX_STOP =>
+                        context_stop_q(to_integer(unsigned(context_config_mmio_dout(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R)))) <= '1';
 
                       WHEN OTHERS =>
                         -- invalid command
@@ -996,6 +1007,7 @@ BEGIN
     -- MMJ
     --
     mmj_c_o.ctx_fifo_we        <= context_fifo_we_q;
+    mmj_c_o.ctx_stop           <= context_stop_q;
 
     mmj_c_o.exploration_done   <= exploration_done_q;
     mmj_c_o.max_sat            <= to_integer(unsigned(snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_SAT_L DOWNTO SNAP_STAT_MAX_SAT_R)));
@@ -1003,6 +1015,7 @@ BEGIN
                                       ELSE '0';
 
     mmj_d_o.context_id         <= context_status_mmio_addr;
+    mmj_d_o.action_id          <= context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R);
 
     action_type_list_gen : FOR action_id IN 0 TO NUM_OF_ACTIONS-1 GENERATE
       mmj_d_o.sat(action_id)   <= action_type_regs_q(action_id)(ATR_SAT_L DOWNTO ATR_SAT_R);
@@ -1010,6 +1023,7 @@ BEGIN
 
     mmj_d_o.current_seqno      <= context_seqno_hw_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R);
     mmj_d_o.current_jqidx      <= context_seqno_hw_dout(CTX_SEQNO_JQIDX_INT_L DOWNTO CTX_SEQNO_JQIDX_INT_R);
+    mmj_d_o.job_queue_mode     <= NOT context_config_mmio_dout(CTX_CFG_DIRECT_MODE_INT);
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
