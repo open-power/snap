@@ -80,6 +80,7 @@ struct dnut_data {
 	uint16_t device_id;
 	uint32_t action_type;	/* Action Type */
 	uint32_t sat;		/* short Action Type */
+	bool action_attach_busy;
 	int mode;
 	uint16_t seq;		/* Seq Number */
 	int afu_fd;
@@ -157,7 +158,8 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
         } else
 		dnut_trace("  %s: WARN Can not detect Err buffer\n", __func__);
 
-	dnut_trace("  %s: %d %x %x\n", __func__, (int)dn->errinfo_size, (int)vendor_id, (int)device_id);
+	dnut_trace("  %s: err info size: %d Vendor id: %x Deviceid: %x\n", __func__,
+		(int)dn->errinfo_size, (int)vendor_id, (int)device_id);
 	/* FIXME Why is wed not part of dn and dn not allocated with
 	   alignment in that case? Can we have wed to be NULL to save
 	   that step? */
@@ -302,16 +304,22 @@ static int hw_attach_action(void *_card, uint32_t action, int flags)
 		data = ((uint64_t)card->seq << 48ll);
 		data |= (card->sat << 12) | card->mode;	/* Short Action Type and Direct Access */
 		hw_dnut_mmio_write64(card, SNAP_S_CCR, data);
+		card->action_attach_busy = false;
 	}
-	data = ((uint64_t)card->seq << 48ll) | 1;	/* Start: Attach action to context */
-	hw_dnut_mmio_write64(card, SNAP_S_JCR, data);
+
+	if (false == card->action_attach_busy) {
+		data = ((uint64_t)card->seq << 48ll) | 1;	/* Start: Attach action to context */
+		hw_dnut_mmio_write64(card, SNAP_S_JCR, data);
+	}
 
 	hw_dnut_mmio_read64(card, SNAP_S_CSR, &data);
 	if (0xC0 != (data & 0xC0)) {
-		dnut_trace("%s Action Busy\n", __func__);
+		dnut_trace("%s Exit Busy\n", __func__);
+		card->action_attach_busy = true;
 		return EBUSY;
 	}
 	card->seq++;
+	card->action_attach_busy = false;
 	dnut_trace("%s Exit OK\n", __func__);
 	return 0;
 }
