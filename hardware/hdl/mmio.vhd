@@ -125,6 +125,9 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL afu_cfg_p                            : std_ulogic_vector(AFU_CFG_SPACE_SIZE-1 DOWNTO 0);
   SIGNAL snap_regs_q                          : REG64_ARRAY_T(MAX_SNAP_REG DOWNTO 0) := (OTHERS => (OTHERS => '0'));
   SIGNAL snap_regs_par_q                      : std_ulogic_vector(MAX_SNAP_REG DOWNTO 0) := (OTHERS => '1');
+  SIGNAL snap_lock_q                          : std_ulogic;
+  SIGNAL snap_lock_write_q                    : boolean;
+  SIGNAL snap_lock_write_val_q                : std_ulogic;
   SIGNAL action_type_regs_q                   : REG64_ARRAY_T(MAX_ACTION_TYPE_REG DOWNTO 0) := (OTHERS => (OTHERS => '0'));
   SIGNAL action_type_regs_par_q               : std_ulogic_vector(MAX_ACTION_TYPE_REG DOWNTO 0) := (OTHERS => '1');
   SIGNAL ctrl_mgr_err_q                       : std_ulogic_vector(31 DOWNTO 0) := (OTHERS => '0');
@@ -352,6 +355,7 @@ BEGIN
         ah_mm_q.datapar                <= '1';
         ah_mm_read_ack_q               <= '0';
         mmio_read_action_outstanding_q <= '0';
+        snap_lock_q                    <= '0';
 
         mm_e_q.rd_data_parity_err    <= (OTHERS => '0');
 
@@ -373,6 +377,10 @@ BEGIN
         ah_mm_q.datapar                <= mmio_read_datapar_q;
         ah_mm_read_ack_q               <= mmio_read_ack_q;
         mmio_read_action_outstanding_q <= mmio_read_action_outstanding_q;
+        snap_lock_q                    <= snap_lock_q;
+        IF snap_lock_write_q THEN
+          snap_lock_q <= snap_lock_write_val_q;
+        END IF;
 
         mm_e_q.rd_data_parity_err      <= (OTHERS => '0');
 
@@ -508,7 +516,17 @@ BEGIN
             -- GENERAL SNAP REGISTER READ
             --
             WHEN SNAP_REG_BASE =>
-              IF mmio_read_reg_offset_q < snap_regs_q'LENGTH THEN
+              IF mmio_read_reg_offset_q = SNAP_LOCK_REG THEN
+                IF mmio_read_master_access_q = '1' THEN
+                  mmio_read_data_q0                <= (OTHERS => '0');
+                  mmio_read_data_q0(SNAP_LOCK_INT) <= snap_lock_q;
+                  mmio_read_datapar_q0             <= NOT snap_lock_q;
+                  snap_lock_q                      <= '1';
+                ELSE
+                  -- invalid (slave) address
+                  non_fatal_slave_rd_errors_q(NFE_INV_RD_ADDRESS)  <= '1';
+                END IF;
+              ELSIF mmio_read_reg_offset_q < snap_regs_q'LENGTH THEN
                 mmio_read_data_q0    <= snap_regs_q(mmio_read_reg_offset_q);
                 mmio_read_datapar_q0 <= snap_regs_par_q(mmio_read_reg_offset_q);
               ELSE
@@ -622,6 +640,9 @@ BEGIN
         snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_ACTION_ID_L DOWNTO SNAP_STAT_MAX_ACTION_ID_R) <= std_ulogic_vector(to_unsigned(NUM_OF_ACTIONS-1, ACTION_BITS));
         snap_regs_par_q(SNAP_STATUS_REG) <= parity_gen_odd(std_ulogic_vector(to_unsigned(NUM_OF_ACTIONS-1, ACTION_BITS)));
 
+        snap_lock_write_q                <= FALSE;
+        snap_lock_write_val_q            <= '0';
+
         action_type_regs_q               <= (OTHERS => (OTHERS => '0'));
         action_type_regs_par_q           <= (OTHERS => '1');
 
@@ -662,6 +683,10 @@ BEGIN
         -- default
         snap_regs_q                      <= snap_regs_q;
         snap_regs_par_q                  <= snap_regs_par_q;
+
+        snap_lock_write_q                <= FALSE;
+        snap_lock_write_val_q            <= snap_lock_write_val_q;
+
         action_type_regs_q               <= action_type_regs_q;
         action_type_regs_par_q           <= action_type_regs_par_q;
         dbg_regs_q                       <= dbg_regs_q;
@@ -762,6 +787,10 @@ BEGIN
                       WHEN OTHERS =>
                         non_fatal_master_wr_errors_q(NFE_ILLEGAL_CMD) <= '1';
                     END CASE;
+
+                  WHEN SNAP_LOCK_REG =>
+                    snap_lock_write_q     <= TRUE;
+                    snap_lock_write_val_q <= ha_mm_w_q.data(SNAP_LOCK_INT);
 
                   WHEN OTHERS =>
                     -- invalid (master) address

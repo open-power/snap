@@ -214,7 +214,8 @@ PACKAGE donut_types IS
   CONSTANT BUILD_DATE_REG             : integer := 16#1#;
   CONSTANT SNAP_CMD_REG               : integer := 16#2#;
   CONSTANT SNAP_STATUS_REG            : integer := 16#3#;
-  CONSTANT MAX_SNAP_REG               : integer := 16#3#;
+  CONSTANT MAX_SNAP_REG               : integer := 16#3#;  -- maximum index for snap register array
+  CONSTANT SNAP_LOCK_REG              : integer := 16#4#;
 
   -- ACTION_TYPE registers
   CONSTANT MAX_ACTION_TYPE_REG        : integer := 16#F#;
@@ -240,6 +241,7 @@ PACKAGE donut_types IS
   CONSTANT SNAP_STAT_MAX_ACTION_ID_R  : integer :=  0;     -- SNAP_STATUS_REG
   CONSTANT SNAP_CMD_MAX_SAT_L         : integer := 51;     -- SNAP_STATUS_REG
   CONSTANT SNAP_CMD_MAX_SAT_R         : integer := 48;     -- SNAP_STATUS_REG
+  CONSTANT SNAP_LOCK_INT              : integer :=  0;     -- SNAP_LOCK_REG
 
   CONSTANT CTX_CFG_SIZE_INT           : integer := 37;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_SEQNO_L      : integer := 63;     -- CONTEXT_CONFIG_REG
