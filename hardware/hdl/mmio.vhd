@@ -503,7 +503,7 @@ BEGIN
           mmio_read_ack_q0     <= '1';
           mmio_master_read_q0  <= mmio_read_master_access_q;
 
-          CASE to_integer(unsigned(ha_mm_r_q.ad(13 DOWNTO 5))) IS
+          CASE to_integer(unsigned(ha_mm_r_q.ad(13 DOWNTO 5))) IS  -- TODO: master access with bits 22:14 not zero?
             -- for DEBUG (TODO: remove)
             --
             -- AFU DEBUG REGISTER READ
@@ -542,8 +542,12 @@ BEGIN
               IF mmio_read_reg_offset_q = SNAP_CTX_ID_REG THEN
                 mmio_read_data_q0                                     <= (OTHERS => '0');
                 mmio_read_data_q0(SNAP_CTX_MASTER_BIT)                <= mmio_read_master_access_q;
-                mmio_read_data_q0(SNAP_CTX_ID_L DOWNTO SNAP_CTX_ID_R) <= context_config_mmio_addr;
-                mmio_read_datapar_q0                                  <= parity_gen_odd(context_config_mmio_addr) XOR mmio_read_master_access_q;
+                IF mmio_read_master_access_q = '0' THEN
+                  mmio_read_data_q0(SNAP_CTX_ID_L DOWNTO SNAP_CTX_ID_R) <= context_config_mmio_addr;
+                  mmio_read_datapar_q0                                  <= parity_gen_odd(context_config_mmio_addr) XOR mmio_read_master_access_q;
+                ELSE
+                  mmio_read_datapar_q0 <= '0';
+                END IF;
               ELSE
                 -- invalid address
                 non_fatal_master_rd_errors_q(NFE_INV_RD_ADDRESS) <= mmio_read_master_access_q;
@@ -769,7 +773,8 @@ BEGIN
         -- valid write request that is not targeting the action
         --
         IF (mmio_write_access_q AND NOT mmio_action_access_q) = '1' THEN
-          CASE to_integer(unsigned(ha_mm_w_q.ad(13 DOWNTO 5))) IS
+
+          CASE to_integer(unsigned(ha_mm_w_q.ad(13 DOWNTO 5))) IS  -- TODO: master access with bits 22:14 not zero?
 --            --
 --            -- AFU FIR REGISTER WRITE (Reset on One)
 --            --
