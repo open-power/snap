@@ -536,7 +536,22 @@ BEGIN
               END IF;
 
             --
-            -- GENERAL SNAP REGISTER READ
+            -- EXTENDED SNAP REGISTER READ
+            --
+            WHEN SNAP_EXT_REG_BASE =>
+              IF mmio_read_reg_offset_q = SNAP_CTX_ID_REG THEN
+                mmio_read_data_q0                                     <= (OTHERS => '0');
+                mmio_read_data_q0(SNAP_CTX_MASTER_BIT)                <= mmio_read_master_access_q;
+                mmio_read_data_q0(SNAP_CTX_ID_L DOWNTO SNAP_CTX_ID_R) <= context_config_mmio_addr;
+                mmio_read_datapar_q0                                  <= parity_gen_odd(context_config_mmio_addr) XOR mmio_read_master_access_q;
+              ELSE
+                -- invalid address
+                non_fatal_master_rd_errors_q(NFE_INV_RD_ADDRESS) <= mmio_read_master_access_q;
+                non_fatal_slave_rd_errors_q(NFE_INV_RD_ADDRESS)  <= NOT mmio_read_master_access_q;
+              END IF;
+
+            --
+            -- ACTION TYPE REGISTER READ
             --
             WHEN ACTION_TYPE_REG_BASE =>
               IF mmio_read_reg_offset_q < action_type_regs_q'LENGTH THEN
