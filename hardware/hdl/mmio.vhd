@@ -893,9 +893,20 @@ BEGIN
                         IF (context_status_mmio_dout(CTX_STAT_CTX_ACTIVE_INT) = '0') AND (ha_mm_w_q.data(CTX_CMD_ARG_L DOWNTO CTX_CMD_ARG_R) /= context_seqno_mmio_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R) - 1) THEN
                           context_fifo_we_q(to_integer(unsigned(context_config_mmio_dout(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R)))) <= '1';
                         END IF;
+                        IF (context_seqno_mmio_addr = jmm_c_i.context_id) THEN
+                          context_seqno_conflict_q <= '1';
+                        END IF;
+                        IF (context_status_mmio_addr = jmm_c_i.context_id) THEN
+                          context_status_conflict_q <= '1';
+                        END IF;
 
                       WHEN CTX_STOP =>
                         context_stop_q(to_integer(unsigned(context_config_mmio_dout(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R)))) <= '1';
+                        context_status_mmio_we                             <= '1';
+                        context_status_mmio_din(CTX_STAT_ACTION_VALID_INT) <= '0';
+                        IF (context_status_mmio_addr = jmm_c_i.context_id) THEN
+                          context_status_conflict_q <= '1';
+                        END IF;
 
                       WHEN OTHERS =>
                         -- invalid command
