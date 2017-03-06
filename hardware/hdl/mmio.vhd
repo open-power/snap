@@ -944,6 +944,7 @@ BEGIN
           jmm_c_q <= jmm_c_i;
           jmm_d_q <= jmm_d_i;
         END IF;
+        jmm_c_q.context_id <= jmm_c_i.context_id;  -- context id is being used prior to we
       END IF;                                     -- afu_reset = '1'
     END IF;                                       -- rising_edge(ha_pclock)
   END PROCESS hw_w;
