@@ -91,6 +91,17 @@ extern "C" {
 #define SNAP_SSR	0x18
 
 /*
+ *  SNAP Lock Register SLR
+ *  ======================
+ *  Address: 0x0000020
+ *   63..1  RO: Reserved
+ *       0  RW: Lock (Set on Read)
+ *
+ *           POR value: 0x0000000000000000
+ */
+#define SNAP_SLR	0x20
+
+/*
  * Freerunning Timer (FRT)
  * =======================
  * Address: 0x0000080
@@ -135,9 +146,11 @@ extern "C" {
  * Context ID Register (CIR)
  * ================================
  * Address: 0x00000A0
- *     63 RO: Set to '1' for master register
- * 62..10 RO: Reserved
- *  9.. 0 RO: My context id (10 bits corresponding to 512 contexts)
+ *     63 RO: Set to '1' for master register 0 for slave
+ * 62.. 0 RO: Reserved (no context ID for master bit 63  = 1)
+ * 62.. 9 RO: Reserved (if bit 63  = 0)
+ *  8.. 0 RO: My context id (if bit 63  = 0)
+ *  		(9 bits corresponding to context IDs in the range 0..511)
  */
 #define SNAP_CIR	0xA0
 

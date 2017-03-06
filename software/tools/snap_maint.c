@@ -334,7 +334,7 @@ static void snap_version(void *handle)
 	uint64_t reg;
 
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_IVR);
-	VERBOSE1("SNAP Release %d/%d:%d Distance: %d GIT: 0x%8.8x\n",
+	VERBOSE1("SNAP Release: %d/%d:%d Distance: %d GIT: 0x%8.8x\n",
 		(int)(reg >> 56),
 		(int)(reg >> 48ll) & 0xff,
 		(int)(reg >> 40ll) & 0xff,
@@ -342,7 +342,7 @@ static void snap_version(void *handle)
 		(uint32_t)reg);
 
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_BDR);
-	VERBOSE1("SNAP Build Y/M/D %x/%x/%x Time (H:M) %x:%x\n",
+	VERBOSE1("SNAP Build (Y/M/D): %x/%x/%x Time (H:M): %x:%x\n",
 		(int)(reg >> 32ll) & 0xffff,
 		(int)(reg >> 24ll) & 0xff,
 		(int)(reg >> 16) & 0xff,
@@ -362,16 +362,21 @@ static int snap_m_init(void *handle)
 	int msat, mact;
 	int i, sai;
 
-	VERBOSE1("%s  Enter Card Master Init.\n", __func__);
+	VERBOSE1("%s  Enter\n", __func__);
+	while (1) {
+		reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_SLR);	/* Get lock */
+		if (0 == reg) break;	/* Got Lock, continue */
+		sleep(1);	/* Try until lock is free */
+		VERBOSE1("%s Waiting for lock..\n", __func__);
+	}
 	ssr = snap_read64(handle, SNAP_M_CTX, SNAP_M_SSR);
 	msat = (int)(ssr >> 4)& 0xf;	/* Get Maximum Short ID */
 	msat++;
 	mact = (int)ssr & 0xf;		/* Get Maximum Action ID */
 	mact++;
 	if (0x100 == (ssr &  0x100)) {
-		VERBOSE1("%s  Exit Setup already done before (SSR: 0x%016llx)\n", __func__,
-			(long long)ssr);
-		return 0;
+		VERBOSE1("%s       Setup already done\n", __func__);
+		goto _snap_m_init_exit;
 	}
 
 	/* Read Action Type */
@@ -381,7 +386,7 @@ static int snap_m_init(void *handle)
 	for (i = 0; i < mact; i++) {
 		reg = base + SNAP_M_ACT_SIZE * i;
 		atype_next = snap_read32(handle, SNAP_M_CTX, reg);
-		VERBOSE1("%s Explore Index: %d Max Index: %d found Action Type: 0x%8.8x Short Action Type: %d\n",
+		VERBOSE1("%s Index: %d Max: %d found AT: 0x%8.8x Assign SAT: %d\n",
 			__func__, i, mact, atype_next, sai);
 		reg = SNAP_M_ATRI + i * 8;
 		data = (uint64_t)sai << 32ll | (uint64_t)atype_next;
@@ -394,7 +399,9 @@ static int snap_m_init(void *handle)
 	/* Set Command Register (SCR) */
 	reg = 0x10 + ((uint64_t)sai << 48ll);	/* Exploration Done + Maximum Short Action Type */
 	snap_write64(handle, SNAP_M_CTX, SNAP_M_SCR, reg);
-	VERBOSE1("%s  Exit Card Master Init\n", __func__);
+_snap_m_init_exit:
+	snap_write64(handle, SNAP_M_CTX, SNAP_M_SLR, 0);	/* Release lock */
+	VERBOSE1("%s  Exit\n", __func__);
 	return 0;
 }
 
