@@ -1,0 +1,150 @@
+#-----------------------------------------------------------
+#
+# Copyright 2016, International Business Machines
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#-----------------------------------------------------------
+
+PSL_SOURCE_ENV=$(FPGACARD)
+
+export BUILD_NAME=noHDK_build
+export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
+export LOGS_DIR=$(BUILD_DIR)/Logs
+
+SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/hdl/top.sv 
+PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
+
+CE_PARMS := -p -clone
+
+ifndef DDR3_USED
+export DDR3_USED=TRUE
+endif
+
+ifndef DDR4_USED
+export DDR4_USED=FALSE
+endif
+
+export DDRI_USED=FALSE
+ifeq "$(DDR3_USED)" "TRUE"
+export DDRI_USED=TRUE
+endif
+ifeq "$(DDR4_USED)" "TRUE"
+export DDRI_USED=TRUE
+endif
+
+ifndef BRAM_USED
+export BRAM_USED=FALSE
+endif
+
+ifndef ILA_DEBUG
+export ILA_DEBUG=FALSE
+endif
+
+ifndef NUM_OF_ACTIONS
+export NUM_OF_ACTIONS=1
+endif
+
+ifndef ACTION_ROOT
+export ACTION_ROOT=$(DONUT_HARDWARE_ROOT)/action_examples/empty
+endif
+
+ifndef MSG_LEVEL
+export MSG_LEVEL=-quiet
+endif
+
+.PHONY: all image model check_donut_settings create_environment copy clean config gitclean patch_version patch_vhd_files patch_tcl_files
+
+all: config model image
+
+check_donut_settings:
+	@if [ ! -d "$(DONUT_HARDWARE_ROOT)" ]; then \
+		echo "DONUT_HARDWARE_ROOT does not point to a directory."; \
+		echo "Please source donut_settings before calling make!"; \
+                exit 1; \
+	fi
+
+copy $(BUILD_DIR)/Checkpoint/b_route_design.dcp:
+	@echo -e "\t[COPY..............] psl build env";
+	@mkdir $(BUILD_DIR); 
+	@mkdir $(BUILD_DIR)/Reports; 
+	@mkdir $(BUILD_DIR)/Logs; 
+	@mkdir $(BUILD_DIR)/Images; 
+	@mkdir $(BUILD_DIR)/Checkpoint; 
+	@ln -s $(BUILD_DIR)/Checkpoint                         $(BUILD_DIR)/Checkpoints;
+	@ln -s $(DONUT_HARDWARE_ROOT)/setup/noHDK_build.tcl    $(BUILD_DIR)/noHDK_build.tcl; 
+	@ln -s $(DONUT_HARDWARE_ROOT)/setup/fw_xpr_build.tcl   $(BUILD_DIR)/fw_xpr_build.tcl; 
+	@cp -ra $(PSL_SOURCE_ENV)/Checkpoint/*                 $(BUILD_DIR)/Checkpoint/; 
+	@cp -ra $(PSL_SOURCE_ENV)/Sources                      $(BUILD_DIR);
+
+$(BUILD_DIR)/Sources/top/psl_fpga.vhd: $(BUILD_DIR)/Checkpoint/b_route_design.dcp
+	@if [ $(DDR3_USED) = "TRUE" ]; then echo -e "\t[PATCH.............] psl_fpga.vhdl for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr3_vhdl.patch; fi
+	@if [ $(DDR4_USED) = "TRUE" ]; then echo -e "\t[PATCH.............] psl_fpga.vhdl for DDR4 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr4_vhdl.patch; fi
+
+$(SNAP_CONFIG_FILES):
+	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+
+create_environment:
+	@echo -e "\t[CREATE_ENVIRONMENT] start `date`";
+	$(eval BUILD_DATE := $(shell date +%Y.%m.%d_%H:%M))
+	@cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/vivado_create_ip_$(BUILD_DATE).log         -journal $(LOGS_DIR)/vivado_create_ip_$(BUILD_DATE).jou
+	@cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/vivado_create_framework_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_frame_work_$(BUILD_DATE).jou 
+	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
+
+config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(SNAP_CONFIG_FILES) create_environment
+	@echo -e "\t[CONFIG............] done `date`"
+
+patch_version:
+	@echo  -e "\t[PATCH.............] SNAP version and build date registers"; \
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl mmio.vhd
+
+image: patch_version
+	@echo -e "\t[BUILD IMAGE.......] start `date`"
+	$(eval BUILD_DATE := $(shell date +%Y.%m.%d_%H:%M))
+	@cd $(BUILD_DIR) && time vivado  $(MSG_LEVEL) -mode batch -source noHDK_build.tcl -notrace -log $(LOGS_DIR)/vivado_build_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_build_$(BUILD_DATE).jou
+	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/framework_timing_summary.rpt | egrep -v "^$|^\-\-"
+	@rm -r -f .bitstream_name.txt
+	@echo -e "\t[BUILD IMAGE.......] done  `date`"
+
+xpr_image: patch_version
+	@echo -e "\t[BUILD XPR IMAGE...] start `date`"
+	$(eval BUILD_DATE := $(shell date +%Y.%m.%d_%H:%M))
+	@cd $(BUILD_DIR) && time vivado  $(MSG_LEVEL) -mode batch -source fw_xpr_build.tcl -notrace -log $(LOGS_DIR)/vivado_build_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_build_$(BUILD_DATE).jou
+	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/framework_timing_summary_routed.rpt | egrep -v "^$|^\-\-"
+	@rm -r -f .bitstream_name.txt
+	@echo -e "\t[BUILD IMAGE.......] done  `date`"
+
+model: patch_version
+	@echo -e "\t[BUILD MODEL] start `date`"
+	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
+	@echo -e "\t[BUILD MODEL] done `date`"
+
+
+
+clean:
+	@echo -e "\t[CLEAN.............] build environment";
+	@rm -r -f  $(BUILD_DIR)
+	rm    -f  build
+	@rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
+	@rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
+	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
+	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
+	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
+	@rm -f     $(SNAP_CONFIG_FILES)
+	rm -f     ./setup/*.log
+	rm -f     ./setup/*.jou
+
+gitclean:
+	@echo -e "\t[GITCLEAN] cleaning and resetting donut git";
+	git clean -f -d -x
+	git reset --hard

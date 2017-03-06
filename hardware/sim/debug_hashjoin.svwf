@@ -1,0 +1,448 @@
+
+#
+# Mnemonic Maps
+#
+mmap new -reuse -name {Boolean as Logic} -radix %b -contents {{%c=FALSE -edgepriority 1 -shape low}
+{%c=TRUE -edgepriority 1 -shape high}}
+mmap new -reuse -name {Example Map} -radix %x -contents {{%b=11???? -bgcolor orange -label REG:%x -linecolor yellow -shape bus}
+{%x=1F -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=2C -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=* -label %x -linecolor gray -shape bus}}
+set id [waveform add -signals [subst  {
+	{[format {top.ah_cea[0:63]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ah_brdata}]}
+	} ]]
+waveform format $id -radix %a
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_bwad}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_mmrnw}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_bwdata}]}
+	} ]]
+waveform format $id -radix %a
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_mmad}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_mmdata}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ah_mmdata}]}
+	} ]]
+set id [waveform add -cdivider divider]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table1_age_ce0}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table1_age_we0}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table1_age_q0}]}
+	} ]]
+waveform format $id -radix %d
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table1_name_ce0}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table1_name_we0}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table1_name_q0}]}
+	} ]]
+waveform format $id -radix %a
+set id [waveform add -cdivider divider]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table2_animal_ce0}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table2_animal_we0}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table2_animal_q0}]}
+	} ]]
+waveform format $id -radix %a
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table2_name_ce0}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table2_name_we0}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table2_name_q0}]}
+	} ]]
+waveform format $id -radix %a
+set id [waveform add -cdivider divider]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table3_idx}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table3_age_ce0}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table3_age_we0}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table3_age_q0}]}
+	} ]]
+waveform format $id -radix %d
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table3_animal_ce0}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table3_animal_we0}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table3_animal_q0}]}
+	} ]]
+waveform format $id -radix %a
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table3_name_ce0}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table3_name_we0}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:p_table3_name_q0}]}
+	} ]]
+waveform format $id -radix %a
+set id [waveform add -cdivider divider]
+set id [waveform add -label ht_get -comment {}]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:grp_action_hashjoin_hls_fu_196:grp_ht_get_fu_306:ap_start}]}
+	} ]]
+set id [waveform add -label ht_set -comment {}]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:grp_action_hashjoin_hls_fu_196:grp_ht_set_fu_290:ap_start}]}
+	} ]]
+set id [waveform add -cdivider divider]
+set id [waveform add -label table1 -comment {}]
+set id [waveform add -label {table 2} -comment {}]
+set id [waveform add -label {table 3} -comment {}]
+set id [waveform add -cdivider divider]
+set id [waveform add -label GMEM_INTERFACE -comment {}]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_ARADDR}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_ARBURST}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_ARCACHE}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_ARID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_ARLEN}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_ARLOCK}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_ARPROT}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_ARQOS}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_ARREADY}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_ARREGION}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_ARSIZE}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_ARUSER}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_ARVALID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_AWADDR}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_AWBURST}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_AWCACHE}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_AWID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_AWLEN}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_AWLOCK}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_AWPROT}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_AWQOS}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_AWREADY}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_AWREGION}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_AWSIZE}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_AWUSER}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_AWVALID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_BID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_BREADY}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_BRESP}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_BUSER}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_BVALID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_RDATA}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_RID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_RLAST}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_RREADY}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_RRESP}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_RUSER}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_RVALID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_WDATA}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_WID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_WLAST}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_WREADY}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_WSTRB}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_WUSER}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_WVALID}]}
+	} ]]
+set id [waveform add -cdivider divider]
+set id [waveform add -label {DDR INTERFACE} -comment {}]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_ARADDR}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_ARBURST}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_ARCACHE}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_ARID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_ARLEN}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_ARLOCK}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_ARPROT}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_ARQOS}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_ARREADY}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_ARREGION}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_ARSIZE}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_ARUSER}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_ARVALID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_AWADDR}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_AWBURST}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_AWCACHE}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_AWID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_AWLEN}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_AWLOCK}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_AWPROT}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_AWQOS}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_AWREADY}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_AWREGION}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_AWSIZE}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_AWUSER}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_AWVALID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_BID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_BREADY}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_BRESP}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_BUSER}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_BVALID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_RDATA}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_RID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_RLAST}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_RREADY}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_RRESP}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_RUSER}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_RVALID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_WDATA}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_WID}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_WLAST}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_WREADY}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_WSTRB}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_WUSER}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_WVALID}]}
+	} ]]
+set id [waveform add -cdivider divider]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:donut_i:ah_b}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:donut_i:ah_c}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:donut_i:ha_b}]}
+	} ]]
+set id [waveform add -cdivider divider]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ah_com}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ah_csize}]}
+	} ]]
+waveform format $id -radix %d
+set id [waveform add -signals [subst  {
+	{[format {top.ah_cea[0:63]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_brvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ah_brdata}]}
+	} ]]
+waveform format $id -radix %a
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ah_brlat}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_brad}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_brtag}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_bwvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_bwad}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_bwdata}]}
+	} ]]
+waveform format $id -radix %a
+
+waveform xview limits 0 223050ns

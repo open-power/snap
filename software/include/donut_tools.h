@@ -101,7 +101,7 @@ extern int _dbg_flag;
 
 #define	pr_dbg(fmt, ...) do {					\
 		if (_dbg_flag)					\
-			fprintf(stdout, fmt, ## __VA_ARGS__);	\
+			fprintf(stderr, fmt, ## __VA_ARGS__);	\
 	} while(0)
 
 /** verbose_flag must be defined elsewhere */
@@ -109,7 +109,7 @@ extern int verbose_flag;
 
 #define pr_info(fmt, ...) do {					\
 		if (verbose_flag)				\
-			fprintf(stdout, fmt, ## __VA_ARGS__);	\
+			fprintf(stderr, fmt, ## __VA_ARGS__);	\
 	} while (0)
 
 /* FIXME Fake this for old RHEL verions e.g. RHEL5.6 */
