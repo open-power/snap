@@ -204,6 +204,12 @@ static int action_main(struct dnut_action *action, void *job,
 
 	switch (js->chk_type) {
 	case CHECKSUM_SPONGE:
+		act_trace("pe=%d nb_pe=%d\n", js->pe, js->nb_pe);
+
+		js->timer_ticks = 0; /* FIXME */
+		if (js->nb_pe == 0)
+			return 0;
+
 		js->chk_out = sponge_main(js->pe, js->nb_pe);
 		break;
 

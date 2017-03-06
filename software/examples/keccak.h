@@ -15,6 +15,24 @@
 #define ROTL64(x, y) (((x) << (y)) | ((x) >> (64 - (y))))
 #endif
 
+#define HASH_SIZE 64
+#define RESULT_SIZE 8
+
+/* Using the real test, takes quite some time */
+#define TEST
+
+#ifdef TEST
+#  define NB_SLICES 4
+#  define NB_ROUND 1<<10
+#else
+#  ifndef NB_SLICES
+#    define NB_SLICES 65536
+#  endif
+#  ifndef NB_ROUND
+#    define NB_ROUND 1<<24
+#  endif
+#endif
+
 // compute a keccak hash (md) of given byte length from "in"
 int keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen);
 

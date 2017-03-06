@@ -113,27 +113,12 @@ int keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen)
     return 0;
 }
 
-#define HASH_SIZE 64
-#define RESULT_SIZE 8
-
-#ifdef TEST
-#define NB_SLICES 4
-#define NB_ROUND 1<<10
-#else
-#ifndef NB_SLICES
-#define NB_SLICES 65536
-#endif
-#ifndef NB_ROUND
-#define NB_ROUND 1<<24
-#endif
-#endif
-
-static uint64_t sponge (const uint64_t rank)
+static uint64_t sponge(const uint64_t rank)
 {
   uint64_t magic[8] = {0x0123456789abcdeful, 0x13579bdf02468aceul,
 		       0xfdecba9876543210ul, 0xeca86420fdb97531ul,
                        0x571e30cf4b29a86dul, 0xd48f0c376e1b29a5ul,
-		       0xc5301e9f6b2ad748ul,0x3894d02e5ba71c6ful};
+		       0xc5301e9f6b2ad748ul, 0x3894d02e5ba71c6ful};
   uint64_t odd[8],even[8],result;
   int i,j;
 
@@ -161,19 +146,31 @@ static uint64_t sponge (const uint64_t rank)
   return result;
 }
 
+/**
+ * nb_pe must be != 0, since we divide by it.
+ *
+ */
 uint64_t sponge_main(uint32_t pe, uint32_t nb_pe)
 {
 	uint32_t slice;
 	uint64_t checksum=0;
 
 	act_trace("%s(%d, %d)\n", __func__, pe, nb_pe);
+	act_trace("  NB_SLICES=%d NB_ROUND=%d\n", NB_SLICES, NB_ROUND);
 
 	for (slice = 0; slice < NB_SLICES; slice++) {
-		act_trace("slice %d\n", slice);
-		if (pe == (slice % nb_pe))
-			checksum ^= sponge(slice);
+		if (pe == (slice % nb_pe)) {
+			uint64_t checksum_tmp;
+
+			act_trace("  slice=%08x\n", slice);
+			checksum_tmp = sponge(slice);
+			checksum ^= checksum_tmp;
+			act_trace("    %016llx %016llx\n",
+				  (long long)checksum_tmp,
+				  (long long)checksum);
+		}
 	}
 
-	printf("checksum=%016llx\n", (unsigned long long)checksum);
+	act_trace("checksum=%016llx\n", (unsigned long long)checksum);
 	return checksum;
 }

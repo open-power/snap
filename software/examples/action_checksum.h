@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 #include <libdonut.h>
+#include "keccak.h"
 
 typedef enum {
 	CHECKSUM_CRC32 = 0x0,
@@ -36,6 +37,7 @@ struct checksum_job {
 	uint64_t chk_out;	/* checksum output */
 	uint32_t pe;		/* special parameter for sponge */
 	uint32_t nb_pe;		/* special parameter for sponge */
+	uint64_t timer_ticks;   /* timer ticks in FPGA timer frequency */
 };
 
 #endif	/* __ACTION_CHECKSUM_H__ */
