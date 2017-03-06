@@ -356,7 +356,7 @@ BEGIN
           IF (unsigned(mmj_d_i.sat(to_integer(unsigned(xj_c_i.action)))) = to_unsigned(sat_id, ACTION_BITS)) THEN
             action_completed_fifo_we(sat_id)  <= xj_c_i.valid;
             action_completed_fifo_din(sat_id) <= xj_c_i.action;
-            action_completed_v                :=  '1';
+            action_completed_v                := xj_c_i.valid;
           END IF;
 
           ctx_completed_fifo_re(sat_id)      <= '0';
