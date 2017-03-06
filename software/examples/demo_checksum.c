@@ -32,6 +32,7 @@
 int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
+static const char *checksum_mode_str[] = { "CRC32", "ADLER32", "SPONGE" };
 
 #define MMIO_DIN_DEFAULT	0x0ull
 #define MMIO_DOUT_DEFAULT	0x0ull
@@ -50,7 +51,9 @@ static void usage(const char *prog)
 	       "  -A, --type-in <CARD_RAM, HOST_RAM, ...>.\n"
 	       "  -a, --addr-in <addr>      address e.g. in CARD_RAM.\n"
 	       "  -s, --size <size>         size of data.\n"
-	       "  -m, --mode <CRC32|ADLER32> mode flags.\n"
+	       "  -p, --pe <pe>             sponge specific input.\n"
+	       "  -n, --nb_pe <nb_pe>       sponge specific input.\n"
+	       "  -m, --mode <CRC32|ADLER32|SPONGE> mode flags.\n"
 	       "\n"
 	       "Example:\n"
 	       "  demo_checksum ...\n"
@@ -65,7 +68,9 @@ static void dnut_prepare_checksum(struct dnut_job *cjob,
 				  uint32_t size_in,
 				  uint8_t type_in,
 				  uint64_t type,
-				  uint64_t chk_in)
+				  uint64_t chk_in,
+				  uint32_t pe,
+				  uint32_t nb_pe)
 {
 	dnut_addr_set(&mjob_in->in, addr_in, size_in, type_in,
 		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
@@ -73,6 +78,8 @@ static void dnut_prepare_checksum(struct dnut_job *cjob,
 	mjob_in->chk_type = type;
 	mjob_in->chk_in = chk_in;
 	mjob_out->chk_out = 0x0;
+	mjob_out->pe = pe;
+	mjob_out->nb_pe = nb_pe;
 
 	dnut_job_set(cjob, CHECKSUM_ACTION_TYPE,
 		     mjob_in, sizeof(*mjob_in),
@@ -167,6 +174,7 @@ int main(int argc, char *argv[])
 	uint64_t addr_in = 0x0ull;
 	int mode = CHECKSUM_CRC32;
 	uint64_t checksum_start = 0ull;
+	uint32_t pe = 0, nb_pe = 0;
 
 	while (1) {
 		int option_index = 0;
@@ -179,6 +187,8 @@ int main(int argc, char *argv[])
 			{ "start-value", required_argument, NULL, 'S' },
 			{ "mode",	 required_argument, NULL, 'm' },
 			{ "timeout",	 required_argument, NULL, 't' },
+			{ "pe",		 required_argument, NULL, 'p' },
+			{ "nb_pe",	 required_argument, NULL, 'n' },
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
@@ -186,7 +196,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-				 "A:C:i:a:S:x:s:t:Vqvh",
+				 "A:C:i:a:S:x:p:m:n:s:t:Vqvh",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -204,10 +214,28 @@ int main(int argc, char *argv[])
 		case 'S':
 			checksum_start = __str_to_num(optarg);
 			break;
+		case 'p':
+			pe = __str_to_num(optarg);
+			break;
+		case 'n':
+			nb_pe = __str_to_num(optarg);
+			break;
 		case 't':
 			timeout = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 'm':
+			if (strcmp(optarg, "CRC32") == 0) {
+				mode = CHECKSUM_CRC32;
+				break;
+			}
+			if (strcmp(optarg, "ADLER32") == 0) {
+				mode = CHECKSUM_ADLER32;
+				break;
+			}
+			if (strcmp(optarg, "SPONGE") == 0) {
+				mode = CHECKSUM_SPONGE;
+				break;
+			}
 			mode = strtol(optarg, (char **)NULL, 0);
 			break;
 			/* input data */
@@ -278,9 +306,13 @@ int main(int argc, char *argv[])
 	       "  addr_in:  %016llx\n"
 	       "  size:     %08lx\n"
 	       "  checksum_start: %016llx\n"
-	       "  mode:     %08x\n",
+	       "  mode:     %08x %s\n"
+	       "  pe:       %08x\n"
+	       "  nb_pe:    %08x\n",
 	       input, type_in, (long long)addr_in,
-	       size, (long long)checksum_start, mode);
+	       size, (long long)checksum_start, mode,
+	       checksum_mode_str[mode % CHECKSUM_MODE_MAX],
+	       pe, nb_pe);
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
 	kernel = dnut_kernel_attach_dev(device,
@@ -293,10 +325,6 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Wait a sec ...\n");
-	sleep(1);
-#endif
 #if 1				/* FIXME Circumvention should go away */
 	pr_info("FIXME Temporary setting to define memory base address\n");
 	dnut_kernel_mmio_write32(kernel, 0x10010, 0);
@@ -312,7 +340,8 @@ int main(int argc, char *argv[])
 
 	dnut_prepare_checksum(&cjob, &mjob_in, &mjob_out,
 			     (void *)addr_in, size, type_in,
-			      CHECKSUM_CRC32, checksum_start);
+			      mode, checksum_start,
+			      pe, nb_pe);
 
 	gettimeofday(&stime, NULL);
 	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);

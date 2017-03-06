@@ -20,8 +20,13 @@
 #include <stdint.h>
 #include <libdonut.h>
 
-#define CHECKSUM_CRC32		0x1
-#define CHECKSUM_ADDLER32	0x2
+typedef enum {
+	CHECKSUM_CRC32 = 0x0,
+	CHECKSUM_ADLER32 = 0x1,
+	CHECKSUM_SPONGE = 0x2,
+	CHECKSUM_MODE_MAX = 0x3,
+} checksum_mode_t;
+
 #define CHECKSUM_ACTION_TYPE	0x0006
 
 struct checksum_job {
@@ -29,6 +34,8 @@ struct checksum_job {
 	uint64_t chk_type;	/* CRC32, ADDLER32 */
 	uint64_t chk_in;	/* checksum input */
 	uint64_t chk_out;	/* checksum output */
+	uint32_t pe;		/* special parameter for sponge */
+	uint32_t nb_pe;		/* special parameter for sponge */
 };
 
 #endif	/* __ACTION_CHECKSUM_H__ */
