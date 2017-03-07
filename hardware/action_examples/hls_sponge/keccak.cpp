@@ -2,7 +2,7 @@
 // 19-Nov-11  Markku-Juhani O. Saarinen <mjos@iki.fi>
 // A baseline Keccak (3rd round) implementation.
 
-#include "keccak.h"
+#include "keccak.H"
 
 const uint64_t keccakf_rndc[24] = 
 {
@@ -89,7 +89,7 @@ int keccak(const uint64_t *in64, int inlen, uint64_t *md64, int mdlen)
     int i, rsiz, rsizw;
     int j;
     uint64_t tmp;
-    uint8_t in[64],md[64];
+    uint8_t in[64];  /* md[64]; */
 
     //Casting from uint64_t to uint8_t
     for( i = 0; i < 8; i++ ) {

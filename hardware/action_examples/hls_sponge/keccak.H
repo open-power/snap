@@ -22,5 +22,8 @@ int keccak(const uint64_t *in, int inlen, uint64_t *md, int mdlen);
 // update the state
 void keccakf(uint64_t st_in[25], uint64_t st_out[25], int norounds);
 
+/* main functionality */
+uint64_t sponge (const uint64_t rank);
+
 #endif
 
