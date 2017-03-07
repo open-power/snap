@@ -48,8 +48,8 @@
 #endif
 
 // BFS defines VEX_WIDTH = log2(MAX_VEX_NUM) The necessary bits to hold vex index
-#define MAX_VEX_NUM 100
-#define VEX_WIDTH   7  
+#define MAX_VEX_NUM 2048
+#define VEX_WIDTH   11  
 
 #define VNODE_SIZE  16
 //vnode = (*edgelink_ptr, *data_ptr)
@@ -97,12 +97,13 @@ typedef struct {//Names of the fields can be changed by User. Should serve as a 
         ap_uint<16> input_flags;
 
         ap_uint<64> output_address;
-        ap_uint<32> output_size;
         ap_uint<16> output_type;
         ap_uint<16> output_flags;
-    
+
+        ap_uint<32> status_pos;
+        ap_uint<32> status_vex; 
         ap_uint<64> action_version;
-        ap_uint<576> unused;
+        ap_uint<544> unused;
 } DATA_BFS; // DATA = 112 Bytes
 
 typedef struct {

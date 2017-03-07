@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+
 #include "action_hashjoin_hls.H"
 
 using namespace std;
@@ -130,6 +131,11 @@ typedef struct snap_4KiB_t {
 	unsigned char b_idx;                /* read position for buffer */
 } snap_4KiB_t;
 
+static inline int snap_4KiB_empty(snap_4KiB_t *buf)
+{
+	return buf->b_idx == 0;
+}
+
 static void snap_4KiB_rinit(snap_4KiB_t *buf, snap_membus_t *mem,
 			    unsigned short max_lines)
 {
@@ -167,8 +173,18 @@ static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
 		fprintf(stderr, "4KiB buffer %d lines, reading %d bytes\n",
 			tocopy, tocopy * sizeof(snap_membus_t));
 #endif
-		memcpy(buf->buf, buf->mem + buf->m_idx,
-		       tocopy * sizeof(snap_membus_t));
+		switch (tocopy) {
+		case 0: /* NOTE: Avoid read/write 0 bytes, HLS bug */
+			break;
+		case  SNAP_4KiB_WORDS:
+			memcpy(buf->buf, buf->mem + buf->m_idx,
+			       SNAP_4KiB_WORDS * sizeof(snap_membus_t));
+			break;
+		default:
+			memcpy(buf->buf, buf->mem + buf->m_idx,
+			       tocopy * sizeof(snap_membus_t));
+			break;
+		}
 		
 		buf->m_idx += tocopy;
 		buf->b_idx = 0; /* buffer is full again */
@@ -180,6 +196,8 @@ static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
 /**
  * Writing beyond the available memory is blocked, still we accept
  * data in the local buffer, but that will not be written out.
+ * Normally I would have written that with tocopy = MIN(free_lines, buf->b_idx)
+ * but that produced hardware with bad timing.
  */
 static void snap_4KiB_flush(snap_4KiB_t *buf)
 {
@@ -192,9 +210,18 @@ static void snap_4KiB_flush(snap_4KiB_t *buf)
 		tocopy, tocopy * sizeof(snap_membus_t),
 		free_lines, SNAP_4KiB_WORDS, buf->max_lines);
 #endif
-	memcpy(buf->mem + buf->m_idx, buf->buf,
-	       tocopy * sizeof(snap_membus_t));
-
+	switch (tocopy) {
+	case 0: /* NOTE: Avoid read/write 0 bytes, HLS bug */
+		break;
+	case SNAP_4KiB_WORDS:
+		memcpy(buf->mem + buf->m_idx, buf->buf,
+		       SNAP_4KiB_WORDS * sizeof(snap_membus_t));
+		break;
+	default:
+		memcpy(buf->mem + buf->m_idx, buf->buf,
+		       tocopy * sizeof(snap_membus_t));
+		break;
+	}
 	buf->m_idx += tocopy;
 	buf->b_idx = 0;
 }
@@ -291,9 +318,9 @@ static void write_table3(snap_membus_t *mem, unsigned int max_lines,
 		snap_4KiB_put(&buf, d[1]); 
 		snap_4KiB_put(&buf, d[2]);
 	}
+
 	/* FIXME Tryout for 0 entries ... */
-	if (t3_used != 0) 
-		snap_4KiB_flush(&buf);
+	snap_4KiB_flush(&buf);
 }
 
 //-----------------------------------------------------------------------------
