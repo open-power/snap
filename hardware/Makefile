@@ -20,7 +20,7 @@ PSL_SOURCE_ENV=$(FPGACARD)
 export BUILD_NAME=HDK_build
 export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
 
-SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/hdl/top.sv 
+SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/core/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/sim/core/top.sv 
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone
@@ -124,7 +124,7 @@ patch_vhd_files:
 
 patch_version:
 	@echo "PATCH SNAP version and build date registers"; \
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl mmio.vhd
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl/core/ mmio.vhd
 
 config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(SNAP_CONFIG_FILES) create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_vhd_files patch_version
 	@echo -e "\t[CONFIG] done `date`"
