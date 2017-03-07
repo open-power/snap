@@ -13,16 +13,16 @@
 #define HASH_SIZE 64
 #define RESULT_SIZE 8
 
-#ifdef TEST
-#define NB_SLICES 4
-#define NB_ROUND 1<<10
+#ifdef NO_SYNTH /* TEST */
+#  define NB_SLICES 4
+#  define NB_ROUND 1<<10
 #else
-#ifndef NB_SLICES
-#define NB_SLICES 4	//65536--for first synthesis
-#endif
-#ifndef NB_ROUND
-#define NB_ROUND 1<<10	//24--for first synthesis
-#endif
+#  ifndef NB_SLICES
+#    define NB_SLICES 65536 /* 4 */	//65536--for first synthesis
+#  endif
+#  ifndef NB_ROUND
+#    define NB_ROUND 1<<24 /* 10 */	//24--for first synthesis
+#  endif
 #endif
 
 uint64_t sponge (const uint64_t rank) {
