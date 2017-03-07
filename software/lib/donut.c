@@ -166,7 +166,7 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
         } else
 		dnut_trace("  %s: WARN Can not detect Err buffer\n", __func__);
 
-	dnut_trace("  %s: err info size: %d Vendor id: %x Deviceid: %x\n", __func__,
+	dnut_trace("  %s: Err Info Size: %d Vendor / Device ID: %x / %x\n", __func__,
 		(int)dn->errinfo_size, (int)vendor_id, (int)device_id);
 	/* FIXME Why is wed not part of dn and dn not allocated with
 	   alignment in that case? Can we have wed to be NULL to save

@@ -362,7 +362,7 @@ static int snap_m_init(void *handle)
 	int msat, mact;
 	int i, sai;
 
-	VERBOSE1("%s  Enter\n", __func__);
+	VERBOSE1("%s Enter\n", __func__);
 	while (1) {
 		reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_SLR);	/* Get lock */
 		if (0 == reg) break;	/* Got Lock, continue */
@@ -401,7 +401,7 @@ static int snap_m_init(void *handle)
 	snap_write64(handle, SNAP_M_CTX, SNAP_M_SCR, reg);
 _snap_m_init_exit:
 	snap_write64(handle, SNAP_M_CTX, SNAP_M_SLR, 0);	/* Release lock */
-	VERBOSE1("%s  Exit\n", __func__);
+	VERBOSE1("%s Exit\n", __func__);
 	return 0;
 }
 

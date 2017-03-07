@@ -489,6 +489,7 @@ int main(int argc, char *argv[])
 	int memcpy_iter = DEFAULT_MEMCPY_ITER;
 	int memcpy_align = DEFAULT_MEMCPY_BLOCK;
 	uint64_t card_ram_base = DDR_MEM_BASE_ADDR;	/* Base of Card DDR or Block Ram */
+	uint64_t cir;
 	int timeout_ms = ACTION_WAIT_TIME;
 
 	while (1) {
@@ -586,15 +587,15 @@ int main(int argc, char *argv[])
 		perror("dnut_card_alloc_dev()");
 		return -1;
 	}
-	VERBOSE1("Start of Action: %d Card Handle: %p\n", action, dn);
+	dnut_mmio_read64(dn, SNAP_S_CIR, &cir);
+	VERBOSE1("Start of Action: %d Card Handle: %p Context: %d\n", action, dn,
+		(int)(cir & 0x1ff));
 
 	switch (action) {
 	case 1:
 		for(delay = start_delay; delay <= end_delay; delay += step_delay) {
 			rc = action_count(dn, delay, timeout_ms);
 			if (0 != rc) break;
-			VERBOSE0("Sleep 10 sec...\n");
-			sleep(10);
 		}
 		rc = 0;
 		break;
