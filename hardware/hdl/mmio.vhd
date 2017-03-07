@@ -181,6 +181,8 @@ ARCHITECTURE mmio OF mmio IS
 
   SIGNAL context_fifo_we_q             : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL context_stop_q                : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL context_stop_ack_q0           : std_ulogic;
+  SIGNAL context_stop_ack_q            : std_ulogic;
 
 BEGIN
 
@@ -689,6 +691,8 @@ BEGIN
 
         context_fifo_we_q                <= (OTHERS => '0');
         context_stop_q                   <= (OTHERS => '0');
+        context_stop_ack_q0              <= '0';
+        context_stop_ack_q               <= '0';
 
         mm_e_q.wr_data_parity_err        <= '0';
 
@@ -744,6 +748,13 @@ BEGIN
 
         context_fifo_we_q                <= (OTHERS => '0');
         context_stop_q                   <= (OTHERS => '0');
+
+        IF (context_status_mmio_addr = jmm_c_i.context_id) AND (jmm_c_i.status_we = '1') THEN
+          context_stop_ack_q0 <= context_stop_ack_q0 AND jmm_d_i.context_active;
+        ELSE
+          context_stop_ack_q0 <= context_stop_ack_q0;
+        END IF;
+        context_stop_ack_q <= context_stop_ack_q0;
 
         --
         -- MMIO Write parity error
@@ -902,11 +913,7 @@ BEGIN
 
                       WHEN CTX_STOP =>
                         context_stop_q(to_integer(unsigned(context_config_mmio_dout(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R)))) <= '1';
-                        context_status_mmio_we                             <= '1';
-                        context_status_mmio_din(CTX_STAT_ACTION_VALID_INT) <= '0';
-                        IF (context_status_mmio_addr = jmm_c_i.context_id) THEN
-                          context_status_conflict_q <= '1';
-                        END IF;
+                        context_stop_ack_q0 <= '1';
 
                       WHEN OTHERS =>
                         -- invalid command
@@ -1044,7 +1051,7 @@ BEGIN
     --
     -- AH_MM
     --
-    ah_mm_o.ack     <= ah_mm_read_ack_q OR (ah_mm_write_ack_q AND NOT mmio_write_action_access_q) OR xmm_ack_q;
+    ah_mm_o.ack     <= ah_mm_read_ack_q OR (ah_mm_write_ack_q AND NOT (mmio_write_action_access_q OR context_stop_ack_q0)) OR xmm_ack_q OR (context_stop_ack_q AND NOT context_stop_ack_q0);
     ah_mm_o.data    <= ah_mm_q.data;
     ah_mm_o.datapar <= ah_mm_q.datapar; -- XOR mm_i_q.inject_read_rsp_parity_error;  -- toggle parity iff inject_read_rsp_parity_error is set to '1';
 
