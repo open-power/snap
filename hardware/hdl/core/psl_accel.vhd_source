@@ -35,8 +35,8 @@ ENTITY psl_accel IS
 
     -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory
     C_AXI_CARD_MEM0_ID_WIDTH       : integer   := 1;
-    C_AXI_CARD_MEM0_ADDR_WIDTH     : integer   := 33;                                    -- only for DDR4_USED!=TRUE
-    C_AXI_CARD_MEM0_ADDR_WIDTH     : integer   := 32;                                    -- only for DDR4_USED=TRUE
+    C_AXI_CARD_MEM0_ADDR_WIDTH     : integer   := 33;                                    -- only for DDR3_USED=TRUE
+    C_AXI_CARD_MEM0_ADDR_WIDTH     : integer   := 32;                                    -- only for DDR3_USED!=TRUE
     C_AXI_CARD_MEM0_DATA_WIDTH     : integer   := 512;
     C_AXI_CARD_MEM0_AWUSER_WIDTH   : integer   := 1;
     C_AXI_CARD_MEM0_ARUSER_WIDTH   : integer   := 1;
