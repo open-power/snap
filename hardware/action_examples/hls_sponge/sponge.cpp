@@ -12,7 +12,8 @@
 #define HASH_SIZE 64
 #define RESULT_SIZE 8
 
-#ifdef NO_SYNTH /* TEST */
+#define TEST /* get faster turn-around time */
+#ifdef TEST /* NO_SYNTH */ /* TEST */
 #  define NB_SLICES 4
 #  define NB_ROUND 1<<10
 #else

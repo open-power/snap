@@ -61,9 +61,12 @@ $(SOLUTION_NAME): $(objs)
 #      if they occur. Rather than challenging our luck.
 #
 # Check for critical warnings and exit if those occur. Add more if needed.
+# Check for register duplication (0x184/Action_Output_o).
 #
 check: $(symlinks)
 	@grep -A8 critical $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ; \
+		test $$? = 1
+	@grep -A8 0x184 vhdl/action_wrapper_ctrl_reg_s_axi.vhd ; \
 		test $$? = 1
 
 clean:
