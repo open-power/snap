@@ -146,30 +146,24 @@ read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict $msg_le
 # XDC
 # Donut XDC
 puts "	                     import XDCs"
-#add_files -fileset constrs_1 -norecurse $root_dir/setup/donut_synth.xdc
-#set_property used_in_implementation false [get_files   $root_dir/setup/donut_synth.xdc]
 add_files -fileset constrs_1 -norecurse $root_dir/setup/donut_link.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/donut_link.xdc]
 update_compile_order -fileset sources_1 $msg_level
 # DDR XDCs
 if { $ddri_used == TRUE } {
-  if { $ddr3_used == TRUE } {
+  if { $bram_used == TRUE } {
+    add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc -quiet
+    add_files -fileset constrs_1 -norecurse $dimm_dir/snap_refclk200.xdc -quiet
+  } elseif { $ddr3_used == TRUE } {
     add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc
-    if { $bram_used == FALSE } {
-#      add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc
-#      set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b0_x72ecc.xdc]
-#      add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b0_8g_x72ecc.xdc
-#      set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b0_8g_x72ecc.xdc]
-      add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc
-      set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc]
-      add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc
-      set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc]
-    }
+    add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc
+    set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc]
+    add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc
+    set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc]
   } elseif { $ddr4_used == TRUE } {
     add_files -fileset constrs_1 -norecurse $dimm_dir/snap_refclk200.xdc
     add_files -fileset constrs_1 -norecurse $dimm_dir/snap_ddr4pins_flash_gt.xdc
     set_property used_in_synthesis false [get_files $dimm_dir/snap_ddr4pins_flash_gt.xdc]
-
   } else {
     puts "	                     ERROR: no DDR RAM was specified"
     exit
