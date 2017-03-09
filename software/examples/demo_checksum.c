@@ -162,6 +162,8 @@ static int do_checksum(int card_no, unsigned long timeout,
 		       uint64_t *_checksum,
 		       uint64_t *_usec,
 		       uint64_t *_timer_ticks,
+		       uint64_t *_nb_slices,
+		       uint64_t *_nb_round,
 		       FILE *fp)
 {
 	int rc;
@@ -224,9 +226,14 @@ static int do_checksum(int card_no, unsigned long timeout,
 	fprintf(fp, "RETC=%x\n"
 		"CHECKSUM=%016llx\n"
 		"TIMERTICKS=%016llx\n"
+		"NB_SLICES=%016llx\n"
+		"NB_ROUND=%016llx\n"
 		"%lld usec\n",
-		cjob.retc, (long long)mjob_out.chk_out,
+		cjob.retc,
+		(long long)mjob_out.chk_out,
 		(long long)mjob_out.timer_ticks,
+		(long long)mjob_out.nb_slices,
+		(long long)mjob_out.nb_round,
 		(long long)timediff_usec(&etime, &stime));
 
 	dnut_kernel_free(kernel);
@@ -237,7 +244,11 @@ static int do_checksum(int card_no, unsigned long timeout,
 		*_usec = timediff_usec(&etime, &stime);
 	if (_timer_ticks)
 		*_timer_ticks = mjob_out.timer_ticks;
-
+	if (_nb_slices)
+		*_nb_slices = mjob_out.nb_slices;
+	if (_nb_round)
+		*_nb_round = mjob_out.nb_round;
+	
 	return 0;
 
  out_error2:
@@ -270,18 +281,18 @@ static int test_sponge(int card_no, int timeout, FILE *fp)
 	};
 
 	fprintf(stderr, "SPONGE TESTCASE\n");
-	fprintf(stderr, "  NB_SLICES=%d NB_ROUND=%d\n", NB_SLICES, NB_ROUND);
 
 	for (i = 0; i < ARRAY_SIZE(test_data); i++) {
 		struct sponge_t *t = &test_data[i];
 		uint64_t timer_ticks = 0;
+		uint64_t nb_slices = 0, nb_round = 0;
 
-		fprintf(stderr, "  pe=%d nb_pe=%d ... ", t->pe, t->nb_pe);
 		rc = do_checksum(card_no, timeout, 0, 0, 0, 0,
 				 CHECKSUM_SPONGE, t->pe, t->nb_pe,
-				 &checksum, &usec, &timer_ticks, fp);
+				 &checksum, &usec, &timer_ticks,
+				 &nb_slices, &nb_round, fp);
 		if (rc != 0) {
-			fprintf(stderr, "FAILED\n");
+			fprintf(stderr, "err: sponge rc=%d FAILED\n", rc);
 			break;
 		}
 		
@@ -292,6 +303,11 @@ static int test_sponge(int card_no, int timeout, FILE *fp)
 				(long long)t->checksum);
 			return -1;
 		}
+		if (i == 0)
+			fprintf(stderr, "  NB_SLICES=%d NB_ROUND=%d\n",
+				(int)nb_slices, (int)nb_round);
+
+		fprintf(stderr, "  pe=%d nb_pe=%d ... ", t->pe, t->nb_pe);
 		fprintf(stderr, "checksum=%016llx %8lld timer_ticks "
 			"%8lld usec OK\n",
 			(long long)checksum,
@@ -462,7 +478,7 @@ int main(int argc, char *argv[])
 	} else {
 		rc = do_checksum(card_no, timeout, addr_in, type_in, size,
 				 checksum_start, mode, pe, nb_pe,
-				 NULL, NULL, NULL, stderr);
+				 NULL, NULL, NULL, NULL, NULL, stderr);
 		if (rc != 0)
 			goto out_error1;
 	}

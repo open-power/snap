@@ -156,7 +156,7 @@ uint64_t sponge_main(uint32_t pe, uint32_t nb_pe)
 	uint64_t checksum=0;
 
 	act_trace("%s(%d, %d)\n", __func__, pe, nb_pe);
-	act_trace("  NB_SLICES=%d NB_ROUND=%d\n", NB_SLICES, NB_ROUND);
+	act_trace("  sw: NB_SLICES=%d NB_ROUND=%d\n", NB_SLICES, NB_ROUND);
 
 	for (slice = 0; slice < NB_SLICES; slice++) {
 		if (pe == (slice % nb_pe)) {

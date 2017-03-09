@@ -211,6 +211,8 @@ static int action_main(struct dnut_action *action, void *job,
 			return 0;
 
 		js->chk_out = sponge_main(js->pe, js->nb_pe);
+		js->nb_slices = NB_SLICES;
+		js->nb_round = NB_ROUND;
 		break;
 
 	case CHECKSUM_CRC32:

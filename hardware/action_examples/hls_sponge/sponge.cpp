@@ -82,14 +82,14 @@ static void write_results(action_output_reg *Action_Output,
 	Action_Output->Data.chk_out = field1;
 	Action_Output->Data.timer_ticks = field2;
 	Action_Output->Data.action_version =  RELEASE_VERSION;
-
-	//Unused registered
-	Action_Output->Reserved      = 0;
-	Action_Output->Data.in       = Action_Input->Data.in;
+	Action_Output->Reserved = 0;
+	Action_Output->Data.in = Action_Input->Data.in;
 	Action_Output->Data.chk_type = Action_Input->Data.chk_type;
-	Action_Output->Data.chk_in   = Action_Input->Data.chk_in;
-	Action_Output->Data.pe       =  Action_Input->Data.pe;
-	Action_Output->Data.nb_pe    =  Action_Input->Data.nb_pe;
+	Action_Output->Data.chk_in = Action_Input->Data.chk_in;
+	Action_Output->Data.pe = Action_Input->Data.pe;
+	Action_Output->Data.nb_pe = Action_Input->Data.nb_pe;
+	Action_Output->Data.nb_slices = NB_SLICES;
+	Action_Output->Data.nb_round = NB_ROUND;
 }
 
 //-----------------------------------------------------------------------------

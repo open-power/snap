@@ -29,14 +29,16 @@
 
 /* Names of the fields can be changed by User. Should serve as a template */
 typedef struct {
-        dnut_addr in;            /* input data */
-        snapu64_t chk_type;      /* CRC32, ADDLER32 */
-        snapu64_t chk_in;        /* checksum input */
-        snapu64_t chk_out;       /* checksum output */
-        snapu32_t pe;            /* special parameter for sponge */
-        snapu32_t nb_pe;         /* special parameter for sponge */
-        snapu64_t timer_ticks;   /* timer ticks in FPGA timer frequency */
-        snapu64_t action_version;
+        dnut_addr in;            /* in:  input data */
+        snapu64_t chk_type;      /* in:  CRC32, ADDLER32 */
+        snapu64_t chk_in;        /* in:  checksum input */
+        snapu64_t chk_out;       /* out: checksum output */
+        snapu32_t pe;            /* in:  special parameter for sponge */
+        snapu32_t nb_pe;         /* in:  special parameter for sponge */
+        snapu32_t nb_slices;     /* out: special parameter for sponge */
+        snapu32_t nb_round;      /* out: special parameter for sponge */
+	snapu64_t timer_ticks;   /* out: timer ticks FPGA timer frequency */
+        snapu64_t action_version;/* out: action version info */
 } DATA_SPONGE; // DATA = 112 Bytes
 
 //---------------------------------------------------------------------
