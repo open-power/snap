@@ -16,14 +16,18 @@
 #
 ###############################################################################
 
-sed -i '/ENTITY psl_fpga IS/,/PORT/ {
-  /ENTITY psl_fpga IS/n
+sed -i '/ENTITY[ ^I]*psl_fpga[ ^I]*IS/,/PORT/ {
   /PORT/ a\
        refclk200_p        : in      std_logic;\
        refclk200_n        : in      std_logic;
 }' $1
- 
-sed -i '/ah_cvalid =>/ i\
+
+sed -i '/^[ ^I]*Component[ ^I]*psl_accel/,/PORT/ {
+  /PORT/ a\
+       refclk200_p        : in      std_logic;\
+       refclk200_n        : in      std_logic;
+}' $1
+
+sed -i '/ah_cvalid[ ^I]*=>/ i\
          refclk200_n     => refclk200_n,\
          refclk200_p     => refclk200_p,' $1
-
