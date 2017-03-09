@@ -28,7 +28,7 @@ set axi_id_width $::env(NUM_OF_ACTIONS)
 set msg_level    $::env(MSG_LEVEL)
 
 ## Create a new Vivado IP Project
-puts "	\[CREATE_IP.........\] start"
+puts "	\[CREATE_IPs........\] start"
 exec rm -rf $ip_dir
 create_project managed_ip_project $ip_dir/managed_ip_project -part $fpga_part -ip $msg_level
 
@@ -144,5 +144,5 @@ if { $ddri_used == TRUE } {
       exit
   }
 }
-puts "	\[CREATE_IP.........\] done"
+puts "	\[CREATE_IPs........\] done"
 close_project $msg_level

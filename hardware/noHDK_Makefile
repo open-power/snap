@@ -22,7 +22,7 @@ export BUILD_NAME=noHDK_build
 export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
 export LOGS_DIR=$(BUILD_DIR)/Logs
 
-SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/hdl/top.sv 
+SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/core/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/sim/core/top.sv 
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone
@@ -106,7 +106,7 @@ config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(SNAP_CONFIG
 
 patch_version:
 	@echo  -e "\t[PATCH.............] SNAP version and build date registers"; \
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl mmio.vhd
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl/core mmio.vhd
 
 image: patch_version
 	@echo -e "\t[BUILD IMAGE.......] start `date`"
@@ -134,15 +134,15 @@ model: patch_version
 clean:
 	@echo -e "\t[CLEAN.............] build environment";
 	@rm -r -f  $(BUILD_DIR)
-	rm    -f  build
+	@rm    -f  build
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
 	@rm -f     $(SNAP_CONFIG_FILES)
-	rm -f     ./setup/*.log
-	rm -f     ./setup/*.jou
+	@rm -f     ./setup/*.log
+	@rm -f     ./setup/*.jou
 
 gitclean:
 	@echo -e "\t[GITCLEAN] cleaning and resetting donut git";

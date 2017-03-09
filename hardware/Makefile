@@ -20,10 +20,19 @@ PSL_SOURCE_ENV=$(FPGACARD)
 export BUILD_NAME=HDK_build
 export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
 
-SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/hdl/top.sv 
+SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/core/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/sim/core/top.sv 
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone
+
+ifndef BRAM_USED
+export BRAM_USED=FALSE
+endif
+
+ifeq "$(BRAM_USED)" "TRUE"
+export DDR3_USED=FALSE
+export DDR4_USED=FALSE
+endif
 
 ifndef DDR3_USED
 export DDR3_USED=TRUE
@@ -40,10 +49,10 @@ endif
 ifeq "$(DDR4_USED)" "TRUE"
 export DDRI_USED=TRUE
 endif
-
-ifndef BRAM_USED
-export BRAM_USED=FALSE
+ifeq "$(BRAM_USED)" "TRUE"
+export DDRI_USED=TRUE
 endif
+
 
 ifndef ILA_DEBUG
 export ILA_DEBUG=FALSE
@@ -107,6 +116,7 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@cat $(BUILD_DIR)/Sources/prj/top.prj $(BUILD_DIR)/Sources/prj/afu.prj > $(BUILD_DIR)/Sources/prj/psl_fpga.prj
 
 $(BUILD_DIR)/Sources/top/psl_fpga.vhd: $(BUILD_DIR)/psl_fpga.tcl
+	@if [ $(BRAM_USED) = "TRUE" ]; then echo "PATCH $(BUILD_DIR)/Sources/top/psl_fpga.vhd for BRAM usage" && $(DONUT_HARDWARE_ROOT)/setup/bram_vhdl.patch.sh $(BUILD_DIR)/Sources/top/psl_fpga.vhdl ; fi
 	@if [ $(DDR3_USED) = "TRUE" ]; then echo "PATCH $(BUILD_DIR)/Sources/top/psl_fpga.vhd for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr3_vhdl.patch; fi
 	@if [ $(DDR4_USED) = "TRUE" ]; then echo "PATCH $(BUILD_DIR)/Sources/top/psl_fpga.vhd for DDR4 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr4_vhdl.patch; fi
 
@@ -124,7 +134,7 @@ patch_vhd_files:
 
 patch_version:
 	@echo "PATCH SNAP version and build date registers"; \
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl donut.vhd
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl/core donut.vhd
 
 config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(SNAP_CONFIG_FILES) create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_vhd_files patch_version
 	@echo -e "\t[CONFIG] done `date`"
