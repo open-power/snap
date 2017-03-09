@@ -22,14 +22,7 @@ sed -i '/ENTITY psl_fpga IS/,/PORT/ {
        refclk200_p        : in      std_logic;\
        refclk200_n        : in      std_logic;
 }' $1
-
-sed -i '/Component psl_accel/,/PORT/ {
-  /Component psl_accel/n
-  /PORT/ a\
-      refclk200_p        : in      std_logic;\
-      refclk200_n        : in      std_logic;
-}' $1
-
+ 
 sed -i '/ah_cvalid =>/ i\
          refclk200_n     => refclk200_n,\
          refclk200_p     => refclk200_p,' $1
