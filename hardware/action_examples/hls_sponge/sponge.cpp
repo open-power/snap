@@ -34,28 +34,39 @@ uint64_t sponge (const uint64_t rank)
   uint64_t odd[8],even[8],result;
   int i,j;
 
-  for(i=0;i<RESULT_SIZE;i++) {
+  even_init:
+   for(i=0;i<RESULT_SIZE;i++) {
     even[i] = magic[i] + rank;
   }
 
   //keccak((uint8_t*)even,HASH_SIZE,(uint8_t*)odd,HASH_SIZE);
   keccak((uint64_t*)even,HASH_SIZE,(uint64_t*)odd,HASH_SIZE);
-  for(i=0;i<NB_ROUND;i++) {
+
+  nb_round_process:
+   for(i=0;i<NB_ROUND;i++) {
+
+    process_odd:
     for(j=0;j<4;j++) {
       odd[2*j] ^= ROTL64( even[2*j] , 4*j+1);
       odd[2*j+1] = ROTL64( even[2*j+1] + odd[2*j+1], 4*j+3);
     }
+
     //keccak((uint8_t*)odd,HASH_SIZE,(uint8_t*)even,HASH_SIZE);
     keccak((uint64_t*)odd,HASH_SIZE,(uint64_t*)even,HASH_SIZE);
-    for(j=0;j<4;j++) {
+
+    process_even:
+     for(j=0;j<4;j++) {
       even[2*j] += ROTL64( odd[2*j] , 4*j+5);
       even[2*j+1] = ROTL64( even[2*j+1] ^ odd[2*j+1], 4*j+7);
     }
+
     //keccak((uint8_t*)even,HASH_SIZE,(uint8_t*)odd,HASH_SIZE);
     keccak((uint64_t*)even,HASH_SIZE,(uint64_t*)odd,HASH_SIZE);
   }
   result=0;
-  for(i=0;i<RESULT_SIZE;i++) {
+  
+  process_result:
+   for(i=0;i<RESULT_SIZE;i++) {
     result += (even[i] ^ odd[i]);
   }
   return result;
