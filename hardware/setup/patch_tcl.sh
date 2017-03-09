@@ -87,6 +87,16 @@ sed -i '/top      top/ a\
                                              \$rootDir/setup/donut_link.xdc \\\
                                              \$rootDir/setup/donut_pblock.xdc \\' $2
 
+if [ $BRAM_USED == "TRUE" ]; then
+  if [ -d $DIMMTEST/example ]; then 
+    sed -i '/top      top/ a\
+                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc \\' $2
+  else 
+    sed -i '/top      top/ a\
+                                             \$dimmDir/snap_refclk200.xdc \\' $2
+  fi
+fi
+
 if [ $DDR3_USED == "TRUE" ]; then
   sed -i '/top      top/ a\
                                              \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc \\' $2

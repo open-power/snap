@@ -696,22 +696,22 @@ module top (
   //////////////////////////////////////////////////////////////////////////////
   // SNAP LOGIC
   //////////////////////////////////////////////////////////////////////////////
-  wire  [ 1:0] c1_ddr3_ck_p;                           //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
-  wire  [ 1:0] c1_ddr3_ck_n;  			       //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
-  wire         c1_ddr3_reset_n;			       //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
-  wire  [ 1:0] c1_ddr3_cke;			       //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
-  wire  [ 1:0] c1_ddr3_cs_n;			       //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
-  wire         c1_ddr3_ras_n; 			       //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
-  wire         c1_ddr3_cas_n;			       //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
-  wire         c1_ddr3_we_n; 			       //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
-  wire  [ 1:0] c1_ddr3_odt;			       //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
-  wire  [ 8:0] c1_ddr3_dm;  			       //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
-  wire  [ 2:0] c1_ddr3_ba;  			       //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
-  wire  [15:0] c1_ddr3_addr;  			       //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
-  wire  [71:0] c1_ddr3_dq;      		       //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
-  wire  [ 8:0] c1_ddr3_dqs_p;    		       //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
-  wire  [ 8:0] c1_ddr3_dqs_n;			       //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
- 						       //-- only for DDR3_USED=TRUE--only for BRAM_USED!=TRUE 	
+  wire  [ 1:0] c1_ddr3_ck_p;                           //-- only for DDR3_USED=TRUE 	
+  wire  [ 1:0] c1_ddr3_ck_n;  			       //-- only for DDR3_USED=TRUE 	
+  wire         c1_ddr3_reset_n;			       //-- only for DDR3_USED=TRUE 	
+  wire  [ 1:0] c1_ddr3_cke;			       //-- only for DDR3_USED=TRUE 	
+  wire  [ 1:0] c1_ddr3_cs_n;			       //-- only for DDR3_USED=TRUE 	
+  wire         c1_ddr3_ras_n; 			       //-- only for DDR3_USED=TRUE 	
+  wire         c1_ddr3_cas_n;			       //-- only for DDR3_USED=TRUE 	
+  wire         c1_ddr3_we_n; 			       //-- only for DDR3_USED=TRUE 	
+  wire  [ 1:0] c1_ddr3_odt;			       //-- only for DDR3_USED=TRUE 	
+  wire  [ 8:0] c1_ddr3_dm;  			       //-- only for DDR3_USED=TRUE 	
+  wire  [ 2:0] c1_ddr3_ba;  			       //-- only for DDR3_USED=TRUE 	
+  wire  [15:0] c1_ddr3_addr;  			       //-- only for DDR3_USED=TRUE 	
+  wire  [71:0] c1_ddr3_dq;      		       //-- only for DDR3_USED=TRUE 	
+  wire  [ 8:0] c1_ddr3_dqs_p;    		       //-- only for DDR3_USED=TRUE 	
+  wire  [ 8:0] c1_ddr3_dqs_n;			       //-- only for DDR3_USED=TRUE 	
+ 						       //-- only for DDR3_USED=TRUE 	
   // Clock generation                                  //-- only for DDRI_USED=TRUE
   reg       refclk200_p;                               //-- only for DDRI_USED=TRUE
   initial   refclk200_p <= 0;                          //-- only for DDRI_USED=TRUE 	
@@ -789,8 +789,8 @@ module top (
     .ah_paren(ah_paren),
     .refclk200_p(refclk200_p),                         //-- only for DDRI_USED=TRUE
     .refclk200_n(~refclk200_p),                        //-- only for DDRI_USED=TRUE
-    .c1_sys_clk_p(c1_sys_clk_p),                       //-- only for DDRI_USED=TRUE
-    .c1_sys_clk_n(~c1_sys_clk_p),                      //-- only for DDRI_USED=TRUE
+    .c1_sys_clk_p(c1_sys_clk_p),                       //-- only for DDR3_USED=TRUE
+    .c1_sys_clk_n(~c1_sys_clk_p),                      //-- only for DDR3_USED=TRUE
     .c1_ddr3_ck_p(c1_ddr3_ck_p),                       //-- only for DDR3_USED=TRUE
     .c1_ddr3_ck_n(c1_ddr3_ck_n),                       //-- only for DDR3_USED=TRUE
     .c1_ddr3_reset_n(c1_ddr3_reset_n),                 //-- only for DDR3_USED=TRUE
