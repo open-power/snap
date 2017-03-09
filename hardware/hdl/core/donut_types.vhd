@@ -204,6 +204,7 @@ PACKAGE donut_types IS
   CONSTANT SNAP_REG_BASE              : integer := 16#000#;  -- 0x0000
   CONSTANT SNAP_EXT_REG_BASE          : integer := 16#001#;  -- 0x0080
   CONSTANT ACTION_TYPE_REG_BASE       : integer := 16#002#;  -- 0x0100
+  CONSTANT ACTION_COUNTER_REG_BASE    : integer := 16#003#;  -- 0x0180
   CONSTANT CONTEXT_REG_BASE           : integer := 16#020#;  -- 0x1000
   CONSTANT DEBUG_REG_BASE             : integer := 16#1A0#;  -- 0xD000 TODO: remove!!
   CONSTANT FIR_REG_BASE               : integer := 16#1C0#;  -- 0xE000
@@ -219,8 +220,8 @@ PACKAGE donut_types IS
   CONSTANT SNAP_LOCK_REG              : integer := 16#4#;
   CONSTANT SNAP_CTX_ID_REG            : integer := 16#4#;
 
-  -- ACTION_TYPE registers
-  CONSTANT MAX_ACTION_TYPE_REG        : integer := 16#F#;
+  -- ACTION_TYPE and ACTION_COUNTER registers
+  CONSTANT MAX_ACTION_REG             : integer := 16#F#;
 
   -- Context registers
   CONSTANT CONTEXT_CONFIG_REG         : integer := 16#0#;
@@ -486,6 +487,7 @@ PACKAGE donut_types IS
   -- TYPE
   TYPE ACTION_TYPE_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(ACTION_TYPE_BITS-1 DOWNTO 0);
   TYPE ACTION_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
+  TYPE ACTION_MASK_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
   TYPE CONTEXT_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
   TYPE SEQNO_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(SEQNO_BITS-1 DOWNTO 0);
   TYPE JQIDX_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(JQIDX_BITS-1 DOWNTO 0);
@@ -802,6 +804,7 @@ PACKAGE donut_types IS
       seqno              : std_ulogic_vector(CTX_SEQNO_CURRENT_L DOWNTO CTX_SEQNO_CURRENT_R);
       jqidx              : std_ulogic_vector(CTX_SEQNO_JQIDX_L DOWNTO CTX_SEQNO_JQIDX_R);
       action_id          : std_ulogic_vector(CTX_STAT_ACTION_ID_L DOWNTO CTX_STAT_ACTION_ID_R);
+      action_active      : std_ulogic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
       attached_to_action : std_ulogic;
       context_active     : std_ulogic;
     END RECORD;

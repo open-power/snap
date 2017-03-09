@@ -227,6 +227,18 @@ Address: 0x0000100 + i * 0x0000008
 
 ---
 
+#### Action Counter Register i (ACRi)
+(0 <= i < 16)
+```
+Address: 0x0000180 + i * 0x0000008
+  63..0  RW: Cumulative counter counting the number of clock cycles while action i is active
+             This counter increments with the 250MHz PSL clock.
+
+  POR value: 0x00000000_00000000
+```
+
+---
+
 #### Context Attach Status Vector (CASV)
 ```
 Address: 0x00C000 + m * 0x0000008 (m = 0,..,15)

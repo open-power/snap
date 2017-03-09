@@ -128,8 +128,9 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL snap_lock_q                          : std_ulogic;
   SIGNAL snap_lock_write_q                    : boolean;
   SIGNAL snap_lock_write_val_q                : std_ulogic;
-  SIGNAL action_type_regs_q                   : REG64_ARRAY_T(MAX_ACTION_TYPE_REG DOWNTO 0) := (OTHERS => (OTHERS => '0'));
-  SIGNAL action_type_regs_par_q               : std_ulogic_vector(MAX_ACTION_TYPE_REG DOWNTO 0) := (OTHERS => '1');
+  SIGNAL action_type_regs_q                   : REG64_ARRAY_T(MAX_ACTION_REG DOWNTO 0) := (OTHERS => (OTHERS => '0'));
+  SIGNAL action_type_regs_par_q               : std_ulogic_vector(MAX_ACTION_REG DOWNTO 0) := (OTHERS => '1');
+  SIGNAL action_counter_regs_q                : REG64_ARRAY_T(MAX_ACTION_REG DOWNTO 0) := (OTHERS => (OTHERS => '0'));
   SIGNAL ctrl_mgr_err_q                       : std_ulogic_vector(31 DOWNTO 0) := (OTHERS => '0');
   SIGNAL mmio_err_q                           : std_ulogic_vector(31 DOWNTO 0) := (OTHERS => '0');
   SIGNAL non_fatal_master_rd_errors_q         : std_ulogic_vector(NFE_L DOWNTO NFE_R);
@@ -570,6 +571,19 @@ BEGIN
               END IF;
 
             --
+            -- ACTION COUNTER REGISTER READ
+            --
+            WHEN ACTION_COUNTER_REG_BASE =>
+              IF mmio_read_reg_offset_q < action_counter_regs_q'LENGTH THEN
+                mmio_read_data_q0    <= action_counter_regs_q(mmio_read_reg_offset_q);
+                mmio_read_datapar_q0 <= parity_gen_odd(action_counter_regs_q(mmio_read_reg_offset_q));
+              ELSE
+                -- invalid address
+                non_fatal_master_rd_errors_q(NFE_INV_RD_ADDRESS) <= mmio_read_master_access_q;
+                non_fatal_slave_rd_errors_q(NFE_INV_RD_ADDRESS)  <= NOT mmio_read_master_access_q;
+              END IF;
+
+            --
             -- CONTEXT REGISTER READ
             --
             WHEN CONTEXT_REG_BASE =>
@@ -666,6 +680,7 @@ BEGIN
 
         action_type_regs_q               <= (OTHERS => (OTHERS => '0'));
         action_type_regs_par_q           <= (OTHERS => '1');
+        action_counter_regs_q            <= (OTHERS => (OTHERS => '0'));
 
         dbg_regs_q                       <= (OTHERS => (OTHERS => '0'));
         dbg_regs_par_q                   <= (OTHERS => '1');
@@ -712,6 +727,11 @@ BEGIN
 
         action_type_regs_q               <= action_type_regs_q;
         action_type_regs_par_q           <= action_type_regs_par_q;
+
+        action_type_counter_update : FOR action_id IN 0 TO NUM_OF_ACTIONS-1 LOOP
+          action_counter_regs_q(action_id) <= action_counter_regs_q(action_id) + jmm_d_i.action_active(action_id);
+        END LOOP;
+
         dbg_regs_q                       <= dbg_regs_q;
         dbg_regs_par_q                   <= dbg_regs_par_q;
 
@@ -799,7 +819,7 @@ BEGIN
 --              END IF;
 
             --
-            -- SNAP REGISTERs
+            -- SNAP REGISTER WRITE
             --
             WHEN SNAP_REG_BASE =>
               IF mmio_write_master_access_q = '1' THEN
@@ -833,12 +853,33 @@ BEGIN
 
 
             --
-            -- ACTION_TYPE REGISTERs
+            -- ACTION TYPE REGISTER WRITE
             --
             WHEN ACTION_TYPE_REG_BASE =>
               IF mmio_write_master_access_q = '1' THEN
-                action_type_regs_q(mmio_write_reg_offset_q)     <= ha_mm_w_q.data;
-                action_type_regs_par_q(mmio_write_reg_offset_q) <= ha_mm_w_q.datapar;
+                IF mmio_read_reg_offset_q < action_type_regs_q'LENGTH THEN
+                  action_type_regs_q(mmio_write_reg_offset_q)     <= ha_mm_w_q.data;
+                  action_type_regs_par_q(mmio_write_reg_offset_q) <= ha_mm_w_q.datapar;
+                ELSE
+                  -- invalid address
+                  non_fatal_master_wr_errors_q(NFE_INV_RD_ADDRESS) <= mmio_read_master_access_q;
+                END IF;
+              ELSE
+                non_fatal_slave_wr_errors_q(NFE_INV_WR_ADDRESS) <= '1';
+              END IF;
+
+
+            --
+            -- ACTION COUNTER REGISTER WRITE
+            --
+            WHEN ACTION_COUNTER_REG_BASE =>
+              IF mmio_write_master_access_q = '1' THEN
+                IF mmio_read_reg_offset_q < action_type_regs_q'LENGTH THEN
+                  action_counter_regs_q(mmio_write_reg_offset_q)     <= ha_mm_w_q.data;
+                ELSE
+                  -- invalid address
+                  non_fatal_master_wr_errors_q(NFE_INV_RD_ADDRESS) <= mmio_read_master_access_q;
+                END IF;
               ELSE
                 non_fatal_slave_wr_errors_q(NFE_INV_WR_ADDRESS) <= '1';
               END IF;

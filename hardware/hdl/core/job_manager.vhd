@@ -89,6 +89,7 @@ ARCHITECTURE job_manager OF job_manager IS
   SIGNAL complete_status_we_q          : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL check_for_idle_q              : std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
   SIGNAL enable_check_for_idle_q       : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_active_q               : std_ulogic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
 
   SIGNAL ctx_fifo_we                   : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL ctx_fifo_re                   : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
@@ -107,6 +108,7 @@ ARCHITECTURE job_manager OF job_manager IS
   SIGNAL action_fifo_dout              : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL action_fifo_wrb               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL action_fifo_rrb               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_attach_q               : ACTION_MASK_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
 
   SIGNAL action_completed_fifo_we      : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL action_completed_fifo_re      : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
@@ -116,6 +118,7 @@ ARCHITECTURE job_manager OF job_manager IS
   SIGNAL action_completed_fifo_dout    : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL action_completed_fifo_wrb     : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL action_completed_fifo_rrb     : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL action_detach_q               : ACTION_MASK_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
 
   SIGNAL ctx_completed_fifo_we         : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL ctx_completed_fifo_re         : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
@@ -239,6 +242,7 @@ BEGIN
         IF afu_reset = '1' THEN
           ctx_fifo_re(sat_id)             <= '0';
           action_fifo_re(sat_id)          <= '0';
+          action_attach_q(sat_id)         <= (OTHERS => '0');
           assign_action_id_q(sat_id)      <= (OTHERS => '0');
           assign_attach_action_q(sat_id)  <= '0';
           assign_context_active_q(sat_id) <= '0';
@@ -252,6 +256,7 @@ BEGIN
           -- defaults
           ctx_fifo_re(sat_id)             <= '0';
           action_fifo_re(sat_id)          <= '0';
+          action_attach_q(sat_id)         <= (OTHERS => '0');
           assign_action_id_q(sat_id)      <= assign_action_id_q(sat_id);
           assign_attach_action_q(sat_id)  <= '0';
           assign_context_active_q(sat_id) <= '0';
@@ -298,6 +303,7 @@ BEGIN
                 assign_attach_action_q(sat_id)  <= '1';
                 assign_context_active_q(sat_id) <= '1';
                 assign_status_we_q(sat_id)      <= '1';
+                action_attach_q(sat_id)(to_integer(unsigned(action_fifo_dout(sat_id)))) <= '1';
                 assign_action_fsm_q             <= ST_RETURN_MMIO_LOCK;
               END IF;
 
@@ -326,6 +332,7 @@ BEGIN
           action_completed_fifo_re(sat_id)   <= '0';
           action_completed_fifo_we(sat_id)   <= '0';
           action_completed_fifo_din(sat_id)  <= (OTHERS => '0');
+          action_detach_q(sat_id)            <= (OTHERS => '0');
           ctx_completed_fifo_re(sat_id)      <= '0';
           ctx_completed_fifo_we(sat_id)      <= '0';
           ctx_completed_fifo_din(sat_id)     <= (OTHERS => '0');
@@ -358,6 +365,8 @@ BEGIN
             action_completed_fifo_din(sat_id) <= xj_c_i.action;
             action_completed_v                := xj_c_i.valid;
           END IF;
+
+          action_detach_q(sat_id)            <= (OTHERS => '0');
 
           ctx_completed_fifo_re(sat_id)      <= '0';
           ctx_completed_fifo_we(sat_id)      <= '0';
@@ -415,6 +424,7 @@ BEGIN
                 complete_seqno_we_q(sat_id)         <= '1';
                 complete_detach_action_q(sat_id)    <= '1';
                 complete_status_we_q(sat_id)        <= '1';
+                action_detach_q(sat_id)(to_integer(unsigned(action_completed_fifo_dout(sat_id)))) <= '1';
                 IF mmj_c_i.last_seqno = '0' THEN
                   complete_context_active_q(sat_id) <= '1';
                   complete_action_fsm_q             <= ST_PUSH_CTX;
@@ -551,6 +561,23 @@ BEGIN
   END PROCESS grant_mmio_access;
 
 
+  action_active: PROCESS (ha_pclock)
+    VARIABLE action_active_v : std_ulogic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
+  BEGIN  -- PROCESS action_active
+    IF rising_edge(ha_pclock) THEN
+      IF afu_reset = '1' THEN
+        action_active_q <= (OTHERS => '0');
+      ELSE
+        action_active_v := action_active_q;
+        FOR sat_id IN 0 TO NUM_OF_ACTION_TYPES-1 LOOP
+          action_active_v := (action_active_v OR action_attach_q(sat_id)) AND NOT action_detach_q(sat_id);
+        END LOOP;  -- sat_id
+        action_active_q <= action_active_v;
+      END IF;                                   -- afu_reset
+    END IF;                                     -- rising_edge(ha_pclock)
+  END PROCESS action_active;
+
+
   set_check_for_idle: PROCESS (ha_pclock)
     VARIABLE check_for_idle_v : std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
   BEGIN  -- PROCESS check_for_idle
@@ -561,7 +588,7 @@ BEGIN
         check_for_idle_v := check_for_idle_q;
         FOR sat_id IN 0 TO NUM_OF_ACTION_TYPES-1 LOOP
           check_for_idle_v := check_for_idle_v OR enable_check_for_idle_q(sat_id);
-        END LOOP;  -- action_id
+        END LOOP;  -- sat_id
         check_for_idle_v(to_integer(unsigned(xj_c_i.action))) := check_for_idle_v(to_integer(unsigned(xj_c_i.action))) AND NOT xj_c_i.valid;
 
         check_for_idle_q <= check_for_idle_v;
@@ -582,6 +609,7 @@ BEGIN
   jmm_d_o.seqno              <= complete_next_seqno_q(grant_mmio_interface_q);
   jmm_d_o.jqidx              <= complete_next_jqidx_q(grant_mmio_interface_q);
   jmm_d_o.action_id          <= assign_action_id_q(grant_mmio_interface_q) WHEN (assign_grant_mmio_q(grant_mmio_interface_q) = '1') ELSE action_completed_fifo_dout(grant_mmio_interface_q);
+  jmm_d_o.action_active      <= action_active_q;
   jmm_d_o.attached_to_action <= assign_attach_action_q(grant_mmio_interface_q) WHEN (assign_grant_mmio_q(grant_mmio_interface_q) = '1') ELSE NOT complete_detach_action_q(grant_mmio_interface_q);
   jmm_d_o.context_active     <= assign_context_active_q(grant_mmio_interface_q) WHEN (assign_grant_mmio_q(grant_mmio_interface_q) = '1') ELSE complete_context_active_q(grant_mmio_interface_q);
 
