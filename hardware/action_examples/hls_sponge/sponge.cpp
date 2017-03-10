@@ -13,7 +13,7 @@
 #define RESULT_SIZE 8
 
 #undef TEST /* get faster turn-around time */
-#ifdef TEST /* NO_SYNTH */ /* TEST */
+#ifdef NO_SYNTH /* TEST */
 #  define NB_SLICES 4
 #  define NB_ROUND 1<<10
 #else
