@@ -164,7 +164,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 
 			/* Intermediate result display */
 			write_results(Action_Output, Action_Input, ReturnCode,
-				      checksum, timer_ticks);
+				      0xfffffffffffffffful, timer_ticks);
 
 		}
 		timer_ticks += 42;
