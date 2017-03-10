@@ -118,7 +118,7 @@ Address: 0x0000008
 ---
 
 #### SNAP Command Register (SCR)
-(commands \<Reset\>, \<Abort\>, \<Stop\> are not yet implemented)
+(commands \<Reset\>, \<Abort\> are not yet implemented)
 
 ```
 Address: 0x0000010
@@ -174,7 +174,8 @@ Address: 0x0000080
 
 ---
 
-#### Job Timeout Register (JTR) required ???
+#### Job Timeout Register (JTR)
+##### Not yet implemented (required ??? for all contexts ???)
 ```
 Address: 0x0000088
       63 RW: Enable Job Timeout checking (1=enabled)
@@ -186,19 +187,21 @@ Address: 0x0000088
 
 ---
 
-#### Action Active Counter (AAC) required ???
+#### Action Active Counter (AAC)
+##### Not yet implemented (required ???)
 ```
 Address: 0x0000090
-  63..0  RO: Counter counting the number of clock cycles with an active action (TBD: when is an action considered active?)
+  63..0  RO: Counter counting the number of clock cycles while an action is active
              This counter increments with the 250MHz PSL clock.
 ```
 
 ---
 
-#### Job Execution Counter (JEC) required ???
+#### Context Execution Counter (CEC)
+##### Not yet implemented (required ???)
 ```
 Address: 0x0000098
-  63..0  RO: Counter counting the number of clock cycles while a job gets executed (TBD: when is a job considered as being executed?)
+  63..0  RO: Counter counting the number of clock cycles while a job gets executed on the card
              This counter increments with the 250MHz PSL clock.
 ```
 
@@ -233,6 +236,7 @@ Address: 0x0000100 + i * 0x0000008
 Address: 0x0000180 + i * 0x0000008
   63..0  RW: Cumulative counter counting the number of clock cycles while action i is active
              This counter increments with the 250MHz PSL clock.
+             It can be reset or preset to any value by the master.
 
   POR value: 0x00000000_00000000
 ```
@@ -240,6 +244,7 @@ Address: 0x0000180 + i * 0x0000008
 ---
 
 #### Context Attach Status Vector (CASV)
+##### Not yet implemented (required ???)
 ```
 Address: 0x00C000 + m * 0x0000008 (m = 0,..,15)
   63..32 RO: Reserved
@@ -249,6 +254,7 @@ Address: 0x00C000 + m * 0x0000008 (m = 0,..,15)
 ---
 
 #### Job-Manager FIRs
+##### Not yet implemented
 ```
 Address: 0x000E000
   63..6  RO: Reserved
@@ -263,6 +269,7 @@ Address: 0x000E000
 ---
 
 #### MMIO FIRs
+##### Not yet implemented
 ```
 Address: 0x000E008
   63..10  RO: Reserved
@@ -281,6 +288,7 @@ Address: 0x000E008
 ---
 
 #### DMA FIRs
+##### Not yet implemented
 ```
 Address: 0x000E010
   63..10 RO: Reserved
@@ -298,15 +306,17 @@ Address: 0x000E010
 
 ---
 
-#### Action n FIRs
+#### Action i FIRs
+##### Not yet implemented
 ```
-Address: 0x000E100 + n*0x0000008
+Address: 0x000E100 + i * 0x0000008
   63..0  RO/RC: TBD by Action
 ```
 
 ---
 
 #### Error Injection Job-Manager
+##### Not yet implemented
 ```
 Address: 0x000E800
   63..17 RO: Reserved
@@ -317,6 +327,7 @@ Address: 0x000E800
 ---
 
 #### Error Injection MMIO
+##### Not yet implemented
 ```
 Address: 0x000E808
   63..17 RO: Reserved
@@ -328,6 +339,7 @@ Address: 0x000E808
 ---
 
 #### Error Injection DMA
+##### Not yet implemented
 ```
 Address: 0x000E810
   63..22 RO: Reserved
@@ -379,7 +391,7 @@ Address: 0x0000008 + (s+n) * 0x0010000
 ---
 
 #### SNAP Command Register (SCR)
-(commands \<Reset\>, \<Abort\>, \<Stop\> are not yet implemented)
+(commands \<Reset\>, \<Abort\> are not yet implemented)
 ```
 Address: 0x0000010 + (s+n) * 0x0010000
   63..48 RO: Argument
@@ -424,6 +436,7 @@ Address: 0x0000080 + (s+n) * 0x0010000
 ---
 
 #### Job Timeout Register (JTR)
+##### Not yet implemented (required ??? per context ???)
 ```
 Address: 0x0000088 + (s+n) * 0x0010000
       63 RW: Enable Job Timeout checking (1=enabled)
@@ -436,24 +449,26 @@ Address: 0x0000088 + (s+n) * 0x0010000
 ---
 
 #### Action Active Counter (AAC)
+##### Not yet implemented (required ???)
 ```
 Address: 0x0000090 + (s+n) * 0x0010000
-  63..0  RO: Counter counting the number of clock cycles with an active action (TBD: when is an action considered active?)
+  63..0  RO: Counter counting the number of clock cycles while an action is active
              This counter increments with the 250MHz PSL clock.
 ```
 
 ---
 
-#### Job Execution Counter (JEC)
+#### Context Execution Counter (CEC)
+##### Not yet implemented (required ???)
 ```
 Address: 0x0000098 + (s+n) * 0x0010000
-  63..0  RO: Counter counting the number of clock cycles while a job gets executed (TBD: when is a job considered as being executed?)
+  63..0  RO: Counter counting the number of clock cycles while a job gets executed for this context
              This counter increments with the 250MHz PSL clock.
 ```
 
 ---
 
-Context ID Register (CIR)
+#### Context ID Register (CIR)
 ```
 Address: 0x00000A0 + (s+n) * 0x0010000
       63 RO: Set to '0' for slave register
@@ -473,6 +488,18 @@ Address: 0x0000100 + (s+n) * 0x0010000 + i * 0x0000008
 
   POR value: 0x00000000_00000000
              LIBDONUT needs to specify the values based on the result of an exploration phase
+```
+
+---
+
+#### Action Counter Register i (ACRi)
+(0 <= i < 16)
+```
+Address: 0x0000180 + (s+n) * 0x0010000 + i * 0x0000008
+  63..0  RO: Cumulative counter counting the number of clock cycles while action i is active
+             This counter increments with the 250MHz PSL clock.
+
+  POR value: 0x00000000_00000000
 ```
 
 ---
@@ -541,7 +568,8 @@ Address: 0x0001010 + (s+n) * 0x0010000
 
 ---
 
-#### Attached Action Type Register (AAT) Required???
+#### Attached Action Type Register (AAT)
+##### Not yet implemented (required ???)
 ```
 Address: 0x0001018 + (s+n) * 0x0010000
   63..32 RO: Reserved
@@ -551,6 +579,7 @@ Address: 0x0001018 + (s+n) * 0x0010000
 ---
 
 #### Job Request Queue Start Pointer Register (JReqQR)
+##### Not yet implemented
 ```
 Address: 0x0001020 + (s+n) * 0x0010000
   63..0  Pointer to start of job queue for this context in system memory
@@ -563,6 +592,7 @@ Address: 0x0001020 + (s+n) * 0x0010000
 ---
 
 #### Job Response Queue Start Pointer Register (JRspQR)
+##### Not yet implemented
 ```
 Address: 0x0001028 + (s+n) * 0x0010000
   63..0  Pointer to start of job queue for this context in system memory
@@ -574,7 +604,8 @@ Address: 0x0001028 + (s+n) * 0x0010000
 
 ---
 
-#### Job Error Register (JER)
+#### Context Error Register (CER)
+##### Not yet implemented
 ```
 Address: 0x0001030 + (s+n) * 0x0010000
   63..24 RO: Reserved
@@ -610,7 +641,8 @@ Address: 0x0001030 + (s+n) * 0x0010000
 
 ---
 
-#### Job Queue DMA Error Address Register (QDEAR) Required ???
+#### Context DMA Error Address Register (CDEAR)
+##### Not yet implemented (required ???)
 ```
 Address: 0x0001038 + (s+n) * 0x0010000
   63..0  RO: DMA address that caused the error
@@ -618,7 +650,8 @@ Address: 0x0001038 + (s+n) * 0x0010000
 
 ---
 
-#### Job Work Timer (JWT)
+#### Context Work Timer (CWT)
+##### Not yet implemented (required ???)
 ```
 Address: 0x0001080 + (s+n) * 0x0010000
   63..0  RO: Counter counting the number of clock cycles during job execution for this context
@@ -630,6 +663,7 @@ Address: 0x0001080 + (s+n) * 0x0010000
 ---
 
 #### Context Attach Status Vector (CASV)
+##### Not yet implemented (required ???)
 ```
 Address: 0x00C000 + (s+n) * 0x0010000 + m * 0x0000008 (m = 0,..,15)
   63..32 RO: Reserved
@@ -639,6 +673,7 @@ Address: 0x00C000 + (s+n) * 0x0010000 + m * 0x0000008 (m = 0,..,15)
 ---
 
 #### Job-Manager FIRs
+##### Not yet implemented
 ```
 Address: 0x000E000 + (s+n) * 0x0010000
   63..32 RO: Reserved
@@ -648,6 +683,7 @@ Address: 0x000E000 + (s+n) * 0x0010000
 ---
 
 #### MMIO FIRs
+##### Not yet implemented
 ```
 Address: 0x000E008 + (s+n) * 0x0010000
   63..32 RO: Reserved
@@ -658,6 +694,7 @@ Address: 0x000E008 + (s+n) * 0x0010000
 ---
 
 #### DMA FIRs
+##### Not yet implemented
 ```
 Address: 0x000E010 + (s+n) * 0x0010000
   63..32 RO: Reserved
@@ -667,6 +704,7 @@ Address: 0x000E010 + (s+n) * 0x0010000
 ---
 
 #### Attached Action FIRs
+##### Not yet implemented
 ```
 Address: 0x000E018 + (s+n) * 0x0010000
   63..32 RO: Reserved
@@ -675,7 +713,17 @@ Address: 0x000E018 + (s+n) * 0x0010000
 
 ---
 
+#### Action i FIRs
+##### Not yet implemented
+```
+Address: 0x000E100 + (s+n) * 0x0010000 + i * 0x0000008
+  63..0  RO: TBD by Action
+```
+
+---
+
 #### Error Injection Job-Manager
+##### Not yet implemented
 ```
 Address: 0x000E800 + (s+n) * 0x0010000
   63..17 RO: Reserved
@@ -686,6 +734,7 @@ Address: 0x000E800 + (s+n) * 0x0010000
 ---
 
 #### Error Injection MMIO
+##### Not yet implemented
 ```
 Address: 0x000E808 + (s+n) * 0x0010000
   63..17 RO: Reserved
@@ -697,6 +746,7 @@ Address: 0x000E808 + (s+n) * 0x0010000
 ---
 
 #### Error Injection DMA
+##### Not yet implemented
 ```
 Address: 0x000E810 + (s+n) * 0x0010000
   63..22 RO: Reserved
@@ -712,6 +762,7 @@ Address: 0x000E810 + (s+n) * 0x0010000
 ---
 
 #### Error Injection Attached Action
+##### Not yet implemented
 ```
 Address: 0x000E818 + (s+n) * 0x0010000
   63..0  RO: TBD by Action
