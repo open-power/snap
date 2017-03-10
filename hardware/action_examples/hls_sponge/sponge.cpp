@@ -142,29 +142,27 @@ void action_wrapper(snap_membus_t *din_gmem,
 	uint64_t checksum = 0;
 	uint32_t slice = 0;
 	uint32_t pe, nb_pe;
-	uint64_t timer_ticks = 0;
+	uint64_t timer_ticks = 4711;
 
 	pe = Action_Input->Data.pe;
 	nb_pe = Action_Input->Data.nb_pe;
 
 	do {
-		/* FIXME Please check if the data alignment matches
-		   the expectations */
+		/* Check if the data alignment matches the expectations */
 		if (Action_Input->Control.action != SPONGE_ACTION_TYPE) {
 			ReturnCode = RET_CODE_FAILURE;
 			break;
 		}
 
 		for (slice = 0; slice < NB_SLICES; slice++) {
+			/* Intermediate result display */
+			write_results(Action_Output, Action_Input, ReturnCode,
+				      checksum, (uint64_t)slice);
+
 			if (pe == (slice % nb_pe)) {
 				checksum ^= sponge(slice);
-
-				/* Intermediate result display */
-				write_results(Action_Output, Action_Input, ReturnCode,
-		      			checksum, (uint64_t)slice);
 			}
 		}
-
 		timer_ticks += 42;
  		
 	} while (0);
