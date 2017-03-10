@@ -81,6 +81,11 @@ check_donut_settings:
 		echo "Please source donut_settings before calling make!"; \
                 exit 1; \
 	fi
+	@cd $(DONUT_HARDWARE_ROOT); if [ -z `git describe HEAD` ]; then \
+		echo "DONUT_HARDWARE_ROOT ($(DONUT_HARDWARE_ROOT)) does not belong to a git repository."; \
+		echo "Please check out the SNAP framework from git repository git@github.com:open-power/donut.git"; \
+		exit 1; \
+	fi
 
 create_environment:
 	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment $(CE_PARMS)
