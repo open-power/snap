@@ -317,7 +317,7 @@ action_axi_slave_inst : entity work.action_axi_slave
     port map (
         -- config reg ; bit 0 => disable dma and
         -- just count down the length regsiter
-        reg_0x10_i      => x"0000_0001",  -- action type
+        reg_0x10_i      => x"1014_0000",  -- action type
         reg_0x14_i      => x"0000_0000",  -- action version
         reg_0x20_o      => reg_0x20,
         -- low order source address
