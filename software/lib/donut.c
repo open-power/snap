@@ -34,9 +34,10 @@ static unsigned int dnut_trace = 0x0;
 static unsigned int dnut_config = 0x0;
 static struct dnut_action *actions = NULL;
 
-#define dnut_trace_enabled()  (dnut_trace & 0x1)
-#define reg_trace_enabled()   (dnut_trace & 0x2)
-#define sim_trace_enabled()   (dnut_trace & 0x4)
+#define dnut_trace_enabled()  (dnut_trace & 0x01)
+#define reg_trace_enabled()   (dnut_trace & 0x02)
+#define sim_trace_enabled()   (dnut_trace & 0x04)
+#define poll_trace_enabled()  (dnut_trace & 0x10)
 
 int action_trace_enabled(void)
 {
@@ -58,6 +59,11 @@ int action_trace_enabled(void)
 #define sim_trace(fmt, ...) do {					\
 		if (sim_trace_enabled())				\
 			fprintf(stderr, "S " fmt, ## __VA_ARGS__);	\
+	} while (0)
+
+#define poll_trace(fmt, ...) do {					\
+		if (poll_trace_enabled())				\
+			fprintf(stderr, "P " fmt, ## __VA_ARGS__);	\
 	} while (0)
 
 #define	FW_BASE_ADDR		0x00100
@@ -400,6 +406,32 @@ int dnut_kernel_completed(struct dnut_kernel *kernel, int *rc)
 	return (action_data & ACTION_CONTROL_IDLE) == ACTION_CONTROL_IDLE;
 }
 
+static int dnut_poll_results(struct dnut_card *card)
+{
+	int rc;
+	unsigned int i;
+	uint32_t action_addr;
+	uint32_t job_data[112/sizeof(uint32_t)];
+
+	if (!poll_trace_enabled())
+		return 1;
+
+	poll_trace("POLLING Result Registers\n");
+	for (i = 0, action_addr = ACTION_JOB_OUT; i < ARRAY_SIZE(job_data);
+	     i++, action_addr += sizeof(uint32_t)) {
+
+		rc = dnut_mmio_read32(card, action_addr, &job_data[i]);
+		if (rc != 0)
+			return rc;
+	}
+	for (i = 0; i < ARRAY_SIZE(job_data); i += 4)
+		poll_trace("  %08x %08x %08x %08x\n",
+			   job_data[i + 0], job_data[i + 1],
+			   job_data[i + 2], job_data[i + 3]);
+
+	return 0;
+}
+
 /**
  * Synchronous way to send a job away. Blocks until job is done.
  *
@@ -475,6 +507,8 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	t_start = tget_ms();
 	do {
 		dnut_trace("%s: CHECK COMPLETION\n", __func__);
+		dnut_poll_results(card);
+
 		completed = dnut_kernel_completed(kernel, &rc);
 		if (completed || rc != 0)
 			break;
