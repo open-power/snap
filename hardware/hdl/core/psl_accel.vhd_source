@@ -707,6 +707,97 @@ ARCHITECTURE psl_accel OF psl_accel IS
        sys_rst                     : IN    STD_LOGIC                                                        -- only for DDR4_USED=TRUE
      );                                                                                                     -- only for DDR4_USED=TRUE
    END COMPONENT;                                                                                           -- only for DDR4_USED=TRUE
+
+  --                                                                                                       -- only for NVME_USED=TRUE
+  -- NVME												   -- only for NVME_USED=TRUE
+  --													   -- only for NVME_USED=TRUE
+  COMPONENT nvme_top is											   -- only for NVME_USED=TRUE
+  PORT (												   -- only for NVME_USED=TRUE
+    --                              									   -- only for NVME_USED=TRUE
+    -- NVME <-> DDR4 Interface      									   -- only for NVME_USED=TRUE
+    ddr_aresetn                   : OUT STD_LOGIC;                                                         -- only for NVME_USED=TRUE 
+    ddr_aclk                      : OUT STD_LOGIC;							   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_awid                : OUT STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_awaddr              : OUT STD_LOGIC_VECTOR ( 33 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_awlen               : OUT STD_LOGIC_VECTOR ( 7 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_awsize              : OUT STD_LOGIC_VECTOR ( 2 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_awburst             : OUT STD_LOGIC_VECTOR ( 1 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_awlock              : OUT STD_LOGIC_VECTOR ( 0 to 0 );					   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_awcache             : OUT STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_awprot              : OUT STD_LOGIC_VECTOR ( 2 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_awregion            : OUT STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_awqos               : OUT STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_awvalid             : OUT STD_LOGIC_VECTOR ( 0 to 0 );					   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_awready             : IN  STD_LOGIC_VECTOR ( 0 to 0 );					   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_wdata               : OUT STD_LOGIC_VECTOR ( 127 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_wstrb               : OUT STD_LOGIC_VECTOR ( 15 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_wlast               : OUT STD_LOGIC_VECTOR ( 0 to 0 );					   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_wuser               : OUT STD_LOGIC_VECTOR ( 15 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_wvalid              : OUT STD_LOGIC_VECTOR ( 0 to 0 );					   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_wready              : IN  STD_LOGIC_VECTOR ( 0 to 0 );					   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_bid                 : IN  STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_bresp               : IN  STD_LOGIC_VECTOR ( 1 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_bvalid              : IN  STD_LOGIC_VECTOR ( 0 to 0 );					   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_bready              : OUT STD_LOGIC_VECTOR ( 0 to 0 );					   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_arid                : OUT STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_araddr              : OUT STD_LOGIC_VECTOR ( 33 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_arlen               : OUT STD_LOGIC_VECTOR ( 7 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_arsize              : OUT STD_LOGIC_VECTOR ( 2 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_arburst             : OUT STD_LOGIC_VECTOR ( 1 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_arlock              : OUT STD_LOGIC_VECTOR ( 0 to 0 );					   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_arcache             : OUT STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_arprot              : OUT STD_LOGIC_VECTOR ( 2 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_arregion            : OUT STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_arqos               : OUT STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_arvalid             : OUT STD_LOGIC_VECTOR ( 0 to 0 );					   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_arready             : IN  STD_LOGIC_VECTOR ( 0 to 0 );					   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_rid                 : IN  STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_rdata               : IN  STD_LOGIC_VECTOR ( 127 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_rresp               : IN  STD_LOGIC_VECTOR ( 1 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_rlast               : IN  STD_LOGIC_VECTOR ( 0 to 0 );					   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_ruser               : IN  STD_LOGIC_VECTOR ( 15 downto 0 );				   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_rvalid              : IN  STD_LOGIC_VECTOR ( 0 to 0 );					   -- only for NVME_USED=TRUE 
+    DDR_M_AXI_rready              : OUT STD_LOGIC_VECTOR ( 0 to 0 );					   -- only for NVME_USED=TRUE 
+													   -- only for NVME_USED=TRUE 
+    --                              									   -- only for NVME_USED=TRUE 
+    -- NVME <-> CONTROL Interface      									   -- only for NVME_USED=TRUE 
+    NVME_S_ARESETN                : IN  STD_LOGIC;							   -- only for NVME_USED=TRUE 
+    NVME_S_ACLK                   : IN  STD_LOGIC;							   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_awaddr             : IN  STD_LOGIC_VECTOR ( 31 downto 0 );				   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_awprot             : IN  STD_LOGIC_VECTOR ( 2 downto 0 );				   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_awvalid            : IN  STD_LOGIC;							   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_awready            : OUT STD_LOGIC;							   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_wdata              : IN  STD_LOGIC_VECTOR ( 31 downto 0 );				   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_wstrb              : IN  STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_wvalid             : IN  STD_LOGIC;							   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_wready             : OUT STD_LOGIC;							   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_bresp              : OUT STD_LOGIC_VECTOR ( 1 downto 0 );				   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_bvalid             : OUT STD_LOGIC;							   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_bready             : IN  STD_LOGIC;							   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_araddr             : IN  STD_LOGIC_VECTOR ( 31 downto 0 );				   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_arprot             : IN  STD_LOGIC_VECTOR ( 2 downto 0 );				   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_arvalid            : IN  STD_LOGIC;							   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_arready            : OUT STD_LOGIC;							   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_rdata              : OUT STD_LOGIC_VECTOR ( 31 downto 0 );				   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_rresp              : OUT STD_LOGIC_VECTOR ( 1 downto 0 );				   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_rvalid             : OUT STD_LOGIC;							   -- only for NVME_USED=TRUE 
+    NVME_S_AXI_rready             : IN  STD_LOGIC;							   -- only for NVME_USED=TRUE 
+													   -- only for NVME_USED=TRUE 
+    --                              									   -- only for NVME_USED=TRUE 
+    -- NVME <-> PCIE Interface      									   -- only for NVME_USED=TRUE 
+    sys_rst_n                     : IN  STD_LOGIC;							   -- only for NVME_USED=TRUE 
+    sys_clk_gt                    : IN  STD_LOGIC;							   -- only for NVME_USED=TRUE 
+    refclk                        : IN  STD_LOGIC;							   -- only for NVME_USED=TRUE 
+    pcie_rc0_rxn                  : IN  STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    pcie_rc0_rxp                  : IN  STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    pcie_rc0_txn                  : OUT STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    pcie_rc0_txp                  : OUT STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    pcie_rc1_rxn                  : IN  STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    pcie_rc1_rxp                  : IN  STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    pcie_rc1_txn                  : OUT STD_LOGIC_VECTOR ( 3 downto 0 );				   -- only for NVME_USED=TRUE 
+    pcie_rc1_txp                  : OUT STD_LOGIC_VECTOR ( 3 downto 0 ) 				   -- only for NVME_USED=TRUE 
+  );													   -- only for NVME_USED=TRUE 
+  END COMPONENT nvme_top;										   -- only for NVME_USED=TRUE 
   
   --
   -- SIGNALS
@@ -728,45 +819,45 @@ ARCHITECTURE psl_accel OF psl_accel IS
 
   --                                                                                                        -- only for DDRI_USED=TRUE
   -- ACTION <-> CLOCK CONVERTER Interface                                                                   -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_awaddr       : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );           -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_awlen        : STD_LOGIC_VECTOR ( 7 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_awsize       : STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_awburst      : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_awlock       : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_awcache      : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_awprot       : STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_awregion     : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_awqos        : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_awvalid      : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_awready      : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_wdata        : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_DATA_WIDTH-1 DOWNTO 0 );           -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_wstrb        : STD_LOGIC_VECTOR ( (C_AXI_CARD_MEM0_DATA_WIDTH/8)-1 DOWNTO 0 );       -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_wlast        : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_wvalid       : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_wready       : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_bresp        : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_bvalid       : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_bready       : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_araddr       : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );           -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_arlen        : STD_LOGIC_VECTOR ( 7 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_arsize       : STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_arburst      : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_arlock       : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_arcache      : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_arprot       : STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_arregion     : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_arqos        : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_arvalid      : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_arready      : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_rdata        : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_DATA_WIDTH-1 DOWNTO 0 );           -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_rresp        : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_rlast        : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_rvalid       : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_rready       : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_arid         : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );             -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_awid         : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );             -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_bid          : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );             -- only for DDRI_USED=TRUE
-  SIGNAL axi_card_mem0_rid          : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );             -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_awaddr       : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );           -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_awlen        : STD_LOGIC_VECTOR ( 7 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_awsize       : STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_awburst      : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_awlock       : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_awcache      : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_awprot       : STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_awregion     : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_awqos        : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_awvalid      : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_awready      : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_wdata        : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_DATA_WIDTH-1 DOWNTO 0 );           -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_wstrb        : STD_LOGIC_VECTOR ( (C_AXI_CARD_MEM0_DATA_WIDTH/8)-1 DOWNTO 0 );       -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_wlast        : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_wvalid       : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_wready       : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_bresp        : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_bvalid       : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_bready       : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_araddr       : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );           -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_arlen        : STD_LOGIC_VECTOR ( 7 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_arsize       : STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_arburst      : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_arlock       : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_arcache      : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_arprot       : STD_LOGIC_VECTOR ( 2 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_arregion     : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_arqos        : STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_arvalid      : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_arready      : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_rdata        : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_DATA_WIDTH-1 DOWNTO 0 );           -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_rresp        : STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                      -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_rlast        : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_rvalid       : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_rready       : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_arid         : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );             -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_awid         : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );             -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_bid          : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );             -- only for DDRI_USED=TRUE
+  SIGNAL act_axi_card_mem0_rid          : STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );             -- only for DDRI_USED=TRUE
 
   --                                                                                                        -- only for DDRI_USED=TRUE
   -- CLOCK CONVERTER <-> SDRAM MIGs                                                                         -- only for DDRI_USED=TRUE
@@ -840,6 +931,90 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL ddr4_dbg_clk               : STD_LOGIC;                                                            -- only for DDR4_USED=TRUE
   SIGNAL ddr4_dbg_bus               : STD_LOGIC_VECTOR(511 DOWNTO 0);                                       -- only for DDR4_USED=TRUE
 
+  --                                                                                                        -- only for NVME_USED=TRUE                  
+  -- NVME <-> DDR4 Interface      									    -- only for NVME_USED=TRUE 
+  SIGNAL ddr_aresetn                : STD_LOGIC;                                                            -- only for NVME_USED=TRUE 
+  SIGNAL ddr_aclk                   : STD_LOGIC;							    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_awid             : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_awaddr           : STD_LOGIC_VECTOR ( 33 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_awlen            : STD_LOGIC_VECTOR ( 7 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_awsize           : STD_LOGIC_VECTOR ( 2 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_awburst          : STD_LOGIC_VECTOR ( 1 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_awlock           : STD_LOGIC_VECTOR ( 0 to 0 );					    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_awcache          : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_awprot           : STD_LOGIC_VECTOR ( 2 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_awregion         : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_awqos            : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_awvalid          : STD_LOGIC_VECTOR ( 0 to 0 );					    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_awready          : STD_LOGIC_VECTOR ( 0 to 0 );					    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_wdata            : STD_LOGIC_VECTOR ( 127 downto 0 );				    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_wstrb            : STD_LOGIC_VECTOR ( 15 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_wlast            : STD_LOGIC_VECTOR ( 0 to 0 );					    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_wuser            : STD_LOGIC_VECTOR ( 15 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_wvalid           : STD_LOGIC_VECTOR ( 0 to 0 );					    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_wready           : STD_LOGIC_VECTOR ( 0 to 0 );					    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_bid              : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_bresp            : STD_LOGIC_VECTOR ( 1 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_bvalid           : STD_LOGIC_VECTOR ( 0 to 0 );					    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_bready           : STD_LOGIC_VECTOR ( 0 to 0 );					    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_arid             : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_araddr           : STD_LOGIC_VECTOR ( 33 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_arlen            : STD_LOGIC_VECTOR ( 7 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_arsize           : STD_LOGIC_VECTOR ( 2 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_arburst          : STD_LOGIC_VECTOR ( 1 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_arlock           : STD_LOGIC_VECTOR ( 0 to 0 );					    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_arcache          : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_arprot           : STD_LOGIC_VECTOR ( 2 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_arregion         : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_arqos            : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_arvalid          : STD_LOGIC_VECTOR ( 0 to 0 );					    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_arready          : STD_LOGIC_VECTOR ( 0 to 0 );					    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_rid              : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_rdata            : STD_LOGIC_VECTOR ( 127 downto 0 );				    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_rresp            : STD_LOGIC_VECTOR ( 1 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_rlast            : STD_LOGIC_VECTOR ( 0 to 0 );					    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_ruser            : STD_LOGIC_VECTOR ( 15 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_rvalid           : STD_LOGIC_VECTOR ( 0 to 0 );					    -- only for NVME_USED=TRUE 
+  SIGNAL DDR_M_AXI_rready           : STD_LOGIC_VECTOR ( 0 to 0 );					    -- only for NVME_USED=TRUE 
+                                       							                    -- only for NVME_USED=TRUE 
+  --                          								                    -- only for NVME_USED=TRUE 
+  -- NVME <-> CONTROL Interface									            -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_aclk            : STD_LOGIC;							    -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_aresetn         : STD_LOGIC;							    -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_awaddr          : STD_LOGIC_VECTOR ( 31 downto 0 );			            -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_awprot          : STD_LOGIC_VECTOR ( 2 downto 0 );			            -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_awvalid         : STD_LOGIC;						    	    -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_awready         : STD_LOGIC;						    	    -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_wdata           : STD_LOGIC_VECTOR ( 31 downto 0 );			            -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_wstrb           : STD_LOGIC_VECTOR ( 3 downto 0 );			            -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_wvalid          : STD_LOGIC;						    	    -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_wready          : STD_LOGIC;						    	    -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_bresp           : STD_LOGIC_VECTOR ( 1 downto 0 );			            -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_bvalid          : STD_LOGIC;						    	    -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_bready          : STD_LOGIC;						    	    -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_araddr          : STD_LOGIC_VECTOR ( 31 downto 0 );			            -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_arprot          : STD_LOGIC_VECTOR ( 2 downto 0 );			            -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_arvalid         : STD_LOGIC;						    	    -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_arready         : STD_LOGIC;						    	    -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_rdata           : STD_LOGIC_VECTOR ( 31 downto 0 );			            -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_rresp           : STD_LOGIC_VECTOR ( 1 downto 0 );			            -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_rvalid          : STD_LOGIC;						    	    -- only for NVME_USED=TRUE 
+  SIGNAL nvm_axi_ctrl_reg_rready          : STD_LOGIC;						            -- only for NVME_USED=TRUE 
+                                     							                    -- only for NVME_USED=TRUE 
+  --                          								                    -- only for NVME_USED=TRUE 
+  -- NVME <-> PCIE Interface  								                    -- only for NVME_USED=TRUE 
+  SIGNAL sys_rst_n                  : STD_LOGIC;							    -- only for NVME_USED=TRUE 
+  SIGNAL sys_clk_gt                 : STD_LOGIC;							    -- only for NVME_USED=TRUE 
+  SIGNAL refclk                     : STD_LOGIC;							    -- only for NVME_USED=TRUE 
+  SIGNAL pcie_rc0_rxn               : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL pcie_rc0_rxp               : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL pcie_rc0_txn               : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL pcie_rc0_txp               : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL pcie_rc1_rxn               : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL pcie_rc1_rxp               : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL pcie_rc1_txn               : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  SIGNAL pcie_rc1_txp               : STD_LOGIC_VECTOR ( 3 downto 0 );				            -- only for NVME_USED=TRUE 
+  
 BEGIN
   action_reset_reg : PROCESS (ha_pclock)
   BEGIN
@@ -1143,45 +1318,45 @@ BEGIN
       m_axi_aresetn   => sdram_axi_rst_n,                                               -- only for DDRI_USED=TRUE
       --                                                                                -- only for DDRI_USED=TRUE
       -- FROM ACTION                                                                    -- only for DDRI_USED=TRUE
-      s_axi_araddr    => axi_card_mem0_araddr,                                          -- only for DDRI_USED=TRUE
-      s_axi_arburst   => axi_card_mem0_arburst,                                         -- only for DDRI_USED=TRUE
-      s_axi_arcache   => axi_card_mem0_arcache,                                         -- only for DDRI_USED=TRUE
-      s_axi_arid      => axi_card_mem0_arid,                                            -- only for DDRI_USED=TRUE
-      s_axi_arlen     => axi_card_mem0_arlen,                                           -- only for DDRI_USED=TRUE
-      s_axi_arlock    => axi_card_mem0_arlock(0 DOWNTO 0),                              -- only for DDRI_USED=TRUE
-      s_axi_arprot    => axi_card_mem0_arprot,                                          -- only for DDRI_USED=TRUE
-      s_axi_arqos     => axi_card_mem0_arqos,                                           -- only for DDRI_USED=TRUE
-      s_axi_arready   => axi_card_mem0_arready,                                         -- only for DDRI_USED=TRUE
-      s_axi_arregion  => axi_card_mem0_arregion,                                        -- only for DDRI_USED=TRUE
-      s_axi_arsize    => axi_card_mem0_arsize,                                          -- only for DDRI_USED=TRUE
-      s_axi_arvalid   => axi_card_mem0_arvalid,                                         -- only for DDRI_USED=TRUE
-      s_axi_awaddr    => axi_card_mem0_awaddr,                                          -- only for DDRI_USED=TRUE
-      s_axi_awburst   => axi_card_mem0_awburst,                                         -- only for DDRI_USED=TRUE
-      s_axi_awcache   => axi_card_mem0_awcache,                                         -- only for DDRI_USED=TRUE
-      s_axi_awid      => axi_card_mem0_awid,                                            -- only for DDRI_USED=TRUE
-      s_axi_awlen     => axi_card_mem0_awlen,                                           -- only for DDRI_USED=TRUE
-      s_axi_awlock    => axi_card_mem0_awlock(0 DOWNTO 0),                              -- only for DDRI_USED=TRUE
-      s_axi_awprot    => axi_card_mem0_awprot,                                          -- only for DDRI_USED=TRUE
-      s_axi_awqos     => axi_card_mem0_awqos,                                           -- only for DDRI_USED=TRUE
-      s_axi_awready   => axi_card_mem0_awready,                                         -- only for DDRI_USED=TRUE
-      s_axi_awregion  => axi_card_mem0_awregion,                                        -- only for DDRI_USED=TRUE
-      s_axi_awsize    => axi_card_mem0_awsize,                                          -- only for DDRI_USED=TRUE
-      s_axi_awvalid   => axi_card_mem0_awvalid,                                         -- only for DDRI_USED=TRUE
-      s_axi_bid       => axi_card_mem0_bid,                                             -- only for DDRI_USED=TRUE
-      s_axi_bready    => axi_card_mem0_bready,                                          -- only for DDRI_USED=TRUE
-      s_axi_bresp     => axi_card_mem0_bresp,                                           -- only for DDRI_USED=TRUE
-      s_axi_bvalid    => axi_card_mem0_bvalid,                                          -- only for DDRI_USED=TRUE
-      s_axi_rdata     => axi_card_mem0_rdata,                                           -- only for DDRI_USED=TRUE
-      s_axi_rid       => axi_card_mem0_rid,                                             -- only for DDRI_USED=TRUE
-      s_axi_rlast     => axi_card_mem0_rlast,                                           -- only for DDRI_USED=TRUE
-      s_axi_rready    => axi_card_mem0_rready,                                          -- only for DDRI_USED=TRUE
-      s_axi_rresp     => axi_card_mem0_rresp,                                           -- only for DDRI_USED=TRUE
-      s_axi_rvalid    => axi_card_mem0_rvalid,                                          -- only for DDRI_USED=TRUE
-      s_axi_wdata     => axi_card_mem0_wdata,                                           -- only for DDRI_USED=TRUE
-      s_axi_wlast     => axi_card_mem0_wlast,                                           -- only for DDRI_USED=TRUE
-      s_axi_wready    => axi_card_mem0_wready,                                          -- only for DDRI_USED=TRUE
-      s_axi_wstrb     => axi_card_mem0_wstrb,                                           -- only for DDRI_USED=TRUE
-      s_axi_wvalid    => axi_card_mem0_wvalid,                                          -- only for DDRI_USED=TRUE
+      s_axi_araddr    => act_axi_card_mem0_araddr,                                      -- only for DDRI_USED=TRUE
+      s_axi_arburst   => act_axi_card_mem0_arburst,                                     -- only for DDRI_USED=TRUE
+      s_axi_arcache   => act_axi_card_mem0_arcache,                                     -- only for DDRI_USED=TRUE
+      s_axi_arid      => act_axi_card_mem0_arid,                                        -- only for DDRI_USED=TRUE
+      s_axi_arlen     => act_axi_card_mem0_arlen,                                       -- only for DDRI_USED=TRUE
+      s_axi_arlock    => act_axi_card_mem0_arlock(0 DOWNTO 0),                          -- only for DDRI_USED=TRUE
+      s_axi_arprot    => act_axi_card_mem0_arprot,                                      -- only for DDRI_USED=TRUE
+      s_axi_arqos     => act_axi_card_mem0_arqos,                                       -- only for DDRI_USED=TRUE
+      s_axi_arready   => act_axi_card_mem0_arready,                                     -- only for DDRI_USED=TRUE
+      s_axi_arregion  => act_axi_card_mem0_arregion,                                    -- only for DDRI_USED=TRUE
+      s_axi_arsize    => act_axi_card_mem0_arsize,                                      -- only for DDRI_USED=TRUE
+      s_axi_arvalid   => act_axi_card_mem0_arvalid,                                     -- only for DDRI_USED=TRUE
+      s_axi_awaddr    => act_axi_card_mem0_awaddr,                                      -- only for DDRI_USED=TRUE
+      s_axi_awburst   => act_axi_card_mem0_awburst,                                     -- only for DDRI_USED=TRUE
+      s_axi_awcache   => act_axi_card_mem0_awcache,                                     -- only for DDRI_USED=TRUE
+      s_axi_awid      => act_axi_card_mem0_awid,                                        -- only for DDRI_USED=TRUE
+      s_axi_awlen     => act_axi_card_mem0_awlen,                                       -- only for DDRI_USED=TRUE
+      s_axi_awlock    => act_axi_card_mem0_awlock(0 DOWNTO 0),                          -- only for DDRI_USED=TRUE
+      s_axi_awprot    => act_axi_card_mem0_awprot,                                      -- only for DDRI_USED=TRUE
+      s_axi_awqos     => act_axi_card_mem0_awqos,                                       -- only for DDRI_USED=TRUE
+      s_axi_awready   => act_axi_card_mem0_awready,                                     -- only for DDRI_USED=TRUE
+      s_axi_awregion  => act_axi_card_mem0_awregion,                                    -- only for DDRI_USED=TRUE
+      s_axi_awsize    => act_axi_card_mem0_awsize,                                      -- only for DDRI_USED=TRUE
+      s_axi_awvalid   => act_axi_card_mem0_awvalid,                                     -- only for DDRI_USED=TRUE
+      s_axi_bid       => act_axi_card_mem0_bid,                                         -- only for DDRI_USED=TRUE
+      s_axi_bready    => act_axi_card_mem0_bready,                                      -- only for DDRI_USED=TRUE
+      s_axi_bresp     => act_axi_card_mem0_bresp,                                       -- only for DDRI_USED=TRUE
+      s_axi_bvalid    => act_axi_card_mem0_bvalid,                                      -- only for DDRI_USED=TRUE
+      s_axi_rdata     => act_axi_card_mem0_rdata,                                       -- only for DDRI_USED=TRUE
+      s_axi_rid       => act_axi_card_mem0_rid,                                         -- only for DDRI_USED=TRUE
+      s_axi_rlast     => act_axi_card_mem0_rlast,                                       -- only for DDRI_USED=TRUE
+      s_axi_rready    => act_axi_card_mem0_rready,                                      -- only for DDRI_USED=TRUE
+      s_axi_rresp     => act_axi_card_mem0_rresp,                                       -- only for DDRI_USED=TRUE
+      s_axi_rvalid    => act_axi_card_mem0_rvalid,                                      -- only for DDRI_USED=TRUE
+      s_axi_wdata     => act_axi_card_mem0_wdata,                                       -- only for DDRI_USED=TRUE
+      s_axi_wlast     => act_axi_card_mem0_wlast,                                       -- only for DDRI_USED=TRUE
+      s_axi_wready    => act_axi_card_mem0_wready,                                      -- only for DDRI_USED=TRUE
+      s_axi_wstrb     => act_axi_card_mem0_wstrb,                                       -- only for DDRI_USED=TRUE
+      s_axi_wvalid    => act_axi_card_mem0_wvalid,                                      -- only for DDRI_USED=TRUE
       --                                                                                -- only for DDRI_USED=TRUE
       -- TO SDRAM                                                                       -- only for DDRI_USED=TRUE
       m_axi_araddr    => sdram_axi_araddr,                                              -- only for DDRI_USED=TRUE
@@ -1455,4 +1630,92 @@ BEGIN
       c0_ddr4_s_axi_rdata        => sdram_axi_rdata,                                    -- only for DDR4_USED=TRUE
       sys_rst                    => sdram_reset_q                                       -- only for DDR4_USED=TRUE
     );                                                                                  -- only for DDR4_USED=TRUE
+
+
+  nvme_top_i: component nvme_top                                                          -- only for NVME_USED=TRUE 
+    port map (										  -- only for NVME_USED=TRUE 
+      --                              							  -- only for NVME_USED=TRUE 
+      -- NVME <-> DDR4 Interface      							  -- only for NVME_USED=TRUE 
+      ddr_aclk                         => ddr_aclk,                			  -- only for NVME_USED=TRUE 
+      ddr_aresetn                      => ddr_aresetn,					  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_araddr(33 downto 0)    => DDR_M_AXI_araddr(33 downto 0),		  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_arburst(1 downto 0)    => DDR_M_AXI_arburst(1 downto 0),		  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_arcache(3 downto 0)    => DDR_M_AXI_arcache(3 downto 0),		  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_arid(3 downto 0)       => DDR_M_AXI_arid(3 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_arlen(7 downto 0)      => DDR_M_AXI_arlen(7 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_arlock(0)              => DDR_M_AXI_arlock(0),				  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_arprot(2 downto 0)     => DDR_M_AXI_arprot(2 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_arqos(3 downto 0)      => DDR_M_AXI_arqos(3 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_arready(0)             => DDR_M_AXI_arready(0),				  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_arregion(3 downto 0)   => DDR_M_AXI_arregion(3 downto 0),		  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_arsize(2 downto 0)     => DDR_M_AXI_arsize(2 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_arvalid(0)             => DDR_M_AXI_arvalid(0),				  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_awaddr(33 downto 0)    => DDR_M_AXI_awaddr(33 downto 0),		  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_awburst(1 downto 0)    => DDR_M_AXI_awburst(1 downto 0),		  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_awcache(3 downto 0)    => DDR_M_AXI_awcache(3 downto 0),		  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_awid(3 downto 0)       => DDR_M_AXI_awid(3 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_awlen(7 downto 0)      => DDR_M_AXI_awlen(7 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_awlock(0)              => DDR_M_AXI_awlock(0),				  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_awprot(2 downto 0)     => DDR_M_AXI_awprot(2 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_awqos(3 downto 0)      => DDR_M_AXI_awqos(3 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_awready(0)             => DDR_M_AXI_awready(0),				  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_awregion(3 downto 0)   => DDR_M_AXI_awregion(3 downto 0),		  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_awsize(2 downto 0)     => DDR_M_AXI_awsize(2 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_awvalid(0)             => DDR_M_AXI_awvalid(0),				  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_bid(3 downto 0)        => DDR_M_AXI_bid(3 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_bready(0)              => DDR_M_AXI_bready(0),				  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_bresp(1 downto 0)      => DDR_M_AXI_bresp(1 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_bvalid(0)              => DDR_M_AXI_bvalid(0),				  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_rdata(127 downto 0)    => DDR_M_AXI_rdata(127 downto 0),		  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_rid(3 downto 0)        => DDR_M_AXI_rid(3 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_rlast(0)               => DDR_M_AXI_rlast(0),				  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_rready(0)              => DDR_M_AXI_rready(0),				  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_rresp(1 downto 0)      => DDR_M_AXI_rresp(1 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_ruser(15 downto 0)     => DDR_M_AXI_ruser(15 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_rvalid(0)              => DDR_M_AXI_rvalid(0),				  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_wdata(127 downto 0)    => DDR_M_AXI_wdata(127 downto 0),		  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_wlast(0)               => DDR_M_AXI_wlast(0),				  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_wready(0)              => DDR_M_AXI_wready(0),				  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_wstrb(15 downto 0)     => DDR_M_AXI_wstrb(15 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_wuser(15 downto 0)     => DDR_M_AXI_wuser(15 downto 0),			  -- only for NVME_USED=TRUE 
+      DDR_M_AXI_wvalid(0)              => DDR_M_AXI_wvalid(0),				  -- only for NVME_USED=TRUE 
+											  -- only for NVME_USED=TRUE 
+      --                              							  -- only for NVME_USED=TRUE 		   
+      -- NVME <-> CONTROL Interface      						  -- only for NVME_USED=TRUE 			
+      NVME_S_ACLK                      => nvm_axi_ctrl_reg_aclk,			  -- only for NVME_USED=TRUE 
+      NVME_S_ARESETN                   => nvm_axi_ctrl_reg_aresetn,			  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_araddr(31 downto 0)   => nvm_axi_ctrl_reg_araddr(31 downto 0),		  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_arprot(2 downto 0)    => nvm_axi_ctrl_reg_arprot(2 downto 0),		  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_arready               => nvm_axi_ctrl_reg_arready,			  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_arvalid               => nvm_axi_ctrl_reg_arvalid,			  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_awaddr(31 downto 0)   => nvm_axi_ctrl_reg_awaddr(31 downto 0),		  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_awprot(2 downto 0)    => nvm_axi_ctrl_reg_awprot(2 downto 0),		  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_awready               => nvm_axi_ctrl_reg_awready,			  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_awvalid               => nvm_axi_ctrl_reg_awvalid,			  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_bready                => nvm_axi_ctrl_reg_bready,			  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_bresp(1 downto 0)     => nvm_axi_ctrl_reg_bresp(1 downto 0),		  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_bvalid                => nvm_axi_ctrl_reg_bvalid,			  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_rdata(31 downto 0)    => nvm_axi_ctrl_reg_rdata(31 downto 0),		  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_rready                => nvm_axi_ctrl_reg_rready,			  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_rresp(1 downto 0)     => nvm_axi_ctrl_reg_rresp(1 downto 0),		  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_rvalid                => nvm_axi_ctrl_reg_rvalid,			  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_wdata(31 downto 0)    => nvm_axi_ctrl_reg_wdata(31 downto 0),		  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_wready                => nvm_axi_ctrl_reg_wready,			  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_wstrb(3 downto 0)     => nvm_axi_ctrl_reg_wstrb(3 downto 0),		  -- only for NVME_USED=TRUE 
+      NVME_S_AXI_wvalid                => nvm_axi_ctrl_reg_wvalid,			  -- only for NVME_USED=TRUE 
+											  -- only for NVME_USED=TRUE 
+      --                              							  -- only for NVME_USED=TRUE 		   
+      -- NVME <-> PCIE Interface      							  -- only for NVME_USED=TRUE 		   
+      refclk                           => refclk,					  -- only for NVME_USED=TRUE 
+      sys_clk_gt                       => sys_clk_gt,					  -- only for NVME_USED=TRUE 
+      sys_rst_n                        => sys_rst_n,					  -- only for NVME_USED=TRUE 
+      pcie_rc0_rxn(3 downto 0)         => pcie_rc0_rxn(3 downto 0),			  -- only for NVME_USED=TRUE 
+      pcie_rc0_rxp(3 downto 0)         => pcie_rc0_rxp(3 downto 0),			  -- only for NVME_USED=TRUE 
+      pcie_rc0_txn(3 downto 0)         => pcie_rc0_txn(3 downto 0),			  -- only for NVME_USED=TRUE 
+      pcie_rc0_txp(3 downto 0)         => pcie_rc0_txp(3 downto 0),			  -- only for NVME_USED=TRUE 
+      pcie_rc1_rxn(3 downto 0)         => pcie_rc1_rxn(3 downto 0),			  -- only for NVME_USED=TRUE 
+      pcie_rc1_rxp(3 downto 0)         => pcie_rc1_rxp(3 downto 0),			  -- only for NVME_USED=TRUE 
+      pcie_rc1_txn(3 downto 0)         => pcie_rc1_txn(3 downto 0),			  -- only for NVME_USED=TRUE 
+      pcie_rc1_txp(3 downto 0)         => pcie_rc1_txp(3 downto 0)			  -- only for NVME_USED=TRUE 
+    );											  -- only for NVME_USED=TRUE 
 END psl_accel;

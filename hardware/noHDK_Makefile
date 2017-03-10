@@ -55,6 +55,10 @@ export DDR4_USED=FALSE
 export DDRI_USED=TRUE
 endif
 
+ifndef NVME_USED
+export NVME_USED=FALSE
+endif
+
 ifndef MSG_LEVEL
 export MSG_LEVEL=-quiet
 endif
@@ -121,8 +125,9 @@ action_config:
 create_environment:
 	@echo -e "\t[CREATE_ENVIRONMENT] start `date`";
 	$(eval BUILD_DATE := $(shell date +%Y.%m.%d_%H:%M))
-	@cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/vivado_create_ip_$(BUILD_DATE).log         -journal $(LOGS_DIR)/vivado_create_ip_$(BUILD_DATE).jou
-	@cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/vivado_create_framework_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_frame_work_$(BUILD_DATE).jou
+	@cd $(DONUT_HARDWARE_ROOT)/setup                                    && vivado $(MSG_LEVEL) -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/vivado_create_ip_$(BUILD_DATE).log         -journal $(LOGS_DIR)/vivado_create_ip_$(BUILD_DATE).jou
+	@if [ $(NVME_USED) = "TRUE" ]; then cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_nvme_host.tcl          -log $(LOGS_DIR)/vivado_create_nvme_host_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_nvme_host_$(BUILD_DATE).jou; fi 
+	@cd $(DONUT_HARDWARE_ROOT)/setup                                    && vivado $(MSG_LEVEL) -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/vivado_create_framework_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_frame_work_$(BUILD_DATE).jou 
 	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
 
 config: check_donut_settings $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FILES) action_config create_environment
@@ -158,6 +163,7 @@ clean:
 	@rm -r -f  $(BUILD_DIR)
 	@rm    -f  build
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
+	@rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_proj_tmp
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim

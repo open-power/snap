@@ -172,10 +172,6 @@
 
      vivado -mode batch -source create_framework.tcl -notrace
      if [[ $? != 0 ]];then echo "error in create_framework.tcl";exit -1;fi
-
-     # patches for xsim only, rest is done in separate tcl scripts
-     sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/xsim/top.sh          # run up to elaboration, skip execution
-     sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" ${DONUT_HARDWARE_ROOT}/sim/xsim/top.sh
    fi
  fi # PREPARE_ENV == 1
 
@@ -187,6 +183,10 @@
 
    echo "compile for simulator=$SIMULATOR afu_connnect_type=${AFU_CONNECT_TYPE}"
    if [ $SIMULATOR == "xsim" ]; then
+     # patches for xsim only, rest is done in separate tcl scripts
+     sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/xsim/top.sh          # run up to elaboration, skip execution
+     sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" ${DONUT_HARDWARE_ROOT}/sim/xsim/top.sh
+
      cd ${DONUT_HARDWARE_ROOT}/sim/xsim;dir=.;source="xsim"
      ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
      ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -

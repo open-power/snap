@@ -28,6 +28,7 @@ set action_dir  $::env(ACTION_ROOT)
 set ddri_used   $::env(DDRI_USED)
 set ddr3_used   $::env(DDR3_USED)
 set ddr4_used   $::env(DDR4_USED)
+set nvme_used   $::env(NVME_USED)
 set bram_used   $::env(BRAM_USED)
 set simulator   $::env(SIMULATOR)
 set vivadoVer   [version -short]
@@ -50,7 +51,6 @@ if { [info exists ::env(HLS_SUPPORT)] == 1 } {
 
 # Create a new Vivado Project
 puts "	\[CREATE_FRAMEWORK..\] start"
-exec rm -rf $root_dir/viv_project
 create_project framework $root_dir/viv_project -part $fpga_part -force 
 
 # Project Settings
@@ -68,6 +68,8 @@ if { ( $simulator == "ncsim" ) || ( $simulator == "irun" ) } {
   set_property -name {xsim.elaborate.xelab.more_options} -value {-sv_lib libdpi -sv_root .} -objects [current_fileset -simset]
 }
 set_property export.sim.base_dir $root_dir [current_project]
+
+
 # Synthesis
 set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT              400     [get_runs synth_1]
 set_property STEPS.SYNTH_DESIGN.ARGS.FSM_EXTRACTION            one_hot [get_runs synth_1]
@@ -149,6 +151,15 @@ if { $ddri_used == "TRUE" } {
 }
 update_compile_order -fileset sources_1 $msg_level
 
+# Add NVME
+if { $nvme_used == TRUE } {
+  add_files -norecurse                          $root_dir/viv_proj_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd
+  add_files $root_dir/hdl/nvme/
+  export_ip_user_files -of_objects  [get_files  $root_dir/viv_proj_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
+  add_files -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/nvme_model.v
+  set_property include_dirs /afs/vlsilab.boeblingen.ibm.com/proj/cte/tools/cds/VIPCAT/vol2/tools.lnx86/denali_64bit/ddvapi/verilog [get_filesets sim_1]
+}
+
 # Add PSL
 puts "	                      import PSL design checkpoint"
 read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict $msg_level 
@@ -179,6 +190,9 @@ if { $ddri_used == "TRUE" } {
     exit
   }
 }
+
+
+
 
 # EXPORT SIMULATION for xsim
 if { [string equal -length 4 2016 $vivadoVer] > 0 } {

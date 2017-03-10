@@ -701,6 +701,7 @@ module top (
   //////////////////////////////////////////////////////////////////////////////
   // SNAP LOGIC
   //////////////////////////////////////////////////////////////////////////////
+
   wire  [ 1:0] c1_ddr3_ck_p;                           //-- only for DDR3_USED=TRUE 	
   wire  [ 1:0] c1_ddr3_ck_n;  			       //-- only for DDR3_USED=TRUE 	
   wire         c1_ddr3_reset_n;			       //-- only for DDR3_USED=TRUE 	
@@ -832,5 +833,7 @@ module top (
     .c1_ddr3_dqs_p,                                    //-- only for DDR3_USED=TRUE
     .c1_ddr3_dqs_n                                     //-- only for DDR3_USED=TRUE
     );                                                 //-- only for DDR3_USED=TRUE
-   
+
+  nvme_model nvme_model (                              //-- only for NVME_USED=TRUE
+    );
 endmodule
