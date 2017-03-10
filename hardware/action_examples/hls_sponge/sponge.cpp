@@ -155,14 +155,20 @@ void action_wrapper(snap_membus_t *din_gmem,
 		}
 
 		for (slice = 0; slice < NB_SLICES; slice++) {
-			if (pe == (slice % nb_pe))
+			if (pe == (slice % nb_pe)) {
 				checksum ^= sponge(slice);
+
+				/* Intermediate result display */
+				write_results(Action_Output, Action_Input,
+					      ReturnCode, checksum, slice);
+			}
 		}
 
 		timer_ticks += 42;
  		
 	} while (0);
 
+	/* Final output register writes */
 	write_results(Action_Output, Action_Input, ReturnCode,
 		      checksum, timer_ticks);
 
