@@ -424,8 +424,9 @@ static int dnut_poll_results(struct dnut_card *card)
 		if (rc != 0)
 			return rc;
 	}
-	for (i = 0; i < ARRAY_SIZE(job_data); i += 4)
-		poll_trace("  %08x %08x %08x %08x\n",
+	for (i = 0, action_addr = ACTION_JOB_OUT; i < ARRAY_SIZE(job_data);
+	     i += 4, action_addr += 4 * sizeof(uint32_t))
+		poll_trace("  %08x: %08x %08x %08x %08x\n", action_addr,
 			   job_data[i + 0], job_data[i + 1],
 			   job_data[i + 2], job_data[i + 3]);
 
