@@ -138,14 +138,18 @@ void action_wrapper(snap_membus_t *din_gmem,
 #pragma HLS INTERFACE s_axilite port=Action_Output offset=0x104 bundle=ctrl_reg
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
-	snapu32_t ReturnCode = 0;
+	snapu32_t ReturnCode = RET_CODE_OK;
 	uint64_t checksum = 0;
 	uint32_t slice = 0;
 	uint32_t pe, nb_pe;
-	uint64_t timer_ticks = 4711;
+	uint64_t timer_ticks = 42;
 
 	pe = Action_Input->Data.pe;
 	nb_pe = Action_Input->Data.nb_pe;
+
+	/* Intermediate result display */
+	write_results(Action_Output, Action_Input, ReturnCode, checksum,
+		      timer_ticks);
 
 	do {
 		/* Check if the data alignment matches the expectations */
@@ -155,21 +159,21 @@ void action_wrapper(snap_membus_t *din_gmem,
 		}
 
 		for (slice = 0; slice < NB_SLICES; slice++) {
+			if (pe == (slice % nb_pe))
+				checksum ^= sponge(slice);
+
 			/* Intermediate result display */
 			write_results(Action_Output, Action_Input, ReturnCode,
-				      checksum, (uint64_t)slice);
+				      checksum, timer_ticks);
 
-			if (pe == (slice % nb_pe)) {
-				checksum ^= sponge(slice);
-			}
 		}
 		timer_ticks += 42;
  		
 	} while (0);
 
 	/* Final output register writes */
-	write_results(Action_Output, Action_Input, ReturnCode,
-		      checksum, timer_ticks);
+	write_results(Action_Output, Action_Input, ReturnCode, checksum,
+		      timer_ticks);
 }
 
 #ifdef NO_SYNTH
