@@ -72,7 +72,7 @@ END mmio;
 ARCHITECTURE mmio OF mmio IS
   --
   -- CONSTANT
---  CONSTANT TIMER_SIZE         : integer := 64;   -- Size of Timers in number of bits
+  CONSTANT TIMER_SIZE         : integer := 64;   -- Size of Timers in number of bits
 
   --
   -- TYPE
@@ -131,6 +131,7 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL action_type_regs_q                   : REG64_ARRAY_T(MAX_ACTION_REG DOWNTO 0) := (OTHERS => (OTHERS => '0'));
   SIGNAL action_type_regs_par_q               : std_ulogic_vector(MAX_ACTION_REG DOWNTO 0) := (OTHERS => '1');
   SIGNAL action_counter_regs_q                : REG64_ARRAY_T(MAX_ACTION_REG DOWNTO 0) := (OTHERS => (OTHERS => '0'));
+  SIGNAL free_running_timer_q                 : std_ulogic_vector(TIMER_SIZE-1 DOWNTO 0) := (OTHERS => '0');  -- Free running timer value
   SIGNAL ctrl_mgr_err_q                       : std_ulogic_vector(31 DOWNTO 0) := (OTHERS => '0');
   SIGNAL mmio_err_q                           : std_ulogic_vector(31 DOWNTO 0) := (OTHERS => '0');
   SIGNAL non_fatal_master_rd_errors_q         : std_ulogic_vector(NFE_L DOWNTO NFE_R);
@@ -529,6 +530,7 @@ BEGIN
                   -- invalid (slave) address
                   non_fatal_slave_rd_errors_q(NFE_INV_RD_ADDRESS)  <= '1';
                 END IF;
+
               ELSIF mmio_read_reg_offset_q < snap_regs_q'LENGTH THEN
                 mmio_read_data_q0    <= snap_regs_q(mmio_read_reg_offset_q);
                 mmio_read_datapar_q0 <= snap_regs_par_q(mmio_read_reg_offset_q);
@@ -542,20 +544,26 @@ BEGIN
             -- EXTENDED SNAP REGISTER READ
             --
             WHEN SNAP_EXT_REG_BASE =>
-              IF mmio_read_reg_offset_q = SNAP_CTX_ID_REG THEN
-                mmio_read_data_q0                                     <= (OTHERS => '0');
-                mmio_read_data_q0(SNAP_CTX_MASTER_BIT)                <= mmio_read_master_access_q;
-                IF mmio_read_master_access_q = '0' THEN
-                  mmio_read_data_q0(SNAP_CTX_ID_L DOWNTO SNAP_CTX_ID_R) <= context_config_mmio_addr;
-                  mmio_read_datapar_q0                                  <= parity_gen_odd(context_config_mmio_addr) XOR mmio_read_master_access_q;
-                ELSE
-                  mmio_read_datapar_q0 <= '0';
-                END IF;
-              ELSE
-                -- invalid address
-                non_fatal_master_rd_errors_q(NFE_INV_RD_ADDRESS) <= mmio_read_master_access_q;
-                non_fatal_slave_rd_errors_q(NFE_INV_RD_ADDRESS)  <= NOT mmio_read_master_access_q;
-              END IF;
+              CASE mmio_read_reg_offset_q IS
+                WHEN SNAP_FRT_REG =>
+                  mmio_read_data_q0(TIMER_SIZE -1 DOWNTO 0) <= free_running_timer_q;
+                  mmio_read_datapar_q0                      <= parity_gen_odd(free_running_timer_q);
+
+                WHEN SNAP_CTX_ID_REG =>
+                  mmio_read_data_q0                                     <= (OTHERS => '0');
+                  mmio_read_data_q0(SNAP_CTX_MASTER_BIT)                <= mmio_read_master_access_q;
+                  IF mmio_read_master_access_q = '0' THEN
+                    mmio_read_data_q0(SNAP_CTX_ID_L DOWNTO SNAP_CTX_ID_R) <= context_config_mmio_addr;
+                    mmio_read_datapar_q0                                  <= parity_gen_odd(context_config_mmio_addr) XOR mmio_read_master_access_q;
+                  ELSE
+                    mmio_read_datapar_q0 <= '0';
+                  END IF;
+
+                WHEN OTHERS =>
+                  -- invalid address
+                  non_fatal_master_rd_errors_q(NFE_INV_RD_ADDRESS) <= mmio_read_master_access_q;
+                  non_fatal_slave_rd_errors_q(NFE_INV_RD_ADDRESS)  <= NOT mmio_read_master_access_q;
+              END CASE;
 
             --
             -- ACTION TYPE REGISTER READ
@@ -682,6 +690,8 @@ BEGIN
         action_type_regs_par_q           <= (OTHERS => '1');
         action_counter_regs_q            <= (OTHERS => (OTHERS => '0'));
 
+        free_running_timer_q             <= (OTHERS => '0');
+
         dbg_regs_q                       <= (OTHERS => (OTHERS => '0'));
         dbg_regs_par_q                   <= (OTHERS => '1');
         dbg_regs_q(14)                   <= IMP_VERSION_DAT;
@@ -731,6 +741,8 @@ BEGIN
         action_type_counter_update : FOR action_id IN 0 TO NUM_OF_ACTIONS-1 LOOP
           action_counter_regs_q(action_id) <= action_counter_regs_q(action_id) + jmm_d_i.action_active(action_id);
         END LOOP;
+
+        free_running_timer_q             <= free_running_timer_q + 1;
 
         dbg_regs_q                       <= dbg_regs_q;
         dbg_regs_par_q                   <= dbg_regs_par_q;

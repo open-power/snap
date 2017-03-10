@@ -217,6 +217,8 @@ PACKAGE donut_types IS
   CONSTANT SNAP_CMD_REG               : integer := 16#2#;
   CONSTANT SNAP_STATUS_REG            : integer := 16#3#;
   CONSTANT MAX_SNAP_REG               : integer := 16#3#;  -- maximum index for snap register array
+  -- SNAP extended registers
+  CONSTANT SNAP_FRT_REG               : integer := 16#0#;
   CONSTANT SNAP_LOCK_REG              : integer := 16#4#;
   CONSTANT SNAP_CTX_ID_REG            : integer := 16#4#;
 
