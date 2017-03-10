@@ -182,54 +182,51 @@ void action_wrapper(snap_membus_t *din_gmem,
  */
 int main(void)
 {
+	uint64_t slice;
+	uint64_t checksum=0;
+	short i, rc=0;
 
-	  uint64_t slice;
-	  //uint32_t pe,nb_pe;
-      uint64_t checksum=0;
-	  short i, rc=0;
+	typedef struct {
+		uint32_t  pe;
+		uint32_t  nb_pe;
+		uint64_t checksum;
+	} arguments_t;
 
+	static arguments_t sequence[] = {
+		{ 0, /*nb_pe =*/  1, /*expected checksum =*/ 0x948dd5b0109342d4 },
+		{ 0, /*nb_pe =*/  2, /*expected checksum =*/ 0x0bca19b17df64085 },
+		{ 1, /*nb_pe =*/  2, /*expected checksum =*/ 0x9f47cc016d650251 },
+		{ 0, /*nb_pe =*/  4, /*expected checksum =*/ 0x7f13a4a377a2c4fe },
+		{ 1, /*nb_pe =*/  4, /*expected checksum =*/ 0xee0710b96b0748fb },
+		{ 2, /*nb_pe =*/  4, /*expected checksum =*/ 0x74d9bd120a54847b },
+		{ 3, /*nb_pe =*/  4, /*expected checksum =*/ 0x7140dcb806624aaa }
+	};
 
-      typedef struct {
-    	  uint32_t  pe;
-    	  uint32_t  nb_pe;
-    	  uint64_t checksum;
-      } arguments_t;
+	for(i=0; i < 7; i++) {
+		checksum = 0;
+		for(slice=0;slice<NB_SLICES;slice++) {
+			if(sequence[i].pe == (slice % sequence[i].nb_pe))
+				checksum ^= sponge(slice);
+		}
+		printf("pe=%d - nb_pe=%d - processed checksum=%016llx ",
+		       sequence[i].pe,
+		       sequence[i].nb_pe,
+		       (unsigned long long) checksum);
+		if (sequence[i].checksum == checksum) {
+			printf(" ==> CORRECT \n");
+			rc |= 0;
+		}
+		else {
+			printf(" ==> ERROR : expected checksum=%016llx \n",
+			       (unsigned long long) sequence[i].checksum);
+			rc |= 1;
+		}
+	}
+	if (rc != 0)
+		printf("\n\t Checksums are given with use of -DTEST "
+		       "flag. Please check you have set it!\n\n");
 
-
-      static arguments_t sequence[] = {
-	      { 0, /*nb_pe =*/  1, /*expected checksum =*/ 0x948dd5b0109342d4 },
-	      { 0, /*nb_pe =*/  2, /*expected checksum =*/ 0x0bca19b17df64085 },
-	      { 1, /*nb_pe =*/  2, /*expected checksum =*/ 0x9f47cc016d650251 },
-	      { 0, /*nb_pe =*/  4, /*expected checksum =*/ 0x7f13a4a377a2c4fe },
-	      { 1, /*nb_pe =*/  4, /*expected checksum =*/ 0xee0710b96b0748fb },
-	      { 2, /*nb_pe =*/  4, /*expected checksum =*/ 0x74d9bd120a54847b },
-	      { 3, /*nb_pe =*/  4, /*expected checksum =*/ 0x7140dcb806624aaa }
-      };
-
-      for(i=0; i < 7; i++) {
-    	  checksum = 0;
-    	  for(slice=0;slice<NB_SLICES;slice++) {
-    		  if(sequence[i].pe == (slice % sequence[i].nb_pe))
-			  checksum ^= sponge(slice);
-    	  }
-    	  printf("pe=%d - nb_pe=%d - processed checksum=%016llx ",
-    			  sequence[i].pe,
-    			  sequence[i].nb_pe,
-				  (unsigned long long) checksum);
-    	  if (sequence[i].checksum == checksum) {
-        	  printf(" ==> CORRECT \n");
-        	  rc |= 0;
-    	  }
-    	  else {
-    		  printf(" ==> ERROR : expected checksum=%016llx \n",
-    				  (unsigned long long) sequence[i].checksum);
-    		  rc |= 1;
-    	  }
-      }
-      if (rc != 0)
-	      printf("\n\t Checksums are given with use of -DTEST "
-		     "flag. Please check you have set it!\n\n");
-      return rc;
+	return rc;
 }
 
 #endif // end of NO_SYNTH flag
