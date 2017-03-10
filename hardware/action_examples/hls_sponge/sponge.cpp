@@ -18,10 +18,10 @@
 #  define NB_ROUND 1<<10
 #else
 #  ifndef NB_SLICES
-#    define NB_SLICES 65536 /* 4 */	//65536--for first synthesis
+#    define NB_SLICES 65536 	/* for real benchmark */
 #  endif
 #  ifndef NB_ROUND
-#    define NB_ROUND 1<<24 /* 10 */	//24--for first synthesis
+#    define NB_ROUND 1<<24 	/* for real benchmark */
 #  endif
 #endif
 
@@ -33,20 +33,21 @@ uint64_t sponge (const uint64_t rank)
 		       0xc5301e9f6b2ad748ul,0x3894d02e5ba71c6ful};
   uint64_t odd[8],even[8],result;
   int i,j;
+  int rnd_nb;
 
-  even_init:
    for(i=0;i<RESULT_SIZE;i++) {
+#pragma HLS UNROLL 
     even[i] = magic[i] + rank;
   }
 
   //keccak((uint8_t*)even,HASH_SIZE,(uint8_t*)odd,HASH_SIZE);
   keccak((uint64_t*)even,HASH_SIZE,(uint64_t*)odd,HASH_SIZE);
 
-  nb_round_process:
-   for(i=0;i<NB_ROUND;i++) {
+   for(rnd_nb=0;rnd_nb<NB_ROUND;rnd_nb++) {
+//#pragma HLS UNROLL factor=2 
 
-    process_odd:
     for(j=0;j<4;j++) {
+#pragma HLS UNROLL 
       odd[2*j] ^= ROTL64( even[2*j] , 4*j+1);
       odd[2*j+1] = ROTL64( even[2*j+1] + odd[2*j+1], 4*j+3);
     }
@@ -54,8 +55,8 @@ uint64_t sponge (const uint64_t rank)
     //keccak((uint8_t*)odd,HASH_SIZE,(uint8_t*)even,HASH_SIZE);
     keccak((uint64_t*)odd,HASH_SIZE,(uint64_t*)even,HASH_SIZE);
 
-    process_even:
      for(j=0;j<4;j++) {
+#pragma HLS UNROLL 
       even[2*j] += ROTL64( odd[2*j] , 4*j+5);
       even[2*j+1] = ROTL64( even[2*j+1] ^ odd[2*j+1], 4*j+7);
     }
@@ -65,8 +66,8 @@ uint64_t sponge (const uint64_t rank)
   }
   result=0;
   
-  process_result:
    for(i=0;i<RESULT_SIZE;i++) {
+#pragma HLS UNROLL 
     result += (even[i] ^ odd[i]);
   }
   return result;
@@ -159,8 +160,8 @@ void action_wrapper(snap_membus_t *din_gmem,
 				checksum ^= sponge(slice);
 
 				/* Intermediate result display */
-				write_results(Action_Output, Action_Input,
-					      ReturnCode, checksum, slice);
+				write_results(Action_Output, Action_Input, ReturnCode,
+		      			checksum, (uint64_t)slice);
 			}
 		}
 
@@ -171,7 +172,6 @@ void action_wrapper(snap_membus_t *din_gmem,
 	/* Final output register writes */
 	write_results(Action_Output, Action_Input, ReturnCode,
 		      checksum, timer_ticks);
-
 }
 
 #ifdef NO_SYNTH
