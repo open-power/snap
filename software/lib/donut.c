@@ -413,10 +413,6 @@ static int dnut_poll_results(struct dnut_card *card)
 	uint32_t action_addr;
 	uint32_t job_data[112/sizeof(uint32_t)];
 
-	if (!poll_trace_enabled())
-		return 1;
-
-	poll_trace("POLLING Result Registers\n");
 	for (i = 0, action_addr = ACTION_JOB_OUT; i < ARRAY_SIZE(job_data);
 	     i++, action_addr += sizeof(uint32_t)) {
 
@@ -511,8 +507,13 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 
 		/* Every second do ... */
 		if (poll_trace_enabled()) {
+			unsigned long t_diff;
+
 			t_now = tget_ms();
-			if ((t_now - t_start) % 1000 == 0)
+			t_diff = t_now - t_start;
+
+			poll_trace("POLLING Result Registers %zd msec\n", t_diff);
+			if ((t_diff % 1000) == 0)
 				dnut_poll_results(card);
 		}
 
