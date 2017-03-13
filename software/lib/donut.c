@@ -508,7 +508,13 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	t_start = tget_ms();
 	do {
 		dnut_trace("%s: CHECK COMPLETION\n", __func__);
-		dnut_poll_results(card);
+
+		/* Every second do ... */
+		if (poll_trace_enabled()) {
+			t_now = tget_ms();
+			if ((t_now - t_start) % 1000 == 0)
+				dnut_poll_results(card);
+		}
 
 		completed = dnut_kernel_completed(kernel, &rc);
 		if (completed || rc != 0)
