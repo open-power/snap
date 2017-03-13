@@ -512,9 +512,11 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 			t_now = tget_ms();
 			t_diff = t_now - t_start;
 
-			poll_trace("POLLING Result Registers %zd msec\n", t_diff);
-			if ((t_diff % 1000) == 0)
+
+			if ((t_diff % 1000) == 0) {
+				poll_trace("POLLING Regs %zd msec\n", t_diff);
 				dnut_poll_results(card);
+			}
 		}
 
 		completed = dnut_kernel_completed(kernel, &rc);
