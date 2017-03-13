@@ -6,7 +6,8 @@ The Framework Control and Status registers (aka Master PSA registers) are 8B
 registers. All the other registers are 4B wide.
 
 ```
-           ========================================
+ Address
+=========  ========================================
 0x0000000  |                                      |
            |            Master Context            |
    ...     |      Framework Control & Status      |
@@ -70,7 +71,7 @@ Address map for context n (0 <= n < 512), and with s = 512:
 
 ---
 
-## Register specifications
+## SNAP Framework Register Specifications
 
 RW = Read/Write  
 RO = Read only - Reserved bits return 0 unless specified otherwise  
@@ -766,6 +767,56 @@ Address: 0x000E810 + (s+n) * 0x0010000
 ```
 Address: 0x000E818 + (s+n) * 0x0010000
   63..0  RO: TBD by Action
+```
+
+---
+
+## MMIO-Map Action Space
+Each action has a 4KB MMIO space which can be accessed from a master context or
+from a slave context using the address ranges as described in the respective
+MMIO-Map above.
+
+The following MMIO registers have dedicated meanings within the SNAP framework.  
+When the Action gets created using Xilinx HLS the registers marked as "Reserved"
+are required for HLS control information. Otherwise, they may be used for any purpose.
+```
+ Offset       Description       Access
+=======  ====================  =======
+0x000    |                  |
+ ...     |  Action control  |    RW
+0x00C    |                  |
+         ====================
+0x010    |   Action Type    |    RO
+         ====================
+0x014    |  Action Version  |    RO
+         ====================
+0x018    |     Reserved     |
+0x01C    |                  | 
+         ====================
+0x020    |    Context ID    |    WO
+         ====================
+0x024    |     Reserved     |
+         ====================
+0x028    |                  |
+ ...            Unused
+0x0FC    |                  |
+         ====================
+0x100    |  Request Queue   |
+ ...     |     element      |    WO
+0x178    |                  |        
+         ====================
+0x17C    |     Reserved     |
+         ====================
+0x180    |  Response Queue  |
+ ...     |     element      |    RO
+0x1F8    |                  |        
+         ====================
+0x1FC    |     Reserved     |
+         ====================
+0x200    |                  |
+ ...            Unused
+0xFFC    |                  |
+         ====================
 ```
 
 ---
