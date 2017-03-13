@@ -35,7 +35,6 @@ void keccakf(uint64_t st_in[25], uint64_t st_out[25],int rounds)
     int i, j, round;
     uint64_t t, bc[5];
     uint64_t st[25];
-//#pragma HLS PIPELINE //if only this line in keccakf => 251k LUTs - 400ns (TEST mode)
 
 
     //separate entry port from logic
@@ -135,6 +134,7 @@ int keccak(const uint64_t *in64, int inlen, uint64_t *md64, int mdlen)
     temp[rsiz - 1] |= 0x80;
 
     for (i = 0; i < rsizw; i++)
+#pragma HLS UNROLL
         st[i] ^= ((uint64_t *) temp)[i];
 
     keccakf(st, st, KECCAK_ROUNDS);
