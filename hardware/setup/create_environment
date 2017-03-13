@@ -194,7 +194,7 @@
 
    if [ $SIMULATOR == "ncsim" ]; then
      if [ ! -f ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh ]; then                              # modbld script doesnt exist yet
-       vivado -mode batch -source export_ncsim.tcl -notrace 
+       vivado -mode batch -source export_ncsim.tcl -notrace
        if [[ $? != 0 ]];then echo "error in export_ncsim.tcl";exit -1;fi
      fi
      sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh             # run ncsim up to elaboration, skip execution
@@ -211,6 +211,10 @@
      fi
      sed -i "s/93 -relax/93 -elaborate -relax/gI"        ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh # run irun up to elaboration, skip execution
      sed -i "s/-top xil_defaultlib.top/-top work.top/gI" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh # build top in work library
+     if [ -n ${DENALI} ];then
+       echo "env DENALI exists ${DENALI}, include in top.sh"
+       perl -i.ori -pe 'use Env qw(DENALI);s/(glbl.v)/$1 \\ \n  +incdir+"${DENALI}\/ddvapi\/verilog"/mg' ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh # add denali include directory
+     fi
      if [ -f ${DONUT_HARDWARE_ROOT}/sim/ies/run.f ]; then
        perl -i.ori -pe 's/(.*\/verilog\/top.v)/ -sv $1/mg' ${DONUT_HARDWARE_ROOT}/sim/ies/run.f                          # compile top.v with system verilog
        perl -i.ori -pe 'BEGIN{undef $/;} s/(^-makelib.*\n.*glbl.v.*\n.*endlib)//mg' ${DONUT_HARDWARE_ROOT}/sim/ies/run.f # remove glbl.v from compile list
@@ -222,7 +226,7 @@
 
    if [ $SIMULATOR == "questa" ]; then
      if [ ! -f ${DONUT_HARDWARE_ROOT}/sim/questa/top.sh ]; then                           # modbld script doesnt exist yet
-       vivado -mode batch -source export_questa.tcl -notrace 
+       vivado -mode batch -source export_questa.tcl -notrace
        if [[ $? != 0 ]];then echo "error in export_irun.tcl";exit -1;fi
        sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/questa/top.sh        # run up to elaboration, skip execution
      fi
