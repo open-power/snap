@@ -44,7 +44,7 @@ uint64_t sponge (const uint64_t rank)
   keccak((uint64_t*)even,HASH_SIZE,(uint64_t*)odd,HASH_SIZE);
 
    for(rnd_nb=0;rnd_nb<NB_ROUND;rnd_nb++) {
-//#pragma HLS UNROLL factor=2 
+#pragma HLS UNROLL factor=4 
 
     for(j=0;j<4;j++) {
 #pragma HLS UNROLL 
@@ -158,6 +158,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 	}
 
 	for (slice = 0; slice < NB_SLICES; slice++) {
+#pragma HLS UNROLL factor=4
 		if (pe == (slice % nb_pe))
 			checksum ^= sponge(slice);
 
