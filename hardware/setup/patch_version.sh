@@ -15,7 +15,6 @@
 # limitations under the License.
 #
 ###############################################################################
-
 NAME=`basename $2`
 
 if [ "$NAME" == "donut.vhd"  ]; then
@@ -30,4 +29,30 @@ if [ "$NAME" == "donut.vhd"  ]; then
     BUILD_DATE_DAT         : std_logic_vector(63 DOWNTO 0) := x\"0000_'$SNAP_BUILD_DATE'\";' $1/$2
 
   echo "fw_$SNAP_RELEASE_$SNAP_BUILD_DATE" >.bitstream_name.txt
+fi
+
+if [ "$NAME" == "top.sh" ]; then
+  echo "patch top.sh for $SIMULATOR"
+  if [ "$SIMULATOR" == "irun" ]; then
+    sed -i "s/  simulate/# simulate/g"                   $1/$2 # run up to elaboration, skip execution
+    sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" $1/$2
+  fi
+  if [ "$SIMULATOR" == "irun" ]; then
+    sed -i "s/93 -relax/93 -elaborate -relax/gI"         $1/$2 # run irun up to elaboration, skip execution
+    sed -i "s/-top xil_defaultlib.top/-top work.top/gI"  $1/$2  # build top in work library
+    if [ -n $DENALI ];then
+      perl -i.ori -pe 'use Env qw(DENALI);s/(glbl.v)/$1 \\ \n  +incdir+"${DENALI}\/ddvapi\/verilog"/mg' $1/$2 # add denali include directory
+    fi
+    if [ -f ${DONUT_HARDWARE_ROOT}/sim/ies/run.f ]; then
+      perl -i.ori -pe 's/(.*\/verilog\/top.v)/ -sv $1/mg' ${DONUT_HARDWARE_ROOT}/sim/ies/run.f;                          # compile top.v with system verilog
+      perl -i.ori -pe 'BEGIN{undef $/;} s/(^-makelib.*\n.*glbl.v.*\n.*endlib)//mg' ${DONUT_HARDWARE_ROOT}/sim/ies/run.f; # remove glbl.v from compile list
+    fi
+  fi
+  if [ "$SIMULATOR" == "ncsim" ]; then
+    sed -i "s/  simulate/# simulate/g"                   $1/$2 # run ncsim up to elaboration, skip execution
+    sed -i "s/opts_ver=/set -e\nopts_ver=/g"             $1/$2 # use set -e to stop compilation on first error
+  fi
+  if [ "$SIMULATOR" == "questa" ]; then
+    sed -i "s/  simulate/# simulate/g"                   $1/$2 # run up to elaboration, skip execution
+  fi
 fi

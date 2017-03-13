@@ -71,7 +71,11 @@ check_donut_settings:
 	@if [ ! -d "$(DONUT_HARDWARE_ROOT)" ]; then \
 		echo "DONUT_HARDWARE_ROOT does not point to a directory."; \
 		echo "Please source donut_settings before calling make!"; \
-                exit 1; \
+		exit 1; \
+	fi
+	@if [[ $(SIMULATOR) != "ncsim" && $(SIMULATOR) != "irun" && $(SIMULATOR) != "xsim" && $(SIMULATOR) != "questa" ]];then \
+		echo "unknown simulator=$SIMULATOR"; \
+		exit 1; \
 	fi
 	@if [ -z `which git 2> /dev/null` ]; then \
 		echo "The SNAP framework make process relies on git."; \
@@ -126,8 +130,8 @@ create_environment:
 	@echo -e "\t[CREATE_ENVIRONMENT] start `date`";
 	$(eval BUILD_DATE := $(shell date +%Y.%m.%d_%H:%M))
 	@cd $(DONUT_HARDWARE_ROOT)/setup                                    && vivado $(MSG_LEVEL) -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/vivado_create_ip_$(BUILD_DATE).log         -journal $(LOGS_DIR)/vivado_create_ip_$(BUILD_DATE).jou
-	@if [ $(NVME_USED) = "TRUE" ]; then cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_nvme_host.tcl          -log $(LOGS_DIR)/vivado_create_nvme_host_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_nvme_host_$(BUILD_DATE).jou; fi 
-	@cd $(DONUT_HARDWARE_ROOT)/setup                                    && vivado $(MSG_LEVEL) -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/vivado_create_framework_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_frame_work_$(BUILD_DATE).jou 
+	@if [ $(NVME_USED) = "TRUE" ]; then cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_nvme_host.tcl          -log $(LOGS_DIR)/vivado_create_nvme_host_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_nvme_host_$(BUILD_DATE).jou; fi
+	@cd $(DONUT_HARDWARE_ROOT)/setup                                    && vivado $(MSG_LEVEL) -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/vivado_create_framework_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_frame_work_$(BUILD_DATE).jou
 	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
 
 config: check_donut_settings $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FILES) action_config create_environment
@@ -153,10 +157,36 @@ xpr_image: $(SNAP_CONFIG_FILES) patch_version
 	@rm -r -f .bitstream_name.txt
 	@echo -e "\t[BUILD IMAGE.......] done  `date`"
 
-model: $(SNAP_CONFIG_FILES) patch_version
-	@echo -e "\t[BUILD MODEL] start `date`"
-	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
-	@echo -e "\t[BUILD MODEL] done `date`"
+model: $(SNAP_CONFIG_FILES) patch_version $(SIMULATOR)
+#	@echo -e "\t[BUILD MODEL.......] start `date`"
+#	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
+#	@echo -e "\t[BUILD MODEL.......] done `date`"
+
+xsim:
+	@echo -e "\t[BUILD xsim........] start `date`"
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/sim/xsim top.sh
+	@cd $(DONUT_HARDWARE_ROOT)/sim/xsim && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so && ./top.sh
+
+irun:
+	@echo -e "\t[BUILD irun........] start `date`"
+	@if [ -f $(DONUT_HARDWARE_ROOT)/sim/ies/top.sh ];then rm -rf $(DONUT_HARDWARE_ROOT)/sim/ies;fi
+	vivado -mode batch -source setup/export_irun.tcl -notrace
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/sim/ies top.sh
+	@cd $(DONUT_HARDWARE_ROOT)/sim/ies && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so && ./top.sh
+
+ncsim:
+	@echo -e "\t[BUILD ncsim.......] start `date`"
+	@if [ -f $(DONUT_HARDWARE_ROOT)/sim/ies/top.sh ];then rm -rf $(DONUT_HARDWARE_ROOT)/sim/ies;fi
+	vivado -mode batch -source setup/export_ncsim.tcl -notrace
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/sim/ies top.sh
+	@cd $(DONUT_HARDWARE_ROOT)/sim/ies && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so && ./top.sh
+
+questa:
+	@echo -e "\t[BUILD questa......] start `date`"
+	@if [ -f $(DONUT_HARDWARE_ROOT)/sim/questa/top.sh ];then rm -rf $(DONUT_HARDWARE_ROOT)/sim/questa;fi
+	vivado -mode batch -source setup/export_questa.tcl -notrace
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/sim/questa top.sh
+	cd $(DONUT_HARDWARE_ROOT)/sim/questa && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so && ./top.sh
 
 clean:
 	@echo -e "\t[CLEAN.............] build environment";
@@ -169,8 +199,8 @@ clean:
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
 	@rm -f     $(SNAP_CONFIG_FILES)
-	@rm -f     ./setup/*.log
-	@rm -f     ./setup/*.jou
+	@rm -f     ./vivado*.log ./*/vivado*.log
+	@rm -f     ./vivado*.jou ./*/vivado*.jou
 
 gitclean:
 	@echo -e "\t[GITCLEAN] cleaning and resetting donut git";
