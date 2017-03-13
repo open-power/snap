@@ -447,6 +447,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	struct dnut_card *card = (struct dnut_card *)kernel;
 	uint32_t action_addr;
 	unsigned int t_start, t_now;
+	unsigned long o_now = 0;
 	struct queue_workitem job; /* one cacheline job description and data */
 	uint32_t *job_data;
 	int completed;
@@ -512,11 +513,11 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 			t_now = tget_ms();
 			t_diff = t_now - t_start;
 
-
-			if ((t_diff % 1000) == 0) {
+			if ((t_now != o_now) && (t_diff % 1000) == 0) {
 				poll_trace("POLLING Regs %zd msec\n", t_diff);
 				dnut_poll_results(card);
 			}
+			o_now = t_now;
 		}
 
 		completed = dnut_kernel_completed(kernel, &rc);
