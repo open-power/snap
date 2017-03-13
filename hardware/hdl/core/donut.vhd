@@ -141,6 +141,7 @@ ARCHITECTURE donut OF donut IS
   SIGNAL ha_r                : HA_R_T;
   SIGNAL jmm_c               : JMM_C_T;
   SIGNAL jmm_d               : JMM_D_T;
+  SIGNAL js_c                : JS_C_T;
   SIGNAL jx_c                : JX_C_T;
   SIGNAL mmc_e               : MMC_E_T;
   SIGNAL mmd_a               : MMD_A_T;
@@ -150,20 +151,21 @@ ARCHITECTURE donut OF donut IS
   SIGNAL mmx_d               : MMX_D_T;
   SIGNAL xmm_d               : XMM_D_T;
 
-  signal xj_c                : XJ_C_T;
+  SIGNAL sj_c                : SJ_C_T;
+  SIGNAL xj_c                : XJ_C_T;
 
-  signal xk_d                : XK_D_T;
-  signal kx_d                : KX_D_T;
-  signal sk_d                : SK_D_T;
-  signal ks_d                : KS_D_T;
+  SIGNAL xk_d                : XK_D_T;
+  SIGNAL kx_d                : KX_D_T;
+  SIGNAL sk_d                : SK_D_T;
+  SIGNAL ks_d                : KS_D_T;
 
-  signal sd_c                : SD_C_T;
-  signal sd_d                : SD_D_T;
-  signal ds_c                : DS_C_T;
-  signal ds_d                : DS_D_T;
-  signal xn_d                : XN_D_T;
-  signal nx_d                : NX_D_T := ('1', '1', "00", '1', '1',
-                                          (31 downto 0 => '0'), "00", '1');
+  SIGNAL sd_c                : SD_C_T;
+  SIGNAL sd_d                : SD_D_T;
+  SIGNAL ds_c                : DS_C_T;
+  SIGNAL ds_d                : DS_D_T;
+  SIGNAL xn_d                : XN_D_T;
+  SIGNAL nx_d                : NX_D_T := ('1', '1', "00", '1', '1',
+                                          (31 DOWNTO 0 => '0'), "00", '1');
 
 
 BEGIN
@@ -368,6 +370,10 @@ BEGIN
       jmm_c_o                => jmm_c,
       jmm_d_o                => jmm_d,
       --
+      -- DMA Interface (via AXI-DMA shim)
+      sj_c_i                 => sj_c,
+      js_c_o                 => js_c,
+      --
       -- AXI MASTER Interface
       xj_c_i                 => xj_c,
       jx_c_o                 => jx_c
@@ -466,6 +472,9 @@ BEGIN
       sd_d_o                       => sd_d,
       ds_c_i                       => ds_c,
       ds_d_i                       => ds_d,
+
+      sj_c_o                       => sj_c,
+      js_c_i                       => js_c,
 
       sk_d_o                       => sk_d_o,  -- axi slave full interface
       ks_d_i                       => ks_d_i

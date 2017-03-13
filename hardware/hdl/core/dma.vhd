@@ -2309,8 +2309,9 @@ BEGIN
           ha_c_q.room          <= (OTHERS => '0');
           ha_r_q               <= ('0', (OTHERS => '0'), '0', ILLEGAL_RSP,
                                    (OTHERS => '0'), (OTHERS => '0'),(OTHERS => '0'));
-          sd_c_q               <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
-                                   '0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'));
+          sd_c_q               <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
+                                   '0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
+                                   '0', (OTHERS => '0'), (OTHERS => '0'));
           mmd_i_q              <= (OTHERS => ('0'));
 
           force_rfifo_empty_q  <= '1';

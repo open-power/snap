@@ -466,10 +466,12 @@ PACKAGE donut_types IS
   ------------------------------------------------------------------------------
   --
   -- CONSTANT
-  CONSTANT ACTION_TYPE_BITS                : integer :=   4;      -- number of bits required to represent the action types
-  CONSTANT NUM_OF_ACTION_TYPES             : integer :=  16;      -- maximum number of supported action types
-  CONSTANT ACTION_BITS                     : integer :=   4;      -- number of bits required to represent the action IDs
-  CONSTANT NUM_OF_ACTIONS                  : integer :=  16;      -- maximum number of supported actions
+  CONSTANT ACTION_TYPE_BITS                : integer :=  4;      -- number of bits required to represent the action types
+  CONSTANT NUM_OF_ACTION_TYPES             : integer := 16;      -- maximum number of supported action types
+  CONSTANT ACTION_BITS                     : integer :=  4;      -- number of bits required to represent the action IDs
+  CONSTANT NUM_OF_ACTIONS                  : integer := 16;      -- maximum number of supported actions
+  CONSTANT INT_BITS                        : integer :=  2;      -- number of bits required to represent the interrupt source ID at
+                                                                 -- "AXI-DMA shim" interface
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -692,6 +694,7 @@ PACKAGE donut_types IS
 --
 --  jmm_c: job_manager -> mmio        : Control Interface
 --  jmm_d: job_manager -> mmio        : Data Interface
+--  js_c : job_manager -> AXI slave   : Control Interface
 --  jx_c : job_manager -> AXI master  : Control Interface
 --
 --  mmc_e: mmio        -> ctrl_mgr    : Error Interface
@@ -706,6 +709,7 @@ PACKAGE donut_types IS
 --
 --  sd_c : AXI slave   -> dma         : Control Interface
 --  sd_d : AXI slave   -> dma         : Data Interface
+--  sj_c : AXI slave   -> job_manager : Control Interface
 --
 --  xmm_d: AXI master  -> mmio        : Data Interface
 --  xmm_c: AXI master  -> mmio        : Control Interface
@@ -723,20 +727,21 @@ PACKAGE donut_types IS
     -- ds_c
     --
     TYPE DS_C_T IS RECORD
-      wr_req_ack        : std_ulogic;                                           --
-      rd_req_ack        : std_ulogic;                                           --
-      wr_id_valid       : std_ulogic;                                           --
-      wr_id             : std_ulogic_vector(C_S_AXI_ID_WIDTH - 1 downto 0);     --
+      wr_req_ack        : std_ulogic;
+      rd_req_ack        : std_ulogic;
+      wr_id_valid       : std_ulogic;
+      wr_id             : std_ulogic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
+      int_req_ack       : std_ulogic;
     END RECORD DS_C_T;
 
     --
     -- ds_d
     --
     TYPE DS_D_T IS RECORD
-      rd_data_strobe    : std_ulogic;                                           --valid
-      rd_last           : std_ulogic;                                           --
-      rd_data           : std_ulogic_vector(C_S_AXI_DATA_WIDTH - 1 downto 0);   -- data
-      rd_id             : std_ulogic_vector(C_S_AXI_ID_WIDTH - 1 downto 0);     --
+      rd_data_strobe    : std_ulogic;                                           -- valid
+      rd_last           : std_ulogic;
+      rd_data           : std_ulogic_vector(C_S_AXI_DATA_WIDTH - 1 DOWNTO 0);   -- data
+      rd_id             : std_ulogic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
     END RECORD DS_D_T;
 
     --
@@ -812,10 +817,19 @@ PACKAGE donut_types IS
     END RECORD;
 
     --
+    -- js_c
+    --
+    TYPE JS_C_T IS RECORD
+      int_valid          : std_ulogic;
+      int_src            : std_ulogic_vector(INT_BITS-1 DOWNTO 0);
+      int_ctx            : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    END RECORD;
+
+    --
     -- jx_c
     --
     TYPE JX_C_T IS RECORD
-      check_for_idle     : std_ulogic_vector(ACTION_BITS-1 downto 0);
+      check_for_idle     : std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
     END RECORD JX_C_T;
 
 
@@ -888,32 +902,44 @@ PACKAGE donut_types IS
 
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
-  --  AXI SLAVE Interface
+  --  AXI SLAVE Interface (AXI-DMA shim)
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
     --
     -- sd_c
     --
     TYPE SD_C_T IS RECORD
-      wr_req            : std_ulogic;                                           --wvalid
-      wr_addr           : std_ulogic_vector(63 downto 0);                       --waddr
-      wr_len            : std_ulogic_vector( 7 downto 0);                       --wlen
-      wr_id             : std_ulogic_vector(C_S_AXI_ID_WIDTH - 1 downto 0);     --action ID
-      rd_req            : std_ulogic;                                           --rvalid
-      rd_addr           : std_ulogic_vector(63 downto 0);                       --raddr
-      rd_len            : std_ulogic_vector( 7 downto 0);                       --rlen
-      rd_id             : std_ulogic_vector(C_S_AXI_ID_WIDTH - 1 downto 0);     --action ID
+      wr_req            : std_ulogic;                                           -- wvalid
+      wr_addr           : std_ulogic_vector(63 DOWNTO 0);                       -- waddr
+      wr_len            : std_ulogic_vector( 7 DOWNTO 0);                       -- wlen
+      wr_id             : std_ulogic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
+      wr_ctx            : std_ulogic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
+      rd_req            : std_ulogic;                                           -- rvalid
+      rd_addr           : std_ulogic_vector(63 DOWNTO 0);                       -- raddr
+      rd_len            : std_ulogic_vector( 7 DOWNTO 0);                       -- rlen
+      rd_id             : std_ulogic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
+      rd_ctx            : std_ulogic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
+      int_valid         : std_ulogic;                                           -- interrupt valid
+      int_src           : std_ulogic_vector(INT_BITS -1 DOWNTO 0);              -- interrupt source ID
+      int_ctx           : std_ulogic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
     END RECORD SD_C_T;
 
     --
     -- sd_d
     --
     TYPE SD_D_T IS RECORD
-      wr_strobe         : std_ulogic_vector(C_S_AXI_DATA_WIDTH/8 - 1 downto 0); -- valid + byte_enable
+      wr_strobe         : std_ulogic_vector(C_S_AXI_DATA_WIDTH/8 - 1 DOWNTO 0); -- valid + byte_enable
       wr_last           : std_ulogic;                                           --
-      wr_data           : std_ulogic_vector(C_S_AXI_DATA_WIDTH - 1 downto 0);   -- data
+      wr_data           : std_ulogic_vector(C_S_AXI_DATA_WIDTH - 1 DOWNTO 0);   -- data
       rd_data_ack       : std_ulogic;                                           --
     END RECORD SD_D_T;
+
+    --
+    -- sj_c
+    --
+    TYPE SJ_C_T IS RECORD
+      int_ack           : std_ulogic;
+    END RECORD;
 
 
   ----------------------------------------------------------------------------
@@ -935,7 +961,7 @@ PACKAGE donut_types IS
     --
     TYPE XJ_C_T IS RECORD
       valid               : std_ulogic;
-      action              : std_ulogic_vector(ACTION_BITS-1 downto 0);
+      action              : std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
     END RECORD XJ_C_T;
 
     --

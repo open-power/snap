@@ -44,6 +44,10 @@ ENTITY job_manager IS
     jmm_c_o                : OUT JMM_C_T;
     jmm_d_o                : OUT JMM_D_T;
     --
+    -- DMA Interface (via AXI-DMA shim)
+    sj_c_i                 : IN  SJ_C_T;
+    js_c_o                 : OUT JS_C_T;
+    --
     -- AXI MASTER Interface
     xj_c_i                 : IN  XJ_C_T;
     jx_c_o                 : OUT JX_C_T

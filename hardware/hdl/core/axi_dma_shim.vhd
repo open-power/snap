@@ -46,6 +46,9 @@ entity axi_dma_shim is
                 ds_c_i            : in  DS_C_T;
                 ds_d_i            : in  DS_D_T;
 
+                sj_c_o            : out SJ_C_T;
+                js_c_i            : in  JS_C_T;
+
                 sk_d_o            : out SK_D_T;
                 ks_d_i            : in  KS_D_T
 
