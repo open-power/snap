@@ -196,7 +196,7 @@ int main(void)
 		{ 0, /*nb_pe =*/  4, /*expected checksum =*/ 0x7f13a4a377a2c4fe },
 		{ 1, /*nb_pe =*/  4, /*expected checksum =*/ 0xee0710b96b0748fb },
 		{ 2, /*nb_pe =*/  4, /*expected checksum =*/ 0x74d9bd120a54847b },
-		{ 3, /*nb_pe =*/  4, /*expected checksum =*/ 0x7140dcb806624aaa }
+		{ 3, /*nb_pe =*/  4, /*expected checksum =*/ 0x7140dcb806624aaa },
 	};
 
 	for(i=0; i < 7; i++) {
@@ -209,12 +209,13 @@ int main(void)
 		       sequence[i].pe,
 		       sequence[i].nb_pe,
 		       (unsigned long long) checksum);
+
 		if (sequence[i].checksum == checksum) {
-			printf(" ==> CORRECT \n");
+			printf(" ==> CORRECT\n");
 			rc |= 0;
 		}
 		else {
-			printf(" ==> ERROR : expected checksum=%016llx \n",
+			printf(" ==> ERROR: expected checksum=%016llx\n",
 			       (unsigned long long) sequence[i].checksum);
 			rc |= 1;
 		}
