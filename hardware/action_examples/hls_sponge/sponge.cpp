@@ -14,14 +14,14 @@
 
 #undef TEST /* get faster turn-around time */
 #ifdef NO_SYNTH /* TEST */
-#  define NB_SLICES 4
-#  define NB_ROUND 1<<10
+#  define NB_SLICES   (4)
+#  define NB_ROUND    (1 << 10)
 #else
 #  ifndef NB_SLICES
-#    define NB_SLICES 65536 	/* for real benchmark */
+#    define NB_SLICES (65536) 	/* for real benchmark */
 #  endif
 #  ifndef NB_ROUND
-#    define NB_ROUND 1<<24 	/* for real benchmark */
+#    define NB_ROUND  (1 << 16) /* (1 << 24) */ /* for real benchmark */
 #  endif
 #endif
 
@@ -138,7 +138,6 @@ void action_wrapper(snap_membus_t *din_gmem,
 #pragma HLS INTERFACE s_axilite port=Action_Output offset=0x104 bundle=ctrl_reg
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
-	snapu32_t ReturnCode = RET_CODE_OK;
 	uint64_t checksum = 0;
 	uint32_t slice = 0;
 	uint32_t pe, nb_pe;
@@ -148,32 +147,28 @@ void action_wrapper(snap_membus_t *din_gmem,
 	nb_pe = Action_Input->Data.nb_pe;
 
 	/* Intermediate result display */
-	write_results(Action_Output, Action_Input, ReturnCode, checksum,
-		      timer_ticks);
+	write_results(Action_Output, Action_Input, RET_CODE_OK,
+		      checksum, timer_ticks);
 
-	do {
-		/* Check if the data alignment matches the expectations */
-		if (Action_Input->Control.action != SPONGE_ACTION_TYPE) {
-			ReturnCode = RET_CODE_FAILURE;
-			break;
-		}
+	/* Check if the data alignment matches the expectations */
+	if (Action_Input->Control.action != SPONGE_ACTION_TYPE) {
+		write_results(Action_Output, Action_Input, RET_CODE_FAILURE,
+			      checksum, timer_ticks);
+		return;
+	}
 
-		for (slice = 0; slice < NB_SLICES; slice++) {
-			if (pe == (slice % nb_pe))
-				checksum ^= sponge(slice);
+	for (slice = 0; slice < NB_SLICES; slice++) {
+		if (pe == (slice % nb_pe))
+			checksum ^= sponge(slice);
 
-			/* Intermediate result display */
-			write_results(Action_Output, Action_Input, ReturnCode,
-				      0xfffffffffffffffful, timer_ticks);
-
-		}
-		timer_ticks += 42;
- 		
-	} while (0);
+		/* Intermediate result display */
+		write_results(Action_Output, Action_Input, RET_CODE_OK,
+			      0xfffffffffffffffful, slice);
+	}
 
 	/* Final output register writes */
-	write_results(Action_Output, Action_Input, ReturnCode, checksum,
-		      timer_ticks);
+	write_results(Action_Output, Action_Input, RET_CODE_OK,
+		      checksum, timer_ticks);
 }
 
 #ifdef NO_SYNTH
