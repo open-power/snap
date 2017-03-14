@@ -23,7 +23,7 @@ int keccak(const uint64_t *in, int inlen, uint64_t *md, int mdlen);
 void keccakf(uint64_t st_in[25], uint64_t st_out[25], int norounds);
 
 /* main functionality */
-uint64_t sponge (const uint64_t rank);
+uint64_t sponge (const uint64_t rank, const uint64_t pe, const uint64_t nb_pe);
 
 #endif
 
