@@ -326,7 +326,7 @@ int main(int argc, char *argv[])
 	int ch, rc = 0;
 	int card_no = 0;
 	const char *input = NULL;
-	unsigned long timeout = 10;
+	unsigned long timeout = 60 * 60 * 60; /* 60h for SPONGE */
 	const char *space = "CARD_RAM";
 	ssize_t size = 1024 * 1024;
 	uint8_t *ibuff = NULL;
