@@ -470,8 +470,8 @@ PACKAGE donut_types IS
   CONSTANT NUM_OF_ACTION_TYPES             : integer := 16;      -- maximum number of supported action types
   CONSTANT ACTION_BITS                     : integer :=  4;      -- number of bits required to represent the action IDs
   CONSTANT NUM_OF_ACTIONS                  : integer := 16;      -- maximum number of supported actions
-  CONSTANT INT_BITS                        : integer :=  2;      -- number of bits required to represent the interrupt source ID at
-                                                                 -- "AXI-DMA shim" interface
+  CONSTANT INT_BITS                        : integer :=  3;      -- number of bits required to represent the seven interrupt
+                                                                 -- source IDs at the interface between "AXI-DMA shim" and DMA
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -821,7 +821,7 @@ PACKAGE donut_types IS
     --
     TYPE JS_C_T IS RECORD
       int_req            : std_ulogic;
-      int_src            : std_ulogic_vector(INT_BITS-1 DOWNTO 0);
+      int_src            : std_ulogic_vector(INT_BITS-2 DOWNTO 0);      -- the job manager only uses two of the seven interrupt source IDs
       int_ctx            : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
     END RECORD;
 
@@ -920,7 +920,7 @@ PACKAGE donut_types IS
       rd_id             : std_ulogic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
       rd_ctx            : std_ulogic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
       int_req           : std_ulogic;                                           -- interrupt valid
-      int_src           : std_ulogic_vector(INT_BITS -1 DOWNTO 0);              -- interrupt source ID
+      int_src           : std_ulogic_vector(INT_BITS - 1 DOWNTO 0);             -- interrupt source ID
       int_ctx           : std_ulogic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
     END RECORD SD_C_T;
 
