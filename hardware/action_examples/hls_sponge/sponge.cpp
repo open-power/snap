@@ -156,9 +156,23 @@ void action_wrapper(snap_membus_t *din_gmem,
 			      checksum, timer_ticks);
 		return;
 	}
+	/*
+	 * Dividing (see below) through nb_pe is not good. We use this
+	 * to probe for NB_SLICE and NB_ROUNDS, which are returned in
+	 * this case. Therefore we return RET_CODE_OK in this special
+	 * situation.
+	 */
+	if (nb_pe == 0) {
+		write_results(Action_Output, Action_Input, RET_CODE_OK, 0, 0);
+		return;
+	}
 
 	for (slice = 0; slice < NB_SLICES; slice++) {
 #pragma HLS UNROLL factor=4
+		/*
+		 * This if might not be a good idea, we are doing experiments
+		 * to move it to a different place.
+		 */
 		if (pe == (slice % nb_pe))
 			checksum ^= sponge(slice);
 
