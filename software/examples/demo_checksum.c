@@ -287,9 +287,11 @@ static struct sponge_t test_data[] = {
 
 	/* NB_SLICES=64K NB_ROUND=64K */
 	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
-	  .pe = 0, .nb_pe = 1, .checksum = 0xed08548b49997520ull },
+	  .pe = 0, .nb_pe = 64 * 1024, .checksum = 0x8d24ed80cd6a0bd9ull },
 	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
-	  .pe = 0, .nb_pe = 4 * 1024, .checksum = 0xd36463652392bddcull },
+	  .pe = 0, .nb_pe = 4 * 1024,  .checksum = 0xd36463652392bddcull },
+	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
+	  .pe = 0, .nb_pe = 1,         .checksum = 0xed08548b49997520ull },
 };
 
 static int test_sponge(int card_no, int timeout, FILE *fp)
@@ -311,7 +313,7 @@ static int test_sponge(int card_no, int timeout, FILE *fp)
 		fprintf(stderr, "err: sponge rc=%d FAILED\n", rc);
 		return rc;
 	}
-	fprintf(stderr, "NB_SLICES=%d NB_ROUND=%d\n", nb_slices, nb_round);
+	fprintf(stderr, "NB_SLICES = %d NB_ROUND = %d\n", nb_slices, nb_round);
 	
 	for (i = 0; i < ARRAY_SIZE(test_data); i++) {
 		struct sponge_t *t = &test_data[i];
@@ -336,11 +338,11 @@ static int test_sponge(int card_no, int timeout, FILE *fp)
 			return -1;
 		}
 		if (i == 0)
-			fprintf(stderr, "  NB_SLICES=%d NB_ROUND=%d\n",
+			fprintf(stderr, "  NB_SLICES = %d NB_ROUND = %d\n",
 				nb_slices, nb_round);
 
-		fprintf(stderr, "  pe=%d nb_pe=%d ... ", t->pe, t->nb_pe);
-		fprintf(stderr, "checksum=%016llx %8lld timer_ticks "
+		fprintf(stderr, "  pe = %5d nb_pe = %5d ... ", t->pe, t->nb_pe);
+		fprintf(stderr, "checksum = %016llx %8lld timer_ticks "
 			"%8lld usec OK\n",
 			(long long)checksum,
 			(long long)timer_ticks,
