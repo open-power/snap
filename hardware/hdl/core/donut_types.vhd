@@ -820,7 +820,7 @@ PACKAGE donut_types IS
     -- js_c
     --
     TYPE JS_C_T IS RECORD
-      int_valid          : std_ulogic;
+      int_req            : std_ulogic;
       int_src            : std_ulogic_vector(INT_BITS-1 DOWNTO 0);
       int_ctx            : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
     END RECORD;
@@ -919,7 +919,7 @@ PACKAGE donut_types IS
       rd_len            : std_ulogic_vector( 7 DOWNTO 0);                       -- rlen
       rd_id             : std_ulogic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
       rd_ctx            : std_ulogic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
-      int_valid         : std_ulogic;                                           -- interrupt valid
+      int_req           : std_ulogic;                                           -- interrupt valid
       int_src           : std_ulogic_vector(INT_BITS -1 DOWNTO 0);              -- interrupt source ID
       int_ctx           : std_ulogic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
     END RECORD SD_C_T;
