@@ -132,7 +132,7 @@ static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
 {
 	int rc;
 
-	addr += context_offset * ACTION_CONTEXT_OFFSET;
+	addr += context_offset;
 	PRINTF4("mmio_write(0x%08x ,0x%08x)\n", addr, data);
 	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
@@ -145,7 +145,7 @@ static uint32_t action_read(struct dnut_card* h, uint32_t addr)
 	int rc;
 	uint32_t data;
 
-	addr += context_offset * ACTION_CONTEXT_OFFSET;
+	addr += context_offset;
 	rc = dnut_mmio_read32(h, (uint64_t)addr, &data);
 	if (0 != rc)
 		PRINTF0("Read MMIO 32 Err\n");
@@ -180,11 +180,10 @@ static int action_wait_idle(struct dnut_card* h, int timeout_ms)
 	return 0;
 }
 
-static int action_start(struct dnut_card* h,
+static void action_start(struct dnut_card* h,
 		int action,
 		uint64_t dest,	/* End address for MEMSET */
-		uint64_t src,	/* Start address for MEMSET */
-		int timeout)
+		uint64_t src)	/* Start address for MEMSET */
 {
 	uint64_t addr;
 	uint8_t pattern;
@@ -199,7 +198,7 @@ static int action_start(struct dnut_card* h,
 		break;
 	default:
 		PRINTF0("\nInvalid Action\n");
-		return 1;
+		return;
 		break;
 	}
 	PRINTF2(" Set: %lld Bytes with Pattern: 0x%02x ",
@@ -212,9 +211,7 @@ static int action_start(struct dnut_card* h,
 	action_write(h, ACTION_DEST_LOW, (uint32_t)(addr & 0xffffffff));
 	action_write(h, ACTION_DEST_HIGH, (uint32_t)(addr >> 32));
 
-	if (action_wait_idle(h, timeout))
-		return 1;
-	return 0;
+	return;
 }
 
 static void free_mem(void *buffer)
@@ -232,7 +229,7 @@ static void usage(const char *prog)
 		"    -C, --card <cardno>  use this card for operation\n"
 		"    -V, --version\n"
 		"    -q, --quiet          quiece output\n"
-		"    -z, --context        Use this for MMIO + N x 0x1000 (default 0)\n"
+		"    -m, --master         Use master Context (default slave context)\n"
 		"    -t, --timeout        timeout in msec (default=1000 ms)\n"
 		"    -i, --iter           Number of Iterations (default 1)\n"
 		"    -H, --host           Set Host Memory (defualt)\n"
@@ -262,6 +259,7 @@ int main(int argc, char *argv[])
 	int h_mem_size = 0;
 	int h_begin = 0;
 	uint64_t start, stop;
+	bool use_master = false;	/* Set to true to use master context */
 
 	while (1) {
                 int option_index = 0;
@@ -272,7 +270,7 @@ int main(int argc, char *argv[])
 			{ "version",  no_argument,       NULL, 'V' },
 			{ "quiet",    no_argument,       NULL, 'q' },
 			{ "iter",     required_argument, NULL, 'i' },
-			{ "context",  required_argument, NULL, 'z' },
+			{ "master",   no_argument,       NULL, 'm' },
 			{ "timeout",  required_argument, NULL, 't' },
 			{ "host",     required_argument, NULL, 'H' },
 			{ "fpga",     required_argument, NULL, 'F' },
@@ -281,7 +279,7 @@ int main(int argc, char *argv[])
 			{ "pattern",  required_argument, NULL, 'p' },
 			{ 0,          no_argument,       NULL, 0   },
 		};
-		cmd = getopt_long(argc, argv, "C:i:z:t:s:b:p:FHqvVh",
+		cmd = getopt_long(argc, argv, "C:i:t:s:b:p:mFHqvVh",
 			long_options, &option_index);
 		if (cmd == -1)  /* all params processed ? */
 			break;
@@ -302,8 +300,9 @@ int main(int argc, char *argv[])
 		case 'i':	/* iter */
 			iter = strtol(optarg, (char **)NULL, 0);
 			break;
-		case 'z':	/* context */
-			context_offset = strtol(optarg, (char **)NULL, 0);
+		case 'm':	/* master */
+			use_master = true;
+			context_offset = ACTION_BASE_M;
 			break;
 		case 't':	/* timeout */
 			timeout = strtol(optarg, (char **)NULL, 0) * 1000;
@@ -339,13 +338,19 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	sprintf(device, "/dev/cxl/afu%d.0m", card_no);
-	PRINTF2("Start Memset Test. Timeout: %d msec Device: %s\n",
-		timeout, device);
-
-	dn = dnut_card_alloc_dev(device, 0, 0);
+	PRINTF2("Start Memset Test. Timeout: %d msec Device: ",
+		timeout);
+	if (use_master) {
+		sprintf(device, "/dev/cxl/afu%d.0m", card_no);
+		dn = dnut_card_alloc_dev(device, DNUT_VENDOR_ID_ANY, DNUT_DEVICE_ID_ANY);
+	} else {
+		sprintf(device, "/dev/cxl/afu%d.0s", card_no);
+		dn = dnut_card_alloc_dev(device, 0x1014, 0xcafe);
+	}
+	PRINTF2("%s\n", device);
 	if (NULL == dn) {
-		perror("dnut_card_alloc_dev()");
+		errno = ENODEV;
+		PRINTF0("ERROR: dnut_card_alloc_dev(%s)\n", device);
 		return -1;
 	}
 
@@ -370,11 +375,21 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < iter; i++) {
 		PRINTF1("[%d/%d] Start Memset ", i+1, iter);
+		if (false == use_master) {
+			PRINTF1(" Attach %x", ACTION_TYPE_EXAMPLE);
+			while (1) {
+				rc = dnut_attach_action(hb, ACTION_TYPE_EXAMPLE, 0);
+				if (0 == rc) break;
+				if (EBUSY == rc)
+					usleep(100);
+				else goto __exit1;
+			}
+		}
 		if (ACTION_CONFIG_MEMSET_F == func) {
 			start = begin;
 			stop = begin + size -1;
-			if (action_start(dn, func | (pattern << 8),
-					stop, start, timeout))
+			action_start(dn, func | (pattern << 8), stop, start);
+			if (0 != action_wait_idle(dn, timeout))
 				goto __exit1;
 		}
 		if (ACTION_CONFIG_MEMSET_H == func) {
@@ -382,17 +397,21 @@ int main(int argc, char *argv[])
 			memset(hb, DEFAULT_MEM, h_mem_size);
 			start = (uint64_t)hb + h_begin;	/* Host Start Address */
 			stop = start + size - 1;	/* Host End Address */
-			if (action_start(dn, func | (pattern << 8),
-					stop, start, timeout))
+			action_start(dn, func | (pattern << 8), stop, start);
+			if (0 != action_wait_idle(dn, timeout))
 				goto __exit1;
 			if (0 != check_buffer(hb, h_begin, size, pattern))
 				goto __exit1;
 		}
+		if (false == use_master)
+			dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
 		PRINTF1(" done\n");
 	}
 	rc = 0;
 
 __exit1:
+	if (false == use_master)
+		dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
 	PRINTF3("Close Card Handle: %p\n", dn);
 	dnut_card_free(dn);
 	free_mem(hb);
