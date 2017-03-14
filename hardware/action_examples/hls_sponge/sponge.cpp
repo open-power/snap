@@ -87,12 +87,12 @@ uint64_t sponge (const uint64_t rank)
 static void write_results(action_output_reg *Action_Output,
 			  action_input_reg *Action_Input,
 			  snapu32_t ReturnCode,
-			  snapu64_t field1,
-			  snapu64_t field2)
+			  snapu64_t chk_out,
+			  snapu64_t timer_ticks)
 {
-	Action_Output->Retc = (snapu32_t)ReturnCode;
-	Action_Output->Data.chk_out = field1;
-	Action_Output->Data.timer_ticks = field2;
+	Action_Output->Retc = ReturnCode;
+	Action_Output->Data.chk_out = chk_out;
+	Action_Output->Data.timer_ticks = timer_ticks;
 	Action_Output->Data.action_version =  RELEASE_VERSION;
 	Action_Output->Reserved = 0;
 	Action_Output->Data.in = Action_Input->Data.in;
