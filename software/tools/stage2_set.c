@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,39 +29,9 @@
 
 #include <libdonut.h>
 #include <donut_tools.h>
-
-#define CACHELINE_BYTES 128
-
-#define	FW_BASE_ADDR	0x00100
-#define	FW_BASE_ADDR8	0x00108
-
-/*	Memcopy Action */
-#define	ACTION_BASE		0x10000
-#define ACTION_CONTEXT_OFFSET	0x01000	/* Add 4 KB for the next Action */
-#define	ACTION_CONTROL		ACTION_BASE
-#define	ACTION_CONTROL_START	0x01
-#define	ACTION_CONTROL_IDLE	0x04
-#define	ACTION_CONTROL_RUN	0x08
-#define	ACTION_4		(ACTION_BASE + 0x04)
-#define	ACTION_8		(ACTION_BASE + 0x08)
-#define	ACTION_CONFIG		(ACTION_BASE + 0x20)
-#define	ACTION_CONFIG_COUNT	1	/* Count Mode */
-#define	ACTION_CONFIG_COPY_HH	2	/* Memcopy Host to Host */
-#define	ACTION_CONFIG_COPY_HD	3	/* Memcopy Host to DDR */
-#define	ACTION_CONFIG_COPY_DH	4	/* Memcopy DDR to Host */
-#define	ACTION_CONFIG_COPY_DD	5	/* Memcopy DDR to DDR */
-#define	ACTION_CONFIG_COPY_HDH	6	/* Memcopy Host to DDR to Host */
-#define	ACTION_CONFIG_MEMSET_H	8	/* Memset Host Memory */
-#define	ACTION_CONFIG_MEMSET_F	9	/* Memset FPGA Memory */
-
-#define	ACTION_SRC_LOW		(ACTION_BASE + 0x24)
-#define	ACTION_SRC_HIGH		(ACTION_BASE + 0x28)
-#define	ACTION_DEST_LOW		(ACTION_BASE + 0x2c)
-#define	ACTION_DEST_HIGH	(ACTION_BASE + 0x30)
-#define	ACTION_CNT		(ACTION_BASE + 0x34)	/* Count Register */
+#include "snap_fw_example.h"
 
 /*	defaults */
-#define	DEFAULT_MEMCPY_ITER	1
 #define ACTION_WAIT_TIME	1000	/* Default in msec */
 
 #define	KILO_BYTE		(1024)
@@ -71,7 +41,7 @@
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
-static int context_offset = 0;
+static uint32_t context_offset = ACTION_BASE_S;
 
 #define PRINTF0(fmt, ...) do {		\
 		printf(fmt, ## __VA_ARGS__);	\
@@ -82,7 +52,7 @@ static int context_offset = 0;
 			printf(fmt, ## __VA_ARGS__);	\
 	} while (0)
 
-#define PRINTF2(fmt, ...) do {		\
+#define PRINTF2(fmt, ...) do {	\
 		if (verbose_level > 1)	\
 			printf(fmt, ## __VA_ARGS__);	\
 	} while (0)

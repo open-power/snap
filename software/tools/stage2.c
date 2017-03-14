@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,34 +28,7 @@
 #include <libdonut.h>
 #include <donut_tools.h>
 #include <snap_s_regs.h>
-
-#define CACHELINE_BYTES 128
-
-#define	FW_BASE_ADDR	0x00100
-#define	FW_BASE_ADDR8	0x00108
-
-/*	Memcopy Action */
-#define	ACTION_TYPE_EXAMPLE	0x10140000
-
-#define	ACTION_BASE		0x0F000
-#define	ACTION_CONTROL		ACTION_BASE
-#define	ACTION_CONTROL_START	0x01
-#define	ACTION_CONTROL_IDLE	0x04
-#define	ACTION_CONTROL_RUN	0x08
-#define	ACTION_4		(ACTION_BASE + 0x04)
-#define	ACTION_8		(ACTION_BASE + 0x08)
-#define	ACTION_CONFIG		(ACTION_BASE + 0x20)
-#define	ACTION_CONFIG_COUNT	1	/* Count Mode */
-#define	ACTION_CONFIG_COPY_HH	2	/* Memcopy Host to Host */
-#define	ACTION_CONFIG_COPY_HD	3	/* Memcopy Host to DDR */
-#define	ACTION_CONFIG_COPY_DH	4	/* Memcopy DDR to Host */
-#define	ACTION_CONFIG_COPY_DD	5	/* Memcopy DDR to DDR */
-#define	ACTION_CONFIG_COPY_HDH	6	/* Memcopy Host to DDR to Host */
-#define	ACTION_SRC_LOW		(ACTION_BASE + 0x24)
-#define	ACTION_SRC_HIGH		(ACTION_BASE + 0x28)
-#define	ACTION_DEST_LOW		(ACTION_BASE + 0x2c)
-#define	ACTION_DEST_HIGH	(ACTION_BASE + 0x30)
-#define	ACTION_CNT		(ACTION_BASE + 0x34)	/* Count Register */
+#include "snap_fw_example.h"
 
 /*	defaults */
 #define	START_DELAY		200
