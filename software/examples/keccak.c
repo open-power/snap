@@ -9,9 +9,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
 #include <donut_internal.h>
 #include "keccak.h"
+
+#define CONFIG_USE_PTHREADS
 
 const uint64_t keccakf_rndc[24] = 
 {
@@ -146,9 +147,10 @@ static uint64_t sponge(const uint64_t rank)
   return result;
 }
 
+#if !defined(CONFIG_USE_PTHREADS)
+
 /**
  * nb_pe must be != 0, since we divide by it.
- *
  */
 uint64_t sponge_main(uint32_t pe, uint32_t nb_pe)
 {
@@ -174,3 +176,85 @@ uint64_t sponge_main(uint32_t pe, uint32_t nb_pe)
 	act_trace("checksum=%016llx\n", (unsigned long long)checksum);
 	return checksum;
 }
+
+#else
+
+#include <pthread.h>
+
+#define CONFIG_NO_THREADS 160 /* Adjust to your test system */
+
+struct thread_data {
+        pthread_t thread_id;    /* Thread id assigned by pthread_create() */
+        unsigned int slice;
+        uint64_t checksum;
+        int thread_rc;
+};
+
+static struct thread_data d[CONFIG_NO_THREADS];
+
+static void *sponge_thread(void *data)
+{
+        struct thread_data *d = (struct thread_data *)data;
+
+        d->checksum = 0;
+        d->thread_rc = 0;
+
+        act_trace("  slice=%08x\n", d->slice);
+        d->checksum = sponge(d->slice);
+        act_trace("    %016llx\n", (long long)d->checksum);
+        pthread_exit(&d->thread_rc);
+}
+
+/**
+ * nb_pe must be != 0, since we divide by it.
+ */
+uint64_t sponge_main(uint32_t pe, uint32_t nb_pe)
+{
+        int rc;
+        uint32_t slice;
+        uint64_t checksum = 0;
+
+        act_trace("%s(%d, %d)\n", __func__, pe, nb_pe);
+        act_trace("  NB_SLICES=%d NB_ROUND=%d\n", NB_SLICES, NB_ROUND);
+
+        for (slice = 0; slice < NB_SLICES; ) {
+                unsigned int i;
+                int remaining_slices = NB_SLICES - slice;
+                unsigned int threads = MIN(remaining_slices,
+                                           CONFIG_NO_THREADS);
+
+                act_trace("  slice=%d remaining=%d threads=%d\n",
+                          slice, remaining_slices, threads);
+
+                for (i = 0; i < threads; i++) {
+                        if (pe != ((slice + i) % nb_pe))
+                                continue;
+
+                        d[i].slice = slice + i;
+
+                        rc = pthread_create(&d[i].thread_id, NULL,
+                                            &sponge_thread, &d[i]);
+                        if (rc != 0) {
+                                fprintf(stderr, "starting %d failed!\n", i);
+                                return EXIT_FAILURE;
+                        }
+                }
+                for (i = 0; i < threads; i++) {
+                        if (pe != ((slice + i) % nb_pe))
+                                continue;
+
+                        rc = pthread_join(d[i].thread_id, NULL);
+                        if (rc != 0) {
+                                fprintf(stderr, "joining threads failed!\n");
+                                return EXIT_FAILURE;
+                        }
+                        checksum ^= d[i].checksum;
+                }
+                slice += threads;
+        }
+
+        act_trace("checksum=%016llx\n", (unsigned long long)checksum);
+        return checksum;
+}
+
+#endif /* CONFIG_USE_PTHREADS */
