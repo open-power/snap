@@ -33,7 +33,6 @@ ENTITY mmio_register_2w2r IS
   );
   PORT (
     clk        : IN  std_ulogic;
-    rst        : IN  std_ulogic;
 
     we_a       : IN  std_ulogic;
     addr_a     : IN  std_ulogic_vector(ADDR_WIDTH - 1 DOWNTO 0);
@@ -57,20 +56,14 @@ BEGIN
   mmio_register_2w2r: PROCESS (clk)
   BEGIN  -- PROCESS mmio_register
     IF (rising_edge(clk)) THEN
-      IF (rst = '1') THEN
-        reset_mem: FOR i IN 0 TO SIZE-1 LOOP
-          mem(i) <= (OTHERS => '0');
-        END LOOP;
-      ELSE
-        IF (we_b = '1') THEN
-          mem(to_integer(unsigned(addr_b))) <= din_b;
-        END IF;
-        IF (we_a = '1') THEN
-          mem(to_integer(unsigned(addr_a))) <= din_a;
-        END IF;
-        dout_b <= mem(to_integer(unsigned(addr_b)));
-        dout_a <= mem(to_integer(unsigned(addr_a)));
+      IF (we_b = '1') THEN
+        mem(to_integer(unsigned(addr_b))) <= din_b;
       END IF;
+      IF (we_a = '1') THEN
+        mem(to_integer(unsigned(addr_a))) <= din_a;
+      END IF;
+      dout_b <= mem(to_integer(unsigned(addr_b)));
+      dout_a <= mem(to_integer(unsigned(addr_a)));
     END IF;
   END PROCESS mmio_register_2w2r;
 
@@ -93,7 +86,6 @@ ENTITY mmio_register_1w2r IS
   );
   PORT (
     clk        : IN  std_ulogic;
-    rst        : IN  std_ulogic;
 
     we_a       : IN  std_ulogic;
     addr_a     : IN  std_ulogic_vector(ADDR_WIDTH - 1 DOWNTO 0);
@@ -115,17 +107,11 @@ BEGIN
   mmio_register_1w2r: PROCESS (clk)
   BEGIN  -- PROCESS mmio_register
     IF (rising_edge(clk)) THEN
-      IF (rst = '1') THEN
-        reset_mem: FOR i IN 0 TO SIZE-1 LOOP
-          mem(i) <= (OTHERS => '0');
-        END LOOP;
-      ELSE
-        IF (we_a = '1') THEN
-          mem(to_integer(unsigned(addr_a))) <= din_a;
-        END IF;
-        dout_a <= mem(to_integer(unsigned(addr_a)));
-        dout_b <= mem(to_integer(unsigned(addr_b)));
+      IF (we_a = '1') THEN
+        mem(to_integer(unsigned(addr_a))) <= din_a;
       END IF;
+      dout_a <= mem(to_integer(unsigned(addr_a)));
+      dout_b <= mem(to_integer(unsigned(addr_b)));
     END IF;
   END PROCESS mmio_register_1w2r;
 
@@ -147,7 +133,6 @@ ENTITY mmio_register_1w1r IS
   );
   PORT (
     clk        : IN  std_ulogic;
-    rst        : IN  std_ulogic;
 
     we         : IN  std_ulogic;
     addr       : IN  std_ulogic_vector(ADDR_WIDTH - 1 DOWNTO 0);
@@ -166,16 +151,10 @@ BEGIN
   mmio_register_1w1r: PROCESS (clk)
   BEGIN  -- PROCESS mmio_register
     IF (rising_edge(clk)) THEN
-      IF (rst = '1') THEN
-        reset_mem: FOR i IN 0 TO SIZE-1 LOOP
-          mem(i) <= (OTHERS => '0');
-        END LOOP;
-      ELSE
-        IF (we = '1') THEN
-          mem(to_integer(unsigned(addr))) <= din;
-        END IF;
-        dout <= mem(to_integer(unsigned(addr)));
+      IF (we = '1') THEN
+        mem(to_integer(unsigned(addr))) <= din;
       END IF;
+      dout <= mem(to_integer(unsigned(addr)));
     END IF;
   END PROCESS mmio_register_1w1r;
 

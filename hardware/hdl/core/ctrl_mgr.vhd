@@ -45,6 +45,7 @@ ENTITY ctrl_mgr IS
 
     --
     -- MMIO IOs
+    mmc_c_i         : IN  MMC_C_T;
     mmc_e_i         : IN  MMC_E_T;
     cmm_e_o         : OUT CMM_E_T
   );
@@ -190,8 +191,10 @@ BEGIN
           -- STATE: SEND RESET DONE
           --
           WHEN ST_SEND_RDONE =>
-            ah_j_q.done <= '1';
-            ctrl_fsm_q  <= ST_IDLE;
+            IF mmc_c_i.reset_done = '1' THEN
+              ah_j_q.done <= '1';
+              ctrl_fsm_q  <= ST_IDLE;
+            END IF;
 
           --
           -- STATE: IDLE
