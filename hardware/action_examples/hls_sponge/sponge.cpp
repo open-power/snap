@@ -172,15 +172,17 @@ void action_wrapper(snap_membus_t *din_gmem,
 	}
 
 	for (slice = 0; slice < NB_SLICES; slice++) {
-#pragma HLS UNROLL factor=8
+#pragma HLS UNROLL factor=20
 		/*
 		 * This if might not be a good idea, we are doing experiments
 		 * to move it to a different place.
 		 */
-		/* Moved this test to sponge function to prevent from breaking the parralelization
+
+		/* Moved this test to sponge function to prevent from breaking
+		 * the parallelization:
 		 * if (pe == (slice % nb_pe))
-			checksum ^= sponge(slice);
-		*/ 
+		 *     checksum ^= sponge(slice);
+		 */ 
 		checksum ^= sponge(slice, pe, nb_pe);
 
 		/* Intermediate result display */
