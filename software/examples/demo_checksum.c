@@ -163,8 +163,8 @@ static int do_checksum(int card_no, unsigned long timeout,
 		       uint64_t *_checksum,
 		       uint64_t *_usec,
 		       uint64_t *_timer_ticks,
-		       uint64_t *_nb_slices,
-		       uint64_t *_nb_round,
+		       uint32_t *_nb_slices,
+		       uint32_t *_nb_round,
 		       FILE *fp)
 {
 	int rc;
@@ -261,9 +261,35 @@ static int do_checksum(int card_no, unsigned long timeout,
 }
 
 struct sponge_t {
+	uint32_t nb_slices;
+	uint32_t nb_round;
 	uint32_t pe;
 	uint32_t nb_pe;
 	uint64_t checksum;
+};
+
+static struct sponge_t test_data[] = {
+	/* NB_SLICES=4 NB_ROUND=1024 */
+	{ .nb_slices = 4, .nb_round = 1 << 10,
+	  .pe = 0, .nb_pe = 1, .checksum = 0x948dd5b0109342d4ull },
+	{ .nb_slices = 4, .nb_round = 1 << 10,
+	  .pe = 0, .nb_pe = 2, .checksum = 0x0bca19b17df64085ull },
+	{ .nb_slices = 4, .nb_round = 1 << 10,
+	  .pe = 1, .nb_pe = 2, .checksum = 0x9f47cc016d650251ull },
+	{ .nb_slices = 4, .nb_round = 1 << 10,
+	  .pe = 0, .nb_pe = 4, .checksum = 0x7f13a4a377a2c4feull },
+	{ .nb_slices = 4, .nb_round = 1 << 10,
+	  .pe = 1, .nb_pe = 4, .checksum = 0xee0710b96b0748fbull },
+	{ .nb_slices = 4, .nb_round = 1 << 10,
+	  .pe = 2, .nb_pe = 4, .checksum = 0x74d9bd120a54847bull },
+	{ .nb_slices = 4, .nb_round = 1 << 10,
+	  .pe = 3, .nb_pe = 4, .checksum = 0x7140dcb806624aaaull },
+
+	/* NB_SLICES=64K NB_ROUND=64K */
+	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
+	  .pe = 0, .nb_pe = 1, .checksum = 0xed08548b49997520ull },
+	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
+	  .pe = 0, .nb_pe = 4 * 1024, .checksum = 0xd36463652392bddcull },
 };
 
 static int test_sponge(int card_no, int timeout, FILE *fp)
@@ -272,23 +298,26 @@ static int test_sponge(int card_no, int timeout, FILE *fp)
 	unsigned int i;
 	uint64_t checksum = 0;
 	uint64_t usec = 0;
-	struct sponge_t test_data[] = {
-		{ .pe = 0, .nb_pe = 1, .checksum = 0x948dd5b0109342d4ul },
-		{ .pe = 0, .nb_pe = 2, .checksum = 0x0bca19b17df64085ul },
-		{ .pe = 1, .nb_pe = 2, .checksum = 0x9f47cc016d650251ul },
-		{ .pe = 0, .nb_pe = 4, .checksum = 0x7f13a4a377a2c4feul },
-		{ .pe = 1, .nb_pe = 4, .checksum = 0xee0710b96b0748fbul },
-		{ .pe = 2, .nb_pe = 4, .checksum = 0x74d9bd120a54847bul },
-		{ .pe = 3, .nb_pe = 4, .checksum = 0x7140dcb806624aaaul },
-		
-	};
+	uint64_t timer_ticks = 0;
+	uint32_t nb_slices = 0, nb_round = 0;
 
-	fprintf(stderr, "SPONGE TESTCASE\n");
+	fprintf(stderr, "SPONGE TESTCASE: ");
 
+	/* Try to figure out nb_slices and nb_round */
+	rc = do_checksum(card_no, timeout, 0, 0, 0, 0, CHECKSUM_SPONGE, 0, 0,
+			 &checksum, &usec, &timer_ticks, &nb_slices, &nb_round,
+			 fp);
+	if (rc != 0) {
+		fprintf(stderr, "err: sponge rc=%d FAILED\n", rc);
+		return rc;
+	}
+	fprintf(stderr, "NB_SLICES=%d NB_ROUND=%d\n", nb_slices, nb_round);
+	
 	for (i = 0; i < ARRAY_SIZE(test_data); i++) {
 		struct sponge_t *t = &test_data[i];
-		uint64_t timer_ticks = 0;
-		uint64_t nb_slices = 0, nb_round = 0;
+
+		if ((nb_slices != t->nb_slices) || (nb_round != t->nb_round))
+			continue;
 
 		rc = do_checksum(card_no, timeout, 0, 0, 0, 0,
 				 CHECKSUM_SPONGE, t->pe, t->nb_pe,
@@ -308,7 +337,7 @@ static int test_sponge(int card_no, int timeout, FILE *fp)
 		}
 		if (i == 0)
 			fprintf(stderr, "  NB_SLICES=%d NB_ROUND=%d\n",
-				(int)nb_slices, (int)nb_round);
+				nb_slices, nb_round);
 
 		fprintf(stderr, "  pe=%d nb_pe=%d ... ", t->pe, t->nb_pe);
 		fprintf(stderr, "checksum=%016llx %8lld timer_ticks "
