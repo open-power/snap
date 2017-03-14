@@ -25,7 +25,7 @@
 #  endif
 #endif
 
-uint64_t sponge (const uint64_t rank)
+uint64_t sponge(const uint64_t rank)
 {
   uint64_t magic[8] = {0x0123456789abcdeful,0x13579bdf02468aceul,
 		       0xfdecba9876543210ul,0xeca86420fdb97531ul,
@@ -177,6 +177,8 @@ void action_wrapper(snap_membus_t *din_gmem,
 /**
  * FIXME We need to use action_wrapper from here to get the real thing
  * simulated. For now let's take the short path and try without it.
+ *
+ * Works only for the TEST set of parameters.
  */
 int main(void)
 {
@@ -209,7 +211,7 @@ int main(void)
 		printf("pe=%d - nb_pe=%d - processed checksum=%016llx ",
 		       sequence[i].pe,
 		       sequence[i].nb_pe,
-		       (unsigned long long) checksum);
+		       (unsigned long long)checksum);
 
 		if (sequence[i].checksum == checksum) {
 			printf(" ==> CORRECT\n");
@@ -217,7 +219,7 @@ int main(void)
 		}
 		else {
 			printf(" ==> ERROR: expected checksum=%016llx\n",
-			       (unsigned long long) sequence[i].checksum);
+			       (unsigned long long)sequence[i].checksum);
 			rc |= 1;
 		}
 	}
