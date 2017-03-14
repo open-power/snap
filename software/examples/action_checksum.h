@@ -37,8 +37,8 @@ struct checksum_job {
 	uint64_t chk_out;	/* out: checksum output */
 	uint32_t pe;		/* in:  special parameter for sponge */
 	uint32_t nb_pe;		/* in:  special parameter for sponge */
-	uint64_t nb_slices;     /* out: special parameter for sponge */
-	uint64_t nb_round;      /* out: special parameter for sponge */
+	uint32_t nb_slices;     /* out: special parameter for sponge */
+	uint32_t nb_round;      /* out: special parameter for sponge */
 	uint64_t timer_ticks;   /* out: timer ticks in FPGA timer frequency */
 	uint64_t action_version;/* out: action version info */
 };

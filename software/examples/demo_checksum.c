@@ -74,7 +74,8 @@ static void dnut_prepare_checksum(struct dnut_job *cjob,
 				  uint32_t nb_pe)
 {
 	dnut_addr_set(&mjob_in->in, addr_in, size_in, type_in,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
+		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC |
+		      DNUT_TARGET_FLAGS_END);
 
 	mjob_in->chk_type = type;
 	mjob_in->chk_in = chk_in;
@@ -226,14 +227,16 @@ static int do_checksum(int card_no, unsigned long timeout,
 	fprintf(fp, "RETC=%x\n"
 		"CHECKSUM=%016llx\n"
 		"TIMERTICKS=%016llx\n"
-		"NB_SLICES=%016llx\n"
-		"NB_ROUND=%016llx\n"
+		"NB_SLICES=%d\n"
+		"NB_ROUND=%d\n"
+		"ACTION_VERSION=%016llx\n"
 		"%lld usec\n",
 		cjob.retc,
 		(long long)mjob_out.chk_out,
 		(long long)mjob_out.timer_ticks,
-		(long long)mjob_out.nb_slices,
-		(long long)mjob_out.nb_round,
+		mjob_out.nb_slices,
+		mjob_out.nb_round,
+		(long long)mjob_out.action_version,
 		(long long)timediff_usec(&etime, &stime));
 
 	dnut_kernel_free(kernel);

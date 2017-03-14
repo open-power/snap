@@ -19,7 +19,7 @@
 #define RESULT_SIZE 8
 
 /* Using the real test, takes quite some time */
-#define TEST
+#undef TEST
 
 #ifdef TEST
 #  define NB_SLICES 4
@@ -29,7 +29,7 @@
 #    define NB_SLICES 65536
 #  endif
 #  ifndef NB_ROUND
-#    define NB_ROUND 1<<24
+#    define NB_ROUND 1<<16 /* 1<<24 */
 #  endif
 #endif
 
