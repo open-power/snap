@@ -205,6 +205,9 @@ ARCHITECTURE dma OF dma IS
   SIGNAL ha_c_q                      : HA_C_T;
   SIGNAL ha_r_q                      : HA_R_T;
   SIGNAL intreq_active_q             : boolean;
+  SIGNAL int_src_q                   : std_ulogic_vector(INT_BITS-1 DOWNTO 0);
+  SIGNAL int_ctx_q                   : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL int_req_ack_q               : std_ulogic;
   SIGNAL mmd_a_q                     : MMD_A_T;
   SIGNAL mmd_i_q                     : MMD_I_T;
   SIGNAL raddr_id_q                  : std_ulogic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
@@ -245,6 +248,8 @@ ARCHITECTURE dma OF dma IS
   SIGNAL rsp_wtag_qq                 : integer RANGE 0 TO 31;
   SIGNAL rsp_wtag_valid_q            : boolean;
   SIGNAL sd_c_q                      : SD_C_T;
+  SIGNAL rd_ctx_q                    : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL wr_ctx_q                    : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
   SIGNAL waddr_id_q                  : std_ulogic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
   SIGNAL waddr_offset_p_q            : std_ulogic;
   SIGNAL waddr_offset_q              : std_ulogic_vector( 12 DOWNTO  7);
@@ -1195,7 +1200,7 @@ BEGIN
 
             --512    IF aln_wfsm_idle = '1' THEN
                   write_ctrl_fsm_q    <= ST_IDLE;
-                  wr_id_valid_q    <= '1';
+                  wr_id_valid_q       <= '1';
             --512    END IF;
               END IF;
 
@@ -1587,7 +1592,7 @@ BEGIN
                                     (OTHERS => '0'),         -- abt
                                     (OTHERS => '0'),         -- ea
                                      '1',                    -- eapar
-                                    (OTHERS => '0'),         -- cch
+                                    (OTHERS => '0'),         -- ch
                                     (OTHERS => '0'));        -- size
 
           ah_c_fsm_q            <= ST_IDLE;
@@ -1602,6 +1607,9 @@ BEGIN
           ah_c_wgate_q          <= CLOSED;
           dmm_e_q.ah_c_fsm_err  <= '0';
           intreq_active_q       <= FALSE;
+          int_src_q             <= (OTHERS => '0');
+          int_ctx_q             <= (OTHERS => '0');
+          int_req_ack_q         <= '0';
           mmd_a_q               <= ('0', '0', '0');
           restart_active_q      <= FALSE;
 
@@ -1610,7 +1618,7 @@ BEGIN
           -- defaults
           --
           ah_c_q                <= ('0', (OTHERS => '0'), '1', RESERVED, '1', (OTHERS => '0'),
-                                   (OTHERS => '0'), '1', context_handle_q, (OTHERS => '0'));
+                                   (OTHERS => '0'), '1', (OTHERS => '0'), (OTHERS => '0'));
           ah_c_fsm_q            <= ah_c_fsm_q;
           ah_c_max_q            <= ha_c_q.room - x"04";
           ah_c_max_reached_q    <= ah_c_max_reached_q;
@@ -1623,14 +1631,18 @@ BEGIN
           ah_c_wgate_q          <= ah_c_wgate_q;
           dmm_e_q.ah_c_fsm_err  <= '0';
           intreq_active_q       <= intreq_active_q;
+          int_src_q             <= int_src_q;
+          int_ctx_q             <= int_ctx_q;
+          int_req_ack_q         <= '0';
           mmd_a_q               <= ('0','0','0'); -- mmd_a_i;
           restart_active_q      <= restart_active_q;
 
           -- intreq is active
-          --IF (write_fsm_req_q = COMMAND) AND
-          --   (jd_c_i.intreq   = '1'  ) THEN
-          --  intreq_active_q <= TRUE;
-          --END IF;
+          IF (sd_c_i.int_req = '1') THEN
+            intreq_active_q <= TRUE;
+            int_src_q       <= sd_c_i.int_src;
+            int_ctx_q       <= sd_c_i.int_ctx;
+          END IF;
 
           ------------------------------------------------------------------------
           -- AH Command Count Logic
@@ -1707,15 +1719,16 @@ BEGIN
             -- STATE READ FSM ACTIVE
             --
             WHEN ST_READ_FSM_ACTIVE =>
-              ah_c_q.valid  <= ah_rc_q.valid;
-              ah_c_q.tag    <= ah_rc_q.tag;
-              ah_c_q.tagpar <= ah_rc_q.tagpar XOR mmd_i_q.inject_ah_c_tagpar_error;
-              ah_c_q.com    <= ah_rc_q.com;
-              ah_c_q.compar <= ah_rc_q.compar XOR mmd_i_q.inject_ah_c_compar_error;
-              ah_c_q.abt    <= ah_rc_q.abt;
-              ah_c_q.ea     <= ah_rc_q.ea & "0000000";
-              ah_c_q.eapar  <= ah_rc_q.eapar XOR mmd_i_q.inject_ah_c_eapar_error;
-              ah_c_q.size   <= x"080";
+              ah_c_q.valid                       <= ah_rc_q.valid;
+              ah_c_q.tag                         <= ah_rc_q.tag;
+              ah_c_q.tagpar                      <= ah_rc_q.tagpar XOR mmd_i_q.inject_ah_c_tagpar_error;
+              ah_c_q.com                         <= ah_rc_q.com;
+              ah_c_q.compar                      <= ah_rc_q.compar XOR mmd_i_q.inject_ah_c_compar_error;
+              ah_c_q.abt                         <= ah_rc_q.abt;
+              ah_c_q.ea                          <= ah_rc_q.ea & "0000000";
+              ah_c_q.eapar                       <= ah_rc_q.eapar XOR mmd_i_q.inject_ah_c_eapar_error;
+              ah_c_q.ch(CONTEXT_BITS-1 DOWNTO 0) <= rd_ctx_q;
+              ah_c_q.size                        <= x"080";
 
               --
               --  max commands reached, closing the gate, but allow
@@ -1740,15 +1753,16 @@ BEGIN
             -- STATE WRITE FSM ACTIVE
             --
             WHEN ST_WRITE_FSM_ACTIVE =>
-              ah_c_q.valid  <= ah_wc_q.valid;
-              ah_c_q.tag    <= ah_wc_q.tag;
-              ah_c_q.tagpar <= ah_wc_q.tagpar XOR mmd_i_q.inject_ah_c_tagpar_error;
-              ah_c_q.com    <= ah_wc_q.com;
-              ah_c_q.compar <= ah_wc_q.compar XOR mmd_i_q.inject_ah_c_compar_error;
-              ah_c_q.abt    <= ah_wc_q.abt;
-              ah_c_q.ea     <= ah_wc_q.ea & "0000000";
-              ah_c_q.eapar  <= ah_wc_q.eapar XOR mmd_i_q.inject_ah_c_eapar_error;
-              ah_c_q.size   <= x"080";
+              ah_c_q.valid                       <= ah_wc_q.valid;
+              ah_c_q.tag                         <= ah_wc_q.tag;
+              ah_c_q.tagpar                      <= ah_wc_q.tagpar XOR mmd_i_q.inject_ah_c_tagpar_error;
+              ah_c_q.com                         <= ah_wc_q.com;
+              ah_c_q.compar                      <= ah_wc_q.compar XOR mmd_i_q.inject_ah_c_compar_error;
+              ah_c_q.abt                         <= ah_wc_q.abt;
+              ah_c_q.ea                          <= ah_wc_q.ea & "0000000";
+              ah_c_q.eapar                       <= ah_wc_q.eapar XOR mmd_i_q.inject_ah_c_eapar_error;
+              ah_c_q.ch(CONTEXT_BITS-1 DOWNTO 0) <= wr_ctx_q;
+              ah_c_q.size                        <= x"080";
 
               --
               --  max commands reached, closing the gate, but allow
@@ -1785,14 +1799,15 @@ BEGIN
             -- STATE COMMAND: INTERRUPT REQUEST
             --
             WHEN ST_COM_INT_REQ =>
-              ah_c_fsm_q    <= ST_WAIT_4_RSP;
-              ah_c_q.valid  <= '1';
-              ah_c_q.tag    <= x"F1";
-              ah_c_q.tagpar <= '0' XOR mmd_i_q.inject_ah_c_tagpar_error;
-              ah_c_q.com    <= INTREQ;
-              ah_c_q.compar <= parity_gen_odd(ENCODE_CMD_CODES(INTREQ)) XOR mmd_i_q.inject_ah_c_compar_error;
-              ah_c_q.ea     <= x"0000_0000_0000_0" & INTSRC;
-              ah_c_q.eapar  <= '0' XOR mmd_i_q.inject_ah_c_eapar_error;
+              ah_c_fsm_q                         <= ST_WAIT_4_RSP;
+              ah_c_q.valid                       <= '1';
+              ah_c_q.tag                         <= x"F1";
+              ah_c_q.tagpar                      <= '0' XOR mmd_i_q.inject_ah_c_tagpar_error;
+              ah_c_q.com                         <= INTREQ;
+              ah_c_q.compar                      <= parity_gen_odd(ENCODE_CMD_CODES(INTREQ)) XOR mmd_i_q.inject_ah_c_compar_error;
+              ah_c_q.ea                          <= x"0000_0000_0000_000" & '0' & int_src_q;
+              ah_c_q.eapar                       <= parity_gen_odd(int_src_q) XOR mmd_i_q.inject_ah_c_eapar_error;
+              ah_c_q.ch(CONTEXT_BITS-1 DOWNTO 0) <= int_ctx_q;
 
             --
             -- STATE WAIT: FOR RESPONSE
@@ -1810,6 +1825,7 @@ BEGIN
                   ELSIF (ha_r_q.tag(3 DOWNTO 0) = x"1") THEN
                     -- deactivate INTREQ
                     intreq_active_q <= FALSE;
+                    int_req_ack_q   <= '1';
                   END IF;
                 ELSE
                   ah_c_fsm_q <= ST_RSP_ERROR;
@@ -1818,8 +1834,8 @@ BEGIN
                   --
                   -- collect all information
                   ah_c_rsp_err_type_q   <= ha_r_q.response;
-                  ah_c_rsp_err_addr_q   <= ha_r_q.tag(7 DOWNTO 0) & x"000" & INTSRC & x"0000" & context_handle_q;
-                  ah_c_rsp_err_addr_p_q <= parity_gen_odd(ha_r_q.tagpar & INTSRC & context_handle_q);
+                  ah_c_rsp_err_addr_q   <= ha_r_q.tag(7 DOWNTO 0) & x"00000000000000";
+                  ah_c_rsp_err_addr_p_q <= ha_r_q.tagpar;
 
                 END IF;
               END IF;
@@ -2290,10 +2306,11 @@ BEGIN
 
     ds_c_o.wr_req_ack  <= '1' WHEN write_ctrl_fsm_q = ST_SEND_WR_REQ_ACK ELSE '0';
     ds_c_o.rd_req_ack  <= '1' WHEN read_ctrl_fsm_q  = ST_SEND_RD_REQ_ACK ELSE '0';
-    ds_c_o.wr_id_valid <= wr_id_valid_q; 
-    ds_c_o.wr_id       <= waddr_id_q; 
+    ds_c_o.wr_id_valid <= wr_id_valid_q;
+    ds_c_o.wr_id       <= waddr_id_q;
+    ds_c_o.int_req_ack <= int_req_ack_q;
 
-    
+
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   --  Register
@@ -2312,10 +2329,12 @@ BEGIN
           sd_c_q               <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
                                    '0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
                                    '0', (OTHERS => '0'), (OTHERS => '0'));
+          wr_ctx_q             <= (OTHERS => '0');
+          rd_ctx_q             <= (OTHERS => '0');
           mmd_i_q              <= (OTHERS => ('0'));
 
           force_rfifo_empty_q  <= '1';
-            
+
         ELSE
           --
           -- defaults
@@ -2324,22 +2343,26 @@ BEGIN
           ha_r_q               <= ha_r_i;
 
           sd_c_q               <= sd_c_i;
-          
+          wr_ctx_q             <= wr_ctx_q;
+          rd_ctx_q             <= rd_ctx_q;
+
           IF write_ctrl_fsm_q = ST_IDLE THEN
             sd_c_q.wr_req <= sd_c_i.wr_req;
+            wr_ctx_q      <= sd_c_i.wr_ctx;
           ELSE
             sd_c_q.wr_req <= '0';
           END IF;
 
           IF read_ctrl_fsm_q = ST_IDLE THEN
             sd_c_q.rd_req <= sd_c_i.rd_req;
+            rd_ctx_q      <= sd_c_i.wr_ctx;
           ELSE
             sd_c_q.rd_req <= '0';
           END IF;
-          
+
           mmd_i_q              <= (OTHERS => '0'); --mmd_i_i;
         END IF;
-        
+
         --
         -- force empty logic
         --
