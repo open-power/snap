@@ -17,6 +17,7 @@
 --
 -- change log:
 -- 12/20/2016  R. Rieke removed fix for DMA overrun issue
+-- 03/15/2017  R. Rieke added support for interrupts and context id
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 
@@ -24,11 +25,11 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_misc.all;
 use ieee.STD_LOGIC_UNSIGNED.all;
-use ieee.numeric_std.all;
+use ieee.numeric_std.all; 
 
 USE work.psl_accel_types.ALL;
 USE work.donut_types.all;
-
+ 
 entity axi_dma_shim is
 	port (
 		-- Users to add ports here
@@ -58,12 +59,15 @@ end axi_dma_shim;
 architecture arch_imp of axi_dma_shim is
 
 
-
-
+        
+        
 
         type wr_fsm_t      is (IDLE, DMA_WR_REQ, DMA_WR_DATA);
         type rd_fsm_t      is (IDLE, DMA_RD_REQ);
         type fifo_buffer_t is array (0 to 31) of std_logic_vector(19 downto 0);
+        type int_req_vec_t is array (0 to NUM_OF_ACTIONS) of std_logic;
+        type int_src_vec_t is array (0 to NUM_OF_ACTIONS) of std_logic_vector(INT_BITS -2 downto 0 );
+        type int_ctx_vec_t is array (0 to NUM_OF_ACTIONS) of std_logic_vector(CONTEXT_BITS - 1 downto 0 );
 
         signal fsm_read_q       : rd_fsm_t;
         signal fsm_write_q      : wr_fsm_t;
@@ -84,6 +88,12 @@ architecture arch_imp of axi_dma_shim is
         signal force_fifo_empty_q : std_logic;
         signal fifo_wr_addr_q     : std_logic_vector(4 downto 0);
         signal fifo_rd_addr_q     : std_logic_vector(4 downto 0);
+
+        signal int_req_vec        : int_req_vec_t;
+        signal int_src_vec        : int_src_vec_t;
+        signal int_ctx_vec        : int_ctx_vec_t;
+        signal int_ack_pending    : std_logic;
+        signal int_src_sel        : integer range 0 to 16;
 
 	--------------------------------------------------
 
@@ -178,6 +188,7 @@ axi_wr: process(ha_pclock)
                       sd_c_o.wr_addr    <= std_ulogic_vector(ks_d_i.S_AXI_AWADDR);
                       sd_c_o.wr_len     <= std_ulogic_vector(ks_d_i.S_AXI_AWLEN);
                       sd_c_o.wr_id      <= std_ulogic_vector(ks_d_i.S_AXI_AWID);
+                      sd_c_o.wr_ctx     <= std_ulogic_vector(ks_d_i.S_AXI_AWUSER);
                       sd_c_o.wr_req     <= '1';
                     end if;
 
@@ -237,6 +248,7 @@ axi_rd:   process(ha_pclock)
                       sd_c_o.rd_addr    <= std_ulogic_vector(ks_d_i.S_AXI_ARADDR);
                       sd_c_o.rd_len     <= std_ulogic_vector(ks_d_i.S_AXI_ARLEN);
                       sd_c_o.rd_id      <= std_ulogic_vector(ks_d_i.S_AXI_ARID);
+                      sd_c_o.rd_ctx     <= std_ulogic_vector(ks_d_i.S_AXI_ARUSER);
                       sd_c_o.rd_req     <= '1';
                     end if;
 
@@ -276,4 +288,60 @@ axi_rd2:  process(ds_d_i.rd_data, ds_d_i.rd_id, ds_d_i.rd_data_strobe,ks_d_i.S_A
             end if;
           end process;
 
+-------------------------------Interrupt Logic-------------------------------------
+
+int_process:   process(ha_pclock)
+          -- receive read request  from axi and forward to DMA
+          begin
+            if rising_edge(ha_pclock) then
+              sd_c_o.int_req <= '0';
+              sj_c_o.int_ack <= '0';
+              sk_d_o.int_req_ack <= '0';
+              if afu_reset = '1' then          
+                 int_ack_pending <= '0';
+                 int_req_vec(0)  <= '0';
+                 int_req_vec(1)  <= '0';
+              else
+                if js_c_i.int_req = '1' then
+                  int_req_vec(0) <= '1';
+                  int_src_vec(0) <= std_logic_vector(js_c_i.int_src);
+                  int_ctx_vec(0) <= std_logic_vector(js_c_i.int_ctx);
+                end if;
+                if ks_d_i.int_req = '1' then
+                  int_req_vec(1) <= '1';
+                  int_src_vec(1) <= ks_d_i.int_src;
+                  int_ctx_vec(1) <= ks_d_i.int_ctx;
+                end if;  
+                -- if we don't wait for an ack, then check for pending interrupts 
+                if int_ack_pending = '0' then
+                  -- has job manager sent an int
+                  if int_req_vec(0) = '1' then
+                    int_src_sel     <= 0;
+                    int_ack_pending <= '1';
+                    int_req_vec(0)  <= '0';
+                    sd_c_o.int_req  <= '1';
+                    sd_c_o.int_src  <= std_ulogic_vector('0' & int_src_vec(0));
+                    sd_c_o.int_ctx  <= std_ulogic_vector(int_ctx_vec(0));
+                  else
+                    if int_req_vec(1) = '1' then
+                      int_src_sel     <= 1;
+                      int_req_vec(1)  <= '0';
+                      int_ack_pending <= '1';
+                      sd_c_o.int_req  <= '1';
+                      sd_c_o.int_src  <= std_ulogic_vector('1' & int_src_vec(1));
+                      sd_c_o.int_ctx  <= std_ulogic_vector(int_ctx_vec(1));
+                    end if;  
+                  end if;  
+                end if;
+                -- handle int ack from DMA
+                if ds_c_i.int_req_ack = '1' then
+                  int_ack_pending <= '0';
+                  case int_src_sel is
+                    when 0      => sj_c_o.int_ack     <= '1';
+                    when others => sk_d_o.int_req_ack <= '1'; 
+                  end case;
+                end if;
+              end if; 
+            end if;  
+    end process;          
 end arch_imp;

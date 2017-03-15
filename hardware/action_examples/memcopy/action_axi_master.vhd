@@ -58,6 +58,7 @@ entity action_axi_master is
                 dma_rd_data_valid_o : out  std_logic;                     
                 dma_rd_data_last_o  : out  std_logic;                     
                 dma_rd_data_taken_i : in   std_logic;
+                dma_rd_context_id   : in   std_logic_vector(C_M_AXI_ARUSER_WIDTH - 1 downto 0);
                 
                                                                    
                 dma_wr_req_i        : in  std_logic;                     
@@ -69,7 +70,8 @@ entity action_axi_master is
                 dma_wr_data_last_i  : in  std_logic;                     
                 dma_wr_ready_o      : out  std_logic;                     
                 dma_wr_bready_i     : in   std_logic;                     
-                dma_wr_done_o       : out  std_logic;                     
+                dma_wr_done_o       : out  std_logic;
+                dma_wr_context_id   : in   std_logic_vector(C_M_AXI_AWUSER_WIDTH - 1 downto 0);
 
 	     	M_AXI_ACLK	: in std_logic;
 		M_AXI_ARESETN	: in std_logic;
