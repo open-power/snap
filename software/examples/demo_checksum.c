@@ -289,10 +289,39 @@ static struct sponge_t test_data[] = {
 	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
 	  .pe = 0, .nb_pe = 64 * 1024, .checksum = 0x8d24ed80cd6a0bd9ull },
 	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
+	  .pe = 1, .nb_pe = 64 * 1024, .checksum = 0xe964ca11c078f26aull },
+	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
+	  .pe = 0, .nb_pe = 32 * 1024, .checksum = 0x6cf6ae5e38ed47d1ull },
+	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
+	  .pe = 0, .nb_pe = 16 * 1024, .checksum = 0xbaf1d25f7d805ecaull },
+	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
 	  .pe = 0, .nb_pe = 4 * 1024,  .checksum = 0xd36463652392bddcull },
+	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
+	  .pe = 0, .nb_pe = 1 * 1024,  .checksum = 0x4842575e08255e83ull },
+	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
+	  .pe = 0, .nb_pe = 512,       .checksum = 0xff341f9c1fdeb19bull },
+	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
+	  .pe = 0, .nb_pe = 128,       .checksum = 0xbfd576bbcddba92cull },
+	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
+	  .pe = 0, .nb_pe = 64,        .checksum = 0x5b7c7868506a5539ull },
+	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
+	  .pe = 0, .nb_pe = 16,        .checksum = 0x19bfa808392aac5full },
 	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
 	  .pe = 0, .nb_pe = 1,         .checksum = 0xed08548b49997520ull },
 };
+
+static uint32_t executed_slices(uint32_t pe, uint32_t nb_pe,
+				uint32_t nb_slices)
+{
+	uint32_t slice;
+	uint32_t executed = 0;
+
+	for (slice = 0; slice < nb_slices; slice++)
+		if (pe == (slice % nb_pe))
+			executed++;
+
+	return executed;
+}
 
 static int test_sponge(int card_no, int timeout, FILE *fp)
 {
@@ -342,9 +371,10 @@ static int test_sponge(int card_no, int timeout, FILE *fp)
 				nb_slices, nb_round);
 
 		fprintf(stderr, "  pe = %5d nb_pe = %5d ... ", t->pe, t->nb_pe);
-		fprintf(stderr, "checksum = %016llx %8lld timer_ticks "
+		fprintf(stderr, "checksum = %016llx executed = %4d %4lld ticks "
 			"%8lld usec OK\n",
 			(long long)checksum,
+			executed_slices(t->pe, t->nb_pe, t->nb_slices),
 			(long long)timer_ticks,
 			(long long)usec);
 		
