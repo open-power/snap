@@ -32,6 +32,7 @@ if [ "$NAME" == "top.sh" ]; then
     if [ -n $DENALI ];then :
       echo "irun include denali files"
       perl -i.ori -pe 'use Env qw(DENALI);s/(glbl.v)/$1 \\\n       +incdir+"${DENALI}\/ddvapi\/verilog"/mg' $1/$2 # add denali include directory
+      perl -i.ori -pe 'use Env qw(DENALI);s/(-namemap_mixgen)/$1 -disable_sem2009 -loadpli1 ${DENALI}\/verilog\/libdenpli.so:den_PLIPtr/mg' $1/$2 # add denali .so
     fi
     if [ -f ${DONUT_HARDWARE_ROOT}/sim/ies/run.f ]; then
 #     echo "irun compile top.v with system verilog"            # not needed anymore, since we work now with top.sv

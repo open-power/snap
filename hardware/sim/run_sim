@@ -183,12 +183,15 @@
  else
    echo "dont know where I am, leaving $P3 $PWD"; exit 12;
  fi
-#if [ "$PARM_FILE" != "" ];then cp ${SIMBASE}/${PARM_FILE} pslse.parms;fi	# overwrite with specified parms file
- if [ "$PARM_FILE" != "" ];then cp $DONUT_HARDWARE_ROOT/sim/${PARM_FILE} pslse.parms;fi	# overwrite with specified parms file
 
- export LD_LIBRARY_PATH=$PSLSE_ROOT/afu_driver/src	# to find libvpi.so
+ if [ "$PARM_FILE" != "" ];then cp ${SIMBASE}/${PARM_FILE} pslse.parms;fi       # overwrite with specified parms file
+ if [ -z $DENALI ];then
+   export LD_LIBRARY_PATH=$PSLSE_ROOT/afu_driver/src                            # to find libvpi.so
+ else
+   export LD_LIBRARY_PATH=$PSLSE_ROOT/afu_driver/src:$DENALI/verilog            # to find libvpi.so and libdenpli.so
+ fi
  if [ "$SIMDIR" == "ies" ];then
-   if [ "$SIM_INIT" == "" ];then SIM_INIT='-ncinitialize x';fi			# default init value for ncsim
+   if [ "$SIM_INIT" == "" ];then SIM_INIT='-ncinitialize x';fi                  # default init value for ncsim
 #  SIM_ARG='-gui' 		# interactive, stop @cyc0
 #  SIM_ARG='-gui -tcl'		# interactive with simvision
 #  SIM_ARG='-gui -run -tcl' 	# non_interactive, with simvision
