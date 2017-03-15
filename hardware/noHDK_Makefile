@@ -155,12 +155,23 @@ xpr_image: $(SNAP_CONFIG_FILES) patch_version
 	@cd $(BUILD_DIR) && time vivado  $(MSG_LEVEL) -mode batch -source fw_xpr_build.tcl -notrace -log $(LOGS_DIR)/vivado_build_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_build_$(BUILD_DATE).jou
 	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/framework_timing_summary_routed.rpt | egrep -v "^$|^\-\-"
 	@rm -r -f .bitstream_name.txt
-	@echo -e "\t[BUILD IMAGE.......] done  `date`"
+	@echo -e "\t[BUILD XPR IMAGE...] done  `date`"
 
-model: $(SNAP_CONFIG_FILES) patch_version $(SIMULATOR)
+model: pslse software $(SIMULATOR)
 #	@echo -e "\t[BUILD MODEL.......] start `date`"
 #	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
 #	@echo -e "\t[BUILD MODEL.......] done `date`"
+
+pslse:
+	@echo -e "\t[PSLSE compile ....] start `date`"
+	make -C $(PSLSE_ROOT)/afu_driver/src
+	make -C $(PSLSE_ROOT)/pslse
+	make -C $(PSLSE_ROOT)/libcxl
+	make -C $(PSLSE_ROOT)/debug
+
+software:
+	@echo -e "\t[SOFTWARE compile..] start `date`"
+	make -C $(DONUT_SOFTWARE_ROOT)
 
 xsim:
 	@echo -e "\t[BUILD xsim........] start `date`"
@@ -171,21 +182,22 @@ irun:
 	@echo -e "\t[BUILD irun........] start `date`"
 	@if [ -f $(DONUT_HARDWARE_ROOT)/sim/ies/top.sh ];then rm -rf $(DONUT_HARDWARE_ROOT)/sim/ies;fi
 	vivado -mode batch -source setup/export_irun.tcl -notrace
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/sim/ies top.sh
-	@cd $(DONUT_HARDWARE_ROOT)/sim/ies && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so && ./top.sh
+	$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/ies top.sh
+	grep -i denali $(DONUT_HARDWARE_ROOT)/sim/ies/top.sh
+	@cd $(DONUT_HARDWARE_ROOT)/sim/ies; ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; ./top.sh
 
 ncsim:
 	@echo -e "\t[BUILD ncsim.......] start `date`"
 	@if [ -f $(DONUT_HARDWARE_ROOT)/sim/ies/top.sh ];then rm -rf $(DONUT_HARDWARE_ROOT)/sim/ies;fi
 	vivado -mode batch -source setup/export_ncsim.tcl -notrace
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/sim/ies top.sh
+	$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/ies top.sh
 	@cd $(DONUT_HARDWARE_ROOT)/sim/ies && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so && ./top.sh
 
 questa:
 	@echo -e "\t[BUILD questa......] start `date`"
 	@if [ -f $(DONUT_HARDWARE_ROOT)/sim/questa/top.sh ];then rm -rf $(DONUT_HARDWARE_ROOT)/sim/questa;fi
 	vivado -mode batch -source setup/export_questa.tcl -notrace
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/sim/questa top.sh
+	$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/questa top.sh
 	cd $(DONUT_HARDWARE_ROOT)/sim/questa && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so && ./top.sh
 
 clean:
@@ -201,6 +213,11 @@ clean:
 	@rm -f     $(SNAP_CONFIG_FILES)
 	@rm -f     ./vivado*.log ./*/vivado*.log
 	@rm -f     ./vivado*.jou ./*/vivado*.jou
+	make -C $(DONUT_SOFTWARE_ROOT)       clean
+	make -C $(PSLSE_ROOT)/afu_driver/src clean
+	make -C $(PSLSE_ROOT)/pslse          clean
+	make -C $(PSLSE_ROOT)/libcxl         clean
+	make -C $(PSLSE_ROOT)/debug          clean
 
 gitclean:
 	@echo -e "\t[GITCLEAN] cleaning and resetting donut git";
