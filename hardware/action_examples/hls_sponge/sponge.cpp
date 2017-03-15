@@ -172,7 +172,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 	}
 
 	for (slice = 0; slice < NB_SLICES; slice++) {
-#pragma HLS UNROLL factor=20
+#pragma HLS UNROLL factor=12
 		/*
 		 * This if might not be a good idea, we are doing experiments
 		 * to move it to a different place.
