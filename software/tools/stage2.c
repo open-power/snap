@@ -546,7 +546,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	VERBOSE2("Open Device: ");
+	VERBOSE2("Open Card: %d\n", card_no);
 	if (use_master) {
 		sprintf(device, "/dev/cxl/afu%d.0m", card_no);
 		dn = dnut_card_alloc_dev(device, DNUT_VENDOR_ID_ANY, DNUT_DEVICE_ID_ANY);
@@ -554,7 +554,6 @@ int main(int argc, char *argv[])
 		sprintf(device, "/dev/cxl/afu%d.0s", card_no);
 		dn = dnut_card_alloc_dev(device, 0x1014, 0xcafe);
 	}
-	VERBOSE2("%s\n", device);
 	if (NULL == dn) {
 		errno = ENODEV;
 		VERBOSE0("ERROR: dnut_card_alloc_dev(%s)\n", device);

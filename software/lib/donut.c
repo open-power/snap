@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <errno.h>
 #include <sys/time.h>
 
@@ -65,9 +66,6 @@ int action_trace_enabled(void)
 #define ACTION_CONFIG_COUNT	  0x00000001
 #define	ACTION_CONFIG_COPY	  0x00000002
 #define	INVALID_SAT 0x0ffffffff
-struct wed {
-	uint64_t res[16];
-};
 
 struct dnut_data {
 	void *priv;
@@ -81,7 +79,6 @@ struct dnut_data {
 	uint16_t seq;		/* Seq Number */
 	int afu_fd;
 
-	struct wed *wed;
 	struct dnut_action *action; /* software simulation mode */
 	size_t errinfo_size;
 	void *errinfo;		/* Err info Buffer */
@@ -111,7 +108,6 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 {
 	struct dnut_data *dn;
 	struct cxl_afu_h *afu_h = NULL;
-	struct wed *wed = NULL;
 	int rc;
 	long id = 0;
 
@@ -133,10 +129,9 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 	if (0xffff != vendor_id) {
 		rc = cxl_get_cr_vendor(afu_h, 0, &id);
 		if ((0 != rc) || ((uint16_t)id != vendor_id)) {
-			dnut_trace("  %s: ERR 0x%x Invalid vendor_id 0x%x\n", __func__,
-				(int)id, (int)device_id);
-			goto __dnut_alloc_err;
-		}
+			dnut_trace("  %s: ERR Vendor 0x%x Invalid Expect 0x%x\n",
+				__func__, (int)id, (int)vendor_id);
+			goto __dnut_alloc_err; }
 		dn->vendor_id = (uint16_t)id;
 	}
 
@@ -145,8 +140,8 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 	if (0xffff != device_id) {
 		rc = cxl_get_cr_device(afu_h, 0, &id);
 		if ((0 != rc) || ((uint16_t)id != device_id)) {
-			dnut_trace("  %s: ERR 0x%x Invalid device_id 0x%x\n", __func__,
-				(int)id, (int)device_id);
+			dnut_trace("  %s: ERR Device 0x%x Invalid Expect 0x%x\n",
+				__func__, (int)id, (int)device_id);
 			goto __dnut_alloc_err;
 		}
 		dn->device_id = (uint16_t)id;
@@ -166,22 +161,12 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
         } else
 		dnut_trace("  %s: WARN Can not detect Err buffer\n", __func__);
 
-	dnut_trace("  %s: Err Info Size: %d Vendor / Device ID: %x / %x\n", __func__,
+	
+	dnut_trace("  %s: errinfo_size: %d VendorID: %x DeviceID: %x\n", __func__,
 		(int)dn->errinfo_size, (int)vendor_id, (int)device_id);
-	/* FIXME Why is wed not part of dn and dn not allocated with
-	   alignment in that case? Can we have wed to be NULL to save
-	   that step? */
-	if (posix_memalign((void **)&wed, CACHELINE_BYTES,
-			   sizeof(struct wed))) {
-		errno = ENOMEM;
-		perror("posix_memalign");
-		goto __dnut_alloc_err;
-	}
-
-	dn->wed = wed;	/* Save */
 	dn->afu_h = afu_h;
 	dn->afu_fd = cxl_afu_fd(dn->afu_h);
-	rc = cxl_afu_attach(dn->afu_h, (uint64_t)wed);
+	rc = cxl_afu_attach(dn->afu_h, 0);
 	if (0 != rc)
 		goto __dnut_alloc_err;
 
@@ -190,7 +175,7 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 		goto __dnut_alloc_err;
 	}
 
-	dnut_trace("%s Exit OK %p\n", __func__, dn);
+	dnut_trace("%s Exit OK\n", __func__);
 	return (struct dnut_card *)dn;
 
  __dnut_alloc_err:
@@ -198,8 +183,6 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 		free(dn->errinfo);
 	if (afu_h)
 		cxl_afu_free(afu_h);
-	if (wed)
-		free(wed);
 	if (dn)
 		free(dn);
 	dnut_trace("%s Exit Err\n", __func__);
@@ -269,7 +252,6 @@ static void hw_dnut_card_free(void *_card)
 		if (card->errinfo)
 			free(card->errinfo);
 		cxl_afu_free(card->afu_h);
-		free(card->wed);
 		free(card);
 	}
 }
