@@ -25,7 +25,7 @@ USE ieee.numeric_std.all;
 USE work.std_ulogic_support.all;
 USE work.std_ulogic_function_support.all;
 USE work.std_ulogic_unsigned.all;
-
+USE work.psl_accel_types.ALL;
 USE work.donut_types.all;
 
 ENTITY mmio IS

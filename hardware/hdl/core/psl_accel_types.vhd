@@ -68,12 +68,34 @@ PACKAGE psl_accel_types IS
     --
     -- 
     --
-    CONSTANT C_S_AXI_ID_WIDTH       : integer   := 20;
-    CONSTANT C_S_AXI_DATA_WIDTH     : integer   := 512;
-    CONSTANT C_S_AXI_ADDR_WIDTH     : integer   := 64;
-    CONSTANT C_DDR_AXI_ID_WIDTH     : integer   := 1;
-    CONSTANT C_DDR_AXI_DATA_WIDTH   : integer   := 512;
-    CONSTANT C_DDR_AXI_ADDR_WIDTH   : integer   := 33;
+    CONSTANT C_S_AXI_ID_WIDTH       : integer  := 20;
+    CONSTANT C_S_AXI_DATA_WIDTH     : integer  := 512;
+    CONSTANT C_S_AXI_ADDR_WIDTH     : integer  := 64;
+                                              
+    CONSTANT C_REG_DATA_WIDTH       : integer  := 32;
+    CONSTANT C_REG_ADDR_WIDTH       : integer  := 32;
+                                              
+    CONSTANT C_DDR_AXI_ID_WIDTH     : integer  := 1;
+    CONSTANT C_DDR_AXI_DATA_WIDTH   : integer  := 512;
+    CONSTANT C_DDR_AXI_ADDR_WIDTH   : integer  := 33;
+    CONSTANT C_DDR_AXI_AWUSER_WIDTH : integer  := 1;
+    CONSTANT C_DDR_AXI_ARUSER_WIDTH : integer  := 1;
+    CONSTANT C_DDR_AXI_WUSER_WIDTH  : integer  := 1;
+    CONSTANT C_DDR_AXI_RUSER_WIDTH  : integer  := 1;
+    CONSTANT C_DDR_AXI_BUSER_WIDTH  : integer  := 1;
+    
+    CONSTANT C_HOST_AXI_ID_WIDTH     : integer  := 1;
+    CONSTANT C_HOST_AXI_DATA_WIDTH   : integer  := 512;
+    CONSTANT C_HOST_AXI_ADDR_WIDTH   : integer  := 64;
+    CONSTANT C_HOST_AXI_WUSER_WIDTH  : integer  := 1;
+    CONSTANT C_HOST_AXI_RUSER_WIDTH  : integer  := 1;
+    CONSTANT C_HOST_AXI_BUSER_WIDTH  : integer  := 1;
+
+
+
+    
+    CONSTANT INT_BITS               : integer :=  3;
+    CONSTANT CONTEXT_BITS           : integer :=  9;  
 
 
 
@@ -120,6 +142,8 @@ PACKAGE psl_accel_types IS
   --  Action Interface
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
+
+   
     --
     -- kx_d
     --
@@ -165,6 +189,7 @@ PACKAGE psl_accel_types IS
       S_AXI_AWPROT    : std_logic_vector(2 DOWNTO 0);
       S_AXI_AWQOS     : std_logic_vector(3 DOWNTO 0);
       S_AXI_AWREGION  : std_logic_vector(3 DOWNTO 0);
+      S_AXI_AWUSER    : std_logic_vector(CONTEXT_BITS -1 DOWNTO 0);
       S_AXI_AWVALID   : std_logic;
       S_AXI_WDATA     : std_logic_vector(C_S_AXI_DATA_WIDTH-1 DOWNTO 0);
       S_AXI_WSTRB     : std_logic_vector((C_S_AXI_DATA_WIDTH/8)-1 DOWNTO 0);
@@ -176,6 +201,7 @@ PACKAGE psl_accel_types IS
       S_AXI_ARLEN     : std_logic_vector(7 DOWNTO 0);
       S_AXI_ARSIZE    : std_logic_vector(2 DOWNTO 0);
       S_AXI_ARBURST   : std_logic_vector(1 DOWNTO 0);
+      S_AXI_ARUSER   : std_logic_vector(CONTEXT_BITS -1 DOWNTO 0);
    --   S_AXI_ARLOCK  : std_logic;
       S_AXI_ARCACHE   : std_logic_vector(3 DOWNTO 0);
       S_AXI_ARPROT    : std_logic_vector(2 DOWNTO 0);
@@ -183,8 +209,11 @@ PACKAGE psl_accel_types IS
       S_AXI_ARREGION  : std_logic_vector(3 DOWNTO 0);
       S_AXI_ARVALID   : std_logic;
       S_AXI_RREADY    : std_logic;
+      int_req         : std_logic;
+      int_src         : std_logic_vector(INT_BITS -2  downto 0);
+      int_ctx         : std_logic_vector(CONTEXT_BITS - 1 downto 0);
     END RECORD KS_D_T;
-
+ 
     --
     -- sk_d
     --
@@ -200,6 +229,7 @@ PACKAGE psl_accel_types IS
       S_AXI_RLAST   : std_logic;
       S_AXI_RVALID  : std_logic;
       S_AXI_ARREADY : std_logic;
+      int_req_ack   : std_logic;
     END RECORD SK_D_T;
 
 END psl_accel_types;

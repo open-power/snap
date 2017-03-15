@@ -23,8 +23,10 @@
   USE work.std_ulogic_function_support.ALL;
   USE work.std_ulogic_support.ALL;
   USE work.std_ulogic_unsigned.ALL;
-
+  
   USE work.psl_accel_types.ALL;
+  USE work.donut_types.ALL;
+  
 
   LIBRARY unisim;                                                                        -- only for DDRI_USED=TRUE
   USE unisim.vcomponents.all;                                                            -- only for DDRI_USED=TRUE
@@ -34,29 +36,28 @@ ENTITY psl_accel IS
     BRAM_USED  : BOOLEAN := FALSE;
 
     -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory
-    C_AXI_CARD_MEM0_ID_WIDTH       : integer   := 1;
-    C_AXI_CARD_MEM0_ADDR_WIDTH     : integer   := 33;                                    -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_ADDR_WIDTH     : integer   := 32;                                    -- only for DDR3_USED!=TRUE
-    C_AXI_CARD_MEM0_DATA_WIDTH     : integer   := 512;
-    C_AXI_CARD_MEM0_AWUSER_WIDTH   : integer   := 1;
-    C_AXI_CARD_MEM0_ARUSER_WIDTH   : integer   := 1;
-    C_AXI_CARD_MEM0_WUSER_WIDTH    : integer   := 1;
-    C_AXI_CARD_MEM0_RUSER_WIDTH    : integer   := 1;
-    C_AXI_CARD_MEM0_BUSER_WIDTH    : integer   := 1;
+    C_AXI_CARD_MEM0_ID_WIDTH       : integer   := C_DDR_AXI_ID_WIDTH;
+    C_AXI_CARD_MEM0_ADDR_WIDTH     : integer   := C_DDR_AXI_ADDR_WIDTH;                  -- only for DDR3_USED=TRUE
+    C_AXI_CARD_MEM0_DATA_WIDTH     : integer   := C_DDR_AXI_DATA_WIDTH;
+    C_AXI_CARD_MEM0_AWUSER_WIDTH   : integer   := C_DDR_AXI_AWUSER_WIDTH;
+    C_AXI_CARD_MEM0_ARUSER_WIDTH   : integer   := C_DDR_AXI_ARUSER_WIDTH;
+    C_AXI_CARD_MEM0_WUSER_WIDTH    : integer   := C_DDR_AXI_WUSER_WIDTH;
+    C_AXI_CARD_MEM0_RUSER_WIDTH    : integer   := C_DDR_AXI_RUSER_WIDTH;
+    C_AXI_CARD_MEM0_BUSER_WIDTH    : integer   := C_DDR_AXI_BUSER_WIDTH;
 
     -- Parameters for Axi Slave Bus Interface AXI_CTRL_REG
-    C_AXI_CTRL_REG_DATA_WIDTH      : integer   := 32;
-    C_AXI_CTRL_REG_ADDR_WIDTH      : integer   := 32;
+    C_AXI_CTRL_REG_DATA_WIDTH      : integer   := C_REG_DATA_WIDTH;
+    C_AXI_CTRL_REG_ADDR_WIDTH      : integer   := C_REG_ADDR_WIDTH;
 
     -- Parameters for Axi Master Bus Interface AXI_HOST_MEM : to Host memory
-    C_AXI_HOST_MEM_ID_WIDTH        : integer   := 1;
-    C_AXI_HOST_MEM_ADDR_WIDTH      : integer   := 64;
-    C_AXI_HOST_MEM_DATA_WIDTH      : integer   := 512;
-    C_AXI_HOST_MEM_AWUSER_WIDTH    : integer   := 1;
-    C_AXI_HOST_MEM_ARUSER_WIDTH    : integer   := 1;
-    C_AXI_HOST_MEM_WUSER_WIDTH     : integer   := 1;
-    C_AXI_HOST_MEM_RUSER_WIDTH     : integer   := 1;
-    C_AXI_HOST_MEM_BUSER_WIDTH     : integer   := 1
+    C_AXI_HOST_MEM_ID_WIDTH        : integer   := C_HOST_AXI_ID_WIDTH;
+    C_AXI_HOST_MEM_ADDR_WIDTH      : integer   := C_HOST_AXI_ADDR_WIDTH;
+    C_AXI_HOST_MEM_DATA_WIDTH      : integer   := C_HOST_AXI_DATA_WIDTH;
+    C_AXI_HOST_MEM_AWUSER_WIDTH    : integer   := CONTEXT_BITS;
+    C_AXI_HOST_MEM_ARUSER_WIDTH    : integer   := CONTEXT_BITS;
+    C_AXI_HOST_MEM_WUSER_WIDTH     : integer   := C_HOST_AXI_WUSER_WIDTH;
+    C_AXI_HOST_MEM_RUSER_WIDTH     : integer   := C_HOST_AXI_RUSER_WIDTH;
+    C_AXI_HOST_MEM_BUSER_WIDTH     : integer   := C_HOST_AXI_BUSER_WIDTH
   );
   PORT(
     -- Accelerator Command Interface
@@ -283,12 +284,19 @@ ARCHITECTURE psl_accel OF psl_accel IS
       C_M_AXI_HOST_MEM_ARUSER_WIDTH    : integer;
       C_M_AXI_HOST_MEM_WUSER_WIDTH     : integer;
       C_M_AXI_HOST_MEM_RUSER_WIDTH     : integer;
-      C_M_AXI_HOST_MEM_BUSER_WIDTH     : integer
+      C_M_AXI_HOST_MEM_BUSER_WIDTH     : integer;
+      INT_BITS                         : integer;
+      CONTEXT_BITS                     : integer
     );
 
     PORT (
       ap_clk                     : IN STD_LOGIC;
       ap_rst_n                   : IN STD_LOGIC;
+      int_req_ack                : in STD_LOGIC;
+      int_req                    : out std_logic;
+      int_src                    : out std_logic_vector(INT_BITS-2 DOWNTO 0);
+      int_ctx                    : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);       
+       
       --                                                                                                -- only for DDRI_USED=TRUE
       -- AXI SDRAM Interface                                                                            -- only for DDRI_USED=TRUE
       m_axi_card_mem0_araddr     : OUT STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );      -- only for DDRI_USED=TRUE
@@ -354,7 +362,6 @@ ARCHITECTURE psl_accel OF psl_accel IS
       s_axi_ctrl_reg_wready      : OUT STD_LOGIC;
       s_axi_ctrl_reg_wstrb       : IN  STD_LOGIC_VECTOR ( (C_AXI_CTRL_REG_DATA_WIDTH/8)-1 DOWNTO 0 );
       s_axi_ctrl_reg_wvalid      : IN  STD_LOGIC;
-      interrupt                  : OUT STD_LOGIC;
       --
       -- AXI Host Memory Interface
       m_axi_host_mem_araddr      : OUT STD_LOGIC_VECTOR ( C_AXI_HOST_MEM_ADDR_WIDTH-1 DOWNTO 0 );
@@ -986,11 +993,17 @@ BEGIN
       C_M_AXI_HOST_MEM_ARUSER_WIDTH    => C_AXI_HOST_MEM_ARUSER_WIDTH,
       C_M_AXI_HOST_MEM_WUSER_WIDTH     => C_AXI_HOST_MEM_WUSER_WIDTH,
       C_M_AXI_HOST_MEM_RUSER_WIDTH     => C_AXI_HOST_MEM_RUSER_WIDTH,
-      C_M_AXI_HOST_MEM_BUSER_WIDTH     => C_AXI_HOST_MEM_BUSER_WIDTH
+      C_M_AXI_HOST_MEM_BUSER_WIDTH     => C_AXI_HOST_MEM_BUSER_WIDTH,
+      INT_BITS                         => INT_BITS,           
+      CONTEXT_BITS                     => CONTEXT_BITS
     )
     PORT MAP (
       ap_clk                               => ha_pclock,
       ap_rst_n                             => action_reset_n_q,
+      int_req_ack                          => sk_d.int_req_ack,
+      int_req                              => ks_d.int_req, 
+      int_src                     	   => ks_d.int_src, 
+      int_ctx                     	   => ks_d.int_ctx, 
       --                                                                                -- only for DDRI_USED=TRUE
       -- AXI SDRAM Interface                                                            -- only for DDRI_USED=TRUE
       m_axi_card_mem0_araddr               => axi_card_mem0_araddr,                     -- only for DDRI_USED=TRUE
@@ -1056,7 +1069,6 @@ BEGIN
       s_axi_ctrl_reg_wready                => kx_d.m_axi_wready,
       s_axi_ctrl_reg_wstrb                 => xk_d.m_axi_wstrb,
       s_axi_ctrl_reg_wvalid                => xk_d.m_axi_wvalid,
-      interrupt                            => OPEN,
       --
       -- AXI Host Memory Interface
       m_axi_host_mem_araddr                => ks_d.s_axi_araddr(C_AXI_HOST_MEM_ADDR_WIDTH-1 DOWNTO 0),
@@ -1070,7 +1082,7 @@ BEGIN
       m_axi_host_mem_arready               => sk_d.s_axi_arready,
       m_axi_host_mem_arregion              => OPEN,
       m_axi_host_mem_arsize                => ks_d.s_axi_arsize,
-      m_axi_host_mem_aruser                => OPEN,
+      m_axi_host_mem_aruser                => ks_d.s_axi_aruser,
       m_axi_host_mem_arvalid               => ks_d.s_axi_arvalid,
       m_axi_host_mem_awaddr                => ks_d.s_axi_awaddr(C_AXI_HOST_MEM_ADDR_WIDTH-1 DOWNTO 0),
       m_axi_host_mem_awburst               => ks_d.s_axi_awburst,
@@ -1083,7 +1095,7 @@ BEGIN
       m_axi_host_mem_awready               => sk_d.s_axi_awready,
       m_axi_host_mem_awregion              => OPEN,
       m_axi_host_mem_awsize                => ks_d.s_axi_awsize,
-      m_axi_host_mem_awuser                => OPEN,
+      m_axi_host_mem_awuser                => ks_d.s_axi_awuser,
       m_axi_host_mem_awvalid               => ks_d.s_axi_awvalid,
       m_axi_host_mem_bid                   => sk_d.s_axi_bid(C_AXI_HOST_MEM_ID_WIDTH-1 DOWNTO 0),
       m_axi_host_mem_bready                => ks_d.s_axi_bready,
