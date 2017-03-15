@@ -1,7 +1,7 @@
 *~
 hdl/*~
-hdl/psl_accel_sim.vhd
-hdl/psl_accel_syn.vhd
+hdl/core/psl_accel.vhd
+sim/core/ptop.sv
 *build
 setup/*~
 sim/ies/
