@@ -29,6 +29,7 @@ create_project   $prj_name $root_dir/viv_project_tmp -part $fpga_part -force $ms
 create_bd_design $bd_name  $msg_level
 
 # Create NVME_HOST IP
+puts "	\                      generating NVME HOST IP"
 ipx::infer_core -vendor IP -library user -taxonomy /UserIP $root_dir/hdl/nvme $msg_level
 ipx::edit_ip_in_project -upgrade true -name edit_ip_project -directory $root_dir/viv_project_tmp/nvme_host_ip/nvme.tmp $root_dir/hdl/nvme/component.xml $msg_level
 ipx::current_core $root_dir/hdl/nvme/component.xml 
@@ -129,6 +130,7 @@ CONFIG.FREQ_HZ {100000000} \
 set sys_rst_n [ create_bd_port -dir I -type rst sys_rst_n ]
 
 # Create instance: axi_interconnect_0, and set properties
+puts "	\                      generating AXI interconnects"
 set axi_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_0 ]
 set_property -dict [ list \
 CONFIG.NUM_MI {3} \
@@ -155,6 +157,7 @@ CONFIG.STRATEGY {2} \
 ] $axi_interconnect_2 $msg_level
 
 # Create instance: axi_pcie3_0, and set properties
+puts "	\                      generating AXI PCIe Root Complex"
 set axi_pcie3_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie3:3.0 axi_pcie3_0 $msg_level ]
 set_property -dict [ list \
 CONFIG.axi_addr_width {34} \
@@ -197,9 +200,11 @@ CONFIG.plltype {QPLL1} \
 ] $axi_pcie3_1 $msg_level
 
 # Create instance: nvme_host_wrap_0, and set properties
+puts "	\                      generating NVMe Host"
 create_bd_cell -type ip -vlnv IP:user:nvme_host_wrap:1.0 nvme_host_wrap_0 $msg_level
 
 # Create interface connections
+puts "	\                      connecting all blocks and ports"
 connect_bd_intf_net -intf_net S00_AXI_1 [get_bd_intf_ports NVME_S_AXI] [get_bd_intf_pins axi_interconnect_0/S00_AXI]
 connect_bd_intf_net -intf_net S00_AXI_3 [get_bd_intf_pins axi_interconnect_2/S00_AXI] [get_bd_intf_pins axi_pcie3_0/M_AXI]
 connect_bd_intf_net -intf_net S01_AXI_1 [get_bd_intf_pins axi_interconnect_2/S01_AXI] [get_bd_intf_pins axi_pcie3_1/M_AXI]
