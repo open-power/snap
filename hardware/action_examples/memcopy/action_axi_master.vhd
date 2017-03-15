@@ -187,7 +187,7 @@ begin
 	M_AXI_AWCACHE	<= "0010";
 	M_AXI_AWPROT	<= "000";
 	M_AXI_AWQOS	<= x"0";
-	M_AXI_AWUSER	<= (others => '1');
+	M_AXI_AWUSER	<= dma_wr_context_id;
 	M_AXI_AWVALID	<= axi_awvalid;
 	M_AXI_WDATA	<= axi_wdata;
 	M_AXI_WSTRB	<= axi_wstrb;
@@ -204,7 +204,7 @@ begin
 	M_AXI_ARCACHE	<= "0010";
 	M_AXI_ARPROT	<= "000";
 	M_AXI_ARQOS	<= x"0";
-	M_AXI_ARUSER	<= (others => '1');
+	M_AXI_ARUSER	<= dma_rd_context_id;
 	M_AXI_ARVALID	<= axi_arvalid;
 	M_AXI_RREADY	<= axi_rready;
 
