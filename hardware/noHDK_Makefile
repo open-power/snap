@@ -22,7 +22,7 @@ export BUILD_NAME=noHDK_build
 export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
 export LOGS_DIR=$(BUILD_DIR)/Logs
 
-SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/hdl/top.sv 
+SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/core/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/sim/core/top.sv 
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone
@@ -73,6 +73,17 @@ check_donut_settings:
 		echo "Please source donut_settings before calling make!"; \
                 exit 1; \
 	fi
+	@if [ -z `which git 2> /dev/null` ]; then \
+		echo "The SNAP framework make process relies on git."; \
+		echo "Please make sure that you have installed git and that"; \
+		echo "the environment variable PATH points to its executable."; \
+		exit 1; \
+	fi
+	@cd $(DONUT_HARDWARE_ROOT); if [ -z `git describe HEAD 2> /dev/null` ]; then \
+		echo "$(DONUT_HARDWARE_ROOT) (DONUT_HARDWARE_ROOT) does not belong to a git repository."; \
+		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/donut.git"; \
+		exit 1; \
+	fi
 
 copy $(BUILD_DIR)/Checkpoint/b_route_design.dcp:
 	@echo -e "\t[COPY..............] psl build env";
@@ -106,7 +117,7 @@ config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(SNAP_CONFIG
 
 patch_version:
 	@echo  -e "\t[PATCH.............] SNAP version and build date registers"; \
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl mmio.vhd
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl/core mmio.vhd
 
 image: patch_version
 	@echo -e "\t[BUILD IMAGE.......] start `date`"
@@ -134,15 +145,15 @@ model: patch_version
 clean:
 	@echo -e "\t[CLEAN.............] build environment";
 	@rm -r -f  $(BUILD_DIR)
-	rm    -f  build
+	@rm    -f  build
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
 	@rm -f     $(SNAP_CONFIG_FILES)
-	rm -f     ./setup/*.log
-	rm -f     ./setup/*.jou
+	@rm -f     ./setup/*.log
+	@rm -f     ./setup/*.jou
 
 gitclean:
 	@echo -e "\t[GITCLEAN] cleaning and resetting donut git";
