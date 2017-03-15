@@ -3,13 +3,14 @@ hdl/*~
 hdl/core/psl_fpga.vhd*
 hdl/core/psl_accel.vhd
 sim/core/top.sv
+hdl/nvme/component.xml
+hdl/nvme/xgui
 *build
 setup/*~
 sim/ies/
 sim/xsim/
-viv_project/
+viv_project*/
 ip/
-action/memcopy.*
 sim/*.log
 sim/20*
 .bitstream_name.txt
