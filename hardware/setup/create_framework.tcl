@@ -51,7 +51,7 @@ if { [info exists ::env(HLS_SUPPORT)] == 1 } {
 
 # Create a new Vivado Project
 puts "	\[CREATE_FRAMEWORK..\] start"
-create_project framework $root_dir/viv_project -part $fpga_part -force 
+create_project framework $root_dir/viv_project -part $fpga_part -force
 
 # Project Settings
 # General
@@ -153,7 +153,7 @@ update_compile_order -fileset sources_1 $msg_level
 
 # Add NVME
 if { $nvme_used == TRUE } {
-  set_property  ip_repo_paths $root_dir/hdl/nvme/ [current_project] 
+  set_property  ip_repo_paths $root_dir/hdl/nvme/ [current_project]
   update_ip_catalog  $msg_level
   add_files -norecurse                          $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd  $msg_level
 #  add_files $root_dir/hdl/nvme/
@@ -193,16 +193,5 @@ if { $ddri_used == "TRUE" } {
   }
 }
 
-
-
-
-# EXPORT SIMULATION for xsim
-if { [string equal -length 4 2016 $vivadoVer] > 0 } {
-  puts "	                      export_simulation 2016 syntax"
-  export_simulation  -force -directory "$root_dir/sim" -simulator xsim -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs $msg_level 
-} else {
-  puts "	                      export_simulation 2015 syntax"
-  export_simulation  -force -directory "$root_dir/sim" -simulator xsim $msg_level
-}
 puts "	\[CREATE_FRAMEWORK..\] done"
 close_project $msg_level

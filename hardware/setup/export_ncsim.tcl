@@ -19,15 +19,9 @@
 set xilinx_vivado [version -short]
 set root_dir      $::env(DONUT_HARDWARE_ROOT)
 set ies_libs      $::env(IES_LIBS)
-puts $root_dir
-puts $ies_libs
+set msg_level     $::env(MSG_LEVEL)
 
+puts "	\[EXPORT_NCSIM......\] version=$xilinx_version"
 open_project $root_dir/viv_project/framework.xpr
-if { [string equal -length 4 2016 $xilinx_vivado] > 0 } {
-  puts "export_simulation 2016 syntax"
-  export_simulation  -force -directory "$root_dir/sim" -simulator ies -lib_map_path "$ies_libs" -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs
-} else {
-  puts "export_simulation 2015 syntax"
-  export_simulation  -force -directory "$root_dir/sim" -simulator ies
-}
+export_simulation -force -directory "$root_dir/sim" -simulator ies -lib_map_path "$ies_libs" -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs $msg_level
 close_project

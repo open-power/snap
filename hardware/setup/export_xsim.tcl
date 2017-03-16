@@ -18,10 +18,9 @@
 
 set xilinx_vivado [version -short]
 set root_dir      $::env(DONUT_HARDWARE_ROOT)
-set mentor_libs   $::env(MENTOR_LIBS)
 set msg_level     $::env(MSG_LEVEL)
 
-puts "	\[EXPORT_QUESTA.....\] version=$xilinx_version"
+puts "	\[EXPORT_XSIM.......\] version=$xilinx_version"
 open_project $root_dir/viv_project/framework.xpr
-export_simulation -force -directory "$root_dir/sim" -simulator questa -lib_map_path "$mentor_libs" -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs $msg_level
+export_simulation -force -directory "$root_dir/sim" -simulator xsim -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs $msg_level
 close_project
