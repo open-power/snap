@@ -28,22 +28,22 @@
   USE work.donut_types.ALL;
   
 
-  LIBRARY unisim;                                                                        -- only for DDRI_USED=TRUE
-  USE unisim.vcomponents.all;                                                            -- only for DDRI_USED=TRUE
+  LIBRARY unisim;							                -- only for DDRI_USED=TRUE
+  USE unisim.vcomponents.all;                                                           -- only for DDRI_USED=TRUE
 
 ENTITY psl_accel IS
   GENERIC (
     BRAM_USED  : BOOLEAN := FALSE;
 
-    -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory             -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_ID_WIDTH       : integer   := C_DDR_AXI_ID_WIDTH;                    -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_ADDR_WIDTH     : integer   := C_DDR_AXI_ADDR_WIDTH;                  -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_DATA_WIDTH     : integer   := C_DDR_AXI_DATA_WIDTH;                  -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_AWUSER_WIDTH   : integer   := C_DDR_AXI_AWUSER_WIDTH;		 -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_ARUSER_WIDTH   : integer   := C_DDR_AXI_ARUSER_WIDTH;		 -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_WUSER_WIDTH    : integer   := C_DDR_AXI_WUSER_WIDTH;		 -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_RUSER_WIDTH    : integer   := C_DDR_AXI_RUSER_WIDTH;		 -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_BUSER_WIDTH    : integer   := C_DDR_AXI_BUSER_WIDTH;                 -- only for DDR3_USED=TRUE   
+    -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory	        -- only for DDR3_USED=TRUE
+    C_AXI_CARD_MEM0_ID_WIDTH       : integer   := C_DDR_AXI_ID_WIDTH;  		        -- only for DDR3_USED=TRUE
+    C_AXI_CARD_MEM0_ADDR_WIDTH     : integer   := C_DDR_AXI_ADDR_WIDTH;	                -- only for DDR3_USED=TRUE
+    C_AXI_CARD_MEM0_DATA_WIDTH     : integer   := C_DDR_AXI_DATA_WIDTH;	                -- only for DDR3_USED=TRUE
+    C_AXI_CARD_MEM0_AWUSER_WIDTH   : integer   := C_DDR_AXI_AWUSER_WIDTH;               -- only for DDR3_USED=TRUE
+    C_AXI_CARD_MEM0_ARUSER_WIDTH   : integer   := C_DDR_AXI_ARUSER_WIDTH;	        -- only for DDR3_USED=TRUE
+    C_AXI_CARD_MEM0_WUSER_WIDTH    : integer   := C_DDR_AXI_WUSER_WIDTH;	        -- only for DDR3_USED=TRUE
+    C_AXI_CARD_MEM0_RUSER_WIDTH    : integer   := C_DDR_AXI_RUSER_WIDTH;                -- only for DDR3_USED=TRUE
+    C_AXI_CARD_MEM0_BUSER_WIDTH    : integer   := C_DDR_AXI_BUSER_WIDTH;                -- only for DDR3_USED=TRUE   
 
     -- Parameters for Axi Slave Bus Interface AXI_CTRL_REG
     C_AXI_CTRL_REG_DATA_WIDTH      : integer   := C_REG_DATA_WIDTH;
