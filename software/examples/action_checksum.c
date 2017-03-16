@@ -203,9 +203,12 @@ static int action_main(struct dnut_action *action, void *job,
 		  (int)js->chk_type);
 
 	switch (js->chk_type) {
-	case CHECKSUM_SPONGE:
+	case CHECKSUM_SPONGE: {
+		unsigned int threads;
+
 		act_trace("pe=%d nb_pe=%d\n", js->pe, js->nb_pe);
 
+		threads = js->nb_slices; /* misused for sw sim */
 		js->nb_slices = NB_SLICES;
 		js->nb_round = NB_ROUND;
 		js->timer_ticks = 0; /* FIXME */
@@ -213,9 +216,9 @@ static int action_main(struct dnut_action *action, void *job,
 		if (js->nb_pe == 0)
 			return 0;
 
-		js->chk_out = sponge_main(js->pe, js->nb_pe);
+		js->chk_out = sponge_main(js->pe, js->nb_pe, threads);
 		break;
-
+	}
 	case CHECKSUM_CRC32:
 		/* checking parameters ... */
 		if (js->in.type != DNUT_TARGET_TYPE_HOST_DRAM)
