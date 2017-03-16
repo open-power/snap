@@ -40,7 +40,7 @@ int keccak(const uint8_t *in, int inlen, uint8_t *md, int mdlen);
 void keccakf(uint64_t st[25], int norounds);
 
 /* main function to calculate the checksum */
-uint64_t sponge_main(uint32_t pe, uint32_t nb_pe);
+uint64_t sponge_main(uint32_t pe, uint32_t nb_pe, uint32_t threads);
 
 #endif
 

@@ -46,6 +46,7 @@ static void usage(const char *prog)
 {
 	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
 	       "  -C, --card <cardno> can be (0...3)\n"
+	       "  -x, --threads <threads>   depends on the available CPUs.\n"
 	       "  -i, --input <file.bin>    input file.\n"
 	       "  -S, --start-value <checksum_start> checksum start value.\n"
 	       "  -A, --type-in <CARD_RAM, HOST_RAM, ...>.\n"
@@ -71,7 +72,8 @@ static void dnut_prepare_checksum(struct dnut_job *cjob,
 				  uint64_t type,
 				  uint64_t chk_in,
 				  uint32_t pe,
-				  uint32_t nb_pe)
+				  uint32_t nb_pe,
+				  uint32_t threads)
 {
 	dnut_addr_set(&mjob_in->in, addr_in, size_in, type_in,
 		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC |
@@ -81,6 +83,7 @@ static void dnut_prepare_checksum(struct dnut_job *cjob,
 	mjob_in->chk_in = chk_in;
 	mjob_in->pe = pe;
 	mjob_in->nb_pe = nb_pe;
+	mjob_in->nb_slices = threads; /* misuse this for software sim */
 
 	mjob_out->chk_out = 0x0;
 	dnut_job_set(cjob, CHECKSUM_ACTION_TYPE,
@@ -155,6 +158,7 @@ file_write(const char *fname, const uint8_t *buff, size_t len)
 }
 
 static int do_checksum(int card_no, unsigned long timeout,
+		       unsigned int threads,
 		       unsigned long addr_in,
 		       unsigned char type_in,  unsigned long size,
 		       uint64_t checksum_start,
@@ -213,7 +217,8 @@ static int do_checksum(int card_no, unsigned long timeout,
 
 	dnut_prepare_checksum(&cjob, &mjob_in, &mjob_out,
 			     (void *)addr_in, size, type_in,
-			      mode, checksum_start, pe, nb_pe);
+			      mode, checksum_start, pe, nb_pe,
+			      threads);
 
 	gettimeofday(&stime, NULL);
 	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
@@ -323,7 +328,8 @@ static uint32_t executed_slices(uint32_t pe, uint32_t nb_pe,
 	return executed;
 }
 
-static int test_sponge(int card_no, int timeout, FILE *fp)
+static int test_sponge(int card_no, int timeout, unsigned int threads,
+		       FILE *fp)
 {
 	int rc = -1;
 	unsigned int i;
@@ -335,8 +341,9 @@ static int test_sponge(int card_no, int timeout, FILE *fp)
 	fprintf(stderr, "SPONGE TESTCASE: ");
 
 	/* Try to figure out nb_slices and nb_round */
-	rc = do_checksum(card_no, timeout, 0, 0, 0, 0, CHECKSUM_SPONGE, 0, 0,
-			 &checksum, &usec, &timer_ticks, &nb_slices, &nb_round,
+	rc = do_checksum(card_no, timeout, threads, 0, 0, 0, 0,
+			 CHECKSUM_SPONGE, 0, 0, &checksum, &usec,
+			 &timer_ticks, &nb_slices, &nb_round,
 			 fp);
 	if (rc != 0) {
 		fprintf(stderr, "err: sponge rc=%d FAILED\n", rc);
@@ -350,7 +357,7 @@ static int test_sponge(int card_no, int timeout, FILE *fp)
 		if ((nb_slices != t->nb_slices) || (nb_round != t->nb_round))
 			continue;
 
-		rc = do_checksum(card_no, timeout, 0, 0, 0, 0,
+		rc = do_checksum(card_no, timeout, threads, 0, 0, 0, 0,
 				 CHECKSUM_SPONGE, t->pe, t->nb_pe,
 				 &checksum, &usec, &timer_ticks,
 				 &nb_slices, &nb_round, fp);
@@ -401,11 +408,13 @@ int main(int argc, char *argv[])
 	uint64_t checksum_start = 0ull;
 	uint32_t pe = 0, nb_pe = 0;
 	int test = 0;
+	unsigned int threads = 160;
 
 	while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {
 			{ "card",	 required_argument, NULL, 'C' },
+			{ "threads",	 required_argument, NULL, 'x' },
 			{ "input",	 required_argument, NULL, 'i' },
 			{ "src-type",	 required_argument, NULL, 'A' },
 			{ "src-addr",	 required_argument, NULL, 'a' },
@@ -423,7 +432,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-				 "A:C:i:a:S:Tx:p:m:n:s:t:Vqvh",
+				 "A:C:i:a:S:Tx:p:m:n:s:t:x:Vqvh",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -431,6 +440,9 @@ int main(int argc, char *argv[])
 		switch (ch) {
 		case 'C':
 			card_no = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'x':
+			threads = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 'i':
 			input = optarg;
@@ -479,7 +491,6 @@ int main(int argc, char *argv[])
 		case 'a':
 			addr_in = strtol(optarg, (char **)NULL, 0);
 			break;
-
 			/* service */
 		case 'V':
 			printf("%s\n", version);
@@ -530,7 +541,7 @@ int main(int argc, char *argv[])
 			FILE *fp;
 
 			fp = fopen("/dev/null", "w");
-			rc = test_sponge(card_no, timeout, fp);
+			rc = test_sponge(card_no, timeout, threads, fp);
 			fclose(fp);
 			if (rc != 0)
 				goto out_error1;
@@ -540,9 +551,10 @@ int main(int argc, char *argv[])
 			goto out_error1;
 		}
 	} else {
-		rc = do_checksum(card_no, timeout, addr_in, type_in, size,
-				 checksum_start, mode, pe, nb_pe,
-				 NULL, NULL, NULL, NULL, NULL, stderr);
+		rc = do_checksum(card_no, timeout, threads, addr_in,
+				 type_in, size, checksum_start, mode,
+				 pe, nb_pe, NULL, NULL, NULL, NULL,
+				 NULL, stderr);
 		if (rc != 0)
 			goto out_error1;
 	}

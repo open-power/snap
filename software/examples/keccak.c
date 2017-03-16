@@ -152,7 +152,8 @@ static uint64_t sponge(const uint64_t rank)
 /**
  * nb_pe must be != 0, since we divide by it.
  */
-uint64_t sponge_main(uint32_t pe, uint32_t nb_pe)
+uint64_t sponge_main(uint32_t pe, uint32_t nb_pe,
+		     uint32_t threads __attribute__((unused)))
 {
 	uint32_t slice;
 	uint64_t checksum=0;
@@ -164,7 +165,7 @@ uint64_t sponge_main(uint32_t pe, uint32_t nb_pe)
 		if (pe == (slice % nb_pe)) {
 			uint64_t checksum_tmp;
 
-			act_trace("  slice=%08x\n", slice);
+			act_trace("  slice=%d\n", slice);
 			checksum_tmp = sponge(slice);
 			checksum ^= checksum_tmp;
 			act_trace("    %016llx %016llx\n",
@@ -181,8 +182,6 @@ uint64_t sponge_main(uint32_t pe, uint32_t nb_pe)
 
 #include <pthread.h>
 
-#define CONFIG_NO_THREADS 160 /* Adjust to your test system */
-
 struct thread_data {
         pthread_t thread_id;    /* Thread id assigned by pthread_create() */
         unsigned int slice;
@@ -190,7 +189,7 @@ struct thread_data {
         int thread_rc;
 };
 
-static struct thread_data d[CONFIG_NO_THREADS];
+static struct thread_data *d;
 
 static void *sponge_thread(void *data)
 {
@@ -198,32 +197,39 @@ static void *sponge_thread(void *data)
 
         d->checksum = 0;
         d->thread_rc = 0;
-
-        act_trace("  slice=%08x\n", d->slice);
         d->checksum = sponge(d->slice);
-        act_trace("    %016llx\n", (long long)d->checksum);
         pthread_exit(&d->thread_rc);
 }
 
 /**
  * nb_pe must be != 0, since we divide by it.
  */
-uint64_t sponge_main(uint32_t pe, uint32_t nb_pe)
+uint64_t sponge_main(uint32_t pe, uint32_t nb_pe, uint32_t _threads)
 {
         int rc;
         uint32_t slice;
         uint64_t checksum = 0;
 
-        act_trace("%s(%d, %d)\n", __func__, pe, nb_pe);
+	if (_threads == 0) {
+		fprintf(stderr, "err: Min threads must be 1\n");
+		return 0;
+	}
+
+        d = calloc(_threads * sizeof(struct thread_data), 1);
+	if (d == NULL) {
+		fprintf(stderr, "err: No memory available\n");
+		return 0;
+	}
+
+        act_trace("%s(%d, %d, %d)\n", __func__, pe, nb_pe, _threads);
         act_trace("  NB_SLICES=%d NB_ROUND=%d\n", NB_SLICES, NB_ROUND);
 
         for (slice = 0; slice < NB_SLICES; ) {
                 unsigned int i;
-                int remaining_slices = NB_SLICES - slice;
-                unsigned int threads = MIN(remaining_slices,
-                                           CONFIG_NO_THREADS);
+                unsigned int remaining_slices = NB_SLICES - slice;
+                unsigned int threads = MIN(remaining_slices, _threads);
 
-                act_trace("  slice=%d remaining=%d threads=%d\n",
+                act_trace("  [X] slice=%d remaining=%d threads=%d\n",
                           slice, remaining_slices, threads);
 
                 for (i = 0; i < threads; i++) {
@@ -231,27 +237,33 @@ uint64_t sponge_main(uint32_t pe, uint32_t nb_pe)
                                 continue;
 
                         d[i].slice = slice + i;
-
                         rc = pthread_create(&d[i].thread_id, NULL,
                                             &sponge_thread, &d[i]);
                         if (rc != 0) {
+				free(d);
                                 fprintf(stderr, "starting %d failed!\n", i);
                                 return EXIT_FAILURE;
                         }
                 }
                 for (i = 0; i < threads; i++) {
+			act_trace("      slice=%d checksum=%016llx\n",
+				  slice + i, (long long)d[i].checksum);
+
                         if (pe != ((slice + i) % nb_pe))
                                 continue;
 
                         rc = pthread_join(d[i].thread_id, NULL);
                         if (rc != 0) {
-                                fprintf(stderr, "joining threads failed!\n");
+				free(d);
+				fprintf(stderr, "joining threads failed!\n");
                                 return EXIT_FAILURE;
                         }
                         checksum ^= d[i].checksum;
                 }
                 slice += threads;
         }
+
+	free(d);
 
         act_trace("checksum=%016llx\n", (unsigned long long)checksum);
         return checksum;
