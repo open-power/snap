@@ -171,8 +171,15 @@ void action_wrapper(snap_membus_t *din_gmem,
 		return;
 	}
 
+	/*
+	 * UNROLL factor need to be a power of 2 otherwise, we'll get
+	 * more logic added but he will take the lower power of 2.
+	 * The best value to be kept should be factor 8 for sponge and
+	 * action_wrapper function. If one need to be reduced then
+	 * decrease the factor in sponge function.
+	 */
 	for (slice = 0; slice < NB_SLICES; slice++) {
-#pragma HLS UNROLL factor=10
+#pragma HLS UNROLL factor=8
 		/*
 		 * This if might not be a good idea, we are doing experiments
 		 * to move it to a different place.
