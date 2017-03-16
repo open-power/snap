@@ -106,7 +106,7 @@ config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(SNAP_CONFIG
 
 patch_version:
 	@echo  -e "\t[PATCH.............] SNAP version and build date registers"; \
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl/core mmio.vhd
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl/core donut.vhd
 
 image: patch_version
 	@echo -e "\t[BUILD IMAGE.......] start `date`"
