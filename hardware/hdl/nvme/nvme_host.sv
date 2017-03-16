@@ -14,6 +14,7 @@
 
 
 `include "nvme_defines.sv"
+`timescale 1ns / 1ns
 
 module nvme_host
 (
