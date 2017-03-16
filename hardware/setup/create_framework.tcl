@@ -154,8 +154,8 @@ update_compile_order -fileset sources_1 $msg_level
 # Add NVME
 if { $nvme_used == TRUE } {
   set_property  ip_repo_paths $root_dir/hdl/nvme/ [current_project] 
-  update_ip_catalog 
-  add_files -norecurse                          $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd
+  update_ip_catalog  $msg_level
+  add_files -norecurse                          $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd  $msg_level
 #  add_files $root_dir/hdl/nvme/
   export_ip_user_files -of_objects  [get_files  $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
   add_files -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/nvme_model.v
