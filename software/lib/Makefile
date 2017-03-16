@@ -21,7 +21,6 @@ libversion = $(VERSION)
 CFLAGS += -fPIC -fno-strict-aliasing
 LDLIBS += -lpthread
 
-### Accelerated libz implemenation (Accelerated Data Compression/ADC)
 libname=libdonut
 projA = $(libname).a \
 	$(libname).so \
@@ -39,7 +38,6 @@ endif
 
 all: $(projs)
 
-### libzADC
 __$(libname).o: $(objs)
 	$(LD) $(XLDFLAGS) -r -o $@ $^
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,33 +29,7 @@
 
 #include <libdonut.h>
 #include <donut_tools.h>
-
-#define CACHELINE_BYTES 128
-
-#define	FW_BASE_ADDR	0x00100
-#define	FW_BASE_ADDR8	0x00108
-
-/*	Memcopy Action */
-#define	ACTION_BASE		0x10000
-#define ACTION_CONTEXT_OFFSET	0x01000	/* Add 4 KB for the next Action */
-#define	ACTION_CONTROL		ACTION_BASE
-#define	ACTION_CONTROL_START	0x01
-#define	ACTION_CONTROL_IDLE	0x04
-#define	ACTION_CONTROL_RUN	0x08
-#define	ACTION_4		(ACTION_BASE + 0x04)
-#define	ACTION_8		(ACTION_BASE + 0x08)
-#define	ACTION_CONFIG		(ACTION_BASE + 0x20)
-#define	ACTION_CONFIG_COUNT	1	/* Count Mode */
-#define	ACTION_CONFIG_COPY_HH	2	/* Memcopy Host to Host */
-#define	ACTION_CONFIG_COPY_HD	3	/* Memcopy Host to DDR */
-#define	ACTION_CONFIG_COPY_DH	4	/* Memcopy DDR to Host */
-#define	ACTION_CONFIG_COPY_DD	5	/* Memcopy DDR to DDR */
-#define	ACTION_CONFIG_COPY_HDH	6	/* Memcopy Host to DDR to Host */
-#define	ACTION_SRC_LOW		(ACTION_BASE + 0x24)
-#define	ACTION_SRC_HIGH		(ACTION_BASE + 0x28)
-#define	ACTION_DEST_LOW		(ACTION_BASE + 0x2c)
-#define	ACTION_DEST_HIGH	(ACTION_BASE + 0x30)
-#define	ACTION_CNT		(ACTION_BASE + 0x34)	/* Count Register */
+#include "snap_fw_example.h"
 
 /*	defaults */
 #define	DEFAULT_MEMCPY_ITER	1
@@ -70,6 +44,7 @@
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
+static uint32_t context_offset = ACTION_BASE_S;		/* Default Slave Context */
 
 #define VERBOSE0(fmt, ...) do {		\
 		printf(fmt, ## __VA_ARGS__);	\
@@ -245,6 +220,7 @@ static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
 {
 	int rc;
 
+	addr += context_offset;
 	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
 		VERBOSE0("Write MMIO 32 Err\n");
@@ -256,6 +232,7 @@ static uint32_t action_read(struct dnut_card* h, uint32_t addr)
 	int rc;
 	uint32_t data;
 
+	addr += context_offset;
 	rc = dnut_mmio_read32(h, (uint64_t)addr, &data);
 	if (0 != rc)
 		VERBOSE0("Read MMIO 32 Err\n");
@@ -346,6 +323,8 @@ static void action_memcpy(struct dnut_card* h,
 	action_write(h, ACTION_SRC_LOW, (uint32_t)(addr & 0xffffffff));
 	action_write(h, ACTION_SRC_HIGH, (uint32_t)(addr >> 32));
 	action_write(h, ACTION_CNT, n);
+
+	return;
 }
 
 /*
@@ -579,10 +558,10 @@ __ram_test_rnd1_exit:
 static int ram_test_rnd2(struct dnut_card* dnc,
 			void *src,
 			void *dest,
-			unsigned int mem_size,		/* Size for Host Buffer */
+			unsigned int mem_size,	/* Size for Host Buffer */
 			uint64_t start_addr,	/* Start of Card Mem */
-			uint64_t end_addr,		/* End of Card Mem */
-			int timeout_ms)			/* Timeout to wait in ms */
+			uint64_t end_addr,	/* End of Card Mem */
+			int timeout_ms)		/* Timeout to wait in ms */
 {
 	int blocks, block;
 	uint64_t card_addr;
@@ -630,6 +609,7 @@ static void usage(const char *prog)
 		"    -C, --card <cardno>  use this card for operation\n"
 		"    -V, --version\n"
 		"    -q, --quiet          quiece output\n"
+		"    -m, --master         Select Master Context (default is Slave)\n"
 		"    -i, --iter           Memcpy Iterations (default 1)\n"
 		"    -s, --start          Card Ram Start Address (default 0x%llx)\n"
 		"    -e, --end            Card Ram End Address (default 0x%llx)\n"
@@ -655,6 +635,7 @@ int main(int argc, char *argv[])
 	unsigned int mem_size = HOST_BUFFER_SIZE;
 	void *src_buf = NULL;
 	void *dest_buf = NULL;
+	bool use_master = false;
 
 	while (1) {
                 int option_index = 0;
@@ -669,9 +650,10 @@ int main(int argc, char *argv[])
 			{ "start",    required_argument, NULL, 's' },
 			{ "end",      required_argument, NULL, 'e' },
 			{ "buffer",   required_argument, NULL, 'b' },
+			{ "master",   no_argument,       NULL, 'm' },
 			{ 0,          no_argument,       NULL, 0   },
 		};
-		cmd = getopt_long(argc, argv, "C:i:t:s:e:b:qvVh",
+		cmd = getopt_long(argc, argv, "C:i:t:s:e:b:mqvVh",
 			long_options, &option_index);
 		if (cmd == -1)  /* all params processed ? */
 			break;
@@ -704,6 +686,10 @@ int main(int argc, char *argv[])
 		case 'b':	/* buffer */
 			mem_size = strtol(optarg, (char **)NULL, 0);
 			break;
+		case 'm':	/* master */
+			use_master = true;
+			context_offset = ACTION_BASE_M;
+			break;
 		default:
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
@@ -715,13 +701,20 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	sprintf(device, "/dev/cxl/afu%d.0m", card_no);
-	VERBOSE1("Start KU3 Memory Test. Timeout: %d msec Device: %s\n",
-		timeout_ms, device);
+	VERBOSE1("Start Memory Test. Timeout: %d msec Device: ",
+		timeout_ms);
+	if (use_master) {
+		sprintf(device, "/dev/cxl/afu%d.0m", card_no);
+		dn = dnut_card_alloc_dev(device, DNUT_VENDOR_ID_ANY, DNUT_DEVICE_ID_ANY);
+	} else {
+		sprintf(device, "/dev/cxl/afu%d.0s", card_no);
+		dn = dnut_card_alloc_dev(device, 0x1014, 0xcafe);
+	}
+	VERBOSE1("%s\n", device);
 
-	dn = dnut_card_alloc_dev(device, 0, 0);
 	if (NULL == dn) {
-		perror("dnut_card_alloc_dev()");
+		errno = ENODEV;
+		VERBOSE0("ERROR: dnut_card_alloc_dev(%s)\n", device);
 		return -1;
 	}
 
@@ -741,6 +734,18 @@ int main(int argc, char *argv[])
 		goto __exit;
 
 	for (i = 0; i < iter; i++) {
+		if (false == use_master) {
+			while (1) {
+				rc = dnut_attach_action(dn, ACTION_TYPE_EXAMPLE, 0);
+				if (0 == rc) break;
+				if (EBUSY == rc)
+					usleep(100);
+				else {
+					VERBOSE0(" Error: Cannot Attach Action %x\n", ACTION_TYPE_EXAMPLE);
+					goto __exit;
+				}
+			}
+		}
 		VERBOSE1("\n[%d/%d] Clear Ram ", i+1, iter);
 		rc = ram_clear(dn, src_buf, mem_size,
 			start_addr, end_addr, timeout_ms);
@@ -764,9 +769,13 @@ int main(int argc, char *argv[])
 		rc = ram_test_rnd2(dn, src_buf, dest_buf, mem_size,
 			start_addr, end_addr, timeout_ms);
 		if (rc) break;
+		if (false == use_master)
+			dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
 	}
 
 __exit:
+	if (false == use_master)
+		dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);	/* Might be  twice */
 	free_mem(src_buf);
 	free_mem(dest_buf);
 	VERBOSE3("\nClose Card Handle: %p", dn);
