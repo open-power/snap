@@ -38,10 +38,6 @@ if ([ "$NAME" == "psl_accel_sim.vhd" ] || [ "$NAME" == "psl_accel_syn.vhd" ]); t
   sed -i 's/C_AXI_HOST_MEM_ID_WIDTH[ ^I]*:[ ^I]*integer[ ^I]*:=[ ^I]*[0-9]*/C_AXI_HOST_MEM_ID_WIDTH        : integer   := '$NUM_OF_ACTIONS'/' $1/$2
 fi
 
-if ([ "$NAME" == "donut.vhd" ]); then
-  sed -i 's/NUM_OF_ACTIONS[ ^I]*:[ ^I]*integer.*:=[ ^I]*[0-9]*/NUM_OF_ACTIONS         : integer RANGE 0 TO 16 := '$NUM_OF_ACTIONS'/' $1/$2
-fi
-
 if ([ "$NAME" == "donut_types.vhd" ]); then
   sed -i 's/CONSTANT NUM_OF_ACTIONS[ ^I]*:[ ^I]*integer.*:=[ ^I]*[0-9]*/CONSTANT NUM_OF_ACTIONS                  : integer := '$NUM_OF_ACTIONS'/' $1/$2
 fi

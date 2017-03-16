@@ -30,7 +30,7 @@ ENTITY donut IS
     IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0);
     BUILD_DATE_DAT         : std_ulogic_vector(63 DOWNTO 0);
     NUM_OF_ACTION_TYPES    : integer RANGE 0 TO 16 := 16;
-    NUM_OF_ACTIONS         : integer RANGE 0 TO 16 :=  1
+    NUM_OF_ACTIONS         : integer RANGE 0 TO 16 :=  NUM_OF_ACTIONS
   );
   PORT (
     --

@@ -469,9 +469,8 @@ PACKAGE donut_types IS
   CONSTANT ACTION_TYPE_BITS                : integer :=  4;      -- number of bits required to represent the action types
   CONSTANT NUM_OF_ACTION_TYPES             : integer := 16;      -- maximum number of supported action types
   CONSTANT ACTION_BITS                     : integer :=  4;      -- number of bits required to represent the action IDs
-  CONSTANT NUM_OF_ACTIONS                  : integer := 1;      -- maximum number of supported actions
---  CONSTANT INT_BITS                        : integer :=  3;      -- number of bits required to represent the seven interrupt
-                                                                 -- source IDs at the interface between "AXI-DMA shim" and DMA
+  CONSTANT NUM_OF_ACTIONS                  : integer :=  1;      -- maximum number of supported actions
+
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
