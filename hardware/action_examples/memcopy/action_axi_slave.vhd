@@ -481,7 +481,7 @@ begin
 	        reg_data_out <= reg_0x10_i;    -- 0x10    
 	      when b"00101" =>
 	        reg_data_out <= reg_0x14_i;    -- 0x14
-	      when b"00110" =>                  
+	      when b"01000" =>                  
 	        reg_data_out <= slv_reg8;      -- 0x20
 	      when b"01100" =>                  
 	        reg_data_out <= slv_reg12;     -- 0x30
