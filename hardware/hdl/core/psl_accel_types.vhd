@@ -93,9 +93,10 @@ PACKAGE psl_accel_types IS
 
 
 
-    
-    CONSTANT INT_BITS               : integer :=  3;
-    CONSTANT CONTEXT_BITS           : integer :=  9;  
+    CONSTANT INT_BITS               : integer :=  3;      -- number of bits required to represent the seven interrupt
+                                                          -- source IDs at the interface between "AXI-DMA shim" and DMA
+
+    CONSTANT CONTEXT_BITS           : integer :=  8;      -- number of bits required to represent the supported contexts as integer
 
 
 

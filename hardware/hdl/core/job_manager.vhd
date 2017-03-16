@@ -64,6 +64,7 @@ ARCHITECTURE job_manager OF job_manager IS
   TYPE ASSIGN_ACTION_FSM_T IS (ST_RESET, ST_WAIT_FREE_ACTION, ST_WAIT_CONTEXT, ST_REQUEST_MMIO, ST_WAIT_MMIO_GRANT, ST_RETURN_MMIO_LOCK);
   TYPE COMPLETE_ACTION_FSM_T IS (ST_WAIT_COMPLETION, ST_REQUEST_MMIO, ST_WAIT_MMIO_GRANT, ST_PUSH_CTX, ST_RETURN_MMIO_LOCK, ST_INIT_ACTIONS);
   TYPE REQUEST_MMIO_INTERFACE_FSM_T IS (ST_WAIT_GRANT, ST_ASSIGN_MMIO_GRANTED, ST_COMPLETE_MMIO_GRANTED, ST_RETURN_GRANT);
+  TYPE INTERRUPTS_FSM_T IS (ST_IDLE, ST_REQUEST_INT, ST_WAIT_ACK);
 
   --
   -- ATTRIBUTE
@@ -71,6 +72,7 @@ ARCHITECTURE job_manager OF job_manager IS
   ATTRIBUTE syn_encoding OF ASSIGN_ACTION_FSM_T          : TYPE IS "safe";
   ATTRIBUTE syn_encoding OF COMPLETE_ACTION_FSM_T        : TYPE IS "safe";
   ATTRIBUTE syn_encoding OF REQUEST_MMIO_INTERFACE_FSM_T : TYPE IS "safe";
+  ATTRIBUTE syn_encoding OF INTERRUPTS_FSM_T             : TYPE IS "safe";
 
 
   --
@@ -133,9 +135,39 @@ ARCHITECTURE job_manager OF job_manager IS
   SIGNAL ctx_completed_fifo_wrb        : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL ctx_completed_fifo_rrb        : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
 
+  SIGNAL int_fifo_we_q                 : std_ulogic;
+  SIGNAL int_fifo_re_q                 : std_ulogic;
+  SIGNAL int_fifo_empty                : std_ulogic;
+  SIGNAL int_fifo_full                 : std_ulogic;
+  SIGNAL int_fifo_din_q                : std_ulogic_vector(CONTEXT_BITS + INT_BITS - 2 DOWNTO 0);
+  SIGNAL int_fifo_dout                 : std_ulogic_vector(CONTEXT_BITS + INT_BITS - 2 DOWNTO 0);
+  SIGNAL int_fifo_wrb                  : std_ulogic;
+  SIGNAL int_fifo_rrb                  : std_ulogic;
+  SIGNAL int_src_id_array_q            : INTSRC_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0); 
+  SIGNAL int_fifo_we_array_q           : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL int_req_q                     : std_ulogic;
+  SIGNAL interrupts_fsm_q              : INTERRUPTS_FSM_T;
+
   --
   -- COMPONENT
-  COMPONENT fifo_9x512
+  COMPONENT fifo_10x512
+    PORT (
+      clk          : IN  std_logic;
+      srst         : IN  std_logic;
+      din          : IN  std_logic_vector(CONTEXT_BITS+INT_BITS-2 DOWNTO 0);
+      wr_en        : IN  std_logic;
+      rd_en        : IN  std_logic;
+      dout         : OUT std_logic_vector(CONTEXT_BITS+INT_BITS-2 DOWNTO 0);
+      full         : OUT std_logic;
+      empty        : OUT std_logic;
+      wr_rst_busy  : OUT std_logic;
+      rd_rst_busy  : OUT std_logic
+    );
+  END COMPONENT;
+
+  --
+  -- COMPONENT
+  COMPONENT fifo_8x512
     PORT (
       clk          : IN  std_logic;
       srst         : IN  std_logic;
@@ -169,6 +201,20 @@ ARCHITECTURE job_manager OF job_manager IS
 
 BEGIN
 
+  int_fifo: fifo_10x512
+    PORT MAP (
+      clk                      => std_logic(ha_pclock),
+      srst                     => std_logic(afu_reset),
+      din                      => std_logic_vector(int_fifo_din_q),
+      wr_en                    => std_logic(int_fifo_we_q),
+      rd_en                    => std_logic(int_fifo_re_q),
+      std_ulogic_vector(dout)  => int_fifo_dout,
+      std_ulogic(full)         => int_fifo_full,
+      std_ulogic(empty)        => int_fifo_empty,
+      std_ulogic(wr_rst_busy)  => int_fifo_wrb,
+      std_ulogic(rd_rst_busy)  => int_fifo_rrb
+    );
+    
   action_type_handling: FOR sat_id IN 0 TO NUM_OF_ACTION_TYPES-1 GENERATE
 
     SIGNAL assign_action_fsm_q          : ASSIGN_ACTION_FSM_T;
@@ -184,7 +230,7 @@ BEGIN
 
   BEGIN
 
-    ctx_fifo: fifo_9x512
+    ctx_fifo: fifo_8x512
     PORT MAP (
       clk                      => std_logic(ha_pclock),
       srst                     => std_logic(afu_reset),
@@ -275,7 +321,9 @@ BEGIN
           --
           CASE assign_action_fsm_q IS
             WHEN ST_RESET =>
-              IF NOT (ctx_fifo_wrb(sat_id) OR ctx_fifo_rrb(sat_id) OR action_fifo_wrb(sat_id) OR action_fifo_rrb(sat_id)) = '1' THEN
+              IF NOT (ctx_fifo_wrb(sat_id) OR ctx_fifo_rrb(sat_id) OR action_fifo_wrb(sat_id) OR action_fifo_rrb(sat_id) OR
+                      ctx_completed_fifo_wrb(sat_id) OR ctx_completed_fifo_rrb(sat_id) OR action_completed_fifo_wrb(sat_id) OR action_completed_fifo_rrb(sat_id) OR
+                      int_fifo_wrb OR int_fifo_rrb) = '1' THEN
                 assign_action_fsm_q <= ST_WAIT_FREE_ACTION;
               END IF;
 
@@ -312,7 +360,7 @@ BEGIN
               END IF;
 
             WHEN ST_RETURN_MMIO_LOCK =>
-              enable_check_for_idle_q(sat_id)(to_integer(unsigned(assign_action_id_q(sat_id)))) <= mmj_d_i.job_queue_mode;
+              enable_check_for_idle_q(sat_id)(to_integer(unsigned(assign_action_id_q(sat_id)))) <= mmj_d_i.job_queue_mode OR mmj_d_i.cpl_int_enable;
               assign_require_mmio_q                                                             <= '0';     -- TODO: switch to a remove state or need ack from mmio?
               assign_action_fsm_q                                                               <= ST_WAIT_FREE_ACTION;
 
@@ -473,6 +521,8 @@ BEGIN
         IF afu_reset = '1' THEN
           lock_mmio_interface_q(sat_id) <= '0';
           mmio_ctx_q(sat_id)            <= (OTHERS => '0');
+          int_src_id_array_q(sat_id)    <= (OTHERS => '0');
+          int_fifo_we_array_q(sat_id)   <= '0';
           assign_grant_mmio_q(sat_id)   <= '0';
           complete_grant_mmio_q(sat_id) <= '0';
           request_mmio_interface_fsm_q  <= ST_WAIT_GRANT;
@@ -481,6 +531,8 @@ BEGIN
           -- defaults
           lock_mmio_interface_q(sat_id) <= lock_mmio_interface_q(sat_id);
           mmio_ctx_q(sat_id)            <= mmio_ctx_q(sat_id);
+          int_src_id_array_q(sat_id)    <= int_src_id_array_q(sat_id);
+          int_fifo_we_array_q(sat_id)   <= '0';
           assign_grant_mmio_q(sat_id)   <= assign_grant_mmio_q(sat_id);
           complete_grant_mmio_q(sat_id) <= complete_grant_mmio_q(sat_id);
           request_mmio_interface_fsm_q  <= request_mmio_interface_fsm_q;
@@ -494,11 +546,15 @@ BEGIN
                 IF assign_require_mmio_q = '1' THEN
                   lock_mmio_interface_q(sat_id) <= '1';
                   mmio_ctx_q(sat_id)            <= ctx_fifo_dout(sat_id);
+                  int_src_id_array_q(sat_id)    <= CTX_ASSIGN_INT_SRC_ID;
+                  int_fifo_we_array_q(sat_id)   <= mmj_d_i.assign_int_enable;
                   assign_grant_mmio_q(sat_id)   <= '1';
                   request_mmio_interface_fsm_q  <= ST_ASSIGN_MMIO_GRANTED;
                 ELSIF complete_require_mmio_q = '1' THEN
                   lock_mmio_interface_q(sat_id) <= '1';
                   mmio_ctx_q(sat_id)            <= current_contexts_q(to_integer(unsigned(action_completed_fifo_dout(sat_id))));
+                  int_src_id_array_q(sat_id)    <= CTX_COMPLETE_INT_SRC_ID;
+                  int_fifo_we_array_q(sat_id)   <= mmj_d_i.cpl_int_enable;
                   complete_grant_mmio_q(sat_id) <= '1';
                   request_mmio_interface_fsm_q  <= ST_COMPLETE_MMIO_GRANTED;
                 ELSE
@@ -512,6 +568,8 @@ BEGIN
                 IF complete_require_mmio_q = '1' THEN
                   lock_mmio_interface_q(sat_id) <= '1';
                   mmio_ctx_q(sat_id)            <= current_contexts_q(to_integer(unsigned(action_completed_fifo_dout(sat_id))));
+                  int_src_id_array_q(sat_id)    <= CTX_COMPLETE_INT_SRC_ID;
+                  int_fifo_we_array_q(sat_id)   <= mmj_d_i.cpl_int_enable;
                   complete_grant_mmio_q(sat_id) <= '1';
                   request_mmio_interface_fsm_q  <= ST_COMPLETE_MMIO_GRANTED;
                 ELSE
@@ -559,7 +617,7 @@ BEGIN
             sat_v := sat_v + 1;
           END IF;
         END IF;
-        grant_mmio_interface_q     <= sat_v;
+        grant_mmio_interface_q <= sat_v;
       END IF;                                   -- afu_reset
     END IF;                                     -- rising_edge(ha_pclock)
   END PROCESS grant_mmio_access;
@@ -600,6 +658,50 @@ BEGIN
     END IF;                                     -- rising_edge(ha_pclock)
   END PROCESS set_check_for_idle;
 
+
+  interrupts: PROCESS (ha_pclock)
+  BEGIN  -- PROCESS int_fifo
+    IF rising_edge(ha_pclock) THEN
+      IF afu_reset = '1' THEN
+        int_fifo_we_q    <= '0';
+        int_fifo_din_q   <= (OTHERS => '0');
+        int_fifo_re_q    <= '0';
+        int_req_q        <= '0';
+        interrupts_fsm_q <= ST_IDLE;
+      ELSE
+        -- defaults
+        int_fifo_we_q    <= int_fifo_we_array_q(grant_mmio_interface_q);
+        int_fifo_din_q   <= mmio_ctx_q(grant_mmio_interface_q) & int_src_id_array_q(grant_mmio_interface_q);
+        int_fifo_re_q    <= '0';
+        int_req_q        <= '0';
+        interrupts_fsm_q <= interrupts_fsm_q;
+
+        --
+        -- F S M
+        --
+        CASE interrupts_fsm_q IS
+          WHEN ST_IDLE =>
+            IF int_fifo_empty = '0' THEN
+              int_fifo_re_q <= '0';
+              interrupts_fsm_q <= ST_REQUEST_INT;
+            END IF;
+
+          WHEN ST_REQUEST_INT =>
+            int_req_q <= '1';
+            interrupts_fsm_q <= ST_WAIT_ACK;
+
+          WHEN ST_WAIT_ACK =>
+            IF sj_c_i.int_ack = '1' THEN
+              interrupts_fsm_q <= ST_IDLE;
+            END IF;
+
+          WHEN OTHERS => NULL;
+        END CASE;
+      END IF;                                   -- afu_reset
+    END IF;                                     -- rising_edge(ha_pclock)    
+  END PROCESS interrupts;
+
+
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   --  Interfaces
@@ -619,5 +721,10 @@ BEGIN
 
   -- to AXI MASTER
   jx_c_o.check_for_idle      <= check_for_idle_q;
+
+  -- to AXI-DMA shim
+  js_c_o.int_req <= int_req_q;
+  js_c_o.int_src <= int_fifo_dout(INT_BITS-2 DOWNTO 0);
+  js_c_o.int_ctx <= int_fifo_dout(CONTEXT_BITS + INT_BITS - 2 DOWNTO INT_BITS - 1);
 
 END ARCHITECTURE;

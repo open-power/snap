@@ -518,7 +518,9 @@ Address: 0x0001000 + (s+n) * 0x0010000
   23..16 RW: Max job queue index
   15..12 RW: Requested Short Action Type
   11..0  RW: Job handling attributes
-             11..1  Reserved for future use
+             11..3  Reserved for future use
+                 2  Enable SNAP interrupt for action assignment
+                 1  Enable SNAP interrupt for job completion (action enters idle mode)
                  0  Execution mode:
                     0=Job Queue Mode
                     1=Direct Action Access Mode

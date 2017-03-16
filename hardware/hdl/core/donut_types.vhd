@@ -194,7 +194,6 @@ PACKAGE donut_types IS
   CONSTANT NVME_SPACE_START_BIT       : integer := 15;  -- NVME space starts at address 0x20000
   CONSTANT SLAVE_SPACE_BIT            : integer := 23;  -- Slave (context) space starts at 0x2000000
   CONSTANT PSL_HOST_ADDR_MAXBIT       : integer := 23;
-  CONSTANT PSL_HOST_CTX_ID_L          : integer := 22;
   CONSTANT PSL_HOST_CTX_ID_R          : integer := 14;
   CONSTANT SLAVE_ACTION_OFFSET_L      : integer := 13;
   CONSTANT SLAVE_ACTION_OFFSET_R      : integer := 10;
@@ -248,10 +247,9 @@ PACKAGE donut_types IS
   CONSTANT SNAP_CMD_MAX_SAT_R         : integer := 48;     -- SNAP_STATUS_REG
   CONSTANT SNAP_LOCK_INT              : integer :=  0;     -- SNAP_LOCK_REG
   CONSTANT SNAP_CTX_MASTER_BIT        : integer := 63;     -- SNAP_CTX_ID_REG
-  CONSTANT SNAP_CTX_ID_L              : integer :=  8;     -- SNAP_CTX_ID_REG
   CONSTANT SNAP_CTX_ID_R              : integer :=  0;     -- SNAP_CTX_ID_REG
 
-  CONSTANT CTX_CFG_SIZE_INT           : integer := 37;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_SIZE_INT           : integer := 39;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_SEQNO_L      : integer := 63;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_SEQNO_R      : integer := 48;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_JQIDX_L      : integer := 31;     -- CONTEXT_CONFIG_REG
@@ -260,15 +258,19 @@ PACKAGE donut_types IS
   CONSTANT CTX_CFG_MAX_JQIDX_R        : integer := 16;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_SAT_L              : integer := 15;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_SAT_R              : integer := 12;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_ASGNINT_ENA        : integer :=  2;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_CPLINT_ENA         : integer :=  1;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_DIRECT_MODE        : integer :=  0;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_FIRST_SEQNO_INT_L  : integer := 36;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_FIRST_SEQNO_INT_R  : integer := 21;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_FIRST_JQIDX_INT_L  : integer := 20;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_FIRST_JQIDX_INT_R  : integer := 13;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_MAX_JQIDX_INT_L    : integer := 12;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_MAX_JQIDX_INT_R    : integer :=  5;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_SAT_INT_L          : integer :=  4;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
-  CONSTANT CTX_CFG_SAT_INT_R          : integer :=  1;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
+  CONSTANT CTX_CFG_FIRST_SEQNO_INT_L  : integer := 38;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_SEQNO_INT_R  : integer := 23;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_JQIDX_INT_L  : integer := 22;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_JQIDX_INT_R  : integer := 15;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_JQIDX_INT_L    : integer := 14;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_JQIDX_INT_R    : integer :=  7;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_SAT_INT_L          : integer :=  6;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
+  CONSTANT CTX_CFG_SAT_INT_R          : integer :=  3;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
+  CONSTANT CTX_CFG_ASGNINT_ENA_INT    : integer :=  2;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_CPLINT_ENA_INT     : integer :=  1;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_DIRECT_MODE_INT    : integer :=  0;     -- CONTEXT_CONFIG_REG
 
   CONSTANT CTX_SEQNO_SIZE_INT         : integer := 40;     -- CONTEXT_STATUS_REG
@@ -355,10 +357,11 @@ PACKAGE donut_types IS
   ------------------------------------------------------------------------------
   --
   -- CONSTANT
-  CONSTANT NUM_OF_CONTEXTS                 : integer := 512;      -- total number of supported contexts
---  CONSTANT CONTEXT_BITS                    : integer :=   9;      -- number of bits required to represent the supported contexts as integer
+  CONSTANT NUM_OF_CONTEXTS                 : integer := 256;      -- total number of supported contexts
   CONSTANT SEQNO_BITS                      : integer :=  16;      -- number of bits required to represent a valid sequence number
   CONSTANT JQIDX_BITS                      : integer :=   8;      -- number of bits required to represent a valid job queue index
+  CONSTANT CTX_ASSIGN_INT_SRC_ID           : std_ulogic_vector(INT_BITS-2 DOWNTO 0) := "10";
+  CONSTANT CTX_COMPLETE_INT_SRC_ID         : std_ulogic_vector(INT_BITS-2 DOWNTO 0) := "01";
 
 --  CONSTANT ACTIVE_CONTEXTS_REGIONS_NUM     : integer :=  16;      -- number of active context regions
 --  CONSTANT ACTIVE_CONTEXTS_REGION_BITS     : integer :=   5;      -- number of bits required to represent active context within the region as integer
@@ -423,8 +426,8 @@ PACKAGE donut_types IS
   END RECORD;
 
   CONSTANT AFU_DES_INI : AFU_DES_T :=             -- see Coherent Accelerator Interface Architecture (CAIA) spec for definition of AFU Descriptor
-    (NUM_INTS_PER_PROCESS  => x"0002",                  -- x'00'  0:15 SNAP requires two interrupts per context (need more?)
-     NUM_OF_PROCESSES      => x"0200",                  -- x'00' 16:31 SNAP supports 512 contexts
+    (NUM_INTS_PER_PROCESS  => x"0007",                  -- x'00'  0:15 Four interrupts reserved for the action and, SNAP requires at least two interrupts per context
+     NUM_OF_PROCESSES      => x"0100",                  -- x'00' 16:31 SNAP supports 256 contexts
      NUM_OF_AFU_CRS        => x"0001",                  -- x'00' 32:47 SNAP provides one config record
      REG_PROG_MODEL        => x"0004",                  -- x'00' 48:63 SNAP requires directed mode programming model
      AFU_CR_LEN            =>   x"00_0000_0000_0001",   -- x'20'  8:63 SNAP provides one 256 bytes config record
@@ -492,6 +495,7 @@ PACKAGE donut_types IS
   TYPE ACTION_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
   TYPE ACTION_MASK_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
   TYPE CONTEXT_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  TYPE INTSRC_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(INT_BITS-2 DOWNTO 0);
   TYPE SEQNO_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(SEQNO_BITS-1 DOWNTO 0);
   TYPE JQIDX_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(JQIDX_BITS-1 DOWNTO 0);
 
@@ -702,7 +706,6 @@ PACKAGE donut_types IS
 --  mmj_c: mmio        -> job_manager : Control Interface
 --  mmj_d: mmio        -> job_manager : Data Interface
 --  mmx_d: mmio        -> AXI master  : Data Interface
---  mmx_c: mmio        -> AXI master  : Control Interface
 --
 --  nx_d : NVMe        -> AXI master  : Data Interface
 --
@@ -711,7 +714,6 @@ PACKAGE donut_types IS
 --  sj_c : AXI slave   -> job_manager : Control Interface
 --
 --  xmm_d: AXI master  -> mmio        : Data Interface
---  xmm_c: AXI master  -> mmio        : Control Interface
 --  xj_c : AXI master  -> job_mgr     : Control Interface
 --  xn_d : AXI master  -> NVMe        : Data Interface
 --
@@ -885,6 +887,8 @@ PACKAGE donut_types IS
       sat                       : ACTION_TYPE_ARRAY(NUM_OF_ACTIONS-1 DOWNTO 0);
       current_seqno             : std_ulogic_vector(CTX_SEQNO_CURRENT_L DOWNTO CTX_SEQNO_CURRENT_R);
       current_jqidx             : std_ulogic_vector(CTX_SEQNO_JQIDX_L DOWNTO CTX_SEQNO_JQIDX_R);
+      assign_int_enable         : std_ulogic;
+      cpl_int_enable            : std_ulogic;
       job_queue_mode            : std_ulogic;
     END RECORD;
 

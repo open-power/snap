@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 --
--- Copyright 2016 International Business Machines
+-- Copyright 2016,2017 International Business Machines
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -553,8 +553,8 @@ BEGIN
                   mmio_read_data_q0                                     <= (OTHERS => '0');
                   mmio_read_data_q0(SNAP_CTX_MASTER_BIT)                <= mmio_read_master_access_q;
                   IF mmio_read_master_access_q = '0' THEN
-                    mmio_read_data_q0(SNAP_CTX_ID_L DOWNTO SNAP_CTX_ID_R) <= context_config_mmio_addr;
-                    mmio_read_datapar_q0                                  <= parity_gen_odd(context_config_mmio_addr) XOR mmio_read_master_access_q;
+                    mmio_read_data_q0(SNAP_CTX_ID_R + CONTEXT_BITS -1 DOWNTO SNAP_CTX_ID_R) <= context_config_mmio_addr;
+                    mmio_read_datapar_q0                                                    <= parity_gen_odd(context_config_mmio_addr) XOR mmio_read_master_access_q;
                   ELSE
                     mmio_read_datapar_q0 <= '0';
                   END IF;
@@ -1144,7 +1144,9 @@ BEGIN
 
     mmj_d_o.current_seqno      <= context_seqno_hw_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R);
     mmj_d_o.current_jqidx      <= context_seqno_hw_dout(CTX_SEQNO_JQIDX_INT_L DOWNTO CTX_SEQNO_JQIDX_INT_R);
-    mmj_d_o.job_queue_mode     <= NOT context_config_mmio_dout(CTX_CFG_DIRECT_MODE_INT);
+    mmj_d_o.assign_int_enable  <= context_config_hw_dout(CTX_CFG_ASGNINT_ENA_INT);
+    mmj_d_o.cpl_int_enable     <= context_config_hw_dout(CTX_CFG_CPLINT_ENA_INT);
+    mmj_d_o.job_queue_mode     <= NOT context_config_hw_dout(CTX_CFG_DIRECT_MODE_INT);
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -1154,7 +1156,7 @@ BEGIN
   --
   host_interface : PROCESS (ha_pclock)
   VARIABLE
-    context_id_v : std_ulogic_vector(PSL_HOST_CTX_ID_L DOWNTO PSL_HOST_CTX_ID_R);
+    context_id_v : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
   BEGIN
     IF (rising_edge(ha_pclock)) THEN
       IF afu_reset = '1' THEN
@@ -1266,7 +1268,7 @@ BEGIN
         --
         -- Context IDs and Context register addresses
         --
-        context_id_v                 := ha_mm_i.ad(PSL_HOST_CTX_ID_L DOWNTO PSL_HOST_CTX_ID_R);
+        context_id_v                 := ha_mm_i.ad(PSL_HOST_CTX_ID_R + CONTEXT_BITS - 1 DOWNTO PSL_HOST_CTX_ID_R);
         context_config_mmio_addr     <= context_config_mmio_addr;
         context_seqno_mmio_addr      <= context_seqno_mmio_addr;
         context_status_mmio_addr     <= context_status_mmio_addr;
