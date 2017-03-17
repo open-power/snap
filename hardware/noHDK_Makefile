@@ -172,24 +172,33 @@ software:
 
 xsim:
 	@echo -e "\t[BUILD xsim........] start `date`"
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/sim/xsim top.sh >>compile_$(SIMULATOR).log 2>&1
-	@cd $(DONUT_HARDWARE_ROOT)/sim/xsim && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so && ./top.sh
+	@if [ ! -d "$(DONUT_HARDWARE_ROOT)/sim/xsim" ];then \
+		time vivado $(MSG_LEVEL) -mode batch -source setup/export_xsim.tcl -notrace -log compile_$(SIMULATOR).log; \
+		$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/xsim top.sh >>compile_$(SIMULATOR).log 2>&1; \
+		cd $(DONUT_HARDWARE_ROOT)/sim/xsim && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
+	fi
+	cd $(DONUT_HARDWARE_ROOT)/sim/xsim && ./top.sh >>../../compile_$(SIMULATOR).log 2>&1
 
 irun:
 	@echo -e "\t[BUILD irun........] start `date`"
-	@if [ -f $(DONUT_HARDWARE_ROOT)/sim/ies/top.sh ];then rm -rf $(DONUT_HARDWARE_ROOT)/sim/ies;fi
-	@time vivado $(MSG_LEVEL) -mode batch -source setup/export_irun.tcl -notrace -log compile_$(SIMULATOR).log
-	$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/ies top.sh >>compile_$(SIMULATOR).log 2>&1
-	cd $(DONUT_HARDWARE_ROOT)/sim/ies; ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; ./top.sh
+	@if [ ! -d "$(DONUT_HARDWARE_ROOT)/sim/ies" ];then \
+		time vivado $(MSG_LEVEL) -mode batch -source setup/export_irun.tcl -notrace -log compile_$(SIMULATOR).log; \
+		$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/ies top.sh >>compile_$(SIMULATOR).log 2>&1; \
+		cd $(DONUT_HARDWARE_ROOT)/sim/ies && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
+	fi
+	cd $(DONUT_HARDWARE_ROOT)/sim/ies && ./top.sh
+#	cd $(DONUT_HARDWARE_ROOT)/sim/ies && ./top.sh >>../../compile_$(SIMULATOR).log 2>&1
 
 questa:
 	@echo -e "\t[BUILD questa......] start `date`"
-	@if [ -f $(DONUT_HARDWARE_ROOT)/sim/questa/top.sh ];then rm -rf $(DONUT_HARDWARE_ROOT)/sim/questa;fi
-	@time vivado $(MSG_LEVEL) -mode batch -source setup/export_questa.tcl -notrace -log compile_$(SIMULATOR).log
-	$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/questa top.sh >>compile_$(SIMULATOR).log 2>&1
-	cd $(DONUT_HARDWARE_ROOT)/sim/questa && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so && ./top.sh >>compile_$(SIMULATOR).log 2>&1
+	@if [ ! -d "$(DONUT_HARDWARE_ROOT)/sim/questa" ];then \
+		time vivado $(MSG_LEVEL) -mode batch -source setup/export_questa.tcl -notrace -log compile_$(SIMULATOR).log; \
+		$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/questa top.sh >>compile_$(SIMULATOR).log 2>&1; \
+		cd $(DONUT_HARDWARE_ROOT)/sim/questa && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
+	fi
+	cd $(DONUT_HARDWARE_ROOT)/sim/questa && ./top.sh >>../../compile_$(SIMULATOR).log 2>&1
 
-clean:
+clean: check_donut_settings
 	@echo -e "\t[CLEAN.............] build environment";
 	@rm -r -f  $(BUILD_DIR)
 	@rm    -f  build
