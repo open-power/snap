@@ -16,7 +16,7 @@
 #
 #-----------------------------------------------------------
 
-set xilinx_vivado [version -short]
+set xilinx_version [version -short]
 set root_dir      $::env(DONUT_HARDWARE_ROOT)
 set msg_level     $::env(MSG_LEVEL)
 
