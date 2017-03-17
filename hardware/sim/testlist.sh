@@ -22,14 +22,22 @@
     t="$DONUT_ROOT/software/tools/dnut_peek 0x10        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
     t="$DONUT_ROOT/software/tools/dnut_peek 0x18        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
                                                                done=${r:13:1};numact=${r:14:1};(( numact += 1 ));echo "done=$done num_actions=$numact"
+    t="$DONUT_ROOT/software/tools/dnut_peek 0x20        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Lockreg 0x1=locked"
     t="$DONUT_ROOT/software/tools/dnut_peek 0x80        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # freerunning timer"
-    t="$DONUT_ROOT/software/tools/dnut_peek 0x88        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # timeout reg"
+    t="$DONUT_ROOT/software/tools/dnut_peek 0x88        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Job timeout reg"
     t="$DONUT_ROOT/software/tools/dnut_peek 0x90        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action active counter"
     t="$DONUT_ROOT/software/tools/dnut_peek 0x98        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # job execution counter"
     t="$DONUT_ROOT/software/tools/dnut_peek 0xA0        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # job IDreg 8=master"
+#   t="$DONUT_ROOT/software/tools/dnut_peek 0xE000      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Jobmgr FIR"
+#   t="$DONUT_ROOT/software/tools/dnut_peek 0xE008      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # MMIO   FIR"
+#   t="$DONUT_ROOT/software/tools/dnut_peek 0xE010      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # DMA    FIR"
+#   t="$DONUT_ROOT/software/tools/dnut_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Jobmgr ErrInj"
+#   t="$DONUT_ROOT/software/tools/dnut_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # MMIO   ErrInj"
+#   t="$DONUT_ROOT/software/tools/dnut_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # DMA    ErrInj"
     if (( numact > 0 ));then
       t="$DONUT_ROOT/software/tools/dnut_peek 0x100       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 type 0.0.0.shrt.4B_long"
                                                                t0s=${r:7:1};t0l=${r:8:8};if [[ $t0l == "00000001" ]];then a0="memcopy";else a0="unknown";fi; echo "action0 type0s=$t0s type0l=$t0l $a0"
+      t="$DONUT_ROOT/software/tools/dnut_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x10000 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x10008 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # build date"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x10010 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg"
@@ -38,6 +46,7 @@
     if (( numact > 1 ));then
       t="$DONUT_ROOT/software/tools/dnut_peek 0x108       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 type 0.0.0.shrt.4B_long"
                                                                t1s=${r:7:1};t1l=${r:8:8};if [[ $t1l == "00000001" ]];then a1="memcopy";else a1="unknown";fi; echo "action1 type0s=$t0s type0l=$t0l $a1"
+      t="$DONUT_ROOT/software/tools/dnut_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x11000 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x11008 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # build date"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x11010 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg"
@@ -45,7 +54,7 @@
     fi
 
     action=$(echo $ACTION_ROOT|sed -e "s/action_examples\// /g"|awk '{print $2}')               ;echo -e "$del\nENV_action=$action"
-    if [[ $t0l == "00000001" ]];then echo "testing memcopy"
+    if [[ $t0l == "10140000" ]];then echo "testing memcopy"
 #   if [[ $action == *"memcopy"* ]];then echo "testing memcopy"
 #     t="$DONUT_ROOT/software/tools/stage1                        -v  "                         ;echo -e "$del\n$t $l";date;((n+=1));time $t;echo "RC=$?" #  4..timeout endless
 #     t="$DONUT_ROOT/software/tools/stage1                 -t10   -v  "                         ;echo -e "$del\n$t $l";date;((n+=1));time $t;echo "RC=$?" #e invalid option -t
@@ -64,41 +73,41 @@
 #     t="$DONUT_ROOT/software/tools/stage2 -a5             -t10       "                         ;echo -e "$del\n$t $l";date;((n+=1));time $t;echo "RC=$?" #  1..3
 #     t="$DONUT_ROOT/software/tools/stage2 -a6                    -vvv"                         ;echo -e "$del\n$t $l";date;((n+=1));time $t;echo "RC=$?" #e memcmp error
 #     t="$DONUT_ROOT/software/tools/stage2 -a6 -z1         -t100      "                         ;echo -e "$del\n$t $l";date;((n+=1));time $t;echo "RC=$?" #  6..10
-      for num4k in 0 1; do
-      for num64 in 1 2; do
-      for align in 4096 1024 256 64; do
-        t="$DONUT_ROOT/software/tools/stage2 -a2 -A${align} -S${num4k} -B${num64} -t200"        ;echo -e "$del\n$t $l";date;((n+=1));time $t;echo "RC=$?" #
-      done
-      done
-      done
-
-      for num64 in 1 5 63 64;do         # 1..64
-      for align in 4096 1024 256 64; do # must be mult of 64
-      for num4k in 0 1 3 7; do          # 1=6sec, 7=20sec
-        t="$DONUT_ROOT/software/tools/stage2 -a6 -A${align} -S${num4k} -B${num64} -t200"        ;echo -e "$del\n$t $l";date;((n+=1));time $t;echo "RC=$?" #
-      done
-      done
-      done
-
-#     #### check DDR3 memory in KU3
-#     t="$DONUT_ROOT/software/tools/stage2_ddr -h"                                              ;echo -e "$del\n$t $l";                   $t;echo "RC=$?" #
-#     for strt in 0x1000 0x2000;do      # start adr
-#     for iter in 1 2 3;do              # number of blocks
-#     for bsize in 64 0x1000; do        # block size
-#       let end=${strt}+${iter}*${bsize}
-#       t="$DONUT_ROOT/software/tools/stage2_ddr -s${strt} -e${end} -b${bsize} -i${iter} -t200" ;echo -e "$del\n$t $l";date;((n+=1));time $t;echo "RC=$?" #
+#     for num4k in 0 1; do
+#     for num64 in 1 2; do
+#     for align in 4096 1024 256 64; do
+#       t="$DONUT_ROOT/software/tools/stage2 -a2 -A${align} -S${num4k} -B${num64} -t200"        ;echo -e "$del\n$t $l";date;((n+=1));time $t;echo "RC=$?" #
 #     done
 #     done
 #     done
 #
-#     #### use memset in host or in fpga memory
-#     t="$DONUT_ROOT/software/tools/stage2_set -h"                                              ;echo -e "$del\n$t $l";                   $t;echo "RC=$?" #
-#     for beg in 0 1 11 63 64;do         # start adr
-#     for size in 1 7 4097; do           # block size to copy
-#       t="$DONUT_ROOT/software/tools/stage2_set -H -b${beg} -s${size} -p${size} -t200"         ;echo -e "$del\n$t $l";date;((n+=1));time $t;echo "RC=$?" #
-#       t="$DONUT_ROOT/software/tools/stage2_set -F -b${beg} -s${size} -p${size} -t200"         ;echo -e "$del\n$t $l";date;((n+=1));time $t;echo "RC=$?" #
+#     for num64 in 1 5 63 64;do         # 1..64
+#     for align in 4096 1024 256 64; do # must be mult of 64
+#     for num4k in 0 1 3 7; do          # 1=6sec, 7=20sec
+#       t="$DONUT_ROOT/software/tools/stage2 -a6 -A${align} -S${num4k} -B${num64} -t200"        ;echo -e "$del\n$t $l";date;((n+=1));time $t;echo "RC=$?" #
 #     done
 #     done
+#     done
+
+      #### check DDR3 memory in KU3
+      t="$DONUT_ROOT/software/tools/stage2_ddr -h"                                              ;echo -e "$del\n$t $l";                   $t;echo "RC=$?" #
+      for strt in 0x1000 0x2000;do      # start adr
+      for iter in 1 2 3;do              # number of blocks
+      for bsize in 64 0x1000; do        # block size
+        let end=${strt}+${iter}*${bsize}
+        t="$DONUT_ROOT/software/tools/stage2_ddr -s${strt} -e${end} -b${bsize} -i${iter} -t200" ;echo -e "$del\n$t $l";date;((n+=1));time $t;echo "RC=$?" #
+      done
+      done
+      done
+
+      #### use memset in host or in fpga memory
+      t="$DONUT_ROOT/software/tools/stage2_set -h"                                              ;echo -e "$del\n$t $l";                   $t;echo "RC=$?" #
+      for beg in 0 1 11 63 64;do         # start adr
+      for size in 1 7 4097; do           # block size to copy
+        t="$DONUT_ROOT/software/tools/stage2_set -H -b${beg} -s${size} -p${size} -t200"         ;echo -e "$del\n$t $l";date;((n+=1));time $t;echo "RC=$?" #
+        t="$DONUT_ROOT/software/tools/stage2_set -F -b${beg} -s${size} -p${size} -t200"         ;echo -e "$del\n$t $l";date;((n+=1));time $t;echo "RC=$?" #
+      done
+      done
     fi # memcopy
 
     if [[ $action == *"hls_mem"* || $action == *"hls_search"* ]];then echo "testing demo_memcopy"
