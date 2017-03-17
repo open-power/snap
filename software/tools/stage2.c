@@ -568,7 +568,7 @@ int main(int argc, char *argv[])
 		for(delay = start_delay; delay <= end_delay; delay += step_delay) {
 			if (false == use_master) {
 				while (1) {
-					rc = dnut_attach_action(dn, ACTION_TYPE_EXAMPLE, 0);
+					rc = dnut_attach_action(dn, ACTION_TYPE_EXAMPLE, 0x5);
 					if (0 == rc) break;
 					if (EBUSY == rc)
 						usleep(100);

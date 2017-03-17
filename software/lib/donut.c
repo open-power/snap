@@ -88,6 +88,7 @@ struct dnut_data {
 	struct dnut_action *action; /* software simulation mode */
 	size_t errinfo_size;
 	void *errinfo;		/* Err info Buffer */
+	struct cxl_event event;
 };
 
 /* To be used for software simulation, use funcs provided by action */
@@ -160,14 +161,13 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 	if (0 == rc) {
 		dn->errinfo = malloc(dn->errinfo_size);
                 if (NULL == dn->errinfo) {
-			errno = ENOMEM;
 			perror("malloc");
 			goto __dnut_alloc_err;
                 }
         } else
 		dnut_trace("  %s: WARN Can not detect Err buffer\n", __func__);
 
-	
+
 	dnut_trace("  %s: errinfo_size: %d VendorID: %x DeviceID: %x\n", __func__,
 		(int)dn->errinfo_size, (int)vendor_id, (int)device_id);
 	dn->afu_h = afu_h;
@@ -262,16 +262,58 @@ static void hw_dnut_card_free(void *_card)
 	}
 }
 
+static int __wait_for_irq(struct dnut_data *card)
+{
+	fd_set  set;
+	struct  timeval timeout;
+	int rc = 0;
+
+	FD_ZERO(&set);
+	FD_SET(card->afu_fd, &set);
+	timeout.tv_sec = 5;
+	timeout.tv_usec = 100 * 1000;
+
+	dnut_trace("  %s: Enter fd: %d\n", __func__, card->afu_fd);
+	rc = select(card->afu_fd +1, &set, NULL, NULL, &timeout);
+	if (0 == rc)
+		rc = EBUSY;
+	else if ((rc == -1) && (errno == EINTR))
+		rc = EINTR;
+	else {
+		rc = cxl_read_event(card->afu_h, &card->event);
+		//cxl_fprint_event(stdout, card->event);
+		switch (card->event.header.type) {
+		case CXL_EVENT_AFU_INTERRUPT:
+			dnut_trace("  %s: Got irq: %d\n", __func__, card->event.irq.irq);
+			rc = 0;
+			break;
+		case CXL_EVENT_DATA_STORAGE:
+		case CXL_EVENT_AFU_ERROR:
+		//case CXL_EVENT_READ_FAIL:
+		default:
+			dnut_trace("  %s: AFU_ERROR %d flags: 0x%x error: 0x%016llx\n",
+				__func__, card->event.header.type,
+				card->event.afu_error.flags,
+				(long long)card->event.afu_error.error);
+			rc = EINTR;
+			break;
+		}
+	}
+	dnut_trace("  %s: Exit fd: %d rc: %d\n", __func__,
+		card->afu_fd, rc);
+	return rc;
+}
+
 static int hw_attach_action(void *_card, uint32_t action, int flags)
 {
 	struct dnut_data *card = (struct dnut_data *)_card;
-	int i;
+	int i, rc = 0;
 	uint64_t data;
 	uint32_t sat = INVALID_SAT;	/* Invalid short Action type */
 	int maid;			/* Max Acition Id's */
 
-	dnut_trace("%s Enter for Action: 0x%x Card Action: 0x%x\n", __func__,
-		action, card->action_type);
+	dnut_trace("%s Enter for Action: 0x%x Card Action: 0x%x Flags: 0x%x\n", __func__,
+		action, card->action_type, flags);
 	if (action != card->action_type) {
 		/* Need to configure if not set */
 		hw_dnut_mmio_read64(card, SNAP_S_SSR, &data);
@@ -292,8 +334,7 @@ static int hw_attach_action(void *_card, uint32_t action, int flags)
 			dnut_trace("%s Error Can not find Action\n",  __func__);
 			return ENODEV;
 		}
-		if (0 == flags) card->mode = 1;	/* Direct Access */
-		else card-> mode = 0;	/* Job mode */
+		card->mode = flags & 0x07;/* Set bit 0,1,2 */
 		card->sat = sat;	/* Save short Action Type */
 		card->seq = 0xf000;
 		card->action_type = action;
@@ -310,14 +351,19 @@ static int hw_attach_action(void *_card, uint32_t action, int flags)
 
 	hw_dnut_mmio_read64(card, SNAP_S_CSR, &data);
 	if (0xC0 != (data & 0xC0)) {
-		dnut_trace("%s Exit Busy\n", __func__);
-		card->action_attach_busy = true;
-		return EBUSY;
+		if (flags & 0x06) {
+			rc = __wait_for_irq(card);
+		} else	{
+			card->action_attach_busy = true;
+			rc = EBUSY;
+		}
 	}
-	card->seq++;
-	card->action_attach_busy = false;
+	if (0 == rc) {
+		card->seq++;
+		card->action_attach_busy = false;
+	}
 	dnut_trace("%s Exit OK\n", __func__);
-	return 0;
+	return rc;
 }
 
 static int hw_detach_action(void *_card, uint32_t action)
