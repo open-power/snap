@@ -469,10 +469,11 @@ PACKAGE donut_types IS
   ------------------------------------------------------------------------------
   --
   -- CONSTANT
-  CONSTANT ACTION_TYPE_BITS                : integer :=  4;      -- number of bits required to represent the action types
-  CONSTANT NUM_OF_ACTION_TYPES             : integer := 16;      -- maximum number of supported action types
-  CONSTANT ACTION_BITS                     : integer :=  4;      -- number of bits required to represent the action IDs
-  CONSTANT NUM_OF_ACTIONS                  : integer :=  1;      -- maximum number of supported actions
+  CONSTANT ACTION_TYPE_BITS                : integer                        :=  4;      -- number of bits required to represent the action types
+  CONSTANT NUM_OF_ACTION_TYPES             : integer                        := 16;      -- maximum number of supported action types
+  CONSTANT ACTION_BITS                     : integer                        :=  4;      -- number of bits required to represent the action IDs
+  CONSTANT NUM_OF_ACTIONS                  : integer                        :=  1;      -- maximum number of supported actions
+  CONSTANT ACTION_CONTEXT_REG              : std_ulogic_vector(11 DOWNTO 0) := x"020";
 
 
 --------------------------------------------------------------------------------
@@ -800,9 +801,9 @@ PACKAGE donut_types IS
     -- jmm_c
     --
     TYPE JMM_C_T IS RECORD
-      context_id      : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
       seqno_we        : std_ulogic;
       status_we       : std_ulogic;
+      assign_action   : std_ulogic;
     END RECORD;
 
     --
@@ -814,6 +815,7 @@ PACKAGE donut_types IS
       action_id          : std_ulogic_vector(CTX_STAT_ACTION_ID_L DOWNTO CTX_STAT_ACTION_ID_R);
       action_active      : std_ulogic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
       attached_to_action : std_ulogic;
+      context_id         : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
       context_active     : std_ulogic;
     END RECORD;
 
@@ -876,6 +878,7 @@ PACKAGE donut_types IS
       exploration_done          : std_ulogic;
       max_sat                   : integer RANGE 0 TO NUM_OF_ACTION_TYPES-1;
       last_seqno                : std_ulogic;
+      action_ack                : std_ulogic;
     END RECORD;
 
     --

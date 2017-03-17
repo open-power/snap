@@ -83,16 +83,16 @@ ARCHITECTURE job_manager OF job_manager IS
   SIGNAL mmio_ctx_q                    : CONTEXT_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL assign_grant_mmio_q           : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL assign_action_id_q            : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
-  SIGNAL assign_attach_action_q        : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL assign_context_active_q       : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL assign_status_we_q            : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL complete_grant_mmio_q         : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL complete_next_seqno_q         : SEQNO_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL complete_next_jqidx_q         : JQIDX_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL complete_seqno_we_q           : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
-  SIGNAL complete_detach_action_q      : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL complete_context_active_q     : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL complete_status_we_q          : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL assign_action_q               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL detach_action_q               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL check_for_idle_q              : std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
   SIGNAL enable_check_for_idle_q       : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL action_active_q               : std_ulogic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
@@ -294,7 +294,7 @@ BEGIN
           action_fifo_re(sat_id)          <= '0';
           action_attach_q(sat_id)         <= (OTHERS => '0');
           assign_action_id_q(sat_id)      <= (OTHERS => '0');
-          assign_attach_action_q(sat_id)  <= '0';
+          assign_action_q(sat_id)         <= '0';
           assign_context_active_q(sat_id) <= '0';
           assign_status_we_q(sat_id)      <= '0';
           assign_require_mmio_q           <= '0';
@@ -308,7 +308,7 @@ BEGIN
           action_fifo_re(sat_id)          <= '0';
           action_attach_q(sat_id)         <= (OTHERS => '0');
           assign_action_id_q(sat_id)      <= assign_action_id_q(sat_id);
-          assign_attach_action_q(sat_id)  <= '0';
+          assign_action_q(sat_id)         <= '0';
           assign_context_active_q(sat_id) <= '0';
           assign_status_we_q(sat_id)      <= '0';
           assign_require_mmio_q           <= assign_require_mmio_q;
@@ -352,17 +352,19 @@ BEGIN
               current_contexts_q(to_integer(unsigned(assign_action_id_q(sat_id)))) <= ctx_fifo_dout(sat_id);
               assign_action_id_q(sat_id)                                           <= action_fifo_dout(sat_id);
               IF assign_grant_mmio_q(sat_id) = '1' THEN
-                assign_attach_action_q(sat_id)  <= '1';
-                assign_context_active_q(sat_id) <= '1';
-                assign_status_we_q(sat_id)      <= '1';
+                assign_context_active_q(sat_id)                                         <= '1';
+                assign_status_we_q(sat_id)                                              <= '1';
                 action_attach_q(sat_id)(to_integer(unsigned(action_fifo_dout(sat_id)))) <= '1';
-                assign_action_fsm_q             <= ST_RETURN_MMIO_LOCK;
+                assign_action_q(sat_id)                                                 <= '1';
+                assign_action_fsm_q                                                     <= ST_RETURN_MMIO_LOCK;
               END IF;
 
             WHEN ST_RETURN_MMIO_LOCK =>
               enable_check_for_idle_q(sat_id)(to_integer(unsigned(assign_action_id_q(sat_id)))) <= mmj_d_i.job_queue_mode OR mmj_d_i.cpl_int_enable;
-              assign_require_mmio_q                                                             <= '0';     -- TODO: switch to a remove state or need ack from mmio?
-              assign_action_fsm_q                                                               <= ST_WAIT_FREE_ACTION;
+              IF mmj_c_i.action_ack = '1' THEN
+                assign_require_mmio_q                                                             <= '0';
+                assign_action_fsm_q                                                               <= ST_WAIT_FREE_ACTION;
+              END IF;
 
             WHEN OTHERS => NULL;
           END CASE;                               -- assign_action_fsm_q
@@ -393,7 +395,7 @@ BEGIN
           complete_next_seqno_q(sat_id)      <= (OTHERS => '0');
           complete_next_jqidx_q(sat_id)      <= (OTHERS => '0');
           complete_seqno_we_q(sat_id)        <= '0';
-          complete_detach_action_q(sat_id)   <= '0';
+          detach_action_q(sat_id)            <= '0';
           complete_context_active_q(sat_id)  <= '0';
           complete_status_we_q(sat_id)       <= '0';
           exploration_done_q                 <= '0';
@@ -441,7 +443,7 @@ BEGIN
           complete_next_seqno_q(sat_id)      <= complete_next_seqno_q(sat_id);
           complete_next_jqidx_q(sat_id)      <= complete_next_jqidx_q(sat_id);
           complete_seqno_we_q(sat_id)        <= '0';
-          complete_detach_action_q(sat_id)   <= complete_detach_action_q(sat_id);
+          detach_action_q(sat_id)            <= detach_action_q(sat_id);
           complete_context_active_q(sat_id)  <= '0';
           complete_status_we_q(sat_id)       <= '0';
           complete_action_fsm_q              <= complete_action_fsm_q;
@@ -470,12 +472,12 @@ BEGIN
             WHEN ST_WAIT_MMIO_GRANT =>
               complete_ctx_q <= current_contexts_q(to_integer(unsigned(action_completed_fifo_dout(sat_id))));
               IF complete_grant_mmio_q(sat_id) = '1' THEN
-                action_fifo_we(sat_id)  <= '1';
-                complete_next_seqno_q(sat_id)       <= mmj_d_i.current_seqno + 1;
-                complete_next_jqidx_q(sat_id)       <= mmj_d_i.current_jqidx + 1;
-                complete_seqno_we_q(sat_id)         <= '1';
-                complete_detach_action_q(sat_id)    <= '1';
-                complete_status_we_q(sat_id)        <= '1';
+                action_fifo_we(sat_id)        <= '1';
+                complete_next_seqno_q(sat_id) <= mmj_d_i.current_seqno + 1;
+                complete_next_jqidx_q(sat_id) <= mmj_d_i.current_jqidx + 1;
+                complete_seqno_we_q(sat_id)   <= '1';
+                detach_action_q(sat_id)       <= '1';
+                complete_status_we_q(sat_id)  <= '1';
                 action_detach_q(sat_id)(to_integer(unsigned(action_completed_fifo_dout(sat_id)))) <= '1';
                 IF mmj_c_i.last_seqno = '0' THEN
                   complete_context_active_q(sat_id) <= '1';
@@ -709,14 +711,15 @@ BEGIN
   ------------------------------------------------------------------------------
 
   -- to MMIO
-  jmm_c_o.context_id         <= mmio_ctx_q(grant_mmio_interface_q);
   jmm_c_o.seqno_we           <= complete_seqno_we_q(grant_mmio_interface_q);
   jmm_c_o.status_we          <= assign_status_we_q(grant_mmio_interface_q) OR complete_status_we_q(grant_mmio_interface_q);
+  jmm_c_o.assign_action      <= assign_action_q(grant_mmio_interface_q);
   jmm_d_o.seqno              <= complete_next_seqno_q(grant_mmio_interface_q);
   jmm_d_o.jqidx              <= complete_next_jqidx_q(grant_mmio_interface_q);
   jmm_d_o.action_id          <= assign_action_id_q(grant_mmio_interface_q) WHEN (assign_grant_mmio_q(grant_mmio_interface_q) = '1') ELSE action_completed_fifo_dout(grant_mmio_interface_q);
   jmm_d_o.action_active      <= action_active_q;
-  jmm_d_o.attached_to_action <= assign_attach_action_q(grant_mmio_interface_q) WHEN (assign_grant_mmio_q(grant_mmio_interface_q) = '1') ELSE NOT complete_detach_action_q(grant_mmio_interface_q);
+  jmm_d_o.attached_to_action <= assign_action_q(grant_mmio_interface_q) WHEN (assign_grant_mmio_q(grant_mmio_interface_q) = '1') ELSE NOT detach_action_q(grant_mmio_interface_q);
+  jmm_d_o.context_id         <= mmio_ctx_q(grant_mmio_interface_q);
   jmm_d_o.context_active     <= assign_context_active_q(grant_mmio_interface_q) WHEN (assign_grant_mmio_q(grant_mmio_interface_q) = '1') ELSE complete_context_active_q(grant_mmio_interface_q);
 
   -- to AXI MASTER

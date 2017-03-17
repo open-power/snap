@@ -92,6 +92,16 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL ah_mm_q                              : AH_MM_T;
   SIGNAL ah_mm_read_ack_q                     : std_ulogic;
   SIGNAL ah_mm_write_ack_q                    : std_ulogic;
+  SIGNAL mmx_d_q                              : MMX_D_T;
+  SIGNAL mmio_action_addr_q                   : std_ulogic_vector(31 DOWNTO 0);
+  SIGNAL mmio_action_data_q                   : std_ulogic_vector(31 DOWNTO 0);
+  SIGNAL mmio_action_write_q                  : std_ulogic;
+  SIGNAL hw_assign_action_q                   : std_ulogic;
+  SIGNAL hw_action_id_q                       : std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
+  SIGNAL hw_action_ctx_q                      : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL mmio_action_read_q                   : std_ulogic;
+  SIGNAL xmm_ack_outstanding_q                : boolean;
+  SIGNAL xmm_mmio_ack_q                       : std_ulogic;
   SIGNAL xmm_ack_q                            : std_ulogic;
   SIGNAL mmio_action_access_q                 : std_ulogic;
   SIGNAL mmio_action_id_valid_q               : std_ulogic;
@@ -781,7 +791,7 @@ BEGIN
         context_fifo_we_q                <= (OTHERS => '0');
         context_stop_q                   <= (OTHERS => '0');
 
-        IF (context_status_mmio_addr = jmm_c_i.context_id) AND (jmm_c_i.status_we = '1') THEN
+        IF (context_status_mmio_addr = jmm_d_i.context_id) AND (jmm_c_i.status_we = '1') THEN
           context_stop_ack_q0 <= context_stop_ack_q0 AND jmm_d_i.context_active;
         ELSE
           context_stop_ack_q0 <= context_stop_ack_q0;
@@ -934,10 +944,10 @@ BEGIN
                       ELSE
                         context_status_mmio_din(CTX_STAT_SAT_VALID_INT) <= '0';
                       END IF;
-                      IF (context_seqno_mmio_addr = jmm_c_i.context_id) THEN
+                      IF (context_seqno_mmio_addr = jmm_d_i.context_id) THEN
                         context_seqno_conflict_q <= '1';
                       END IF;
-                      IF (context_status_mmio_addr = jmm_c_i.context_id) THEN
+                      IF (context_status_mmio_addr = jmm_d_i.context_id) THEN
                         context_status_conflict_q <= '1';
                       END IF;
                     ELSE
@@ -957,10 +967,10 @@ BEGIN
                         IF (context_status_mmio_dout(CTX_STAT_CTX_ACTIVE_INT) = '0') AND (ha_mm_w_q.data(CTX_CMD_ARG_L DOWNTO CTX_CMD_ARG_R) /= context_seqno_mmio_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R) - 1) THEN
                           context_fifo_we_q(to_integer(unsigned(context_config_mmio_dout(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R)))) <= '1';
                         END IF;
-                        IF (context_seqno_mmio_addr = jmm_c_i.context_id) THEN
+                        IF (context_seqno_mmio_addr = jmm_d_i.context_id) THEN
                           context_seqno_conflict_q <= '1';
                         END IF;
-                        IF (context_status_mmio_addr = jmm_c_i.context_id) THEN
+                        IF (context_status_mmio_addr = jmm_d_i.context_id) THEN
                           context_status_conflict_q <= '1';
                         END IF;
 
@@ -1005,7 +1015,7 @@ BEGIN
       IF afu_reset = '1' THEN
         jmm_c_q.seqno_we   <= '0';
         jmm_c_q.status_we  <= '0';
-        jmm_c_q.context_id <= (OTHERS => '0');
+        jmm_d_q.context_id <= (OTHERS => '0');
       ELSE
         jmm_c_q           <= jmm_c_q;
         jmm_c_q.seqno_we  <= jmm_c_q.seqno_we AND context_seqno_conflict_q;
@@ -1015,7 +1025,7 @@ BEGIN
           jmm_c_q <= jmm_c_i;
           jmm_d_q <= jmm_d_i;
         END IF;
-        jmm_c_q.context_id <= jmm_c_i.context_id;  -- context id is being used prior to we
+        jmm_d_q.context_id <= jmm_d_i.context_id;  -- context id is being used prior to we
       END IF;                                     -- afu_reset = '1'
     END IF;                                       -- rising_edge(ha_pclock)
   END PROCESS hw_w;
@@ -1055,7 +1065,7 @@ BEGIN
       -- AFU ERRORS
       mmc_e_q.error                  <= (OTHERS => '0');
 
-    END IF;
+    END IF;                                       -- rising_edge(ha_pclock)
   END PROCESS mmio_fir;
 
   --
@@ -1084,12 +1094,12 @@ BEGIN
     -- Hardware Register
     --
     context_seqno_hw_we    <= jmm_c_q.seqno_we AND NOT context_seqno_conflict_q;
-    context_seqno_hw_addr  <= jmm_c_q.context_id;
+    context_seqno_hw_addr  <= jmm_d_q.context_id;
     context_seqno_hw_din   <= jmm_d_q.seqno &
                               context_seqno_hw_dout(CTX_SEQNO_LAST_INT_L DOWNTO CTX_SEQNO_LAST_INT_R) &
                               jmm_d_q.jqidx;
     context_status_hw_we   <= jmm_c_q.status_we AND NOT context_status_conflict_q;
-    context_status_hw_addr <= jmm_c_q.context_id;
+    context_status_hw_addr <= jmm_d_q.context_id;
     context_status_hw_din  <= jmm_d_q.action_id &
                               context_status_hw_dout(CTX_STAT_SAT_VALID_INT) &
                               jmm_d_q.attached_to_action &
@@ -1111,18 +1121,7 @@ BEGIN
     --
     -- MMX
     --
-    mmx_d_o.addr(31 DOWNTO 18) <= (OTHERS => '0');
-    mmx_d_o.addr(17 DOWNTO 16) <= ha_mm_w_q.ad(15 DOWNTO 14) WHEN mmio_write_master_access_q = '1' ELSE "01";
-    mmx_d_o.addr(15 DOWNTO 12) <= ha_mm_w_q.ad(13 DOWNTO 10) WHEN mmio_write_master_access_q = '1' ELSE context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R);
-    mmx_d_o.addr(11 DOWNTO  2) <= ha_mm_w_q.ad(9 DOWNTO 0);
-    mmx_d_o.addr( 1 DOWNTO  0) <= (OTHERS => '0');
-    mmx_d_o.data               <= ha_mm_w_q.data(31 DOWNTO 0);
-    mmx_d_o.wr_strobe          <= mmio_action_access_q AND (ha_mm_w_q.valid AND NOT( ha_mm_r_q.rnw OR ha_mm_r_q.dw OR ha_mm_r_q.cfg)) AND
-                                  ((mmio_action_id_valid_q AND NOT ha_mm_w_q.ad(SLAVE_SPACE_BIT)) OR
-                                   (context_status_mmio_dout(CTX_STAT_ACTION_VALID_INT) AND ha_mm_r_q.ad(SLAVE_SPACE_BIT)));
-    mmx_d_o.rd_strobe          <= mmio_action_access_q AND (ha_mm_r_q.valid AND ha_mm_r_q.rnw AND NOT(ha_mm_r_q.dw OR ha_mm_r_q.cfg)) AND
-                                  ((mmio_action_id_valid_q AND NOT ha_mm_r_q.ad(SLAVE_SPACE_BIT)) OR
-                                   (context_status_mmio_dout(CTX_STAT_ACTION_VALID_INT) AND ha_mm_r_q.ad(SLAVE_SPACE_BIT)));
+    mmx_d_o <= mmx_d_q;
 
     --
     -- MMJ
@@ -1134,6 +1133,8 @@ BEGIN
     mmj_c_o.max_sat            <= to_integer(unsigned(snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_SAT_L DOWNTO SNAP_STAT_MAX_SAT_R)));
     mmj_c_o.last_seqno         <= '1' WHEN context_seqno_hw_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R) = context_seqno_hw_dout(CTX_SEQNO_LAST_INT_L DOWNTO CTX_SEQNO_LAST_INT_R)
                                       ELSE '0';
+
+    mmj_c_o.action_ack         <= xmm_d_i.ack AND NOT xmm_mmio_ack_q;
 
     mmj_d_o.context_id         <= context_status_mmio_addr;
     mmj_d_o.action_id          <= context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R);
@@ -1277,8 +1278,8 @@ BEGIN
           context_seqno_mmio_addr    <= context_id_v;
           context_status_mmio_addr   <= context_id_v;
         END IF;
-      END IF;
-    END IF;
+      END IF;                                     -- afu_reset = '1'
+    END IF;                                       -- rising_edge(ha_pclock)
   END PROCESS host_interface;
 
 
@@ -1292,12 +1293,99 @@ BEGIN
   BEGIN
     IF (rising_edge(ha_pclock)) THEN
       IF afu_reset = '1' THEN
-        xmm_ack_q <= '0';
+        mmx_d_q.addr          <= (OTHERS => '0');
+        mmx_d_q.data          <= (OTHERS => '0');
+        mmx_d_q.wr_strobe     <= '0';
+        mmx_d_q.rd_strobe     <= '0';
+        mmio_action_addr_q    <= (OTHERS => '0');
+        mmio_action_data_q    <= (OTHERS => '0');
+        mmio_action_write_q   <= '0';
+        mmio_action_read_q    <= '0';
+        hw_assign_action_q    <= '0';
+        hw_action_id_q        <= (OTHERS => '0');
+        hw_action_ctx_q       <= (OTHERS => '0');
+        xmm_ack_outstanding_q <= FALSE;
+        xmm_mmio_ack_q        <= '0';
+        xmm_ack_q             <= '0';
       ELSE
+        mmx_d_q.addr        <= mmx_d_q.addr;
+        mmx_d_q.data        <= mmx_d_q.data;
+        mmx_d_q.wr_strobe   <= '0';
+        mmx_d_q.rd_strobe   <= '0';
+        mmio_action_addr_q  <= mmio_action_addr_q;
+        mmio_action_data_q  <= mmio_action_data_q;
+        IF ha_mm_w_q.valid = '1' THEN
+          IF mmio_write_master_access_q = '1' THEN
+            mmio_action_addr_q(17 DOWNTO 12) <= ha_mm_w_q.ad(15 DOWNTO 10);
+          ELSE
+            mmio_action_addr_q(17 DOWNTO 12) <= "01" & context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R);
+          END IF;
+          mmio_action_addr_q(11 DOWNTO  2) <= ha_mm_w_q.ad(9 DOWNTO 0);
+          mmio_action_data_q               <= ha_mm_w_q.data(31 DOWNTO 0);
+        ELSIF ha_mm_r_q.valid = '1' THEN
+          IF mmio_read_master_access_q = '1' THEN
+            mmio_action_addr_q(17 DOWNTO 12) <= ha_mm_r_q.ad(15 DOWNTO 10);
+          ELSE
+            mmio_action_addr_q(17 DOWNTO 12) <= "01" & context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R);
+          END IF;
+          mmio_action_addr_q(11 DOWNTO  2) <= ha_mm_r_q.ad(9 DOWNTO 0);
+        END IF;
+
+        mmio_action_write_q <= mmio_action_write_q OR
+                               (mmio_action_access_q AND ha_mm_w_q.valid AND NOT( ha_mm_r_q.rnw OR ha_mm_r_q.dw OR ha_mm_r_q.cfg) AND
+                                 ((mmio_action_id_valid_q AND NOT ha_mm_w_q.ad(SLAVE_SPACE_BIT)) OR
+                                  (context_status_mmio_dout(CTX_STAT_ACTION_VALID_INT) AND ha_mm_r_q.ad(SLAVE_SPACE_BIT))));
+                               
+        mmio_action_read_q  <= mmio_action_read_q OR
+                               (mmio_action_access_q AND ha_mm_r_q.valid AND ha_mm_r_q.rnw AND NOT(ha_mm_r_q.dw OR ha_mm_r_q.cfg) AND
+                                 ((mmio_action_id_valid_q AND NOT ha_mm_r_q.ad(SLAVE_SPACE_BIT)) OR
+                                  (context_status_mmio_dout(CTX_STAT_ACTION_VALID_INT) AND ha_mm_r_q.ad(SLAVE_SPACE_BIT))));
+
+        hw_assign_action_q  <= hw_assign_action_q OR jmm_c_i.assign_action;
+        hw_action_id_q      <= hw_action_id_q;
+        hw_action_ctx_q     <= hw_action_ctx_q;
+        IF jmm_c_i.assign_action = '1' THEN
+          hw_action_id_q  <= jmm_d_i.action_id;
+          hw_action_ctx_q <= jmm_d_i.context_id;
+        END IF;
+
+        xmm_ack_outstanding_q <= xmm_ack_outstanding_q;
+        xmm_mmio_ack_q        <= xmm_mmio_ack_q;
+        xmm_ack_q             <= '0';      
+
+        IF NOT xmm_ack_outstanding_q THEN
+          IF hw_assign_action_q = '1' THEN
+            xmm_ack_outstanding_q                 <= TRUE;
+            mmx_d_q.addr(31 DOWNTO 18)            <= (OTHERS => '0');
+            mmx_d_q.addr(17 DOWNTO 16)            <= "01";
+            mmx_d_q.addr(15 DOWNTO 12)            <= hw_action_id_q;
+            mmx_d_q.addr(11 DOWNTO 0)             <= ACTION_CONTEXT_REG;
+            mmx_d_q.data(31 DOWNTO CONTEXT_BITS)  <= (OTHERS => '0');
+            mmx_d_q.data(CONTEXT_BITS-1 DOWNTO 0) <= hw_action_ctx_q;
+            mmx_d_q.wr_strobe                     <= '1';
+            hw_assign_action_q                    <= '0';
+            xmm_mmio_ack_q                        <= '0';
+          ELSIF (mmio_action_write_q OR mmio_action_read_q) = '1' THEN
+            xmm_ack_outstanding_q <= TRUE;
+            mmx_d_q.addr          <= mmio_action_addr_q;
+            mmx_d_q.data          <= mmio_action_data_q;
+            mmx_d_q.wr_strobe     <= mmio_action_write_q;
+            mmx_d_q.rd_strobe     <= mmio_action_read_q;
+            mmio_action_write_q   <= '0';
+            mmio_action_read_q    <= '0';
+            xmm_mmio_ack_q        <= '1';
+          END IF;
+
+        END IF;
+
         -- acknowledge from AXI master
-        xmm_ack_q <= xmm_d_i.ack;
-      END IF;
-    END IF;
+        IF xmm_d_i.ack = '1' THEN
+          xmm_ack_q             <= xmm_mmio_ack_q;
+          xmm_ack_outstanding_q <= FALSE;
+        END IF;
+
+      END IF;                                     -- afu_reset = '1'
+    END IF;                                       -- rising_edge(ha_pclock)
   END PROCESS axi_master_interface;
 
 END ARCHITECTURE;
