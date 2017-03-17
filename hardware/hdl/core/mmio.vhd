@@ -771,6 +771,8 @@ BEGIN
         context_config_mmio_din(CTX_CFG_FIRST_JQIDX_INT_L DOWNTO CTX_CFG_FIRST_JQIDX_INT_R)  <= ha_mm_w_q.data(CTX_CFG_FIRST_JQIDX_L DOWNTO CTX_CFG_FIRST_JQIDX_R);
         context_config_mmio_din(CTX_CFG_MAX_JQIDX_INT_L DOWNTO CTX_CFG_MAX_JQIDX_INT_R)      <= ha_mm_w_q.data(CTX_CFG_MAX_JQIDX_L DOWNTO CTX_CFG_MAX_JQIDX_R);
         context_config_mmio_din(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R)                  <= ha_mm_w_q.data(CTX_CFG_SAT_L DOWNTO CTX_CFG_SAT_R);
+        context_config_mmio_din(CTX_CFG_ASGNINT_ENA_INT)                                     <= ha_mm_w_q.data(CTX_CFG_ASGNINT_ENA);
+        context_config_mmio_din(CTX_CFG_CPLINT_ENA_INT)                                      <= ha_mm_w_q.data(CTX_CFG_CPLINT_ENA);
         context_config_mmio_din(CTX_CFG_DIRECT_MODE_INT)                                     <= ha_mm_w_q.data(CTX_CFG_DIRECT_MODE);
 
         context_seqno_mmio_din                                                               <= context_seqno_mmio_dout;
@@ -1093,6 +1095,7 @@ BEGIN
     --
     -- Hardware Register
     --
+    context_config_hw_addr <= jmm_d_q.context_id;
     context_seqno_hw_we    <= jmm_c_q.seqno_we AND NOT context_seqno_conflict_q;
     context_seqno_hw_addr  <= jmm_d_q.context_id;
     context_seqno_hw_din   <= jmm_d_q.seqno &
