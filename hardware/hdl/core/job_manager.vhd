@@ -684,7 +684,7 @@ BEGIN
         CASE interrupts_fsm_q IS
           WHEN ST_IDLE =>
             IF int_fifo_empty = '0' THEN
-              int_fifo_re_q <= '0';
+              int_fifo_re_q <= '1';
               interrupts_fsm_q <= ST_REQUEST_INT;
             END IF;
 
