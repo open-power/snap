@@ -23,9 +23,11 @@
 #include <stdint.h>
 #include <errno.h>
 #include <string.h>
+
 #include <libdonut.h>
 #include <donut_internal.h>
 #include <action_checksum.h>
+#include <keccak.h>
 
 static int mmio_write32(void *_card, uint64_t offs, uint32_t data)
 {
@@ -196,22 +198,44 @@ static int action_main(struct dnut_action *action, void *job,
 	struct checksum_job *js = (struct checksum_job *)job;
 	void *src;
 
-	act_trace("%s(%p, %p, %d)\n", __func__, action, job, job_len);
+	action->retc = DNUT_RETC_FAILURE;
+	act_trace("%s(%p, %p, %d) [%d]\n", __func__, action, job, job_len,
+		  (int)js->chk_type);
 
-	/* checking parameters ... */
-	if (js->in.type != DNUT_TARGET_TYPE_HOST_DRAM) {
-		action->retc = DNUT_RETC_FAILURE;
+	switch (js->chk_type) {
+	case CHECKSUM_SPONGE: {
+		unsigned int threads;
+
+		act_trace("pe=%d nb_pe=%d\n", js->pe, js->nb_pe);
+
+		threads = js->nb_slices; /* misused for sw sim */
+		js->nb_slices = NB_SLICES;
+		js->nb_round = NB_ROUND;
+		js->timer_ticks = 0; /* FIXME */
+
+		if (js->nb_pe == 0)
+			return 0;
+
+		js->chk_out = sponge_main(js->pe, js->nb_pe, threads);
+		break;
+	}
+	case CHECKSUM_CRC32:
+		/* checking parameters ... */
+		if (js->in.type != DNUT_TARGET_TYPE_HOST_DRAM)
+			return 0;
+
+		src = (void *)js->in.addr;
+		if (src == NULL)
+			return 0;
+
+		/* calculate the results ... */
+		js->chk_out = do_crc(js->chk_in, src, js->in.size);
+		js->chk_out &= 0xffffffff; /* 32-bit only */
+		break;
+
+	default:
 		return 0;
 	}
-	src = (void *)js->in.addr;
-	if (src == NULL)  {
-		action->retc = DNUT_RETC_FAILURE;
-		return 0;
-	}
-
-	/* calculate the results ... */
-	js->chk_out = do_crc(js->chk_in, src, js->in.size);
-	js->chk_out &= 0xffffffff; /* 32-bit only */
 
 	action->retc = DNUT_RETC_SUCCESS;
 	return 0;

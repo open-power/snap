@@ -29,7 +29,7 @@ endif
 
 demo_search_objs = action_search.o
 demo_memcopy_objs = action_memcopy.o
-demo_checksum_objs = action_checksum.o
+demo_checksum_objs = action_checksum.o keccak.o
 demo_hashjoin_objs = action_hashjoin.o
 demo_bfs_objs = action_bfs.o
 
@@ -39,13 +39,13 @@ all: $(objs) $(projs)
 
 demo_search: action_search.o
 demo_memcopy: action_memcopy.o
-demo_checksum: action_checksum.o
+demo_checksum: action_checksum.o keccak.o
 demo_hashjoin: action_hashjoin.o
 demo_bfs: action_bfs.o
 
 $(projs): $(libs)
 
-objs += action_search.o action_memcopy.o action_checksum.o action_hashjoin.o action_bfs.o
+objs += action_search.o action_memcopy.o action_checksum.o action_hashjoin.o keccak.o action_bfs.o
 
 ### Deactivate existing implicit rule
 %: %.c

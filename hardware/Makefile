@@ -81,6 +81,17 @@ check_donut_settings:
 		echo "Please source donut_settings before calling make!"; \
                 exit 1; \
 	fi
+	@if [ -z `which git 2> /dev/null` ]; then \
+		echo "The SNAP framework make process relies on git."; \
+		echo "Please make sure that you have installed git and that"; \
+		echo "the environment variable PATH points to its executable."; \
+		exit 1; \
+	fi
+	@cd $(DONUT_HARDWARE_ROOT); if [ -z `git describe HEAD 2> /dev/null` ]; then \
+		echo "$(DONUT_HARDWARE_ROOT) (DONUT_HARDWARE_ROOT) does not belong to a git repository."; \
+		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/donut.git"; \
+		exit 1; \
+	fi
 
 create_environment:
 	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment $(CE_PARMS)
