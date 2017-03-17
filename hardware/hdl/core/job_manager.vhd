@@ -144,7 +144,8 @@ ARCHITECTURE job_manager OF job_manager IS
   SIGNAL int_fifo_wrb                  : std_ulogic;
   SIGNAL int_fifo_rrb                  : std_ulogic;
   SIGNAL int_src_id_array_q            : INTSRC_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0); 
-  SIGNAL int_fifo_we_array_q           : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL int_fifo_assign_we_q          : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL int_fifo_complete_we_q        : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL int_req_q                     : std_ulogic;
   SIGNAL interrupts_fsm_q              : INTERRUPTS_FSM_T;
 
@@ -301,6 +302,7 @@ BEGIN
           assign_action_fsm_q             <= ST_RESET;
           current_contexts_q              <= (OTHERS => (OTHERS => '0'));
           enable_check_for_idle_q(sat_id) <= (OTHERS => '0');
+          int_fifo_assign_we_q(sat_id)    <= '0';
 
         ELSE
           -- defaults
@@ -315,6 +317,7 @@ BEGIN
           assign_action_fsm_q             <= assign_action_fsm_q;
           current_contexts_q              <= current_contexts_q;
           enable_check_for_idle_q(sat_id) <= (OTHERS => '0');
+          int_fifo_assign_we_q(sat_id)    <= '0';
 
           --
           -- F S M
@@ -356,6 +359,7 @@ BEGIN
                 assign_status_we_q(sat_id)                                              <= '1';
                 action_attach_q(sat_id)(to_integer(unsigned(action_fifo_dout(sat_id)))) <= '1';
                 assign_action_q(sat_id)                                                 <= '1';
+                int_fifo_assign_we_q(sat_id)                                            <= mmj_d_i.assign_int_enable;
                 assign_action_fsm_q                                                     <= ST_RETURN_MMIO_LOCK;
               END IF;
 
@@ -398,6 +402,7 @@ BEGIN
           detach_action_q(sat_id)            <= '0';
           complete_context_active_q(sat_id)  <= '0';
           complete_status_we_q(sat_id)       <= '0';
+          int_fifo_complete_we_q(sat_id)     <= '0';
           exploration_done_q                 <= '0';
           init_action_counter_q              <= (OTHERS => '0');
 
@@ -448,6 +453,8 @@ BEGIN
           complete_status_we_q(sat_id)       <= '0';
           complete_action_fsm_q              <= complete_action_fsm_q;
 
+          int_fifo_complete_we_q(sat_id)     <= '0';
+
           exploration_done_q                 <= exploration_done_q OR mmj_c_i.exploration_done;
           init_action_counter_q              <= init_action_counter_q;
 
@@ -472,12 +479,13 @@ BEGIN
             WHEN ST_WAIT_MMIO_GRANT =>
               complete_ctx_q <= current_contexts_q(to_integer(unsigned(action_completed_fifo_dout(sat_id))));
               IF complete_grant_mmio_q(sat_id) = '1' THEN
-                action_fifo_we(sat_id)        <= '1';
-                complete_next_seqno_q(sat_id) <= mmj_d_i.current_seqno + 1;
-                complete_next_jqidx_q(sat_id) <= mmj_d_i.current_jqidx + 1;
-                complete_seqno_we_q(sat_id)   <= '1';
-                detach_action_q(sat_id)       <= '1';
-                complete_status_we_q(sat_id)  <= '1';
+                action_fifo_we(sat_id)          <= '1';
+                complete_next_seqno_q(sat_id)   <= mmj_d_i.current_seqno + 1;
+                complete_next_jqidx_q(sat_id)   <= mmj_d_i.current_jqidx + 1;
+                complete_seqno_we_q(sat_id)     <= '1';
+                detach_action_q(sat_id)         <= '1';
+                complete_status_we_q(sat_id)    <= '1';
+                int_fifo_complete_we_q(sat_id)  <= mmj_d_i.cpl_int_enable;
                 action_detach_q(sat_id)(to_integer(unsigned(action_completed_fifo_dout(sat_id)))) <= '1';
                 IF mmj_c_i.last_seqno = '0' THEN
                   complete_context_active_q(sat_id) <= '1';
@@ -524,7 +532,6 @@ BEGIN
           lock_mmio_interface_q(sat_id) <= '0';
           mmio_ctx_q(sat_id)            <= (OTHERS => '0');
           int_src_id_array_q(sat_id)    <= (OTHERS => '0');
-          int_fifo_we_array_q(sat_id)   <= '0';
           assign_grant_mmio_q(sat_id)   <= '0';
           complete_grant_mmio_q(sat_id) <= '0';
           request_mmio_interface_fsm_q  <= ST_WAIT_GRANT;
@@ -534,7 +541,6 @@ BEGIN
           lock_mmio_interface_q(sat_id) <= lock_mmio_interface_q(sat_id);
           mmio_ctx_q(sat_id)            <= mmio_ctx_q(sat_id);
           int_src_id_array_q(sat_id)    <= int_src_id_array_q(sat_id);
-          int_fifo_we_array_q(sat_id)   <= '0';
           assign_grant_mmio_q(sat_id)   <= assign_grant_mmio_q(sat_id);
           complete_grant_mmio_q(sat_id) <= complete_grant_mmio_q(sat_id);
           request_mmio_interface_fsm_q  <= request_mmio_interface_fsm_q;
@@ -549,14 +555,12 @@ BEGIN
                   lock_mmio_interface_q(sat_id) <= '1';
                   mmio_ctx_q(sat_id)            <= ctx_fifo_dout(sat_id);
                   int_src_id_array_q(sat_id)    <= CTX_ASSIGN_INT_SRC_ID;
-                  int_fifo_we_array_q(sat_id)   <= mmj_d_i.assign_int_enable;
                   assign_grant_mmio_q(sat_id)   <= '1';
                   request_mmio_interface_fsm_q  <= ST_ASSIGN_MMIO_GRANTED;
                 ELSIF complete_require_mmio_q = '1' THEN
                   lock_mmio_interface_q(sat_id) <= '1';
                   mmio_ctx_q(sat_id)            <= current_contexts_q(to_integer(unsigned(action_completed_fifo_dout(sat_id))));
                   int_src_id_array_q(sat_id)    <= CTX_COMPLETE_INT_SRC_ID;
-                  int_fifo_we_array_q(sat_id)   <= mmj_d_i.cpl_int_enable;
                   complete_grant_mmio_q(sat_id) <= '1';
                   request_mmio_interface_fsm_q  <= ST_COMPLETE_MMIO_GRANTED;
                 ELSE
@@ -571,7 +575,6 @@ BEGIN
                   lock_mmio_interface_q(sat_id) <= '1';
                   mmio_ctx_q(sat_id)            <= current_contexts_q(to_integer(unsigned(action_completed_fifo_dout(sat_id))));
                   int_src_id_array_q(sat_id)    <= CTX_COMPLETE_INT_SRC_ID;
-                  int_fifo_we_array_q(sat_id)   <= mmj_d_i.cpl_int_enable;
                   complete_grant_mmio_q(sat_id) <= '1';
                   request_mmio_interface_fsm_q  <= ST_COMPLETE_MMIO_GRANTED;
                 ELSE
@@ -672,7 +675,7 @@ BEGIN
         interrupts_fsm_q <= ST_IDLE;
       ELSE
         -- defaults
-        int_fifo_we_q    <= int_fifo_we_array_q(grant_mmio_interface_q);
+        int_fifo_we_q    <= int_fifo_assign_we_q(grant_mmio_interface_q) OR int_fifo_complete_we_q(grant_mmio_interface_q);
         int_fifo_din_q   <= mmio_ctx_q(grant_mmio_interface_q) & int_src_id_array_q(grant_mmio_interface_q);
         int_fifo_re_q    <= '0';
         int_req_q        <= '0';
