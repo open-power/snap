@@ -55,7 +55,7 @@ uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
   keccak((uint64_t*)even,HASH_SIZE,(uint64_t*)odd,HASH_SIZE);
 
    for(rnd_nb=0;rnd_nb<NB_ROUND;rnd_nb++) {
-#pragma HLS UNROLL factor=8 
+#pragma HLS UNROLL factor=4 
 
     for(j=0;j<4;j++) {
 #pragma HLS UNROLL 
