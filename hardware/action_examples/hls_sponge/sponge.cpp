@@ -25,6 +25,13 @@
 #  endif
 #endif
 
+/* Number of parallelization channels at action_wrapper level*/
+#if NB_SLICES == 4
+#  define CHANNELS 4
+#else
+#  define CHANNELS 8
+#endif
+
 uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
 {
   uint64_t magic[8] = {0x0123456789abcdeful,0x13579bdf02468aceul,
@@ -48,7 +55,7 @@ uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
   keccak((uint64_t*)even,HASH_SIZE,(uint64_t*)odd,HASH_SIZE);
 
    for(rnd_nb=0;rnd_nb<NB_ROUND;rnd_nb++) {
-#pragma HLS UNROLL factor=8 
+#pragma HLS UNROLL factor=4 
 
     for(j=0;j<4;j++) {
 #pragma HLS UNROLL 
@@ -146,6 +153,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 	uint32_t slice = 0;
 	uint32_t pe, nb_pe;
 	uint64_t timer_ticks = 42;
+        char j;
 
 	pe = Action_Input->Data.pe;
 	nb_pe = Action_Input->Data.nb_pe;
@@ -178,8 +186,8 @@ void action_wrapper(snap_membus_t *din_gmem,
 	 * action_wrapper function. If one need to be reduced then
 	 * decrease the factor in sponge function.
 	 */
-	for (slice = 0; slice < NB_SLICES; slice++) {
-#pragma HLS UNROLL factor=8
+        for (slice = 0; slice < NB_SLICES/CHANNELS; slice++) {
+//#pragma HLS UNROLL factor=8
 		/*
 		 * This if might not be a good idea, we are doing experiments
 		 * to move it to a different place.
@@ -190,7 +198,10 @@ void action_wrapper(snap_membus_t *din_gmem,
 		 * if (pe == (slice % nb_pe))
 		 *     checksum ^= sponge(slice);
 		 */ 
-		checksum ^= sponge(slice, pe, nb_pe);
+              /* Adjust the way slices values are sent to operate as the modulo */
+                for (j = 0; j < CHANNELS; j++)
+#pragma HLS UNROLL
+                        checksum ^= sponge(slice + j*NB_SLICES/CHANNELS, pe, nb_pe);
 
 		/* Intermediate result display */
 		write_results(Action_Output, Action_Input, RET_CODE_OK,
@@ -214,7 +225,7 @@ int main(void)
 {
 	uint64_t slice;
 	uint64_t checksum=0;
-	short i, rc=0;
+	short i, j, rc=0;
 
 	typedef struct {
 		uint32_t  pe;
@@ -234,10 +245,15 @@ int main(void)
 
 	for(i=0; i < 7; i++) {
 		checksum = 0;
-		for(slice=0;slice<NB_SLICES;slice++) {
+                for(slice=0;slice<NB_SLICES/CHANNELS;slice++) {
+
 			//if(sequence[i].pe == (slice % sequence[i].nb_pe))
 			//	checksum ^= sponge(slice);
-			checksum ^= sponge(slice, sequence[i].pe, sequence[i].nb_pe);
+                        /* Adjust the way slices values are sent to operate as the modulo */
+                        for (j = 0; j < CHANNELS; j++)
+                                checksum ^= sponge(slice+j*NB_SLICES/CHANNELS, 
+						sequence[i].pe, sequence[i].nb_pe);
+
 		}
 		printf("pe=%d - nb_pe=%d - processed checksum=%016llx ",
 		       sequence[i].pe,
