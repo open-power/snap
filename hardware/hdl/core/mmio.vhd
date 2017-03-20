@@ -421,7 +421,7 @@ BEGIN
         --
         -- MMIO CFG READ
         --
-        IF mmio_read_cfg_access_q = '1' THEN
+        IF (mmio_read_cfg_access_q AND NOT mmio_read_alignment_error_q) = '1' THEN
           -- acknowledge read request
           ah_mm_read_ack_q  <= '1';
 
@@ -512,7 +512,7 @@ BEGIN
         -- MMIO READ
         -- valid read request that is not targeting the action
         --
-        IF (mmio_read_access_q AND NOT mmio_action_access_q) = '1' THEN
+        IF (mmio_read_access_q AND NOT (mmio_action_access_q OR mmio_read_alignment_error_q)) = '1' THEN
           -- acknowledge read request
           mmio_read_ack_q0     <= '1';
           mmio_master_read_q0  <= mmio_read_master_access_q;
@@ -648,7 +648,7 @@ BEGIN
 
         END IF;                                   -- (mmio_read_access_q AND NOT mmio_action_access_q) = '1'
 
-        IF (mmio_read_action_access_q = '1') THEN
+        IF (mmio_read_action_access_q AND NOT mmio_read_alignment_error_q) = '1' THEN
           mmio_read_action_outstanding_q <= '1';
         END IF;
 
@@ -827,7 +827,7 @@ BEGIN
         -- MMIO WRITE
         -- valid write request that is not targeting the action
         --
-        IF (mmio_write_access_q AND NOT mmio_action_access_q) = '1' THEN
+        IF (mmio_write_access_q AND NOT (mmio_action_access_q OR mmio_write_alignment_error_q)) = '1' THEN
 
           CASE to_integer(unsigned(ha_mm_w_q.ad(13 DOWNTO 5))) IS  -- TODO: master access with bits 22:14 not zero?
 --            --
