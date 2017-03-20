@@ -977,8 +977,10 @@ BEGIN
                         END IF;
 
                       WHEN CTX_STOP =>
-                        context_stop_q(to_integer(unsigned(context_config_mmio_dout(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R)))) <= '1';
-                        context_stop_ack_q0 <= '1';
+                        IF context_status_mmio_dout(CTX_STAT_ACTION_VALID_INT) = '1' THEN
+                          context_stop_q(to_integer(unsigned(context_config_mmio_dout(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R)))) <= '1';
+                          context_stop_ack_q0 <= '1';
+                        END IF;
 
                       WHEN OTHERS =>
                         -- invalid command
