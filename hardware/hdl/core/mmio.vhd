@@ -50,6 +50,7 @@ ENTITY mmio IS
     --
     -- CTRL MGR Interface
     cmm_e_i                : IN  CMM_E_T;
+    mmc_c_o                : OUT MMC_C_T;
     mmc_e_o                : OUT MMC_E_T;
     --
     -- JOB MGR Interface
@@ -133,6 +134,8 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL afu_des_p                            : std_ulogic_vector(15 DOWNTO 0);
   SIGNAL afu_cfg                              : REG64_ARRAY_T(AFU_CFG_SPACE_SIZE-1 DOWNTO 0);
   SIGNAL afu_cfg_p                            : std_ulogic_vector(AFU_CFG_SPACE_SIZE-1 DOWNTO 0);
+  SIGNAL regs_reset_q                         : std_ulogic;
+  SIGNAL regs_reset_addr_q                    : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
   SIGNAL snap_regs_q                          : REG64_ARRAY_T(MAX_SNAP_REG DOWNTO 0) := (OTHERS => (OTHERS => '0'));
   SIGNAL snap_regs_par_q                      : std_ulogic_vector(MAX_SNAP_REG DOWNTO 0) := (OTHERS => '1');
   SIGNAL snap_lock_q                          : std_ulogic;
@@ -210,7 +213,6 @@ BEGIN
       ADDR_WIDTH => CONTEXT_BITS)
     PORT MAP (
       clk    => ha_pclock,
-      rst    => afu_reset,
       we_a   => context_config_mmio_we,
       addr_a => context_config_mmio_addr,
       din_a  => context_config_mmio_din,
@@ -227,7 +229,6 @@ BEGIN
       ADDR_WIDTH => CONTEXT_BITS)
     PORT MAP (
       clk    => ha_pclock,
-      rst    => afu_reset,
       we_a   => context_seqno_mmio_we,
       addr_a => context_seqno_mmio_addr,
       din_a  => context_seqno_mmio_din,
@@ -246,7 +247,6 @@ BEGIN
       ADDR_WIDTH => CONTEXT_BITS)
     PORT MAP (
       clk    => ha_pclock,
-      rst    => afu_reset,
       we_a   => context_status_mmio_we,
       addr_a => context_status_mmio_addr,
       din_a  => context_status_mmio_din,
@@ -265,7 +265,6 @@ BEGIN
       ADDR_WIDTH => CONTEXT_BITS)
     PORT MAP (
       clk    => ha_pclock,
-      rst    => afu_reset,
       we     => context_command_mmio_we,
       addr   => context_command_mmio_addr,
       din    => context_command_mmio_din,
@@ -716,10 +715,10 @@ BEGIN
         context_status_mmio_din          <= (OTHERS => '0');
         context_command_mmio_din         <= (OTHERS => '0');
 
-        context_config_mmio_we           <= '0';
-        context_seqno_mmio_we            <= '0';
-        context_status_mmio_we           <= '0';
-        context_command_mmio_we          <= '0';
+        context_config_mmio_we           <= '1';
+        context_seqno_mmio_we            <= '1';
+        context_status_mmio_we           <= '1';
+        context_command_mmio_we          <= '1';
 
         context_seqno_conflict_q         <= '0';
         context_status_conflict_q        <= '0';
@@ -767,25 +766,32 @@ BEGIN
         non_fatal_slave_errors_reset_q   <= (OTHERS => '0');
 
         -- Register inputs
-        context_config_mmio_din(CTX_CFG_FIRST_SEQNO_INT_L DOWNTO CTX_CFG_FIRST_SEQNO_INT_R)  <= ha_mm_w_q.data(CTX_CFG_FIRST_SEQNO_L DOWNTO CTX_CFG_FIRST_SEQNO_R);
-        context_config_mmio_din(CTX_CFG_FIRST_JQIDX_INT_L DOWNTO CTX_CFG_FIRST_JQIDX_INT_R)  <= ha_mm_w_q.data(CTX_CFG_FIRST_JQIDX_L DOWNTO CTX_CFG_FIRST_JQIDX_R);
-        context_config_mmio_din(CTX_CFG_MAX_JQIDX_INT_L DOWNTO CTX_CFG_MAX_JQIDX_INT_R)      <= ha_mm_w_q.data(CTX_CFG_MAX_JQIDX_L DOWNTO CTX_CFG_MAX_JQIDX_R);
-        context_config_mmio_din(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R)                  <= ha_mm_w_q.data(CTX_CFG_SAT_L DOWNTO CTX_CFG_SAT_R);
-        context_config_mmio_din(CTX_CFG_ASGNINT_ENA_INT)                                     <= ha_mm_w_q.data(CTX_CFG_ASGNINT_ENA);
-        context_config_mmio_din(CTX_CFG_CPLINT_ENA_INT)                                      <= ha_mm_w_q.data(CTX_CFG_CPLINT_ENA);
-        context_config_mmio_din(CTX_CFG_DIRECT_MODE_INT)                                     <= ha_mm_w_q.data(CTX_CFG_DIRECT_MODE);
+        IF regs_reset_q = '1' THEN
+          context_config_mmio_din  <= (OTHERS => '0');
+          context_seqno_mmio_din   <= (OTHERS => '0');
+          context_status_mmio_din  <= (OTHERS => '0');
+          context_command_mmio_din <= (OTHERS => '0');
+        ELSE
+          context_config_mmio_din(CTX_CFG_FIRST_SEQNO_INT_L DOWNTO CTX_CFG_FIRST_SEQNO_INT_R)  <= ha_mm_w_q.data(CTX_CFG_FIRST_SEQNO_L DOWNTO CTX_CFG_FIRST_SEQNO_R);
+          context_config_mmio_din(CTX_CFG_FIRST_JQIDX_INT_L DOWNTO CTX_CFG_FIRST_JQIDX_INT_R)  <= ha_mm_w_q.data(CTX_CFG_FIRST_JQIDX_L DOWNTO CTX_CFG_FIRST_JQIDX_R);
+          context_config_mmio_din(CTX_CFG_MAX_JQIDX_INT_L DOWNTO CTX_CFG_MAX_JQIDX_INT_R)      <= ha_mm_w_q.data(CTX_CFG_MAX_JQIDX_L DOWNTO CTX_CFG_MAX_JQIDX_R);
+          context_config_mmio_din(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R)                  <= ha_mm_w_q.data(CTX_CFG_SAT_L DOWNTO CTX_CFG_SAT_R);
+          context_config_mmio_din(CTX_CFG_ASGNINT_ENA_INT)                                     <= ha_mm_w_q.data(CTX_CFG_ASGNINT_ENA);
+          context_config_mmio_din(CTX_CFG_CPLINT_ENA_INT)                                      <= ha_mm_w_q.data(CTX_CFG_CPLINT_ENA);
+          context_config_mmio_din(CTX_CFG_DIRECT_MODE_INT)                                     <= ha_mm_w_q.data(CTX_CFG_DIRECT_MODE);
 
-        context_seqno_mmio_din                                                               <= context_seqno_mmio_dout;
+          context_seqno_mmio_din                                                               <= context_seqno_mmio_dout;
 
-        context_status_mmio_din <= context_status_mmio_dout;
+          context_status_mmio_din                                                              <= context_status_mmio_dout;
 
-        context_command_mmio_din(CTX_CMD_ARG_INT_L DOWNTO CTX_CMD_ARG_INT_R)                 <= ha_mm_w_q.data(CTX_CMD_ARG_L DOWNTO CTX_CMD_ARG_R);
-        context_command_mmio_din(CTX_CMD_CODE_INT_L DOWNTO CTX_CMD_CODE_INT_R)               <= ha_mm_w_q.data(CTX_CMD_CODE_L DOWNTO CTX_CMD_CODE_R);
+          context_command_mmio_din(CTX_CMD_ARG_INT_L DOWNTO CTX_CMD_ARG_INT_R)                 <= ha_mm_w_q.data(CTX_CMD_ARG_L DOWNTO CTX_CMD_ARG_R);
+          context_command_mmio_din(CTX_CMD_CODE_INT_L DOWNTO CTX_CMD_CODE_INT_R)               <= ha_mm_w_q.data(CTX_CMD_CODE_L DOWNTO CTX_CMD_CODE_R);
+        END IF;
 
-        context_config_mmio_we           <= '0';
-        context_seqno_mmio_we            <= '0';
-        context_status_mmio_we           <= '0';
-        context_command_mmio_we          <= '0';
+        context_config_mmio_we           <= regs_reset_q;
+        context_seqno_mmio_we            <= regs_reset_q;
+        context_status_mmio_we           <= regs_reset_q;
+        context_command_mmio_we          <= regs_reset_q;
 
         context_seqno_conflict_q         <= '0';
         context_status_conflict_q        <= '0';
@@ -1123,6 +1129,10 @@ BEGIN
     ah_mm_o.data    <= ah_mm_q.data;
     ah_mm_o.datapar <= ah_mm_q.datapar; -- XOR mm_i_q.inject_read_rsp_parity_error;  -- toggle parity iff inject_read_rsp_parity_error is set to '1';
 
+    -- MMC
+    --
+    mmc_c_o.reset_done <= NOT regs_reset_q;
+
     --
     -- MMX
     --
@@ -1194,7 +1204,13 @@ BEGIN
 
         ah_mm_write_ack_q                   <= '0';
 
+        regs_reset_q                        <= '1';
+        regs_reset_addr_q                   <= (OTHERS => '0');
+
         context_config_mmio_addr            <= (OTHERS => '0');
+        context_seqno_mmio_addr             <= (OTHERS => '0');
+        context_status_mmio_addr            <= (OTHERS => '0');
+        context_command_mmio_addr           <= (OTHERS => '0');
 
       ELSE
         ha_mm_q0             <= ha_mm_i;
@@ -1272,16 +1288,31 @@ BEGIN
         mm_e_q.wr_addr_parity_err    <= (ha_mm_q0.adpar XOR parity_gen_odd(ha_mm_q0.ad)) AND ha_mm_q0.valid ;
 
         --
-        -- Context IDs and Context register addresses
+        -- MMIO register addresses
         --
-        context_id_v                 := ha_mm_i.ad(PSL_HOST_CTX_ID_R + CONTEXT_BITS - 1 DOWNTO PSL_HOST_CTX_ID_R);
+        regs_reset_q      <= regs_reset_q;
+        regs_reset_addr_q <= regs_reset_addr_q;
+        IF regs_reset_q = '1' THEN
+          context_id_v := regs_reset_addr_q;
+          IF to_integer(unsigned(regs_reset_addr_q)) = NUM_OF_CONTEXTS-1 THEN
+            regs_reset_q      <= '0';
+            regs_reset_addr_q <= (OTHERS => '0');
+          ELSE
+            regs_reset_addr_q <= regs_reset_addr_q + 1;
+          END IF;
+        ELSE
+          context_id_v := ha_mm_i.ad(PSL_HOST_CTX_ID_R + CONTEXT_BITS - 1 DOWNTO PSL_HOST_CTX_ID_R);
+        END IF;
+
         context_config_mmio_addr     <= context_config_mmio_addr;
         context_seqno_mmio_addr      <= context_seqno_mmio_addr;
         context_status_mmio_addr     <= context_status_mmio_addr;
-        IF (ha_mm_i.valid = '1') THEN
+        context_command_mmio_addr    <= context_command_mmio_addr;
+        IF (ha_mm_i.valid OR regs_reset_q) = '1' THEN
           context_config_mmio_addr   <= context_id_v;
           context_seqno_mmio_addr    <= context_id_v;
           context_status_mmio_addr   <= context_id_v;
+          context_command_mmio_addr  <= context_id_v;
         END IF;
       END IF;                                     -- afu_reset = '1'
     END IF;                                       -- rising_edge(ha_pclock)

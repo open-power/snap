@@ -143,6 +143,7 @@ ARCHITECTURE donut OF donut IS
   SIGNAL jmm_d               : JMM_D_T;
   SIGNAL js_c                : JS_C_T;
   SIGNAL jx_c                : JX_C_T;
+  SIGNAL mmc_c               : MMC_C_T;
   SIGNAL mmc_e               : MMC_E_T;
   SIGNAL mmd_a               : MMD_A_T;
   SIGNAL mmd_i               : MMD_I_T;
@@ -340,6 +341,7 @@ BEGIN
       afu_reset_o            => afu_reset,
       --
       -- MMIO IOs
+      mmc_c_i                => mmc_c,          
       mmc_e_i                => mmc_e,
       cmm_e_o                => cmm_e
     );
@@ -409,6 +411,7 @@ BEGIN
       --
       -- CTRL MGR Interface
       cmm_e_i                => cmm_e,
+      mmc_c_o                => mmc_c,
       mmc_e_o                => mmc_e,
       --
       -- JOB MGR Interface

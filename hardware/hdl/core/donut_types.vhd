@@ -701,6 +701,7 @@ PACKAGE donut_types IS
 --  js_c : job_manager -> AXI slave   : Control Interface
 --  jx_c : job_manager -> AXI master  : Control Interface
 --
+--  mmc_c: mmio        -> ctrl_mgr    : Control Interface
 --  mmc_e: mmio        -> ctrl_mgr    : Error Interface
 --  mmd_a: mmio        -> dma         : Aggravater Interface
 --  mmd_i: mmio        -> dma         : Error Inject
@@ -841,6 +842,13 @@ PACKAGE donut_types IS
   --  MMIO Interface
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
+    --
+    -- mmc_c
+    --
+    TYPE MMC_C_T IS RECORD
+      reset_done : std_ulogic;
+    END RECORD MMC_C_T;
+
     --
     -- mmc_e
     --
