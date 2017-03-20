@@ -23,6 +23,7 @@ LDLIBS += $(libs) -lpthread
 # Link statically for PSLSE simulation and dynamically for real version
 ifdef BUILD_SIMCODE
 libs += $(PSLSE_ROOT)/libcxl/libcxl.a
+CFLAGS+=-D_SIM_
 else
 LDLIBS += -lcxl
 endif
@@ -31,7 +32,9 @@ dnut_peek_objs = force_cpu.o
 dnut_poke_objs = force_cpu.o
 
 projs = dnut_peek dnut_poke stage1 stage2 stage2_ddr stage2_set
+projs += snap_maint
 objs = force_cpu.o $(projs:=.o)
+hfiles = force_cpu.h  snap_fw_example.h
 
 all: $(projs)
 
@@ -45,7 +48,7 @@ $(projs): $(objs) $(libs)
 %: %.o
 	$(CC) $(LDFLAGS) $@.o $($(@)_objs) $($(@)_libs) $(LDLIBS) -o $@
 
-%.o: %.c $(libs)
+%.o: %.c $(libs) $(hfiles)
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
 install: all
@@ -61,4 +64,3 @@ uninstall:
 
 clean distclean:
 	$(RM) $(objs) $(projs)
-

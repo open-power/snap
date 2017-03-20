@@ -22,14 +22,16 @@ LIBRARY ieee;--, ibm, ibm_asic;
 USE ieee.std_logic_1164.all;
 USE ieee.numeric_std.all;
 
---USE ibm_asic.std_ulogic_asic_function_support.all;
---USE ibm.std_ulogic_function_support.all;
---USE ibm.std_ulogic_support.all;
-
 USE work.psl_accel_types.ALL;
 USE work.donut_types.ALL;
 
 ENTITY donut IS
+  GENERIC(
+    IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0);
+    BUILD_DATE_DAT         : std_ulogic_vector(63 DOWNTO 0);
+    NUM_OF_ACTION_TYPES    : integer RANGE 0 TO 16 := 16;
+    NUM_OF_ACTIONS         : integer RANGE 0 TO 16 :=  1
+  );
   PORT (
     --
     -- PSL Interface
@@ -110,7 +112,6 @@ ENTITY donut IS
     -- Kernel AXI Slave Interface
     sk_d_o         : OUT SK_D_T;
     ks_d_i         : IN  KS_D_T
-    
   );
 END donut;
 
@@ -138,11 +139,19 @@ ARCHITECTURE donut OF donut IS
   SIGNAL ha_j                : HA_J_T;
   SIGNAL ha_mm               : HA_MM_T;
   SIGNAL ha_r                : HA_R_T;
+  SIGNAL jmm_c               : JMM_C_T;
+  SIGNAL jmm_d               : JMM_D_T;
+  SIGNAL jx_c                : JX_C_T;
+  SIGNAL mmc_c               : MMC_C_T;
   SIGNAL mmc_e               : MMC_E_T;
   SIGNAL mmd_a               : MMD_A_T;
   SIGNAL mmd_i               : MMD_I_T;
+  SIGNAL mmj_c               : MMJ_C_T;
+  SIGNAL mmj_d               : MMJ_D_T;
   SIGNAL mmx_d               : MMX_D_T;
   SIGNAL xmm_d               : XMM_D_T;
+
+  signal xj_c                : XJ_C_T;
 
   signal xk_d                : XK_D_T;
   signal kx_d                : KX_D_T;
@@ -153,6 +162,9 @@ ARCHITECTURE donut OF donut IS
   signal sd_d                : SD_D_T;
   signal ds_c                : DS_C_T;
   signal ds_d                : DS_D_T;
+  signal xn_d                : XN_D_T;
+  signal nx_d                : NX_D_T := ('1', '1', "00", '1', '1',
+                                          (31 downto 0 => '0'), "00", '1');
 
 
 BEGIN
@@ -327,8 +339,40 @@ BEGIN
       afu_reset_o            => afu_reset,
       --
       -- MMIO IOs
+      mmc_c_i                => mmc_c,          
       mmc_e_i                => mmc_e,
       cmm_e_o                => cmm_e
+    );
+
+
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- JOB MANAGER Entity
+  --
+  --
+  -- shortcut = j
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+    job_mgr: ENTITY work.job_manager
+    GENERIC MAP (
+      NUM_OF_ACTION_TYPES => NUM_OF_ACTION_TYPES,
+      NUM_OF_ACTIONS      => NUM_OF_ACTIONS
+    )
+    PORT MAP (
+      --
+      -- pervasive
+      ha_pclock              => ha_pclock,
+      afu_reset              => afu_reset,
+      --
+      -- MMIO Interface
+      mmj_c_i                => mmj_c,
+      mmj_d_i                => mmj_d,
+      jmm_c_o                => jmm_c,
+      jmm_d_o                => jmm_d,
+      --
+      -- AXI MASTER Interface
+      xj_c_i                 => xj_c,
+      jx_c_o                 => jx_c
     );
 
 
@@ -341,6 +385,11 @@ BEGIN
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
     mmio: ENTITY work.mmio
+    GENERIC MAP (
+      IMP_VERSION_DAT => IMP_VERSION_DAT,
+      BUILD_DATE_DAT  => BUILD_DATE_DAT,
+      NUM_OF_ACTIONS  => NUM_OF_ACTIONS
+    )
     PORT MAP (
       --
       -- pervasive
@@ -356,7 +405,14 @@ BEGIN
       --
       -- CTRL MGR Interface
       cmm_e_i                => cmm_e,
+      mmc_c_o                => mmc_c,
       mmc_e_o                => mmc_e,
+      --
+      -- JOB MGR Interface
+      jmm_c_i                => jmm_c,
+      jmm_d_i                => jmm_d,
+      mmj_c_o                => mmj_c,
+      mmj_d_o                => mmj_d,
       --
       -- DMA Interface
       dmm_e_i                => dmm_e,
@@ -387,10 +443,18 @@ BEGIN
       -- MMIO Interface
       mmx_d_i                => mmx_d,
       xmm_d_o                => xmm_d,
-
+      --
       -- Application / Kernel Interface
       xk_d_o                 => xk_d_o,   -- axi master lite
-      kx_d_i                 => kx_d_i
+      kx_d_i                 => kx_d_i,
+      --
+      -- Job Manager Interface
+      xj_c_o                 => xj_c,
+      jx_c_i                 => jx_c,
+      --
+      -- NVME Interface
+      xn_d_o                 => xn_d,
+      nx_d_i                 => nx_d
     );
 
 
@@ -412,4 +476,3 @@ BEGIN
 
     action_reset <= afu_reset;
 END ARCHITECTURE;
-

@@ -188,12 +188,12 @@ architecture action_memcopy of action_memcopy is
         signal fsm_app_q        : fsm_app_t;
         signal fsm_copy_q       : fsm_copy_t;
 
-        signal reg_0x10         : std_logic_vector(31 downto 0);
-        signal reg_0x14         : std_logic_vector(31 downto 0);
-        signal reg_0x18         : std_logic_vector(31 downto 0);
-        signal reg_0x1c         : std_logic_vector(31 downto 0);
         signal reg_0x20         : std_logic_vector(31 downto 0);
         signal reg_0x24         : std_logic_vector(31 downto 0);
+        signal reg_0x28         : std_logic_vector(31 downto 0);
+        signal reg_0x2c         : std_logic_vector(31 downto 0);
+        signal reg_0x30         : std_logic_vector(31 downto 0);
+        signal reg_0x34         : std_logic_vector(31 downto 0);
         signal app_start        : std_logic;
         signal app_done         : std_logic;
         signal app_ready        : std_logic;
@@ -306,7 +306,7 @@ begin
 --  axi_card_mem0_error  <= '0';
 --  axi_host_mem_error   <= '0';
 
---  reg_0x10 <= x"0000_0108";
+--  reg_0x20 <= x"0000_0108";
 
 -- Instantiation of Axi Bus Interface AXI_CTRL_REG
 action_axi_slave_inst : entity work.action_axi_slave
@@ -317,17 +317,19 @@ action_axi_slave_inst : entity work.action_axi_slave
     port map (
         -- config reg ; bit 0 => disable dma and
         -- just count down the length regsiter
-        reg_0x10_o      => reg_0x10,
-        -- low order source address
-        reg_0x14_o      => reg_0x14,
-        -- high order source  address
-        reg_0x18_o      => reg_0x18,
-        -- low order destination address
-        reg_0x1c_o      => reg_0x1c,
-        -- high order destination address
+        reg_0x10_i      => x"1014_0000",  -- action type
+        reg_0x14_i      => x"0000_0000",  -- action version
         reg_0x20_o      => reg_0x20,
-        -- number of bytes to copy
+        -- low order source address
         reg_0x24_o      => reg_0x24,
+        -- high order source  address
+        reg_0x28_o      => reg_0x28,
+        -- low order destination address
+        reg_0x2c_o      => reg_0x2c,
+        -- high order destination address
+        reg_0x30_o      => reg_0x30,
+        -- number of bytes to copy
+        reg_0x34_o      => reg_0x34,
         app_start_o     => app_start,
         app_done_i      => app_done,
         app_ready_i     => app_ready,
@@ -527,8 +529,8 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
       if (rising_edge (action_clk)) then
             start_copy          <= '0';
             start_fill          <= '0';
-            if reg_0x10(3 downto 0) = x"2" or reg_0x10(3 downto 0) = x"3" or
-               reg_0x10(3 downto 0) = x"4" or reg_0x10(3 downto 0) = x"5"   then
+            if reg_0x20(3 downto 0) = x"2" or reg_0x20(3 downto 0) = x"3" or
+               reg_0x20(3 downto 0) = x"4" or reg_0x20(3 downto 0) = x"5"   then
               memcopy <= true;
             else
               memcopy <= false;
@@ -550,12 +552,12 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
                     src_host  <= '0';
                     dest_ddr  <= '0';                                                    -- only for DDRI_USED=TRUE
                     dest_host <= '0';
-                    case reg_0x10(3 downto 0) is
+                    case reg_0x20(3 downto 0) is
 
                       when x"1" =>
                         -- just count a counter down
                         fsm_app_q  <= JUST_COUNT_DOWN;
-                        counter_q  <= reg_0x24;
+                        counter_q  <= reg_0x34;
 
                        when x"2" =>
                         -- memcopy host to host memory
@@ -636,7 +638,7 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
     variable j,k : integer range 0 to 63;
     begin
        if (rising_edge (action_clk)) then
-          j := to_integer(unsigned(reg_0x14(5 downto 0)));
+          j := to_integer(unsigned(reg_0x24(5 downto 0)));
           for x in 0 to 63 loop
             if x >= j then
               first_write_mask(x) <= '1';
@@ -644,7 +646,7 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
               first_write_mask(x) <= '0';
             end if;
           end loop;  -- x
-          k := to_integer(unsigned(reg_0x1C(5 downto 0)));
+          k := to_integer(unsigned(reg_0x2c(5 downto 0)));
           for x in 0 to 63 loop
             if x > k then
               last_write_mask(x) <= '0';
@@ -656,7 +658,7 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
     end process;
 
 
-    block_diff <= "000000" & ((reg_0x20 & reg_0x1c(31 downto 6)) - (reg_0x18 & reg_0x14(31 downto 6)));
+    block_diff <= "000000" & ((reg_0x30 & reg_0x2c(31 downto 6)) - (reg_0x28 & reg_0x24(31 downto 6)));
 
     process(action_clk ) is
      variable temp64 : std_logic_vector(63 downto 0);
@@ -679,19 +681,19 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
                   wr_req_count     <= 0;
                   wr_done_count    <= 0;
                   wr_gate          <= '0';
-                  blocks_to_read   <= "000000"   & reg_0x24(31 downto 6);
+                  blocks_to_read   <= "000000"   & reg_0x34(31 downto 6);
                   if memcopy then
                     -- memcopy
-                    blocks_to_write  <= "000000"   & reg_0x24(31 downto 6);
-                    blocks_expected  <= "000000"   & reg_0x24(31 downto 6);
-                    first_max_blk_w    <= x"0000_00" & (x"40" - reg_0x1c(11 downto 6));
+                    blocks_to_write  <= "000000"   & reg_0x34(31 downto 6);
+                    blocks_expected  <= "000000"   & reg_0x34(31 downto 6);
+                    first_max_blk_w    <= x"0000_00" & (x"40" - reg_0x2c(11 downto 6));
                   else
                     -- memfill
                     blocks_to_write  <= block_diff(31 downto 0) + 1;
                     blocks_expected  <= block_diff(31 downto 0) + 1;
-                    first_max_blk_w    <= x"0000_00" & (x"40" - reg_0x14(11 downto 6));
+                    first_max_blk_w    <= x"0000_00" & (x"40" - reg_0x24(11 downto 6));
                   end if;
-                  first_max_blk_r    <= x"0000_00" & (x"40" - reg_0x14(11 downto 6));
+                  first_max_blk_r    <= x"0000_00" & (x"40" - reg_0x24(11 downto 6));
 
                   if first_max_blk_r < blocks_to_read then
                     first_blk_r      <= first_max_blk_r;
@@ -703,11 +705,11 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
                   else
                     first_blk_w      <= blocks_to_write ;
                   end if;
-                  rd_addr            <= reg_0x18 & reg_0x14(31 downto 6) & "000000";
+                  rd_addr            <= reg_0x28 & reg_0x24(31 downto 6) & "000000";
                   if memcopy then
-                    wr_addr          <= reg_0x20 & reg_0x1c(31 downto 6) & "000000";
+                    wr_addr          <= reg_0x30 & reg_0x2c(31 downto 6) & "000000";
                   else
-                    wr_addr          <= reg_0x18 & reg_0x14(31 downto 6) & "000000";
+                    wr_addr          <= reg_0x28 & reg_0x24(31 downto 6) & "000000";
                   end if;
 
                   rd_requests_done <= '0';
@@ -715,10 +717,10 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
                   rd_len          <= first_blk_r (7 downto 0) - '1';
                   wr_len          <= first_blk_w (7 downto 0) - '1';
 
-                  rd_addr_adder   <= x"1000" - (reg_0x14(11 downto 6) & (5 downto 0 =>'0'));
+                  rd_addr_adder   <= x"1000" - (reg_0x24(11 downto 6) & (5 downto 0 =>'0'));
 
                   if start_copy = '1' then
-                    wr_addr_adder   <= x"1000" - (reg_0x1c(11 downto 6) & (5 downto 0 =>'0'));
+                    wr_addr_adder   <= x"1000" - (reg_0x2c(11 downto 6) & (5 downto 0 =>'0'));
                     blocks_to_read  <= blocks_to_read  -first_blk_r (7 downto 0) ;
                     blocks_to_write <= blocks_to_write -first_blk_w (7 downto 0) ;
                     -- request data either from host or
@@ -732,7 +734,7 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
                     fsm_copy_q    <= PROCESS_COPY;
                   end if;
                   if start_fill = '1' then
-                    wr_addr_adder   <= x"1000" - (reg_0x14(11 downto 6) & (5 downto 0 =>'0'));
+                    wr_addr_adder   <= x"1000" - (reg_0x24(11 downto 6) & (5 downto 0 =>'0'));
                     wr_gate         <= '1';
                     blocks_to_write <= blocks_to_write -first_blk_w (7 downto 0) ;
                     dma_wr_req      <= dest_host;
@@ -857,9 +859,9 @@ read_write_process:
               reg2_data         <= dma_rd_data;   -- assigning reset value in order to get around 'partial antenna' problems
               total_write_count <=(31 downto 1 => '0') & '1';
               if memcopy then
-                write_counter_up  <=(31 downto 0 => '0' ) + reg_0x1c(11 downto 6) + 1;
+                write_counter_up  <=(31 downto 0 => '0' ) + reg_0x2c(11 downto 6) + 1;
               else
-                write_counter_up  <=(31 downto 0 => '0' ) + reg_0x14(11 downto 6) + 1;
+                write_counter_up  <=(31 downto 0 => '0' ) + reg_0x24(11 downto 6) + 1;
               end if;
 
               write_counter_dn  <= blocks_to_write(25 downto 0);
@@ -947,7 +949,7 @@ read_write_process:
 
 write_data_process:
   process(reg0_data, reg1_data, reg2_data, reg0_valid, reg1_valid, reg2_valid,
-          write_counter_up, total_write_count, reg_0x24, reg_0x10, last_write_q,
+          write_counter_up, total_write_count, reg_0x34, reg_0x20, last_write_q,
           dest_ddr,                                                                      -- only for DDRI_USED=TRUE
           dest_host, tail, blocks_expected,wr_gate, memcopy  ) is
     begin
@@ -969,8 +971,8 @@ write_data_process:
       if not memcopy then
       --  mem fill
         for i in 1 to 64 loop
-          if reg_0x10(23 downto 16) = x"00" then
-            wr_data(i * 8 -1 downto (i-1) *8) <= reg_0x10(15 downto 8);
+          if reg_0x20(23 downto 16) = x"00" then
+            wr_data(i * 8 -1 downto (i-1) *8) <= reg_0x20(15 downto 8);
           else
             wr_data(i * 8 -1 downto (i-1) *8) <= std_logic_vector(to_unsigned(i-1, 8));
           end if;

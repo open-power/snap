@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 --
--- Copyright 2016 International Business Machines
+-- Copyright 2016,2017 International Business Machines
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -57,7 +57,6 @@ PACKAGE donut_types IS
   --
   function AC_PPARITH(dir: integer; a_in ,ap_in,b_in,bp_in : std_ulogic_vector; w : natural := 8                              ) return std_ulogic_vector;
   function AC_PPARITH(dir: integer; a_in : std_ulogic_vector; ap_in : std_ulogic; b_in : std_ulogic_vector; bp_in : std_ulogic) return std_ulogic;
-
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -187,20 +186,52 @@ PACKAGE donut_types IS
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
 
-  CONSTANT MASTER_BOUNDARY            : integer := 15;
-  CONSTANT ACTION_BIT                 : integer := 14;
+  -- PSL host address space (host addresses are 4B word adresses - i.e. you need to add lower two bit to obtain the complete byte address)
+--  CONSTANT MASTER_BOUNDARY            : integer := 15;
+  CONSTANT MASTER_ACTION_ACCESS_BIT   : integer := 14;  -- Action space for master access starts at 0x10000 (16 x 4KB)
+  CONSTANT MASTER_ACTION_ID_L         : integer := 13;  -- Action ID is encoded in bits 15:12 of the real address
+  CONSTANT MASTER_ACTION_ID_R         : integer := 10;  -- Action ID is encoded in bits 15:12 of the real address  
+  CONSTANT NVME_SPACE_START_BIT       : integer := 15;  -- NVME space starts at address 0x20000
+  CONSTANT SLAVE_SPACE_BIT            : integer := 23;  -- Slave (context) space starts at 0x2000000
+  CONSTANT PSL_HOST_ADDR_MAXBIT       : integer := 23;
+  CONSTANT PSL_HOST_CTX_ID_L          : integer := 22;
+  CONSTANT PSL_HOST_CTX_ID_R          : integer := 14;
+  CONSTANT SLAVE_ACTION_OFFSET_L      : integer := 13;
+  CONSTANT SLAVE_ACTION_OFFSET_R      : integer := 10;
+  CONSTANT SLAVE_ACTION_OFFSET_VAL    : std_ulogic_vector(13 DOWNTO 10) := "1111"; -- only bits 13 downto 10 of the PSL address are checked for action ACCESS
 
   -- Register base address (bits 13 downto 5 of the address)
-  CONSTANT AFU_REG_BASE               : integer := 16#000#;  -- 0x0000
-  CONSTANT FIR_REG_BASE               : integer := 16#020#;  -- 0x1000
---  CONSTANT DEBUG_REG_BASE             : integer := 16#1FE#;  -- 0xFF00
-  CONSTANT DEBUG_REG_BASE             : integer := 16#002#;  -- 0x0100
+  CONSTANT SNAP_REG_BASE              : integer := 16#000#;  -- 0x0000
+  CONSTANT SNAP_EXT_REG_BASE          : integer := 16#001#;  -- 0x0080
+  CONSTANT ACTION_TYPE_REG_BASE       : integer := 16#002#;  -- 0x0100
+  CONSTANT ACTION_COUNTER_REG_BASE    : integer := 16#003#;  -- 0x0180
+  CONSTANT CONTEXT_REG_BASE           : integer := 16#020#;  -- 0x1000
+  CONSTANT DEBUG_REG_BASE             : integer := 16#1A0#;  -- 0xD000 TODO: remove!!
+  CONSTANT FIR_REG_BASE               : integer := 16#1C0#;  -- 0xE000
+
 
   -- Register offset (bits 4 downto 1 of the address - note: bit 0 of addr is always '0')
+  -- SNAP registers
   CONSTANT IMP_VERSION_REG            : integer := 16#0#;
   CONSTANT BUILD_DATE_REG             : integer := 16#1#;
-  CONSTANT AFU_CMD_REG                : integer := 16#3#;
-  CONSTANT MAX_AFU_REG                : integer := 16#3#;
+  CONSTANT SNAP_CMD_REG               : integer := 16#2#;
+  CONSTANT SNAP_STATUS_REG            : integer := 16#3#;
+  CONSTANT MAX_SNAP_REG               : integer := 16#3#;  -- maximum index for snap register array
+  -- SNAP extended registers
+  CONSTANT SNAP_FRT_REG               : integer := 16#0#;
+  CONSTANT SNAP_LOCK_REG              : integer := 16#4#;
+  CONSTANT SNAP_CTX_ID_REG            : integer := 16#4#;
+
+  -- ACTION_TYPE and ACTION_COUNTER registers
+  CONSTANT MAX_ACTION_REG             : integer := 16#F#;
+
+  -- Context registers
+  CONSTANT CONTEXT_CONFIG_REG         : integer := 16#0#;
+  CONSTANT CONTEXT_STATUS_REG         : integer := 16#1#;
+  CONSTANT CONTEXT_COMMAND_REG        : integer := 16#2#;
+
+
+  -- FIR registers
 --  CONSTANT FIRREG_CTRL_MGR            : integer := 16#0#;
 --  CONSTANT FIRREG_JOB_MGR             : integer := 16#1#;
 --  CONSTANT FIRREG_MMIO                : integer := 16#2#;
@@ -208,8 +239,85 @@ PACKAGE donut_types IS
 --  CONSTANT MAX_FIR_REG                : integer := 16#3#;
 
   -- Specific bits of selected registers
+  CONSTANT SNAP_STAT_EXPLORATION_DONE : integer :=  8;     -- SNAP_STATUS_REG
+  CONSTANT SNAP_STAT_MAX_SAT_L        : integer :=  7;     -- SNAP_STATUS_REG
+  CONSTANT SNAP_STAT_MAX_SAT_R        : integer :=  4;     -- SNAP_STATUS_REG
+  CONSTANT SNAP_STAT_MAX_ACTION_ID_L  : integer :=  3;     -- SNAP_STATUS_REG
+  CONSTANT SNAP_STAT_MAX_ACTION_ID_R  : integer :=  0;     -- SNAP_STATUS_REG
+  CONSTANT SNAP_CMD_MAX_SAT_L         : integer := 51;     -- SNAP_STATUS_REG
+  CONSTANT SNAP_CMD_MAX_SAT_R         : integer := 48;     -- SNAP_STATUS_REG
+  CONSTANT SNAP_LOCK_INT              : integer :=  0;     -- SNAP_LOCK_REG
+  CONSTANT SNAP_CTX_MASTER_BIT        : integer := 63;     -- SNAP_CTX_ID_REG
+  CONSTANT SNAP_CTX_ID_L              : integer :=  8;     -- SNAP_CTX_ID_REG
+  CONSTANT SNAP_CTX_ID_R              : integer :=  0;     -- SNAP_CTX_ID_REG
+
+  CONSTANT CTX_CFG_SIZE_INT           : integer := 37;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_SEQNO_L      : integer := 63;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_SEQNO_R      : integer := 48;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_JQIDX_L      : integer := 31;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_JQIDX_R      : integer := 24;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_JQIDX_L        : integer := 23;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_JQIDX_R        : integer := 16;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_SAT_L              : integer := 15;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_SAT_R              : integer := 12;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_DIRECT_MODE        : integer :=  0;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_SEQNO_INT_L  : integer := 36;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_SEQNO_INT_R  : integer := 21;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_JQIDX_INT_L  : integer := 20;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_JQIDX_INT_R  : integer := 13;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_JQIDX_INT_L    : integer := 12;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_JQIDX_INT_R    : integer :=  5;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_SAT_INT_L          : integer :=  4;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
+  CONSTANT CTX_CFG_SAT_INT_R          : integer :=  1;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
+  CONSTANT CTX_CFG_DIRECT_MODE_INT    : integer :=  0;     -- CONTEXT_CONFIG_REG
+
+  CONSTANT CTX_SEQNO_SIZE_INT         : integer := 40;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_CURRENT_L        : integer := 63;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_CURRENT_R        : integer := 48;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_LAST_L           : integer := 47;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_LAST_R           : integer := 32;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_JQIDX_L          : integer := 31;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_JQIDX_R          : integer := 24;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_CURRENT_INT_L    : integer := 39;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_CURRENT_INT_R    : integer := 24;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_LAST_INT_L       : integer := 23;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_LAST_INT_R       : integer :=  8;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_JQIDX_INT_L      : integer :=  7;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_SEQNO_JQIDX_INT_R      : integer :=  0;     -- CONTEXT_STATUS_REG
+
+  CONSTANT CTX_STAT_SIZE_INT          : integer :=  8;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_SAT_L             : integer := 15;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_SAT_R             : integer := 12;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_SAT_VALID         : integer :=  7;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_ACTION_ID_L       : integer := 11;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_ACTION_ID_R       : integer :=  8;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_ACTION_VALID      : integer :=  6;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_JOB_ACTIVE        : integer :=  1;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_CTX_ACTIVE        : integer :=  0;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_ACTION_ID_INT_L   : integer :=  7;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_ACTION_ID_INT_R   : integer :=  4;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_SAT_VALID_INT     : integer :=  3;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_ACTION_VALID_INT  : integer :=  2;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_JOB_ACTIVE_INT    : integer :=  1;     -- CONTEXT_STATUS_REG
+  CONSTANT CTX_STAT_CTX_ACTIVE_INT    : integer :=  0;     -- CONTEXT_STATUS_REG
+
+  CONSTANT CTX_CMD_SIZE_INT           : integer := 20;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_ARG_L              : integer := 63;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_ARG_R              : integer := 48;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_CODE_L             : integer :=  3;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_CODE_R             : integer :=  0;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_ARG_INT_L          : integer := 19;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_ARG_INT_R          : integer :=  4;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_CODE_INT_L         : integer :=  3;     -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_CMD_CODE_INT_R         : integer :=  0;     -- CONTEXT_COMMAND_REG
+
+  CONSTANT ATR_SAT_L                  : integer := 35;     -- ACTION_TYPE_REG
+  CONSTANT ATR_SAT_R                  : integer := 32;     -- ACTION_TYPE_REG
+
   CONSTANT NFE_L                      : integer := 23;     -- DDCBQ_STAT_REG
   CONSTANT NFE_R                      : integer :=  8;     -- DDCBQ_STAT_REG
+  CONSTANT NFE_CFG_ACTIVE             : integer := 15;     -- DDCBQ_STAT_REG
+  CONSTANT NFE_ILLEGAL_CMD            : integer := 14;     -- DDCBQ_STAT_REG
   CONSTANT NFE_CFG_WR_ACCESS          : integer := 13;     -- DDCBQ_STAT_REG
   CONSTANT NFE_INV_WR_ACCESS          : integer := 12;     -- DDCBQ_STAT_REG
   CONSTANT NFE_INV_WR_ADDRESS         : integer := 11;     -- DDCBQ_STAT_REG
@@ -247,8 +355,11 @@ PACKAGE donut_types IS
   ------------------------------------------------------------------------------
   --
   -- CONSTANT
---  CONSTANT CONTEXTS_NUM                    : integer := 512;      -- total number of supported contexts
---  CONSTANT CONTEXT_BITS                    : integer :=   9;      -- number of bits required to represent the supported contexts as integer
+  CONSTANT NUM_OF_CONTEXTS                 : integer := 512;      -- total number of supported contexts
+  CONSTANT CONTEXT_BITS                    : integer :=   9;      -- number of bits required to represent the supported contexts as integer
+  CONSTANT SEQNO_BITS                      : integer :=  16;      -- number of bits required to represent a valid sequence number
+  CONSTANT JQIDX_BITS                      : integer :=   8;      -- number of bits required to represent a valid job queue index
+
 --  CONSTANT ACTIVE_CONTEXTS_REGIONS_NUM     : integer :=  16;      -- number of active context regions
 --  CONSTANT ACTIVE_CONTEXTS_REGION_BITS     : integer :=   5;      -- number of bits required to represent active context within the region as integer
 --  CONSTANT ACTIVE_CONTEXTS_REGION_SIZE     : integer :=  2**ACTIVE_CONTEXTS_REGION_BITS; -- size in bits of each active context region
@@ -265,14 +376,30 @@ PACKAGE donut_types IS
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
-  -- DONUT Commands
+  -- Context Commands
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   --
   -- CONSTANT
-  CONSTANT AFU_NOP              : std_ulogic_vector(3 DOWNTO 0) := x"0";  -- AFU_COMMAND_REG
-  CONSTANT AFU_STOP             : std_ulogic_vector(3 DOWNTO 0) := x"2";  -- AFU_COMMAND_REG
-  CONSTANT AFU_ABORT            : std_ulogic_vector(3 DOWNTO 0) := x"4";  -- AFU_COMMAND_REG
+  CONSTANT CTX_NOP            : std_ulogic_vector(3 DOWNTO 0) := x"0";  -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_START          : std_ulogic_vector(3 DOWNTO 0) := x"1";  -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_STOP           : std_ulogic_vector(3 DOWNTO 0) := x"2";  -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_ABORT          : std_ulogic_vector(3 DOWNTO 0) := x"4";  -- CONTEXT_COMMAND_REG
+
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- SNAP DONUT Commands
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  --
+  -- CONSTANT
+  CONSTANT SNAP_CMD_BITS_L      : integer := 4;                                                          -- SNAP_CMD_REG
+  CONSTANT SNAP_CMD_BITS_R      : integer := 0;                                                          -- SNAP_CMD_REG
+  CONSTANT SNAP_NOP             : std_ulogic_vector(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) := "00000";  -- SNAP_CMD_REG
+  CONSTANT SNAP_STOP            : std_ulogic_vector(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) := "00010";  -- SNAP_CMD_REG
+  CONSTANT SNAP_ABORT           : std_ulogic_vector(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) := "00100";  -- SNAP_CMD_REG
+  CONSTANT SNAP_RESET           : std_ulogic_vector(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) := "01000";  -- SNAP_CMD_REG
+  CONSTANT EXPLORATION_DONE     : std_ulogic_vector(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) := "10000";  -- SNAP_CMD_REG
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -295,18 +422,18 @@ PACKAGE donut_types IS
     AFU_EB_OFFSET          : std_ulogic_vector(63 DOWNTO 0);
   END RECORD;
 
-  CONSTANT AFU_DES_INI : AFU_DES_T :=
-    (NUM_INTS_PER_PROCESS  => x"0002",                  -- x'00'  0:15
-     NUM_OF_PROCESSES      => x"0200",                  -- x'00' 16:31
-     NUM_OF_AFU_CRS        => x"0001",                  -- x'00' 32:47
-     REG_PROG_MODEL        => x"0004",                  -- x'00' 48:63
-     AFU_CR_LEN            =>   x"00_0000_0000_0001",   -- x'20'  8:63
-     AFU_CR_OFFSET         => x"0000_0000_0000_0100",   -- x'28'  0:63
-     PERPROCESSPSA_CONTROL => x"03",                    -- x'30'  0: 7
-     PERPROCESSPSA_LENGTH  =>   x"00_0000_0000_0010",   -- x'30'  8:63
-     PERPROCESSPSA_OFFSET  => x"0000_0000_0002_0000",   -- x'38'  0:63
-     AFU_EB_LEN            =>   x"00_0000_0000_0001",   -- x'40'  8:63
-     AFU_EB_OFFSET         => x"0000_0000_0000_1000"    -- x'48'  0:63
+  CONSTANT AFU_DES_INI : AFU_DES_T :=             -- see Coherent Accelerator Interface Architecture (CAIA) spec for definition of AFU Descriptor
+    (NUM_INTS_PER_PROCESS  => x"0002",                  -- x'00'  0:15 SNAP requires two interrupts per context (need more?)
+     NUM_OF_PROCESSES      => x"0200",                  -- x'00' 16:31 SNAP supports 512 contexts
+     NUM_OF_AFU_CRS        => x"0001",                  -- x'00' 32:47 SNAP provides one config record
+     REG_PROG_MODEL        => x"0004",                  -- x'00' 48:63 SNAP requires directed mode programming model
+     AFU_CR_LEN            =>   x"00_0000_0000_0001",   -- x'20'  8:63 SNAP provides one 256 bytes config record
+     AFU_CR_OFFSET         => x"0000_0000_0000_0100",   -- x'28'  0:63 The config record starts at address 0x100 of the config space (directly behind the descripter)
+     PERPROCESSPSA_CONTROL => x"03",                    -- x'30'  0: 7 Per process PSA (MMIO space for each context) required
+     PERPROCESSPSA_LENGTH  =>   x"00_0000_0000_0010",   -- x'30'  8:63 Each per process PSA is 16 * 4KB = 64KB in size
+     PERPROCESSPSA_OFFSET  => x"0000_0000_0200_0000",   -- x'38'  0:63 Per process PSA starts at 0x2000000
+     AFU_EB_LEN            =>   x"00_0000_0000_0001",   -- x'40'  8:63 A 4 KB error buffer is supported (not yet used)
+     AFU_EB_OFFSET         => x"0000_0000_0000_1000"    -- x'48'  0:63 The error buffer starts at address 0x1000 of the config space
     );
 
   ------------------------------------------------------------------------------
@@ -332,6 +459,18 @@ PACKAGE donut_types IS
      AFU_REVISION_ID => x"01"                     -- TODO: value
     );
 
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- ACTION Control
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  --
+  -- CONSTANT
+  CONSTANT ACTION_TYPE_BITS                : integer :=   4;      -- number of bits required to represent the action types
+  CONSTANT NUM_OF_ACTION_TYPES             : integer :=  16;      -- maximum number of supported action types
+  CONSTANT ACTION_BITS                     : integer :=   4;      -- number of bits required to represent the action IDs
+  CONSTANT NUM_OF_ACTIONS                  : integer :=  16;      -- maximum number of supported actions
+
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- ******************************************************
@@ -340,6 +479,20 @@ PACKAGE donut_types IS
 --
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- ARRAY TYPES
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  --
+  -- TYPE
+  TYPE ACTION_TYPE_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(ACTION_TYPE_BITS-1 DOWNTO 0);
+  TYPE ACTION_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
+  TYPE ACTION_MASK_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
+  TYPE CONTEXT_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  TYPE SEQNO_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(SEQNO_BITS-1 DOWNTO 0);
+  TYPE JQIDX_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(JQIDX_BITS-1 DOWNTO 0);
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -537,17 +690,28 @@ PACKAGE donut_types IS
 --
 --  cmm_e: ctrl_mgr    -> mmio        : Error Interface
 --
+--  jmm_c: job_manager -> mmio        : Control Interface
+--  jmm_d: job_manager -> mmio        : Data Interface
+--  jx_c : job_manager -> AXI master  : Control Interface
+--
+--  mmc_c: mmio        -> ctrl_mgr    : Control Interface
 --  mmc_e: mmio        -> ctrl_mgr    : Error Interface
 --  mmd_a: mmio        -> dma         : Aggravater Interface
 --  mmd_i: mmio        -> dma         : Error Inject
+--  mmj_c: mmio        -> job_manager : Control Interface
+--  mmj_d: mmio        -> job_manager : Data Interface
 --  mmx_d: mmio        -> AXI master  : Data Interface
 --  mmx_c: mmio        -> AXI master  : Control Interface
+--
+--  nx_d : NVMe        -> AXI master  : Data Interface
 --
 --  sd_c : AXI slave   -> dma         : Control Interface
 --  sd_d : AXI slave   -> dma         : Data Interface
 --
 --  xmm_d: AXI master  -> mmio        : Data Interface
 --  xmm_c: AXI master  -> mmio        : Control Interface
+--  xj_c : AXI master  -> job_mgr     : Control Interface
+--  xn_d : AXI master  -> NVMe        : Data Interface
 --
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -624,9 +788,50 @@ PACKAGE donut_types IS
 
   ---------------------------------------------------------------------------
   ----------------------------------------------------------------------------
+  --  Job Manager Interface
+  ----------------------------------------------------------------------------
+  ----------------------------------------------------------------------------
+    --
+    -- jmm_c
+    --
+    TYPE JMM_C_T IS RECORD
+      context_id      : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+      seqno_we        : std_ulogic;
+      status_we       : std_ulogic;
+    END RECORD;
+
+    --
+    -- jmm_d
+    --
+    TYPE JMM_D_T IS RECORD
+      seqno              : std_ulogic_vector(CTX_SEQNO_CURRENT_L DOWNTO CTX_SEQNO_CURRENT_R);
+      jqidx              : std_ulogic_vector(CTX_SEQNO_JQIDX_L DOWNTO CTX_SEQNO_JQIDX_R);
+      action_id          : std_ulogic_vector(CTX_STAT_ACTION_ID_L DOWNTO CTX_STAT_ACTION_ID_R);
+      action_active      : std_ulogic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
+      attached_to_action : std_ulogic;
+      context_active     : std_ulogic;
+    END RECORD;
+
+    --
+    -- jx_c
+    --
+    TYPE JX_C_T IS RECORD
+      check_for_idle     : std_ulogic_vector(ACTION_BITS-1 downto 0);
+    END RECORD JX_C_T;
+
+
+  ---------------------------------------------------------------------------
+  ----------------------------------------------------------------------------
   --  MMIO Interface
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
+    --
+    -- mmc_c
+    --
+    TYPE MMC_C_T IS RECORD
+      reset_done : std_ulogic;
+    END RECORD MMC_C_T;
+
     --
     -- mmc_e
     --
@@ -643,7 +848,9 @@ PACKAGE donut_types IS
       thr_cmd_fsm         : std_ulogic;
     END RECORD MMD_A_T;
 
+    --
     -- mmd_i
+    --
     TYPE MMD_I_T IS RECORD
       inject_dma_write_error    : std_ulogic;
       inject_dma_read_error     : std_ulogic;
@@ -653,7 +860,32 @@ PACKAGE donut_types IS
       inject_ah_c_tagpar_error  : std_ulogic;
     END RECORD;
 
+    --
+    -- mmj_c
+    --
+    TYPE MMJ_C_T IS RECORD
+      ctx_fifo_we               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+      ctx_stop                  : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+      exploration_done          : std_ulogic;
+      max_sat                   : integer RANGE 0 TO NUM_OF_ACTION_TYPES-1;
+      last_seqno                : std_ulogic;
+    END RECORD;
+
+    --
+    -- mmj_d
+    --
+    TYPE MMJ_D_T IS RECORD
+      context_id                : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+      action_id                 : std_ulogic_vector(CTX_STAT_ACTION_ID_L DOWNTO CTX_STAT_ACTION_ID_R);
+      sat                       : ACTION_TYPE_ARRAY(NUM_OF_ACTIONS-1 DOWNTO 0);
+      current_seqno             : std_ulogic_vector(CTX_SEQNO_CURRENT_L DOWNTO CTX_SEQNO_CURRENT_R);
+      current_jqidx             : std_ulogic_vector(CTX_SEQNO_JQIDX_L DOWNTO CTX_SEQNO_JQIDX_R);
+      job_queue_mode            : std_ulogic;
+    END RECORD;
+
+    --
     -- mmx_d
+    --
     TYPE MMX_D_T IS RECORD
       addr                : std_ulogic_vector(31 DOWNTO 0);
       data                : std_ulogic_vector(31 DOWNTO 0);
@@ -705,6 +937,47 @@ PACKAGE donut_types IS
       ack                 : std_ulogic;
       error               : std_ulogic_vector( 1 DOWNTO 0);
     END RECORD XMM_D_T;
+
+    --
+    -- xj_c
+    --
+    TYPE XJ_C_T IS RECORD
+      valid               : std_ulogic;
+      action              : std_ulogic_vector(ACTION_BITS-1 downto 0);
+    END RECORD XJ_C_T;
+
+    --
+    -- nx_d
+    --
+    TYPE NX_D_T IS RECORD
+      M_AXI_AWREADY   : std_logic;
+      M_AXI_WREADY    : std_logic;
+      M_AXI_BRESP     : std_logic_vector(1 DOWNTO 0);
+      M_AXI_BVALID    : std_logic;
+      M_AXI_ARREADY   : std_logic;
+      M_AXI_RDATA     : std_logic_vector(31 DOWNTO 0);
+      M_AXI_RRESP     : std_logic_vector(1 DOWNTO 0);
+      M_AXI_RVALID    : std_logic;
+    END RECORD NX_D_T;
+
+    --
+    -- xn_d
+    --
+    TYPE XN_D_T IS RECORD
+      M_AXI_AWADDR    : std_logic_vector(31 DOWNTO 0);
+      M_AXI_AWPROT    : std_logic_vector(2 DOWNTO 0);
+      M_AXI_AWVALID   : std_logic;
+      M_AXI_WDATA     : std_logic_vector(31 DOWNTO 0);
+      M_AXI_WSTRB     : std_logic_vector(3 DOWNTO 0);
+      M_AXI_WVALID    : std_logic;
+      M_AXI_BREADY    : std_logic;
+      M_AXI_ARADDR    : std_logic_vector(31 DOWNTO 0);
+      M_AXI_ARPROT    : std_logic_vector(2 DOWNTO 0);
+      M_AXI_ARVALID   : std_logic;
+      M_AXI_RREADY    : std_logic;
+    END RECORD XN_D_T;
+
+  
 END donut_types;
 
 

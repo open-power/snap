@@ -138,6 +138,10 @@ struct dnut_card;
 struct dnut_card *dnut_card_alloc_dev(const char *path,
 			uint16_t vendor_id, uint16_t device_id);
 
+int dnut_attach_action(struct dnut_card *card, uint32_t offset, int flags);
+
+int dnut_detach_action(struct dnut_card *card, uint32_t offset);
+
 int dnut_mmio_write32(struct dnut_card *card, uint64_t offset,
 			uint32_t data);
 int dnut_mmio_read32(struct dnut_card *card, uint64_t offset,

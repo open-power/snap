@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,14 +40,14 @@ static const char *version = GIT_VERSION;
 #define	ACTION_CONTROL_RUN	0x08
 #define	ACTION_4		(ACTION_BASE + 0x04)
 #define	ACTION_8		(ACTION_BASE + 0x08)
-#define	ACTION_CONFIG		(ACTION_BASE + 0x10)
+#define	ACTION_CONFIG		(ACTION_BASE + 0x20)
 #define ACTION_CONFIG_COUNT	0x1
 #define	ACTION_CONFIG_COPY	0x2
-#define	ACTION_SRC_LOW		(ACTION_BASE + 0x14)
-#define	ACTION_SRC_HIGH		(ACTION_BASE + 0x18)
-#define	ACTION_DEST_LOW		(ACTION_BASE + 0x1c)
-#define	ACTION_DEST_HIGH	(ACTION_BASE + 0x20)
-#define	ACTION_CNT		(ACTION_BASE + 0x24)	/* Count Register */
+#define	ACTION_SRC_LOW		(ACTION_BASE + 0x24)
+#define	ACTION_SRC_HIGH		(ACTION_BASE + 0x28)
+#define	ACTION_DEST_LOW		(ACTION_BASE + 0x2c)
+#define	ACTION_DEST_HIGH	(ACTION_BASE + 0x30)
+#define	ACTION_CNT		(ACTION_BASE + 0x34)	/* Count Register */
 
 /* Framework Write and Read are 64 bit MMIO */
 static void fw_write(struct dnut_card* h, uint64_t addr, uint64_t data)

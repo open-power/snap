@@ -115,8 +115,12 @@ add_files -norecurse $root_dir/ip/ram_520x64_2p/ram_520x64_2p.xci $msg_level
 export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_520x64_2p/ram_520x64_2p.xci"] -force $msg_level
 add_files -norecurse $root_dir/ip/ram_584x64_2p/ram_584x64_2p.xci $msg_level
 export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_584x64_2p/ram_584x64_2p.xci"] -force $msg_level
+add_files -norecurse  $root_dir/ip/fifo_4x512/fifo_4x512.xci $msg_level
+export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_4x512/fifo_4x512.xci"] -force $msg_level
+add_files -norecurse  $root_dir/ip/fifo_9x512/fifo_9x512.xci $msg_level
+export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_9x512/fifo_9x512.xci"] -force $msg_level
 add_files -norecurse  $root_dir/ip/fifo_513x512/fifo_513x512.xci $msg_level
-export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_513x512/fifo_513x512.xci"] -force  $msg_level
+export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_513x512/fifo_513x512.xci"] -force $msg_level
 # DDR3 / BRAM IPs
 if { $ddri_used == TRUE } {
   add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci $msg_level

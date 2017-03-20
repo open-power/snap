@@ -45,6 +45,8 @@ fi
 sed -i '/top    synth_options/ a\
                                              \$rootDir/ip/ram_520x64_2p/ram_520x64_2p.xci \\\
                                              \$rootDir/ip/ram_584x64_2p/ram_584x64_2p.xci \\\
+                                             \$rootDir/ip/fifo_4x512/fifo_4x512.xci \\\
+                                             \$rootDir/ip/fifo_9x512/fifo_9x512.xci \\\
                                              \$rootDir/ip/fifo_513x512/fifo_513x512.xci \\' $2
 
 
