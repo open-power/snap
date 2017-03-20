@@ -18,11 +18,11 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.std_logic_misc.all;
-use ieee.STD_LOGIC_UNSIGNED.all;
-use ieee.numeric_std.all;
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+USE ieee.std_logic_misc.all;
+USE ieee.std_logic_unsigned.all;
+USE ieee.numeric_std.all;
 
 USE work.psl_accel_types.ALL;
 USE work.donut_types.all;
@@ -35,9 +35,9 @@ entity mmio_to_axi_master is
   );  
   port (
  
-       clk             : IN  std_ulogic;
-       rst             : IN  std_ulogic;
-
+       clk             : IN  std_logic;
+       rst             : IN  std_logic;
+          
        mmx_d_i         : IN  MMX_D_T;
        xmm_d_o         : OUT XMM_D_T;
 
@@ -128,12 +128,12 @@ begin
 	xn_d_o.M_AXI_RREADY	<= axi_rready_q and     nvme_q;
 	--Example design I/O
         xmm_d_o.ack             <= mmio_ack_q;
-        xmm_d_o.data            <= std_ulogic_vector(mmio_rd_data_q);
-        xmm_d_o.error           <= std_ulogic_vector(mmio_error_q);
+        xmm_d_o.data            <= mmio_rd_data_q;
+        xmm_d_o.error           <= mmio_error_q;
         max_actions             <= std_logic_vector(to_unsigned(NUM_OF_ACTIONS - 1,4));
 
-        xj_c_o.valid            <= std_ulogic(idle_vector_q(4));
-        xj_c_o.action           <= std_ulogic_vector(idle_vector_q(3 downto 0));
+        xj_c_o.valid            <= idle_vector_q(4);
+        xj_c_o.action           <= idle_vector_q(3 downto 0);
 
         process(clk)
         begin

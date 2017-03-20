@@ -18,31 +18,29 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 
-LIBRARY ieee; -- ibm, ibm_asic;
+LIBRARY ieee;
 USE ieee.std_logic_1164.all;
+USE ieee.std_logic_misc.all;
+USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
---USE ieee.std_logic_arith.all;
-USE work.std_ulogic_support.all;
-USE work.std_ulogic_function_support.all;
-USE work.std_ulogic_unsigned.all;
 
 USE work.donut_types.all;
 
 ENTITY mmio IS
   GENERIC (
     -- Version register content
-    IMP_VERSION_DAT        : std_ulogic_vector(63 DOWNTO 0);
-    BUILD_DATE_DAT         : std_ulogic_vector(63 DOWNTO 0);
+    IMP_VERSION_DAT        : std_logic_vector(63 DOWNTO 0);
+    BUILD_DATE_DAT         : std_logic_vector(63 DOWNTO 0);
     NUM_OF_ACTIONS         : integer RANGE 0 TO 16
   );
   PORT (
     --
     -- pervasive
-    ha_pclock              : IN  std_ulogic;
-    afu_reset              : IN  std_ulogic;
+    ha_pclock              : IN  std_logic;
+    afu_reset              : IN  std_logic;
     --
     -- debug (TODO: remove)
-    ah_paren_mm_o          : OUT std_ulogic;
+    ah_paren_mm_o          : OUT std_logic;
     --
     -- PSL IOs
     ha_mm_i                : IN  HA_MM_T;
@@ -77,8 +75,8 @@ ARCHITECTURE mmio OF mmio IS
 
   --
   -- TYPE
-  TYPE REG64_ARRAY_T IS ARRAY (natural RANGE <>) OF std_ulogic_vector(63 DOWNTO 0);
---  TYPE REG32_ARRAY_T IS ARRAY (natural RANGE <>) OF std_ulogic_vector(31 DOWNTO 0);
+  TYPE REG64_ARRAY_T IS ARRAY (natural RANGE <>) OF std_logic_vector(63 DOWNTO 0);
+--  TYPE REG32_ARRAY_T IS ARRAY (natural RANGE <>) OF std_logic_vector(31 DOWNTO 0);
 
   --
   -- ATTRIBUTE
@@ -91,103 +89,103 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL ha_mm_w_q0                           : HA_MM_T;
   SIGNAL ha_mm_w_q                            : HA_MM_T;
   SIGNAL ah_mm_q                              : AH_MM_T;
-  SIGNAL ah_mm_read_ack_q                     : std_ulogic;
-  SIGNAL ah_mm_write_ack_q                    : std_ulogic;
-  SIGNAL xmm_ack_q                            : std_ulogic;
-  SIGNAL mmio_action_access_q                 : std_ulogic;
-  SIGNAL mmio_action_id_valid_q               : std_ulogic;
-  SIGNAL mmio_invalid_action_read_q           : std_ulogic;
-  SIGNAL mmio_read_access_q                   : std_ulogic;
-  SIGNAL mmio_read_alignment_error_q          : std_ulogic;
-  SIGNAL mmio_read_cfg_access_q               : std_ulogic;
-  SIGNAL mmio_read_master_access_q            : std_ulogic;
-  SIGNAL mmio_read_action_access_q            : std_ulogic;
+  SIGNAL ah_mm_read_ack_q                     : std_logic;
+  SIGNAL ah_mm_write_ack_q                    : std_logic;
+  SIGNAL xmm_ack_q                            : std_logic;
+  SIGNAL mmio_action_access_q                 : std_logic;
+  SIGNAL mmio_action_id_valid_q               : std_logic;
+  SIGNAL mmio_invalid_action_read_q           : std_logic;
+  SIGNAL mmio_read_access_q                   : std_logic;
+  SIGNAL mmio_read_alignment_error_q          : std_logic;
+  SIGNAL mmio_read_cfg_access_q               : std_logic;
+  SIGNAL mmio_read_master_access_q            : std_logic;
+  SIGNAL mmio_read_action_access_q            : std_logic;
   SIGNAL mmio_read_reg_offset_q               : integer RANGE 0 TO 15;
-  SIGNAL mmio_read_data_q0                    : std_ulogic_vector(63 DOWNTO 0);
-  SIGNAL mmio_read_datapar_q0                 : std_ulogic;
-  SIGNAL mmio_read_ack_q0                     : std_ulogic;
-  SIGNAL mmio_read_data_q                     : std_ulogic_vector(63 DOWNTO 0);
-  SIGNAL mmio_read_datapar_q                  : std_ulogic;
-  SIGNAL mmio_read_ack_q                      : std_ulogic;
-  SIGNAL mmio_read_action_outstanding_q       : std_ulogic;
-  SIGNAL mmio_master_read_q0                  : std_ulogic;
-  SIGNAL mmio_master_read_q                   : std_ulogic;
-  SIGNAL mmio_write_access_q                  : std_ulogic;
-  SIGNAL mmio_write_parity_error_q            : std_ulogic;
-  SIGNAL mmio_write_alignment_error_q         : std_ulogic;
-  SIGNAL mmio_write_cfg_access_q              : std_ulogic;
-  SIGNAL mmio_write_master_access_q           : std_ulogic;
-  SIGNAL mmio_write_action_access_q           : std_ulogic;
+  SIGNAL mmio_read_data_q0                    : std_logic_vector(63 DOWNTO 0);
+  SIGNAL mmio_read_datapar_q0                 : std_logic;
+  SIGNAL mmio_read_ack_q0                     : std_logic;
+  SIGNAL mmio_read_data_q                     : std_logic_vector(63 DOWNTO 0);
+  SIGNAL mmio_read_datapar_q                  : std_logic;
+  SIGNAL mmio_read_ack_q                      : std_logic;
+  SIGNAL mmio_read_action_outstanding_q       : std_logic;
+  SIGNAL mmio_master_read_q0                  : std_logic;
+  SIGNAL mmio_master_read_q                   : std_logic;
+  SIGNAL mmio_write_access_q                  : std_logic;
+  SIGNAL mmio_write_parity_error_q            : std_logic;
+  SIGNAL mmio_write_alignment_error_q         : std_logic;
+  SIGNAL mmio_write_cfg_access_q              : std_logic;
+  SIGNAL mmio_write_master_access_q           : std_logic;
+  SIGNAL mmio_write_action_access_q           : std_logic;
   SIGNAL mmio_write_reg_offset_q              : integer RANGE 0 TO 15;
   SIGNAL mmio_cfg_space_access_q              : boolean;
   SIGNAL afu_des                              : REG64_ARRAY_T(15 DOWNTO 0);
-  SIGNAL afu_des_p                            : std_ulogic_vector(15 DOWNTO 0);
+  SIGNAL afu_des_p                            : std_logic_vector(15 DOWNTO 0);
   SIGNAL afu_cfg                              : REG64_ARRAY_T(AFU_CFG_SPACE_SIZE-1 DOWNTO 0);
-  SIGNAL afu_cfg_p                            : std_ulogic_vector(AFU_CFG_SPACE_SIZE-1 DOWNTO 0);
-  SIGNAL regs_reset_q                         : std_ulogic;
-  SIGNAL regs_reset_addr_q                    : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL afu_cfg_p                            : std_logic_vector(AFU_CFG_SPACE_SIZE-1 DOWNTO 0);
+  SIGNAL regs_reset_q                         : std_logic;
+  SIGNAL regs_reset_addr_q                    : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
   SIGNAL snap_regs_q                          : REG64_ARRAY_T(MAX_SNAP_REG DOWNTO 0) := (OTHERS => (OTHERS => '0'));
-  SIGNAL snap_regs_par_q                      : std_ulogic_vector(MAX_SNAP_REG DOWNTO 0) := (OTHERS => '1');
-  SIGNAL snap_lock_q                          : std_ulogic;
+  SIGNAL snap_regs_par_q                      : std_logic_vector(MAX_SNAP_REG DOWNTO 0) := (OTHERS => '1');
+  SIGNAL snap_lock_q                          : std_logic;
   SIGNAL snap_lock_write_q                    : boolean;
-  SIGNAL snap_lock_write_val_q                : std_ulogic;
+  SIGNAL snap_lock_write_val_q                : std_logic;
   SIGNAL action_type_regs_q                   : REG64_ARRAY_T(MAX_ACTION_REG DOWNTO 0) := (OTHERS => (OTHERS => '0'));
-  SIGNAL action_type_regs_par_q               : std_ulogic_vector(MAX_ACTION_REG DOWNTO 0) := (OTHERS => '1');
+  SIGNAL action_type_regs_par_q               : std_logic_vector(MAX_ACTION_REG DOWNTO 0) := (OTHERS => '1');
   SIGNAL action_counter_regs_q                : REG64_ARRAY_T(MAX_ACTION_REG DOWNTO 0) := (OTHERS => (OTHERS => '0'));
-  SIGNAL free_running_timer_q                 : std_ulogic_vector(TIMER_SIZE-1 DOWNTO 0) := (OTHERS => '0');  -- Free running timer value
-  SIGNAL ctrl_mgr_err_q                       : std_ulogic_vector(31 DOWNTO 0) := (OTHERS => '0');
-  SIGNAL mmio_err_q                           : std_ulogic_vector(31 DOWNTO 0) := (OTHERS => '0');
-  SIGNAL non_fatal_master_rd_errors_q         : std_ulogic_vector(NFE_L DOWNTO NFE_R);
-  SIGNAL non_fatal_master_wr_errors_q         : std_ulogic_vector(NFE_L DOWNTO NFE_R);
-  SIGNAL non_fatal_master_errors_reset_q      : std_ulogic_vector(NFE_L DOWNTO NFE_R);
-  SIGNAL non_fatal_slave_rd_errors_q          : std_ulogic_vector(NFE_L DOWNTO NFE_R);
-  SIGNAL non_fatal_slave_wr_errors_q          : std_ulogic_vector(NFE_L DOWNTO NFE_R);
-  SIGNAL non_fatal_slave_errors_reset_q       : std_ulogic_vector(NFE_L DOWNTO NFE_R);
+  SIGNAL free_running_timer_q                 : std_logic_vector(TIMER_SIZE-1 DOWNTO 0) := (OTHERS => '0');  -- Free running timer value
+  SIGNAL ctrl_mgr_err_q                       : std_logic_vector(31 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL mmio_err_q                           : std_logic_vector(31 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL non_fatal_master_rd_errors_q         : std_logic_vector(NFE_L DOWNTO NFE_R);
+  SIGNAL non_fatal_master_wr_errors_q         : std_logic_vector(NFE_L DOWNTO NFE_R);
+  SIGNAL non_fatal_master_errors_reset_q      : std_logic_vector(NFE_L DOWNTO NFE_R);
+  SIGNAL non_fatal_slave_rd_errors_q          : std_logic_vector(NFE_L DOWNTO NFE_R);
+  SIGNAL non_fatal_slave_wr_errors_q          : std_logic_vector(NFE_L DOWNTO NFE_R);
+  SIGNAL non_fatal_slave_errors_reset_q       : std_logic_vector(NFE_L DOWNTO NFE_R);
   SIGNAL mmc_e_q                              : MMC_E_T;
   SIGNAL mm_e_q                               : MM_E_T := ('0', '0',(OTHERS => '0'));
   SIGNAL jmm_c_q                              : JMM_C_T;
   SIGNAL jmm_d_q                              : JMM_D_T;
   SIGNAL dbg_regs_q                           : REG64_ARRAY_T(15 DOWNTO 0);
-  SIGNAL dbg_regs_par_q                       : std_ulogic_vector(15 DOWNTO 0);
-  SIGNAL exploration_done_q                   : std_ulogic;
+  SIGNAL dbg_regs_par_q                       : std_logic_vector(15 DOWNTO 0);
+  SIGNAL exploration_done_q                   : std_logic;
 
   -- Registers
-  SIGNAL context_config_mmio_we        : std_ulogic;
-  SIGNAL context_config_mmio_addr      : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
-  SIGNAL context_config_mmio_din       : std_ulogic_vector(CTX_CFG_SIZE_INT-1 DOWNTO 0);
-  SIGNAL context_config_mmio_dout      : std_ulogic_vector(CTX_CFG_SIZE_INT-1 DOWNTO 0);
-  SIGNAL context_config_hw_addr        : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
-  SIGNAL context_config_hw_dout        : std_ulogic_vector(CTX_CFG_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_config_mmio_we        : std_logic;
+  SIGNAL context_config_mmio_addr      : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL context_config_mmio_din       : std_logic_vector(CTX_CFG_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_config_mmio_dout      : std_logic_vector(CTX_CFG_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_config_hw_addr        : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL context_config_hw_dout        : std_logic_vector(CTX_CFG_SIZE_INT-1 DOWNTO 0);
 
-  SIGNAL context_seqno_conflict_q      : std_ulogic;  -- handle conflict between HW and MMIO write access
-  SIGNAL context_seqno_mmio_we         : std_ulogic;
-  SIGNAL context_seqno_mmio_addr       : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
-  SIGNAL context_seqno_mmio_din        : std_ulogic_vector(CTX_SEQNO_SIZE_INT-1 DOWNTO 0);
-  SIGNAL context_seqno_mmio_dout       : std_ulogic_vector(CTX_SEQNO_SIZE_INT-1 DOWNTO 0);
-  SIGNAL context_seqno_hw_we           : std_ulogic;
-  SIGNAL context_seqno_hw_addr         : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
-  SIGNAL context_seqno_hw_din          : std_ulogic_vector(CTX_SEQNO_SIZE_INT-1 DOWNTO 0);
-  SIGNAL context_seqno_hw_dout         : std_ulogic_vector(CTX_SEQNO_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_seqno_conflict_q      : std_logic;  -- handle conflict between HW and MMIO write access
+  SIGNAL context_seqno_mmio_we         : std_logic;
+  SIGNAL context_seqno_mmio_addr       : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL context_seqno_mmio_din        : std_logic_vector(CTX_SEQNO_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_seqno_mmio_dout       : std_logic_vector(CTX_SEQNO_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_seqno_hw_we           : std_logic;
+  SIGNAL context_seqno_hw_addr         : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL context_seqno_hw_din          : std_logic_vector(CTX_SEQNO_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_seqno_hw_dout         : std_logic_vector(CTX_SEQNO_SIZE_INT-1 DOWNTO 0);
 
-  SIGNAL context_status_conflict_q     : std_ulogic;  -- handle conflict between HW and MMIO write access
-  SIGNAL context_status_mmio_we        : std_ulogic;
-  SIGNAL context_status_mmio_addr      : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
-  SIGNAL context_status_mmio_din       : std_ulogic_vector(CTX_STAT_SIZE_INT-1 DOWNTO 0);
-  SIGNAL context_status_mmio_dout      : std_ulogic_vector(CTX_STAT_SIZE_INT-1 DOWNTO 0);
-  SIGNAL context_status_hw_we          : std_ulogic;
-  SIGNAL context_status_hw_addr        : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
-  SIGNAL context_status_hw_din         : std_ulogic_vector(CTX_STAT_SIZE_INT-1 DOWNTO 0);
-  SIGNAL context_status_hw_dout        : std_ulogic_vector(CTX_STAT_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_status_conflict_q     : std_logic;  -- handle conflict between HW and MMIO write access
+  SIGNAL context_status_mmio_we        : std_logic;
+  SIGNAL context_status_mmio_addr      : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL context_status_mmio_din       : std_logic_vector(CTX_STAT_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_status_mmio_dout      : std_logic_vector(CTX_STAT_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_status_hw_we          : std_logic;
+  SIGNAL context_status_hw_addr        : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL context_status_hw_din         : std_logic_vector(CTX_STAT_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_status_hw_dout        : std_logic_vector(CTX_STAT_SIZE_INT-1 DOWNTO 0);
 
-  SIGNAL context_command_mmio_we       : std_ulogic;
-  SIGNAL context_command_mmio_addr     : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
-  SIGNAL context_command_mmio_din      : std_ulogic_vector(CTX_CMD_SIZE_INT-1 DOWNTO 0);
-  SIGNAL context_command_mmio_dout     : std_ulogic_vector(CTX_CMD_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_command_mmio_we       : std_logic;
+  SIGNAL context_command_mmio_addr     : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL context_command_mmio_din      : std_logic_vector(CTX_CMD_SIZE_INT-1 DOWNTO 0);
+  SIGNAL context_command_mmio_dout     : std_logic_vector(CTX_CMD_SIZE_INT-1 DOWNTO 0);
 
-  SIGNAL context_fifo_we_q             : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
-  SIGNAL context_stop_q                : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
-  SIGNAL context_stop_ack_q0           : std_ulogic;
-  SIGNAL context_stop_ack_q            : std_ulogic;
+  SIGNAL context_fifo_we_q             : std_logic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL context_stop_q                : std_logic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL context_stop_ack_q0           : std_logic;
+  SIGNAL context_stop_ack_q            : std_logic;
 
 BEGIN
 
@@ -679,8 +677,8 @@ BEGIN
         snap_regs_q(BUILD_DATE_REG)      <= BUILD_DATE_DAT;
         snap_regs_par_q(BUILD_DATE_REG)  <= parity_gen_odd(BUILD_DATE_DAT);
 
-        snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_ACTION_ID_L DOWNTO SNAP_STAT_MAX_ACTION_ID_R) <= std_ulogic_vector(to_unsigned(NUM_OF_ACTIONS-1, ACTION_BITS));
-        snap_regs_par_q(SNAP_STATUS_REG) <= parity_gen_odd(std_ulogic_vector(to_unsigned(NUM_OF_ACTIONS-1, ACTION_BITS)));
+        snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_ACTION_ID_L DOWNTO SNAP_STAT_MAX_ACTION_ID_R) <= std_logic_vector(to_unsigned(NUM_OF_ACTIONS-1, ACTION_BITS));
+        snap_regs_par_q(SNAP_STATUS_REG) <= parity_gen_odd(std_logic_vector(to_unsigned(NUM_OF_ACTIONS-1, ACTION_BITS)));
 
         snap_lock_write_q                <= FALSE;
         snap_lock_write_val_q            <= '0';
@@ -1163,8 +1161,8 @@ BEGIN
   ------------------------------------------------------------------------------
   --
   host_interface : PROCESS (ha_pclock)
-  VARIABLE
-    context_id_v : std_ulogic_vector(PSL_HOST_CTX_ID_L DOWNTO PSL_HOST_CTX_ID_R);
+    VARIABLE context_id_v                   : std_logic_vector(PSL_HOST_CTX_ID_L DOWNTO PSL_HOST_CTX_ID_R);
+    VARIABLE ad_equal_slave_action_offset_v : std_logic;
   BEGIN
     IF (rising_edge(ha_pclock)) THEN
       IF afu_reset = '1' THEN
@@ -1215,9 +1213,16 @@ BEGIN
         mmio_action_access_q   <= mmio_action_access_q;
         mmio_action_id_valid_q <= mmio_action_id_valid_q;
         IF (ha_mm_i.valid = '1') THEN
+          IF (ha_mm_i.ad(SLAVE_ACTION_OFFSET_L DOWNTO SLAVE_ACTION_OFFSET_R) = SLAVE_ACTION_OFFSET_VAL) THEN 
+            ad_equal_slave_action_offset_v := '1';
+          ELSE
+            ad_equal_slave_action_offset_v := '0';
+          END IF;
+            
           mmio_action_access_q <= ((ha_mm_i.ad(MASTER_ACTION_ACCESS_BIT) AND NOT or_reduce(ha_mm_i.ad(PSL_HOST_ADDR_MAXBIT DOWNTO MASTER_ACTION_ACCESS_BIT+1))) OR
-                                   (ha_mm_i.ad(SLAVE_SPACE_BIT) AND (ha_mm_i.ad(SLAVE_ACTION_OFFSET_L DOWNTO SLAVE_ACTION_OFFSET_R) = SLAVE_ACTION_OFFSET_VAL))) AND
+                                   (ha_mm_i.ad(SLAVE_SPACE_BIT) AND ad_equal_slave_action_offset_v)) AND
                                   NOT (ha_mm_i.cfg OR ha_mm_i.dw);
+
           IF to_integer(unsigned(ha_mm_i.ad(MASTER_ACTION_ID_L DOWNTO MASTER_ACTION_ID_R))) < (to_integer(unsigned(snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_ACTION_ID_L DOWNTO SNAP_STAT_MAX_ACTION_ID_L))) + 1) THEN
             mmio_action_id_valid_q <= '1';
           ELSE

@@ -138,7 +138,7 @@ patch_tcl_files:
 	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
 
 patch_vhd_files:
-	@echo "PATCH .vhd FILES" && VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\///' | sed 's/\(^.*psl_accel_s\)yn.vhd/\1yn.vhd\n\1im.vhd/'`; \
+	@echo "PATCH .vhd FILES" && VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\/..\///' | sed 's/\(^.*psl_accel_s\)yn.vhd/\1yn.vhd\n\1im.vhd/'`; \
 	for vhd_file in $$VHD_FILES; do \
 		$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; \
 	done

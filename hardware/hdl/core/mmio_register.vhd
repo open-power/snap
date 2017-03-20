@@ -21,9 +21,9 @@
 -- True dual port, single clocked register
 LIBRARY ieee;
 USE ieee.std_logic_1164.all;
+USE ieee.std_logic_misc.all;
+USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
-USE work.std_ulogic_function_support.all;
-USE work.std_ulogic_unsigned.all;
 
 ENTITY mmio_register_2w2r IS
   GENERIC (
@@ -32,22 +32,22 @@ ENTITY mmio_register_2w2r IS
     ADDR_WIDTH : integer := 9
   );
   PORT (
-    clk        : IN  std_ulogic;
+    clk        : IN  std_logic;
 
-    we_a       : IN  std_ulogic;
-    addr_a     : IN  std_ulogic_vector(ADDR_WIDTH - 1 DOWNTO 0);
-    din_a      : IN  std_ulogic_vector(WIDTH-1 DOWNTO 0);
-    dout_a     : OUT std_ulogic_vector(WIDTH-1 DOWNTO 0);
+    we_a       : IN  std_logic;
+    addr_a     : IN  std_logic_vector(ADDR_WIDTH - 1 DOWNTO 0);
+    din_a      : IN  std_logic_vector(WIDTH-1 DOWNTO 0);
+    dout_a     : OUT std_logic_vector(WIDTH-1 DOWNTO 0);
 
-    we_b       : IN  std_ulogic;
-    addr_b     : IN  std_ulogic_vector(ADDR_WIDTH - 1 DOWNTO 0);
-    din_b      : IN  std_ulogic_vector(WIDTH-1 DOWNTO 0);
-    dout_b     : OUT std_ulogic_vector(WIDTH-1 DOWNTO 0)
+    we_b       : IN  std_logic;
+    addr_b     : IN  std_logic_vector(ADDR_WIDTH - 1 DOWNTO 0);
+    din_b      : IN  std_logic_vector(WIDTH-1 DOWNTO 0);
+    dout_b     : OUT std_logic_vector(WIDTH-1 DOWNTO 0)
   );
 END mmio_register_2w2r;
 
 ARCHITECTURE mmio_register_2w2r OF mmio_register_2w2r IS
-  TYPE ram_t IS ARRAY (SIZE-1 DOWNTO 0) OF std_ulogic_vector(WIDTH-1 DOWNTO 0);
+  TYPE ram_t IS ARRAY (SIZE-1 DOWNTO 0) OF std_logic_vector(WIDTH-1 DOWNTO 0);
 
   SHARED VARIABLE ram_v : ram_t;
 
@@ -80,9 +80,9 @@ END ARCHITECTURE;
 -- Single write / dual read port, single clocked register
 LIBRARY ieee;
 USE ieee.std_logic_1164.all;
+USE ieee.std_logic_misc.all;
+USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
-USE work.std_ulogic_function_support.all;
-USE work.std_ulogic_unsigned.all;
 
 ENTITY mmio_register_1w2r IS
   GENERIC (
@@ -91,20 +91,20 @@ ENTITY mmio_register_1w2r IS
     ADDR_WIDTH : integer := 9
   );
   PORT (
-    clk        : IN  std_ulogic;
+    clk        : IN  std_logic;
 
-    we_a       : IN  std_ulogic;
-    addr_a     : IN  std_ulogic_vector(ADDR_WIDTH - 1 DOWNTO 0);
-    din_a      : IN  std_ulogic_vector(WIDTH-1 DOWNTO 0);
-    dout_a     : OUT std_ulogic_vector(WIDTH-1 DOWNTO 0);
+    we_a       : IN  std_logic;
+    addr_a     : IN  std_logic_vector(ADDR_WIDTH - 1 DOWNTO 0);
+    din_a      : IN  std_logic_vector(WIDTH-1 DOWNTO 0);
+    dout_a     : OUT std_logic_vector(WIDTH-1 DOWNTO 0);
 
-    addr_b     : IN  std_ulogic_vector(ADDR_WIDTH - 1 DOWNTO 0);
-    dout_b     : OUT std_ulogic_vector(WIDTH-1 DOWNTO 0)
+    addr_b     : IN  std_logic_vector(ADDR_WIDTH - 1 DOWNTO 0);
+    dout_b     : OUT std_logic_vector(WIDTH-1 DOWNTO 0)
   );
 END mmio_register_1w2r;
 
 ARCHITECTURE mmio_register_1w2r OF mmio_register_1w2r IS
-  TYPE mem_t IS ARRAY (SIZE DOWNTO 0) OF std_ulogic_vector(WIDTH-1 DOWNTO 0);
+  TYPE mem_t IS ARRAY (SIZE DOWNTO 0) OF std_logic_vector(WIDTH-1 DOWNTO 0);
 
   SIGNAL mem : mem_t;
 
@@ -127,9 +127,9 @@ END ARCHITECTURE;
 -- Single port register
 LIBRARY ieee;
 USE ieee.std_logic_1164.all;
+USE ieee.std_logic_misc.all;
+USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
-USE work.std_ulogic_function_support.all;
-USE work.std_ulogic_unsigned.all;
 
 ENTITY mmio_register_1w1r IS
   GENERIC (
@@ -138,17 +138,17 @@ ENTITY mmio_register_1w1r IS
     ADDR_WIDTH : integer := 9
   );
   PORT (
-    clk        : IN  std_ulogic;
+    clk        : IN  std_logic;
 
-    we         : IN  std_ulogic;
-    addr       : IN  std_ulogic_vector(ADDR_WIDTH - 1 DOWNTO 0);
-    din        : IN  std_ulogic_vector(WIDTH-1 DOWNTO 0);
-    dout       : OUT std_ulogic_vector(WIDTH-1 DOWNTO 0)
+    we         : IN  std_logic;
+    addr       : IN  std_logic_vector(ADDR_WIDTH - 1 DOWNTO 0);
+    din        : IN  std_logic_vector(WIDTH-1 DOWNTO 0);
+    dout       : OUT std_logic_vector(WIDTH-1 DOWNTO 0)
   );
 END mmio_register_1w1r;
 
 ARCHITECTURE mmio_register_1w1r OF mmio_register_1w1r IS
-  TYPE mem_t IS ARRAY (SIZE DOWNTO 0) OF std_ulogic_vector(WIDTH-1 DOWNTO 0);
+  TYPE mem_t IS ARRAY (SIZE DOWNTO 0) OF std_logic_vector(WIDTH-1 DOWNTO 0);
 
   SIGNAL mem : mem_t;
 

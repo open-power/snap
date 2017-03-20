@@ -68,24 +68,24 @@ export_ip_user_files -of_objects             [get_files $ip_dir/fifo_513x512/fif
 export_simulation -of_objects [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
 
 #create fifo_9x512
-# 
-create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_9x512 -dir $ip_dir
+puts "	                     generating IP fifo_9x512"
+create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_9x512 -dir $ip_dir $msg_level
 set_property -dict [list CONFIG.Input_Data_Width {9} CONFIG.Input_Depth {512} CONFIG.Output_Data_Width {9} CONFIG.Output_Depth {512} CONFIG.Data_Count_Width {9} CONFIG.Write_Data_Count_Width {9} CONFIG.Read_Data_Count_Width {9} CONFIG.Full_Threshold_Assert_Value {511} CONFIG.Full_Threshold_Negate_Value {510}] [get_ips fifo_9x512]
 set_property generate_synth_checkpoint false [get_files $ip_dir/fifo_9x512/fifo_9x512.xci]
-generate_target {instantiation_template}     [get_files $ip_dir/fifo_9x512/fifo_9x512.xci]
-generate_target all                          [get_files $ip_dir/fifo_9x512/fifo_9x512.xci]
-export_ip_user_files -of_objects             [get_files $ip_dir/fifo_9x512/fifo_9x512.xci] -no_script -force -quiet
-export_simulation -of_objects [get_files $ip_dir/fifo_9x512/fifo_9x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
+generate_target {instantiation_template}     [get_files $ip_dir/fifo_9x512/fifo_9x512.xci] $msg_level
+generate_target all                          [get_files $ip_dir/fifo_9x512/fifo_9x512.xci] $msg_level
+export_ip_user_files -of_objects             [get_files $ip_dir/fifo_9x512/fifo_9x512.xci] -no_script -force $msg_level
+export_simulation -of_objects [get_files $ip_dir/fifo_9x512/fifo_9x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
 
-#create fifo_4x512 (depth of 16 would be sufficient but, 512 is the smallest possible depth)
-# 
-create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_4x512 -dir $ip_dir
+#create fifo_4x512 (depth of 16 would be sufficient but, 512 is the smallest possible depth) 
+puts "	                     generating IP fifo_4x512"
+create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_4x512 -dir $ip_dir $msg_level
 set_property -dict [list CONFIG.Input_Data_Width {4} CONFIG.Input_Depth {512} CONFIG.Output_Data_Width {4} CONFIG.Output_Depth {512} CONFIG.Data_Count_Width {9} CONFIG.Write_Data_Count_Width {9} CONFIG.Read_Data_Count_Width {9} CONFIG.Full_Threshold_Assert_Value {511} CONFIG.Full_Threshold_Negate_Value {510}] [get_ips fifo_4x512]
 set_property generate_synth_checkpoint false [get_files $ip_dir/fifo_4x512/fifo_4x512.xci]
-generate_target {instantiation_template}     [get_files $ip_dir/fifo_4x512/fifo_4x512.xci]
-generate_target all                          [get_files $ip_dir/fifo_4x512/fifo_4x512.xci]
-export_ip_user_files -of_objects             [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] -no_script -force -quiet
-export_simulation -of_objects [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
+generate_target {instantiation_template}     [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] $msg_level
+generate_target all                          [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] $msg_level
+export_ip_user_files -of_objects             [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] -no_script -force $msg_level
+export_simulation -of_objects [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level  
 
 
 #choose type of RAM that will be connected to the DDR AXI Interface

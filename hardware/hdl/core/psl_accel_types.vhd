@@ -18,13 +18,11 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 
-LIBRARY ieee;-- ibm, ibm_asic;
-USE ieee.std_logic_1164.ALL;
-USE ieee.numeric_std.ALL;
---USE ieee.std_logic_arith.ALL;
-USE work.std_ulogic_support.ALL;
-USE work.std_ulogic_function_support.ALL;
-USE work.std_ulogic_unsigned.ALL;
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+USE ieee.std_logic_misc.all;
+USE ieee.std_logic_unsigned.all;
+USE ieee.numeric_std.all;
 
 PACKAGE psl_accel_types IS
 
