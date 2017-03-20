@@ -2355,7 +2355,7 @@ BEGIN
 
           IF read_ctrl_fsm_q = ST_IDLE THEN
             sd_c_q.rd_req <= sd_c_i.rd_req;
-            rd_ctx_q      <= sd_c_i.wr_ctx;
+            rd_ctx_q      <= sd_c_i.rd_ctx;
           ELSE
             sd_c_q.rd_req <= '0';
           END IF;
