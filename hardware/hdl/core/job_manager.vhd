@@ -95,6 +95,7 @@ ARCHITECTURE job_manager OF job_manager IS
   SIGNAL detach_action_q               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL check_for_idle_q              : std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
   SIGNAL enable_check_for_idle_q       : ACTION_ID_ARRAY(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+  SIGNAL job_queue_mode_q              : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL action_active_q               : std_ulogic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
 
   SIGNAL ctx_fifo_we                   : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
@@ -302,6 +303,7 @@ BEGIN
           assign_action_fsm_q             <= ST_RESET;
           current_contexts_q              <= (OTHERS => (OTHERS => '0'));
           enable_check_for_idle_q(sat_id) <= (OTHERS => '0');
+          job_queue_mode_q(sat_id)        <= '0';
           int_fifo_assign_we_q(sat_id)    <= '0';
 
         ELSE
@@ -317,6 +319,7 @@ BEGIN
           assign_action_fsm_q             <= assign_action_fsm_q;
           current_contexts_q              <= current_contexts_q;
           enable_check_for_idle_q(sat_id) <= (OTHERS => '0');
+          job_queue_mode_q(sat_id)        <= job_queue_mode_q(sat_id);
           int_fifo_assign_we_q(sat_id)    <= '0';
 
           --
@@ -365,9 +368,10 @@ BEGIN
 
             WHEN ST_RETURN_MMIO_LOCK =>
               enable_check_for_idle_q(sat_id)(to_integer(unsigned(assign_action_id_q(sat_id)))) <= mmj_d_i.job_queue_mode OR mmj_d_i.cpl_int_enable;
+              job_queue_mode_q(sat_id)                                                          <= mmj_d_i.job_queue_mode;
               IF mmj_c_i.action_ack = '1' THEN
-                assign_require_mmio_q                                                             <= '0';
-                assign_action_fsm_q                                                               <= ST_WAIT_FREE_ACTION;
+                assign_require_mmio_q <= '0';
+                assign_action_fsm_q   <= ST_WAIT_FREE_ACTION;
               END IF;
 
             WHEN OTHERS => NULL;
@@ -419,7 +423,7 @@ BEGIN
           action_completed_fifo_re(sat_id)   <= '0';
           action_completed_fifo_we(sat_id)   <= '0';
           action_completed_v                 := '0';
-          IF (unsigned(mmj_d_i.sat(to_integer(unsigned(xj_c_i.action)))) = to_unsigned(sat_id, ACTION_BITS)) THEN
+          IF (job_queue_mode_q(sat_id) = '1') AND (unsigned(mmj_d_i.sat(to_integer(unsigned(xj_c_i.action)))) = to_unsigned(sat_id, ACTION_BITS)) THEN
             action_completed_fifo_we(sat_id)  <= xj_c_i.valid;
             action_completed_fifo_din(sat_id) <= xj_c_i.action;
             action_completed_v                := xj_c_i.valid;
