@@ -1039,7 +1039,7 @@ PACKAGE BODY donut_types IS
       FOR i IN data'low TO data'high LOOP
         res := data(i) XOR res;
       END LOOP;  -- i
-      return NOT res;
+      return res;
     END parity_gen_even;
 
     --
@@ -1048,7 +1048,7 @@ PACKAGE BODY donut_types IS
     FUNCTION parity_gen_odd(CONSTANT data : IN std_logic_vector ) RETURN std_logic IS
       VARIABLE res : std_logic;
     BEGIN
-      res := '0';
+      res := '1';
       
       FOR i  IN data'low TO data'high LOOP
         res := data(i) XOR res;
