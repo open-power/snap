@@ -138,10 +138,19 @@ patch_tcl_files:
 	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
 
 patch_vhd_files:
-	@echo "PATCH .vhd FILES" && VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\/..\///' | sed 's/\(^.*psl_accel_s\)yn.vhd/\1yn.vhd\n\1im.vhd/'`; \
-	for vhd_file in $$VHD_FILES; do \
-		$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; \
-	done
+	@echo "PATCH .vhd FILES" 
+	@#yet another Xilinx bug: the fileinfo.txt is not correct if DDR3=BRAM=FALSE!
+	@if [ $(DDR3_USED) = "TRUE" ] || [ $(BRAM_USED) = "TRUE" ]; then\
+		VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\///' | sed 's/\(^.*psl_accel_s\)yn.vhd/\1yn.vhd\n\1im.vhd/'`; \
+		for vhd_file in $$VHD_FILES; do \
+			$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; \
+		done;\
+	else\
+		VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\/..\///' | sed 's/\(^.*psl_accel_s\)yn.vhd/\1yn.vhd\n\1im.vhd/'`; \
+		for vhd_file in $$VHD_FILES; do \
+			$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; \
+		done;\
+	fi;	
 
 patch_version:
 	@echo "PATCH SNAP version and build date registers"; \
