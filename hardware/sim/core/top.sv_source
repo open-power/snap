@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-`timescale 1ns / 1ns
+`timescale 1ns / 10ps
 module top (
   output          breakpoint
 );
