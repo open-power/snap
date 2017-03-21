@@ -41,7 +41,6 @@
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
-static uint32_t context_offset = ACTION_BASE_S;
 
 #define PRINTF0(fmt, ...) do {		\
 		printf(fmt, ## __VA_ARGS__);	\
@@ -132,8 +131,6 @@ static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
 {
 	int rc;
 
-	addr += context_offset;
-	PRINTF4("mmio_write(0x%08x ,0x%08x)\n", addr, data);
 	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
 		PRINTF0("Write MMIO 32 Err\n");
@@ -145,11 +142,9 @@ static uint32_t action_read(struct dnut_card* h, uint32_t addr)
 	int rc;
 	uint32_t data;
 
-	addr += context_offset;
 	rc = dnut_mmio_read32(h, (uint64_t)addr, &data);
 	if (0 != rc)
 		PRINTF0("Read MMIO 32 Err\n");
-	PRINTF4("mmio_read(0x%08x) -> 0x%08x\n", addr, data);
 	return data;
 }
 
@@ -302,7 +297,6 @@ int main(int argc, char *argv[])
 			break;
 		case 'm':	/* master */
 			use_master = true;
-			context_offset = ACTION_BASE_M;
 			break;
 		case 't':	/* timeout */
 			timeout = strtol(optarg, (char **)NULL, 0) * 1000;

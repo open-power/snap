@@ -44,7 +44,6 @@
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
-static uint32_t context_offset = ACTION_BASE_S;		/* Default Slave Context */
 
 #define VERBOSE0(fmt, ...) do {		\
 		printf(fmt, ## __VA_ARGS__);	\
@@ -220,7 +219,6 @@ static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
 {
 	int rc;
 
-	addr += context_offset;
 	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
 		VERBOSE0("Write MMIO 32 Err\n");
@@ -232,7 +230,6 @@ static uint32_t action_read(struct dnut_card* h, uint32_t addr)
 	int rc;
 	uint32_t data;
 
-	addr += context_offset;
 	rc = dnut_mmio_read32(h, (uint64_t)addr, &data);
 	if (0 != rc)
 		VERBOSE0("Read MMIO 32 Err\n");
@@ -688,7 +685,6 @@ int main(int argc, char *argv[])
 			break;
 		case 'm':	/* master */
 			use_master = true;
-			context_offset = ACTION_BASE_M;
 			break;
 		default:
 			usage(argv[0]);

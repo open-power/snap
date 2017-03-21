@@ -51,20 +51,22 @@ extern "C" {
 #define	CACHELINE_BYTES		128
 
 /* General ACTION registers */
-#define	ACTION_BASE		0x10000
-#define	ACTION_CONTROL		ACTION_BASE
-#define	ACTION_CONTROL_START	  0x00000001
-#define	ACTION_CONTROL_IDLE	  0x00000004
-#define	ACTION_CONTROL_RUN	  0x00000008
+#define	ACTION_BASE_M		0x10000		/* Base when in Master Mode */
+#define	ACTION_BASE_S		0x0F000		/* Base when in Slave Mode */
+
+#define	ACTION_CONTROL		0
+#define	ACTION_CONTROL_START	0x00000001
+#define	ACTION_CONTROL_IDLE	0x00000004
+#define	ACTION_CONTROL_RUN	0x00000008
 
 /* ACTION Specific register setup: Input */
-#define ACTION_PARAMS_IN	(ACTION_BASE + 0x80) /* 0x80 - 0x90 */
-#define ACTION_JOB_IN		(ACTION_BASE + 0x90) /* 0x90 - 0xfc */
+#define ACTION_PARAMS_IN	0x80	/* 0x80 - 0x90 */
+#define ACTION_JOB_IN		0x90	/* 0x90 - 0xfc */
 
 /* ACTION Specific register setup: Output */
-#define ACTION_PARAMS_OUT	(ACTION_BASE + 0x100) /* 0x100 - 0x110 */
-#define ACTION_RETC		(ACTION_BASE + 0x104) /* 0x104 */
-#define ACTION_JOB_OUT		(ACTION_BASE + 0x110) /* 0x110 - 0x1fc */
+#define ACTION_PARAMS_OUT	0x100 	/* 0x100 - 0x110 */
+#define ACTION_RETC		0x104	/* 0x104 */
+#define ACTION_JOB_OUT		0x110	/* 0x110 - 0x1fc */
 
 struct dnut_funcs {
 	void * (* card_alloc_dev)(const char *path, uint16_t vendor_id,

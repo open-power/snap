@@ -68,19 +68,19 @@ int action_trace_enabled(void)
 			fprintf(stderr, "P " fmt, ## __VA_ARGS__);	\
 	} while (0)
 
-#define	ACTION_CONFIG		(ACTION_BASE + 0x10)
-#define ACTION_CONFIG_COUNT	  0x00000001
-#define	ACTION_CONFIG_COPY	  0x00000002
 #define	INVALID_SAT 0x0ffffffff
 
 struct dnut_data {
 	void *priv;
 	struct cxl_afu_h *afu_h;
+	bool master;		/* True if this is Master Device */
+	int cir;		/* Context id */
+	uint64_t action_base;
 	uint16_t vendor_id;
 	uint16_t device_id;
 	uint32_t action_type;	/* Action Type */
 	uint32_t sat;		/* short Action Type */
-	bool action_attach_busy;
+	bool start_attach;
 	int mode;
 	uint16_t seq;		/* Seq Number */
 	int afu_fd;
@@ -115,6 +115,7 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 {
 	struct dnut_data *dn;
 	struct cxl_afu_h *afu_h = NULL;
+	uint64_t reg;
 	int rc;
 	long id = 0;
 
@@ -180,8 +181,17 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 		dnut_trace("  %s: Error Can not mmap\n", __func__);
 		goto __dnut_alloc_err;
 	}
+	cxl_mmio_read64(afu_h, SNAP_S_CIR, &reg);
+	if (0x8000000000000000 & reg) {
+		dn->action_base = ACTION_BASE_M;
+		dn->master = true;
+	} else {
+		dn->action_base = ACTION_BASE_S;
+		dn->master = false;
+	}
+	dn->cir = (int)(reg & 0xffff);
 
-	dnut_trace("%s Exit OK\n", __func__);
+	dnut_trace("%s Exit OK Context: %d Master: %d\n", __func__, dn->cir, dn->master);
 	return (struct dnut_card *)dn;
 
  __dnut_alloc_err:
@@ -200,11 +210,12 @@ static int hw_dnut_mmio_write32(void *_card, uint64_t offset, uint32_t data)
 	int rc = -1;
 	struct dnut_data *card = (struct dnut_data *)_card;
 
-	reg_trace("  %s(%p, %llx, %lx)\n", __func__, _card,
-		  (long long)offset, (long)data);
-
-	if ((card) && (card->afu_h))
+	if ((card) && (card->afu_h)) {
+		offset += card->action_base;
+		reg_trace("  %s(%p, %llx, %lx)\n", __func__, _card,
+			(long long)offset, (long)data);
 		rc = cxl_mmio_write32(card->afu_h, offset, data);
+	} else reg_trace("  %s Error\n", __func__);
 	return rc;
 }
 
@@ -214,11 +225,12 @@ static int hw_dnut_mmio_read32(void *_card,
 	int rc = -1;
 	struct dnut_data *card = (struct dnut_data *)_card;
 
-	if ((card) && (card->afu_h))
+	if ((card) && (card->afu_h)) {
+		offset += card->action_base;
 		rc = cxl_mmio_read32(card->afu_h, offset, data);
-
-	reg_trace("  %s(%p, %llx, %lx) %d\n", __func__, _card,
-		  (long long)offset, (long)*data, rc);
+		reg_trace("  %s(%p, %llx, %lx) %d\n", __func__, _card,
+			(long long)offset, (long)*data, rc);
+	} else reg_trace("  %s Error\n", __func__);
 
 	return rc;
 }
@@ -230,7 +242,6 @@ static int hw_dnut_mmio_write64(void *_card, uint64_t offset, uint64_t data)
 
 	reg_trace("  %s(%p, %llx, %llx)\n", __func__, _card,
 		  (long long)offset, (long long)data);
-
 	if ((card) && (card->afu_h))
 		rc = cxl_mmio_write64(card->afu_h, offset, data);
 	return rc;
@@ -243,7 +254,6 @@ static int hw_dnut_mmio_read64(void *_card, uint64_t offset, uint64_t *data)
 
 	if ((card) && (card->afu_h))
 		rc = cxl_mmio_read64(card->afu_h, offset, data);
-
 	reg_trace("  %s(%p, %llx, %llx) %d\n", __func__, _card,
 		  (long long)offset, (long long)*data, rc);
 
@@ -270,7 +280,7 @@ static int __wait_for_irq(struct dnut_data *card)
 
 	FD_ZERO(&set);
 	FD_SET(card->afu_fd, &set);
-	timeout.tv_sec = 5;
+	timeout.tv_sec = 20;
 	timeout.tv_usec = 100 * 1000;
 
 	dnut_trace("  %s: Enter fd: %d\n", __func__, card->afu_fd);
@@ -284,7 +294,8 @@ static int __wait_for_irq(struct dnut_data *card)
 		//cxl_fprint_event(stdout, card->event);
 		switch (card->event.header.type) {
 		case CXL_EVENT_AFU_INTERRUPT:
-			dnut_trace("  %s: Got irq: %d\n", __func__, card->event.irq.irq);
+			dnut_trace("  %s: Got flags: %d irq: %d\n", __func__,
+				card->event.irq.flags, card->event.irq.irq);
 			rc = 0;
 			break;
 		case CXL_EVENT_DATA_STORAGE:
@@ -334,34 +345,30 @@ static int hw_attach_action(void *_card, uint32_t action, int flags)
 			dnut_trace("%s Error Can not find Action\n",  __func__);
 			return ENODEV;
 		}
-		card->mode = flags & 0x07;/* Set bit 0,1,2 */
-		card->sat = sat;	/* Save short Action Type */
+		card->mode = flags;		/* Get IRQ Flags bit 0,1,2 + 3 */
+		card->sat = sat;		/* Save short Action Type */
 		card->seq = 0xf000;
 		card->action_type = action;
 		data = ((uint64_t)card->seq << 48ll);
-		data |= (card->sat << 12) | card->mode;	/* Short Action Type and Direct Access */
+		data |= (card->sat << 12) | (card->mode & 0x07);	/* Short Action Type and Direct Access */
 		hw_dnut_mmio_write64(card, SNAP_S_CCR, data);
-		card->action_attach_busy = false;
+		card->start_attach = true;
 	}
 
-	if (false == card->action_attach_busy) {
+	if (card->start_attach) {
+		card->start_attach = false;
 		data = ((uint64_t)card->seq << 48ll) | 1;	/* Start: Attach action to context */
 		hw_dnut_mmio_write64(card, SNAP_S_JCR, data);
 	}
 
 	hw_dnut_mmio_read64(card, SNAP_S_CSR, &data);
 	if (0xC0 != (data & 0xC0)) {
-		if (flags & 0x06) {
+		if (SNAP_CCR_IRQ_ATTACH & card->mode)
 			rc = __wait_for_irq(card);
-		} else	{
-			card->action_attach_busy = true;
-			rc = EBUSY;
-		}
+		else	rc = EBUSY;
 	}
-	if (0 == rc) {
+	if (0 == rc)
 		card->seq++;
-		card->action_attach_busy = false;
-	}
 	dnut_trace("%s Exit OK\n", __func__);
 	return rc;
 }
@@ -372,6 +379,7 @@ static int hw_detach_action(void *_card, uint32_t action)
 	int rc = 0;
 
 	dnut_trace("%s Enter 0x%x\n", __func__, action);
+	card->start_attach = true;			/* Set Flag to Attach next Time again */
 	hw_dnut_mmio_write64(card, SNAP_S_JCR, 2);	/* Stop:  Detach action */
 	dnut_trace("%s Exit %d\n", __func__, rc);
 	return rc;
@@ -476,7 +484,7 @@ int dnut_sync_execute_job(struct dnut_queue *queue,
 	uint32_t *job_data = (uint32_t *)(unsigned long)cjob->win_addr;
 
 	/* Action registers setup */
-	for (i = 0, action_addr = ACTION_CONFIG;
+	for (i = 0, action_addr = 0x10;	/* FIXME */
 	     i < cjob->win_size/sizeof(uint32_t);
 	     i++, action_addr += sizeof(uint32_t)) {
 
@@ -551,7 +559,10 @@ int dnut_kernel_completed(struct dnut_kernel *kernel, int *rc)
 	int _rc;
 	uint32_t action_data = 0;
 	struct dnut_card *card = (struct dnut_card *)kernel;
+	struct dnut_data *dd = (struct dnut_data *)kernel;
 
+	if (0x08 & dd->mode)	/* Check if Action can raise IRQ */
+		__wait_for_irq(dd);
 	_rc = dnut_mmio_read32(card, ACTION_CONTROL, &action_data);
 	if (rc)
 		*rc = _rc;

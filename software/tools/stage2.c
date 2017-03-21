@@ -71,7 +71,6 @@
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
-static uint32_t context_offset = ACTION_BASE_S;	/* Default offset set to Slave mode */
 
 static uint64_t get_usec(void)
 {
@@ -133,25 +132,10 @@ static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
 {
 	int rc;
 
-	addr += context_offset;
-	VERBOSE3("MMIO Write %08x ----> %08x\n", data, addr);
 	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
 		VERBOSE0("Write MMIO 32 Err\n");
 	return;
-}
-
-static uint32_t action_read(struct dnut_card* h, uint32_t addr)
-{
-	int rc;
-	uint32_t data;
-
-	addr += context_offset;
-	rc = dnut_mmio_read32(h, (uint64_t)addr, &data);
-	if (0 != rc)
-		VERBOSE0("Read MMIO 32 Err\n");
-	VERBOSE3("MMIO Read  %08x ----> %08x\n", addr, data);
-	return data;
 }
 
 /*	Calculate msec to FPGA ticks.
@@ -172,28 +156,29 @@ static uint32_t msec_2_ticks(int msec)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct dnut_card* h, int timeout_ms, uint64_t *elapsed)
+static int action_wait_idle(struct dnut_card* h, int timeout_ms, uint64_t *elapsed, bool use_irq)
 {
-	uint32_t action_data;
 	int rc = 0;
 	uint64_t t_start;	/* time in usec */
 	uint64_t tout = (uint64_t)timeout_ms * 1000;
-	uint64_t td;		/* Diff time in usec */
+	uint64_t td = 0;	/* Diff time in usec */
 
-	action_write(h, ACTION_CONTROL, ACTION_CONTROL_START);
+	if (use_irq)
+		action_write(h, ACTION_INT_CONFIG, ACTION_INT_GLOBAL);
+	dnut_kernel_start((void*)h);
 
 	/* Wait for Action to go back to Idle */
 	t_start = get_usec();
-	do {
-		action_data = action_read(h, ACTION_CONTROL);
+	while (!dnut_kernel_completed((void*)h, NULL)) {
 		td = get_usec() - t_start;
 		if (td > tout) {
 			VERBOSE0("Error. Timeout while Waiting for Idle\n");
 			rc = ETIME;
 			break;
 		}
-	} while ((action_data & ACTION_CONTROL_IDLE) == 0);
-
+	}
+	if (use_irq)
+		action_write(h, ACTION_INT_CONFIG, 0);
 	*elapsed = td;
 	return rc;
 }
@@ -243,11 +228,11 @@ static int memcpy_test(struct dnut_card* dnc,
 			int blocks_4k,	/* Number of DEFAULT_MEMCPY_BLOCK */
 			int blocks_64,	/* Number of 64 Bytes Blocks */
 			int align,
-			int iter,
 			uint64_t card_ram_base,
-			int timeout)		/* Timeout to wait in ms */
+			int timeout,		/* Timeout to wait in ms */
+			bool irq)
 {
-	int i, rc;
+	int rc;
 	void *src = NULL;
 	void *dest = NULL;
 	void *ddr3;
@@ -311,44 +296,34 @@ static int memcpy_test(struct dnut_card* dnc,
 
 	switch (action) {
 	case ACTION_CONFIG_COPY_HH:
-		for (i = 0; i < iter; i++) {
-			action_memcpy(dnc, action, dest, src, memsize);
-			rc = action_wait_idle(dnc, timeout, &td);
-			print_time(td, memsize);
-			if (0 != rc) break;
-			rc = memcmp(src, dest, memsize);
-			if ((verbose_level > 1) || rc) {
-				VERBOSE0("---------- src Buffer: %p\n", src);
-				__hexdump(stdout, src, memsize);
-				VERBOSE0("---------- dest Buffer: %p\n", dest);
-				__hexdump(stdout, dest, memsize);
-			}
-			if (rc) {
-				VERBOSE0("Error Memcmp failed rc: %d\n", rc);
-				break;
-			}
+		action_memcpy(dnc, action, dest, src, memsize);
+		rc = action_wait_idle(dnc, timeout, &td, irq);
+		print_time(td, memsize);
+		if (0 != rc) break;
+		rc = memcmp(src, dest, memsize);
+		if ((verbose_level > 1) || rc) {
+			VERBOSE0("---------- src Buffer: %p\n", src);
+			__hexdump(stdout, src, memsize);
+			VERBOSE0("---------- dest Buffer: %p\n", dest);
+			__hexdump(stdout, dest, memsize);
 		}
+		if (rc)
+			VERBOSE0("Error Memcmp failed rc: %d\n", rc);
 		break;
 	case ACTION_CONFIG_COPY_HD:	/* Host to Card RAM */
 		dest = (void*)card_ram_base;
-		for (i = 0; i < iter; i++) {
-			action_memcpy(dnc, action, dest, src, memsize);
-			rc = action_wait_idle(dnc, timeout, &td);
-			print_time(td, memsize);
-			if (0 != rc) break;
-		}
+		action_memcpy(dnc, action, dest, src, memsize);
+		rc = action_wait_idle(dnc, timeout, &td, irq);
+		print_time(td, memsize);
 		break;
 	case ACTION_CONFIG_COPY_DH:
 		src = (void*)card_ram_base;
-		for (i = 0; i < iter; i++) {
-			action_memcpy(dnc, action, dest, src, memsize);
-			rc = action_wait_idle(dnc, timeout, &td);
-			print_time(td, memsize);
-			if (0 != rc) break;
-			if (verbose_level > 1) {
-				VERBOSE0("---------- dest Buffer: %p\n", dest);
-				__hexdump(stdout, dest, memsize);
-			}
+		action_memcpy(dnc, action, dest, src, memsize);
+		rc = action_wait_idle(dnc, timeout, &td, irq);
+		print_time(td, memsize);
+		if (verbose_level > 1) {
+			VERBOSE0("---------- dest Buffer: %p\n", dest);
+			__hexdump(stdout, dest, memsize);
 		}
 		break;
 	case ACTION_CONFIG_COPY_DD:
@@ -359,43 +334,61 @@ static int memcpy_test(struct dnut_card* dnc,
 				memsize, (long long)card_ram_base);
 			break;
 		}
-		for (i = 0; i < iter; i++) {
-			action_memcpy(dnc, action, dest, src, memsize);
-			rc = action_wait_idle(dnc, timeout, &td);
-			print_time(td, memsize);
-			if (0 != rc) break;
-		}
+		action_memcpy(dnc, action, dest, src, memsize);
+		rc = action_wait_idle(dnc, timeout, &td, irq);
+		print_time(td, memsize);
 		break;
 	case ACTION_CONFIG_COPY_HDH:	/* Host -> DDR -> Host */
 		ddr3 = (void*)card_ram_base;
-		for (i = 0; i < iter; i++) {
-			action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
-				ddr3, src, memsize);
-			rc = action_wait_idle(dnc, timeout, &td);
-			print_time(td, memsize);
-			if (0 != rc) break;
-			action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
-				dest, ddr3, memsize);
-			rc = action_wait_idle(dnc, timeout, &td);
-			print_time(td, memsize);
-			if (0 != rc) break;
-			rc = memcmp(src, dest, memsize);
-			if ((verbose_level > 1) || rc) {
-				VERBOSE0("---------- src Buffer: %p\n", src);
-				__hexdump(stdout, src, memsize);
-				VERBOSE0("---------- dest Buffer: %p\n", dest);
-				__hexdump(stdout, dest, memsize);
-			}
-			if (rc) {
-				VERBOSE0("Error Memcmp failed rc: %d\n", rc);
-				break;
-			}
+		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
+			ddr3, src, memsize);
+		rc = action_wait_idle(dnc, timeout, &td, irq);
+		print_time(td, memsize);
+		if (0 != rc) break;
+		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
+			dest, ddr3, memsize);
+		rc = action_wait_idle(dnc, timeout, &td, irq);
+		print_time(td, memsize);
+		if (0 != rc) break;
+		rc = memcmp(src, dest, memsize);
+		if ((verbose_level > 1) || rc) {
+			VERBOSE0("---------- src Buffer: %p\n", src);
+			__hexdump(stdout, src, memsize);
+			VERBOSE0("---------- dest Buffer: %p\n", dest);
+			__hexdump(stdout, dest, memsize);
 		}
+		if (rc)
+			VERBOSE0("Error Memcmp failed rc: %d\n", rc);
 		break;
 	}
 
 	free_mem(src);
 	free_mem(dest);
+	return rc;
+}
+
+static int get_action(struct dnut_card *handle, int flags, int timeout)
+{
+	int rc = 0;
+	uint64_t ts;
+	int dt;
+
+	ts = get_usec();
+	while (1) {
+		rc = dnut_attach_action(handle, ACTION_TYPE_EXAMPLE, flags);
+		if (0 == rc) break;
+		if (EBUSY == rc)
+			usleep(100);
+		else {
+			rc = ENODEV;
+			break;
+		}
+		dt = (int)((get_usec() - ts)/1000);
+		if (dt > 10*timeout) {
+			rc = EBUSY;
+			break;
+		}
+	}
 	return rc;
 }
 
@@ -410,6 +403,7 @@ static void usage(const char *prog)
 		"    -a, --action         Action to execute (default 1)\n"
 		"    -m, --master         Set this flag to use Master Context\n"
 		"    -t, --timeout        Timeout after N sec (default 1 sec)\n"
+		"    -I, --interrupt      Use Interrupts (default No Interrupts)\n"
 		"    ----- Action 1 Settings -------------- (-a) ----\n"
 		"    -s, --start          Start delay in msec (default %d)\n"
 		"    -e, --end            End delay time in msec (default %d)\n"
@@ -443,13 +437,15 @@ int main(int argc, char *argv[])
 	int action = ACTION_CONFIG_COUNT;
 	int num_4k = 1;	/* Default is 1 4 K Blocks */
 	int num_64 = 0;	/* Default is 0 64 Bytes Blocks */
-	int rc = 1;
+	int i, rc = 1;
 	int memcpy_iter = DEFAULT_MEMCPY_ITER;
 	int memcpy_align = DEFAULT_MEMCPY_BLOCK;
 	uint64_t card_ram_base = DDR_MEM_BASE_ADDR;	/* Base of Card DDR or Block Ram */
 	uint64_t cir;
 	int timeout_ms = ACTION_WAIT_TIME;
 	bool use_master = false;
+	bool use_interrupt = false;
+	int attach_flags = SNAP_CCR_DIRECT_MODE;
 	uint64_t td;
 
 	while (1) {
@@ -471,9 +467,10 @@ int main(int argc, char *argv[])
 			{ "dest",     required_argument, NULL, 'D' },
 			{ "timeout",  required_argument, NULL, 't' },
 			{ "master",   no_argument,       NULL, 'm' },
+			{ "interrupt", no_argument,      NULL, 'I' },
 			{ 0,          no_argument,       NULL, 0   },
 		};
-		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:B:N:A:D:t:mqvVh",
+		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:B:N:A:D:t:ImqvVh",
 			long_options, &option_index);
 		if (cmd == -1)  /* all params processed ? */
 			break;
@@ -496,7 +493,6 @@ int main(int argc, char *argv[])
 			break;
 		case 'm':	/* master */
 			use_master = true;
-			context_offset = ACTION_BASE_M;
 			break;
 		/* Action 1 Options */
 		case 's':
@@ -526,6 +522,10 @@ int main(int argc, char *argv[])
 			break;
 		case 't':
 			timeout_ms = strtol(optarg, (char **)NULL, 0) * 1000; /* Make msec */
+			break;
+		case 'I':
+			use_interrupt = true;
+			attach_flags |= ACTION_IDLE_IRQ_MODE | SNAP_CCR_IRQ_ATTACH;
 			break;
 		default:
 			usage(argv[0]);
@@ -566,22 +566,15 @@ int main(int argc, char *argv[])
 	switch (action) {
 	case 1:
 		for(delay = start_delay; delay <= end_delay; delay += step_delay) {
-			if (false == use_master) {
-				while (1) {
-					rc = dnut_attach_action(dn, ACTION_TYPE_EXAMPLE, 0x5);
-					if (0 == rc) break;
-					if (EBUSY == rc)
-						usleep(100);
-					else {
-						rc = ENODEV;
-						goto __exit1;
-					}
-				}
+			if (!use_master) {
+				rc = get_action(dn, attach_flags, timeout_ms+delay);
+				if (0 != rc)
+					goto __exit1;
 			}
 			action_count(dn, delay);
-			rc = action_wait_idle(dn, timeout_ms + delay, &td);
+			rc = action_wait_idle(dn, timeout_ms + delay, &td, use_interrupt);
 			print_time(td, 0);
-			if (false == use_master)
+			if (!use_master)
 				dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
 			if (0 != rc) break;
 		}
@@ -592,23 +585,19 @@ int main(int argc, char *argv[])
 	case 4:
 	case 5:
 	case 6:
-		if (false == use_master) {
-			while (1) {
-				rc = dnut_attach_action(dn, ACTION_TYPE_EXAMPLE, 0);
-				if (0 == rc) break;
-				if (EBUSY == rc)
-					usleep(100);
-				else {
-					rc = ENODEV;
+		for (i = 0; i < memcpy_iter; i++) {
+			if (!use_master) {
+				rc = get_action(dn, attach_flags, timeout_ms);
+				if (0 != rc)
 					goto __exit1;
-				}
 			}
+			rc = memcpy_test(dn, action, num_4k, num_64,
+				memcpy_align, card_ram_base,
+				timeout_ms,
+				use_interrupt);
+			if (!use_master)
+				dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
 		}
-		rc = memcpy_test(dn, action, num_4k, num_64,
-				memcpy_align, memcpy_iter, card_ram_base,
-				timeout_ms);
-		if (false == use_master)
-			dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
 		break;
 	default:
 		VERBOSE0("%d Invalid Action\n", action);
