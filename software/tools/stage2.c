@@ -169,8 +169,13 @@ static int action_wait_idle(struct dnut_card* h, int timeout_ms, uint64_t *elaps
 
 	/* Wait for Action to go back to Idle */
 	t_start = get_usec();
-	while (!dnut_kernel_completed((void*)h, NULL)) {
+	while (1) {
+		rc = dnut_kernel_completed((void*)h, NULL);
 		td = get_usec() - t_start;
+		if (rc) {
+			rc = 0;
+			break;
+		}
 		if (td > tout) {
 			VERBOSE0("Error. Timeout while Waiting for Idle\n");
 			rc = ETIME;
@@ -537,7 +542,7 @@ int main(int argc, char *argv[])
 		usage(argv[0]);
 		exit(1);
 	}
-	if (start_delay >= end_delay) {
+	if (start_delay > end_delay) {
 		usage(argv[0]);
 		exit(1);
 	}
