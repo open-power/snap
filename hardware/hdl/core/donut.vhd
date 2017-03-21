@@ -29,10 +29,10 @@ USE work.donut_types.ALL;
 
 ENTITY donut IS
   GENERIC(
-    IMP_VERSION_DAT        : std_logic_vector(63 DOWNTO 0) := x"1234_1234_1234_1234";
-    BUILD_DATE_DAT         : std_logic_vector(63 DOWNTO 0) := x"1234_1234_1234_1234";
+    IMP_VERSION_DAT        : std_logic_vector(63 DOWNTO 0);
+    BUILD_DATE_DAT         : std_logic_vector(63 DOWNTO 0);
     NUM_OF_ACTION_TYPES    : integer RANGE 0 TO 16 := 16;
-    NUM_OF_ACTIONS         : integer RANGE 0 TO 16 := 1
+    NUM_OF_ACTIONS         : integer RANGE 0 TO 16 :=  1
   );
   PORT (
     --
