@@ -136,15 +136,13 @@ static int snap_write64(void *handle, int ctx, int offset, uint64_t data)
 	return rc;
 }
 
-static uint32_t snap_read32(void *handle, int ctx, int offset)
+static uint32_t snap_read32(void *handle, int offset)
 {
 	uint32_t addr;
 	uint32_t reg;
 	int rc;
 
-	addr = offset;
-	if (ctx) addr += SNAP_S_BASE + (ctx * SNAP_S_SIZE);
-	rc = dnut_mmio_read32(handle, (uint64_t)addr, &reg);
+	rc = dnut_mmio_read32(handle, (uint64_t)offset, &reg);
 	if (0 != rc)
 		VERBOSE3("[%s] Error Reading MMIO %x\n", __func__, addr);
 	return reg;
@@ -381,11 +379,11 @@ static int snap_m_init(void *handle)
 
 	/* Read Action Type */
 	sai = 0;	/* Short Action Index start */
-	base = SNAP_M_ACT_OFFSET + 0x10;	/* Action Type */
-	atype = snap_read32(handle, SNAP_M_CTX, base);
+	base = 0x10;	/* Action Type */
+	atype = snap_read32(handle, base);
 	for (i = 0; i < mact; i++) {
 		reg = base + SNAP_M_ACT_SIZE * i;
-		atype_next = snap_read32(handle, SNAP_M_CTX, reg);
+		atype_next = snap_read32(handle, reg);
 		VERBOSE1("%s Index: %d Max: %d found AT: 0x%8.8x Assign SAT: %d\n",
 			__func__, i, mact, atype_next, sai);
 		reg = SNAP_M_ATRI + i * 8;
