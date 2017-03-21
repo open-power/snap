@@ -138,13 +138,12 @@ static int snap_write64(void *handle, int ctx, int offset, uint64_t data)
 
 static uint32_t snap_read32(void *handle, int offset)
 {
-	uint32_t addr;
 	uint32_t reg;
 	int rc;
 
 	rc = dnut_mmio_read32(handle, (uint64_t)offset, &reg);
 	if (0 != rc)
-		VERBOSE3("[%s] Error Reading MMIO %x\n", __func__, addr);
+		VERBOSE3("[%s] Error Reading MMIO %x\n", __func__, offset);
 	return reg;
 }
 
