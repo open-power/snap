@@ -73,10 +73,11 @@ Address map for context n (0 <= n < 512), and with s = 512:
 
 ## SNAP Framework Register Specifications
 
-RW = Read/Write  
-RO = Read only - Reserved bits return 0 unless specified otherwise  
-RC = Read/WriteClear (Write clears (=>0) the bits for each bit=1 in the write value)  
-RS = Read/WriteSet   (Write sets (=>1) the bits for each bit=1 in the write value)
+RW  = Read/Write  
+RO  = Read only - Reserved bits return 0 unless specified otherwise
+RC  = Read only with clear on read  
+RWC = Read/WriteClear (Write clears (=>0) the bits for each bit=1 in the write value)  
+RWS = Read/WriteSet   (Write sets (=>1) the bits for each bit=1 in the write value)
 
 n = Context Handle (aka. Process ID; 0 <= n < number of processes)
 
@@ -258,13 +259,13 @@ Address: 0x00C000 + m * 0x0000008 (m = 0,..,15)
 ##### Not yet implemented
 ```
 Address: 0x000E000
-  63..6  RO: Reserved
-      5  RC: EA Parity Error
-      4  RC: COM Parity Error
-      3  RC: DDCB Read FSM Error
-      2  RC: DDCB Queue Control FSM Error
-      1  RC: Job Control FSM Error
-      0  RC: Context Control FSM Error
+  63..6  RO:  Reserved
+      5  RWC: EA Parity Error
+      4  RWC: COM Parity Error
+      3  RWC: DDCB Read FSM Error
+      2  RWC: DDCB Queue Control FSM Error
+      1  RWC: Job Control FSM Error
+      0  RWC: Context Control FSM Error
 ```
 
 ---
@@ -273,17 +274,17 @@ Address: 0x000E000
 ##### Not yet implemented
 ```
 Address: 0x000E008
-  63..10  RO: Reserved
-      9  RC: MMIO DDCBQ Work-Timer RAM Parity Error
-      8  RC: MMIO DDCBQ DMA-Error RAM Parity Error
-      7  RC: MMIO DDCBQ Last Sequence Number RAM Parity Error
-      6  RC: MMIO DDCBQ Index and Sequence Number RAM Parity Error
-      5  RC: MMIO DDCBQ Non-Fatal-Error RAM Parity Error
-      4  RC: MMIO DDCBQ Status RAM Parity Error
-      3  RC: MMIO DDCBQ Config RAM Parity Error
-      2  RC: MMIO DDCBQ Start Pointer RAM Parity Error
-      1  RC: MMIO Write Address Parity Error
-      0  RC: MMIO Write Data Parity Error
+  63..10 RO:  Reserved
+      9  RWC: MMIO DDCBQ Work-Timer RAM Parity Error
+      8  RWC: MMIO DDCBQ DMA-Error RAM Parity Error
+      7  RWC: MMIO DDCBQ Last Sequence Number RAM Parity Error
+      6  RWC: MMIO DDCBQ Index and Sequence Number RAM Parity Error
+      5  RWC: MMIO DDCBQ Non-Fatal-Error RAM Parity Error
+      4  RWC: MMIO DDCBQ Status RAM Parity Error
+      3  RWC: MMIO DDCBQ Config RAM Parity Error
+      2  RWC: MMIO DDCBQ Start Pointer RAM Parity Error
+      1  RWC: MMIO Write Address Parity Error
+      0  RWC: MMIO Write Data Parity Error
 ```
 
 ---
@@ -292,17 +293,17 @@ Address: 0x000E008
 ##### Not yet implemented
 ```
 Address: 0x000E010
-  63..10 RO: Reserved
-      9  RC: DMA Aligner Write FSM Error
-      8  RC: DMA Aligner Read FSM Error
-      7  RO: Reserved
-      6  RC: HA Buffer Interface Write Data Error
-      5  RC: HA Buffer Interface Write Tag Error
-      4  RC: HA Buffer Interface Read TAG Error
-      3  RC: HA Response Interface Tag Error
-      2  RC: DMA Write Control FSM Error
-      1  RC: DMA Read Control FSM Error
-      0  RC: AH Command FSM Error
+  63..10 RO:  Reserved
+      9  RWC: DMA Aligner Write FSM Error
+      8  RWC: DMA Aligner Read FSM Error
+      7  RO:  Reserved
+      6  RWC: HA Buffer Interface Write Data Error
+      5  RWC: HA Buffer Interface Write Tag Error
+      4  RWC: HA Buffer Interface Read TAG Error
+      3  RWC: HA Response Interface Tag Error
+      2  RWC: DMA Write Control FSM Error
+      1  RWC: DMA Read Control FSM Error
+      0  RWC: AH Command FSM Error
 ```
 
 ---
@@ -311,7 +312,7 @@ Address: 0x000E010
 ##### Not yet implemented
 ```
 Address: 0x000E100 + i * 0x0000008
-  63..0  RO/RC: TBD by Action
+  63..0  RO/RWC: TBD by Action
 ```
 
 ---
@@ -611,35 +612,35 @@ Address: 0x0001028 + (s+n) * 0x0010000
 ##### Not yet implemented
 ```
 Address: 0x0001030 + (s+n) * 0x0010000
-  63..24 RO: Reserved
-  23..8  Non-fatal errors: TBD
-         23..20 RC: DMA Response Error Code (see DMA Error Address Register for DMA address triggering the error)
-                    0=DONE
-                    1=AERROR
-                    3=DERROR
-                    4=NLOCK
-                    5=NRES
-                    6=FLUSHED
-                    7=FAULT
-                    8=FAILED
-                    A=PAGED
-                    B=CONTEXT
-                    F=ILLEGAL_RSP
-             19 RC: DMA Response Error Source
-                    1=Interrupt or Restart
-                    0=DMA Read or DMA Write
-             18 RC: Received illegal command in DDCB Queue Command Register
-             17 RC: Invalid Sequence number in DDCB (queue will be stopped)
-             16 RC: Write attempt to DDCB Queue Start Pointer register while Queue active
-             15 RC: Write attempt to DDCB Queue Configuration register while Queue active
-             14 RC: Write attempt to DDCB Queue Configuration register with first DDCB index > max DDCB index
-             13 RC: MMIO Cfg Write access (illegal for non cfg space area)
-             12 RC: MMIO Write access to master register via slave address
-             11 RC: Illegal MMIO write address
-             10 RC: Illegal MMIO write alignment
-             9  RC: Illegal MMIO read address
-             8  RC: Illegal MMIO read alignment
-   7..0  RO: Reserved
+  63..24 RO:  Reserved
+  23..8  RWC: Non-fatal errors:
+              23..20: DMA Response Error Code (see DMA Error Address Register for DMA address triggering the error)
+                        0=DONE
+                        1=AERROR
+                        3=DERROR
+                        4=NLOCK
+                        5=NRES
+                        6=FLUSHED
+                        7=FAULT
+                        8=FAILED
+                        A=PAGED
+                        B=CONTEXT
+                        F=ILLEGAL_RSP
+                  19: DMA Response Error Source
+                        1=Interrupt or Restart
+                        0=DMA Read or DMA Write
+                  18: Received illegal command in DDCB Queue Command Register
+                  17: Invalid Sequence number in DDCB (queue will be stopped)
+                  16: Write attempt to DDCB Queue Start Pointer register while Queue active
+                  15: Write attempt to DDCB Queue Configuration register while Queue active
+                  14: Write attempt to DDCB Queue Configuration register with first DDCB index > max DDCB index
+                  13: MMIO Cfg Write access (illegal for non cfg space area)
+                  12: MMIO Write access to master register via slave address
+                  11: Illegal MMIO write address
+                  10: Illegal MMIO write alignment
+                   9: Illegal MMIO read address
+                   8: Illegal MMIO read alignment
+   7..0  RO:  Reserved
 ```
 
 ---
@@ -819,6 +820,56 @@ are required for HLS control information. Otherwise, they may be used for any pu
  ...            Unused
 0xFFC    |                  |
          ====================
+```
+
+---
+
+### Action Register Layout
+
+#### Action Control Register
+```
+Address: 0x000
+  31..8  RO: Reserved
+      7  RW: auto restart
+   6..4  RO: Reserved
+      3  RO: Ready
+      2  RO: Idle
+      1  RC: Done
+      0  RW: Start
+```
+
+---
+
+#### Interrupt Enable Register
+```
+Address: 0x004
+  31..1  RO: Reserved
+      0  RW: Enable Interrupt
+```
+
+---
+
+#### Action Type Register
+```
+Address: 0x010
+  31..0  RO: Unique four byte number specifying the type (the implemented functionality) of this action
+```
+
+---
+
+#### Action Version Register
+```
+Address: 0x014
+  31..0  RO: Four byte number specifying the version of this action.
+```
+
+---
+
+#### Context ID Register
+```
+Address: 0x020
+  31..8  RO: Reserved
+   7..0  RW: Context ID to be passed with DMA and Interrupt commands to the host.
 ```
 
 ---
