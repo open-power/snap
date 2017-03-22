@@ -78,12 +78,7 @@ set_property STEPS.WRITE_BITSTREAM.ARGS.BIN_FILE true [get_runs impl_1]
 # Add Files
 # PSL Files
 puts "	                     import design files"
-add_files -norecurse -scan_for_includes $build_dir/Sources/top/std_ulogic_support.vhdl
 add_files -norecurse -scan_for_includes $build_dir/Sources/top/psl_fpga.vhdl
-add_files -norecurse -scan_for_includes $build_dir/Sources/top/std_ulogic_function_support.vhdl
-add_files -norecurse -scan_for_includes $build_dir/Sources/top/std_ulogic_unsigned.vhdl
-add_files -norecurse -scan_for_includes $build_dir/Sources/top/synthesis_support.vhdl
-set_property library ibm              [get_files $build_dir/Sources/top/synthesis_support.vhdl]
 set_property used_in_simulation false [get_files $build_dir/Sources/top/psl_fpga.vhdl]
 # HDL Files
 add_files -scan_for_includes $root_dir/hdl/core/
@@ -147,7 +142,7 @@ update_compile_order -fileset sources_1 $msg_level
 
 # Add PSL
 puts "	                     import PSL design checkpoint"
-read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict $msg_level
+read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict $msg_level 
 
 # XDC
 # Donut XDC

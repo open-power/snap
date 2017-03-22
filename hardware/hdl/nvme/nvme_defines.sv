@@ -19,6 +19,11 @@
 `define PCIE_S_ADDR_BITS 21
 `define PCIE_S_ID_BITS 4
 
+// Use PRP entry for data transfer
+`define USE_PRP 0
+// LBA size as power of 2, 12=4kB size
+`define LBA_BYTE_SHIFT 12
+
 // Number of queue entries for the admin and i/o queues
 // Data entries for admin data.  For Tx = bytes/64, for Rx = bytes/16
   // Each submission queue entry is 64 bytes, buffer width is 16 bytes

@@ -19,20 +19,17 @@
 ----------------------------------------------------------------------------
 
 LIBRARY ieee;
-USE ieee.std_logic_1164.ALL;
-USE ieee.numeric_std.ALL;
---USE ieee.std_logic_arith.all;
---USE ibm.std_ulogic_support.all;
-USE work.std_ulogic_function_support.all;
-USE work.std_ulogic_unsigned.ALL;
-
+USE ieee.std_logic_1164.all;
+USE ieee.std_logic_misc.all;
+USE ieee.std_logic_unsigned.all;
+USE ieee.numeric_std.all;
 USE work.donut_types.ALL;
 
 ENTITY ctrl_mgr IS
   PORT (
     --
     -- pervasive
-    ha_pclock       : IN  std_ulogic;
+    ha_pclock       : IN  std_logic;
 
     --
     -- PSL IOs
@@ -41,7 +38,7 @@ ENTITY ctrl_mgr IS
 
     --
     -- Global Resets
-    afu_reset_o     : OUT std_ulogic;
+    afu_reset_o     : OUT std_logic;
 
     --
     -- MMIO IOs
@@ -68,18 +65,18 @@ ARCHITECTURE ctrl_mgr OF ctrl_mgr IS
   -- SIGNAL
   SIGNAL ctrl_fsm_q               : CTRL_FSM_T := ST_IDLE;
   SIGNAL ha_j_q                   : HA_J_T;
-  SIGNAL ha_j_llcmd_code_q        : std_ulogic_vector(LLCMD_CMD_L DOWNTO LLCMD_CMD_R);
+  SIGNAL ha_j_llcmd_code_q        : std_logic_vector(LLCMD_CMD_L DOWNTO LLCMD_CMD_R);
   SIGNAL ah_j_q                   : AH_J_T := ('0', '0', '0', (OTHERS => '0'), '0');
-  SIGNAL afu_reset_q              : std_ulogic := '1';
---  SIGNAL dma_reset_m              : std_ulogic := '1';
---  SIGNAL dma_reset_q              : std_ulogic := '1';
---  SIGNAL gen_dma_reset            : std_ulogic := '0';
---  SIGNAL gen_app_reset            : std_ulogic;
---  SIGNAL app_reset_m              : std_ulogic;
---  SIGNAL app_reset_v              : std_ulogic;
+  SIGNAL afu_reset_q              : std_logic := '1';
+--  SIGNAL dma_reset_m              : std_logic := '1';
+--  SIGNAL dma_reset_q              : std_logic := '1';
+--  SIGNAL gen_dma_reset            : std_logic := '0';
+--  SIGNAL gen_app_reset            : std_logic;
+--  SIGNAL app_reset_m              : std_logic;
+--  SIGNAL app_reset_v              : std_logic;
 
-  SIGNAL llcmd_req_q              : std_ulogic;
-  SIGNAL llcmd_ack_q              : std_ulogic;
+  SIGNAL llcmd_req_q              : std_logic;
+  SIGNAL llcmd_ack_q              : std_logic;
 
   -- Ctrl Mgr Error record:
   SIGNAL cmm_e_q                  : CMM_E_T := (OTHERS => '0');

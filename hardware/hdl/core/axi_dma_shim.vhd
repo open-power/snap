@@ -166,9 +166,9 @@ axi_wr: process(ha_pclock)
               sd_d_o.wr_last    <= '0';
               -- reverse the byte order 
               for i in 1 to C_S_AXI_DATA_WIDTH / 8  loop
-                 sd_d_o.wr_data(i * 8 - 1 downto (i-1) *8)         <= std_ulogic_vector(ks_d_i.S_AXI_WDATA((C_S_AXI_DATA_WIDTH + 7)- i*8 downto C_S_AXI_DATA_WIDTH -  i*8));
+                 sd_d_o.wr_data(i * 8 - 1 downto (i-1) *8)         <= ks_d_i.S_AXI_WDATA((C_S_AXI_DATA_WIDTH + 7)- i*8 downto C_S_AXI_DATA_WIDTH -  i*8);
               end loop;  -- i
-          --    sd_d_o.wr_data    <= std_ulogic_vector(ks_d_i.S_AXI_WDATA);
+          --    sd_d_o.wr_data    <= ks_d_i.S_AXI_WDATA;
               if afu_reset = '1' then
                 fsm_write_q     <= IDLE;
                 axi_awready_q   <= '0';
@@ -185,10 +185,10 @@ axi_wr: process(ha_pclock)
                     if axi_awready_q = '1' and ks_d_i.S_AXI_AWVALID = '1' then
                       fsm_write_q       <= DMA_WR_REQ;
                       axi_awready_q     <= '0';
-                      sd_c_o.wr_addr    <= std_ulogic_vector(ks_d_i.S_AXI_AWADDR);
-                      sd_c_o.wr_len     <= std_ulogic_vector(ks_d_i.S_AXI_AWLEN);
-                      sd_c_o.wr_id      <= std_ulogic_vector(ks_d_i.S_AXI_AWID);
-                      sd_c_o.wr_ctx     <= std_ulogic_vector(ks_d_i.S_AXI_AWUSER);
+                      sd_c_o.wr_addr    <= ks_d_i.S_AXI_AWADDR;
+                      sd_c_o.wr_len     <= ks_d_i.S_AXI_AWLEN;
+                      sd_c_o.wr_id      <= ks_d_i.S_AXI_AWID;
+                      sd_c_o.wr_ctx     <= ks_d_i.S_AXI_AWUSER;
                       sd_c_o.wr_req     <= '1';
                     end if;
 
@@ -202,7 +202,7 @@ axi_wr: process(ha_pclock)
                   when DMA_WR_DATA =>
                     if ks_d_i.S_AXI_WVALID = '1' then
                       for i in 0 to (C_S_AXI_DATA_WIDTH / 8) -1 LOOP
-                        sd_d_o.wr_strobe(((C_S_AXI_DATA_WIDTH / 8) -1) - i) <= std_ulogic(ks_d_i.S_AXI_WSTRB(i));
+                        sd_d_o.wr_strobe(((C_S_AXI_DATA_WIDTH / 8) -1) - i) <= ks_d_i.S_AXI_WSTRB(i);
                       end loop;   
                       if ks_d_i.S_AXI_WLAST = '1' then
                         sd_d_o.wr_last <= '1';
@@ -245,10 +245,10 @@ axi_rd:   process(ha_pclock)
                     if axi_arready_q = '1' and ks_d_i.S_AXI_ARVALID = '1' then
                       fsm_read_q        <= DMA_RD_REQ;
                       axi_arready_q     <= '0';
-                      sd_c_o.rd_addr    <= std_ulogic_vector(ks_d_i.S_AXI_ARADDR);
-                      sd_c_o.rd_len     <= std_ulogic_vector(ks_d_i.S_AXI_ARLEN);
-                      sd_c_o.rd_id      <= std_ulogic_vector(ks_d_i.S_AXI_ARID);
-                      sd_c_o.rd_ctx     <= std_ulogic_vector(ks_d_i.S_AXI_ARUSER);
+                      sd_c_o.rd_addr    <= ks_d_i.S_AXI_ARADDR;
+                      sd_c_o.rd_len     <= ks_d_i.S_AXI_ARLEN;
+                      sd_c_o.rd_id      <= ks_d_i.S_AXI_ARID;
+                      sd_c_o.rd_ctx     <= ks_d_i.S_AXI_ARUSER;
                       sd_c_o.rd_req     <= '1';
                     end if;
 
@@ -320,16 +320,16 @@ int_process:   process(ha_pclock)
                     int_ack_pending <= '1';
                     int_req_vec(0)  <= '0';
                     sd_c_o.int_req  <= '1';
-                    sd_c_o.int_src  <= std_ulogic_vector('0' & int_src_vec(0));
-                    sd_c_o.int_ctx  <= std_ulogic_vector(int_ctx_vec(0));
+                    sd_c_o.int_src  <= '0' & int_src_vec(0);
+                    sd_c_o.int_ctx  <= int_ctx_vec(0);
                   else
                     if int_req_vec(1) = '1' then
                       int_src_sel     <= 1;
                       int_req_vec(1)  <= '0';
                       int_ack_pending <= '1';
                       sd_c_o.int_req  <= '1';
-                      sd_c_o.int_src  <= std_ulogic_vector('1' & int_src_vec(1));
-                      sd_c_o.int_ctx  <= std_ulogic_vector(int_ctx_vec(1));
+                      sd_c_o.int_src  <= '1' & int_src_vec(1);
+                      sd_c_o.int_ctx  <= int_ctx_vec(1);
                     end if;  
                   end if;  
                 end if;

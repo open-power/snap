@@ -18,10 +18,10 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
   LIBRARY ieee;
-  USE ieee.std_logic_1164.ALL;
-  USE work.std_ulogic_function_support.ALL;
-  USE work.std_ulogic_support.ALL;
-  USE work.std_ulogic_unsigned.ALL;
+  USE ieee.std_logic_1164.all;
+  USE ieee.std_logic_misc.all;
+  USE ieee.std_logic_unsigned.all;
+  USE ieee.numeric_std.all;
 
   USE work.ddr3_sdram_pkg.ALL;                                                           
   USE work.ddr3_sdram_usodimm_pkg.ALL;                                                   

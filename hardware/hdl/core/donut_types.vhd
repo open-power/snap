@@ -18,13 +18,12 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 
-LIBRARY ieee;-- ibm, ibm_asic;
+LIBRARY ieee;
 USE ieee.std_logic_1164.all;
+USE ieee.std_logic_misc.all;
+USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
---USE ieee.std_logic_arith.all;
-USE work.std_ulogic_support.all;
-USE work.std_ulogic_function_support.all;
-use work.std_ulogic_unsigned.all;
+
 USE work.psl_accel_types.ALL;
 
 PACKAGE donut_types IS
@@ -40,23 +39,25 @@ PACKAGE donut_types IS
   --
   -- verilog <-> vhdl connector
   --
-  FUNCTION v2vhdl_connector(CONSTANT data_in :std_ulogic_vector) RETURN std_ulogic_vector;
-  FUNCTION vhdl2v_connector(CONSTANT data_in :std_ulogic_vector) RETURN std_ulogic_vector;
+  FUNCTION v2vhdl_connector(CONSTANT data_in :std_logic_vector) RETURN std_logic_vector;
+  FUNCTION vhdl2v_connector(CONSTANT data_in :std_logic_vector) RETURN std_logic_vector;
 
   --
   -- Parity Generator
   --
-  FUNCTION gen_parity_odd_32(CONSTANT data : IN std_ulogic_vector) RETURN std_ulogic_vector;
-  FUNCTION gen_parity_odd_64(CONSTANT data : IN std_ulogic_vector) RETURN std_ulogic_vector;
-  FUNCTION gen_parity_odd_128(CONSTANT data : IN std_ulogic_vector) RETURN std_ulogic_vector;
-  function AC_GENPARITY(data_in :std_ulogic_vector; w: natural) return std_ulogic_vector;
-  function AC_GENPARITY(data_in : std_ulogic_vector           ) return std_ulogic_vector;
+  FUNCTION parity_gen_odd(CONSTANT data : IN std_logic_vector) RETURN std_logic;
+  FUNCTION parity_gen_even(CONSTANT data : IN std_logic_vector) RETURN std_logic;
+  FUNCTION gen_parity_odd_32(CONSTANT data : IN std_logic_vector) RETURN std_logic_vector;
+  FUNCTION gen_parity_odd_64(CONSTANT data : IN std_logic_vector) RETURN std_logic_vector;
+  FUNCTION gen_parity_odd_128(CONSTANT data : IN std_logic_vector) RETURN std_logic_vector;
+  function AC_GENPARITY(data_in :std_logic_vector; w: natural) return std_logic_vector;
+  function AC_GENPARITY(data_in : std_logic_vector           ) return std_logic_vector;
 
   --
   -- Parity Prediction
   --
-  function AC_PPARITH(dir: integer; a_in ,ap_in,b_in,bp_in : std_ulogic_vector; w : natural := 8                              ) return std_ulogic_vector;
-  function AC_PPARITH(dir: integer; a_in : std_ulogic_vector; ap_in : std_ulogic; b_in : std_ulogic_vector; bp_in : std_ulogic) return std_ulogic;
+  function AC_PPARITH(dir: integer; a_in ,ap_in,b_in,bp_in : std_logic_vector; w : natural := 8                              ) return std_logic_vector;
+  function AC_PPARITH(dir: integer; a_in : std_logic_vector; ap_in : std_logic; b_in : std_logic_vector; bp_in : std_logic) return std_logic;
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -84,7 +85,7 @@ PACKAGE donut_types IS
                        EVICT_I, RESERVED,
                        LOCK, UNLOCK,
                        FLUSH, INTREQ, RESTART);
-  TYPE ENCODING_CMD_CODES_ARRAY IS ARRAY(CMD_CODES_T) OF std_ulogic_vector(0 TO 12);
+  TYPE ENCODING_CMD_CODES_ARRAY IS ARRAY(CMD_CODES_T) OF std_logic_vector(0 TO 12);
   CONSTANT ENCODE_CMD_CODES : ENCODING_CMD_CODES_ARRAY :=
     (READ_CL_NA    => '0' & x"A00",
      READ_CL_S     => '0' & x"A50",
@@ -142,7 +143,7 @@ PACKAGE donut_types IS
          144 => START,
       OTHERS => ILLEGAL_COM
     );
-  TYPE CODING_COM_PARITY_ARRAY IS ARRAY (COM_CODES_T) OF std_ulogic;
+  TYPE CODING_COM_PARITY_ARRAY IS ARRAY (COM_CODES_T) OF std_logic;
   CONSTANT COM_CODES_PARITY : CODING_COM_PARITY_ARRAY :=
     ( TIMEBASE => '1',
       LLCMD    => '0',
@@ -157,7 +158,7 @@ PACKAGE donut_types IS
   CONSTANT LLCMD_PE_HANDLE_R  : integer := 0;
 
   TYPE LLCMD_CODES_T IS (NO_CMD, TERMINATE_ELEMENT, REMOVE_ELEMENT, SUSPEND_ELEMENT, RESUME_ELEMENT, ADD_ELEMENT, UPDATE_ELEMENT, RESERVED_CMD);
-  TYPE ENCODING_LLCMD_CODES_ARRAY IS ARRAY(LLCMD_CODES_T) OF std_ulogic_vector(15 DOWNTO 0);
+  TYPE ENCODING_LLCMD_CODES_ARRAY IS ARRAY(LLCMD_CODES_T) OF std_logic_vector(15 DOWNTO 0);
   CONSTANT LLCMD_CODES : ENCODING_LLCMD_CODES_ARRAY :=
     ( NO_CMD            => x"0000",
       TERMINATE_ELEMENT => x"0001",
@@ -197,7 +198,7 @@ PACKAGE donut_types IS
   CONSTANT PSL_HOST_CTX_ID_R          : integer := 14;
   CONSTANT SLAVE_ACTION_OFFSET_L      : integer := 13;
   CONSTANT SLAVE_ACTION_OFFSET_R      : integer := 10;
-  CONSTANT SLAVE_ACTION_OFFSET_VAL    : std_ulogic_vector(13 DOWNTO 10) := "1111"; -- only bits 13 downto 10 of the PSL address are checked for action ACCESS
+  CONSTANT SLAVE_ACTION_OFFSET_VAL    : std_logic_vector(13 DOWNTO 10) := "1111"; -- only bits 13 downto 10 of the PSL address are checked for action ACCESS
 
   -- Register base address (bits 13 downto 5 of the address)
   CONSTANT SNAP_REG_BASE              : integer := 16#000#;  -- 0x0000
@@ -360,8 +361,8 @@ PACKAGE donut_types IS
   CONSTANT NUM_OF_CONTEXTS                 : integer := 256;      -- total number of supported contexts
   CONSTANT SEQNO_BITS                      : integer :=  16;      -- number of bits required to represent a valid sequence number
   CONSTANT JQIDX_BITS                      : integer :=   8;      -- number of bits required to represent a valid job queue index
-  CONSTANT CTX_ASSIGN_INT_SRC_ID           : std_ulogic_vector(INT_BITS-2 DOWNTO 0) := "10";
-  CONSTANT CTX_COMPLETE_INT_SRC_ID         : std_ulogic_vector(INT_BITS-2 DOWNTO 0) := "01";
+  CONSTANT CTX_ASSIGN_INT_SRC_ID           : std_logic_vector(INT_BITS-2 DOWNTO 0) := "10";
+  CONSTANT CTX_COMPLETE_INT_SRC_ID         : std_logic_vector(INT_BITS-2 DOWNTO 0) := "01";
 
 --  CONSTANT ACTIVE_CONTEXTS_REGIONS_NUM     : integer :=  16;      -- number of active context regions
 --  CONSTANT ACTIVE_CONTEXTS_REGION_BITS     : integer :=   5;      -- number of bits required to represent active context within the region as integer
@@ -374,8 +375,8 @@ PACKAGE donut_types IS
 
   --
   -- TYPE
---  TYPE ACTIVE_CONTEXTS_ARRAY_T   IS ARRAY (natural RANGE <>) OF std_ulogic_vector(ACTIVE_CONTEXTS_REGION_SIZE-1 DOWNTO 0);
---  TYPE ATTACHED_CONTEXTS_ARRAY_T IS ARRAY (natural RANGE <>) OF std_ulogic_vector(ATTACHED_CONTEXTS_REGISTER_SIZE-1 DOWNTO 0);
+--  TYPE ACTIVE_CONTEXTS_ARRAY_T   IS ARRAY (natural RANGE <>) OF std_logic_vector(ACTIVE_CONTEXTS_REGION_SIZE-1 DOWNTO 0);
+--  TYPE ATTACHED_CONTEXTS_ARRAY_T IS ARRAY (natural RANGE <>) OF std_logic_vector(ATTACHED_CONTEXTS_REGISTER_SIZE-1 DOWNTO 0);
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -384,10 +385,10 @@ PACKAGE donut_types IS
   ------------------------------------------------------------------------------
   --
   -- CONSTANT
-  CONSTANT CTX_NOP            : std_ulogic_vector(3 DOWNTO 0) := x"0";  -- CONTEXT_COMMAND_REG
-  CONSTANT CTX_START          : std_ulogic_vector(3 DOWNTO 0) := x"1";  -- CONTEXT_COMMAND_REG
-  CONSTANT CTX_STOP           : std_ulogic_vector(3 DOWNTO 0) := x"2";  -- CONTEXT_COMMAND_REG
-  CONSTANT CTX_ABORT          : std_ulogic_vector(3 DOWNTO 0) := x"4";  -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_NOP            : std_logic_vector(3 DOWNTO 0) := x"0";  -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_START          : std_logic_vector(3 DOWNTO 0) := x"1";  -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_STOP           : std_logic_vector(3 DOWNTO 0) := x"2";  -- CONTEXT_COMMAND_REG
+  CONSTANT CTX_ABORT          : std_logic_vector(3 DOWNTO 0) := x"4";  -- CONTEXT_COMMAND_REG
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -398,11 +399,11 @@ PACKAGE donut_types IS
   -- CONSTANT
   CONSTANT SNAP_CMD_BITS_L      : integer := 4;                                                          -- SNAP_CMD_REG
   CONSTANT SNAP_CMD_BITS_R      : integer := 0;                                                          -- SNAP_CMD_REG
-  CONSTANT SNAP_NOP             : std_ulogic_vector(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) := "00000";  -- SNAP_CMD_REG
-  CONSTANT SNAP_STOP            : std_ulogic_vector(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) := "00010";  -- SNAP_CMD_REG
-  CONSTANT SNAP_ABORT           : std_ulogic_vector(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) := "00100";  -- SNAP_CMD_REG
-  CONSTANT SNAP_RESET           : std_ulogic_vector(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) := "01000";  -- SNAP_CMD_REG
-  CONSTANT EXPLORATION_DONE     : std_ulogic_vector(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) := "10000";  -- SNAP_CMD_REG
+  CONSTANT SNAP_NOP             : std_logic_vector(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) := "00000";  -- SNAP_CMD_REG
+  CONSTANT SNAP_STOP            : std_logic_vector(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) := "00010";  -- SNAP_CMD_REG
+  CONSTANT SNAP_ABORT           : std_logic_vector(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) := "00100";  -- SNAP_CMD_REG
+  CONSTANT SNAP_RESET           : std_logic_vector(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) := "01000";  -- SNAP_CMD_REG
+  CONSTANT EXPLORATION_DONE     : std_logic_vector(SNAP_CMD_BITS_L DOWNTO SNAP_CMD_BITS_R) := "10000";  -- SNAP_CMD_REG
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -412,17 +413,17 @@ PACKAGE donut_types IS
   CONSTANT AFU_DESCRIPTOR_BASE  : integer := 16#000#;
 
   TYPE AFU_DES_T IS RECORD
-    NUM_INTS_PER_PROCESS   : std_ulogic_vector(15 DOWNTO 0);
-    NUM_OF_PROCESSES       : std_ulogic_vector(15 DOWNTO 0);
-    NUM_OF_AFU_CRS         : std_ulogic_vector(15 DOWNTO 0);
-    REG_PROG_MODEL         : std_ulogic_vector(15 DOWNTO 0);
-    AFU_CR_LEN             : std_ulogic_vector(55 DOWNTO 0);
-    AFU_CR_OFFSET          : std_ulogic_vector(63 DOWNTO 0);
-    PERPROCESSPSA_CONTROL  : std_ulogic_vector( 7 DOWNTO 0);
-    PERPROCESSPSA_LENGTH   : std_ulogic_vector(55 DOWNTO 0);
-    PERPROCESSPSA_OFFSET   : std_ulogic_vector(63 DOWNTO 0);
-    AFU_EB_LEN             : std_ulogic_vector(55 DOWNTO 0);
-    AFU_EB_OFFSET          : std_ulogic_vector(63 DOWNTO 0);
+    NUM_INTS_PER_PROCESS   : std_logic_vector(15 DOWNTO 0);
+    NUM_OF_PROCESSES       : std_logic_vector(15 DOWNTO 0);
+    NUM_OF_AFU_CRS         : std_logic_vector(15 DOWNTO 0);
+    REG_PROG_MODEL         : std_logic_vector(15 DOWNTO 0);
+    AFU_CR_LEN             : std_logic_vector(55 DOWNTO 0);
+    AFU_CR_OFFSET          : std_logic_vector(63 DOWNTO 0);
+    PERPROCESSPSA_CONTROL  : std_logic_vector( 7 DOWNTO 0);
+    PERPROCESSPSA_LENGTH   : std_logic_vector(55 DOWNTO 0);
+    PERPROCESSPSA_OFFSET   : std_logic_vector(63 DOWNTO 0);
+    AFU_EB_LEN             : std_logic_vector(55 DOWNTO 0);
+    AFU_EB_OFFSET          : std_logic_vector(63 DOWNTO 0);
   END RECORD;
 
   CONSTANT AFU_DES_INI : AFU_DES_T :=             -- see Coherent Accelerator Interface Architecture (CAIA) spec for definition of AFU Descriptor
@@ -449,10 +450,10 @@ PACKAGE donut_types IS
   CONSTANT AFU_CFG_SPACE_SIZE   : integer := 2;
 
   TYPE AFU_CFG_T IS RECORD
-    AFU_DEVICE_ID   : std_ulogic_vector(31 DOWNTO 16);
-    AFU_VENDOR_ID   : std_ulogic_vector(15 DOWNTO  0);
-    AFU_CLASS_CODE  : std_ulogic_vector(31 DOWNTO  8);
-    AFU_REVISION_ID : std_ulogic_vector( 7 DOWNTO  0);
+    AFU_DEVICE_ID   : std_logic_vector(31 DOWNTO 16);
+    AFU_VENDOR_ID   : std_logic_vector(15 DOWNTO  0);
+    AFU_CLASS_CODE  : std_logic_vector(31 DOWNTO  8);
+    AFU_REVISION_ID : std_logic_vector( 7 DOWNTO  0);
   END RECORD;
 
   CONSTANT AFU_CFG_INI : AFU_CFG_T :=
@@ -469,11 +470,11 @@ PACKAGE donut_types IS
   ------------------------------------------------------------------------------
   --
   -- CONSTANT
-  CONSTANT ACTION_TYPE_BITS                : integer                        :=  4;      -- number of bits required to represent the action types
-  CONSTANT NUM_OF_ACTION_TYPES             : integer                        := 16;      -- maximum number of supported action types
-  CONSTANT ACTION_BITS                     : integer                        :=  4;      -- number of bits required to represent the action IDs
-  CONSTANT NUM_OF_ACTIONS                  : integer                        :=  1;      -- maximum number of supported actions
-  CONSTANT ACTION_CONTEXT_REG              : std_ulogic_vector(11 DOWNTO 0) := x"020";
+  CONSTANT ACTION_TYPE_BITS                : integer                       :=  4;      -- number of bits required to represent the action types
+  CONSTANT NUM_OF_ACTION_TYPES             : integer                       := 16;      -- maximum number of supported action types
+  CONSTANT ACTION_BITS                     : integer                       :=  4;      -- number of bits required to represent the action IDs
+  CONSTANT NUM_OF_ACTIONS                  : integer                       :=  1;      -- maximum number of supported actions
+  CONSTANT ACTION_CONTEXT_REG              : std_logic_vector(11 DOWNTO 0) := x"020";
 
 
 --------------------------------------------------------------------------------
@@ -492,13 +493,13 @@ PACKAGE donut_types IS
   ------------------------------------------------------------------------------
   --
   -- TYPE
-  TYPE ACTION_TYPE_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(ACTION_TYPE_BITS-1 DOWNTO 0);
-  TYPE ACTION_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
-  TYPE ACTION_MASK_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
-  TYPE CONTEXT_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
-  TYPE INTSRC_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(INT_BITS-2 DOWNTO 0);
-  TYPE SEQNO_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(SEQNO_BITS-1 DOWNTO 0);
-  TYPE JQIDX_ARRAY IS ARRAY (integer RANGE <>) OF std_ulogic_vector(JQIDX_BITS-1 DOWNTO 0);
+  TYPE ACTION_TYPE_ARRAY IS ARRAY (integer RANGE <>) OF std_logic_vector(ACTION_TYPE_BITS-1 DOWNTO 0);
+  TYPE ACTION_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_logic_vector(ACTION_BITS-1 DOWNTO 0);
+  TYPE ACTION_MASK_ARRAY IS ARRAY (integer RANGE <>) OF std_logic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
+  TYPE CONTEXT_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  TYPE INTSRC_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_logic_vector(INT_BITS-2 DOWNTO 0);
+  TYPE SEQNO_ARRAY IS ARRAY (integer RANGE <>) OF std_logic_vector(SEQNO_BITS-1 DOWNTO 0);
+  TYPE JQIDX_ARRAY IS ARRAY (integer RANGE <>) OF std_logic_vector(JQIDX_BITS-1 DOWNTO 0);
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -526,23 +527,23 @@ PACKAGE donut_types IS
     --  ha_c (from PSL)
     --
     TYPE HA_C_T IS RECORD
-      room        : std_ulogic_vector(7 DOWNTO 0);        -- Command room
+      room        : std_logic_vector(7 DOWNTO 0);        -- Command room
     END RECORD HA_C_T;
 
     --
     --  ah_c (to   PSL)
     --
     TYPE AH_C_T IS RECORD
-      valid       : std_ulogic;                           -- Command valid
-      tag         : std_ulogic_vector(7  DOWNTO 0);       -- Command tag
-      tagpar      : std_ulogic;                           -- Command tag parity
+      valid       : std_logic;                           -- Command valid
+      tag         : std_logic_vector(7  DOWNTO 0);       -- Command tag
+      tagpar      : std_logic;                           -- Command tag parity
       com         : CMD_CODES_T;                          -- Command code
-      compar      : std_ulogic;                           -- Command code parity
-      abt         : std_ulogic_vector(2 DOWNTO 0);        -- Command ABT
-      ea          : std_ulogic_vector(63 DOWNTO 0);       -- Command address
-      eapar       : std_ulogic;                           -- Command address parity
-      ch          : std_ulogic_vector(15 DOWNTO 0);       -- Command context handle
-      size        : std_ulogic_vector(11 DOWNTO 0);       -- Command size
+      compar      : std_logic;                           -- Command code parity
+      abt         : std_logic_vector(2 DOWNTO 0);        -- Command ABT
+      ea          : std_logic_vector(63 DOWNTO 0);       -- Command address
+      eapar       : std_logic;                           -- Command address parity
+      ch          : std_logic_vector(15 DOWNTO 0);       -- Command context handle
+      size        : std_logic_vector(11 DOWNTO 0);       -- Command size
     END RECORD AH_C_T;
 
 
@@ -558,25 +559,25 @@ PACKAGE donut_types IS
     --  ha_b (from PSL)
     --
     TYPE HA_B_T IS RECORD
-      rvalid      : std_ulogic;                           -- Buffer Read valid
-      rtag        : std_ulogic_vector(7 DOWNTO 0);        -- Buffer Read tag
-      rtagpar     : std_ulogic;                           -- Buffer Read tag parity
-      rad         : std_ulogic_vector(5 DOWNTO 0);        -- Buffer Read address
-      wvalid      : std_ulogic;                           -- Buffer Write valid
-      wtag        : std_ulogic_vector(7 DOWNTO 0);        -- Buffer Write tag
-      wtagpar     : std_ulogic;                           -- Buffer Write tag parity
-      wad         : std_ulogic_vector(5   DOWNTO 0);      -- Buffer Write address
-      wdata       : std_ulogic_vector(511 DOWNTO 0);      -- Buffer Write data
-      wpar        : std_ulogic_vector(7   DOWNTO 0);      -- Buffer Write parity
+      rvalid      : std_logic;                           -- Buffer Read valid
+      rtag        : std_logic_vector(7 DOWNTO 0);        -- Buffer Read tag
+      rtagpar     : std_logic;                           -- Buffer Read tag parity
+      rad         : std_logic_vector(5 DOWNTO 0);        -- Buffer Read address
+      wvalid      : std_logic;                           -- Buffer Write valid
+      wtag        : std_logic_vector(7 DOWNTO 0);        -- Buffer Write tag
+      wtagpar     : std_logic;                           -- Buffer Write tag parity
+      wad         : std_logic_vector(5   DOWNTO 0);      -- Buffer Write address
+      wdata       : std_logic_vector(511 DOWNTO 0);      -- Buffer Write data
+      wpar        : std_logic_vector(7   DOWNTO 0);      -- Buffer Write parity
     END RECORD HA_B_T;
 
     --
     --  ah_b (to   PSL)
     --
     TYPE AH_B_T IS RECORD
-      rlat        : std_ulogic_vector(3   DOWNTO 0);      -- Buffer Read latency
-      rdata       : std_ulogic_vector(511 DOWNTO 0);      -- Buffer Read data
-      rpar        : std_ulogic_vector(7   DOWNTO 0);      -- Buffer Read parity
+      rlat        : std_logic_vector(3   DOWNTO 0);      -- Buffer Read latency
+      rdata       : std_logic_vector(511 DOWNTO 0);      -- Buffer Read data
+      rpar        : std_logic_vector(7   DOWNTO 0);      -- Buffer Read parity
     END RECORD AH_B_T;
 
 
@@ -591,13 +592,13 @@ PACKAGE donut_types IS
     --  ha_r (from PSL)
     --
     TYPE HA_R_T IS RECORD
-      valid       : std_ulogic;                           -- Response valid
-      tag         : std_ulogic_vector(7  DOWNTO 0);       -- Response tag
-      tagpar      : std_ulogic;                           -- Response tag parity
+      valid       : std_logic;                           -- Response valid
+      tag         : std_logic_vector(7  DOWNTO 0);       -- Response tag
+      tagpar      : std_logic;                           -- Response tag parity
       response    : RSP_CODES_T;                          -- Response
-      credits     : std_ulogic_vector(8  DOWNTO 0);       -- Response credits
-      cachestate  : std_ulogic_vector(1  DOWNTO 0);       -- Response cache state
-      cachepos    : std_ulogic_vector(12 DOWNTO 0);       -- Response cache pos
+      credits     : std_logic_vector(8  DOWNTO 0);       -- Response credits
+      cachestate  : std_logic_vector(1  DOWNTO 0);       -- Response cache state
+      cachepos    : std_logic_vector(12 DOWNTO 0);       -- Response cache pos
     END RECORD HA_R_T;
 
 
@@ -615,38 +616,38 @@ PACKAGE donut_types IS
     --  ha_mm (from PSL)
     --
     TYPE HA_MM_T IS RECORD
-      valid      : std_ulogic;                            -- A valid MMIO is present
-      cfg        : std_ulogic;                            -- MMIO is AFU descriptor space access
-      rnw        : std_ulogic;                            -- 1 = read  0 = write
-      dw         : std_ulogic;                            -- 1 = doubleword  0 = word
-      ad         : std_ulogic_vector(23 DOWNTO 0);        -- mmio address
-      adpar      : std_ulogic;                            -- mmio address parity
-      data       : std_ulogic_vector(63 DOWNTO 0);        -- Write data
-      datapar    : std_ulogic;                            -- Write data parity
+      valid      : std_logic;                            -- A valid MMIO is present
+      cfg        : std_logic;                            -- MMIO is AFU descriptor space access
+      rnw        : std_logic;                            -- 1 = read  0 = write
+      dw         : std_logic;                            -- 1 = doubleword  0 = word
+      ad         : std_logic_vector(23 DOWNTO 0);        -- mmio address
+      adpar      : std_logic;                            -- mmio address parity
+      data       : std_logic_vector(63 DOWNTO 0);        -- Write data
+      datapar    : std_logic;                            -- Write data parity
     END RECORD HA_MM_T;
 
     --
     --  ah_mm (to   PSL)
     --
     TYPE AH_MM_T IS RECORD
-      ack        : std_ulogic;                            -- Write is complete or Read is valid
-      data       : std_ulogic_vector(63 DOWNTO 0);        -- Read data
-      datapar    : std_ulogic;                            -- Read data parity
+      ack        : std_logic;                            -- Write is complete or Read is valid
+      data       : std_logic_vector(63 DOWNTO 0);        -- Read data
+      datapar    : std_logic;                            -- Read data parity
     END RECORD AH_MM_T;
 
 
     --
     --  mm_e (internal to MMIO for error reporting)
     TYPE MM_E_T IS RECORD
-      wr_data_parity_err     : std_ulogic;
-      wr_addr_parity_err     : std_ulogic;
-      rd_data_parity_err     : std_ulogic_vector(MMIO_DDCBQ_RAM_RD_ERR_L DOWNTO MMIO_DDCBQ_RAM_RD_ERR_R);
+      wr_data_parity_err     : std_logic;
+      wr_addr_parity_err     : std_logic;
+      rd_data_parity_err     : std_logic_vector(MMIO_DDCBQ_RAM_RD_ERR_L DOWNTO MMIO_DDCBQ_RAM_RD_ERR_R);
     END RECORD;
 
     -- mm_i (internal to MMIO for error injection)
     TYPE MM_I_T IS RECORD
-      inject_read_rsp_parity_error : std_ulogic;
-      inject_write_parity_error    : std_ulogic;
+      inject_read_rsp_parity_error : std_logic;
+      inject_write_parity_error    : std_logic;
     END RECORD;
 
   ------------------------------------------------------------------------------
@@ -661,22 +662,22 @@ PACKAGE donut_types IS
     -- ha_j (from PSL)
     --
     TYPE HA_J_T IS RECORD
-      valid            : std_ulogic;                      -- Job valid
+      valid            : std_logic;                      -- Job valid
       com              : COM_CODES_T;                     -- Job command
-      compar           : std_ulogic;                      -- Job command parity
-      ea               : std_ulogic_vector(63 DOWNTO 0);  -- Job address / LLCMD information
-      eapar            : std_ulogic;                      -- Job address parity
+      compar           : std_logic;                      -- Job command parity
+      ea               : std_logic_vector(63 DOWNTO 0);  -- Job address / LLCMD information
+      eapar            : std_logic;                      -- Job address parity
     END RECORD HA_J_T;
 
     --
     -- ah_j (to   PSL)
     --
     TYPE AH_J_T IS RECORD
-      running          : std_ulogic;                      -- Job running
-      done             : std_ulogic;                      -- Job done
-      cack             : std_ulogic;                      -- Acknowledge completion of LLCMD
-      error            : std_ulogic_vector(63 DOWNTO 0);  -- AFU error
-      yield            : std_ulogic;                      -- Job yield
+      running          : std_logic;                      -- Job running
+      done             : std_logic;                      -- Job done
+      cack             : std_logic;                      -- Acknowledge completion of LLCMD
+      error            : std_logic_vector(63 DOWNTO 0);  -- AFU error
+      yield            : std_logic;                      -- Job yield
     END RECORD AH_J_T;
 
 
@@ -730,51 +731,51 @@ PACKAGE donut_types IS
     -- ds_c
     --
     TYPE DS_C_T IS RECORD
-      wr_req_ack        : std_ulogic;
-      rd_req_ack        : std_ulogic;
-      wr_id_valid       : std_ulogic;
-      wr_id             : std_ulogic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
-      int_req_ack       : std_ulogic;
+      wr_req_ack        : std_logic;
+      rd_req_ack        : std_logic;
+      wr_id_valid       : std_logic;
+      wr_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
+      int_req_ack       : std_logic;
     END RECORD DS_C_T;
 
     --
     -- ds_d
     --
     TYPE DS_D_T IS RECORD
-      rd_data_strobe    : std_ulogic;                                           -- valid
-      rd_last           : std_ulogic;
-      rd_data           : std_ulogic_vector(C_S_AXI_DATA_WIDTH - 1 DOWNTO 0);   -- data
-      rd_id             : std_ulogic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
+      rd_data_strobe    : std_logic;                                           -- valid
+      rd_last           : std_logic;
+      rd_data           : std_logic_vector(C_S_AXI_DATA_WIDTH - 1 DOWNTO 0);   -- data
+      rd_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
     END RECORD DS_D_T;
 
     --
     -- dmm_e
     --
     TYPE DMM_E_T IS RECORD
-      ah_c_fsm_err        : std_ulogic;
-      read_ctrl_fsm_err   : std_ulogic;
-      read_ctrl_q_err     : std_ulogic;
-      write_ctrl_fsm_err  : std_ulogic;
-      write_ctrl_q_err    : std_ulogic;
-      ha_r_tag_err        : std_ulogic;
-      ha_r_code_err       : std_ulogic;
-      ha_b_rtag_err       : std_ulogic;
-      ha_b_wtag_err       : std_ulogic;
-      ha_b_wdata_err      : std_ulogic;
-      aln_read_fsm_err    : std_ulogic;
-      aln_write_fsm_err   : std_ulogic;
-      sd_p_err            : std_ulogic;
-      write_data_p_err    : std_ulogic;
-      com_rtag_err        : std_ulogic;
-      clt_rtag_err        : std_ulogic;
-      rsp_rtag_err        : std_ulogic;
-      buf_rtag_err        : std_ulogic;
-      raddr_err           : std_ulogic;
-      com_wtag_err        : std_ulogic;
-      clt_wtag_err        : std_ulogic;
-      rsp_wtag_err        : std_ulogic;
-      buf_wtag_err        : std_ulogic;
-      waddr_err           : std_ulogic;
+      ah_c_fsm_err        : std_logic;
+      read_ctrl_fsm_err   : std_logic;
+      read_ctrl_q_err     : std_logic;
+      write_ctrl_fsm_err  : std_logic;
+      write_ctrl_q_err    : std_logic;
+      ha_r_tag_err        : std_logic;
+      ha_r_code_err       : std_logic;
+      ha_b_rtag_err       : std_logic;
+      ha_b_wtag_err       : std_logic;
+      ha_b_wdata_err      : std_logic;
+      aln_read_fsm_err    : std_logic;
+      aln_write_fsm_err   : std_logic;
+      sd_p_err            : std_logic;
+      write_data_p_err    : std_logic;
+      com_rtag_err        : std_logic;
+      clt_rtag_err        : std_logic;
+      rsp_rtag_err        : std_logic;
+      buf_rtag_err        : std_logic;
+      raddr_err           : std_logic;
+      com_wtag_err        : std_logic;
+      clt_wtag_err        : std_logic;
+      rsp_wtag_err        : std_logic;
+      buf_wtag_err        : std_logic;
+      waddr_err           : std_logic;
     END RECORD DMM_E_T;
 
 
@@ -787,9 +788,9 @@ PACKAGE donut_types IS
     -- cmm_e
     --
     TYPE CMM_E_T IS RECORD
-      ctrl_fsm_err     : std_ulogic;
-      com_parity_err   : std_ulogic;
-      ea_parity_err    : std_ulogic;
+      ctrl_fsm_err     : std_logic;
+      com_parity_err   : std_logic;
+      ea_parity_err    : std_logic;
     END RECORD;
 
 
@@ -802,38 +803,38 @@ PACKAGE donut_types IS
     -- jmm_c
     --
     TYPE JMM_C_T IS RECORD
-      seqno_we        : std_ulogic;
-      status_we       : std_ulogic;
-      assign_action   : std_ulogic;
+      seqno_we        : std_logic;
+      status_we       : std_logic;
+      assign_action   : std_logic;
     END RECORD;
 
     --
     -- jmm_d
     --
     TYPE JMM_D_T IS RECORD
-      seqno              : std_ulogic_vector(CTX_SEQNO_CURRENT_L DOWNTO CTX_SEQNO_CURRENT_R);
-      jqidx              : std_ulogic_vector(CTX_SEQNO_JQIDX_L DOWNTO CTX_SEQNO_JQIDX_R);
-      action_id          : std_ulogic_vector(CTX_STAT_ACTION_ID_L DOWNTO CTX_STAT_ACTION_ID_R);
-      action_active      : std_ulogic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
-      attached_to_action : std_ulogic;
-      context_id         : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
-      context_active     : std_ulogic;
+      seqno              : std_logic_vector(CTX_SEQNO_CURRENT_L DOWNTO CTX_SEQNO_CURRENT_R);
+      jqidx              : std_logic_vector(CTX_SEQNO_JQIDX_L DOWNTO CTX_SEQNO_JQIDX_R);
+      action_id          : std_logic_vector(CTX_STAT_ACTION_ID_L DOWNTO CTX_STAT_ACTION_ID_R);
+      action_active      : std_logic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
+      attached_to_action : std_logic;
+      context_id         : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+      context_active     : std_logic;
     END RECORD;
 
     --
     -- js_c
     --
     TYPE JS_C_T IS RECORD
-      int_req            : std_ulogic;
-      int_src            : std_ulogic_vector(INT_BITS-2 DOWNTO 0);      -- the job manager only uses two of the seven interrupt source IDs
-      int_ctx            : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+      int_req            : std_logic;
+      int_src            : std_logic_vector(INT_BITS-2 DOWNTO 0);      -- the job manager only uses two of the seven interrupt source IDs
+      int_ctx            : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
     END RECORD;
 
     --
     -- jx_c
     --
     TYPE JX_C_T IS RECORD
-      check_for_idle     : std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
+      check_for_idle     : std_logic_vector(ACTION_BITS-1 DOWNTO 0);
     END RECORD JX_C_T;
 
 
@@ -846,71 +847,71 @@ PACKAGE donut_types IS
     -- mmc_c
     --
     TYPE MMC_C_T IS RECORD
-      reset_done : std_ulogic;
+      reset_done : std_logic;
     END RECORD MMC_C_T;
 
     --
     -- mmc_e
     --
     TYPE MMC_E_T IS RECORD
-      error : std_ulogic_vector(63 DOWNTO 0);
+      error : std_logic_vector(63 DOWNTO 0);
     END RECORD MMC_E_T;
 
     --
     --
     -- mmd_a
     TYPE MMD_A_T IS RECORD
-      thr_read_fsm        : std_ulogic;
-      thr_write_fsm       : std_ulogic;
-      thr_cmd_fsm         : std_ulogic;
+      thr_read_fsm        : std_logic;
+      thr_write_fsm       : std_logic;
+      thr_cmd_fsm         : std_logic;
     END RECORD MMD_A_T;
 
     --
     -- mmd_i
     --
     TYPE MMD_I_T IS RECORD
-      inject_dma_write_error    : std_ulogic;
-      inject_dma_read_error     : std_ulogic;
-      inject_ah_c_compar_error  : std_ulogic;
-      inject_ah_c_eapar_error   : std_ulogic;
-      inject_ah_b_rpar_error    : std_ulogic;
-      inject_ah_c_tagpar_error  : std_ulogic;
+      inject_dma_write_error    : std_logic;
+      inject_dma_read_error     : std_logic;
+      inject_ah_c_compar_error  : std_logic;
+      inject_ah_c_eapar_error   : std_logic;
+      inject_ah_b_rpar_error    : std_logic;
+      inject_ah_c_tagpar_error  : std_logic;
     END RECORD;
 
     --
     -- mmj_c
     --
     TYPE MMJ_C_T IS RECORD
-      ctx_fifo_we               : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
-      ctx_stop                  : std_ulogic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
-      exploration_done          : std_ulogic;
+      ctx_fifo_we               : std_logic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+      ctx_stop                  : std_logic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
+      exploration_done          : std_logic;
       max_sat                   : integer RANGE 0 TO NUM_OF_ACTION_TYPES-1;
-      last_seqno                : std_ulogic;
-      action_ack                : std_ulogic;
+      last_seqno                : std_logic;
+      action_ack                : std_logic;
     END RECORD;
 
     --
     -- mmj_d
     --
     TYPE MMJ_D_T IS RECORD
-      context_id                : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
-      action_id                 : std_ulogic_vector(CTX_STAT_ACTION_ID_L DOWNTO CTX_STAT_ACTION_ID_R);
+      context_id                : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+      action_id                 : std_logic_vector(CTX_STAT_ACTION_ID_L DOWNTO CTX_STAT_ACTION_ID_R);
       sat                       : ACTION_TYPE_ARRAY(NUM_OF_ACTIONS-1 DOWNTO 0);
-      current_seqno             : std_ulogic_vector(CTX_SEQNO_CURRENT_L DOWNTO CTX_SEQNO_CURRENT_R);
-      current_jqidx             : std_ulogic_vector(CTX_SEQNO_JQIDX_L DOWNTO CTX_SEQNO_JQIDX_R);
-      assign_int_enable         : std_ulogic;
-      cpl_int_enable            : std_ulogic;
-      job_queue_mode            : std_ulogic;
+      current_seqno             : std_logic_vector(CTX_SEQNO_CURRENT_L DOWNTO CTX_SEQNO_CURRENT_R);
+      current_jqidx             : std_logic_vector(CTX_SEQNO_JQIDX_L DOWNTO CTX_SEQNO_JQIDX_R);
+      assign_int_enable         : std_logic;
+      cpl_int_enable            : std_logic;
+      job_queue_mode            : std_logic;
     END RECORD;
 
     --
     -- mmx_d
     --
     TYPE MMX_D_T IS RECORD
-      addr                : std_ulogic_vector(31 DOWNTO 0);
-      data                : std_ulogic_vector(31 DOWNTO 0);
-      wr_strobe           : std_ulogic;
-      rd_strobe           : std_ulogic;
+      addr                : std_logic_vector(31 DOWNTO 0);
+      data                : std_logic_vector(31 DOWNTO 0);
+      wr_strobe           : std_logic;
+      rd_strobe           : std_logic;
     END RECORD MMX_D_T;
 
 
@@ -923,36 +924,36 @@ PACKAGE donut_types IS
     -- sd_c
     --
     TYPE SD_C_T IS RECORD
-      wr_req            : std_ulogic;                                           -- wvalid
-      wr_addr           : std_ulogic_vector(63 DOWNTO 0);                       -- waddr
-      wr_len            : std_ulogic_vector( 7 DOWNTO 0);                       -- wlen
-      wr_id             : std_ulogic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
-      wr_ctx            : std_ulogic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
-      rd_req            : std_ulogic;                                           -- rvalid
-      rd_addr           : std_ulogic_vector(63 DOWNTO 0);                       -- raddr
-      rd_len            : std_ulogic_vector( 7 DOWNTO 0);                       -- rlen
-      rd_id             : std_ulogic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
-      rd_ctx            : std_ulogic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
-      int_req           : std_ulogic;                                           -- interrupt valid
-      int_src           : std_ulogic_vector(INT_BITS - 1 DOWNTO 0);             -- interrupt source ID
-      int_ctx           : std_ulogic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
+      wr_req            : std_logic;                                           -- wvalid
+      wr_addr           : std_logic_vector(63 DOWNTO 0);                       -- waddr
+      wr_len            : std_logic_vector( 7 DOWNTO 0);                       -- wlen
+      wr_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
+      wr_ctx            : std_logic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
+      rd_req            : std_logic;                                           -- rvalid
+      rd_addr           : std_logic_vector(63 DOWNTO 0);                       -- raddr
+      rd_len            : std_logic_vector( 7 DOWNTO 0);                       -- rlen
+      rd_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
+      rd_ctx            : std_logic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
+      int_req           : std_logic;                                           -- interrupt valid
+      int_src           : std_logic_vector(INT_BITS - 1 DOWNTO 0);             -- interrupt source ID
+      int_ctx           : std_logic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
     END RECORD SD_C_T;
 
     --
     -- sd_d
     --
     TYPE SD_D_T IS RECORD
-      wr_strobe         : std_ulogic_vector(C_S_AXI_DATA_WIDTH/8 - 1 DOWNTO 0); -- valid + byte_enable
-      wr_last           : std_ulogic;                                           --
-      wr_data           : std_ulogic_vector(C_S_AXI_DATA_WIDTH - 1 DOWNTO 0);   -- data
-      rd_data_ack       : std_ulogic;                                           --
+      wr_strobe         : std_logic_vector(C_S_AXI_DATA_WIDTH/8 - 1 DOWNTO 0); -- valid + byte_enable
+      wr_last           : std_logic;                                           --
+      wr_data           : std_logic_vector(C_S_AXI_DATA_WIDTH - 1 DOWNTO 0);   -- data
+      rd_data_ack       : std_logic;                                           --
     END RECORD SD_D_T;
 
     --
     -- sj_c
     --
     TYPE SJ_C_T IS RECORD
-      int_ack           : std_ulogic;
+      int_ack           : std_logic;
     END RECORD;
 
 
@@ -965,17 +966,17 @@ PACKAGE donut_types IS
     -- xmm_d
     --
     TYPE XMM_D_T IS RECORD
-      data                : std_ulogic_vector(31 DOWNTO 0);
-      ack                 : std_ulogic;
-      error               : std_ulogic_vector( 1 DOWNTO 0);
+      data                : std_logic_vector(31 DOWNTO 0);
+      ack                 : std_logic;
+      error               : std_logic_vector( 1 DOWNTO 0);
     END RECORD XMM_D_T;
 
     --
     -- xj_c
     --
     TYPE XJ_C_T IS RECORD
-      valid               : std_ulogic;
-      action              : std_ulogic_vector(ACTION_BITS-1 DOWNTO 0);
+      valid               : std_logic;
+      action              : std_logic_vector(ACTION_BITS-1 DOWNTO 0);
     END RECORD XJ_C_T;
 
     --
@@ -1030,8 +1031,8 @@ PACKAGE BODY donut_types IS
   ----------------------------------------------------------------------------
     -- verilog to vhdl connector
     --
-    FUNCTION v2vhdl_connector(CONSTANT data_in :std_ulogic_vector) RETURN std_ulogic_vector IS
-      VARIABLE data_out_v : std_ulogic_vector(data_in'high DOWNTO data_in'low);
+    FUNCTION v2vhdl_connector(CONSTANT data_in :std_logic_vector) RETURN std_logic_vector IS
+      VARIABLE data_out_v : std_logic_vector(data_in'high DOWNTO data_in'low);
     BEGIN
       FOR  i IN data_in'low TO data_in'high  LOOP
         data_out_v(i) := data_in(data_in'high - i);
@@ -1043,8 +1044,8 @@ PACKAGE BODY donut_types IS
     --
     -- vhdl to verilog connector
     --
-    FUNCTION vhdl2v_connector(CONSTANT data_in :std_ulogic_vector) RETURN std_ulogic_vector IS
-      VARIABLE data_out_v : std_ulogic_vector(data_in'low TO data_in'high);
+    FUNCTION vhdl2v_connector(CONSTANT data_in :std_logic_vector) RETURN std_logic_vector IS
+      VARIABLE data_out_v : std_logic_vector(data_in'low TO data_in'high);
     BEGIN
       FOR  i IN data_in'low TO data_in'high  LOOP
         data_out_v(i) := data_in(data_in'high - i);
@@ -1060,10 +1061,38 @@ PACKAGE BODY donut_types IS
   ---------------------------------------------------------------------------
   ----------------------------------------------------------------------------
     --
+    -- 1 bit ven parity out of N bit
+    --
+    FUNCTION parity_gen_even(CONSTANT data : IN std_logic_vector ) RETURN std_logic IS
+      VARIABLE res : std_logic;
+    BEGIN
+      res := '0';
+      
+      FOR i IN data'low TO data'high LOOP
+        res := data(i) XOR res;
+      END LOOP;  -- i
+      return res;
+    END parity_gen_even;
+
+    --
+    -- 1 bit odd parity out of N bit
+    --
+    FUNCTION parity_gen_odd(CONSTANT data : IN std_logic_vector ) RETURN std_logic IS
+      VARIABLE res : std_logic;
+    BEGIN
+      res := '1';
+      
+      FOR i  IN data'low TO data'high LOOP
+        res := data(i) XOR res;
+      END LOOP;  -- i
+      return res;
+    END parity_gen_odd;
+
+    --
     -- 4 bit odd parity out of 32 bit
     --
-    FUNCTION gen_parity_odd_32( CONSTANT data : IN std_ulogic_vector ) RETURN std_ulogic_vector IS
-      VARIABLE res : std_ulogic_vector(3 DOWNTO 0);
+    FUNCTION gen_parity_odd_32( CONSTANT data : IN std_logic_vector ) RETURN std_logic_vector IS
+      VARIABLE res : std_logic_vector(3 DOWNTO 0);
     BEGIN
       FOR i  IN 0 TO 3 LOOP
         res(i) := parity_gen_odd(data(data'low+7+i*8 DOWNTO data'low+i*8));
@@ -1075,8 +1104,8 @@ PACKAGE BODY donut_types IS
     --
     -- 8 bit odd parity out of 64 bit
     --
-    FUNCTION gen_parity_odd_64( CONSTANT data : IN std_ulogic_vector ) RETURN std_ulogic_vector IS
-      VARIABLE res : std_ulogic_vector(7 DOWNTO 0);
+    FUNCTION gen_parity_odd_64( CONSTANT data : IN std_logic_vector ) RETURN std_logic_vector IS
+      VARIABLE res : std_logic_vector(7 DOWNTO 0);
     BEGIN
       FOR i  IN 0 TO 7 LOOP
         res(i) := parity_gen_odd(data(data'low+7+i*8 DOWNTO data'low+i*8));
@@ -1087,8 +1116,8 @@ PACKAGE BODY donut_types IS
     --
     -- 16 bit odd parity out of 128 bit
     --
-    FUNCTION gen_parity_odd_128( CONSTANT data : IN std_ulogic_vector ) RETURN std_ulogic_vector IS
-      VARIABLE res : std_ulogic_vector(15 DOWNTO 0);
+    FUNCTION gen_parity_odd_128( CONSTANT data : IN std_logic_vector ) RETURN std_logic_vector IS
+      VARIABLE res : std_logic_vector(15 DOWNTO 0);
     BEGIN
       FOR i  IN 0 TO 15 LOOP
         res(i) := parity_gen_odd(data(data'low+7+i*8 DOWNTO data'low+i*8));
@@ -1098,21 +1127,27 @@ PACKAGE BODY donut_types IS
 
     -- Generate odd byte wide parity with pad to 8-bit boundary on the RIGHT
     -- w : byte width (normally 8)
-    function AC_GENPARITY( data_in :std_ulogic_vector; w: natural) return std_ulogic_vector is
-      variable data : std_ulogic_vector(0 to  ((data_in'length-1)/w+1)*w -1);
-      variable z    : std_ulogic_vector(0 to  ( data_in'length-1)/w        );
+    function AC_GENPARITY( data_in :std_logic_vector; w: natural) return std_logic_vector is
+      variable data   : std_logic_vector(0 to  ((data_in'length-1)/w+1)*w -1);
+      variable z      : std_logic_vector(0 to  ( data_in'length-1)/w        );
+      variable or_res : std_logic;
     begin
-
+ 
       data := (others => '0');
       data(0 to data_in'length-1)  := data_in;  -- normalize to left'=0, and even multiple of w.
       for i in 0 to data'length/w -1 loop
-        z(i) := xnor_reduce(data(w*i to w*(i+1)-1));
+        --z(i) := xnor_reduce(data(w*i to w*(i+1)-1));
+        or_res := '0';
+        FOR l IN (w*i) TO (w*(i+1)-1) LOOP
+          or_res := data(l) OR or_res;
+        END LOOP;  -- l
+        z(i) := NOT or_res;
       end loop;
       return z;
     end AC_GENPARITY;
-
-    function AC_GENPARITY(data_in : std_ulogic_vector) return std_ulogic_vector is
-      variable z    : std_ulogic_vector(0 to (data_in'length-1)/8);
+ 
+    function AC_GENPARITY(data_in : std_logic_vector) return std_logic_vector is
+      variable z    : std_logic_vector(0 to (data_in'length-1)/8);
     begin
       z := AC_GENPARITY(data_in,8);
       return z;
@@ -1124,17 +1159,17 @@ PACKAGE BODY donut_types IS
   --  Parity Prediction
   ---------------------------------------------------------------------------
   ----------------------------------------------------------------------------
-    function AC_PPARITH(dir: integer; a_in ,ap_in,b_in,bp_in : std_ulogic_vector; w: natural := 8) return std_ulogic_vector is
+    function AC_PPARITH(dir: integer; a_in ,ap_in,b_in,bp_in : std_logic_vector; w: natural := 8) return std_logic_vector is
       -- odd parity predicting arithmetic (adder/subt)
       -- given addends with parity,  predicts what the parity of the sum will be
       -- result needs inverting if even parity is used.
       -- dir is 1 : add,  -1 : subtract.
       -- w is the parity byte size. (typically 8)
-      constant add : std_ulogic_vector(7 downto 0) := "11101000";   -- majority function
-      constant sub : std_ulogic_vector(7 downto 0) := "10001110";
-      variable a,b,c : std_ulogic_vector(a_in'length -1 downto 0);
-      variable sp,cp,z : std_ulogic_vector(ap_in'length-1 downto 0);
-      variable y : std_ulogic_vector(2 downto 0);
+      constant add : std_logic_vector(7 downto 0) := "11101000";   -- majority function
+      constant sub : std_logic_vector(7 downto 0) := "10001110";
+      variable a,b,c : std_logic_vector(a_in'length -1 downto 0);
+      variable sp,cp,z : std_logic_vector(ap_in'length-1 downto 0);
+      variable y : std_logic_vector(2 downto 0);
     begin
       a := a_in;
       b := b_in;
@@ -1143,9 +1178,9 @@ PACKAGE BODY donut_types IS
       for i in 1 to a'length-1 loop
         -- majority  function.  code for a 3input lut
         y := a(i-1) & b(i-1) & c(i-1);
-        if dir=1 then c(i) := add(tconv(y));
-        else c(i) := sub(tconv(y));
-        end if;
+--        if dir=1 then c(i) := add(tconv(y));
+--        else c(i) := sub(tconv(y));
+ --       end if;
       end loop;
       -- find the parity of the operands.
       sp := ap_in xor bp_in;
@@ -1157,9 +1192,9 @@ PACKAGE BODY donut_types IS
     end function AC_PPARITH;
 
 
-    function AC_PPARITH(dir:integer; a_in : std_ulogic_vector; ap_in : std_ulogic;
-                                     b_in : std_ulogic_vector; bp_in : std_ulogic) return std_ulogic is
-      variable z : std_ulogic_vector(0 to 0);
+    function AC_PPARITH(dir:integer; a_in : std_logic_vector; ap_in : std_logic;
+                                     b_in : std_logic_vector; bp_in : std_logic) return std_logic is
+      variable z : std_logic_vector(0 to 0);
     begin
       z := ac_pparith(dir, a_in , (0 to 0 => ap_in), b_in, (0 to 0 => bp_in), a_in'length);
       return z(0);

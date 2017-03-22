@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-`timescale 1ns / 1ns
+`timescale 1ns / 10ps
 module top (
   output          breakpoint
 );
@@ -311,7 +311,7 @@ module top (
   // Clock generation
   // 250MHz AFU clock
   always begin
-     #4.0ns;
+     #2.0ns;
      ha_pclock = !ha_pclock;
   end
 
@@ -720,13 +720,13 @@ module top (
  						       //-- only for DDRI_USED=TRUE 	
   // 200MHz DDR3 reference clock		       //-- only for DDRI_USED=TRUE 	
   always begin					       //-- only for DDRI_USED=TRUE 	
-     #5.0ns;					       //-- only for DDRI_USED=TRUE 	
+     #2.5ns;					       //-- only for DDRI_USED=TRUE 	
      refclk200_p = !refclk200_p;		       //-- only for DDRI_USED=TRUE 	
   end						       //-- only for DDRI_USED=TRUE 	
 						       //-- only for DDRI_USED=TRUE 	
   // 400MHz DDR3 system clock			       //-- only for DDRI_USED=TRUE 	
   always begin					       //-- only for DDRI_USED=TRUE 	
-     #2.5ns;					       //-- only for DDRI_USED=TRUE 	
+     #1.25ns;					       //-- only for DDRI_USED=TRUE 	
      c1_sys_clk_p = !c1_sys_clk_p;		       //-- only for DDRI_USED=TRUE 	
   end						       //-- only for DDRI_USED=TRUE 	
 
