@@ -162,15 +162,18 @@ static int action_wait_idle(struct dnut_card* h, int timeout_ms, uint64_t *elaps
 	uint64_t t_start;	/* time in usec */
 	uint64_t tout = (uint64_t)timeout_ms * 1000;
 	uint64_t td = 0;	/* Diff time in usec */
+	int irq = 0;
 
-	if (use_irq)
+	if (use_irq) {
 		action_write(h, ACTION_INT_CONFIG, ACTION_INT_GLOBAL);
+		irq = 4;
+	}
 	dnut_kernel_start((void*)h);
 
 	/* Wait for Action to go back to Idle */
 	t_start = get_usec();
 	while (1) {
-		rc = dnut_kernel_completed((void*)h, NULL);
+		rc = dnut_kernel_completed((void*)h, irq, NULL);
 		td = get_usec() - t_start;
 		if (rc) {
 			rc = 0;
@@ -406,9 +409,8 @@ static void usage(const char *prog)
 		"    -V, --version\n"
 		"    -q, --quiet          quiece output\n"
 		"    -a, --action         Action to execute (default 1)\n"
-		"    -m, --master         Set this flag to use Master Context\n"
 		"    -t, --timeout        Timeout after N sec (default 1 sec)\n"
-		"    -I, --interrupt      Use Interrupts (default No Interrupts)\n"
+		"    -I, --irq            Use Interrupts (default No Interrupts)\n"
 		"    ----- Action 1 Settings -------------- (-a) ----\n"
 		"    -s, --start          Start delay in msec (default %d)\n"
 		"    -e, --end            End delay time in msec (default %d)\n"
@@ -448,7 +450,6 @@ int main(int argc, char *argv[])
 	uint64_t card_ram_base = DDR_MEM_BASE_ADDR;	/* Base of Card DDR or Block Ram */
 	uint64_t cir;
 	int timeout_ms = ACTION_WAIT_TIME;
-	bool use_master = false;
 	bool use_interrupt = false;
 	int attach_flags = SNAP_CCR_DIRECT_MODE;
 	uint64_t td;
@@ -471,11 +472,10 @@ int main(int argc, char *argv[])
 			{ "align",    required_argument, NULL, 'A' },
 			{ "dest",     required_argument, NULL, 'D' },
 			{ "timeout",  required_argument, NULL, 't' },
-			{ "master",   no_argument,       NULL, 'm' },
-			{ "interrupt", no_argument,      NULL, 'I' },
+			{ "irq",      no_argument,       NULL, 'I' },
 			{ 0,          no_argument,       NULL, 0   },
 		};
-		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:B:N:A:D:t:ImqvVh",
+		cmd = getopt_long(argc, argv, "C:s:e:i:a:S:B:N:A:D:t:IqvVh",
 			long_options, &option_index);
 		if (cmd == -1)  /* all params processed ? */
 			break;
@@ -495,9 +495,6 @@ int main(int argc, char *argv[])
 			break;
 		case 'a':	/* action */
 			action = strtol(optarg, (char **)NULL, 0);
-			break;
-		case 'm':	/* master */
-			use_master = true;
 			break;
 		/* Action 1 Options */
 		case 's':
@@ -528,7 +525,7 @@ int main(int argc, char *argv[])
 		case 't':
 			timeout_ms = strtol(optarg, (char **)NULL, 0) * 1000; /* Make msec */
 			break;
-		case 'I':
+		case 'I':	/* irq */
 			use_interrupt = true;
 			attach_flags |= ACTION_IDLE_IRQ_MODE | SNAP_CCR_IRQ_ATTACH;
 			break;
@@ -552,13 +549,8 @@ int main(int argc, char *argv[])
 	}
 
 	VERBOSE2("Open Card: %d\n", card_no);
-	if (use_master) {
-		sprintf(device, "/dev/cxl/afu%d.0m", card_no);
-		dn = dnut_card_alloc_dev(device, DNUT_VENDOR_ID_ANY, DNUT_DEVICE_ID_ANY);
-	} else {
-		sprintf(device, "/dev/cxl/afu%d.0s", card_no);
-		dn = dnut_card_alloc_dev(device, 0x1014, 0xcafe);
-	}
+	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
+	dn = dnut_card_alloc_dev(device, 0x1014, 0xcafe);
 	if (NULL == dn) {
 		errno = ENODEV;
 		VERBOSE0("ERROR: dnut_card_alloc_dev(%s)\n", device);
@@ -571,16 +563,13 @@ int main(int argc, char *argv[])
 	switch (action) {
 	case 1:
 		for(delay = start_delay; delay <= end_delay; delay += step_delay) {
-			if (!use_master) {
-				rc = get_action(dn, attach_flags, timeout_ms+delay);
-				if (0 != rc)
-					goto __exit1;
-			}
+			rc = get_action(dn, attach_flags, timeout_ms+delay);
+			if (0 != rc)
+				goto __exit1;
 			action_count(dn, delay);
 			rc = action_wait_idle(dn, timeout_ms + delay, &td, use_interrupt);
 			print_time(td, 0);
-			if (!use_master)
-				dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
+			dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
 			if (0 != rc) break;
 		}
 		rc = 0;
@@ -591,17 +580,14 @@ int main(int argc, char *argv[])
 	case 5:
 	case 6:
 		for (i = 0; i < memcpy_iter; i++) {
-			if (!use_master) {
-				rc = get_action(dn, attach_flags, timeout_ms);
-				if (0 != rc)
-					goto __exit1;
-			}
+			rc = get_action(dn, attach_flags, timeout_ms);
+			if (0 != rc)
+				goto __exit1;
 			rc = memcpy_test(dn, action, num_4k, num_64,
 				memcpy_align, card_ram_base,
 				timeout_ms,
 				use_interrupt);
-			if (!use_master)
-				dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
+			dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
 		}
 		break;
 	default:

@@ -29,6 +29,7 @@
 
 #include <libdonut.h>
 #include <donut_tools.h>
+#include "snap_s_regs.h"
 #include "snap_fw_example.h"
 
 /*	defaults */
@@ -258,29 +259,39 @@ static void dump_regs(struct dnut_card* h)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct dnut_card* h, int timeout_ms, uint64_t *elapsed)
+static int action_wait_idle(struct dnut_card* h, int timeout_ms, uint64_t *elapsed, bool use_irq)
 {
-	uint32_t action_data;
 	int rc = 0;
 	uint64_t t_start;	/* time in usec */
 	uint64_t tout = (uint64_t)timeout_ms * 1000;
 	uint64_t td;		/* Diff time in usec */
+	int irq = 0;
 
-	action_write(h, ACTION_CONTROL, ACTION_CONTROL_START);
+	if (use_irq) {
+		action_write(h, ACTION_INT_CONFIG, ACTION_INT_GLOBAL);
+		irq = 4;
+	}
+	dnut_kernel_start((void*)h);
+
 
 	/* Wait for Action to go back to Idle */
 	t_start = get_usec();
-	do {
-		action_data = action_read(h, ACTION_CONTROL);
+	while (1) {
+		rc = dnut_kernel_completed((void*)h, irq, NULL);
 		td = get_usec() - t_start;
+		if (rc) {
+			rc = 0;
+			break;
+		}
 		if (td > tout) {
 			VERBOSE0("Error. Timeout while Waiting for Idle\n");
 			rc = ETIME;
 			errno = ETIME;
 			break;
 		}
-	} while ((action_data & ACTION_CONTROL_IDLE) == 0);
-
+	}
+	if (use_irq)
+		action_write(h, ACTION_INT_CONFIG, 0);
 	*elapsed = td;
 	return(rc);
 }
@@ -397,7 +408,8 @@ static int ram_clear(struct dnut_card* dnc,
 			unsigned int mem_size,	/* Size for Host Buffer */
 			uint64_t start_addr,	/* Start of Card Mem */
 			uint64_t end_addr,	/* End of Card Mem */
-			int timeout_ms)		/* Timeout to wait in ms */
+			int timeout_ms,		/* Timeout to wait in ms */
+			bool irq_flag)
 {
 	int rc, blocks, block;
 	uint64_t card_addr;
@@ -417,7 +429,7 @@ static int ram_clear(struct dnut_card* dnc,
 		/* Copy Data from Host to Card */
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 			(void *)card_addr, src, mem_size);
-		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
+		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed, irq_flag))
 			goto __ram_zero_exit;
 		card_addr += mem_size;
 		t_sum += us_elappsed;
@@ -435,7 +447,8 @@ static int ram_test_ad(struct dnut_card* dnc,
 			uint64_t start_addr,	/* Start of Card Mem */
 			uint64_t end_addr,	/* End of Card Mem */
 			int timeout_ms,		/* Timeout to wait in ms */
-			bool inverse)
+			bool inverse,
+			bool irq_flag)
 {
 	int rc = -1;
 	int blocks, block;
@@ -457,7 +470,7 @@ static int ram_test_ad(struct dnut_card* dnc,
 		else	memset_ad(src, card_addr, mem_size);
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 			(void *)card_addr, src, mem_size);
-		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
+		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed, irq_flag))
 			goto __ram_test_ad_exit;
 		card_addr += mem_size;
 		t_sum += us_elappsed;
@@ -474,7 +487,7 @@ static int ram_test_ad(struct dnut_card* dnc,
 	for (block = 0; block < blocks; block++) {
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
 			dest, (void *)card_addr, mem_size);
-		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
+		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed, irq_flag))
 			goto __ram_test_ad_exit;
 		t_sum += us_elappsed;
 		if (inverse)
@@ -498,7 +511,8 @@ static int ram_test_rnd1(struct dnut_card* dnc,
 			unsigned int mem_size,	/* Size for Host Buffer */
 			uint64_t start_addr,	/* Start of Card Mem */
 			uint64_t end_addr,	/* End of Card Mem */
-			int timeout_ms)		/* Timeout to wait in ms */
+			int timeout_ms,		/* Timeout to wait in ms */
+			bool irq_flag)
 {
 	int blocks, block;
 	uint64_t card_addr;
@@ -518,7 +532,7 @@ static int ram_test_rnd1(struct dnut_card* dnc,
 	for (block = 0; block < blocks; block++) {
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 			(void *)card_addr, src, mem_size);
-		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
+		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed, irq_flag))
 			goto __ram_test_rnd1_exit;
 		t_sum += us_elappsed;
 		card_addr += mem_size;
@@ -536,7 +550,7 @@ static int ram_test_rnd1(struct dnut_card* dnc,
 	for (block = 0; block < blocks; block++) {
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
 			dest, (void *)card_addr, mem_size);
-		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
+		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed, irq_flag))
 			goto __ram_test_rnd1_exit;
 		t_sum += us_elappsed;
 		rc = memcmp2(dest, src, card_addr, mem_size);
@@ -558,7 +572,8 @@ static int ram_test_rnd2(struct dnut_card* dnc,
 			unsigned int mem_size,	/* Size for Host Buffer */
 			uint64_t start_addr,	/* Start of Card Mem */
 			uint64_t end_addr,	/* End of Card Mem */
-			int timeout_ms)		/* Timeout to wait in ms */
+			int timeout_ms,		/* Timeout to wait in ms */
+			bool irq_flag)
 {
 	int blocks, block;
 	uint64_t card_addr;
@@ -578,13 +593,13 @@ static int ram_test_rnd2(struct dnut_card* dnc,
 		/* Write DDR3 Memory */
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 			(void *)card_addr, src, mem_size);
-		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
+		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed, irq_flag))
 			goto __ram_test_rnd2_exit;
 		t_sum += us_elappsed;
 		/* Read DDR3 Memory */
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
 			dest, (void *)card_addr, mem_size);
-		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed))
+		if (0 != action_wait_idle(dnc, timeout_ms, &us_elappsed, irq_flag))
 			goto __ram_test_rnd2_exit;
 		t_sum += us_elappsed;
 		rc = memcmp2(dest, src, card_addr, mem_size);
@@ -606,11 +621,11 @@ static void usage(const char *prog)
 		"    -C, --card <cardno>  use this card for operation\n"
 		"    -V, --version\n"
 		"    -q, --quiet          quiece output\n"
-		"    -m, --master         Select Master Context (default is Slave)\n"
 		"    -i, --iter           Memcpy Iterations (default 1)\n"
 		"    -s, --start          Card Ram Start Address (default 0x%llx)\n"
 		"    -e, --end            Card Ram End Address (default 0x%llx)\n"
 		"    -b, --buffer         Host Buffer Size (default 0x%llx)\n"
+		"    -I, --irq            Use Interrupts\n"
 		"\tTool to check DDR3 Memory on KU3\n"
 		, prog,
 		(long long)DDR_MEM_BASE_ADDR,
@@ -632,7 +647,8 @@ int main(int argc, char *argv[])
 	unsigned int mem_size = HOST_BUFFER_SIZE;
 	void *src_buf = NULL;
 	void *dest_buf = NULL;
-	bool use_master = false;
+	bool use_interrupt = false;
+	int attach_flags = SNAP_CCR_DIRECT_MODE;
 
 	while (1) {
                 int option_index = 0;
@@ -647,10 +663,10 @@ int main(int argc, char *argv[])
 			{ "start",    required_argument, NULL, 's' },
 			{ "end",      required_argument, NULL, 'e' },
 			{ "buffer",   required_argument, NULL, 'b' },
-			{ "master",   no_argument,       NULL, 'm' },
+			{ "irq",      required_argument, NULL, 'I' },
 			{ 0,          no_argument,       NULL, 0   },
 		};
-		cmd = getopt_long(argc, argv, "C:i:t:s:e:b:mqvVh",
+		cmd = getopt_long(argc, argv, "C:i:t:s:e:b:IqvVh",
 			long_options, &option_index);
 		if (cmd == -1)  /* all params processed ? */
 			break;
@@ -683,8 +699,9 @@ int main(int argc, char *argv[])
 		case 'b':	/* buffer */
 			mem_size = strtol(optarg, (char **)NULL, 0);
 			break;
-		case 'm':	/* master */
-			use_master = true;
+		case 'I':
+			use_interrupt = true;
+			attach_flags |= ACTION_IDLE_IRQ_MODE | SNAP_CCR_IRQ_ATTACH;
 			break;
 		default:
 			usage(argv[0]);
@@ -699,13 +716,8 @@ int main(int argc, char *argv[])
 
 	VERBOSE1("Start Memory Test. Timeout: %d msec Device: ",
 		timeout_ms);
-	if (use_master) {
-		sprintf(device, "/dev/cxl/afu%d.0m", card_no);
-		dn = dnut_card_alloc_dev(device, DNUT_VENDOR_ID_ANY, DNUT_DEVICE_ID_ANY);
-	} else {
-		sprintf(device, "/dev/cxl/afu%d.0s", card_no);
-		dn = dnut_card_alloc_dev(device, 0x1014, 0xcafe);
-	}
+	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
+	dn = dnut_card_alloc_dev(device, 0x1014, 0xcafe);
 	VERBOSE1("%s\n", device);
 
 	if (NULL == dn) {
@@ -730,48 +742,43 @@ int main(int argc, char *argv[])
 		goto __exit;
 
 	for (i = 0; i < iter; i++) {
-		if (false == use_master) {
-			while (1) {
-				rc = dnut_attach_action(dn, ACTION_TYPE_EXAMPLE, 0);
-				if (0 == rc) break;
-				if (EBUSY == rc)
-					usleep(100);
-				else {
-					VERBOSE0(" Error: Cannot Attach Action %x\n", ACTION_TYPE_EXAMPLE);
-					goto __exit;
-				}
+		while (1) {
+			rc = dnut_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags);
+			if (0 == rc) break;
+			if (EBUSY == rc)
+				usleep(100);
+			else {
+				VERBOSE0(" Error: Cannot Attach Action %x\n", ACTION_TYPE_EXAMPLE);
+				goto __exit;
 			}
 		}
 		VERBOSE1("\n[%d/%d] Clear Ram ", i+1, iter);
 		rc = ram_clear(dn, src_buf, mem_size,
-			start_addr, end_addr, timeout_ms);
+			start_addr, end_addr, timeout_ms, use_interrupt);
 
 		VERBOSE1("\n[%d/%d] Test Address = Data ", i+1, iter);
 		rc = ram_test_ad(dn, src_buf, dest_buf, mem_size,
-			start_addr, end_addr, timeout_ms, false);
+			start_addr, end_addr, timeout_ms, false, use_interrupt);
 		if (rc) break;
 
 		VERBOSE1("\n[%d/%d] Test Address = (not)Data ", i+1, iter);
 		rc = ram_test_ad(dn, src_buf, dest_buf, mem_size,
-			start_addr, end_addr, timeout_ms, true);
+			start_addr, end_addr, timeout_ms, true, use_interrupt);
 		if (rc) break;
 
 		VERBOSE1("\n[%d/%d] Test Random Mode 1 ", i+1, iter);
 		rc = ram_test_rnd1(dn, src_buf, dest_buf, mem_size,
-			start_addr, end_addr, timeout_ms);
+			start_addr, end_addr, timeout_ms, use_interrupt);
 		if (rc) break;
 
 		VERBOSE1("\n[%d/%d] Test Random Mode 2 ", i+1, iter);
 		rc = ram_test_rnd2(dn, src_buf, dest_buf, mem_size,
-			start_addr, end_addr, timeout_ms);
+			start_addr, end_addr, timeout_ms, use_interrupt);
 		if (rc) break;
-		if (false == use_master)
-			dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
+		dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
 	}
 
 __exit:
-	if (false == use_master)
-		dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);	/* Might be  twice */
 	free_mem(src_buf);
 	free_mem(dest_buf);
 	VERBOSE3("\nClose Card Handle: %p", dn);
