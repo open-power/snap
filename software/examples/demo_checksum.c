@@ -344,7 +344,7 @@ static struct sponge_t test_data[] = {
 	{ .nb_slices = 64 * 1024, .nb_round = 16 * 1024 * 1024,
 	  .pe = 0, .nb_pe = 32 * 1024, .checksum = 0x0ull },
 	{ .nb_slices = 64 * 1024, .nb_round = 16 * 1024 * 1024,
-	  .pe = 0, .nb_pe = 16 * 1024, .checksum = 0x08ull },
+	  .pe = 0, .nb_pe = 16 * 1024, .checksum = 0x0ull },
 	{ .nb_slices = 64 * 1024, .nb_round = 16 * 1024 * 1024,
 	  .pe = 0, .nb_pe = 4 * 1024,  .checksum = 0x0ull },
 	{ .nb_slices = 64 * 1024, .nb_round = 16 * 1024 * 1024,
