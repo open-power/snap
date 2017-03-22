@@ -45,11 +45,9 @@
 
 LIBRARY ieee;
 USE ieee.std_logic_1164.all;
+USE ieee.std_logic_misc.all;
+USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
---USE ieee.std_logic_arith.all;
---USE ibm.std_ulogic_support.all;
-USE work.std_ulogic_function_support.all;
-USE work.std_ulogic_unsigned.all;
 
 USE work.psl_accel_types.ALL;
 USE work.donut_types.all;
@@ -58,8 +56,8 @@ ENTITY dma IS
   PORT (
     --
     -- pervasive
-    ha_pclock              : IN  std_ulogic;
-    afu_reset              : IN  std_ulogic;
+    ha_pclock              : IN  std_logic;
+    afu_reset              : IN  std_logic;
     --
     -- PSL Interface
     ha_c_i                 : IN  HA_C_T;
@@ -84,9 +82,9 @@ END dma;
 ARCHITECTURE dma OF dma IS
   --
   -- CONSTANT
-  CONSTANT INTSRC     : std_ulogic_vector(11 DOWNTO 0) := x"001";
-  CONSTANT VALUE_128  : std_ulogic_vector(63 DOWNTO 7) := x"0000_0000_0000_00" & '1';
-  CONSTANT VALUE_128_P: std_ulogic                     := '0';
+  CONSTANT INTSRC     : std_logic_vector(11 DOWNTO 0) := x"001";
+  CONSTANT VALUE_128  : std_logic_vector(63 DOWNTO 7) := x"0000_0000_0000_00" & '1';
+  CONSTANT VALUE_128_P: std_logic                     := '0';
 
   --
   -- TYPE
@@ -123,14 +121,14 @@ ARCHITECTURE dma OF dma IS
   TYPE ARR_DMA_CTL_T IS ARRAY (0 TO 31) OF DMA_CTL_T;
 
   TYPE AH_RWC_T IS RECORD
-    valid       : std_ulogic;                           -- Command valid
-    tag         : std_ulogic_vector(7  DOWNTO 0);       -- Command tag
-    tagpar      : std_ulogic;                           -- Command tag parity
+    valid       : std_logic;                           -- Command valid
+    tag         : std_logic_vector(7  DOWNTO 0);       -- Command tag
+    tagpar      : std_logic;                           -- Command tag parity
     com         : CMD_CODES_T;                          -- Command code
-    compar      : std_ulogic;                           -- Command code parity
-    abt         : std_ulogic_vector(2 DOWNTO 0);        -- Command ABT
-    ea          : std_ulogic_vector(63 DOWNTO 7);       -- Command address
-    eapar       : std_ulogic;                           -- Command address parity
+    compar      : std_logic;                           -- Command code parity
+    abt         : std_logic_vector(2 DOWNTO 0);        -- Command ABT
+    ea          : std_logic_vector(63 DOWNTO 7);       -- Command address
+    eapar       : std_logic;                           -- Command address parity
   END RECORD AH_RWC_T;
 
   --
@@ -144,121 +142,121 @@ ARCHITECTURE dma OF dma IS
   -- SIGNAL
   SIGNAL ah_c_counter_q              : integer RANGE 0 TO 255;
   SIGNAL ah_c_fsm_q                  : AH_C_FSM_T;
-  SIGNAL ah_c_max_q                  : std_ulogic_vector(7 DOWNTO 0);
+  SIGNAL ah_c_max_q                  : std_logic_vector(7 DOWNTO 0);
   SIGNAL ah_c_max_reached_q          : boolean;
   SIGNAL ah_c_q                      : AH_C_T;
   SIGNAL ah_c_rgate_q                : GATE_INDICATION_T;
-  SIGNAL ah_c_rsp_err_addr_p_q       : std_ulogic;
-  SIGNAL ah_c_rsp_err_addr_q         : std_ulogic_vector(63 DOWNTO 0);
+  SIGNAL ah_c_rsp_err_addr_p_q       : std_logic;
+  SIGNAL ah_c_rsp_err_addr_q         : std_logic_vector(63 DOWNTO 0);
   SIGNAL ah_c_rsp_err_first_q        : boolean;
   SIGNAL ah_c_rsp_err_type_q         : RSP_CODES_T;
   SIGNAL ah_c_rsp_err_valid_q        : boolean;
   SIGNAL ah_c_wgate_q                : GATE_INDICATION_T;
   SIGNAL ah_rc_q                     : AH_RWC_T;
   SIGNAL ah_wc_q                     : AH_RWC_T;
-  SIGNAL aln_db_wb_rdreq             : std_ulogic;
-  SIGNAL aln_rdata                   : std_ulogic_vector(511 DOWNTO  0);
-  SIGNAL aln_rdata_e                 : std_ulogic;
-  SIGNAL aln_rdata_p                 : std_ulogic_vector(  7 DOWNTO  0);
-  SIGNAL aln_rdata_v                 : std_ulogic;
-  SIGNAL aln_wbusy                   : std_ulogic;
-  SIGNAL aln_wdata                   : std_ulogic_vector(511 DOWNTO  0);
-  SIGNAL aln_wdata_be                : std_ulogic_vector( 63 DOWNTO  0);
-  SIGNAL aln_wdata_p                 : std_ulogic_vector(  7 DOWNTO  0);
-  SIGNAL aln_wdata_v                 : std_ulogic;
-  SIGNAL aln_wfsm_idle               : std_ulogic;
-  SIGNAL buf_rdata                   : std_ulogic_vector(511 DOWNTO  0);
-  SIGNAL buf_rdata_e_q               : std_ulogic;
-  SIGNAL buf_rdata_p                 : std_ulogic_vector(  7 DOWNTO  0);
-  SIGNAL buf_rdata_vld               : std_ulogic;
-  SIGNAL buf_rrdreq                  : std_ulogic;
-  SIGNAL buf_rtag_p_q                : std_ulogic;
-  SIGNAL buf_rtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL aln_db_wb_rdreq             : std_logic;
+  SIGNAL aln_rdata                   : std_logic_vector(511 DOWNTO  0);
+  SIGNAL aln_rdata_e                 : std_logic;
+  SIGNAL aln_rdata_p                 : std_logic_vector(  7 DOWNTO  0);
+  SIGNAL aln_rdata_v                 : std_logic;
+  SIGNAL aln_wbusy                   : std_logic;
+  SIGNAL aln_wdata                   : std_logic_vector(511 DOWNTO  0);
+  SIGNAL aln_wdata_be                : std_logic_vector( 63 DOWNTO  0);
+  SIGNAL aln_wdata_p                 : std_logic_vector(  7 DOWNTO  0);
+  SIGNAL aln_wdata_v                 : std_logic;
+  SIGNAL aln_wfsm_idle               : std_logic;
+  SIGNAL buf_rdata                   : std_logic_vector(511 DOWNTO  0);
+  SIGNAL buf_rdata_e_q               : std_logic;
+  SIGNAL buf_rdata_p                 : std_logic_vector(  7 DOWNTO  0);
+  SIGNAL buf_rdata_vld               : std_logic;
+  SIGNAL buf_rrdreq                  : std_logic;
+  SIGNAL buf_rtag_p_q                : std_logic;
+  SIGNAL buf_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL buf_rtag_valid_q            : boolean;
   SIGNAL buf_wactive_q               : boolean;
-  SIGNAL buf_walmost_full_q          : std_ulogic;
-  SIGNAL buf_wdata_parity_err        : std_ulogic;
+  SIGNAL buf_walmost_full_q          : std_logic;
+  SIGNAL buf_wdata_parity_err        : std_logic;
   SIGNAL buf_wfull_cnt_q             : integer RANGE 0 TO 32;
   SIGNAL buf_wtag_cl_partial_q       : boolean;
-  SIGNAL buf_wtag_p_q                : std_ulogic;
-  SIGNAL buf_wtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL buf_wtag_p_q                : std_logic;
+  SIGNAL buf_wtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL buf_wtag_valid_q            : boolean;
-  SIGNAL clt_rtag_next_q             : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL clt_rtag_p_q                : std_ulogic;
-  SIGNAL clt_rtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL clt_wtag_next_q             : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL clt_wtag_p_q                : std_ulogic;
-  SIGNAL clt_wtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL com_rtag_next_q             : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL com_rtag_p_q                : std_ulogic;
-  SIGNAL com_rtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL clt_rtag_next_q             : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL clt_rtag_p_q                : std_logic;
+  SIGNAL clt_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL clt_wtag_next_q             : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL clt_wtag_p_q                : std_logic;
+  SIGNAL clt_wtag_q                  : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL com_rtag_next_q             : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL com_rtag_p_q                : std_logic;
+  SIGNAL com_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL com_rtag_qq                 : integer RANGE 0 TO 31;
   SIGNAL com_rtag_valid_q            : boolean;
-  SIGNAL com_wtag_next_q             : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL com_wtag_p_q                : std_ulogic;
-  SIGNAL com_wtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL com_wtag_next_q             : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL com_wtag_p_q                : std_logic;
+  SIGNAL com_wtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL com_wtag_qq                 : integer RANGE 0 TO 31;
   SIGNAL com_wtag_valid_q            : boolean;
-  SIGNAL context_handle_q            : std_ulogic_vector(15 DOWNTO 0);
+  SIGNAL context_handle_q            : std_logic_vector(15 DOWNTO 0);
   SIGNAL dmm_e_q                     : DMM_E_T := (OTHERS => '0');
-  SIGNAL force_rfifo_empty_q         : std_ulogic;
+  SIGNAL force_rfifo_empty_q         : std_logic;
   SIGNAL ha_c_q                      : HA_C_T;
   SIGNAL ha_r_q                      : HA_R_T;
   SIGNAL intreq_active_q             : boolean;
   SIGNAL mmd_a_q                     : MMD_A_T;
   SIGNAL mmd_i_q                     : MMD_I_T;
-  SIGNAL raddr_id_q                  : std_ulogic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
-  SIGNAL raddr_offset_p_q            : std_ulogic;
-  SIGNAL raddr_offset_q              : std_ulogic_vector( 12 DOWNTO  7);
-  SIGNAL raddr_p_q                   : std_ulogic;
-  SIGNAL raddr_q                     : std_ulogic_vector( 63 DOWNTO  7);
-  SIGNAL rclen_q                     : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL read_ctrl_buf_full_q        : std_ulogic_vector( 31 DOWNTO  0);
+  SIGNAL raddr_id_q                  : std_logic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
+  SIGNAL raddr_offset_p_q            : std_logic;
+  SIGNAL raddr_offset_q              : std_logic_vector( 12 DOWNTO  7);
+  SIGNAL raddr_p_q                   : std_logic;
+  SIGNAL raddr_q                     : std_logic_vector( 63 DOWNTO  7);
+  SIGNAL rclen_q                     : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL read_ctrl_buf_full_q        : std_logic_vector( 31 DOWNTO  0);
   SIGNAL read_ctrl_fsm_q             : READ_CTRL_FSM_T;
   SIGNAL read_ctrl_q                 : ARR_DMA_CTL_T;
-  SIGNAL read_ctrl_q_err_q           : std_ulogic_vector( 31 DOWNTO  0);
+  SIGNAL read_ctrl_q_err_q           : std_logic_vector( 31 DOWNTO  0);
   SIGNAL read_ctrl_rsp_rtag_q        : DMA_CTL_T;
   SIGNAL read_fsm_req_q              : FSM_REQ_T;
-  SIGNAL read_rsp_err_addr_p_q       : std_ulogic;
-  SIGNAL read_rsp_err_addr_q         : std_ulogic_vector(63 DOWNTO 0);
+  SIGNAL read_rsp_err_addr_p_q       : std_logic;
+  SIGNAL read_rsp_err_addr_q         : std_logic_vector(63 DOWNTO 0);
   SIGNAL read_rsp_err_first_q        : boolean;
   SIGNAL read_rsp_err_type_q         : RSP_CODES_T;
   SIGNAL read_rsp_err_valid_q        : boolean;
   SIGNAL restart_active_q            : boolean;
-  SIGNAL rfifo_empty                 : std_ulogic;
-  SIGNAL rfifo_empty_tmp             : std_ulogic;
-  SIGNAL rfifo_full                  : std_ulogic;
-  SIGNAL rfifo_prog_full             : std_ulogic;
-  SIGNAL rfifo_rd_rst_busy           : std_ulogic;
-  SIGNAL rfifo_rdata                 : std_ulogic_vector(512 DOWNTO 0);
-  SIGNAL rfifo_wdata                 : std_ulogic_vector(512 DOWNTO 0);
-  SIGNAL rfifo_wr_in_process_q       : std_ulogic_vector(1 DOWNTO 0);
-  SIGNAL rfifo_wr_rst_busy           : std_ulogic;
-  SIGNAL rsp_rtag_next_q             : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL rsp_rtag_p_q                : std_ulogic;
-  SIGNAL rsp_rtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL rfifo_empty                 : std_logic;
+  SIGNAL rfifo_empty_tmp             : std_logic;
+  SIGNAL rfifo_full                  : std_logic;
+  SIGNAL rfifo_prog_full             : std_logic;
+  SIGNAL rfifo_rd_rst_busy           : std_logic;
+  SIGNAL rfifo_rdata                 : std_logic_vector(512 DOWNTO 0);
+  SIGNAL rfifo_wdata                 : std_logic_vector(512 DOWNTO 0);
+  SIGNAL rfifo_wr_in_process_q       : std_logic_vector(1 DOWNTO 0);
+  SIGNAL rfifo_wr_rst_busy           : std_logic;
+  SIGNAL rsp_rtag_next_q             : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL rsp_rtag_p_q                : std_logic;
+  SIGNAL rsp_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL rsp_rtag_qq                 : integer RANGE 0 TO 31;
   SIGNAL rsp_rtag_valid_q            : boolean;
-  SIGNAL rsp_wtag_next_q             : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL rsp_wtag_p_q                : std_ulogic;
-  SIGNAL rsp_wtag_q                  : std_ulogic_vector(  5 DOWNTO  0);
+  SIGNAL rsp_wtag_next_q             : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL rsp_wtag_p_q                : std_logic;
+  SIGNAL rsp_wtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL rsp_wtag_qq                 : integer RANGE 0 TO 31;
   SIGNAL rsp_wtag_valid_q            : boolean;
   SIGNAL sd_c_q                      : SD_C_T;
-  SIGNAL waddr_id_q                  : std_ulogic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
-  SIGNAL waddr_offset_p_q            : std_ulogic;
-  SIGNAL waddr_offset_q              : std_ulogic_vector( 12 DOWNTO  7);
-  SIGNAL waddr_p_q                   : std_ulogic;
-  SIGNAL waddr_q                     : std_ulogic_vector( 63 DOWNTO  7);
-  SIGNAL wclen_q                     : std_ulogic_vector(  5 DOWNTO  0);
-  SIGNAL wr_id_valid_q               : std_ulogic;
+  SIGNAL waddr_id_q                  : std_logic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
+  SIGNAL waddr_offset_p_q            : std_logic;
+  SIGNAL waddr_offset_q              : std_logic_vector( 12 DOWNTO  7);
+  SIGNAL waddr_p_q                   : std_logic;
+  SIGNAL waddr_q                     : std_logic_vector( 63 DOWNTO  7);
+  SIGNAL wclen_q                     : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL wr_id_valid_q               : std_logic;
   SIGNAL write_ctrl_fsm_q            : WRITE_CTRL_FSM_T;
   SIGNAL write_ctrl_q                : ARR_DMA_CTL_T;
-  SIGNAL write_ctrl_q_err_q          : std_ulogic_vector( 31 DOWNTO  0);
+  SIGNAL write_ctrl_q_err_q          : std_logic_vector( 31 DOWNTO  0);
   SIGNAL write_ctrl_rsp_wtag_q       : DMA_CTL_T;
   SIGNAL write_fsm_req_q             : FSM_REQ_T;
-  SIGNAL write_rsp_err_addr_p_q      : std_ulogic;
-  SIGNAL write_rsp_err_addr_q        : std_ulogic_vector(63 DOWNTO 0);
+  SIGNAL write_rsp_err_addr_p_q      : std_logic;
+  SIGNAL write_rsp_err_addr_q        : std_logic_vector(63 DOWNTO 0);
   SIGNAL write_rsp_err_first_q       : boolean;
   SIGNAL write_rsp_err_type_q        : RSP_CODES_T;
   SIGNAL write_rsp_err_valid_q       : boolean;
@@ -345,10 +343,10 @@ BEGIN
           --
           -- defaults
           --
-          com_rtag_v            := to_integer(com_rtag_q     (4 DOWNTO 0));
-          com_rtag_next_v       := to_integer(com_rtag_next_q(4 DOWNTO 0));
-          rsp_rtag_v            := to_integer(rsp_rtag_q     (4 DOWNTO 0));
-          rsp_rtag_next_v       := to_integer(rsp_rtag_next_q(4 DOWNTO 0));
+          com_rtag_v            := to_integer(unsigned(com_rtag_q     (4 DOWNTO 0)));
+          com_rtag_next_v       := to_integer(unsigned(com_rtag_next_q(4 DOWNTO 0)));
+          rsp_rtag_v            := to_integer(unsigned(rsp_rtag_q     (4 DOWNTO 0)));
+          rsp_rtag_next_v       := to_integer(unsigned(rsp_rtag_next_q(4 DOWNTO 0)));
 
           ah_rc_q               <= ( '0',             -- valid
                                     (OTHERS => '0'),  -- tag
@@ -722,7 +720,7 @@ BEGIN
       VARIABLE buf_active_v    : boolean;
       VARIABLE clt_rtag_v      : integer RANGE 0 TO 31;
       VARIABLE clt_rtag_next_v : integer RANGE 0 TO 31;
-      VARIABLE cl_calc_v       : std_ulogic_vector(5 DOWNTO 0);
+      VARIABLE cl_calc_v       : std_logic_vector(5 DOWNTO 0);
       VARIABLE ha_r_tag_v      : integer RANGE 0 TO 31;
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
@@ -750,15 +748,15 @@ BEGIN
           clt_rtag_q         <= clt_rtag_q;
           clt_rtag_next_q    <= clt_rtag_next_q;
           clt_rtag_p_q       <= clt_rtag_p_q;
-          com_rtag_qq        <= to_integer(com_rtag_q(4 DOWNTO 0));
-          rsp_rtag_qq        <= to_integer(rsp_rtag_q(4 DOWNTO 0));
+          com_rtag_qq        <= to_integer(unsigned(com_rtag_q(4 DOWNTO 0)));
+          rsp_rtag_qq        <= to_integer(unsigned(rsp_rtag_q(4 DOWNTO 0)));
           rclen_q            <= rclen_q;
           read_ctrl_q        <= read_ctrl_q;
 
-          buf_rtag_v         := to_integer(buf_rtag_q     (4 DOWNTO 0));
-          clt_rtag_v         := to_integer(clt_rtag_q     (4 DOWNTO 0));
-          clt_rtag_next_v    := to_integer(clt_rtag_next_q(4 DOWNTO 0));
-          ha_r_tag_v         := to_integer(ha_r_q.tag     (4 DOWNTO 0));
+          buf_rtag_v         := to_integer(unsigned(buf_rtag_q     (4 DOWNTO 0)));
+          clt_rtag_v         := to_integer(unsigned(clt_rtag_q     (4 DOWNTO 0)));
+          clt_rtag_next_v    := to_integer(unsigned(clt_rtag_next_q(4 DOWNTO 0)));
+          ha_r_tag_v         := to_integer(unsigned(ha_r_q.tag     (4 DOWNTO 0)));
 
           --
           -- CLT: CACHE LINE TYPE TAG IS VALID
@@ -917,10 +915,10 @@ BEGIN
           --
           -- defaults
           --
-          com_wtag_v            := to_integer(com_wtag_q     (4 DOWNTO 0));
-          com_wtag_next_v       := to_integer(com_wtag_next_q(4 DOWNTO 0));
-          rsp_wtag_v            := to_integer(rsp_wtag_q     (4 DOWNTO 0));
-          rsp_wtag_next_v       := to_integer(rsp_wtag_next_q(4 DOWNTO 0));
+          com_wtag_v            := to_integer(unsigned(com_wtag_q     (4 DOWNTO 0)));
+          com_wtag_next_v       := to_integer(unsigned(com_wtag_next_q(4 DOWNTO 0)));
+          rsp_wtag_v            := to_integer(unsigned(rsp_wtag_q     (4 DOWNTO 0)));
+          rsp_wtag_next_v       := to_integer(unsigned(rsp_wtag_next_q(4 DOWNTO 0)));
 
           ah_wc_q                <= ( '0',             -- valid
                                      (OTHERS => '0'),  -- tag
@@ -1393,7 +1391,7 @@ BEGIN
       VARIABLE clt_wtag_v      : integer RANGE 0 TO 31;
       VARIABLE clt_wtag_next_v : integer RANGE 0 TO 31;
       VARIABLE ha_r_tag_v      : integer RANGE 0 TO 31;
-      VARIABLE cl_calc_v       : std_ulogic_vector(5 DOWNTO 0);
+      VARIABLE cl_calc_v       : std_logic_vector(5 DOWNTO 0);
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
         IF afu_reset = '1' THEN
@@ -1423,14 +1421,14 @@ BEGIN
           clt_wtag_q            <= clt_wtag_q;
           clt_wtag_next_q       <= clt_wtag_next_q;
           clt_wtag_p_q          <= clt_wtag_p_q;
-          com_wtag_qq           <= to_integer(com_wtag_q(4 DOWNTO 0));
-          rsp_wtag_qq           <= to_integer(rsp_wtag_q(4 DOWNTO 0));
+          com_wtag_qq           <= to_integer(unsigned(com_wtag_q(4 DOWNTO 0)));
+          rsp_wtag_qq           <= to_integer(unsigned(rsp_wtag_q(4 DOWNTO 0)));
           wclen_q               <= wclen_q;
 
-          buf_wtag_v            := to_integer(buf_wtag_q     (4 DOWNTO 0));
-          clt_wtag_v            := to_integer(clt_wtag_q     (4 DOWNTO 0));
-          clt_wtag_next_v       := to_integer(clt_wtag_next_q(4 DOWNTO 0));
-          ha_r_tag_v            := to_integer(ha_r_q.tag     (4 DOWNTO 0));
+          buf_wtag_v            := to_integer(unsigned(buf_wtag_q     (4 DOWNTO 0)));
+          clt_wtag_v            := to_integer(unsigned(clt_wtag_q     (4 DOWNTO 0)));
+          clt_wtag_next_v       := to_integer(unsigned(clt_wtag_next_q(4 DOWNTO 0)));
+          ha_r_tag_v            := to_integer(unsigned(ha_r_q.tag     (4 DOWNTO 0)));
 
           --
           -- CLT: CACHE LINE TYPE TAG IS VALID
@@ -1569,7 +1567,7 @@ BEGIN
   ------------------------------------------------------------------------------
     --
     ah_c_ctl : PROCESS (ha_pclock)
-      VARIABLE ah_c_valid_v : std_ulogic;
+      VARIABLE ah_c_valid_v : std_logic;
       VARIABLE ah_c_counter_v  : integer RANGE 0 TO 255;
 
     BEGIN
@@ -1651,7 +1649,7 @@ BEGIN
           -- Note: It takes 4 cycles to stop the full command
           --       pipe
           --
-          IF ah_c_counter_v  < to_integer(ah_c_max_q)  THEN
+          IF ah_c_counter_v  < to_integer(unsigned(ah_c_max_q))  THEN
             ah_c_max_reached_q <= FALSE;
           ELSE
             ah_c_max_reached_q <= TRUE;
@@ -1964,17 +1962,17 @@ BEGIN
     
     dma_read_fifo : fifo_513x512
     PORT MAP (
-      clk                      => std_logic(ha_pclock),
-      srst                     => std_logic(afu_reset),
-      din                      => std_logic_vector(rfifo_wdata),
-      wr_en                    => std_logic(aln_rdata_v),
-      rd_en                    => std_logic(sd_d_i.rd_data_ack),
-      std_ulogic_vector(dout)  => rfifo_rdata,
-      std_ulogic(full)         => rfifo_full,
-      std_ulogic(empty)        => rfifo_empty_tmp,
-      std_ulogic(prog_full)    => rfifo_prog_full,
-      std_ulogic(wr_rst_busy)  => rfifo_wr_rst_busy,
-      std_ulogic(rd_rst_busy)  => rfifo_rd_rst_busy
+      clk          => ha_pclock,
+      srst         => afu_reset,
+      din          => rfifo_wdata,
+      wr_en        => aln_rdata_v,
+      rd_en        => sd_d_i.rd_data_ack,
+      dout         => rfifo_rdata,
+      full         => rfifo_full,
+      empty        => rfifo_empty_tmp,
+      prog_full    => rfifo_prog_full,
+      wr_rst_busy  => rfifo_wr_rst_busy,
+      rd_rst_busy  => rfifo_rd_rst_busy
     );
 
      rfifo_empty  <= '1' WHEN force_rfifo_empty_q = '1' ELSE rfifo_empty_tmp;

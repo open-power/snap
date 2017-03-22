@@ -813,7 +813,7 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
                    if or_reduce(write_counter_dn) = '0' and wr_req_count = wr_done_count then
                      last_write_done <= '1';
                      fsm_copy_q      <= IDLE;
-                     ddr_wr_bready   <= '0';
+                     ddr_wr_bready   <= '0';                                             -- only for DDRI_USED=TRUE
                      dma_wr_bready   <= '0';
                    end if;
 
@@ -868,11 +868,12 @@ read_write_process:
               last_write_q      <= '0';
               first_write_q     <= '1';
             else
-              if dest_ddr = '1' then
-                last_write_q      <= (last_write and ddr_wr_ready and ( dma_wr_data_valid or  ddr_wr_data_valid)) or last_write_q;
-              else
-                last_write_q      <= (last_write and dma_wr_ready and ( dma_wr_data_valid or  ddr_wr_data_valid)) or last_write_q;
-              end if;
+-- only for DDRI_USED!=TRUE                last_write_q      <= (last_write and dma_wr_ready and dma_wr_data_valid) or last_write_q;  
+               if dest_ddr = '1' THEN                                                                                                -- only for DDRI_USED=TRUE
+                 last_write_q      <= (last_write and ddr_wr_ready and ( dma_wr_data_valid or  ddr_wr_data_valid)) or last_write_q;  -- only for DDRI_USED=TRUE
+               ELSE                                                                                                                  -- only for DDRI_USED=TRUE
+                last_write_q      <= (last_write and dma_wr_ready and ( dma_wr_data_valid or  ddr_wr_data_valid)) or last_write_q;   -- only for DDRI_USED=TRUE
+               end if;                                                                                                               -- only for DDRI_USED=TRUE
                if head = 0 and reg0_valid = '0' then
                 if src_host = '1' then
                   if dma_rd_data_valid = '1' then
@@ -1029,9 +1030,9 @@ wr_strobes: process(dma_wr_data_valid, memcopy,
       if last_write = '1' and first_write_q = '1' then                   -- only for DDRI_USED=TRUE
         ddr_wr_data_strobe <= first_write_mask and last_write_mask;      -- only for DDRI_USED=TRUE
       end if;                                                            -- only for DDRI_USED=TRUE
-      if memcopy  then
-        ddr_wr_data_strobe <= (63 downto 0 => '1');
-      end if;
+      if memcopy  THEN                                                   -- only for DDRI_USED=TRUE
+        ddr_wr_data_strobe <= (63 downto 0 => '1');                      -- only for DDRI_USED=TRUE
+      end if;                                                            -- only for DDRI_USED=TRUE
     end if;                                                              -- only for DDRI_USED=TRUE
 
   end process;

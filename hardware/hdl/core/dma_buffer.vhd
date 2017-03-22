@@ -22,11 +22,9 @@
 
 LIBRARY ieee;
 USE ieee.std_logic_1164.all;
+USE ieee.std_logic_misc.all;
+USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
---USE ieee.std_logic_arith.all;
---USE ibm.std_ulogic_support.all;
-USE work.std_ulogic_function_support.all;
-USE work.std_ulogic_unsigned.all;
 
 USE work.donut_types.all;
 
@@ -34,42 +32,42 @@ ENTITY dma_buffer IS
   PORT (
     --
     -- pervasive
-    ha_pclock                : IN  std_ulogic;
-    afu_reset                : IN  std_ulogic;
+    ha_pclock                : IN  std_logic;
+    afu_reset                : IN  std_logic;
     --
     -- PSL IOs
     ha_b_i                   : IN  HA_B_T;
     ah_b_o                   : OUT AH_B_T;
     --
     -- DMA control
-    buf_rrdreq_i             : IN  std_ulogic;
-    buf_wdata_i              : IN  std_ulogic_vector(511 DOWNTO 0);
-    buf_wdata_p_i            : IN  std_ulogic_vector(  7 DOWNTO 0);
-    buf_wdata_v_i            : IN  std_ulogic;
-    buf_wdata_be_i           : IN  std_ulogic_vector( 63 DOWNTO 0);
-    buf_wdata_parity_err_o   : out std_ulogic := '0';
-    read_ctrl_buf_full_i     : IN  std_ulogic_vector(31 DOWNTO 0);
+    buf_rrdreq_i             : IN  std_logic;
+    buf_wdata_i              : IN  std_logic_vector(511 DOWNTO 0);
+    buf_wdata_p_i            : IN  std_logic_vector(  7 DOWNTO 0);
+    buf_wdata_v_i            : IN  std_logic;
+    buf_wdata_be_i           : IN  std_logic_vector( 63 DOWNTO 0);
+    buf_wdata_parity_err_o   : out std_logic := '0';
+    read_ctrl_buf_full_i     : IN  std_logic_vector(31 DOWNTO 0);
     --
-    buf_rdata_o              : OUT std_ulogic_vector(511 DOWNTO 0);
-    buf_rdata_p_o            : OUT std_ulogic_vector(  7 DOWNTO 0);
-    buf_rdata_vld_o          : OUT std_ulogic;
-    buf_rtag_o               : OUT std_ulogic_vector(5 DOWNTO 0);
-    buf_rtag_p_o             : OUT std_ulogic;
+    buf_rdata_o              : OUT std_logic_vector(511 DOWNTO 0);
+    buf_rdata_p_o            : OUT std_logic_vector(  7 DOWNTO 0);
+    buf_rdata_vld_o          : OUT std_logic;
+    buf_rtag_o               : OUT std_logic_vector(5 DOWNTO 0);
+    buf_rtag_p_o             : OUT std_logic;
     buf_rtag_valid_o         : OUT boolean;
-    buf_wtag_o               : OUT std_ulogic_vector(5 DOWNTO 0);
-    buf_wtag_p_o             : OUT std_ulogic;
+    buf_wtag_o               : OUT std_logic_vector(5 DOWNTO 0);
+    buf_wtag_p_o             : OUT std_logic;
     buf_wtag_cl_partial_o    : OUT boolean;
     buf_wtag_valid_o         : OUT boolean;
     --
     -- Error Inject
-    inject_dma_read_error_i  : IN  std_ulogic;
-    inject_dma_write_error_i : IN  std_ulogic;
-    inject_ah_b_rpar_error_i : IN  std_ulogic;
+    inject_dma_read_error_i  : IN  std_logic;
+    inject_dma_write_error_i : IN  std_logic;
+    inject_ah_b_rpar_error_i : IN  std_logic;
     --
     -- Error Checker
-    ha_b_rtag_err_o          : OUT std_ulogic := '0';
-    ha_b_wtag_err_o          : OUT std_ulogic := '0';
-    ha_b_wdata_err_o         : OUT std_ulogic := '0'
+    ha_b_rtag_err_o          : OUT std_logic := '0';
+    ha_b_wtag_err_o          : OUT std_logic := '0';
+    ha_b_wdata_err_o         : OUT std_logic := '0'
 
   );
 END dma_buffer;
@@ -80,68 +78,68 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
 
   --
   -- TYPE
-  TYPE ARR_RLCK_DATA_T   IS ARRAY (0 TO 1) OF std_ulogic_vector(511 DOWNTO 0);
-  TYPE ARR_RLCK_DATA_P_T IS ARRAY (0 TO 1) OF std_ulogic_vector(  7 DOWNTO 0);
+  TYPE ARR_RLCK_DATA_T   IS ARRAY (0 TO 1) OF std_logic_vector(511 DOWNTO 0);
+  TYPE ARR_RLCK_DATA_P_T IS ARRAY (0 TO 1) OF std_logic_vector(  7 DOWNTO 0);
   --
   -- ATTRIBUTE
 
   --
   -- SIGNAL
-  SIGNAL buf_rrdreq                       : std_ulogic;
+  SIGNAL buf_rrdreq                       : std_logic;
   SIGNAL buf_rtag                         : integer RANGE 0 TO 31;
-  SIGNAL buf_rtag_q                       : std_ulogic_vector(  5 DOWNTO 0);
-  SIGNAL buf_rtag_qq                      : std_ulogic_vector(  5 DOWNTO 0);
-  SIGNAL buf_rtag_qqq                     : std_ulogic_vector(  5 DOWNTO 0);
-  SIGNAL buf_rtag_p_q                     : std_ulogic;
-  SIGNAL buf_rtag_p_qq                    : std_ulogic;
-  SIGNAL buf_rtag_p_qqq                   : std_ulogic;
+  SIGNAL buf_rtag_q                       : std_logic_vector(  5 DOWNTO 0);
+  SIGNAL buf_rtag_qq                      : std_logic_vector(  5 DOWNTO 0);
+  SIGNAL buf_rtag_qqq                     : std_logic_vector(  5 DOWNTO 0);
+  SIGNAL buf_rtag_p_q                     : std_logic;
+  SIGNAL buf_rtag_p_qq                    : std_logic;
+  SIGNAL buf_rtag_p_qqq                   : std_logic;
   SIGNAL buf_rtag_valid_q                 : boolean;
   SIGNAL buf_rtag_valid_qq                : boolean;
   SIGNAL buf_rtag_valid_qqq               : boolean;
-  SIGNAL buf_wtag_q                       : std_ulogic_vector(  5 DOWNTO 0);
-  SIGNAL buf_wtag_p_q                     : std_ulogic;
+  SIGNAL buf_wtag_q                       : std_logic_vector(  5 DOWNTO 0);
+  SIGNAL buf_wtag_p_q                     : std_logic;
   SIGNAL buf_wtag_valid_q                 : boolean;
   SIGNAL ha_b_q                           : HA_B_T;
-  SIGNAL ha_b_rad_q                       : std_ulogic;
-  SIGNAL ha_b_rad_qq                      : std_ulogic;
-  SIGNAL ha_b_wvalid_q                    : std_ulogic;
-  SIGNAL ha_b_rtag_err_q                  : std_ulogic := '0';
-  SIGNAL ha_b_wdata_err_q                 : std_ulogic_vector(7 DOWNTO 0) := (OTHERS => '0') ;
-  SIGNAL ha_b_wtag_err_q                  : std_ulogic := '0';
+  SIGNAL ha_b_rad_q                       : std_logic;
+  SIGNAL ha_b_rad_qq                      : std_logic;
+  SIGNAL ha_b_wvalid_q                    : std_logic;
+  SIGNAL ha_b_rtag_err_q                  : std_logic := '0';
+  SIGNAL ha_b_wdata_err_q                 : std_logic_vector(7 DOWNTO 0) := (OTHERS => '0') ;
+  SIGNAL ha_b_wtag_err_q                  : std_logic := '0';
   SIGNAL rlck_data_p_q                    : ARR_RLCK_DATA_P_T;
   SIGNAL rlck_data_q                      : ARR_RLCK_DATA_T;
-  SIGNAL rram_raddr                       : std_ulogic_vector(  5 DOWNTO 0);
-  SIGNAL rram_raddr_d, rram_raddr_q       : std_ulogic_vector(  6 DOWNTO 0);
-  SIGNAL rram_raddr_p_d, rram_raddr_p_q   : std_ulogic;
-  SIGNAL rram_rdata                       : std_ulogic_vector(519 DOWNTO 0);
-  SIGNAL rram_rdata_vld_d                 : std_ulogic;
-  SIGNAL rram_rdata_vld_q                 : std_ulogic;
-  SIGNAL rram_rdata_vld_qq                : std_ulogic;
-  SIGNAL rram_rdata_vld_qqq               : std_ulogic;
-  SIGNAL rram_rdata_p_q                   : std_ulogic_vector( 7 DOWNTO 0);
-  SIGNAL rram_rdata_q                     : std_ulogic_vector(511 DOWNTO 0);
-  SIGNAL rram_ren_q                       : std_ulogic_vector(  1 DOWNTO 0);
-  SIGNAL rram_waddr                       : std_ulogic_vector(  5 DOWNTO 0);
-  SIGNAL rram_wdata                       : std_ulogic_vector(519 DOWNTO 0);
-  SIGNAL rram_wdata_p_q                   : std_ulogic_vector(  7 DOWNTO 0);
-  SIGNAL rram_wen                         : std_ulogic;
-  SIGNAL wback_data_p_q                   : std_ulogic_vector(  7 DOWNTO 0);
-  SIGNAL wback_data_q                     : std_ulogic_vector(511 DOWNTO 0);
-  SIGNAL wram_raddr                       : std_ulogic_vector(  5 DOWNTO 0);
-  SIGNAL wram_rdata                       : std_ulogic_vector(583 DOWNTO 0);
-  SIGNAL wram_rdata_p_q                   : std_ulogic_vector(  7 DOWNTO 0);
-  SIGNAL wram_rdata_q                     : std_ulogic_vector(511 DOWNTO 0);
-  SIGNAL wram_waddr                       : std_ulogic_vector(  5 DOWNTO 0);
-  SIGNAL wram_waddr_d, wram_waddr_q       : std_ulogic_vector(  6 DOWNTO 0);
-  SIGNAL wram_waddr_p_d, wram_waddr_p_q   : std_ulogic;
-  SIGNAL wram_wdata                       : std_ulogic_vector(583 DOWNTO 0);
-  SIGNAL wram_wen                         : std_ulogic;
+  SIGNAL rram_raddr                       : std_logic_vector(  5 DOWNTO 0);
+  SIGNAL rram_raddr_d, rram_raddr_q       : std_logic_vector(  6 DOWNTO 0);
+  SIGNAL rram_raddr_p_d, rram_raddr_p_q   : std_logic;
+  SIGNAL rram_rdata                       : std_logic_vector(519 DOWNTO 0);
+  SIGNAL rram_rdata_vld_d                 : std_logic;
+  SIGNAL rram_rdata_vld_q                 : std_logic;
+  SIGNAL rram_rdata_vld_qq                : std_logic;
+  SIGNAL rram_rdata_vld_qqq               : std_logic;
+  SIGNAL rram_rdata_p_q                   : std_logic_vector( 7 DOWNTO 0);
+  SIGNAL rram_rdata_q                     : std_logic_vector(511 DOWNTO 0);
+  SIGNAL rram_ren_q                       : std_logic_vector(  1 DOWNTO 0);
+  SIGNAL rram_waddr                       : std_logic_vector(  5 DOWNTO 0);
+  SIGNAL rram_wdata                       : std_logic_vector(519 DOWNTO 0);
+  SIGNAL rram_wdata_p_q                   : std_logic_vector(  7 DOWNTO 0);
+  SIGNAL rram_wen                         : std_logic;
+  SIGNAL wback_data_p_q                   : std_logic_vector(  7 DOWNTO 0);
+  SIGNAL wback_data_q                     : std_logic_vector(511 DOWNTO 0);
+  SIGNAL wram_raddr                       : std_logic_vector(  5 DOWNTO 0);
+  SIGNAL wram_rdata                       : std_logic_vector(583 DOWNTO 0);
+  SIGNAL wram_rdata_p_q                   : std_logic_vector(  7 DOWNTO 0);
+  SIGNAL wram_rdata_q                     : std_logic_vector(511 DOWNTO 0);
+  SIGNAL wram_waddr                       : std_logic_vector(  5 DOWNTO 0);
+  SIGNAL wram_waddr_d, wram_waddr_q       : std_logic_vector(  6 DOWNTO 0);
+  SIGNAL wram_waddr_p_d, wram_waddr_p_q   : std_logic;
+  SIGNAL wram_wdata                       : std_logic_vector(583 DOWNTO 0);
+  SIGNAL wram_wen                         : std_logic;
   SIGNAL even_wdata_complete_q            : boolean;
   SIGNAL buf_wtag_cl_partial_q            : boolean;
-  SIGNAL parity_error_fir_q               : std_ulogic := '0';
+  SIGNAL parity_error_fir_q               : std_logic := '0';
 
-  signal flip_bit_q                       : std_ulogic;
-  signal flip_bit_valid_q                 : std_ulogic;
+  signal flip_bit_q                       : std_logic;
+  signal flip_bit_valid_q                 : std_logic;
 
   COMPONENT ram_520x64_2p
     PORT(
@@ -190,13 +188,13 @@ BEGIN
     PORT MAP (
       --
       -- pervasive
-      clka                     => std_logic(ha_pclock),
-      clkb                     => std_logic(ha_pclock),
-      dina                     => std_logic_vector(rram_wdata),
-      addra                    => std_logic_vector(rram_waddr),
-      wea(0)                   => std_logic(rram_wen),
-      addrb                    => std_logic_vector(rram_raddr),
-      std_ulogic_vector(doutb) => rram_rdata
+      clka    => ha_pclock,
+      clkb    => ha_pclock,
+      dina    => rram_wdata,
+      addra   => rram_waddr,
+      wea(0)  => rram_wen,
+      addrb   => rram_raddr,
+      doutb   => rram_rdata
     );
 
     ----------------------------------------------------------------------------
@@ -204,7 +202,7 @@ BEGIN
     -- Note: Only a full CL will be transfered to job_manager or data_bridge.
     --       Throttling in between a CL transfer is not possible.
     ----------------------------------------------------------------------------
-    buf_rtag              <= to_integer(rram_raddr_q(5 DOWNTO 1));
+    buf_rtag              <= to_integer(unsigned(rram_raddr_q(5 DOWNTO 1)));
     rram_waddr            <= ha_b_q.wtag(4 DOWNTO 0) & ha_b_q.wad(0);
     rram_raddr            <= rram_raddr_q(5 DOWNTO 0);
 
@@ -308,13 +306,13 @@ BEGIN
     PORT MAP (
       --
       -- pervasive
-      clka                     => std_logic(ha_pclock),
-      clkb                     => std_logic(ha_pclock),
-      dina                     => std_logic_vector(wram_wdata),
-      addra                    => std_logic_vector(wram_waddr),
-      wea(0)                   => std_logic(wram_wen),
-      addrb                    => std_logic_vector(wram_raddr),
-      std_ulogic_vector(doutb) => wram_rdata
+      clka   => ha_pclock,
+      clkb   => ha_pclock,
+      dina   => wram_wdata,
+      addra  => wram_waddr,
+      wea(0) => wram_wen,
+      addrb  => wram_raddr,
+      doutb  => wram_rdata
     );
 
     assert parity_error_fir_q = '0' report "FIR: wram write parity error" severity FIR_MSG_LEVEL;
@@ -344,11 +342,11 @@ BEGIN
     ----------------------------------------------------------------------------
     wram_ctrl_clk : PROCESS (ha_pclock)
       VARIABLE odd_wdata_complete_v : boolean;
-      VARIABLE wram_rdata_v         : std_ulogic_vector(511 DOWNTO 0);
-      VARIABLE wram_rdata_p_v       : std_ulogic_vector(  7 DOWNTO 0);
-      VARIABLE wram_rdata_be_v      : std_ulogic_vector( 63 DOWNTO 0);
-      VARIABLE wram_rmdata_v        : std_ulogic_vector(511 DOWNTO 0);
-      VARIABLE wram_rmdata_p_v      : std_ulogic_vector( 63 DOWNTO 0);
+      VARIABLE wram_rdata_v         : std_logic_vector(511 DOWNTO 0);
+      VARIABLE wram_rdata_p_v       : std_logic_vector(  7 DOWNTO 0);
+      VARIABLE wram_rdata_be_v      : std_logic_vector( 63 DOWNTO 0);
+      VARIABLE wram_rmdata_v        : std_logic_vector(511 DOWNTO 0);
+      VARIABLE wram_rmdata_p_v      : std_logic_vector( 63 DOWNTO 0);
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
         IF afu_reset = '1' THEN

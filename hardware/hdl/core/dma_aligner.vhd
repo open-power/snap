@@ -20,11 +20,9 @@
 
 LIBRARY ieee;
 USE ieee.std_logic_1164.all;
+USE ieee.std_logic_misc.all;
+USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
---USE ieee.std_logic_arith.all;
---USE ibm.std_ulogic_support.all;
-USE work.std_ulogic_function_support.all;
-USE work.std_ulogic_unsigned.all;
 
 USE work.donut_types.all;
 
@@ -32,34 +30,34 @@ ENTITY dma_aligner IS
   PORT (
     --
     -- pervasive
-    ha_pclock              : IN  std_ulogic;
-    afu_reset              : IN  std_ulogic;
+    ha_pclock              : IN  std_logic;
+    afu_reset              : IN  std_logic;
     --
     -- Alinger Conrol
     sd_c_i                 : IN  SD_C_T;
-    aln_wbusy_o            : OUT std_ulogic;
-    aln_wfsm_idle_o        : OUT std_ulogic;
+    aln_wbusy_o            : OUT std_logic;
+    aln_wfsm_idle_o        : OUT std_logic;
     --                     
     -- Unaligned Data      
-    buf_rdata_i            : IN  std_ulogic_vector(511 DOWNTO 0);
-    buf_rdata_p_i          : IN  std_ulogic_vector(  7 DOWNTO 0);
-    buf_rdata_v_i          : IN  std_ulogic;
-    buf_rdata_e_i          : IN  std_ulogic;
-    aln_wdata_o            : OUT std_ulogic_vector(511 DOWNTO 0);
-    aln_wdata_p_o          : OUT std_ulogic_vector(  7 DOWNTO 0);
-    aln_wdata_v_o          : OUT std_ulogic;
-    aln_wdata_be_o         : OUT std_ulogic_vector( 63 DOWNTO 0);
+    buf_rdata_i            : IN  std_logic_vector(511 DOWNTO 0);
+    buf_rdata_p_i          : IN  std_logic_vector(  7 DOWNTO 0);
+    buf_rdata_v_i          : IN  std_logic;
+    buf_rdata_e_i          : IN  std_logic;
+    aln_wdata_o            : OUT std_logic_vector(511 DOWNTO 0);
+    aln_wdata_p_o          : OUT std_logic_vector(  7 DOWNTO 0);
+    aln_wdata_v_o          : OUT std_logic;
+    aln_wdata_be_o         : OUT std_logic_vector( 63 DOWNTO 0);
     --                     
     -- Aligned Data        
     sd_d_i                 : IN  SD_D_T;
-    aln_rdata_o            : OUT std_ulogic_vector(511 DOWNTO 0);
-    aln_rdata_p_o          : OUT std_ulogic_vector(  7 DOWNTO 0);
-    aln_rdata_v_o          : OUT std_ulogic;
-    aln_rdata_e_o          : OUT std_ulogic;
+    aln_rdata_o            : OUT std_logic_vector(511 DOWNTO 0);
+    aln_rdata_p_o          : OUT std_logic_vector(  7 DOWNTO 0);
+    aln_rdata_v_o          : OUT std_logic;
+    aln_rdata_e_o          : OUT std_logic;
     --
     -- Error Checker
-    aln_read_fsm_err_o     : OUT std_ulogic := '0';
-    aln_write_fsm_err_o    : OUT std_ulogic := '0'
+    aln_read_fsm_err_o     : OUT std_logic := '0';
+    aln_write_fsm_err_o    : OUT std_logic := '0'
   );
 END dma_aligner;
 
@@ -81,10 +79,10 @@ ARCHITECTURE dma_aligner OF dma_aligner IS
   --
   -- SIGNAL
   SIGNAL aligner_read_fsm_q      : ALIGNER_READ_FSM_T;
-  SIGNAL aligner_read_fsm_err_q  : std_ulogic := '0';
+  SIGNAL aligner_read_fsm_err_q  : std_logic := '0';
   SIGNAL aligner_write_fsm_q     : ALIGNER_WRITE_FSM_T;
-  SIGNAL aligner_write_fsm_err_q : std_ulogic := '0';
-  SIGNAL read_count_q            : std_ulogic_vector(7 DOWNTO 0);
+  SIGNAL aligner_write_fsm_err_q : std_logic := '0';
+  SIGNAL read_count_q            : std_logic_vector(7 DOWNTO 0);
   SIGNAL write_extra_axi_beat_q  : BOOLEAN;
 
 BEGIN
@@ -151,7 +149,7 @@ BEGIN
             --
             IF buf_rdata_v_i = '1' THEN
               aln_rdata_v_o <= '1';            
-              read_count_q  <= read_count_q - 1;
+              read_count_q  <= read_count_q - "1";
 
               IF read_count_q = x"00" THEN
                 aligner_read_fsm_q <= ST_IDLE;
