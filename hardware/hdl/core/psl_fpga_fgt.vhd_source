@@ -124,74 +124,74 @@ ARCHITECTURE psl_fpga OF psl_fpga IS
 Component psl_accel
   PORT(
        -- Accelerator Command Interface
-       ah_cvalid: out std_ulogic;                                            -- A valid command is present
-       ah_ctag: out std_ulogic_vector(0 to 7);                               -- request id
-       ah_com: out std_ulogic_vector(0 to 12);                               -- command PSL will execute
-       ah_cpad: out std_ulogic_vector(0 to 2);                               -- prefetch attributes
-       ah_cabt: out std_ulogic_vector(0 to 2);                               -- abort if translation intr is generated
-       ah_cea: out std_ulogic_vector(0 to 63);                               -- Effective byte address for command
-       ah_cch: out std_ulogic_vector(0 to 15);                               -- Context Handle
-       ah_csize: out std_ulogic_vector(0 to 11);                             -- Number of bytes
-       ha_croom: in std_ulogic_vector(0 to 7);                               -- Commands PSL is prepared to accept
+       ah_cvalid: out std_logic;                                            -- A valid command is present
+       ah_ctag: out std_logic_vector(0 to 7);                               -- request id
+       ah_com: out std_logic_vector(0 to 12);                               -- command PSL will execute
+       ah_cpad: out std_logic_vector(0 to 2);                               -- prefetch attributes
+       ah_cabt: out std_logic_vector(0 to 2);                               -- abort if translation intr is generated
+       ah_cea: out std_logic_vector(0 to 63);                               -- Effective byte address for command
+       ah_cch: out std_logic_vector(0 to 15);                               -- Context Handle
+       ah_csize: out std_logic_vector(0 to 11);                             -- Number of bytes
+       ha_croom: in std_logic_vector(0 to 7);                               -- Commands PSL is prepared to accept
        
        -- command parity
-       ah_ctagpar: out std_ulogic;
-       ah_compar: out std_ulogic;
-       ah_ceapar: out std_ulogic;
+       ah_ctagpar: out std_logic;
+       ah_compar: out std_logic;
+       ah_ceapar: out std_logic;
        
        -- Accelerator Buffer Interfaces
-       ha_brvalid: in std_ulogic;                                            -- A read transfer is present
-       ha_brtag: in std_ulogic_vector(0 to 7);                               -- Accelerator generated ID for read
-       ha_brad: in std_ulogic_vector(0 to 5);                                -- half line index of read data
-       ah_brlat: out std_ulogic_vector(0 to 3);                              -- Read data ready latency
-       ah_brdata: out std_ulogic_vector(0 to 511);                           -- Read data
-       ah_brpar: out std_ulogic_vector(0 to 7);                              -- Read data parity
-       ha_bwvalid: in std_ulogic;                                            -- A write data transfer is present
-       ha_bwtag: in std_ulogic_vector(0 to 7);                               -- Accelerator ID of the write
-       ha_bwad: in std_ulogic_vector(0 to 5);                                -- half line index of write data
-       ha_bwdata: in std_ulogic_vector(0 to 511);                            -- Write data
-       ha_bwpar: in std_ulogic_vector(0 to 7);                               -- Write data parity
+       ha_brvalid: in std_logic;                                            -- A read transfer is present
+       ha_brtag: in std_logic_vector(0 to 7);                               -- Accelerator generated ID for read
+       ha_brad: in std_logic_vector(0 to 5);                                -- half line index of read data
+       ah_brlat: out std_logic_vector(0 to 3);                              -- Read data ready latency
+       ah_brdata: out std_logic_vector(0 to 511);                           -- Read data
+       ah_brpar: out std_logic_vector(0 to 7);                              -- Read data parity
+       ha_bwvalid: in std_logic;                                            -- A write data transfer is present
+       ha_bwtag: in std_logic_vector(0 to 7);                               -- Accelerator ID of the write
+       ha_bwad: in std_logic_vector(0 to 5);                                -- half line index of write data
+       ha_bwdata: in std_logic_vector(0 to 511);                            -- Write data
+       ha_bwpar: in std_logic_vector(0 to 7);                               -- Write data parity
        
        -- buffer tag parity
-       ha_brtagpar: in std_ulogic;
-       ha_bwtagpar: in std_ulogic;
+       ha_brtagpar: in std_logic;
+       ha_bwtagpar: in std_logic;
        
        -- PSL Response Interface
-       ha_rvalid: in std_ulogic;                                             --A response is present
-       ha_rtag: in std_ulogic_vector(0 to 7);                                --Accelerator generated request ID
-       ha_response: in std_ulogic_vector(0 to 7);                            --response code
-       ha_rcredits: in std_ulogic_vector(0 to 8);                            --twos compliment number of credits
-       ha_rcachestate: in std_ulogic_vector(0 to 1);                         --Resultant Cache State
-       ha_rcachepos: in std_ulogic_vector(0 to 12);                          --Cache location id
-       ha_rtagpar: in std_ulogic;
+       ha_rvalid: in std_logic;                                             --A response is present
+       ha_rtag: in std_logic_vector(0 to 7);                                --Accelerator generated request ID
+       ha_response: in std_logic_vector(0 to 7);                            --response code
+       ha_rcredits: in std_logic_vector(0 to 8);                            --twos compliment number of credits
+       ha_rcachestate: in std_logic_vector(0 to 1);                         --Resultant Cache State
+       ha_rcachepos: in std_logic_vector(0 to 12);                          --Cache location id
+       ha_rtagpar: in std_logic;
        
        -- MMIO Interface
-       ha_mmval: in std_ulogic;                                              -- A valid MMIO is present
-       ha_mmrnw: in std_ulogic;                                              -- 1 = read, 0 = write
-       ha_mmdw: in std_ulogic;                                               -- 1 = doubleword, 0 = word
-       ha_mmad: in std_ulogic_vector(0 to 23);                               -- mmio address
-       ha_mmdata: in std_ulogic_vector(0 to 63);                             -- Write data
-       ha_mmcfg: in std_ulogic;                                              -- mmio is to afu descriptor space
-       ah_mmack: out std_ulogic;                                             -- Write is complete or Read is valid pulse
-       ah_mmdata: out std_ulogic_vector(0 to 63);                            -- Read data
+       ha_mmval: in std_logic;                                              -- A valid MMIO is present
+       ha_mmrnw: in std_logic;                                              -- 1 = read, 0 = write
+       ha_mmdw: in std_logic;                                               -- 1 = doubleword, 0 = word
+       ha_mmad: in std_logic_vector(0 to 23);                               -- mmio address
+       ha_mmdata: in std_logic_vector(0 to 63);                             -- Write data
+       ha_mmcfg: in std_logic;                                              -- mmio is to afu descriptor space
+       ah_mmack: out std_logic;                                             -- Write is complete or Read is valid pulse
+       ah_mmdata: out std_logic_vector(0 to 63);                            -- Read data
        
        -- mmio parity
-       ha_mmadpar: in std_ulogic;
-       ha_mmdatapar: in std_ulogic;
-       ah_mmdatapar: out std_ulogic;
+       ha_mmadpar: in std_logic;
+       ha_mmdatapar: in std_logic;
+       ah_mmdatapar: out std_logic;
        
        -- Accelerator Control Interface
-       ha_jval: in std_ulogic;                                               -- A valid job control command is present
-       ha_jcom: in std_ulogic_vector(0 to 7);                                -- Job control command opcode
-       ha_jea: in std_ulogic_vector(0 to 63);                                -- Save/Restore address
-       ah_jrunning: out std_ulogic;                                          -- Accelerator is running level
-       ah_jdone: out std_ulogic;                                             -- Accelerator is finished pulse
-       ah_jcack: out std_ulogic;                                             -- Accelerator is with context llcmd pulse
-       ah_jerror: out std_ulogic_vector(0 to 63);                            -- Accelerator error code. 0 = success
-       ah_tbreq: out std_ulogic;                                             -- Timebase request pulse
-       ah_jyield: out std_ulogic;                                            -- Accelerator wants to stop
-       ha_jeapar: in std_ulogic;
-       ha_jcompar: in std_ulogic;
+       ha_jval: in std_logic;                                               -- A valid job control command is present
+       ha_jcom: in std_logic_vector(0 to 7);                                -- Job control command opcode
+       ha_jea: in std_logic_vector(0 to 63);                                -- Save/Restore address
+       ah_jrunning: out std_logic;                                          -- Accelerator is running level
+       ah_jdone: out std_logic;                                             -- Accelerator is finished pulse
+       ah_jcack: out std_logic;                                             -- Accelerator is with context llcmd pulse
+       ah_jerror: out std_logic_vector(0 to 63);                            -- Accelerator error code. 0 = success
+       ah_tbreq: out std_logic;                                             -- Timebase request pulse
+       ah_jyield: out std_logic;                                            -- Accelerator wants to stop
+       ha_jeapar: in std_logic;
+       ha_jcompar: in std_logic;
                                                                                           -- only for DDRI_USED=TRUE
        -- Clock inputs for SDRAM	                                                  -- only for DDRI_USED=TRUE
        refclk_sdram_p                : IN    STD_LOGIC;                                   -- only for DDRI_USED=TRUE
@@ -215,8 +215,8 @@ Component psl_accel
        c0_ddr4_ck_c                  : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);                -- only for DDR4_USED=TRUE
        c0_ddr4_ck_t                  : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);                -- only for DDR4_USED=TRUE
 
-       ah_paren: out std_ulogic;
-       ha_pclock: in std_ulogic);
+       ah_paren: out std_logic;
+       ha_pclock: in std_logic);
 End Component psl_accel;
 
 Component base_img
@@ -284,126 +284,126 @@ Component base_img
        pci0_o_txp_out7: out std_logic;
        pci0_o_txn_out7: out std_logic;
 
-       a0h_cvalid: in std_ulogic;
-       a0h_ctag: in std_ulogic_vector(0 to 7);
-       a0h_com: in std_ulogic_vector(0 to 12);
-       a0h_cpad: in std_ulogic_vector(0 to 2);
-       a0h_cabt: in std_ulogic_vector(0 to 2);
-       a0h_cea: in std_ulogic_vector(0 to 63);
-       a0h_cch: in std_ulogic_vector(0 to 15);
-       a0h_csize: in std_ulogic_vector(0 to 11);
-       ha0_croom: out std_ulogic_vector(0 to 7);
-       a0h_ctagpar: in std_ulogic;
-       a0h_compar: in std_ulogic;
-       a0h_ceapar: in std_ulogic;
-       ha0_brvalid: out std_ulogic;
-       ha0_brtag: out std_ulogic_vector(0 to 7);
-       ha0_brad: out std_ulogic_vector(0 to 5);
-       a0h_brlat: in std_ulogic_vector(0 to 3);
-       a0h_brdata: in std_ulogic_vector(0 to 511);
-       a0h_brpar: in std_ulogic_vector(0 to 7);
-       ha0_bwvalid: out std_ulogic;
-       ha0_bwtag: out std_ulogic_vector(0 to 7);
-       ha0_bwad: out std_ulogic_vector(0 to 5);
-       ha0_bwdata: out std_ulogic_vector(0 to 511);
-       ha0_bwpar: out std_ulogic_vector(0 to 7);
-       ha0_brtagpar: out std_ulogic;
-       ha0_bwtagpar: out std_ulogic;
-       ha0_rvalid: out std_ulogic;
-       ha0_rtag: out std_ulogic_vector(0 to 7);
-       ha0_response: out std_ulogic_vector(0 to 7);
-       ha0_rcredits: out std_ulogic_vector(0 to 8);
-       ha0_rcachestate: out std_ulogic_vector(0 to 1);
-       ha0_rcachepos: out std_ulogic_vector(0 to 12);
-       ha0_rtagpar: out std_ulogic;
-       ha0_mmval: out std_ulogic;
-       ha0_mmrnw: out std_ulogic;
-       ha0_mmdw: out std_ulogic;
-       ha0_mmad: out std_ulogic_vector(0 to 23);
-       ha0_mmdata: out std_ulogic_vector(0 to 63);
-       ha0_mmcfg: out std_ulogic;
-       a0h_mmack: in std_ulogic;
-       a0h_mmdata: in std_ulogic_vector(0 to 63);
-       ha0_mmadpar: out std_ulogic;
-       ha0_mmdatapar: out std_ulogic;
-       a0h_mmdatapar: in std_ulogic;
-       ha0_jval: out std_ulogic;
-       ha0_jcom: out std_ulogic_vector(0 to 7);
-       ha0_jea: out std_ulogic_vector(0 to 63);
-       a0h_jrunning: in std_ulogic;
-       a0h_jdone: in std_ulogic;
-       a0h_jcack: in std_ulogic;
-       a0h_jerror: in std_ulogic_vector(0 to 63);
-       a0h_tbreq: in std_ulogic;
-       a0h_jyield: in std_ulogic;
-       ha0_jeapar: out std_ulogic;
-       ha0_jcompar: out std_ulogic;
-       a0h_paren: in std_ulogic;
-       ha0_pclock: out std_ulogic;
-       gold_factory: in std_ulogic;
+       a0h_cvalid: in std_logic;
+       a0h_ctag: in std_logic_vector(0 to 7);
+       a0h_com: in std_logic_vector(0 to 12);
+       a0h_cpad: in std_logic_vector(0 to 2);
+       a0h_cabt: in std_logic_vector(0 to 2);
+       a0h_cea: in std_logic_vector(0 to 63);
+       a0h_cch: in std_logic_vector(0 to 15);
+       a0h_csize: in std_logic_vector(0 to 11);
+       ha0_croom: out std_logic_vector(0 to 7);
+       a0h_ctagpar: in std_logic;
+       a0h_compar: in std_logic;
+       a0h_ceapar: in std_logic;
+       ha0_brvalid: out std_logic;
+       ha0_brtag: out std_logic_vector(0 to 7);
+       ha0_brad: out std_logic_vector(0 to 5);
+       a0h_brlat: in std_logic_vector(0 to 3);
+       a0h_brdata: in std_logic_vector(0 to 511);
+       a0h_brpar: in std_logic_vector(0 to 7);
+       ha0_bwvalid: out std_logic;
+       ha0_bwtag: out std_logic_vector(0 to 7);
+       ha0_bwad: out std_logic_vector(0 to 5);
+       ha0_bwdata: out std_logic_vector(0 to 511);
+       ha0_bwpar: out std_logic_vector(0 to 7);
+       ha0_brtagpar: out std_logic;
+       ha0_bwtagpar: out std_logic;
+       ha0_rvalid: out std_logic;
+       ha0_rtag: out std_logic_vector(0 to 7);
+       ha0_response: out std_logic_vector(0 to 7);
+       ha0_rcredits: out std_logic_vector(0 to 8);
+       ha0_rcachestate: out std_logic_vector(0 to 1);
+       ha0_rcachepos: out std_logic_vector(0 to 12);
+       ha0_rtagpar: out std_logic;
+       ha0_mmval: out std_logic;
+       ha0_mmrnw: out std_logic;
+       ha0_mmdw: out std_logic;
+       ha0_mmad: out std_logic_vector(0 to 23);
+       ha0_mmdata: out std_logic_vector(0 to 63);
+       ha0_mmcfg: out std_logic;
+       a0h_mmack: in std_logic;
+       a0h_mmdata: in std_logic_vector(0 to 63);
+       ha0_mmadpar: out std_logic;
+       ha0_mmdatapar: out std_logic;
+       a0h_mmdatapar: in std_logic;
+       ha0_jval: out std_logic;
+       ha0_jcom: out std_logic_vector(0 to 7);
+       ha0_jea: out std_logic_vector(0 to 63);
+       a0h_jrunning: in std_logic;
+       a0h_jdone: in std_logic;
+       a0h_jcack: in std_logic;
+       a0h_jerror: in std_logic_vector(0 to 63);
+       a0h_tbreq: in std_logic;
+       a0h_jyield: in std_logic;
+       ha0_jeapar: out std_logic;
+       ha0_jcompar: out std_logic;
+       a0h_paren: in std_logic;
+       ha0_pclock: out std_logic;
+       gold_factory: in std_logic;
        pci_user_reset: out std_logic;  --PCI hip user_reset signal if needed
        pci_clock_125MHz: out std_logic --125MHz clock if needed
        );
 
 END Component base_img;
 
-Signal a0h_brdata: std_ulogic_vector(0 to 511);  -- hline
-Signal a0h_brlat: std_ulogic_vector(0 to 3);  -- v4bit
-Signal a0h_brpar: std_ulogic_vector(0 to 7);  -- v8bit
-Signal a0h_cabt: std_ulogic_vector(0 to 2);  -- cabt
-Signal a0h_cch: std_ulogic_vector(0 to 15);  -- ctxhndl
-Signal a0h_cea: std_ulogic_vector(0 to 63);  -- ead
-Signal a0h_ceapar: std_ulogic;  -- bool
-Signal a0h_com: std_ulogic_vector(0 to 12);  -- apcmd
-Signal a0h_compar: std_ulogic;  -- bool
-Signal a0h_cpad: std_ulogic_vector(0 to 2);  -- pade
-Signal a0h_csize: std_ulogic_vector(0 to 11);  -- v12bit
-Signal a0h_ctag: std_ulogic_vector(0 to 7);  -- acctag
-Signal a0h_ctagpar: std_ulogic;  -- bool
-Signal a0h_cvalid: std_ulogic;  -- bool
-Signal a0h_jcack: std_ulogic;  -- bool
-Signal a0h_jdone: std_ulogic;  -- bool
-Signal a0h_jerror: std_ulogic_vector(0 to 63);  -- v64bit
-Signal a0h_jrunning: std_ulogic;  -- bool
-Signal a0h_jyield: std_ulogic;  -- bool
-Signal a0h_mmack: std_ulogic;  -- bool
-Signal a0h_mmdata: std_ulogic_vector(0 to 63);  -- v64bit
-Signal a0h_mmdatapar: std_ulogic;  -- bool
-Signal a0h_paren: std_ulogic;  -- bool
-Signal a0h_tbreq: std_ulogic;  -- bool
-Signal ha0_brad: std_ulogic_vector(0 to 5);  -- v6bit
-Signal ha0_brtag: std_ulogic_vector(0 to 7);  -- acctag
-Signal ha0_brtagpar: std_ulogic;  -- bool
-Signal ha0_brvalid: std_ulogic;  -- bool
-Signal ha0_bwad: std_ulogic_vector(0 to 5);  -- v6bit
-Signal ha0_bwdata: std_ulogic_vector(0 to 511);  -- hline
-Signal ha0_bwpar: std_ulogic_vector(0 to 7);  -- v8bit
-Signal ha0_bwtag: std_ulogic_vector(0 to 7);  -- acctag
-Signal ha0_bwtagpar: std_ulogic;  -- bool
-Signal ha0_bwvalid: std_ulogic;  -- bool
-Signal ha0_croom: std_ulogic_vector(0 to 7);  -- v8bit
-Signal ha0_jcom: std_ulogic_vector(0 to 7);  -- jbcom
-Signal ha0_jcompar: std_ulogic;  -- bool
-Signal ha0_jea: std_ulogic_vector(0 to 63);  -- v64bit
-Signal ha0_jeapar: std_ulogic;  -- bool
-Signal ha0_jval: std_ulogic;  -- bool
-Signal ha0_mmad: std_ulogic_vector(0 to 23);  -- v24bit
-Signal ha0_mmadpar: std_ulogic;  -- bool
-Signal ha0_mmcfg: std_ulogic;  -- bool
-Signal ha0_mmdata: std_ulogic_vector(0 to 63);  -- v64bit
-Signal ha0_mmdatapar: std_ulogic;  -- bool
-Signal ha0_mmdw: std_ulogic;  -- bool
-Signal ha0_mmrnw: std_ulogic;  -- bool
-Signal ha0_mmval: std_ulogic;  -- bool
-Signal ha0_pclock: std_ulogic;  -- bool
-Signal ha0_rcachepos: std_ulogic_vector(0 to 12);  -- v13bit
-Signal ha0_rcachestate: std_ulogic_vector(0 to 1);  -- statespec
-Signal ha0_rcredits: std_ulogic_vector(0 to 8);  -- v9bit
-Signal ha0_response: std_ulogic_vector(0 to 7);  -- apresp
-Signal ha0_rtag: std_ulogic_vector(0 to 7);  -- acctag
-Signal ha0_rtagpar: std_ulogic;  -- bool
-Signal ha0_rvalid: std_ulogic;  -- bool
-Signal gold_factory: std_ulogic;
+Signal a0h_brdata: std_logic_vector(0 to 511);  -- hline
+Signal a0h_brlat: std_logic_vector(0 to 3);  -- v4bit
+Signal a0h_brpar: std_logic_vector(0 to 7);  -- v8bit
+Signal a0h_cabt: std_logic_vector(0 to 2);  -- cabt
+Signal a0h_cch: std_logic_vector(0 to 15);  -- ctxhndl
+Signal a0h_cea: std_logic_vector(0 to 63);  -- ead
+Signal a0h_ceapar: std_logic;  -- bool
+Signal a0h_com: std_logic_vector(0 to 12);  -- apcmd
+Signal a0h_compar: std_logic;  -- bool
+Signal a0h_cpad: std_logic_vector(0 to 2);  -- pade
+Signal a0h_csize: std_logic_vector(0 to 11);  -- v12bit
+Signal a0h_ctag: std_logic_vector(0 to 7);  -- acctag
+Signal a0h_ctagpar: std_logic;  -- bool
+Signal a0h_cvalid: std_logic;  -- bool
+Signal a0h_jcack: std_logic;  -- bool
+Signal a0h_jdone: std_logic;  -- bool
+Signal a0h_jerror: std_logic_vector(0 to 63);  -- v64bit
+Signal a0h_jrunning: std_logic;  -- bool
+Signal a0h_jyield: std_logic;  -- bool
+Signal a0h_mmack: std_logic;  -- bool
+Signal a0h_mmdata: std_logic_vector(0 to 63);  -- v64bit
+Signal a0h_mmdatapar: std_logic;  -- bool
+Signal a0h_paren: std_logic;  -- bool
+Signal a0h_tbreq: std_logic;  -- bool
+Signal ha0_brad: std_logic_vector(0 to 5);  -- v6bit
+Signal ha0_brtag: std_logic_vector(0 to 7);  -- acctag
+Signal ha0_brtagpar: std_logic;  -- bool
+Signal ha0_brvalid: std_logic;  -- bool
+Signal ha0_bwad: std_logic_vector(0 to 5);  -- v6bit
+Signal ha0_bwdata: std_logic_vector(0 to 511);  -- hline
+Signal ha0_bwpar: std_logic_vector(0 to 7);  -- v8bit
+Signal ha0_bwtag: std_logic_vector(0 to 7);  -- acctag
+Signal ha0_bwtagpar: std_logic;  -- bool
+Signal ha0_bwvalid: std_logic;  -- bool
+Signal ha0_croom: std_logic_vector(0 to 7);  -- v8bit
+Signal ha0_jcom: std_logic_vector(0 to 7);  -- jbcom
+Signal ha0_jcompar: std_logic;  -- bool
+Signal ha0_jea: std_logic_vector(0 to 63);  -- v64bit
+Signal ha0_jeapar: std_logic;  -- bool
+Signal ha0_jval: std_logic;  -- bool
+Signal ha0_mmad: std_logic_vector(0 to 23);  -- v24bit
+Signal ha0_mmadpar: std_logic;  -- bool
+Signal ha0_mmcfg: std_logic;  -- bool
+Signal ha0_mmdata: std_logic_vector(0 to 63);  -- v64bit
+Signal ha0_mmdatapar: std_logic;  -- bool
+Signal ha0_mmdw: std_logic;  -- bool
+Signal ha0_mmrnw: std_logic;  -- bool
+Signal ha0_mmval: std_logic;  -- bool
+Signal ha0_pclock: std_logic;  -- bool
+Signal ha0_rcachepos: std_logic_vector(0 to 12);  -- v13bit
+Signal ha0_rcachestate: std_logic_vector(0 to 1);  -- statespec
+Signal ha0_rcredits: std_logic_vector(0 to 8);  -- v9bit
+Signal ha0_response: std_logic_vector(0 to 7);  -- apresp
+Signal ha0_rtag: std_logic_vector(0 to 7);  -- acctag
+Signal ha0_rtagpar: std_logic;  -- bool
+Signal ha0_rvalid: std_logic;  -- bool
+Signal gold_factory: std_logic;
 Signal pci_user_reset: std_logic;
 Signal pci_clock_125MHz: std_logic;
 Signal led_red: std_logic_vector(0 to 1);
