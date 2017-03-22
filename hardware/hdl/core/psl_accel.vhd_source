@@ -170,8 +170,8 @@ ENTITY psl_accel IS
 -- TODO:    c0_ddr4_ten                        : OUT   STD_LOGIC;                       -- only for DDR4_USED=TRUE
 
     -- Clock inputs for SDRAM
-    refclk200_p                        : IN    STD_LOGIC;                               -- only for DDRI_USED=TRUE
-    refclk200_n                        : IN    STD_LOGIC;                               -- only for DDRI_USED=TRUE
+    refclk_sdram_p                     : IN    STD_LOGIC;                               -- only for DDRI_USED=TRUE
+    refclk_sdram_n                     : IN    STD_LOGIC;                               -- only for DDRI_USED=TRUE
 
     -- Host Clock input
     ha_pclock                          : IN    STD_LOGIC
@@ -825,8 +825,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL sdram_axi_ctrl_rdata       : STD_LOGIC_VECTOR(31 DOWNTO 0);                                        -- only for DDRI_USED=TRUE
   SIGNAL sdram_axi_ctrl_rresp       : STD_LOGIC_VECTOR(1 DOWNTO 0);                                         -- only for DDRI_USED=TRUE
   SIGNAL sdram_interrupt            : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL refclk200_ibuf             : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL refclk200_bufg             : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL refclk_sdram_ibuf          : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL refclk_sdram_bufg          : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
 
   --                                                                                                        -- only for DDR4_USED=TRUE
   -- DDR4 SDRAM Interface                                                                                   -- only for DDR4_USED=TRUE
@@ -843,9 +843,9 @@ BEGIN
     END IF;
   END PROCESS action_reset_reg;
 
-  sdram_reset : PROCESS (refclk200_bufg)                                                -- only for DDRI_USED=TRUE
+  sdram_reset : PROCESS (refclk_sdram_bufg)                                             -- only for DDRI_USED=TRUE
   BEGIN  -- PROCESS                                                                     -- only for DDRI_USED=TRUE
-    IF (rising_edge(refclk200_bufg)) THEN                                               -- only for DDRI_USED=TRUE
+    IF (rising_edge(refclk_sdram_bufg)) THEN                                            -- only for DDRI_USED=TRUE
       IF ((action_reset   = '1') OR                                                     -- only for DDRI_USED=TRUE
           (action_reset_q = '1') or                                                     -- only for DDRI_USED=TRUE
           (action_reset_qq= '1')) THEN                                                  -- only for DDRI_USED=TRUE
@@ -859,17 +859,17 @@ BEGIN
     END IF;                                                                             -- only for DDRI_USED=TRUE
   END PROCESS sdram_reset;                                                              -- only for DDRI_USED=TRUE
                                                                                         -- only for DDRI_USED=TRUE
-  ibuf_refclk200 : IBUFGDS                                                              -- only for DDRI_USED=TRUE
+  ibuf_refclk_sdram : IBUFGDS                                                           -- only for DDRI_USED=TRUE
   port map(                                                                             -- only for DDRI_USED=TRUE
-    I  => refclk200_p,                                                                  -- only for DDRI_USED=TRUE
-    IB => refclk200_n,                                                                  -- only for DDRI_USED=TRUE
-    O  => refclk200_ibuf                                                                -- only for DDRI_USED=TRUE
+    I  => refclk_sdram_p,                                                               -- only for DDRI_USED=TRUE
+    IB => refclk_sdram_n,                                                               -- only for DDRI_USED=TRUE
+    O  => refclk_sdram_ibuf                                                             -- only for DDRI_USED=TRUE
   );                                                                                    -- only for DDRI_USED=TRUE
                                                                                         -- only for DDRI_USED=TRUE
   bufg_clk : BUFG                                                                       -- only for DDRI_USED=TRUE
   port map(                                                                             -- only for DDRI_USED=TRUE
-    I => refclk200_ibuf,                                                                -- only for DDRI_USED=TRUE
-    O => refclk200_bufg                                                                 -- only for DDRI_USED=TRUE
+    I => refclk_sdram_ibuf,                                                             -- only for DDRI_USED=TRUE
+    O => refclk_sdram_bufg                                                              -- only for DDRI_USED=TRUE
   );                                                                                    -- only for DDRI_USED=TRUE
 
 
@@ -1120,7 +1120,7 @@ BEGIN
 
   sdram_axi_clk   <= sdram_ui_clk;                                                      -- only for DDRI_USED=TRUE-- only for BRAM_USED!=TRUE
   sdram_axi_rst_n <= NOT sdram_ui_clk_sync_rst;                                         -- only for DDRI_USED=TRUE-- only for BRAM_USED!=TRUE
-  sdram_axi_clk   <= refclk200_bufg;                                                    -- only for DDRI_USED=TRUE-- only for BRAM_USED=TRUE
+  sdram_axi_clk   <= refclk_sdram_bufg;                                                 -- only for DDRI_USED=TRUE-- only for BRAM_USED=TRUE
   sdram_axi_rst_n <= sdram_reset_n_q;                                                   -- only for DDRI_USED=TRUE-- only for BRAM_USED=TRUE
 
   axi_clock_converter_i : axi_clock_converter                                           -- only for DDRI_USED=TRUE

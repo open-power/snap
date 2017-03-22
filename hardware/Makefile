@@ -1,26 +1,27 @@
-#-----------------------------------------------------------
-#
-# Copyright 2016, International Business Machines
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-#-----------------------------------------------------------
+############################################################################
+############################################################################
+##
+## Copyright 2016,2017 International Business Machines
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##     http://www.apache.org/licenses/LICENSE#2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions AND
+## limitations under the License.
+##
+############################################################################
+############################################################################
 
-PSL_SOURCE_ENV=$(FPGACARD)
 export BUILD_NAME=HDK_build
 export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
 
-SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/core/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/sim/core/top.sv 
+SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd $(DONUT_HARDWARE_ROOT)/hdl/core/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/sim/core/top.sv 
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone
@@ -92,19 +93,26 @@ check_donut_settings:
 		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/donut.git"; \
 		exit 1; \
 	fi
+	@if [[ $(FPGACARD) != "FGT" && $(FPGACARD) != "KU3" ]];then \
+		echo "unknown FPGACARD"; \
+		echo "supported cards are: FGT and KU3"; \
+		exit 1; \
+	fi
 
 create_environment:
 	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment $(CE_PARMS)
 	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
 
 copy $(BUILD_DIR)/psl_fpga.tcl:
-	@echo -e "\t[COPY] psl build env"; cp -a $(PSL_SOURCE_ENV) $(BUILD_DIR)
+	@echo -e "\t[COPY] psl build env"; cp -a $(HDK_ROOT) $(BUILD_DIR)
 	@echo -e "\t[CONFIG] setup psl_fpga.tcl"
 	@sed -i 's/run.oocSynth.*1/run.oocSynth 0/' $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.oocImpl.*1/run.oocImpl 0/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topImpl.*0/run.topImpl 1/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topSynth.*0/run.topSynth 1/' $(BUILD_DIR)/psl_fpga.tcl
-	@mv -f $(BUILD_DIR)/Sources/prj/psl_fpga.prj $(BUILD_DIR)/Sources/prj/top.prj
+	@if [ $(FPGACARD) = "KU3" ]; then ln -f -s $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga_ku3.vhd_source $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd_source; fi
+	@if [ $(FPGACARD) = "FGT" ]; then ln -f -s $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga_fgt.vhd_source $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd_source; fi
+	@echo "vhdl work ../hdl/core/psl_fpga.vhd" > $(BUILD_DIR)/Sources/prj/top.prj
 	@ln -s $(BUILD_NAME) build
 
 $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
@@ -126,11 +134,6 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@echo -e "\t[CREATE] $@"
 	@cat $(BUILD_DIR)/Sources/prj/top.prj $(BUILD_DIR)/Sources/prj/afu.prj > $(BUILD_DIR)/Sources/prj/psl_fpga.prj
 
-$(BUILD_DIR)/Sources/top/psl_fpga.vhd: $(BUILD_DIR)/psl_fpga.tcl
-	@if [ $(BRAM_USED) = "TRUE" ]; then echo "PATCH $(BUILD_DIR)/Sources/top/psl_fpga.vhd for BRAM usage" && $(DONUT_HARDWARE_ROOT)/setup/bram_vhdl.patch.sh $(BUILD_DIR)/Sources/top/psl_fpga.vhdl ; fi
-	@if [ $(DDR3_USED) = "TRUE" ]; then echo "PATCH $(BUILD_DIR)/Sources/top/psl_fpga.vhd for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr3_vhdl.patch; fi
-	@if [ $(DDR4_USED) = "TRUE" ]; then echo "PATCH $(BUILD_DIR)/Sources/top/psl_fpga.vhd for DDR4 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr4_vhdl.patch; fi
-
 $(SNAP_CONFIG_FILES):
 	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
@@ -140,7 +143,7 @@ patch_tcl_files:
 patch_vhd_files:
 	@echo "PATCH .vhd FILES" 
 	@#yet another Xilinx bug: the fileinfo.txt is not correct if DDR3=BRAM=FALSE!
-	@if [ $(DDR3_USED) = "TRUE" ] || [ $(BRAM_USED) = "TRUE" ]; then\
+	@if [ $(DDR3_USED) = "TRUE" ] || [ $(DDR4_USED) = "TRUE" ] || [ $(BRAM_USED) = "TRUE" ]; then\
 		VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\///' | sed 's/\(^.*psl_accel_s\)yn.vhd/\1yn.vhd\n\1im.vhd/'`; \
 		for vhd_file in $$VHD_FILES; do \
 			$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; \
@@ -156,7 +159,7 @@ patch_version:
 	@echo "PATCH SNAP version and build date registers"; \
 	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl/core donut.vhd
 
-config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(SNAP_CONFIG_FILES) create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_vhd_files patch_version
+config: check_donut_settings $(SNAP_CONFIG_FILES) create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_vhd_files patch_version
 	@echo -e "\t[CONFIG] done `date`"
 
 model: patch_version
@@ -178,16 +181,16 @@ image: patch_version
 
 clean:
 	@echo -e "\t[CLEAN] build environment";
-	rm -r -f  $(BUILD_DIR)
-	rm    -f  build
-	rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
-	rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
-	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
-	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
-	rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
-	rm -f     $(SNAP_CONFIG_FILES)
-	rm -f     ./setup/*.log
-	rm -f     ./setup/*.jou
+	@rm -r -f  $(BUILD_DIR)
+	@rm    -f  build
+	@rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
+	@rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
+	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
+	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
+	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
+	@rm -f     $(SNAP_CONFIG_FILES)
+	@rm -f     ./setup/*.log
+	@rm -f     ./setup/*.jou
 
 gitclean:
 	@echo -e "\t[GITCLEAN] cleaning and resetting donut git";

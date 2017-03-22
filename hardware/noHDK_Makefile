@@ -1,31 +1,39 @@
-#-----------------------------------------------------------
-#
-# Copyright 2016, International Business Machines
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-#-----------------------------------------------------------
+############################################################################
+############################################################################
+##
+## Copyright 2016,2017 International Business Machines
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##     http://www.apache.org/licenses/LICENSE#2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions AND
+## limitations under the License.
+##
+############################################################################
+############################################################################
 
-PSL_SOURCE_ENV=$(FPGACARD)
+PSL_DCP=$(HDK_ROOT)/Checkpoint/b_route_design.dcp
 
 export BUILD_NAME=noHDK_build
 export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
 export LOGS_DIR=$(BUILD_DIR)/Logs
 
-SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/core/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/sim/core/top.sv 
+SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd $(DONUT_HARDWARE_ROOT)/hdl/core/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/sim/core/top.sv 
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
-CE_PARMS := -p -clone
+ifndef BRAM_USED
+export BRAM_USED=FALSE
+endif
+ifeq "$(BRAM_USED)" "TRUE"
+export DDR3_USED=FALSE
+export DDR4_USED=FALSE
+endif
 
 ifndef DDR3_USED
 export DDR3_USED=TRUE
@@ -43,8 +51,8 @@ ifeq "$(DDR4_USED)" "TRUE"
 export DDRI_USED=TRUE
 endif
 
-ifndef BRAM_USED
-export BRAM_USED=FALSE
+ifeq "$(BRAM_USED)" "TRUE"
+export DDRI_USED=TRUE
 endif
 
 ifndef ILA_DEBUG
@@ -84,6 +92,11 @@ check_donut_settings:
 		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/donut.git"; \
 		exit 1; \
 	fi
+	@if [[ $(FPGACARD) != "FGT" && $(FPGACARD) != "KU3" ]];then \
+		echo "unknown FPGACARD"; \
+		echo "supported cards are: FGT and KU3"; \
+		exit 1; \
+	fi
 
 copy $(BUILD_DIR)/Checkpoint/b_route_design.dcp:
 	@echo -e "\t[COPY..............] psl build env";
@@ -92,15 +105,10 @@ copy $(BUILD_DIR)/Checkpoint/b_route_design.dcp:
 	@mkdir $(BUILD_DIR)/Logs; 
 	@mkdir $(BUILD_DIR)/Images; 
 	@mkdir $(BUILD_DIR)/Checkpoint; 
-	@ln -s $(BUILD_DIR)/Checkpoint                         $(BUILD_DIR)/Checkpoints;
-	@ln -s $(DONUT_HARDWARE_ROOT)/setup/noHDK_build.tcl    $(BUILD_DIR)/noHDK_build.tcl; 
-	@ln -s $(DONUT_HARDWARE_ROOT)/setup/fw_xpr_build.tcl   $(BUILD_DIR)/fw_xpr_build.tcl; 
-	@cp -ra $(PSL_SOURCE_ENV)/Checkpoint/*                 $(BUILD_DIR)/Checkpoint/; 
-	@cp -ra $(PSL_SOURCE_ENV)/Sources                      $(BUILD_DIR);
-
-$(BUILD_DIR)/Sources/top/psl_fpga.vhd: $(BUILD_DIR)/Checkpoint/b_route_design.dcp
-	@if [ $(DDR3_USED) = "TRUE" ]; then echo -e "\t[PATCH.............] psl_fpga.vhdl for DDR3 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr3_vhdl.patch; fi
-	@if [ $(DDR4_USED) = "TRUE" ]; then echo -e "\t[PATCH.............] psl_fpga.vhdl for DDR4 usage" && cd $(BUILD_DIR) && patch -p0 -s < $(DONUT_HARDWARE_ROOT)/setup/ddr4_vhdl.patch; fi
+	@ln -s $(BUILD_DIR)/Checkpoint                       $(BUILD_DIR)/Checkpoints;
+	@ln -s $(DONUT_HARDWARE_ROOT)/setup/noHDK_build.tcl  $(BUILD_DIR)/noHDK_build.tcl; 
+	@ln -s $(DONUT_HARDWARE_ROOT)/setup/fw_xpr_build.tcl $(BUILD_DIR)/fw_xpr_build.tcl; 
+	@cp -ra $(PSL_DCP)                                   $(BUILD_DIR)/Checkpoint/; 
 
 $(SNAP_CONFIG_FILES):
 	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
@@ -112,7 +120,7 @@ create_environment:
 	@cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/vivado_create_framework_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_frame_work_$(BUILD_DATE).jou 
 	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
 
-config: check_donut_settings $(BUILD_DIR)/Sources/top/psl_fpga.vhd $(SNAP_CONFIG_FILES) create_environment
+config: check_donut_settings $(SNAP_CONFIG_FILES) create_environment
 	@echo -e "\t[CONFIG............] done `date`"
 
 patch_version:
