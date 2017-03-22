@@ -74,7 +74,7 @@ Address map for context n (0 <= n < 512), and with s = 512:
 ## SNAP Framework Register Specifications
 
 RW  = Read/Write  
-RO  = Read only - Reserved bits return 0 unless specified otherwise
+RO  = Read only - Reserved bits return 0 unless specified otherwise  
 RC  = Read only with clear on read  
 RWC = Read/WriteClear (Write clears (=>0) the bits for each bit=1 in the write value)  
 RWS = Read/WriteSet   (Write sets (=>1) the bits for each bit=1 in the write value)
