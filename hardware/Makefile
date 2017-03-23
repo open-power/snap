@@ -159,7 +159,7 @@ patch_version:
 	@echo "PATCH SNAP version and build date registers"; \
 	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl/core donut.vhd
 
-config: check_donut_settings $(SNAP_CONFIG_FILES) create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_vhd_files patch_version
+config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl $(SNAP_CONFIG_FILES) create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_vhd_files patch_version
 	@echo -e "\t[CONFIG] done `date`"
 
 model: patch_version
