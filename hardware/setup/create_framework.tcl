@@ -1,20 +1,22 @@
-#-----------------------------------------------------------
-#
-# Copyright 2016, International Business Machines
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-#-----------------------------------------------------------
+############################################################################
+############################################################################
+##
+## Copyright 2016,2017 International Business Machines
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##     http://www.apache.org/licenses/LICENSE#2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions AND
+## limitations under the License.
+##
+############################################################################
+############################################################################
 
 set root_dir    $::env(DONUT_HARDWARE_ROOT)
 set fpga_part   $::env(FPGACHIP)
@@ -78,20 +80,16 @@ set_property STEPS.WRITE_BITSTREAM.ARGS.BIN_FILE true [get_runs impl_1]
 # Add Files
 # PSL Files
 puts "	                     import design files"
-add_files -norecurse -scan_for_includes $build_dir/Sources/top/psl_fpga.vhdl
-set_property used_in_simulation false [get_files $build_dir/Sources/top/psl_fpga.vhdl]
 # HDL Files
 add_files -scan_for_includes $root_dir/hdl/core/
+set_property used_in_simulation false [get_files $root_dir/hdl/core/psl_fpga.vhd]
 # Action Files
 add_files            -fileset sources_1 -scan_for_includes $action_dir/
 # Sim Files
 set_property SOURCE_SET sources_1 [get_filesets sim_1]
-#add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/hdl/psl_accel_sim.vhd
-#set_property file_type SystemVerilog [get_files $pslse_dir/afu_driver/verilog/top.v]
 add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/top.sv
 set_property file_type SystemVerilog [get_files $root_dir/sim/core/top.sv]
 set_property used_in_synthesis false [get_files $root_dir/sim/core/top.sv]
-#set_property used_in_synthesis false [get_files  $root_dir/hdl/psl_accel_sim.vhd]
 # DDR3 Sim Files
 if { $ddr3_used == TRUE } {
   add_files    -fileset sim_1            -scan_for_includes $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/
@@ -162,7 +160,7 @@ if { $ddri_used == TRUE } {
     add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc
     set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc]
   } elseif { $ddr4_used == TRUE } {
-    add_files -fileset constrs_1 -norecurse $dimm_dir/snap_refclk200.xdc
+    add_files -fileset constrs_1 -norecurse $dimm_dir/snap_refclk266.xdc
     add_files -fileset constrs_1 -norecurse $dimm_dir/snap_ddr4pins_flash_gt.xdc
     set_property used_in_synthesis false [get_files $dimm_dir/snap_ddr4pins_flash_gt.xdc]
   } else {

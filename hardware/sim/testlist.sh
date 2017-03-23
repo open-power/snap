@@ -85,7 +85,11 @@
 #     t="$DONUT_ROOT/software/tools/stage2     -s2 -e4 -i1 -t40       "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..33
 #     t="$DONUT_ROOT/software/tools/stage2 -a1             -t200"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #t 4..112..33min
 #     t="$DONUT_ROOT/software/tools/stage2 -a1 -s1 -e2 -i1 -t100 -I -vv "                       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
+<<<<<<< HEAD
       t="$DONUT_ROOT/software/tools/stage2 -a1 -s1 -e2 -i1 -t100  -vv "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
+=======
+#     t="$DONUT_ROOT/software/tools/stage2 -a1 -s1 -e1 -i1 -t100  -vv "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
+>>>>>>> master
 #     t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e4 -i1 -t10"                                ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
 #     t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e8 -i1 -t100"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..76..12min
 #     t="$DONUT_ROOT/software/tools/stage2 -a2                    -vvv"                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #e memcmp failed

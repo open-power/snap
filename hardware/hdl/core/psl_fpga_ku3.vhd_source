@@ -1,0 +1,584 @@
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+--
+-- Copyright 2016,2017 International Business Machines
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions AND
+-- limitations under the License.
+--
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+USE ieee.std_logic_misc.all;
+USE ieee.std_logic_unsigned.all;
+USE ieee.numeric_std.all;
+
+ENTITY psl_fpga IS
+  PORT(
+       -- DDR3 SDRAM Interface                                                  -- only for DDR3_USED=TRUE 
+       --									-- only for DDR3_USED=TRUE 
+       -- Alpha-Data KU3 card has two DDR3 SO-DIMMs				-- only for DDR3_USED=TRUE 
+       -- SNAP is only using the C1 DIMM					-- only for DDR3_USED=TRUE 
+       c1_sys_clk_p       : IN    STD_LOGIC;					-- only for DDR3_USED=TRUE 
+       c1_sys_clk_n       : IN    STD_LOGIC;					-- only for DDR3_USED=TRUE 
+       c1_ddr3_addr       : OUT   STD_LOGIC_VECTOR(15 DOWNTO 0);		-- only for DDR3_USED=TRUE 
+       c1_ddr3_ba         : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);			-- only for DDR3_USED=TRUE 
+       c1_ddr3_ras_n      : OUT   STD_LOGIC;					-- only for DDR3_USED=TRUE 
+       c1_ddr3_cas_n      : OUT   STD_LOGIC;					-- only for DDR3_USED=TRUE 
+       c1_ddr3_reset_n    : OUT   STD_LOGIC;					-- only for DDR3_USED=TRUE 
+       c1_ddr3_cs_n       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);			-- only for DDR3_USED=TRUE 
+       c1_ddr3_cke        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);			-- only for DDR3_USED=TRUE 
+       c1_ddr3_ck_p       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);			-- only for DDR3_USED=TRUE 
+       c1_ddr3_ck_n       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);			-- only for DDR3_USED=TRUE 
+       c1_ddr3_we_n       : OUT   STD_LOGIC;					-- only for DDR3_USED=TRUE 
+       c1_ddr3_dm         : OUT   STD_LOGIC_VECTOR(8 DOWNTO 0);			-- only for DDR3_USED=TRUE 
+       c1_ddr3_dq         : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);		-- only for DDR3_USED=TRUE 
+       c1_ddr3_dqs_p      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);			-- only for DDR3_USED=TRUE 
+       c1_ddr3_dqs_n      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);			-- only for DDR3_USED=TRUE 
+       c1_ddr3_odt        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);			-- only for DDR3_USED=TRUE 
+										-- only for DDRI_USED=TRUE 
+       -- Clock inputs for SDRAM						-- only for DDRI_USED=TRUE 
+       refclk200_p        : in      std_logic;					-- only for DDRI_USED=TRUE 
+       refclk200_n        : in      std_logic;					-- only for DDRI_USED=TRUE 
+
+       -- flash bus
+       o_flash_oen: out std_logic;
+       o_flash_wen: out std_logic;
+       o_flash_rstn: out std_logic;
+       o_flash_a: out std_logic_vector(1 to 26);
+       o_flash_advn: out std_logic;
+       b_flash_dq: inout std_logic_vector(0 to 11);
+
+       -- PTMON PMBUS
+       b_basei2c_scl: inout std_logic;                                       -- clock
+       b_basei2c_sda: inout std_logic;                                       -- data
+       i_cable_present_l: in std_logic;                                      -- detect external cable low active
+
+       -- pci interface
+       pci_pi_nperst0: in std_logic;                                         -- Active low reset from the PCIe reset pin of the device
+       pci_pi_refclk_p0: in std_logic;                                       -- 100MHz Refclk
+       pci_pi_refclk_n0: in std_logic;                                       -- 100MHz Refclk
+       
+       -- Xilinx requires both pins of differential transceivers
+       pci0_i_rxp_in0: in std_logic;
+       pci0_i_rxn_in0: in std_logic;
+       pci0_i_rxp_in1: in std_logic;
+       pci0_i_rxn_in1: in std_logic;
+       pci0_i_rxp_in2: in std_logic;
+       pci0_i_rxn_in2: in std_logic;
+       pci0_i_rxp_in3: in std_logic;
+       pci0_i_rxn_in3: in std_logic;
+       pci0_i_rxp_in4: in std_logic;
+       pci0_i_rxn_in4: in std_logic;
+       pci0_i_rxp_in5: in std_logic;
+       pci0_i_rxn_in5: in std_logic;
+       pci0_i_rxp_in6: in std_logic;
+       pci0_i_rxn_in6: in std_logic;
+       pci0_i_rxp_in7: in std_logic;
+       pci0_i_rxn_in7: in std_logic;
+       pci0_o_txp_out0: out std_logic;
+       pci0_o_txn_out0: out std_logic;
+       pci0_o_txp_out1: out std_logic;
+       pci0_o_txn_out1: out std_logic;
+       pci0_o_txp_out2: out std_logic;
+       pci0_o_txn_out2: out std_logic;
+       pci0_o_txp_out3: out std_logic;
+       pci0_o_txn_out3: out std_logic;
+       pci0_o_txp_out4: out std_logic;
+       pci0_o_txn_out4: out std_logic;
+       pci0_o_txp_out5: out std_logic;
+       pci0_o_txn_out5: out std_logic;
+       pci0_o_txp_out6: out std_logic;
+       pci0_o_txn_out6: out std_logic;
+       pci0_o_txp_out7: out std_logic;
+       pci0_o_txn_out7: out std_logic
+--       o_debug: out std_logic_vector(0 to 3);
+       );
+
+       attribute secure_config : string;
+       attribute secure_config of psl_fpga : entity is "PROTECT";
+       attribute secure_netlist : string;       
+       attribute secure_netlist of psl_fpga : entity is "ENCRYPT";
+END psl_fpga;
+
+
+
+ARCHITECTURE psl_fpga OF psl_fpga IS
+
+Component psl_accel
+  PORT(
+       -- Accelerator Command Interface
+       ah_cvalid: out std_logic;                                            -- A valid command is present
+       ah_ctag: out std_logic_vector(0 to 7);                               -- request id
+       ah_com: out std_logic_vector(0 to 12);                               -- command PSL will execute
+       ah_cpad: out std_logic_vector(0 to 2);                               -- prefetch attributes
+       ah_cabt: out std_logic_vector(0 to 2);                               -- abort if translation intr is generated
+       ah_cea: out std_logic_vector(0 to 63);                               -- Effective byte address for command
+       ah_cch: out std_logic_vector(0 to 15);                               -- Context Handle
+       ah_csize: out std_logic_vector(0 to 11);                             -- Number of bytes
+       ha_croom: in std_logic_vector(0 to 7);                               -- Commands PSL is prepared to accept
+       
+       -- command parity
+       ah_ctagpar: out std_logic;
+       ah_compar: out std_logic;
+       ah_ceapar: out std_logic;
+       
+       -- Accelerator Buffer Interfaces
+       ha_brvalid: in std_logic;                                            -- A read transfer is present
+       ha_brtag: in std_logic_vector(0 to 7);                               -- Accelerator generated ID for read
+       ha_brad: in std_logic_vector(0 to 5);                                -- half line index of read data
+       ah_brlat: out std_logic_vector(0 to 3);                              -- Read data ready latency
+       ah_brdata: out std_logic_vector(0 to 511);                           -- Read data
+       ah_brpar: out std_logic_vector(0 to 7);                              -- Read data parity
+       ha_bwvalid: in std_logic;                                            -- A write data transfer is present
+       ha_bwtag: in std_logic_vector(0 to 7);                               -- Accelerator ID of the write
+       ha_bwad: in std_logic_vector(0 to 5);                                -- half line index of write data
+       ha_bwdata: in std_logic_vector(0 to 511);                            -- Write data
+       ha_bwpar: in std_logic_vector(0 to 7);                               -- Write data parity
+       
+       -- buffer tag parity
+       ha_brtagpar: in std_logic;
+       ha_bwtagpar: in std_logic;
+       
+       -- PSL Response Interface
+       ha_rvalid: in std_logic;                                             --A response is present
+       ha_rtag: in std_logic_vector(0 to 7);                                --Accelerator generated request ID
+       ha_response: in std_logic_vector(0 to 7);                            --response code
+       ha_rcredits: in std_logic_vector(0 to 8);                            --twos compliment number of credits
+       ha_rcachestate: in std_logic_vector(0 to 1);                         --Resultant Cache State
+       ha_rcachepos: in std_logic_vector(0 to 12);                          --Cache location id
+       ha_rtagpar: in std_logic;
+       
+       -- MMIO Interface
+       ha_mmval: in std_logic;                                              -- A valid MMIO is present
+       ha_mmrnw: in std_logic;                                              -- 1 = read, 0 = write
+       ha_mmdw: in std_logic;                                               -- 1 = doubleword, 0 = word
+       ha_mmad: in std_logic_vector(0 to 23);                               -- mmio address
+       ha_mmdata: in std_logic_vector(0 to 63);                             -- Write data
+       ha_mmcfg: in std_logic;                                              -- mmio is to afu descriptor space
+       ah_mmack: out std_logic;                                             -- Write is complete or Read is valid pulse
+       ah_mmdata: out std_logic_vector(0 to 63);                            -- Read data
+       
+       -- mmio parity
+       ha_mmadpar: in std_logic;
+       ha_mmdatapar: in std_logic;
+       ah_mmdatapar: out std_logic;
+       
+       -- Accelerator Control Interface
+       ha_jval: in std_logic;                                               -- A valid job control command is present
+       ha_jcom: in std_logic_vector(0 to 7);                                -- Job control command opcode
+       ha_jea: in std_logic_vector(0 to 63);                                -- Save/Restore address
+       ah_jrunning: out std_logic;                                          -- Accelerator is running level
+       ah_jdone: out std_logic;                                             -- Accelerator is finished pulse
+       ah_jcack: out std_logic;                                             -- Accelerator is with context llcmd pulse
+       ah_jerror: out std_logic_vector(0 to 63);                            -- Accelerator error code. 0 = success
+       ah_tbreq: out std_logic;                                             -- Timebase request pulse
+       ah_jyield: out std_logic;                                            -- Accelerator wants to stop
+       ha_jeapar: in std_logic;
+       ha_jcompar: in std_logic;
+                                                                                          -- only for DDRI_USED=TRUE
+       -- Clock inputs for SDRAM	                                                  -- only for DDRI_USED=TRUE
+       refclk_sdram_p                     : IN    STD_LOGIC;                              -- only for DDRI_USED=TRUE
+       refclk_sdram_n                     : IN    STD_LOGIC;                              -- only for DDRI_USED=TRUE
+    											  -- only for DDR3_USED=TRUE 
+       -- DDR3 SDRAM Interface                                                            -- only for DDR3_USED=TRUE
+       c1_sys_clk_p                       : IN    STD_LOGIC;                              -- only for DDR3_USED=TRUE
+       c1_sys_clk_n                       : IN    STD_LOGIC;                              -- only for DDR3_USED=TRUE
+       c1_ddr3_addr                       : OUT   STD_LOGIC_VECTOR(15 DOWNTO 0);          -- only for DDR3_USED=TRUE
+       c1_ddr3_ba                         : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);           -- only for DDR3_USED=TRUE
+       c1_ddr3_ras_n                      : OUT   STD_LOGIC;                              -- only for DDR3_USED=TRUE
+       c1_ddr3_cas_n                      : OUT   STD_LOGIC;                              -- only for DDR3_USED=TRUE
+       c1_ddr3_reset_n                    : OUT   STD_LOGIC;                              -- only for DDR3_USED=TRUE
+       c1_ddr3_cs_n                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);           -- only for DDR3_USED=TRUE
+       c1_ddr3_cke                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);           -- only for DDR3_USED=TRUE
+       c1_ddr3_ck_p                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);           -- only for DDR3_USED=TRUE
+       c1_ddr3_ck_n                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);           -- only for DDR3_USED=TRUE
+       c1_ddr3_we_n                       : OUT   STD_LOGIC;                              -- only for DDR3_USED=TRUE
+       c1_ddr3_dm                         : OUT   STD_LOGIC_VECTOR(8 DOWNTO 0);           -- only for DDR3_USED=TRUE
+       c1_ddr3_dq                         : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);          -- only for DDR3_USED=TRUE
+       c1_ddr3_dqs_p                      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);           -- only for DDR3_USED=TRUE
+       c1_ddr3_dqs_n                      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);           -- only for DDR3_USED=TRUE
+       c1_ddr3_odt                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);           -- only for DDR3_USED=TRUE
+
+       -- Parity Check enable and Host Clock input
+       ah_paren: out std_logic;
+       ha_pclock: in std_logic);
+End Component psl_accel;
+
+Component base_img
+  PORT(
+       -- flash bus
+       o_flash_oen: out std_logic;
+       o_flash_wen: out std_logic;
+       o_flash_rstn: out std_logic;
+       o_flash_a: out std_logic_vector(1 to 26);
+       o_flash_advn: out std_logic;
+       b_flash_dq: inout std_logic_vector(0 to 11);
+
+       -- PTMON PMBUS
+       b_basei2c_scl: inout std_logic;                                       -- clock
+       b_basei2c_sda: inout std_logic;                                       -- data
+       i_cable_present_l: in std_logic;                                      -- detect external cable low active
+
+       -- pci interface
+       pci_pi_nperst0: in std_logic;                                         -- Active low reset from the PCIe reset pin of the device
+       pci_pi_refclk_p0: in std_logic;                                       -- 100MHz Refclk
+       pci_pi_refclk_n0: in std_logic;                                       -- 100MHz Refclk
+
+       -- Xilinx requires both pins of differential transceivers
+       pci0_i_rxp_in0: in std_logic;
+       pci0_i_rxn_in0: in std_logic;
+       pci0_i_rxp_in1: in std_logic;
+       pci0_i_rxn_in1: in std_logic;
+       pci0_i_rxp_in2: in std_logic;
+       pci0_i_rxn_in2: in std_logic;
+       pci0_i_rxp_in3: in std_logic;
+       pci0_i_rxn_in3: in std_logic;
+       pci0_i_rxp_in4: in std_logic;
+       pci0_i_rxn_in4: in std_logic;
+       pci0_i_rxp_in5: in std_logic;
+       pci0_i_rxn_in5: in std_logic;
+       pci0_i_rxp_in6: in std_logic;
+       pci0_i_rxn_in6: in std_logic;
+       pci0_i_rxp_in7: in std_logic;
+       pci0_i_rxn_in7: in std_logic;
+       pci0_o_txp_out0: out std_logic;
+       pci0_o_txn_out0: out std_logic;
+       pci0_o_txp_out1: out std_logic;
+       pci0_o_txn_out1: out std_logic;
+       pci0_o_txp_out2: out std_logic;
+       pci0_o_txn_out2: out std_logic;
+       pci0_o_txp_out3: out std_logic;
+       pci0_o_txn_out3: out std_logic;
+       pci0_o_txp_out4: out std_logic;
+       pci0_o_txn_out4: out std_logic;
+       pci0_o_txp_out5: out std_logic;
+       pci0_o_txn_out5: out std_logic;
+       pci0_o_txp_out6: out std_logic;
+       pci0_o_txn_out6: out std_logic;
+       pci0_o_txp_out7: out std_logic;
+       pci0_o_txn_out7: out std_logic;
+
+       a0h_cvalid: in std_logic;
+       a0h_ctag: in std_logic_vector(0 to 7);
+       a0h_com: in std_logic_vector(0 to 12);
+       a0h_cpad: in std_logic_vector(0 to 2);
+       a0h_cabt: in std_logic_vector(0 to 2);
+       a0h_cea: in std_logic_vector(0 to 63);
+       a0h_cch: in std_logic_vector(0 to 15);
+       a0h_csize: in std_logic_vector(0 to 11);
+       ha0_croom: out std_logic_vector(0 to 7);
+       a0h_ctagpar: in std_logic;
+       a0h_compar: in std_logic;
+       a0h_ceapar: in std_logic;
+       ha0_brvalid: out std_logic;
+       ha0_brtag: out std_logic_vector(0 to 7);
+       ha0_brad: out std_logic_vector(0 to 5);
+       a0h_brlat: in std_logic_vector(0 to 3);
+       a0h_brdata: in std_logic_vector(0 to 511);
+       a0h_brpar: in std_logic_vector(0 to 7);
+       ha0_bwvalid: out std_logic;
+       ha0_bwtag: out std_logic_vector(0 to 7);
+       ha0_bwad: out std_logic_vector(0 to 5);
+       ha0_bwdata: out std_logic_vector(0 to 511);
+       ha0_bwpar: out std_logic_vector(0 to 7);
+       ha0_brtagpar: out std_logic;
+       ha0_bwtagpar: out std_logic;
+       ha0_rvalid: out std_logic;
+       ha0_rtag: out std_logic_vector(0 to 7);
+       ha0_response: out std_logic_vector(0 to 7);
+       ha0_rcredits: out std_logic_vector(0 to 8);
+       ha0_rcachestate: out std_logic_vector(0 to 1);
+       ha0_rcachepos: out std_logic_vector(0 to 12);
+       ha0_rtagpar: out std_logic;
+       ha0_mmval: out std_logic;
+       ha0_mmrnw: out std_logic;
+       ha0_mmdw: out std_logic;
+       ha0_mmad: out std_logic_vector(0 to 23);
+       ha0_mmdata: out std_logic_vector(0 to 63);
+       ha0_mmcfg: out std_logic;
+       a0h_mmack: in std_logic;
+       a0h_mmdata: in std_logic_vector(0 to 63);
+       ha0_mmadpar: out std_logic;
+       ha0_mmdatapar: out std_logic;
+       a0h_mmdatapar: in std_logic;
+       ha0_jval: out std_logic;
+       ha0_jcom: out std_logic_vector(0 to 7);
+       ha0_jea: out std_logic_vector(0 to 63);
+       a0h_jrunning: in std_logic;
+       a0h_jdone: in std_logic;
+       a0h_jcack: in std_logic;
+       a0h_jerror: in std_logic_vector(0 to 63);
+       a0h_tbreq: in std_logic;
+       a0h_jyield: in std_logic;
+       ha0_jeapar: out std_logic;
+       ha0_jcompar: out std_logic;
+       a0h_paren: in std_logic;
+       ha0_pclock: out std_logic;
+       gold_factory: in std_logic);
+
+END Component base_img;
+
+Signal a0h_brdata: std_logic_vector(0 to 511);  -- hline
+Signal a0h_brlat: std_logic_vector(0 to 3);  -- v4bit
+Signal a0h_brpar: std_logic_vector(0 to 7);  -- v8bit
+Signal a0h_cabt: std_logic_vector(0 to 2);  -- cabt
+Signal a0h_cch: std_logic_vector(0 to 15);  -- ctxhndl
+Signal a0h_cea: std_logic_vector(0 to 63);  -- ead
+Signal a0h_ceapar: std_logic;  -- bool
+Signal a0h_com: std_logic_vector(0 to 12);  -- apcmd
+Signal a0h_compar: std_logic;  -- bool
+Signal a0h_cpad: std_logic_vector(0 to 2);  -- pade
+Signal a0h_csize: std_logic_vector(0 to 11);  -- v12bit
+Signal a0h_ctag: std_logic_vector(0 to 7);  -- acctag
+Signal a0h_ctagpar: std_logic;  -- bool
+Signal a0h_cvalid: std_logic;  -- bool
+Signal a0h_jcack: std_logic;  -- bool
+Signal a0h_jdone: std_logic;  -- bool
+Signal a0h_jerror: std_logic_vector(0 to 63);  -- v64bit
+Signal a0h_jrunning: std_logic;  -- bool
+Signal a0h_jyield: std_logic;  -- bool
+Signal a0h_mmack: std_logic;  -- bool
+Signal a0h_mmdata: std_logic_vector(0 to 63);  -- v64bit
+Signal a0h_mmdatapar: std_logic;  -- bool
+Signal a0h_paren: std_logic;  -- bool
+Signal a0h_tbreq: std_logic;  -- bool
+Signal ha0_brad: std_logic_vector(0 to 5);  -- v6bit
+Signal ha0_brtag: std_logic_vector(0 to 7);  -- acctag
+Signal ha0_brtagpar: std_logic;  -- bool
+Signal ha0_brvalid: std_logic;  -- bool
+Signal ha0_bwad: std_logic_vector(0 to 5);  -- v6bit
+Signal ha0_bwdata: std_logic_vector(0 to 511);  -- hline
+Signal ha0_bwpar: std_logic_vector(0 to 7);  -- v8bit
+Signal ha0_bwtag: std_logic_vector(0 to 7);  -- acctag
+Signal ha0_bwtagpar: std_logic;  -- bool
+Signal ha0_bwvalid: std_logic;  -- bool
+Signal ha0_croom: std_logic_vector(0 to 7);  -- v8bit
+Signal ha0_jcom: std_logic_vector(0 to 7);  -- jbcom
+Signal ha0_jcompar: std_logic;  -- bool
+Signal ha0_jea: std_logic_vector(0 to 63);  -- v64bit
+Signal ha0_jeapar: std_logic;  -- bool
+Signal ha0_jval: std_logic;  -- bool
+Signal ha0_mmad: std_logic_vector(0 to 23);  -- v24bit
+Signal ha0_mmadpar: std_logic;  -- bool
+Signal ha0_mmcfg: std_logic;  -- bool
+Signal ha0_mmdata: std_logic_vector(0 to 63);  -- v64bit
+Signal ha0_mmdatapar: std_logic;  -- bool
+Signal ha0_mmdw: std_logic;  -- bool
+Signal ha0_mmrnw: std_logic;  -- bool
+Signal ha0_mmval: std_logic;  -- bool
+Signal ha0_pclock: std_logic;  -- bool
+Signal ha0_rcachepos: std_logic_vector(0 to 12);  -- v13bit
+Signal ha0_rcachestate: std_logic_vector(0 to 1);  -- statespec
+Signal ha0_rcredits: std_logic_vector(0 to 8);  -- v9bit
+Signal ha0_response: std_logic_vector(0 to 7);  -- apresp
+Signal ha0_rtag: std_logic_vector(0 to 7);  -- acctag
+Signal ha0_rtagpar: std_logic;  -- bool
+Signal ha0_rvalid: std_logic;  -- bool
+Signal gold_factory: std_logic;
+
+begin
+
+     a0: psl_accel
+      PORT MAP (
+         ah_cvalid            => a0h_cvalid,
+         ah_ctag              => a0h_ctag,
+         ah_com               => a0h_com,
+         ah_cpad              => a0h_cpad,
+         ah_cabt              => a0h_cabt,
+         ah_cea               => a0h_cea,
+         ah_cch               => a0h_cch,
+         ah_csize             => a0h_csize,
+         ha_croom             => ha0_croom,
+         ah_ctagpar           => a0h_ctagpar,
+         ah_compar            => a0h_compar,
+         ah_ceapar            => a0h_ceapar,
+         ha_brvalid           => ha0_brvalid,
+         ha_brtag             => ha0_brtag,
+         ha_brad              => ha0_brad,
+         ah_brlat             => a0h_brlat,
+         ah_brdata            => a0h_brdata,
+         ah_brpar             => a0h_brpar,
+         ha_bwvalid           => ha0_bwvalid,
+         ha_bwtag             => ha0_bwtag,
+         ha_bwad              => ha0_bwad,
+         ha_bwdata            => ha0_bwdata,
+         ha_bwpar             => ha0_bwpar,
+         ha_brtagpar          => ha0_brtagpar,
+         ha_bwtagpar          => ha0_bwtagpar,
+         ha_rvalid            => ha0_rvalid,
+         ha_rtag              => ha0_rtag,
+         ha_response          => ha0_response,
+         ha_rcredits          => ha0_rcredits,
+         ha_rcachestate       => ha0_rcachestate,
+         ha_rcachepos         => ha0_rcachepos,
+         ha_rtagpar           => ha0_rtagpar,
+         ha_mmval             => ha0_mmval,
+         ha_mmrnw             => ha0_mmrnw,
+         ha_mmdw              => ha0_mmdw,
+         ha_mmad              => ha0_mmad,
+         ha_mmdata            => ha0_mmdata,
+         ha_mmcfg             => ha0_mmcfg,
+         ah_mmack             => a0h_mmack,
+         ah_mmdata            => a0h_mmdata,
+         ha_mmadpar           => ha0_mmadpar,
+         ha_mmdatapar         => ha0_mmdatapar,
+         ah_mmdatapar         => a0h_mmdatapar,
+         ha_jval              => ha0_jval,
+         ha_jcom              => ha0_jcom,
+         ha_jea               => ha0_jea,
+         ah_jrunning          => a0h_jrunning,
+         ah_jdone             => a0h_jdone,
+         ah_jcack             => a0h_jcack,
+         ah_jerror            => a0h_jerror,
+         ah_tbreq             => a0h_tbreq,
+         ah_jyield            => a0h_jyield,
+         ha_jeapar            => ha0_jeapar,
+         ha_jcompar           => ha0_jcompar,
+         refclk_sdram_n       => refclk200_n,               -- only for DDRI_USED=TRUE 
+         refclk_sdram_p       => refclk200_p,		    -- only for DDRI_USED=TRUE 
+         c1_sys_clk_p         => c1_sys_clk_p,		    -- only for DDR3_USED=TRUE 
+         c1_sys_clk_n         => c1_sys_clk_n,		    -- only for DDR3_USED=TRUE 
+         c1_ddr3_addr         => c1_ddr3_addr,		    -- only for DDR3_USED=TRUE 
+         c1_ddr3_ba           => c1_ddr3_ba,		    -- only for DDR3_USED=TRUE 
+         c1_ddr3_ras_n        => c1_ddr3_ras_n,		    -- only for DDR3_USED=TRUE 
+         c1_ddr3_cas_n        => c1_ddr3_cas_n,		    -- only for DDR3_USED=TRUE 
+         c1_ddr3_reset_n      => c1_ddr3_reset_n,	    -- only for DDR3_USED=TRUE 
+         c1_ddr3_cs_n         => c1_ddr3_cs_n,		    -- only for DDR3_USED=TRUE 
+         c1_ddr3_cke          => c1_ddr3_cke,		    -- only for DDR3_USED=TRUE 
+         c1_ddr3_ck_p         => c1_ddr3_ck_p,		    -- only for DDR3_USED=TRUE 
+         c1_ddr3_ck_n         => c1_ddr3_ck_n,		    -- only for DDR3_USED=TRUE 
+         c1_ddr3_we_n         => c1_ddr3_we_n,		    -- only for DDR3_USED=TRUE 
+         c1_ddr3_dm           => c1_ddr3_dm,		    -- only for DDR3_USED=TRUE 
+         c1_ddr3_dq           => c1_ddr3_dq,		    -- only for DDR3_USED=TRUE 
+         c1_ddr3_dqs_p        => c1_ddr3_dqs_p,		    -- only for DDR3_USED=TRUE 
+         c1_ddr3_dqs_n        => c1_ddr3_dqs_n,		    -- only for DDR3_USED=TRUE 
+         c1_ddr3_odt          => c1_ddr3_odt,		    -- only for DDR3_USED=TRUE 
+         ah_paren             => a0h_paren,
+         ha_pclock            => ha0_pclock
+    );
+
+    gold_factory <= '1'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
+
+    b: base_img
+     PORT MAP (
+         pci_pi_nperst0 => pci_pi_nperst0,                                
+         pci_pi_refclk_p0 => pci_pi_refclk_p0,       
+         pci_pi_refclk_n0 => pci_pi_refclk_n0,                                       
+         pci0_i_rxp_in0 => pci0_i_rxp_in0,
+         pci0_i_rxn_in0 => pci0_i_rxn_in0,
+         pci0_i_rxp_in1 => pci0_i_rxp_in1,
+         pci0_i_rxn_in1 => pci0_i_rxn_in1,
+         pci0_i_rxp_in2 => pci0_i_rxp_in2,
+         pci0_i_rxn_in2 => pci0_i_rxn_in2,
+         pci0_i_rxp_in3 => pci0_i_rxp_in3,
+         pci0_i_rxn_in3 => pci0_i_rxn_in3,
+         pci0_i_rxp_in4 => pci0_i_rxp_in4,
+         pci0_i_rxn_in4 => pci0_i_rxn_in4,
+         pci0_i_rxp_in5 => pci0_i_rxp_in5,
+         pci0_i_rxn_in5 => pci0_i_rxn_in5,
+         pci0_i_rxp_in6 => pci0_i_rxp_in6,
+         pci0_i_rxn_in6 => pci0_i_rxn_in6,
+         pci0_i_rxp_in7 => pci0_i_rxp_in7,
+         pci0_i_rxn_in7 => pci0_i_rxn_in7,
+         pci0_o_txp_out0 => pci0_o_txp_out0,
+         pci0_o_txn_out0 => pci0_o_txn_out0,
+         pci0_o_txp_out1 => pci0_o_txp_out1,
+         pci0_o_txn_out1 => pci0_o_txn_out1,
+         pci0_o_txp_out2 => pci0_o_txp_out2,
+         pci0_o_txn_out2 => pci0_o_txn_out2,
+         pci0_o_txp_out3 => pci0_o_txp_out3,
+         pci0_o_txn_out3 => pci0_o_txn_out3,
+         pci0_o_txp_out4 => pci0_o_txp_out4,
+         pci0_o_txn_out4 => pci0_o_txn_out4,
+         pci0_o_txp_out5 => pci0_o_txp_out5,
+         pci0_o_txn_out5 => pci0_o_txn_out5,
+         pci0_o_txp_out6 => pci0_o_txp_out6,
+         pci0_o_txn_out6 => pci0_o_txn_out6,
+         pci0_o_txp_out7 => pci0_o_txp_out7,
+         pci0_o_txn_out7 => pci0_o_txn_out7,
+
+       -- flash bus
+         o_flash_oen => o_flash_oen,
+         o_flash_wen => o_flash_wen,
+         o_flash_rstn => o_flash_rstn,
+         o_flash_a => o_flash_a,
+         o_flash_advn => o_flash_advn,
+         b_flash_dq => b_flash_dq,
+
+         --PTMON PMBUS
+         b_basei2c_scl => b_basei2c_scl,
+         b_basei2c_sda => b_basei2c_sda,
+         i_cable_present_l => i_cable_present_l,
+
+         a0h_cvalid => a0h_cvalid,
+         a0h_ctag => a0h_ctag,
+         a0h_com => a0h_com,
+         a0h_cpad => a0h_cpad,
+         a0h_cabt => a0h_cabt,
+         a0h_cea => a0h_cea,
+         a0h_cch => a0h_cch,
+         a0h_csize => a0h_csize,
+         ha0_croom => ha0_croom,
+         a0h_ctagpar => a0h_ctagpar,
+         a0h_compar => a0h_compar,
+         a0h_ceapar => a0h_ceapar,
+         ha0_brvalid => ha0_brvalid,
+         ha0_brtag => ha0_brtag,
+         ha0_brad => ha0_brad,
+         a0h_brlat => a0h_brlat,
+         a0h_brdata => a0h_brdata,
+         a0h_brpar => a0h_brpar,
+         ha0_bwvalid => ha0_bwvalid,
+         ha0_bwtag => ha0_bwtag,
+         ha0_bwad => ha0_bwad,
+         ha0_bwdata => ha0_bwdata,
+         ha0_bwpar => ha0_bwpar,
+         ha0_brtagpar => ha0_brtagpar,
+         ha0_bwtagpar => ha0_bwtagpar,
+         ha0_rvalid => ha0_rvalid,
+         ha0_rtag => ha0_rtag,
+         ha0_response => ha0_response,
+         ha0_rcredits => ha0_rcredits,
+         ha0_rcachestate => ha0_rcachestate,
+         ha0_rcachepos => ha0_rcachepos,
+         ha0_rtagpar => ha0_rtagpar,
+         ha0_mmval => ha0_mmval,
+         ha0_mmrnw => ha0_mmrnw,
+         ha0_mmdw => ha0_mmdw,
+         ha0_mmad => ha0_mmad,
+         ha0_mmdata => ha0_mmdata,
+         ha0_mmcfg => ha0_mmcfg,
+         a0h_mmack => a0h_mmack,
+         a0h_mmdata => a0h_mmdata,
+         ha0_mmadpar => ha0_mmadpar,
+         ha0_mmdatapar => ha0_mmdatapar,
+         a0h_mmdatapar => a0h_mmdatapar,
+         ha0_jval => ha0_jval,
+         ha0_jcom => ha0_jcom,
+         ha0_jea => ha0_jea,
+         a0h_jrunning => a0h_jrunning,
+         a0h_jdone => a0h_jdone,
+         a0h_jcack => a0h_jcack,
+         a0h_jerror => a0h_jerror,
+         a0h_tbreq => a0h_tbreq,
+         a0h_jyield => a0h_jyield,
+         ha0_jeapar => ha0_jeapar,
+         ha0_jcompar => ha0_jcompar,
+         a0h_paren => a0h_paren,
+         ha0_pclock => ha0_pclock,
+         gold_factory => gold_factory
+    );
+
+END psl_fpga;

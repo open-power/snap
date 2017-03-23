@@ -1,20 +1,23 @@
 #!/bin/bash
-#
-# Copyright 2016, International Business Machines
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-###############################################################################
+############################################################################
+############################################################################
+##
+## Copyright 2016,2017 International Business Machines
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##     http://www.apache.org/licenses/LICENSE#2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions AND
+## limitations under the License.
+##
+############################################################################
+############################################################################
 
 cd $1
 
@@ -86,17 +89,18 @@ if [ $DDR4_USED == "TRUE" ] && [ $BRAM_USED != "TRUE"  ]; then
                                              \$dimmDir/snap_ddr4pins_flash_gt.xdc \\' $2
 fi
 
-sed -i '/top      top/ a\
-                                             \$rootDir/setup/donut_link.xdc \\\
+if [ $FPGACARD == "KU3" ]; then 
+  sed -i '/top      top/ a\
                                              \$rootDir/setup/donut_pblock.xdc \\' $2
+fi
 
 if [ $BRAM_USED == "TRUE" ]; then
-  if [ -d $DIMMTEST/example ]; then 
+  if [ $FPGACARD == "KU3" ]; then 
     sed -i '/top      top/ a\
                                              \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc \\' $2
   else 
     sed -i '/top      top/ a\
-                                             \$dimmDir/snap_refclk200.xdc \\' $2
+                                             \$dimmDir/snap_refclk266.xdc \\' $2
   fi
 fi
 
@@ -107,8 +111,12 @@ fi
 
 if [ $DDR4_USED == "TRUE" ]; then
   sed -i '/top      top/ a\
-                                             \$dimmDir/snap_refclk200.xdc \\' $2
+                                             \$dimmDir/snap_refclk266.xdc \\' $2
 fi
+
+sed -i '/top      top/ a\
+                                             \$rootDir/setup/donut_link.xdc \\' $2
+
 
 sed -i '/top      top/ a\
 set_attribute impl \$top      linkXDC       \[list \\' $2
