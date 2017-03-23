@@ -20,7 +20,7 @@
 #
 
 platform=`uname -p`
-exit 0
+
 case "$platform" in
 	"ppc64le" | "ppc64" )
 		echo "-O3 -mcpu=power8"
