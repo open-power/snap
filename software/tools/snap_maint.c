@@ -354,43 +354,71 @@ static void snap_version(void *handle)
 /*	Master Init */
 static int snap_m_init(void *handle)
 {
-	uint64_t reg, ssr, data, base;
+	uint64_t reg, ssr, data, offset;
 	uint32_t atype, atype_next;
 	int msat, mact;
 	int i, sai;
 
+	int rc = 1;
 	VERBOSE1("%s Enter\n", __func__);
-	while (1) {
+	for (i = 0; i < 10; i++) {
 		reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_SLR);	/* Get lock */
 		if (0 == reg) break;	/* Got Lock, continue */
 		sleep(1);	/* Try until lock is free */
-		VERBOSE1("%s Waiting for lock..\n", __func__);
 	}
+	if (10 == i) {
+		VERBOSE0("   Error Waiting 10 sec to get Lock\n");
+		goto _snap_m_init_exit1;
+	}
+	/* Have lock, check if done */
+	rc = 0;
 	ssr = snap_read64(handle, SNAP_M_CTX, SNAP_M_SSR);
 	msat = (int)(ssr >> 4)& 0xf;	/* Get Maximum Short ID */
 	msat++;
 	mact = (int)ssr & 0xf;		/* Get Maximum Action ID */
-	mact++;
+	mact++;				/* Make 1..16 */
 	if (0x100 == (ssr &  0x100)) {
-		VERBOSE1("%s       Setup already done\n", __func__);
+		VERBOSE1("   Setup already done (MSAI: %d MAID: %d)\n\n",
+			1+(int)((ssr&0xf0)>>4), (int)(ssr&0xf)+1);
+		VERBOSE1("   Short      Action Type\n");
+		VERBOSE1("   -------------------------------------\n");
+		offset = SNAP_M_ATRI;
+		for (i = 0; i < mact; i++) {
+			reg = snap_read64(handle, SNAP_M_CTX, offset);
+			atype = (uint32_t)(reg);
+			VERBOSE1("   %d          0x%8.8x ",
+				(int)(reg >> 32ll), atype);
+			switch (atype) {
+			case 0x10140000:
+				VERBOSE1("IBM Sample Code\n");
+				break;
+			case 0x10140001:
+				VERBOSE1("HLS Code 1");
+				break;
+			default:
+				VERBOSE1("UNKNOWN Code.....\n");
+				break;
+			}
+			offset =+ 8;
+		}
 		goto _snap_m_init_exit;
 	}
 
-	/* Read Action Type */
-	sai = 0;	/* Short Action Index start */
-	base = SNAP_M_ACT_OFFSET + 0x10;	/* Action Type */
-	atype = snap_read32(handle, base);
+	/* Read Action Type  and configure */
+	sai = 0;				/* Short Action Index */
+	offset = SNAP_M_ACT_OFFSET + 0x10;	/* Action Type */
+	atype = snap_read32(handle, offset);
 	for (i = 0; i < mact; i++) {
-		reg = base + SNAP_M_ACT_SIZE * i;
-		atype_next = snap_read32(handle, reg);
-		VERBOSE1("%s Index: %d Max: %d found AT: 0x%8.8x Assign SAT: %d\n",
-			__func__, i, mact, atype_next, sai);
+		atype_next = snap_read32(handle, offset);
+		VERBOSE1("   %d Max AT: %d Found AT: 0x%8.8x --> Assign Short AT: %d\n",
+			i, mact, atype_next, sai);
 		reg = SNAP_M_ATRI + i * 8;
 		data = (uint64_t)sai << 32ll | (uint64_t)atype_next;
 		snap_write64(handle,SNAP_M_CTX, reg, data);
 		if (atype != atype_next)
 			sai++;
 		atype = atype_next;
+		offset += SNAP_M_ACT_SIZE;	/* Next Action */
 	}
 
 	/* Set Command Register (SCR) */
@@ -398,8 +426,9 @@ static int snap_m_init(void *handle)
 	snap_write64(handle, SNAP_M_CTX, SNAP_M_SCR, reg);
 _snap_m_init_exit:
 	snap_write64(handle, SNAP_M_CTX, SNAP_M_SLR, 0);	/* Release lock */
-	VERBOSE1("%s Exit\n", __func__);
-	return 0;
+_snap_m_init_exit1:
+	VERBOSE1("%s Exit rc: %d\n", __func__, rc);
+	return rc;
 }
 
 static int snap_do_master(struct mdev_ctx *mctx)
