@@ -35,14 +35,6 @@ export DDR3_USED=FALSE
 export DDR4_USED=FALSE
 endif
 
-ifndef DDR3_USED
-export DDR3_USED=TRUE
-endif
-
-ifndef DDR4_USED
-export DDR4_USED=FALSE
-endif
-
 export DDRI_USED=FALSE
 ifeq "$(DDR3_USED)" "TRUE"
 export DDRI_USED=TRUE
@@ -52,19 +44,6 @@ export DDRI_USED=TRUE
 endif
 ifeq "$(BRAM_USED)" "TRUE"
 export DDRI_USED=TRUE
-endif
-
-
-ifndef ILA_DEBUG
-export ILA_DEBUG=FALSE
-endif
-
-ifndef NUM_OF_ACTIONS
-export NUM_OF_ACTIONS=1
-endif
-
-ifndef ACTION_ROOT
-export ACTION_ROOT=$(DONUT_HARDWARE_ROOT)/action_examples/empty
 endif
 
 ifndef MSG_LEVEL
@@ -93,9 +72,14 @@ check_donut_settings:
 		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/donut.git"; \
 		exit 1; \
 	fi
-	@if [[ $(FPGACARD) != "FGT" && $(FPGACARD) != "KU3" ]];then \
-		echo "unknown FPGACARD"; \
-		echo "supported cards are: FGT and KU3"; \
+	@if [ -z $(DDR3_USED) ] || [ -z $(DDR4_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ]; then \
+		echo "Missing one or more environment  variables"; \
+		echo "Please check the following variable and source donut_settings before calling make!"; \
+		echo "DDR3_USED:     $(DDR3_USED)"; \
+		echo "DDR4_USED:     $(DDR4_USED)"; \
+		echo "ILA_DEBUG:     $(ILA_DEBUG)"; \
+		echo "NUM_OF_ACTION: $(NUM_OF_ACTIONS)"; \
+		echo "ACTION_ROOT:   $(ACTION_ROOT)"; \
 		exit 1; \
 	fi
 
