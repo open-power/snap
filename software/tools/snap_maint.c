@@ -378,7 +378,7 @@ static int snap_m_init(void *handle)
 
 	/* Read Action Type */
 	sai = 0;	/* Short Action Index start */
-	base = 0x10000 + 0x10;	/* Action Type */
+	base = SNAP_M_ACT_OFFSET + 0x10;	/* Action Type */
 	atype = snap_read32(handle, base);
 	for (i = 0; i < mact; i++) {
 		reg = base + SNAP_M_ACT_SIZE * i;

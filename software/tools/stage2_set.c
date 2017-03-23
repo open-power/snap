@@ -368,11 +368,14 @@ int main(int argc, char *argv[])
 		PRINTF1("[%d/%d] Start Memset ", i+1, iter);
 		PRINTF1(" Attach %x", ACTION_TYPE_EXAMPLE);
 		while (1) {
-			rc = dnut_attach_action(hb, ACTION_TYPE_EXAMPLE, attach_flags);
+			rc = dnut_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags);
 			if (0 == rc) break;
 			if (EBUSY == rc)
 				usleep(100);
-			else goto __exit1;
+			else {
+				PRINTF0(" ERROR from Attach\n");
+				goto __exit1;
+			}
 		}
 		if (ACTION_CONFIG_MEMSET_F == func) {
 			start = begin;
@@ -398,10 +401,10 @@ int main(int argc, char *argv[])
 	rc = 0;
 
 __exit1:
+	PRINTF1("\n");
 	PRINTF3("Close Card Handle: %p\n", dn);
 	dnut_card_free(dn);
 	free_mem(hb);
-
 	PRINTF2("Exit rc: %d\n", rc);
 	return rc;
 }
