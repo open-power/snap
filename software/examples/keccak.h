@@ -29,7 +29,7 @@
 #    define NB_SLICES 65536
 #  endif
 #  ifndef NB_ROUND
-#    define NB_ROUND 1 << 24 /* 1<<16 */ /* 1<<24 */
+#    define NB_ROUND 1 << 24 /* 1<<16 */ /* 1 << 20 */ /* 1<<24 */
 #  endif
 #endif
 
