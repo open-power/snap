@@ -102,15 +102,8 @@ while [ -z "$SETUP_DONE" ]; do
     echo "ACTION_ROOT             is set to \"$ACTION_ROOT\""
   fi
 
-  if [ ! -d "$HDK_ROOT" ]; then
-    export HDK_ROOT=$FRAMEWORK_ROOT/cards/adku060_capi_1_1_release
-    echo "Setting HDK_ROOT               to \"$HDK_ROOT\""
-  else
-    echo "HDK_ROOT                is set to \"$HDK_ROOT\""
-  fi
-
   if [ -z "$FPGACARD" ]; then
-    export FPGACARD=FGT
+    export FPGACARD=KU3
     echo "Setting FPGACARD               to \"$FPGACARD\""
   else
     echo "FPGACARD                is set to \"$FPGACARD\""
@@ -123,8 +116,24 @@ while [ -z "$SETUP_DONE" ]; do
     echo "FPGACHIP                is set to \"$FPGACHIP\""
   fi
 
+  if [ ! -d "$HDK_ROOT" ]; then
+    if [ $FPGACARD = "KU3" ] 
+      export HDK_ROOT=$FRAMEWORK_ROOT/cards/adku060_capi_1_1_release
+    else 
+      export HDK_ROOT=$FRAMEWORK_ROOT/cards/flashgt_2016_3
+    fi 
+
+    echo "Setting HDK_ROOT               to \"$HDK_ROOT\""
+  else
+    echo "HDK_ROOT                is set to \"$HDK_ROOT\""
+  fi
+
   if [ ! -d "$DIMMTEST" ]; then
-    export DIMMTEST=$FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0
+    if [ $FPGACARD = "KU3" ] 
+      export DIMMTEST=$FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0
+    else 
+      export DIMMTEST=$FRAMEWORK_ROOT/cards/flashgt_dimm
+    fi 
     echo "Setting DIMMTEST               to \"$DIMMTEST\""
   else
     echo "DIMMTEST                is set to \"$DIMMTEST\""
