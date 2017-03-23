@@ -77,6 +77,7 @@ ARCHITECTURE job_manager OF job_manager IS
 
   --
   -- SIGNAL
+  SIGNAL ctx_workaround_q              : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
   SIGNAL grant_mmio_interface_q        : integer RANGE 0 TO NUM_OF_ACTION_TYPES-1;
   SIGNAL wait_lock_q                   : std_logic;
   SIGNAL lock_mmio_interface_q         : std_logic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
@@ -612,10 +613,16 @@ BEGIN
   BEGIN  -- PROCESS grant_mmio_access
     IF rising_edge(ha_pclock) THEN
       IF afu_reset = '1' THEN
+        ctx_workaround_q           <= (OTHERS => '0');
         grant_mmio_interface_q     <= 0;
         wait_lock_q                <= '1';
       ELSE
         sat_v := grant_mmio_interface_q;
+
+        ctx_workaround_q <= ctx_workaround_q;
+        IF (assign_grant_mmio_q(sat_v) = '1') THEN
+          ctx_workaround_q <= ctx_fifo_dout(sat_v);
+        END IF;
 
         wait_lock_q <= '0';
         IF (lock_mmio_interface_q(sat_v) OR wait_lock_q) = '0' THEN
@@ -736,5 +743,6 @@ BEGIN
   js_c_o.int_req <= int_req_q;
   js_c_o.int_src <= int_fifo_dout(INT_BITS-2 DOWNTO 0);
   js_c_o.int_ctx <= int_fifo_dout(CONTEXT_BITS + INT_BITS - 2 DOWNTO INT_BITS - 1);
+  js_c_o.ctx_workaround <= ctx_workaround_q;
 
 END ARCHITECTURE;

@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 --
--- Copyright 2016 International Business Machines
+-- Copyright 2016,2017 International Business Machines
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
 -- See the License for the specific language governing permissions AND
 -- limitations under the License.
 --
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+
 -- change log:
 -- 12/20/2016  R. Rieke removed fix for DMA overrun issue
 -- 03/15/2017  R. Rieke added support for interrupts and context id
-----------------------------------------------------------------------------
-----------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -188,7 +189,8 @@ axi_wr: process(ha_pclock)
                       sd_c_o.wr_addr    <= ks_d_i.S_AXI_AWADDR;
                       sd_c_o.wr_len     <= ks_d_i.S_AXI_AWLEN;
                       sd_c_o.wr_id      <= ks_d_i.S_AXI_AWID;
-                      sd_c_o.wr_ctx     <= ks_d_i.S_AXI_AWUSER;
+--                      sd_c_o.wr_ctx     <= ks_d_i.S_AXI_AWUSER;
+                      sd_c_o.wr_ctx     <= js_c_i.ctx_workaround;
                       sd_c_o.wr_req     <= '1';
                     end if;
 
@@ -248,7 +250,8 @@ axi_rd:   process(ha_pclock)
                       sd_c_o.rd_addr    <= ks_d_i.S_AXI_ARADDR;
                       sd_c_o.rd_len     <= ks_d_i.S_AXI_ARLEN;
                       sd_c_o.rd_id      <= ks_d_i.S_AXI_ARID;
-                      sd_c_o.rd_ctx     <= ks_d_i.S_AXI_ARUSER;
+--                      sd_c_o.rd_ctx     <= ks_d_i.S_AXI_ARUSER;
+                      sd_c_o.rd_ctx     <= js_c_i.ctx_workaround;
                       sd_c_o.rd_req     <= '1';
                     end if;
 
@@ -304,8 +307,8 @@ int_process:   process(ha_pclock)
               else
                 if js_c_i.int_req = '1' then
                   int_req_vec(0) <= '1';
-                  int_src_vec(0) <= std_logic_vector(js_c_i.int_src);
-                  int_ctx_vec(0) <= std_logic_vector(js_c_i.int_ctx);
+                  int_src_vec(0) <= js_c_i.int_src;
+                  int_ctx_vec(0) <= js_c_i.int_ctx;
                 end if;
                 if ks_d_i.int_req = '1' then
                   int_req_vec(1) <= '1';

@@ -828,6 +828,7 @@ PACKAGE donut_types IS
       int_req            : std_logic;
       int_src            : std_logic_vector(INT_BITS-2 DOWNTO 0);      -- the job manager only uses two of the seven interrupt source IDs
       int_ctx            : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+      ctx_workaround     : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
     END RECORD;
 
     --
