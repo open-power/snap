@@ -117,7 +117,7 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
   if [ ! -d "$HDK_ROOT" ]; then
-    if [ $FPGACARD = "KU3" ] 
+    if [ $FPGACARD = "KU3" ]; then
       export HDK_ROOT=$FRAMEWORK_ROOT/cards/adku060_capi_1_1_release
     else 
       export HDK_ROOT=$FRAMEWORK_ROOT/cards/flashgt_2016_3
@@ -129,7 +129,7 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
   if [ ! -d "$DIMMTEST" ]; then
-    if [ $FPGACARD = "KU3" ] 
+    if [ $FPGACARD = "KU3" ]; then 
       export DIMMTEST=$FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0
     else 
       export DIMMTEST=$FRAMEWORK_ROOT/cards/flashgt_dimm
