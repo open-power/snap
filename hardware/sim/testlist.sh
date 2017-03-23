@@ -21,15 +21,15 @@
     fi
     if [[ $done == "0" ]];then echo "exploration not done yet"
       action=$(echo $ACTION_ROOT|sed -e "s/action_examples\// /g"|awk '{print $2}');echo "ENV_action=$action"
-      if [[ $action == *"memcopy"* ]];then echo "testing memcopy in master mode"
-        t="$DONUT_ROOT/software/tools/stage2 -a1 -m -s1 -e2 -i1 -t100 -vv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
-        t="$DONUT_ROOT/software/tools/stage2 -a2 -m -A4096 -S0 -B1 -t30"                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-        t="$DONUT_ROOT/software/tools/stage2 -a2 -m -A4096 -S1 -B0 -t30"                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-        t="$DONUT_ROOT/software/tools/stage2 -a6 -m -A4096 -S0 -B1 -t30"                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-        t="$DONUT_ROOT/software/tools/stage2 -a6 -m -A4096 -S1 -B0 -t30"                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-        t="$DONUT_ROOT/software/tools/stage2_ddr -m -s0x1000 -e0x1100 -b0x100 -i1 -t200"        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-        t="$DONUT_ROOT/software/tools/stage2_set -m -H -b1 -s10 -p10 -t200"                     ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      fi
+#     if [[ $action == *"memcopy"* ]];then echo "testing memcopy in master mode"
+#       t="$DONUT_ROOT/software/tools/stage2 -a1 -m -s1 -e2 -i1 -t100 -vv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
+#       t="$DONUT_ROOT/software/tools/stage2 -a2 -m -A4096 -S0 -B1 -t30"                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#       t="$DONUT_ROOT/software/tools/stage2 -a2 -m -A4096 -S1 -B0 -t30"                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#       t="$DONUT_ROOT/software/tools/stage2 -a6 -m -A4096 -S0 -B1 -t30"                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#       t="$DONUT_ROOT/software/tools/stage2 -a6 -m -A4096 -S1 -B0 -t30"                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#       t="$DONUT_ROOT/software/tools/stage2_ddr -m -s0x1000 -e0x1100 -b0x100 -i1 -t200"        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#       t="$DONUT_ROOT/software/tools/stage2_set -m -H -b1 -s10 -p10 -t200"                     ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     fi
       echo "start exploration"
 #     t="$DONUT_ROOT/software/tools/snap_maint -h -V"                                           ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
 #     t="$DONUT_ROOT/software/tools/snap_maint"                                                 ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
