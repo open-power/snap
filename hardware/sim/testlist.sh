@@ -3,7 +3,7 @@
   set -e                                                # exit on error
   n=0                                                   # count amount of tests executed (exception for subsecond calls)
   loops=1;
-  export DNUT_TRACE=0xFF
+# export DNUT_TRACE=0xFF
   stimfile=$(basename "$0"); logfile="${stimfile%.*}.log"; ts0=$(date +%s); echo "executing $stimfile, logging $logfile maxloop=$loops";
   for((i=1;i<=loops;i++)) do l="loop=$i of $loops"; ts1=$(date +%s);                                                                                    #  sec
 #   t="$DONUT_ROOT/software/tools/dnut_peek -h"                                                 ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  1
@@ -104,31 +104,33 @@
       done
       done
       done
-      for num64 in 1 5 63 64;do         # 1..64
-      for align in 4096 1024 256 64; do # must be mult of 64
-      for num4k in 0 1 3 7; do          # 1=6sec, 7=20sec
-        t="$DONUT_ROOT/software/tools/stage2 -a6 -A${align} -S${num4k} -B${num64} -t200"        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      done
-      done
-      done
-      #### check DDR3 memory in KU3
-      t="$DONUT_ROOT/software/tools/stage2_ddr -h"                                              ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
-      for strt in 0x1000 0x2000;do      # start adr
-      for iter in 1 2 3;do              # number of blocks
-      for bsize in 64 0x1000; do        # block size
-        let end=${strt}+${iter}*${bsize}
-        t="$DONUT_ROOT/software/tools/stage2_ddr -s${strt} -e${end} -b${bsize} -i${iter} -t200" ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      done
-      done
-      done
-      #### use memset in host or in fpga memory
-      t="$DONUT_ROOT/software/tools/stage2_set -h"                                              ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
-      for beg in 0 1 11 63 64;do         # start adr
-      for size in 1 7 4097; do           # block size to copy
-        t="$DONUT_ROOT/software/tools/stage2_set -H -b${beg} -s${size} -p${size} -t200"         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-        t="$DONUT_ROOT/software/tools/stage2_set -F -b${beg} -s${size} -p${size} -t200"         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      done
-      done
+      if [[ "$DDR3_USED" == "TRUE" || "$DDR4_USED" == "TRUE" ]];then echo "testing DDR"
+        for num64 in 1 5 63 64;do         # 1..64
+        for align in 4096 1024 256 64; do # must be mult of 64
+        for num4k in 0 1 3 7; do          # 1=6sec, 7=20sec
+          t="$DONUT_ROOT/software/tools/stage2 -a6 -A${align} -S${num4k} -B${num64} -t200"      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+        done
+        done
+        done
+        #### check DDR3 memory in KU3,, stay under 512k for BRAM
+        t="$DONUT_ROOT/software/tools/stage2_ddr -h"                                            ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
+        for strt in 0x1000 0x2000;do      # start adr,
+        for iter in 1 2 3;do              # number of blocks
+        for bsize in 64 0x1000; do        # block size
+          let end=${strt}+${iter}*${bsize}
+          t="$DONUT_ROOT/software/tools/stage2_ddr -s${strt} -e${end} -b${bsize} -i${iter} -t200";echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+        done
+        done
+        done
+        #### use memset in host or in fpga memory, stay under 512k for BRAM
+        t="$DONUT_ROOT/software/tools/stage2_set -h"                                            ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
+        for beg in 0 1 11 63 64;do         # start adr
+        for size in 1 7 4097; do           # block size to copy
+          t="$DONUT_ROOT/software/tools/stage2_set -H -b${beg} -s${size} -p${size} -t200"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+          t="$DONUT_ROOT/software/tools/stage2_set -F -b${beg} -s${size} -p${size} -t200"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+        done
+        done
+      fi
     fi # memcopy
 
     if [[ $action == *"hls_mem"* || $action == *"hls_search"* ]];then echo "testing demo_memcopy"
