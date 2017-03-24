@@ -26,6 +26,10 @@ PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone
 
+ifndef HLS_WORKAROUND
+export HLS_WORKAROUND=TRUE
+endif
+
 ifndef BRAM_USED
 export BRAM_USED=FALSE
 endif
@@ -75,11 +79,11 @@ check_donut_settings:
 	@if [ -z $(DDR3_USED) ] || [ -z $(DDR4_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ]; then \
 		echo "Missing one or more environment  variables"; \
 		echo "Please check the following variable and source donut_settings before calling make!"; \
-		echo "DDR3_USED:     $(DDR3_USED)"; \
-		echo "DDR4_USED:     $(DDR4_USED)"; \
-		echo "ILA_DEBUG:     $(ILA_DEBUG)"; \
-		echo "NUM_OF_ACTION: $(NUM_OF_ACTIONS)"; \
-		echo "ACTION_ROOT:   $(ACTION_ROOT)"; \
+		echo "DDR3_USED:      $(DDR3_USED)"; \
+		echo "DDR4_USED:      $(DDR4_USED)"; \
+		echo "ILA_DEBUG:      $(ILA_DEBUG)"; \
+		echo "NUM_OF_ACTIONS: $(NUM_OF_ACTIONS)"; \
+		echo "ACTION_ROOT:    $(ACTION_ROOT)"; \
 		exit 1; \
 	fi
 
@@ -128,12 +132,12 @@ patch_vhd_files:
 	@echo "PATCH .vhd FILES" 
 	@#yet another Xilinx bug: the fileinfo.txt is not correct if DDR3=BRAM=FALSE!
 	@if [ $(DDR3_USED) = "TRUE" ] || [ $(DDR4_USED) = "TRUE" ] || [ $(BRAM_USED) = "TRUE" ]; then\
-		VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\///' | sed 's/\(^.*psl_accel_s\)yn.vhd/\1yn.vhd\n\1im.vhd/'`; \
+		VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\///'`; \
 		for vhd_file in $$VHD_FILES; do \
 			$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; \
 		done;\
 	else\
-		VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\/..\///' | sed 's/\(^.*psl_accel_s\)yn.vhd/\1yn.vhd\n\1im.vhd/'`; \
+		VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\/..\///'`; \
 		for vhd_file in $$VHD_FILES; do \
 			$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; \
 		done;\

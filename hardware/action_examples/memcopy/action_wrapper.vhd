@@ -57,10 +57,10 @@ ENTITY action_wrapper IS
   PORT (
     ap_clk                     : IN STD_LOGIC;
     ap_rst_n                   : IN STD_LOGIC;
-    int_req                    : out std_logic;
-    int_src                    : out std_logic_vector(INT_BITS -2 DOWNTO 0);
-    int_ctx                    : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
-    int_req_ack                : in std_logic;
+    interrupt                  : out std_logic;
+    interrupt_src              : out std_logic_vector(INT_BITS -2 DOWNTO 0);
+    interrupt_ctx              : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    interrupt_ack              : in std_logic;
     --                                                                                                 -- only for DDRI_USED=TRUE
     -- AXI DDR3 Interface                                                                              -- only for DDRI_USED=TRUE
     m_axi_card_mem0_araddr     : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );     -- only for DDRI_USED=TRUE
@@ -361,10 +361,10 @@ action_0: COMPONENT action_memcopy
   PORT MAP (
     action_clk                 => ap_clk,
     action_rst_n               => ap_rst_n,
-    int_req                    => int_req,
-    int_src                    => int_src,
-    int_ctx                    => int_ctx,
-    int_req_ack                => int_req_ack,
+    int_req                    => interrupt,
+    int_src                    => interrupt_src,
+    int_ctx                    => interrupt_ctx,
+    int_req_ack                => interrupt_ack,
     axi_card_mem0_araddr       => m_axi_card_mem0_araddr,                                -- only for DDRI_USED=TRUE
     axi_card_mem0_arburst      => m_axi_card_mem0_arburst,                               -- only for DDRI_USED=TRUE
     axi_card_mem0_arcache      => m_axi_card_mem0_arcache,                               -- only for DDRI_USED=TRUE

@@ -277,6 +277,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
       C_S_AXI_CTRL_REG_ADDR_WIDTH      : integer;
 
       -- Parameters for Axi Master Bus Interface AXI_HOST_MEM : to Host memory
+      INT_BITS                         : integer;
+      CONTEXT_BITS                     : integer;
       C_M_AXI_HOST_MEM_ID_WIDTH        : integer;
       C_M_AXI_HOST_MEM_ADDR_WIDTH      : integer;
       C_M_AXI_HOST_MEM_DATA_WIDTH      : integer;
@@ -284,18 +286,16 @@ ARCHITECTURE psl_accel OF psl_accel IS
       C_M_AXI_HOST_MEM_ARUSER_WIDTH    : integer;
       C_M_AXI_HOST_MEM_WUSER_WIDTH     : integer;
       C_M_AXI_HOST_MEM_RUSER_WIDTH     : integer;
-      C_M_AXI_HOST_MEM_BUSER_WIDTH     : integer;
-      INT_BITS                         : integer;
-      CONTEXT_BITS                     : integer
+      C_M_AXI_HOST_MEM_BUSER_WIDTH     : integer
     );
 
     PORT (
       ap_clk                     : IN STD_LOGIC;
       ap_rst_n                   : IN STD_LOGIC;
-      int_req_ack                : in STD_LOGIC;
-      int_req                    : out std_logic;
-      int_src                    : out std_logic_vector(INT_BITS-2 DOWNTO 0);
-      int_ctx                    : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);       
+      interrupt_ack              : in STD_LOGIC;
+      interrupt                  : out std_logic;
+      interrupt_src              : out std_logic_vector(INT_BITS-2 DOWNTO 0);
+      interrupt_ctx              : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);       
        
       --                                                                                                -- only for DDRI_USED=TRUE
       -- AXI SDRAM Interface                                                                            -- only for DDRI_USED=TRUE
@@ -986,6 +986,8 @@ BEGIN
       C_S_AXI_CTRL_REG_ADDR_WIDTH      => C_AXI_CTRL_REG_ADDR_WIDTH,
 
       -- Parameters for Axi Master Bus Interface AXI_HOST_MEM : to Host memory
+      INT_BITS                         => INT_BITS,           
+      CONTEXT_BITS                     => CONTEXT_BITS,
       C_M_AXI_HOST_MEM_ID_WIDTH        => C_AXI_HOST_MEM_ID_WIDTH,
       C_M_AXI_HOST_MEM_ADDR_WIDTH      => C_AXI_HOST_MEM_ADDR_WIDTH,
       C_M_AXI_HOST_MEM_DATA_WIDTH      => C_AXI_HOST_MEM_DATA_WIDTH,
@@ -993,17 +995,15 @@ BEGIN
       C_M_AXI_HOST_MEM_ARUSER_WIDTH    => C_AXI_HOST_MEM_ARUSER_WIDTH,
       C_M_AXI_HOST_MEM_WUSER_WIDTH     => C_AXI_HOST_MEM_WUSER_WIDTH,
       C_M_AXI_HOST_MEM_RUSER_WIDTH     => C_AXI_HOST_MEM_RUSER_WIDTH,
-      C_M_AXI_HOST_MEM_BUSER_WIDTH     => C_AXI_HOST_MEM_BUSER_WIDTH,
-      INT_BITS                         => INT_BITS,           
-      CONTEXT_BITS                     => CONTEXT_BITS
+      C_M_AXI_HOST_MEM_BUSER_WIDTH     => C_AXI_HOST_MEM_BUSER_WIDTH
     )
     PORT MAP (
       ap_clk                               => ha_pclock,
       ap_rst_n                             => action_reset_n_q,
-      int_req_ack                          => sk_d.int_req_ack,
-      int_req                              => ks_d.int_req, 
-      int_src                     	   => ks_d.int_src, 
-      int_ctx                     	   => ks_d.int_ctx, 
+      interrupt_ack                        => sk_d.int_req_ack,
+      interrupt                            => ks_d.int_req, 
+      interrupt_src                        => ks_d.int_src, 
+      interrupt_ctx                        => ks_d.int_ctx, 
       --                                                                                -- only for DDRI_USED=TRUE
       -- AXI SDRAM Interface                                                            -- only for DDRI_USED=TRUE
       m_axi_card_mem0_araddr               => axi_card_mem0_araddr,                     -- only for DDRI_USED=TRUE
