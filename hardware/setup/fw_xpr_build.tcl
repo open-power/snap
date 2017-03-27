@@ -17,6 +17,7 @@
 #-----------------------------------------------------------
 
 set msg_level    $::env(MSG_LEVEL)
+set fpgacard     $::env(FPGACARD)
 set ddr3_used    $::env(DDR3_USED)
 set ddr4_used    $::env(DDR4_USED)
 set bram_used    $::env(BRAM_USED)
@@ -61,18 +62,23 @@ file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_timing_summary_ro
 puts [format "%-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "[clock format [clock seconds] -format %H:%M:%S]"]
 set STREAM_NAME [exec cat ../.bitstream_name.txt]
 
-if { $ddr3_used == TRUE } {
-  if { $bram_used == TRUE } {
-    set FUNC_NAME DDR3_BRAM_KU3
+if { $fpgacard == "KU3" } {
+  if { $bram_used == "TRUE" } {
+    set FUNC_NAME _BRAM_KU3
+  } elseif { $ddr3_used == "TRUE" } {
+    set FUNC_NAME _DDR3_KU3
   } else {
-    set FUNC_NAME DDR3_KU3
+    set FUNC_NAME _KU3
   }
 }
-if { $ddr4_used == TRUE } {
-  if { $bram_used == TRUE } {
-    set FUNC_NAME DDR4_BRAM_FGT
+
+if { $fpgacard == "FGT" } {
+  if { $bram_used == "TRUE" } {
+    set FUNC_NAME _BRAM_FGT
+  } elseif { $ddr4_used == "TRUE" } {
+    set FUNC_NAME _DDR4_FGT
   } else {
-    set FUNC_NAME DDR4_FGT
+    set FUNC_NAME _FGT
   }
 }
 
