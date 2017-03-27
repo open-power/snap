@@ -91,9 +91,10 @@ copy $(BUILD_DIR)/Checkpoint/b_route_design.dcp:
 	@mkdir $(BUILD_DIR)/Images; 
 	@mkdir $(BUILD_DIR)/Checkpoint; 
 	@ln -s $(BUILD_DIR)/Checkpoint                       $(BUILD_DIR)/Checkpoints;
+	@ln -s $(BUILD_NAME)                                   build;
 	@ln -s $(DONUT_HARDWARE_ROOT)/setup/noHDK_build.tcl  $(BUILD_DIR)/noHDK_build.tcl; 
 	@ln -s $(DONUT_HARDWARE_ROOT)/setup/fw_xpr_build.tcl $(BUILD_DIR)/fw_xpr_build.tcl; 
-	@cp -ra $(PSL_DCP)                                   $(BUILD_DIR)/Checkpoint/; 
+	@cp -p $(PSL_DCP)                                    $(BUILD_DIR)/Checkpoint/; 
 	@if [ $(FPGACARD) = "KU3" ]; then ln -f -s $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga_ku3.vhd_source $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd_source; fi
 	@if [ $(FPGACARD) = "FGT" ]; then ln -f -s $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga_fgt.vhd_source $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd_source; fi
 
