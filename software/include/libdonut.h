@@ -355,7 +355,7 @@ struct dnut_kernel *dnut_kernel_attach_dev(const char *path,
 int dnut_kernel_start(struct dnut_kernel *kernel);
 
 int dnut_kernel_stop(struct dnut_kernel *kernel);
-int dnut_kernel_completed(struct dnut_kernel *kernel, int *rc);
+int dnut_kernel_completed(struct dnut_kernel *kernel, int irq, int *rc);
 
 /**
  * Synchronous way to send a job away. Blocks until job is done.

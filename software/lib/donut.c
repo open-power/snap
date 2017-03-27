@@ -75,7 +75,7 @@ struct dnut_data {
 	struct cxl_afu_h *afu_h;
 	bool master;		/* True if this is Master Device */
 	int cir;		/* Context id */
-	uint64_t action_base;
+	uint32_t action_base;
 	uint16_t vendor_id;
 	uint16_t device_id;
 	uint32_t action_type;	/* Action Type */
@@ -105,10 +105,6 @@ static unsigned int tget_ms(void)
 		(unsigned int)(now.tv_usec / 1000);
 	return tms;
 }
-
-/**********************************************************************
- * DIRECT CARD ACCESS
- *********************************************************************/
 
 static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 				    uint16_t device_id)
@@ -171,27 +167,25 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 
 	dnut_trace("  %s: errinfo_size: %d VendorID: %x DeviceID: %x\n", __func__,
 		(int)dn->errinfo_size, (int)vendor_id, (int)device_id);
-	dn->afu_h = afu_h;
-	dn->afu_fd = cxl_afu_fd(dn->afu_h);
-	rc = cxl_afu_attach(dn->afu_h, 0);
+	dn->afu_fd = cxl_afu_fd(afu_h);
+	rc = cxl_afu_attach(afu_h, 0);
 	if (0 != rc)
 		goto __dnut_alloc_err;
 
-	if (cxl_mmio_map(dn->afu_h, CXL_MMIO_BIG_ENDIAN) == -1) {
+	if (cxl_mmio_map(afu_h, CXL_MMIO_BIG_ENDIAN) == -1) {
 		dnut_trace("  %s: Error Can not mmap\n", __func__);
 		goto __dnut_alloc_err;
 	}
-	cxl_mmio_read64(afu_h, SNAP_S_CIR, &reg);
-	if (0x8000000000000000 & reg) {
-		dn->action_base = ACTION_BASE_M;
-		dn->master = true;
-	} else {
-		dn->action_base = ACTION_BASE_S;
-		dn->master = false;
-	}
-	dn->cir = (int)(reg & 0xffff);
 
-	dnut_trace("%s Exit OK Context: %d Master: %d\n", __func__, dn->cir, dn->master);
+	dn->action_base = 0;
+	cxl_mmio_read64(afu_h, SNAP_S_CIR, &reg);
+	if (0x8000000000000000 & reg)
+		dn->master = true;
+	else	dn->master = false;
+	dn->cir = (int)(reg & 0xffff);
+	dn->afu_h = afu_h;
+	dnut_trace("%s Exit %p OK Context: %d Master: %d\n", __func__,
+		dn, dn->cir, dn->master);
 	return (struct dnut_card *)dn;
 
  __dnut_alloc_err:
@@ -205,13 +199,14 @@ static void *hw_dnut_card_alloc_dev(const char *path, uint16_t vendor_id,
 	return NULL;
 }
 
-static int hw_dnut_mmio_write32(void *_card, uint64_t offset, uint32_t data)
+static int hw_dnut_mmio_write32(void *_card,
+		uint64_t offset, uint32_t data)
 {
 	int rc = -1;
 	struct dnut_data *card = (struct dnut_data *)_card;
 
 	if ((card) && (card->afu_h)) {
-		offset += card->action_base;
+		offset += (uint64_t)card->action_base;
 		reg_trace("  %s(%p, %llx, %lx)\n", __func__, _card,
 			(long long)offset, (long)data);
 		rc = cxl_mmio_write32(card->afu_h, offset, data);
@@ -220,13 +215,13 @@ static int hw_dnut_mmio_write32(void *_card, uint64_t offset, uint32_t data)
 }
 
 static int hw_dnut_mmio_read32(void *_card,
-			      uint64_t offset, uint32_t *data)
+		uint64_t offset, uint32_t *data)
 {
 	int rc = -1;
 	struct dnut_data *card = (struct dnut_data *)_card;
 
 	if ((card) && (card->afu_h)) {
-		offset += card->action_base;
+		offset += (uint64_t)card->action_base;
 		rc = cxl_mmio_read32(card->afu_h, offset, data);
 		reg_trace("  %s(%p, %llx, %lx) %d\n", __func__, _card,
 			(long long)offset, (long)*data, rc);
@@ -272,30 +267,37 @@ static void hw_dnut_card_free(void *_card)
 	}
 }
 
-static int __wait_for_irq(struct dnut_data *card)
+static int hw_wait_irq(void *_card, int irq)
 {
 	fd_set  set;
 	struct  timeval timeout;
 	int rc = 0;
 
-	FD_ZERO(&set);
-	FD_SET(card->afu_fd, &set);
-	timeout.tv_sec = 20;
-	timeout.tv_usec = 100 * 1000;
+	struct dnut_data *card = (struct dnut_data *)_card;
+	dnut_trace("  %s: Enter fd: %d irq: %d mode: 0x%x\n", __func__,
+		card->afu_fd, irq, card->mode);
 
-	dnut_trace("  %s: Enter fd: %d\n", __func__, card->afu_fd);
-	rc = select(card->afu_fd +1, &set, NULL, NULL, &timeout);
-	if (0 == rc)
-		rc = EBUSY;
-	else if ((rc == -1) && (errno == EINTR))
-		rc = EINTR;
-	else {
+	if (!cxl_event_pending(card->afu_h)) {
+		timeout.tv_sec = 20;
+		timeout.tv_usec = 100 * 1000;
+		FD_ZERO(&set);
+		FD_SET(card->afu_fd, &set);
+
+		rc = select(card->afu_fd +1, &set, NULL, NULL, &timeout);
+		if (0 == rc)
+			rc = EBUSY;
+		else if ((rc == -1) && (errno == EINTR))
+			rc = EINTR;
+		else rc = 0;
+	} else
+		dnut_trace("    Event is Pending ......\n");
+	if (0 == rc) {
 		rc = cxl_read_event(card->afu_h, &card->event);
 		//cxl_fprint_event(stdout, card->event);
 		switch (card->event.header.type) {
 		case CXL_EVENT_AFU_INTERRUPT:
-			dnut_trace("  %s: Got flags: %d irq: %d\n", __func__,
-				card->event.irq.flags, card->event.irq.irq);
+			dnut_trace("  %s:     Event flags: %d irq: %d (expect:%d)\n", __func__,
+				card->event.irq.flags, card->event.irq.irq, irq);
 			rc = 0;
 			break;
 		case CXL_EVENT_DATA_STORAGE:
@@ -323,13 +325,17 @@ static int hw_attach_action(void *_card, uint32_t action, int flags)
 	uint32_t sat = INVALID_SAT;	/* Invalid short Action type */
 	int maid;			/* Max Acition Id's */
 
-	dnut_trace("%s Enter for Action: 0x%x Card Action: 0x%x Flags: 0x%x\n", __func__,
-		action, card->action_type, flags);
+	dnut_trace("%s Enter Action: 0x%x Old Action: 0x%x Flags: 0x%x Base: 0x%x\n", __func__,
+		action, card->action_type, flags, card->action_base);
+	if (card->master) {
+		dnut_trace("%s Exit Error Master is not allowed to use  Action\n",  __func__);
+		return ENODEV;
+	}
 	if (action != card->action_type) {
-		/* Need to configure if not set */
 		hw_dnut_mmio_read64(card, SNAP_S_SSR, &data);
+		/* Check if configure Slave s done */
 		if (0x100 != (data & 0x100)) {
-			dnut_trace("%s Error need setup\n", __func__);
+			dnut_trace("%s Error AFU SLAVE need's setup\n", __func__);
 			return ENODEV;
 		}
 		maid = (int)(data & 0xf) + 1;	/* Max Actions */
@@ -342,7 +348,7 @@ static int hw_attach_action(void *_card, uint32_t action, int flags)
 			}
 		}
 		if (INVALID_SAT == sat) {
-			dnut_trace("%s Error Can not find Action\n",  __func__);
+			dnut_trace("%s Exit Error Can not find Action\n",  __func__);
 			return ENODEV;
 		}
 		card->mode = flags;		/* Get IRQ Flags bit 0,1,2 + 3 */
@@ -353,6 +359,7 @@ static int hw_attach_action(void *_card, uint32_t action, int flags)
 		data |= (card->sat << 12) | (card->mode & 0x07);	/* Short Action Type and Direct Access */
 		hw_dnut_mmio_write64(card, SNAP_S_CCR, data);
 		card->start_attach = true;
+		card->action_base = ACTION_BASE_S;
 	}
 
 	if (card->start_attach) {
@@ -361,15 +368,17 @@ static int hw_attach_action(void *_card, uint32_t action, int flags)
 		hw_dnut_mmio_write64(card, SNAP_S_JCR, data);
 	}
 
-	hw_dnut_mmio_read64(card, SNAP_S_CSR, &data);
-	if (0xC0 != (data & 0xC0)) {
-		if (SNAP_CCR_IRQ_ATTACH & card->mode)
-			rc = __wait_for_irq(card);
-		else	rc = EBUSY;
+	if (SNAP_CCR_IRQ_ATTACH & card->mode)
+		rc = hw_wait_irq(_card, 2);
+	else {
+		hw_dnut_mmio_read64(card, SNAP_S_CSR, &data);
+		if (0xC0 != (data & 0xC0))
+			rc = EBUSY;
 	}
 	if (0 == rc)
 		card->seq++;
-	dnut_trace("%s Exit OK\n", __func__);
+	dnut_trace("%s Exit %d Action Base: 0x%x\n", __func__,
+		rc, card->action_base);
 	return rc;
 }
 
@@ -554,15 +563,14 @@ int dnut_kernel_stop(struct dnut_kernel *kernel __unused)
 	return 0;
 }
 
-int dnut_kernel_completed(struct dnut_kernel *kernel, int *rc)
+int dnut_kernel_completed(struct dnut_kernel *kernel, int irq, int *rc)
 {
 	int _rc;
 	uint32_t action_data = 0;
 	struct dnut_card *card = (struct dnut_card *)kernel;
-	struct dnut_data *dd = (struct dnut_data *)kernel;
 
-	if (0x08 & dd->mode)	/* Check if Action can raise IRQ */
-		__wait_for_irq(dd);
+	if (0 != irq)
+		hw_wait_irq((void*)kernel, irq);
 	_rc = dnut_mmio_read32(card, ACTION_CONTROL, &action_data);
 	if (rc)
 		*rc = _rc;
@@ -684,7 +692,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 			o_now = t_now;
 		}
 
-		completed = dnut_kernel_completed(kernel, &rc);
+		completed = dnut_kernel_completed(kernel, 0, &rc);
 		if (completed || rc != 0)
 			break;
 

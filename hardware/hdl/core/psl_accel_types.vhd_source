@@ -18,13 +18,11 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 
-LIBRARY ieee;-- ibm, ibm_asic;
-USE ieee.std_logic_1164.ALL;
-USE ieee.numeric_std.ALL;
---USE ieee.std_logic_arith.ALL;
-USE work.std_ulogic_support.ALL;
-USE work.std_ulogic_function_support.ALL;
-USE work.std_ulogic_unsigned.ALL;
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+USE ieee.std_logic_misc.all;
+USE ieee.std_logic_unsigned.all;
+USE ieee.numeric_std.all;
 
 PACKAGE psl_accel_types IS
 
@@ -77,7 +75,8 @@ PACKAGE psl_accel_types IS
                                               
     CONSTANT C_DDR_AXI_ID_WIDTH     : integer  := 1;
     CONSTANT C_DDR_AXI_DATA_WIDTH   : integer  := 512;
-    CONSTANT C_DDR_AXI_ADDR_WIDTH   : integer  := 33;
+    CONSTANT C_DDR_AXI_ADDR_WIDTH   : integer  := 33;  -- only for DDR3_USED=TRUE
+    CONSTANT C_DDR_AXI_ADDR_WIDTH   : integer  := 32;  -- only for DDR3_USED!=TRUE
     CONSTANT C_DDR_AXI_AWUSER_WIDTH : integer  := 1;
     CONSTANT C_DDR_AXI_ARUSER_WIDTH : integer  := 1;
     CONSTANT C_DDR_AXI_WUSER_WIDTH  : integer  := 1;

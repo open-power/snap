@@ -51,6 +51,7 @@
  RNDMASK=0			# frequently change aggravator values with randmask.sh
  TCRC=0				# testcase RC
  SIM_INIT='' 			# default init value for simulator
+ EXPLORE=0 			# 1=do action exploration before starting application/list/xterm
 #set -u				# warn for uninitialized variables
 
 # ARGUMENTS #############
@@ -80,6 +81,7 @@
      -clean)		CLEAN=1;;	
      -keep)		CLEAN=0;;	
      -local)		LOCAL=1;;	
+     -explore)		EXPLORE=1;;
      -inject)		TCL_INJECT=1;;	
      -seed)		TCL_SEED="$2";shift;;	
      -rndmask)		RNDMASK=1;;
@@ -93,7 +95,7 @@
      -init0)		SIM_INIT='-ncinitialize 0';;
      -initx)		SIM_INIT='-ncinitialize x';;
      -h) 		echo "Usage: $0 -cdemx"
-		echo "  -app "pgm"   : single program (arguments should be passed with -arg)"
+		echo "  -app "pgm"   : single program (arguments can be passed with -arg)"
 		echo "  -list <file> : handwritten testlist with selected testcases"
 		echo "  -x | xterm   : open xterm for manual testcases(default)"
 		echo "  -t <text>    : title text for XTERM and simout_suffix"
@@ -101,6 +103,7 @@
 		echo "  -par <n>     : number of parallel runs (default=1)"
 		echo "  -tn <n>      : testnumber to run in selected test lists (parallel_echo,exec_*complist, ...)"
 		echo "  -arg '-x y'  : passing additional args to test pgm (-i 1, -R, -vvv ...)"
+		echo "  -explore     : do action exploration before running application/list/xterm"
 		echo "  -aet|-noaet  : generate waveform during simulation (default)"
 		echo "  -clean|-keep : remove succesful simout directories after run (default=keep)"
 		echo "  -local       : create simout directory locally under /data (default=AFS)"
@@ -317,6 +320,10 @@
    set -o pipefail 						# highest RC in pipe, if set -o pipefail
    randnum=$((RANDOM%1));
    echo "**** run $PAR $TST_NAME app(s) timeout=${DDCB_TIMEOUT} seed=${TCL_SEED} randnum=$randnum tst_arg=$TST_ARG"|tee stim.log
+   if [ "$EXPLORE" == "1" ];then
+     echo "explore actions"|tee -a $STIMLOG
+     $DONUT_SOFTWARE_ROOT/tools/snap_maint 2>&1 |tee -a $STIMLOG
+   fi
    for i in `seq 1 $PAR`;do					# start testcase
      prc[$i]=0
      if [ "$PAR" == "1" ];then STIMLOG="stim.log";else STIMLOG="stim${i}.log";fi

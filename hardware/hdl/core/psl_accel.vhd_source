@@ -19,11 +19,11 @@
 ----------------------------------------------------------------------------
 
   LIBRARY ieee;
-  USE ieee.std_logic_1164.ALL;
-  USE work.std_ulogic_function_support.ALL;
-  USE work.std_ulogic_support.ALL;
-  USE work.std_ulogic_unsigned.ALL;
-  
+  USE ieee.std_logic_1164.all;
+  USE ieee.std_logic_misc.all;
+  USE ieee.std_logic_unsigned.all;
+  USE ieee.numeric_std.all;
+
   USE work.psl_accel_types.ALL;
   USE work.donut_types.ALL;
   
@@ -35,15 +35,15 @@ ENTITY psl_accel IS
   GENERIC (
     BRAM_USED  : BOOLEAN := FALSE;
 
-    -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory	        -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_ID_WIDTH       : integer   := C_DDR_AXI_ID_WIDTH;  		        -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_ADDR_WIDTH     : integer   := C_DDR_AXI_ADDR_WIDTH;	                -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_DATA_WIDTH     : integer   := C_DDR_AXI_DATA_WIDTH;	                -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_AWUSER_WIDTH   : integer   := C_DDR_AXI_AWUSER_WIDTH;               -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_ARUSER_WIDTH   : integer   := C_DDR_AXI_ARUSER_WIDTH;	        -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_WUSER_WIDTH    : integer   := C_DDR_AXI_WUSER_WIDTH;	        -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_RUSER_WIDTH    : integer   := C_DDR_AXI_RUSER_WIDTH;                -- only for DDR3_USED=TRUE
-    C_AXI_CARD_MEM0_BUSER_WIDTH    : integer   := C_DDR_AXI_BUSER_WIDTH;                -- only for DDR3_USED=TRUE   
+    -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory
+    C_AXI_CARD_MEM0_ID_WIDTH       : integer   := C_DDR_AXI_ID_WIDTH;
+    C_AXI_CARD_MEM0_ADDR_WIDTH     : integer   := C_DDR_AXI_ADDR_WIDTH;
+    C_AXI_CARD_MEM0_DATA_WIDTH     : integer   := C_DDR_AXI_DATA_WIDTH;
+    C_AXI_CARD_MEM0_AWUSER_WIDTH   : integer   := C_DDR_AXI_AWUSER_WIDTH;
+    C_AXI_CARD_MEM0_ARUSER_WIDTH   : integer   := C_DDR_AXI_ARUSER_WIDTH;
+    C_AXI_CARD_MEM0_WUSER_WIDTH    : integer   := C_DDR_AXI_WUSER_WIDTH;
+    C_AXI_CARD_MEM0_RUSER_WIDTH    : integer   := C_DDR_AXI_RUSER_WIDTH;
+    C_AXI_CARD_MEM0_BUSER_WIDTH    : integer   := C_DDR_AXI_BUSER_WIDTH;
 
     -- Parameters for Axi Slave Bus Interface AXI_CTRL_REG
     C_AXI_CTRL_REG_DATA_WIDTH      : integer   := C_REG_DATA_WIDTH;
@@ -61,75 +61,75 @@ ENTITY psl_accel IS
   );
   PORT(
     -- Accelerator Command Interface
-    ah_cvalid                          : OUT   STD_ULOGIC;  -- A valid command is present
-    ah_ctag                            : OUT   STD_ULOGIC_VECTOR(0 TO 7);  -- request id
-    ah_com                             : OUT   STD_ULOGIC_VECTOR(0 TO 12);  -- command PSL will execute
-    ah_cpad                            : OUT   STD_ULOGIC_VECTOR(0 TO 2);  -- prefetch attributes
-    ah_cabt                            : OUT   STD_ULOGIC_VECTOR(0 TO 2);  -- abort if translation intr is generated
-    ah_cea                             : OUT   STD_ULOGIC_VECTOR(0 TO 63);  -- Effective byte address for command
-    ah_cch                             : OUT   STD_ULOGIC_VECTOR(0 TO 15);  -- Context Handle
-    ah_csize                           : OUT   STD_ULOGIC_VECTOR(0 TO 11);  -- Number of bytes
-    ha_croom                           : IN    STD_ULOGIC_VECTOR(0 TO 7);  -- Commands PSL is prepared to accept
+    ah_cvalid                          : OUT   STD_LOGIC;  -- A valid command is present
+    ah_ctag                            : OUT   STD_LOGIC_VECTOR(0 TO 7);  -- request id
+    ah_com                             : OUT   STD_LOGIC_VECTOR(0 TO 12);  -- command PSL will execute
+    ah_cpad                            : OUT   STD_LOGIC_VECTOR(0 TO 2);  -- prefetch attributes
+    ah_cabt                            : OUT   STD_LOGIC_VECTOR(0 TO 2);  -- abort if translation intr is generated
+    ah_cea                             : OUT   STD_LOGIC_VECTOR(0 TO 63);  -- Effective byte address for command
+    ah_cch                             : OUT   STD_LOGIC_VECTOR(0 TO 15);  -- Context Handle
+    ah_csize                           : OUT   STD_LOGIC_VECTOR(0 TO 11);  -- Number of bytes
+    ha_croom                           : IN    STD_LOGIC_VECTOR(0 TO 7);  -- Commands PSL is prepared to accept
 
     -- command parity
-    ah_ctagpar                         : OUT   STD_ULOGIC;
-    ah_compar                          : OUT   STD_ULOGIC;
-    ah_ceapar                          : OUT   STD_ULOGIC;
+    ah_ctagpar                         : OUT   STD_LOGIC;
+    ah_compar                          : OUT   STD_LOGIC;
+    ah_ceapar                          : OUT   STD_LOGIC;
 
     -- Accelerator Buffer Interfaces
-    ha_brvalid                         : IN    STD_ULOGIC;  -- A read transfer is present
-    ha_brtag                           : IN    STD_ULOGIC_VECTOR(0 TO 7);  -- Accelerator generated ID for read
-    ha_brad                            : IN    STD_ULOGIC_VECTOR(0 TO 5);  -- half line index of read data
-    ah_brlat                           : OUT   STD_ULOGIC_VECTOR(0 TO 3);  -- Read data ready latency
-    ah_brdata                          : OUT   STD_ULOGIC_VECTOR(0 TO 511);  -- Read data
-    ah_brpar                           : OUT   STD_ULOGIC_VECTOR(0 TO 7);  -- Read data parity
-    ha_bwvalid                         : IN    STD_ULOGIC;  -- A write data transfer is present
-    ha_bwtag                           : IN    STD_ULOGIC_VECTOR(0 TO 7);  -- Accelerator ID of the write
-    ha_bwad                            : IN    STD_ULOGIC_VECTOR(0 TO 5);  -- half line index of write data
-    ha_bwdata                          : IN    STD_ULOGIC_VECTOR(0 TO 511);  -- Write data
-    ha_bwpar                           : IN    STD_ULOGIC_VECTOR(0 TO 7);  -- Write data parity
+    ha_brvalid                         : IN    STD_LOGIC;  -- A read transfer is present
+    ha_brtag                           : IN    STD_LOGIC_VECTOR(0 TO 7);  -- Accelerator generated ID for read
+    ha_brad                            : IN    STD_LOGIC_VECTOR(0 TO 5);  -- half line index of read data
+    ah_brlat                           : OUT   STD_LOGIC_VECTOR(0 TO 3);  -- Read data ready latency
+    ah_brdata                          : OUT   STD_LOGIC_VECTOR(0 TO 511);  -- Read data
+    ah_brpar                           : OUT   STD_LOGIC_VECTOR(0 TO 7);  -- Read data parity
+    ha_bwvalid                         : IN    STD_LOGIC;  -- A write data transfer is present
+    ha_bwtag                           : IN    STD_LOGIC_VECTOR(0 TO 7);  -- Accelerator ID of the write
+    ha_bwad                            : IN    STD_LOGIC_VECTOR(0 TO 5);  -- half line index of write data
+    ha_bwdata                          : IN    STD_LOGIC_VECTOR(0 TO 511);  -- Write data
+    ha_bwpar                           : IN    STD_LOGIC_VECTOR(0 TO 7);  -- Write data parity
 
     -- buffer tag parity
-    ha_brtagpar                        : IN    STD_ULOGIC;
-    ha_bwtagpar                        : IN    STD_ULOGIC;
+    ha_brtagpar                        : IN    STD_LOGIC;
+    ha_bwtagpar                        : IN    STD_LOGIC;
 
     -- PSL Response Interface
-    ha_rvalid                          : IN    STD_ULOGIC;  --A response is present
-    ha_rtag                            : IN    STD_ULOGIC_VECTOR(0 TO 7);  --Accelerator generated request ID
-    ha_response                        : IN    STD_ULOGIC_VECTOR(0 TO 7);  --response code
-    ha_rcredits                        : IN    STD_ULOGIC_VECTOR(0 TO 8);  --twos compliment number of credits
-    ha_rcachestate                     : IN    STD_ULOGIC_VECTOR(0 TO 1);  --Resultant Cache State
-    ha_rcachepos                       : IN    STD_ULOGIC_VECTOR(0 TO 12);  --Cache location id
-    ha_rtagpar                         : IN    STD_ULOGIC;
+    ha_rvalid                          : IN    STD_LOGIC;  --A response is present
+    ha_rtag                            : IN    STD_LOGIC_VECTOR(0 TO 7);  --Accelerator generated request ID
+    ha_response                        : IN    STD_LOGIC_VECTOR(0 TO 7);  --response code
+    ha_rcredits                        : IN    STD_LOGIC_VECTOR(0 TO 8);  --twos compliment number of credits
+    ha_rcachestate                     : IN    STD_LOGIC_VECTOR(0 TO 1);  --Resultant Cache State
+    ha_rcachepos                       : IN    STD_LOGIC_VECTOR(0 TO 12);  --Cache location id
+    ha_rtagpar                         : IN    STD_LOGIC;
 
     -- MMIO Interface
-    ha_mmval                           : IN    STD_ULOGIC;  -- A valid MMIO is present
-    ha_mmrnw                           : IN    STD_ULOGIC;  -- 1 = read, 0 = write
-    ha_mmdw                            : IN    STD_ULOGIC;  -- 1 = doubleword, 0 = word
-    ha_mmad                            : IN    STD_ULOGIC_VECTOR(0 TO 23);  -- mmio address
-    ha_mmdata                          : IN    STD_ULOGIC_VECTOR(0 TO 63);  -- Write data
-    ha_mmcfg                           : IN    STD_ULOGIC;  -- mmio is to afu descriptor space
-    ah_mmack                           : OUT   STD_ULOGIC;  -- Write is complete or Read is valid pulse
-    ah_mmdata                          : OUT   STD_ULOGIC_VECTOR(0 TO 63);  -- Read data
+    ha_mmval                           : IN    STD_LOGIC;  -- A valid MMIO is present
+    ha_mmrnw                           : IN    STD_LOGIC;  -- 1 = read, 0 = write
+    ha_mmdw                            : IN    STD_LOGIC;  -- 1 = doubleword, 0 = word
+    ha_mmad                            : IN    STD_LOGIC_VECTOR(0 TO 23);  -- mmio address
+    ha_mmdata                          : IN    STD_LOGIC_VECTOR(0 TO 63);  -- Write data
+    ha_mmcfg                           : IN    STD_LOGIC;  -- mmio is to afu descriptor space
+    ah_mmack                           : OUT   STD_LOGIC;  -- Write is complete or Read is valid pulse
+    ah_mmdata                          : OUT   STD_LOGIC_VECTOR(0 TO 63);  -- Read data
 
     -- mmio parity
-    ha_mmadpar                         : IN    STD_ULOGIC;
-    ha_mmdatapar                       : IN    STD_ULOGIC;
-    ah_mmdatapar                       : OUT   STD_ULOGIC;
+    ha_mmadpar                         : IN    STD_LOGIC;
+    ha_mmdatapar                       : IN    STD_LOGIC;
+    ah_mmdatapar                       : OUT   STD_LOGIC;
 
     -- Accelerator Control Interface
-    ha_jval                            : IN    STD_ULOGIC;  -- A valid job control command is present
-    ha_jcom                            : IN    STD_ULOGIC_VECTOR(0 TO 7);  -- Job control command opcode
-    ha_jea                             : IN    STD_ULOGIC_VECTOR(0 TO 63);  -- Save/Restore address
-    ah_jrunning                        : OUT   STD_ULOGIC;  -- Accelerator is running level
-    ah_jdone                           : OUT   STD_ULOGIC;  -- Accelerator is finished pulse
-    ah_jcack                           : OUT   STD_ULOGIC;  -- Accelerator is with context llcmd pulse
-    ah_jerror                          : OUT   STD_ULOGIC_VECTOR(0 TO 63);  -- Accelerator error code. 0 = success
-    ah_tbreq                           : OUT   STD_ULOGIC;  -- Timebase request pulse
-    ah_jyield                          : OUT   STD_ULOGIC;  -- Accelerator wants to stop
-    ha_jeapar                          : IN    STD_ULOGIC;
-    ha_jcompar                         : IN    STD_ULOGIC;
-    ah_paren                           : OUT   STD_ULOGIC;
+    ha_jval                            : IN    STD_LOGIC;  -- A valid job control command is present
+    ha_jcom                            : IN    STD_LOGIC_VECTOR(0 TO 7);  -- Job control command opcode
+    ha_jea                             : IN    STD_LOGIC_VECTOR(0 TO 63);  -- Save/Restore address
+    ah_jrunning                        : OUT   STD_LOGIC;  -- Accelerator is running level
+    ah_jdone                           : OUT   STD_LOGIC;  -- Accelerator is finished pulse
+    ah_jcack                           : OUT   STD_LOGIC;  -- Accelerator is with context llcmd pulse
+    ah_jerror                          : OUT   STD_LOGIC_VECTOR(0 TO 63);  -- Accelerator error code. 0 = success
+    ah_tbreq                           : OUT   STD_LOGIC;  -- Timebase request pulse
+    ah_jyield                          : OUT   STD_LOGIC;  -- Accelerator wants to stop
+    ha_jeapar                          : IN    STD_LOGIC;
+    ha_jcompar                         : IN    STD_LOGIC;
+    ah_paren                           : OUT   STD_LOGIC;
 
     -- DDR3 SDRAM Interface
     c1_sys_clk_p                       : IN    STD_LOGIC;                               -- only for DDR3_USED=TRUE
@@ -171,11 +171,11 @@ ENTITY psl_accel IS
 -- TODO:    c0_ddr4_ten                        : OUT   STD_LOGIC;                       -- only for DDR4_USED=TRUE
 
     -- Clock inputs for SDRAM
-    refclk200_p                        : IN    STD_LOGIC;                               -- only for DDRI_USED=TRUE
-    refclk200_n                        : IN    STD_LOGIC;                               -- only for DDRI_USED=TRUE
+    refclk_sdram_p                     : IN    STD_LOGIC;                               -- only for DDRI_USED=TRUE
+    refclk_sdram_n                     : IN    STD_LOGIC;                               -- only for DDRI_USED=TRUE
 
     -- Host Clock input
-    ha_pclock                          : IN    STD_ULOGIC
+    ha_pclock                          : IN    STD_LOGIC
   );
 END psl_accel;
 
@@ -186,66 +186,66 @@ ARCHITECTURE psl_accel OF psl_accel IS
   --
   COMPONENT donut
     PORT (
-      ah_cvalid                : OUT STD_ULOGIC;
-      ah_ctag                  : OUT STD_ULOGIC_VECTOR(0 TO 7);
-      ah_com                   : OUT STD_ULOGIC_VECTOR(0 TO 12);
-      ah_cabt                  : OUT STD_ULOGIC_VECTOR(0 TO 2);
-      ah_cea                   : OUT STD_ULOGIC_VECTOR(0 TO 63);
-      ah_cch                   : OUT STD_ULOGIC_VECTOR(0 TO 15);
-      ah_csize                 : OUT STD_ULOGIC_VECTOR(0 TO 11);
-      ha_croom                 : IN  STD_ULOGIC_VECTOR(0 TO 7);
-      ah_ctagpar               : OUT STD_ULOGIC;
-      ah_compar                : OUT STD_ULOGIC;
-      ah_ceapar                : OUT STD_ULOGIC;
-      ha_brvalid               : IN  STD_ULOGIC;
-      ha_brtag                 : IN  STD_ULOGIC_VECTOR(0 TO 7);
-      ha_brad                  : IN  STD_ULOGIC_VECTOR(0 TO 5);
-      ah_brlat                 : OUT STD_ULOGIC_VECTOR(0 TO 3);
-      ah_brdata                : OUT STD_ULOGIC_VECTOR(0 TO 511);
-      ah_brpar                 : OUT STD_ULOGIC_VECTOR(0 TO 7);
-      ha_bwvalid               : IN  STD_ULOGIC;
-      ha_bwtag                 : IN  STD_ULOGIC_VECTOR(0 TO 7);
-      ha_bwad                  : IN  STD_ULOGIC_VECTOR(0 TO 5);
-      ha_bwdata                : IN  STD_ULOGIC_VECTOR(0 TO 511);
-      ha_bwpar                 : IN  STD_ULOGIC_VECTOR(0 TO 7);
-      ha_brtagpar              : IN  STD_ULOGIC;
-      ha_bwtagpar              : IN  STD_ULOGIC;
-      ha_rvalid                : IN  STD_ULOGIC;
-      ha_rtag                  : IN  STD_ULOGIC_VECTOR(0 TO 7);
-      ha_response              : IN  STD_ULOGIC_VECTOR(0 TO 7);
-      ha_rcredits              : IN  STD_ULOGIC_VECTOR(0 TO 8);
-      ha_rcachestate           : IN  STD_ULOGIC_VECTOR(0 TO 1);
-      ha_rcachepos             : IN  STD_ULOGIC_VECTOR(0 TO 12);
-      ha_rtagpar               : IN  STD_ULOGIC;
-      ha_mmval                 : IN  STD_ULOGIC;
-      ha_mmrnw                 : IN  STD_ULOGIC;
-      ha_mmdw                  : IN  STD_ULOGIC;
-      ha_mmad                  : IN  STD_ULOGIC_VECTOR(0 TO 23);
-      ha_mmdata                : IN  STD_ULOGIC_VECTOR(0 TO 63);
-      ha_mmcfg                 : IN  STD_ULOGIC;
-      ah_mmack                 : OUT STD_ULOGIC;
-      ah_mmdata                : OUT STD_ULOGIC_VECTOR(0 TO 63);
-      ha_mmadpar               : IN  STD_ULOGIC;
-      ha_mmdatapar             : IN  STD_ULOGIC;
-      ah_mmdatapar             : OUT STD_ULOGIC;
-      ha_jval                  : IN  STD_ULOGIC;
-      ha_jcom                  : IN  STD_ULOGIC_VECTOR(0 TO 7);
-      ha_jea                   : IN  STD_ULOGIC_VECTOR(0 TO 63);
-      ah_jrunning              : OUT STD_ULOGIC;
-      ah_jdone                 : OUT STD_ULOGIC;
-      ah_jcack                 : OUT STD_ULOGIC;
-      ah_jerror                : OUT STD_ULOGIC_VECTOR(0 TO 63);
-      ah_tbreq                 : OUT STD_ULOGIC;
-      ah_jyield                : OUT STD_ULOGIC;
-      ha_jeapar                : IN  STD_ULOGIC;
-      ha_jcompar               : IN  STD_ULOGIC;
-      ah_paren                 : OUT STD_ULOGIC;
-      ha_pclock                : IN  STD_ULOGIC;
+      ah_cvalid                : OUT STD_LOGIC;
+      ah_ctag                  : OUT STD_LOGIC_VECTOR(0 TO 7);
+      ah_com                   : OUT STD_LOGIC_VECTOR(0 TO 12);
+      ah_cabt                  : OUT STD_LOGIC_VECTOR(0 TO 2);
+      ah_cea                   : OUT STD_LOGIC_VECTOR(0 TO 63);
+      ah_cch                   : OUT STD_LOGIC_VECTOR(0 TO 15);
+      ah_csize                 : OUT STD_LOGIC_VECTOR(0 TO 11);
+      ha_croom                 : IN  STD_LOGIC_VECTOR(0 TO 7);
+      ah_ctagpar               : OUT STD_LOGIC;
+      ah_compar                : OUT STD_LOGIC;
+      ah_ceapar                : OUT STD_LOGIC;
+      ha_brvalid               : IN  STD_LOGIC;
+      ha_brtag                 : IN  STD_LOGIC_VECTOR(0 TO 7);
+      ha_brad                  : IN  STD_LOGIC_VECTOR(0 TO 5);
+      ah_brlat                 : OUT STD_LOGIC_VECTOR(0 TO 3);
+      ah_brdata                : OUT STD_LOGIC_VECTOR(0 TO 511);
+      ah_brpar                 : OUT STD_LOGIC_VECTOR(0 TO 7);
+      ha_bwvalid               : IN  STD_LOGIC;
+      ha_bwtag                 : IN  STD_LOGIC_VECTOR(0 TO 7);
+      ha_bwad                  : IN  STD_LOGIC_VECTOR(0 TO 5);
+      ha_bwdata                : IN  STD_LOGIC_VECTOR(0 TO 511);
+      ha_bwpar                 : IN  STD_LOGIC_VECTOR(0 TO 7);
+      ha_brtagpar              : IN  STD_LOGIC;
+      ha_bwtagpar              : IN  STD_LOGIC;
+      ha_rvalid                : IN  STD_LOGIC;
+      ha_rtag                  : IN  STD_LOGIC_VECTOR(0 TO 7);
+      ha_response              : IN  STD_LOGIC_VECTOR(0 TO 7);
+      ha_rcredits              : IN  STD_LOGIC_VECTOR(0 TO 8);
+      ha_rcachestate           : IN  STD_LOGIC_VECTOR(0 TO 1);
+      ha_rcachepos             : IN  STD_LOGIC_VECTOR(0 TO 12);
+      ha_rtagpar               : IN  STD_LOGIC;
+      ha_mmval                 : IN  STD_LOGIC;
+      ha_mmrnw                 : IN  STD_LOGIC;
+      ha_mmdw                  : IN  STD_LOGIC;
+      ha_mmad                  : IN  STD_LOGIC_VECTOR(0 TO 23);
+      ha_mmdata                : IN  STD_LOGIC_VECTOR(0 TO 63);
+      ha_mmcfg                 : IN  STD_LOGIC;
+      ah_mmack                 : OUT STD_LOGIC;
+      ah_mmdata                : OUT STD_LOGIC_VECTOR(0 TO 63);
+      ha_mmadpar               : IN  STD_LOGIC;
+      ha_mmdatapar             : IN  STD_LOGIC;
+      ah_mmdatapar             : OUT STD_LOGIC;
+      ha_jval                  : IN  STD_LOGIC;
+      ha_jcom                  : IN  STD_LOGIC_VECTOR(0 TO 7);
+      ha_jea                   : IN  STD_LOGIC_VECTOR(0 TO 63);
+      ah_jrunning              : OUT STD_LOGIC;
+      ah_jdone                 : OUT STD_LOGIC;
+      ah_jcack                 : OUT STD_LOGIC;
+      ah_jerror                : OUT STD_LOGIC_VECTOR(0 TO 63);
+      ah_tbreq                 : OUT STD_LOGIC;
+      ah_jyield                : OUT STD_LOGIC;
+      ha_jeapar                : IN  STD_LOGIC;
+      ha_jcompar               : IN  STD_LOGIC;
+      ah_paren                 : OUT STD_LOGIC;
+      ha_pclock                : IN  STD_LOGIC;
       --
       -- ACTION Interface
       --
       -- misc
-      action_reset             : OUT STD_ULOGIC;
+      action_reset             : OUT STD_LOGIC;
       --
       -- Kernel AXI Master Interface
       xk_d_o                   : OUT XK_D_T;
@@ -277,6 +277,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
       C_S_AXI_CTRL_REG_ADDR_WIDTH      : integer;
 
       -- Parameters for Axi Master Bus Interface AXI_HOST_MEM : to Host memory
+      INT_BITS                         : integer;
+      CONTEXT_BITS                     : integer;
       C_M_AXI_HOST_MEM_ID_WIDTH        : integer;
       C_M_AXI_HOST_MEM_ADDR_WIDTH      : integer;
       C_M_AXI_HOST_MEM_DATA_WIDTH      : integer;
@@ -284,18 +286,16 @@ ARCHITECTURE psl_accel OF psl_accel IS
       C_M_AXI_HOST_MEM_ARUSER_WIDTH    : integer;
       C_M_AXI_HOST_MEM_WUSER_WIDTH     : integer;
       C_M_AXI_HOST_MEM_RUSER_WIDTH     : integer;
-      C_M_AXI_HOST_MEM_BUSER_WIDTH     : integer;
-      INT_BITS                         : integer;
-      CONTEXT_BITS                     : integer
+      C_M_AXI_HOST_MEM_BUSER_WIDTH     : integer
     );
 
     PORT (
       ap_clk                     : IN STD_LOGIC;
       ap_rst_n                   : IN STD_LOGIC;
-      int_req_ack                : in STD_LOGIC;
-      int_req                    : out std_logic;
-      int_src                    : out std_logic_vector(INT_BITS-2 DOWNTO 0);
-      int_ctx                    : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);       
+      interrupt_ack              : in STD_LOGIC;
+      interrupt                  : out std_logic;
+      interrupt_src              : out std_logic_vector(INT_BITS-2 DOWNTO 0);
+      interrupt_ctx              : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);       
        
       --                                                                                                -- only for DDRI_USED=TRUE
       -- AXI SDRAM Interface                                                                            -- only for DDRI_USED=TRUE
@@ -711,19 +711,19 @@ ARCHITECTURE psl_accel OF psl_accel IS
   --
   -- SIGNALS
   --
-  SIGNAL action_reset               : STD_ULOGIC;
-  SIGNAL action_reset_n_q           : STD_ULOGIC;
-  SIGNAL action_reset_q             : STD_ULOGIC;
-  SIGNAL action_reset_qq            : STD_ULOGIC;
+  SIGNAL action_reset               : STD_LOGIC;
+  SIGNAL action_reset_n_q           : STD_LOGIC;
+  SIGNAL action_reset_q             : STD_LOGIC;
+  SIGNAL action_reset_qq            : STD_LOGIC;
   SIGNAL xk_d                       : XK_D_T;
   SIGNAL kx_d                       : KX_D_T;
   SIGNAL sk_d                       : SK_D_T;
   SIGNAL ks_d                       : KS_D_T;
 
-  SIGNAL sdram_axi_clk              : STD_ULOGIC;                                                           -- only for DDRI_USED=TRUE
-  SIGNAL sdram_axi_rst_n            : STD_ULOGIC;                                                           -- only for DDRI_USED=TRUE
-  SIGNAL sdram_reset_q              : STD_ULOGIC;                                                           -- only for DDRI_USED=TRUE
-  SIGNAL sdram_reset_n_q            : STD_ULOGIC;                                                           -- only for DDRI_USED=TRUE
+  SIGNAL sdram_axi_clk              : STD_LOGIC;                                                           -- only for DDRI_USED=TRUE
+  SIGNAL sdram_axi_rst_n            : STD_LOGIC;                                                           -- only for DDRI_USED=TRUE
+  SIGNAL sdram_reset_q              : STD_LOGIC;                                                           -- only for DDRI_USED=TRUE
+  SIGNAL sdram_reset_n_q            : STD_LOGIC;                                                           -- only for DDRI_USED=TRUE
   SIGNAL sdram_reset_m              : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
 
   --                                                                                                        -- only for DDRI_USED=TRUE
@@ -832,8 +832,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL sdram_axi_ctrl_rdata       : STD_LOGIC_VECTOR(31 DOWNTO 0);                                        -- only for DDRI_USED=TRUE
   SIGNAL sdram_axi_ctrl_rresp       : STD_LOGIC_VECTOR(1 DOWNTO 0);                                         -- only for DDRI_USED=TRUE
   SIGNAL sdram_interrupt            : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL refclk200_ibuf             : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
-  SIGNAL refclk200_bufg             : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL refclk_sdram_ibuf          : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
+  SIGNAL refclk_sdram_bufg          : STD_LOGIC;                                                            -- only for DDRI_USED=TRUE
 
   --                                                                                                        -- only for DDR4_USED=TRUE
   -- DDR4 SDRAM Interface                                                                                   -- only for DDR4_USED=TRUE
@@ -850,9 +850,9 @@ BEGIN
     END IF;
   END PROCESS action_reset_reg;
 
-  sdram_reset : PROCESS (refclk200_bufg)                                                -- only for DDRI_USED=TRUE
+  sdram_reset : PROCESS (refclk_sdram_bufg)                                             -- only for DDRI_USED=TRUE
   BEGIN  -- PROCESS                                                                     -- only for DDRI_USED=TRUE
-    IF (rising_edge(refclk200_bufg)) THEN                                               -- only for DDRI_USED=TRUE
+    IF (rising_edge(refclk_sdram_bufg)) THEN                                            -- only for DDRI_USED=TRUE
       IF ((action_reset   = '1') OR                                                     -- only for DDRI_USED=TRUE
           (action_reset_q = '1') or                                                     -- only for DDRI_USED=TRUE
           (action_reset_qq= '1')) THEN                                                  -- only for DDRI_USED=TRUE
@@ -866,17 +866,17 @@ BEGIN
     END IF;                                                                             -- only for DDRI_USED=TRUE
   END PROCESS sdram_reset;                                                              -- only for DDRI_USED=TRUE
                                                                                         -- only for DDRI_USED=TRUE
-  ibuf_refclk200 : IBUFGDS                                                              -- only for DDRI_USED=TRUE
+  ibuf_refclk_sdram : IBUFGDS                                                           -- only for DDRI_USED=TRUE
   port map(                                                                             -- only for DDRI_USED=TRUE
-    I  => refclk200_p,                                                                  -- only for DDRI_USED=TRUE
-    IB => refclk200_n,                                                                  -- only for DDRI_USED=TRUE
-    O  => refclk200_ibuf                                                                -- only for DDRI_USED=TRUE
+    I  => refclk_sdram_p,                                                               -- only for DDRI_USED=TRUE
+    IB => refclk_sdram_n,                                                               -- only for DDRI_USED=TRUE
+    O  => refclk_sdram_ibuf                                                             -- only for DDRI_USED=TRUE
   );                                                                                    -- only for DDRI_USED=TRUE
                                                                                         -- only for DDRI_USED=TRUE
   bufg_clk : BUFG                                                                       -- only for DDRI_USED=TRUE
   port map(                                                                             -- only for DDRI_USED=TRUE
-    I => refclk200_ibuf,                                                                -- only for DDRI_USED=TRUE
-    O => refclk200_bufg                                                                 -- only for DDRI_USED=TRUE
+    I => refclk_sdram_ibuf,                                                             -- only for DDRI_USED=TRUE
+    O => refclk_sdram_bufg                                                              -- only for DDRI_USED=TRUE
   );                                                                                    -- only for DDRI_USED=TRUE
 
 
@@ -986,6 +986,8 @@ BEGIN
       C_S_AXI_CTRL_REG_ADDR_WIDTH      => C_AXI_CTRL_REG_ADDR_WIDTH,
 
       -- Parameters for Axi Master Bus Interface AXI_HOST_MEM : to Host memory
+      INT_BITS                         => INT_BITS,           
+      CONTEXT_BITS                     => CONTEXT_BITS,
       C_M_AXI_HOST_MEM_ID_WIDTH        => C_AXI_HOST_MEM_ID_WIDTH,
       C_M_AXI_HOST_MEM_ADDR_WIDTH      => C_AXI_HOST_MEM_ADDR_WIDTH,
       C_M_AXI_HOST_MEM_DATA_WIDTH      => C_AXI_HOST_MEM_DATA_WIDTH,
@@ -993,17 +995,15 @@ BEGIN
       C_M_AXI_HOST_MEM_ARUSER_WIDTH    => C_AXI_HOST_MEM_ARUSER_WIDTH,
       C_M_AXI_HOST_MEM_WUSER_WIDTH     => C_AXI_HOST_MEM_WUSER_WIDTH,
       C_M_AXI_HOST_MEM_RUSER_WIDTH     => C_AXI_HOST_MEM_RUSER_WIDTH,
-      C_M_AXI_HOST_MEM_BUSER_WIDTH     => C_AXI_HOST_MEM_BUSER_WIDTH,
-      INT_BITS                         => INT_BITS,           
-      CONTEXT_BITS                     => CONTEXT_BITS
+      C_M_AXI_HOST_MEM_BUSER_WIDTH     => C_AXI_HOST_MEM_BUSER_WIDTH
     )
     PORT MAP (
       ap_clk                               => ha_pclock,
       ap_rst_n                             => action_reset_n_q,
-      int_req_ack                          => sk_d.int_req_ack,
-      int_req                              => ks_d.int_req, 
-      int_src                     	   => ks_d.int_src, 
-      int_ctx                     	   => ks_d.int_ctx, 
+      interrupt_ack                        => sk_d.int_req_ack,
+      interrupt                            => ks_d.int_req, 
+      interrupt_src                        => ks_d.int_src, 
+      interrupt_ctx                        => ks_d.int_ctx, 
       --                                                                                -- only for DDRI_USED=TRUE
       -- AXI SDRAM Interface                                                            -- only for DDRI_USED=TRUE
       m_axi_card_mem0_araddr               => axi_card_mem0_araddr,                     -- only for DDRI_USED=TRUE
@@ -1132,7 +1132,7 @@ BEGIN
 
   sdram_axi_clk   <= sdram_ui_clk;                                                      -- only for DDRI_USED=TRUE-- only for BRAM_USED!=TRUE
   sdram_axi_rst_n <= NOT sdram_ui_clk_sync_rst;                                         -- only for DDRI_USED=TRUE-- only for BRAM_USED!=TRUE
-  sdram_axi_clk   <= refclk200_bufg;                                                    -- only for DDRI_USED=TRUE-- only for BRAM_USED=TRUE
+  sdram_axi_clk   <= refclk_sdram_bufg;                                                 -- only for DDRI_USED=TRUE-- only for BRAM_USED=TRUE
   sdram_axi_rst_n <= sdram_reset_n_q;                                                   -- only for DDRI_USED=TRUE-- only for BRAM_USED=TRUE
 
   axi_clock_converter_i : axi_clock_converter                                           -- only for DDRI_USED=TRUE

@@ -1,7 +1,8 @@
 *~
 hdl/*~
+hdl/core/psl_fpga.vhd*
 hdl/core/psl_accel.vhd
-sim/core/ptop.sv
+sim/core/top.sv
 *build
 setup/*~
 sim/ies/
@@ -11,3 +12,4 @@ ip/
 action/memcopy.*
 sim/*.log
 sim/20*
+.bitstream_name.txt
