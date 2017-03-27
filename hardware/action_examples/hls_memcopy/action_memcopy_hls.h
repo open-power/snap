@@ -77,25 +77,21 @@ typedef struct {
 } dnut_addr; //128 bits=16B
 
 typedef struct {//Names of the fields can be changed by User. Should serve as a template
-        dnut_addr in; 	/* input data */
-        dnut_addr out;	/* offset table */
+        dnut_addr in; 	/* input data : 128 bits*/
+        dnut_addr out;	/* offset table : 128 bits*/
         ap_uint<64> action_version;
-        ap_uint<576> unused;
-} DATA_MC; // DATA = 112 Bytes
+        ap_uint<544> unused;
+} DATA_MC; // DATA = 108 Bytes
 
 typedef struct {
         CONTROL  Control; //  16 bytes
-        DATA_MC  Data; // 112 bytes
-} action_input_reg;
+        DATA_MC  Data; // 108 bytes
+} action_reg;
 
-// ISSUE #44
-// => IMPOSSIBLE TO HAVE action_output_reg contiguous to action_input_reg
-// => Retc is at 0x104 but action field is not copied to action_output_reg
 typedef struct {
-        ap_uint<32>   Retc; //   4 bytes
-        ap_uint<64>   Reserved; //  4 bytes
-        DATA_MC       Data; // 112 bytes
-} action_output_reg;
+        ap_uint<32>   action_id; //   4 bytes
+        ap_uint<32>   release_level; //  4 bytes
+} action_RO_config_reg;
 
 
 #endif
