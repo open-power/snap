@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -337,6 +337,30 @@ static struct sponge_t test_data[] = {
 	  .pe = 0, .nb_pe = 16,        .checksum = 0x226298a4a67933e2ull },
 	{ .nb_slices = 64 * 1024, .nb_round = 1024 * 1024,
 	  .pe = 0, .nb_pe = 1,         .checksum = 0x37f147bb31057bb6ull },
+
+	/* NB_SLICES=64K NB_ROUND=16M */
+	{ .nb_slices = 64 * 1024, .nb_round = 16 * 1024 * 1024,
+	  .pe = 0, .nb_pe = 64 * 1024, .checksum = 0x0ull },
+	{ .nb_slices = 64 * 1024, .nb_round = 16 * 1024 * 1024,
+	  .pe = 0, .nb_pe = 32 * 1024, .checksum = 0x0ull },
+	{ .nb_slices = 64 * 1024, .nb_round = 16 * 1024 * 1024,
+	  .pe = 0, .nb_pe = 16 * 1024, .checksum = 0x0ull },
+	{ .nb_slices = 64 * 1024, .nb_round = 16 * 1024 * 1024,
+	  .pe = 0, .nb_pe = 4 * 1024,  .checksum = 0x0ull },
+	{ .nb_slices = 64 * 1024, .nb_round = 16 * 1024 * 1024,
+	  .pe = 0, .nb_pe = 1 * 1024,  .checksum = 0x0ull },
+	{ .nb_slices = 64 * 1024, .nb_round = 16 * 1024 * 1024,
+	  .pe = 0, .nb_pe = 512,       .checksum = 0x0ull },
+	{ .nb_slices = 64 * 1024, .nb_round = 16 * 1024 * 1024,
+	  .pe = 0, .nb_pe = 128,       .checksum = 0x0ull },
+	{ .nb_slices = 64 * 1024, .nb_round = 16 * 1024 * 1024,
+	  .pe = 0, .nb_pe = 64,        .checksum = 0x0ull },
+	{ .nb_slices = 64 * 1024, .nb_round = 16 * 1024 * 1024,
+	  .pe = 0, .nb_pe = 32,        .checksum = 0x0ull },
+	{ .nb_slices = 64 * 1024, .nb_round = 16 * 1024 * 1024,
+	  .pe = 0, .nb_pe = 16,        .checksum = 0x0ull },
+	{ .nb_slices = 64 * 1024, .nb_round = 16 * 1024 * 1024,
+	  .pe = 0, .nb_pe = 1,         .checksum = 0x0ull },
 };
 
 static uint32_t executed_slices(uint32_t pe, uint32_t nb_pe,
@@ -390,7 +414,7 @@ static int test_sponge(int card_no, int timeout, unsigned int threads,
 			break;
 		}
 		
-		if (checksum != t->checksum) {
+		if ((t->checksum != 0) && (checksum != t->checksum)) {
 			fprintf(stderr, "err: pe = %d nb_pe = %d "
 				"checksum mismatch %016llx/%016llx\n",
 				t->pe, t->nb_pe,

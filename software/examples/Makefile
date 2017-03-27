@@ -27,6 +27,8 @@ else
 LDLIBS += -lcxl
 endif
 
+CFLAGS += -funroll-all-loops
+
 demo_search_objs = action_search.o
 demo_memcopy_objs = action_memcopy.o
 demo_checksum_objs = action_checksum.o keccak.o

@@ -89,6 +89,8 @@ CFLAGS ?= -W -Wall -Werror -Wwrite-strings -Wextra -O2 -g \
 CFLAGS += -DGIT_VERSION=\"$(VERSION)\" \
 	-I. -I../include -D_GNU_SOURCE=1
 
+CFLAGS += $(shell "../scripts/platform_cflags")
+
 # Force 32-bit build
 #   This is needed to generate the code for special environments. We have
 #   some 64-bit machines where we need to support binaries compiled for

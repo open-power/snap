@@ -225,32 +225,31 @@ uint64_t sponge_main(uint32_t pe, uint32_t nb_pe, uint32_t _threads)
         act_trace("  NB_SLICES=%d NB_ROUND=%d\n", NB_SLICES, NB_ROUND);
 
         for (slice = 0; slice < NB_SLICES; ) {
-                unsigned int i;
+                unsigned int s, i, t;
                 unsigned int remaining_slices = NB_SLICES - slice;
-                unsigned int threads = MIN(remaining_slices, _threads);
 
-                act_trace("  [X] slice=%d remaining=%d threads=%d\n",
-                          slice, remaining_slices, threads);
+                act_trace("  [X] slice=%d remaining=%d\n",
+                          slice, remaining_slices);
 
-                for (i = 0; i < threads; i++) {
-                        if (pe != ((slice + i) % nb_pe))
+                for (s = 0, t = 0; s < remaining_slices && t < _threads; s++) {
+                        if (pe != ((slice + s) % nb_pe))
                                 continue;
 
-                        d[i].slice = slice + i;
-                        rc = pthread_create(&d[i].thread_id, NULL,
-                                            &sponge_thread, &d[i]);
+			act_trace("    [S] starting thread=%d slice=%d\n",
+				  t, slice + s);
+                        d[t].slice = slice + s;
+                        rc = pthread_create(&d[t].thread_id, NULL,
+                                            &sponge_thread, &d[t]);
                         if (rc != 0) {
 				free(d);
-                                fprintf(stderr, "starting %d failed!\n", i);
+                                fprintf(stderr, "starting %d failed!\n", t);
                                 return EXIT_FAILURE;
                         }
+			t++;
                 }
-                for (i = 0; i < threads; i++) {
-			act_trace("      slice=%d checksum=%016llx\n",
-				  slice + i, (long long)d[i].checksum);
-
-                        if (pe != ((slice + i) % nb_pe))
-                                continue;
+                for (i = 0; i < t; i++) {
+			act_trace("    [E] thread=%d slice=%d checksum=%016llx\n",
+				  i, d[i].slice, (long long)d[i].checksum);
 
                         rc = pthread_join(d[i].thread_id, NULL);
                         if (rc != 0) {
@@ -260,7 +259,7 @@ uint64_t sponge_main(uint32_t pe, uint32_t nb_pe, uint32_t _threads)
                         }
                         checksum ^= d[i].checksum;
                 }
-                slice += threads;
+                slice += s;
         }
 
 	free(d);
