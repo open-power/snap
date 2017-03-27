@@ -29,5 +29,5 @@ if [ "$NAME" == "donut.vhd"  ]; then
   sed -i '/ BUILD_DATE_DAT[^I]*:[ ^I]std_logic_vector/ c\
     BUILD_DATE_DAT         : std_logic_vector(63 DOWNTO 0) := x\"0000_'$SNAP_BUILD_DATE'\";' $1/$2
 
-  echo "fw_$SNAP_RELEASE.$SNAP_BUILD_DATE" >.bitstream_name.txt
+  echo "fw_$SNAP_RELEASE_$SNAP_BUILD_DATE" >.bitstream_name.txt
 fi
