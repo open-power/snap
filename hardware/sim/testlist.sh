@@ -10,6 +10,7 @@
 #   t="$DONUT_ROOT/software/tools/dnut_peek 0x0         "                                       ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  1
 #   t="$DONUT_ROOT/software/tools/dnut_peek 0x10000 -w32"                                       ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  1
     t="$DONUT_ROOT/software/tools/dnut_peek 0x0         ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release maj.int.min.dist.4Bsha"
+    major=${r:0:4};minor=${r:4:4};echo "release major=$major minor=$minor"
     t="$DONUT_ROOT/software/tools/dnut_peek 0x8         ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # build date 0000YYYY.MM.DD.hh.mm"
     t="$DONUT_ROOT/software/tools/dnut_peek 0x10        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
     done=${r:14:1};echo "exploration done=$done";
@@ -33,8 +34,8 @@
       echo "start exploration"
 #     t="$DONUT_ROOT/software/tools/snap_maint -h -V"                                           ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
 #     t="$DONUT_ROOT/software/tools/snap_maint"                                                 ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$DONUT_ROOT/software/tools/snap_maint -m1 -c1"                                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-#     t="$DONUT_ROOT/software/tools/snap_maint -m1 -c1 -vvv"                                    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     t="$DONUT_ROOT/software/tools/snap_maint -m1 -c1"                                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/tools/snap_maint -m1 -c1 -vvv"                                    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
 #     t="$DONUT_ROOT/software/tools/snap_maint -m2 -c1 -vvv"                                    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
       t="$DONUT_ROOT/software/tools/dnut_peek 0x10        ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x18        ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
@@ -84,10 +85,12 @@
 #     t="$DONUT_ROOT/software/tools/stage2                 -t100      "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  4..105
 #     t="$DONUT_ROOT/software/tools/stage2     -s2 -e4 -i1 -t40       "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..33
 #     t="$DONUT_ROOT/software/tools/stage2 -a1             -t200"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #t 4..112..33min
-      t="$DONUT_ROOT/software/tools/stage2 -a1 -s1 -e2 -i1 -t100 -I -vv "                       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
-      t="$DONUT_ROOT/software/tools/stage2 -a1 -s1 -e2 -i1 -t100  -vv "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
-#     t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e4 -i1 -t10"                                ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
-#     t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e8 -i1 -t100"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..76..12min
+      if [[ "$major" > "0007" && "$minor" > "0040" || "$major" > "0008" ]];then echo "including interrupts starting with 0008.0041"
+#       t="$DONUT_ROOT/software/tools/stage2 -a1 -s1 -e2 -i1 -t100 -I -vv "                     ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
+        t="$DONUT_ROOT/software/tools/stage2 -a1 -s1 -e2 -i1 -t100  -vv "                       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
+#       t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e4 -i1 -t10"                              ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
+#       t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e8 -i1 -t100"                             ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..76..12min
+      fi
 #     t="$DONUT_ROOT/software/tools/stage2 -a2                    -vvv"                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #e memcmp failed
 #     t="$DONUT_ROOT/software/tools/stage2 -a2 -z0         -t50   -v  "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #e memcmp failed
 #     t="$DONUT_ROOT/software/tools/stage2 -a2 -z1         -t100      "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  4
@@ -112,9 +115,9 @@
         done
         done
         done
-        #### check DDR3 memory in KU3,, stay under 512k for BRAM
+        #### check DDR3 memory in KU3, stay under 512k for BRAM
         t="$DONUT_ROOT/software/tools/stage2_ddr -h"                                            ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
-        for strt in 0x1000 0x2000;do      # start adr,
+        for strt in 0x1000 0x2000;do      # start adr
         for iter in 1 2 3;do              # number of blocks
         for bsize in 64 0x1000; do        # block size
           let end=${strt}+${iter}*${bsize}
@@ -122,14 +125,14 @@
         done
         done
         done
-        #### use memset in host or in fpga memory, stay under 512k for BRAM
-        t="$DONUT_ROOT/software/tools/stage2_set -h"                                            ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
-        for beg in 0 1 11 63 64;do         # start adr
-        for size in 1 7 4097; do           # block size to copy
-          t="$DONUT_ROOT/software/tools/stage2_set -H -b${beg} -s${size} -p${size} -t200"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-          t="$DONUT_ROOT/software/tools/stage2_set -F -b${beg} -s${size} -p${size} -t200"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-        done
-        done
+#       #### use memset in host or in fpga memory, stay under 512k for BRAM
+#       t="$DONUT_ROOT/software/tools/stage2_set -h"                                            ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
+#       for beg in 0 1 11 63 64;do         # start adr
+#       for size in 1 7 4097; do           # block size to copy
+#         t="$DONUT_ROOT/software/tools/stage2_set -H -b${beg} -s${size} -p${size} -t200"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#         t="$DONUT_ROOT/software/tools/stage2_set -F -b${beg} -s${size} -p${size} -t200"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#       done
+#       done
       fi
     fi # memcopy
 
