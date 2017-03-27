@@ -109,22 +109,23 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
 // Host Memory AXI Interface
 #pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
 #pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
-#pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg offset=0x030
-#pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg offset=0x040
+#pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg 		offset=0x030
+#pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg 		offset=0x040
 
 //DDR memory Interface
-#pragma HLS INTERFACE m_axi port=d_ddrmem    bundle=card_mem0 offset=slave depth=512
-#pragma HLS INTERFACE s_axilite port=d_ddrmem    bundle=ctrl_reg  offset=0x050
+#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
+#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg  		offset=0x050
 
 // Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Config
-#pragma HLS INTERFACE s_axilite port=Action_Config offset=0x010 bundle=ctrl_reg
+#pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg 	offset=0x010
+#pragma HLS INTERFACE ap_none port=Action_Config  // remove handshake to read value before start
 #pragma HLS DATA_PACK variable=Action_Register
-#pragma HLS INTERFACE s_axilite port=Action_Register offset=0x100 bundle=ctrl_reg
+#pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg	offset=0x100
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
 // Hardcoded numbers
-  Action_Config->action_id     = (ap_uint<32>) MEMCOPY_ACTION_TYPE;
+  Action_Config->action_type   = (ap_uint<32>) MEMCOPY_ACTION_TYPE;
   Action_Config->release_level = (ap_uint<32>) RELEASE_VERSION;
 
 

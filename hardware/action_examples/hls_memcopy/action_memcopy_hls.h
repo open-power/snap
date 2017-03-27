@@ -89,7 +89,7 @@ typedef struct {
 } action_reg;
 
 typedef struct {
-        ap_uint<32>   action_id; //   4 bytes
+        ap_uint<32>   action_type; //   4 bytes
         ap_uint<32>   release_level; //  4 bytes
 } action_RO_config_reg;
 
