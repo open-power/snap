@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 --
--- Copyright 2016 International Business Machines
+-- Copyright 2016,2017 International Business Machines
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -343,7 +343,7 @@ BEGIN
       afu_reset_o            => afu_reset,
       --
       -- MMIO IOs
-      mmc_c_i                => mmc_c,          
+      mmc_c_i                => mmc_c,
       mmc_e_i                => mmc_e,
       cmm_e_o                => cmm_e
     );

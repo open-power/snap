@@ -26,11 +26,11 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_misc.all;
 use ieee.STD_LOGIC_UNSIGNED.all;
-use ieee.numeric_std.all; 
+use ieee.numeric_std.all;
 
 USE work.psl_accel_types.ALL;
 USE work.donut_types.all;
- 
+
 entity axi_dma_shim is
 	port (
 		-- Users to add ports here
@@ -58,10 +58,6 @@ entity axi_dma_shim is
 end axi_dma_shim;
 
 architecture arch_imp of axi_dma_shim is
-
-
-        
-        
 
         type wr_fsm_t      is (IDLE, DMA_WR_REQ, DMA_WR_DATA);
         type rd_fsm_t      is (IDLE, DMA_RD_REQ);
@@ -165,7 +161,7 @@ axi_wr: process(ha_pclock)
             if rising_edge(ha_pclock) then
               sd_d_o.wr_strobe  <= (others => '0');
               sd_d_o.wr_last    <= '0';
-              -- reverse the byte order 
+              -- reverse the byte order
               for i in 1 to C_S_AXI_DATA_WIDTH / 8  loop
                  sd_d_o.wr_data(i * 8 - 1 downto (i-1) *8)         <= ks_d_i.S_AXI_WDATA((C_S_AXI_DATA_WIDTH + 7)- i*8 downto C_S_AXI_DATA_WIDTH -  i*8);
               end loop;  -- i
@@ -189,8 +185,8 @@ axi_wr: process(ha_pclock)
                       sd_c_o.wr_addr    <= ks_d_i.S_AXI_AWADDR;
                       sd_c_o.wr_len     <= ks_d_i.S_AXI_AWLEN;
                       sd_c_o.wr_id      <= ks_d_i.S_AXI_AWID;
---                      sd_c_o.wr_ctx     <= ks_d_i.S_AXI_AWUSER;
-                      sd_c_o.wr_ctx     <= js_c_i.ctx_workaround;
+                      sd_c_o.wr_ctx     <= ks_d_i.S_AXI_AWUSER;                                         -- only for HLS_WORKAROUND!=TRUE
+                      sd_c_o.wr_ctx     <= js_c_i.ctx_workaround;                                       -- only for HLS_WORKAROUND=TRUE
                       sd_c_o.wr_req     <= '1';
                     end if;
 
@@ -205,7 +201,7 @@ axi_wr: process(ha_pclock)
                     if ks_d_i.S_AXI_WVALID = '1' then
                       for i in 0 to (C_S_AXI_DATA_WIDTH / 8) -1 LOOP
                         sd_d_o.wr_strobe(((C_S_AXI_DATA_WIDTH / 8) -1) - i) <= ks_d_i.S_AXI_WSTRB(i);
-                      end loop;   
+                      end loop;  -- i
                       if ks_d_i.S_AXI_WLAST = '1' then
                         sd_d_o.wr_last <= '1';
                         axi_wready_q      <= '0';
@@ -250,8 +246,8 @@ axi_rd:   process(ha_pclock)
                       sd_c_o.rd_addr    <= ks_d_i.S_AXI_ARADDR;
                       sd_c_o.rd_len     <= ks_d_i.S_AXI_ARLEN;
                       sd_c_o.rd_id      <= ks_d_i.S_AXI_ARID;
---                      sd_c_o.rd_ctx     <= ks_d_i.S_AXI_ARUSER;
-                      sd_c_o.rd_ctx     <= js_c_i.ctx_workaround;
+                      sd_c_o.rd_ctx     <= ks_d_i.S_AXI_ARUSER;                                         -- only for HLS_WORKAROUND!=TRUE
+                      sd_c_o.rd_ctx     <= js_c_i.ctx_workaround;                                       -- only for HLS_WORKAROUND=TRUE
                       sd_c_o.rd_req     <= '1';
                     end if;
 
@@ -272,15 +268,14 @@ axi_rd:   process(ha_pclock)
       sk_d_o.S_AXI_RLAST         <=  ds_d_i.rd_last;
 axi_rd2:  process(ds_d_i.rd_data, ds_d_i.rd_id, ds_d_i.rd_data_strobe,ks_d_i.S_AXI_RREADY)
           begin
-            -- reverse the byte order 
+            -- reverse the byte order
             for i in 1 to C_S_AXI_DATA_WIDTH / 8 loop
               sk_d_o.S_AXI_RDATA(i * 8 - 1 downto (i-1) *8)         <= std_logic_vector(ds_d_i.rd_data((C_S_AXI_DATA_WIDTH + 7) - i*8 downto C_S_AXI_DATA_WIDTH -  i*8));
             end loop;  -- i
-              
-           
+
 
             sk_d_o.S_AXI_RID           <= std_logic_vector(ds_d_i.rd_id);
-            
+
             sk_d_o.S_AXI_RRESP         <= "00";
             sk_d_o.S_AXI_RVALID        <= '0';
 
@@ -300,7 +295,7 @@ int_process:   process(ha_pclock)
               sd_c_o.int_req <= '0';
               sj_c_o.int_ack <= '0';
               sk_d_o.int_req_ack <= '0';
-              if afu_reset = '1' then          
+              if afu_reset = '1' then
                  int_ack_pending <= '0';
                  int_req_vec(0)  <= '0';
                  int_req_vec(1)  <= '0';
@@ -314,8 +309,8 @@ int_process:   process(ha_pclock)
                   int_req_vec(1) <= '1';
                   int_src_vec(1) <= ks_d_i.int_src;
                   int_ctx_vec(1) <= ks_d_i.int_ctx;
-                end if;  
-                -- if we don't wait for an ack, then check for pending interrupts 
+                end if;
+                -- if we don't wait for an ack, then check for pending interrupts
                 if int_ack_pending = '0' then
                   -- has job manager sent an int
                   if int_req_vec(0) = '1' then
@@ -333,18 +328,18 @@ int_process:   process(ha_pclock)
                       sd_c_o.int_req  <= '1';
                       sd_c_o.int_src  <= '1' & int_src_vec(1);
                       sd_c_o.int_ctx  <= int_ctx_vec(1);
-                    end if;  
-                  end if;  
+                    end if;
+                  end if;
                 end if;
                 -- handle int ack from DMA
                 if ds_c_i.int_req_ack = '1' then
                   int_ack_pending <= '0';
                   case int_src_sel is
                     when 0      => sj_c_o.int_ack     <= '1';
-                    when others => sk_d_o.int_req_ack <= '1'; 
+                    when others => sk_d_o.int_req_ack <= '1';
                   end case;
                 end if;
-              end if; 
-            end if;  
-    end process;          
+              end if;
+            end if;
+    end process;
 end arch_imp;

@@ -20,8 +20,17 @@
 
 export BUILD_NAME=HDK_build
 export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
+export DONUT_HDL_CORE=$(DONUT_HARDWARE_ROOT)/hdl/core
+export DONUT_SIM_CORE=$(DONUT_HARDWARE_ROOT)/sim/core
 
-SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd $(DONUT_HARDWARE_ROOT)/hdl/core/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/hdl/core/psl_accel_types.vhd $(DONUT_HARDWARE_ROOT)/sim/core/top.sv 
+SNAP_CONFIG_FILES=$(DONUT_HDL_CORE)/psl_fpga.vhd \
+		$(DONUT_HDL_CORE)/psl_accel.vhd \
+		$(DONUT_HDL_CORE)/psl_accel_types.vhd \
+		$(DONUT_SIM_CORE)/top.sv \
+		$(DONUT_HDL_CORE)/donut.vhd \
+		$(DONUT_HDL_CORE)/donut_types.vhd \
+		$(DONUT_HDL_CORE)/axi_dma_shim.vhd \
+		$(DONUT_HDL_CORE)/job_manager.vhd
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone
@@ -98,8 +107,8 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 	@sed -i 's/run.oocImpl.*1/run.oocImpl 0/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topImpl.*0/run.topImpl 1/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topSynth.*0/run.topSynth 1/' $(BUILD_DIR)/psl_fpga.tcl
-	@if [ $(FPGACARD) = "KU3" ]; then ln -f -s $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga_ku3.vhd_source $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd_source; fi
-	@if [ $(FPGACARD) = "FGT" ]; then ln -f -s $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga_fgt.vhd_source $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd_source; fi
+	@if [ $(FPGACARD) = "KU3" ]; then ln -f -s $(DONUT_HDL_CORE)/psl_fpga_ku3.vhd_source $(DONUT_HDL_CORE)/psl_fpga.vhd_source; fi
+	@if [ $(FPGACARD) = "FGT" ]; then ln -f -s $(DONUT_HDL_CORE)/psl_fpga_fgt.vhd_source $(DONUT_HDL_CORE)/psl_fpga.vhd_source; fi
 	@echo "vhdl work ../hdl/core/psl_fpga.vhd" > $(BUILD_DIR)/Sources/prj/top.prj
 	@ln -s $(BUILD_NAME) build
 
@@ -145,7 +154,7 @@ patch_vhd_files:
 
 patch_version:
 	@echo "PATCH SNAP version and build date registers"; \
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl/core donut.vhd
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HDL_CORE) donut.vhd
 
 config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl $(SNAP_CONFIG_FILES) create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_vhd_files patch_version
 	@echo -e "\t[CONFIG] done `date`"

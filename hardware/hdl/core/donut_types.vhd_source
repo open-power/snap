@@ -191,7 +191,7 @@ PACKAGE donut_types IS
 --  CONSTANT MASTER_BOUNDARY            : integer := 15;
   CONSTANT MASTER_ACTION_ACCESS_BIT   : integer := 14;  -- Action space for master access starts at 0x10000 (16 x 4KB)
   CONSTANT MASTER_ACTION_ID_L         : integer := 13;  -- Action ID is encoded in bits 15:12 of the real address
-  CONSTANT MASTER_ACTION_ID_R         : integer := 10;  -- Action ID is encoded in bits 15:12 of the real address  
+  CONSTANT MASTER_ACTION_ID_R         : integer := 10;  -- Action ID is encoded in bits 15:12 of the real address
   CONSTANT NVME_SPACE_START_BIT       : integer := 15;  -- NVME space starts at address 0x20000
   CONSTANT SLAVE_SPACE_BIT            : integer := 23;  -- Slave (context) space starts at 0x2000000
   CONSTANT PSL_HOST_ADDR_MAXBIT       : integer := 23;
@@ -828,7 +828,7 @@ PACKAGE donut_types IS
       int_req            : std_logic;
       int_src            : std_logic_vector(INT_BITS-2 DOWNTO 0);      -- the job manager only uses two of the seven interrupt source IDs
       int_ctx            : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
-      ctx_workaround     : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+      ctx_workaround     : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);  -- only for HLS_WORKAROUND=TRUE
     END RECORD;
 
     --
@@ -1011,7 +1011,7 @@ PACKAGE donut_types IS
       M_AXI_RREADY    : std_logic;
     END RECORD XN_D_T;
 
-  
+
 END donut_types;
 
 
@@ -1068,7 +1068,7 @@ PACKAGE BODY donut_types IS
       VARIABLE res : std_logic;
     BEGIN
       res := '0';
-      
+
       FOR i IN data'low TO data'high LOOP
         res := data(i) XOR res;
       END LOOP;  -- i
@@ -1082,7 +1082,7 @@ PACKAGE BODY donut_types IS
       VARIABLE res : std_logic;
     BEGIN
       res := '1';
-      
+
       FOR i  IN data'low TO data'high LOOP
         res := data(i) XOR res;
       END LOOP;  -- i
@@ -1133,7 +1133,7 @@ PACKAGE BODY donut_types IS
       variable z      : std_logic_vector(0 to  ( data_in'length-1)/w        );
       variable or_res : std_logic;
     begin
- 
+
       data := (others => '0');
       data(0 to data_in'length-1)  := data_in;  -- normalize to left'=0, and even multiple of w.
       for i in 0 to data'length/w -1 loop
@@ -1146,7 +1146,7 @@ PACKAGE BODY donut_types IS
       end loop;
       return z;
     end AC_GENPARITY;
- 
+
     function AC_GENPARITY(data_in : std_logic_vector) return std_logic_vector is
       variable z    : std_logic_vector(0 to (data_in'length-1)/8);
     begin

@@ -43,10 +43,11 @@ else
   BRAM_FILTER="\-\- only for BRAM_USED=TRUE"
 fi
 
-if [ `basename $2` == "psl_accel.vhd" ] && [ "$HLS_WORKAROUND" == "TRUE" ]; then
-  grep -v "$DDRI_FILTER" $1 | grep -v "$DDR3_FILTER" | grep -v "$DDR4_FILTER" | grep -v "$BRAM_FILTER" | grep -v "interrupt_" | grep -v "INT_BITS" | grep -v "CONTEXT_BITS.*:" | grep -v "=>.*CONTEXT_BITS" > $2
-  sed -i 's/:=[ ^I]*CONTEXT_BITS/:= 1/' $2
+if [ "$HLS_WORKAROUND" == "TRUE" ]; then
+  HLS_WORKAROUND_FILTER="\-\- only for HLS_WORKAROUND!=TRUE"
 else
-  grep -v "$DDRI_FILTER" $1 | grep -v "$DDR3_FILTER" | grep -v "$DDR4_FILTER" | grep -v "$BRAM_FILTER" > $2
+  HLS_WORKAROUND_FILTER="\-\- only for HLS_WORKAROUND=TRUE"
 fi
+
+grep -v "$DDRI_FILTER" $1 | grep -v "$DDR3_FILTER" | grep -v "$DDR4_FILTER" | grep -v "$BRAM_FILTER" | grep -v "$HLS_WORKAROUND_FILTER" > $2
 
