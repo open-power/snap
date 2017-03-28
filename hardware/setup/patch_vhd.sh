@@ -33,11 +33,6 @@ fi
 
 NAME=`basename $2`
 
-if ([ "$NAME" == "psl_accel.vhd" ]); then
-  sed -i 's/C_AXI_CARD_MEM0_ID_WIDTH[ ^I]*:[ ^I]*integer[ ^I]*:=[ ^I]*[0-9]*/C_AXI_CARD_MEM0_ID_WIDTH       : integer   := '$NUM_OF_ACTIONS'/' $1/$2
-  sed -i 's/C_AXI_HOST_MEM_ID_WIDTH[ ^I]*:[ ^I]*integer[ ^I]*:=[ ^I]*[0-9]*/C_AXI_HOST_MEM_ID_WIDTH        : integer   := '$NUM_OF_ACTIONS'/' $1/$2
-fi
-
 if ([ "$NAME" == "donut_types.vhd" ]); then
   sed -i 's/CONSTANT NUM_OF_ACTIONS[ ^I]*:[ ^I]*integer.*:=[ ^I]*[0-9]*/CONSTANT NUM_OF_ACTIONS                  : integer := '$NUM_OF_ACTIONS'/' $1/$2
 fi
