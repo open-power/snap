@@ -118,6 +118,7 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
 // Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Config
 #pragma HLS INTERFACE s_axilite port=Action_Config offset=0x010 bundle=ctrl_reg
+#pragma HLS INTERFACE ap_none port=Action_Config  //remove handshake to read value before start
 #pragma HLS DATA_PACK variable=Action_Register
 #pragma HLS INTERFACE s_axilite port=Action_Register offset=0x100 bundle=ctrl_reg
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
