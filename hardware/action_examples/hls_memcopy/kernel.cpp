@@ -1,4 +1,4 @@
-/*MEMCOPY_ACTION_TYPE
+/*
  * Copyright 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,9 +19,8 @@
 #include "ap_int.h"
 #include "action_memcopy_hls.h"
 
-#define MEMCOPY_ACTION_TYPE     0x14101000
-
-#define RELEASE_VERSION 0x00000020
+#define MEMCOPY_ACTION_TYPE  0x14101000
+#define RELEASE_VERSION      0x00000020
 // ----------------------------------------------------------------------------
 // Known Limitations => Issue #39 & #45
 // => Transfers must be 64 byte aligned and a size of multiples of 64 bytes
@@ -109,19 +108,18 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
 // Host Memory AXI Interface
 #pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
 #pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
-#pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg 		offset=0x030
-#pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg 		offset=0x040
+#pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg offset=0x030
+#pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg offset=0x040
 
 //DDR memory Interface
-#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
-#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg  		offset=0x050
+#pragma HLS INTERFACE m_axi port=d_ddrmem    bundle=card_mem0 offset=slave depth=512
+#pragma HLS INTERFACE s_axilite port=d_ddrmem    bundle=ctrl_reg  offset=0x050
 
 // Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Config
-#pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg 	offset=0x010
-#pragma HLS INTERFACE ap_none port=Action_Config  // remove handshake to read value before start
+#pragma HLS INTERFACE s_axilite port=Action_Config offset=0x010 bundle=ctrl_reg
 #pragma HLS DATA_PACK variable=Action_Register
-#pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg	offset=0x100
+#pragma HLS INTERFACE s_axilite port=Action_Register offset=0x100 bundle=ctrl_reg
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
 // Hardcoded numbers
@@ -154,22 +152,19 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
 
   ReturnCode = RET_CODE_OK;
 
-  if(Action_Register->Control.action == MEMCOPY_ACTION_TYPE) {
-   
-     address_xfer_offset = 0x0;
-     // testing sizes to prevent from writing out of bounds
-     action_xfer_size = MIN32b(Action_Register->Data.in.size, Action_Register->Data.out.size);
-     if (Action_Register->Data.in.type == CARD_DRAM and Action_Register->Data.in.size > CARD_DRAM_SIZE)
+  address_xfer_offset = 0x0;
+  // testing sizes to prevent from writing out of bounds
+  action_xfer_size = MIN32b(Action_Register->Data.in.size, Action_Register->Data.out.size);
+  if (Action_Register->Data.in.type == CARD_DRAM and Action_Register->Data.in.size > CARD_DRAM_SIZE)
 	rc = 1;
-     if (Action_Register->Data.out.type == CARD_DRAM and Action_Register->Data.out.size > CARD_DRAM_SIZE)
+  if (Action_Register->Data.out.type == CARD_DRAM and Action_Register->Data.out.size > CARD_DRAM_SIZE)
 	rc = 1;
 
-     // buffer size is hardware limited by MAX_NB_OF_BYTES_READ 
-     nb_blocks_to_xfer = (action_xfer_size / MAX_NB_OF_BYTES_READ) + 1;
+  // buffer size is hardware limited by MAX_NB_OF_BYTES_READ 
+  nb_blocks_to_xfer = (action_xfer_size / MAX_NB_OF_BYTES_READ) + 1;
 
-     // transferring buffers one after the other 
-     L0:for ( i = 0; i < nb_blocks_to_xfer; i++ ) { 
-     //L0:while(action_xfer_size > 0 and rc == 0) {
+  // transferring buffers one after the other 
+  L0:for ( i = 0; i < nb_blocks_to_xfer; i++ ) { 
         //#pragma HLS UNROLL // cannot completely unroll a loop with a variable trip count
         xfer_size = MIN32b(action_xfer_size, MAX_NB_OF_BYTES_READ);
 
@@ -183,13 +178,8 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
         address_xfer_offset += (ap_uint<64>)(xfer_size >> ADDR_RIGHT_SHIFT);
      } // end of L0 loop
 
-     if(rc!=0) ReturnCode = RET_CODE_FAILURE;
+  if(rc!=0) ReturnCode = RET_CODE_FAILURE;
 
-  }
-
-  else  // unknown action
-    ReturnCode = RET_CODE_FAILURE;
- 
   Action_Register->Control.Retc = (ap_uint<32>) ReturnCode;
 
   return;

@@ -62,7 +62,7 @@ enum {
 };
 
 typedef struct {
-        ap_uint<8>  action;
+        ap_uint<8>  sat; //short_action_type
         ap_uint<8>  flags;
         ap_uint<16> seq;
         ap_uint<32> Retc;
@@ -79,8 +79,7 @@ typedef struct {
 typedef struct {//Names of the fields can be changed by User. Should serve as a template
         dnut_addr in; 	/* input data : 128 bits*/
         dnut_addr out;	/* offset table : 128 bits*/
-        ap_uint<64> action_version;
-        ap_uint<544> unused;
+        ap_uint<608> unused;
 } DATA_MC; // DATA = 108 Bytes
 
 typedef struct {
