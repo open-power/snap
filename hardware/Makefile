@@ -42,7 +42,6 @@ endif
 ifndef BRAM_USED
 export BRAM_USED=FALSE
 endif
-
 ifeq "$(BRAM_USED)" "TRUE"
 export DDR3_USED=FALSE
 export DDR4_USED=FALSE
@@ -64,7 +63,7 @@ export MSG_LEVEL=-quiet
 endif
 
 
-.PHONY: all image model check_donut_settings create_environment copy clean config gitclean patch_version patch_vhd_files patch_tcl_files
+.PHONY: all image model check_donut_settings action_config create_environment copy clean config gitclean patch_version patch_vhd_files patch_tcl_files
 
 all: config model image
 
@@ -134,29 +133,20 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 $(SNAP_CONFIG_FILES):
 	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
+action_config:
+	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
+		echo -e "Executing $(ACTION_ROOT)/action_config.sh"; \
+		cd $(ACTION_ROOT) && ./action_config.sh; \
+	fi
+
 patch_tcl_files:
 	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
-
-patch_vhd_files:
-	@echo "PATCH .vhd FILES" 
-	@#yet another Xilinx bug: the fileinfo.txt is not correct if DDR3=BRAM=FALSE!
-	@if [ $(DDR3_USED) = "TRUE" ] || [ $(DDR4_USED) = "TRUE" ] || [ $(BRAM_USED) = "TRUE" ]; then\
-		VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\///'`; \
-		for vhd_file in $$VHD_FILES; do \
-			$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; \
-		done;\
-	else\
-		VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\/..\///'`; \
-		for vhd_file in $$VHD_FILES; do \
-			$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; \
-		done;\
-	fi;	
 
 patch_version:
 	@echo "PATCH SNAP version and build date registers"; \
 	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HDL_CORE) donut.vhd
 
-config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl $(SNAP_CONFIG_FILES) create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_vhd_files patch_version
+config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl $(SNAP_CONFIG_FILES) action_config create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_version
 	@echo -e "\t[CONFIG] done `date`"
 
 model: patch_version

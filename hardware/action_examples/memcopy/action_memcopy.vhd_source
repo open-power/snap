@@ -54,7 +54,7 @@ entity action_memcopy is
         C_AXI_HOST_MEM_RUSER_WIDTH  : integer   := 1;
         C_AXI_HOST_MEM_BUSER_WIDTH  : integer   := 1;
         INT_BITS                    : integer   := 3;
-        CONTEXT_BITS                : integer   := 8 
+        CONTEXT_BITS                : integer   := 8
     );
     port (
         action_clk                  : in STD_LOGIC;
@@ -62,8 +62,8 @@ entity action_memcopy is
         int_req_ack                 : in STD_LOGIC;
         int_req                     : out std_logic;
         int_src                     : out std_logic_vector(INT_BITS-2 DOWNTO 0);
-        int_ctx                     : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);       
- 
+        int_ctx                     : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+
         -- Ports of Axi Master Bus Interface AXI_CARD_MEM0                                         -- only for DDRI_USED=TRUE
                 -- to DDR memory                                                                   -- only for DDRI_USED=TRUE
         axi_card_mem0_awaddr    : out std_logic_vector(C_AXI_CARD_MEM0_ADDR_WIDTH-1 downto 0);     -- only for DDRI_USED=TRUE
@@ -310,9 +310,8 @@ architecture action_memcopy of action_memcopy is
 
 begin
 
-  
     int_ctx <= reg_0x20(CONTEXT_BITS - 1 downto 0);
-    int_src <= "00";  
+    int_src <= "00";
 
 
 -- Instantiation of Axi Bus Interface AXI_CTRL_REG
@@ -370,7 +369,6 @@ action_axi_slave_inst : entity work.action_axi_slave
 -- Instantiation of Axi Bus Interface AXI_HOST_MEM
 action_dma_axi_master_inst : entity work.action_axi_master
     generic map (
- 
 
         C_M_AXI_ID_WIDTH    => C_AXI_HOST_MEM_ID_WIDTH,
         C_M_AXI_ADDR_WIDTH  => C_AXI_HOST_MEM_ADDR_WIDTH,
@@ -455,7 +453,6 @@ action_dma_axi_master_inst : entity work.action_axi_master
 action_ddr_axi_master_inst : entity work.action_axi_master                                         -- only for DDRI_USED=TRUE
     generic map (                                                                                  -- only for DDRI_USED=TRUE
 
- 
         C_M_AXI_ID_WIDTH     => C_AXI_CARD_MEM0_ID_WIDTH,                                           -- only for DDRI_USED=TRUE
         C_M_AXI_ADDR_WIDTH   => C_AXI_CARD_MEM0_ADDR_WIDTH,                                         -- only for DDRI_USED=TRUE
         C_M_AXI_DATA_WIDTH   => C_AXI_CARD_MEM0_DATA_WIDTH,                                         -- only for DDRI_USED=TRUE
@@ -883,13 +880,13 @@ read_write_process:
               last_write_q      <= '0';
               first_write_q     <= '1';
             else
--- only for DDRI_USED!=TRUE                last_write_q      <= (last_write and dma_wr_ready and dma_wr_data_valid) or last_write_q;  
-               if dest_ddr = '1' THEN                                                                                                -- only for DDRI_USED=TRUE
-                 last_write_q      <= (last_write and ddr_wr_ready and ( dma_wr_data_valid or  ddr_wr_data_valid)) or last_write_q;  -- only for DDRI_USED=TRUE
-               ELSE                                                                                                                  -- only for DDRI_USED=TRUE
-                last_write_q      <= (last_write and dma_wr_ready and ( dma_wr_data_valid or  ddr_wr_data_valid)) or last_write_q;   -- only for DDRI_USED=TRUE
-               end if;                                                                                                               -- only for DDRI_USED=TRUE
-               if head = 0 and reg0_valid = '0' then
+              last_write_q     <= (last_write and dma_wr_ready and dma_wr_data_valid) or last_write_q;                              -- only for DDRI_USED!=TRUE
+              if dest_ddr = '1' THEN                                                                                                -- only for DDRI_USED=TRUE
+                last_write_q      <= (last_write and ddr_wr_ready and ( dma_wr_data_valid or  ddr_wr_data_valid)) or last_write_q;  -- only for DDRI_USED=TRUE
+              ELSE                                                                                                                  -- only for DDRI_USED=TRUE
+               last_write_q      <= (last_write and dma_wr_ready and ( dma_wr_data_valid or  ddr_wr_data_valid)) or last_write_q;   -- only for DDRI_USED=TRUE
+              end if;                                                                                                               -- only for DDRI_USED=TRUE
+              if head = 0 and reg0_valid = '0' then
                 if src_host = '1' then
                   if dma_rd_data_valid = '1' then
                     reg0_data  <= dma_rd_data;

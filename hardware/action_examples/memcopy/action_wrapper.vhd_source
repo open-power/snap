@@ -126,7 +126,6 @@ ENTITY action_wrapper IS
     s_axi_ctrl_reg_wready      : OUT STD_LOGIC;
     s_axi_ctrl_reg_wstrb       : IN  STD_LOGIC_VECTOR ( (C_S_AXI_CTRL_REG_DATA_WIDTH/8)-1 DOWNTO 0 );
     s_axi_ctrl_reg_wvalid      : IN  STD_LOGIC;
-    
     --
     -- AXI Host Memory Interface
     m_axi_host_mem_araddr      : OUT STD_LOGIC_VECTOR ( C_M_AXI_HOST_MEM_ADDR_WIDTH-1 DOWNTO 0 );
@@ -279,7 +278,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       axi_ctrl_reg_rresp       : OUT std_logic_vector(1 DOWNTO 0);
       axi_ctrl_reg_rvalid      : OUT std_logic;
       axi_ctrl_reg_rready      : IN  std_logic;
-   
+
       -- Ports of Axi Master Bus Interface AXI_HOST_MEM
       --       to HOST memory
       axi_host_mem_awaddr      : OUT std_logic_vector(C_M_AXI_HOST_MEM_ADDR_WIDTH-1 DOWNTO 0);
