@@ -61,12 +61,10 @@ done
 sed -i '/top    synth_options/ a\
 set_attribute module \$top    ip            \[list \\' $2
 
-if [ $DDRI_USED == "TRUE" ]; then
-  sed -i '/top    synth_options/ a\
+sed -i '/top    synth_options/ a\
 set_attribute module $top    synthXDC      \[list \\\
                                              \$rootDir/setup/donut_synth.xdc \\\
                                            \]' $2
-fi
 
 sed -i '/linkXDC/ d' $2
 
@@ -78,13 +76,13 @@ if [ $ILA_DEBUG == "TRUE" ]; then
                                              \$rootDir/setup/debug.xdc \\' $2
 fi
 
-if [ $DDR3_USED == "TRUE" ] && [ $BRAM_USED != "TRUE"  ] ; then
+if [ $DDR3_USED == "TRUE" ]; then
   sed -i '/top      top/ a\
-                                              \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc \\\
-                                              \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc \\' $2
+                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc \\\
+                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc \\' $2
 fi
 
-if [ $DDR4_USED == "TRUE" ] && [ $BRAM_USED != "TRUE"  ]; then
+if [ $DDR4_USED == "TRUE" ]; then
   sed -i '/top      top/ a\
                                              \$dimmDir/snap_ddr4pins_flash_gt.xdc \\' $2
 fi
@@ -92,31 +90,19 @@ fi
 if [ $FPGACARD == "KU3" ]; then 
   sed -i '/top      top/ a\
                                              \$rootDir/setup/donut_pblock.xdc \\' $2
-fi
 
-if [ $BRAM_USED == "TRUE" ]; then
-  if [ $FPGACARD == "KU3" ]; then 
+  if [ $BRAM_USED == "TRUE" ] || [ $DDR3_USED == "TRUE" ]; then
     sed -i '/top      top/ a\
-                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc \\' $2
-  else 
+                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc \\\
+                                             \$rootDir/setup/donut_link.xdc \\' $2
+  fi
+else 
+  if [ $BRAM_USED == "TRUE" ] || [ $DDR4_USED == "TRUE" ]; then
     sed -i '/top      top/ a\
-                                             \$dimmDir/snap_refclk266.xdc \\' $2
+                                             \$dimmDir/snap_refclk266.xdc \\\
+                                             \$rootDir/setup/donut_link.xdc \\' $2
   fi
 fi
-
-if [ $DDR3_USED == "TRUE" ]; then
-  sed -i '/top      top/ a\
-                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc \\' $2
-fi
-
-if [ $DDR4_USED == "TRUE" ]; then
-  sed -i '/top      top/ a\
-                                             \$dimmDir/snap_refclk266.xdc \\' $2
-fi
-
-sed -i '/top      top/ a\
-                                             \$rootDir/setup/donut_link.xdc \\' $2
-
 
 sed -i '/top      top/ a\
 set_attribute impl \$top      linkXDC       \[list \\' $2

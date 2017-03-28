@@ -35,14 +35,6 @@ export DDR3_USED=FALSE
 export DDR4_USED=FALSE
 endif
 
-ifndef DDR3_USED
-export DDR3_USED=TRUE
-endif
-
-ifndef DDR4_USED
-export DDR4_USED=FALSE
-endif
-
 export DDRI_USED=FALSE
 ifeq "$(DDR3_USED)" "TRUE"
 export DDRI_USED=TRUE
@@ -53,18 +45,6 @@ endif
 
 ifeq "$(BRAM_USED)" "TRUE"
 export DDRI_USED=TRUE
-endif
-
-ifndef ILA_DEBUG
-export ILA_DEBUG=FALSE
-endif
-
-ifndef NUM_OF_ACTIONS
-export NUM_OF_ACTIONS=1
-endif
-
-ifndef ACTION_ROOT
-export ACTION_ROOT=$(DONUT_HARDWARE_ROOT)/action_examples/empty
 endif
 
 ifndef MSG_LEVEL
@@ -92,9 +72,14 @@ check_donut_settings:
 		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/donut.git"; \
 		exit 1; \
 	fi
-	@if [[ $(FPGACARD) != "FGT" && $(FPGACARD) != "KU3" ]];then \
-		echo "unknown FPGACARD"; \
-		echo "supported cards are: FGT and KU3"; \
+	@if [ -z $(DDR3_USED) ] || [ -z $(DDR4_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ]; then \
+		echo "Missing one or more environment  variables"; \
+		echo "Please check the following variable and source donut_settings before calling make!"; \
+		echo "DDR3_USED:     $(DDR3_USED)"; \
+		echo "DDR4_USED:     $(DDR4_USED)"; \
+		echo "ILA_DEBUG:     $(ILA_DEBUG)"; \
+		echo "NUM_OF_ACTION: $(NUM_OF_ACTIONS)"; \
+		echo "ACTION_ROOT:   $(ACTION_ROOT)"; \
 		exit 1; \
 	fi
 
@@ -106,9 +91,12 @@ copy $(BUILD_DIR)/Checkpoint/b_route_design.dcp:
 	@mkdir $(BUILD_DIR)/Images; 
 	@mkdir $(BUILD_DIR)/Checkpoint; 
 	@ln -s $(BUILD_DIR)/Checkpoint                       $(BUILD_DIR)/Checkpoints;
+	@ln -s $(BUILD_NAME)                                   build;
 	@ln -s $(DONUT_HARDWARE_ROOT)/setup/noHDK_build.tcl  $(BUILD_DIR)/noHDK_build.tcl; 
 	@ln -s $(DONUT_HARDWARE_ROOT)/setup/fw_xpr_build.tcl $(BUILD_DIR)/fw_xpr_build.tcl; 
-	@cp -ra $(PSL_DCP)                                   $(BUILD_DIR)/Checkpoint/; 
+	@cp -p $(PSL_DCP)                                    $(BUILD_DIR)/Checkpoint/; 
+	@if [ $(FPGACARD) = "KU3" ]; then ln -f -s $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga_ku3.vhd_source $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd_source; fi
+	@if [ $(FPGACARD) = "FGT" ]; then ln -f -s $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga_fgt.vhd_source $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd_source; fi
 
 $(SNAP_CONFIG_FILES):
 	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
@@ -120,7 +108,7 @@ create_environment:
 	@cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/vivado_create_framework_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_frame_work_$(BUILD_DATE).jou 
 	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
 
-config: check_donut_settings $(SNAP_CONFIG_FILES) create_environment
+config: check_donut_settings $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FILES) create_environment
 	@echo -e "\t[CONFIG............] done `date`"
 
 patch_version:
