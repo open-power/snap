@@ -19,9 +19,9 @@
 #include "ap_int.h"
 #include "action_memcopy_hls.h"
 
-#define MEMCOPY_ACTION_TYPE     0x0004
+#define MEMCOPY_ACTION_TYPE     0x14101000
 
-#define RELEASE_VERSION 0xFEEDA00400000020
+#define RELEASE_VERSION 0x00000020
 // ----------------------------------------------------------------------------
 // Known Limitations => Issue #39 & #45
 // => Transfers must be 64 byte aligned and a size of multiples of 64 bytes
