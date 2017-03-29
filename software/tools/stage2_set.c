@@ -33,7 +33,7 @@
 #include "snap_fw_example.h"
 
 /*	defaults */
-#define ACTION_WAIT_TIME	1000	/* Default in msec */
+#define ACTION_WAIT_TIME	1	/* Default in sec */
 
 #define	KILO_BYTE		(1024)
 #define	MEGA_BYTE		(1024*1024)
@@ -141,38 +141,29 @@ static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct dnut_card* h, int timeout_ms, bool use_irq)
+static int action_wait_idle(struct dnut_card* h, int timeout, bool use_irq)
 {
 	uint64_t t_start;	/* time in usec */
-	uint64_t tout = (uint64_t)timeout_ms * 1000;	/* in usec */
 	uint64_t td = 0;
 	int irq = 0;
-	int rc;
+	int rc = 1;
 
 	if (use_irq) {
 		action_write(h, ACTION_INT_CONFIG, ACTION_INT_GLOBAL);
 		irq = 4;
 	}
-	action_write(h, ACTION_CONTROL, ACTION_CONTROL_START);
+	dnut_kernel_start((void*)h);
 
-	/* Wait for Action to go back to Idle */
 	t_start = get_usec();
-	while (1) {
-		rc = dnut_kernel_completed((void*)h, irq, NULL);
-		td = get_usec() - t_start;
-		if (rc) {
-			rc = 0;
-			break;
-		}
-		if (td > tout) {
-			PRINTF0("Error. Timeout while Waiting for Idle\n");
-			return ETIME;
-		}
-	}
+	/* Wait for Action to go back to Idle */
+	if (dnut_kernel_completed((void*)h, irq, NULL, timeout))
+		rc = 0;	/* Good */
+	td = get_usec() - t_start;
 	if (use_irq)
 		action_write(h, ACTION_INT_CONFIG, 0);
 	print_time(td);
-	return 0;
+
+	return rc;
 }
 
 static void action_start(struct dnut_card* h,
@@ -224,7 +215,7 @@ static void usage(const char *prog)
 		"    -C, --card <cardno>  use this card for operation\n"
 		"    -V, --version\n"
 		"    -q, --quiet          quiece output\n"
-		"    -t, --timeout        timeout in msec (default=1000 ms)\n"
+		"    -t, --timeout        timeout in sec (default=1 sec)\n"
 		"    -i, --iter           Number of Iterations (default 1)\n"
 		"    -H, --host           Set Host Memory (defualt)\n"
 		"    -F, --fpga           Set FPGA Memory\n"
@@ -297,7 +288,7 @@ int main(int argc, char *argv[])
 			iter = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 't':	/* timeout */
-			timeout = strtol(optarg, (char **)NULL, 0) * 1000;
+			timeout = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 'H':	/* host */
 			func = ACTION_CONFIG_MEMSET_H;
@@ -334,7 +325,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	PRINTF2("Start Memset Test. Timeout: %d msec Device: ",
+	PRINTF2("Start Memset Test. Timeout: %d sec Device: ",
 		timeout);
 	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
 	dn = dnut_card_alloc_dev(device, 0x1014, 0xcafe);
@@ -367,15 +358,11 @@ int main(int argc, char *argv[])
 	for (i = 0; i < iter; i++) {
 		PRINTF1("[%d/%d] Start Memset ", i+1, iter);
 		PRINTF1(" Attach %x", ACTION_TYPE_EXAMPLE);
-		while (1) {
-			rc = dnut_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags);
-			if (0 == rc) break;
-			if (EBUSY == rc)
-				usleep(100);
-			else {
-				PRINTF0(" ERROR from Attach\n");
-				goto __exit1;
-			}
+		rc = dnut_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags, 5*timeout);
+		if (0 != rc) {
+			PRINTF0(" ERROR from Attach %x after %d sec\n",
+				ACTION_TYPE_EXAMPLE, 5*timeout);
+			goto __exit1;
 		}
 		if (ACTION_CONFIG_MEMSET_F == func) {
 			start = begin;
@@ -395,7 +382,7 @@ int main(int argc, char *argv[])
 			if (0 != check_buffer(hb, h_begin, size, pattern))
 				goto __exit1;
 		}
-		dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
+		dnut_detach_action(dn);
 		PRINTF1(" done\n");
 	}
 	rc = 0;

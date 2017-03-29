@@ -37,7 +37,7 @@
 #define	STEP_DELAY		200
 #define	DEFAULT_MEMCPY_BLOCK	4096
 #define	DEFAULT_MEMCPY_ITER	1
-#define ACTION_WAIT_TIME	1000	/* Default in msec */
+#define ACTION_WAIT_TIME	1	/* Default in sec */
 
 #define	MEGAB		(1024*1024ull)
 #define	GIGAB		(1024 * MEGAB)
@@ -156,11 +156,10 @@ static uint32_t msec_2_ticks(int msec)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct dnut_card* h, int timeout_ms, uint64_t *elapsed, bool use_irq)
+static int action_wait_idle(struct dnut_card* h, int timeout, uint64_t *elapsed, bool use_irq)
 {
-	int rc = 0;
+	int rc = ETIME;
 	uint64_t t_start;	/* time in usec */
-	uint64_t tout = (uint64_t)timeout_ms * 1000;
 	uint64_t td = 0;	/* Diff time in usec */
 	int irq = 0;
 
@@ -172,19 +171,10 @@ static int action_wait_idle(struct dnut_card* h, int timeout_ms, uint64_t *elaps
 
 	/* Wait for Action to go back to Idle */
 	t_start = get_usec();
-	while (1) {
-		rc = dnut_kernel_completed((void*)h, irq, NULL);
-		td = get_usec() - t_start;
-		if (rc) {
-			rc = 0;
-			break;
-		}
-		if (td > tout) {
-			VERBOSE0("Error. Timeout while Waiting for Idle\n");
-			rc = ETIME;
-			break;
-		}
-	}
+	rc = dnut_kernel_completed((void*)h, irq, NULL, timeout);
+	if (rc) rc = 0;
+	else VERBOSE0("Error. Timeout while Waiting for Idle\n");
+	td = get_usec() - t_start;
 	if (use_irq)
 		action_write(h, ACTION_INT_CONFIG, 0);
 	*elapsed = td;
@@ -378,25 +368,8 @@ static int memcpy_test(struct dnut_card* dnc,
 static int get_action(struct dnut_card *handle, int flags, int timeout)
 {
 	int rc = 0;
-	uint64_t ts;
-	int dt;
 
-	ts = get_usec();
-	while (1) {
-		rc = dnut_attach_action(handle, ACTION_TYPE_EXAMPLE, flags);
-		if (0 == rc) break;
-		if (EBUSY == rc)
-			usleep(100);
-		else {
-			rc = ENODEV;
-			break;
-		}
-		dt = (int)((get_usec() - ts)/1000);
-		if (dt > 10*timeout) {
-			rc = EBUSY;
-			break;
-		}
-	}
+	rc = dnut_attach_action(handle, ACTION_TYPE_EXAMPLE, flags, timeout);
 	return rc;
 }
 
@@ -449,7 +422,7 @@ int main(int argc, char *argv[])
 	int memcpy_align = DEFAULT_MEMCPY_BLOCK;
 	uint64_t card_ram_base = DDR_MEM_BASE_ADDR;	/* Base of Card DDR or Block Ram */
 	uint64_t cir;
-	int timeout_ms = ACTION_WAIT_TIME;
+	int timeout = ACTION_WAIT_TIME;
 	bool use_interrupt = false;
 	int attach_flags = SNAP_CCR_DIRECT_MODE;
 	uint64_t td;
@@ -523,7 +496,7 @@ int main(int argc, char *argv[])
 			card_ram_base = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 't':
-			timeout_ms = strtol(optarg, (char **)NULL, 0) * 1000; /* Make msec */
+			timeout = strtol(optarg, (char **)NULL, 0); /* in sec */
 			break;
 		case 'I':	/* irq */
 			use_interrupt = true;
@@ -563,13 +536,13 @@ int main(int argc, char *argv[])
 	switch (action) {
 	case 1:
 		for(delay = start_delay; delay <= end_delay; delay += step_delay) {
-			rc = get_action(dn, attach_flags, timeout_ms+delay);
+			rc = get_action(dn, attach_flags, 5*timeout + delay);
 			if (0 != rc)
 				goto __exit1;
 			action_count(dn, delay);
-			rc = action_wait_idle(dn, timeout_ms + delay, &td, use_interrupt);
+			rc = action_wait_idle(dn, timeout + delay, &td, use_interrupt);
 			print_time(td, 0);
-			dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
+			dnut_detach_action(dn);
 			if (0 != rc) break;
 		}
 		rc = 0;
@@ -580,14 +553,14 @@ int main(int argc, char *argv[])
 	case 5:
 	case 6:
 		for (i = 0; i < memcpy_iter; i++) {
-			rc = get_action(dn, attach_flags, timeout_ms);
+			rc = get_action(dn, attach_flags, 5*timeout);
 			if (0 != rc)
 				goto __exit1;
 			rc = memcpy_test(dn, action, num_4k, num_64,
 				memcpy_align, card_ram_base,
-				timeout_ms,
+				timeout,
 				use_interrupt);
-			dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
+			dnut_detach_action(dn);
 		}
 		break;
 	default:
