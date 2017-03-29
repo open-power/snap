@@ -1,5 +1,5 @@
-#ifndef __ACTION_MEMCOPY_H__
-#define __ACTION_MEMCOPY_H__
+#ifndef __ACTION_BFS_H__
+#define __ACTION_BFS_H__
 
 /*
  * Copyright 2016, International Business Machines
@@ -116,4 +116,4 @@ int bfs_all(VexNode *, unsigned int vex_num );
 void bfs(VexNode *, unsigned int vex_num, unsigned int root);
 void output_vex(unsigned int, int);
 
-#endif	/* __ACTION_MEMCOPY_H__ */
+#endif	/* __ACTION_BFS_H__ */
