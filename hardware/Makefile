@@ -35,10 +35,6 @@ PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone
 
-ifndef HLS_WORKAROUND
-export HLS_WORKAROUND=FALSE
-endif
-
 ifndef BRAM_USED
 export BRAM_USED=FALSE
 endif

@@ -43,6 +43,10 @@ else
   BRAM_FILTER="\-\- only for BRAM_USED=TRUE"
 fi
 
+if [ -z "$HLS_WORKAROUND" ] && [ `echo "$ACTION_ROOT" | sed 's/hls/xxx/' | sed 's/HLS/XXX/'` != "$ACTION_ROOT" ] ; then
+  HLS_WORKAROUND="TRUE"
+fi
+
 if [ "$HLS_WORKAROUND" == "TRUE" ]; then
   HLS_WORKAROUND_FILTER="\-\- only for HLS_WORKAROUND!=TRUE"
 else

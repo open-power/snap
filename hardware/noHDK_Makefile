@@ -36,10 +36,6 @@ SNAP_CONFIG_FILES=$(DONUT_HDL_CORE)/psl_fpga.vhd \
 		$(DONUT_HDL_CORE)/job_manager.vhd
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
-ifndef HLS_WORKAROUND
-export HLS_WORKAROUND=FALSE
-endif
-
 ifndef BRAM_USED
 export BRAM_USED=FALSE
 endif
