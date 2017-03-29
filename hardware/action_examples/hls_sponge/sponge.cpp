@@ -21,7 +21,7 @@
 #    define NB_SLICES (65536) 	/* for real benchmark */
 #  endif
 #  ifndef NB_ROUND
-#    define NB_ROUND  (1 << 16) /* (1 << 24) */ /* for real benchmark */
+#    define NB_ROUND  (1 << 24) /* (1 << 24) */ /* for real benchmark */
 #  endif
 #endif
 
@@ -29,7 +29,7 @@
 #if NB_SLICES == 4
 #  define CHANNELS 4
 #else
-#  define CHANNELS 8
+#  define CHANNELS 16
 #endif
 
 uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
@@ -134,26 +134,25 @@ void action_wrapper(snap_membus_t *din_gmem,
 	// Host Memory AXI Interface
 #pragma HLS INTERFACE m_axi depth=256 port=din_gmem bundle=host_mem
 #pragma HLS INTERFACE m_axi depth=256 port=dout_gmem bundle=host_mem
-
-#pragma HLS INTERFACE s_axilite depth=256 port=din_gmem bundle=ctrl_reg
-#pragma HLS INTERFACE s_axilite depth=256 port=dout_gmem bundle=ctrl_reg
+#pragma HLS INTERFACE s_axilite depth=256 port=din_gmem bundle=ctrl_reg 	offset=0x010
+#pragma HLS INTERFACE s_axilite depth=256 port=dout_gmem bundle=ctrl_reg	offset=0x01C
 
 	//DDR memory Interface
 #pragma HLS INTERFACE m_axi depth=256 port=d_ddrmem offset=slave bundle=card_mem0
-#pragma HLS INTERFACE s_axilite depth=256 port=d_ddrmem bundle=ctrl_reg
+#pragma HLS INTERFACE s_axilite depth=256 port=d_ddrmem bundle=ctrl_reg		offset=0x028
 
 	// Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Input
-#pragma HLS INTERFACE s_axilite port=Action_Input offset=0x080 bundle=ctrl_reg
+#pragma HLS INTERFACE s_axilite port=Action_Input bundle=ctrl_reg		offset=0x080
 #pragma HLS DATA_PACK variable=Action_Output
-#pragma HLS INTERFACE s_axilite port=Action_Output offset=0x104 bundle=ctrl_reg
+#pragma HLS INTERFACE s_axilite port=Action_Output bundle=ctrl_reg		offset=0x104
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
 	uint64_t checksum = 0;
 	uint32_t slice = 0;
 	uint32_t pe, nb_pe;
 	uint64_t timer_ticks = 42;
-        char j;
+    char j;
 
 	pe = Action_Input->Data.pe;
 	nb_pe = Action_Input->Data.nb_pe;
@@ -188,10 +187,6 @@ void action_wrapper(snap_membus_t *din_gmem,
 	 */
         for (slice = 0; slice < NB_SLICES/CHANNELS; slice++) {
 //#pragma HLS UNROLL factor=8
-		/*
-		 * This if might not be a good idea, we are doing experiments
-		 * to move it to a different place.
-		 */
 
 		/* Moved this test to sponge function to prevent from breaking
 		 * the parallelization:
@@ -216,16 +211,16 @@ void action_wrapper(snap_membus_t *din_gmem,
 #ifdef NO_SYNTH
 
 /**
- * FIXME We need to use action_wrapper from here to get the real thing
- * simulated. For now let's take the short path and try without it.
- *
  * Works only for the TEST set of parameters.
  */
 int main(void)
 {
-	uint64_t slice;
-	uint64_t checksum=0;
 	short i, j, rc=0;
+	snap_membus_t din_gmem[0]; 	// Unused in this example
+	snap_membus_t dout_gmem[0];	// Unused in this example
+	snap_membus_t d_ddrmem[0];	// Unused in this example
+	action_input_reg Action_Input;
+	action_output_reg Action_Output;
 
 	typedef struct {
 		uint32_t  pe;
@@ -242,25 +237,25 @@ int main(void)
 		{ 2, /*nb_pe =*/  4, /*expected checksum =*/ 0x74d9bd120a54847b },
 		{ 3, /*nb_pe =*/  4, /*expected checksum =*/ 0x7140dcb806624aaa },
 	};
+	Action_Input.Control.action = SPONGE_ACTION_TYPE;
 
 	for(i=0; i < 7; i++) {
-		checksum = 0;
-                for(slice=0;slice<NB_SLICES/CHANNELS;slice++) {
+		Action_Input.Data.pe = sequence[i].pe;
+		Action_Input.Data.nb_pe = sequence[i].nb_pe;
 
-			//if(sequence[i].pe == (slice % sequence[i].nb_pe))
-			//	checksum ^= sponge(slice);
-                        /* Adjust the way slices values are sent to operate as the modulo */
-                        for (j = 0; j < CHANNELS; j++)
-                                checksum ^= sponge(slice+j*NB_SLICES/CHANNELS, 
-						sequence[i].pe, sequence[i].nb_pe);
+		action_wrapper(din_gmem, dout_gmem, d_ddrmem,
+				    &Action_Input, &Action_Output);
 
+		if (Action_Output.Retc == RET_CODE_FAILURE) {
+					printf(" ==> RETURN CODE FAILURE <==\n");
+					return 1;
 		}
 		printf("pe=%d - nb_pe=%d - processed checksum=%016llx ",
-		       sequence[i].pe,
-		       sequence[i].nb_pe,
-		       (unsigned long long)checksum);
+				(unsigned int)Action_Output.Data.pe,
+				(unsigned int)Action_Output.Data.nb_pe,
+		        (unsigned long long)Action_Output.Data.chk_out);
 
-		if (sequence[i].checksum == checksum) {
+		if (sequence[i].checksum == Action_Output.Data.chk_out) {
 			printf(" ==> CORRECT\n");
 			rc |= 0;
 		}
@@ -270,6 +265,7 @@ int main(void)
 			rc |= 1;
 		}
 	}
+
 	if (rc != 0)
 		printf("\n\t Checksums are given with use of -DTEST "
 		       "flag. Please check you have set it!\n\n");
