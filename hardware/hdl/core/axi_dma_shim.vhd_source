@@ -307,8 +307,10 @@ int_process:   process(ha_pclock)
                 end if;
                 if ks_d_i.int_req = '1' then
                   int_req_vec(1) <= '1';
-                  int_src_vec(1) <= ks_d_i.int_src;
-                  int_ctx_vec(1) <= ks_d_i.int_ctx;
+                  int_src_vec(1) <= ks_d_i.int_src;                                                     -- only for HLS_WORKAROUND!=TRUE
+                  int_ctx_vec(1) <= ks_d_i.int_ctx;                                                     -- only for HLS_WORKAROUND!=TRUE
+                  int_src_vec(1) <= (others => '0');                                                    -- only for HLS_WORKAROUND=TRUE
+                  int_ctx_vec(1) <= js_c_i.ctx_workaround;                                              -- only for HLS_WORKAROUND=TRUE
                 end if;
                 -- if we don't wait for an ack, then check for pending interrupts
                 if int_ack_pending = '0' then
