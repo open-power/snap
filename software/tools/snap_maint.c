@@ -33,6 +33,7 @@
 
 #include <libcxl.h>
 
+#include <donut_internal.h>
 #include <libdonut.h>
 #include <donut_tools.h>
 #include <snap_m_regs.h>
@@ -147,183 +148,14 @@ static uint32_t snap_read32(void *handle, int offset)
 	return reg;
 }
 
-#ifdef UW
-static int snap_write32(void *handle, int ctx, int offset, uint32_t data)
+static void snap_write32(void *handle, int offset, uint32_t data)
 {
-	uint32_t addr;
 	int rc;
 
-	addr = offset;
-	if (ctx) addr += SNAP_S_BASE + (ctx * SNAP_S_SIZE);
-	rc = dnut_mmio_write32(handle, (uint64_t)addr, data);
-	return rc;
-}
-#endif
-
-static int snap_check_stime(struct mdev_ctx *mctx)
-{
-#ifdef UW
-	int	gsel, bsel = 0, ctx = 0;
-	uint64_t gmask = 0, qstat_reg, err_reg, mstat_reg;
-	uint64_t wtime;
-	uint64_t cid_reg;
-	int	n_act = 0;
-	uint64_t s_time = 0;
-	char s[32];
-
-	for (gsel = 0; gsel < SNAP_CASV_REG_NUM; gsel++) {
-		gmask = snap_read64(mctx->handle, SNAP_MASTER_CTX,
-			SNAP_M_CASV + (gsel * 8));
-		if (0 == gmask)
-			continue;	/* No bit set, Skip */
-
-		for (bsel = 0; bsel < MMIO_CASV_REG_CTX; bsel++) {
-			if (0 == (gmask & (1ull << bsel)))
-				continue;	/* Skip */
-
-			ctx = (gsel * MMIO_CASV_REG_CTX) + bsel;	/* Active */
-
-			qstat_reg = dnut_ctx_read64(mctx->handle, ctx+1, MMIO_DDCBQ_STATUS_REG);
-			if (0 == (qstat_reg & 0xffffffff00000000ull)) {
-				VERBOSE3("AFU[%d:%03d] master skip\n",
-					mctx->card, ctx);
-				continue;	/* Skip Master */
-			}
-			mmio_read(mctx->afu_h, ctx+1, MMIO_DDCBQ_WT_REG, &wtime);
-			wtime = wtime / 250; /* makes time in usec */
-
-			cid_reg = dnut_ctx_read64(mctx->handle, ctx+1, MMIO_DDCBQ_CID_REG);
-			uint16_t cur_cid = (uint16_t)(cid_reg >> 16);	/* Currect Context id */
-			uint16_t my_cid = (uint16_t)(cid_reg & 0xffff);	/* My Context id */
-
-			err_reg = dnut_ctx_read64(mctx->handle, ctx+1, MMIO_DDCBQ_DMAE_REG);
-
-			uint16_t cseq = (uint16_t)(qstat_reg >> 48ull);	/* Currect sequence */
-			uint16_t lseq = (uint16_t)(qstat_reg >> 32ull);	/* Last sequence */
-			uint8_t qidx = (uint8_t)(qstat_reg >> 24);	/* Q Index */
-			uint16_t qnfe = (uint16_t)(qstat_reg >> 8);	/* Context Non Fatal Error Bits */
-			uint8_t qstat = (uint8_t)(qstat_reg & 0xff);	/* Context Status */
-
-			/* Generate W for Waiting, I for Idle and R for Running */
-			char flag = 'W';		/* Default Context is Waiting to get executed */
-			if ((lseq + 1 ) == cseq)
-				flag = 'I';		/* Context is Idle, nothing to do */
-			else if (0x30 == qstat)		/* if Bits 4 + 5 on ? */
-					flag = 'R';	/* Context is Running */
-
-			if (qnfe) {
-				VERBOSE0("AFU[%d:%03d] ERR: CurrentCtx: %03d MyCtx: %03d CS: %04X LS: %04X ",
-					mctx->card, ctx, cur_cid, my_cid, cseq, lseq);
-				VERBOSE0("[%c] IDX: %02d QNFE: %04x QSTAT: %02x Time: %lld usec",
-					flag, qidx, qnfe, qstat, (long long)wtime);
-				if (0 != err_reg)
-					VERBOSE0("DMA Err: 0x%016llx", (long long)err_reg);
-				VERBOSE0("\n");
-			} else {
-				VERBOSE0("AFU[%d:%03d] CurrentCtx: %03d MyCtx: %03d CS: %04X LS: %04X ",
-					mctx->card, ctx, cur_cid, my_cid, cseq, lseq);
-				VERBOSE0("[%c] IDX: %02d QNFE: %04x QSTAT: %02x Time: %lld usec",
-					flag, qidx, qnfe, qstat, (long long)wtime);
-				if (0 != err_reg)
-					VERBOSE0("DMA Err: 0x%016llx", (long long)err_reg);
-				VERBOSE0("\n");
-			}
-			n_act++;
-			s_time += wtime;
-		}
-	}
-	if (n_act) {
-		time_t result = time(NULL);
-		struct tm *p = localtime(&result);
-		strftime(s, 32, "%T", p);
-
-		VERBOSE0("AFU[%d:XXX] at %s Running %d Active Contexts total %lld msec",
-			 mctx->card,  s, n_act, (long long)s_time/1000);
-		mstat_reg = dnut_ctx_read64(mctx->handle, SNAP_MASTER_CTX_NUMBER,
-			MMIO_AFU_STATUS_REG);
-		if (0 != mstat_reg)
-			VERBOSE0(" Status: 0x%016llx", (long long)mstat_reg);
-		VERBOSE0("\n");
-	}
-#endif
-	return mctx->dt;
-}
-
-#ifdef UW
-static void snap_dump_mfirs(struct mdev_ctx *mctx)
-{
-	unsigned int i;
-	struct cgzip_afu_fir *fir;
-
-	if (verbose > 3) {
-		__hexdump(fd_out, mctx->errinfo, mctx->errinfo_size);
-		return;
-	}
-
-	for (i = 0, fir = (struct cgzip_afu_fir *)mctx->errinfo;
-	     i < MMIO_FIR_REGS_NUM; i++) {
-
-		VERBOSE0("  AFU[%d] FIR: %d: 0x%08x addr: 0x%08x "
-			 "mmio: 0x%016llx\n",
-			 mctx->card, i,
-			 be32toh(fir[i].fir_val),
-			 be32toh(fir[i].fir_addr),
-			 (long long)mctx->fir[i]);
-	}
-}
-#endif
-
-/*
- * Print FIRs only if they have changed. Always collect them.
- */
-static int snap_check_firs(struct mdev_ctx *mctx)
-{
-#ifdef UW
-	int i;
-	uint64_t data;
-	uint32_t offs;
-	bool changed = false;
-	bool dead = false;
-	long cr_device = 0;
-	time_t t;
-	int rc;
-
-	for (i = 0; i < MMIO_FIR_REGS_NUM; i++) {
-		offs = MMIO_FIR_REGS_BASE + i * 8;
-		mmio_read(mctx->afu_h, MMIO_MASTER_CTX_NUMBER, offs, &data);
-		if (data != mctx->fir[i])
-			changed = true;
-		if (data == -1ull)
-			dead = true;
-
-		mctx->fir[i] = data;
-	}
-	if (changed) {
-		t = time(NULL);
-		VERBOSE0("%s", ctime(&t));
-
-		/* Always print this ... */
-		cxl_get_cr_device(mctx->afu_h, 0, &cr_device);
-		VERBOSE0("  cr_device: 0x%04lx\n", (unsigned long)cr_device);
-
-		if (mctx->errinfo) {
-			rc = cxl_errinfo_read(mctx->afu_h, mctx->errinfo, 0,
-					      mctx->errinfo_size);
-			if (rc != (int)mctx->errinfo_size) {
-				VERBOSE0("  cxl_err_info_read returned %d!\n",
-					 rc);
-			}
-			afu_dump_mfirs(mctx);
-		}
-
-		if (dead) {
-			t = time(NULL);
-			VERBOSE0("%s  AFU[%d] card is dead.\n",
-				 ctime(&t), mctx->card);
-		}
-	}
-#endif
-	return mctx->dt;
+	rc = dnut_mmio_write32(handle, (uint64_t)offset, data);
+	if (0 != rc)
+		VERBOSE3("[%s] Error writting MMIO %x\n", __func__, offset);
+	return;
 }
 
 static void snap_version(void *handle)
@@ -351,6 +183,32 @@ static void snap_version(void *handle)
 	return;
 }
 
+/* Some Action need inital start to unlock Registers */
+static uint32_t unlock_action(void *handle, uint64_t offset)
+{
+	int i;
+	uint32_t reg;
+
+	VERBOSE2("%s Enter\n", __func__);
+	reg = snap_read32(handle, offset + 0x10);
+	if (0x00000000 == reg) {
+		VERBOSE2("%s      Invoke Unlock\n", __func__);
+		snap_write32(handle, offset + ACTION_CONTROL, ACTION_CONTROL_START);
+		for (i = 0; i < 10; i++) {
+			reg = snap_read32(handle, offset + ACTION_CONTROL);
+			if (ACTION_CONTROL_DONE == (reg & ACTION_CONTROL_DONE)) {
+				reg = snap_read32(handle, offset + 0x10);
+				break;
+			}
+			sleep(1);
+			VERBOSE0("Retry, wait for IDLE....\n");
+			reg = 0xffffffff;
+		}
+	}
+	VERBOSE2("%s Exit 0x%x\n", __func__, reg);
+	return reg;
+}
+
 /*	Master Init */
 static int snap_m_init(void *handle)
 {
@@ -360,7 +218,7 @@ static int snap_m_init(void *handle)
 	int i, sai;
 
 	int rc = 1;
-	VERBOSE1("%s Enter\n", __func__);
+	VERBOSE2("%s Enter\n", __func__);
 	for (i = 0; i < 10; i++) {
 		reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_SLR);	/* Get lock */
 		if (0 == reg) break;	/* Got Lock, continue */
@@ -381,19 +239,22 @@ static int snap_m_init(void *handle)
 		VERBOSE1("   Setup already done (MSAI: %d MAID: %d)\n\n",
 			1+(int)((ssr&0xf0)>>4), (int)(ssr&0xf)+1);
 		VERBOSE1("   Short      Action Type\n");
-		VERBOSE1("   -------------------------------------\n");
+		VERBOSE1("   ----------------------------------------\n");
 		offset = SNAP_M_ATRI;
 		for (i = 0; i < mact; i++) {
 			reg = snap_read64(handle, SNAP_M_CTX, offset);
 			atype = (uint32_t)(reg);
-			VERBOSE1("   %d          0x%8.8x ",
+			VERBOSE1("   %d          0x%8.8x   ",
 				(int)(reg >> 32ll), atype);
 			switch (atype) {
 			case 0x10140000:
 				VERBOSE1("IBM Sample Code\n");
 				break;
-			case 0x10140001:
-				VERBOSE1("HLS Code 1");
+			case 0x10141000:
+				VERBOSE1("HLS Demo Memcopy\n");
+				break;
+			case 0x10141001:
+				VERBOSE1("HLS Code 2\n");
 				break;
 			default:
 				VERBOSE1("UNKNOWN Code.....\n");
@@ -406,10 +267,18 @@ static int snap_m_init(void *handle)
 
 	/* Read Action Type  and configure */
 	sai = 0;				/* Short Action Index */
-	offset = SNAP_M_ACT_OFFSET + 0x10;	/* Action Type */
-	atype = snap_read32(handle, offset);
+	offset = SNAP_M_ACT_OFFSET;		/* Base for 1st Action */
+	atype = unlock_action(handle, offset);
+	if (0xffffffff == atype) {
+		rc = 1;
+		goto _snap_m_init_exit;
+	}
 	for (i = 0; i < mact; i++) {
-		atype_next = snap_read32(handle, offset);
+		atype_next = unlock_action(handle, offset);
+		if (0xffffffff == atype_next) {
+			rc = 1;
+			goto _snap_m_init_exit;
+		}
 		VERBOSE1("   %d Max AT: %d Found AT: 0x%8.8x --> Assign Short AT: %d\n",
 			i, mact, atype_next, sai);
 		reg = SNAP_M_ATRI + i * 8;
@@ -427,7 +296,7 @@ static int snap_m_init(void *handle)
 _snap_m_init_exit:
 	snap_write64(handle, SNAP_M_CTX, SNAP_M_SLR, 0);	/* Release lock */
 _snap_m_init_exit1:
-	VERBOSE1("%s Exit rc: %d\n", __func__, rc);
+	VERBOSE2("%s Exit rc: %d\n", __func__, rc);
 	return rc;
 }
 
@@ -439,10 +308,6 @@ static int snap_do_master(struct mdev_ctx *mctx)
 	VERBOSE2("AFU[%d:XXX] Loop: %d Delay: %d sec mode: 0x%x left: %d\n",
 		mctx->card, mctx->loop,
 		mctx->dt, mctx->mode, mctx->count);
-
-	dt = snap_check_firs(mctx);
-	dt = snap_check_stime(mctx);
-
 	return dt;
 }
 
