@@ -19,7 +19,7 @@
 #include "ap_int.h"
 #include "action_memcopy_hls.h"
 
-#define MEMCOPY_ACTION_TYPE  0x14101000
+#define MEMCOPY_ACTION_TYPE  0x10141000
 #define RELEASE_VERSION      0x00000020
 // ----------------------------------------------------------------------------
 // Known Limitations => Issue #39 & #45
@@ -100,7 +100,7 @@ ap_uint<32> MIN32b(ap_uint<32> A, ap_uint<32> B)
 //--------------------------------------------------------------------------------------------
 //--- MAIN PROGRAM ---------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
-void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem, 
+void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
 	ap_uint<MEMDW> *d_ddrmem,
         action_reg *Action_Register, action_RO_config_reg *Action_Config)
 {
@@ -160,18 +160,18 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
   if (Action_Register->Data.out.type == CARD_DRAM and Action_Register->Data.out.size > CARD_DRAM_SIZE)
 	rc = 1;
 
-  // buffer size is hardware limited by MAX_NB_OF_BYTES_READ 
+  // buffer size is hardware limited by MAX_NB_OF_BYTES_READ
   nb_blocks_to_xfer = (action_xfer_size / MAX_NB_OF_BYTES_READ) + 1;
 
-  // transferring buffers one after the other 
-  L0:for ( i = 0; i < nb_blocks_to_xfer; i++ ) { 
+  // transferring buffers one after the other
+  L0:for ( i = 0; i < nb_blocks_to_xfer; i++ ) {
         //#pragma HLS UNROLL // cannot completely unroll a loop with a variable trip count
         xfer_size = MIN32b(action_xfer_size, MAX_NB_OF_BYTES_READ);
 
-        rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, Action_Register->Data.in.type, 
+        rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, Action_Register->Data.in.type,
                   InputAddress + address_xfer_offset, buf_gmem, xfer_size);
 
-        rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem, Action_Register->Data.out.type, 
+        rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem, Action_Register->Data.out.type,
                   OutputAddress + address_xfer_offset, buf_gmem, xfer_size);
 
         action_xfer_size -= xfer_size;
