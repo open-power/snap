@@ -28,35 +28,39 @@
 #include <donut_tools.h>
 #include <libdonut.h>
 #include <action_bfs.h>
+#include <snap_s_regs.h>
 
-/* 
- * BFS: breadth first search 
+#define HLS_BFS_ID		0x10141004
+#define ACTION_REDAY_IRQ	4
+
+/*
+ * BFS: breadth first search
  *    Simple demo to traverse a graph stored in adjcent table.
- *    
+ *
  *    A directed graph with vertexs (or called node) and edges (or called arc)
- *    The adjacent table format is: 
+ *    The adjacent table format is:
  *    vex_list[0]   -> {edge, vex_index} -> {edge, vex_index} -> ... -> NULL
  *    vex_list[1]   -> {edge, vex_index} -> {edge, vex_index} -> ... -> NULL
  *    ...
  *    vex_list[N-1] -> {edge, vex_index} -> {edge, vex_index} -> ... -> NULL
- * 
- * Function: 
+ *
+ * Function:
  *    Starting from each vertex node (called 'root'),
  *      and search all of the vertexes that it can reach.
- *      Visited nodes are recorded in obuf. 
- * 
- * Implementation:   
- *    We ask FPGA to visit the host memory to traverse this data structure. 
- *    1. We need to set a BFS_ACTION_TYPE, this is the ACTION ID. 
- *    2. We need to fill in 112 bytes configuration space. 
- *    Host will send this field to FPGA via MMIO-32. 
+ *      Visited nodes are recorded in obuf.
+ *
+ * Implementation:
+ *    We ask FPGA to visit the host memory to traverse this data structure.
+ *    1. We need to set a BFS_ACTION_TYPE, this is the ACTION ID.
+ *    2. We need to fill in 112 bytes configuration space.
+ *    Host will send this field to FPGA via MMIO-32.
  *          This field is completely user defined. see 'bfs_job'
  *          (No more 112 bytes. If 112B is not enough, we can append more)
  *    3. Call donut APIs
- * 
- * Notes: 
- *    When 'timeout' is reached, PSLSE will send ha_jcom=LLCMD (0x45) and uncompleted transactions will be killed. 
- *  
+ *
+ * Notes:
+ *    When 'timeout' is reached, PSLSE will send ha_jcom=LLCMD (0x45) and uncompleted transactions will be killed.
+ *
 */
 
 static const char *version = GIT_VERSION;
@@ -67,11 +71,12 @@ static void usage(const char *prog)
 	       "  -C, --card <cardno> can be (0...3)\n"
 	       "  -i, --input_file <graph.txt>       Input graph file.\n"
 	       "  -o, --output_file <bfs_result.bin> Output traverse result file.\n"
-           "  -t, --timeout <number>        When graph is large, need to enlarge it. \n"
-           "  -r, --rand_nodes <number>     Generate a random graph with the numbers \n"
-           "  -v, --verbose                 Show more information on screen. \n"
+           "  -t, --timeout <number>        When graph is large, need to enlarge it.\n"
+           "  -r, --rand_nodes <number>     Generate a random graph with the numbers\n"
+           "  -v, --verbose                 Show more information on screen.\n"
            "                                Automatically turned off when vex number > 20\n"
-           "  -V, --version                 Git version\n"                                 
+           "  -V, --version                 Git version\n"
+           "  -I, --irq                     Enable Interrupts\n"
 	       "\n"
 	       "Example:\n"
 	       "  demo_bfs   (Traverse a small sample graph and show result on screen)\n"
@@ -81,7 +86,7 @@ static void usage(const char *prog)
 }
 
 /*---------------------------------------------------
- *       Sample Data 
+ *       Sample Data
  *---------------------------------------------------*/
 
 static VexData v_table[] = {
@@ -121,7 +126,7 @@ static EdgeEntry e_table[] = {
 
 
 /*---------------------------------------------------
- *       Create Adjacent Table 
+ *       Create Adjacent Table
  *---------------------------------------------------*/
 //static int create_file_graph( /*AdjList * adj, const char * input_file*/)
 //{
@@ -129,14 +134,14 @@ static EdgeEntry e_table[] = {
 ////    printf("input_file is %s\n", input_file);
 //    return rc;
 //}
-        
+
 
 static int create_random_graph( AdjList * adj, uint32_t vex_num, uint32_t edge_num, uint32_t page_size)
 {
     int rc = 0;
     adj->vex_num = vex_num;
     adj->edge_num = edge_num;
-    
+
     uint32_t i;
     EdgeNode * en = NULL;
     adj->vex_list = memalign (page_size, vex_num * sizeof(VexNode));
@@ -155,7 +160,7 @@ static int create_random_graph( AdjList * adj, uint32_t vex_num, uint32_t edge_n
     {
         uint32_t s, d;
         s = rand()%vex_num;
-        
+
         do {
             d = rand()%vex_num;
         }while (d==s); //An arc to itself is not allowed.
@@ -170,8 +175,8 @@ static int create_random_graph( AdjList * adj, uint32_t vex_num, uint32_t edge_n
 
         if(verbose_flag && i <50)
             printf("edge %d:   %d -> %d\n", i, s, d);
-        
-        
+
+
         //FIXME: I cannot avoid multiple edges from s to d when building the edgelinks
         en->adjvex = d;
         en->data   = malloc(sizeof(EdgeData));
@@ -250,7 +255,7 @@ static void print_graph(AdjList * adj)
 }
 
 /*---------------------------------------------------
- *       Delete Adjacent Table when exit 
+ *       Delete Adjacent Table when exit
  *---------------------------------------------------*/
 static void destroy_graph(AdjList adj)
 {
@@ -259,7 +264,7 @@ static void destroy_graph(AdjList adj)
     EdgeNode * p;
     for (i = 0; i < adj.vex_num; i++)
     {
-        en = adj.vex_list[i].edgelink; 
+        en = adj.vex_list[i].edgelink;
         while (en)
         {
             p = en;
@@ -272,7 +277,7 @@ static void destroy_graph(AdjList adj)
 
 
 /*---------------------------------------------------
- *       Hook 112B Configuration 
+ *       Hook 112B Configuration
  *---------------------------------------------------*/
 
 static void dnut_prepare_bfs(struct dnut_job *job,
@@ -290,7 +295,7 @@ static void dnut_prepare_bfs(struct dnut_job *job,
     fprintf(stdout, "input_adjtable_address = 0x%0llx\n",(unsigned long long) addr_in);
     fprintf(stdout, "output_address = 0x%0llx\n",(unsigned long long) addr_out);
     fprintf(stdout, "------------------------------------------ \n");
-    
+
     bjob_in->input_adjtable_address = (uint64_t)addr_in;
     bjob_in->input_vex_num = vex_num_in;
     bjob_in->input_type = type_in;
@@ -300,14 +305,14 @@ static void dnut_prepare_bfs(struct dnut_job *job,
     bjob_in->output_type = type_out;
     bjob_in->output_flags = DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST | DNUT_TARGET_FLAGS_END;
 
-    bjob_in->status_pos = 0; 
+    bjob_in->status_pos = 0;
     bjob_in->status_vex = 0xbeefbeef;
     bjob_in->action_version = BFS_RELEASE;
 //	bjob->mmio_din = MMIO_DIN_DEFAULT;
 //	bjob->mmio_dout = MMIO_DOUT_DEFAULT;
 
-    //Here sets the 112byte MMIO settings input. 
-    // We have input parameters. 
+    //Here sets the 112byte MMIO settings input.
+    // We have input parameters.
     // But we don't need AFU to write back results from MMIO.
     // Results will be written in host_memory, starting from output_address
 	dnut_job_set(job, BFS_ACTION_TYPE, bjob_in, sizeof(*bjob_in),
@@ -316,13 +321,13 @@ static void dnut_prepare_bfs(struct dnut_job *job,
 
 }
 /*---------------------------------------------------
- *       MAIN                        
+ *       MAIN
  *---------------------------------------------------*/
 int main(int argc, char *argv[])
 {
 
     //General variables for donut call
-	int ch; 
+	int ch;
     int rc = 0;
 	int card_no = 0;
 	struct dnut_kernel *kernel = NULL;
@@ -338,6 +343,8 @@ int main(int argc, char *argv[])
 	const char *output_file = NULL;
     int random_graph = 0;
     uint32_t vex_n, edge_n;
+	int attach_flags = SNAP_CCR_DIRECT_MODE;
+	int action_irq = 0;
 
     vex_n  = ARRAY_SIZE(v_table);
     edge_n = ARRAY_SIZE(e_table);
@@ -391,7 +398,10 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
-
+		case 'I':	/* irq */
+			attach_flags |= SNAP_CCR_IRQ_ATTACH;
+			action_irq = ACTION_REDAY_IRQ;
+			break;
 		default:
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
@@ -408,7 +418,7 @@ int main(int argc, char *argv[])
     //Action specfic
 	struct bfs_job bjob_in;
 	struct bfs_job bjob_out;
-	
+
     //Input buffer
 	uint8_t type_in = DNUT_TARGET_TYPE_HOST_DRAM;
 	VexNode * ibuf = 0x0ull;
@@ -419,10 +429,10 @@ int main(int argc, char *argv[])
     uint32_t size_out;
     uint32_t i, j, k;
     FILE *ofp;
-	
-    
+
+
     // Construct the graph, and set to ibuf.
-    AdjList adj; 
+    AdjList adj;
 
     fprintf(stdout, "DEBUG: page_size is %d\n", page_size);
     fprintf(stdout, "DEBUG: timeout is %ld\n",timeout);
@@ -430,7 +440,7 @@ int main(int argc, char *argv[])
     fprintf(stdout, "input_file is %s\n", input_file);
  //   if(input_file != NULL)
    //     rc = create_file_graph (/*&adj, input_file*/); // TODO dummy function
-    //else 
+    //else
     if (random_graph && vex_n > 0)
     {
         edge_n = vex_n * (vex_n - 1) / 4;  // 1/4 of a full connection
@@ -438,9 +448,9 @@ int main(int argc, char *argv[])
     }
     else
         rc = create_sample_graph(&adj, vex_n, edge_n, v_table, e_table, page_size);
-   
+
     print_graph(&adj);
-    if(rc < 0) 
+    if(rc < 0)
         goto out_error;
 
 	ibuf = adj.vex_list;
@@ -448,7 +458,7 @@ int main(int argc, char *argv[])
 
 
     // obuf is 512bit  aligned.
-    // Format: 
+    // Format:
     // 512b: Root0: | {visit_node}, {visit_node}, .............................{visit_node} |
     // 512b:        | {visit_node}, {visit_node}, ....,  {FF....cnt}, {dummy}, ..., {dummy} |
     // 512b: Root1: | {visit_node}, {visit_node}, .............................{visit_node} |
@@ -456,17 +466,17 @@ int main(int argc, char *argv[])
     //  ... till Root N-1
     //
     // Each {} is uint32_t, can fill 16 nodes in a row.
-    
-    size_out = vex_n * (vex_n/16+1)*16; 
+
+    size_out = vex_n * (vex_n/16+1)*16;
     obuf = memalign(page_size, sizeof(uint32_t) * size_out);
     //fprintf(stdout, "DEBUG: size_out = %d, obuf = 0x%0llx\n", size_out,(unsigned long long) obuf);
 
 
     fprintf(stdout, "dnut_kernel_attach start...\n");
-	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
+	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	kernel = dnut_kernel_attach_dev(device,
-					DNUT_VENDOR_ID_ANY,
-					DNUT_DEVICE_ID_ANY,
+					0x1014,
+					0xcafe,
 					BFS_ACTION_TYPE);
 	if (kernel == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
@@ -478,17 +488,24 @@ int main(int argc, char *argv[])
 	printf("FIXME Wait a sec ...\n");
 	sleep(1);
 #endif
+	rc = dnut_attach_action((void*)kernel, HLS_BFS_ID, attach_flags, 5*timeout);
+	if (rc) {
+		fprintf(stderr, "err: job Attach %d: %s!\n", rc,
+			strerror(errno));
+		dnut_kernel_free(kernel);
+		goto out_error;
+	}
 #if 1				/* FIXME Circumvention should go away */
 	printf("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x10010, 0);
-	dnut_kernel_mmio_write32(kernel, 0x10014, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1001c, 0);
-	dnut_kernel_mmio_write32(kernel, 0x10020, 0);
+	dnut_kernel_mmio_write32(kernel, 0x10, 0);
+	dnut_kernel_mmio_write32(kernel, 0x14, 0);
+	dnut_kernel_mmio_write32(kernel, 0x1c, 0);
+	dnut_kernel_mmio_write32(kernel, 0x20, 0);
 #endif
 #if 1				/* FIXME Circumvention should go away */
 	printf("FIXME Temporary setting to enable DDR on the card\n");
-	dnut_kernel_mmio_write32(kernel, 0x10028, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1002c, 0);
+	dnut_kernel_mmio_write32(kernel, 0x28, 0);
+	dnut_kernel_mmio_write32(kernel, 0x2c, 0);
 #endif
 
 	dnut_prepare_bfs(&job, &bjob_in, &bjob_out,
@@ -497,7 +514,7 @@ int main(int argc, char *argv[])
 
 	fprintf(stdout, "INFO: Timer starts...\n");
 	gettimeofday(&stime, NULL);
-	rc = dnut_kernel_sync_execute_job(kernel, &job, timeout);
+	rc = dnut_kernel_sync_execute_job(kernel, &job, timeout, action_irq);
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
 			strerror(errno));
@@ -515,12 +532,12 @@ int main(int argc, char *argv[])
 
     if(output_file == NULL )
     {
-        //print on screen 
+        //print on screen
 
         i = 0;  //uint32 count
         j = 0;  //vex    index
         fprintf(stdout, "Visiting node (%d): ", j);
-        
+
         while(i < size_out)
         {
             k = obuf[i];
@@ -561,8 +578,8 @@ int main(int argc, char *argv[])
 		if (rc < 0)
 			goto out_error;
     }
- 
-        
+
+
 
 
 	dnut_kernel_free(kernel);
