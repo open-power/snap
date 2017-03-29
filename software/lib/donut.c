@@ -267,7 +267,7 @@ static void hw_dnut_card_free(void *_card)
 	}
 }
 
-static int hw_wait_irq(void *_card, int irq)
+static int hw_wait_irq(void *_card, int irq, int timeout_sec)
 {
 	fd_set  set;
 	struct  timeval timeout;
@@ -278,8 +278,8 @@ static int hw_wait_irq(void *_card, int irq)
 		card->afu_fd, irq, card->mode);
 
 	if (!cxl_event_pending(card->afu_h)) {
-		timeout.tv_sec = 20;
-		timeout.tv_usec = 100 * 1000;
+		timeout.tv_sec = timeout_sec;
+		timeout.tv_usec = 0;
 		FD_ZERO(&set);
 		FD_SET(card->afu_fd, &set);
 
@@ -317,16 +317,17 @@ static int hw_wait_irq(void *_card, int irq)
 	return rc;
 }
 
-static int hw_attach_action(void *_card, uint32_t action, int flags)
+static int hw_attach_action(void *_card, uint32_t action, int flags, int timeout_sec)
 {
 	struct dnut_data *card = (struct dnut_data *)_card;
 	int i, rc = 0;
 	uint64_t data;
 	uint32_t sat = INVALID_SAT;	/* Invalid short Action type */
 	int maid;			/* Max Acition Id's */
+	int t0, dt;
 
-	dnut_trace("%s Enter Action: 0x%x Old Action: 0x%x Flags: 0x%x Base: 0x%x\n", __func__,
-		action, card->action_type, flags, card->action_base);
+	dnut_trace("%s Enter Action: 0x%x Old Action: 0x%x Flags: 0x%x Base: 0x%x timeout: %d sec\n", __func__,
+		action, card->action_type, flags, card->action_base, timeout_sec);
 	if (card->master) {
 		dnut_trace("%s Exit Error Master is not allowed to use  Action\n",  __func__);
 		return ENODEV;
@@ -369,36 +370,40 @@ static int hw_attach_action(void *_card, uint32_t action, int flags)
 	}
 
 	if (SNAP_CCR_IRQ_ATTACH & card->mode)
-		rc = hw_wait_irq(_card, 2);
+		rc = hw_wait_irq(_card, 2, timeout_sec);
 	else {
-		hw_dnut_mmio_read64(card, SNAP_S_CSR, &data);
-		if (0xC0 != (data & 0xC0))
-			rc = EBUSY;
+		t0 = tget_ms();
+		dt = 0;
+		rc = EBUSY;
+		while (dt < (timeout_sec*1000)) {
+			hw_dnut_mmio_read64(card, SNAP_S_CSR, &data);
+			if (0xC0 == (data & 0xC0)) {
+				rc = 0;
+				break;
+			}
+			dt = tget_ms() - t0;
+		}
 	}
 	if (0 == rc)
 		card->seq++;
-	dnut_trace("%s Exit %d Action Base: 0x%x\n", __func__,
+	dnut_trace("%s Exit rc: %d Action Base: 0x%x\n", __func__,
 		rc, card->action_base);
 	return rc;
 }
 
-static int hw_detach_action(void *_card, uint32_t action)
+static int hw_detach_action(void *_card)
 {
-	struct dnut_data *card = (struct dnut_data *)_card;
-	int rc = 0;
-
-	dnut_trace("%s Enter 0x%x\n", __func__, action);
+	struct dnut_data *card = (struct dnut_data*)_card;
 	card->start_attach = true;			/* Set Flag to Attach next Time again */
 	hw_dnut_mmio_write64(card, SNAP_S_JCR, 2);	/* Stop:  Detach action */
-	dnut_trace("%s Exit %d\n", __func__, rc);
-	return rc;
+	return 0;
 }
 
 /* Hardware version of the lowlevel functions */
 static struct dnut_funcs hardware_funcs = {
 	.card_alloc_dev = hw_dnut_card_alloc_dev,
 	.attach_action = hw_attach_action,	/* attach Action */
-	.detach_action = hw_detach_action,	/* dettach Action */
+	.detach_action = hw_detach_action,	/* detach Action */
 	.mmio_write32 = hw_dnut_mmio_write32,
 	.mmio_read32 = hw_dnut_mmio_read32,
 	.mmio_write64 = hw_dnut_mmio_write64,
@@ -417,15 +422,17 @@ struct dnut_card *dnut_card_alloc_dev(const char *path,
 }
 
 int dnut_attach_action(struct dnut_card *_card,
-		      uint32_t action, int flags)
+		      uint32_t action, int flags, int timeout_ms)
 {
-	return df->attach_action(_card, action, flags);
+	return df->attach_action(_card, action, flags, timeout_ms);
 }
 
-int dnut_detach_action(struct dnut_card *_card,
-		      uint32_t action)
+int dnut_detach_action(struct dnut_card *_card)
 {
-	return df->detach_action(_card, action);
+	dnut_trace("%s Enter\n", __func__);
+	df->detach_action(_card);
+	dnut_trace("%s Exit\n", __func__);
+	return 0;
 }
 
 int dnut_mmio_write32(struct dnut_card *_card,
@@ -563,42 +570,31 @@ int dnut_kernel_stop(struct dnut_kernel *kernel __unused)
 	return 0;
 }
 
-int dnut_kernel_completed(struct dnut_kernel *kernel, int irq, int *rc)
+int dnut_kernel_completed(struct dnut_kernel *kernel, int irq, int *rc, int timeout)
 {
-	int _rc;
+	int _rc = 0;
 	uint32_t action_data = 0;
 	struct dnut_card *card = (struct dnut_card *)kernel;
+	int t0, dt, timeout_ms;
 
-	if (0 != irq)
-		hw_wait_irq((void*)kernel, irq);
-	_rc = dnut_mmio_read32(card, ACTION_CONTROL, &action_data);
+	if (irq) {
+		hw_wait_irq((void*)kernel, irq, timeout);
+		_rc = dnut_mmio_read32(card, ACTION_CONTROL, &action_data);
+	} else {
+		/* Busy poll timout sec */
+		t0 = tget_ms();
+		dt = 0;
+		timeout_ms = timeout * 1000;
+		while (dt < timeout_ms) {
+			_rc = dnut_mmio_read32(card, ACTION_CONTROL, &action_data);
+			if ((action_data & ACTION_CONTROL_IDLE) == ACTION_CONTROL_IDLE)
+				break;
+			dt = tget_ms() - t0;
+		}
+	}
 	if (rc)
 		*rc = _rc;
-
 	return (action_data & ACTION_CONTROL_IDLE) == ACTION_CONTROL_IDLE;
-}
-
-static int dnut_poll_results(struct dnut_card *card)
-{
-	int rc;
-	unsigned int i;
-	uint32_t action_addr;
-	uint32_t job_data[112/sizeof(uint32_t)];
-
-	for (i = 0, action_addr = ACTION_JOB_OUT; i < ARRAY_SIZE(job_data);
-	     i++, action_addr += sizeof(uint32_t)) {
-
-		rc = dnut_mmio_read32(card, action_addr, &job_data[i]);
-		if (rc != 0)
-			return rc;
-	}
-	for (i = 0, action_addr = ACTION_JOB_OUT; i < ARRAY_SIZE(job_data);
-	     i += 4, action_addr += 4 * sizeof(uint32_t))
-		poll_trace("  %08x: %08x %08x %08x %08x\n", action_addr,
-			   job_data[i + 0], job_data[i + 1],
-			   job_data[i + 2], job_data[i + 3]);
-
-	return 0;
 }
 
 /**
@@ -612,14 +608,13 @@ static int dnut_poll_results(struct dnut_card *card)
  */
 int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 				 struct dnut_job *cjob,
-				 unsigned int timeout_sec)
+				 unsigned int timeout_sec,
+				 int irq)
 {
 	int rc;
 	unsigned int i;
 	struct dnut_card *card = (struct dnut_card *)kernel;
 	uint32_t action_addr;
-	unsigned int t_start, t_now;
-	unsigned long o_now = 0;
 	struct queue_workitem job; /* one cacheline job description and data */
 	uint32_t *job_data;
 	int completed;
@@ -673,34 +668,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	if (rc != 0)
 		return rc;
 
-	/* Wait for Action to go back to Idle */
-	t_start = tget_ms();
-	do {
-		dnut_trace("%s: CHECK COMPLETION\n", __func__);
-
-		/* Every second do ... */
-		if (poll_trace_enabled()) {
-			unsigned long t_diff;
-
-			t_now = tget_ms();
-			t_diff = t_now - t_start;
-
-			if ((t_now != o_now) && (t_diff % 1000) == 0) {
-				poll_trace("POLLING Regs %zd msec\n", t_diff);
-				dnut_poll_results(card);
-			}
-			o_now = t_now;
-		}
-
-		completed = dnut_kernel_completed(kernel, 0, &rc);
-		if (completed || rc != 0)
-			break;
-
-		t_now = tget_ms();
-		if (0xffffffff == timeout_sec)
-			continue;	/* forever */
-	} while ((t_now - t_start) < (timeout_sec * 1000));
-
+	completed = dnut_kernel_completed(kernel, irq, &rc, timeout_sec);
 	if (completed == 0) {
 		dnut_trace("%s: rc=%d completed=%d\n", __func__,
 			   rc, completed);
@@ -967,15 +935,15 @@ static int sw_mmio_read64(void *_card, uint64_t offs, uint64_t *data)
 	return rc;
 }
 
-static int sw_attach_action(void *_card, uint32_t action, int flags)
+static int sw_attach_action(void *_card, uint32_t action, int flags, int timeout_ms)
 {
-	dnut_trace("  %s(%p, %x %d)\n", __func__, _card, action, flags);
+	dnut_trace("  %s(%p, %x %d %d)\n", __func__, _card, action, flags, timeout_ms);
 	return 0;
 }
 
-static int sw_detach_action(void *_card, uint32_t action)
+static int sw_detach_action(void *_card)
 {
-	dnut_trace("  %s(%p, %x)\n", __func__, _card, action);
+	dnut_trace("  %s(%p)\n", __func__, _card);
 	return 0;
 }
 
