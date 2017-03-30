@@ -25,7 +25,7 @@
 #include "hls_snap.H"
 
 #define SPONGE_ACTION_TYPE 0x10141001
-#define RELEASE_VERSION    0x00000020 
+#define RELEASE_LEVEL      0x00000020 
 
 /* Names of the fields can be changed by User. Should serve as a template */
 typedef struct {
