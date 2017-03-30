@@ -133,8 +133,8 @@ void action_wrapper(snap_membus_t *din_gmem,
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
 	/* Hardcoded numbers */
-	Action_Config->action_type   = (ap_uint<32>) SPONGE_ACTION_TYPE;
-	Action_Config->release_level = (ap_uint<32>) RELEASE_LEVEL;
+	Action_Config->action_type   = (snapu32_t) SPONGE_ACTION_TYPE;
+	Action_Config->release_level = (snapu32_t) RELEASE_LEVEL;
 
 	uint64_t checksum = 0;
 	uint32_t slice = 0;
