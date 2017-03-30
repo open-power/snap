@@ -247,15 +247,11 @@ static int snap_m_init(void *handle)
 			VERBOSE1("   %d          0x%8.8x   ",
 				(int)(reg >> 32ll), atype);
 			switch (atype) {
-			case 0x10140000:
-				VERBOSE1("IBM Sample Code\n");
-				break;
-			case 0x10141000:
-				VERBOSE1("HLS Demo Memcopy\n");
-				break;
-			case 0x10141001:
-				VERBOSE1("HLS Code 2\n");
-				break;
+			case 0x10140000: VERBOSE1("IBM Sample Code\n"); break;
+			case 0x10141000: VERBOSE1("HLS Demo Memcopy\n"); break;
+			case 0x10141001: VERBOSE1("HLS sponge\n"); break;
+			case 0x10141002: VERBOSE1("HLS XXXX\n"); break;
+			case 0x10141003: VERBOSE1("HLS test search\n"); break;
 			default:
 				VERBOSE1("UNKNOWN Code.....\n");
 				break;
