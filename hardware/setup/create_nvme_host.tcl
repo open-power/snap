@@ -171,6 +171,7 @@ CONFIG.pf0_msix_cap_table_bir {BAR_1:0} \
 CONFIG.pipe_sim {true} \
 CONFIG.pl_link_cap_max_link_speed {8.0_GT/s} \
 CONFIG.pl_link_cap_max_link_width {X4} \
+CONFIG.coreclk_freq {500} \
 CONFIG.plltype {QPLL1} \
 ] $axi_pcie3_0 $msg_level
 
@@ -192,6 +193,7 @@ CONFIG.pf0_msix_cap_table_bir {BAR_1:0} \
 CONFIG.pipe_sim {true} \
 CONFIG.pl_link_cap_max_link_speed {8.0_GT/s} \
 CONFIG.pl_link_cap_max_link_width {X4} \
+CONFIG.coreclk_freq {500} \
 CONFIG.plltype {QPLL1} \
 ] $axi_pcie3_1 $msg_level
 

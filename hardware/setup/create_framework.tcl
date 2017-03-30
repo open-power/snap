@@ -162,7 +162,8 @@ if { $nvme_used == TRUE } {
   puts "	                     generating NVMe output products"
   set_property synth_checkpoint_mode None [get_files  $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] $msg_level
   generate_target all                     [get_files  $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] $msg_level
-  add_files -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/nvme_model.v
+  add_files -fileset sim_1 -scan_for_includes $root_dir/sim/nvme/
+  add_files -fileset sim_1 -norecurse -scan_for_includes /afs/vlsilab.boeblingen.ibm.com/proj/cte/tools/cds/VIPCAT/vol2/tools.lnx86/denali_64bit/ddvapi/verilog/denaliPcie.v
   set_property include_dirs /afs/vlsilab.boeblingen.ibm.com/proj/cte/tools/cds/VIPCAT/vol2/tools.lnx86/denali_64bit/ddvapi/verilog [get_filesets sim_1]
 }
 
