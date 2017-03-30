@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 --
--- Copyright 2016 International Business Machines
+-- Copyright 2016,2017 International Business Machines
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ ENTITY donut IS
     IMP_VERSION_DAT        : std_logic_vector(63 DOWNTO 0);
     BUILD_DATE_DAT         : std_logic_vector(63 DOWNTO 0);
     NUM_OF_ACTION_TYPES    : integer RANGE 0 TO 16 := 16;
-    NUM_OF_ACTIONS         : integer RANGE 0 TO 16 :=  1
+    NUM_OF_ACTIONS         : integer RANGE 0 TO 16 :=  NUM_OF_ACTIONS
   );
   PORT (
     --
@@ -143,6 +143,7 @@ ARCHITECTURE donut OF donut IS
   SIGNAL ha_r                : HA_R_T;
   SIGNAL jmm_c               : JMM_C_T;
   SIGNAL jmm_d               : JMM_D_T;
+  SIGNAL js_c                : JS_C_T;
   SIGNAL jx_c                : JX_C_T;
   SIGNAL mmc_c               : MMC_C_T;
   SIGNAL mmc_e               : MMC_E_T;
@@ -153,20 +154,21 @@ ARCHITECTURE donut OF donut IS
   SIGNAL mmx_d               : MMX_D_T;
   SIGNAL xmm_d               : XMM_D_T;
 
-  signal xj_c                : XJ_C_T;
+  SIGNAL sj_c                : SJ_C_T;
+  SIGNAL xj_c                : XJ_C_T;
 
-  signal xk_d                : XK_D_T;
-  signal kx_d                : KX_D_T;
-  signal sk_d                : SK_D_T;
-  signal ks_d                : KS_D_T;
+  SIGNAL xk_d                : XK_D_T;
+  SIGNAL kx_d                : KX_D_T;
+  SIGNAL sk_d                : SK_D_T;
+  SIGNAL ks_d                : KS_D_T;
 
-  signal sd_c                : SD_C_T;
-  signal sd_d                : SD_D_T;
-  signal ds_c                : DS_C_T;
-  signal ds_d                : DS_D_T;
-  signal xn_d                : XN_D_T;
-  signal nx_d                : NX_D_T := ('1', '1', "00", '1', '1',
-                                          (31 downto 0 => '0'), "00", '1');
+  SIGNAL sd_c                : SD_C_T;
+  SIGNAL sd_d                : SD_D_T;
+  SIGNAL ds_c                : DS_C_T;
+  SIGNAL ds_d                : DS_D_T;
+  SIGNAL xn_d                : XN_D_T;
+  SIGNAL nx_d                : NX_D_T := ('1', '1', "00", '1', '1',
+                                          (31 DOWNTO 0 => '0'), "00", '1');
 
 
 BEGIN
@@ -341,7 +343,7 @@ BEGIN
       afu_reset_o            => afu_reset,
       --
       -- MMIO IOs
-      mmc_c_i                => mmc_c,          
+      mmc_c_i                => mmc_c,
       mmc_e_i                => mmc_e,
       cmm_e_o                => cmm_e
     );
@@ -371,6 +373,10 @@ BEGIN
       mmj_d_i                => mmj_d,
       jmm_c_o                => jmm_c,
       jmm_d_o                => jmm_d,
+      --
+      -- DMA Interface (via AXI-DMA shim)
+      sj_c_i                 => sj_c,
+      js_c_o                 => js_c,
       --
       -- AXI MASTER Interface
       xj_c_i                 => xj_c,
@@ -471,6 +477,9 @@ BEGIN
       sd_d_o                       => sd_d,
       ds_c_i                       => ds_c,
       ds_d_i                       => ds_d,
+
+      sj_c_o                       => sj_c,
+      js_c_i                       => js_c,
 
       sk_d_o                       => sk_d_o,  -- axi slave full interface
       ks_d_i                       => ks_d_i

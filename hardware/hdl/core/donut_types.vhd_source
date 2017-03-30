@@ -191,11 +191,10 @@ PACKAGE donut_types IS
 --  CONSTANT MASTER_BOUNDARY            : integer := 15;
   CONSTANT MASTER_ACTION_ACCESS_BIT   : integer := 14;  -- Action space for master access starts at 0x10000 (16 x 4KB)
   CONSTANT MASTER_ACTION_ID_L         : integer := 13;  -- Action ID is encoded in bits 15:12 of the real address
-  CONSTANT MASTER_ACTION_ID_R         : integer := 10;  -- Action ID is encoded in bits 15:12 of the real address  
+  CONSTANT MASTER_ACTION_ID_R         : integer := 10;  -- Action ID is encoded in bits 15:12 of the real address
   CONSTANT NVME_SPACE_START_BIT       : integer := 15;  -- NVME space starts at address 0x20000
   CONSTANT SLAVE_SPACE_BIT            : integer := 23;  -- Slave (context) space starts at 0x2000000
   CONSTANT PSL_HOST_ADDR_MAXBIT       : integer := 23;
-  CONSTANT PSL_HOST_CTX_ID_L          : integer := 22;
   CONSTANT PSL_HOST_CTX_ID_R          : integer := 14;
   CONSTANT SLAVE_ACTION_OFFSET_L      : integer := 13;
   CONSTANT SLAVE_ACTION_OFFSET_R      : integer := 10;
@@ -249,10 +248,9 @@ PACKAGE donut_types IS
   CONSTANT SNAP_CMD_MAX_SAT_R         : integer := 48;     -- SNAP_STATUS_REG
   CONSTANT SNAP_LOCK_INT              : integer :=  0;     -- SNAP_LOCK_REG
   CONSTANT SNAP_CTX_MASTER_BIT        : integer := 63;     -- SNAP_CTX_ID_REG
-  CONSTANT SNAP_CTX_ID_L              : integer :=  8;     -- SNAP_CTX_ID_REG
   CONSTANT SNAP_CTX_ID_R              : integer :=  0;     -- SNAP_CTX_ID_REG
 
-  CONSTANT CTX_CFG_SIZE_INT           : integer := 37;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_SIZE_INT           : integer := 39;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_SEQNO_L      : integer := 63;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_SEQNO_R      : integer := 48;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_JQIDX_L      : integer := 31;     -- CONTEXT_CONFIG_REG
@@ -261,15 +259,19 @@ PACKAGE donut_types IS
   CONSTANT CTX_CFG_MAX_JQIDX_R        : integer := 16;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_SAT_L              : integer := 15;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_SAT_R              : integer := 12;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_ASGNINT_ENA        : integer :=  2;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_CPLINT_ENA         : integer :=  1;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_DIRECT_MODE        : integer :=  0;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_FIRST_SEQNO_INT_L  : integer := 36;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_FIRST_SEQNO_INT_R  : integer := 21;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_FIRST_JQIDX_INT_L  : integer := 20;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_FIRST_JQIDX_INT_R  : integer := 13;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_MAX_JQIDX_INT_L    : integer := 12;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_MAX_JQIDX_INT_R    : integer :=  5;     -- CONTEXT_CONFIG_REG
-  CONSTANT CTX_CFG_SAT_INT_L          : integer :=  4;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
-  CONSTANT CTX_CFG_SAT_INT_R          : integer :=  1;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
+  CONSTANT CTX_CFG_FIRST_SEQNO_INT_L  : integer := 38;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_SEQNO_INT_R  : integer := 23;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_JQIDX_INT_L  : integer := 22;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_FIRST_JQIDX_INT_R  : integer := 15;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_JQIDX_INT_L    : integer := 14;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_MAX_JQIDX_INT_R    : integer :=  7;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_SAT_INT_L          : integer :=  6;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
+  CONSTANT CTX_CFG_SAT_INT_R          : integer :=  3;     -- CONTEXT_CONFIG_REG and CONTEXT_STATUS_REG
+  CONSTANT CTX_CFG_ASGNINT_ENA_INT    : integer :=  2;     -- CONTEXT_CONFIG_REG
+  CONSTANT CTX_CFG_CPLINT_ENA_INT     : integer :=  1;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_DIRECT_MODE_INT    : integer :=  0;     -- CONTEXT_CONFIG_REG
 
   CONSTANT CTX_SEQNO_SIZE_INT         : integer := 40;     -- CONTEXT_STATUS_REG
@@ -356,10 +358,11 @@ PACKAGE donut_types IS
   ------------------------------------------------------------------------------
   --
   -- CONSTANT
-  CONSTANT NUM_OF_CONTEXTS                 : integer := 512;      -- total number of supported contexts
-  CONSTANT CONTEXT_BITS                    : integer :=   9;      -- number of bits required to represent the supported contexts as integer
+  CONSTANT NUM_OF_CONTEXTS                 : integer := 256;      -- total number of supported contexts
   CONSTANT SEQNO_BITS                      : integer :=  16;      -- number of bits required to represent a valid sequence number
   CONSTANT JQIDX_BITS                      : integer :=   8;      -- number of bits required to represent a valid job queue index
+  CONSTANT CTX_ASSIGN_INT_SRC_ID           : std_logic_vector(INT_BITS-2 DOWNTO 0) := "10";
+  CONSTANT CTX_COMPLETE_INT_SRC_ID         : std_logic_vector(INT_BITS-2 DOWNTO 0) := "01";
 
 --  CONSTANT ACTIVE_CONTEXTS_REGIONS_NUM     : integer :=  16;      -- number of active context regions
 --  CONSTANT ACTIVE_CONTEXTS_REGION_BITS     : integer :=   5;      -- number of bits required to represent active context within the region as integer
@@ -424,8 +427,8 @@ PACKAGE donut_types IS
   END RECORD;
 
   CONSTANT AFU_DES_INI : AFU_DES_T :=             -- see Coherent Accelerator Interface Architecture (CAIA) spec for definition of AFU Descriptor
-    (NUM_INTS_PER_PROCESS  => x"0002",                  -- x'00'  0:15 SNAP requires two interrupts per context (need more?)
-     NUM_OF_PROCESSES      => x"0200",                  -- x'00' 16:31 SNAP supports 512 contexts
+    (NUM_INTS_PER_PROCESS  => x"0007",                  -- x'00'  0:15 Four interrupts reserved for the action and, SNAP requires at least two interrupts per context
+     NUM_OF_PROCESSES      => x"0100",                  -- x'00' 16:31 SNAP supports 256 contexts
      NUM_OF_AFU_CRS        => x"0001",                  -- x'00' 32:47 SNAP provides one config record
      REG_PROG_MODEL        => x"0004",                  -- x'00' 48:63 SNAP requires directed mode programming model
      AFU_CR_LEN            =>   x"00_0000_0000_0001",   -- x'20'  8:63 SNAP provides one 256 bytes config record
@@ -467,10 +470,12 @@ PACKAGE donut_types IS
   ------------------------------------------------------------------------------
   --
   -- CONSTANT
-  CONSTANT ACTION_TYPE_BITS                : integer :=   4;      -- number of bits required to represent the action types
-  CONSTANT NUM_OF_ACTION_TYPES             : integer :=  16;      -- maximum number of supported action types
-  CONSTANT ACTION_BITS                     : integer :=   4;      -- number of bits required to represent the action IDs
-  CONSTANT NUM_OF_ACTIONS                  : integer := 1;      -- maximum number of supported actions
+  CONSTANT ACTION_TYPE_BITS                : integer                       :=  4;      -- number of bits required to represent the action types
+  CONSTANT NUM_OF_ACTION_TYPES             : integer                       := 16;      -- maximum number of supported action types
+  CONSTANT ACTION_BITS                     : integer                       :=  4;      -- number of bits required to represent the action IDs
+  CONSTANT NUM_OF_ACTIONS                  : integer                       :=  1;      -- maximum number of supported actions
+  CONSTANT ACTION_CONTEXT_REG              : std_logic_vector(11 DOWNTO 0) := x"020";
+
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -492,6 +497,7 @@ PACKAGE donut_types IS
   TYPE ACTION_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_logic_vector(ACTION_BITS-1 DOWNTO 0);
   TYPE ACTION_MASK_ARRAY IS ARRAY (integer RANGE <>) OF std_logic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
   TYPE CONTEXT_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  TYPE INTSRC_ID_ARRAY IS ARRAY (integer RANGE <>) OF std_logic_vector(INT_BITS-2 DOWNTO 0);
   TYPE SEQNO_ARRAY IS ARRAY (integer RANGE <>) OF std_logic_vector(SEQNO_BITS-1 DOWNTO 0);
   TYPE JQIDX_ARRAY IS ARRAY (integer RANGE <>) OF std_logic_vector(JQIDX_BITS-1 DOWNTO 0);
 
@@ -693,6 +699,7 @@ PACKAGE donut_types IS
 --
 --  jmm_c: job_manager -> mmio        : Control Interface
 --  jmm_d: job_manager -> mmio        : Data Interface
+--  js_c : job_manager -> AXI slave   : Control Interface
 --  jx_c : job_manager -> AXI master  : Control Interface
 --
 --  mmc_c: mmio        -> ctrl_mgr    : Control Interface
@@ -702,15 +709,14 @@ PACKAGE donut_types IS
 --  mmj_c: mmio        -> job_manager : Control Interface
 --  mmj_d: mmio        -> job_manager : Data Interface
 --  mmx_d: mmio        -> AXI master  : Data Interface
---  mmx_c: mmio        -> AXI master  : Control Interface
 --
 --  nx_d : NVMe        -> AXI master  : Data Interface
 --
 --  sd_c : AXI slave   -> dma         : Control Interface
 --  sd_d : AXI slave   -> dma         : Data Interface
+--  sj_c : AXI slave   -> job_manager : Control Interface
 --
 --  xmm_d: AXI master  -> mmio        : Data Interface
---  xmm_c: AXI master  -> mmio        : Control Interface
 --  xj_c : AXI master  -> job_mgr     : Control Interface
 --  xn_d : AXI master  -> NVMe        : Data Interface
 --
@@ -725,20 +731,21 @@ PACKAGE donut_types IS
     -- ds_c
     --
     TYPE DS_C_T IS RECORD
-      wr_req_ack        : std_logic;                                           --
-      rd_req_ack        : std_logic;                                           --
-      wr_id_valid       : std_logic;                                           --
-      wr_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 downto 0);     --
+      wr_req_ack        : std_logic;
+      rd_req_ack        : std_logic;
+      wr_id_valid       : std_logic;
+      wr_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
+      int_req_ack       : std_logic;
     END RECORD DS_C_T;
 
     --
     -- ds_d
     --
     TYPE DS_D_T IS RECORD
-      rd_data_strobe    : std_logic;                                           --valid
-      rd_last           : std_logic;                                           --
-      rd_data           : std_logic_vector(C_S_AXI_DATA_WIDTH - 1 downto 0);   -- data
-      rd_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 downto 0);     --
+      rd_data_strobe    : std_logic;                                           -- valid
+      rd_last           : std_logic;
+      rd_data           : std_logic_vector(C_S_AXI_DATA_WIDTH - 1 DOWNTO 0);   -- data
+      rd_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
     END RECORD DS_D_T;
 
     --
@@ -796,9 +803,9 @@ PACKAGE donut_types IS
     -- jmm_c
     --
     TYPE JMM_C_T IS RECORD
-      context_id      : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
       seqno_we        : std_logic;
       status_we       : std_logic;
+      assign_action   : std_logic;
     END RECORD;
 
     --
@@ -810,14 +817,25 @@ PACKAGE donut_types IS
       action_id          : std_logic_vector(CTX_STAT_ACTION_ID_L DOWNTO CTX_STAT_ACTION_ID_R);
       action_active      : std_logic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
       attached_to_action : std_logic;
+      context_id         : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
       context_active     : std_logic;
+    END RECORD;
+
+    --
+    -- js_c
+    --
+    TYPE JS_C_T IS RECORD
+      int_req            : std_logic;
+      int_src            : std_logic_vector(INT_BITS-2 DOWNTO 0);      -- the job manager only uses two of the seven interrupt source IDs
+      int_ctx            : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+      ctx_workaround     : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);  -- only for HLS_WORKAROUND=TRUE
     END RECORD;
 
     --
     -- jx_c
     --
     TYPE JX_C_T IS RECORD
-      check_for_idle     : std_logic_vector(ACTION_BITS-1 downto 0);
+      check_for_idle     : std_logic_vector(ACTION_BITS-1 DOWNTO 0);
     END RECORD JX_C_T;
 
 
@@ -870,6 +888,7 @@ PACKAGE donut_types IS
       exploration_done          : std_logic;
       max_sat                   : integer RANGE 0 TO NUM_OF_ACTION_TYPES-1;
       last_seqno                : std_logic;
+      action_ack                : std_logic;
     END RECORD;
 
     --
@@ -881,6 +900,8 @@ PACKAGE donut_types IS
       sat                       : ACTION_TYPE_ARRAY(NUM_OF_ACTIONS-1 DOWNTO 0);
       current_seqno             : std_logic_vector(CTX_SEQNO_CURRENT_L DOWNTO CTX_SEQNO_CURRENT_R);
       current_jqidx             : std_logic_vector(CTX_SEQNO_JQIDX_L DOWNTO CTX_SEQNO_JQIDX_R);
+      assign_int_enable         : std_logic;
+      cpl_int_enable            : std_logic;
       job_queue_mode            : std_logic;
     END RECORD;
 
@@ -897,32 +918,44 @@ PACKAGE donut_types IS
 
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
-  --  AXI SLAVE Interface
+  --  AXI SLAVE Interface (AXI-DMA shim)
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
     --
     -- sd_c
     --
     TYPE SD_C_T IS RECORD
-      wr_req            : std_logic;                                           --wvalid
-      wr_addr           : std_logic_vector(63 downto 0);                       --waddr
-      wr_len            : std_logic_vector( 7 downto 0);                       --wlen
-      wr_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 downto 0);     --action ID
-      rd_req            : std_logic;                                           --rvalid
-      rd_addr           : std_logic_vector(63 downto 0);                       --raddr
-      rd_len            : std_logic_vector( 7 downto 0);                       --rlen
-      rd_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 downto 0);     --action ID
+      wr_req            : std_logic;                                           -- wvalid
+      wr_addr           : std_logic_vector(63 DOWNTO 0);                       -- waddr
+      wr_len            : std_logic_vector( 7 DOWNTO 0);                       -- wlen
+      wr_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
+      wr_ctx            : std_logic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
+      rd_req            : std_logic;                                           -- rvalid
+      rd_addr           : std_logic_vector(63 DOWNTO 0);                       -- raddr
+      rd_len            : std_logic_vector( 7 DOWNTO 0);                       -- rlen
+      rd_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
+      rd_ctx            : std_logic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
+      int_req           : std_logic;                                           -- interrupt valid
+      int_src           : std_logic_vector(INT_BITS - 1 DOWNTO 0);             -- interrupt source ID
+      int_ctx           : std_logic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
     END RECORD SD_C_T;
 
     --
     -- sd_d
     --
     TYPE SD_D_T IS RECORD
-      wr_strobe         : std_logic_vector(C_S_AXI_DATA_WIDTH/8 - 1 downto 0); -- valid + byte_enable
+      wr_strobe         : std_logic_vector(C_S_AXI_DATA_WIDTH/8 - 1 DOWNTO 0); -- valid + byte_enable
       wr_last           : std_logic;                                           --
-      wr_data           : std_logic_vector(C_S_AXI_DATA_WIDTH - 1 downto 0);   -- data
+      wr_data           : std_logic_vector(C_S_AXI_DATA_WIDTH - 1 DOWNTO 0);   -- data
       rd_data_ack       : std_logic;                                           --
     END RECORD SD_D_T;
+
+    --
+    -- sj_c
+    --
+    TYPE SJ_C_T IS RECORD
+      int_ack           : std_logic;
+    END RECORD;
 
 
   ----------------------------------------------------------------------------
@@ -944,7 +977,7 @@ PACKAGE donut_types IS
     --
     TYPE XJ_C_T IS RECORD
       valid               : std_logic;
-      action              : std_logic_vector(ACTION_BITS-1 downto 0);
+      action              : std_logic_vector(ACTION_BITS-1 DOWNTO 0);
     END RECORD XJ_C_T;
 
     --
@@ -978,7 +1011,7 @@ PACKAGE donut_types IS
       M_AXI_RREADY    : std_logic;
     END RECORD XN_D_T;
 
-  
+
 END donut_types;
 
 
@@ -1100,7 +1133,7 @@ PACKAGE BODY donut_types IS
       variable z      : std_logic_vector(0 to  ( data_in'length-1)/w        );
       variable or_res : std_logic;
     begin
- 
+
       data := (others => '0');
       data(0 to data_in'length-1)  := data_in;  -- normalize to left'=0, and even multiple of w.
       for i in 0 to data'length/w -1 loop
@@ -1113,7 +1146,7 @@ PACKAGE BODY donut_types IS
       end loop;
       return z;
     end AC_GENPARITY;
- 
+
     function AC_GENPARITY(data_in : std_logic_vector) return std_logic_vector is
       variable z    : std_logic_vector(0 to (data_in'length-1)/8);
     begin

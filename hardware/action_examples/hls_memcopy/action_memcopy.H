@@ -1,5 +1,5 @@
-#ifndef __ACTION_SPONGE_H__
-#define __ACTION_SPONGE_H__
+#ifndef __ACTION_MEMCOPY_H__
+#define __ACTION_MEMCOPY_H__
 
 /*
  * Copyright 2017, International Business Machines
@@ -20,33 +20,29 @@
 #include <stdint.h>
 #include <string.h>
 #include <ap_int.h>
-#include <hls_stream.h>
+
 
 #include "hls_snap.H"
 
-#define SPONGE_ACTION_TYPE 0x10141001
-#define RELEASE_LEVEL      0x00000020 
+#define MEMCOPY_ACTION_TYPE 0x10141000
+#define RELEASE_LEVEL       0x00000020 
+
+#define MAX_NB_OF_BYTES_READ  (4 * 1024)
+#define CARD_DRAM_SIZE (1 * 1024 *1024 * 1024)
 
 /* Names of the fields can be changed by User. Should serve as a template */
-typedef struct {
-        dnut_addr in;            /* in:  input data 128 bits*/
-        snapu64_t chk_type;      /* in:  CRC32, ADDLER32 */
-        snapu64_t chk_in;        /* in:  checksum input */
-        snapu64_t chk_out;       /* out: checksum output */
-        snapu32_t pe;            /* in:  special parameter for sponge */
-        snapu32_t nb_pe;         /* in:  special parameter for sponge */
-        snapu32_t nb_slices;     /* out: special parameter for sponge */
-        snapu32_t nb_round;      /* out: special parameter for sponge */
-	snapu64_t timer_ticks;   /* out: timer ticks FPGA timer frequency */
-        snapu64_t action_version;/* out: action version info */
-} DATA_SPONGE; // DATA = 112 Bytes
+typedef struct {//Names of the fields can be changed by User. Should serve as a template
+        dnut_addr in;   /* input data : 128 bits*/
+        dnut_addr out;  /* offset table : 128 bits*/
+        ap_uint<608> unused;
+} DATA_MC; // DATA = 108 Bytes
 
 //---------------------------------------------------------------------
 typedef struct {
         CONTROL Control;       //  16 bytes
-        DATA_SPONGE Data;      // up to 96 bytes
+        DATA_MC  Data;      // up to 96 bytes
 } action_reg;
 
 #define CONFIG_HOSTSTYLE_ALGO
 
-#endif  /* __ACTION_SPONGE_H__ */
+#endif  /* __ACTION_MEMCOPY_H__ */

@@ -66,8 +66,8 @@ $(SOLUTION_NAME): $(objs)
 check: $(symlinks)
 	@grep -A8 critical $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ; \
 		test $$? = 1
-	@grep -A8 0x184 vhdl/action_wrapper_ctrl_reg_s_axi.vhd ; \
-		test $$? = 1
+#	@grep -A8 0x184 vhdl/action_wrapper_ctrl_reg_s_axi.vhd ; \
+#		test $$? = 1
 
 clean:
 	$(RM) -r $(SOLUTION_DIR)* run_hls_script.tcl *~ *.log \
