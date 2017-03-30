@@ -10,7 +10,7 @@
 #   t="$DONUT_ROOT/software/tools/dnut_peek 0x0         "                                       ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  1
 #   t="$DONUT_ROOT/software/tools/dnut_peek 0x10000 -w32"                                       ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  1
     t="$DONUT_ROOT/software/tools/dnut_peek 0x0         ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release maj.int.min.dist.4Bsha"
-    major=${r:0:4};minor=${r:4:4};echo "release major=$major minor=$minor"
+    vers=${r:0:6}; vers1=${r:0:2}; vers2=${r:2:2}; vers3=${r:4:2}; dist=${r:6:2};echo "donut version=$vers1.$vers2.$vers3 dist=$dist"
     t="$DONUT_ROOT/software/tools/dnut_peek 0x8         ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # build date 0000YYYY.MM.DD.hh.mm"
     t="$DONUT_ROOT/software/tools/dnut_peek 0x10        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
     done=${r:14:1};echo "exploration done=$done";
@@ -35,6 +35,7 @@
 #     t="$DONUT_ROOT/software/tools/snap_maint -h -V"                                           ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
 #     t="$DONUT_ROOT/software/tools/snap_maint"                                                 ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
 #     t="$DONUT_ROOT/software/tools/snap_maint -m1 -c1"                                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/tools/snap_maint -m1 -c1 -vvv"                                    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
       t="$DONUT_ROOT/software/tools/snap_maint -m1 -c1 -vvv"                                    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
 #     t="$DONUT_ROOT/software/tools/snap_maint -m2 -c1 -vvv"                                    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
       t="$DONUT_ROOT/software/tools/dnut_peek 0x10        ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
@@ -84,12 +85,12 @@
 #     t="$DONUT_ROOT/software/tools/stage2 -h"                                                  ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
 #     t="$DONUT_ROOT/software/tools/stage2                 -t100      "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  4..105
 #     t="$DONUT_ROOT/software/tools/stage2     -s2 -e4 -i1 -t40       "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..33
-#     t="$DONUT_ROOT/software/tools/stage2 -a1             -t200"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #t 4..112..33min
-      if [[ "$major" > "0007" && "$minor" > "0040" || "$major" > "0008" ]];then echo "including interrupts starting with 0008.0041"
+      t="$DONUT_ROOT/software/tools/stage2 -a1             -t200"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #t 4..112..33min
+      t="$DONUT_ROOT/software/tools/stage2 -a1 -s1 -e2 -i1 -t100  -vv "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
+      t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e4 -i1 -t10"                                ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
+      t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e8 -i1 -t100"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..76..12min
+      if [[ "$ver" == "000800" && "$dist" > "40" || "$vers" > "000800" ]];then echo "including interrupts starting with version00.08.00 dist41"
         t="$DONUT_ROOT/software/tools/stage2 -a1 -s1 -e2 -i1 -t100 -I -vv "                     ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
-        t="$DONUT_ROOT/software/tools/stage2 -a1 -s1 -e2 -i1 -t100  -vv "                       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
-#       t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e4 -i1 -t10"                              ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
-#       t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e8 -i1 -t100"                             ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..76..12min
       fi
 #     t="$DONUT_ROOT/software/tools/stage2 -a2                    -vvv"                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #e memcmp failed
 #     t="$DONUT_ROOT/software/tools/stage2 -a2 -z0         -t50   -v  "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #e memcmp failed
@@ -100,31 +101,31 @@
 #     t="$DONUT_ROOT/software/tools/stage2 -a5             -t10       "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  1..3
 #     t="$DONUT_ROOT/software/tools/stage2 -a6                    -vvv"                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #e memcmp error
 #     t="$DONUT_ROOT/software/tools/stage2 -a6 -z1         -t100      "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  6..10
-#     for num4k in 0 1; do
-#     for num64 in 1 2; do
-#     for align in 4096 1024 256 64; do
-#       t="$DONUT_ROOT/software/tools/stage2 -a2 -A${align} -S${num4k} -B${num64} -t200"        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-#     done
-#     done
-#     done
+      for num4k in 0 1; do
+      for num64 in 1 2; do
+      for align in 4096 1024 256 64; do
+        t="$DONUT_ROOT/software/tools/stage2 -a2 -A${align} -S${num4k} -B${num64} -t200"        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      done
+      done
+      done
       if [[ "$DDR3_USED" == "TRUE" || "$DDR4_USED" == "TRUE" ]];then echo "testing DDR"
-#       for num64 in 1 5 63 64;do         # 1..64
-#       for align in 4096 1024 256 64; do # must be mult of 64
-#       for num4k in 0 1 3 7; do          # 1=6sec, 7=20sec
-#         t="$DONUT_ROOT/software/tools/stage2 -a6 -A${align} -S${num4k} -B${num64} -t200"      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-#       done
-#       done
-#       done
-#       #### check DDR3 memory in KU3, stay under 512k for BRAM
-#       t="$DONUT_ROOT/software/tools/stage2_ddr -h"                                            ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
-#       for strt in 0x1000 0x2000;do      # start adr
-#       for iter in 1 2 3;do              # number of blocks
-#       for bsize in 64 0x1000; do        # block size
-#         let end=${strt}+${iter}*${bsize}
-#         t="$DONUT_ROOT/software/tools/stage2_ddr -s${strt} -e${end} -b${bsize} -i${iter} -t200";echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-#       done
-#       done
-#       done
+        for num64 in 1 5 63 64;do         # 1..64
+        for align in 4096 1024 256 64; do # must be mult of 64
+        for num4k in 0 1 3 7; do          # 1=6sec, 7=20sec
+          t="$DONUT_ROOT/software/tools/stage2 -a6 -A${align} -S${num4k} -B${num64} -t200"      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+        done
+        done
+        done
+        #### check DDR3 memory in KU3, stay under 512k for BRAM
+        t="$DONUT_ROOT/software/tools/stage2_ddr -h"                                            ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
+        for strt in 0x1000 0x2000;do      # start adr
+        for iter in 1 2 3;do              # number of blocks
+        for bsize in 64 0x1000; do        # block size
+          let end=${strt}+${iter}*${bsize}
+          t="$DONUT_ROOT/software/tools/stage2_ddr -s${strt} -e${end} -b${bsize} -i${iter} -t200";echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+        done
+        done
+        done
         #### use memset in host or in fpga memory, stay under 512k for BRAM
         t="$DONUT_ROOT/software/tools/stage2_set -h"                                            ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
         for beg in 0 1 11 63 64;do         # start adr
@@ -136,7 +137,7 @@
       fi
     fi # memcopy
 
-    if [[ $action == "hls_memcopy" || $action == "hls_search" ]];then echo "testing demo_memcopy"
+    if [[ $t0l == "10141000" || $action == "hls_memcopy" || $action == "hls_search" ]];then echo "testing demo_memcopy"
       t="$DONUT_ROOT/software/examples/demo_memcopy -h"                                         ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  5..7
 #     t="$DONUT_ROOT/software/examples/demo_memcopy -C0 -i ../../1KB.txt -o 1KB.out -t10"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..7
       #### select 1 selection loop
@@ -147,6 +148,21 @@
         #### select 1 checking method
         # t="$DONUT_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -v -t20"   ;echo -e "$t $l"; # memcopy without checking behind buffer
           t="$DONUT_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -v -X -t20";echo -e "$t $l"; # memcopy with checking behind buffer
+        #### select 1 type of data generation
+        # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                         # same char mult times
+        # cmd='print("A" * '${size}', end="")'; python3 -c "$cmd" >${size}.in;head ${size}.in;echo      # deterministic char string generated with python
+        # cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w ${size}|head -n 1 >${size}.in;head ${size}.in     # random data alphanumeric, includes EOF
+          dd if=/dev/urandom bs=${size} count=1 >${size}.in                                             # random data any char, no echo due to unprintable char
+        ((n+=1));time $t;rc=$?;if diff ${size}.in ${size}.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
+      done
+      #### select 1 selection loop
+      # for size in 2 83; do                      # still error with 83B ?
+        for size in   8 16 64;do
+      # for size in 2 8 16 64 128 256 512 1024; do # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
+      # for size in 2 31 32 33 64 65 80 81 83 255 256 257 1024 1025 4096 4097; do
+        #### select 1 checking method
+        # t="$DONUT_ROOT/software/examples/demo_memcopy -I -i ${size}.in -o ${size}.out -v -t20"   ;echo -e "$t $l"; # memcopy without checking behind buffer
+          t="$DONUT_ROOT/software/examples/demo_memcopy -I -i ${size}.in -o ${size}.out -v -X -t20";echo -e "$t $l"; # memcopy with checking behind buffer
         #### select 1 type of data generation
         # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                         # same char mult times
         # cmd='print("A" * '${size}', end="")'; python3 -c "$cmd" >${size}.in;head ${size}.in;echo      # deterministic char string generated with python
