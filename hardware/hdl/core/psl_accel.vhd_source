@@ -176,7 +176,7 @@ ENTITY psl_accel IS
     -- inputs for NVMe
     refclk100_p                        : IN    STD_LOGIC;                               -- only for NVME_USED=TRUE
     refclk100_n                        : IN    STD_LOGIC;                               -- only for NVME_USED=TRUE
-    unit_reset                         : in    std_ulogic;                              -- only for NVME_USED=TRUE
+    unit_reset_n                       : in    std_ulogic;                              -- only for NVME_USED=TRUE
                                                                                         -- only for NVME_USED=TRUE               
     pcie_rc0_rxn                       : in   STD_LOGIC_VECTOR(3 downto 0);             -- only for NVME_USED=TRUE
     pcie_rc0_rxp                       : in   STD_LOGIC_VECTOR(3 downto 0);             -- only for NVME_USED=TRUE
@@ -1023,7 +1023,6 @@ ARCHITECTURE psl_accel OF psl_accel IS
 
   -- NVME <-> PCIE Interface  								                    -- only for NVME_USED=TRUE 
   SIGNAL refclk                     : STD_LOGIC;							    -- only for NVME_USED=TRUE 
-  SIGNAL unit_reset_n               : STD_LOGIC;				                            -- only for NVME_USED=TRUE 
   
 BEGIN
   action_reset_reg : PROCESS (ha_pclock)
@@ -1645,7 +1644,7 @@ BEGIN
       sys_rst                    => sdram_reset_q                                       -- only for DDR4_USED=TRUE
     );                                                                                  -- only for DDR4_USED=TRUE
 
-  unit_reset_n <= not unit_reset;
+ 
   nvme_top_i: component nvme_top                                                          -- only for NVME_USED=TRUE 
     port map (										  -- only for NVME_USED=TRUE 
       --                              							  -- only for NVME_USED=TRUE 
