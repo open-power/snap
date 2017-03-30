@@ -197,6 +197,10 @@ begin
                     nvme_q            <= '1';
                   else
                     axi_address_q     <= std_logic_vector(mmx_d_i.addr);
+                    if mmx_d_i.addr(29 downto 28) = "00" then
+                       axi_address_q(17) <= '0';
+                    end if;
+                
                     -- address is eq or gt than 0x20000 --> is NVMe access
                     nvme_q            <= mmx_d_i.addr(17);
                   end if;

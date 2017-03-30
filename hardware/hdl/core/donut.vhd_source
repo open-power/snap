@@ -29,8 +29,8 @@ USE work.donut_types.ALL;
 
 ENTITY donut IS
   GENERIC(
-    IMP_VERSION_DAT        : std_logic_vector(63 DOWNTO 0);
-    BUILD_DATE_DAT         : std_logic_vector(63 DOWNTO 0);
+    IMP_VERSION_DAT        : std_logic_vector(63 DOWNTO 0) := x"0008_002A_CFFF_61A0";
+    BUILD_DATE_DAT         : std_logic_vector(63 DOWNTO 0) := x"0000_2017_0324_1233";
     NUM_OF_ACTION_TYPES    : integer RANGE 0 TO 16 := 16;
     NUM_OF_ACTIONS         : integer RANGE 0 TO 16 :=  NUM_OF_ACTIONS
   );
@@ -110,6 +110,10 @@ ENTITY donut IS
     -- Kernel AXI Master Interface
     xk_d_o         : OUT XK_D_T;
     kx_d_i         : IN  KX_D_T;
+    --
+    -- AXI Master to NVMe Interface
+    xn_d_o         : out XN_D_T;
+    nx_d_i         : in  NX_D_T;
     --
     -- Kernel AXI Slave Interface
     sk_d_o         : OUT SK_D_T;
@@ -461,8 +465,8 @@ BEGIN
       jx_c_i                 => jx_c,
       --
       -- NVME Interface
-      xn_d_o                 => xn_d,
-      nx_d_i                 => nx_d
+      xn_d_o                 => xn_d_o,
+      nx_d_i                 => nx_d_i
     );
 
 

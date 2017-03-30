@@ -21,7 +21,7 @@
 // Use PRP entry for data transfer
 `define USE_PRP 0
 // LBA size as power of 2, 12=4kB size
-`define LBA_BYTE_SHIFT 12
+`define LBA_BYTE_SHIFT 9
 
 // Number of queue entries for the admin and i/o queues
 // Data entries for admin data.  For Tx = bytes/64, for Rx = bytes/16

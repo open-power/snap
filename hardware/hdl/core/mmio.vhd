@@ -1228,7 +1228,7 @@ BEGIN
             ad_equal_slave_action_offset_v := '0';
           END IF;
             
-          mmio_action_access_q <= ((ha_mm_i.ad(MASTER_ACTION_ACCESS_BIT) AND NOT or_reduce(ha_mm_i.ad(PSL_HOST_ADDR_MAXBIT DOWNTO MASTER_ACTION_ACCESS_BIT+1))) OR
+          mmio_action_access_q <= (((ha_mm_i.ad(MASTER_ACTION_ACCESS_BIT)or ha_mm_i.ad(MASTER_ACTION_ACCESS_BIT+1)) AND NOT or_reduce(ha_mm_i.ad(PSL_HOST_ADDR_MAXBIT DOWNTO MASTER_ACTION_ACCESS_BIT+2))) OR
                                    (ha_mm_i.ad(SLAVE_SPACE_BIT) AND ad_equal_slave_action_offset_v)) AND
                                   NOT (ha_mm_i.cfg OR ha_mm_i.dw);
 
