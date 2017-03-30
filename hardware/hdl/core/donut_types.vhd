@@ -1034,9 +1034,9 @@ PACKAGE BODY donut_types IS
     FUNCTION parity_gen_even(CONSTANT data : IN std_logic_vector ) RETURN std_logic IS
       VARIABLE res : std_logic;
     BEGIN
-      res := '0';
+      res := data(data'low);
       
-      FOR i IN data'low TO data'high LOOP
+      FOR i IN data'low+1 TO data'high LOOP
         res := data(i) XOR res;
       END LOOP;  -- i
       return res;
@@ -1048,12 +1048,12 @@ PACKAGE BODY donut_types IS
     FUNCTION parity_gen_odd(CONSTANT data : IN std_logic_vector ) RETURN std_logic IS
       VARIABLE res : std_logic;
     BEGIN
-      res := '1';
+      res := data(data'low);
       
-      FOR i  IN data'low TO data'high LOOP
+      FOR i  IN data'low+1 TO data'high LOOP
         res := data(i) XOR res;
       END LOOP;  -- i
-      return res;
+      return NOT res;
     END parity_gen_odd;
 
     --
@@ -1104,10 +1104,10 @@ PACKAGE BODY donut_types IS
       data := (others => '0');
       data(0 to data_in'length-1)  := data_in;  -- normalize to left'=0, and even multiple of w.
       for i in 0 to data'length/w -1 loop
-        --z(i) := xnor_reduce(data(w*i to w*(i+1)-1));
-        or_res := '0';
-        FOR l IN (w*i) TO (w*(i+1)-1) LOOP
-          or_res := data(l) OR or_res;
+        -- xnor_reduce
+        or_res := data(w*i);
+        FOR l IN (w*i)+1 TO (w*(i+1)-1) LOOP
+          or_res := data(l) XOR or_res;
         END LOOP;  -- l
         z(i) := NOT or_res;
       end loop;
@@ -1133,11 +1133,11 @@ PACKAGE BODY donut_types IS
       -- result needs inverting if even parity is used.
       -- dir is 1 : add,  -1 : subtract.
       -- w is the parity byte size. (typically 8)
-      constant add : std_logic_vector(7 downto 0) := "11101000";   -- majority function
-      constant sub : std_logic_vector(7 downto 0) := "10001110";
-      variable a,b,c : std_logic_vector(a_in'length -1 downto 0);
+      constant add     : std_logic_vector(7 downto 0) := "11101000";   -- majority function
+      constant sub     : std_logic_vector(7 downto 0) := "10001110";
+      variable a,b,c   : std_logic_vector(a_in'length -1 downto 0);
       variable sp,cp,z : std_logic_vector(ap_in'length-1 downto 0);
-      variable y : std_logic_vector(2 downto 0);
+      variable y       : std_logic_vector(2 downto 0);
     begin
       a := a_in;
       b := b_in;
@@ -1146,9 +1146,11 @@ PACKAGE BODY donut_types IS
       for i in 1 to a'length-1 loop
         -- majority  function.  code for a 3input lut
         y := a(i-1) & b(i-1) & c(i-1);
---        if dir=1 then c(i) := add(tconv(y));
---        else c(i) := sub(tconv(y));
- --       end if;
+        if dir=1 then
+          c(i) := add(to_integer(unsigned(y)));
+        ELSE
+          c(i) := sub(to_integer(unsigned(y)));
+        end if;
       end loop;
       -- find the parity of the operands.
       sp := ap_in xor bp_in;
