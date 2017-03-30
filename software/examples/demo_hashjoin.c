@@ -344,10 +344,6 @@ int main(int argc, char *argv[])
 		table1_dump(t1, t1_entries);
 
 	gettimeofday(&stime, NULL);
-	if (action_irq) {
-		dnut_kernel_mmio_write32(kernel, 0x8, 1);
-		dnut_kernel_mmio_write32(kernel, 0x4, 1);
-	}
 	while (t2_entries != 0) {
 		t2_tocopy = MIN(ARRAY_SIZE(t2), t2_entries);
 
@@ -364,8 +360,14 @@ int main(int argc, char *argv[])
 		}
 
 		if (action_irq) {
+			dnut_kernel_mmio_write32(kernel, 0x8, 1);
+			dnut_kernel_mmio_write32(kernel, 0x4, 1);
 		}
 		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
+		if (action_irq) {
+			dnut_kernel_mmio_write32(kernel, 0xc, 1);
+			dnut_kernel_mmio_write32(kernel, 0x4, 0);
+		}
 		if (rc != 0) {
 			fprintf(stderr, "err: job execution %d: %s!\n", rc,
 				strerror(errno));
@@ -383,8 +385,6 @@ int main(int argc, char *argv[])
 				   ht stores the values */
 		t2_entries -= t2_tocopy;
 	}
-	if (action_irq)
-		dnut_kernel_mmio_write32(kernel, 0x4, 0);
 	gettimeofday(&etime, NULL);
 
 	fprintf(stderr, "Action version: %llx\n"

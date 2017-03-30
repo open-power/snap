@@ -348,7 +348,15 @@ int main(int argc, char *argv[])
 	run = 0;
 	gettimeofday(&stime, NULL);
 	do {
+		if (action_irq) {
+			dnut_kernel_mmio_write32(kernel, 0x8, 1);
+			dnut_kernel_mmio_write32(kernel, 0x4, 1);
+		}
 		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
+		if (action_irq) {
+			dnut_kernel_mmio_write32(kernel, 0xc, 1);
+			dnut_kernel_mmio_write32(kernel, 0x4, 0);
+		}
 		if (rc != 0) {
 			fprintf(stderr, "err: job execution %d: %s!\n", rc,
 				strerror(errno));
