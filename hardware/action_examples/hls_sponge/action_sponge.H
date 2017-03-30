@@ -24,12 +24,12 @@
 
 #include "hls_snap.H"
 
-#define SPONGE_ACTION_TYPE 0x0006
-#define RELEASE_VERSION      0xFEEDA02227022017 /* Action/Release numbers */
+#define SPONGE_ACTION_TYPE 0x10141001
+#define RELEASE_VERSION    0x00000020 
 
 /* Names of the fields can be changed by User. Should serve as a template */
 typedef struct {
-        dnut_addr in;            /* in:  input data */
+        dnut_addr in;            /* in:  input data 128 bits*/
         snapu64_t chk_type;      /* in:  CRC32, ADDLER32 */
         snapu64_t chk_in;        /* in:  checksum input */
         snapu64_t chk_out;       /* out: checksum output */
@@ -44,17 +44,8 @@ typedef struct {
 //---------------------------------------------------------------------
 typedef struct {
         CONTROL Control;       //  16 bytes
-        DATA_SPONGE Data;      // 112 bytes
-} action_input_reg;
-
-// ISSUE #44
-// => IMPOSSIBLE TO HAVE action_output_reg contiguous to action_input_reg
-// => Retc is at 0x104 but action field is not copied to action_output_reg
-typedef struct {
-        snapu32_t Retc;       //   4 bytes
-        snapu64_t Reserved;   //   8 bytes
-        DATA_SPONGE Data;     // 112 bytes
-} action_output_reg;
+        DATA_SPONGE Data;      // up to 96 bytes
+} action_reg;
 
 #define CONFIG_HOSTSTYLE_ALGO
 
