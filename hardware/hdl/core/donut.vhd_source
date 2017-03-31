@@ -29,8 +29,8 @@ USE work.donut_types.ALL;
 
 ENTITY donut IS
   GENERIC(
-    IMP_VERSION_DAT        : std_logic_vector(63 DOWNTO 0) := x"0008_002A_CFFF_61A0";
-    BUILD_DATE_DAT         : std_logic_vector(63 DOWNTO 0) := x"0000_2017_0324_1233";
+    IMP_VERSION_DAT        : std_logic_vector(63 DOWNTO 0);
+    BUILD_DATE_DAT         : std_logic_vector(63 DOWNTO 0);
     NUM_OF_ACTION_TYPES    : integer RANGE 0 TO 16 := 16;
     NUM_OF_ACTIONS         : integer RANGE 0 TO 16 :=  NUM_OF_ACTIONS
   );
