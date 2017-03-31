@@ -107,11 +107,14 @@ copy $(BUILD_DIR)/Checkpoint/b_route_design.dcp:
 	@if [ $(FPGACARD) = "KU3" ]; then ln -f -s $(DONUT_HDL_CORE)/psl_fpga_ku3.vhd_source $(DONUT_HDL_CORE)/psl_fpga.vhd_source; fi
 	@if [ $(FPGACARD) = "FGT" ]; then ln -f -s $(DONUT_HDL_CORE)/psl_fpga_fgt.vhd_source $(DONUT_HDL_CORE)/psl_fpga.vhd_source; fi
 
-$(SNAP_CONFIG_FILES):
+%.vhd: %.vhd_source
+	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+
+%.sv: %.sv_source
 	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 action_config:
-	@if [ ! -e "$(ACTION_ROOT)/action_config.sh" ]; then \
+	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
 		echo -e "Executing $(ACTION_ROOT)/action_config.sh"; \
 		cd $(ACTION_ROOT) && ./action_config.sh; \
 	fi
@@ -130,7 +133,7 @@ patch_version:
 	@echo  -e "\t[PATCH.............] SNAP version and build date registers"; \
 	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HDL_CORE) donut.vhd
 
-image: patch_version
+image: $(SNAP_CONFIG_FILES) patch_version
 	@echo -e "\t[BUILD IMAGE.......] start `date`"
 	$(eval BUILD_DATE := $(shell date +%Y.%m.%d_%H:%M))
 	@cd $(BUILD_DIR) && time vivado  $(MSG_LEVEL) -mode batch -source noHDK_build.tcl -notrace -log $(LOGS_DIR)/vivado_build_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_build_$(BUILD_DATE).jou
@@ -138,7 +141,7 @@ image: patch_version
 	@rm -r -f .bitstream_name.txt
 	@echo -e "\t[BUILD IMAGE.......] done  `date`"
 
-xpr_image: patch_version
+xpr_image: $(SNAP_CONFIG_FILES) patch_version
 	@echo -e "\t[BUILD XPR IMAGE...] start `date`"
 	$(eval BUILD_DATE := $(shell date +%Y.%m.%d_%H:%M))
 	@cd $(BUILD_DIR) && time vivado  $(MSG_LEVEL) -mode batch -source fw_xpr_build.tcl -notrace -log $(LOGS_DIR)/vivado_build_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_build_$(BUILD_DATE).jou
@@ -146,12 +149,10 @@ xpr_image: patch_version
 	@rm -r -f .bitstream_name.txt
 	@echo -e "\t[BUILD IMAGE.......] done  `date`"
 
-model: patch_version
+model: $(SNAP_CONFIG_FILES) patch_version
 	@echo -e "\t[BUILD MODEL] start `date`"
 	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
 	@echo -e "\t[BUILD MODEL] done `date`"
-
-
 
 clean:
 	@echo -e "\t[CLEAN.............] build environment";
