@@ -126,7 +126,10 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@echo -e "\t[CREATE] $@"
 	@cat $(BUILD_DIR)/Sources/prj/top.prj $(BUILD_DIR)/Sources/prj/afu.prj > $(BUILD_DIR)/Sources/prj/psl_fpga.prj
 
-$(SNAP_CONFIG_FILES):
+%.vhd: %.vhd_source
+	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+
+%.sv: %.sv_source
 	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 action_config:
@@ -145,12 +148,12 @@ patch_version:
 config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl $(SNAP_CONFIG_FILES) action_config create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_version
 	@echo -e "\t[CONFIG] done `date`"
 
-model: patch_version
+model: $(SNAP_CONFIG_FILES) patch_version
 	@echo -e "\t[BUILD MODEL] start `date`"
 	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
 	@echo -e "\t[BUILD MODEL] done `date`"
 
-image: patch_version
+image: $(SNAP_CONFIG_FILES) patch_version
 	@echo -e "\t[BUILD IMAGE (BIT)] start `date`"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
 	@if [ "`vivado -version |head -n1  |cut -c 9-12`" = "2015" ] && [ $(DDR3_USED) = "TRUE" ] && [ $(BRAM_USED) = "FALSE" ]; then\
