@@ -49,11 +49,11 @@ void write_results_in_MC_regs(action_output_reg *Action_Output, action_input_reg
     Action_Output->Data.intsect_result.size  = result_num;
 
     // Registers unchanged
-    for (i = 0; i < NUM_TABLES; i++)
-        Action_Output->Data.src_tables[i]        = Action_Input->Data.src_tables[i];
+    Action_Output->Data.src_table1        = Action_Input->Data.src_table1;
+    Action_Output->Data.src_table2        = Action_Input->Data.src_table2;
 
     Action_Output->Data.step                 = Action_Input->Data.step;
-    Action_Output->Data.rc                   = 0;
+    Action_Output->Data.rc                   = ReturnCode;
     Action_Output->Data.unused               = Action_Input->Data.unused;
 }
 
@@ -122,8 +122,9 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
     ap_uint<32> xfer_size_a, xfer_size_b;
     ap_uint<64> table_offset_a, table_offset_b;
     ap_uint<32> table_xfer_size;
-    ap_uint<32> h, k, m;
+    ap_uint<32> hhh, kkk, m;
     ap_uint<32> bytes_a, bytes_b;
+    ap_uint<1> match_1, match_2;
 
 
 
@@ -137,15 +138,23 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
         {
 
             //calculate copy size and copy
-            address_xfer_offset = 0x0;
             for(i = 0; i < NUM_TABLES; i++)
             {
-                table_xfer_size = Action_Input->Data.src_tables[i].size;
+                address_xfer_offset = 0x0;
+                if(i == 0)
+                {
+                    table_xfer_size = Action_Input->Data.src_table1.size;
+                    InputAddress = (Action_Input->Data.src_table1.address >> ADDR_RIGHT_SHIFT);
+                    DDR_SRC_addr = 0;
+                }
+                else
+                {
+                    table_xfer_size = Action_Input->Data.src_table2.size;
+                    InputAddress = (Action_Input->Data.src_table2.address >> ADDR_RIGHT_SHIFT);
+                    DDR_SRC_addr = MAX_TABLE_SIZE >> ADDR_RIGHT_SHIFT; 
+                    //Store tabel 2 to a different area.
+                }
 
-                InputAddress = (Action_Input->Data.src_tables[i].address >> ADDR_RIGHT_SHIFT);
-
-                //Copy to separate areas for each table.
-                DDR_SRC_addr  = ((i*MAX_TABLE_SIZE) >> ADDR_RIGHT_SHIFT); 
 
                 //copy data from Host memory to DDR
 L_COPY:         while(table_xfer_size > 0 and rc == 0)
@@ -176,12 +185,14 @@ L_COPY:         while(table_xfer_size > 0 and rc == 0)
         }
         else if (Action_Input->Data.step == 2)
         {
+            rc = 0;
             local_res_cnt = 0;
             //Do intersection
                 
             //Read a bulk from table a
             table_offset_a = 0;
-            bytes_a        = Action_Input->Data.src_tables[0].size;
+            bytes_a        = Action_Input->Data.src_table1.size;
+
 L1:         while (bytes_a > 0 and rc == 0)
             {
 
@@ -195,7 +206,7 @@ L1:         while (bytes_a > 0 and rc == 0)
 
                 //Read a bulk from table b
                 table_offset_b = 0;
-                bytes_b = Action_Input->Data.src_tables[1].size;
+                bytes_b = Action_Input->Data.src_table2.size;
 L2:             while (bytes_b > 0 and rc == 0)
                 {
                     xfer_size_b = MIN32b(bytes_b, MAX_NB_OF_BYTES_READ);
@@ -203,21 +214,25 @@ L2:             while (bytes_b > 0 and rc == 0)
                             (MAX_TABLE_SIZE >> ADDR_RIGHT_SHIFT) + table_offset_b, buf_b_dram, xfer_size_b );
 
                     table_offset_b += (ap_uint<64>)(xfer_size_b >> ADDR_RIGHT_SHIFT);
-                    bytes_a -= xfer_size_a;
+                    bytes_b -= xfer_size_b;
 
 
                     //Compare
                     //At most MAX_NB_OF_BYTES_READ/ENTRY_BYTES matches. 
                     //Save it in local BRAM
-C1:                 for (h = 0; h < xfer_size_a/ENTRY_BYTES; h++)
+C1:                 for (hhh = 0; hhh < xfer_size_a/ENTRY_BYTES; hhh++)
                     {
-C2:                     for (k =0; k < xfer_size_b/ENTRY_BYTES; k++)
+                        node_a = buf_a_dram[hhh];
+
+#pragma HLS UNROLL factor=4
+C2:                     for (kkk =0; kkk < xfer_size_b/ENTRY_BYTES; kkk++)
                         {
                             //Here! BPERDW = 64, ENTRY_BYTES = 64
-                            node_a = buf_a_dram[h];
-                            node_b = buf_b_dram[k];
+                            node_b = buf_b_dram[kkk];
 
-                            if(node_a(511,256) == node_b(511,256)) //timing issue.
+                            match_1 = (node_a(255,0) == node_b(255,0));
+                            match_2 = (node_a(511,256) == node_b(511, 256));
+                            if(match_1 && match_2) //timing issue.
                             {
                                 //Look up in result buffer
                                 //Which is in DDR
@@ -227,13 +242,16 @@ C3:                             for( m = 0; m < local_res_cnt; m++)
                                     rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, CARD_DRAM, 
                                             (RESULT_BUF_ADDR + m*ENTRY_BYTES)>> ADDR_RIGHT_SHIFT, local_res_buf, BPERDW );
 
-                                    if(node_a(511,256) == local_res_buf[0](511,256))
+                                    match_1 = (node_a(255,0) == local_res_buf[0](255,0));
+                                    match_2 = (node_a(511,256) == local_res_buf[0](511,256));
+                                    if(match_1 && match_2)
                                     {
                                         found = 1;
                                         break;
                                         //not insert
                                     }
                                 }
+
                                 //Need to insert a result.
                                 if(found == 0)
                                 {
@@ -252,10 +270,7 @@ C3:                             for( m = 0; m < local_res_cnt; m++)
                     }
                 }
             }
-        }
-        else if (Action_Input ->Data.step == 3)
-        {
-            //write back to host ram
+             //write back to host ram
             for (m = 0; m < local_res_cnt; m++)
             {
 
@@ -266,14 +281,18 @@ C3:                             for( m = 0; m < local_res_cnt; m++)
                 rc |= write_burst_of_data_to_mem(din_gmem, d_ddrmem, HOST_DRAM, 
                         OutputAddress, local_res_buf, BPERDW );
             }
+
         }
+        //else if (Action_Input ->Data.step == 3)
+        //{
+        //}
         if(rc!=0) ReturnCode = RET_CODE_FAILURE;
 
     }
     else  // unknown action
         ReturnCode = RET_CODE_FAILURE;
 
-    write_results_in_MC_regs(Action_Output, Action_Input, local_res_cnt, ReturnCode); 
+    write_results_in_MC_regs(Action_Output, Action_Input, local_res_cnt*ENTRY_BYTES, ReturnCode); 
 
     return;
 }
