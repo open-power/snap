@@ -87,7 +87,8 @@ typedef struct {
 } dnut_addr; //128 bits=16B
 
 typedef struct {//Names of the fields can be changed by User. Should serve as a template
-        dnut_addr src_tables[NUM_TABLES]; 	/* input data */
+        dnut_addr src_table1; 	/* input data */
+        dnut_addr src_table2; 	/* input data */
         dnut_addr intsect_result;
         ap_uint<64> step;
         ap_uint<64> rc;
