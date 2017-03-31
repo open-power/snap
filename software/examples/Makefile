@@ -32,8 +32,9 @@ demo_memcopy_objs = action_memcopy.o
 demo_checksum_objs = action_checksum.o keccak.o
 demo_hashjoin_objs = action_hashjoin.o
 demo_bfs_objs = action_bfs.o
+demo_intersect_objs = action_intersect.o
 
-projs = demo_search demo_memcopy demo_checksum demo_hashjoin demo_bfs
+projs = demo_search demo_memcopy demo_checksum demo_hashjoin demo_bfs demo_intersect
 
 all: $(objs) $(projs)
 
@@ -42,10 +43,11 @@ demo_memcopy: action_memcopy.o
 demo_checksum: action_checksum.o keccak.o
 demo_hashjoin: action_hashjoin.o
 demo_bfs: action_bfs.o
+demo_intersect: action_intersect.o
 
 $(projs): $(libs)
 
-objs += action_search.o action_memcopy.o action_checksum.o action_hashjoin.o keccak.o action_bfs.o
+objs += action_search.o action_memcopy.o action_checksum.o action_hashjoin.o keccak.o action_bfs.o action_intersect.o
 
 ### Deactivate existing implicit rule
 %: %.c
