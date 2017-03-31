@@ -20,6 +20,7 @@
 
 set root_dir    $::env(DONUT_HARDWARE_ROOT)
 set fpga_part   $::env(FPGACHIP)
+set fpga_card   $::env(FPGACARD)
 set pslse_dir   $::env(PSLSE_ROOT)
 set dimm_dir    $::env(DIMMTEST)
 set build_dir   $::env(BUILD_DIR)
@@ -131,8 +132,13 @@ add_files -norecurse  $root_dir/ip/fifo_513x512/fifo_513x512.xci $msg_level
 export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_513x512/fifo_513x512.xci"] -force $msg_level
 # DDR3 / BRAM IPs
 if { $ddri_used == "TRUE" } {
-  add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci $msg_level
-  export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force $msg_level
+  if { $fpga_card == "KU3" } {
+    add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci $msg_level
+    export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force $msg_level
+  } else {
+    add_files -norecurse $root_dir/ip/axi_interconnect/axi_interconnect.xci $msg_level
+    export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_interconnect/axi_interconnect.xci"] -force $msg_level
+  }
   if { $bram_used == "TRUE" } {
     add_files -norecurse $root_dir/ip/block_RAM/block_RAM.xci $msg_level
     export_ip_user_files -of_objects  [get_files "$root_dir/ip/block_RAM/block_RAM.xci"] -force $msg_level

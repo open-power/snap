@@ -108,7 +108,7 @@ if { $ddri_used == "TRUE" } {
   if { $fpga_card == "KU3" } {
     #create clock converter for axi_card_mem
     puts "	                     generating IP axi_clock_converter"
-    create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir $msg_level
+    create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir 
 
     if { $ddr3_used == "TRUE" } {
       set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH $axi_id_width] [get_ips axi_clock_converter]
@@ -130,6 +130,7 @@ if { $ddri_used == "TRUE" } {
     generate_target all                          [get_files $ip_dir/axi_interconnect/axi_interconnect.xci]
     export_ip_user_files -of_objects             [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] -no_script -sync -force -quiet
     export_simulation    -of_objects             [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
+  }
 
   if { $bram_used == "TRUE" } {
     #create BlockRAM

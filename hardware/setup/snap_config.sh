@@ -19,6 +19,12 @@
 ############################################################################
 ############################################################################
 
+if [ "$FPGACARD" == "KU3" ]; then
+  FPGA_FILTER="\-\- only for FPGACARD=FGT"
+else
+  FPGA_FILTER="\-\- only for FPGACARD=KU3"
+fi
+
 if [ "$DDRI_USED" == "TRUE" ]; then
   DDRI_FILTER="\-\- only for DDRI_USED!=TRUE"
 else
@@ -59,7 +65,7 @@ else
   HLS_WORKAROUND_FILTER="\-\- only for HLS_WORKAROUND=TRUE"
 fi
 
-grep -v "$DDRI_FILTER" $1 | grep -v "$DDR3_FILTER" | grep -v "$DDR4_FILTER" | grep -v "$BRAM_FILTER" | grep -v "$NVME_FILTER" | grep -v "$HLS_WORKAROUND_FILTER" > $2
+grep -v "$FPGA_FILTER" $1 | grep -v "$DDRI_FILTER" |  grep -v "$DDR3_FILTER" | grep -v "$DDR4_FILTER" | grep -v "$BRAM_FILTER" | grep -v "$NVME_FILTER" | grep -v "$HLS_WORKAROUND_FILTER" > $2
 
 NAME=`basename $2`
 

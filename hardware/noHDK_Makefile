@@ -60,7 +60,7 @@ ifndef MSG_LEVEL
 export MSG_LEVEL=-verbose
 endif
 
-.PHONY: all image model check_donut_settings action_config create_environment copy clean config gitclean patch_version xpr_image
+.PHONY: all image model check_donut_settings action_config create_environment copy clean config gitclean patch_version xpr_image snap_config
 
 all: config model image
 
@@ -117,6 +117,8 @@ copy $(BUILD_DIR)/Checkpoint/b_route_design.dcp:
 %.sv: %.sv_source
 	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
+snap_config: $(SNAP_CONFIG_FILES)
+
 action_config:
 	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
 		echo -e "Executing $(ACTION_ROOT)/action_config.sh"; \
@@ -154,7 +156,7 @@ xpr_image: $(SNAP_CONFIG_FILES) patch_version
 	@rm -r -f .bitstream_name.txt
 	@echo -e "\t[BUILD XPR IMAGE...] done  `date`"
 
-model: pslse software $(SIMULATOR)
+model: pslse software $(SNAP_CONFIG_FILES) patch_version $(SIMULATOR)
 #	@echo -e "\t[BUILD MODEL.......] start `date`"
 #	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
 #	@echo -e "\t[BUILD MODEL.......] done `date`"

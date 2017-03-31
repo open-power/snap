@@ -736,11 +736,11 @@ module top (
      c1_sys_clk_p = !c1_sys_clk_p;		       //-- only for DDRI_USED=TRUE 	
   end						       //-- only for DDRI_USED=TRUE 
    	
-  reg     refclk100_p;                                 //-- only for NVME_USED=TRUE
-  initial refclk100_p <= 0;			       //-- only for NVME_USED=TRUE
+  reg     refclk_nvme_p;                                 //-- only for NVME_USED=TRUE
+  initial refclk_nvme_p <= 0;			       //-- only for NVME_USED=TRUE
   always begin					       //-- only for NVME_USED=TRUE
      #5.0ns;					       //-- only for NVME_USED=TRUE
-     refclk100_p = !refclk100_p;		       //-- only for NVME_USED=TRUE
+     refclk_nvme_p = !refclk_nvme_p;		       //-- only for NVME_USED=TRUE
   end						       //-- only for NVME_USED=TRUE
     						       //-- only for NVME_USED=TRUE
   reg   unit_reset_n;				       //-- only for NVME_USED=TRUE
@@ -819,7 +819,8 @@ module top (
     .ah_paren(ah_paren),
     .refclk_sdram_p(refclk200_p),                      //-- only for DDRI_USED=TRUE
     .refclk_sdram_n(~refclk200_p),                     //-- only for DDRI_USED=TRUE
-    .refclk100_p(refclk100_p),                         //-- only for NVME_USED=TRUE
+    .refclk_nvme_p(refclk_nvme_p),                         //-- only for NVME_USED=TRUE
+    .refclk_nvme_n(~refclk_nvme_p),                         //-- only for NVME_USED=TRUE
     .pcie_rc0_rxn(pcie_rc0_rxn),                       //-- only for NVME_USED=TRUE
     .pcie_rc0_rxp(pcie_rc0_rxp),                       //-- only for NVME_USED=TRUE
     .pcie_rc0_txn(pcie_rc0_txn),                       //-- only for NVME_USED=TRUE 
