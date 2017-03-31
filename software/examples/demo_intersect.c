@@ -51,17 +51,21 @@ static const char *version = GIT_VERSION;
  */
 static void usage(const char *prog)
 {
-	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
+	printf("\nUsage: \n%s [-h] [-v, --verbose] [-V, --version]\n"
 	       "  -C, --card     <cardno>   can be (0...3)\n"
+	       "  -t, --timeout  <seconds>  timeout seconds.\n"
+           "----------------------------------------------\n"
 	       "  -i, --input    <file.bin> input file.\n"
 	       "  -o, --output   <file.bin> output file.\n"
-	       "  -n, --num      <int>      How many elements in the table.\n"
+           "----------------------------------------------\n"
+	       "  -n, --num      <int>      How many elements in the table for random generated array.\n"
 	       "  -l, --len      <int>      length of the random string.\n"
-	       "  -m, --method   <0/1>      1 (default): use range intersection. 0: compare one by one.\n"
-	       "  -t, --timeout  <seconds>  timeout seconds.\n"
+	       "  -m, --method   <0/1>      1 (default, only in SW): use range intersection.\n"
+           "                            0: compare one by one.\n"
 	       "\n"
 	       "Example:\n"
-	       "  demo_intersect ...\n"
+	       "HW:  sudo ./demo_intersect ...\n"
+	       "SW:  DNUT_CONFIG=1 ./demo_intersect ...\n"
 	       "\n",
 	       prog);
 }
@@ -90,6 +94,8 @@ static void dnut_prepare_intersect(struct dnut_job *cjob, struct intersect_job *
 		        DNUT_TARGET_FLAGS_END);
 
     ijob->step = step;
+    ijob->rc = 0;
+    ijob->action_version = INTERSECT_RELEASE;
 	
     dnut_job_set(cjob, INTERSECT_ACTION_TYPE, ijob, sizeof(*ijob),
 		     NULL, 0);
@@ -116,7 +122,7 @@ static void fill_table(value_t table[], uint32_t num, uint32_t len)
         copyvalue(table[i], pattern);
     }
 }
-/*
+
 static void dump_table(value_t table[], uint32_t num)
 {
     uint32_t i;
@@ -127,7 +133,7 @@ static void dump_table(value_t table[], uint32_t num)
     }
     printf("\n");
 }
-*/
+
 /**
  * Read accelerator specific registers. Must be called as root!
  */
@@ -257,7 +263,8 @@ int main(int argc, char *argv[])
                 printf("use default length to fill the table.\n");
                 fill_table(src_tables[i], num, 4);
             }
-            //dump_table(src_tables[i], num);
+            if(0)
+                dump_table(src_tables[i], num);
         }
 
 
@@ -344,12 +351,13 @@ int main(int argc, char *argv[])
 		time_us);
 
     temp = intsect_result;
-    for(i = 0; i< ijob.intsect_result.size/sizeof(value_t); i++)
+    printf("result address is %llx\n",(unsigned long long )intsect_result);
+    printf("ijob.intsect_result.size = %d\n", ijob.intsect_result.size);
+    for(i = 0;( i< ijob.intsect_result.size/sizeof(value_t) && verbose_flag); i++)
     {
-   //     printf("%s, ", *temp);
+        printf("%s;\n", *temp);
         temp ++;
     }
-        printf("%s, ", *temp);
     printf("access bytes = %ld, (%f MB/s)\n", access_bytes, (double)access_bytes/(double)time_us);
     printf("\n");
 
