@@ -14,8 +14,15 @@
 # limitations under the License.
 #
 ###############################################################################
-#database -open   capiWave -incsize 20M -incfiles 2
-#probe    -create -memories -depth 2
-#probe    -create -all -depth 10       ;# depth3 is 6x smaller than depth7
- open_vcd {dump.vcd}
- log_vcd
+##### use native format
+#open_wave_database native
+#get_objects -verbose -recursive -filter { type == internal_signal } *fsm*
+ add_wave -r *
+##### use VCD format
+#open_vcd {dump.vcd}
+#log_vcd *
+#log_vcd -verbose *
+#log_vcd -level 9 -verbose *
+#log_vcd -level 5 [get_objects -filter { type == port } /* ]
+#log_vcd          [get_objects -filter { type == internal_signal } * ]
+#limit_vcd 200000000

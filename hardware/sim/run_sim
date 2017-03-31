@@ -233,6 +233,11 @@
    SIM_ARG=''			# -batch overrides -tcl
    VPI_OPT='libdpi.so'
    SIM_ARG+=" -t xsrun.tcl"
+   if [ "$AET" == "1" ];then
+     `sed -i "s/#source xsaet.tcl/ source xsaet.tcl/g" xsrun.tcl`               # enable/uncomment AET generation in xsrun.tcl
+   else
+     `sed -i "s/ source xsaet.tcl/#source xsaet.tcl/g" xsrun.tcl`               # disable/comment  AET generation in xsrun.tcl
+   fi
  elif [ "$SIMDIR" == "questa" ];then
    SIM_INIT=''		 	# default init value for simulator
    SIM_ARG=''			# -batch overrides -tcl
