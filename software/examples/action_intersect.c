@@ -564,6 +564,7 @@ static int action_main(struct dnut_action *action,
     
 
     }
+    //Do nothing for step3. 
         
 
 // out_ok:

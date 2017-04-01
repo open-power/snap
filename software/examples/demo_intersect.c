@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
 	struct dnut_job cjob;
 
     //Function specific
-    long long time_us;
+    //long long time_us;
     struct intersect_job ijob;
     value_t * src_tables[NUM_TABLES];
 
@@ -309,12 +309,10 @@ int main(int argc, char *argv[])
 #endif
 
     //------------------------------------
-    // Action begin 
+    // Action begin (1) 
 	dnut_prepare_intersect(&cjob, &ijob,
                  1, src_tables, table_sizes, DNUT_TARGET_TYPE_HOST_DRAM, 
                     intsect_result, result_size, DNUT_TARGET_TYPE_HOST_DRAM);
-
-    //------------------------------------
     // Timer starts for step1
 	gettimeofday(&stime, NULL);
 	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
@@ -327,14 +325,13 @@ int main(int argc, char *argv[])
     // Timer ends for step1
 	fprintf(stdout, "intersect step1 took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
+    //------------------------------------
     
     //------------------------------------
-    // Action begin 
-
+    // Action begin (2)
 	dnut_prepare_intersect(&cjob, &ijob,
                  2, src_tables, table_sizes, DNUT_TARGET_TYPE_CARD_DRAM, 
                     intsect_result, result_size, DNUT_TARGET_TYPE_HOST_DRAM);
-    //------------------------------------
     // Timer starts for step2
 	gettimeofday(&stime, NULL);
 	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
@@ -345,11 +342,31 @@ int main(int argc, char *argv[])
 	}
 	gettimeofday(&etime, NULL);
     // Timer ends for step2
-
-    time_us = (long long)timediff_usec(&etime, &stime);
 	fprintf(stdout, "intersect step2 took %lld usec\n",
-		time_us);
+		(long long)timediff_usec(&etime, &stime));
+    //------------------------------------
 
+    //------------------------------------
+    // Action begin (3)
+	dnut_prepare_intersect(&cjob, &ijob,
+                 3, src_tables, table_sizes, DNUT_TARGET_TYPE_CARD_DRAM, 
+                    intsect_result, result_size, DNUT_TARGET_TYPE_HOST_DRAM);
+    // Timer starts for step3
+	gettimeofday(&stime, NULL);
+	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
+	if (rc != 0) {
+		fprintf(stderr, "err: job execution %d: %s!\n", rc,
+			strerror(errno));
+		goto out_error;
+	}
+	gettimeofday(&etime, NULL);
+    // Timer ends for step3
+	fprintf(stdout, "intersect step3 took %lld usec\n",
+		(long long)timediff_usec(&etime, &stime));
+    //------------------------------------
+
+
+    /// Print the results
     temp = intsect_result;
     printf("result address is %llx\n",(unsigned long long )intsect_result);
     printf("ijob.intsect_result.size = %d\n", ijob.intsect_result.size);
@@ -358,7 +375,7 @@ int main(int argc, char *argv[])
         printf("%s;\n", *temp);
         temp ++;
     }
-    printf("access bytes = %ld, (%f MB/s)\n", access_bytes, (double)access_bytes/(double)time_us);
+   // printf("access bytes = %ld, (%f MB/s)\n", access_bytes, (double)access_bytes/(double)time_us);
     printf("\n");
 
 

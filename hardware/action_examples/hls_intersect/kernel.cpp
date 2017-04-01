@@ -122,7 +122,7 @@ void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem,
     ap_uint<32> xfer_size_a, xfer_size_b;
     ap_uint<64> table_offset_a, table_offset_b;
     ap_uint<32> table_xfer_size;
-    ap_uint<32> hhh, kkk, m;
+    ap_uint<32> hhh, kkk, mmm;
     ap_uint<32> bytes_a, bytes_b;
     ap_uint<1> match_1, match_2;
 
@@ -237,10 +237,10 @@ C2:                     for (kkk =0; kkk < xfer_size_b/ENTRY_BYTES; kkk++)
                                 //Look up in result buffer
                                 //Which is in DDR
                                 found = 0;
-C3:                             for( m = 0; m < local_res_cnt; m++)
+C3:                             for( mmm = 0; mmm < local_res_cnt; mmm++)
                                 {
                                     rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, CARD_DRAM, 
-                                            (RESULT_BUF_ADDR + m*ENTRY_BYTES)>> ADDR_RIGHT_SHIFT, local_res_buf, BPERDW );
+                                            (RESULT_BUF_ADDR + mmm*ENTRY_BYTES)>> ADDR_RIGHT_SHIFT, local_res_buf, BPERDW );
 
                                     match_1 = (node_a(255,0) == local_res_buf[0](255,0));
                                     match_2 = (node_a(511,256) == local_res_buf[0](511,256));
@@ -270,29 +270,30 @@ C3:                             for( m = 0; m < local_res_cnt; m++)
                     }
                 }
             }
-             //write back to host ram
-            for (m = 0; m < local_res_cnt; m++)
+            write_results_in_MC_regs(Action_Output, Action_Input, local_res_cnt*ENTRY_BYTES, ReturnCode); 
+             
+        }
+        else if (Action_Input ->Data.step == 3)
+        {
+        //write back to host ram
+            for (mmm = 0; mmm < Action_Input->Data.intsect_result.size; mmm = mmm + ENTRY_BYTES)
             {
 
                 rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, CARD_DRAM, 
-                        (RESULT_BUF_ADDR + m*ENTRY_BYTES)>> ADDR_RIGHT_SHIFT, local_res_buf, BPERDW );
+                        (RESULT_BUF_ADDR + mmm)>> ADDR_RIGHT_SHIFT, local_res_buf, BPERDW );
                 
-                OutputAddress = (Action_Input->Data.intsect_result.address + m * ENTRY_BYTES)>> ADDR_RIGHT_SHIFT;
+                OutputAddress = (Action_Input->Data.intsect_result.address + mmm)>> ADDR_RIGHT_SHIFT;
                 rc |= write_burst_of_data_to_mem(din_gmem, d_ddrmem, HOST_DRAM, 
                         OutputAddress, local_res_buf, BPERDW );
             }
 
         }
-        //else if (Action_Input ->Data.step == 3)
-        //{
-        //}
         if(rc!=0) ReturnCode = RET_CODE_FAILURE;
 
     }
     else  // unknown action
         ReturnCode = RET_CODE_FAILURE;
 
-    write_results_in_MC_regs(Action_Output, Action_Input, local_res_cnt*ENTRY_BYTES, ReturnCode); 
 
     return;
 }
