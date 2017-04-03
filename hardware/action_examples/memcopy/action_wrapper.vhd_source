@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 --
--- Copyright 2016 International Business Machines
+-- Copyright 2016,2017 International Business Machines
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ ENTITY action_wrapper IS
     ap_clk                     : IN STD_LOGIC;
     ap_rst_n                   : IN STD_LOGIC;
     interrupt                  : out std_logic;
-    interrupt_src              : out std_logic_vector(INT_BITS -2 DOWNTO 0);
+    interrupt_src              : out std_logic_vector(INT_BITS-2 DOWNTO 0);
     interrupt_ctx              : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
     interrupt_ack              : in std_logic;
     --                                                                                                 -- only for DDRI_USED=TRUE
@@ -209,7 +209,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       action_clk               : IN STD_LOGIC;
       action_rst_n             : IN STD_LOGIC;
       int_req                  : out std_logic;
-      int_src                  : out std_logic_vector(INT_BITS - 2 DOWNTO 0);
+      int_src                  : out std_logic_vector(INT_BITS-2 DOWNTO 0);
       int_ctx                  : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
       int_req_ack              : in std_logic;
 
