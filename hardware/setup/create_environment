@@ -107,6 +107,12 @@
  if [ -z ${SIMULATOR} ]         ;then SIMULATOR="xsim"; fi
  if [[ $maxrc > 0 ]];then exit;fi
 
+ if [ -z "$HLS_WORKAROUND" ] && [ `echo "$ACTION_ROOT" | sed 's/hls/xxx/' | sed 's/HLS/XXX/'` != "$ACTION_ROOT" ]; then
+   export HLS_SUPPORT="TRUE";
+ else
+   export HLS_SUPPORT="$HLS_WORKAROUND";
+ fi
+
  if [ $PREPARE_ENV == 1 ]; then
    if [ -d ${PSLSE_ROOT} ]    ;then           # directory exists
      echo "directory $PSLSE_ROOT exists"

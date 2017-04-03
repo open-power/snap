@@ -25,6 +25,7 @@ set dimm_dir    $::env(DIMMTEST)
 set build_dir   $::env(BUILD_DIR)
 set ip_dir      $root_dir/ip
 set action_dir  $::env(ACTION_ROOT)
+set hls_support $::env(HLS_SUPPORT)
 set ddri_used   $::env(DDRI_USED)
 set ddr3_used   $::env(DDR3_USED)
 set ddr4_used   $::env(DDR4_USED)
@@ -82,6 +83,9 @@ set_property STEPS.WRITE_BITSTREAM.ARGS.BIN_FILE true [get_runs impl_1]
 puts "	                      import design files"
 # HDL Files
 add_files -scan_for_includes $root_dir/hdl/core/
+if { $hls_support == "TRUE" } {
+  add_files -scan_for_includes $root_dir/hdl/hls/
+}
 set_property used_in_simulation false [get_files $root_dir/hdl/core/psl_fpga.vhd]
 # Action Files
 add_files            -fileset sources_1 -scan_for_includes $action_dir/
