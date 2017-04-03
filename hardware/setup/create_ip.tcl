@@ -138,7 +138,12 @@ if { $ddri_used == "TRUE" } {
     generate_target all                          [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] $msg_level
     export_ip_user_files -of_objects             [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -no_script -force $msg_level
     export_simulation -of_objects [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
+
+    #DDR3 create ddr3sdramm example design
+    puts "	                      generating ddr3sdram example"
+    open_example_project $msg_level -force -dir $ip_dir [get_ips  ddr3sdram]  
   } elseif { $ddr4_used == "TRUE" } {
+
     #DDR4 create ddr4sdramm with ECC
     puts "	                      generating IP ddr4sdram"
     create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.1 -module_name ddr4sdram -dir $ip_dir $msg_level
@@ -148,7 +153,10 @@ if { $ddri_used == "TRUE" } {
     generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] $msg_level
     export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -no_script -force  $msg_level
     export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
-#    open_example_project -force -dir $ip_dir     [get_ips ddr4sdram]
+
+    #DDR4 create ddr4sdramm example design
+    puts "	                      generating ddr4sdram example"
+    open_example_project -force -dir $ip_dir [get_ips  ddr4sdram] $msg_level
   } else {
       puts "	                      ERROR: no DDR RAM was specified"
       exit

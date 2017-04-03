@@ -92,12 +92,26 @@ set_property file_type SystemVerilog [get_files $root_dir/sim/core/top.sv]
 set_property used_in_synthesis false [get_files $root_dir/sim/core/top.sv]
 # DDR3 Sim Files
 if { $ddr3_used == "TRUE" } {
-  add_files    -fileset sim_1            -scan_for_includes $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/
-  remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_twindie.vhd
-  remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_lwb.vhd
-  add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/ddr3_dimm.vhd
-  set_property used_in_synthesis false           [get_files $root_dir/sim/core/ddr3_dimm.vhd]
+# AlphaData DDR3 DIMM Model
+#  add_files    -fileset sim_1            -scan_for_includes $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/
+#  remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_twindie.vhd
+#  remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_lwb.vhd
+#  add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/ddr3_dimm.vhd
+#  set_property used_in_synthesis false           [get_files $root_dir/sim/core/ddr3_dimm.vhd]
+
+# Xilinx DDR3 DIMM Model
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr3sdram_ex/imports/ddr3.v
+  set_property file_type {Verilog Header} [get_files $ip_dir/ddr3sdram_ex/imports/ddr3.v]  
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/ddr3_dimm.sv
+  set_property used_in_synthesis false           [get_files $root_dir/sim/core/ddr3_dimm.sv]
 }
+# DDR4 Sim Files
+if { $ddr4_used == "TRUE" } {
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_sdram_model_wrapper.sv
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/ddr4_dimm.sv
+  set_property used_in_synthesis false           [get_files $root_dir/sim/core/ddr4_dimm.sv]
+}
+
 update_compile_order -fileset sources_1 $msg_level
 update_compile_order -fileset sim_1 $msg_level
 

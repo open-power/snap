@@ -32,21 +32,21 @@
 
 ENTITY ddr3_dimm IS
   PORT(
-    c1_ddr3_addr                       : IN    STD_LOGIC_VECTOR(15 DOWNTO 0);           
-    c1_ddr3_ba                         : IN    STD_LOGIC_VECTOR(2 DOWNTO 0);            
-    c1_ddr3_ras_n                      : IN    STD_LOGIC;                               
-    c1_ddr3_cas_n                      : IN    STD_LOGIC;                               
-    c1_ddr3_reset_n                    : IN    STD_LOGIC;                               
-    c1_ddr3_cs_n                       : IN    STD_LOGIC_VECTOR(1 DOWNTO 0);            
-    c1_ddr3_cke                        : IN    STD_LOGIC_VECTOR(1 DOWNTO 0);            
-    c1_ddr3_ck_p                       : IN    STD_LOGIC_VECTOR(1 DOWNTO 0);            
-    c1_ddr3_ck_n                       : IN    STD_LOGIC_VECTOR(1 DOWNTO 0);            
-    c1_ddr3_we_n                       : IN    STD_LOGIC;                               
-    c1_ddr3_dm                         : IN    STD_LOGIC_VECTOR(8 DOWNTO 0);            
-    c1_ddr3_dq                         : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);           
-    c1_ddr3_dqs_p                      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);            
-    c1_ddr3_dqs_n                      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);            
-    c1_ddr3_odt                        : IN    STD_LOGIC_VECTOR(1 DOWNTO 0)             
+    c0_ddr3_addr                       : IN    STD_LOGIC_VECTOR(15 DOWNTO 0);           
+    c0_ddr3_ba                         : IN    STD_LOGIC_VECTOR(2 DOWNTO 0);            
+    c0_ddr3_ras_n                      : IN    STD_LOGIC;                               
+    c0_ddr3_cas_n                      : IN    STD_LOGIC;                               
+    c0_ddr3_reset_n                    : IN    STD_LOGIC;                               
+    c0_ddr3_cs_n                       : IN    STD_LOGIC_VECTOR(1 DOWNTO 0);            
+    c0_ddr3_cke                        : IN    STD_LOGIC_VECTOR(1 DOWNTO 0);            
+    c0_ddr3_ck_p                       : IN    STD_LOGIC_VECTOR(1 DOWNTO 0);            
+    c0_ddr3_ck_n                       : IN    STD_LOGIC_VECTOR(1 DOWNTO 0);            
+    c0_ddr3_we_n                       : IN    STD_LOGIC;                               
+    c0_ddr3_dm                         : IN    STD_LOGIC_VECTOR(8 DOWNTO 0);            
+    c0_ddr3_dq                         : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);           
+    c0_ddr3_dqs_p                      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);            
+    c0_ddr3_dqs_n                      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);            
+    c0_ddr3_odt                        : IN    STD_LOGIC_VECTOR(1 DOWNTO 0)             
   );
 END ddr3_dimm;
 
@@ -77,20 +77,20 @@ BEGIN
       read_undef_val => 'U'                                                             
     )                                                                                   
     PORT MAP(                                                                           
-      ck       => c1_ddr3_ck_p,                                                         
-      ck_l     => c1_ddr3_ck_n,                                                         
-      reset_l  => c1_ddr3_reset_n,                                                      
-      cke      => c1_ddr3_cke,                                                          
-      cs_l     => c1_ddr3_cs_n,                                                         
-      ras_l    => c1_ddr3_ras_n,                                                        
-      cas_l    => c1_ddr3_cas_n,                                                        
-      we_l     => c1_ddr3_we_n,                                                         
-      odt      => c1_ddr3_odt,                                                          
-      dm       => c1_ddr3_dm,                                                           
-      ba       => c1_ddr3_ba,                                                           
-      a        => c1_ddr3_addr,                                                         
-      dq       => c1_ddr3_dq,                                                           
-      dqs      => c1_ddr3_dqs_p,                                                        
-      dqs_l    => c1_ddr3_dqs_n                                                         
+      ck       => c0_ddr3_ck_p,                                                         
+      ck_l     => c0_ddr3_ck_n,                                                         
+      reset_l  => c0_ddr3_reset_n,                                                      
+      cke      => c0_ddr3_cke,                                                          
+      cs_l     => c0_ddr3_cs_n,                                                         
+      ras_l    => c0_ddr3_ras_n,                                                        
+      cas_l    => c0_ddr3_cas_n,                                                        
+      we_l     => c0_ddr3_we_n,                                                         
+      odt      => c0_ddr3_odt,                                                          
+      dm       => c0_ddr3_dm,
+      ba       => c0_ddr3_ba,                                                           
+      a        => c0_ddr3_addr,                                                         
+      dq       => c0_ddr3_dq,                                                           
+      dqs      => c0_ddr3_dqs_p,                                                        
+      dqs_l    => c0_ddr3_dqs_n                                                         
     );                                                                                  
 END ddr3_dimm;
