@@ -24,7 +24,7 @@ PART_NUMBER ?= xcku060-ffva1156-2-e
 
 # The wrapper name must match a function in the HLS sources which is
 # taken as entry point for the HDL generation.
-WRAPPER ?= action_wrapper
+WRAPPER ?= hls_action
 
 syn_dir=$(SOLUTION_DIR)_$(PART_NUMBER)/$(SOLUTION_NAME)/syn
 symlinks=vhdl verilog systemc report
@@ -66,7 +66,7 @@ $(SOLUTION_NAME): $(objs)
 check: $(symlinks)
 	@grep -A8 critical $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ; \
 		test $$? = 1
-#	@grep -A8 0x184 vhdl/action_wrapper_ctrl_reg_s_axi.vhd ; \
+#	@grep -A8 0x184 vhdl/$(WRAPPER)_ctrl_reg_s_axi.vhd ; \
 #		test $$? = 1
 
 clean:

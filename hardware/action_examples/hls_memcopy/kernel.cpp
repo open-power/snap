@@ -79,7 +79,7 @@ short read_burst_of_data_from_mem(snap_membus_t *din_gmem, snap_membus_t *d_ddrm
 //--------------------------------------------------------------------------------------------
 //--- MAIN PROGRAM ---------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
-void action_wrapper(snap_membus_t  *din_gmem, snap_membus_t  *dout_gmem,
+void hls_action(snap_membus_t  *din_gmem, snap_membus_t  *dout_gmem,
 	snap_membus_t  *d_ddrmem,
         action_reg *Action_Register, action_RO_config_reg *Action_Config)
 {
@@ -180,7 +180,7 @@ int main(void)
     Action_Register.Data.out.size = 128;
     Action_Register.Data.out.type = 0x0000;
 
-    action_wrapper(din_gmem, dout_gmem, d_ddrmem,
+    hls_action(din_gmem, dout_gmem, d_ddrmem,
                &Action_Register, &Action_Config);
 
     if (Action_Register.Control.Retc == RET_CODE_FAILURE) {
