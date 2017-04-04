@@ -22,7 +22,7 @@
 `define           den4096Mb
 `define           sg125
 `define           x8
-//`define           MAX_MEM
+//`define           MAX_MEM  //use files in /tmp for memory contents(not multi user safe)
 `include "ddr3.v"
 
 module ddr3_dimm

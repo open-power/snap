@@ -21,7 +21,6 @@
 set root_dir    $::env(DONUT_HARDWARE_ROOT)
 set fpga_part   $::env(FPGACHIP)
 set pslse_dir   $::env(PSLSE_ROOT)
-set dimm_dir    $::env(DIMMTEST)
 set build_dir   $::env(BUILD_DIR)
 set ip_dir      $root_dir/ip
 set action_dir  $::env(ACTION_ROOT)
@@ -165,18 +164,16 @@ update_compile_order -fileset sources_1 $msg_level
 # DDR XDCs
 if { $ddri_used == "TRUE" } {
   if { $bram_used == "TRUE" } {
-    add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc -quiet
-    add_files -fileset constrs_1 -norecurse $dimm_dir/snap_refclk200.xdc -quiet
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc -quiet
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/FGT/snap_refclk266.xdc -quiet
   } elseif { $ddr3_used == "TRUE" } {
-    add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc
-    add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc
-    set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc]
-    add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc
-    set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc]
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_ddr3_b1pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/KU3/snap_ddr3_b1pins.xdc]
   } elseif { $ddr4_used == "TRUE" } {
-    add_files -fileset constrs_1 -norecurse $dimm_dir/snap_refclk266.xdc
-    add_files -fileset constrs_1 -norecurse $dimm_dir/snap_ddr4pins_flash_gt.xdc
-    set_property used_in_synthesis false [get_files $dimm_dir/snap_ddr4pins_flash_gt.xdc]
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/FGT/snap_refclk266.xdc
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/FGT/snap_ddr4pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/FGT/snap_ddr4pins.xdc]
   } else {
     puts "	                      ERROR: no DDR RAM was specified"
     exit

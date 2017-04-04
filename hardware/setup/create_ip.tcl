@@ -18,7 +18,6 @@
 
 set root_dir     $::env(DONUT_HARDWARE_ROOT)
 set fpga_part    $::env(FPGACHIP)
-set dimm_dir     $::env(DIMMTEST)
 set ip_dir       $root_dir/ip
 set ddri_used    $::env(DDRI_USED)
 set ddr3_used    $::env(DDR3_USED)
@@ -132,7 +131,7 @@ if { $ddri_used == "TRUE" } {
     #DDR3 create ddr3sdramm with ECC
     puts "	                      generating IP ddr3sdram"
     create_ip -name ddr3 -vendor xilinx.com -library ip -version 1.* -module_name ddr3sdram -dir $ip_dir $msg_level
-    set_property -dict [list CONFIG.C0.DDR3_TimePeriod {1250} CONFIG.C0.DDR3_InputClockPeriod {2500} CONFIG.C0.DDR3_MemoryType {SODIMMs} CONFIG.C0.DDR3_MemoryPart {CUSTOM_MT18KSF1G72HZ-1G6} CONFIG.C0.DDR3_AxiSelection {true} CONFIG.C0.DDR3_AxiDataWidth {512} CONFIG.C0.DDR3_CustomParts $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/ip-2015.3/custom_parts.csv CONFIG.C0.DDR3_isCustom {true} CONFIG.Simulation_Mode {Unisim} CONFIG.Internal_Vref {false} CONFIG.C0.DDR3_DataWidth {72} CONFIG.C0.DDR3_DataMask {false} CONFIG.C0.DDR3_Ecc {true} CONFIG.C0.DDR3_CasLatency {11} CONFIG.C0.DDR3_CasWriteLatency {8} CONFIG.C0.DDR3_AxiAddressWidth {33} CONFIG.C0.DDR3_AxiIDWidth $axi_id_width] [get_ips ddr3sdram] $msg_level
+    set_property -dict [list CONFIG.C0.DDR3_TimePeriod {1250} CONFIG.C0.DDR3_InputClockPeriod {2500} CONFIG.C0.DDR3_MemoryType {SODIMMs} CONFIG.C0.DDR3_MemoryPart {CUSTOM_MT18KSF1G72HZ-1G6} CONFIG.C0.DDR3_AxiSelection {true} CONFIG.C0.DDR3_AxiDataWidth {512} CONFIG.C0.DDR3_CustomParts $root_dir/setup/KU3/MT18KSF1G72HZ-1G6.csv CONFIG.C0.DDR3_isCustom {true} CONFIG.Simulation_Mode {Unisim} CONFIG.Internal_Vref {false} CONFIG.C0.DDR3_DataWidth {72} CONFIG.C0.DDR3_DataMask {false} CONFIG.C0.DDR3_Ecc {true} CONFIG.C0.DDR3_CasLatency {11} CONFIG.C0.DDR3_CasWriteLatency {8} CONFIG.C0.DDR3_AxiAddressWidth {33} CONFIG.C0.DDR3_AxiIDWidth $axi_id_width] [get_ips ddr3sdram] $msg_level
     set_property generate_synth_checkpoint false [get_files $ip_dir/ddr3sdram/ddr3sdram.xci]
     generate_target {instantiation_template}     [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] $msg_level
     generate_target all                          [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] $msg_level
@@ -147,7 +146,7 @@ if { $ddri_used == "TRUE" } {
     #DDR4 create ddr4sdramm with ECC
     puts "	                      generating IP ddr4sdram"
     create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.1 -module_name ddr4sdram -dir $ip_dir $msg_level
-    set_property -dict [list CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-083E} CONFIG.C0.DDR4_TimePeriod {938} CONFIG.C0.DDR4_InputClockPeriod {3752} CONFIG.C0.DDR4_CasLatency {15} CONFIG.C0.DDR4_CasWriteLatency {11} CONFIG.C0.DDR4_DataWidth {72} CONFIG.C0.DDR4_AxiSelection {true} CONFIG.C0.DDR4_CustomParts $dimm_dir/MT40A512M16HA-083E.csv CONFIG.C0.DDR4_isCustom {true} CONFIG.Simulation_Mode {Unisim} CONFIG.C0.DDR4_DataMask {NO_DM_NO_DBI} CONFIG.C0.DDR4_Ecc {true} CONFIG.C0.DDR4_AxiDataWidth {512} CONFIG.C0.DDR4_AxiAddressWidth {32} CONFIG.C0.DDR4_AxiIDWidth $axi_id_width CONFIG.C0.BANK_GROUP_WIDTH {1}] [get_ips ddr4sdram] $msg_level
+    set_property -dict [list CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-083E} CONFIG.C0.DDR4_TimePeriod {938} CONFIG.C0.DDR4_InputClockPeriod {3752} CONFIG.C0.DDR4_CasLatency {15} CONFIG.C0.DDR4_CasWriteLatency {11} CONFIG.C0.DDR4_DataWidth {72} CONFIG.C0.DDR4_AxiSelection {true} CONFIG.C0.DDR4_CustomParts $root_dir/setup/FGT/MT40A512M16HA-083E.csv CONFIG.C0.DDR4_isCustom {true} CONFIG.Simulation_Mode {Unisim} CONFIG.C0.DDR4_DataMask {NO_DM_NO_DBI} CONFIG.C0.DDR4_Ecc {true} CONFIG.C0.DDR4_AxiDataWidth {512} CONFIG.C0.DDR4_AxiAddressWidth {32} CONFIG.C0.DDR4_AxiIDWidth $axi_id_width CONFIG.C0.BANK_GROUP_WIDTH {1}] [get_ips ddr4sdram] $msg_level
     set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
     generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] $msg_level
     generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] $msg_level
