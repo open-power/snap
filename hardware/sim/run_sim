@@ -192,7 +192,8 @@
 #  SIM_ARG='-gui -tcl'		# interactive with simvision
 #  SIM_ARG='-gui -run -tcl' 	# non_interactive, with simvision
 #  SIM_ARG='-run -tcl'		# non_interactive, no exit at end
-   SIM_ARG='-batch'		# -batch overrides -tcl
+#  SIM_ARG='-batch'             # -batch overrides -tcl
+   SIM_ARG='-batch +model_data+'.''     # model_data for tracing ddr3_dimm
 #  if [ "$CDS_COVERAGE" == "1" ];then 	# coverage options in ncsim based on envvariable
    if [ -z ${CDS_COVERAGE+x} ];then :	# coverage options in ncsim based on envvariable, works with set -u
 #    echo "env_var CDS_COVERAGE is unset"
@@ -232,7 +233,9 @@
    SIM_INIT=''		 	# default init value for simulator
    SIM_ARG=''			# -batch overrides -tcl
    VPI_OPT='libdpi.so'
-   SIM_ARG+=" -t xsrun.tcl"
+   SIM_ARG+=' -t xsrun.tcl'
+#  SIM_ARG+=" -t xsrun.tcl +model_data+'.'" # syntax errors
+#  SIM_ARG+=' -t xsrun.tcl +model_data+.'   # syntax errors
    if [ "$AET" == "1" ];then
      `sed -i "s/#source xsaet.tcl/ source xsaet.tcl/g" xsrun.tcl`               # enable/uncomment AET generation in xsrun.tcl
    else
@@ -432,7 +435,10 @@
    done
  fi
 
- echo "**** append msgs from sim.log"  |tee -a stim.log; grep -i -E "error=|error:|FIR:|assertion" sim.log |grep -v LOADLB |tee -a stim.log
+ echo "**** append msgs from sim.log"  |tee -a stim.log;
+ grep -i -E "error=|error:|FIR:" sim.log |grep -v -E "LOADLB|tIS violation|tRCD violation|RST_N goes inactive" |tee -a stim.log
+ xil_warnings=`grep -i "error:" sim.log |grep -E "tIS violation|tRCD violation|RST_N goes inactive" |wc -l`;
+ if [[ "$xil_warnings" -ne "0" ]]; then echo "$xil_warnings tIS/tRCD/RST_N violations found in sim.log, ignored according to Xilinx AR#61901" |tee -a stim.log;fi
 #echo "**** append msgs from $SIMULATOR.log"|tee -a stim.log; grep -i "error" $SIMULATOR.log|grep -v LOADLB |tee -a stim.log # duplicate info to sim.log
 #cd $DONUT_HARDWARE_ROOT; 	HWVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
 #cd $DONUT_SOFTWARE_ROOT; 	SWVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
