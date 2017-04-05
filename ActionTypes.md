@@ -1,7 +1,8 @@
 ## Action Type Assignment
 Vendor | Range Start | Range End | Description
 :--- | :--- | :--- | :---
-free | 00.00.00.00 | 00.00.FF.FF | Free for experimental use
+Reserved | 00.00.00.00 | 00.00.00.00 | Reserved
+free | 00.00.00.01 | 00.00.FF.FF | Free for experimental use
 IBM | 10.14.00.00 | 10.14.00.00 | SNAP framework example
 IBM | 10.14.00.01 | 10.14.0F.FF | Reserved for IBM Actions
 IBM | 10.14.10.00 | 10.14.10.00 | HLS memcopy
