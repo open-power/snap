@@ -571,6 +571,7 @@ int main(int argc, char *argv[])
 	exit(exit_code);
 
  out_error2:
+    printf("dnut_kernel_free.....\n");
 	dnut_kernel_free(kernel);
 
  out_error:
