@@ -22,8 +22,7 @@
 cd $1
 
 sed -i '/set netlistDir/ a\
-set rootDir    \$::env(DONUT_HARDWARE_ROOT)\
-set dimmDir    \$::env(DIMMTEST)' $2
+set rootDir    \$::env(DONUT_HARDWARE_ROOT)' $2
 
 sed -i 's/top    synth_options "-flatten_hierarchy rebuilt/top    synth_options "-flatten_hierarchy none/' $2
 
@@ -78,13 +77,12 @@ fi
 
 if [ $DDR3_USED == "TRUE" ]; then
   sed -i '/top      top/ a\
-                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc \\\
-                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc \\' $2
+                                             \$rootDir/setup/KU3/snap_ddr3_b1pins.xdc \\' $2
 fi
 
 if [ $DDR4_USED == "TRUE" ]; then
   sed -i '/top      top/ a\
-                                             \$dimmDir/snap_ddr4pins_flash_gt.xdc \\' $2
+                                             \$rootDir/setup/FGT/snap_ddr4pins.xdc \\' $2
 fi
 
 if [ $FPGACARD == "KU3" ]; then 
@@ -93,13 +91,13 @@ if [ $FPGACARD == "KU3" ]; then
 
   if [ $BRAM_USED == "TRUE" ] || [ $DDR3_USED == "TRUE" ]; then
     sed -i '/top      top/ a\
-                                             \$dimmDir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc \\\
+                                             \$rootDir/setup/KU3/snap_refclk200.xdc \\\
                                              \$rootDir/setup/donut_link.xdc \\' $2
   fi
 else 
   if [ $BRAM_USED == "TRUE" ] || [ $DDR4_USED == "TRUE" ]; then
     sed -i '/top      top/ a\
-                                             \$dimmDir/snap_refclk266.xdc \\\
+                                             \$rootDir/setup/FGT/snap_refclk266.xdc \\\
                                              \$rootDir/setup/donut_link.xdc \\' $2
   fi
 fi
