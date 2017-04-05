@@ -185,8 +185,7 @@ axi_wr: process(ha_pclock)
                       sd_c_o.wr_addr    <= ks_d_i.S_AXI_AWADDR;
                       sd_c_o.wr_len     <= ks_d_i.S_AXI_AWLEN;
                       sd_c_o.wr_id      <= ks_d_i.S_AXI_AWID;
-                      sd_c_o.wr_ctx     <= ks_d_i.S_AXI_AWUSER;                                         -- only for HLS_WORKAROUND!=TRUE
-                      sd_c_o.wr_ctx     <= js_c_i.ctx_workaround;                                       -- only for HLS_WORKAROUND=TRUE
+                      sd_c_o.wr_ctx     <= ks_d_i.S_AXI_AWUSER;
                       sd_c_o.wr_req     <= '1';
                     end if;
 
@@ -246,8 +245,7 @@ axi_rd:   process(ha_pclock)
                       sd_c_o.rd_addr    <= ks_d_i.S_AXI_ARADDR;
                       sd_c_o.rd_len     <= ks_d_i.S_AXI_ARLEN;
                       sd_c_o.rd_id      <= ks_d_i.S_AXI_ARID;
-                      sd_c_o.rd_ctx     <= ks_d_i.S_AXI_ARUSER;                                         -- only for HLS_WORKAROUND!=TRUE
-                      sd_c_o.rd_ctx     <= js_c_i.ctx_workaround;                                       -- only for HLS_WORKAROUND=TRUE
+                      sd_c_o.rd_ctx     <= ks_d_i.S_AXI_ARUSER;
                       sd_c_o.rd_req     <= '1';
                     end if;
 
@@ -307,10 +305,8 @@ int_process:   process(ha_pclock)
                 end if;
                 if ks_d_i.int_req = '1' then
                   int_req_vec(1) <= '1';
-                  int_src_vec(1) <= ks_d_i.int_src;                                                     -- only for HLS_WORKAROUND!=TRUE
-                  int_ctx_vec(1) <= ks_d_i.int_ctx;                                                     -- only for HLS_WORKAROUND!=TRUE
-                  int_src_vec(1) <= (others => '0');                                                    -- only for HLS_WORKAROUND=TRUE
-                  int_ctx_vec(1) <= js_c_i.ctx_workaround;                                              -- only for HLS_WORKAROUND=TRUE
+                  int_src_vec(1) <= ks_d_i.int_src;
+                  int_ctx_vec(1) <= ks_d_i.int_ctx;
                 end if;
                 -- if we don't wait for an ack, then check for pending interrupts
                 if int_ack_pending = '0' then

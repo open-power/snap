@@ -177,9 +177,12 @@ END action_wrapper;
 
 ARCHITECTURE STRUCTURE OF action_wrapper IS
 
-  SIGNAL interrupt_i          : STD_LOGIC;
-  SIGNAL interrupt_q          : STD_LOGIC;
-  SIGNAL interrupt_wait_ack_q : STD_LOGIC;
+  CONSTANT ADDR_CTX_ID_REG : STD_LOGIC_VECTOR(C_S_AXI_CTRL_REG_ADDR_WIDTH-1 DOWNTO 0) := x"00000020";
+
+  SIGNAL interrupt_i            : STD_LOGIC;
+  SIGNAL interrupt_q            : STD_LOGIC;
+  SIGNAL interrupt_wait_ack_q   : STD_LOGIC;
+  SIGNAL context_q              : STD_LOGIC_VECTOR(CONTEXT_BITS-1 DOWNTO 0);
 
   COMPONENT hls_action
     GENERIC (
@@ -434,7 +437,7 @@ BEGIN
     m_axi_host_mem_arready       => m_axi_host_mem_arready,
     m_axi_host_mem_arregion      => m_axi_host_mem_arregion,
     m_axi_host_mem_arsize        => m_axi_host_mem_arsize,
-    m_axi_host_mem_aruser        => m_axi_host_mem_aruser(0 DOWNTO 0),
+    m_axi_host_mem_aruser        => open,
     m_axi_host_mem_arvalid       => m_axi_host_mem_arvalid,
     m_axi_host_mem_awaddr        => m_axi_host_mem_awaddr,
     m_axi_host_mem_awburst       => m_axi_host_mem_awburst,
@@ -447,7 +450,7 @@ BEGIN
     m_axi_host_mem_awready       => m_axi_host_mem_awready,
     m_axi_host_mem_awregion      => m_axi_host_mem_awregion,
     m_axi_host_mem_awsize        => m_axi_host_mem_awsize,
-    m_axi_host_mem_awuser        => m_axi_host_mem_awuser(0 DOWNTO 0),
+    m_axi_host_mem_awuser        => open,
     m_axi_host_mem_awvalid       => m_axi_host_mem_awvalid,
     m_axi_host_mem_bid           => m_axi_host_mem_bid,
     m_axi_host_mem_bready        => m_axi_host_mem_bready,
@@ -470,6 +473,20 @@ BEGIN
     m_axi_host_mem_wvalid        => m_axi_host_mem_wvalid,
     interrupt                    => interrupt_i
   );
+
+  ctx: PROCESS (ap_clk)
+  BEGIN  -- PROCESS ctx
+    IF rising_edge(ap_clk) THEN
+      IF ap_rst_n = '0' THEN
+        context_q <= (OTHERS => '0');
+      ELSE
+        context_q <= context_q;
+        IF (s_axi_ctrl_reg_awvalid = '1') AND (s_axi_ctrl_reg_awaddr = ADDR_CTX_ID_REG) THEN
+          context_q <= s_axi_ctrl_reg_wdata(CONTEXT_BITS-1 DOWNTO 0);
+        END IF;
+      END IF;                                   -- ap_rst_n
+    END IF;                                     -- rising_edge(ap_clk)
+  END PROCESS ctx;
 
   int: PROCESS (ap_clk)
   BEGIN  -- PROCESS int
@@ -497,7 +514,11 @@ BEGIN
   -- use fixed interrupt source id '0x4' for HLS interrupts
   -- (the high order bit of the source id is assigned by SNAP)
   interrupt_src <= (OTHERS => '0');
-  -- context ID will be assigned by job-manager.
-  interrupt_ctx <= (OTHERS => '0');
+  -- context ID
+  interrupt_ctx <= context_q;
+
+-- Driving context ID to host memory interface
+  m_axi_host_mem_aruser <= context_q;
+  m_axi_host_mem_awuser <= context_q;
 
 END STRUCTURE;
