@@ -189,7 +189,11 @@ extern "C" {
 #define	SNAP_JWT	0x1080
 
 /*	Context specific registers */
-#define	SNAP_CCR	0x1000
+#define SNAP_CCR	0x1000
+#define SNAP_CCR_DIRECT_MODE	0x01
+#define SNAP_CCR_IRQ_ACTION	0x02	/* Rise IRQ when Action goes to IDLE */
+#define SNAP_CCR_IRQ_ATTACH	0x04	/* Rise IRQ when Action is attached */
+
 #define	SNAP_CSR	0x1008
 #define	SNAP_JCR	0x1010
 #define	SNAP_AAT	0x1018

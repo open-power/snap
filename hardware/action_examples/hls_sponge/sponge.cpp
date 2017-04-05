@@ -18,7 +18,7 @@
 #  define NB_ROUND    (1 << 10)
 #else
 #  ifndef NB_SLICES
-#    define NB_SLICES (65536) 	/* for real benchmark */
+#    define NB_SLICES (65536) 	/* 65536 */ /* for real benchmark */
 #  endif
 #  ifndef NB_ROUND
 #    define NB_ROUND  (1 << 16) /* (1 << 24) */ /* for real benchmark */
@@ -29,9 +29,10 @@
 #if NB_SLICES == 4
 #  define CHANNELS 4
 #else
-#  define CHANNELS 8
+#  define CHANNELS 16
 #endif
 
+//uint64_t sponge(const uint64_t rank)
 uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
 {
   uint64_t magic[8] = {0x0123456789abcdeful,0x13579bdf02468aceul,
@@ -47,7 +48,7 @@ uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
         return 0;
 
    for(i=0;i<RESULT_SIZE;i++) {
-#pragma HLS UNROLL 
+#pragma HLS UNROLL
     even[i] = magic[i] + rank;
   }
 
@@ -55,10 +56,10 @@ uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
   keccak((uint64_t*)even,HASH_SIZE,(uint64_t*)odd,HASH_SIZE);
 
    for(rnd_nb=0;rnd_nb<NB_ROUND;rnd_nb++) {
-#pragma HLS UNROLL factor=4 
+#pragma HLS UNROLL factor=4
 
     for(j=0;j<4;j++) {
-#pragma HLS UNROLL 
+#pragma HLS UNROLL
       odd[2*j] ^= ROTL64( even[2*j] , 4*j+1);
       odd[2*j+1] = ROTL64( even[2*j+1] + odd[2*j+1], 4*j+3);
     }
@@ -67,7 +68,7 @@ uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
     keccak((uint64_t*)odd,HASH_SIZE,(uint64_t*)even,HASH_SIZE);
 
      for(j=0;j<4;j++) {
-#pragma HLS UNROLL 
+#pragma HLS UNROLL
       even[2*j] += ROTL64( odd[2*j] , 4*j+5);
       even[2*j+1] = ROTL64( even[2*j+1] ^ odd[2*j+1], 4*j+7);
     }
@@ -78,7 +79,7 @@ uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
   result=0;
   
    for(i=0;i<RESULT_SIZE;i++) {
-#pragma HLS UNROLL 
+#pragma HLS UNROLL
     result += (even[i] ^ odd[i]);
   }
   return result;
@@ -86,33 +87,15 @@ uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
 
 /*
  * WRITE RESULTS IN MMIO REGS
- *
- * Always check that ALL Outputs are tied to a value or HLS will generate a
- * Action_Output_i and a Action_Output_o registers and address to read results
- * will be shifted ...and wrong
- * => easy checking in generated files:
- *   grep 0x184 action_wrapper_ctrl_reg_s_axi.vhd
- * this grep should return nothing if no duplication of registers
- * (which is expected)
  */
-static void write_results(action_output_reg *Action_Output,
-			  action_input_reg *Action_Input,
+static void write_results(action_reg *Action_Register,
 			  snapu32_t ReturnCode,
 			  snapu64_t chk_out,
 			  snapu64_t timer_ticks)
 {
-	Action_Output->Retc = ReturnCode;
-	Action_Output->Data.chk_out = chk_out;
-	Action_Output->Data.timer_ticks = timer_ticks;
-	Action_Output->Data.action_version =  RELEASE_VERSION;
-	Action_Output->Reserved = 0;
-	Action_Output->Data.in = Action_Input->Data.in;
-	Action_Output->Data.chk_type = Action_Input->Data.chk_type;
-	Action_Output->Data.chk_in = Action_Input->Data.chk_in;
-	Action_Output->Data.pe = Action_Input->Data.pe;
-	Action_Output->Data.nb_pe = Action_Input->Data.nb_pe;
-	Action_Output->Data.nb_slices = NB_SLICES;
-	Action_Output->Data.nb_round = NB_ROUND;
+	Action_Register->Control.Retc = ReturnCode;
+	Action_Register->Data.chk_out = chk_out;
+	Action_Register->Data.timer_ticks = timer_ticks;
 }
 
 //-----------------------------------------------------------------------------
@@ -128,26 +111,30 @@ static void write_results(action_output_reg *Action_Output,
 void action_wrapper(snap_membus_t *din_gmem,
 		    snap_membus_t *dout_gmem,
 		    snap_membus_t *d_ddrmem,
-		    action_input_reg *Action_Input,
-		    action_output_reg *Action_Output)
+		    action_reg *Action_Register,
+		    action_RO_config_reg *Action_Config)
 {
-	// Host Memory AXI Interface
-#pragma HLS INTERFACE m_axi depth=256 port=din_gmem bundle=host_mem
-#pragma HLS INTERFACE m_axi depth=256 port=dout_gmem bundle=host_mem
 
-#pragma HLS INTERFACE s_axilite depth=256 port=din_gmem bundle=ctrl_reg
-#pragma HLS INTERFACE s_axilite depth=256 port=dout_gmem bundle=ctrl_reg
+// Host Memory AXI Interface
+#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
+#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
+#pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg           offset=0x030
+#pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg          offset=0x040
 
-	//DDR memory Interface
-#pragma HLS INTERFACE m_axi depth=256 port=d_ddrmem offset=slave bundle=card_mem0
-#pragma HLS INTERFACE s_axilite depth=256 port=d_ddrmem bundle=ctrl_reg
+//DDR memory Interface
+#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
+#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg           offset=0x050
 
-	// Host Memory AXI Lite Master Interface
-#pragma HLS DATA_PACK variable=Action_Input
-#pragma HLS INTERFACE s_axilite port=Action_Input offset=0x080 bundle=ctrl_reg
-#pragma HLS DATA_PACK variable=Action_Output
-#pragma HLS INTERFACE s_axilite port=Action_Output offset=0x104 bundle=ctrl_reg
+// Host Memory AXI Lite Master Interface
+#pragma HLS DATA_PACK variable=Action_Config
+#pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg      offset=0x010
+#pragma HLS DATA_PACK variable=Action_Register
+#pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg    offset=0x100
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
+
+	/* Hardcoded numbers */
+	Action_Config->action_type   = (snapu32_t) SPONGE_ACTION_TYPE;
+	Action_Config->release_level = (snapu32_t) RELEASE_LEVEL;
 
 	uint64_t checksum = 0;
 	uint32_t slice = 0;
@@ -155,19 +142,13 @@ void action_wrapper(snap_membus_t *din_gmem,
 	uint64_t timer_ticks = 42;
         char j;
 
-	pe = Action_Input->Data.pe;
-	nb_pe = Action_Input->Data.nb_pe;
+	pe = Action_Register->Data.pe;
+	nb_pe = Action_Register->Data.nb_pe;
 
 	/* Intermediate result display */
-	write_results(Action_Output, Action_Input, RET_CODE_OK,
+	write_results(Action_Register, RET_CODE_OK,
 		      checksum, timer_ticks);
 
-	/* Check if the data alignment matches the expectations */
-	if (Action_Input->Control.action != SPONGE_ACTION_TYPE) {
-		write_results(Action_Output, Action_Input, RET_CODE_FAILURE,
-			      checksum, timer_ticks);
-		return;
-	}
 	/*
 	 * Dividing (see below) through nb_pe is not good. We use this
 	 * to probe for NB_SLICE and NB_ROUNDS, which are returned in
@@ -175,7 +156,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 	 * situation.
 	 */
 	if (nb_pe == 0) {
-		write_results(Action_Output, Action_Input, RET_CODE_OK, 0, 0);
+		write_results(Action_Register, RET_CODE_OK, 0, 0);
 		return;
 	}
 
@@ -186,30 +167,26 @@ void action_wrapper(snap_membus_t *din_gmem,
 	 * action_wrapper function. If one need to be reduced then
 	 * decrease the factor in sponge function.
 	 */
-        for (slice = 0; slice < NB_SLICES/CHANNELS; slice++) {
-//#pragma HLS UNROLL factor=8
-		/*
-		 * This if might not be a good idea, we are doing experiments
-		 * to move it to a different place.
-		 */
-
+	//for (slice = 0; slice < NB_SLICES; slice++) {
+	//#pragma HLS UNROLL factor=16
+	for (slice = 0; slice < NB_SLICES/CHANNELS; slice++) {
 		/* Moved this test to sponge function to prevent from breaking
 		 * the parallelization:
 		 * if (pe == (slice % nb_pe))
 		 *     checksum ^= sponge(slice);
-		 */ 
+		 */
               /* Adjust the way slices values are sent to operate as the modulo */
                 for (j = 0; j < CHANNELS; j++)
 #pragma HLS UNROLL
                         checksum ^= sponge(slice + j*NB_SLICES/CHANNELS, pe, nb_pe);
 
 		/* Intermediate result display */
-		write_results(Action_Output, Action_Input, RET_CODE_OK,
+		write_results(Action_Register, RET_CODE_OK,
 			      0xfffffffffffffffful, slice);
 	}
 
 	/* Final output register writes */
-	write_results(Action_Output, Action_Input, RET_CODE_OK,
+	write_results(Action_Register, RET_CODE_OK,
 		      checksum, timer_ticks);
 }
 
@@ -223,9 +200,13 @@ void action_wrapper(snap_membus_t *din_gmem,
  */
 int main(void)
 {
-	uint64_t slice;
-	uint64_t checksum=0;
 	short i, j, rc=0;
+
+	snap_membus_t din_gmem[1]; 	// Unused
+	snap_membus_t dout_gmem[1];	// Unused
+	snap_membus_t d_ddrmem[1];	// Unused
+	action_reg Action_Register;
+	action_RO_config_reg Action_Config;
 
 	typedef struct {
 		uint32_t  pe;
@@ -244,23 +225,22 @@ int main(void)
 	};
 
 	for(i=0; i < 7; i++) {
-		checksum = 0;
-                for(slice=0;slice<NB_SLICES/CHANNELS;slice++) {
+		Action_Register.Data.pe = sequence[i].pe;
+		Action_Register.Data.nb_pe = sequence[i].nb_pe;
 
-			//if(sequence[i].pe == (slice % sequence[i].nb_pe))
-			//	checksum ^= sponge(slice);
-                        /* Adjust the way slices values are sent to operate as the modulo */
-                        for (j = 0; j < CHANNELS; j++)
-                                checksum ^= sponge(slice+j*NB_SLICES/CHANNELS, 
-						sequence[i].pe, sequence[i].nb_pe);
+		action_wrapper(din_gmem, dout_gmem, d_ddrmem,
+				    &Action_Register, &Action_Config);
 
+		if (Action_Register.Control.Retc == RET_CODE_FAILURE) {
+					printf(" ==> RETURN CODE FAILURE <==\n");
+					return 1;
 		}
 		printf("pe=%d - nb_pe=%d - processed checksum=%016llx ",
-		       sequence[i].pe,
-		       sequence[i].nb_pe,
-		       (unsigned long long)checksum);
+				(unsigned int)Action_Register.Data.pe,
+				(unsigned int)Action_Register.Data.nb_pe,
+		        (unsigned long long)Action_Register.Data.chk_out);
 
-		if (sequence[i].checksum == checksum) {
+		if (sequence[i].checksum == Action_Register.Data.chk_out) {
 			printf(" ==> CORRECT\n");
 			rc |= 0;
 		}
@@ -274,9 +254,11 @@ int main(void)
 		printf("\n\t Checksums are given with use of -DTEST "
 		       "flag. Please check you have set it!\n\n");
 
+	printf(">> ACTION TYPE = %8lx - RELEASE_LEVEL = %8lx <<\n",
+			(unsigned int)Action_Config.action_type,
+			(unsigned int)Action_Config.release_level);
+
 	return rc;
 }
 
 #endif // end of NO_SYNTH flag
-
-

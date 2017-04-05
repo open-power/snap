@@ -110,8 +110,10 @@ add_files -norecurse $root_dir/ip/ram_584x64_2p/ram_584x64_2p.xci $msg_level
 export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_584x64_2p/ram_584x64_2p.xci"] -force $msg_level
 add_files -norecurse  $root_dir/ip/fifo_4x512/fifo_4x512.xci $msg_level
 export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_4x512/fifo_4x512.xci"] -force $msg_level
-add_files -norecurse  $root_dir/ip/fifo_9x512/fifo_9x512.xci $msg_level
-export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_9x512/fifo_9x512.xci"] -force $msg_level
+add_files -norecurse  $root_dir/ip/fifo_8x512/fifo_8x512.xci $msg_level
+export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_8x512/fifo_8x512.xci"] -force $msg_level
+add_files -norecurse  $root_dir/ip/fifo_10x512/fifo_10x512.xci $msg_level
+export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_10x512/fifo_10x512.xci"] -force $msg_level
 add_files -norecurse  $root_dir/ip/fifo_513x512/fifo_513x512.xci $msg_level
 export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_513x512/fifo_513x512.xci"] -force $msg_level
 # DDR3 / BRAM IPs

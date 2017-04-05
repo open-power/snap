@@ -34,12 +34,14 @@
 #include <donut_tools.h>
 #include <libdonut.h>
 #include <action_search.h>
+#include <snap_s_regs.h>
 
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
 
 #define MMIO_DIN_DEFAULT	0x0ull
 #define MMIO_DOUT_DEFAULT	0x0ull
+#define	ACTION_REDAY_IRQ	4
 
 static inline
 ssize_t file_size(const char *fname)
@@ -174,7 +176,9 @@ static void usage(const char *prog)
 	       "  -i, --input <data.bin> Input data.\n"
 	       "  -I, --items <items>    Max items to find.\n"
 	       "  -p, --pattern <str>    Pattern to search for\n"
-	       "  -E, --expected <num>   Expected # of patterns to find, "
+	       "  -E, --expected <num>   Expected # of patterns to find\n"
+	       "  -t, --timeout <num>    timeout in sec (default 10 sec)\n"
+	       "  -X, --irq              Enable Interrupts, "
 	       "for verification\n"
 	       "\n"
 	       "Example:\n"
@@ -210,6 +214,8 @@ int main(int argc, char *argv[])
 	struct timeval etime, stime;
 	long int expected_patterns = -1;
 	int exit_code = EXIT_SUCCESS;
+	int attach_flags = SNAP_CCR_DIRECT_MODE;
+	int action_irq = 0;
 
 	while (1) {
 		int option_index = 0;
@@ -223,11 +229,12 @@ int main(int argc, char *argv[])
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
+			{ "irq",	 no_argument,	    NULL, 'X' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-				 "C:E:i:p:I:t:Vvh",
+				 "C:E:i:p:I:t:VvhX",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -262,7 +269,10 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
-
+		case 'X':	/* irq */
+			attach_flags |= SNAP_CCR_IRQ_ATTACH;
+			action_irq = ACTION_REDAY_IRQ;
+			break;
 		default:
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
@@ -306,11 +316,11 @@ int main(int argc, char *argv[])
 	 * Apply for exclusive kernel access for kernel type 0xC0FE.
 	 * Once granted, MMIO to that kernel will work.
 	 */
-	pr_info("Opening device ...\n");
-	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
+	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
+	pr_info("Opening device ... %s\n", device);
 	kernel = dnut_kernel_attach_dev(device,
-					DNUT_VENDOR_ID_ANY,
-					DNUT_DEVICE_ID_ANY,
+					0x1014,
+					0xcafe,
 					SEARCH_ACTION_TYPE);
 	if (kernel == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
@@ -324,21 +334,29 @@ int main(int argc, char *argv[])
 #endif
 #if 1				/* FIXME Circumvention should go away */
 	pr_info("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x10010, 0);
-	dnut_kernel_mmio_write32(kernel, 0x10014, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1001c, 0);
-	dnut_kernel_mmio_write32(kernel, 0x10020, 0);
+	dnut_kernel_mmio_write32(kernel, 0x10, 0);
+	dnut_kernel_mmio_write32(kernel, 0x14, 0);
+	dnut_kernel_mmio_write32(kernel, 0x1c, 0);
+	dnut_kernel_mmio_write32(kernel, 0x20, 0);
 #endif
 #if 1				/* FIXME Circumvention should go away */
 	pr_info("FIXME Temporary setting to enable DDR on the card\n");
-	dnut_kernel_mmio_write32(kernel, 0x10028, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1002c, 0);
+	dnut_kernel_mmio_write32(kernel, 0x28, 0);
+	dnut_kernel_mmio_write32(kernel, 0x2c, 0);
 #endif
 
 	run = 0;
 	gettimeofday(&stime, NULL);
 	do {
-		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
+		if (action_irq) {
+			dnut_kernel_mmio_write32(kernel, 0x8, 1);
+			dnut_kernel_mmio_write32(kernel, 0x4, 1);
+		}
+		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
+		if (action_irq) {
+			dnut_kernel_mmio_write32(kernel, 0xc, 1);
+			dnut_kernel_mmio_write32(kernel, 0x4, 0);
+		}
 		if (rc != 0) {
 			fprintf(stderr, "err: job execution %d: %s!\n", rc,
 				strerror(errno));

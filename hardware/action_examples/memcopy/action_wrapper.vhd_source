@@ -24,6 +24,7 @@ USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
 
 
+
 ENTITY action_wrapper IS
   GENERIC (
     -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory
@@ -48,12 +49,18 @@ ENTITY action_wrapper IS
     C_M_AXI_HOST_MEM_ARUSER_WIDTH    : integer   := 1;
     C_M_AXI_HOST_MEM_WUSER_WIDTH     : integer   := 1;
     C_M_AXI_HOST_MEM_RUSER_WIDTH     : integer   := 1;
-    C_M_AXI_HOST_MEM_BUSER_WIDTH     : integer   := 1
+    C_M_AXI_HOST_MEM_BUSER_WIDTH     : integer   := 1;
+    INT_BITS                         : integer   := 3;
+    CONTEXT_BITS                     : integer   := 8
   );
 
   PORT (
     ap_clk                     : IN STD_LOGIC;
     ap_rst_n                   : IN STD_LOGIC;
+    interrupt                  : out std_logic;
+    interrupt_src              : out std_logic_vector(INT_BITS -2 DOWNTO 0);
+    interrupt_ctx              : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    interrupt_ack              : in std_logic;
     --                                                                                                 -- only for DDRI_USED=TRUE
     -- AXI DDR3 Interface                                                                              -- only for DDRI_USED=TRUE
     m_axi_card_mem0_araddr     : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );     -- only for DDRI_USED=TRUE
@@ -119,7 +126,6 @@ ENTITY action_wrapper IS
     s_axi_ctrl_reg_wready      : OUT STD_LOGIC;
     s_axi_ctrl_reg_wstrb       : IN  STD_LOGIC_VECTOR ( (C_S_AXI_CTRL_REG_DATA_WIDTH/8)-1 DOWNTO 0 );
     s_axi_ctrl_reg_wvalid      : IN  STD_LOGIC;
-    interrupt                  : OUT STD_LOGIC;
     --
     -- AXI Host Memory Interface
     m_axi_host_mem_araddr      : OUT STD_LOGIC_VECTOR ( C_M_AXI_HOST_MEM_ADDR_WIDTH-1 DOWNTO 0 );
@@ -194,12 +200,18 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       C_AXI_HOST_MEM_ARUSER_WIDTH    : integer;
       C_AXI_HOST_MEM_WUSER_WIDTH     : integer;
       C_AXI_HOST_MEM_RUSER_WIDTH     : integer;
-      C_AXI_HOST_MEM_BUSER_WIDTH     : integer
+      C_AXI_HOST_MEM_BUSER_WIDTH     : integer;
+      INT_BITS                       : integer;
+      CONTEXT_BITS                   : integer
     );
 
     PORT (
       action_clk               : IN STD_LOGIC;
       action_rst_n             : IN STD_LOGIC;
+      int_req                  : out std_logic;
+      int_src                  : out std_logic_vector(INT_BITS - 2 DOWNTO 0);
+      int_ctx                  : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+      int_req_ack              : in std_logic;
 
       -- Ports of Axi Master Bus Interface AXI_CARD_MEM0                                           -- only for DDRI_USED=TRUE
       -- to DDR memory                                                                             -- only for DDRI_USED=TRUE
@@ -266,7 +278,6 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       axi_ctrl_reg_rresp       : OUT std_logic_vector(1 DOWNTO 0);
       axi_ctrl_reg_rvalid      : OUT std_logic;
       axi_ctrl_reg_rready      : IN  std_logic;
-      interrupt                : OUT std_logic;
 
       -- Ports of Axi Master Bus Interface AXI_HOST_MEM
       --       to HOST memory
@@ -342,11 +353,17 @@ action_0: COMPONENT action_memcopy
     C_AXI_HOST_MEM_ARUSER_WIDTH    => C_M_AXI_HOST_MEM_ARUSER_WIDTH,
     C_AXI_HOST_MEM_WUSER_WIDTH     => C_M_AXI_HOST_MEM_WUSER_WIDTH,
     C_AXI_HOST_MEM_RUSER_WIDTH     => C_M_AXI_HOST_MEM_RUSER_WIDTH,
-    C_AXI_HOST_MEM_BUSER_WIDTH     => C_M_AXI_HOST_MEM_BUSER_WIDTH
+    C_AXI_HOST_MEM_BUSER_WIDTH     => C_M_AXI_HOST_MEM_BUSER_WIDTH,
+    INT_BITS                       => INT_BITS,
+    CONTEXT_BITS                   => CONTEXT_BITS
   )
   PORT MAP (
     action_clk                 => ap_clk,
     action_rst_n               => ap_rst_n,
+    int_req                    => interrupt,
+    int_src                    => interrupt_src,
+    int_ctx                    => interrupt_ctx,
+    int_req_ack                => interrupt_ack,
     axi_card_mem0_araddr       => m_axi_card_mem0_araddr,                                -- only for DDRI_USED=TRUE
     axi_card_mem0_arburst      => m_axi_card_mem0_arburst,                               -- only for DDRI_USED=TRUE
     axi_card_mem0_arcache      => m_axi_card_mem0_arcache,                               -- only for DDRI_USED=TRUE
@@ -408,7 +425,6 @@ action_0: COMPONENT action_memcopy
     axi_ctrl_reg_wready        => s_axi_ctrl_reg_wready,
     axi_ctrl_reg_wstrb         => s_axi_ctrl_reg_wstrb,
     axi_ctrl_reg_wvalid        => s_axi_ctrl_reg_wvalid,
-    interrupt                  => interrupt,
     axi_host_mem_araddr        => m_axi_host_mem_araddr,
     axi_host_mem_arburst       => m_axi_host_mem_arburst,
     axi_host_mem_arcache       => m_axi_host_mem_arcache,

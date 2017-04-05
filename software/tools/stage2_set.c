@@ -29,10 +29,11 @@
 
 #include <libdonut.h>
 #include <donut_tools.h>
+#include "snap_s_regs.h"
 #include "snap_fw_example.h"
 
 /*	defaults */
-#define ACTION_WAIT_TIME	1000	/* Default in msec */
+#define ACTION_WAIT_TIME	1	/* Default in sec */
 
 #define	KILO_BYTE		(1024)
 #define	MEGA_BYTE		(1024*1024)
@@ -41,7 +42,6 @@
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
-static uint32_t context_offset = ACTION_BASE_S;
 
 #define PRINTF0(fmt, ...) do {		\
 		printf(fmt, ## __VA_ARGS__);	\
@@ -132,52 +132,38 @@ static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
 {
 	int rc;
 
-	addr += context_offset;
-	PRINTF4("mmio_write(0x%08x ,0x%08x)\n", addr, data);
 	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
 		PRINTF0("Write MMIO 32 Err\n");
 	return;
 }
 
-static uint32_t action_read(struct dnut_card* h, uint32_t addr)
-{
-	int rc;
-	uint32_t data;
-
-	addr += context_offset;
-	rc = dnut_mmio_read32(h, (uint64_t)addr, &data);
-	if (0 != rc)
-		PRINTF0("Read MMIO 32 Err\n");
-	PRINTF4("mmio_read(0x%08x) -> 0x%08x\n", addr, data);
-	return data;
-}
-
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct dnut_card* h, int timeout_ms)
+static int action_wait_idle(struct dnut_card* h, int timeout, bool use_irq)
 {
-	uint32_t action_data;
 	uint64_t t_start;	/* time in usec */
-	uint64_t tout = (uint64_t)timeout_ms * 1000;	/* in usec */
-	uint64_t td;		/* Diff time in usec */
+	uint64_t td = 0;
+	int irq = 0;
+	int rc = 1;
 
-	action_write(h, ACTION_CONTROL, 0);
-	action_write(h, ACTION_CONTROL, ACTION_CONTROL_START);
+	if (use_irq) {
+		action_write(h, ACTION_INT_CONFIG, ACTION_INT_GLOBAL);
+		irq = 4;
+	}
+	dnut_kernel_start((void*)h);
 
-	/* Wait for Action to go back to Idle */
 	t_start = get_usec();
-	do {
-		action_data = action_read(h, ACTION_CONTROL);
-		td = get_usec() - t_start;
-		if (td > tout) {
-			PRINTF0("Error. Timeout while Waiting for Idle\n");
-			return ETIME;
-		}
-	} while ((action_data & ACTION_CONTROL_IDLE) == 0);
+	/* Wait for Action to go back to Idle */
+	if (dnut_kernel_completed((void*)h, irq, NULL, timeout))
+		rc = 0;	/* Good */
+	td = get_usec() - t_start;
+	if (use_irq)
+		action_write(h, ACTION_INT_CONFIG, 0);
 	print_time(td);
-	return 0;
+
+	return rc;
 }
 
 static void action_start(struct dnut_card* h,
@@ -229,14 +215,14 @@ static void usage(const char *prog)
 		"    -C, --card <cardno>  use this card for operation\n"
 		"    -V, --version\n"
 		"    -q, --quiet          quiece output\n"
-		"    -m, --master         Use master Context (default slave context)\n"
-		"    -t, --timeout        timeout in msec (default=1000 ms)\n"
+		"    -t, --timeout        timeout in sec (default=1 sec)\n"
 		"    -i, --iter           Number of Iterations (default 1)\n"
 		"    -H, --host           Set Host Memory (defualt)\n"
 		"    -F, --fpga           Set FPGA Memory\n"
 		"    -s, --size           Size to fill (default %d)\n"
 		"    -b, --begin          Byte offset to begin set (default 0)\n"
 		"    -p, --pattern        Byte Pattern to use (default 0x0)\n"
+		"    -I, --irq            Use Interrupts\n"
 		"\tSNAP Test tool to Set Memory in Host (Option -H) or FPGA (Option -F) Card\n"
 		, prog,
 		(4 * KILO_BYTE));
@@ -259,7 +245,8 @@ int main(int argc, char *argv[])
 	int h_mem_size = 0;
 	int h_begin = 0;
 	uint64_t start, stop;
-	bool use_master = false;	/* Set to true to use master context */
+	bool use_interrupt = false;
+	int attach_flags = SNAP_CCR_DIRECT_MODE;
 
 	while (1) {
                 int option_index = 0;
@@ -270,16 +257,16 @@ int main(int argc, char *argv[])
 			{ "version",  no_argument,       NULL, 'V' },
 			{ "quiet",    no_argument,       NULL, 'q' },
 			{ "iter",     required_argument, NULL, 'i' },
-			{ "master",   no_argument,       NULL, 'm' },
 			{ "timeout",  required_argument, NULL, 't' },
 			{ "host",     required_argument, NULL, 'H' },
 			{ "fpga",     required_argument, NULL, 'F' },
 			{ "size",     required_argument, NULL, 's' },
 			{ "begin",    required_argument, NULL, 'b' },
 			{ "pattern",  required_argument, NULL, 'p' },
+			{ "irq",      required_argument, NULL, 'I' },
 			{ 0,          no_argument,       NULL, 0   },
 		};
-		cmd = getopt_long(argc, argv, "C:i:t:s:b:p:mFHqvVh",
+		cmd = getopt_long(argc, argv, "C:i:t:s:b:p:IFHqvVh",
 			long_options, &option_index);
 		if (cmd == -1)  /* all params processed ? */
 			break;
@@ -300,12 +287,8 @@ int main(int argc, char *argv[])
 		case 'i':	/* iter */
 			iter = strtol(optarg, (char **)NULL, 0);
 			break;
-		case 'm':	/* master */
-			use_master = true;
-			context_offset = ACTION_BASE_M;
-			break;
 		case 't':	/* timeout */
-			timeout = strtol(optarg, (char **)NULL, 0) * 1000;
+			timeout = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 'H':	/* host */
 			func = ACTION_CONFIG_MEMSET_H;
@@ -321,6 +304,10 @@ int main(int argc, char *argv[])
 			break;
 		case 'p':	/* pattern */
 			pattern = strtol(optarg, (char **)NULL, 0);
+			break;
+		case 'I':	/* irq */
+			use_interrupt = true;
+			attach_flags |= ACTION_IDLE_IRQ_MODE | SNAP_CCR_IRQ_ATTACH;
 			break;
 		default:
 			usage(argv[0]);
@@ -338,15 +325,10 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	PRINTF2("Start Memset Test. Timeout: %d msec Device: ",
+	PRINTF2("Start Memset Test. Timeout: %d sec Device: ",
 		timeout);
-	if (use_master) {
-		sprintf(device, "/dev/cxl/afu%d.0m", card_no);
-		dn = dnut_card_alloc_dev(device, DNUT_VENDOR_ID_ANY, DNUT_DEVICE_ID_ANY);
-	} else {
-		sprintf(device, "/dev/cxl/afu%d.0s", card_no);
-		dn = dnut_card_alloc_dev(device, 0x1014, 0xcafe);
-	}
+	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
+	dn = dnut_card_alloc_dev(device, 0x1014, 0xcafe);
 	PRINTF2("%s\n", device);
 	if (NULL == dn) {
 		errno = ENODEV;
@@ -375,21 +357,18 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < iter; i++) {
 		PRINTF1("[%d/%d] Start Memset ", i+1, iter);
-		if (false == use_master) {
-			PRINTF1(" Attach %x", ACTION_TYPE_EXAMPLE);
-			while (1) {
-				rc = dnut_attach_action(hb, ACTION_TYPE_EXAMPLE, 0);
-				if (0 == rc) break;
-				if (EBUSY == rc)
-					usleep(100);
-				else goto __exit1;
-			}
+		PRINTF1(" Attach %x", ACTION_TYPE_EXAMPLE);
+		rc = dnut_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags, 5*timeout);
+		if (0 != rc) {
+			PRINTF0(" ERROR from Attach %x after %d sec\n",
+				ACTION_TYPE_EXAMPLE, 5*timeout);
+			goto __exit1;
 		}
 		if (ACTION_CONFIG_MEMSET_F == func) {
 			start = begin;
 			stop = begin + size -1;
 			action_start(dn, func | (pattern << 8), stop, start);
-			if (0 != action_wait_idle(dn, timeout))
+			if (0 != action_wait_idle(dn, timeout, use_interrupt))
 				goto __exit1;
 		}
 		if (ACTION_CONFIG_MEMSET_H == func) {
@@ -398,24 +377,21 @@ int main(int argc, char *argv[])
 			start = (uint64_t)hb + h_begin;	/* Host Start Address */
 			stop = start + size - 1;	/* Host End Address */
 			action_start(dn, func | (pattern << 8), stop, start);
-			if (0 != action_wait_idle(dn, timeout))
+			if (0 != action_wait_idle(dn, timeout, use_interrupt))
 				goto __exit1;
 			if (0 != check_buffer(hb, h_begin, size, pattern))
 				goto __exit1;
 		}
-		if (false == use_master)
-			dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
+		dnut_detach_action(dn);
 		PRINTF1(" done\n");
 	}
 	rc = 0;
 
 __exit1:
-	if (false == use_master)
-		dnut_detach_action(dn, ACTION_TYPE_EXAMPLE);
+	PRINTF1("\n");
 	PRINTF3("Close Card Handle: %p\n", dn);
 	dnut_card_free(dn);
 	free_mem(hb);
-
 	PRINTF2("Exit rc: %d\n", rc);
 	return rc;
 }

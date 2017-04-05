@@ -22,9 +22,18 @@ PSL_DCP=$(HDK_ROOT)/Checkpoint/b_route_design.dcp
 
 export BUILD_NAME=noHDK_build
 export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
+export DONUT_HDL_CORE=$(DONUT_HARDWARE_ROOT)/hdl/core
+export DONUT_SIM_CORE=$(DONUT_HARDWARE_ROOT)/sim/core
 export LOGS_DIR=$(BUILD_DIR)/Logs
 
-SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd $(DONUT_HARDWARE_ROOT)/hdl/core/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/sim/core/top.sv 
+SNAP_CONFIG_FILES=$(DONUT_HDL_CORE)/psl_fpga.vhd \
+		$(DONUT_HDL_CORE)/psl_accel.vhd \
+		$(DONUT_HDL_CORE)/psl_accel_types.vhd \
+		$(DONUT_SIM_CORE)/top.sv \
+		$(DONUT_HDL_CORE)/donut.vhd \
+		$(DONUT_HDL_CORE)/donut_types.vhd \
+		$(DONUT_HDL_CORE)/axi_dma_shim.vhd \
+		$(DONUT_HDL_CORE)/job_manager.vhd
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 ifndef BRAM_USED
@@ -51,7 +60,7 @@ ifndef MSG_LEVEL
 export MSG_LEVEL=-quiet
 endif
 
-.PHONY: all image model check_donut_settings create_environment copy clean config gitclean patch_version patch_vhd_files patch_tcl_files
+.PHONY: all image model check_donut_settings action_config create_environment copy clean config gitclean patch_version xpr_image
 
 all: config model image
 
@@ -95,27 +104,36 @@ copy $(BUILD_DIR)/Checkpoint/b_route_design.dcp:
 	@ln -s $(DONUT_HARDWARE_ROOT)/setup/noHDK_build.tcl  $(BUILD_DIR)/noHDK_build.tcl; 
 	@ln -s $(DONUT_HARDWARE_ROOT)/setup/fw_xpr_build.tcl $(BUILD_DIR)/fw_xpr_build.tcl; 
 	@cp -p $(PSL_DCP)                                    $(BUILD_DIR)/Checkpoint/; 
-	@if [ $(FPGACARD) = "KU3" ]; then ln -f -s $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga_ku3.vhd_source $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd_source; fi
-	@if [ $(FPGACARD) = "FGT" ]; then ln -f -s $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga_fgt.vhd_source $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd_source; fi
+	@if [ $(FPGACARD) = "KU3" ]; then ln -f -s $(DONUT_HDL_CORE)/psl_fpga_ku3.vhd_source $(DONUT_HDL_CORE)/psl_fpga.vhd_source; fi
+	@if [ $(FPGACARD) = "FGT" ]; then ln -f -s $(DONUT_HDL_CORE)/psl_fpga_fgt.vhd_source $(DONUT_HDL_CORE)/psl_fpga.vhd_source; fi
 
-$(SNAP_CONFIG_FILES):
+%.vhd: %.vhd_source
 	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+
+%.sv: %.sv_source
+	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+
+action_config:
+	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
+		echo -e "Executing $(ACTION_ROOT)/action_config.sh"; \
+		cd $(ACTION_ROOT) && ./action_config.sh; \
+	fi
 
 create_environment:
 	@echo -e "\t[CREATE_ENVIRONMENT] start `date`";
 	$(eval BUILD_DATE := $(shell date +%Y.%m.%d_%H:%M))
 	@cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/vivado_create_ip_$(BUILD_DATE).log         -journal $(LOGS_DIR)/vivado_create_ip_$(BUILD_DATE).jou
-	@cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/vivado_create_framework_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_frame_work_$(BUILD_DATE).jou 
+	@cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/vivado_create_framework_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_frame_work_$(BUILD_DATE).jou
 	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
 
-config: check_donut_settings $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FILES) create_environment
+config: check_donut_settings $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FILES) action_config create_environment
 	@echo -e "\t[CONFIG............] done `date`"
 
 patch_version:
 	@echo  -e "\t[PATCH.............] SNAP version and build date registers"; \
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl/core donut.vhd
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HDL_CORE) donut.vhd
 
-image: patch_version
+image: $(SNAP_CONFIG_FILES) patch_version
 	@echo -e "\t[BUILD IMAGE.......] start `date`"
 	$(eval BUILD_DATE := $(shell date +%Y.%m.%d_%H:%M))
 	@cd $(BUILD_DIR) && time vivado  $(MSG_LEVEL) -mode batch -source noHDK_build.tcl -notrace -log $(LOGS_DIR)/vivado_build_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_build_$(BUILD_DATE).jou
@@ -123,7 +141,7 @@ image: patch_version
 	@rm -r -f .bitstream_name.txt
 	@echo -e "\t[BUILD IMAGE.......] done  `date`"
 
-xpr_image: patch_version
+xpr_image: $(SNAP_CONFIG_FILES) patch_version
 	@echo -e "\t[BUILD XPR IMAGE...] start `date`"
 	$(eval BUILD_DATE := $(shell date +%Y.%m.%d_%H:%M))
 	@cd $(BUILD_DIR) && time vivado  $(MSG_LEVEL) -mode batch -source fw_xpr_build.tcl -notrace -log $(LOGS_DIR)/vivado_build_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_build_$(BUILD_DATE).jou
@@ -131,12 +149,10 @@ xpr_image: patch_version
 	@rm -r -f .bitstream_name.txt
 	@echo -e "\t[BUILD IMAGE.......] done  `date`"
 
-model: patch_version
+model: $(SNAP_CONFIG_FILES) patch_version
 	@echo -e "\t[BUILD MODEL] start `date`"
 	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
 	@echo -e "\t[BUILD MODEL] done `date`"
-
-
 
 clean:
 	@echo -e "\t[CLEAN.............] build environment";

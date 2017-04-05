@@ -28,6 +28,7 @@
 #include <donut_tools.h>
 #include <action_memcopy.h>
 #include <libdonut.h>
+#include <snap_s_regs.h>
 
 int verbose_flag = 0;
 
@@ -35,6 +36,8 @@ static const char *version = GIT_VERSION;
 
 #define MMIO_DIN_DEFAULT	0x0ull
 #define MMIO_DOUT_DEFAULT	0x0ull
+#define	HLS_MEMCOPY_ID		0x10141000
+#define ACTION_REDAY_IRQ	4
 
 static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME" };
 
@@ -55,7 +58,9 @@ static void usage(const char *prog)
 	       "  -d, --addr-out <addr>     address e.g. in CARD_RAM.\n"
 	       "  -s, --size <size>         size of data.\n"
 	       "  -m, --mode <mode>         mode flags.\n"
+	       "  -t, --timeout             Timeout in sec to wait for done. (10 sec default)\n"
 	       "  -X, --verify              verify result if possible\n"
+	       "  -I, --irq                 Enable Interrupts\n"
 	       "\n"
 	       "Example:\n"
 	       "  demo_memcopy ...\n"
@@ -112,6 +117,8 @@ int main(int argc, char *argv[])
 	int verify = 0;
 	int exit_code = EXIT_SUCCESS;
 	uint8_t trailing_zeros[1024] = { 0, };
+	int attach_flags = SNAP_CCR_DIRECT_MODE;
+	int action_irq = 0;
 
 	while (1) {
 		int option_index = 0;
@@ -130,11 +137,12 @@ int main(int argc, char *argv[])
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
+			{ "irq",	 no_argument,	    NULL, 'I' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-				 "A:C:i:o:a:S:D:d:x:s:t:XVqvh",
+				 "A:C:i:o:a:S:D:d:x:s:t:XVqvhI",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -202,6 +210,10 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
+		case 'I':
+			attach_flags |= SNAP_CCR_IRQ_ATTACH;
+			action_irq = ACTION_REDAY_IRQ;
+			break;
 		default:
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
@@ -263,10 +275,10 @@ int main(int argc, char *argv[])
 	       type_out, mem_tab[type_out], (long long)addr_out,
 	       size, mode);
 
-	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
+	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	kernel = dnut_kernel_attach_dev(device,
-					DNUT_VENDOR_ID_ANY,
-					DNUT_DEVICE_ID_ANY,
+					0x1014,
+					0xcafe,
 					MEMCOPY_ACTION_TYPE);
 	if (kernel == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
@@ -278,25 +290,36 @@ int main(int argc, char *argv[])
 	pr_info("FIXME Wait a sec ...\n");
 	sleep(1);
 #endif
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x10010, 0);
-	dnut_kernel_mmio_write32(kernel, 0x10014, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1001c, 0);
-	dnut_kernel_mmio_write32(kernel, 0x10020, 0);
-#endif
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Temporary setting to enable DDR on the card\n");
-	dnut_kernel_mmio_write32(kernel, 0x10028, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1002c, 0);
-#endif
-
 	dnut_prepare_memcopy(&cjob, &mjob,
 			     (void *)addr_in,  size, type_in,
 			     (void *)addr_out, size, type_out);
 
+	rc = dnut_attach_action((void*)kernel, HLS_MEMCOPY_ID, attach_flags, 5*timeout);
+	if (rc != 0) {
+		fprintf(stderr, "err: job Attach %d: %s!\n", rc,
+			strerror(errno));
+		goto out_error2;
+	}
+#if 1				/* FIXME Circumvention should go away */
+	pr_info("FIXME Temporary setting to define memory base address\n");
+	dnut_kernel_mmio_write32(kernel, 0x00030, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00034, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00040, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00044, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00050, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00054, 0);
+#endif
+
 	gettimeofday(&stime, NULL);
-	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
+	if (action_irq) {
+		dnut_kernel_mmio_write32(kernel, 0x8, 1);
+		dnut_kernel_mmio_write32(kernel, 0x4, 1);
+	}
+	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
+	if (action_irq) {
+		dnut_kernel_mmio_write32(kernel, 0xc, 1);
+		dnut_kernel_mmio_write32(kernel, 0x4, 0);
+	}
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
 			strerror(errno));
@@ -336,6 +359,7 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "memcopy took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
+	dnut_detach_action((void*)kernel);
 	dnut_kernel_free(kernel);
 
 	__free(obuff);

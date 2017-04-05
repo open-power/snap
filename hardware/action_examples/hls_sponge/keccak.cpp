@@ -30,6 +30,7 @@ const int keccakf_piln[24] =
 
 // update the state with given number of rounds
 
+//void keccakf(uint64_t st[25],int rounds)
 void keccakf(uint64_t st_in[25], uint64_t st_out[25],int rounds)
 {
     int i, j, round;
@@ -105,18 +106,19 @@ int keccak(const uint64_t *in64, int inlen, uint64_t *md64, int mdlen)
     rsiz = 200 - 2 * mdlen;
     rsizw = rsiz / 8;
     
-    //memset(st, 0, sizeof(st));
+    //memset(st, 0, sizeof(st)); // supported in this case but not UNROLLED!
     for( i = 0; i < 25; i++ )
 #pragma HLS UNROLL
   	  st[i] = 0;
 
     //following loop unused with HASH_SIZE param given
-    for ( ; inlen >= rsiz; inlen -= rsiz, in64 += rsiz) {
     //for ( ; inlen >= rsiz; inlen -= rsiz, in += rsiz) {
+    for ( ; inlen >= rsiz; inlen -= rsiz, in64 += rsiz) {
         for (i = 0; i < rsizw; i++)
             //st[i] ^= ((uint64_t *) in)[i];
         	st[i] ^= ((uint64_t *) in64)[i];
-        keccakf(st, st, KECCAK_ROUNDS);
+    	//keccakf(st, KECCAK_ROUNDS);
+    	keccakf(st, st, KECCAK_ROUNDS);
     }
 
     // last block and padding
@@ -137,6 +139,7 @@ int keccak(const uint64_t *in64, int inlen, uint64_t *md64, int mdlen)
 #pragma HLS UNROLL
         st[i] ^= ((uint64_t *) temp)[i];
 
+    //keccakf(st, KECCAK_ROUNDS);
     keccakf(st, st, KECCAK_ROUNDS);
 
     //memcpy(md, st, mdlen);

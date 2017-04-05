@@ -48,12 +48,14 @@ static void usage(const char *prog)
 	       "  -c, --count <num>         number of peeks do be done, 1: default.\n"
 	       "  -e, --must-be <value>     compare and exit if not equal.\n"
 	       "  -n, --must-not-be <value> compare and exit if equal.\n"
+	       "  -d, --dump                Number of 32 or 64 bytes to read. default 1\n"
 	       "  <addr>\n"
-	       "\n"
+		"Note: Use -w32 to access dnut action starting at offset 0x10000\n"
 	       "Example:\n"
-	       "  dnut_peek 0x0000\n"
-	       "  [00000000] 000000021032a178\n\n"
-	       "\n",
+	       "  $ dnut_peek 0x0000\n"
+	       "  [00000000] 0008002f0bc0ed99\nor\n"
+	       "  $ dnut_peek 0x0008\n"
+	       "  [00000000] 0000201703222151\n\n",
 	       prog);
 }
 
@@ -77,6 +79,7 @@ int main(int argc, char *argv[])
 	unsigned long i, count = 1;
 	unsigned long interval = 0;
 	char device[128];
+	int dump = 1;
 
 	while (1) {
 		int option_index = 0;
@@ -97,11 +100,12 @@ int main(int argc, char *argv[])
 			{ "quiet",	 no_argument,	    NULL, 'q' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
+			{ "dump",	 required_argument, NULL, 'd' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-				 "C:X:w:i:c:e:n:a:Vqvh",
+				 "C:X:w:i:c:e:n:a:d:Vqvh",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -148,7 +152,9 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
-
+		case 'd':		/* dump */
+			dump = strtol(optarg, (char **)NULL, 0);
+			break;
 		default:
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
@@ -182,6 +188,7 @@ int main(int argc, char *argv[])
 		printf("[%s] Open CAPI Card Got handle: %p\n", argv[0], card);
 
 	for (i = 0; i < count; i++) {
+		dump_more:
 		switch (width) {
 		case 32: {
 			if (verbose_flag > 1)
@@ -224,8 +231,18 @@ int main(int argc, char *argv[])
 
 		if (interval)
 			usleep(interval);
+		dump--;
+		if (dump >= 1) {
+			if (32 == width) {
+				printf("[%08x] %08lx\n", offs, (long)val);
+				offs+=4;
+			} else {
+				printf("[%08x] %016llx\n", offs, (long long)val);
+				offs+=8;
+			}
+			goto dump_more;
+		}
 	}
-
 	if (verbose_flag)
 		printf("[%s] Close CAPI Card: %p\n", argv[0], card);
 	dnut_card_free(card);
@@ -236,6 +253,6 @@ int main(int argc, char *argv[])
 		else	printf("[%08x] %016llx\n", offs, (long long)val);
 	}
 	if (verbose_flag)
-		printf("[%s] Exit OK\n", argv[0]);
+		printf("[%s] Exit rc %d\n", argv[0], rc);
 	exit(EXIT_SUCCESS);
 }

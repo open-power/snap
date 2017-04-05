@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 --
--- Copyright 2016 International Business Machines
+-- Copyright 2016,2017 International Business Machines
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -15,10 +15,12 @@
 -- See the License for the specific language governing permissions AND
 -- limitations under the License.
 --
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+
 -- change log:
 -- 12/20/2016  R. Rieke removed fix for DMA overrun issue
-----------------------------------------------------------------------------
-----------------------------------------------------------------------------
+-- 03/15/2017  R. Rieke added support for interrupts and context id
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -46,6 +48,9 @@ entity axi_dma_shim is
                 ds_c_i            : in  DS_C_T;
                 ds_d_i            : in  DS_D_T;
 
+                sj_c_o            : out SJ_C_T;
+                js_c_i            : in  JS_C_T;
+
                 sk_d_o            : out SK_D_T;
                 ks_d_i            : in  KS_D_T
 
@@ -54,13 +59,12 @@ end axi_dma_shim;
 
 architecture arch_imp of axi_dma_shim is
 
-
-
-
-
         type wr_fsm_t      is (IDLE, DMA_WR_REQ, DMA_WR_DATA);
         type rd_fsm_t      is (IDLE, DMA_RD_REQ);
         type fifo_buffer_t is array (0 to 31) of std_logic_vector(19 downto 0);
+        type int_req_vec_t is array (0 to NUM_OF_ACTIONS) of std_logic;
+        type int_src_vec_t is array (0 to NUM_OF_ACTIONS) of std_logic_vector(INT_BITS -2 downto 0 );
+        type int_ctx_vec_t is array (0 to NUM_OF_ACTIONS) of std_logic_vector(CONTEXT_BITS - 1 downto 0 );
 
         signal fsm_read_q       : rd_fsm_t;
         signal fsm_write_q      : wr_fsm_t;
@@ -81,6 +85,12 @@ architecture arch_imp of axi_dma_shim is
         signal force_fifo_empty_q : std_logic;
         signal fifo_wr_addr_q     : std_logic_vector(4 downto 0);
         signal fifo_rd_addr_q     : std_logic_vector(4 downto 0);
+
+        signal int_req_vec        : int_req_vec_t;
+        signal int_src_vec        : int_src_vec_t;
+        signal int_ctx_vec        : int_ctx_vec_t;
+        signal int_ack_pending    : std_logic;
+        signal int_src_sel        : integer range 0 to 16;
 
 	--------------------------------------------------
 
@@ -151,7 +161,7 @@ axi_wr: process(ha_pclock)
             if rising_edge(ha_pclock) then
               sd_d_o.wr_strobe  <= (others => '0');
               sd_d_o.wr_last    <= '0';
-              -- reverse the byte order 
+              -- reverse the byte order
               for i in 1 to C_S_AXI_DATA_WIDTH / 8  loop
                  sd_d_o.wr_data(i * 8 - 1 downto (i-1) *8)         <= ks_d_i.S_AXI_WDATA((C_S_AXI_DATA_WIDTH + 7)- i*8 downto C_S_AXI_DATA_WIDTH -  i*8);
               end loop;  -- i
@@ -175,6 +185,8 @@ axi_wr: process(ha_pclock)
                       sd_c_o.wr_addr    <= ks_d_i.S_AXI_AWADDR;
                       sd_c_o.wr_len     <= ks_d_i.S_AXI_AWLEN;
                       sd_c_o.wr_id      <= ks_d_i.S_AXI_AWID;
+                      sd_c_o.wr_ctx     <= ks_d_i.S_AXI_AWUSER;                                         -- only for HLS_WORKAROUND!=TRUE
+                      sd_c_o.wr_ctx     <= js_c_i.ctx_workaround;                                       -- only for HLS_WORKAROUND=TRUE
                       sd_c_o.wr_req     <= '1';
                     end if;
 
@@ -189,7 +201,7 @@ axi_wr: process(ha_pclock)
                     if ks_d_i.S_AXI_WVALID = '1' then
                       for i in 0 to (C_S_AXI_DATA_WIDTH / 8) -1 LOOP
                         sd_d_o.wr_strobe(((C_S_AXI_DATA_WIDTH / 8) -1) - i) <= ks_d_i.S_AXI_WSTRB(i);
-                      end loop;   
+                      end loop;  -- i
                       if ks_d_i.S_AXI_WLAST = '1' then
                         sd_d_o.wr_last <= '1';
                         axi_wready_q      <= '0';
@@ -234,6 +246,8 @@ axi_rd:   process(ha_pclock)
                       sd_c_o.rd_addr    <= ks_d_i.S_AXI_ARADDR;
                       sd_c_o.rd_len     <= ks_d_i.S_AXI_ARLEN;
                       sd_c_o.rd_id      <= ks_d_i.S_AXI_ARID;
+                      sd_c_o.rd_ctx     <= ks_d_i.S_AXI_ARUSER;                                         -- only for HLS_WORKAROUND!=TRUE
+                      sd_c_o.rd_ctx     <= js_c_i.ctx_workaround;                                       -- only for HLS_WORKAROUND=TRUE
                       sd_c_o.rd_req     <= '1';
                     end if;
 
@@ -254,15 +268,14 @@ axi_rd:   process(ha_pclock)
       sk_d_o.S_AXI_RLAST         <=  ds_d_i.rd_last;
 axi_rd2:  process(ds_d_i.rd_data, ds_d_i.rd_id, ds_d_i.rd_data_strobe,ks_d_i.S_AXI_RREADY)
           begin
-            -- reverse the byte order 
+            -- reverse the byte order
             for i in 1 to C_S_AXI_DATA_WIDTH / 8 loop
               sk_d_o.S_AXI_RDATA(i * 8 - 1 downto (i-1) *8)         <= std_logic_vector(ds_d_i.rd_data((C_S_AXI_DATA_WIDTH + 7) - i*8 downto C_S_AXI_DATA_WIDTH -  i*8));
             end loop;  -- i
-              
-           
+
 
             sk_d_o.S_AXI_RID           <= std_logic_vector(ds_d_i.rd_id);
-            
+
             sk_d_o.S_AXI_RRESP         <= "00";
             sk_d_o.S_AXI_RVALID        <= '0';
 
@@ -273,4 +286,62 @@ axi_rd2:  process(ds_d_i.rd_data, ds_d_i.rd_id, ds_d_i.rd_data_strobe,ks_d_i.S_A
             end if;
           end process;
 
+-------------------------------Interrupt Logic-------------------------------------
+
+int_process:   process(ha_pclock)
+          -- receive read request  from axi and forward to DMA
+          begin
+            if rising_edge(ha_pclock) then
+              sd_c_o.int_req <= '0';
+              sj_c_o.int_ack <= '0';
+              sk_d_o.int_req_ack <= '0';
+              if afu_reset = '1' then
+                 int_ack_pending <= '0';
+                 int_req_vec(0)  <= '0';
+                 int_req_vec(1)  <= '0';
+              else
+                if js_c_i.int_req = '1' then
+                  int_req_vec(0) <= '1';
+                  int_src_vec(0) <= js_c_i.int_src;
+                  int_ctx_vec(0) <= js_c_i.int_ctx;
+                end if;
+                if ks_d_i.int_req = '1' then
+                  int_req_vec(1) <= '1';
+                  int_src_vec(1) <= ks_d_i.int_src;                                                     -- only for HLS_WORKAROUND!=TRUE
+                  int_ctx_vec(1) <= ks_d_i.int_ctx;                                                     -- only for HLS_WORKAROUND!=TRUE
+                  int_src_vec(1) <= (others => '0');                                                    -- only for HLS_WORKAROUND=TRUE
+                  int_ctx_vec(1) <= js_c_i.ctx_workaround;                                              -- only for HLS_WORKAROUND=TRUE
+                end if;
+                -- if we don't wait for an ack, then check for pending interrupts
+                if int_ack_pending = '0' then
+                  -- has job manager sent an int
+                  if int_req_vec(0) = '1' then
+                    int_src_sel     <= 0;
+                    int_ack_pending <= '1';
+                    int_req_vec(0)  <= '0';
+                    sd_c_o.int_req  <= '1';
+                    sd_c_o.int_src  <= '0' & int_src_vec(0);
+                    sd_c_o.int_ctx  <= int_ctx_vec(0);
+                  else
+                    if int_req_vec(1) = '1' then
+                      int_src_sel     <= 1;
+                      int_req_vec(1)  <= '0';
+                      int_ack_pending <= '1';
+                      sd_c_o.int_req  <= '1';
+                      sd_c_o.int_src  <= '1' & int_src_vec(1);
+                      sd_c_o.int_ctx  <= int_ctx_vec(1);
+                    end if;
+                  end if;
+                end if;
+                -- handle int ack from DMA
+                if ds_c_i.int_req_ack = '1' then
+                  int_ack_pending <= '0';
+                  case int_src_sel is
+                    when 0      => sj_c_o.int_ack     <= '1';
+                    when others => sk_d_o.int_req_ack <= '1';
+                  end case;
+                end if;
+              end if;
+            end if;
+    end process;
 end arch_imp;

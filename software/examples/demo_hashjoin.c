@@ -36,6 +36,10 @@
 #include <donut_tools.h>
 #include <libdonut.h>
 #include <action_hashjoin.h>
+#include <snap_s_regs.h>
+
+#define ACTION_REDAY_IRQ        4
+#define	HLS_HASH_JOIN_ID	0x10141003
 
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
@@ -67,7 +71,7 @@ static const char *get_name(void)
 {
 	const char *names[] = { "Jonah", "Alan", "Allen", "Glory", "Frank", "Bruno",
 				"Dieter", "Thomas", "Lisa", "Andrea", "Anders",
-				"Reiner", "Rainer", "Eberhard", "Joerg-Stephan", 
+				"Reiner", "Rainer", "Eberhard", "Joerg-Stephan",
 				"Klaus-Dieter", "Melanie", "Susanne", "Maik", "Mike",
 				"Andreas", "Dirk", "Georg", "George W.", "Willhelm",
 				"Uwe", "Ruediger", "Horst", "Klaus", "Klaus-Dieter",
@@ -195,10 +199,11 @@ static void usage(const char *prog)
 {
 	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
 	       "  -C, --card <cardno> can be (0...3)\n"
-	       "  -t, --timeout <timeout>  Timefor for job completion.\n"
+	       "  -t, --timeout <timeout>  Timefor for job completion. (default 10 sec)\n"
 	       "  -Q, --t1-entries <items> Entries in table1.\n"
 	       "  -T, --t2-entries <items> Entries in table2.\n"
 	       "  -s, --seed <seed>        Random seed to enable recreation.\n"
+	       "  -I, --irq                Enable Interrupts\n"
 	       "\n"
 	       "Example:\n"
 	       "  demo_hashjoin ...\n"
@@ -225,6 +230,8 @@ int main(int argc, char *argv[])
 	unsigned int t2_entries = 23;
 	unsigned int t2_tocopy = 0;
 	unsigned int seed = 1974;
+	int attach_flags = SNAP_CCR_DIRECT_MODE;
+	int action_irq = 0;
 
 	while (1) {
 		int option_index = 0;
@@ -237,11 +244,12 @@ int main(int argc, char *argv[])
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
+			{ "irq",	 no_argument,	    NULL, 'I' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-				 "s:Q:T:C:t:Vvh",
+				 "s:Q:T:C:t:VvhI",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -273,7 +281,10 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
-
+		case 'I':
+			attach_flags |= SNAP_CCR_IRQ_ATTACH;
+			action_irq = ACTION_REDAY_IRQ;
+			break;
 		default:
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
@@ -292,10 +303,10 @@ int main(int argc, char *argv[])
 	 * Once granted, MMIO to that kernel will work.
 	 */
 	pr_info("Opening device ...\n");
-	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
+	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	kernel = dnut_kernel_attach_dev(device,
-					DNUT_VENDOR_ID_ANY,
-					DNUT_DEVICE_ID_ANY,
+					0x1014,
+					0xcafe,
 					HASHJOIN_ACTION_TYPE);
 	if (kernel == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n",
@@ -308,17 +319,24 @@ int main(int argc, char *argv[])
 		goto out_error;
 	}
 
+	rc = dnut_attach_action((void*)kernel, HLS_HASH_JOIN_ID, attach_flags, 5*timeout);
+	if (rc != 0) {
+		fprintf(stderr, "err: job Attach %d: %s!\n", rc,
+			strerror(errno));
+		dnut_kernel_free(kernel);
+		goto out_error;
+	}
 #if 1				/* FIXME Circumvention should go away */
 	pr_info("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x10010, 0);
-	dnut_kernel_mmio_write32(kernel, 0x10014, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1001c, 0);
-	dnut_kernel_mmio_write32(kernel, 0x10020, 0);
+	dnut_kernel_mmio_write32(kernel, 0x10, 0);
+	dnut_kernel_mmio_write32(kernel, 0x14, 0);
+	dnut_kernel_mmio_write32(kernel, 0x1c, 0);
+	dnut_kernel_mmio_write32(kernel, 0x20, 0);
 #endif
 #if 1				/* FIXME Circumvention should go away */
 	pr_info("FIXME Temporary setting to enable DDR on the card\n");
-	dnut_kernel_mmio_write32(kernel, 0x10028, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1002c, 0);
+	dnut_kernel_mmio_write32(kernel, 0x28, 0);
+	dnut_kernel_mmio_write32(kernel, 0x2c, 0);
 #endif
 
 	table1_fill(t1, t1_entries);
@@ -341,7 +359,15 @@ int main(int argc, char *argv[])
 			table2_dump(t2, t2_tocopy);
 		}
 
-		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
+		if (action_irq) {
+			dnut_kernel_mmio_write32(kernel, 0x8, 1);
+			dnut_kernel_mmio_write32(kernel, 0x4, 1);
+		}
+		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
+		if (action_irq) {
+			dnut_kernel_mmio_write32(kernel, 0xc, 1);
+			dnut_kernel_mmio_write32(kernel, 0x4, 0);
+		}
 		if (rc != 0) {
 			fprintf(stderr, "err: job execution %d: %s!\n", rc,
 				strerror(errno));
