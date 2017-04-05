@@ -20,8 +20,17 @@
 
 export BUILD_NAME=HDK_build
 export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
+export DONUT_HDL_CORE=$(DONUT_HARDWARE_ROOT)/hdl/core
+export DONUT_SIM_CORE=$(DONUT_HARDWARE_ROOT)/sim/core
 
-SNAP_CONFIG_FILES=$(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd $(DONUT_HARDWARE_ROOT)/hdl/core/psl_accel.vhd $(DONUT_HARDWARE_ROOT)/sim/core/top.sv 
+SNAP_CONFIG_FILES=$(DONUT_HDL_CORE)/psl_fpga.vhd \
+		$(DONUT_HDL_CORE)/psl_accel.vhd \
+		$(DONUT_HDL_CORE)/psl_accel_types.vhd \
+		$(DONUT_SIM_CORE)/top.sv \
+		$(DONUT_HDL_CORE)/donut.vhd \
+		$(DONUT_HDL_CORE)/donut_types.vhd \
+		$(DONUT_HDL_CORE)/axi_dma_shim.vhd \
+		$(DONUT_HDL_CORE)/job_manager.vhd
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone
@@ -29,7 +38,6 @@ CE_PARMS := -p -clone
 ifndef BRAM_USED
 export BRAM_USED=FALSE
 endif
-
 ifeq "$(BRAM_USED)" "TRUE"
 export DDR3_USED=FALSE
 export DDR4_USED=FALSE
@@ -51,7 +59,7 @@ export MSG_LEVEL=-quiet
 endif
 
 
-.PHONY: all image model check_donut_settings create_environment copy clean config gitclean patch_version patch_vhd_files patch_tcl_files
+.PHONY: all image model check_donut_settings action_config create_environment copy clean config gitclean patch_version patch_vhd_files patch_tcl_files
 
 all: config model image
 
@@ -75,11 +83,11 @@ check_donut_settings:
 	@if [ -z $(DDR3_USED) ] || [ -z $(DDR4_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ]; then \
 		echo "Missing one or more environment  variables"; \
 		echo "Please check the following variable and source donut_settings before calling make!"; \
-		echo "DDR3_USED:     $(DDR3_USED)"; \
-		echo "DDR4_USED:     $(DDR4_USED)"; \
-		echo "ILA_DEBUG:     $(ILA_DEBUG)"; \
-		echo "NUM_OF_ACTION: $(NUM_OF_ACTIONS)"; \
-		echo "ACTION_ROOT:   $(ACTION_ROOT)"; \
+		echo "DDR3_USED:      $(DDR3_USED)"; \
+		echo "DDR4_USED:      $(DDR4_USED)"; \
+		echo "ILA_DEBUG:      $(ILA_DEBUG)"; \
+		echo "NUM_OF_ACTIONS: $(NUM_OF_ACTIONS)"; \
+		echo "ACTION_ROOT:    $(ACTION_ROOT)"; \
 		exit 1; \
 	fi
 
@@ -94,8 +102,8 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 	@sed -i 's/run.oocImpl.*1/run.oocImpl 0/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topImpl.*0/run.topImpl 1/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topSynth.*0/run.topSynth 1/' $(BUILD_DIR)/psl_fpga.tcl
-	@if [ $(FPGACARD) = "KU3" ]; then ln -f -s $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga_ku3.vhd_source $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd_source; fi
-	@if [ $(FPGACARD) = "FGT" ]; then ln -f -s $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga_fgt.vhd_source $(DONUT_HARDWARE_ROOT)/hdl/core/psl_fpga.vhd_source; fi
+	@if [ $(FPGACARD) = "KU3" ]; then ln -f -s $(DONUT_HDL_CORE)/psl_fpga_ku3.vhd_source $(DONUT_HDL_CORE)/psl_fpga.vhd_source; fi
+	@if [ $(FPGACARD) = "FGT" ]; then ln -f -s $(DONUT_HDL_CORE)/psl_fpga_fgt.vhd_source $(DONUT_HDL_CORE)/psl_fpga.vhd_source; fi
 	@echo "vhdl work ../hdl/core/psl_fpga.vhd" > $(BUILD_DIR)/Sources/prj/top.prj
 	@ln -s $(BUILD_NAME) build
 
@@ -118,40 +126,34 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@echo -e "\t[CREATE] $@"
 	@cat $(BUILD_DIR)/Sources/prj/top.prj $(BUILD_DIR)/Sources/prj/afu.prj > $(BUILD_DIR)/Sources/prj/psl_fpga.prj
 
-$(SNAP_CONFIG_FILES):
+%.vhd: %.vhd_source
 	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+
+%.sv: %.sv_source
+	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+
+action_config:
+	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
+		echo -e "Executing $(ACTION_ROOT)/action_config.sh"; \
+		cd $(ACTION_ROOT) && ./action_config.sh; \
+	fi
 
 patch_tcl_files:
 	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
 
-patch_vhd_files:
-	@echo "PATCH .vhd FILES" 
-	@#yet another Xilinx bug: the fileinfo.txt is not correct if DDR3=BRAM=FALSE!
-	@if [ $(DDR3_USED) = "TRUE" ] || [ $(DDR4_USED) = "TRUE" ] || [ $(BRAM_USED) = "TRUE" ]; then\
-		VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\///' | sed 's/\(^.*psl_accel_s\)yn.vhd/\1yn.vhd\n\1im.vhd/'`; \
-		for vhd_file in $$VHD_FILES; do \
-			$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; \
-		done;\
-	else\
-		VHD_FILES=`grep -i "^vhdl" $(BUILD_DIR)/Sources/prj/afu.prj | cut -d " " -f 3 | sed 's/..\/..\///' | sed 's/\(^.*psl_accel_s\)yn.vhd/\1yn.vhd\n\1im.vhd/'`; \
-		for vhd_file in $$VHD_FILES; do \
-			$(DONUT_HARDWARE_ROOT)/setup/patch_vhd.sh $(DONUT_HARDWARE_ROOT) $$vhd_file; \
-		done;\
-	fi;	
-
 patch_version:
 	@echo "PATCH SNAP version and build date registers"; \
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HARDWARE_ROOT)/hdl/core donut.vhd
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HDL_CORE) donut.vhd
 
-config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl $(SNAP_CONFIG_FILES) create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_vhd_files patch_version
+config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl $(SNAP_CONFIG_FILES) action_config create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_version
 	@echo -e "\t[CONFIG] done `date`"
 
-model: patch_version
+model: $(SNAP_CONFIG_FILES) patch_version
 	@echo -e "\t[BUILD MODEL] start `date`"
 	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
 	@echo -e "\t[BUILD MODEL] done `date`"
 
-image: patch_version
+image: $(SNAP_CONFIG_FILES) patch_version
 	@echo -e "\t[BUILD IMAGE (BIT)] start `date`"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
 	@if [ "`vivado -version |head -n1  |cut -c 9-12`" = "2015" ] && [ $(DDR3_USED) = "TRUE" ] && [ $(BRAM_USED) = "FALSE" ]; then\

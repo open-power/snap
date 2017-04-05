@@ -138,9 +138,10 @@ struct dnut_card;
 struct dnut_card *dnut_card_alloc_dev(const char *path,
 			uint16_t vendor_id, uint16_t device_id);
 
-int dnut_attach_action(struct dnut_card *card, uint32_t offset, int flags);
+int dnut_attach_action(struct dnut_card *card, uint32_t offset, int flags,
+			int timeout_sec);
 
-int dnut_detach_action(struct dnut_card *card, uint32_t offset);
+int dnut_detach_action(struct dnut_card *card);
 
 int dnut_mmio_write32(struct dnut_card *card, uint64_t offset,
 			uint32_t data);
@@ -355,7 +356,7 @@ struct dnut_kernel *dnut_kernel_attach_dev(const char *path,
 int dnut_kernel_start(struct dnut_kernel *kernel);
 
 int dnut_kernel_stop(struct dnut_kernel *kernel);
-int dnut_kernel_completed(struct dnut_kernel *kernel, int *rc);
+int dnut_kernel_completed(struct dnut_kernel *kernel, int irq, int *rc, int timeout_sec);
 
 /**
  * Synchronous way to send a job away. Blocks until job is done.
@@ -369,7 +370,8 @@ int dnut_kernel_completed(struct dnut_kernel *kernel, int *rc);
  */
 int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 				 struct dnut_job *cjob,
-				 unsigned int timeout_sec);
+				 unsigned int timeout_sec,
+				 int irq);
 
 void dnut_kernel_free(struct dnut_kernel *kernel);
 

@@ -28,6 +28,7 @@
 #include <donut_tools.h>
 #include <action_checksum.h>
 #include <libdonut.h>
+#include <snap_s_regs.h>
 
 int verbose_flag = 0;
 
@@ -36,6 +37,7 @@ static const char *checksum_mode_str[] = { "CRC32", "ADLER32", "SPONGE" };
 
 #define MMIO_DIN_DEFAULT	0x0ull
 #define MMIO_DOUT_DEFAULT	0x0ull
+#define ACTION_REDAY_IRQ        4
 
 /**
  * @brief	prints valid command line options
@@ -56,6 +58,8 @@ static void usage(const char *prog)
 	       "  -n, --nb_pe <nb_pe>       sponge specific input.\n"
 	       "  -m, --mode <CRC32|ADLER32|SPONGE> mode flags.\n"
 	       "  -T, --test                execute a test if available.\n"
+	       "  -t, --timeout             Timeout in sec (default 3600 sec).\n"
+	       "  -I, --irq                 Enable Interrupts\n"
 	       "\n"
 	       "Example:\n"
 	       "  demo_checksum ...\n"
@@ -169,7 +173,9 @@ static int do_checksum(int card_no, unsigned long timeout,
 		       uint64_t *_timer_ticks,
 		       uint32_t *_nb_slices,
 		       uint32_t *_nb_round,
-		       FILE *fp)
+		       FILE *fp,
+		       int attach_flags,
+		       int action_irq)
 {
 	int rc;
 	char device[128];
@@ -191,10 +197,10 @@ static int do_checksum(int card_no, unsigned long timeout,
 		checksum_mode_str[mode % CHECKSUM_MODE_MAX],
 		pe, nb_pe);
 
-	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
+	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	kernel = dnut_kernel_attach_dev(device,
-					DNUT_VENDOR_ID_ANY,
-					DNUT_DEVICE_ID_ANY,
+					0x1014,
+					0xcafe,
 					CHECKSUM_ACTION_TYPE);
 	if (kernel == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
@@ -202,17 +208,23 @@ static int do_checksum(int card_no, unsigned long timeout,
 		goto out_error1;
 	}
 
+	rc = dnut_attach_action((void*)kernel, 0x10141003, attach_flags, 5*timeout);
+        if (rc != 0) {
+		fprintf(stderr, "err: job Attach %d: %s!\n", rc,
+			strerror(errno));
+		goto out_error1;
+        }
 #if 1				/* FIXME Circumvention should go away */
 	pr_info("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x10010, 0);
-	dnut_kernel_mmio_write32(kernel, 0x10014, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1001c, 0);
-	dnut_kernel_mmio_write32(kernel, 0x10020, 0);
+	dnut_kernel_mmio_write32(kernel, 0x10, 0);
+	dnut_kernel_mmio_write32(kernel, 0x14, 0);
+	dnut_kernel_mmio_write32(kernel, 0x1c, 0);
+	dnut_kernel_mmio_write32(kernel, 0x20, 0);
 #endif
 #if 1				/* FIXME Circumvention should go away */
 	pr_info("FIXME Temporary setting to enable DDR on the card\n");
-	dnut_kernel_mmio_write32(kernel, 0x10028, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1002c, 0);
+	dnut_kernel_mmio_write32(kernel, 0x28, 0);
+	dnut_kernel_mmio_write32(kernel, 0x2c, 0);
 #endif
 
 	dnut_prepare_checksum(&cjob, &mjob_in, &mjob_out,
@@ -221,7 +233,15 @@ static int do_checksum(int card_no, unsigned long timeout,
 			      threads);
 
 	gettimeofday(&stime, NULL);
-	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
+	if (action_irq) {
+		dnut_kernel_mmio_write32(kernel, 0x8, 1);
+		dnut_kernel_mmio_write32(kernel, 0x4, 1);
+	}
+	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
+	if (action_irq) {
+		dnut_kernel_mmio_write32(kernel, 0xc, 1);
+		dnut_kernel_mmio_write32(kernel, 0x4, 0);
+	}
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
 			strerror(errno));
@@ -244,6 +264,7 @@ static int do_checksum(int card_no, unsigned long timeout,
 		(long long)mjob_out.action_version,
 		(long long)timediff_usec(&etime, &stime));
 
+	dnut_detach_action((void*)kernel);
 	dnut_kernel_free(kernel);
 
 	if (_checksum)
@@ -256,10 +277,11 @@ static int do_checksum(int card_no, unsigned long timeout,
 		*_nb_slices = mjob_out.nb_slices;
 	if (_nb_round)
 		*_nb_round = mjob_out.nb_round;
-	
+
 	return 0;
 
  out_error2:
+	dnut_detach_action((void*)kernel);
 	dnut_kernel_free(kernel);
  out_error1:
 	return -1;
@@ -313,7 +335,7 @@ static struct sponge_t test_data[] = {
 	  .pe = 0, .nb_pe = 16,        .checksum = 0x19bfa808392aac5full },
 	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
 	  .pe = 0, .nb_pe = 1,         .checksum = 0xed08548b49997520ull },
-	  
+
 	/* NB_SLICES=64K NB_ROUND=1M */
 	{ .nb_slices = 64 * 1024, .nb_round = 1024 * 1024,
 	  .pe = 0, .nb_pe = 64 * 1024, .checksum = 0x8e2c79142abf87d5ull },
@@ -353,7 +375,7 @@ static uint32_t executed_slices(uint32_t pe, uint32_t nb_pe,
 }
 
 static int test_sponge(int card_no, int timeout, unsigned int threads,
-		       FILE *fp)
+		       FILE *fp, int attach_flags, int action_irq)
 {
 	int rc = -1;
 	unsigned int i;
@@ -368,13 +390,13 @@ static int test_sponge(int card_no, int timeout, unsigned int threads,
 	rc = do_checksum(card_no, timeout, threads, 0, 0, 0, 0,
 			 CHECKSUM_SPONGE, 0, 0, &checksum, &usec,
 			 &timer_ticks, &nb_slices, &nb_round,
-			 fp);
+			 fp, attach_flags, action_irq);
 	if (rc != 0) {
 		fprintf(stderr, "err: sponge rc=%d FAILED\n", rc);
 		return rc;
 	}
 	fprintf(stderr, "NB_SLICES = %d NB_ROUND = %d\n", nb_slices, nb_round);
-	
+
 	for (i = 0; i < ARRAY_SIZE(test_data); i++) {
 		struct sponge_t *t = &test_data[i];
 
@@ -384,12 +406,12 @@ static int test_sponge(int card_no, int timeout, unsigned int threads,
 		rc = do_checksum(card_no, timeout, threads, 0, 0, 0, 0,
 				 CHECKSUM_SPONGE, t->pe, t->nb_pe,
 				 &checksum, &usec, &timer_ticks,
-				 &nb_slices, &nb_round, fp);
+				 &nb_slices, &nb_round, fp, attach_flags, action_irq);
 		if (rc != 0) {
 			fprintf(stderr, "err: sponge rc=%d FAILED\n", rc);
 			break;
 		}
-		
+
 		if (checksum != t->checksum) {
 			fprintf(stderr, "err: pe = %d nb_pe = %d "
 				"checksum mismatch %016llx/%016llx\n",
@@ -409,7 +431,7 @@ static int test_sponge(int card_no, int timeout, unsigned int threads,
 			executed_slices(t->pe, t->nb_pe, t->nb_slices),
 			(long long)timer_ticks,
 			(long long)usec);
-		
+
 	}
 	return rc;
 }
@@ -434,6 +456,8 @@ int main(int argc, char *argv[])
 	uint32_t pe = 0, nb_pe = 0;
 	int test = 0;
 	unsigned int threads = 160;
+	int action_irq = 0;
+	int attach_flags = SNAP_CCR_DIRECT_MODE;
 
 	while (1) {
 		int option_index = 0;
@@ -453,11 +477,12 @@ int main(int argc, char *argv[])
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
+			{ "rq",	 	no_argument,	    NULL, 'I' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-				 "A:C:i:a:S:Tx:p:m:n:s:t:x:Vqvh",
+				 "A:C:i:a:S:Tx:p:m:n:s:t:x:VqvhI",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -527,6 +552,10 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
+		case 'I':
+			action_irq = ACTION_REDAY_IRQ;
+			attach_flags |= SNAP_CCR_IRQ_ATTACH;
+			break;
 		default:
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
@@ -566,7 +595,8 @@ int main(int argc, char *argv[])
 			FILE *fp;
 
 			fp = fopen("/dev/null", "w");
-			rc = test_sponge(card_no, timeout, threads, fp);
+			rc = test_sponge(card_no, timeout, threads, fp,
+				attach_flags, action_irq);
 			fclose(fp);
 			if (rc != 0)
 				goto out_error1;
@@ -579,11 +609,11 @@ int main(int argc, char *argv[])
 		rc = do_checksum(card_no, timeout, threads, addr_in,
 				 type_in, size, checksum_start, mode,
 				 pe, nb_pe, NULL, NULL, NULL, NULL,
-				 NULL, stderr);
+				 NULL, stderr, attach_flags, action_irq);
 		if (rc != 0)
 			goto out_error1;
 	}
-	
+
 	if (ibuff)
 		free(ibuff);
 	exit(EXIT_SUCCESS);
