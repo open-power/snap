@@ -57,7 +57,7 @@ static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 //   Intersect functions
 //////////////////////////////////////////////////////////////////
 
-inline void copyvalue(value_t dst, value_t src)
+void copyvalue(value_t dst, value_t src)
 {
     size_t i;
     for(i = 0 ; i < sizeof(value_t); i++)
@@ -75,7 +75,7 @@ inline void copyvalue(value_t dst, value_t src)
  * than s2.
  */
 
-inline int cmpvalue(const value_t s1, const value_t s2)
+int cmpvalue(const value_t s1, const value_t s2)
 {
     size_t i;
 	for (i = 0; i < sizeof(value_t); i++) {
@@ -511,7 +511,6 @@ static int action_main(struct dnut_action *action,
         //check input parameters
         if(n[i] <= 0)
         {
-            js->rc = DNUT_EINVAL;
             goto out_err;
         }
     }
@@ -548,19 +547,18 @@ static int action_main(struct dnut_action *action,
         {
             result_num = intersect_direct((value_t *)js->src_tables[0].addr, n[0], 
                              (value_t *)js->src_tables[1].addr, n[1], 
-                             (value_t *)js->intsect_result.addr);
+                             (value_t *)js->result_table.addr);
         }
         else
         {
             result_num = intersect ((value_t *)js->src_tables[0].addr, plists[0], 
                        (value_t *)js->src_tables[1].addr, plists[1], 
-                       (value_t *)js->intsect_result.addr);
+                       (value_t *)js->result_table.addr);
         }
 
 
         printf("result_num = %d\n", result_num);
-        js-> intsect_result.size = result_num * sizeof(value_t);
-        js->rc = 0;
+        js-> result_table.size = result_num * sizeof(value_t);
     
 
     }
@@ -583,7 +581,7 @@ static int action_main(struct dnut_action *action,
 static struct dnut_action action = {
 	.vendor_id = DNUT_VENDOR_ID_ANY,
 	.device_id = DNUT_DEVICE_ID_ANY,
-	.action_type = INTERSECT_ACTION_TYPE,
+	.action_type = (HLS_INTERSECT_ID&0xFFFF),
 
 	.retc = DNUT_RETC_FAILURE, /* preset value, should be 0 on success */
 	.state = ACTION_IDLE,
