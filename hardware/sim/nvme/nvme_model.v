@@ -18,9 +18,31 @@
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 
-`timescale 1ns / 1ns
+`timescale 1ns / 1ps
 module nvme_model (
+  unit_reset_n,
+  pcie_rc0_rxn, 
+  pcie_rc0_rxp, 
+  pcie_rc0_txn, 
+  pcie_rc0_txp, 
+  pcie_rc1_rxn, 
+  pcie_rc1_rxp, 
+  pcie_rc1_txn, 
+  pcie_rc1_txp
+
+
+		   
 );
+
+   input        unit_reset_n;
+   input  [3:0] pcie_rc0_rxn; 
+   input  [3:0] pcie_rc0_rxp; 
+   output [3:0] pcie_rc0_txn; 
+   output [3:0] pcie_rc0_txp; 
+   input  [3:0] pcie_rc1_rxn; 
+   input  [3:0] pcie_rc1_rxp; 
+   output [3:0] pcie_rc1_txn; 
+   output [3:0] pcie_rc1_txp; 
  
 
  
@@ -33,12 +55,12 @@ module nvme_model (
         `else
         $dumpfile("test.vcd.gz");
         `endif
-        $dumpvars(0,surelockex_sim);
+ //       $dumpvars(0,surelockex_sim);
         `endif
         `else
         $fsdbDumpfile("test.fsdb",800);
-        $fsdbDumpvars(0,surelockex_sim);
-         $fsdbDumpvars(0,surelock_sim.afu.iFC,"+all");
+//        $fsdbDumpvars(0,surelockex_sim);
+//         $fsdbDumpvars(0,surelock_sim.afu.iFC,"+all");
         `endif
   end
   reg refclk_100;
@@ -52,13 +74,22 @@ module nvme_model (
         #(5.0);
      end
  
-   reg   unit_reset;
-   initial begin
-      unit_reset <= 1 ;
-  //    #(50ns);
-      unit_reset <= 0 ;
-   end    
- 
+//   reg   unit_reset;
+//   initial begin
+//      refclk_100 <= 1'b0;
+//      unit_reset <= 1 ; 
+//      #50;
+//      unit_reset <= 0 ;
+//   end    
+
+   integer status;
+   wire [3:0]pcie_rc0_rxn = 4'h0;
+   wire [3:0]pcie_rc0_rxp = 4'h0;
+
+   wire [3:0]pcie_rc1_rxn = 4'h0;
+   wire [3:0]pcie_rc1_rxp = 4'h0;
+
+     
    wire [25:0] pipe_common_commands_in_rp;
    wire [83:0] pipe_rx_0_rp;
    wire [83:0] pipe_rx_1_rp;
@@ -101,16 +132,29 @@ module nvme_model (
    
    wire   pcie_clk_p;
    wire   pcie_clk_n;
+
+   wire [2:0] cfg_speed;
+   wire [3:0] cfg_width;
+   wire [2:0] cfg_speed_1;
+   wire [3:0] cfg_width_1;
   
  
-   `define DUTP0 a0.nvme_top.axi_pcie3_0  // ?????
-   `define DUTP2 a0.nvme_top.axi_pcie3_1  // ?????
+   `define DUTP0 a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst 
+   `define DUTP2 a0.nvme_top_i.axi_pcie3_1.inst.pcie3_ip_i.inst
+
+
+   `define DUTe a0.nvme_top_i
+
+
+   
 //   `define DUTP1 afu
    `define DUTP1 a0              // ?????
-   defparam afu.axi_pcie3_0.inst.pcie3_ip_i.inst.EXT_PIPE_SIM = "TRUE";
-   defparam afu.axi_pcie3_0.inst.pcie3_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
-   defparam afu.axi_pcie3_1.inst.pcie3_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
-   defparam afu.axi_pcie3_1.inst.pcie3_ip_i.inst.EXT_PIPE_SIM = "TRUE";
+   defparam a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst.EXT_PIPE_SIM = "TRUE";
+   defparam a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
+   defparam a0.nvme_top_i.axi_pcie3_1.inst.pcie3_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
+   defparam a0.nvme_top_i.axi_pcie3_1.inst.pcie3_ip_i.inst.EXT_PIPE_SIM = "TRUE";
+
+   
    assign `DUTP0.common_commands_in =   pipe_common_commands_in_rp;  
    assign `DUTP0.pipe_rx_0_sigs  = pipe_rx_0_rp;                
    assign `DUTP0.pipe_rx_1_sigs  = pipe_rx_1_rp;                
@@ -119,7 +163,8 @@ module nvme_model (
    assign `DUTP0.pipe_rx_4_sigs  = pipe_rx_4_rp;                
    assign `DUTP0.pipe_rx_5_sigs  = pipe_rx_5_rp;                
    assign `DUTP0.pipe_rx_6_sigs  = pipe_rx_6_rp;                
-   assign `DUTP0.pipe_rx_7_sigs  = pipe_rx_7_rp;               
+   assign `DUTP0.pipe_rx_7_sigs  = pipe_rx_7_rp;  
+          
  
    assign `DUTP2.common_commands_in =   pipe_common_commands_in_rp_1;  
    assign `DUTP2.pipe_rx_0_sigs  = pipe_rx_0_rp_1;                
@@ -150,10 +195,17 @@ module nvme_model (
    assign  pipe_tx_5_rp_1                = `DUTP2.pipe_tx_5_sigs;
    assign  pipe_tx_6_rp_1                = `DUTP2.pipe_tx_6_sigs;
    assign  pipe_tx_7_rp_1                = `DUTP2.pipe_tx_7_sigs;
+
+   assign cfg_speed = a0.nvme_top_i.axi_pcie3_0.inst.cfg_current_speed[2:0];
+   assign cfg_width = a0.nvme_top_i.axi_pcie3_0.inst.cfg_negotiated_width[3:0];
+
+   assign cfg_speed_1 = a0.nvme_top_i.axi_pcie3_1.inst.cfg_current_speed[2:0];
+   assign cfg_width_1 = a0.nvme_top_i.axi_pcie3_1.inst.cfg_negotiated_width[3:0];
    
    
-   assign pcie_clk_p =  refclk_100;
-   assign pcie_clk_n = ~refclk_100;
+//   assign pcie_clk_p =  unit_reset;
+ //refclk_100;
+//   assign pcie_clk_n = ~refclk_100;
 
 `include "denaliPcieTypes.v"
 `include "denaliPcieErrTable.v"
@@ -196,8 +248,8 @@ denaliPcie den();
       .pipe_tx_5_rp       (pipe_tx_5_rp[69:0]),
       .pipe_tx_6_rp       (pipe_tx_6_rp[69:0]),
       .pipe_tx_7_rp       (pipe_tx_7_rp[69:0]),
-      .sys_rst_n          (~unit_reset),
-      .nperst             (~unit_reset)
+      .sys_rst_n          (unit_reset_n),
+      .nperst             (unit_reset_n)
       );
  
     pcie_endp_model pcie_endp_model1
@@ -222,8 +274,8 @@ denaliPcie den();
       .pipe_tx_5_rp       (pipe_tx_5_rp_1[69:0]),
       .pipe_tx_6_rp       (pipe_tx_6_rp_1[69:0]),
       .pipe_tx_7_rp       (pipe_tx_7_rp_1[69:0]),
-      .sys_rst_n          (~unit_reset),
-      .nperst             (~unit_reset)
+      .sys_rst_n          (unit_reset_n),
+      .nperst             (unit_reset_n)
       );
  
      initial
@@ -265,7 +317,7 @@ denaliPcie den();
  	$display("I've reached here before waitDLactive\n");
 //	waitPLactive(ep_cfg_id0);
  	$display("Waiting on link of SSD0 to be active\n");
- 	@(posedge (afu.axi_pcie3_0.user_link_up && afu.axi_pcie3_1.user_link_up));
+ 	@(posedge ( a0.nvme_top_i.axi_pcie3_0.user_link_up && a0.nvme_top_i.axi_pcie3_1.user_link_up));
  	$display("Link Training done");
  	$display("Link speed for SSD0 - Trained to G3[%x] - G2[%x] - G1[%x] ",cfg_speed[2],cfg_speed[1], cfg_speed[0]);
  	$display("Link Width for SSD0 - Trained to x%x", cfg_width);
@@ -280,11 +332,127 @@ denaliPcie den();
     //    $display("Link Training done");
         $display("Link speed for SSD1 - Trained to G3[%x] - G2[%x] - G1[%x] ",cfg_speed_1[2],cfg_speed_1[1], cfg_speed_1[0]);
         $display("Link Width for SSD1 - Trained to x%x", cfg_width_1);
- 
-    end 
- 
-   
+	//@(posedge(a0:donut_i:mmio_to_axi_master:nvme_q));
 
+        
+	$display("-------Configuring namespace for SSD0\n");
+        nvme_write_cds(ep_adminsq0, NVME_CDS_FLD_NN, 32'h0000, 32'h0001);  // number of namespaces
+        nvme_read_cds(ep_adminsq0, NVME_CDS_FLD_FR );  // Firmware Revision
+        // nvme_write_cds(ep_adminsq0, NVME_CDS_FLD_FR, 32'h0000, {"FOOO"});  // Firmware Revision
+	nvme_write_cds(ep_adminsq0, NVME_CDS_FLD_IEEE, 32'h0, 32'h00382500); //IEEE OUI
+	$display("Configuring namespace\n");
+        ep_nsid0 = 0;
+        status = $mmwriteword4(ep_adminsq0, NVME_REG_Q_OP_INDEX, ep_nsid0);
+        status = $mmwriteword4(ep_adminsq0, NVME_REG_Q_OP, NVME_QOP_CREATE_NDS);
+
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_NSZE, 32'h00000000, 32'h000000B0);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_NCAP, 32'h00000000, 32'h000000B0);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_NUSE, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_NSFEAT, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_NLBAF, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_FLBAS, 32'h0000, 32'h0000);        
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_MC, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_DPC, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_DPS, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF0, 32'h0000, 32'h01090000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF1, 32'h0000, 32'h02000000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF2, 32'h0000, 32'h03000000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF3, 32'h0000, 32'h04000000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF4, 32'h0000, 32'h05000000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF5, 32'h0000, 32'h06000000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF6, 32'h0000, 32'h07000000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF7, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF8, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF9, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF10, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF11, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF12, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF13, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF14, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_LBAF15, 32'h0000, 32'h0000);
+
+
+	$display("-------Configuring namespace of SSD1\n");
+	nvme_write_cds(ep_adminsq1, NVME_CDS_FLD_NN, 32'h0000, 32'h0001);  // number of namespaces
+        nvme_read_cds(ep_adminsq1, NVME_CDS_FLD_FR );  // Firmware Revision
+	nvme_write_cds(ep_adminsq1, NVME_CDS_FLD_IEEE, 32'h0, 32'h00382500); //IEEE OUI
+        $display("Configuring namespace\n");
+        ep_nsid0 = 0;
+        status = $mmwriteword4(ep_adminsq1, NVME_REG_Q_OP_INDEX, ep_nsid0);
+        status = $mmwriteword4(ep_adminsq1, NVME_REG_Q_OP, NVME_QOP_CREATE_NDS);
+
+	nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_NSZE, 32'h00000000, 32'h000000B0);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_NCAP, 32'h00000000, 32'h000000B0);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_NUSE, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_NSFEAT, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_NLBAF, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_FLBAS, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_MC, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_DPC, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_DPS, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF0, 32'h0000, 32'h01090000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF1, 32'h0000, 32'h02000000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF2, 32'h0000, 32'h03000000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF3, 32'h0000, 32'h04000000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF4, 32'h0000, 32'h05000000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF5, 32'h0000, 32'h06000000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF6, 32'h0000, 32'h07000000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF7, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF8, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF9, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF10, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF11, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF12, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF13, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF14, 32'h0000, 32'h0000);
+        nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF15, 32'h0000, 32'h0000);
+
+
+	
+
+      end
+
+   task nvme_read_cds;
+      input [31:0] id;   
+      input [31:0] field;
+      reg   [31:0] data0, data1;
+      begin
+         status = $mmwriteword4(id, NVME_REG_Q_OP_INDEX, field);   
+         status = $mmwriteword4(id, NVME_REG_Q_OP, NVME_QOP_READ_CDS);
+         status = $mmreadword2(id, NVME_REG_Q_DATA_0, data0);
+         status = $mmreadword2(id, NVME_REG_Q_DATA_1, data1);
+         $display(" data0: %x  data1: %x",data0, data1);
+      end
+    endtask	
+ 
+   task nvme_write_cds;
+      input [31:0] id;   
+      input [31:0] field;
+      input [31:0] data1;
+      input [31:0] data0;
+      begin
+        status = $mmwriteword4(id, NVME_REG_Q_OP_INDEX, field);   
+        status = $mmwriteword4(id, NVME_REG_Q_DATA_0, data0);
+        status = $mmwriteword4(id, NVME_REG_Q_DATA_1, data1);
+        status = $mmwriteword4(id, NVME_REG_Q_OP, NVME_QOP_WRITE_CDS);
+      end
+   endtask // nvme_write_cds
+
+    task nvme_write_nds;
+      input [31:0] id;
+      input [31:0] nsid;
+      input [31:0] field;
+      input [31:0] data1;
+      input [31:0] data0;
+      begin
+        status = $mmwriteword4(id, NVME_REG_Q_OP_INDEX, nsid);
+        status = $mmwriteword4(id, NVME_REG_Q_OP_INDEX_2, field);
+        status = $mmwriteword4(id, NVME_REG_Q_DATA_0, data0);
+        status = $mmwriteword4(id, NVME_REG_Q_DATA_1, data1);
+        status = $mmwriteword4(id, NVME_REG_Q_OP, NVME_QOP_WRITE_NDS);
+   
+      end
+    endtask
  
    
 
