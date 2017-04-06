@@ -125,6 +125,7 @@ action_config:
 		cd $(ACTION_ROOT) && ./action_config.sh; \
 	fi
 
+
 create_environment:
 	@echo -e "\t[CREATE_ENVIRONMENT] start `date`";
 	$(eval BUILD_DATE := $(shell date +%Y.%m.%d_%H:%M))
@@ -133,12 +134,26 @@ create_environment:
 	@cd $(DONUT_HARDWARE_ROOT)/setup                                    && vivado $(MSG_LEVEL) -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/vivado_create_framework_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_frame_work_$(BUILD_DATE).jou
 	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
 
-config: check_donut_settings $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FILES) action_config create_environment
+config: copy_denali check_donut_settings $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FILES) action_config create_environment patch_NVMe
+
 	@echo -e "\t[CONFIG............] done `date`"
 
 patch_version:
 	@echo  -e "\t[PATCH.............] SNAP version and build date registers"; \
 	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HDL_CORE) donut.vhd
+
+patch_NVMe:
+	@if [ -e "$(DONUT_HARDWARE_ROOT)/setup/patch_NVMe.sh" ]; then \
+		cd $(DONUT_HARDWARE_ROOT)/setup && ./patch_NVMe.sh && cd .. ; \
+		echo  -e "\t[PATCH.............] NVMe: Root Complex sim. files"; \
+	fi	
+ 
+copy_denali:
+	@if [ -e "$(FRAMEWORK_ROOT)/denali/tmp/" ]; then \
+                cp $(FRAMEWORK_ROOT)/denali/tmp/* $(DONUT_HARDWARE_ROOT)/sim/nvme/. ;  \
+                echo  -e "\t[COPY..............] NVMe: denali files"; \
+        fi
+
 
 image: $(SNAP_CONFIG_FILES) patch_version
 	@echo -e "\t[BUILD IMAGE.......] start `date`"
