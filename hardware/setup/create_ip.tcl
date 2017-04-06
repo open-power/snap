@@ -25,7 +25,8 @@ set ddri_used    $::env(DDRI_USED)
 set ddr3_used    $::env(DDR3_USED)
 set ddr4_used    $::env(DDR4_USED)
 set bram_used    $::env(BRAM_USED)
-set axi_id_width $::env(NUM_OF_ACTIONS)
+#set axi_id_width $::env(NUM_OF_ACTIONS)
+set axi_id_width 4
 set msg_level    $::env(MSG_LEVEL)
 
 ## Create a new Vivado IP Project

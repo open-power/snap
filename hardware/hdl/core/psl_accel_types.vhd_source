@@ -73,7 +73,7 @@ PACKAGE psl_accel_types IS
     CONSTANT C_REG_DATA_WIDTH       : integer  := 32;
     CONSTANT C_REG_ADDR_WIDTH       : integer  := 32;
                                               
-    CONSTANT C_DDR_AXI_ID_WIDTH     : integer  := 1;
+    CONSTANT C_DDR_AXI_ID_WIDTH     : integer  := 4;
     CONSTANT C_DDR_AXI_DATA_WIDTH   : integer  := 512;
     CONSTANT C_DDR_AXI_ADDR_WIDTH   : integer  := 33;  -- only for DDR3_USED=TRUE
     CONSTANT C_DDR_AXI_ADDR_WIDTH   : integer  := 32;  -- only for DDR3_USED!=TRUE
