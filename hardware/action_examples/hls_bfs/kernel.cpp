@@ -31,7 +31,7 @@ void write_results_in_BFS_regs(action_output_reg *Action_Output, action_input_re
 // Always check that ALL Outputs are tied to a value or HLS will generate a 
 // Action_Output_i and a Action_Output_o registers and address to read results 
 // will be shifted ...and wrong
-// => easy checking in generated files : grep 0x184 action_wrapper_ctrl_reg_s_axi.vhd
+// => easy checking in generated files : grep 0x184 hls_action_ctrl_reg_s_axi.vhd
 //
   Action_Output->Retc = (ap_uint<32>) ReturnCode;
   Action_Output->Reserved =  0; 
@@ -57,7 +57,7 @@ void write_results_in_BFS_regs(action_output_reg *Action_Output, action_input_re
 //--------------------------------------------------------------------------------------------
 //--- MAIN PROGRAM ---------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
-void action_wrapper(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem, 
+void hls_action(ap_uint<MEMDW> *din_gmem, ap_uint<MEMDW> *dout_gmem, 
 	ap_uint<MEMDW> *d_ddrmem,
         action_input_reg *Action_Input, action_output_reg *Action_Output)
 {

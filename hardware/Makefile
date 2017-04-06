@@ -28,9 +28,7 @@ SNAP_CONFIG_FILES=$(DONUT_HDL_CORE)/psl_fpga.vhd \
 		$(DONUT_HDL_CORE)/psl_accel_types.vhd \
 		$(DONUT_SIM_CORE)/top.sv \
 		$(DONUT_HDL_CORE)/donut.vhd \
-		$(DONUT_HDL_CORE)/donut_types.vhd \
-		$(DONUT_HDL_CORE)/axi_dma_shim.vhd \
-		$(DONUT_HDL_CORE)/job_manager.vhd
+		$(DONUT_HDL_CORE)/donut_types.vhd
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone

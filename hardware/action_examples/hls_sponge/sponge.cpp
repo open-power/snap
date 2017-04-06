@@ -25,7 +25,7 @@
 #  endif
 #endif
 
-/* Number of parallelization channels at action_wrapper level*/
+/* Number of parallelization channels at hls_action level*/
 #if NB_SLICES == 4
 #  define CHANNELS 4
 #else
@@ -108,7 +108,7 @@ static void write_results(action_reg *Action_Register,
  * the cosimulation will not work, since the width of the interface cannot
  * be determined. Using an array din_gmem[...] works too to fix that.
  */
-void action_wrapper(snap_membus_t *din_gmem,
+void hls_action(snap_membus_t *din_gmem,
 		    snap_membus_t *dout_gmem,
 		    snap_membus_t *d_ddrmem,
 		    action_reg *Action_Register,
@@ -164,7 +164,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 	 * UNROLL factor need to be a power of 2 otherwise, we'll get
 	 * more logic added but he will take the lower power of 2.
 	 * The best value to be kept should be factor 8 for sponge and
-	 * action_wrapper function. If one need to be reduced then
+	 * hls_action function. If one need to be reduced then
 	 * decrease the factor in sponge function.
 	 */
 	//for (slice = 0; slice < NB_SLICES; slice++) {
@@ -193,7 +193,7 @@ void action_wrapper(snap_membus_t *din_gmem,
 #ifdef NO_SYNTH
 
 /**
- * FIXME We need to use action_wrapper from here to get the real thing
+ * FIXME We need to use hls_action from here to get the real thing
  * simulated. For now let's take the short path and try without it.
  *
  * Works only for the TEST set of parameters.
@@ -228,7 +228,7 @@ int main(void)
 		Action_Register.Data.pe = sequence[i].pe;
 		Action_Register.Data.nb_pe = sequence[i].nb_pe;
 
-		action_wrapper(din_gmem, dout_gmem, d_ddrmem,
+		hls_action(din_gmem, dout_gmem, d_ddrmem,
 				    &Action_Register, &Action_Config);
 
 		if (Action_Register.Control.Retc == RET_CODE_FAILURE) {
