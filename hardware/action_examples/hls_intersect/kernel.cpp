@@ -280,19 +280,18 @@ C3:                         for( mmm = 0; mmm < local_res_cnt; mmm++)
                 }
             }
         }
-        Action_Register->Data.return_size = local_res_cnt*ENTRY_BYTES;
   
     }
     else if (Action_Register->Data.step == 3)
     {
     //write back to host ram
-        for (mmm = 0; mmm < Action_Register->Data.intsect_result.size; mmm = mmm + ENTRY_BYTES)
+        for (mmm = 0; mmm < Action_Register->Data.res_table.size; mmm = mmm + ENTRY_BYTES)
         {
 
             rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, CARD_DRAM, 
                     (RESULT_BUF_ADDR + mmm)>> ADDR_RIGHT_SHIFT, local_res_buf, BPERDW );
             
-            OutputAddress = (Action_Register->Data.intsect_result.address + mmm)>> ADDR_RIGHT_SHIFT;
+            OutputAddress = (Action_Register->Data.res_table.address + mmm)>> ADDR_RIGHT_SHIFT;
             rc |= write_burst_of_data_to_mem(din_gmem, d_ddrmem, HOST_DRAM, 
                     OutputAddress, local_res_buf, BPERDW );
         }
@@ -301,7 +300,8 @@ C3:                         for( mmm = 0; mmm < local_res_cnt; mmm++)
     if(rc!=0) ReturnCode = RET_CODE_FAILURE;
 
 
-    Action_Register->Data.intsect_result.size = local_res_cnt*ENTRY_BYTES;
+    //size in bytes
+    Action_Register->Data.res_table.size = local_res_cnt*ENTRY_BYTES;
     Action_Register->Control.Retc = (snapu32_t) ReturnCode;
 
     return;
