@@ -38,6 +38,9 @@
 #include <donut_tools.h>
 #include <action_intersect.h>
 #include <libdonut.h>
+#include <snap_s_regs.h>
+
+#define ACTION_REDAY_IRQ 4
 
 int verbose_flag = 0;
 
@@ -62,6 +65,7 @@ static void usage(const char *prog)
 	       "  -l, --len      <int>      length of the random string.\n"
 	       "  -m, --method   <0/1>      1 (default, only in SW): use range intersection.\n"
            "                            0: compare one by one.\n"
+           "  -I, --irq                 Enable Interrupts\n"      
 	       "\n"
 	       "Example:\n"
 	       "HW:  sudo ./demo_intersect ...\n"
@@ -70,7 +74,9 @@ static void usage(const char *prog)
 	       prog);
 }
 
-static void dnut_prepare_intersect(struct dnut_job *cjob, struct intersect_job *ijob,
+static void dnut_prepare_intersect(struct dnut_job *cjob, 
+        struct intersect_job *ijob_i, 
+        struct intersect_job *ijob_o,
                  uint64_t step,
 
                  value_t * input_addrs[],
@@ -85,20 +91,18 @@ static void dnut_prepare_intersect(struct dnut_job *cjob, struct intersect_job *
     for (i = 0; i <  NUM_TABLES; i++)
     {
      //   printf("src table address = %p\n", input_addrs[i]);
-        dnut_addr_set( &ijob->src_tables[i], input_addrs[i], input_sizes[i], input_type,
+        dnut_addr_set( &ijob_i->src_tables[i], input_addrs[i], input_sizes[i], input_type,
                 DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
     }
 
-    dnut_addr_set (&ijob->intsect_result, output_addr, output_size, output_type,
+    dnut_addr_set (&ijob_i->result_table, output_addr, output_size, output_type,
                 DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
 		        DNUT_TARGET_FLAGS_END);
 
-    ijob->step = step;
-    ijob->rc = 0;
-    ijob->action_version = INTERSECT_RELEASE;
+    ijob_i->step = step;
 	
-    dnut_job_set(cjob, INTERSECT_ACTION_TYPE, ijob, sizeof(*ijob),
-		     NULL, 0);
+    dnut_job_set(cjob, HLS_INTERSECT_ID, ijob_i, sizeof(*ijob_i),
+		    ijob_o, sizeof(*ijob_o));
 }
 
 
@@ -150,16 +154,19 @@ int main(int argc, char *argv[])
     int exit_code = EXIT_SUCCESS;
     unsigned long timeout = 1000;
 	struct dnut_job cjob;
+    int attach_flags = SNAP_CCR_DIRECT_MODE;
+    int action_irq = 0;
 
     //Function specific
     //long long time_us;
-    struct intersect_job ijob;
+    struct intersect_job ijob_i, ijob_o;
     value_t * src_tables[NUM_TABLES];
 
     uint32_t  table_sizes[NUM_TABLES];
-    value_t * intsect_result;
+    value_t * result_table = NULL;
     value_t * temp;
-    uint32_t  result_size;
+    uint32_t  init_result_size;
+    uint32_t  actual_result_size;
     uint32_t i;
     uint32_t min_num = END_SIGN;
     uint32_t num = 20; //This is for generated table.
@@ -184,12 +191,13 @@ int main(int argc, char *argv[])
 			{ "timeout", required_argument, NULL, 't' },
 			{ "version", no_argument,	    NULL, 'V' },
 			{ "verbose", no_argument,	    NULL, 'v' },
+			{ "irq",     no_argument,	    NULL, 'I' },
 			{ "help",	 no_argument,	    NULL, 'h' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-				 "C:i:o:m:n:l:t:XVvh",
+				 "C:i:o:m:n:l:t:XVIvh",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -228,6 +236,10 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
+        case 'I': /* irq */
+            attach_flags |= SNAP_CCR_IRQ_ATTACH;
+            action_irq = ACTION_REDAY_IRQ;
+            break;
 		default:
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
@@ -269,9 +281,9 @@ int main(int argc, char *argv[])
 
 
         min_num = num;
-        result_size = min_num * sizeof(value_t);
-        intsect_result = memalign(page_size, result_size);
-        if (!intsect_result)
+        init_result_size = min_num * sizeof(value_t);
+        result_table = memalign(page_size, init_result_size);
+        if (!result_table)
             goto out_error2;
 
 //    }
@@ -279,12 +291,11 @@ int main(int argc, char *argv[])
 //    {
 //
 //    }
-	
-    snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
+    snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	kernel = dnut_kernel_attach_dev(device,
-					DNUT_VENDOR_ID_ANY,
-					DNUT_DEVICE_ID_ANY,
-					INTERSECT_ACTION_TYPE);
+					0x1014,
+					0xcafe,
+					HLS_INTERSECT_ID&0xFFFF);
 	if (kernel == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
 			strerror(errno));
@@ -295,27 +306,41 @@ int main(int argc, char *argv[])
 	pr_info("FIXME Wait a sec ...\n");
 	sleep(1);
 #endif
+    rc = dnut_attach_action((void*)kernel, HLS_INTERSECT_ID, attach_flags, timeout);
 #if 1				/* FIXME Circumvention should go away */
 	pr_info("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x10010, 0);
-	dnut_kernel_mmio_write32(kernel, 0x10014, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1001c, 0);
-	dnut_kernel_mmio_write32(kernel, 0x10020, 0);
-#endif
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Temporary setting to enable DDR on the card\n");
-	dnut_kernel_mmio_write32(kernel, 0x10028, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1002c, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00030, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00034, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00040, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00044, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00050, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00054, 0);
 #endif
 
     //------------------------------------
     // Action begin (1) 
-	dnut_prepare_intersect(&cjob, &ijob,
+	dnut_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                  1, src_tables, table_sizes, DNUT_TARGET_TYPE_HOST_DRAM, 
-                    intsect_result, result_size, DNUT_TARGET_TYPE_HOST_DRAM);
+                    result_table, init_result_size, DNUT_TARGET_TYPE_HOST_DRAM);
+    
+	if (rc != 0) {
+		fprintf(stderr, "err: job Attach %d: %s!\n", rc,
+			strerror(errno));
+		goto out_error2;
+	}
+
     // Timer starts for step1
 	gettimeofday(&stime, NULL);
-	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
+ 	if (action_irq) {
+		dnut_kernel_mmio_write32(kernel, 0x8, 1);
+		dnut_kernel_mmio_write32(kernel, 0x4, 1);
+	}
+	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
+    if (action_irq) {
+		dnut_kernel_mmio_write32(kernel, 0xc, 1);
+		dnut_kernel_mmio_write32(kernel, 0x4, 0);
+	}
+
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
 			strerror(errno));
@@ -323,18 +348,26 @@ int main(int argc, char *argv[])
 	}
 	gettimeofday(&etime, NULL);
     // Timer ends for step1
-	fprintf(stdout, "intersect step1 took %lld usec\n",
+	fprintf(stdout, "intersect step1 took %lld usec\n\n\n",
 		(long long)timediff_usec(&etime, &stime));
     //------------------------------------
     
     //------------------------------------
     // Action begin (2)
-	dnut_prepare_intersect(&cjob, &ijob,
+	dnut_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                  2, src_tables, table_sizes, DNUT_TARGET_TYPE_CARD_DRAM, 
-                    intsect_result, result_size, DNUT_TARGET_TYPE_HOST_DRAM);
+                    result_table, init_result_size, DNUT_TARGET_TYPE_HOST_DRAM);
     // Timer starts for step2
 	gettimeofday(&stime, NULL);
-	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
+ 	if (action_irq) {
+		dnut_kernel_mmio_write32(kernel, 0x8, 1);
+		dnut_kernel_mmio_write32(kernel, 0x4, 1);
+	}
+	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
+    if (action_irq) {
+		dnut_kernel_mmio_write32(kernel, 0xc, 1);
+		dnut_kernel_mmio_write32(kernel, 0x4, 0);
+	}
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
 			strerror(errno));
@@ -342,20 +375,30 @@ int main(int argc, char *argv[])
 	}
 	gettimeofday(&etime, NULL);
     // Timer ends for step2
-	fprintf(stdout, "intersect step2 took %lld usec\n",
+	fprintf(stdout, "intersect step2 took %lld usec\n\n\n",
 		(long long)timediff_usec(&etime, &stime));
+    actual_result_size = ijob_o.result_table.size;
+    printf("actual_result_size = %d\n", actual_result_size);
     //------------------------------------
 
     //------------------------------------
     // Action begin (3)
-	dnut_prepare_intersect(&cjob, &ijob,
+	dnut_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                  3, src_tables, table_sizes, DNUT_TARGET_TYPE_CARD_DRAM, 
-                    intsect_result, result_size, DNUT_TARGET_TYPE_HOST_DRAM);
+                    result_table, actual_result_size, DNUT_TARGET_TYPE_HOST_DRAM);
     // Timer starts for step3
 	gettimeofday(&stime, NULL);
-	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
+ 	if (action_irq) {
+		dnut_kernel_mmio_write32(kernel, 0x8, 1);
+		dnut_kernel_mmio_write32(kernel, 0x4, 1);
+	}
+	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
+    if (action_irq) {
+		dnut_kernel_mmio_write32(kernel, 0xc, 1);
+		dnut_kernel_mmio_write32(kernel, 0x4, 0);
+	}
 	if (rc != 0) {
-		fprintf(stderr, "err: job execution %d: %s!\n", rc,
+		fprintf(stderr, "err: job execution %d: %s!\n\n\n", rc,
 			strerror(errno));
 		goto out_error;
 	}
@@ -367,10 +410,10 @@ int main(int argc, char *argv[])
 
 
     /// Print the results
-    temp = intsect_result;
-    printf("result address is %llx\n",(unsigned long long )intsect_result);
-    printf("ijob.intsect_result.size = %d\n", ijob.intsect_result.size);
-    for(i = 0;( i< ijob.intsect_result.size/sizeof(value_t) && verbose_flag); i++)
+    temp = result_table;
+    printf("result address is %llx\n",(unsigned long long )result_table);
+    printf("ijob.result_table.size = %d\n", ijob_o.result_table.size);
+    for(i = 0;( i< actual_result_size/sizeof(value_t) && verbose_flag); i++)
     {
         printf("%s;\n", *temp);
         temp ++;
@@ -384,7 +427,7 @@ int main(int argc, char *argv[])
 
     for(i = 0; i < NUM_TABLES; i++)
 	    __free(src_tables[i]);
-	__free(intsect_result);
+	__free(result_table);
 
 	exit(exit_code);
 
@@ -394,6 +437,6 @@ int main(int argc, char *argv[])
  out_error:
     for(i = 0; i < NUM_TABLES; i++)
 	    __free(src_tables[i]);
-	__free(intsect_result);
+	__free(result_table);
 	exit(EXIT_FAILURE);
 }
