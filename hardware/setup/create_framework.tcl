@@ -25,7 +25,6 @@ set dimm_dir    $::env(DIMMTEST)
 set build_dir   $::env(BUILD_DIR)
 set ip_dir      $root_dir/ip
 set action_dir  $::env(ACTION_ROOT)
-set hls_support $::env(HLS_SUPPORT)
 set ddri_used   $::env(DDRI_USED)
 set ddr3_used   $::env(DDR3_USED)
 set ddr4_used   $::env(DDR4_USED)
@@ -33,6 +32,14 @@ set bram_used   $::env(BRAM_USED)
 set simulator   $::env(SIMULATOR)
 set vivadoVer   [version -short]
 set msg_level    $::env(MSG_LEVEL)
+
+if { [info exists ::env(HLS_SUPPORT)] == 1 } {
+    set hls_support [string toupper $::env(HLS_SUPPORT)]
+} elseif { [string first "HLS" [string toupper $action_dir]] != -1 } {
+  set hls_support "TRUE"
+} else {
+  set hls_support "not defined"
+}
 
 #debug information
 #puts $root_dir
