@@ -41,7 +41,7 @@ using namespace std;
  * Always check that ALL Outputs are tied to a value or HLS will generate a
  * Action_Output_i and a Action_Output_o registers and address to read results
  * will be shifted ...and wrong
- * => easy checking in generated files : grep 0x184 action_wrapper_ctrl_reg_s_axi.vhd
+ * => easy checking in generated files : grep 0x184 hls_action_ctrl_reg_s_axi.vhd
  * this grep should return nothing if no duplication of registers (which is expected)
  */
 static void write_results_in_HJ_regs(action_output_reg *Action_Output,
@@ -428,7 +428,7 @@ static void do_the_work(snap_membus_t *din_gmem,
  * the cosimulation will not work, since the width of the interface cannot
  * be determined. Using an array din_gmem[...] works too to fix that.
  */
-void action_wrapper(snap_membus_t *din_gmem,
+void hls_action(snap_membus_t *din_gmem,
 		    snap_membus_t *dout_gmem,
 		    snap_membus_t *d_ddrmem,
 		    action_input_reg *Action_Input,
@@ -582,7 +582,7 @@ int main(void)
 		Action_Input.Data.t2.size = todo * sizeof(table2_t);
 		
 		fprintf(stderr, "Processing %d table2 entries ...\n", todo);
-		action_wrapper(din_gmem, dout_gmem, d_ddrmem,
+		hls_action(din_gmem, dout_gmem, d_ddrmem,
 			       &Action_Input, &Action_Output);
 
 		Action_Input.Data.t1.address = 0; /* no need to process t1 */
