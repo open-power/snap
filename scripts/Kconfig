@@ -11,16 +11,11 @@ choice
           There are multiple card the framework supports. Please select
           one of them.
 
-config FLASH_GT
+config FLASHGT
         bool "Flash GT with DDR4, NVMe and Xilinx FPGA"
         help
           Nallatech Flash GT card originally used for CAPI Flash using NVMe
           storage. Uses Xilinx FPGA.
-
-config CAPI_GZIP
-        bool "CAPI GZIP and Altera FPGA"
-        help
-          Nallatech card used for CAPI GZIP product. Uses Altera FPGA.
 
 config KU3
         bool "KU3 Card with Ethernet, DDR3 and Xilinx FPGA"
@@ -29,57 +24,97 @@ config KU3
 
 endchoice
 
+############# FPGA CHIP #######################################################
+
+# Depends on the card which was selected. E.g. xcku060-ffva1156-2-e for
+# KU3 as well as for FLASHGT.
+
 ############# Xinlinx Tools ###################################################
 
 menu "Xilinx Tools"
-        depends on FLASH_GT || KU3
+        depends on FLASHGT || KU3
 
 choice
         prompt "Xilinx Tools"
         default VIVADO_1604
 
-config VIVADO_1504
-        bool "Vivado 15.04"
-
 config VIVADO_1604
         bool "Vivado 16.04"
 
+config VIVADO_1704
+        bool "Vivado 17.04"
+
 endchoice
 
-# Try selecting different default path settings for the differet versions
-# of the Xilinx tools.
-config XLINIX_PATH
-	string "Path to Xilinx tools 15.04"
-	depends on VIVADO_1504
-	default "/afs/bb/proj/fpga/xilinx/Vivado_HLS/2015.4/bin"
+endmenu
 
+# Try selecting different default path settings for the differet versions
+# of the Xilinx tools. The AFS example is for our IBM internal setup.
+#
 config XLINIX_PATH
-	string "Path to Xilinx tools 16.04"
-	depends on VIVADO_1604
-	default "/afs/bb/proj/fpga/xilinx/Vivado_HLS/2016.4/bin"
+        string "Path to Xilinx tools 16.04"
+        depends on VIVADO_1604
+        default "/afs/bb/proj/fpga/xilinx/Vivado_HLS/2016.4/bin"
+
+############# Simulator #######################################################
+
+menu "Simulator"
+        depends on FLASHGT || KU3
+
+choice
+        prompt "ncsim"
+        default SIMULATOR_XSIM
+
+config SIMULATOR_XSIM
+        bool "XSIM"
+
+config SIMULATOR_NCSIM
+        bool "NCSIM"
+
+config SIMULATOR_IRUN
+        bool "IRUN"
+
+endchoice
 
 endmenu
 
 ############# Peripherals ######################################################
 
-config DDR3
-        bool "DDR3 Support"
-        default n
-        depends on KU3 || CAPI_GZIP
-        help
-          This option selects whether to use DDR3 or not.
+# Available peripherals depend on the card which was selected and if they make
+# sense for the respective configuration e.g. action.
+#
 
-config DDR4
-        bool "DDR4 Support"
-        default n
-        depends on FLASH_GT
+choice
+        prompt "Card RAM Selection"
+        default SDRAM_USED
+
+config SDRAM
+        bool "SDRAM"
+        default y
+        depends on KU3 || FLASHGT
         help
-          This option selects whether to use DDR4 or not.
+          This option selects whether to use the SDRAM inferface or not.
+
+config BRAM
+        bool "BRAM"
+        default y
+        depends on KU3 || FLASHGT
+        help
+          This option selects whether to use the BRAM interface or not.
+
+config NORAM
+        bool "No CARD RAM"
+        default y
+        depends on KU3 || FLASHGT
+        help
+          Select this if you neither need SDRAM nor BRAM.
+
+endchoice
 
 config NVME
         bool "NVME Support"
         default n
-        depends on FLASH_GT
+        depends on FLASHGT
         help
           This option selects whether to use NVME or not.
 
@@ -90,17 +125,9 @@ config ETHERNET
         help
           This option selects whether to use ETHERNET or not.
 
-config JOB_MANAGER
-        bool "Job manager"
-        default y
-        depends on FLASH_GT || CAPI_GZIP || KU3
-        help
-          The card manager offers AFU directed support and a job queue
-          for acceleration purposes.
-
-config ACTION_MAX
-        int "Action Max"
-        default 16
+config NUM_OF_ACTIONS
+        int "Number of available SNAP actions"
+        default 1
         help
           Maximum number of possible FPGA actions for the SNAP framework.
 
@@ -113,38 +140,19 @@ config AFU_CONTEXTS
 
 ############# Action Setup ####################################################
 
-menu "Action Setup"
-
-config ACTION
-        bool "Use external FPGA action"
-        default n
+config DEFAULT_MEMCOPY
+        bool "VHDL written MemCopy"
+        depends on KU3 || FLASHGT
+	select SDRAM
+        default y
         help
-          Enable user defined actions.
+          VHDL written simple example for a memcopy.
+          Use stage2 to call the action.
 
-config ACTION_WIDTH
-        int "Action data bus width"
-        depends on ACTION
-        default 512
-        help
-          Use this to build your own action.
-
-config ACTION_GIT
-        string "Action URL"
-        depends on ACTION
-        default "git@github.ibm.com:ibm-capi/snap-example-actions.git"
-        help
-          Use this git to download the action code.
-
-config ACTION_DIR
-        string "Action directory"
-        depends on ACTION
-        default "hash_join_512b"
-        help
-          Use this git to download the action code.
-
-config HLS_MEMOPY
+config HLS_MEMCOPY
         bool "HLS MemCopy"
-        depends on KU3 || FLASH_GT
+        depends on KU3 || FLASHGT
+	select SDRAM
         default n
         help
           HLS written simple example for memcopy. Use demo_memcopy to
@@ -152,7 +160,8 @@ config HLS_MEMOPY
 
 config HLS_SEARCH
         bool "HLS Search"
-        depends on KU3 || FLASH_GT
+        depends on KU3 || FLASHGT
+        select SDRAM
         default n
         help
           HLS written simple example for searching a byte in a buffer.
@@ -160,10 +169,16 @@ config HLS_SEARCH
 
 config HLS_HASHJOIN
         bool "HLS HashJoin"
-        depends on KU3 || FLASH_GT
+        depends on KU3 || FLASHGT
         default n
         help
           HLS written simple example for a hash join operation. Use 
           demo_hashjoin to call the action.
 
-endmenu
+config HLS_SPONGE
+        bool "HLS Sponge"
+        depends on KU3 || FLASHGT
+        default n
+        help
+          HLS written simple example for a sponge checksum benchmark.
+          Use demo_checksum -m SPONGE to call the action.
