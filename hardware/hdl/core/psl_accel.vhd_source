@@ -1476,6 +1476,8 @@ BEGIN
   sdram_axi_rst_n <= NOT sdram_ui_clk_sync_rst;                                         -- only for DDRI_USED=TRUE -- only for BRAM_USED!=TRUE
   sdram_axi_clk   <= refclk_sdram_bufg;                                                 -- only for DDRI_USED=TRUE -- only for BRAM_USED=TRUE
   sdram_axi_rst_n <= sdram_reset_n_q;                                                   -- only for DDRI_USED=TRUE -- only for BRAM_USED=TRUE
+
+
 														    
   axi_clock_converter_i : axi_clock_converter                                           -- only for DDRI_USED=TRUE -- only for FPGACARD=KU3 
     PORT MAP (                                                                          -- only for DDRI_USED=TRUE -- only for FPGACARD=KU3 
@@ -1716,14 +1718,14 @@ BEGIN
     PORT MAP (                                                                          -- only for BRAM_USED=TRUE
       s_aresetn      => sdram_axi_rst_n,                                                -- only for BRAM_USED=TRUE
       s_aclk         => sdram_axi_clk,                                                  -- only for BRAM_USED=TRUE
-      s_axi_araddr   => sdram_axi_araddr(31 DOWNTO 0),                                  -- only for BRAM_USED=TRUE
+      s_axi_araddr   => sdram_axi_araddr_s(31 DOWNTO 0),                                -- only for BRAM_USED=TRUE
       s_axi_arburst  => sdram_axi_arburst(1 DOWNTO 0),                                  -- only for BRAM_USED=TRUE
       s_axi_arid     => sdram_axi_arid,                                                 -- only for BRAM_USED=TRUE
       s_axi_arlen    => sdram_axi_arlen(7 DOWNTO 0),                                    -- only for BRAM_USED=TRUE
       s_axi_arready  => sdram_axi_arready,                                              -- only for BRAM_USED=TRUE
       s_axi_arsize   => "101",                                                          -- only for BRAM_USED=TRUE
       s_axi_arvalid  => sdram_axi_arvalid,                                              -- only for BRAM_USED=TRUE
-      s_axi_awaddr   => sdram_axi_awaddr(31 DOWNTO 0),                                  -- only for BRAM_USED=TRUE
+      s_axi_awaddr   => sdram_axi_awaddr_s(31 DOWNTO 0),                                -- only for BRAM_USED=TRUE
       s_axi_awburst  => sdram_axi_awburst(1 DOWNTO 0),                                  -- only for BRAM_USED=TRUE
       s_axi_awid     => sdram_axi_awid,                                                 -- only for BRAM_USED=TRUE
       s_axi_awlen    => sdram_axi_awlen(7 DOWNTO 0),                                    -- only for BRAM_USED=TRUE

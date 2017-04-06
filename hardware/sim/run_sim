@@ -59,6 +59,7 @@
  if [ -z $DONUT_ROOT ];then echo "variable DONUT_ROOT not found, leaving"; exit 11; fi
  if [ -z $DONUT_SOFTWARE_ROOT ];then echo "variable DONUT_SOFTWARE_ROOT not found, leaving"; exit 11; fi
  if [ -z $DONUT_HARDWARE_ROOT ];then echo "variable DONUT_HARDWARE_ROOT not found, leaving"; exit 11; fi
+ if [ -z $FRAMEWORK_ROOT ];then echo "variable FRAMEWORK_ROOT not found, leaving"; exit 11; fi
  if [ -z $PSLSE_ROOT ];then echo "variable PSLSE_ROOT not found, leaving"; exit 11; fi
  HOSTNAME=`hostname -s`; echo "hostname=$HOSTNAME arguments=$@"
  runsim_args=$@
@@ -161,6 +162,7 @@
    if   [ "$SIMDIR" == "ies" ];then
      ln -s $DONUT_HARDWARE_ROOT/sim/ies/ies        	# point to compiled model
      ln -s $DONUT_HARDWARE_ROOT/sim/ies/INCA_libs 	# point to compiled model
+     ln -s $FRAMEWORK_ROOT/denali                       # point to denali config files
    elif [ "$SIMDIR" == "xsim" ];then
      ln -s $DONUT_HARDWARE_ROOT/sim/xsim/xsim.dir
    elif [ "$SIMDIR" == "questa" ];then
