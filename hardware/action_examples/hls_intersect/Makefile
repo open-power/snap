@@ -28,6 +28,6 @@
 # This is solution specific. Check if we can replace this by generics too.
 SOLUTION_NAME ?= intersect
 SOLUTION_DIR ?= hlsIntersect
-srcs += kernel.cpp action_intersect_fct_hls.cpp 
+srcs += kernel.cpp 
 
 include ../hls.mk

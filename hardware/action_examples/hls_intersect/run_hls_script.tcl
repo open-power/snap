@@ -3,7 +3,7 @@ open_project "hlsIntersect_xcku060-ffva1156-2-e"
 set_top action_wrapper
 
 # Can that be a list?
-foreach file [ list kernel.cpp action_intersect_fct_hls.cpp  ] {
+foreach file [ list kernel.cpp  ] {
   add_files ${file} -cflags "-I../include"
 }
 
