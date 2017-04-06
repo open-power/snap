@@ -21,9 +21,8 @@
 #include <libdonut.h>
 
 
-#define BFS_ACTION_TYPE 0x0007
-#define BFS_RELEASE 0xFEEDA00700000010
-//Same action type, Version 1.0
+#define HLS_BFS_ID 0x10141004
+#define BFS_RELEASE 0xFEED0010
 
 #define VNODE_SIZE 16
 #define ENODE_SIZE 32

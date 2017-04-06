@@ -284,7 +284,7 @@ static int action_main(struct dnut_action *action,
 static struct dnut_action action = {
 	.vendor_id = DNUT_VENDOR_ID_ANY,
 	.device_id = DNUT_DEVICE_ID_ANY,
-	.action_type = BFS_ACTION_TYPE,
+	.action_type = (HLS_BFS_ID&0xFFFF),
 
 	.retc = DNUT_RETC_FAILURE, /* preset value, should be 0 on success */
 	.state = ACTION_IDLE,

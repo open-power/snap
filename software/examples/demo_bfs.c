@@ -30,7 +30,6 @@
 #include <action_bfs.h>
 #include <snap_s_regs.h>
 
-#define HLS_BFS_ID		0x10141004
 #define ACTION_REDAY_IRQ	4
 
 /*
@@ -315,7 +314,7 @@ static void dnut_prepare_bfs(struct dnut_job *job,
     // We have input parameters.
     // But we don't need AFU to write back results from MMIO.
     // Results will be written in host_memory, starting from output_address
-	dnut_job_set(job, BFS_ACTION_TYPE, bjob_in, sizeof(*bjob_in),
+	dnut_job_set(job, (HLS_BFS_ID&0xFFFF), bjob_in, sizeof(*bjob_in),
 		     bjob_out, sizeof(*bjob_out));
 
 
@@ -360,11 +359,12 @@ int main(int argc, char *argv[])
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
+			{ "irq",	 no_argument,	    NULL, 'I' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-				 "C:i:o:t:r:Vvh",
+				 "C:i:o:t:r:VIvh",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -431,6 +431,7 @@ int main(int argc, char *argv[])
     FILE *ofp;
 
 
+    //////////////////////////////////////////////////////////////////////
     // Construct the graph, and set to ibuf.
     AdjList adj;
 
@@ -438,8 +439,8 @@ int main(int argc, char *argv[])
     fprintf(stdout, "DEBUG: timeout is %ld\n",timeout);
 
     fprintf(stdout, "input_file is %s\n", input_file);
- //   if(input_file != NULL)
-   //     rc = create_file_graph (/*&adj, input_file*/); // TODO dummy function
+    //if(input_file != NULL)
+    //    rc = create_file_graph (/*&adj, input_file*/); // TODO dummy function
     //else
     if (random_graph && vex_n > 0)
     {
@@ -457,6 +458,7 @@ int main(int argc, char *argv[])
 
 
 
+    // create obuf
     // obuf is 512bit  aligned.
     // Format:
     // 512b: Root0: | {visit_node}, {visit_node}, .............................{visit_node} |
@@ -469,22 +471,23 @@ int main(int argc, char *argv[])
 
     size_out = vex_n * (vex_n/16+1)*16;
     obuf = memalign(page_size, sizeof(uint32_t) * size_out);
-    //fprintf(stdout, "DEBUG: size_out = %d, obuf = 0x%0llx\n", size_out,(unsigned long long) obuf);
 
+
+    //////////////////////////////////////////////////////////////////////
 
     fprintf(stdout, "dnut_kernel_attach start...\n");
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	kernel = dnut_kernel_attach_dev(device,
 					0x1014,
 					0xcafe,
-					BFS_ACTION_TYPE);
+					HLS_BFS_ID & 0xFFFF);
 	if (kernel == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
 			strerror(errno));
 		goto out_error;
 	}
 
-#if 0				/* FIXME Circumvention should go away */
+#if 1				/* FIXME Circumvention should go away */
 	printf("FIXME Wait a sec ...\n");
 	sleep(1);
 #endif
@@ -496,16 +499,13 @@ int main(int argc, char *argv[])
 		goto out_error;
 	}
 #if 1				/* FIXME Circumvention should go away */
-	printf("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x10, 0);
-	dnut_kernel_mmio_write32(kernel, 0x14, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1c, 0);
-	dnut_kernel_mmio_write32(kernel, 0x20, 0);
-#endif
-#if 1				/* FIXME Circumvention should go away */
-	printf("FIXME Temporary setting to enable DDR on the card\n");
-	dnut_kernel_mmio_write32(kernel, 0x28, 0);
-	dnut_kernel_mmio_write32(kernel, 0x2c, 0);
+	pr_info("FIXME Temporary setting to define memory base address\n");
+	dnut_kernel_mmio_write32(kernel, 0x00030, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00034, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00040, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00044, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00050, 0);
+	dnut_kernel_mmio_write32(kernel, 0x00054, 0);
 #endif
 
 	dnut_prepare_bfs(&job, &bjob_in, &bjob_out,
