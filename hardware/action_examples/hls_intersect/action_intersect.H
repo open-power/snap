@@ -19,7 +19,7 @@
 
 #include "hls_snap.H"
 
-#define INTERSECT_ACTION_TYPE 0x10141008
+#define INTERSECT_ACTION_TYPE 0x10141005
 #define RELEASE_LEVEL       0x00000011 
 
 #if defined(NO_SYNTH)
@@ -47,9 +47,8 @@
 typedef struct {//Names of the fields can be changed by User. Should serve as a template
         dnut_addr src_table1; 	/* input data */
         dnut_addr src_table2; 	/* input data */
-        dnut_addr intsect_result;
-        ap_uint<32> step;
-        ap_uint<32> return_size;
+        dnut_addr res_table;
+        ap_uint<64> step;
         ap_uint<416> unused; 
 } DATA_IS; // DATA = 108 Bytes
 
@@ -63,4 +62,5 @@ typedef struct {
 
 #endif
 
+#define CONFIG_HOSTSTYLE_ALGO
 #endif	/* __ACTION_INTERSECT_H__ */
