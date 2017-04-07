@@ -143,13 +143,13 @@ patch_version:
 	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HDL_CORE) donut.vhd
 
 patch_NVMe:
-	@if [ -e "$(DONUT_HARDWARE_ROOT)/setup/patch_NVMe.sh" ]; then \
+	@if [[ -e "$(DONUT_HARDWARE_ROOT)/setup/patch_NVMe.sh" && $(NVME_USED) = "TRUE" ]]; then \
 		cd $(DONUT_HARDWARE_ROOT)/setup && ./patch_NVMe.sh && cd .. ; \
-		echo  -e "\t[PATCH.............] NVMe: Root Complex sim. files"; \
+		echo  -e "\t[PATCH.............] NVMe PCIe Root Complex sim. files"; \
 	fi	
  
 copy_denali:
-	@if [ -e "$(FRAMEWORK_ROOT)/denali/tmp/" ]; then \
+	@if [[ -e "$(FRAMEWORK_ROOT)/denali/tmp/" && $(NVME_USED) = "TRUE" ]]; then \
                 cp $(FRAMEWORK_ROOT)/denali/tmp/* $(DONUT_HARDWARE_ROOT)/sim/nvme/. ;  \
                 echo  -e "\t[COPY..............] NVMe: denali files"; \
         fi
