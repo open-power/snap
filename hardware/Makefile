@@ -34,15 +34,15 @@ PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 CE_PARMS := -p -clone
 
 ifeq "$(FPGACARD)" "KU3"
-export DDR3_USED="$(SDRAM_USED)"
+export DDR3_USED=$(SDRAM_USED)
 export DDR4_USED=FALSE
-export DDRI_USED="$(SDRAM_USED)"
+export DDRI_USED=$(SDRAM_USED)
 endif
 
 ifeq "$(FPGACARD)" "FGT"
 export DDR3_USED=FALSE
-export DDR4_USED="$(SDRAM_USED)"
-export DDRI_USED="$(SDRAM_USED)"
+export DDR4_USED=$(SDRAM_USED)
+export DDRI_USED=$(SDRAM_USED)
 endif
 
 ifndef BRAM_USED
