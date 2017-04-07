@@ -33,22 +33,24 @@ PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 CE_PARMS := -p -clone
 
+ifeq "$(FPGACARD)" "KU3"
+export DDR3_USED="$(SDRAM_USED)"
+export DDR4_USED=FALSE
+export DDRI_USED="$(SDRAM_USED)"
+endif
+
+ifeq "$(FPGACARD)" "FGT"
+export DDR3_USED=FALSE
+export DDR4_USED="$(SDRAM_USED)"
+export DDRI_USED="$(SDRAM_USED)"
+endif
+
 ifndef BRAM_USED
 export BRAM_USED=FALSE
 endif
 ifeq "$(BRAM_USED)" "TRUE"
 export DDR3_USED=FALSE
 export DDR4_USED=FALSE
-endif
-
-export DDRI_USED=FALSE
-ifeq "$(DDR3_USED)" "TRUE"
-export DDRI_USED=TRUE
-endif
-ifeq "$(DDR4_USED)" "TRUE"
-export DDRI_USED=TRUE
-endif
-ifeq "$(BRAM_USED)" "TRUE"
 export DDRI_USED=TRUE
 endif
 
@@ -78,11 +80,11 @@ check_donut_settings:
 		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/donut.git"; \
 		exit 1; \
 	fi
-	@if [ -z $(DDR3_USED) ] || [ -z $(DDR4_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ]; then \
+	@if [ -z $(FPGACARD) ] || [ -z $(SDRAM_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ]; then \
 		echo "Missing one or more environment  variables"; \
-		echo "Please check the following variable and source donut_settings before calling make!"; \
-		echo "DDR3_USED:      $(DDR3_USED)"; \
-		echo "DDR4_USED:      $(DDR4_USED)"; \
+		echo "Please check the following variables and source donut_settings before calling make!"; \
+		echo "FPGACARD:       $(FPGACARD)"; \
+		echo "SDRAM_USED:     $(SDRAM_USED)"; \
 		echo "ILA_DEBUG:      $(ILA_DEBUG)"; \
 		echo "NUM_OF_ACTIONS: $(NUM_OF_ACTIONS)"; \
 		echo "ACTION_ROOT:    $(ACTION_ROOT)"; \
