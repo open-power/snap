@@ -23,14 +23,17 @@ differently):
     DONUT_ROOT          = <parent of the directory containing donut_settings>    # donut clone from github
     DONUT_SOFTWARE_ROOT = $DONUT_ROOT/software                                   # path to donut software
     DONUT_HARDWARE_ROOT = $DONUT_ROOT/hardware                                   # path to donut hardware
-    FPGACARD            = $FRAMEWORK_ROOT/cards/adku060_capi_1_1_release         # path to card HDK
+    FPGACARD            = KU3                                                    # CAPI FPGA card to be used - currently supported are KU3, FGT
     FPGACHIP            = xcku060-ffva1156-2-e                                   # version of the FPGA chip
+    HDK_ROOT            = $FRAMEWORK_ROOT/cards/adku060_capi_1_1_release         # path to HDK for the CAPI FPGA card
     DIMMTEST            = $FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0      # path to DRAM model for simulation
     SIMULATOR           = xsim                                                   # currently supported simulators are xsim, ncsim, irun
+    NUM_OF_ACTIONS      = 1                                                      # number of actions to be implemented with the card (up to 16)
+    SDRAM_USED          = FALSE                                                  # if set to TRUE the actions have access to the on card SDRAM via an AXI interface
 ```
 
-Besides the HDK for the card a DIMM test project is required which can be obtained from
-the Alpha Data Support Portal:
+If the on card SDRAM is used a DIMM test project is required for simulation.  
+For the KU3 card it can be obtained from the Alpha Data Support Portal:  
 `https://support.alpha-data.com/Portals/0/Downloads/dimm_test-admpcieku3-v3_0_0.tar.gz`
 
 The environment variable `DIMMTEST` needs to point to the directory containing that project.
@@ -56,6 +59,7 @@ to the Cadence tools and libraries. In case `SIMULATOR=ncsim` or `SIMULATOR=irun
 
 if it is not already pre-defined.
 
+
 # Action wrapper
 
 The path to the set of actions that shall be included is defined via the environment variable `ACTION_ROOT`.
@@ -63,7 +67,7 @@ The path to the set of actions that shall be included is defined via the environ
 
     $DONUT_HARDWARE_ROOT/action_examples
 
-This directory needs to contain an action_wrapper entity as interface between the actions and the SNAP framework.
+This directory needs to contain an entity named `action_wrapper` as interface between the actions and the SNAP framework.
 
 Corresponding to the ports that the SNAP framework provides
 * an AXI master port for MMIO based control
@@ -76,8 +80,8 @@ large enough to support the number of actions that shall be instantiated.
 For the build process this is controlled via the environment variable `NUM_OF_ACTIONS`
 which defaults to `1` if not set differently.
 
-Examples for actions together with their wrappers may be found in `$DONUT_HARDWARE_ROOT/action_examples/empty`
-and in `$DONUT_HARDWARE_ROOT/action_examples/memcopy`.
+An example for an action together with a corresponding wrapper may be found
+in `$DONUT_HARDWARE_ROOT/action_examples/memcopy`.
 
 
 # DDR3 Card Memory
@@ -87,29 +91,11 @@ through an AXI master interface. The existence of that interface is configurable
 When setting
 
 ```bash
-    DDR3_USED=TRUE
+    SDRAM_USED=TRUE
 ```
 
-the interface will be instantiated and the access to the DDR3 memory will be provided.
+the interface will be instantiated and the access to the SDRAM will be provided.
 
-The examples in `$DONUT_HARDWARE_ROOT/action_examples/empty` and in `$DONUT_HARDWARE_ROOT/action_examples/memcopy` show
-how the card memory can be connected via the action_wrapper.
-In the `config` step of the `make` process all the lines containing the comment
-
-```vhdl
-    -- only for DDR3_USED=TRUE
-```
-
-will be de-activated when `DDR3_USED` is not set to `TRUE` while they will be activated (or stay active) when `DDR3_USED`
-is set to `TRUE`.
-At the same time all lines containing the comment
-
-```vhdl
-    -- only for DDR3_USED!=TRUE
-```
-
-will be activated (or stay active) when `DDR3_USED` is not set to `TRUE` while they will be de-activated when `DDR3_USED`
-is set to `TRUE`.
 
 # Image and model build
 
@@ -124,15 +110,17 @@ are defined (e.g. by sourcing the ./setup/donut_settings script).
 The variable `SIMULATOR` is used to determine for which of the simulators xsim or ncsim
 the environment will be prepared.
 
-If the variable `ACTION_ROOT` is not set the make process will set it to `$DONUT_HARDWARE_ROOT/action_examples/empty`
-containing a dummy action wrapper file that drives zeros on all interfaces.
-A memcopy action example will be included if the environment variable  is set to
+If the variable `ACTION_ROOT` is not set the make process will terminate. 
+A memcopy action example will be included if the environment variable is set to
 `$DONUT_HARDWARE_ROOT/action_examples/memcopy`.
 As usual you may set the variable with the call of make:
 
 ```bash
     make config ACTION_ROOT=$DONUT_HARDWARE_ROOT/action_examples/memcopy
 ```
+
+As part of the configuration step a script `$ACTION_ROOT/action_config.sh` will be called if it exists.
+Via this script specific configurations/preparations for the action may be added.
 
 If you call make w/o any targets then the environment is created and a simulation model build
 as well as a card image build are kicked off.
@@ -148,17 +136,11 @@ If you want to build an image (a bitstream) for a given `ACTION_ROOT` you may ca
     make config image
 ```
 
-Note: The decision if the memcopy action example gets included is made in the configuration step.
+Note: All preparations for the build process including the decision which actions get included is made in the configuration step.
 If the configuration step was already executed you may just call:
 
 ```bash
     make image
-```
-
-To build a binfile to program into a flash module, run the `write_bitstream.tcl` script from the `donut/hardware/build` directory:
-
-```bash
-    vivado -mode batch -source write_bitstream.tcl
 ```
 
 A simulation model (for the simulator defined by the environment variable `SIMULATOR`) may be created

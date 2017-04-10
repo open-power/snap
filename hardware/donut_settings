@@ -153,36 +153,21 @@ while [ -z "$SETUP_DONE" ]; do
  
   if [ -z "$NUM_OF_ACTIONS" ]; then
     export NUM_OF_ACTIONS=1
-    echo "Variable NUM_OF_ACTIONS is not set. Will default to  \"1\""
+    echo "Setting NUM_OF_ACTIONS         to  \"$NUM_OF_ACTIONS\""
   else
     echo "NUM_OF_ACTIONS          is set to  \"$NUM_OF_ACTIONS\""
   fi
 
-  if [ -z "$DDR3_USED" ]; then
-    export DDR3_USED="FALSE"
-    echo "Variable DDR3_USED      is not set. Will default to  \"FALSE\""
+  if [ -z "$SDRAM_USED" ]; then
+    export SDRAM_USED="FALSE"
+    echo "Setting SDRAM_USED             to  \"$SDRAM_USED\""
   else
-    echo "DDR3_USED               is set to  \"$DDR3_USED\""
-
-    if [[ $DDR3_USED = "TRUE" && $FPGACARD = "FGT" ]]; then 
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of DDR3_USED=$DDR3_USED on FGT is conflicting!"
-    fi
-  fi
-
-  if [ -z "$DDR4_USED" ]; then
-    export DDR4_USED="FALSE"
-    echo "Variable DDR4_USED      is not set. Will default to  \"FALSE\""
-  else
-    echo "DDR4_USED               is set to  \"$DDR4_USED\""
-
-    if [[ $DDR4_USED = "TRUE"  && $FPGACARD = "KU3" ]]; then 
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of DDR4_USED=$DDR4_USED on KU3 is conflicting!"
-    fi
+    echo "SDRAM_USED              is set to  \"$SDRAM_USED\""
   fi
 
   if [ -z "$ILA_DEBUG" ]; then
     export ILA_DEBUG="FALSE"
-    echo "Variable ILA_DEBUG      is not set. Will default to  \"FALSE\""
+    echo "Setting ILA_DEBUG              to  \"ILA_DEBUG\""
   else
     echo "ILA_DEBUG               is set to  \"$ILA_DEBUG\""
   fi
