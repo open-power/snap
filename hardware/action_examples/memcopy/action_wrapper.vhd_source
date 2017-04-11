@@ -171,7 +171,54 @@ ENTITY action_wrapper IS
     m_axi_host_mem_wready      : IN  STD_LOGIC;
     m_axi_host_mem_wstrb       : OUT STD_LOGIC_VECTOR ( (C_M_AXI_HOST_MEM_DATA_WIDTH/8)-1 DOWNTO 0 );
     m_axi_host_mem_wuser       : OUT STD_LOGIC_VECTOR ( C_M_AXI_HOST_MEM_WUSER_WIDTH-1 DOWNTO 0 );
-    m_axi_host_mem_wvalid      : OUT STD_LOGIC
+    m_axi_host_mem_wvalid      : OUT STD_LOGIC;
+
+    -- AXI NVME Interface
+    m_axi_nvme_araddr      : OUT STD_LOGIC_VECTOR ( 31 DOWNTO 0 );
+    m_axi_nvme_arburst     : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+    m_axi_nvme_arcache     : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+    m_axi_nvme_arid        : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+    m_axi_nvme_arlen       : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );
+    m_axi_nvme_arlock      : OUT STD_LOGIC;
+    m_axi_nvme_arprot      : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
+    m_axi_nvme_arqos       : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+    m_axi_nvme_arready     : IN  STD_LOGIC;
+    m_axi_nvme_arregion    : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+    m_axi_nvme_arsize      : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
+    m_axi_nvme_aruser      : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+    m_axi_nvme_arvalid     : OUT STD_LOGIC;
+    m_axi_nvme_awaddr      : OUT STD_LOGIC_VECTOR ( 31 DOWNTO 0 );
+    m_axi_nvme_awburst     : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+    m_axi_nvme_awcache     : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+    m_axi_nvme_awid        : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+    m_axi_nvme_awlen       : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );
+    m_axi_nvme_awlock      : OUT STD_LOGIC;
+    m_axi_nvme_awprot      : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
+    m_axi_nvme_awqos       : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+    m_axi_nvme_awready     : IN  STD_LOGIC;
+    m_axi_nvme_awregion    : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+    m_axi_nvme_awsize      : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
+    m_axi_nvme_awuser      : OUT STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+    m_axi_nvme_awvalid     : OUT STD_LOGIC;
+    m_axi_nvme_bid         : IN  STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+    m_axi_nvme_bready      : OUT STD_LOGIC;
+    m_axi_nvme_bresp       : IN  STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+    m_axi_nvme_buser       : IN  STD_LOGIC_VECTOR ( 0 downto 0 );
+    m_axi_nvme_bvalid      : IN  STD_LOGIC;
+    m_axi_nvme_rdata       : IN  STD_LOGIC_VECTOR ( 31 DOWNTO 0 );
+    m_axi_nvme_rid         : IN  STD_LOGIC_VECTOR (  0 DOWNTO 0 );
+    m_axi_nvme_rlast       : IN  STD_LOGIC;
+    m_axi_nvme_rready      : OUT STD_LOGIC;
+    m_axi_nvme_rresp       : IN  STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+    m_axi_nvme_ruser       : IN  STD_LOGIC_VECTOR ( 0 DOWNTO 0 );
+    m_axi_nvme_rvalid      : IN  STD_LOGIC;
+    m_axi_nvme_wdata       : OUT STD_LOGIC_VECTOR (31 DOWNTO 0 );
+    m_axi_nvme_wlast       : OUT STD_LOGIC;
+    m_axi_nvme_wready      : IN  STD_LOGIC;
+    m_axi_nvme_wstrb       : OUT STD_LOGIC_VECTOR (3 DOWNTO 0 );
+    m_axi_nvme_wuser       : OUT STD_LOGIC_VECTOR (0 DOWNTO 0 );
+    m_axi_nvme_wvalid      : OUT STD_LOGIC
+
   );
 END action_wrapper;
 
@@ -324,7 +371,55 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       axi_host_mem_buser       : IN  std_logic_vector(C_M_AXI_HOST_MEM_BUSER_WIDTH-1 DOWNTO 0);
       axi_host_mem_rid         : IN  std_logic_vector(C_M_AXI_HOST_MEM_ID_WIDTH-1 DOWNTO 0);
       axi_host_mem_ruser       : IN  std_logic_vector(C_M_AXI_HOST_MEM_RUSER_WIDTH-1 DOWNTO 0);
-      axi_host_mem_wuser       : OUT std_logic_vector(C_M_AXI_HOST_MEM_WUSER_WIDTH-1 DOWNTO 0)
+      axi_host_mem_wuser       : OUT std_logic_vector(C_M_AXI_HOST_MEM_WUSER_WIDTH-1 DOWNTO 0);
+
+      -- Ports of Axi Master Bus Interface AXI_NVME
+      --       to DDR memory
+      axi_nvme_awaddr      : OUT std_logic_vector(31 DOWNTO 0);
+      axi_nvme_awlen       : OUT std_logic_vector(7 DOWNTO 0);
+      axi_nvme_awsize      : OUT std_logic_vector(2 DOWNTO 0);
+      axi_nvme_awburst     : OUT std_logic_vector(1 DOWNTO 0);
+      axi_nvme_awlock      : OUT std_logic;
+      axi_nvme_awcache     : OUT std_logic_vector(3 DOWNTO 0);
+      axi_nvme_awprot      : OUT std_logic_vector(2 DOWNTO 0);
+      axi_nvme_awregion    : OUT std_logic_vector(3 DOWNTO 0);
+      axi_nvme_awqos       : OUT std_logic_vector(3 DOWNTO 0);
+      axi_nvme_awvalid     : OUT std_logic;
+      axi_nvme_awready     : IN  std_logic;
+      axi_nvme_wdata       : OUT std_logic_vector(31 downto 0);
+      axi_nvme_wstrb       : OUT std_logic_vector(3 DOWNTO 0);
+      axi_nvme_wlast       : OUT std_logic;
+      axi_nvme_wvalid      : OUT std_logic;
+      axi_nvme_wready      : IN  std_logic;
+      axi_nvme_bresp       : IN  std_logic_vector(1 DOWNTO 0);
+      axi_nvme_bvalid      : IN  std_logic;
+      axi_nvme_bready      : OUT std_logic;
+      axi_nvme_araddr      : OUT std_logic_vector(31 downto 0);
+      axi_nvme_arlen       : OUT std_logic_vector(7 DOWNTO 0);
+      axi_nvme_arsize      : OUT std_logic_vector(2 DOWNTO 0);
+      axi_nvme_arburst     : OUT std_logic_vector(1 DOWNTO 0);
+      axi_nvme_arlock      : OUT std_logic;
+      axi_nvme_arcache     : OUT std_logic_vector(3 DOWNTO 0);
+      axi_nvme_arprot      : OUT std_logic_vector(2 DOWNTO 0);
+      axi_nvme_arregion    : OUT std_logic_vector(3 DOWNTO 0);
+      axi_nvme_arqos       : OUT std_logic_vector(3 DOWNTO 0);
+      axi_nvme_arvalid     : OUT std_logic;
+      axi_nvme_arready     : IN  std_logic;
+      axi_nvme_rdata       : IN  std_logic_vector(31 DOWNTO 0);
+      axi_nvme_rresp       : IN  std_logic_vector(1 DOWNTO 0);
+      axi_nvme_rlast       : IN  std_logic;
+      axi_nvme_rvalid      : IN  std_logic;
+      axi_nvme_rready      : OUT std_logic;
+      axi_nvme_arid        : OUT std_logic_vector(0 downto 0);
+      axi_nvme_aruser      : OUT std_logic_vector(0 DOWNTO 0);
+      axi_nvme_awid        : OUT std_logic_vector(0 DOWNTO 0);
+      axi_nvme_awuser      : OUT std_logic_vector(0 DOWNTO 0);
+      axi_nvme_bid         : IN  std_logic_vector(0 DOWNTO 0);
+      axi_nvme_buser       : IN  std_logic_vector(0 DOWNTO 0);
+      axi_nvme_rid         : IN  std_logic_vector(0 DOWNTO 0);
+      axi_nvme_ruser       : IN  std_logic_vector(0 DOWNTO 0);
+      axi_nvme_wuser       : OUT std_logic_vector(0 DOWNTO 0)
+
     );
   END COMPONENT action_memcopy;
 
@@ -468,6 +563,56 @@ action_0: COMPONENT action_memcopy
     axi_host_mem_wready        => m_axi_host_mem_wready,
     axi_host_mem_wstrb         => m_axi_host_mem_wstrb,
     axi_host_mem_wuser         => m_axi_host_mem_wuser,
-    axi_host_mem_wvalid        => m_axi_host_mem_wvalid
+    axi_host_mem_wvalid        => m_axi_host_mem_wvalid,
+
+    axi_nvme_araddr       => m_axi_nvme_araddr,                                -- only for DDRI_USED=TRUE
+    axi_nvme_arburst      => m_axi_nvme_arburst,                               -- only for DDRI_USED=TRUE
+    axi_nvme_arcache      => m_axi_nvme_arcache,                               -- only for DDRI_USED=TRUE
+    axi_nvme_arid         => m_axi_nvme_arid,                                  -- only for DDRI_USED=TRUE
+    axi_nvme_arlen        => m_axi_nvme_arlen,                                 -- only for DDRI_USED=TRUE
+    axi_nvme_arlock       => m_axi_nvme_arlock,                                -- only for DDRI_USED=TRUE
+    axi_nvme_arprot       => m_axi_nvme_arprot,                                -- only for DDRI_USED=TRUE
+    axi_nvme_arqos        => m_axi_nvme_arqos,                                 -- only for DDRI_USED=TRUE
+    axi_nvme_arready      => m_axi_nvme_arready,                               -- only for DDRI_USED=TRUE
+    axi_nvme_arregion     => m_axi_nvme_arregion,                              -- only for DDRI_USED=TRUE
+    axi_nvme_arsize       => m_axi_nvme_arsize,                                -- only for DDRI_USED=TRUE
+    axi_nvme_aruser       => m_axi_nvme_aruser,                                -- only for DDRI_USED=TRUE
+    axi_nvme_arvalid      => m_axi_nvme_arvalid,                               -- only for DDRI_USED=TRUE
+    axi_nvme_awaddr       => m_axi_nvme_awaddr,                                -- only for DDRI_USED=TRUE
+    axi_nvme_awburst      => m_axi_nvme_awburst,                               -- only for DDRI_USED=TRUE
+    axi_nvme_awcache      => m_axi_nvme_awcache,                               -- only for DDRI_USED=TRUE
+    axi_nvme_awid         => m_axi_nvme_awid,                                  -- only for DDRI_USED=TRUE
+    axi_nvme_awlen        => m_axi_nvme_awlen,                                 -- only for DDRI_USED=TRUE
+    axi_nvme_awlock       => m_axi_nvme_awlock,                                -- only for DDRI_USED=TRUE
+    axi_nvme_awprot       => m_axi_nvme_awprot,                                -- only for DDRI_USED=TRUE
+    axi_nvme_awqos        => m_axi_nvme_awqos,                                 -- only for DDRI_USED=TRUE
+    axi_nvme_awready      => m_axi_nvme_awready,                               -- only for DDRI_USED=TRUE
+    axi_nvme_awregion     => m_axi_nvme_awregion,                              -- only for DDRI_USED=TRUE
+    axi_nvme_awsize       => m_axi_nvme_awsize,                                -- only for DDRI_USED=TRUE
+    axi_nvme_awuser       => m_axi_nvme_awuser,                                -- only for DDRI_USED=TRUE
+    axi_nvme_awvalid      => m_axi_nvme_awvalid,                               -- only for DDRI_USED=TRUE
+    axi_nvme_bid          => m_axi_nvme_bid,                                   -- only for DDRI_USED=TRUE
+    axi_nvme_bready       => m_axi_nvme_bready,                                -- only for DDRI_USED=TRUE
+    axi_nvme_bresp        => m_axi_nvme_bresp,                                 -- only for DDRI_USED=TRUE
+    axi_nvme_buser        => m_axi_nvme_buser,                                 -- only for DDRI_USED=TRUE
+    axi_nvme_bvalid       => m_axi_nvme_bvalid,                                -- only for DDRI_USED=TRUE
+    axi_nvme_rdata        => m_axi_nvme_rdata,                                 -- only for DDRI_USED=TRUE
+    axi_nvme_rid          => m_axi_nvme_rid,                                   -- only for DDRI_USED=TRUE
+    axi_nvme_rlast        => m_axi_nvme_rlast,                                 -- only for DDRI_USED=TRUE
+    axi_nvme_rready       => m_axi_nvme_rready,                                -- only for DDRI_USED=TRUE
+    axi_nvme_rresp        => m_axi_nvme_rresp,                                 -- only for DDRI_USED=TRUE
+    axi_nvme_ruser        => m_axi_nvme_ruser,                                 -- only for DDRI_USED=TRUE
+    axi_nvme_rvalid       => m_axi_nvme_rvalid,                                -- only for DDRI_USED=TRUE
+    axi_nvme_wdata        => m_axi_nvme_wdata,                                 -- only for DDRI_USED=TRUE
+    axi_nvme_wlast        => m_axi_nvme_wlast,                                 -- only for DDRI_USED=TRUE
+    axi_nvme_wready       => m_axi_nvme_wready,                                -- only for DDRI_USED=TRUE
+    axi_nvme_wstrb        => m_axi_nvme_wstrb,                                 -- only for DDRI_USED=TRUE
+    axi_nvme_wuser        => m_axi_nvme_wuser,                                 -- only for DDRI_USED=TRUE
+    axi_nvme_wvalid       => m_axi_nvme_wvalid                                -- only for DDRI_USED=TRUE
+
+
+
+
+
   );
 END STRUCTURE;

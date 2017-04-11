@@ -135,6 +135,7 @@ create_environment:
 	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
 
 config: copy_denali check_donut_settings $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FILES) action_config create_environment patch_NVMe
+#config: copy_denali check_donut_settings $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FILES) action_config create_environment
 
 	@echo -e "\t[CONFIG............] done `date`"
 

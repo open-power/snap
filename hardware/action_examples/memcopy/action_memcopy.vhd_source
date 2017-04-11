@@ -112,6 +112,56 @@ entity action_memcopy is
         axi_card_mem0_ruser     : in std_logic_vector(C_AXI_CARD_MEM0_RUSER_WIDTH-1 downto 0);     -- only for DDRI_USED=TRUE
         axi_card_mem0_wuser     : out std_logic_vector(C_AXI_CARD_MEM0_WUSER_WIDTH-1 downto 0);    -- only for DDRI_USED=TRUE
 
+
+        -- Ports for NVMe control Interface                                                   -- only for DDRI_USED=TRUE
+
+        axi_nvme_awaddr    : out std_logic_vector(31 downto 0);                               -- only for NVME_USED=TRUE
+        axi_nvme_awlen     : out std_logic_vector(7 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_awsize    : out std_logic_vector(2 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_awburst   : out std_logic_vector(1 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_awlock    : out std_logic;                                -- only for NVME_USED=TRUE
+        axi_nvme_awcache   : out std_logic_vector(3 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_awprot    : out std_logic_vector(2 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_awregion  : out std_logic_vector(3 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_awqos     : out std_logic_vector(3 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_awvalid   : out std_logic;                                                   -- only for NVME_USED=TRUE
+        axi_nvme_awready   : in std_logic;                                                    -- only for NVME_USED=TRUE
+        axi_nvme_wdata     : out std_logic_vector(31 downto 0);                               -- only for NVME_USED=TRUE
+        axi_nvme_wstrb     : out std_logic_vector(3 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_wlast     : out std_logic;                                                   -- only for NVME_USED=TRUE
+        axi_nvme_wvalid    : out std_logic;                                                   -- only for NVME_USED=TRUE
+        axi_nvme_wready    : in std_logic;                                                    -- only for NVME_USED=TRUE
+        axi_nvme_bresp     : in std_logic_vector(1 downto 0);                                 -- only for NVME_USED=TRUE
+        axi_nvme_bvalid    : in std_logic;                                                    -- only for NVME_USED=TRUE
+        axi_nvme_bready    : out std_logic;                                                   -- only for NVME_USED=TRUE
+        axi_nvme_araddr    : out std_logic_vector(31 downto 0);                               -- only for NVME_USED=TRUE
+        axi_nvme_arlen     : out std_logic_vector(7 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_arsize    : out std_logic_vector(2 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_arburst   : out std_logic_vector(1 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_arlock    : out std_logic;                                -- only for NVME_USED=TRUE
+        axi_nvme_arcache   : out std_logic_vector(3 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_arprot    : out std_logic_vector(2 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_arregion  : out std_logic_vector(3 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_arqos     : out std_logic_vector(3 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_arvalid   : out std_logic;                                                   -- only for NVME_USED=TRUE
+        axi_nvme_arready   : in std_logic;                                                    -- only for NVME_USED=TRUE
+        axi_nvme_rdata     : in std_logic_vector(31 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_rresp     : in std_logic_vector(1 downto 0);                                 -- only for NVME_USED=TRUE
+        axi_nvme_rlast     : in std_logic;                                                    -- only for NVME_USED=TRUE
+        axi_nvme_rvalid    : in std_logic;                                                    -- only for NVME_USED=TRUE
+        axi_nvme_rready    : out std_logic;                                                   -- only for NVME_USED=TRUE
+        axi_nvme_arid      : out std_logic_vector(0 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_aruser    : out std_logic_vector(0 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_awid      : out std_logic_vector(0 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_awuser    : out std_logic_vector(0 downto 0);                                -- only for NVME_USED=TRUE
+        axi_nvme_bid       : in std_logic_vector(0 downto 0);                                 -- only for NVME_USED=TRUE
+        axi_nvme_buser     : in std_logic_vector(0 downto 0);                                 -- only for NVME_USED=TRUE
+        axi_nvme_rid       : in std_logic_vector(0 downto 0);                                 -- only for NVME_USED=TRUE
+        axi_nvme_ruser     : in std_logic_vector(0 downto 0);                                 -- only for NVME_USED=TRUE
+        axi_nvme_wuser     : out std_logic_vector(0 downto 0);                                -- only for NVME_USED=TRUE
+
+
+        
         -- Ports of Axi Slave Bus Interface AXI_CTRL_REG
         axi_ctrl_reg_awaddr     : in std_logic_vector(C_AXI_CTRL_REG_ADDR_WIDTH-1 downto 0);
      -- axi_ctrl_reg_awprot : in std_logic_vector(2 downto 0);
@@ -254,6 +304,8 @@ architecture action_memcopy of action_memcopy is
         signal last_write_done   : std_logic;
         signal src_host          : std_logic;
         signal src_ddr           : std_logic;                                            -- only for DDRI_USED=TRUE
+        signal src_nvme          : std_logic;                                            -- only for DDRI_USED=TRUE
+        signal dest_nvme         : std_logic;
         signal dest_host         : std_logic;
         signal dest_ddr          : std_logic;                                            -- only for DDRI_USED=TRUE
 
@@ -294,6 +346,14 @@ architecture action_memcopy of action_memcopy is
         signal wr_gate           : std_logic;
         signal int_enable        : std_logic;
 
+        signal nvme_copy_done    : std_logic;
+        signal start_nvme_copy   : std_logic;
+        signal nvme_cmd_valid    : std_logic;
+        signal nvme_cmd          : std_logic_vector (11 downto 0); 
+        signal nvme_mem_addr     : std_logic_vector (63 downto 0); 
+        signal nvme_lba_addr     : std_logic_vector (63 downto 0); 
+        signal nvme_lba_count    : std_logic_vector (31 downto 0); 
+        signal nvme_status       : std_logic_vector (31 downto 0); 
 
 
         function or_reduce (signal arg : std_logic_vector) return std_logic is
@@ -531,12 +591,72 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
       M_AXI_RREADY    => axi_card_mem0_rready                                            -- only for DDRI_USED=TRUE
     );                                                                                   -- only for DDRI_USED=TRUE
 
+-- Instantiation of Axi Bus Interface AXI_CARD_MEM0                                                -- only for DDRI_USED=TRUE
+action_axi_nvme_inst : entity work.action_axi_nvme                                         -- only for DDRI_USED=TRUE
+
+    port map (                                                                                      -- only for DDRI_USED=TRUE
+
+      nvme_cmd_valid_i  => nvme_cmd_valid,
+      nvme_cmd_i        => nvme_cmd,  
+      nvme_mem_addr_i   => nvme_mem_addr, 
+      nvme_lba_addr_i   => nvme_lba_addr, 
+      nvme_lba_count_i  => nvme_lba_count, 
+      nvme_status       => nvme_status, 
+      
+      M_AXI_ACLK        => action_clk,                                                         -- only for DDRI_USED=TRUE
+      M_AXI_ARESETN     => action_rst_n,                                                   -- only for DDRI_USED=TRUE
+      M_AXI_AWID        => axi_nvme_awid,                                                 -- only for DDRI_USED=TRUE
+      M_AXI_AWADDR      => axi_nvme_awaddr,                                           -- only for DDRI_USED=TRUE
+      M_AXI_AWLEN       => axi_nvme_awlen,                                                -- only for DDRI_USED=TRUE
+      M_AXI_AWSIZE      => axi_nvme_awsize,                                           -- only for DDRI_USED=TRUE
+      M_AXI_AWBURST     => axi_nvme_awburst,                                          -- only for DDRI_USED=TRUE
+      M_AXI_AWLOCK      => axi_nvme_awlock,                                        -- only for DDRI_USED=TRUE
+      M_AXI_AWCACHE     => axi_nvme_awcache,                                          -- only for DDRI_USED=TRUE
+      M_AXI_AWPROT      => axi_nvme_awprot,                                           -- only for DDRI_USED=TRUE
+      M_AXI_AWQOS       => axi_nvme_awqos,                                                -- only for DDRI_USED=TRUE
+      M_AXI_AWUSER      => axi_nvme_awuser,                                           -- only for DDRI_USED=TRUE
+      M_AXI_AWVALID     => axi_nvme_awvalid,                                          -- only for DDRI_USED=TRUE
+      M_AXI_AWREADY     => axi_nvme_awready,                                          -- only for DDRI_USED=TRUE
+      M_AXI_WDATA       => axi_nvme_wdata,                                                -- only for DDRI_USED=TRUE
+      M_AXI_WSTRB       => axi_nvme_wstrb,                                                -- only for DDRI_USED=TRUE
+      M_AXI_WLAST       => axi_nvme_wlast,                                                -- only for DDRI_USED=TRUE
+      M_AXI_WUSER       => axi_nvme_wuser,                                                -- only for DDRI_USED=TRUE
+      M_AXI_WVALID      => axi_nvme_wvalid,                                           -- only for DDRI_USED=TRUE
+      M_AXI_WREADY      => axi_nvme_wready,                                           -- only for DDRI_USED=TRUE
+      M_AXI_BID         => axi_nvme_bid,                                                  -- only for DDRI_USED=TRUE
+      M_AXI_BRESP       => axi_nvme_bresp,                                                -- only for DDRI_USED=TRUE
+      M_AXI_BUSER       => axi_nvme_buser,                                                -- only for DDRI_USED=TRUE
+      M_AXI_BVALID      => axi_nvme_bvalid,                                           -- only for DDRI_USED=TRUE
+      M_AXI_BREADY      => axi_nvme_bready,                                           -- only for DDRI_USED=TRUE
+      M_AXI_ARID        => axi_nvme_arid,                                                 -- only for DDRI_USED=TRUE
+      M_AXI_ARADDR      => axi_nvme_araddr,                                           -- only for DDRI_USED=TRUE
+      M_AXI_ARLEN       => axi_nvme_arlen,                                                -- only for DDRI_USED=TRUE
+      M_AXI_ARSIZE      => axi_nvme_arsize,                                           -- only for DDRI_USED=TRUE
+      M_AXI_ARBURST     => axi_nvme_arburst,                                          -- only for DDRI_USED=TRUE
+      M_AXI_ARLOCK      => axi_nvme_arlock,                                        -- only for DDRI_USED=TRUE
+      M_AXI_ARCACHE     => axi_nvme_arcache,                                          -- only for DDRI_USED=TRUE
+      M_AXI_ARPROT      => axi_nvme_arprot,                                           -- only for DDRI_USED=TRUE
+      M_AXI_ARQOS       => axi_nvme_arqos,                                                -- only for DDRI_USED=TRUE
+      M_AXI_ARUSER      => axi_nvme_aruser,                                           -- only for DDRI_USED=TRUE
+      M_AXI_ARVALID     => axi_nvme_arvalid,                                          -- only for DDRI_USED=TRUE
+      M_AXI_ARREADY     => axi_nvme_arready,                                          -- only for DDRI_USED=TRUE
+      M_AXI_RID         => axi_nvme_rid,                                                  -- only for DDRI_USED=TRUE
+      M_AXI_RDATA       => axi_nvme_rdata,                                                -- only for DDRI_USED=TRUE
+      M_AXI_RRESP       => axi_nvme_rresp,                                                -- only for DDRI_USED=TRUE
+      M_AXI_RLAST       => axi_nvme_rlast,                                                -- only for DDRI_USED=TRUE
+      M_AXI_RUSER       => axi_nvme_ruser,                                                -- only for DDRI_USED=TRUE
+      M_AXI_RVALID      => axi_nvme_rvalid,                                           -- only for DDRI_USED=TRUE
+      M_AXI_RREADY      => axi_nvme_rready                                            -- only for DDRI_USED=TRUE
+    );                                                                                   -- only for DDRI_USED=TRUE
 
 
-        process(action_clk ) is
+
+
+    process(action_clk ) is
     begin
       if (rising_edge (action_clk)) then
             start_copy          <= '0';
+            start_nvme_copy     <= '0';
             start_fill          <= '0';
             if reg_0x30(3 downto 0) = x"2" or reg_0x30(3 downto 0) = x"3" or
                reg_0x30(3 downto 0) = x"4" or reg_0x30(3 downto 0) = x"5"   then
@@ -558,8 +678,10 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
                   int_req  <= '0';
 
                   if app_start = '1' then
+                    src_nvme  <= '0';
                     src_ddr   <= '0';                                                    -- only for DDRI_USED=TRUE
                     src_host  <= '0';
+                    dest_nvme <= '0';
                     dest_ddr  <= '0';                                                    -- only for DDRI_USED=TRUE
                     dest_host <= '0';
                     case reg_0x30(3 downto 0) is
@@ -609,6 +731,20 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
                         src_ddr    <= '1';                                               -- only for DDRI_USED=TRUE
                         dest_ddr   <= '1';                                               -- only for DDRI_USED=TRUE
                         start_copy <= '1';                                               -- only for DDRI_USED=TRUE
+                        
+                       when x"a" =>                                                      -- only for NVME_USED=TRUE
+                        -- memcopy DDR to NVMe                                           -- only for NVME_USED=TRUE
+                        fsm_app_q       <= WAIT_FOR_MEMCOPY_DONE;                        -- only for NVME_USED=TRUE
+                        src_ddr         <= '1';                                          -- only for NVME_USED=TRUE
+                        dest_nvme       <= '1';                                          -- only for NVME_USED=TRUE
+                        start_nvme_copy <= '1';                                          -- only for NVME_USED=TRUE
+                        
+                       when x"b" =>                                                      -- only for NVME_USED=TRUE
+                        -- memcopy NVMe to DDR                                           -- only for NVME_USED=TRUE
+                        fsm_app_q       <= WAIT_FOR_MEMCOPY_DONE;                        -- only for NVME_USED=TRUE
+                        src_nvme        <= '1';                                          -- only for NVME_USED=TRUE
+                        dest_ddr        <= '1';                                          -- only for NVME_USED=TRUE
+                        start_nvme_copy <= '1';                                          -- only for NVME_USED=TRUE
 
                        when others =>
                          app_done   <= '1';
@@ -626,7 +762,7 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
                   end if;
 
                 when WAIT_FOR_MEMCOPY_DONE =>
-                  if last_write_done = '1' then
+                  if last_write_done = '1' or nvme_copy_done = '1' then
                     app_done   <= '1';
                     int_req    <= '1' and int_enable;
                     fsm_app_q  <= IDLE;
@@ -646,6 +782,31 @@ action_ddr_axi_master_inst : entity work.action_axi_master                      
                 when dest_host = '1' else ddr_wr_req_ack                                 -- only for DDRI_USED=TRUE
                 ;
 
+-- NVME copy process
+    nvme_lba_addr         <= reg_0x38 & reg_0x34 when src_nvme  = '1' else reg_0x40 & reg_0x3c;
+    nvme_mem_addr        <= (reg_0x38 + 2) & reg_0x34 when dest_nvme = '1' else (reg_0x40 + 2) & reg_0x3c;
+    nvme_cmd(11 downto 8) <= reg_0x30(11 downto 8);  -- action id
+    nvme_cmd( 3 downto 0) <= x"1" when reg_0x30(3 downto 0) = x"a"  else x"0"; -- a one is a read cmd
+    nvme_cmd( 7 downto 4) <= x"1" when reg_0x30(4)          = '0'   else x"3"; -- a one is SSD 0
+    nvme_lba_count        <= reg_0x44 - 1;       
+    
+    process(action_clk) is
+
+    begin
+       if (rising_edge (action_clk)) then
+         nvme_copy_done <= '0';
+         nvme_cmd_valid <= '0';
+         if start_nvme_copy = '1' then
+           nvme_cmd_valid <= '1';
+         end if;
+         if nvme_status(8) = '1'  then
+           nvme_copy_done <= '1';
+         end if;
+       end if;
+    end process;   
+-------------------------------------------------------------------------------
+
+       
     process(action_clk) is
     variable j,k : integer range 0 to 63;
     begin

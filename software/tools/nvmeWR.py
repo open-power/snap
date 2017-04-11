@@ -123,7 +123,7 @@ class NVME_Drive:
         print ('completion code %x' % status)
 
         print ('create IO SQ ')
-        AFU_MMIO.nvme_write(0x88, offset + 0x40)  # set buffer address
+        AFU_MMIO.nvme_write(0x88, offset + 0x10)  # set buffer address
         array = [0x1,0,0,0,0,0,0x20000,0,0,0,0xd90001,0x10005,0,0,0,0]
         AFU_MMIO.nvme_fill_buffer(array)
         # notify drive
@@ -205,7 +205,7 @@ class NVME_Drive:
 
     @staticmethod
     def dump_buffer(drive, words):
-        AFU_MMIO.nvme_write(0x88, 0x1bc0)
+        AFU_MMIO.nvme_write(0x88, 0x6f0)
         while (words > 0):
             data = AFU_MMIO.nvme_read(0x90)
             print('buffer data word %d : %8x' % (words, data))
@@ -225,71 +225,42 @@ class NVME_Drive:
 ADMIN_Q_ENTRIES = 4;
 
 
-AFU_MMIO.write(0x10020, 0xb)         
+#AFU_MMIO.write(0x10020, 0xb)         
 data = AFU_MMIO.read(0x10020)
 print ('read back ')
 print  (data)
+print ('setting up registers')
+AFU_MMIO.write(0x10030,0xa)  # write to nvme
+AFU_MMIO.write(0x10034,0x0)
+AFU_MMIO.write(0x10038,0x0)
+AFU_MMIO.write(0x1003c,0x0)
+AFU_MMIO.write(0x10040,0x0)
+AFU_MMIO.write(0x10044,0x10)
+print ('start NVMe write')
+AFU_MMIO.write(0x10000,1)
+print ('waiting for command to complete')
+data = 0
+# 
+while (data != 0xc ):
+    data = AFU_MMIO.read(0x10000)
+    print (" rc = %x " % data)
 
-print ("configure NVMe host, RC and drive")
+print ('NVMe write command completed')
 
-AFU_MMIO.nvme_write(0x80, 0x01)                 # enable NVMe host    
-AFU_MMIO.nvme_write(0x10000018, 0x10100)        # set bus, devive and function number    
-AFU_MMIO.nvme_write(0x100000d4, 0x00)           # set device capabilities  
-AFU_MMIO.nvme_write(0x10100010, 0x1000000c)     # PCIe Base Addr Register 0   
-AFU_MMIO.nvme_write(0x10100014, 0x00000000)     # PCIe Base Addr Register 1   
-AFU_MMIO.nvme_write(0x10100018, 0x00000000)     # PCIe Base Addr Register 2   
-AFU_MMIO.nvme_write(0x1010001C, 0x00000000)     # PCIe Base Addr Register 3   
-AFU_MMIO.nvme_write(0x10100020, 0x00000000)     # PCIe Base Addr Register 4   
-AFU_MMIO.nvme_write(0x10100024, 0x00000000)     # PCIe Base Addr Register 5   
-AFU_MMIO.nvme_write(0x10100030, 0x00000001)     # Expansion ROM address   
-AFU_MMIO.nvme_write(0x101000d0, 0x00000041)     # Telling endpoint what common clock and power management states are enable  
-AFU_MMIO.nvme_write(0x10100004, 0x00000006)     # PCI command register 
-AFU_MMIO.nvme_write(0x10000148, 0x00000001)     # PCI enable root port 
-AFU_MMIO.nvme_write(0x1000020c, 0x10000000)     # set up AXI Base address translation register 
-AFU_MMIO.nvme_write(0x00000080, 0x00000001) 
- 
-data = NVME_Drive.read(0x00)                    # read nvme drive: capability register     
-print ('\ncap register = %x' % data)  
-data = (data >> 20) & 0xf
-print ('max page size %x' % data)  
+AFU_MMIO.write(0x10030,0xb)
+AFU_MMIO.write(0x1003c,0x4000)
+print ('start NVMe read')
+AFU_MMIO.write(0x10000,1)
+print ('waiting for command to complete')
+data = 0
+# 
+while (data != 0xc ):
+    data = AFU_MMIO.read(0x10000)
+    print (" rc = %x " % data)
 
-print ("config done")
-# time.sleep(5)
-data = (4<<20) | (6<<16) | (data<<7)
-NVME_Drive.write(0x14,data)                     # writing SSD0 controller register
-queue_entries = (((ADMIN_Q_ENTRIES-1)<<16) | (ADMIN_Q_ENTRIES-1)); 
-NVME_Drive.write(0x24,queue_entries)            # AQA register  
-NVME_Drive.write(0x30,0x110000)                 # ACQ low        
-NVME_Drive.write(0x34,0x00)                     # ACQ high  
-NVME_Drive.write(0x28,0x10000)                  # Admission Queue low  
-NVME_Drive.write(0x2c,0x00000)                  # Admission Queue high  
-NVME_Drive.write(0x14,data | 1)                 # enable SSD0
-AFU_MMIO.nvme_write(0x80, 0x1)                  # disable auto increment of NVMe host
+print ('NVMe read command completed')
 
-NVME_Drive.wait_for_ready(0);
-print (" config done, waiting 1 sec.")
-time.sleep(1)
-# please note:
-# every command which is put in the admin queue needs a proper buffer address
-# the admin queue has a depth of 4
-# buffer addresses 0x00, 0x10, 0x20, 0x30
-NVME_Drive.send_identify(0x00,0);  # use buffer 0x00
-#NVME_Drive.send_identify(1);
-NVME_Drive.dump_buffer(0,4);
-# create submission and completion queue
-NVME_Drive.create_IO_Queues(0x40,0) # use buffer 0x40 and 0x80
-NVME_Drive.set_Features(0xc0, 0)    # use buffer 0xc0
-NVME_Drive.get_Features(0x00, 0)    # use buffer 0x00
-NVME_Drive.send_identify2(0x40,0);  # use buffer 0x40
-######NVME_Drive.dump_buffer(0,4);
-#print (" sending NVMe write command ")
-# copy 4k data  from RAM to SSD0
-# copy data from RAM address 0
-# add 0x0000_00002_0000_0000 offset
-# 15 means 16 blocks of 512b
-# real SSD has different block size (4k ?) 
-#NVME_Drive.RW_data(0,2,0,0,15,0x11)
-#rc = 0
+
 #print ('waiting for command to complete') 
 #while (rc == 0):
 #    rc = AFU_MMIO.nvme_read(0x4)
