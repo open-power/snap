@@ -1,38 +1,22 @@
 # SNAP Framework Hardware and Software
 
-The SNAP (**S**torage, **N**etwork, and **A**nalytics **P**rogramming) Framework is helping you to adopt to IBM CAPI technology quickly and efficiently.
-It is providing example use-cases for hardware acceleration.
+The SNAP Framework enables programmers and computer engineers to quickly create FPGA-based acceleration actions that work on server host data, as well as data from storage, flash, Ethernet, or other connected resources.  SNAP, therefore, is an acronym for “**S**torage, **N**etwork, and **A**nalytics **P**rogramming”.
+The SNAP framework makes it easy to create accelerated actions utilizing the IBM Coherent Accelerator Processor Interface (CAPI). 
 
-The framework hardware consists of a CAPI PSL-AXI bridge unit, PSL control and a job management unit.
-It interfaces with a user-written action (a.k.a. kernel) through an AXI lite control interface, and gives coherent access to host memory through an AXI slave.
+The framework hardware consists of a AXI-to-CAPI bridge unit, memory-mapped register I/O, host DMA, and a job management unit.
+It interfaces with a user-written action (a.k.a. kernel) through an AXI-lite control interface, and gives coherent access to host memory through AXI. Optionally, it also provides access to the on-card DRAM via AXI.
 A NVMe host controller-AXI bridge complements the framework for storage or database applications as an independent unit.
-Software gets access to the action through the libdonut library, allowing applications to call a "function" instead of programming an accelerator.
-
+Software gets access to the action through the libdonut library, allowing applications to call a "function" instead of programming an accelerator.  
 The framework supports multi-process applications as well as multiple instantiated hardware actions in parallel.
-Related components are the Power Service Layer (PSL) from a CAPI Hardware Development Kit, or PSLSE https://github.com/ibm-capi/pslse for simulation.
 
-As of Sept. 2016, the functionality is limited to CAPI interface, AXI lite control, software and simulation setup. The next stage 2 is going to deliver DMA access from the action to host memory.
-
-This work started as a sub-group of the OpenPOWER Foundation Accelerator Workgroup.
-
+This project is an initiative of the OpenPOWER Foundation Accelerator Workgroup.  
 Please see here for more details:
 * https://members.openpowerfoundation.org/wg/ACLWG/dashboard
 * http://openpowerfoundation.org/blogs/capi-drives-business-performance/
 
-# Related Work
+For detailed design information, please refer to the SNAP Workbook (available soon).
 
-Before we created the SNAP Framework, we created a CAPI driven DEFLAGE compression/decompression solution. The software to use this can be found here:
-* https://github.com/ibm-genwqe/genwqe-user
-
-This code uses libcxl to access the CAPI hardware. Normally your Linux distribution should have an installation package containing your library. If not, please look here and build and install manually:
-
-* https://github.com/ibm-capi/libcxl
-
-This code does not compile for Intel sytems, who do not support CAPI. If you like to do build checks consider using the simulation version of libcxl, which is contained in the pslse simulation package:
-
-* https://github.com/ibm-capi/pslse
-
-# Generating and Flashing the Bitstream
+# Getting started
 
 ## Generating the Bitstream
 
@@ -90,3 +74,21 @@ Here how it should look like:
     Preparing to reset card
     Resetting card
     Reset complete
+
+# Dependencies
+
+This code uses libcxl to access the CAPI hardware. This library should be part of your Linux distribution. For more information, please see 
+* https://github.com/ibm-capi/libcxl
+
+Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For the latest PSL checkpoint download, visit CAPI section of the IBM Portal for OpenPOWER at
+* https://www.ibm.com/systems/power/openpower
+
+For simulation, SNAP relies on the PSL Simulation Environment (PSLSE) which is available on github:
+* https://github.com/ibm-capi/pslse
+
+SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulation model and image build, SNAP requires the Xilinx Vivado 2016.4 tool suite.
+* https://www.xilinx.com/products/design-tools/hardware-zone.html
+
+As of now, two FPGA cards can be used with SNAP:
+* Alpha-Data ADM-PCIE-KU3 http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
+* A Nallatech card with on-card NVMe M.2 connectors http://www.nallatech.com/solutions/fpga-cards
