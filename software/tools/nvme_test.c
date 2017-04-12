@@ -114,20 +114,23 @@ static void memset_ad(void *a, uint64_t pattern, int size)
 /*
  *	Compare 2 Buffers
  */
-static int memcmp2(uint64_t *dest,	/* Data from RAM */
-		uint64_t *src,		/* Expect Data Buffer */
+static int memcmp2(void *dest,	/* Data from RAM */
+		void *src,		/* Expect Data Buffer */
 		int size)
 {
 	int i;
 	int rc;
 	uint64_t data;		/* Data Value */
 	uint64_t expect;	/* Compare Value */
+	uint64_t *a64s = dest;
+	uint64_t *a64d = src;   /* compare bufer */
 
-	VERBOSE3("\n      Compare Buffer %llx <-> %llx", (long long)src, (long long)dest);
+
+	VERBOSE1("\n      Compare Buffer Source: %p <-> Destination: %p", src, dest);
 	rc = 0;
-	for (i = 0; i < size; i++) {
-		data = dest[i];		/* Get data from 1st Host Buffer */
-		expect = src[i];	/* Get expect Value from 2nd Host Buffer */
+	for (i = 0; i < size; i+=8) {
+		data = *a64d;	/* Get data from Host Buffer */
+		expect = *a64s;	/* Get expect Value from 2nd Host Buffer */
 		if (data != expect) {
 			VERBOSE0("\nExpect: 0x%016llx Read: 0x%016llx",
 				(long long)expect,	/* What i expect */
@@ -136,10 +139,12 @@ static int memcmp2(uint64_t *dest,	/* Data from RAM */
 			if (rc > 10)
 				goto __memcmp2_exit;	/* Exit */
 		}
+		a64s++;
+		a64d++;
 	}
 	rc = 0;
 __memcmp2_exit:
-	VERBOSE3("  Exit: %d ", rc);
+	VERBOSE1("  RC: %d\n", rc);
 	return rc;
 }
 
@@ -189,32 +194,8 @@ static void action_memcpy(struct dnut_card* h,
 		uint64_t src,
 		size_t n)
 {
-	switch (action) {
-	case ACTION_CONFIG_COPY_HD:
-		VERBOSE3("\n      [DDR <- Host]");
-		break;
-	case ACTION_CONFIG_COPY_DH:
-		VERBOSE3("\n      [Host <- DDR]");
-		break;
-	case ACTION_CONFIG_COPY_DN:	/* from DDR to NVME Drive 0 */
-		VERBOSE3("\n      [NVME(0) <- DDR]");
-		break;
-	case ACTION_CONFIG_COPY_DN|NVME_DRIVE1:	/* from DDR to NVME Drive 1 */
-		VERBOSE3("\n      [NVME(1) <- DDR]");
-		break;
-	case ACTION_CONFIG_COPY_ND:	/* from NVME Drive 0 to DDR */
-		VERBOSE3("\n      [DDR <- NVME(0)]");
-		break;
-	case ACTION_CONFIG_COPY_ND|NVME_DRIVE1:	/* from NVME Drive 1 to DDR */
-		VERBOSE3("\n      [DDR <- NVME(1)]");
-		break;
-	default:
-		VERBOSE0("\nInvalid Action\n");
-		return;
-		break;
-	}
-	VERBOSE3(" memcpy(0x%llx, 0x%llx, 0x%lx) ",
-		(long long)dest, (long long)src, n);
+	VERBOSE2(" memcpy_%x(%llx, %llx, %lx) ",
+		action, (long long)dest, (long long)src, n);
 	action_write(h, ACTION_CONFIG,  action);
 	action_write(h, ACTION_DEST_LOW, (uint32_t)(dest & 0xffffffff));
 	action_write(h, ACTION_DEST_HIGH, (uint32_t)(dest >> 32));
@@ -269,7 +250,7 @@ int main(int argc, char *argv[])
 	int rc = 1;
 	int timeout = ACTION_WAIT_TIME;
 	uint32_t mem_size = 0;
-	uint32_t drive_cmd = ACTION_CONFIG_COPY_HD; 
+	uint32_t drive_cmd = ACTION_CONFIG_COPY_HD;
 	uint32_t blocks = 1;
 	void *src_buf = NULL;
 	void *dest_buf = NULL;
@@ -389,7 +370,7 @@ int main(int argc, char *argv[])
 	dest_buf = get_mem(mem_size);
 	if (NULL == dest_buf)
 		goto __exit;
-	memset_ad(src_buf, 0, mem_size);
+	memset_ad(src_buf, nvme_offset, mem_size);
 
 	host_src = (uint64_t)src_buf;
 	host_dest = (uint64_t)dest_buf;
@@ -401,7 +382,7 @@ int main(int argc, char *argv[])
 		"    Drive: %d Size: 0x%x Nvme-Addr: 0x%llx LB: %d\n",
 		(long long)host_src, (long long)host_dest,
 		(long long)ddr_src, (long long)ddr_dest,
-		drive, mem_size, (long long)nvme_offset, (int)nvme_lb);
+		drive, mem_size, (long long)nvme_offset, (int)blocks);
 
 	rc = dnut_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags, 5*timeout);
 	if (0 != rc) {
