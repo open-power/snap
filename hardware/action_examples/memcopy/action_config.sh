@@ -25,7 +25,7 @@ else
   DDRI_FILTER="\-\- only for DDRI_USED=TRUE"
 fi
 
-if [ "NVME_USED" == "TRUE" ]; then
+if [ "$NVME_USED" == "TRUE" ]; then
   NVME_FILTER="\-\- only for NVME_USED!=TRUE"
 else
   NVME_FILTER="\-\- only for NVME_USED=TRUE"

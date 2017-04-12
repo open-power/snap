@@ -20,7 +20,7 @@
 
 `timescale 1ns / 1ps
 module nvme_model (
-  pci_user_reset_n,
+  unit_reset_n,
   pcie_rc0_rxn, 
   pcie_rc0_rxp, 
   pcie_rc0_txn, 
@@ -34,7 +34,7 @@ module nvme_model (
 		   
 );
 
-   input        pci_user_reset_n;
+   input        unit_reset_n;
    input  [3:0] pcie_rc0_rxn; 
    input  [3:0] pcie_rc0_rxp; 
    output [3:0] pcie_rc0_txn; 
@@ -63,6 +63,24 @@ module nvme_model (
 //         $fsdbDumpvars(0,surelock_sim.afu.iFC,"+all");
         `endif
   end
+  reg refclk_100;
+ 
+     //100Mhz
+  always
+     begin
+        refclk_100 <= 1'b1;
+        #(5.0);
+        refclk_100 <= 1'b0;
+        #(5.0);
+     end
+ 
+//   reg   unit_reset;
+//   initial begin
+//      refclk_100 <= 1'b0;
+//      unit_reset <= 1 ; 
+//      #50;
+//      unit_reset <= 0 ;
+//   end    
 
    integer status;
    wire [3:0]pcie_rc0_rxn = 4'h0;
@@ -121,7 +139,7 @@ module nvme_model (
    wire [3:0] cfg_width_1;
   
  
-//nvme_ch0   `define DUTP0 a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst 
+   `define DUTP0 a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst 
    `define DUTP2 a0.nvme_top_i.axi_pcie3_1.inst.pcie3_ip_i.inst
 
 
@@ -131,21 +149,21 @@ module nvme_model (
    
 //   `define DUTP1 afu
    `define DUTP1 a0              // ?????
-//nvme_ch0   defparam a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst.EXT_PIPE_SIM = "TRUE";
-//nvme_ch0   defparam a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
+   defparam a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst.EXT_PIPE_SIM = "TRUE";
+   defparam a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
    defparam a0.nvme_top_i.axi_pcie3_1.inst.pcie3_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
    defparam a0.nvme_top_i.axi_pcie3_1.inst.pcie3_ip_i.inst.EXT_PIPE_SIM = "TRUE";
 
    
-//nvme_ch0   assign `DUTP0.common_commands_in =   pipe_common_commands_in_rp;  
-//nvme_ch0   assign `DUTP0.pipe_rx_0_sigs  = pipe_rx_0_rp;                
-//nvme_ch0   assign `DUTP0.pipe_rx_1_sigs  = pipe_rx_1_rp;                
-//nvme_ch0   assign `DUTP0.pipe_rx_2_sigs  = pipe_rx_2_rp;                
-//nvme_ch0   assign `DUTP0.pipe_rx_3_sigs  = pipe_rx_3_rp;                
-//nvme_ch0   assign `DUTP0.pipe_rx_4_sigs  = pipe_rx_4_rp;                
-//nvme_ch0   assign `DUTP0.pipe_rx_5_sigs  = pipe_rx_5_rp;                
-//nvme_ch0   assign `DUTP0.pipe_rx_6_sigs  = pipe_rx_6_rp;                
-//nvme_ch0   assign `DUTP0.pipe_rx_7_sigs  = pipe_rx_7_rp;  
+   assign `DUTP0.common_commands_in =   pipe_common_commands_in_rp;  
+   assign `DUTP0.pipe_rx_0_sigs  = pipe_rx_0_rp;                
+   assign `DUTP0.pipe_rx_1_sigs  = pipe_rx_1_rp;                
+   assign `DUTP0.pipe_rx_2_sigs  = pipe_rx_2_rp;                
+   assign `DUTP0.pipe_rx_3_sigs  = pipe_rx_3_rp;                
+   assign `DUTP0.pipe_rx_4_sigs  = pipe_rx_4_rp;                
+   assign `DUTP0.pipe_rx_5_sigs  = pipe_rx_5_rp;                
+   assign `DUTP0.pipe_rx_6_sigs  = pipe_rx_6_rp;                
+   assign `DUTP0.pipe_rx_7_sigs  = pipe_rx_7_rp;  
           
  
    assign `DUTP2.common_commands_in =   pipe_common_commands_in_rp_1;  
@@ -158,15 +176,15 @@ module nvme_model (
    assign `DUTP2.pipe_rx_6_sigs  = pipe_rx_6_rp_1;                
    assign `DUTP2.pipe_rx_7_sigs  = pipe_rx_7_rp_1;
  
-//nvme_ch0   assign  pipe_common_commands_out_rp = `DUTP0.common_commands_out; 
-//nvme_ch0   assign  pipe_tx_0_rp                = `DUTP0.pipe_tx_0_sigs;                
-//nvme_ch0   assign  pipe_tx_1_rp                = `DUTP0.pipe_tx_1_sigs;                
-//nvme_ch0   assign  pipe_tx_2_rp                = `DUTP0.pipe_tx_2_sigs;                
-//nvme_ch0   assign  pipe_tx_3_rp                = `DUTP0.pipe_tx_3_sigs;                
-//nvme_ch0   assign  pipe_tx_4_rp                = `DUTP0.pipe_tx_4_sigs;                
-//nvme_ch0   assign  pipe_tx_5_rp                = `DUTP0.pipe_tx_5_sigs;                
-//nvme_ch0   assign  pipe_tx_6_rp                = `DUTP0.pipe_tx_6_sigs;                
-//nvme_ch0   assign  pipe_tx_7_rp                = `DUTP0.pipe_tx_7_sigs;                
+   assign  pipe_common_commands_out_rp = `DUTP0.common_commands_out; 
+   assign  pipe_tx_0_rp                = `DUTP0.pipe_tx_0_sigs;                
+   assign  pipe_tx_1_rp                = `DUTP0.pipe_tx_1_sigs;                
+   assign  pipe_tx_2_rp                = `DUTP0.pipe_tx_2_sigs;                
+   assign  pipe_tx_3_rp                = `DUTP0.pipe_tx_3_sigs;                
+   assign  pipe_tx_4_rp                = `DUTP0.pipe_tx_4_sigs;                
+   assign  pipe_tx_5_rp                = `DUTP0.pipe_tx_5_sigs;                
+   assign  pipe_tx_6_rp                = `DUTP0.pipe_tx_6_sigs;                
+   assign  pipe_tx_7_rp                = `DUTP0.pipe_tx_7_sigs;                
  
    assign  pipe_common_commands_out_rp_1 = `DUTP2.common_commands_out;
    assign  pipe_tx_0_rp_1                = `DUTP2.pipe_tx_0_sigs;
@@ -178,13 +196,17 @@ module nvme_model (
    assign  pipe_tx_6_rp_1                = `DUTP2.pipe_tx_6_sigs;
    assign  pipe_tx_7_rp_1                = `DUTP2.pipe_tx_7_sigs;
 
-//nvme_ch0   assign cfg_speed = a0.nvme_top_i.axi_pcie3_0.inst.cfg_current_speed[2:0];
-//nvme_ch0   assign cfg_width = a0.nvme_top_i.axi_pcie3_0.inst.cfg_negotiated_width[3:0];
+   assign cfg_speed = a0.nvme_top_i.axi_pcie3_0.inst.cfg_current_speed[2:0];
+   assign cfg_width = a0.nvme_top_i.axi_pcie3_0.inst.cfg_negotiated_width[3:0];
 
    assign cfg_speed_1 = a0.nvme_top_i.axi_pcie3_1.inst.cfg_current_speed[2:0];
    assign cfg_width_1 = a0.nvme_top_i.axi_pcie3_1.inst.cfg_negotiated_width[3:0];
    
    
+//   assign pcie_clk_p =  unit_reset;
+ //refclk_100;
+//   assign pcie_clk_n = ~refclk_100;
+
 `include "denaliPcieTypes.v"
 `include "denaliPcieErrTable.v"
 denaliPcie den();
@@ -226,8 +248,8 @@ denaliPcie den();
       .pipe_tx_5_rp       (pipe_tx_5_rp[69:0]),
       .pipe_tx_6_rp       (pipe_tx_6_rp[69:0]),
       .pipe_tx_7_rp       (pipe_tx_7_rp[69:0]),
-      .sys_rst_n          (pci_user_reset_n),
-      .nperst             (pci_user_reset_n)
+      .sys_rst_n          (unit_reset_n),
+      .nperst             (unit_reset_n)
       );
  
     pcie_endp_model pcie_endp_model1
@@ -252,8 +274,8 @@ denaliPcie den();
       .pipe_tx_5_rp       (pipe_tx_5_rp_1[69:0]),
       .pipe_tx_6_rp       (pipe_tx_6_rp_1[69:0]),
       .pipe_tx_7_rp       (pipe_tx_7_rp_1[69:0]),
-      .sys_rst_n          (pci_user_reset_n),
-      .nperst             (pci_user_reset_n)
+      .sys_rst_n          (unit_reset_n),
+      .nperst             (unit_reset_n)
       );
  
      initial
@@ -295,7 +317,7 @@ denaliPcie den();
  	$display("I've reached here before waitDLactive\n");
 //	waitPLactive(ep_cfg_id0);
  	$display("Waiting on link of SSD0 to be active\n");
-//nvme_ch0	@(posedge ( a0.nvme_top_i.axi_pcie3_0.user_link_up && a0.nvme_top_i.axi_pcie3_1.user_link_up));
+ 	@(posedge ( a0.nvme_top_i.axi_pcie3_0.user_link_up && a0.nvme_top_i.axi_pcie3_1.user_link_up));
  	$display("Link Training done");
  	$display("Link speed for SSD0 - Trained to G3[%x] - G2[%x] - G1[%x] ",cfg_speed[2],cfg_speed[1], cfg_speed[0]);
  	$display("Link Width for SSD0 - Trained to x%x", cfg_width);
