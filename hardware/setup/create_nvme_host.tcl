@@ -156,14 +156,22 @@ CONFIG.ASSOCIATED_BUSIF {DDR_M_AXI} \
 CONFIG.ASSOCIATED_RESET {ddr_aresetn} \
 ] $ddr_aclk
 set ddr_aresetn [ create_bd_port -dir O -type rst ddr_aresetn ]
-set refclk [ create_bd_port -dir I -type clk refclk ]
+set sys_clk_nvme_ch0 [ create_bd_port -dir I -type clk sys_clk_nvme_ch0 ]
 set_property -dict [ list \
 CONFIG.FREQ_HZ {100000000} \
-] $refclk
-set sys_clk_gt [ create_bd_port -dir I -type clk sys_clk_gt ]
+] $sys_clk_nvme_ch0
+set sys_clk_nvme_ch0_gt [ create_bd_port -dir I -type clk sys_clk_nvme_ch0_gt ]
 set_property -dict [ list \
 CONFIG.FREQ_HZ {100000000} \
-] $sys_clk_gt
+] $sys_clk_nvme_ch0_gt
+set sys_clk_nvme_ch1 [ create_bd_port -dir I -type clk sys_clk_nvme_ch1 ]
+set_property -dict [ list \
+CONFIG.FREQ_HZ {100000000} \
+] $sys_clk_nvme_ch1
+set sys_clk_nvme_ch1_gt [ create_bd_port -dir I -type clk sys_clk_nvme_ch1_gt ]
+set_property -dict [ list \
+CONFIG.FREQ_HZ {100000000} \
+] $sys_clk_nvme_ch1_gt
 set sys_rst_n [ create_bd_port -dir I -type rst sys_rst_n ]
 
 # Create instance: axi_interconnect_0, and set properties
@@ -197,6 +205,7 @@ CONFIG.STRATEGY {2} \
 puts "	\                      generating AXI PCIe Root Complex"
 set axi_pcie3_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie3:3.0 axi_pcie3_0 $msg_level ]
 set_property -dict [ list \
+CONFIG.pcie_blk_locn {X0Y1} \
 CONFIG.axi_addr_width {34} \
 CONFIG.axi_data_width {128_bit} \
 CONFIG.axisten_freq {250} \
@@ -219,6 +228,7 @@ CONFIG.plltype {QPLL1} \
 # Create instance: axi_pcie3_1, and set properties
 set axi_pcie3_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie3:3.0 axi_pcie3_1 $msg_level ]
 set_property -dict [ list \
+CONFIG.pcie_blk_locn {X0Y2} \
 CONFIG.axi_addr_width {34} \
 CONFIG.axi_data_width {128_bit} \
 CONFIG.axisten_freq {250} \
@@ -268,8 +278,10 @@ connect_bd_net -net axi_pcie3_0_axi_aclk [get_bd_ports ddr_aclk] [get_bd_pins ax
 connect_bd_net -net axi_pcie3_0_axi_aresetn [get_bd_ports ddr_aresetn] [get_bd_pins axi_interconnect_0/ARESETN] [get_bd_pins axi_interconnect_0/M00_ARESETN] [get_bd_pins axi_interconnect_0/M01_ARESETN] [get_bd_pins axi_interconnect_1/ARESETN] [get_bd_pins axi_interconnect_1/M00_ARESETN] [get_bd_pins axi_interconnect_1/S00_ARESETN] [get_bd_pins axi_interconnect_2/ARESETN] [get_bd_pins axi_interconnect_2/M00_ARESETN] [get_bd_pins axi_interconnect_2/M01_ARESETN] [get_bd_pins axi_interconnect_2/S00_ARESETN] [get_bd_pins axi_pcie3_0/axi_aresetn] [get_bd_pins nvme_host_wrap_0/axi_aresetn]
 connect_bd_net -net axi_pcie3_1_axi_aclk [get_bd_pins axi_interconnect_0/M02_ACLK] [get_bd_pins axi_interconnect_1/M01_ACLK] [get_bd_pins axi_interconnect_2/S01_ACLK] [get_bd_pins axi_pcie3_1/axi_aclk]
 connect_bd_net -net axi_pcie3_1_axi_aresetn [get_bd_pins axi_interconnect_0/M02_ARESETN] [get_bd_pins axi_interconnect_1/M01_ARESETN] [get_bd_pins axi_interconnect_2/S01_ARESETN] [get_bd_pins axi_pcie3_1/axi_aresetn]
-connect_bd_net -net refclk_1 [get_bd_ports refclk] [get_bd_pins axi_pcie3_0/refclk] [get_bd_pins axi_pcie3_1/refclk]
-connect_bd_net -net sys_clk_gt_1 [get_bd_ports sys_clk_gt] [get_bd_pins axi_pcie3_0/sys_clk_gt] [get_bd_pins axi_pcie3_1/sys_clk_gt]
+connect_bd_net -net sys_clk_nvme_ch0        [get_bd_ports sys_clk_nvme_ch0] [get_bd_pins axi_pcie3_0/refclk] 
+connect_bd_net -net sys_clk_nvme_ch1        [get_bd_ports sys_clk_nvme_ch1] [get_bd_pins axi_pcie3_1/refclk] 
+connect_bd_net -net sys_clk_nvme_ch0_gt     [get_bd_ports sys_clk_nvme_ch0_gt] [get_bd_pins axi_pcie3_0/sys_clk_gt]
+connect_bd_net -net sys_clk_nvme_ch1_gt     [get_bd_ports sys_clk_nvme_ch1_gt] [get_bd_pins axi_pcie3_1/sys_clk_gt]
 connect_bd_net -net sys_rst_n_1 [get_bd_ports sys_rst_n] [get_bd_pins axi_pcie3_0/sys_rst_n] [get_bd_pins axi_pcie3_1/sys_rst_n]
 
 # Create address segments
@@ -284,6 +296,13 @@ create_bd_addr_seg -range 0x10000000 -offset 0x20000000 [get_bd_addr_spaces NVME
 create_bd_addr_seg -range 0x00001000 -offset 0x00000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs nvme_host_wrap_0/host_s_axi/reg0] SEG_nvme_host_wrap_0_reg0
 create_bd_addr_seg -range 0x00001000 -offset 0x00000000 [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs nvme_host_wrap_0/host_s_axi/reg0] SEG_nvme_host_wrap_0_reg0
 
+# temp fix to solve placement issue: remove axi_pcie3_0
+delete_bd_objs [get_bd_nets sys_clk_nvme_ch0] [get_bd_nets sys_clk_nvme_ch0_gt] [get_bd_intf_nets S00_AXI_3] [get_bd_intf_nets axi_interconnect_0_M01_AXI] [get_bd_intf_nets axi_interconnect_1_M00_AXI] [get_bd_intf_nets axi_pcie3_0_pcie_7x_mgt] [get_bd_cells axi_pcie3_0]
+connect_bd_net [get_bd_ports ddr_aclk] [get_bd_pins axi_pcie3_1/axi_aclk]
+connect_bd_net [get_bd_ports ddr_aresetn] [get_bd_pins axi_pcie3_1/axi_aresetn]
+delete_bd_objs [get_bd_ports sys_clk_nvme_ch0]
+delete_bd_objs [get_bd_ports sys_clk_nvme_ch0_gt]
+delete_bd_objs [get_bd_intf_ports pcie_rc0]
 # Save block design and close the project
 save_bd_design $msg_level
 

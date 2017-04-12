@@ -25,8 +25,14 @@ else
   DDRI_FILTER="\-\- only for DDRI_USED=TRUE"
 fi
 
+if [ "NVME_USED" == "TRUE" ]; then
+  NVME_FILTER="\-\- only for NVME_USED!=TRUE"
+else
+  NVME_FILTER="\-\- only for NVME_USED=TRUE"
+fi
+
 for vhdsource in *.vhd_source; do
     vhdfile=`echo $vhdsource | sed 's/vhd_source$/vhd/'`
     echo "Generating $vhdfile"
-    grep -v "$DDRI_FILTER" $vhdsource > $vhdfile
+    grep -v "$DDRI_FILTER" $vhdsource | grep -v "$NVME_FILTER" > $vhdfile
 done
