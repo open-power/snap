@@ -38,13 +38,13 @@ short write_burst_of_data_to_mem(snap_membus_t *dout_gmem, snap_membus_t *d_ddrm
     short rc;
     switch (memory_type) {
 	case HOST_DRAM:
-       		memcpy((snap_membus_t  *) (dout_gmem + output_address), 
-				buffer, size_in_bytes_to_transfer);
+		memcpy((snap_membus_t  *) (dout_gmem + output_address),
+			buffer, size_in_bytes_to_transfer);
        		rc =  0;
 		break;
 	case CARD_DRAM:
-       		memcpy((snap_membus_t  *) (d_ddrmem + output_address), 
-				buffer, size_in_bytes_to_transfer);
+		memcpy((snap_membus_t  *) (d_ddrmem + output_address),
+			buffer, size_in_bytes_to_transfer);
        		rc =  0;
 		break;
 	default:
@@ -61,13 +61,13 @@ short read_burst_of_data_from_mem(snap_membus_t *din_gmem, snap_membus_t *d_ddrm
      short rc;
     switch (memory_type) {
 	case HOST_DRAM:
-        	memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address), 
-				size_in_bytes_to_transfer);
+		memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
+			size_in_bytes_to_transfer);
        		rc =  0;
 		break;
 	case CARD_DRAM:
-        	memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address), 
-				size_in_bytes_to_transfer);
+		memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address),
+			size_in_bytes_to_transfer);
        		rc =  0;
 		break;
 	default:
@@ -96,14 +96,18 @@ void hls_action(snap_membus_t  *din_gmem, snap_membus_t  *dout_gmem,
 
 // Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Config
-#pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg	offset=0x010 
+#pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg	offset=0x010
 #pragma HLS DATA_PACK variable=Action_Register
-#pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg	offset=0x100 
+#pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg	offset=0x100
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
 // Hardcoded numbers
-  Action_Config->action_type   = (snapu32_t) MEMCOPY_ACTION_TYPE;
-  Action_Config->release_level = (snapu32_t) RELEASE_LEVEL;
+	if (Action_Register->Control.flags==0) {
+		Action_Config->action_type   = (snapu32_t) MEMCOPY_ACTION_TYPE;
+		Action_Config->release_level = (snapu32_t) RELEASE_LEVEL;
+		Action_Register->Control.Retc = (snapu32_t) 0xe00f;
+		return;
+	}
 
 
   // VARIABLES

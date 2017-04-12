@@ -623,20 +623,19 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	unsigned int mmio_in, mmio_out;
 	int attach_flags = SNAP_CCR_DIRECT_MODE;	/* FIX ME for Job mode */
 
-	if (cjob->wout_size > 112) {
+	if (cjob->wout_size > 6*16) {		/* Size must be less than addr[6] */
 		errno = EINVAL;
 		return -1;
 	}
 
 	memset(&job, 0, sizeof(job));
-	job.action = (uint8_t)cjob->action;	/* FIX me */
 	job.flags = 0x01;			/* Fix me */
-	job.seq = 0xbeef;
-	job.retc = 0x00000000;
+	job.retc = 0;
+	job.seq = card->seq++;
 	job.priv_data = 0xdeadbeefc0febabeull;
 
 	/* Fill workqueue cacheline which we need to transfer to the action */
-	if (cjob->win_size <= 112) {
+	if (cjob->win_size <= 6*16) {
 		memcpy(&job.user, (void *)(unsigned long)cjob->win_addr,
 		       MIN(cjob->win_size, sizeof(job.user)));
 		mmio_out = cjob->win_size / sizeof(uint32_t);
@@ -650,6 +649,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	}
 	mmio_in = 16 / sizeof(uint32_t) + mmio_out;
 
+	dnut_trace("%s: Connect to Action 0x%x\n", __func__, (uint32_t)cjob->action);
 	if (irq)
 		attach_flags |= SNAP_CCR_IRQ_ATTACH;
 	if (dnut_attach_action(card, (uint32_t)cjob->action, attach_flags, timeout_sec)) {
@@ -658,7 +658,8 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 		return -1;
 	}
 
-	dnut_trace("%s: PASS PARAMETERS to Action 0x%x\n", __func__, (uint32_t)cjob->action);
+	job.short_action = card->sat;
+	dnut_trace("%s: PASS PARAMETERS to Short Action %d\n", __func__, card->sat);
 
 	/* __hexdump(stderr, &job, sizeof(job)); */
 

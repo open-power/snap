@@ -122,8 +122,8 @@ static inline void dnut_addr_set(struct dnut_addr *da,
 {
 	da->addr = (unsigned long)addr;
 	da->size = size;
-	da->type = type;				\
-	da->flags = flags;				\
+	da->type = type;
+	da->flags = flags;
 }
 
 /**********************************************************************

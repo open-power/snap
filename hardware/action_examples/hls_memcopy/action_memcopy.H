@@ -25,7 +25,7 @@
 #include "hls_snap.H"
 
 #define MEMCOPY_ACTION_TYPE 0x10141000
-#define RELEASE_LEVEL       0x00000020 
+#define RELEASE_LEVEL       0x00000020
 
 #define MAX_NB_OF_BYTES_READ  (4 * 1024)
 #define CARD_DRAM_SIZE (1 * 1024 *1024 * 1024)
