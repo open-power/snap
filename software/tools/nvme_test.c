@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'd':	/* drive */
 			drive = strtol(optarg, (char **)NULL, 0);
-			if ((0 != drive) || (1 != drive)) {
+			if ((0 != drive) && (1 != drive)) {
 				VERBOSE0("Error: Drive (-d, --drive) must be 0 or 1\n");
 				exit(1);
 			}
