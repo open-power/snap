@@ -216,10 +216,21 @@
     fi # hls_hashjoin
 
     if [[ ${env_action} == "memcopy" && "$NVME_USED" == "TRUE" ]];then echo -e "$del\ntesting nvme"
-      t="$DONUT_ROOT/software/tools/nvmeBU.py"                                                  ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$DONUT_ROOT/software/tools/stage2 -a6 -S2          -t100 -vv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  6..10
-      t="$DONUT_ROOT/software/tools/nvmeWR.py"                                                  ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$DONUT_ROOT/software/tools/stage2 -a4 -S2 -D0x4000 -t100 -vv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  6..10
+      t="$DONUT_ROOT/software/tools/nvmeBU.py 1"                                                ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/tools/nvme_test -h"                                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/tools/stage2 -a6 -S2          -t100 -vv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/tools/nvmeWR.py 1"                                                ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/tools/stage2 -a4 -S2 -D0x8000 -t100 -vv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/tools/nvme_test -d1           -t100 -vv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/tools/nvme_test -d1 -b4       -t100 -vv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+    fi # nvme
+
+    if [[ ${env_action} == "hls_bfs" ]];then echo -e "$del\ntesting BFS"
+      t="$DONUT_ROOT/software/examples/demo_bfs -h"                                             ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/examples/demo_bfs -r50        -t30000 -v"                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     for size in {1..3}; do
+#       t="$DONUT_ROOT/software/examples/demo_bfs -r50        -t30000 -v"                       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     done
     fi # nvme
 
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"
