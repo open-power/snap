@@ -62,6 +62,7 @@ update_ip_catalog $msg_level
 # Create interface ports
 set DDR_M_AXI [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 DDR_M_AXI ]
 set_property -dict [ list \
+#CONFIG.ID_WIDTH {2} \
 CONFIG.ADDR_WIDTH {32} \
 CONFIG.DATA_WIDTH {128} \
 CONFIG.NUM_READ_OUTSTANDING {2} \
