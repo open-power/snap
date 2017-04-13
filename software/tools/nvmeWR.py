@@ -92,59 +92,60 @@ if (len(sys.argv) > 1):
     if(sys.argv[1] == "1"): SSD0_USED = False
 
 
+if (SSD0_USED):
+    print ('start  SSD0 write')
+    AFU_MMIO.write(0x10030,0xa)  # write to nvme
+    AFU_MMIO.write(0x10034,0x0)
+    AFU_MMIO.write(0x10038,0x0)
+    AFU_MMIO.write(0x1003c,0x0)
+    AFU_MMIO.write(0x10040,0x0)
+    AFU_MMIO.write(0x10044,0x10)
+    AFU_MMIO.write(0x10000,1)
+    print ('waiting for command to complete')
+    data = 0
+    while (data != 0xc ):
+        data = AFU_MMIO.read(0x10000)
+        print (" rc = %x " % data)
+    print ('NVMe write command completed')
 
-print ('start  SSD0 write')
-AFU_MMIO.write(0x10030,0xa)  # write to nvme
-AFU_MMIO.write(0x10034,0x0)
-AFU_MMIO.write(0x10038,0x0)
-AFU_MMIO.write(0x1003c,0x0)
-AFU_MMIO.write(0x10040,0x0)
-AFU_MMIO.write(0x10044,0x10)
-AFU_MMIO.write(0x10000,1)
-print ('waiting for command to complete')
-data = 0
-# 
-while (data != 0xc ):
-    data = AFU_MMIO.read(0x10000)
-    print (" rc = %x " % data)
+if (SSD1_USED):
+    print ('start  SSD1 write')
+    AFU_MMIO.write(0x10030,0x1a)  # write to nvme
+    AFU_MMIO.write(0x10034,0x0)
+    AFU_MMIO.write(0x10038,0x0)
+    AFU_MMIO.write(0x1003c,0x0)
+    AFU_MMIO.write(0x10040,0x0)
+    AFU_MMIO.write(0x10044,0x10)
+    AFU_MMIO.write(0x10000,1)
+    print ('waiting for command to complete')
+    data = 0
+    while (data != 0xc ):
+        data = AFU_MMIO.read(0x10000)
+        print (" rc = %x " % data)
+    print ('NVMe write command completed')
 
-print ('NVMe write command completed')
+if (SSD0_USED):
+    AFU_MMIO.write(0x10030,0xb)
+    AFU_MMIO.write(0x1003c,0x4000)
+    print ('start SSD0 read')
+    AFU_MMIO.write(0x10000,1)
+    print ('waiting for command to complete')
+    data = 0
+    while (data != 0xc ):
+        data = AFU_MMIO.read(0x10000)
+        print (" rc = %x " % data)
+    print ('NVMe read command completed')
 
-print ('start  SSD1 write')
-AFU_MMIO.write(0x10030,0x1a)  # write to nvme
-AFU_MMIO.write(0x10000,1)
-print ('waiting for command to complete')
-data = 0
-while (data != 0xc ):
-    data = AFU_MMIO.read(0x10000)
-    print (" rc = %x " % data)
-
-print ('NVMe write command completed')
-
-
-AFU_MMIO.write(0x10030,0xb)
-AFU_MMIO.write(0x1003c,0x4000)
-print ('start SSD0 read')
-AFU_MMIO.write(0x10000,1)
-print ('waiting for command to complete')
-data = 0
-# 
-while (data != 0xc ):
-    data = AFU_MMIO.read(0x10000)
-    print (" rc = %x " % data)
-
-print ('NVMe read command completed')
-AFU_MMIO.write(0x10030,0x1b)
-AFU_MMIO.write(0x1003c,0x8000)
-print ('start SSD1 read')
-AFU_MMIO.write(0x10000,1)
-print ('waiting for command to complete')
-data = 0
-# 
-while (data != 0xc ):
-    data = AFU_MMIO.read(0x10000)
-    print (" rc = %x " % data)
-
-print ('NVMe read command completed')
+if (SSD1_USED):
+    AFU_MMIO.write(0x10030,0x1b)
+    AFU_MMIO.write(0x1003c,0x8000)
+    print ('start SSD1 read')
+    AFU_MMIO.write(0x10000,1)
+    print ('waiting for command to complete')
+    data = 0
+    while (data != 0xc ):
+        data = AFU_MMIO.read(0x10000)
+        print (" rc = %x " % data)
+    print ('NVMe read command completed')
 
 
