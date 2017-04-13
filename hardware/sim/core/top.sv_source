@@ -874,14 +874,14 @@ module top (
                                                        //-- only for NVME_USED=TRUE
   // NVMe model                                        //-- only for NVME_USED=TRUE
   nvme_model nvme_model (                              //-- only for NVME_USED=TRUE
-    .pci_user_reset_n(~pci_user_reset),                //-- only for NVME_USED=TRUE
-    pcie_rc0_rxn,      		                       //-- only for NVME_USED=TRUE
-    pcie_rc0_rxp, 				       //-- only for NVME_USED=TRUE
-    pcie_rc0_txn,                                      //-- only for NVME_USED=TRUE
-    pcie_rc0_txp, 				       //-- only for NVME_USED=TRUE
-    pcie_rc1_rxn,                                      //-- only for NVME_USED=TRUE
-    pcie_rc1_rxp, 				       //-- only for NVME_USED=TRUE
-    pcie_rc1_txn,                                      //-- only for NVME_USED=TRUE
-    pcie_rc1_txp                                       //-- only for NVME_USED=TRUE
+    .unit_reset_n(~pci_user_reset),                    //-- only for NVME_USED=TRUE
+    .pcie_rc0_rxn(pcie_rc0_rxn),      		       //-- only for NVME_USED=TRUE
+    .pcie_rc0_rxp(pcie_rc0_rxp), 		       //-- only for NVME_USED=TRUE
+    .pcie_rc0_txn(pcie_rc0_txn),                       //-- only for NVME_USED=TRUE
+    .pcie_rc0_txp(pcie_rc0_txp), 		       //-- only for NVME_USED=TRUE
+    .pcie_rc1_rxn(pcie_rc1_rxn),                       //-- only for NVME_USED=TRUE
+    .pcie_rc1_rxp(pcie_rc1_rxp), 		       //-- only for NVME_USED=TRUE
+    .pcie_rc1_txn(pcie_rc1_txn),                       //-- only for NVME_USED=TRUE
+    .pcie_rc1_txp(pcie_rc1_txp)                        //-- only for NVME_USED=TRUE
     );                                                 //-- only for NVME_USED=TRUE 
 endmodule
