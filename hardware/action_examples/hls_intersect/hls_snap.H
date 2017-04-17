@@ -58,7 +58,9 @@ typedef ap_uint<64>        snapu64_t;
 typedef ap_uint<32>        snapu32_t;
 typedef ap_uint<16>        snapu16_t;
 typedef ap_uint<8>         snapu8_t;
+typedef ap_uint<1>         snap_bool_t;
 
+typedef ap_uint<MEMDW>     value_t;
 /* enum definitions should stay in sync with include/libdonut.h */
 enum {
 	RET_CODE_OK      = 0x00000102,
