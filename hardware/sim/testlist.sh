@@ -108,7 +108,7 @@
       done
       done
       done
-      if [[ "$DDR3_USED" == "TRUE" || "$DDR4_USED" == "TRUE" || "$SDRAM_USED" == "TRUE" ]]; then echo -e "$del\ntesting DDR"
+      if [[ "$DDR3_USED" == "TRUE" || "$DDR4_USED" == "TRUE" || "$BRAM_USED" == "TRUE" || "$SDRAM_USED" == "TRUE" ]]; then echo -e "$del\ntesting DDR"
         for num64 in 1 5 63 64;do         # 1..64
         for align in 4096 1024 256 64; do # must be mult of 64
         for num4k in 0 1 3 7; do          # 1=6sec, 7=20sec
