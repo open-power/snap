@@ -55,7 +55,7 @@
 
 // BRAM stays in local FPGA
 // When HT_ENTRY_NUM = (1<<21), it costs 2Mbits
-#define WIDTH_EXP 9
+#define WIDTH_EXP 7
 #define BRAM_WIDTH (1<<WIDTH_EXP)
 static ap_uint<BRAM_WIDTH> hash_used[HT_ENTRY_NUM/BRAM_WIDTH];
 
