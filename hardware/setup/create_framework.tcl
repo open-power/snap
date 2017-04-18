@@ -99,6 +99,10 @@ if { $hls_support == "TRUE" } {
 set_property used_in_simulation false [get_files $root_dir/hdl/core/psl_fpga.vhd]
 # Action Files
 add_files            -fileset sources_1 -scan_for_includes $action_dir/
+if { $nvme_used == "FALSE" } {
+  remove_files  $action_dir/action_axi_nvme.vhd
+}
+
 # Sim Files
 set_property SOURCE_SET sources_1 [get_filesets sim_1]
 add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/top.sv
@@ -132,12 +136,12 @@ add_files -norecurse  $root_dir/ip/fifo_513x512/fifo_513x512.xci $msg_level
 export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_513x512/fifo_513x512.xci"] -force $msg_level
 # DDR3 / BRAM IPs
 if { $ddri_used == "TRUE" } {
-  if { $fpga_card == "KU3" } {
-    add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci $msg_level
-    export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force $msg_level
-  } else {
+  if { $nvme_used == "TRUE" } {
     add_files -norecurse $root_dir/ip/axi_interconnect/axi_interconnect.xci $msg_level
     export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_interconnect/axi_interconnect.xci"] -force $msg_level
+  } else {
+    add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci $msg_level
+    export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force $msg_level
   }
   if { $bram_used == "TRUE" } {
     add_files -norecurse $root_dir/ip/block_RAM/block_RAM.xci $msg_level

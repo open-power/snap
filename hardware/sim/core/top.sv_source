@@ -206,6 +206,7 @@ module top (
   wire            ah_ctagpar;
   wire   [0:12]   ah_com;
   wire            ah_compar;
+  wire   [0:2]    ah_cpad;
   wire   [0:2]    ah_cabt;
   wire   [0:63]   ah_cea;
   wire            ah_ceapar;
@@ -768,6 +769,7 @@ module top (
     .ah_ctagpar(ah_ctagpar),
     .ah_com(ah_com),
     .ah_compar(ah_compar),
+    .ah_cpad(ah_cpad),
     .ah_cabt(ah_cabt),
     .ah_cea(ah_cea),
     .ah_ceapar(ah_ceapar),

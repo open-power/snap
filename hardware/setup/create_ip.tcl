@@ -24,6 +24,7 @@ set ip_dir       $root_dir/ip
 set ddri_used    $::env(DDRI_USED)
 set ddr3_used    $::env(DDR3_USED)
 set ddr4_used    $::env(DDR4_USED)
+set nvme_used    $::env(NVME_USED)
 set bram_used    $::env(BRAM_USED)
 #set axi_id_width $::env(NUM_OF_ACTIONS)
 set axi_id_width 4
@@ -106,9 +107,19 @@ export_simulation -of_objects [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] -dir
 # DDR4_USED=TRUE 4GB FlashGT DDR4 RAM
 if { $ddri_used == "TRUE" } {
   
-  if { $fpga_card == "KU3" } {
+  if { $nvme_used == "TRUE" } {
+    #create axi interconect for axi_card_mem
+    puts "	                      generating IP axi_interconect"
+    create_ip -name axi_interconnect -vendor xilinx.com -library ip -version 1.7 -module_name axi_interconnect -dir $ip_dir 
+    set_property -dict [list CONFIG.NUM_SLAVE_PORTS {2} CONFIG.THREAD_ID_WIDTH {1} CONFIG.INTERCONNECT_DATA_WIDTH {512} CONFIG.S00_AXI_DATA_WIDTH {512} CONFIG.S01_AXI_DATA_WIDTH {128} CONFIG.M00_AXI_DATA_WIDTH {512} CONFIG.S00_AXI_IS_ACLK_ASYNC {1} CONFIG.S01_AXI_IS_ACLK_ASYNC {1} CONFIG.M00_AXI_IS_ACLK_ASYNC {1} CONFIG.S00_AXI_REGISTER {1} CONFIG.S01_AXI_REGISTER {1} CONFIG.M00_AXI_REGISTER {1}] [get_ips axi_interconnect]
+    set_property generate_synth_checkpoint false [get_files $ip_dir/axi_interconnect/axi_interconnect.xci]
+    generate_target {instantiation_template}     [get_files $ip_dir/axi_interconnect/axi_interconnect.xci]
+    generate_target all                          [get_files $ip_dir/axi_interconnect/axi_interconnect.xci]
+    export_ip_user_files -of_objects             [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] -no_script -sync -force -quiet
+    export_simulation    -of_objects             [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
+  } else {
     #create clock converter for axi_card_mem
-    puts "	                     generating IP axi_clock_converter"
+    puts "	                      generating IP axi_clock_converter"
     create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir 
 
     if { $ddr3_used == "TRUE" } {
@@ -121,16 +132,6 @@ if { $ddri_used == "TRUE" } {
     generate_target all                          [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] $msg_level
     export_ip_user_files -of_objects             [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] -no_script -force $msg_level
     export_simulation    -of_objects             [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
-  } else {
-    #create axi interconect for axi_card_mem
-    puts "	                     generating IP axi_interconect"
-    create_ip -name axi_interconnect -vendor xilinx.com -library ip -version 1.7 -module_name axi_interconnect -dir $ip_dir 
-    set_property -dict [list CONFIG.NUM_SLAVE_PORTS {2} CONFIG.THREAD_ID_WIDTH {1} CONFIG.INTERCONNECT_DATA_WIDTH {512} CONFIG.S00_AXI_DATA_WIDTH {512} CONFIG.S01_AXI_DATA_WIDTH {128} CONFIG.M00_AXI_DATA_WIDTH {512} CONFIG.S00_AXI_IS_ACLK_ASYNC {1} CONFIG.S01_AXI_IS_ACLK_ASYNC {1} CONFIG.M00_AXI_IS_ACLK_ASYNC {1} CONFIG.S00_AXI_REGISTER {1} CONFIG.S01_AXI_REGISTER {1} CONFIG.M00_AXI_REGISTER {1}] [get_ips axi_interconnect]
-    set_property generate_synth_checkpoint false [get_files $ip_dir/axi_interconnect/axi_interconnect.xci]
-    generate_target {instantiation_template}     [get_files $ip_dir/axi_interconnect/axi_interconnect.xci]
-    generate_target all                          [get_files $ip_dir/axi_interconnect/axi_interconnect.xci]
-    export_ip_user_files -of_objects             [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] -no_script -sync -force -quiet
-    export_simulation    -of_objects             [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
   }
 
   if { $bram_used == "TRUE" } {
