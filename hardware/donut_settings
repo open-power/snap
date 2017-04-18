@@ -165,7 +165,7 @@ while [ -z "$SETUP_DONE" ]; do
     echo "SDRAM_USED              is set to  \"$SDRAM_USED\""
   fi
 
-  if [ -z "NVME_USED" ]; then
+  if [ -z "$NVME_USED" ]; then
     export NVME_USED="FALSE"
     echo "Variable NVME_USED      is not set. Will default to  \"FALSE\""
   else
