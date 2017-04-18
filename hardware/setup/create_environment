@@ -172,6 +172,9 @@
 
      vivado -mode batch -source create_framework.tcl -notrace
      if [[ $? != 0 ]];then echo "error in create_framework.tcl";exit -1;fi
+
+     vivado -mode batch -source export_xsim.tcl -notrace
+     
    fi
  fi # PREPARE_ENV == 1
 

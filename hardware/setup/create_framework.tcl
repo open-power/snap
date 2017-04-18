@@ -158,8 +158,8 @@ if { $ddri_used == "TRUE" } {
 update_compile_order -fileset sources_1 $msg_level
 
 # Add NVME
-puts "	                     adding NVMe block design"
 if { $nvme_used == TRUE } {
+  puts "	                      adding NVMe block design"
   set_property  ip_repo_paths $root_dir/hdl/nvme/ [current_project]
   update_ip_catalog  $msg_level
   add_files -norecurse                          $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd  $msg_level
