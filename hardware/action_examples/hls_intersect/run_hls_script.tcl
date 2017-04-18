@@ -1,6 +1,6 @@
 open_project "hlsIntersect_xcku060-ffva1156-2-e"
 
-set_top action_wrapper
+set_top hls_action
 
 # Can that be a list?
 foreach file [ list kernel.cpp  ] {
