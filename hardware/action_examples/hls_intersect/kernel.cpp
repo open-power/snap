@@ -186,10 +186,10 @@ static short make_hashtable(snap_membus_t  *d_ddrmem,
             hash_entry = 0;
             if(used == 0)
             {
-                hash_used[index>>WIDTH_EXP](index(WIDTH_EXP-1,0), index(WIDTH_EXP-1,0)) = 1;
                 hash_entry(31,0) = 1;
                 hash_entry(63,32) = offset;
                 write_bulk_ddr(d_ddrmem, HASH_TABLE_ADDR + index * BPERDW, BPERDW, &hash_entry);
+                hash_used[index>>WIDTH_EXP](index(WIDTH_EXP-1,0), index(WIDTH_EXP-1,0)) = 1;
             }
             else
             {
