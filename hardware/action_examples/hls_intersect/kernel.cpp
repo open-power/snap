@@ -109,15 +109,13 @@ static short compare(value_t a, value_t b)
     snapu16_t kkk =0;
     snapu8_t byte1, byte2;
 #pragma HLS UNROLL
-    for (kkk = 0; kkk < sizeof(value_t); kkk++)
+    for (kkk = 0; kkk < 2; kkk++)
     {
-        byte1 = a((kkk<<3 )+7, kkk<<3);
-        byte2 = b((kkk<<3 )+7, kkk<<3);
+        byte1 = a((kkk<<8 )+255, kkk<<8);
+        byte2 = b((kkk<<8 )+255, kkk<<8);
 
-        if (byte1 > byte2)
+        if (byte1 != byte2)
             return 1;
-        else if (byte1 < byte2)
-            return -1;
     }
     return 0;
 }
@@ -125,22 +123,22 @@ static short compare(value_t a, value_t b)
 
 static uint32_t ht_hash(value_t key)
 {
-    
-    snapu16_t bit = 0;
-    snapu16_t k = 0;
-    snapu16_t high_bound;
-    //do it in parallel
-    
+    short k;
     ap_uint<HT_ENTRY_NUM_EXP> hash_val = 0;
-    while (bit < ENTRY_BYTES*8 )
+#pragma HLS UNROLL
+    for (k =0; k < 4; k++)
     {
-        high_bound = MIN((snapu16_t)( ENTRY_BYTES * 8 -1),(snapu16_t)( HT_ENTRY_NUM_EXP*k + HT_ENTRY_NUM_EXP - 1));
-        hash_val += key(high_bound, HT_ENTRY_NUM_EXP*k);
-        bit += HT_ENTRY_NUM_EXP;
-        k ++;
+        hash_val = hash_val + key(20  + k*126,  0 + k*126) +
+                              key(41  + k*126, 21 + k*126) + 
+                              key(62  + k*126, 42 + k*126) + 
+                              key(83  + k*126, 63 + k*126) + 
+                              key(104 + k*126, 84 + k*126) +
+                              key(125 + k*126,105 + k*126);
     }
 
-    //return hashval %HT_ENTRY_NUM;  //This step is not needed as we limit hashval to 24bits.  
+    // Counting for 63bytes. 
+    // 63byte/21bit = 24 bulks. Add 6 bulk in one cycle, and finish in 4 cycles.
+    //return hashval %HT_ENTRY_NUM;  //This step is not needed as we limit hashval to 21bits.  
     return hash_val ; 
 }
 
@@ -218,7 +216,7 @@ static short make_hashtable(snap_membus_t  *d_ddrmem,
     return 0;
 }
 
-static void check_table2(snap_membus_t  *d_ddrmem,
+static snapu32_t check_table2(snap_membus_t  *d_ddrmem,
                   action_reg      *Action_Register)
 {
     snapu32_t index;
@@ -276,14 +274,13 @@ static void check_table2(snap_membus_t  *d_ddrmem,
         left_bytes -= MAX_NB_OF_BYTES_READ;
         addr       += MAX_NB_OF_BYTES_READ;
     }
-    Action_Register->Data.res_table.size = res_size;
-    Action_Register->Data.method = HASH_METHOD + 0x1000;
+    return res_size;
 }
 
 //--------------------------------------------------------------------------------------------
 //--- MAIN PROGRAM ---------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
-void action_wrapper(snap_membus_t  *din_gmem,
+void hls_action(snap_membus_t  *din_gmem,
                      snap_membus_t  *dout_gmem,
 	                 snap_membus_t  *d_ddrmem,
                      action_reg            *Action_Register,
@@ -312,6 +309,7 @@ void action_wrapper(snap_membus_t  *din_gmem,
     Action_Config->release_level = (snapu32_t) RELEASE_LEVEL;
 
     short rc = 0;
+    snapu32_t result_size=0;
 
     if(Action_Register->Data.step == 1)
     {
@@ -357,7 +355,7 @@ void action_wrapper(snap_membus_t  *din_gmem,
                 Action_Register->Control.Retc = RET_CODE_FAILURE;
                 return;
             }
-            check_table2(d_ddrmem, Action_Register);
+            result_size = check_table2(d_ddrmem, Action_Register);
         }
        // else if (Action_Register->Data.method == SORT_METHOD)
        // {
@@ -376,6 +374,7 @@ void action_wrapper(snap_membus_t  *din_gmem,
     }
         
     Action_Register->Control.Retc = RET_CODE_OK;
+    Action_Register->Data.res_table.size = result_size;
     return;
 }
 
