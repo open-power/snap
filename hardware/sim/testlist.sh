@@ -85,9 +85,9 @@
 #     t="$DONUT_ROOT/software/tools/stage2 -h"                                                  ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
 #     t="$DONUT_ROOT/software/tools/stage2                 -t100      "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  4..105
 #     t="$DONUT_ROOT/software/tools/stage2     -s2 -e4 -i1 -t40       "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..33
-      t="$DONUT_ROOT/software/tools/stage2 -a1             -t200"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #t 4..112..33min
+#     t="$DONUT_ROOT/software/tools/stage2 -a1             -t200"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #t 4..112..33min
       t="$DONUT_ROOT/software/tools/stage2 -a1 -s1 -e2 -i1 -t100  -vv "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
-      t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e4 -i1 -t10"                                ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
+      t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e4 -i1 -t100"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
       t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e8 -i1 -t100"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..76..12min
       if [[ "$ver" == "000800" && "$dist" > "40" || "$vers" > "000800" ]];then echo "including interrupts starting with version00.08.00 dist41"
         t="$DONUT_ROOT/software/tools/stage2 -a1 -s1 -e2 -i1 -t100 -I -vv "                     ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
@@ -144,6 +144,8 @@
       # for size in 2 83; do                      # still error with 83B ?
         for size in 2 8 16 64;do
       # for size in 2 8 16 64 128 256 512 1024; do # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
+      # for size in 255 255 256 256 257 257 258 258 259 259 260 260; do
+      # for size in 83 255 256 257 1024 1025 4095 4096 4097; do
       # for size in 2 31 32 33 64 65 80 81 83 255 256 257 1024 1025 4096 4097; do
         #### select 1 checking method
         # t="$DONUT_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -v -t20"   ;echo -e "$t $l"; # memcopy without checking behind buffer

@@ -25,7 +25,7 @@ normal=$(tput sgr0)
 # TCL parameters
 directory=hlsMemcpy
 name=memcopy
-wrapper=action_wrapper
+wrapper=hls_action
 
 # Examples:
 #   xcku060-ffva1156-2-e

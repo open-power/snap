@@ -219,7 +219,7 @@ ap_uint<64> find_nb_occurences_max(action_input_reg *Action_Input)
 
 //*** MAIN PROGRAM *******************************************//
 //************************************************************//
-void action_wrapper(ap_uint<memDW> *din_gmem, ap_uint<memDW> *dout_gmem, ap_uint<memDW> *d_ddrmem,
+void hls_action(ap_uint<memDW> *din_gmem, ap_uint<memDW> *dout_gmem, ap_uint<memDW> *d_ddrmem,
                           action_input_reg *Action_Input, action_output_reg *Action_Output)
 {
 

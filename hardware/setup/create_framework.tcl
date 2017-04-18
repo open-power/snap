@@ -33,6 +33,14 @@ set simulator   $::env(SIMULATOR)
 set vivadoVer   [version -short]
 set msg_level    $::env(MSG_LEVEL)
 
+if { [info exists ::env(HLS_SUPPORT)] == 1 } {
+    set hls_support [string toupper $::env(HLS_SUPPORT)]
+} elseif { [string first "HLS" [string toupper $action_dir]] != -1 } {
+  set hls_support "TRUE"
+} else {
+  set hls_support "not defined"
+}
+
 #debug information
 #puts $root_dir
 #puts $pslse_dir
@@ -82,6 +90,9 @@ set_property STEPS.WRITE_BITSTREAM.ARGS.BIN_FILE true [get_runs impl_1]
 puts "	                      import design files"
 # HDL Files
 add_files -scan_for_includes $root_dir/hdl/core/
+if { $hls_support == "TRUE" } {
+  add_files -scan_for_includes $root_dir/hdl/hls/
+}
 set_property used_in_simulation false [get_files $root_dir/hdl/core/psl_fpga.vhd]
 # Action Files
 add_files            -fileset sources_1 -scan_for_includes $action_dir/
