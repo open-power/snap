@@ -1752,147 +1752,147 @@ BEGIN
     );                                                                                  -- only for DDRI_USED=TRUE -- only for FPGACARD=KU3 
 
 
-  act_axi_card_mem0_bid  (3 downto 1) <= "000";                                         --only for DDRI_USED=TRUE -- only for FPGACARD=FGT	
-  act_axi_card_mem0_rid  (3 downto 1) <= "000";                                         --only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+  act_axi_card_mem0_bid  (3 downto 1) <= "000";                                         -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT	
+  act_axi_card_mem0_rid  (3 downto 1) <= "000";                                         -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
    					                                              
 
-  nvm_axi_card_mem0_bid  (1 downto 0) <= "00";                                         --only for DDRI_USED=TRUE -- only for FPGACARD=FGT	
-  nvm_axi_card_mem0_rid  (1 downto 0) <= "00";                                         --only for DDRI_USED=TRUE -- only for FPGACARD=FGT	
+  nvm_axi_card_mem0_bid  (1 downto 0) <= "00";                                          -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT	
+  nvm_axi_card_mem0_rid  (1 downto 0) <= "00";                                          -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT	
 
-                                                                                        --only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-  axi_interconnect_i : axi_interconnect							--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-    PORT MAP (										--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      INTERCONNECT_ACLK       => ha_pclock,                                             --only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      INTERCONNECT_ARESETN    => action_reset_n_q,                                      --only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      S00_AXI_ACLK            => ha_pclock,                                             --only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      S00_AXI_ARESET_OUT_N    => open,                                                  --only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      S01_AXI_ACLK            => ddr_aclk,                                              --only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      S01_AXI_ARESET_OUT_N    => open,                                                  --only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      M00_AXI_ACLK            => sdram_axi_clk,                                         --only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      M00_AXI_ARESET_OUT_N    => open,                                                  --only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-   											--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      --                 								--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      -- FROM ACTION     								--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_araddr          => act_axi_card_mem0_araddr,            			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_arburst         => act_axi_card_mem0_arburst,           			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_arcache         => act_axi_card_mem0_arcache,           			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_arid            => act_axi_card_mem0_arid(0),              			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_arlen           => act_axi_card_mem0_arlen,             			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_arlock          => act_axi_card_mem0_arlock(0),			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_arprot          => act_axi_card_mem0_arprot,            			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_arqos           => act_axi_card_mem0_arqos,             			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_arready         => act_axi_card_mem0_arready,           			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_arsize          => act_axi_card_mem0_arsize,            			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_arvalid         => act_axi_card_mem0_arvalid,           			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_awaddr          => act_axi_card_mem0_awaddr,            			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_awburst         => act_axi_card_mem0_awburst,           			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_awcache         => act_axi_card_mem0_awcache,           			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_awid            => act_axi_card_mem0_awid(0),              			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_awlen           => act_axi_card_mem0_awlen,             			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_awlock          => act_axi_card_mem0_awlock(0),			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_awprot          => act_axi_card_mem0_awprot,            			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_awqos           => act_axi_card_mem0_awqos,             			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_awready         => act_axi_card_mem0_awready,           			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_awsize          => act_axi_card_mem0_awsize, 				--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_awvalid         => act_axi_card_mem0_awvalid,           			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_bid             => act_axi_card_mem0_bid(0),               			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_bready          => act_axi_card_mem0_bready,            			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_bresp           => act_axi_card_mem0_bresp,             			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_bvalid          => act_axi_card_mem0_bvalid,            			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_rdata           => act_axi_card_mem0_rdata,             			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_rid             => act_axi_card_mem0_rid(0),               			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_rlast           => act_axi_card_mem0_rlast,             			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_rready          => act_axi_card_mem0_rready,            			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_rresp           => act_axi_card_mem0_rresp,             			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_rvalid          => act_axi_card_mem0_rvalid,            			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_wdata           => act_axi_card_mem0_wdata,             			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_wlast           => act_axi_card_mem0_wlast,             			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_wready          => act_axi_card_mem0_wready,            			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_wstrb           => act_axi_card_mem0_wstrb,             			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s00_axi_wvalid          => act_axi_card_mem0_wvalid,            			--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      --                 								--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      -- FROM NVMe									--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_araddr          => nvm_axi_card_mem0_araddr(31 downto 0),					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_arburst         => nvm_axi_card_mem0_arburst,					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_arcache         => nvm_axi_card_mem0_arcache,					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_arid            => nvm_axi_card_mem0_arid(2),						--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_arlen           => nvm_axi_card_mem0_arlen,						--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_arlock          => nvm_axi_card_mem0_arlock(0),					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_arprot          => nvm_axi_card_mem0_arprot,					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_arqos           => nvm_axi_card_mem0_arqos,						--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_arready         => nvm_axi_card_mem0_arready(0),					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_arsize          => nvm_axi_card_mem0_arsize,					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_arvalid         => nvm_axi_card_mem0_arvalid(0),					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_awaddr          => nvm_axi_card_mem0_awaddr(31 downto 0),					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_awburst         => nvm_axi_card_mem0_awburst,					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_awcache         => nvm_axi_card_mem0_awcache,					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_awid            => nvm_axi_card_mem0_awid(2),						--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_awlen           => nvm_axi_card_mem0_awlen,						--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_awlock          => nvm_axi_card_mem0_awlock(0),					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_awprot          => nvm_axi_card_mem0_awprot,					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_awqos           => nvm_axi_card_mem0_awqos,						--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_awready         => nvm_axi_card_mem0_awready(0),					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_awsize          => nvm_axi_card_mem0_awsize,					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_awvalid         => nvm_axi_card_mem0_awvalid(0),					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_bid             => nvm_axi_card_mem0_bid(2),						--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_bready          => nvm_axi_card_mem0_bready(0),					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_bresp           => nvm_axi_card_mem0_bresp,						--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_bvalid          => nvm_axi_card_mem0_bvalid(0),					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_rdata           => nvm_axi_card_mem0_rdata,						--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_rid             => nvm_axi_card_mem0_rid(2),						--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_rlast           => nvm_axi_card_mem0_rlast(0),						--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_rready          => nvm_axi_card_mem0_rready(0),					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_rresp           => nvm_axi_card_mem0_rresp,						--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_rvalid          => nvm_axi_card_mem0_rvalid(0),					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_wdata           => nvm_axi_card_mem0_wdata,						--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_wlast           => nvm_axi_card_mem0_wlast(0),						--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_wready          => nvm_axi_card_mem0_wready(0),					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_wstrb           => nvm_axi_card_mem0_wstrb,						--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      s01_axi_wvalid          => nvm_axi_card_mem0_wvalid(0),					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      --                                                                                --only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      -- TO SDRAM                                                                       --only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_araddr          => sdram_axi_araddr,    					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_arburst	      => sdram_axi_arburst,   					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_arcache	      => sdram_axi_arcache,   					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_arid(3 downto 0)=> sdram_axi_arid,      					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_arid(4)         => open,      					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_arlen  	      => sdram_axi_arlen,     					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_arlock 	      => open, -- sdram_axi_arlock,    					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_arprot 	      => sdram_axi_arprot,    					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_arqos  	      => sdram_axi_arqos,     					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_arready	      => sdram_axi_arready,   					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_arsize 	      => sdram_axi_arsize, 					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_arvalid	      => sdram_axi_arvalid,   					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_awaddr 	      => sdram_axi_awaddr,    					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_awburst	      => sdram_axi_awburst,   					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_awcache	      => sdram_axi_awcache,   					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_awid(3 downto 0) => sdram_axi_awid,      					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_awid(4)         => open,      					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_awlen  	      => sdram_axi_awlen,     					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
---      m00_axi_awlock 	      => sdram_axi_awlock,    					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_awprot 	      => sdram_axi_awprot,    					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_awqos  	      => sdram_axi_awqos,     					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_awready	      => sdram_axi_awready,   					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_awsize 	      => sdram_axi_awsize, 					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_awvalid	      => sdram_axi_awvalid,   					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_bid(3 downto 0) => sdram_axi_bid,       					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_bid(4)          => '0',       			  		        --only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_bready 	      => sdram_axi_bready,    					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_bresp  	      => sdram_axi_bresp,     					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_bvalid 	      => sdram_axi_bvalid,    					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_rdata  	      => sdram_axi_rdata,     					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_rid(3 downto 0)  => sdram_axi_rid,       					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_rid(4)          => '0',       					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_rlast  	      => sdram_axi_rlast,     					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_rready 	      => sdram_axi_rready,    					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_rresp  	      => sdram_axi_rresp,     					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_rvalid 	      => sdram_axi_rvalid,    					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_wdata  	      => sdram_axi_wdata,     					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_wlast  	      => sdram_axi_wlast,     					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_wready 	      => sdram_axi_wready,    					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_wstrb  	      => sdram_axi_wstrb,     					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-      m00_axi_wvalid 	      => sdram_axi_wvalid     					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-    );						     					--only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+                                                                                        -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+  axi_interconnect_i : axi_interconnect							-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+    PORT MAP (										-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      INTERCONNECT_ACLK       => ha_pclock,                                             -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      INTERCONNECT_ARESETN    => action_reset_n_q,                                      -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      S00_AXI_ACLK            => ha_pclock,                                             -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      S00_AXI_ARESET_OUT_N    => open,                                                  -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      S01_AXI_ACLK            => ddr_aclk,                                              -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      S01_AXI_ARESET_OUT_N    => open,                                                  -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      M00_AXI_ACLK            => sdram_axi_clk,                                         -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      M00_AXI_ARESET_OUT_N    => open,                                                  -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+   											-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      --                 								-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      -- FROM ACTION     								-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_araddr          => act_axi_card_mem0_araddr,            			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_arburst         => act_axi_card_mem0_arburst,           			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_arcache         => act_axi_card_mem0_arcache,           			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_arid            => act_axi_card_mem0_arid(0),              		-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_arlen           => act_axi_card_mem0_arlen,             			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_arlock          => act_axi_card_mem0_arlock(0),			        -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_arprot          => act_axi_card_mem0_arprot,            			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_arqos           => act_axi_card_mem0_arqos,             			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_arready         => act_axi_card_mem0_arready,           			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_arsize          => act_axi_card_mem0_arsize,            			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_arvalid         => act_axi_card_mem0_arvalid,           			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_awaddr          => act_axi_card_mem0_awaddr,            			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_awburst         => act_axi_card_mem0_awburst,           			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_awcache         => act_axi_card_mem0_awcache,           			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_awid            => act_axi_card_mem0_awid(0),              		-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_awlen           => act_axi_card_mem0_awlen,             			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_awlock          => act_axi_card_mem0_awlock(0),			        -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_awprot          => act_axi_card_mem0_awprot,            			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_awqos           => act_axi_card_mem0_awqos,             			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_awready         => act_axi_card_mem0_awready,           			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_awsize          => act_axi_card_mem0_awsize, 				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_awvalid         => act_axi_card_mem0_awvalid,           			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_bid             => act_axi_card_mem0_bid(0),               		-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_bready          => act_axi_card_mem0_bready,            			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_bresp           => act_axi_card_mem0_bresp,             			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_bvalid          => act_axi_card_mem0_bvalid,            			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_rdata           => act_axi_card_mem0_rdata,             			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_rid             => act_axi_card_mem0_rid(0),               		-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_rlast           => act_axi_card_mem0_rlast,             			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_rready          => act_axi_card_mem0_rready,            			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_rresp           => act_axi_card_mem0_rresp,             			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_rvalid          => act_axi_card_mem0_rvalid,            			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_wdata           => act_axi_card_mem0_wdata,             			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_wlast           => act_axi_card_mem0_wlast,             			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_wready          => act_axi_card_mem0_wready,            			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_wstrb           => act_axi_card_mem0_wstrb,             			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s00_axi_wvalid          => act_axi_card_mem0_wvalid,            			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      --                 								-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      -- FROM NVMe									-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_araddr          => nvm_axi_card_mem0_araddr(31 downto 0),			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_arburst         => nvm_axi_card_mem0_arburst,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_arcache         => nvm_axi_card_mem0_arcache,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_arid            => nvm_axi_card_mem0_arid(2),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_arlen           => nvm_axi_card_mem0_arlen,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_arlock          => nvm_axi_card_mem0_arlock(0),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_arprot          => nvm_axi_card_mem0_arprot,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_arqos           => nvm_axi_card_mem0_arqos,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_arready         => nvm_axi_card_mem0_arready(0),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_arsize          => nvm_axi_card_mem0_arsize,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_arvalid         => nvm_axi_card_mem0_arvalid(0),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_awaddr          => nvm_axi_card_mem0_awaddr(31 downto 0),			-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_awburst         => nvm_axi_card_mem0_awburst,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_awcache         => nvm_axi_card_mem0_awcache,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_awid            => nvm_axi_card_mem0_awid(2),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_awlen           => nvm_axi_card_mem0_awlen,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_awlock          => nvm_axi_card_mem0_awlock(0),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_awprot          => nvm_axi_card_mem0_awprot,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_awqos           => nvm_axi_card_mem0_awqos,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_awready         => nvm_axi_card_mem0_awready(0),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_awsize          => nvm_axi_card_mem0_awsize,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_awvalid         => nvm_axi_card_mem0_awvalid(0),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_bid             => nvm_axi_card_mem0_bid(2),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_bready          => nvm_axi_card_mem0_bready(0),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_bresp           => nvm_axi_card_mem0_bresp,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_bvalid          => nvm_axi_card_mem0_bvalid(0),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_rdata           => nvm_axi_card_mem0_rdata,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_rid             => nvm_axi_card_mem0_rid(2),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_rlast           => nvm_axi_card_mem0_rlast(0),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_rready          => nvm_axi_card_mem0_rready(0),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_rresp           => nvm_axi_card_mem0_rresp,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_rvalid          => nvm_axi_card_mem0_rvalid(0),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_wdata           => nvm_axi_card_mem0_wdata,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_wlast           => nvm_axi_card_mem0_wlast(0),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_wready          => nvm_axi_card_mem0_wready(0),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_wstrb           => nvm_axi_card_mem0_wstrb,				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      s01_axi_wvalid          => nvm_axi_card_mem0_wvalid(0),				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      --                                                                                -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      -- TO SDRAM                                                                       -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_araddr          => sdram_axi_araddr,    					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_arburst	      => sdram_axi_arburst,   					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_arcache	      => sdram_axi_arcache,   					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_arid(3 downto 0)=> sdram_axi_arid,      					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_arid(4)         => open,      					        -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_arlen  	      => sdram_axi_arlen,     					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_arlock 	      => open, -- sdram_axi_arlock,    				-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_arprot 	      => sdram_axi_arprot,    					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_arqos  	      => sdram_axi_arqos,     					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_arready	      => sdram_axi_arready,   					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_arsize 	      => sdram_axi_arsize, 					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_arvalid	      => sdram_axi_arvalid,   					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_awaddr 	      => sdram_axi_awaddr,    					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_awburst	      => sdram_axi_awburst,   					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_awcache	      => sdram_axi_awcache,   					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_awid(3 downto 0) => sdram_axi_awid,      					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_awid(4)         => open,      					        -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_awlen  	      => sdram_axi_awlen,     					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+--      m00_axi_awlock 	      => sdram_axi_awlock,    					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_awprot 	      => sdram_axi_awprot,    					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_awqos  	      => sdram_axi_awqos,     					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_awready	      => sdram_axi_awready,   					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_awsize 	      => sdram_axi_awsize, 					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_awvalid	      => sdram_axi_awvalid,   					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_bid(3 downto 0) => sdram_axi_bid,       					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_bid(4)          => '0',       			  		        -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_bready 	      => sdram_axi_bready,    					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_bresp  	      => sdram_axi_bresp,     					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_bvalid 	      => sdram_axi_bvalid,    					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_rdata  	      => sdram_axi_rdata,     					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_rid(3 downto 0)  => sdram_axi_rid,       					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_rid(4)          => '0',       					        -- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_rlast  	      => sdram_axi_rlast,     					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_rready 	      => sdram_axi_rready,    					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_rresp  	      => sdram_axi_rresp,     					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_rvalid 	      => sdram_axi_rvalid,    					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_wdata  	      => sdram_axi_wdata,     					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_wlast  	      => sdram_axi_wlast,     					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_wready 	      => sdram_axi_wready,    					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_wstrb  	      => sdram_axi_wstrb,     					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+      m00_axi_wvalid 	      => sdram_axi_wvalid     					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
+    );						     					-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
 
   sdram_axi_araddr_s(31 DOWNTO 0) <= '0' & sdram_axi_araddr(31 DOWNTO 1);               -- only for BRAM_USED=TRUE
   sdram_axi_awaddr_s(31 DOWNTO 0) <= '0' & sdram_axi_awaddr(31 DOWNTO 1);		-- only for BRAM_USED=TRUE
