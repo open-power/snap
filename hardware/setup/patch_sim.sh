@@ -25,7 +25,7 @@ if [ "$NAME" == "top.sh" ]; then
   if [ "$SIMULATOR" == "irun" ]; then
     sed -i "s/93 -relax/93 -elaborate -relax/gI"         $1/$2 # run irun up to elaboration, skip execution
     sed -i "s/-top xil_defaultlib.top/-top work.top/gI"  $1/$2 # build top in work library
-    if [ -n $DENALI ];then :
+    if [[ -n ${DENALI} ]];then :
       echo "	                     patch $irun include denali files"
       perl -i.ori -pe 'use Env qw(DENALI);s/(glbl.v)/$1 \\\n       +incdir+"${DENALI}\/ddvapi\/verilog"/mg' $1/$2 # add denali include directory
       perl -i.ori -pe 'use Env qw(DENALI);s/(-namemap_mixgen)/$1 -disable_sem2009 -loadpli1 ${DENALI}\/verilog\/libdenpli.so:den_PLIPtr/mg' $1/$2 # add denali .so

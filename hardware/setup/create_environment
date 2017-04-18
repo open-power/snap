@@ -174,7 +174,7 @@
      if [[ $? != 0 ]];then echo "error in create_framework.tcl";exit -1;fi
 
      vivado -mode batch -source export_xsim.tcl -notrace
-     
+
    fi
  fi # PREPARE_ENV == 1
 
@@ -214,7 +214,7 @@
      fi
      sed -i "s/93 -relax/93 -elaborate -relax/gI"        ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh # run irun up to elaboration, skip execution
      sed -i "s/-top xil_defaultlib.top/-top work.top/gI" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh # build top in work library
-     if [ -n ${DENALI} ];then
+     if [[ -n ${DENALI} ]];then
        echo "env DENALI exists ${DENALI}, include in top.sh"
        perl -i.ori -pe 'use Env qw(DENALI);s/(glbl.v)/$1 \\ \n  +incdir+"${DENALI}\/ddvapi\/verilog"/mg' ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh # add denali include directory
      fi
