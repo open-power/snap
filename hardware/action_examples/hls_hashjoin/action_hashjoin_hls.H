@@ -92,9 +92,9 @@ typedef struct {
 
 //---------------------------------------------------------------------
 typedef struct {
-        CONTROL  Control;   //  16 bytes
-        DATA_HJ  Data;      // 112 bytes
-} action_input_reg;
+        CONTROL Control;    // 16 bytes
+        DATA_HJ Data;       // up to 96 bytes
+} action_reg;
 
 // ISSUE #44
 // => IMPOSSIBLE TO HAVE action_output_reg contiguous to action_input_reg

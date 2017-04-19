@@ -43,28 +43,19 @@ using namespace std;
  * => easy checking in generated files : grep 0x184 hls_action_ctrl_reg_s_axi.vhd
  * this grep should return nothing if no duplication of registers (which is expected)
  */
-static void write_results_in_HJ_regs(action_output_reg *Action_Output,
-			      action_input_reg *Action_Input,
-			      snapu32_t ReturnCode,
-			      snapu64_t field1,
-			      snapu64_t field2,
-			      snapu64_t field3,
-			      snapu64_t field4)
+static void write_HJ_regs(action_reg *reg,
+			  snapu32_t retc,
+			  snapu64_t field1,
+			  snapu64_t field2,
+			  snapu64_t field3)
 {
-	Action_Output->Retc     = (snapu32_t)ReturnCode;
-	Action_Output->Reserved = (snapu64_t)0x0;
-
-	Action_Output->Data.t1_processed   = field1;
-	Action_Output->Data.t2_processed   = field2;
-	Action_Output->Data.t3_produced    = field3;
-	Action_Output->Data.rc             = 0;
-	Action_Output->Data.action_version =  RELEASE_VERSION;
-
-	// Registers unchanged
-	Action_Output->Data.t1 = Action_Input->Data.t1;
-	Action_Output->Data.t2 = Action_Input->Data.t2;
-	Action_Output->Data.t3 = Action_Input->Data.t3;
-	Action_Output->Data.hash_table = Action_Input->Data.hash_table;
+	reg->Control.Retc = (snapu32_t)retc;
+	reg->Control.Reserved = (snapu64_t)0x0;
+	reg->Data.t1_processed = field1;
+	reg->Data.t2_processed = field2;
+	reg->Data.t3_produced  = field3;
+	reg->Data.rc = 0;
+	reg->Data.action_version = RELEASE_VERSION;
 }
 
 /*
@@ -328,8 +319,8 @@ static void write_table3(snap_membus_t *mem, unsigned int max_lines,
 static void do_the_work(snap_membus_t *din_gmem,
 			snap_membus_t *dout_gmem,
 			snap_membus_t *d_ddrmem,
-			action_input_reg *Action_Input,
-			action_output_reg *Action_Output)
+			action_reg *Action_Register,
+			action_RO_config_reg *Action_Config)
 {
 	snapu16_t i, j;
 	short rc;
@@ -361,35 +352,23 @@ static void do_the_work(snap_membus_t *din_gmem,
 
 	//== Parameters fetched in memory ==
 	//==================================
-
-	/*
-	 * FIXME We added the do { } while (0) construct to avoid MMIO
-	 * register duplication which we observed happening when we
-	 * called write_results_in_HJ_regs() multiple times.
-	 */
 	do {
-		/* FIXME Please check if the data alignment matches the expectations */
-		if (Action_Input->Control.action != HASHJOIN_ACTION_TYPE) {
-			ReturnCode = RET_CODE_FAILURE;
-			break;
-		}
-
 		// byte address received need to be aligned with port width
-		T1_address = Action_Input->Data.t1.address;
-		T1_type    = Action_Input->Data.t1.type;
-		T1_size    = Action_Input->Data.t1.size;
+		T1_address = Action_Register->Data.t1.address;
+		T1_type    = Action_Register->Data.t1.type;
+		T1_size    = Action_Register->Data.t1.size;
 		T1_items   = T1_size / sizeof(table1_t);
 		T1_lines   = T1_size / sizeof(snap_membus_t);
 
-		T2_address = Action_Input->Data.t2.address;
-		T2_type    = Action_Input->Data.t2.type;
-		T2_size    = Action_Input->Data.t2.size;
+		T2_address = Action_Register->Data.t2.address;
+		T2_type    = Action_Register->Data.t2.type;
+		T2_size    = Action_Register->Data.t2.size;
 		T2_items   = T2_size / sizeof(table2_t);
 		T2_lines   = T2_size / sizeof(snap_membus_t);
 
-		T3_address = Action_Input->Data.t3.address;
-		T3_type    = Action_Input->Data.t3.type;
-		T3_size    = Action_Input->Data.t3.size;
+		T3_address = Action_Register->Data.t3.address;
+		T3_type    = Action_Register->Data.t3.type;
+		T3_size    = Action_Register->Data.t3.size;
 		T3_lines   = T3_size / sizeof(snap_membus_t);
 		ReturnCode = RET_CODE_OK;
 
@@ -416,8 +395,7 @@ static void do_the_work(snap_membus_t *din_gmem,
 			ReturnCode = RET_CODE_FAILURE;
 	} while (0);
 
-	write_results_in_HJ_regs(Action_Output, Action_Input, ReturnCode, 0, 0,
-				 __table3_idx, 0);
+	write_HJ_regs(Action_Register, ReturnCode, 0, 0, __table3_idx);
 }
 
 /**
@@ -426,42 +404,40 @@ static void do_the_work(snap_membus_t *din_gmem,
  * the cosimulation will not work, since the width of the interface cannot
  * be determined. Using an array din_gmem[...] works too to fix that.
  */
-void hls_action(snap_membus_t *din_gmem,
-		    snap_membus_t *dout_gmem,
-		    snap_membus_t *d_ddrmem,
-		    action_input_reg *Action_Input,
-		    action_output_reg *Action_Output)
+void hls_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
+		snap_membus_t *d_ddrmem,
+		action_reg *Action_Register,
+		action_RO_config_reg *Action_Config)
 {
 	// Host Memory AXI Interface
-#pragma HLS INTERFACE m_axi depth=256 port=din_gmem bundle=host_mem
-#pragma HLS INTERFACE m_axi depth=256 port=dout_gmem bundle=host_mem
-
-#pragma HLS INTERFACE s_axilite depth=256 port=din_gmem bundle=ctrl_reg
-#pragma HLS INTERFACE s_axilite depth=256 port=dout_gmem bundle=ctrl_reg
+#pragma HLS INTERFACE m_axi depth=512 port=din_gmem bundle=host_mem
+#pragma HLS INTERFACE m_axi depth=512 port=dout_gmem bundle=host_mem
+#pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg offset=0x030
+#pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg offset=0x040
 
 	//DDR memory Interface
-#pragma HLS INTERFACE m_axi depth=256 port=d_ddrmem offset=slave bundle=card_mem0
-#pragma HLS INTERFACE s_axilite depth=256 port=d_ddrmem bundle=ctrl_reg
+#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
+#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg offset=0x050
 
 	// Host Memory AXI Lite Master Interface
-#pragma HLS DATA_PACK variable=Action_Input
-#pragma HLS INTERFACE s_axilite port=Action_Input offset=0x080 bundle=ctrl_reg
-#pragma HLS DATA_PACK variable=Action_Output
-#pragma HLS INTERFACE s_axilite port=Action_Output offset=0x104 bundle=ctrl_reg
+#pragma HLS DATA_PACK variable=Action_Config
+#pragma HLS INTERFACE s_axilite port=Action_Config offset=0x010 bundle=ctrl_reg
+#pragma HLS DATA_PACK variable=Action_Register
+#pragma HLS INTERFACE s_axilite port=Action_Register offset=0x100 bundle=ctrl_reg
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
 
 	/* NOTE: switch generates better vhdl than "if" */
 	switch (Action_Register->Control.flags) {
 	case 0:
-		Action_Config->action_type   = (snapu32_t)HASHJOIN_ACTION_TYPE;
-		Action_Config->release_level = (snapu32_t)RELEASE_LEVEL;
+		Action_Config->action_type = (snapu32_t)HASHJOIN_ACTION_TYPE;
+		Action_Config->release_level = (snapu32_t)RELEASE_VERSION;
 		Action_Register->Control.Retc = (snapu32_t)0xe00f;
 		return;
 		break;
 	default:
 		do_the_work(din_gmem, dout_gmem, d_ddrmem,
-			    Action_Input, Action_Output);
+			    Action_Register, Action_Config);
 
 	}
 }
@@ -540,9 +516,13 @@ static table3_t table3[TABLE1_SIZE * TABLE2_SIZE * TABLE2_N];
 static snap_membus_t din_gmem[MEMORY_LINES];    /* content is here */
 static snap_membus_t dout_gmem[MEMORY_LINES];   /* output goes here, empty */
 static snap_membus_t d_ddrmem[MEMORY_LINES];    /* card memory is empty */
-static action_input_reg Action_Input;
-static action_output_reg Action_Output;
+static action_reg Action_Register;
+static action_RO_config_reg Action_Config;
 
+/*
+ * FIXME Algorithm is broken, since the ouput register region got removed and 
+ * replaced by an read/write generatil register region.
+ */
 int main(void)
 {
 	unsigned int i;
@@ -554,19 +534,17 @@ int main(void)
 	memset(dout_gmem, 0, sizeof(dout_gmem));
 	memset(d_ddrmem,  0, sizeof(d_ddrmem));
 
-	Action_Input.Control.action = HASHJOIN_ACTION_TYPE;
-
-	Action_Input.Data.t1.type = HOST_DRAM;
-	Action_Input.Data.t1.address = 0;
-	Action_Input.Data.t1.size = sizeof(table1);
+	Action_Register.Data.t1.type = HOST_DRAM;
+	Action_Register.Data.t1.address = 0;
+	Action_Register.Data.t1.size = sizeof(table1);
 
 	table2_entries = ARRAY_SIZE(table2) * TABLE2_N;
-	Action_Input.Data.t2.type = HOST_DRAM;
-	Action_Input.Data.t2.address = sizeof(table1);
+	Action_Register.Data.t2.type = HOST_DRAM;
+	Action_Register.Data.t2.address = sizeof(table1);
 
-	Action_Input.Data.t3.type = HOST_DRAM;
-	Action_Input.Data.t3.address = sizeof(table1) + TABLE2_N * sizeof(table2);
-	Action_Input.Data.t3.size = sizeof(table3);
+	Action_Register.Data.t3.type = HOST_DRAM;
+	Action_Register.Data.t3.address = sizeof(table1) + TABLE2_N * sizeof(table2);
+	Action_Register.Data.t3.size = sizeof(table3);
 
 	memcpy((uint8_t *)din_gmem, table1, sizeof(table1));
 
@@ -589,24 +567,23 @@ int main(void)
 		unsigned int t3_data;
 		unsigned int todo = MIN(table2_entries, TABLE2_SIZE);
 
-		Action_Input.Data.t2.size = todo * sizeof(table2_t);
+		Action_Register.Data.t2.size = todo * sizeof(table2_t);
 		
 		fprintf(stderr, "Processing %d table2 entries ...\n", todo);
-		hls_action(din_gmem, dout_gmem, d_ddrmem,
-			       &Action_Input, &Action_Output);
+		hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
 
-		Action_Input.Data.t1.address = 0; /* no need to process t1 */
-		Action_Input.Data.t1.size = 0;
-		Action_Input.Data.t2.address += todo * sizeof(table2_t);
+		Action_Register.Data.t1.address = 0; /* no need to process t1 */
+		Action_Register.Data.t1.size = 0;
+		Action_Register.Data.t2.address += todo * sizeof(table2_t);
 
-		t3_found = (int)Action_Output.Data.t3_produced;
+		t3_found = (int)Action_Register.Data.t3_produced;
 		t3_data = t3_found * sizeof(table3_t);
 
 		fprintf(stderr, "Found %d entries for table3 %d bytes\n",
 			t3_found, t3_data);
 
-		Action_Input.Data.t3.address += t3_data;
-		Action_Input.Data.t3.size -= t3_data;
+		Action_Register.Data.t3.address += t3_data;
+		Action_Register.Data.t3.size -= t3_data;
 
 		table3_found += t3_found;
 		table2_entries -= todo;

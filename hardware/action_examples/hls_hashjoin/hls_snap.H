@@ -78,7 +78,7 @@ enum {
 };
 
 typedef struct {
-        snapu8_t  action;
+        snapu8_t  sat; // short action type
         snapu8_t  flags;
         snapu16_t seq;
         snapu32_t Retc;
@@ -91,5 +91,10 @@ typedef struct {
         snapu16_t type;
         snapu16_t flags;
 } dnut_addr; /* 128 bits = 16B */
+
+typedef struct {
+        snapu32_t   action_type; //   4 bytes
+        snapu32_t   release_level; //  4 bytes
+} action_RO_config_reg;
 
 #endif  /* __HLS_SNAP_H__ */
