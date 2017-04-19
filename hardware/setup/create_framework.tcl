@@ -103,7 +103,7 @@ add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/top
 set_property file_type SystemVerilog [get_files $root_dir/sim/core/top.sv]
 set_property used_in_synthesis false [get_files $root_dir/sim/core/top.sv]
 # DDR3 Sim Files
-if { ($fpga_card == "KU3") && ($sdram_used ="TRUE") } {
+if { ($fpga_card == "KU3") && ($sdram_used == "TRUE") } {
   add_files    -fileset sim_1            -scan_for_includes $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/
   remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_twindie.vhd
   remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_lwb.vhd
@@ -183,7 +183,7 @@ if { $nvme_used == TRUE } {
 
 # Add PSL
 puts "	                      import PSL design checkpoint"
-read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict $msg_level 
+read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict $msg_level
 
 # XDC
 # Donut XDC
