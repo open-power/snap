@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/* SNAP HLS_HASHJOIN EXAMPLE */
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -312,10 +314,6 @@ static void write_table3(snap_membus_t *mem, unsigned int max_lines,
 	snap_4KiB_flush(&buf);
 }
 
-//-----------------------------------------------------------------------------
-//--- MAIN PROGRAM ------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
 static void do_the_work(snap_membus_t *din_gmem,
 			snap_membus_t *dout_gmem,
 			snap_membus_t *d_ddrmem,
@@ -397,6 +395,10 @@ static void do_the_work(snap_membus_t *din_gmem,
 
 	write_HJ_regs(Action_Register, ReturnCode, 0, 0, __table3_idx);
 }
+
+//--------------------------------------------------------------------------------------------
+//--- MAIN PROGRAM HASHJOIN ------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------
 
 /**
  * Remarks: Using pointers for the din_gmem, ... parameters is requiring to

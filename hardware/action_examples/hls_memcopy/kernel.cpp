@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+/* SNAP HLS_MEMCOPY EXAMPLE */
 
 #include <string.h>
 #include "ap_int.h"
@@ -77,8 +78,9 @@ short read_burst_of_data_from_mem(snap_membus_t *din_gmem, snap_membus_t *d_ddrm
 }
 
 //--------------------------------------------------------------------------------------------
-//--- MAIN PROGRAM ---------------------------------------------------------------------------
+//--- MAIN PROGRAM MEMCOPY -------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
+
 void hls_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
 		snap_membus_t *d_ddrmem,
 		action_reg *Action_Register,
@@ -164,6 +166,10 @@ void hls_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
 	Action_Register->Control.Retc = (snapu32_t)ReturnCode;
 	return;
 }
+
+//-----------------------------------------------------------------------------
+//--- TESTBENCH ---------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 #ifdef NO_SYNTH
 
