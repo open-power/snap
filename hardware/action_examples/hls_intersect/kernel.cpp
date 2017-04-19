@@ -121,7 +121,7 @@ static short compare(value_t a, value_t b)
 }
 
 
-static uint32_t ht_hash(value_t key)
+static ap_uint<HT_ENTRY_NUM_EXP> ht_hash(value_t key)
 {
     short k;
     ap_uint<HT_ENTRY_NUM_EXP> hash_val = 0;
@@ -149,7 +149,9 @@ static short make_hashtable(snap_membus_t  *d_ddrmem,
     //Something to be cautious: 
     // int type can represent -2G~+2G
     // Input table size is designed to be <=1GB
-    snapu32_t index;
+    ap_uint<HT_ENTRY_NUM_EXP> index;
+    ap_uint<HT_ENTRY_NUM_EXP - WIDTH_EXP> index_high;
+    ap_uint<WIDTH_EXP> index_low;
 
     short ijk;
     snapu32_t read_bytes;
@@ -158,10 +160,11 @@ static short make_hashtable(snap_membus_t  *d_ddrmem,
     snapu32_t offset = 0;
     
     value_t keybuf[MAX_NB_OF_BYTES_READ/BPERDW];
-    value_t hash_entry;
+    value_t hash_entry, new_entry;
 
     ap_uint<5> count;
     snap_bool_t used = 0;
+    ap_uint<BRAM_WIDTH> ram_q;
 
 
     //Hash Table arrangement: 
@@ -181,15 +184,25 @@ static short make_hashtable(snap_membus_t  *d_ddrmem,
         for (ijk = 0; ijk < read_bytes/BPERDW; ijk++)
         {
             index = ht_hash(keybuf[ijk]);
+            index_high = index(HT_ENTRY_NUM_EXP-1, WIDTH_EXP);
+            index_low  = index(WIDTH_EXP-1,0);
 
-            used = hash_used[index>>WIDTH_EXP](index(WIDTH_EXP-1,0), index(WIDTH_EXP-1,0));
-            hash_entry = 0;
+            ram_q = hash_used[index_high];
+
+            used =  ram_q(index_low, index_low);
+            
+            ram_q(index_low, index_low) = 1;
+            hash_used[index_high] = ram_q;
+
+
+
+            new_entry = 0;
             if(used == 0)
             {
-                hash_entry(31,0) = 1;
-                hash_entry(63,32) = offset;
-                write_bulk_ddr(d_ddrmem, HASH_TABLE_ADDR + index * BPERDW, BPERDW, &hash_entry);
-                hash_used[index>>WIDTH_EXP](index(WIDTH_EXP-1,0), index(WIDTH_EXP-1,0)) = 1;
+                new_entry(31,0) = 1;
+                new_entry(63,32) = offset;
+                write_bulk_ddr(d_ddrmem, HASH_TABLE_ADDR + index * BPERDW, BPERDW, &new_entry);
+
             }
             else
             {
@@ -200,9 +213,10 @@ static short make_hashtable(snap_membus_t  *d_ddrmem,
                     return -1; //Hash Table is full. 
                 else
                 {
-                    hash_entry(31,0) = count + 1;
-                    hash_entry((count+1)*32+31, (count+1)*32) = offset;
-                    write_bulk_ddr(d_ddrmem, HASH_TABLE_ADDR + index * BPERDW, BPERDW, &hash_entry);
+                    new_entry = hash_entry;
+                    new_entry(31,0) = count + 1;
+                    new_entry((count+1)*32+31, (count+1)*32) = offset;
+                    write_bulk_ddr(d_ddrmem, HASH_TABLE_ADDR + index * BPERDW, BPERDW, &new_entry);
                 }
             }
             
@@ -219,7 +233,9 @@ static short make_hashtable(snap_membus_t  *d_ddrmem,
 static snapu32_t check_table2(snap_membus_t  *d_ddrmem,
                   action_reg      *Action_Register)
 {
-    snapu32_t index;
+    ap_uint<HT_ENTRY_NUM_EXP> index;
+    ap_uint<HT_ENTRY_NUM_EXP - WIDTH_EXP> index_high;
+    ap_uint<WIDTH_EXP> index_low;
 
     short iii;
     short j;
@@ -237,6 +253,7 @@ static snapu32_t check_table2(snap_membus_t  *d_ddrmem,
     snapu64_t write_addr = Action_Register->Data.res_table.address;
     
     snap_bool_t used = 0;
+    ap_uint<BRAM_WIDTH> ram_q;
 
     while (left_bytes > 0)
     {
@@ -246,12 +263,14 @@ static snapu32_t check_table2(snap_membus_t  *d_ddrmem,
         {
             //Current element in Table2 is keybuf[i]
             index = ht_hash(keybuf[iii]);
-            
-            used =  hash_used[index>>WIDTH_EXP](index(WIDTH_EXP-1,0), index(WIDTH_EXP-1,0));
+            index_high = index(HT_ENTRY_NUM_EXP-1, WIDTH_EXP);
+            index_low  = index(WIDTH_EXP-1,0);
+            ram_q = hash_used[index_high];
+            used = ram_q(index_low, index_low);
             if(used == 1)
             {
                 read_bulk_ddr(d_ddrmem, HASH_TABLE_ADDR + index * BPERDW, BPERDW, &hash_entry);
-                count = hash_entry(31,0); //How many elements are in the same hash table index
+                count = hash_entry(31,0); //How many elements are in the same hash table entry
                                              //If count == 0, this element in Table2 doesn't exist in Table1.
                 for (j = 0; j < count; j++)
                 {
