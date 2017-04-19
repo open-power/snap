@@ -177,21 +177,37 @@ int main(void)
     action_reg Action_Register;
     action_RO_config_reg Action_Config;
 
-    Action_Register.Data.in.address = 0;
+    /* Query ACTION_TYPE ... */
+    Action_Register.Control.flags = 0x0;
+    hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
+    fprintf(stderr,
+	    "ACTION_TYPE:   %08x\n"
+	    "RELEASE_LEVEL: %08x\n"
+	    "RETC:          %04x\n",
+	    (unsigned int)Action_Config.action_type,
+	    (unsigned int)Action_Config.release_level,
+	    (unsigned int)Action_Register.Control.Retc);
+    
+    Action_Register.Control.flags = 0x1; /* just not 0x0 */
+    Action_Register.Data.in.address = 0x0;
     Action_Register.Data.in.size = 128;
-    Action_Register.Data.in.type = 0x0000;
-    Action_Register.Data.out.address = 0;
+    Action_Register.Data.in.type = HOST_DRAM;
+    Action_Register.Data.out.address = 256;
     Action_Register.Data.out.size = 128;
-    Action_Register.Data.out.type = 0x0000;
+    Action_Register.Data.out.type = HOST_DRAM;
 
-    hls_action(din_gmem, dout_gmem, d_ddrmem,
-               &Action_Register, &Action_Config);
-
+    hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
     if (Action_Register.Control.Retc == RET_CODE_FAILURE) {
-                            printf(" ==> RETURN CODE FAILURE <==\n");
-                            return 1;
+	    fprintf(stderr, " ==> RETURN CODE FAILURE <==\n");
+	    return 1;
     }
-    printf(">> ACTION TYPE = %8lx - RELEASE_LEVEL = %8lx <<\n",
+    if (memcmp((void *)((unsigned long)din_gmem + 0),
+	       (void *)((unsigned long)dout_gmem + 256), 128) != 0) {
+	    fprintf(stderr, " ==> DATA COMPARE FAILURE <==\n");
+	    return 1;
+    }
+
+    printf(">> ACTION TYPE = %08lx - RELEASE_LEVEL = %08lx <<\n",
                     (unsigned int)Action_Config.action_type,
                     (unsigned int)Action_Config.release_level);
     return 0;
