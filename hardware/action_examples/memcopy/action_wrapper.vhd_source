@@ -350,7 +350,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       axi_nvme_buser       : IN  std_logic_vector(0 DOWNTO 0);                                      -- only for NVME_USED=TRUE 
       axi_nvme_rid         : IN  std_logic_vector(0 DOWNTO 0);                                      -- only for NVME_USED=TRUE 
       axi_nvme_ruser       : IN  std_logic_vector(0 DOWNTO 0);                                      -- only for NVME_USED=TRUE 
-      axi_nvme_wuser       : OUT std_logic_vector(0 DOWNTO 0)                                       -- only for NVME_USED=TRUE 
+      axi_nvme_wuser       : OUT std_logic_vector(0 DOWNTO 0);                                      -- only for NVME_USED=TRUE 
 
       -- Ports of Axi Slave Bus Interface AXI_CTRL_REG
       axi_ctrl_reg_awaddr      : IN  std_logic_vector(C_S_AXI_CTRL_REG_ADDR_WIDTH-1 DOWNTO 0);
