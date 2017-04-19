@@ -410,22 +410,22 @@ void hls_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
 		action_RO_config_reg *Action_Config)
 {
 	// Host Memory AXI Interface
-#pragma HLS INTERFACE m_axi depth=512 port=din_gmem bundle=host_mem
-#pragma HLS INTERFACE m_axi depth=512 port=dout_gmem bundle=host_mem
+	//   Leaving here the bundle=host_mem away to get the code syntesize
+#pragma HLS INTERFACE m_axi port=din_gmem offset=slave depth=512
+#pragma HLS INTERFACE m_axi port=dout_gmem offset=slave depth=512
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg offset=0x030
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg offset=0x040
 
-	//DDR memory Interface
+	// DDR memory Interface
 #pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
 #pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg offset=0x050
 
 	// Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Config
-#pragma HLS INTERFACE s_axilite port=Action_Config offset=0x010 bundle=ctrl_reg
+#pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg offset=0x010
 #pragma HLS DATA_PACK variable=Action_Register
-#pragma HLS INTERFACE s_axilite port=Action_Register offset=0x100 bundle=ctrl_reg
+#pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg offset=0x100
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
-
 
 	/* NOTE: switch generates better vhdl than "if" */
 	switch (Action_Register->Control.flags) {
