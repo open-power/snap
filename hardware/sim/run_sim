@@ -94,6 +94,7 @@
      -aet)		AET=1;;
      -noaet)		AET=0;;
      -init0)		SIM_INIT='-ncinitialize 0';;
+     -init1)		SIM_INIT='-ncinitialize 1';;
      -initx)		SIM_INIT='-ncinitialize x';;
      -h) 		echo "Usage: $0 -cdemx"
 		echo "  -app "pgm"   : single program (arguments can be passed with -arg)"
@@ -193,7 +194,7 @@
    export LD_LIBRARY_PATH=$PSLSE_ROOT/afu_driver/src:$DENALI/verilog            # to find libvpi.so and libdenpli.so
  fi
  if [ "$SIMDIR" == "ies" ];then
-   if [ "$SIM_INIT" == "" ];then SIM_INIT='-ncinitialize x';fi                  # default init value for ncsim
+#  if [ "$SIM_INIT" == "" ];then SIM_INIT='-ncinitialize x';fi                  # default init value for ncsim
 #  SIM_ARG='-gui' 		# interactive, stop @cyc0
 #  SIM_ARG='-gui -tcl'		# interactive with simvision
 #  SIM_ARG='-gui -run -tcl' 	# non_interactive, with simvision
