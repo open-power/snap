@@ -102,17 +102,18 @@ static int action_main(struct dnut_action *action,
 			goto out_err;
 
 		goto out_ok;
-	} else
+	} else {
+		act_trace("   copy %p to %p %ld bytes\n", src, dst, len);
 		memcpy(dst, src, len);
-
+	}
  out_ok:
-	action->retc = DNUT_RETC_SUCCESS;
+	action->job.retc = DNUT_RETC_SUCCESS;
 	return 0;
 
  out_err:
 	__free(ibuf);
 	__free(obuf);
-	action->retc = DNUT_RETC_FAILURE;
+	action->job.retc = DNUT_RETC_FAILURE;
 	return 0;
 }
 
@@ -121,7 +122,7 @@ static struct dnut_action action = {
 	.device_id = DNUT_DEVICE_ID_ANY,
 	.action_type = MEMCOPY_ACTION_TYPE,
 
-	.retc = DNUT_RETC_FAILURE, /* preset value, should be 0 on success */
+	.job = { .retc = DNUT_RETC_FAILURE, },
 	.state = ACTION_IDLE,
 	.main = action_main,
 	.priv_data = NULL,	/* this is passed back as void *card */

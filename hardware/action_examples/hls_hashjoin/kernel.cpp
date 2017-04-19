@@ -18,7 +18,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
-
 #include "action_hashjoin_hls.H"
 
 using namespace std;
@@ -452,8 +451,20 @@ void hls_action(snap_membus_t *din_gmem,
 #pragma HLS INTERFACE s_axilite port=Action_Output offset=0x104 bundle=ctrl_reg
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
-	do_the_work(din_gmem, dout_gmem, d_ddrmem,
-		    Action_Input, Action_Output);
+
+	/* NOTE: switch generates better vhdl than "if" */
+	switch (Action_Register->Control.flags) {
+	case 0:
+		Action_Config->action_type   = (snapu32_t)HASHJOIN_ACTION_TYPE;
+		Action_Config->release_level = (snapu32_t)RELEASE_LEVEL;
+		Action_Register->Control.Retc = (snapu32_t)0xe00f;
+		return;
+		break;
+	default:
+		do_the_work(din_gmem, dout_gmem, d_ddrmem,
+			    Action_Input, Action_Output);
+
+	}
 }
 
 //-----------------------------------------------------------------------------

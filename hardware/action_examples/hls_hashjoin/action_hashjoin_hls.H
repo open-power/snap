@@ -63,7 +63,7 @@ typedef hls::stream<table3_t> t3_fifo_t;
 #define TABLE1_MEMBUS_WORDS  (TABLE1_BYTES / sizeof(snap_membus_t))
 #define TABLE2_MEMBUS_WORDS  (TABLE2_BYTES / sizeof(snap_membus_t))
 
-#define HASHJOIN_ACTION_TYPE 0x0022
+#define HASHJOIN_ACTION_TYPE 0x10141002
 #define RELEASE_VERSION      0xFEEDA02227022017 /* Action/Release numbers */
 
 typedef struct entry_s {
@@ -86,9 +86,8 @@ typedef struct {
         snapu64_t t1_processed; /* #entries cached, repeat if not all */
         snapu64_t t2_processed; /* #entries processed, repeat if not all */
         snapu64_t t3_produced;  /* #entries produced store them away */
-        snapu64_t checkpoint;
-        snapu64_t rc;
-        snapu64_t action_version;
+        snapu32_t rc;
+        snapu32_t action_version;
 } DATA_HJ; // DATA = 112 Bytes
 
 //---------------------------------------------------------------------

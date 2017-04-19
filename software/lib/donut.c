@@ -94,7 +94,7 @@ struct dnut_data {
 };
 
 /* To be used for software simulation, use funcs provided by action */
-static int dnut_map_funcs(struct dnut_data *card, uint16_t action_type);
+static int dnut_map_funcs(struct dnut_data *card, uint32_t action_type);
 
 /*	Get Time in msec */
 static unsigned int tget_ms(void)
@@ -540,7 +540,7 @@ void dnut_queue_free(struct dnut_queue *queue)
 struct dnut_kernel *dnut_kernel_attach_dev(const char *path,
 					   uint16_t vendor_id,
 					   uint16_t device_id,
-					   uint16_t action_type __unused)
+					   uint32_t action_type) /* long */
 {
 	struct dnut_card *card;
 
@@ -620,9 +620,11 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	uint32_t *job_data;
 	int completed;
 	unsigned int mmio_in, mmio_out;
-	int attach_flags = SNAP_CCR_DIRECT_MODE;	/* FIX ME for Job mode */
+	int attach_flags = SNAP_CCR_DIRECT_MODE;	/* FIXME for Job mode */
 
 	if (cjob->wout_size > (6 * 16)) {	/* Size must be less than addr[6] */
+		dnut_trace("  %s: err: wout_size too large %d\n", __func__, 
+			   cjob->wout_size);
 		errno = EINVAL;
 		return -1;
 	}
@@ -787,9 +789,11 @@ int dnut_action_register(struct dnut_action *new_action)
 	return 0;
 }
 
-static struct dnut_action *find_action(uint16_t action_type)
+static struct dnut_action *find_action(uint32_t action_type)
 {
 	struct dnut_action *a;
+
+	dnut_trace("  %s: Searching action_type %x\n", __func__, action_type);
 
 	for (a = actions; a != NULL; a = a->next) {
 		if (a->action_type == action_type)
@@ -798,19 +802,23 @@ static struct dnut_action *find_action(uint16_t action_type)
 	return NULL;
 }
 
-static int dnut_map_funcs(struct dnut_data *card, uint16_t action_type)
+static int dnut_map_funcs(struct dnut_data *card, uint32_t action_type)
 {
 	struct dnut_action *a;
+
+	dnut_trace("%s: Mapping action_type %x\n", __func__, action_type);
 
 	card->action_type = action_type;
 
 	/* search action and map in its mmios */
 	a = find_action(action_type);
 	if (a == NULL) {
+		dnut_trace("  %s: No action found!!\n", __func__);
 		errno = ENOENT;
 		return -1;
 	}
 
+	dnut_trace("  %s: Action found %p.\n", __func__, a);
 	card->action = a;
 	return 0;
 }
@@ -859,7 +867,7 @@ static int sw_mmio_write32(void *_card __unused,
 		errno = EFAULT;
 		return -1;
 	}
-	w =  (struct queue_workitem *)a->job;
+	w = &a->job;
 
 	if (offs == ACTION_CONTROL) {
 		dnut_trace("  starting action!!\n");
@@ -873,7 +881,7 @@ static int sw_mmio_write32(void *_card __unused,
 
 	if ((offs >= ACTION_PARAMS_IN) &&
 	    (offs < ACTION_PARAMS_IN + CACHELINE_BYTES)) {
-		*(uint32_t *)&a->job[offs - ACTION_PARAMS_IN] = data;
+		((uint32_t *)&a->job)[(offs - ACTION_PARAMS_IN)/4] = data;
 	}
 
 	if (a->mmio_write32)
@@ -899,8 +907,7 @@ static int sw_mmio_read32(void *_card __unused,
 		errno = EFAULT;
 		return -1;
 	}
-	w =  (struct queue_workitem *)a->job;
-
+	w = &a->job;
 	*data = 0x0;
 
 	switch (offs) {
@@ -917,11 +924,9 @@ static int sw_mmio_read32(void *_card __unused,
 	default:
 		if ((offs >= ACTION_PARAMS_OUT) &&
 		    (offs < ACTION_PARAMS_OUT + sizeof(w->user))) {
-			unsigned int idx = offs - ACTION_PARAMS_OUT;
+			unsigned int idx = (offs - ACTION_PARAMS_OUT)/4;
+			*data = ((uint32_t *)(unsigned long)w)[idx];
 
-			*data = *(uint32_t *)
-				&w->user.data[idx];
-			break;
 		} else if (a->mmio_read32)
 			rc = a->mmio_read32(a, offs, data);
 	}

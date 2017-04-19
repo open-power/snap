@@ -182,7 +182,6 @@ static void dnut_prepare_hashjoin(struct dnut_job *cjob,
 	jin->t1_processed = 0;
 	jin->t2_processed = 0;
 	jin->t3_produced = 0;
-	jin->checkpoint = 0xABCD;
 	jin->rc = 0;
 	jin->action_version = 0;
 
@@ -359,11 +358,9 @@ int main(int argc, char *argv[])
 	gettimeofday(&etime, NULL);
 
 	fprintf(stderr, "Action version: %llx\n"
-		"Checkpoint: %016llx\n"
 		"ReturnCode: %lld\n"
 		"HashJoin took %lld usec\n",
 		(long long)jout.action_version,
-		(long long)jout.checkpoint,
 		(long long)jout.rc,
 		(long long)timediff_usec(&etime, &stime));
 

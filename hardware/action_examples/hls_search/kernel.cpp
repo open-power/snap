@@ -1,3 +1,19 @@
+/**
+ * Copyright 2017 International Business Machines
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 //************************************************************
 //** Coding recommendation for HLS better generation added **
 //************************************************************
@@ -29,20 +45,27 @@
 //************************************************************
 // enum definitions should stay in sync with libdonut.h
 enum {
-      ACTION_MEM_COPY  = 0x04,
-      ACTION_TXTSRCH   = 0x05,
-      ACTION_HASHJOIN  = 0x06,
-      RET_CODE_OK      = 0x00000102,
-      RET_CODE_FAILURE = 0x00000104,
-      HOST_DRAM        = 0x0000,
-      CARD_DRAM        = 0x0001,
-      UNUSED_MEM       = 0xFFFF,
-      F_SOURCE         = 0x0010,
-      F_DEST           = 0x0020,
-      F_END            = 0x0001,
-      F_ADDR           = 0x0002,
-      F_DATA           = 0x0004,
-      F_EXT            = 0x0008
+	  /* FIXME FIXME In control we pass the short action_id, which
+	     can be dynamically assigned, this is not a fixed number
+	     anymore. Using the long action_type is not working, since
+	     the field in the control register is only 8-bit width.
+	     See also ActionTypes.md */
+	  ACTION_MEM_COPY  = 0x00, /* take the last 8-bit from the 32-bit action_type. */
+	  ACTION_TXTSRCH   = 0x03, /* might or might not work ... */
+	  ACTION_HASHJOIN  = 0x02,
+	  
+	  /* FIXME Duplicating the defintions should be removed */
+	  RET_CODE_OK      = 0x00000102,
+	  RET_CODE_FAILURE = 0x00000104,
+	  HOST_DRAM        = 0x0000,
+	  CARD_DRAM        = 0x0001,
+	  UNUSED_MEM       = 0xFFFF,
+	  F_SOURCE         = 0x0010,
+	  F_DEST           = 0x0020,
+	  F_END            = 0x0001,
+	  F_ADDR           = 0x0002,
+	  F_DATA           = 0x0004,
+	  F_EXT            = 0x0008
 };
 
 //** Use structures to ease fields extraction from MMIO regs **//

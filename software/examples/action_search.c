@@ -50,7 +50,7 @@ static int action_main(struct dnut_action *action,
 	unsigned int needle_len, haystack_len, offs_used, offs_max;
 	uint64_t *offs;
 
-	act_trace("%s(%p, %p, %d)\n", __func__, action, job, job_len);
+	act_trace("%s(%p, %p, %d) SEARCH\n", __func__, action, job, job_len);
 	memset((uint8_t *)js->output.addr, 0, js->output.size);
 
 	offs = (uint64_t *)(unsigned long)js->output.addr;
@@ -84,7 +84,9 @@ static int action_main(struct dnut_action *action,
 
 	js->nb_of_occurrences = offs_used;
 	js->action_version = 0xC0FEBABEBABEBABEull;
-	action->retc = DNUT_RETC_SUCCESS;
+	action->job.retc = DNUT_RETC_SUCCESS;
+
+	act_trace("%s SEARCH DONE retc=%x\n", __func__, action->job.retc);
 	return 0;
 }
 
@@ -93,7 +95,7 @@ static struct dnut_action action = {
 	.device_id = DNUT_DEVICE_ID_ANY,
 	.action_type = SEARCH_ACTION_TYPE,
 
-	.retc = DNUT_RETC_FAILURE, /* preset value, should be 0 on success */
+	.job = { .retc = DNUT_RETC_FAILURE, },
 	.state = ACTION_IDLE,
 	.main = action_main,
 	.priv_data = NULL,	/* this is passed back as void *card */

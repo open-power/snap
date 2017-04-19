@@ -34,10 +34,6 @@ int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
 
-#define MMIO_DIN_DEFAULT	0x0ull
-#define MMIO_DOUT_DEFAULT	0x0ull
-#define	HLS_MEMCOPY_ID		0x10141000
-
 static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME" };
 
 /**
@@ -82,10 +78,7 @@ static void dnut_prepare_memcopy(struct dnut_job *cjob,
 		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
 		      DNUT_TARGET_FLAGS_END);
 
-	mjob->mmio_din = MMIO_DIN_DEFAULT;
-	mjob->mmio_dout = MMIO_DOUT_DEFAULT;
-
-	dnut_job_set(cjob, HLS_MEMCOPY_ID, mjob, sizeof(*mjob),
+	dnut_job_set(cjob, MEMCOPY_ACTION_TYPE, mjob, sizeof(*mjob),
 		     NULL, 0);
 }
 
@@ -131,7 +124,7 @@ int main(int argc, char *argv[])
 			{ "size",	 required_argument, NULL, 's' },
 			{ "mode",	 required_argument, NULL, 'm' },
 			{ "timeout",	 required_argument, NULL, 't' },
-			{ "verfy",	 no_argument,	    NULL, 'X' },
+			{ "verify",	 no_argument,	    NULL, 'X' },
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
@@ -247,10 +240,12 @@ int main(int argc, char *argv[])
 
 	/* if output file is defined, use that as output */
 	if (output != NULL) {
-		obuff = memalign(page_size, size);
+		size_t set_size = size + (verify ? sizeof(trailing_zeros) : 0);
+
+		obuff = memalign(page_size, set_size);
 		if (obuff == NULL)
 			goto out_error;
-		memset(obuff, 0, size);
+		memset(obuff, 0x0, set_size);
 		type_out = DNUT_TARGET_TYPE_HOST_DRAM;
 		addr_out = (unsigned long)obuff;
 	}
@@ -296,8 +291,8 @@ int main(int argc, char *argv[])
 
 	/* If the output buffer is in host DRAM we can write it to a file */
 	if (output != NULL) {
-		fprintf(stdout, "writing output data %d bytes to %s\n",
-			(int)size, output);
+		fprintf(stdout, "writing output data %p %d bytes to %s\n",
+			obuff, (int)size, output);
 
 		rc = __file_write(output, obuff, size);
 		if (rc < 0)
@@ -315,6 +310,8 @@ int main(int argc, char *argv[])
 
 			rc = memcmp(obuff + size, trailing_zeros, 1024);
 			if (rc != 0) {
+				fprintf(stderr, "err: trailing zero "
+					"verification failed!\n");
 				__hexdump(stderr, obuff + size, 1024);
 				exit_code = EX_ERR_VERIFY;
 			}

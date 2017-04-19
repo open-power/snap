@@ -19,6 +19,7 @@
  */
 
 #include <stdint.h>
+#include "donut_queue.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,12 +95,12 @@ typedef int (*action_main_t)(struct dnut_action *action,
 struct dnut_action {
 	uint16_t vendor_id;
 	uint16_t device_id;
-	uint16_t action_type;
+	uint32_t action_type;
 
 	enum dnut_action_state state;
 	void *priv_data;
-	uint8_t job[CACHELINE_BYTES];
-	uint32_t retc;
+
+	struct queue_workitem job;
 	action_main_t main;
 
 	int (* mmio_write32)(void *card, uint64_t offset, uint32_t data);

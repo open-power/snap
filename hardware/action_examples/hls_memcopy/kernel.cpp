@@ -88,22 +88,34 @@ void hls_action(snap_membus_t  *din_gmem, snap_membus_t  *dout_gmem,
 // Host Memory AXI Interface
 #pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
 #pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
-#pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg 		offset=0x030
-#pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg 		offset=0x040
+#pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg offset=0x030
+#pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg offset=0x040
 
 //DDR memory Interface
 #pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
-#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg 		offset=0x050
+#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg offset=0x050
 
 // Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Config
-#pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg	offset=0x010
+#pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg offset=0x010
 #pragma HLS DATA_PACK variable=Action_Register
-#pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg	offset=0x100
+#pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg offset=0x100
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
-// Hardcoded numbers
-// 	NOTE: switch might be better than "if" */
+	// VARIABLES
+	snapu32_t xfer_size;
+	snapu32_t action_xfer_size;
+	snapu32_t nb_blocks_to_xfer;
+	snapu16_t i;
+	short rc = 0;
+	snapu32_t   ReturnCode;
+	snapu64_t   InputAddress;
+	snapu64_t   OutputAddress;
+	snapu64_t   address_xfer_offset;
+	snap_membus_t  buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];   // if MEMDW=512 : 1024=>16 words
+
+	// Hardcoded numbers
+	// 	NOTE: switch generates better vhdl than "if" */
 	switch (Action_Register->Control.flags) {
 	case 0:
 		Action_Config->action_type   = (snapu32_t)MEMCOPY_ACTION_TYPE;
@@ -114,21 +126,6 @@ void hls_action(snap_membus_t  *din_gmem, snap_membus_t  *dout_gmem,
 	default:
 		break;
 	}
-
-	// VARIABLES
-	snapu32_t xfer_size;
-	snapu32_t action_xfer_size;
-	snapu32_t nb_blocks_to_xfer;
-	snapu16_t i;
-	short rc = 0;
-
-	snapu32_t   ReturnCode;
-
-	snapu64_t   InputAddress;
-	snapu64_t   OutputAddress;
-	snapu64_t   address_xfer_offset;
-	snap_membus_t  buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];   // if MEMDW=512 : 1024=>16 words
-
 	// byte address received need to be aligned with port width
 	InputAddress = (Action_Register->Data.in.address)   >> ADDR_RIGHT_SHIFT;
 	OutputAddress = (Action_Register->Data.out.address) >> ADDR_RIGHT_SHIFT;

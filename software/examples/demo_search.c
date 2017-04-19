@@ -326,10 +326,6 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
-#if 0				/* FIXME Circumvention should go away */
-	pr_info("FIXME Wait a sec ...\n");
-	sleep(1);
-#endif
 	run = 0;
 	gettimeofday(&stime, NULL);
 	do {
