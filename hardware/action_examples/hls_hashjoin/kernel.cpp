@@ -160,7 +160,7 @@ static void snap_4KiB_get(snap_4KiB_t *buf, snap_membus_t *line)
 
 #if defined(CONFIG_4KIB_DEBUG)
 		fprintf(stderr, "4KiB buffer %d lines, reading %d bytes\n",
-			tocopy, tocopy * sizeof(snap_membus_t));
+			tocopy, tocopy * (int)sizeof(snap_membus_t));
 #endif
 		switch (tocopy) {
 		case 0: /* NOTE: Avoid read/write 0 bytes, HLS bug */
@@ -196,8 +196,8 @@ static void snap_4KiB_flush(snap_4KiB_t *buf)
 #if defined(CONFIG_4KIB_DEBUG)
 	fprintf(stderr, "4KiB buffer %d lines, writing %d bytes "
 		"free: %d bmax: %d mmax: %d\n",
-		tocopy, tocopy * sizeof(snap_membus_t),
-		free_lines, SNAP_4KiB_WORDS, buf->max_lines);
+		tocopy, tocopy * (int)sizeof(snap_membus_t),
+		(int)free_lines, SNAP_4KiB_WORDS, buf->max_lines);
 #endif
 	switch (tocopy) {
 	case 0: /* NOTE: Avoid read/write 0 bytes, HLS bug */
@@ -530,6 +530,18 @@ int main(void)
 	unsigned int t3_found;
 	unsigned int table3_found = 0;
 
+	/* Query ACTION_TYPE ... */
+	Action_Register.Control.flags = 0x0;
+	hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
+	fprintf(stderr,
+		"ACTION_TYPE:   %08x\n"
+		"RELEASE_LEVEL: %08x\n"
+		"RETC:          %04x\n",
+		(unsigned int)Action_Config.action_type,
+		(unsigned int)Action_Config.release_level,
+		(unsigned int)Action_Register.Control.Retc);
+
+	Action_Register.Control.flags = 0x1; /* just not 0x0 */
 	memset(din_gmem,  0, sizeof(din_gmem));
 	memset(dout_gmem, 0, sizeof(dout_gmem));
 	memset(d_ddrmem,  0, sizeof(d_ddrmem));
