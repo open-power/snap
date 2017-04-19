@@ -169,6 +169,9 @@ Component psl_accel
     --			      					                -- only for NVME_USED=TRUE 
     -- NVME Interface	      					                -- only for NVME_USED=TRUE 
     --			      					                -- only for NVME_USED=TRUE 
+    -- Reset Input                                                              -- only for NVME_USED=TRUE
+    pcie_perstn               : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
+    --			      					                -- only for NVME_USED=TRUE 
     -- Clock inputs for NVMe                                                    -- only for NVME_USED=TRUE
 --nvme_ch0    refclk_nvme_ch0_p         : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
 --nvme_ch0    refclk_nvme_ch0_n         : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
@@ -176,7 +179,6 @@ Component psl_accel
     refclk_nvme_ch1_n         : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
     --			      					                -- only for NVME_USED=TRUE 
     -- NVME <-> PCIE Interface					                -- only for NVME_USED=TRUE 
-    pci_user_reset_n          : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE 
 --nvme_ch0    pcie_rc0_rxn              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
 --nvme_ch0    pcie_rc0_rxp              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
 --nvme_ch0    pcie_rc0_txn              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
@@ -483,14 +485,16 @@ begin
       --			         					-- only for NVME_USED=TRUE 
       -- NVME Interface	         						-- only for NVME_USED=TRUE 
       --			         					-- only for NVME_USED=TRUE 
-      -- Clock inputs for NVMe                                                  -- only for NVME_USED=TRUE
+      -- Reset Input                                                            -- only for NVME_USED=TRUE
+      pcie_perstn                       => pci_pi_nperst0,                      -- only for NVME_USED=TRUE
+      --			         					-- only for NVME_USED=TRUE 
+      -- Clock Inputs for NVMe                                                  -- only for NVME_USED=TRUE
 --nvme_ch0      refclk_nvme_ch0_p                     => pcie_clk1_p,                     -- only for NVME_USED=TRUE
 --nvme_ch0      refclk_nvme_ch0_n                     => pcie_clk1_n,                     -- only for NVME_USED=TRUE
       refclk_nvme_ch1_p                     => pcie_clk2_p,                     -- only for NVME_USED=TRUE
       refclk_nvme_ch1_n                     => pcie_clk2_n,                     -- only for NVME_USED=TRUE
       --									-- only for NVME_USED=TRUE 
       -- NVME <-> PCIE Interface      					        -- only for NVME_USED=TRUE 		   
-      pci_user_reset_n                    => NOT pci_user_reset,                -- only for NVME_USED=TRUE                               
 --nvme_ch0      pcie_rc0_rxn(3 downto 0)          => pcie_rc0_rxn(3 downto 0),		-- only for NVME_USED=TRUE 
 --nvme_ch0      pcie_rc0_rxp(3 downto 0)          => pcie_rc0_rxp(3 downto 0),		-- only for NVME_USED=TRUE 
 --nvme_ch0      pcie_rc0_txn(3 downto 0)          => pcie_rc0_txn(3 downto 0),		-- only for NVME_USED=TRUE 

@@ -110,13 +110,13 @@ if { $ddri_used == "TRUE" } {
   if { $nvme_used == "TRUE" } {
     #create axi interconect for axi_card_mem
     puts "	                      generating IP axi_interconect"
-    create_ip -name axi_interconnect -vendor xilinx.com -library ip -version 1.7 -module_name axi_interconnect -dir $ip_dir 
+    create_ip -name axi_interconnect -vendor xilinx.com -library ip -version 1.7 -module_name axi_interconnect -dir $ip_dir  $msg_level
     set_property -dict [list CONFIG.NUM_SLAVE_PORTS {2} CONFIG.THREAD_ID_WIDTH {1} CONFIG.INTERCONNECT_DATA_WIDTH {512} CONFIG.S00_AXI_DATA_WIDTH {512} CONFIG.S01_AXI_DATA_WIDTH {128} CONFIG.M00_AXI_DATA_WIDTH {512} CONFIG.S00_AXI_IS_ACLK_ASYNC {1} CONFIG.S01_AXI_IS_ACLK_ASYNC {1} CONFIG.M00_AXI_IS_ACLK_ASYNC {1} CONFIG.S00_AXI_REGISTER {1} CONFIG.S01_AXI_REGISTER {1} CONFIG.M00_AXI_REGISTER {1}] [get_ips axi_interconnect]
     set_property generate_synth_checkpoint false [get_files $ip_dir/axi_interconnect/axi_interconnect.xci]
-    generate_target {instantiation_template}     [get_files $ip_dir/axi_interconnect/axi_interconnect.xci]
-    generate_target all                          [get_files $ip_dir/axi_interconnect/axi_interconnect.xci]
-    export_ip_user_files -of_objects             [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] -no_script -sync -force -quiet
-    export_simulation    -of_objects             [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] -directory $ip_dir/ip_user_files/sim_scripts -force -quiet
+    generate_target {instantiation_template}     [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] $msg_level
+    generate_target all                          [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] $msg_level
+    export_ip_user_files -of_objects             [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] -no_script -sync -force  $msg_level
+    export_simulation    -of_objects             [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
   } else {
     #create clock converter for axi_card_mem
     puts "	                      generating IP axi_clock_converter"

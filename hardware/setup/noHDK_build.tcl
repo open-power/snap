@@ -37,7 +37,7 @@ write_checkpoint   $msg_level -force ./Checkpoint/framework_synth.dcp
 report_utilization $msg_level -file  ./Reports/framework_utilization_synth.rpt
  
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-lock_design $msg_level -level routing b
+#lock_design $msg_level -level routing b
  
 set directive [get_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start opt_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]

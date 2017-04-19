@@ -321,13 +321,13 @@ module top (
      ha_pclock = !ha_pclock;
   end
 
-  // PSL User Reset generation
+  // PCIe Reset generation
   // 
-  reg pci_user_reset;		
+  reg pcie_perst;		
   initial begin                 
-     pci_user_reset <= 1;        
+     pcie_perst <= 1;        
      #50ns;                       
-     pci_user_reset <= 0 ;        
+     pcie_perst <= 0 ;        
   end                           
 
   // Currently unused inputs
@@ -851,7 +851,7 @@ module top (
     .c1_ddr3_dq(c1_ddr3_dq),                           //-- only for DDR3_USED=TRUE
     .c1_ddr3_dqs_p(c1_ddr3_dqs_p),                     //-- only for DDR3_USED=TRUE
     .c1_ddr3_dqs_n(c1_ddr3_dqs_n),                     //-- only for DDR3_USED=TRUE
-    .pci_user_reset_n(~pci_user_reset),                //-- only for NVME_USED=TRUE
+    .pcie_perstn(~pcie_perst),                         //-- only for NVME_USED=TRUE
     .ha_pclock(ha_pclock)
   );
                                                        //-- only for DDR3_USED=TRUE
