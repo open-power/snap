@@ -20,8 +20,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <ap_int.h>
-
-
 #include "hls_snap.H"
 
 #define MEMCOPY_ACTION_TYPE 0x10141000
@@ -39,8 +37,8 @@ typedef struct {//Names of the fields can be changed by User. Should serve as a 
 
 //---------------------------------------------------------------------
 typedef struct {
-        CONTROL Control;       //  16 bytes
-        DATA_MC  Data;      // up to 96 bytes
+        CONTROL Control;       // 16 bytes
+        DATA_MC Data;          // up to 96 bytes
 } action_reg;
 
 #define CONFIG_HOSTSTYLE_ALGO

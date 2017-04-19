@@ -79,23 +79,22 @@ short read_burst_of_data_from_mem(snap_membus_t *din_gmem, snap_membus_t *d_ddrm
 //--------------------------------------------------------------------------------------------
 //--- MAIN PROGRAM ---------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
-void hls_action(snap_membus_t  *din_gmem, snap_membus_t  *dout_gmem,
-		snap_membus_t  *d_ddrmem,
+void hls_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
+		snap_membus_t *d_ddrmem,
 		action_reg *Action_Register,
 		action_RO_config_reg *Action_Config)
 {
-
-// Host Memory AXI Interface
+	// Host Memory AXI Interface
 #pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
 #pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg offset=0x030
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg offset=0x040
 
-//DDR memory Interface
+	// DDR memory Interface
 #pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
 #pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg offset=0x050
 
-// Host Memory AXI Lite Master Interface
+	// Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Config
 #pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg offset=0x010
 #pragma HLS DATA_PACK variable=Action_Register
@@ -126,6 +125,7 @@ void hls_action(snap_membus_t  *din_gmem, snap_membus_t  *dout_gmem,
 	default:
 		break;
 	}
+
 	// byte address received need to be aligned with port width
 	InputAddress = (Action_Register->Data.in.address)   >> ADDR_RIGHT_SHIFT;
 	OutputAddress = (Action_Register->Data.out.address) >> ADDR_RIGHT_SHIFT;
