@@ -80,8 +80,9 @@ short read_burst_of_data_from_mem(snap_membus_t *din_gmem, snap_membus_t *d_ddrm
 //--- MAIN PROGRAM ---------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
 void hls_action(snap_membus_t  *din_gmem, snap_membus_t  *dout_gmem,
-	snap_membus_t  *d_ddrmem,
-        action_reg *Action_Register, action_RO_config_reg *Action_Config)
+		snap_membus_t  *d_ddrmem,
+		action_reg *Action_Register,
+		action_RO_config_reg *Action_Config)
 {
 
 // Host Memory AXI Interface
@@ -102,73 +103,75 @@ void hls_action(snap_membus_t  *din_gmem, snap_membus_t  *dout_gmem,
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
 // Hardcoded numbers
-	if (Action_Register->Control.flags==0) {
-		Action_Config->action_type   = (snapu32_t) MEMCOPY_ACTION_TYPE;
-		Action_Config->release_level = (snapu32_t) RELEASE_LEVEL;
-		Action_Register->Control.Retc = (snapu32_t) 0xe00f;
+// 	NOTE: switch might be better than "if" */
+	switch (Action_Register->Control.flags) {
+	case 0:
+		Action_Config->action_type   = (snapu32_t)MEMCOPY_ACTION_TYPE;
+		Action_Config->release_level = (snapu32_t)RELEASE_LEVEL;
+		Action_Register->Control.Retc = (snapu32_t)0xe00f;
 		return;
+		break;
+	default:
+		break;
 	}
 
+	// VARIABLES
+	snapu32_t xfer_size;
+	snapu32_t action_xfer_size;
+	snapu32_t nb_blocks_to_xfer;
+	snapu16_t i;
+	short rc = 0;
 
-  // VARIABLES
-  snapu32_t xfer_size;
-  snapu32_t action_xfer_size;
-  snapu32_t nb_blocks_to_xfer;
-  snapu16_t i;
-  short rc = 0;
+	snapu32_t   ReturnCode;
 
-  snapu32_t   ReturnCode;
+	snapu64_t   InputAddress;
+	snapu64_t   OutputAddress;
+	snapu64_t   address_xfer_offset;
+	snap_membus_t  buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];   // if MEMDW=512 : 1024=>16 words
 
-  snapu64_t   InputAddress;
-  snapu64_t   OutputAddress;
-  snapu64_t   address_xfer_offset;
-  snap_membus_t  buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];   // if MEMDW=512 : 1024=>16 words
+	// byte address received need to be aligned with port width
+	InputAddress = (Action_Register->Data.in.address)   >> ADDR_RIGHT_SHIFT;
+	OutputAddress = (Action_Register->Data.out.address) >> ADDR_RIGHT_SHIFT;
 
+	ReturnCode = RET_CODE_OK;
 
-  // byte address received need to be aligned with port width
-  InputAddress = (Action_Register->Data.in.address)   >> ADDR_RIGHT_SHIFT;
-  OutputAddress = (Action_Register->Data.out.address) >> ADDR_RIGHT_SHIFT;
+	address_xfer_offset = 0x0;
+	// testing sizes to prevent from writing out of bounds
+	action_xfer_size = MIN(Action_Register->Data.in.size, Action_Register->Data.out.size);
+	if (Action_Register->Data.in.type == CARD_DRAM and Action_Register->Data.in.size > CARD_DRAM_SIZE)
+		rc = 1;
+	if (Action_Register->Data.out.type == CARD_DRAM and Action_Register->Data.out.size > CARD_DRAM_SIZE)
+		rc = 1;
 
-  ReturnCode = RET_CODE_OK;
+	// buffer size is hardware limited by MAX_NB_OF_BYTES_READ
+	nb_blocks_to_xfer = (action_xfer_size / MAX_NB_OF_BYTES_READ) + 1;
 
-  address_xfer_offset = 0x0;
-  // testing sizes to prevent from writing out of bounds
-  action_xfer_size = MIN(Action_Register->Data.in.size, Action_Register->Data.out.size);
-  if (Action_Register->Data.in.type == CARD_DRAM and Action_Register->Data.in.size > CARD_DRAM_SIZE)
-	rc = 1;
-  if (Action_Register->Data.out.type == CARD_DRAM and Action_Register->Data.out.size > CARD_DRAM_SIZE)
-	rc = 1;
+	// transferring buffers one after the other
+	L0:
+	for ( i = 0; i < nb_blocks_to_xfer; i++ ) {
+		//#pragma HLS UNROLL // cannot completely unroll a loop with a variable trip count
+		xfer_size = MIN(action_xfer_size, (snapu32_t) MAX_NB_OF_BYTES_READ);
 
-  // buffer size is hardware limited by MAX_NB_OF_BYTES_READ
-  nb_blocks_to_xfer = (action_xfer_size / MAX_NB_OF_BYTES_READ) + 1;
+		rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, Action_Register->Data.in.type,
+			InputAddress + address_xfer_offset, buf_gmem, xfer_size);
 
-  // transferring buffers one after the other
-  L0:for ( i = 0; i < nb_blocks_to_xfer; i++ ) {
-        //#pragma HLS UNROLL // cannot completely unroll a loop with a variable trip count
-        xfer_size = MIN(action_xfer_size, (snapu32_t) MAX_NB_OF_BYTES_READ);
+		rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem, Action_Register->Data.out.type,
+			OutputAddress + address_xfer_offset, buf_gmem, xfer_size);
 
-        rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, Action_Register->Data.in.type,
-                  InputAddress + address_xfer_offset, buf_gmem, xfer_size);
+		action_xfer_size -= xfer_size;
+		address_xfer_offset += (snapu64_t)(xfer_size >> ADDR_RIGHT_SHIFT);
+	} // end of L0 loop
 
-        rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem, Action_Register->Data.out.type,
-                  OutputAddress + address_xfer_offset, buf_gmem, xfer_size);
-
-        action_xfer_size -= xfer_size;
-        address_xfer_offset += (snapu64_t)(xfer_size >> ADDR_RIGHT_SHIFT);
-     } // end of L0 loop
-
-  if(rc!=0) ReturnCode = RET_CODE_FAILURE;
-
-  Action_Register->Control.Retc = (snapu32_t) ReturnCode;
-
-  return;
+	if (rc != 0)
+		ReturnCode = RET_CODE_FAILURE;
+	Action_Register->Control.Retc = (snapu32_t)ReturnCode;
+	return;
 }
 
 #ifdef NO_SYNTH
 
 int main(void)
 {
-
     int rc = 0;
     unsigned int i;
     snap_membus_t  din_gmem[2048];
@@ -194,11 +197,7 @@ int main(void)
     printf(">> ACTION TYPE = %8lx - RELEASE_LEVEL = %8lx <<\n",
                     (unsigned int)Action_Config.action_type,
                     (unsigned int)Action_Config.release_level);
-
-
-
     return 0;
 }
-
 
 #endif
