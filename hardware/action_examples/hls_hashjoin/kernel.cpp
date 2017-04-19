@@ -57,7 +57,6 @@ static void write_results_in_HJ_regs(action_output_reg *Action_Output,
 	Action_Output->Data.t1_processed   = field1;
 	Action_Output->Data.t2_processed   = field2;
 	Action_Output->Data.t3_produced    = field3;
-	Action_Output->Data.checkpoint     = field4;
 	Action_Output->Data.rc             = 0;
 	Action_Output->Data.action_version =  RELEASE_VERSION;
 
