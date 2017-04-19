@@ -69,9 +69,9 @@ struct queue_workitem {
 	uint32_t retc;			/* Return code from APP */
 	uint64_t priv_data;
 	union {
-		struct dnut_addr ext;     /* 16 bytes if job > 108 bytes */
-		struct dnut_addr addr[6]; /* 16 * 6 = 96 bytes */
-		uint8_t data[112];
+		struct dnut_addr ext;     /* 16 bytes if job > 112 bytes */
+		struct dnut_addr addr[6]; /* 16 * 6 = 96 bytes 16 Bytes are left free */
+		uint8_t data[112];	/* RAW Data Space to fill to 128 Bytes */
 	} user;
 };
 

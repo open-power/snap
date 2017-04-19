@@ -167,12 +167,12 @@ void dnut_card_free(struct dnut_card *card);
  * alike if that is required. Makes sense?
  */
 typedef struct dnut_job {
-	uint64_t action;		/* ro */
-	uint32_t retc;			/* rw */
-	uint64_t win_addr;		/* rw writing to MMIO 0x090 */
-	uint32_t win_size;		/* rw read from MMIO 0x110 if wout 0*/
-	uint64_t wout_addr;		/* wr read from MMIO 0x110 */
-	uint32_t wout_size;		/* wr */
+	uint64_t action;		/* Action ID from Caller*/
+	uint32_t retc;			/* Write to 0x104, Read from 0x184 */
+	uint64_t win_addr;		/* rw writing to MMIO 0x110 */
+	uint32_t win_size;		/* Number of bytes to Write */
+	uint64_t wout_addr;		/* wr read from MMIO 0x190 */
+	uint32_t wout_size;		/* Number of Bytes to Read */
 } *dnut_job_t;
 
 /**
@@ -187,7 +187,7 @@ static inline void dnut_job_set(struct dnut_job *djob, uint64_t action,
 				void *win_addr, uint32_t win_size,
 				void *wout_addr, uint32_t wout_size)
 {
-	djob->action = action;
+	djob->action = (uint32_t)action;	/* Action is only 32 bits */
 	djob->retc = 0xffffffff;
 	djob->win_addr = (unsigned long)win_addr;
 	djob->win_size = win_size;

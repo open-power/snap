@@ -386,8 +386,6 @@ static int hw_attach_action(void *_card, uint32_t action, int flags, int timeout
 			dt = tget_ms() - t0;
 		}
 	}
-	if (0 == rc)
-		card->seq++;
 	dnut_trace("%s Exit rc: %d Action Base: 0x%x\n", __func__,
 		rc, card->action_base);
 	return rc;
@@ -616,6 +614,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	int rc;
 	unsigned int i;
 	struct dnut_card *card = (struct dnut_card *)kernel;
+	struct dnut_data *card_data = (struct dnut_data *)kernel;
 	uint32_t action_addr;
 	struct queue_workitem job; /* one cacheline job description and data */
 	uint32_t *job_data;
@@ -623,19 +622,19 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	unsigned int mmio_in, mmio_out;
 	int attach_flags = SNAP_CCR_DIRECT_MODE;	/* FIX ME for Job mode */
 
-	if (cjob->wout_size > 6*16) {		/* Size must be less than addr[6] */
+	if (cjob->wout_size > (6 * 16)) {	/* Size must be less than addr[6] */
 		errno = EINVAL;
 		return -1;
 	}
 
-	memset(&job, 0, sizeof(job));
-	job.flags = 0x01;			/* Fix me */
-	job.retc = 0;
-	job.seq = card->seq++;
+	job.short_action = 0x00;	/* Set later */
+	job.flags = 0x01;		/* FIXME Set Flag to Execute */
+	job.seq = 0x0000;		/* Set later */
+	job.retc = 0x00000000;
 	job.priv_data = 0xdeadbeefc0febabeull;
 
 	/* Fill workqueue cacheline which we need to transfer to the action */
-	if (cjob->win_size <= 6*16) {
+	if (cjob->win_size <= (6 * 16)) {
 		memcpy(&job.user, (void *)(unsigned long)cjob->win_addr,
 		       MIN(cjob->win_size, sizeof(job.user)));
 		mmio_out = cjob->win_size / sizeof(uint32_t);
@@ -650,6 +649,8 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	mmio_in = 16 / sizeof(uint32_t) + mmio_out;
 
 	dnut_trace("%s: Connect to Action 0x%x\n", __func__, (uint32_t)cjob->action);
+	dnut_trace("    win_size: %d wout_size: %d mmio_in: %d mmio_out: %d\n",
+		cjob->win_size, cjob->wout_size, mmio_in, mmio_out);
 	if (irq)
 		attach_flags |= SNAP_CCR_IRQ_ATTACH;
 	if (dnut_attach_action(card, (uint32_t)cjob->action, attach_flags, timeout_sec)) {
@@ -657,9 +658,10 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 		errno = ETIME;
 		return -1;
 	}
+	job.short_action = card_data->sat;	/* Set correct Value after attach */
+	job.seq = card_data->seq++;		/* Set correct Value after attach */
 
-	job.short_action = card->sat;
-	dnut_trace("%s: PASS PARAMETERS to Short Action %d\n", __func__, card->sat);
+	dnut_trace("%s: PASS PARAMETERS to Short Action %d Seq: %x\n", __func__, job.short_action, job.seq);
 
 	/* __hexdump(stderr, &job, sizeof(job)); */
 
@@ -667,55 +669,67 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	   bytes or a little less */
 	job_data = (uint32_t *)(unsigned long)&job;
 	for (i = 0, action_addr = ACTION_PARAMS_IN; i < mmio_in;
-	     i++, action_addr += sizeof(uint32_t)) {
+		i++, action_addr += sizeof(uint32_t)) {
 		rc = dnut_mmio_write32(card, action_addr, job_data[i]);
 		if (rc != 0)
-			return rc;
+			goto __dnut_kernel_sync_execute_job_exit;
 	}
 
 	/* Start Action and wait for finish */
 	dnut_trace("%s: START Action 0x%x\n", __func__, (uint32_t)cjob->action);
 	rc = dnut_kernel_start(kernel);
 	if (rc != 0)
-		return rc;
+		goto __dnut_kernel_sync_execute_job_exit;
 
 	if (irq) {
+		/* Enable IRQ */
 		dnut_mmio_write32(card, ACTION_IRQ_APP, ACTION_IRQ_APP_DONE);
 		dnut_mmio_write32(card, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
 	}
 	completed = dnut_kernel_completed(kernel, irq, &rc, timeout_sec);
 	if (irq) {
+		/* Ack. IRQ and disable */
 		dnut_mmio_write32(card, ACTION_IRQ_STATUS, ACTION_IRQ_STATUS_DONE);
 		dnut_mmio_write32(card, ACTION_IRQ_APP, 0);
 		dnut_mmio_write32(card, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_OFF);
 	}
 	if (completed == 0) {
+		/* Not done */
 		dnut_trace("%s: rc=%d completed=%d\n", __func__,
 			   rc, completed);
-		if (rc == 0)
+		if (rc == 0) {
 			errno = ETIME;
-		return (rc != 0) ? rc : DNUT_ETIMEDOUT;
+			rc = DNUT_ETIMEDOUT;
+		}
+		goto __dnut_kernel_sync_execute_job_exit;
 	}
 
+	/* Get RETC (0x184) back to the caller */
+	rc = dnut_mmio_read32(card, ACTION_RETC_OUT, &cjob->retc);
+	if (rc != 0)
+		goto __dnut_kernel_sync_execute_job_exit;
 	dnut_trace("%s: RETURN RESULTS %ld bytes (%d)\n", __func__,
 		   mmio_out * sizeof(uint32_t), mmio_out);
 
-	/* Get job results max 112 bytes back to the caller */
+	/* Get job results max 6*16 bytes back to the caller */
 	if (cjob->wout_addr == 0) {
+		/* No out Address, mmio_out is set */
 		job_data = (uint32_t *)(unsigned long)cjob->win_addr;
 	} else {
 		job_data = (uint32_t *)(unsigned long)cjob->wout_addr;
 		mmio_out = cjob->wout_size / sizeof(uint32_t);
 	}
 
-	for (i = 0, action_addr = ACTION_PARAMS_OUT; i < mmio_out;
+	/* No need to read back 0x190, 0x194, 0x198 and 0x19c .... */
+	for (i = 0, action_addr = ACTION_PARAMS_OUT+0x10; i < mmio_out;
 	     i++, action_addr += sizeof(uint32_t)) {
 		rc = dnut_mmio_read32(card, action_addr, &job_data[i]);
 		if (rc != 0)
-			return rc;
-		dnut_trace("  %s: i=%d data=%x\n", __func__, i, job_data[i]);
+			goto __dnut_kernel_sync_execute_job_exit;
+		dnut_trace("  %s: %d Addr: %x Data: %x\n", __func__, i, action_addr, job_data[i]);
 	}
 
+__dnut_kernel_sync_execute_job_exit:
 	dnut_detach_action(card);
 	dnut_kernel_stop(kernel);
 	return rc;
