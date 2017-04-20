@@ -88,6 +88,9 @@ typedef struct {
         snapu64_t t3_produced;  /* #entries produced store them away */
         snapu32_t rc;
         snapu32_t action_version;
+
+	/* NOTE: reserved ... Required such that HLS generates the right
+	   register layout */
 } DATA_HJ; // DATA = 112 Bytes
 
 //---------------------------------------------------------------------

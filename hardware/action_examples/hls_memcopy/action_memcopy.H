@@ -32,7 +32,8 @@
 typedef struct {//Names of the fields can be changed by User. Should serve as a template
         dnut_addr in;   /* input data : 128 bits*/
         dnut_addr out;  /* offset table : 128 bits*/
-        ap_uint<608> unused;
+        ap_uint<608> unused; /* NOTE: Required such that HLS generates
+				the right register layout */
 } DATA_MC; // DATA = 108 Bytes
 
 //---------------------------------------------------------------------

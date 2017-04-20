@@ -32,56 +32,66 @@
  */
 
 // WRITE DATA TO MEMORY
-short write_burst_of_data_to_mem(snap_membus_t *dout_gmem, snap_membus_t *d_ddrmem,
-         snapu16_t memory_type, snapu64_t output_address,
-         snap_membus_t *buffer, snapu64_t size_in_bytes_to_transfer)
+short write_burst_of_data_to_mem(snap_membus_t *dout_gmem,
+				 snap_membus_t *d_ddrmem,
+				 snapu16_t memory_type,
+				 snapu64_t output_address,
+				 snap_membus_t *buffer,
+				 snapu64_t size_in_bytes_to_transfer)
 {
-    short rc;
-    switch (memory_type) {
+	short rc;
+	switch (memory_type) {
 	case HOST_DRAM:
 		memcpy((snap_membus_t  *) (dout_gmem + output_address),
-			buffer, size_in_bytes_to_transfer);
+		       buffer, size_in_bytes_to_transfer);
        		rc =  0;
 		break;
 	case CARD_DRAM:
 		memcpy((snap_membus_t  *) (d_ddrmem + output_address),
-			buffer, size_in_bytes_to_transfer);
+		       buffer, size_in_bytes_to_transfer);
        		rc =  0;
 		break;
 	default:
 		rc = 1;
-    }
-    return rc;
+	}
+
+	return rc;
 }
 
 // READ DATA FROM MEMORY
-short read_burst_of_data_from_mem(snap_membus_t *din_gmem, snap_membus_t *d_ddrmem,
-         snapu16_t memory_type, snapu64_t input_address,
-         snap_membus_t *buffer, snapu64_t size_in_bytes_to_transfer)
+short read_burst_of_data_from_mem(snap_membus_t *din_gmem,
+				  snap_membus_t *d_ddrmem,
+				  snapu16_t memory_type,
+				  snapu64_t input_address,
+				  snap_membus_t *buffer,
+				  snapu64_t size_in_bytes_to_transfer)
 {
-     short rc;
-    switch (memory_type) {
+	short rc;
+
+	switch (memory_type) {
 	case HOST_DRAM:
 		memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
-			size_in_bytes_to_transfer);
+		       size_in_bytes_to_transfer);
        		rc =  0;
 		break;
 	case CARD_DRAM:
 		memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address),
-			size_in_bytes_to_transfer);
+		       size_in_bytes_to_transfer);
        		rc =  0;
 		break;
 	default:
 		rc = 1;
-    }
-    return rc;
+	}
+
+	return rc;
 }
 
 //--------------------------------------------------------------------------------------------
 //--- MAIN PROGRAM MEMCOPY -------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
 
-void hls_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
+void hls_action(snap_membus_t *din_gmem,
+		snap_membus_t *dout_gmem,
 		snap_membus_t *d_ddrmem,
 		action_reg *Action_Register,
 		action_RO_config_reg *Action_Config)

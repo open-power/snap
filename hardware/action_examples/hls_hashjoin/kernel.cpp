@@ -413,8 +413,8 @@ void hls_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
 {
 	// Host Memory AXI Interface
 	//   Leaving here the bundle=host_mem away to get the code syntesize
-#pragma HLS INTERFACE m_axi port=din_gmem offset=slave depth=512
-#pragma HLS INTERFACE m_axi port=dout_gmem offset=slave depth=512
+#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
+#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg offset=0x030
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg offset=0x040
 
