@@ -28,18 +28,17 @@
 #define MAX_NB_OF_BYTES_READ  (4 * 1024)
 #define CARD_DRAM_SIZE (1 * 1024 *1024 * 1024)
 
-/* Names of the fields can be changed by User. Should serve as a template */
-typedef struct {//Names of the fields can be changed by User. Should serve as a template
+typedef struct { //Names of the fields can be changed by User. Should serve as a template 
         dnut_addr in;   /* input data : 128 bits*/
         dnut_addr out;  /* offset table : 128 bits*/
         ap_uint<608> unused; /* NOTE: Required such that HLS generates
 				the right register layout */
-} DATA_MC; // DATA = 108 Bytes
+} DATA_MC; // DATA = 108 Bytes / 864 bits (fixed length)
 
 //---------------------------------------------------------------------
 typedef struct {
-        CONTROL Control;       // 16 bytes
-        DATA_MC Data;          // up to 96 bytes
+        CONTROL Control;       //  16 bytes
+        DATA_MC Data;          // 108 bytes
 } action_reg;
 
 #define CONFIG_HOSTSTYLE_ALGO
