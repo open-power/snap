@@ -296,7 +296,9 @@ static void write_table3(snap_membus_t *mem, unsigned int max_lines,
 	/* FIXME Tryout for 0 entries ... */
 	snap_4KiB_flush(&buf);
 }
-
+//-----------------------------------------------------------------------------
+//--- MAIN PROGRAM ------------------------------------------------------------
+//-----------------------------------------------------------------------------
 static void process_action(snap_membus_t *din_gmem,
 			   snap_membus_t *dout_gmem,
 			   snap_membus_t *d_ddrmem,
@@ -330,58 +332,51 @@ static void process_action(snap_membus_t *din_gmem,
 #pragma HLS stream variable=t2_fifo depth=32
 #pragma HLS stream variable=t3_fifo depth=32
 
-	//== Parameters fetched in memory ==
-	//==================================
-	do {
-		// byte address received need to be aligned with port width
-		T1_address = Action_Register->Data.t1.address;
-		T1_type    = Action_Register->Data.t1.type;
-		T1_size    = Action_Register->Data.t1.size;
-		T1_items   = T1_size / sizeof(table1_t);
-		T1_lines   = T1_size / sizeof(snap_membus_t);
+	// byte address received need to be aligned with port width
+	T1_address = Action_Register->Data.t1.address;
+	T1_type    = Action_Register->Data.t1.type;
+	T1_size    = Action_Register->Data.t1.size;
+	T1_items   = T1_size / sizeof(table1_t);
+	T1_lines   = T1_size / sizeof(snap_membus_t);
 
-		T2_address = Action_Register->Data.t2.address;
-		T2_type    = Action_Register->Data.t2.type;
-		T2_size    = Action_Register->Data.t2.size;
-		T2_items   = T2_size / sizeof(table2_t);
-		T2_lines   = T2_size / sizeof(snap_membus_t);
+	T2_address = Action_Register->Data.t2.address;
+	T2_type    = Action_Register->Data.t2.type;
+	T2_size    = Action_Register->Data.t2.size;
+	T2_items   = T2_size / sizeof(table2_t);
+	T2_lines   = T2_size / sizeof(snap_membus_t);
 
-		T3_address = Action_Register->Data.t3.address;
-		T3_type    = Action_Register->Data.t3.type;
-		T3_size    = Action_Register->Data.t3.size;
-		T3_lines   = T3_size / sizeof(snap_membus_t);
-		ReturnCode = RET_CODE_OK;
+	T3_address = Action_Register->Data.t3.address;
+	T3_type    = Action_Register->Data.t3.type;
+	T3_size    = Action_Register->Data.t3.size;
+	T3_lines   = T3_size / sizeof(snap_membus_t);
+	ReturnCode = RET_CODE_OK;
 
-		fprintf(stderr, "t1: %016lx/%08x t2: %016lx/%08x t3: %016lx/%08x\n",
-			(long)T1_address, (int)T1_size,
-			(long)T2_address, (int)T2_size,
-			(long)T3_address, (int)T3_size);
+	fprintf(stderr, "t1: %016lx/%08x t2: %016lx/%08x t3: %016lx/%08x\n",
+		(long)T1_address, (int)T1_size,
+		(long)T2_address, (int)T2_size,
+		(long)T3_address, (int)T3_size);
 
+	/* FIXME Just Host DDRAM for now */
+	read_table1(din_gmem + (T1_address >> ADDR_RIGHT_SHIFT),
+		    T1_lines, &t1_fifo, T1_items);
+	read_table2(din_gmem + (T2_address >> ADDR_RIGHT_SHIFT),
+		    T2_lines, &t2_fifo, T2_items);
+
+	__table3_idx = 0;
+	rc = action_hashjoin_hls(&t1_fifo, T1_items,
+				 &t2_fifo, T2_items,
+				 &t3_fifo, &__table3_idx);
+	if (rc == 0) {
 		/* FIXME Just Host DDRAM for now */
-		read_table1(din_gmem + (T1_address >> ADDR_RIGHT_SHIFT),
-			    T1_lines, &t1_fifo, T1_items);
-		read_table2(din_gmem + (T2_address >> ADDR_RIGHT_SHIFT),
-			    T2_lines, &t2_fifo, T2_items);
-
-		__table3_idx = 0;
-		rc = action_hashjoin_hls(&t1_fifo, T1_items,
-					 &t2_fifo, T2_items,
-					 &t3_fifo, &__table3_idx);
-		if (rc == 0) {
-			/* FIXME Just Host DDRAM for now */
-			write_table3(dout_gmem + (T3_address>>ADDR_RIGHT_SHIFT),
-				     T3_lines, &t3_fifo, __table3_idx);
-		} else
-			ReturnCode = RET_CODE_FAILURE;
-	} while (0);
+		write_table3(dout_gmem + (T3_address>>ADDR_RIGHT_SHIFT),
+			     T3_lines, &t3_fifo, __table3_idx);
+	} else
+		ReturnCode = RET_CODE_FAILURE;
 
 	write_HJ_regs(Action_Register, ReturnCode, 0, 0, __table3_idx, 0);
 }
 
-//--------------------------------------------------------------------------------------------
-//--- MAIN PROGRAM HASHJOIN ------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------
-
+//--- TOP LEVEL MODULE ------------------------------------------------------------------
 /**
  * Remarks: Using pointers for the din_gmem, ... parameters is requiring to
  * to set the depth=... parameter via the pragma below. If missing to do this
