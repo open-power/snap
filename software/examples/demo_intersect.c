@@ -140,9 +140,9 @@ static void dnut_prepare_intersect(struct dnut_job *cjob,
             DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
 
         //result_table in DDR 
-        // 99 is a dummy value. HW will update this field when finished.
+        // 128 is a dummy value. HW will update this field when finished.
         ddr_addr = 2*MAX_TABLE_SIZE;
-        dnut_addr_set (&ijob_i->result_table, (void *)ddr_addr, 99, DNUT_TARGET_TYPE_CARD_DRAM ,
+        dnut_addr_set (&ijob_i->result_table, (void *)ddr_addr, 128, DNUT_TARGET_TYPE_CARD_DRAM ,
                 DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
 		        DNUT_TARGET_FLAGS_END);
 
@@ -540,7 +540,7 @@ int main(int argc, char *argv[])
         actual_result_size = ijob_o.result_table.size;  //in bytes
         result_num = actual_result_size/sizeof(value_t);
         printf("HW: result_num = %d\n", result_num);
- 
+
 
         //------------------------------------
         // Action begin (5)
