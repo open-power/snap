@@ -32,7 +32,7 @@
 
 int verbose_flag = 0;
 
-#define	HLS_CHECKSUM_ID		0x10141004
+#define	HLS_CHECKSUM_ID		0x10141001
 
 static const char *version = GIT_VERSION;
 static const char *checksum_mode_str[] = { "CRC32", "ADLER32", "SPONGE" };
