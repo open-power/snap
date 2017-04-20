@@ -338,7 +338,7 @@ BEGIN
   hls_action_0 : hls_action
   GENERIC MAP (
     -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory
-    C_M_AXI_CARD_MEM0_ID_WIDTH       => C_M_AXI_CARD_MEM0_ID_WIDTH,
+    C_M_AXI_CARD_MEM0_ID_WIDTH       => 1, --C_M_AXI_CARD_MEM0_ID_WIDTH, --SR# 10394170
     C_M_AXI_CARD_MEM0_ADDR_WIDTH     => C_M_AXI_CARD_MEM0_ADDR_WIDTH,
     C_M_AXI_CARD_MEM0_DATA_WIDTH     => C_M_AXI_CARD_MEM0_DATA_WIDTH,
     C_M_AXI_CARD_MEM0_AWUSER_WIDTH   => C_M_AXI_CARD_MEM0_AWUSER_WIDTH,
@@ -367,7 +367,7 @@ BEGIN
     m_axi_card_mem0_araddr       => m_axi_card_mem0_araddr,                                -- only for DDRI_USED=TRUE
     m_axi_card_mem0_arburst      => m_axi_card_mem0_arburst,                               -- only for DDRI_USED=TRUE
     m_axi_card_mem0_arcache      => m_axi_card_mem0_arcache,                               -- only for DDRI_USED=TRUE
-    m_axi_card_mem0_arid         => m_axi_card_mem0_arid,                                  -- only for DDRI_USED=TRUE
+    m_axi_card_mem0_arid         => m_axi_card_mem0_arid( 0 DOWNTO 0),--SR# 10394170                                  -- only for DDRI_USED=TRUE
     m_axi_card_mem0_arlen        => m_axi_card_mem0_arlen,                                 -- only for DDRI_USED=TRUE
     m_axi_card_mem0_arlock       => m_axi_card_mem0_arlock,                                -- only for DDRI_USED=TRUE
     m_axi_card_mem0_arprot       => m_axi_card_mem0_arprot,                                -- only for DDRI_USED=TRUE
@@ -380,7 +380,7 @@ BEGIN
     m_axi_card_mem0_awaddr       => m_axi_card_mem0_awaddr,                                -- only for DDRI_USED=TRUE
     m_axi_card_mem0_awburst      => m_axi_card_mem0_awburst,                               -- only for DDRI_USED=TRUE
     m_axi_card_mem0_awcache      => m_axi_card_mem0_awcache,                               -- only for DDRI_USED=TRUE
-    m_axi_card_mem0_awid         => m_axi_card_mem0_awid,                                  -- only for DDRI_USED=TRUE
+    m_axi_card_mem0_awid         => m_axi_card_mem0_awid(0 DOWNTO 0),--SR# 10394170                                  -- only for DDRI_USED=TRUE
     m_axi_card_mem0_awlen        => m_axi_card_mem0_awlen,                                 -- only for DDRI_USED=TRUE
     m_axi_card_mem0_awlock       => m_axi_card_mem0_awlock,                                -- only for DDRI_USED=TRUE
     m_axi_card_mem0_awprot       => m_axi_card_mem0_awprot,                                -- only for DDRI_USED=TRUE
@@ -390,13 +390,13 @@ BEGIN
     m_axi_card_mem0_awsize       => m_axi_card_mem0_awsize,                                -- only for DDRI_USED=TRUE
     m_axi_card_mem0_awuser       => m_axi_card_mem0_awuser,                                -- only for DDRI_USED=TRUE
     m_axi_card_mem0_awvalid      => m_axi_card_mem0_awvalid,                               -- only for DDRI_USED=TRUE
-    m_axi_card_mem0_bid          => m_axi_card_mem0_bid,                                   -- only for DDRI_USED=TRUE
+    m_axi_card_mem0_bid          => m_axi_card_mem0_bid(0 DOWNTO 0),--SR# 10394170                                   -- only for DDRI_USED=TRUE
     m_axi_card_mem0_bready       => m_axi_card_mem0_bready,                                -- only for DDRI_USED=TRUE
     m_axi_card_mem0_bresp        => m_axi_card_mem0_bresp,                                 -- only for DDRI_USED=TRUE
     m_axi_card_mem0_buser        => m_axi_card_mem0_buser,                                 -- only for DDRI_USED=TRUE
     m_axi_card_mem0_bvalid       => m_axi_card_mem0_bvalid,                                -- only for DDRI_USED=TRUE
     m_axi_card_mem0_rdata        => m_axi_card_mem0_rdata,                                 -- only for DDRI_USED=TRUE
-    m_axi_card_mem0_rid          => m_axi_card_mem0_rid,                                   -- only for DDRI_USED=TRUE
+    m_axi_card_mem0_rid          => m_axi_card_mem0_rid(0 DOWNTO 0),--SR# 10394170                                   -- only for DDRI_USED=TRUE
     m_axi_card_mem0_rlast        => m_axi_card_mem0_rlast,                                 -- only for DDRI_USED=TRUE
     m_axi_card_mem0_rready       => m_axi_card_mem0_rready,                                -- only for DDRI_USED=TRUE
     m_axi_card_mem0_rresp        => m_axi_card_mem0_rresp,                                 -- only for DDRI_USED=TRUE
