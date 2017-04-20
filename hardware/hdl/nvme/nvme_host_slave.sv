@@ -265,7 +265,7 @@ module nvme_host_slave #
       write_addr_inc <= 1'b0;
       // Auto incrment address if signalled
       if (write_addr_inc || read_addr_inc) begin
-        admin_regs[`ADMIN_BUFFER_ADDR] <= admin_regs[`ADMIN_BUFFER_ADDR] + 1;
+        admin_regs[`ADMIN_BUFFER_ADDR] <= admin_regs[`ADMIN_BUFFER_ADDR] + 4;
       end
       // Set admin ready status
       admin_regs[`ADMIN_STATUS][`ADMIN_STAT_READY] <= system_init;
@@ -321,7 +321,7 @@ module nvme_host_slave #
             `HOST_BUFFER_DATA: begin
               // Replicate the 32 bit data across all 128 bits (4 lanes)
               tx_wdata <= {4{host_s_axi_wdata}};
-              unique case (admin_regs[`ADMIN_BUFFER_ADDR][1:0])
+              unique case (admin_regs[`ADMIN_BUFFER_ADDR][3:2])
                 0: begin
                   tx_write <= 4'b0001;
                 end
@@ -335,7 +335,7 @@ module nvme_host_slave #
                   tx_write <= 4'b1000;
                 end
               endcase;
-              tx_waddr <= admin_regs[`ADMIN_BUFFER_ADDR][2 +: TX_ADDR_BITS];
+              tx_waddr <= admin_regs[`ADMIN_BUFFER_ADDR][4 +: TX_ADDR_BITS];
               // Autoincrement
               if (admin_regs[`ADMIN_CONTROL][`CONTROL_AUTO_INCR]) begin
                 write_addr_inc <= 1'b1;
@@ -568,8 +568,8 @@ module nvme_host_slave #
           unique case (host_raddr)
           `HOST_BUFFER_DATA: begin
             rx_read <= 1'b1;
-            rx_raddr <= admin_regs[`ADMIN_BUFFER_ADDR][2 +: RX_ADDR_BITS];
-            read_index <= admin_regs[`ADMIN_BUFFER_ADDR][1:0];
+            rx_raddr <= admin_regs[`ADMIN_BUFFER_ADDR][4 +: RX_ADDR_BITS];
+            read_index <= admin_regs[`ADMIN_BUFFER_ADDR][3:2];
             // Autoincrement
             if (admin_regs[`ADMIN_CONTROL][`CONTROL_AUTO_INCR]) begin
               read_addr_inc <= 1'b1;

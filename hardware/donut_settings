@@ -64,32 +64,32 @@ while [ -z "$SETUP_DONE" ]; do
     export USERHOME=$FRAMEWORK_ROOT/$USER
     echo "Setting USERHOME               to  \"$USERHOME\""
   else
-    echo "USERHOME                is set to  \"$USERHOME\""
+    echo "USERHOME                is set to: \"$USERHOME\""
   fi
 
   if [ ! -d "$PSLSE_ROOT" ]; then
     export PSLSE_ROOT=$USERHOME/pslse                          # used with git clone https://github.com/ibm-capi/pslse     $PSLSE_ROOT
     echo "Setting PSLSE_ROOT             to  \"$PSLSE_ROOT\""
   else
-    echo "PSLSE_ROOT              is set to  \"$PSLSE_ROOT\""
+    echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
   fi
 
   if [ "$DONUT_ROOT" = "$donutdir" ]; then
-    echo "DONUT_ROOT              is set to  \"$DONUT_ROOT\""
+    echo "DONUT_ROOT              is set to: \"$DONUT_ROOT\""
   else
     echo "Setting DONUT_ROOT             to  \"$donutdir\""
   fi
   export DONUT_ROOT=$donutdir
 
   if [ "$DONUT_HARDWARE_ROOT" = "$DONUT_ROOT/hardware" ]; then
-    echo "DONUT_HARDWARE_ROOT     is set to  \"$DONUT_HARDWARE_ROOT\""
+    echo "DONUT_HARDWARE_ROOT     is set to: \"$DONUT_HARDWARE_ROOT\""
   else
     echo "Setting DONUT_HARDWARE_ROOT    to  \"$DONUT_ROOT/hardware\""
   fi
   export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware
 
   if [ "$DONUT_SOFTWARE_ROOT" = "$DONUT_ROOT/software" ]; then
-    echo "DONUT_SOFTWARE_ROOT     is set to  \"$DONUT_SOFTWARE_ROOT\""
+    echo "DONUT_SOFTWARE_ROOT     is set to: \"$DONUT_SOFTWARE_ROOT\""
   else
     echo "Setting DONUT_SOFTWARE_ROOT    to  \"$DONUT_ROOT/software\""
   fi
@@ -99,14 +99,14 @@ while [ -z "$SETUP_DONE" ]; do
     echo "Variable ACTION_ROOT    is not set. Please let it point to your action source if you want to add an action to your project."
     SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Variable ACTION_ROOT is not set (see above)."
   else
-    echo "ACTION_ROOT             is set to  \"$ACTION_ROOT\""
+    echo "ACTION_ROOT             is set to: \"$ACTION_ROOT\""
   fi
 
   if [ -z "$FPGACARD" ]; then
     export FPGACARD=KU3
     echo "Setting FPGACARD               to  \"$FPGACARD\""
   else
-    echo "FPGACARD                is set to  \"$FPGACARD\""
+    echo "FPGACARD                is set to: \"$FPGACARD\""
     if [[ ($FPGACARD != "KU3") && ($FPGACARD != "FGT") ]]; then 
       echo
       echo "### ERROR ### FPGACARD=$FPGACARD is not supported"
@@ -118,7 +118,7 @@ while [ -z "$SETUP_DONE" ]; do
     export FPGACHIP=xcku060-ffva1156-2-e
     echo "Setting FPGACHIP               to  \"$FPGACHIP\""
   else
-    echo "FPGACHIP                is set to  \"$FPGACHIP\""
+    echo "FPGACHIP                is set to: \"$FPGACHIP\""
   fi
 
   if [ ! -d "$HDK_ROOT" ]; then
@@ -130,7 +130,7 @@ while [ -z "$SETUP_DONE" ]; do
 
     echo "Setting HDK_ROOT               to  \"$HDK_ROOT\""
   else
-    echo "HDK_ROOT                is set to  \"$HDK_ROOT\""
+    echo "HDK_ROOT                is set to: \"$HDK_ROOT\""
   fi
 
   if [ ! -d "$DIMMTEST" ]; then
@@ -141,21 +141,21 @@ while [ -z "$SETUP_DONE" ]; do
     fi 
     echo "Setting DIMMTEST               to  \"$DIMMTEST\""
   else
-    echo "DIMMTEST                is set to  \"$DIMMTEST\""
+    echo "DIMMTEST                is set to: \"$DIMMTEST\""
   fi
 
   if [ -z "$SIMULATOR" ]; then
     export SIMULATOR=xsim                                      # xsim, questa and ncsim are supported, currently
     echo "Setting SIMULATOR              to  \"$SIMULATOR\""
   else
-    echo "SIMULATOR               is set to  \"$SIMULATOR\""
+    echo "SIMULATOR               is set to: \"$SIMULATOR\""
   fi
  
   if [ -z "$NUM_OF_ACTIONS" ]; then
     export NUM_OF_ACTIONS=1
     echo "Setting NUM_OF_ACTIONS         to  \"$NUM_OF_ACTIONS\""
   else
-    echo "NUM_OF_ACTIONS          is set to  \"$NUM_OF_ACTIONS\""
+    echo "NUM_OF_ACTIONS          is set to: \"$NUM_OF_ACTIONS\""
   fi
 
   if [ -z "$SDRAM_USED" ]; then
@@ -165,11 +165,20 @@ while [ -z "$SETUP_DONE" ]; do
     echo "SDRAM_USED              is set to  \"$SDRAM_USED\""
   fi
 
+  if [ -z "$NVME_USED" ]; then
+    export NVME_USED="FALSE"
+    echo "Variable NVME_USED      is not set. Will default to  \"FALSE\""
+  else
+    echo "NVME_USED               is set to: \"$NVME_USED\""
+    if [[ $NVME_USED = "TRUE"  && $FPGACARD = "KU3" ]]; then 
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of NVME_USED=$NVME_USED on KU3 is conflicting!"
+    fi
+  fi
   if [ -z "$ILA_DEBUG" ]; then
     export ILA_DEBUG="FALSE"
     echo "Setting ILA_DEBUG              to  \"ILA_DEBUG\""
   else
-    echo "ILA_DEBUG               is set to  \"$ILA_DEBUG\""
+    echo "ILA_DEBUG               is set to: \"$ILA_DEBUG\""
   fi
  echo
 
@@ -180,18 +189,18 @@ while [ -z "$SETUP_DONE" ]; do
     if [ -z `which ncsim 2> /dev/null` ]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to ncsim not set Cadence simulation won't work"
     else
-      echo "Path to ncsim: `which ncsim`"
+      echo "Path to ncsim           is set to: \"`which ncsim`\""
       # checking version
-      ncsim -version
+      echo "ncsim version           is set to: \"$(ncsim -version| cut -f 3)\""
       if [ -z "$CDS_INST_DIR" ]; then
         export CDS_INST_DIR=$(dirname $(dirname `which ncsim`))
         echo "Setting CDS_INST_DIR           to  \"$CDS_INST_DIR\""
       else
-        echo "CDS_INST_DIR            is set to  \"$CDS_INST_DIR\""
+        echo "CDS_INST_DIR            is set to: \"$CDS_INST_DIR\""
       fi
     fi
     if [ -f "$IES_LIBS/cds.lib" ]; then
-      echo "cds.lib found in IES_LIBS=$IES_LIBS"
+      echo "cds.lib (IES_LIBS)       found in: \"$IES_LIBS\""
     else
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Cannot find cds.lib in IES_LIBS=$IES_LIBS, Cadence compilation won't work"
     fi

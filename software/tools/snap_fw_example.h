@@ -42,11 +42,14 @@
 #define ACTION_CONFIG_COPY_HDH  6       /* Memcopy Host to DDR to Host */
 #define ACTION_CONFIG_MEMSET_H  8       /* Memset Host Memory */
 #define ACTION_CONFIG_MEMSET_F  9       /* Memset FPGA Memory */
+#define ACTION_CONFIG_COPY_DN   0x0a    /* Copy DDR to NVME drive 0 */
+#define ACTION_CONFIG_COPY_ND   0x0b    /* Copy NVME drive 0 to DDR */
+#define NVME_DRIVE1		0x10	/* Select Drive 1 for 0a and 0b */
 
-#define ACTION_SRC_LOW          0x34
+#define ACTION_SRC_LOW          0x34	/* LBA for 0A, 1A, 0B and 1B */
 #define ACTION_SRC_HIGH         0x38
-#define ACTION_DEST_LOW         0x3c
+#define ACTION_DEST_LOW         0x3c	/* LBA for 0A, 1A, 0B and 1B */
 #define ACTION_DEST_HIGH        0x40
-#define ACTION_CNT              0x44    /* Count Register */
+#define ACTION_CNT              0x44    /* Count Register or # of 512 Byte Blocks for NVME */
 
 #endif	/* __SNAP_FW_EXA__ */

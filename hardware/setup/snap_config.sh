@@ -19,6 +19,12 @@
 ############################################################################
 ############################################################################
 
+if [ "$FPGACARD" == "KU3" ]; then
+  FPGA_FILTER="\-\- only for FPGACARD=FGT"
+else
+  FPGA_FILTER="\-\- only for FPGACARD=KU3"
+fi
+
 if [ "$DDRI_USED" == "TRUE" ]; then
   DDRI_FILTER="\-\- only for DDRI_USED!=TRUE"
 else
@@ -43,7 +49,23 @@ else
   BRAM_FILTER="\-\- only for BRAM_USED=TRUE"
 fi
 
-grep -v "$DDRI_FILTER" $1 | grep -v "$DDR3_FILTER" | grep -v "$DDR4_FILTER" | grep -v "$BRAM_FILTER" > $2
+if [ "$NVME_USED" == "TRUE" ]; then
+  NVME_FILTER="\-\- only for NVME_USED!=TRUE"
+else
+  NVME_FILTER="\-\- only for NVME_USED=TRUE"
+fi
+
+if [ -z "$HLS_WORKAROUND" ] && [ `echo "$ACTION_ROOT" | sed 's/hls/xxx/' | sed 's/HLS/XXX/'` != "$ACTION_ROOT" ] ; then
+  HLS_WORKAROUND="TRUE"
+fi
+
+if [ "$HLS_WORKAROUND" == "TRUE" ]; then
+  HLS_WORKAROUND_FILTER="\-\- only for HLS_WORKAROUND!=TRUE"
+else
+  HLS_WORKAROUND_FILTER="\-\- only for HLS_WORKAROUND=TRUE"
+fi
+
+grep -v "$FPGA_FILTER" $1 | grep -v "$DDRI_FILTER" |  grep -v "$DDR3_FILTER" | grep -v "$DDR4_FILTER" | grep -v "$BRAM_FILTER" | grep -v "$NVME_FILTER" | grep -v "$HLS_WORKAROUND_FILTER" > $2
 
 NAME=`basename $2`
 

@@ -275,29 +275,28 @@ static int memcpy_test(struct dnut_card* dnc,
 		return 0;
 	}
 
-	/* Allocate Src Buffer if in Host->Host or Host->DDR Mode or Host->DDR->Host*/
-	src = alloc_mem(align, memsize);
-	if (NULL == src)
-		return 1;
-	VERBOSE1("  Src:  %p Size: 0x%x (%d * 4K + %d * 64 Byte) Align: %d\n",
-		src, memsize, blocks_4k, blocks_64, align);
-	memset2(src, card_ram_base, memsize);
-
-	/* Allocate Dest Buffer if in Host->Host or DDR->Host Mode */
-	dest = alloc_mem(align, memsize);
-	if (NULL == dest) {
-		free_mem(src);
-		return 1;
-	}
-	VERBOSE1("  Dest: %p timeout: %d msec\n",
-			dest, timeout);
-
 	switch (action) {
 	case ACTION_CONFIG_COPY_HH:
+		/* Allocate Host Src Buffer */
+		src = alloc_mem(align, memsize);
+		if (NULL == src)
+			return 1;
+		VERBOSE1("  From Host:  %p Size: 0x%x (%d * 4K + %d * 64 Byte) Align: %d\n",
+			src, memsize, blocks_4k, blocks_64, align);
+		memset2(src, card_ram_base, memsize);
+		/* Allocate Host Dest Buffer */
+		dest = alloc_mem(align, memsize);
+		if (NULL == dest) {
+			free_mem(src);
+			return 1;
+		}
+		VERBOSE1("  To Host: %p timeout: %d msec\n", dest, timeout);
+
 		action_memcpy(dnc, action, dest, src, memsize);
 		rc = action_wait_idle(dnc, timeout, &td, irq);
 		print_time(td, memsize);
 		if (0 != rc) break;
+		VERBOSE1("  Compare: %p <-> %p\n", src, dest);
 		rc = memcmp(src, dest, memsize);
 		if ((verbose_level > 1) || rc) {
 			VERBOSE0("---------- src Buffer: %p\n", src);
@@ -307,15 +306,37 @@ static int memcpy_test(struct dnut_card* dnc,
 		}
 		if (rc)
 			VERBOSE0("Error Memcmp failed rc: %d\n", rc);
+		free_mem(src);
+		free_mem(dest);
 		break;
 	case ACTION_CONFIG_COPY_HD:	/* Host to Card RAM */
+		/* Allocate Host Src Buffer */
+		src = alloc_mem(align, memsize);
+		if (NULL == src)
+			return 1;
+		memset2(src, card_ram_base, memsize);
+		VERBOSE1("  From Host:  %p Size: 0x%x (%d * 4K + %d * 64 Byte) Align: %d\n",
+			src, memsize, blocks_4k, blocks_64, align);
+		/* Set Dest to DDR Ram Address */
 		dest = (void*)card_ram_base;
+		VERBOSE1("  To DDR: %p timeout: %d msec\n", dest, timeout);
+
 		action_memcpy(dnc, action, dest, src, memsize);
 		rc = action_wait_idle(dnc, timeout, &td, irq);
 		print_time(td, memsize);
+		free_mem(src);
 		break;
 	case ACTION_CONFIG_COPY_DH:
+		/* Set Src to DDR Ram Address */
 		src = (void*)card_ram_base;
+		VERBOSE1("  From DDR:  %p Size: 0x%x (%d * 4K + %d * 64 Byte) Align: %d\n",
+			src, memsize, blocks_4k, blocks_64, align);
+		/* Allocate Host Dest Buffer */
+		dest = alloc_mem(align, memsize);
+		if (NULL == dest)
+			return 1;
+		VERBOSE1("  To Host: %p timeout: %d msec\n", dest, timeout);
+
 		action_memcpy(dnc, action, dest, src, memsize);
 		rc = action_wait_idle(dnc, timeout, &td, irq);
 		print_time(td, memsize);
@@ -323,31 +344,54 @@ static int memcpy_test(struct dnut_card* dnc,
 			VERBOSE0("---------- dest Buffer: %p\n", dest);
 			__hexdump(stdout, dest, memsize);
 		}
+		free_mem(dest);
 		break;
 	case ACTION_CONFIG_COPY_DD:
 		src = (void*)card_ram_base;
+		VERBOSE1("  From DDR:  %p Size: 0x%x (%d * 4K + %d * 64 Byte) Align: %d\n",
+			src, memsize, blocks_4k, blocks_64, align);
 		dest = src + memsize;	/* Need to check */
 		if ((uint64_t)(dest + memsize) > DDR_MEM_SIZE) {
 			VERBOSE0("Error Size 0x%x and Offset 0x%llx Exceed Memory\n",
 				memsize, (long long)card_ram_base);
 			break;
 		}
+		VERBOSE1("  To DDR: %p timeout: %d msec\n", dest, timeout);
+
 		action_memcpy(dnc, action, dest, src, memsize);
 		rc = action_wait_idle(dnc, timeout, &td, irq);
 		print_time(td, memsize);
 		break;
 	case ACTION_CONFIG_COPY_HDH:	/* Host -> DDR -> Host */
+		/* Allocate Host Src Buffer */
+		src = alloc_mem(align, memsize);
+		if (NULL == src)
+			return 1;
+		VERBOSE1("  From Host:  %p Size: 0x%x (%d * 4K + %d * 64 Byte) Align: %d\n",
+			src, memsize, blocks_4k, blocks_64, align);
+		memset2(src, card_ram_base, memsize);
 		ddr3 = (void*)card_ram_base;
+		VERBOSE1("  To DDR: %p timeout: %d msec\n", ddr3, timeout);
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 			ddr3, src, memsize);
 		rc = action_wait_idle(dnc, timeout, &td, irq);
 		print_time(td, memsize);
 		if (0 != rc) break;
+
+		/* Allocate Host Dest Buffer */
+		dest = alloc_mem(align, memsize);
+		if (NULL == dest) {
+			free_mem(src);
+			return 1;
+		}
+		VERBOSE1("  From DDR Src: %p\n", ddr3);
+		VERBOSE1("  To Host: %p timeout: %d msec\n", dest, timeout);
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
 			dest, ddr3, memsize);
 		rc = action_wait_idle(dnc, timeout, &td, irq);
 		print_time(td, memsize);
 		if (0 != rc) break;
+		VERBOSE1("  Compare: %p <-> %p\n", src, dest);
 		rc = memcmp(src, dest, memsize);
 		if ((verbose_level > 1) || rc) {
 			VERBOSE0("---------- src Buffer: %p\n", src);
@@ -357,11 +401,10 @@ static int memcpy_test(struct dnut_card* dnc,
 		}
 		if (rc)
 			VERBOSE0("Error Memcmp failed rc: %d\n", rc);
+		free_mem(src);
+		free_mem(dest);
 		break;
 	}
-
-	free_mem(src);
-	free_mem(dest);
 	return rc;
 }
 

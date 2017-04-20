@@ -38,6 +38,7 @@ ifeq "$(FPGACARD)" "KU3"
 export DDR3_USED=$(SDRAM_USED)
 export DDR4_USED=FALSE
 export DDRI_USED=$(SDRAM_USED)
+export NVME_USED=FALSE
 endif
 
 ifeq "$(FPGACARD)" "FGT"
@@ -55,11 +56,15 @@ export DDR4_USED=FALSE
 export DDRI_USED=TRUE
 endif
 
+ifndef NVME_USED
+export NVME_USED=FALSE
+endif
+
 ifndef MSG_LEVEL
 export MSG_LEVEL=-quiet
 endif
 
-.PHONY: all image model check_donut_settings action_config create_environment copy clean config gitclean patch_version xpr_image
+.PHONY: all image model check_donut_settings action_config create_environment copy clean config gitclean patch_version xpr_image snap_config
 
 all: config model image
 
@@ -67,7 +72,11 @@ check_donut_settings:
 	@if [ ! -d "$(DONUT_HARDWARE_ROOT)" ]; then \
 		echo "DONUT_HARDWARE_ROOT does not point to a directory."; \
 		echo "Please source donut_settings before calling make!"; \
-                exit 1; \
+		exit 1; \
+	fi
+	@if [[ $(SIMULATOR) != "irun" && $(SIMULATOR) != "xsim" && $(SIMULATOR) != "questa" ]];then \
+		echo "unknown simulator=$SIMULATOR"; \
+		exit 1; \
 	fi
 	@if [ -z `which git 2> /dev/null` ]; then \
 		echo "The SNAP framework make process relies on git."; \
@@ -112,30 +121,49 @@ copy $(BUILD_DIR)/Checkpoint/b_route_design.dcp:
 %.sv: %.sv_source
 	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
+snap_config: $(SNAP_CONFIG_FILES)
+
 action_config:
 	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
 		echo -e "Executing $(ACTION_ROOT)/action_config.sh"; \
 		cd $(ACTION_ROOT) && ./action_config.sh; \
 	fi
 
+
 create_environment:
 	@echo -e "\t[CREATE_ENVIRONMENT] start `date`";
 	$(eval BUILD_DATE := $(shell date +%Y.%m.%d_%H:%M))
-	@cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/vivado_create_ip_$(BUILD_DATE).log         -journal $(LOGS_DIR)/vivado_create_ip_$(BUILD_DATE).jou
-	@cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/vivado_create_framework_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_frame_work_$(BUILD_DATE).jou
+	@cd $(DONUT_HARDWARE_ROOT)/setup                                    && vivado $(MSG_LEVEL) -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/vivado_create_ip_$(BUILD_DATE).log         -journal $(LOGS_DIR)/vivado_create_ip_$(BUILD_DATE).jou
+	@if [ $(NVME_USED) = "TRUE" ]; then cd $(DONUT_HARDWARE_ROOT)/setup && vivado $(MSG_LEVEL) -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/vivado_create_nvme_host_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_nvme_host_$(BUILD_DATE).jou; fi
+	@cd $(DONUT_HARDWARE_ROOT)/setup                                    && vivado $(MSG_LEVEL) -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/vivado_create_framework_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_frame_work_$(BUILD_DATE).jou
 	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
 
-config: check_donut_settings $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FILES) action_config create_environment
+config: copy_denali check_donut_settings $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FILES) action_config create_environment patch_NVMe
+#config: copy_denali check_donut_settings $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FILES) action_config create_environment
+
 	@echo -e "\t[CONFIG............] done `date`"
 
 patch_version:
 	@echo  -e "\t[PATCH.............] SNAP version and build date registers"; \
 	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HDL_CORE) donut.vhd
 
+patch_NVMe:
+	@if [[ -e "$(DONUT_HARDWARE_ROOT)/setup/patch_NVMe.sh" && $(NVME_USED) = "TRUE" ]]; then \
+		cd $(DONUT_HARDWARE_ROOT)/setup && ./patch_NVMe.sh && cd .. ; \
+		echo  -e "\t[PATCH.............] NVMe PCIe Root Complex sim. files"; \
+	fi	
+ 
+copy_denali:
+	@if [[ -e "$(FRAMEWORK_ROOT)/denali/tmp/" && $(NVME_USED) = "TRUE" ]]; then \
+                cp $(FRAMEWORK_ROOT)/denali/tmp/* $(DONUT_HARDWARE_ROOT)/sim/nvme/. ;  \
+                echo  -e "\t[COPY..............] NVMe: denali files"; \
+        fi
+
+
 image: $(SNAP_CONFIG_FILES) patch_version
 	@echo -e "\t[BUILD IMAGE.......] start `date`"
 	$(eval BUILD_DATE := $(shell date +%Y.%m.%d_%H:%M))
-	@cd $(BUILD_DIR) && time vivado  $(MSG_LEVEL) -mode batch -source noHDK_build.tcl -notrace -log $(LOGS_DIR)/vivado_build_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_build_$(BUILD_DATE).jou
+	@cd $(BUILD_DIR) && time vivado $(MSG_LEVEL) -mode batch -source noHDK_build.tcl -notrace -log $(LOGS_DIR)/vivado_build_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_build_$(BUILD_DATE).jou
 	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/framework_timing_summary.rpt | egrep -v "^$|^\-\-"
 	@rm -r -f .bitstream_name.txt
 	@echo -e "\t[BUILD IMAGE.......] done  `date`"
@@ -143,28 +171,81 @@ image: $(SNAP_CONFIG_FILES) patch_version
 xpr_image: $(SNAP_CONFIG_FILES) patch_version
 	@echo -e "\t[BUILD XPR IMAGE...] start `date`"
 	$(eval BUILD_DATE := $(shell date +%Y.%m.%d_%H:%M))
-	@cd $(BUILD_DIR) && time vivado  $(MSG_LEVEL) -mode batch -source fw_xpr_build.tcl -notrace -log $(LOGS_DIR)/vivado_build_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_build_$(BUILD_DATE).jou
+	@cd $(BUILD_DIR) && time vivado $(MSG_LEVEL) -mode batch -source fw_xpr_build.tcl -notrace -log $(LOGS_DIR)/vivado_build_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_build_$(BUILD_DATE).jou
 	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/framework_timing_summary_routed.rpt | egrep -v "^$|^\-\-"
 	@rm -r -f .bitstream_name.txt
-	@echo -e "\t[BUILD IMAGE.......] done  `date`"
+	@echo -e "\t[BUILD XPR IMAGE...] done  `date`"
 
-model: $(SNAP_CONFIG_FILES) patch_version
-	@echo -e "\t[BUILD MODEL] start `date`"
-	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
-	@echo -e "\t[BUILD MODEL] done `date`"
+model: pslse software $(SNAP_CONFIG_FILES) patch_version $(SIMULATOR)
+#	@echo -e "\t[BUILD MODEL.......] start `date`"
+#	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
+#	@echo -e "\t[BUILD MODEL.......] done `date`"
 
-clean:
+pslse:
+	@echo -e "\t[COMPILE PSLSE ....] start `date`"
+	@make -C $(PSLSE_ROOT)/afu_driver/src >compile_pslse.log 2>&1
+	@make -C $(PSLSE_ROOT)/pslse         >>compile_pslse.log 2>&1
+	@make -C $(PSLSE_ROOT)/libcxl        >>compile_pslse.log 2>&1
+	@make -C $(PSLSE_ROOT)/debug         >>compile_pslse.log 2>&1
+
+software:
+	@echo -e "\t[COMPILE SOFTWARE..] start `date`"
+	@make -C $(DONUT_SOFTWARE_ROOT)       >compile_sw.log 2>&1
+
+xsim:
+	@echo -e "\t[BUILD xsim........] start `date`"
+	@if [ ! -d "$(DONUT_HARDWARE_ROOT)/sim/xsim" ];then \
+		time vivado $(MSG_LEVEL) -mode batch -source setup/export_xsim.tcl -notrace -log compile_$(SIMULATOR).log; \
+		$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/xsim top.sh >>compile_$(SIMULATOR).log 2>&1; \
+		cd $(DONUT_HARDWARE_ROOT)/sim/xsim && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
+	fi
+	cd $(DONUT_HARDWARE_ROOT)/sim/xsim && ./top.sh >>../../compile_$(SIMULATOR).log 2>&1
+
+irun:
+	@echo -e "\t[BUILD irun........] start `date`"
+	@if [ ! -d "$(DONUT_HARDWARE_ROOT)/sim/ies" ];then \
+		time vivado $(MSG_LEVEL) -mode batch -source setup/export_irun.tcl -notrace -log compile_$(SIMULATOR).log; \
+		$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/ies top.sh >>compile_$(SIMULATOR).log 2>&1; \
+		cd $(DONUT_HARDWARE_ROOT)/sim/ies && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
+	fi
+	cd $(DONUT_HARDWARE_ROOT)/sim/ies && ./top.sh
+#	cd $(DONUT_HARDWARE_ROOT)/sim/ies && ./top.sh >>../../compile_$(SIMULATOR).log 2>&1
+
+questa:
+	@echo -e "\t[BUILD questa......] start `date`"
+	@if [ ! -d "$(DONUT_HARDWARE_ROOT)/sim/questa" ];then \
+		time vivado $(MSG_LEVEL) -mode batch -source setup/export_questa.tcl -notrace -log compile_$(SIMULATOR).log; \
+		$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/questa top.sh >>compile_$(SIMULATOR).log 2>&1; \
+		cd $(DONUT_HARDWARE_ROOT)/sim/questa && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
+	fi
+	cd $(DONUT_HARDWARE_ROOT)/sim/questa && ./top.sh >>../../compile_$(SIMULATOR).log 2>&1
+
+clean: check_donut_settings
 	@echo -e "\t[CLEAN.............] build environment";
 	@rm -r -f  $(BUILD_DIR)
 	@rm    -f  build
+	@echo -e "\t                     vivado project";
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
+	@echo -e "\t                     IPs";
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
+	@echo -e "\t                     sim files";
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
 	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
+	@rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project_tmp
+	@echo -e "\t                     NVMe files";
+	@rm -r -f  $(DONUT_HARDWARE_ROOT)/hdl/nvme/component.xml
+	@rm -r -f  $(DONUT_HARDWARE_ROOT)/hdl/nvme/xgui
 	@rm -f     $(SNAP_CONFIG_FILES)
-	@rm -f     ./setup/*.log
-	@rm -f     ./setup/*.jou
+	@rm -f     ./vivado*.log ./*/vivado*.log
+	@rm -f     ./vivado*.jou ./*/vivado*.jou
+	@echo -e "\t                     Software";
+	@make -C $(DONUT_SOFTWARE_ROOT)       clean >/dev/null
+	@echo -e "\t                     PSLSE";
+	@make -C $(PSLSE_ROOT)/afu_driver/src clean >/dev/null
+	@make -C $(PSLSE_ROOT)/pslse          clean >/dev/null
+	@make -C $(PSLSE_ROOT)/libcxl         clean >/dev/null
+	@make -C $(PSLSE_ROOT)/debug          clean >/dev/null
 
 gitclean:
 	@echo -e "\t[GITCLEAN] cleaning and resetting donut git";

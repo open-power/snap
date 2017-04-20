@@ -15,7 +15,6 @@
 # limitations under the License.
 #
 ###############################################################################
-
 NAME=`basename $2`
 
 if [ "$NAME" == "donut.vhd"  ]; then
