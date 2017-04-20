@@ -260,7 +260,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       m_axi_card_mem0_buser      : IN  STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_BUSER_WIDTH-1 DOWNTO 0);   -- only for DDRI_USED=TRUE
       m_axi_card_mem0_rid        : IN  STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);      -- only for DDRI_USED=TRUE
       m_axi_card_mem0_ruser      : IN  STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_RUSER_WIDTH-1 DOWNTO 0);   -- only for DDRI_USED=TRUE
-      m_axi_card_mem0_wid        : OUT STD_LOGIC_VECTOR (C_M_AXI_HOST_MEM_ID_WIDTH-1 DOWNTO 0);      -- only for DDRI_USED=TRUE
+      m_axi_card_mem0_wid        : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);      -- only for DDRI_USED=TRUE
       m_axi_card_mem0_wuser      : OUT STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_WUSER_WIDTH-1 DOWNTO 0);   -- only for DDRI_USED=TRUE
       --
       -- Ports of Axi Slave Bus Interface AXI_CTRL_REG

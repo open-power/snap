@@ -209,7 +209,7 @@ if { $create_clock_conv == "TRUE" } {
   puts "	                     generating IP axi_clock_converter"
   create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir  $msg_level
 
-  if { $sdram_used == "TRUE" } {
+  if { ($sdram_used == "TRUE") && ( $fpga_card == "KU3" ) } {
     set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]
   } else {
     set_property -dict [list CONFIG.ADDR_WIDTH {32} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]

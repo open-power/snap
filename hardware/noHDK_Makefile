@@ -61,7 +61,7 @@ export NVME_USED=FALSE
 endif
 
 ifndef MSG_LEVEL
-export MSG_LEVEL=-verbose
+export MSG_LEVEL=-quiet
 endif
 
 .PHONY: all image model check_donut_settings action_config create_environment copy clean config gitclean patch_version xpr_image snap_config

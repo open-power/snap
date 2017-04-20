@@ -1469,10 +1469,10 @@ BEGIN
       ap_rst_n                             => action_reset_n_q,
       interrupt_ack                        => sk_d.int_req_ack,
       interrupt                            => ks_d.int_req,
-      interrupt_src                        => ks_d.int_src,
-      interrupt_ctx                        => ks_d.int_ctx,
-      --                                                                                -- only for DDRI_USED=TRUE
-      -- AXI NVMe DDR Interface                                                            -- only for DDRI_USED=TRUE
+      interrupt_src                        => ks_d.int_src,                                 -- only for HLS_WORKAROUND!=TRUE
+      interrupt_ctx                        => ks_d.int_ctx,                                 -- only for HLS_WORKAROUND!=TRUE
+      --                                                                                    -- only for DDRI_USED=TRUE
+      -- AXI NVMe DDR Interface                                                             -- only for DDRI_USED=TRUE
       m_axi_card_mem0_araddr               => act_axi_card_mem0_araddr,                     -- only for DDRI_USED=TRUE
       m_axi_card_mem0_arburst              => act_axi_card_mem0_arburst,                    -- only for DDRI_USED=TRUE
       m_axi_card_mem0_arcache              => act_axi_card_mem0_arcache,                    -- only for DDRI_USED=TRUE
