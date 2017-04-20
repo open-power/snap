@@ -28,36 +28,19 @@ using namespace std;
 // Known Limitations => Issue #39 & #45
 //      => Transfers must be 64 byte aligned and a size of multiples of 64 bytes
 // ----------------------------------------------------------------------------
-// v1.4 : 01/20/2017 :  cleaning code             : split files and link them
-// v1.3 : 01/17/2017 :  simplifying code          : read tables sent by application
-//                      HLS_SYN_MEM=142,HLS_SYN_DSP=26,HLS_SYN_FF=20836,HLS_SYN_LUT=32321
-// v1.2 : 01/10/2017 :  adapting to master branch : change interfaces names and MEMDW=512
-// v1.1 : 12/08/2016 :  adding 2nd C code         : HJ2 for real hash table creation
-// v1.0 : 12/05/2016 :  creation from search V1.8 : HJ1 used for RD/WR database value
-//                                                : + test string+int conversion
-
-/*
- * WRITE RESULTS IN MMIO REGS
- *
- * Always check that ALL Outputs are tied to a value or HLS will generate a
- * Action_Output_i and a Action_Output_o registers and address to read results
- * will be shifted ...and wrong
- * => easy checking in generated files : grep 0x184 hls_action_ctrl_reg_s_axi.vhd
- * this grep should return nothing if no duplication of registers (which is expected)
- */
 static void write_HJ_regs(action_reg *reg,
 			  snapu32_t retc,
 			  snapu64_t field1,
 			  snapu64_t field2,
-			  snapu64_t field3)
+			  snapu64_t field3,
+			  snapu64_t field4)
 {
 	reg->Control.Retc = (snapu32_t)retc;
-	reg->Control.Reserved = (snapu64_t)0x0;
+
 	reg->Data.t1_processed = field1;
 	reg->Data.t2_processed = field2;
 	reg->Data.t3_produced  = field3;
-	reg->Data.rc = 0;
-	reg->Data.action_version = RELEASE_VERSION;
+	reg->Data.checkpoint   = field4;
 }
 
 /*
@@ -314,11 +297,10 @@ static void write_table3(snap_membus_t *mem, unsigned int max_lines,
 	snap_4KiB_flush(&buf);
 }
 
-static void do_the_work(snap_membus_t *din_gmem,
-			snap_membus_t *dout_gmem,
-			snap_membus_t *d_ddrmem,
-			action_reg *Action_Register,
-			action_RO_config_reg *Action_Config)
+static void process_action(snap_membus_t *din_gmem,
+			   snap_membus_t *dout_gmem,
+			   snap_membus_t *d_ddrmem,
+			   action_reg *Action_Register)
 {
 	snapu16_t i, j;
 	short rc;
@@ -340,7 +322,7 @@ static void do_the_work(snap_membus_t *din_gmem,
 	unsigned int T2_items = 0;
 	unsigned int __table3_idx = 0;
 
-#pragma HLS DATAFLOW /* 3.5ns timing without this, 3.5n with it, ok ... */
+//#pragma HLS DATAFLOW /* 3.5ns timing without this, 3.5n with it, ok ... */
 	t1_fifo_t t1_fifo;
 	t2_fifo_t t2_fifo;
 	t3_fifo_t t3_fifo;
@@ -393,7 +375,7 @@ static void do_the_work(snap_membus_t *din_gmem,
 			ReturnCode = RET_CODE_FAILURE;
 	} while (0);
 
-	write_HJ_regs(Action_Register, ReturnCode, 0, 0, __table3_idx);
+	write_HJ_regs(Action_Register, ReturnCode, 0, 0, __table3_idx, 0);
 }
 
 //--------------------------------------------------------------------------------------------
@@ -406,13 +388,13 @@ static void do_the_work(snap_membus_t *din_gmem,
  * the cosimulation will not work, since the width of the interface cannot
  * be determined. Using an array din_gmem[...] works too to fix that.
  */
-void hls_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
-		snap_membus_t *d_ddrmem,
-		action_reg *Action_Register,
-		action_RO_config_reg *Action_Config)
+void hls_action(snap_membus_t *din_gmem,
+                    snap_membus_t *dout_gmem,
+                    snap_membus_t *d_ddrmem,
+                    action_reg *Action_Register,
+                    action_RO_config_reg *Action_Config)
 {
 	// Host Memory AXI Interface
-	//   Leaving here the bundle=host_mem away to get the code syntesize
 #pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
 #pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg offset=0x030
@@ -432,14 +414,14 @@ void hls_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
 	/* NOTE: switch generates better vhdl than "if" */
 	switch (Action_Register->Control.flags) {
 	case 0:
-		Action_Config->action_type = (snapu32_t)HASHJOIN_ACTION_TYPE;
-		Action_Config->release_level = (snapu32_t)RELEASE_VERSION;
+		Action_Config->action_type    = (snapu32_t) HASHJOIN_ACTION_TYPE;
+		Action_Config->release_level  = (snapu32_t) RELEASE_LEVEL;
 		Action_Register->Control.Retc = (snapu32_t)0xe00f;
 		return;
 		break;
 	default:
-		do_the_work(din_gmem, dout_gmem, d_ddrmem,
-			    Action_Register, Action_Config);
+		process_action(din_gmem, dout_gmem, d_ddrmem, Action_Register);
+		break;
 
 	}
 }
