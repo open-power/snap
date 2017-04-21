@@ -79,7 +79,7 @@
       t="$DONUT_ROOT/software/tools/dnut_peek 0x11018 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg"
     fi
 
-    if [[ ( "$t0l" == "10140000" || "${env_action}" == "memcopy" )  && "$NVME_USED" == "FALSE" ]];then echo -e "$del\ntesting memcopy"
+    if [[ ( "$t0l" == "10140000" || "${env_action}" == "memcopy" )  && "$NVME_USED" -ne "TRUE" ]];then echo -e "$del\ntesting memcopy"
 #     t="$DONUT_ROOT/software/tools/stage1                        -v  "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  4..timeout endless
 #     t="$DONUT_ROOT/software/tools/stage1                 -t10   -v  "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #e invalid option -t
 #     t="$DONUT_ROOT/software/tools/stage2 -h"                                                  ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
