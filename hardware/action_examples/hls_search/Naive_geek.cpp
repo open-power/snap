@@ -1,13 +1,26 @@
+//
 // C program for Naive Pattern Searching algorithm
-#include<stdio.h>
-#include<string.h>
+//
+// Origin:
+//   http://www.geeksforgeeks.org/searching-for-patterns-set-1-naive-pattern-searching
+//
+// License:
+//   https://creativecommons.org/licenses/by-nc-nd/2.5/in/deed.en_US
+//
 
-//void search(char *pat, char *txt)
-int Nsearch(char *pat, int M, char *txt, int N)
+#include <stdio.h>
+#include <string.h>
+
+#include "action_search.H"
+
+/* void search(char *pat, char *txt) */
+/* int Nsearch(char *pat, int M, char *txt, int N) */
+
+int Nsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N)
 {
 #pragma HLS INLINE off
-//    int M = strlen(pat);
-//    int N = strlen(txt);
+//  int M = strlen(pat);
+//  int N = strlen(txt);
     int count=0;
 
     /* A loop to slide pat[] one by one */
@@ -32,7 +45,7 @@ int Nsearch(char *pat, int M, char *txt, int N)
 #ifdef NO_SYNTH  
 // Synthesis clock = 3.26 - 300LUTs - Latency 3?
 /* Driver program to test above function */
-int main()
+int main(void)
 {
    char txt[] = "The dog was afraid of the cat. But was it really a dog or a cat?";
    char pat[] = "dog";

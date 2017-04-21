@@ -116,23 +116,13 @@ static snap_membus_t word_to_mbus(word_t text)
         return mem;
 }
 
-int search(char *Pattern,
-           unsigned int PatternSize,
-           char *Text,
-           unsigned int TextSize)
+int search(char *Pattern, unsigned int PatternSize,
+           char *Text, unsigned int TextSize)
 {
         int rc;
-        short i;
-
-        rc = Nsearch(Pattern, PatternSize, Text, TextSize);
-/*
- * int Nsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
- * int KMPSearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
- * int FAsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
- * int FAEsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
- * int BMsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
- * */
-return rc;
+        
+	rc = Nsearch(Pattern, PatternSize, Text, TextSize);
+	return rc;
 }
 
 //--------------------------------------------------------------------------------------------
@@ -204,8 +194,8 @@ static void process_action(snap_membus_t *din_gmem,
 		TextBuffer, search_size);
 
         /* convert buffer to char*/
-  	for(i=0;i<MAX_NB_OF_BYTES_READ/BPERDW;i++)
-#pragma HLS UNROLL
+  	for (i = 0; i < MAX_NB_OF_BYTES_READ/BPERDW; i++)
+#pragma HLS UNROLL factor=4
   		mbus_to_word(TextBuffer[i], &Text[i*BPERDW]);
 
 	nb_of_occurrences += (unsigned int) search(Pattern, PatternSize, Text, search_size);

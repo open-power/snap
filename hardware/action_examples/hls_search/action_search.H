@@ -21,6 +21,7 @@
 #include <string.h>
 #include <ap_int.h>
 #include <hls_stream.h>
+
 #include "hls_snap.H"
 
 #define SEARCH_ACTION_TYPE 0x10141003
