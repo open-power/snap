@@ -132,11 +132,17 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 %.sv: %.sv_source
 	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
-action_config:
+action_config: $(ACTION_ROOT)
 	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
 		echo -e "Executing $(ACTION_ROOT)/action_config.sh"; \
 		cd $(ACTION_ROOT) && ./action_config.sh; \
 	fi
+
+# In case we have a HLS action there will be no vhdl directory,
+# such that ACTION_ROOT does not exist. To build it, we go one directory
+# above and issue "make", such that the vhdl code can be synthesized.
+$(ACTION_ROOT):
+	$(MAKE) -C `dirname $(ACTION_ROOT)`
 
 patch_tcl_files:
 	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
