@@ -59,12 +59,17 @@ copy $(BUILD_DIR)/Checkpoint/b_route_design.dcp:
 
 snap_config: $(SNAP_CONFIG_FILES)
 
-action_config:
+action_config: $(ACTION_ROOT)
 	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
 		echo -e "Executing $(ACTION_ROOT)/action_config.sh"; \
 		cd $(ACTION_ROOT) && ./action_config.sh; \
 	fi
 
+# In case we have a HLS action there will be no vhdl directory,
+# such that ACTION_ROOT does not exist. To build it, we go one directory
+# above and issue "make", such that the vhdl code can be synthesized.
+$(ACTION_ROOT):
+	$(MAKE) -C `dirname $(ACTION_ROOT)`
 
 create_environment:
 	@echo -e "\t[CREATE_ENVIRONMENT] start `date`";
