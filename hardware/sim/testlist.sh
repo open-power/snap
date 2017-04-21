@@ -20,9 +20,9 @@
       t="$DONUT_ROOT/software/tools/dnut_peek 0x100       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 type 0.0.0.shrt.4B_long"
       t0s=${r:7:1};t0l=${r:8:8};if [[ $t0l == "10140000" ]];then a0="memcopy";else a0="unknown";fi;echo "action0 type0s=$t0s type0l=$t0l $a0"
     fi
-    if [[ $done == "0" ]];then echo "exploration not done yet"
+    if [[ "$done" == "0" ]];then echo "exploration not done yet"
       env_action=$(echo $ACTION_ROOT|sed -e "s/action_examples\// /g"|awk '{print $2}');echo "ENV_action=${env_action}"
-#     if [[ ${env_action} == *"memcopy"* ]];then echo -e "$del\ntesting memcopy in master mode"
+#     if [[ "${env_action}" == *"memcopy"* ]];then echo -e "$del\ntesting memcopy in master mode"
 #       t="$DONUT_ROOT/software/tools/stage2 -a1 -m -s1 -e2 -i1 -t100 -vv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
 #       t="$DONUT_ROOT/software/tools/stage2 -a2 -m -A4096 -S0 -B1 -t30"                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
 #       t="$DONUT_ROOT/software/tools/stage2 -a2 -m -A4096 -S1 -B0 -t30"                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
@@ -41,7 +41,7 @@
       t="$DONUT_ROOT/software/tools/dnut_peek 0x10        ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x18        ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
       done=${r:13:1};numact=${r:14:1};(( numact += 1 ));echo "exploration done=$done num_actions=$numact"
-      if [[ $done == "0" ]];then
+      if [[ "$done" == "0" ]];then
         echo "exploration still not shown as done, subsequent runs may fail !!!!";
         t="$DONUT_ROOT/software/tools/snap_maint -m1 -c1 -vvv"                                  ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
         t="$DONUT_ROOT/software/tools/dnut_peek 0x10        "; r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
@@ -62,7 +62,7 @@
 #   t="$DONUT_ROOT/software/tools/dnut_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # DMA    ErrInj"
     if (( numact > 0 ));then
       t="$DONUT_ROOT/software/tools/dnut_peek 0x100       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 type 0.0.0.shrt.4B_long"
-         t0s=${r:7:1};t0l=${r:8:8};if [[ $t0l == "00000001" ]];then a0="memcopy";else a0="unknown";fi; echo "action0 type0s=$t0s type0l=$t0l $a0"
+         t0s=${r:7:1};t0l=${r:8:8};if [[ "$t0l" == "00000001" ]];then a0="memcopy";else a0="unknown";fi; echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x10000 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x10008 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # build date"
@@ -71,7 +71,7 @@
     fi
     if (( numact > 1 ));then
       t="$DONUT_ROOT/software/tools/dnut_peek 0x108       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 type 0.0.0.shrt.4B_long"
-        t1s=${r:7:1};t1l=${r:8:8};if [[ $t1l == "00000001" ]];then a1="memcopy";else a1="unknown";fi; echo "action1 type0s=$t0s type0l=$t0l $a1"
+        t1s=${r:7:1};t1l=${r:8:8};if [[ "$t1l" == "00000001" ]];then a1="memcopy";else a1="unknown";fi; echo "action1 type0s=$t0s type0l=$t0l $a1"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x11000 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x11008 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # build date"
@@ -79,7 +79,7 @@
       t="$DONUT_ROOT/software/tools/dnut_peek 0x11018 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg"
     fi
 
-    if [[ ( $t0l == "10140000" || ${env_action} == "memcopy" )  && "$NVME_USED" == "FALSE" ]];then echo -e "$del\ntesting memcopy"
+    if [[ ( "$t0l" == "10140000" || "${env_action}" == "memcopy" )  && "$NVME_USED" == "FALSE" ]];then echo -e "$del\ntesting memcopy"
 #     t="$DONUT_ROOT/software/tools/stage1                        -v  "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  4..timeout endless
 #     t="$DONUT_ROOT/software/tools/stage1                 -t10   -v  "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #e invalid option -t
 #     t="$DONUT_ROOT/software/tools/stage2 -h"                                                  ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
@@ -137,7 +137,7 @@
       fi
     fi # memcopy
 
-    if [[ $t0l == "10141000" || ${env_action} == "hls_memcopy" || ${env_action} == "hls_search" ]];then echo -e "$del\ntesting demo_memcopy"
+    if [[ "$t0l" == "10141000" || "${env_action}" == "hls_memcopy" || "${env_action}" == "hls_search" ]];then echo -e "$del\ntesting demo_memcopy"
       t="$DONUT_ROOT/software/examples/demo_memcopy -h"                                         ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  5..7
 #     t="$DONUT_ROOT/software/examples/demo_memcopy -C0 -i ../../1KB.txt -o 1KB.out -t10"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..7
       #### select 1 selection loop
@@ -174,7 +174,7 @@
       done
     fi # hls_memcopy
 
-    if [[ ${env_action} == "hls_search" ]];then echo -e "$del\ntesting demo_search"
+    if [[ "${env_action}" == "hls_search"* ]];then echo -e "$del\ntesting demo_search"
       t="$DONUT_ROOT/software/examples/demo_search -h"                                          ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
 #     t="$DONUT_ROOT/software/examples/demo_search -p'A' -C0 -i ../../1KB.txt   -t100      "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 31..34
 #     t="$DONUT_ROOT/software/examples/demo_search -pX       -i ../../1KB.txt   -t100      "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 32..35
@@ -201,7 +201,7 @@
       done
     fi # hls_search
 
-    if [[ ${env_action} == "hls_hashjoin" ]];then echo -e "$del\ntesting demo_hashjoin"
+    if [[ "${env_action}" == "hls_hashjoin"* ]];then echo -e "$del\ntesting demo_hashjoin"
       t="$DONUT_ROOT/software/examples/demo_hashjoin -h"                                        ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
       t="$DONUT_ROOT/software/examples/demo_hashjoin       -t300 -vvv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 1m26s
       t="$DONUT_ROOT/software/examples/demo_hashjoin -T1   -t300 -vvv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #   49s
@@ -215,7 +215,7 @@
 #     t="$DONUT_ROOT/software/examples/demo_hashjoin -Q257 -t300 -vvv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #e too large
     fi # hls_hashjoin
 
-    if [[ ${env_action} == "memcopy" && "$NVME_USED" == "TRUE" ]];then echo -e "$del\ntesting nvme"
+    if [[ "${env_action}" == "memcopy" && "$NVME_USED" == "TRUE" ]];then echo -e "$del\ntesting nvme"
       t="$DONUT_ROOT/software/tools/nvmeBU.py 1"                                                ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
       t="$DONUT_ROOT/software/tools/nvme_test -h"                                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
       t="$DONUT_ROOT/software/tools/stage2 -a6 -S2          -t100 -vv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
@@ -225,7 +225,7 @@
       t="$DONUT_ROOT/software/tools/nvme_test -d1 -b4       -t100 -vv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
     fi # nvme
 
-    if [[ ${env_action} == "hls_bfs" ]];then echo -e "$del\ntesting BFS"
+    if [[ "${env_action}" == "hls_bfs"* ]];then echo -e "$del\ntesting BFS"
       t="$DONUT_ROOT/software/examples/demo_bfs -h"                                             ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
       t="$DONUT_ROOT/software/examples/demo_bfs -r50        -t30000 -v"                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
 #     for size in {1..3}; do
@@ -233,12 +233,12 @@
 #     done
     fi # bfs
 
-    if [[ ${env_action} == "hls_sponge" ]];then echo -e "$del\ntesting sponge"
+    if [[ "${env_action}" == "hls_sponge"* ]];then echo -e "$del\ntesting sponge"
       t="$DONUT_ROOT/software/examples/demo_checksum -h"                                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
 #     t="$DONUT_ROOT/software/examples/demo_checksum -v -t300000 -arg "-mSPONGE -p1 -n4"        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
     fi # sponge
 
-    if [[ ${env_action} == "hls_intersect" ]];then echo -e "$del\ntesting intersect"
+    if [[ "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect"
       t="$DONUT_ROOT/software/examples/demo_intersect -h"                                       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
       t="$DONUT_ROOT/software/examples/demo_intersect -v -m1"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
     fi # intersect
