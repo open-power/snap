@@ -171,10 +171,9 @@ void hls_action(snap_membus_t *din_gmem,
 #pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg offset=0x100
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
-
-	// Hardcoded numbers
+	/* Required Action Type Detection */
 	// 	NOTE: switch generates better vhdl than "if" */
-	// test used to exit the action if no parameter has been set.
+	// Test used to exit the action if no parameter has been set.
  	// Used for the discovery phase of the cards */
 	switch (Action_Register->Control.flags) {
 	case 0:
@@ -187,8 +186,8 @@ void hls_action(snap_membus_t *din_gmem,
         	process_action(din_gmem, dout_gmem, d_ddrmem, Action_Register);
 		break;
 	}
-
 }
+
 //-----------------------------------------------------------------------------
 //--- TESTBENCH ---------------------------------------------------------------
 //-----------------------------------------------------------------------------

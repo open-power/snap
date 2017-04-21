@@ -305,7 +305,6 @@ void hls_action(snap_membus_t  *din_gmem,
                      action_reg            *Action_Register,
                      action_RO_config_reg  *Action_Config)
 {
-
 // Host Memory AXI Interface
 #pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
 #pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
@@ -323,12 +322,19 @@ void hls_action(snap_membus_t  *din_gmem,
 #pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg	offset=0x100 
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
-// Hardcoded numbers
-    Action_Config->action_type   = (snapu32_t) INTERSECT_ACTION_TYPE;
-    Action_Config->release_level = (snapu32_t) RELEASE_LEVEL;
+	short rc = 0;
+	snapu32_t result_size=0;
 
-    short rc = 0;
-    snapu32_t result_size=0;
+	/* Required Action Type Detection */
+	switch (Action_Register->Control.flags) {
+	case 0:
+		Action_Config->action_type = (snapu32_t)INTERSECT_ACTION_TYPE;
+		Action_Config->release_level = (snapu32_t)RELEASE_LEVEL;
+		Action_Register->Control.Retc = (snapu32_t)0xe00f;
+		return;
+	default:
+		break;
+	}
 
     if(Action_Register->Data.step == 1)
     {
