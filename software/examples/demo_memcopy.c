@@ -300,15 +300,6 @@ int main(int argc, char *argv[])
 			strerror(errno));
 		goto out_error2;
 	}
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x00030, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00034, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00040, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00044, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00050, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00054, 0);
-#endif
 
 	gettimeofday(&stime, NULL);
 	if (action_irq) {

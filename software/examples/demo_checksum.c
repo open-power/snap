@@ -216,16 +216,6 @@ static int do_checksum(int card_no, unsigned long timeout,
 			strerror(errno));
 		goto out_error1;
         }
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x30, 0);
-	dnut_kernel_mmio_write32(kernel, 0x34, 0);
-	dnut_kernel_mmio_write32(kernel, 0x40, 0);
-	dnut_kernel_mmio_write32(kernel, 0x44, 0);
-	dnut_kernel_mmio_write32(kernel, 0x50, 0);
-	dnut_kernel_mmio_write32(kernel, 0x54, 0);
-#endif
-
 	dnut_prepare_checksum(&cjob, &mjob_in, &mjob_out,
 			     (void *)addr_in, size, type_in,
 			      mode, checksum_start, pe, nb_pe,

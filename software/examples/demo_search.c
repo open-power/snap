@@ -332,19 +332,6 @@ int main(int argc, char *argv[])
 	pr_info("FIXME Wait a sec ...\n");
 	sleep(1);
 #endif
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x10, 0);
-	dnut_kernel_mmio_write32(kernel, 0x14, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1c, 0);
-	dnut_kernel_mmio_write32(kernel, 0x20, 0);
-#endif
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Temporary setting to enable DDR on the card\n");
-	dnut_kernel_mmio_write32(kernel, 0x28, 0);
-	dnut_kernel_mmio_write32(kernel, 0x2c, 0);
-#endif
-
 	run = 0;
 	gettimeofday(&stime, NULL);
 	do {

@@ -184,6 +184,18 @@ static void snap_version(void *handle)
 	return;
 }
 
+static void hls_setup(void *handle, uint32_t offset)
+{
+	VERBOSE2("%s Enter Offset: %x\n", __func__, offset);
+	snap_write32(handle, offset+0x30, 0);
+	snap_write32(handle, offset+0x34, 0);
+	snap_write32(handle, offset+0x40, 0);
+	snap_write32(handle, offset+0x44, 0);
+	snap_write32(handle, offset+0x50, 0);
+	snap_write32(handle, offset+0x54, 0);
+	VERBOSE2("%s Exit\n", __func__);
+}
+
 /* Some Action need inital start to unlock Registers */
 static uint32_t unlock_action(void *handle, uint64_t offset)
 {
@@ -198,6 +210,7 @@ static uint32_t unlock_action(void *handle, uint64_t offset)
 		for (i = 0; i < 10; i++) {
 			reg = snap_read32(handle, offset + ACTION_CONTROL);
 			if (ACTION_CONTROL_DONE == (reg & ACTION_CONTROL_DONE)) {
+				hls_setup(handle, offset);
 				reg = snap_read32(handle, offset + 0x10);
 				break;
 			}
