@@ -28,7 +28,6 @@
 #include <donut_tools.h>
 #include <libdonut.h>
 #include <action_bfs.h>
-#include <snap_s_regs.h>
 #include <snap_hls_if.h>
 
 #define ACTION_REDAY_IRQ	4
@@ -316,7 +315,7 @@ static void dnut_prepare_bfs(struct dnut_job *job,
     // We have input parameters.
     // But we don't need AFU to write back results from MMIO.
     // Results will be written in host_memory, starting from output_address
-	dnut_job_set(job, (HLS_BFS_ID&0xFFFF), bjob_in, sizeof(*bjob_in),
+	dnut_job_set(job, HLS_BFS_ID, bjob_in, sizeof(*bjob_in),
 		     bjob_out, sizeof(*bjob_out));
 
 
@@ -343,7 +342,6 @@ int main(int argc, char *argv[])
 	const char *output_file = NULL;
 	int random_graph = 0;
 	uint32_t vex_n, edge_n;
-	int attach_flags = SNAP_CCR_DIRECT_MODE;
 	int action_irq = 0;
 
 	vex_n  = ARRAY_SIZE(v_table);
@@ -399,7 +397,6 @@ int main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		case 'I':	/* irq */
-			attach_flags |= SNAP_CCR_IRQ_ATTACH;
 			action_irq = ACTION_DONE_IRQ;
 			break;
 		default:
@@ -487,37 +484,19 @@ int main(int argc, char *argv[])
 		goto out_error;
 	}
 
-	rc = dnut_attach_action((void*)kernel, HLS_BFS_ID, attach_flags, 5*timeout);
-	if (rc) {
-		fprintf(stderr, "err: job Attach %d: %s!\n", rc,
-			strerror(errno));
-		dnut_kernel_free(kernel);
-		goto out_error;
-	}
-
 	dnut_prepare_bfs(&job, &bjob_in, &bjob_out,
 			     (void *)ibuf,  vex_n,    type_in,
 			     (void *)obuf, type_out);
 
 	fprintf(stdout, "INFO: Timer starts...\n");
 	gettimeofday(&stime, NULL);
-	if (action_irq) {
-		dnut_kernel_mmio_write32(kernel, ACTION_IRQ_APP, ACTION_IRQ_APP_DONE);
-		dnut_kernel_mmio_write32(kernel, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
-	}
 	rc = dnut_kernel_sync_execute_job(kernel, &job, timeout, action_irq);
-	if (action_irq) {
-		dnut_kernel_mmio_write32(kernel, ACTION_IRQ_STATUS, ACTION_IRQ_STATUS_DONE);
-		dnut_kernel_mmio_write32(kernel, ACTION_IRQ_APP, 0);
-		dnut_kernel_mmio_write32(kernel, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_OFF);
-	}
+	gettimeofday(&etime, NULL);
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
 			strerror(errno));
 		goto out_error2;
 	}
-	gettimeofday(&etime, NULL);
-	dnut_detach_action((void*)kernel);
 
 	fprintf(stdout, "RETC=%x\n", job.retc);
 	fprintf(stdout, "INFO: BFS took %lld usec\n",

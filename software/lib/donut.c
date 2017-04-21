@@ -621,6 +621,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	uint32_t *job_data;
 	int completed;
 	unsigned int mmio_in, mmio_out;
+	int attach_flags = SNAP_CCR_DIRECT_MODE;	/* FIX ME for Job mode */
 
 	if (cjob->wout_size > 112) {
 		errno = EINVAL;
@@ -628,10 +629,10 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	}
 
 	memset(&job, 0, sizeof(job));
-	job.action = cjob->action;
-	job.flags = 0x00;
+	job.action = (uint8_t)cjob->action;	/* FIX me */
+	job.flags = 0x01;			/* Fix me */
 	job.seq = 0xbeef;
-	job.retc = 0x0;
+	job.retc = 0x00000000;
 	job.priv_data = 0xdeadbeefc0febabeull;
 
 	/* Fill workqueue cacheline which we need to transfer to the action */
@@ -649,7 +650,15 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	}
 	mmio_in = 16 / sizeof(uint32_t) + mmio_out;
 
-	dnut_trace("%s: PASS PARAMETERS\n", __func__);
+	if (irq)
+		attach_flags |= SNAP_CCR_IRQ_ATTACH;
+	if (dnut_attach_action(card, (uint32_t)cjob->action, attach_flags, timeout_sec)) {
+		dnut_trace("%s: Error Can not attach to Action 0x%x\n", __func__, (uint32_t)cjob->action);
+		errno = ETIME;
+		return -1;
+	}
+
+	dnut_trace("%s: PASS PARAMETERS to Action 0x%x\n", __func__, (uint32_t)cjob->action);
 
 	/* __hexdump(stderr, &job, sizeof(job)); */
 
@@ -658,19 +667,27 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	job_data = (uint32_t *)(unsigned long)&job;
 	for (i = 0, action_addr = ACTION_PARAMS_IN; i < mmio_in;
 	     i++, action_addr += sizeof(uint32_t)) {
-
 		rc = dnut_mmio_write32(card, action_addr, job_data[i]);
 		if (rc != 0)
 			return rc;
 	}
 
 	/* Start Action and wait for finish */
-	dnut_trace("%s: START KERNEL\n", __func__);
+	dnut_trace("%s: START Action 0x%x\n", __func__, (uint32_t)cjob->action);
 	rc = dnut_kernel_start(kernel);
 	if (rc != 0)
 		return rc;
 
+	if (irq) {
+		dnut_mmio_write32(card, ACTION_IRQ_APP, ACTION_IRQ_APP_DONE);
+		dnut_mmio_write32(card, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
+	}
 	completed = dnut_kernel_completed(kernel, irq, &rc, timeout_sec);
+	if (irq) {
+		dnut_mmio_write32(card, ACTION_IRQ_STATUS, ACTION_IRQ_STATUS_DONE);
+		dnut_mmio_write32(card, ACTION_IRQ_APP, 0);
+		dnut_mmio_write32(card, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_OFF);
+	}
 	if (completed == 0) {
 		dnut_trace("%s: rc=%d completed=%d\n", __func__,
 			   rc, completed);
@@ -692,14 +709,13 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 
 	for (i = 0, action_addr = ACTION_PARAMS_OUT; i < mmio_out;
 	     i++, action_addr += sizeof(uint32_t)) {
-
 		rc = dnut_mmio_read32(card, action_addr, &job_data[i]);
 		if (rc != 0)
 			return rc;
-
 		dnut_trace("  %s: i=%d data=%x\n", __func__, i, job_data[i]);
 	}
 
+	dnut_detach_action(card);
 	dnut_kernel_stop(kernel);
 	return rc;
 }
