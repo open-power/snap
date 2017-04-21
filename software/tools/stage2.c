@@ -29,6 +29,8 @@
 #include <libdonut.h>
 #include <donut_tools.h>
 #include <snap_s_regs.h>
+#include <snap_hls_if.h>
+
 #include "snap_fw_example.h"
 
 /*	defaults */
@@ -156,27 +158,25 @@ static uint32_t msec_2_ticks(int msec)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct dnut_card* h, int timeout, uint64_t *elapsed, bool use_irq)
+static int action_wait_idle(struct dnut_card* h, int timeout, uint64_t *elapsed, int irq)
 {
 	int rc = ETIME;
 	uint64_t t_start;	/* time in usec */
 	uint64_t td = 0;	/* Diff time in usec */
-	int irq = 0;
 
-	if (use_irq) {
-		action_write(h, ACTION_INT_CONFIG, ACTION_INT_GLOBAL);
-		irq = 4;
-	}
+	if (irq)
+		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
 	dnut_kernel_start((void*)h);
 
 	/* Wait for Action to go back to Idle */
 	t_start = get_usec();
 	rc = dnut_kernel_completed((void*)h, irq, NULL, timeout);
-	if (rc) rc = 0;
-	else VERBOSE0("Error. Timeout while Waiting for Idle\n");
 	td = get_usec() - t_start;
-	if (use_irq)
-		action_write(h, ACTION_INT_CONFIG, 0);
+
+	if (irq)
+		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_OFF);
+	if (rc) rc = 0;	/* Good */
+	else VERBOSE0("Error. Timeout while Waiting for Idle\n");
 	*elapsed = td;
 	return rc;
 }
@@ -228,7 +228,7 @@ static int memcpy_test(struct dnut_card* dnc,
 			int align,
 			uint64_t card_ram_base,
 			int timeout,		/* Timeout to wait in ms */
-			bool irq)
+			int irq)
 {
 	int rc;
 	void *src = NULL;
@@ -466,7 +466,7 @@ int main(int argc, char *argv[])
 	uint64_t card_ram_base = DDR_MEM_BASE_ADDR;	/* Base of Card DDR or Block Ram */
 	uint64_t cir;
 	int timeout = ACTION_WAIT_TIME;
-	bool use_interrupt = false;
+	int action_irq = 0;	/* No Action irq */
 	int attach_flags = SNAP_CCR_DIRECT_MODE;
 	uint64_t td;
 
@@ -542,8 +542,8 @@ int main(int argc, char *argv[])
 			timeout = strtol(optarg, (char **)NULL, 0); /* in sec */
 			break;
 		case 'I':	/* irq */
-			use_interrupt = true;
-			attach_flags |= ACTION_IDLE_IRQ_MODE | SNAP_CCR_IRQ_ATTACH;
+			attach_flags = SNAP_CCR_IRQ_ATTACH;
+			action_irq = ACTION_DONE_IRQ;
 			break;
 		default:
 			usage(argv[0]);
@@ -583,7 +583,7 @@ int main(int argc, char *argv[])
 			if (0 != rc)
 				goto __exit1;
 			action_count(dn, delay);
-			rc = action_wait_idle(dn, timeout + delay, &td, use_interrupt);
+			rc = action_wait_idle(dn, timeout + delay, &td, action_irq);
 			print_time(td, 0);
 			dnut_detach_action(dn);
 			if (0 != rc) break;
@@ -602,7 +602,7 @@ int main(int argc, char *argv[])
 			rc = memcpy_test(dn, action, num_4k, num_64,
 				memcpy_align, card_ram_base,
 				timeout,
-				use_interrupt);
+				action_irq);
 			dnut_detach_action(dn);
 		}
 		break;

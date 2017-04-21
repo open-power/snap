@@ -31,11 +31,6 @@
 
 static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 {
-	struct dnut_action *action = (struct dnut_action *)_card;
-
-	if (offs == ACTION_RETC)
-		*data = action->retc;
-
 	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
 		  (long long)offs, *data);
 	return 0;
@@ -50,7 +45,7 @@ static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 static int hashkey_cmp(const hashkey_t s1, const hashkey_t s2)
 {
 	size_t i;
-	
+
 	for (i = 0; i < sizeof(hashkey_t); i++) {
 		if (*s1 == 0 || *s2 == 0)
 			break;
@@ -122,10 +117,10 @@ static int ht_hash(hashkey_t key)
 
 /**
  * Insert a key-value pair into a hash table.
- * 
+ *
  * FIXME Review void *value and try to replace with hashdata_t ...
  *       failed on 1st try.
- * 
+ *
  */
 static int ht_set(hashtable_t *ht, hashkey_t key,
 	   table1_t *value)
@@ -271,7 +266,7 @@ static int hash_join(table1_t *table1, table2_t *table2, table3_t *table3,
 		int bin;
 		entry_t *entry;
 		table2_t *t2 = &table2[i];
-		
+
 		bin = ht_get(h, t2->name);
 		if (bin == -1)
 			continue;	/* nothing found */

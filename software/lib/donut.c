@@ -30,6 +30,8 @@
 #include <donut_internal.h>
 #include <donut_queue.h>
 #include <snap_s_regs.h>	/* Include SNAP Slave Regs */
+#include <snap_hls_if.h>	/* Include SNAP -> HLS */
+
 
 /* Trace hardware implementation */
 static unsigned int dnut_trace = 0x0;
@@ -677,11 +679,6 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 		return (rc != 0) ? rc : DNUT_ETIMEDOUT;
 	}
 
-	/* Get RETC back to the caller */
-	rc = dnut_mmio_read32(card, ACTION_RETC, &cjob->retc);
-	if (rc != 0)
-		return rc;
-
 	dnut_trace("%s: RETURN RESULTS %ld bytes (%d)\n", __func__,
 		   mmio_out * sizeof(uint32_t), mmio_out);
 
@@ -693,7 +690,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 		mmio_out = cjob->wout_size / sizeof(uint32_t);
 	}
 
-	for (i = 0, action_addr = ACTION_JOB_OUT; i < mmio_out;
+	for (i = 0, action_addr = ACTION_PARAMS_OUT; i < mmio_out;
 	     i++, action_addr += sizeof(uint32_t)) {
 
 		rc = dnut_mmio_read32(card, action_addr, &job_data[i]);
@@ -887,9 +884,9 @@ static int sw_mmio_read32(void *_card __unused,
 		}
 		break;
 	default:
-		if ((offs >= ACTION_JOB_OUT) &&
-		    (offs < ACTION_JOB_OUT + sizeof(w->user))) {
-			unsigned int idx = offs - ACTION_JOB_OUT;
+		if ((offs >= ACTION_PARAMS_OUT) &&
+		    (offs < ACTION_PARAMS_OUT + sizeof(w->user))) {
+			unsigned int idx = offs - ACTION_PARAMS_OUT;
 
 			*data = *(uint32_t *)
 				&w->user.data[idx];

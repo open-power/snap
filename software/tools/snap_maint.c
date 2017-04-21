@@ -37,6 +37,7 @@
 #include <libdonut.h>
 #include <donut_tools.h>
 #include <snap_m_regs.h>
+#include <snap_hls_if.h>
 
 static const char *version = GIT_VERSION;
 static int verbose = 0;
@@ -201,10 +202,12 @@ static uint32_t unlock_action(void *handle, uint64_t offset)
 				break;
 			}
 			sleep(1);
-			VERBOSE0("Retry, wait for IDLE....\n");
-			reg = 0xffffffff;
+			reg = 0xffffffff;	/* Invalid */
 		}
 	}
+	if (0xffffffff == reg)
+		VERBOSE0("%s Error: Detect Invalid Action at ofset: 0x%llx\n",
+			__func__, (long long)offset);
 	VERBOSE2("%s Exit 0x%x\n", __func__, reg);
 	return reg;
 }
@@ -225,7 +228,7 @@ static int snap_m_init(void *handle)
 		sleep(1);	/* Try until lock is free */
 	}
 	if (10 == i) {
-		VERBOSE0("   Error Waiting 10 sec to get Lock\n");
+		VERBOSE0("%s Error: Can not aquire SNAP lock\n", __func__);
 		goto _snap_m_init_exit1;
 	}
 	/* Have lock, check if done */

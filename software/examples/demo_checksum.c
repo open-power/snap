@@ -29,15 +29,17 @@
 #include <action_checksum.h>
 #include <libdonut.h>
 #include <snap_s_regs.h>
+#include <snap_hls_if.h>
 
 int verbose_flag = 0;
+
+#define	ACTION_ID	0x10141004
 
 static const char *version = GIT_VERSION;
 static const char *checksum_mode_str[] = { "CRC32", "ADLER32", "SPONGE" };
 
 #define MMIO_DIN_DEFAULT	0x0ull
 #define MMIO_DOUT_DEFAULT	0x0ull
-#define ACTION_REDAY_IRQ        4
 
 /**
  * @brief	prints valid command line options
@@ -208,7 +210,7 @@ static int do_checksum(int card_no, unsigned long timeout,
 		goto out_error1;
 	}
 
-	rc = dnut_attach_action((void*)kernel, 0x10141003, attach_flags, 5*timeout);
+	rc = dnut_attach_action((void*)kernel, ACTION_ID, attach_flags, 5*timeout);
         if (rc != 0) {
 		fprintf(stderr, "err: job Attach %d: %s!\n", rc,
 			strerror(errno));
@@ -216,15 +218,12 @@ static int do_checksum(int card_no, unsigned long timeout,
         }
 #if 1				/* FIXME Circumvention should go away */
 	pr_info("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x10, 0);
-	dnut_kernel_mmio_write32(kernel, 0x14, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1c, 0);
-	dnut_kernel_mmio_write32(kernel, 0x20, 0);
-#endif
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Temporary setting to enable DDR on the card\n");
-	dnut_kernel_mmio_write32(kernel, 0x28, 0);
-	dnut_kernel_mmio_write32(kernel, 0x2c, 0);
+	dnut_kernel_mmio_write32(kernel, 0x30, 0);
+	dnut_kernel_mmio_write32(kernel, 0x34, 0);
+	dnut_kernel_mmio_write32(kernel, 0x40, 0);
+	dnut_kernel_mmio_write32(kernel, 0x44, 0);
+	dnut_kernel_mmio_write32(kernel, 0x50, 0);
+	dnut_kernel_mmio_write32(kernel, 0x54, 0);
 #endif
 
 	dnut_prepare_checksum(&cjob, &mjob_in, &mjob_out,
@@ -234,13 +233,14 @@ static int do_checksum(int card_no, unsigned long timeout,
 
 	gettimeofday(&stime, NULL);
 	if (action_irq) {
-		dnut_kernel_mmio_write32(kernel, 0x8, 1);
-		dnut_kernel_mmio_write32(kernel, 0x4, 1);
+		dnut_kernel_mmio_write32(kernel, ACTION_IRQ_APP, ACTION_IRQ_APP_DONE);
+		dnut_kernel_mmio_write32(kernel, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
 	}
 	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
 	if (action_irq) {
-		dnut_kernel_mmio_write32(kernel, 0xc, 1);
-		dnut_kernel_mmio_write32(kernel, 0x4, 0);
+		dnut_kernel_mmio_write32(kernel, ACTION_IRQ_STATUS, ACTION_IRQ_STATUS_DONE);
+		dnut_kernel_mmio_write32(kernel, ACTION_IRQ_APP, 0);
+		dnut_kernel_mmio_write32(kernel, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_OFF);
 	}
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
@@ -553,7 +553,7 @@ int main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		case 'I':
-			action_irq = ACTION_REDAY_IRQ;
+			action_irq = ACTION_DONE_IRQ;
 			attach_flags |= SNAP_CCR_IRQ_ATTACH;
 			break;
 		default:

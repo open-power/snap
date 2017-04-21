@@ -37,11 +37,6 @@ static int mmio_write32(void *_card, uint64_t offs, uint32_t data)
 
 static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 {
-	struct dnut_action *action = (struct dnut_action *)_card;
-
-	if (offs == ACTION_RETC)
-		*data = action->retc;
-
 	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
 		  (long long)offs, *data);
 	return 0;
