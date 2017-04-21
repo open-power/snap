@@ -137,7 +137,7 @@
       fi
     fi # memcopy
 
-    if [[ $t0l == "10141000" || ${env_action} == "hls_memcopy" ]];then echo -e "$del\ntesting demo_memcopy"
+    if [[ $t0l == "10141000" || ${env_action} == "hls_memcopy" || ${env_action} == "hls_search" ]];then echo -e "$del\ntesting demo_memcopy"
       t="$DONUT_ROOT/software/examples/demo_memcopy -h"                                         ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  5..7
 #     t="$DONUT_ROOT/software/examples/demo_memcopy -C0 -i ../../1KB.txt -o 1KB.out -t10"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..7
       #### select 1 selection loop
@@ -231,7 +231,17 @@
 #     for size in {1..3}; do
 #       t="$DONUT_ROOT/software/examples/demo_bfs -r50        -t30000 -v"                       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
 #     done
-    fi # nvme
+    fi # bfs
+
+    if [[ ${env_action} == "hls_sponge" ]];then echo -e "$del\ntesting sponge"
+      t="$DONUT_ROOT/software/examples/demo_checksum -h"                                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     t="$DONUT_ROOT/software/examples/demo_checksum -v -t300000 -arg "-mSPONGE -p1 -n4"        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+    fi # sponge
+
+    if [[ ${env_action} == "hls_intersect" ]];then echo -e "$del\ntesting intersect"
+      t="$DONUT_ROOT/software/examples/demo_intersect -h"                                       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/examples/demo_intersect -v -m1"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+    fi # intersect
 
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"
   done; l=""; ts3=$(date +%s); totaltime=`expr $ts3 - $ts0`; echo "loops=$loops tests=$n total_time=$totaltime"
