@@ -29,7 +29,8 @@
 
 #include <libdonut.h>
 #include <donut_tools.h>
-#include "snap_s_regs.h"
+#include <snap_s_regs.h>
+
 #include "snap_fw_example.h"
 
 /*	defaults */
