@@ -18,10 +18,14 @@
     done=${r:13:1};numact=${r:14:1};(( numact += 1 ));echo "exploration done=$done num_actions=$numact"
     if (( numact > 0 ));then
       t="$DONUT_ROOT/software/tools/dnut_peek 0x100       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 type 0.0.0.shrt.4B_long"
-      t0s=${r:7:1};t0l=${r:8:8};if [[ $t0l == "10140000" ]];then a0="memcopy";else a0="unknown";fi;echo "action0 type0s=$t0s type0l=$t0l $a0"
+      t0s=${r:7:1};t0l=${r:8:8}
+      if   [[ $t0l == "10140000" ]];then a0="memcopy";
+      elif [[ $t0l == "10141000" ]];then a0="hls_memcopy"
+      else a0="unknown"; fi;
+      echo "action0 type0s=$t0s type0l=$t0l $a0"
     fi
     if [[ "$done" == "0" ]];then echo "exploration not done yet"
-      env_action=$(echo $ACTION_ROOT|sed -e "s/action_examples\// /g"|awk '{print $2}');echo "ENV_action=${env_action}"
+      env_action=$(echo $ACTION_ROOT|sed -e "s/action_examples\// /g"|awk '{print $2}');echo "ENV_action=${env_action} ${NVME_USED}"
 #     if [[ "${env_action}" == *"memcopy"* ]];then echo -e "$del\ntesting memcopy in master mode"
 #       t="$DONUT_ROOT/software/tools/stage2 -a1 -m -s1 -e2 -i1 -t100 -vv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
 #       t="$DONUT_ROOT/software/tools/stage2 -a2 -m -A4096 -S0 -B1 -t30"                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
@@ -62,7 +66,11 @@
 #   t="$DONUT_ROOT/software/tools/dnut_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # DMA    ErrInj"
     if (( numact > 0 ));then
       t="$DONUT_ROOT/software/tools/dnut_peek 0x100       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 type 0.0.0.shrt.4B_long"
-         t0s=${r:7:1};t0l=${r:8:8};if [[ "$t0l" == "00000001" ]];then a0="memcopy";else a0="unknown";fi; echo "action0 type0s=$t0s type0l=$t0l $a0"
+      t0s=${r:7:1};t0l=${r:8:8}
+      if   [[ $t0l == "10140000" ]];then a0="memcopy";
+      elif [[ $t0l == "10141000" ]];then a0="hls_memcopy"
+      else a0="unknown"; fi;
+      echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x10000 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x10008 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # build date"
@@ -71,7 +79,11 @@
     fi
     if (( numact > 1 ));then
       t="$DONUT_ROOT/software/tools/dnut_peek 0x108       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 type 0.0.0.shrt.4B_long"
-        t1s=${r:7:1};t1l=${r:8:8};if [[ "$t1l" == "00000001" ]];then a1="memcopy";else a1="unknown";fi; echo "action1 type0s=$t0s type0l=$t0l $a1"
+      t1s=${r:7:1};t1l=${r:8:8}
+      if   [[ $t1l == "10140000" ]];then a1="memcopy";
+      elif [[ $t1l == "10141000" ]];then a1="hls_memcopy"
+      else a1="unknown"; fi;
+      echo "action1 type1s=$t1s type1l=$t1l $a1"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x11000 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release"
       t="$DONUT_ROOT/software/tools/dnut_peek 0x11008 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # build date"
@@ -137,7 +149,7 @@
       fi
     fi # memcopy
 
-    if [[ "$t0l" == "10141000" || "${env_action}" == "hls_memcopy" || "${env_action}" == "hls_search" ]];then echo -e "$del\ntesting demo_memcopy"
+    if [[ "$t0l" == "10141000" || "${env_action}" == "hls_memcopy"* || "${env_action}" == "hls_search"* ]];then echo -e "$del\ntesting demo_memcopy"
       t="$DONUT_ROOT/software/examples/demo_memcopy -h"                                         ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  5..7
 #     t="$DONUT_ROOT/software/examples/demo_memcopy -C0 -i ../../1KB.txt -o 1KB.out -t10"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..7
       #### select 1 selection loop
