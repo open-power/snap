@@ -44,11 +44,6 @@ static int mmio_write32(void *_card, uint64_t offs, uint32_t data)
 
 static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 {
-	struct dnut_action *action = (struct dnut_action *)_card;
-
-	if (offs == ACTION_RETC)
-		*data = action->retc;
-
 	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
 		  (long long)offs, *data);
 	return 0;
@@ -250,7 +245,7 @@ static int action_main(struct dnut_action *action,
     //Do Nothing.
 
 // out_ok:
-	action->retc = DNUT_RETC_SUCCESS;
+	action->job.retc = DNUT_RETC_SUCCESS;
 	return 0;
 
 }
@@ -264,7 +259,7 @@ static struct dnut_action action = {
 	.device_id = DNUT_DEVICE_ID_ANY,
 	.action_type = (HLS_INTERSECT_ID&0xFFFF),
 
-	.retc = DNUT_RETC_FAILURE, /* preset value, should be 0 on success */
+	.job = { .retc = DNUT_RETC_FAILURE, },
 	.state = ACTION_IDLE,
 	.main = action_main,
 	.priv_data = NULL,	/* this is passed back as void *card */
