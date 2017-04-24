@@ -451,7 +451,7 @@ int main(int argc, char *argv[])
     if(rc < 0)
         goto out_error;
 
-	ibuf = adj.vex_list;
+    ibuf = adj.vex_list;
 
 
 

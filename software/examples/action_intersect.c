@@ -98,9 +98,8 @@ static uint32_t intersect_direct(value_t table1[], uint32_t n1,
     // a straight forward way to do intersection.
     // we can compare the speed with following intersect() function.
     uint32_t i,j;
-    uint32_t k, n3;
+    uint32_t n3;
 
-    k = 0;
     n3 = 0; //number of result_array entries
 
     for ( i = 0; i < n1; i++)
@@ -194,6 +193,8 @@ static uint32_t intersect_sort( value_t table1[], uint32_t n1,
     uint32_t n3 = 0;
     uint32_t i, j;
 
+    i = 0;
+    j = 0;
     //Quicksort 
     qsort(table1, n1, sizeof(value_t), qs_cmp);
     qsort(table2, n2, sizeof(value_t), qs_cmp);
@@ -204,8 +205,8 @@ static uint32_t intersect_sort( value_t table1[], uint32_t n1,
         {
             copyvalue(result_array[n3], table2[j]);
             n3++;
-            i ++;
-            j ++;
+            i++;
+            j++;
         }
         else if (cmpvalue(table1[i], table2[j]) < 0)
             i++;
