@@ -103,9 +103,8 @@ static uint32_t intersect_direct(value_t table1[], uint32_t n1,
     // a straight forward way to do intersection.
     // we can compare the speed with following intersect() function.
     uint32_t i,j;
-    uint32_t k, n3;
+    uint32_t n3;
 
-    k = 0;
     n3 = 0; //number of result_array entries
 
     for ( i = 0; i < n1; i++)
@@ -145,11 +144,19 @@ static uint32_t intersect_hash(value_t table1[], uint32_t n1,
 
     
     uint32_t i, index;
-    struct entry_t * hash_table[HT_ENTRY_NUM];
+    struct entry_t * *hash_table;
     struct entry_t * ptr;
     struct entry_t * entry;
 
     uint32_t n3 = 0;
+    hash_table = malloc( HT_ENTRY_NUM * 8);
+    if(!hash_table)
+    {
+        fprintf(stderr, "ERROR: hash table malloc failed.\n");
+        return 0;
+    }
+
+
     for ( i = 0; i < HT_ENTRY_NUM; i++)
         hash_table[i] = NULL;
 
@@ -188,6 +195,7 @@ static uint32_t intersect_hash(value_t table1[], uint32_t n1,
             ptr = ptr -> next;
         }
     }
+    __free(hash_table);  
     return n3;
 }
 
@@ -199,6 +207,8 @@ static uint32_t intersect_sort( value_t table1[], uint32_t n1,
     uint32_t n3 = 0;
     uint32_t i, j;
 
+    i = 0;
+    j = 0;
     //Quicksort 
     qsort(table1, n1, sizeof(value_t), qs_cmp);
     qsort(table2, n2, sizeof(value_t), qs_cmp);
