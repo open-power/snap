@@ -931,9 +931,9 @@ module top (
     .c0_ddr3_dqs_p(c1_ddr3_dqs_p),                          //-- only for DDR3_USED=TRUE
     .c0_ddr3_dqs_n(c1_ddr3_dqs_n)                           //-- only for DDR3_USED=TRUE
     );                                                      //-- only for DDR3_USED=TRUE
- //////////////////////////////////////////////////////////////////////////////
-  // DDR4 DIMM INSTANCE
-  //////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////-- only for DDR4_USED=TRUE
+  // DDR4 DIMM INSTANCE                                     //-- only for DDR4_USED=TRUE
+  ////////////////////////////////////////////////////////////-- only for DDR4_USED=TRUE
   ddr4_dimm ddr4_dimm (                                     //-- only for DDR4_USED=TRUE
     .pcie_perst             (pcie_perst),                   //-- only for DDR4_USED=TRUE
     .c0_ddr4_act_n          (c0_ddr4_act_n),                //-- only for DDR4_USED=TRUE
@@ -950,7 +950,7 @@ module top (
     .c0_ddr4_dq             (c0_ddr4_dq),                   //-- only for DDR4_USED=TRUE
     .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),                //-- only for DDR4_USED=TRUE
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)                 //-- only for DDR4_USED=TRUE
-    ); 
+    );                                                      //-- only for DDR4_USED=TRUE
                                                             //-- only for NVME_USED=TRUE
   ////////////////////////////////////////////////////////////-- only for NVME_USED=TRUE
   // NVMe model                                             //-- only for NVME_USED=TRUE
