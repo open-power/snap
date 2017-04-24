@@ -390,7 +390,7 @@ int main(int argc, char *argv[])
             
             printf("Source table address is %p\n",src_tables[i]);
 
-            if(1)
+            if(0)
                 dump_table(src_tables[i], num);
         }
 
@@ -556,15 +556,30 @@ int main(int argc, char *argv[])
         
     
 
-    /// Print the results
-    temp_ptr = result_table;
-    for(i = 0;( i< result_num && verbose_flag); i++)
+    if(output != NULL)
     {
-        printf("%s;\n", *temp_ptr);
-        temp_ptr ++;
-    }
-    printf("\n");
+       printf("Writing intersection result %d lines to %s\n",
+                    (int)result_num, output);
+       
+        //Change \0 to \n
+       for(i = 0; i < result_num; i++)
+          result_table[i][sizeof(value_t)-1] = '\n';
 
+       rc |= __file_write(output, (uint8_t *) result_table, result_num*sizeof(value_t)); 
+       if (rc < 0)
+           goto out_error2;
+    }
+    else 
+    { 
+        /// Print the results
+        temp_ptr = result_table;
+        for(i = 0;( i< result_num && verbose_flag); i++)
+        {
+            printf("%s;\n", *temp_ptr);
+            temp_ptr ++;
+        }
+        printf("\n");
+    }
 
 
 	dnut_kernel_free(kernel);
