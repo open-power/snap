@@ -233,10 +233,12 @@ static void snap_decode(uint64_t reg)
 		(int)(reg >> 32ll), atype);
 	switch (atype) {
 	case 0x10140000: VERBOSE1("IBM Sample Code\n"); break;
-	case 0x10141000: VERBOSE1("HLS Demo Memcopy\n"); break;
-	case 0x10141001: VERBOSE1("HLS sponge\n"); break;
-	case 0x10141002: VERBOSE1("HLS XXXX\n"); break;
-	case 0x10141003: VERBOSE1("HLS test search\n"); break;
+	case 0x10141000: VERBOSE1("HLS Memcopy\n"); break;
+	case 0x10141001: VERBOSE1("HLS Checksum\n"); break;
+	case 0x10141002: VERBOSE1("HLS Hash Join\n"); break;
+	case 0x10141003: VERBOSE1("HLS Text Search\n"); break;
+	case 0x10141004: VERBOSE1("HLS Breadth first search (BFS)\n"); break;
+	case 0x10141005: VERBOSE1("HLS Intersect\n"); break;
 	default:
 		VERBOSE1("UNKNOWN Code.....\n");
 		break;
