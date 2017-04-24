@@ -541,7 +541,7 @@ int main(int argc, char *argv[])
 			timeout = strtol(optarg, (char **)NULL, 0); /* in sec */
 			break;
 		case 'I':	/* irq */
-			attach_flags = SNAP_CCR_IRQ_ATTACH;
+			attach_flags |= SNAP_CCR_IRQ_ATTACH;
 			action_irq = ACTION_DONE_IRQ;
 			break;
 		default:
