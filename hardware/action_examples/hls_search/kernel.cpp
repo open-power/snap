@@ -210,9 +210,10 @@ static void process_action(snap_membus_t *din_gmem,
 
         rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, InputType,
                 (InputAddress >> ADDR_RIGHT_SHIFT) + address_text_offset,
-		TextBuffer, search_size);
+				TextBuffer, search_size);
 	x_mbus_to_word(TextBuffer, Text); /* convert buffer to char*/
-        
+       
+	/* call search function */ 
 	nb_of_occurrences += (unsigned int) search(Pattern, PatternSize, Text, search_size);
 
         //rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem, Action_Register->Data.out.type,
@@ -291,12 +292,9 @@ int main(void)
     action_reg Action_Register;
     action_RO_config_reg Action_Config;
     short nb_of_occurrences;
-    //char txt[] = "123456789_123456789_123456789 111111111_222222222_333333333 123412312_123123123_XXXXXXXXX 123456789_123456789_123456789 123456789_123456789_123456789 123456789_123456789_123456789 17occurrences";
-    char pat[] = "123";
-    char *tmp;
+
     FILE *fp;
-    char txt[MAX_NB_OF_BYTES_READ];
-    size_t nread;
+
     int c;
     int k=0;
 
@@ -313,6 +311,7 @@ int main(void)
                 din_gmem[k++] = c;
                 //putchar(c);
         if(ferror(fp)) return 1;
+    }
     fclose(fp);
 
     Action_Register.Data.in.address = 0;
@@ -322,12 +321,17 @@ int main(void)
     Action_Register.Data.out.size = 128;
     Action_Register.Data.out.type = 0x0000;
     Action_Register.Data.pattern.address = 0;
-    Action_Register.Data.pattern.size = sizeof(pat)-1; // exclude the \0
+    Action_Register.Data.pattern.size = 3; // Take 3 first characters of din_gmem as pattern
     Action_Register.Data.pattern.type = 0x0000;
 
 
-
+    // get Action_Register values
     hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
+
+    // process the action
+    Action_Register.Control.flags = 0x1;
+	hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
+
     nb_of_occurrences = Action_Register.Data.nb_of_occurrences;
 
     //nb_of_occurrences = search(pat, strlen(pat), txt, strlen(txt));

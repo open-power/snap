@@ -38,19 +38,10 @@ typedef struct table_i_s {
 } table_i_t;
 
 typedef struct table_o_s {
-        address_t item_address;         /* 8 bytes */
+        address_t item_address;    /* 8 bytes */
         unsigned int item_number;  /* 4 bytes */
-        unsigned int reserved     ;  /* 4 bytes */
+        unsigned int reserved     ;/* 4 bytes */
 } table_o_t;
-
-typedef hls::stream<table_i_t> t_i_fifo_t;
-typedef hls::stream<table_o_t> t_o_fifo_t;
-
-/* Define memory buffers to keep the data we read from CARD or HOST DRAM */
-#define TABLE_I_SIZE    32
-#define TABLE_I_BYTES         (sizeof(table_i_t) * TABLE_I_SIZE)
-#define TABLE_I_IN_4KiB       (4096 / sizeof(table_i_t))
-#define TABLE_I_MEMBUS_WORDS  (TABLE_I_BYTES / sizeof(snap_membus_t))
 
 /* d is the number of characters in input alphabet */
 //#define d 256
