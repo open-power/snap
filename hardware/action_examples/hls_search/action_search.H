@@ -21,7 +21,6 @@
 #include <string.h>
 #include <ap_int.h>
 #include <hls_stream.h>
-
 #include "hls_snap.H"
 
 #define SEARCH_ACTION_TYPE 0x10141003
@@ -54,9 +53,9 @@ typedef hls::stream<table_o_t> t_o_fifo_t;
 #define TABLE_I_MEMBUS_WORDS  (TABLE_I_BYTES / sizeof(snap_membus_t))
 
 /* d is the number of characters in input alphabet */
-#define d 256
-#define PATTERN_SIZE 15
-#define TEXT_SIZE 150
+//#define d 256
+//#define PATTERN_SIZE 15
+//#define TEXT_SIZE 150
 
 /* Action_Register is a 992 bits/124 Bytes made of a 16 Bytes header and a 108 bytes data field
  * To keep the address at the right location, Data should always be 108 bytes
@@ -76,11 +75,11 @@ typedef struct {
         DATA_TS  Data;         // 108 Bytes
 } action_reg;
 
-int Nsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
-int KMPSearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
-int FAsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
-int FAEsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
-int BMsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
+int Nsearch(char *pat, int M, char *txt, int N);
+int KMPsearch(char *pat, int M, char *txt, int N);
+int FAsearch(char *pat, int M, char *txt, int N);
+int FAEsearch(char *pat, int M, char *txt, int N);
+int BMsearch(char *pat, int M, char *txt, int N);
 
 #define CONFIG_HOSTSTYLE_ALGO
 

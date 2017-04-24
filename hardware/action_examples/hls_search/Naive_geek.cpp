@@ -11,12 +11,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "action_search.H"
+//#include "action_search.H"
 
 /* void search(char *pat, char *txt) */
 /* int Nsearch(char *pat, int M, char *txt, int N) */
 
-int Nsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N)
+//int Nsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N)
+int Nsearch(char *pat, int M, char *txt, int N) 
 {
 #pragma HLS INLINE off
 //  int M = strlen(pat);
