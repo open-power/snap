@@ -26,16 +26,6 @@
 /* Header file for SNAP Framework example code */
 #define ACTION_TYPE_EXAMPLE     0x10140000	/* Action Type */
 
-/* FIXME discuss where the following defitions should got to ............... */
-#define ACTION_INT_CONFIG       0x04
-#define ACTION_INT_GLOBAL       1       /* Action IRQ START->IDLE */
-#define ACTION_IDLE_IRQ_MODE    0x08    /* ! */
-
-#define ACTION_8                0x08
-#define ACTION_10               0x10
-#define ACTION_CONTEXT          0x20    /* Context id */
-/* FIXME until here ........................................................ */
-
 #define ACTION_CONFIG           0x30
 #define ACTION_CONFIG_COUNT     1       /* Count Mode */
 #define ACTION_CONFIG_COPY_HH   2       /* Memcopy Host to Host */
