@@ -218,7 +218,7 @@ if { $fpga_card == "KU3" } {
   }
 
   if { $nvme_used == "TRUE" } {
-    add_files -fileset constrs_1 -norecurse  $root_dir/setup/FTG/snap_refclk100.xdc
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/FGT/snap_refclk100.xdc
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/FGT/snap_nvme.xdc
   }
 }
