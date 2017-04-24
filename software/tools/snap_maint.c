@@ -201,7 +201,7 @@ static uint32_t unlock_action(void *handle, uint32_t addr)
 	uint32_t reg;
 
 	VERBOSE2("%s Enter\n", __func__);
-	reg = snap_read32(handle, addr + 0x10);
+	reg = snap_read32(handle, addr + SNAP_ACTION_ID_REG);
 	if (0x00000000 == reg) {
 		VERBOSE2("      Invoke Unlock\n");
 		snap_write32(handle, addr + 0x100, 0);	/* This will set flags to 0 */

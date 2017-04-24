@@ -41,15 +41,15 @@ extern "C" {
 
 /* ACTION Specific register setup: Input */
 #define ACTION_PARAMS_IN	0x100
-#define	ACTION_RETC_IN		(ACTION_PARAMS_IN + 4)
+#define ACTION_RETC_IN		(ACTION_PARAMS_IN + 4)
 /* ACTION Specific register setup: Output */
 #define ACTION_PARAMS_OUT	(ACTION_PARAMS_IN + 0x80)
-#define	ACTION_RETC_OUT		(ACTION_PARAMS_OUT + 4)
+#define ACTION_RETC_OUT		(ACTION_PARAMS_OUT + 4)
 
-#define	SNAP_ID_REG0		0x10	/* SNAP Action ID Register 0 */
-#define	SNAP_ID_REG1		0x14	/* SNAP Action ID Register 1 */
+#define SNAP_ACTION_ID_REG	0x10	/* SNAP Action ID Register */
+#define SNAP_ACTION_VERS_REG	0x14	/* SNAP Action Version Register */
 
-#define	ACTION_DONE_IRQ		4	/* Int# asserted from Job Manager */
+#define ACTION_DONE_IRQ		4	/* Int# asserted from Job Manager */
 
 #ifdef __cplusplus
 }
