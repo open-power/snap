@@ -140,9 +140,9 @@ static void dnut_prepare_intersect(struct dnut_job *cjob,
             DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
 
         //result_table in DDR 
-        // 128 is a dummy value. HW will update this field when finished.
+        // 99 is a dummy value. HW will update this field when finished.
         ddr_addr = 2*MAX_TABLE_SIZE;
-        dnut_addr_set (&ijob_i->result_table, (void *)ddr_addr, 128, DNUT_TARGET_TYPE_CARD_DRAM ,
+        dnut_addr_set (&ijob_i->result_table, (void *)ddr_addr, 99, DNUT_TARGET_TYPE_CARD_DRAM ,
                 DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
 		        DNUT_TARGET_FLAGS_END);
 
@@ -402,7 +402,6 @@ int main(int argc, char *argv[])
 
         int filesize[2];
         uint32_t j;
-        value_t temp_data;
 
         for (i = 0; i < NUM_TABLES; i++)
         {
@@ -428,9 +427,11 @@ int main(int argc, char *argv[])
 
             for( j = 0; j < num; j++)
             {
-                fgets(temp_data, sizeof(value_t)+1, fp);
-                temp_data[sizeof(value_t)-1] = '\0';
-                copyvalue(src_tables[i][j], temp_data);
+                if(fgets(src_tables[i][j], sizeof(value_t), fp) != NULL)
+                {
+                    src_tables[i][j][sizeof(value_t)-1] = '\0';
+                    fseek(fp, 1, SEEK_CUR);
+                }
             }
 
             
@@ -546,7 +547,7 @@ int main(int argc, char *argv[])
         // Action begin (5)
         printf("Start Step5 (Copy result from DDR to Host) ..............\n");
         dnut_prepare_intersect(&cjob, &ijob_i, &ijob_o,
-                     5, method, src_tables, src_sizes, result_table, actual_result_size);
+                     5, method, src_tables, src_sizes, result_table, result_num * sizeof(value_t));
         
         rc |= run_one_step(kernel, &cjob, timeout, action_irq, 5);
         if (rc != 0)
