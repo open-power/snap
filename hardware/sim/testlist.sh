@@ -142,14 +142,14 @@
 #     t="$DONUT_ROOT/software/examples/demo_memcopy -C0 -i ../../1KB.txt -o 1KB.out -t10"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..7
       #### select 1 selection loop
       # for size in 2 83; do                      # still error with 83B ?
-        for size in 2 8 16 64;do
+        for size in 2 8 16 64;do to=$((size*5+10))                                                                 # rough timeout dependent on filesize
       # for size in 2 8 16 64 128 256 512 1024; do # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
       # for size in 255 255 256 256 257 257 258 258 259 259 260 260; do
       # for size in 83 255 256 257 1024 1025 4095 4096 4097; do
       # for size in 2 31 32 33 64 65 80 81 83 255 256 257 1024 1025 4096 4097; do
         #### select 1 checking method
-        # t="$DONUT_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -v -t20"   ;echo -e "$t $l"; # memcopy without checking behind buffer
-          t="$DONUT_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -v -X -t20";echo -e "$t $l"; # memcopy with checking behind buffer
+        # t="$DONUT_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -v -t$t0"   ;echo -e "$t $l"; # memcopy without checking behind buffer
+          t="$DONUT_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -v -X -t$t0";echo -e "$t $l"; # memcopy with checking behind buffer
         #### select 1 type of data generation
         # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                         # same char mult times
         # cmd='print("A" * '${size}', end="")'; python3 -c "$cmd" >${size}.in;head ${size}.in;echo      # deterministic char string generated with python
@@ -159,12 +159,12 @@
       done
       #### select 1 selection loop
       # for size in 2 83; do                      # still error with 83B ?
-        for size in   8 16 64;do
+        for size in   8 16 64;do to=$((size*5+10))                                                                 # rough timeout dependent on filesize
       # for size in 2 8 16 64 128 256 512 1024; do # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
       # for size in 2 31 32 33 64 65 80 81 83 255 256 257 1024 1025 4096 4097; do
         #### select 1 checking method
-        # t="$DONUT_ROOT/software/examples/demo_memcopy -I -i ${size}.in -o ${size}.out -v -t20"   ;echo -e "$t $l"; # memcopy without checking behind buffer
-          t="$DONUT_ROOT/software/examples/demo_memcopy -I -i ${size}.in -o ${size}.out -v -X -t20";echo -e "$t $l"; # memcopy with checking behind buffer
+        # t="$DONUT_ROOT/software/examples/demo_memcopy -I -i ${size}.in -o ${size}.out -v -t$to"   ;echo -e "$t $l"; # memcopy without checking behind buffer
+          t="$DONUT_ROOT/software/examples/demo_memcopy -I -i ${size}.in -o ${size}.out -v -X -t$to";echo -e "$t $l"; # memcopy with checking behind buffer
         #### select 1 type of data generation
         # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                         # same char mult times
         # cmd='print("A" * '${size}', end="")'; python3 -c "$cmd" >${size}.in;head ${size}.in;echo      # deterministic char string generated with python
