@@ -28,16 +28,11 @@
 #include <donut_tools.h>
 #include <action_memcopy.h>
 #include <libdonut.h>
-#include <snap_s_regs.h>
+#include <snap_hls_if.h>
 
 int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
-
-#define MMIO_DIN_DEFAULT	0x0ull
-#define MMIO_DOUT_DEFAULT	0x0ull
-#define	HLS_MEMCOPY_ID		0x10141000
-#define ACTION_REDAY_IRQ	4
 
 static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME" };
 
@@ -83,9 +78,6 @@ static void dnut_prepare_memcopy(struct dnut_job *cjob,
 		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
 		      DNUT_TARGET_FLAGS_END);
 
-	mjob->mmio_din = MMIO_DIN_DEFAULT;
-	mjob->mmio_dout = MMIO_DOUT_DEFAULT;
-
 	dnut_job_set(cjob, MEMCOPY_ACTION_TYPE, mjob, sizeof(*mjob),
 		     NULL, 0);
 }
@@ -117,7 +109,6 @@ int main(int argc, char *argv[])
 	int verify = 0;
 	int exit_code = EXIT_SUCCESS;
 	uint8_t trailing_zeros[1024] = { 0, };
-	int attach_flags = SNAP_CCR_DIRECT_MODE;
 	int action_irq = 0;
 
 	while (1) {
@@ -133,7 +124,7 @@ int main(int argc, char *argv[])
 			{ "size",	 required_argument, NULL, 's' },
 			{ "mode",	 required_argument, NULL, 'm' },
 			{ "timeout",	 required_argument, NULL, 't' },
-			{ "verfy",	 no_argument,	    NULL, 'X' },
+			{ "verify",	 no_argument,	    NULL, 'X' },
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
@@ -211,8 +202,7 @@ int main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		case 'I':
-			attach_flags |= SNAP_CCR_IRQ_ATTACH;
-			action_irq = ACTION_REDAY_IRQ;
+			action_irq = ACTION_DONE_IRQ;
 			break;
 		default:
 			usage(argv[0]);
@@ -250,12 +240,12 @@ int main(int argc, char *argv[])
 
 	/* if output file is defined, use that as output */
 	if (output != NULL) {
-		/* destination buffer/FIXME 1024 more for debugging ... */
-		obuff = memalign(page_size, size + 1024);
+		size_t set_size = size + (verify ? sizeof(trailing_zeros) : 0);
+
+		obuff = memalign(page_size, set_size);
 		if (obuff == NULL)
 			goto out_error;
-		memset(obuff, 0, size + 1024); /* FIXME */
-
+		memset(obuff, 0x0, set_size);
 		type_out = DNUT_TARGET_TYPE_HOST_DRAM;
 		addr_out = (unsigned long)obuff;
 	}
@@ -286,51 +276,23 @@ int main(int argc, char *argv[])
 		goto out_error;
 	}
 
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Wait a sec ...\n");
-	sleep(1);
-#endif
 	dnut_prepare_memcopy(&cjob, &mjob,
 			     (void *)addr_in,  size, type_in,
 			     (void *)addr_out, size, type_out);
 
-	rc = dnut_attach_action((void*)kernel, HLS_MEMCOPY_ID, attach_flags, 5*timeout);
-	if (rc != 0) {
-		fprintf(stderr, "err: job Attach %d: %s!\n", rc,
-			strerror(errno));
-		goto out_error2;
-	}
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x00030, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00034, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00040, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00044, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00050, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00054, 0);
-#endif
-
 	gettimeofday(&stime, NULL);
-	if (action_irq) {
-		dnut_kernel_mmio_write32(kernel, 0x8, 1);
-		dnut_kernel_mmio_write32(kernel, 0x4, 1);
-	}
 	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
-	if (action_irq) {
-		dnut_kernel_mmio_write32(kernel, 0xc, 1);
-		dnut_kernel_mmio_write32(kernel, 0x4, 0);
-	}
+	gettimeofday(&etime, NULL);
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
 			strerror(errno));
 		goto out_error2;
 	}
-	gettimeofday(&etime, NULL);
 
 	/* If the output buffer is in host DRAM we can write it to a file */
 	if (output != NULL) {
-		fprintf(stdout, "writing output data %d bytes to %s\n",
-			(int)size, output);
+		fprintf(stdout, "writing output data %p %d bytes to %s\n",
+			obuff, (int)size, output);
 
 		rc = __file_write(output, obuff, size);
 		if (rc < 0)
@@ -348,6 +310,8 @@ int main(int argc, char *argv[])
 
 			rc = memcmp(obuff + size, trailing_zeros, 1024);
 			if (rc != 0) {
+				fprintf(stderr, "err: trailing zero "
+					"verification failed!\n");
 				__hexdump(stderr, obuff + size, 1024);
 				exit_code = EX_ERR_VERIFY;
 			}
@@ -359,7 +323,6 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "memcopy took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
-	dnut_detach_action((void*)kernel);
 	dnut_kernel_free(kernel);
 
 	__free(obuff);

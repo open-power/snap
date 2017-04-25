@@ -31,11 +31,6 @@
 
 static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 {
-	struct dnut_action *action = (struct dnut_action *)_card;
-
-	if (offs == ACTION_RETC)
-		*data = action->retc;
-
 	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
 		  (long long)offs, *data);
 	return 0;
@@ -50,7 +45,7 @@ static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 static int hashkey_cmp(const hashkey_t s1, const hashkey_t s2)
 {
 	size_t i;
-	
+
 	for (i = 0; i < sizeof(hashkey_t); i++) {
 		if (*s1 == 0 || *s2 == 0)
 			break;
@@ -122,10 +117,10 @@ static int ht_hash(hashkey_t key)
 
 /**
  * Insert a key-value pair into a hash table.
- * 
+ *
  * FIXME Review void *value and try to replace with hashdata_t ...
  *       failed on 1st try.
- * 
+ *
  */
 static int ht_set(hashtable_t *ht, hashkey_t key,
 	   table1_t *value)
@@ -271,7 +266,7 @@ static int hash_join(table1_t *table1, table2_t *table2, table3_t *table3,
 		int bin;
 		entry_t *entry;
 		table2_t *t2 = &table2[i];
-		
+
 		bin = ht_get(h, t2->name);
 		if (bin == -1)
 			continue;	/* nothing found */
@@ -316,9 +311,8 @@ static int action_main(struct dnut_action *action,
 	unsigned int table3_idx = 0;
 
 	print_job(hj);
-	hj->action_version = 0xFEEDBABEBABEBABEull;
+	hj->action_version = 0xFEEDBABE;
 
-	set_checkpoint(hj, 0xeeee0001);
 	t1 = (table1_t *)hj->t1.addr;
 	if (!t1 || hj->t1.size/sizeof(table1_t) > TABLE1_SIZE) {
 		printf("  t1.size/sizeof(table1_t) = %ld entries\n",
@@ -327,7 +321,6 @@ static int action_main(struct dnut_action *action,
 		goto err_out;
 	}
 
-	set_checkpoint(hj, 0xeeee0002);
 	t2 = (table2_t *)hj->t2.addr;
 	if (!t2 || hj->t2.size/sizeof(table2_t) > TABLE2_SIZE) {
 		printf("  t2.size/sizeof(table2_t) = %ld entries\n",
@@ -336,7 +329,6 @@ static int action_main(struct dnut_action *action,
 		goto err_out;
 	}
 
-	set_checkpoint(hj, 0xeeee0003);
 	t3 = (table3_t *)hj->t3.addr;
 	if (!t3 || hj->t3.size/sizeof(table3_t) > TABLE3_SIZE) {
 		printf("  t3.size/sizeof(table3_t) = %ld entries\n",
@@ -345,7 +337,6 @@ static int action_main(struct dnut_action *action,
 		goto err_out;
 	}
 
-	set_checkpoint(hj, 0xeeee0004);
 	h = (hashtable_t *)hj->hashtable.addr;
 	if (hj->hashtable.size/sizeof(entry_t) > HT_SIZE) {
 		printf("  hashtable.size/sizeof(entry_t) = %ld entries\n",
@@ -354,18 +345,17 @@ static int action_main(struct dnut_action *action,
 		goto err_out;
 	}
 
-	set_checkpoint(hj, 0xeeee0005);
 	hj->rc = hash_join(t1, t2, t3, h, &table3_idx);
 	hj->t3_produced = table3_idx;
 
 	if (hj->rc == 0) {
-		action->retc = DNUT_RETC_SUCCESS;
+		action->job.retc = DNUT_RETC_SUCCESS;
 	} else
-		action->retc = DNUT_RETC_FAILURE;
+		action->job.retc = DNUT_RETC_FAILURE;
 	return 0;
 
  err_out:
-	action->retc = DNUT_RETC_FAILURE;
+	action->job.retc = DNUT_RETC_FAILURE;
 	return -1;
 }
 
@@ -374,7 +364,7 @@ static struct dnut_action action = {
 	.device_id = DNUT_DEVICE_ID_ANY,
 	.action_type = HASHJOIN_ACTION_TYPE,
 
-	.retc = DNUT_RETC_FAILURE, /* preset value, 0 on success */
+	.job = { .retc = DNUT_RETC_FAILURE, },
 	.state = ACTION_IDLE,
 	.main = action_main,
 	.priv_data = NULL,	/* this is passed back as void *card */

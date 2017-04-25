@@ -76,7 +76,6 @@ void hls_action(snap_membus_t  *din_gmem, snap_membus_t  *dout_gmem,
 	snap_membus_t  *d_ddrmem,
         action_reg *Action_Register, action_RO_config_reg *Action_Config)
 {
-
 // Host Memory AXI Interface
 #pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
 #pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
@@ -94,34 +93,39 @@ void hls_action(snap_membus_t  *din_gmem, snap_membus_t  *dout_gmem,
 #pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg	offset=0x100 
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
-// Hardcoded numbers
-  Action_Config->action_type   = (snapu32_t) BFS_ACTION_TYPE;
-  Action_Config->release_level = (snapu32_t) RELEASE_LEVEL;
+	// VARIABLES
+	short rc=0;
+	snapu32_t ReturnCode;
 
+	snapu64_t INPUT_ADDRESS;
+	snapu64_t OUTPUT_ADDRESS;
+	snapu64_t fetch_address;
+	snapu64_t commit_address;
 
+	ap_uint<1>         visited[MAX_VEX_NUM];
+	ap_uint<VEX_WIDTH> i,j, root, current, vex_num;
+
+	ap_uint<VEX_WIDTH> vnode_cnt;
+	snapu32_t vnode_place;
+
+	snapu64_t edgelink_ptr;
+	ap_uint<VEX_WIDTH> adjvex;
+
+	snap_membus_t buf_node[1];
+	snap_membus_t buf_out[1];
+	ap_uint<4> idx;
+
+	/* Required Action Type Detection */
+	switch (Action_Register->Control.flags) {
+	case 0:
+		Action_Config->action_type = (snapu32_t)BFS_ACTION_TYPE;
+		Action_Config->release_level = (snapu32_t)RELEASE_LEVEL;
+		Action_Register->Control.Retc = (snapu32_t)0xe00f;
+		return;
+	default:
+		break;
+	}
  
-  // VARIABLES
-  short rc=0;
-  snapu32_t ReturnCode;
-
-  snapu64_t INPUT_ADDRESS;
-  snapu64_t OUTPUT_ADDRESS;
-  snapu64_t fetch_address;
-  snapu64_t commit_address;
-
-  ap_uint<1>         visited[MAX_VEX_NUM];
-  ap_uint<VEX_WIDTH> i,j, root, current, vex_num;
-
-  ap_uint<VEX_WIDTH> vnode_cnt;
-  snapu32_t vnode_place;
-
-  snapu64_t edgelink_ptr;
-  ap_uint<VEX_WIDTH> adjvex;
-
-  snap_membus_t buf_node[1];
-  snap_membus_t buf_out[1];
-  ap_uint<4> idx;
-  
   if(Action_Register->Control.sat == 0x04)
   {
   //== Parameters fetched in memory ==

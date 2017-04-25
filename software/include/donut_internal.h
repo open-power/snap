@@ -19,6 +19,7 @@
  */
 
 #include <stdint.h>
+#include "donut_queue.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,35 +51,9 @@ extern "C" {
 
 #define	CACHELINE_BYTES		128
 
-/* General ACTION registers */
-#define	ACTION_BASE_M		0x10000		/* Base when in Master Mode */
-#define	ACTION_BASE_S		0x0F000		/* Base when in Slave Mode */
+#define	ACTION_BASE_M	0x10000		/* Base when in Master Mode */
+#define	ACTION_BASE_S	0x0F000		/* Base when in Slave Mode */
 
-#define	ACTION_CONTROL		0x0		/* Control signals */
-#define	ACTION_CONTROL_START	0x00000001	/* ap_start (Clear on Handshake) */
-#define	ACTION_CONTROL_DONE	0x00000002	/* ap_done (Clear on Read) */
-#define	ACTION_CONTROL_IDLE	0x00000004	/* ap_idle (read) */
-#define	ACTION_CONTROL_RUN	0x00000008	/* ap_ready (Read) */
-
-#define	ACTION_IRQ_CONTROL	0x04		/* Global Interrupt Enable Register */
-#define	ACTION_IRQ_CONTROL_ON	0x00000001	/* Global Interrupt Enable (Read/Write) */
-
-#define	ACTION_IRQ_APP		0x08		/* IP Interrupt Enable Register (Read/Write) */
-#define	ACTION_IRQ_APP_DONE	0x00000001	/* Channel 0 (ap_done)*/
-#define	ACTION_IRQ_APP_READY	0x00000002	/* Channel 1 (ap_ready) */
-
-#define	ACTION_IRQ_STATUS	0x0c		/* IP Interrupt Status Register (Read/TOW) */
-#define	ACTION_IRQ_STATUS_DONE	0x00000001	/* Channel 0 (ap_done)*/
-#define	ACTION_IRQ_STATUS_READY	0x00000002	/* Channel 1 (ap_ready) */
-
-/* ACTION Specific register setup: Input */
-#define ACTION_PARAMS_IN	0x100	/* 0x80 - 0x90 */
-#define ACTION_JOB_IN		0x90	/* 0x90 - 0xfc */
-
-/* ACTION Specific register setup: Output */
-#define ACTION_PARAMS_OUT	0x180 	/* 0x100 - 0x110 */
-#define ACTION_RETC		0x184	/* 0x104 */
-#define ACTION_JOB_OUT		0x110	/* 0x110 - 0x1fc */
 
 struct dnut_funcs {
 	void * (* card_alloc_dev)(const char *path, uint16_t vendor_id,
@@ -120,12 +95,12 @@ typedef int (*action_main_t)(struct dnut_action *action,
 struct dnut_action {
 	uint16_t vendor_id;
 	uint16_t device_id;
-	uint16_t action_type;
+	uint32_t action_type;
 
 	enum dnut_action_state state;
 	void *priv_data;
-	uint8_t job[CACHELINE_BYTES];
-	uint32_t retc;
+
+	struct queue_workitem job;
 	action_main_t main;
 
 	int (* mmio_write32)(void *card, uint64_t offset, uint32_t data);

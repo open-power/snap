@@ -82,10 +82,10 @@ install uninstall:
 test: test_software
 
 test_software: all
-	DNUT_CONFIG=0x1 ./scripts/donut_tests.sh
+	DNUT_CONFIG=0x1 ./scripts/donut_tests.sh -a
 
 test_hardware:
-	./scripts/donut_tests.sh
+	./scripts/donut_tests.sh -h
 
 help:
 	@echo "Build Donut/CAPI hardware accelerator tools"

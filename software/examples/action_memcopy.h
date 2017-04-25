@@ -20,13 +20,11 @@
 #include <stdint.h>
 #include <libdonut.h>
 
-#define MEMCOPY_ACTION_TYPE	0x0004
+#define MEMCOPY_ACTION_TYPE 0x10141000
 
 struct memcopy_job {
 	struct dnut_addr in;	/* input data */
 	struct dnut_addr out;   /* offset table */
-	uint64_t mmio_din;	/* private settins for this action */
-	uint64_t mmio_dout;	/* private settins for this action */
 };
 
 #endif	/* __ACTION_MEMCOPY_H__ */

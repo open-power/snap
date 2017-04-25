@@ -23,6 +23,9 @@
 #include <hls_stream.h>
 #include "hls_snap.H"
 
+#define HASHJOIN_ACTION_TYPE 0x10141002
+#define RELEASE_LEVEL        0x00000020
+
 typedef char hashkey_t[64];
 
 typedef struct table1_s {
@@ -63,9 +66,6 @@ typedef hls::stream<table3_t> t3_fifo_t;
 #define TABLE1_MEMBUS_WORDS  (TABLE1_BYTES / sizeof(snap_membus_t))
 #define TABLE2_MEMBUS_WORDS  (TABLE2_BYTES / sizeof(snap_membus_t))
 
-#define HASHJOIN_ACTION_TYPE 0x0022
-#define RELEASE_VERSION      0xFEEDA02227022017 /* Action/Release numbers */
-
 typedef struct entry_s {
         hashkey_t key;          /* key */
         unsigned int used;      /* list entries used */
@@ -78,33 +78,23 @@ typedef struct hashtable_s {
 
 /* Names of the fields can be changed by User. Should serve as a template */
 typedef struct {
-        dnut_addr t1; /* IN: input table1 for multihash */
-        dnut_addr t2; /* IN: 2nd table2 to do join with */
-        dnut_addr t3; /* OUT: resulting table3 */
-        dnut_addr hash_table; /* CACHE: multihash table */
+        dnut_addr t1; /* IN: input table1 for multihash : 128 bits*/
+        dnut_addr t2; /* IN: 2nd table2 to do join with : 128 bits*/
+        dnut_addr t3; /* OUT: resulting table3 : 128 bits*/
+        dnut_addr hash_table; /* CACHE: multihash table : 128 bits*/
 
         snapu64_t t1_processed; /* #entries cached, repeat if not all */
         snapu64_t t2_processed; /* #entries processed, repeat if not all */
         snapu64_t t3_produced;  /* #entries produced store them away */
         snapu64_t checkpoint;
-        snapu64_t rc;
-        snapu64_t action_version;
-} DATA_HJ; // DATA = 112 Bytes
+        ap_uint<96> unused; /* mandatory to keep output register at the right address*/
+} DATA_HJ; // DATA = 108 Bytes / 864 bits (fixed length)
 
 //---------------------------------------------------------------------
 typedef struct {
-        CONTROL  Control;   //  16 bytes
-        DATA_HJ  Data;      // 112 bytes
-} action_input_reg;
-
-// ISSUE #44
-// => IMPOSSIBLE TO HAVE action_output_reg contiguous to action_input_reg
-// => Retc is at 0x104 but action field is not copied to action_output_reg
-typedef struct {
-        snapu32_t Retc;     //   4 bytes
-        snapu64_t Reserved; //   8 bytes
-        DATA_HJ   Data;     // 112 bytes
-} action_output_reg;
+        CONTROL Control;    //  16 bytes
+        DATA_HJ Data;       // 108 bytes
+} action_reg;
 
 void hashkey_cpy(hashkey_t dst, hashkey_t src);
 

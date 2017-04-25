@@ -102,39 +102,11 @@ static void write_results(action_reg *Action_Register,
 //--- MAIN PROGRAM ------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-/**
- * Remarks: Using pointers for the din_gmem, ... parameters is requiring to
- * to set the depth=... parameter via the pragma below. If missing to do this
- * the cosimulation will not work, since the width of the interface cannot
- * be determined. Using an array din_gmem[...] works too to fix that.
- */
-void hls_action(snap_membus_t *din_gmem,
-		    snap_membus_t *dout_gmem,
-		    snap_membus_t *d_ddrmem,
-		    action_reg *Action_Register,
-		    action_RO_config_reg *Action_Config)
+static void process_action(snap_membus_t *din_gmem,
+                           snap_membus_t *dout_gmem,
+                           snap_membus_t *d_ddrmem,
+                           action_reg *Action_Register)
 {
-
-// Host Memory AXI Interface
-#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
-#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
-#pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg           offset=0x030
-#pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg          offset=0x040
-
-//DDR memory Interface
-#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
-#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg           offset=0x050
-
-// Host Memory AXI Lite Master Interface
-#pragma HLS DATA_PACK variable=Action_Config
-#pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg      offset=0x010
-#pragma HLS DATA_PACK variable=Action_Register
-#pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg    offset=0x100
-#pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
-
-	/* Hardcoded numbers */
-	Action_Config->action_type   = (snapu32_t) SPONGE_ACTION_TYPE;
-	Action_Config->release_level = (snapu32_t) RELEASE_LEVEL;
 
 	uint64_t checksum = 0;
 	uint32_t slice = 0;
@@ -189,6 +161,57 @@ void hls_action(snap_membus_t *din_gmem,
 	write_results(Action_Register, RET_CODE_OK,
 		      checksum, timer_ticks);
 }
+
+//--- TOP LEVEL MODULE -------------------------------------------------
+/**
+ * Remarks: Using pointers for the din_gmem, ... parameters is requiring to
+ * to set the depth=... parameter via the pragma below. If missing to do this
+ * the cosimulation will not work, since the width of the interface cannot
+ * be determined. Using an array din_gmem[...] works too to fix that.
+ */
+void hls_action(snap_membus_t *din_gmem,
+		    snap_membus_t *dout_gmem,
+		    snap_membus_t *d_ddrmem,
+		    action_reg *Action_Register,
+		    action_RO_config_reg *Action_Config)
+{
+
+// Host Memory AXI Interface
+#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
+#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
+#pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg           offset=0x030
+#pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg          offset=0x040
+
+//DDR memory Interface
+#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
+#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg           offset=0x050
+
+// Host Memory AXI Lite Master Interface
+#pragma HLS DATA_PACK variable=Action_Config
+#pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg      offset=0x010
+#pragma HLS DATA_PACK variable=Action_Register
+#pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg    offset=0x100
+#pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
+
+	/* Hardcoded numbers */
+        switch (Action_Register->Control.flags) {
+        case 0:
+		Action_Config->action_type   = (snapu32_t) SPONGE_ACTION_TYPE;
+		Action_Config->release_level = (snapu32_t) RELEASE_LEVEL;
+                Action_Register->Control.Retc = (snapu32_t)0xe00f;
+                return;
+                break;
+        default:
+                process_action(din_gmem, dout_gmem, d_ddrmem, Action_Register);
+                break;
+        }
+
+}
+
+//-----------------------------------------------------------------------------
+//--- TESTBENCH ---------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
 
 #ifdef NO_SYNTH
 

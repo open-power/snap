@@ -45,11 +45,6 @@ static int mmio_write32(void *_card, uint64_t offs, uint32_t data)
 
 static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 {
-	struct dnut_action *action = (struct dnut_action *)_card;
-
-	if (offs == ACTION_RETC)
-		*data = action->retc;
-
 	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
 		  (long long)offs, *data);
 	return 0;
@@ -89,7 +84,7 @@ static void PrintQueue(Queue *q)
         printf ("empty.\n");
         return;
     }
-    
+
     QNode * node = q->front;
     while (node != NULL)
     {
@@ -112,10 +107,10 @@ static void EnQueue (Queue *q, ElementType element)
     node_ptr->next = NULL;
 
     //Append to the tail
-    
+
     if (q->front == NULL)
         q->front = node_ptr;
-    
+
     if (q->rear == NULL)
     {
         q->rear = node_ptr;
@@ -135,7 +130,7 @@ static void EnQueue (Queue *q, ElementType element)
 static void DeQueue (Queue *q, ElementType *ep)
 {
    // printf("Dequeue\n");
-    if (QueueEmpty (q)) 
+    if (QueueEmpty (q))
     {
         printf ("ERROR: DeQueue: queue is empty.\n");
         return;
@@ -158,7 +153,7 @@ static void DeQueue (Queue *q, ElementType *ep)
 
 
 //-------------------------------------
-//    breadth first search   
+//    breadth first search
 //-------------------------------------
 
 void output_vex(unsigned int vex, int is_tail)
@@ -184,12 +179,12 @@ int bfs_all (VexNode * vex_list, unsigned int vex_num)
     unsigned int i;
     for (i = 0; i < vex_num; i++)
     {
-        bfs(vex_list, vex_num, i); 
+        bfs(vex_list, vex_num, i);
     }
     return 0;
 }
 
-//Breadth-first-search from a perticular vertex. 
+//Breadth-first-search from a perticular vertex.
 void bfs (VexNode * vex_list, unsigned int vex_num, unsigned int root)
 {
     EdgeNode *p;
@@ -197,10 +192,10 @@ void bfs (VexNode * vex_list, unsigned int vex_num, unsigned int root)
     unsigned int current, i;
     int * visited;
     visited = (int *) malloc (vex_num * sizeof(int));
-    unsigned int cnt = 0; 
+    unsigned int cnt = 0;
     current = 0;
-    
-    //initilize to all zero.  
+
+    //initilize to all zero.
     for (i = 0; i < vex_num; i++)
         visited[i] = 0;
 
@@ -209,12 +204,12 @@ void bfs (VexNode * vex_list, unsigned int vex_num, unsigned int root)
     visited[root] = 1;
     output_vex( root,0);
     cnt++;
-    
+
     EnQueue(Q, root);
 
     while (! QueueEmpty(Q))
     {
-        
+
    /*
         printf("vistied = ");
         for (i = 0; i < vex_num; i++)
@@ -222,8 +217,8 @@ void bfs (VexNode * vex_list, unsigned int vex_num, unsigned int root)
             printf("%d", visited[i]);
         }
         printf("\n");
-     */   
-            
+     */
+
         DeQueue(Q, &current);
         p = vex_list[current].edgelink;
 
@@ -256,11 +251,11 @@ static int action_main(struct dnut_action *action,
 {
 	int rc;
 	struct bfs_job *js = (struct bfs_job *)job;
-	
+
     VexNode * vex_list = (VexNode *) js->input_adjtable_address;
     unsigned int vex_num = js->input_vex_num;
 
-    
+
     g_out_ptr = (unsigned int *)js->output_address;
 
     rc = bfs_all(vex_list, vex_num);
@@ -271,13 +266,13 @@ static int action_main(struct dnut_action *action,
     else
         goto out_err;
 
- 
+
  out_ok:
-	action->retc = DNUT_RETC_SUCCESS;
+	action->job.retc = DNUT_RETC_SUCCESS;
 	return 0;
 
  out_err:
-	action->retc = DNUT_RETC_FAILURE;
+	action->job.retc = DNUT_RETC_FAILURE;
 	return 0;
 }
 
@@ -286,7 +281,7 @@ static struct dnut_action action = {
 	.device_id = DNUT_DEVICE_ID_ANY,
 	.action_type = (HLS_BFS_ID&0xFFFF),
 
-	.retc = DNUT_RETC_FAILURE, /* preset value, should be 0 on success */
+	.job = { .retc = DNUT_RETC_FAILURE, },
 	.state = ACTION_IDLE,
 	.main = action_main,
 	.priv_data = NULL,	/* this is passed back as void *card */

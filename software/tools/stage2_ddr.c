@@ -29,7 +29,8 @@
 
 #include <libdonut.h>
 #include <donut_tools.h>
-#include "snap_s_regs.h"
+#include <snap_s_regs.h>
+
 #include "snap_fw_example.h"
 
 /*	defaults */
@@ -259,28 +260,26 @@ static void dump_regs(struct dnut_card* h)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct dnut_card* h, int timeout, uint64_t *elapsed, bool use_irq)
+static int action_wait_idle(struct dnut_card* h, int timeout, uint64_t *elapsed, int irq)
 {
 	int rc = ETIME;
 	uint64_t t_start;	/* time in usec */
 	uint64_t td;		/* Diff time in usec */
-	int irq = 0;
 
-	if (use_irq) {
-		action_write(h, ACTION_INT_CONFIG, ACTION_INT_GLOBAL);
-		irq = 4;
-	}
+	if (irq)
+		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
 	dnut_kernel_start((void*)h);
 
 
 	/* Wait for Action to go back to Idle */
 	t_start = get_usec();
 	rc = dnut_kernel_completed((void*)h, irq, NULL, timeout);
+	td = get_usec() - t_start;
+
 	if (rc) rc = 0;	/* Good */
 	else VERBOSE0("Error. Timeout while Waiting for Idle\n");
-	td = get_usec() - t_start;
-	if (use_irq)
-		action_write(h, ACTION_INT_CONFIG, 0);
+	if (irq)
+		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_OFF);
 	*elapsed = td;
 	return(rc);
 }
@@ -320,7 +319,6 @@ static void action_memcpy(struct dnut_card* h,
 	action_write(h, ACTION_SRC_LOW, (uint32_t)(addr & 0xffffffff));
 	action_write(h, ACTION_SRC_HIGH, (uint32_t)(addr >> 32));
 	action_write(h, ACTION_CNT, n);
-
 	return;
 }
 
@@ -398,7 +396,7 @@ static int ram_clear(struct dnut_card* dnc,
 			uint64_t start_addr,	/* Start of Card Mem */
 			uint64_t end_addr,	/* End of Card Mem */
 			int timeout,		/* Timeout to wait in ms */
-			bool irq_flag)
+			int irq)
 {
 	int rc, blocks, block;
 	uint64_t card_addr;
@@ -418,7 +416,7 @@ static int ram_clear(struct dnut_card* dnc,
 		/* Copy Data from Host to Card */
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 			(void *)card_addr, src, mem_size);
-		if (0 != action_wait_idle(dnc, timeout, &us_elappsed, irq_flag))
+		if (0 != action_wait_idle(dnc, timeout, &us_elappsed, irq))
 			goto __ram_zero_exit;
 		card_addr += mem_size;
 		t_sum += us_elappsed;
@@ -437,7 +435,7 @@ static int ram_test_ad(struct dnut_card* dnc,
 			uint64_t end_addr,	/* End of Card Mem */
 			int timeout,		/* Timeout to wait in ms */
 			bool inverse,
-			bool irq_flag)
+			int irq)
 {
 	int rc = -1;
 	int blocks, block;
@@ -459,7 +457,7 @@ static int ram_test_ad(struct dnut_card* dnc,
 		else	memset_ad(src, card_addr, mem_size);
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 			(void *)card_addr, src, mem_size);
-		if (0 != action_wait_idle(dnc, timeout, &us_elappsed, irq_flag))
+		if (0 != action_wait_idle(dnc, timeout, &us_elappsed, irq))
 			goto __ram_test_ad_exit;
 		card_addr += mem_size;
 		t_sum += us_elappsed;
@@ -476,7 +474,7 @@ static int ram_test_ad(struct dnut_card* dnc,
 	for (block = 0; block < blocks; block++) {
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
 			dest, (void *)card_addr, mem_size);
-		if (0 != action_wait_idle(dnc, timeout, &us_elappsed, irq_flag))
+		if (0 != action_wait_idle(dnc, timeout, &us_elappsed, irq))
 			goto __ram_test_ad_exit;
 		t_sum += us_elappsed;
 		if (inverse)
@@ -501,7 +499,7 @@ static int ram_test_rnd1(struct dnut_card* dnc,
 			uint64_t start_addr,	/* Start of Card Mem */
 			uint64_t end_addr,	/* End of Card Mem */
 			int timeout,		/* Timeout to wait in ms */
-			bool irq_flag)
+			int irq)
 {
 	int blocks, block;
 	uint64_t card_addr;
@@ -521,7 +519,7 @@ static int ram_test_rnd1(struct dnut_card* dnc,
 	for (block = 0; block < blocks; block++) {
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 			(void *)card_addr, src, mem_size);
-		if (0 != action_wait_idle(dnc, timeout, &us_elappsed, irq_flag))
+		if (0 != action_wait_idle(dnc, timeout, &us_elappsed, irq))
 			goto __ram_test_rnd1_exit;
 		t_sum += us_elappsed;
 		card_addr += mem_size;
@@ -539,7 +537,7 @@ static int ram_test_rnd1(struct dnut_card* dnc,
 	for (block = 0; block < blocks; block++) {
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
 			dest, (void *)card_addr, mem_size);
-		if (0 != action_wait_idle(dnc, timeout, &us_elappsed, irq_flag))
+		if (0 != action_wait_idle(dnc, timeout, &us_elappsed, irq))
 			goto __ram_test_rnd1_exit;
 		t_sum += us_elappsed;
 		rc = memcmp2(dest, src, card_addr, mem_size);
@@ -562,7 +560,7 @@ static int ram_test_rnd2(struct dnut_card* dnc,
 			uint64_t start_addr,	/* Start of Card Mem */
 			uint64_t end_addr,	/* End of Card Mem */
 			int timeout,		/* Timeout to wait in ms */
-			bool irq_flag)
+			int irq)
 {
 	int blocks, block;
 	uint64_t card_addr;
@@ -582,13 +580,13 @@ static int ram_test_rnd2(struct dnut_card* dnc,
 		/* Write DDR3 Memory */
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 			(void *)card_addr, src, mem_size);
-		if (0 != action_wait_idle(dnc, timeout, &us_elappsed, irq_flag))
+		if (0 != action_wait_idle(dnc, timeout, &us_elappsed, irq))
 			goto __ram_test_rnd2_exit;
 		t_sum += us_elappsed;
 		/* Read DDR3 Memory */
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
 			dest, (void *)card_addr, mem_size);
-		if (0 != action_wait_idle(dnc, timeout, &us_elappsed, irq_flag))
+		if (0 != action_wait_idle(dnc, timeout, &us_elappsed, irq))
 			goto __ram_test_rnd2_exit;
 		t_sum += us_elappsed;
 		rc = memcmp2(dest, src, card_addr, mem_size);
@@ -637,7 +635,7 @@ int main(int argc, char *argv[])
 	unsigned int mem_size = HOST_BUFFER_SIZE;
 	void *src_buf = NULL;
 	void *dest_buf = NULL;
-	bool use_interrupt = false;
+	int action_irq = 0;
 	int attach_flags = SNAP_CCR_DIRECT_MODE;
 
 	while (1) {
@@ -690,8 +688,8 @@ int main(int argc, char *argv[])
 			mem_size = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 'I':
-			use_interrupt = true;
-			attach_flags |= ACTION_IDLE_IRQ_MODE | SNAP_CCR_IRQ_ATTACH;
+			action_irq = ACTION_DONE_IRQ;
+			attach_flags |= SNAP_CCR_IRQ_ATTACH;
 			break;
 		default:
 			usage(argv[0]);
@@ -740,26 +738,26 @@ int main(int argc, char *argv[])
 		}
 		VERBOSE1("\n[%d/%d] Clear Ram ", i+1, iter);
 		rc = ram_clear(dn, src_buf, mem_size,
-			start_addr, end_addr, timeout, use_interrupt);
+			start_addr, end_addr, timeout, action_irq);
 
 		VERBOSE1("\n[%d/%d] Test Address = Data ", i+1, iter);
 		rc = ram_test_ad(dn, src_buf, dest_buf, mem_size,
-			start_addr, end_addr, timeout, false, use_interrupt);
+			start_addr, end_addr, timeout, false, action_irq);
 		if (rc) break;
 
 		VERBOSE1("\n[%d/%d] Test Address = (not)Data ", i+1, iter);
 		rc = ram_test_ad(dn, src_buf, dest_buf, mem_size,
-			start_addr, end_addr, timeout, true, use_interrupt);
+			start_addr, end_addr, timeout, true, action_irq);
 		if (rc) break;
 
 		VERBOSE1("\n[%d/%d] Test Random Mode 1 ", i+1, iter);
 		rc = ram_test_rnd1(dn, src_buf, dest_buf, mem_size,
-			start_addr, end_addr, timeout, use_interrupt);
+			start_addr, end_addr, timeout, action_irq);
 		if (rc) break;
 
 		VERBOSE1("\n[%d/%d] Test Random Mode 2 ", i+1, iter);
 		rc = ram_test_rnd2(dn, src_buf, dest_buf, mem_size,
-			start_addr, end_addr, timeout, use_interrupt);
+			start_addr, end_addr, timeout, action_irq);
 		if (rc) break;
 		dnut_detach_action(dn);
 	}

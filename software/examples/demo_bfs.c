@@ -28,9 +28,10 @@
 #include <donut_tools.h>
 #include <libdonut.h>
 #include <action_bfs.h>
-#include <snap_s_regs.h>
+#include <snap_hls_if.h>
 
 #define ACTION_REDAY_IRQ	4
+#define HLS_BFS_ID		0x10141004
 
 /*
  * BFS: breadth first search
@@ -314,7 +315,7 @@ static void dnut_prepare_bfs(struct dnut_job *job,
     // We have input parameters.
     // But we don't need AFU to write back results from MMIO.
     // Results will be written in host_memory, starting from output_address
-	dnut_job_set(job, (HLS_BFS_ID&0xFFFF), bjob_in, sizeof(*bjob_in),
+	dnut_job_set(job, HLS_BFS_ID, bjob_in, sizeof(*bjob_in),
 		     bjob_out, sizeof(*bjob_out));
 
 
@@ -324,36 +325,34 @@ static void dnut_prepare_bfs(struct dnut_job *job,
  *---------------------------------------------------*/
 int main(int argc, char *argv[])
 {
-
-    //General variables for donut call
+	//General variables for donut call
 	int ch;
-    int rc = 0;
+	int rc = 0;
 	int card_no = 0;
 	struct dnut_kernel *kernel = NULL;
 	char device[128];
 	struct dnut_job job;
 	struct timeval etime, stime;
 	uint32_t page_size = sysconf(_SC_PAGESIZE);
-    int exit_code = EXIT_SUCCESS;
+	int exit_code = EXIT_SUCCESS;
 
 
-    unsigned long timeout = 10000;
+	unsigned long timeout = 10000;
 	const char *input_file = NULL;
 	const char *output_file = NULL;
-    int random_graph = 0;
-    uint32_t vex_n, edge_n;
-	int attach_flags = SNAP_CCR_DIRECT_MODE;
+	int random_graph = 0;
+	uint32_t vex_n, edge_n;
 	int action_irq = 0;
 
-    vex_n  = ARRAY_SIZE(v_table);
-    edge_n = ARRAY_SIZE(e_table);
+	vex_n  = ARRAY_SIZE(v_table);
+	edge_n = ARRAY_SIZE(e_table);
 
-    while (1) {
+	while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {
 			{ "card",	 required_argument, NULL, 'C' },
 			{ "input_file",	 required_argument, NULL, 'i' },
-			{ "output_file",	 required_argument, NULL, 'o' },
+			{ "output_file", required_argument, NULL, 'o' },
 			{ "rand_nodes",	 required_argument, NULL, 'r' },
 			{ "timeout",	 required_argument, NULL, 't' },
 			{ "version",	 no_argument,	    NULL, 'V' },
@@ -364,7 +363,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-				 "C:i:o:t:r:VIvh",
+				 "C:i:o:t:r:VvhI",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -374,13 +373,12 @@ int main(int argc, char *argv[])
 		case 'C':
 			card_no = strtol(optarg, (char **)NULL, 0);
 			break;
-        case 'i':
+		case 'i':
 			input_file = optarg;
 			break;
 		case 'o':
 			output_file = optarg;
 			break;
-
 		case 't':
 			timeout = strtol(optarg, (char **)NULL, 0);
 			break;
@@ -392,15 +390,14 @@ int main(int argc, char *argv[])
 			break;
 		case 'r':
 			random_graph=1;
-            vex_n = strtol(optarg, (char **)NULL, 0);
+			vex_n = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 'h':
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
 		case 'I':	/* irq */
-			attach_flags |= SNAP_CCR_IRQ_ATTACH;
-			action_irq = ACTION_REDAY_IRQ;
+			action_irq = ACTION_DONE_IRQ;
 			break;
 		default:
 			usage(argv[0]);
@@ -415,15 +412,15 @@ int main(int argc, char *argv[])
 
 
 
-    //Action specfic
+	//Action specfic
 	struct bfs_job bjob_in;
 	struct bfs_job bjob_out;
 
-    //Input buffer
+	//Input buffer
 	uint8_t type_in = DNUT_TARGET_TYPE_HOST_DRAM;
 	VexNode * ibuf = 0x0ull;
 
-    //Output buffer
+	//Output buffer
 	uint8_t type_out = DNUT_TARGET_TYPE_HOST_DRAM;
 	uint32_t * obuf = 0x0ull;
     uint32_t size_out;
@@ -454,7 +451,7 @@ int main(int argc, char *argv[])
     if(rc < 0)
         goto out_error;
 
-	ibuf = adj.vex_list;
+    ibuf = adj.vex_list;
 
 
 
@@ -487,48 +484,19 @@ int main(int argc, char *argv[])
 		goto out_error;
 	}
 
-#if 1				/* FIXME Circumvention should go away */
-	printf("FIXME Wait a sec ...\n");
-	sleep(1);
-#endif
-	rc = dnut_attach_action((void*)kernel, HLS_BFS_ID, attach_flags, 5*timeout);
-	if (rc) {
-		fprintf(stderr, "err: job Attach %d: %s!\n", rc,
-			strerror(errno));
-		dnut_kernel_free(kernel);
-		goto out_error;
-	}
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x00030, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00034, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00040, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00044, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00050, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00054, 0);
-#endif
-
 	dnut_prepare_bfs(&job, &bjob_in, &bjob_out,
 			     (void *)ibuf,  vex_n,    type_in,
 			     (void *)obuf, type_out);
 
 	fprintf(stdout, "INFO: Timer starts...\n");
 	gettimeofday(&stime, NULL);
-	if (action_irq) {
-		dnut_kernel_mmio_write32(kernel, 0x8, 1);
-		dnut_kernel_mmio_write32(kernel, 0x4, 1);
-	}
 	rc = dnut_kernel_sync_execute_job(kernel, &job, timeout, action_irq);
-	if (action_irq) {
-		dnut_kernel_mmio_write32(kernel, 0xc, 1);
-		dnut_kernel_mmio_write32(kernel, 0x4, 0);
-	}
+	gettimeofday(&etime, NULL);
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
 			strerror(errno));
 		goto out_error2;
 	}
-	gettimeofday(&etime, NULL);
 
 	fprintf(stdout, "RETC=%x\n", job.retc);
 	fprintf(stdout, "INFO: BFS took %lld usec\n",

@@ -4,7 +4,7 @@
 /**
  * Copyright 2016 International Business Machines
  * Copyright 2016 Rackspace Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -63,15 +63,15 @@
  */
 
 struct queue_workitem {
-	uint8_t action;
-	uint8_t flags;
-	uint16_t seq;
-	uint32_t retc;
+	uint8_t short_action;		/* Job Manager Short Action ID */
+	uint8_t flags;			/* 0 is reserved for 1st start from snap_maint */
+	uint16_t seq;			/* Action Seq Number */
+	uint32_t retc;			/* Return code from APP */
 	uint64_t priv_data;
 	union {
 		struct dnut_addr ext;     /* 16 bytes if job > 112 bytes */
-		struct dnut_addr addr[7]; /* 16 * 7 = 112 bytes */
-		uint8_t data[112];
+		struct dnut_addr addr[6]; /* 16 * 6 = 96 bytes 16 Bytes are left free */
+		uint8_t data[112];	/* RAW Data Space to fill to 128 Bytes */
 	} user;
 };
 

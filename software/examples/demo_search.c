@@ -34,14 +34,14 @@
 #include <donut_tools.h>
 #include <libdonut.h>
 #include <action_search.h>
-#include <snap_s_regs.h>
+#include <snap_hls_if.h>
 
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
 
 #define MMIO_DIN_DEFAULT	0x0ull
 #define MMIO_DOUT_DEFAULT	0x0ull
-#define	ACTION_REDAY_IRQ	4
+#define HLS_TEXT_SEARCH_ID	0x10141003	/* See Action ID file */
 
 static inline
 ssize_t file_size(const char *fname)
@@ -114,7 +114,7 @@ static void dnut_prepare_search(struct dnut_job *cjob,
 	sjob_out->mmio_dout = 0;
 	sjob_out->action_version = 0;
 
-	dnut_job_set(cjob, SEARCH_ACTION_TYPE,
+	dnut_job_set(cjob, HLS_TEXT_SEARCH_ID,
 		sjob_in, sizeof(*sjob_in), sjob_out, sizeof(*sjob_out));
 }
 
@@ -214,7 +214,6 @@ int main(int argc, char *argv[])
 	struct timeval etime, stime;
 	long int expected_patterns = -1;
 	int exit_code = EXIT_SUCCESS;
-	int attach_flags = SNAP_CCR_DIRECT_MODE;
 	int action_irq = 0;
 
 	while (1) {
@@ -270,8 +269,7 @@ int main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		case 'X':	/* irq */
-			attach_flags |= SNAP_CCR_IRQ_ATTACH;
-			action_irq = ACTION_REDAY_IRQ;
+			action_irq = ACTION_DONE_IRQ;
 			break;
 		default:
 			usage(argv[0]);
@@ -328,35 +326,10 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
-#if 0				/* FIXME Circumvention should go away */
-	pr_info("FIXME Wait a sec ...\n");
-	sleep(1);
-#endif
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x10, 0);
-	dnut_kernel_mmio_write32(kernel, 0x14, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1c, 0);
-	dnut_kernel_mmio_write32(kernel, 0x20, 0);
-#endif
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Temporary setting to enable DDR on the card\n");
-	dnut_kernel_mmio_write32(kernel, 0x28, 0);
-	dnut_kernel_mmio_write32(kernel, 0x2c, 0);
-#endif
-
 	run = 0;
 	gettimeofday(&stime, NULL);
 	do {
-		if (action_irq) {
-			dnut_kernel_mmio_write32(kernel, 0x8, 1);
-			dnut_kernel_mmio_write32(kernel, 0x4, 1);
-		}
 		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
-		if (action_irq) {
-			dnut_kernel_mmio_write32(kernel, 0xc, 1);
-			dnut_kernel_mmio_write32(kernel, 0x4, 0);
-		}
 		if (rc != 0) {
 			fprintf(stderr, "err: job execution %d: %s!\n", rc,
 				strerror(errno));

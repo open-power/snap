@@ -30,6 +30,8 @@
 #include <donut_internal.h>
 #include <donut_queue.h>
 #include <snap_s_regs.h>	/* Include SNAP Slave Regs */
+#include <snap_hls_if.h>	/* Include SNAP -> HLS */
+
 
 /* Trace hardware implementation */
 static unsigned int dnut_trace = 0x0;
@@ -92,7 +94,7 @@ struct dnut_data {
 };
 
 /* To be used for software simulation, use funcs provided by action */
-static int dnut_map_funcs(struct dnut_data *card, uint16_t action_type);
+static int dnut_map_funcs(struct dnut_data *card, uint32_t action_type);
 
 /*	Get Time in msec */
 static unsigned int tget_ms(void)
@@ -384,8 +386,6 @@ static int hw_attach_action(void *_card, uint32_t action, int flags, int timeout
 			dt = tget_ms() - t0;
 		}
 	}
-	if (0 == rc)
-		card->seq++;
 	dnut_trace("%s Exit rc: %d Action Base: 0x%x\n", __func__,
 		rc, card->action_base);
 	return rc;
@@ -540,7 +540,7 @@ void dnut_queue_free(struct dnut_queue *queue)
 struct dnut_kernel *dnut_kernel_attach_dev(const char *path,
 					   uint16_t vendor_id,
 					   uint16_t device_id,
-					   uint16_t action_type __unused)
+					   uint32_t action_type) /* long */
 {
 	struct dnut_card *card;
 
@@ -614,26 +614,29 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	int rc;
 	unsigned int i;
 	struct dnut_card *card = (struct dnut_card *)kernel;
+	struct dnut_data *card_data = (struct dnut_data *)kernel;
 	uint32_t action_addr;
 	struct queue_workitem job; /* one cacheline job description and data */
 	uint32_t *job_data;
 	int completed;
 	unsigned int mmio_in, mmio_out;
+	int attach_flags = SNAP_CCR_DIRECT_MODE;	/* FIXME for Job mode */
 
-	if (cjob->wout_size > 112) {
+	if (cjob->wout_size > (6 * 16)) {	/* Size must be less than addr[6] */
+		dnut_trace("  %s: err: wout_size too large %d\n", __func__, 
+			   cjob->wout_size);
 		errno = EINVAL;
 		return -1;
 	}
 
-	memset(&job, 0, sizeof(job));
-	job.action = cjob->action;
-	job.flags = 0x00;
-	job.seq = 0xbeef;
-	job.retc = 0x0;
+	job.short_action = 0x00;	/* Set later */
+	job.flags = 0x01;		/* FIXME Set Flag to Execute */
+	job.seq = 0x0000;		/* Set later */
+	job.retc = 0x00000000;
 	job.priv_data = 0xdeadbeefc0febabeull;
 
 	/* Fill workqueue cacheline which we need to transfer to the action */
-	if (cjob->win_size <= 112) {
+	if (cjob->win_size <= (6 * 16)) {
 		memcpy(&job.user, (void *)(unsigned long)cjob->win_addr,
 		       MIN(cjob->win_size, sizeof(job.user)));
 		mmio_out = cjob->win_size / sizeof(uint32_t);
@@ -647,7 +650,20 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	}
 	mmio_in = 16 / sizeof(uint32_t) + mmio_out;
 
-	dnut_trace("%s: PASS PARAMETERS\n", __func__);
+	dnut_trace("%s: Connect to Action 0x%x\n", __func__, (uint32_t)cjob->action);
+	dnut_trace("    win_size: %d wout_size: %d mmio_in: %d mmio_out: %d\n",
+		cjob->win_size, cjob->wout_size, mmio_in, mmio_out);
+	if (irq)
+		attach_flags |= SNAP_CCR_IRQ_ATTACH;
+	if (dnut_attach_action(card, (uint32_t)cjob->action, attach_flags, timeout_sec)) {
+		dnut_trace("%s: Error Can not attach to Action 0x%x\n", __func__, (uint32_t)cjob->action);
+		errno = ETIME;
+		return -1;
+	}
+	job.short_action = card_data->sat;	/* Set correct Value after attach */
+	job.seq = card_data->seq++;		/* Set correct Value after attach */
+
+	dnut_trace("%s: PASS PARAMETERS to Short Action %d Seq: %x\n", __func__, job.short_action, job.seq);
 
 	/* __hexdump(stderr, &job, sizeof(job)); */
 
@@ -655,54 +671,68 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	   bytes or a little less */
 	job_data = (uint32_t *)(unsigned long)&job;
 	for (i = 0, action_addr = ACTION_PARAMS_IN; i < mmio_in;
-	     i++, action_addr += sizeof(uint32_t)) {
-
+		i++, action_addr += sizeof(uint32_t)) {
 		rc = dnut_mmio_write32(card, action_addr, job_data[i]);
 		if (rc != 0)
-			return rc;
+			goto __dnut_kernel_sync_execute_job_exit;
 	}
 
 	/* Start Action and wait for finish */
-	dnut_trace("%s: START KERNEL\n", __func__);
+	dnut_trace("%s: START Action 0x%x\n", __func__, (uint32_t)cjob->action);
 	rc = dnut_kernel_start(kernel);
 	if (rc != 0)
-		return rc;
+		goto __dnut_kernel_sync_execute_job_exit;
 
+	if (irq) {
+		/* Enable IRQ */
+		dnut_mmio_write32(card, ACTION_IRQ_APP, ACTION_IRQ_APP_DONE);
+		dnut_mmio_write32(card, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
+	}
 	completed = dnut_kernel_completed(kernel, irq, &rc, timeout_sec);
+	if (irq) {
+		/* Ack. IRQ and disable */
+		dnut_mmio_write32(card, ACTION_IRQ_STATUS, ACTION_IRQ_STATUS_DONE);
+		dnut_mmio_write32(card, ACTION_IRQ_APP, 0);
+		dnut_mmio_write32(card, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_OFF);
+	}
 	if (completed == 0) {
+		/* Not done */
 		dnut_trace("%s: rc=%d completed=%d\n", __func__,
 			   rc, completed);
-		if (rc == 0)
+		if (rc == 0) {
 			errno = ETIME;
-		return (rc != 0) ? rc : DNUT_ETIMEDOUT;
+			rc = DNUT_ETIMEDOUT;
+		}
+		goto __dnut_kernel_sync_execute_job_exit;
 	}
 
-	/* Get RETC back to the caller */
-	rc = dnut_mmio_read32(card, ACTION_RETC, &cjob->retc);
+	/* Get RETC (0x184) back to the caller */
+	rc = dnut_mmio_read32(card, ACTION_RETC_OUT, &cjob->retc);
 	if (rc != 0)
-		return rc;
-
+		goto __dnut_kernel_sync_execute_job_exit;
 	dnut_trace("%s: RETURN RESULTS %ld bytes (%d)\n", __func__,
 		   mmio_out * sizeof(uint32_t), mmio_out);
 
-	/* Get job results max 112 bytes back to the caller */
+	/* Get job results max 6*16 bytes back to the caller */
 	if (cjob->wout_addr == 0) {
+		/* No out Address, mmio_out is set */
 		job_data = (uint32_t *)(unsigned long)cjob->win_addr;
 	} else {
 		job_data = (uint32_t *)(unsigned long)cjob->wout_addr;
 		mmio_out = cjob->wout_size / sizeof(uint32_t);
 	}
 
-	for (i = 0, action_addr = ACTION_JOB_OUT; i < mmio_out;
+	/* No need to read back 0x190, 0x194, 0x198 and 0x19c .... */
+	for (i = 0, action_addr = ACTION_PARAMS_OUT+0x10; i < mmio_out;
 	     i++, action_addr += sizeof(uint32_t)) {
-
 		rc = dnut_mmio_read32(card, action_addr, &job_data[i]);
 		if (rc != 0)
-			return rc;
-
-		dnut_trace("  %s: i=%d data=%x\n", __func__, i, job_data[i]);
+			goto __dnut_kernel_sync_execute_job_exit;
+		dnut_trace("  %s: %d Addr: %x Data: %x\n", __func__, i, action_addr, job_data[i]);
 	}
 
+__dnut_kernel_sync_execute_job_exit:
+	dnut_detach_action(card);
 	dnut_kernel_stop(kernel);
 	return rc;
 }
@@ -759,9 +789,11 @@ int dnut_action_register(struct dnut_action *new_action)
 	return 0;
 }
 
-static struct dnut_action *find_action(uint16_t action_type)
+static struct dnut_action *find_action(uint32_t action_type)
 {
 	struct dnut_action *a;
+
+	dnut_trace("  %s: Searching action_type %x\n", __func__, action_type);
 
 	for (a = actions; a != NULL; a = a->next) {
 		if (a->action_type == action_type)
@@ -770,19 +802,23 @@ static struct dnut_action *find_action(uint16_t action_type)
 	return NULL;
 }
 
-static int dnut_map_funcs(struct dnut_data *card, uint16_t action_type)
+static int dnut_map_funcs(struct dnut_data *card, uint32_t action_type)
 {
 	struct dnut_action *a;
+
+	dnut_trace("%s: Mapping action_type %x\n", __func__, action_type);
 
 	card->action_type = action_type;
 
 	/* search action and map in its mmios */
 	a = find_action(action_type);
 	if (a == NULL) {
+		dnut_trace("  %s: No action found!!\n", __func__);
 		errno = ENOENT;
 		return -1;
 	}
 
+	dnut_trace("  %s: Action found %p.\n", __func__, a);
 	card->action = a;
 	return 0;
 }
@@ -831,7 +867,7 @@ static int sw_mmio_write32(void *_card __unused,
 		errno = EFAULT;
 		return -1;
 	}
-	w =  (struct queue_workitem *)a->job;
+	w = &a->job;
 
 	if (offs == ACTION_CONTROL) {
 		dnut_trace("  starting action!!\n");
@@ -845,7 +881,7 @@ static int sw_mmio_write32(void *_card __unused,
 
 	if ((offs >= ACTION_PARAMS_IN) &&
 	    (offs < ACTION_PARAMS_IN + CACHELINE_BYTES)) {
-		*(uint32_t *)&a->job[offs - ACTION_PARAMS_IN] = data;
+		((uint32_t *)&a->job)[(offs - ACTION_PARAMS_IN)/4] = data;
 	}
 
 	if (a->mmio_write32)
@@ -871,8 +907,7 @@ static int sw_mmio_read32(void *_card __unused,
 		errno = EFAULT;
 		return -1;
 	}
-	w =  (struct queue_workitem *)a->job;
-
+	w = &a->job;
 	*data = 0x0;
 
 	switch (offs) {
@@ -887,13 +922,11 @@ static int sw_mmio_read32(void *_card __unused,
 		}
 		break;
 	default:
-		if ((offs >= ACTION_JOB_OUT) &&
-		    (offs < ACTION_JOB_OUT + sizeof(w->user))) {
-			unsigned int idx = offs - ACTION_JOB_OUT;
+		if ((offs >= ACTION_PARAMS_OUT) &&
+		    (offs < ACTION_PARAMS_OUT + sizeof(w->user))) {
+			unsigned int idx = (offs - ACTION_PARAMS_OUT)/4;
+			*data = ((uint32_t *)(unsigned long)w)[idx];
 
-			*data = *(uint32_t *)
-				&w->user.data[idx];
-			break;
 		} else if (a->mmio_read32)
 			rc = a->mmio_read32(a, offs, data);
 	}

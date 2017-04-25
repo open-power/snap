@@ -44,11 +44,6 @@ static int mmio_write32(void *_card, uint64_t offs, uint32_t data)
 
 static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 {
-	struct dnut_action *action = (struct dnut_action *)_card;
-
-	if (offs == ACTION_RETC)
-		*data = action->retc;
-
 	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
 		  (long long)offs, *data);
 	return 0;
@@ -103,9 +98,8 @@ static uint32_t intersect_direct(value_t table1[], uint32_t n1,
     // a straight forward way to do intersection.
     // we can compare the speed with following intersect() function.
     uint32_t i,j;
-    uint32_t k, n3;
+    uint32_t n3;
 
-    k = 0;
     n3 = 0; //number of result_array entries
 
     for ( i = 0; i < n1; i++)
@@ -145,11 +139,19 @@ static uint32_t intersect_hash(value_t table1[], uint32_t n1,
 
     
     uint32_t i, index;
-    struct entry_t * hash_table[HT_ENTRY_NUM];
+    struct entry_t * *hash_table;
     struct entry_t * ptr;
     struct entry_t * entry;
 
     uint32_t n3 = 0;
+    hash_table = malloc( HT_ENTRY_NUM * 8);
+    if(!hash_table)
+    {
+        fprintf(stderr, "ERROR: hash table malloc failed.\n");
+        return 0;
+    }
+
+
     for ( i = 0; i < HT_ENTRY_NUM; i++)
         hash_table[i] = NULL;
 
@@ -188,6 +190,7 @@ static uint32_t intersect_hash(value_t table1[], uint32_t n1,
             ptr = ptr -> next;
         }
     }
+    __free(hash_table);  
     return n3;
 }
 
@@ -199,6 +202,8 @@ static uint32_t intersect_sort( value_t table1[], uint32_t n1,
     uint32_t n3 = 0;
     uint32_t i, j;
 
+    i = 0;
+    j = 0;
     //Quicksort 
     qsort(table1, n1, sizeof(value_t), qs_cmp);
     qsort(table2, n2, sizeof(value_t), qs_cmp);
@@ -209,8 +214,8 @@ static uint32_t intersect_sort( value_t table1[], uint32_t n1,
         {
             copyvalue(result_array[n3], table2[j]);
             n3++;
-            i ++;
-            j ++;
+            i++;
+            j++;
         }
         else if (cmpvalue(table1[i], table2[j]) < 0)
             i++;
@@ -250,7 +255,7 @@ static int action_main(struct dnut_action *action,
     //Do Nothing.
 
 // out_ok:
-	action->retc = DNUT_RETC_SUCCESS;
+	action->job.retc = DNUT_RETC_SUCCESS;
 	return 0;
 
 }
@@ -264,7 +269,7 @@ static struct dnut_action action = {
 	.device_id = DNUT_DEVICE_ID_ANY,
 	.action_type = (HLS_INTERSECT_ID&0xFFFF),
 
-	.retc = DNUT_RETC_FAILURE, /* preset value, should be 0 on success */
+	.job = { .retc = DNUT_RETC_FAILURE, },
 	.state = ACTION_IDLE,
 	.main = action_main,
 	.priv_data = NULL,	/* this is passed back as void *card */

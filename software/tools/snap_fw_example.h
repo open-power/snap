@@ -17,21 +17,14 @@
 #ifndef __SNAP_FW_EXA__
 #define __SNAP_FW_EXA__
 
+/*
+ * This makes it obvious that we are influenced by HLS details ...
+ * The ACTION control bits are defined in the following file.
+ */
+#include <snap_hls_if.h>
+
 /* Header file for SNAP Framework example code */
 #define ACTION_TYPE_EXAMPLE     0x10140000	/* Action Type */
-
-#define ACTION_CONTROL          0x00
-#define ACTION_CONTROL_START    0x01
-#define ACTION_CONTROL_IDLE     0x04
-#define ACTION_CONTROL_RUN      0x08
-
-#define ACTION_INT_CONFIG	0x04
-#define ACTION_INT_GLOBAL	1	/* Action IRQ START->IDLE */
-#define ACTION_IDLE_IRQ_MODE	0x08	/* ! */
-
-#define ACTION_8                0x08
-#define ACTION_10               0x10
-#define ACTION_CONTEXT          0x20	/* Context id */
 
 #define ACTION_CONFIG           0x30
 #define ACTION_CONFIG_COUNT     1       /* Count Mode */
