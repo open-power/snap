@@ -371,19 +371,22 @@ static int hw_attach_action(void *_card, uint32_t action, int flags, int timeout
 		hw_dnut_mmio_write64(card, SNAP_S_JCR, data);
 	}
 
-	if (SNAP_CCR_IRQ_ATTACH & card->mode)
-		rc = hw_wait_irq(_card, 2, timeout_sec);
-	else {
-		t0 = tget_ms();
-		dt = 0;
-		rc = EBUSY;
-		while (dt < (timeout_sec*1000)) {
-			hw_dnut_mmio_read64(card, SNAP_S_CSR, &data);
-			if (0xC0 == (data & 0xC0)) {
-				rc = 0;
-				break;
+	hw_dnut_mmio_read64(card, SNAP_S_CSR, &data);
+	if (0xC0 != (data & 0xC0)) {
+		if (SNAP_CCR_IRQ_ATTACH & card->mode)
+			rc = hw_wait_irq(_card, 2, timeout_sec);
+		else {
+			t0 = tget_ms();
+			dt = 0;
+			rc = EBUSY;
+			while (dt < (timeout_sec*1000)) {
+				hw_dnut_mmio_read64(card, SNAP_S_CSR, &data);
+				if (0xC0 == (data & 0xC0)) {
+					rc = 0;
+					break;
+				}
+				dt = tget_ms() - t0;
 			}
-			dt = tget_ms() - t0;
 		}
 	}
 	dnut_trace("%s Exit rc: %d Action Base: 0x%x\n", __func__,
@@ -623,7 +626,7 @@ int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
 	int attach_flags = SNAP_CCR_DIRECT_MODE;	/* FIXME for Job mode */
 
 	if (cjob->wout_size > (6 * 16)) {	/* Size must be less than addr[6] */
-		dnut_trace("  %s: err: wout_size too large %d\n", __func__, 
+		dnut_trace("  %s: err: wout_size too large %d\n", __func__,
 			   cjob->wout_size);
 		errno = EINVAL;
 		return -1;
