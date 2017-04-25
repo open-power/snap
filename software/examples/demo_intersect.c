@@ -209,19 +209,11 @@ static void dump_table(value_t* table, uint32_t num)
 
 static int run_one_step(struct dnut_kernel *kernel, struct dnut_job *cjob, unsigned long timeout, int action_irq, uint64_t step)
 {
+	int rc;
+	struct timeval etime, stime;
 
-    int rc;
-    struct timeval etime, stime;
-    gettimeofday(&stime, NULL);
- 	if (action_irq) {
-		dnut_kernel_mmio_write32(kernel, 0x8, 1);
-		dnut_kernel_mmio_write32(kernel, 0x4, 1);
-	}
+	gettimeofday(&stime, NULL);
 	rc = dnut_kernel_sync_execute_job(kernel, cjob, timeout, action_irq);
-    if (action_irq) {
-		dnut_kernel_mmio_write32(kernel, 0xc, 1);
-		dnut_kernel_mmio_write32(kernel, 0x4, 0);
-	}
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n\n\n", rc,
 			strerror(errno));
@@ -231,7 +223,7 @@ static int run_one_step(struct dnut_kernel *kernel, struct dnut_job *cjob, unsig
 	fprintf(stdout, "Step %ld took %lld usec\n",
 		step, (long long)timediff_usec(&etime, &stime));
 
-    return rc;
+	return rc;
 }
 
 /**
@@ -332,7 +324,7 @@ int main(int argc, char *argv[])
 		case 's':
 			sw = 1;
 			break;
-        /* service */
+		/* service */
 		case 'V':
 			printf("%s\n", version);
 			exit(EXIT_SUCCESS);
@@ -343,10 +335,10 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
-        case 'I': /* irq */
-            attach_flags |= SNAP_CCR_IRQ_ATTACH;
-            action_irq = ACTION_REDAY_IRQ;
-            break;
+                case 'I': /* irq */
+                        attach_flags |= SNAP_CCR_IRQ_ATTACH;
+                        action_irq = ACTION_REDAY_IRQ;
+                        break;
 		default:
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
@@ -446,27 +438,6 @@ int main(int argc, char *argv[])
 			strerror(errno));
 		goto out_error;
 	}
-
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Wait a sec ...\n");
-	sleep(1);
-#endif
-    rc = dnut_attach_action((void*)kernel, HLS_INTERSECT_ID, attach_flags, timeout);
-	if (rc != 0) {
-		fprintf(stderr, "err: job Attach %d: %s!\n", rc,
-			strerror(errno));
-		goto out_error2;
-	}
-
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x00030, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00034, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00040, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00044, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00050, 0);
-	dnut_kernel_mmio_write32(kernel, 0x00054, 0);
-#endif
 
     //------------------------------------
     // Action begin (1)
