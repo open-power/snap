@@ -133,17 +133,6 @@ while [ -z "$SETUP_DONE" ]; do
     echo "HDK_ROOT                is set to: \"$HDK_ROOT\""
   fi
 
-  if [ ! -d "$DIMMTEST" ]; then
-   if [ $FPGACARD = "KU3" ]; then 
-      export DIMMTEST=$FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0
-    else 
-      export DIMMTEST=$FRAMEWORK_ROOT/cards/flashgt_dimm
-    fi 
-    echo "Setting DIMMTEST               to  \"$DIMMTEST\""
-  else
-    echo "DIMMTEST                is set to: \"$DIMMTEST\""
-  fi
-
   if [ -z "$SIMULATOR" ]; then
     export SIMULATOR=xsim                                      # xsim, questa and ncsim are supported, currently
     echo "Setting SIMULATOR              to  \"$SIMULATOR\""

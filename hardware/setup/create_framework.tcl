@@ -7,7 +7,7 @@
 ## you may not use this file except in compliance with the License.
 ## You may obtain a copy of the License at
 ##
-##     http://www.apache.org/licenses/LICENSE#2.0
+##     http://www.apache.org/licenses/LICENSE-2.0
 ##
 ## Unless required by applicable law or agreed to in writing, software
 ## distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,7 @@ set root_dir    $::env(DONUT_HARDWARE_ROOT)
 set fpga_part   $::env(FPGACHIP)
 set fpga_card   $::env(FPGACARD)
 set pslse_dir   $::env(PSLSE_ROOT)
-set dimm_dir    $::env(DIMMTEST)
+set dimm_dir    .
 set build_dir   $::env(BUILD_DIR)
 set ip_dir      $root_dir/ip
 set action_dir  $::env(ACTION_ROOT)
@@ -104,11 +104,17 @@ set_property file_type SystemVerilog [get_files $root_dir/sim/core/top.sv]
 set_property used_in_synthesis false [get_files $root_dir/sim/core/top.sv]
 # DDR3 Sim Files
 if { ($fpga_card == "KU3") && ($sdram_used == "TRUE") } {
-  add_files    -fileset sim_1            -scan_for_includes $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/
-  remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_twindie.vhd
-  remove_files -fileset sim_1                               $dimm_dir/fpga/lib/ddr3_sdram_model-v1_1_0/src/ddr3_sdram_lwb.vhd
-  add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/ddr3_dimm.vhd
-  set_property used_in_synthesis false           [get_files $root_dir/sim/core/ddr3_dimm.vhd]
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr3sdram_ex/imports/ddr3.v
+  set_property file_type {Verilog Header}        [get_files $ip_dir/ddr3sdram_ex/imports/ddr3.v]  
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/ddr3_dimm.sv
+  set_property used_in_synthesis false           [get_files $root_dir/sim/core/ddr3_dimm.sv]
+}
+# DDR4 Sim Files
+if { ($fpga_card == "FGT") && ($sdram_used == "TRUE") } {
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv
+#  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_sdram_model_wrapper.sv
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/ddr4_dimm.sv
+  set_property used_in_synthesis false           [get_files $root_dir/sim/core/ddr4_dimm.sv]
 }
 update_compile_order -fileset sources_1 $msg_level
 update_compile_order -fileset sim_1 $msg_level
@@ -179,6 +185,8 @@ if { $nvme_used == TRUE } {
   add_files -fileset sim_1 -scan_for_includes $root_dir/sim/nvme/
   add_files -fileset sim_1 -norecurse -scan_for_includes /afs/vlsilab.boeblingen.ibm.com/proj/cte/tools/cds/VIPCAT/vol2/tools.lnx86/denali_64bit/ddvapi/verilog/denaliPcie.v
   set_property include_dirs /afs/vlsilab.boeblingen.ibm.com/proj/cte/tools/cds/VIPCAT/vol2/tools.lnx86/denali_64bit/ddvapi/verilog [get_filesets sim_1]
+} else {
+  remove_files $action_dir/action_axi_nvme.vhd -quiet
 }
 
 # Add PSL
@@ -194,26 +202,24 @@ update_compile_order -fileset sources_1 $msg_level
 # DDR XDCs
 if { $fpga_card == "KU3" } {
   if { $bram_used == "TRUE" } {
-    add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc -quiet
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc 
   } elseif { $sdram_used == "TRUE" } {
-    add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/refclk200.xdc
-    add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc
-    set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_dm_b1_x72ecc.xdc]
-    add_files -fileset constrs_1 -norecurse $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc
-    set_property used_in_synthesis false [get_files $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/src/ddr3sdram_locs_b1_8g_x72ecc.xdc]
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc 
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_ddr3_b1pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/KU3/snap_ddr3_b1pins.xdc]
   }
 } elseif { $fpga_card == "FGT" } {
   if { $bram_used == "TRUE" } {
-    add_files -fileset constrs_1 -norecurse $dimm_dir/snap_refclk266.xdc
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/FGT/snap_refclk266.xdc
   } elseif { $sdram_used == "TRUE" } {
-    add_files -fileset constrs_1 -norecurse $dimm_dir/snap_refclk266.xdc
-    add_files -fileset constrs_1 -norecurse $dimm_dir/snap_ddr4pins_flash_gt.xdc
-    set_property used_in_synthesis false [get_files $dimm_dir/snap_ddr4pins_flash_gt.xdc]
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/FGT/snap_refclk266.xdc
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/FGT/snap_ddr4pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/FGT/snap_ddr4pins.xdc]
   }
 
   if { $nvme_used == "TRUE" } {
-    add_files -fileset constrs_1 -norecurse $dimm_dir/snap_refclk100.xdc
-    add_files -fileset constrs_1 -norecurse $dimm_dir/snap_nvme.xdc
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/FGT/snap_refclk100.xdc
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/FGT/snap_nvme.xdc
   }
 }
 
