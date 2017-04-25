@@ -148,8 +148,8 @@
       # for size in 83 255 256 257 1024 1025 4095 4096 4097; do
       # for size in 2 31 32 33 64 65 80 81 83 255 256 257 1024 1025 4096 4097; do
         #### select 1 checking method
-        # t="$DONUT_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -v -t$t0"   ;echo -e "$t $l"; # memcopy without checking behind buffer
-          t="$DONUT_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -v -X -t$t0";echo -e "$t $l"; # memcopy with checking behind buffer
+        # t="$DONUT_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -v -t$to"   ;echo -e "$t $l"; # memcopy without checking behind buffer
+          t="$DONUT_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -v -X -t$to";echo -e "$t $l"; # memcopy with checking behind buffer
         #### select 1 type of data generation
         # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                         # same char mult times
         # cmd='print("A" * '${size}', end="")'; python3 -c "$cmd" >${size}.in;head ${size}.in;echo      # deterministic char string generated with python
