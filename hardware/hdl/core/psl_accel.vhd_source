@@ -318,8 +318,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
       ap_rst_n                   : IN STD_LOGIC;
       interrupt_ack              : in STD_LOGIC;
       interrupt                  : out std_logic;
-      interrupt_src              : out std_logic_vector(INT_BITS-2 DOWNTO 0);                           -- only for HLS_WORKAROUND!=TRUE
-      interrupt_ctx              : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);                       -- only for HLS_WORKAROUND!=TRUE
+      interrupt_src              : out std_logic_vector(INT_BITS-2 DOWNTO 0);
+      interrupt_ctx              : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
       --                                                                                                -- only for DDRI_USED=TRUE
       -- AXI SDRAM Interface                                                                            -- only for DDRI_USED=TRUE
       m_axi_card_mem0_araddr     : OUT STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );      -- only for DDRI_USED=TRUE
@@ -1469,8 +1469,8 @@ BEGIN
       ap_rst_n                             => action_reset_n_q,
       interrupt_ack                        => sk_d.int_req_ack,
       interrupt                            => ks_d.int_req,
-      interrupt_src                        => ks_d.int_src,                                 -- only for HLS_WORKAROUND!=TRUE
-      interrupt_ctx                        => ks_d.int_ctx,                                 -- only for HLS_WORKAROUND!=TRUE
+      interrupt_src                        => ks_d.int_src,
+      interrupt_ctx                        => ks_d.int_ctx,
       --                                                                                    -- only for DDRI_USED=TRUE
       -- AXI NVMe DDR Interface                                                             -- only for DDRI_USED=TRUE
       m_axi_card_mem0_araddr               => act_axi_card_mem0_araddr,                     -- only for DDRI_USED=TRUE
