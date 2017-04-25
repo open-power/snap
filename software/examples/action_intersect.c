@@ -139,11 +139,19 @@ static uint32_t intersect_hash(value_t table1[], uint32_t n1,
 
     
     uint32_t i, index;
-    struct entry_t * hash_table[HT_ENTRY_NUM];
+    struct entry_t * *hash_table;
     struct entry_t * ptr;
     struct entry_t * entry;
 
     uint32_t n3 = 0;
+    hash_table = malloc( HT_ENTRY_NUM * 8);
+    if(!hash_table)
+    {
+        fprintf(stderr, "ERROR: hash table malloc failed.\n");
+        return 0;
+    }
+
+
     for ( i = 0; i < HT_ENTRY_NUM; i++)
         hash_table[i] = NULL;
 
@@ -182,6 +190,7 @@ static uint32_t intersect_hash(value_t table1[], uint32_t n1,
             ptr = ptr -> next;
         }
     }
+    __free(hash_table);  
     return n3;
 }
 

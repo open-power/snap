@@ -25,7 +25,7 @@
 // v1.2 : 04/13/2017 : Add Hash/Sort and more steps 
 //--------------------------------------------------------------------------------------------
 
-static snapu32_t read_bulk_ddr ( snap_membus_t *d_ddrmem,
+static snapu32_t read_bulk ( snap_membus_t *src_mem,
                             snapu64_t      byte_address,
                             snapu32_t      byte_to_transfer,
                             snap_membus_t *buffer)
@@ -33,18 +33,18 @@ static snapu32_t read_bulk_ddr ( snap_membus_t *d_ddrmem,
 
     snapu32_t xfer_size;
     xfer_size = MIN(byte_to_transfer, (snapu32_t) MAX_NB_OF_BYTES_READ);
-    memcpy(buffer, (snap_membus_t *) (d_ddrmem + (byte_address >> ADDR_RIGHT_SHIFT)), xfer_size);
+    memcpy(buffer, (snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)), xfer_size);
     return xfer_size;
 }
 
-static snapu32_t write_bulk_ddr (snap_membus_t *d_ddrmem, 
+static snapu32_t write_bulk (snap_membus_t *tgt_mem, 
                             snapu64_t      byte_address, 
                             snapu32_t      byte_to_transfer,
                             snap_membus_t *buffer)
 {
     snapu32_t xfer_size;
     xfer_size = MIN(byte_to_transfer, (snapu32_t)  MAX_NB_OF_BYTES_READ);
-    memcpy((snap_membus_t *)(d_ddrmem + (byte_address >> ADDR_RIGHT_SHIFT)), buffer, xfer_size);
+    memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), buffer, xfer_size);
     return xfer_size;
 }
 
@@ -60,29 +60,30 @@ static void memcopy_table(snap_membus_t  *din_gmem,
     //direction == 1: Copy from DDR to Host
     
     //source_address and target_address are byte addresses.
-    snapu32_t xfer_size;
-    snapu64_t address_xfer_offset;
-    int left_bytes = total_bytes_to_transfer;
+    snapu64_t address_xfer_offset = 0;
     snap_membus_t   buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];
-    address_xfer_offset = 0;
 
-L_COPY: while(left_bytes > 0)
+
+    snapu32_t  left_bytes = total_bytes_to_transfer;
+    snapu32_t  copy_bytes;
+
+    // Be cautious with "unsigned", it always >=0
+L_COPY: while (left_bytes > 0)
     {
-        
-        xfer_size = MIN(left_bytes, (int) MAX_NB_OF_BYTES_READ);
         if(direction == 0)
         {
-            memcpy(buf_gmem,   (snap_membus_t *) (din_gmem + ((source_address + address_xfer_offset) >> ADDR_RIGHT_SHIFT)), xfer_size);
-            memcpy((snap_membus_t *)(d_ddrmem + ((target_address + address_xfer_offset) >> ADDR_RIGHT_SHIFT)), buf_gmem, xfer_size);
+            copy_bytes = read_bulk (din_gmem, source_address + address_xfer_offset,  left_bytes, buf_gmem);
+                         write_bulk (d_ddrmem, target_address + address_xfer_offset,  copy_bytes, buf_gmem);
         }
         else
         {
-            memcpy(buf_gmem,   (snap_membus_t *) (d_ddrmem + ((source_address + address_xfer_offset) >> ADDR_RIGHT_SHIFT)), xfer_size);
-            memcpy((snap_membus_t *)(dout_gmem + ((target_address + address_xfer_offset) >> ADDR_RIGHT_SHIFT)), buf_gmem, xfer_size);
+            copy_bytes = read_bulk  (d_ddrmem, source_address + address_xfer_offset, left_bytes, buf_gmem);
+                         write_bulk (dout_gmem, target_address + address_xfer_offset, copy_bytes, buf_gmem);
+
         }
 
-        left_bytes -= xfer_size;
-        address_xfer_offset += (snapu64_t)xfer_size;
+        left_bytes -= copy_bytes;
+        address_xfer_offset += MAX_NB_OF_BYTES_READ;
     } // end of L_COPY
 
 }
@@ -90,31 +91,15 @@ L_COPY: while(left_bytes > 0)
 static short compare(value_t a, value_t b)
 {
 
-//    ap_uint<256> halfa;
-//    ap_uint<256> halfb;
-//
-//    short kkk = 0;
-//    for(kkk = 0; kkk < 2; kkk++)
-//    {
-//        halfa = a(255 + (kkk<<8), kkk<<8);
-//        halfb = b(255 + (kkk<<8), kkk<<8);
-//        if(halfa > halfb)
-//            return 1;
-//        else
-//            return -1;
-//    }
-//    return 0;
-
-
     snapu16_t kkk =0;
-    snapu8_t byte1, byte2;
+    ap_uint<256> half1, half2;
 #pragma HLS UNROLL
     for (kkk = 0; kkk < 2; kkk++)
     {
-        byte1 = a((kkk<<8 )+255, kkk<<8);
-        byte2 = b((kkk<<8 )+255, kkk<<8);
+        half1 = a((kkk<<8 )+255, kkk<<8);
+        half2 = b((kkk<<8 )+255, kkk<<8);
 
-        if (byte1 != byte2)
+        if (half1 != half2)
             return 1;
     }
     return 0;
@@ -179,7 +164,7 @@ static short make_hashtable(snap_membus_t  *d_ddrmem,
 
      while (left_bytes > 0)
     {
-        read_bytes = read_bulk_ddr (d_ddrmem, addr,  left_bytes, keybuf);
+        read_bytes = read_bulk (d_ddrmem, addr,  left_bytes, keybuf);
         
         for (ijk = 0; ijk < read_bytes/BPERDW; ijk++)
         {
@@ -201,12 +186,12 @@ static short make_hashtable(snap_membus_t  *d_ddrmem,
             {
                 new_entry(31,0) = 1;
                 new_entry(63,32) = offset;
-                write_bulk_ddr(d_ddrmem, HASH_TABLE_ADDR + index * BPERDW, BPERDW, &new_entry);
+                write_bulk(d_ddrmem, HASH_TABLE_ADDR + index * BPERDW, BPERDW, &new_entry);
 
             }
             else
             {
-                read_bulk_ddr(d_ddrmem, HASH_TABLE_ADDR + index * BPERDW, BPERDW, &hash_entry);
+                read_bulk(d_ddrmem, HASH_TABLE_ADDR + index * BPERDW, BPERDW, &hash_entry);
                 count = hash_entry(31,0);
 
                 if (count >= 15)
@@ -216,7 +201,7 @@ static short make_hashtable(snap_membus_t  *d_ddrmem,
                     new_entry = hash_entry;
                     new_entry(31,0) = count + 1;
                     new_entry((count+1)*32+31, (count+1)*32) = offset;
-                    write_bulk_ddr(d_ddrmem, HASH_TABLE_ADDR + index * BPERDW, BPERDW, &new_entry);
+                    write_bulk(d_ddrmem, HASH_TABLE_ADDR + index * BPERDW, BPERDW, &new_entry);
                 }
             }
             
@@ -257,7 +242,7 @@ static snapu32_t check_table2(snap_membus_t  *d_ddrmem,
 
     while (left_bytes > 0)
     {
-        read_bytes = read_bulk_ddr (d_ddrmem, addr,  left_bytes, keybuf);
+        read_bytes = read_bulk (d_ddrmem, addr,  left_bytes, keybuf);
         
         for (iii = 0; iii < read_bytes/BPERDW; iii++)
         {
@@ -269,7 +254,7 @@ static snapu32_t check_table2(snap_membus_t  *d_ddrmem,
             used = ram_q(index_low, index_low);
             if(used == 1)
             {
-                read_bulk_ddr(d_ddrmem, HASH_TABLE_ADDR + index * BPERDW, BPERDW, &hash_entry);
+                read_bulk(d_ddrmem, HASH_TABLE_ADDR + index * BPERDW, BPERDW, &hash_entry);
                 count = hash_entry(31,0); //How many elements are in the same hash table entry
                                              //If count == 0, this element in Table2 doesn't exist in Table1.
                 for (j = 0; j < count; j++)
@@ -277,12 +262,12 @@ static snapu32_t check_table2(snap_membus_t  *d_ddrmem,
                     //Go to read Table1
                     offset = hash_entry(32*(j+1)+31, 32*(j+1));
 
-                    read_bulk_ddr(d_ddrmem, Action_Register->Data.ddr_table1.address + offset, BPERDW, &node_a);
+                    read_bulk(d_ddrmem, Action_Register->Data.ddr_table1.address + offset, BPERDW, &node_a);
 
                     if (compare(node_a, keybuf[iii] ) == 0)
                     {
                             //match!
-                        write_bulk_ddr(d_ddrmem, write_addr, BPERDW, &node_a);
+                        write_bulk(d_ddrmem, write_addr, BPERDW, &node_a);
                         res_size += BPERDW; 
                         write_addr += BPERDW;
                         break;
