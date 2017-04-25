@@ -956,7 +956,7 @@ module top (
   // NVMe model                                             //-- only for NVME_USED=TRUE
   ////////////////////////////////////////////////////////////-- only for NVME_USED=TRUE
   nvme_model nvme_model (                                   //-- only for NVME_USED=TRUE
-    .unit_reset_n(~pci_user_reset),                         //-- only for NVME_USED=TRUE
+    .unit_reset_n(~pcie_perst),                             //-- only for NVME_USED=TRUE
     .pcie_rc0_rxn(pcie_rc0_rxn),      		            //-- only for NVME_USED=TRUE
     .pcie_rc0_rxp(pcie_rc0_rxp), 		            //-- only for NVME_USED=TRUE
     .pcie_rc0_txn(pcie_rc0_txn),                            //-- only for NVME_USED=TRUE
