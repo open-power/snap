@@ -137,7 +137,7 @@
       fi
     fi # memcopy
 
-    if [[ $t0l == "10141000" || ${env_action} == "hls_memcopy" || ${env_action} == "hls_search" ]];then echo -e "$del\ntesting demo_memcopy"
+    if [[ $t0l == "10141000" || ${env_action} == "hls_memcopy" ]];then echo -e "$del\ntesting demo_memcopy"
       t="$DONUT_ROOT/software/examples/demo_memcopy -h"                                         ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  5..7
 #     t="$DONUT_ROOT/software/examples/demo_memcopy -C0 -i ../../1KB.txt -o 1KB.out -t10"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..7
       #### select 1 selection loop
