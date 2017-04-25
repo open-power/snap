@@ -38,7 +38,7 @@ struct intersect_job {
 };
 
 typedef char value_t[64];
-typedef unsigned int ptr_t; 
+typedef unsigned int ptr_t;
 
 void copyvalue(value_t dst, value_t src);
 int cmpvalue(const value_t src1, const value_t src2);
@@ -50,6 +50,6 @@ struct entry_t
     struct entry_t * next;
 }entry_t;
 
-//local 
+//local
 uint32_t * plists[NUM_TABLES];
 #endif	/* __ACTION_INTERSECT_H__ */

@@ -20,7 +20,7 @@
 #include "hls_snap.H"
 
 #define INTERSECT_ACTION_TYPE 0x10141005
-#define RELEASE_LEVEL       0x00000012 
+#define RELEASE_LEVEL       0x00000012
 
 #if defined(NO_SYNTH)
 
@@ -33,20 +33,20 @@
 //4KiB
 #define MAX_NB_OF_BYTES_READ  (4 * 1024)
 
-#define NUM_TABLES 2 
-#define ENTRY_BYTES 64  
-#define ENTRY_SHIFT 6 
+#define NUM_TABLES 2
+#define ENTRY_BYTES 64
+#define ENTRY_SHIFT 6
 // 6 = log2(64)
 // Very inflexible -- just equal to BPERDW
 // Consider ap_uint<> width should be less than 1024
-// So ENTRY_BYTES should <= 128. 
+// So ENTRY_BYTES should <= 128.
 
 #define HT_ENTRY_NUM_EXP 21
 #define HT_ENTRY_NUM (1<<HT_ENTRY_NUM_EXP)
 
 #define MAX_TABLE_SIZE 1024*1024*1024
 //DDR Address map
-//  0: Table1 (Configured from SW) 
+//  0: Table1 (Configured from SW)
 //1GB: Table2 (Configured from SW)
 //2GB: Result (Configured from SW)
 
@@ -59,7 +59,6 @@
 #define BRAM_WIDTH (1<<WIDTH_EXP)
 static ap_uint<BRAM_WIDTH> hash_used[HT_ENTRY_NUM/BRAM_WIDTH];
 
-
 typedef struct {//Names of the fields can be changed by User. Should serve as a template
         dnut_addr src_table1; 	/* input data */
         dnut_addr src_table2; 	/* input data */
@@ -68,17 +67,15 @@ typedef struct {//Names of the fields can be changed by User. Should serve as a 
         dnut_addr res_table;
         ap_uint<32> step;
         ap_uint<32> method;
-        ap_uint<160> unused; 
+        ap_uint<160> unused;
 } DATA_IS; // DATA = 108 Bytes
 
 // Assume each input data has 64Bytes
 
 typedef struct {
-        CONTROL  Control; 
-        DATA_IS  Data; 
+        CONTROL  Control;
+        DATA_IS  Data;
 } action_reg;
-
-
 
 #endif
 

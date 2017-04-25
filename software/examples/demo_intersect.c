@@ -17,10 +17,10 @@
 /* Function: Two steps:
  * 1) Copy two or more tables from Host to DDR (memcopy)
  * 2) Do intersection on the tables, and return the result to Host memory
- *      
+ *
  *      Assume the table elements have same data struct
  *      The size of intersection result is MIN(Table1, Table2, ...Table N)
- * Only count the time elapsed at step 2. 
+ * Only count the time elapsed at step 2.
  *
  */
 
@@ -68,7 +68,7 @@ static void usage(const char *prog)
 	       "  -m, --method   <0/1>      0: compare one by one (Only in SW).\n"
            "                            1: Use hash table\n"
            "                            2: Sort and do intersection\n"
-           "  -I, --irq                 Enable Interrupts\n"      
+           "  -I, --irq                 Enable Interrupts\n"
 	       "\n"
 	       "Example:\n"
 	       "HW:  sudo ./demo_intersect ...\n"
@@ -77,32 +77,32 @@ static void usage(const char *prog)
 	       prog);
 }
 
-static void dnut_prepare_intersect(struct dnut_job *cjob, 
-                 struct intersect_job *ijob_i, 
+static void dnut_prepare_intersect(struct dnut_job *cjob,
+                 struct intersect_job *ijob_i,
                  struct intersect_job *ijob_o,
                  uint32_t step,
                  uint32_t method,
 
                  value_t * input_addrs_host[],
-                 uint32_t input_sizes[], 
-                 value_t * output_addr_host, 
+                 uint32_t input_sizes[],
+                 value_t * output_addr_host,
                  uint32_t actual_output_size)
 {
-    uint64_t ddr_addr = 0x0ull; 
+    uint64_t ddr_addr = 0x0ull;
 
     if (step == 1)
     {
-        //Memcopy, source 
+        //Memcopy, source
         dnut_addr_set( &ijob_i->src_tables_host[0], input_addrs_host[0], input_sizes[0],DNUT_TARGET_TYPE_HOST_DRAM ,
             DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
         dnut_addr_set( &ijob_i->src_tables_host[1], input_addrs_host[1], input_sizes[1],DNUT_TARGET_TYPE_HOST_DRAM ,
             DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-        
-        //Memcopy, target 
+
+        //Memcopy, target
         ddr_addr = 0;
         dnut_addr_set( &ijob_i->src_tables_ddr[0], (void *)ddr_addr, input_sizes[0], DNUT_TARGET_TYPE_CARD_DRAM ,
             DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST | DNUT_TARGET_FLAGS_END);
-        
+
         ddr_addr = MAX_TABLE_SIZE;
         dnut_addr_set( &ijob_i->src_tables_ddr[1], (void *)ddr_addr, input_sizes[1], DNUT_TARGET_TYPE_CARD_DRAM ,
             DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST | DNUT_TARGET_FLAGS_END);
@@ -111,17 +111,16 @@ static void dnut_prepare_intersect(struct dnut_job *cjob,
     }
     else if (step == 2)
     {
-        
-        //Memcopy, source 
+        //Memcopy, source
         ddr_addr = 0;
         dnut_addr_set( &ijob_i->src_tables_ddr[0], (void *)ddr_addr, input_sizes[0],DNUT_TARGET_TYPE_CARD_DRAM ,
             DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-        
+
         ddr_addr = MAX_TABLE_SIZE;
         dnut_addr_set( &ijob_i->src_tables_ddr[1], (void *)ddr_addr, input_sizes[1],DNUT_TARGET_TYPE_CARD_DRAM ,
             DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-        
-        //Memcopy, target 
+
+        //Memcopy, target
         dnut_addr_set( &ijob_i->src_tables_host[0], input_addrs_host[0], input_sizes[0],DNUT_TARGET_TYPE_HOST_DRAM ,
             DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST | DNUT_TARGET_FLAGS_END);
         dnut_addr_set( &ijob_i->src_tables_host[1], input_addrs_host[1], input_sizes[1],DNUT_TARGET_TYPE_HOST_DRAM ,
@@ -139,23 +138,22 @@ static void dnut_prepare_intersect(struct dnut_job *cjob,
         dnut_addr_set( &ijob_i->src_tables_ddr[1], (void *)ddr_addr, input_sizes[1],DNUT_TARGET_TYPE_CARD_DRAM ,
             DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
 
-        //result_table in DDR 
+        //result_table in DDR
         // 99 is a dummy value. HW will update this field when finished.
         ddr_addr = 2*MAX_TABLE_SIZE;
         dnut_addr_set (&ijob_i->result_table, (void *)ddr_addr, 99, DNUT_TARGET_TYPE_CARD_DRAM ,
                 DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
 		        DNUT_TARGET_FLAGS_END);
-
     }
     else if (step == 5)
     {
-        //Memcopy, source 
-        // reuse src_tables_ddr[0] for the result. 
+        //Memcopy, source
+        // reuse src_tables_ddr[0] for the result.
         ddr_addr = 2*MAX_TABLE_SIZE;
         dnut_addr_set( &ijob_i->src_tables_ddr[0], (void *)ddr_addr, actual_output_size,DNUT_TARGET_TYPE_CARD_DRAM ,
             DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-        
-        //Memcopy, target 
+
+        //Memcopy, target
         dnut_addr_set (&ijob_i->result_table, output_addr_host, actual_output_size, DNUT_TARGET_TYPE_HOST_DRAM ,
                 DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
 		        DNUT_TARGET_FLAGS_END);
@@ -166,11 +164,9 @@ static void dnut_prepare_intersect(struct dnut_job *cjob,
 		    ijob_o, sizeof(*ijob_o));
 }
 
-
 static int gen_random_table(value_t table[], uint32_t num,uint32_t len)
 {
-    
-    //Parameters: 
+    //Parameters:
     // num: how many elements in the table
     //Value
     uint32_t i,j;
@@ -184,17 +180,15 @@ static int gen_random_table(value_t table[], uint32_t num,uint32_t len)
     }
     for (i = 0; i < num; i++)
     {
-    
         for(j = 0; j < len; j++)
         {
-            pattern[j] = (char)(rand()%26+97); //generate letters. 
+            pattern[j] = (char)(rand()%26+97); //generate letters.
         }
         for(j = len; j < sizeof(value_t)-1; j++)
         {
-            pattern[j] = 32; //space 
+            pattern[j] = 32; //space
         }
-        
-        pattern[j] = '\0'; 
+        pattern[j] = '\0';
         copyvalue(table[i], pattern);
     }
 
@@ -246,7 +240,7 @@ static int run_one_step(struct dnut_kernel *kernel, struct dnut_job *cjob, unsig
 int main(int argc, char *argv[])
 {
     //General variables for donut call
-	int ch; 
+	int ch;
     int rc = 0;
 	int card_no = 0;
 	struct dnut_kernel *kernel = NULL;
@@ -272,26 +266,19 @@ int main(int argc, char *argv[])
     uint32_t  actual_result_size;
     uint32_t result_num;
     uint32_t i;
-    
     uint32_t min_num = -1; //MAX for unsigned.
 
-
     //For random generated table....
-    uint32_t num = 20; 
+    uint32_t num = 20;
     uint32_t len = 1;
-   
-    
-    //Several global variables. 
+    //Several global variables.
     uint32_t method = 1;
     uint32_t sw = 0;
-    
     const char *input[NUM_TABLES];
     for(i = 0; i < NUM_TABLES; i++)
         input[i] = NULL;
-	
     const char *output = NULL;
 
-	
     while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {
@@ -345,7 +332,6 @@ int main(int argc, char *argv[])
 		case 's':
 			sw = 1;
 			break;
-        
         /* service */
 		case 'V':
 			printf("%s\n", version);
@@ -374,20 +360,17 @@ int main(int argc, char *argv[])
 
 
     //Create Input tables
-    
-    if (input[0] == NULL || input[1] == NULL) 
+    if (input[0] == NULL || input[1] == NULL)
     {
         //Randomly generate the Table data
         for (i = 0; i < NUM_TABLES; i++)
         {
             src_sizes[i] = num*sizeof(value_t); //All tables are of same size.
-            
-            src_tables[i] = memalign (page_size, src_sizes[i]); 
+            src_tables[i] = memalign (page_size, src_sizes[i]);
             if(!src_tables[i])
                 goto out_error2;
 
             rc |= gen_random_table(src_tables[i], num, len);
-            
             printf("Source table address is %p\n",src_tables[i]);
 
             if(0)
@@ -413,11 +396,9 @@ int main(int argc, char *argv[])
             src_sizes[i] = num * sizeof(value_t);
             if(num < min_num)
                 min_num = num;
-            
             src_tables[i] = memalign(page_size, src_sizes[i]);
             if(!src_tables[i])
                 goto out_error2;
-            
             fp = fopen(input[i], "rb");
             if(!fp)
             {
@@ -434,7 +415,6 @@ int main(int argc, char *argv[])
                 }
             }
 
-            
             fclose(fp);
 
             fprintf(stdout, "reading input data %d elements from %s\n",
@@ -442,23 +422,19 @@ int main(int argc, char *argv[])
 
             if(0)
                 dump_table(src_tables[i], num);
-  
             if (rc < 0)
 			    goto out_error;
         }
-
     }
-    
 
-    // Apply result_table. 
+    // Apply result_table.
     init_result_size = min_num * sizeof(value_t);
     result_table = memalign(page_size, init_result_size);
     if (!result_table)
         goto out_error2;
 
-    
     /////////////////////////////////////////////////////////////////
-    //    Open Device ... and start 
+    //    Open Device ... and start
     /////////////////////////////////////////////////////////////////
     snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	kernel = dnut_kernel_attach_dev(device,
@@ -493,15 +469,15 @@ int main(int argc, char *argv[])
 #endif
 
     //------------------------------------
-    // Action begin (1) 
+    // Action begin (1)
     printf("Start Step1 (Copy source data from Host to DDR) ..............\n");
 	dnut_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                  1, method, src_tables, src_sizes,result_table,99);
-    
+
     rc |= run_one_step(kernel, &cjob, timeout, action_irq, 1);
 	if (rc != 0)
 		goto out_error;
-    
+
     if(sw)
     {
         //------------------------------------
@@ -509,7 +485,7 @@ int main(int argc, char *argv[])
         printf("Start Step2 (Copy source data from DDR to Host) ..............\n");
         dnut_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                      2, method, src_tables, src_sizes,result_table,99);
-        
+
         rc |= run_one_step(kernel, &cjob, timeout, action_irq, 2);
         if (rc != 0)
             goto out_error;
@@ -533,11 +509,11 @@ int main(int argc, char *argv[])
         printf("Start Step3 (Do intersection in DDR) ..............\n");
         dnut_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                      3, method, src_tables, src_sizes, result_table, 99);
-        
+
         rc |= run_one_step(kernel, &cjob, timeout, action_irq, 3);
         if (rc != 0)
             goto out_error;
-        
+
         actual_result_size = ijob_o.result_table.size;  //in bytes
         result_num = actual_result_size/sizeof(value_t);
         printf("HW: result_num = %d\n", result_num);
@@ -548,29 +524,27 @@ int main(int argc, char *argv[])
         printf("Start Step5 (Copy result from DDR to Host) ..............\n");
         dnut_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                      5, method, src_tables, src_sizes, result_table, result_num * sizeof(value_t));
-        
+
         rc |= run_one_step(kernel, &cjob, timeout, action_irq, 5);
         if (rc != 0)
             goto out_error;
     }
-        
-    
 
     if(output != NULL)
     {
        printf("Writing intersection result %d lines to %s\n",
                     (int)result_num, output);
-       
+
         //Change \0 to \n
        for(i = 0; i < result_num; i++)
           result_table[i][sizeof(value_t)-1] = '\n';
 
-       rc |= __file_write(output, (uint8_t *) result_table, result_num*sizeof(value_t)); 
+       rc |= __file_write(output, (uint8_t *) result_table, result_num*sizeof(value_t));
        if (rc < 0)
            goto out_error2;
     }
-    else 
-    { 
+    else
+    {
         /// Print the results
         temp_ptr = result_table;
         for(i = 0;( i< result_num && verbose_flag); i++)
