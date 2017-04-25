@@ -91,31 +91,15 @@ L_COPY: while (left_bytes > 0)
 static short compare(value_t a, value_t b)
 {
 
-//    ap_uint<256> halfa;
-//    ap_uint<256> halfb;
-//
-//    short kkk = 0;
-//    for(kkk = 0; kkk < 2; kkk++)
-//    {
-//        halfa = a(255 + (kkk<<8), kkk<<8);
-//        halfb = b(255 + (kkk<<8), kkk<<8);
-//        if(halfa > halfb)
-//            return 1;
-//        else
-//            return -1;
-//    }
-//    return 0;
-
-
     snapu16_t kkk =0;
-    snapu8_t byte1, byte2;
+    ap_uint<256> half1, half2;
 #pragma HLS UNROLL
     for (kkk = 0; kkk < 2; kkk++)
     {
-        byte1 = a((kkk<<8 )+255, kkk<<8);
-        byte2 = b((kkk<<8 )+255, kkk<<8);
+        half1 = a((kkk<<8 )+255, kkk<<8);
+        half2 = b((kkk<<8 )+255, kkk<<8);
 
-        if (byte1 != byte2)
+        if (half1 != half2)
             return 1;
     }
     return 0;
