@@ -465,11 +465,11 @@ begin
   -- 
   -- NVMe Reset Logic 
   -- 
-  -- Note: generate a 16384x8ns=131ms reset pulse for NVMe 
+  -- Note: generate a 32768x4ns=131ms reset pulse for NVMe 
   --
-  nvme_reset : PROCESS (pci_clock_125MHz)
+  nvme_reset : PROCESS (ha0_pclock)
   BEGIN
-    IF (rising_edge(pci_clock_125MHz)) THEN
+    IF (rising_edge(ha0_pclock)) THEN
       hold_nvme_reset_q <= '0';
       nvme_reset_n_q    <= '1';
       nvme_reset_cnt_q  <= (OTHERS => '0');
@@ -481,7 +481,7 @@ begin
         nvme_reset_n_q    <= '0';
         nvme_reset_cnt_q  <= nvme_reset_cnt_q + '1';
         
-        IF (nvme_reset_cnt_q(14) = '1') THEN
+        IF (nvme_reset_cnt_q(15) = '1') THEN
           hold_nvme_reset_q <= '0';
           nvme_reset_n_q    <= '1';
         END IF;
