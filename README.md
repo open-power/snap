@@ -66,5 +66,5 @@ Then, for every commit, use `git commit -s` to add the "signed-off by ..." messa
 
 The master branch is protected. You can no longer commit directly into the master branch. To contribute changes, please create a branch, make the changes there and issue a pull request. Pull requests to merge into the master branch must be reviewed before they can be released.
 
-By default the git repository is read-only. Users can fork their private branch and issue a pull request from there.
+By default the git repository is read-only. Users can fork the donut repository, make the changes there and issue a pull request.
 
