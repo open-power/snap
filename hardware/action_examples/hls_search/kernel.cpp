@@ -80,14 +80,18 @@ short read_single_word_of_data_from_mem(snap_membus_t *din_gmem, snap_membus_t *
          snapu16_t memory_type, snapu64_t input_address, snap_membus_t *buffer)
 {
      short rc;
-     if(memory_type == HOST_DRAM) {
-        buffer[0] = (din_gmem + input_address)[0];
-       rc = 0;
-     } else if(memory_type == CARD_DRAM) {
-        buffer[0] = (d_ddrmem + input_address)[0];
-       rc = 0;
-    } else // unknown input_type
-       rc = 1;
+    switch (memory_type) {
+	case HOST_DRAM:
+        	buffer[0] = (din_gmem + input_address)[0];
+       		rc = 0;
+		break;
+	case CARD_DRAM:
+        	buffer[0] = (d_ddrmem + input_address)[0];
+       		rc = 0;
+		break;
+	default:
+		rc = 1;
+    }
     return rc;
 }
 // Cast a word from input port (512b) to a char* word (64B)
@@ -102,7 +106,6 @@ static void mbus_to_word(snap_membus_t mem, word_t text)
                 tmp = tmp >> 8;
         }
 }
-
 // Cast multiples word from input port to a char* word
 static void x_mbus_to_word(snap_membus_t *buffer, char *text)
 {
@@ -110,7 +113,7 @@ static void x_mbus_to_word(snap_membus_t *buffer, char *text)
 #pragma HLS PIPELINE
                 mbus_to_word(buffer[k], &text[k*BPERDW]);
 }
-/*
+
 // Cast a char* word (64B) to a word for output port (512b)
 static snap_membus_t word_to_mbus(word_t text)
 {
@@ -124,24 +127,44 @@ static snap_membus_t word_to_mbus(word_t text)
         }
         return mem;
 }
-*/
-int search(char *Pattern, 
+int search(snapu16_t Method,
+           char *Pattern,
            unsigned int PatternSize,
-           char *Text, 
+           char *Text,
            unsigned int TextSize)
 {
-        int rc;
-        
-	rc = Nsearch(Pattern, PatternSize, Text, TextSize);
-/*
- *         rc = Nsearch(Pattern, PatternSize, Text, TextSize);
- *         rc = KMPsearch(Pattern, PatternSize, Text, TextSize);
- *         rc = FAsearch(Pattern, PatternSize, Text, TextSize);
- *         rc = FAEsearch(Pattern, PatternSize, Text, TextSize);
- *         rc = BMsearch(Pattern, PatternSize, Text, TextSize);
- */
+        int nb_of_occurrences = 0;
+        int q = 101; // a prime number
 
-	return rc;
+        switch (Method) {
+        case(NAIVE):    printf("======== Naive method ========\n");
+                        nb_of_occurrences = Nsearch  (Pattern, PatternSize, Text, TextSize);
+                        break;
+        case(KMP):      printf("========= KMP method =========\n");
+                        nb_of_occurrences = KMPsearch(Pattern, PatternSize, Text, TextSize);
+                        break;
+        case(FA):       printf("========= FA method =========\n");
+                        nb_of_occurrences = FAsearch (Pattern, PatternSize, Text, TextSize);
+                        break;
+        case(FAE):      printf("========= FAE method =========\n");
+                        nb_of_occurrences = FAEsearch(Pattern, PatternSize, Text, TextSize);
+                        break;
+        case(BM):       printf("========= BM method =========\n");
+                        nb_of_occurrences = BMsearch (Pattern, PatternSize, Text, TextSize);
+                        break;
+        case(RK):       printf("========= RK method =========\n");
+                        nb_of_occurrences = RKsearch (Pattern, PatternSize, Text, TextSize, q);
+                        break;
+
+        default:        printf("===== Default Naive method =====\n");;
+                        nb_of_occurrences = Nsearch  (Pattern, PatternSize, Text, TextSize);
+                        
+
+        }
+        printf("pattern size %d - text size %d - rc = %d \n", PatternSize, TextSize, nb_of_occurrences);
+
+
+        return nb_of_occurrences;
 }
 
 //--------------------------------------------------------------------------------------------
@@ -149,7 +172,7 @@ int search(char *Pattern,
 //--------------------------------------------------------------------------------------------
 static void process_action(snap_membus_t *din_gmem,
                            snap_membus_t *dout_gmem,
-                          snap_membus_t *d_ddrmem,
+                           snap_membus_t *d_ddrmem,
                            action_reg *Action_Register)
 {
 
@@ -171,11 +194,15 @@ static void process_action(snap_membus_t *din_gmem,
   snapu16_t   PatternType;
 
   snapu64_t   address_text_offset;
+
   snap_membus_t  TextBuffer[MAX_NB_OF_WORDS_READ];   // 4KB =>64 words of 64B
   char  Text[MAX_NB_OF_BYTES_READ]; 
+
   snap_membus_t  PatternBuffer[1];
-  char  Pattern[BPERDW];
+  char  Pattern[PATTERN_SIZE];
   snapu64_t nb_of_occurrences = 0;
+  snapu32_t Method;
+  snapu32_t Step;
 
   /* read pattern */
   PatternAddress = Action_Register->Data.pattern.address;
@@ -183,17 +210,21 @@ static void process_action(snap_membus_t *din_gmem,
   PatternType    = Action_Register->Data.pattern.type;
 
  /* FIXME : let's first consider that pattern is less than a data width word */
-  if (PatternSize > BPERDW) rc = 1;
+  if (PatternSize > PATTERN_SIZE) rc = 1;
 
-  read_single_word_of_data_from_mem(din_gmem, d_ddrmem, PatternType,
-  		PatternAddress >> ADDR_RIGHT_SHIFT, PatternBuffer);
-  mbus_to_word(PatternBuffer[0], Pattern);  /* convert buffer to char*/
+  read_single_word_of_data_from_mem(din_gmem, d_ddrmem, 
+                PatternType,
+                PatternAddress >> ADDR_RIGHT_SHIFT, 
+                PatternBuffer);
+  mbus_to_word(PatternBuffer[0], Pattern); /* convert buffer to char*/
 
   /* read text in */
   // byte address received need to be aligned with port width
   InputAddress = Action_Register->Data.in.address;
   InputSize    = Action_Register->Data.in.size;
   InputType    = Action_Register->Data.in.type,
+  Method       = Action_Register->Data.method,
+  Step         = Action_Register->Data.step,
 
   ReturnCode = RET_CODE_OK;
 
@@ -204,24 +235,25 @@ static void process_action(snap_membus_t *din_gmem,
   nb_blocks_to_process = (InputSize / MAX_NB_OF_BYTES_READ) + 1;
 
   // processing buffers one after the other
-  L0:for ( i = 0; i < nb_blocks_to_process; i++ ) {
-        //#pragma HLS UNROLL // cannot completely unroll a loop with a variable trip count
+  process_text_per_block:
+  for ( i = 0; i < nb_blocks_to_process; i++ ) {
+//#pragma HLS UNROLL // cannot completely unroll a loop with a variable trip count
         search_size = MIN(text_size, (snapu32_t) MAX_NB_OF_BYTES_READ);
 
         rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, InputType,
                 (InputAddress >> ADDR_RIGHT_SHIFT) + address_text_offset,
-				TextBuffer, search_size);
-	x_mbus_to_word(TextBuffer, Text); /* convert buffer to char*/
-       
-	/* call search function */ 
-	nb_of_occurrences += (unsigned int) search(Pattern, PatternSize, Text, search_size);
+		TextBuffer, search_size);
+        x_mbus_to_word(TextBuffer, Text); /* convert buffer to char*/
+
+        /* call search function */
+	nb_of_occurrences += (unsigned int) search(Method, Pattern, PatternSize, Text, search_size);
 
         //rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem, Action_Register->Data.out.type,
         //          OutputAddress + address_text_offset, TextBuffer, search_size);
 
         text_size -= search_size;
         address_text_offset += (snapu64_t)(search_size >> ADDR_RIGHT_SHIFT);
-     } // end of L0 loop
+     } 
 
   if(rc!=0) ReturnCode = RET_CODE_FAILURE;
 
@@ -286,39 +318,45 @@ int main(void)
 {
     int rc = 0;
     unsigned int i;
-    snap_membus_t  din_gmem[MAX_NB_OF_WORDS_READ];
+    snap_membus_t  din_gmem [MAX_NB_OF_WORDS_READ];
     snap_membus_t  dout_gmem[MAX_NB_OF_WORDS_READ];
-    snap_membus_t  d_ddrmem[MAX_NB_OF_WORDS_READ];
+    snap_membus_t  d_ddrmem [MAX_NB_OF_WORDS_READ];
+
     action_reg Action_Register;
     action_RO_config_reg Action_Config;
+
     short nb_of_occurrences;
+    char word_tmp[BPERDW];
 
     FILE *fp;
 
     int c;
-    int k=0;
-
-    // Hardcoded numbers -- initialized in action_wrapper
-    Action_Config.action_type   = (snapu32_t) SEARCH_ACTION_TYPE;
-    Action_Config.release_level = (snapu32_t) RELEASE_LEVEL;
-   
-    Action_Register.Control.sat = 0;
+    int k=0, m=0;
 
     // read data for text
     fp = fopen("demo_search123.txt", "r");
     if (fp) {
-        while((c = getc(fp)) != EOF)
-                din_gmem[k++] = c;
-                //putchar(c);
+        while((c = getc(fp)) != EOF) {
+                word_tmp[k] = c;
+                k++;
+                if(k == BPERDW) {
+                        din_gmem[m] = (snap_membus_t) word_to_mbus(word_tmp);
+                        if (m < MAX_NB_OF_WORDS_READ)
+                                m++;
+                        else
+                                break;
+                        k=0;
+                }
+        }
         if(ferror(fp)) return 1;
     }
     fclose(fp);
 
     Action_Register.Data.in.address = 0;
-    Action_Register.Data.in.size = sizeof(din_gmem);
+    Action_Register.Data.in.size = (m*BPERDW) + k + 1;
     Action_Register.Data.in.type = 0x0000;
     Action_Register.Data.out.address = 0;
-    Action_Register.Data.out.size = 128;
+    Action_Register.Data.out.size = 12;
     Action_Register.Data.out.type = 0x0000;
     Action_Register.Data.pattern.address = 0;
     Action_Register.Data.pattern.size = 3; // Take 3 first characters of din_gmem as pattern
@@ -326,24 +364,26 @@ int main(void)
 
 
     // get Action_Register values
+    Action_Register.Control.flags = 0x0;
     hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
 
     // process the action
+    Action_Register.Data.method = 0; //  method
     Action_Register.Control.flags = 0x1;
-	hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
+        hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
 
     nb_of_occurrences = Action_Register.Data.nb_of_occurrences;
 
     //nb_of_occurrences = search(pat, strlen(pat), txt, strlen(txt));
-        printf("Naive search : %d occurrences found\n", nb_of_occurrences);
+    printf("Search : %d occurrences found\n=============================\n ", nb_of_occurrences);
 
     if (Action_Register.Control.Retc == RET_CODE_FAILURE) {
                             printf(" ==> RETURN CODE FAILURE <==\n");
                             return 1;
     }
     printf(">> ACTION TYPE = %8lx - RELEASE_LEVEL = %8lx <<\n",
-                    (unsigned int)Action_Config.action_type,
-                    (unsigned int)Action_Config.release_level);
+                    (unsigned long)Action_Config.action_type,
+                    (unsigned long)Action_Config.release_level);
     if (Action_Config.action_type != SEARCH_ACTION_TYPE) {
                             printf(" ==> BAD CODE TYPE <==\n");
                             return 1;
@@ -351,6 +391,5 @@ int main(void)
 
     return 0;
 }
-
 
 #endif

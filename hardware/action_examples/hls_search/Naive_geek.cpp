@@ -11,13 +11,12 @@
 #include <stdio.h>
 #include <string.h>
 
-//#include "action_search.H"
+#include "action_search.H"
 
 /* void search(char *pat, char *txt) */
 /* int Nsearch(char *pat, int M, char *txt, int N) */
 
-//int Nsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N)
-int Nsearch(char *pat, int M, char *txt, int N) 
+int Nsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N)
 {
 #pragma HLS INLINE off
 //  int M = strlen(pat);
@@ -25,20 +24,32 @@ int Nsearch(char *pat, int M, char *txt, int N)
     int count=0;
 
     /* A loop to slide pat[] one by one */
-    for (int i = 0; i <= N - M; i++)
+    slide_pattern_loop:
+    //for (int i = 0; i <= N - M; i++)
+    for (int i = 0; i <= TEXT_SIZE; i++)
     {
         int j;
-  
-        /* For current index i, check for pattern match */
-        for (j = 0; j < M; j++)
-            if (txt[i+j] != pat[j])
-                break;
- 
-        if (j == M)  // if pat[0...M-1] = txt[i, i+1, ...i+M-1]
+        if (i <= N - M)
         {
-           count++; // BM : line added to return a value
-           printf("Pattern found at index %d \n", i);
+  
+           /* For current index i, check for pattern match */
+           matching_pattern_loop:
+           //for (j = 0; j < M; j++)
+           for (j = 0; j < PATTERN_SIZE; j++)
+               if (j < M)
+               {
+                   if (txt[i+j] != pat[j])
+                       break;
+               }
+               else break;
+ 
+           if (j == M)  // if pat[0...M-1] = txt[i, i+1, ...i+M-1]
+           {
+              count++; // BM : line added to return a value
+              printf("Pattern found at index %d \n", i);
+           }
         }
+        else break;
     }
     return count;
 }
