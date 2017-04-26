@@ -328,8 +328,8 @@ static int hw_attach_action(void *_card, uint32_t action, int flags, int timeout
 	int maid;			/* Max Acition Id's */
 	int t0, dt;
 
-	dnut_trace("%s Enter Action: 0x%x Old Action: 0x%x Flags: 0x%x Base: 0x%x timeout: %d sec\n", __func__,
-		action, card->action_type, flags, card->action_base, timeout_sec);
+	dnut_trace("%s Enter Action: 0x%x Old Action: %x Flags: 0x%x Base: %x timeout: %d sec Seq: %x\n",
+		__func__, action, card->action_type, flags, card->action_base, timeout_sec, card->seq);
 	if (card->master) {
 		dnut_trace("%s Exit Error Master is not allowed to use  Action\n",  __func__);
 		return ENODEV;
@@ -369,6 +369,7 @@ static int hw_attach_action(void *_card, uint32_t action, int flags, int timeout
 		card->start_attach = false;
 		data = ((uint64_t)card->seq << 48ll) | 1;	/* Start: Attach action to context */
 		hw_dnut_mmio_write64(card, SNAP_S_JCR, data);
+		card->seq++;
 	}
 
 	hw_dnut_mmio_read64(card, SNAP_S_CSR, &data);
@@ -397,9 +398,17 @@ static int hw_attach_action(void *_card, uint32_t action, int flags, int timeout
 static int hw_detach_action(void *_card)
 {
 	struct dnut_data *card = (struct dnut_data*)_card;
+	int rc = 0;
+	uint64_t data;
+
 	card->start_attach = true;			/* Set Flag to Attach next Time again */
 	hw_dnut_mmio_write64(card, SNAP_S_JCR, 2);	/* Stop:  Detach action */
-	return 0;
+	hw_dnut_mmio_read64(card, SNAP_S_CSR, &data);   /* Action Must be gone */
+	if (0 != (data & 0x40)) {                       /* Check if Context is still attached to action */
+		dnut_trace("%s Error: CSR 0x%llx\n", __func__, (long long)data);
+		rc = 1;
+	}
+	return rc;
 }
 
 /* Hardware version of the lowlevel functions */
@@ -432,10 +441,12 @@ int dnut_attach_action(struct dnut_card *_card,
 
 int dnut_detach_action(struct dnut_card *_card)
 {
+	int rc;
+
 	dnut_trace("%s Enter\n", __func__);
-	df->detach_action(_card);
-	dnut_trace("%s Exit\n", __func__);
-	return 0;
+	rc = df->detach_action(_card);
+	dnut_trace("%s Exit rc: %d\n", __func__, rc);
+	return rc;
 }
 
 int dnut_mmio_write32(struct dnut_card *_card,
