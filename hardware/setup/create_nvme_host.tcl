@@ -173,7 +173,7 @@ set refclk_nvme_ch1_n [ create_bd_port -dir I -type clk refclk_nvme_ch1_n ]
 set_property -dict [ list \
 CONFIG.FREQ_HZ {100000000} \
 ] $refclk_nvme_ch1_n
-set pcie_perstn [ create_bd_port -dir I -type rst pcie_perstn ]
+set nvme_reset_n [ create_bd_port -dir I -type rst nvme_reset_n ]
 
 ## Create instance: axi_interconnect_0, and set properties
 #puts "	\                      generating AXI interconnects"
@@ -325,7 +325,7 @@ connect_bd_net -net axi_pcie3_0_axi_aclk [get_bd_ports ddr_aclk] [get_bd_pins ax
 connect_bd_net -net axi_pcie3_0_axi_aresetn [get_bd_ports ddr_aresetn] [get_bd_pins axi_interconnect_0/ARESETN] [get_bd_pins axi_interconnect_0/M00_ARESETN] [get_bd_pins axi_interconnect_0/M01_ARESETN] [get_bd_pins axi_interconnect_1/ARESETN] [get_bd_pins axi_interconnect_1/M00_ARESETN] [get_bd_pins axi_interconnect_1/S00_ARESETN] [get_bd_pins axi_interconnect_2/ARESETN] [get_bd_pins axi_interconnect_2/M00_ARESETN] [get_bd_pins axi_interconnect_2/M01_ARESETN] [get_bd_pins axi_interconnect_2/S00_ARESETN] [get_bd_pins axi_pcie3_0/axi_aresetn] [get_bd_pins nvme_host_wrap_0/axi_aresetn]
 connect_bd_net -net axi_pcie3_1_axi_aclk [get_bd_pins axi_interconnect_0/M02_ACLK] [get_bd_pins axi_interconnect_1/M01_ACLK] [get_bd_pins axi_interconnect_2/S01_ACLK] [get_bd_pins axi_pcie3_1/axi_aclk]
 connect_bd_net -net axi_pcie3_1_axi_aresetn [get_bd_pins axi_interconnect_0/M02_ARESETN] [get_bd_pins axi_interconnect_1/M01_ARESETN] [get_bd_pins axi_interconnect_2/S01_ARESETN] [get_bd_pins axi_pcie3_1/axi_aresetn]
-connect_bd_net -net pcie_perstn             [get_bd_ports pcie_perstn] [get_bd_pins axi_pcie3_0/sys_rst_n] [get_bd_pins axi_pcie3_1/sys_rst_n]
+connect_bd_net -net nvme_reset_n            [get_bd_ports nvme_reset_n] [get_bd_pins axi_pcie3_0/sys_rst_n] [get_bd_pins axi_pcie3_1/sys_rst_n]
 
 connect_bd_net [get_bd_ports refclk_nvme_ch0_p] [get_bd_pins util_buf_gte_0/IBUF_DS_P] 
 connect_bd_net [get_bd_ports refclk_nvme_ch0_n] [get_bd_pins util_buf_gte_0/IBUF_DS_N]

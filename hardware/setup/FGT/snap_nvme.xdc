@@ -19,6 +19,4 @@
 ############################################################################
 
 ## 
-set_false_path -from [get_pins a0/donut_i/ctrl_mgr/afu_reset_q_reg/C] -to [get_pins a0/nvme_ch1_reset_m_reg*/D]
-set_false_path -from [get_pins a0/action_reset_q_reg/C]               -to [get_pins a0/nvme_ch1_reset_m_reg*/D]
-set_false_path -from [get_pins a0/action_reset_qq_reg/C]              -to [get_pins a0/nvme_ch1_reset_m_reg*/D]
+set_false_path -from [get_pins nvme_reset_n_q_reg/C] -to [get_pins {a0/nvme_top_i/axi_pcie3_1/inst/pcie3_ip_i/inst/gt_top_i/phy_rst_i/rrst_n_r_reg[?]/CLR}]

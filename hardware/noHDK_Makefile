@@ -53,6 +53,7 @@ endif
 ifeq "$(BRAM_USED)" "TRUE"
 export DDR3_USED=FALSE
 export DDR4_USED=FALSE
+export SDRAM_USED=FALSE
 export DDRI_USED=TRUE
 endif
 
