@@ -20,9 +20,9 @@
 #include "action_intersect.H"
 
 //--------------------------------------------------------------------------------------------
-// v1.0 : 03/24/2017 : creation 
-// v1.1 : 04/05/2017 : multiple changes to fit new config reg mapping 
-// v1.2 : 04/13/2017 : Add Hash/Sort and more steps 
+// v1.0 : 03/24/2017 : creation
+// v1.1 : 04/05/2017 : multiple changes to fit new config reg mapping
+// v1.2 : 04/13/2017 : Add Hash/Sort and more steps
 //--------------------------------------------------------------------------------------------
 
 static snapu32_t read_bulk ( snap_membus_t *src_mem,
@@ -37,8 +37,8 @@ static snapu32_t read_bulk ( snap_membus_t *src_mem,
     return xfer_size;
 }
 
-static snapu32_t write_bulk (snap_membus_t *tgt_mem, 
-                            snapu64_t      byte_address, 
+static snapu32_t write_bulk (snap_membus_t *tgt_mem,
+                            snapu64_t      byte_address,
                             snapu32_t      byte_to_transfer,
                             snap_membus_t *buffer)
 {
@@ -48,17 +48,17 @@ static snapu32_t write_bulk (snap_membus_t *tgt_mem,
     return xfer_size;
 }
 
-static void memcopy_table(snap_membus_t  *din_gmem, 
-                    snap_membus_t  *dout_gmem, 
+static void memcopy_table(snap_membus_t  *din_gmem,
+                    snap_membus_t  *dout_gmem,
                     snap_membus_t  *d_ddrmem,
-                    snapu64_t       source_address , 
-                    snapu64_t       target_address, 
-                    snapu32_t       total_bytes_to_transfer, 
+                    snapu64_t       source_address ,
+                    snapu64_t       target_address,
+                    snapu32_t       total_bytes_to_transfer,
                     snap_bool_t     direction)
 {
     //direction == 0: Copy from Host to DDR
     //direction == 1: Copy from DDR to Host
-    
+
     //source_address and target_address are byte addresses.
     snapu64_t address_xfer_offset = 0;
     snap_membus_t   buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];
@@ -114,24 +114,24 @@ static ap_uint<HT_ENTRY_NUM_EXP> ht_hash(value_t key)
     for (k =0; k < 4; k++)
     {
         hash_val = hash_val + key(20  + k*126,  0 + k*126) +
-                              key(41  + k*126, 21 + k*126) + 
-                              key(62  + k*126, 42 + k*126) + 
-                              key(83  + k*126, 63 + k*126) + 
+                              key(41  + k*126, 21 + k*126) +
+                              key(62  + k*126, 42 + k*126) +
+                              key(83  + k*126, 63 + k*126) +
                               key(104 + k*126, 84 + k*126) +
                               key(125 + k*126,105 + k*126);
     }
 
-    // Counting for 63bytes. 
+    // Counting for 63bytes.
     // 63byte/21bit = 24 bulks. Add 6 bulk in one cycle, and finish in 4 cycles.
-    //return hashval %HT_ENTRY_NUM;  //This step is not needed as we limit hashval to 21bits.  
-    return hash_val ; 
+    //return hashval %HT_ENTRY_NUM;  //This step is not needed as we limit hashval to 21bits.
+    return hash_val ;
 }
 
 
 static short make_hashtable(snap_membus_t  *d_ddrmem,
                      action_reg *Action_Register)
 {
-    //Something to be cautious: 
+    //Something to be cautious:
     // int type can represent -2G~+2G
     // Input table size is designed to be <=1GB
     ap_uint<HT_ENTRY_NUM_EXP> index;
@@ -140,10 +140,10 @@ static short make_hashtable(snap_membus_t  *d_ddrmem,
 
     short ijk;
     snapu32_t read_bytes;
-    snapu64_t addr = Action_Register->Data.ddr_table1.address; 
+    snapu64_t addr = Action_Register->Data.ddr_table1.address;
     int left_bytes = Action_Register->Data.ddr_table1.size;
     snapu32_t offset = 0;
-    
+
     value_t keybuf[MAX_NB_OF_BYTES_READ/BPERDW];
     value_t hash_entry, new_entry;
 
@@ -152,20 +152,20 @@ static short make_hashtable(snap_membus_t  *d_ddrmem,
     ap_uint<BRAM_WIDTH> ram_q;
 
 
-    //Hash Table arrangement: 
+    //Hash Table arrangement:
     // Starting from HASH_TABLE_ADDR
-    // Only stores the address of input 
-    // Still 64bytes: 
-    // Byte0-3: Count 
+    // Only stores the address of input
+    // Still 64bytes:
+    // Byte0-3: Count
     // Byte4-7: offset0  (offset to ddr_table1.address)
-    // Byte8-11: offset1 
+    // Byte8-11: offset1
     // ....
-    // Byte60-63: offset14 
+    // Byte60-63: offset14
 
      while (left_bytes > 0)
     {
         read_bytes = read_bulk (d_ddrmem, addr,  left_bytes, keybuf);
-        
+
         for (ijk = 0; ijk < read_bytes/BPERDW; ijk++)
         {
             index = ht_hash(keybuf[ijk]);
@@ -175,7 +175,7 @@ static short make_hashtable(snap_membus_t  *d_ddrmem,
             ram_q = hash_used[index_high];
 
             used =  ram_q(index_low, index_low);
-            
+
             ram_q(index_low, index_low) = 1;
             hash_used[index_high] = ram_q;
 
@@ -195,7 +195,7 @@ static short make_hashtable(snap_membus_t  *d_ddrmem,
                 count = hash_entry(31,0);
 
                 if (count >= 15)
-                    return -1; //Hash Table is full. 
+                    return -1; //Hash Table is full.
                 else
                 {
                     new_entry = hash_entry;
@@ -204,9 +204,9 @@ static short make_hashtable(snap_membus_t  *d_ddrmem,
                     write_bulk(d_ddrmem, HASH_TABLE_ADDR + index * BPERDW, BPERDW, &new_entry);
                 }
             }
-            
+
             offset += BPERDW;
-            
+
 
         }
         left_bytes -= MAX_NB_OF_BYTES_READ;
@@ -225,10 +225,10 @@ static snapu32_t check_table2(snap_membus_t  *d_ddrmem,
     short iii;
     short j;
     snapu32_t read_bytes;
-    snapu64_t addr = Action_Register->Data.ddr_table2.address; 
+    snapu64_t addr = Action_Register->Data.ddr_table2.address;
     int left_bytes = Action_Register->Data.ddr_table2.size;
     snapu32_t offset = 0;
-    
+
     value_t keybuf[MAX_NB_OF_BYTES_READ/BPERDW];
     value_t hash_entry;
     value_t node_a;
@@ -236,14 +236,14 @@ static snapu32_t check_table2(snap_membus_t  *d_ddrmem,
     snapu32_t count;
     snapu32_t res_size = 0;
     snapu64_t write_addr = Action_Register->Data.res_table.address;
-    
+
     snap_bool_t used = 0;
     ap_uint<BRAM_WIDTH> ram_q;
 
     while (left_bytes > 0)
     {
         read_bytes = read_bulk (d_ddrmem, addr,  left_bytes, keybuf);
-        
+
         for (iii = 0; iii < read_bytes/BPERDW; iii++)
         {
             //Current element in Table2 is keybuf[i]
@@ -268,7 +268,7 @@ static snapu32_t check_table2(snap_membus_t  *d_ddrmem,
                     {
                             //match!
                         write_bulk(d_ddrmem, write_addr, BPERDW, &node_a);
-                        res_size += BPERDW; 
+                        res_size += BPERDW;
                         write_addr += BPERDW;
                         break;
                     }
@@ -302,9 +302,9 @@ void hls_action(snap_membus_t  *din_gmem,
 
 // Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Config
-#pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg	offset=0x010 
+#pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg	offset=0x010
 #pragma HLS DATA_PACK variable=Action_Register
-#pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg	offset=0x100 
+#pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg	offset=0x100
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
 	short rc = 0;
@@ -326,11 +326,11 @@ void hls_action(snap_membus_t  *din_gmem,
         //Copy from Host to DDR
         // Table1
         memcopy_table(din_gmem, dout_gmem, d_ddrmem,
-            Action_Register->Data.src_table1.address, Action_Register->Data.ddr_table1.address, 
+            Action_Register->Data.src_table1.address, Action_Register->Data.ddr_table1.address,
             Action_Register->Data.src_table1.size, 0);
         // Table2
         memcopy_table(din_gmem, dout_gmem, d_ddrmem,
-            Action_Register->Data.src_table2.address, Action_Register->Data.ddr_table2.address, 
+            Action_Register->Data.src_table2.address, Action_Register->Data.ddr_table2.address,
             Action_Register->Data.src_table2.size, 0);
 
         if(Action_Register->Data.method == HASH_METHOD)
@@ -339,24 +339,22 @@ void hls_action(snap_membus_t  *din_gmem,
             for(i = 0; i < (HT_ENTRY_NUM >> WIDTH_EXP); i++)
                 hash_used[i]=0;
         }
-            
-
     }
     else if(Action_Register->Data.step == 2)
     {
         //Copy from DDR to Host
         // Table1
         memcopy_table(din_gmem, dout_gmem, d_ddrmem,
-            Action_Register->Data.ddr_table1.address, Action_Register->Data.src_table1.address, 
+            Action_Register->Data.ddr_table1.address, Action_Register->Data.src_table1.address,
             Action_Register->Data.ddr_table1.size, 1);
         // Table2
         memcopy_table(din_gmem, dout_gmem, d_ddrmem,
-            Action_Register->Data.ddr_table2.address, Action_Register->Data.src_table2.address, 
+            Action_Register->Data.ddr_table2.address, Action_Register->Data.src_table2.address,
             Action_Register->Data.ddr_table2.size, 1);
     }
     else if(Action_Register->Data.step == 3)
     {
-        if(Action_Register->Data.method == HASH_METHOD) 
+        if(Action_Register->Data.method == HASH_METHOD)
         {
             //Make hash table
             rc = make_hashtable(d_ddrmem, Action_Register);
@@ -372,17 +370,15 @@ void hls_action(snap_membus_t  *din_gmem,
        //     merge_sort(d_ddrmem, Action_Register);
        //     intersection(d_ddrmem, Action_Register);
        // }
-        
-
     }
     else if (Action_Register->Data.step == 5)
     {
-        //Copy Result from DDR to Host. 
-        memcopy_table(din_gmem, dout_gmem, d_ddrmem, 
-        Action_Register->Data.ddr_table1.address, Action_Register->Data.res_table.address, 
-        Action_Register->Data.res_table.size, 1); 
+        //Copy Result from DDR to Host.
+        memcopy_table(din_gmem, dout_gmem, d_ddrmem,
+        Action_Register->Data.ddr_table1.address, Action_Register->Data.res_table.address,
+        Action_Register->Data.res_table.size, 1);
     }
-        
+
     Action_Register->Control.Retc = RET_CODE_OK;
     Action_Register->Data.res_table.size = result_size;
     return;
