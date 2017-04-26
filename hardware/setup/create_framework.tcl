@@ -22,7 +22,6 @@ set root_dir    $::env(DONUT_HARDWARE_ROOT)
 set fpga_part   $::env(FPGACHIP)
 set fpga_card   $::env(FPGACARD)
 set pslse_dir   $::env(PSLSE_ROOT)
-set dimm_dir    .
 set build_dir   $::env(BUILD_DIR)
 set ip_dir      $root_dir/ip
 set action_dir  $::env(ACTION_ROOT)
@@ -39,6 +38,12 @@ if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support "TRUE"
 } else {
   set hls_support "not defined"
+}
+
+if { [info exists ::env(DENALI)] == 1 } {
+  set denali_dir  $::env(DENALI)
+} else {
+  set denali_dir .
 }
 
 #debug information
@@ -183,8 +188,8 @@ if { $nvme_used == TRUE } {
   set_property synth_checkpoint_mode None [get_files  $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] $msg_level
   generate_target all                     [get_files  $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] $msg_level
   add_files -fileset sim_1 -scan_for_includes $root_dir/sim/nvme/
-  add_files -fileset sim_1 -norecurse -scan_for_includes /afs/vlsilab.boeblingen.ibm.com/proj/cte/tools/cds/VIPCAT/vol2/tools.lnx86/denali_64bit/ddvapi/verilog/denaliPcie.v
-  set_property include_dirs /afs/vlsilab.boeblingen.ibm.com/proj/cte/tools/cds/VIPCAT/vol2/tools.lnx86/denali_64bit/ddvapi/verilog [get_filesets sim_1]
+  add_files -fileset sim_1 -norecurse -scan_for_includes $denali_dir/ddvapi/verilog/denaliPcie.v
+  set_property include_dirs                              $denali_dir/ddvapi/verilog [get_filesets sim_1]
 } else {
   remove_files $action_dir/action_axi_nvme.vhd -quiet
 }

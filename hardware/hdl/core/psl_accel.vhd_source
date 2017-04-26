@@ -175,7 +175,7 @@ ENTITY psl_accel IS
     -- NVME Interface	         						        -- only for NVME_USED=TRUE 
     --			         					                -- only for NVME_USED=TRUE 
     -- Reset Input                                                                      -- only for NVME_USED=TRUE
-    pcie_perstn                        : IN    std_ulogic;                              -- only for NVME_USED=TRUE
+    nvme_reset_n                       : IN    std_ulogic;                              -- only for NVME_USED=TRUE
     --			         					                -- only for NVME_USED=TRUE 
     -- Clock inputs for NVMe                                                            -- only for NVME_USED=TRUE
 --nvme_ch0    refclk_nvme_ch0_p                  : IN    STD_LOGIC;                               -- only for NVME_USED=TRUE
@@ -1018,7 +1018,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
     -- NVME Interface	         						                           -- only for NVME_USED=TRUE 
     --			         					                                   -- only for NVME_USED=TRUE 
     -- Reset Input                                                                                         -- only for NVME_USED=TRUE
-    pcie_perstn                   : IN    std_ulogic;                                                      -- only for NVME_USED=TRUE
+    nvme_reset_n                  : IN    std_ulogic;                                                      -- only for NVME_USED=TRUE
     --			         					                                   -- only for NVME_USED=TRUE 
     -- Clock inputs for NVMe                                                                               -- only for NVME_USED=TRUE
 --nvme_ch0    refclk_nvme_ch0_p                  : IN    STD_LOGIC;                                                -- only for NVME_USED=TRUE
@@ -2233,7 +2233,7 @@ BEGIN
 --nvme_ch0      refclk_nvme_ch0_n                => refclk_nvme_ch0_n,				  -- only for NVME_USED=TRUE 
       refclk_nvme_ch1_p                => refclk_nvme_ch1_p,				  -- only for NVME_USED=TRUE 
       refclk_nvme_ch1_n                => refclk_nvme_ch1_n,				  -- only for NVME_USED=TRUE 
-      pcie_perstn                      => pcie_perstn,     		                  -- only for NVME_USED=TRUE 
+      nvme_reset_n                     => nvme_reset_n,     		                  -- only for NVME_USED=TRUE 
 --nvme_ch0      pcie_rc0_rxn(3 downto 0)         => pcie_rc0_rxn(3 downto 0),			  -- only for NVME_USED=TRUE 
 --nvme_ch0      pcie_rc0_rxp(3 downto 0)         => pcie_rc0_rxp(3 downto 0),			  -- only for NVME_USED=TRUE 
 --nvme_ch0      pcie_rc0_txn(3 downto 0)         => pcie_rc0_txn(3 downto 0),			  -- only for NVME_USED=TRUE 

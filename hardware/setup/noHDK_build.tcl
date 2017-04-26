@@ -18,8 +18,8 @@
 
 set msg_level    $::env(MSG_LEVEL)
 set fpgacard     $::env(FPGACARD)
-set ddr3_used    $::env(DDR3_USED)
-set ddr4_used    $::env(DDR4_USED)
+set sdram_used   $::env(SDRAM_USED)
+set nvme_used    $::env(NVME_USED)
 set bram_used    $::env(BRAM_USED)
 
 #Define widths of each column
@@ -37,7 +37,7 @@ write_checkpoint   $msg_level -force ./Checkpoint/framework_synth.dcp
 report_utilization $msg_level -file  ./Reports/framework_utilization_synth.rpt
  
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-#lock_design $msg_level -level routing b
+lock_design $msg_level -level routing b
  
 set directive [get_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start opt_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
@@ -67,28 +67,22 @@ report_drc            $msg_level -ruledeck bitstream_checks -name psl_fpga -file
  
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
 set STREAM_NAME [exec cat ../.bitstream_name.txt]
-
-if { $fpgacard == "KU3" } {
-  if { $bram_used == "TRUE" } {
-    set FUNC_NAME _BRAM_KU3
-  } elseif { $ddr3_used == "TRUE" } {
-    set FUNC_NAME _DDR3_KU3
-  } else {
-    set FUNC_NAME _KU3
-  }
+ 
+if { $bram_used == "TRUE" } {
+    set RAM_TYPE BRAM
+} elseif { $sdram_used == "TRUE" } {
+    set RAM_TYPE SDRAM
+} else {
+    set RAM_TYPE noSDRAM
 }
-
-if { $fpgacard == "FGT" } {
-  if { $bram_used == "TRUE" } {
-    set FUNC_NAME _BRAM_FGT
-  } elseif { $ddr4_used == "TRUE" } {
-    set FUNC_NAME _DDR4_FGT
-  } else {
-    set FUNC_NAME _FGT
-  }
+ 
+if { $nvme_used == "TRUE" } {
+  set IMAGE_NAME [format {%s_NVME_%s_%s} $STREAM_NAME $RAM_TYPE $fpgacard]
+} else {
+  set IMAGE_NAME [format {%s_%s_%s} $STREAM_NAME $RAM_TYPE $fpgacard]
 }
-
-write_bitstream $msg_level -force -file ./Images/$STREAM_NAME$FUNC_NAME
-write_cfgmem    $msg_level -format bin -loadbit "up 0x0 ./Images/$STREAM_NAME$FUNC_NAME.bit" -file ./Images/$STREAM_NAME$FUNC_NAME  -size 128 -interface  BPIx16 -force
+ 
+write_bitstream $msg_level -force -file ./Images/$IMAGE_NAME
+write_cfgmem    $msg_level -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME  -size 128 -interface  BPIx16 -force
 
 close_project $msg_level
