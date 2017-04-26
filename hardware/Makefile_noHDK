@@ -18,8 +18,6 @@
 ############################################################################
 ############################################################################
 
-PSL_DCP=$(HDK_ROOT)/Checkpoint/b_route_design.dcp
-
 export BUILD_NAME=noHDK_build
 export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
 export DONUT_HDL_CORE=$(DONUT_HARDWARE_ROOT)/hdl/core
@@ -27,79 +25,16 @@ export DONUT_SIM_CORE=$(DONUT_HARDWARE_ROOT)/sim/core
 export LOGS_DIR=$(BUILD_DIR)/Logs
 
 SNAP_CONFIG_FILES=$(DONUT_HDL_CORE)/psl_fpga.vhd \
-		$(DONUT_HDL_CORE)/psl_accel.vhd \
-		$(DONUT_HDL_CORE)/psl_accel_types.vhd \
-		$(DONUT_SIM_CORE)/top.sv \
-		$(DONUT_HDL_CORE)/donut.vhd \
-		$(DONUT_HDL_CORE)/donut_types.vhd
-PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
+		  $(DONUT_HDL_CORE)/psl_accel.vhd \
+		  $(DONUT_HDL_CORE)/psl_accel_types.vhd \
+		  $(DONUT_SIM_CORE)/top.sv \
+		  $(DONUT_HDL_CORE)/donut.vhd \
+		  $(DONUT_HDL_CORE)/donut_types.vhd
 
-ifeq "$(FPGACARD)" "KU3"
-export DDR3_USED=$(SDRAM_USED)
-export DDR4_USED=FALSE
-export DDRI_USED=$(SDRAM_USED)
-export NVME_USED=FALSE
-endif
 
-ifeq "$(FPGACARD)" "FGT"
-export DDR3_USED=FALSE
-export DDR4_USED=$(SDRAM_USED)
-export DDRI_USED=$(SDRAM_USED)
-endif
-
-ifndef BRAM_USED
-export BRAM_USED=FALSE
-endif
-ifeq "$(BRAM_USED)" "TRUE"
-export DDR3_USED=FALSE
-export DDR4_USED=FALSE
-export SDRAM_USED=FALSE
-export DDRI_USED=TRUE
-endif
-
-ifndef NVME_USED
-export NVME_USED=FALSE
-endif
-
-ifndef MSG_LEVEL
-export MSG_LEVEL=-quiet
-endif
-
-.PHONY: all image model check_donut_settings action_config create_environment copy clean config gitclean patch_version xpr_image snap_config
+.PHONY: all image model action_config create_environment copy clean config gitclean patch_version xpr_image snap_config
 
 all: config model image
-
-check_donut_settings:
-	@if [ ! -d "$(DONUT_HARDWARE_ROOT)" ]; then \
-		echo "DONUT_HARDWARE_ROOT does not point to a directory."; \
-		echo "Please source donut_settings before calling make!"; \
-		exit 1; \
-	fi
-	@if [[ $(SIMULATOR) != "irun" && $(SIMULATOR) != "xsim" && $(SIMULATOR) != "questa" ]];then \
-		echo "unknown simulator=$SIMULATOR"; \
-		exit 1; \
-	fi
-	@if [ -z `which git 2> /dev/null` ]; then \
-		echo "The SNAP framework make process relies on git."; \
-		echo "Please make sure that you have installed git and that"; \
-		echo "the environment variable PATH points to its executable."; \
-		exit 1; \
-	fi
-	@cd $(DONUT_HARDWARE_ROOT); if [ -z `git describe HEAD 2> /dev/null` ]; then \
-		echo "$(DONUT_HARDWARE_ROOT) (DONUT_HARDWARE_ROOT) does not belong to a git repository."; \
-		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/donut.git"; \
-		exit 1; \
-	fi
-	@if [ -z $(FPGACARD) ] || [ -z $(SDRAM_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ]; then \
-		echo "Missing one or more environment  variables"; \
-		echo "Please check the following variables and source donut_settings before calling make!"; \
-		echo "FPGACARD:       $(FPGACARD)"; \
-		echo "SDRAM_USED:     $(SDRAM_USED)"; \
-		echo "ILA_DEBUG:      $(ILA_DEBUG)"; \
-		echo "NUM_OF_ACTIONS: $(NUM_OF_ACTIONS)"; \
-		echo "ACTION_ROOT:    $(ACTION_ROOT)"; \
-		exit 1; \
-	fi
 
 copy $(BUILD_DIR)/Checkpoint/b_route_design.dcp:
 	@echo -e "\t[COPY..............] psl build env";
@@ -139,7 +74,7 @@ create_environment:
 	@cd $(DONUT_HARDWARE_ROOT)/setup                                    && vivado $(MSG_LEVEL) -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/vivado_create_framework_$(BUILD_DATE).log  -journal $(LOGS_DIR)/vivado_create_frame_work_$(BUILD_DATE).jou
 	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
 
-config: copy_denali check_donut_settings $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FILES) action_config create_environment patch_NVMe
+config: copy_denali $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FILES) action_config create_environment patch_NVMe
 #config: copy_denali check_donut_settings $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FILES) action_config create_environment
 
 	@echo -e "\t[CONFIG............] done `date`"
@@ -221,7 +156,7 @@ questa:
 	fi
 	cd $(DONUT_HARDWARE_ROOT)/sim/questa && ./top.sh >>../../compile_$(SIMULATOR).log 2>&1
 
-clean: check_donut_settings
+clean: 
 	@echo -e "\t[CLEAN.............] build environment";
 	@rm -r -f  $(BUILD_DIR)
 	@rm    -f  build

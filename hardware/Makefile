@@ -18,31 +18,20 @@
 ############################################################################
 ############################################################################
 
-export BUILD_NAME=HDK_build
-export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
-export DONUT_HDL_CORE=$(DONUT_HARDWARE_ROOT)/hdl/core
-export DONUT_SIM_CORE=$(DONUT_HARDWARE_ROOT)/sim/core
-
-SNAP_CONFIG_FILES=$(DONUT_HDL_CORE)/psl_fpga.vhd \
-		$(DONUT_HDL_CORE)/psl_accel.vhd \
-		$(DONUT_HDL_CORE)/psl_accel_types.vhd \
-		$(DONUT_SIM_CORE)/top.sv \
-		$(DONUT_HDL_CORE)/donut.vhd \
-		$(DONUT_HDL_CORE)/donut_types.vhd
-PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
-
-CE_PARMS := -p -clone
 
 ifeq "$(FPGACARD)" "KU3"
 export DDR3_USED=$(SDRAM_USED)
 export DDR4_USED=FALSE
 export DDRI_USED=$(SDRAM_USED)
+export NVME_USED=FALSE
+HDK_MODE="HDK"
 endif
 
 ifeq "$(FPGACARD)" "FGT"
 export DDR3_USED=FALSE
 export DDR4_USED=$(SDRAM_USED)
 export DDRI_USED=$(SDRAM_USED)
+HDK_MODE="noHDK"
 endif
 
 ifndef BRAM_USED
@@ -55,20 +44,25 @@ export SDRAM_USED=FALSE
 export DDRI_USED=TRUE
 endif
 
+ifndef NVME_USED
+export NVME_USED=FALSE
+endif
+
 ifndef MSG_LEVEL
 export MSG_LEVEL=-quiet
 endif
 
-
-.PHONY: all image model check_donut_settings action_config create_environment copy clean config gitclean patch_version patch_vhd_files patch_tcl_files
-
-all: config model image
+.PHONY: check_donut_settings config image model clean gitclean
 
 check_donut_settings:
 	@if [ ! -d "$(DONUT_HARDWARE_ROOT)" ]; then \
 		echo "DONUT_HARDWARE_ROOT does not point to a directory."; \
 		echo "Please source donut_settings before calling make!"; \
-                exit 1; \
+		exit 1; \
+	fi
+	@if [[ $(SIMULATOR) != "irun" && $(SIMULATOR) != "xsim" && $(SIMULATOR) != "questa" ]];then \
+		echo "unknown simulator=$SIMULATOR"; \
+		exit 1; \
 	fi
 	@if [ -z `which git 2> /dev/null` ]; then \
 		echo "The SNAP framework make process relies on git."; \
@@ -92,85 +86,9 @@ check_donut_settings:
 		exit 1; \
 	fi
 
-create_environment:
-	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment $(CE_PARMS)
-	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
+config: check_donut_settings
+	@$(MAKE) -f Makefile_$(HDK_MODE) $@
 
-copy $(BUILD_DIR)/psl_fpga.tcl:
-	@echo -e "\t[COPY] psl build env"; cp -a $(HDK_ROOT) $(BUILD_DIR)
-	@echo -e "\t[CONFIG] setup psl_fpga.tcl"
-	@sed -i 's/run.oocSynth.*1/run.oocSynth 0/' $(BUILD_DIR)/psl_fpga.tcl
-	@sed -i 's/run.oocImpl.*1/run.oocImpl 0/'   $(BUILD_DIR)/psl_fpga.tcl
-	@sed -i 's/run.topImpl.*0/run.topImpl 1/'   $(BUILD_DIR)/psl_fpga.tcl
-	@sed -i 's/run.topSynth.*0/run.topSynth 1/' $(BUILD_DIR)/psl_fpga.tcl
-	@if [ $(FPGACARD) = "KU3" ]; then ln -f -s $(DONUT_HDL_CORE)/psl_fpga_ku3.vhd_source $(DONUT_HDL_CORE)/psl_fpga.vhd_source; fi
-	@if [ $(FPGACARD) = "FGT" ]; then ln -f -s $(DONUT_HDL_CORE)/psl_fpga_fgt.vhd_source $(DONUT_HDL_CORE)/psl_fpga.vhd_source; fi
-	@echo "vhdl work ../hdl/core/psl_fpga.vhd" > $(BUILD_DIR)/Sources/prj/top.prj
-	@ln -s $(BUILD_NAME) build
+image model clean gitclean:
+	@$(MAKE) -f Makefile_$(HDK_MODE) $@
 
-$(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
-	@echo -e "\t[CREATE] $(BUILD_DIR)/Sources/prj/afu.prj"
-	@cut -d "," -f "2 3 4" $(PROJECT_COMPILE_LIST) | sed 's/, */ /g' | \
-		grep -E "(\/hdl\/|\/action_examples\/)" | \
-		grep -Ev '\/ip\/|action_auto_|viv_project' | \
-                sed 's/ ..\/..\// ..\//' | sed 's/ ..\/..\// ..\//' | sed 's/ ..\/..\// ..\//' |\
-		grep -v ddr3_dimm | grep -v top.sv  > $(BUILD_DIR)/Sources/prj/afu.prj;
-	@echo -e "\t[CREATE] $@"
-	@cat $(BUILD_DIR)/Sources/prj/top.prj $(BUILD_DIR)/Sources/prj/afu.prj > $(BUILD_DIR)/Sources/prj/psl_fpga.prj
-
-%.vhd: %.vhd_source
-	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
-
-%.sv: %.sv_source
-	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
-
-action_config:
-	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
-		echo -e "Executing $(ACTION_ROOT)/action_config.sh"; \
-		cd $(ACTION_ROOT) && ./action_config.sh; \
-	fi
-
-patch_tcl_files:
-	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
-
-patch_version:
-	@echo "PATCH SNAP version and build date registers"; \
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HDL_CORE) donut.vhd
-
-config: check_donut_settings $(BUILD_DIR)/psl_fpga.tcl $(SNAP_CONFIG_FILES) action_config create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_version
-	@echo -e "\t[CONFIG] done `date`"
-
-model: $(SNAP_CONFIG_FILES) patch_version
-	@echo -e "\t[BUILD MODEL] start `date`"
-	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
-	@echo -e "\t[BUILD MODEL] done `date`"
-
-image: $(SNAP_CONFIG_FILES) patch_version
-	@echo -e "\t[BUILD IMAGE (BIT)] start `date`"
-	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
-	@if [ "`vivado -version |head -n1  |cut -c 9-12`" = "2015" ] && [ $(DDR3_USED) = "TRUE" ] && [ $(BRAM_USED) = "FALSE" ]; then\
-	  cd $(DONUT_HARDWARE_ROOT)/setup && vivado -mode batch -source AR_64051.tcl -notrace;\
-	else\
-	  cd $(BUILD_DIR) && vivado -mode batch -source write_bitstream.tcl;\
-	  mv $(BUILD_DIR)/Implement/psl_fpga/psl_fpga.bit $(BUILD_DIR)/psl_fpga_flash.bit;\
-	fi
-	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Implement/psl_fpga/reports/psl_fpga_timing_summary.rpt | egrep -v "^$|^\-\-"
-	@echo -e "\t[BUILD IMAGE (BIN)] done  `date`"
-
-clean:
-	@echo -e "\t[CLEAN] build environment";
-	@rm -r -f  $(BUILD_DIR)
-	@rm    -f  build
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
-	@rm -f     $(SNAP_CONFIG_FILES)
-	@rm -f     ./setup/*.log
-	@rm -f     ./setup/*.jou
-
-gitclean:
-	@echo -e "\t[GITCLEAN] cleaning and resetting donut git";
-	git clean -f -d -x
-	git reset --hard
