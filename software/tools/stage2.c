@@ -150,7 +150,7 @@ static uint32_t msec_2_ticks(int msec)
 #ifndef _SIM_
 	fpga_ticks = fpga_ticks * 1000;
 #endif
-	printf(" fpga Ticks = %d (0x%x)", fpga_ticks, fpga_ticks);
+	VERBOSE1(" fpga Ticks = %d (0x%x)", fpga_ticks, fpga_ticks);
 	return fpga_ticks;
 }
 
@@ -578,11 +578,11 @@ int main(int argc, char *argv[])
 	switch (action) {
 	case 1:
 		for(delay = start_delay; delay <= end_delay; delay += step_delay) {
-			rc = get_action(dn, attach_flags, 5*timeout + delay);
+			rc = get_action(dn, attach_flags, 5*timeout + delay/1000);
 			if (0 != rc)
 				goto __exit1;
 			action_count(dn, delay);
-			rc = action_wait_idle(dn, timeout + delay, &td, action_irq);
+			rc = action_wait_idle(dn, timeout + delay/1000, &td, action_irq);
 			print_time(td, 0);
 			dnut_detach_action(dn);
 			if (0 != rc) break;
