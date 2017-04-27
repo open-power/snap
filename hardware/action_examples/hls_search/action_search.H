@@ -52,14 +52,16 @@ typedef struct table_o_s {
  * To keep the address at the right location, Data should always be 108 bytes
  */
 typedef struct {
-        dnut_addr in;   /* input data : 128 bits*/
-        dnut_addr out;  /* offset table : 128 bits*/
-        dnut_addr pattern;  /* offset table : 128 bits*/
+        dnut_addr src_text1;   /* input data : 128 bits*/
+        dnut_addr src_text2;   /* input data : 128 bits*/
+        dnut_addr ddr_text1;   /* input data : 128 bits*/
+        dnut_addr ddr_text2;   /* input data : 128 bits*/
+        dnut_addr res_text;    /* output table : 128 bits*/
         snapu64_t nb_of_occurrences;
         snapu64_t next_input_address;
         snapu32_t step;
         snapu32_t method;
-        ap_uint<288> unused; /* mandatory to keep output register at the right address*/
+        ap_uint<32> unused; /* mandatory to keep output register at the right address*/
 } DATA_TS; // DATA = 108 Bytes = 864 bits
 
 //---------------------------------------------------------------------
@@ -78,7 +80,9 @@ enum {
         BM     = 0x5,
         RK     = 0x6
 };
-
+#define HOST2DDR 0
+#define DDR2HOST 1
+ 
 int Nsearch  (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
 int KMPsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
 int FAsearch (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);

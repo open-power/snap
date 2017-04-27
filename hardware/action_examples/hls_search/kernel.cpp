@@ -29,6 +29,68 @@
  *  #121 can be circumvented by replacing lines (151 and) 154 by 155
  * ----------------------------------------------------------------------------
  */
+static snapu32_t read_bulk ( snap_membus_t *src_mem,
+                            snapu64_t      byte_address,
+                            snapu32_t      byte_to_transfer,
+                            snap_membus_t *buffer)
+{
+
+    snapu32_t xfer_size;
+    xfer_size = MIN(byte_to_transfer, (snapu32_t) MAX_NB_OF_BYTES_READ);
+    memcpy(buffer, (snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)), xfer_size);
+    return xfer_size;
+}
+
+static snapu32_t write_bulk (snap_membus_t *tgt_mem,
+                            snapu64_t      byte_address,
+                            snapu32_t      byte_to_transfer,
+                            snap_membus_t *buffer)
+{
+    snapu32_t xfer_size;
+    xfer_size = MIN(byte_to_transfer, (snapu32_t)  MAX_NB_OF_BYTES_READ);
+    memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), buffer, xfer_size);
+    return xfer_size;
+}
+
+static void memcopy_table(snap_membus_t  *din_gmem,
+                    snap_membus_t  *dout_gmem,
+                    snap_membus_t  *d_ddrmem,
+                    snapu64_t       source_address ,
+                    snapu64_t       target_address,
+                    snapu32_t       total_bytes_to_transfer,
+                    snap_bool_t     direction)
+{
+    //direction == 0: Copy from Host to DDR
+    //direction == 1: Copy from DDR to Host
+    
+    //source_address and target_address are byte addresses.
+    snapu64_t address_xfer_offset = 0;
+    snap_membus_t   buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];
+
+
+    snapu32_t  left_bytes = total_bytes_to_transfer;
+    snapu32_t  copy_bytes;
+
+
+L_COPY: while (left_bytes > 0)
+    {
+        if(direction == HOST2DDR)
+        {
+            copy_bytes = read_bulk (din_gmem, source_address + address_xfer_offset,  left_bytes, buf_gmem);
+                         write_bulk (d_ddrmem, target_address + address_xfer_offset,  copy_bytes, buf_gmem);
+        }
+        else
+        {
+            copy_bytes = read_bulk  (d_ddrmem, source_address + address_xfer_offset, left_bytes, buf_gmem);
+                         write_bulk (dout_gmem, target_address + address_xfer_offset, copy_bytes, buf_gmem);
+
+        }
+
+        left_bytes -= copy_bytes;
+        address_xfer_offset += MAX_NB_OF_BYTES_READ;
+    } // end of L_COPY
+
+}
 
 // WRITE DATA TO MEMORY
 short write_burst_of_data_to_mem(snap_membus_t *dout_gmem, snap_membus_t *d_ddrmem,
@@ -205,9 +267,9 @@ static void process_action(snap_membus_t *din_gmem,
   snapu32_t Step;
 
   /* read pattern */
-  PatternAddress = Action_Register->Data.pattern.address;
-  PatternSize    = Action_Register->Data.pattern.size;
-  PatternType    = Action_Register->Data.pattern.type;
+  PatternAddress = Action_Register->Data.ddr_text1.address;
+  PatternSize    = Action_Register->Data.ddr_text1.size;
+  PatternType    = Action_Register->Data.ddr_text1.type;
 
  /* FIXME : let's first consider that pattern is less than a data width word */
   if (PatternSize > PATTERN_SIZE) rc = 1;
@@ -220,9 +282,9 @@ static void process_action(snap_membus_t *din_gmem,
 
   /* read text in */
   // byte address received need to be aligned with port width
-  InputAddress = Action_Register->Data.in.address;
-  InputSize    = Action_Register->Data.in.size;
-  InputType    = Action_Register->Data.in.type,
+  InputAddress = Action_Register->Data.ddr_text2.address;
+  InputSize    = Action_Register->Data.ddr_text2.size;
+  InputType    = Action_Register->Data.ddr_text2.type,
   Method       = Action_Register->Data.method,
   Step         = Action_Register->Data.step,
 
@@ -301,11 +363,59 @@ void hls_action(snap_membus_t *din_gmem,
                 return;
                 break;
         default:
-                process_action(din_gmem, dout_gmem, d_ddrmem, Action_Register);
                 break;
 
         }
+    if(Action_Register->Data.step == 1) // SW + HW : copy all data from Host to DDR
+    {
+        //Copy from Host to DDR
+        // Pattern
+        memcopy_table(din_gmem, dout_gmem, d_ddrmem,
+                      Action_Register->Data.src_text1.address, 
+                      Action_Register->Data.ddr_text1.address,
+                      Action_Register->Data.src_text1.size, HOST2DDR);
+        // Text
+        memcopy_table(din_gmem, dout_gmem, d_ddrmem,
+                      Action_Register->Data.src_text2.address, 
+                      Action_Register->Data.ddr_text2.address,
+                      Action_Register->Data.src_text2.size, HOST2DDR);
+    }
+
+    else if(Action_Register->Data.step == 2) // SW : copy source from DDR to Host
+    {
+        //Copy from DDR to Host
+        // Pattern
+        memcopy_table(din_gmem, dout_gmem, d_ddrmem,
+                      Action_Register->Data.ddr_text1.address, 
+                      Action_Register->Data.src_text1.address,
+                      Action_Register->Data.ddr_text1.size, DDR2HOST);
+	   // Text
+        memcopy_table(din_gmem, dout_gmem, d_ddrmem,
+                      Action_Register->Data.ddr_text2.address, 
+                      Action_Register->Data.src_text2.address,
+                      Action_Register->Data.ddr_text2.size, DDR2HOST);
+    }
+
+    else if(Action_Register->Data.step == 3) // HW : search processing
+    {
+        process_action(din_gmem, dout_gmem, d_ddrmem, Action_Register);
+
+    }
+    else if (Action_Register->Data.step == 5) // HW : copy result array from DDR to Host
+    {
+        //Copy Result from DDR to Host.
+        memcopy_table(din_gmem, dout_gmem, d_ddrmem,
+                      Action_Register->Data.ddr_text1.address, 
+                      Action_Register->Data.res_text.address,
+                      Action_Register->Data.res_text.size, DDR2HOST);
+    }
+
+    Action_Register->Control.Retc = RET_CODE_OK;
+    //result_size = check_table2(d_ddrmem, Action_Register);
+    //Action_Register->Data.res_text.size = result_size;
+    return;
 }
+
 
 //-----------------------------------------------------------------------------
 //--- TESTBENCH ---------------------------------------------------------------
@@ -352,30 +462,57 @@ int main(void)
     }
     fclose(fp);
 
-    Action_Register.Data.in.address = 0;
-    Action_Register.Data.in.size = (m*BPERDW) + k + 1;
-    Action_Register.Data.in.type = 0x0000;
-    Action_Register.Data.out.address = 0;
-    Action_Register.Data.out.size = 12;
-    Action_Register.Data.out.type = 0x0000;
-    Action_Register.Data.pattern.address = 0;
-    Action_Register.Data.pattern.size = 3; // Take 3 first characters of din_gmem as pattern
-    Action_Register.Data.pattern.type = 0x0000;
+    Action_Register.Data.src_text1.address = 0;
+    Action_Register.Data.src_text1.size = 3; // Take 3 first characters of din_gmem as pattern
+    Action_Register.Data.src_text1.type = 0x0000;
+    Action_Register.Data.ddr_text1.address = 0;
+    Action_Register.Data.ddr_text1.size = 3; // Take 3 first characters of din_gmem as pattern
+    Action_Register.Data.ddr_text1.type = 0x0000;
 
+    Action_Register.Data.src_text2.address = 0;
+    Action_Register.Data.src_text2.size = (m*BPERDW) + k + 1;
+    Action_Register.Data.src_text2.type = 0x0000;    Action_Register.Data.ddr_text2.address = 0;
+    Action_Register.Data.ddr_text2.address = 0;
+    Action_Register.Data.ddr_text2.size = (m*BPERDW) + k + 1;
+    Action_Register.Data.ddr_text2.type = 0x0000;
+
+    Action_Register.Data.res_text.address = 0;
+    Action_Register.Data.res_text.size = 12;
+    Action_Register.Data.res_text.type = 0x0000;
 
     // get Action_Register values
     Action_Register.Control.flags = 0x0;
     hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
 
     // process the action
-    Action_Register.Data.method = 0; //  method
-    Action_Register.Control.flags = 0x1;
-        hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
+    Action_Register.Data.method = NAIVE; //  method
+    Action_Register.Control.flags = 0x1; // mandatory to have flags !=0 to have processing start
 
+    // SW + HW : copy all data from Host to DDR
+    Action_Register.Data.step = 1;
+    printf("--Step 1--SW + HW : copy all data from Host to DDR--");
+    hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
+    if(Action_Register.Control.Retc == RET_CODE_FAILURE) printf("Error in step 1\n"); else printf("OK\n");
+
+    // SW : copy source from DDR to Host
+    Action_Register.Data.step = 2;
+    printf("--Step 2--SW : copy source from DDR to Host--");
+    hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
+    if(Action_Register.Control.Retc == RET_CODE_FAILURE) printf("Error in step 2\n"); else printf("OK\n");
+
+    // HW : search processing
+    Action_Register.Data.step = 3;
+    printf("--Step 3--HW : search processing--\n");
+    hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
     nb_of_occurrences = Action_Register.Data.nb_of_occurrences;
-
-    //nb_of_occurrences = search(pat, strlen(pat), txt, strlen(txt));
+    if(Action_Register.Control.Retc == RET_CODE_FAILURE) printf("Error in step 3\n"); else printf("--Step 3--OK\n");
     printf("Search : %d occurrences found\n=============================\n ", nb_of_occurrences);
+
+    // HW : copy result array from DDR to Host
+    Action_Register.Data.step = 5;
+    printf("--Step 5--HW : copy result array from DDR to Host--");
+    hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
+    if(Action_Register.Control.Retc == RET_CODE_FAILURE) printf("Error in step 5\n"); else printf("OK\n");
 
     if (Action_Register.Control.Retc == RET_CODE_FAILURE) {
                             printf(" ==> RETURN CODE FAILURE <==\n");
