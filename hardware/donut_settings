@@ -107,7 +107,7 @@ while [ -z "$SETUP_DONE" ]; do
     echo "Setting FPGACARD               to  \"$FPGACARD\""
   else
     echo "FPGACARD                is set to: \"$FPGACARD\""
-    if [[ ($FPGACARD != "KU3") && ($FPGACARD != "FGT") ]]; then 
+    if [[ ($FPGACARD != "KU3") && ($FPGACARD != "FGT") ]]; then
       echo
       echo "### ERROR ### FPGACARD=$FPGACARD is not supported"
       break
@@ -145,7 +145,7 @@ while [ -z "$SETUP_DONE" ]; do
   else
     echo "SIMULATOR               is set to: \"$SIMULATOR\""
   fi
- 
+
   if [ -z "$NUM_OF_ACTIONS" ]; then
     export NUM_OF_ACTIONS=1
     echo "Setting NUM_OF_ACTIONS         to  \"$NUM_OF_ACTIONS\""
@@ -165,7 +165,7 @@ while [ -z "$SETUP_DONE" ]; do
     echo "Variable NVME_USED      is not set. Will default to  \"FALSE\""
   else
     echo "NVME_USED               is set to: \"$NVME_USED\""
-    if [[ $NVME_USED = "TRUE"  && $FPGACARD = "KU3" ]]; then 
+    if [[ $NVME_USED = "TRUE"  && $FPGACARD = "KU3" ]]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of NVME_USED=$NVME_USED on KU3 is conflicting!"
     fi
   fi
@@ -205,7 +205,7 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
   if [ -z "$DENALI" ]; then
-    if [[ $NVME_USED = "TRUE" ]]; then 
+    if [[ $NVME_USED = "TRUE" ]]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of NVME_USED=$NVME_USED but DENALI not set!"
     fi
   else
@@ -220,3 +220,4 @@ while [ -z "$SETUP_DONE" ]; do
 
   SETUP_DONE="1"
 done
+if [[ "$SETUP_DONE" == "1" ];then return 0;else return 1;fi
