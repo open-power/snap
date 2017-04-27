@@ -220,4 +220,4 @@ while [ -z "$SETUP_DONE" ]; do
 
   SETUP_DONE="1"
 done
-if [[ "$SETUP_DONE" == "1" ];then return 0;else return 1;fi
+if [[ "$SETUP_DONE" == "1" ]];then return 0;else return 1;fi
