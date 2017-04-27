@@ -32,7 +32,7 @@ SNAP_CONFIG_FILES=$(DONUT_HDL_CORE)/psl_fpga.vhd \
 		  $(DONUT_HDL_CORE)/donut_types.vhd
 
 
-.PHONY: all image model action_config create_environment copy clean config gitclean patch_version xpr_image snap_config
+.PHONY: all image model action_config create_environment copy config patch_version xpr_image snap_config
 
 all: config model image
 
@@ -156,34 +156,3 @@ questa:
 	fi
 	cd $(DONUT_HARDWARE_ROOT)/sim/questa && ./top.sh >>../../compile_$(SIMULATOR).log 2>&1
 
-clean: 
-	@echo -e "\t[CLEAN.............] build environment";
-	@rm -r -f  $(BUILD_DIR)
-	@rm    -f  build
-	@echo -e "\t                     vivado project";
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
-	@echo -e "\t                     IPs";
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
-	@echo -e "\t                     sim files";
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project_tmp
-	@echo -e "\t                     NVMe files";
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/hdl/nvme/component.xml
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/hdl/nvme/xgui
-	@rm -f     $(SNAP_CONFIG_FILES)
-	@rm -f     ./vivado*.log ./*/vivado*.log
-	@rm -f     ./vivado*.jou ./*/vivado*.jou
-	@echo -e "\t                     Software";
-	@make -C $(DONUT_SOFTWARE_ROOT)       clean >/dev/null
-	@echo -e "\t                     PSLSE";
-	@make -C $(PSLSE_ROOT)/afu_driver/src clean >/dev/null
-	@make -C $(PSLSE_ROOT)/pslse          clean >/dev/null
-	@make -C $(PSLSE_ROOT)/libcxl         clean >/dev/null
-	@make -C $(PSLSE_ROOT)/debug          clean >/dev/null
-
-gitclean:
-	@echo -e "\t[GITCLEAN] cleaning and resetting donut git";
-	git clean -f -d -x
-	git reset --hard

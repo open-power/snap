@@ -32,7 +32,7 @@ SNAP_CONFIG_FILES=$(DONUT_HDL_CORE)/psl_fpga.vhd \
 PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 
-.PHONY: all image model action_config create_environment copy clean config gitclean patch_version patch_vhd_files patch_tcl_files
+.PHONY: all image model action_config create_environment copy config patch_version patch_vhd_files patch_tcl_files
 
 all: config model image
 
@@ -102,20 +102,3 @@ image: $(SNAP_CONFIG_FILES) patch_version
 	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Implement/psl_fpga/reports/psl_fpga_timing_summary.rpt | egrep -v "^$|^\-\-"
 	@echo -e "\t[BUILD IMAGE (BIN)] done  `date`"
 
-clean:
-	@echo -e "\t[CLEAN] build environment";
-	@rm -r -f  $(BUILD_DIR)
-	@rm    -f  build
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/viv_project
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/ip
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/ies
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/xsim
-	@rm -r -f  $(DONUT_HARDWARE_ROOT)/sim/questa
-	@rm -f     $(SNAP_CONFIG_FILES)
-	@rm -f     ./setup/*.log
-	@rm -f     ./setup/*.jou
-
-gitclean:
-	@echo -e "\t[GITCLEAN] cleaning and resetting donut git";
-	git clean -f -d -x
-	git reset --hard

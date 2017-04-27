@@ -52,7 +52,7 @@ ifndef MSG_LEVEL
 export MSG_LEVEL=-quiet
 endif
 
-.PHONY: check_donut_settings config image model clean gitclean
+.PHONY: clean gitclean check_donut_settings config image model clean gitclean
 
 check_donut_settings:
 	@if [ ! -d "$(DONUT_HARDWARE_ROOT)" ]; then \
@@ -89,6 +89,30 @@ check_donut_settings:
 config: check_donut_settings
 	@$(MAKE) -f Makefile_$(HDK_MODE) $@
 
-image model clean gitclean:
+image model:
 	@$(MAKE) -f Makefile_$(HDK_MODE) $@
 
+clean: 
+	@echo -e "\t[CLEAN.............] build environment";
+	@rm -r -f  build*
+	@echo -e "\t                     vivado project";
+	@rm -r -f  viv_project*
+	@echo -e "\t                     IPs";
+	@rm -r -f  ip
+	@echo -e "\t                     sim files";
+	@rm -r -f  sim/ies
+	@rm -r -f  sim/xsim
+	@rm -r -f  sim/questa
+	@rm -r -f  hdl/nvme/component.xml
+	@rm -r -f  hdl/nvme/xgui
+	@echo -e "\t                     log files";
+	@rm -f     ./compile*.log ./*/compile*.log
+	@rm -f     ./vivado*.log  ./*/vivado*.log
+	@rm -f     ./vivado*.jou  ./*/vivado*.jou
+	@echo -e "\t[CLEAN.............] done";
+
+gitclean:
+	@echo -e "\t[GITCLEAN..........] cleaning and resetting donut git";
+	git clean -f -d -x
+	git reset --hard
+	@echo -e "\t[GITCLEAN..........] done";
