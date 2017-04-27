@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "keccak.H"
+#include "sha3.H"
 #include "action_sponge.H"
 
 #define HASH_SIZE 64
@@ -32,14 +32,51 @@
 #  define CHANNELS 16
 #endif
 
+//Casting from uint8_t to uint64_t
+void cast_uint8_to_uint64_W8(uint8_t st_in[200], uint64_t st[25])
+{
+    uint64_t mem;
+    int i, j;
+    const int VECTOR_SIZE = 8;
+
+    for( i = 0; i < VECTOR_SIZE; i++ ) {
+#pragma HLS UNROLL
+          mem = 0;
+          for( j = 8; j >= 0; j--) {
+#pragma HLS UNROLL
+                  mem = (mem << 8);
+                  //mem(7, 0) = st_in[j+i*8];
+                  mem = (mem & 0xFFFFFFFFFFFFFF00 ) | st_in[j+i*8];
+          }
+          st[i] = mem;
+    }
+}
+//Casting from uint64_t to uint8_t
+void cast_uint64_to_uint8_W8(uint64_t st_in[25], uint8_t st_out[200])
+{
+    uint64_t tmp = 0;
+    int i, j;
+    const int VECTOR_SIZE = 8;
+
+    for( i = 0; i < VECTOR_SIZE; i++ ) {
+#pragma HLS UNROLL
+          tmp = st_in[i];
+          for( j = 0; j < 8; j++ ) {
+#pragma HLS UNROLL
+                  st_out[i*8+j] = (uint8_t)tmp;
+                  tmp = (tmp >> 8);
+          }
+    }
+}
 //uint64_t sponge(const uint64_t rank)
 uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
 {
   uint64_t magic[8] = {0x0123456789abcdeful,0x13579bdf02468aceul,
-		       0xfdecba9876543210ul,0xeca86420fdb97531ul,
+                       0xfdecba9876543210ul,0xeca86420fdb97531ul,
                        0x571e30cf4b29a86dul,0xd48f0c376e1b29a5ul,
-		       0xc5301e9f6b2ad748ul,0x3894d02e5ba71c6ful};
+                       0xc5301e9f6b2ad748ul,0x3894d02e5ba71c6ful};
   uint64_t odd[8],even[8],result;
+  uint8_t odd8b[64],even8b[64];
   int i,j;
   int rnd_nb;
 
@@ -53,7 +90,13 @@ uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
   }
 
   //keccak((uint8_t*)even,HASH_SIZE,(uint8_t*)odd,HASH_SIZE);
-  keccak((uint64_t*)even,HASH_SIZE,(uint64_t*)odd,HASH_SIZE);
+//  keccak((uint64_t*)even,HASH_SIZE,(uint64_t*)odd,HASH_SIZE);
+//  sha3(msg, msg_len, buf, sha_len);
+
+   cast_uint64_to_uint8_W8(even, even8b);
+   sha3((uint8_t*)even8b,HASH_SIZE,(uint8_t*)odd8b,HASH_SIZE);
+   // FIXME - this double conversion need to be optimized
+   cast_uint8_to_uint64_W8(odd8b, odd);
 
    for(rnd_nb=0;rnd_nb<NB_ROUND;rnd_nb++) {
 #pragma HLS UNROLL factor=4
@@ -65,7 +108,12 @@ uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
     }
 
     //keccak((uint8_t*)odd,HASH_SIZE,(uint8_t*)even,HASH_SIZE);
-    keccak((uint64_t*)odd,HASH_SIZE,(uint64_t*)even,HASH_SIZE);
+    //keccak((uint64_t*)odd,HASH_SIZE,(uint64_t*)even,HASH_SIZE);
+    cast_uint64_to_uint8_W8(odd, odd8b);
+    sha3((uint8_t*)odd8b,HASH_SIZE,(uint8_t*)even8b,HASH_SIZE);
+
+    // FIXME - this double conversion need to be optimized
+    cast_uint8_to_uint64_W8(even8b, even);
 
      for(j=0;j<4;j++) {
 #pragma HLS UNROLL
@@ -74,7 +122,11 @@ uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
     }
 
     //keccak((uint8_t*)even,HASH_SIZE,(uint8_t*)odd,HASH_SIZE);
-    keccak((uint64_t*)even,HASH_SIZE,(uint64_t*)odd,HASH_SIZE);
+    //keccak((uint64_t*)even,HASH_SIZE,(uint64_t*)odd,HASH_SIZE);
+    cast_uint64_to_uint8_W8(even, even8b);
+
+    sha3((uint8_t*)even8b,HASH_SIZE,(uint8_t*)odd8b,HASH_SIZE);
+    cast_uint8_to_uint64_W8(odd8b, odd);
   }
   result=0;
   
@@ -237,20 +289,28 @@ int main(void)
 		uint64_t checksum;
 	} arguments_t;
 
+	/* NEW CRC BASED ON A RUN WITH NEW SHA3 ALGORITHM */
 	static arguments_t sequence[] = {
-		{ 0, /*nb_pe =*/  1, /*expected checksum =*/ 0x948dd5b0109342d4 },
-		{ 0, /*nb_pe =*/  2, /*expected checksum =*/ 0x0bca19b17df64085 },
-		{ 1, /*nb_pe =*/  2, /*expected checksum =*/ 0x9f47cc016d650251 },
-		{ 0, /*nb_pe =*/  4, /*expected checksum =*/ 0x7f13a4a377a2c4fe },
-		{ 1, /*nb_pe =*/  4, /*expected checksum =*/ 0xee0710b96b0748fb },
-		{ 2, /*nb_pe =*/  4, /*expected checksum =*/ 0x74d9bd120a54847b },
-		{ 3, /*nb_pe =*/  4, /*expected checksum =*/ 0x7140dcb806624aaa },
+		{ 0, /*nb_pe =*/  1, /*expected checksum =*/ 0x9ca5f5a87a61a0e0 },
+		{ 0, /*nb_pe =*/  2, /*expected checksum =*/ 0xf58550c966d6efb5 },
+		{ 1, /*nb_pe =*/  2, /*expected checksum =*/ 0x6920a5611cb74f55 },
+		{ 0, /*nb_pe =*/  4, /*expected checksum =*/ 0x2834f2b78de3f0f1 },
+		{ 1, /*nb_pe =*/  4, /*expected checksum =*/ 0x8140816edeb7ef50 },
+		{ 2, /*nb_pe =*/  4, /*expected checksum =*/ 0xddb1a27eeb351f44 },
+		{ 3, /*nb_pe =*/  4, /*expected checksum =*/ 0xe860240fc200a005 },
 	};
 
 	for(i=0; i < 7; i++) {
 		Action_Register.Data.pe = sequence[i].pe;
 		Action_Register.Data.nb_pe = sequence[i].nb_pe;
 
+		// Get Config registers
+		Action_Register.Control.flags = 0;
+		hls_action(din_gmem, dout_gmem, d_ddrmem,
+				    &Action_Register, &Action_Config);
+
+		// Process the action
+		Action_Register.Control.flags = 1;
 		hls_action(din_gmem, dout_gmem, d_ddrmem,
 				    &Action_Register, &Action_Config);
 
