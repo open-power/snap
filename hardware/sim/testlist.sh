@@ -145,17 +145,17 @@
         for strt in 0x1000 0x2000;do      # start adr
         for iter in 1 2 3;do              # number of blocks
         for bsize in 64 0x1000; do        # block size
-          let end=${strt}+${iter}*${bsize}
-          t="$DONUT_ROOT/software/tools/stage2_ddr -s${strt} -e${end} -b${bsize} -i${iter} -t200";echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+          let end=${strt}+${iter}*${bsize}; to=$((iter*bsize/200+10))                           # rough timeout dependent on filesize
+          t="$DONUT_ROOT/software/tools/stage2_ddr -s${strt} -e${end} -b${bsize} -i${iter} -t$to";echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
         done
         done
         done
         #### use memset in host or in fpga memory, stay under 512k for BRAM
         t="$DONUT_ROOT/software/tools/stage2_set -h"                                            ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
-        for beg in 0 1 11 63 64;do         # start adr
-        for size in 1 7 4097; do           # block size to copy
-          t="$DONUT_ROOT/software/tools/stage2_set -H -b${beg} -s${size} -p${size} -t200"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-          t="$DONUT_ROOT/software/tools/stage2_set -F -b${beg} -s${size} -p${size} -t200"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+        for beg in 0 1 11 63 64;do                                    # start adr
+        for size in 1 7 4097; do  to=$((size/20+100))                 # block size to copy, rough timeout dependent on filesize
+          t="$DONUT_ROOT/software/tools/stage2_set -H -b${beg} -s${size} -p${size} -t$to"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+          t="$DONUT_ROOT/software/tools/stage2_set -F -b${beg} -s${size} -p${size} -t$to"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
         done
         done
       fi
@@ -216,16 +216,13 @@
 
     if [[ "$t0l" == "10141002" || "${env_action}" == "hls_hashjoin"* ]];then echo -e "$del\ntesting demo_hashjoin"
       t="$DONUT_ROOT/software/examples/demo_hashjoin -h"                                        ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
-      t="$DONUT_ROOT/software/examples/demo_hashjoin       -t300 -vvv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 1m26s
-      t="$DONUT_ROOT/software/examples/demo_hashjoin -T1   -t300 -vvv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #   49s
-      t="$DONUT_ROOT/software/examples/demo_hashjoin -T15  -t300 -vvv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 1m17s
-#     t="$DONUT_ROOT/software/examples/demo_hashjoin -T257 -t600 -vvv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 8m51s
-      t="$DONUT_ROOT/software/examples/demo_hashjoin -Q1   -t300 -vvv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #   25s
-      t="$DONUT_ROOT/software/examples/demo_hashjoin -Q5   -t300 -vvv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #   33s
-#     t="$DONUT_ROOT/software/examples/demo_hashjoin -Q8   -t300 -vvv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #   40s
-#     t="$DONUT_ROOT/software/examples/demo_hashjoin -Q16  -t300 -vvv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 1m02s
-      t="$DONUT_ROOT/software/examples/demo_hashjoin -Q32  -t300 -vvv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 1m45s
-#     t="$DONUT_ROOT/software/examples/demo_hashjoin -Q257 -t300 -vvv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #e too large
+      t="$DONUT_ROOT/software/examples/demo_hashjoin           -t300 -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 1m26s
+      for vart in 1 15 257;do to=$((vart*20+50))                                                        # rough timeout dependent on filesize
+        t="$DONUT_ROOT/software/examples/demo_hashjoin -T$vart -t$to -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #   49s
+      done
+      for varq in 1 5 8 16 32 257;do to=$((varq*20+50))                                                 # rough timeout dependent on filesize
+        t="$DONUT_ROOT/software/examples/demo_hashjoin -Q$vart -t$to -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #   49s
+      done
     fi # hls_hashjoin
 
     if [[ "$t0l" == "10141003" || "${env_action}" == "hls_search"* ]];then echo -e "$del\ntesting demo_search"
