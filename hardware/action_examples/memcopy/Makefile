@@ -14,23 +14,17 @@
 # limitations under the License.
 #
 
-subdirs += $(wildcard hls_*)
-hardware_subdirs += memcopy
+vhd_srcs=$(wildcard *.vhd_source)
+vhd_files=$(vhd_srcs:.vhd_source=.vhd)
 
-all: $(subdirs)
-
-# Only build if the subdirectory is really existent
-.PHONY: $(subdirs)
-$(subdirs):
-	@if [ -d $@ ]; then				\
-		$(MAKE) -C $@ || exit 1;		\
-	fi
+all config:
 
 clean:
-	@for dir in $(subdirs) $(hardware_subdirs); do	\
-		if [ -d $$dir ]; then			\
-			$(MAKE) -C $$dir $@ || exit 1;	\
-		fi					\
-	done
-	@find . -depth -name '*~'  -exec rm -rf '{}' \; -print
-	@find . -depth -name '.#*' -exec rm -rf '{}' \; -print
+	$(RM) $(vhd_files)
+
+#
+# FIXME Consider moving the functionality from action_config.sh into
+#      this Makefile. This also allows to define a proper clean rule
+#      such that the directory gets properly cleaned up and git status
+#      shows not the generated files.
+#
