@@ -32,18 +32,17 @@
 #  define CHANNELS 16
 #endif
 
-//Casting from uint8_t to uint64_t
-void cast_uint8_to_uint64_W8(uint8_t st_in[200], uint64_t st[25])
+//Casting from uint8_t to uint64_t => 89 FF - 83 LUT - II=34 - Latency=33
+void cast_uint8_to_uint64_W8(uint8_t st_in[64], uint64_t st[8])
 {
     uint64_t mem;
     int i, j;
     const int VECTOR_SIZE = 8;
 
     for( i = 0; i < VECTOR_SIZE; i++ ) {
-#pragma HLS UNROLL
+#pragma HLS PIPELINE
           mem = 0;
           for( j = 8; j >= 0; j--) {
-#pragma HLS UNROLL
                   mem = (mem << 8);
                   //mem(7, 0) = st_in[j+i*8];
                   mem = (mem & 0xFFFFFFFFFFFFFF00 ) | st_in[j+i*8];
@@ -51,18 +50,17 @@ void cast_uint8_to_uint64_W8(uint8_t st_in[200], uint64_t st[25])
           st[i] = mem;
     }
 }
-//Casting from uint64_t to uint8_t
-void cast_uint64_to_uint8_W8(uint64_t st_in[25], uint8_t st_out[200])
+//Casting from uint64_t to uint8_t => 89 FF - 99 LUT - II=36 - Latency=35
+void cast_uint64_to_uint8_W8(uint64_t st_in[8], uint8_t st_out[64])
 {
     uint64_t tmp = 0;
     int i, j;
     const int VECTOR_SIZE = 8;
 
     for( i = 0; i < VECTOR_SIZE; i++ ) {
-#pragma HLS UNROLL
+#pragma HLS PIPELINE
           tmp = st_in[i];
           for( j = 0; j < 8; j++ ) {
-#pragma HLS UNROLL
                   st_out[i*8+j] = (uint8_t)tmp;
                   tmp = (tmp >> 8);
           }

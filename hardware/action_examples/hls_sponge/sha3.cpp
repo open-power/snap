@@ -16,26 +16,25 @@
 
 #include "sha3.H"
 
-//Casting from uint8_t to uint64_t
-void cast_uint8_to_uint64_W25(uint8_t st_in[200], uint64_t st[25])
+//Casting from uint8_t to uint64_t => 94 FF - 118 LUT - II=104 - Latency=103
+void cast_uint8_to_uint64_W25(uint8_t st_in[200], uint64_t st_out[25])
 {
     uint64_t mem;
     int i, j;
     const int VECTOR_SIZE = 25;
 
     for( i = 0; i < VECTOR_SIZE; i++ ) {
-#pragma HLS UNROLL
+#pragma HLS PIPELINE
           mem = 0;
           for( j = 8; j >= 0; j--) {
-#pragma HLS UNROLL
                   mem = (mem << 8);
                   //mem(7, 0) = st_in[j+i*8];
                   mem = (mem & 0xFFFFFFFFFFFFFF00 ) | st_in[j+i*8];
           }
-          st[i] = mem;
+          st_out[i] = mem;
     }
 }
-//Casting from uint64_t to uint8_t
+//Casting from uint64_t to uint8_t => 94 FF - 134 LUT - II=104 - Latency=103
 void cast_uint64_to_uint8_W25(uint64_t st_in[25], uint8_t st_out[200])
 {
     uint64_t tmp = 0;
@@ -43,10 +42,9 @@ void cast_uint64_to_uint8_W25(uint64_t st_in[25], uint8_t st_out[200])
     const int VECTOR_SIZE = 25;
 
     for( i = 0; i < VECTOR_SIZE; i++ ) {
-#pragma HLS UNROLL
+#pragma HLS PIPELINE
           tmp = st_in[i];
           for( j = 0; j < 8; j++ ) {
-#pragma HLS UNROLL
                   st_out[i*8+j] = (uint8_t)tmp;
                   tmp = (tmp >> 8);
           }
@@ -102,7 +100,7 @@ void sha3_keccakf(uint8_t st_in[200], uint8_t st_out[200])
 
     // actual iteration
     for (r = 0; r < KECCAKF_ROUNDS; r++) {
-#pragma HLS PIPELINE 
+#pragma HLS PIPELINE
         // Theta
         for (i = 0; i < 5; i++)
             bc[i] = st[i] ^ st[i + 5] ^ st[i + 10] ^ st[i + 15] ^ st[i + 20];
@@ -166,7 +164,7 @@ int sha3_init(sha3_ctx_t *c, int mdlen)
 //        c->st.q[i] = 0; 
     for (i = 0; i < 200; i++)
 #pragma HLS UNROLL
-        c->st.b[i] = 0; 
+    	c->st.b[i] = 0;
     c->mdlen = mdlen;
     c->rsiz = 200 - 2 * mdlen;
     c->pt = 0;
@@ -183,13 +181,16 @@ int sha3_update(sha3_ctx_t *c, const uint8_t *data, size_t len)
     int j;
 
     j = c->pt;
-    for (i = 0; i < len; i++) {
+    //for (i = 0; i < len; i++) {
+    for (i = 0; i < 64; i++) { // => sponge =64max
 #pragma HLS UNROLL
-        c->st.b[j++] ^= ((const uint8_t *) data)[i];
-        if (j >= c->rsiz) {
-            //sha3_keccakf(c->st.q);
-            sha3_keccakf(c->st.b,c->st.b);
-            j = 0;
+        if (i < len) {
+			c->st.b[j++] ^= ((const uint8_t *) data)[i];
+			if (j >= c->rsiz) {
+				//sha3_keccakf(c->st.q);
+				sha3_keccakf(c->st.b, c->st.b);
+				j = 0;
+			}
         }
     }
     c->pt = j;
@@ -208,11 +209,11 @@ int sha3_final(uint8_t *md, sha3_ctx_t *c)
     c->st.b[c->rsiz - 1] ^= 0x80;
 
     //sha3_keccakf(c->st.q);
-    sha3_keccakf(c->st.b,c->st.b);
+    sha3_keccakf(c->st.b, c->st.b);
 
     //for (i = 0; i < c->mdlen; i++) {
-    for (i = 0; i < 200; i++) {
-#pragma HLS UNROLL  // WARNING: cannot completely unroll a loop with a variable trip count.
+    for (i = 0; i < 64; i++) { // => sponge =64max
+#pragma HLS UNROLL
     	if(i < c->mdlen)
     		((uint8_t *) md)[i] = c->st.b[i];
     }

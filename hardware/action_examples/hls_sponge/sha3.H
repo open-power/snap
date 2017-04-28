@@ -51,7 +51,7 @@ void sha3(const uint8_t *in, size_t inlen, uint8_t *md, int mdlen);
 void shake_xof(sha3_ctx_t *c);
 void shake_out(sha3_ctx_t *c, void *out, size_t len);
 
-void cast_uint8_to_uint64_W25(uint8_t st_in[64], uint64_t st[8]);
+void cast_uint8_to_uint64_W25(uint8_t st_in[64], uint64_t st_out[8]);
 void cast_uint64_to_uint8_W25(uint64_t st_in[8], uint8_t st_out[64]);
 #endif
 
