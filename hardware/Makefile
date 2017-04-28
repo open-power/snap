@@ -103,15 +103,13 @@ clean:
 	@echo -e "\t                     IPs";
 	@rm -r -f  ip
 	@echo -e "\t                     sim files";
-	@rm -r -f  sim/ies
-	@rm -r -f  sim/xsim
-	@rm -r -f  sim/questa
-	@rm -r -f  hdl/nvme/component.xml
-	@rm -r -f  hdl/nvme/xgui
+	@rm -r -f  sim/ies sim/xsim sim/questa hdl/nvme/component.xml hdl/nvme/xgui
 	@echo -e "\t                     log files";
-	@rm -f     ./compile*.log ./*/compile*.log
-	@rm -f     ./vivado*.log  ./*/vivado*.log
-	@rm -f     ./vivado*.jou  ./*/vivado*.jou
+	@$(RM) ./compile*.log ./*/compile*.log ./vivado*.log	\
+	       ./*/vivado*.log ./vivado*.jou ./*/vivado*.jou	\
+	       hdl/core/donut.vhd				\
+	       hdl/core/donut_types.vhd				\
+	       hdl/core/psl_accel_types.vhd
 	@echo -e "\t[CLEAN.............] done";
 
 gitclean:
