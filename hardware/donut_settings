@@ -132,7 +132,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ $FPGACARD = "FGT" ]; then
     if [ ! -f "$PSL_DCP" ]; then
-      export PSL_DCP=$FRAMEWORK_ROOT/cards/FGT/portal_20170413/Checkpoint/b_route_design.dcp
+      export PSL_DCP=$FRAMEWORK_ROOT/cards/FGT/portal_20170413/b_route_design.dcp
       echo "Setting PSL_DCP                to  \"$PSL_DCP\""
     else
       echo "PSL_DCP                 is set to: \"$PSL_DCP\""
