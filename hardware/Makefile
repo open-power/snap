@@ -18,38 +18,41 @@
 ############################################################################
 ############################################################################
 
-
 ifeq "$(FPGACARD)" "KU3"
-export DDR3_USED=$(SDRAM_USED)
-export DDR4_USED=FALSE
-export DDRI_USED=$(SDRAM_USED)
-export NVME_USED=FALSE
-HDK_MODE="HDK"
+  export DDR3_USED=$(SDRAM_USED)
+  export DDR4_USED=FALSE
+  export DDRI_USED=$(SDRAM_USED)
+  export NVME_USED=FALSE
+  ifndef FLOW_MODE
+    FLOW_MODE="HDK"
+  endif
 endif
 
 ifeq "$(FPGACARD)" "FGT"
-export DDR3_USED=FALSE
-export DDR4_USED=$(SDRAM_USED)
-export DDRI_USED=$(SDRAM_USED)
-HDK_MODE="noHDK"
+  export DDR3_USED=FALSE
+  export DDR4_USED=$(SDRAM_USED)
+  export DDRI_USED=$(SDRAM_USED)
+  ifndef FLOW_MODE
+    FLOW_MODE="HDK"
+  endif
 endif
 
 ifndef BRAM_USED
-export BRAM_USED=FALSE
+  export BRAM_USED=FALSE
 endif
 ifeq "$(BRAM_USED)" "TRUE"
-export DDR3_USED=FALSE
-export DDR4_USED=FALSE
-export SDRAM_USED=FALSE
-export DDRI_USED=TRUE
+  export DDR3_USED=FALSE
+  export DDR4_USED=FALSE
+  export SDRAM_USED=FALSE
+  export DDRI_USED=TRUE
 endif
 
 ifndef NVME_USED
-export NVME_USED=FALSE
+  export NVME_USED=FALSE
 endif
 
 ifndef MSG_LEVEL
-export MSG_LEVEL=-quiet
+  export MSG_LEVEL=-quiet
 endif
 
 .PHONY: clean gitclean check_donut_settings config image model clean gitclean
@@ -87,10 +90,10 @@ check_donut_settings:
 	fi
 
 config: check_donut_settings
-	@$(MAKE) -f Makefile_$(HDK_MODE) $@
+	@$(MAKE) -f Makefile_$(FLOW_MODE) $@
 
 image model:
-	@$(MAKE) -f Makefile_$(HDK_MODE) $@
+	@$(MAKE) -f Makefile_$(FLOW_MODE) $@
 
 clean: 
 	@echo -e "\t[CLEAN.............] build environment";
