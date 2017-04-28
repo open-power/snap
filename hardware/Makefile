@@ -33,7 +33,7 @@ ifeq "$(FPGACARD)" "FGT"
   export DDR4_USED=$(SDRAM_USED)
   export DDRI_USED=$(SDRAM_USED)
   ifndef FLOW_MODE
-    FLOW_MODE="HDK"
+    FLOW_MODE="noHDK"
   endif
 endif
 
