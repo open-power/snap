@@ -35,6 +35,8 @@ puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthese" $w
 synth_design       $msg_level -mode default -flatten_hierarchy none -fanout_limit 400 -fsm_extraction one_hot -keep_equivalent_registers -resource_sharing off -no_lc -shreg_min_size 5 -no_iobuf -top psl_fpga
 write_checkpoint   $msg_level -force ./Checkpoint/framework_synth.dcp
 report_utilization $msg_level -file  ./Reports/framework_utilization_synth.rpt
+set TIMING_TNS [exec grep -A6 "Design Timing Summary" ./Reports/framework_timing_summary.rpt | tail -n 1 | sed {s/^ *\([0-9]*\).\([0-9]*\).*/\1\2/g}]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Timing (TNS)" $widthCol3 "$TIMING_TNS ps" $widthCol4 "" ]
  
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
 lock_design $msg_level -level routing b
@@ -77,9 +79,9 @@ if { $bram_used == "TRUE" } {
 }
  
 if { $nvme_used == "TRUE" } {
-  set IMAGE_NAME [format {%s_NVME_%s_%s} $STREAM_NAME $RAM_TYPE $fpgacard]
+  set IMAGE_NAME [format {%s_NVME_%s_%s_%s} $STREAM_NAME $RAM_TYPE $fpgacard $TIMING_TNS]
 } else {
-  set IMAGE_NAME [format {%s_%s_%s} $STREAM_NAME $RAM_TYPE $fpgacard]
+  set IMAGE_NAME [format {%s_%s_%s_%s} $STREAM_NAME $RAM_TYPE $fpgacard $TIMING_TNS]
 }
  
 write_bitstream $msg_level -force -file ./Images/$IMAGE_NAME
