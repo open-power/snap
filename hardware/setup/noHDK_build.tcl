@@ -21,6 +21,7 @@ set fpgacard     $::env(FPGACARD)
 set sdram_used   $::env(SDRAM_USED)
 set nvme_used    $::env(NVME_USED)
 set bram_used    $::env(BRAM_USED)
+set TIMING_LABLIMIT "-250"
 
 #Define widths of each column
 set widthCol1 28
@@ -64,9 +65,17 @@ report_utilization    $msg_level -file  ./Reports/framework_utilization_route_de
 report_route_status   $msg_level -file  ./Reports/framework_route_status.rpt
 report_timing_summary $msg_level -max_paths 100 -file ./Reports/framework_timing_summary.rpt
 report_drc            $msg_level -ruledeck bitstream_checks -name psl_fpga -file ./Reports/framework_drc_bitstream_checks.rpt
-set TIMING_TNS [exec grep -A6 "Design Timing Summary" ./Reports/framework_timing_summary.rpt | tail -n 1 | sed {s/^ *\([0-9]*\).\([0-9]*\).*/\1\2/g}]
+# Extract timing information, change ns to ps, remove leading 0's in number to avoid treatment as octal.
+set TIMING_TNS [exec grep -A6 "Design Timing Summary" ./Reports/framework_timing_summary.rpt | tail -n 1 | tr -s " " | cut -d " " -f 2 | tr -d "." | sed {s/^\(\-*\)0*\([0-9]*\)/\1\2/}]
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Timing (TNS)" $widthCol3 "$TIMING_TNS ps" $widthCol4 "" ]
- 
+if { [expr $TIMING_TNS >= 0 ] } {
+    puts "Timing OK"
+} elseif { [expr $TIMING_TNS < $TIMING_LABLIMIT ] } {
+    puts "ERROR: Timing FAILED"
+    exit 42
+} else {
+    puts "WARNING: Timing FAILED, but may be OK for lab use"
+}
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
 set IMAGE_NAME [exec cat ../.bitstream_name.txt]
 append IMAGE_NAME [expr {$nvme_used == "TRUE" ? "_NVME" : ""}]
