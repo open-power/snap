@@ -21,6 +21,7 @@ set fpgacard     $::env(FPGACARD)
 set sdram_used   $::env(SDRAM_USED)
 set nvme_used    $::env(NVME_USED)
 set bram_used    $::env(BRAM_USED)
+set TIMING_LABLIMIT "-250"
 
 #Define widths of each column
 set widthCol1 28
@@ -64,10 +65,20 @@ report_utilization    $msg_level -file  ./Reports/framework_utilization_route_de
 report_route_status   $msg_level -file  ./Reports/framework_route_status.rpt
 report_timing_summary $msg_level -max_paths 100 -file ./Reports/framework_timing_summary.rpt
 report_drc            $msg_level -ruledeck bitstream_checks -name psl_fpga -file ./Reports/framework_drc_bitstream_checks.rpt
- 
+# Extract timing information, change ns to ps, remove leading 0's in number to avoid treatment as octal.
+set TIMING_TNS [exec grep -A6 "Design Timing Summary" ./Reports/framework_timing_summary.rpt | tail -n 1 | tr -s " " | cut -d " " -f 2 | tr -d "." | sed {s/^\(\-*\)0*\([0-9]*\)/\1\2/}]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Timing (TNS)" $widthCol3 "$TIMING_TNS ps" $widthCol4 "" ]
+if { [expr $TIMING_TNS >= 0 ] } {
+    puts "Timing OK"
+} elseif { [expr $TIMING_TNS < $TIMING_LABLIMIT ] } {
+    puts "ERROR: Timing FAILED"
+    exit 42
+} else {
+    puts "WARNING: Timing FAILED, but may be OK for lab use"
+}
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-set STREAM_NAME [exec cat ../.bitstream_name.txt]
- 
+set IMAGE_NAME [exec cat ../.bitstream_name.txt]
+append IMAGE_NAME [expr {$nvme_used == "TRUE" ? "_NVME" : ""}]
 if { $bram_used == "TRUE" } {
     set RAM_TYPE BRAM
 } elseif { $sdram_used == "TRUE" } {
@@ -75,12 +86,7 @@ if { $bram_used == "TRUE" } {
 } else {
     set RAM_TYPE noSDRAM
 }
- 
-if { $nvme_used == "TRUE" } {
-  set IMAGE_NAME [format {%s_NVME_%s_%s} $STREAM_NAME $RAM_TYPE $fpgacard]
-} else {
-  set IMAGE_NAME [format {%s_%s_%s} $STREAM_NAME $RAM_TYPE $fpgacard]
-}
+append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_TNS]
  
 write_bitstream $msg_level -force -file ./Images/$IMAGE_NAME
 write_cfgmem    $msg_level -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME  -size 128 -interface  BPIx16 -force

@@ -97,7 +97,7 @@ image model:
 
 clean: 
 	@echo -e "\t[CLEAN.............] build environment";
-	@rm -r -f  build*
+	@rm -r -f  *build
 	@echo -e "\t                     vivado project";
 	@rm -r -f  viv_project*
 	@echo -e "\t                     IPs";
