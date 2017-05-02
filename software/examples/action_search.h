@@ -22,15 +22,21 @@
 
 #define SEARCH_ACTION_TYPE	0x10141003
 
+//DDR address map
+#define DDR_PATTERN_START 0
+#define DDR_TEXT_START    1024*1024*1024
+#define DDR_OFFS_START  6*1024*1024*1024
+
 struct search_job {
-	struct dnut_addr input;	 /* input data */
-	struct dnut_addr output; /* offset table */
-	struct dnut_addr pattern;
+	struct dnut_addr src_text1;	     /* input text */
+	struct dnut_addr src_text2;	     /* input pattern */
+	struct dnut_addr ddr_text1;      /* text copied to DDR */
+	struct dnut_addr ddr_text2;      /* pattern copied to DDR */
+	struct dnut_addr res_text;
 	uint64_t nb_of_occurrences;
 	uint64_t next_input_addr;
-	uint64_t action_version;
-	uint64_t mmio_din;	/* private settings for this action */
-	uint64_t mmio_dout;	/* private settings for this action */
+	uint32_t step;
+	uint32_t method;	
 };
 
 #endif	/* __ACTION_SEARCH_H__ */
