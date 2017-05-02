@@ -45,48 +45,50 @@ static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 static int action_main(struct dnut_action *action,
 		       void *job, unsigned int job_len)
 {
-	struct search_job *js = (struct search_job *)job;
-	char *needle, *haystack;
+//	struct search_job *js = (struct search_job *)job;
+	act_trace("%s(%p, %p, %d) SEARCH\n", __func__, action, job, job_len);
+/*
+    char *needle, *haystack;
 	unsigned int needle_len, haystack_len, offs_used, offs_max;
 	uint64_t *offs;
 
-	act_trace("%s(%p, %p, %d) SEARCH\n", __func__, action, job, job_len);
-	memset((uint8_t *)js->output.addr, 0, js->output.size);
+	memset((uint8_t *)js->res_text.addr, 0, js->res_text.size);
 
-	offs = (uint64_t *)(unsigned long)js->output.addr;
-	offs_max = js->output.size / sizeof(uint64_t);
+	offs = (uint64_t *)(unsigned long)js->res_text.addr;
+	offs_max = js->res_text.size / sizeof(uint64_t);
 	offs_used = 0;
 
-	haystack = (char *)(unsigned long)js->input.addr;
-	haystack_len = js->input.size;
+	haystack = (char *)(unsigned long)js->src_text1.addr;
+	haystack_len = js->src_text1.size;
 
-	needle = (char *)(unsigned long)js->pattern.addr;
-	needle_len = js->pattern.size;
+	needle = (char *)(unsigned long)js->src_text2.addr;
+	needle_len = js->src_text2.size;
 
 	js->next_input_addr = 0;
 	while (haystack_len != 0) {
 		if (needle_len > haystack_len) {
 			js->next_input_addr = 0;
-			break;	/* cannot find more */
+			break;	// cannot find more
 		}
 		if (strncmp(haystack, needle, needle_len) == 0) {
 			if (offs_used == offs_max) {
 				js->next_input_addr = (unsigned long)haystack;
-				break;	/* cannot put more in result array */
+				break;	// cannot put more in result array 
 			}
-			/* write down result */
+			// write down result
 			offs[offs_used] = (unsigned long)haystack;
 			offs_used++;
 		}
-		haystack++;	/* uuh, is that performing badly ;-) */
+		haystack++;	// uuh, is that performing badly ;-)
 		haystack_len--;
 	}
 
 	js->nb_of_occurrences = offs_used;
-	js->action_version = 0xC0FEBABEBABEBABEull;
+	//js->action_version = 0xC0FEBABEBABEBABEull;
+    */
 	action->job.retc = DNUT_RETC_SUCCESS;
 
-	act_trace("%s SEARCH DONE retc=%x\n", __func__, action->job.retc);
+	//act_trace("%s SEARCH DONE retc=%x\n", __func__, action->job.retc);
 	return 0;
 }
 
