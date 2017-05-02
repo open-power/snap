@@ -317,7 +317,7 @@ if { $create_ddr3 == "TRUE" } {
 #DDR4 create ddr4sdramm with ECC
 if { $create_ddr4 == "TRUE" } {
   puts "	                      generating IP ddr4sdram"
-  create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.1 -module_name ddr4sdram -dir $ip_dir $msg_level
+  create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir $msg_level
   set_property -dict [list                                                                   \
                       CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-083E} 			     \
                       CONFIG.C0.DDR4_TimePeriod {938} 				             \
