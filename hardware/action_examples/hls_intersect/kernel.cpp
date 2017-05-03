@@ -91,41 +91,54 @@ L_COPY: while (left_bytes > 0)
 static short compare(value_t a, value_t b)
 {
 
-    snapu16_t kkk =0;
-    ap_uint<256> half1, half2;
-#pragma HLS UNROLL
-    for (kkk = 0; kkk < 2; kkk++)
-    {
-        half1 = a((kkk<<8 )+255, kkk<<8);
-        half2 = b((kkk<<8 )+255, kkk<<8);
+   ap_uint<256> ah, al, bh, bl;
+   ah = a(511,256);
+   al = a(255,0);
 
-        if (half1 != half2)
-            return 1;
-    }
-    return 0;
+   bh = b(511,256);
+   bl = b(255,0);
+
+   if(ah != bh)
+       return 1;
+   else if (al != al)
+       return 1;
+   else
+       return 0;
 }
-
 
 static ap_uint<HT_ENTRY_NUM_EXP> ht_hash(value_t key)
 {
     short k;
     ap_uint<HT_ENTRY_NUM_EXP> hash_val = 0;
-#pragma HLS UNROLL
-    for (k =0; k < 4; k++)
-    {
-        hash_val = hash_val + key(20  + k*126,  0 + k*126) +
-                              key(41  + k*126, 21 + k*126) + 
-                              key(62  + k*126, 42 + k*126) + 
-                              key(83  + k*126, 63 + k*126) + 
-                              key(104 + k*126, 84 + k*126) +
-                              key(125 + k*126,105 + k*126);
-    }
-
-    // Counting for 63bytes. 
-    // 63byte/21bit = 24 bulks. Add 6 bulk in one cycle, and finish in 4 cycles.
-    //return hashval %HT_ENTRY_NUM;  //This step is not needed as we limit hashval to 21bits.  
-    return hash_val ; 
+    //22bit 
+    hash_val(21,21) = key(496,496);
+    hash_val(20,0) = key (20, 0) + 
+                     key (41, 21) + 
+                     key (62, 42) + 
+                     key (83, 63) + 
+                     key (104, 84) + 
+                     key (125, 105) + 
+                     key (146, 126) + 
+                     key (167, 147) + 
+                     key (188, 168) + 
+                     key (209, 189) + 
+                     key (230, 210) + 
+                     key (251, 231) + 
+                     key (272, 252) + 
+                     key (293, 273) + 
+                     key (314, 294) + 
+                     key (335, 315) + 
+                     key (356, 336) + 
+                     key (377, 357) + 
+                     key (398, 378) + 
+                     key (419, 399) + 
+                     key (440, 420) + 
+                     key (461, 441) + 
+                     key (482, 462) + 
+                     key (503, 483); 
+    return hash_val ;
 }
+
 
 
 static short make_hashtable(snap_membus_t  *d_ddrmem,

@@ -41,7 +41,7 @@
 // Consider ap_uint<> width should be less than 1024
 // So ENTRY_BYTES should <= 128. 
 
-#define HT_ENTRY_NUM_EXP 21
+#define HT_ENTRY_NUM_EXP 22
 #define HT_ENTRY_NUM (1<<HT_ENTRY_NUM_EXP)
 
 #define MAX_TABLE_SIZE 1024*1024*1024
@@ -78,6 +78,7 @@ typedef struct {
         DATA_IS  Data; 
 } action_reg;
 
+typedef char val_t[64];
 
 
 #endif
