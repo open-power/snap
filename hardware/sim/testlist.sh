@@ -138,9 +138,9 @@
       done
       done
       if [[ "$DDR3_USED" == "TRUE" || "$DDR4_USED" == "TRUE" || "$BRAM_USED" == "TRUE" || "$SDRAM_USED" == "TRUE" ]]; then echo -e "$del\ntesting DDR"
+        for num4k in 0 1 3; do to=$((80+num4k*80))     # irun 1=6sec, 7=20sec, xsim 1=60sec 3=150sec
         for num64 in 1 5 63 64;do                      # 1..64
         for align in 4096 1024 256 64; do              # must be mult of 64
-        for num4k in 0 1 3 7; do to=$((80+num4k*80))   # irun 1=6sec, 7=20sec, xsim 1=60sec 3=150sec
           t="$DONUT_ROOT/software/tools/stage2 -a6 -A${align} -S${num4k} -B${num64} -t$to"      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
         done
         done
@@ -222,7 +222,7 @@
 
     if [[ "$t0l" == "10141002" || "${env_action}" == "hls_hashjoin"* ]];then echo -e "$del\ntesting demo_hashjoin"
       t="$DONUT_ROOT/software/examples/demo_hashjoin -h"                                        ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
-      t="$DONUT_ROOT/software/examples/demo_hashjoin           -t300 -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 1m26s
+      t="$DONUT_ROOT/software/examples/demo_hashjoin           -t600 -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 1m26s
       for vart in 1 15 257;do to=$((vart*20+50))                                                        # rough timeout dependent on filesize
         t="$DONUT_ROOT/software/examples/demo_hashjoin -T$vart -t$to -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #   49s
       done
@@ -244,7 +244,7 @@
       #### select one loop type
       # for size in 20 83; do
       # for size in {1..5}; do
-        for size in 2 20 30 31 32 33 80 81 255 256 257 1024 1025; do to=$((size/5+100))       # rough timeout dependent on filesize
+        for size in 2 20 30 31 32 33 80 81 255 256 257 1024 1025; do to=$((size*2+200))       # rough timeout dependent on filesize
         #### select 1 search char
           char=$(cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w 1|head -n 1)                               # one random ASCII  char to search for
         # char='A'                                                                                      # one deterministic char to search for
