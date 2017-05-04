@@ -268,11 +268,11 @@
 
     if [[ "$t0l" == "10141005" || "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect"
       t="$DONUT_ROOT/software/examples/demo_intersect     -h"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$DONUT_ROOT/software/examples/demo_intersect -n1 -v"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$DONUT_ROOT/software/examples/demo_intersect -n2 -v"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$DONUT_ROOT/software/examples/demo_intersect -n4 -v"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$DONUT_ROOT/software/examples/demo_intersect -n8 -v"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$DONUT_ROOT/software/examples/demo_intersect -m1 -v"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/examples/demo_intersect -n1 -v -t1000"                            ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/examples/demo_intersect -m1 -v -t1000"                            ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     t="$DONUT_ROOT/software/examples/demo_intersect -n2 -v -t1000"                            ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     t="$DONUT_ROOT/software/examples/demo_intersect -n4 -v -t1000"                            ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     t="$DONUT_ROOT/software/examples/demo_intersect -n8 -v -t1000"                            ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
     fi # intersect
 
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"
