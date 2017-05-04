@@ -154,20 +154,23 @@ if { $fpga_card == "KU3" } {
   }
 } elseif { $fpga_card == "FGT" } {
   if { $bram_used == "TRUE" } {
-    add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci $msg_level
-    export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force $msg_level
+    if { $nvme_used == "TRUE" } {
+      add_files -norecurse $root_dir/ip/axi_interconnect/axi_interconnect.xci $msg_level
+      export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_interconnect/axi_interconnect.xci"] -force $msg_level
+    } else {
+      add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci $msg_level
+      export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force $msg_level
+    }
     add_files -norecurse $root_dir/ip/block_RAM/block_RAM.xci $msg_level
     export_ip_user_files -of_objects  [get_files "$root_dir/ip/block_RAM/block_RAM.xci"] -force $msg_level
-  } elseif { $nvme_used == "TRUE" } {
-    add_files -norecurse $root_dir/ip/axi_interconnect/axi_interconnect.xci $msg_level
-    export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_interconnect/axi_interconnect.xci"] -force $msg_level
-#    open_example_project -force -dir $ip_dir     [get_ips ddr4sdram]
-#    close project
-    add_files -norecurse $root_dir/ip/ddr4sdram/ddr4sdram.xci $msg_level
-    export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr4sdram/ddr4sdram.xci"] -force $msg_level
   } elseif { $sdram_used == "TRUE" } {
-    add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci $msg_level
-    export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force $msg_level
+    if { $nvme_used == "TRUE" } {
+      add_files -norecurse $root_dir/ip/axi_interconnect/axi_interconnect.xci $msg_level
+      export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_interconnect/axi_interconnect.xci"] -force $msg_level
+    } else {
+      add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci $msg_level
+      export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force $msg_level
+    }
 #    open_example_project -force -dir $ip_dir     [get_ips ddr4sdram]
 #    close project
     add_files -norecurse $root_dir/ip/ddr4sdram/ddr4sdram.xci $msg_level
