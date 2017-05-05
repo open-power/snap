@@ -116,8 +116,8 @@
 #     t="$DONUT_ROOT/software/tools/stage2     -s2 -e4 -i1 -t40       "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..33
 #     t="$DONUT_ROOT/software/tools/stage2 -a1             -t200"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #t 4..112..33min
       t="$DONUT_ROOT/software/tools/stage2 -a1 -s1 -e2 -i1 -t100  -vv "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
-      t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e4 -i1 -t100"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
-      t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e8 -i1 -t100"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..76..12min
+      t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e4 -i1 -t200"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
+      t="$DONUT_ROOT/software/tools/stage2 -a1 -s2 -e8 -i1 -t500"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..76..12min
       if [[ "$ver" == "000800" && "$dist" > "40" || "$vers" > "000800" ]];then echo "including interrupts starting with version00.08.00 dist41"
         t="$DONUT_ROOT/software/tools/stage2 -a1 -s1 -e2 -i1 -t100 -I -vv "                     ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
       fi
@@ -150,7 +150,7 @@
         for strt in 0x1000 0x2000;do      # start adr
         for iter in 1 2;do                # number of blocks
         for bsize in 64 0x1000; do        # block size
-          let end=${strt}+${iter}*${bsize}; to=$((iter*bsize/6+10))                           # rough timeout dependent on filesize
+          let end=${strt}+${iter}*${bsize}; to=$((iter*iter*bsize/4+300))                       # rough timeout dependent on filesize
           t="$DONUT_ROOT/software/tools/stage2_ddr -s${strt} -e${end} -b${bsize} -i${iter} -t$to";echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
         done
         done
@@ -158,7 +158,7 @@
         #### use memset in host or in fpga memory, stay under 512k for BRAM
         t="$DONUT_ROOT/software/tools/stage2_set -h"                                            ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
         for beg in 0 1 11 63 64;do                                    # start adr
-        for size in 1 7 4097; do  to=$((size/20+100))                 # block size to copy, rough timeout dependent on filesize
+        for size in 1 7 4097; do  to=$((size/20+300))                                           # block size to copy, rough timeout dependent on filesize
           t="$DONUT_ROOT/software/tools/stage2_set -H -b${beg} -s${size} -p${size} -t$to"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
           t="$DONUT_ROOT/software/tools/stage2_set -F -b${beg} -s${size} -p${size} -t$to"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
         done
@@ -268,11 +268,12 @@
 
     if [[ "$t0l" == "10141005" || "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect"
       t="$DONUT_ROOT/software/examples/demo_intersect     -h"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$DONUT_ROOT/software/examples/demo_intersect -n1 -v -t1000"                            ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$DONUT_ROOT/software/examples/demo_intersect -m1 -v -t1000"                            ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-#     t="$DONUT_ROOT/software/examples/demo_intersect -n2 -v -t1000"                            ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-#     t="$DONUT_ROOT/software/examples/demo_intersect -n4 -v -t1000"                            ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-#     t="$DONUT_ROOT/software/examples/demo_intersect -n8 -v -t1000"                            ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/examples/demo_intersect    -m1 -v -t300"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/examples/demo_intersect    -n1 -v -t200"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/examples/demo_intersect    -n2 -v -t400"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/examples/demo_intersect    -n4 -v -t600"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/examples/demo_intersect    -n8 -v -t800"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$DONUT_ROOT/software/examples/demo_intersect -I -m1 -v -t300"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
     fi # intersect
 
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"
