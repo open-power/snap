@@ -94,6 +94,8 @@ extern "C" {
 #define SNAP_EFAULT			-5 /* Illegal address */
 #define SNAP_ETIMEDOUT			-6 /* Timeout error */
 #define SNAP_EINVAL			-7 /* Invalid parameters */
+#define SNAP_EATTACH                    -8 /* Attach error */
+#define SNAP_EDETACH                    -9 /* Detach error */
 
 /**********************************************************************
  * SNAP Common Definitions
@@ -278,6 +280,23 @@ int snap_mmio_write64(struct snap_card *card, uint64_t offset,
 int snap_mmio_read64(struct snap_card *card, uint64_t offset,
 			uint64_t *data);
 
+/*
+ * This function will attach to the action and release
+ * the attachement when the job has been executed.
+ *
+ * snap_attach_action()
+ * snap_action_sync_execute_job()
+ * snap_detatch_action()
+ *
+ * See below.
+ */
+int snap_sync_execute_job(struct snap_card *card,
+			snap_action_type_t action_type,
+			struct snap_job *cjob,
+			int attach_timeout_sec,
+			int timeout_sec,
+			int irq);
+
 /**********************************************************************
  * SNAP Action Access
  *********************************************************************/
@@ -312,9 +331,9 @@ int snap_action_completed(struct snap_action *action, int irq, int *rc,
  * @return        0 on success.
  */
 int snap_action_sync_execute_job(struct snap_action *action,
-				struct snap_job *cjob,
-				unsigned int timeout_sec,
-				int irq);
+			struct snap_job *cjob,
+			unsigned int timeout_sec,
+			int irq);
 
 /**
  * Allow the action to use interrupts to signal results back to the
@@ -356,9 +375,9 @@ void snap_queue_free(struct snap_queue *queue);
  * @cjob          streaming framework job
  * @return        0 on success.
  */
-int snap_sync_execute_job(struct snap_queue *queue,
-			struct snap_job *cjob,
-			unsigned int timeout_sec);
+int snap_queue_sync_execute_job(struct snap_queue *queue,
+			  struct snap_job *cjob,
+			  unsigned int timeout_sec);
 
 /**
  * Asynchronous way to send a job away.
