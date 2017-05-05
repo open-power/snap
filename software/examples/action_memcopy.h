@@ -23,8 +23,8 @@
 #define MEMCOPY_ACTION_TYPE 0x10141000
 
 struct memcopy_job {
-	struct dnut_addr in;	/* input data */
-	struct dnut_addr out;   /* offset table */
+	struct snap_addr in;	/* input data */
+	struct snap_addr out;   /* offset table */
 };
 
 #endif	/* __ACTION_MEMCOPY_H__ */

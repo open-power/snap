@@ -29,9 +29,10 @@
 #include <donut_internal.h>
 #include <action_hashjoin.h>
 
-static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
+static int mmio_read32(struct snap_card *card,
+		       uint64_t offs, uint32_t *data)
 {
-	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
+	act_trace("  %s(%p, %llx, %x)\n", __func__, card,
 		  (long long)offs, *data);
 	return 0;
 }
@@ -300,7 +301,7 @@ static void print_job(struct hashjoin_job *j)
 
 }
 
-static int action_main(struct dnut_action *action,
+static int action_main(struct snap_sim_action *action,
 		       void *job, unsigned int job_len __unused)
 {
 	struct hashjoin_job *hj = (struct hashjoin_job *)job;
@@ -317,7 +318,7 @@ static int action_main(struct dnut_action *action,
 	if (!t1 || hj->t1.size/sizeof(table1_t) > TABLE1_SIZE) {
 		printf("  t1.size/sizeof(table1_t) = %ld entries\n",
 		       hj->t1.size/sizeof(table1_t));
-		hj->rc = DNUT_EINVAL;
+		hj->rc = SNAP_EINVAL;
 		goto err_out;
 	}
 
@@ -325,7 +326,7 @@ static int action_main(struct dnut_action *action,
 	if (!t2 || hj->t2.size/sizeof(table2_t) > TABLE2_SIZE) {
 		printf("  t2.size/sizeof(table2_t) = %ld entries\n",
 		       hj->t2.size/sizeof(table2_t));
-		hj->rc = DNUT_EINVAL;
+		hj->rc = SNAP_EINVAL;
 		goto err_out;
 	}
 
@@ -333,7 +334,7 @@ static int action_main(struct dnut_action *action,
 	if (!t3 || hj->t3.size/sizeof(table3_t) > TABLE3_SIZE) {
 		printf("  t3.size/sizeof(table3_t) = %ld entries\n",
 		       hj->t3.size/sizeof(table3_t));
-		hj->rc = DNUT_EINVAL;
+		hj->rc = SNAP_EINVAL;
 		goto err_out;
 	}
 
@@ -341,7 +342,7 @@ static int action_main(struct dnut_action *action,
 	if (hj->hashtable.size/sizeof(entry_t) > HT_SIZE) {
 		printf("  hashtable.size/sizeof(entry_t) = %ld entries\n",
 		       hj->hashtable.size/sizeof(entry_t));
-		hj->rc = DNUT_EINVAL;
+		hj->rc = SNAP_EINVAL;
 		goto err_out;
 	}
 
@@ -349,22 +350,22 @@ static int action_main(struct dnut_action *action,
 	hj->t3_produced = table3_idx;
 
 	if (hj->rc == 0) {
-		action->job.retc = DNUT_RETC_SUCCESS;
+		action->job.retc = SNAP_RETC_SUCCESS;
 	} else
-		action->job.retc = DNUT_RETC_FAILURE;
+		action->job.retc = SNAP_RETC_FAILURE;
 	return 0;
 
  err_out:
-	action->job.retc = DNUT_RETC_FAILURE;
+	action->job.retc = SNAP_RETC_FAILURE;
 	return -1;
 }
 
-static struct dnut_action action = {
-	.vendor_id = DNUT_VENDOR_ID_ANY,
-	.device_id = DNUT_DEVICE_ID_ANY,
+static struct snap_sim_action action = {
+	.vendor_id = SNAP_VENDOR_ID_ANY,
+	.device_id = SNAP_DEVICE_ID_ANY,
 	.action_type = HASHJOIN_ACTION_TYPE,
 
-	.job = { .retc = DNUT_RETC_FAILURE, },
+	.job = { .retc = SNAP_RETC_FAILURE, },
 	.state = ACTION_IDLE,
 	.main = action_main,
 	.priv_data = NULL,	/* this is passed back as void *card */
@@ -377,5 +378,5 @@ static void _init(void) __attribute__((constructor));
 
 static void _init(void)
 {
-	dnut_action_register(&action);
+	snap_action_register(&action);
 }

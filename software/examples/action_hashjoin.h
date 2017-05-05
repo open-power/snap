@@ -64,10 +64,10 @@ typedef struct hashtable_s {
 } hashtable_t;
 
 struct hashjoin_job {
-	struct dnut_addr t1; /* IN: input table1 for multihash */
-	struct dnut_addr t2; /* IN: 2nd table2 to do join with */
-	struct dnut_addr t3; /* OUT: resulting table3 */
-	struct dnut_addr hashtable; /* CACHE: multihash table */
+	struct snap_addr t1; /* IN: input table1 for multihash */
+	struct snap_addr t2; /* IN: 2nd table2 to do join with */
+	struct snap_addr t3; /* OUT: resulting table3 */
+	struct snap_addr hashtable; /* CACHE: multihash table */
 
 	uint64_t t1_processed; /* #entries cached, repeat if not all */
 	uint64_t t2_processed; /* #entries processed, repeat if not all */

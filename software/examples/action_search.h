@@ -23,9 +23,9 @@
 #define SEARCH_ACTION_TYPE	0x10141003
 
 struct search_job {
-	struct dnut_addr input;	 /* input data */
-	struct dnut_addr output; /* offset table */
-	struct dnut_addr pattern;
+	struct snap_addr input;	 /* input data */
+	struct snap_addr output; /* offset table */
+	struct snap_addr pattern;
 	uint64_t nb_of_occurrences;
 	uint64_t next_input_addr;
 	uint64_t action_version;

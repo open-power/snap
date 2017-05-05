@@ -36,16 +36,18 @@
 #include <action_bfs.h>
 
 
-static int mmio_write32(void *_card, uint64_t offs, uint32_t data)
+static int mmio_write32(struct snap_card *card,
+			uint64_t offs, uint32_t data)
 {
-	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
+	act_trace("  %s(%p, %llx, %x)\n", __func__, card,
 		  (long long)offs, data);
 	return 0;
 }
 
-static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
+static int mmio_read32(struct snap_card *card,
+		       uint64_t offs, uint32_t *data)
 {
-	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
+	act_trace("  %s(%p, %llx, %x)\n", __func__, card,
 		  (long long)offs, *data);
 	return 0;
 }
@@ -246,7 +248,7 @@ void bfs (VexNode * vex_list, unsigned int vex_num, unsigned int root)
 //    action main
 //------------------------------------
 
-static int action_main(struct dnut_action *action,
+static int action_main(struct snap_sim_action *action,
 		       void *job, unsigned int job_len __unused)
 {
 	int rc;
@@ -268,20 +270,20 @@ static int action_main(struct dnut_action *action,
 
 
  out_ok:
-	action->job.retc = DNUT_RETC_SUCCESS;
+	action->job.retc = SNAP_RETC_SUCCESS;
 	return 0;
 
  out_err:
-	action->job.retc = DNUT_RETC_FAILURE;
+	action->job.retc = SNAP_RETC_FAILURE;
 	return 0;
 }
 
-static struct dnut_action action = {
-	.vendor_id = DNUT_VENDOR_ID_ANY,
-	.device_id = DNUT_DEVICE_ID_ANY,
+static struct snap_sim_action action = {
+	.vendor_id = SNAP_VENDOR_ID_ANY,
+	.device_id = SNAP_DEVICE_ID_ANY,
 	.action_type = (HLS_BFS_ID&0xFFFF),
 
-	.job = { .retc = DNUT_RETC_FAILURE, },
+	.job = { .retc = SNAP_RETC_FAILURE, },
 	.state = ACTION_IDLE,
 	.main = action_main,
 	.priv_data = NULL,	/* this is passed back as void *card */
@@ -295,5 +297,5 @@ static void _init(void) __attribute__((constructor));
 
 static void _init(void)
 {
-	dnut_action_register(&action);
+	snap_action_register(&action);
 }
