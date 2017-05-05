@@ -209,6 +209,8 @@ static int hw_snap_mmio_write32(struct snap_card *card,
 	int rc = -1;
 
 	if ((card) && (card->afu_h)) {
+		offset += card->action_base; /* FIXME use action_*32 instead */
+
 		reg_trace("  %s(%p, %llx, %lx)\n", __func__, card,
 			(long long)offset, (long)data);
 		rc = cxl_mmio_write32(card->afu_h, offset, data);
@@ -223,6 +225,8 @@ static int hw_snap_mmio_read32(struct snap_card *card,
 	int rc = -1;
 
 	if ((card) && (card->afu_h)) {
+		offset += card->action_base; /* FIXME use action_*32 instead */
+
 		rc = cxl_mmio_read32(card->afu_h, offset, data);
 		reg_trace("  %s(%p, %llx, %lx) %d\n", __func__, card,
 			(long long)offset, (long)*data, rc);
@@ -430,6 +434,8 @@ static int hw_detach_action(struct snap_action *action)
 			   __func__, (long long)data);
 		rc = 1; /* FIXME Use libdonut return codes */
 	}
+
+	card->action_base = 0; /* FIXME use action_*32 instead */
 	return rc;
 }
 
