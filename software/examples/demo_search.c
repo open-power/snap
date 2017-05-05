@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
-	action = snap_attach_action(card, SEARCH_ACTION_TYPE, 0, 5);
+	action = snap_attach_action(card, SEARCH_ACTION_TYPE, 0, 60);
 	if (action == NULL) {
 		fprintf(stderr, "err: failed to attach action %u: %s\n",
 			card_no, strerror(errno));

@@ -206,7 +206,7 @@ static int do_checksum(int card_no, unsigned long timeout,
 		goto out_error;
 	}
 
-	action = snap_attach_action(card, CHECKSUM_ACTION_TYPE, 0, 5);
+	action = snap_attach_action(card, CHECKSUM_ACTION_TYPE, 0, 60);
 	if (action == NULL) {
 		fprintf(stderr, "err: failed to attach action %u: %s\n",
 			card_no, strerror(errno));
