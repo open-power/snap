@@ -2,7 +2,7 @@
 #define __ACTION_INTERSECT_H__
 
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,9 @@
 #define HT_ENTRY_NUM (1<<HT_ENTRY_NUM_EXP)
 
 struct intersect_job {
-	struct dnut_addr src_tables_host[NUM_TABLES];	 /* input tables */
-	struct dnut_addr src_tables_ddr[NUM_TABLES];	 /* input tables */
-	struct dnut_addr result_table;             /* output table */
+	struct snap_addr src_tables_host[NUM_TABLES];	 /* input tables */
+	struct snap_addr src_tables_ddr[NUM_TABLES];	 /* input tables */
+	struct snap_addr result_table;             /* output table */
     uint32_t step;
     uint32_t method;
 };

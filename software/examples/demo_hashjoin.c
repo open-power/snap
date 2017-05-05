@@ -155,7 +155,7 @@ file_read(const char *fname, uint8_t *buff, size_t len)
 	return rc;
 }
 
-static void dnut_prepare_hashjoin(struct dnut_job *cjob,
+static void snap_prepare_hashjoin(struct snap_job *cjob,
 				  struct hashjoin_job *jin,
 				  struct hashjoin_job *jout,
 				  const table1_t *t1, ssize_t t1_size,
@@ -163,21 +163,21 @@ static void dnut_prepare_hashjoin(struct dnut_job *cjob,
 				  table3_t *t3, size_t t3_size,
 				  hashtable_t *h, size_t h_size)
 {
-	dnut_addr_set(&jin->t1, t1, t1_size,
-		      DNUT_TARGET_TYPE_HOST_DRAM,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-	dnut_addr_set(&jin->t2, t2, t2_size,
-		      DNUT_TARGET_TYPE_HOST_DRAM,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-	dnut_addr_set(&jin->t3, t3, t3_size,
-		      DNUT_TARGET_TYPE_HOST_DRAM,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
+	snap_addr_set(&jin->t1, t1, t1_size,
+		      SNAP_ADDRTYPE_HOST_DRAM,
+		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
+	snap_addr_set(&jin->t2, t2, t2_size,
+		      SNAP_ADDRTYPE_HOST_DRAM,
+		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
+	snap_addr_set(&jin->t3, t3, t3_size,
+		      SNAP_ADDRTYPE_HOST_DRAM,
+		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST);
 
 	/* FIXME Assumptions where there is free DRAM on the card ... */
-	dnut_addr_set(&jin->hashtable, h, h_size,
-		      DNUT_TARGET_TYPE_CARD_DRAM,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
-		      DNUT_TARGET_FLAGS_END);
+	snap_addr_set(&jin->hashtable, h, h_size,
+		      SNAP_ADDRTYPE_CARD_DRAM,
+		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST |
+		      SNAP_ADDRFLAG_END);
 
 	jin->t1_processed = 0;
 	jin->t2_processed = 0;
@@ -185,8 +185,7 @@ static void dnut_prepare_hashjoin(struct dnut_job *cjob,
 	jin->rc = 0;
 	jin->action_version = 0;
 
-	dnut_job_set(cjob, HLS_HASH_JOIN_ID,
-		     jin, sizeof(*jin), jout, sizeof(*jout));
+	snap_job_set(cjob, jin, sizeof(*jin), jout, sizeof(*jout));
 }
 
 /**
@@ -217,9 +216,10 @@ int main(int argc, char *argv[])
 {
 	int ch, rc = 0;
 	int card_no = 0;
-	struct dnut_kernel *kernel = NULL;
+	struct snap_card *card = NULL;
+	struct snap_action *action = NULL;
 	char device[128];
-	struct dnut_job cjob;
+	struct snap_job cjob;
 	struct hashjoin_job jin;
 	struct hashjoin_job jout;
 	unsigned int timeout = 10;
@@ -296,19 +296,23 @@ int main(int argc, char *argv[])
 	srand(seed);
 
 	/*
-	 * Apply for exclusive kernel access for kernel type 0xC0FE.
-	 * Once granted, MMIO to that kernel will work.
+	 * Apply for exclusive action access for action type 0xC0FE.
+	 * Once granted, MMIO to that action will work.
 	 */
-	pr_info("Opening device ...\n");
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
-	kernel = dnut_kernel_attach_dev(device,
-					0x1014,
-					0xcafe,
-					HASHJOIN_ACTION_TYPE);
-	if (kernel == NULL) {
+	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
+				   SNAP_DEVICE_ID_SNAP);
+	if (card == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n",
 			card_no, strerror(errno));
 		goto out_error;
+	}
+
+	action = snap_attach_action(card, HASHJOIN_ACTION_TYPE, 0, 5);
+	if (action == NULL) {
+		fprintf(stderr, "err: failed to attach action %u: %s\n",
+			card_no, strerror(errno));
+		goto out_error1;
 	}
 
 	if (t1_entries > ARRAY_SIZE(t1)) {
@@ -325,7 +329,7 @@ int main(int argc, char *argv[])
 		t2_tocopy = MIN(ARRAY_SIZE(t2), t2_entries);
 
 		table2_fill(t2, t2_tocopy);
-		dnut_prepare_hashjoin(&cjob, &jin, &jout,
+		snap_prepare_hashjoin(&cjob, &jin, &jout,
 				      t1, t1_entries * sizeof(table1_t),
 				      t2, t2_tocopy * sizeof(table2_t),
 				      t3, sizeof(t3),
@@ -336,13 +340,13 @@ int main(int argc, char *argv[])
 			table2_dump(t2, t2_tocopy);
 		}
 
-		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
+		rc = snap_action_sync_execute_job(action, &cjob, timeout, action_irq);
 		if (rc != 0) {
 			fprintf(stderr, "err: job execution %d: %s!\n", rc,
 				strerror(errno));
 			goto out_error2;
 		}
-		if (cjob.retc != DNUT_RETC_SUCCESS)  {
+		if (cjob.retc != SNAP_RETC_SUCCESS)  {
 			fprintf(stderr, "err: job retc %x!\n", cjob.retc);
 			goto out_error2;
 		}
@@ -354,7 +358,7 @@ int main(int argc, char *argv[])
 				   ht stores the values */
 		t2_entries -= t2_tocopy;
 	}
-	dnut_detach_action((void*)kernel);
+	snap_detach_action((void*)action);
 	gettimeofday(&etime, NULL);
 
 	fprintf(stderr, "Action version: %llx\n"
@@ -364,11 +368,14 @@ int main(int argc, char *argv[])
 		(long long)jout.rc,
 		(long long)timediff_usec(&etime, &stime));
 
-	dnut_kernel_free(kernel);
+	snap_detach_action(action);
+	snap_card_free(card);
 	exit(exit_code);
 
  out_error2:
-	dnut_kernel_free(kernel);
+	snap_detach_action(action);
+ out_error1:
+	snap_card_free(card);
  out_error:
 	exit(EXIT_FAILURE);
 }

@@ -1,6 +1,6 @@
 /*
- * Copyright 2016, International Business Machines
- *
+ * Copyright 2016, 2017, International Business Machines
+ *!
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -63,7 +63,7 @@ static void usage(const char *prog)
 	       prog);
 }
 
-static void dnut_prepare_memcopy(struct dnut_job *cjob,
+static void snap_prepare_memcopy(struct snap_job *cjob,
 				 struct memcopy_job *mjob,
 				 void *addr_in,
 				 uint32_t size_in,
@@ -72,14 +72,13 @@ static void dnut_prepare_memcopy(struct dnut_job *cjob,
 				 uint32_t size_out,
 				 uint8_t type_out)
 {
-	dnut_addr_set(&mjob->in, addr_in, size_in, type_in,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-	dnut_addr_set(&mjob->out, addr_out, size_out, type_out,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
-		      DNUT_TARGET_FLAGS_END);
+	snap_addr_set(&mjob->in, addr_in, size_in, type_in,
+		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
+	snap_addr_set(&mjob->out, addr_out, size_out, type_out,
+		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST |
+		      SNAP_ADDRFLAG_END);
 
-	dnut_job_set(cjob, MEMCOPY_ACTION_TYPE, mjob, sizeof(*mjob),
-		     NULL, 0);
+	snap_job_set(cjob, mjob, sizeof(*mjob), NULL, 0);
 }
 
 /**
@@ -89,9 +88,10 @@ int main(int argc, char *argv[])
 {
 	int ch, rc = 0;
 	int card_no = 0;
-	struct dnut_kernel *kernel = NULL;
+	struct snap_card *card = NULL;
+	struct snap_action *action = NULL;
 	char device[128];
-	struct dnut_job cjob;
+	struct snap_job cjob;
 	struct memcopy_job mjob;
 	const char *input = NULL;
 	const char *output = NULL;
@@ -102,9 +102,9 @@ int main(int argc, char *argv[])
 	ssize_t size = 1024 * 1024;
 	uint8_t *ibuff = NULL, *obuff = NULL;
 	unsigned int page_size = sysconf(_SC_PAGESIZE);
-	uint8_t type_in = DNUT_TARGET_TYPE_HOST_DRAM;
+	uint8_t type_in = SNAP_ADDRTYPE_HOST_DRAM;
 	uint64_t addr_in = 0x0ull;
-	uint8_t type_out = DNUT_TARGET_TYPE_HOST_DRAM;
+	uint8_t type_out = SNAP_ADDRTYPE_HOST_DRAM;
 	uint64_t addr_out = 0x0ull;
 	int verify = 0;
 	int exit_code = EXIT_SUCCESS;
@@ -161,9 +161,9 @@ int main(int argc, char *argv[])
 		case 'A':
 			space = optarg;
 			if (strcmp(space, "CARD_DRAM") == 0)
-				type_in = DNUT_TARGET_TYPE_CARD_DRAM;
+				type_in = SNAP_ADDRTYPE_CARD_DRAM;
 			else if (strcmp(space, "HOST_DRAM") == 0)
-				type_in = DNUT_TARGET_TYPE_HOST_DRAM;
+				type_in = SNAP_ADDRTYPE_HOST_DRAM;
 			else {
 				usage(argv[0]);
 				exit(EXIT_FAILURE);
@@ -176,9 +176,9 @@ int main(int argc, char *argv[])
 		case 'D':
 			space = optarg;
 			if (strcmp(space, "CARD_DRAM") == 0)
-				type_out = DNUT_TARGET_TYPE_CARD_DRAM;
+				type_out = SNAP_ADDRTYPE_CARD_DRAM;
 			else if (strcmp(space, "HOST_DRAM") == 0)
-				type_out = DNUT_TARGET_TYPE_HOST_DRAM;
+				type_out = SNAP_ADDRTYPE_HOST_DRAM;
 			else {
 				usage(argv[0]);
 				exit(EXIT_FAILURE);
@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
 		if (rc < 0)
 			goto out_error;
 
-		type_in = DNUT_TARGET_TYPE_HOST_DRAM;
+		type_in = SNAP_ADDRTYPE_HOST_DRAM;
 		addr_in = (unsigned long)ibuff;
 	}
 
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
 		if (obuff == NULL)
 			goto out_error;
 		memset(obuff, 0x0, set_size);
-		type_out = DNUT_TARGET_TYPE_HOST_DRAM;
+		type_out = SNAP_ADDRTYPE_HOST_DRAM;
 		addr_out = (unsigned long)obuff;
 	}
 
@@ -266,22 +266,27 @@ int main(int argc, char *argv[])
 	       size, mode);
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
-	kernel = dnut_kernel_attach_dev(device,
-					0x1014,
-					0xcafe,
-					MEMCOPY_ACTION_TYPE);
-	if (kernel == NULL) {
-		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
-			strerror(errno));
+	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
+				   SNAP_DEVICE_ID_SNAP);
+	if (card == NULL) {
+		fprintf(stderr, "err: failed to open card %u: %s\n",
+			card_no, strerror(errno));
 		goto out_error;
 	}
 
-	dnut_prepare_memcopy(&cjob, &mjob,
+	action = snap_attach_action(card, MEMCOPY_ACTION_TYPE, 0, 5);
+	if (action == NULL) {
+		fprintf(stderr, "err: failed to attach action %u: %s\n",
+			card_no, strerror(errno));
+		goto out_error1;
+	}
+
+	snap_prepare_memcopy(&cjob, &mjob,
 			     (void *)addr_in,  size, type_in,
 			     (void *)addr_out, size, type_out);
 
 	gettimeofday(&stime, NULL);
-	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
+	rc = snap_action_sync_execute_job(action, &cjob, timeout, action_irq);
 	gettimeofday(&etime, NULL);
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
@@ -302,8 +307,8 @@ int main(int argc, char *argv[])
 	/* obuff[size] = 0xff; */
 	fprintf(stdout, "RETC=%x\n", cjob.retc);
 	if (verify) {
-		if ((type_in  == DNUT_TARGET_TYPE_HOST_DRAM) &&
-		    (type_out == DNUT_TARGET_TYPE_HOST_DRAM)) {
+		if ((type_in  == SNAP_ADDRTYPE_HOST_DRAM) &&
+		    (type_out == SNAP_ADDRTYPE_HOST_DRAM)) {
 			rc = memcmp(ibuff, obuff, size);
 			if (rc != 0)
 				exit_code = EX_ERR_VERIFY;
@@ -323,15 +328,17 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "memcopy took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
-	dnut_kernel_free(kernel);
+	snap_detach_action(action);
+	snap_card_free(card);
 
 	__free(obuff);
 	__free(ibuff);
 	exit(exit_code);
 
  out_error2:
-	dnut_kernel_free(kernel);
-
+	snap_detach_action(action);
+ out_error1:
+	snap_card_free(card);
  out_error:
 	__free(obuff);
 	__free(ibuff);

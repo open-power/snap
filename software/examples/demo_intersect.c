@@ -72,12 +72,12 @@ static void usage(const char *prog)
 	       "\n"
 	       "Example:\n"
 	       "HW:  sudo ./demo_intersect ...\n"
-	       "SW:  DNUT_CONFIG=1 ./demo_intersect ...\n"
+	       "SW:  SNAP_CONFIG=1 ./demo_intersect ...\n"
 	       "\n",
 	       prog);
 }
 
-static void dnut_prepare_intersect(struct dnut_job *cjob,
+static void snap_prepare_intersect(struct snap_job *cjob,
                  struct intersect_job *ijob_i,
                  struct intersect_job *ijob_o,
                  uint32_t step,
@@ -93,19 +93,19 @@ static void dnut_prepare_intersect(struct dnut_job *cjob,
     if (step == 1)
     {
         //Memcopy, source
-        dnut_addr_set( &ijob_i->src_tables_host[0], input_addrs_host[0], input_sizes[0],DNUT_TARGET_TYPE_HOST_DRAM ,
-            DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-        dnut_addr_set( &ijob_i->src_tables_host[1], input_addrs_host[1], input_sizes[1],DNUT_TARGET_TYPE_HOST_DRAM ,
-            DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
+        snap_addr_set( &ijob_i->src_tables_host[0], input_addrs_host[0], input_sizes[0],SNAP_ADDRTYPE_HOST_DRAM ,
+            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
+        snap_addr_set( &ijob_i->src_tables_host[1], input_addrs_host[1], input_sizes[1],SNAP_ADDRTYPE_HOST_DRAM ,
+            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 
         //Memcopy, target
         ddr_addr = 0;
-        dnut_addr_set( &ijob_i->src_tables_ddr[0], (void *)ddr_addr, input_sizes[0], DNUT_TARGET_TYPE_CARD_DRAM ,
-            DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST | DNUT_TARGET_FLAGS_END);
+        snap_addr_set( &ijob_i->src_tables_ddr[0], (void *)ddr_addr, input_sizes[0], SNAP_ADDRTYPE_CARD_DRAM ,
+            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END);
 
         ddr_addr = MAX_TABLE_SIZE;
-        dnut_addr_set( &ijob_i->src_tables_ddr[1], (void *)ddr_addr, input_sizes[1], DNUT_TARGET_TYPE_CARD_DRAM ,
-            DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST | DNUT_TARGET_FLAGS_END);
+        snap_addr_set( &ijob_i->src_tables_ddr[1], (void *)ddr_addr, input_sizes[1], SNAP_ADDRTYPE_CARD_DRAM ,
+            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END);
 
         //No relation to result_table
     }
@@ -113,54 +113,60 @@ static void dnut_prepare_intersect(struct dnut_job *cjob,
     {
         //Memcopy, source
         ddr_addr = 0;
-        dnut_addr_set( &ijob_i->src_tables_ddr[0], (void *)ddr_addr, input_sizes[0],DNUT_TARGET_TYPE_CARD_DRAM ,
-            DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
+        snap_addr_set( &ijob_i->src_tables_ddr[0], (void *)ddr_addr, input_sizes[0],SNAP_ADDRTYPE_CARD_DRAM ,
+            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 
         ddr_addr = MAX_TABLE_SIZE;
-        dnut_addr_set( &ijob_i->src_tables_ddr[1], (void *)ddr_addr, input_sizes[1],DNUT_TARGET_TYPE_CARD_DRAM ,
-            DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
+        snap_addr_set( &ijob_i->src_tables_ddr[1], (void *)ddr_addr, input_sizes[1],SNAP_ADDRTYPE_CARD_DRAM ,
+            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 
         //Memcopy, target
-        dnut_addr_set( &ijob_i->src_tables_host[0], input_addrs_host[0], input_sizes[0],DNUT_TARGET_TYPE_HOST_DRAM ,
-            DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST | DNUT_TARGET_FLAGS_END);
-        dnut_addr_set( &ijob_i->src_tables_host[1], input_addrs_host[1], input_sizes[1],DNUT_TARGET_TYPE_HOST_DRAM ,
-            DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST | DNUT_TARGET_FLAGS_END);
+        snap_addr_set( &ijob_i->src_tables_host[0], input_addrs_host[0], input_sizes[0],SNAP_ADDRTYPE_HOST_DRAM ,
+            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END);
+        snap_addr_set( &ijob_i->src_tables_host[1], input_addrs_host[1], input_sizes[1],SNAP_ADDRTYPE_HOST_DRAM ,
+            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END);
 
         //No relation to result_table
     }
     else if (step == 3)
     {
         ddr_addr = 0;
-        dnut_addr_set( &ijob_i->src_tables_ddr[0], (void *)ddr_addr, input_sizes[0],DNUT_TARGET_TYPE_CARD_DRAM ,
-            DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
+        snap_addr_set( &ijob_i->src_tables_ddr[0], (void *)ddr_addr, input_sizes[0],SNAP_ADDRTYPE_CARD_DRAM ,
+            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 
         ddr_addr = MAX_TABLE_SIZE;
-        dnut_addr_set( &ijob_i->src_tables_ddr[1], (void *)ddr_addr, input_sizes[1],DNUT_TARGET_TYPE_CARD_DRAM ,
-            DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
+        snap_addr_set( &ijob_i->src_tables_ddr[1], (void *)ddr_addr,
+		       input_sizes[1],SNAP_ADDRTYPE_CARD_DRAM ,
+		       SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 
         //result_table in DDR
         // 99 is a dummy value. HW will update this field when finished.
         ddr_addr = 2*MAX_TABLE_SIZE;
-        dnut_addr_set (&ijob_i->result_table, (void *)ddr_addr, 99, DNUT_TARGET_TYPE_CARD_DRAM ,
-                DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
-		        DNUT_TARGET_FLAGS_END);
+        snap_addr_set (&ijob_i->result_table, (void *)ddr_addr,
+		       99, SNAP_ADDRTYPE_CARD_DRAM ,
+		       SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST |
+		       SNAP_ADDRFLAG_END);
     }
     else if (step == 5)
     {
         //Memcopy, source
         // reuse src_tables_ddr[0] for the result.
         ddr_addr = 2*MAX_TABLE_SIZE;
-        dnut_addr_set( &ijob_i->src_tables_ddr[0], (void *)ddr_addr, actual_output_size,DNUT_TARGET_TYPE_CARD_DRAM ,
-            DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
+        snap_addr_set( &ijob_i->src_tables_ddr[0],
+		       (void *)ddr_addr, actual_output_size,
+		       SNAP_ADDRTYPE_CARD_DRAM ,
+		       SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 
         //Memcopy, target
-        dnut_addr_set (&ijob_i->result_table, output_addr_host, actual_output_size, DNUT_TARGET_TYPE_HOST_DRAM ,
-                DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
-		        DNUT_TARGET_FLAGS_END);
+        snap_addr_set (&ijob_i->result_table,
+		       output_addr_host, actual_output_size,
+		       SNAP_ADDRTYPE_HOST_DRAM ,
+		       SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST |
+		       SNAP_ADDRFLAG_END);
     }
     ijob_i->step = step;
     ijob_i->method = method;
-	dnut_job_set(cjob, HLS_INTERSECT_ID, ijob_i, sizeof(*ijob_i),
+	snap_job_set(cjob, ijob_i, sizeof(*ijob_i),
 		    ijob_o, sizeof(*ijob_o));
 }
 
@@ -207,13 +213,16 @@ static void dump_table(value_t* table, uint32_t num)
     printf("\n");
 }
 
-static int run_one_step(struct dnut_kernel *kernel, struct dnut_job *cjob, unsigned long timeout, int action_irq, uint64_t step)
+static int run_one_step(struct snap_action *action,
+			struct snap_job *cjob,
+			unsigned long timeout,
+			int action_irq, uint64_t step)
 {
 	int rc;
 	struct timeval etime, stime;
 
 	gettimeofday(&stime, NULL);
-	rc = dnut_kernel_sync_execute_job(kernel, cjob, timeout, action_irq);
+	rc = snap_action_sync_execute_job(action, cjob, timeout, action_irq);
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n\n\n", rc,
 			strerror(errno));
@@ -235,12 +244,13 @@ int main(int argc, char *argv[])
 	int ch;
     int rc = 0;
 	int card_no = 0;
-	struct dnut_kernel *kernel = NULL;
+	struct snap_card *card = NULL;
+	struct snap_action *action = NULL;
 	char device[128];
 	uint32_t page_size = sysconf(_SC_PAGESIZE);
     int exit_code = EXIT_SUCCESS;
     unsigned long timeout = 1000;
-	struct dnut_job cjob;
+	struct snap_job cjob;
     int attach_flags = SNAP_CCR_DIRECT_MODE;
     int action_irq = 0;
     struct timeval etime, stime;
@@ -428,38 +438,42 @@ int main(int argc, char *argv[])
     /////////////////////////////////////////////////////////////////
     //    Open Device ... and start
     /////////////////////////////////////////////////////////////////
-    snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
-	kernel = dnut_kernel_attach_dev(device,
-					0x1014,
-					0xcafe,
-					HLS_INTERSECT_ID&0xFFFF);
-	if (kernel == NULL) {
-		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
-			strerror(errno));
+	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
+	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
+				   SNAP_DEVICE_ID_SNAP);
+	if (card == NULL) {
+		fprintf(stderr, "err: failed to open card %u: %s\n",
+			card_no, strerror(errno));
 		goto out_error;
 	}
 
+	action = snap_attach_action(card, HLS_INTERSECT_ID, 0, 5);
+	if (action == NULL) {
+		fprintf(stderr, "err: failed to attach action %u: %s\n",
+			card_no, strerror(errno));
+		goto out_error1;
+	}
     //------------------------------------
     // Action begin (1)
     printf("Start Step1 (Copy source data from Host to DDR) ..............\n");
-	dnut_prepare_intersect(&cjob, &ijob_i, &ijob_o,
+	snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                  1, method, src_tables, src_sizes,result_table,99);
 
-    rc |= run_one_step(kernel, &cjob, timeout, action_irq, 1);
+    rc |= run_one_step(action, &cjob, timeout, action_irq, 1);
 	if (rc != 0)
-		goto out_error;
+		goto out_error2;
 
     if(sw)
     {
         //------------------------------------
         // Action begin (2)
         printf("Start Step2 (Copy source data from DDR to Host) ..............\n");
-        dnut_prepare_intersect(&cjob, &ijob_i, &ijob_o,
+        snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                      2, method, src_tables, src_sizes,result_table,99);
 
-        rc |= run_one_step(kernel, &cjob, timeout, action_irq, 2);
+        rc |= run_one_step(action, &cjob, timeout, action_irq, 2);
         if (rc != 0)
-            goto out_error;
+            goto out_error2;
 
         //------------------------------------
         // Action begin (4)
@@ -478,12 +492,12 @@ int main(int argc, char *argv[])
         //------------------------------------
         // Action begin (3)
         printf("Start Step3 (Do intersection in DDR) ..............\n");
-        dnut_prepare_intersect(&cjob, &ijob_i, &ijob_o,
+        snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                      3, method, src_tables, src_sizes, result_table, 99);
 
-        rc |= run_one_step(kernel, &cjob, timeout, action_irq, 3);
+        rc |= run_one_step(action, &cjob, timeout, action_irq, 3);
         if (rc != 0)
-            goto out_error;
+            goto out_error2;
 
         actual_result_size = ijob_o.result_table.size;  //in bytes
         result_num = actual_result_size/sizeof(value_t);
@@ -493,12 +507,12 @@ int main(int argc, char *argv[])
         //------------------------------------
         // Action begin (5)
         printf("Start Step5 (Copy result from DDR to Host) ..............\n");
-        dnut_prepare_intersect(&cjob, &ijob_i, &ijob_o,
+        snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                      5, method, src_tables, src_sizes, result_table, result_num * sizeof(value_t));
 
-        rc |= run_one_step(kernel, &cjob, timeout, action_irq, 5);
+        rc |= run_one_step(action, &cjob, timeout, action_irq, 5);
         if (rc != 0)
-            goto out_error;
+            goto out_error2;
     }
 
     if(output != NULL)
@@ -526,8 +540,8 @@ int main(int argc, char *argv[])
         printf("\n");
     }
 
-
-	dnut_kernel_free(kernel);
+	snap_detach_action(action);
+	snap_card_free(card);
 
     for(i = 0; i < NUM_TABLES; i++)
 	    __free(src_tables[i]);
@@ -536,11 +550,13 @@ int main(int argc, char *argv[])
 	exit(exit_code);
 
  out_error2:
-	dnut_kernel_free(kernel);
-
+	snap_detach_action(action);
+ out_error1:
+	snap_card_free(card);
  out_error:
     for(i = 0; i < NUM_TABLES; i++)
 	    __free(src_tables[i]);
 	__free(result_table);
+
 	exit(EXIT_FAILURE);
 }

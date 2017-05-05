@@ -734,7 +734,8 @@ int main(int argc, char *argv[])
 		struct snap_action *act;
 
 		/* FIXME snap_detach_action() not called on errors! */
-		act = snap_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags, 5*timeout);
+		act = snap_attach_action(dn, ACTION_TYPE_EXAMPLE,
+					 attach_flags, 5*timeout);
 		if (NULL != act) {
 			VERBOSE0(" Error: Cannot Attach Action %x after %d sec\n",
 				ACTION_TYPE_EXAMPLE, 5*timeout);
