@@ -26,7 +26,7 @@ ifeq "$(FPGACARD)" "KU3"
   ifndef FLOW_MODE
     FLOW_MODE="HDK"
   endif
-endif
+endif 
 
 ifeq "$(FPGACARD)" "FGT"
   export DDR3_USED=FALSE
