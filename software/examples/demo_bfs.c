@@ -484,7 +484,7 @@ int main(int argc, char *argv[])
 		goto out_error;
 	}
 
-	action = snap_attach_action(card, HLS_BFS_ID, 0, 5);
+	action = snap_attach_action(card, HLS_BFS_ID, 0, 60);
 	if (action == NULL) {
 		fprintf(stderr, "err: failed to attach action %u: %s\n",
 			card_no, strerror(errno));

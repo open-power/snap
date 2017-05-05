@@ -409,9 +409,11 @@ static int memcpy_test(struct snap_card* dnc,
 	return rc;
 }
 
-static struct snap_action *get_action(struct snap_card *handle, int flags, int timeout)
+static struct snap_action *get_action(struct snap_card *handle,
+				      int flags, int timeout)
 {
-	return snap_attach_action(handle, ACTION_TYPE_EXAMPLE, flags, timeout);
+	return snap_attach_action(handle, ACTION_TYPE_EXAMPLE,
+				  flags, timeout);
 }
 
 static void usage(const char *prog)
