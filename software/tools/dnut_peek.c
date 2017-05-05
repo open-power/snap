@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,11 +50,11 @@ static void usage(const char *prog)
 	       "  -n, --must-not-be <value> compare and exit if equal.\n"
 	       "  -d, --dump                Number of 32 or 64 bytes to read. default 1\n"
 	       "  <addr>\n"
-		"Note: Use -w32 to access dnut action starting at offset 0x10000\n"
+		"Note: Use -w32 to access snap action starting at offset 0x10000\n"
 	       "Example:\n"
-	       "  $ dnut_peek 0x0000\n"
+	       "  $ snap_peek 0x0000\n"
 	       "  [00000000] 0008002f0bc0ed99\nor\n"
-	       "  $ dnut_peek 0x0008\n"
+	       "  $ snap_peek 0x0008\n"
 	       "  [00000000] 0000201703222151\n\n",
 	       prog);
 }
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 {
 	int ch, rc = 0;
 	int card_no = 0;
-	struct dnut_card *card;
+	struct snap_card *card;
 	int cpu = -1;
 	int width = 64;
 	uint32_t offs;
@@ -177,8 +177,8 @@ int main(int argc, char *argv[])
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
 	if (verbose_flag)
 		printf("[%s] Open CAPI Card: %s\n", argv[0], device);
-	card = dnut_card_alloc_dev(device, DNUT_VENDOR_ID_ANY,
-				DNUT_DEVICE_ID_ANY);
+	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_ANY,
+				SNAP_DEVICE_ID_ANY);
 	if (card == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
 			strerror(errno));
@@ -192,32 +192,32 @@ int main(int argc, char *argv[])
 		switch (width) {
 		case 32: {
 			if (verbose_flag > 1)
-				printf("[%s] dnut_mmio_read32(%p, %x)\n",
+				printf("[%s] snap_mmio_read32(%p, %x)\n",
 					argv[0], card, offs);
-			rc = dnut_mmio_read32(card, offs, (uint32_t *)&val);
+			rc = snap_mmio_read32(card, offs, (uint32_t *)&val);
 			val &= 0xffffffff; /* mask off obsolete bits ... */
 			break;
 		}
 		default:
 		case 64:
 			if (verbose_flag > 1)
-				printf("[%s] dnut_mmio_read64(%p, %x)\n",
+				printf("[%s] snap_mmio_read64(%p, %x)\n",
 					argv[0], card, offs);
-			rc = dnut_mmio_read64(card, offs, &val);
+			rc = snap_mmio_read64(card, offs, &val);
 			break;
 		}
 
 		if (rc != 0) {
 			fprintf(stderr, "err: could not read [%08x] rc=%d\n",
 				offs, rc);
-			dnut_card_free(card);
+			snap_card_free(card);
 			exit(EXIT_FAILURE);
 		}
 		if ((equal) &&
 		    (equal_val != (val & and_mask))) {
 			fprintf(stderr, "err: [%08x] %016llx != %016llx\n",
 				offs, (long long)val, (long long)equal_val);
-			dnut_card_free(card);
+			snap_card_free(card);
 			exit(EX_ERR_DATA);
 		}
 		if ((not_equal) &&
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "err: [%08x] %016llx == %016llx\n",
 				offs, (long long)val,
 				(long long)not_equal_val);
-			dnut_card_free(card);
+			snap_card_free(card);
 			exit(EX_ERR_DATA);
 		}
 
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 	}
 	if (verbose_flag)
 		printf("[%s] Close CAPI Card: %p\n", argv[0], card);
-	dnut_card_free(card);
+	snap_card_free(card);
 
 	if (!quiet) {
 		if (32 == width)

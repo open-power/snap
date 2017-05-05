@@ -150,11 +150,11 @@ __memcmp2_exit:
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
-static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
+static void action_write(struct snap_card* h, uint32_t addr, uint32_t data)
 {
 	int rc;
 
-	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
+	rc = snap_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
 		VERBOSE0("Write MMIO 32 Err\n");
 	return;
@@ -163,7 +163,7 @@ static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct dnut_card* h, int timeout, int irq, uint32_t mem_size)
+static int action_wait_idle(struct snap_card* h, int timeout, int irq, uint32_t mem_size)
 {
 	int rc = ETIME;
 	uint64_t t_start;	/* time in usec */
@@ -171,12 +171,15 @@ static int action_wait_idle(struct dnut_card* h, int timeout, int irq, uint32_t 
 
 	if (irq)
 		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
-	dnut_kernel_start((void*)h);
 
+	/* FIXME Use act and not h */
+	snap_action_start((void*)h);
 
 	/* Wait for Action to go back to Idle */
 	t_start = get_usec();
-	rc = dnut_kernel_completed((void*)h, irq, NULL, timeout);
+
+	/* FIXME Use act and not h */
+	rc = snap_action_completed((void*)h, irq, NULL, timeout);
 	if (0 == rc)
 		VERBOSE0("Error: Timeout while Waiting for Idle ");
 	td = get_usec() - t_start;
@@ -186,7 +189,7 @@ static int action_wait_idle(struct dnut_card* h, int timeout, int irq, uint32_t 
 	return(!rc);
 }
 
-static void action_memcpy(struct dnut_card* h,
+static void action_memcpy(struct snap_card* h,
 		uint32_t action,
 		uint64_t dest,
 		uint64_t src,
@@ -242,7 +245,7 @@ static void usage(const char *prog)
 int main(int argc, char *argv[])
 {
 	char device[64];
-	struct dnut_card *dn;	/* lib dnut handle */
+	struct snap_card *dn;	/* lib snap handle */
 	int card_no = 0;
 	int cmd;
 	int rc = 1;
@@ -262,7 +265,8 @@ int main(int argc, char *argv[])
 	uint64_t host_src = 0;
 	uint64_t host_dest = 0;
 	unsigned long long max_blocks = (NVME_DRIVE_SIZE / NVME_LB_SIZE);
-
+	struct snap_action *act = NULL;
+	
 	while (1) {
                 int option_index = 0;
 		static struct option long_options[] = {
@@ -351,14 +355,14 @@ int main(int argc, char *argv[])
 	}
 
 	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
-	dn = dnut_card_alloc_dev(device, 0x1014, 0xcafe);
+	dn = snap_card_alloc_dev(device, 0x1014, 0xcafe);
 
 	VERBOSE1("NVME Test: Snap Card: %s Timeout %d NVME Drive: %d Handle: %p\n",
 		device, timeout, drive, dn);
 
 	if (NULL == dn) {
 		errno = ENODEV;
-		VERBOSE0("ERROR: dnut_card_alloc_dev(%s)\n", device);
+		VERBOSE0("ERROR: snap_card_alloc_dev(%s)\n", device);
 		return -1;
 	}
 
@@ -382,8 +386,8 @@ int main(int argc, char *argv[])
 		(long long)ddr_src, (long long)ddr_dest,
 		drive, mem_size, (long long)nvme_offset, (int)blocks);
 
-	rc = dnut_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags, 5*timeout);
-	if (0 != rc) {
+	act = snap_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags, 5*timeout);
+	if (NULL != act) {
 		VERBOSE0(" Error: Cannot Attach Action %x after %d sec\n",
 			ACTION_TYPE_EXAMPLE, 5*timeout);
 		goto __exit;
@@ -413,12 +417,12 @@ int main(int argc, char *argv[])
 	rc = memcmp2(dest_buf, src_buf, mem_size);
 
 __exit1:
-	dnut_detach_action(dn);
+	snap_detach_action(act);
 __exit:
 	free_mem(src_buf);
 	free_mem(dest_buf);
 	VERBOSE3("\nClose Card Handle: %p", dn);
-	dnut_card_free(dn);
+	snap_card_free(dn);
 	VERBOSE1("\nExit rc: %d\n", rc);
 	return rc;
 }
