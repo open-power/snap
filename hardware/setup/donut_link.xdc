@@ -17,15 +17,9 @@
 #-----------------------------------------------------------
 
 ## 
-set_false_path -from [get_pins a0/donut_i/ctrl_mgr/afu_reset_q_reg/C] -to [get_pins a0/sdram_reset_m_reg*/D]
+set_false_path -from [get_pins a0/snap_core_i/ctrl_mgr/afu_reset_q_reg/C] -to [get_pins a0/sdram_reset_m_reg*/D]
 set_false_path -from [get_pins a0/action_reset_q_reg/C] -to [get_pins a0/sdram_reset_m_reg*/D]
 set_false_path -from [get_pins a0/action_reset_qq_reg/C] -to [get_pins a0/sdram_reset_m_reg*/D]
-
-set_false_path -from [get_pins {b/f/dff_flash_intf_oe2/dout_int_reg[30]/C}] -to [get_ports o_flash_rstn]
-set_false_path -from [get_pins {b/f/dff_flash_intf_oe2/dout_int_reg[30]/C}] -to [get_ports o_flash_oen]
-set_false_path -from [get_pins {b/f/dff_flash_intf_oe2/dout_int_reg[30]/C}] -to [get_ports o_flash_wen]
-set_false_path -from [get_pins {b/f/dff_flash_dat_oe2/dout_int_reg[15]/C}] -to [get_ports {b_flash_dq[*]}]
-set_false_path -from [get_pins {b/f/dff_flash_intf_oe2/dout_int_reg[30]/C}] -to [get_ports {o_flash_a[*]}]
 
 ###############################################################################################################
 
@@ -47,9 +41,9 @@ set s_clk  [get_clocks -of_objects [get_pins ${axi_cc}/s_axi_aclk]]
 
 set m_clk  [get_clocks -of_objects [get_pins ${axi_cc}/m_axi_aclk]]
 
-set_max_delay -from [filter [all_fanout -from [get_pins ${axi_cc}/s_axi_aclk] -flat -endpoints_only] {IS_LEAF}] -to [filter [all_fanout -from [get_pins ${axi_cc}/m_axi_aclk] -flat -only_cells] {IS_SEQUENTIAL && (NAME !~ *dout_i_reg[*])}] -datapath_only [get_property -min PERIOD $s_clk]
+set_max_delay -from [filter [all_fanout -from [get_pins ${axi_cc}/s_axi_aclk] -flat -endpoints_only] {IS_LEAF}] -to [filter [all_fanout -from [get_pins ${axi_cc}/m_axi_aclk] -flat -only_cells] {IS_SEQUENTIAL && (NAME !~ *snap_core_i_reg[*])}] -datapath_only [get_property -min PERIOD $s_clk]
 
-set_max_delay -from [filter [all_fanout -from [get_pins ${axi_cc}/m_axi_aclk] -flat -endpoints_only] {IS_LEAF}] -to [filter [all_fanout -from [get_pins ${axi_cc}/s_axi_aclk] -flat -only_cells] {IS_SEQUENTIAL && (NAME !~ *dout_i_reg[*])}] -datapath_only [get_property -min PERIOD $m_clk]
+set_max_delay -from [filter [all_fanout -from [get_pins ${axi_cc}/m_axi_aclk] -flat -endpoints_only] {IS_LEAF}] -to [filter [all_fanout -from [get_pins ${axi_cc}/s_axi_aclk] -flat -only_cells] {IS_SEQUENTIAL && (NAME !~ *snap_core_i_reg[*])}] -datapath_only [get_property -min PERIOD $m_clk]
 
 #
 

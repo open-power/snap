@@ -128,12 +128,12 @@ Component psl_accel
        ah_cch: out std_logic_vector(0 to 15);                               -- Context Handle
        ah_csize: out std_logic_vector(0 to 11);                             -- Number of bytes
        ha_croom: in std_logic_vector(0 to 7);                               -- Commands PSL is prepared to accept
-    --									         
+       
        -- command parity
        ah_ctagpar: out std_logic;
        ah_compar: out std_logic;
        ah_ceapar: out std_logic;
-    --									         
+       
        -- Accelerator Buffer Interfaces
        ha_brvalid: in std_logic;                                            -- A read transfer is present
        ha_brtag: in std_logic_vector(0 to 7);                               -- Accelerator generated ID for read
@@ -146,11 +146,11 @@ Component psl_accel
        ha_bwad: in std_logic_vector(0 to 5);                                -- half line index of write data
        ha_bwdata: in std_logic_vector(0 to 511);                            -- Write data
        ha_bwpar: in std_logic_vector(0 to 7);                               -- Write data parity
-    --									         
+       
        -- buffer tag parity
        ha_brtagpar: in std_logic;
        ha_bwtagpar: in std_logic;
-    --									         
+       
        -- PSL Response Interface
        ha_rvalid: in std_logic;                                             --A response is present
        ha_rtag: in std_logic_vector(0 to 7);                                --Accelerator generated request ID
@@ -159,7 +159,7 @@ Component psl_accel
        ha_rcachestate: in std_logic_vector(0 to 1);                         --Resultant Cache State
        ha_rcachepos: in std_logic_vector(0 to 12);                          --Cache location id
        ha_rtagpar: in std_logic;
-    --									         
+       
        -- MMIO Interface
        ha_mmval: in std_logic;                                              -- A valid MMIO is present
        ha_mmrnw: in std_logic;                                              -- 1 = read, 0 = write
@@ -169,12 +169,12 @@ Component psl_accel
        ha_mmcfg: in std_logic;                                              -- mmio is to afu descriptor space
        ah_mmack: out std_logic;                                             -- Write is complete or Read is valid pulse
        ah_mmdata: out std_logic_vector(0 to 63);                            -- Read data
-    --									         
+       
        -- mmio parity
        ha_mmadpar: in std_logic;
        ha_mmdatapar: in std_logic;
        ah_mmdatapar: out std_logic;
-    --									         
+       
        -- Accelerator Control Interface
        ha_jval: in std_logic;                                               -- A valid job control command is present
        ha_jcom: in std_logic_vector(0 to 7);                                -- Job control command opcode
@@ -326,10 +326,7 @@ Component base_img
        ha0_jcompar: out std_logic;
        a0h_paren: in std_logic;
        ha0_pclock: out std_logic;
-       gold_factory: in std_logic;
-       pci_user_reset: out std_logic;  --PCI hip user_reset signal if needed
-       pci_clock_125MHz: out std_logic --125MHz clock if needed
-       );
+       gold_factory: in std_logic);
 
 END Component base_img;
 
@@ -390,8 +387,6 @@ Signal ha0_rtag: std_logic_vector(0 to 7);  -- acctag
 Signal ha0_rtagpar: std_logic;  -- bool
 Signal ha0_rvalid: std_logic;  -- bool
 Signal gold_factory: std_logic;
-Signal pci_user_reset: std_logic;
-Signal pci_clock_125MHz: std_logic;
 
 begin
 
@@ -406,13 +401,9 @@ begin
          ah_cch               => a0h_cch,
          ah_csize             => a0h_csize,
          ha_croom             => ha0_croom,
-      --			         
-      -- command parity		         
          ah_ctagpar           => a0h_ctagpar,
          ah_compar            => a0h_compar,
          ah_ceapar            => a0h_ceapar,
-      --
-      -- Accelerator Buffer Interfaces
          ha_brvalid           => ha0_brvalid,
          ha_brtag             => ha0_brtag,
          ha_brad              => ha0_brad,
@@ -424,12 +415,8 @@ begin
          ha_bwad              => ha0_bwad,
          ha_bwdata            => ha0_bwdata,
          ha_bwpar             => ha0_bwpar,
-      --			         
-      -- buffer tag parity	         
          ha_brtagpar          => ha0_brtagpar,
          ha_bwtagpar          => ha0_bwtagpar,
-      --			         
-      -- PSL Response Interface	         
          ha_rvalid            => ha0_rvalid,
          ha_rtag              => ha0_rtag,
          ha_response          => ha0_response,
@@ -437,8 +424,6 @@ begin
          ha_rcachestate       => ha0_rcachestate,
          ha_rcachepos         => ha0_rcachepos,
          ha_rtagpar           => ha0_rtagpar,
-      --			         
-      -- MMIO Interface		         
          ha_mmval             => ha0_mmval,
          ha_mmrnw             => ha0_mmrnw,
          ha_mmdw              => ha0_mmdw,
@@ -450,8 +435,6 @@ begin
          ha_mmadpar           => ha0_mmadpar,
          ha_mmdatapar         => ha0_mmdatapar,
          ah_mmdatapar         => a0h_mmdatapar,
-      --			         
-      -- Accelerator Control Interface
          ha_jval              => ha0_jval,
          ha_jcom              => ha0_jcom,
          ha_jea               => ha0_jea,
@@ -595,9 +578,7 @@ begin
          ha0_jcompar => ha0_jcompar,
          a0h_paren => a0h_paren,
          ha0_pclock => ha0_pclock,
-         gold_factory => gold_factory,
-         pci_user_reset => pci_user_reset,
-         pci_clock_125MHz => pci_clock_125MHz
+         gold_factory => gold_factory
     );
 
 END psl_fpga;

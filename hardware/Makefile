@@ -107,8 +107,10 @@ clean:
 	@echo -e "\t                     log files";
 	@$(RM) ./compile*.log ./*/compile*.log ./vivado*.log	\
 	       ./*/vivado*.log ./vivado*.jou ./*/vivado*.jou	\
-	       hdl/core/donut.vhd				\
-	       hdl/core/donut_types.vhd				\
+	       sim/core/top.sv   				\
+	       hdl/core/snap_core.vhd				\
+	       hdl/core/snap_core_types.vhd			\
+	       hdl/core/psl_accel.vhd				\
 	       hdl/core/psl_accel_types.vhd
 	@echo -e "\t[CLEAN.............] done";
 

@@ -25,7 +25,7 @@ USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
 
 USE work.psl_accel_types.ALL;
-USE work.donut_types.all;
+USE work.snap_core_types.all;
 
 ENTITY mmio IS
   GENERIC (

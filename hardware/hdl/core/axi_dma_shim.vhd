@@ -29,7 +29,7 @@ use ieee.STD_LOGIC_UNSIGNED.all;
 use ieee.numeric_std.all;
 
 USE work.psl_accel_types.ALL;
-USE work.donut_types.all;
+USE work.snap_core_types.all;
 
 entity axi_dma_shim is
 	port (
