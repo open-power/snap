@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ static void usage(const char *prog)
 	       "  <addr> <val>\n"
 	       "\n"
 	       "Example:\n"
-	       "  dnut_poke 0x0000000 0xdeadbeef\n"
+	       "  snap_poke 0x0000000 0xdeadbeef\n"
 	       "\n",
 	       prog);
 }
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 {
 	int ch, rc, rbrc = 0;
 	int card_no = 0;
-	struct dnut_card *card;
+	struct snap_card *card;
 	int cpu = -1;
 	int width = 64;
 	int rd_back = 0;
@@ -157,8 +157,8 @@ int main(int argc, char *argv[])
 	}
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
-	card = dnut_card_alloc_dev(device, DNUT_VENDOR_ID_ANY,
-				DNUT_DEVICE_ID_ANY);
+	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_ANY,
+				SNAP_DEVICE_ID_ANY);
 	if (card == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
 			strerror(errno));
@@ -168,18 +168,18 @@ int main(int argc, char *argv[])
 	for (i = 0; i < count; i++) {
 		switch (width) {
 		case 32:
-			rc = dnut_mmio_write32(card, offs, (uint32_t)val);
+			rc = snap_mmio_write32(card, offs, (uint32_t)val);
 			xerrno = errno;
 			if (rd_back)
-				rbrc = dnut_mmio_read32(card, offs,
+				rbrc = snap_mmio_read32(card, offs,
 							(uint32_t *)&rbval);
 			break;
 		default:
 		case 64:
-			rc = dnut_mmio_write64(card, offs, val);
+			rc = snap_mmio_write64(card, offs, val);
 			xerrno = errno;
 			if (rd_back)
-				rbrc = dnut_mmio_read64(card, offs, &rbval);
+				rbrc = snap_mmio_read64(card, offs, &rbval);
 			break;
 		}
 
@@ -188,14 +188,14 @@ int main(int argc, char *argv[])
 				"%016llx to [%08x]\n"
 				"  %s\n", (unsigned long long)val, offs,
 				strerror(xerrno));
-			dnut_card_free(card);
+			snap_card_free(card);
 			exit(EXIT_FAILURE);
 		}
 		if (rd_back) {
 			if (rbrc != 0) {
 				fprintf(stderr, "err: read back failed (%d)\n",
 					rbrc);
-				dnut_card_free(card);
+				snap_card_free(card);
 				exit(EXIT_FAILURE);
 			}
 			if (val != rbval) {
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
 					"%016llx/%016llx\n",
 					(unsigned long long)val,
 					(unsigned long long)rbval);
-				dnut_card_free(card);
+				snap_card_free(card);
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
 			usleep(interval);
 	}
 
-	dnut_card_free(card);
+	snap_card_free(card);
 
 	if (!quiet)
 		printf("[%08x] %016llx\n", offs, (long long)val);
