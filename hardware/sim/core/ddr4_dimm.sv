@@ -38,7 +38,7 @@ endmodule
 
 module ddr4_dimm
 (
-  input             pcie_perst,
+  input             sys_reset,
   input             c0_ddr4_act_n,
   input  [16:0]     c0_ddr4_adr,
   input  [1:0]      c0_ddr4_ba,
@@ -63,7 +63,7 @@ module ddr4_dimm
 
   initial begin
     en_model = 1'b0;
-    wait (pcie_perst == 1'b1);
+    wait (sys_reset == 1'b1);
     #5ns en_model = 1'b1;
   end
    
@@ -77,7 +77,7 @@ module ddr4_dimm
       if (c0_ddr4_act_n)
         if ((c0_ddr4_adr[16:14] == 3'b100) ||   // write request 
             (c0_ddr4_adr[16:14] == 3'b101))    // read request
-          c0_ddr4_adr_int = c0_ddr4_adr & 18'h1C7FF;
+          c0_ddr4_adr_int = c0_ddr4_adr & 17'h1C7FF;
         else
           c0_ddr4_adr_int = c0_ddr4_adr;	
       else

@@ -321,15 +321,18 @@ module top (
      ha_pclock = !ha_pclock;
   end
 
-  // PCIe Reset generation
-  // 
-  reg pcie_perst;		
+  //
+  // System Reset Logic 
+  // Note: The HW generates a 16384x8ns=131ms reset pulse for NVMe, 
+  //       in simulation a 100ns pulse should be sufficient. 
+  //       Also use the reset to reset the DDR4 DIMM model 
+  reg sys_reset_n_q;		
   initial begin                 
-     pcie_perst <= 0;
-     #10ns        
-     pcie_perst <= 1;        
-     #10ns;                       
-     pcie_perst <= 0 ;        
+     sys_reset_n_q <= 1;
+     #10ns           
+     sys_reset_n_q <= 0;        
+     #100ns;                       
+     sys_reset_n_q <= 1 ;        
   end                           
 
   // Currently unused inputs
@@ -895,6 +898,7 @@ module top (
     .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),		    //-- only for DDR4_USED=TRUE  
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t),		    //-- only for DDR4_USED=TRUE  
     // NVME                                                 //-- only for NVME_USED=TRUE
+    .nvme_reset_n           (sys_reset_n_q),                //-- only for NVME_USED=TRUE
 //nvme_ch0    .refclk_nvme_ch0_p(refclk_nvme_p),                 //-- only for NVME_USED=TRUE
 //nvme_ch0    .refclk_nvme_ch0_n(~refclk_nvme_p),                //-- only for NVME_USED=TRUE
     .refclk_nvme_ch1_p(refclk_nvme_p),                 //-- only for NVME_USED=TRUE
@@ -907,7 +911,6 @@ module top (
     .pcie_rc1_rxp(pcie_rc1_rxp),    		       //-- only for NVME_USED=TRUE
     .pcie_rc1_txn(pcie_rc1_txn),    		       //-- only for NVME_USED=TRUE
     .pcie_rc1_txp(pcie_rc1_txp),                       //-- only for NVME_USED=TRUE	
-    .pcie_perstn(~pcie_perst),                         //-- only for NVME_USED=TRUE
     .ha_pclock(ha_pclock)
   );
 
@@ -935,7 +938,7 @@ module top (
   // DDR4 DIMM INSTANCE                                     //-- only for DDR4_USED=TRUE
   ////////////////////////////////////////////////////////////-- only for DDR4_USED=TRUE
   ddr4_dimm ddr4_dimm (                                     //-- only for DDR4_USED=TRUE
-    .pcie_perst             (pcie_perst),                   //-- only for DDR4_USED=TRUE
+    .sys_reset              (~sys_reset_n_q),               //-- only for DDR4_USED=TRUE
     .c0_ddr4_act_n          (c0_ddr4_act_n),                //-- only for DDR4_USED=TRUE
     .c0_ddr4_adr            (c0_ddr4_adr),                  //-- only for DDR4_USED=TRUE
     .c0_ddr4_ba             (c0_ddr4_ba),                   //-- only for DDR4_USED=TRUE
@@ -956,7 +959,7 @@ module top (
   // NVMe model                                             //-- only for NVME_USED=TRUE
   ////////////////////////////////////////////////////////////-- only for NVME_USED=TRUE
   nvme_model nvme_model (                                   //-- only for NVME_USED=TRUE
-    .unit_reset_n(~pcie_perst),                             //-- only for NVME_USED=TRUE
+    .sys_reset_n(sys_reset_n_q),                            //-- only for NVME_USED=TRUE
     .pcie_rc0_rxn(pcie_rc0_rxn),      		            //-- only for NVME_USED=TRUE
     .pcie_rc0_rxp(pcie_rc0_rxp), 		            //-- only for NVME_USED=TRUE
     .pcie_rc0_txn(pcie_rc0_txn),                            //-- only for NVME_USED=TRUE

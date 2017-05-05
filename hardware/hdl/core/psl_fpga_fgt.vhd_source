@@ -170,7 +170,7 @@ Component psl_accel
     -- NVME Interface	      					                -- only for NVME_USED=TRUE 
     --			      					                -- only for NVME_USED=TRUE 
     -- Reset Input                                                              -- only for NVME_USED=TRUE
-    pcie_perstn               : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
+    nvme_reset_n              : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
     --			      					                -- only for NVME_USED=TRUE 
     -- Clock inputs for NVMe                                                    -- only for NVME_USED=TRUE
 --nvme_ch0    refclk_nvme_ch0_p         : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
@@ -455,8 +455,41 @@ Signal pci_clock_125MHz: std_logic;
 Signal led_red: std_logic_vector(0 to 1);
 Signal led_green: std_logic_vector(0 to 1);
 Signal led_blue: std_logic_vector(0 to 1);
+-- NVME Reset Logic
+Signal nvme_reset_cnt_q: std_logic_vector(15 DOWNTO 0);
+Signal hold_nvme_reset_q: std_logic;
+Signal nvme_reset_n_q: std_logic;
+
 
 begin
+  -- 
+  -- NVMe Reset Logic 
+  -- 
+  -- Note: generate a 32768x4ns=131ms reset pulse for NVMe 
+  --
+  nvme_reset : PROCESS (ha0_pclock)
+  BEGIN
+    IF (rising_edge(ha0_pclock)) THEN
+      hold_nvme_reset_q <= '0';
+      nvme_reset_n_q    <= '1';
+      nvme_reset_cnt_q  <= (OTHERS => '0');
+
+      IF ((pci_user_reset    = '1') OR
+          (hold_nvme_reset_q = '1')) THEN
+  
+        hold_nvme_reset_q <= '1';
+        nvme_reset_n_q    <= '0';
+        nvme_reset_cnt_q  <= nvme_reset_cnt_q + '1';
+        
+        IF (nvme_reset_cnt_q(15) = '1') THEN
+          hold_nvme_reset_q <= '0';
+          nvme_reset_n_q    <= '1';
+        END IF;
+      END IF;
+    END IF;
+  END PROCESS nvme_reset;
+
+
   a0: psl_accel
     PORT MAP (
       -- DDR4 SDRAM Interface                                                   -- only for DDRI_USED=TRUE
@@ -486,7 +519,7 @@ begin
       -- NVME Interface	         						-- only for NVME_USED=TRUE 
       --			         					-- only for NVME_USED=TRUE 
       -- Reset Input                                                            -- only for NVME_USED=TRUE
-      pcie_perstn                       => pci_pi_nperst0,                      -- only for NVME_USED=TRUE
+      nvme_reset_n                      => nvme_reset_n_q,                      -- only for NVME_USED=TRUE
       --			         					-- only for NVME_USED=TRUE 
       -- Clock Inputs for NVMe                                                  -- only for NVME_USED=TRUE
 --nvme_ch0      refclk_nvme_ch0_p                     => pcie_clk1_p,                     -- only for NVME_USED=TRUE

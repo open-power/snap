@@ -107,7 +107,7 @@ while [ -z "$SETUP_DONE" ]; do
     echo "Setting FPGACARD               to  \"$FPGACARD\""
   else
     echo "FPGACARD                is set to: \"$FPGACARD\""
-    if [[ ($FPGACARD != "KU3") && ($FPGACARD != "FGT") ]]; then 
+    if [[ ($FPGACARD != "KU3") && ($FPGACARD != "FGT") ]]; then
       echo
       echo "### ERROR ### FPGACARD=$FPGACARD is not supported"
       break
@@ -121,16 +121,22 @@ while [ -z "$SETUP_DONE" ]; do
     echo "FPGACHIP                is set to: \"$FPGACHIP\""
   fi
 
-  if [ ! -d "$HDK_ROOT" ]; then
-    if [ $FPGACARD = "KU3" ]; then
+  if [ $FPGACARD = "KU3" ]; then
+    if [ ! -d "$HDK_ROOT" ]; then
       export HDK_ROOT=$FRAMEWORK_ROOT/cards/adku060_capi_1_1_release
-    else 
-      export HDK_ROOT=$FRAMEWORK_ROOT/cards/flashgt_2016_3
-    fi 
+      echo "Setting HDK_ROOT               to  \"$HDK_ROOT\""
+    else
+      echo "HDK_ROOT                is set to: \"$HDK_ROOT\""
+    fi
+  fi
 
-    echo "Setting HDK_ROOT               to  \"$HDK_ROOT\""
-  else
-    echo "HDK_ROOT                is set to: \"$HDK_ROOT\""
+  if [ $FPGACARD = "FGT" ]; then
+    if [ ! -f "$PSL_DCP" ]; then
+      export PSL_DCP=$FRAMEWORK_ROOT/cards/FGT/portal_20170413/b_route_design.dcp
+      echo "Setting PSL_DCP                to  \"$PSL_DCP\""
+    else
+      echo "PSL_DCP                 is set to: \"$PSL_DCP\""
+    fi
   fi
 
   if [ -z "$SIMULATOR" ]; then
@@ -139,7 +145,7 @@ while [ -z "$SETUP_DONE" ]; do
   else
     echo "SIMULATOR               is set to: \"$SIMULATOR\""
   fi
- 
+
   if [ -z "$NUM_OF_ACTIONS" ]; then
     export NUM_OF_ACTIONS=1
     echo "Setting NUM_OF_ACTIONS         to  \"$NUM_OF_ACTIONS\""
@@ -159,7 +165,7 @@ while [ -z "$SETUP_DONE" ]; do
     echo "Variable NVME_USED      is not set. Will default to  \"FALSE\""
   else
     echo "NVME_USED               is set to: \"$NVME_USED\""
-    if [[ $NVME_USED = "TRUE"  && $FPGACARD = "KU3" ]]; then 
+    if [[ $NVME_USED = "TRUE"  && $FPGACARD = "KU3" ]]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of NVME_USED=$NVME_USED on KU3 is conflicting!"
     fi
   fi
@@ -198,6 +204,14 @@ while [ -z "$SETUP_DONE" ]; do
     fi
   fi
 
+  if [ -z "$DENALI" ]; then
+    if [[ $NVME_USED = "TRUE" ]]; then
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of NVME_USED=$NVME_USED but DENALI not set!"
+    fi
+  else
+    echo "DENALI                  is set to: \"$DENALI\""
+  fi
+
   if [ ! -z "$SETUP_WARNING" ]; then
     echo -e "$SETUP_WARNING"
   fi
@@ -206,3 +220,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   SETUP_DONE="1"
 done
+# set a return value in case that the file was sourced
+if [[ "$_" = "$0" ]]; then
+  if [[ "$SETUP_DONE" == "1" ]];then return 0;else return 1;fi
+fi
