@@ -44,6 +44,7 @@ int getNextState(char pat[PATTERN_SIZE], int M, int state, int x)
 void computeTF(char pat[PATTERN_SIZE], int M, int TF[PATTERN_SIZE+1][NO_OF_CHARS])
 {
   int state, x;
+
   for (state = 0; state <= M; ++state)
     	  for (x = 0; x < NO_OF_CHARS; ++x)
 		  	  TF[state][x] = getNextState(pat, M, state, x);
@@ -52,6 +53,7 @@ void computeTF(char pat[PATTERN_SIZE], int M, int TF[PATTERN_SIZE+1][NO_OF_CHARS
 /* Prints all occurrences of pat in txt */
 int FAsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N)
 {
+#pragma HLS INLINE off
 //  int M = strlen(pat);
 //  int N = strlen(txt);
 

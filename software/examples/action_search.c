@@ -42,6 +42,81 @@ static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 	return 0;
 }
 
+//
+// C program for Naive Pattern Searching algorithm
+//
+// Origin:
+//   http://www.geeksforgeeks.org/searching-for-patterns-set-1-naive-pattern-searching
+//
+// License:
+//   https://creativecommons.org/licenses/by-nc-nd/2.5/in/deed.en_US
+//
+
+/* void search(char *pat, char *txt) */
+int Nsearch(char *pat, int M, char *txt, int N) 
+{
+//  int M = strlen(pat);
+//  int N = strlen(txt);
+    int count=0;
+
+    /* A loop to slide pat[] one by one */
+    int i;
+    for (i = 0; i <= N - M; i++)
+    {
+        int j;
+  
+           /* For current index i, check for pattern match */
+           for (j = 0; j < M; j++)
+                   if (txt[i+j] != pat[j])
+                       break;
+ 
+           if (j == M)  // if pat[0...M-1] = txt[i, i+1, ...i+M-1]
+           {
+              count++; // BM : line added to return a value
+              printf("Pattern found at index %d \n", i);
+           }
+    }
+    return count;
+}
+
+uint32_t run_sw_search (char *dbuff, ssize_t dsize, char *pbuff, int psize, int method)
+{
+        int count = 0;
+        //int q = 101; // a prime number
+
+    printf("SW search, method = %d, Text size is %d, pattern is %s, pattern size is %d \n",
+                                    method, (unsigned int) dsize, pbuff, psize);
+
+        switch (method) {
+        case(NAIVE):    printf("======== Naive method ========\n");
+                        count = Nsearch  ((char *) pbuff, psize, (char *)dbuff, dsize);
+                        break;
+/*
+        case(KMP):      printf("========= KMP method =========\n");
+                        count = KMPsearch(Pattern, PatternSize, Text, TextSize);
+                        break;
+        case(FA):       printf("========= FA method =========\n");
+                        count = FAsearch (Pattern, PatternSize, Text, TextSize);
+                        break;
+        case(FAE):      printf("========= FAE method =========\n");
+                        count = FAEsearch(Pattern, PatternSize, Text, TextSize);
+                        break;
+        case(BM):       printf("========= BM method =========\n");
+                        count = BMsearch (Pattern, PatternSize, Text, TextSize);
+                        break;
+        case(RK):       printf("========= RK method =========\n");
+                        count = RKsearch (Pattern, PatternSize, Text, TextSize, q);
+                        break;
+*/
+        default:        printf("=== Default Naive method ===\n");;
+                        count = Nsearch  (pbuff, psize, dbuff, dsize);
+        }
+        printf("pattern size %d - text size %d - rc = %d \n", psize, (unsigned int)dsize, count);
+
+        return count;
+
+}
+
 static int action_main(struct dnut_action *action,
 		       void *job, unsigned int job_len)
 {

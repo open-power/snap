@@ -20,6 +20,7 @@
 */
 int RKsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N, int q)
 {
+#pragma HLS INLINE off
     //int M = strlen(pat);
     //int N = strlen(txt);
     int i, j;

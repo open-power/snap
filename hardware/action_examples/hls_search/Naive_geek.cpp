@@ -26,7 +26,7 @@ int Nsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N)
     /* A loop to slide pat[] one by one */
     slide_pattern_loop:
     //for (int i = 0; i <= N - M; i++)
-    for (int i = 0; i <= TEXT_SIZE; i++)
+    for (int i = 0; i < TEXT_SIZE; i++)
     {
         int j;
         if (i <= N - M)
@@ -36,6 +36,7 @@ int Nsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N)
            matching_pattern_loop:
            //for (j = 0; j < M; j++)
            for (j = 0; j < PATTERN_SIZE; j++)
+#pragma HLS UNROLL
                if (j < M)
                {
                    if (txt[i+j] != pat[j])

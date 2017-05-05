@@ -38,6 +38,7 @@ void badCharHeuristic( char str[PATTERN_SIZE], int size, int badchar[NO_OF_CHARS
    Boyer Moore Algorithm */
 int BMsearch(char pat[PATTERN_SIZE], int m, char txt[TEXT_SIZE], int n)
 {
+#pragma HLS INLINE off
 //    int m = strlen(pat);
 //    int n = strlen(txt);
     int count = 0;

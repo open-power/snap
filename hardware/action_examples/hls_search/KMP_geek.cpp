@@ -14,6 +14,7 @@
 //void computeLPSArray(char *pat, int M, int *lps)
 void computeLPSArray(char pat[PATTERN_SIZE], int M, int *lps)
 {
+#pragma HLS INLINE off
     // length of the previous longest prefix suffix
     int len = 0;
 
@@ -55,6 +56,7 @@ void computeLPSArray(char pat[PATTERN_SIZE], int M, int *lps)
 //void KMPsearch(char *pat, char *txt)
 int KMPsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N)
 {
+#pragma HLS INLINE off
 	// Moved to main()
     //int M = strlen(pat);
     //int N = strlen(txt);

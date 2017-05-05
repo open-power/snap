@@ -168,7 +168,7 @@ static void dnut_prepare_search(struct dnut_job *cjob,
 }
 static int run_one_step(struct dnut_kernel *kernel, struct dnut_job *cjob, unsigned long timeout, int action_irq, uint64_t step)
 {
-	int rc;
+	int rc = 0;
 	struct timeval etime, stime;
 
 	gettimeofday(&stime, NULL);
@@ -284,6 +284,7 @@ int main(int argc, char *argv[])
 	long int expected_patterns = -1;
 	int exit_code = EXIT_SUCCESS;
 	int action_irq = 0;
+        uint32_t result_num = 0;
     int sw = 0; //using software flow. Default is 0.  
     unsigned method = 1; //search method. Default is byte-by-byte. 
 
@@ -414,18 +415,24 @@ int main(int argc, char *argv[])
      */
 
     
+    printf("**************************************************************\n");
     printf("Start Step1 (Copy source data from Host to DDR) ..............\n");
+    printf("**************************************************************\n");
 	dnut_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
 			    offs, items, pbuff, psize, method, 1);
 
     rc |= run_one_step(kernel, &cjob, timeout, action_irq, 1);
-	if (rc != 0)
-		goto out_error2;
+	if (rc != 0) {
+            printf("Error out of Step1.\n");
+	//	goto out_error2;
+	}
     
     printf("here.\n");
     if(sw)
     {
+        printf("**************************************************************\n");
         printf("Start Step2 (Copy source data from DDR to Host) ..............\n");
+        printf("**************************************************************\n");
 	    dnut_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
 			    offs, items, pbuff, psize, method, 2);
 
@@ -434,14 +441,17 @@ int main(int argc, char *argv[])
             goto out_error2;
 
         //------------------------------------
+        printf("**************************************************************\n");
         printf("Start Step4 (Do Search by software) ..............\n");
+        printf("**************************************************************\n");
         gettimeofday(&stime, NULL);
-        //TODO  
-        //To Add the function here!
-	    gettimeofday(&etime, NULL);
-	    fprintf(stdout, "Step 4 took %lld usec\n", (long long)timediff_usec(&etime, &stime));
-        //TODO
-        //To print the results
+
+        //result_num = run_sw_search ((char) dbuff, dsize, (char) pbuff, psize, method);
+
+	gettimeofday(&etime, NULL);
+	printf("Step 4 : RESULT :  %d occurrences \n", result_num);
+
+	fprintf(stdout, "Step 4 took %lld usec\n", (long long)timediff_usec(&etime, &stime));
 
     }
     else
@@ -449,13 +459,18 @@ int main(int argc, char *argv[])
 
         run = 0;
         do {
+            printf("**************************************************************\n");
             printf(" >>> Searching %d >>> ", run);
+            printf("**************************************************************\n");
             printf("Start Step3 (Do Search by hardware, in DDR) ..............\n");
+            printf("**************************************************************\n");
             dnut_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
                     offs, items, pbuff, psize, method, 3);
             rc |= run_one_step(kernel, &cjob, timeout, action_irq, 3);
-            if (rc != 0)
-                goto out_error2;
+            if (rc != 0) {
+                printf("Error out of Step3.\n");
+                //goto out_error2;
+            }
             
             if (cjob.retc != DNUT_RETC_SUCCESS)  {
                 fprintf(stderr, "err: job retc %x!\n", cjob.retc);
@@ -463,7 +478,9 @@ int main(int argc, char *argv[])
             }
             
 		
+            printf("**************************************************************\n");
             printf("Start Step5 (Copy pattern matching positions back to Host) ..............\n");
+            printf("**************************************************************\n");
             dnut_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
                     offs, items, pbuff, psize, method, 5);
             dnut_print_search_results(&cjob, run);

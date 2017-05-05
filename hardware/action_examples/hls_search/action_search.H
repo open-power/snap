@@ -57,11 +57,11 @@ typedef struct {
         dnut_addr ddr_text1;   /* input data : 128 bits*/
         dnut_addr ddr_text2;   /* input data : 128 bits*/
         dnut_addr res_text;    /* output table : 128 bits*/
-        snapu64_t nb_of_occurrences;
+        snapu16_t step;
+        snapu16_t method;
+        snapu32_t nb_of_occurrences;
         snapu64_t next_input_address;
-        snapu32_t step;
-        snapu32_t method;
-        ap_uint<32> unused; /* mandatory to keep output register at the right address*/
+        ap_uint<96> unused; /* mandatory to keep output register at the right address*/
 } DATA_TS; // DATA = 108 Bytes = 864 bits
 
 //---------------------------------------------------------------------
@@ -73,6 +73,7 @@ typedef struct {
 
 /* search method */
 enum {
+	    STRM   = 0x0,
         NAIVE  = 0x1,
         KMP    = 0x2,
         FA     = 0x3,

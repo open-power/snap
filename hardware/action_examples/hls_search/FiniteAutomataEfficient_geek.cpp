@@ -41,6 +41,7 @@ void computeTransFun(char pat[PATTERN_SIZE], int M, int TF[PATTERN_SIZE][NO_OF_C
 /* Prints all occurrences of pat in txt */
 int FAEsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N)
 {
+#pragma HLS INLINE off
     //int M = strlen(pat);
     //int N = strlen(txt);
 	int count = 0;
