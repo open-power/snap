@@ -95,7 +95,8 @@ struct snap_card {
 };
 
 /* To be used for software simulation, use funcs provided by action */
-static int snap_map_funcs(struct snap_card *card, uint32_t action_type);
+static int snap_map_funcs(struct snap_card *card,
+			  snap_action_type_t action_type);
 
 /*	Get Time in msec */
 static unsigned int tget_ms(void)
@@ -432,7 +433,7 @@ static int hw_detach_action(struct snap_action *action)
 						   attached to action */
 		snap_trace("%s Error: CSR 0x%llx\n",
 			   __func__, (long long)data);
-		rc = 1; /* FIXME Use libdonut return codes */
+		rc = SNAP_EDETACH; /* FIXME Use libdonut return codes */
 	}
 
 	card->action_base = 0; /* FIXME use action_*32 instead */
@@ -545,54 +546,6 @@ void snap_queue_free(struct snap_queue *queue __unused)
 	card->queue_type = 0xffffffff;
 }
 
-/**
- * Synchronous way to send a job away. Blocks until job is done.
- *
- * FIXME Example Code not working yet. Needs fixups and discussion.
- *       Makes most sense if the job-manager is really implemented in the
- *       FPGA.
- *
- * @queue	handle to streaming framework queue
- * @cjob	streaming framework job
- * @return	0 on success.
- */
-int snap_sync_execute_job(struct snap_queue *queue,
-			  struct snap_job *cjob,
-			  unsigned int timeout_sec __unused)
-{
-	int rc;
-	unsigned int i;
-	struct snap_card *card = (struct snap_card *)queue;
-	uint32_t action_data, action_addr;
-	uint32_t *job_data = (uint32_t *)(unsigned long)cjob->win_addr;
-
-	/* Action registers setup */
-	for (i = 0, action_addr = 0x10;	/* FIXME */
-	     i < cjob->win_size/sizeof(uint32_t);
-	     i++, action_addr += sizeof(uint32_t)) {
-
-		rc = snap_mmio_write32(card, action_addr, job_data[i]);
-		if (rc != 0)
-			return rc;
-	}
-
-	/* Start Action and wait for finish */
-	rc = snap_mmio_write32(card, ACTION_CONTROL, ACTION_CONTROL_START);
-	if (rc != 0)
-		return rc;
-
-	/* FIXME Timeout missing */
-	/* Wait for Action to go back to Idle */
-	do {
-		rc = snap_mmio_read32(card, ACTION_CONTROL, &action_data);
-		if (rc != 0)
-			return rc;
-
-	} while ((action_data & ACTION_CONTROL_IDLE) == 0);
-
-	return 0;
-}
-
 /*****************************************************************************
  * FIXED ACTION ASSIGNMENT MODE
  * E.g. for data streaming if action must stay alive for the whole
@@ -654,15 +607,13 @@ int snap_action_sync_execute_job(struct snap_action *action,
 				 int irq)
 {
 	int rc;
+	int completed;
 	unsigned int i;
 	struct snap_card *card = (struct snap_card *)action;
-	uint32_t action_addr;
-	/* one cacheline job description and data */
 	struct snap_queue_workitem job;
+	uint32_t action_addr;
 	uint32_t *job_data;
-	int completed;
 	unsigned int mmio_in, mmio_out;
-	int attach_flags = SNAP_CCR_DIRECT_MODE;	/* FIXME for Job mode */
 
 	if (cjob->wout_size > (6 * 16)) {	/* Size must be less than addr[6] */
 		snap_trace("  %s: err: wout_size too large %d\n", __func__,
@@ -671,7 +622,7 @@ int snap_action_sync_execute_job(struct snap_action *action,
 		return -1;
 	}
 
-	job.short_action = 0x00;	/* Set later */
+	/* job.short_action = 0x00; */	/* Set later */
 	job.flags = 0x01;		/* FIXME Set Flag to Execute */
 	job.seq = 0x0000;		/* Set later */
 	job.retc = 0x00000000;
@@ -695,16 +646,6 @@ int snap_action_sync_execute_job(struct snap_action *action,
 	snap_trace("    win_size: %d wout_size: %d mmio_in: %d mmio_out: %d\n",
 		cjob->win_size, cjob->wout_size, mmio_in, mmio_out);
 
-	if (irq)
-		attach_flags |= SNAP_CCR_IRQ_ATTACH;
-
-	if (snap_attach_action(card, card->action_type,
-			       attach_flags, timeout_sec)) {
-		snap_trace("%s: Error Can not attach to Action 0x%x\n",
-			   __func__, card->action_type);
-		errno = ETIME;
-		return -1;
-	}
 	job.short_action = card->sat;/* Set correct Value after attach */
 	job.seq = card->seq++;	  /* Set correct Value after attach */
 
@@ -778,10 +719,43 @@ int snap_action_sync_execute_job(struct snap_action *action,
 	}
 
 __snap_action_sync_execute_job_exit:
-	snap_detach_action(action);
 	snap_action_stop(action);
 	return rc;
 }
+
+int snap_sync_execute_job(struct snap_card *card,
+			  snap_action_type_t action_type,
+			  struct snap_job *cjob,
+			  int attach_timeout_sec,
+			  int timeout_sec,
+			  int irq)
+{
+	int rc = SNAP_OK;
+	int attach_flags = SNAP_CCR_DIRECT_MODE; /* FIXME for Job mode */
+	struct snap_action *action;
+
+	if (irq)
+		attach_flags |= SNAP_CCR_IRQ_ATTACH;
+
+	action = snap_attach_action(card, action_type,
+				    attach_flags, attach_timeout_sec); 
+	if (action == NULL) {
+		snap_trace("%s: Error Can not attach to Action 0x%x\n",
+			   __func__, card->action_type);
+		errno = ETIME;
+		return SNAP_EATTACH;
+	}
+
+	rc = snap_action_sync_execute_job(action, cjob, timeout_sec, irq);
+	if (rc != SNAP_OK)
+		goto err_out;
+
+	return snap_detach_action(action);
+
+ err_out:
+	snap_detach_action(action);
+	return rc;
+ }
 
 /******************************************************************************
  * SOFTWARE EMULATION OF FPGA ACTIONS
@@ -830,12 +804,12 @@ static int snap_map_funcs(struct snap_card *card,
 	if (a == NULL) {
 		snap_trace("  %s: No action found!!\n", __func__);
 		errno = ENOENT;
-		return -1;
+		return SNAP_ENOENT;
 	}
 
 	snap_trace("  %s: Action found %p.\n", __func__, a);
 	card->action = a;
-	return 0;
+	return SNAP_OK;
 }
 
 static void *sw_card_alloc_dev(const char *path __unused,
