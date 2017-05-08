@@ -94,7 +94,7 @@ static void *snap_open(struct mdev_ctx *mctx)
 
 	sprintf(device, "/dev/cxl/afu%d.0m", mctx->card);
 	VERBOSE3("[%s] Enter: %s\n", __func__, device);
-	handle = dnut_card_alloc_dev(device, 0xffff, 0xffff);
+	handle = snap_card_alloc_dev(device, 0xffff, 0xffff);
 	VERBOSE3("[%s] Exit %p\n", __func__, handle);
 	return handle;
 }
@@ -106,7 +106,7 @@ static void snap_close(struct mdev_ctx *mctx)
 	if (NULL == mctx->handle)
 		rc =  -1;
 	else {
-		dnut_card_free(mctx->handle);
+		snap_card_free(mctx->handle);
 		mctx->handle = NULL;
 	}
 	VERBOSE3("[%s] Exit %d\n", __func__, rc);
@@ -120,7 +120,7 @@ static uint64_t snap_read64(void *handle, int ctx, uint32_t addr)
 
 	if (ctx)
 		addr += SNAP_S_BASE + (ctx * SNAP_S_SIZE);
-	rc = dnut_mmio_read64(handle, (uint64_t)addr, &reg);
+	rc = snap_mmio_read64(handle, (uint64_t)addr, &reg);
 	if (0 != rc)
 		VERBOSE0("[%s] Error Reading MMIO %x\n", __func__, addr);
 	return reg;
@@ -132,7 +132,7 @@ static int snap_write64(void *handle, int ctx, uint32_t addr, uint64_t data)
 
 	if (ctx)
 		addr += SNAP_S_BASE + (ctx * SNAP_S_SIZE);
-	rc = dnut_mmio_write64(handle, (uint64_t)addr, data);
+	rc = snap_mmio_write64(handle, (uint64_t)addr, data);
 	return rc;
 }
 
@@ -141,7 +141,7 @@ static uint32_t snap_read32(void *handle, uint32_t addr)
 	uint32_t reg;
 	int rc;
 
-	rc = dnut_mmio_read32(handle, (uint64_t)addr, &reg);
+	rc = snap_mmio_read32(handle, (uint64_t)addr, &reg);
 	if (0 != rc)
 		VERBOSE3("[%s] Error Reading MMIO %x\n", __func__, addr);
 	return reg;
@@ -151,7 +151,7 @@ static void snap_write32(void *handle, uint32_t addr, uint32_t data)
 {
 	int rc;
 
-	rc = dnut_mmio_write32(handle, (uint64_t)addr, data);
+	rc = snap_mmio_write32(handle, (uint64_t)addr, data);
 	if (0 != rc)
 		VERBOSE3("[%s] Error writting MMIO %x\n", __func__, addr);
 	return;

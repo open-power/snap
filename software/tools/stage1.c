@@ -50,41 +50,41 @@ static const char *version = GIT_VERSION;
 #define	ACTION_CNT		(ACTION_BASE + 0x34)	/* Count Register */
 
 /* Framework Write and Read are 64 bit MMIO */
-static void fw_write(struct dnut_card* h, uint64_t addr, uint64_t data)
+static void fw_write(struct snap_card* h, uint64_t addr, uint64_t data)
 {
 	printf("FW Write: 0x%016llx 0x%016llx\n",
 		(long long)addr, (long long)data);
-	dnut_mmio_write64(h, addr, data);
+	snap_mmio_write64(h, addr, data);
 }
 
-static uint64_t fw_read(struct dnut_card* h, uint64_t addr)
+static uint64_t fw_read(struct snap_card* h, uint64_t addr)
 {
 	uint64_t reg;
 
-	dnut_mmio_read64(h, addr,&reg);
+	snap_mmio_read64(h, addr,&reg);
 	printf("FW Read: 0x%016llx 0x%016llx\n",
 		(long long)addr, (long long)reg);
 	return reg;
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
-static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
+static void action_write(struct snap_card* h, uint32_t addr, uint32_t data)
 {
 	int rc;
 
 	printf("Action Write: 0x%08x 0x%08x\n", addr, data);
-	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
+	rc = snap_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
 		printf("Write MMIO 32 Err\n");
 	return;
 }
 
-static uint32_t action_read(struct dnut_card* h, uint32_t addr)
+static uint32_t action_read(struct snap_card* h, uint32_t addr)
 {
 	int rc;
 	uint32_t reg = 0x11;
 
-	rc = dnut_mmio_read32(h, (uint64_t)addr, &reg);
+	rc = snap_mmio_read32(h, (uint64_t)addr, &reg);
 	if (0 != rc)
 		printf("Read MMIO 32 Err\n");
 	printf("Action Read: 0x%08x 0x%08x\n", addr, reg);
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 	uint64_t fw_addr;
 	uint32_t action_addr, action_data;
 	uint     i, len, card_no = 0;
-	struct dnut_card *dn;
+	struct snap_card *dn;
 	int ch;
 
 	while (1) {
@@ -156,11 +156,11 @@ int main(int argc, char *argv[])
 	}
 
 	sprintf(device, "/dev/cxl/afu%d.0m", card_no);
-	dn = dnut_card_alloc_dev(device,
-				 DNUT_VENDOR_ID_ANY,
-				 DNUT_DEVICE_ID_ANY);
+	dn = snap_card_alloc_dev(device,
+				 SNAP_VENDOR_ID_ANY,
+				 SNAP_DEVICE_ID_ANY);
 	if (NULL == dn) {
-		perror("dnut_card_alloc_dev()");
+		perror("snap_card_alloc_dev()");
 		return -1;
 	}
 
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 	printf("\n");
 
 	// Unmap AFU MMIO registers, if previously mapped
-	dnut_card_free(dn);
+	snap_card_free(dn);
 	printf("End of Test...\n");
 	return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -280,7 +280,7 @@ static void destroy_graph(AdjList adj)
  *       Hook 112B Configuration
  *---------------------------------------------------*/
 
-static void dnut_prepare_bfs(struct dnut_job *job,
+static void snap_prepare_bfs(struct snap_job *job,
 				 struct bfs_job *bjob_in,
 				 struct bfs_job *bjob_out,
 				 void *addr_in,
@@ -299,11 +299,11 @@ static void dnut_prepare_bfs(struct dnut_job *job,
     bjob_in->input_adjtable_address = (uint64_t)addr_in;
     bjob_in->input_vex_num = vex_num_in;
     bjob_in->input_type = type_in;
-    bjob_in->input_flags = DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC;
+    bjob_in->input_flags = SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC;
 
     bjob_in->output_address = (uint64_t) addr_out;
     bjob_in->output_type = type_out;
-    bjob_in->output_flags = DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST | DNUT_TARGET_FLAGS_END;
+    bjob_in->output_flags = SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END;
 
     bjob_in->status_pos = 0;
     bjob_in->status_vex = 0xbeefbeef;
@@ -315,7 +315,7 @@ static void dnut_prepare_bfs(struct dnut_job *job,
     // We have input parameters.
     // But we don't need AFU to write back results from MMIO.
     // Results will be written in host_memory, starting from output_address
-	dnut_job_set(job, HLS_BFS_ID, bjob_in, sizeof(*bjob_in),
+	snap_job_set(job, bjob_in, sizeof(*bjob_in),
 		     bjob_out, sizeof(*bjob_out));
 
 
@@ -329,9 +329,10 @@ int main(int argc, char *argv[])
 	int ch;
 	int rc = 0;
 	int card_no = 0;
-	struct dnut_kernel *kernel = NULL;
+	struct snap_card *card = NULL;
+	struct snap_action *action = NULL;
 	char device[128];
-	struct dnut_job job;
+	struct snap_job job;
 	struct timeval etime, stime;
 	uint32_t page_size = sysconf(_SC_PAGESIZE);
 	int exit_code = EXIT_SUCCESS;
@@ -417,11 +418,11 @@ int main(int argc, char *argv[])
 	struct bfs_job bjob_out;
 
 	//Input buffer
-	uint8_t type_in = DNUT_TARGET_TYPE_HOST_DRAM;
+	uint8_t type_in = SNAP_ADDRTYPE_HOST_DRAM;
 	VexNode * ibuf = 0x0ull;
 
 	//Output buffer
-	uint8_t type_out = DNUT_TARGET_TYPE_HOST_DRAM;
+	uint8_t type_out = SNAP_ADDRTYPE_HOST_DRAM;
 	uint32_t * obuf = 0x0ull;
     uint32_t size_out;
     uint32_t i, j, k;
@@ -472,25 +473,32 @@ int main(int argc, char *argv[])
 
     //////////////////////////////////////////////////////////////////////
 
-    fprintf(stdout, "dnut_kernel_attach start...\n");
+    fprintf(stdout, "snap_kernel_attach start...\n");
+
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
-	kernel = dnut_kernel_attach_dev(device,
-					0x1014,
-					0xcafe,
-					HLS_BFS_ID & 0xFFFF);
-	if (kernel == NULL) {
-		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
-			strerror(errno));
+	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
+				   SNAP_DEVICE_ID_SNAP);
+	if (card == NULL) {
+		fprintf(stderr, "err: failed to open card %u: %s\n",
+			card_no, strerror(errno));
 		goto out_error;
 	}
 
-	dnut_prepare_bfs(&job, &bjob_in, &bjob_out,
-			     (void *)ibuf,  vex_n,    type_in,
-			     (void *)obuf, type_out);
+	action = snap_attach_action(card, HLS_BFS_ID, 0, 60);
+	if (action == NULL) {
+		fprintf(stderr, "err: failed to attach action %u: %s\n",
+			card_no, strerror(errno));
+		goto out_error1;
+	}
+
+	snap_prepare_bfs(&job, &bjob_in, &bjob_out,
+			 (void *)ibuf,  vex_n,    type_in,
+			 (void *)obuf, type_out);
 
 	fprintf(stdout, "INFO: Timer starts...\n");
 	gettimeofday(&stime, NULL);
-	rc = dnut_kernel_sync_execute_job(kernel, &job, timeout, action_irq);
+	rc = snap_action_sync_execute_job(action, &job, timeout,
+					  action_irq);
 	gettimeofday(&etime, NULL);
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
@@ -555,18 +563,16 @@ int main(int argc, char *argv[])
 			goto out_error;
     }
 
-
-
-
-	dnut_kernel_free(kernel);
+    snap_detach_action(action);
+    snap_card_free(card);
     free(obuf);
     destroy_graph(adj);
-	exit(exit_code);
+    exit(exit_code);
 
  out_error2:
-    printf("dnut_kernel_free.....\n");
-	dnut_kernel_free(kernel);
-
+	snap_detach_action(action);
+ out_error1:
+	snap_card_free(card);
  out_error:
     destroy_graph(adj);
     free(obuf);

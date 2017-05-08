@@ -217,28 +217,28 @@ __memcmp_pat_exit:
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
-static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
+static void action_write(struct snap_card* h, uint32_t addr, uint32_t data)
 {
 	int rc;
 
-	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
+	rc = snap_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
 		VERBOSE0("Write MMIO 32 Err\n");
 	return;
 }
 
-static uint32_t action_read(struct dnut_card* h, uint32_t addr)
+static uint32_t action_read(struct snap_card* h, uint32_t addr)
 {
 	int rc;
 	uint32_t data;
 
-	rc = dnut_mmio_read32(h, (uint64_t)addr, &data);
+	rc = snap_mmio_read32(h, (uint64_t)addr, &data);
 	if (0 != rc)
 		VERBOSE0("Read MMIO 32 Err\n");
 	return data;
 }
 
-static void dump_regs(struct dnut_card* h)
+static void dump_regs(struct snap_card* h)
 {
 	uint32_t reg;
 	reg = action_read(h, ACTION_CONFIG);
@@ -260,7 +260,7 @@ static void dump_regs(struct dnut_card* h)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct dnut_card* h, int timeout, uint64_t *elapsed, int irq)
+static int action_wait_idle(struct snap_card* h, int timeout, uint64_t *elapsed, int irq)
 {
 	int rc = ETIME;
 	uint64_t t_start;	/* time in usec */
@@ -268,12 +268,13 @@ static int action_wait_idle(struct dnut_card* h, int timeout, uint64_t *elapsed,
 
 	if (irq)
 		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
-	dnut_kernel_start((void*)h);
 
+	/* FIXME Use struct snap_action and not struct snap_card */
+	snap_action_start((void*)h);
 
 	/* Wait for Action to go back to Idle */
 	t_start = get_usec();
-	rc = dnut_kernel_completed((void*)h, irq, NULL, timeout);
+	rc = snap_action_completed((void*)h, irq, NULL, timeout);
 	td = get_usec() - t_start;
 
 	if (rc) rc = 0;	/* Good */
@@ -284,7 +285,7 @@ static int action_wait_idle(struct dnut_card* h, int timeout, uint64_t *elapsed,
 	return(rc);
 }
 
-static void action_memcpy(struct dnut_card* h,
+static void action_memcpy(struct snap_card* h,
 		int action,	/* ACTION_CONFIG_COPY_ */
 		void *dest,
 		const void *src,
@@ -390,7 +391,7 @@ static void free_mem(void *buffer)
 /*
  *	Set Card Ram to 0
  */
-static int ram_clear(struct dnut_card* dnc,
+static int ram_clear(struct snap_card* dnc,
 			void *src,
 			unsigned int mem_size,	/* Size for Host Buffer */
 			uint64_t start_addr,	/* Start of Card Mem */
@@ -427,7 +428,7 @@ __ram_zero_exit:
 	return rc;
 }
 
-static int ram_test_ad(struct dnut_card* dnc,
+static int ram_test_ad(struct snap_card* dnc,
 			void *src,
 			void *dest,
 			unsigned int mem_size,	/* Size for Host Buffer */
@@ -492,7 +493,7 @@ __ram_test_ad_exit:
 	return rc;
 }
 
-static int ram_test_rnd1(struct dnut_card* dnc,
+static int ram_test_rnd1(struct snap_card* dnc,
 			void *src,
 			void *dest,
 			unsigned int mem_size,	/* Size for Host Buffer */
@@ -553,7 +554,7 @@ __ram_test_rnd1_exit:
 	return rc;
 }
 
-static int ram_test_rnd2(struct dnut_card* dnc,
+static int ram_test_rnd2(struct snap_card* dnc,
 			void *src,
 			void *dest,
 			unsigned int mem_size,	/* Size for Host Buffer */
@@ -624,7 +625,7 @@ static void usage(const char *prog)
 int main(int argc, char *argv[])
 {
 	char device[64];
-	struct dnut_card *dn;	/* lib dnut handle */
+	struct snap_card *dn;	/* lib snap handle */
 	int card_no = 0;
 	int cmd;
 	int rc = 1;
@@ -705,12 +706,12 @@ int main(int argc, char *argv[])
 	VERBOSE1("Start Memory Test. Timeout: %d sec Device: ",
 		timeout);
 	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
-	dn = dnut_card_alloc_dev(device, 0x1014, 0xcafe);
+	dn = snap_card_alloc_dev(device, 0x1014, 0xcafe);
 	VERBOSE1("%s\n", device);
 
 	if (NULL == dn) {
 		errno = ENODEV;
-		VERBOSE0("ERROR: dnut_card_alloc_dev(%s)\n", device);
+		VERBOSE0("ERROR: snap_card_alloc_dev(%s)\n", device);
 		return -1;
 	}
 
@@ -730,8 +731,12 @@ int main(int argc, char *argv[])
 		goto __exit;
 
 	for (i = 0; i < iter; i++) {
-		rc = dnut_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags, 5*timeout);
-		if (0 != rc) {
+		struct snap_action *act;
+
+		/* FIXME snap_detach_action() not called on errors! */
+		act = snap_attach_action(dn, ACTION_TYPE_EXAMPLE,
+					 attach_flags, 5*timeout);
+		if (NULL != act) {
 			VERBOSE0(" Error: Cannot Attach Action %x after %d sec\n",
 				ACTION_TYPE_EXAMPLE, 5*timeout);
 			goto __exit;
@@ -759,14 +764,15 @@ int main(int argc, char *argv[])
 		rc = ram_test_rnd2(dn, src_buf, dest_buf, mem_size,
 			start_addr, end_addr, timeout, action_irq);
 		if (rc) break;
-		dnut_detach_action(dn);
+
+		snap_detach_action(act);
 	}
 
 __exit:
 	free_mem(src_buf);
 	free_mem(dest_buf);
 	VERBOSE3("\nClose Card Handle: %p", dn);
-	dnut_card_free(dn);
+	snap_card_free(dn);
 
 	VERBOSE1("\nExit rc: %d\n", rc);
 	return rc;

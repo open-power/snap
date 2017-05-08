@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ static void usage(const char *prog)
 	       prog);
 }
 
-static void dnut_prepare_checksum(struct dnut_job *cjob,
+static void snap_prepare_checksum(struct snap_job *cjob,
 				  struct checksum_job *mjob_in,
 				  struct checksum_job *mjob_out,
 				  void *addr_in,
@@ -80,9 +80,9 @@ static void dnut_prepare_checksum(struct dnut_job *cjob,
 				  uint32_t nb_pe,
 				  uint32_t threads)
 {
-	dnut_addr_set(&mjob_in->in, addr_in, size_in, type_in,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC |
-		      DNUT_TARGET_FLAGS_END);
+	snap_addr_set(&mjob_in->in, addr_in, size_in, type_in,
+		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC |
+		      SNAP_ADDRFLAG_END);
 
 	mjob_in->chk_type = type;
 	mjob_in->chk_in = chk_in;
@@ -91,8 +91,7 @@ static void dnut_prepare_checksum(struct dnut_job *cjob,
 	mjob_in->nb_slices = threads; /* misuse this for software sim */
 
 	mjob_out->chk_out = 0x0;
-	dnut_job_set(cjob, HLS_CHECKSUM_ID,
-		     mjob_in, sizeof(*mjob_in),
+	snap_job_set(cjob, mjob_in, sizeof(*mjob_in),
 		     mjob_out, sizeof(*mjob_out));
 }
 
@@ -179,8 +178,9 @@ static int do_checksum(int card_no, unsigned long timeout,
 {
 	int rc;
 	char device[128];
-	struct dnut_kernel *kernel = NULL;
-	struct dnut_job cjob;
+	struct snap_card *card = NULL;
+	struct snap_action *action = NULL;
+	struct snap_job cjob;
 	struct checksum_job mjob_in, mjob_out;
 	struct timeval etime, stime;
 
@@ -198,23 +198,28 @@ static int do_checksum(int card_no, unsigned long timeout,
 		pe, nb_pe);
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
-	kernel = dnut_kernel_attach_dev(device,
-					0x1014,
-					0xcafe,
-					CHECKSUM_ACTION_TYPE);
-	if (kernel == NULL) {
-		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
-			strerror(errno));
+	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
+				   SNAP_DEVICE_ID_SNAP);
+	if (card == NULL) {
+		fprintf(stderr, "err: failed to open card %u: %s\n",
+			card_no, strerror(errno));
+		goto out_error;
+	}
+
+	action = snap_attach_action(card, CHECKSUM_ACTION_TYPE, 0, 60);
+	if (action == NULL) {
+		fprintf(stderr, "err: failed to attach action %u: %s\n",
+			card_no, strerror(errno));
 		goto out_error1;
 	}
 
-	dnut_prepare_checksum(&cjob, &mjob_in, &mjob_out,
+	snap_prepare_checksum(&cjob, &mjob_in, &mjob_out,
 			     (void *)addr_in, size, type_in,
 			      mode, checksum_start, pe, nb_pe,
 			      threads);
 
 	gettimeofday(&stime, NULL);
-	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
+	rc = snap_action_sync_execute_job(action, &cjob, timeout, action_irq);
 	gettimeofday(&etime, NULL);
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
@@ -237,7 +242,8 @@ static int do_checksum(int card_no, unsigned long timeout,
 		(long long)mjob_out.action_version,
 		(long long)timediff_usec(&etime, &stime));
 
-	dnut_kernel_free(kernel);
+	snap_detach_action(action);
+	snap_card_free(card);
 
 	if (_checksum)
 		*_checksum = mjob_out.chk_out;
@@ -253,8 +259,10 @@ static int do_checksum(int card_no, unsigned long timeout,
 	return 0;
 
  out_error2:
-	dnut_kernel_free(kernel);
+	snap_detach_action(action);
  out_error1:
+	snap_card_free(card);
+ out_error:
 	return -1;
 }
 
@@ -420,7 +428,7 @@ int main(int argc, char *argv[])
 	ssize_t size = 1024 * 1024;
 	uint8_t *ibuff = NULL;
 	unsigned int page_size = sysconf(_SC_PAGESIZE);
-	uint8_t type_in = DNUT_TARGET_TYPE_HOST_DRAM;
+	uint8_t type_in = SNAP_ADDRTYPE_HOST_DRAM;
 	uint64_t addr_in = 0x0ull;
 	int mode = CHECKSUM_CRC32;
 	uint64_t checksum_start = 0ull;
@@ -504,9 +512,9 @@ int main(int argc, char *argv[])
 		case 'A':
 			space = optarg;
 			if (strcmp(space, "CARD_DRAM") == 0)
-				type_in = DNUT_TARGET_TYPE_CARD_DRAM;
+				type_in = SNAP_ADDRTYPE_CARD_DRAM;
 			else if (strcmp(space, "HOST_DRAM") == 0)
-				type_in = DNUT_TARGET_TYPE_HOST_DRAM;
+				type_in = SNAP_ADDRTYPE_HOST_DRAM;
 			break;
 		case 'a':
 			addr_in = strtol(optarg, (char **)NULL, 0);
@@ -554,7 +562,7 @@ int main(int argc, char *argv[])
 		if (rc < 0)
 			goto out_error1;
 
-		type_in = DNUT_TARGET_TYPE_HOST_DRAM;
+		type_in = SNAP_ADDRTYPE_HOST_DRAM;
 		addr_in = (unsigned long)ibuff;
 	}
 
@@ -585,6 +593,7 @@ int main(int argc, char *argv[])
 
 	if (ibuff)
 		free(ibuff);
+
 	exit(EXIT_SUCCESS);
 
  out_error1:

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,23 +84,23 @@ file_read(const char *fname, uint8_t *buff, size_t len)
 	return rc;
 }
 
-static void dnut_prepare_search(struct dnut_job *cjob,
+static void snap_prepare_search(struct snap_job *cjob,
 				struct search_job *sjob_in,
 				struct search_job *sjob_out,
 				const uint8_t *dbuff, ssize_t dsize,
 				uint64_t *offs, unsigned int items,
 				const uint8_t *pbuff, unsigned int psize)
 {
-	dnut_addr_set(&sjob_in->input, dbuff, dsize,
-		      DNUT_TARGET_TYPE_HOST_DRAM,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-	dnut_addr_set(&sjob_in->output, offs, items * sizeof(*offs),
-		      DNUT_TARGET_TYPE_HOST_DRAM,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
-	dnut_addr_set(&sjob_in->pattern, pbuff, psize,
-		      DNUT_TARGET_TYPE_HOST_DRAM,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC |
-		      DNUT_TARGET_FLAGS_END);
+	snap_addr_set(&sjob_in->input, dbuff, dsize,
+		      SNAP_ADDRTYPE_HOST_DRAM,
+		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
+	snap_addr_set(&sjob_in->output, offs, items * sizeof(*offs),
+		      SNAP_ADDRTYPE_HOST_DRAM,
+		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST);
+	snap_addr_set(&sjob_in->pattern, pbuff, psize,
+		      SNAP_ADDRTYPE_HOST_DRAM,
+		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC |
+		      SNAP_ADDRFLAG_END);
 
 	sjob_in->nb_of_occurrences = 0;
 	sjob_in->next_input_addr = 0;
@@ -114,11 +114,11 @@ static void dnut_prepare_search(struct dnut_job *cjob,
 	sjob_out->mmio_dout = 0;
 	sjob_out->action_version = 0;
 
-	dnut_job_set(cjob, HLS_TEXT_SEARCH_ID,
-		sjob_in, sizeof(*sjob_in), sjob_out, sizeof(*sjob_out));
+	snap_job_set(cjob, sjob_in, sizeof(*sjob_in),
+		     sjob_out, sizeof(*sjob_out));
 }
 
-static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
+static void snap_print_search_results(struct snap_job *cjob, unsigned int run)
 {
 	unsigned int i;
 	struct search_job *sjob = (struct search_job *)
@@ -194,11 +194,12 @@ int main(int argc, char *argv[])
 {
 	int ch, run, psize = 0, rc = 0;
 	int card_no = 0;
-	struct dnut_kernel *kernel = NULL;
+	struct snap_card *card = NULL;
+	struct snap_action *action = NULL;
 	char device[128];
 	const char *fname = NULL;
 	const char *pattern_str = "Donut";
-	struct dnut_job cjob;
+	struct snap_job cjob;
 	struct search_job sjob_in;
 	struct search_job sjob_out;
 	ssize_t dsize;
@@ -307,44 +308,48 @@ int main(int argc, char *argv[])
 
 	input_addr = dbuff;
 	input_size = dsize;
-	dnut_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
+	snap_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
 			    offs, items, pbuff, psize);
 
 	/*
-	 * Apply for exclusive kernel access for kernel type 0xC0FE.
-	 * Once granted, MMIO to that kernel will work.
+	 * Apply for exclusive action access for action type 0xC0FE.
+	 * Once granted, MMIO to that action will work.
 	 */
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
-	pr_info("Opening device ... %s\n", device);
-	kernel = dnut_kernel_attach_dev(device,
-					0x1014,
-					0xcafe,
-					SEARCH_ACTION_TYPE);
-	if (kernel == NULL) {
-		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
-			strerror(errno));
+	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
+				   SNAP_DEVICE_ID_SNAP);
+	if (card == NULL) {
+		fprintf(stderr, "err: failed to open card %u: %s\n",
+			card_no, strerror(errno));
 		goto out_error1;
+	}
+
+	action = snap_attach_action(card, SEARCH_ACTION_TYPE, 0, 60);
+	if (action == NULL) {
+		fprintf(stderr, "err: failed to attach action %u: %s\n",
+			card_no, strerror(errno));
+		goto out_error2;
 	}
 
 	run = 0;
 	gettimeofday(&stime, NULL);
 	do {
-		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
+		rc = snap_action_sync_execute_job(action, &cjob, timeout, action_irq);
 		if (rc != 0) {
 			fprintf(stderr, "err: job execution %d: %s!\n", rc,
 				strerror(errno));
-			goto out_error2;
+			goto out_error3;
 		}
-		if (cjob.retc != DNUT_RETC_SUCCESS)  {
+		if (cjob.retc != SNAP_RETC_SUCCESS)  {
 			fprintf(stderr, "err: job retc %x!\n", cjob.retc);
-			goto out_error2;
+			goto out_error3;
 		}
 
 		sjob_in.nb_of_occurrences = sjob_out.nb_of_occurrences;
 		sjob_in.next_input_addr = sjob_out.next_input_addr;
 		sjob_in.action_version = sjob_out.action_version;
 
-		dnut_print_search_results(&cjob, run);
+		snap_print_search_results(&cjob, run);
 
 		/* trigger repeat if search was not complete */
 		if (sjob_out.next_input_addr != 0x0) {
@@ -379,16 +384,18 @@ int main(int argc, char *argv[])
 		(long long)sjob_out.action_version,
 		(long long)timediff_usec(&etime, &stime));
 
-	dnut_kernel_free(kernel);
-
 	free(dbuff);
 	free(pbuff);
 	free(offs);
 
+	snap_detach_action(action);
+	snap_card_free(card);
 	exit(exit_code);
 
+ out_error3:
+	snap_detach_action(action);
  out_error2:
-	dnut_kernel_free(kernel);
+	snap_card_free(card);
  out_error1:
 	free(offs);
  out_errorX:
