@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 	unsigned int t2_entries = 23;
 	unsigned int t2_tocopy = 0;
 	unsigned int seed = 1974;
-	int action_irq = 0;
+	snap_action_flag_t action_irq = 0;
 
 	while (1) {
 		int option_index = 0;
@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		case 'I':
-			action_irq = ACTION_REDAY_IRQ;
+			action_irq = (SNAP_DONE_IRQ | SNAP_ATTACH_IRQ);
 			break;
 		default:
 			usage(argv[0]);
@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
 		goto out_error;
 	}
 
-	action = snap_attach_action(card, HASHJOIN_ACTION_TYPE, 0, 60);
+	action = snap_attach_action(card, HASHJOIN_ACTION_TYPE, action_irq, 60);
 	if (action == NULL) {
 		fprintf(stderr, "err: failed to attach action %u: %s\n",
 			card_no, strerror(errno));
@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
 			table2_dump(t2, t2_tocopy);
 		}
 
-		rc = snap_action_sync_execute_job(action, &cjob, timeout, action_irq);
+		rc = snap_action_sync_execute_job(action, &cjob, timeout);
 		if (rc != 0) {
 			fprintf(stderr, "err: job execution %d: %s!\n", rc,
 				strerror(errno));

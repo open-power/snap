@@ -343,7 +343,7 @@ int main(int argc, char *argv[])
 	const char *output_file = NULL;
 	int random_graph = 0;
 	uint32_t vex_n, edge_n;
-	int action_irq = 0;
+	snap_action_flag_t action_irq = 0;
 
 	vex_n  = ARRAY_SIZE(v_table);
 	edge_n = ARRAY_SIZE(e_table);
@@ -398,7 +398,7 @@ int main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		case 'I':	/* irq */
-			action_irq = ACTION_DONE_IRQ;
+			action_irq = (SNAP_DONE_IRQ | SNAP_ATTACH_IRQ);
 			break;
 		default:
 			usage(argv[0]);
@@ -484,7 +484,7 @@ int main(int argc, char *argv[])
 		goto out_error;
 	}
 
-	action = snap_attach_action(card, HLS_BFS_ID, 0, 60);
+	action = snap_attach_action(card, HLS_BFS_ID, action_irq, 60);
 	if (action == NULL) {
 		fprintf(stderr, "err: failed to attach action %u: %s\n",
 			card_no, strerror(errno));
@@ -497,8 +497,7 @@ int main(int argc, char *argv[])
 
 	fprintf(stdout, "INFO: Timer starts...\n");
 	gettimeofday(&stime, NULL);
-	rc = snap_action_sync_execute_job(action, &job, timeout,
-					  action_irq);
+	rc = snap_action_sync_execute_job(action, &job, timeout);
 	gettimeofday(&etime, NULL);
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,

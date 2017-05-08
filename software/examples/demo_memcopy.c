@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 	int verify = 0;
 	int exit_code = EXIT_SUCCESS;
 	uint8_t trailing_zeros[1024] = { 0, };
-	int action_irq = 0;
+	snap_action_flag_t action_irq = 0;
 
 	while (1) {
 		int option_index = 0;
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		case 'I':
-			action_irq = ACTION_DONE_IRQ;
+			action_irq = (SNAP_DONE_IRQ | SNAP_ATTACH_IRQ);
 			break;
 		default:
 			usage(argv[0]);
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
 		goto out_error;
 	}
 
-	action = snap_attach_action(card, MEMCOPY_ACTION_TYPE, 0, 60);
+	action = snap_attach_action(card, MEMCOPY_ACTION_TYPE, action_irq, 60);
 	if (action == NULL) {
 		fprintf(stderr, "err: failed to attach action %u: %s\n",
 			card_no, strerror(errno));
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
 			     (void *)addr_out, size, type_out);
 
 	gettimeofday(&stime, NULL);
-	rc = snap_action_sync_execute_job(action, &cjob, timeout, action_irq);
+	rc = snap_action_sync_execute_job(action, &cjob, timeout);
 	gettimeofday(&etime, NULL);
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
@@ -306,6 +306,11 @@ int main(int argc, char *argv[])
 
 	/* obuff[size] = 0xff; */
 	fprintf(stdout, "RETC=%x\n", cjob.retc);
+	if (cjob.retc != SNAP_RETC_SUCCESS) {
+		fprintf(stderr, "err: Unexpected RETC=%x!\n", cjob.retc);
+		goto out_error2;
+	}
+
 	if (verify) {
 		if ((type_in  == SNAP_ADDRTYPE_HOST_DRAM) &&
 		    (type_out == SNAP_ADDRTYPE_HOST_DRAM)) {

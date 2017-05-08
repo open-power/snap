@@ -94,6 +94,11 @@ struct snap_card {
 	struct cxl_event event;
 };
 
+static int snap_irq_enabled(struct snap_card *card)
+{
+	return (card->mode & (SNAP_CCR_IRQ_ACTION | SNAP_CCR_IRQ_ATTACH));
+}
+
 /* To be used for software simulation, use funcs provided by action */
 static int snap_map_funcs(struct snap_card *card,
 			  snap_action_type_t action_type);
@@ -274,14 +279,14 @@ static void hw_snap_card_free(struct snap_card *card)
 	free(card);
 }
 
-static int hw_wait_irq(struct snap_card *card, int irq, int timeout_sec)
+static int hw_wait_irq(struct snap_card *card, int timeout_sec)
 {
 	fd_set  set;
 	struct  timeval timeout;
 	int rc = 0;
 
-	snap_trace("  %s: Enter fd: %d irq: %d mode: 0x%x\n", __func__,
-		card->afu_fd, irq, card->mode);
+	snap_trace("  %s: Enter fd: %d irq_enabled: %d mode: 0x%x\n", __func__,
+		   card->afu_fd, snap_irq_enabled(card), card->mode);
 
 	if (!cxl_event_pending(card->afu_h)) {
 		timeout.tv_sec = timeout_sec;
@@ -303,8 +308,10 @@ static int hw_wait_irq(struct snap_card *card, int irq, int timeout_sec)
 		//cxl_fprint_event(stdout, card->event);
 		switch (card->event.header.type) {
 		case CXL_EVENT_AFU_INTERRUPT:
-			snap_trace("  %s:     Event flags: %d irq: %d (expect:%d)\n", __func__,
-				card->event.irq.flags, card->event.irq.irq, irq);
+			snap_trace("  %s:     Event flags: %d irq_enabled: %d "
+				   "(expect:%d)\n",
+				   __func__, card->event.irq.flags,
+				   card->event.irq.irq, snap_irq_enabled(card));
 			rc = 0;
 			break;
 		case CXL_EVENT_DATA_STORAGE:
@@ -326,7 +333,7 @@ static int hw_wait_irq(struct snap_card *card, int irq, int timeout_sec)
 
 static struct snap_action *hw_attach_action(struct snap_card *card,
 				snap_action_type_t action_type,
-				int flags,
+				snap_action_flag_t action_flags,
 				int timeout_sec)
 {
 	int i, rc = 0;
@@ -337,7 +344,7 @@ static struct snap_action *hw_attach_action(struct snap_card *card,
 
 	snap_trace("%s Enter Action: 0x%x Old Action: %x "
 		   "Flags: 0x%x Base: %x timeout: %d sec Seq: %x\n",
-		   __func__, action_type, card->action_type, flags,
+		   __func__, action_type, card->action_type, action_flags,
 		   card->action_base, timeout_sec, card->seq);
 
 	if (card->master) {
@@ -374,7 +381,14 @@ static struct snap_action *hw_attach_action(struct snap_card *card,
 			errno = -ENODEV;
 			return NULL;
 		}
-		card->mode = flags;	/* Get IRQ Flags bit 0,1,2 + 3 */
+
+		/* Get IRQ Flags bit 0,1,2 + 3 */
+		card->mode = SNAP_CCR_DIRECT_MODE; /* FIXME Just this mode for now */
+		if (action_flags & SNAP_DONE_IRQ)
+			card->mode |= SNAP_CCR_IRQ_ACTION;
+		if (action_flags & SNAP_ATTACH_IRQ)
+			card->mode |= SNAP_CCR_IRQ_ATTACH;
+
 		card->sat = sat;	/* Save short Action Type */
 		card->seq = 0xf000;
 		card->action_type = action_type;
@@ -399,7 +413,7 @@ static struct snap_action *hw_attach_action(struct snap_card *card,
 	hw_snap_mmio_read64(card, SNAP_S_CSR, &data);
 	if (0xC0 != (data & 0xC0)) {
 		if (SNAP_CCR_IRQ_ATTACH & card->mode)
-			rc = hw_wait_irq(card, 2, timeout_sec);
+			rc = hw_wait_irq(card, timeout_sec);
 		else {
 			t0 = tget_ms();
 			dt = 0;
@@ -464,13 +478,13 @@ struct snap_card *snap_card_alloc_dev(const char *path,
 
 struct snap_action *snap_attach_action(struct snap_card *card,
 				       snap_action_type_t action_type,
-				       int flags,
+				       snap_action_flag_t action_flags,
 				       int timeout_ms)
 {
 	if (simulation_enabled())
 		snap_map_funcs(card, action_type);
 
-	return df->attach_action(card, action_type, flags, timeout_ms);
+	return df->attach_action(card, action_type, action_flags, timeout_ms);
 }
 
 int snap_detach_action(struct snap_action *action)
@@ -565,15 +579,16 @@ int snap_action_stop(struct snap_action *action __unused)
 	return 0;
 }
 
-int snap_action_completed(struct snap_action *action, int irq, int *rc, int timeout)
+int snap_action_completed(struct snap_action *action, int *rc, int timeout)
 {
 	int _rc = 0;
 	uint32_t action_data = 0;
 	struct snap_card *card = (struct snap_card *)action;
 	int t0, dt, timeout_ms;
 
-	if (irq) {
-		hw_wait_irq((void*)action, irq, timeout);
+	if (snap_irq_enabled(card)) {
+		/* FIXME action to card casting is not good */
+		hw_wait_irq((struct snap_card *)action, timeout);
 		_rc = snap_mmio_read32(card, ACTION_CONTROL, &action_data);
 	} else {
 		/* Busy poll timout sec */
@@ -603,8 +618,7 @@ int snap_action_completed(struct snap_action *action, int irq, int *rc, int time
  */
 int snap_action_sync_execute_job(struct snap_action *action,
 				 struct snap_job *cjob,
-				 unsigned int timeout_sec,
-				 int irq)
+				 unsigned int timeout_sec)
 {
 	int rc;
 	int completed;
@@ -670,13 +684,13 @@ int snap_action_sync_execute_job(struct snap_action *action,
 	if (rc != 0)
 		goto __snap_action_sync_execute_job_exit;
 
-	if (irq) {
+	if (snap_irq_enabled(card)) {
 		/* Enable IRQ */
 		snap_mmio_write32(card, ACTION_IRQ_APP, ACTION_IRQ_APP_DONE);
 		snap_mmio_write32(card, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
 	}
-	completed = snap_action_completed(action, irq, &rc, timeout_sec);
-	if (irq) {
+	completed = snap_action_completed(action, &rc, timeout_sec);
+	if (snap_irq_enabled(card)) {
 		/* Ack. IRQ and disable */
 		snap_mmio_write32(card, ACTION_IRQ_STATUS, ACTION_IRQ_STATUS_DONE);
 		snap_mmio_write32(card, ACTION_IRQ_APP, 0);
@@ -725,20 +739,16 @@ __snap_action_sync_execute_job_exit:
 
 int snap_sync_execute_job(struct snap_card *card,
 			  snap_action_type_t action_type,
+			  snap_action_flag_t action_flags,
 			  struct snap_job *cjob,
 			  int attach_timeout_sec,
-			  int timeout_sec,
-			  int irq)
+			  int timeout_sec)
 {
 	int rc = SNAP_OK;
-	int attach_flags = SNAP_CCR_DIRECT_MODE; /* FIXME for Job mode */
 	struct snap_action *action;
 
-	if (irq)
-		attach_flags |= SNAP_CCR_IRQ_ATTACH;
-
-	action = snap_attach_action(card, action_type,
-				    attach_flags, attach_timeout_sec); 
+	action = snap_attach_action(card, action_type, action_flags,
+				    attach_timeout_sec); 
 	if (action == NULL) {
 		snap_trace("%s: Error Can not attach to Action 0x%x\n",
 			   __func__, card->action_type);
@@ -746,7 +756,7 @@ int snap_sync_execute_job(struct snap_card *card,
 		return SNAP_EATTACH;
 	}
 
-	rc = snap_action_sync_execute_job(action, cjob, timeout_sec, irq);
+	rc = snap_action_sync_execute_job(action, cjob, timeout_sec);
 	if (rc != SNAP_OK)
 		goto err_out;
 
@@ -956,11 +966,12 @@ static int sw_mmio_read64(struct snap_card *card,
 }
 
 static struct snap_action *sw_attach_action(struct snap_card *card,
-				snap_action_type_t action_type,
-				int flags, int timeout_ms)
+					    snap_action_type_t action_type,
+					    snap_action_flag_t action_flags,
+					    int timeout_ms)
 {
 	snap_trace("  %s(%p, %x %d %d)\n", __func__, 
-		   card, action_type, flags, timeout_ms);
+		   card, action_type, action_flags, timeout_ms);
 
 	return (struct snap_action *)card;
 }

@@ -280,8 +280,14 @@ int snap_mmio_write64(struct snap_card *card, uint64_t offset,
 int snap_mmio_read64(struct snap_card *card, uint64_t offset,
 			uint64_t *data);
 
+/* Settings for action attachement and job completion */
+typedef enum snap_action_flag  {
+	SNAP_DONE_IRQ = 0x2,   /* Use IRQ to detect if job is done */
+	SNAP_ATTACH_IRQ = 0x4, /* Use IRQ to detect if attachment is done */
+} snap_action_flag_t;
+
 /*
- * This function will attach to the action and release
+ * This function will attach to the action, execute a job and release
  * the attachement when the job has been executed.
  *
  * snap_attach_action()
@@ -291,19 +297,25 @@ int snap_mmio_read64(struct snap_card *card, uint64_t offset,
  * See below.
  */
 int snap_sync_execute_job(struct snap_card *card,
-			snap_action_type_t action_type,
-			struct snap_job *cjob,
-			int attach_timeout_sec,
-			int timeout_sec,
-			int irq);
+			  snap_action_type_t action_type,
+			  snap_action_flag_t action_flags,
+			  struct snap_job *cjob,
+			  int attach_timeout_sec,
+			  int timeout_sec);
 
 /**********************************************************************
  * SNAP Action Access
  *********************************************************************/
 
-/* Only works with slave contexts */
+/*
+ * Attach an action to the card handle. If this is done a job can be
+ * send ot the action.
+ *
+ * Only works with slave contexts
+ */
 struct snap_action *snap_attach_action(struct snap_card *card,
-			snap_action_type_t action_type, int flags,
+			snap_action_type_t action_type,
+			snap_action_flag_t action_flags,
 			int timeout_sec);
 
 /* Only works with slave contexts */
@@ -317,8 +329,8 @@ int snap_action_read32(struct snap_action *action, uint64_t offset,
 
 int snap_action_start(struct snap_action *action);
 int snap_action_stop(struct snap_action *action);
-int snap_action_completed(struct snap_action *action, int irq, int *rc,
-			int timeout_sec);
+int snap_action_completed(struct snap_action *action, int *rc,
+			  int timeout_sec);
 
 /**
  * Synchronous way to send a job away. Blocks until job is done.
@@ -332,8 +344,7 @@ int snap_action_completed(struct snap_action *action, int irq, int *rc,
  */
 int snap_action_sync_execute_job(struct snap_action *action,
 			struct snap_job *cjob,
-			unsigned int timeout_sec,
-			int irq);
+			unsigned int timeout_sec);
 
 /**
  * Allow the action to use interrupts to signal results back to the

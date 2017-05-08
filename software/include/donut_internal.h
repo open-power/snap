@@ -60,7 +60,7 @@ struct snap_funcs {
 
 	struct snap_action *(* attach_action)(struct snap_card *card,
 					      snap_action_type_t action_type,
-					      int flags,
+					      snap_action_flag_t action_flags,
 					      int timeout_sec);
 	int (* detach_action)(struct snap_action *action);
 

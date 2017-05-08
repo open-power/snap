@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
 	struct timeval etime, stime;
 	long int expected_patterns = -1;
 	int exit_code = EXIT_SUCCESS;
-	int action_irq = 0;
+	snap_action_flag_t action_irq = 0;
 
 	while (1) {
 		int option_index = 0;
@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		case 'X':	/* irq */
-			action_irq = ACTION_DONE_IRQ;
+			action_irq = (SNAP_DONE_IRQ | SNAP_ATTACH_IRQ);
 			break;
 		default:
 			usage(argv[0]);
@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
 	run = 0;
 	gettimeofday(&stime, NULL);
 	do {
-		rc = snap_action_sync_execute_job(action, &cjob, timeout, action_irq);
+		rc = snap_action_sync_execute_job(action, &cjob, timeout);
 		if (rc != 0) {
 			fprintf(stderr, "err: job execution %d: %s!\n", rc,
 				strerror(errno));

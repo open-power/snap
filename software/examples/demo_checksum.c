@@ -174,7 +174,7 @@ static int do_checksum(int card_no, unsigned long timeout,
 		       uint32_t *_nb_slices,
 		       uint32_t *_nb_round,
 		       FILE *fp,
-		       int action_irq)
+		       snap_action_flag_t action_irq)
 {
 	int rc;
 	char device[128];
@@ -206,7 +206,7 @@ static int do_checksum(int card_no, unsigned long timeout,
 		goto out_error;
 	}
 
-	action = snap_attach_action(card, CHECKSUM_ACTION_TYPE, 0, 60);
+	action = snap_attach_action(card, CHECKSUM_ACTION_TYPE, action_irq, 60);
 	if (action == NULL) {
 		fprintf(stderr, "err: failed to attach action %u: %s\n",
 			card_no, strerror(errno));
@@ -219,7 +219,7 @@ static int do_checksum(int card_no, unsigned long timeout,
 			      threads);
 
 	gettimeofday(&stime, NULL);
-	rc = snap_action_sync_execute_job(action, &cjob, timeout, action_irq);
+	rc = snap_action_sync_execute_job(action, &cjob, timeout);
 	gettimeofday(&etime, NULL);
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
@@ -354,7 +354,7 @@ static uint32_t executed_slices(uint32_t pe, uint32_t nb_pe,
 }
 
 static int test_sponge(int card_no, int timeout, unsigned int threads,
-		       FILE *fp, int action_irq)
+		       FILE *fp, snap_action_flag_t action_irq)
 {
 	int rc = -1;
 	unsigned int i;
@@ -435,7 +435,7 @@ int main(int argc, char *argv[])
 	uint32_t pe = 0, nb_pe = 0;
 	int test = 0;
 	unsigned int threads = 160;
-	int action_irq = 0;
+	snap_action_flag_t action_irq = 0;
 
 	while (1) {
 		int option_index = 0;
@@ -531,7 +531,7 @@ int main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		case 'I':
-			action_irq = ACTION_DONE_IRQ;
+			action_irq = (SNAP_DONE_IRQ | SNAP_ATTACH_IRQ);
 			break;
 		default:
 			usage(argv[0]);
@@ -573,7 +573,7 @@ int main(int argc, char *argv[])
 
 			fp = fopen("/dev/null", "w");
 			rc = test_sponge(card_no, timeout, threads, fp,
-				action_irq);
+					 action_irq);
 			fclose(fp);
 			if (rc != 0)
 				goto out_error1;

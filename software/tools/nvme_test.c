@@ -179,7 +179,7 @@ static int action_wait_idle(struct snap_card* h, int timeout, int irq, uint32_t 
 	t_start = get_usec();
 
 	/* FIXME Use act and not h */
-	rc = snap_action_completed((void*)h, irq, NULL, timeout);
+	rc = snap_action_completed((void*)h, NULL, timeout);
 	if (0 == rc)
 		VERBOSE0("Error: Timeout while Waiting for Idle ");
 	td = get_usec() - t_start;

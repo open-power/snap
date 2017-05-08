@@ -156,7 +156,7 @@ static int action_wait_idle(struct snap_card* h, int timeout, int irq)
 
 	t_start = get_usec();
 	/* Wait for Action to go back to Idle */
-	if (snap_action_completed((void*)h, irq, NULL, timeout))
+	if (snap_action_completed((void*)h, NULL, timeout))
 		rc = 0;	/* Good */
 	td = get_usec() - t_start;
 	if (irq)

@@ -216,13 +216,13 @@ static void dump_table(value_t* table, uint32_t num)
 static int run_one_step(struct snap_action *action,
 			struct snap_job *cjob,
 			unsigned long timeout,
-			int action_irq, uint64_t step)
+			uint64_t step)
 {
 	int rc;
 	struct timeval etime, stime;
 
 	gettimeofday(&stime, NULL);
-	rc = snap_action_sync_execute_job(action, cjob, timeout, action_irq);
+	rc = snap_action_sync_execute_job(action, cjob, timeout);
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n\n\n", rc,
 			strerror(errno));
@@ -251,8 +251,7 @@ int main(int argc, char *argv[])
     int exit_code = EXIT_SUCCESS;
     unsigned long timeout = 1000;
 	struct snap_job cjob;
-    int attach_flags = SNAP_CCR_DIRECT_MODE;
-    int action_irq = 0;
+    snap_action_flag_t action_irq = 0;
     struct timeval etime, stime;
 
     //Function specific
@@ -346,8 +345,7 @@ int main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
                 case 'I': /* irq */
-                        attach_flags |= SNAP_CCR_IRQ_ATTACH;
-                        action_irq = ACTION_REDAY_IRQ;
+			action_irq = (SNAP_DONE_IRQ | SNAP_ATTACH_IRQ);
                         break;
 		default:
 			usage(argv[0]);
@@ -459,7 +457,7 @@ int main(int argc, char *argv[])
 	snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                  1, method, src_tables, src_sizes,result_table,99);
 
-    rc |= run_one_step(action, &cjob, timeout, action_irq, 1);
+    rc |= run_one_step(action, &cjob, timeout, 1);
 	if (rc != 0)
 		goto out_error2;
 
@@ -471,7 +469,7 @@ int main(int argc, char *argv[])
         snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                      2, method, src_tables, src_sizes,result_table,99);
 
-        rc |= run_one_step(action, &cjob, timeout, action_irq, 2);
+        rc |= run_one_step(action, &cjob, timeout, 2);
         if (rc != 0)
             goto out_error2;
 
@@ -495,7 +493,7 @@ int main(int argc, char *argv[])
         snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                      3, method, src_tables, src_sizes, result_table, 99);
 
-        rc |= run_one_step(action, &cjob, timeout, action_irq, 3);
+        rc |= run_one_step(action, &cjob, timeout, 3);
         if (rc != 0)
             goto out_error2;
 
@@ -510,7 +508,7 @@ int main(int argc, char *argv[])
         snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                      5, method, src_tables, src_sizes, result_table, result_num * sizeof(value_t));
 
-        rc |= run_one_step(action, &cjob, timeout, action_irq, 5);
+        rc |= run_one_step(action, &cjob, timeout, 5);
         if (rc != 0)
             goto out_error2;
     }
