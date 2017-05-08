@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <libdonut.h>
 
-#define HASHJOIN_ACTION_TYPE 0x0022
+#define HASHJOIN_ACTION_TYPE 0x10141002
 
 #define TABLE1_SIZE 32
 #define TABLE2_SIZE 32
@@ -72,9 +72,8 @@ struct hashjoin_job {
 	uint64_t t1_processed; /* #entries cached, repeat if not all */
 	uint64_t t2_processed; /* #entries processed, repeat if not all */
 	uint64_t t3_produced;  /* #entries produced store them away */
-	uint64_t checkpoint;
-	uint64_t rc;
-	uint64_t action_version;
+	uint32_t rc;
+	uint32_t action_version;
 };
 
 static inline void print_hex(void *buf, size_t len)
@@ -154,11 +153,6 @@ static inline void table3_dump(table3_t *table3, unsigned int table3_idx)
 		       "/* %d. */\n", t3->name, t3->animal, t3->age, i);
 	}
 	fprintf(stderr, "}; /* table3_idx=%d\n", table3_idx);
-}
-
-static inline void set_checkpoint(struct hashjoin_job *hj, uint64_t cp)
-{
-	hj->checkpoint = cp;
 }
 
 #endif	/* __ACTION_HASHJOIN_H__ */

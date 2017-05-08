@@ -1,25 +1,26 @@
-#-----------------------------------------------------------
-#
-# Copyright 2016, International Business Machines
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-#-----------------------------------------------------------
+############################################################################
+############################################################################
+##
+## Copyright 2016, International Business Machines
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##     http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+##
+############################################################################
+############################################################################
 
 set root_dir     $::env(DONUT_HARDWARE_ROOT)
 set fpga_part    $::env(FPGACHIP)
 set fpga_card    $::env(FPGACARD)
-set dimm_dir     $::env(DIMMTEST)
 set ip_dir       $root_dir/ip
 set sdram_used   $::env(SDRAM_USED)
 set bram_used    $::env(BRAM_USED)
@@ -114,17 +115,17 @@ export_simulation -of_objects [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] 
 #create fifo_10x512
 puts "	                      generating IP fifo_10x512"
 create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_10x512 -dir $ip_dir $msg_level
-set_property -dict [list                          \
-CONFIG.Input_Data_Width {10} 			  \
-CONFIG.Input_Depth {512} 			  \
-CONFIG.Output_Data_Width {10} 			  \
-CONFIG.Output_Depth {512} 			  \
-CONFIG.Data_Count_Width {9} 			  \
-CONFIG.Write_Data_Count_Width {9} 		  \
-CONFIG.Read_Data_Count_Width {9} 		  \
-CONFIG.Full_Threshold_Assert_Value {511} 	  \
-CONFIG.Full_Threshold_Negate_Value {510}	  \
-] [get_ips fifo_10x512]
+set_property -dict [list                                          \
+                    CONFIG.Input_Data_Width {10} 		  \
+                    CONFIG.Input_Depth {512} 			  \
+                    CONFIG.Output_Data_Width {10} 		  \
+                    CONFIG.Output_Depth {512} 			  \
+                    CONFIG.Data_Count_Width {9} 		  \
+                    CONFIG.Write_Data_Count_Width {9} 		  \
+                    CONFIG.Read_Data_Count_Width {9} 		  \
+                    CONFIG.Full_Threshold_Assert_Value {511} 	  \
+                    CONFIG.Full_Threshold_Negate_Value {510}	  \
+                   ] [get_ips fifo_10x512]
 
 set_property generate_synth_checkpoint false [get_files $ip_dir/fifo_10x512/fifo_10x512.xci]
 generate_target {instantiation_template}     [get_files $ip_dir/fifo_10x512/fifo_10x512.xci] $msg_level
@@ -192,7 +193,11 @@ if { $fpga_card == "KU3" } {
   }
 } elseif { $fpga_card == "FGT" } { 
   if { $bram_used == "TRUE" } {
-    set create_clock_conv  TRUE
+    if { $nvme_used == "TRUE" } {
+      set create_interconect  TRUE
+    } else {
+      set create_clock_conv   TRUE
+    }
     set create_bram        TRUE
   } elseif { $sdram_used == "TRUE" } {
     if { $nvme_used == "TRUE" } {
@@ -206,7 +211,7 @@ if { $fpga_card == "KU3" } {
 
 #create clock converter 
 if { $create_clock_conv == "TRUE" } {
-  puts "	                     generating IP axi_clock_converter"
+  puts "	                      generating IP axi_clock_converter"
   create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir  $msg_level
 
   if { ($sdram_used == "TRUE") && ( $fpga_card == "KU3" ) } {
@@ -283,60 +288,67 @@ if { $create_bram == "TRUE" } {
 if { $create_ddr3 == "TRUE" } {
   puts "	                      generating IP ddr3sdram"
   create_ip -name ddr3 -vendor xilinx.com -library ip -version 1.* -module_name ddr3sdram -dir $ip_dir $msg_level
-  set_property -dict [list                                                                                                        \
-                      CONFIG.C0.DDR3_TimePeriod {1250} 									          \
-                      CONFIG.C0.DDR3_InputClockPeriod {2500} 									  \
-                      CONFIG.C0.DDR3_MemoryType {SODIMMs} 									  \
-                      CONFIG.C0.DDR3_MemoryPart {CUSTOM_MT18KSF1G72HZ-1G6} 							  \
-                      CONFIG.C0.DDR3_AxiSelection {true} 									  \
-                      CONFIG.C0.DDR3_AxiDataWidth {512} 									  \
-                      CONFIG.C0.DDR3_CustomParts $dimm_dir/example/dimm_test-admpcieku3-v3_0_0/fpga/ip-2015.3/custom_parts.csv    \
-                      CONFIG.C0.DDR3_isCustom {true} 										  \
-                      CONFIG.Simulation_Mode {Unisim} 									          \
-                      CONFIG.Internal_Vref {false} 										  \
-                      CONFIG.C0.DDR3_DataWidth {72} 										  \
-                      CONFIG.C0.DDR3_DataMask {false} 									          \
-                      CONFIG.C0.DDR3_Ecc {true} 										  \
-                      CONFIG.C0.DDR3_CasLatency {11} 										  \
-                      CONFIG.C0.DDR3_CasWriteLatency {8} 									  \
-                      CONFIG.C0.DDR3_AxiAddressWidth {33} 									  \
-                      CONFIG.C0.DDR3_AxiIDWidth {4}										  \
+  set_property -dict [list                                                                   \
+                      CONFIG.C0.DDR3_TimePeriod {1250} 					     \
+                      CONFIG.C0.DDR3_InputClockPeriod {2500} 				     \
+                      CONFIG.C0.DDR3_MemoryType {SODIMMs} 				     \
+                      CONFIG.C0.DDR3_MemoryPart {CUSTOM_MT18KSF1G72HZ-1G6} 		     \
+                      CONFIG.C0.DDR3_AxiSelection {true} 				     \
+                      CONFIG.C0.DDR3_AxiDataWidth {512} 				     \
+                      CONFIG.C0.DDR3_CustomParts $root_dir/setup/KU3/MT18KSF1G72HZ-1G6.csv   \
+                      CONFIG.C0.DDR3_isCustom {true} 					     \
+                      CONFIG.Simulation_Mode {Unisim} 					     \
+                      CONFIG.Internal_Vref {false} 					     \
+                      CONFIG.C0.DDR3_DataWidth {72} 					     \
+                      CONFIG.C0.DDR3_DataMask {false} 					     \
+                      CONFIG.C0.DDR3_Ecc {true} 					     \
+                      CONFIG.C0.DDR3_CasLatency {11} 					     \
+                      CONFIG.C0.DDR3_CasWriteLatency {8} 				     \
+                      CONFIG.C0.DDR3_AxiAddressWidth {33} 				     \
+                      CONFIG.C0.DDR3_AxiIDWidth {4}					     \
                      ] [get_ips ddr3sdram] $msg_level
   set_property generate_synth_checkpoint false [get_files $ip_dir/ddr3sdram/ddr3sdram.xci]
   generate_target {instantiation_template}     [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] $msg_level
   generate_target all                          [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] $msg_level
   export_ip_user_files -of_objects             [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -no_script -force $msg_level
   export_simulation -of_objects [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
-} 
+
+  #DDR3 create ddr3sdramm example design
+  puts "	                      generating ddr3sdram example"
+  open_example_project $msg_level -force -dir $ip_dir [get_ips  ddr3sdram]  
+}
 
 #DDR4 create ddr4sdramm with ECC
 if { $create_ddr4 == "TRUE" } {
   puts "	                      generating IP ddr4sdram"
-  create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.1 -module_name ddr4sdram -dir $ip_dir $msg_level
-  set_property -dict [list                                                               \
-                      CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-083E} 			 \
-                      CONFIG.C0.DDR4_TimePeriod {938} 				         \
-                      CONFIG.C0.DDR4_InputClockPeriod {3752} 				 \
-                      CONFIG.C0.DDR4_CasLatency {15} 					 \
-                      CONFIG.C0.DDR4_CasWriteLatency {11} 				 \
-                      CONFIG.C0.DDR4_DataWidth {72} 					 \
-                      CONFIG.C0.DDR4_AxiSelection {true} 				 \
-                      CONFIG.C0.DDR4_CustomParts $dimm_dir/MT40A512M16HA-083E.csv 	 \
-                      CONFIG.C0.DDR4_isCustom {true} 					 \
-                      CONFIG.Simulation_Mode {Unisim} 				         \
-                      CONFIG.C0.DDR4_DataMask {NO_DM_NO_DBI} 				 \
-                      CONFIG.C0.DDR4_Ecc {true} 					 \
-                      CONFIG.C0.DDR4_AxiDataWidth {512} 				 \
-                      CONFIG.C0.DDR4_AxiAddressWidth {32} 				 \
-                      CONFIG.C0.DDR4_AxiIDWidth {4} 					 \
-                      CONFIG.C0.BANK_GROUP_WIDTH {1}					 \
+  create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir $msg_level
+  set_property -dict [list                                                                   \
+                      CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-083E} 			     \
+                      CONFIG.C0.DDR4_TimePeriod {938} 				             \
+                      CONFIG.C0.DDR4_InputClockPeriod {3752} 				     \
+                      CONFIG.C0.DDR4_CasLatency {15} 					     \
+                      CONFIG.C0.DDR4_CasWriteLatency {11} 				     \
+                      CONFIG.C0.DDR4_DataWidth {72} 					     \
+                      CONFIG.C0.DDR4_AxiSelection {true} 				     \
+                      CONFIG.C0.DDR4_CustomParts $root_dir/setup/FGT/MT40A512M16HA-083E.csv  \
+                      CONFIG.C0.DDR4_isCustom {true} 					     \
+                      CONFIG.Simulation_Mode {Unisim} 				             \
+                      CONFIG.C0.DDR4_DataMask {NO_DM_NO_DBI} 				     \
+                      CONFIG.C0.DDR4_Ecc {true} 					     \
+                      CONFIG.C0.DDR4_AxiDataWidth {512} 				     \
+                      CONFIG.C0.DDR4_AxiAddressWidth {32} 				     \
+                      CONFIG.C0.DDR4_AxiIDWidth {4} 					     \
+                      CONFIG.C0.BANK_GROUP_WIDTH {1}					     \
                      ] [get_ips ddr4sdram] $msg_level
   set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
   generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] $msg_level
   generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] $msg_level
   export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -no_script -force  $msg_level
   export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
-#    open_example_project -force -dir $ip_dir     [get_ips ddr4sdram]
+
+  #DDR4 create ddr4sdramm example design
+  puts "	                      generating ddr4sdram example"
+  open_example_project $msg_level -force -dir $ip_dir     [get_ips ddr4sdram]
 }
 
 puts "	\[CREATE_IPs........\] done"

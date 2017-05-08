@@ -39,7 +39,7 @@
 #include <snap_s_regs.h>
 
 #define ACTION_REDAY_IRQ        4
-#define	HLS_HASH_JOIN_ID	0x10141003
+#define	HLS_HASH_JOIN_ID	0x10141002
 
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
@@ -182,11 +182,10 @@ static void dnut_prepare_hashjoin(struct dnut_job *cjob,
 	jin->t1_processed = 0;
 	jin->t2_processed = 0;
 	jin->t3_produced = 0;
-	jin->checkpoint = 0xABCD;
 	jin->rc = 0;
 	jin->action_version = 0;
 
-	dnut_job_set(cjob, HASHJOIN_ACTION_TYPE,
+	dnut_job_set(cjob, HLS_HASH_JOIN_ID,
 		     jin, sizeof(*jin), jout, sizeof(*jout));
 }
 
@@ -230,7 +229,6 @@ int main(int argc, char *argv[])
 	unsigned int t2_entries = 23;
 	unsigned int t2_tocopy = 0;
 	unsigned int seed = 1974;
-	int attach_flags = SNAP_CCR_DIRECT_MODE;
 	int action_irq = 0;
 
 	while (1) {
@@ -282,7 +280,6 @@ int main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		case 'I':
-			attach_flags |= SNAP_CCR_IRQ_ATTACH;
 			action_irq = ACTION_REDAY_IRQ;
 			break;
 		default:
@@ -319,26 +316,6 @@ int main(int argc, char *argv[])
 		goto out_error;
 	}
 
-	rc = dnut_attach_action((void*)kernel, HLS_HASH_JOIN_ID, attach_flags, 5*timeout);
-	if (rc != 0) {
-		fprintf(stderr, "err: job Attach %d: %s!\n", rc,
-			strerror(errno));
-		dnut_kernel_free(kernel);
-		goto out_error;
-	}
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Temporary setting to define memory base address\n");
-	dnut_kernel_mmio_write32(kernel, 0x10, 0);
-	dnut_kernel_mmio_write32(kernel, 0x14, 0);
-	dnut_kernel_mmio_write32(kernel, 0x1c, 0);
-	dnut_kernel_mmio_write32(kernel, 0x20, 0);
-#endif
-#if 1				/* FIXME Circumvention should go away */
-	pr_info("FIXME Temporary setting to enable DDR on the card\n");
-	dnut_kernel_mmio_write32(kernel, 0x28, 0);
-	dnut_kernel_mmio_write32(kernel, 0x2c, 0);
-#endif
-
 	table1_fill(t1, t1_entries);
 	if (verbose_flag)
 		table1_dump(t1, t1_entries);
@@ -359,15 +336,7 @@ int main(int argc, char *argv[])
 			table2_dump(t2, t2_tocopy);
 		}
 
-		if (action_irq) {
-			dnut_kernel_mmio_write32(kernel, 0x8, 1);
-			dnut_kernel_mmio_write32(kernel, 0x4, 1);
-		}
 		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout, action_irq);
-		if (action_irq) {
-			dnut_kernel_mmio_write32(kernel, 0xc, 1);
-			dnut_kernel_mmio_write32(kernel, 0x4, 0);
-		}
 		if (rc != 0) {
 			fprintf(stderr, "err: job execution %d: %s!\n", rc,
 				strerror(errno));
@@ -385,14 +354,13 @@ int main(int argc, char *argv[])
 				   ht stores the values */
 		t2_entries -= t2_tocopy;
 	}
+	dnut_detach_action((void*)kernel);
 	gettimeofday(&etime, NULL);
 
 	fprintf(stderr, "Action version: %llx\n"
-		"Checkpoint: %016llx\n"
 		"ReturnCode: %lld\n"
 		"HashJoin took %lld usec\n",
 		(long long)jout.action_version,
-		(long long)jout.checkpoint,
 		(long long)jout.rc,
 		(long long)timediff_usec(&etime, &stime));
 

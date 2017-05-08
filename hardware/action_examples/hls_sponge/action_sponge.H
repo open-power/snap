@@ -39,12 +39,13 @@ typedef struct {
         snapu32_t nb_round;      /* out: special parameter for sponge */
 	snapu64_t timer_ticks;   /* out: timer ticks FPGA timer frequency */
         snapu64_t action_version;/* out: action version info */
-} DATA_SPONGE; // DATA = 112 Bytes
+        ap_uint<288> unused;     /* mandatory to keep output register at the right address*/
+} DATA_SPONGE; // DATA = 108 Bytes / 864 bits
 
 //---------------------------------------------------------------------
 typedef struct {
         CONTROL Control;       //  16 bytes
-        DATA_SPONGE Data;      // up to 96 bytes
+        DATA_SPONGE Data;      // 108 bytes
 } action_reg;
 
 #define CONFIG_HOSTSTYLE_ALGO

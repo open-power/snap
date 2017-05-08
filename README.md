@@ -51,3 +51,21 @@ SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulat
 As of now, two FPGA cards can be used with SNAP:
 * Alpha-Data ADM-PCIE-KU3 http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
 * A Nallatech card with on-card NVMe M.2 connectors http://www.nallatech.com/solutions/fpga-cards
+
+# Contributing
+
+Before contributing to this project, please read and agree to the rules in 
+* [CONTRIBUTING.md](CONTRIBUTING.md)
+
+To simplify the sign-off, create a ".gitconfig" file in you home by executing:
+```
+$ git config --global user.name "John Doe"
+$ git config --global user.email johndoe@example.com
+```
+Then, for every commit, use `git commit -s` to add the "signed-off by ..." message.
+
+The master branch is protected. You can no longer commit directly into the master branch. To contribute changes, please create a branch, make the changes there and issue a pull request. 
+
+By default the git repository is read-only. Users can fork the donut repository, make the changes there and issue a pull request.
+
+Pull requests to merge into the master branch must be reviewed before they will be merged.

@@ -20,27 +20,25 @@
 #include <stdint.h>
 #include <string.h>
 #include <ap_int.h>
-
-
 #include "hls_snap.H"
 
 #define MEMCOPY_ACTION_TYPE 0x10141000
-#define RELEASE_LEVEL       0x00000020 
+#define RELEASE_LEVEL       0x00000020
 
 #define MAX_NB_OF_BYTES_READ  (4 * 1024)
 #define CARD_DRAM_SIZE (1 * 1024 *1024 * 1024)
 
-/* Names of the fields can be changed by User. Should serve as a template */
-typedef struct {//Names of the fields can be changed by User. Should serve as a template
+typedef struct { //Names of the fields can be changed by User. Should serve as a template 
         dnut_addr in;   /* input data : 128 bits*/
         dnut_addr out;  /* offset table : 128 bits*/
-        ap_uint<608> unused;
-} DATA_MC; // DATA = 108 Bytes
+        ap_uint<608> unused; /* NOTE: Required such that HLS generates
+				the right register layout */
+} DATA_MC; // DATA = 108 Bytes / 864 bits (fixed length)
 
 //---------------------------------------------------------------------
 typedef struct {
         CONTROL Control;       //  16 bytes
-        DATA_MC  Data;      // up to 96 bytes
+        DATA_MC Data;          // 108 bytes
 } action_reg;
 
 #define CONFIG_HOSTSTYLE_ALGO

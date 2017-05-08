@@ -29,7 +29,8 @@
 
 #include <libdonut.h>
 #include <donut_tools.h>
-#include "snap_s_regs.h"
+#include <snap_s_regs.h>
+
 #include "snap_fw_example.h"
 
 /*	defaults */
@@ -141,17 +142,14 @@ static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct dnut_card* h, int timeout, bool use_irq)
+static int action_wait_idle(struct dnut_card* h, int timeout, int irq)
 {
 	uint64_t t_start;	/* time in usec */
 	uint64_t td = 0;
-	int irq = 0;
 	int rc = 1;
 
-	if (use_irq) {
-		action_write(h, ACTION_INT_CONFIG, ACTION_INT_GLOBAL);
-		irq = 4;
-	}
+	if (irq)
+		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
 	dnut_kernel_start((void*)h);
 
 	t_start = get_usec();
@@ -159,8 +157,8 @@ static int action_wait_idle(struct dnut_card* h, int timeout, bool use_irq)
 	if (dnut_kernel_completed((void*)h, irq, NULL, timeout))
 		rc = 0;	/* Good */
 	td = get_usec() - t_start;
-	if (use_irq)
-		action_write(h, ACTION_INT_CONFIG, 0);
+	if (irq)
+		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_OFF);
 	print_time(td);
 
 	return rc;
@@ -245,7 +243,7 @@ int main(int argc, char *argv[])
 	int h_mem_size = 0;
 	int h_begin = 0;
 	uint64_t start, stop;
-	bool use_interrupt = false;
+	int action_irq = 0;
 	int attach_flags = SNAP_CCR_DIRECT_MODE;
 
 	while (1) {
@@ -306,8 +304,8 @@ int main(int argc, char *argv[])
 			pattern = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 'I':	/* irq */
-			use_interrupt = true;
-			attach_flags |= ACTION_IDLE_IRQ_MODE | SNAP_CCR_IRQ_ATTACH;
+			action_irq = ACTION_DONE_IRQ;
+			attach_flags |= SNAP_CCR_IRQ_ATTACH;
 			break;
 		default:
 			usage(argv[0]);
@@ -368,7 +366,7 @@ int main(int argc, char *argv[])
 			start = begin;
 			stop = begin + size -1;
 			action_start(dn, func | (pattern << 8), stop, start);
-			if (0 != action_wait_idle(dn, timeout, use_interrupt))
+			if (0 != action_wait_idle(dn, timeout, action_irq))
 				goto __exit1;
 		}
 		if (ACTION_CONFIG_MEMSET_H == func) {
@@ -377,7 +375,7 @@ int main(int argc, char *argv[])
 			start = (uint64_t)hb + h_begin;	/* Host Start Address */
 			stop = start + size - 1;	/* Host End Address */
 			action_start(dn, func | (pattern << 8), stop, start);
-			if (0 != action_wait_idle(dn, timeout, use_interrupt))
+			if (0 != action_wait_idle(dn, timeout, action_irq))
 				goto __exit1;
 			if (0 != check_buffer(hb, h_begin, size, pattern))
 				goto __exit1;

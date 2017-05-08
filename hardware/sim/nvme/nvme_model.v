@@ -20,21 +20,18 @@
 
 `timescale 1ns / 1ps
 module nvme_model (
-  unit_reset_n,
-  pcie_rc0_rxn, 
-  pcie_rc0_rxp, 
-  pcie_rc0_txn, 
-  pcie_rc0_txp, 
-  pcie_rc1_rxn, 
-  pcie_rc1_rxp, 
-  pcie_rc1_txn, 
-  pcie_rc1_txp
-
-
-		   
+    sys_reset_n,
+    pcie_rc0_rxn,
+    pcie_rc0_rxp,
+    pcie_rc0_txn,
+    pcie_rc0_txp,
+    pcie_rc1_rxn,
+    pcie_rc1_rxp,
+    pcie_rc1_txn,
+    pcie_rc1_txp 		   
 );
 
-   input        unit_reset_n;
+   input        sys_reset_n;
    input  [3:0] pcie_rc0_rxn; 
    input  [3:0] pcie_rc0_rxp; 
    output [3:0] pcie_rc0_txn; 
@@ -248,8 +245,8 @@ denaliPcie den();
       .pipe_tx_5_rp       (pipe_tx_5_rp[69:0]),
       .pipe_tx_6_rp       (pipe_tx_6_rp[69:0]),
       .pipe_tx_7_rp       (pipe_tx_7_rp[69:0]),
-      .sys_rst_n          (unit_reset_n),
-      .nperst             (unit_reset_n)
+      .sys_rst_n          (sys_reset_n),
+      .nperst             (sys_reset_n)
       );
  
     pcie_endp_model pcie_endp_model1
@@ -274,8 +271,8 @@ denaliPcie den();
       .pipe_tx_5_rp       (pipe_tx_5_rp_1[69:0]),
       .pipe_tx_6_rp       (pipe_tx_6_rp_1[69:0]),
       .pipe_tx_7_rp       (pipe_tx_7_rp_1[69:0]),
-      .sys_rst_n          (unit_reset_n),
-      .nperst             (unit_reset_n)
+      .sys_rst_n          (sys_reset_n),
+      .nperst             (sys_reset_n)
       );
  
      initial

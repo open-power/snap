@@ -175,7 +175,7 @@ ENTITY psl_accel IS
     -- NVME Interface	         						        -- only for NVME_USED=TRUE 
     --			         					                -- only for NVME_USED=TRUE 
     -- Reset Input                                                                      -- only for NVME_USED=TRUE
-    pcie_perstn                        : IN    std_ulogic;                              -- only for NVME_USED=TRUE
+    nvme_reset_n                       : IN    std_ulogic;                              -- only for NVME_USED=TRUE
     --			         					                -- only for NVME_USED=TRUE 
     -- Clock inputs for NVMe                                                            -- only for NVME_USED=TRUE
 --nvme_ch0    refclk_nvme_ch0_p                  : IN    STD_LOGIC;                               -- only for NVME_USED=TRUE
@@ -318,8 +318,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
       ap_rst_n                   : IN STD_LOGIC;
       interrupt_ack              : in STD_LOGIC;
       interrupt                  : out std_logic;
-      interrupt_src              : out std_logic_vector(INT_BITS-2 DOWNTO 0);                           -- only for HLS_WORKAROUND!=TRUE
-      interrupt_ctx              : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);                       -- only for HLS_WORKAROUND!=TRUE
+      interrupt_src              : out std_logic_vector(INT_BITS-2 DOWNTO 0);
+      interrupt_ctx              : out std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
       --                                                                                                -- only for DDRI_USED=TRUE
       -- AXI SDRAM Interface                                                                            -- only for DDRI_USED=TRUE
       m_axi_card_mem0_araddr     : OUT STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );      -- only for DDRI_USED=TRUE
@@ -1018,7 +1018,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
     -- NVME Interface	         						                           -- only for NVME_USED=TRUE 
     --			         					                                   -- only for NVME_USED=TRUE 
     -- Reset Input                                                                                         -- only for NVME_USED=TRUE
-    pcie_perstn                   : IN    std_ulogic;                                                      -- only for NVME_USED=TRUE
+    nvme_reset_n                  : IN    std_ulogic;                                                      -- only for NVME_USED=TRUE
     --			         					                                   -- only for NVME_USED=TRUE 
     -- Clock inputs for NVMe                                                                               -- only for NVME_USED=TRUE
 --nvme_ch0    refclk_nvme_ch0_p                  : IN    STD_LOGIC;                                                -- only for NVME_USED=TRUE
@@ -1469,8 +1469,8 @@ BEGIN
       ap_rst_n                             => action_reset_n_q,
       interrupt_ack                        => sk_d.int_req_ack,
       interrupt                            => ks_d.int_req,
-      interrupt_src                        => ks_d.int_src,                                 -- only for HLS_WORKAROUND!=TRUE
-      interrupt_ctx                        => ks_d.int_ctx,                                 -- only for HLS_WORKAROUND!=TRUE
+      interrupt_src                        => ks_d.int_src,
+      interrupt_ctx                        => ks_d.int_ctx,
       --                                                                                    -- only for DDRI_USED=TRUE
       -- AXI NVMe DDR Interface                                                             -- only for DDRI_USED=TRUE
       m_axi_card_mem0_araddr               => act_axi_card_mem0_araddr,                     -- only for DDRI_USED=TRUE
@@ -2233,7 +2233,7 @@ BEGIN
 --nvme_ch0      refclk_nvme_ch0_n                => refclk_nvme_ch0_n,				  -- only for NVME_USED=TRUE 
       refclk_nvme_ch1_p                => refclk_nvme_ch1_p,				  -- only for NVME_USED=TRUE 
       refclk_nvme_ch1_n                => refclk_nvme_ch1_n,				  -- only for NVME_USED=TRUE 
-      pcie_perstn                      => pcie_perstn,     		                  -- only for NVME_USED=TRUE 
+      nvme_reset_n                     => nvme_reset_n,     		                  -- only for NVME_USED=TRUE 
 --nvme_ch0      pcie_rc0_rxn(3 downto 0)         => pcie_rc0_rxn(3 downto 0),			  -- only for NVME_USED=TRUE 
 --nvme_ch0      pcie_rc0_rxp(3 downto 0)         => pcie_rc0_rxp(3 downto 0),			  -- only for NVME_USED=TRUE 
 --nvme_ch0      pcie_rc0_txn(3 downto 0)         => pcie_rc0_txn(3 downto 0),			  -- only for NVME_USED=TRUE 

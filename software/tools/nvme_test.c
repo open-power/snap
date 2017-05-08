@@ -29,7 +29,8 @@
 
 #include <libdonut.h>
 #include <donut_tools.h>
-#include "snap_s_regs.h"
+#include <snap_s_regs.h>
+
 #include "snap_fw_example.h"
 
 /*	defaults */
@@ -162,17 +163,14 @@ static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct dnut_card* h, int timeout, bool use_irq, uint32_t mem_size)
+static int action_wait_idle(struct dnut_card* h, int timeout, int irq, uint32_t mem_size)
 {
 	int rc = ETIME;
 	uint64_t t_start;	/* time in usec */
 	uint64_t td;		/* Diff time in usec */
-	int irq = 0;
 
-	if (use_irq) {
-		action_write(h, ACTION_INT_CONFIG, ACTION_INT_GLOBAL);
-		irq = 4;
-	}
+	if (irq)
+		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
 	dnut_kernel_start((void*)h);
 
 
@@ -182,8 +180,8 @@ static int action_wait_idle(struct dnut_card* h, int timeout, bool use_irq, uint
 	if (0 == rc)
 		VERBOSE0("Error: Timeout while Waiting for Idle ");
 	td = get_usec() - t_start;
-	if (use_irq)
-		action_write(h, ACTION_INT_CONFIG, 0);
+	if (irq)
+		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_OFF);
 	print_time(td, mem_size);
 	return(!rc);
 }
@@ -254,7 +252,7 @@ int main(int argc, char *argv[])
 	uint32_t blocks = 1;
 	void *src_buf = NULL;
 	void *dest_buf = NULL;
-	bool irq = false;
+	int action_irq = 0;
 	int attach_flags = SNAP_CCR_DIRECT_MODE;
 	int drive = 0;
 	uint64_t nvme_offset = 0;
@@ -333,8 +331,8 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'i':
-			irq = true;
-			attach_flags |= ACTION_IDLE_IRQ_MODE | SNAP_CCR_IRQ_ATTACH;
+			attach_flags |= SNAP_CCR_IRQ_ATTACH;
+			action_irq = ACTION_DONE_IRQ;
 			break;
 		default:
 			usage(argv[0]);
@@ -392,28 +390,29 @@ int main(int argc, char *argv[])
 	}
 	VERBOSE1("\n        Host -> DDR ");
 	action_memcpy(dn, ACTION_CONFIG_COPY_HD, ddr_src, host_src, mem_size);
-	rc = action_wait_idle(dn, timeout, irq, mem_size);
-	if (rc) goto __exit;
+	rc = action_wait_idle(dn, timeout, action_irq, mem_size);
+	if (rc) goto __exit1;
 
 	VERBOSE1("\n        DDR -> NVME ");
 	drive_cmd = ACTION_CONFIG_COPY_DN | (NVME_DRIVE1 * drive);
 	action_memcpy(dn, drive_cmd, nvme_lb, ddr_src, blocks);
-	rc = action_wait_idle(dn, timeout, irq, mem_size);
-	if (rc) goto __exit;
+	rc = action_wait_idle(dn, timeout, action_irq, mem_size);
+	if (rc) goto __exit1;
 
 	VERBOSE1("\n        NVME -> DDR ");
 	drive_cmd = ACTION_CONFIG_COPY_ND | (NVME_DRIVE1 * drive);
 	action_memcpy(dn, drive_cmd, ddr_dest, nvme_lb, blocks);
-	rc = action_wait_idle(dn, timeout, irq, mem_size);
-	if (rc) goto __exit;
+	rc = action_wait_idle(dn, timeout, action_irq, mem_size);
+	if (rc) goto __exit1;
 
 	VERBOSE1("\n        DDR -> Host ");
 	action_memcpy(dn, ACTION_CONFIG_COPY_DH, host_dest, ddr_dest, mem_size);
-	rc = action_wait_idle(dn, timeout, irq, mem_size);
-	if (rc) goto __exit;
+	rc = action_wait_idle(dn, timeout, action_irq, mem_size);
+	if (rc) goto __exit1;
 
 	rc = memcmp2(dest_buf, src_buf, mem_size);
 
+__exit1:
 	dnut_detach_action(dn);
 __exit:
 	free_mem(src_buf);

@@ -44,11 +44,6 @@ static int mmio_write32(void *_card, uint64_t offs, uint32_t data)
 
 static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 {
-	struct dnut_action *action = (struct dnut_action *)_card;
-
-	if (offs == ACTION_RETC)
-		*data = action->retc;
-
 	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
 		  (long long)offs, *data);
 	return 0;
@@ -94,9 +89,8 @@ static int qs_cmp(const void *a, const void *b)
 {
     return cmpvalue((char*) a, (char*) b);
 }
-        
 
-static uint32_t intersect_direct(value_t table1[], uint32_t n1, 
+static uint32_t intersect_direct(value_t table1[], uint32_t n1,
                               value_t table2[], uint32_t n2,
                               value_t result_array[] )
 {
@@ -126,7 +120,7 @@ static uint32_t ht_hash(value_t key)
 {
     uint64_t hashval = 0;
     uint32_t i = 0;
-    int k = HT_ENTRY_NUM_EXP/8; //For example, 24/8 = 3. 
+    int k = HT_ENTRY_NUM_EXP/8; //For example, 24/8 = 3.
 
     while (i < sizeof(value_t))
     {
@@ -137,12 +131,11 @@ static uint32_t ht_hash(value_t key)
 
     return (hashval % HT_ENTRY_NUM);
 }
-static uint32_t intersect_hash(value_t table1[], uint32_t n1, 
+static uint32_t intersect_hash(value_t table1[], uint32_t n1,
                               value_t table2[], uint32_t n2,
                               value_t result_array[] )
 {
 
-    
     uint32_t i, index;
     struct entry_t * *hash_table;
     struct entry_t * ptr;
@@ -176,7 +169,6 @@ static uint32_t intersect_hash(value_t table1[], uint32_t n1,
         index = ht_hash(table2[i]);
         ptr = hash_table[index];
         entry = ptr;
-        
        // printf("index = %d, ptr = %p\n", index, ptr);
 
         while (ptr != NULL)
@@ -195,11 +187,11 @@ static uint32_t intersect_hash(value_t table1[], uint32_t n1,
             ptr = ptr -> next;
         }
     }
-    __free(hash_table);  
+    __free(hash_table);
     return n3;
 }
 
-static uint32_t intersect_sort( value_t table1[], uint32_t n1, 
+static uint32_t intersect_sort( value_t table1[], uint32_t n1,
                                 value_t table2[], uint32_t n2,
                                 value_t result_array[] )
 {
@@ -209,7 +201,7 @@ static uint32_t intersect_sort( value_t table1[], uint32_t n1,
 
     i = 0;
     j = 0;
-    //Quicksort 
+    //Quicksort
     qsort(table1, n1, sizeof(value_t), qs_cmp);
     qsort(table2, n2, sizeof(value_t), qs_cmp);
 
@@ -219,8 +211,8 @@ static uint32_t intersect_sort( value_t table1[], uint32_t n1,
         {
             copyvalue(result_array[n3], table2[j]);
             n3++;
-            i ++;
-            j ++;
+            i++;
+            j++;
         }
         else if (cmpvalue(table1[i], table2[j]) < 0)
             i++;
@@ -253,14 +245,13 @@ uint32_t run_sw_intersection(int method, value_t *table1, uint32_t n1, value_t *
 static int action_main(struct dnut_action *action,
 		       void *job, uint32_t job_len)
 {
-        
 	struct intersect_job *js = (struct intersect_job *)job;
-    act_trace("%s(%p, %p, %d) table1_size = %d, table2_size = %d\n", 
+    act_trace("%s(%p, %p, %d) table1_size = %d, table2_size = %d\n",
             __func__, action, job, job_len, js->src_tables_host[0].size,  js->src_tables_host[1].size);
     //Do Nothing.
 
 // out_ok:
-	action->retc = DNUT_RETC_SUCCESS;
+	action->job.retc = DNUT_RETC_SUCCESS;
 	return 0;
 
 }
@@ -274,7 +265,7 @@ static struct dnut_action action = {
 	.device_id = DNUT_DEVICE_ID_ANY,
 	.action_type = (HLS_INTERSECT_ID&0xFFFF),
 
-	.retc = DNUT_RETC_FAILURE, /* preset value, should be 0 on success */
+	.job = { .retc = DNUT_RETC_FAILURE, },
 	.state = ACTION_IDLE,
 	.main = action_main,
 	.priv_data = NULL,	/* this is passed back as void *card */
