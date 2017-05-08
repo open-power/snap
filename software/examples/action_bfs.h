@@ -31,23 +31,14 @@
 
 unsigned int * g_out_ptr;
 
-// BFS 112bytes PATTERN
-// This must match with DATA structure in bfs.cpp
+// BFS 108bytes PATTERN
+// This must match with DATA structure in hls_bfs/kernel.cpp
 struct bfs_job {
-    uint64_t input_adjtable_address;
-    uint32_t input_vex_num;
-    uint16_t input_type;
-    uint16_t input_flags;
-
-    uint64_t output_address;
-    uint16_t output_type;
-    uint16_t output_flags;
-
+    struct snap_addr input_adjtable;
+    struct snap_addr output_traverse;
+    uint32_t vex_num;
     uint32_t status_pos;
     uint32_t status_vex;
-    uint64_t action_version;
-   // uint64_t mmio_din; //private
-   // uint64_t mmio_dout; //private
 };
 
 /* Example structure for Vex and Edge*/
