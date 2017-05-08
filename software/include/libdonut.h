@@ -159,11 +159,11 @@ static inline void snap_addr_set(struct snap_addr *da,
  * alike if that is required. Makes sense?
  */
 typedef struct snap_job {
-	uint32_t retc;                        /* Write to 0x104, Read from 0x184 */
-	uint64_t win_addr;                /* rw writing to MMIO 0x110 */
-	uint32_t win_size;                /* Number of bytes to Write */
-	uint64_t wout_addr;                /* wr read from MMIO 0x190 */
-	uint32_t wout_size;                /* Number of Bytes to Read */
+	uint32_t retc;			/* Write to 0x104, Read from 0x184 */
+	uint64_t win_addr;		/* rw writing to MMIO 0x110 */
+	uint32_t win_size;		/* Number of bytes to Write */
+	uint64_t wout_addr;		/* wr read from MMIO 0x190 */
+	uint32_t wout_size;		/* Number of Bytes to Read */
 } *snap_job_t;
 
 /**
@@ -250,14 +250,14 @@ static inline void snap_job_set(struct snap_job *djob,
  */
 
 
-/**********************************************************************
+/******************************************************************************
  * SNAP Card Access
- *********************************************************************/
+ *****************************************************************************/
 
 #define SNAP_VENDOR_ID_ANY	0xffff
 #define SNAP_DEVICE_ID_ANY	0xffff
 #define SNAP_VENDOR_ID_IBM	0x1014
-#define SNAP_DEVICE_ID_SNAP	0xcafe /* FIXME: Need officially assigned value */
+#define SNAP_DEVICE_ID_SNAP	0xcafe /* FIXME: Need officially assigned val */
 
 /*
  * Opens the device given by the path.
@@ -303,9 +303,9 @@ int snap_sync_execute_job(struct snap_card *card,
 			  int attach_timeout_sec,
 			  int timeout_sec);
 
-/**********************************************************************
+/******************************************************************************
  * SNAP Action Access
- *********************************************************************/
+ *****************************************************************************/
 
 /*
  * Attach an action to the card handle. If this is done a job can be
@@ -361,9 +361,9 @@ int snap_action_enable_irq(struct snap_action *action, int irq);
 int snap_action_disable_irq(struct snap_action *action, int irq);
 int snap_action_free_irq(struct snap_action *action, int irq);
 
-/**********************************************************************
+/******************************************************************************
  * SNAP Queue Operations
- *********************************************************************/
+ *****************************************************************************/
 
 /**
  * Get a streaming framework queue handle.
@@ -404,50 +404,6 @@ typedef int (*snap_job_finished_t)(struct snap_queue *queue,
 int snap_async_execute_job(struct snap_queue *queue,
 			struct snap_job *cjob,
 			snap_job_finished_t finished);
-
-
-#if 0 /* Not in plan */
-
-/**
- * FIXME Proposal Discussion (not in plan)
- *    is there need for this?
- *
- * I think to have an example data queue - as later extension is a good
- * thing to have. Question: Is one of those per action enough to start
- * with?
- */
-int snap_action_setup_data_queue(struct snap_card *card,
-				unsigned int send_queue_len,
-				unsigned int rcv_qeue_len,
-				unsigned int rcv_buf_size,
-				int irq);
-
-void snap_action_free_data_queue(struct snap_action *action);
-
-int snap_action_send(struct snap_action *action, const uint8_t *data,
-                     unsigned int len);
-
-int snap_action_rcv(struct snap_action *action, uint8_t *data,
-                    unsigned int len);
-
-/**
- * FIXME Proposal Discussion (not in plan)
- *    is there need for this?
- *
- * Doorbell: Proposal
- */
-struct snap_doorbell *snap_doorbell_connect(struct snap_card *card,
-			unsigned int msg_size, int irq);
-
-int snap_doorbell_send(struct snap_doorbell *doorbell, const uint8_t *msg,
-			unsigned int msg_size);
-
-int snap_doorbell_rcv(struct snap_doorbell *doorbell, uint8_t *msg,
-			unsigned int msg_size);
-
-void snap_doorbell_free(struct snap_doorbell *doorbell);
-
-#endif /* FIXME Not in plan */
 
 #ifdef __cplusplus
 }
