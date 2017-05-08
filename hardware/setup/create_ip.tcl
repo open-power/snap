@@ -193,7 +193,11 @@ if { $fpga_card == "KU3" } {
   }
 } elseif { $fpga_card == "FGT" } { 
   if { $bram_used == "TRUE" } {
-    set create_clock_conv  TRUE
+    if { $nvme_used == "TRUE" } {
+      set create_interconect  TRUE
+    } else {
+      set create_clock_conv   TRUE
+    }
     set create_bram        TRUE
   } elseif { $sdram_used == "TRUE" } {
     if { $nvme_used == "TRUE" } {
