@@ -156,6 +156,9 @@ static void DeQueue (Queue *q, ElementType *ep)
 //    breadth first search
 //-------------------------------------
 
+// put one visited vertex to the place of g_out_ptr. 
+// Last vertex (is_tail=1) will follow an END sign (FFxxxxxx)
+// And with the total number of vertices
 void output_vex(unsigned int vex, int is_tail)
 {
     if(is_tail == 0)
@@ -168,7 +171,7 @@ void output_vex(unsigned int vex, int is_tail)
     {
         *g_out_ptr = 0xFF000000 + vex; //here vex means cnt
      // printf("End. %x\n", *g_out_ptr);
-        g_out_ptr += 16 - (((unsigned long long )g_out_ptr & 0x3C) >> 2); //Make paddings.
+        g_out_ptr += 32 - (((unsigned long long )g_out_ptr & 0x7C) >> 2); //Make paddings.
 
     }
 }
@@ -252,11 +255,11 @@ static int action_main(struct dnut_action *action,
 	int rc;
 	struct bfs_job *js = (struct bfs_job *)job;
 
-    VexNode * vex_list = (VexNode *) js->input_adjtable_address;
-    unsigned int vex_num = js->input_vex_num;
+    VexNode * vex_list = (VexNode *) js->input_adjtable.addr;
+    unsigned int vex_num = js->vex_num;
 
 
-    g_out_ptr = (unsigned int *)js->output_address;
+    g_out_ptr = (unsigned int *)js->output_traverse.addr;
 
     rc = bfs_all(vex_list, vex_num);
     js->status_vex = vex_num -1;
