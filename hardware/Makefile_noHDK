@@ -28,8 +28,8 @@ SNAP_CONFIG_FILES=$(DONUT_HDL_CORE)/psl_fpga.vhd \
 		  $(DONUT_HDL_CORE)/psl_accel.vhd \
 		  $(DONUT_HDL_CORE)/psl_accel_types.vhd \
 		  $(DONUT_SIM_CORE)/top.sv \
-		  $(DONUT_HDL_CORE)/donut.vhd \
-		  $(DONUT_HDL_CORE)/donut_types.vhd
+		  $(DONUT_HDL_CORE)/snap_core.vhd \
+		  $(DONUT_HDL_CORE)/snap_core_types.vhd
 
 
 .PHONY: all image model action_config create_environment copy config patch_version xpr_image snap_config
@@ -48,8 +48,14 @@ copy $(BUILD_DIR)/Checkpoint/b_route_design.dcp:
 	@ln -s $(DONUT_HARDWARE_ROOT)/setup/noHDK_build.tcl  $(BUILD_DIR)/noHDK_build.tcl; 
 	@ln -s $(DONUT_HARDWARE_ROOT)/setup/fw_xpr_build.tcl $(BUILD_DIR)/fw_xpr_build.tcl; 
 	@cp -p $(PSL_DCP)                                    $(BUILD_DIR)/Checkpoint/; 
-	@if [ $(FPGACARD) = "KU3" ]; then ln -f -s $(DONUT_HDL_CORE)/psl_fpga_ku3.vhd_source $(DONUT_HDL_CORE)/psl_fpga.vhd_source; fi
-	@if [ $(FPGACARD) = "FGT" ]; then ln -f -s $(DONUT_HDL_CORE)/psl_fpga_fgt.vhd_source $(DONUT_HDL_CORE)/psl_fpga.vhd_source; fi
+	@if [ $(FPGACARD) = "KU3" ]; then \
+	  ln -f -s $(DONUT_HDL_CORE)/psl_fpga_ku3.vhd_source  $(DONUT_HDL_CORE)/psl_fpga.vhd_source; \
+	  ln -f -s $(DONUT_HDL_CORE)/psl_accel_ku3.vhd_source $(DONUT_HDL_CORE)/psl_accel.vhd_source; \
+        fi
+	@if [ $(FPGACARD) = "FGT" ]; then \
+	  ln -f -s $(DONUT_HDL_CORE)/psl_fpga_fgt.vhd_source  $(DONUT_HDL_CORE)/psl_fpga.vhd_source; \
+	  ln -f -s $(DONUT_HDL_CORE)/psl_accel_fgt.vhd_source $(DONUT_HDL_CORE)/psl_accel.vhd_source; \
+	fi
 
 %.vhd: %.vhd_source
 	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
@@ -86,7 +92,7 @@ config: copy_denali $(BUILD_DIR)/Checkpoint/b_route_design.dcp $(SNAP_CONFIG_FIL
 
 patch_version:
 	@echo  -e "\t[PATCH.............] SNAP version and build date registers"; \
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HDL_CORE) donut.vhd
+	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HDL_CORE) snap_core.vhd
 
 patch_NVMe:
 	@if [[ -e "$(DONUT_HARDWARE_ROOT)/setup/patch_NVMe.sh" && $(NVME_USED) = "TRUE" ]]; then \

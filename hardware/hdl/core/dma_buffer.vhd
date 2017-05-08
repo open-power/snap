@@ -26,7 +26,7 @@ USE ieee.std_logic_misc.all;
 USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
 
-USE work.donut_types.all;
+USE work.snap_core_types.all;
 
 ENTITY dma_buffer IS
   PORT (
