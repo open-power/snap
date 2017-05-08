@@ -294,10 +294,12 @@ static int hw_wait_irq(struct snap_card *card, int timeout_sec)
 		FD_ZERO(&set);
 		FD_SET(card->afu_fd, &set);
 
+	/* retry_select: */
 		rc = select(card->afu_fd +1, &set, NULL, NULL, &timeout);
 		if (0 == rc)
 			rc = EBUSY;
 		else if ((rc == -1) && (errno == EINTR))
+			/* FIXME I think we should goto retry_select here */
 			rc = EINTR;
 		else rc = 0;
 	} else
@@ -355,6 +357,12 @@ static struct snap_action *hw_attach_action(struct snap_card *card,
 	}
 
 	if (action_type != card->action_type) {
+		/*
+		 * FIXME I think this code is better done in functions with
+		 * more meaningful names. Should make the code better
+		 * maintain and readable.
+		 */
+
 		hw_snap_mmio_read64(card, SNAP_S_SSR, &data);
 		/* Check if configure Slave s done */
 		if (0x100 != (data & 0x100)) {
@@ -382,8 +390,8 @@ static struct snap_action *hw_attach_action(struct snap_card *card,
 			return NULL;
 		}
 
-		/* Get IRQ Flags bit 0,1,2 + 3 */
-		card->mode = SNAP_CCR_DIRECT_MODE; /* FIXME Just this mode for now */
+		/* Get IRQ Flags bit 0, 1, 2 + 3 */
+		card->mode = SNAP_CCR_DIRECT_MODE; /* FIXME Only this mode supported */
 		if (action_flags & SNAP_DONE_IRQ)
 			card->mode |= SNAP_CCR_IRQ_ACTION;
 		if (action_flags & SNAP_ATTACH_IRQ)
@@ -509,10 +517,17 @@ int snap_mmio_read32(struct snap_card *_card,
 	return df->mmio_read32(_card, offset, data);
 }
 
+/*
+ * FIXME Remove adding action_base in plain mmio_read32/write32.
+ */
 int snap_action_write32(struct snap_action *action,
 		      uint64_t offset, uint32_t data)
 {
 	struct snap_card *card = (struct snap_card *)action;
+
+	if (card->action_base == 0) /* must be attached to make this work */
+		return SNAP_EATTACH;
+
 	return df->mmio_write32(card, card->action_base + offset, data);
 }
 
@@ -520,6 +535,10 @@ int snap_action_read32(struct snap_action *action,
 		     uint64_t offset, uint32_t *data)
 {
 	struct snap_card *card = (struct snap_card *)action;
+
+	if (card->action_base == 0) /* must be attached to make this work */
+		return SNAP_EATTACH;
+
 	return df->mmio_read32(card, card->action_base + offset, data);
 }
 
@@ -847,8 +866,7 @@ static void sw_card_free(struct snap_card *card)
 }
 
 static int sw_mmio_write32(struct snap_card *card,
-			   uint64_t offs __unused,
-			   uint32_t data __unused)
+			   uint64_t offs, uint32_t data)
 {
 	int rc = 0;
 	struct snap_sim_action *a = card->action;
