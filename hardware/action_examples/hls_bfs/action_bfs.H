@@ -21,27 +21,27 @@
 #include "hls_snap.H"
 
 #define BFS_ACTION_TYPE     0x10141004
-#define RELEASE_LEVEL       0x00000012 
+#define RELEASE_LEVEL       0x00000012
 
 // BFS defines VEX_WIDTH = log2(MAX_VEX_NUM) The necessary bits to hold vex index
 #define MAX_VEX_NUM 16*1024
-#define VEX_WIDTH   14  
+#define VEX_WIDTH   14
 
 #define MAX_NB_OF_BYTES_READ (4 * 1024)
 
 typedef struct {//Names of the fields can be changed by User. Should serve as a template
         dnut_addr input_adjtable;   //16B
         dnut_addr output_traverse;  //16B
-        snapu32_t vex_num;        //4B 
+        snapu32_t vex_num;        //4B
         snapu32_t status_pos;     //4B
         snapu32_t status_vex;     //4B
 
-        ap_uint<512> unused;      
+        ap_uint<512> unused;
 } DATA_BFS; // DATA = 108 Bytes
 
 typedef struct {
         CONTROL  Control; //  16 bytes
-        DATA_BFS  Data; 
+        DATA_BFS  Data;
 } action_reg;
 
 /////////////////////////////////
@@ -55,10 +55,10 @@ typedef struct
     int  age;
 } VexData;
 
-typedef struct 
+typedef struct
 {
     char relation [32];
-    int  distance; 
+    int  distance;
 } EdgeData;
 
 //ENODE_SIZE = 64B
@@ -69,8 +69,8 @@ typedef struct EdgeNode
 	//struct EdgeNode   * next;
     snapu32_t            adjvex;      //store the index of corresponding vex
     snapu32_t            is_tail;     //Not used.
-	snapu64_t            dataptr;    
-	//EdgeData          * data;    
+	snapu64_t            dataptr;
+	//EdgeData          * data;
     snapu64_t            reserved[5]; // To fill 64B
 } EdgeNode;
 
@@ -83,7 +83,7 @@ typedef struct
 	//VexData    * data;        /* Vex data field */
 } VexNode;
 
-    
+
 
 typedef ap_uint<VEX_WIDTH> Q_t;
 #define CONFIG_HOSTSTYLE_ALGO
