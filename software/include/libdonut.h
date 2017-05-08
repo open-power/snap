@@ -152,11 +152,18 @@ static inline void snap_addr_set(struct snap_addr *da,
 }
 
 /**
- * We discussed if the snap_job struct makes sense or could be replaced
- * by paramters. I think in the sync calling case it might be obsolete,
- * but for the asynchronous operation we can nicely use it to return
- * results and status. Maybe even more allow polling of progress or
- * alike if that is required. Makes sense?
+ * SNAP Job description
+ *
+ * The input interface struct is passed to the hardware action. The hardware
+ * action processes the job an returns results either in memory or using the
+ * output interface struct.
+ *
+ * @retc       execution status. Check this to determine if job execution
+ *             was sucessfull
+ * @win_addr   input address of interface struct
+ * @win_size   input size (use extension ptr if larger than 96 bytes)
+ * @wout_addr  output address of output interface struct
+ * @wout_addr  output size (maximum 96 bytes)
  */
 typedef struct snap_job {
 	uint32_t retc;			/* Write to 0x104, Read from 0x184 */
@@ -170,9 +177,9 @@ typedef struct snap_job {
  * snap_job_set - helper function to more easily setup the job request.
  *
  * @win_addr   input address of specific job
- * @win_size   input size (use extension ptr if larger than 112 bytes)
+ * @win_size   input size (use extension ptr if larger than 96 bytes)
  * @wout_addr  output address of specific job
- * @wout_addr  output size (maximum 112 bytes)
+ * @wout_addr  output size (maximum 96 bytes)
  */
 static inline void snap_job_set(struct snap_job *djob,
 				void *win_addr, uint32_t win_size,
@@ -260,16 +267,36 @@ static inline void snap_job_set(struct snap_job *djob,
 #define SNAP_DEVICE_ID_SNAP	0xcafe /* FIXME: Need officially assigned val */
 
 /*
- * Opens the device given by the path.
- * Checks if the given vendor and device id match the values in the
- * CAPI AFU config space, fails if the IDs don't match.
+ * Opens the device given by the path. Checks if the given vendor and device
+ * id match the values in the CAPI AFU config space, fails if the IDs don't
+ * match.
+ *
+ * @path        name of the CAPI device node in /dev
+ * @vendor_id   vendor_id in AFU config space. Use the IBM id in case of doubt.
+ * @device_id   CAPI SNAP device_id. See above. This makes sure you are really
+ *              talking to a CAPI card supporting SNAP.
+ * @return      snap_device handle or NULL in case of error.
  */
 struct snap_card *snap_card_alloc_dev(const char *path,
 			uint16_t vendor_id, uint16_t device_id);
 
+/*
+ * Free SNAP device
+ *
+ * @card        snap_card device handle.
+ */
 void snap_card_free(struct snap_card *card);
 
-/* Working with any type of AFU context */
+/*
+ * MMIO Access functions
+ *
+ * @card        snap_card device handle.
+ * @offset      offset in AFU MMIO register space.
+ * @data        data to read/write.
+ * @return      SNAP_OK in case of success, else error.
+ *
+ * Working with any type of AFU context.
+ */
 int snap_mmio_write32(struct snap_card *card, uint64_t offset,
 			uint32_t data);
 int snap_mmio_read32(struct snap_card *card, uint64_t offset,
@@ -280,7 +307,12 @@ int snap_mmio_write64(struct snap_card *card, uint64_t offset,
 int snap_mmio_read64(struct snap_card *card, uint64_t offset,
 			uint64_t *data);
 
-/* Settings for action attachement and job completion */
+/*
+ * Settings for action attachement and job completion.
+ *
+ * @SNAP_DONE_IRQ     Use interrupt to determine job completion.
+ * @SNAP_ATTACH_IRQ   Use interrupt to determine if action got attached.
+ */
 typedef enum snap_action_flag  {
 	SNAP_DONE_IRQ = 0x2,   /* Use IRQ to detect if job is done */
 	SNAP_ATTACH_IRQ = 0x4, /* Use IRQ to detect if attachment is done */
@@ -290,11 +322,25 @@ typedef enum snap_action_flag  {
  * This function will attach to the action, execute a job and release
  * the attachement when the job has been executed.
  *
- * snap_attach_action()
- * snap_action_sync_execute_job()
- * snap_detatch_action()
+ * snap_sync_execute_job()
+ *   snap_attach_action()
+ *   snap_action_sync_execute_job()
+ *   snap_detatch_action()
  *
- * See below.
+ * @card          snap_card device handle.
+ * @action_type   long SNAP action type. This is a unique value identifying the
+ *                SNAP action. See ActionTypes.md for exising ids and how to
+ *                add your own.
+ * @action_flags  Define special behavior, e.g. if interrupts should be used or
+ *                polling for completion of a job.
+ * @cjob          SNAP job description.
+ * @attach_timeout_sec Timeout for action attachement. Select larger value if
+ *                multiple users compete for the action resource.
+ * @timout_sec    Job execution timeout. Use larger value if there are multiple
+ *                potential users.
+ * @return        SNAP_OK, else error.
+ *
+ * See for other variants below.
  */
 int snap_sync_execute_job(struct snap_card *card,
 			  snap_action_type_t action_type,
@@ -311,22 +357,56 @@ int snap_sync_execute_job(struct snap_card *card,
  * Attach an action to the card handle. If this is done a job can be
  * send ot the action.
  *
+ * @card          snap_card device handle.
+ * @action_type   long SNAP action type. This is a unique value identifying the
+ *                SNAP action. See ActionTypes.md for exising ids and how to
+ *                add your own.
+ * @action_flags  Define special behavior, e.g. if interrupts should be used or
+ *                polling for completion of a job.
+ * @attach_timeout_sec Timeout for action attachement. Select larger value if
+ *                multiple users compete for the action resource.
+ * @return        SNAP_OK, else error.
+ *
  * Only works with slave contexts
  */
 struct snap_action *snap_attach_action(struct snap_card *card,
 			snap_action_type_t action_type,
 			snap_action_flag_t action_flags,
-			int timeout_sec);
+			int attach_timeout_sec);
 
-/* Only works with slave contexts */
+/*
+ * Detach action from card handle.
+ *
+ * @action        snap_action handle.
+ * @return        SNAP_OK, else error.
+ *
+ * Only works with slave contexts.
+ */
 int snap_detach_action(struct snap_action *action);
 
-/* Working with any type of AFU context */
+/*
+ * MMIO Access functions for actions
+ *
+ * @card        snap_card device handle.
+ * @offset      offset in AFU MMIO register space.
+ * @data        data to read/write.
+ * @return      SNAP_OK in case of success, else error.
+ *
+ * Working with attached action. SNAP jobmanager maps the MMIO ara
+ * for the action to a specific offset. Use these functions to
+ * directly access this range without the need to add the action_base
+ * offset.
+ */
 int snap_action_write32(struct snap_action *action, uint64_t offset,
 			uint32_t data);
 int snap_action_read32(struct snap_action *action, uint64_t offset,
 			uint32_t *data);
 
+/*
+ * Manual access to job passing and action control functions. Normal
+ * usage should be using the execute_job functions. If those are not
+ * sufficient, consider using the following low-level functions.
+ */
 int snap_action_start(struct snap_action *action);
 int snap_action_stop(struct snap_action *action);
 int snap_action_completed(struct snap_action *action, int *rc,
@@ -334,13 +414,13 @@ int snap_action_completed(struct snap_action *action, int *rc,
 
 /**
  * Synchronous way to send a job away. Blocks until job is done.
- * @action           handle to streaming framework queue
- * @cjob             streaming framework job
- * @cjob->win_addr   input address of specific job
- * @cjob->win_size   input size (use extension ptr if larger than 112 bytes)
- * @cjob->wout_addr  output address of specific job
- * @cjob->wout_addr  output size (maximum 112 bytes)
- * @return        0 on success.
+ * @action      handle to streaming framework queue
+ * @cjob        streaming framework job
+ *   @cjob->win_addr   input address of specific job
+ *   @cjob->win_size   input size (use extension ptr if larger than 112 bytes)
+ *   @cjob->wout_addr  output address of specific job
+ *   @cjob->wout_addr  output size (maximum 112 bytes)
+ * @return      SNAP_OK in case of success, else error.
  */
 int snap_action_sync_execute_job(struct snap_action *action,
 			struct snap_job *cjob,
