@@ -281,7 +281,7 @@ static int action_main(struct snap_sim_action *action,
 static struct snap_sim_action action = {
 	.vendor_id = SNAP_VENDOR_ID_ANY,
 	.device_id = SNAP_DEVICE_ID_ANY,
-	.action_type = (HLS_BFS_ID&0xFFFF),
+	.action_type = HLS_BFS_ID,
 
 	.job = { .retc = SNAP_RETC_FAILURE, },
 	.state = ACTION_IDLE,
