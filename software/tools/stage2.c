@@ -129,11 +129,11 @@ static void memset2(void *a, uint64_t pattern, int size)
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
-static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
+static void action_write(struct snap_card* h, uint32_t addr, uint32_t data)
 {
 	int rc;
 
-	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
+	rc = snap_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
 		VERBOSE0("Write MMIO 32 Err\n");
 	return;
@@ -157,7 +157,7 @@ static uint32_t msec_2_ticks(int msec)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct dnut_card* h, int timeout, uint64_t *elapsed, int irq)
+static int action_wait_idle(struct snap_card* h, int timeout, uint64_t *elapsed, int irq)
 {
 	int rc = ETIME;
 	uint64_t t_start;	/* time in usec */
@@ -165,11 +165,13 @@ static int action_wait_idle(struct dnut_card* h, int timeout, uint64_t *elapsed,
 
 	if (irq)
 		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
-	dnut_kernel_start((void*)h);
+
+	/* FIXME Use struct snap_action and not struct snap_card */
+	snap_action_start((void*)h);
 
 	/* Wait for Action to go back to Idle */
 	t_start = get_usec();
-	rc = dnut_kernel_completed((void*)h, irq, NULL, timeout);
+	rc = snap_action_completed((void*)h, NULL, timeout);
 	td = get_usec() - t_start;
 
 	if (irq)
@@ -180,7 +182,7 @@ static int action_wait_idle(struct dnut_card* h, int timeout, uint64_t *elapsed,
 	return rc;
 }
 
-static void action_count(struct dnut_card* h, int delay_ms)
+static void action_count(struct snap_card* h, int delay_ms)
 {
 	VERBOSE1("       Expect %d msec to wait...", delay_ms);
 	fflush(stdout);
@@ -189,7 +191,7 @@ static void action_count(struct dnut_card* h, int delay_ms)
 	return;
 }
 
-static void action_memcpy(struct dnut_card* h,
+static void action_memcpy(struct snap_card* h,
 		int action,	/* Action can be 2,3,4,5,6  see ACTION_CONFIG_COPY_ */
 		void *dest,
 		const void *src,
@@ -220,7 +222,7 @@ static void action_memcpy(struct dnut_card* h,
 	return;
 }
 
-static int memcpy_test(struct dnut_card* dnc,
+static int memcpy_test(struct snap_card* dnc,
 			int action,
 			int blocks_4k,	/* Number of DEFAULT_MEMCPY_BLOCK */
 			int blocks_64,	/* Number of 64 Bytes Blocks */
@@ -407,12 +409,11 @@ static int memcpy_test(struct dnut_card* dnc,
 	return rc;
 }
 
-static int get_action(struct dnut_card *handle, int flags, int timeout)
+static struct snap_action *get_action(struct snap_card *handle,
+				      int flags, int timeout)
 {
-	int rc = 0;
-
-	rc = dnut_attach_action(handle, ACTION_TYPE_EXAMPLE, flags, timeout);
-	return rc;
+	return snap_attach_action(handle, ACTION_TYPE_EXAMPLE,
+				  flags, timeout);
 }
 
 static void usage(const char *prog)
@@ -449,7 +450,7 @@ static void usage(const char *prog)
 int main(int argc, char *argv[])
 {
 	char device[64];
-	struct dnut_card *dn;	/* lib dnut handle */
+	struct snap_card *dn;	/* lib snap handle */
 	int start_delay = START_DELAY;
 	int end_delay = END_DELAY;
 	int step_delay = STEP_DELAY;
@@ -468,6 +469,7 @@ int main(int argc, char *argv[])
 	int action_irq = 0;	/* No Action irq */
 	int attach_flags = SNAP_CCR_DIRECT_MODE;
 	uint64_t td;
+	struct snap_action *act = NULL;
 
 	while (1) {
                 int option_index = 0;
@@ -565,26 +567,30 @@ int main(int argc, char *argv[])
 
 	VERBOSE2("Open Card: %d\n", card_no);
 	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
-	dn = dnut_card_alloc_dev(device, 0x1014, 0xcafe);
+	dn = snap_card_alloc_dev(device, 0x1014, 0xcafe);
 	if (NULL == dn) {
 		errno = ENODEV;
-		VERBOSE0("ERROR: dnut_card_alloc_dev(%s)\n", device);
+		VERBOSE0("ERROR: snap_card_alloc_dev(%s)\n", device);
 		return -1;
 	}
-	dnut_mmio_read64(dn, SNAP_S_CIR, &cir);
+	snap_mmio_read64(dn, SNAP_S_CIR, &cir);
 	VERBOSE1("Start of Action: %d Card Handle: %p Context: %d\n", action, dn,
 		(int)(cir & 0x1ff));
 
 	switch (action) {
 	case 1:
-		for(delay = start_delay; delay <= end_delay; delay += step_delay) {
-			rc = get_action(dn, attach_flags, 5*timeout + delay/1000);
-			if (0 != rc)
+		for(delay = start_delay; delay <= end_delay;
+		    delay += step_delay) {
+			act = get_action(dn, attach_flags,
+					 5*timeout + delay/1000);
+			if (NULL != act)
 				goto __exit1;
+
 			action_count(dn, delay);
 			rc = action_wait_idle(dn, timeout + delay/1000, &td, action_irq);
 			print_time(td, 0);
-			dnut_detach_action(dn);
+
+			snap_detach_action(act);
 			if (0 != rc) break;
 		}
 		rc = 0;
@@ -595,14 +601,15 @@ int main(int argc, char *argv[])
 	case 5:
 	case 6:
 		for (i = 0; i < memcpy_iter; i++) {
-			rc = get_action(dn, attach_flags, 5*timeout);
-			if (0 != rc)
+			act = get_action(dn, attach_flags, 5*timeout);
+			if (NULL != act)
 				goto __exit1;
 			rc = memcpy_test(dn, action, num_4k, num_64,
 				memcpy_align, card_ram_base,
 				timeout,
 				action_irq);
-			dnut_detach_action(dn);
+
+			snap_detach_action(act);
 		}
 		break;
 	default:
@@ -613,7 +620,7 @@ int main(int argc, char *argv[])
 __exit1:
 	// Unmap AFU MMIO registers, if previously mapped
 	VERBOSE2("Free Card Handle: %p\n", dn);
-	dnut_card_free(dn);
+	snap_card_free(dn);
 
 	VERBOSE1("End of Test rc: %d\n", rc);
 	return rc;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,108 +84,41 @@ file_read(const char *fname, uint8_t *buff, size_t len)
 	return rc;
 }
 
-static void dnut_prepare_search(struct dnut_job *cjob,
+static void snap_prepare_search(struct snap_job *cjob,
 				struct search_job *sjob_in,
 				struct search_job *sjob_out,
 				const uint8_t *dbuff, ssize_t dsize,
 				uint64_t *offs, unsigned int items,
-				const uint8_t *pbuff, unsigned int psize, unsigned int method, unsigned int step)
+				const uint8_t *pbuff, unsigned int psize)
 {
-    uint64_t ddr_addr;
-    if (step == 1)
-    {
-        // Step1 will copy src_text1/pattern to ddr_text1/pattern
-        dnut_addr_set(&sjob_in->src_text1, dbuff, dsize,
-		      DNUT_TARGET_TYPE_HOST_DRAM, DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-	
-        dnut_addr_set(&sjob_in->src_text2, pbuff, psize,
-		      DNUT_TARGET_TYPE_HOST_DRAM, DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC | DNUT_TARGET_FLAGS_END);
-	
-        ddr_addr = (uint64_t) DDR_TEXT_START;
-    	dnut_addr_set(&sjob_in->ddr_text1, (void*) ddr_addr, dsize,
-		      DNUT_TARGET_TYPE_CARD_DRAM, DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
+	snap_addr_set(&sjob_in->input, dbuff, dsize,
+		      SNAP_ADDRTYPE_HOST_DRAM,
+		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
+	snap_addr_set(&sjob_in->output, offs, items * sizeof(*offs),
+		      SNAP_ADDRTYPE_HOST_DRAM,
+		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST);
+	snap_addr_set(&sjob_in->pattern, pbuff, psize,
+		      SNAP_ADDRTYPE_HOST_DRAM,
+		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC |
+		      SNAP_ADDRFLAG_END);
 
-        ddr_addr = (uint64_t) DDR_PATTERN_START;
-    	dnut_addr_set(&sjob_in->ddr_text2, (void*) ddr_addr, psize,
-		      DNUT_TARGET_TYPE_CARD_DRAM, DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
-    }
-    else if (step == 2)
-    {
-        // Step2 will copy ddr_text1/pattern to host
-        dnut_addr_set(&sjob_in->src_text1, dbuff, dsize,
-		      DNUT_TARGET_TYPE_HOST_DRAM, DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
-	
-        dnut_addr_set(&sjob_in->src_text2, pbuff, psize,
-		      DNUT_TARGET_TYPE_HOST_DRAM, DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST );
-
-        ddr_addr = (uint64_t)DDR_TEXT_START;
-    	dnut_addr_set(&sjob_in->ddr_text1, (void*) ddr_addr, dsize,
-		      DNUT_TARGET_TYPE_CARD_DRAM, DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-
-        ddr_addr = (uint64_t) DDR_PATTERN_START;
-    	dnut_addr_set(&sjob_in->ddr_text2, (void*) ddr_addr, psize,
-		      DNUT_TARGET_TYPE_CARD_DRAM, DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC | DNUT_TARGET_FLAGS_END);
-    }
-    else if (step == 3)
-    {
-        // Step3 hardware doing search in DDR
-        ddr_addr = (uint64_t) DDR_TEXT_START;
-    	dnut_addr_set(&sjob_in->ddr_text1, (void*) ddr_addr, dsize,
-		      DNUT_TARGET_TYPE_CARD_DRAM, DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-        ddr_addr = (uint64_t) DDR_PATTERN_START;
-    	dnut_addr_set(&sjob_in->ddr_text2, (void*) ddr_addr, psize,
-		      DNUT_TARGET_TYPE_CARD_DRAM, DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC | DNUT_TARGET_FLAGS_END);
-        ddr_addr = (uint64_t) DDR_OFFS_START; 
-    	dnut_addr_set(&sjob_in->res_text, (void*) ddr_addr, dsize,
-		      DNUT_TARGET_TYPE_CARD_DRAM, DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
-    }
-    else if (step == 5)
-    {
-        // Step5 is copying results in DDR back to Host
-        ddr_addr = (uint64_t) DDR_OFFS_START;
-    	dnut_addr_set(&sjob_in->ddr_text1, (void*) ddr_addr,  items * sizeof(*offs) ,
-		      DNUT_TARGET_TYPE_CARD_DRAM, DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC | DNUT_TARGET_FLAGS_END);
-
-        dnut_addr_set(&sjob_in->res_text, offs, items * sizeof(*offs),
-		      DNUT_TARGET_TYPE_HOST_DRAM, DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
-    }
-
-    // Following are initialized value. 
-    // They can still be updated by external assignments since sjob_in and sjob_out are pointers.
 	sjob_in->nb_of_occurrences = 0;
 	sjob_in->next_input_addr = 0;
-    sjob_in->method = method;
-    sjob_in->step = step;
+	sjob_in->mmio_din = 0;
+	sjob_in->mmio_dout = 0;
+	sjob_in->action_version = 0;
 
-    // sjob_out should be updated by HLS kernel. Following steps may not be necessary. 
 	sjob_out->nb_of_occurrences = 0;
 	sjob_out->next_input_addr = 0;
-    sjob_out->method = method;
-    sjob_out->step = step;
+	sjob_out->mmio_din = 0;
+	sjob_out->mmio_dout = 0;
+	sjob_out->action_version = 0;
 
-    //Assign to donut job!
-	dnut_job_set(cjob, HLS_TEXT_SEARCH_ID, sjob_in, sizeof(*sjob_in), sjob_out, sizeof(*sjob_out));
-}
-static int run_one_step(struct dnut_kernel *kernel, struct dnut_job *cjob, unsigned long timeout, int action_irq, uint64_t step)
-{
-	int rc = 0;
-	struct timeval etime, stime;
-
-	gettimeofday(&stime, NULL);
-	rc = dnut_kernel_sync_execute_job(kernel, cjob, timeout, action_irq);
-	if (rc != 0) {
-		fprintf(stderr, "err: job execution %d: %s!\n\n\n", rc,
-			strerror(errno));
-		return rc;
-	}
-	gettimeofday(&etime, NULL);
-	fprintf(stdout, "Step %ld took %lld usec\n",
-		step, (long long)timediff_usec(&etime, &stime));
-
-	return rc;
+	snap_job_set(cjob, sjob_in, sizeof(*sjob_in),
+		     sjob_out, sizeof(*sjob_out));
 }
 
-static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
+static void snap_print_search_results(struct snap_job *cjob, unsigned int run)
 {
 	unsigned int i;
 	struct search_job *sjob = (struct search_job *)
@@ -202,18 +135,18 @@ static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
 		       sjob, run, (long)cjob->retc);
 		printf(PR_GREEN);
 		printf(" Input:  %016llx - %016llx %s\n",
-		       (long long)sjob->src_text1.addr,
-		       (long long)sjob->src_text1.addr + sjob->src_text1.size,
-		       mem_tab[sjob->src_text1.type]);
+		       (long long)sjob->input.addr,
+		       (long long)sjob->input.addr + sjob->input.size,
+		       mem_tab[sjob->input.type]);
 		printf(" Output: %016llx - %016llx %s\n",
-		       (long long)sjob->res_text.addr,
-		       (long long)sjob->res_text.addr + sjob->res_text.size,
-		       mem_tab[sjob->res_text.type]);
+		       (long long)sjob->output.addr,
+		       (long long)sjob->output.addr + sjob->output.size,
+		       mem_tab[sjob->output.type]);
 		printf(PR_STD);
 	}
 	if (verbose_flag > 2) {
-		offs = (uint64_t *)(unsigned long)sjob->res_text.addr;
-		offs_max = sjob->res_text.size / sizeof(uint64_t);
+		offs = (uint64_t *)(unsigned long)sjob->output.addr;
+		offs_max = sjob->output.size / sizeof(uint64_t);
 		for (i = 0; i < MIN(sjob->nb_of_occurrences, offs_max); i++) {
 			printf("%3d: %016llx", i,
 			       (long long)__le64_to_cpu(offs[i]));
@@ -240,16 +173,14 @@ static void usage(const char *prog)
 {
 	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
 	       "  -C, --card <cardno> can be (0...3)\n"
-	       "  -s, --software         Test the software flow (step 1-2-4) \n"
-	       "  -m, --method           can be (1...6) different search method \n"
 	       "  -i, --input <data.bin> Input data.\n"
 	       "  -I, --items <items>    Max items to find.\n"
 	       "  -p, --pattern <str>    Pattern to search for\n"
 	       "  -E, --expected <num>   Expected # of patterns to find\n"
 	       "  -t, --timeout <num>    timeout in sec (default 10 sec)\n"
 	       "  -X, --irq              Enable Interrupts, "
-	       "This demo will search a pattern in text source. Default uses HW (step1-3-5)\n"
-           "unless using -s (--software) \n"
+	       "for verification\n"
+	       "\n"
 	       "Example:\n"
 	       "  demo_search ...\n"
 	       "\n",
@@ -263,11 +194,12 @@ int main(int argc, char *argv[])
 {
 	int ch, run, psize = 0, rc = 0;
 	int card_no = 0;
-	struct dnut_kernel *kernel = NULL;
+	struct snap_card *card = NULL;
+	struct snap_action *action = NULL;
 	char device[128];
 	const char *fname = NULL;
 	const char *pattern_str = "Donut";
-	struct dnut_job cjob;
+	struct snap_job cjob;
 	struct search_job sjob_in;
 	struct search_job sjob_out;
 	ssize_t dsize;
@@ -283,18 +215,12 @@ int main(int argc, char *argv[])
 	struct timeval etime, stime;
 	long int expected_patterns = -1;
 	int exit_code = EXIT_SUCCESS;
-	int action_irq = 0;
-        uint32_t result_num = 0;
-
-        int sw = 0; //using software flow. Default is 0.  
-        unsigned method = 1; //search method. Default is Naive. 
+	snap_action_flag_t action_irq = 0;
 
 	while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {
 			{ "card",	 required_argument, NULL, 'C' },
-			{ "software",	 no_argument,	    NULL, 's' },
-			{ "method",	 required_argument, NULL, 'm' },
 			{ "input",	 required_argument, NULL, 'i' },
 			{ "pattern",	 required_argument, NULL, 'p' },
 			{ "items",	 required_argument, NULL, 'I' },
@@ -308,7 +234,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-				 "C:E:i:p:I:t:VsmvhX",
+				 "C:E:i:p:I:t:VvhX",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -318,9 +244,6 @@ int main(int argc, char *argv[])
 		case 'C':
 			card_no = strtol(optarg, (char **)NULL, 0);
 			break;
-		case 's':
-			sw = 1;
-			break;
 		case 'i':
 			fname = optarg;
 			break;
@@ -329,9 +252,6 @@ int main(int argc, char *argv[])
 			break;
 		case 'I':
 			items = strtol(optarg, (char **)NULL, 0);
-			break;
-		case 'm':
-			method = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 't':
 			timeout = strtol(optarg, (char **)NULL, 0);
@@ -350,7 +270,7 @@ int main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		case 'X':	/* irq */
-			action_irq = ACTION_DONE_IRQ;
+			action_irq = (SNAP_DONE_IRQ | SNAP_ATTACH_IRQ);
 			break;
 		default:
 			usage(argv[0]);
@@ -363,10 +283,6 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-    /*
-     * Process the input files for text and pattern
-     * Initialize offs buffer (the location of matches)
-     */
 	dsize = file_size(fname);
 	if (dsize < 0)
 		goto out_error;
@@ -390,126 +306,66 @@ int main(int argc, char *argv[])
 		goto out_errorX;
 	memset(offs, 0xAB, items * sizeof(*offs));
 
-
 	input_addr = dbuff;
 	input_size = dsize;
+	snap_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
+			    offs, items, pbuff, psize);
+
 	/*
-	 * Apply for exclusive kernel access for kernel type 0xC0FE.
-	 * Once granted, MMIO to that kernel will work.
+	 * Apply for exclusive action access for action type 0xC0FE.
+	 * Once granted, MMIO to that action will work.
 	 */
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
-	pr_info("Opening device ... %s\n", device);
-	kernel = dnut_kernel_attach_dev(device,
-					0x1014,
-					0xcafe,
-					SEARCH_ACTION_TYPE);
-	if (kernel == NULL) {
-		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
-			strerror(errno));
+	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
+				   SNAP_DEVICE_ID_SNAP);
+	if (card == NULL) {
+		fprintf(stderr, "err: failed to open card %u: %s\n",
+			card_no, strerror(errno));
 		goto out_error1;
 	}
 
-
-    /*
-     * Run Step 1, 2, 4 for Software search
-     * Run Step 1, 3, 5 for Hardware search
-     */
-
-    
-    printf("**************************************************************\n");
-    printf("Start Step1 (Copy source data from Host to DDR) ..............\n");
-    printf("**************************************************************\n");
-	dnut_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
-			    offs, items, pbuff, psize, method, 1);
-
-    rc |= run_one_step(kernel, &cjob, timeout, action_irq, 1);
-	if (rc != 0) {
-            printf("Error out of Step1.\n");
-	//	goto out_error2;
+	action = snap_attach_action(card, SEARCH_ACTION_TYPE, 0, 60);
+	if (action == NULL) {
+		fprintf(stderr, "err: failed to attach action %u: %s\n",
+			card_no, strerror(errno));
+		goto out_error2;
 	}
-    
-    if(sw)
-    {
-        printf("**************************************************************\n");
-        printf("Start Step2 (Copy source data from DDR to Host) ..............\n");
-        printf("**************************************************************\n");
-	    dnut_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
-			    offs, items, pbuff, psize, method, 2);
 
-        rc |= run_one_step(kernel, &cjob, timeout, action_irq, 2);
-        if (rc != 0)
-            goto out_error2;
+	run = 0;
+	gettimeofday(&stime, NULL);
+	do {
+		rc = snap_action_sync_execute_job(action, &cjob, timeout);
+		if (rc != 0) {
+			fprintf(stderr, "err: job execution %d: %s!\n", rc,
+				strerror(errno));
+			goto out_error3;
+		}
+		if (cjob.retc != SNAP_RETC_SUCCESS)  {
+			fprintf(stderr, "err: job retc %x!\n", cjob.retc);
+			goto out_error3;
+		}
 
-        //------------------------------------
-        printf("**************************************************************\n");
-        printf("Start Step4 (Do Search by software) ..............\n");
-        printf("**************************************************************\n");
-        gettimeofday(&stime, NULL);
+		sjob_in.nb_of_occurrences = sjob_out.nb_of_occurrences;
+		sjob_in.next_input_addr = sjob_out.next_input_addr;
+		sjob_in.action_version = sjob_out.action_version;
 
-        //result_num = run_sw_search ((char) dbuff, dsize, (char) pbuff, psize, method);
+		snap_print_search_results(&cjob, run);
 
+		/* trigger repeat if search was not complete */
+		if (sjob_out.next_input_addr != 0x0) {
+			input_size -= (sjob_out.next_input_addr -
+				       (unsigned long)input_addr);
+			input_addr = (uint8_t *)(unsigned long)
+				sjob_out.next_input_addr;
+
+			/* Fixup input address and size for next search */
+			sjob_in.input.addr = (unsigned long)input_addr;
+			sjob_in.input.size = input_size;
+		}
+		total_found += sjob_out.nb_of_occurrences;
+		run++;
+	} while (sjob_out.next_input_addr != 0x0);
 	gettimeofday(&etime, NULL);
-	printf("Step 4 : RESULT :  %d occurrences \n", result_num);
-
-	fprintf(stdout, "Step 4 took %lld usec\n", (long long)timediff_usec(&etime, &stime));
-
-    }
-    else
-    {
-
-        run = 0;
-        do {
-            printf("**************************************************************\n");
-            printf(" >>> Searching %d >>> ", run);
-            printf("**************************************************************\n");
-            printf("Start Step3 (Do Search by hardware, in DDR) ..............\n");
-            printf(" >>>>>>>>>> method %d \n", method);
-            printf("**************************************************************\n");
-            dnut_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
-                    offs, items, pbuff, psize, method, 3);
-            rc |= run_one_step(kernel, &cjob, timeout, action_irq, 3);
-            if (rc != 0) {
-                printf("Error out of Step3.\n");
-                //goto out_error2;
-            }
-            
-            if (cjob.retc != DNUT_RETC_SUCCESS)  {
-                fprintf(stderr, "err: job retc %x!\n", cjob.retc);
-                goto out_error2;
-            }
-            
-		
-            printf("**************************************************************\n");
-            printf("Start Step5 (Copy pattern matching positions back to Host) ..............\n");
-            printf("**************************************************************\n");
-            dnut_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
-                    offs, items, pbuff, psize, method, 5);
-            dnut_print_search_results(&cjob, run);
-        
-            /* trigger repeat if search was not complete */
-            sjob_in.nb_of_occurrences = sjob_out.nb_of_occurrences;
-		    sjob_in.next_input_addr = sjob_out.next_input_addr;
-            
-            if (sjob_out.next_input_addr != 0x0) {
-                input_size -= (sjob_out.next_input_addr -
-                           (unsigned long)input_addr);
-                input_addr = (uint8_t *)(unsigned long)
-                    sjob_out.next_input_addr;
-
-                /* Fixup input address and size for next search */
-                sjob_in.src_text1.addr = (unsigned long)input_addr;
-                sjob_in.src_text1.size = input_size;
-            }
-            total_found += sjob_out.nb_of_occurrences;
-            run++;
-
-        
-        } while (sjob_out.next_input_addr != 0x0);
-    
-        
-    }
-
-    
 
 	fprintf(stdout, PR_RED "%d patterns found.\n" PR_STD, total_found);
 
@@ -523,21 +379,23 @@ int main(int argc, char *argv[])
 		}
 	}
 
-//	fprintf(stdout, "Action version: %llx\n"
-//		"Searching took %lld usec\n",
-//		(long long)sjob_out.action_version,
-//		(long long)timediff_usec(&etime, &stime));
-
-	dnut_kernel_free(kernel);
+	fprintf(stdout, "Action version: %llx\n"
+		"Searching took %lld usec\n",
+		(long long)sjob_out.action_version,
+		(long long)timediff_usec(&etime, &stime));
 
 	free(dbuff);
 	free(pbuff);
 	free(offs);
 
+	snap_detach_action(action);
+	snap_card_free(card);
 	exit(exit_code);
 
+ out_error3:
+	snap_detach_action(action);
  out_error2:
-	dnut_kernel_free(kernel);
+	snap_card_free(card);
  out_error1:
 	free(offs);
  out_errorX:

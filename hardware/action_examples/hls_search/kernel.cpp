@@ -216,7 +216,7 @@ static snap_membus_t word_to_mbus(word_t text)
 
 static void strm_search_proc(const char pattern[PATTERN_SIZE], const int pat_size, int txt_size,
                 hls::stream<char> &txt_stream_in, hls::stream<long> &pos_stream_out,
-				unsigned int &count)
+                unsigned int &count)
 {
 	snap_bool_t cmp;
     char curr_char;
@@ -379,14 +379,14 @@ static void strm_search(snap_membus_t *din_gmem,
 
 
 
-	  //Action_Register->Data.nb_of_occurrences = (snapu32_t) count;
+	 Action_Register->Data.nb_of_occurrences = (snapu32_t) count;
 
 }
 
 //--------------------------------------------------------------------------------------------
 //--- MAIN PROGRAM FOR STREAMING -------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
-static void process_action_strm(snap_membus_t *din_gmem,
+static snapu32_t process_action_strm(snap_membus_t *din_gmem,
                            snap_membus_t *dout_gmem,
                            snap_membus_t *d_ddrmem,
                            action_reg *Action_Register)
@@ -418,6 +418,7 @@ static void process_action_strm(snap_membus_t *din_gmem,
   else      Action_Register->Control.Retc = RET_CODE_OK;
 
   Action_Register->Data.nb_of_occurrences = (snapu32_t) global_count;
+  return (snapu32_t) global_count;
 }
 
 
@@ -518,9 +519,8 @@ unsigned int search(snapu16_t Method,
                         count = KMP_search(Pattern, PatternSize, Text, TextSize);
                         break;
         default:        printf("=== Default Naive method ===\n");;
-        count = Naive_search(Pattern, PatternSize, Text, TextSize);
-                        
-
+                        count = Naive_search(Pattern, PatternSize, Text, TextSize);
+                        break;
         }
 
         printf("pattern size %d - text size %d - rc = %d \n", PatternSize, TextSize, count);
@@ -532,7 +532,7 @@ unsigned int search(snapu16_t Method,
 //--------------------------------------------------------------------------------------------
 //--- MAIN PROGRAM FOR ARRAY SEARCH ----------------------------------------------------------
 //--------------------------------------------------------------------------------------------
-static void process_action(snap_membus_t *din_gmem,
+static snapu32_t process_action(snap_membus_t *din_gmem,
                            snap_membus_t *dout_gmem,
                            snap_membus_t *d_ddrmem,
                            action_reg *Action_Register)
@@ -605,6 +605,7 @@ static void process_action(snap_membus_t *din_gmem,
 
 		/* call search function */
 		nb_of_occurrences +=  search(Method, Pattern, PatternSize, Text, search_size);
+                Action_Register->Data.nb_of_occurrences = (snapu32_t) nb_of_occurrences;
 
 
 		//rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem, Action_Register->Data.out.type,
@@ -616,6 +617,7 @@ static void process_action(snap_membus_t *din_gmem,
   }
   // FOR LISA : writing here gives old value overwriting new value
   Action_Register->Data.nb_of_occurrences = (snapu32_t) nb_of_occurrences;
+  return (snapu32_t) nb_of_occurrences;
 }
 
 
@@ -644,7 +646,7 @@ void hls_action(snap_membus_t *din_gmem,
 #pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg	offset=0x100 
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
-	unsigned int result;
+	snapu32_t result;
 	snap_membus_t  buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];
 	// Hardcoded numbers
   	/* test used to exit the action if no parameter has been set.
@@ -659,6 +661,7 @@ void hls_action(snap_membus_t *din_gmem,
                 return;
                 break;
         default:
+                Action_Register->Data.nb_of_occurrences = (snapu32_t) 0x0;
                 break;
 
         }
@@ -684,9 +687,9 @@ void hls_action(snap_membus_t *din_gmem,
     		break;
     	case 3: // HW : search processing
     		if(Action_Register->Data.method == STRM_method)
-    			process_action_strm(din_gmem, dout_gmem, d_ddrmem, Action_Register);
+                    result = process_action_strm(din_gmem, dout_gmem, d_ddrmem, Action_Register);
     		else
-    		    process_action(din_gmem, dout_gmem, d_ddrmem, Action_Register);
+                    result = process_action(din_gmem, dout_gmem, d_ddrmem, Action_Register);
     		break;
 
 
@@ -696,7 +699,7 @@ void hls_action(snap_membus_t *din_gmem,
             memcopy_table(din_gmem, dout_gmem, d_ddrmem,
                           Action_Register->Data.ddr_text2.address,
                           Action_Register->Data.res_text.address,
-						  (Action_Register->Data.nb_of_occurrences * 8), DDR2HOST); // position is on 64 bits
+                         (Action_Register->Data.nb_of_occurrences * 8), DDR2HOST); // position is on 64 bits
             break;
 
     	default:
@@ -704,6 +707,7 @@ void hls_action(snap_membus_t *din_gmem,
         }
 
     Action_Register->Control.Retc = RET_CODE_OK;
+    Action_Register->Data.nb_of_occurrences = (snapu32_t) result;
 
     //result_size = check_table2(d_ddrmem, Action_Register);
     //Action_Register->Data.res_text.size = result_size;
@@ -722,9 +726,9 @@ int main(void)
 {
     int rc = 0;
     unsigned int i;
-    snap_membus_t  din_gmem [2048];
-    snap_membus_t  dout_gmem[2048];
-    snap_membus_t  d_ddrmem [2048];
+    snap_membus_t  din_gmem [512];
+    snap_membus_t  dout_gmem[512];
+    snap_membus_t  d_ddrmem [512];
 
     action_reg Action_Register;
     action_RO_config_reg Action_Config;

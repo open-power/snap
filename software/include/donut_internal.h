@@ -19,6 +19,7 @@
  */
 
 #include <stdint.h>
+#include <libdonut.h>
 #include "donut_queue.h"
 
 #ifdef __cplusplus
@@ -49,23 +50,25 @@ extern "C" {
 			   (_a) < (_b) ? (_a) : (_b); })
 #endif
 
-#define	CACHELINE_BYTES		128
-
+#define	CACHELINE_BYTES	128
 #define	ACTION_BASE_M	0x10000		/* Base when in Master Mode */
 #define	ACTION_BASE_S	0x0F000		/* Base when in Slave Mode */
 
-
-struct dnut_funcs {
+struct snap_funcs {
 	void * (* card_alloc_dev)(const char *path, uint16_t vendor_id,
 		uint16_t device_id);
-	int (* attach_action)(void *card, uint32_t action, int flags,
-		int timeout_sec);
-	int (* detach_action)(void *card);
-	int (* mmio_write32)(void *card, uint64_t offset, uint32_t data);
-	int (* mmio_read32)(void *card, uint64_t offset, uint32_t *data);
-	int (* mmio_write64)(void *card, uint64_t offset, uint64_t data);
-	int (* mmio_read64)(void *card, uint64_t offset, uint64_t *data);
-	void (* card_free)(void *card);
+
+	struct snap_action *(* attach_action)(struct snap_card *card,
+					      snap_action_type_t action_type,
+					      snap_action_flag_t action_flags,
+					      int timeout_sec);
+	int (* detach_action)(struct snap_action *action);
+
+	int (* mmio_write32)(struct snap_card *card, uint64_t offset, uint32_t data);
+	int (* mmio_read32)(struct snap_card *card, uint64_t offset, uint32_t *data);
+	int (* mmio_write64)(struct snap_card *card, uint64_t offset, uint64_t data);
+	int (* mmio_read64)(struct snap_card *card, uint64_t offset, uint64_t *data);
+	void (* card_free)(struct snap_card *card);
 };
 
 int action_trace_enabled(void);
@@ -81,37 +84,44 @@ int action_trace_enabled(void);
  * implement the host applications even before the real hardware
  * implementation is completely working.
  */
-enum dnut_action_state {
+enum snap_action_state {
 	ACTION_IDLE = 0,
 	ACTION_RUNNING,
 	ACTION_ERROR,
 };
 
-struct dnut_action;
+struct snap_sim_action;
 
-typedef int (*action_main_t)(struct dnut_action *action,
-			     void *job, unsigned int job_len);
+typedef int (*snap_action_main_t)(struct snap_sim_action *action,
+				  void *job, unsigned int job_len);
 
-struct dnut_action {
+struct snap_sim_action {
 	uint16_t vendor_id;
 	uint16_t device_id;
 	uint32_t action_type;
 
-	enum dnut_action_state state;
+	enum snap_action_state state;
 	void *priv_data;
 
-	struct queue_workitem job;
-	action_main_t main;
+	struct snap_queue_workitem job;
+	snap_action_main_t main;
 
-	int (* mmio_write32)(void *card, uint64_t offset, uint32_t data);
-	int (* mmio_read32)(void *card, uint64_t offset, uint32_t *data);
-	int (* mmio_write64)(void *card, uint64_t offset, uint64_t data);
-	int (* mmio_read64)(void *card, uint64_t offset, uint64_t *data);
+	int (* mmio_write32)(struct snap_card *card,
+			     uint64_t offset, uint32_t data);
+	int (* mmio_read32) (struct snap_card *card,
+			     uint64_t offset, uint32_t *data);
+	int (* mmio_write64)(struct snap_card *card,
+			     uint64_t offset, uint64_t data);
+	int (* mmio_read64) (struct snap_card *card,
+			     uint64_t offset, uint64_t *data);
 
-	struct dnut_action *next;
+	struct snap_sim_action *next;
 };
 
-int dnut_action_register(struct dnut_action *action);
+int snap_action_register(struct snap_sim_action *action);
+
+struct snap_sim_action *snap_card_to_sim_action(struct snap_card *card);
+
 
 #ifdef __cplusplus
 }

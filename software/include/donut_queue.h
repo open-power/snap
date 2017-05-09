@@ -2,7 +2,7 @@
 #define __DONUT_QUEUE_H__
 
 /**
- * Copyright 2016 International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  * Copyright 2016 Rackspace Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,11 +41,11 @@
  *		is used to continue the workitem. That means, first 96
  *		bytes are stored in the queue_workitem for speed, and the
  *		remaining bytes are referenced to, by the extension.
- *		If type == DNUT_TARGET_TYPE_UNUSED there is no extension.
- *		extension is intentionally a dnut_addr, to have always
- *		the array in place. If there is no dnut_addr required
+ *		If type == SNAP_TARGET_TYPE_UNUSED there is no extension.
+ *		extension is intentionally a snap_addr, to have always
+ *		the array in place. If there is no snap_addr required
  *		by the kernel, at least the extension entry is there
- *		where the DNUT_TARGET_FLAGS_END flag can be set to
+ *		where the SNAP_TARGET_FLAGS_END flag can be set to
  *		indicate the end of the list. Otherwise directly starting
  *		with data would not work.
  *
@@ -62,15 +62,17 @@
  * implementation.
  */
 
-struct queue_workitem {
+struct snap_queue_workitem {
 	uint8_t short_action;		/* Job Manager Short Action ID */
-	uint8_t flags;			/* 0 is reserved for 1st start from snap_maint */
+	uint8_t flags;			/* 0 is reserved for 1st start
+					   from snap_maint */
 	uint16_t seq;			/* Action Seq Number */
 	uint32_t retc;			/* Return code from APP */
 	uint64_t priv_data;
 	union {
-		struct dnut_addr ext;     /* 16 bytes if job > 112 bytes */
-		struct dnut_addr addr[6]; /* 16 * 6 = 96 bytes 16 Bytes are left free */
+		struct snap_addr ext;   /* 16 bytes if job > 112 bytes */
+		struct snap_addr addr[6]; /* 16 * 6 = 96 bytes
+					     16 bytes are left free */
 		uint8_t data[112];	/* RAW Data Space to fill to 128 Bytes */
 	} user;
 };
