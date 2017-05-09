@@ -48,6 +48,8 @@ typedef struct {
         DATA_SPONGE Data;      // 108 bytes
 } action_reg;
 
+void cast_uint8_to_uint64_W8(uint8_t st_in[64], uint64_t st_out[8]);
+void cast_uint64_to_uint8_W8(uint64_t st_in[8], uint8_t st_out[64]);
 #define CONFIG_HOSTSTYLE_ALGO
 
 #endif  /* __ACTION_SPONGE_H__ */

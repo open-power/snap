@@ -21,6 +21,7 @@
 #include <string.h>
 #include <ap_int.h>
 #include <hls_stream.h>
+
 #include "hls_snap.H"
 
 #define SEARCH_ACTION_TYPE 0x10141003
@@ -33,31 +34,37 @@
 typedef char word_t[BPERDW];
 typedef snapu64_t address_t;
 
-typedef struct table_i_s {
-        word_t text;             /* 64 bytes */
-} table_i_t;
 
-typedef struct table_o_s {
-        address_t item_address;    /* 8 bytes */
-        unsigned int item_number;  /* 4 bytes */
-        unsigned int reserved     ;/* 4 bytes */
-} table_o_t;
+//typedef struct table_i_s {
+//        word_t text;              /* 64 bytes */
+//} table_i_t;
 
-/* d is the number of characters in input alphabet */
-//#define d 256
-//#define PATTERN_SIZE 15
-//#define TEXT_SIZE 150
+//typedef struct table_o_s {
+//        address_t item_address;    /* 8 bytes */
+//        unsigned int item_number;  /* 4 bytes */
+//        unsigned int reserved;     /* 4 bytes */
+//} table_o_t;
+
+#define NO_OF_CHARS  256
+#define PATTERN_SIZE BPERDW
+#define TEXT_SIZE    MAX_NB_OF_BYTES_READ
+#define HOST2DDR 0
+#define DDR2HOST 1
 
 /* Action_Register is a 992 bits/124 Bytes made of a 16 Bytes header and a 108 bytes data field
  * To keep the address at the right location, Data should always be 108 bytes
  */
 typedef struct {
-        dnut_addr in;   /* input data : 128 bits*/
-        dnut_addr out;  /* offset table : 128 bits*/
-        dnut_addr pattern;  /* offset table : 128 bits*/
-        snapu64_t nb_of_occurrences;
+        dnut_addr src_text1;   /* input data : 128 bits*/
+        dnut_addr src_text2;   /* input data : 128 bits*/
+        dnut_addr ddr_text1;   /* input data : 128 bits*/
+        dnut_addr ddr_text2;   /* input data : 128 bits*/
+        dnut_addr res_text;    /* output table : 128 bits*/
+        snapu16_t step;
+        snapu16_t method;
+        snapu32_t nb_of_occurrences;
         snapu64_t next_input_address;
-        ap_uint<352> unused; /* mandatory to keep output register at the right address*/
+        ap_uint<96> unused; /* mandatory to keep output register at the right address*/
 } DATA_TS; // DATA = 108 Bytes = 864 bits
 
 //---------------------------------------------------------------------
@@ -66,11 +73,16 @@ typedef struct {
         DATA_TS  Data;         // 108 Bytes
 } action_reg;
 
-int Nsearch(char *pat, int M, char *txt, int N);
-int KMPsearch(char *pat, int M, char *txt, int N);
-int FAsearch(char *pat, int M, char *txt, int N);
-int FAEsearch(char *pat, int M, char *txt, int N);
-int BMsearch(char *pat, int M, char *txt, int N);
+
+/* search method */
+enum {
+	    STRM_method   = 0x0,
+        NAIVE_method  = 0x1,
+		KMP_method    = 0x2,
+};
+ 
+int Naive_search (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
+int KMP_search   (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
 
 #define CONFIG_HOSTSTYLE_ALGO
 
