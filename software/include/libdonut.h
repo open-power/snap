@@ -426,6 +426,7 @@ int snap_action_sync_execute_job(struct snap_action *action,
 			struct snap_job *cjob,
 			unsigned int timeout_sec);
 
+#if 0 /* FIXME Discuss how this must be done correctly */
 /**
  * Allow the action to use interrupts to signal results back to the
  * application. If an irq happens libsnap will call the interrupt
@@ -440,6 +441,8 @@ int snap_action_register_irq(struct snap_action *action,
 int snap_action_enable_irq(struct snap_action *action, int irq);
 int snap_action_disable_irq(struct snap_action *action, int irq);
 int snap_action_free_irq(struct snap_action *action, int irq);
+
+#endif /* IRQ_SUPPORT */
 
 /******************************************************************************
  * SNAP Queue Operations
