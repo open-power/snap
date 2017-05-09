@@ -129,11 +129,11 @@ static int check_buffer(uint8_t *hb,	/* Host Buffer */
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
-static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
+static void action_write(struct snap_card* h, uint32_t addr, uint32_t data)
 {
 	int rc;
 
-	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
+	rc = snap_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
 		PRINTF0("Write MMIO 32 Err\n");
 	return;
@@ -142,7 +142,7 @@ static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct dnut_card* h, int timeout, int irq)
+static int action_wait_idle(struct snap_card* h, int timeout, int irq)
 {
 	uint64_t t_start;	/* time in usec */
 	uint64_t td = 0;
@@ -150,11 +150,13 @@ static int action_wait_idle(struct dnut_card* h, int timeout, int irq)
 
 	if (irq)
 		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
-	dnut_kernel_start((void*)h);
+
+	/* FIXME Use act and not h */
+	snap_action_start((void*)h);
 
 	t_start = get_usec();
 	/* Wait for Action to go back to Idle */
-	if (dnut_kernel_completed((void*)h, irq, NULL, timeout))
+	if (snap_action_completed((void*)h, NULL, timeout))
 		rc = 0;	/* Good */
 	td = get_usec() - t_start;
 	if (irq)
@@ -164,7 +166,7 @@ static int action_wait_idle(struct dnut_card* h, int timeout, int irq)
 	return rc;
 }
 
-static void action_start(struct dnut_card* h,
+static void action_start(struct snap_card* h,
 		int action,
 		uint64_t dest,	/* End address for MEMSET */
 		uint64_t src)	/* Start address for MEMSET */
@@ -229,7 +231,7 @@ static void usage(const char *prog)
 int main(int argc, char *argv[])
 {
 	char device[64];
-	struct dnut_card *dn;	/* lib dnut handle */
+	struct snap_card *dn;	/* lib snap handle */
 	int card_no = 0;
 	int cmd;
 	int rc = 1;
@@ -326,11 +328,11 @@ int main(int argc, char *argv[])
 	PRINTF2("Start Memset Test. Timeout: %d sec Device: ",
 		timeout);
 	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
-	dn = dnut_card_alloc_dev(device, 0x1014, 0xcafe);
+	dn = snap_card_alloc_dev(device, 0x1014, 0xcafe);
 	PRINTF2("%s\n", device);
 	if (NULL == dn) {
 		errno = ENODEV;
-		PRINTF0("ERROR: dnut_card_alloc_dev(%s)\n", device);
+		PRINTF0("ERROR: snap_card_alloc_dev(%s)\n", device);
 		return -1;
 	}
 
@@ -354,10 +356,13 @@ int main(int argc, char *argv[])
 		size, (long long)begin, (long long)begin+size-1, pattern);
 
 	for (i = 0; i < iter; i++) {
+		struct snap_action *act;
+
 		PRINTF1("[%d/%d] Start Memset ", i+1, iter);
 		PRINTF1(" Attach %x", ACTION_TYPE_EXAMPLE);
-		rc = dnut_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags, 5*timeout);
-		if (0 != rc) {
+
+		act = snap_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags, 5*timeout);
+		if (NULL != act) {
 			PRINTF0(" ERROR from Attach %x after %d sec\n",
 				ACTION_TYPE_EXAMPLE, 5*timeout);
 			goto __exit1;
@@ -380,7 +385,7 @@ int main(int argc, char *argv[])
 			if (0 != check_buffer(hb, h_begin, size, pattern))
 				goto __exit1;
 		}
-		dnut_detach_action(dn);
+		snap_detach_action(act);
 		PRINTF1(" done\n");
 	}
 	rc = 0;
@@ -388,7 +393,7 @@ int main(int argc, char *argv[])
 __exit1:
 	PRINTF1("\n");
 	PRINTF3("Close Card Handle: %p\n", dn);
-	dnut_card_free(dn);
+	snap_card_free(dn);
 	free_mem(hb);
 	PRINTF2("Exit rc: %d\n", rc);
 	return rc;

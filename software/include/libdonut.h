@@ -1,8 +1,8 @@
-#ifndef __LIBDONUT_H__
-#define __LIBDONUT_H__
+#ifndef __LIBSNAP_H__
+#define __LIBSNAP_H__
 
 /**
- * Copyright 2016 International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  * Copyright 2016 Rackspace Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -56,7 +56,7 @@
  *  - Interrupt is used to signal job completion, kernels do not send
  *    interrupts while they are running
  *
- * 2. Fixed compute kernel assignment/data-streaming mode
+ * 2. Fixed compute action assignment/data-streaming mode
  *
  * In this mode compute kernels do not execute one job and can be
  * reused after that. Instead they run for the whole application lifetime.
@@ -76,121 +76,118 @@
 extern "C" {
 #endif
 
-#define DONUT_VERSION			"0.0.6"
+#define SNAP_VERSION			"0.10.0"
+
+/**********************************************************************
+ * SNAP Error Codes
+ *********************************************************************/
 
 /*
  * Error codes FIXME alternaternatively we could use the errno codes
  * and return -1 in case of error. This would be similar to libcxl.h.
  */
-#define DNUT_OK				0  /* Everything great */
-#define DNUT_EBUSY			-1 /* Resource is busy */
-#define DNUT_ENODEV			-2 /* No such device */
-#define DNUT_EIO			-3 /* Problem accessing the card */
-#define DNUT_ENOENT			-4 /* Entry not found */
-#define DNUT_EFAULT			-5 /* Illegal address */
-#define DNUT_ETIMEDOUT			-6 /* Timeout error */
-#define DNUT_EINVAL			-7 /* Invalid parameters */
+#define SNAP_OK				0  /* Everything great */
+#define SNAP_EBUSY			-1 /* Resource is busy */
+#define SNAP_ENODEV			-2 /* No such device */
+#define SNAP_EIO			-3 /* Problem accessing the card */
+#define SNAP_ENOENT			-4 /* Entry not found */
+#define SNAP_EFAULT			-5 /* Illegal address */
+#define SNAP_ETIMEDOUT			-6 /* Timeout error */
+#define SNAP_EINVAL			-7 /* Invalid parameters */
+#define SNAP_EATTACH                    -8 /* Attach error */
+#define SNAP_EDETACH                    -9 /* Detach error */
+
+/**********************************************************************
+ * SNAP Common Definitions
+ *********************************************************************/
+
+struct snap_card;
+struct snap_action;
+struct snap_queue;
+
+typedef uint32_t snap_action_type_t; /* long action type identifies the action */
+
+/**********************************************************************
+ * SNAP Job Definition
+ *********************************************************************/
 
 /* Standardized, non-zero return codes to be expected from FPGA actions */
-#define DNUT_RETC_SUCCESS		0x0102
-#define DNUT_RETC_FAILURE		0x0104
+#define SNAP_RETC_SUCCESS		0x0102
+#define SNAP_RETC_FAILURE		0x0104
 
 /* FIXME Constants are too long, I like to type less */
-#define DNUT_TARGET_TYPE_UNUSED		0xffff
-#define DNUT_TARGET_TYPE_HOST_DRAM	0x0000 /* this is fine, always there */
-#define DNUT_TARGET_TYPE_CARD_DRAM	0x0001 /* card specific */
-#define DNUT_TARGET_TYPE_NVME		0x0002 /* card specific */
-#define DNUT_TARGET_TYPE_zzz		0x0003 /* ? */
+#define SNAP_ADDRTYPE_UNUSED		0xffff
+#define SNAP_ADDRTYPE_HOST_DRAM		0x0000 /* this is fine, always there */
+#define SNAP_ADDRTYPE_CARD_DRAM		0x0001 /* card specific */
+#define SNAP_ADDRTYPE_NVME		0x0002 /* card specific */
+#define SNAP_ADDRTYPE_zzz		0x0003 /* ? */
 
-#define DNUT_TARGET_FLAGS_END		0x0001 /* last element in the list */
-#define DNUT_TARGET_FLAGS_ADDR		0x0002 /* this one is an address */
-#define DNUT_TARGET_FLAGS_DATA		0x0004 /* 64-bit address */
-#define DNUT_TARGET_FLAGS_EXT		0x0008 /* reserved for extension */
-#define DNUT_TARGET_FLAGS_SRC		0x0010 /* data source */
-#define DNUT_TARGET_FLAGS_DST		0x0020 /* data destination */
+#define SNAP_ADDRFLAG_END		0x0001 /* last element in the list */
+#define SNAP_ADDRFLAG_ADDR		0x0002 /* this one is an address */
+#define SNAP_ADDRFLAG_DATA		0x0004 /* 64-bit address */
+#define SNAP_ADDRFLAG_EXT		0x0008 /* reserved for extension */
+#define SNAP_ADDRFLAG_SRC		0x0010 /* data source */
+#define SNAP_ADDRFLAG_DST		0x0020 /* data destination */
 
-typedef struct dnut_addr {
-	uint64_t addr;
-	uint32_t size;
-	uint16_t type;			/* DRAM, NVME, ... */
-	uint16_t flags;
-} *dnut_addr_t;				/* 16 bytes */
+typedef uint16_t snap_addrtype_t;
+typedef uint16_t snap_addrflag_t;
 
-static inline void dnut_addr_set(struct dnut_addr *da,
-				 const void *addr, uint32_t size,
-				 uint16_t type, uint16_t flags)
+typedef struct snap_addr {
+        uint64_t addr;
+        uint32_t size;
+        snap_addrtype_t type;		/* DRAM, NVME, ... */
+        snap_addrflag_t flags;		/* SRC, DST, EXT, ... */
+} *snap_addr_t;				/* 16 bytes */
+
+static inline void snap_addr_set(struct snap_addr *da,
+				 const void *addr,
+				 uint32_t size,
+				 snap_addrtype_t type,
+				 snap_addrflag_t flags)
 {
-	da->addr = (unsigned long)addr;
-	da->size = size;
-	da->type = type;
-	da->flags = flags;
+        da->addr = (unsigned long)addr;
+        da->size = size;
+        da->type = type;
+        da->flags = flags;
 }
 
-/**********************************************************************
- * MMIO ACCESS in AFU MASTER MODE
- *********************************************************************/
-
-#define DNUT_VENDOR_ID_ANY	0xffff
-#define DNUT_DEVICE_ID_ANY	0xffff
-
-struct dnut_card;
-
-struct dnut_card *dnut_card_alloc_dev(const char *path,
-			uint16_t vendor_id, uint16_t device_id);
-
-int dnut_attach_action(struct dnut_card *card, uint32_t offset, int flags,
-			int timeout_sec);
-
-int dnut_detach_action(struct dnut_card *card);
-
-int dnut_mmio_write32(struct dnut_card *card, uint64_t offset,
-			uint32_t data);
-int dnut_mmio_read32(struct dnut_card *card, uint64_t offset,
-			uint32_t *data);
-
-int dnut_mmio_write64(struct dnut_card *card, uint64_t offset,
-			uint64_t data);
-int dnut_mmio_read64(struct dnut_card *card, uint64_t offset,
-			uint64_t *data);
-
-void dnut_card_free(struct dnut_card *card);
-
-/**********************************************************************
- * JOB EXECUTION MODE
- *********************************************************************/
-
 /**
- * We discussed if the dnut_job struct makes sense or could be replaced
- * by paramters. I think in the sync calling case it might be obsolete,
- * but for the asynchronous operation we can nicely use it to return
- * results and status. Maybe even more allow polling of progress or
- * alike if that is required. Makes sense?
+ * SNAP Job description
+ *
+ * The input interface struct is passed to the hardware action. The hardware
+ * action processes the job an returns results either in memory or using the
+ * output interface struct.
+ *
+ * @retc       execution status. Check this to determine if job execution
+ *             was sucessfull
+ * @win_addr   input address of interface struct
+ * @win_size   input size (use extension ptr if larger than 96 bytes)
+ * @wout_addr  output address of output interface struct
+ * @wout_addr  output size (maximum 96 bytes)
  */
-typedef struct dnut_job {
-	uint64_t action;		/* Action ID from Caller*/
+typedef struct snap_job {
 	uint32_t retc;			/* Write to 0x104, Read from 0x184 */
 	uint64_t win_addr;		/* rw writing to MMIO 0x110 */
 	uint32_t win_size;		/* Number of bytes to Write */
 	uint64_t wout_addr;		/* wr read from MMIO 0x190 */
 	uint32_t wout_size;		/* Number of Bytes to Read */
-} *dnut_job_t;
+} *snap_job_t;
 
 /**
- * dnut_job_set - helper function to more easily setup the job request.
+ * snap_job_set - helper function to more easily setup the job request.
  *
  * @win_addr   input address of specific job
- * @win_size   input size (use extension ptr if larger than 112 bytes)
+ * @win_size   input size (use extension ptr if larger than 96 bytes)
  * @wout_addr  output address of specific job
- * @wout_addr  output size (maximum 112 bytes)
+ * @wout_addr  output size (maximum 96 bytes)
  */
-static inline void dnut_job_set(struct dnut_job *djob, uint64_t action,
+static inline void snap_job_set(struct snap_job *djob,
 				void *win_addr, uint32_t win_size,
 				void *wout_addr, uint32_t wout_size)
 {
-	djob->action = (uint32_t)action;	/* Action is only 32 bits */
-	djob->retc = 0xffffffff;
-	djob->win_addr = (unsigned long)win_addr;
-	djob->win_size = win_size;
+	djob->retc = 0x0;
+	djob->win_addr  = (unsigned long)win_addr;
+	djob->win_size  = win_size;
 	djob->wout_addr = (unsigned long)wout_addr;
 	djob->wout_size = wout_size;
 }
@@ -199,26 +196,26 @@ static inline void dnut_job_set(struct dnut_job *djob, uint64_t action,
  * Workitem build up by the calling code as follows:
  * {
  *   { .address = 0xXXXX, .size = 0xYYYY, .type = DRAM,
- *		.flags = DNUT_TARGET_FLAGS_ADDR },
+ *                .flags = SNAP_TARGET_FLAGS_ADDR },
  *   { .address = 0xXXXX, .size = 0xYYYY, .type = DRAM,
- *		.flags = DNUT_TARGET_FLAGS_ADDR },
+ *                .flags = SNAP_TARGET_FLAGS_ADDR },
  *   ...
  *   { .address = 0xXXXX, .size = 0xYYYY, .type = DRAM,
- *		.flags = DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_END }
+ *                .flags = SNAP_TARGET_FLAGS_ADDR | SNAP_TARGET_FLAGS_END }
  *
- *   uint8_t data[DATA_SIZE]; // Data: format depends on dnut_job.action
+ *   uint8_t data[DATA_SIZE]; // Data: format depends on snap_job.action
  * }
  *
  * I like the idea to separate queue specifics from the real workitem/job
  * related data. I think that helps to avoid mixing those things up
  * and therefore improves the design. One could even
- * embedd struct dnut_job in the AFU specific structure to keep the
+ * embedd struct snap_job in the AFU specific structure to keep the
  * data together e.g. if dynamic allocation/deallocation is desired.
  *
  * Each AFU.action has to define its own special workitem structure.
  * We can help the AFU to do data prefetching/mapping, if we start
  * the workitem structure with an architected address list. The list
- * ends when flags & DNUT_TARGET_FLAGS_END is not 0.
+ * ends when flags & SNAP_TARGET_FLAGS_END is not 0.
  *
  * AFU.action specific data can follow. I think the AFU.action
  * itself will know how large the data must be. For compression that
@@ -230,225 +227,269 @@ static inline void dnut_job_set(struct dnut_job *djob, uint64_t action,
  * So e.g.
  *
  * struct flash_job {
- *	struct dnut_addr src;	// just one for this application,
- *	struct dnut_addr dst;	// could be more if needed
- *	uint64_t block_size;	// application specific data ...
- *	uint64_t special_state;
- *	uint64_t special_errcode;
- *				// to keep allocation simple
+ *        struct snap_addr src;        // just one for this application,
+ *        struct snap_addr dst;        // could be more if needed
+ *        uint64_t block_size;        // application specific data ...
+ *        uint64_t special_state;
+ *        uint64_t special_errcode;
+ *                                // to keep allocation simple
  * };
  *
  * struct flash_job fjob;
- * struct dnut_job cjob;
+ * struct snap_job cjob;
  *
- * fjob.src = { .addr = 0x234234000, size = 4096, .type = DNUT_TYPE_DRAM,
- *		.flags = DNUT_TARGET_FLAGS_ADDR };
- * fjob.dst = { .addr = 0xffff34000, size = 4096, .type = DNUT_TYPE_NVME,
- *		.flags = DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_END };
+ * fjob.src = { .addr = 0x234234000, size = 4096, .type = SNAP_TYPE_DRAM,
+ *                .flags = SNAP_TARGET_FLAGS_ADDR };
+ * fjob.dst = { .addr = 0xffff34000, size = 4096, .type = SNAP_TYPE_NVME,
+ *                .flags = SNAP_TARGET_FLAGS_ADDR | SNAP_TARGET_FLAGS_END };
  * fjob.lba = 0x...;
  * ...
  *
  * cjob_setup(&cjob, NVME_AFU_WRITE, 0xf00baa, 0x0, &fjob, sizeof(fjob));
- *		cjob->action = NVME_AFU_WRITE;
- *		cjob->retc = 0x00000000;
- *		cjob->dnut_addr_items = 2;
- *		cjob->workitem_addr = (uint64_t)(unsigned long)&fjob;
- *		cjob->workitem_size = sizeof(fjob);
+ *                cjob->action = NVME_AFU_WRITE;
+ *                cjob->retc = 0x00000000;
+ *                cjob->snap_addr_items = 2;
+ *                cjob->workitem_addr = (uint64_t)(unsigned long)&fjob;
+ *                cjob->workitem_size = sizeof(fjob);
  *
- * rc = dnut_execute_job(queue, &cjob);
+ * rc = snap_execute_job(queue, &cjob);
  * ...
  */
 
-/**
- * I suggest here to use a contiguous memory area for the worktitem
- * provided by the user. It consists of an array of struct dnut_addr,
- * followed by a user-definable data area. If the user does not need the
- * struct dnut_addr, it can just be a data region.
+
+/******************************************************************************
+ * SNAP Card Access
+ *****************************************************************************/
+
+#define SNAP_VENDOR_ID_ANY	0xffff
+#define SNAP_DEVICE_ID_ANY	0xffff
+#define SNAP_VENDOR_ID_IBM	0x1014
+#define SNAP_DEVICE_ID_SNAP	0xcafe /* FIXME: Need officially assigned val */
+
+/*
+ * Opens the device given by the path. Checks if the given vendor and device
+ * id match the values in the CAPI AFU config space, fails if the IDs don't
+ * match.
+ *
+ * @path        name of the CAPI device node in /dev
+ * @vendor_id   vendor_id in AFU config space. Use the IBM id in case of doubt.
+ * @device_id   CAPI SNAP device_id. See above. This makes sure you are really
+ *              talking to a CAPI card supporting SNAP.
+ * @return      snap_device handle or NULL in case of error.
  */
+struct snap_card *snap_card_alloc_dev(const char *path,
+			uint16_t vendor_id, uint16_t device_id);
 
-/**
- * Get a streaming framework queue handle.
- * @path	Device to use, "autoselect" to randomly select one
- * @kernel_id	Use special kernel_type for the queue. DNUT_QUEUE_GENERIC
- *		allows to put requests to different kernels on the queue.
- * @return	0 success
- *		DNUT_ENODEV no matching capi device found
+/*
+ * Free SNAP device
+ *
+ * @card        snap_card device handle.
  */
-#define DNUT_DEV_AUTOSELECT	"autoselect"
-#define DNUT_QUEUE_GENERIC	0xffffffff /* TODO what is kernel_id? */
+void snap_card_free(struct snap_card *card);
 
-struct dnut_queue;
-
-struct dnut_queue *dnut_queue_alloc_dev(const char *path,
-			uint16_t vendor_id, uint16_t device_id,
-			uint16_t kernel_id, unsigned int queue_length);
-
-int dnut_queue_mmio_write32(struct dnut_queue *queue, uint64_t offset,
+/*
+ * MMIO Access functions
+ *
+ * @card        snap_card device handle.
+ * @offset      offset in AFU MMIO register space.
+ * @data        data to read/write.
+ * @return      SNAP_OK in case of success, else error.
+ *
+ * Working with any type of AFU context.
+ */
+int snap_mmio_write32(struct snap_card *card, uint64_t offset,
 			uint32_t data);
-int dnut_queue_mmio_read32(struct dnut_queue *queue, uint64_t offset,
+int snap_mmio_read32(struct snap_card *card, uint64_t offset,
 			uint32_t *data);
 
-int dnut_queue_mmio_write64(struct dnut_queue *queue, uint64_t offset,
+int snap_mmio_write64(struct snap_card *card, uint64_t offset,
 			uint64_t data);
-int dnut_queue_mmio_read64(struct dnut_queue *queue, uint64_t offset,
+int snap_mmio_read64(struct snap_card *card, uint64_t offset,
 			uint64_t *data);
 
-void dnut_queue_free(struct dnut_queue *queue);
+/*
+ * Settings for action attachement and job completion.
+ *
+ * @SNAP_DONE_IRQ     Use interrupt to determine job completion.
+ * @SNAP_ATTACH_IRQ   Use interrupt to determine if action got attached.
+ */
+typedef enum snap_action_flag  {
+	SNAP_DONE_IRQ = 0x2,   /* Use IRQ to detect if job is done */
+	SNAP_ATTACH_IRQ = 0x4, /* Use IRQ to detect if attachment is done */
+} snap_action_flag_t;
+
+/*
+ * This function will attach to the action, execute a job and release
+ * the attachement when the job has been executed.
+ *
+ * snap_sync_execute_job()
+ *   snap_attach_action()
+ *   snap_action_sync_execute_job()
+ *   snap_detatch_action()
+ *
+ * @card          snap_card device handle.
+ * @action_type   long SNAP action type. This is a unique value identifying the
+ *                SNAP action. See ActionTypes.md for exising ids and how to
+ *                add your own.
+ * @action_flags  Define special behavior, e.g. if interrupts should be used or
+ *                polling for completion of a job.
+ * @cjob          SNAP job description.
+ * @attach_timeout_sec Timeout for action attachement. Select larger value if
+ *                multiple users compete for the action resource.
+ * @timout_sec    Job execution timeout. Use larger value if there are multiple
+ *                potential users.
+ * @return        SNAP_OK, else error.
+ *
+ * See for other variants below.
+ */
+int snap_sync_execute_job(struct snap_card *card,
+			  snap_action_type_t action_type,
+			  snap_action_flag_t action_flags,
+			  struct snap_job *cjob,
+			  int attach_timeout_sec,
+			  int timeout_sec);
+
+/******************************************************************************
+ * SNAP Action Access
+ *****************************************************************************/
+
+/*
+ * Attach an action to the card handle. If this is done a job can be
+ * send ot the action.
+ *
+ * @card          snap_card device handle.
+ * @action_type   long SNAP action type. This is a unique value identifying the
+ *                SNAP action. See ActionTypes.md for exising ids and how to
+ *                add your own.
+ * @action_flags  Define special behavior, e.g. if interrupts should be used or
+ *                polling for completion of a job.
+ * @attach_timeout_sec Timeout for action attachement. Select larger value if
+ *                multiple users compete for the action resource.
+ * @return        SNAP_OK, else error.
+ *
+ * Only works with slave contexts
+ */
+struct snap_action *snap_attach_action(struct snap_card *card,
+			snap_action_type_t action_type,
+			snap_action_flag_t action_flags,
+			int attach_timeout_sec);
+
+/*
+ * Detach action from card handle.
+ *
+ * @action        snap_action handle.
+ * @return        SNAP_OK, else error.
+ *
+ * Only works with slave contexts.
+ */
+int snap_detach_action(struct snap_action *action);
+
+/*
+ * MMIO Access functions for actions
+ *
+ * @card        snap_card device handle.
+ * @offset      offset in AFU MMIO register space.
+ * @data        data to read/write.
+ * @return      SNAP_OK in case of success, else error.
+ *
+ * Working with attached action. SNAP jobmanager maps the MMIO ara
+ * for the action to a specific offset. Use these functions to
+ * directly access this range without the need to add the action_base
+ * offset.
+ */
+int snap_action_write32(struct snap_action *action, uint64_t offset,
+			uint32_t data);
+int snap_action_read32(struct snap_action *action, uint64_t offset,
+			uint32_t *data);
+
+/*
+ * Manual access to job passing and action control functions. Normal
+ * usage should be using the execute_job functions. If those are not
+ * sufficient, consider using the following low-level functions.
+ */
+int snap_action_start(struct snap_action *action);
+int snap_action_stop(struct snap_action *action);
+int snap_action_completed(struct snap_action *action, int *rc,
+			  int timeout_sec);
 
 /**
  * Synchronous way to send a job away. Blocks until job is done.
- * @queue	handle to streaming framework queue
- * @cjob	streaming framework job
- * @return	0 on success.
+ * @action      handle to streaming framework queue
+ * @cjob        streaming framework job
+ *   @cjob->win_addr   input address of specific job
+ *   @cjob->win_size   input size (use extension ptr if larger than 112 bytes)
+ *   @cjob->wout_addr  output address of specific job
+ *   @cjob->wout_addr  output size (maximum 112 bytes)
+ * @return      SNAP_OK in case of success, else error.
  */
-int dnut_sync_execute_job(struct dnut_queue *queue, struct dnut_job *cjob,
+int snap_action_sync_execute_job(struct snap_action *action,
+			struct snap_job *cjob,
+			unsigned int timeout_sec);
+
+#if 0 /* FIXME Discuss how this must be done correctly */
+/**
+ * Allow the action to use interrupts to signal results back to the
+ * application. If an irq happens libsnap will call the interrupt
+ * handler function if it got registered with snap_action_register_irq.
+ */
+typedef int (*snap_action_irq_t)(struct snap_action *action, int irq);
+
+int snap_action_register_irq(struct snap_action *action,
+                        snap_action_irq_t *irq_handler,
+                        int irq);
+
+int snap_action_enable_irq(struct snap_action *action, int irq);
+int snap_action_disable_irq(struct snap_action *action, int irq);
+int snap_action_free_irq(struct snap_action *action, int irq);
+
+#endif /* IRQ_SUPPORT */
+
+/******************************************************************************
+ * SNAP Queue Operations
+ *****************************************************************************/
+
+/**
+ * Get a streaming framework queue handle.
+ * @card          Valid SNAP card handle
+ * @action_type   Use special action_type for the queue.
+ * @return        0 success
+ *                SNAP_ENODEV no matching capi device found
+ */
+
+struct snap_queue *snap_queue_alloc(struct snap_card *card,
+			snap_action_type_t action_type,
+			unsigned int queue_length,
+			unsigned int attach_timeout_sec);
+
+void snap_queue_free(struct snap_queue *queue);
+
+/**
+ * Synchronous way to send a job away. Blocks until job is done.
+ * @queue         handle to streaming framework queue
+ * @cjob          streaming framework job
+ * @return        0 on success.
+ */
+int snap_queue_sync_execute_job(struct snap_queue *queue,
+			  struct snap_job *cjob,
 			  unsigned int timeout_sec);
 
 /**
  * Asynchronous way to send a job away.
- * @queue	handle to streaming framework queue
- * @cjob	streaming framework job
- * @finished	callback function which is called once job is done
- * @return	0 on success.
+ * @queue         handle to streaming framework queue
+ * @cjob          streaming framework job
+ * @finished      callback function which is called once job is done
+ * @return        0 on success.
  */
 /* NOTE: Discuss if such a construct as suggested below really works ok */
-typedef int (*dnut_job_finished_t)(struct dnut_queue *queue,
-				   struct dnut_job *cjob);
+typedef int (*snap_job_finished_t)(struct snap_queue *queue,
+			struct snap_job *cjob);
 
-int dnut_async_execute_job(struct dnut_queue *queue, struct dnut_job *cjob,
-			dnut_job_finished_t finished);
-
-/**********************************************************************
- * FIXED KERNEL ASSIGNMENT MODE
- * E.g. for data streaming if kernel must stay alive for the whole
- *	program runtime.
- *********************************************************************/
-
-/**
- * Proposal: There is a suggested use-case which requires to tie an
- *	FPGA kernel/action directly to an AFU context. This allows
- *	the FPGA kernel to stay active until it is stopped again.
- *	When an FPGA kernel is assigned to an AFU context, it can
- *	in the first version not used by other AFU contexts.
- *
- *	We propose to let the job-manager select a free kernel and attach
- *	that to the AFU context requesting it. That allows a to
- *	manage free resources (computing kernels) at a central
- *	spot, so that we can support multi-process easily.
- *
- *	We attach one kernel to one AFU context, not more to keep things
- *	simple.
- */
-
-struct dnut_kernel;
-
-/**
- * Attach compute kernel fix to context.
- * @return	0 success
- *		DNUT_EBUSY all kernels are currently in use, try again
- *		DNUT_ENODEV no matching capi device found
- *		DNUT_ENOENT tried to attach non existing kernel
- */
-struct dnut_kernel *dnut_kernel_attach_dev(const char *path,
-			uint16_t vendor_id, uint16_t device_id,
-			uint32_t action_type);
-
-int dnut_kernel_start(struct dnut_kernel *kernel);
-
-int dnut_kernel_stop(struct dnut_kernel *kernel);
-int dnut_kernel_completed(struct dnut_kernel *kernel, int irq, int *rc, int timeout_sec);
-
-/**
- * Synchronous way to send a job away. Blocks until job is done.
- * @queue	handle to streaming framework queue
- * @cjob	streaming framework job
- * @cjob->win_addr   input address of specific job
- * @cjob->win_size   input size (use extension ptr if larger than 112 bytes)
- * @cjob->wout_addr  output address of specific job
- * @cjob->wout_addr  output size (maximum 112 bytes)
- * @return	0 on success.
- */
-int dnut_kernel_sync_execute_job(struct dnut_kernel *kernel,
-				 struct dnut_job *cjob,
-				 unsigned int timeout_sec,
-				 int irq);
-
-void dnut_kernel_free(struct dnut_kernel *kernel);
-
-/**
- * Allow the kernel to use interrupts to signal results back to the
- * application. If an irq happens libdonut will call the interrupt
- * handler function if it got registered with dnut_kernel_register_irq.
- */
-typedef int (*dnut_kernel_irq_t)(struct dnut_kernel *kernel, int irq);
-
-int dnut_kernel_register_irq(struct dnut_kernel *kernel,
-			dnut_kernel_irq_t *irq_handler,
-			int irq);
-
-int dnut_kernel_enable_irq(struct dnut_kernel *kernel, int irq);
-int dnut_kernel_disable_irq(struct dnut_kernel *kernel, int irq);
-int dnut_kernel_free_irq(struct dnut_kernel *kernel, int irq);
-
-/**
- * Once the job-manager assigned a kernel to the AFU context, it will
- * map the compute kernels MMIO space into the AFU context. This will
- * allow software to communicate with the compute kernels, setup
- * parameters, and do adjustments while it is running.
- * Offset starts with 0, and ends with MMIO space maximum defined for
- * compute kernels (e.g. 4KiB at the moment).
- */
-int dnut_kernel_mmio_write64(struct dnut_kernel *kernel, uint64_t offset,
-			uint64_t data);
-int dnut_kernel_mmio_read64(struct dnut_kernel *kernel, uint64_t offset,
-			uint64_t *data);
-
-int dnut_kernel_mmio_write32(struct dnut_kernel *kernel, uint32_t offset,
-			uint32_t data);
-int dnut_kernel_mmio_read32(struct dnut_kernel *kernel, uint32_t offset,
-			uint32_t *data);
-
-/**
- * FIXME Proposal Discussion (not in plan)
- *    is there need for this?
- *
- * I think to have an example data queue - as later extension is a good
- * thing to have. Question: Is one of those per kernel enough to start
- * with?
- */
-int dnut_kernel_setup_data_queue(struct dnut_kernel *kernel,
-				 unsigned int send_queue_len,
-				 unsigned int rcv_qeue_len,
-				 unsigned int rcv_buf_size,
-				 int irq);
-
-void dnut_kernel_free_data_queue(struct dnut_kernel *kernel);
-
-int dnut_kernel_send(struct dnut_kernel *kernel, const uint8_t *data,
-		     unsigned int len);
-
-int dnut_kernel_rcv(struct dnut_kernel *kernel, uint8_t *data,
-		    unsigned int len);
-
-/**
- * FIXME Proposal Discussion (not in plan)
- *    is there need for this?
- *
- * Doorbell: Proposal by Paul
- */
-struct dnut_doorbell *dnut_doorbell_connect(struct dnut_kernel *kernel,
-			unsigned int msg_size, int irq);
-
-int dnut_doorbell_send(struct dnut_doorbell *doorbell, const uint8_t *msg,
-			unsigned int msg_size);
-
-int dnut_doorbell_rcv(struct dnut_doorbell *doorbell, uint8_t *msg,
-			unsigned int msg_size);
-
-void dnut_doorbell_free(struct dnut_doorbell *doorbell);
+int snap_async_execute_job(struct snap_queue *queue,
+			struct snap_job *cjob,
+			snap_job_finished_t finished);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /*__LIBDONUT_H__ */
+#endif /*__LIBSNAP_H__ */

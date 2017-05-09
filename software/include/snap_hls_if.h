@@ -42,6 +42,7 @@ extern "C" {
 /* ACTION Specific register setup: Input */
 #define ACTION_PARAMS_IN	0x100
 #define ACTION_RETC_IN		(ACTION_PARAMS_IN + 4)
+
 /* ACTION Specific register setup: Output */
 #define ACTION_PARAMS_OUT	(ACTION_PARAMS_IN + 0x80)
 #define ACTION_RETC_OUT		(ACTION_PARAMS_OUT + 4)

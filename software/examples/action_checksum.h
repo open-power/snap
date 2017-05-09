@@ -31,7 +31,7 @@ typedef enum {
 #define CHECKSUM_ACTION_TYPE	0x0006
 
 struct checksum_job {
-	struct dnut_addr in;	/* input data */
+	struct snap_addr in;	/* input data */
 	uint64_t chk_type;	/* in:  CRC32, ADDLER32 */
 	uint64_t chk_in;	/* in:  checksum input */
 	uint64_t chk_out;	/* out: checksum output */
