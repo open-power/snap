@@ -583,7 +583,7 @@ int main(int argc, char *argv[])
 		    delay += step_delay) {
 			act = get_action(dn, attach_flags,
 					 5*timeout + delay/1000);
-			if (NULL != act)
+			if (NULL == act)
 				goto __exit1;
 
 			action_count(dn, delay);
@@ -602,7 +602,7 @@ int main(int argc, char *argv[])
 	case 6:
 		for (i = 0; i < memcpy_iter; i++) {
 			act = get_action(dn, attach_flags, 5*timeout);
-			if (NULL != act)
+			if (NULL == act)
 				goto __exit1;
 			rc = memcpy_test(dn, action, num_4k, num_64,
 				memcpy_align, card_ram_base,

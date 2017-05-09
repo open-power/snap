@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
 		PRINTF1(" Attach %x", ACTION_TYPE_EXAMPLE);
 
 		act = snap_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags, 5*timeout);
-		if (NULL != act) {
+		if (NULL == act) {
 			PRINTF0(" ERROR from Attach %x after %d sec\n",
 				ACTION_TYPE_EXAMPLE, 5*timeout);
 			goto __exit1;
