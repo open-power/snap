@@ -43,11 +43,7 @@ enum {
         STRM   = 0x0,
         NAIVE  = 0x1,
         KMP    = 0x2,
-        FA     = 0x3,
-        FAE    = 0x4,
-        BM     = 0x5,
-        RK     = 0x6
 };
 uint32_t run_sw_search (char *dbuff, ssize_t dsize, char *pbuff, int psize, int method);
-int Nsearch(char *pat, int M, char *txt, int N);
+int Naive_search(char *pat, int M, char *txt, int N);
 #endif	/* __ACTION_SEARCH_H__ */

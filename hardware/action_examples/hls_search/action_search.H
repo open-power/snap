@@ -34,19 +34,22 @@
 typedef char word_t[BPERDW];
 typedef snapu64_t address_t;
 
-typedef struct table_i_s {
-        word_t text;              /* 64 bytes */
-} table_i_t;
 
-typedef struct table_o_s {
-        address_t item_address;    /* 8 bytes */
-        unsigned int item_number;  /* 4 bytes */
-        unsigned int reserved;     /* 4 bytes */
-} table_o_t;
+//typedef struct table_i_s {
+//        word_t text;              /* 64 bytes */
+//} table_i_t;
+
+//typedef struct table_o_s {
+//        address_t item_address;    /* 8 bytes */
+//        unsigned int item_number;  /* 4 bytes */
+//        unsigned int reserved;     /* 4 bytes */
+//} table_o_t;
 
 #define NO_OF_CHARS  256
 #define PATTERN_SIZE BPERDW
 #define TEXT_SIZE    MAX_NB_OF_BYTES_READ
+#define HOST2DDR 0
+#define DDR2HOST 1
 
 /* Action_Register is a 992 bits/124 Bytes made of a 16 Bytes header and a 108 bytes data field
  * To keep the address at the right location, Data should always be 108 bytes
@@ -73,23 +76,13 @@ typedef struct {
 
 /* search method */
 enum {
-	    STRM   = 0x0,
-        NAIVE  = 0x1,
-        KMP    = 0x2,
-        FA     = 0x3,
-        FAE    = 0x4,
-        BM     = 0x5,
-        RK     = 0x6
+	    STRM_method   = 0x0,
+        NAIVE_method  = 0x1,
+		KMP_method    = 0x2,
 };
-#define HOST2DDR 0
-#define DDR2HOST 1
  
-int Nsearch  (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
-int KMPsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
-int FAsearch (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
-int FAEsearch(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
-int BMsearch (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
-int RKsearch (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N, int q);
+int Naive_search (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
+int KMP_search   (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
 
 #define CONFIG_HOSTSTYLE_ALGO
 

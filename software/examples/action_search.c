@@ -41,43 +41,30 @@ static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
 		  (long long)offs, *data);
 	return 0;
 }
-
 //
-// C program for Naive Pattern Searching algorithm
+// C++ program for Knuth Morris Pratt Pattern Searching algorithm
 //
 // Origin:
-//   http://www.geeksforgeeks.org/searching-for-patterns-set-1-naive-pattern-searching
+//   based on D. E. Knuth, J. H. Morris, Jr., and V. R. Pratt, i
+//   Fast pattern matching in strings", SIAM J. Computing 6 (1977), 323--350
 //
-// License:
-//   https://creativecommons.org/licenses/by-nc-nd/2.5/in/deed.en_US
-//
-
-/* void search(char *pat, char *txt) */
-int Nsearch(char *pat, int M, char *txt, int N) 
+int Naive_search(char *pat, int M, char *txt, int N)
 {
-//  int M = strlen(pat);
-//  int N = strlen(txt);
-    int count=0;
+   int i, j;
+   int count=0;
 
-    /* A loop to slide pat[] one by one */
-    int i;
-    for (i = 0; i <= N - M; i++)
-    {
-        int j;
-  
-           /* For current index i, check for pattern match */
-           for (j = 0; j < M; j++)
-                   if (txt[i+j] != pat[j])
-                       break;
- 
-           if (j == M)  // if pat[0...M-1] = txt[i, i+1, ...i+M-1]
-           {
-              count++; // BM : line added to return a value
-              printf("Pattern found at index %d \n", i);
-           }
-    }
-    return count;
+
+   for (j = 0; j <= N - M; ++j) {
+      for (i = 0; i < M && pat[i] == txt[i + j]; ++i);
+      if (i >= M)
+      {
+           count++; 
+           printf("Pattern found at index %d \n", j);
+      }
+   }
+   return count;
 }
+
 
 uint32_t run_sw_search (char *dbuff, ssize_t dsize, char *pbuff, int psize, int method)
 {
@@ -89,7 +76,7 @@ uint32_t run_sw_search (char *dbuff, ssize_t dsize, char *pbuff, int psize, int 
 
         switch (method) {
         case(NAIVE):    printf("======== Naive method ========\n");
-                        count = Nsearch  ((char *) pbuff, psize, (char *)dbuff, dsize);
+                        count = Naive_search  ((char *) pbuff, psize, (char *)dbuff, dsize);
                         break;
 /*
         case(KMP):      printf("========= KMP method =========\n");
@@ -109,7 +96,7 @@ uint32_t run_sw_search (char *dbuff, ssize_t dsize, char *pbuff, int psize, int 
                         break;
 */
         default:        printf("=== Default Naive method ===\n");;
-                        count = Nsearch  (pbuff, psize, dbuff, dsize);
+                        count = Naive_search  (pbuff, psize, dbuff, dsize);
         }
         printf("pattern size %d - text size %d - rc = %d \n", psize, (unsigned int)dsize, count);
 

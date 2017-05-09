@@ -28,6 +28,6 @@
 # This is solution specific. Check if we can replace this by generics too.
 SOLUTION_NAME ?= search
 SOLUTION_DIR ?= hlsSearch
-srcs += kernel.cpp Naive_geek.cpp KMP_geek.cpp RabinKarp_geek.cpp FiniteAutomata_geek.cpp FiniteAutomataEfficient_geek.cpp BoyerMoore_geek.cpp
+srcs += kernel.cpp 
 
 include ../hls.mk

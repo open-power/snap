@@ -285,8 +285,9 @@ int main(int argc, char *argv[])
 	int exit_code = EXIT_SUCCESS;
 	int action_irq = 0;
         uint32_t result_num = 0;
-    int sw = 0; //using software flow. Default is 0.  
-    unsigned method = 1; //search method. Default is byte-by-byte. 
+
+        int sw = 0; //using software flow. Default is 0.  
+        unsigned method = 1; //search method. Default is Naive. 
 
 	while (1) {
 		int option_index = 0;
@@ -427,7 +428,6 @@ int main(int argc, char *argv[])
 	//	goto out_error2;
 	}
     
-    printf("here.\n");
     if(sw)
     {
         printf("**************************************************************\n");
@@ -463,6 +463,7 @@ int main(int argc, char *argv[])
             printf(" >>> Searching %d >>> ", run);
             printf("**************************************************************\n");
             printf("Start Step3 (Do Search by hardware, in DDR) ..............\n");
+            printf(" >>>>>>>>>> method %d \n", method);
             printf("**************************************************************\n");
             dnut_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
                     offs, items, pbuff, psize, method, 3);
