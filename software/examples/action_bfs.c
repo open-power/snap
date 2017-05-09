@@ -262,7 +262,7 @@ static int action_main(struct dnut_action *action,
     g_out_ptr = (unsigned int *)js->output_traverse.addr;
 
     rc = bfs_all(vex_list, vex_num);
-    js->status_vex = vex_num -1;
+    js->status_vex = vex_num;
     js->status_pos = (unsigned int)((unsigned long long) g_out_ptr & 0xFFFFFFFFull);
     if (rc == 0)
         goto out_ok;
