@@ -706,7 +706,7 @@ int main(int argc, char *argv[])
 	VERBOSE1("Start Memory Test. Timeout: %d sec Device: ",
 		timeout);
 	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
-	dn = snap_card_alloc_dev(device, 0x1014, 0xcafe);
+	dn = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM, SNAP_DEVICE_ID_SNAP);
 	VERBOSE1("%s\n", device);
 
 	if (NULL == dn) {
