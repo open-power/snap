@@ -308,14 +308,16 @@ int snap_mmio_read64(struct snap_card *card, uint64_t offset,
 			uint64_t *data);
 
 /*
- * Settings for action attachement and job completion.
+ * Settings for action attachement and Action completion.
  *
- * @SNAP_DONE_IRQ     Use interrupt to determine job completion.
- * @SNAP_ATTACH_IRQ   Use interrupt to determine if action got attached.
+ * @SNAP_ACTION_DONE_IRQ  Enables Action Done Interrupt.
+ *
+ * @SNAP_ATTACH_IRQ       Use interrupt to determine if action got attached
+ *                        from Job Manager.
  */
 typedef enum snap_action_flag  {
-	SNAP_DONE_IRQ = 0x2,   /* Use IRQ to detect if job is done */
-	SNAP_ATTACH_IRQ = 0x4, /* Use IRQ to detect if attachment is done */
+	SNAP_ACTION_DONE_IRQ = 0x01,   /* Enable Action Done Interrupt */
+	SNAP_ATTACH_IRQ = 0x10000      /* Enable Attach IRQ from Job Manager */
 } snap_action_flag_t;
 
 /*
