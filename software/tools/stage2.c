@@ -291,7 +291,7 @@ static int memcpy_test(struct snap_card* dnc,
 			free_mem(src);
 			return 1;
 		}
-		VERBOSE1("  To Host: %p timeout: %d msec\n", dest, timeout);
+		VERBOSE1("  To Host: %p timeout: %d sec\n", dest, timeout);
 
 		action_memcpy(dnc, action, dest, src, memsize);
 		rc = action_wait_idle(dnc, timeout, &td, irq);
@@ -320,7 +320,7 @@ static int memcpy_test(struct snap_card* dnc,
 			src, memsize, blocks_4k, blocks_64, align);
 		/* Set Dest to DDR Ram Address */
 		dest = (void*)card_ram_base;
-		VERBOSE1("  To DDR: %p timeout: %d msec\n", dest, timeout);
+		VERBOSE1("  To DDR: %p timeout: %d sec\n", dest, timeout);
 
 		action_memcpy(dnc, action, dest, src, memsize);
 		rc = action_wait_idle(dnc, timeout, &td, irq);
@@ -336,7 +336,7 @@ static int memcpy_test(struct snap_card* dnc,
 		dest = alloc_mem(align, memsize);
 		if (NULL == dest)
 			return 1;
-		VERBOSE1("  To Host: %p timeout: %d msec\n", dest, timeout);
+		VERBOSE1("  To Host: %p timeout: %d sec\n", dest, timeout);
 
 		action_memcpy(dnc, action, dest, src, memsize);
 		rc = action_wait_idle(dnc, timeout, &td, irq);
@@ -357,7 +357,7 @@ static int memcpy_test(struct snap_card* dnc,
 				memsize, (long long)card_ram_base);
 			break;
 		}
-		VERBOSE1("  To DDR: %p timeout: %d msec\n", dest, timeout);
+		VERBOSE1("  To DDR: %p timeout: %d sec\n", dest, timeout);
 
 		action_memcpy(dnc, action, dest, src, memsize);
 		rc = action_wait_idle(dnc, timeout, &td, irq);
@@ -372,7 +372,7 @@ static int memcpy_test(struct snap_card* dnc,
 			src, memsize, blocks_4k, blocks_64, align);
 		memset2(src, card_ram_base, memsize);
 		ddr3 = (void*)card_ram_base;
-		VERBOSE1("  To DDR: %p timeout: %d msec\n", ddr3, timeout);
+		VERBOSE1("  To DDR: %p timeout: %d sec\n", ddr3, timeout);
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 			ddr3, src, memsize);
 		rc = action_wait_idle(dnc, timeout, &td, irq);
@@ -386,7 +386,7 @@ static int memcpy_test(struct snap_card* dnc,
 			return 1;
 		}
 		VERBOSE1("  From DDR Src: %p\n", ddr3);
-		VERBOSE1("  To Host: %p timeout: %d msec\n", dest, timeout);
+		VERBOSE1("  To Host: %p timeout: %d sec\n", dest, timeout);
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
 			dest, ddr3, memsize);
 		rc = action_wait_idle(dnc, timeout, &td, irq);
@@ -567,7 +567,7 @@ int main(int argc, char *argv[])
 
 	VERBOSE2("Open Card: %d\n", card_no);
 	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
-	dn = snap_card_alloc_dev(device, 0x1014, 0xcafe);
+	dn = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM, SNAP_DEVICE_ID_SNAP);
 	if (NULL == dn) {
 		errno = ENODEV;
 		VERBOSE0("ERROR: snap_card_alloc_dev(%s)\n", device);
