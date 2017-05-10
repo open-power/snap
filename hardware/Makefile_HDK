@@ -44,6 +44,7 @@ create_environment:
 
 copy $(BUILD_DIR)/psl_fpga.tcl:
 	@echo -e "\t[COPY] psl build env"; cp -a $(HDK_ROOT) $(BUILD_DIR)
+	@ mkdir logs
 	@echo -e "\t[CONFIG] setup psl_fpga.tcl"
 	@sed -i 's/run.oocSynth.*1/run.oocSynth 0/' $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.oocImpl.*1/run.oocImpl 0/'   $(BUILD_DIR)/psl_fpga.tcl

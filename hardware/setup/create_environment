@@ -167,10 +167,10 @@
    fi
    if [ ! -d ${DONUT_HARDWARE_ROOT}/sim/ies ];then 
      cd ${DONUT_HARDWARE_ROOT}/setup; echo "run Vivado setup scripts"
-     vivado -mode batch -source create_ip.tcl -notrace -log ${LOGS_DIR}/create_ip.log
+     vivado -mode batch -source create_ip.tcl -notrace -log ${DONUT_HARDWARE_ROOT}/logs/create_ip.log
      if [[ $? != 0 ]];then echo "error in create_ip.tcl";exit -1;fi
 
-     vivado -mode batch -source create_framework.tcl -notrace -log ${LOGS_DIR}/create_framework.log
+     vivado -mode batch -source create_framework.tcl -notrace -log ${DONUT_HARDWARE_ROOT}/logs/create_framework.log
      if [[ $? != 0 ]];then echo "error in create_framework.tcl";exit -1;fi
 
      vivado -mode batch -source export_xsim.tcl -notrace
