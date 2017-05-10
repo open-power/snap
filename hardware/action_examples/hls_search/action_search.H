@@ -55,11 +55,11 @@ typedef snapu64_t address_t;
  * To keep the address at the right location, Data should always be 108 bytes
  */
 typedef struct {
-        dnut_addr src_text1;   /* input data : 128 bits*/
-        dnut_addr src_text2;   /* input data : 128 bits*/
-        dnut_addr ddr_text1;   /* input data : 128 bits*/
-        dnut_addr ddr_text2;   /* input data : 128 bits*/
-        dnut_addr res_text;    /* output table : 128 bits*/
+        dnut_addr src_text1;   /* input text in HOST: 128 bits*/
+        dnut_addr src_pattern; /* input pattern in HOST: 128 bits*/
+        dnut_addr ddr_text1;   /* input text in DDR : 128 bits*/
+        dnut_addr src_result;   /* output result in HOST : 128 bits*/
+        dnut_addr ddr_result;   /* output result in DDR : 128 bits*/
         snapu16_t step;
         snapu16_t method;
         snapu32_t nb_of_occurrences;

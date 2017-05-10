@@ -403,10 +403,10 @@ static snapu32_t process_action_strm(snap_membus_t *din_gmem,
   short rc = 0;
 
 
-  PatternSize = Action_Register->Data.src_text2.size;
+  PatternSize = Action_Register->Data.src_pattern.size;
    read_single_word_of_data_from_mem(din_gmem, d_ddrmem,
-          Action_Register->Data.src_text2.type,
-          Action_Register->Data.src_text2.address >> ADDR_RIGHT_SHIFT,
+          Action_Register->Data.src_pattern.type,
+          Action_Register->Data.src_pattern.address >> ADDR_RIGHT_SHIFT,
           PatternBuffer);
 
 
@@ -435,7 +435,6 @@ void preprocess_KMP_table(char pat[PATTERN_SIZE], int M, int KMP_table[])
    j = -1;
    KMP_table[0] = -1;
    while (i < M) {
-   //for (i = 0; i < M; i++) {
       while (j > -1 && pat[i] != pat[j])
          j = KMP_table[j];
       i++;
@@ -459,7 +458,6 @@ int KMP_search(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N)
    i = j = 0;
    count = 0;
    while (j < N) {
-   //for (j = 0; j < N; j++) {
       while (i > -1 && pat[i] != txt[j])
          i = KMP_table[i];
       i++;
@@ -506,24 +504,23 @@ unsigned int search(snapu16_t Method,
            unsigned int TextSize)
 {
         int count;
-        int q = 101; // a prime number
         unsigned int positions[TEXT_SIZE];
-
 
         count = 0;
         switch (Method) {
         case(NAIVE_method):    printf("======== Naive method ========\n");
-                        count = Naive_search (Pattern, PatternSize, Text, TextSize);
-                        break;
+               count = Naive_search (Pattern, (int)PatternSize, Text, (int)TextSize);
+               break;
         case(KMP_method):      printf("========= KMP method =========\n");
-                        count = KMP_search(Pattern, PatternSize, Text, TextSize);
-                        break;
+               count = KMP_search(Pattern, (int)PatternSize, Text, (int)TextSize);
+               break;
         default:        printf("=== Default Naive method ===\n");;
-                        count = Naive_search(Pattern, PatternSize, Text, TextSize);
-                        break;
+               count = Naive_search(Pattern, (int)PatternSize, Text, (int)TextSize);
+               break;
         }
 
-        printf("pattern size %d - text size %d - rc = %d \n", PatternSize, TextSize, count);
+        printf("pattern size %d - text size %d - rc = %d \n", 
+                (int)PatternSize, (int)TextSize, count);
 
 
         return (unsigned int) count;
@@ -568,12 +565,12 @@ static snapu32_t process_action(snap_membus_t *din_gmem,
   char  Pattern[PATTERN_SIZE];
 
    /* FIXME : let's first consider that pattern is less than a data width word */
-  PatternSize = Action_Register->Data.ddr_text2.size;
+  PatternSize = Action_Register->Data.src_pattern.size;
   if (PatternSize > PATTERN_SIZE) rc = 1;
 
   read_single_word_of_data_from_mem(din_gmem, d_ddrmem, 
-          Action_Register->Data.src_text2.type,
-          Action_Register->Data.src_text2.address >> ADDR_RIGHT_SHIFT,
+          Action_Register->Data.src_pattern.type,
+          Action_Register->Data.src_pattern.address >> ADDR_RIGHT_SHIFT,
           PatternBuffer);
   mbus_to_word(PatternBuffer[0], Pattern); // convert buffer to char
 
@@ -695,10 +692,9 @@ void hls_action(snap_membus_t *din_gmem,
 
     	case 5: // HW : copy result array from DDR to Host
             //Copy Result from DDR to Host.
-    		//FIXME => Copy nb_of occurrences x 64 bits from DDR_text2 address to res_text address
             memcopy_table(din_gmem, dout_gmem, d_ddrmem,
-                          Action_Register->Data.ddr_text2.address,
-                          Action_Register->Data.res_text.address,
+                          Action_Register->Data.ddr_result.address,
+                          Action_Register->Data.src_result.address,
                          (Action_Register->Data.nb_of_occurrences * 8), DDR2HOST); // position is on 64 bits
             break;
 
@@ -772,13 +768,10 @@ int main(void)
     Action_Register.Data.ddr_text1.size = (m*BPERDW) + k + 1;
     Action_Register.Data.ddr_text1.type = CARD_DRAM;
 
-    Action_Register.Data.src_text2.address = 0;
-    Action_Register.Data.src_text2.size = 3; // Take 3 first characters of din_gmem as pattern
-    Action_Register.Data.src_text2.type = HOST_DRAM;
+    Action_Register.Data.src_pattern.address = 0;
+    Action_Register.Data.src_pattern.size = 3; // Take 3 first characters of din_gmem as pattern
+    Action_Register.Data.src_pattern.type = HOST_DRAM;
 
-    Action_Register.Data.ddr_text2.address = 0;
-    Action_Register.Data.ddr_text2.size = 3; // Take 3 first characters of din_gmem as pattern
-    Action_Register.Data.ddr_text2.type = CARD_DRAM;
 
     Action_Register.Data.res_text.address = 0;
     Action_Register.Data.res_text.size = 12;
