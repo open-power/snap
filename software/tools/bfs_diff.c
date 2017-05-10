@@ -54,7 +54,7 @@ int main(int argc , char ** argv)
         sw_char = fgetc(fp2);
         //printf("%d.%d(%d)\n", (int)hw_char, (int)sw_char, i);
 
-        if( (i%4 == 3) && (hw_char == -1) && (sw_char == -1))
+        if( (i%4 == 3) && (hw_char == 255) && (sw_char == 255))
         {
         //    printf("jump\n");
             j = 127 - (i %128);
