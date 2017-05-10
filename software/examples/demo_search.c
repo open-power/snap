@@ -315,7 +315,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-				 "C:E:s:m:i:p:I:t:VvhX",
+				 "C:E:m:i:p:I:t:sVvhX",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
