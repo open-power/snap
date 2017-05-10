@@ -34,20 +34,8 @@
 typedef char word_t[BPERDW];
 typedef snapu64_t address_t;
 
-
-//typedef struct table_i_s {
-//        word_t text;              /* 64 bytes */
-//} table_i_t;
-
-//typedef struct table_o_s {
-//        address_t item_address;    /* 8 bytes */
-//        unsigned int item_number;  /* 4 bytes */
-//        unsigned int reserved;     /* 4 bytes */
-//} table_o_t;
-
-#define NO_OF_CHARS  256
 #define PATTERN_SIZE BPERDW
-#define TEXT_SIZE    MAX_NB_OF_BYTES_READ
+#define TEXT_SIZE    4 * MAX_NB_OF_BYTES_READ // used for streaming only
 #define HOST2DDR 0
 #define DDR2HOST 1
 
@@ -76,9 +64,9 @@ typedef struct {
 
 /* search method */
 enum {
-	    STRM_method   = 0x0,
+        STRM_method   = 0x0,
         NAIVE_method  = 0x1,
-		KMP_method    = 0x2,
+        KMP_method    = 0x2,
 };
  
 int Naive_search (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);

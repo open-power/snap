@@ -69,6 +69,7 @@ void preprocess_KMP_table(char *pat, int M, int KMP_table[])
 int KMP_search(char *pat, int M, char *txt, int N)
 {
    int i, j;
+   /*FIXME Pattern is currently hardware limited to 64 Bytes */
    int KMP_table[64];
    int count;
 
@@ -114,7 +115,6 @@ unsigned int run_sw_search(unsigned int Method,
            char *Text, unsigned int TextSize)
 {
         int count;
-        //unsigned int positions[TEXT_SIZE];
 
         count = 0;
         switch (Method) {

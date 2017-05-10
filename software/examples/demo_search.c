@@ -379,6 +379,12 @@ int main(int argc, char *argv[])
 		goto out_error;
 
 	psize = strlen(pattern_str);
+	/* FIXME pattern is limited to 64 Bytes by hardware in this preliminary release */
+	if(psize > 64) 
+	{
+		printf("Pattern is limited to 64 bytes\n");
+		goto out_error0;
+	}
 	pbuff = memalign(page_size, psize);
 	if (pbuff == NULL)
 		goto out_error0;
@@ -418,18 +424,6 @@ int main(int argc, char *argv[])
 
 	run = 0;
 	gettimeofday(&stime, NULL);
-/*
-	rc = snap_action_sync_execute_job(action, &cjob, timeout);
-	if (rc != 0) {
-		fprintf(stderr, "err: job execution %d: %s!\n", rc,
-			strerror(errno));
-		goto out_error3;
-	}
-	if (cjob.retc != SNAP_RETC_SUCCESS)  {
-		fprintf(stderr, "err: job retc %x!\n", cjob.retc);
-		goto out_error3;
-	}
-*/
     	/*
  	 * Run Step 1, 2, 4 for Software search
  	 * Run Step 1, 3, 5 for Hardware search
@@ -471,7 +465,10 @@ int main(int argc, char *argv[])
         	sjob_out.nb_of_occurrences = run_sw_search(method, (char *)pbuff, psize,
 					(char *)dbuff, dsize);
         	gettimeofday(&etime, NULL);
+
+            	snap_print_search_results(&cjob, run);
         	printf("Step 4 : RESULT :  %d occurrences \n", sjob_out.nb_of_occurrences);
+            	total_found += sjob_out.nb_of_occurrences;
 
         	fprintf(stdout, "Step 4 took %lld usec\n", 
 			(long long)timediff_usec(&etime, &stime));
@@ -485,7 +482,10 @@ int main(int argc, char *argv[])
             		printf(" >>> Searching : run n° %d \n", run);
             		printf("***************************************************\n");
             		printf("Start Step3 (Do Search by hardware, in DDR) .......\n");
-            		printf(" >>>>>>>>>> method %d \n", method);
+            		if (method == 1) printf(" >>>>>>>>>> Naive method (%d) \n", method);
+            		else if (method == 2) printf(" >>>>>>>>>> KMP method (%d) \n", method);
+            		else if (method == 0) printf(" >>>>>>>>>> Streaming method (%d) \n", method);
+            		else  printf(" >>>>>>>>>> Naive method (%d) \n", method);
             		printf("***************************************************\n");
 			step = 3;
 
@@ -499,22 +499,24 @@ int main(int argc, char *argv[])
                 		goto out_error3;
             		}
 			
+            		snap_print_search_results(&cjob, run);
+        		printf("nb of occurrences = %d \n", (int)sjob_out.nb_of_occurrences);
+
             		if (cjob.retc != SNAP_RETC_SUCCESS)  {
                 		fprintf(stderr, "err: job retc %x!\n", cjob.retc);
                 		goto out_error3;
             		}
            		printf("****************************************************\n");
             		printf("Start Step5 (Copy pattern positions back to Host) ..\n");
+            		printf("......no positions yet to transfer .............. ..\n");
             		printf("****************************************************\n");
 			step = 5;
 
+			/*
             		snap_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
                     		offs, items, pbuff, psize, method, step);
         		printf("dsize = %d - psize = %d \n", (int)dsize, (int)psize);
-            		snap_print_search_results(&cjob, run);
-        		printf("nb of occurrences = %d \n", (int)sjob_in.nb_of_occurrences);
-        		printf("nb of occurrences = %d \n", (int)sjob_out.nb_of_occurrences);
-			
+			*/
             		/* trigger repeat if search was not complete */
             		sjob_in.nb_of_occurrences = sjob_out.nb_of_occurrences;
                     	sjob_in.next_input_addr = sjob_out.next_input_addr;

@@ -27,11 +27,6 @@ unsigned int global_count;
  * => Transfers must be 64 byte aligned and a size of multiples of 64 bytes
  * ----------------------------------------------------------------------------
  */
-/* Known bug for V1.8 + V1.9 : Issue #120 & #121 - Burst issue
- *  #120 has no solution yet
- *  #121 can be circumvented by replacing lines (151 and) 154 by 155
- * ----------------------------------------------------------------------------
- */
 static snapu32_t read_bulk ( snap_membus_t *src_mem,
                             snapu64_t      byte_address,
                             snapu32_t      byte_to_transfer,
@@ -347,7 +342,7 @@ static void strm_search(snap_membus_t *din_gmem,
 	printf("strm_count %d\n", count);
 	// set a global variable to report the result
 	global_count = count;
-		// Get the stream of positions and build an array
+	// Get the stream of positions and build an array
 	pos_nb = 0;
 	wr_address_text_offset = 0;
 	PositionBuffer[0] = 0x0;
@@ -427,14 +422,14 @@ static snapu32_t process_action_strm(snap_membus_t *din_gmem,
 // based on D. E. Knuth, J. H. Morris, Jr., and V. R. Pratt, i
 // Fast pattern matching in strings", SIAM J. Computing 6 (1977), 323--350
 
-void preprocess_KMP_table(char pat[PATTERN_SIZE], int M, int KMP_table[])
+void preprocess_KMP_table(char pat[PATTERN_SIZE], int PatternSize, int KMP_table[])
 {
    int i, j;
 
    i = 0;
    j = -1;
    KMP_table[0] = -1;
-   while (i < M) {
+   while (i < PatternSize) {
       while (j > -1 && pat[i] != pat[j])
          j = KMP_table[j];
       i++;
@@ -446,26 +441,27 @@ void preprocess_KMP_table(char pat[PATTERN_SIZE], int M, int KMP_table[])
    }
 }
 
-int KMP_search(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N)
+int KMP_search(char pat[PATTERN_SIZE], int PatternSize, 
+               char txt[MAX_NB_OF_BYTES_READ], int TextSize)
 {
 #pragma HLS INLINE off
    int i, j;
    int KMP_table[PATTERN_SIZE];
    int count;
 
-   preprocess_KMP_table(pat, M, KMP_table);
+   preprocess_KMP_table(pat, PatternSize, KMP_table);
 
    i = j = 0;
    count = 0;
-   while (j < N) {
+   while (j < TextSize) {
       while (i > -1 && pat[i] != txt[j])
          i = KMP_table[i];
       i++;
       j++;
-      if (i >= M)
+      if (i >= PatternSize)
       {
          i = KMP_table[i];
-         printf("Found pattern at index %d\n", j-i-M);
+         printf("Found pattern at index %d\n", j-i-PatternSize);
          count++;
       }
    }
@@ -477,15 +473,16 @@ int KMP_search(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N)
 // based on D. E. Knuth, J. H. Morris, Jr., and V. R. Pratt, i
 // Fast pattern matching in strings", SIAM J. Computing 6 (1977), 323--350
 
-int Naive_search(char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N)
+int Naive_search(char pat[PATTERN_SIZE], int PatternSize, 
+                 char txt[MAX_NB_OF_BYTES_READ], int TextSize)
 {
 #pragma HLS INLINE off
    int i, j;
    int count=0;
 
-   for (j = 0; j <= N - M; ++j) {
-      for (i = 0; i < M && pat[i] == txt[i + j]; ++i);
-      if (i >= M)
+   for (j = 0; j <= TextSize - PatternSize; ++j) {
+      for (i = 0; i < PatternSize && pat[i] == txt[i + j]; ++i);
+      if (i >= PatternSize)
       {
            count++;
            printf("Pattern found at index %d \n", j);
@@ -504,7 +501,6 @@ unsigned int search(snapu16_t Method,
            unsigned int TextSize)
 {
         int count;
-        unsigned int positions[TEXT_SIZE];
 
         count = 0;
         switch (Method) {
@@ -555,7 +551,6 @@ static snapu32_t process_action(snap_membus_t *din_gmem,
 
   unsigned int nb_of_occurrences = 0;
   snapu16_t Method;
-  unsigned int positions[TEXT_SIZE];
   unsigned int nb_pos;
 
 
@@ -601,18 +596,20 @@ static snapu32_t process_action(snap_membus_t *din_gmem,
 		x_mbus_to_word(TextBuffer, Text); /* convert buffer to char*/
 
 		/* call search function */
-		nb_of_occurrences +=  search(Method, Pattern, PatternSize, Text, search_size);
+		nb_of_occurrences +=  search(Method, Pattern, PatternSize, 
+                                            Text, search_size);
                 Action_Register->Data.nb_of_occurrences = (snapu32_t) nb_of_occurrences;
 
 
-		//rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem, Action_Register->Data.out.type,
-		//          OutputAddress + rd_address_text_offset, TextBuffer, search_size);
+		//rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem, 
+		//                           Action_Register->Data.out.type,
+		//                           OutputAddress + rd_address_text_offset, 
+		//                           TextBuffer, search_size);
 
 		txt_size -= search_size;
 		rd_address_text_offset += (snapu64_t)(search_size >> ADDR_RIGHT_SHIFT);
 
   }
-  // FOR LISA : writing here gives old value overwriting new value
   Action_Register->Data.nb_of_occurrences = (snapu32_t) nb_of_occurrences;
   return (snapu32_t) nb_of_occurrences;
 }
