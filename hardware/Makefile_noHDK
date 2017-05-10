@@ -126,7 +126,7 @@ xpr_image: snap_config patch_version
 model: pslse software snap_config patch_version $(SIMULATOR)
 
 pslse:
-	@echo -e "\t[COMPILE PSLSE ....] start `date`"
+	@echo -e "\t[COMPILE PSLSE ......] start `date`"
 	@make -C $(PSLSE_ROOT)/afu_driver/src > $(LOGS_DIR)/compile_pslse.log 2>&1
 	@make -C $(PSLSE_ROOT)/pslse         >> $(LOGS_DIR)/compile_pslse.log 2>&1
 	@make -C $(PSLSE_ROOT)/libcxl        >> $(LOGS_DIR)/compile_pslse.log 2>&1
@@ -143,7 +143,7 @@ xsim:
 		$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/xsim top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 		cd $(DONUT_HARDWARE_ROOT)/sim/xsim && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
 	fi
-	cd $(DONUT_HARDWARE_ROOT)/sim/xsim && ./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1
+	@cd $(DONUT_HARDWARE_ROOT)/sim/xsim && ./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1
 
 irun:
 	@echo -e "\t[BUILD irun..........] start `date`"
@@ -152,8 +152,7 @@ irun:
 		$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/ies top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 		cd $(DONUT_HARDWARE_ROOT)/sim/ies && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
 	fi
-	cd $(DONUT_HARDWARE_ROOT)/sim/ies && ./top.sh
-#	cd $(DONUT_HARDWARE_ROOT)/sim/ies && ./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1
+	@cd $(DONUT_HARDWARE_ROOT)/sim/ies && ./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1
 
 questa:
 	@echo -e "\t[BUILD questa........] start `date`"
@@ -162,5 +161,5 @@ questa:
 		$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/questa top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 		cd $(DONUT_HARDWARE_ROOT)/sim/questa && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
 	fi
-	cd $(DONUT_HARDWARE_ROOT)/sim/questa && ./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1
+	@cd $(DONUT_HARDWARE_ROOT)/sim/questa && ./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1
 
