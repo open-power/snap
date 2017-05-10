@@ -33,6 +33,6 @@ fi
 
 for vhdsource in *.vhd_source; do
     vhdfile=`echo $vhdsource | sed 's/vhd_source$/vhd/'`
-    echo "Generating $vhdfile"
+    echo -e "\t                        generating $vhdfile"
     grep -v "$DDRI_FILTER" $vhdsource | grep -v "$NVME_FILTER" > $vhdfile
 done

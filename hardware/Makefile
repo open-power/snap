@@ -96,26 +96,25 @@ image model:
 	@$(MAKE) -f Makefile_$(FLOW_MODE) $@
 
 clean: 
-	@echo -e "\t[CLEAN.............] build environment";
+	@echo -e "\t[CLEAN ENVIRONMENT...] start";
 	@rm -r -f  *build
-	@echo -e "\t                     vivado project";
+	@echo -e "\t                        vivado project";
 	@rm -r -f  viv_project*
-	@echo -e "\t                     IPs";
+	@echo -e "\t                        IPs";
 	@rm -r -f  ip
-	@echo -e "\t                     sim files";
+	@echo -e "\t                        sim files";
 	@rm -r -f  sim/ies sim/xsim sim/questa hdl/nvme/component.xml hdl/nvme/xgui
-	@echo -e "\t                     log files";
-	@$(RM) ./compile*.log ./*/compile*.log ./vivado*.log	\
-	       ./*/vivado*.log ./vivado*.jou ./*/vivado*.jou	\
+	@echo -e "\t                        log files";
+	@rm -r -f  logs
+	@$(RM) ./*/*.log                                	\
 	       sim/core/top.sv   				\
 	       hdl/core/snap_core.vhd				\
 	       hdl/core/snap_core_types.vhd			\
+	       hdl/core/psl_fpga.vhd				\
 	       hdl/core/psl_accel.vhd				\
 	       hdl/core/psl_accel_types.vhd
-	@echo -e "\t[CLEAN.............] done";
 
 gitclean:
-	@echo -e "\t[GITCLEAN..........] cleaning and resetting donut git";
+	@echo -e "\t[GITCLEAN............] cleaning and resetting donut git";
 	git clean -f -d -x
 	git reset --hard
-	@echo -e "\t[GITCLEAN..........] done";

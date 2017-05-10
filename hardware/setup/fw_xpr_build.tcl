@@ -16,12 +16,12 @@
 #
 #-----------------------------------------------------------
 
-set msg_level    $::env(MSG_LEVEL)
 set fpgacard     $::env(FPGACARD)
 set ddr3_used    $::env(DDR3_USED)
 set ddr4_used    $::env(DDR4_USED)
 set bram_used    $::env(BRAM_USED)
-
+set log_dir      $::env(LOGS_DIR)
+set log_file     $log_dir/fw_xpr_build.log
 
 #Define widths of each column
 set widthCol1 28
@@ -29,25 +29,25 @@ set widthCol2 35
 set widthCol3 10
 
 puts [format "%-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "open framework project" $widthCol3  "[clock format [clock seconds] -format %H:%M:%S]"]
-open_project ../viv_project/framework.xpr $msg_level
+open_project ../viv_project/framework.xpr >> $log_file
 
  
 puts [format "%-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthese" $widthCol3  "[clock format [clock seconds] -format %H:%M:%S]"]
-reset_run   $msg_level synth_1
-launch_runs $msg_level synth_1
-wait_on_run $msg_level synth_1
+reset_run    synth_1 >> $log_file
+launch_runs  synth_1 >> $log_file
+wait_on_run  synth_1 >> $log_file
 file copy -force ../viv_project/framework.runs/synth_1/psl_fpga.dcp                       ./Checkpoints/framework_synth.dcp
 file copy -force ../viv_project/framework.runs/synth_1/psl_fpga_utilization_synth.rpt     ./Reports/framework_utilization_synth.rpt
 
  
 puts [format "%-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3  "[clock format [clock seconds] -format %H:%M:%S]"]
-open_run    $msg_level synth_1 -name synth_1
-lock_design $msg_level -level routing b
+open_run     synth_1 -name synth_1 >> $log_file
+lock_design  -level routing b      >> $log_file
  
 puts [format "%-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start implementation" $widthCol3  "[clock format [clock seconds] -format %H:%M:%S]"]
-reset_run   $msg_level impl_1
-launch_runs $msg_level impl_1
-wait_on_run $msg_level impl_1
+reset_run    impl_1 >> $log_file
+launch_runs  impl_1 >> $log_file
+wait_on_run  impl_1 >> $log_file
 
 
 puts [format "%-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "collecting reports and checkpoints" $widthCol3  "[clock format [clock seconds] -format %H:%M:%S]"]
@@ -82,7 +82,7 @@ if { $fpgacard == "FGT" } {
   }
 }
 
-write_bitstream $msg_level -force -file ./Images/$STREAM_NAME$FUNC_NAME
-write_cfgmem    $msg_level -format bin -loadbit "up 0x0 ./Images/$STREAM_NAME$FUNC_NAME.bit" -file ./Images/$STREAM_NAME$FUNC_NAME  -size 128 -interface  BPIx16 -force
+write_bitstream  -force -file ./Images/$STREAM_NAME$FUNC_NAME >> $log_file
+write_cfgmem     -format bin -loadbit "up 0x0 ./Images/$STREAM_NAME$FUNC_NAME.bit" -file ./Images/$STREAM_NAME$FUNC_NAME  -size 128 -interface  BPIx16 -force >> $log_file
 
-close_project $msg_level
+close_project  >> $log_file

@@ -30,7 +30,8 @@ set bram_used   $::env(BRAM_USED)
 set sdram_used  $::env(SDRAM_USED)
 set simulator   $::env(SIMULATOR)
 set vivadoVer   [version -short]
-set msg_level    $::env(MSG_LEVEL)
+set log_dir      $::env(LOGS_DIR)
+set log_file     $log_dir/create_framework.log
 
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
     set hls_support [string toupper $::env(HLS_SUPPORT)]
@@ -54,12 +55,12 @@ if { [info exists ::env(DENALI)] == 1 } {
 #puts $simulator
 
 # Create a new Vivado Project
-puts "	\[CREATE_FRAMEWORK..\] start"
-create_project framework $root_dir/viv_project -part $fpga_part -force
+puts "	\[CREATE_FRAMEWORK....\] start"
+create_project framework $root_dir/viv_project -part $fpga_part -force >> $log_file
 
 # Project Settings
 # General
-puts "	                      set up project settings"
+puts "	                        set up project settings"
 set_property target_language VHDL [current_project]
 set_property default_lib work [current_project]
 # Simulation
@@ -93,7 +94,7 @@ set_property STEPS.WRITE_BITSTREAM.ARGS.BIN_FILE true [get_runs impl_1]
 
 # Add Files
 # PSL Files
-puts "	                      import design files"
+puts "	                        import design files"
 # HDL Files
 add_files -scan_for_includes $root_dir/hdl/core/
 if { $hls_support == "TRUE" } {
@@ -116,80 +117,80 @@ if { ($fpga_card == "KU3") && ($sdram_used == "TRUE") } {
 }
 # DDR4 Sim Files
 if { ($fpga_card == "FGT") && ($sdram_used == "TRUE") } {
-  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv
+#  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv
 #  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_sdram_model_wrapper.sv
   add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/ddr4_dimm.sv
   set_property used_in_synthesis false           [get_files $root_dir/sim/core/ddr4_dimm.sv]
 }
-update_compile_order -fileset sources_1 $msg_level
-update_compile_order -fileset sim_1 $msg_level
+update_compile_order -fileset sources_1 >> $log_file
+update_compile_order -fileset sim_1 >> $log_file
 
 # Add IPs
 # Donut IPs
-puts "	                      import IPs"
-add_files -norecurse $root_dir/ip/ram_520x64_2p/ram_520x64_2p.xci $msg_level
-export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_520x64_2p/ram_520x64_2p.xci"] -force $msg_level
-add_files -norecurse $root_dir/ip/ram_584x64_2p/ram_584x64_2p.xci $msg_level
-export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_584x64_2p/ram_584x64_2p.xci"] -force $msg_level
-add_files -norecurse  $root_dir/ip/fifo_4x512/fifo_4x512.xci $msg_level
-export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_4x512/fifo_4x512.xci"] -force $msg_level
-add_files -norecurse  $root_dir/ip/fifo_8x512/fifo_8x512.xci $msg_level
-export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_8x512/fifo_8x512.xci"] -force $msg_level
-add_files -norecurse  $root_dir/ip/fifo_10x512/fifo_10x512.xci $msg_level
-export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_10x512/fifo_10x512.xci"] -force $msg_level
-add_files -norecurse  $root_dir/ip/fifo_513x512/fifo_513x512.xci $msg_level
-export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_513x512/fifo_513x512.xci"] -force $msg_level
+puts "	                        import IPs"
+add_files -norecurse $root_dir/ip/ram_520x64_2p/ram_520x64_2p.xci >> $log_file
+export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_520x64_2p/ram_520x64_2p.xci"] -force >> $log_file
+add_files -norecurse $root_dir/ip/ram_584x64_2p/ram_584x64_2p.xci >> $log_file
+export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_584x64_2p/ram_584x64_2p.xci"] -force >> $log_file
+add_files -norecurse  $root_dir/ip/fifo_4x512/fifo_4x512.xci >> $log_file
+export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_4x512/fifo_4x512.xci"] -force >> $log_file
+add_files -norecurse  $root_dir/ip/fifo_8x512/fifo_8x512.xci >> $log_file
+export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_8x512/fifo_8x512.xci"] -force >> $log_file
+add_files -norecurse  $root_dir/ip/fifo_10x512/fifo_10x512.xci >> $log_file
+export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_10x512/fifo_10x512.xci"] -force >> $log_file
+add_files -norecurse  $root_dir/ip/fifo_513x512/fifo_513x512.xci >> $log_file
+export_ip_user_files -of_objects  [get_files  "$root_dir/ip/fifo_513x512/fifo_513x512.xci"] -force >> $log_file
 # DDR3 / BRAM IPs
 if { $fpga_card == "KU3" } {
   if { $bram_used == "TRUE" } {
-    add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci $msg_level
-    export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force $msg_level
-    add_files -norecurse $root_dir/ip/block_RAM/block_RAM.xci $msg_level
-    export_ip_user_files -of_objects  [get_files "$root_dir/ip/block_RAM/block_RAM.xci"] -force $msg_level
+    add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci >> $log_file
+    export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force >> $log_file
+    add_files -norecurse $root_dir/ip/block_RAM/block_RAM.xci >> $log_file
+    export_ip_user_files -of_objects  [get_files "$root_dir/ip/block_RAM/block_RAM.xci"] -force >> $log_file
   } elseif { $sdram_used == "TRUE" } {
-    add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci $msg_level
-    export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force $msg_level
-    add_files -norecurse $root_dir/ip/ddr3sdram/ddr3sdram.xci $msg_level
-    export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr3sdram/ddr3sdram.xci"] -force $msg_level
+    add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci >> $log_file
+    export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force >> $log_file
+    add_files -norecurse $root_dir/ip/ddr3sdram/ddr3sdram.xci >> $log_file
+    export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr3sdram/ddr3sdram.xci"] -force >> $log_file
   }
 } elseif { $fpga_card == "FGT" } {
   if { $bram_used == "TRUE" } {
     if { $nvme_used == "TRUE" } {
-      add_files -norecurse $root_dir/ip/axi_interconnect/axi_interconnect.xci $msg_level
-      export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_interconnect/axi_interconnect.xci"] -force $msg_level
+      add_files -norecurse $root_dir/ip/axi_interconnect/axi_interconnect.xci >> $log_file
+      export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_interconnect/axi_interconnect.xci"] -force >> $log_file
     } else {
-      add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci $msg_level
-      export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force $msg_level
+      add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci >> $log_file
+      export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force >> $log_file
     }
-    add_files -norecurse $root_dir/ip/block_RAM/block_RAM.xci $msg_level
-    export_ip_user_files -of_objects  [get_files "$root_dir/ip/block_RAM/block_RAM.xci"] -force $msg_level
+    add_files -norecurse $root_dir/ip/block_RAM/block_RAM.xci >> $log_file
+    export_ip_user_files -of_objects  [get_files "$root_dir/ip/block_RAM/block_RAM.xci"] -force >> $log_file
   } elseif { $sdram_used == "TRUE" } {
     if { $nvme_used == "TRUE" } {
-      add_files -norecurse $root_dir/ip/axi_interconnect/axi_interconnect.xci $msg_level
-      export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_interconnect/axi_interconnect.xci"] -force $msg_level
+      add_files -norecurse $root_dir/ip/axi_interconnect/axi_interconnect.xci >> $log_file
+      export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_interconnect/axi_interconnect.xci"] -force >> $log_file
     } else {
-      add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci $msg_level
-      export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force $msg_level
+      add_files -norecurse $root_dir/ip/axi_clock_converter/axi_clock_converter.xci >> $log_file
+      export_ip_user_files -of_objects  [get_files "$root_dir/ip/axi_clock_converter/axi_clock_converter.xci"] -force >> $log_file
     }
 #    open_example_project -force -dir $ip_dir     [get_ips ddr4sdram]
 #    close project
-    add_files -norecurse $root_dir/ip/ddr4sdram/ddr4sdram.xci $msg_level
-    export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr4sdram/ddr4sdram.xci"] -force $msg_level
+    add_files -norecurse $root_dir/ip/ddr4sdram/ddr4sdram.xci >> $log_file
+    export_ip_user_files -of_objects  [get_files "$root_dir/ip/ddr4sdram/ddr4sdram.xci"] -force >> $log_file
   }
 }
-update_compile_order -fileset sources_1 $msg_level
+update_compile_order -fileset sources_1 >> $log_file
 
 # Add NVME
 if { $nvme_used == TRUE } {
-  puts "	                      adding NVMe block design"
+  puts "  	                      adding NVMe block design"
   set_property  ip_repo_paths $root_dir/hdl/nvme/ [current_project]
-  update_ip_catalog  $msg_level
-  add_files -norecurse                          $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd  $msg_level
+  update_ip_catalog  >> $log_file
+  add_files -norecurse                          $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd  >> $log_file
   export_ip_user_files -of_objects  [get_files  $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
   update_compile_order -fileset sources_1
-  puts "	                      generating NVMe output products"
-  set_property synth_checkpoint_mode None [get_files  $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] $msg_level
-  generate_target all                     [get_files  $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] $msg_level
+  puts "	                        generating NVMe output products"
+  set_property synth_checkpoint_mode None [get_files  $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
+  generate_target all                     [get_files  $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
   add_files -fileset sim_1 -scan_for_includes $root_dir/sim/nvme/
   add_files -fileset sim_1 -norecurse -scan_for_includes $denali_dir/ddvapi/verilog/denaliPcie.v
   set_property include_dirs                              $denali_dir/ddvapi/verilog [get_filesets sim_1]
@@ -198,15 +199,15 @@ if { $nvme_used == TRUE } {
 }
 
 # Add PSL
-puts "	                      import PSL design checkpoint"
-read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict $msg_level
+puts "	                        import PSL design checkpoint"
+read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict >> $log_file
 
 # XDC
 # Donut XDC
-puts "	                      import XDCs"
+puts "	                        import XDCs"
 add_files -fileset constrs_1 -norecurse $root_dir/setup/donut_link.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/donut_link.xdc]
-update_compile_order -fileset sources_1 $msg_level
+update_compile_order -fileset sources_1 >> $log_file
 # DDR XDCs
 if { $fpga_card == "KU3" } {
   if { $bram_used == "TRUE" } {
@@ -231,5 +232,5 @@ if { $fpga_card == "KU3" } {
   }
 }
 
-puts "	\[CREATE_FRAMEWORK..\] done"
-close_project $msg_level
+puts "	\[CREATE_FRAMEWORK....\] done"
+close_project >> $log_file
