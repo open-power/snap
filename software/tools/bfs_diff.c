@@ -45,7 +45,7 @@ int main(int argc , char ** argv)
         exit(EXIT_FAILURE);
     }
 
-    char hw_char, sw_char;
+    uint8_t hw_char, sw_char;
     int i = 0;
     int j = 0;
     while(i < hw_size)
