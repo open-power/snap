@@ -214,6 +214,17 @@ extern "C" {
 
 #define	SNAP_EIJR0	0xE800	/* Error Injection Job-Manager */
 
+/*
+ *  Interrupt defines
+ */
+#define SNAP_DETACH_IRQ_NUM         1     /* IRQ Raised when action get's detached */
+#define SNAP_ATTACH_IRQ_NUM         2     /* IRQ Raised when action get's attached */
+#define SNAP_ERR_IRQ_NUM            3     /* SNAP Error Interrupt */
+#define SNAP_ACTION_IRQ_NUM         4     /* IRQ raised form Application (HLS) code */
+#define SNAP_ACTION_RES5_IRQ_NUM    5     /* Not Used */
+#define SNAP_ACTION_RES6_IRQ_NUM    6     /* Not Used */
+#define SNAP_ACTION_RES7_IRQ_NUM    7     /* Not Used */
+
 #ifdef __cplusplus
 }
 #endif
