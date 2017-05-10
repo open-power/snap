@@ -22,6 +22,7 @@ export BUILD_NAME=HDK_build
 export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
 export DONUT_HDL_CORE=$(DONUT_HARDWARE_ROOT)/hdl/core
 export DONUT_SIM_CORE=$(DONUT_HARDWARE_ROOT)/sim/core
+export LOGS_DIR=$(DONUT_HARDWARE_ROOT)/logs
 
 SNAP_CONFIG_FILES=$(DONUT_HDL_CORE)/psl_fpga.vhd \
 		  $(DONUT_HDL_CORE)/psl_accel.vhd \
