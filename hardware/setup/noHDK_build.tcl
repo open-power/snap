@@ -33,7 +33,7 @@ set widthCol4 22
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "open framework project" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
 open_project ../viv_project/framework.xpr >> $log_file
  
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthese" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
 synth_design       -mode default -flatten_hierarchy none -fanout_limit 400 -fsm_extraction one_hot -keep_equivalent_registers -resource_sharing off -no_lc -shreg_min_size 5 -no_iobuf -top psl_fpga > $log_dir/synthese.log
 write_checkpoint    -force ./Checkpoints/framework_synth.dcp          >> $log_dir/synthese.log
 report_utilization  -file  ./Reports/framework_utilization_synth.rpt -quiet

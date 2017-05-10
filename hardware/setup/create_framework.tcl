@@ -117,8 +117,7 @@ if { ($fpga_card == "KU3") && ($sdram_used == "TRUE") } {
 }
 # DDR4 Sim Files
 if { ($fpga_card == "FGT") && ($sdram_used == "TRUE") } {
-#  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv
-#  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_sdram_model_wrapper.sv
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv
   add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/ddr4_dimm.sv
   set_property used_in_synthesis false           [get_files $root_dir/sim/core/ddr4_dimm.sv]
 }
