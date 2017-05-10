@@ -355,9 +355,9 @@ int main(int argc, char *argv[])
 	}
 
 	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
-	dn = snap_card_alloc_dev(device, 0x1014, 0xcafe);
+	dn = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM, SNAP_DEVICE_ID_SNAP);
 
-	VERBOSE1("NVME Test: Snap Card: %s Timeout %d NVME Drive: %d Handle: %p\n",
+	VERBOSE1("NVME Test: Snap Card: %s Timeout: %d sec NVME Drive: %d Handle: %p\n",
 		device, timeout, drive, dn);
 
 	if (NULL == dn) {
@@ -387,7 +387,7 @@ int main(int argc, char *argv[])
 		drive, mem_size, (long long)nvme_offset, (int)blocks);
 
 	act = snap_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags, 5*timeout);
-	if (NULL != act) {
+	if (NULL == act) {
 		VERBOSE0(" Error: Cannot Attach Action %x after %d sec\n",
 			ACTION_TYPE_EXAMPLE, 5*timeout);
 		goto __exit;
