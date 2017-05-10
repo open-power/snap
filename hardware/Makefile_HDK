@@ -72,10 +72,10 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@cat $(BUILD_DIR)/Sources/prj/top.prj $(BUILD_DIR)/Sources/prj/afu.prj > $(BUILD_DIR)/Sources/prj/psl_fpga.prj
 
 %.vhd: %.vhd_source
-	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+	@$(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 %.sv: %.sv_source
-	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+	@$(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 action_config: $(ACTION_ROOT)
 	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
