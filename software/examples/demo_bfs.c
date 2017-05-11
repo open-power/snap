@@ -52,10 +52,10 @@
  * Implementation:
  *    We ask FPGA to visit the host memory to traverse this data structure.
  *    1. We need to set a BFS_ACTION_TYPE, this is the ACTION ID.
- *    2. We need to fill in 112 bytes configuration space.
+ *    2. We need to fill in 108 bytes configuration space.
  *    Host will send this field to FPGA via MMIO-32.
  *          This field is completely user defined. see 'bfs_job'
- *          (No more 112 bytes. If 112B is not enough, we can append more)
+ *          (No more 108 bytes. If not enough, we can append more)
  *    3. Call donut APIs
  *
  * Notes:
@@ -69,7 +69,7 @@ static void usage(const char *prog)
 {
 	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
 	       "  -C, --card <cardno> can be (0...3)\n"
-	       "  -i, --input_file <graph.txt>       Input graph file.\n"
+	       "  -i, --input_file <graph.txt>       Input graph file. (Not Available Now!!!) \n"
 	       "  -o, --output_file <bfs_result.bin> Output traverse result file.\n"
            "  -t, --timeout <number>        When graph is large, need to enlarge it.\n"
            "  -r, --rand_nodes <number>     Generate a random graph with the numbers\n"
@@ -239,14 +239,14 @@ static void print_graph(AdjList * adj)
         for (i = 0; i < adj->vex_num; i++)
         {
             en = adj->vex_list[i].edgelink;
-            printf("---\nVex %d (0x%0llx) links to ", i, (unsigned long long)&adj->vex_list[i]);
+            printf("---\nVex %d (%p) links to ", i, &adj->vex_list[i]);
             if(en)
                 printf(" some edge nodes\n");
             else
                 printf(" NULL\n");
             while ( en)
             {
-                printf("             ->0x%0llx, vexadj=%d\n",(unsigned long long) en, en->adjvex);
+                printf("             ->%p, vexadj=%d\n", en, en->adjvex);
                 en = en->next;
             }
         }
@@ -277,7 +277,7 @@ static void destroy_graph(AdjList adj)
 
 
 /*---------------------------------------------------
- *       Hook 112B Configuration
+ *       Hook 108B Configuration
  *---------------------------------------------------*/
 
 static void snap_prepare_bfs(struct snap_job *job,
@@ -292,31 +292,30 @@ static void snap_prepare_bfs(struct snap_job *job,
 {
 
     fprintf(stdout, "----------------  Config Space ----------- \n");
-    fprintf(stdout, "input_adjtable_address = 0x%0llx\n",(unsigned long long) addr_in);
-    fprintf(stdout, "output_address = 0x%0llx\n",(unsigned long long) addr_out);
+    fprintf(stdout, "input_adjtable_address = %p\n",addr_in);
+    fprintf(stdout, "output_address = %p\n", addr_out);
     fprintf(stdout, "------------------------------------------ \n");
 
-    bjob_in->input_adjtable_address = (uint64_t)addr_in;
-    bjob_in->input_vex_num = vex_num_in;
-    bjob_in->input_type = type_in;
-    bjob_in->input_flags = SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC;
 
-    bjob_in->output_address = (uint64_t) addr_out;
-    bjob_in->output_type = type_out;
-    bjob_in->output_flags = SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END;
+    dnut_addr_set(&bjob_in->input_adjtable, addr_in, 0,
+		      type_in, DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
+
+    dnut_addr_set(&bjob_in->output_traverse, addr_out, 0,
+		      type_out, DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST | DNUT_TARGET_FLAGS_END );
+    
+
+    bjob_in->vex_num = vex_num_in;
+
+
 
     bjob_in->status_pos = 0;
     bjob_in->status_vex = 0xbeefbeef;
-    bjob_in->action_version = BFS_RELEASE;
-//	bjob->mmio_din = MMIO_DIN_DEFAULT;
-//	bjob->mmio_dout = MMIO_DOUT_DEFAULT;
-
-    //Here sets the 112byte MMIO settings input.
+    
+    // Here sets the 108byte MMIO settings input.
     // We have input parameters.
-    // But we don't need AFU to write back results from MMIO.
-    // Results will be written in host_memory, starting from output_address
-	snap_job_set(job, bjob_in, sizeof(*bjob_in),
-		     bjob_out, sizeof(*bjob_out));
+
+	dnut_job_set(job, HLS_BFS_ID, bjob_in, sizeof(*bjob_in),
+               bjob_out, sizeof(*bjob_out));
 
 
 }
@@ -457,17 +456,17 @@ int main(int argc, char *argv[])
 
 
     // create obuf
-    // obuf is 512bit  aligned.
+    // obuf is 1024bit  aligned.
     // Format:
-    // 512b: Root0: | {visit_node}, {visit_node}, .............................{visit_node} |
-    // 512b:        | {visit_node}, {visit_node}, ....,  {FF....cnt}, {dummy}, ..., {dummy} |
-    // 512b: Root1: | {visit_node}, {visit_node}, .............................{visit_node} |
-    // 512b:        | {visit_node}, {visit_node}, ....,  {FF....cnt}, {dummy}, ..., {dummy} |
+    // 1024b: Root0: | {visit_node}, {visit_node}, .............................{visit_node} |
+    // 1024b:        | {visit_node}, {visit_node}, ....,  {FF....cnt}, {dummy}, ..., {dummy} |
+    // 1024b: Root1: | {visit_node}, {visit_node}, .............................{visit_node} |
+    // 1024b:        | {visit_node}, {visit_node}, ....,  {FF....cnt}, {dummy}, ..., {dummy} |
     //  ... till Root N-1
     //
-    // Each {} is uint32_t, can fill 16 nodes in a row.
+    // Each {} is uint32_t, can fill 32 nodes in a row.
 
-    size_out = vex_n * (vex_n/16+1)*16;
+    size_out = vex_n * (vex_n/32+1)*32;
     obuf = memalign(page_size, sizeof(uint32_t) * size_out);
 
 
@@ -529,17 +528,18 @@ int main(int argc, char *argv[])
             if((k>>24) == 0xFF)
             {
                 fprintf (stdout, "End. Cnt = %d\n", (k&0x00FFFFFF));
-                i = i + 16 - (i%16); //Skip following empty.
+                i = i + 32 - (i%32); //Skip following empty.
                 j++;
                 if(i < size_out) //For next node:
                     fprintf(stdout, "Visiting node (%d): ", j);
+                
             }
             else
             {
                 fprintf (stdout, "%d, ", k);
                 i++;
             }
-            if (i > 300)
+            if (i > 600)
             {
                 fprintf(stdout, "\n .... will not print too many lines. Stop.\n");
                 break;
