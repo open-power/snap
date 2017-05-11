@@ -22,7 +22,7 @@
 
 
 #define HLS_BFS_ID 0x10141004
-#define BFS_RELEASE 0xFEED0010
+#define BFS_RELEASE 0xFEED0012
 
 #define VNODE_SIZE 16
 #define ENODE_SIZE 32
@@ -34,8 +34,8 @@ unsigned int * g_out_ptr;
 // BFS 108bytes PATTERN
 // This must match with DATA structure in hls_bfs/kernel.cpp
 struct bfs_job {
-    struct dnut_addr input_adjtable;
-    struct dnut_addr output_traverse;
+    struct snap_addr input_adjtable;
+    struct snap_addr output_traverse;
     uint32_t vex_num;
     uint32_t status_pos;
     uint32_t status_vex;
