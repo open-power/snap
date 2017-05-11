@@ -26,90 +26,84 @@ USE ieee.numeric_std.all;
 
 ENTITY psl_fpga IS
   PORT(
-       -- DDR3 SDRAM Interface                                                  -- only for DDR3_USED=TRUE 
-       --									-- only for DDR3_USED=TRUE 
-       -- Alpha-Data KU3 card has two DDR3 SO-DIMMs				-- only for DDR3_USED=TRUE 
-       -- SNAP is only using the C1 DIMM					-- only for DDR3_USED=TRUE 
-       c1_sys_clk_p       : IN    STD_LOGIC;					-- only for DDR3_USED=TRUE 
-       c1_sys_clk_n       : IN    STD_LOGIC;					-- only for DDR3_USED=TRUE 
-       c1_ddr3_addr       : OUT   STD_LOGIC_VECTOR(15 DOWNTO 0);		-- only for DDR3_USED=TRUE 
-       c1_ddr3_ba         : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);			-- only for DDR3_USED=TRUE 
-       c1_ddr3_ras_n      : OUT   STD_LOGIC;					-- only for DDR3_USED=TRUE 
-       c1_ddr3_cas_n      : OUT   STD_LOGIC;					-- only for DDR3_USED=TRUE 
-       c1_ddr3_reset_n    : OUT   STD_LOGIC;					-- only for DDR3_USED=TRUE 
-       c1_ddr3_cs_n       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);			-- only for DDR3_USED=TRUE 
-       c1_ddr3_cke        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);			-- only for DDR3_USED=TRUE 
-       c1_ddr3_ck_p       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);			-- only for DDR3_USED=TRUE 
-       c1_ddr3_ck_n       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);			-- only for DDR3_USED=TRUE 
-       c1_ddr3_we_n       : OUT   STD_LOGIC;					-- only for DDR3_USED=TRUE 
-       c1_ddr3_dm         : OUT   STD_LOGIC_VECTOR(8 DOWNTO 0);			-- only for DDR3_USED=TRUE 
-       c1_ddr3_dq         : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);		-- only for DDR3_USED=TRUE 
-       c1_ddr3_dqs_p      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);			-- only for DDR3_USED=TRUE 
-       c1_ddr3_dqs_n      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);			-- only for DDR3_USED=TRUE 
-       c1_ddr3_odt        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);			-- only for DDR3_USED=TRUE 
-										-- only for DDRI_USED=TRUE 
-       -- Clock inputs for SDRAM						-- only for DDRI_USED=TRUE 
-       refclk200_p        : in      std_logic;					-- only for DDRI_USED=TRUE 
-       refclk200_n        : in      std_logic;					-- only for DDRI_USED=TRUE 
+    -- DDR3 SDRAM Interface                                                     -- only for DDR3_USED=TRUE
+    --                                                                          -- only for DDR3_USED=TRUE
+    -- Alpha-Data KU3 card has two DDR3 SO-DIMMs                                -- only for DDR3_USED=TRUE
+    -- SNAP is only using the C1 DIMM                                           -- only for DDR3_USED=TRUE
+    c1_sys_clk_p       : IN    STD_LOGIC;                                       -- only for DDR3_USED=TRUE
+    c1_sys_clk_n       : IN    STD_LOGIC;                                       -- only for DDR3_USED=TRUE
+    c1_ddr3_addr       : OUT   STD_LOGIC_VECTOR(15 DOWNTO 0);                   -- only for DDR3_USED=TRUE
+    c1_ddr3_ba         : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);                    -- only for DDR3_USED=TRUE
+    c1_ddr3_ras_n      : OUT   STD_LOGIC;                                       -- only for DDR3_USED=TRUE
+    c1_ddr3_cas_n      : OUT   STD_LOGIC;                                       -- only for DDR3_USED=TRUE
+    c1_ddr3_reset_n    : OUT   STD_LOGIC;                                       -- only for DDR3_USED=TRUE
+    c1_ddr3_cs_n       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);                    -- only for DDR3_USED=TRUE
+    c1_ddr3_cke        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);                    -- only for DDR3_USED=TRUE
+    c1_ddr3_ck_p       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);                    -- only for DDR3_USED=TRUE
+    c1_ddr3_ck_n       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);                    -- only for DDR3_USED=TRUE
+    c1_ddr3_we_n       : OUT   STD_LOGIC;                                       -- only for DDR3_USED=TRUE
+    c1_ddr3_dm         : OUT   STD_LOGIC_VECTOR(8 DOWNTO 0);                    -- only for DDR3_USED=TRUE
+    c1_ddr3_dq         : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);                   -- only for DDR3_USED=TRUE
+    c1_ddr3_dqs_p      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);                    -- only for DDR3_USED=TRUE
+    c1_ddr3_dqs_n      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);                    -- only for DDR3_USED=TRUE
+    c1_ddr3_odt        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);                    -- only for DDR3_USED=TRUE
 
-       -- flash bus
-       o_flash_oen: out std_logic;
-       o_flash_wen: out std_logic;
-       o_flash_rstn: out std_logic;
-       o_flash_a: out std_logic_vector(1 to 26);
-       o_flash_advn: out std_logic;
-       b_flash_dq: inout std_logic_vector(0 to 11);
+    -- Clock inputs for SDRAM                                                   -- only for DDRI_USED=TRUE
+    refclk200_p        : in      std_logic;                                     -- only for DDRI_USED=TRUE
+    refclk200_n        : in      std_logic;                                     -- only for DDRI_USED=TRUE
 
-       -- PTMON PMBUS
-       b_basei2c_scl: inout std_logic;                                       -- clock
-       b_basei2c_sda: inout std_logic;                                       -- data
-       i_cable_present_l: in std_logic;                                      -- detect external cable low active
+    -- flash bus
+    o_flash_oen: out std_logic;
+    o_flash_wen: out std_logic;
+    o_flash_rstn: out std_logic;
+    o_flash_a: out std_logic_vector(1 to 26);
+    o_flash_advn: out std_logic;
+    b_flash_dq: inout std_logic_vector(0 to 11);
 
-       -- pci interface
-       pci_pi_nperst0: in std_logic;                                         -- Active low reset from the PCIe reset pin of the device
-       pci_pi_refclk_p0: in std_logic;                                       -- 100MHz Refclk
-       pci_pi_refclk_n0: in std_logic;                                       -- 100MHz Refclk
-       
-       -- Xilinx requires both pins of differential transceivers
-       pci0_i_rxp_in0: in std_logic;
-       pci0_i_rxn_in0: in std_logic;
-       pci0_i_rxp_in1: in std_logic;
-       pci0_i_rxn_in1: in std_logic;
-       pci0_i_rxp_in2: in std_logic;
-       pci0_i_rxn_in2: in std_logic;
-       pci0_i_rxp_in3: in std_logic;
-       pci0_i_rxn_in3: in std_logic;
-       pci0_i_rxp_in4: in std_logic;
-       pci0_i_rxn_in4: in std_logic;
-       pci0_i_rxp_in5: in std_logic;
-       pci0_i_rxn_in5: in std_logic;
-       pci0_i_rxp_in6: in std_logic;
-       pci0_i_rxn_in6: in std_logic;
-       pci0_i_rxp_in7: in std_logic;
-       pci0_i_rxn_in7: in std_logic;
-       pci0_o_txp_out0: out std_logic;
-       pci0_o_txn_out0: out std_logic;
-       pci0_o_txp_out1: out std_logic;
-       pci0_o_txn_out1: out std_logic;
-       pci0_o_txp_out2: out std_logic;
-       pci0_o_txn_out2: out std_logic;
-       pci0_o_txp_out3: out std_logic;
-       pci0_o_txn_out3: out std_logic;
-       pci0_o_txp_out4: out std_logic;
-       pci0_o_txn_out4: out std_logic;
-       pci0_o_txp_out5: out std_logic;
-       pci0_o_txn_out5: out std_logic;
-       pci0_o_txp_out6: out std_logic;
-       pci0_o_txn_out6: out std_logic;
-       pci0_o_txp_out7: out std_logic;
-       pci0_o_txn_out7: out std_logic
---       o_debug: out std_logic_vector(0 to 3);
-       );
+    -- PTMON PMBUS
+    b_basei2c_scl: inout std_logic;                                       -- clock
+    b_basei2c_sda: inout std_logic;                                       -- data
+    i_cable_present_l: in std_logic;                                      -- detect external cable low active
 
-       attribute secure_config : string;
-       attribute secure_config of psl_fpga : entity is "PROTECT";
-       attribute secure_netlist : string;       
-       attribute secure_netlist of psl_fpga : entity is "ENCRYPT";
+    -- pci interface
+    pci_pi_nperst0: in std_logic;                                         -- Active low reset from the PCIe reset pin of the device
+    pci_pi_refclk_p0: in std_logic;                                       -- 100MHz Refclk
+    pci_pi_refclk_n0: in std_logic;                                       -- 100MHz Refclk
+
+    -- Xilinx requires both pins of differential transceivers
+    pci0_i_rxp_in0: in std_logic;
+    pci0_i_rxn_in0: in std_logic;
+    pci0_i_rxp_in1: in std_logic;
+    pci0_i_rxn_in1: in std_logic;
+    pci0_i_rxp_in2: in std_logic;
+    pci0_i_rxn_in2: in std_logic;
+    pci0_i_rxp_in3: in std_logic;
+    pci0_i_rxn_in3: in std_logic;
+    pci0_i_rxp_in4: in std_logic;
+    pci0_i_rxn_in4: in std_logic;
+    pci0_i_rxp_in5: in std_logic;
+    pci0_i_rxn_in5: in std_logic;
+    pci0_i_rxp_in6: in std_logic;
+    pci0_i_rxn_in6: in std_logic;
+    pci0_i_rxp_in7: in std_logic;
+    pci0_i_rxn_in7: in std_logic;
+    pci0_o_txp_out0: out std_logic;
+    pci0_o_txn_out0: out std_logic;
+    pci0_o_txp_out1: out std_logic;
+    pci0_o_txn_out1: out std_logic;
+    pci0_o_txp_out2: out std_logic;
+    pci0_o_txn_out2: out std_logic;
+    pci0_o_txp_out3: out std_logic;
+    pci0_o_txn_out3: out std_logic;
+    pci0_o_txp_out4: out std_logic;
+    pci0_o_txn_out4: out std_logic;
+    pci0_o_txp_out5: out std_logic;
+    pci0_o_txn_out5: out std_logic;
+    pci0_o_txp_out6: out std_logic;
+    pci0_o_txn_out6: out std_logic;
+    pci0_o_txp_out7: out std_logic;
+    pci0_o_txn_out7: out std_logic
+  );
 END psl_fpga;
 
 
@@ -188,10 +182,10 @@ Component psl_accel
        ha_jeapar: in std_logic;
        ha_jcompar: in std_logic;
                                                                                           -- only for DDRI_USED=TRUE
-       -- Clock inputs for SDRAM	                                                  -- only for DDRI_USED=TRUE
+       -- Clock inputs for SDRAM                                                          -- only for DDRI_USED=TRUE
        refclk_sdram_p                     : IN    STD_LOGIC;                              -- only for DDRI_USED=TRUE
        refclk_sdram_n                     : IN    STD_LOGIC;                              -- only for DDRI_USED=TRUE
-    											  -- only for DDR3_USED=TRUE 
+                                                                                          -- only for DDR3_USED=TRUE 
        -- DDR3 SDRAM Interface                                                            -- only for DDR3_USED=TRUE
        c1_sys_clk_p                       : IN    STD_LOGIC;                              -- only for DDR3_USED=TRUE
        c1_sys_clk_n                       : IN    STD_LOGIC;                              -- only for DDR3_USED=TRUE
