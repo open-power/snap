@@ -54,39 +54,39 @@ static const char *version = GIT_VERSION;
  */
 static void usage(const char *prog)
 {
-	printf("\nUsage: \n%s [-h] [-v, --verbose] [-V, --version]\n"
-	       "  -C, --card     <cardno>   can be (0...3)\n"
-	       "  -t, --timeout  <seconds>  timeout seconds.\n"
-           "----------------------------------------------\n"
-	       "  -i, --input1    <file1.bin> input file 1.\n"
-	       "  -j, --input2    <file2.bin> input file 2.\n"
-	       "  -o, --output   <result.bin> output file.\n"
-           "----------------------------------------------\n"
-	       "  -n, --num      <int>      How many elements in the table for random generated array.\n"
-	       "  -l, --len      <int>      length of the random string.\n"
-	       "  -s, --software            Use software methods.\n"
-	       "  -m, --method   <0/1>      0: compare one by one (Only in SW).\n"
-           "                            1: Use hash table\n"
-           "                            2: Sort and do intersection\n"
-           "  -I, --irq                 Enable Interrupts\n"
-	       "\n"
-	       "Example:\n"
-	       "HW:  sudo ./demo_intersect ...\n"
-	       "SW:  SNAP_CONFIG=1 ./demo_intersect ...\n"
-	       "\n",
-	       prog);
+    printf("\nUsage: \n%s [-h] [-v, --verbose] [-V, --version]\n"
+            "  -C, --card     <cardno>   can be (0...3)\n"
+            "  -t, --timeout  <seconds>  timeout seconds.\n"
+            "----------------------------------------------\n"
+            "  -i, --input1    <file1.bin> input file 1.\n"
+            "  -j, --input2    <file2.bin> input file 2.\n"
+            "  -o, --output   <result.bin> output file.\n"
+            "----------------------------------------------\n"
+            "  -n, --num      <int>      How many elements in the table for random generated array.\n"
+            "  -l, --len      <int>      length of the random string.\n"
+            "  -s, --software            Use software methods.\n"
+            "  -m, --method   <0/1>      0: compare one by one (Only in SW).\n"
+            "                            1: Use hash table\n"
+            "                            2: Sort and do intersection\n"
+            "  -I, --irq                 Enable Interrupts\n"
+            "\n"
+            "Example:\n"
+            "HW:  sudo ./demo_intersect ...\n"
+            "SW:  SNAP_CONFIG=1 ./demo_intersect ...\n"
+            "\n",
+            prog);
 }
 
 static void snap_prepare_intersect(struct snap_job *cjob,
-                 struct intersect_job *ijob_i,
-                 struct intersect_job *ijob_o,
-                 uint32_t step,
-                 uint32_t method,
+        struct intersect_job *ijob_i,
+        struct intersect_job *ijob_o,
+        uint32_t step,
+        uint32_t method,
 
-                 value_t * input_addrs_host[],
-                 uint32_t input_sizes[],
-                 value_t * output_addr_host,
-                 uint32_t actual_output_size)
+        value_t * input_addrs_host[],
+        uint32_t input_sizes[],
+        value_t * output_addr_host,
+        uint32_t actual_output_size)
 {
     uint64_t ddr_addr = 0x0ull;
 
@@ -94,18 +94,18 @@ static void snap_prepare_intersect(struct snap_job *cjob,
     {
         //Memcopy, source
         snap_addr_set( &ijob_i->src_tables_host[0], input_addrs_host[0], input_sizes[0],SNAP_ADDRTYPE_HOST_DRAM ,
-            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
+                SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
         snap_addr_set( &ijob_i->src_tables_host[1], input_addrs_host[1], input_sizes[1],SNAP_ADDRTYPE_HOST_DRAM ,
-            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
+                SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 
         //Memcopy, target
         ddr_addr = 0;
         snap_addr_set( &ijob_i->src_tables_ddr[0], (void *)ddr_addr, input_sizes[0], SNAP_ADDRTYPE_CARD_DRAM ,
-            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END);
+                SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END);
 
         ddr_addr = MAX_TABLE_SIZE;
         snap_addr_set( &ijob_i->src_tables_ddr[1], (void *)ddr_addr, input_sizes[1], SNAP_ADDRTYPE_CARD_DRAM ,
-            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END);
+                SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END);
 
         //No relation to result_table
     }
@@ -114,17 +114,17 @@ static void snap_prepare_intersect(struct snap_job *cjob,
         //Memcopy, source
         ddr_addr = 0;
         snap_addr_set( &ijob_i->src_tables_ddr[0], (void *)ddr_addr, input_sizes[0],SNAP_ADDRTYPE_CARD_DRAM ,
-            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
+                SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 
         ddr_addr = MAX_TABLE_SIZE;
         snap_addr_set( &ijob_i->src_tables_ddr[1], (void *)ddr_addr, input_sizes[1],SNAP_ADDRTYPE_CARD_DRAM ,
-            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
+                SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 
         //Memcopy, target
         snap_addr_set( &ijob_i->src_tables_host[0], input_addrs_host[0], input_sizes[0],SNAP_ADDRTYPE_HOST_DRAM ,
-            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END);
+                SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END);
         snap_addr_set( &ijob_i->src_tables_host[1], input_addrs_host[1], input_sizes[1],SNAP_ADDRTYPE_HOST_DRAM ,
-            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END);
+                SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END);
 
         //No relation to result_table
     }
@@ -132,20 +132,20 @@ static void snap_prepare_intersect(struct snap_job *cjob,
     {
         ddr_addr = 0;
         snap_addr_set( &ijob_i->src_tables_ddr[0], (void *)ddr_addr, input_sizes[0],SNAP_ADDRTYPE_CARD_DRAM ,
-            SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
+                SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 
         ddr_addr = MAX_TABLE_SIZE;
         snap_addr_set( &ijob_i->src_tables_ddr[1], (void *)ddr_addr,
-		       input_sizes[1],SNAP_ADDRTYPE_CARD_DRAM ,
-		       SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
+                input_sizes[1],SNAP_ADDRTYPE_CARD_DRAM ,
+                SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 
         //result_table in DDR
         // 99 is a dummy value. HW will update this field when finished.
         ddr_addr = 2*MAX_TABLE_SIZE;
         snap_addr_set (&ijob_i->result_table, (void *)ddr_addr,
-		       99, SNAP_ADDRTYPE_CARD_DRAM ,
-		       SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST |
-		       SNAP_ADDRFLAG_END);
+                99, SNAP_ADDRTYPE_CARD_DRAM ,
+                SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST |
+                SNAP_ADDRFLAG_END);
     }
     else if (step == 5)
     {
@@ -153,21 +153,21 @@ static void snap_prepare_intersect(struct snap_job *cjob,
         // reuse src_tables_ddr[0] for the result.
         ddr_addr = 2*MAX_TABLE_SIZE;
         snap_addr_set( &ijob_i->src_tables_ddr[0],
-		       (void *)ddr_addr, actual_output_size,
-		       SNAP_ADDRTYPE_CARD_DRAM ,
-		       SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
+                (void *)ddr_addr, actual_output_size,
+                SNAP_ADDRTYPE_CARD_DRAM ,
+                SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 
         //Memcopy, target
         snap_addr_set (&ijob_i->result_table,
-		       output_addr_host, actual_output_size,
-		       SNAP_ADDRTYPE_HOST_DRAM ,
-		       SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST |
-		       SNAP_ADDRFLAG_END);
+                output_addr_host, actual_output_size,
+                SNAP_ADDRTYPE_HOST_DRAM ,
+                SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST |
+                SNAP_ADDRFLAG_END);
     }
     ijob_i->step = step;
     ijob_i->method = method;
-	snap_job_set(cjob, ijob_i, sizeof(*ijob_i),
-		    ijob_o, sizeof(*ijob_o));
+    snap_job_set(cjob, ijob_i, sizeof(*ijob_i),
+            ijob_o, sizeof(*ijob_o));
 }
 
 static int gen_random_table(value_t table[], uint32_t num,uint32_t len)
@@ -214,25 +214,25 @@ static void dump_table(value_t* table, uint32_t num)
 }
 
 static int run_one_step(struct snap_action *action,
-			struct snap_job *cjob,
-			unsigned long timeout,
-			uint64_t step)
+        struct snap_job *cjob,
+        unsigned long timeout,
+        uint64_t step)
 {
-	int rc;
-	struct timeval etime, stime;
+    int rc;
+    struct timeval etime, stime;
 
-	gettimeofday(&stime, NULL);
-	rc = snap_action_sync_execute_job(action, cjob, timeout);
-	if (rc != 0) {
-		fprintf(stderr, "err: job execution %d: %s!\n\n\n", rc,
-			strerror(errno));
-		return rc;
-	}
-	gettimeofday(&etime, NULL);
-	fprintf(stdout, "Step %ld took %lld usec\n",
-		step, (long long)timediff_usec(&etime, &stime));
+    gettimeofday(&stime, NULL);
+    rc = snap_action_sync_execute_job(action, cjob, timeout);
+    if (rc != 0) {
+        fprintf(stderr, "err: job execution %d: %s!\n\n\n", rc,
+                strerror(errno));
+        return rc;
+    }
+    gettimeofday(&etime, NULL);
+    fprintf(stdout, "Step %ld took %lld usec\n",
+            step, (long long)timediff_usec(&etime, &stime));
 
-	return rc;
+    return rc;
 }
 
 /**
@@ -241,16 +241,16 @@ static int run_one_step(struct snap_action *action,
 int main(int argc, char *argv[])
 {
     //General variables for donut call
-	int ch;
+    int ch;
     int rc = 0;
-	int card_no = 0;
-	struct snap_card *card = NULL;
-	struct snap_action *action = NULL;
-	char device[128];
-	uint32_t page_size = sysconf(_SC_PAGESIZE);
+    int card_no = 0;
+    struct snap_card *card = NULL;
+    struct snap_action *action = NULL;
+    char device[128];
+    uint32_t page_size = sysconf(_SC_PAGESIZE);
     int exit_code = EXIT_SUCCESS;
     unsigned long timeout = 1000;
-	struct snap_job cjob;
+    struct snap_job cjob;
     snap_action_flag_t action_irq = 0;
     struct timeval etime, stime;
 
@@ -281,82 +281,82 @@ int main(int argc, char *argv[])
     const char *output = NULL;
 
     while (1) {
-		int option_index = 0;
-		static struct option long_options[] = {
-			{ "card",	 required_argument, NULL, 'C' },
-			{ "input1",	 required_argument, NULL, 'i' },
-			{ "input2",	 required_argument, NULL, 'j' },
-			{ "output",	 required_argument, NULL, 'o' },
-			{ "num",	 required_argument, NULL, 'n' },
-			{ "len",	 required_argument, NULL, 'l' },
-			{ "method",	 required_argument, NULL, 'm' },
-			{ "software",required_argument, NULL, 's' },
-			{ "timeout", required_argument, NULL, 't' },
-			{ "version", no_argument,	    NULL, 'V' },
-			{ "verbose", no_argument,	    NULL, 'v' },
-			{ "irq",     no_argument,	    NULL, 'I' },
-			{ "help",	 no_argument,	    NULL, 'h' },
-			{ 0,		 no_argument,	    NULL, 0   },
-		};
+        int option_index = 0;
+        static struct option long_options[] = {
+            { "card",	 required_argument, NULL, 'C' },
+            { "input1",	 required_argument, NULL, 'i' },
+            { "input2",	 required_argument, NULL, 'j' },
+            { "output",	 required_argument, NULL, 'o' },
+            { "num",	 required_argument, NULL, 'n' },
+            { "len",	 required_argument, NULL, 'l' },
+            { "method",	 required_argument, NULL, 'm' },
+            { "software",required_argument, NULL, 's' },
+            { "timeout", required_argument, NULL, 't' },
+            { "version", no_argument,	    NULL, 'V' },
+            { "verbose", no_argument,	    NULL, 'v' },
+            { "irq",     no_argument,	    NULL, 'I' },
+            { "help",	 no_argument,	    NULL, 'h' },
+            { 0,		 no_argument,	    NULL, 0   },
+        };
 
-		ch = getopt_long(argc, argv,
-				 "C:i:j:o:m:n:l:t:VIvhs",
-				 long_options, &option_index);
-		if (ch == -1)
-			break;
+        ch = getopt_long(argc, argv,
+                "C:i:j:o:m:n:l:t:VIvhs",
+                long_options, &option_index);
+        if (ch == -1)
+            break;
 
-		switch (ch) {
-		case 'C':
-			card_no = strtol(optarg, (char **)NULL, 0);
-			break;
-		case 'i':
-			input[0] = optarg;
-			break;
-		case 'j':
-			input[1] = optarg;
-			break;
-		case 'o':
-			output = optarg;
-			break;
-		case 'n':
-			num = __str_to_num(optarg);
-			break;
-		case 'l':
-			len = __str_to_num(optarg);
-			break;
-		case 't':
-			timeout = strtol(optarg, (char **)NULL, 0);
-			break;
-		case 'm':
-			method = strtol(optarg, (char **)NULL, 0);
-			break;
-		case 's':
-			sw = 1;
-			break;
-		/* service */
-		case 'V':
-			printf("%s\n", version);
-			exit(EXIT_SUCCESS);
-		case 'v':
-			verbose_flag = 1;
-			break;
-		case 'h':
-			usage(argv[0]);
-			exit(EXIT_SUCCESS);
-			break;
-                case 'I': /* irq */
-			action_irq = (SNAP_DONE_IRQ | SNAP_ATTACH_IRQ);
-                        break;
-		default:
-			usage(argv[0]);
-			exit(EXIT_FAILURE);
-		}
-	}
+        switch (ch) {
+            case 'C':
+                card_no = strtol(optarg, (char **)NULL, 0);
+                break;
+            case 'i':
+                input[0] = optarg;
+                break;
+            case 'j':
+                input[1] = optarg;
+                break;
+            case 'o':
+                output = optarg;
+                break;
+            case 'n':
+                num = __str_to_num(optarg);
+                break;
+            case 'l':
+                len = __str_to_num(optarg);
+                break;
+            case 't':
+                timeout = strtol(optarg, (char **)NULL, 0);
+                break;
+            case 'm':
+                method = strtol(optarg, (char **)NULL, 0);
+                break;
+            case 's':
+                sw = 1;
+                break;
+                /* service */
+            case 'V':
+                printf("%s\n", version);
+                exit(EXIT_SUCCESS);
+            case 'v':
+                verbose_flag = 1;
+                break;
+            case 'h':
+                usage(argv[0]);
+                exit(EXIT_SUCCESS);
+                break;
+            case 'I': /* irq */
+                action_irq = (SNAP_DONE_IRQ | SNAP_ATTACH_IRQ);
+                break;
+            default:
+                usage(argv[0]);
+                exit(EXIT_FAILURE);
+        }
+    }
 
-	if (optind != argc) {
-		usage(argv[0]);
-		exit(EXIT_FAILURE);
-	}
+    if (optind != argc) {
+        usage(argv[0]);
+        exit(EXIT_FAILURE);
+    }
 
 
     //Create Input tables
@@ -418,12 +418,12 @@ int main(int argc, char *argv[])
             fclose(fp);
 
             fprintf(stdout, "reading input data %d elements from %s\n",
-                num, input[i]);
+                    num, input[i]);
 
             if(0)
                 dump_table(src_tables[i], num);
             if (rc < 0)
-			    goto out_error;
+                goto out_error;
         }
     }
 
@@ -436,30 +436,30 @@ int main(int argc, char *argv[])
     /////////////////////////////////////////////////////////////////
     //    Open Device ... and start
     /////////////////////////////////////////////////////////////////
-	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
-	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
-				   SNAP_DEVICE_ID_SNAP);
-	if (card == NULL) {
-		fprintf(stderr, "err: failed to open card %u: %s\n",
-			card_no, strerror(errno));
-		goto out_error;
-	}
+    snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
+    card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
+            SNAP_DEVICE_ID_SNAP);
+    if (card == NULL) {
+        fprintf(stderr, "err: failed to open card %u: %s\n",
+                card_no, strerror(errno));
+        goto out_error;
+    }
 
-	action = snap_attach_action(card, HLS_INTERSECT_ID, 0, 60);
-	if (action == NULL) {
-		fprintf(stderr, "err: failed to attach action %u: %s\n",
-			card_no, strerror(errno));
-		goto out_error1;
-	}
+    action = snap_attach_action(card, HLS_INTERSECT_ID, 0, 60);
+    if (action == NULL) {
+        fprintf(stderr, "err: failed to attach action %u: %s\n",
+                card_no, strerror(errno));
+        goto out_error1;
+    }
     //------------------------------------
     // Action begin (1)
     printf("Start Step1 (Copy source data from Host to DDR) ..............\n");
-	snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
-                 1, method, src_tables, src_sizes,result_table,99);
+    snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
+            1, method, src_tables, src_sizes,result_table,99);
 
     rc |= run_one_step(action, &cjob, timeout, 1);
-	if (rc != 0)
-		goto out_error2;
+    if (rc != 0)
+        goto out_error2;
 
     if(sw)
     {
@@ -467,7 +467,7 @@ int main(int argc, char *argv[])
         // Action begin (2)
         printf("Start Step2 (Copy source data from DDR to Host) ..............\n");
         snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
-                     2, method, src_tables, src_sizes,result_table,99);
+                2, method, src_tables, src_sizes,result_table,99);
 
         rc |= run_one_step(action, &cjob, timeout, 2);
         if (rc != 0)
@@ -478,9 +478,9 @@ int main(int argc, char *argv[])
         printf("Start Step4 (Do interesction by software) ..............\n");
         gettimeofday(&stime, NULL);
         result_num = run_sw_intersection (method, src_tables[0], src_sizes[0]/sizeof(value_t),
-                                                                            src_tables[1], src_sizes[1]/sizeof(value_t), result_table);
-	    gettimeofday(&etime, NULL);
-	    fprintf(stdout, "Step 4 took %lld usec\n", (long long)timediff_usec(&etime, &stime));
+                src_tables[1], src_sizes[1]/sizeof(value_t), result_table);
+        gettimeofday(&etime, NULL);
+        fprintf(stdout, "Step 4 took %lld usec\n", (long long)timediff_usec(&etime, &stime));
         printf("SW: result_num = %d\n", result_num);
 
 
@@ -491,7 +491,7 @@ int main(int argc, char *argv[])
         // Action begin (3)
         printf("Start Step3 (Do intersection in DDR) ..............\n");
         snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
-                     3, method, src_tables, src_sizes, result_table, 99);
+                3, method, src_tables, src_sizes, result_table, 99);
 
         rc |= run_one_step(action, &cjob, timeout, 3);
         if (rc != 0)
@@ -506,7 +506,7 @@ int main(int argc, char *argv[])
         // Action begin (5)
         printf("Start Step5 (Copy result from DDR to Host) ..............\n");
         snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
-                     5, method, src_tables, src_sizes, result_table, result_num * sizeof(value_t));
+                5, method, src_tables, src_sizes, result_table, result_num * sizeof(value_t));
 
         rc |= run_one_step(action, &cjob, timeout, 5);
         if (rc != 0)
@@ -515,16 +515,16 @@ int main(int argc, char *argv[])
 
     if(output != NULL)
     {
-       printf("Writing intersection result %d lines to %s\n",
-                    (int)result_num, output);
+        printf("Writing intersection result %d lines to %s\n",
+                (int)result_num, output);
 
         //Change \0 to \n
-       for(i = 0; i < result_num; i++)
-          result_table[i][sizeof(value_t)-1] = '\n';
+        for(i = 0; i < result_num; i++)
+            result_table[i][sizeof(value_t)-1] = '\n';
 
-       rc |= __file_write(output, (uint8_t *) result_table, result_num*sizeof(value_t));
-       if (rc < 0)
-           goto out_error2;
+        rc |= __file_write(output, (uint8_t *) result_table, result_num*sizeof(value_t));
+        if (rc < 0)
+            goto out_error2;
     }
     else
     {
@@ -538,23 +538,23 @@ int main(int argc, char *argv[])
         printf("\n");
     }
 
-	snap_detach_action(action);
-	snap_card_free(card);
+    snap_detach_action(action);
+    snap_card_free(card);
 
     for(i = 0; i < NUM_TABLES; i++)
-	    __free(src_tables[i]);
-	__free(result_table);
+        __free(src_tables[i]);
+    __free(result_table);
 
-	exit(exit_code);
+    exit(exit_code);
 
- out_error2:
-	snap_detach_action(action);
- out_error1:
-	snap_card_free(card);
- out_error:
+out_error2:
+    snap_detach_action(action);
+out_error1:
+    snap_card_free(card);
+out_error:
     for(i = 0; i < NUM_TABLES; i++)
-	    __free(src_tables[i]);
-	__free(result_table);
+        __free(src_tables[i]);
+    __free(result_table);
 
-	exit(EXIT_FAILURE);
+    exit(EXIT_FAILURE);
 }

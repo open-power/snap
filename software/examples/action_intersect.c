@@ -36,19 +36,19 @@
 
 
 static int mmio_write32(struct snap_card *card,
-			uint64_t offs, uint32_t data)
+        uint64_t offs, uint32_t data)
 {
-	act_trace("  %s(%p, %llx, %x)\n", __func__, card,
-		  (long long)offs, data);
-	return 0;
+    act_trace("  %s(%p, %llx, %x)\n", __func__, card,
+            (long long)offs, data);
+    return 0;
 }
 
 static int mmio_read32(struct snap_card *card,
-		       uint64_t offs, uint32_t *data)
+        uint64_t offs, uint32_t *data)
 {
-	act_trace("  %s(%p, %llx, %x)\n", __func__, card,
-		  (long long)offs, *data);
-	return 0;
+    act_trace("  %s(%p, %llx, %x)\n", __func__, card,
+            (long long)offs, *data);
+    return 0;
 }
 //////////////////////////////////////////////////////////////////
 //   Intersect functions
@@ -75,17 +75,17 @@ void copyvalue(value_t dst, value_t src)
 int cmpvalue(const value_t s1, const value_t s2)
 {
     size_t i;
-	for (i = 0; i < sizeof(value_t); i++) {
-		if (*s1 == 0 || *s2 == 0)
-			break;
+    for (i = 0; i < sizeof(value_t); i++) {
+        if (*s1 == 0 || *s2 == 0)
+            break;
 
-		if (*s1 != *s2)
-			return *s1 - *s2;
+        if (*s1 != *s2)
+            return *s1 - *s2;
 
-		s1 += 1;
-		s2 += 1;
-	}
-	return *s1 - *s2;
+        s1 += 1;
+        s2 += 1;
+    }
+    return *s1 - *s2;
 }
 static int qs_cmp(const void *a, const void *b)
 {
@@ -93,8 +93,8 @@ static int qs_cmp(const void *a, const void *b)
 }
 
 static uint32_t intersect_direct(value_t table1[], uint32_t n1,
-                              value_t table2[], uint32_t n2,
-                              value_t result_array[] )
+        value_t table2[], uint32_t n2,
+        value_t result_array[] )
 {
     // a straight forward way to do intersection.
     // we can compare the speed with following intersect() function.
@@ -134,8 +134,8 @@ static uint32_t ht_hash(value_t key)
     return (hashval % HT_ENTRY_NUM);
 }
 static uint32_t intersect_hash(value_t table1[], uint32_t n1,
-                              value_t table2[], uint32_t n2,
-                              value_t result_array[] )
+        value_t table2[], uint32_t n2,
+        value_t result_array[] )
 {
 
     uint32_t i, index;
@@ -159,7 +159,7 @@ static uint32_t intersect_hash(value_t table1[], uint32_t n1,
     {
         index = ht_hash(table1[i]);
 
-    //    printf("build hash: %s, index = %d,",table1[i], index);
+        //    printf("build hash: %s, index = %d,",table1[i], index);
         entry = malloc(sizeof(entry_t));
         copyvalue(entry->data, table1[i]);
         entry->next = hash_table[index];
@@ -171,14 +171,14 @@ static uint32_t intersect_hash(value_t table1[], uint32_t n1,
         index = ht_hash(table2[i]);
         ptr = hash_table[index];
         entry = ptr;
-       // printf("index = %d, ptr = %p\n", index, ptr);
+        // printf("index = %d, ptr = %p\n", index, ptr);
 
         while (ptr != NULL)
         {
-       //     printf("   cmp: %s . %s \n", table2[i], ptr->data);
+            //     printf("   cmp: %s . %s \n", table2[i], ptr->data);
             if(cmpvalue(table2[i], ptr->data) == 0)
             {
-    //            printf("match %d, %s\n", i, table2[i]);
+                //            printf("match %d, %s\n", i, table2[i]);
                 copyvalue(result_array[n3], table2[i]);
                 n3++;
                 entry->next = ptr->next; //delete a node.
@@ -194,8 +194,8 @@ static uint32_t intersect_hash(value_t table1[], uint32_t n1,
 }
 
 static uint32_t intersect_sort( value_t table1[], uint32_t n1,
-                                value_t table2[], uint32_t n2,
-                                value_t result_array[] )
+        value_t table2[], uint32_t n2,
+        value_t result_array[] )
 {
 
     uint32_t n3 = 0;
@@ -228,7 +228,7 @@ static uint32_t intersect_sort( value_t table1[], uint32_t n1,
 uint32_t run_sw_intersection(int method, value_t *table1, uint32_t n1, value_t * table2, uint32_t n2, value_t *result_array)
 {
     printf("SW intersection, method = %d, table1 (%p) num is %d, table2 (%p) num is %d, out (%p) \n",
-                                    method, table1, n1, table2, n2, result_array);
+            method, table1, n1, table2, n2, result_array);
     if(method == 0)
         return intersect_direct(table1, n1, table2, n2, result_array);
     else if (method == 1)
@@ -245,16 +245,16 @@ uint32_t run_sw_intersection(int method, value_t *table1, uint32_t n1, value_t *
 }
 
 static int action_main(struct snap_sim_action *action,
-		       void *job, uint32_t job_len)
+        void *job, uint32_t job_len)
 {
-	struct intersect_job *js = (struct intersect_job *)job;
+    struct intersect_job *js = (struct intersect_job *)job;
     act_trace("%s(%p, %p, %d) table1_size = %d, table2_size = %d\n",
             __func__, action, job, job_len, js->src_tables_host[0].size,  js->src_tables_host[1].size);
     //Do Nothing.
 
-// out_ok:
-	action->job.retc = SNAP_RETC_SUCCESS;
-	return 0;
+    // out_ok:
+    action->job.retc = SNAP_RETC_SUCCESS;
+    return 0;
 
 }
 
@@ -263,23 +263,23 @@ static int action_main(struct snap_sim_action *action,
 //////////////////////////////////////////////
 
 static struct snap_sim_action action = {
-	.vendor_id = SNAP_VENDOR_ID_ANY,
-	.device_id = SNAP_DEVICE_ID_ANY,
-	.action_type = HLS_INTERSECT_ID,
+    .vendor_id = SNAP_VENDOR_ID_ANY,
+    .device_id = SNAP_DEVICE_ID_ANY,
+    .action_type = HLS_INTERSECT_ID,
 
-	.job = { .retc = SNAP_RETC_FAILURE, },
-	.state = ACTION_IDLE,
-	.main = action_main,
-	.priv_data = NULL,	/* this is passed back as void *card */
-	.mmio_write32 = mmio_write32,
-	.mmio_read32 = mmio_read32,
+    .job = { .retc = SNAP_RETC_FAILURE, },
+    .state = ACTION_IDLE,
+    .main = action_main,
+    .priv_data = NULL,	/* this is passed back as void *card */
+    .mmio_write32 = mmio_write32,
+    .mmio_read32 = mmio_read32,
 
-	.next = NULL,
+    .next = NULL,
 };
 
 static void _init(void) __attribute__((constructor));
 
 static void _init(void)
 {
-	snap_action_register(&action);
+    snap_action_register(&action);
 }
