@@ -37,19 +37,19 @@
 
 
 static int mmio_write32(struct snap_card *card,
-			uint64_t offs, uint32_t data)
+        uint64_t offs, uint32_t data)
 {
-	act_trace("  %s(%p, %llx, %x)\n", __func__, card,
-		  (long long)offs, data);
-	return 0;
+    act_trace("  %s(%p, %llx, %x)\n", __func__, card,
+            (long long)offs, data);
+    return 0;
 }
 
 static int mmio_read32(struct snap_card *card,
-		       uint64_t offs, uint32_t *data)
+        uint64_t offs, uint32_t *data)
 {
-	act_trace("  %s(%p, %llx, %x)\n", __func__, card,
-		  (long long)offs, *data);
-	return 0;
+    act_trace("  %s(%p, %llx, %x)\n", __func__, card,
+            (long long)offs, *data);
+    return 0;
 }
 //-------------------------------------
 //   Queue functions
@@ -78,24 +78,24 @@ static int QueueEmpty(Queue * q)
 }
 
 /*
-static void PrintQueue(Queue *q)
-{
-    printf("Queue is ");
-    if (QueueEmpty(q))
-    {
-        printf ("empty.\n");
-        return;
-    }
+   static void PrintQueue(Queue *q)
+   {
+   printf("Queue is ");
+   if (QueueEmpty(q))
+   {
+   printf ("empty.\n");
+   return;
+   }
 
-    QNode * node = q->front;
-    while (node != NULL)
-    {
-        printf ("%d, ", node->data);
-        node = node->next;
-    }
-    printf("\n");
-}
-*/
+   QNode * node = q->front;
+   while (node != NULL)
+   {
+   printf ("%d, ", node->data);
+   node = node->next;
+   }
+   printf("\n");
+   }
+   */
 static void EnQueue (Queue *q, ElementType element)
 {
     QNode * node_ptr = (QNode*) malloc (sizeof(QNode));
@@ -131,7 +131,7 @@ static void EnQueue (Queue *q, ElementType element)
 
 static void DeQueue (Queue *q, ElementType *ep)
 {
-   // printf("Dequeue\n");
+    // printf("Dequeue\n");
     if (QueueEmpty (q))
     {
         printf ("ERROR: DeQueue: queue is empty.\n");
@@ -167,12 +167,12 @@ void output_vex(unsigned int vex, int is_tail)
     {
         *g_out_ptr = vex;
         g_out_ptr ++;
-     //   printf("Visit Node %d\n", vex);
+        //   printf("Visit Node %d\n", vex);
     }
     else
     {
         *g_out_ptr = 0xFF000000 + vex; //here vex means cnt
-     // printf("End. %x\n", *g_out_ptr);
+        // printf("End. %x\n", *g_out_ptr);
         g_out_ptr += 32 - (((unsigned long long )g_out_ptr & 0x7C) >> 2); //Make paddings.
 
     }
@@ -215,19 +215,19 @@ void bfs (VexNode * vex_list, unsigned int vex_num, unsigned int root)
     while (! QueueEmpty(Q))
     {
 
-   /*
-        printf("vistied = ");
-        for (i = 0; i < vex_num; i++)
-        {
-            printf("%d", visited[i]);
-        }
-        printf("\n");
-     */
+        /*
+           printf("vistied = ");
+           for (i = 0; i < vex_num; i++)
+           {
+           printf("%d", visited[i]);
+           }
+           printf("\n");
+           */
 
         DeQueue(Q, &current);
         p = vex_list[current].edgelink;
 
-       // printf("current = %d\n", current);
+        // printf("current = %d\n", current);
         while(p)
         {
             if(!visited[p->adjvex])
@@ -252,10 +252,10 @@ void bfs (VexNode * vex_list, unsigned int vex_num, unsigned int root)
 //------------------------------------
 
 static int action_main(struct snap_sim_action *action,
-		       void *job, unsigned int job_len __unused)
+        void *job, unsigned int job_len __unused)
 {
-	int rc;
-	struct bfs_job *js = (struct bfs_job *)job;
+    int rc;
+    struct bfs_job *js = (struct bfs_job *)job;
 
     VexNode * vex_list = (VexNode *) js->input_adjtable.addr;
     unsigned int vex_num = js->vex_num;
@@ -272,33 +272,33 @@ static int action_main(struct snap_sim_action *action,
         goto out_err;
 
 
- out_ok:
-	action->job.retc = SNAP_RETC_SUCCESS;
-	return 0;
+out_ok:
+    action->job.retc = SNAP_RETC_SUCCESS;
+    return 0;
 
- out_err:
-	action->job.retc = SNAP_RETC_FAILURE;
-	return 0;
+out_err:
+    action->job.retc = SNAP_RETC_FAILURE;
+    return 0;
 }
 
 static struct snap_sim_action action = {
-	.vendor_id = SNAP_VENDOR_ID_ANY,
-	.device_id = SNAP_DEVICE_ID_ANY,
-	.action_type = HLS_BFS_ID,
+    .vendor_id = SNAP_VENDOR_ID_ANY,
+    .device_id = SNAP_DEVICE_ID_ANY,
+    .action_type = HLS_BFS_ID,
 
-	.job = { .retc = SNAP_RETC_FAILURE, },
-	.state = ACTION_IDLE,
-	.main = action_main,
-	.priv_data = NULL,	/* this is passed back as void *card */
-	.mmio_write32 = mmio_write32,
-	.mmio_read32 = mmio_read32,
+    .job = { .retc = SNAP_RETC_FAILURE, },
+    .state = ACTION_IDLE,
+    .main = action_main,
+    .priv_data = NULL,	/* this is passed back as void *card */
+    .mmio_write32 = mmio_write32,
+    .mmio_read32 = mmio_read32,
 
-	.next = NULL,
+    .next = NULL,
 };
 
 static void _init(void) __attribute__((constructor));
 
 static void _init(void)
 {
-	snap_action_register(&action);
+    snap_action_register(&action);
 }
