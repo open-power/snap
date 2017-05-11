@@ -60,7 +60,7 @@ create_project framework $root_dir/viv_project -part $fpga_part -force >> $log_f
 
 # Project Settings
 # General
-puts "	                        set up project settings"
+puts "	                        setting up project settings"
 set_property target_language VHDL [current_project]
 set_property default_lib work [current_project]
 # Simulation
@@ -94,7 +94,7 @@ set_property STEPS.WRITE_BITSTREAM.ARGS.BIN_FILE true [get_runs impl_1]
 
 # Add Files
 # PSL Files
-puts "	                        import design files"
+puts "	                        importing design files"
 # HDL Files
 add_files -scan_for_includes $root_dir/hdl/core/  >> $log_file
 if { $hls_support == "TRUE" } {
