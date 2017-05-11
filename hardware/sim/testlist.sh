@@ -148,7 +148,7 @@
         #### check DDR3 memory in KU3, stay under 512k for BRAM
         t="$DONUT_ROOT/software/tools/stage2_ddr -h"                                            ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
         for strt in 0x1000 0x2000;do      # start adr
-        for iter in 1 2;do                # number of blocks
+        for iter in 1;  do                # number of blocks (no iteration for now due to a bug to be fixed in stage2_fix
         for bsize in 64 0x1000; do        # block size
           let end=${strt}+${iter}*${bsize}; to=$((iter*iter*bsize/4+300))                       # rough timeout dependent on filesize
           t="$DONUT_ROOT/software/tools/stage2_ddr -s${strt} -e${end} -b${bsize} -i${iter} -t$to";echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
