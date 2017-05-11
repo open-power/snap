@@ -43,6 +43,103 @@ static int mmio_read32(struct snap_card *card,
 		  (long long)offs, *data);
 	return 0;
 }
+/*******************************************************/
+// Knuth Morris Pratt Pattern Searching algorithm
+// based on D. E. Knuth, J. H. Morris, Jr., and V. R. Pratt, i
+// Fast pattern matching in strings", SIAM J. Computing 6 (1977), 323--350
+//
+void preprocess_KMP_table(char *pat, int M, int KMP_table[])
+{
+   int i, j;
+
+   i = 0;
+   j = -1;
+   KMP_table[0] = -1;
+   while (i < M) {
+      while (j > -1 && pat[i] != pat[j])
+         j = KMP_table[j];
+      i++;
+      j++;
+      if (pat[i] == pat[j])
+          KMP_table[i] = KMP_table[j];
+      else
+          KMP_table[i] = j;
+   }
+}
+int KMP_search(char *pat, int M, char *txt, int N)
+{
+   int i, j;
+   /*FIXME Pattern is currently hardware limited to 64 Bytes */
+   int KMP_table[64];
+   int count;
+
+   preprocess_KMP_table(pat, M, KMP_table);
+
+   i = j = 0;
+   count = 0;
+   while (j < N) {
+      while (i > -1 && pat[i] != txt[j])
+         i = KMP_table[i];
+      i++;
+      j++;
+      if (i >= M)
+      {
+         i = KMP_table[i];
+         printf("Found pattern at index %d\n", j-i-M);
+         count++;
+      }
+   }
+   return count;
+}
+// Naive / Brute Force Searching algorithm
+// based on D. E. Knuth, J. H. Morris, Jr., and V. R. Pratt, i
+// Fast pattern matching in strings", SIAM J. Computing 6 (1977), 323--350
+//
+int Naive_search(char *pat, int M, char *txt, int N)
+{
+   int i, j;
+   int count=0;
+
+   for (j = 0; j <= N - M; ++j) {
+      for (i = 0; i < M && pat[i] == txt[i + j]; ++i);
+      if (i >= M)
+      {
+           count++;
+           printf("Pattern found at index %d \n", j);
+      }
+   }
+   return count;
+}
+unsigned int run_sw_search(unsigned int Method,
+           char *Pattern, unsigned int PatternSize,
+           char *Text, unsigned int TextSize)
+{
+        int count;
+
+        count = 0;
+        switch (Method) {
+        case(NAIVE_method):    printf("======== Naive method ========\n");
+                        count = Naive_search (Pattern, PatternSize, Text, TextSize);
+                        break;
+        case(KMP_method):      printf("========= KMP method =========\n");
+                        count = KMP_search(Pattern, PatternSize, Text, TextSize);
+                        break;
+        default:        printf("=== Default Naive method ===\n");;
+                        count = Naive_search(Pattern, PatternSize, Text, TextSize);
+                        break;
+        }
+
+        printf("pattern size %d - text size %d - rc = %d \n", PatternSize, TextSize, count);
+
+
+        return (unsigned int) count;
+}
+
+static void __trace_addr(const char *name, struct snap_addr *a)
+{
+	act_trace("  %-12s: %012llx %08x %04x %04x\n",
+		  name, (long long)a->addr, a->size, a->type, a->flags);
+}
 
 static int action_main(struct snap_sim_action *action,
 		       void *job, unsigned int job_len)
@@ -53,17 +150,25 @@ static int action_main(struct snap_sim_action *action,
 	uint64_t *offs;
 
 	act_trace("%s(%p, %p, %d) SEARCH\n", __func__, action, job, job_len);
-	memset((uint8_t *)js->output.addr, 0, js->output.size);
+	__trace_addr("src_text1",   &js->src_text1);
+	__trace_addr("src_pattern", &js->src_pattern);
+	__trace_addr("ddr_text1",   &js->ddr_text1);
+	__trace_addr("src_result",  &js->src_result);
+	__trace_addr("ddr_result",  &js->ddr_result);
 
-	offs = (uint64_t *)(unsigned long)js->output.addr;
-	offs_max = js->output.size / sizeof(uint64_t);
+	if (js->src_result.addr != 0 && js->src_result.type == SNAP_ADDRTYPE_HOST_DRAM)
+		memset((uint8_t *)js->src_result.addr, 0, js->src_result.size);
+
+
+	offs = (uint64_t *)(unsigned long)js->src_result.addr;
+	offs_max = js->src_result.size / sizeof(uint64_t);
 	offs_used = 0;
 
-	haystack = (char *)(unsigned long)js->input.addr;
-	haystack_len = js->input.size;
+	haystack = (char *)(unsigned long)js->src_text1.addr;
+	haystack_len = js->src_text1.size;
 
-	needle = (char *)(unsigned long)js->pattern.addr;
-	needle_len = js->pattern.size;
+	needle = (char *)(unsigned long)js->src_pattern.addr;
+	needle_len = js->src_pattern.size;
 
 	js->next_input_addr = 0;
 	while (haystack_len != 0) {
@@ -85,7 +190,6 @@ static int action_main(struct snap_sim_action *action,
 	}
 
 	js->nb_of_occurrences = offs_used;
-	js->action_version = 0xC0FEBABEBABEBABEull;
 	action->job.retc = SNAP_RETC_SUCCESS;
 
 	act_trace("%s SEARCH DONE retc=%x\n", __func__, action->job.retc);
