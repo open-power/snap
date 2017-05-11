@@ -33,10 +33,7 @@
 typedef char word_t[BPERDW];
 typedef snapu64_t address_t;
 
-<<<<<<< HEAD
-=======
 #define NO_OF_CHARS  256
->>>>>>> HLS HashJoin: Adding correct license headers
 #define PATTERN_SIZE BPERDW
 #define TEXT_SIZE    4 * MAX_NB_OF_BYTES_READ // used for streaming only
 #define HOST2DDR 0
