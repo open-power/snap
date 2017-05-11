@@ -96,29 +96,29 @@ set_property STEPS.WRITE_BITSTREAM.ARGS.BIN_FILE true [get_runs impl_1]
 # PSL Files
 puts "	                        import design files"
 # HDL Files
-add_files -scan_for_includes $root_dir/hdl/core/
+add_files -scan_for_includes $root_dir/hdl/core/  >> $log_file
 if { $hls_support == "TRUE" } {
-  add_files -scan_for_includes $root_dir/hdl/hls/
+  add_files -scan_for_includes $root_dir/hdl/hls/  >> $log_file
 }
 set_property used_in_simulation false [get_files $root_dir/hdl/core/psl_fpga.vhd]
 # Action Files
 add_files            -fileset sources_1 -scan_for_includes $action_dir/
 # Sim Files
 set_property SOURCE_SET sources_1 [get_filesets sim_1]
-add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/top.sv
+add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/top.sv  >> $log_file
 set_property file_type SystemVerilog [get_files $root_dir/sim/core/top.sv]
 set_property used_in_synthesis false [get_files $root_dir/sim/core/top.sv]
 # DDR3 Sim Files
 if { ($fpga_card == "KU3") && ($sdram_used == "TRUE") } {
-  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr3sdram_ex/imports/ddr3.v
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr3sdram_ex/imports/ddr3.v  >> $log_file
   set_property file_type {Verilog Header}        [get_files $ip_dir/ddr3sdram_ex/imports/ddr3.v]  
-  add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/ddr3_dimm.sv
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/ddr3_dimm.sv      >> $log_file
   set_property used_in_synthesis false           [get_files $root_dir/sim/core/ddr3_dimm.sv]
 }
 # DDR4 Sim Files
 if { ($fpga_card == "FGT") && ($sdram_used == "TRUE") } {
-  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv
-  add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/ddr4_dimm.sv
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $root_dir/sim/core/ddr4_dimm.sv  >> $log_file
   set_property used_in_synthesis false           [get_files $root_dir/sim/core/ddr4_dimm.sv]
 }
 update_compile_order -fileset sources_1 >> $log_file
@@ -181,7 +181,7 @@ update_compile_order -fileset sources_1 >> $log_file
 
 # Add NVME
 if { $nvme_used == TRUE } {
-  puts "  	                      adding NVMe block design"
+  puts "  	                        adding NVMe block design"
   set_property  ip_repo_paths $root_dir/hdl/nvme/ [current_project]
   update_ip_catalog  >> $log_file
   add_files -norecurse                          $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd  >> $log_file

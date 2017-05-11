@@ -51,10 +51,6 @@ ifndef NVME_USED
   export NVME_USED=FALSE
 endif
 
-ifndef MSG_LEVEL
-  export MSG_LEVEL=-quiet
-endif
-
 .PHONY: clean gitclean check_donut_settings config image model clean gitclean
 
 check_donut_settings:

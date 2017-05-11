@@ -22,13 +22,20 @@ set fpgacard     $::env(FPGACARD)
 set sdram_used   $::env(SDRAM_USED)
 set nvme_used    $::env(NVME_USED)
 set bram_used    $::env(BRAM_USED)
-set TIMING_LABLIMIT "-250"
+
+#timing_lablimit  
+if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
+    set timing_lablimit [string toupper $::env(TIMING_LABLIMIT)]
+} else {
+  set timing_lablimit "-250"
+}
 
 #Define widths of each column
 set widthCol1 31
 set widthCol2 23
 set widthCol3 35
 set widthCol4 22
+
 
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "open framework project" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
 open_project ../viv_project/framework.xpr >> $log_file
@@ -73,7 +80,7 @@ puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Timing (TNS)" $wid
 if { [expr $TIMING_TNS >= 0 ] } {
     puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "TIMING OK" $widthCol4 "" ]
     set remove_tmp_files TRUE
-} elseif { [expr $TIMING_TNS < $TIMING_LABLIMIT ] } {
+} elseif { [expr $TIMING_TNS < $timing_lablimit ] } {
     puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: TIMING FAILED" $widthCol4 "" ]
     exit 42
 } else {

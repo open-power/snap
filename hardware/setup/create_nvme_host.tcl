@@ -293,7 +293,7 @@ CONFIG.plltype {QPLL1} \
 ] $axi_pcie3_1 >> $log_file
 
 # Create instance: nvme_host_wrap_0, and set properties
-puts "	\                      generating NVMe Host"
+puts "	\                        generating NVMe Host"
 create_bd_cell   -type ip -vlnv IP:user:nvme_host_wrap:1.0 nvme_host_wrap_0 >> $log_file
 
 # Create interface connections
