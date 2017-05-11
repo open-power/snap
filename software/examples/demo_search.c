@@ -482,10 +482,14 @@ int main(int argc, char *argv[])
             		printf(" >>> Searching : run n° %d \n", run);
             		printf("***************************************************\n");
             		printf("Start Step3 (Do Search by hardware, in DDR) .......\n");
-            		if (method == 1) printf(" >>>>>>>>>> Naive method (%d) \n", method);
-            		else if (method == 2) printf(" >>>>>>>>>> KMP method (%d) \n", method);
-            		else if (method == 0) printf(" >>>>>>>>>> Streaming method (%d) \n", method);
-            		else  printf(" >>>>>>>>>> Naive method (%d) \n", method);
+            		if (method == 1)
+				printf(" >>>>>>>>>> Naive method (%d) \n", method);
+            		else if (method == 2)
+				printf(" >>>>>>>>>> KMP method (%d) \n", method);
+            		else if (method == 0)
+				printf(" >>>>>>>>>> Streaming method (%d) \n", method);
+            		else
+				printf(" >>>>>>>>>> Naive method (%d) \n", method);
             		printf("***************************************************\n");
 			step = 3;
 
@@ -506,6 +510,11 @@ int main(int argc, char *argv[])
                 		fprintf(stderr, "err: job retc %x!\n", cjob.retc);
                 		goto out_error3;
             		}
+
+        		printf("nb of occurrences = %d \n", (int)sjob_in.nb_of_occurrences);
+        		printf("nb of occurrences = %d \n", (int)sjob_out.nb_of_occurrences);
+            		total_found += sjob_out.nb_of_occurrences;
+
            		printf("****************************************************\n");
             		printf("Start Step5 (Copy pattern positions back to Host) ..\n");
             		printf("......no positions yet to transfer .............. ..\n");
@@ -517,6 +526,8 @@ int main(int argc, char *argv[])
                     		offs, items, pbuff, psize, method, step);
         		printf("dsize = %d - psize = %d \n", (int)dsize, (int)psize);
 			*/
+            		snap_print_search_results(&cjob, run);
+			
             		/* trigger repeat if search was not complete */
             		sjob_in.nb_of_occurrences = sjob_out.nb_of_occurrences;
                     	sjob_in.next_input_addr = sjob_out.next_input_addr;
@@ -531,7 +542,6 @@ int main(int argc, char *argv[])
                 		sjob_in.src_text1.addr = (unsigned long)input_addr;
                 		sjob_in.src_text1.size = input_size;
             		}
-            		total_found += sjob_out.nb_of_occurrences;
             		run++;
 
 
