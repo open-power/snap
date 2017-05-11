@@ -96,11 +96,11 @@ write_bitstream -force -file ./Images/$IMAGE_NAME  > $log_dir/write_bitstream.lo
 write_cfgmem    -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME  -size 128 -interface  BPIx16 -force >> $log_dir/write_bitstream.log
 
 if { $remove_tmp_files == "TRUE" } {
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "remove temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
   exec rm -rf ./Checkpoints/framework_synth.dcp
   exec rm -rf ./Checkpoints/framework_opt_design.dcp
   exec rm -rf ./Checkpoints/framework_place_design.dcp
-  exec rm -rf ./Checkpoints/framework_phys_opt_design.dc
+  exec rm -rf ./Checkpoints/framework_phys_opt_design.dcp
 }
 
 close_project >> $log_file
