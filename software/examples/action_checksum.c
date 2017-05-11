@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,16 +29,18 @@
 #include <action_checksum.h>
 #include <keccak.h>
 
-static int mmio_write32(void *_card, uint64_t offs, uint32_t data)
+static int mmio_write32(struct snap_card *card,
+			uint64_t offs, uint32_t data)
 {
-	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
+	act_trace("  %s(%p, %llx, %x)\n", __func__, card,
 		  (long long)offs, data);
 	return 0;
 }
 
-static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
+static int mmio_read32(struct snap_card *card,
+		       uint64_t offs, uint32_t *data)
 {
-	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
+	act_trace("  %s(%p, %llx, %x)\n", __func__, card,
 		  (long long)offs, *data);
 	return 0;
 }
@@ -187,7 +189,7 @@ static unsigned long do_crc(unsigned long crc, unsigned char *buf, int len)
 	return c ^ 0xffffffffL;
 }
 
-static int action_main(struct dnut_action *action, void *job,
+static int action_main(struct snap_sim_action *action, void *job,
 		       unsigned int job_len)
 {
 	struct checksum_job *js = (struct checksum_job *)job;
@@ -215,7 +217,7 @@ static int action_main(struct dnut_action *action, void *job,
 	}
 	case CHECKSUM_CRC32:
 		/* checking parameters ... */
-		if (js->in.type != DNUT_TARGET_TYPE_HOST_DRAM)
+		if (js->in.type != SNAP_ADDRTYPE_HOST_DRAM)
 			return 0;
 
 		src = (void *)js->in.addr;
@@ -231,16 +233,16 @@ static int action_main(struct dnut_action *action, void *job,
 		return 0;
 	}
 
-	action->job.retc = DNUT_RETC_SUCCESS;
+	action->job.retc = SNAP_RETC_SUCCESS;
 	return 0;
 }
 
-static struct dnut_action action = {
-	.vendor_id = DNUT_VENDOR_ID_ANY,
-	.device_id = DNUT_DEVICE_ID_ANY,
+static struct snap_sim_action action = {
+	.vendor_id = SNAP_VENDOR_ID_ANY,
+	.device_id = SNAP_DEVICE_ID_ANY,
 	.action_type = CHECKSUM_ACTION_TYPE,
 
-	.job = { .retc = DNUT_RETC_FAILURE, },
+	.job = { .retc = SNAP_RETC_FAILURE, },
 	.state = ACTION_IDLE,
 	.main = action_main,
 	.priv_data = NULL,	/* this is passed back as void *card */
@@ -254,5 +256,5 @@ static void _init(void) __attribute__((constructor));
 
 static void _init(void)
 {
-	dnut_action_register(&action);
+	snap_action_register(&action);
 }

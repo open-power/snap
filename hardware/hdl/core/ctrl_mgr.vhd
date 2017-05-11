@@ -23,7 +23,7 @@ USE ieee.std_logic_1164.all;
 USE ieee.std_logic_misc.all;
 USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
-USE work.donut_types.ALL;
+USE work.snap_core_types.ALL;
 
 ENTITY ctrl_mgr IS
   PORT (

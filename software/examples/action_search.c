@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,21 +28,23 @@
 #include <donut_internal.h>
 #include <action_search.h>
 
-static int mmio_write32(void *_card, uint64_t offs, uint32_t data)
+static int mmio_write32(struct snap_card *card,
+			uint64_t offs, uint32_t data)
 {
-	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
+	act_trace("  %s(%p, %llx, %x)\n", __func__, card,
 		  (long long)offs, data);
 	return 0;
 }
 
-static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
+static int mmio_read32(struct snap_card *card,
+		       uint64_t offs, uint32_t *data)
 {
-	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
+	act_trace("  %s(%p, %llx, %x)\n", __func__, card,
 		  (long long)offs, *data);
 	return 0;
 }
 
-static int action_main(struct dnut_action *action,
+static int action_main(struct snap_sim_action *action,
 		       void *job, unsigned int job_len)
 {
 	struct search_job *js = (struct search_job *)job;
@@ -84,18 +86,18 @@ static int action_main(struct dnut_action *action,
 
 	js->nb_of_occurrences = offs_used;
 	js->action_version = 0xC0FEBABEBABEBABEull;
-	action->job.retc = DNUT_RETC_SUCCESS;
+	action->job.retc = SNAP_RETC_SUCCESS;
 
 	act_trace("%s SEARCH DONE retc=%x\n", __func__, action->job.retc);
 	return 0;
 }
 
-static struct dnut_action action = {
-	.vendor_id = DNUT_VENDOR_ID_ANY,
-	.device_id = DNUT_DEVICE_ID_ANY,
+static struct snap_sim_action action = {
+	.vendor_id = SNAP_VENDOR_ID_ANY,
+	.device_id = SNAP_DEVICE_ID_ANY,
 	.action_type = SEARCH_ACTION_TYPE,
 
-	.job = { .retc = DNUT_RETC_FAILURE, },
+	.job = { .retc = SNAP_RETC_FAILURE, },
 	.state = ACTION_IDLE,
 	.main = action_main,
 	.priv_data = NULL,	/* this is passed back as void *card */
@@ -109,5 +111,5 @@ static void _init(void) __attribute__((constructor));
 
 static void _init(void)
 {
-	dnut_action_register(&action);
+	snap_action_register(&action);
 }

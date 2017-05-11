@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,21 +38,23 @@
 /* Name is defined by address and size */
 #define MEMORY_FILE "action_memory_%016llx_%016llx.bin"
 
-static int mmio_write32(void *_card, uint64_t offs, uint32_t data)
+static int mmio_write32(struct snap_card *card,
+			uint64_t offs, uint32_t data)
 {
-	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
+	act_trace("  %s(%p, %llx, %x)\n", __func__, card,
 		  (long long)offs, data);
 	return 0;
 }
 
-static int mmio_read32(void *_card, uint64_t offs, uint32_t *data)
+static int mmio_read32(struct snap_card *card,
+		       uint64_t offs, uint32_t *data)
 {
-	act_trace("  %s(%p, %llx, %x)\n", __func__, _card,
+	act_trace("  %s(%p, %llx, %x)\n", __func__, card,
 		  (long long)offs, *data);
 	return 0;
 }
 
-static int action_main(struct dnut_action *action,
+static int action_main(struct snap_sim_action *action,
 		       void *job, unsigned int job_len)
 {
 	int rc;
@@ -75,7 +77,7 @@ static int action_main(struct dnut_action *action,
 		goto out_err;
 	}
 	/* checking parameters ... */
-	if (js->in.type != DNUT_TARGET_TYPE_HOST_DRAM) {
+	if (js->in.type != SNAP_ADDRTYPE_HOST_DRAM) {
 		snprintf(ifname, sizeof(ifname), MEMORY_FILE,
 			 (long long)js->in.addr, (long long)js->in.size);
 
@@ -92,7 +94,7 @@ static int action_main(struct dnut_action *action,
 	} else
 		src = (void *)js->in.addr;
 
-	if (js->out.type != DNUT_TARGET_TYPE_HOST_DRAM) {
+	if (js->out.type != SNAP_ADDRTYPE_HOST_DRAM) {
 		snprintf(ofname, sizeof(ofname), MEMORY_FILE,
 			 (long long)js->out.addr, (long long)js->out.size);
 
@@ -107,22 +109,22 @@ static int action_main(struct dnut_action *action,
 		memcpy(dst, src, len);
 	}
  out_ok:
-	action->job.retc = DNUT_RETC_SUCCESS;
+	action->job.retc = SNAP_RETC_SUCCESS;
 	return 0;
 
  out_err:
 	__free(ibuf);
 	__free(obuf);
-	action->job.retc = DNUT_RETC_FAILURE;
+	action->job.retc = SNAP_RETC_FAILURE;
 	return 0;
 }
 
-static struct dnut_action action = {
-	.vendor_id = DNUT_VENDOR_ID_ANY,
-	.device_id = DNUT_DEVICE_ID_ANY,
+static struct snap_sim_action action = {
+	.vendor_id = SNAP_VENDOR_ID_ANY,
+	.device_id = SNAP_DEVICE_ID_ANY,
 	.action_type = MEMCOPY_ACTION_TYPE,
 
-	.job = { .retc = DNUT_RETC_FAILURE, },
+	.job = { .retc = SNAP_RETC_FAILURE, },
 	.state = ACTION_IDLE,
 	.main = action_main,
 	.priv_data = NULL,	/* this is passed back as void *card */
@@ -136,5 +138,5 @@ static void _init(void) __attribute__((constructor));
 
 static void _init(void)
 {
-	dnut_action_register(&action);
+	snap_action_register(&action);
 }

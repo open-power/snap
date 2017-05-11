@@ -25,7 +25,7 @@ USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
 
 USE work.psl_accel_types.ALL;
-USE work.donut_types.all;
+USE work.snap_core_types.all;
 
 ENTITY mmio IS
   GENERIC (
@@ -799,7 +799,7 @@ BEGIN
         context_stop_q                   <= (OTHERS => '0');
 
         IF (context_status_mmio_addr = jmm_d_i.context_id) AND (jmm_c_i.status_we = '1') THEN
-          context_stop_ack_q0 <= context_stop_ack_q0 AND jmm_d_i.context_active;
+          context_stop_ack_q0 <= context_stop_ack_q0 AND jmm_d_i.attached_to_action;
         ELSE
           context_stop_ack_q0 <= context_stop_ack_q0;
         END IF;

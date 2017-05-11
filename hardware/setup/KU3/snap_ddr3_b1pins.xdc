@@ -19,12 +19,6 @@
 ############################################################################
 
 
-# Get IOSTANDARD & OUTPUT_IMPEDANCE for BA pins, which are also
-# unidirectional and should therefore use the same values as the DM pins.
-set c1_dm_iostandard       [ get_property IOSTANDARD       [ get_ports "c1_ddr3_ba[0]" ] ]
-set c1_dm_output_impedance [ get_property OUTPUT_IMPEDANCE [ get_ports "c1_ddr3_ba[0]" ] ]
-
-
 ## Pad Function: IO_L13N_T2L_N1_GC_QBC_45
 set_property PACKAGE_PIN AH17 [ get_ports "c1_sys_clk_n" ]
 set_property IOSTANDARD {DIFF_HSTL_I} [ get_ports {c1_sys_clk_n} ]
@@ -39,18 +33,8 @@ set_property PACKAGE_PIN AD15 [ get_ports "c1_ddr3_dq[67]" ]
 ## Pad Function: IO_L24P_T3U_N10_45
 set_property PACKAGE_PIN AD16 [ get_ports "c1_ddr3_dq[66]" ]
 
-## Pad Function: IO_L19P_T3L_N0_DBC_AD9P_45
-set_property PACKAGE_PIN AD19 [ get_ports "c1_ddr3_dm[8]" ]
-set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[8]" ]
-set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[8]" ]
-
 ## Pad Function: IO_L3P_T0L_N4_AD15P_44
 set_property PACKAGE_PIN AD20 [ get_ports "c1_ddr3_dq[1]" ]
-
-## Pad Function: IO_L1P_T0L_N0_DBC_44
-set_property PACKAGE_PIN AD21 [ get_ports "c1_ddr3_dm[0]" ]
-set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[0]" ]
-set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[0]" ]
 
 ## Pad Function: IO_L22N_T3U_N7_DBC_AD0N_45
 set_property PACKAGE_PIN AE15 [ get_ports "c1_ddr3_dqs_n[8]" ]
@@ -72,11 +56,6 @@ set_property PACKAGE_PIN AE22 [ get_ports "c1_ddr3_dq[5]" ]
 
 ## Pad Function: IO_L5N_T0U_N9_AD14N_44
 set_property PACKAGE_PIN AE23 [ get_ports "c1_ddr3_dq[4]" ]
-
-## Pad Function: IO_L7P_T1L_N0_QBC_AD13P_44
-set_property PACKAGE_PIN AE25 [ get_ports "c1_ddr3_dm[1]" ]
-set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[1]" ]
-set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[1]" ]
 
 ## Pad Function: IO_L20N_T3L_N3_AD1N_45
 set_property PACKAGE_PIN AF14 [ get_ports "c1_ddr3_dq[64]" ]
@@ -144,11 +123,6 @@ set_property PACKAGE_PIN AH23 [ get_ports "c1_ddr3_dq[12]" ]
 ## Pad Function: IO_L10P_T1U_N6_QBC_AD4P_44
 set_property PACKAGE_PIN AH24 [ get_ports "c1_ddr3_dqs_p[1]" ]
 
-## Pad Function: IO_L1P_T0L_N0_DBC_46
-set_property PACKAGE_PIN AH26 [ get_ports "c1_ddr3_dm[4]" ]
-set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[4]" ]
-set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[4]" ]
-
 ## Pad Function: IO_L5P_T0U_N8_AD14P_46
 set_property PACKAGE_PIN AH27 [ get_ports "c1_ddr3_dq[39]" ]
 
@@ -176,11 +150,6 @@ set_property PACKAGE_PIN AJ19 [ get_ports "c1_ddr3_addr[7]" ]
 ## Pad Function: IO_L16P_T2U_N6_QBC_AD3P_44
 set_property PACKAGE_PIN AJ20 [ get_ports "c1_ddr3_dqs_p[2]" ]
 
-## Pad Function: IO_L13P_T2L_N0_GC_QBC_44
-set_property PACKAGE_PIN AJ21 [ get_ports "c1_ddr3_dm[2]" ]
-set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[2]" ]
-set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[2]" ]
-
 ## Pad Function: IO_L11P_T1U_N8_GC_44
 set_property PACKAGE_PIN AJ23 [ get_ports "c1_ddr3_dq[13]" ]
 
@@ -192,11 +161,6 @@ set_property PACKAGE_PIN AJ25 [ get_ports "c1_ddr3_dqs_n[1]" ]
 
 ## Pad Function: IO_L6P_T0U_N10_AD6P_46
 set_property PACKAGE_PIN AJ28 [ get_ports "c1_ddr3_dq[35]" ]
-
-## Pad Function: IO_L13P_T2L_N0_GC_QBC_46
-set_property PACKAGE_PIN AJ29 [ get_ports "c1_ddr3_dm[6]" ]
-set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[6]" ]
-set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[6]" ]
 
 ## Pad Function: IO_L15P_T2L_N4_AD11P_46
 set_property PACKAGE_PIN AJ30 [ get_ports "c1_ddr3_dq[50]" ]
@@ -297,11 +261,6 @@ set_property PACKAGE_PIN AL29 [ get_ports "c1_ddr3_dq[27]" ]
 ## Pad Function: IO_L12P_T1U_N10_GC_46
 set_property PACKAGE_PIN AL30 [ get_ports "c1_ddr3_dq[26]" ]
 
-## Pad Function: IO_L19P_T3L_N0_DBC_AD9P_46
-set_property PACKAGE_PIN AL32 [ get_ports "c1_ddr3_dm[7]" ]
-set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[7]" ]
-set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[7]" ]
-
 ## Pad Function: IO_L24P_T3U_N10_46
 set_property PACKAGE_PIN AL34 [ get_ports "c1_ddr3_dq[59]" ]
 
@@ -322,11 +281,6 @@ set_property PACKAGE_PIN AM19 [ get_ports "c1_ddr3_addr[15]" ]
 
 ## Pad Function: IO_L15N_T2L_N5_AD11N_44
 set_property PACKAGE_PIN AM20 [ get_ports "c1_ddr3_dq[19]" ]
-
-## Pad Function: IO_L19P_T3L_N0_DBC_AD9P_44
-set_property PACKAGE_PIN AM21 [ get_ports "c1_ddr3_dm[5]" ]
-set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[5]" ]
-set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[5]" ]
 
 ## Pad Function: IO_L20P_T3L_N2_AD1P_44
 set_property PACKAGE_PIN AM22 [ get_ports "c1_ddr3_dq[45]" ]
@@ -381,11 +335,6 @@ set_property PACKAGE_PIN AN23 [ get_ports "c1_ddr3_dq[40]" ]
 
 ## Pad Function: IO_L21N_T3L_N5_AD8N_44
 set_property PACKAGE_PIN AN24 [ get_ports "c1_ddr3_dq[42]" ]
-
-## Pad Function: IO_L7P_T1L_N0_QBC_AD13P_46
-set_property PACKAGE_PIN AN26 [ get_ports "c1_ddr3_dm[3]" ]
-set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[3]" ]
-set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[3]" ]
 
 ## Pad Function: IO_L9P_T1L_N4_AD12P_46
 set_property PACKAGE_PIN AN27 [ get_ports "c1_ddr3_dq[28]" ]
@@ -446,3 +395,54 @@ set_property PACKAGE_PIN AP33 [ get_ports "c1_ddr3_dq[58]" ]
 
 ## Pad Function: IO_L22N_T3U_N7_DBC_AD0N_46
 set_property PACKAGE_PIN AP34 [ get_ports "c1_ddr3_dqs_n[7]" ]
+
+# Get IOSTANDARD & OUTPUT_IMPEDANCE for BA pins, which are also
+# unidirectional and should therefore use the same values as the DM pins.
+set c1_dm_iostandard       [ get_property IOSTANDARD       [ get_ports "c1_ddr3_ba[0]" ] ]
+set c1_dm_output_impedance [ get_property OUTPUT_IMPEDANCE [ get_ports "c1_ddr3_ba[0]" ] ]
+
+## Pad Function: IO_L19P_T3L_N0_DBC_AD9P_45
+set_property PACKAGE_PIN AD19 [ get_ports "c1_ddr3_dm[8]" ]
+set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[8]" ]
+set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[8]" ]
+
+## Pad Function: IO_L1P_T0L_N0_DBC_44
+set_property PACKAGE_PIN AD21 [ get_ports "c1_ddr3_dm[0]" ]
+set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[0]" ]
+set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[0]" ]
+
+## Pad Function: IO_L7P_T1L_N0_QBC_AD13P_44
+set_property PACKAGE_PIN AE25 [ get_ports "c1_ddr3_dm[1]" ]
+set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[1]" ]
+set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[1]" ]
+
+## Pad Function: IO_L1P_T0L_N0_DBC_46
+set_property PACKAGE_PIN AH26 [ get_ports "c1_ddr3_dm[4]" ]
+set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[4]" ]
+set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[4]" ]
+
+## Pad Function: IO_L13P_T2L_N0_GC_QBC_46
+set_property PACKAGE_PIN AJ29 [ get_ports "c1_ddr3_dm[6]" ]
+set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[6]" ]
+set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[6]" ]
+
+## Pad Function: IO_L19P_T3L_N0_DBC_AD9P_44
+set_property PACKAGE_PIN AM21 [ get_ports "c1_ddr3_dm[5]" ]
+set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[5]" ]
+set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[5]" ]
+
+## Pad Function: IO_L7P_T1L_N0_QBC_AD13P_46
+set_property PACKAGE_PIN AN26 [ get_ports "c1_ddr3_dm[3]" ]
+set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[3]" ]
+set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[3]" ]
+
+## Pad Function: IO_L13P_T2L_N0_GC_QBC_44
+set_property PACKAGE_PIN AJ21 [ get_ports "c1_ddr3_dm[2]" ]
+set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[2]" ]
+set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[2]" ]
+
+## Pad Function: IO_L19P_T3L_N0_DBC_AD9P_46
+set_property PACKAGE_PIN AL32 [ get_ports "c1_ddr3_dm[7]" ]
+set_property IOSTANDARD $c1_dm_iostandard [ get_ports "c1_ddr3_dm[7]" ]
+set_property OUTPUT_IMPEDANCE $c1_dm_output_impedance [ get_ports "c1_ddr3_dm[7]" ]
+
