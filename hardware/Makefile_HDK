@@ -22,6 +22,7 @@ export BUILD_NAME=HDK_build
 export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
 export DONUT_HDL_CORE=$(DONUT_HARDWARE_ROOT)/hdl/core
 export DONUT_SIM_CORE=$(DONUT_HARDWARE_ROOT)/sim/core
+export LOGS_DIR=$(DONUT_HARDWARE_ROOT)/logs
 
 SNAP_CONFIG_FILES=$(DONUT_HDL_CORE)/psl_fpga.vhd \
 		  $(DONUT_HDL_CORE)/psl_accel.vhd \
@@ -43,6 +44,7 @@ create_environment:
 
 copy $(BUILD_DIR)/psl_fpga.tcl:
 	@echo -e "\t[COPY] psl build env"; cp -a $(HDK_ROOT) $(BUILD_DIR)
+	@ mkdir logs
 	@echo -e "\t[CONFIG] setup psl_fpga.tcl"
 	@sed -i 's/run.oocSynth.*1/run.oocSynth 0/' $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.oocImpl.*1/run.oocImpl 0/'   $(BUILD_DIR)/psl_fpga.tcl
@@ -70,10 +72,10 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@cat $(BUILD_DIR)/Sources/prj/top.prj $(BUILD_DIR)/Sources/prj/afu.prj > $(BUILD_DIR)/Sources/prj/psl_fpga.prj
 
 %.vhd: %.vhd_source
-	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+	@$(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 %.sv: %.sv_source
-	@echo "Creating $@"; $(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+	@$(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 action_config: $(ACTION_ROOT)
 	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \

@@ -165,12 +165,12 @@
      rm -rf sim/xsim
      rm -rf sim/questa
    fi
-   if [ ! -d ${DONUT_HARDWARE_ROOT}/sim/ies ];then
+   if [ ! -d ${DONUT_HARDWARE_ROOT}/sim/ies ];then 
      cd ${DONUT_HARDWARE_ROOT}/setup; echo "run Vivado setup scripts"
-     vivado -mode batch -source create_ip.tcl -notrace
+     vivado -mode batch -source create_ip.tcl -notrace -log ${DONUT_HARDWARE_ROOT}/logs/create_ip.log
      if [[ $? != 0 ]];then echo "error in create_ip.tcl";exit -1;fi
 
-     vivado -mode batch -source create_framework.tcl -notrace
+     vivado -mode batch -source create_framework.tcl -notrace -log ${DONUT_HARDWARE_ROOT}/logs/create_framework.log
      if [[ $? != 0 ]];then echo "error in create_framework.tcl";exit -1;fi
 
      vivado -mode batch -source export_xsim.tcl -notrace

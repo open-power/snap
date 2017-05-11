@@ -59,6 +59,8 @@ grep -v "$FPGA_FILTER" $1 | grep -v "$DDRI_FILTER" |  grep -v "$DDR3_FILTER" | g
 
 NAME=`basename $2`
 
+echo -e "\t                        generating $NAME"
+
 if ([ "$NAME" == "snap_core_types.vhd" ]); then
   sed -i 's/CONSTANT NUM_OF_ACTIONS[ ^I]*:[ ^I]*integer.*:=[ ^I]*[0-9]*/CONSTANT NUM_OF_ACTIONS                  : integer := '$NUM_OF_ACTIONS'/' $2
 fi
