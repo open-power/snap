@@ -126,7 +126,7 @@ update_compile_order -fileset sim_1 >> $log_file
 
 # Add IPs
 # Donut IPs
-puts "	                        import IPs"
+puts "	                        importing IPs"
 add_files -norecurse $root_dir/ip/ram_520x64_2p/ram_520x64_2p.xci >> $log_file
 export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_520x64_2p/ram_520x64_2p.xci"] -force >> $log_file
 add_files -norecurse $root_dir/ip/ram_584x64_2p/ram_584x64_2p.xci >> $log_file
@@ -198,12 +198,12 @@ if { $nvme_used == TRUE } {
 }
 
 # Add PSL
-puts "	                        import PSL design checkpoint"
+puts "	                        importing PSL design checkpoint"
 read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict >> $log_file
 
 # XDC
 # Donut XDC
-puts "	                        import XDCs"
+puts "	                        importing XDCs"
 add_files -fileset constrs_1 -norecurse $root_dir/setup/donut_link.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/donut_link.xdc]
 update_compile_order -fileset sources_1 >> $log_file
