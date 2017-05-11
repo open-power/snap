@@ -135,6 +135,12 @@ unsigned int run_sw_search(unsigned int Method,
         return (unsigned int) count;
 }
 
+static void __trace_addr(const char *name, struct snap_addr *a)
+{
+	act_trace("  %-12s: %012llx %08x %04x %04x\n",
+		  name, (long long)a->addr, a->size, a->type, a->flags);
+}
+
 static int action_main(struct snap_sim_action *action,
 		       void *job, unsigned int job_len)
 {
@@ -144,7 +150,15 @@ static int action_main(struct snap_sim_action *action,
 	uint64_t *offs;
 
 	act_trace("%s(%p, %p, %d) SEARCH\n", __func__, action, job, job_len);
-	memset((uint8_t *)js->src_result.addr, 0, js->src_result.size);
+	__trace_addr("src_text1",   &js->src_text1);
+	__trace_addr("src_pattern", &js->src_pattern);
+	__trace_addr("ddr_text1",   &js->ddr_text1);
+	__trace_addr("src_result",  &js->src_result);
+	__trace_addr("ddr_result",  &js->ddr_result);
+
+	if (js->src_result.addr != 0 && js->src_result.type == SNAP_ADDRTYPE_HOST_DRAM)
+		memset((uint8_t *)js->src_result.addr, 0, js->src_result.size);
+
 
 	offs = (uint64_t *)(unsigned long)js->src_result.addr;
 	offs_max = js->src_result.size / sizeof(uint64_t);

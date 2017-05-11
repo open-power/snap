@@ -93,6 +93,7 @@ static void snap_prepare_search(struct snap_job *cjob,
 				const int method, const int step)
 {
     uint64_t ddr_addr;
+
     if (step == 1)
     {
         // Step1 will copy src_text1 to ddr_text1
@@ -151,13 +152,13 @@ static void snap_prepare_search(struct snap_job *cjob,
 		      SNAP_ADDRTYPE_CARD_DRAM,
 		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC |
 		      SNAP_ADDRFLAG_END);
-
-        // result moved to Host
-	snap_addr_set(&sjob_in->src_result, offs, items * sizeof(*offs), 
-		      SNAP_ADDRTYPE_HOST_DRAM,
-		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST);
     } 
 
+    // result moved to Host
+    snap_addr_set(&sjob_in->src_result, offs, items * sizeof(*offs), 
+		  SNAP_ADDRTYPE_HOST_DRAM,
+		  SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST);
+   
     sjob_in->nb_of_occurrences = 0;
     sjob_in->next_input_addr = 0;
     sjob_in->step = step;
@@ -434,8 +435,11 @@ int main(int argc, char *argv[])
    	printf("**************************************************************\n");
  	step = 1;
 
-	snap_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
-		    offs, items, pbuff, psize, method, step);
+	snap_prepare_search(&cjob, &sjob_in, &sjob_out,
+			    dbuff, dsize,
+			    offs, items,
+			    pbuff, psize,
+			    method, step);
 
         printf("dsize = %d - psize = %d \n", (int)dsize, (int)psize);
        	rc = run_one_step(action, &cjob, timeout, step);
@@ -448,8 +452,11 @@ int main(int argc, char *argv[])
        		printf("Start Step2 (Copy source data from DDR to Host) .........\n");
        		printf("*********************************************************\n");
  	 	step = 2;
-        	snap_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
-                       	offs, items, pbuff, psize, method, step);
+        	snap_prepare_search(&cjob, &sjob_in, &sjob_out,
+				    dbuff, dsize,
+				    offs, items,
+				    pbuff, psize,
+				    method, step);
 	
         	printf("dsize = %d - psize = %d \n", (int)dsize, (int)psize);
        		rc |= run_one_step(action, &cjob, timeout, step);
@@ -493,8 +500,11 @@ int main(int argc, char *argv[])
             		printf("***************************************************\n");
 			step = 3;
 
-            		snap_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
-                   		offs, items, pbuff, psize, method, step);
+            		snap_prepare_search(&cjob, &sjob_in, &sjob_out,
+					    dbuff, dsize,
+					    offs, items,
+					    pbuff, psize,
+					    method, step);
         		printf("dsize = %d - psize = %d \n", (int)dsize, (int)psize);
 
             		rc |= run_one_step(action, &cjob, timeout, step);
