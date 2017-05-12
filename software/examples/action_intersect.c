@@ -1,5 +1,37 @@
 /*
- * Copyright 2016, 2017, International Business Machines
+ * Example to use the FPGA to do an intersection on two data tables.
+ *
+ * Two methods:
+ * 1) Hash one source table, and then do intersection
+ *  See the introductions of Hash function:
+ *        https://en.wikipedia.org/wiki/Hash_function
+ *  And Hash table:
+ *        https://en.wikipedia.org/wiki/Hash_table
+ *
+ * 2) Sort both source tables, and then do intersection
+ *  Use C build in library qsort  (quick sort)
+ * 
+ * Wikipedia's pages are based on "CC BY-SA 3.0"
+ * Creative Commons Attribution-ShareAlike License 3.0
+ * https://creativecommons.org/licenses/by-sa/3.0/
+ *
+ * Attribution: 
+ * You must give appropriate credit, provide a link to 
+ * the license, and indicate if changes were made. You may do so in
+ * any reasonable manner, but not in any way that suggests the
+ * licensor endorses you or your use.
+ *
+ * ShareAlike: 
+ * If you remix, transform, or build upon the material, you must
+ * distribute your contributions under the same license as the original.
+ */
+
+ /*
+ * Adopt SNAP's framework for software action part.
+ */
+
+/*
+ * Copyright 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +46,6 @@
  * limitations under the License.
  */
 
-/*
- * Example to use the FPGA to do an intersec on two data sets.
- */
 
 #include <stdio.h>
 #include <stdlib.h>

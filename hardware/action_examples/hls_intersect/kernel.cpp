@@ -1,4 +1,39 @@
 /*
+ * Simple Table Intersection in C 
+ * Two methods:
+ * 1) Hash one source table, and then do intersection
+ *  See the introductions of Hash function:
+ *        https://en.wikipedia.org/wiki/Hash_function
+ *  And Hash table:
+ *        https://en.wikipedia.org/wiki/Hash_table
+ *
+ * 2) Sort both source tables, and then do intersection
+ *  Use bubble_sort and bottom-up merge sort
+ *      https://en.wikipedia.org/wiki/Bubble_sort
+ *      https://en.wikipedia.org/wiki/Merge_sort
+ * 
+ * Wikipedia's pages are based on "CC BY-SA 3.0"
+ * Creative Commons Attribution-ShareAlike License 3.0
+ * https://creativecommons.org/licenses/by-sa/3.0/
+ *
+ * Attribution: 
+ * You must give appropriate credit, provide a link to 
+ * the license, and indicate if changes were made. You may do so in
+ * any reasonable manner, but not in any way that suggests the
+ * licensor endorses you or your use.
+ *
+ * ShareAlike: 
+ * If you remix, transform, or build upon the material, you must
+ * distribute your contributions under the same license as the original.
+ */
+
+
+ /*
+ * Adopt SNAP's framework for FPGA hardware action part.
+ * Fit for Xilinx HLS compiling constraints.
+ */
+
+/*
  * Copyright 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
