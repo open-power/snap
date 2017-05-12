@@ -281,7 +281,6 @@ int main(int argc, char *argv[])
     const char *output = NULL;
 
     while (1) {
-<<<<<<< HEAD
         int option_index = 0;
         static struct option long_options[] = {
             { "card",	 required_argument, NULL, 'C' },
