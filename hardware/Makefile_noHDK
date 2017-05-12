@@ -110,16 +110,16 @@ copy_denali:
 image:  snap_config patch_version
 	@echo -e "\t[BUILD IMAGE.........] start `date`"
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source noHDK_build.tcl -notrace -log $(LOGS_DIR)/noHDK_build.log  -journal $(LOGS_DIR)/noHDKbuild.jou
-	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/framework_timing_summary.rpt | egrep -v "^$|^\-\-"
 	@rm -r -f .bitstream_name.txt
 	@echo -e "\t[BUILD IMAGE.........] done  `date`"
+#	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/timing_summary.rpt | egrep -v "^$|^\-\-"
 
 xpr_image: snap_config patch_version
 	@echo -e "\t[BUILD XPR IMAGE.....] start `date`"
 	@cd $(BUILD_DIR) && vivado quiet -mode batch -source fw_xpr_build.tcl -notrace -log $(LOGS_DIR)/fw_xpr_build.log  -journal $(LOGS_DIR)/fw_xpr_build.jou
-	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/framework_timing_summary_routed.rpt | egrep -v "^$|^\-\-"
-	@rm -r -f .bitstream_name.txt
 	@echo -e "\t[BUILD XPR IMAGE....] done  `date`"
+	@rm -r -f .bitstream_name.txt
+#	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/timing_summary_routed.rpt | egrep -v "^$|^\-\-"
 
 model: pslse software snap_config patch_version $(SIMULATOR)
 

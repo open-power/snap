@@ -37,45 +37,105 @@ set widthCol3 35
 set widthCol4 22
 
 
+## 
+## open snap project
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "open framework project" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
 open_project ../viv_project/framework.xpr >> $log_file
  
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-synth_design       -mode default -flatten_hierarchy none -fanout_limit 400 -fsm_extraction one_hot -keep_equivalent_registers -resource_sharing off -no_lc -shreg_min_size 5 -no_iobuf -top psl_fpga > $log_dir/synthese.log
-write_checkpoint    -force ./Checkpoints/framework_synth.dcp          >> $log_dir/synthese.log
-report_utilization  -file  ./Reports/framework_utilization_synth.rpt -quiet
+
+## 
+## synthesis project
+set step      synth_design
+set logfile   $log_dir/${step}.log
+set directive [get_property STEPS.SYNTH_DESIGN.ARGS.DIRECTIVE [get_runs synth_1]]
+set command   "synth_design -mode default -directive $directive"
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+
+if { [catch "$command > $logfile" errMsg] } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: synthesis failed" $widthCol4 "" ]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
+
+  if { ![catch {current_instance}] } {
+      write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
+    exit 42
+  }
+} else {
+  write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
+  report_utilization -file  ./Reports/${step}_utilization.rpt -quiet
+}
  
+## 
+## locking PSL
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
 lock_design -level routing b > $log_dir/lock_design.log
  
+## 
+## optimizing design
 set directive [get_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start opt_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-opt_design       -directive $directive                          > $log_dir/opt_design.log
-write_checkpoint -force ./Checkpoints/framework_opt_design.dcp  >> $log_dir/opt_design.log
+opt_design       -directive $directive                 > $log_dir/opt_design.log
+write_checkpoint -force ./Checkpoints/opt_design.dcp  >> $log_dir/opt_design.log
  
+## 
+## placing design
+set step      place_design
+set logfile   $log_dir/${step}.log
 set directive [get_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+set command   "place_design -directive $directive"
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start place_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-place_design     -directive $directive                           > $log_dir/place_design.log
-write_checkpoint -force ./Checkpoints/framework_place_design.dcp >> $log_dir/place_design.log
- 
-set directive [get_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start phys_opt_desig" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-phys_opt_design  -directive $directive                              > $log_dir/phys_opt_design.log
-write_checkpoint -force ./Checkpoints/framework_phys_opt_design.dcp >> $log_dir/phys_opt_design.log
- 
-set directive [get_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start route_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-route_design     -directive $directive                           > $log_dir/route_design.log
-write_checkpoint -force ./Checkpoints/framework_route_design.dcp >> $log_dir/route_design.log
- 
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating reports" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-report_utilization    -quiet -file  ./Reports/framework_utilization_route_design.rpt
-report_route_status   -quiet -file  ./Reports/framework_route_status.rpt
-report_timing_summary -quiet -max_paths 100 -file ./Reports/framework_timing_summary.rpt
-report_drc            -quiet -ruledeck bitstream_checks -name psl_fpga -file ./Reports/framework_drc_bitstream_checks.rpt
 
-# Extract timing information, change ns to ps, remove leading 0's in number to avoid treatment as octal.
-set TIMING_TNS [exec grep -A6 "Design Timing Summary" ./Reports/framework_timing_summary.rpt | tail -n 1 | tr -s " " | cut -d " " -f 2 | tr -d "." | sed {s/^\(\-*\)0*\([0-9]*\)/\1\2/}]
+if { [catch "$command > $logfile" errMsg] } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: place_design failed" $widthCol4 "" ]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
+
+  if { ![catch {current_instance}] } {
+      write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
+    exit 42
+  }
+} else {
+  write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
+}
+
+ 
+## 
+## physical optimizing design
+set directive [get_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start phys_opt_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+phys_opt_design  -directive $directive                     > $log_dir/phys_opt_design.log
+write_checkpoint -force ./Checkpoints/phys_opt_design.dcp >> $log_dir/phys_opt_design.log
+ 
+## 
+## routing design
+set step      route_design
+set logfile   $log_dir/${step}.log
+set directive [get_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+set command   "route_design -directive $directive" 
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start route_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+
+if { [catch "$command > $logfile" errMsg] } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: route_design failed" $widthCol4 "" ]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
+
+  if { ![catch {current_instance}] } {
+      write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
+    exit 42
+  }
+} else {
+  write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
+}
+
+## 
+## generating reports
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating reports" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+report_utilization    -quiet -file  ./Reports/utilization_route_design.rpt
+report_route_status   -quiet -file  ./Reports/route_status.rpt
+report_timing_summary -quiet -max_paths 100 -file ./Reports/timing_summary.rpt
+report_drc            -quiet -ruledeck bitstream_checks -name psl_fpga -file ./Reports/drc_bitstream_checks.rpt
+
+## 
+## checking timing
+## Extract timing information, change ns to ps, remove leading 0's in number to avoid treatment as octal.
+set TIMING_TNS [exec grep -A6 "Design Timing Summary" ./Reports/timing_summary.rpt | tail -n 1 | tr -s " " | cut -d " " -f 2 | tr -d "." | sed {s/^\(\-*\)0*\([0-9]*\)/\1\2/}]
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Timing (TNS)" $widthCol3 "$TIMING_TNS ps" $widthCol4 "" ]
 if { [expr $TIMING_TNS >= 0 ] } {
     puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "TIMING OK" $widthCol4 "" ]
@@ -87,7 +147,9 @@ if { [expr $TIMING_TNS >= 0 ] } {
     puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "WARNING: TIMING FAILED, but may be OK for lab use" $widthCol4 "" ]
     set remove_tmp_files TRUE
 }
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+
+## 
+## generating bitstream name
 set IMAGE_NAME [exec cat ../.bitstream_name.txt]
 append IMAGE_NAME [expr {$nvme_used == "TRUE" ? "_NVME" : ""}]
 if { $bram_used == "TRUE" } {
@@ -99,15 +161,29 @@ if { $bram_used == "TRUE" } {
 }
 append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_TNS]
  
-write_bitstream -force -file ./Images/$IMAGE_NAME  > $log_dir/write_bitstream.log
-write_cfgmem    -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME  -size 128 -interface  BPIx16 -force >> $log_dir/write_bitstream.log
+## 
+## writing bitstream
+set step     write_bitstream
+set logfile  $log_dir/${step}.log
+set command  "write_bitstream -force -file ./Images/$IMAGE_NAME"  
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
 
+if { [catch "$command > $logfile" errMsg] } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: write_bitstream failed" $widthCol4 "" ]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
+
+} else {
+  write_cfgmem    -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME  -size 128 -interface  BPIx16 -force >> $logfile
+}
+
+## 
+## removing unnecessary files
 if { $remove_tmp_files == "TRUE" } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-  exec rm -rf ./Checkpoints/framework_synth.dcp
-  exec rm -rf ./Checkpoints/framework_opt_design.dcp
-  exec rm -rf ./Checkpoints/framework_place_design.dcp
-  exec rm -rf ./Checkpoints/framework_phys_opt_design.dcp
+  exec rm -rf ./Checkpoints/synth.dcp
+  exec rm -rf ./Checkpoints/opt_design.dcp
+  exec rm -rf ./Checkpoints/place_design.dcp
+  exec rm -rf ./Checkpoints/phys_opt_design.dcp
 }
 
 close_project >> $log_file
