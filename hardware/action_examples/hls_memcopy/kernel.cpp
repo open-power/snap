@@ -194,6 +194,21 @@ void hls_action(snap_membus_t *din_gmem,
 
 #ifdef NO_SYNTH
 
+typedef char word_t[BPERDW];
+// Cast a char* word (64B) to a word for output port (512b)
+static snap_membus_t word_to_mbus(word_t text)
+{
+        snap_membus_t mem = 0;
+
+ loop_word_to_mbus:
+        for (char k = sizeof(word_t)-1; k >= 0; k--) {
+#pragma HLS PIPELINE
+                mem = mem << 8;
+                mem(7, 0) = text[k];
+        }
+        return mem;
+}
+
 int main(void)
 {
     int rc = 0;
@@ -214,6 +229,36 @@ int main(void)
 	    (unsigned int)Action_Config.action_type,
 	    (unsigned int)Action_Config.release_level,
 	    (unsigned int)Action_Register.Control.Retc);
+
+    char word_tmp[BPERDW];
+    FILE *fp;
+
+    int c;
+    int k=0, m=0;
+
+    // read data for text
+    fp = fopen("demo_search123.txt", "r");
+    if (fp) {
+        while((c = getc(fp)) != EOF) {
+                word_tmp[k] = c;
+                k++;
+                if(k == BPERDW) {
+                        din_gmem[m] = (snap_membus_t) word_to_mbus(word_tmp);
+                        if (m < MAX_NB_OF_WORDS_READ)
+                                m++;
+                        else
+                                break;
+                        k=0;
+                }
+        }
+        if(k != BPERDW) // flush
+        {
+                din_gmem[m] = (snap_membus_t) word_to_mbus(word_tmp);
+        }
+        if(ferror(fp)) return 1;
+    }
+    fclose(fp);
+
     
     Action_Register.Control.flags = 0x1; /* just not 0x0 */
     Action_Register.Data.in.address = 0x0;

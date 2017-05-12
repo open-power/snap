@@ -25,12 +25,13 @@ set ip_dir       $root_dir/ip
 set sdram_used   $::env(SDRAM_USED)
 set bram_used    $::env(BRAM_USED)
 set nvme_used    $::env(NVME_USED)
-set msg_level    $::env(MSG_LEVEL)
+set log_dir      $::env(LOGS_DIR)
+set log_file     $log_dir/create_ip.log
 
 ## Create a new Vivado IP Project
-puts "	\[CREATE_IPs........\] start"
+puts "	\[CREATE_IPs..........\] start"
 exec rm -rf $ip_dir
-create_project managed_ip_project $ip_dir/managed_ip_project -part $fpga_part -ip $msg_level
+create_project managed_ip_project $ip_dir/managed_ip_project -part $fpga_part -ip  >> $log_file
 
 # Project IP Settings
 # General
@@ -38,8 +39,8 @@ set_property target_language VHDL [current_project]
 set_property target_simulator IES [current_project]
 
 #create ram_520x64_2p  
-puts "	                      generating IP ram_520x64_2p"
-create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name ram_520x64_2p -dir $ip_dir $msg_level
+puts "	                        generating IP ram_520x64_2p"
+create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name ram_520x64_2p -dir $ip_dir  >> $log_file
 set_property -dict [list                                                         \
                     CONFIG.Memory_Type {Simple_Dual_Port_RAM} 		         \
                     CONFIG.Assume_Synchronous_Clk {true} 		         \
@@ -58,14 +59,14 @@ set_property -dict [list                                                        
                     CONFIG.Port_B_Enable_Rate {100}				 \
                    ] [get_ips ram_520x64_2p]
 set_property generate_synth_checkpoint false [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci] 
-generate_target {instantiation_template}     [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci] $msg_level
-generate_target all                          [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci] $msg_level
-export_ip_user_files -of_objects             [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci] -no_script -force $msg_level
-export_simulation -of_objects [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
+generate_target {instantiation_template}     [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci]  >> $log_file
+generate_target all                          [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci]  >> $log_file
+export_ip_user_files -of_objects             [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci] -no_script -force >> $log_file
+export_simulation -of_objects [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create ram_584x64_2p  
-puts "	                      generating IP ram_584x64_2p"
-create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name ram_584x64_2p -dir $ip_dir $msg_level
+puts "	                        generating IP ram_584x64_2p"
+create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name ram_584x64_2p -dir $ip_dir >> $log_file
 set_property -dict [list                                                            \
                     CONFIG.Memory_Type {Simple_Dual_Port_RAM} 		            \
                     CONFIG.Assume_Synchronous_Clk {true} 			    \
@@ -83,14 +84,14 @@ set_property -dict [list                                                        
                     CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}       \
                    ] [get_ips ram_584x64_2p]
 set_property generate_synth_checkpoint false [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci]
-generate_target {instantiation_template}     [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] $msg_level
-generate_target all                          [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] $msg_level
-export_ip_user_files -of_objects             [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] -no_script -force $msg_level
-export_simulation -of_objects [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
+generate_target {instantiation_template}     [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] >> $log_file
+generate_target all                          [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] >> $log_file
+export_ip_user_files -of_objects             [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] -no_script -force >> $log_file
+export_simulation -of_objects [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create fifo_513x512
-puts "	                      generating IP fifo_513x512"
-create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_513x512 -dir $ip_dir $msg_level
+puts "	                        generating IP fifo_513x512"
+create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_513x512 -dir $ip_dir >> $log_file
 set_property -dict [list                                                                              \
                     CONFIG.Performance_Options {First_Word_Fall_Through} 			      \
                     CONFIG.Input_Data_Width {513} 						      \
@@ -107,14 +108,14 @@ set_property -dict [list                                                        
                     CONFIG.Empty_Threshold_Negate_Value {5}					      \
                    ] [get_ips fifo_513x512]
 set_property generate_synth_checkpoint false [get_files $ip_dir/fifo_513x512/fifo_513x512.xci]
-generate_target {instantiation_template}     [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] $msg_level
-generate_target all                          [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] $msg_level
-export_ip_user_files -of_objects             [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] -no_script -force $msg_level
-export_simulation -of_objects [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
+generate_target {instantiation_template}     [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] >> $log_file
+generate_target all                          [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] >> $log_file
+export_ip_user_files -of_objects             [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] -no_script -force >> $log_file
+export_simulation -of_objects [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create fifo_10x512
-puts "	                      generating IP fifo_10x512"
-create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_10x512 -dir $ip_dir $msg_level
+puts "	                        generating IP fifo_10x512"
+create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_10x512 -dir $ip_dir >> $log_file
 set_property -dict [list                                          \
                     CONFIG.Input_Data_Width {10} 		  \
                     CONFIG.Input_Depth {512} 			  \
@@ -128,14 +129,14 @@ set_property -dict [list                                          \
                    ] [get_ips fifo_10x512]
 
 set_property generate_synth_checkpoint false [get_files $ip_dir/fifo_10x512/fifo_10x512.xci]
-generate_target {instantiation_template}     [get_files $ip_dir/fifo_10x512/fifo_10x512.xci] $msg_level
-generate_target all                          [get_files $ip_dir/fifo_10x512/fifo_10x512.xci] $msg_level
-export_ip_user_files -of_objects             [get_files $ip_dir/fifo_10x512/fifo_10x512.xci] -no_script -force $msg_level
-export_simulation -of_objects [get_files $ip_dir/fifo_10x512/fifo_10x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
+generate_target {instantiation_template}     [get_files $ip_dir/fifo_10x512/fifo_10x512.xci] >> $log_file
+generate_target all                          [get_files $ip_dir/fifo_10x512/fifo_10x512.xci] >> $log_file
+export_ip_user_files -of_objects             [get_files $ip_dir/fifo_10x512/fifo_10x512.xci] -no_script -force >> $log_file
+export_simulation -of_objects [get_files $ip_dir/fifo_10x512/fifo_10x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create fifo_8x512
-puts "	                      generating IP fifo_8x512"
-create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_8x512 -dir $ip_dir $msg_level
+puts "	                        generating IP fifo_8x512"
+create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_8x512 -dir $ip_dir >> $log_file
 set_property -dict [list                                         \
                     CONFIG.Input_Data_Width {8} 		 \
                     CONFIG.Input_Depth {512} 		         \
@@ -148,14 +149,14 @@ set_property -dict [list                                         \
                     CONFIG.Full_Threshold_Negate_Value {510}     \
                    ] [get_ips fifo_8x512]
 set_property generate_synth_checkpoint false [get_files $ip_dir/fifo_8x512/fifo_8x512.xci]
-generate_target {instantiation_template}     [get_files $ip_dir/fifo_8x512/fifo_8x512.xci] $msg_level
-generate_target all                          [get_files $ip_dir/fifo_8x512/fifo_8x512.xci] $msg_level
-export_ip_user_files -of_objects             [get_files $ip_dir/fifo_8x512/fifo_8x512.xci] -no_script -force $msg_level
-export_simulation -of_objects [get_files $ip_dir/fifo_8x512/fifo_8x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
+generate_target {instantiation_template}     [get_files $ip_dir/fifo_8x512/fifo_8x512.xci] >> $log_file
+generate_target all                          [get_files $ip_dir/fifo_8x512/fifo_8x512.xci] >> $log_file
+export_ip_user_files -of_objects             [get_files $ip_dir/fifo_8x512/fifo_8x512.xci] -no_script -force >> $log_file
+export_simulation -of_objects [get_files $ip_dir/fifo_8x512/fifo_8x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create fifo_4x512 (depth of 16 would be sufficient but, 512 is the smallest possible depth) 
-puts "	                      generating IP fifo_4x512"
-create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_4x512 -dir $ip_dir $msg_level
+puts "	                        generating IP fifo_4x512"
+create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_4x512 -dir $ip_dir >> $log_file
 set_property -dict [list                                        \
                     CONFIG.Input_Data_Width {4} 		\
                     CONFIG.Input_Depth {512} 		        \
@@ -168,10 +169,10 @@ set_property -dict [list                                        \
                     CONFIG.Full_Threshold_Negate_Value {510}    \
                    ] [get_ips fifo_4x512]
 set_property generate_synth_checkpoint false [get_files $ip_dir/fifo_4x512/fifo_4x512.xci]
-generate_target {instantiation_template}     [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] $msg_level
-generate_target all                          [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] $msg_level
-export_ip_user_files -of_objects             [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] -no_script -force $msg_level
-export_simulation -of_objects [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level  
+generate_target {instantiation_template}     [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] >> $log_file
+generate_target all                          [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] >> $log_file
+export_ip_user_files -of_objects             [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] -no_script -force >> $log_file
+export_simulation -of_objects [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file  
 
 #choose type of RAM that will be connected to the DDR AXI Interface
 # BRAM_USED=TRUE  500KB BRAM
@@ -211,8 +212,8 @@ if { $fpga_card == "KU3" } {
 
 #create clock converter 
 if { $create_clock_conv == "TRUE" } {
-  puts "	                      generating IP axi_clock_converter"
-  create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir  $msg_level
+  puts "	                        generating IP axi_clock_converter"
+  create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir  >> $log_file
 
   if { ($sdram_used == "TRUE") && ( $fpga_card == "KU3" ) } {
     set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]
@@ -220,17 +221,17 @@ if { $create_clock_conv == "TRUE" } {
     set_property -dict [list CONFIG.ADDR_WIDTH {32} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]
   }
   set_property generate_synth_checkpoint false [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci]
-  generate_target {instantiation_template}     [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] $msg_level
-  generate_target all                          [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] $msg_level
-  export_ip_user_files -of_objects             [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] -no_script -force $msg_level
-  export_simulation    -of_objects             [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
+  generate_target {instantiation_template}     [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] >> $log_file
+  generate_target all                          [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] -no_script -force >> $log_file
+  export_simulation    -of_objects             [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 } 
 
 
 #create axi interconect
 if { $create_interconect == "TRUE" } {
-  puts "	                      generating IP axi_interconect"
-  create_ip -name axi_interconnect -vendor xilinx.com -library ip -version 1.7 -module_name axi_interconnect -dir $ip_dir  $msg_level
+  puts "	                        generating IP axi_interconect"
+  create_ip -name axi_interconnect -vendor xilinx.com -library ip -version 1.7 -module_name axi_interconnect -dir $ip_dir  >> $log_file
   set_property -dict [list                                  \
                       CONFIG.NUM_SLAVE_PORTS {2} 	    \
                       CONFIG.THREAD_ID_WIDTH {1} 	    \
@@ -246,16 +247,16 @@ if { $create_interconect == "TRUE" } {
                       CONFIG.M00_AXI_REGISTER {1}	    \
                      ] [get_ips axi_interconnect]
   set_property generate_synth_checkpoint false [get_files $ip_dir/axi_interconnect/axi_interconnect.xci]
-  generate_target {instantiation_template}     [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] $msg_level
-  generate_target all                          [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] $msg_level
-  export_ip_user_files -of_objects             [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] -no_script -sync -force  $msg_level
-  export_simulation    -of_objects             [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
+  generate_target {instantiation_template}     [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] >> $log_file
+  generate_target all                          [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] -no_script -sync -force  >> $log_file
+  export_simulation    -of_objects             [get_files $ip_dir/axi_interconnect/axi_interconnect.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 }
 
 #create BlockRAM
 if { $create_bram == "TRUE" } {
-  puts "	                      generating IP block_RAM"
-  create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name block_RAM -dir  $ip_dir $msg_level
+  puts "	                        generating IP block_RAM"
+  create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name block_RAM -dir  $ip_dir >> $log_file
   set_property -dict [list                                                           \
                       CONFIG.Interface_Type {AXI4} 				     \
                       CONFIG.Write_Width_A {256} 				     \
@@ -278,16 +279,16 @@ if { $create_bram == "TRUE" } {
                       CONFIG.Port_B_Enable_Rate {100}				     \
                      ] [get_ips block_RAM]
   set_property generate_synth_checkpoint false [get_files $ip_dir/block_RAM/block_RAM.xci]
-  generate_target {instantiation_template}     [get_files $ip_dir/block_RAM/block_RAM.xci] $msg_level
-  generate_target all                          [get_files $ip_dir/block_RAM/block_RAM.xci] $msg_level
-  export_ip_user_files -of_objects             [get_files $ip_dir/block_RAM/block_RAM.xci] -no_script -force $msg_level
-  export_simulation -of_objects [get_files $ip_dir/block_RAM/block_RAM.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
+  generate_target {instantiation_template}     [get_files $ip_dir/block_RAM/block_RAM.xci] >> $log_file
+  generate_target all                          [get_files $ip_dir/block_RAM/block_RAM.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files $ip_dir/block_RAM/block_RAM.xci] -no_script -force >> $log_file
+  export_simulation -of_objects [get_files $ip_dir/block_RAM/block_RAM.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 }
 
 #DDR3 create ddr3sdramm with ECC
 if { $create_ddr3 == "TRUE" } {
-  puts "	                      generating IP ddr3sdram"
-  create_ip -name ddr3 -vendor xilinx.com -library ip -version 1.* -module_name ddr3sdram -dir $ip_dir $msg_level
+  puts "	                        generating IP ddr3sdram"
+  create_ip -name ddr3 -vendor xilinx.com -library ip -version 1.* -module_name ddr3sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                   \
                       CONFIG.C0.DDR3_TimePeriod {1250} 					     \
                       CONFIG.C0.DDR3_InputClockPeriod {2500} 				     \
@@ -306,22 +307,22 @@ if { $create_ddr3 == "TRUE" } {
                       CONFIG.C0.DDR3_CasWriteLatency {8} 				     \
                       CONFIG.C0.DDR3_AxiAddressWidth {33} 				     \
                       CONFIG.C0.DDR3_AxiIDWidth {4}					     \
-                     ] [get_ips ddr3sdram] $msg_level
+                     ] [get_ips ddr3sdram] >> $log_file
   set_property generate_synth_checkpoint false [get_files $ip_dir/ddr3sdram/ddr3sdram.xci]
-  generate_target {instantiation_template}     [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] $msg_level
-  generate_target all                          [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] $msg_level
-  export_ip_user_files -of_objects             [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -no_script -force $msg_level
-  export_simulation -of_objects [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
+  generate_target {instantiation_template}     [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] >> $log_file
+  generate_target all                          [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -no_script -force >> $log_file
+  export_simulation -of_objects [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
   #DDR3 create ddr3sdramm example design
-  puts "	                      generating ddr3sdram example"
-  open_example_project $msg_level -force -dir $ip_dir [get_ips  ddr3sdram]  
+  puts "	                        generating ddr3sdram example"
+  open_example_project -in_process -force -dir $ip_dir [get_ips  ddr3sdram] >> $log_file  
 }
 
 #DDR4 create ddr4sdramm with ECC
 if { $create_ddr4 == "TRUE" } {
-  puts "	                      generating IP ddr4sdram"
-  create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir $msg_level
+  puts "	                        generating IP ddr4sdram"
+  create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                   \
                       CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-083E} 			     \
                       CONFIG.C0.DDR4_TimePeriod {938} 				             \
@@ -339,17 +340,17 @@ if { $create_ddr4 == "TRUE" } {
                       CONFIG.C0.DDR4_AxiAddressWidth {32} 				     \
                       CONFIG.C0.DDR4_AxiIDWidth {4} 					     \
                       CONFIG.C0.BANK_GROUP_WIDTH {1}					     \
-                     ] [get_ips ddr4sdram] $msg_level
+                     ] [get_ips ddr4sdram] >> $log_file
   set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
-  generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] $msg_level
-  generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] $msg_level
-  export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -no_script -force  $msg_level
-  export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force $msg_level
+  generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
+  generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -no_script -force  >> $log_file
+  export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
   #DDR4 create ddr4sdramm example design
-  puts "	                      generating ddr4sdram example"
-  open_example_project $msg_level -force -dir $ip_dir     [get_ips ddr4sdram]
+  puts "	                        generating ddr4sdram example"
+  open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
 }
 
-puts "	\[CREATE_IPs........\] done"
-close_project $msg_level
+puts "	\[CREATE_IPs..........\] done"
+close_project >> $log_file

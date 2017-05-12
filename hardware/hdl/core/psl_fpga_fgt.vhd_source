@@ -27,12 +27,12 @@ USE ieee.numeric_std.all;
 ENTITY psl_fpga IS
   PORT(
     -- DDR4 SDRAM Interface                                                     -- only for DDRI_USED=TRUE
-    --									        -- only for DDRI_USED=TRUE 
-    -- Clock inputs for SDRAM	                                                -- only for DDRI_USED=TRUE
+    --                                                                          -- only for DDRI_USED=TRUE
+    -- Clock inputs for SDRAM                                                   -- only for DDRI_USED=TRUE
     refclk266_p               : IN    STD_LOGIC;                                -- only for DDRI_USED=TRUE
     refclk266_n               : IN    STD_LOGIC;                                -- only for DDRI_USED=TRUE
     --                                                                          -- only for DDR4_USED=TRUE
-    -- Nalatech FlashGT card has one DDR4 SO-DIMMs				-- only for DDR4_USED=TRUE 
+    -- Nalatech FlashGT card has one DDR4 SO-DIMMs                              -- only for DDR4_USED=TRUE
     c0_sys_clk_p              : IN    STD_LOGIC;                                -- only for DDR4_USED=TRUE
     c0_sys_clk_n              : IN    STD_LOGIC;                                -- only for DDR4_USED=TRUE
     c0_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);            -- only for DDR4_USED=TRUE
@@ -49,24 +49,28 @@ ENTITY psl_fpga IS
     c0_ddr4_act_n             : OUT   STD_LOGIC;                                -- only for DDR4_USED=TRUE
     c0_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);             -- only for DDR4_USED=TRUE
     c0_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);             -- only for DDR4_USED=TRUE
-    --			         						-- only for NVME_USED=TRUE 
-    -- NVME Interface	         						-- only for NVME_USED=TRUE 
-    --			         						-- only for NVME_USED=TRUE 
+    --                                                                          -- only for NVME_USED=TRUE
+    -- NVME Interface                                                           -- only for NVME_USED=TRUE
+    --                                                                          -- only for NVME_USED=TRUE
     -- Clock inputs for NVMe                                                    -- only for NVME_USED=TRUE
 --nvme_ch0    pcie_clk1_p               : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
 --nvme_ch0    pcie_clk1_n               : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
     pcie_clk2_p               : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
     pcie_clk2_n               : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
-    --                         					                -- only for NVME_USED=TRUE 
-    -- NVME <-> PCIE Interface 					                -- only for NVME_USED=TRUE 
---nvme_ch0    pcie_rc0_rxn              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
---nvme_ch0    pcie_rc0_rxp              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
---nvme_ch0    pcie_rc0_txn              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
---nvme_ch0    pcie_rc0_txp              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
-    pcie_rc1_rxn              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
-    pcie_rc1_rxp              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
-    pcie_rc1_txn              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
-    pcie_rc1_txp              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 ); 	        -- only for NVME_USED=TRUE 
+    --                                                                          -- only for NVME_USED=TRUE
+    -- NVME <-> PCIE Interface                                                  -- only for NVME_USED=TRUE
+--nvme_ch0    pcie_rc0_rxn              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
+--nvme_ch0    pcie_rc0_rxp              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
+--nvme_ch0    pcie_rc0_txn              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
+--nvme_ch0    pcie_rc0_txp              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
+    pcie_rc1_rxn              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
+    pcie_rc1_rxp              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
+    pcie_rc1_txn              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
+    pcie_rc1_txp              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
+    --                                                                          -- only for NVME_USED=TRUE
+    -- Outputs to NVMe drive                                                    -- only for NVME_USED=TRUE
+    m2_perst_n                : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    m2_susclk                 : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
     -- 
     -- CAPI PSL Interface 
     --
@@ -95,7 +99,7 @@ ENTITY psl_fpga IS
     pci_pi_nperst0: in std_logic;                                               -- Active low reset from the PCIe reset pin of the device
     pci_pi_refclk_p0: in std_logic;                                             -- 100MHz Refclk
     pci_pi_refclk_n0: in std_logic;                                             -- 100MHz Refclk
-    
+
     -- Xilinx requires both pins of differential transceivers
     pci0_i_rxp_in0: in std_logic;
     pci0_i_rxn_in0: in std_logic;
@@ -128,13 +132,8 @@ ENTITY psl_fpga IS
     pci0_o_txp_out6: out std_logic;
     pci0_o_txn_out6: out std_logic;
     pci0_o_txp_out7: out std_logic;
-    pci0_o_txn_out7: out std_logic;
-    o_debug: out std_logic_vector(0 to 3));
-
-    attribute secure_config : string;
-    attribute secure_config of psl_fpga : entity is "PROTECT";
-    attribute secure_netlist : string;       
-    attribute secure_netlist of psl_fpga : entity is "ENCRYPT";
+    pci0_o_txn_out7: out std_logic
+  );
 END psl_fpga;
 
 
@@ -144,12 +143,12 @@ ARCHITECTURE psl_fpga OF psl_fpga IS
 Component psl_accel
   PORT(
     -- DDR4 SDRAM Interface                                                     -- only for DDRI_USED=TRUE
-    --								                -- only for DDRI_USED=TRUE 
-    -- Clock inputs for SDRAM	                                                -- only for DDRI_USED=TRUE
+    --                                                                          -- only for DDRI_USED=TRUE
+    -- Clock inputs for SDRAM                                                   -- only for DDRI_USED=TRUE
     refclk_sdram_p            : IN    STD_LOGIC;                                -- only for DDRI_USED=TRUE
     refclk_sdram_n            : IN    STD_LOGIC;                                -- only for DDRI_USED=TRUE
     --                                                                          -- only for DDR4_USED=TRUE
-    -- Nalatech FlashGT card has one DDR4 SO-DIMMs				-- only for DDR4_USED=TRUE 
+    -- Nalatech FlashGT card has one DDR4 SO-DIMMs                              -- only for DDR4_USED=TRUE 
     c0_sys_clk_p              : IN    STD_LOGIC;                                -- only for DDR4_USED=TRUE
     c0_sys_clk_n              : IN    STD_LOGIC;                                -- only for DDR4_USED=TRUE
     c0_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);            -- only for DDR4_USED=TRUE
@@ -179,14 +178,14 @@ Component psl_accel
     refclk_nvme_ch1_n         : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
     --			      					                -- only for NVME_USED=TRUE 
     -- NVME <-> PCIE Interface					                -- only for NVME_USED=TRUE 
---nvme_ch0    pcie_rc0_rxn              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
---nvme_ch0    pcie_rc0_rxp              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
---nvme_ch0    pcie_rc0_txn              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
---nvme_ch0    pcie_rc0_txp              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
-    pcie_rc1_rxn              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
-    pcie_rc1_rxp              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
-    pcie_rc1_txn              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );	        -- only for NVME_USED=TRUE 
-    pcie_rc1_txp              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 ); 	        -- only for NVME_USED=TRUE 
+--nvme_ch0    pcie_rc0_rxn              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
+--nvme_ch0    pcie_rc0_rxp              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
+--nvme_ch0    pcie_rc0_txn              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
+--nvme_ch0    pcie_rc0_txp              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
+    pcie_rc1_rxn              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE 
+    pcie_rc1_rxp              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE 
+    pcie_rc1_txn              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE 
+    pcie_rc1_txp              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE 
     -- 
     -- CAPI PSL Interface 
     --
@@ -455,87 +454,96 @@ Signal pci_clock_125MHz: std_logic;
 Signal led_red: std_logic_vector(0 to 1);
 Signal led_green: std_logic_vector(0 to 1);
 Signal led_blue: std_logic_vector(0 to 1);
--- NVME Reset Logic
-Signal nvme_reset_cnt_q: std_logic_vector(15 DOWNTO 0);
-Signal hold_nvme_reset_q: std_logic;
-Signal nvme_reset_n_q: std_logic;
+-- NVME Reset Logic                                                         -- only for NVME_USED=TRUE
+Signal nvme_reset_cnt_q: std_logic_vector(15 downto 0);                     -- only for NVME_USED=TRUE
+Signal hold_nvme_reset_q: std_logic;                                        -- only for NVME_USED=TRUE
+Signal nvme_reset_n_q: std_logic;                                           -- only for NVME_USED=TRUE
 
 
 begin
-  -- 
-  -- NVMe Reset Logic 
-  -- 
-  -- Note: generate a 32768x4ns=131ms reset pulse for NVMe 
-  --
-  nvme_reset : PROCESS (ha0_pclock)
-  BEGIN
-    IF (rising_edge(ha0_pclock)) THEN
-      hold_nvme_reset_q <= '0';
-      nvme_reset_n_q    <= '1';
-      nvme_reset_cnt_q  <= (OTHERS => '0');
-
-      IF ((pci_user_reset    = '1') OR
-          (hold_nvme_reset_q = '1')) THEN
-  
-        hold_nvme_reset_q <= '1';
-        nvme_reset_n_q    <= '0';
-        nvme_reset_cnt_q  <= nvme_reset_cnt_q + '1';
-        
-        IF (nvme_reset_cnt_q(15) = '1') THEN
-          hold_nvme_reset_q <= '0';
-          nvme_reset_n_q    <= '1';
-        END IF;
-      END IF;
-    END IF;
-  END PROCESS nvme_reset;
+  --                                                                        -- only for NVME_USED=TRUE
+  -- NVMe Reset Logic                                                       -- only for NVME_USED=TRUE
+  --                                                                        -- only for NVME_USED=TRUE
+  -- Note: generate a 32768x4ns=131ms reset pulse for NVMe                  -- only for NVME_USED=TRUE
+  --                                                                        -- only for NVME_USED=TRUE
+  nvme_reset : PROCESS (ha0_pclock)                                         -- only for NVME_USED=TRUE
+  BEGIN                                                                     -- only for NVME_USED=TRUE
+    IF (rising_edge(ha0_pclock)) THEN                                       -- only for NVME_USED=TRUE
+      hold_nvme_reset_q <= '0';                                             -- only for NVME_USED=TRUE
+      nvme_reset_n_q    <= '1';                                             -- only for NVME_USED=TRUE
+      nvme_reset_cnt_q  <= (OTHERS => '0');                                 -- only for NVME_USED=TRUE
+                                                                            -- only for NVME_USED=TRUE
+      IF ((pci_user_reset    = '1') OR                                      -- only for NVME_USED=TRUE
+          (hold_nvme_reset_q = '1')) THEN                                   -- only for NVME_USED=TRUE
+                                                                            -- only for NVME_USED=TRUE
+        hold_nvme_reset_q <= '1';                                           -- only for NVME_USED=TRUE
+        nvme_reset_n_q    <= '0';                                           -- only for NVME_USED=TRUE
+        nvme_reset_cnt_q  <= nvme_reset_cnt_q + '1';                        -- only for NVME_USED=TRUE
+                                                                            -- only for NVME_USED=TRUE
+        IF (nvme_reset_cnt_q(15) = '1') THEN                                -- only for NVME_USED=TRUE
+          hold_nvme_reset_q <= '0';                                         -- only for NVME_USED=TRUE
+          nvme_reset_n_q    <= '1';                                         -- only for NVME_USED=TRUE
+        END IF;                                                             -- only for NVME_USED=TRUE
+      END IF;                                                               -- only for NVME_USED=TRUE
+    END IF;                                                                 -- only for NVME_USED=TRUE
+  END PROCESS nvme_reset;                                                   -- only for NVME_USED=TRUE
+                                                                            -- only for NVME_USED=TRUE
+  --                                                                        -- only for NVME_USED=TRUE
+  -- Drive resets to NVMe drives at M2 pins                                 -- only for NVME_USED=TRUE
+  m2_perst_n <=  nvme_reset_n_q & nvme_reset_n_q &                          -- only for NVME_USED=TRUE
+                 nvme_reset_n_q & nvme_reset_n_q;                           -- only for NVME_USED=TRUE
+  --                                                                        -- only for NVME_USED=TRUE
+  -- Clock ties for NVMe drives at M2 pins                                  -- only for NVME_USED=TRUE
+  m2_susclk  <= (OTHERS => '0');                                            -- only for NVME_USED=TRUE
 
 
   a0: psl_accel
     PORT MAP (
-      -- DDR4 SDRAM Interface                                                   -- only for DDRI_USED=TRUE
-      --									-- only for DDRI_USED=TRUE 
-      -- Clock inputs for SDRAM	                                                -- only for DDRI_USED=TRUE
-      refclk_sdram_p                    => refclk266_p,		                -- only for DDRI_USED=TRUE 
-      refclk_sdram_n                    => refclk266_n,		                -- only for DDRI_USED=TRUE 
-      --                                                                        -- only for DDR4_USED=TRUE
-      -- Nalatech FlashGT card has one DDR4 SO-DIMMs				-- only for DDR4_USED=TRUE 
-      c0_sys_clk_p                      => c0_sys_clk_p,	                -- only for DDR4_USED=TRUE 
-      c0_sys_clk_n                      => c0_sys_clk_n,	                -- only for DDR4_USED=TRUE 
-      c0_ddr4_adr                       => c0_ddr4_adr,		                -- only for DDR4_USED=TRUE 
-      c0_ddr4_ba                        => c0_ddr4_ba,		                -- only for DDR4_USED=TRUE 
-      c0_ddr4_cke                       => c0_ddr4_cke,		                -- only for DDR4_USED=TRUE 
-      c0_ddr4_cs_n                      => c0_ddr4_cs_n,	                -- only for DDR4_USED=TRUE 
-      c0_ddr4_dm_dbi_n                  => c0_ddr4_dm_dbi_n,	                -- only for DDR4_USED=TRUE 
-      c0_ddr4_dq                        => c0_ddr4_dq,		                -- only for DDR4_USED=TRUE 
-      c0_ddr4_dqs_c                     => c0_ddr4_dqs_c,	                -- only for DDR4_USED=TRUE 
-      c0_ddr4_dqs_t                     => c0_ddr4_dqs_t,	                -- only for DDR4_USED=TRUE 
-      c0_ddr4_odt                       => c0_ddr4_odt,		                -- only for DDR4_USED=TRUE 
-      c0_ddr4_bg                        => c0_ddr4_bg,		                -- only for DDR4_USED=TRUE 
-      c0_ddr4_reset_n                   => c0_ddr4_reset_n,	                -- only for DDR4_USED=TRUE 
-      c0_ddr4_act_n                     => c0_ddr4_act_n,	                -- only for DDR4_USED=TRUE 
-      c0_ddr4_ck_c                      => c0_ddr4_ck_c,	                -- only for DDR4_USED=TRUE 
-      c0_ddr4_ck_t                      => c0_ddr4_ck_t,	                -- only for DDR4_USED=TRUE 
-      --			         					-- only for NVME_USED=TRUE 
-      -- NVME Interface	         						-- only for NVME_USED=TRUE 
-      --			         					-- only for NVME_USED=TRUE 
-      -- Reset Input                                                            -- only for NVME_USED=TRUE
-      nvme_reset_n                      => nvme_reset_n_q,                      -- only for NVME_USED=TRUE
-      --			         					-- only for NVME_USED=TRUE 
-      -- Clock Inputs for NVMe                                                  -- only for NVME_USED=TRUE
+      -- DDR4 SDRAM Interface                                               -- only for DDRI_USED=TRUE
+      --                                                                    -- only for DDRI_USED=TRUE
+      -- Clock inputs for SDRAM                                             -- only for DDRI_USED=TRUE
+      refclk_sdram_p                    => refclk266_p,                     -- only for DDRI_USED=TRUE
+      refclk_sdram_n                    => refclk266_n,                     -- only for DDRI_USED=TRUE
+      --                                                                    -- only for DDR4_USED=TRUE
+      -- Nalatech FlashGT card has one DDR4 SO-DIMMs                        -- only for DDR4_USED=TRUE
+      c0_sys_clk_p                      => c0_sys_clk_p,                    -- only for DDR4_USED=TRUE
+      c0_sys_clk_n                      => c0_sys_clk_n,                    -- only for DDR4_USED=TRUE
+      c0_ddr4_adr                       => c0_ddr4_adr,                     -- only for DDR4_USED=TRUE
+      c0_ddr4_ba                        => c0_ddr4_ba,                      -- only for DDR4_USED=TRUE
+      c0_ddr4_cke                       => c0_ddr4_cke,                     -- only for DDR4_USED=TRUE
+      c0_ddr4_cs_n                      => c0_ddr4_cs_n,                    -- only for DDR4_USED=TRUE
+      c0_ddr4_dm_dbi_n                  => c0_ddr4_dm_dbi_n,                -- only for DDR4_USED=TRUE
+      c0_ddr4_dq                        => c0_ddr4_dq,                      -- only for DDR4_USED=TRUE
+      c0_ddr4_dqs_c                     => c0_ddr4_dqs_c,                   -- only for DDR4_USED=TRUE
+      c0_ddr4_dqs_t                     => c0_ddr4_dqs_t,                   -- only for DDR4_USED=TRUE
+      c0_ddr4_odt                       => c0_ddr4_odt,                     -- only for DDR4_USED=TRUE
+      c0_ddr4_bg                        => c0_ddr4_bg,                      -- only for DDR4_USED=TRUE
+      c0_ddr4_reset_n                   => c0_ddr4_reset_n,                 -- only for DDR4_USED=TRUE
+      c0_ddr4_act_n                     => c0_ddr4_act_n,                   -- only for DDR4_USED=TRUE
+      c0_ddr4_ck_c                      => c0_ddr4_ck_c,                    -- only for DDR4_USED=TRUE
+      c0_ddr4_ck_t                      => c0_ddr4_ck_t,                    -- only for DDR4_USED=TRUE
+
+      --                                                                    -- only for NVME_USED=TRUE
+      -- NVME Interface                                                     -- only for NVME_USED=TRUE
+      --                                                                    -- only for NVME_USED=TRUE
+      -- Reset Input                                                        -- only for NVME_USED=TRUE
+      nvme_reset_n                      => nvme_reset_n_q,                  -- only for NVME_USED=TRUE
+      --                                                                    -- only for NVME_USED=TRUE
+      -- Clock Inputs for NVMe                                              -- only for NVME_USED=TRUE
 --nvme_ch0      refclk_nvme_ch0_p                     => pcie_clk1_p,                     -- only for NVME_USED=TRUE
 --nvme_ch0      refclk_nvme_ch0_n                     => pcie_clk1_n,                     -- only for NVME_USED=TRUE
-      refclk_nvme_ch1_p                     => pcie_clk2_p,                     -- only for NVME_USED=TRUE
-      refclk_nvme_ch1_n                     => pcie_clk2_n,                     -- only for NVME_USED=TRUE
-      --									-- only for NVME_USED=TRUE 
-      -- NVME <-> PCIE Interface      					        -- only for NVME_USED=TRUE 		   
+      refclk_nvme_ch1_p                 => pcie_clk2_p,                     -- only for NVME_USED=TRUE
+      refclk_nvme_ch1_n                 => pcie_clk2_n,                     -- only for NVME_USED=TRUE
+      --                                                                    -- only for NVME_USED=TRUE
+      -- NVME <-> PCIE Interface                                            -- only for NVME_USED=TRUE
 --nvme_ch0      pcie_rc0_rxn(3 downto 0)          => pcie_rc0_rxn(3 downto 0),		-- only for NVME_USED=TRUE 
 --nvme_ch0      pcie_rc0_rxp(3 downto 0)          => pcie_rc0_rxp(3 downto 0),		-- only for NVME_USED=TRUE 
 --nvme_ch0      pcie_rc0_txn(3 downto 0)          => pcie_rc0_txn(3 downto 0),		-- only for NVME_USED=TRUE 
 --nvme_ch0      pcie_rc0_txp(3 downto 0)          => pcie_rc0_txp(3 downto 0),		-- only for NVME_USED=TRUE 
-      pcie_rc1_rxn(3 downto 0)          => pcie_rc1_rxn(3 downto 0),		-- only for NVME_USED=TRUE 
-      pcie_rc1_rxp(3 downto 0)          => pcie_rc1_rxp(3 downto 0),		-- only for NVME_USED=TRUE 
-      pcie_rc1_txn(3 downto 0)          => pcie_rc1_txn(3 downto 0),		-- only for NVME_USED=TRUE 
-      pcie_rc1_txp(3 downto 0)          => pcie_rc1_txp(3 downto 0),		-- only for NVME_USED=TRUE          
+      pcie_rc1_rxn(3 downto 0)          => pcie_rc1_rxn(3 downto 0),        -- only for NVME_USED=TRUE
+      pcie_rc1_rxp(3 downto 0)          => pcie_rc1_rxp(3 downto 0),        -- only for NVME_USED=TRUE
+      pcie_rc1_txn(3 downto 0)          => pcie_rc1_txn(3 downto 0),        -- only for NVME_USED=TRUE
+      pcie_rc1_txp(3 downto 0)          => pcie_rc1_txp(3 downto 0),        -- only for NVME_USED=TRUE
       -- 
       -- CAPI PSL Interface 
       --

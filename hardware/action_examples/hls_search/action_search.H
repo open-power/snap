@@ -33,44 +33,47 @@
 typedef char word_t[BPERDW];
 typedef snapu64_t address_t;
 
-typedef struct table_i_s {
-        word_t text;             /* 64 bytes */
-} table_i_t;
+#define NO_OF_CHARS  256
+#define PATTERN_SIZE BPERDW
+#define TEXT_SIZE    4 * MAX_NB_OF_BYTES_READ // used for streaming only
+#define HOST2DDR 0
+#define DDR2HOST 1
 
-typedef struct table_o_s {
-        address_t item_address;    /* 8 bytes */
-        unsigned int item_number;  /* 4 bytes */
-        unsigned int reserved     ;/* 4 bytes */
-} table_o_t;
-
-/* d is the number of characters in input alphabet */
-//#define d 256
-//#define PATTERN_SIZE 15
-//#define TEXT_SIZE 150
-
-/* Action_Register is a 992 bits/124 Bytes made of a 16 Bytes header and a 108 bytes data field
- * To keep the address at the right location, Data should always be 108 bytes
+/*
+ * Action_Register is a 992 bits/124 Bytes made of a 16 Bytes header and a 108
+ * bytes data field. To keep the address at the right location, Data should
+ * always be 108 bytes.
  */
-typedef struct {
-        dnut_addr in;   /* input data : 128 bits*/
-        dnut_addr out;  /* offset table : 128 bits*/
-        dnut_addr pattern;  /* offset table : 128 bits*/
-        snapu64_t nb_of_occurrences;
-        snapu64_t next_input_address;
-        ap_uint<352> unused; /* mandatory to keep output register at the right address*/
+typedef struct {                                                   /* 0x190 */
+        dnut_addr src_text1;   /* in text in HOST: 128 bits*/    /* 16 0x10 */
+        dnut_addr src_pattern; /* in pattern in HOST: 128 bits*/ /* 32 0x20 */
+        dnut_addr ddr_text1;   /* in text in DDR : 128 bits*/    /* 48 0x30 */
+        dnut_addr src_result;  /* out result in HOST : 128 bits*//* 64 0x40 */
+        dnut_addr ddr_result;  /* out result in DDR : 128 bits*/ /* 80 0x50 */
+        snapu16_t step;                                          /* 82 0x52 */
+        snapu16_t method;                                        /* 84 0x54 */
+        snapu32_t nb_of_occurrences;                             /* 88 0x58 */
+        snapu64_t next_input_address;                            /* 96 0x60 */
+        ap_uint<96> unused; /* mandatory to keep output register at the
+			       right address */
 } DATA_TS; // DATA = 108 Bytes = 864 bits
 
 //---------------------------------------------------------------------
 typedef struct {
         CONTROL Control;       //  16 bytes
-        DATA_TS  Data;         // 108 Bytes
+        DATA_TS Data;          // 108 Bytes
 } action_reg;
 
-int Nsearch(char *pat, int M, char *txt, int N);
-int KMPsearch(char *pat, int M, char *txt, int N);
-int FAsearch(char *pat, int M, char *txt, int N);
-int FAEsearch(char *pat, int M, char *txt, int N);
-int BMsearch(char *pat, int M, char *txt, int N);
+
+/* search method */
+enum {
+        STRM_method   = 0x0,
+        NAIVE_method  = 0x1,
+        KMP_method    = 0x2,
+};
+ 
+int Naive_search (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
+int KMP_search   (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
 
 #define CONFIG_HOSTSTYLE_ALGO
 

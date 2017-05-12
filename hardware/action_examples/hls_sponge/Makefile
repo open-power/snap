@@ -32,7 +32,7 @@
 # This is solution specific. Check if we can replace this by generics too.
 SOLUTION_NAME ?= sponge
 SOLUTION_DIR ?= hlsSponge
-srcs += sponge.cpp keccak.cpp
+srcs += sponge.cpp sha3.cpp
 
 include ../hls.mk
 

@@ -18,20 +18,21 @@
 
 set root_dir   $::env(DONUT_HARDWARE_ROOT)
 set fpga_part  $::env(FPGACHIP)
-set msg_level  $::env(MSG_LEVEL)
+set log_dir    $::env(LOGS_DIR)
+set log_file   $log_dir/create_nvme_host.log
 
 set prj_name nvme
 set bd_name  nvme_top
 
-puts "	\[CREATE_NVMe.......\] start"
+puts "	\[CREATE_NVMe.........\] start"
 # Create NVME project
-create_project   $prj_name $root_dir/viv_project_tmp -part $fpga_part -force $msg_level
-create_bd_design $bd_name  $msg_level
+create_project   $prj_name $root_dir/viv_project_tmp -part $fpga_part -force >> $log_file
+create_bd_design $bd_name  >> $log_file
 
 # Create NVME_HOST IP
-puts "	\                      generating NVMe Host IP"
-ipx::infer_core -vendor IP -library user -taxonomy /UserIP $root_dir/hdl/nvme $msg_level
-ipx::edit_ip_in_project -upgrade true -name edit_ip_project -directory $root_dir/viv_project_tmp/nvme_host_ip/nvme.tmp $root_dir/hdl/nvme/component.xml $msg_level
+puts "	\                        generating NVMe Host IP"
+ipx::infer_core -vendor IP -library user -taxonomy /UserIP $root_dir/hdl/nvme >> $log_file
+ipx::edit_ip_in_project -upgrade true -name edit_ip_project -directory $root_dir/viv_project_tmp/nvme_host_ip/nvme.tmp $root_dir/hdl/nvme/component.xml >> $log_file
 ipx::current_core $root_dir/hdl/nvme/component.xml 
 update_compile_order -fileset sim_1
 
@@ -43,9 +44,9 @@ ipx::add_bus_parameter FREQ_HZ [ipx::get_bus_interfaces pcie_s_axi -of_objects [
 set_property description {Clock frequency (Hertz)} [ipx::get_bus_parameters FREQ_HZ -of_objects [ipx::get_bus_interfaces pcie_s_axi -of_objects [ipx::current_core]]]
 ipx::add_bus_parameter ASSOCIATED_BUSIF_bus [ipx::get_bus_interfaces axi_aclk -of_objects [ipx::current_core]]
 ipx::remove_bus_parameter ASSOCIATED_BUSIF_bus [ipx::get_bus_interfaces axi_aclk -of_objects [ipx::current_core]]
-ipx::associate_bus_interfaces -busif host_s_axi -clock axi_aclk [ipx::current_core] $msg_level 
-ipx::associate_bus_interfaces -busif pcie_m_axi -clock axi_aclk [ipx::current_core] $msg_level 
-ipx::associate_bus_interfaces -busif pcie_s_axi -clock axi_aclk [ipx::current_core] $msg_level
+ipx::associate_bus_interfaces -busif host_s_axi -clock axi_aclk [ipx::current_core] >> $log_file 
+ipx::associate_bus_interfaces -busif pcie_m_axi -clock axi_aclk [ipx::current_core] >> $log_file 
+ipx::associate_bus_interfaces -busif pcie_s_axi -clock axi_aclk [ipx::current_core] >> $log_file
 set_property value 250000000 [ipx::get_bus_parameters FREQ_HZ -of_objects [ipx::get_bus_interfaces host_s_axi -of_objects [ipx::current_core]]]
 set_property value 250000000 [ipx::get_bus_parameters FREQ_HZ -of_objects [ipx::get_bus_interfaces pcie_m_axi -of_objects [ipx::current_core]]]
 set_property value 250000000 [ipx::get_bus_parameters FREQ_HZ -of_objects [ipx::get_bus_interfaces pcie_s_axi -of_objects [ipx::current_core]]]
@@ -57,7 +58,7 @@ close_project -delete
 
 # ADD IP PATH to the current project
 set_property  ip_repo_paths $root_dir/hdl/nvme/ [current_project] 
-update_ip_catalog $msg_level
+update_ip_catalog >> $log_file
 
 # Create interface ports
 set DDR_M_AXI [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 DDR_M_AXI ]
@@ -176,13 +177,13 @@ CONFIG.FREQ_HZ {100000000} \
 set nvme_reset_n [ create_bd_port -dir I -type rst nvme_reset_n ]
 
 ## Create instance: axi_interconnect_0, and set properties
-#puts "	\                      generating AXI interconnects"
+#puts "	\                        generating AXI interconnects"
 #set axi_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_0 ]
 #set_property -dict [ list \
 #CONFIG.NUM_MI {3}\
 #CONFIG.NUM_SI {2} \
 #CONFIG.STRATEGY {1} \
-#] $axi_interconnect_0 $msg_level
+#] $axi_interconnect_0 >> $log_file
 # 
 ## Create instance: axi_interconnect_1, and set properties
 #set axi_interconnect_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_1 ]
@@ -190,7 +191,7 @@ set nvme_reset_n [ create_bd_port -dir I -type rst nvme_reset_n ]
 #CONFIG.NUM_MI {2} \
 #CONFIG.NUM_SI {1} \
 #CONFIG.STRATEGY {1} \
-#] $axi_interconnect_1 $msg_level
+#] $axi_interconnect_1 >> $log_file
 # 
 ## Create instance: axi_interconnect_2, and set properties
 #set axi_interconnect_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_2 ]
@@ -200,29 +201,29 @@ set nvme_reset_n [ create_bd_port -dir I -type rst nvme_reset_n ]
 #CONFIG.S00_HAS_DATA_FIFO {2} \
 #CONFIG.S01_HAS_DATA_FIFO {2} \
 #CONFIG.STRATEGY {2} \
-#] $axi_interconnect_2 $msg_level
+#] $axi_interconnect_2 >> $log_file
 
 # Create instance: util_buf_gte_0, and set properties
-puts "	\                      generating Utility Buffer"
+puts "	\                        generating Utility Buffer"
 set util_buf_gte_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_buf_gte_0 ]
 set_property -dict [list  \
 CONFIG.C_BUF_TYPE {IBUFDSGTE} \
-] $util_buf_gte_0 $msg_level
+] $util_buf_gte_0 >> $log_file
 
 # Create instance: util_buf_gte_1, and set properties
 set util_buf_gte_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_buf_gte_1 ]
 set_property -dict [list  \
 CONFIG.C_BUF_TYPE {IBUFDSGTE} \
-] $util_buf_gte_1 $msg_level
+] $util_buf_gte_1 >> $log_file
 
 # Create instance: axi_interconnect_0, and set properties
-puts "	\                      generating AXI Interconnects"
+puts "	\                        generating AXI Interconnects"
 set axi_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_0 ]
 set_property -dict [ list \
 CONFIG.NUM_MI {2} \
 CONFIG.NUM_SI {2} \
 CONFIG.STRATEGY {1} \
-] $axi_interconnect_0 $msg_level
+] $axi_interconnect_0 >> $log_file
 
 # Create instance: axi_interconnect_1, and set properties
 set axi_interconnect_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_1 ]
@@ -230,7 +231,7 @@ set_property -dict [ list \
 CONFIG.NUM_MI {1} \
 CONFIG.NUM_SI {1} \
 CONFIG.STRATEGY {1} \
-] $axi_interconnect_1 $msg_level
+] $axi_interconnect_1 >> $log_file
 
 # Create instance: axi_interconnect_2, and set properties
 set axi_interconnect_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_2 ]
@@ -239,14 +240,14 @@ CONFIG.NUM_MI {2} \
 CONFIG.NUM_SI {1} \
 CONFIG.S00_HAS_DATA_FIFO {2} \
 CONFIG.STRATEGY {2} \
-] $axi_interconnect_2 $msg_level
+] $axi_interconnect_2 >> $log_file
 
 
 
 
 # Create instance: axi_pcie3_0, and set properties
-puts "	\                      generating AXI PCIe Root Complex"
-set axi_pcie3_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie3:3.0 axi_pcie3_0 $msg_level ]
+puts "	\                        generating AXI PCIe Root Complex"
+set axi_pcie3_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie3:3.0 axi_pcie3_0 >> $log_file ]
 set_property -dict [ list \
 CONFIG.pcie_blk_locn {X0Y1} \
 CONFIG.axi_addr_width {34} \
@@ -266,10 +267,10 @@ CONFIG.pl_link_cap_max_link_speed {8.0_GT/s} \
 CONFIG.pl_link_cap_max_link_width {X4} \
 CONFIG.coreclk_freq {500} \
 CONFIG.plltype {QPLL1} \
-] $axi_pcie3_0 $msg_level
+] $axi_pcie3_0 >> $log_file
 
 # Create instance: axi_pcie3_1, and set properties
-set axi_pcie3_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie3:3.0 axi_pcie3_1 $msg_level ]
+set axi_pcie3_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie3:3.0 axi_pcie3_1 >> $log_file ]
 set_property -dict [ list \
 CONFIG.pcie_blk_locn {X0Y2} \
 CONFIG.axi_addr_width {34} \
@@ -289,14 +290,14 @@ CONFIG.pl_link_cap_max_link_speed {8.0_GT/s} \
 CONFIG.pl_link_cap_max_link_width {X4} \
 CONFIG.coreclk_freq {500} \
 CONFIG.plltype {QPLL1} \
-] $axi_pcie3_1 $msg_level
+] $axi_pcie3_1 >> $log_file
 
 # Create instance: nvme_host_wrap_0, and set properties
-puts "	\                      generating NVMe Host"
-create_bd_cell -type ip -vlnv IP:user:nvme_host_wrap:1.0 nvme_host_wrap_0 $msg_level
+puts "	\                        generating NVMe Host"
+create_bd_cell   -type ip -vlnv IP:user:nvme_host_wrap:1.0 nvme_host_wrap_0 >> $log_file
 
 # Create interface connections
-puts "	\                      connecting all blocks and ports"
+puts "	\                        connecting all blocks and ports"
 connect_bd_intf_net -intf_net S00_AXI_1 [get_bd_intf_ports NVME_S_AXI] [get_bd_intf_pins axi_interconnect_0/S00_AXI]
 connect_bd_intf_net -intf_net S01_AXI_11 [get_bd_intf_ports ACT_NVME_AXI] [get_bd_intf_pins axi_interconnect_0/S01_AXI]
 ##connect_bd_intf_net -intf_net S00_AXI_3 [get_bd_intf_pins axi_interconnect_2/S00_AXI] [get_bd_intf_pins axi_pcie3_0/M_AXI]
@@ -358,9 +359,9 @@ connect_bd_net [get_bd_ports ddr_aresetn] [get_bd_pins axi_pcie3_1/axi_aresetn]
 delete_bd_objs [get_bd_intf_ports pcie_rc0]
 delete_bd_objs [get_bd_nets util_buf_gte_0_IBUF_OUT] [get_bd_nets util_buf_gte_0_IBUF_DS_ODIV2] [get_bd_cells util_buf_gte_0]
 # Save block design and close the project
-save_bd_design $msg_level
+save_bd_design >> $log_file
 
-puts "	\[CREATE_NVMe.......\] done"
+puts "	\[CREATE_NVMe.........\] done"
  
-close_project $msg_level
+close_project >> $log_file
 

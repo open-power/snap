@@ -22,15 +22,44 @@
 
 #define SEARCH_ACTION_TYPE	0x10141003
 
+//DDR address map
+#define DDR_TEXT_START      1024*1024*1024
+#define DDR_OFFS_START    6*1024*1024*1024
+
+
 struct search_job {
-	struct snap_addr input;	 /* input data */
-	struct snap_addr output; /* offset table */
+        struct snap_addr src_text1;     /* input text in HOST: 128 bits*/
+        struct snap_addr src_pattern;     /* input pattern in HOST: 128 bits*/
+        struct snap_addr ddr_text1;     /* input text in DDR : 128 bits*/
+        struct snap_addr src_result;    /* output result in HOST : 128 bits*/
+        struct snap_addr ddr_result;    /* output result in DDR : 128 bits*/
+        uint16_t step;
+        uint16_t method;
+        uint32_t nb_of_occurrences;
+        uint64_t next_input_addr;
+
+/* OLD config is following - should be removed
+	struct snap_addr input;	 
+	struct snap_addr output; 
 	struct snap_addr pattern;
 	uint64_t nb_of_occurrences;
 	uint64_t next_input_addr;
 	uint64_t action_version;
-	uint64_t mmio_din;	/* private settings for this action */
-	uint64_t mmio_dout;	/* private settings for this action */
+	uint64_t mmio_din;	
+	uint64_t mmio_dout;
+*/
 };
+
+/* search method */
+enum {
+        STRM_method   = 0x0,
+        NAIVE_method  = 0x1,
+        KMP_method    = 0x2,
+};
+unsigned int run_sw_search(unsigned int Method, char *Pattern,
+           unsigned int PatternSize, char *Text, unsigned int TextSize);
+int Naive_search(char *pat, int M, char *txt, int N);
+void preprocess_KMP_table(char *pat, int M, int KMP_table[]);
+int KMP_search(char *pat, int M, char *txt, int N);
 
 #endif	/* __ACTION_SEARCH_H__ */
