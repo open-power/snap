@@ -182,7 +182,7 @@ begin
               end if;
               if mmx_d_i.rd_strobe = '1' then
                 rd_pending_q <= '1';
-                if mmx_d_i.addr(11 downto 8 ) = x"2" then
+                if mmx_d_i.addr(17 downto 16 ) = "11" then
                   addr_32b_q <= true;
                 else
                   addr_32b_q <= false;
