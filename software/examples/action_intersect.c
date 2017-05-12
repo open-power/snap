@@ -14,19 +14,9 @@
  * Wikipedia's pages are based on "CC BY-SA 3.0"
  * Creative Commons Attribution-ShareAlike License 3.0
  * https://creativecommons.org/licenses/by-sa/3.0/
- *
- * Attribution: 
- * You must give appropriate credit, provide a link to 
- * the license, and indicate if changes were made. You may do so in
- * any reasonable manner, but not in any way that suggests the
- * licensor endorses you or your use.
- *
- * ShareAlike: 
- * If you remix, transform, or build upon the material, you must
- * distribute your contributions under the same license as the original.
  */
 
- /*
+/*
  * Adopt SNAP's framework for software action part.
  */
 
