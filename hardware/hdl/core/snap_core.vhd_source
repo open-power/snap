@@ -161,11 +161,6 @@ ARCHITECTURE snap_core OF snap_core IS
   SIGNAL sj_c                : SJ_C_T;
   SIGNAL xj_c                : XJ_C_T;
 
-  SIGNAL xk_d                : XK_D_T;
-  SIGNAL kx_d                : KX_D_T;
-  SIGNAL sk_d                : SK_D_T;
-  SIGNAL ks_d                : KS_D_T;
-
   SIGNAL sd_c                : SD_C_T;
   SIGNAL sd_d                : SD_D_T;
   SIGNAL ds_c                : DS_C_T;
