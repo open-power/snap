@@ -67,7 +67,7 @@ if { [catch "$command > $logfile" errMsg] } {
 ## 
 ## locking PSL
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-lock_design -level routing b > $log_dir/lock_design.log
+#lock_design -level routing b > $log_dir/lock_design.log
  
 ## 
 ## optimizing design
