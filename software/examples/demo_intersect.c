@@ -281,6 +281,7 @@ int main(int argc, char *argv[])
     const char *output = NULL;
 
     while (1) {
+<<<<<<< HEAD
         int option_index = 0;
         static struct option long_options[] = {
             { "card",	 required_argument, NULL, 'C' },
@@ -345,7 +346,7 @@ int main(int argc, char *argv[])
                 exit(EXIT_SUCCESS);
                 break;
             case 'I': /* irq */
-                action_irq = (SNAP_DONE_IRQ | SNAP_ATTACH_IRQ);
+		action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
                 break;
             default:
                 usage(argv[0]);
