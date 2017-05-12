@@ -142,14 +142,11 @@ static void action_write(struct snap_card* h, uint32_t addr, uint32_t data)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct snap_card* h, int timeout, int irq)
+static int action_wait_idle(struct snap_card* h, int timeout)
 {
 	uint64_t t_start;	/* time in usec */
 	uint64_t td = 0;
 	int rc = 1;
-
-	if (irq)
-		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
 
 	/* FIXME Use act and not h */
 	snap_action_start((void*)h);
@@ -159,8 +156,6 @@ static int action_wait_idle(struct snap_card* h, int timeout, int irq)
 	if (snap_action_completed((void*)h, NULL, timeout))
 		rc = 0;	/* Good */
 	td = get_usec() - t_start;
-	if (irq)
-		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_OFF);
 	print_time(td);
 
 	return rc;
@@ -245,8 +240,7 @@ int main(int argc, char *argv[])
 	int h_mem_size = 0;
 	int h_begin = 0;
 	uint64_t start, stop;
-	int action_irq = 0;
-	int attach_flags = SNAP_CCR_DIRECT_MODE;
+	snap_action_flag_t attach_flags = 0;
 
 	while (1) {
                 int option_index = 0;
@@ -306,8 +300,7 @@ int main(int argc, char *argv[])
 			pattern = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 'I':	/* irq */
-			action_irq = ACTION_DONE_IRQ;
-			attach_flags |= SNAP_CCR_IRQ_ATTACH;
+			attach_flags |= SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ;
 			break;
 		default:
 			usage(argv[0]);
@@ -363,15 +356,15 @@ int main(int argc, char *argv[])
 
 		act = snap_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags, 5*timeout);
 		if (NULL == act) {
-			PRINTF0(" ERROR from Attach %x after %d sec\n",
-				ACTION_TYPE_EXAMPLE, 5*timeout);
+			PRINTF0(" ERROR from Attach Action:%x\n",
+				ACTION_TYPE_EXAMPLE);
 			goto __exit1;
 		}
 		if (ACTION_CONFIG_MEMSET_F == func) {
 			start = begin;
 			stop = begin + size -1;
 			action_start(dn, func | (pattern << 8), stop, start);
-			if (0 != action_wait_idle(dn, timeout, action_irq))
+			if (0 != action_wait_idle(dn, timeout))
 				goto __exit1;
 		}
 		if (ACTION_CONFIG_MEMSET_H == func) {
@@ -380,7 +373,7 @@ int main(int argc, char *argv[])
 			start = (uint64_t)hb + h_begin;	/* Host Start Address */
 			stop = start + size - 1;	/* Host End Address */
 			action_start(dn, func | (pattern << 8), stop, start);
-			if (0 != action_wait_idle(dn, timeout, action_irq))
+			if (0 != action_wait_idle(dn, timeout))
 				goto __exit1;
 			if (0 != check_buffer(hb, h_begin, size, pattern))
 				goto __exit1;

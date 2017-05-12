@@ -157,14 +157,11 @@ static uint32_t msec_2_ticks(int msec)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct snap_card* h, int timeout, uint64_t *elapsed, int irq)
+static int action_wait_idle(struct snap_card* h, int timeout, uint64_t *elapsed)
 {
 	int rc = ETIME;
 	uint64_t t_start;	/* time in usec */
 	uint64_t td = 0;	/* Diff time in usec */
-
-	if (irq)
-		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
 
 	/* FIXME Use struct snap_action and not struct snap_card */
 	snap_action_start((void*)h);
@@ -173,9 +170,6 @@ static int action_wait_idle(struct snap_card* h, int timeout, uint64_t *elapsed,
 	t_start = get_usec();
 	rc = snap_action_completed((void*)h, NULL, timeout);
 	td = get_usec() - t_start;
-
-	if (irq)
-		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_OFF);
 	if (rc) rc = 0;	/* Good */
 	else VERBOSE0("Error. Timeout while Waiting for Idle\n");
 	*elapsed = td;
@@ -228,8 +222,7 @@ static int memcpy_test(struct snap_card* dnc,
 			int blocks_64,	/* Number of 64 Bytes Blocks */
 			int align,
 			uint64_t card_ram_base,
-			int timeout,		/* Timeout to wait in ms */
-			int irq)
+			int timeout)		/* Timeout to wait in sec */
 {
 	int rc;
 	void *src = NULL;
@@ -294,7 +287,7 @@ static int memcpy_test(struct snap_card* dnc,
 		VERBOSE1("  To Host: %p timeout: %d sec\n", dest, timeout);
 
 		action_memcpy(dnc, action, dest, src, memsize);
-		rc = action_wait_idle(dnc, timeout, &td, irq);
+		rc = action_wait_idle(dnc, timeout, &td);
 		print_time(td, memsize);
 		if (0 != rc) break;
 		VERBOSE1("  Compare: %p <-> %p\n", src, dest);
@@ -323,7 +316,7 @@ static int memcpy_test(struct snap_card* dnc,
 		VERBOSE1("  To DDR: %p timeout: %d sec\n", dest, timeout);
 
 		action_memcpy(dnc, action, dest, src, memsize);
-		rc = action_wait_idle(dnc, timeout, &td, irq);
+		rc = action_wait_idle(dnc, timeout, &td);
 		print_time(td, memsize);
 		free_mem(src);
 		break;
@@ -339,7 +332,7 @@ static int memcpy_test(struct snap_card* dnc,
 		VERBOSE1("  To Host: %p timeout: %d sec\n", dest, timeout);
 
 		action_memcpy(dnc, action, dest, src, memsize);
-		rc = action_wait_idle(dnc, timeout, &td, irq);
+		rc = action_wait_idle(dnc, timeout, &td);
 		print_time(td, memsize);
 		if (verbose_level > 1) {
 			VERBOSE0("---------- dest Buffer: %p\n", dest);
@@ -360,7 +353,7 @@ static int memcpy_test(struct snap_card* dnc,
 		VERBOSE1("  To DDR: %p timeout: %d sec\n", dest, timeout);
 
 		action_memcpy(dnc, action, dest, src, memsize);
-		rc = action_wait_idle(dnc, timeout, &td, irq);
+		rc = action_wait_idle(dnc, timeout, &td);
 		print_time(td, memsize);
 		break;
 	case ACTION_CONFIG_COPY_HDH:	/* Host -> DDR -> Host */
@@ -375,7 +368,7 @@ static int memcpy_test(struct snap_card* dnc,
 		VERBOSE1("  To DDR: %p timeout: %d sec\n", ddr3, timeout);
 		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
 			ddr3, src, memsize);
-		rc = action_wait_idle(dnc, timeout, &td, irq);
+		rc = action_wait_idle(dnc, timeout, &td);
 		print_time(td, memsize);
 		if (0 != rc) break;
 
@@ -389,7 +382,7 @@ static int memcpy_test(struct snap_card* dnc,
 		VERBOSE1("  To Host: %p timeout: %d sec\n", dest, timeout);
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
 			dest, ddr3, memsize);
-		rc = action_wait_idle(dnc, timeout, &td, irq);
+		rc = action_wait_idle(dnc, timeout, &td);
 		print_time(td, memsize);
 		if (0 != rc) break;
 		VERBOSE1("  Compare: %p <-> %p\n", src, dest);
@@ -410,7 +403,7 @@ static int memcpy_test(struct snap_card* dnc,
 }
 
 static struct snap_action *get_action(struct snap_card *handle,
-				      int flags, int timeout)
+				      snap_action_flag_t flags, int timeout)
 {
 	return snap_attach_action(handle, ACTION_TYPE_EXAMPLE,
 				  flags, timeout);
@@ -418,6 +411,12 @@ static struct snap_action *get_action(struct snap_card *handle,
 
 static void usage(const char *prog)
 {
+	VERBOSE0("SNAP Basic Test and Debug Tool.\n"
+		"    Use Option -a 1 for SNAP Timer Test's\n"
+		"    e.g. %s -a1 -s 1000 -e 2000 -i 200 -v\n"
+		"    Use Option -a 2,3,4,5,6 for SNAP DMA Test's\n"
+		"    e.g. %s -a2 [-vv] [-I]\n",
+		prog, prog);
 	VERBOSE0("Usage: %s\n"
 		"    -h, --help           print usage information\n"
 		"    -v, --verbose        verbose mode\n"
@@ -426,7 +425,7 @@ static void usage(const char *prog)
 		"    -q, --quiet          quiece output\n"
 		"    -a, --action         Action to execute (default 1)\n"
 		"    -t, --timeout        Timeout after N sec (default 1 sec)\n"
-		"    -I, --irq            Use Interrupts (default No Interrupts)\n"
+		"    -I, --irq            Enable Action Done Interrupt (default No Interrupts)\n"
 		"    ----- Action 1 Settings -------------- (-a) ----\n"
 		"    -s, --start          Start delay in msec (default %d)\n"
 		"    -e, --end            End delay time in msec (default %d)\n"
@@ -466,8 +465,7 @@ int main(int argc, char *argv[])
 	uint64_t card_ram_base = DDR_MEM_BASE_ADDR;	/* Base of Card DDR or Block Ram */
 	uint64_t cir;
 	int timeout = ACTION_WAIT_TIME;
-	int action_irq = 0;	/* No Action irq */
-	int attach_flags = SNAP_CCR_DIRECT_MODE;
+	snap_action_flag_t attach_flags = 0;
 	uint64_t td;
 	struct snap_action *act = NULL;
 
@@ -542,9 +540,8 @@ int main(int argc, char *argv[])
 		case 't':
 			timeout = strtol(optarg, (char **)NULL, 0); /* in sec */
 			break;
-		case 'I':	/* irq */
-			attach_flags |= SNAP_CCR_IRQ_ATTACH;
-			action_irq = ACTION_DONE_IRQ;
+		case 'I':      /* irq */
+			attach_flags = SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ;
 			break;
 		default:
 			usage(argv[0]);
@@ -587,7 +584,7 @@ int main(int argc, char *argv[])
 				goto __exit1;
 
 			action_count(dn, delay);
-			rc = action_wait_idle(dn, timeout + delay/1000, &td, action_irq);
+			rc = action_wait_idle(dn, timeout + delay/1000, &td);
 			print_time(td, 0);
 
 			snap_detach_action(act);
@@ -606,8 +603,7 @@ int main(int argc, char *argv[])
 				goto __exit1;
 			rc = memcpy_test(dn, action, num_4k, num_64,
 				memcpy_align, card_ram_base,
-				timeout,
-				action_irq);
+				timeout);
 
 			snap_detach_action(act);
 		}
