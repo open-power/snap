@@ -163,14 +163,11 @@ static void action_write(struct snap_card* h, uint32_t addr, uint32_t data)
 /*
  *	Start Action and wait for Idle.
  */
-static int action_wait_idle(struct snap_card* h, int timeout, int irq, uint32_t mem_size)
+static int action_wait_idle(struct snap_card* h, int timeout, uint32_t mem_size)
 {
 	int rc = ETIME;
 	uint64_t t_start;	/* time in usec */
 	uint64_t td;		/* Diff time in usec */
-
-	if (irq)
-		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
 
 	/* FIXME Use act and not h */
 	snap_action_start((void*)h);
@@ -183,8 +180,6 @@ static int action_wait_idle(struct snap_card* h, int timeout, int irq, uint32_t 
 	if (0 == rc)
 		VERBOSE0("Error: Timeout while Waiting for Idle ");
 	td = get_usec() - t_start;
-	if (irq)
-		action_write(h, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_OFF);
 	print_time(td, mem_size);
 	return(!rc);
 }
@@ -255,8 +250,7 @@ int main(int argc, char *argv[])
 	uint32_t blocks = 1;
 	void *src_buf = NULL;
 	void *dest_buf = NULL;
-	int action_irq = 0;
-	int attach_flags = SNAP_CCR_DIRECT_MODE;
+	snap_action_flag_t attach_flags = 0;
 	int drive = 0;
 	uint64_t nvme_offset = 0;
 	uint64_t nvme_lb = 0;
@@ -266,7 +260,7 @@ int main(int argc, char *argv[])
 	uint64_t host_dest = 0;
 	unsigned long long max_blocks = (NVME_DRIVE_SIZE / NVME_LB_SIZE);
 	struct snap_action *act = NULL;
-	
+
 	while (1) {
                 int option_index = 0;
 		static struct option long_options[] = {
@@ -335,8 +329,7 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'i':
-			attach_flags |= SNAP_CCR_IRQ_ATTACH;
-			action_irq = ACTION_DONE_IRQ;
+			attach_flags |= SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ;
 			break;
 		default:
 			usage(argv[0]);
@@ -388,30 +381,30 @@ int main(int argc, char *argv[])
 
 	act = snap_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags, 5*timeout);
 	if (NULL == act) {
-		VERBOSE0(" Error: Cannot Attach Action %x after %d sec\n",
-			ACTION_TYPE_EXAMPLE, 5*timeout);
+		VERBOSE0(" Error: Cannot Attach Action: %x\n",
+			ACTION_TYPE_EXAMPLE);
 		goto __exit;
 	}
 	VERBOSE1("\n        Host -> DDR ");
 	action_memcpy(dn, ACTION_CONFIG_COPY_HD, ddr_src, host_src, mem_size);
-	rc = action_wait_idle(dn, timeout, action_irq, mem_size);
+	rc = action_wait_idle(dn, timeout, mem_size);
 	if (rc) goto __exit1;
 
 	VERBOSE1("\n        DDR -> NVME ");
 	drive_cmd = ACTION_CONFIG_COPY_DN | (NVME_DRIVE1 * drive);
 	action_memcpy(dn, drive_cmd, nvme_lb, ddr_src, blocks);
-	rc = action_wait_idle(dn, timeout, action_irq, mem_size);
+	rc = action_wait_idle(dn, timeout, mem_size);
 	if (rc) goto __exit1;
 
 	VERBOSE1("\n        NVME -> DDR ");
 	drive_cmd = ACTION_CONFIG_COPY_ND | (NVME_DRIVE1 * drive);
 	action_memcpy(dn, drive_cmd, ddr_dest, nvme_lb, blocks);
-	rc = action_wait_idle(dn, timeout, action_irq, mem_size);
+	rc = action_wait_idle(dn, timeout, mem_size);
 	if (rc) goto __exit1;
 
 	VERBOSE1("\n        DDR -> Host ");
 	action_memcpy(dn, ACTION_CONFIG_COPY_DH, host_dest, ddr_dest, mem_size);
-	rc = action_wait_idle(dn, timeout, action_irq, mem_size);
+	rc = action_wait_idle(dn, timeout, mem_size);
 	if (rc) goto __exit1;
 
 	rc = memcmp2(dest_buf, src_buf, mem_size);
