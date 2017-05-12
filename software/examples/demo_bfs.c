@@ -1,5 +1,16 @@
 /*
- * Copyright 2016, 2017, International Business Machines
+ * Simple Breadth-first-search in C 
+ *
+ * Use Adjacency list to describe a graph:
+ *        https://en.wikipedia.org/wiki/Adjacency_list
+ *
+ * Above link follows license of 
+ * https://en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License
+ *
+ */
+
+/*
+ * Copyright 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
