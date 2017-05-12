@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		case 'X':	/* irq */
-			action_irq = (SNAP_DONE_IRQ | SNAP_ATTACH_IRQ);
+			action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 			break;
 		default:
 			usage(argv[0]);
