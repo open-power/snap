@@ -10,7 +10,7 @@
  *
  * 2) Sort both source tables, and then do intersection
  *  Use C build in library qsort  (quick sort)
- * 
+ *
  * Wikipedia's pages are based on "CC BY-SA 3.0"
  * Creative Commons Attribution-ShareAlike License 3.0
  * https://creativecommons.org/licenses/by-sa/3.0/
