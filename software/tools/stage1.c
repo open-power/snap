@@ -21,8 +21,8 @@
 #include <errno.h>
 #include <malloc.h>
 #include <getopt.h>
-#include <libdonut.h>
-#include <donut_tools.h>
+#include <libsnap.h>
+#include <snap_tools.h>
 
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;

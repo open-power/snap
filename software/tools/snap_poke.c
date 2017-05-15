@@ -22,8 +22,8 @@
 #include <asm/byteorder.h>
 #include <sys/mman.h>
 #include <getopt.h>
-#include <donut_tools.h>
-#include <libdonut.h>
+#include <snap_tools.h>
+#include <libsnap.h>
 #include "force_cpu.h"
 
 int verbose_flag = 0;

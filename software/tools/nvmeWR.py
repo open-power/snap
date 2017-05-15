@@ -23,44 +23,44 @@
 from __future__ import print_function
 import sys
 import subprocess
-import time 
+import time
 trace = True
 
 
 class AFU_MMIO:
-    
+
     @staticmethod
     def write(addr, data):
         if trace :
             print ('w', end ='')
             sys.stdout.flush()
-        p = subprocess.Popen (["../../../../software/tools/dnut_poke", "-w32", str(addr), str(data)],stdout=subprocess.PIPE,)
+        p = subprocess.Popen (["../../../../software/tools/snap_poke", "-w32", str(addr), str(data)],stdout=subprocess.PIPE,)
         p.wait()
-        return 
+        return
 
     @staticmethod
     def read(addr):
         if trace:
-            print ('r',end ='') 
+            print ('r',end ='')
             sys.stdout.flush()
-        p = subprocess.Popen (["../../../../software/tools/dnut_peek", "-w32", str(addr),],stdout=subprocess.PIPE,)
+        p = subprocess.Popen (["../../../../software/tools/snap_peek", "-w32", str(addr),],stdout=subprocess.PIPE,)
         #p = subprocess.Popen(["ls", "-l"],stdout=subprocess.PIPE,)
         p.wait()
- 
+
         txt = p.communicate()[0]
         txt = txt.split(']',1)
         txt = txt[1].split()
-        
+
         return int(txt[0],16)
 
     @staticmethod
     def nvme_write(addr, data):
         if (addr >= 0x30000) :
-            AFU_MMIO.write(0x30000, addr) 
+            AFU_MMIO.write(0x30000, addr)
             AFU_MMIO.write(0x30004, data)
         else :
             AFU_MMIO.write(0x20000 + addr, data)
-        
+
 
 
     @staticmethod
@@ -78,12 +78,12 @@ class AFU_MMIO:
             data = AFU_MMIO.nvme_read(0x90)
             print('buffer data word %d : %8x' % (words, data))
             words -=1
-    
+
     @staticmethod
     def nvme_fill_buffer(array):
         for data in array:
             AFU_MMIO.nvme_write(0x90,data)
-    
+
 
 SSD0_USED = True
 SSD1_USED = True

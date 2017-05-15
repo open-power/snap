@@ -33,9 +33,9 @@
 
 #include <libcxl.h>
 
-#include <donut_internal.h>
-#include <libdonut.h>
-#include <donut_tools.h>
+#include <snap_internal.h>
+#include <libsnap.h>
+#include <snap_tools.h>
 #include <snap_m_regs.h>
 #include <snap_hls_if.h>
 
@@ -65,7 +65,7 @@ static FILE *fd_out;
 struct mdev_ctx {
 	int loop;		/* Loop Counter */
 	int card;		/* Card no (0,1,2,3 */
-	void *handle;		/* The donut handle */
+	void *handle;		/* The snap handle */
 	int dt;			/* Delay time in sec (1 sec default) */
 	int count;		/* Number of loops to do, (-1) = forever */
 	bool daemon;		/* TRUE if forked */
