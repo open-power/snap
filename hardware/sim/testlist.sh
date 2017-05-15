@@ -6,18 +6,18 @@
 # export SNAP_TRACE=0xFF
   stimfile=$(basename "$0"); logfile="${stimfile%.*}.log"; ts0=$(date +%s); echo "executing $stimfile, logging $logfile maxloop=$loops";
   for((i=1;i<=loops;i++)) do l="loop=$i of $loops"; ts1=$(date +%s);                                                                                    #  sec
-#   t="$SNAP_ROOT/software/tools/dnut_peek -h"                                                 ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  1
-#   t="$SNAP_ROOT/software/tools/dnut_peek 0x0         "                                       ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  1
-#   t="$SNAP_ROOT/software/tools/dnut_peek 0x10000 -w32"                                       ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  1
-    t="$SNAP_ROOT/software/tools/dnut_peek 0x0         ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release maj.int.min.dist.4Bsha"
+#   t="$SNAP_ROOT/software/tools/snap_peek -h"                                                 ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  1
+#   t="$SNAP_ROOT/software/tools/snap_peek 0x0         "                                       ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  1
+#   t="$SNAP_ROOT/software/tools/snap_peek 0x10000 -w32"                                       ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  1
+    t="$SNAP_ROOT/software/tools/snap_peek 0x0         ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release maj.int.min.dist.4Bsha"
     vers=${r:0:6}; vers1=${r:0:2}; vers2=${r:2:2}; vers3=${r:4:2}; dist=${r:6:2};echo "SNAP version=$vers1.$vers2.$vers3 dist=$dist"
-    t="$SNAP_ROOT/software/tools/dnut_peek 0x8         ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # build date 0000YYYY.MM.DD.hh.mm"
-    t="$SNAP_ROOT/software/tools/dnut_peek 0x10        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
+    t="$SNAP_ROOT/software/tools/snap_peek 0x8         ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # build date 0000YYYY.MM.DD.hh.mm"
+    t="$SNAP_ROOT/software/tools/snap_peek 0x10        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
     done=${r:14:1};echo "exploration done=$done";
-    t="$SNAP_ROOT/software/tools/dnut_peek 0x18        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
+    t="$SNAP_ROOT/software/tools/snap_peek 0x18        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
     done=${r:13:1};numact=${r:14:1};(( numact += 1 ));echo "exploration done=$done num_actions=$numact"
     if (( numact > 0 ));then
-      t="$SNAP_ROOT/software/tools/dnut_peek 0x100       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 type 0.0.0.shrt.4B_long"
+      t="$SNAP_ROOT/software/tools/snap_peek 0x100       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 type 0.0.0.shrt.4B_long"
       t0s=${r:7:1};t0l=${r:8:8}
       if   [[ $t0l == "10140000" ]];then a0="memcopy";
       elif [[ $t0l == "10141000" ]];then a0="hls_memcopy"
@@ -47,30 +47,30 @@
       t="$SNAP_ROOT/software/tools/snap_maint -m1 -c1 -vvv"                                    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
       t="$SNAP_ROOT/software/tools/snap_maint -m1 -c1 -vvv"                                    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
 #     t="$SNAP_ROOT/software/tools/snap_maint -m2 -c1 -vvv"                                    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/tools/dnut_peek 0x10        ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
-      t="$SNAP_ROOT/software/tools/dnut_peek 0x18        ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
+      t="$SNAP_ROOT/software/tools/snap_peek 0x10        ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
+      t="$SNAP_ROOT/software/tools/snap_peek 0x18        ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
       done=${r:13:1};numact=${r:14:1};(( numact += 1 ));echo "exploration done=$done num_actions=$numact"
       if [[ "$done" == "0" ]];then
         echo "exploration still not shown as done, subsequent runs may fail !!!!";
         t="$SNAP_ROOT/software/tools/snap_maint -m1 -c1 -vvv"                                  ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-        t="$SNAP_ROOT/software/tools/dnut_peek 0x10        "; r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
-        t="$SNAP_ROOT/software/tools/dnut_peek 0x18        "; r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
+        t="$SNAP_ROOT/software/tools/snap_peek 0x10        "; r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
+        t="$SNAP_ROOT/software/tools/snap_peek 0x18        "; r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
       fi
     fi
-#   t="$SNAP_ROOT/software/tools/dnut_peek 0x20        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Lockreg 0x1=locked"
-#   t="$SNAP_ROOT/software/tools/dnut_peek 0x80        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # freerunning timer"
-#   t="$SNAP_ROOT/software/tools/dnut_peek 0x88        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Job timeout reg"
-#   t="$SNAP_ROOT/software/tools/dnut_peek 0x90        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action active counter"
-#   t="$SNAP_ROOT/software/tools/dnut_peek 0x98        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # job execution counter"
-#   t="$SNAP_ROOT/software/tools/dnut_peek 0xA0        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # job IDreg 8=master"
-#   t="$SNAP_ROOT/software/tools/dnut_peek 0xE000      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Jobmgr FIR"
-#   t="$SNAP_ROOT/software/tools/dnut_peek 0xE008      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # MMIO   FIR"
-#   t="$SNAP_ROOT/software/tools/dnut_peek 0xE010      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # DMA    FIR"
-#   t="$SNAP_ROOT/software/tools/dnut_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Jobmgr ErrInj"
-#   t="$SNAP_ROOT/software/tools/dnut_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # MMIO   ErrInj"
-#   t="$SNAP_ROOT/software/tools/dnut_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # DMA    ErrInj"
+#   t="$SNAP_ROOT/software/tools/snap_peek 0x20        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Lockreg 0x1=locked"
+#   t="$SNAP_ROOT/software/tools/snap_peek 0x80        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # freerunning timer"
+#   t="$SNAP_ROOT/software/tools/snap_peek 0x88        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Job timeout reg"
+#   t="$SNAP_ROOT/software/tools/snap_peek 0x90        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action active counter"
+#   t="$SNAP_ROOT/software/tools/snap_peek 0x98        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # job execution counter"
+#   t="$SNAP_ROOT/software/tools/snap_peek 0xA0        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # job IDreg 8=master"
+#   t="$SNAP_ROOT/software/tools/snap_peek 0xE000      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Jobmgr FIR"
+#   t="$SNAP_ROOT/software/tools/snap_peek 0xE008      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # MMIO   FIR"
+#   t="$SNAP_ROOT/software/tools/snap_peek 0xE010      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # DMA    FIR"
+#   t="$SNAP_ROOT/software/tools/snap_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Jobmgr ErrInj"
+#   t="$SNAP_ROOT/software/tools/snap_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # MMIO   ErrInj"
+#   t="$SNAP_ROOT/software/tools/snap_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # DMA    ErrInj"
     if (( numact > 0 ));then
-      t="$SNAP_ROOT/software/tools/dnut_peek 0x100       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 type 0.0.0.shrt.4B_long"
+      t="$SNAP_ROOT/software/tools/snap_peek 0x100       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 type 0.0.0.shrt.4B_long"
       t0s=${r:7:1};t0l=${r:8:8}
       if   [[ $t0l == "10140000" ]];then a0="memcopy";
       elif [[ $t0l == "10141000" ]];then a0="hls_memcopy"
@@ -81,14 +81,14 @@
       elif [[ $t0l == "10141005" ]];then a0="hls_intersect"
       else a0="unknown"; fi;
       echo "action0 type0s=$t0s type0l=$t0l $a0"
-      t="$SNAP_ROOT/software/tools/dnut_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
-      t="$SNAP_ROOT/software/tools/dnut_peek 0x10000 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release"
-      t="$SNAP_ROOT/software/tools/dnut_peek 0x10008 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # build date"
-      t="$SNAP_ROOT/software/tools/dnut_peek 0x10010 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg"
-      t="$SNAP_ROOT/software/tools/dnut_peek 0x10018 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg"
+      t="$SNAP_ROOT/software/tools/snap_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
+      t="$SNAP_ROOT/software/tools/snap_peek 0x10000 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release"
+      t="$SNAP_ROOT/software/tools/snap_peek 0x10008 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # build date"
+      t="$SNAP_ROOT/software/tools/snap_peek 0x10010 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg"
+      t="$SNAP_ROOT/software/tools/snap_peek 0x10018 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg"
     fi
     if (( numact > 1 ));then
-      t="$SNAP_ROOT/software/tools/dnut_peek 0x108       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 type 0.0.0.shrt.4B_long"
+      t="$SNAP_ROOT/software/tools/snap_peek 0x108       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 type 0.0.0.shrt.4B_long"
       t1s=${r:7:1};t1l=${r:8:8}
       if   [[ $t1l == "10140000" ]];then a1="memcopy";
       elif [[ $t1l == "10141000" ]];then a1="hls_memcopy"
@@ -99,11 +99,11 @@
       elif [[ $t1l == "10141005" ]];then a1="hls_intersect"
       else a1="unknown"; fi;
       echo "action1 type1s=$t1s type1l=$t1l $a1"
-      t="$SNAP_ROOT/software/tools/dnut_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
-      t="$SNAP_ROOT/software/tools/dnut_peek 0x11000 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release"
-      t="$SNAP_ROOT/software/tools/dnut_peek 0x11008 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # build date"
-      t="$SNAP_ROOT/software/tools/dnut_peek 0x11010 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg"
-      t="$SNAP_ROOT/software/tools/dnut_peek 0x11018 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg"
+      t="$SNAP_ROOT/software/tools/snap_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
+      t="$SNAP_ROOT/software/tools/snap_peek 0x11000 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release"
+      t="$SNAP_ROOT/software/tools/snap_peek 0x11008 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # build date"
+      t="$SNAP_ROOT/software/tools/snap_peek 0x11010 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg"
+      t="$SNAP_ROOT/software/tools/snap_peek 0x11018 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg"
     fi
 
     if [[ "$t0l" == "10140000" || "${env_action}" == "memcopy" ]];then echo -e "$del\ntesting memcopy"
