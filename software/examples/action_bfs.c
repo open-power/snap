@@ -1,5 +1,37 @@
 /*
- * Copyright 2016, International Business Machines
+ * Simple Breadth-first-search in C 
+ *
+ * Based on Pseudo code of:
+ *        https://en.wikipedia.org/wiki/Breadth-first_search
+ *
+ * Use Adjacency list to describe a graph:
+ *        https://en.wikipedia.org/wiki/Adjacency_list
+ * 
+ * And takes Queue structure: 
+ *        https://en.wikipedia.org/wiki/Queue_%28abstract_data_type%29  
+ *
+ * Wikipedia's pages are based on "CC BY-SA 3.0"
+ * Creative Commons Attribution-ShareAlike License 3.0
+ * https://creativecommons.org/licenses/by-sa/3.0/
+ *
+ * Attribution: 
+ * You must give appropriate credit, provide a link to 
+ * the license, and indicate if changes were made. You may do so in
+ * any reasonable manner, but not in any way that suggests the
+ * licensor endorses you or your use.
+ *
+ * ShareAlike: 
+ * If you remix, transform, or build upon the material, you must
+ * distribute your contributions under the same license as the original.
+ */
+ 
+
+ /*
+ * Adopt SNAP's framework for software action part.
+ */
+
+/*
+ * Copyright 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +47,8 @@
  */
 
 /*
- * Example to use the FPGA to find patterns in a byte-stream.
+ * Example to use the FPGA to traverse a graph with breadth-first-search
+ * method.
  */
 
 #include <stdio.h>

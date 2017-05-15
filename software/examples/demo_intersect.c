@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
-/* Function: Two steps:
- * 1) Copy two or more tables from Host to DDR (memcopy)
- * 2) Do intersection on the tables, and return the result to Host memory
+
+//////////////////////////////////////////////////////////////////
+/* Function: Three steps to emulate FPGA doing intersection:
+ * 1) Copy two or more tables from Host to FPGA DDR (memcopy)
+ * 3) Do intersection in FPGA, and return the result to FPGA DDR
+ * 5) Copy the result from FPGA DDR back to Host (memcopy)
  *
- *      Assume the table elements have same data struct
- *      The size of intersection result is MIN(Table1, Table2, ...Table N)
- * Only count the time elapsed at step 2.
+ * Count the time elapsed at step 3 + step5.
  *
+ * Function: Three steps to emulate Host CPU doing intersection: 
+ * 1) Copy two or more tables from Host to FPGA DDR (memcopy)
+ * 2) Copy these tables from FPGADDR to Host (memcopy) to emulate the external
+ *     data transfered to Host
+ * 4) Do intersection in CPU. Results stored in Host memory. 
+ *
+ * Count the time elapsed at step2 + step4.
  */
 
 #include <fcntl.h>
