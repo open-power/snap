@@ -18,7 +18,7 @@
 ############################################################################
 ############################################################################
 
-set root_dir     $::env(DONUT_HARDWARE_ROOT)
+set root_dir     $::env(SNAP_HARDWARE_ROOT)
 set fpga_part    $::env(FPGACHIP)
 set fpga_card    $::env(FPGACARD)
 set ip_dir       $root_dir/ip

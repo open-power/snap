@@ -17,7 +17,7 @@
 #-----------------------------------------------------------
 
 set xilinx_version [version -short]
-set root_dir      $::env(DONUT_HARDWARE_ROOT)
+set root_dir      $::env(SNAP_HARDWARE_ROOT)
 set ies_libs      $::env(IES_LIBS)
 set log_dir       $::env(LOGS_DIR)
 set log_file      $log_dir/compile_xsim.log

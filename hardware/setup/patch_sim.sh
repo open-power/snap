@@ -30,9 +30,9 @@ if [ "$NAME" == "top.sh" ]; then
       perl -i.ori -pe 'use Env qw(DENALI);s/(glbl.v)/$1 \\\n       +incdir+"${DENALI}\/ddvapi\/verilog"/mg' $1/$2 # add denali include directory
       perl -i.ori -pe 'use Env qw(DENALI);s/(-namemap_mixgen)/$1 -disable_sem2009 -loadpli1 ${DENALI}\/verilog\/libdenpli.so:den_PLIPtr/mg' $1/$2 # add denali .so
     fi
-    if [ -f ${DONUT_HARDWARE_ROOT}/sim/ies/run.f ]; then
-#     perl -i.ori -pe 's/(.*\/verilog\/top.v)/ -sv $1/mg' ${DONUT_HARDWARE_ROOT}/sim/ies/run.f; # compile top.v with system verilog, not needed anymore, since we work now with top.sv
-      perl -i.ori -pe 'BEGIN{undef $/;} s/(^-makelib.*\n.*glbl.v.*\n.*endlib)//mg' ${DONUT_HARDWARE_ROOT}/sim/ies/run.f; # remove glbl.v from compile list
+    if [ -f ${SNAP_HARDWARE_ROOT}/sim/ies/run.f ]; then
+#     perl -i.ori -pe 's/(.*\/verilog\/top.v)/ -sv $1/mg' ${SNAP_HARDWARE_ROOT}/sim/ies/run.f; # compile top.v with system verilog, not needed anymore, since we work now with top.sv
+      perl -i.ori -pe 'BEGIN{undef $/;} s/(^-makelib.*\n.*glbl.v.*\n.*endlib)//mg' ${SNAP_HARDWARE_ROOT}/sim/ies/run.f; # remove glbl.v from compile list
     fi
   fi
   if [ "$SIMULATOR" == "ncsim" ]; then

@@ -19,18 +19,18 @@
 ############################################################################
 
 export BUILD_NAME=HDK_build
-export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
-export DONUT_HDL_CORE=$(DONUT_HARDWARE_ROOT)/hdl/core
-export DONUT_SIM_CORE=$(DONUT_HARDWARE_ROOT)/sim/core
-export LOGS_DIR=$(DONUT_HARDWARE_ROOT)/logs
+export BUILD_DIR=$(SNAP_HARDWARE_ROOT)/$(BUILD_NAME)
+export SNAP_HDL_CORE=$(SNAP_HARDWARE_ROOT)/hdl/core
+export SNAP_SIM_CORE=$(SNAP_HARDWARE_ROOT)/sim/core
+export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 
-SNAP_CONFIG_FILES=$(DONUT_HDL_CORE)/psl_fpga.vhd \
-		  $(DONUT_HDL_CORE)/psl_accel.vhd \
-		  $(DONUT_HDL_CORE)/psl_accel_types.vhd \
-		  $(DONUT_SIM_CORE)/top.sv \
-		  $(DONUT_HDL_CORE)/snap_core.vhd \
-		  $(DONUT_HDL_CORE)/snap_core_types.vhd
-PROJECT_COMPILE_LIST = $(DONUT_HARDWARE_ROOT)/sim/xsim/file_info.txt
+SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
+		  $(SNAP_HDL_CORE)/psl_accel.vhd \
+		  $(SNAP_HDL_CORE)/psl_accel_types.vhd \
+		  $(SNAP_SIM_CORE)/top.sv \
+		  $(SNAP_HDL_CORE)/snap_core.vhd \
+		  $(SNAP_HDL_CORE)/snap_core_types.vhd
+PROJECT_COMPILE_LIST = $(SNAP_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
 
 .PHONY: all image model action_config create_environment copy config patch_version patch_vhd_files patch_tcl_files
@@ -39,7 +39,7 @@ all: config model image
 
 
 create_environment:
-	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -p -clone
+	@cd $(SNAP_HARDWARE_ROOT)/setup && ./create_environment -p -clone
 	@echo -e "\t[CREATE_ENVIRONMENT] done `date`"
 
 copy $(BUILD_DIR)/psl_fpga.tcl:
@@ -51,12 +51,12 @@ copy $(BUILD_DIR)/psl_fpga.tcl:
 	@sed -i 's/run.topImpl.*0/run.topImpl 1/'   $(BUILD_DIR)/psl_fpga.tcl
 	@sed -i 's/run.topSynth.*0/run.topSynth 1/' $(BUILD_DIR)/psl_fpga.tcl
 	@if [ $(FPGACARD) = "KU3" ]; then \
-	  ln -f -s $(DONUT_HDL_CORE)/psl_fpga_ku3.vhd_source  $(DONUT_HDL_CORE)/psl_fpga.vhd_source; \
-	  ln -f -s $(DONUT_HDL_CORE)/psl_accel_ku3.vhd_source $(DONUT_HDL_CORE)/psl_accel.vhd_source; \
+	  ln -f -s $(SNAP_HDL_CORE)/psl_fpga_ku3.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
+	  ln -f -s $(SNAP_HDL_CORE)/psl_accel_ku3.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
         fi
 	@if [ $(FPGACARD) = "FGT" ]; then \
-	  ln -f -s $(DONUT_HDL_CORE)/psl_fpga_fgt.vhd_source  $(DONUT_HDL_CORE)/psl_fpga.vhd_source; \
-	  ln -f -s $(DONUT_HDL_CORE)/psl_accel_fgt.vhd_source $(DONUT_HDL_CORE)/psl_accel.vhd_source; \
+	  ln -f -s $(SNAP_HDL_CORE)/psl_fpga_fgt.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
+	  ln -f -s $(SNAP_HDL_CORE)/psl_accel_fgt.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
 	fi
 	@echo "vhdl work ../hdl/core/psl_fpga.vhd" > $(BUILD_DIR)/Sources/prj/top.prj
 	@ln -s $(BUILD_NAME) build
@@ -72,10 +72,10 @@ $(BUILD_DIR)/Sources/prj/psl_fpga.prj: $(BUILD_DIR)/psl_fpga.tcl
 	@cat $(BUILD_DIR)/Sources/prj/top.prj $(BUILD_DIR)/Sources/prj/afu.prj > $(BUILD_DIR)/Sources/prj/psl_fpga.prj
 
 %.vhd: %.vhd_source
-	@$(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 %.sv: %.sv_source
-	@$(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 action_config: $(ACTION_ROOT)
 	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
@@ -90,25 +90,25 @@ $(ACTION_ROOT):
 	$(MAKE) -C `dirname $(ACTION_ROOT)`
 
 patch_tcl_files:
-	@echo "PATCH .tcl FILES"  && $(DONUT_HARDWARE_ROOT)/setup/patch_tcl.sh $(DONUT_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
+	@echo "PATCH .tcl FILES"  && $(SNAP_HARDWARE_ROOT)/setup/patch_tcl.sh $(SNAP_HARDWARE_ROOT) $(BUILD_DIR)/psl_fpga.tcl
 
 patch_version:
 	@echo "PATCH SNAP version and build date registers"; \
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HDL_CORE) snap_core.vhd
+	$(SNAP_HARDWARE_ROOT)/setup/patch_version.sh $(SNAP_HDL_CORE) snap_core.vhd
 
 config: $(BUILD_DIR)/psl_fpga.tcl $(SNAP_CONFIG_FILES) action_config create_environment $(BUILD_DIR)/Sources/prj/psl_fpga.prj patch_tcl_files patch_version
 	@echo -e "\t[CONFIG] done `date`"
 
 model: $(SNAP_CONFIG_FILES) patch_version
 	@echo -e "\t[BUILD MODEL] start `date`"
-	@cd $(DONUT_HARDWARE_ROOT)/setup && ./create_environment -b
+	@cd $(SNAP_HARDWARE_ROOT)/setup && ./create_environment -b
 	@echo -e "\t[BUILD MODEL] done `date`"
 
 image: $(SNAP_CONFIG_FILES) patch_version
 	@echo -e "\t[BUILD IMAGE (BIT)] start `date`"
 	@cd $(BUILD_DIR) && vivado -mode batch -source psl_fpga.tcl -notrace
 	@if [ "`vivado -version |head -n1  |cut -c 9-12`" = "2015" ] && [ $(DDR3_USED) = "TRUE" ] && [ $(BRAM_USED) = "FALSE" ]; then\
-	  cd $(DONUT_HARDWARE_ROOT)/setup && vivado -mode batch -source AR_64051.tcl -notrace;\
+	  cd $(SNAP_HARDWARE_ROOT)/setup && vivado -mode batch -source AR_64051.tcl -notrace;\
 	else\
 	  cd $(BUILD_DIR) && vivado -mode batch -source write_bitstream.tcl;\
 	  mv $(BUILD_DIR)/Implement/psl_fpga/psl_fpga.bit $(BUILD_DIR)/psl_fpga_flash.bit;\

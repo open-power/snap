@@ -51,12 +51,12 @@ ifndef NVME_USED
   export NVME_USED=FALSE
 endif
 
-.PHONY: clean gitclean check_donut_settings config image model clean gitclean
+.PHONY: clean gitclean check_snap_settings config image model clean gitclean
 
-check_donut_settings:
-	@if [ ! -d "$(DONUT_HARDWARE_ROOT)" ]; then \
-		echo "DONUT_HARDWARE_ROOT does not point to a directory."; \
-		echo "Please source donut_settings before calling make!"; \
+check_snap_settings:
+	@if [ ! -d "$(SNAP_HARDWARE_ROOT)" ]; then \
+		echo "SNAP_HARDWARE_ROOT does not point to a directory."; \
+		echo "Please source snap_settings before calling make!"; \
 		exit 1; \
 	fi
 	@if [[ $(SIMULATOR) != "irun" && $(SIMULATOR) != "xsim" && $(SIMULATOR) != "questa" ]];then \
@@ -69,14 +69,14 @@ check_donut_settings:
 		echo "the environment variable PATH points to its executable."; \
 		exit 1; \
 	fi
-	@cd $(DONUT_HARDWARE_ROOT); if [ -z `git describe HEAD 2> /dev/null` ]; then \
-		echo "$(DONUT_HARDWARE_ROOT) (DONUT_HARDWARE_ROOT) does not belong to a git repository."; \
+	@cd $(SNAP_HARDWARE_ROOT); if [ -z `git describe HEAD 2> /dev/null` ]; then \
+		echo "$(SNAP_HARDWARE_ROOT) (SNAP_HARDWARE_ROOT) does not belong to a git repository."; \
 		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/donut.git"; \
 		exit 1; \
 	fi
 	@if [ -z $(FPGACARD) ] || [ -z $(SDRAM_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ]; then \
 		echo "Missing one or more environment  variables"; \
-		echo "Please check the following variables and source donut_settings before calling make!"; \
+		echo "Please check the following variables and source snap_settings before calling make!"; \
 		echo "FPGACARD:       $(FPGACARD)"; \
 		echo "SDRAM_USED:     $(SDRAM_USED)"; \
 		echo "ILA_DEBUG:      $(ILA_DEBUG)"; \
@@ -85,7 +85,7 @@ check_donut_settings:
 		exit 1; \
 	fi
 
-config: check_donut_settings
+config: check_snap_settings
 	@$(MAKE) -f Makefile_$(FLOW_MODE) $@
 
 image model:
@@ -111,6 +111,6 @@ clean:
 	       hdl/core/psl_accel_types.vhd
 
 gitclean:
-	@echo -e "\t[GITCLEAN............] cleaning and resetting donut git";
+	@echo -e "\t[GITCLEAN............] cleaning and resetting snap git";
 	git clean -f -d -x
 	git reset --hard
