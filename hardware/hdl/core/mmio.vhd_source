@@ -39,6 +39,7 @@ ENTITY mmio IS
     -- pervasive
     ha_pclock              : IN  std_logic;
     afu_reset              : IN  std_logic;
+    nvme_perst_n_gate      : OUT std_logic_Vector(3 DOWNTO 0);             -- only for NVME_USED=TRUE -- gate to keep NVMe drives in reset (by driving 0's)
     --
     -- debug (TODO: remove)
     ah_paren_mm_o          : OUT std_logic;
@@ -872,6 +873,10 @@ BEGIN
                     snap_lock_write_q     <= TRUE;
                     snap_lock_write_val_q <= ha_mm_w_q.data(SNAP_LOCK_INT);
 
+                  WHEN SNAP_RESET_REG =>
+                    snap_regs_q(SNAP_RESET_REG)     <= ha_mm_w_q.data;
+                    snap_regs_par_q(SNAP_RESET_REG) <= ha_mm_w_q.datapar;
+
                   WHEN OTHERS =>
                     -- invalid (master) address
                     non_fatal_master_wr_errors_q(NFE_INV_WR_ADDRESS) <= '1';
@@ -1163,6 +1168,11 @@ BEGIN
     mmj_d_o.cpl_int_enable     <= context_config_hw_dout(CTX_CFG_CPLINT_ENA_INT);
     mmj_d_o.job_queue_mode     <= NOT context_config_hw_dout(CTX_CFG_DIRECT_MODE_INT);
 
+    --                                                                                             -- only for NVME_USED=TRUE
+    -- PERST gates for NVMe drives                                                                 -- only for NVME_USED=TRUE
+    --                                                                                             -- only for NVME_USED=TRUE
+    nvme_perst_n_gate <= snap_regs_q(SNAP_RESET_REG)(SNAP_NVME_PERST_L DOWNTO SNAP_NVME_PERST_R);  -- only for NVME_USED=TRUE
+
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   --  Host Interface
@@ -1222,12 +1232,12 @@ BEGIN
         mmio_action_access_q   <= mmio_action_access_q;
         mmio_action_id_valid_q <= mmio_action_id_valid_q;
         IF (ha_mm_i.valid = '1') THEN
-          IF (ha_mm_i.ad(SLAVE_ACTION_OFFSET_L DOWNTO SLAVE_ACTION_OFFSET_R) = SLAVE_ACTION_OFFSET_VAL) THEN 
+          IF (ha_mm_i.ad(SLAVE_ACTION_OFFSET_L DOWNTO SLAVE_ACTION_OFFSET_R) = SLAVE_ACTION_OFFSET_VAL) THEN
             ad_equal_slave_action_offset_v := '1';
           ELSE
             ad_equal_slave_action_offset_v := '0';
           END IF;
-            
+
           mmio_action_access_q <= (((ha_mm_i.ad(MASTER_ACTION_ACCESS_BIT)or ha_mm_i.ad(MASTER_ACTION_ACCESS_BIT+1)) AND NOT or_reduce(ha_mm_i.ad(PSL_HOST_ADDR_MAXBIT DOWNTO MASTER_ACTION_ACCESS_BIT+2))) OR
                                    (ha_mm_i.ad(SLAVE_SPACE_BIT) AND ad_equal_slave_action_offset_v)) AND
                                   NOT (ha_mm_i.cfg OR ha_mm_i.dw);
@@ -1377,7 +1387,7 @@ BEGIN
                                (mmio_action_access_q AND ha_mm_w_q.valid AND NOT( ha_mm_r_q.rnw OR ha_mm_r_q.dw OR ha_mm_r_q.cfg) AND
                                  ((mmio_action_id_valid_q AND NOT ha_mm_w_q.ad(SLAVE_SPACE_BIT)) OR
                                   (context_status_mmio_dout(CTX_STAT_ACTION_VALID_INT) AND ha_mm_r_q.ad(SLAVE_SPACE_BIT))));
-                               
+
         mmio_action_read_q  <= mmio_action_read_q OR
                                (mmio_action_access_q AND ha_mm_r_q.valid AND ha_mm_r_q.rnw AND NOT(ha_mm_r_q.dw OR ha_mm_r_q.cfg) AND
                                  ((mmio_action_id_valid_q AND NOT ha_mm_r_q.ad(SLAVE_SPACE_BIT)) OR
@@ -1393,7 +1403,7 @@ BEGIN
 
         xmm_ack_outstanding_q <= xmm_ack_outstanding_q;
         xmm_mmio_ack_q        <= xmm_mmio_ack_q;
-        xmm_ack_q             <= '0';      
+        xmm_ack_q             <= '0';
 
         IF NOT xmm_ack_outstanding_q THEN
           IF hw_assign_action_q = '1' THEN

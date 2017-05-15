@@ -163,8 +163,11 @@ ENTITY psl_accel IS
 --nvme_ch0    refclk_nvme_ch0_n                   : IN    STD_LOGIC;                               -- only for NVME_USED=TRUE
     refclk_nvme_ch1_p                   : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
     refclk_nvme_ch1_n                   : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
-      --                                                                                  -- only for NVME_USED=TRUE
-      -- NVME <-> PCIE Interface                                                          -- only for NVME_USED=TRUE
+    --                                                                                    -- only for NVME_USED=TRUE
+    -- PERST gates for NVMe drives                                                        -- only for NVME_USED=TRUE
+    nvme_perst_n_gate                   : OUT   STD_LOGIC_VECTOR(3 DOWNTO 0);             -- only for NVME_USED=TRUE -- gate to keep NVMe drives in reset (by driving 0's)
+    --                                                                                    -- only for NVME_USED=TRUE
+    -- NVME <-> PCIE Interface                                                            -- only for NVME_USED=TRUE
 --nvme_ch0    pcie_rc0_rxn                       : in   STD_LOGIC_VECTOR(3 downto 0);             -- only for NVME_USED=TRUE
 --nvme_ch0    pcie_rc0_rxp                       : in   STD_LOGIC_VECTOR(3 downto 0);             -- only for NVME_USED=TRUE
 --nvme_ch0    pcie_rc0_txn                       : out  STD_LOGIC_VECTOR(3 downto 0);             -- only for NVME_USED=TRUE
@@ -247,6 +250,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       --
       -- misc
       action_reset            : OUT STD_LOGIC;
+      nvme_perst_n_gate       : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);       -- only for NVME_USED=TRUE -- gate to keep NVMe drives in reset (by driving 0's)
       --
       -- Kernel AXI Master Interface
       xk_d_o                  : OUT XK_D_T;
@@ -1307,6 +1311,7 @@ BEGIN
       --
       -- misc
       action_reset   => action_reset,
+      nvme_perst_n_gate => nvme_perst_n_gate,     -- only for NVME_USED=TRUE
       --
       -- Kernel AXI Master Interface
       xk_d_o         => xk_d,
