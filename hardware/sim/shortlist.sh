@@ -5,12 +5,12 @@
   loops=1;
   stimfile=$(basename "$0"); logfile="${stimfile%.*}.log"; ts0=$(date +%s); echo "executing $stimfile, logging $logfile maxloop=$loops";
   for((i=1;i<=loops;i++)) do l="loop=$i of $loops"; ts1=$(date +%s);                                                                                #     sec
-#   t="$SNAP_ROOT/software/tools/dnut_peek -h"                                                 ;echo -e "$del\n$t $l";             $t;echo "RC=$?" #     1
-    t="$SNAP_ROOT/software/tools/dnut_peek 0"                                                  ;echo -e "$del\n$t $l";             $t;echo "RC=$?" #     1
-    t="$SNAP_ROOT/software/tools/dnut_peek 8"                                                  ;echo -e "$del\n$t $l";             $t;echo "RC=$?" #     1
-#   t="$SNAP_ROOT/software/tools/dnut_peek 1000"                                               ;echo -e "$del\n$t $l";             $t;echo "RC=$?" #     1
-#   t="$SNAP_ROOT/software/tools/dnut_peek 10000"                                              ;echo -e "$del\n$t $l";             $t;echo "RC=$?" #     1
-    t="$SNAP_ROOT/software/tools/dnut_peek 8"; result=$($t|grep ']'|awk '{print $2}')          ;echo -e "$del\n$t RC=$? result=$result"
+#   t="$SNAP_ROOT/software/tools/snap_peek -h"                                                 ;echo -e "$del\n$t $l";             $t;echo "RC=$?" #     1
+    t="$SNAP_ROOT/software/tools/snap_peek 0"                                                  ;echo -e "$del\n$t $l";             $t;echo "RC=$?" #     1
+    t="$SNAP_ROOT/software/tools/snap_peek 8"                                                  ;echo -e "$del\n$t $l";             $t;echo "RC=$?" #     1
+#   t="$SNAP_ROOT/software/tools/snap_peek 1000"                                               ;echo -e "$del\n$t $l";             $t;echo "RC=$?" #     1
+#   t="$SNAP_ROOT/software/tools/snap_peek 10000"                                              ;echo -e "$del\n$t $l";             $t;echo "RC=$?" #     1
+    t="$SNAP_ROOT/software/tools/snap_peek 8"; result=$($t|grep ']'|awk '{print $2}')          ;echo -e "$del\n$t RC=$? result=$result"
     action=$(echo $ACTION_ROOT|sed -e "s/action_examples\// /g"|awk '{print $2}')               ;echo -e "$del\naction=$action"
 
     if [[ $action == *"memcopy"* ]];then echo "testing memcopy"
