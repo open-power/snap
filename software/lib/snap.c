@@ -24,11 +24,11 @@
 #include <errno.h>
 #include <sys/time.h>
 
-#include <libdonut.h>
+#include <libsnap.h>
 #include <libcxl.h>
-#include <donut_tools.h>
-#include <donut_internal.h>
-#include <donut_queue.h>
+#include <snap_tools.h>
+#include <snap_internal.h>
+#include <snap_queue.h>
 #include <snap_s_regs.h>	/* Include SNAP Slave Regs */
 #include <snap_hls_if.h>	/* Include SNAP -> HLS */
 
@@ -458,7 +458,7 @@ static int hw_detach_action(struct snap_action *action)
 						   attached to action */
 		snap_trace("%s Error: CSR 0x%llx\n",
 			   __func__, (long long)data);
-		rc = SNAP_EDETACH;              /* FIXME Use libdonut return codes */
+		rc = SNAP_EDETACH; /* FIXME Use libsnap return codes */
 	}
 
 	card->action_base = 0;                  /* FIXME use action_*32 instead */
@@ -1015,11 +1015,11 @@ static void _init(void)
 	const char *trace_env;
 	const char *config_env;
 
-	trace_env = getenv("DNUT_TRACE"); /* FIXME change to SNAP */
+	trace_env = getenv("SNAP_TRACE");
 	if (trace_env != NULL)
 		snap_trace = strtol(trace_env, (char **)NULL, 0);
 
-	config_env = getenv("DNUT_CONFIG"); /* FIXME change to SNAP */
+	config_env = getenv("SNAP_CONFIG");
 	if (config_env != NULL)
 		snap_config = strtol(config_env, (char **)NULL, 0);
 

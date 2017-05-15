@@ -163,7 +163,7 @@ extern "C" {
  *   31.. 0 RW: Action type for action i (all zero if no Action i is implemented)
  *
  *   POR value: 0x00000000_00000000
- *   LIBDONUT needs to specify the values based on the result of an exploration phase
+ *   LIBSNAP needs to specify the values based on the result of an exploration phase
  */
 #define	SNAP_ATRI	0x100
 

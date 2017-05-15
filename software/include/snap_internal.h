@@ -1,5 +1,6 @@
-#ifndef __DONUT_INTERNAL_H__
-#define __DONUT_INTERNAL_H__
+#ifndef __SNAP_INTERNAL_H__
+#define __SNAP_INTERNAL_H__
+
 
 /**
  * Copyright 2016 International Business Machines
@@ -19,8 +20,8 @@
  */
 
 #include <stdint.h>
-#include <libdonut.h>
-#include "donut_queue.h"
+#include <libsnap.h>
+#include "snap_queue.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -127,4 +128,4 @@ struct snap_sim_action *snap_card_to_sim_action(struct snap_card *card);
 }
 #endif
 
-#endif	/* __DONUT_INTERNAL_H__ */
+#endif	/* __SNAP_INTERNAL_H__ */
