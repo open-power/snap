@@ -184,12 +184,12 @@ if { $nvme_used == TRUE } {
   puts "  	                        adding NVMe block design"
   set_property  ip_repo_paths $root_dir/hdl/nvme/ [current_project]
   update_ip_catalog  >> $log_file
-  add_files -norecurse                          $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd  >> $log_file
-  export_ip_user_files -of_objects  [get_files  $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
+  add_files -norecurse                          $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd  >> $log_file
+  export_ip_user_files -of_objects  [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
   update_compile_order -fileset sources_1
   puts "	                        generating NVMe output products"
-  set_property synth_checkpoint_mode None [get_files  $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
-  generate_target all                     [get_files  $root_dir/viv_project_tmp/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
+  set_property synth_checkpoint_mode None [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
+  generate_target all                     [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
   add_files -fileset sim_1 -scan_for_includes $root_dir/sim/nvme/
   add_files -fileset sim_1 -norecurse -scan_for_includes $denali_dir/ddvapi/verilog/denaliPcie.v
   set_property include_dirs                              $denali_dir/ddvapi/verilog [get_filesets sim_1]
