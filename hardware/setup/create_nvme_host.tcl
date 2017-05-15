@@ -26,13 +26,13 @@ set bd_name  nvme_top
 
 puts "	\[CREATE_NVMe.........\] start"
 # Create NVME project
-create_project   $prj_name $root_dir/viv_project_tmp -part $fpga_part -force >> $log_file
+create_project   $prj_name $root_dir/ip/nvme -part $fpga_part -force >> $log_file
 create_bd_design $bd_name  >> $log_file
 
 # Create NVME_HOST IP
 puts "	\                        generating NVMe Host IP"
 ipx::infer_core -vendor IP -library user -taxonomy /UserIP $root_dir/hdl/nvme >> $log_file
-ipx::edit_ip_in_project -upgrade true -name edit_ip_project -directory $root_dir/viv_project_tmp/nvme_host_ip/nvme.tmp $root_dir/hdl/nvme/component.xml >> $log_file
+ipx::edit_ip_in_project -upgrade true -name edit_ip_project -directory $root_dir/ip/nvme/nvme_host_ip/nvme.tmp $root_dir/hdl/nvme/component.xml >> $log_file
 ipx::current_core $root_dir/hdl/nvme/component.xml 
 update_compile_order -fileset sim_1
 

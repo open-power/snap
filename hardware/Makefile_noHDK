@@ -87,7 +87,7 @@ create_environment:
 	@cd $(SNAP_HARDWARE_ROOT)/setup                                    && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/framework.log         -journal $(LOGS_DIR)/create_frame_work.jou
 	@echo -e "\t[CREATE_ENVIRONMENT..] done `date`"
 
-config: copy_denali $(BUILD_DIR)/Checkpoint/b_route_design.dcp snap_config action_config create_environment patch_version patch_NVMe
+config: $(BUILD_DIR)/Checkpoint/b_route_design.dcp copy_denali snap_config action_config create_environment patch_version patch_NVMe
 	@echo -e "\t[CONFIG..............] done `date`"
 
 patch_version:
@@ -103,7 +103,7 @@ patch_NVMe:
 copy_denali:
 	@if [[ -e "$(FRAMEWORK_ROOT)/denali/tmp/" && $(NVME_USED) = "TRUE" ]]; then \
                 cp $(FRAMEWORK_ROOT)/denali/tmp/* $(SNAP_HARDWARE_ROOT)/sim/nvme/. ;  \
-                echo  -e "\t[COPY................] NVMe: denali files"; \
+                echo  -e "\t                       NVMe: denali files"; \
         fi
 
 
