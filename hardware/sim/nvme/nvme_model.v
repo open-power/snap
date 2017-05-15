@@ -329,7 +329,7 @@ denaliPcie den();
     //    $display("Link Training done");
         $display("Link speed for SSD1 - Trained to G3[%x] - G2[%x] - G1[%x] ",cfg_speed_1[2],cfg_speed_1[1], cfg_speed_1[0]);
         $display("Link Width for SSD1 - Trained to x%x", cfg_width_1);
-	//@(posedge(a0:donut_i:mmio_to_axi_master:nvme_q));
+	//@(posedge(a0:snap_core_i:mmio_to_axi_master:nvme_q));
 
         
 	$display("-------Configuring namespace for SSD0\n");

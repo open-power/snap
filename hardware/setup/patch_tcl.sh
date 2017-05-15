@@ -22,7 +22,7 @@
 cd $1
 
 sed -i '/set netlistDir/ a\
-set rootDir    \$::env(DONUT_HARDWARE_ROOT)' $2
+set rootDir    \$::env(SNAP_HARDWARE_ROOT)' $2
 
 sed -i 's/top    synth_options "-flatten_hierarchy rebuilt/top    synth_options "-flatten_hierarchy none/' $2
 
@@ -62,7 +62,7 @@ set_attribute module \$top    ip            \[list \\' $2
 
 sed -i '/top    synth_options/ a\
 set_attribute module $top    synthXDC      \[list \\\
-                                             \$rootDir/setup/donut_synth.xdc \\\
+                                             \$rootDir/setup/snap_synth.xdc \\\
                                            \]' $2
 
 sed -i '/linkXDC/ d' $2
@@ -87,18 +87,18 @@ fi
 
 if [ $FPGACARD == "KU3" ]; then 
   sed -i '/top      top/ a\
-                                             \$rootDir/setup/donut_pblock.xdc \\' $2
+                                             \$rootDir/setup/snap_pblock.xdc \\' $2
 
   if [ $BRAM_USED == "TRUE" ] || [ $DDR3_USED == "TRUE" ]; then
     sed -i '/top      top/ a\
                                              \$rootDir/setup/KU3/snap_refclk200.xdc \\\
-                                             \$rootDir/setup/donut_link.xdc \\' $2
+                                             \$rootDir/setup/snap_link.xdc \\' $2
   fi
 else 
   if [ $BRAM_USED == "TRUE" ] || [ $DDR4_USED == "TRUE" ]; then
     sed -i '/top      top/ a\
                                              \$rootDir/setup/FGT/snap_refclk266.xdc \\\
-                                             \$rootDir/setup/donut_link.xdc \\' $2
+                                             \$rootDir/setup/snap_link.xdc \\' $2
   fi
 fi
 

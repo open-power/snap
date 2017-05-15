@@ -21,14 +21,14 @@
 # export FRAMEWORK_ROOT=<your local workspace base>
 # export USERHOME=$FRAMEWORK_ROOT/$USER               # each user has his own workspace
 # export PSLSE_ROOT=$USERHOME/pslse                   # PSLSE clone from github
-# export DONUT_ROOT=$USERHOME/donut                   # donut clone from github
-# export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software     # path to donut software
-# export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware     # path to donut hardware
+# export SNAP_ROOT=$USERHOME/dnout                    # donut clone from github
+# export SNAP_SOFTWARE_ROOT=$SNAP_ROOT/software       # path to snap software
+# export SNAP_HARDWARE_ROOT=$SNAP_ROOT/hardware       # path to snap hardware
 # export SIMULATOR=xsim                               # ncsim,irun,xsim and questa are supported
 #
 # This script may download code from GIT:
 # git clone git@github.com:ibm-capi/pslse             $PSLSE_ROOT
-# git clone git@github.com:open-power/donut.git       $DONUT_ROOT
+# git clone git@github.com:open-power/donut.git       $SNAP_ROOT
 #
 # DEFAULTS ##############
  CLONE=0                 # do git clone, if root doesn't exist
@@ -48,15 +48,15 @@
 
 # FUNCTIONS ###################
  function check_rc() {
-           grep -i error ${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log|grep -v "errors: 0"
-   errors=`grep -i error ${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log|grep -v "errors: 0"|wc -l`  # you cannot trust the RC alone, better grep for errors in the log
+           grep -i error ${SNAP_HARDWARE_ROOT}/sim/compile_${source}.log|grep -v "errors: 0"
+   errors=`grep -i error ${SNAP_HARDWARE_ROOT}/sim/compile_${source}.log|grep -v "errors: 0"|wc -l`  # you cannot trust the RC alone, better grep for errors in the log
    echo "compile $source args=$DEBUG $CLEAN pwd=$PWD subdir=$dir RC=$rc error lines=$errors";
-   git branch -a >>${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log
-   git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2 " " $3}'>>${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log
+   git branch -a >>${SNAP_HARDWARE_ROOT}/sim/compile_${source}.log
+   git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2 " " $3}'>>${SNAP_HARDWARE_ROOT}/sim/compile_${source}.log
    if [[ $rc > $maxrc ]];then
      maxrc=$rc;
      if [[ $SOFE > 0 ]];then
-       less         ${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log
+       less         ${SNAP_HARDWARE_ROOT}/sim/compile_${source}.log
        exit 1;
      fi
    fi
@@ -101,8 +101,8 @@
 # MAIN PROGRAM #########
  # Check/Clone/pull Git repositories
  if [ -z ${PSLSE_ROOT} ]    ;then echo "variable PSLSE_ROOT not set"        ;maxrc+=1;fi # check for code path
- if [ -z ${DONUT_SOFTWARE_ROOT} ];then echo "variable DONUT_SOFTWARE_ROOT not set";maxrc+=1;fi # check for code path
- if [ -z ${DONUT_HARDWARE_ROOT} ];then echo "variable DONUT_HARDWARE_ROOT not set";maxrc+=1;fi # check for code path
+ if [ -z ${SNAP_SOFTWARE_ROOT} ];then echo "variable SNAP_SOFTWARE_ROOT not set";maxrc+=1;fi # check for code path
+ if [ -z ${SNAP_HARDWARE_ROOT} ];then echo "variable SNAP_HARDWARE_ROOT not set";maxrc+=1;fi # check for code path
  if [[ -z ${AFU_CONNECT_TYPE} || ${SIMULATOR} == "xsim" ]]  ;then AFU_CONNECT_TYPE='DPI'; fi
  if [ -z ${SIMULATOR} ]         ;then SIMULATOR="xsim"; fi
  if [[ $maxrc > 0 ]];then exit;fi
@@ -127,23 +127,23 @@
      else echo "directory $PSLSE_ROOT doesn't exist";maxrc+=1;fi
    fi
 
-   if [ -d ${DONUT_SOFTWARE_ROOT} ]   ;then
-     echo "directory $DONUT_SOFTWARE_ROOT exists"
-     source="SW";cd ${DONUT_SOFTWARE_ROOT};
+   if [ -d ${SNAP_SOFTWARE_ROOT} ]   ;then
+     echo "directory $SNAP_SOFTWARE_ROOT exists"
+     source="SW";cd ${SNAP_SOFTWARE_ROOT};
      if [ $UPDATE == 1 ]; then git branch;git pull;fi
    else
      if [ $CLONE == 1 ]; then
-       echo "clone -b master to $DONUT_ROOT"
-       git clone -b master      git@github.com:open-power/donut.git ${DONUT_ROOT}
-     else echo "directory $DONUT_SOFTWARE_ROOT doesn't exist";maxrc+=1;fi
+       echo "clone -b master to $SNAP_ROOT"
+       git clone -b master      git@github.com:open-power/donut.git ${SNAP_ROOT}
+     else echo "directory $SNAP_SOFTWARE_ROOT doesn't exist";maxrc+=1;fi
    fi
 
-   if [ -d ${DONUT_HARDWARE_ROOT} ]   ;then
-     echo "directory $DONUT_HARDWARE_ROOT exists"
-     source="hw";cd ${DONUT_HARDWARE_ROOT};
+   if [ -d ${SNAP_HARDWARE_ROOT} ]   ;then
+     echo "directory $SNAP_HARDWARE_ROOT exists"
+     source="hw";cd ${SNAP_HARDWARE_ROOT};
      if [ $UPDATE == 1 ]; then git branch;git pull;fi
    else
-     echo "directory $DONUT_HARDWARE_ROOT doesn't exist";maxrc+=1;
+     echo "directory $SNAP_HARDWARE_ROOT doesn't exist";maxrc+=1;
    fi
 
    if [[ $maxrc > 0 ]];then exit;fi
@@ -151,26 +151,26 @@
 
    # Compile local repositories in the order: pslse, SW, HW
    source='pslse';cd ${PSLSE_ROOT};
-   dir="afu_driver/src"; make -C $dir $DEBUG $CLEAN all        >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
-   dir="pslse"         ; make -C $dir $DEBUG FINISH=1 $CLEAN all  >>${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
-   dir="libcxl"        ; make -C $dir $DEBUG $CLEAN all       >>${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
-   dir="debug"         ; make -C $dir $DEBUG $CLEAN all       >>${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
+   dir="afu_driver/src"; make -C $dir $DEBUG $CLEAN all        >${SNAP_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
+   dir="pslse"         ; make -C $dir $DEBUG FINISH=1 $CLEAN all  >>${SNAP_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
+   dir="libcxl"        ; make -C $dir $DEBUG $CLEAN all       >>${SNAP_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
+   dir="debug"         ; make -C $dir $DEBUG $CLEAN all       >>${SNAP_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
 
-   source="sw";cd ${DONUT_SOFTWARE_ROOT};
-   dir='.'             ; make         $DEBUG $CLEAN all       >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
+   source="sw";cd ${SNAP_SOFTWARE_ROOT};
+   dir='.'             ; make         $DEBUG $CLEAN all       >${SNAP_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc
 
-   source="hw";cd ${DONUT_HARDWARE_ROOT};
+   source="hw";cd ${SNAP_HARDWARE_ROOT};
    if [ "$CLEAN" == "clean" ];then
      rm -rf sim/ies
      rm -rf sim/xsim
      rm -rf sim/questa
    fi
-   if [ ! -d ${DONUT_HARDWARE_ROOT}/sim/ies ];then 
-     cd ${DONUT_HARDWARE_ROOT}/setup; echo "run Vivado setup scripts"
-     vivado -mode batch -source create_ip.tcl -notrace -log ${DONUT_HARDWARE_ROOT}/logs/create_ip.log
+   if [ ! -d ${SNAP_HARDWARE_ROOT}/sim/ies ];then 
+     cd ${SNAP_HARDWARE_ROOT}/setup; echo "run Vivado setup scripts"
+     vivado -mode batch -source create_ip.tcl -notrace -log ${SNAP_HARDWARE_ROOT}/logs/create_ip.log
      if [[ $? != 0 ]];then echo "error in create_ip.tcl";exit -1;fi
 
-     vivado -mode batch -source create_framework.tcl -notrace -log ${DONUT_HARDWARE_ROOT}/logs/create_framework.log
+     vivado -mode batch -source create_framework.tcl -notrace -log ${SNAP_HARDWARE_ROOT}/logs/create_framework.log
      if [[ $? != 0 ]];then echo "error in create_framework.tcl";exit -1;fi
 
      vivado -mode batch -source export_xsim.tcl -notrace
@@ -187,50 +187,50 @@
    echo "compile for simulator=$SIMULATOR afu_connnect_type=${AFU_CONNECT_TYPE}"
    if [ $SIMULATOR == "xsim" ]; then
      # patches for xsim only, rest is done in separate tcl scripts
-     sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/xsim/top.sh          # run up to elaboration, skip execution
-     sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" ${DONUT_HARDWARE_ROOT}/sim/xsim/top.sh
+     sed -i "s/  simulate/# simulate/g" ${SNAP_HARDWARE_ROOT}/sim/xsim/top.sh          # run up to elaboration, skip execution
+     sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" ${SNAP_HARDWARE_ROOT}/sim/xsim/top.sh
 
-     cd ${DONUT_HARDWARE_ROOT}/sim/xsim;dir=.;source="xsim"
+     cd ${SNAP_HARDWARE_ROOT}/sim/xsim;dir=.;source="xsim"
      ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
-     ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
+     ./top.sh >${SNAP_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
    fi
 
    if [ $SIMULATOR == "ncsim" ]; then
-     if [ ! -f ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh ]; then                              # modbld script doesnt exist yet
+     if [ ! -f ${SNAP_HARDWARE_ROOT}/sim/ies/top.sh ]; then                              # modbld script doesnt exist yet
        vivado -mode batch -source export_ncsim.tcl -notrace
        if [[ $? != 0 ]];then echo "error in export_ncsim.tcl";exit -1;fi
      fi
-     sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh             # run ncsim up to elaboration, skip execution
-     sed -i "s/opts_ver=/set -e\nopts_ver=/g" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh       # use set -e to stop compilation on first error
-     cd ${DONUT_HARDWARE_ROOT}/sim/ies;dir=.;source=$SIMULATOR
+     sed -i "s/  simulate/# simulate/g" ${SNAP_HARDWARE_ROOT}/sim/ies/top.sh             # run ncsim up to elaboration, skip execution
+     sed -i "s/opts_ver=/set -e\nopts_ver=/g" ${SNAP_HARDWARE_ROOT}/sim/ies/top.sh       # use set -e to stop compilation on first error
+     cd ${SNAP_HARDWARE_ROOT}/sim/ies;dir=.;source=$SIMULATOR
      ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
-     ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
+     ./top.sh >${SNAP_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
    fi
 
    if [ $SIMULATOR == "irun" ]; then
-     if [ ! -f ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh ]; then                              # modbld script doesnt exist yet
+     if [ ! -f ${SNAP_HARDWARE_ROOT}/sim/ies/top.sh ]; then                              # modbld script doesnt exist yet
        vivado -mode batch -source export_irun.tcl -notrace
        if [[ $? != 0 ]];then echo "error in export_irun.tcl";exit -1;fi
      fi
-     sed -i "s/93 -relax/93 -elaborate -relax/gI"        ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh # run irun up to elaboration, skip execution
-     sed -i "s/-top xil_defaultlib.top/-top work.top/gI" ${DONUT_HARDWARE_ROOT}/sim/ies/top.sh # build top in work library
-     if [ -f ${DONUT_HARDWARE_ROOT}/sim/ies/run.f ]; then
-       perl -i.ori -pe 's/(.*\/verilog\/top.v)/ -sv $1/mg' ${DONUT_HARDWARE_ROOT}/sim/ies/run.f                          # compile top.v with system verilog
-       perl -i.ori -pe 'BEGIN{undef $/;} s/(^-makelib.*\n.*glbl.v.*\n.*endlib)//mg' ${DONUT_HARDWARE_ROOT}/sim/ies/run.f # remove glbl.v from compile list
+     sed -i "s/93 -relax/93 -elaborate -relax/gI"        ${SNAP_HARDWARE_ROOT}/sim/ies/top.sh # run irun up to elaboration, skip execution
+     sed -i "s/-top xil_defaultlib.top/-top work.top/gI" ${SNAP_HARDWARE_ROOT}/sim/ies/top.sh # build top in work library
+     if [ -f ${SNAP_HARDWARE_ROOT}/sim/ies/run.f ]; then
+       perl -i.ori -pe 's/(.*\/verilog\/top.v)/ -sv $1/mg' ${SNAP_HARDWARE_ROOT}/sim/ies/run.f                          # compile top.v with system verilog
+       perl -i.ori -pe 'BEGIN{undef $/;} s/(^-makelib.*\n.*glbl.v.*\n.*endlib)//mg' ${SNAP_HARDWARE_ROOT}/sim/ies/run.f # remove glbl.v from compile list
      fi
-     cd ${DONUT_HARDWARE_ROOT}/sim/ies;dir=.;source=$SIMULATOR
+     cd ${SNAP_HARDWARE_ROOT}/sim/ies;dir=.;source=$SIMULATOR
      ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
-     ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
+     ./top.sh >${SNAP_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
    fi
 
    if [ $SIMULATOR == "questa" ]; then
-     if [ ! -f ${DONUT_HARDWARE_ROOT}/sim/questa/top.sh ]; then                           # modbld script doesnt exist yet
+     if [ ! -f ${SNAP_HARDWARE_ROOT}/sim/questa/top.sh ]; then                           # modbld script doesnt exist yet
        vivado -mode batch -source export_questa.tcl -notrace
        if [[ $? != 0 ]];then echo "error in export_irun.tcl";exit -1;fi
-       sed -i "s/  simulate/# simulate/g" ${DONUT_HARDWARE_ROOT}/sim/questa/top.sh        # run up to elaboration, skip execution
+       sed -i "s/  simulate/# simulate/g" ${SNAP_HARDWARE_ROOT}/sim/questa/top.sh        # run up to elaboration, skip execution
      fi
-     cd ${DONUT_HARDWARE_ROOT}/sim/questa;dir=.;source=$SIMULATOR
+     cd ${SNAP_HARDWARE_ROOT}/sim/questa;dir=.;source=$SIMULATOR
      ln -sf ${PSLSE_ROOT}/afu_driver/src/libdpi.so 2>/dev/null
-     ./top.sh >${DONUT_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
+     ./top.sh >${SNAP_HARDWARE_ROOT}/sim/compile_${source}.log 2>&1; rc=$?;check_rc;cd -
    fi
  fi # BUILD_MODEL == 1

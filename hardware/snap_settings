@@ -24,7 +24,7 @@
 called=$BASH_SOURCE                # can be path+name, absolut or relative
 script=$(readlink -f "$called")    # absolute path+name
 scriptdir=$(dirname  "$script")    # just path
-donutdir=$(dirname "$scriptdir")
+snapdir=$(dirname "$scriptdir")
 
 unset SETUP_DONE;
 while [ -z "$SETUP_DONE" ]; do
@@ -74,26 +74,26 @@ while [ -z "$SETUP_DONE" ]; do
     echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
   fi
 
-  if [ "$DONUT_ROOT" = "$donutdir" ]; then
-    echo "DONUT_ROOT              is set to: \"$DONUT_ROOT\""
+  if [ "$SNAP_ROOT" = "$snapdir" ]; then
+    echo "SNAP_ROOT               is set to: \"$SNAP_ROOT\""
   else
-    echo "Setting DONUT_ROOT             to  \"$donutdir\""
+    echo "Setting SNAP_ROOT              to  \"$snapdir\""
   fi
-  export DONUT_ROOT=$donutdir
+  export SNAP_ROOT=$snapdir
 
-  if [ "$DONUT_HARDWARE_ROOT" = "$DONUT_ROOT/hardware" ]; then
-    echo "DONUT_HARDWARE_ROOT     is set to: \"$DONUT_HARDWARE_ROOT\""
+  if [ "$SNAP_HARDWARE_ROOT" = "$SNAP_ROOT/hardware" ]; then
+    echo "SNAP_HARDWARE_ROOT      is set to: \"$SNAP_HARDWARE_ROOT\""
   else
-    echo "Setting DONUT_HARDWARE_ROOT    to  \"$DONUT_ROOT/hardware\""
+    echo "Setting SNAP_HARDWARE_ROOT     to  \"$SNAP_ROOT/hardware\""
   fi
-  export DONUT_HARDWARE_ROOT=$DONUT_ROOT/hardware
+  export SNAP_HARDWARE_ROOT=$SNAP_ROOT/hardware
 
-  if [ "$DONUT_SOFTWARE_ROOT" = "$DONUT_ROOT/software" ]; then
-    echo "DONUT_SOFTWARE_ROOT     is set to: \"$DONUT_SOFTWARE_ROOT\""
+  if [ "$SNAP_SOFTWARE_ROOT" = "$SNAP_ROOT/software" ]; then
+    echo "SNAP_SOFTWARE_ROOT      is set to: \"$SNAP_SOFTWARE_ROOT\""
   else
-    echo "Setting DONUT_SOFTWARE_ROOT    to  \"$DONUT_ROOT/software\""
+    echo "Setting SNAP_SOFTWARE_ROOT     to  \"$SNAP_ROOT/software\""
   fi
-  export DONUT_SOFTWARE_ROOT=$DONUT_ROOT/software
+  export SNAP_SOFTWARE_ROOT=$SNAP_ROOT/software
 
   if [ -z "$ACTION_ROOT" ]; then
     echo "Variable ACTION_ROOT    is not set. Please let it point to your action source if you want to add an action to your project."

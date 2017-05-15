@@ -18,7 +18,7 @@
 ############################################################################
 ############################################################################
 
-set root_dir    $::env(DONUT_HARDWARE_ROOT)
+set root_dir    $::env(SNAP_HARDWARE_ROOT)
 set fpga_part   $::env(FPGACHIP)
 set fpga_card   $::env(FPGACARD)
 set pslse_dir   $::env(PSLSE_ROOT)
@@ -125,7 +125,7 @@ update_compile_order -fileset sources_1 >> $log_file
 update_compile_order -fileset sim_1 >> $log_file
 
 # Add IPs
-# Donut IPs
+# SNAP CORE IPs
 puts "	                        importing IPs"
 add_files -norecurse $root_dir/ip/ram_520x64_2p/ram_520x64_2p.xci >> $log_file
 export_ip_user_files -of_objects  [get_files "$root_dir/ip/ram_520x64_2p/ram_520x64_2p.xci"] -force >> $log_file
@@ -202,10 +202,10 @@ puts "	                        importing PSL design checkpoint"
 read_checkpoint -cell b $build_dir/Checkpoint/b_route_design.dcp -strict >> $log_file
 
 # XDC
-# Donut XDC
+# SNAP CORE XDC
 puts "	                        importing XDCs"
-add_files -fileset constrs_1 -norecurse $root_dir/setup/donut_link.xdc
-set_property used_in_synthesis false [get_files  $root_dir/setup/donut_link.xdc]
+add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_link.xdc
+set_property used_in_synthesis false [get_files  $root_dir/setup/snap_link.xdc]
 update_compile_order -fileset sources_1 >> $log_file
 # DDR XDCs
 if { $fpga_card == "KU3" } {

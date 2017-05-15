@@ -19,17 +19,17 @@
 ############################################################################
 
 export BUILD_NAME=noHDK_build
-export BUILD_DIR=$(DONUT_HARDWARE_ROOT)/$(BUILD_NAME)
-export DONUT_HDL_CORE=$(DONUT_HARDWARE_ROOT)/hdl/core
-export DONUT_SIM_CORE=$(DONUT_HARDWARE_ROOT)/sim/core
-export LOGS_DIR=$(DONUT_HARDWARE_ROOT)/logs
+export BUILD_DIR=$(SNAP_HARDWARE_ROOT)/$(BUILD_NAME)
+export SNAP_HDL_CORE=$(SNAP_HARDWARE_ROOT)/hdl/core
+export SNAP_SIM_CORE=$(SNAP_HARDWARE_ROOT)/sim/core
+export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 
-SNAP_CONFIG_FILES=$(DONUT_HDL_CORE)/psl_fpga.vhd \
-		  $(DONUT_HDL_CORE)/psl_accel.vhd \
-		  $(DONUT_HDL_CORE)/psl_accel_types.vhd \
-		  $(DONUT_SIM_CORE)/top.sv \
-		  $(DONUT_HDL_CORE)/snap_core.vhd \
-		  $(DONUT_HDL_CORE)/snap_core_types.vhd
+SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
+		  $(SNAP_HDL_CORE)/psl_accel.vhd \
+		  $(SNAP_HDL_CORE)/psl_accel_types.vhd \
+		  $(SNAP_SIM_CORE)/top.sv \
+		  $(SNAP_HDL_CORE)/snap_core.vhd \
+		  $(SNAP_HDL_CORE)/snap_core_types.vhd
 
 
 .PHONY: all image model action_config create_environment copy config patch_version xpr_image snap_config snap_config_start
@@ -45,23 +45,23 @@ copy $(BUILD_DIR)/Checkpoint/b_route_design.dcp:
 	@mkdir $(BUILD_DIR)/Checkpoint; 
 	@ln -s $(BUILD_DIR)/Checkpoint                       $(BUILD_DIR)/Checkpoints;
 	@ln -s $(BUILD_NAME)                                   build;
-	@ln -s $(DONUT_HARDWARE_ROOT)/setup/noHDK_build.tcl  $(BUILD_DIR)/noHDK_build.tcl; 
-	@ln -s $(DONUT_HARDWARE_ROOT)/setup/fw_xpr_build.tcl $(BUILD_DIR)/fw_xpr_build.tcl; 
+	@ln -s $(SNAP_HARDWARE_ROOT)/setup/noHDK_build.tcl   $(BUILD_DIR)/noHDK_build.tcl; 
+	@ln -s $(SNAP_HARDWARE_ROOT)/setup/fw_xpr_build.tcl  $(BUILD_DIR)/fw_xpr_build.tcl; 
 	@cp -p $(PSL_DCP)                                    $(BUILD_DIR)/Checkpoint/; 
 	@if [ $(FPGACARD) = "KU3" ]; then \
-	  ln -f -s $(DONUT_HDL_CORE)/psl_fpga_ku3.vhd_source  $(DONUT_HDL_CORE)/psl_fpga.vhd_source; \
-	  ln -f -s $(DONUT_HDL_CORE)/psl_accel_ku3.vhd_source $(DONUT_HDL_CORE)/psl_accel.vhd_source; \
+	  ln -f -s $(SNAP_HDL_CORE)/psl_fpga_ku3.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
+	  ln -f -s $(SNAP_HDL_CORE)/psl_accel_ku3.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
         fi
 	@if [ $(FPGACARD) = "FGT" ]; then \
-	  ln -f -s $(DONUT_HDL_CORE)/psl_fpga_fgt.vhd_source  $(DONUT_HDL_CORE)/psl_fpga.vhd_source; \
-	  ln -f -s $(DONUT_HDL_CORE)/psl_accel_fgt.vhd_source $(DONUT_HDL_CORE)/psl_accel.vhd_source; \
+	  ln -f -s $(SNAP_HDL_CORE)/psl_fpga_fgt.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
+	  ln -f -s $(SNAP_HDL_CORE)/psl_accel_fgt.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
 	fi
 
 %.vhd: %.vhd_source
-	@$(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 %.sv: %.sv_source
-	@$(DONUT_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 snap_config: snap_config_start $(SNAP_CONFIG_FILES)
 
@@ -82,9 +82,9 @@ $(ACTION_ROOT):
 
 create_environment:
 	@echo -e "\t[CREATE_ENVIRONMENT..] start `date`";
-	@cd $(DONUT_HARDWARE_ROOT)/setup                                    && vivado -quiet -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -journal $(LOGS_DIR)/create_ip.jou
-	@if [ $(NVME_USED) = "TRUE" ]; then cd $(DONUT_HARDWARE_ROOT)/setup && vivado -quiet -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou; fi
-	@cd $(DONUT_HARDWARE_ROOT)/setup                                    && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/framework.log         -journal $(LOGS_DIR)/create_frame_work.jou
+	@cd $(SNAP_HARDWARE_ROOT)/setup                                    && vivado -quiet -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -journal $(LOGS_DIR)/create_ip.jou
+	@if [ $(NVME_USED) = "TRUE" ]; then cd $(SNAP_HARDWARE_ROOT)/setup && vivado -quiet -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou; fi
+	@cd $(SNAP_HARDWARE_ROOT)/setup                                    && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/framework.log         -journal $(LOGS_DIR)/create_frame_work.jou
 	@echo -e "\t[CREATE_ENVIRONMENT..] done `date`"
 
 config: copy_denali $(BUILD_DIR)/Checkpoint/b_route_design.dcp snap_config action_config create_environment patch_version patch_NVMe
@@ -92,17 +92,17 @@ config: copy_denali $(BUILD_DIR)/Checkpoint/b_route_design.dcp snap_config actio
 
 patch_version:
 	@echo  -e "\t[PATCH...............] SNAP version and build date registers"; \
-	$(DONUT_HARDWARE_ROOT)/setup/patch_version.sh $(DONUT_HDL_CORE) snap_core.vhd
+	$(SNAP_HARDWARE_ROOT)/setup/patch_version.sh $(SNAP_HDL_CORE) snap_core.vhd
 
 patch_NVMe:
-	@if [[ -e "$(DONUT_HARDWARE_ROOT)/setup/patch_NVMe.sh" && $(NVME_USED) = "TRUE" ]]; then \
-		cd $(DONUT_HARDWARE_ROOT)/setup && ./patch_NVMe.sh && cd .. ; \
+	@if [[ -e "$(SNAP_HARDWARE_ROOT)/setup/patch_NVMe.sh" && $(NVME_USED) = "TRUE" ]]; then \
+		cd $(SNAP_HARDWARE_ROOT)/setup && ./patch_NVMe.sh && cd .. ; \
 		echo  -e "\t[PATCH...............] NVMe PCIe Root Complex sim. files"; \
 	fi	
  
 copy_denali:
 	@if [[ -e "$(FRAMEWORK_ROOT)/denali/tmp/" && $(NVME_USED) = "TRUE" ]]; then \
-                cp $(FRAMEWORK_ROOT)/denali/tmp/* $(DONUT_HARDWARE_ROOT)/sim/nvme/. ;  \
+                cp $(FRAMEWORK_ROOT)/denali/tmp/* $(SNAP_HARDWARE_ROOT)/sim/nvme/. ;  \
                 echo  -e "\t[COPY................] NVMe: denali files"; \
         fi
 
@@ -132,32 +132,32 @@ pslse:
 
 software:
 	@echo -e "\t[COMPILE SOFTWARE....] start `date`"
-	@make -C $(DONUT_SOFTWARE_ROOT)       > $(LOGS_DIR)/compile_sw.log 2>&1
+	@make -C $(SNAP_SOFTWARE_ROOT)       > $(LOGS_DIR)/compile_sw.log 2>&1
 
 xsim:
 	@echo -e "\t[BUILD xsim..........] start `date`"
-	@if [ ! -d "$(DONUT_HARDWARE_ROOT)/sim/xsim" ];then \
+	@if [ ! -d "$(SNAP_HARDWARE_ROOT)/sim/xsim" ];then \
 		vivado -quiet -mode batch -source setup/export_xsim.tcl -notrace -log $(LOGS_DIR)/compile_$(SIMULATOR).log; \
-		$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/xsim top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
-		cd $(DONUT_HARDWARE_ROOT)/sim/xsim && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
+		$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/xsim top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
+		cd $(SNAP_HARDWARE_ROOT)/sim/xsim && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
 	fi
-	@cd $(DONUT_HARDWARE_ROOT)/sim/xsim && ./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1
+	@cd $(SNAP_HARDWARE_ROOT)/sim/xsim && ./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1
 
 irun:
 	@echo -e "\t[BUILD irun..........] start `date`"
-	@if [ ! -d "$(DONUT_HARDWARE_ROOT)/sim/ies" ];then \
+	@if [ ! -d "$(SNAP_HARDWARE_ROOT)/sim/ies" ];then \
 		vivado -quiet -mode batch -source setup/export_irun.tcl -notrace -log $(LOGS_DIR)/compile_$(SIMULATOR).log; \
-		$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/ies top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
-		cd $(DONUT_HARDWARE_ROOT)/sim/ies && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
+		$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/ies top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
+		cd $(SNAP_HARDWARE_ROOT)/sim/ies && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
 	fi
-	@cd $(DONUT_HARDWARE_ROOT)/sim/ies && ./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1
+	@cd $(SNAP_HARDWARE_ROOT)/sim/ies && ./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1
 
 questa:
 	@echo -e "\t[BUILD questa........] start `date`"
-	@if [ ! -d "$(DONUT_HARDWARE_ROOT)/sim/questa" ];then \
+	@if [ ! -d "$(SNAP_HARDWARE_ROOT)/sim/questa" ];then \
 		vivado -quiet -mode batch -source setup/export_questa.tcl -notrace -log $(LOGS_DIR)/compile_$(SIMULATOR).log; \
-		$(DONUT_HARDWARE_ROOT)/setup/patch_sim.sh $(DONUT_HARDWARE_ROOT)/sim/questa top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
-		cd $(DONUT_HARDWARE_ROOT)/sim/questa && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
+		$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/questa top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
+		cd $(SNAP_HARDWARE_ROOT)/sim/questa && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
 	fi
-	@cd $(DONUT_HARDWARE_ROOT)/sim/questa && ./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1
+	@cd $(SNAP_HARDWARE_ROOT)/sim/questa && ./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1
 

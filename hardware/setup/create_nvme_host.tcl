@@ -16,7 +16,7 @@
 #
 #-----------------------------------------------------------
 
-set root_dir   $::env(DONUT_HARDWARE_ROOT)
+set root_dir   $::env(SNAP_HARDWARE_ROOT)
 set fpga_part  $::env(FPGACHIP)
 set log_dir    $::env(LOGS_DIR)
 set log_file   $log_dir/create_nvme_host.log
