@@ -216,7 +216,8 @@ PACKAGE snap_core_types IS
   CONSTANT BUILD_DATE_REG             : integer := 16#1#;
   CONSTANT SNAP_CMD_REG               : integer := 16#2#;
   CONSTANT SNAP_STATUS_REG            : integer := 16#3#;
-  CONSTANT MAX_SNAP_REG               : integer := 16#3#;  -- maximum index for snap register array
+  CONSTANT SNAP_RESET_REG             : integer := 16#5#;
+  CONSTANT MAX_SNAP_REG               : integer := 16#5#;  -- maximum index for snap register array
   -- SNAP extended registers
   CONSTANT SNAP_FRT_REG               : integer := 16#0#;
   CONSTANT SNAP_LOCK_REG              : integer := 16#4#;
@@ -249,6 +250,8 @@ PACKAGE snap_core_types IS
   CONSTANT SNAP_LOCK_INT              : integer :=  0;     -- SNAP_LOCK_REG
   CONSTANT SNAP_CTX_MASTER_BIT        : integer := 63;     -- SNAP_CTX_ID_REG
   CONSTANT SNAP_CTX_ID_R              : integer :=  0;     -- SNAP_CTX_ID_REG
+  CONSTANT SNAP_NVME_PERST_L          : integer :=  3;     -- SNAP_RESET_REG
+  CONSTANT SNAP_NVME_PERST_R          : integer :=  0;     -- SNAP_RESET_REG
 
   CONSTANT CTX_CFG_SIZE_INT           : integer := 39;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_SEQNO_L      : integer := 63;     -- CONTEXT_CONFIG_REG
