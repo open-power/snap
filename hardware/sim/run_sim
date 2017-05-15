@@ -56,9 +56,9 @@
 
 # ARGUMENTS #############
  TS=`date +%Y%m%d_%H%M%S`; if [ "$TST_TITLE" != "" ];then TS="${TS}_${TST_TITLE}";fi
- if [ -z $DONUT_ROOT ];then echo "variable DONUT_ROOT not found, leaving"; exit 11; fi
- if [ -z $DONUT_SOFTWARE_ROOT ];then echo "variable DONUT_SOFTWARE_ROOT not found, leaving"; exit 11; fi
- if [ -z $DONUT_HARDWARE_ROOT ];then echo "variable DONUT_HARDWARE_ROOT not found, leaving"; exit 11; fi
+ if [ -z $SNAP_ROOT ];then echo "variable SNAP_ROOT not found, leaving"; exit 11; fi
+ if [ -z $SNAP_SOFTWARE_ROOT ];then echo "variable SNAP_SOFTWARE_ROOT not found, leaving"; exit 11; fi
+ if [ -z $SNAP_HARDWARE_ROOT ];then echo "variable SNAP_HARDWARE_ROOT not found, leaving"; exit 11; fi
  if [ -z $FRAMEWORK_ROOT ];then echo "variable FRAMEWORK_ROOT not found, leaving"; exit 11; fi
  if [ -z $PSLSE_ROOT ];then echo "variable PSLSE_ROOT not found, leaving"; exit 11; fi
  HOSTNAME=`hostname -s`; echo "hostname=$HOSTNAME arguments=$@"
@@ -67,7 +67,7 @@
 #  echo "arg1=$1 arg2=$2"
    case $1 in				
      -app)		TST_NAME="$2";shift
-     			if [[ ! -f ${DONUT_SOFTWARE_ROOT}/${TST_NAME} ]];then echo "file ${DONUT_SOFTWARE_ROOT}/${TST_NAME} not found, leaving";exit 11;fi;;
+     			if [[ ! -f ${SNAP_SOFTWARE_ROOT}/${TST_NAME} ]];then echo "file ${SNAP_SOFTWARE_ROOT}/${TST_NAME} not found, leaving";exit 11;fi;;
      -list)		TST_NAME='LIST';LISTNAME="$2";shift
      			if [[ ! -f ${LISTNAME} ]];then echo "testlist ${LISTNAME} not found, leaving"; exit 11; fi;;
      -x|xterm|XTERM)	TST_NAME='XTERM';;
@@ -159,18 +159,18 @@
      cp ../qu*.tcl  	      $SIMOUT 2>/dev/null
    else echo "cannot prepare simout for simdir=$SIMDIR"; exit 1; fi
    cd $SIMOUT
-#  ln -s $DONUT_HARDWARE_ROOT/support  support  	# to easier get to waveform signallists
+#  ln -s $SNAP_HARDWARE_ROOT/support  support  	# to easier get to waveform signallists
    if   [ "$SIMDIR" == "ies" ];then
-     ln -s $DONUT_HARDWARE_ROOT/sim/ies/ies        	# point to compiled model
-     ln -s $DONUT_HARDWARE_ROOT/sim/ies/INCA_libs 	# point to compiled model
+     ln -s $SNAP_HARDWARE_ROOT/sim/ies/ies        	# point to compiled model
+     ln -s $SNAP_HARDWARE_ROOT/sim/ies/INCA_libs 	# point to compiled model
      ln -s $FRAMEWORK_ROOT/denali                       # point to denali config files
    elif [ "$SIMDIR" == "xsim" ];then
-     ln -s $DONUT_HARDWARE_ROOT/sim/xsim/xsim.dir
+     ln -s $SNAP_HARDWARE_ROOT/sim/xsim/xsim.dir
    elif [ "$SIMDIR" == "questa" ];then
-     ln -s $DONUT_HARDWARE_ROOT/sim/questa/msim
-     ln -s $DONUT_HARDWARE_ROOT/sim/questa/work
+     ln -s $SNAP_HARDWARE_ROOT/sim/questa/msim
+     ln -s $SNAP_HARDWARE_ROOT/sim/questa/work
    else echo "dont know model pointer for simdir=$SIMDIR"; exit 1; fi
-#  ln -s $DONUT_SOFTWARE_ROOT          jobq_software
+#  ln -s $SNAP_SOFTWARE_ROOT          jobq_software
    cp $PSLSE_ROOT/pslse/pslse.parms   .		# default pslse.parms file
  elif [ "${P3:0:3}" == "201" ] || [ "$P3" == "latest" ];then # already in simout i.e. 20160101_235959
    echo "in simout"
@@ -262,9 +262,9 @@
 #  echo "add $VERBOSE to tst_arg $TST_ARG"
    TST_ARG+=" ${VERBOSE}"
  fi
- echo "donut_root=$DONUT_ROOT"		 |tee sim.log
-#echo "SW root=   ${DONUT_ROOT}/software"|tee sim.log
-#echo "HW root=   ${DONUT_ROOT}/hardware"|tee -a sim.log
+ echo "SNAP_root=$SNAP_ROOT"		 |tee sim.log
+#echo "SW root=   ${SNAP_ROOT}/software"|tee sim.log
+#echo "HW root=   ${SNAP_ROOT}/hardware"|tee -a sim.log
  echo "pslse_root=$PSLSE_ROOT"		 |tee -a sim.log
  echo "simbase=   $SIMBASE"		 |tee -a sim.log
  echo "simout=    $SIMOUT"		 |tee -a sim.log
@@ -335,7 +335,7 @@
    echo "**** run $PAR $TST_NAME app(s) timeout=${DDCB_TIMEOUT} seed=${TCL_SEED} randnum=$randnum tst_arg=$TST_ARG"|tee stim.log
    if [ "$EXPLORE" == "1" ];then
      echo "explore actions"|tee -a $STIMLOG
-     $DONUT_SOFTWARE_ROOT/tools/snap_maint 2>&1 |tee -a $STIMLOG
+     $SNAP_SOFTWARE_ROOT/tools/snap_maint 2>&1 |tee -a $STIMLOG
    fi
    for i in `seq 1 $PAR`;do					# start testcase
      prc[$i]=0
@@ -351,9 +351,9 @@
          sh  ${parfilename}.sh 2>&1|tee -a ${parfilename}.log &
        else echo "cannot start list for par=$PAR"|tee -a stim.log; fi
      elif [ "$TST_NAME" == "EBERHARD" ];then
-       $DONUT_SOFTWARE_ROOT/mmio/app0 -vv 2>&1 |tee -a $STIMLOG &  # for Eberhard
+       $SNAP_SOFTWARE_ROOT/mmio/app0 -vv 2>&1 |tee -a $STIMLOG &  # for Eberhard
      else
-       $DONUT_SOFTWARE_ROOT/${TST_NAME} $TST_ARG 2>&1 |tee -a $STIMLOG &
+       $SNAP_SOFTWARE_ROOT/${TST_NAME} $TST_ARG 2>&1 |tee -a $STIMLOG &
      fi
      pid[$i]=$(jobs -p|tail -n1);
      ts4=$(date +%T); echo "$ts4 app $i started, pid=${pid[$i]}"|tee -a stim.log
@@ -445,9 +445,9 @@
  xil_warnings=`grep -i "error:" sim.log |grep -E "tIS violation|tRCD violation|RST_N goes inactive" |wc -l`;
  if [[ "$xil_warnings" -ne "0" ]]; then echo "$xil_warnings tIS/tRCD/RST_N violations found in sim.log, ignored according to Xilinx AR#61901" |tee -a stim.log;fi
 #echo "**** append msgs from $SIMULATOR.log"|tee -a stim.log; grep -i "error" $SIMULATOR.log|grep -v LOADLB |tee -a stim.log # duplicate info to sim.log
-#cd $DONUT_HARDWARE_ROOT; 	HWVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
-#cd $DONUT_SOFTWARE_ROOT; 	SWVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
- cd $DONUT_ROOT;          	DOVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
+#cd $SNAP_HARDWARE_ROOT; 	HWVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
+#cd $SNAP_SOFTWARE_ROOT; 	SWVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
+ cd $SNAP_ROOT;          	SNAPVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
  if [ "${PSLSE_PID}." != "." ] ;then			# variable exists, PSLSE started
    echo "**** append msgs from pslse.log"|tee -a stim.log; grep -i "error" pslse.log|tee -a stim.log
    cd $PSLSE_ROOT;	  	PSLSEVERS=`git log --pretty=format:"%h %ad" -n1 --date=iso|awk '{print $1 " "  $2}'`;cd - >/dev/null
@@ -477,10 +477,10 @@
  USED=`du -sk . |awk '{print $1}'`				
  echo "**** RC=$TCRC parallel=$PAR executed=$EXECUTED failed=$FAILED runtime=$RUNTIME simtime=$SIMTIME cpus=$CPUS speed=$SPEED load=$LOAD local=$LOCAL used_kB=$USED percused=$PERCUSED"
 #echo "**** Versions: HW=$HWVERS SW=$SWVERS PSLSE=$PSLSEVERS"
- echo "**** Versions: DONUT=$DOVERS PSLSE=$PSLSEVERS"
+ echo "**** Versions: SNAP=$SNAPVERS PSLSE=$PSLSEVERS"
  if [ ! -d "$USERHOME" ];then echo "variable USERHOME is not pointing to a directory: $USERHOME"      # no collection for statistics
  else                                                                                                 # collect statistics in USERHOME
-   echo "$DOVERS,$PSLSEVERS,$SIMBASE,$TS,$TCRC,$PAR,$EXECUTED,$FAILED,$RUNTIME,$SIMTIME,$DDCB_TIMEOUT,$HOSTNAME,$SPEED,$CPUS,$LOAD,$USED,$PERCUSED,$TST_NAME $LISTNAME,$TST_ARG" >>$USERHOME/status.csv
+   echo "$SNAPVERS,$PSLSEVERS,$SIMBASE,$TS,$TCRC,$PAR,$EXECUTED,$FAILED,$RUNTIME,$SIMTIME,$DDCB_TIMEOUT,$HOSTNAME,$SPEED,$CPUS,$LOAD,$USED,$PERCUSED,$TST_NAME $LISTNAME,$TST_ARG" >>$USERHOME/status.csv
  fi
  grep --text -iE "error|errno|warning|retc|return|genwqe_|time|finished|loop|failed|script|tmp_pid" stim.log >>../summary.log # collect short summary over all jobs in this checkout
  sleep 5

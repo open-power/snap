@@ -21,7 +21,7 @@
 # export FRAMEWORK_ROOT=<your local workspace base>
 # export USERHOME=$FRAMEWORK_ROOT/$USER               # each user has his own workspace
 # export PSLSE_ROOT=$USERHOME/pslse                   # PSLSE clone from github
-# export SNAP_ROOT=$USERHOME/dnout                    # donut clone from github
+# export SNAP_ROOT=$USERHOME/donut                    # SNAP clone from github
 # export SNAP_SOFTWARE_ROOT=$SNAP_ROOT/software       # path to snap software
 # export SNAP_HARDWARE_ROOT=$SNAP_ROOT/hardware       # path to snap hardware
 # export SIMULATOR=xsim                               # ncsim,irun,xsim and questa are supported
@@ -165,7 +165,7 @@
      rm -rf sim/xsim
      rm -rf sim/questa
    fi
-   if [ ! -d ${SNAP_HARDWARE_ROOT}/sim/ies ];then 
+   if [ ! -d ${SNAP_HARDWARE_ROOT}/sim/ies ];then
      cd ${SNAP_HARDWARE_ROOT}/setup; echo "run Vivado setup scripts"
      vivado -mode batch -source create_ip.tcl -notrace -log ${SNAP_HARDWARE_ROOT}/logs/create_ip.log
      if [[ $? != 0 ]];then echo "error in create_ip.tcl";exit -1;fi
