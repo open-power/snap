@@ -1,5 +1,5 @@
-#ifndef __DONUT_QUEUE_H__
-#define __DONUT_QUEUE_H__
+#ifndef __SNAP_QUEUE_H__
+#define __SNAP_QUEUE_H__
 
 /**
  * Copyright 2016, 2017 International Business Machines
@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-#include <libdonut.h>
+#include <libsnap.h>
 
 /**
  * CAPI Streaming Framework - Job Queue specific definitions
@@ -77,4 +77,4 @@ struct snap_queue_workitem {
 	} user;
 };
 
-#endif /*__DONUT_QUEUE_H__ */
+#endif /*__SNAP_QUEUE_H__ */

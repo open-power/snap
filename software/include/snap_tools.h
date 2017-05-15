@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef __DNUT_TOOLS_H__
-#define __DNUT_TOOLS_H__
+#ifndef __SNAP_TOOLS_H__
+#define __SNAP_TOOLS_H__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-#define DNUT_TOOL_VERS_STRING	"3.0.25"
+#define SNAP_TOOL_VERS_STRING	"3.0.25"
 
 /*****************************************************************************/
 /** Useful macros in case they are not defined somewhere else		     */
@@ -284,4 +284,4 @@ static inline void __free(void *ptr)
 }
 #endif
 
-#endif		/* __DNUT_TOOLS_H__ */
+#endif		/* __SNAP_TOOLS_H__ */

@@ -21,13 +21,13 @@ libversion = $(VERSION)
 CFLAGS += -fPIC -fno-strict-aliasing
 LDLIBS += -lpthread
 
-libname=libdonut
+libname=libsnap
 projA = $(libname).a \
 	$(libname).so \
 	$(libname).so.$(MAJOR_VERSION) \
 	$(libname).so.$(libversion)
 
-src = donut.c
+src = snap.c
 objs = $(src:.c=.o)
 projs += $(projA)
 
