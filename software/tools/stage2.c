@@ -26,8 +26,8 @@
 #include <getopt.h>
 #include <ctype.h>
 
-#include <libdonut.h>
-#include <donut_tools.h>
+#include <libsnap.h>
+#include <snap_tools.h>
 #include <snap_s_regs.h>
 
 #include "snap_fw_example.h"
@@ -436,7 +436,7 @@ static void usage(const char *prog)
 		"    -N, --iter           Memcpy Iterations (default 1)\n"
 		"    -A, --align          Memcpy alignemend (default 4 KB)\n"
 		"    -D, --dest           Memcpy Card RAM base Address (default 0)\n"
-		"\tTool to check Stage 1 FPGA or Stage 2 FPGA Mode (-a) for donut bringup.\n"
+		"\tTool to check Stage 1 FPGA or Stage 2 FPGA Mode (-a) for snap bringup.\n"
 		"\t-a 1: Count down mode (Stage 1)\n"
 		"\t-a 2: Copy from Host Memory to Host Memory.\n"
 		"\t-a 3: Copy from Host Memory to DDR Memory (FPGA Card).\n"

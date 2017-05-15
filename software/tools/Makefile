@@ -17,7 +17,7 @@
 include ../config.mk
 
 DESTDIR ?= /usr
-libs = ../lib/libdonut.a
+libs = ../lib/libsnap.a
 LDLIBS += $(libs) -lpthread
 
 # Link statically for PSLSE simulation and dynamically for real version
@@ -28,10 +28,10 @@ else
 LDLIBS += -lcxl
 endif
 
-dnut_peek_objs = force_cpu.o
-dnut_poke_objs = force_cpu.o
+snap_peek_objs = force_cpu.o
+snap_poke_objs = force_cpu.o
 
-projs = dnut_peek dnut_poke stage1 stage2 stage2_ddr stage2_set nvme_test bfs_diff
+projs = snap_peek snap_poke stage1 stage2 stage2_ddr stage2_set nvme_test bfs_diff
 projs += snap_maint
 objs = force_cpu.o $(projs:=.o)
 hfiles = force_cpu.h  snap_fw_example.h
@@ -53,8 +53,8 @@ $(projs): $(objs) $(libs)
 
 install: all
 	@mkdir -p $(DESTDIR)/bin
-	install -D -m 755 dnut_peek -T $(DESTDIR)/bin/dnut_peek
-	install -D -m 755 dnut_poke -T $(DESTDIR)/bin/dnut_poke
+	install -D -m 755 snap_peek -T $(DESTDIR)/bin/snap_peek
+	install -D -m 755 snap_poke -T $(DESTDIR)/bin/snap_poke
 
 uninstall:
 	@for f in $(projs) ; do					\

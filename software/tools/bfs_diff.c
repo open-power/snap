@@ -16,14 +16,14 @@
 
 // this is a small compare toll for BFS output checking
 #include <stdio.h>
-#include <donut_tools.h>
-#include <libdonut.h>
+#include <snap_tools.h>
+#include <libsnap.h>
 
 int main(int argc , char ** argv)
 {
     char * hw_fname;
     char * sw_fname;
-    if (argc != 3) 
+    if (argc != 3)
     {
         fprintf(stdout, "Usage: %s hw_out.bin sw_out.bin\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -34,7 +34,7 @@ int main(int argc , char ** argv)
     ssize_t sw_size = __file_size(sw_fname);
     if(hw_size != sw_size)
     {
-        fprintf(stderr, "File size not match\n"); 
+        fprintf(stderr, "File size not match\n");
         exit(EXIT_FAILURE);
     }
     FILE *fp1 = fopen(hw_fname, "r");
@@ -60,7 +60,7 @@ int main(int argc , char ** argv)
             j = 127 - (i %128);
             fseek(fp1, j, SEEK_CUR);
             fseek(fp2, j, SEEK_CUR);
-            i += j; 
+            i += j;
         }
 
 
