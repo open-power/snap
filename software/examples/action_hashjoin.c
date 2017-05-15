@@ -56,8 +56,8 @@
 #include <errno.h>
 #include <string.h>
 #include <limits.h>
-#include <libdonut.h>
-#include <donut_internal.h>
+#include <libsnap.h>
+#include <snap_internal.h>
 #include <action_hashjoin.h>
 
 static int mmio_read32(struct snap_card *card,

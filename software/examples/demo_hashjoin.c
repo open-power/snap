@@ -33,8 +33,8 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include <donut_tools.h>
-#include <libdonut.h>
+#include <snap_tools.h>
+#include <libsnap.h>
 #include <action_hashjoin.h>
 #include <snap_s_regs.h>
 

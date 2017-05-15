@@ -2,7 +2,7 @@
 #define __ACTION_SEARCH_H__
 
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
  */
 
 #include <stdint.h>
-#include <libdonut.h>
+#include <libsnap.h>
 
 #define SEARCH_ACTION_TYPE	0x10141003
 
@@ -39,13 +39,13 @@ struct search_job {
         uint64_t next_input_addr;
 
 /* OLD config is following - should be removed
-	struct snap_addr input;	 
-	struct snap_addr output; 
+	struct snap_addr input;
+	struct snap_addr output;
 	struct snap_addr pattern;
 	uint64_t nb_of_occurrences;
 	uint64_t next_input_addr;
 	uint64_t action_version;
-	uint64_t mmio_din;	
+	uint64_t mmio_din;
 	uint64_t mmio_dout;
 */
 };

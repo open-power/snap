@@ -2,7 +2,7 @@
 #define __ACTION_BFS_H__
 
 /*
- * Copyright 2017, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
  */
 
 #include <stdint.h>
-#include <libdonut.h>
+#include <libsnap.h>
 
 
 #define HLS_BFS_ID 0x10141004
@@ -49,10 +49,10 @@ typedef struct
     int  age;
 } VexData;
 
-typedef struct 
+typedef struct
 {
     char relation [32];
-    int  distance; 
+    int  distance;
 } EdgeData;
 
 //ENODE_SIZE = 32B
@@ -62,7 +62,7 @@ typedef struct EdgeNode
 	struct EdgeNode   * next;
     uint32_t            adjvex; //store the index of corresponding vex
     uint32_t            is_tail; //Not used.
-	EdgeData          * data;    
+	EdgeData          * data;
     uint64_t            reserved;
 } EdgeNode;
 

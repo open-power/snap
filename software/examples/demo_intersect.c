@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@
  *
  * Count the time elapsed at step 3 + step5.
  *
- * Function: Three steps to emulate Host CPU doing intersection: 
+ * Function: Three steps to emulate Host CPU doing intersection:
  * 1) Copy two or more tables from Host to FPGA DDR (memcopy)
  * 2) Copy these tables from FPGADDR to Host (memcopy) to emulate the external
  *     data transfered to Host
- * 4) Do intersection in CPU. Results stored in Host memory. 
+ * 4) Do intersection in CPU. Results stored in Host memory.
  *
  * Count the time elapsed at step2 + step4.
  */
@@ -43,9 +43,9 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include <donut_tools.h>
+#include <snap_tools.h>
 #include <action_intersect.h>
-#include <libdonut.h>
+#include <libsnap.h>
 #include <snap_s_regs.h>
 
 #define ACTION_REDAY_IRQ 4
@@ -248,7 +248,7 @@ static int run_one_step(struct snap_action *action,
  */
 int main(int argc, char *argv[])
 {
-    //General variables for donut call
+    //General variables for snap call
     int ch;
     int rc = 0;
     int card_no = 0;

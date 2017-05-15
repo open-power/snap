@@ -27,12 +27,12 @@
 #include <endian.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <libdonut.h>
+#include <libsnap.h>
 #include <linux/types.h>	/* __be64 */
 #include <asm/byteorder.h>
 
-#include <donut_internal.h>
-#include <donut_tools.h>
+#include <snap_internal.h>
+#include <snap_tools.h>
 #include <action_memcopy.h>
 
 /* Name is defined by address and size */

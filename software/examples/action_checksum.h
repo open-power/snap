@@ -2,7 +2,7 @@
 #define __ACTION_CHECKSUM_H__
 
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
  */
 
 #include <stdint.h>
-#include <libdonut.h>
+#include <libsnap.h>
 #include "keccak.h"
 
 typedef enum {

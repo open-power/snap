@@ -1,5 +1,5 @@
 #
-# Copyright 2016, International Business Machines
+# Copyright 2016, 2017 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -82,13 +82,13 @@ install uninstall:
 test: test_software
 
 test_software: all
-	DNUT_CONFIG=0x1 ./scripts/donut_tests.sh -a
+	SNAP_CONFIG=0x1 ./scripts/snap_tests.sh -a
 
 test_hardware:
-	./scripts/donut_tests.sh -h
+	./scripts/snap_tests.sh -h
 
 help:
-	@echo "Build Donut/CAPI hardware accelerator tools"
+	@echo "Build Snap/CAPI hardware accelerator tools"
 	@echo
 	@echo "Possible Makefile options:"
 	@echo "  V=0 silent, 1 normal (default), 2 verbose"

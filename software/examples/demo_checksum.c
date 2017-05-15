@@ -25,9 +25,9 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include <donut_tools.h>
+#include <snap_tools.h>
 #include <action_checksum.h>
-#include <libdonut.h>
+#include <libsnap.h>
 #include <snap_hls_if.h>
 
 int verbose_flag = 0;

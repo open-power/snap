@@ -16,11 +16,11 @@
 #
 
 #
-# Simple tests for example donut actions.
+# Simple tests for example snap actions.
 #
 
 verbose=0
-dnut_card=0
+snap_card=0
 iteration=1
 
 function test () # $1 = card, $2 = 4k or 64, $3 = action
@@ -129,10 +129,10 @@ function usage() {
 while getopts "C:t:i:h" opt; do
 	case $opt in
 	C)
-	dnut_card=$OPTARG;
+	snap_card=$OPTARG;
 	;;
 	t)
-	DNUT_TRACE=$OPTARG;
+	SNAP_TRACE=$OPTARG;
 	;;
 	i)
 	iteration=$OPTARG;
@@ -147,11 +147,11 @@ while getopts "C:t:i:h" opt; do
 	esac
 done
 
-echo "Check if /dev/cxl/afu$dnut_card is AlphaDataKU60"
-rev=$(cat /sys/class/cxl/card$dnut_card/device/subsystem_device | xargs printf "0x%.4X")
+echo "Check if /dev/cxl/afu$snap_card is AlphaDataKU60"
+rev=$(cat /sys/class/cxl/card$snap_card/device/subsystem_device | xargs printf "0x%.4X")
 if [ $rev != "0x0605" ]; then
-	echo "Capi Card $dnut_card does have subsystem_device: $rev"
-	echo "I Expect to have 0x605, Check if -C $dnut_card did move to other CAPI id and use other -C option!"
+	echo "Capi Card $snap_card does have subsystem_device: $rev"
+	echo "I Expect to have 0x605, Check if -C $snap_card did move to other CAPI id and use other -C option!"
 	exit 1
 fi
 
@@ -159,7 +159,7 @@ for ((iter=1;iter <= iteration;iter++))
 {
 	echo "Iteration $iter of $iteration"
 	echo "Testing Action 1 from 200 msec to 1 sec in 200 msec steps"
-	cmd="./tools/stage2 -a 1 -C${dnut_card} -e 1000 -t 2"
+	cmd="./tools/stage2 -a 1 -C${snap_card} -e 1000 -t 2"
 	eval ${cmd}
 	if [ $? -ne 0 ]; then
        		echo "cmd: ${cmd}"
@@ -167,16 +167,16 @@ for ((iter=1;iter <= iteration;iter++))
        		exit 1
 	fi
 
-	test "${dnut_card}" "4k" "2"
-	test "${dnut_card}" "64" "2"
-	test_sb "${dnut_card}" "2" "2"
-	test_bs "${dnut_card}" "2"
-	test_rnd "$dnut_card" "2"
+	test "${snap_card}" "4k" "2"
+	test "${snap_card}" "64" "2"
+	test_sb "${snap_card}" "2" "2"
+	test_bs "${snap_card}" "2"
+	test_rnd "$snap_card" "2"
 
-	test "$dnut_card" "4k" "6"
-	test "$dnut_card" "64" "6"
-	test_sb "${dnut_card}" "6"
-	test_bs "${dnut_card}" "6"
-	test_rnd "$dnut_card" "6"
+	test "$snap_card" "4k" "6"
+	test "$snap_card" "64" "6"
+	test_sb "${snap_card}" "6"
+	test_bs "${snap_card}" "6"
+	test_rnd "$snap_card" "6"
 }
 exit 0

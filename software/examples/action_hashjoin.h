@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <libdonut.h>
+#include <libsnap.h>
 
 #define HASHJOIN_ACTION_TYPE 0x10141002
 
