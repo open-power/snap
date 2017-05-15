@@ -1,5 +1,5 @@
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-#include <donut_tools.h>
-#include <libdonut.h>
+#include <snap_tools.h>
+#include <libsnap.h>
 #include "force_cpu.h"
 
 int verbose_flag = 0;
@@ -51,7 +51,7 @@ static void usage(const char *prog)
 	       "  <addr>\n"
 	       "\n"
 	       "Example:\n"
-	       "  dnut_peek 0x0000\n"
+	       "  snap_peek 0x0000\n"
 	       "  [00000000] 000000021032a178\n\n"
 	       "\n",
 	       prog);
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 {
 	int ch, rc = 0;
 	int card_no = 0;
-	struct dnut_card *card;
+	struct snap_card *card;
 	int cpu = -1;
 	int width = 64;
 	uint32_t offs;
@@ -169,8 +169,8 @@ int main(int argc, char *argv[])
 	switch_cpu(cpu, verbose_flag);
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
-	card = dnut_card_alloc_dev(device, DNUT_VENDOR_ID_ANY,
-				DNUT_DEVICE_ID_ANY);
+	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_ANY,
+				SNAP_DEVICE_ID_ANY);
 	if (card == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
 			strerror(errno));
@@ -180,27 +180,27 @@ int main(int argc, char *argv[])
 	for (i = 0; i < count; i++) {
 		switch (width) {
 		case 32: {
-			rc = dnut_mmio_read32(card, offs, (uint32_t *)&val);
+			rc = snap_mmio_read32(card, offs, (uint32_t *)&val);
 			val &= 0xffffffff; /* mask off obsolete bits ... */
 			break;
 		}
 		default:
 		case 64:
-			rc = dnut_mmio_read64(card, offs, &val);
+			rc = snap_mmio_read64(card, offs, &val);
 			break;
 		}
 
 		if (rc != 0) {
 			fprintf(stderr, "err: could not read [%08x] rc=%d\n",
 				offs, rc);
-			dnut_card_free(card);
+			snap_card_free(card);
 			exit(EXIT_FAILURE);
 		}
 		if ((equal) &&
 		    (equal_val != (val & and_mask))) {
 			fprintf(stderr, "err: [%08x] %016llx != %016llx\n",
 				offs, (long long)val, (long long)equal_val);
-			dnut_card_free(card);
+			snap_card_free(card);
 			exit(EX_ERR_DATA);
 		}
 		if ((not_equal) &&
@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "err: [%08x] %016llx == %016llx\n",
 				offs, (long long)val,
 				(long long)not_equal_val);
-			dnut_card_free(card);
+			snap_card_free(card);
 			exit(EX_ERR_DATA);
 		}
 
@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
 			usleep(interval);
 	}
 
-	dnut_card_free(card);
+	snap_card_free(card);
 
 	if (!quiet)
 		printf("[%08x] %016llx\n", offs, (long long)val);
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -247,8 +247,8 @@ int main(int argc, char *argv[])
 #include <asm/byteorder.h>
 #include <sys/mman.h>
 
-#include <donut_tools.h>
-#include <libdonut.h>
+#include <snap_tools.h>
+#include <libsnap.h>
 #include "force_cpu.h"
 
 int verbose_flag = 0;
@@ -274,7 +274,7 @@ static void usage(const char *prog)
 	       "  <addr> <val>\n"
 	       "\n"
 	       "Example:\n"
-	       "  dnut_poke 0x0000000 0xdeadbeef\n"
+	       "  snap_poke 0x0000000 0xdeadbeef\n"
 	       "\n",
 	       prog);
 }
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
 {
 	int ch, rc, rbrc = 0;
 	int card_no = 0;
-	struct dnut_card *card;
+	struct snap_card *card;
 	int cpu = -1;
 	int width = 64;
 	int rd_back = 0;
@@ -382,8 +382,8 @@ int main(int argc, char *argv[])
 	}
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
-	card = dnut_card_alloc_dev(device, DNUT_VENDOR_ID_ANY,
-				DNUT_DEVICE_ID_ANY);
+	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_ANY,
+				SNAP_DEVICE_ID_ANY);
 	if (card == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
 			strerror(errno));
@@ -393,18 +393,18 @@ int main(int argc, char *argv[])
 	for (i = 0; i < count; i++) {
 		switch (width) {
 		case 32:
-			rc = dnut_mmio_write32(card, offs, (uint32_t)val);
+			rc = snap_mmio_write32(card, offs, (uint32_t)val);
 			xerrno = errno;
 			if (rd_back)
-				rbrc = dnut_mmio_read32(card, offs,
+				rbrc = snap_mmio_read32(card, offs,
 							(uint32_t *)&rbval);
 			break;
 		default:
 		case 64:
-			rc = dnut_mmio_write64(card, offs, val);
+			rc = snap_mmio_write64(card, offs, val);
 			xerrno = errno;
 			if (rd_back)
-				rbrc = dnut_mmio_read64(card, offs, &rbval);
+				rbrc = snap_mmio_read64(card, offs, &rbval);
 			break;
 		}
 
@@ -413,14 +413,14 @@ int main(int argc, char *argv[])
 				"%016llx to [%08x]\n"
 				"  %s\n", (unsigned long long)val, offs,
 				strerror(xerrno));
-			dnut_card_free(card);
+			snap_card_free(card);
 			exit(EXIT_FAILURE);
 		}
 		if (rd_back) {
 			if (rbrc != 0) {
 				fprintf(stderr, "err: read back failed (%d)\n",
 					rbrc);
-				dnut_card_free(card);
+				snap_card_free(card);
 				exit(EXIT_FAILURE);
 			}
 			if (val != rbval) {
@@ -428,7 +428,7 @@ int main(int argc, char *argv[])
 					"%016llx/%016llx\n",
 					(unsigned long long)val,
 					(unsigned long long)rbval);
-				dnut_card_free(card);
+				snap_card_free(card);
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -437,7 +437,7 @@ int main(int argc, char *argv[])
 			usleep(interval);
 	}
 
-	dnut_card_free(card);
+	snap_card_free(card);
 
 	if (!quiet)
 		printf("[%08x] %016llx\n", offs, (long long)val);
@@ -445,7 +445,7 @@ int main(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -573,7 +573,7 @@ int switch_cpu(int cpu, int verbose)
 	return 0;
 }
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -595,8 +595,8 @@ int switch_cpu(int cpu, int verbose)
 #include <errno.h>
 #include <malloc.h>
 
-#include <libdonut.h>
-#include <donut_tools.h>
+#include <libsnap.h>
+#include <snap_tools.h>
 
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
@@ -624,41 +624,41 @@ static const char *version = GIT_VERSION;
 #define	ACTION_CNT		(ACTION_BASE + 0x24)	/* Count Register */
 
 /* Framework Write and Read are 64 bit MMIO */
-static void fw_write(struct dnut_card* h, uint64_t addr, uint64_t data)
+static void fw_write(struct snap_card* h, uint64_t addr, uint64_t data)
 {
 	printf("FW Write: 0x%016llx 0x%016llx\n",
 		(long long)addr, (long long)data);
-	dnut_mmio_write64(h, addr, data);
+	snap_mmio_write64(h, addr, data);
 }
 
-static uint64_t fw_read(struct dnut_card* h, uint64_t addr)
+static uint64_t fw_read(struct snap_card* h, uint64_t addr)
 {
 	uint64_t reg;
 
-	dnut_mmio_read64(h, addr,&reg);
+	snap_mmio_read64(h, addr,&reg);
 	printf("FW Read: 0x%016llx 0x%016llx\n",
 		(long long)addr, (long long)reg);
 	return reg;
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
-static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
+static void action_write(struct snap_card* h, uint32_t addr, uint32_t data)
 {
 	int rc;
 
 	printf("Action Write: 0x%08x 0x%08x\n", addr, data);
-	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
+	rc = snap_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
 		printf("Write MMIO 32 Err\n");
 	return;
 }
 
-static uint32_t action_read(struct dnut_card* h, uint32_t addr)
+static uint32_t action_read(struct snap_card* h, uint32_t addr)
 {
 	int rc;
 	uint32_t reg = 0x11;
 
-	rc = dnut_mmio_read32(h, (uint64_t)addr, &reg);
+	rc = snap_mmio_read32(h, (uint64_t)addr, &reg);
 	if (0 != rc)
 		printf("Read MMIO 32 Err\n");
 	printf("Action Read: 0x%08x 0x%08x\n", addr, reg);
@@ -686,7 +686,7 @@ int main(int argc, char *argv[])
 	uint64_t fw_addr;
 	uint32_t action_addr, action_data;
 	uint     i, len, card_no = 0;
-	struct dnut_card *dn;
+	struct snap_card *dn;
 	int ch;
 
 	while (1) {
@@ -730,11 +730,11 @@ int main(int argc, char *argv[])
 	}
 
 	sprintf(device, "/dev/cxl/afu%d.0m", card_no);
-	dn = dnut_card_alloc_dev(device,
-				 DNUT_VENDOR_ID_ANY,
-				 DNUT_DEVICE_ID_ANY);
+	dn = snap_card_alloc_dev(device,
+				 SNAP_VENDOR_ID_ANY,
+				 SNAP_DEVICE_ID_ANY);
 	if (NULL == dn) {
-		perror("dnut_card_alloc_dev()");
+		perror("snap_card_alloc_dev()");
 		return -1;
 	}
 
@@ -801,12 +801,12 @@ int main(int argc, char *argv[])
 	printf("\n");
 
 	// Unmap AFU MMIO registers, if previously mapped
-	dnut_card_free(dn);
+	snap_card_free(dn);
 	printf("End of Test...\n");
 	return 0;
 }
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -831,7 +831,7 @@ int main(int argc, char *argv[])
 #include <sys/time.h>
 #include <getopt.h>
 
-#include <libdonut.h>
+#include <libsnap.h>
 
 #define CACHELINE_BYTES 128
 
@@ -879,24 +879,24 @@ static uint64_t get_usec(void)
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
-static void action_write(struct dnut_card* h, uint32_t addr, uint32_t data)
+static void action_write(struct snap_card* h, uint32_t addr, uint32_t data)
 {
 	int rc;
 
 	if (verbose_level > 1)
 		printf("MMIO Write %08x ----> %08x\n", data, addr);
-	rc = dnut_mmio_write32(h, (uint64_t)addr, data);
+	rc = snap_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
 		printf("Write MMIO 32 Err\n");
 	return;
 }
 
-static uint32_t action_read(struct dnut_card* h, uint32_t addr)
+static uint32_t action_read(struct snap_card* h, uint32_t addr)
 {
 	int rc;
 	uint32_t data;
 
-	rc = dnut_mmio_read32(h, (uint64_t)addr, &data);
+	rc = snap_mmio_read32(h, (uint64_t)addr, &data);
 	if (0 != rc)
 		printf("Read MMIO 32 Err\n");
 	if (verbose_level > 1)
@@ -918,7 +918,7 @@ static uint32_t msec_2_ticks(int msec)
 /*
  *	Start Action and wait for Idle.
  */
-static void action_wait_idle(struct dnut_card* h, int timeout_ms)
+static void action_wait_idle(struct snap_card* h, int timeout_ms)
 {
 	uint32_t action_data;
 	int n = 0;
@@ -943,14 +943,14 @@ static void action_wait_idle(struct dnut_card* h, int timeout_ms)
 
 	if (verbose_level > 0) {
 		printf("Action Time was was ");
-		if (td < 100000) 
+		if (td < 100000)
 			printf("%d usec after %d loops\n" , (int)td, n);
 		else	printf("%d msec after %d loops\n" , (int)td/1000, n);
 	}
 	return;
 }
 
-static void action_count(struct dnut_card* h, int delay_ms)
+static void action_count(struct snap_card* h, int delay_ms)
 {
 	if (verbose_level > 0)
 		printf("Action Expect %d msec to wait...\n",
@@ -959,7 +959,7 @@ static void action_count(struct dnut_card* h, int delay_ms)
 	action_write(h, ACTION_CNT, msec_2_ticks(delay_ms));
 }
 
-static void action_memcpy(struct dnut_card* h,
+static void action_memcpy(struct snap_card* h,
 		int mode,	/* Mode can be 2,3,4,5  see ACTION_CONFIG_COPY_ */
 		void *dest, const void *src, size_t n)
 {
@@ -988,7 +988,7 @@ static void action_memcpy(struct dnut_card* h,
 	action_write(h, ACTION_CNT, n);
 }
 
-static int memcpy_test(struct dnut_card* dnc,
+static int memcpy_test(struct snap_card* dnc,
 			int mode,
 			int block4k,
 			int input_o,
@@ -1124,7 +1124,7 @@ static void usage(const char *prog)
 		"    -A, --align          Memcpy alignemend (default 4 KB)\n"
 		"    -I, --ioff           Memcpy input offset (default 0)\n"
 		"    -O, --ooff           Memcpy output offset (default 0)\n"
-		"\tTool to check Stage 1 FPGA or Stage 2 FPGA Mode (-a) for donut bringup.\n"
+		"\tTool to check Stage 1 FPGA or Stage 2 FPGA Mode (-a) for snap bringup.\n"
 		"\t-a 1: Count down mode\n"
 		"\t-a 2: Copy from Host Memory to Host Memory.\n"
 		"\t-a 3: Copy from Host Memory to DDR Memory (FPGA Card).\n"
@@ -1136,7 +1136,7 @@ static void usage(const char *prog)
 int main(int argc, char *argv[])
 {
 	char device[64];
-	struct dnut_card *dn;	/* lib dnut handle */
+	struct snap_card *dn;	/* lib snap handle */
 	int start_delay = START_DELAY;
 	int end_delay = END_DELAY;
 	int step_delay = STEP_DELAY;
@@ -1240,9 +1240,9 @@ int main(int argc, char *argv[])
 	}
 
 	sprintf(device, "/dev/cxl/afu%d.0m", card_no);
-	dn = dnut_card_alloc_dev(device, 0, 0);
+	dn = snap_card_alloc_dev(device, 0, 0);
 	if (NULL == dn) {
-		perror("dnut_card_alloc_dev()");
+		perror("snap_card_alloc_dev()");
 		return -1;
 	}
 	if (verbose_level > 0)
@@ -1271,14 +1271,14 @@ int main(int argc, char *argv[])
 	// Unmap AFU MMIO registers, if previously mapped
 	if (verbose_level > 0)
 		printf("Free Card Handle: %p\n", dn);
-	dnut_card_free(dn);
+	snap_card_free(dn);
 
 	if (verbose_level > 0)
 		printf("End of Test rc: %d\n", rc);
 	return rc;
 }
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1310,15 +1310,15 @@ int main(int argc, char *argv[])
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include <libdonut.h>
-#include <donut_internal.h>
+#include <libsnap.h>
+#include <snap_internal.h>
 #include <action_search.h>
 
-struct dnut_card {
+struct snap_card {
 	uint32_t reserved;
 };
 
-struct dnut_card card = {
+struct snap_card card = {
 	.reserved = 0xdeadbeef,
 };
 
@@ -1342,7 +1342,7 @@ static int mmio_read32(void *_card __unused,
 		       uint64_t offset __unused,
 		       uint32_t *data __unused)
 {
-	struct dnut_action *action = (struct dnut_action *)_card;
+	struct snap_action *action = (struct snap_action *)_card;
 
 	*data = 0x12345678;
 
@@ -1359,7 +1359,7 @@ static void card_free(void *_card __unused)
 	return;
 }
 
-static int action_main(struct dnut_action *action,
+static int action_main(struct snap_action *action,
 		       void *job, unsigned int job_len)
 {
 	struct search_job *js = (struct search_job *)job;
@@ -1406,7 +1406,7 @@ static int action_main(struct dnut_action *action,
 }
 
 /* Hardware version of the lowlevel functions */
-static struct dnut_funcs funcs = {
+static struct snap_funcs funcs = {
 	.card_alloc_dev = card_alloc_dev,
 	.mmio_write32 = mmio_write32,
 	.mmio_read32 = mmio_read32,
@@ -1415,9 +1415,9 @@ static struct dnut_funcs funcs = {
 	.card_free = card_free,
 };
 
-static struct dnut_action action = {
-	.vendor_id = DNUT_VENDOR_ID_ANY,
-	.device_id = DNUT_DEVICE_ID_ANY,
+static struct snap_action action = {
+	.vendor_id = SNAP_VENDOR_ID_ANY,
+	.device_id = SNAP_DEVICE_ID_ANY,
 	.action_type = 0xC0FE,
 	.retc = 0x104,		/* preset value, should be 0 on success */
 	.state = ACTION_IDLE,
@@ -1432,10 +1432,10 @@ static void _init(void) __attribute__((constructor));
 
 static void _init(void)
 {
-	dnut_action_register(&action);
+	snap_action_register(&action);
 }
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1461,8 +1461,8 @@ static void _init(void)
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include <donut_tools.h>
-#include <libdonut.h>
+#include <snap_tools.h>
+#include <libsnap.h>
 
 int verbose_flag = 0;
 
@@ -1474,8 +1474,8 @@ static const char *version = GIT_VERSION;
 #define MMIO_DOUT_DEFAULT	0x0ull
 
 struct memcopy_job {
-	struct dnut_addr in;	/* input data */
-	struct dnut_addr out;   /* offset table */
+	struct snap_addr in;	/* input data */
+	struct snap_addr out;   /* offset table */
 	uint64_t mmio_din;	/* private settins for this action */
 	uint64_t mmio_dout;	/* private settins for this action */
 };
@@ -1504,7 +1504,7 @@ static void usage(const char *prog)
 	       prog);
 }
 
-static void dnut_prepare_memcopy(struct dnut_job *cjob,
+static void snap_prepare_memcopy(struct snap_job *cjob,
 				 struct memcopy_job *mjob,
 				 void *addr_in,
 				 uint32_t size_in,
@@ -1513,16 +1513,16 @@ static void dnut_prepare_memcopy(struct dnut_job *cjob,
 				 uint32_t size_out,
 				 uint8_t type_out)
 {
-	dnut_addr_set(&mjob->in, addr_in, size_in, type_in,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-	dnut_addr_set(&mjob->out, addr_out, size_out, type_out,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST |
-		      DNUT_TARGET_FLAGS_END);
+	snap_addr_set(&mjob->in, addr_in, size_in, type_in,
+		      SNAP_TARGET_FLAGS_ADDR | SNAP_TARGET_FLAGS_SRC);
+	snap_addr_set(&mjob->out, addr_out, size_out, type_out,
+		      SNAP_TARGET_FLAGS_ADDR | SNAP_TARGET_FLAGS_DST |
+		      SNAP_TARGET_FLAGS_END);
 
 	mjob->mmio_din = MMIO_DIN_DEFAULT;
 	mjob->mmio_dout = MMIO_DOUT_DEFAULT;
 
-	dnut_job_set(cjob, MEMCOPY_ACTION_TYPE, mjob, sizeof(*mjob));
+	snap_job_set(cjob, MEMCOPY_ACTION_TYPE, mjob, sizeof(*mjob));
 }
 
 static inline
@@ -1598,9 +1598,9 @@ int main(int argc, char *argv[])
 {
 	int ch, rc = 0;
 	int card_no = 0;
-	struct dnut_kernel *kernel = NULL;
+	struct snap_kernel *kernel = NULL;
 	char device[128];
-	struct dnut_job cjob;
+	struct snap_job cjob;
 	struct memcopy_job mjob;
 	const char *input = NULL;
 	const char *output = NULL;
@@ -1611,9 +1611,9 @@ int main(int argc, char *argv[])
 	ssize_t size = 1024 * 1024;
 	uint8_t *ibuff = NULL, *obuff = NULL;
 	unsigned int page_size = sysconf(_SC_PAGESIZE);
-	uint8_t type_in = DNUT_TARGET_TYPE_HOST_DRAM;
+	uint8_t type_in = SNAP_TARGET_TYPE_HOST_DRAM;
 	uint64_t addr_in = 0x0ull;
-	uint8_t type_out = DNUT_TARGET_TYPE_HOST_DRAM;
+	uint8_t type_out = SNAP_TARGET_TYPE_HOST_DRAM;
 	uint64_t addr_out = 0x0ull;
 
 	while (1) {
@@ -1664,9 +1664,9 @@ int main(int argc, char *argv[])
 		case 'A':
 			space = optarg;
 			if (strcmp(space, "CARD_DRAM") == 0)
-				type_in = DNUT_TARGET_TYPE_CARD_DRAM;
+				type_in = SNAP_TARGET_TYPE_CARD_DRAM;
 			else if (strcmp(space, "HOST_DRAM") == 0)
-				type_in = DNUT_TARGET_TYPE_HOST_DRAM;
+				type_in = SNAP_TARGET_TYPE_HOST_DRAM;
 			break;
 		case 'a':
 			addr_in = strtol(optarg, (char **)NULL, 0);
@@ -1675,9 +1675,9 @@ int main(int argc, char *argv[])
 		case 'D':
 			space = optarg;
 			if (strcmp(space, "CARD_DRAM") == 0)
-				type_out = DNUT_TARGET_TYPE_CARD_DRAM;
+				type_out = SNAP_TARGET_TYPE_CARD_DRAM;
 			else if (strcmp(space, "HOST_DRAM") == 0)
-				type_out = DNUT_TARGET_TYPE_HOST_DRAM;
+				type_out = SNAP_TARGET_TYPE_HOST_DRAM;
 			break;
 		case 'd':
 			addr_out = strtol(optarg, (char **)NULL, 0);
@@ -1737,20 +1737,20 @@ int main(int argc, char *argv[])
 		if (rc < 0)
 			goto out_error1;
 
-		type_in = DNUT_TARGET_TYPE_HOST_DRAM;
+		type_in = SNAP_TARGET_TYPE_HOST_DRAM;
 		addr_in = (unsigned long)ibuff;
 	}
 
 	/* if output file is defined, use that as output */
 	if (output != NULL) {
-		type_out = DNUT_TARGET_TYPE_HOST_DRAM;
+		type_out = SNAP_TARGET_TYPE_HOST_DRAM;
 		addr_out = (unsigned long)obuff;
 	}
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
-	kernel = dnut_kernel_attach_dev(device,
-					DNUT_VENDOR_ID_ANY,
-					DNUT_DEVICE_ID_ANY,
+	kernel = snap_kernel_attach_dev(device,
+					SNAP_VENDOR_ID_ANY,
+					SNAP_DEVICE_ID_ANY,
 					MEMCOPY_ACTION_TYPE);
 	if (kernel == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
@@ -1758,12 +1758,12 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
-	dnut_prepare_memcopy(&cjob, &mjob,
+	snap_prepare_memcopy(&cjob, &mjob,
 			     (void *)addr_in, size, type_in,
 			     (void *)addr_out, size, type_out);
 
 	gettimeofday(&stime, NULL);
-	rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
+	rc = snap_kernel_sync_execute_job(kernel, &cjob, timeout);
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d!\n", rc);
 		goto out_error2;
@@ -1780,7 +1780,7 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "memcopy took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
-	dnut_kernel_free(kernel);
+	snap_kernel_free(kernel);
 
 	free(obuff);
 	free(ibuff);
@@ -1788,7 +1788,7 @@ int main(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 
  out_error2:
-	dnut_kernel_free(kernel);
+	snap_kernel_free(kernel);
  out_error1:
 	free(obuff);
  out_error0:
@@ -1797,7 +1797,7 @@ int main(int argc, char *argv[])
 	exit(EXIT_FAILURE);
 }
 /*
- * Copyright 2016, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1827,8 +1827,8 @@ int main(int argc, char *argv[])
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include <donut_tools.h>
-#include <libdonut.h>
+#include <snap_tools.h>
+#include <libsnap.h>
 #include <action_search.h>
 
 int verbose_flag = 0;
@@ -1878,31 +1878,31 @@ file_read(const char *fname, uint8_t *buff, size_t len)
 	return rc;
 }
 
-static void dnut_prepare_search(struct dnut_job *cjob, struct search_job *sjob,
+static void snap_prepare_search(struct snap_job *cjob, struct search_job *sjob,
 				const uint8_t *dbuff, ssize_t dsize,
 				uint64_t *offs, unsigned int items,
 				const uint8_t *pbuff, unsigned int psize)
 {
-	dnut_addr_set(&sjob->input, dbuff, dsize,
-		      DNUT_TARGET_TYPE_HOST_DRAM,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC);
-	dnut_addr_set(&sjob->output, offs, items * sizeof(*offs),
-		      DNUT_TARGET_TYPE_HOST_DRAM,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_DST);
-	dnut_addr_set(&sjob->pattern, pbuff, psize,
-		      DNUT_TARGET_TYPE_HOST_DRAM,
-		      DNUT_TARGET_FLAGS_ADDR | DNUT_TARGET_FLAGS_SRC |
-		      DNUT_TARGET_FLAGS_END);
+	snap_addr_set(&sjob->input, dbuff, dsize,
+		      SNAP_TARGET_TYPE_HOST_DRAM,
+		      SNAP_TARGET_FLAGS_ADDR | SNAP_TARGET_FLAGS_SRC);
+	snap_addr_set(&sjob->output, offs, items * sizeof(*offs),
+		      SNAP_TARGET_TYPE_HOST_DRAM,
+		      SNAP_TARGET_FLAGS_ADDR | SNAP_TARGET_FLAGS_DST);
+	snap_addr_set(&sjob->pattern, pbuff, psize,
+		      SNAP_TARGET_TYPE_HOST_DRAM,
+		      SNAP_TARGET_FLAGS_ADDR | SNAP_TARGET_FLAGS_SRC |
+		      SNAP_TARGET_FLAGS_END);
 
 	sjob->nb_of_occurrences = 0;
 	sjob->next_input_addr = 0;
 	sjob->mmio_din = MMIO_DIN_DEFAULT;
 	sjob->mmio_dout = MMIO_DOUT_DEFAULT;
 
-	dnut_job_set(cjob, SEARCH_ACTION_TYPE, sjob, sizeof(*sjob));
+	snap_job_set(cjob, SEARCH_ACTION_TYPE, sjob, sizeof(*sjob));
 }
 
-static void dnut_print_search_results(struct dnut_job *cjob, unsigned int run)
+static void snap_print_search_results(struct snap_job *cjob, unsigned int run)
 {
 	struct search_job *sjob = (struct search_job *)
 		(unsigned long)cjob->workitem_addr;
@@ -1951,11 +1951,11 @@ int main(int argc, char *argv[])
 {
 	int ch, run, psize = 0, rc = 0;
 	int card_no = 0;
-	struct dnut_kernel *kernel = NULL;
+	struct snap_kernel *kernel = NULL;
 	char device[128];
 	const char *fname = NULL;
-	const char *pattern_str = "Donut";
-	struct dnut_job cjob;
+	const char *pattern_str = "Snap";
+	struct snap_job cjob;
 	struct search_job sjob;
 	ssize_t dsize;
 	uint8_t *pbuff;		/* pattern buffer */
@@ -2048,18 +2048,18 @@ int main(int argc, char *argv[])
 		goto out_errorX;
 	memset(offs, 0xAB, items * sizeof(*offs));
 
-	dnut_prepare_search(&cjob, &sjob, dbuff, dsize,
+	snap_prepare_search(&cjob, &sjob, dbuff, dsize,
 			    offs, items, pbuff, psize);
-	dnut_print_search_results(&cjob, 0xffffffff);
+	snap_print_search_results(&cjob, 0xffffffff);
 
 	/*
 	 * Apply for exclusive kernel access for kernel type 0xC0FE.
 	 * Once granted, MMIO to that kernel will work.
 	 */
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
-	kernel = dnut_kernel_attach_dev(device,
-					DNUT_VENDOR_ID_ANY,
-					DNUT_DEVICE_ID_ANY,
+	kernel = snap_kernel_attach_dev(device,
+					SNAP_VENDOR_ID_ANY,
+					SNAP_DEVICE_ID_ANY,
 					SEARCH_ACTION_TYPE);
 	if (kernel == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n", card_no,
@@ -2070,7 +2070,7 @@ int main(int argc, char *argv[])
 	run = 0;
 	gettimeofday(&stime, NULL);
 	do {
-		rc = dnut_kernel_sync_execute_job(kernel, &cjob, timeout);
+		rc = snap_kernel_sync_execute_job(kernel, &cjob, timeout);
 		if (rc != 0) {
 			fprintf(stderr, "err: job execution %d!\n", rc);
 			goto out_error2;
@@ -2079,7 +2079,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "err: job retc %x!\n", cjob.retc);
 			goto out_error2;
 		}
-		dnut_print_search_results(&cjob, run);
+		snap_print_search_results(&cjob, run);
 
 		/* trigger repeat if search was not complete */
 		if (sjob.next_input_addr != 0x0) {
@@ -2094,7 +2094,7 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "searching took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
-	dnut_kernel_free(kernel);
+	snap_kernel_free(kernel);
 
 	free(dbuff);
 	free(pbuff);
@@ -2103,7 +2103,7 @@ int main(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 
  out_error2:
-	dnut_kernel_free(kernel);
+	snap_kernel_free(kernel);
  out_error1:
 	free(offs);
  out_errorX:

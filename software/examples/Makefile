@@ -1,5 +1,5 @@
 #
-# Copyright 2016, International Business Machines
+# Copyright 2016, 2017 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 include ../config.mk
 
 DESTDIR ?= /usr
-libs = ../lib/libdonut.a
+libs = ../lib/libsnap.a
 LDLIBS += $(libs) -lpthread
 
 # Link statically for PSLSE simulation and dynamically for real version

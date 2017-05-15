@@ -46,8 +46,8 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include <donut_tools.h>
-#include <libdonut.h>
+#include <snap_tools.h>
+#include <libsnap.h>
 #include <action_bfs.h>
 #include <snap_hls_if.h>
 
@@ -76,7 +76,7 @@
  *    Host will send this field to FPGA via MMIO-32.
  *          This field is completely user defined. see 'bfs_job'
  *          (No more 108 bytes. If not enough, we can append more)
- *    3. Call donut APIs
+ *    3. Call snap APIs
  *
  * Notes:
  *    When 'timeout' is reached, PSLSE will send ha_jcom=LLCMD (0x45) and uncompleted transactions will be killed.
@@ -340,7 +340,7 @@ static void snap_prepare_bfs(struct snap_job *job,
  *---------------------------------------------------*/
 int main(int argc, char *argv[])
 {
-    //General variables for donut call
+    //General variables for snap call
     int ch;
     int rc = 0;
     int card_no = 0;

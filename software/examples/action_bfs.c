@@ -1,37 +1,37 @@
 /*
- * Simple Breadth-first-search in C 
+ * Simple Breadth-first-search in C
  *
  * Based on Pseudo code of:
  *        https://en.wikipedia.org/wiki/Breadth-first_search
  *
  * Use Adjacency list to describe a graph:
  *        https://en.wikipedia.org/wiki/Adjacency_list
- * 
- * And takes Queue structure: 
- *        https://en.wikipedia.org/wiki/Queue_%28abstract_data_type%29  
+ *
+ * And takes Queue structure:
+ *        https://en.wikipedia.org/wiki/Queue_%28abstract_data_type%29
  *
  * Wikipedia's pages are based on "CC BY-SA 3.0"
  * Creative Commons Attribution-ShareAlike License 3.0
  * https://creativecommons.org/licenses/by-sa/3.0/
  *
- * Attribution: 
- * You must give appropriate credit, provide a link to 
+ * Attribution:
+ * You must give appropriate credit, provide a link to
  * the license, and indicate if changes were made. You may do so in
  * any reasonable manner, but not in any way that suggests the
  * licensor endorses you or your use.
  *
- * ShareAlike: 
+ * ShareAlike:
  * If you remix, transform, or build upon the material, you must
  * distribute your contributions under the same license as the original.
  */
- 
+
 
  /*
  * Adopt SNAP's framework for software action part.
  */
 
 /*
- * Copyright 2017, International Business Machines
+ * Copyright 2016, 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,12 +60,12 @@
 #include <endian.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <libdonut.h>
+#include <libsnap.h>
 #include <linux/types.h>	/* __be64 */
 #include <asm/byteorder.h>
 
-#include <donut_internal.h>
-#include <donut_tools.h>
+#include <snap_internal.h>
+#include <snap_tools.h>
 #include <action_bfs.h>
 
 
@@ -191,7 +191,7 @@ static void DeQueue (Queue *q, ElementType *ep)
 //    breadth first search
 //-------------------------------------
 
-// put one visited vertex to the place of g_out_ptr. 
+// put one visited vertex to the place of g_out_ptr.
 // Last vertex (is_tail=1) will follow an END sign (FFxxxxxx)
 // And with the total number of vertices
 void output_vex(unsigned int vex, int is_tail)

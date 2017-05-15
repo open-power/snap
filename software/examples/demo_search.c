@@ -31,8 +31,8 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include <donut_tools.h>
-#include <libdonut.h>
+#include <snap_tools.h>
+#include <libsnap.h>
 #include <action_search.h>
 #include <snap_hls_if.h>
 
@@ -152,13 +152,13 @@ static void snap_prepare_search(struct snap_job *cjob,
 		      SNAP_ADDRTYPE_CARD_DRAM,
 		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC |
 		      SNAP_ADDRFLAG_END);
-    } 
+    }
 
     // result moved to Host
-    snap_addr_set(&sjob_in->src_result, offs, items * sizeof(*offs), 
+    snap_addr_set(&sjob_in->src_result, offs, items * sizeof(*offs),
 		  SNAP_ADDRTYPE_HOST_DRAM,
 		  SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST);
-   
+
     sjob_in->nb_of_occurrences = 0;
     sjob_in->next_input_addr = 0;
     sjob_in->step = step;
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 	struct snap_action *action = NULL;
 	char device[128];
 	const char *fname = NULL;
-	const char *pattern_str = "Donut";
+	const char *pattern_str = "Snap";
 	struct snap_job cjob;
 	struct search_job sjob_in;
 	struct search_job sjob_out;
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
 	snap_action_flag_t action_irq = 0;
         int sw = 0; //using software flow. Default is 0.
         unsigned int method = 1; //search method. Default is Naive(1).
-        unsigned int step; 
+        unsigned int step;
 
 	while (1) {
 		int option_index = 0;
@@ -381,7 +381,7 @@ int main(int argc, char *argv[])
 
 	psize = strlen(pattern_str);
 	/* FIXME pattern is limited to 64 Bytes by hardware in this preliminary release */
-	if(psize > 64) 
+	if(psize > 64)
 	{
 		printf("Pattern is limited to 64 bytes\n");
 		goto out_error0;
@@ -443,7 +443,7 @@ int main(int argc, char *argv[])
 
         printf("dsize = %d - psize = %d \n", (int)dsize, (int)psize);
        	rc = run_one_step(action, &cjob, timeout, step);
-	if (rc != 0) 
+	if (rc != 0)
 		goto out_error3;
 
     	if(sw)
@@ -457,7 +457,7 @@ int main(int argc, char *argv[])
 				    offs, items,
 				    pbuff, psize,
 				    method, step);
-	
+
         	printf("dsize = %d - psize = %d \n", (int)dsize, (int)psize);
        		rc |= run_one_step(action, &cjob, timeout, step);
        		if (rc != 0)
@@ -475,11 +475,10 @@ int main(int argc, char *argv[])
 
             	snap_print_search_results(&cjob, run);
         	printf("Step 4 : RESULT :  %d occurrences \n", sjob_out.nb_of_occurrences);
-            	total_found += sjob_out.nb_of_occurrences;
+		total_found += sjob_out.nb_of_occurrences;
 
-        	fprintf(stdout, "Step 4 took %lld usec\n", 
+		fprintf(stdout, "Step 4 took %lld usec\n",
 			(long long)timediff_usec(&etime, &stime));
-
     	}
    	else
     	{
@@ -512,7 +511,7 @@ int main(int argc, char *argv[])
                 		printf("Error out of Step3.\n");
                 		goto out_error3;
             		}
-			
+
             		snap_print_search_results(&cjob, run);
         		printf("nb of occurrences = %d \n", (int)sjob_out.nb_of_occurrences);
 
@@ -537,17 +536,17 @@ int main(int argc, char *argv[])
         		printf("dsize = %d - psize = %d \n", (int)dsize, (int)psize);
 			*/
             		snap_print_search_results(&cjob, run);
-			
+
             		/* trigger repeat if search was not complete */
             		sjob_in.nb_of_occurrences = sjob_out.nb_of_occurrences;
                     	sjob_in.next_input_addr = sjob_out.next_input_addr;
-			
+
             		if (sjob_out.next_input_addr != 0x0) {
                 		input_size -= (sjob_out.next_input_addr -
                            		(unsigned long)input_addr);
                 		input_addr = (uint8_t *)(unsigned long)
                     		sjob_out.next_input_addr;
-			
+
                 		/* Fixup input address and size for next search */
                 		sjob_in.src_text1.addr = (unsigned long)input_addr;
                 		sjob_in.src_text1.size = input_size;

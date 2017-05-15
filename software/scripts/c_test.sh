@@ -16,11 +16,11 @@
 #
 
 #
-# Simple tests for example donut actions.
+# Simple tests for example snap actions.
 #
 
 verbose=0
-dnut_card=0
+snap_card=0
 iteration=1
 
 function test_memset ()	# $1 = card
@@ -67,10 +67,10 @@ function usage() {
 while getopts "C:t:i:h" opt; do
 	case $opt in
 	C)
-	dnut_card=$OPTARG;
+	snap_card=$OPTARG;
 	;;
 	t)
-	DNUT_TRACE=$OPTARG;
+	SNAP_TRACE=$OPTARG;
 	;;
 	i)
 	iteration=$OPTARG;
@@ -85,11 +85,11 @@ while getopts "C:t:i:h" opt; do
 	esac
 done
 
-echo "Check if /dev/cxl/afu$dnut_card is AlphaDataKU60"
-rev=$(cat /sys/class/cxl/card$dnut_card/device/subsystem_device | xargs printf "0x%.4X")
+echo "Check if /dev/cxl/afu$snap_card is AlphaDataKU60"
+rev=$(cat /sys/class/cxl/card$snap_card/device/subsystem_device | xargs printf "0x%.4X")
 if [ $rev != "0x0605" ]; then
-	echo "Capi Card $dnut_card does have subsystem_device: $rev"
-	echo "I Expect to have 0x605, Check if -C $dnut_card did move to other CAPI id and use other -C option!"
+	echo "Capi Card $snap_card does have subsystem_device: $rev"
+	echo "I Expect to have 0x605, Check if -C $snap_card did move to other CAPI id and use other -C option!"
 	exit 1
 fi
 
@@ -97,6 +97,6 @@ for ((iter=1;iter <= iteration;iter++))
 {
 	echo -n "Testing Memory Set Function "
 	echo -n "$iter of $iteration"
-	test_memset "${dnut_card}"
+	test_memset "${snap_card}"
 }
 exit 0
