@@ -19,7 +19,6 @@
 
 #include <stdint.h>
 #include <libsnap.h>
-#include "keccak.h"
 
 typedef enum {
 	CHECKSUM_CRC32 = 0x0,
