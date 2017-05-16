@@ -596,7 +596,6 @@ int snap_action_start(struct snap_action *action)
 	/* Enable Ready IRQ if set by application */
 	if (SNAP_ACTION_DONE_IRQ  & card->flags) {
 		snap_mmio_write32(card, ACTION_IRQ_APP, ACTION_IRQ_APP_DONE);
-		snap_mmio_write32(card, ACTION_IRQ_APP, ACTION_IRQ_APP_READY);
 		snap_mmio_write32(card, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_ON);
 	}
 	return snap_mmio_write32(card, ACTION_CONTROL, ACTION_CONTROL_START);
