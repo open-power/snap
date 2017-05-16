@@ -15,6 +15,30 @@
  */
 
 /*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2015 Markku-Juhani O. Saarinen
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/*
  * Example to use the FPGA to calculate a CRC32 checksum.
  */
 
@@ -27,7 +51,7 @@
 #include <libsnap.h>
 #include <snap_internal.h>
 #include <action_checksum.h>
-#include <keccak.h>
+#include <sha3.h>
 
 static int mmio_write32(struct snap_card *card,
 			uint64_t offs, uint32_t data)
@@ -188,6 +212,245 @@ static unsigned long do_crc(unsigned long crc, unsigned char *buf, int len)
 	}
 	return c ^ 0xffffffffL;
 }
+
+#undef TEST /* get faster turn-around time */
+#ifdef NO_SYNTH /* TEST */
+#  define NB_SLICES   (4)
+#  define NB_ROUND    (1 << 10)
+#else
+#  ifndef NB_SLICES
+#    define NB_SLICES (65536)   /* 65536 */ /* for real benchmark */
+#  endif
+#  ifndef NB_ROUND
+#    define NB_ROUND  (1 << 16) /* (1 << 24) */ /* for real benchmark */
+#  endif
+#endif
+
+/* Number of parallelization channels at hls_action level*/
+#if NB_SLICES == 4
+#  define CHANNELS 4
+#else
+#  define CHANNELS 16
+#endif
+
+#define RESULT_SIZE 8
+#define HASH_SIZE 64
+/*
+ * Casting from uint8_t to uint64_t => 89 FF - 83 LUT - II=34 - Latency=33
+ */
+static void cast_uint8_to_uint64_W8(uint8_t st_in[64], uint64_t st[8])
+{
+	uint64_t mem;
+	int i, j;
+	const int VECTOR_SIZE = 8;
+
+	for (i = 0; i < VECTOR_SIZE; i++ ) {
+		/* #pragma HLS PIPELINE */
+		mem = 0;
+		for (j = 8; j >= 0; j--) {
+			mem = (mem << 8);
+			mem = (mem & 0xFFFFFFFFFFFFFF00 ) | st_in[j+i*8];
+		}
+		st[i] = mem;
+	}
+}
+
+/*
+ * Casting from uint64_t to uint8_t => 89 FF - 99 LUT - II=36 - Latency=35
+ */
+static void cast_uint64_to_uint8_W8(uint64_t st_in[8], uint8_t st_out[64])
+{
+	uint64_t tmp = 0;
+	int i, j;
+	const int VECTOR_SIZE = 8;
+
+	for (i = 0; i < VECTOR_SIZE; i++ ) {
+		/* #pragma HLS PIPELINE */
+		tmp = st_in[i];
+		for (j = 0; j < 8; j++ ) {
+			st_out[i*8+j] = (uint8_t)tmp;
+			tmp = (tmp >> 8);
+		}
+	}
+}
+
+static uint64_t sponge(const uint64_t rank)
+{
+	uint64_t magic[8] = { 0x0123456789abcdeful, 0x13579bdf02468aceul,
+			      0xfdecba9876543210ul, 0xeca86420fdb97531ul,
+			      0x571e30cf4b29a86dul, 0xd48f0c376e1b29a5ul,
+			      0xc5301e9f6b2ad748ul, 0x3894d02e5ba71c6ful };
+	uint64_t odd[8], even[8], result;
+	uint8_t odd8b[64], even8b[64];
+	int i, j;
+	int rnd_nb;
+
+	for (i = 0; i < RESULT_SIZE; i++) {
+		/* #pragma HLS UNROLL */
+		even[i] = magic[i] + rank;
+	}
+
+	// FIXME - this double conversion need to be optimized
+	cast_uint64_to_uint8_W8(even, even8b);
+	sha3((uint8_t*)even8b, HASH_SIZE, (uint8_t*)odd8b, HASH_SIZE);
+	cast_uint8_to_uint64_W8(odd8b, odd);
+	
+	for (rnd_nb = 0; rnd_nb < NB_ROUND; rnd_nb++) {
+		/* #pragma HLS UNROLL factor=4 */
+
+		for (j = 0; j < 4; j++) {
+			/* #pragma HLS UNROLL */
+			odd[2*j] ^= ROTL64( even[2*j] , 4*j+1);
+			odd[2*j+1] = ROTL64( even[2*j+1] + odd[2*j+1], 4*j+3);
+		}
+
+		// FIXME - this double conversion need to be optimized
+		cast_uint64_to_uint8_W8(odd, odd8b);
+		sha3((uint8_t*)odd8b,HASH_SIZE,(uint8_t*)even8b,HASH_SIZE);
+		cast_uint8_to_uint64_W8(even8b, even);
+
+		for (j = 0; j < 4; j++) {
+			/* #pragma HLS UNROLL */
+			even[2*j] += ROTL64( odd[2*j] , 4*j+5);
+			even[2*j+1] = ROTL64( even[2*j+1] ^ odd[2*j+1], 4*j+7);
+		}
+		
+		cast_uint64_to_uint8_W8(even, even8b);
+		sha3((uint8_t*)even8b,HASH_SIZE,(uint8_t*)odd8b,HASH_SIZE);
+		cast_uint8_to_uint64_W8(odd8b, odd);
+	}
+	result = 0;
+  
+	for (i = 0; i < RESULT_SIZE; i++) {
+		/* #pragma HLS UNROLL */
+		result += (even[i] ^ odd[i]);
+	}
+	return result;
+}
+
+#if !defined(CONFIG_USE_PTHREADS)
+
+/**
+ * nb_pe must be != 0, since we divide by it.
+ */
+static uint64_t sponge_main(uint32_t pe, uint32_t nb_pe,
+			    uint32_t threads __attribute__((unused)))
+{
+	uint32_t slice;
+	uint64_t checksum=0;
+
+	act_trace("%s(%d, %d)\n", __func__, pe, nb_pe);
+	act_trace("  sw: NB_SLICES=%d NB_ROUND=%d\n", NB_SLICES, NB_ROUND);
+
+	for (slice = 0; slice < NB_SLICES; slice++) {
+		if (pe == (slice % nb_pe)) {
+			uint64_t checksum_tmp;
+
+			act_trace("  slice=%d\n", slice);
+			checksum_tmp = sponge(slice);
+			checksum ^= checksum_tmp;
+			act_trace("    %016llx %016llx\n",
+				  (long long)checksum_tmp,
+				  (long long)checksum);
+		}
+	}
+
+	act_trace("checksum=%016llx\n", (unsigned long long)checksum);
+	return checksum;
+}
+
+#else
+
+#include <pthread.h>
+
+struct thread_data {
+        pthread_t thread_id;    /* Thread id assigned by pthread_create() */
+        unsigned int slice;
+        uint64_t checksum;
+        int thread_rc;
+};
+
+static struct thread_data *d;
+
+static void *sponge_thread(void *data)
+{
+        struct thread_data *d = (struct thread_data *)data;
+
+        d->checksum = 0;
+        d->thread_rc = 0;
+        d->checksum = sponge(d->slice);
+        pthread_exit(&d->thread_rc);
+}
+
+/**
+ * nb_pe must be != 0, since we divide by it.
+ */
+static uint64_t sponge_main(uint32_t pe, uint32_t nb_pe, uint32_t _threads)
+{
+        int rc;
+        uint32_t slice;
+        uint64_t checksum = 0;
+
+	if (_threads == 0) {
+		fprintf(stderr, "err: Min threads must be 1\n");
+		return 0;
+	}
+
+        d = calloc(_threads * sizeof(struct thread_data), 1);
+	if (d == NULL) {
+		fprintf(stderr, "err: No memory available\n");
+		return 0;
+	}
+
+        act_trace("%s(%d, %d, %d)\n", __func__, pe, nb_pe, _threads);
+        act_trace("  NB_SLICES=%d NB_ROUND=%d\n", NB_SLICES, NB_ROUND);
+
+        for (slice = 0; slice < NB_SLICES; ) {
+                unsigned int i;
+                unsigned int remaining_slices = NB_SLICES - slice;
+                unsigned int threads = MIN(remaining_slices, _threads);
+
+                act_trace("  [X] slice=%d remaining=%d threads=%d\n",
+                          slice, remaining_slices, threads);
+
+                for (i = 0; i < threads; i++) {
+                        if (pe != ((slice + i) % nb_pe))
+                                continue;
+
+                        d[i].slice = slice + i;
+                        rc = pthread_create(&d[i].thread_id, NULL,
+                                            &sponge_thread, &d[i]);
+                        if (rc != 0) {
+				free(d);
+                                fprintf(stderr, "starting %d failed!\n", i);
+                                return EXIT_FAILURE;
+                        }
+                }
+                for (i = 0; i < threads; i++) {
+			act_trace("      slice=%d checksum=%016llx\n",
+				  slice + i, (long long)d[i].checksum);
+
+                        if (pe != ((slice + i) % nb_pe))
+                                continue;
+
+                        rc = pthread_join(d[i].thread_id, NULL);
+                        if (rc != 0) {
+				free(d);
+				fprintf(stderr, "joining threads failed!\n");
+                                return EXIT_FAILURE;
+                        }
+                        checksum ^= d[i].checksum;
+                }
+                slice += threads;
+        }
+
+	free(d);
+
+        act_trace("checksum=%016llx\n", (unsigned long long)checksum);
+        return checksum;
+}
+
+#endif /* CONFIG_USE_PTHREADS */
 
 static int action_main(struct snap_sim_action *action, void *job,
 		       unsigned int job_len)
