@@ -21,12 +21,6 @@
 #include <stdint.h>
 
 /**
- * CAPI Streaming Framework - Example
- *
- * @author Kenneth Wilke, Frank Haverkamp, Eberhard Amann et. al.
- *
- * DRAFT 0.5
- *
  * During the workshop we discovered that there are two potential
  * application use-cases:
  *  1. Job-execution mode
