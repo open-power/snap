@@ -1,4 +1,21 @@
 #!/bin/bash
+
+#
+# Copyright 2017 International Business Machines
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
   del="#######################################"         # delimiter
   set -e                                                # exit on error
   n=0                                                   # count amount of tests executed (exception for subsecond calls)
@@ -68,16 +85,16 @@
       done
     fi
 
-    if [[ $action == *"hls_mem"* || $action == *"hls_search"* ]];then echo "testing demo_memcopy"
-      t="$SNAP_ROOT/software/examples/demo_memcopy -h"                                         ;echo -e "$del\n$t $l";             $t;echo "RC=$?" #     5..7
-#     t="$SNAP_ROOT/software/examples/demo_memcopy -C0 -i ../../1KB.txt -o 1KB.out -t10"       ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #     5..7
+    if [[ $action == *"hls_mem"* || $action == *"hls_search"* ]];then echo "testing hls_memcopy"
+      t="$SNAP_ROOT/software/examples/hls_memcopy -h"                                         ;echo -e "$del\n$t $l";             $t;echo "RC=$?" #     5..7
+#     t="$SNAP_ROOT/software/examples/hls_memcopy -C0 -i ../../1KB.txt -o 1KB.out -t10"       ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #     5..7
       #### select 1 selection loop
       # for size in 2 83; do                      # still error with 83B ?
         for size in 2 8 16 64 128 256 512 1024; do # 64B aligned       01/20/2017: error 128B
       # for size in 2 31 32 33 64 65 80 81 83 255 256 257 1024 1025 4096 4097; do
         #### select 1 checking method
-        # t="$SNAP_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -v -t20"   ;echo -e "$del\n$t $l"; # memcopy without checking behind buffer
-          t="$SNAP_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -v -X -t20";echo -e "$del\n$t $l"; # memcopy with checking behind buffer
+        # t="$SNAP_ROOT/software/examples/hls_memcopy -i ${size}.in -o ${size}.out -v -t20"   ;echo -e "$del\n$t $l"; # memcopy without checking behind buffer
+          t="$SNAP_ROOT/software/examples/hls_memcopy -i ${size}.in -o ${size}.out -v -X -t20";echo -e "$del\n$t $l"; # memcopy with checking behind buffer
         #### select 1 type of data generation
         # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                         # same char mult times
         # cmd='print("A" * '${size}', end="")'; python3 -c "$cmd" >${size}.in;head ${size}.in;echo      # deterministic char string generated with python
@@ -87,16 +104,16 @@
       done
     fi
 
-    if [[ $action == *"hls_search"* ]];then echo "testing demo_search"
-      t="$SNAP_ROOT/software/examples/demo_search -h"                                          ;echo -e "$del\n$t $l";             $t;echo "RC=$?" #     7       result=1   ok
-#     t="$SNAP_ROOT/software/examples/demo_search -p'A' -C0 -i ../../1KB.txt   -t100      "    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #    31..34
-#     t="$SNAP_ROOT/software/examples/demo_search -pX       -i ../../1KB.txt   -t100      "    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #    32..35
-#     t="$SNAP_ROOT/software/examples/demo_search -p0123    -i ../../1KB.txt   -t500      "    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #    33
-#     t="$SNAP_ROOT/software/examples/demo_search -ph       -i ../../1KB.txt   -t100      "    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #    31..32
-#     t="$SNAP_ROOT/software/examples/demo_search -ph       -i ../../1KB.txt   -t100  -vvv"    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #    33
-#     t="$SNAP_ROOT/software/examples/demo_search -p.       -i ../../fox1.txt  -t30   -v  "    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #
-#     t="$SNAP_ROOT/software/examples/demo_search -p.       -i ../../fox10.txt -t80   -v  "    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #
-#     t="$SNAP_ROOT/software/examples/demo_search -px       -i ../../fox1.txt  -t30   -v  "    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #     7       result=1   ok
+    if [[ $action == *"hls_search"* ]];then echo "testing hls_search"
+      t="$SNAP_ROOT/software/examples/hls_search -h"                                          ;echo -e "$del\n$t $l";             $t;echo "RC=$?" #     7       result=1   ok
+#     t="$SNAP_ROOT/software/examples/hls_search -p'A' -C0 -i ../../1KB.txt   -t100      "    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #    31..34
+#     t="$SNAP_ROOT/software/examples/hls_search -pX       -i ../../1KB.txt   -t100      "    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #    32..35
+#     t="$SNAP_ROOT/software/examples/hls_search -p0123    -i ../../1KB.txt   -t500      "    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #    33
+#     t="$SNAP_ROOT/software/examples/hls_search -ph       -i ../../1KB.txt   -t100      "    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #    31..32
+#     t="$SNAP_ROOT/software/examples/hls_search -ph       -i ../../1KB.txt   -t100  -vvv"    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #    33
+#     t="$SNAP_ROOT/software/examples/hls_search -p.       -i ../../fox1.txt  -t30   -v  "    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #
+#     t="$SNAP_ROOT/software/examples/hls_search -p.       -i ../../fox10.txt -t80   -v  "    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #
+#     t="$SNAP_ROOT/software/examples/hls_search -px       -i ../../fox1.txt  -t30   -v  "    ;echo -e "$del\n$t $l";((n++));time $t;echo "RC=$?" #     7       result=1   ok
       #### select one loop type
       # for size in 20 83; do
       # for size in {1..5}; do
@@ -111,11 +128,11 @@
         # dd if=/dev/urandom bs=${size} count=1 >${size}.in;                                            # random data any char, no echo due to unprintable char
         # cmd='print("A" * '${size}', end="")'; python3 -c "$cmd" >${size}.in;head ${size}.in;echo      # data generated with python
         count=$(fgrep -o $char ${size}.in|wc -l);                                                       # expected occurence of char in file
-        t="$SNAP_ROOT/software/examples/demo_search -p${char} -i${size}.in -E${count} -t$to -v";echo -e "$t $l";((n++));time $t;echo "RC=$?"
+        t="$SNAP_ROOT/software/examples/hls_search -p${char} -i${size}.in -E${count} -t$to -v";echo -e "$t $l";((n++));time $t;echo "RC=$?"
       done
     fi
 
-    if [[ $action == *"hls_hash"* ]];then echo "testing demo_hashjoin"
+    if [[ $action == *"hls_hash"* ]];then echo "testing hls_hashjoin"
     fi
 
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"
