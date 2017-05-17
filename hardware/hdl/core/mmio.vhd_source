@@ -39,7 +39,7 @@ ENTITY mmio IS
     -- pervasive
     ha_pclock              : IN  std_logic;
     afu_reset              : IN  std_logic;
-    nvme_perst_n_gate      : OUT std_logic_Vector(3 DOWNTO 0);             -- only for NVME_USED=TRUE -- gate to keep NVMe drives in reset (by driving 0's)
+    nvme_reset_ctl         : OUT std_logic_vector(SNAP_NVME_RST_L  DOWNTO SNAP_NVME_RST_R);   -- only for NVME_USED=TRUE  -- keeping NVMe drives in reset by driving 0's
     --
     -- debug (TODO: remove)
     ah_paren_mm_o          : OUT std_logic;
@@ -1171,7 +1171,7 @@ BEGIN
     --                                                                                             -- only for NVME_USED=TRUE
     -- PERST gates for NVMe drives                                                                 -- only for NVME_USED=TRUE
     --                                                                                             -- only for NVME_USED=TRUE
-    nvme_perst_n_gate <= snap_regs_q(SNAP_RESET_REG)(SNAP_NVME_PERST_L DOWNTO SNAP_NVME_PERST_R);  -- only for NVME_USED=TRUE
+    nvme_reset_ctl <= snap_regs_q(SNAP_RESET_REG)(SNAP_NVME_RST_L DOWNTO SNAP_NVME_RST_R);         -- only for NVME_USED=TRUE
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------

@@ -106,7 +106,7 @@ ENTITY snap_core IS
     -- ACTION Interface
     -- misc
     action_reset   : OUT std_logic;
-    nvme_perst_n_gate : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);       -- only for NVME_USED=TRUE -- gate to keep NVMe drives in reset (by driving 0's)
+    nvme_reset_ctl : OUT std_logic_vector(SNAP_NVME_RST_L  DOWNTO SNAP_NVME_RST_R);   -- only for NVME_USED=TRUE  -- keeping NVMe drives in reset by driving 0's
     --
     -- Kernel AXI Master Interface
     xk_d_o         : OUT XK_D_T;
@@ -402,7 +402,7 @@ BEGIN
       -- pervasive
       ha_pclock              => ha_pclock,
       afu_reset              => afu_reset,
-      nvme_perst_n_gate      => nvme_perst_n_gate, -- only for NVME_USED=TRUE
+      nvme_reset_ctl         => nvme_reset_ctl,   -- only for NVME_USED=TRUE
       --
       -- debug (TODO: remove)
       ah_paren_mm_o          => ah_paren,
