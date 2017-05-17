@@ -1,4 +1,19 @@
 #!/bin/bash
+#
+# Copyright 2017 International Business Machines
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
   del="\n#######################################"       # delimiter
   set -e                                                # exit on error
   n=0                                                   # count amount of tests executed (exception for subsecond calls)
@@ -119,7 +134,8 @@
       t="$SNAP_ROOT/software/tools/stage2 -a1 -s2 -e4 -i1 -t200"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
       t="$SNAP_ROOT/software/tools/stage2 -a1 -s2 -e8 -i1 -t500"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..76..12min
       if [[ "$ver" == "000800" && "$dist" > "40" || "$vers" > "000800" ]];then echo "including interrupts starting with version00.08.00 dist41"
-        t="$SNAP_ROOT/software/tools/stage2 -a1 -s1 -e2 -i1 -t100 -I -vv "                     ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
+        t="$SNAP_ROOT/software/tools/stage2 -I -a1 -s1 -e2 -i1 -t100 -vv "                     ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
+        t="$SNAP_ROOT/software/tools/stage2 -I -a2 -A256 -S1 -B0 -t200"                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
       fi
 #     t="$SNAP_ROOT/software/tools/stage2 -a2                    -vvv"                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #e memcmp failed
 #     t="$SNAP_ROOT/software/tools/stage2 -a2 -z0         -t50   -v  "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #e memcmp failed
@@ -132,15 +148,15 @@
 #     t="$SNAP_ROOT/software/tools/stage2 -a6 -z1         -t100      "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  6..10
       for num4k in 0 1; do
       for num64 in 1 2; do
-      for align in 4096 1024 256 64; do
+      for align in 4096 256 64; do
         t="$SNAP_ROOT/software/tools/stage2 -a2 -A${align} -S${num4k} -B${num64} -t200"        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
       done
       done
       done
       if [[ "$DDR3_USED" == "TRUE" || "$DDR4_USED" == "TRUE" || "$BRAM_USED" == "TRUE" || "$SDRAM_USED" == "TRUE" ]]; then echo -e "$del\ntesting DDR"
         for num4k in 0 1 3; do to=$((80+num4k*80))     # irun 1=6sec, 7=20sec, xsim 1=60sec 3=150sec
-        for num64 in 1 5 63 64;do                      # 1..64
-        for align in 4096 1024 256 64; do              # must be mult of 64
+        for num64 in 1 64; do                          # 1..64
+        for align in 4096 256 64; do                   # must be mult of 64
           t="$SNAP_ROOT/software/tools/stage2 -a6 -A${align} -S${num4k} -B${num64} -t$to"      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
         done
         done
@@ -157,8 +173,8 @@
         done
         #### use memset in host or in fpga memory, stay under 512k for BRAM
         t="$SNAP_ROOT/software/tools/stage2_set -h"                                            ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
-        for beg in 0 1 11 63 64;do                                    # start adr
-        for size in 1 7 4097; do  to=$((size/20+300))                                           # block size to copy, rough timeout dependent on filesize
+        for beg in 0 11 63; do                                    # start adr
+        for size in 7 4097; do to=$((size/20+300))                                              # block size to copy, rough timeout dependent on filesize
           t="$SNAP_ROOT/software/tools/stage2_set -H -b${beg} -s${size} -p${size} -t$to"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
           t="$SNAP_ROOT/software/tools/stage2_set -F -b${beg} -s${size} -p${size} -t$to"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
         done
@@ -177,9 +193,9 @@
       t="$SNAP_ROOT/software/tools/nvme_test -d1 -b4       -t100 -vv"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
     fi # nvme
 
-    if [[ "$t0l" == "10141000" || "${env_action}" == "hls_memcopy"* ]];then echo -e "$del\ntesting demo_memcopy"
-      t="$SNAP_ROOT/software/examples/demo_memcopy -h"                                         ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  5..7
-#     t="$SNAP_ROOT/software/examples/demo_memcopy -C0 -i ../../1KB.txt -o 1KB.out -t10"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..7
+    if [[ "$t0l" == "10141000" || "${env_action}" == "hls_memcopy"* ]];then echo -e "$del\ntesting hls_memcopy"
+      t="$SNAP_ROOT/software/examples/hls_memcopy -h"                                         ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #  5..7
+#     t="$SNAP_ROOT/software/examples/hls_memcopy -C0 -i ../../1KB.txt -o 1KB.out -t10"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..7
       #### select 1 selection loop
       # for size in 2 83; do                      # still error with 83B ?
         for size in 1 2 4 8 16 32 64;do to=$((size*50+10))                                                                 # rough timeout dependent on filesize
@@ -188,8 +204,8 @@
       # for size in 83 255 256 257 1024 1025 4095 4096 4097; do
       # for size in 2 31 32 33 64 65 80 81 83 255 256 257 1024 1025 4096 4097; do
         #### select 1 checking method
-        # t="$SNAP_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -v -t$to"   ;echo -e "$t $l"; # memcopy without checking behind buffer
-          t="$SNAP_ROOT/software/examples/demo_memcopy -i ${size}.in -o ${size}.out -v -X -t$to";echo -e "$t $l"; # memcopy with checking behind buffer
+        # t="$SNAP_ROOT/software/examples/hls_memcopy -i ${size}.in -o ${size}.out -v -t$to"   ;echo -e "$t $l"; # memcopy without checking behind buffer
+          t="$SNAP_ROOT/software/examples/hls_memcopy -i ${size}.in -o ${size}.out -v -X -t$to";echo -e "$t $l"; # memcopy with checking behind buffer
         #### select 1 type of data generation
         # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                         # same char mult times
         # cmd='print("A" * '${size}', end="")'; python3 -c "$cmd" >${size}.in;head ${size}.in;echo      # deterministic char string generated with python
@@ -204,8 +220,8 @@
       # for size in 2 8 16 64 128 256 512 1024; do # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
       # for size in 2 31 32 33 64 65 80 81 83 255 256 257 1024 1025 4096 4097; do
         #### select 1 checking method
-        # t="$SNAP_ROOT/software/examples/demo_memcopy -I -i ${size}.in -o ${size}.out -v -t$to"   ;echo -e "$t $l"; # memcopy without checking behind buffer
-          t="$SNAP_ROOT/software/examples/demo_memcopy -I -i ${size}.in -o ${size}.out -v -X -t$to";echo -e "$t $l"; # memcopy with checking behind buffer
+        # t="$SNAP_ROOT/software/examples/hls_memcopy -I -i ${size}.in -o ${size}.out -v -t$to"   ;echo -e "$t $l"; # memcopy without checking behind buffer
+          t="$SNAP_ROOT/software/examples/hls_memcopy -I -i ${size}.in -o ${size}.out -v -X -t$to";echo -e "$t $l"; # memcopy with checking behind buffer
         #### select 1 type of data generation
         # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                         # same char mult times
         # cmd='print("A" * '${size}', end="")'; python3 -c "$cmd" >${size}.in;head ${size}.in;echo      # deterministic char string generated with python
@@ -216,31 +232,31 @@
     fi # hls_memcopy
 
     if [[ "$t0l" == "10141001" || "${env_action}" == "hls_sponge"* ]];then echo -e "$del\ntesting sponge"
-      t="$SNAP_ROOT/software/examples/demo_checksum -h"                                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-#     t="$SNAP_ROOT/software/examples/demo_checksum -v -t300000 -arg "-mSPONGE -p1 -n4"        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/hls_checksum -h"                                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     t="$SNAP_ROOT/software/examples/hls_checksum -v -t300000 -arg "-mSPONGE -p1 -n4"        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
     fi # sponge
 
-    if [[ "$t0l" == "10141002" || "${env_action}" == "hls_hashjoin"* ]];then echo -e "$del\ntesting demo_hashjoin"
-      t="$SNAP_ROOT/software/examples/demo_hashjoin -h"                                        ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/demo_hashjoin           -t600 -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 1m26s
-      for vart in 1 15 257;do to=$((vart*20+50))                                                        # rough timeout dependent on filesize
-        t="$SNAP_ROOT/software/examples/demo_hashjoin -T$vart -t$to -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #   49s
+    if [[ "$t0l" == "10141002" || "${env_action}" == "hls_hashjoin"* ]];then echo -e "$del\ntesting hls_hashjoin"
+      t="$SNAP_ROOT/software/examples/hls_hashjoin -h"                                        ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/hls_hashjoin           -t600 -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 1m26s
+      for vart in 1 15 257;do to=$((vart*3+500))                                                        # rough timeout dependent on filesize
+        t="$SNAP_ROOT/software/examples/hls_hashjoin -T$vart -t$to -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #   49s
       done
-      for varq in 1 5 8 16 32 257;do to=$((varq*20+50))                                                 # rough timeout dependent on filesize
-        t="$SNAP_ROOT/software/examples/demo_hashjoin -Q$vart -t$to -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #   49s
+      for varq in 1 5 32;do to=$((varq*3+500))                                                 # rough timeout dependent on filesize
+        t="$SNAP_ROOT/software/examples/hls_hashjoin -Q$vart -t$to -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #   49s
       done
     fi # hls_hashjoin
 
-    if [[ "$t0l" == "10141003" || "${env_action}" == "hls_search"* ]];then echo -e "$del\ntesting demo_search"
-      t="$SNAP_ROOT/software/examples/demo_search -h"                                          ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
-#     t="$SNAP_ROOT/software/examples/demo_search -p'A' -C0 -i ../../1KB.txt   -t100      "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 31..34
-#     t="$SNAP_ROOT/software/examples/demo_search -pX       -i ../../1KB.txt   -t100      "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 32..35
-#     t="$SNAP_ROOT/software/examples/demo_search -p0123    -i ../../1KB.txt   -t500      "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 33
-#     t="$SNAP_ROOT/software/examples/demo_search -ph       -i ../../1KB.txt   -t100      "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 31..32
-#     t="$SNAP_ROOT/software/examples/demo_search -ph       -i ../../1KB.txt   -t100  -vvv"    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 33
-#     t="$SNAP_ROOT/software/examples/demo_search -p.       -i ../../fox1.txt  -t30   -v  "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-#     t="$SNAP_ROOT/software/examples/demo_search -p.       -i ../../fox10.txt -t80   -v  "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-#     t="$SNAP_ROOT/software/examples/demo_search -px       -i ../../fox1.txt  -t30   -v  "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+    if [[ "$t0l" == "10141003" || "${env_action}" == "hls_search"* ]];then echo -e "$del\ntesting hls_search"
+      t="$SNAP_ROOT/software/examples/hls_search -h"                                          ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
+#     t="$SNAP_ROOT/software/examples/hls_search -p'A' -C0 -i ../../1KB.txt   -t100      "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 31..34
+#     t="$SNAP_ROOT/software/examples/hls_search -pX       -i ../../1KB.txt   -t100      "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 32..35
+#     t="$SNAP_ROOT/software/examples/hls_search -p0123    -i ../../1KB.txt   -t500      "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 33
+#     t="$SNAP_ROOT/software/examples/hls_search -ph       -i ../../1KB.txt   -t100      "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 31..32
+#     t="$SNAP_ROOT/software/examples/hls_search -ph       -i ../../1KB.txt   -t100  -vvv"    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 33
+#     t="$SNAP_ROOT/software/examples/hls_search -p.       -i ../../fox1.txt  -t30   -v  "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     t="$SNAP_ROOT/software/examples/hls_search -p.       -i ../../fox10.txt -t80   -v  "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     t="$SNAP_ROOT/software/examples/hls_search -px       -i ../../fox1.txt  -t30   -v  "    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
       #### select one loop type
       # for size in 20 83; do
       # for size in {1..5}; do
@@ -254,26 +270,27 @@
         # dd if=/dev/urandom bs=${size} count=1 >${size}.in;                                            # random data any char, no echo due to unprintable char
         # cmd='print("A" * '${size}', end="")'; python3 -c "$cmd" >${size}.in;head ${size}.in;echo      # data generated with python
         count=$(fgrep -o $char ${size}.in|wc -l);                                                       # expected occurence of char in file
-        t="$SNAP_ROOT/software/examples/demo_search -p${char} -i${size}.in -E${count} -t$to -v";echo -e "$t $l";((n+=1));time $t;echo -e "RC=$?$del"
+        t="$SNAP_ROOT/software/examples/hls_search -p${char} -i${size}.in -E${count} -t$to -v";echo -e "$t $l";((n+=1));time $t;echo -e "RC=$?$del"
       done
     fi # hls_search
 
     if [[ "$t0l" == "10141004" || "${env_action}" == "hls_bfs"* ]];then echo -e "$del\ntesting BFS"
-      t="$SNAP_ROOT/software/examples/demo_bfs -h"                                             ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/demo_bfs -r50        -t30000 -v"                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/hls_bfs -h"                                             ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/hls_bfs -r20 -t30000 -v"                                ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     t="$SNAP_ROOT/software/examples/hls_bfs -r50 -t30000 -v"                                ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
 #     for size in {1..3}; do
-#       t="$SNAP_ROOT/software/examples/demo_bfs -r50        -t30000 -v"                       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#       t="$SNAP_ROOT/software/examples/hls_bfs -r50 -t30000 -v"                              ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
 #     done
     fi # bfs
 
     if [[ "$t0l" == "10141005" || "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect"
-      t="$SNAP_ROOT/software/examples/demo_intersect     -h"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/demo_intersect    -m1 -v -t300"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/demo_intersect    -n1 -v -t200"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/demo_intersect    -n2 -v -t400"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/demo_intersect    -n4 -v -t600"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/demo_intersect    -n8 -v -t800"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/demo_intersect -I -m1 -v -t300"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/hls_intersect     -h"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/hls_intersect    -m1 -v -t300"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/hls_intersect    -n1 -v -t400"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/hls_intersect    -n2 -v -t800"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/hls_intersect    -n4 -v -t1200"                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/hls_intersect    -n8 -v -t1600"                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/hls_intersect -I -m1 -v -t600"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
     fi # intersect
 
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"
