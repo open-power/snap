@@ -167,6 +167,20 @@ Address: 0x0000020
 
 ---
 
+#### SNAP Reset Control Register (SRC)
+```
+Address: 0x0000028
+  63..5  RO: Reserved
+      4  RW: Reset PCIe core and NVMe drives
+             '1' : keep RESET active
+   3..0  RW: Reset NVMe drives via the four M2_PERST_N pins
+             Bit i='1' : pull down M2_PERST_N(i)
+
+  POR value: 0x0000000000000000
+```
+
+---
+
 #### Freerunning Timer (FRT)
 ```
 Address: 0x0000080
@@ -424,6 +438,20 @@ Address: 0x0000018 + (s+n) * 0x0010000
    3..0  RO: Maximum Action ID
 
   POR value: 0x000000000000000a with a = maximum action ID for this card build
+```
+
+---
+
+#### SNAP Reset Control Register (SRC)
+```
+Address: 0x0000028 + (s+n) * 0x0010000
+  63..5  RO: Reserved
+      4  RO: Reset PCIe core and NVMe drives
+             '1' : keep RESET active
+   3..0  RO: Reset NVMe drives via the four M2_PERST_N pins
+             Bit i='1' : pull down M2_PERST_N(i)
+
+  POR value: 0x0000000000000000
 ```
 
 ---
