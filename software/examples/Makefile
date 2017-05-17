@@ -27,23 +27,23 @@ else
 LDLIBS += -lcxl
 endif
 
-demo_search_objs = action_search.o
-demo_memcopy_objs = action_memcopy.o
-demo_checksum_objs = action_checksum.o sha3.o
-demo_hashjoin_objs = action_hashjoin.o
-demo_bfs_objs = action_bfs.o
-demo_intersect_objs = action_intersect.o
+snap_search_objs = action_search.o
+snap_memcopy_objs = action_memcopy.o
+snap_checksum_objs = action_checksum.o sha3.o
+snap_hashjoin_objs = action_hashjoin.o
+snap_bfs_objs = action_bfs.o
+snap_intersect_objs = action_intersect.o
 
-projs = demo_search demo_memcopy demo_checksum demo_hashjoin demo_bfs demo_intersect
+projs = snap_search snap_memcopy snap_checksum snap_hashjoin snap_bfs snap_intersect
 
 all: $(objs) $(projs)
 
-demo_search: action_search.o
-demo_memcopy: action_memcopy.o
-demo_checksum: action_checksum.o sha3.o
-demo_hashjoin: action_hashjoin.o
-demo_bfs: action_bfs.o
-demo_intersect: action_intersect.o
+snap_search: action_search.o
+snap_memcopy: action_memcopy.o
+snap_checksum: action_checksum.o sha3.o
+snap_hashjoin: action_hashjoin.o
+snap_bfs: action_bfs.o
+snap_intersect: action_intersect.o
 
 $(projs): $(libs)
 
