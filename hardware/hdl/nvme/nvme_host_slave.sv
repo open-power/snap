@@ -437,7 +437,7 @@ module nvme_host_slave #
               // PRP Entry format
               unique case (sq_count)
               // DW3-0: RSV(8 bytes), NSID(4 bytes), 31:16 CMD_ID, 15:14 PRP 13:10 RSV, 9:8 FUSE, 7:0 OPC
-              0: tx_wdata <= {64'd0, 32'd0, sq_cid, 2'b00, 4'b0000, 2'b00, sq_opcode};
+              0: tx_wdata <= {64'd0, 32'd1, sq_cid, 2'b00, 4'b0000, 2'b00, sq_opcode};
               // DW7-4:  PRP1(8 bytes), MPTR(8 bytes)
               1: tx_wdata <= {{action_w_regs[`ACTION_W_DPTR_HIGH], action_w_regs[`ACTION_W_DPTR_LOW]}, 64'd0};
               // DW11-8: Start LBA(8 bytes), PRP2(8 bytes)
@@ -451,7 +451,7 @@ module nvme_host_slave #
               sg_byte_length = (action_w_regs[`ACTION_W_LBA_NUM][15:0] + 1) << `LBA_BYTE_SHIFT;
               unique case (sq_count)
               // DW3-0: RSV(8 bytes), NSID(4 bytes), 31:16 CMD_ID, 15:14 SGL 13:10 RSV, 9:8 FUSE, 7:0 OPC
-              0: tx_wdata <= {64'd0, 32'd0, sq_cid, 2'b10, 4'b0000, 2'b00, sq_opcode};
+              0: tx_wdata <= {64'd0, 32'd1, sq_cid, 2'b10, 4'b0000, 2'b00, sq_opcode};
               // DW7-4:  SGE Address[7:0](8 bytes), MPTR(8 bytes)
               1: tx_wdata <= {{action_w_regs[`ACTION_W_DPTR_HIGH], action_w_regs[`ACTION_W_DPTR_LOW]}, 64'd0};
               // DW11-8: Start LBA(8 bytes), SG ID (1 byte), SG RSVD (3 bytes), SG Byte Length (4 bytes)
