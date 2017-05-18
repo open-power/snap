@@ -236,7 +236,7 @@
 #     t="$SNAP_ROOT/software/examples/snap_checksum -v -t300000 -arg "-mSPONGE -p1 -n4"        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
     fi # sponge
 
-    if [[ "$t0l" == "10141002" || "${env_action}" == "hls_hashjoin"* ]];then echo -e "$del\ntesting demo_hashjoin"
+    if [[ "$t0l" == "10141002" || "${env_action}" == "hls_hashjoin"* ]];then echo -e "$del\ntesting snap_hashjoin"
       t="$SNAP_ROOT/software/examples/snap_hashjoin -h"                                        ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
       t="$SNAP_ROOT/software/examples/snap_hashjoin           -t600 -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 1m26s
       for vart in 1 15; do to=$((vart*3+500))                                                   # rough timeout dependent on filesize
