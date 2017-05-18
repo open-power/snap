@@ -19,7 +19,7 @@
 `define PCIE_S_ID_BITS 4
 
 // Use PRP entry for data transfer
-`define USE_PRP 0
+`define USE_PRP 1
 // LBA size as power of 2, 12=4kB size
 `define LBA_BYTE_SHIFT 9
 
