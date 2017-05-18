@@ -286,10 +286,10 @@
     if [[ "$t0l" == "10141005" || "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect"
       t="$SNAP_ROOT/software/examples/snap_intersect     -h"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
       t="$SNAP_ROOT/software/examples/snap_intersect    -m1 -v -t300"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/snap_intersect    -n1 -v -t200"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/snap_intersect    -n2 -v -t400"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/snap_intersect    -n4 -v -t600"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/snap_intersect    -n8 -v -t800"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/snap_intersect    -n1 -v -t600"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/snap_intersect    -n2 -v -t1200"                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     t="$SNAP_ROOT/software/examples/snap_intersect    -n4 -v -t1800"                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     t="$SNAP_ROOT/software/examples/snap_intersect    -n8 -v -t3200"                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
       t="$SNAP_ROOT/software/examples/snap_intersect -I -m1 -v -t300"                          ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
     fi # intersect
 
