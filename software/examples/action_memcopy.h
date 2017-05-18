@@ -18,13 +18,22 @@
  */
 
 #include <stdint.h>
-#include <libsnap.h>
+#include <snap_types.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define MEMCOPY_ACTION_TYPE 0x10141000
 
-struct memcopy_job {
+typedef struct memcopy_job {
 	struct snap_addr in;	/* input data */
 	struct snap_addr out;   /* offset table */
-};
+	uint8_t reserved[SNAP_JOBSIZE - 2 * sizeof(struct snap_addr)];
+} memcopy_job_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* __ACTION_MEMCOPY_H__ */
