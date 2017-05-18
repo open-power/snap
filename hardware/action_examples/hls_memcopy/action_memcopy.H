@@ -1,5 +1,5 @@
-#ifndef __ACTION_MEMCOPY_H__
-#define __ACTION_MEMCOPY_H__
+#ifndef __ACTION_HLS_MEMCOPY_H__
+#define __ACTION_HLS_MEMCOPY_H__
 
 /*
  * Copyright 2017, International Business Machines
@@ -20,7 +20,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <ap_int.h>
+
 #include "hls_snap.H"
+#include <action_memcopy.h> /* Memcopy Job definition */
 
 #define MEMCOPY_ACTION_TYPE 0x10141000
 #define RELEASE_LEVEL       0x00000020
@@ -29,17 +31,10 @@
 #define CARD_DRAM_SIZE (1 * 1024 *1024 * 1024)
 #define MAX_NB_OF_WORDS_READ MAX_NB_OF_BYTES_READ/BPERDW
 
-typedef struct { //Names of the fields can be changed by User. Should serve as a template 
-        dnut_addr in;   /* input data : 128 bits*/
-        dnut_addr out;  /* offset table : 128 bits*/
-        ap_uint<608> unused; /* NOTE: Required such that HLS generates
-				the right register layout */
-} DATA_MC; // DATA = 108 Bytes / 864 bits (fixed length)
-
 //---------------------------------------------------------------------
 typedef struct {
-        CONTROL Control;       //  16 bytes
-        DATA_MC Data;          // 108 bytes
+        CONTROL Control;       /*  16 bytes */
+	memcopy_job_t Data;    /* 108 bytes */
 } action_reg;
 
 #define CONFIG_HOSTSTYLE_ALGO

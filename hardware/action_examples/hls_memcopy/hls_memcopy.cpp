@@ -109,8 +109,8 @@ static void process_action(snap_membus_t *din_gmem,
 
 
 	// byte address received need to be aligned with port width
-	InputAddress = (Action_Register->Data.in.address)   >> ADDR_RIGHT_SHIFT;
-	OutputAddress = (Action_Register->Data.out.address) >> ADDR_RIGHT_SHIFT;
+	InputAddress = (Action_Register->Data.in.addr)   >> ADDR_RIGHT_SHIFT;
+	OutputAddress = (Action_Register->Data.out.addr) >> ADDR_RIGHT_SHIFT;
 
 	ReturnCode = RET_CODE_OK;
 
