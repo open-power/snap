@@ -30,7 +30,8 @@ SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
 		  $(SNAP_SIM_CORE)/top.sv \
 		  $(SNAP_HDL_CORE)/snap_core.vhd \
 		  $(SNAP_HDL_CORE)/snap_core_types.vhd \
-		  $(SNAP_HDL_CORE)/mmio.vhd
+		  $(SNAP_HDL_CORE)/mmio.vhd \
+		  $(SNAP_HARDWARE_ROOT)/hdl/hls/action_wrapper.vhd
 
 PROJECT_COMPILE_LIST = $(SNAP_HARDWARE_ROOT)/sim/xsim/file_info.txt
 
