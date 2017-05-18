@@ -79,8 +79,8 @@ static void usage(const char *prog)
             "  -I, --irq                 Enable Interrupts\n"
             "\n"
             "Example:\n"
-            "HW:  sudo ./demo_intersect ...\n"
-            "SW:  SNAP_CONFIG=1 ./demo_intersect ...\n"
+            "HW:  sudo ./snap_intersect ...\n"
+            "SW:  SNAP_CONFIG=1 ./snap_intersect ...\n"
             "\n",
             prog);
 }

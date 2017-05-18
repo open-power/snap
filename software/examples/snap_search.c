@@ -259,7 +259,7 @@ static void usage(const char *prog)
 	       "for verification\n"
 	       "\n"
 	       "Example:\n"
-	       "  demo_search ...\n"
+	       "  snap_search ...\n"
 	       "\n",
 	       prog);
 }
