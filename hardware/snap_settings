@@ -96,7 +96,7 @@ while [ -z "$SETUP_DONE" ]; do
   export SNAP_SOFTWARE_ROOT=$SNAP_ROOT/software
 
   if [ -z "$ACTION_ROOT" ]; then
-    export ACTION_ROOT=$SNAP_HARDWARE_ROOT/action_examples/hdl_memcopy/
+    export ACTION_ROOT=$SNAP_HARDWARE_ROOT/action_examples/hdl_example/
     echo "ACTION_ROOT                    to: \"$ACTION_ROOT\"" 
   else
     echo "ACTION_ROOT             is set to: \"$ACTION_ROOT\""
