@@ -23,6 +23,7 @@ LDLIBS += $(libs) -lpthread
 # Link statically for PSLSE simulation and dynamically for real version
 ifdef BUILD_SIMCODE
 libs += $(PSLSE_ROOT)/libcxl/libcxl.a
+CFLAGS+=-D_SIM_
 else
 LDLIBS += -lcxl
 endif
