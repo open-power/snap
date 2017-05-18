@@ -61,14 +61,17 @@ typedef ap_uint<8>         snapu8_t;
 
 /* enum definitions should stay in sync with include/libdonut.h */
 enum {
+	/* FIMXE REMOVE */
 	RET_CODE_OK      = 0x00000102,
 	RET_CODE_FAILURE = 0x00000104,
 
+	/* FIMXE REMOVE */
 	HOST_DRAM        = 0x0000, /* this is fine, always there */
 	CARD_DRAM        = 0x0001, /* card specific */
 	NVME             = 0x0002, /* card specific */
 	UNUSED_MEM       = 0xFFFF,
 
+	/* FIMXE REMOVE */
 	F_END            = 0x0001, /* last element in the list */
 	F_ADDR           = 0x0002, /* this one is an address */
 	F_DATA           = 0x0004, /* 64-bit address */
