@@ -57,7 +57,6 @@
 # ARGUMENTS #############
  TS=`date +%Y%m%d_%H%M%S`; if [ "$TST_TITLE" != "" ];then TS="${TS}_${TST_TITLE}";fi
  if [ -z $SNAP_ROOT ];then echo "variable SNAP_ROOT not found, leaving"; exit 11; fi
- if [ -z $FRAMEWORK_ROOT ];then echo "variable FRAMEWORK_ROOT not found, leaving"; exit 11; fi
  if [ -z $PSLSE_ROOT ];then echo "variable PSLSE_ROOT not found, leaving"; exit 11; fi
 
  SNAP_SOFTWARE_ROOT=$SNAP_ROOT/software 
@@ -164,7 +163,7 @@
    if   [ "$SIMDIR" == "ies" ];then
      ln -s $SNAP_HARDWARE_ROOT/sim/ies/ies        	# point to compiled model
      ln -s $SNAP_HARDWARE_ROOT/sim/ies/INCA_libs 	# point to compiled model
-     ln -s $FRAMEWORK_ROOT/denali                       # point to denali config files
+     ln -s $DENALI_ROOT                                 # point to denali config files
    elif [ "$SIMDIR" == "xsim" ];then
      ln -s $SNAP_HARDWARE_ROOT/sim/xsim/xsim.dir
    elif [ "$SIMDIR" == "questa" ];then
