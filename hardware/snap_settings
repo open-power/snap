@@ -96,14 +96,14 @@ while [ -z "$SETUP_DONE" ]; do
   export SNAP_SOFTWARE_ROOT=$SNAP_ROOT/software
 
   if [ -z "$ACTION_ROOT" ]; then
-    echo "Variable ACTION_ROOT    is not set. Please let it point to your action source if you want to add an action to your project."
-    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Variable ACTION_ROOT is not set (see above)."
+    export ACTION_ROOT=$SNAP_HARDWARE_ROOT/action_examples/hdl_memcopy/
+    echo "ACTION_ROOT                    to: \"$ACTION_ROOT\"" 
   else
     echo "ACTION_ROOT             is set to: \"$ACTION_ROOT\""
   fi
 
   if [ -z "$FPGACARD" ]; then
-    export FPGACARD=KU3
+    export FPGACARD=FGT
     echo "Setting FPGACARD               to  \"$FPGACARD\""
   else
     echo "FPGACARD                is set to: \"$FPGACARD\""
@@ -162,7 +162,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ -z "$NVME_USED" ]; then
     export NVME_USED="FALSE"
-    echo "Variable NVME_USED      is not set. Will default to  \"FALSE\""
+    echo "Variable NVME_USED             to  \"FALSE\""
   else
     echo "NVME_USED               is set to: \"$NVME_USED\""
     if [[ $NVME_USED = "TRUE"  && $FPGACARD = "KU3" ]]; then
