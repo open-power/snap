@@ -1,6 +1,6 @@
 /*
- * Copyright 2016, 2017, International Business Machines
- *!
+ * Copyright 2016, 2017 International Business Machines
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -58,7 +58,7 @@ static void usage(const char *prog)
 	       "  -I, --irq                 Enable Interrupts\n"
 	       "\n"
 	       "Example:\n"
-	       "  demo_memcopy ...\n"
+	       "  snap_memcopy ...\n"
 	       "\n",
 	       prog);
 }
