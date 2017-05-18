@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, International Business Machines
+ * Copyright 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ short write_burst_of_data_to_mem(snap_membus_t *dout_gmem,
 		       buffer, size_in_bytes_to_transfer);
        		rc =  0;
 		break;
-	case CARD_DRAM:
+	case SNAP_ADDRTYPE_CARD_DRAM:
 		memcpy((snap_membus_t  *) (d_ddrmem + output_address),
 		       buffer, size_in_bytes_to_transfer);
        		rc =  0;
@@ -74,7 +74,7 @@ short read_burst_of_data_from_mem(snap_membus_t *din_gmem,
 		       size_in_bytes_to_transfer);
        		rc =  0;
 		break;
-	case CARD_DRAM:
+	case SNAP_ADDRTYPE_CARD_DRAM:
 		memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address),
 		       size_in_bytes_to_transfer);
        		rc =  0;
@@ -94,7 +94,6 @@ static void process_action(snap_membus_t *din_gmem,
                            snap_membus_t *d_ddrmem,
                            action_reg *Action_Register)
 {
-
 	// VARIABLES
 	snapu32_t xfer_size;
 	snapu32_t action_xfer_size;
@@ -105,8 +104,8 @@ static void process_action(snap_membus_t *din_gmem,
 	snapu64_t   InputAddress;
 	snapu64_t   OutputAddress;
 	snapu64_t   address_xfer_offset;
-	snap_membus_t  buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];   // if 4096 bytes max => 64 words
-
+	snap_membus_t  buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];
+	// if 4096 bytes max => 64 words
 
 	// byte address received need to be aligned with port width
 	InputAddress = (Action_Register->Data.in.addr)   >> ADDR_RIGHT_SHIFT;
@@ -116,10 +115,14 @@ static void process_action(snap_membus_t *din_gmem,
 
 	address_xfer_offset = 0x0;
 	// testing sizes to prevent from writing out of bounds
-	action_xfer_size = MIN(Action_Register->Data.in.size, Action_Register->Data.out.size);
-	if (Action_Register->Data.in.type == CARD_DRAM and Action_Register->Data.in.size > CARD_DRAM_SIZE)
+	action_xfer_size = MIN(Action_Register->Data.in.size,
+			       Action_Register->Data.out.size);
+
+	if (Action_Register->Data.in.type == SNAP_ADDRTYPE_CARD_DRAM and
+	    Action_Register->Data.in.size > SNAP_ADDRTYPE_CARD_DRAM_SIZE)
 		rc = 1;
-	if (Action_Register->Data.out.type == CARD_DRAM and Action_Register->Data.out.size > CARD_DRAM_SIZE)
+	if (Action_Register->Data.out.type == SNAP_ADDRTYPE_CARD_DRAM and
+	    Action_Register->Data.out.size > SNAP_ADDRTYPE_CARD_DRAM_SIZE)
 		rc = 1;
 
 	// buffer size is hardware limited by MAX_NB_OF_BYTES_READ
@@ -128,13 +131,18 @@ static void process_action(snap_membus_t *din_gmem,
 	// transferring buffers one after the other
 	L0:
 	for ( i = 0; i < nb_blocks_to_xfer; i++ ) {
-		//#pragma HLS UNROLL // cannot completely unroll a loop with a variable trip count
-		xfer_size = MIN(action_xfer_size, (snapu32_t) MAX_NB_OF_BYTES_READ);
+		//#pragma HLS UNROLL
+		// cannot completely unroll a loop with a variable trip count
 
-		rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, Action_Register->Data.in.type,
+		xfer_size = MIN(action_xfer_size,
+				(snapu32_t)MAX_NB_OF_BYTES_READ);
+
+		rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem,
+						  Action_Register->Data.in.type,
 			InputAddress + address_xfer_offset, buf_gmem, xfer_size);
 
-		rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem, Action_Register->Data.out.type,
+		rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem,
+						 Action_Register->Data.out.type,
 			OutputAddress + address_xfer_offset, buf_gmem, xfer_size);
 
 		action_xfer_size -= xfer_size;
@@ -142,8 +150,9 @@ static void process_action(snap_membus_t *din_gmem,
 	} // end of L0 loop
 
 	if (rc != 0)
-		ReturnCode = RET_CODE_FAILURE;
-	Action_Register->Control.Retc = (snapu32_t)ReturnCode;
+		ReturnCode = SNAP_RETC_FAILURE;
+
+	Action_Register->Control.Retc = ReturnCode;
 	return;
 }
 
@@ -177,9 +186,9 @@ void hls_action(snap_membus_t *din_gmem,
  	// Used for the discovery phase of the cards */
 	switch (Action_Register->Control.flags) {
 	case 0:
-		Action_Config->action_type   = (snapu32_t)MEMCOPY_ACTION_TYPE;
-		Action_Config->release_level = (snapu32_t)RELEASE_LEVEL;
-		Action_Register->Control.Retc = (snapu32_t)0xe00f;
+		Action_Config->action_type = MEMCOPY_ACTION_TYPE;
+		Action_Config->release_level = RELEASE_LEVEL;
+		Action_Register->Control.Retc = 0xe00f;
 		return;
 		break;
 	default:
