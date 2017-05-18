@@ -57,10 +57,11 @@
 # ARGUMENTS #############
  TS=`date +%Y%m%d_%H%M%S`; if [ "$TST_TITLE" != "" ];then TS="${TS}_${TST_TITLE}";fi
  if [ -z $SNAP_ROOT ];then echo "variable SNAP_ROOT not found, leaving"; exit 11; fi
- if [ -z $SNAP_SOFTWARE_ROOT ];then echo "variable SNAP_SOFTWARE_ROOT not found, leaving"; exit 11; fi
- if [ -z $SNAP_HARDWARE_ROOT ];then echo "variable SNAP_HARDWARE_ROOT not found, leaving"; exit 11; fi
  if [ -z $FRAMEWORK_ROOT ];then echo "variable FRAMEWORK_ROOT not found, leaving"; exit 11; fi
  if [ -z $PSLSE_ROOT ];then echo "variable PSLSE_ROOT not found, leaving"; exit 11; fi
+
+ SNAP_SOFTWARE_ROOT=$SNAP_ROOT/software 
+ SNAP_HARDWARE_ROOT=$SNAP_ROOT/hardware 
  HOSTNAME=`hostname -s`; echo "hostname=$HOSTNAME arguments=$@"
  runsim_args=$@
  while [[ $# > 0 ]]; do         # consume multiple args per loop with shift

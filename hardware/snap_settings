@@ -126,7 +126,7 @@ while [ -z "$SETUP_DONE" ]; do
       export HDK_ROOT=$FRAMEWORK_ROOT/cards/adku060_capi_1_1_release
       echo "Setting HDK_ROOT               to: \"$HDK_ROOT\""
     else
-      echo "HDK_ROOT                is set to: \"$HDK_ROOT\""
+      echo "PSL_DCP                 is set to: \"$PSL_DCP\""
     fi
   fi
 

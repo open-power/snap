@@ -21,8 +21,6 @@ differently):
     USERHOME            = $FRAMEWORK_ROOT/$USER                                  # each user has his own workspace
     PSLSE_ROOT          = $USERHOME/pslse                                        # PSLSE clone from github
     SNAP_ROOT           = <parent of the directory containing snap_settings>    # snap clone from github
-    SNAP_SOFTWARE_ROOT  = $SNAP_ROOT/software                                   # path to snap software
-    SNAP_HARDWARE_ROOT  = $SNAP_ROOT/hardware                                   # path to snap hardware
     FPGACARD            = KU3                                                    # CAPI FPGA card to be used - currently supported are KU3, FGT
     FPGACHIP            = xcku060-ffva1156-2-e                                   # version of the FPGA chip
     HDK_ROOT            = $FRAMEWORK_ROOT/cards/adku060_capi_1_1_release         # path to HDK for the CAPI FPGA card
