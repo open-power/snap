@@ -135,7 +135,8 @@
       t="$SNAP_ROOT/software/tools/stage2 -a1 -s2 -e4 -i1 -t200"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
       t="$SNAP_ROOT/software/tools/stage2 -a1 -s2 -e8 -i1 -t500"                               ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..76..12min
       if [[ "$ver" == "000800" && "$dist" > "40" || "$vers" > "000800" ]];then echo "including interrupts starting with version00.08.00 dist41"
-        t="$SNAP_ROOT/software/tools/stage2 -a1 -s1 -e2 -i1 -t100 -I -vv "                     ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
+        t="$SNAP_ROOT/software/tools/stage2 -I -a1 -s1 -e2 -i1 -t100 -vv "                     ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  2..34
+        t="$SNAP_ROOT/software/tools/stage2 -I -a2 -A256 -S1 -B0 -t200"                        ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
       fi
 #     t="$SNAP_ROOT/software/tools/stage2 -a2                    -vvv"                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #e memcmp failed
 #     t="$SNAP_ROOT/software/tools/stage2 -a2 -z0         -t50   -v  "                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #e memcmp failed
@@ -155,16 +156,16 @@
       done
       if [[ "$DDR3_USED" == "TRUE" || "$DDR4_USED" == "TRUE" || "$BRAM_USED" == "TRUE" || "$SDRAM_USED" == "TRUE" ]]; then echo -e "$del\ntesting DDR"
         for num4k in 0 1 3; do to=$((80+num4k*80))     # irun 1=6sec, 7=20sec, xsim 1=60sec 3=150sec
-        for num64 in 1 5 63 64;do                      # 1..64
-        for align in 4096 1024 256 64; do              # must be mult of 64
+        for num64 in 1 64; do                          # 1..64
+        for align in 4096 256 64; do                   # must be mult of 64
           t="$SNAP_ROOT/software/tools/stage2 -a6 -A${align} -S${num4k} -B${num64} -t$to"      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
         done
         done
         done
         #### check DDR3 memory in KU3, stay under 512k for BRAM
         t="$SNAP_ROOT/software/tools/stage2_ddr -h"                                            ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
-        for strt in 0x1000 0x2000;do      # start adr
-        for iter in 1 2;do                # number of blocks
+        for strt in 0x1000 0x2000; do      # start adr
+        for iter in 1 2; do                # number of blocks
         for bsize in 64 0x1000; do        # block size
           let end=${strt}+${iter}*${bsize}; to=$((iter*iter*bsize/4+300))                       # rough timeout dependent on filesize
           t="$SNAP_ROOT/software/tools/stage2_ddr -s${strt} -e${end} -b${bsize} -i${iter} -t$to";echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
@@ -173,8 +174,8 @@
         done
         #### use memset in host or in fpga memory, stay under 512k for BRAM
         t="$SNAP_ROOT/software/tools/stage2_set -h"                                            ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
-        for beg in 0 1 11 63 64;do                                    # start adr
-        for size in 1 7 4097; do  to=$((size/20+300))                                           # block size to copy, rough timeout dependent on filesize
+        for beg in 0 11 63; do                                    # start adr
+        for size in 7 4097; do to=$((size/20+300))                                              # block size to copy, rough timeout dependent on filesize
           t="$SNAP_ROOT/software/tools/stage2_set -H -b${beg} -s${size} -p${size} -t$to"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
           t="$SNAP_ROOT/software/tools/stage2_set -F -b${beg} -s${size} -p${size} -t$to"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
         done
@@ -198,7 +199,7 @@
 #     t="$SNAP_ROOT/software/examples/snap_memcopy -C0 -i ../../1KB.txt -o 1KB.out -t10"       ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #  5..7
       #### select 1 selection loop
       # for size in 2 83; do                      # still error with 83B ?
-        for size in 1 2 4 8 16 32 64;do to=$((size*50+10))                                                                 # rough timeout dependent on filesize
+        for size in 1 2 4 8 16 32 64; do to=$((size*50+10))                                     # rough timeout dependent on filesize
       # for size in 2 8 16 64 128 256 512 1024; do # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
       # for size in 255 255 256 256 257 257 258 258 259 259 260 260; do
       # for size in 83 255 256 257 1024 1025 4095 4096 4097; do
@@ -215,8 +216,8 @@
       done
       #### select 1 selection loop
       # for size in 2 83; do                      # still error with 83B ?
-      # for size in   8 16 64;do to=$((size*5+10))                                                                 # rough timeout dependent on filesize
-        for size in 1 2 4 8 16 32 64;do to=$((size*50+10))                                                                 # rough timeout dependent on filesize
+      # for size in   8 16 64; do to=$((size*5+10))                                             # rough timeout dependent on filesize
+        for size in 1 2 4 8 16 32 64; do to=$((size*50+10))                                     # rough timeout dependent on filesize
       # for size in 2 8 16 64 128 256 512 1024; do # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
       # for size in 2 31 32 33 64 65 80 81 83 255 256 257 1024 1025 4096 4097; do
         #### select 1 checking method
@@ -239,10 +240,10 @@
     if [[ "$t0l" == "10141002" || "${env_action}" == "hls_hashjoin"* ]];then echo -e "$del\ntesting snap_hashjoin"
       t="$SNAP_ROOT/software/examples/snap_hashjoin -h"                                        ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
       t="$SNAP_ROOT/software/examples/snap_hashjoin           -t600 -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" # 1m26s
-      for vart in 1 15 257;do to=$((vart*20+50))                                                        # rough timeout dependent on filesize
+      for vart in 1 15; do to=$((vart*3+500))                                                   # rough timeout dependent on filesize
         t="$SNAP_ROOT/software/examples/snap_hashjoin -T$vart -t$to -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #   49s
       done
-      for varq in 1 5 8 16 32 257;do to=$((varq*20+50))                                                 # rough timeout dependent on filesize
+      for varq in 1 5 32; do to=$((varq*3+500))                                                 # rough timeout dependent on filesize
         t="$SNAP_ROOT/software/examples/snap_hashjoin -Q$vart -t$to -vvv"                      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #   49s
       done
     fi # hls_hashjoin
@@ -260,7 +261,7 @@
       #### select one loop type
       # for size in 20 83; do
       # for size in {1..5}; do
-        for size in 2 20 30 31 32 33 80 81 255 256 257 1024 1025; do to=$((size*2+200))       # rough timeout dependent on filesize
+        for size in 2 20 30 31 32 33 80 81 255 256 257 1024 1025; do to=$((size*2+200))         # rough timeout dependent on filesize
         #### select 1 search char
           char=$(cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w 1|head -n 1)                               # one random ASCII  char to search for
         # char='A'                                                                                      # one deterministic char to search for
