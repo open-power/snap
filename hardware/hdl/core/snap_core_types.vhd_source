@@ -222,6 +222,9 @@ PACKAGE snap_core_types IS
   CONSTANT SNAP_FRT_REG               : integer := 16#0#;
   CONSTANT SNAP_LOCK_REG              : integer := 16#4#;
   CONSTANT SNAP_CTX_ID_REG            : integer := 16#4#;
+  -- SNAP debug REGISTER
+  CONSTANT SNAP_DEBUG_REG             : integer := 16#0#;
+  CONSTANT SNAP_NVME_REG              : integer := 16#1#;
 
   -- ACTION_TYPE and ACTION_COUNTER registers
   CONSTANT MAX_ACTION_REG             : integer := 16#F#;
@@ -252,6 +255,7 @@ PACKAGE snap_core_types IS
   CONSTANT SNAP_CTX_ID_R              : integer :=  0;     -- SNAP_CTX_ID_REG
   CONSTANT SNAP_NVME_RST_L            : integer :=  4;     -- SNAP_RESET_REG
   CONSTANT SNAP_NVME_RST_R            : integer :=  0;     -- SNAP_RESET_REG
+  CONSTANT SNAP_DBG_AH_PAREN          : integer :=  0;     -- SNAP_DEBUG_REG
 
   CONSTANT CTX_CFG_SIZE_INT           : integer := 39;     -- CONTEXT_CONFIG_REG
   CONSTANT CTX_CFG_FIRST_SEQNO_L      : integer := 63;     -- CONTEXT_CONFIG_REG
@@ -731,7 +735,7 @@ PACKAGE snap_core_types IS
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
     --
-    -- ds_c 
+    -- ds_c
     --
     TYPE DS_C_T IS RECORD
       wr_req_ack        : std_logic;
@@ -1070,7 +1074,7 @@ PACKAGE BODY snap_core_types IS
       VARIABLE res : std_logic;
     BEGIN
       res := data(data'low);
-      
+
       FOR i IN data'low+1 TO data'high LOOP
         res := data(i) XOR res;
       END LOOP;  -- i
@@ -1084,7 +1088,7 @@ PACKAGE BODY snap_core_types IS
       VARIABLE res : std_logic;
     BEGIN
       res := data(data'low);
-      
+
       FOR i  IN data'low+1 TO data'high LOOP
         res := data(i) XOR res;
       END LOOP;  -- i
