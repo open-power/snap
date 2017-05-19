@@ -23,6 +23,7 @@ LDLIBS += $(libs) -lpthread
 # Link statically for PSLSE simulation and dynamically for real version
 ifdef BUILD_SIMCODE
 libs += $(PSLSE_ROOT)/libcxl/libcxl.a
+CFLAGS+=-D_SIM_
 else
 LDLIBS += -lcxl
 endif
@@ -35,6 +36,7 @@ snap_bfs_objs = action_bfs.o
 snap_intersect_objs = action_intersect.o
 
 projs = snap_search snap_memcopy snap_checksum snap_hashjoin snap_bfs snap_intersect
+projs += snap_example snap_example_ddr snap_example_set snap_example_nvme
 
 all: $(objs) $(projs)
 
