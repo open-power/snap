@@ -43,14 +43,8 @@
 #include "sha3.H"
 #include "action_sponge.H"
 
-#undef TEST /* get faster turn-around time */
-#ifdef NO_SYNTH /* TEST */
-#  define NB_SLICES    14
-#else
-#  ifndef NB_SLICES
-#    define NB_SLICES  14
-#  endif
-#endif
+#define NB_SLICES    14
+
 
 /* Number of parallelization channels at hls_action level*/
 //#if NB_SLICES == 4
@@ -137,25 +131,26 @@ int test_sha3()
     char testvec256_1[] = "2F1A5F7159E34EA19CDDC70EBF9B81F1A66DB40615D7EAD3CC1F1B954D82A3AF";
     // SHA3-384, exact block size
     char testvec384_0[] = "E35780EB9799AD4C77535D4DDB683CF33EF367715327CF4C4A58ED9CBDCDD486"
-			 	 	 	  "F669F80189D549A9364FA82A51A52654EC721BB3AAB95DCEB4A86A6AFA93826D"
-			 	 	 	  "B923517E928F33E3FBA850D45660EF83B9876ACCAFA2A9987A254B137C6E140A"
-			 	 	 	  "21691E1069413848";
+                          "F669F80189D549A9364FA82A51A52654EC721BB3AAB95DCEB4A86A6AFA93826D"
+                          "B923517E928F33E3FBA850D45660EF83B9876ACCAFA2A9987A254B137C6E140A"
+                          "21691E1069413848";
     char testvec384_1[] = "D1C0FA85C8D183BEFF99AD9D752B263E286B477F79F0710B0103170173978133"
-    					  "44B99DAF3BB7B1BC5E8D722BAC85943A";
+                          "44B99DAF3BB7B1BC5E8D722BAC85943A";
     // SHA3-512, multiblock message
     char testvec512_0[] = "3A3A819C48EFDE2AD914FBF00E18AB6BC4F14513AB27D0C178A188B61431E7F5"
-            			  "623CB66B23346775D386B50E982C493ADBBFC54B9A3CD383382336A1A0B2150A"
-            			  "15358F336D03AE18F666C7573D55C4FD181C29E6CCFDE63EA35F0ADF5885CFC0"
-            			  "A3D84A2B2E4DD24496DB789E663170CEF74798AA1BBCD4574EA0BBA40489D764"
-            			  "B2F83AADC66B148B4A0CD95246C127D5871C4F11418690A5DDF01246A0C80A43"
-            			  "C70088B6183639DCFDA4125BD113A8F49EE23ED306FAAC576C3FB0C1E256671D"
-            			  "817FC2534A52F5B439F72E424DE376F4C565CCA82307DD9EF76DA5B7C4EB7E08"
-            			  "5172E328807C02D011FFBF33785378D79DC266F6A5BE6BB0E4A92ECEEBAEB1";
+                          "623CB66B23346775D386B50E982C493ADBBFC54B9A3CD383382336A1A0B2150A"
+                          "15358F336D03AE18F666C7573D55C4FD181C29E6CCFDE63EA35F0ADF5885CFC0"
+                          "A3D84A2B2E4DD24496DB789E663170CEF74798AA1BBCD4574EA0BBA40489D764"
+                          "B2F83AADC66B148B4A0CD95246C127D5871C4F11418690A5DDF01246A0C80A43"
+                          "C70088B6183639DCFDA4125BD113A8F49EE23ED306FAAC576C3FB0C1E256671D"
+                          "817FC2534A52F5B439F72E424DE376F4C565CCA82307DD9EF76DA5B7C4EB7E08"
+                          "5172E328807C02D011FFBF33785378D79DC266F6A5BE6BB0E4A92ECEEBAEB1";
     char testvec512_1[] = "6E8B8BD195BDD560689AF2348BDC74AB7CD05ED8B9A57711E9BE71E9726FDA45"
-            			   "91FEE12205EDACAF82FFBBAF16DFF9E702A708862080166C2FF6BA379BC7FFC2";
+                          "91FEE12205EDACAF82FFBBAF16DFF9E702A708862080166C2FF6BA379BC7FFC2";
 
     int i, fails, msg_len, sha_len;
     uint8_t sha[64], buf[64], msg[256];
+    uint64_t sha64[8], buf64[8], msg64[32];
 
     fails = 0;
     for (i = 0; i < 4; i++) {
@@ -187,7 +182,9 @@ int test_sha3()
         	break;
         }
 
+        //cast_uint8_to_uint64_W25(msg, msg64,32);
         sha3(msg, msg_len, buf, sha_len);
+        //cast_uint64_to_uint8_W25(buf64, buf,8);
 
         //if (memcmp(sha, buf, sha_len) != 0) {
         for(int k = 0; k < sha_len; k++) {
@@ -220,9 +217,13 @@ int test_shake()
         // SHAKE256, 1600-bit test pattern
         "6A1A9D7846436E4DCA5728B6F760EEF0CA92BF0BE5615E96959D767197A0BEEB"
     };*/
+        // SHAKE128, message of length 0
     char testvec128_0[]    = "43E41B45A653F2A5C4492C1ADD544512DDA2529833462B71A41A45BE97290B6F";
+        // SHAKE256, message of length 0
     char testvec256_0[]    = "AB0BAE316339894304E35877B0C28A9B1FD166C796B9CC258A064A8F57E27F2A";
+        // SHAKE128, 1600-bit test pattern
     char testvec128_1600[] = "44C9FB359FD56AC0A9A75A743CFF6862F17D7259AB075216C0699511643B6439";
+        // SHAKE256, 1600-bit test pattern
     char testvec256_1600[] = "6A1A9D7846436E4DCA5728B6F760EEF0CA92BF0BE5615E96959D767197A0BEEB";
 
     int i, j, fails;
@@ -288,17 +289,15 @@ int test_shake()
 }
 
 // test speed of the comp
-void test_speed()
+int test_speed()
 {
     int i, j;
     uint64_t st[25], x, n, slice;
     clock_t bg, us;
-    uint8_t st8[200];
 
-//    for (i = 0; i < 25; i++)
-//        st[i] = i;
-    for (i = 0; i < 200; i++)
-        st8[i] = i;
+    for (i = 0; i < 25; i++)
+#pragma HLS UNROLL
+        st[i] = i;
 
     //bg = clock();
     n = 0;
@@ -308,7 +307,7 @@ void test_speed()
         for (i = 0; i < 100000; i++)
         {
             //sha3_keccakf(st);
-            sha3_keccakf(st8, st8);
+        	sha3_keccakf(st, st);
         }
         n += i;
         //us = clock() - bg;
@@ -317,17 +316,17 @@ void test_speed()
     //} while (us < 3 * CLOCKS_PER_SEC);
 
     x = 0;
-//    for (i = 0; i < 25; i++)
-//        x += st[i];
-    for (i = 0; i < 200; i++)
-        x += st8[i];
+    for (i = 0; i < 25; i++)
+#pragma HLS UNROLL
+        x += st[i];
+
 
     fprintf(stdout, "0x%016lX rounds - (0x%016lX) - 0x%016lX Keccak-p[1600,24].\n",
     		(unsigned long) slice, (unsigned long) x, (unsigned long) n);
 //    printf("(%016lX) %.3f Keccak-p[1600,24] / Second.\n",
 //    		(unsigned long) x, (CLOCKS_PER_SEC * ((double) n)) / ((double) us));
 
-
+return 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -336,19 +335,37 @@ void test_speed()
 
 void process_action( action_reg *Action_Register)
 {
-	int rc = 0;
+	int rc = 1;
 
-    if (test_sha3() == 0 && test_shake() == 0)
-    	rc = 1;
-
-    test_speed();
+	switch(Action_Register->Data.pe) {
+	case(0):
+		rc = test_speed();
+		if(!rc) printf("Speed test !!\n");
+		break;
+	case(1):
+		rc = test_sha3();
+		if(!rc) printf("FIPS 202 / SHA3  Self-Tests OK!!\n");
+		break;
+	case(2):
+		rc = test_shake();
+		if(!rc) printf("SHAKE128, SHAKE2563  Self-Tests OK!!\n");
+		break;
+	case(3):
+		rc = test_sha3();
+		rc |= test_shake();
+		if(!rc) printf("FIPS 202 / SHA3, SHAKE128, SHAKE256  Self-Tests OK!!\n");
+		break;
+	default:
+		rc = 1;
+		break;
+	}
 
    	/* Final output register writes */
-    if (rc == 1)
+    if (rc == 0)
     	Action_Register->Control.Retc = RET_CODE_OK;
     else
     	Action_Register->Control.Retc = RET_CODE_FAILURE;
-    Action_Register->Data.nb_slices = NB_SLICES;
+        Action_Register->Data.nb_slices = NB_SLICES;
 	Action_Register->Data.chk_out = 0;
 	Action_Register->Data.timer_ticks = 0;
 }
@@ -363,7 +380,7 @@ void process_action( action_reg *Action_Register)
  */
 void hls_action(snap_membus_t *din_gmem,
 		    snap_membus_t *dout_gmem,
-		    snap_membus_t *d_ddrmem,     // SVEN : comment this line to test #264
+		    snap_membus_t *d_ddrmem, // SVEN : comment this line to remove ddr port
 		    action_reg *Action_Register,
 		    action_RO_config_reg *Action_Config)
 {
@@ -374,8 +391,8 @@ void hls_action(snap_membus_t *din_gmem,
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg           offset=0x030
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg          offset=0x040
 
-//DDR memory Interface
-//SVEN : comment following 2 lines to test #264
+//DDR memory Interface 
+// SVEN : comment these 2 lines below to remove ddr port
 #pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
 #pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg           offset=0x050
 
@@ -398,11 +415,6 @@ void hls_action(snap_membus_t *din_gmem,
         	process_action(Action_Register);
         	break;
         }
-
-        if (Action_Register->Control.Retc == RET_CODE_OK)
-        	printf("FIPS 202 / SHA3, SHAKE128, SHAKE256  Self-Tests OK!!\n");
-        else
-        	printf("FIPS 202 / SHA3, SHAKE128, SHAKE256 Self-Tests FAILURE!\n");
 
 }
 
@@ -437,6 +449,11 @@ int main(void)
 
 	// Process the action
 	Action_Register.Control.flags = 1;
+	Action_Register.Data.pe = 0; //speed test
+	hls_action(din_gmem, dout_gmem, d_ddrmem,
+			    &Action_Register, &Action_Config);
+
+	Action_Register.Data.pe = 3; //SHA + SHAKE tests
 	hls_action(din_gmem, dout_gmem, d_ddrmem,
 			    &Action_Register, &Action_Config);
 
