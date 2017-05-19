@@ -59,27 +59,6 @@ typedef ap_uint<32>        snapu32_t;
 typedef ap_uint<16>        snapu16_t;
 typedef ap_uint<8>         snapu8_t;
 
-/* enum definitions should stay in sync with include/libdonut.h */
-enum {
-	/* FIMXE REMOVE */
-	RET_CODE_OK      = 0x00000102,
-	RET_CODE_FAILURE = 0x00000104,
-
-	/* FIMXE REMOVE */
-	HOST_DRAM        = 0x0000, /* this is fine, always there */
-	CARD_DRAM        = 0x0001, /* card specific */
-	NVME             = 0x0002, /* card specific */
-	UNUSED_MEM       = 0xFFFF,
-
-	/* FIMXE REMOVE */
-	F_END            = 0x0001, /* last element in the list */
-	F_ADDR           = 0x0002, /* this one is an address */
-	F_DATA           = 0x0004, /* 64-bit address */
-	F_EXT            = 0x0008, /* reserved for extension */
-	F_SOURCE         = 0x0010, /* data source */
-	F_DEST           = 0x0020  /* data destination */
-};
-
 typedef struct {
         snapu8_t  sat; // short action type
         snapu8_t  flags;
@@ -87,13 +66,6 @@ typedef struct {
         snapu32_t Retc;
         snapu64_t Reserved; // Priv_data
 } CONTROL;
-
-typedef struct {
-        snapu64_t address;
-        snapu32_t size;
-        snapu16_t type;
-        snapu16_t flags;
-} dnut_addr; /* 128 bits = 16B */
 
 typedef struct {
         snapu32_t action_type;   // 4 bytes

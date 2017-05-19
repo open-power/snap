@@ -41,7 +41,7 @@ short write_burst_of_data_to_mem(snap_membus_t *dout_gmem,
 {
 	short rc;
 	switch (memory_type) {
-	case HOST_DRAM:
+	case SNAP_ADDRTYPE_HOST_DRAM:
 		memcpy((snap_membus_t  *) (dout_gmem + output_address),
 		       buffer, size_in_bytes_to_transfer);
        		rc =  0;
@@ -69,7 +69,7 @@ short read_burst_of_data_from_mem(snap_membus_t *din_gmem,
 	short rc;
 
 	switch (memory_type) {
-	case HOST_DRAM:
+	case SNAP_ADDRTYPE_HOST_DRAM:
 		memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
 		       size_in_bytes_to_transfer);
        		rc =  0;
@@ -100,10 +100,10 @@ static void process_action(snap_membus_t *din_gmem,
 	snapu32_t nb_blocks_to_xfer;
 	snapu16_t i;
 	short rc = 0;
-	snapu32_t   ReturnCode;
-	snapu64_t   InputAddress;
-	snapu64_t   OutputAddress;
-	snapu64_t   address_xfer_offset;
+	snapu32_t ReturnCode = SNAP_RETC_SUCCESS;
+	snapu64_t InputAddress;
+	snapu64_t OutputAddress;
+	snapu64_t address_xfer_offset;
 	snap_membus_t  buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];
 	// if 4096 bytes max => 64 words
 
@@ -111,18 +111,16 @@ static void process_action(snap_membus_t *din_gmem,
 	InputAddress = (Action_Register->Data.in.addr)   >> ADDR_RIGHT_SHIFT;
 	OutputAddress = (Action_Register->Data.out.addr) >> ADDR_RIGHT_SHIFT;
 
-	ReturnCode = RET_CODE_OK;
-
 	address_xfer_offset = 0x0;
 	// testing sizes to prevent from writing out of bounds
 	action_xfer_size = MIN(Action_Register->Data.in.size,
 			       Action_Register->Data.out.size);
 
 	if (Action_Register->Data.in.type == SNAP_ADDRTYPE_CARD_DRAM and
-	    Action_Register->Data.in.size > SNAP_ADDRTYPE_CARD_DRAM_SIZE)
+	    Action_Register->Data.in.size > CARD_DRAM_SIZE)
 		rc = 1;
 	if (Action_Register->Data.out.type == SNAP_ADDRTYPE_CARD_DRAM and
-	    Action_Register->Data.out.size > SNAP_ADDRTYPE_CARD_DRAM_SIZE)
+	    Action_Register->Data.out.size > CARD_DRAM_SIZE)
 		rc = 1;
 
 	// buffer size is hardware limited by MAX_NB_OF_BYTES_READ
@@ -270,15 +268,17 @@ int main(void)
 
     
     Action_Register.Control.flags = 0x1; /* just not 0x0 */
+
     Action_Register.Data.in.address = 0x0;
     Action_Register.Data.in.size = 128;
-    Action_Register.Data.in.type = HOST_DRAM;
+    Action_Register.Data.in.type = SNAP_ADDRTYPE_HOST_DRAM;
+
     Action_Register.Data.out.address = 256;
     Action_Register.Data.out.size = 128;
-    Action_Register.Data.out.type = HOST_DRAM;
+    Action_Register.Data.out.type = SNAP_ADDRTYPE_HOST_DRAM;
 
     hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
-    if (Action_Register.Control.Retc == RET_CODE_FAILURE) {
+    if (Action_Register.Control.Retc == SNAP_RETC_FAILURE) {
 	    fprintf(stderr, " ==> RETURN CODE FAILURE <==\n");
 	    return 1;
     }
