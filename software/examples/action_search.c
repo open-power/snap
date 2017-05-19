@@ -23,6 +23,8 @@
 #include <stdint.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/time.h>
+#include <snap_tools.h>
 
 #include <libsnap.h>
 #include <snap_internal.h>
@@ -116,18 +118,29 @@ unsigned int run_sw_search(unsigned int Method,
 {
         int count;
 
+        struct timeval etime, stime;
+
         count = 0;
+ 	gettimeofday(&stime, NULL);
+
         switch (Method) {
-        case(NAIVE_method):    printf("======== Naive method ========\n");
-                        count = Naive_search (Pattern, PatternSize, Text, TextSize);
-                        break;
-        case(KMP_method):      printf("========= KMP method =========\n");
-                        count = KMP_search(Pattern, PatternSize, Text, TextSize);
-                        break;
-        default:        printf("=== Default Naive method ===\n");;
-                        count = Naive_search(Pattern, PatternSize, Text, TextSize);
-                        break;
+        case(1):
+		printf("======== Naive method ========\n");
+                count = Naive_search (Pattern, PatternSize, Text, TextSize);
+                break;
+        case(2):
+	        printf("========= KMP method =========\n");
+                count = KMP_search(Pattern, PatternSize, Text, TextSize);
+                break;
+        default:
+	        printf("=== Default Naive method ===\n");;
+                count = Naive_search(Pattern, PatternSize, Text, TextSize);
+                break;
         }
+
+        gettimeofday(&etime, NULL);
+        fprintf(stdout, "SW run step took %lld usec\n",
+                 (long long)timediff_usec(&etime, &stime));
 
         printf("pattern size %d - text size %d - rc = %d \n", PatternSize, TextSize, count);
 
@@ -146,7 +159,7 @@ static int action_main(struct snap_sim_action *action,
 {
 	struct search_job *js = (struct search_job *)job;
 	char *needle, *haystack;
-	unsigned int needle_len, haystack_len, offs_used, offs_max;
+	unsigned int needle_len, haystack_len, offs_used, offs_max, method;
 	uint64_t *offs;
 
 	act_trace("%s(%p, %p, %d) SEARCH\n", __func__, action, job, job_len);
@@ -159,7 +172,6 @@ static int action_main(struct snap_sim_action *action,
 	if (js->src_result.addr != 0 && js->src_result.type == SNAP_ADDRTYPE_HOST_DRAM)
 		memset((uint8_t *)js->src_result.addr, 0, js->src_result.size);
 
-
 	offs = (uint64_t *)(unsigned long)js->src_result.addr;
 	offs_max = js->src_result.size / sizeof(uint64_t);
 	offs_used = 0;
@@ -170,26 +182,12 @@ static int action_main(struct snap_sim_action *action,
 	needle = (char *)(unsigned long)js->src_pattern.addr;
 	needle_len = js->src_pattern.size;
 
-	js->next_input_addr = 0;
-	while (haystack_len != 0) {
-		if (needle_len > haystack_len) {
-			js->next_input_addr = 0;
-			break;	/* cannot find more */
-		}
-		if (strncmp(haystack, needle, needle_len) == 0) {
-			if (offs_used == offs_max) {
-				js->next_input_addr = (unsigned long)haystack;
-				break;	/* cannot put more in result array */
-			}
-			/* write down result */
-			offs[offs_used] = (unsigned long)haystack;
-			offs_used++;
-		}
-		haystack++;	/* uuh, is that performing badly ;-) */
-		haystack_len--;
-	}
+	method =  js->method;
 
-	js->nb_of_occurrences = offs_used;
+        if (js->step == 3) 
+		js->nb_of_occurrences = run_sw_search(method, (char *)needle, needle_len,
+                                        (char *)haystack, haystack_len);
+
 	action->job.retc = SNAP_RETC_SUCCESS;
 
 	act_trace("%s SEARCH DONE retc=%x\n", __func__, action->job.retc);

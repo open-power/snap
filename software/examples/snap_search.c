@@ -93,6 +93,25 @@ static void snap_prepare_search(struct snap_job *cjob,
 				const int method, const int step)
 {
     uint64_t ddr_addr;
+    uint64_t ddr_offaddr;
+
+    // common settings
+    // pattern is in Host
+    snap_addr_set(&sjob_in->src_pattern, pbuff, psize,
+	      SNAP_ADDRTYPE_HOST_DRAM,
+	      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC |
+	      SNAP_ADDRFLAG_END);
+
+    // result moved to Host
+    snap_addr_set(&sjob_in->src_result, offs, items * sizeof(*offs),
+		  SNAP_ADDRTYPE_HOST_DRAM,
+		  SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST);
+
+     // result will be in DDR
+     ddr_offaddr = (uint64_t) DDR_OFFS_START;
+     snap_addr_set(&sjob_in->ddr_result, (void*) ddr_offaddr, items * sizeof(*offs),
+		      SNAP_ADDRTYPE_CARD_DRAM,
+		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST);
 
     if (step == 1)
     {
@@ -131,33 +150,17 @@ static void snap_prepare_search(struct snap_job *cjob,
 		      SNAP_ADDRTYPE_CARD_DRAM,
 		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 
-        // pattern is in Host
-	snap_addr_set(&sjob_in->src_pattern, pbuff, psize,
-		      SNAP_ADDRTYPE_HOST_DRAM,
-		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC |
-		      SNAP_ADDRFLAG_END);
-
-        // result will be in DDR
-        ddr_addr = (uint64_t) DDR_OFFS_START;
-	snap_addr_set(&sjob_in->ddr_result, (void*) ddr_addr, dsize,
-		      SNAP_ADDRTYPE_CARD_DRAM,
-		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST);
     }
     else if (step == 5)
     {
         // Step5 is copying results in DDR back to Host
         // result is in DDR
-        ddr_addr = (uint64_t) DDR_OFFS_START;
-	snap_addr_set(&sjob_in->ddr_result, (void*) ddr_addr, items * sizeof(*offs),
+        ddr_offaddr = (uint64_t) DDR_OFFS_START;
+	snap_addr_set(&sjob_in->ddr_result, (void*) ddr_offaddr, items * sizeof(*offs),
 		      SNAP_ADDRTYPE_CARD_DRAM,
 		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC |
 		      SNAP_ADDRFLAG_END);
     }
-
-    // result moved to Host
-    snap_addr_set(&sjob_in->src_result, offs, items * sizeof(*offs),
-		  SNAP_ADDRTYPE_HOST_DRAM,
-		  SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST);
 
     sjob_in->nb_of_occurrences = 0;
     sjob_in->next_input_addr = 0;
@@ -424,7 +427,6 @@ int main(int argc, char *argv[])
 	}
 
 	run = 0;
-	gettimeofday(&stime, NULL);
     	/*
  	 * Run Step 1, 2, 4 for Software search
  	 * Run Step 1, 3, 5 for Hardware search
@@ -441,11 +443,12 @@ int main(int argc, char *argv[])
 			    pbuff, psize,
 			    method, step);
 
-        printf("dsize = %d - psize = %d \n", (int)dsize, (int)psize);
+        printf("INITIALIZATION : move %d bytes from Host mem to DDR\n", (int) dsize);
        	rc = run_one_step(action, &cjob, timeout, step);
 	if (rc != 0)
 		goto out_error3;
 
+	gettimeofday(&stime, NULL);
     	if(sw)
     	{
        		printf("*********************************************************\n");
@@ -467,38 +470,38 @@ int main(int argc, char *argv[])
         	printf("Start Step4 (Do Search by software) ..............\n");
         	printf("**************************************************\n");
  	 	step = 4;
-        	gettimeofday(&stime, NULL);
 
         	sjob_out.nb_of_occurrences = run_sw_search(method, (char *)pbuff, psize,
 					(char *)dbuff, dsize);
-        	gettimeofday(&etime, NULL);
 
             	snap_print_search_results(&cjob, run);
         	printf("Step 4 : RESULT :  %d occurrences \n", sjob_out.nb_of_occurrences);
 		total_found += sjob_out.nb_of_occurrences;
-
-		fprintf(stdout, "Step 4 took %lld usec\n",
-			(long long)timediff_usec(&etime, &stime));
     	}
    	else
     	{
+           	printf("***************************************************\n");
+           	printf(" >>> Searching : iteration number %d \n", run);
+            	printf("***************************************************\n");
+            	printf("Start Step3 (Do Search by hardware, in DDR) .......\n");
+                switch(method) {
+                case(1):
+                        printf(" >>>>>>>>>> Naive method (%d) \n", method);
+                        break;
+                case(2):
+                        printf(" >>>>>>>>>> KMP method (%d) \n", method);
+                        break;
+                case(0):
+                        printf(" >>>>>>>>>> Streaming method (%d) \n", method);
+                        break;
+                default:
+                        printf(" >>> Default: Naive method (%d) \n", method);
+                }
+                printf("***************************************************\n");
+		step = 3;
+
         	run = 0;
         	do {
-            		printf("***************************************************\n");
-            		printf(" >>> Searching : run n° %d \n", run);
-            		printf("***************************************************\n");
-            		printf("Start Step3 (Do Search by hardware, in DDR) .......\n");
-            		if (method == 1)
-				printf(" >>>>>>>>>> Naive method (%d) \n", method);
-            		else if (method == 2)
-				printf(" >>>>>>>>>> KMP method (%d) \n", method);
-            		else if (method == 0)
-				printf(" >>>>>>>>>> Streaming method (%d) \n", method);
-            		else
-				printf(" >>>>>>>>>> Naive method (%d) \n", method);
-            		printf("***************************************************\n");
-			step = 3;
-
             		snap_prepare_search(&cjob, &sjob_in, &sjob_out,
 					    dbuff, dsize,
 					    offs, items,
@@ -513,29 +516,27 @@ int main(int argc, char *argv[])
             		}
 
             		snap_print_search_results(&cjob, run);
-        		printf("nb of occurrences = %d \n", (int)sjob_out.nb_of_occurrences);
 
             		if (cjob.retc != SNAP_RETC_SUCCESS)  {
                 		fprintf(stderr, "err: job retc %x!\n", cjob.retc);
                 		goto out_error3;
             		}
 
-        		printf("nb of occurrences = %d \n", (int)sjob_in.nb_of_occurrences);
         		printf("nb of occurrences = %d \n", (int)sjob_out.nb_of_occurrences);
             		total_found += sjob_out.nb_of_occurrences;
 
+			/*
            		printf("****************************************************\n");
             		printf("Start Step5 (Copy pattern positions back to Host) ..\n");
             		printf("......no positions yet to transfer .............. ..\n");
             		printf("****************************************************\n");
 			step = 5;
 
-			/*
             		snap_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
                     		offs, items, pbuff, psize, method, step);
         		printf("dsize = %d - psize = %d \n", (int)dsize, (int)psize);
-			*/
             		snap_print_search_results(&cjob, run);
+			*/
 
             		/* trigger repeat if search was not complete */
             		sjob_in.nb_of_occurrences = sjob_out.nb_of_occurrences;
@@ -569,6 +570,8 @@ int main(int argc, char *argv[])
 				expected_patterns, total_found);
 			exit_code = EX_ERR_DATA;
 		}
+                else
+                        fprintf(stdout, "Verification of pattern number = SUCCESS!\n");
 	}
 
 	fprintf(stdout, "Searching took %lld usec\n",

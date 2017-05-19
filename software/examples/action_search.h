@@ -23,9 +23,8 @@
 #define SEARCH_ACTION_TYPE	0x10141003
 
 //DDR address map
-#define DDR_TEXT_START      1024*1024*1024
-#define DDR_OFFS_START    6*1024*1024*1024
-
+#define DDR_TEXT_START         1024*1024
+#define DDR_OFFS_START     512*1024*1024
 
 struct search_job {
         struct snap_addr src_text1;     /* input text in HOST: 128 bits*/
@@ -37,17 +36,6 @@ struct search_job {
         uint16_t method;
         uint32_t nb_of_occurrences;
         uint64_t next_input_addr;
-
-/* OLD config is following - should be removed
-	struct snap_addr input;
-	struct snap_addr output;
-	struct snap_addr pattern;
-	uint64_t nb_of_occurrences;
-	uint64_t next_input_addr;
-	uint64_t action_version;
-	uint64_t mmio_din;
-	uint64_t mmio_dout;
-*/
 };
 
 /* search method */
