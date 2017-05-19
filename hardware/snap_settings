@@ -62,14 +62,14 @@ while [ -z "$SETUP_DONE" ]; do
   echo "======================================================="
   if [ ! -d "$USERHOME" ]; then
     export USERHOME=$FRAMEWORK_ROOT/$USER
-    echo "Setting USERHOME               to  \"$USERHOME\""
+    echo "Setting USERHOME               to: \"$USERHOME\""
   else
     echo "USERHOME                is set to: \"$USERHOME\""
   fi
 
   if [ ! -d "$PSLSE_ROOT" ]; then
     export PSLSE_ROOT=$USERHOME/pslse                          # used with git clone https://github.com/ibm-capi/pslse     $PSLSE_ROOT
-    echo "Setting PSLSE_ROOT             to  \"$PSLSE_ROOT\""
+    echo "Setting PSLSE_ROOT             to: \"$PSLSE_ROOT\""
   else
     echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
   fi
@@ -77,34 +77,34 @@ while [ -z "$SETUP_DONE" ]; do
   if [ "$SNAP_ROOT" = "$snapdir" ]; then
     echo "SNAP_ROOT               is set to: \"$SNAP_ROOT\""
   else
-    echo "Setting SNAP_ROOT              to  \"$snapdir\""
+    echo "Setting SNAP_ROOT              to: \"$snapdir\""
   fi
   export SNAP_ROOT=$snapdir
 
   if [ "$SNAP_HARDWARE_ROOT" = "$SNAP_ROOT/hardware" ]; then
     echo "SNAP_HARDWARE_ROOT      is set to: \"$SNAP_HARDWARE_ROOT\""
   else
-    echo "Setting SNAP_HARDWARE_ROOT     to  \"$SNAP_ROOT/hardware\""
+    echo "Setting SNAP_HARDWARE_ROOT     to: \"$SNAP_ROOT/hardware\""
   fi
   export SNAP_HARDWARE_ROOT=$SNAP_ROOT/hardware
 
   if [ "$SNAP_SOFTWARE_ROOT" = "$SNAP_ROOT/software" ]; then
     echo "SNAP_SOFTWARE_ROOT      is set to: \"$SNAP_SOFTWARE_ROOT\""
   else
-    echo "Setting SNAP_SOFTWARE_ROOT     to  \"$SNAP_ROOT/software\""
+    echo "Setting SNAP_SOFTWARE_ROOT     to: \"$SNAP_ROOT/software\""
   fi
   export SNAP_SOFTWARE_ROOT=$SNAP_ROOT/software
 
   if [ -z "$ACTION_ROOT" ]; then
     export ACTION_ROOT=$SNAP_HARDWARE_ROOT/action_examples/hdl_example/
-    echo "ACTION_ROOT                    to: \"$ACTION_ROOT\"" 
+    echo "Setting ACTION_ROOT            to: \"$ACTION_ROOT\"" 
   else
     echo "ACTION_ROOT             is set to: \"$ACTION_ROOT\""
   fi
 
   if [ -z "$FPGACARD" ]; then
     export FPGACARD=FGT
-    echo "Setting FPGACARD               to  \"$FPGACARD\""
+    echo "Setting FPGACARD               to: \"$FPGACARD\""
   else
     echo "FPGACARD                is set to: \"$FPGACARD\""
     if [[ ($FPGACARD != "KU3") && ($FPGACARD != "FGT") ]]; then
@@ -116,7 +116,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ -z "$FPGACHIP" ]; then
     export FPGACHIP=xcku060-ffva1156-2-e
-    echo "Setting FPGACHIP               to  \"$FPGACHIP\""
+    echo "Setting FPGACHIP               to:  \"$FPGACHIP\""
   else
     echo "FPGACHIP                is set to: \"$FPGACHIP\""
   fi
@@ -124,7 +124,7 @@ while [ -z "$SETUP_DONE" ]; do
   if [ $FPGACARD = "KU3" ]; then
     if [ ! -d "$HDK_ROOT" ]; then
       export HDK_ROOT=$FRAMEWORK_ROOT/cards/adku060_capi_1_1_release
-      echo "Setting HDK_ROOT               to  \"$HDK_ROOT\""
+      echo "Setting HDK_ROOT               to: \"$HDK_ROOT\""
     else
       echo "HDK_ROOT                is set to: \"$HDK_ROOT\""
     fi
@@ -133,7 +133,7 @@ while [ -z "$SETUP_DONE" ]; do
   if [ $FPGACARD = "FGT" ]; then
     if [ ! -f "$PSL_DCP" ]; then
       export PSL_DCP=$FRAMEWORK_ROOT/cards/FGT/portal_20170413/b_route_design.dcp
-      echo "Setting PSL_DCP                to  \"$PSL_DCP\""
+      echo "Setting PSL_DCP                to: \"$PSL_DCP\""
     else
       echo "PSL_DCP                 is set to: \"$PSL_DCP\""
     fi
@@ -141,7 +141,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ -z "$SIMULATOR" ]; then
     export SIMULATOR=xsim                                      # xsim, questa and ncsim are supported, currently
-    echo "Setting SIMULATOR              to  \"$SIMULATOR\""
+    echo "Setting SIMULATOR              to: \"$SIMULATOR\""
   else
     echo "SIMULATOR               is set to: \"$SIMULATOR\""
   fi
@@ -155,14 +155,14 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ -z "$SDRAM_USED" ]; then
     export SDRAM_USED="FALSE"
-    echo "Setting SDRAM_USED             to  \"$SDRAM_USED\""
+    echo "Setting SDRAM_USED             to: \"$SDRAM_USED\""
   else
-    echo "SDRAM_USED              is set to  \"$SDRAM_USED\""
+    echo "SDRAM_USED              is set to: \"$SDRAM_USED\""
   fi
 
   if [ -z "$NVME_USED" ]; then
     export NVME_USED="FALSE"
-    echo "Variable NVME_USED             to  \"FALSE\""
+    echo "Setting NVME_USED              to:  \"FALSE\""
   else
     echo "NVME_USED               is set to: \"$NVME_USED\""
     if [[ $NVME_USED = "TRUE"  && $FPGACARD = "KU3" ]]; then
@@ -189,7 +189,7 @@ while [ -z "$SETUP_DONE" ]; do
       echo "ncsim version           is set to: \"$(ncsim -version| cut -f 3)\""
       if [ -z "$CDS_INST_DIR" ]; then
         export CDS_INST_DIR=$(dirname $(dirname `which ncsim`))
-        echo "Setting CDS_INST_DIR           to  \"$CDS_INST_DIR\""
+        echo "Setting CDS_INST_DIR           to: \"$CDS_INST_DIR\""
       else
         echo "CDS_INST_DIR            is set to: \"$CDS_INST_DIR\""
       fi
