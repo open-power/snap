@@ -20,15 +20,25 @@
 #include <stdint.h>
 #include <libsnap.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SEARCH_ACTION_TYPE	0x10141003
+#define RELEASE_LEVEL		0x00000021
 
-//DDR address map
-#define DDR_TEXT_START         1024*1024
-#define DDR_OFFS_START     512*1024*1024
+/* DDR address map */
+#define DDR_TEXT_START       (1024 * 1024)
+#define DDR_OFFS_START (512 * 1024 * 1024)
 
-struct search_job {
+/*
+ * Action_Register is a 992 bits/124 Bytes made of a 16 Bytes header and a 108
+ * bytes data field. To keep the address at the right location, Data should
+ * always be 108 bytes.
+ */
+typedef struct search_job {
         struct snap_addr src_text1;     /* input text in HOST: 128 bits*/
-        struct snap_addr src_pattern;     /* input pattern in HOST: 128 bits*/
+        struct snap_addr src_pattern;   /* input pattern in HOST: 128 bits*/
         struct snap_addr ddr_text1;     /* input text in DDR : 128 bits*/
         struct snap_addr src_result;    /* output result in HOST : 128 bits*/
         struct snap_addr ddr_result;    /* output result in DDR : 128 bits*/
@@ -36,18 +46,18 @@ struct search_job {
         uint16_t method;
         uint32_t nb_of_occurrences;
         uint64_t next_input_addr;
-};
+	uint8_t reserved[96/8];
+} search_job_t;
 
 /* search method */
-enum {
+typedef enum {
         STRM_method   = 0x0,
         NAIVE_method  = 0x1,
         KMP_method    = 0x2,
-};
-unsigned int run_sw_search(unsigned int Method, char *Pattern,
-           unsigned int PatternSize, char *Text, unsigned int TextSize);
-int Naive_search(char *pat, int M, char *txt, int N);
-void preprocess_KMP_table(char *pat, int M, int KMP_table[]);
-int KMP_search(char *pat, int M, char *txt, int N);
+} search_method_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* __ACTION_SEARCH_H__ */

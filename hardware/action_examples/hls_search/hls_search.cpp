@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, International Business Machines
+ * Copyright 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,166 +27,170 @@ unsigned int global_count;
  * => Transfers must be 64 byte aligned and a size of multiples of 64 bytes
  * ----------------------------------------------------------------------------
  */
-static snapu32_t read_bulk ( snap_membus_t *src_mem,
-                            snapu64_t      byte_address,
-                            snapu32_t      byte_to_transfer,
-                            snap_membus_t *buffer)
+static snapu32_t read_bulk(snap_membus_t *src_mem,
+			   snapu64_t      byte_address,
+			   snapu32_t      byte_to_transfer,
+			   snap_membus_t *buffer)
 {
-    snapu32_t xfer_size;
+	snapu32_t xfer_size;
 
-    xfer_size = MIN(byte_to_transfer, (snapu32_t) MAX_NB_OF_BYTES_READ);
+	xfer_size = MIN(byte_to_transfer, (snapu32_t) MAX_NB_OF_BYTES_READ);
 
-    memcpy(buffer, 
-	(snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
-	xfer_size);
+	memcpy(buffer, 
+	       (snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
+	       xfer_size);
 
-    return xfer_size;
+	return xfer_size;
 }
 
-static snapu32_t write_bulk (snap_membus_t *tgt_mem,
+static snapu32_t write_bulk(snap_membus_t *tgt_mem,
                             snapu64_t      byte_address,
                             snapu32_t      byte_to_transfer,
                             snap_membus_t *buffer)
 {
-    snapu32_t xfer_size;
+	snapu32_t xfer_size;
 
-    xfer_size = MIN(byte_to_transfer, (snapu32_t)  MAX_NB_OF_BYTES_READ);
+	xfer_size = MIN(byte_to_transfer, (snapu32_t)  MAX_NB_OF_BYTES_READ);
 
-    memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
-	buffer, xfer_size);
+	memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
+	       buffer, xfer_size);
 
-    return xfer_size;
+	return xfer_size;
 }
 
 static void memcopy_table(snap_membus_t  *din_gmem,
-                    snap_membus_t  *dout_gmem,
-                    snap_membus_t  *d_ddrmem,
-                    snapu64_t       source_address ,
-                    snapu64_t       target_address,
-                    snapu32_t       total_bytes_to_transfer,
-                    snap_bool_t     direction)
+			  snap_membus_t  *dout_gmem,
+			  snap_membus_t  *d_ddrmem,
+			  snapu64_t       source_address ,
+			  snapu64_t       target_address,
+			  snapu32_t       total_bytes_to_transfer,
+			  snap_bool_t     direction)
 {
-    //source_address and target_address are byte addresses.
-    snapu64_t address_xfer_offset = 0;
-    snap_membus_t   buf_gmem[MAX_NB_OF_WORDS_READ];
+	//source_address and target_address are byte addresses.
+	snapu64_t address_xfer_offset = 0;
+	snap_membus_t   buf_gmem[MAX_NB_OF_WORDS_READ];
+	snapu32_t  left_bytes = total_bytes_to_transfer;
+	snapu32_t  copy_bytes;
 
-    snapu32_t  left_bytes = total_bytes_to_transfer;
-    snapu32_t  copy_bytes;
-
-    L_COPY: while (left_bytes > 0)
-    {
-	switch (direction) {
-	case HOST2DDR:
-          	copy_bytes = read_bulk (din_gmem, 
-			source_address + address_xfer_offset,  
-			left_bytes, buf_gmem);
-            	write_bulk (d_ddrmem, 
-			target_address + address_xfer_offset,  
-			copy_bytes, buf_gmem);
-		break;
-	case DDR2HOST:
-           	copy_bytes = read_bulk (d_ddrmem, 
-			source_address + address_xfer_offset, 
-			left_bytes, buf_gmem);
-            	write_bulk (dout_gmem, 
-			target_address + address_xfer_offset, 
-			copy_bytes, buf_gmem);
-		break;
-	default:
-		break;
-	}
-        left_bytes -= copy_bytes;
-        address_xfer_offset += MAX_NB_OF_BYTES_READ;
-    } // end of L_COPY
-
+ L_COPY:
+	while (left_bytes > 0) {
+		switch (direction) {
+		case HOST2DDR:
+			copy_bytes = read_bulk (din_gmem, 
+						source_address + address_xfer_offset,  
+						left_bytes, buf_gmem);
+			write_bulk (d_ddrmem, 
+				    target_address + address_xfer_offset,  
+				    copy_bytes, buf_gmem);
+			break;
+		case DDR2HOST:
+			copy_bytes = read_bulk (d_ddrmem, 
+						source_address + address_xfer_offset, 
+						left_bytes, buf_gmem);
+			write_bulk (dout_gmem, 
+				    target_address + address_xfer_offset, 
+				    copy_bytes, buf_gmem);
+			break;
+		default:
+			break;
+		}
+		left_bytes -= copy_bytes;
+		address_xfer_offset += MAX_NB_OF_BYTES_READ;
+	} // end of L_COPY
 }
 
 // WRITE DATA TO MEMORY
-short write_burst_of_data_to_mem(snap_membus_t *dout_gmem, 
-	snap_membus_t *d_ddrmem,
-        snapu16_t memory_type, snapu64_t output_address,
-        snap_membus_t *buffer, snapu64_t size_in_bytes_to_transfer)
+static short write_burst_of_data_to_mem(snap_membus_t *dout_gmem, 
+					snap_membus_t *d_ddrmem,
+					snapu16_t memory_type,
+					snapu64_t output_address,
+					snap_membus_t *buffer,
+					snapu64_t size_in_bytes_to_transfer)
 {
-    short rc;
-    switch (memory_type) {
-	case HOST_DRAM:
+	short rc = -1;
+    
+	switch (memory_type) {
+	case SNAP_ADDRTYPE_HOST_DRAM:
        		memcpy((snap_membus_t  *) (dout_gmem + output_address), 
-			buffer, size_in_bytes_to_transfer);
+		       buffer, size_in_bytes_to_transfer);
        		rc =  0;
 		break;
-	case CARD_DRAM:
+	case SNAP_ADDRTYPE_CARD_DRAM:
        		memcpy((snap_membus_t  *) (d_ddrmem + output_address), 
-			buffer, size_in_bytes_to_transfer);
+		       buffer, size_in_bytes_to_transfer);
        		rc =  0;
 		break;
-	default:
-		rc = 1;
-    }
-    return rc;
+	}
+	return rc;
 }
 
 // READ DATA FROM MEMORY
-short read_burst_of_data_from_mem(snap_membus_t *din_gmem, 
-	snap_membus_t *d_ddrmem,
-        snapu16_t memory_type, snapu64_t input_address,
-        snap_membus_t *buffer, snapu64_t size_in_bytes_to_transfer)
+static short read_burst_of_data_from_mem(snap_membus_t *din_gmem, 
+					 snap_membus_t *d_ddrmem,
+					 snapu16_t memory_type,
+					 snapu64_t input_address,
+					 snap_membus_t *buffer,
+					 snapu64_t size_in_bytes_to_transfer)
 {
-     short rc;
-    switch (memory_type) {
-	case HOST_DRAM:
+	short rc = -1;
+
+	switch (memory_type) {
+	case SNAP_ADDRTYPE_HOST_DRAM:
         	memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
-				size_in_bytes_to_transfer);
+		       size_in_bytes_to_transfer);
        		rc =  0;
 		break;
-	case CARD_DRAM:
+	case SNAP_ADDRTYPE_CARD_DRAM:
         	memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address), 
-				size_in_bytes_to_transfer);
+		       size_in_bytes_to_transfer);
        		rc =  0;
 		break;
-	default:
-		rc = 1;
-    }
-    return rc;
+	}
+	return rc;
 }
 
-short read_single_word_of_data_from_mem(snap_membus_t *din_gmem, 
-	snap_membus_t *d_ddrmem,
-        snapu16_t memory_type, snapu64_t input_address, snap_membus_t *buffer)
+static short read_single_word_of_data_from_mem(snap_membus_t *din_gmem, 
+					       snap_membus_t *d_ddrmem,
+					       snapu16_t memory_type,
+					       snapu64_t input_address,
+					       snap_membus_t *buffer)
 {
-     short rc;
-    switch (memory_type) {
-	case HOST_DRAM:
+	short rc = -1;
+	
+	switch (memory_type) {
+	case  SNAP_ADDRTYPE_HOST_DRAM:
         	buffer[0] = (din_gmem + input_address)[0];
        		rc = 0;
 		break;
-	case CARD_DRAM:
+	case  SNAP_ADDRTYPE_CARD_DRAM:
         	buffer[0] = (d_ddrmem + input_address)[0];
        		rc = 0;
 		break;
-	default:
-		rc = 1;
-    }
-    return rc;
+	}
+	return rc;
 }
-short write_single_word_of_data_to_mem(snap_membus_t *din_gmem, 
-	snap_membus_t *d_ddrmem,
-        snapu16_t memory_type, snapu64_t input_address, snap_membus_t *buffer)
+
+static short write_single_word_of_data_to_mem(snap_membus_t *din_gmem, 
+					      snap_membus_t *d_ddrmem,
+					      snapu16_t memory_type,
+					      snapu64_t input_address,
+					      snap_membus_t *buffer)
 {
-     short rc;
-    switch (memory_type) {
-	case HOST_DRAM:
+	short rc = -1;
+
+	switch (memory_type) {
+	case  SNAP_ADDRTYPE_HOST_DRAM:
         	(din_gmem + input_address)[0] = buffer[0];
        		rc = 0;
 		break;
-	case CARD_DRAM:
+	case  SNAP_ADDRTYPE_CARD_DRAM:
         	(d_ddrmem + input_address)[0] = buffer[0];
        		rc = 0;
 		break;
-	default:
-		rc = 1;
-    }
-    return rc;
+	}
+	return rc;
 }
+
 // Cast a word from input port (512b) to a char* word (64B)
 static void mbus_to_word(snap_membus_t mem, word_t text)
 {
@@ -304,7 +308,7 @@ static void strm_search(snap_membus_t *din_gmem,
 
 
   // byte address received need to be aligned with port width
-  InputAddress = Action_Register->Data.ddr_text1.address;
+  InputAddress = Action_Register->Data.ddr_text1.addr;
   InputSize    = Action_Register->Data.ddr_text1.size;
   InputType    = Action_Register->Data.ddr_text1.type;
 
@@ -381,7 +385,7 @@ static void strm_search(snap_membus_t *din_gmem,
 			{
 			   //write_single_word_of_data_to_mem(din_gmem, d_ddrmem,
 			    //      Action_Register->Data.res_text.type,
-			    //      (Action_Register->Data.res_text.address >> ADDR_RIGHT_SHIFT) + wr_address_text_offset,
+			    //      (Action_Register->Data.res_text.addr >> ADDR_RIGHT_SHIFT) + wr_address_text_offset,
 			    //	  PositionBuffer);
 				   wr_address_text_offset++;
 			}
@@ -390,7 +394,7 @@ static void strm_search(snap_membus_t *din_gmem,
 //	if(pos_nb%32 != 0)
 //		   write_single_word_of_data_to_mem(din_gmem, d_ddrmem,
 //		          Action_Register->Data.res_text.type,
-//		          (Action_Register->Data.res_text.address >> ADDR_RIGHT_SHIFT) + wr_address_text_offset,
+//		          (Action_Register->Data.res_text.addr >> ADDR_RIGHT_SHIFT) + wr_address_text_offset,
 //				  PositionBuffer);
 
 
@@ -420,20 +424,21 @@ static snapu32_t process_action_strm(snap_membus_t *din_gmem,
 
 
   PatternSize = Action_Register->Data.src_pattern.size;
-   read_single_word_of_data_from_mem(din_gmem, d_ddrmem,
+  read_single_word_of_data_from_mem(din_gmem, d_ddrmem,
           Action_Register->Data.src_pattern.type,
-          Action_Register->Data.src_pattern.address >> ADDR_RIGHT_SHIFT,
+          Action_Register->Data.src_pattern.addr >> ADDR_RIGHT_SHIFT,
           PatternBuffer);
 
 
   mbus_to_word(PatternBuffer[0], Pattern); // convert buffer to char
 
-  if(Action_Register->Data.ddr_text1.size < TEXT_SIZE)
-  	strm_search(din_gmem, dout_gmem, d_ddrmem, 
-		Action_Register, Pattern, PatternSize);
+  if (Action_Register->Data.ddr_text1.size < TEXT_SIZE)
+	  strm_search(din_gmem, dout_gmem, d_ddrmem, 
+		      Action_Register, Pattern, PatternSize);
 
-  if(rc!=0) Action_Register->Control.Retc = RET_CODE_FAILURE;
-  else      Action_Register->Control.Retc = RET_CODE_OK;
+  if (rc != 0)
+	  Action_Register->Control.Retc = SNAP_RETC_FAILURE;
+  else    Action_Register->Control.Retc = SNAP_RETC_SUCCESS;
 
   Action_Register->Data.nb_of_occurrences = (snapu32_t) global_count;
   return (snapu32_t) global_count;
@@ -609,14 +614,14 @@ static snapu32_t process_action(snap_membus_t *din_gmem,
 
   read_single_word_of_data_from_mem(din_gmem, d_ddrmem, 
           Action_Register->Data.src_pattern.type,
-          Action_Register->Data.src_pattern.address >> ADDR_RIGHT_SHIFT,
+          Action_Register->Data.src_pattern.addr >> ADDR_RIGHT_SHIFT,
           PatternBuffer);
   mbus_to_word(PatternBuffer[0], Pattern); // convert buffer to char
 
 
   /* read text in */
   // byte address received need to be aligned with port width
-  InputAddress = Action_Register->Data.ddr_text1.address;
+  InputAddress = Action_Register->Data.ddr_text1.addr;
   InputSize    = Action_Register->Data.ddr_text1.size;
   InputType    = Action_Register->Data.ddr_text1.type;
   Method       = Action_Register->Data.method;
@@ -699,9 +704,9 @@ void hls_action(snap_membus_t *din_gmem,
                 return;
                 break;
         default:
-                Action_Register->Data.nb_of_occurrences = (snapu32_t) 0x0;
+                Action_Register->Data.nb_of_occurrences = 0x0;
 		Action_Register->Control.Retc = 0x0000;
-                Action_Register->Data.next_input_address = (snapu64_t) 0x0;
+                Action_Register->Data.next_input_addr = 0x0;
                 break;
 
         }
@@ -711,8 +716,8 @@ void hls_action(snap_membus_t *din_gmem,
             //Copy from Host to DDR
             // Text1/Text
             memcopy_table(din_gmem, dout_gmem, d_ddrmem,
-                          Action_Register->Data.src_text1.address,
-                          Action_Register->Data.ddr_text1.address,
+                          Action_Register->Data.src_text1.addr,
+                          Action_Register->Data.ddr_text1.addr,
                           Action_Register->Data.src_text1.size, 
                           HOST2DDR);
     		break;
@@ -721,8 +726,8 @@ void hls_action(snap_membus_t *din_gmem,
             //Copy from DDR to Host
             // Text1/Text
             memcopy_table(din_gmem, dout_gmem, d_ddrmem,
-                          Action_Register->Data.ddr_text1.address,
-                          Action_Register->Data.src_text1.address,
+                          Action_Register->Data.ddr_text1.addr,
+                          Action_Register->Data.src_text1.addr,
                           Action_Register->Data.ddr_text1.size, 
                           DDR2HOST);
 
@@ -740,8 +745,8 @@ void hls_action(snap_membus_t *din_gmem,
     	case 5: // HW : copy result array from DDR to Host
             //Copy Result from DDR to Host. // position is on 64 bits
             memcopy_table(din_gmem, dout_gmem, d_ddrmem,
-                          Action_Register->Data.ddr_result.address,
-                          Action_Register->Data.src_result.address,
+                          Action_Register->Data.ddr_result.addr,
+                          Action_Register->Data.src_result.addr,
                          (Action_Register->Data.nb_of_occurrences * 8), 
                          DDR2HOST);
             break;
@@ -750,9 +755,9 @@ void hls_action(snap_membus_t *din_gmem,
             break;
         }
 
-    Action_Register->Control.Retc = RET_CODE_OK;
-    Action_Register->Data.nb_of_occurrences = (snapu32_t) result;
-    Action_Register->Data.next_input_address = (snapu64_t) 0x0;
+    Action_Register->Control.Retc = SNAP_RETC_SUCCESS;
+    Action_Register->Data.nb_of_occurrences = result;
+    Action_Register->Data.next_input_addr = 0x0;
 
     return;
 }
@@ -808,18 +813,19 @@ int main(void)
     }
     fclose(fp);
 
-    Action_Register.Data.src_text1.address = 0;
+    Action_Register.Data.src_text1.addr = 0;
     Action_Register.Data.src_text1.size = (m*BPERDW) + k + 1;
-    Action_Register.Data.src_text1.type = HOST_DRAM;
-    Action_Register.Data.ddr_text1.address = 512; //0;
+    Action_Register.Data.src_text1.type = SNAP_ADDRTYPE_HOST_DRAM;
+
+    Action_Register.Data.ddr_text1.addr = 512; //0;
     Action_Register.Data.ddr_text1.size = (m*BPERDW) + k + 1;
-    Action_Register.Data.ddr_text1.type = CARD_DRAM;
+    Action_Register.Data.ddr_text1.type = SNAP_ADDRTYPE_CARD_DRAM;
 
-    Action_Register.Data.src_pattern.address = 0;
+    Action_Register.Data.src_pattern.addr = 0;
     Action_Register.Data.src_pattern.size = 3; // Take 3 first characters of din_gmem as pattern
-    Action_Register.Data.src_pattern.type = HOST_DRAM;
+    Action_Register.Data.src_pattern.type = SNAP_ADDRTYPE_HOST_DRAM;
 
-    Action_Register.Data.ddr_result.address = 0;
+    Action_Register.Data.ddr_result.addr = 0;
     Action_Register.Data.ddr_result.size = 12;
     Action_Register.Data.ddr_result.type = 0x0000;
 
@@ -836,38 +842,48 @@ int main(void)
     Action_Register.Data.step = 1;
     printf("--Step 1--SW + HW : copy all data from Host to DDR--");
     hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
-    if(Action_Register.Control.Retc == RET_CODE_FAILURE) printf("Error in step 1\n"); else printf("OK\n");
+    if (Action_Register.Control.Retc == SNAP_RETC_FAILURE)
+	    printf("Error in step 1\n");
+    else printf("OK\n");
 
     // SW : copy source from DDR to Host
     Action_Register.Data.step = 2;
     printf("--Step 2--SW : copy source from DDR to Host--");
     hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
-    if(Action_Register.Control.Retc == RET_CODE_FAILURE) printf("Error in step 2\n"); else printf("OK\n");
+    if (Action_Register.Control.Retc == SNAP_RETC_FAILURE)
+	    printf("Error in step 2\n");
+    else printf("OK\n");
 
     // HW : search processing
     Action_Register.Data.step = 3;
     printf("--Step 3--HW : search processing--\n");
     hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
     nb_of_occurrences = Action_Register.Data.nb_of_occurrences;
-    if(Action_Register.Control.Retc == RET_CODE_FAILURE) printf("Error in step 3\n"); else printf("--Step 3--OK\n");
-    printf("Search : %d occurrences found\n=============================\n ", (unsigned int)nb_of_occurrences);
+    if(Action_Register.Control.Retc == SNAP_RETC_FAILURE)
+	    printf("Error in step 3\n");
+    else printf("--Step 3--OK\n");
+    printf("Search : %d occurrences found\n=============================\n ",
+	   (unsigned int)nb_of_occurrences);
 
     // HW : copy result array from DDR to Host
     Action_Register.Data.step = 5;
     printf("--Step 5--HW : copy result array from DDR to Host--");
     hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
-    if(Action_Register.Control.Retc == RET_CODE_FAILURE) printf("Error in step 5\n"); else printf("OK\n");
+    if(Action_Register.Control.Retc == SNAP_RETC_FAILURE)
+	    printf("Error in step 5\n");
+    else printf("OK\n");
 
-    if (Action_Register.Control.Retc == RET_CODE_FAILURE) {
-                            printf(" ==> RETURN CODE FAILURE <==\n");
-                            return 1;
+    if (Action_Register.Control.Retc == SNAP_RETC_FAILURE) {
+	    printf(" ==> RETURN CODE FAILURE <==\n");
+	    return 1;
     }
     printf(">> ACTION TYPE = %8lx - RELEASE_LEVEL = %8lx <<\n",
-                    (unsigned long)Action_Config.action_type,
-                    (unsigned long)Action_Config.release_level);
+	   (unsigned long)Action_Config.action_type,
+	   (unsigned long)Action_Config.release_level);
+
     if (Action_Config.action_type != SEARCH_ACTION_TYPE) {
-                            printf(" ==> BAD CODE TYPE <==\n");
-                            return 1;
+	    printf(" ==> BAD CODE TYPE <==\n");
+	    return 1;
     }
 
     return 0;

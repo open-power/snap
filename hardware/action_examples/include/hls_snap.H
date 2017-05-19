@@ -53,15 +53,16 @@
 #define WPERDW (64/BPERDW) // Number of words per DW if MEMDW=512 => WPERDW =  1
 #define ADDR_RIGHT_SHIFT 6
 
-typedef ap_uint<MEMDW>     snap_membus_t;  /* snap memory access */
-typedef ap_uint<64>        snapu64_t;
-typedef ap_uint<32>        snapu32_t;
-typedef ap_uint<16>        snapu16_t;
-typedef ap_uint<8>         snapu8_t;
+typedef ap_uint<MEMDW> snap_membus_t;  /* snap memory access */
+typedef ap_uint<64> snapu64_t;
+typedef ap_uint<32> snapu32_t;
+typedef ap_uint<16> snapu16_t;
+typedef ap_uint<8> snapu8_t;
+typedef ap_uint<1> snap_bool_t;
 
 typedef struct {
-        snapu8_t  sat; // short action type
-        snapu8_t  flags;
+        snapu8_t sat; // short action type
+        snapu8_t flags;
         snapu16_t seq;
         snapu32_t Retc;
         snapu64_t Reserved; // Priv_data

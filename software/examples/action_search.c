@@ -28,7 +28,7 @@
 
 #include <libsnap.h>
 #include <snap_internal.h>
-#include <action_search.h>
+#include <snap_search.h>
 
 static int mmio_write32(struct snap_card *card,
 			uint64_t offs, uint32_t data)
