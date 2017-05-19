@@ -269,6 +269,29 @@ Address: 0x00C000 + m * 0x0000008 (m = 0,..,15)
 
 ---
 
+#### SNAP Debug Register (SDR)
+```
+Address: 0x000D000
+  63..1  RO: Reserved
+      0  RW: Disable parity checking on ah Interface by PSL
+                 '1': Parity checking is disabled (default value, until all parity problems are fixed)
+                 '0': Parity checking is enabled
+
+  POR value: 0x00000000_00000001
+```
+
+---
+
+#### SNAP NVMe Register (SNR)
+```
+Address: 0x000D008
+  63..0  RW: Reserved for NVMe usage
+
+  POR value: 0x00000000_00000000
+```
+
+---
+
 #### Job-Manager FIRs
 ##### Not yet implemented
 ```
@@ -700,6 +723,29 @@ Address: 0x0001080 + (s+n) * 0x0010000
 Address: 0x00C000 + (s+n) * 0x0010000 + m * 0x0000008 (m = 0,..,15)
   63..32 RO: Reserved
   31..0  RO: Context m*32+k is attached if (and only if) bit k is set (for each k = 0,..,31).
+```
+
+---
+
+#### SNAP Debug Register (SDR)
+```
+Address: 0x000D000 + (s+n) * 0x0010000
+  63..1  RO: Reserved
+      0  RO: Disable parity checking on ah Interface by PSL
+                 '1': Parity checking is disabled (default value, until all parity problems are fixed)
+                 '0': Parity checking is enabled
+
+  POR value: 0x00000000_00000001
+```
+
+---
+
+#### SNAP NVMe Register (SNR)
+```
+Address: 0x000D008 + (s+n) * 0x0010000
+  63..0  RO: Reserved for NVMe usage
+
+  POR value: 0x00000000_00000000
 ```
 
 ---

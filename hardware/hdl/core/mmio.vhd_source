@@ -40,8 +40,6 @@ ENTITY mmio IS
     ha_pclock              : IN  std_logic;
     afu_reset              : IN  std_logic;
     nvme_reset_ctl         : OUT std_logic_vector(SNAP_NVME_RST_L  DOWNTO SNAP_NVME_RST_R);   -- only for NVME_USED=TRUE  -- keeping NVMe drives in reset by driving 0's
-    --
-    -- debug (TODO: remove)
     ah_paren_mm_o          : OUT std_logic;
     --
     -- PSL IOs
@@ -703,10 +701,8 @@ BEGIN
 
         dbg_regs_q                       <= (OTHERS => (OTHERS => '0'));
         dbg_regs_par_q                   <= (OTHERS => '1');
-        dbg_regs_q(14)                   <= IMP_VERSION_DAT;
-        dbg_regs_par_q(14)               <= parity_gen_odd(IMP_VERSION_DAT);
-        dbg_regs_q(15)                   <= BUILD_DATE_DAT;
-        dbg_regs_par_q(15)               <= parity_gen_odd(BUILD_DATE_DAT);
+        dbg_regs_q(SNAP_DEBUG_REG)(SNAP_DBG_AH_PAREN) <= '1';  -- TODO: Change reset value, when all parity problems are resolved
+        dbg_regs_par_q(SNAP_DEBUG_REG)                <= '0';
 
         exploration_done_q               <= '0';
 
@@ -1133,6 +1129,12 @@ BEGIN
     ah_mm_o.data    <= ah_mm_q.data;
     ah_mm_o.datapar <= ah_mm_q.datapar; -- XOR mm_i_q.inject_read_rsp_parity_error;  -- toggle parity iff inject_read_rsp_parity_error is set to '1';
 
+    --
+    -- Parity enable for ah interface in PSL
+    --
+    ah_paren_mm_o   <= NOT dbg_regs_q(SNAP_DEBUG_REG)(SNAP_DBG_AH_PAREN);
+
+    --
     -- MMC
     --
     mmc_c_o.reset_done <= NOT regs_reset_q;
