@@ -27,7 +27,7 @@ use ieee.STD_LOGIC_UNSIGNED.all;
 use ieee.numeric_std.all;
 
 
-entity action_memcopy is
+entity action_example is
     generic (
         -- Parameters of Axi Master Bus Interface AXI_CARD_MEM0 ; to DDR memory
         C_AXI_CARD_MEM0_ID_WIDTH    : integer   := 2;
@@ -226,9 +226,9 @@ entity action_memcopy is
         axi_host_mem_ruser    : in std_logic_vector(C_AXI_HOST_MEM_RUSER_WIDTH-1 downto 0);
         axi_host_mem_wuser    : out std_logic_vector(C_AXI_HOST_MEM_WUSER_WIDTH-1 downto 0)
 );
-end action_memcopy;
+end action_example;
 
-architecture action_memcopy of action_memcopy is
+architecture action_example of action_example is
 
 
 
@@ -1209,4 +1209,4 @@ wr_strobes: process(dma_wr_data_valid, memcopy,
 
 
 
-end action_memcopy;
+end action_example;

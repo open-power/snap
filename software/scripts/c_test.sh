@@ -29,7 +29,7 @@ function test_memset ()	# $1 = card
 
 	for  begin in ` seq 0 64 `; do
 		echo -n "."
-		cmd="./tools/stage2_set -C ${card} -F -s 4096 -b 0 -p 0xff"
+		cmd="./examples/snap_example_set -C ${card} -F -s 4096 -b 0 -p 0xff"
 		eval ${cmd}
 		if [ $? -ne 0 ]; then
 			echo "cmd: ${cmd}"
@@ -37,14 +37,14 @@ function test_memset ()	# $1 = card
 			exit 1
 		fi
 		for  size in ` seq 1 256 `; do
-			cmd="./tools/stage2_set -C ${card} -H -s $size -b $begin -p $size"
+			cmd="./examples/snap_example_set -C ${card} -H -s $size -b $begin -p $size"
 			eval ${cmd}
 			if [ $? -ne 0 ]; then
 				echo "cmd: ${cmd}"
 				echo "failed"
 				exit 1
 			fi
-			cmd="./tools/stage2_set -C ${card} -F -s $size -b $begin -p $size"
+			cmd="./examples/snap_example_set -C ${card} -F -s $size -b $begin -p $size"
 			eval ${cmd}
 			if [ $? -ne 0 ]; then
 				echo "cmd: ${cmd}"
