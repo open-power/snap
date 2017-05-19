@@ -443,7 +443,9 @@ int main(int argc, char *argv[])
 			    pbuff, psize,
 			    method, step);
 
-        printf("INITIALIZATION : move %d bytes from Host mem to DDR\n", (int) dsize);
+	fprintf(stderr, "  job size %ld bytes\n", sizeof(sjob_in));
+        printf("INITIALIZATION : move %d bytes from Host mem to DDR\n",
+	       (int) dsize);
        	rc = run_one_step(action, &cjob, timeout, step);
 	if (rc != 0)
 		goto out_error3;

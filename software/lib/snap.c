@@ -664,6 +664,11 @@ int snap_action_sync_execute_job(struct snap_action *action,
 	if (cjob->wout_size > WOUT_MAX) {	/* Size must be less than addr[6] */
 		snap_trace("  %s: err: wout_size too large %d > %d\n", __func__,
 			   cjob->wout_size, WOUT_MAX);
+		snap_trace("      win_addr  = %llx size = %d\n",
+			   (long long)cjob->win_addr, cjob->win_size);
+		snap_trace("      wout_addr = %llx size = %d\n",
+			   (long long)cjob->wout_addr, cjob->wout_size);
+
 		errno = EINVAL;
 		return -1;
 	}

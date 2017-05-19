@@ -91,7 +91,7 @@ fi
 
 if [ $search -eq 1 ]; then
 	echo -n "Trying snap_search ... "
-	cmd="./examples/snap_search -C${snap_card} -E 98	\
+	cmd="./examples/snap_search -C${snap_card} -E 98 	\
 		-i examples/snap_search.txt -p snap >		\
 		examples/snap_search.log 2>&1"
 	eval ${cmd}
