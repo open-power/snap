@@ -646,6 +646,8 @@ int snap_action_completed(struct snap_action *action, int *rc, int timeout)
  * @cjob	streaming framework job
  * @return	0 on success.
  */
+#define WOUT_MAX (6 * 16)
+
 int snap_action_sync_execute_job(struct snap_action *action,
 				 struct snap_job *cjob,
 				 unsigned int timeout_sec)
@@ -659,9 +661,9 @@ int snap_action_sync_execute_job(struct snap_action *action,
 	uint32_t *job_data;
 	unsigned int mmio_in, mmio_out;
 
-	if (cjob->wout_size > (6 * 16)) {	/* Size must be less than addr[6] */
-		snap_trace("  %s: err: wout_size too large %d\n", __func__,
-			   cjob->wout_size);
+	if (cjob->wout_size > WOUT_MAX) {	/* Size must be less than addr[6] */
+		snap_trace("  %s: err: wout_size too large %d > %d\n", __func__,
+			   cjob->wout_size, WOUT_MAX);
 		errno = EINVAL;
 		return -1;
 	}

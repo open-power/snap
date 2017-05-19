@@ -77,7 +77,7 @@ typedef struct hashjoin_job {
 	uint64_t t3_produced;  /* #entries produced store them away */
 	uint64_t checkpoint;
 
-	uint8_t reserved[96/8]; /* mandatory to keep output register
+	/* uint8_t reserved[96/8]; */ /* mandatory to keep output register
 				   at the right address */
 } hashjoin_job_t; /* DATA = 108 Bytes / 864 bits (fixed length) */
 

@@ -335,6 +335,7 @@ static void print_job(struct hashjoin_job *j)
 static int action_main(struct snap_sim_action *action,
 		       void *job, unsigned int job_len __unused)
 {
+	int rc;
 	struct hashjoin_job *hj = (struct hashjoin_job *)job;
 	table1_t *t1;
 	table2_t *t2;
@@ -343,13 +344,11 @@ static int action_main(struct snap_sim_action *action,
 	unsigned int table3_idx = 0;
 
 	print_job(hj);
-	hj->action_version = 0xFEEDBABE;
 
 	t1 = (table1_t *)hj->t1.addr;
 	if (!t1 || hj->t1.size/sizeof(table1_t) > TABLE1_SIZE) {
 		printf("  t1.size/sizeof(table1_t) = %ld entries\n",
 		       hj->t1.size/sizeof(table1_t));
-		hj->rc = SNAP_EINVAL;
 		goto err_out;
 	}
 
@@ -357,7 +356,6 @@ static int action_main(struct snap_sim_action *action,
 	if (!t2 || hj->t2.size/sizeof(table2_t) > TABLE2_SIZE) {
 		printf("  t2.size/sizeof(table2_t) = %ld entries\n",
 		       hj->t2.size/sizeof(table2_t));
-		hj->rc = SNAP_EINVAL;
 		goto err_out;
 	}
 
@@ -365,7 +363,6 @@ static int action_main(struct snap_sim_action *action,
 	if (!t3 || hj->t3.size/sizeof(table3_t) > TABLE3_SIZE) {
 		printf("  t3.size/sizeof(table3_t) = %ld entries\n",
 		       hj->t3.size/sizeof(table3_t));
-		hj->rc = SNAP_EINVAL;
 		goto err_out;
 	}
 
@@ -373,14 +370,13 @@ static int action_main(struct snap_sim_action *action,
 	if (hj->hashtable.size/sizeof(entry_t) > HT_SIZE) {
 		printf("  hashtable.size/sizeof(entry_t) = %ld entries\n",
 		       hj->hashtable.size/sizeof(entry_t));
-		hj->rc = SNAP_EINVAL;
 		goto err_out;
 	}
 
-	hj->rc = hash_join(t1, t2, t3, h, &table3_idx);
+	rc = hash_join(t1, t2, t3, h, &table3_idx);
 	hj->t3_produced = table3_idx;
 
-	if (hj->rc == 0) {
+	if (rc == 0) {
 		action->job.retc = SNAP_RETC_SUCCESS;
 	} else
 		action->job.retc = SNAP_RETC_FAILURE;
