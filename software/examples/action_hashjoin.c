@@ -58,7 +58,7 @@
 #include <limits.h>
 #include <libsnap.h>
 #include <snap_internal.h>
-#include <action_hashjoin.h>
+#include <snap_hashjoin.h>
 
 static int mmio_read32(struct snap_card *card,
 		       uint64_t offs, uint32_t *data)

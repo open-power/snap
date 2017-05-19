@@ -24,9 +24,9 @@
 extern "C" {
 #endif
 
-/**********************************************************************
+/******************************************************************************
  * SNAP Job Definition
- *********************************************************************/
+ *****************************************************************************/
 
 /* Standardized, non-zero return codes to be expected from FPGA actions */
 #define SNAP_RETC_SUCCESS		0x0102
@@ -54,7 +54,7 @@ typedef struct snap_addr {
         uint32_t size;
         snap_addrtype_t type;		/* DRAM, NVME, ... */
         snap_addrflag_t flags;		/* SRC, DST, EXT, ... */
-} *snap_addr_t;				/* 16 bytes */
+} snap_addr_t;				/* 16 bytes */
 
 static inline void snap_addr_set(struct snap_addr *da,
 				 const void *addr,

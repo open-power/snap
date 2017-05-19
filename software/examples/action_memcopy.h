@@ -17,7 +17,6 @@
  * limitations under the License.
  */
 
-#include <stdint.h>
 #include <snap_types.h>
 
 #ifdef __cplusplus

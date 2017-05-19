@@ -33,13 +33,10 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include <snap_tools.h>
 #include <libsnap.h>
-#include <action_hashjoin.h>
+#include <snap_tools.h>
 #include <snap_s_regs.h>
-
-#define ACTION_REDAY_IRQ        4
-#define	HLS_HASH_JOIN_ID	0x10141002
+#include <snap_hashjoin.h>
 
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
