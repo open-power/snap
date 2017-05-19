@@ -33,8 +33,13 @@ static snapu32_t read_bulk ( snap_membus_t *src_mem,
                             snap_membus_t *buffer)
 {
     snapu32_t xfer_size;
+
     xfer_size = MIN(byte_to_transfer, (snapu32_t) MAX_NB_OF_BYTES_READ);
-    memcpy(buffer, (snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)), xfer_size);
+
+    memcpy(buffer, 
+	(snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
+	xfer_size);
+
     return xfer_size;
 }
 
@@ -44,8 +49,12 @@ static snapu32_t write_bulk (snap_membus_t *tgt_mem,
                             snap_membus_t *buffer)
 {
     snapu32_t xfer_size;
+
     xfer_size = MIN(byte_to_transfer, (snapu32_t)  MAX_NB_OF_BYTES_READ);
-    memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), buffer, xfer_size);
+
+    memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
+	buffer, xfer_size);
+
     return xfer_size;
 }
 
@@ -57,32 +66,35 @@ static void memcopy_table(snap_membus_t  *din_gmem,
                     snapu32_t       total_bytes_to_transfer,
                     snap_bool_t     direction)
 {
-    //direction == 0: Copy from Host to DDR
-    //direction == 1: Copy from DDR to Host
-
     //source_address and target_address are byte addresses.
     snapu64_t address_xfer_offset = 0;
-    snap_membus_t   buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];
-
+    snap_membus_t   buf_gmem[MAX_NB_OF_WORDS_READ];
 
     snapu32_t  left_bytes = total_bytes_to_transfer;
     snapu32_t  copy_bytes;
 
-
-L_COPY: while (left_bytes > 0)
+    L_COPY: while (left_bytes > 0)
     {
-		switch (direction) {
-		case HOST2DDR:
-            copy_bytes = read_bulk (din_gmem, source_address + address_xfer_offset,  left_bytes, buf_gmem);
-            write_bulk (d_ddrmem, target_address + address_xfer_offset,  copy_bytes, buf_gmem);
-			break;
-		case DDR2HOST:
-            copy_bytes = read_bulk  (d_ddrmem, source_address + address_xfer_offset, left_bytes, buf_gmem);
-            write_bulk (dout_gmem, target_address + address_xfer_offset, copy_bytes, buf_gmem);
-			break;
-		default:
-			copy_bytes = 0;
-		}
+	switch (direction) {
+	case HOST2DDR:
+          	copy_bytes = read_bulk (din_gmem, 
+			source_address + address_xfer_offset,  
+			left_bytes, buf_gmem);
+            	write_bulk (d_ddrmem, 
+			target_address + address_xfer_offset,  
+			copy_bytes, buf_gmem);
+		break;
+	case DDR2HOST:
+           	copy_bytes = read_bulk (d_ddrmem, 
+			source_address + address_xfer_offset, 
+			left_bytes, buf_gmem);
+            	write_bulk (dout_gmem, 
+			target_address + address_xfer_offset, 
+			copy_bytes, buf_gmem);
+		break;
+	default:
+		break;
+	}
         left_bytes -= copy_bytes;
         address_xfer_offset += MAX_NB_OF_BYTES_READ;
     } // end of L_COPY
@@ -90,20 +102,21 @@ L_COPY: while (left_bytes > 0)
 }
 
 // WRITE DATA TO MEMORY
-short write_burst_of_data_to_mem(snap_membus_t *dout_gmem, snap_membus_t *d_ddrmem,
-         snapu16_t memory_type, snapu64_t output_address,
-         snap_membus_t *buffer, snapu64_t size_in_bytes_to_transfer)
+short write_burst_of_data_to_mem(snap_membus_t *dout_gmem, 
+	snap_membus_t *d_ddrmem,
+        snapu16_t memory_type, snapu64_t output_address,
+        snap_membus_t *buffer, snapu64_t size_in_bytes_to_transfer)
 {
     short rc;
     switch (memory_type) {
 	case HOST_DRAM:
        		memcpy((snap_membus_t  *) (dout_gmem + output_address), 
-				buffer, size_in_bytes_to_transfer);
+			buffer, size_in_bytes_to_transfer);
        		rc =  0;
 		break;
 	case CARD_DRAM:
        		memcpy((snap_membus_t  *) (d_ddrmem + output_address), 
-				buffer, size_in_bytes_to_transfer);
+			buffer, size_in_bytes_to_transfer);
        		rc =  0;
 		break;
 	default:
@@ -113,9 +126,10 @@ short write_burst_of_data_to_mem(snap_membus_t *dout_gmem, snap_membus_t *d_ddrm
 }
 
 // READ DATA FROM MEMORY
-short read_burst_of_data_from_mem(snap_membus_t *din_gmem, snap_membus_t *d_ddrmem,
-         snapu16_t memory_type, snapu64_t input_address,
-         snap_membus_t *buffer, snapu64_t size_in_bytes_to_transfer)
+short read_burst_of_data_from_mem(snap_membus_t *din_gmem, 
+	snap_membus_t *d_ddrmem,
+        snapu16_t memory_type, snapu64_t input_address,
+        snap_membus_t *buffer, snapu64_t size_in_bytes_to_transfer)
 {
      short rc;
     switch (memory_type) {
@@ -135,8 +149,9 @@ short read_burst_of_data_from_mem(snap_membus_t *din_gmem, snap_membus_t *d_ddrm
     return rc;
 }
 
-short read_single_word_of_data_from_mem(snap_membus_t *din_gmem, snap_membus_t *d_ddrmem,
-         snapu16_t memory_type, snapu64_t input_address, snap_membus_t *buffer)
+short read_single_word_of_data_from_mem(snap_membus_t *din_gmem, 
+	snap_membus_t *d_ddrmem,
+        snapu16_t memory_type, snapu64_t input_address, snap_membus_t *buffer)
 {
      short rc;
     switch (memory_type) {
@@ -153,8 +168,9 @@ short read_single_word_of_data_from_mem(snap_membus_t *din_gmem, snap_membus_t *
     }
     return rc;
 }
-short write_single_word_of_data_to_mem(snap_membus_t *din_gmem, snap_membus_t *d_ddrmem,
-         snapu16_t memory_type, snapu64_t input_address, snap_membus_t *buffer)
+short write_single_word_of_data_to_mem(snap_membus_t *din_gmem, 
+	snap_membus_t *d_ddrmem,
+        snapu16_t memory_type, snapu64_t input_address, snap_membus_t *buffer)
 {
      short rc;
     switch (memory_type) {
@@ -209,9 +225,11 @@ static snap_membus_t word_to_mbus(word_t text)
 /********* STREAMING SEARCH ****************************/
 /*******************************************************/
 
-static void strm_search_proc(const char pattern[PATTERN_SIZE], const int pat_size, int txt_size,
-                hls::stream<char> &txt_stream_in, hls::stream<long> &pos_stream_out,
-                unsigned int &count)
+static void strm_search_proc(const char pattern[PATTERN_SIZE], 
+	const int pat_size, int txt_size,
+        hls::stream<char> &txt_stream_in, 
+	hls::stream<long> &pos_stream_out,
+        unsigned int &count)
 {
 	snap_bool_t cmp;
     char curr_char;
@@ -230,15 +248,17 @@ static void strm_search_proc(const char pattern[PATTERN_SIZE], const int pat_siz
             cmp = 1;
             cmp_loop:for(int j = 0; j < PATTERN_SIZE; j++) {
             	if ( j < pat_size ) {
-            	    cache[j] = (j < pat_size-1) ? cache[j + 1] : curr_char; // shifting cache with new value as last one
+            	    // shifting cache with new value as last one
+            	    cache[j] = (j < pat_size-1) ? cache[j + 1] : curr_char;
                     cmp &= (cache[j] == pattern[j]) ? 1 : 0;
             	}
             }
-            count = (idx < pat_size - 1) ? 0 : count + (unsigned int)cmp; // don't take care of cmp if cache not filled
-            position = (cmp == 1) ? idx - (pat_size -1) : -1; // send  position or -1
+            // don't take care of cmp if cache not filled
+            count = (idx < pat_size - 1) ? 0 : count + (unsigned int)cmp; 
+ 	    // send  position or -1
+            position = (cmp == 1) ? idx - (pat_size -1) : -1;
 
             pos_stream_out.write(position); //pos_stream_out << position;
-
     	}
     	else
     		break;
@@ -277,7 +297,7 @@ static void strm_search(snap_membus_t *din_gmem,
   snap_membus_t PositionBuffer[1];
   unsigned int pos_nb;
   unsigned long position;
-  unsigned int count;
+  unsigned int count = 0;
 
 #pragma HLS DATAFLOW
 #pragma HLS INLINE region // bring loops in sub-functions to this DATAFLOW region
@@ -332,7 +352,8 @@ static void strm_search(snap_membus_t *din_gmem,
   // **************
   // process search
   // *************
-    strm_search_proc(Pattern, PatternSize, InputSize, txt_stream_in, pos_stream_out, count);
+    strm_search_proc(Pattern, PatternSize, InputSize, 
+		txt_stream_in, pos_stream_out, count);
 
 
    // **************
@@ -341,7 +362,7 @@ static void strm_search(snap_membus_t *din_gmem,
 
 	printf("strm_count %d\n", count);
 	// set a global variable to report the result
-	global_count = count;
+	global_count += count;
 	// Get the stream of positions and build an array
 	pos_nb = 0;
 	wr_address_text_offset = 0;
@@ -352,18 +373,18 @@ static void strm_search(snap_membus_t *din_gmem,
 		   pos_idx = pos_stream_out.read();  //pos_stream_out >> position;
 		   if (pos_idx != -1)
 		   {
-				position = (unsigned long) pos_idx;
-				printf("strm_position n°: %d - found at: %d\n", pos_nb, pos_idx);
-				PositionBuffer[0] = (PositionBuffer[0] << 2*sizeof(position)) + position;
-				pos_nb ++;
-				if(pos_nb%32 == 0) // 32 x 2*8 = 512 bits =
-				{
-					   //write_single_word_of_data_to_mem(din_gmem, d_ddrmem,
-					    //      Action_Register->Data.res_text.type,
-					    //      (Action_Register->Data.res_text.address >> ADDR_RIGHT_SHIFT) + wr_address_text_offset,
-						//	  PositionBuffer);
-					   wr_address_text_offset++;
-				}
+			position = (unsigned long) pos_idx;
+			printf("strm_position n°: %d - found at: %d\n", pos_nb, pos_idx);
+			PositionBuffer[0] = (PositionBuffer[0] << 2*sizeof(position)) + position;
+			pos_nb ++;
+			if(pos_nb%32 == 0) // 32 x 2*8 = 512 bits =
+			{
+			   //write_single_word_of_data_to_mem(din_gmem, d_ddrmem,
+			    //      Action_Register->Data.res_text.type,
+			    //      (Action_Register->Data.res_text.address >> ADDR_RIGHT_SHIFT) + wr_address_text_offset,
+			    //	  PositionBuffer);
+				   wr_address_text_offset++;
+			}
 		   }
 	}
 //	if(pos_nb%32 != 0)
@@ -407,7 +428,9 @@ static snapu32_t process_action_strm(snap_membus_t *din_gmem,
 
   mbus_to_word(PatternBuffer[0], Pattern); // convert buffer to char
 
-  strm_search(din_gmem, dout_gmem, d_ddrmem, Action_Register, Pattern, PatternSize);
+  if(Action_Register->Data.ddr_text1.size < TEXT_SIZE)
+  	strm_search(din_gmem, dout_gmem, d_ddrmem, 
+		Action_Register, Pattern, PatternSize);
 
   if(rc!=0) Action_Register->Control.Retc = RET_CODE_FAILURE;
   else      Action_Register->Control.Retc = RET_CODE_OK;
@@ -422,7 +445,8 @@ static snapu32_t process_action_strm(snap_membus_t *din_gmem,
 // based on D. E. Knuth, J. H. Morris, Jr., and V. R. Pratt, i
 // Fast pattern matching in strings", SIAM J. Computing 6 (1977), 323--350
 
-void preprocess_KMP_table(char pat[PATTERN_SIZE], int PatternSize, int KMP_table[])
+void preprocess_KMP_table(char pat[PATTERN_SIZE], int PatternSize, 
+	int KMP_table[])
 {
    int i, j;
 
@@ -453,17 +477,23 @@ int KMP_search(char pat[PATTERN_SIZE], int PatternSize,
 
    i = j = 0;
    count = 0;
-   while (j < TextSize) {
-      while (i > -1 && pat[i] != txt[j])
-         i = KMP_table[i];
-      i++;
-      j++;
-      if (i >= PatternSize)
-      {
-         i = KMP_table[i];
-         printf("Found pattern at index %d\n", j-i-PatternSize);
-         count++;
-      }
+   //while (j < TextSize) {
+   while (j < MAX_NB_OF_BYTES_READ) {
+#pragma HLS UNROLL factor=32
+	   if (j < TextSize) {
+		  while (i > -1 && pat[i] != txt[j])
+			 i = KMP_table[i];
+		  i++;
+		  j++;
+		  if (i >= PatternSize)
+		  {
+			 i = KMP_table[i];
+			 printf("Found pattern at index %d\n", j-i-PatternSize);
+			 count++;
+		  }
+	   }
+	   else
+		    break;
    }
    return count;
 }
@@ -480,13 +510,21 @@ int Naive_search(char pat[PATTERN_SIZE], int PatternSize,
    int i, j;
    int count=0;
 
-   for (j = 0; j <= TextSize - PatternSize; ++j) {
-      for (i = 0; i < PatternSize && pat[i] == txt[i + j]; ++i);
-      if (i >= PatternSize)
-      {
-           count++;
-           printf("Pattern found at index %d \n", j);
-      }
+   //for (j = 0; j <= TextSize - PatternSize; ++j)
+   for (j = 0; j < MAX_NB_OF_BYTES_READ; ++j)
+   {
+#pragma HLS UNROLL factor=32
+	   if (j <= TextSize - PatternSize)
+	   {
+		  for (i = 0; i < PatternSize && pat[i] == txt[i + j]; ++i);
+		  // for (i = 0; i < PatternSize; ++i);
+		  // 	   if (pat[i] == txt[i + j]) break;
+		  if (i >= PatternSize)
+		  {
+			   count++;
+			   printf("Pattern found at index %d \n", j);
+		  }
+	   }
    }
    return count;
 }
@@ -504,15 +542,21 @@ unsigned int search(snapu16_t Method,
 
         count = 0;
         switch (Method) {
-        case(NAIVE_method):    printf("======== Naive method ========\n");
-               count = Naive_search (Pattern, (int)PatternSize, Text, (int)TextSize);
-               break;
-        case(KMP_method):      printf("========= KMP method =========\n");
-               count = KMP_search(Pattern, (int)PatternSize, Text, (int)TextSize);
-               break;
-        default:        printf("=== Default Naive method ===\n");;
-               count = Naive_search(Pattern, (int)PatternSize, Text, (int)TextSize);
-               break;
+        case(NAIVE_method):    
+		printf("======== Naive method ========\n");
+                count = Naive_search (Pattern, (int)PatternSize, 
+				Text, (int)TextSize);
+                break;
+        case(KMP_method):      
+		printf("========= KMP method =========\n");
+                count = KMP_search(Pattern, (int)PatternSize, 
+				Text, (int)TextSize);
+                break;
+        default:        
+		printf("=== Default Naive method ===\n");;
+                count = Naive_search(Pattern, (int)PatternSize, 
+				Text, (int)TextSize);
+                break;
         }
 
         printf("pattern size %d - text size %d - rc = %d \n", 
@@ -656,6 +700,8 @@ void hls_action(snap_membus_t *din_gmem,
                 break;
         default:
                 Action_Register->Data.nb_of_occurrences = (snapu32_t) 0x0;
+		Action_Register->Control.Retc = 0x0000;
+                Action_Register->Data.next_input_address = (snapu64_t) 0x0;
                 break;
 
         }
@@ -667,7 +713,8 @@ void hls_action(snap_membus_t *din_gmem,
             memcopy_table(din_gmem, dout_gmem, d_ddrmem,
                           Action_Register->Data.src_text1.address,
                           Action_Register->Data.ddr_text1.address,
-                          Action_Register->Data.src_text1.size, HOST2DDR);
+                          Action_Register->Data.src_text1.size, 
+                          HOST2DDR);
     		break;
 
     	case 2: // SW : copy source from DDR to Host
@@ -676,23 +723,27 @@ void hls_action(snap_membus_t *din_gmem,
             memcopy_table(din_gmem, dout_gmem, d_ddrmem,
                           Action_Register->Data.ddr_text1.address,
                           Action_Register->Data.src_text1.address,
-                          Action_Register->Data.ddr_text1.size, DDR2HOST);
+                          Action_Register->Data.ddr_text1.size, 
+                          DDR2HOST);
 
     		break;
     	case 3: // HW : search processing
     		if(Action_Register->Data.method == STRM_method)
-                    result = process_action_strm(din_gmem, dout_gmem, d_ddrmem, Action_Register);
+                    result = process_action_strm(din_gmem, dout_gmem, d_ddrmem, 
+					Action_Register);
     		else
-                    result = process_action(din_gmem, dout_gmem, d_ddrmem, Action_Register);
+                    result = process_action(din_gmem, dout_gmem, d_ddrmem, 
+					Action_Register);
     		break;
 
 
     	case 5: // HW : copy result array from DDR to Host
-            //Copy Result from DDR to Host.
+            //Copy Result from DDR to Host. // position is on 64 bits
             memcopy_table(din_gmem, dout_gmem, d_ddrmem,
                           Action_Register->Data.ddr_result.address,
                           Action_Register->Data.src_result.address,
-                         (Action_Register->Data.nb_of_occurrences * 8), DDR2HOST); // position is on 64 bits
+                         (Action_Register->Data.nb_of_occurrences * 8), 
+                         DDR2HOST);
             break;
 
     	default:
@@ -701,10 +752,9 @@ void hls_action(snap_membus_t *din_gmem,
 
     Action_Register->Control.Retc = RET_CODE_OK;
     Action_Register->Data.nb_of_occurrences = (snapu32_t) result;
+    Action_Register->Data.next_input_address = (snapu64_t) 0x0;
 
-    //result_size = check_table2(d_ddrmem, Action_Register);
-    //Action_Register->Data.res_text.size = result_size;
-//    return;
+    return;
 }
 
 
@@ -769,10 +819,9 @@ int main(void)
     Action_Register.Data.src_pattern.size = 3; // Take 3 first characters of din_gmem as pattern
     Action_Register.Data.src_pattern.type = HOST_DRAM;
 
-
-    Action_Register.Data.res_text.address = 0;
-    Action_Register.Data.res_text.size = 12;
-    Action_Register.Data.res_text.type = 0x0000;
+    Action_Register.Data.ddr_result.address = 0;
+    Action_Register.Data.ddr_result.size = 12;
+    Action_Register.Data.ddr_result.type = 0x0000;
 
     // get Action_Register values
     Action_Register.Control.flags = 0x0;
