@@ -37,6 +37,7 @@
 
 // Revised 07-Aug-15 to match with official release of FIPS PUB 202 "SHA3"
 // Revised 03-Sep-15 for portability + OpenSSL - style API
+// 05-May-17  IBM : adapt to be compiled by Vivado HLS
 
 #include "sha3.H"
 
@@ -47,8 +48,8 @@ void cast_uint8_to_uint64_W25(uint8_t st_in[200], uint64_t st_out[25])
     int i, j;
     const int VECTOR_SIZE = 25;
 
-    for( i = 0; i < VECTOR_SIZE; i++ ) {
-#pragma HLS PIPELINE
+    cast_8to64:for( i = 0; i < VECTOR_SIZE; i++ ) {
+#pragma HLS UNROLL
           mem = 0;
           for( j = 8; j >= 0; j--) {
                   mem = (mem << 8);
@@ -65,8 +66,8 @@ void cast_uint64_to_uint8_W25(uint64_t st_in[25], uint8_t st_out[200])
     int i, j;
     const int VECTOR_SIZE = 25;
 
-    for( i = 0; i < VECTOR_SIZE; i++ ) {
-#pragma HLS PIPELINE
+    cast_64to8:for( i = 0; i < VECTOR_SIZE; i++ ) {
+#pragma HLS UNROLL
           tmp = st_in[i];
           for( j = 0; j < 8; j++ ) {
                   st_out[i*8+j] = (uint8_t)tmp;
@@ -205,17 +206,14 @@ int sha3_update(sha3_ctx_t *c, const uint8_t *data, size_t len)
     int j;
 
     j = c->pt;
-    //for (i = 0; i < len; i++) {
-    for (i = 0; i < 64; i++) { // => sponge =64max
+    for (i = 0; i < len; i++) {
 #pragma HLS UNROLL
-        if (i < len) {
 			c->st.b[j++] ^= ((const uint8_t *) data)[i];
 			if (j >= c->rsiz) {
 				//sha3_keccakf(c->st.q);
 				sha3_keccakf(c->st.b, c->st.b);
 				j = 0;
 			}
-        }
     }
     c->pt = j;
 
@@ -235,10 +233,8 @@ int sha3_final(uint8_t *md, sha3_ctx_t *c)
     //sha3_keccakf(c->st.q);
     sha3_keccakf(c->st.b, c->st.b);
 
-    //for (i = 0; i < c->mdlen; i++) {
-    for (i = 0; i < 64; i++) { // => sponge =64max
+    for (i = 0; i < c->mdlen; i++) {
 #pragma HLS UNROLL
-    	if(i < c->mdlen)
     		((uint8_t *) md)[i] = c->st.b[i];
     }
 

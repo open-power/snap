@@ -24,6 +24,7 @@
 
 // sha3.h
 // 19-Nov-11  Markku-Juhani O. Saarinen <mjos@iki.fi>
+// 05-May-17  Bruno Mesnet - IBM : adapt to be compiled by Vivado HLS
 
 #ifndef SHA3_H
 #define SHA3_H
@@ -53,7 +54,6 @@ typedef struct {
 
 // Compression function.
 //void sha3_keccakf(uint64_t st[25]);
-//void sha3_keccakf(uint64_t st_in[25], uint64_t st_out[25]);
 void sha3_keccakf(uint8_t st_in[200], uint8_t st_out[200]);
 
 // OpenSSL - like interfece

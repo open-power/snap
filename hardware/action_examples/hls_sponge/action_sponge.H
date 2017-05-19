@@ -1,5 +1,5 @@
-#ifndef __ACTION_SPONGE_H__
-#define __ACTION_SPONGE_H__
+#ifndef __ACTION_TINY_SHA3_H__
+#define __ACTION_TINY_SHA3_H__
 
 /*
  * Copyright 2017, International Business Machines
@@ -50,6 +50,10 @@ typedef struct {
 
 void cast_uint8_to_uint64_W8(uint8_t st_in[64], uint64_t st_out[8]);
 void cast_uint64_to_uint8_W8(uint64_t st_in[8], uint8_t st_out[64]);
+void process_action(snap_membus_t *din_gmem,
+                           snap_membus_t *dout_gmem,
+                           snap_membus_t *d_ddrmem,
+                           action_reg *Action_Register);
 #define CONFIG_HOSTSTYLE_ALGO
 
-#endif  /* __ACTION_SPONGE_H__ */
+#endif  /* __ACTION_TINY_SHA3_H__ */
