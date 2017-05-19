@@ -443,7 +443,6 @@ int main(int argc, char *argv[])
 			    pbuff, psize,
 			    method, step);
 
-	fprintf(stderr, "  job size %ld bytes\n", sizeof(sjob_in));
         printf("INITIALIZATION : move %d bytes from Host mem to DDR\n",
 	       (int) dsize);
        	rc = run_one_step(action, &cjob, timeout, step);

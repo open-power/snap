@@ -108,7 +108,9 @@ clean:
 	       hdl/core/snap_core_types.vhd			\
 	       hdl/core/psl_fpga.vhd				\
 	       hdl/core/psl_accel.vhd				\
-	       hdl/core/psl_accel_types.vhd
+	       hdl/core/psl_accel_types.vhd			\
+	       hdl/core/mmio.vhd				\
+	       hdl/hls/action_wrapper.vhd
 
 gitclean:
 	@echo -e "\t[GITCLEAN............] cleaning and resetting snap git";
