@@ -31,7 +31,7 @@
 #include <snap_tools.h>
 #include <snap_s_regs.h>
 
-#include "snap_fw_example.h"
+#include "snap_example.h"
 
 /*	defaults */
 #define	DEFAULT_MEMCPY_ITER	1
