@@ -52,7 +52,7 @@ entity action_axi_nvme is
 	port (
 		-- Users to add ports here
 
-                nvme_cmd_valid_i      : in  std_logic;             
+                nvme_cmd_valid_i      : in  std_logic;
                 nvme_cmd_i            : in  std_logic_vector(11 downto 0);
                 nvme_mem_addr_i       : in  std_logic_vector(63 downto 0);
                 nvme_lba_addr_i       : in  std_logic_vector(63 downto 0);
@@ -114,29 +114,29 @@ architecture action_axi_nvme of action_axi_nvme is
         	-- function called clogb2 that returns an integer which has the
 	--value of the ceiling of the log base 2
 
-	function clogb2 (bit_depth : integer) return integer is            
-	 	variable depth  : integer := bit_depth;                               
-	 	variable count  : integer := 1;                                       
-	 begin                                                                   
-	 	 for clogb2 in 1 to bit_depth loop  -- Works for up to 32 bit integers
-	      if (bit_depth <= 2) then                                           
-	        count := 1;                                                      
-	      else                                                               
-	        if(depth <= 1) then                                              
-	 	       count := count;                                                
-	 	     else                                                             
-	 	       depth := depth / 2;                                            
-	          count := count + 1;                                            
-	 	     end if;                                                          
-	 	   end if;                                                            
-	   end loop;                                                             
-	   return(count);        	                                              
-	 end;
+        function clogb2 (bit_depth : integer) return integer is
+          variable depth  : integer := bit_depth;
+          variable count  : integer := 1;
+        begin
+          for clogb2 in 1 to bit_depth loop  -- Works for up to 32 bit integers
+            if (bit_depth <= 2) then
+              count := 1;
+            else
+              if(depth <= 1) then
+                count := count;
+              else
+                depth := depth / 2;
+                count := count + 1;
+              end if;
+            end if;
+          end loop;
+          return(count);
+	end;
 
-  
+
         function or_reduce (signal arg : std_logic_vector) return std_logic is
           variable result : std_logic;
-        
+
         begin
           result := '0';
           for i in arg'low to arg'high loop
@@ -163,7 +163,7 @@ architecture action_axi_nvme of action_axi_nvme is
         signal cmd_complete      : std_logic_vector(1 downto 0);
         signal wr_count          : std_logic_vector(3 downto 0);
 
-        
+
 
 begin
 
@@ -209,12 +209,12 @@ with wr_count select
     nvme_lba_count_i(31 downto 0)       when x"1",
     (31 downto 12 => '0') & nvme_cmd_i  when others ;
 
-   M_AXI_WLAST   <= '1' when wr_count = x"0" else '0';        
+   M_AXI_WLAST   <= '1' when wr_count = x"0" else '0';
    axi_awaddr    <= (others => '0');
    axi_awlen      <= x"05";
 
-axi_w:	process(M_AXI_ACLK)                
-	begin                                                                             
+axi_w:	process(M_AXI_ACLK)
+	begin
 	  if (rising_edge (M_AXI_ACLK)) then
              nvme_status(8)          <= '0';
              if M_AXI_ARESETN = '0'  then
@@ -238,16 +238,19 @@ axi_w:	process(M_AXI_ACLK)
                  axi_bready        <= '1';
                end if;
 
+               start_polling <= '0';
                if M_AXI_BVALID = '1' and axi_bready = '1' then
                  axi_bready <= '0';
                  nvme_status(0) <= '1';
+                 if wr_count = x"f" then
+                    start_polling <= '1';
+                 end if;
                end if;
-               start_polling <= '0';
+
                if axi_wvalid = '1' and M_AXI_WREADY = '1' then
                  wr_count <= wr_count - '1';
                  if wr_count = x"0" then
                    axi_wvalid        <= '0';
-                   start_polling <= '1';
                  end if;
                end if;
              end if;
@@ -258,13 +261,13 @@ axi_w:	process(M_AXI_ACLK)
 
 
 axi_araddr   <= x"0000_0004";
-axi_arlen    <= x"00";        
+axi_arlen    <= x"00";
 
 axi_r:	 process(M_AXI_ACLK)
 	 begin
 	   if (rising_edge (M_AXI_ACLK)) then
              continue_polling    <= '0';
-             cmd_complete        <= (others => '0');  
+             cmd_complete        <= (others => '0');
              if (M_AXI_ARESETN = '0' ) then
                axi_arvalid    <= '0';
                axi_rready     <= '0';
@@ -281,8 +284,8 @@ axi_r:	 process(M_AXI_ACLK)
                  if M_AXI_RDATA(1 downto 0) = "00" then
                    continue_polling <= '1';
                  else
-                   cmd_complete <= M_AXI_RDATA(1 downto 0);  
-                 end if;  
+                   cmd_complete <= M_AXI_RDATA(1 downto 0);
+                 end if;
                end if;
              end if;
            end if;
