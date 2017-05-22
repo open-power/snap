@@ -10,4 +10,4 @@ To uniquely identfiy SNAP actions, they must use a uniqe id. How to setup the id
 
 ### SNAP Action Enumeration
 
-To enable SNAP actions, please use the snap_maint application prior using the individual SNAP host-application. This step must only be done once the FPGA card comes alive.
+To enable SNAP actions, please use the *snap_maint* application prior using the individual SNAP host-application. This step must only be done once the FPGA card comes alive.
