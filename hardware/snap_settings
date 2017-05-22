@@ -55,8 +55,8 @@ while [ -z "$SETUP_DONE" ]; do
     break
   fi
   # checking Vivado version
-  echo "Path to vivado: `which vivado`"
-  echo "Vivado version: `vivado -version|head -n1`"
+  echo "Path to vivado          is set to: `which vivado`"
+  echo "Vivado version          is set to: `vivado -version|head -n1`"
 
   ####### user settings for CAPI STREAMING FRAMEWORK
   echo "=====CARD variables===================================="
