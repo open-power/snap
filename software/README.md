@@ -20,9 +20,9 @@ To debug libsnap functionality or associated actions, there are currently some e
 
     .
     |-- examples       Contains host-code examples either for HDL or for HLS written SNAP actions
-    |                  action_*.h should define the SNAP job executed by the SNAP action. This file
-    |                  should only include <snap_types.h> and is shared with the HLS action
-    |                  implementation.
+    |                  action_*.h should define the SNAP job executed by the SNAP action. These files
+    |                  should only include <snap_types.h> and are shared with the HLS action
+    |                  hardware implementation.
     |                  action_*.c is a software written emulation of the SNAP action. This should
     |                  be used to try out the job interface between host-code and SNAP action.
     |-- include        libsnap.h and auxiliary C-headers
