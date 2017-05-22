@@ -79,19 +79,17 @@ while [ -z "$SETUP_DONE" ]; do
     echo "FPGACHIP                is set to: \"$FPGACHIP\""
   fi
 
-  if [ ! -f "$PSL_DCP" ]; then
-      echo "Setting PSL_DCP                to: \"$PSL_DCP\""
-  else
+  if [ -f "$PSL_DCP" ]; then
       echo "PSL_DCP                 is set to: \"$PSL_DCP\""
   fi
 
   echo "=====SNAP PATH variables==============================="
-  if [ "$SNAP_ROOT" = "$snapdir" ]; then
-    echo "SNAP_ROOT               is set to: \"$SNAP_ROOT\""
+  if [ -z "$SNAP_ROOT" ]; then
+    export SNAP_ROOT=$snapdir
+    echo "SNAP_ROOT               is set to: \"$snapdir\""
   else
-    echo "Setting SNAP_ROOT              to: \"$snapdir\""
+    echo "Setting SNAP_ROOT              to: \"$SNAP_ROOT\""
   fi
-  export SNAP_ROOT=$snapdir
 
   if [ -z "$ACTION_ROOT" ]; then
     export ACTION_ROOT=$SNAP_ROOT/hardware/action_examples/hdl_example
@@ -102,8 +100,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   echo "=====SNAP simulation variables========================="
   if [ ! -d "$PSLSE_ROOT" ]; then
-    export PSLSE_ROOT=$SNAP_ROOT/../pslse                          # used with git clone https://github.com/ibm-capi/pslse     $PSLSE_ROOT
-    echo "Setting PSLSE_ROOT             to  \"$PSLSE_ROOT\""
+    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set, please git clone https://github.com/ibm-capi/pslse $PSLSE_ROOT"
   else
     echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
   fi
@@ -119,7 +116,7 @@ while [ -z "$SETUP_DONE" ]; do
   echo "=====SNAP function variables==========================="
   if [ -z "$NUM_OF_ACTIONS" ]; then
     export NUM_OF_ACTIONS=1
-    echo "Setting NUM_OF_ACTIONS         to  \"$NUM_OF_ACTIONS\""
+    echo "Setting NUM_OF_ACTIONS         to: \"$NUM_OF_ACTIONS\""
   else
     echo "NUM_OF_ACTIONS          is set to: \"$NUM_OF_ACTIONS\""
   fi
@@ -142,17 +139,17 @@ while [ -z "$SETUP_DONE" ]; do
   fi
   if [ -z "$ILA_DEBUG" ]; then
     export ILA_DEBUG="FALSE"
-    echo "Setting ILA_DEBUG              to  \"ILA_DEBUG\""
+    echo "Setting ILA_DEBUG              to: \"ILA_DEBUG\""
   else
     echo "ILA_DEBUG               is set to: \"$ILA_DEBUG\""
   fi
 
   ####### Cadence simulation setup:
-  if [ "$SIMULATOR" == "ncsim" ] || [ "$SIMULATOR" == "irun" ]; then
+  if [ "$SIMULATOR" == "irun" ]; then
     echo "=====Cadence simulation setup=========================="
 
     if [ -z `which ncsim 2> /dev/null` ]; then
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to ncsim not set Cadence simulation won't work"
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to ncsim not set, Cadence simulation won't work"
     else
       echo "Path to ncsim           is set to: \"`which ncsim`\""
       # checking version
@@ -174,12 +171,12 @@ while [ -z "$SETUP_DONE" ]; do
     fi
   fi
 
-  if [ -z "$DENALI_ROOT" ]; then
+  if [ -z "$DENALI" ]; then
     if [[ $NVME_USED = "TRUE" ]]; then
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of NVME_USED=$NVME_USED but DENALI_ROOT not set!"
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of NVME_USED=$NVME_USED but DENALI not set!"
     fi
   else
-    echo "DENALI_ROOT             is set to: \"$DENALI_ROOT\""
+    echo "DENALI                  is set to: \"$DENALI\""
   fi
 
   if [ ! -z "$SETUP_WARNING" ]; then
