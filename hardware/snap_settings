@@ -93,7 +93,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ -z "$ACTION_ROOT" ]; then
     export ACTION_ROOT=$SNAP_ROOT/hardware/action_examples/hdl_example
-    echo "ACTION_ROOT                    to: \"$ACTION_ROOT\""
+    echo "Setting ACTION_ROOT            to: \"$ACTION_ROOT\""
   else
     echo "ACTION_ROOT             is set to: \"$ACTION_ROOT\""
   fi
