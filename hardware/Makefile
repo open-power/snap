@@ -163,7 +163,7 @@ patch_NVMe:
 	fi	
  
 copy_denali:
-	@if [[ -e "$(DENALI_TMP" && $(NVME_USED) = "TRUE" ]]; then \
+	@if [[ -e "$(DENALI_TMP)" && $(NVME_USED) = "TRUE" ]]; then \
                 cp $(DENALI_TMP)/*  $(SNAP_HARDWARE_ROOT)/sim/nvme/. ;  \
                 echo  -e "\t                       NVMe: denali files"; \
         fi

@@ -86,9 +86,9 @@ while [ -z "$SETUP_DONE" ]; do
   echo "=====SNAP PATH variables==============================="
   if [ -z "$SNAP_ROOT" ]; then
     export SNAP_ROOT=$snapdir
-    echo "SNAP_ROOT               is set to: \"$snapdir\""
+    echo "Setting SNAP_ROOT              to: \"$snapdir\""
   else
-    echo "Setting SNAP_ROOT              to: \"$SNAP_ROOT\""
+    echo "SNAP_ROOT               is set to: \"$SNAP_ROOT\""
   fi
 
   if [ -z "$ACTION_ROOT" ]; then
@@ -130,7 +130,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ -z "$NVME_USED" ]; then
     export NVME_USED="FALSE"
-    echo "Setting NVME_USED              to:  \"FALSE\""
+    echo "Setting NVME_USED              to: \"FALSE\""
   else
     echo "NVME_USED               is set to: \"$NVME_USED\""
     if [[ $NVME_USED = "TRUE"  && $FPGACARD = "KU3" ]]; then
