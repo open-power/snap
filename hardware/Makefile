@@ -22,16 +22,19 @@
 export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
 export BUILD_DIR=$(SNAP_HARDWARE_ROOT)/build
 export SNAP_HDL_CORE=$(SNAP_HARDWARE_ROOT)/hdl/core
+export SNAP_HDL_HLS=$(SNAP_HARDWARE_ROOT)/hdl/hls
 export SNAP_SIM_CORE=$(SNAP_HARDWARE_ROOT)/sim/core
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 
 SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
 		  $(SNAP_HDL_CORE)/psl_accel.vhd \
 		  $(SNAP_HDL_CORE)/psl_accel_types.vhd \
-		  $(SNAP_HDL_CORE)/mmio.vhd \
-		  $(SNAP_SIM_CORE)/top.sv \
 		  $(SNAP_HDL_CORE)/snap_core.vhd \
-		  $(SNAP_HDL_CORE)/snap_core_types.vhd
+		  $(SNAP_HDL_CORE)/snap_core_types.vhd \
+		  $(SNAP_HDL_CORE)/mmio.vhd \
+		  $(SNAP_HDL_HLS)/action_wrapper.vhd \
+		  $(SNAP_SIM_CORE)/top.sv
+
 
 ifeq "$(FPGACARD)" "KU3"
   export DDR3_USED=$(SDRAM_USED)
