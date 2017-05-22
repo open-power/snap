@@ -84,7 +84,7 @@ function detect_ku3_cards() {
 			continue
 		fi
 		device=`cat /sys/class/cxl/card${card}/afu${card}.0/cr0/device`
-		if [ $device = 0xcafe ]; then
+		if [ $device = 0x0632 ]; then
 			echo -n "${card} "
 		fi
 	done
