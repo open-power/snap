@@ -31,10 +31,10 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include <snap_tools.h>
 #include <libsnap.h>
-#include <action_search.h>
+#include <snap_tools.h>
 #include <snap_hls_if.h>
+#include <snap_search.h>
 
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
@@ -443,7 +443,8 @@ int main(int argc, char *argv[])
 			    pbuff, psize,
 			    method, step);
 
-        printf("INITIALIZATION : move %d bytes from Host mem to DDR\n", (int) dsize);
+        printf("INITIALIZATION : move %d bytes from Host mem to DDR\n",
+	       (int) dsize);
        	rc = run_one_step(action, &cjob, timeout, step);
 	if (rc != 0)
 		goto out_error3;

@@ -33,13 +33,10 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include <snap_tools.h>
 #include <libsnap.h>
-#include <action_hashjoin.h>
+#include <snap_tools.h>
 #include <snap_s_regs.h>
-
-#define ACTION_REDAY_IRQ        4
-#define	HLS_HASH_JOIN_ID	0x10141002
+#include <snap_hashjoin.h>
 
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
@@ -182,8 +179,6 @@ static void snap_prepare_hashjoin(struct snap_job *cjob,
 	jin->t1_processed = 0;
 	jin->t2_processed = 0;
 	jin->t3_produced = 0;
-	jin->rc = 0;
-	jin->action_version = 0;
 
 	snap_job_set(cjob, jin, sizeof(*jin), jout, sizeof(*jout));
 }
@@ -351,7 +346,7 @@ int main(int argc, char *argv[])
 			goto out_error2;
 		}
 
-		if (verbose_flag || (jout.rc == 0))
+		if (verbose_flag)
 			table3_dump(t3, jout.t3_produced);
 
 		t1_entries = 0; /* no need to process this twice,
@@ -361,11 +356,8 @@ int main(int argc, char *argv[])
 	snap_detach_action((void*)action);
 	gettimeofday(&etime, NULL);
 
-	fprintf(stderr, "Action version: %llx\n"
-		"ReturnCode: %lld\n"
-		"HashJoin took %lld usec\n",
-		(long long)jout.action_version,
-		(long long)jout.rc,
+	fprintf(stderr, "ReturnCode: %x\n"
+		"HashJoin took %lld usec\n", cjob.retc,
 		(long long)timediff_usec(&etime, &stime));
 
 	snap_detach_action(action);

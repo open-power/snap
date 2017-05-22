@@ -17,8 +17,14 @@
  * limitations under the License.
  */
 
-#include <stdint.h>
-#include <libsnap.h>
+#include <snap_types.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define CHECKSUM_ACTION_TYPE 0x10141001
+#define RELEASE_LEVEL        0x00000020 
 
 typedef enum {
 	CHECKSUM_CRC32 = 0x0,
@@ -27,19 +33,20 @@ typedef enum {
 	CHECKSUM_MODE_MAX = 0x3,
 } checksum_mode_t;
 
-#define CHECKSUM_ACTION_TYPE	0x0006
-
-struct checksum_job {
-	struct snap_addr in;	/* input data */
-	uint64_t chk_type;	/* in:  CRC32, ADDLER32 */
+typedef struct checksum_job {
+	struct snap_addr in;	/* in:  input data */
 	uint64_t chk_in;	/* in:  checksum input */
 	uint64_t chk_out;	/* out: checksum output */
+	uint32_t chk_type;	/* in:  CRC32, ADDLER32 */
 	uint32_t pe;		/* in:  special parameter for sponge */
 	uint32_t nb_pe;		/* in:  special parameter for sponge */
 	uint32_t nb_slices;     /* out: special parameter for sponge */
 	uint32_t nb_round;      /* out: special parameter for sponge */
-	uint64_t timer_ticks;   /* out: timer ticks in FPGA timer frequency */
-	uint64_t action_version;/* out: action version info */
-};
+	uint32_t reserved;      /* make 8 byte aligned */
+} checksum_job_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* __ACTION_CHECKSUM_H__ */

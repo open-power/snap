@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, International Business Machines
+ * Copyright 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,12 +41,12 @@ short write_burst_of_data_to_mem(snap_membus_t *dout_gmem,
 {
 	short rc;
 	switch (memory_type) {
-	case HOST_DRAM:
+	case SNAP_ADDRTYPE_HOST_DRAM:
 		memcpy((snap_membus_t  *) (dout_gmem + output_address),
 		       buffer, size_in_bytes_to_transfer);
        		rc =  0;
 		break;
-	case CARD_DRAM:
+	case SNAP_ADDRTYPE_CARD_DRAM:
 		memcpy((snap_membus_t  *) (d_ddrmem + output_address),
 		       buffer, size_in_bytes_to_transfer);
        		rc =  0;
@@ -69,12 +69,12 @@ short read_burst_of_data_from_mem(snap_membus_t *din_gmem,
 	short rc;
 
 	switch (memory_type) {
-	case HOST_DRAM:
+	case SNAP_ADDRTYPE_HOST_DRAM:
 		memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
 		       size_in_bytes_to_transfer);
        		rc =  0;
 		break;
-	case CARD_DRAM:
+	case SNAP_ADDRTYPE_CARD_DRAM:
 		memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address),
 		       size_in_bytes_to_transfer);
        		rc =  0;
@@ -92,34 +92,35 @@ short read_burst_of_data_from_mem(snap_membus_t *din_gmem,
 static void process_action(snap_membus_t *din_gmem,
                            snap_membus_t *dout_gmem,
                            snap_membus_t *d_ddrmem,
-                           action_reg *Action_Register)
+                           action_reg *act_reg)
 {
-
 	// VARIABLES
 	snapu32_t xfer_size;
 	snapu32_t action_xfer_size;
 	snapu32_t nb_blocks_to_xfer;
 	snapu16_t i;
 	short rc = 0;
-	snapu32_t   ReturnCode;
-	snapu64_t   InputAddress;
-	snapu64_t   OutputAddress;
-	snapu64_t   address_xfer_offset;
-	snap_membus_t  buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];   // if 4096 bytes max => 64 words
-
+	snapu32_t ReturnCode = SNAP_RETC_SUCCESS;
+	snapu64_t InputAddress;
+	snapu64_t OutputAddress;
+	snapu64_t address_xfer_offset;
+	snap_membus_t  buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];
+	// if 4096 bytes max => 64 words
 
 	// byte address received need to be aligned with port width
-	InputAddress = (Action_Register->Data.in.address)   >> ADDR_RIGHT_SHIFT;
-	OutputAddress = (Action_Register->Data.out.address) >> ADDR_RIGHT_SHIFT;
-
-	ReturnCode = RET_CODE_OK;
+	InputAddress = (act_reg->Data.in.addr)   >> ADDR_RIGHT_SHIFT;
+	OutputAddress = (act_reg->Data.out.addr) >> ADDR_RIGHT_SHIFT;
 
 	address_xfer_offset = 0x0;
 	// testing sizes to prevent from writing out of bounds
-	action_xfer_size = MIN(Action_Register->Data.in.size, Action_Register->Data.out.size);
-	if (Action_Register->Data.in.type == CARD_DRAM and Action_Register->Data.in.size > CARD_DRAM_SIZE)
+	action_xfer_size = MIN(act_reg->Data.in.size,
+			       act_reg->Data.out.size);
+
+	if (act_reg->Data.in.type == SNAP_ADDRTYPE_CARD_DRAM and
+	    act_reg->Data.in.size > CARD_DRAM_SIZE)
 		rc = 1;
-	if (Action_Register->Data.out.type == CARD_DRAM and Action_Register->Data.out.size > CARD_DRAM_SIZE)
+	if (act_reg->Data.out.type == SNAP_ADDRTYPE_CARD_DRAM and
+	    act_reg->Data.out.size > CARD_DRAM_SIZE)
 		rc = 1;
 
 	// buffer size is hardware limited by MAX_NB_OF_BYTES_READ
@@ -128,13 +129,18 @@ static void process_action(snap_membus_t *din_gmem,
 	// transferring buffers one after the other
 	L0:
 	for ( i = 0; i < nb_blocks_to_xfer; i++ ) {
-		//#pragma HLS UNROLL // cannot completely unroll a loop with a variable trip count
-		xfer_size = MIN(action_xfer_size, (snapu32_t) MAX_NB_OF_BYTES_READ);
+		//#pragma HLS UNROLL
+		// cannot completely unroll a loop with a variable trip count
 
-		rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, Action_Register->Data.in.type,
+		xfer_size = MIN(action_xfer_size,
+				(snapu32_t)MAX_NB_OF_BYTES_READ);
+
+		rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem,
+						  act_reg->Data.in.type,
 			InputAddress + address_xfer_offset, buf_gmem, xfer_size);
 
-		rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem, Action_Register->Data.out.type,
+		rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem,
+						 act_reg->Data.out.type,
 			OutputAddress + address_xfer_offset, buf_gmem, xfer_size);
 
 		action_xfer_size -= xfer_size;
@@ -142,8 +148,9 @@ static void process_action(snap_membus_t *din_gmem,
 	} // end of L0 loop
 
 	if (rc != 0)
-		ReturnCode = RET_CODE_FAILURE;
-	Action_Register->Control.Retc = (snapu32_t)ReturnCode;
+		ReturnCode = SNAP_RETC_FAILURE;
+
+	act_reg->Control.Retc = ReturnCode;
 	return;
 }
 
@@ -151,7 +158,7 @@ static void process_action(snap_membus_t *din_gmem,
 void hls_action(snap_membus_t *din_gmem,
 		snap_membus_t *dout_gmem,
 		snap_membus_t *d_ddrmem,
-		action_reg *Action_Register,
+		action_reg *act_reg,
 		action_RO_config_reg *Action_Config)
 {
 	// Host Memory AXI Interface
@@ -167,23 +174,23 @@ void hls_action(snap_membus_t *din_gmem,
 	// Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Config
 #pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg offset=0x010
-#pragma HLS DATA_PACK variable=Action_Register
-#pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg offset=0x100
+#pragma HLS DATA_PACK variable=act_reg
+#pragma HLS INTERFACE s_axilite port=act_reg bundle=ctrl_reg offset=0x100
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
 	/* Required Action Type Detection */
 	// 	NOTE: switch generates better vhdl than "if" */
 	// Test used to exit the action if no parameter has been set.
  	// Used for the discovery phase of the cards */
-	switch (Action_Register->Control.flags) {
+	switch (act_reg->Control.flags) {
 	case 0:
-		Action_Config->action_type   = (snapu32_t)MEMCOPY_ACTION_TYPE;
-		Action_Config->release_level = (snapu32_t)RELEASE_LEVEL;
-		Action_Register->Control.Retc = (snapu32_t)0xe00f;
+		Action_Config->action_type = MEMCOPY_ACTION_TYPE;
+		Action_Config->release_level = RELEASE_LEVEL;
+		act_reg->Control.Retc = 0xe00f;
 		return;
 		break;
 	default:
-        	process_action(din_gmem, dout_gmem, d_ddrmem, Action_Register);
+        	process_action(din_gmem, dout_gmem, d_ddrmem, act_reg);
 		break;
 	}
 }
@@ -216,19 +223,19 @@ int main(void)
     snap_membus_t  din_gmem[2048];
     snap_membus_t  dout_gmem[2048];
     snap_membus_t  d_ddrmem[2048];
-    action_reg Action_Register;
+    action_reg act_reg;
     action_RO_config_reg Action_Config;
 
     /* Query ACTION_TYPE ... */
-    Action_Register.Control.flags = 0x0;
-    hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
+    act_reg.Control.flags = 0x0;
+    hls_action(din_gmem, dout_gmem, d_ddrmem, &act_reg, &Action_Config);
     fprintf(stderr,
 	    "ACTION_TYPE:   %08x\n"
 	    "RELEASE_LEVEL: %08x\n"
 	    "RETC:          %04x\n",
 	    (unsigned int)Action_Config.action_type,
 	    (unsigned int)Action_Config.release_level,
-	    (unsigned int)Action_Register.Control.Retc);
+	    (unsigned int)act_reg.Control.Retc);
 
     char word_tmp[BPERDW];
     FILE *fp;
@@ -260,16 +267,18 @@ int main(void)
     fclose(fp);
 
     
-    Action_Register.Control.flags = 0x1; /* just not 0x0 */
-    Action_Register.Data.in.address = 0x0;
-    Action_Register.Data.in.size = 128;
-    Action_Register.Data.in.type = HOST_DRAM;
-    Action_Register.Data.out.address = 256;
-    Action_Register.Data.out.size = 128;
-    Action_Register.Data.out.type = HOST_DRAM;
+    act_reg.Control.flags = 0x1; /* just not 0x0 */
 
-    hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
-    if (Action_Register.Control.Retc == RET_CODE_FAILURE) {
+    act_reg.Data.in.address = 0x0;
+    act_reg.Data.in.size = 128;
+    act_reg.Data.in.type = SNAP_ADDRTYPE_HOST_DRAM;
+
+    act_reg.Data.out.address = 256;
+    act_reg.Data.out.size = 128;
+    act_reg.Data.out.type = SNAP_ADDRTYPE_HOST_DRAM;
+
+    hls_action(din_gmem, dout_gmem, d_ddrmem, &act_reg, &Action_Config);
+    if (act_reg.Control.Retc == SNAP_RETC_FAILURE) {
 	    fprintf(stderr, " ==> RETURN CODE FAILURE <==\n");
 	    return 1;
     }

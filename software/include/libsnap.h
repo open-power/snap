@@ -19,6 +19,7 @@
  */
 
 #include <stdint.h>
+#include <snap_types.h>
 
 /**
  * During the workshop we discovered that there are two potential
@@ -104,46 +105,6 @@ typedef uint32_t snap_action_type_t; /* long action type identifies the action *
 /**********************************************************************
  * SNAP Job Definition
  *********************************************************************/
-
-/* Standardized, non-zero return codes to be expected from FPGA actions */
-#define SNAP_RETC_SUCCESS		0x0102
-#define SNAP_RETC_FAILURE		0x0104
-
-/* FIXME Constants are too long, I like to type less */
-#define SNAP_ADDRTYPE_UNUSED		0xffff
-#define SNAP_ADDRTYPE_HOST_DRAM		0x0000 /* this is fine, always there */
-#define SNAP_ADDRTYPE_CARD_DRAM		0x0001 /* card specific */
-#define SNAP_ADDRTYPE_NVME		0x0002 /* card specific */
-#define SNAP_ADDRTYPE_zzz		0x0003 /* ? */
-
-#define SNAP_ADDRFLAG_END		0x0001 /* last element in the list */
-#define SNAP_ADDRFLAG_ADDR		0x0002 /* this one is an address */
-#define SNAP_ADDRFLAG_DATA		0x0004 /* 64-bit address */
-#define SNAP_ADDRFLAG_EXT		0x0008 /* reserved for extension */
-#define SNAP_ADDRFLAG_SRC		0x0010 /* data source */
-#define SNAP_ADDRFLAG_DST		0x0020 /* data destination */
-
-typedef uint16_t snap_addrtype_t;
-typedef uint16_t snap_addrflag_t;
-
-typedef struct snap_addr {
-        uint64_t addr;
-        uint32_t size;
-        snap_addrtype_t type;		/* DRAM, NVME, ... */
-        snap_addrflag_t flags;		/* SRC, DST, EXT, ... */
-} *snap_addr_t;				/* 16 bytes */
-
-static inline void snap_addr_set(struct snap_addr *da,
-				 const void *addr,
-				 uint32_t size,
-				 snap_addrtype_t type,
-				 snap_addrflag_t flags)
-{
-        da->addr = (unsigned long)addr;
-        da->size = size;
-        da->type = type;
-        da->flags = flags;
-}
 
 /**
  * SNAP Job description
@@ -488,4 +449,4 @@ int snap_async_execute_job(struct snap_queue *queue,
 }
 #endif
 
-#endif /*__LIBSNAP_H__ */
+#endif /* __LIBSNAP_H__ */

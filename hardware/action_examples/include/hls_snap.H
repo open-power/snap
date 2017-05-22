@@ -52,50 +52,26 @@
 #define BPERDW (MEMDW/8)   // Bytes per Data Word    if MEMDW=512 => BPERDW = 64
 #define WPERDW (64/BPERDW) // Number of words per DW if MEMDW=512 => WPERDW =  1
 #define ADDR_RIGHT_SHIFT 6
+#define SNAP_HLS_JOBSIZE 108
 
-typedef ap_uint<MEMDW>     snap_membus_t;  /* snap memory access */
-typedef ap_uint<64>        snapu64_t;
-typedef ap_uint<32>        snapu32_t;
-typedef ap_uint<16>        snapu16_t;
-typedef ap_uint<8>         snapu8_t;
-typedef ap_uint<1>         snap_bool_t;
-
-/* enum definitions should stay in sync with include/libdonut.h */
-enum {
-	RET_CODE_OK      = 0x00000102,
-	RET_CODE_FAILURE = 0x00000104,
-
-	HOST_DRAM        = 0x0000, /* this is fine, always there */
-	CARD_DRAM        = 0x0001, /* card specific */
-	NVME             = 0x0002, /* card specific */
-	UNUSED_MEM       = 0xFFFF,
-
-	F_END            = 0x0001, /* last element in the list */
-	F_ADDR           = 0x0002, /* this one is an address */
-	F_DATA           = 0x0004, /* 64-bit address */
-	F_EXT            = 0x0008, /* reserved for extension */
-	F_SOURCE         = 0x0010, /* data source */
-	F_DEST           = 0x0020  /* data destination */
-};
+typedef ap_uint<MEMDW> snap_membus_t;  /* snap memory access */
+typedef ap_uint<64> snapu64_t;
+typedef ap_uint<32> snapu32_t;
+typedef ap_uint<16> snapu16_t;
+typedef ap_uint<8> snapu8_t;
+typedef ap_uint<1> snap_bool_t;
 
 typedef struct {
-        snapu8_t  sat; // short action type
-        snapu8_t  flags;
+        snapu8_t sat; // short action type
+        snapu8_t flags;
         snapu16_t seq;
         snapu32_t Retc;
         snapu64_t Reserved; // Priv_data
 } CONTROL;
 
 typedef struct {
-        snapu64_t address;
-        snapu32_t size;
-        snapu16_t type;
-        snapu16_t flags;
-} dnut_addr; /* 128 bits = 16B */
-
-typedef struct {
-        snapu32_t   action_type; //   4 bytes
-        snapu32_t   release_level; //  4 bytes
+        snapu32_t action_type;   // 4 bytes
+        snapu32_t release_level; // 4 bytes
 } action_RO_config_reg;
 
 #endif  /* __HLS_SNAP_H__ */
