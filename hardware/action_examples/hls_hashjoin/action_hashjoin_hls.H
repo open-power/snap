@@ -21,40 +21,9 @@
 #include <string.h>
 #include <ap_int.h>
 #include <hls_stream.h>
-#include "hls_snap.H"
 
-#define HASHJOIN_ACTION_TYPE 0x10141002
-#define RELEASE_LEVEL        0x00000020
-
-typedef char hashkey_t[64];
-
-typedef struct table1_s {
-        hashkey_t name;             /* 64 bytes */
-        unsigned int age;           /*  4 bytes */
-        unsigned char reserved[60]; /* 64 bytes */
-} table1_t;
-
-typedef struct table2_s {
-        hashkey_t name;             /* 64 bytes */
-        hashkey_t animal;           /* 64 bytes */
-} table2_t;
-
-typedef struct table3_s {
-        hashkey_t animal;           /* 64 bytes */
-        hashkey_t name;             /* 64 bytes */
-        unsigned int age;           /*  4 bytes */
-        unsigned char reserved[60]; /* 60 bytes */
-} table3_t;
-
-typedef hls::stream<table1_t> t1_fifo_t; 
-typedef hls::stream<table2_t> t2_fifo_t; 
-typedef hls::stream<table3_t> t3_fifo_t; 
-
-#define TABLE1_SIZE    32                          /* build multihash from this */
-#define TABLE2_SIZE    32                          /* combine with table1 */
-#define TABLE3_SIZE    (TABLE1_SIZE * TABLE2_SIZE) /* worst case */
-#define HT_SIZE        (TABLE1_SIZE * 4)           /* size of hashtable */
-#define HT_MULTI       TABLE1_SIZE                 /* multihash */
+#include <hls_snap.H>
+#include <action_hashjoin.h>
 
 /* Define memory buffers to keep the data we read from CARD or HOST DRAM */
 #define TABLE1_BYTES         (sizeof(table1_t) * TABLE1_SIZE)
@@ -66,34 +35,15 @@ typedef hls::stream<table3_t> t3_fifo_t;
 #define TABLE1_MEMBUS_WORDS  (TABLE1_BYTES / sizeof(snap_membus_t))
 #define TABLE2_MEMBUS_WORDS  (TABLE2_BYTES / sizeof(snap_membus_t))
 
-typedef struct entry_s {
-        hashkey_t key;          /* key */
-        unsigned int used;      /* list entries used */
-        table1_t multi[HT_MULTI];/* fixed size */
-} entry_t;
-
-typedef struct hashtable_s {
-        entry_t table[HT_SIZE]; /* fixed size */
-} hashtable_t;
-
-/* Names of the fields can be changed by User. Should serve as a template */
-typedef struct {
-        dnut_addr t1; /* IN: input table1 for multihash : 128 bits*/
-        dnut_addr t2; /* IN: 2nd table2 to do join with : 128 bits*/
-        dnut_addr t3; /* OUT: resulting table3 : 128 bits*/
-        dnut_addr hash_table; /* CACHE: multihash table : 128 bits*/
-
-        snapu64_t t1_processed; /* #entries cached, repeat if not all */
-        snapu64_t t2_processed; /* #entries processed, repeat if not all */
-        snapu64_t t3_produced;  /* #entries produced store them away */
-        snapu64_t checkpoint;
-        ap_uint<96> unused; /* mandatory to keep output register at the right address*/
-} DATA_HJ; // DATA = 108 Bytes / 864 bits (fixed length)
+typedef hls::stream<table1_t> t1_fifo_t; 
+typedef hls::stream<table2_t> t2_fifo_t; 
+typedef hls::stream<table3_t> t3_fifo_t; 
 
 //---------------------------------------------------------------------
 typedef struct {
-        CONTROL Control;    //  16 bytes
-        DATA_HJ Data;       // 108 bytes
+	CONTROL Control;	/*  16 bytes */
+	hashjoin_job_t Data;	/* 108 bytes */
+	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(hashjoin_job_t)];
 } action_reg;
 
 void hashkey_cpy(hashkey_t dst, hashkey_t src);

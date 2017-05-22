@@ -32,13 +32,8 @@
 
 int verbose_flag = 0;
 
-#define	HLS_CHECKSUM_ID		0x10141001
-
 static const char *version = GIT_VERSION;
 static const char *checksum_mode_str[] = { "CRC32", "ADLER32", "SPONGE" };
-
-#define MMIO_DIN_DEFAULT	0x0ull
-#define MMIO_DOUT_DEFAULT	0x0ull
 
 /**
  * @brief	prints valid command line options
@@ -170,7 +165,6 @@ static int do_checksum(int card_no, unsigned long timeout,
 		       uint32_t pe, uint32_t nb_pe,
 		       uint64_t *_checksum,
 		       uint64_t *_usec,
-		       uint64_t *_timer_ticks,
 		       uint32_t *_nb_slices,
 		       uint32_t *_nb_round,
 		       FILE *fp,
@@ -191,11 +185,12 @@ static int do_checksum(int card_no, unsigned long timeout,
 		"  checksum_start: %016llx\n"
 		"  mode:     %08x %s\n"
 		"  pe:       %08x\n"
-		"  nb_pe:    %08x\n",
+		"  nb_pe:    %08x\n"
+		"  job_size: %ld bytes\n",
 		type_in, (long long)addr_in,
 		size, (long long)checksum_start, mode,
 		checksum_mode_str[mode % CHECKSUM_MODE_MAX],
-		pe, nb_pe);
+		pe, nb_pe, sizeof(struct checksum_job));
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
@@ -229,17 +224,13 @@ static int do_checksum(int card_no, unsigned long timeout,
 
 	fprintf(fp, "RETC=%x\n"
 		"CHECKSUM=%016llx\n"
-		"TIMERTICKS=%016llx\n"
 		"NB_SLICES=%d\n"
 		"NB_ROUND=%d\n"
-		"ACTION_VERSION=%016llx\n"
 		"%lld usec\n",
 		cjob.retc,
 		(long long)mjob_out.chk_out,
-		(long long)mjob_out.timer_ticks,
 		mjob_out.nb_slices,
 		mjob_out.nb_round,
-		(long long)mjob_out.action_version,
 		(long long)timediff_usec(&etime, &stime));
 
 	snap_detach_action(action);
@@ -249,8 +240,6 @@ static int do_checksum(int card_no, unsigned long timeout,
 		*_checksum = mjob_out.chk_out;
 	if (_usec)
 		*_usec = timediff_usec(&etime, &stime);
-	if (_timer_ticks)
-		*_timer_ticks = mjob_out.timer_ticks;
 	if (_nb_slices)
 		*_nb_slices = mjob_out.nb_slices;
 	if (_nb_round)
@@ -360,7 +349,6 @@ static int test_sponge(int card_no, int timeout, unsigned int threads,
 	unsigned int i;
 	uint64_t checksum = 0;
 	uint64_t usec = 0;
-	uint64_t timer_ticks = 0;
 	uint32_t nb_slices = 0, nb_round = 0;
 
 	fprintf(stderr, "SPONGE TESTCASE: ");
@@ -368,8 +356,7 @@ static int test_sponge(int card_no, int timeout, unsigned int threads,
 	/* Try to figure out nb_slices and nb_round */
 	rc = do_checksum(card_no, timeout, threads, 0, 0, 0, 0,
 			 CHECKSUM_SPONGE, 0, 0, &checksum, &usec,
-			 &timer_ticks, &nb_slices, &nb_round,
-			 fp, action_irq);
+			 &nb_slices, &nb_round, fp, action_irq);
 	if (rc != 0) {
 		fprintf(stderr, "err: sponge rc=%d FAILED\n", rc);
 		return rc;
@@ -384,8 +371,8 @@ static int test_sponge(int card_no, int timeout, unsigned int threads,
 
 		rc = do_checksum(card_no, timeout, threads, 0, 0, 0, 0,
 				 CHECKSUM_SPONGE, t->pe, t->nb_pe,
-				 &checksum, &usec, &timer_ticks,
-				 &nb_slices, &nb_round, fp, action_irq);
+				 &checksum, &usec, &nb_slices, &nb_round, fp,
+				 action_irq);
 		if (rc != 0) {
 			fprintf(stderr, "err: sponge rc=%d FAILED\n", rc);
 			break;
@@ -404,11 +391,10 @@ static int test_sponge(int card_no, int timeout, unsigned int threads,
 				nb_slices, nb_round);
 
 		fprintf(stderr, "  pe = %5d nb_pe = %5d ... ", t->pe, t->nb_pe);
-		fprintf(stderr, "checksum = %016llx executed = %4d %4lld ticks "
+		fprintf(stderr, "checksum = %016llx executed = %4d "
 			"%8lld usec OK\n",
 			(long long)checksum,
 			executed_slices(t->pe, t->nb_pe, t->nb_slices),
-			(long long)timer_ticks,
 			(long long)usec);
 
 	}
@@ -585,7 +571,7 @@ int main(int argc, char *argv[])
 	} else {
 		rc = do_checksum(card_no, timeout, threads, addr_in,
 				 type_in, size, checksum_start, mode,
-				 pe, nb_pe, NULL, NULL, NULL, NULL,
+				 pe, nb_pe, NULL, NULL, NULL,
 				 NULL, stderr, action_irq);
 		if (rc != 0)
 			goto out_error1;

@@ -41,7 +41,7 @@ $(syn_dir): $(srcs) run_hls_script.tcl
 
 # Create symlink for simpler access
 vhdl verilog systemc report:
-	ln -sf $(syn_dir)/$@ $@
+	@ln -sf $(syn_dir)/$@ $@
 
 run_hls_script.tcl:
 	../create_run_hls_script.sh	\
@@ -61,11 +61,18 @@ $(SOLUTION_NAME): $(objs)
 #      if they occur. Rather than challenging our luck.
 #
 # Check for critical warnings and exit if those occur. Add more if needed.
+# Check for reserved HLS MMIO reg at offset 0x17c.
 # Check for register duplication (0x184/Action_Output_o).
 #
 check: $(symlinks)
+	@echo -n "Checking for critical warnings during HLS synthesis ... "
 	@grep -A8 critical $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ; \
 		test $$? = 1
+	@echo "OK"
+	@echo -n "Checking for reserved MMIO area during HLS synthesis ... "
+	@grep -A8 0x17c vhdl/$(WRAPPER)_ctrl_reg_s_axi.vhd | grep reserved > \
+		/dev/null; test $$? = 0
+	@echo "OK"
 #	@grep -A8 0x184 vhdl/$(WRAPPER)_ctrl_reg_s_axi.vhd ; \
 #		test $$? = 1
 

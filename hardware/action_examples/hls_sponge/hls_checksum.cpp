@@ -180,12 +180,10 @@ uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
  */
 static void write_results(action_reg *Action_Register,
 			  snapu32_t ReturnCode,
-			  snapu64_t chk_out,
-			  snapu64_t timer_ticks)
+			  snapu64_t chk_out)
 {
 	Action_Register->Control.Retc = ReturnCode;
 	Action_Register->Data.chk_out = chk_out;
-	Action_Register->Data.timer_ticks = timer_ticks;
 }
 
 //-----------------------------------------------------------------------------
@@ -201,24 +199,22 @@ static void process_action(snap_membus_t *din_gmem,
 	uint64_t checksum = 0;
 	uint32_t slice = 0;
 	uint32_t pe, nb_pe;
-	uint64_t timer_ticks = 42;
         char j;
 
 	pe = Action_Register->Data.pe;
 	nb_pe = Action_Register->Data.nb_pe;
 
 	/* Intermediate result display */
-	write_results(Action_Register, RET_CODE_OK,
-		      checksum, timer_ticks);
+	write_results(Action_Register, SNAP_RETC_SUCCESS, checksum);
 
 	/*
 	 * Dividing (see below) through nb_pe is not good. We use this
 	 * to probe for NB_SLICE and NB_ROUNDS, which are returned in
-	 * this case. Therefore we return RET_CODE_OK in this special
+	 * this case. Therefore we return SNAP_RETC_SUCCESS in this special
 	 * situation.
 	 */
 	if (nb_pe == 0) {
-		write_results(Action_Register, RET_CODE_OK, 0, 0);
+		write_results(Action_Register, SNAP_RETC_SUCCESS, 0);
 		return;
 	}
 
@@ -241,15 +237,10 @@ static void process_action(snap_membus_t *din_gmem,
                 for (j = 0; j < CHANNELS; j++)
 #pragma HLS UNROLL
                         checksum ^= sponge(slice + j*NB_SLICES/CHANNELS, pe, nb_pe);
-
-		/* Intermediate result display */
-		write_results(Action_Register, RET_CODE_OK,
-			      0xfffffffffffffffful, slice);
 	}
 
 	/* Final output register writes */
-	write_results(Action_Register, RET_CODE_OK,
-		      checksum, timer_ticks);
+	write_results(Action_Register, SNAP_RETC_SUCCESS, checksum);
 }
 
 //--- TOP LEVEL MODULE -------------------------------------------------
@@ -286,9 +277,9 @@ void hls_action(snap_membus_t *din_gmem,
 	/* Hardcoded numbers */
         switch (Action_Register->Control.flags) {
         case 0:
-		Action_Config->action_type   = (snapu32_t) SPONGE_ACTION_TYPE;
-		Action_Config->release_level = (snapu32_t) RELEASE_LEVEL;
-                Action_Register->Control.Retc = (snapu32_t)0xe00f;
+		Action_Config->action_type = CHECKSUM_ACTION_TYPE;
+		Action_Config->release_level = RELEASE_LEVEL;
+                Action_Register->Control.Retc = SNAP_RETC_SUCCESS;
                 return;
                 break;
         default:
@@ -352,7 +343,7 @@ int main(void)
 		hls_action(din_gmem, dout_gmem, d_ddrmem,
 				    &Action_Register, &Action_Config);
 
-		if (Action_Register.Control.Retc == RET_CODE_FAILURE) {
+		if (Action_Register.Control.Retc == SNAP_RETC_FAILURE) {
 					printf(" ==> RETURN CODE FAILURE <==\n");
 					return 1;
 		}

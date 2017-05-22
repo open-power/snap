@@ -470,7 +470,6 @@ static int action_main(struct snap_sim_action *action, void *job,
 		threads = js->nb_slices; /* misused for sw sim */
 		js->nb_slices = NB_SLICES;
 		js->nb_round = NB_ROUND;
-		js->timer_ticks = 0; /* FIXME */
 
 		if (js->nb_pe == 0)
 			return 0;
