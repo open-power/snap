@@ -219,7 +219,7 @@ static inline void snap_job_set(struct snap_job *djob,
 #define SNAP_VENDOR_ID_ANY	0xffff
 #define SNAP_DEVICE_ID_ANY	0xffff
 #define SNAP_VENDOR_ID_IBM	0x1014
-#define SNAP_DEVICE_ID_SNAP	0xcafe /* FIXME: Need officially assigned val */
+#define SNAP_DEVICE_ID_SNAP	0x0632 /* Assigned for SNAP framework  */
 
 /*
  * Opens the device given by the path. Checks if the given vendor and device
