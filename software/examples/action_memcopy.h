@@ -28,7 +28,6 @@ extern "C" {
 typedef struct memcopy_job {
 	struct snap_addr in;	/* input data */
 	struct snap_addr out;   /* offset table */
-	uint8_t reserved[SNAP_JOBSIZE - 2 * sizeof(struct snap_addr)];
 } memcopy_job_t;
 
 #ifdef __cplusplus

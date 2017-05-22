@@ -42,7 +42,7 @@ typedef struct checksum_job {
 	uint32_t nb_pe;		/* in:  special parameter for sponge */
 	uint32_t nb_slices;     /* out: special parameter for sponge */
 	uint32_t nb_round;      /* out: special parameter for sponge */
-        /* uint8_t unused[8]; */ /* mandatory to keep outreg at the right addr */
+	uint32_t reserved;      /* make 8 byte aligned */
 } checksum_job_t;
 
 #ifdef __cplusplus

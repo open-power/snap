@@ -24,6 +24,7 @@
 typedef struct {
         CONTROL Control;       /*  16 bytes */
         checksum_job_t Data;   /* 108 bytes */
+	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(checksum_job_t)];
 } action_reg;
 
 void cast_uint8_to_uint64_W8(uint8_t st_in[64], uint64_t st_out[8]);

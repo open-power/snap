@@ -41,8 +41,9 @@ typedef hls::stream<table3_t> t3_fifo_t;
 
 //---------------------------------------------------------------------
 typedef struct {
-        CONTROL Control;       /*  16 bytes */
-        hashjoin_job_t Data;   /* 108 bytes */
+	CONTROL Control;	/*  16 bytes */
+	hashjoin_job_t Data;	/* 108 bytes */
+	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(hashjoin_job_t)];
 } action_reg;
 
 void hashkey_cpy(hashkey_t dst, hashkey_t src);

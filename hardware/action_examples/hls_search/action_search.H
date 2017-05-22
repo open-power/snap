@@ -42,6 +42,7 @@ typedef snapu64_t address_t;
 typedef struct {
         CONTROL Control;       /*  16 bytes */
         search_job_t Data;     /* 108 Bytes */
+	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(search_job_t)];
 } action_reg;
 
 int Naive_search (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);

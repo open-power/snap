@@ -24,6 +24,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <assert.h>
 
 #include <snap_tools.h>
 #include <action_memcopy.h>
@@ -72,6 +73,11 @@ static void snap_prepare_memcopy(struct snap_job *cjob,
 				 uint32_t size_out,
 				 uint8_t type_out)
 {
+	fprintf(stderr, "  prepare memcopy job of %ld bytes size\n", sizeof(*mjob));
+
+	assert(sizeof(*mjob) <= SNAP_JOBSIZE);
+	memset(mjob, 0, sizeof(*mjob));
+
 	snap_addr_set(&mjob->in, addr_in, size_in, type_in,
 		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 	snap_addr_set(&mjob->out, addr_out, size_out, type_out,
@@ -257,7 +263,7 @@ int main(int argc, char *argv[])
 	       "  addr_in:     %016llx\n"
 	       "  type_out:    %x %s\n"
 	       "  addr_out:    %016llx\n"
-	       "  size_in/out: %08lx\n"
+	       "  size_in/out: %08lx/\n"
 	       "  mode:        %08x\n",
 	       input  ? input  : "unknown",
 	       output ? output : "unknown",
@@ -284,6 +290,8 @@ int main(int argc, char *argv[])
 	snap_prepare_memcopy(&cjob, &mjob,
 			     (void *)addr_in,  size, type_in,
 			     (void *)addr_out, size, type_out);
+
+	__hexdump(stderr, &mjob, sizeof(mjob));
 
 	gettimeofday(&stime, NULL);
 	rc = snap_action_sync_execute_job(action, &cjob, timeout);

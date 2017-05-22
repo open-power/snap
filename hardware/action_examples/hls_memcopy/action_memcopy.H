@@ -24,17 +24,16 @@
 #include "hls_snap.H"
 #include <action_memcopy.h> /* Memcopy Job definition */
 
-#define RELEASE_LEVEL       0x00000020
-#define MAX_NB_OF_BYTES_READ  (4 * 1024)
-#define CARD_DRAM_SIZE (1 * 1024 *1024 * 1024)
-#define MAX_NB_OF_WORDS_READ MAX_NB_OF_BYTES_READ/BPERDW
+#define RELEASE_LEVEL		0x00000020
+#define MAX_NB_OF_BYTES_READ	(4 * 1024)
+#define CARD_DRAM_SIZE		(1 * 1024 *1024 * 1024)
+#define MAX_NB_OF_WORDS_READ	(MAX_NB_OF_BYTES_READ/BPERDW)
 
 //---------------------------------------------------------------------
 typedef struct {
-        CONTROL Control;       /*  16 bytes */
-	memcopy_job_t Data;    /* 108 bytes */
+	CONTROL Control;	/*  16 bytes */
+	memcopy_job_t Data;	/* 108 bytes */
+	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(memcopy_job_t)];
 } action_reg;
 
-#define CONFIG_HOSTSTYLE_ALGO
-
-#endif  /* __ACTION_MEMCOPY_H__ */
+#endif  /* __ACTION_HLS_MEMCOPY_H__ */

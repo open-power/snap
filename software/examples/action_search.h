@@ -46,7 +46,6 @@ typedef struct search_job {
         uint16_t method;
         uint32_t nb_of_occurrences;
         uint64_t next_input_addr;
-	/* uint8_t reserved[X]; */ /* Must be <= 96 bytes at the moment */
 } search_job_t;
 
 /* search method */
