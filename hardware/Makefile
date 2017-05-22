@@ -28,6 +28,7 @@ export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
 		  $(SNAP_HDL_CORE)/psl_accel.vhd \
 		  $(SNAP_HDL_CORE)/psl_accel_types.vhd \
+		  $(SNAP_HDL_CORE)/mmio.vhd \
 		  $(SNAP_SIM_CORE)/top.sv \
 		  $(SNAP_HDL_CORE)/snap_core.vhd \
 		  $(SNAP_HDL_CORE)/snap_core_types.vhd

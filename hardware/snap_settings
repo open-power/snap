@@ -80,7 +80,7 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
   if [ ! -f "$PSL_DCP" ]; then
-      echo "Setting PSL_DCP                to  \"$PSL_DCP\""
+      echo "Setting PSL_DCP                to: \"$PSL_DCP\""
   else
       echo "PSL_DCP                 is set to: \"$PSL_DCP\""
   fi
@@ -89,7 +89,7 @@ while [ -z "$SETUP_DONE" ]; do
   if [ "$SNAP_ROOT" = "$snapdir" ]; then
     echo "SNAP_ROOT               is set to: \"$SNAP_ROOT\""
   else
-    echo "Setting SNAP_ROOT              to  \"$snapdir\""
+    echo "Setting SNAP_ROOT              to: \"$snapdir\""
   fi
   export SNAP_ROOT=$snapdir
 
