@@ -16,78 +16,21 @@ To debug libsnap functionality or associated actions, there are currently some e
 - ***SNAP_CONFIG***: 0x1 Enable software action emulation for those actions which we use for trying out.
 - ***SNAP_TRACE***: 0x1 General libsnap trace, 0x2 Enable register read/write trace, 0x4 Enable simulation specific trace, 0x8 Enable action traces.
 
-Here a simple example for the action-assignment mode.
+## Directory Structure
 
-    #include <libsnap.h>
-
-    struct search_job {
-      struct snap_addr input;
-      struct snap_addr output;
-      struct snap_addr pattern;
-      uint64_t nb_of_occurrences;
-      uint64_t next_input_addr;
-    };
-
-    static void snap_prepare_search(struct snap_job *cjob,
-             struct search_job *sjob,
-             const uint8_t *dbuff, ssize_t dsize,
-             uint64_t *offs, unsigned int items,
-             const uint8_t *pbuff, unsigned int psize)
-    {
-      snap_addr_set(&sjob->input, dbuff, dsize,
-             SNAP_TARGET_TYPE_HOST_DRAM,
-             SNAP_TARGET_FLAGS_ADDR | DSNAPTARGET_FLAGS_SRC);
-      snap_addr_set(&sjob->output, offs, items * sizeof(*offs),
-             SNAP_TARGET_TYPE_HOST_DRAM,
-             SNAP_TARGET_FLAGS_ADDR | SNAP_TARGET_FLAGS_DST);
-      snap_addr_set(&sjob->pattern, pbuff, psize,
-             SNAP_TARGET_TYPE_HOST_DRAM,
-             SNAP_TARGET_FLAGS_ADDR | SNAP_TARGET_FLAGS_SRC |
-             SNAP_TARGET_FLAGS_END);
-
-      sjob->nb_of_occurrences = 0;
-      sjob->next_input_addr = 0;
-      snap_job_set(cjob, SEARCH_ACTION_TYPE, sjob, sizeof(*sjob));
-    }
-
-    int main(int argc, char *argv[])
-    {
-      struct snap_job cjob;
-      struct search_job sjob;
-      const char *pattern_str = "Snap";
-      dsize = file_size(fname);
-      dbuff = memalign(page_size, dsize);
-      psize = strlen(pattern_str);
-      pbuff = memalign(page_size, psize);
-      memcpy(pbuff, pattern_str, psize);
-
-      offs = memalign(page_size, items * sizeof(*offs));
-      file_read(fname, dbuff, dsize);
-
-      snap_prepare_search(&cjob, &sjob, dbuff, dsize,
-             offs, items, pbuff, psize);
-
-      snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
-      kernel = snap_kernel_attach_dev(device,  SNAP_VENDOR_ID_ANY,
-             SNAP_DEVICE_ID_ANY,
-             SEARCH_ACTION_TYPE);
-      run = 0;
-      do {
-        snap_kernel_sync_execute_job(kernel, &cjob, timeout);
-        if (cjob.retc != 0x0)
-          exit(EXIT_FAILURE);
-
-        snap_print_search_results(&cjob, run);
-
-        /* trigger repeat if search was not complete */
-        if (sjob.next_input_addr != 0x0) {
-          sjob.input.size -= (sjob.next_input_addr -
-                 sjob.input.addr);
-          sjob.input.addr = sjob.next_input_addr;
-        }
-        run++;
-      } while (sjob.next_input_addr != 0x0);
-
-      snap_kernel_free(kernel);
-      exit(EXIT_SUCCESS);
-    }
+    .
+    |-- examples       Contains host-code examples either for HDL or for HLS written SNAP actions
+    |                  action_*.h should define the SNAP job executed by the SNAP action. This file
+    |                  should only include <snap_types.h> and is shared with the HLS action
+    |                  implementation.
+    |                  action_*.c is a software written emulation of the SNAP action. This should
+    |                  be used to try out the job interface between host-code and SNAP action.
+    |-- include        libsnap.h and auxiliary C-headers
+    |                  snap_types.h contains shared data types and definitions between the host-code
+    |                  and HLS written SNAP actions
+    |-- lib            libsnap.so/.a
+    |-- scripts        Testcases
+    `-- tools          Generic tools for SNAP users.
+                       snap_maint setup tool which needs to be called once before using the card.
+                       Sets up the SNAP action assignment hardware.
+                       snap_peek/poke debug tools to read/write SNAP MMIO registers.
