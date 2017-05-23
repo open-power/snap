@@ -31,7 +31,6 @@ To debug libsnap functionality or associated actions, there are currently some e
     |-- lib            libsnap.so/.a
     |-- scripts        Testcases
     `-- tools          Generic tools for SNAP users. E.g.:
-                       snap_maint setup tool which needs to be called one 
-                       time before using the card.
-                       It sets up the SNAP action assignment hardware.
+                       snap_maint setup tool which needs to be called before using the card.
+                                             It sets up the SNAP action assignment hardware.
                        snap_peek/poke debug tools to read/write SNAP MMIO registers.
