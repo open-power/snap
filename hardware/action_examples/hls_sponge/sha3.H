@@ -24,7 +24,7 @@
 
 // sha3.h
 // 19-Nov-11  Markku-Juhani O. Saarinen <mjos@iki.fi>
-// 05-May-17  Bruno Mesnet - IBM : adapt to be compiled by Vivado HLS
+// 05-May-17  IBM : adapt to be compiled by Vivado HLS
 
 #ifndef SHA3_H
 #define SHA3_H
@@ -75,7 +75,7 @@ void sha3(const uint8_t *in, size_t inlen, uint8_t *md, int mdlen);
 void shake_xof(sha3_ctx_t *c);
 void shake_out(sha3_ctx_t *c, void *out, size_t len);
 
-void cast_uint8_to_uint64_W25(uint8_t *st_in, uint64_t *st_out, unsigned int size);
-void cast_uint64_to_uint8_W25(uint64_t *st_in, uint8_t *st_out, unsigned int size);
+void cast_uint8_to_uint64(uint8_t *st_in, uint64_t *st_out, unsigned int size);
+void cast_uint64_to_uint8(uint64_t *st_in, uint8_t *st_out, unsigned int size);
 #endif
 

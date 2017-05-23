@@ -42,14 +42,12 @@
 #include "sha3.H"
 
 //Casting from uint8_t to uint64_t => 94 FF - 118 LUT - II=104 - Latency=103
-//void cast_uint8_to_uint64_W25(uint8_t st_in[200], uint64_t st_out[25])
-void cast_uint8_to_uint64_W25(uint8_t *st_in, uint64_t *st_out, unsigned int size)
+//void cast_uint8_to_uint64(uint8_t st_in[200], uint64_t st_out[25])
+void cast_uint8_to_uint64(uint8_t *st_in, uint64_t *st_out, unsigned int size)
 {
     uint64_t mem;
-    int i, j;
-
-
-    i = sizeof(st_out);
+    unsigned int i;
+    int j;
 
     cast_8to64:for( i = 0; i < size; i++ ) {
 #pragma HLS UNROLL
@@ -63,10 +61,10 @@ void cast_uint8_to_uint64_W25(uint8_t *st_in, uint64_t *st_out, unsigned int siz
     }
 }
 //Casting from uint64_t to uint8_t => 94 FF - 134 LUT - II=104 - Latency=103
-void cast_uint64_to_uint8_W25(uint64_t *st_in, uint8_t *st_out, unsigned int size)
+void cast_uint64_to_uint8(uint64_t *st_in, uint8_t *st_out, unsigned int size)
 {
     uint64_t tmp = 0;
-    int i, j;
+    unsigned int i, j;
 
     cast_64to8:for( i = 0; i < size; i++ ) {
 #pragma HLS UNROLL
@@ -220,9 +218,10 @@ int sha3_update(sha3_ctx_t *c, const uint8_t *data, size_t len)
 			if (j >= c->rsiz) {
 				//sha3_keccakf(c->st.q);
 
-			    cast_uint8_to_uint64_W25(c->st.b, st, 25);
+				//FIXME these double cast could be optimized
+			        cast_uint8_to_uint64(c->st.b, st, 25);
 				sha3_keccakf(st, st);
-			    cast_uint64_to_uint8_W25(st, c->st.b, 25);
+			        cast_uint64_to_uint8(st, c->st.b, 25);
 				j = 0;
 			}
     }
@@ -244,12 +243,10 @@ int sha3_final(uint8_t *md, sha3_ctx_t *c)
 
     //sha3_keccakf(c->st.q);
 
-    //Casting from uint8_t to uint64_t
-    cast_uint8_to_uint64_W25(c->st.b, st, 25);
-	sha3_keccakf(st, st);
-	//sha3_keccakf(c->st.b, c->st.b);
-    //Casting from uint64_t to uint8_t
-    cast_uint64_to_uint8_W25(st, c->st.b, 25);
+    //FIXME these double cast could be optimized
+    cast_uint8_to_uint64(c->st.b, st, 25);
+    sha3_keccakf(st, st);
+    cast_uint64_to_uint8(st, c->st.b, 25);
 
 
     for (i = 0; i < c->mdlen; i++) {
@@ -284,12 +281,10 @@ void shake_xof(sha3_ctx_t *c)
     c->st.b[c->rsiz - 1] ^= 0x80;
     //sha3_keccakf(c->st.q);
 
-    //Casting from uint8_t to uint64_t
-    cast_uint8_to_uint64_W25(c->st.b, st, 25);
-	sha3_keccakf(st, st);
-	//sha3_keccakf(c->st.b, c->st.b);
-    //Casting from uint64_t to uint8_t
-    cast_uint64_to_uint8_W25(st, c->st.b, 25);
+    //FIXME these double cast could be optimized
+    cast_uint8_to_uint64(c->st.b, st, 25);
+    sha3_keccakf(st, st);
+    cast_uint64_to_uint8(st, c->st.b, 25);
 
     c->pt = 0;
 }
@@ -304,12 +299,10 @@ void shake_out(sha3_ctx_t *c, void *out, size_t len)
     for (i = 0; i < len; i++) {
         if (j >= c->rsiz) {
             //sha3_keccakf(c->st.q);
-            //Casting from uint8_t to uint64_t
-            cast_uint8_to_uint64_W25(c->st.b, st,25);
-        	sha3_keccakf(st, st);
-        	//sha3_keccakf(c->st.b, c->st.b);
-            //Casting from uint64_t to uint8_t
-            cast_uint64_to_uint8_W25(st, c->st.b, 25);
+            //FIXME these double cast could be optimized
+            cast_uint8_to_uint64(c->st.b, st,25);
+            sha3_keccakf(st, st);
+            cast_uint64_to_uint8(st, c->st.b, 25);
             j = 0;
         }
         ((uint8_t *) out)[i] = c->st.b[j++];
