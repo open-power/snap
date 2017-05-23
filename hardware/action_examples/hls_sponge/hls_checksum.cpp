@@ -402,7 +402,7 @@ void process_action( action_reg *Action_Register)
  */
 void hls_action(snap_membus_t *din_gmem,
 		    snap_membus_t *dout_gmem,
-		    snap_membus_t *d_ddrmem, // SVEN : comment this line to remove ddr port
+		    snap_membus_t *d_ddrmem, 
 		    action_reg *Action_Register,
 		    action_RO_config_reg *Action_Config)
 {
@@ -414,7 +414,6 @@ void hls_action(snap_membus_t *din_gmem,
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg          offset=0x040
 
 //DDR memory Interface 
-// SVEN : comment these 2 lines below to remove ddr port
 #pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
 #pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg           offset=0x050
 
