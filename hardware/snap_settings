@@ -29,22 +29,25 @@ snapdir=$(dirname "$scriptdir")
 unset SETUP_DONE;
 while [ -z "$SETUP_DONE" ]; do
   SETUP_WARNING=""
-  if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ] || [ ! -f "$PSL_DCP" ]; then
-    echo "Note: The following commands need to be executed before calling this script:"
-    echo
-    echo "export PSL_DCP              = CAPI PSL Checkpoint file (b_route_design.dcp)"
-    echo "source <xilinx_root>/Vivado/<version>/settings64.sh"
-    echo "export XILINXD_LICENSE_FILE = <pointer to Vivado license>"
-    echo
-    echo "For more information see also README.md"
-    break
-  fi
-  echo
-
-  ####### Checking Xilinx Vivado:
   echo "======================================================="
   echo "== SNAP SETUP                                        =="
   echo "======================================================="
+
+  if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ]; then
+    echo "Error: The following commands need to be executed before calling this script:"
+    echo "	source <xilinx_root>/Vivado/<version>/settings64.sh"
+    echo "	export XILINXD_LICENSE_FILE=<pointer to Vivado license>"
+    echo "For more information see also README.md"
+    break
+  fi
+  if [ ! -f "$PSL_DCP" ]; then
+    echo "Error: The following environment variable must be set before calling this script:"
+    echo "	export PSL_DCP=<CAPI PSL Checkpoint file (b_route_design.dcp)>"
+    echo "For more information see also README.md"
+    break
+  fi
+
+  ####### Checking Xilinx Vivado:
   echo "=====Checking Xilinx Vivado:==========================="
   if [ ! -d "$XILINX_VIVADO" ]; then
     echo "XILINX_VIVADO is not set, please source settings64.sh from your Vivado installation"
@@ -100,7 +103,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   echo "=====SNAP simulation variables========================="
   if [ ! -d "$PSLSE_ROOT" ]; then
-    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set, for simulation please clone PSL Simulation Environment from  https://github.com/ibm-capi/pslse"
+    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set. For simulation please clone PSL Simulation Environment from https://github.com/ibm-capi/pslse and let \$PSLSE_ROOT point to it"
   else
     echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
   fi
