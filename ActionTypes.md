@@ -13,3 +13,7 @@ IBM | 10.14.10.04 | 10.14.10.04 | HLS BFS (Breadth First Search)
 IBM | 10.14.10.05 | 10.14.10.05 | HLS Intersection
 IBM | 10.14.00.06 | 10.14.FF.FF | Reserved for IBM Actions
 Reserved | FF.FF.00.00 | FF.FF.FF.FF | Reserved
+
+### How to apply for a new ActionType
+
+Each new action type should get a unique number. The number is defined as pair of 16-bit vendor and 16-bit action id. To obtain a number, please add the new action type in the table above. Create a git merge request and get it approved and included. Following this procedure duplicate action types should be avoided. You may use your own 16-bit vendor id in your action type.
