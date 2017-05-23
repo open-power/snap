@@ -57,10 +57,10 @@
 # ARGUMENTS #############
  TS=`date +%Y%m%d_%H%M%S`; if [ "$TST_TITLE" != "" ];then TS="${TS}_${TST_TITLE}";fi
  if [ -z $SNAP_ROOT ];then echo "variable SNAP_ROOT not found, leaving"; exit 11; fi
- if [ -z $SNAP_SOFTWARE_ROOT ];then echo "variable SNAP_SOFTWARE_ROOT not found, leaving"; exit 11; fi
- if [ -z $SNAP_HARDWARE_ROOT ];then echo "variable SNAP_HARDWARE_ROOT not found, leaving"; exit 11; fi
- if [ -z $FRAMEWORK_ROOT ];then echo "variable FRAMEWORK_ROOT not found, leaving"; exit 11; fi
  if [ -z $PSLSE_ROOT ];then echo "variable PSLSE_ROOT not found, leaving"; exit 11; fi
+
+ SNAP_SOFTWARE_ROOT=$SNAP_ROOT/software 
+ SNAP_HARDWARE_ROOT=$SNAP_ROOT/hardware 
  HOSTNAME=`hostname -s`; echo "hostname=$HOSTNAME arguments=$@"
  runsim_args=$@
  while [[ $# > 0 ]]; do         # consume multiple args per loop with shift
@@ -163,7 +163,7 @@
    if   [ "$SIMDIR" == "ies" ];then
      ln -s $SNAP_HARDWARE_ROOT/sim/ies/ies        	# point to compiled model
      ln -s $SNAP_HARDWARE_ROOT/sim/ies/INCA_libs 	# point to compiled model
-     ln -s $FRAMEWORK_ROOT/denali                       # point to denali config files
+     ln -s $DENALI_ROOT                                 # point to denali config files
    elif [ "$SIMDIR" == "xsim" ];then
      ln -s $SNAP_HARDWARE_ROOT/sim/xsim/xsim.dir
    elif [ "$SIMDIR" == "questa" ];then
@@ -478,10 +478,11 @@
  echo "**** RC=$TCRC parallel=$PAR executed=$EXECUTED failed=$FAILED runtime=$RUNTIME simtime=$SIMTIME cpus=$CPUS speed=$SPEED load=$LOAD local=$LOCAL used_kB=$USED percused=$PERCUSED"
 #echo "**** Versions: HW=$HWVERS SW=$SWVERS PSLSE=$PSLSEVERS"
  echo "**** Versions: SNAP=$SNAPVERS PSLSE=$PSLSEVERS"
- if [ ! -d "$USERHOME" ];then echo "variable USERHOME is not pointing to a directory: $USERHOME"      # no collection for statistics
- else                                                                                                 # collect statistics in USERHOME
-   echo "$SNAPVERS,$PSLSEVERS,$SIMBASE,$TS,$TCRC,$PAR,$EXECUTED,$FAILED,$RUNTIME,$SIMTIME,$DDCB_TIMEOUT,$HOSTNAME,$SPEED,$CPUS,$LOAD,$USED,$PERCUSED,$TST_NAME $LISTNAME,$TST_ARG" >>$USERHOME/status.csv
- fi
+# FIXME: Conflicts with RC_rm_HDK changes. Find a new location for the simulation statistics
+# if [ ! -d "$USERHOME" ];then echo "variable USERHOME is not pointing to a directory: $USERHOME"      # no collection for statistics
+# else                                                                                                 # collect statistics in USERHOME
+#   echo "$SNAPVERS,$PSLSEVERS,$SIMBASE,$TS,$TCRC,$PAR,$EXECUTED,$FAILED,$RUNTIME,$SIMTIME,$DDCB_TIMEOUT,$HOSTNAME,$SPEED,$CPUS,$LOAD,$USED,$PERCUSED,$TST_NAME $LISTNAME,$TST_ARG" >>$USERHOME/status.csv
+# fi
  grep --text -iE "error|errno|warning|retc|return|genwqe_|time|finished|loop|failed|script|tmp_pid" stim.log >>../summary.log # collect short summary over all jobs in this checkout
  sleep 5
  if [ "$CLEAN" == "1" ];then

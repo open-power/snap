@@ -29,21 +29,26 @@ snapdir=$(dirname "$scriptdir")
 unset SETUP_DONE;
 while [ -z "$SETUP_DONE" ]; do
   SETUP_WARNING=""
-  if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ] || [ ! -d "$FRAMEWORK_ROOT" ]; then
-    echo "Note: The following commands need to be executed before calling this script:"
-    echo
-    echo "export FRAMEWORK_ROOT       = <your local workspace base>"
-    echo "source <xilinx_root>/Vivado/<version>/settings64.sh"
-    echo "export XILINXD_LICENSE_FILE = <pointer to Vivado license>"
-    echo
+  echo "======================================================="
+  echo "== SNAP SETUP                                        =="
+  echo "======================================================="
+
+  if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ]; then
+    echo "Error: The following commands need to be executed before calling this script:"
+    echo "	source <xilinx_root>/Vivado/<version>/settings64.sh"
+    echo "	export XILINXD_LICENSE_FILE=<pointer to Vivado license>"
     echo "For more information see also README.md"
     break
   fi
-  echo
+  if [ ! -f "$PSL_DCP" ]; then
+    echo "Error: The following environment variable must be set before calling this script:"
+    echo "	export PSL_DCP=<CAPI PSL Checkpoint file (b_route_design.dcp)>"
+    echo "For more information see also README.md"
+    break
+  fi
 
   ####### Checking Xilinx Vivado:
-  echo "Checking Xilinx Vivado:"
-  echo "======================="
+  echo "=====Checking Xilinx Vivado:==========================="
   if [ ! -d "$XILINX_VIVADO" ]; then
     echo "XILINX_VIVADO is not set, please source settings64.sh from your Vivado installation"
     break
@@ -53,55 +58,11 @@ while [ -z "$SETUP_DONE" ]; do
     break
   fi
   # checking Vivado version
-  echo "Path to vivado: `which vivado`"
-  echo "Vivado version: `vivado -version|head -n1`"
+  echo "Path to vivado          is set to: `which vivado`"
+  echo "Vivado version          is set to: `vivado -version|head -n1`"
 
   ####### user settings for CAPI STREAMING FRAMEWORK
-  echo
-  echo "Setting environment variables that are not pre-defined:"
-  echo "======================================================="
-  if [ ! -d "$USERHOME" ]; then
-    export USERHOME=$FRAMEWORK_ROOT/$USER
-    echo "Setting USERHOME               to: \"$USERHOME\""
-  else
-    echo "USERHOME                is set to: \"$USERHOME\""
-  fi
-
-  if [ ! -d "$PSLSE_ROOT" ]; then
-    export PSLSE_ROOT=$USERHOME/pslse                          # used with git clone https://github.com/ibm-capi/pslse     $PSLSE_ROOT
-    echo "Setting PSLSE_ROOT             to: \"$PSLSE_ROOT\""
-  else
-    echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
-  fi
-
-  if [ "$SNAP_ROOT" = "$snapdir" ]; then
-    echo "SNAP_ROOT               is set to: \"$SNAP_ROOT\""
-  else
-    echo "Setting SNAP_ROOT              to: \"$snapdir\""
-  fi
-  export SNAP_ROOT=$snapdir
-
-  if [ "$SNAP_HARDWARE_ROOT" = "$SNAP_ROOT/hardware" ]; then
-    echo "SNAP_HARDWARE_ROOT      is set to: \"$SNAP_HARDWARE_ROOT\""
-  else
-    echo "Setting SNAP_HARDWARE_ROOT     to: \"$SNAP_ROOT/hardware\""
-  fi
-  export SNAP_HARDWARE_ROOT=$SNAP_ROOT/hardware
-
-  if [ "$SNAP_SOFTWARE_ROOT" = "$SNAP_ROOT/software" ]; then
-    echo "SNAP_SOFTWARE_ROOT      is set to: \"$SNAP_SOFTWARE_ROOT\""
-  else
-    echo "Setting SNAP_SOFTWARE_ROOT     to: \"$SNAP_ROOT/software\""
-  fi
-  export SNAP_SOFTWARE_ROOT=$SNAP_ROOT/software
-
-  if [ -z "$ACTION_ROOT" ]; then
-    export ACTION_ROOT=$SNAP_HARDWARE_ROOT/action_examples/hdl_example/
-    echo "Setting ACTION_ROOT            to: \"$ACTION_ROOT\"" 
-  else
-    echo "ACTION_ROOT             is set to: \"$ACTION_ROOT\""
-  fi
-
+  echo "=====CARD variables===================================="
   if [ -z "$FPGACARD" ]; then
     export FPGACARD=FGT
     echo "Setting FPGACARD               to: \"$FPGACARD\""
@@ -121,23 +82,32 @@ while [ -z "$SETUP_DONE" ]; do
     echo "FPGACHIP                is set to: \"$FPGACHIP\""
   fi
 
-  if [ $FPGACARD = "KU3" ]; then
-    if [ ! -d "$HDK_ROOT" ]; then
-      export HDK_ROOT=$FRAMEWORK_ROOT/cards/adku060_capi_1_1_release
-      echo "Setting HDK_ROOT               to: \"$HDK_ROOT\""
-    else
-      echo "HDK_ROOT                is set to: \"$HDK_ROOT\""
-    fi
+  if [ -f "$PSL_DCP" ]; then
+      echo "PSL_DCP                 is set to: \"$PSL_DCP\""
   fi
 
-  if [ $FPGACARD = "FGT" ]; then
-    if [ ! -f "$PSL_DCP" ]; then
-      export PSL_DCP=$FRAMEWORK_ROOT/cards/FGT/portal_20170413/b_route_design.dcp
-      echo "Setting PSL_DCP                to: \"$PSL_DCP\""
-    else
-      echo "PSL_DCP                 is set to: \"$PSL_DCP\""
-    fi
+  echo "=====SNAP PATH variables==============================="
+  if [ -z "$SNAP_ROOT" ]; then
+    export SNAP_ROOT=$snapdir
+    echo "Setting SNAP_ROOT              to: \"$snapdir\""
+  else
+    echo "SNAP_ROOT               is set to: \"$SNAP_ROOT\""
   fi
+
+  if [ -z "$ACTION_ROOT" ]; then
+    export ACTION_ROOT=$SNAP_ROOT/hardware/action_examples/hdl_example
+    echo "Setting ACTION_ROOT            to: \"$ACTION_ROOT\""
+  else
+    echo "ACTION_ROOT             is set to: \"$ACTION_ROOT\""
+  fi
+
+  echo "=====SNAP simulation variables========================="
+  if [ ! -d "$PSLSE_ROOT" ]; then
+    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set. For simulation please clone PSL Simulation Environment from https://github.com/ibm-capi/pslse and let \$PSLSE_ROOT point to it"
+  else
+    echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
+  fi
+
 
   if [ -z "$SIMULATOR" ]; then
     export SIMULATOR=xsim                                      # xsim, questa and ncsim are supported, currently
@@ -146,9 +116,10 @@ while [ -z "$SETUP_DONE" ]; do
     echo "SIMULATOR               is set to: \"$SIMULATOR\""
   fi
 
+  echo "=====SNAP function variables==========================="
   if [ -z "$NUM_OF_ACTIONS" ]; then
     export NUM_OF_ACTIONS=1
-    echo "Setting NUM_OF_ACTIONS         to  \"$NUM_OF_ACTIONS\""
+    echo "Setting NUM_OF_ACTIONS         to: \"$NUM_OF_ACTIONS\""
   else
     echo "NUM_OF_ACTIONS          is set to: \"$NUM_OF_ACTIONS\""
   fi
@@ -162,7 +133,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ -z "$NVME_USED" ]; then
     export NVME_USED="FALSE"
-    echo "Setting NVME_USED              to:  \"FALSE\""
+    echo "Setting NVME_USED              to: \"FALSE\""
   else
     echo "NVME_USED               is set to: \"$NVME_USED\""
     if [[ $NVME_USED = "TRUE"  && $FPGACARD = "KU3" ]]; then
@@ -171,18 +142,17 @@ while [ -z "$SETUP_DONE" ]; do
   fi
   if [ -z "$ILA_DEBUG" ]; then
     export ILA_DEBUG="FALSE"
-    echo "Setting ILA_DEBUG              to  \"ILA_DEBUG\""
+    echo "Setting ILA_DEBUG              to: \"ILA_DEBUG\""
   else
     echo "ILA_DEBUG               is set to: \"$ILA_DEBUG\""
   fi
- echo
 
   ####### Cadence simulation setup:
-  if [ "$SIMULATOR" == "ncsim" ] || [ "$SIMULATOR" == "irun" ]; then
-    echo "Cadence simulation setup for pslse:"
-    echo "==================================="
+  if [ "$SIMULATOR" == "irun" ]; then
+    echo "=====Cadence simulation setup=========================="
+
     if [ -z `which ncsim 2> /dev/null` ]; then
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to ncsim not set Cadence simulation won't work"
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to ncsim not set, Cadence simulation won't work"
     else
       echo "Path to ncsim           is set to: \"`which ncsim`\""
       # checking version
