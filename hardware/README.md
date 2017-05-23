@@ -18,25 +18,15 @@ This script will define the following environment variables (if they are not alr
 differently):
 
 ```
-    USERHOME            = $FRAMEWORK_ROOT/$USER                                  # each user has his own workspace
-    PSLSE_ROOT          = $USERHOME/pslse                                        # PSLSE clone from github
-    SNAP_ROOT           = <parent of the directory containing snap_settings>    # snap clone from github
-    SNAP_SOFTWARE_ROOT  = $SNAP_ROOT/software                                   # path to snap software
-    SNAP_HARDWARE_ROOT  = $SNAP_ROOT/hardware                                   # path to snap hardware
     FPGACARD            = KU3                                                    # CAPI FPGA card to be used - currently supported are KU3, FGT
     FPGACHIP            = xcku060-ffva1156-2-e                                   # version of the FPGA chip
-    HDK_ROOT            = $FRAMEWORK_ROOT/cards/adku060_capi_1_1_release         # path to HDK for the CAPI FPGA card
-    DIMMTEST            = $FRAMEWORK_ROOT/cards/dimm_test-admpcieku3-v3_0_0      # path to DRAM model for simulation
-    SIMULATOR           = xsim                                                   # currently supported simulators are xsim, ncsim, irun
+    SNAP_ROOT           = <parent of the directory containing snap_settings>     # snap clone from github
+    PSLSE_ROOT          = <parent of the $SNAP_ROOT directory>                   # PSLSE clone from github
+    PSL_DCP             =                                                        # PSL DCP for the CAPI FPGA card
+    SIMULATOR           = xsim                                                   # currently supported simulators are xsim, irun (IES)
     NUM_OF_ACTIONS      = 1                                                      # number of actions to be implemented with the card (up to 16)
     SDRAM_USED          = FALSE                                                  # if set to TRUE the actions have access to the on card SDRAM via an AXI interface
 ```
-
-If the on card SDRAM is used a DIMM test project is required for simulation.  
-For the KU3 card it can be obtained from the Alpha Data Support Portal:  
-`https://support.alpha-data.com/Portals/0/Downloads/dimm_test-admpcieku3-v3_0_0.tar.gz`
-
-The environment variable `DIMMTEST` needs to point to the directory containing that project.
 
 ### Cadence setup
 

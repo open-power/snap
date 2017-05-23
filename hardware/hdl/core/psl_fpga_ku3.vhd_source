@@ -320,7 +320,10 @@ Component base_img
        ha0_jcompar: out std_logic;
        a0h_paren: in std_logic;
        ha0_pclock: out std_logic;
-       gold_factory: in std_logic);
+       gold_factory: in std_logic;
+       pci_user_reset: out std_logic;  --PCI hip user_reset signal if needed
+       pci_clock_125MHz: out std_logic --125MHz clock if needed
+       );
 
 END Component base_img;
 
@@ -381,6 +384,8 @@ Signal ha0_rtag: std_logic_vector(0 to 7);  -- acctag
 Signal ha0_rtagpar: std_logic;  -- bool
 Signal ha0_rvalid: std_logic;  -- bool
 Signal gold_factory: std_logic;
+Signal pci_user_reset: std_logic;
+Signal pci_clock_125MHz: std_logic;
 
 begin
 
@@ -572,7 +577,9 @@ begin
          ha0_jcompar => ha0_jcompar,
          a0h_paren => a0h_paren,
          ha0_pclock => ha0_pclock,
-         gold_factory => gold_factory
+         gold_factory => gold_factory,
+         pci_user_reset => pci_user_reset,
+         pci_clock_125MHz => pci_clock_125MHz
     );
 
 END psl_fpga;
