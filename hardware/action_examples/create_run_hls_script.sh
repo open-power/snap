@@ -30,7 +30,7 @@ wrapper=hls_action
 # Examples:
 #   xcku060-ffva1156-2-e
 #   xc7vx690tffg1157-2
-part_number=xcku060-ffva1156-2-e
+part_number=$FPGACHIP
 files="kernel.cpp"
 clk_period=4
 
