@@ -67,13 +67,17 @@ static int action_main(struct snap_sim_action *action,
 	char ofname[128];
 
 	/* No error checking ... */
-	act_trace("%s(%p, %p, %d) type_in=%d type_out=%d\n",
-		  __func__, action, job, job_len, js->in.type, js->out.type);
+	act_trace("%s(%p, %p, %d) type_in=%d type_out=%d jobsize %ld bytes\n",
+		  __func__, action, job, job_len, js->in.type, js->out.type,
+		  sizeof(*js));
+
+	__hexdump(stderr, js, sizeof(*js));
 
 	len = js->out.size;
 	dst = (void *)js->out.addr;
 	if (js->in.size != js->out.size) {
-		act_trace("  err: size does not match!\n");
+		act_trace("  err: size does not match in %d bytes versus "
+			  "out %d bytes!\n", js->in.size, js->out.size);
 		goto out_err;
 	}
 	/* checking parameters ... */

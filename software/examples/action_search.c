@@ -28,7 +28,7 @@
 
 #include <libsnap.h>
 #include <snap_internal.h>
-#include <action_search.h>
+#include <snap_search.h>
 
 static int mmio_write32(struct snap_card *card,
 			uint64_t offs, uint32_t data)
@@ -159,8 +159,7 @@ static int action_main(struct snap_sim_action *action,
 {
 	struct search_job *js = (struct search_job *)job;
 	char *needle, *haystack;
-	unsigned int needle_len, haystack_len, offs_used, offs_max, method;
-	uint64_t *offs;
+	unsigned int needle_len, haystack_len, method;
 
 	act_trace("%s(%p, %p, %d) SEARCH\n", __func__, action, job, job_len);
 	__trace_addr("src_text1",   &js->src_text1);
@@ -171,10 +170,6 @@ static int action_main(struct snap_sim_action *action,
 
 	if (js->src_result.addr != 0 && js->src_result.type == SNAP_ADDRTYPE_HOST_DRAM)
 		memset((uint8_t *)js->src_result.addr, 0, js->src_result.size);
-
-	offs = (uint64_t *)(unsigned long)js->src_result.addr;
-	offs_max = js->src_result.size / sizeof(uint64_t);
-	offs_used = 0;
 
 	haystack = (char *)(unsigned long)js->src_text1.addr;
 	haystack_len = js->src_text1.size;

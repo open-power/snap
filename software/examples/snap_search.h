@@ -1,5 +1,5 @@
-#ifndef __ACTION_MEMCOPY_H__
-#define __ACTION_MEMCOPY_H__
+#ifndef __SNAP_SEARCH_H__
+#define __SNAP_SEARCH_H__
 
 /*
  * Copyright 2016, 2017 International Business Machines
@@ -17,21 +17,13 @@
  * limitations under the License.
  */
 
-#include <snap_types.h>
+#include <libsnap.h>
+#include <action_search.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+unsigned int run_sw_search(unsigned int Method, char *Pattern,
+           unsigned int PatternSize, char *Text, unsigned int TextSize);
+int Naive_search(char *pat, int M, char *txt, int N);
+void preprocess_KMP_table(char *pat, int M, int KMP_table[]);
+int KMP_search(char *pat, int M, char *txt, int N);
 
-#define MEMCOPY_ACTION_TYPE 0x10141000
-
-typedef struct memcopy_job {
-	struct snap_addr in;	/* input data */
-	struct snap_addr out;   /* offset table */
-} memcopy_job_t;
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif	/* __ACTION_MEMCOPY_H__ */
+#endif	/* __ACTION_SEARCH_H__ */
