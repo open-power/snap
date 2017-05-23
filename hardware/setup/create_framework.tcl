@@ -24,7 +24,6 @@ set hdl_dir     $root_dir/hdl
 set sim_dir     $root_dir/sim
 set fpga_part   $::env(FPGACHIP)
 set fpga_card   $::env(FPGACARD)
-set pslse_dir   $::env(PSLSE_ROOT)
 set build_dir   $::env(BUILD_DIR)
 set action_dir  $::env(ACTION_ROOT)
 set nvme_used   $::env(NVME_USED)
@@ -48,13 +47,6 @@ if { [info exists ::env(DENALI)] == 1 } {
 } else {
   set denali_dir .
 }
-
-#debug information
-#puts $root_dir
-#puts $pslse_dir
-#puts $build_dir
-#puts $vivadoVer
-#puts $simulator
 
 # Create a new Vivado Project
 puts "	\[CREATE_FRAMEWORK....\] start"

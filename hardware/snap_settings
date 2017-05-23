@@ -100,7 +100,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   echo "=====SNAP simulation variables========================="
   if [ ! -d "$PSLSE_ROOT" ]; then
-    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set, please git clone https://github.com/ibm-capi/pslse $PSLSE_ROOT"
+    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set, for simulation please clone PSL Simulation Environment from  https://github.com/ibm-capi/pslse"
   else
     echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
   fi
