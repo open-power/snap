@@ -37,18 +37,22 @@
 
 // Revised 07-Aug-15 to match with official release of FIPS PUB 202 "SHA3"
 // Revised 03-Sep-15 for portability + OpenSSL - style API
+// 05-May-17  IBM : adapt to be compiled by Vivado HLS
 
 #include "sha3.H"
 
 //Casting from uint8_t to uint64_t => 94 FF - 118 LUT - II=104 - Latency=103
-void cast_uint8_to_uint64_W25(uint8_t st_in[200], uint64_t st_out[25])
+//void cast_uint8_to_uint64_W25(uint8_t st_in[200], uint64_t st_out[25])
+void cast_uint8_to_uint64_W25(uint8_t *st_in, uint64_t *st_out, unsigned int size)
 {
     uint64_t mem;
     int i, j;
-    const int VECTOR_SIZE = 25;
 
-    for( i = 0; i < VECTOR_SIZE; i++ ) {
-#pragma HLS PIPELINE
+
+    i = sizeof(st_out);
+
+    cast_8to64:for( i = 0; i < size; i++ ) {
+#pragma HLS UNROLL
           mem = 0;
           for( j = 8; j >= 0; j--) {
                   mem = (mem << 8);
@@ -59,14 +63,13 @@ void cast_uint8_to_uint64_W25(uint8_t st_in[200], uint64_t st_out[25])
     }
 }
 //Casting from uint64_t to uint8_t => 94 FF - 134 LUT - II=104 - Latency=103
-void cast_uint64_to_uint8_W25(uint64_t st_in[25], uint8_t st_out[200])
+void cast_uint64_to_uint8_W25(uint64_t *st_in, uint8_t *st_out, unsigned int size)
 {
     uint64_t tmp = 0;
     int i, j;
-    const int VECTOR_SIZE = 25;
 
-    for( i = 0; i < VECTOR_SIZE; i++ ) {
-#pragma HLS PIPELINE
+    cast_64to8:for( i = 0; i < size; i++ ) {
+#pragma HLS UNROLL
           tmp = st_in[i];
           for( j = 0; j < 8; j++ ) {
                   st_out[i*8+j] = (uint8_t)tmp;
@@ -78,7 +81,7 @@ void cast_uint64_to_uint8_W25(uint64_t st_in[25], uint8_t st_out[200])
 // update the state with given number of rounds
 
 //void sha3_keccakf(uint64_t st[25])
-void sha3_keccakf(uint8_t st_in[200], uint8_t st_out[200])
+void sha3_keccakf(uint64_t st_in[25], uint64_t st_out[25])
 {
     // constants
     const uint64_t keccakf_rndc[24] = {
@@ -104,10 +107,13 @@ void sha3_keccakf(uint8_t st_in[200], uint8_t st_out[200])
     int i, j, r;
     uint64_t t, bc[5];
     uint64_t st[25];
+#pragma HLS ARRAY_RESHAPE variable=st block factor=4 dim=1
+
 
     //separate entry port from logic
-    //Casting from uint8_t to uint64_t
-    cast_uint8_to_uint64_W25(st_in, st);
+    for (i = 0; i < 25; i++)
+#pragma HLS UNROLL
+        st[i] = st_in[i];
 
 #if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
     uint8_t *v;
@@ -121,6 +127,7 @@ void sha3_keccakf(uint8_t st_in[200], uint8_t st_out[200])
             (((uint64_t) v[6]) << 48) | (((uint64_t) v[7]) << 56);
     }
 #endif
+
 
     // actual iteration
     for (r = 0; r < KECCAKF_ROUNDS; r++) {
@@ -173,8 +180,9 @@ void sha3_keccakf(uint8_t st_in[200], uint8_t st_out[200])
 #endif
 
     //separate entry port from logic
-    //Casting from uint64_t to uint8_t
-    cast_uint64_to_uint8_W25(st, st_out);
+    for (i = 0; i < 25; i++)
+#pragma HLS UNROLL
+        st_out[i] = st[i];
 
 }
 
@@ -203,19 +211,20 @@ int sha3_update(sha3_ctx_t *c, const uint8_t *data, size_t len)
 {
     size_t i;
     int j;
+    uint64_t st[25];
 
     j = c->pt;
-    //for (i = 0; i < len; i++) {
-    for (i = 0; i < 64; i++) { // => sponge =64max
+    for (i = 0; i < len; i++) {
 #pragma HLS UNROLL
-        if (i < len) {
 			c->st.b[j++] ^= ((const uint8_t *) data)[i];
 			if (j >= c->rsiz) {
 				//sha3_keccakf(c->st.q);
-				sha3_keccakf(c->st.b, c->st.b);
+
+			    cast_uint8_to_uint64_W25(c->st.b, st, 25);
+				sha3_keccakf(st, st);
+			    cast_uint64_to_uint8_W25(st, c->st.b, 25);
 				j = 0;
 			}
-        }
     }
     c->pt = j;
 
@@ -228,17 +237,23 @@ int sha3_update(sha3_ctx_t *c, const uint8_t *data, size_t len)
 int sha3_final(uint8_t *md, sha3_ctx_t *c)
 {
     int i;
+    uint64_t st[25];
 
     c->st.b[c->pt] ^= 0x06;
     c->st.b[c->rsiz - 1] ^= 0x80;
 
     //sha3_keccakf(c->st.q);
-    sha3_keccakf(c->st.b, c->st.b);
 
-    //for (i = 0; i < c->mdlen; i++) {
-    for (i = 0; i < 64; i++) { // => sponge =64max
+    //Casting from uint8_t to uint64_t
+    cast_uint8_to_uint64_W25(c->st.b, st, 25);
+	sha3_keccakf(st, st);
+	//sha3_keccakf(c->st.b, c->st.b);
+    //Casting from uint64_t to uint8_t
+    cast_uint64_to_uint8_W25(st, c->st.b, 25);
+
+
+    for (i = 0; i < c->mdlen; i++) {
 #pragma HLS UNROLL
-    	if(i < c->mdlen)
     		((uint8_t *) md)[i] = c->st.b[i];
     }
 
@@ -263,10 +278,19 @@ void sha3(const uint8_t *in, size_t inlen, uint8_t *md, int mdlen)
 
 void shake_xof(sha3_ctx_t *c)
 {
+    uint64_t st[25];
+
     c->st.b[c->pt] ^= 0x1F;
     c->st.b[c->rsiz - 1] ^= 0x80;
     //sha3_keccakf(c->st.q);
-    sha3_keccakf(c->st.b,c->st.b);
+
+    //Casting from uint8_t to uint64_t
+    cast_uint8_to_uint64_W25(c->st.b, st, 25);
+	sha3_keccakf(st, st);
+	//sha3_keccakf(c->st.b, c->st.b);
+    //Casting from uint64_t to uint8_t
+    cast_uint64_to_uint8_W25(st, c->st.b, 25);
+
     c->pt = 0;
 }
 
@@ -274,12 +298,18 @@ void shake_out(sha3_ctx_t *c, void *out, size_t len)
 {
     size_t i;
     int j;
+    uint64_t st[25];
 
     j = c->pt;
     for (i = 0; i < len; i++) {
         if (j >= c->rsiz) {
             //sha3_keccakf(c->st.q);
-            sha3_keccakf(c->st.b,c->st.b);
+            //Casting from uint8_t to uint64_t
+            cast_uint8_to_uint64_W25(c->st.b, st,25);
+        	sha3_keccakf(st, st);
+        	//sha3_keccakf(c->st.b, c->st.b);
+            //Casting from uint64_t to uint8_t
+            cast_uint64_to_uint8_W25(st, c->st.b, 25);
             j = 0;
         }
         ((uint8_t *) out)[i] = c->st.b[j++];
