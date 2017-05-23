@@ -478,10 +478,11 @@
  echo "**** RC=$TCRC parallel=$PAR executed=$EXECUTED failed=$FAILED runtime=$RUNTIME simtime=$SIMTIME cpus=$CPUS speed=$SPEED load=$LOAD local=$LOCAL used_kB=$USED percused=$PERCUSED"
 #echo "**** Versions: HW=$HWVERS SW=$SWVERS PSLSE=$PSLSEVERS"
  echo "**** Versions: SNAP=$SNAPVERS PSLSE=$PSLSEVERS"
- if [ ! -d "$USERHOME" ];then echo "variable USERHOME is not pointing to a directory: $USERHOME"      # no collection for statistics
- else                                                                                                 # collect statistics in USERHOME
-   echo "$SNAPVERS,$PSLSEVERS,$SIMBASE,$TS,$TCRC,$PAR,$EXECUTED,$FAILED,$RUNTIME,$SIMTIME,$DDCB_TIMEOUT,$HOSTNAME,$SPEED,$CPUS,$LOAD,$USED,$PERCUSED,$TST_NAME $LISTNAME,$TST_ARG" >>$USERHOME/status.csv
- fi
+# FIXME: Conflicts with RC_rm_HDK changes. Find a new location for the simulation statistics
+# if [ ! -d "$USERHOME" ];then echo "variable USERHOME is not pointing to a directory: $USERHOME"      # no collection for statistics
+# else                                                                                                 # collect statistics in USERHOME
+#   echo "$SNAPVERS,$PSLSEVERS,$SIMBASE,$TS,$TCRC,$PAR,$EXECUTED,$FAILED,$RUNTIME,$SIMTIME,$DDCB_TIMEOUT,$HOSTNAME,$SPEED,$CPUS,$LOAD,$USED,$PERCUSED,$TST_NAME $LISTNAME,$TST_ARG" >>$USERHOME/status.csv
+# fi
  grep --text -iE "error|errno|warning|retc|return|genwqe_|time|finished|loop|failed|script|tmp_pid" stim.log >>../summary.log # collect short summary over all jobs in this checkout
  sleep 5
  if [ "$CLEAN" == "1" ];then
