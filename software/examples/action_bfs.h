@@ -2,7 +2,7 @@
 #define __ACTION_BFS_H__
 
 /*
- * Copyright 2016, 2017 International Business Machines
+ * Copyright 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <snap_types.h>
 
-#include <stdint.h>
-#include <libsnap.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+#define BFS_ACTION_TYPE 0x10141004
 
-#define HLS_BFS_ID 0x10141004
-#define BFS_RELEASE 0xFEED0012
-
-#define VNODE_SIZE 16
-#define ENODE_SIZE 32
-//#define MMIO_DIN_DEFAULT	0x0ull
-//#define MMIO_DOUT_DEFAULT	0x0ull
-
+#ifndef CACHELINE_BYTES
+#define CACHELINE_BYTES 128
+#endif
 unsigned int * g_out_ptr;
 
-// BFS 108bytes PATTERN
+// BFS Configuration PATTERN.
 // This must match with DATA structure in hls_bfs/kernel.cpp
-struct bfs_job {
+typedef struct bfs_job {
     struct snap_addr input_adjtable;
     struct snap_addr output_traverse;
     uint32_t vex_num;
+    uint32_t start_root;
     uint32_t status_pos;
     uint32_t status_vex;
-};
+} bfs_job_t;
 
 /* Example structure for Vex and Edge*/
 typedef struct
@@ -55,7 +54,6 @@ typedef struct
     int  distance;
 } EdgeData;
 
-//ENODE_SIZE = 32B
 typedef struct EdgeNode
 {
     //Note: the order matters. FPGA HW picks up the interested field from this data structure.
@@ -63,10 +61,9 @@ typedef struct EdgeNode
     uint32_t            adjvex; //store the index of corresponding vex
     uint32_t            is_tail; //Not used.
 	EdgeData          * data;
-    uint64_t            reserved;
+    uint64_t            reserved[5];
 } EdgeNode;
 
-//VNODE_SIZE = 16B = 64b*2
 typedef struct
 {
 	EdgeNode   * edgelink;    /* Edge Table header */
@@ -102,8 +99,11 @@ typedef struct {
     QNode * rear;
 }Queue;
 
-int bfs_all(VexNode *, unsigned int vex_num );
+//int bfs_all(VexNode *, unsigned int vex_num );
 void bfs(VexNode *, unsigned int vex_num, unsigned int root);
 void output_vex(unsigned int, int);
 
+#ifdef __cplusplus
+}
+#endif
 #endif	/* __ACTION_BFS_H__ */
