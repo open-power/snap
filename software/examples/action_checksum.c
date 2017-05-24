@@ -474,7 +474,7 @@ static int test_shake()
 static unsigned long test_speed()
 {
     int i;
-    uint64_t st[25], x, n, slice;
+    uint64_t st[25], x, slice;
     //clock_t bg, us;
 
     printf("Speed test : ");
@@ -484,8 +484,6 @@ static unsigned long test_speed()
         st[i] = i;
 
     //bg = clock();
-    n = 0;
-
     //do{
     for (slice = 0; slice < NB_SLICES; slice++)
     {
@@ -555,11 +553,11 @@ static int action_main(struct snap_sim_action *action, void *job,
 
 	switch (js->chk_type) {
 	case CHECKSUM_SPONGE: {
-		unsigned int threads;
+		/* unsigned int threads; */
 
 		act_trace("test_choice=%d nb_pe=%d\n", js->test_choice, js->nb_pe);
 
-		threads = js->nb_slices; /* misused for sw sim */
+		/* threads = js->nb_slices; */
 
         	switch(js->test_choice) {
         	case(0):
