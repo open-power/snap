@@ -1,20 +1,21 @@
 /*
- * Simple Breadth-first-search in C 
+ * Simple Breadth-first-search in C
  *
  * Based on Pseudo code of:
  *        https://en.wikipedia.org/wiki/Breadth-first_search
  *
  * Use Adjacency list to describe a graph:
  *        https://en.wikipedia.org/wiki/Adjacency_list
- * 
- * And takes Queue structure: 
- *        https://en.wikipedia.org/wiki/Queue_%28abstract_data_type%29  
  *
- * Above links follow license of 
- * https://en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License
+ * And takes Queue structure:
+ *        https://en.wikipedia.org/wiki/Queue_%28abstract_data_type%29
+ *
+ * Wikipedia's pages are based on "CC BY-SA 3.0"
+ * Creative Commons Attribution-ShareAlike License 3.0
+ * https://creativecommons.org/licenses/by-sa/3.0/
  */
 
- /*
+/*
  * Adopt SNAP's framework for FPGA hardware action part.
  * Fit for Xilinx HLS compiling constraints.
  */
@@ -36,11 +37,17 @@
  * limitations under the License.
  */
 
+/* Version
+ * 2017/5/18    1.3   fixed address bits lost when reading one 512b word
+ */
 
 #include <string.h>
 #include "ap_int.h"
 #include <hls_stream.h>
 #include "action_bfs.H"
+
+#define HW_RELEASE_LEVEL       0x00000013
+
 
 //--------------------------------------------------------------------------------------------
 static snapu32_t read_bulk ( snap_membus_t *src_mem,
@@ -55,6 +62,12 @@ static snapu32_t read_bulk ( snap_membus_t *src_mem,
     return xfer_size;
 }
 
+static void read_single (snap_membus_t * src_mem, snapu64_t byte_address, snap_membus_t * data)
+{
+    *data = (src_mem + (byte_address >> ADDR_RIGHT_SHIFT))[0];
+}
+
+//--------------------------------------------------------------------------------------------
 static snapu32_t write_bulk (snap_membus_t *tgt_mem,
         snapu64_t      byte_address,
         snapu32_t      byte_to_transfer,
@@ -64,6 +77,10 @@ static snapu32_t write_bulk (snap_membus_t *tgt_mem,
     xfer_size = MIN(byte_to_transfer, (snapu32_t)  MAX_NB_OF_BYTES_READ);
     memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), buffer, xfer_size);
     return xfer_size;
+}
+static void write_single (snap_membus_t * tgt_mem, snapu64_t byte_address, snap_membus_t data)
+{
+    (tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT))[0] = data;
 }
 //--------------------------------------------------------------------------------------------
 
@@ -107,14 +124,14 @@ void write_out_buf (snap_membus_t  * tgt_mem, snapu64_t address, snapu32_t * out
     write_bulk(tgt_mem, address, BPERCL, lines);
 }
 
-void fill_vnode_array(snapu32_t vex_num, VexNode * vex_array, snapu64_t  address, snap_membus_t * src_mem )
+void fill_vnode_array(snapu32_t vex_num, VexNode_hls * vex_array, snapu64_t  address, snap_membus_t * src_mem )
 {
     if(vex_num <=0)
         return;
 
     snapu64_t 		address_xfer_offset = 0;
     snap_membus_t   block_buf[MAX_NB_OF_BYTES_READ/BPERDW];
-    snapu32_t left_bytes = vex_num * sizeof (VexNode);
+    snapu32_t left_bytes = vex_num * sizeof (VexNode_hls);
     snapu32_t xfer_bytes;
     ap_uint<VEX_WIDTH> index = 0;
 
@@ -124,12 +141,12 @@ void fill_vnode_array(snapu32_t vex_num, VexNode * vex_array, snapu64_t  address
 
         ap_uint<VEX_WIDTH> iii, jjj;
 
-        for(iii = 0; iii < xfer_bytes/sizeof(VexNode); iii++)
+        for(iii = 0; iii < xfer_bytes/sizeof(VexNode_hls); iii++)
         {
             /// iii is the vex count
             //  jjj is the snap_membus_t count
             jjj = iii/4;
-            // one snap_membus_t <=> 4 VexNode
+            // one snap_membus_t <=> 4 VexNode_hls
             switch(iii(1,0))
             {
                 case 0: vex_array[index].edgelink = block_buf[jjj](63,0); break;
@@ -148,9 +165,11 @@ void fill_vnode_array(snapu32_t vex_num, VexNode * vex_array, snapu64_t  address
 //--------------------------------------------------------------------------------------------
 //--- MAIN PROGRAM ---------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
+// This example doesn't use FPGA DDR.
+// Need to set Environment Variable "SDRAM_USED=FALSE" before compilation.
 void hls_action(snap_membus_t  *din_gmem, snap_membus_t  *dout_gmem,
-        snap_membus_t  *d_ddrmem,
-        action_reg *Action_Register, action_RO_config_reg *Action_Config)
+//        snap_membus_t  *d_ddrmem,
+        action_reg *action_reg, action_RO_config_reg *Action_Config)
 {
     // Host Memory AXI Interface
 #pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
@@ -159,14 +178,14 @@ void hls_action(snap_membus_t  *din_gmem, snap_membus_t  *dout_gmem,
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg 		offset=0x040
 
     //DDR memory Interface
-#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
-#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg 		offset=0x050
+//#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
+//#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg 		offset=0x050
 
     // Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Config
 #pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg	offset=0x010
-#pragma HLS DATA_PACK variable=Action_Register
-#pragma HLS INTERFACE s_axilite port=Action_Register bundle=ctrl_reg	offset=0x100
+#pragma HLS DATA_PACK variable=action_reg
+#pragma HLS INTERFACE s_axilite port=action_reg bundle=ctrl_reg	offset=0x100
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
     // VARIABLES
@@ -186,11 +205,11 @@ void hls_action(snap_membus_t  *din_gmem, snap_membus_t  *dout_gmem,
     snapu32_t buf_out[32];   //To fill a cacheline and write to output_traverse.
 
     /* Required Action Type Detection */
-    switch (Action_Register->Control.flags) {
+    switch (action_reg->Control.flags) {
         case 0:
             Action_Config->action_type = (snapu32_t)BFS_ACTION_TYPE;
-            Action_Config->release_level = (snapu32_t)RELEASE_LEVEL;
-            Action_Register->Control.retc = (snapu32_t)0xe00f;
+            Action_Config->release_level = (snapu32_t)HW_RELEASE_LEVEL;
+            action_reg->Control.Retc = (snapu32_t)0xe00f;
             return;
         default:
             break;
@@ -200,28 +219,27 @@ void hls_action(snap_membus_t  *din_gmem, snap_membus_t  *dout_gmem,
     //==================================
 
     // byte address received need to be aligned with port width
-    input_address  = Action_Register->Data.input_adjtable.addr;
-    commit_address = Action_Register->Data.output_traverse.addr;
-    vex_num        = Action_Register->Data.vex_num;
+    input_address  = action_reg->Data.input_adjtable.addr;
+    commit_address = action_reg->Data.output_traverse.addr;
+    vex_num        = action_reg->Data.vex_num;
+    root           = action_reg->Data.start_root;
 
-    ReturnCode = RET_CODE_OK;
+
+
+    ReturnCode = SNAP_RETC_SUCCESS;
 
     hls::stream <Q_t> Q;
 #pragma HLS stream depth=16384 variable=Q
-    //Caution!!! pragma doesn't recognize MAX_VEX_NUM macro.
+    //TODO Caution!!! pragma doesn't recognize MAX_VEX_NUM macro.
 
-    //define a RAM to hold VNODE:
-    // MAX_VEX_NUM * VNODE_SIZE
-    // 16K * 16B = 256KB
-
-    VexNode vnode_array[MAX_VEX_NUM];
-    //Initialize it with burst read
+    //A local RAM to hold vertex array.
     //It will improve the performance a lot.
+    VexNode_hls vnode_array[MAX_VEX_NUM];
     fill_vnode_array(vex_num, vnode_array, input_address, din_gmem);
 
 
-L0: for (root = 0; root < vex_num; root ++)
-    {
+//L0: for (root = 0; root < vex_num; root ++)
+//    {
 
         //Enqueue
         Q.write(root); //Need several actions to fill the internal until empty() takes effect.
@@ -246,7 +264,7 @@ L0: for (root = 0; root < vex_num; root ++)
                 fetch_address = edgelink_ptr;
 
                 //Read next edge
-                read_bulk (din_gmem, fetch_address, BPERDW, &edge_node);
+                read_single (din_gmem, fetch_address, &edge_node);
 
                 //edgelink_ptr = edge_node.nextptr;
                 //adjvex       = edge_node.adjvex;
@@ -263,7 +281,7 @@ L0: for (root = 0; root < vex_num; root ++)
                     vnode_idx ++;
 
                     //Commit buf_out if a cacheline is fulfilled
-                    if(vnode_idx >= BPERCL)
+                    if((vnode_idx * sizeof(snapu32_t)) >= BPERCL)
                     {
                         write_out_buf(dout_gmem, commit_address, buf_out);
 
@@ -280,16 +298,16 @@ L0: for (root = 0; root < vex_num; root ++)
         vnode_idx = 0;
         commit_address += BPERCL; //One cacheline
         //Update register
-        Action_Register->Data.status_pos             = commit_address(31,0);
-        Action_Register->Data.status_vex             = root;
-    }
+        action_reg->Data.status_pos             = commit_address(31,0);
+        action_reg->Data.status_vex             = root;
+//    }
 
-    if(root != vex_num) //Doesn't run to last node.
-        ReturnCode = RET_CODE_FAILURE;
+//    if(root != vex_num) //Doesn't run to last node.
+//        ReturnCode = SNAP_RETC_FAILURE;
 
-    Action_Register->Control.retc = (snapu32_t) ReturnCode;
-    Action_Register->Data.status_pos             = commit_address(31,0);
-    Action_Register->Data.status_vex             = root;
+    action_reg->Control.Retc = (snapu32_t) ReturnCode;
+    action_reg->Data.status_pos             = commit_address(31,0);
+    action_reg->Data.status_vex             = root;
     return;
 }
 

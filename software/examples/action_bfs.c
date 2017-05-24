@@ -31,7 +31,7 @@
  */
 
 /*
- * Copyright 2016, 2017 International Business Machines
+ * Copyright 2017, International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -211,7 +211,7 @@ void output_vex(unsigned int vex, int is_tail)
     }
 }
 
-
+/*
 int bfs_all (VexNode * vex_list, unsigned int vex_num)
 {
     unsigned int i;
@@ -221,7 +221,7 @@ int bfs_all (VexNode * vex_list, unsigned int vex_num)
     }
     return 0;
 }
-
+*/
 //Breadth-first-search from a perticular vertex.
 void bfs (VexNode * vex_list, unsigned int vex_num, unsigned int root)
 {
@@ -287,8 +287,8 @@ void bfs (VexNode * vex_list, unsigned int vex_num, unsigned int root)
 static int action_main(struct snap_sim_action *action,
         void *job, unsigned int job_len __unused)
 {
-    int rc;
-    struct bfs_job *js = (struct bfs_job *)job;
+    int rc = 0;
+    bfs_job_t *js = (bfs_job_t *)job;
 
     VexNode * vex_list = (VexNode *) js->input_adjtable.addr;
     unsigned int vex_num = js->vex_num;
@@ -296,7 +296,7 @@ static int action_main(struct snap_sim_action *action,
 
     g_out_ptr = (unsigned int *)js->output_traverse.addr;
 
-    rc = bfs_all(vex_list, vex_num);
+    bfs(vex_list, vex_num, js->start_root);
     js->status_vex = vex_num;
     js->status_pos = (unsigned int)((unsigned long long) g_out_ptr & 0xFFFFFFFFull);
     if (rc == 0)
@@ -317,7 +317,7 @@ out_err:
 static struct snap_sim_action action = {
     .vendor_id = SNAP_VENDOR_ID_ANY,
     .device_id = SNAP_DEVICE_ID_ANY,
-    .action_type = HLS_BFS_ID,
+    .action_type = BFS_ACTION_TYPE,
 
     .job = { .retc = SNAP_RETC_FAILURE, },
     .state = ACTION_IDLE,

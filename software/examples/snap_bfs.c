@@ -41,7 +41,6 @@
 #include <action_bfs.h>
 #include <snap_hls_if.h>
 
-#define HLS_BFS_ID		0x10141004
 
 /*
  * BFS: breadth first search
@@ -64,8 +63,7 @@
  *    1. We need to set a BFS_ACTION_TYPE, this is the ACTION ID.
  *    2. We need to fill in 108 bytes configuration space.
  *    Host will send this field to FPGA via MMIO-32.
- *          This field is completely user defined. see 'bfs_job'
- *          (No more 108 bytes. If not enough, we can append more)
+ *          This field is completely user defined. see 'bfs_job_t'
  *    3. Call snap APIs
  *
  * Notes:
@@ -80,9 +78,10 @@ static void usage(const char *prog)
     printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
             "  -C, --card <cardno> can be (0...3)\n"
             "  -i, --input_file <graph.txt>       Input graph file. (Not Available Now!!!) \n"
-            "  -o, --output_file <bfs_result.bin> Output traverse result file.\n"
-            "  -t, --timeout <number>        When graph is large, need to enlarge it.\n"
-            "  -r, --rand_nodes <number>     Generate a random graph with the numbers\n"
+            "  -o, --output_file <traverse.bin>   Output traverse result file.\n"
+            "  -t, --timeout <seconds>       When graph is large, need to enlarge it.\n"
+            "  -r, --rand_nodes <N>          Generate a random graph with the number\n"
+            "  -s, --start_root <num>        Traverse starting node index [0...N-1], default 0\n"
             "  -v, --verbose                 Show more information on screen.\n"
             "                                Automatically turned off when vex number > 20\n"
             "  -V, --version                 Git version\n"
@@ -90,7 +89,8 @@ static void usage(const char *prog)
             "\n"
             "Example:\n"
             "  snap_bfs   (Traverse a small sample graph and show result on screen)\n"
-            "  snap_bfs -i graph.txt -o traverse.txt \n"
+            "  snap_bfs -r 50 -s 9 -o traverse.bin \n"
+            "             (Generate a 50 nodes graph, traverse from node 9) \n"
             "\n",
             prog);
 }
@@ -159,7 +159,7 @@ static int create_random_graph( AdjList * adj, uint32_t vex_num, uint32_t edge_n
     // Initialize the header nodes
     for (i = 0; i < vex_num; i++)
     {
-        adj->vex_list[i].data = malloc (sizeof(VexData));
+        adj->vex_list[i].data = memalign(CACHELINE_BYTES, sizeof(VexData));
         //TODO? no real info for VexData field
 
         adj->vex_list[i].edgelink = NULL;
@@ -175,7 +175,7 @@ static int create_random_graph( AdjList * adj, uint32_t vex_num, uint32_t edge_n
             d = rand()%vex_num;
         }while (d==s); //An arc to itself is not allowed.
 
-        en = memalign(32, sizeof(EdgeNode));
+        en = memalign(CACHELINE_BYTES, sizeof(EdgeNode));
         if(en == NULL)
         {
             printf("ERROR: Fail to malloc edge node\n");
@@ -189,7 +189,7 @@ static int create_random_graph( AdjList * adj, uint32_t vex_num, uint32_t edge_n
 
         //FIXME: I cannot avoid multiple edges from s to d when building the edgelinks
         en->adjvex = d;
-        en->data   = malloc(sizeof(EdgeData));
+        en->data   = memalign(CACHELINE_BYTES, sizeof(EdgeData));
         en->next   = adj->vex_list[s].edgelink;
         adj->vex_list[s].edgelink = en;
     }
@@ -223,7 +223,7 @@ static int create_sample_graph( AdjList * adj, uint32_t vex_num, uint32_t edge_n
         uint32_t d;
         s = e_table[i].s_vex;
         d = e_table[i].d_vex;
-        en = memalign(32, sizeof (EdgeNode)); //aligned to 32bytes
+        en = memalign(CACHELINE_BYTES, sizeof (EdgeNode)); //aligned to 32bytes
         //en = (EdgeNode *) malloc (sizeof (EdgeNode));
         if (en == NULL)
         {
@@ -291,10 +291,11 @@ static void destroy_graph(AdjList adj)
  *---------------------------------------------------*/
 
 static void snap_prepare_bfs(struct snap_job *job,
-        struct bfs_job *bjob_in,
-        struct bfs_job *bjob_out,
-        void *addr_in,
+        bfs_job_t *bjob_in,
+        bfs_job_t *bjob_out,
         uint32_t vex_num_in,
+        uint32_t root_in,
+        void *addr_in,
         uint16_t type_in,
 
         void *addr_out,
@@ -304,6 +305,8 @@ static void snap_prepare_bfs(struct snap_job *job,
     fprintf(stdout, "----------------  Config Space ----------- \n");
     fprintf(stdout, "input_adjtable_address = %p\n",addr_in);
     fprintf(stdout, "output_address = %p\n", addr_out);
+    fprintf(stdout, "graph nodes number = %d\n", vex_num_in);
+    fprintf(stdout, "start BFS traversing at %d\n", root_in);
     fprintf(stdout, "------------------------------------------ \n");
 
     snap_addr_set(&bjob_in->input_adjtable, addr_in, 0,
@@ -316,6 +319,7 @@ static void snap_prepare_bfs(struct snap_job *job,
             type_out, SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END );
 
     bjob_in->vex_num = vex_num_in;
+    bjob_in->start_root = root_in;
     bjob_in->status_pos = 0;
     bjob_in->status_vex = 0xbeefbeef;
 
@@ -347,11 +351,12 @@ int main(int argc, char *argv[])
     const char *input_file = NULL;
     const char *output_file = NULL;
     int random_graph = 0;
-    uint32_t vex_n, edge_n;
+    uint32_t vex_n, edge_n, root_in;
     snap_action_flag_t action_irq = 0;
 
     vex_n  = ARRAY_SIZE(v_table);
     edge_n = ARRAY_SIZE(e_table);
+    root_in = 0;
 
     while (1) {
         int option_index = 0;
@@ -360,6 +365,7 @@ int main(int argc, char *argv[])
             { "input_file",	 required_argument, NULL, 'i' },
             { "output_file", required_argument, NULL, 'o' },
             { "rand_nodes",	 required_argument, NULL, 'r' },
+            { "start_root",	 required_argument, NULL, 's' },
             { "timeout",	 required_argument, NULL, 't' },
             { "version",	 no_argument,	    NULL, 'V' },
             { "verbose",	 no_argument,	    NULL, 'v' },
@@ -369,7 +375,7 @@ int main(int argc, char *argv[])
         };
 
         ch = getopt_long(argc, argv,
-                "C:i:o:t:r:VvhI",
+                "C:i:o:t:r:s:VvhI",
                 long_options, &option_index);
         if (ch == -1)	/* all params processed ? */
             break;
@@ -398,6 +404,9 @@ int main(int argc, char *argv[])
                 random_graph=1;
                 vex_n = strtol(optarg, (char **)NULL, 0);
                 break;
+            case 's':
+                root_in = strtol(optarg, (char **)NULL, 0);
+                break;
             case 'h':
                 usage(argv[0]);
                 exit(EXIT_SUCCESS);
@@ -419,8 +428,8 @@ int main(int argc, char *argv[])
 
 
     //Action specfic
-    struct bfs_job bjob_in;
-    struct bfs_job bjob_out;
+    bfs_job_t bjob_in;
+    bfs_job_t bjob_out;
 
     //Input buffer
     uint8_t type_in = SNAP_ADDRTYPE_HOST_DRAM;
@@ -429,7 +438,7 @@ int main(int argc, char *argv[])
     //Output buffer
     uint8_t type_out = SNAP_ADDRTYPE_HOST_DRAM;
     uint32_t * obuf = 0x0ull;
-    uint32_t size_out;
+    uint32_t nodes_out;
     uint32_t i, j, k;
     FILE *ofp;
 
@@ -447,7 +456,7 @@ int main(int argc, char *argv[])
     //else
     if (random_graph && vex_n > 0)
     {
-        edge_n = vex_n * (vex_n - 1) / 4;  // 1/4 of a full connection
+        edge_n = vex_n * (vex_n - 1) / 8;  // 1/8 of a full connection
         rc = create_random_graph(&adj, vex_n, edge_n, page_size);
     }
     else
@@ -464,16 +473,15 @@ int main(int argc, char *argv[])
     // create obuf
     // obuf is 1024bit  aligned.
     // Format:
-    // 1024b: Root0: | {visit_node}, {visit_node}, .............................{visit_node} |
-    // 1024b:        | {visit_node}, {visit_node}, ....,  {FF....cnt}, {dummy}, ..., {dummy} |
-    // 1024b: Root1: | {visit_node}, {visit_node}, .............................{visit_node} |
-    // 1024b:        | {visit_node}, {visit_node}, ....,  {FF....cnt}, {dummy}, ..., {dummy} |
-    //  ... till Root N-1
+    // 1024b: Root: | {visit_node}, {visit_node}, .............................{visit_node} |
+    // 1024b:       | {visit_node}, {visit_node}, ....,  {FF....cnt}, {dummy}, ..., {dummy} |
     //
     // Each {} is uint32_t, can fill 32 nodes in a row.
 
-    size_out = vex_n * (vex_n/32+1)*32;
-    obuf = memalign(page_size, sizeof(uint32_t) * size_out);
+    nodes_out = (vex_n/32+1)*32;
+    //nodes_out = vex_n * (vex_n/32+1)*32;
+    printf("nodes_out = %d nodes. \n", nodes_out);
+    obuf = memalign(page_size, sizeof(uint32_t) * nodes_out);
 
 
     //////////////////////////////////////////////////////////////////////
@@ -489,7 +497,7 @@ int main(int argc, char *argv[])
         goto out_error;
     }
 
-    action = snap_attach_action(card, HLS_BFS_ID, action_irq, 60);
+    action = snap_attach_action(card, BFS_ACTION_TYPE, action_irq, 60);
     if (action == NULL) {
         fprintf(stderr, "err: failed to attach action %u: %s\n",
                 card_no, strerror(errno));
@@ -497,7 +505,8 @@ int main(int argc, char *argv[])
     }
 
     snap_prepare_bfs(&job, &bjob_in, &bjob_out,
-            (void *)ibuf,  vex_n,    type_in,
+            vex_n, root_in,
+            (void *)ibuf, type_in,
             (void *)obuf, type_out);
 
     fprintf(stdout, "INFO: Timer starts...\n");
@@ -526,7 +535,7 @@ int main(int argc, char *argv[])
         j = 0;  //vex    index
         fprintf(stdout, "Visiting node (%d): ", j);
 
-        while(i < size_out)
+        while(i < nodes_out)
         {
             k = obuf[i];
 
@@ -536,7 +545,7 @@ int main(int argc, char *argv[])
                 fprintf (stdout, "End. Cnt = %d\n", (k&0x00FFFFFF));
                 i = i + 32 - (i%32); //Skip following empty.
                 j++;
-                if(i < size_out) //For next node:
+                if(i < nodes_out) //For next node:
                     fprintf(stdout, "Visiting node (%d): ", j);
 
             }
@@ -563,7 +572,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "err: Cannot open file %s\n", output_file);
             goto out_error;
         }
-        rc = fwrite(obuf, size_out, 4, ofp);
+        rc = fwrite(obuf, nodes_out, 4, ofp);
         if (rc < 0)
             goto out_error;
     }
