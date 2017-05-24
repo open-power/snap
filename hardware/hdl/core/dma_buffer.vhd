@@ -123,7 +123,7 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL rram_wdata                       : std_logic_vector(519 DOWNTO 0);
   SIGNAL rram_wdata_p_q                   : std_logic_vector(  7 DOWNTO 0);
   SIGNAL rram_wen                         : std_logic;
-  SIGNAL wback_data_p_q                   : std_logic_vector(  7 DOWNTO 0);
+  SIGNAL wback_data_p_q                   : std_logic_vector( 63 DOWNTO 0);
   SIGNAL wback_data_q                     : std_logic_vector(511 DOWNTO 0);
   SIGNAL wram_raddr                       : std_logic_vector(  5 DOWNTO 0);
   SIGNAL wram_rdata                       : std_logic_vector(583 DOWNTO 0);
@@ -136,7 +136,8 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL wram_wen                         : std_logic;
   SIGNAL even_wdata_complete_q            : boolean;
   SIGNAL buf_wtag_cl_partial_q            : boolean;
-  SIGNAL parity_error_fir_q               : std_logic := '0';
+  SIGNAL wdata_parity_err_q               : std_logic_vector(  7 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL wdata_parity_fir_q               : std_logic := '0';
 
   signal flip_bit_q                       : std_logic;
   signal flip_bit_valid_q                 : std_logic;
@@ -274,10 +275,14 @@ BEGIN
 
         IF ha_b_rad_q = '0' THEN
           wback_data_q   <= rlck_data_q(0);
-          wback_data_p_q <= rlck_data_p_q(0);
+           FOR i IN 0 TO 63 LOOP
+            wback_data_p_q(i) <= parity_gen_odd(rlck_data_q(0)(i*8+7 DOWNTO i*8)); 
+          END LOOP;  -- i
         ELSE
           wback_data_q   <= rlck_data_q(1);
-          wback_data_p_q <= rlck_data_p_q(1);
+           FOR i IN 0 TO 63 LOOP
+            wback_data_p_q(i) <= parity_gen_odd(rlck_data_q(1)(i*8+7 DOWNTO i*8)); 
+          END LOOP;  -- i
         END IF;
       END IF;
     END PROCESS rlock_reg;
@@ -315,8 +320,8 @@ BEGIN
       doutb  => wram_rdata
     );
 
-    assert parity_error_fir_q = '0' report "FIR: wram write parity error" severity FIR_MSG_LEVEL;
-    buf_wdata_parity_err_o  <=  parity_error_fir_q;
+    assert wdata_parity_fir_q = '0' report "FIR: wram write parity error" severity FIR_MSG_LEVEL;
+    buf_wdata_parity_err_o  <=  wdata_parity_fir_q;
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -360,7 +365,8 @@ BEGIN
           wram_rdata_p_q     <= (OTHERS => '1');
           wram_waddr_q       <= (OTHERS => '0');
           wram_waddr_p_q     <= '1';
-          parity_error_fir_q <= '0';
+          wdata_parity_err_q <= (OTHERS => '0');
+          wdata_parity_fir_q <= '0';
 
         ELSE
           --
@@ -370,17 +376,25 @@ BEGIN
           buf_wtag_p_q          <= parity_gen_even(wram_waddr_p_q & wram_waddr_q(0));
           buf_wtag_valid_q      <= FALSE;
           buf_wtag_cl_partial_q <= TRUE;
-          parity_error_fir_q    <= '0';
+          wdata_parity_err_q    <= (OTHERS => '0');
+          wdata_parity_fir_q    <= '0';
           wram_waddr_q          <= wram_waddr_d;
           wram_waddr_p_q        <= wram_waddr_p_d;
 
           --
           -- wdata
-          if buf_wdata_v_i = '1' then
---512            if  gen_parity_odd_128(buf_wdata_i) /= (buf_wdata_p_i xor buf_wdata_be_i) then
---512              parity_error_fir_q <= '1';
---512            end if;
+          IF buf_wdata_v_i = '1' THEN
+            --
+            -- check the data that will be written into the buffer
+            -- 
+            FOR i IN 0 TO 7 LOOP
+              IF  parity_gen_odd(buf_wdata_i(i*64+63 DOWNTO i*64)) /= (buf_wdata_p_i(i) XOR buf_wdata_be_i(i)) THEN
+                wdata_parity_err_q(i) <= '1';
+              END IF;
+            END LOOP;  -- i
 
+            wdata_parity_fir_q <= or_reduce(wdata_parity_err_q);
+            
             --
             -- check that the first 64 bytes of a CL are written into the buffer
             -- 
@@ -426,26 +440,25 @@ BEGIN
           -- wram read and modified data
           FOR i IN 63 DOWNTO 0 LOOP
             IF wram_rdata_be_v(i) = '1' THEN
-              wram_rmdata_v(i*8+7 DOWNTO i*8) :=     wram_rdata_v(i*8+7 DOWNTO i*8);
---              wram_rmdata_p_v(i)              := NOT wram_rdata_p_v(i);
+              wram_rmdata_v(i*8+7 DOWNTO i*8) :=  wram_rdata_v(i*8+7 DOWNTO i*8);
+              wram_rmdata_p_v(i)              := '0';
             ELSE
               wram_rmdata_v(i*8+7 DOWNTO i*8) := wback_data_q(i*8+7 DOWNTO i*8);
---              wram_rmdata_p_v(i)              := wback_data_p_q(i);
+              wram_rmdata_p_v(i)              := wback_data_p_q(i);
             END IF;
           END LOOP;  -- i
 
           --
           --
           wram_rdata_q   <= wram_rmdata_v;
-          wram_rdata_p_q <= (OTHERS => '0');
---512          wram_rdata_p_q <= parity_gen_odd(wram_rmdata_p_v(63 DOWNTO 56) & inject_ah_b_rpar_error_i) &
---512                            parity_gen_odd(wram_rmdata_p_v(55 DOWNTO 48)                           ) &
---512                            parity_gen_odd(wram_rmdata_p_v(47 DOWNTO 40)                           ) &
---512                            parity_gen_odd(wram_rmdata_p_v(39 DOWNTO 32)                           ) &
---512                            parity_gen_odd(wram_rmdata_p_v(31 DOWNTO 24)                           ) &
---512                            parity_gen_odd(wram_rmdata_p_v(23 DOWNTO 16)                           ) &
---512                            parity_gen_odd(wram_rmdata_p_v(15 DOWNTO  8)                           ) &
---512                            parity_gen_odd(wram_rmdata_p_v( 7 DOWNTO  0)                           );
+          wram_rdata_p_q <= parity_gen_odd(wram_rmdata_p_v(63 DOWNTO 56) & wram_rdata_p_v(7) & inject_ah_b_rpar_error_i) &
+                            parity_gen_odd(wram_rmdata_p_v(55 DOWNTO 48) & wram_rdata_p_v(6)                           ) &
+                            parity_gen_odd(wram_rmdata_p_v(47 DOWNTO 40) & wram_rdata_p_v(5)                           ) &
+                            parity_gen_odd(wram_rmdata_p_v(39 DOWNTO 32) & wram_rdata_p_v(4)                           ) &
+                            parity_gen_odd(wram_rmdata_p_v(31 DOWNTO 24) & wram_rdata_p_v(3)                           ) &
+                            parity_gen_odd(wram_rmdata_p_v(23 DOWNTO 16) & wram_rdata_p_v(2)                           ) &
+                            parity_gen_odd(wram_rmdata_p_v(15 DOWNTO  8) & wram_rdata_p_v(1)                           ) &
+                            parity_gen_odd(wram_rmdata_p_v( 7 DOWNTO  0) & wram_rdata_p_v(0)                           );
         END IF;
       END IF;
     END PROCESS wram_ctrl_clk;

@@ -203,7 +203,12 @@ xsim:
 		$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/xsim top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 		cd $(SNAP_HARDWARE_ROOT)/sim/xsim && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
 	fi
-	@cd $(SNAP_HARDWARE_ROOT)/sim/xsim && ./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1
+	@cd $(SNAP_HARDWARE_ROOT)/sim/xsim; \
+	./top.sh > $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
+	if [ $$? -ne 0 ]; then \
+	 echo -e "\t                       Error: please look into compile_$(SIMULATOR).log"; \
+	fi 
+	@echo -e "\t[BUILD xsim..........] done  `date`"
 
 irun:
 	@echo -e "\t[BUILD irun..........] start `date`"
@@ -212,7 +217,12 @@ irun:
 		$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/ies top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 		cd $(SNAP_HARDWARE_ROOT)/sim/ies && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
 	fi
-	@cd $(SNAP_HARDWARE_ROOT)/sim/ies && ./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1
+	@cd $(SNAP_HARDWARE_ROOT)/sim/ies;\
+	./top.sh > $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
+	if [ $$? -ne 0 ]; then \
+	 echo -e "\t                       Error: please look into compile_$(SIMULATOR).log"; \
+	fi 
+	@echo -e "\t[BUILD irun..........] done  `date`"
 
 questa:
 	@echo -e "\t[BUILD questa........] start `date`"
@@ -221,7 +231,12 @@ questa:
 		$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/questa top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 		cd $(SNAP_HARDWARE_ROOT)/sim/questa && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
 	fi
-	@cd $(SNAP_HARDWARE_ROOT)/sim/questa && ./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1
+	@cd $(SNAP_HARDWARE_ROOT)/sim/questa; \
+	./top.sh 4> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
+	if [ $$? -ne 0 ]; then \
+	 echo -e "\t                       Error: please look into compile_$(SIMULATOR).log"; \
+	fi 
+	@echo -e "\t[BUILD questa........] done  `date`"
 
 clean: 
 	@echo -e "\t[CLEAN ENVIRONMENT...] start";
