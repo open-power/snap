@@ -109,7 +109,7 @@ setup_environment:
 	@mkdir $(BUILD_DIR)/Checkpoints; 
 	@ln -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl     $(BUILD_DIR)/snap_build.tcl; 
 	@ln -s $(SNAP_HARDWARE_ROOT)/setup/snap_xpr_build.tcl $(BUILD_DIR)/snap_xpr_build.tcl; 
-	@cp -p $(PSL_DCP)                                     $(BUILD_DIR)/Checkpoints/; 
+	@cp -p $(PSL_DCP)                                     $(BUILD_DIR)/Checkpoints/b_route_design.dcp; 
 	@if [ $(FPGACARD) = "KU3" ]; then \
 	  ln -f -s $(SNAP_HDL_CORE)/psl_fpga_ku3.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
 	  ln -f -s $(SNAP_HDL_CORE)/psl_accel_ku3.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
