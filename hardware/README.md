@@ -31,7 +31,7 @@ differently):
 
 ### Cadence setup
 
-If you want to use Cadence tools (i.e. ncsim or irun) for simulation you need to compile the Xilinx IP and let the environment variable
+If you want to use Cadence tools (irun) for simulation you need to compile the Xilinx IP and let the environment variable
 
 ```
    export IES_LIBS      = <pointer to precompiled Xilinx IP for Cadence tools>
@@ -41,7 +41,7 @@ If you want to use Cadence tools (i.e. ncsim or irun) for simulation you need to
 point to the resulting compiled library.
 
 Furthermore, the environment variables `$PATH` and `$LD_LIBRARY_PATH` need to contain the paths
-to the Cadence tools and libraries. In case `$SIMULATOR == ncsim` or `$SIMULATOR == irun` the script
+to the Cadence tools and libraries. In case `$SIMULATOR == irun` the script
 [./snap_settings](./snap_settings) will set the Cadence specific environment variable
 
 ```
