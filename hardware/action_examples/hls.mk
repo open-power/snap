@@ -18,9 +18,8 @@
 #   xcku060-ffva1156-2-e
 #   xc7vx690tffg1157-2
 #
-# FIXME Set from outside should be possible
-#
-PART_NUMBER ?= xcku060-ffva1156-2-e
+FPGACHIP    ?= xcku060-ffva1156-2-e
+PART_NUMBER ?= $(FPGACHIP)
 
 # The wrapper name must match a function in the HLS sources which is
 # taken as entry point for the HDL generation.
