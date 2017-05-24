@@ -34,6 +34,7 @@ int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
 static const char *checksum_mode_str[] = { "CRC32", "ADLER32", "SPONGE" };
+static const char *test_choice_str[] = { "SPEED", "SHA3", "SHAKE" , "SHA3_SHAKE"};
 
 /**
  * @brief	prints valid command line options
@@ -50,7 +51,7 @@ static void usage(const char *prog)
 	       "  -A, --type-in <CARD_RAM, HOST_RAM, ...>.\n"
 	       "  -a, --addr-in <addr>      address e.g. in CARD_RAM.\n"
 	       "  -s, --size <size>         size of data.\n"
-	       "  -p, --pe <pe>             sponge specific input.\n"
+	       "  -c, --choice <SPEED,SHA3,SHAKE,SHA3_SHAKE>  sponge specific input.\n"
 	       "  -n, --nb_pe <nb_pe>       sponge specific input.\n"
 	       "  -m, --mode <CRC32|ADLER32|SPONGE> mode flags.\n"
 	       "  -T, --test                execute a test if available.\n"
@@ -71,7 +72,7 @@ static void snap_prepare_checksum(struct snap_job *cjob,
 				  uint8_t type_in,
 				  uint64_t type,
 				  uint64_t chk_in,
-				  uint32_t pe,
+				  uint32_t test_choice,
 				  uint32_t nb_pe,
 				  uint32_t threads)
 {
@@ -81,7 +82,7 @@ static void snap_prepare_checksum(struct snap_job *cjob,
 
 	mjob_in->chk_type = type;
 	mjob_in->chk_in = chk_in;
-	mjob_in->pe = pe;
+	mjob_in->test_choice = test_choice;
 	mjob_in->nb_pe = nb_pe;
 	mjob_in->nb_slices = threads; /* misuse this for software sim */
 
@@ -162,7 +163,7 @@ static int do_checksum(int card_no, unsigned long timeout,
 		       unsigned char type_in,  unsigned long size,
 		       uint64_t checksum_start,
 		       checksum_mode_t mode,
-		       uint32_t pe, uint32_t nb_pe,
+		       test_choice_t test_choice, uint32_t nb_pe,
 		       uint64_t *_checksum,
 		       uint64_t *_usec,
 		       uint32_t *_nb_slices,
@@ -184,13 +185,15 @@ static int do_checksum(int card_no, unsigned long timeout,
 		"  size:     %08lx\n"
 		"  checksum_start: %016llx\n"
 		"  mode:     %08x %s\n"
-		"  pe:       %08x\n"
-		"  nb_pe:    %08x\n"
+		"  test_choice:%08x %s\n"
+		/*"  nb_pe:    %08x\n"*/
 		"  job_size: %ld bytes\n",
 		type_in, (long long)addr_in,
 		size, (long long)checksum_start, mode,
-		checksum_mode_str[mode % CHECKSUM_MODE_MAX],
-		pe, nb_pe, sizeof(struct checksum_job));
+		checksum_mode_str[mode % CHECKSUM_MODE_MAX], test_choice, 
+		test_choice_str[test_choice % CHECKSUM_TYPE_MAX],
+		/*nb_pe, */
+                sizeof(struct checksum_job));
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
@@ -210,7 +213,7 @@ static int do_checksum(int card_no, unsigned long timeout,
 
 	snap_prepare_checksum(&cjob, &mjob_in, &mjob_out,
 			     (void *)addr_in, size, type_in,
-			      mode, checksum_start, pe, nb_pe,
+			      mode, checksum_start, test_choice, nb_pe,
 			      threads);
 
 	gettimeofday(&stime, NULL);
@@ -255,151 +258,6 @@ static int do_checksum(int card_no, unsigned long timeout,
 	return -1;
 }
 
-struct sponge_t {
-	uint32_t nb_slices;
-	uint32_t nb_round;
-	uint32_t pe;
-	uint32_t nb_pe;
-	uint64_t checksum;
-};
-
-static struct sponge_t test_data[] = {
-	/* NB_SLICES=4 NB_ROUND=1024 */
-	{ .nb_slices = 4, .nb_round = 1 << 10,
-	  .pe = 0, .nb_pe = 1, .checksum = 0x948dd5b0109342d4ull },
-	{ .nb_slices = 4, .nb_round = 1 << 10,
-	  .pe = 0, .nb_pe = 2, .checksum = 0x0bca19b17df64085ull },
-	{ .nb_slices = 4, .nb_round = 1 << 10,
-	  .pe = 1, .nb_pe = 2, .checksum = 0x9f47cc016d650251ull },
-	{ .nb_slices = 4, .nb_round = 1 << 10,
-	  .pe = 0, .nb_pe = 4, .checksum = 0x7f13a4a377a2c4feull },
-	{ .nb_slices = 4, .nb_round = 1 << 10,
-	  .pe = 1, .nb_pe = 4, .checksum = 0xee0710b96b0748fbull },
-	{ .nb_slices = 4, .nb_round = 1 << 10,
-	  .pe = 2, .nb_pe = 4, .checksum = 0x74d9bd120a54847bull },
-	{ .nb_slices = 4, .nb_round = 1 << 10,
-	  .pe = 3, .nb_pe = 4, .checksum = 0x7140dcb806624aaaull },
-
-	/* NB_SLICES=64K NB_ROUND=64K */
-	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
-	  .pe = 0, .nb_pe = 64 * 1024, .checksum = 0x8d24ed80cd6a0bd9ull },
-	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
-	  .pe = 1, .nb_pe = 64 * 1024, .checksum = 0xe964ca11c078f26aull },
-	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
-	  .pe = 0, .nb_pe = 32 * 1024, .checksum = 0x6cf6ae5e38ed47d1ull },
-	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
-	  .pe = 0, .nb_pe = 16 * 1024, .checksum = 0xbaf1d25f7d805ecaull },
-	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
-	  .pe = 0, .nb_pe = 4 * 1024,  .checksum = 0xd36463652392bddcull },
-	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
-	  .pe = 0, .nb_pe = 1 * 1024,  .checksum = 0x4842575e08255e83ull },
-	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
-	  .pe = 0, .nb_pe = 512,       .checksum = 0xff341f9c1fdeb19bull },
-	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
-	  .pe = 0, .nb_pe = 128,       .checksum = 0xbfd576bbcddba92cull },
-	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
-	  .pe = 0, .nb_pe = 64,        .checksum = 0x5b7c7868506a5539ull },
-	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
-	  .pe = 0, .nb_pe = 16,        .checksum = 0x19bfa808392aac5full },
-	{ .nb_slices = 64 * 1024, .nb_round = 64 * 1024,
-	  .pe = 0, .nb_pe = 1,         .checksum = 0xed08548b49997520ull },
-
-	/* NB_SLICES=64K NB_ROUND=1M */
-	{ .nb_slices = 64 * 1024, .nb_round = 1024 * 1024,
-	  .pe = 0, .nb_pe = 64 * 1024, .checksum = 0x8e2c79142abf87d5ull },
-	{ .nb_slices = 64 * 1024, .nb_round = 1024 * 1024,
-	  .pe = 0, .nb_pe = 32 * 1024, .checksum = 0x9a872b8e5404fef2ull },
-	{ .nb_slices = 64 * 1024, .nb_round = 1024 * 1024,
-	  .pe = 0, .nb_pe = 16 * 1024, .checksum = 0xd673450d56c08398ull },
-	{ .nb_slices = 64 * 1024, .nb_round = 1024 * 1024,
-	  .pe = 0, .nb_pe = 4 * 1024,  .checksum = 0x131b697098fffa0bull },
-	{ .nb_slices = 64 * 1024, .nb_round = 1024 * 1024,
-	  .pe = 0, .nb_pe = 1 * 1024,  .checksum = 0xb435337247963e67ull },
-	{ .nb_slices = 64 * 1024, .nb_round = 1024 * 1024,
-	  .pe = 0, .nb_pe = 512,       .checksum = 0x60597d63aa2b811eull },
-	{ .nb_slices = 64 * 1024, .nb_round = 1024 * 1024,
-	  .pe = 0, .nb_pe = 128,       .checksum = 0xe554ef8cde27f4b4ull },
-	{ .nb_slices = 64 * 1024, .nb_round = 1024 * 1024,
-	  .pe = 0, .nb_pe = 64,        .checksum = 0xdfdc6f9b4613587eull },
-	{ .nb_slices = 64 * 1024, .nb_round = 1024 * 1024,
-	  .pe = 0, .nb_pe = 32,        .checksum = 0x27825f866bd12575ull },
-	{ .nb_slices = 64 * 1024, .nb_round = 1024 * 1024,
-	  .pe = 0, .nb_pe = 16,        .checksum = 0x226298a4a67933e2ull },
-	{ .nb_slices = 64 * 1024, .nb_round = 1024 * 1024,
-	  .pe = 0, .nb_pe = 1,         .checksum = 0x37f147bb31057bb6ull },
-};
-
-static uint32_t executed_slices(uint32_t pe, uint32_t nb_pe,
-				uint32_t nb_slices)
-{
-	uint32_t slice;
-	uint32_t executed = 0;
-
-	for (slice = 0; slice < nb_slices; slice++)
-		if (pe == (slice % nb_pe))
-			executed++;
-
-	return executed;
-}
-
-static int test_sponge(int card_no, int timeout, unsigned int threads,
-		       FILE *fp, snap_action_flag_t action_irq)
-{
-	int rc = -1;
-	unsigned int i;
-	uint64_t checksum = 0;
-	uint64_t usec = 0;
-	uint32_t nb_slices = 0, nb_round = 0;
-
-	fprintf(stderr, "SPONGE TESTCASE: ");
-
-	/* Try to figure out nb_slices and nb_round */
-	rc = do_checksum(card_no, timeout, threads, 0, 0, 0, 0,
-			 CHECKSUM_SPONGE, 0, 0, &checksum, &usec,
-			 &nb_slices, &nb_round, fp, action_irq);
-	if (rc != 0) {
-		fprintf(stderr, "err: sponge rc=%d FAILED\n", rc);
-		return rc;
-	}
-	fprintf(stderr, "NB_SLICES = %d NB_ROUND = %d\n", nb_slices, nb_round);
-
-	for (i = 0; i < ARRAY_SIZE(test_data); i++) {
-		struct sponge_t *t = &test_data[i];
-
-		if ((nb_slices != t->nb_slices) || (nb_round != t->nb_round))
-			continue;
-
-		rc = do_checksum(card_no, timeout, threads, 0, 0, 0, 0,
-				 CHECKSUM_SPONGE, t->pe, t->nb_pe,
-				 &checksum, &usec, &nb_slices, &nb_round, fp,
-				 action_irq);
-		if (rc != 0) {
-			fprintf(stderr, "err: sponge rc=%d FAILED\n", rc);
-			break;
-		}
-
-		if (checksum != t->checksum) {
-			fprintf(stderr, "err: pe = %d nb_pe = %d "
-				"checksum mismatch %016llx/%016llx\n",
-				t->pe, t->nb_pe,
-				(long long)checksum,
-				(long long)t->checksum);
-			return -1;
-		}
-		if (i == 0)
-			fprintf(stderr, "  NB_SLICES = %d NB_ROUND = %d\n",
-				nb_slices, nb_round);
-
-		fprintf(stderr, "  pe = %5d nb_pe = %5d ... ", t->pe, t->nb_pe);
-		fprintf(stderr, "checksum = %016llx executed = %4d "
-			"%8lld usec OK\n",
-			(long long)checksum,
-			executed_slices(t->pe, t->nb_pe, t->nb_slices),
-			(long long)usec);
-
-	}
-	return rc;
-}
 
 /**
  * Read accelerator specific registers. Must be called as root!
@@ -418,7 +276,7 @@ int main(int argc, char *argv[])
 	uint64_t addr_in = 0x0ull;
 	int mode = CHECKSUM_CRC32;
 	uint64_t checksum_start = 0ull;
-	uint32_t pe = 0, nb_pe = 0;
+	uint32_t test_choice = 0, nb_pe = 0;
 	int test = 0;
 	unsigned int threads = 160;
 	snap_action_flag_t action_irq = 0;
@@ -436,17 +294,17 @@ int main(int argc, char *argv[])
 			{ "mode",	 required_argument, NULL, 'm' },
 			{ "timeout",	 required_argument, NULL, 't' },
 			{ "test",	 no_argument,       NULL, 'T' },
-			{ "pe",		 required_argument, NULL, 'p' },
-			{ "nb_pe",	 required_argument, NULL, 'n' },
+			{ "test_choice", required_argument, NULL, 'c' },
+			{ "nb_pe",	 no_argument,       NULL, 'n' },
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
-			{ "rq",	 	no_argument,	    NULL, 'I' },
+			{ "rq",	 	 no_argument,	    NULL, 'I' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-				 "A:C:i:a:S:Tx:p:m:n:s:t:x:VqvhI",
+				 "A:C:i:a:S:Tx:c:m:s:t:x:VqvhI",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -470,8 +328,24 @@ int main(int argc, char *argv[])
 		case 'T':
 			test++;
 			break;
-		case 'p':
-			pe = __str_to_num(optarg);
+		case 'c':
+			if (strcmp(optarg, "SPEED") == 0) {
+				test_choice = CHECKSUM_SPEED;
+				break;
+			}
+			if (strcmp(optarg, "SHA3") == 0) {
+				test_choice = CHECKSUM_SHA3;
+				break;
+			}
+			if (strcmp(optarg, "SHAKE") == 0) {
+				test_choice = CHECKSUM_SHAKE;
+				break;
+			}
+			if (strcmp(optarg, "SHA3_SHAKE") == 0) {
+				test_choice = CHECKSUM_SHA3_SHAKE;
+				break;
+			}
+			test_choice = strtol(optarg, (char **)NULL, 0);
 			break;
 		case 'n':
 			nb_pe = __str_to_num(optarg);
@@ -554,24 +428,13 @@ int main(int argc, char *argv[])
 
 	if (test) {
 		switch (mode) {
-		case CHECKSUM_SPONGE: {
-			FILE *fp;
-
-			fp = fopen("/dev/null", "w");
-			rc = test_sponge(card_no, timeout, threads, fp,
-					 action_irq);
-			fclose(fp);
-			if (rc != 0)
-				goto out_error1;
-			break;
-		}
 		default:
 			goto out_error1;
 		}
 	} else {
 		rc = do_checksum(card_no, timeout, threads, addr_in,
 				 type_in, size, checksum_start, mode,
-				 pe, nb_pe, NULL, NULL, NULL,
+				 test_choice, nb_pe, NULL, NULL, NULL,
 				 NULL, stderr, action_irq);
 		if (rc != 0)
 			goto out_error1;

@@ -33,12 +33,20 @@ typedef enum {
 	CHECKSUM_MODE_MAX = 0x3,
 } checksum_mode_t;
 
+typedef enum {
+	CHECKSUM_SPEED = 0x0,
+	CHECKSUM_SHA3  = 0x1,
+	CHECKSUM_SHAKE = 0x2,
+	CHECKSUM_SHA3_SHAKE = 0x3,
+	CHECKSUM_TYPE_MAX = 0x4,
+} test_choice_t;
+
 typedef struct checksum_job {
 	struct snap_addr in;	/* in:  input data */
 	uint64_t chk_in;	/* in:  checksum input */
 	uint64_t chk_out;	/* out: checksum output */
 	uint32_t chk_type;	/* in:  CRC32, ADDLER32 */
-	uint32_t pe;		/* in:  special parameter for sponge */
+	uint32_t test_choice;	/* in:  special parameter for sponge */
 	uint32_t nb_pe;		/* in:  special parameter for sponge */
 	uint32_t nb_slices;     /* out: special parameter for sponge */
 	uint32_t nb_round;      /* out: special parameter for sponge */

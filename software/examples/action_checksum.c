@@ -235,134 +235,293 @@ static unsigned long do_crc(unsigned long crc, unsigned char *buf, int len)
 
 #define RESULT_SIZE 8
 #define HASH_SIZE 64
-/*
- * Casting from uint8_t to uint64_t => 89 FF - 83 LUT - II=34 - Latency=33
- */
-static void cast_uint8_to_uint64_W8(uint8_t st_in[64], uint64_t st[8])
-{
-	uint64_t mem;
-	int i, j;
-	const int VECTOR_SIZE = 8;
 
-	for (i = 0; i < VECTOR_SIZE; i++ ) {
-		/* #pragma HLS PIPELINE */
-		mem = 0;
-		for (j = 8; j >= 0; j--) {
-			mem = (mem << 8);
-			mem = (mem & 0xFFFFFFFFFFFFFF00 ) | st_in[j+i*8];
-		}
-		st[i] = mem;
-	}
+// read a hex string, return byte length or -1 on error.
+static int test_hexdigit(char ch)
+{
+    if (ch >= '0' && ch <= '9')
+        return  ch - '0';
+    if (ch >= 'A' && ch <= 'F')
+        return  ch - 'A' + 10;
+    if (ch >= 'a' && ch <= 'f')
+        return  ch - 'a' + 10;
+    return -1;
 }
 
-/*
- * Casting from uint64_t to uint8_t => 89 FF - 99 LUT - II=36 - Latency=35
- */
-static void cast_uint64_to_uint8_W8(uint64_t st_in[8], uint8_t st_out[64])
+static int test_readhex(uint8_t *buf, const char *str, int maxbytes)
 {
-	uint64_t tmp = 0;
-	int i, j;
-	const int VECTOR_SIZE = 8;
+    int i, h, l;
 
-	for (i = 0; i < VECTOR_SIZE; i++ ) {
-		/* #pragma HLS PIPELINE */
-		tmp = st_in[i];
-		for (j = 0; j < 8; j++ ) {
-			st_out[i*8+j] = (uint8_t)tmp;
-			tmp = (tmp >> 8);
-		}
-	}
+    for (i = 0; i < maxbytes; i++) {
+/*#pragma HLS UNROLL factor=4 */
+        h = test_hexdigit(str[2 * i]);
+        if (h < 0)
+            return i;
+        l = test_hexdigit(str[2 * i + 1]);
+        if (l < 0)
+            return i;
+        buf[i] = (h << 4) + l;
+    }
+
+    return i;
 }
 
-static uint64_t sponge(const uint64_t rank)
+// returns zero on success, nonzero + stderr messages on failure
+
+static int test_sha3()
 {
-	uint64_t magic[8] = { 0x0123456789abcdeful, 0x13579bdf02468aceul,
-			      0xfdecba9876543210ul, 0xeca86420fdb97531ul,
-			      0x571e30cf4b29a86dul, 0xd48f0c376e1b29a5ul,
-			      0xc5301e9f6b2ad748ul, 0x3894d02e5ba71c6ful };
-	uint64_t odd[8], even[8], result;
-	uint8_t odd8b[64], even8b[64];
-	int i, j;
-	int rnd_nb;
+        printf("FIPS 202 / SHA3  Self-Tests : ");
+    // message / digest pairs, lifted from ShortMsgKAT_SHA3-xxx.txt files
+    // in the official package: https://github.com/gvanas/KeccakCodePackage
+/*    
+    const char *testvec[][2] = {
+        {   // SHA3-224, corner case with 0-length message
+            "",
+            "6B4E03423667DBB73B6E15454F0EB1ABD4597F9A1B078E3F5B5A6BC7"
+        },
+        {   // SHA3-256, short message
+            "9F2FCC7C90DE090D6B87CD7E9718C1EA6CB21118FC2D5DE9F97E5DB6AC1E9C10",
+            "2F1A5F7159E34EA19CDDC70EBF9B81F1A66DB40615D7EAD3CC1F1B954D82A3AF"
+        },
+        {   // SHA3-384, exact block size
+            "E35780EB9799AD4C77535D4DDB683CF33EF367715327CF4C4A58ED9CBDCDD486"
+            "F669F80189D549A9364FA82A51A52654EC721BB3AAB95DCEB4A86A6AFA93826D"
+            "B923517E928F33E3FBA850D45660EF83B9876ACCAFA2A9987A254B137C6E140A"
+            "21691E1069413848",
+            "D1C0FA85C8D183BEFF99AD9D752B263E286B477F79F0710B0103170173978133"
+            "44B99DAF3BB7B1BC5E8D722BAC85943A"
+        },
+        {   // SHA3-512, multiblock message
+            "3A3A819C48EFDE2AD914FBF00E18AB6BC4F14513AB27D0C178A188B61431E7F5"
+            "623CB66B23346775D386B50E982C493ADBBFC54B9A3CD383382336A1A0B2150A"
+            "15358F336D03AE18F666C7573D55C4FD181C29E6CCFDE63EA35F0ADF5885CFC0"
+            "A3D84A2B2E4DD24496DB789E663170CEF74798AA1BBCD4574EA0BBA40489D764"
+            "B2F83AADC66B148B4A0CD95246C127D5871C4F11418690A5DDF01246A0C80A43"
+            "C70088B6183639DCFDA4125BD113A8F49EE23ED306FAAC576C3FB0C1E256671D"
+            "817FC2534A52F5B439F72E424DE376F4C565CCA82307DD9EF76DA5B7C4EB7E08"
+            "5172E328807C02D011FFBF33785378D79DC266F6A5BE6BB0E4A92ECEEBAEB1",
+            "6E8B8BD195BDD560689AF2348BDC74AB7CD05ED8B9A57711E9BE71E9726FDA45"
+            "91FEE12205EDACAF82FFBBAF16DFF9E702A708862080166C2FF6BA379BC7FFC2"
+        }
+    };
+*/
+ // SHA3-224, corner case with 0-length message
+    char testvec224_0[] = "";
+    char testvec224_1[] = "6B4E03423667DBB73B6E15454F0EB1ABD4597F9A1B078E3F5B5A6BC7";
+    // SHA3-256, short message
+    char testvec256_0[] = "9F2FCC7C90DE090D6B87CD7E9718C1EA6CB21118FC2D5DE9F97E5DB6AC1E9C10";
+    char testvec256_1[] = "2F1A5F7159E34EA19CDDC70EBF9B81F1A66DB40615D7EAD3CC1F1B954D82A3AF";
+    // SHA3-384, exact block size
+    char testvec384_0[] = "E35780EB9799AD4C77535D4DDB683CF33EF367715327CF4C4A58ED9CBDCDD486"
+                          "F669F80189D549A9364FA82A51A52654EC721BB3AAB95DCEB4A86A6AFA93826D"
+                          "B923517E928F33E3FBA850D45660EF83B9876ACCAFA2A9987A254B137C6E140A"
+                          "21691E1069413848";
+    char testvec384_1[] = "D1C0FA85C8D183BEFF99AD9D752B263E286B477F79F0710B0103170173978133"
+                          "44B99DAF3BB7B1BC5E8D722BAC85943A";
+    // SHA3-512, multiblock message
+      char testvec512_0[] = "3A3A819C48EFDE2AD914FBF00E18AB6BC4F14513AB27D0C178A188B61431E7F5"
+                          "623CB66B23346775D386B50E982C493ADBBFC54B9A3CD383382336A1A0B2150A"
+                          "15358F336D03AE18F666C7573D55C4FD181C29E6CCFDE63EA35F0ADF5885CFC0"
+                          "A3D84A2B2E4DD24496DB789E663170CEF74798AA1BBCD4574EA0BBA40489D764"
+                          "B2F83AADC66B148B4A0CD95246C127D5871C4F11418690A5DDF01246A0C80A43"
+                          "C70088B6183639DCFDA4125BD113A8F49EE23ED306FAAC576C3FB0C1E256671D"
+                          "817FC2534A52F5B439F72E424DE376F4C565CCA82307DD9EF76DA5B7C4EB7E08"
+                          "5172E328807C02D011FFBF33785378D79DC266F6A5BE6BB0E4A92ECEEBAEB1";
+    char testvec512_1[] = "6E8B8BD195BDD560689AF2348BDC74AB7CD05ED8B9A57711E9BE71E9726FDA45"
+                          "91FEE12205EDACAF82FFBBAF16DFF9E702A708862080166C2FF6BA379BC7FFC2";
 
-	for (i = 0; i < RESULT_SIZE; i++) {
-		/* #pragma HLS UNROLL */
-		even[i] = magic[i] + rank;
-	}
+    int i, k, fails, msg_len, sha_len;
+    uint8_t sha[64], buf[64], msg[256];
+    //uint64_t sha64[8], buf64[8], msg64[32];
 
-	// FIXME - this double conversion need to be optimized
-	cast_uint64_to_uint8_W8(even, even8b);
-	sha3((uint8_t*)even8b, HASH_SIZE, (uint8_t*)odd8b, HASH_SIZE);
-	cast_uint8_to_uint64_W8(odd8b, odd);
-	
-	for (rnd_nb = 0; rnd_nb < NB_ROUND; rnd_nb++) {
-		/* #pragma HLS UNROLL factor=4 */
+    fails = 0;
+    for (i = 0; i < 4; i++) {
+ /*#pragma HLS UNROLL*/
+        memset(sha, 0, sizeof(sha));
+        memset(buf, 0, sizeof(buf));
+        memset(msg, 0, sizeof(msg));
 
-		for (j = 0; j < 4; j++) {
-			/* #pragma HLS UNROLL */
-			odd[2*j] ^= ROTL64( even[2*j] , 4*j+1);
-			odd[2*j+1] = ROTL64( even[2*j+1] + odd[2*j+1], 4*j+3);
-		}
+        //msg_len = test_readhex(msg, testvec[i][0], sizeof(msg));
+        //sha_len = test_readhex(sha, testvec[i][1], sizeof(sha));
+        switch(i) {
+        case(0) : // SHA3-224, corner case with 0-length message
+                msg_len = test_readhex(msg, testvec224_0, sizeof(msg));
+                sha_len = test_readhex(sha, testvec224_1, sizeof(sha));
+                break;
+        case(1) :// SHA3-256, short message
+            msg_len = test_readhex(msg, testvec256_0, sizeof(msg));
+                sha_len = test_readhex(sha, testvec256_1, sizeof(sha));
+                break;
+        case(2) :// SHA3-384, exact block size
+            msg_len = test_readhex(msg, testvec384_0, sizeof(msg));
+            sha_len = test_readhex(sha, testvec384_1, sizeof(sha));
+            break;
+        case(3) :// SHA3-512, multiblock message
+            msg_len = test_readhex(msg, testvec512_0, sizeof(msg));
+            sha_len = test_readhex(sha, testvec512_1, sizeof(sha));
+            break;
+        default :
+                break;
+        }
 
-		// FIXME - this double conversion need to be optimized
-		cast_uint64_to_uint8_W8(odd, odd8b);
-		sha3((uint8_t*)odd8b,HASH_SIZE,(uint8_t*)even8b,HASH_SIZE);
-		cast_uint8_to_uint64_W8(even8b, even);
+        sha3(msg, msg_len, buf, sha_len);
 
-		for (j = 0; j < 4; j++) {
-			/* #pragma HLS UNROLL */
-			even[2*j] += ROTL64( odd[2*j] , 4*j+5);
-			even[2*j+1] = ROTL64( even[2*j+1] ^ odd[2*j+1], 4*j+7);
-		}
-		
-		cast_uint64_to_uint8_W8(even, even8b);
-		sha3((uint8_t*)even8b,HASH_SIZE,(uint8_t*)odd8b,HASH_SIZE);
-		cast_uint8_to_uint64_W8(odd8b, odd);
-	}
-	result = 0;
-  
-	for (i = 0; i < RESULT_SIZE; i++) {
-		/* #pragma HLS UNROLL */
-		result += (even[i] ^ odd[i]);
-	}
-	return result;
+        //if (memcmp(sha, buf, sha_len) != 0) {
+        for(k = 0; k < sha_len; k++) {
+                if (sha[k] != buf[k]) {
+            fprintf(stderr, "[%d] SHA3-%d, len %d test FAILED.\n",
+                i, sha_len * 8, msg_len);
+            fails++;
+                }
+        }
+    }
+
+    return fails;
+}
+
+// test for SHAKE128 and SHAKE256
+
+static int test_shake()
+{
+        printf("SHAKE128, SHAKE2563  Self-Tests : ");
+        // Test vectors have bytes 480..511 of XOF output for given inputs.
+        // From http://csrc.nist.gov/groups/ST/toolkit/examples.html#aHashing
+   
+        /*const char testhex[4] = {
+        // SHAKE128, message of length 0
+        "43E41B45A653F2A5C4492C1ADD544512DDA2529833462B71A41A45BE97290B6F",
+        // SHAKE256, message of length 0
+        "AB0BAE316339894304E35877B0C28A9B1FD166C796B9CC258A064A8F57E27F2A",
+        // SHAKE128, 1600-bit test pattern
+        "44C9FB359FD56AC0A9A75A743CFF6862F17D7259AB075216C0699511643B6439",
+        // SHAKE256, 1600-bit test pattern
+        "6A1A9D7846436E4DCA5728B6F760EEF0CA92BF0BE5615E96959D767197A0BEEB"
+        };*/
+
+        // SHAKE128, message of length 0
+        char testvec128_0[]    = "43E41B45A653F2A5C4492C1ADD544512DDA2529833462B71A41A45BE97290B6F";
+        // SHAKE256, message of length 0
+        char testvec256_0[]    = "AB0BAE316339894304E35877B0C28A9B1FD166C796B9CC258A064A8F57E27F2A";
+        // SHAKE128, 1600-bit test pattern
+        char testvec128_1600[] = "44C9FB359FD56AC0A9A75A743CFF6862F17D7259AB075216C0699511643B6439";
+        // SHAKE256, 1600-bit test pattern
+        char testvec256_1600[] = "6A1A9D7846436E4DCA5728B6F760EEF0CA92BF0BE5615E96959D767197A0BEEB";
+        
+    int i, j, k, fails;
+    sha3_ctx_t sha3;
+    uint8_t buf[32], ref[32];
+
+
+    fails = 0;
+
+    for (i = 0; i < 4; i++) {
+/*#pragma HLS UNROLL*/
+        if ((i & 1) == 0) {             // test each twice
+            shake128_init(&sha3);
+        } else {
+            shake256_init(&sha3);
+        }
+
+        if (i >= 2) {                   // 1600-bit test pattern
+            //memset(buf, 0xA3, 20);
+            for (j = 0; j < 20; j ++)
+                buf[j] = 0xA3;
+
+            for (j = 0; j < 200; j += 20)
+                shake_update(&sha3, buf, 20);
+        }
+
+        shake_xof(&sha3);               // switch to extensible output
+
+        for (j = 0; j < 512; j += 32)   // output. discard bytes 0..479
+            shake_out(&sha3, buf, 32);
+
+        // compare to reference
+        //test_readhex(ref, testhex[i], sizeof(ref));
+        switch(i) {
+        case(0) : // SHAKE128, message of length 0
+                test_readhex(ref, testvec128_0, sizeof(ref));
+                        break;
+        case(1) : // SHAKE256, message of length 0
+                test_readhex(ref, testvec256_0, sizeof(ref));
+                break;
+        case(2) : // SHAKE128, 1600-bit test pattern
+                test_readhex(ref, testvec128_1600, sizeof(ref));
+                break;
+        case(3) : // SHAKE256, 1600-bit test pattern
+                test_readhex(ref, testvec256_1600, sizeof(ref));
+                break;
+        default :
+                        break;
+        }
+
+        //if (memcmp(buf, ref, 32) != 0) {
+        for(k = 0; k < 32; k++) {
+/*#pragma HLS UNROLL*/
+                if (buf[k] != ref[k]) {
+            fprintf(stderr, "[%d] SHAKE%d, len %d test FAILED.\n",
+                i, i & 1 ? 256 : 128, i >= 2 ? 1600 : 0);
+            fails++;
+                }
+        }
+    }
+
+    return fails;
 }
 
 #if !defined(CONFIG_USE_PTHREADS)
-
-/**
- * nb_pe must be != 0, since we divide by it.
- */
-static uint64_t sponge_main(uint32_t pe, uint32_t nb_pe,
-			    uint32_t threads __attribute__((unused)))
+// test speed of the comp
+static unsigned long test_speed()
 {
-	uint32_t slice;
-	uint64_t checksum=0;
+    int i;
+    uint64_t st[25], x, n, slice;
+    //clock_t bg, us;
 
-	act_trace("%s(%d, %d)\n", __func__, pe, nb_pe);
-	act_trace("  sw: NB_SLICES=%d NB_ROUND=%d\n", NB_SLICES, NB_ROUND);
+    printf("Speed test : ");
 
-	for (slice = 0; slice < NB_SLICES; slice++) {
-		if (pe == (slice % nb_pe)) {
-			uint64_t checksum_tmp;
+    for (i = 0; i < 25; i++)
+/*#pragma HLS UNROLL*/
+        st[i] = i;
 
-			act_trace("  slice=%d\n", slice);
-			checksum_tmp = sponge(slice);
-			checksum ^= checksum_tmp;
-			act_trace("    %016llx %016llx\n",
-				  (long long)checksum_tmp,
-				  (long long)checksum);
-		}
-	}
+    //bg = clock();
+    n = 0;
 
-	act_trace("checksum=%016llx\n", (unsigned long long)checksum);
-	return checksum;
+    //do{
+    for (slice = 0; slice < NB_SLICES; slice++)
+    {
+        for (i = 0; i < NB_ROUND; i++)
+        {
+            // Successive tests of sha3 taking result of previous for next process
+            //sha3_keccakf(st);
+                sha3_keccakf(st, st);
+        }
+        //n += i;
+        //us = clock() - bg;
+    }
+    //} while (us < 3 * CLOCKS_PER_SEC);
+
+
+    x = 0;
+    for (i = 0; i < 25; i++)
+/*#pragma HLS PIPELINE // using UNROLL will prevent the test_speed from being synthesized !!*/
+        x += st[i];
+
+
+/*
+    printf("(0x%016lX) - 0x%016lX Keccak-p[1600,24].\n",
+                (unsigned long) x,
+                (unsigned long) (NB_SLICES * NB_ROUND));
+*/
+//    printf("(%016lX) %.3f Keccak-p[1600,24] / Second.\n",
+//              (unsigned long) x, (CLOCKS_PER_SEC * ((double) n)) / ((double) us));
+
+    return x;
 }
 
 #else
 
 #include <pthread.h>
-
+/*FIXEME - NOT TESTED PART */
 struct thread_data {
         pthread_t thread_id;    /* Thread id assigned by pthread_create() */
         unsigned int slice;
@@ -378,76 +537,8 @@ static void *sponge_thread(void *data)
 
         d->checksum = 0;
         d->thread_rc = 0;
-        d->checksum = sponge(d->slice);
+        d->checksum = test_speed();
         pthread_exit(&d->thread_rc);
-}
-
-/**
- * nb_pe must be != 0, since we divide by it.
- */
-static uint64_t sponge_main(uint32_t pe, uint32_t nb_pe, uint32_t _threads)
-{
-        int rc;
-        uint32_t slice;
-        uint64_t checksum = 0;
-
-	if (_threads == 0) {
-		fprintf(stderr, "err: Min threads must be 1\n");
-		return 0;
-	}
-
-        d = calloc(_threads * sizeof(struct thread_data), 1);
-	if (d == NULL) {
-		fprintf(stderr, "err: No memory available\n");
-		return 0;
-	}
-
-        act_trace("%s(%d, %d, %d)\n", __func__, pe, nb_pe, _threads);
-        act_trace("  NB_SLICES=%d NB_ROUND=%d\n", NB_SLICES, NB_ROUND);
-
-        for (slice = 0; slice < NB_SLICES; ) {
-                unsigned int i;
-                unsigned int remaining_slices = NB_SLICES - slice;
-                unsigned int threads = MIN(remaining_slices, _threads);
-
-                act_trace("  [X] slice=%d remaining=%d threads=%d\n",
-                          slice, remaining_slices, threads);
-
-                for (i = 0; i < threads; i++) {
-                        if (pe != ((slice + i) % nb_pe))
-                                continue;
-
-                        d[i].slice = slice + i;
-                        rc = pthread_create(&d[i].thread_id, NULL,
-                                            &sponge_thread, &d[i]);
-                        if (rc != 0) {
-				free(d);
-                                fprintf(stderr, "starting %d failed!\n", i);
-                                return EXIT_FAILURE;
-                        }
-                }
-                for (i = 0; i < threads; i++) {
-			act_trace("      slice=%d checksum=%016llx\n",
-				  slice + i, (long long)d[i].checksum);
-
-                        if (pe != ((slice + i) % nb_pe))
-                                continue;
-
-                        rc = pthread_join(d[i].thread_id, NULL);
-                        if (rc != 0) {
-				free(d);
-				fprintf(stderr, "joining threads failed!\n");
-                                return EXIT_FAILURE;
-                        }
-                        checksum ^= d[i].checksum;
-                }
-                slice += threads;
-        }
-
-	free(d);
-
-        act_trace("checksum=%016llx\n", (unsigned long long)checksum);
-        return checksum;
 }
 
 #endif /* CONFIG_USE_PTHREADS */
@@ -457,6 +548,7 @@ static int action_main(struct snap_sim_action *action, void *job,
 {
 	struct checksum_job *js = (struct checksum_job *)job;
 	void *src;
+	int rc = 1;
 
 	act_trace("%s(%p, %p, %d) [%d]\n", __func__, action, job, job_len,
 		  (int)js->chk_type);
@@ -465,16 +557,41 @@ static int action_main(struct snap_sim_action *action, void *job,
 	case CHECKSUM_SPONGE: {
 		unsigned int threads;
 
-		act_trace("pe=%d nb_pe=%d\n", js->pe, js->nb_pe);
+		act_trace("test_choice=%d nb_pe=%d\n", js->test_choice, js->nb_pe);
 
 		threads = js->nb_slices; /* misused for sw sim */
-		js->nb_slices = NB_SLICES;
-		js->nb_round = NB_ROUND;
 
-		if (js->nb_pe == 0)
-			return 0;
+        	switch(js->test_choice) {
+        	case(0):
+                	js->chk_out = test_speed();
+                	js->nb_slices = NB_SLICES;
+                	js->nb_round  = NB_ROUND;
+                	rc = 0;
+                	break;
+        	case(1):
+                	rc = test_sha3();
+                	js->chk_out = rc;
+                	js->nb_slices = 0;
+                	js->nb_round  = 0;
+                	break;
+        	case(2):
+                	rc = test_shake();
+                	js->chk_out = rc;
+                	js->nb_slices = 0;
+                	js->nb_round  = 0;
+                	break;
+        	case(3):
+                	rc = test_sha3();
+                	rc |= test_shake();
+                	js->chk_out = rc;
+                	js->nb_slices = 0;
+                	js->nb_round  = 0;
+                	break;
+        	default:
+                	rc = 1;
+                	break;
+        	}
 
-		js->chk_out = sponge_main(js->pe, js->nb_pe, threads);
 		break;
 	}
 	case CHECKSUM_CRC32:

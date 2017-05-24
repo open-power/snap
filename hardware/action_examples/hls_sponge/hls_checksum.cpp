@@ -42,208 +42,358 @@
  * Sponge: hash sha-3 (keccak)
  */
 
+
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 
 #include "sha3.H"
-#include "action_sponge.H"
+#include "action_checksum.H"
 
-#define HASH_SIZE 64
-#define RESULT_SIZE 8
+#define NB_SLICES    14
+#define NB_ROUND 100000
 
-#undef TEST /* get faster turn-around time */
-#ifdef NO_SYNTH /* TEST */
-#  define NB_SLICES   (4)
-#  define NB_ROUND    (1 << 10)
-#else
-#  ifndef NB_SLICES
-#    define NB_SLICES (65536) 	/* 65536 */ /* for real benchmark */
-#  endif
-#  ifndef NB_ROUND
-#    define NB_ROUND  (1 << 16) /* (1 << 24) */ /* for real benchmark */
-#  endif
-#endif
 
 /* Number of parallelization channels at hls_action level*/
-#if NB_SLICES == 4
-#  define CHANNELS 4
-#else
-#  define CHANNELS 16
-#endif
+//#if NB_SLICES == 4
+//#  define CHANNELS 4
+//#else
+//#  define CHANNELS 16
+//#endif
 
-//Casting from uint8_t to uint64_t => 89 FF - 83 LUT - II=34 - Latency=33
-void cast_uint8_to_uint64_W8(uint8_t st_in[64], uint64_t st[8])
+// read a hex string, return byte length or -1 on error.
+
+static int test_hexdigit(char ch)
 {
-    uint64_t mem;
-    int i, j;
-    const int VECTOR_SIZE = 8;
-
-    for( i = 0; i < VECTOR_SIZE; i++ ) {
-#pragma HLS PIPELINE
-          mem = 0;
-          for( j = 8; j >= 0; j--) {
-                  mem = (mem << 8);
-                  //mem(7, 0) = st_in[j+i*8];
-                  mem = (mem & 0xFFFFFFFFFFFFFF00 ) | st_in[j+i*8];
-          }
-          st[i] = mem;
-    }
+    if (ch >= '0' && ch <= '9')
+        return  ch - '0';
+    if (ch >= 'A' && ch <= 'F')
+        return  ch - 'A' + 10;
+    if (ch >= 'a' && ch <= 'f')
+        return  ch - 'a' + 10;
+    return -1;
 }
-//Casting from uint64_t to uint8_t => 89 FF - 99 LUT - II=36 - Latency=35
-void cast_uint64_to_uint8_W8(uint64_t st_in[8], uint8_t st_out[64])
+
+static int test_readhex(uint8_t *buf, const char *str, int maxbytes)
 {
-    uint64_t tmp = 0;
-    int i, j;
-    const int VECTOR_SIZE = 8;
+    int i, h, l;
 
-    for( i = 0; i < VECTOR_SIZE; i++ ) {
-#pragma HLS PIPELINE
-          tmp = st_in[i];
-          for( j = 0; j < 8; j++ ) {
-                  st_out[i*8+j] = (uint8_t)tmp;
-                  tmp = (tmp >> 8);
-          }
-    }
-}
-//uint64_t sponge(const uint64_t rank)
-uint64_t sponge(const uint64_t rank, const uint32_t pe, const uint32_t nb_pe)
-{
-  uint64_t magic[8] = {0x0123456789abcdeful,0x13579bdf02468aceul,
-                       0xfdecba9876543210ul,0xeca86420fdb97531ul,
-                       0x571e30cf4b29a86dul,0xd48f0c376e1b29a5ul,
-                       0xc5301e9f6b2ad748ul,0x3894d02e5ba71c6ful};
-  uint64_t odd[8],even[8],result;
-  uint8_t odd8b[64],even8b[64];
-  int i,j;
-  int rnd_nb;
-
- /* test moved from top module to prevent breaking parallelization */
- if (pe != (rank % nb_pe))
-        return 0;
-
-   for(i=0;i<RESULT_SIZE;i++) {
-#pragma HLS UNROLL
-    even[i] = magic[i] + rank;
-  }
-
-  //keccak((uint8_t*)even,HASH_SIZE,(uint8_t*)odd,HASH_SIZE);
-//  keccak((uint64_t*)even,HASH_SIZE,(uint64_t*)odd,HASH_SIZE);
-//  sha3(msg, msg_len, buf, sha_len);
-
-   cast_uint64_to_uint8_W8(even, even8b);
-   sha3((uint8_t*)even8b,HASH_SIZE,(uint8_t*)odd8b,HASH_SIZE);
-   // FIXME - this double conversion need to be optimized
-   cast_uint8_to_uint64_W8(odd8b, odd);
-
-   for(rnd_nb=0;rnd_nb<NB_ROUND;rnd_nb++) {
+    for (i = 0; i < maxbytes; i++) {
 #pragma HLS UNROLL factor=4
-
-    for(j=0;j<4;j++) {
-#pragma HLS UNROLL
-      odd[2*j] ^= ROTL64( even[2*j] , 4*j+1);
-      odd[2*j+1] = ROTL64( even[2*j+1] + odd[2*j+1], 4*j+3);
+        h = test_hexdigit(str[2 * i]);
+        if (h < 0)
+            return i;
+        l = test_hexdigit(str[2 * i + 1]);
+        if (l < 0)
+            return i;
+        buf[i] = (h << 4) + l;
     }
 
-    //keccak((uint8_t*)odd,HASH_SIZE,(uint8_t*)even,HASH_SIZE);
-    //keccak((uint64_t*)odd,HASH_SIZE,(uint64_t*)even,HASH_SIZE);
-    cast_uint64_to_uint8_W8(odd, odd8b);
-    sha3((uint8_t*)odd8b,HASH_SIZE,(uint8_t*)even8b,HASH_SIZE);
-
-    // FIXME - this double conversion need to be optimized
-    cast_uint8_to_uint64_W8(even8b, even);
-
-     for(j=0;j<4;j++) {
-#pragma HLS UNROLL
-      even[2*j] += ROTL64( odd[2*j] , 4*j+5);
-      even[2*j+1] = ROTL64( even[2*j+1] ^ odd[2*j+1], 4*j+7);
-    }
-
-    //keccak((uint8_t*)even,HASH_SIZE,(uint8_t*)odd,HASH_SIZE);
-    //keccak((uint64_t*)even,HASH_SIZE,(uint64_t*)odd,HASH_SIZE);
-    cast_uint64_to_uint8_W8(even, even8b);
-
-    sha3((uint8_t*)even8b,HASH_SIZE,(uint8_t*)odd8b,HASH_SIZE);
-    cast_uint8_to_uint64_W8(odd8b, odd);
-  }
-  result=0;
-  
-   for(i=0;i<RESULT_SIZE;i++) {
-#pragma HLS UNROLL
-    result += (even[i] ^ odd[i]);
-  }
-  return result;
+    return i;
 }
 
-/*
- * WRITE RESULTS IN MMIO REGS
- */
-static void write_results(action_reg *Action_Register,
-			  snapu32_t ReturnCode,
-			  snapu64_t chk_out)
+// returns zero on success, nonzero + stderr messages on failure
+
+static int test_sha3()
 {
-	Action_Register->Control.Retc = ReturnCode;
-	Action_Register->Data.chk_out = chk_out;
+	printf("FIPS 202 / SHA3  Self-Tests : ");
+    // message / digest pairs, lifted from ShortMsgKAT_SHA3-xxx.txt files
+    // in the official package: https://github.com/gvanas/KeccakCodePackage
+
+	/*
+    const char *testvec[][2] = {
+        {   // SHA3-224, corner case with 0-length message
+            "",
+            "6B4E03423667DBB73B6E15454F0EB1ABD4597F9A1B078E3F5B5A6BC7"
+        },
+        {   // SHA3-256, short message
+            "9F2FCC7C90DE090D6B87CD7E9718C1EA6CB21118FC2D5DE9F97E5DB6AC1E9C10",
+            "2F1A5F7159E34EA19CDDC70EBF9B81F1A66DB40615D7EAD3CC1F1B954D82A3AF"
+        },
+        {   // SHA3-384, exact block size
+            "E35780EB9799AD4C77535D4DDB683CF33EF367715327CF4C4A58ED9CBDCDD486"
+            "F669F80189D549A9364FA82A51A52654EC721BB3AAB95DCEB4A86A6AFA93826D"
+            "B923517E928F33E3FBA850D45660EF83B9876ACCAFA2A9987A254B137C6E140A"
+            "21691E1069413848",
+            "D1C0FA85C8D183BEFF99AD9D752B263E286B477F79F0710B0103170173978133"
+            "44B99DAF3BB7B1BC5E8D722BAC85943A"
+        },
+        {   // SHA3-512, multiblock message
+            "3A3A819C48EFDE2AD914FBF00E18AB6BC4F14513AB27D0C178A188B61431E7F5"
+            "623CB66B23346775D386B50E982C493ADBBFC54B9A3CD383382336A1A0B2150A"
+            "15358F336D03AE18F666C7573D55C4FD181C29E6CCFDE63EA35F0ADF5885CFC0"
+            "A3D84A2B2E4DD24496DB789E663170CEF74798AA1BBCD4574EA0BBA40489D764"
+            "B2F83AADC66B148B4A0CD95246C127D5871C4F11418690A5DDF01246A0C80A43"
+            "C70088B6183639DCFDA4125BD113A8F49EE23ED306FAAC576C3FB0C1E256671D"
+            "817FC2534A52F5B439F72E424DE376F4C565CCA82307DD9EF76DA5B7C4EB7E08"
+            "5172E328807C02D011FFBF33785378D79DC266F6A5BE6BB0E4A92ECEEBAEB1",
+            "6E8B8BD195BDD560689AF2348BDC74AB7CD05ED8B9A57711E9BE71E9726FDA45"
+            "91FEE12205EDACAF82FFBBAF16DFF9E702A708862080166C2FF6BA379BC7FFC2"
+        }
+    };
+*/
+	// SHA3-224, corner case with 0-length message
+    char testvec224_0[] = "";
+    char testvec224_1[] = "6B4E03423667DBB73B6E15454F0EB1ABD4597F9A1B078E3F5B5A6BC7";
+    // SHA3-256, short message
+    char testvec256_0[] = "9F2FCC7C90DE090D6B87CD7E9718C1EA6CB21118FC2D5DE9F97E5DB6AC1E9C10";
+    char testvec256_1[] = "2F1A5F7159E34EA19CDDC70EBF9B81F1A66DB40615D7EAD3CC1F1B954D82A3AF";
+    // SHA3-384, exact block size
+    char testvec384_0[] = "E35780EB9799AD4C77535D4DDB683CF33EF367715327CF4C4A58ED9CBDCDD486"
+                          "F669F80189D549A9364FA82A51A52654EC721BB3AAB95DCEB4A86A6AFA93826D"
+                          "B923517E928F33E3FBA850D45660EF83B9876ACCAFA2A9987A254B137C6E140A"
+                          "21691E1069413848";
+    char testvec384_1[] = "D1C0FA85C8D183BEFF99AD9D752B263E286B477F79F0710B0103170173978133"
+                          "44B99DAF3BB7B1BC5E8D722BAC85943A";
+    // SHA3-512, multiblock message
+    char testvec512_0[] = "3A3A819C48EFDE2AD914FBF00E18AB6BC4F14513AB27D0C178A188B61431E7F5"
+                          "623CB66B23346775D386B50E982C493ADBBFC54B9A3CD383382336A1A0B2150A"
+                          "15358F336D03AE18F666C7573D55C4FD181C29E6CCFDE63EA35F0ADF5885CFC0"
+                          "A3D84A2B2E4DD24496DB789E663170CEF74798AA1BBCD4574EA0BBA40489D764"
+                          "B2F83AADC66B148B4A0CD95246C127D5871C4F11418690A5DDF01246A0C80A43"
+                          "C70088B6183639DCFDA4125BD113A8F49EE23ED306FAAC576C3FB0C1E256671D"
+                          "817FC2534A52F5B439F72E424DE376F4C565CCA82307DD9EF76DA5B7C4EB7E08"
+                          "5172E328807C02D011FFBF33785378D79DC266F6A5BE6BB0E4A92ECEEBAEB1";
+    char testvec512_1[] = "6E8B8BD195BDD560689AF2348BDC74AB7CD05ED8B9A57711E9BE71E9726FDA45"
+                          "91FEE12205EDACAF82FFBBAF16DFF9E702A708862080166C2FF6BA379BC7FFC2";
+
+    int i, fails, msg_len, sha_len;
+    uint8_t sha[64], buf[64], msg[256];
+    ////uint64_t sha64[8], buf64[8], msg64[32];
+
+    fails = 0;
+    for (i = 0; i < 4; i++) {
+#pragma HLS UNROLL
+        memset(sha, 0, sizeof(sha));
+        memset(buf, 0, sizeof(buf));
+        memset(msg, 0, sizeof(msg));
+
+        //msg_len = test_readhex(msg, testvec[i][0], sizeof(msg));
+        //sha_len = test_readhex(sha, testvec[i][1], sizeof(sha));
+        switch(i) {
+        case(0) : // SHA3-224, corner case with 0-length message
+    		msg_len = test_readhex(msg, testvec224_0, sizeof(msg));
+    		sha_len = test_readhex(sha, testvec224_1, sizeof(sha));
+    		break;
+        case(1) :// SHA3-256, short message
+    	    msg_len = test_readhex(msg, testvec256_0, sizeof(msg));
+    	   	sha_len = test_readhex(sha, testvec256_1, sizeof(sha));
+    	   	break;
+        case(2) :// SHA3-384, exact block size
+    	    msg_len = test_readhex(msg, testvec384_0, sizeof(msg));
+    	    sha_len = test_readhex(sha, testvec384_1, sizeof(sha));
+    	    break;
+        case(3) :// SHA3-512, multiblock message
+    	    msg_len = test_readhex(msg, testvec512_0, sizeof(msg));
+    	    sha_len = test_readhex(sha, testvec512_1, sizeof(sha));
+            break;
+        default :
+        	break;
+        }
+
+        sha3(msg, msg_len, buf, sha_len);
+
+        //if (memcmp(sha, buf, sha_len) != 0) {
+        for(int k = 0; k < sha_len; k++) {
+        	if (sha[k] != buf[k]) {
+            fprintf(stderr, "[%d] SHA3-%d, len %d test FAILED.\n",
+                i, sha_len * 8, msg_len);
+            fails++;
+        	}
+        }
+    }
+
+    return fails;
+}
+
+// test for SHAKE128 and SHAKE256
+
+static int test_shake()
+{
+	printf("SHAKE128, SHAKE2563  Self-Tests : ");
+    // Test vectors have bytes 480..511 of XOF output for given inputs.
+    // From http://csrc.nist.gov/groups/ST/toolkit/examples.html#aHashing
+
+
+      /*const char testhex[4] = {
+        // SHAKE128, message of length 0
+        "43E41B45A653F2A5C4492C1ADD544512DDA2529833462B71A41A45BE97290B6F",
+        // SHAKE256, message of length 0
+        "AB0BAE316339894304E35877B0C28A9B1FD166C796B9CC258A064A8F57E27F2A",
+        // SHAKE128, 1600-bit test pattern
+        "44C9FB359FD56AC0A9A75A743CFF6862F17D7259AB075216C0699511643B6439",
+        // SHAKE256, 1600-bit test pattern
+        "6A1A9D7846436E4DCA5728B6F760EEF0CA92BF0BE5615E96959D767197A0BEEB"
+    };*/
+        // SHAKE128, message of length 0
+    char testvec128_0[]    = "43E41B45A653F2A5C4492C1ADD544512DDA2529833462B71A41A45BE97290B6F";
+        // SHAKE256, message of length 0
+    char testvec256_0[]    = "AB0BAE316339894304E35877B0C28A9B1FD166C796B9CC258A064A8F57E27F2A";
+        // SHAKE128, 1600-bit test pattern
+    char testvec128_1600[] = "44C9FB359FD56AC0A9A75A743CFF6862F17D7259AB075216C0699511643B6439";
+        // SHAKE256, 1600-bit test pattern
+    char testvec256_1600[] = "6A1A9D7846436E4DCA5728B6F760EEF0CA92BF0BE5615E96959D767197A0BEEB";
+
+    int i, j, fails;
+    sha3_ctx_t sha3;
+    uint8_t buf[32], ref[32];
+
+
+    fails = 0;
+
+    for (i = 0; i < 4; i++) {
+#pragma HLS UNROLL
+        if ((i & 1) == 0) {             // test each twice
+            shake128_init(&sha3);
+        } else {
+            shake256_init(&sha3);
+        }
+
+        if (i >= 2) {                   // 1600-bit test pattern
+            //memset(buf, 0xA3, 20);
+            for (j = 0; j < 20; j ++)
+                buf[j] = 0xA3;
+
+            for (j = 0; j < 200; j += 20)
+                shake_update(&sha3, buf, 20);
+        }
+
+        shake_xof(&sha3);               // switch to extensible output
+
+        for (j = 0; j < 512; j += 32)   // output. discard bytes 0..479
+            shake_out(&sha3, buf, 32);
+
+        // compare to reference
+        //test_readhex(ref, testhex[i], sizeof(ref));
+        switch(i) {
+        case(0) : // SHAKE128, message of length 0
+    	    	test_readhex(ref, testvec128_0, sizeof(ref));
+        		break;
+        case(1) : // SHAKE256, message of length 0
+    	    	test_readhex(ref, testvec256_0, sizeof(ref));
+    	        break;
+        case(2) : // SHAKE128, 1600-bit test pattern
+    	    	test_readhex(ref, testvec128_1600, sizeof(ref));
+    	        break;
+        case(3) : // SHAKE256, 1600-bit test pattern
+    	    	test_readhex(ref, testvec256_1600, sizeof(ref));
+    	        break;
+        default :
+        		break;
+        }
+
+        //if (memcmp(buf, ref, 32) != 0) {
+        for(int k = 0; k < 32; k++) {
+#pragma HLS UNROLL
+        	if (buf[k] != ref[k]) {
+            fprintf(stderr, "[%d] SHAKE%d, len %d test FAILED.\n",
+                i, i & 1 ? 256 : 128, i >= 2 ? 1600 : 0);
+            fails++;
+        	}
+        }
+    }
+
+    return fails;
+}
+
+// test speed of the comp
+static unsigned long test_speed()
+{
+    int i;
+    uint64_t st[25], x, n, slice;
+    //clock_t bg, us;
+
+    printf("Speed test : ");
+
+    for (i = 0; i < 25; i++)
+#pragma HLS UNROLL
+        st[i] = i;
+
+    //bg = clock();
+    n = 0;
+
+    //do{
+    for (slice = 0; slice < NB_SLICES; slice++)
+    {
+        for (i = 0; i < NB_ROUND; i++)
+        {
+            // Successive tests of sha3 taking result of previous for next process
+            //sha3_keccakf(st);
+        	sha3_keccakf(st, st);
+        }
+        //n += i;
+        //us = clock() - bg;
+    }
+    //} while (us < 3 * CLOCKS_PER_SEC);
+
+    x = 0;
+    for (i = 0; i < 25; i++)
+#pragma HLS PIPELINE // using UNROLL will prevent the test_speed from being synthesized !!
+        x += st[i];
+
+
+
+    printf("(0x%016lX) - 0x%016lX Keccak-p[1600,24].\n",
+                (unsigned long) x, 
+                (unsigned long) (NB_SLICES * NB_ROUND));
+//    printf("(%016lX) %.3f Keccak-p[1600,24] / Second.\n",
+//    		(unsigned long) x, (CLOCKS_PER_SEC * ((double) n)) / ((double) us));
+
+    return x;
 }
 
 //-----------------------------------------------------------------------------
 //--- MAIN PROGRAM ------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-static void process_action(snap_membus_t *din_gmem,
-                           snap_membus_t *dout_gmem,
-                           snap_membus_t *d_ddrmem,
-                           action_reg *Action_Register)
+void process_action( action_reg *Action_Register)
 {
+	int rc = 1;
 
-	uint64_t checksum = 0;
-	uint32_t slice = 0;
-	uint32_t pe, nb_pe;
-        char j;
-
-	pe = Action_Register->Data.pe;
-	nb_pe = Action_Register->Data.nb_pe;
-
-	/* Intermediate result display */
-	write_results(Action_Register, SNAP_RETC_SUCCESS, checksum);
-
-	/*
-	 * Dividing (see below) through nb_pe is not good. We use this
-	 * to probe for NB_SLICE and NB_ROUNDS, which are returned in
-	 * this case. Therefore we return SNAP_RETC_SUCCESS in this special
-	 * situation.
-	 */
-	if (nb_pe == 0) {
-		write_results(Action_Register, SNAP_RETC_SUCCESS, 0);
-		return;
+	switch(Action_Register->Data.test_choice) {
+	case(0):
+		Action_Register->Data.chk_out = test_speed();
+    		Action_Register->Data.nb_slices = NB_SLICES;
+    		Action_Register->Data.nb_round  = NB_ROUND;
+		rc = 0;
+		break;
+	case(1):
+		rc = test_sha3();
+		Action_Register->Data.chk_out = rc;
+    		Action_Register->Data.nb_slices = 0;
+    		Action_Register->Data.nb_round  = 0;
+		break;
+	case(2):
+		rc = test_shake();
+		Action_Register->Data.chk_out = rc;
+    		Action_Register->Data.nb_slices = 0;
+    		Action_Register->Data.nb_round  = 0;
+		break;
+	case(3):
+		rc = test_sha3();
+		rc |= test_shake();
+		Action_Register->Data.chk_out = rc;
+    		Action_Register->Data.nb_slices = 0;
+    		Action_Register->Data.nb_round  = 0;
+		break;
+	default:
+		rc = 1;
+		break;
 	}
 
-	/*
-	 * UNROLL factor need to be a power of 2 otherwise, we'll get
-	 * more logic added but he will take the lower power of 2.
-	 * The best value to be kept should be factor 8 for sponge and
-	 * hls_action function. If one need to be reduced then
-	 * decrease the factor in sponge function.
-	 */
-	//for (slice = 0; slice < NB_SLICES; slice++) {
-	//#pragma HLS UNROLL factor=16
-	for (slice = 0; slice < NB_SLICES/CHANNELS; slice++) {
-		/* Moved this test to sponge function to prevent from breaking
-		 * the parallelization:
-		 * if (pe == (slice % nb_pe))
-		 *     checksum ^= sponge(slice);
-		 */
-              /* Adjust the way slices values are sent to operate as the modulo */
-                for (j = 0; j < CHANNELS; j++)
-#pragma HLS UNROLL
-                        checksum ^= sponge(slice + j*NB_SLICES/CHANNELS, pe, nb_pe);
-	}
+   	/* Final output register writes */
+    if (rc == 0) {
+    	printf("Test completed OK !!\n");
+    	Action_Register->Control.Retc = SNAP_RETC_SUCCESS;
+    }
+    else
+    {
+    	Action_Register->Control.Retc = SNAP_RETC_FAILURE;
+    }
 
-	/* Final output register writes */
-	write_results(Action_Register, SNAP_RETC_SUCCESS, checksum);
 }
 
-//--- TOP LEVEL MODULE -------------------------------------------------
+
+//--- INTERFACE LEVEL -------------------------------------------------
 /**
  * Remarks: Using pointers for the din_gmem, ... parameters is requiring to
  * to set the depth=... parameter via the pragma below. If missing to do this
@@ -252,7 +402,7 @@ static void process_action(snap_membus_t *din_gmem,
  */
 void hls_action(snap_membus_t *din_gmem,
 		    snap_membus_t *dout_gmem,
-		    snap_membus_t *d_ddrmem,
+		    snap_membus_t *d_ddrmem, 
 		    action_reg *Action_Register,
 		    action_RO_config_reg *Action_Config)
 {
@@ -263,7 +413,7 @@ void hls_action(snap_membus_t *din_gmem,
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg           offset=0x030
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg          offset=0x040
 
-//DDR memory Interface
+//DDR memory Interface 
 #pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
 #pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg           offset=0x050
 
@@ -277,16 +427,18 @@ void hls_action(snap_membus_t *din_gmem,
 	/* Hardcoded numbers */
         switch (Action_Register->Control.flags) {
         case 0:
-		Action_Config->action_type = CHECKSUM_ACTION_TYPE;
-		Action_Config->release_level = RELEASE_LEVEL;
-                Action_Register->Control.Retc = SNAP_RETC_SUCCESS;
-                return;
-                break;
+        	Action_Config->action_type   = (snapu32_t) CHECKSUM_ACTION_TYPE;
+        	Action_Config->release_level = (snapu32_t) RELEASE_LEVEL;
+        	Action_Register->Control.Retc = (snapu32_t)0xe00f;
+        	return;
+        	break;
         default:
-                process_action(din_gmem, dout_gmem, d_ddrmem, Action_Register);
-                break;
+        	Action_Register->Control.Retc = (snapu32_t)0x0;
+        	process_action(Action_Register);
+        	break;
         }
 
+        return;
 }
 
 //-----------------------------------------------------------------------------
@@ -312,59 +464,29 @@ int main(void)
 	action_reg Action_Register;
 	action_RO_config_reg Action_Config;
 
-	typedef struct {
-		uint32_t  pe;
-		uint32_t  nb_pe;
-		uint64_t checksum;
-	} arguments_t;
 
-	/* NEW CRC BASED ON A RUN WITH NEW SHA3 ALGORITHM */
-	static arguments_t sequence[] = {
-		{ 0, /*nb_pe =*/  1, /*expected checksum =*/ 0x9ca5f5a87a61a0e0 },
-		{ 0, /*nb_pe =*/  2, /*expected checksum =*/ 0xf58550c966d6efb5 },
-		{ 1, /*nb_pe =*/  2, /*expected checksum =*/ 0x6920a5611cb74f55 },
-		{ 0, /*nb_pe =*/  4, /*expected checksum =*/ 0x2834f2b78de3f0f1 },
-		{ 1, /*nb_pe =*/  4, /*expected checksum =*/ 0x8140816edeb7ef50 },
-		{ 2, /*nb_pe =*/  4, /*expected checksum =*/ 0xddb1a27eeb351f44 },
-		{ 3, /*nb_pe =*/  4, /*expected checksum =*/ 0xe860240fc200a005 },
-	};
+	// Get Config registers
+	Action_Register.Control.flags = 0;
+	hls_action(din_gmem, dout_gmem, d_ddrmem,
+			    &Action_Register, &Action_Config);
 
-	for(i=0; i < 7; i++) {
-		Action_Register.Data.pe = sequence[i].pe;
-		Action_Register.Data.nb_pe = sequence[i].nb_pe;
+	// Process the action
+	Action_Register.Control.flags = 1;
+	Action_Register.Data.test_choice = 0; //speed test
+	hls_action(din_gmem, dout_gmem, d_ddrmem,
+			    &Action_Register, &Action_Config);
 
-		// Get Config registers
-		Action_Register.Control.flags = 0;
-		hls_action(din_gmem, dout_gmem, d_ddrmem,
-				    &Action_Register, &Action_Config);
+	Action_Register.Data.test_choice = 3; //SHA + SHAKE tests
+	hls_action(din_gmem, dout_gmem, d_ddrmem,
+			    &Action_Register, &Action_Config);
 
-		// Process the action
-		Action_Register.Control.flags = 1;
-		hls_action(din_gmem, dout_gmem, d_ddrmem,
-				    &Action_Register, &Action_Config);
-
-		if (Action_Register.Control.Retc == SNAP_RETC_FAILURE) {
-					printf(" ==> RETURN CODE FAILURE <==\n");
-					return 1;
-		}
-		printf("pe=%d - nb_pe=%d - processed checksum=%016llx ",
-				(unsigned int)Action_Register.Data.pe,
-				(unsigned int)Action_Register.Data.nb_pe,
-		        (unsigned long long)Action_Register.Data.chk_out);
-
-		if (sequence[i].checksum == Action_Register.Data.chk_out) {
-			printf(" ==> CORRECT\n");
-			rc |= 0;
-		}
-		else {
-			printf(" ==> ERROR: expected checksum=%016llx\n",
-			       (unsigned long long)sequence[i].checksum);
-			rc |= 1;
-		}
+	if (Action_Register.Control.Retc == SNAP_RETC_FAILURE) {
+				printf(" ==> RETURN CODE FAILURE <==\n");
+				return 1;
 	}
-	if (rc != 0)
-		printf("\n\t Checksums are given with use of -DTEST "
-		       "flag. Please check you have set it!\n\n");
+	else
+		printf(" ==> RETURN CODE OK <==\n");
+
 
 	printf(">> ACTION TYPE = %8lx - RELEASE_LEVEL = %8lx <<\n",
 			(unsigned int)Action_Config.action_type,
@@ -374,3 +496,4 @@ int main(void)
 }
 
 #endif // end of NO_SYNTH flag
+

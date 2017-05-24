@@ -24,6 +24,7 @@
 
 // sha3.h
 // 19-Nov-11  Markku-Juhani O. Saarinen <mjos@iki.fi>
+// 05-May-17  IBM : adapt to be compiled by Vivado HLS
 
 #ifndef SHA3_H
 #define SHA3_H
@@ -46,15 +47,14 @@ typedef struct {
 /*    union {                                 // state:
  */   struct {                                 // state:
         uint8_t b[200];                     // 8-bit bytes
-        uint64_t q_unused[25];                     // 64-bit words
+        uint64_t q[25];                     // 64-bit words
     } st;
     int pt, rsiz, mdlen;                    // these don't overflow
 } sha3_ctx_t;
 
 // Compression function.
 //void sha3_keccakf(uint64_t st[25]);
-//void sha3_keccakf(uint64_t st_in[25], uint64_t st_out[25]);
-void sha3_keccakf(uint8_t st_in[200], uint8_t st_out[200]);
+void sha3_keccakf(uint64_t st_in[25], uint64_t st_out[25]);
 
 // OpenSSL - like interfece
 int sha3_init(sha3_ctx_t *c, int mdlen);    // mdlen = hash output in bytes
@@ -75,7 +75,7 @@ void sha3(const uint8_t *in, size_t inlen, uint8_t *md, int mdlen);
 void shake_xof(sha3_ctx_t *c);
 void shake_out(sha3_ctx_t *c, void *out, size_t len);
 
-void cast_uint8_to_uint64_W25(uint8_t st_in[64], uint64_t st_out[8]);
-void cast_uint64_to_uint8_W25(uint64_t st_in[8], uint8_t st_out[64]);
+void cast_uint8_to_uint64(uint8_t *st_in, uint64_t *st_out, unsigned int size);
+void cast_uint64_to_uint8(uint64_t *st_in, uint8_t *st_out, unsigned int size);
 #endif
 
