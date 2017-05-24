@@ -28,6 +28,6 @@
 # This is solution specific. Check if we can replace this by generics too.
 SOLUTION_NAME ?= bfs
 SOLUTION_DIR ?= hlsBfs
-srcs += kernel.cpp
+srcs += hls_bfs.cpp
 
 include ../hls.mk
