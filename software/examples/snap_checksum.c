@@ -52,14 +52,17 @@ static void usage(const char *prog)
 	       "  -a, --addr-in <addr>      address e.g. in CARD_RAM.\n"
 	       "  -s, --size <size>         size of data.\n"
 	       "  -c, --choice <SPEED,SHA3,SHAKE,SHA3_SHAKE>  sponge specific input.\n"
-	       "  -n, --nb_pe <nb_pe>       sponge specific input.\n"
+	       "  -p, --pe <pe>             sponge specific input.\n"
+	       "  -n, --nb_pe <nb_pe>       sponge specific input.(up to 65536)\n"
 	       "  -m, --mode <CRC32|ADLER32|SPONGE> mode flags.\n"
 	       "  -T, --test                execute a test if available.\n"
 	       "  -t, --timeout             Timeout in sec (default 3600 sec).\n"
 	       "  -I, --irq                 Enable Interrupts\n"
 	       "\n"
 	       "Example:\n"
-	       "  snap_checksum ...\n"
+	       "  snap_checksum -mSPONGE -I -t200 -cSPEED -p2 -n65536 will generate 65536*2/65536 = 2 calls \n"
+	       "  snap_checksum -mSPONGE -I -t200 -cSPEED -p1 -n4     will generate 65536*1/4 = 16384 calls\n"
+               "               (1 call every 4 calls until 65536...\n"
 	       "\n",
 	       prog);
 }
@@ -73,6 +76,7 @@ static void snap_prepare_checksum(struct snap_job *cjob,
 				  uint64_t type,
 				  uint64_t chk_in,
 				  uint32_t test_choice,
+				  uint32_t pe,
 				  uint32_t nb_pe,
 				  uint32_t threads)
 {
@@ -83,6 +87,7 @@ static void snap_prepare_checksum(struct snap_job *cjob,
 	mjob_in->chk_type = type;
 	mjob_in->chk_in = chk_in;
 	mjob_in->test_choice = test_choice;
+	mjob_in->pe = pe;
 	mjob_in->nb_pe = nb_pe;
 	mjob_in->nb_slices = threads; /* misuse this for software sim */
 
@@ -163,11 +168,12 @@ static int do_checksum(int card_no, unsigned long timeout,
 		       unsigned char type_in,  unsigned long size,
 		       uint64_t checksum_start,
 		       checksum_mode_t mode,
-		       test_choice_t test_choice, uint32_t nb_pe,
+		       test_choice_t test_choice, 
+                       uint32_t pe, uint32_t nb_pe,
 		       uint64_t *_checksum,
 		       uint64_t *_usec,
 		       uint32_t *_nb_slices,
-		       uint32_t *_nb_round,
+		       uint32_t *_nb_rounds,
 		       FILE *fp,
 		       snap_action_flag_t action_irq)
 {
@@ -178,6 +184,8 @@ static int do_checksum(int card_no, unsigned long timeout,
 	struct snap_job cjob;
 	struct checksum_job mjob_in, mjob_out;
 	struct timeval etime, stime;
+        uint64_t nb_keccak_calls, nb_of_runs = 0;
+        int j;
 
 	fprintf(fp, "PARAMETERS:\n"
 		"  type_in:  %x\n"
@@ -185,15 +193,15 @@ static int do_checksum(int card_no, unsigned long timeout,
 		"  size:     %08lx\n"
 		"  checksum_start: %016llx\n"
 		"  mode:     %08x %s\n"
-		"  test_choice:%08x %s\n"
-		/*"  nb_pe:    %08x\n"*/
+		"  test_choice:%02d %s\n"
+		"  pe:    %08d\n"
+		"  nb_pe:    %08d\n"
 		"  job_size: %ld bytes\n",
 		type_in, (long long)addr_in,
 		size, (long long)checksum_start, mode,
 		checksum_mode_str[mode % CHECKSUM_MODE_MAX], test_choice, 
 		test_choice_str[test_choice % CHECKSUM_TYPE_MAX],
-		/*nb_pe, */
-                sizeof(struct checksum_job));
+		pe, nb_pe, sizeof(struct checksum_job));
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
@@ -213,7 +221,7 @@ static int do_checksum(int card_no, unsigned long timeout,
 
 	snap_prepare_checksum(&cjob, &mjob_in, &mjob_out,
 			     (void *)addr_in, size, type_in,
-			      mode, checksum_start, test_choice, nb_pe,
+			      mode, checksum_start, test_choice, pe, nb_pe,
 			      threads);
 
 	gettimeofday(&stime, NULL);
@@ -233,8 +241,21 @@ static int do_checksum(int card_no, unsigned long timeout,
 		cjob.retc,
 		(long long)mjob_out.chk_out,
 		mjob_out.nb_slices,
-		mjob_out.nb_round,
+		mjob_out.nb_rounds,
 		(long long)timediff_usec(&etime, &stime));
+
+        if(test_choice == CHECKSUM_SPEED) {
+
+            for(j = 0; j<NB_SLICES; j++)
+                 if(mjob_out.pe > (j % mjob_out.nb_pe))
+                      nb_of_runs++;
+
+            nb_keccak_calls = nb_of_runs * mjob_out.nb_rounds;
+	    fprintf(fp, "%lld Keccak-p[1600,24] calls\n", (long long)nb_keccak_calls);
+	    fprintf(fp, "%.3f Keccak-p[1600,24] / Second.\n",
+		((double)(1000000 * nb_keccak_calls)) / 
+                 (double)(timediff_usec(&etime, &stime)));
+        }
 
 	snap_detach_action(action);
 	snap_card_free(card);
@@ -245,8 +266,8 @@ static int do_checksum(int card_no, unsigned long timeout,
 		*_usec = timediff_usec(&etime, &stime);
 	if (_nb_slices)
 		*_nb_slices = mjob_out.nb_slices;
-	if (_nb_round)
-		*_nb_round = mjob_out.nb_round;
+	if (_nb_rounds)
+		*_nb_rounds = mjob_out.nb_rounds;
 
 	return 0;
 
@@ -276,7 +297,7 @@ int main(int argc, char *argv[])
 	uint64_t addr_in = 0x0ull;
 	int mode = CHECKSUM_CRC32;
 	uint64_t checksum_start = 0ull;
-	uint32_t test_choice = 0, nb_pe = 0;
+	uint32_t test_choice = CHECKSUM_SPEED, pe = 0, nb_pe = 1;
 	int test = 0;
 	unsigned int threads = 160;
 	snap_action_flag_t action_irq = 0;
@@ -295,16 +316,17 @@ int main(int argc, char *argv[])
 			{ "timeout",	 required_argument, NULL, 't' },
 			{ "test",	 no_argument,       NULL, 'T' },
 			{ "test_choice", required_argument, NULL, 'c' },
-			{ "nb_pe",	 no_argument,       NULL, 'n' },
+			{ "pe",	         required_argument, NULL, 'p' },
+			{ "nb_pe",	 required_argument, NULL, 'n' },
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
-			{ "rq",	 	 no_argument,	    NULL, 'I' },
+			{ "irq", 	 no_argument,	    NULL, 'I' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-				 "A:C:i:a:S:Tx:c:m:s:t:x:VqvhI",
+				 "A:C:i:a:S:Tx:c:p:n:m:s:t:x:VqvhI",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -347,8 +369,11 @@ int main(int argc, char *argv[])
 			}
 			test_choice = strtol(optarg, (char **)NULL, 0);
 			break;
+		case 'p':
+			pe =  __str_to_num(optarg);
+			break;
 		case 'n':
-			nb_pe = __str_to_num(optarg);
+			nb_pe =  __str_to_num(optarg);
 			break;
 		case 't':
 			timeout = strtol(optarg, (char **)NULL, 0);
@@ -434,7 +459,7 @@ int main(int argc, char *argv[])
 	} else {
 		rc = do_checksum(card_no, timeout, threads, addr_in,
 				 type_in, size, checksum_start, mode,
-				 test_choice, nb_pe, NULL, NULL, NULL,
+				 test_choice, pe, nb_pe, NULL, NULL, NULL,
 				 NULL, stderr, action_irq);
 		if (rc != 0)
 			goto out_error1;

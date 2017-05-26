@@ -431,27 +431,27 @@ void hls_action(snap_membus_t *din_gmem,
 /* table1 is initialized as constant for test code */
 static table1_t table1[] = {
 	{ /* .name = */ "ABCDEFGHIJKLMNOPQRSTUVWXYZ", 16, { 0x0, } }, /* 1 */
-	{ /* .name = */ "ronah",  /* .age = */127, { 0x0, } },
-        { /* .name = */ "rlan",   /* .age = */118, { 0x0, } },
-        { /* .name = */ "rlory",  /* .age = */128, { 0x0, } },
-        { /* .name = */ "ropeye", /* .age = */118, { 0x0, } },
-        { /* .name = */ "rlan",   /* .age = */128, { 0x0, } },
-        { /* .name = */ "rlan",   /* .age = */138, { 0x0, } },
-        { /* .name = */ "rlan",   /* .age = */148, { 0x0, } },
-        { /* .name = */ "rlan",   /* .age = */158, { 0x0, } },
-        { /* .name = */ "rdam",   /* .age = */168, { 0x0, } },
-        { /* .name = */ "rnton",  /* .age = */123, { 0x0, } },
-        { /* .name = */ "rnton",  /* .age = */124, { 0x0, } },
-        { /* .name = */ "rieter", /* .age = */125, { 0x0, } },
-        { /* .name = */ "roerg",  /* .age = */126, { 0x0, } },
-        { /* .name = */ "rhomas", /* .age = */122, { 0x0, } },
-        { /* .name = */ "rrank",  /* .age = */120, { 0x0, } },
+	{ /* .name = */ "Jonah",  /* .age = */127, { 0x0, } },
+        { /* .name = */ "Alan",   /* .age = */118, { 0x0, } },
+        { /* .name = */ "Glory",  /* .age = */128, { 0x0, } },
+        { /* .name = */ "Popeye", /* .age = */118, { 0x0, } },
+        { /* .name = */ "Alan",   /* .age = */128, { 0x0, } },
+        { /* .name = */ "Alan",   /* .age = */138, { 0x0, } },
+        { /* .name = */ "Alan",   /* .age = */148, { 0x0, } },
+        { /* .name = */ "Alan",   /* .age = */158, { 0x0, } },
+        { /* .name = */ "Adam",   /* .age = */168, { 0x0, } },
+        { /* .name = */ "Anton",  /* .age = */123, { 0x0, } },
+        { /* .name = */ "Anton",  /* .age = */124, { 0x0, } },
+        { /* .name = */ "Dieter", /* .age = */125, { 0x0, } },
+        { /* .name = */ "Joerg",  /* .age = */126, { 0x0, } },
+        { /* .name = */ "Thomas", /* .age = */122, { 0x0, } },
+        { /* .name = */ "Frank",  /* .age = */120, { 0x0, } },
         { /* .name = */ "Bruno" , /* .age = */112, { 0x0, } },
-        { /* .name = */ "rlumi" , /* .age = */115, { 0x0, } },
-        { /* .name = */ "rikey",  /* .age = */115, { 0x0, } },
-        { /* .name = */ "rlong",  /* .age = */114, { 0x0, } },
-        { /* .name = */ "riffy",  /* .age = */113, { 0x0, } },
-        { /* .name = */ "riffy",  /* .age = */112, { 0x0, } }, /* 22 */
+        { /* .name = */ "Alumi" , /* .age = */115, { 0x0, } },
+        { /* .name = */ "Mikey",  /* .age = */115, { 0x0, } },
+        { /* .name = */ "Blong",  /* .age = */114, { 0x0, } },
+        { /* .name = */ "Giffy",  /* .age = */113, { 0x0, } },
+        { /* .name = */ "Giffy",  /* .age = */112, { 0x0, } }, /* 22 */
 };
 
 /*
@@ -460,30 +460,30 @@ static table1_t table1[] = {
  * PCIe bus to the card.
  */
 static table2_t table2[] = {
-        { /* .name = */ "ronah", /* .animal = */ "Whales"   }, /* 1 */
-        { /* .name = */ "ronah", /* .animal = */ "Spiders"  },
-        { /* .name = */ "rlan",  /* .animal = */ "Ghosts"   },
-        { /* .name = */ "rlan",  /* .animal = */ "Zombies"  },
-        { /* .name = */ "rlory", /* .animal = */ "Buffy"    },
-        { /* .name = */ "rrobi", /* .animal = */ "Giraffe"  },
-        { /* .name = */ "roofy", /* .animal = */ "Lion"     },
-        { /* .name = */ "rumie", /* .animal = */ "Gepard"   },
-        { /* .name = */ "rlumi", /* .animal = */ "Cow"      },
-        { /* .name = */ "roofy", /* .animal = */ "Ape"      },
-        { /* .name = */ "roofy", /* .animal = */ "Fish"     },
-        { /* .name = */ "rikey", /* .animal = */ "Trout"    },
-        { /* .name = */ "rikey", /* .animal = */ "Greyling" },
-        { /* .name = */ "rnton", /* .animal = */ "Eagle"    },
-        { /* .name = */ "rhomy", /* .animal = */ "Austrich" },
-        { /* .name = */ "rlomy", /* .animal = */ "Sharks"   },
-        { /* .name = */ "rroof", /* .animal = */ "Fly"      },
+        { /* .name = */ "Jonah", /* .animal = */ "Whales"   }, /* 1 */
+        { /* .name = */ "Jonah", /* .animal = */ "Spiders"  },
+        { /* .name = */ "Alan",  /* .animal = */ "Ghosts"   },
+        { /* .name = */ "Alan",  /* .animal = */ "Zombies"  },
+        { /* .name = */ "Glory", /* .animal = */ "Buffy"    },
+        { /* .name = */ "Grobi", /* .animal = */ "Giraffe"  },
+        { /* .name = */ "Goofy", /* .animal = */ "Lion"     },
+        { /* .name = */ "Mumie", /* .animal = */ "Gepard"   },
+        { /* .name = */ "Alumi", /* .animal = */ "Cow"      },
+        { /* .name = */ "Goofy", /* .animal = */ "Ape"      },
+        { /* .name = */ "Goofy", /* .animal = */ "Fish"     },
+        { /* .name = */ "Mikey", /* .animal = */ "Trout"    },
+        { /* .name = */ "Mikey", /* .animal = */ "Greyling" },
+        { /* .name = */ "Anton", /* .animal = */ "Eagle"    },
+        { /* .name = */ "Thomy", /* .animal = */ "Austrich" },
+        { /* .name = */ "Alomy", /* .animal = */ "Sharks"   },
+        { /* .name = */ "Proof", /* .animal = */ "Fly"      },
         { /* .name = */ "rlimb", /* .animal = */ "Birds"    },
-        { /* .name = */ "rlong", /* .animal = */ "Buffy"    },
-        { /* .name = */ "rrank", /* .animal = */ "Turtles"  },
-        { /* .name = */ "rrank", /* .animal = */ "Gorillas" },
-        { /* .name = */ "roffy", /* .animal = */ "Buffy"    },
-        { /* .name = */ "ruffy", /* .animal = */ "Buffy"    },
-        { /* .name = */ "rrank", /* .animal = */ "Buffy"    },
+        { /* .name = */ "Blong", /* .animal = */ "Buffy"    },
+        { /* .name = */ "Frank", /* .animal = */ "Turtles"  },
+        { /* .name = */ "Frank", /* .animal = */ "Gorillas" },
+        { /* .name = */ "Roffy", /* .animal = */ "Buffy"    },
+        { /* .name = */ "Buffy", /* .animal = */ "Buffy"    },
+        { /* .name = */ "Frank", /* .animal = */ "Buffy"    },
         { /* .name = */ "Bruno", /* .animal = */ "Buffy"    },
 	{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "ABCDEFGHIJKLMNOPQRSTUVWXYZ" }, /* 26 */
 };
@@ -531,7 +531,7 @@ int main(void)
 	Action_Register.Data.t1.size = sizeof(table1);
 
 	table2_entries = ARRAY_SIZE(table2) * TABLE2_N;
-	Action_Register.Data.t2.type = HOST_DRAM;
+	Action_Register.Data.t2.type = SNAP_ADDRTYPE_HOST_DRAM;
 	Action_Register.Data.t2.addr = sizeof(table1);
 
 	Action_Register.Data.t3.type = SNAP_ADDRTYPE_HOST_DRAM;
@@ -561,7 +561,7 @@ int main(void)
 
 		Action_Register.Data.t2.size = todo * sizeof(table2_t);
 		
-		fprintf(stderr, "Processing %d table2 entries ...\n", todo);
+		fprintf(stderr, "\nProcessing %d table2 entries ...\n", todo);
 		hls_action(din_gmem, dout_gmem, d_ddrmem, &Action_Register, &Action_Config);
 
 		Action_Register.Data.t1.addr = 0; /* no need to process t1 */
@@ -574,7 +574,7 @@ int main(void)
 		fprintf(stderr, "Found %d entries for table3 %d bytes\n",
 			t3_found, t3_data);
 
-		Action_Register.Data.t3.address += t3_data;
+		Action_Register.Data.t3.addr += t3_data;
 		Action_Register.Data.t3.size -= t3_data;
 
 		table3_found += t3_found;
@@ -583,7 +583,7 @@ int main(void)
 
 
 		/* DEBUG The 24 entries are a manually determined value */
-		fprintf(stderr, "Temporary number of entries in t3: %d\n",
+		fprintf(stderr, "\n>>>> Temporary number of entries in t3: %d\n",
 			table3_found);
 		table3_dump((table3_t *)((uint8_t *)dout_gmem +
 					 sizeof(table1) + TABLE2_N * sizeof(table2)),
@@ -601,7 +601,7 @@ int main(void)
 #endif
 	
 	/* The 24 entries are a manually determined value */
-	fprintf(stderr, "Final number of entries in t3: %d\n", table3_found);
+	fprintf(stderr, "\n>>>> Final number of entries in t3: %d\n", table3_found);
 	table3_dump((table3_t *)((uint8_t *)dout_gmem +
 				 sizeof(table1) + TABLE2_N * sizeof(table2)),
 		    table3_found);
