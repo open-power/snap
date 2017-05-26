@@ -455,7 +455,8 @@ static uint64_t test_speed(const uint64_t slice,
                            const uint32_t nb_pe)
 {
     int i;
-    uint64_t st[25], x, n;
+    uint64_t st[25], x;
+    //uint64_t n;
     //clock_t bg, us;
 
 //adding this test to control number of calls of this test
@@ -468,7 +469,7 @@ static uint64_t test_speed(const uint64_t slice,
         st[i] = i + slice; // adding slice to have different checksum
 
     //bg = clock();
-    n = 0;
+    //n = 0;
 
     //do{
     //{
