@@ -24,7 +24,7 @@ set hdl_dir     $root_dir/hdl
 set sim_dir     $root_dir/sim
 set fpga_part   $::env(FPGACHIP)
 set fpga_card   $::env(FPGACARD)
-set build_dir   $::env(BUILD_DIR)
+set psl_dcp     [file tail $::env(PSL_DCP)]
 set action_dir  $::env(ACTION_ROOT)
 set nvme_used   $::env(NVME_USED)
 set bram_used   $::env(BRAM_USED)
@@ -193,7 +193,7 @@ if { $nvme_used == TRUE } {
 
 # Add PSL
 puts "	                        importing PSL design checkpoint"
-read_checkpoint -cell b $build_dir/Checkpoints/b_route_design.dcp -strict >> $log_file
+read_checkpoint -cell b $root_dir/build/Checkpoints/$psl_dcp -strict >> $log_file
 
 # XDC
 # SNAP CORE XDC

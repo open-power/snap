@@ -18,23 +18,9 @@
 ############################################################################
 ############################################################################
 
-
+## variables that other scripts needed
 export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
-export BUILD_DIR=$(SNAP_HARDWARE_ROOT)/build
-export SNAP_HDL_CORE=$(SNAP_HARDWARE_ROOT)/hdl/core
-export SNAP_HDL_HLS=$(SNAP_HARDWARE_ROOT)/hdl/hls
-export SNAP_SIM_CORE=$(SNAP_HARDWARE_ROOT)/sim/core
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
-
-SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
-		  $(SNAP_HDL_CORE)/psl_accel.vhd \
-		  $(SNAP_HDL_CORE)/psl_accel_types.vhd \
-		  $(SNAP_HDL_CORE)/snap_core.vhd \
-		  $(SNAP_HDL_CORE)/snap_core_types.vhd \
-		  $(SNAP_HDL_CORE)/mmio.vhd \
-		  $(SNAP_HDL_HLS)/action_wrapper.vhd \
-		  $(SNAP_SIM_CORE)/top.sv
-
 
 ifeq "$(FPGACARD)" "KU3"
   export DDR3_USED=$(SDRAM_USED)
@@ -63,6 +49,22 @@ ifndef NVME_USED
   export NVME_USED=FALSE
 endif
 
+## variables only for this Makefile
+BUILD_DIR=$(SNAP_HARDWARE_ROOT)/build
+SNAP_HDL_CORE=$(SNAP_HARDWARE_ROOT)/hdl/core
+SNAP_HDL_HLS=$(SNAP_HARDWARE_ROOT)/hdl/hls
+SNAP_SIM_CORE=$(SNAP_HARDWARE_ROOT)/sim/core
+
+SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
+		  $(SNAP_HDL_CORE)/psl_accel.vhd \
+		  $(SNAP_HDL_CORE)/psl_accel_types.vhd \
+		  $(SNAP_HDL_CORE)/snap_core.vhd \
+		  $(SNAP_HDL_CORE)/snap_core_types.vhd \
+		  $(SNAP_HDL_CORE)/mmio.vhd \
+		  $(SNAP_HDL_HLS)/action_wrapper.vhd \
+		  $(SNAP_SIM_CORE)/top.sv
+
+
 .PHONY: all clean gitclean check_snap_settings image model action_config setup_environment create_environment config patch_version xpr_image snap_config snap_config_start
 
 all: config model image
@@ -88,14 +90,15 @@ check_snap_settings:
 		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/donut.git"; \
 		exit 1; \
 	fi
-	@if [ -z $(FPGACARD) ] || [ -z $(SDRAM_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ]; then \
+	@if [ -z $(FPGACARD) ] || [ -z $(SDRAM_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ] || [ -z $(PSL_DCP) ]; then \
 		echo "Missing one or more environment  variables"; \
 		echo "Please check the following variables and source snap_settings before calling make!"; \
 		echo "FPGACARD:       $(FPGACARD)"; \
+		echo "PSL_DCP :       $(PSL_DCP)"; \
+		echo "ACTION_ROOT:    $(ACTION_ROOT)"; \
 		echo "SDRAM_USED:     $(SDRAM_USED)"; \
 		echo "ILA_DEBUG:      $(ILA_DEBUG)"; \
 		echo "NUM_OF_ACTIONS: $(NUM_OF_ACTIONS)"; \
-		echo "ACTION_ROOT:    $(ACTION_ROOT)"; \
 		exit 1; \
 	fi
 
