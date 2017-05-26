@@ -21,7 +21,7 @@ set root_dir      $::env(SNAP_HARDWARE_ROOT)
 set log_dir       $::env(LOGS_DIR)
 set log_file      $log_dir/compile_xsim.log
 
-puts "	\[EXPORT_XSIM.........\] version=$xilinx_version"
+puts "\t                        export simulation for version=$xilinx_version"
 open_project $root_dir/viv_project/framework.xpr  >> $log_file
 export_simulation -force -directory "$root_dir/sim" -simulator xsim -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs >> $log_file
 close_project  >> $log_file

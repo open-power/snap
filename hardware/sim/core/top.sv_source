@@ -899,18 +899,18 @@ module top (
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t),		    //-- only for DDR4_USED=TRUE  
     // NVME                                                 //-- only for NVME_USED=TRUE
     .nvme_reset_n           (sys_reset_n_q),                //-- only for NVME_USED=TRUE
-//nvme_ch0    .refclk_nvme_ch0_p(refclk_nvme_p),                 //-- only for NVME_USED=TRUE
-//nvme_ch0    .refclk_nvme_ch0_n(~refclk_nvme_p),                //-- only for NVME_USED=TRUE
-    .refclk_nvme_ch1_p(refclk_nvme_p),                 //-- only for NVME_USED=TRUE
-    .refclk_nvme_ch1_n(~refclk_nvme_p),                //-- only for NVME_USED=TRUE
-//nvme_ch0    .pcie_rc0_rxn(pcie_rc0_rxn),                       //-- only for NVME_USED=TRUE
-//nvme_ch0    .pcie_rc0_rxp(pcie_rc0_rxp),                       //-- only for NVME_USED=TRUE
-//nvme_ch0    .pcie_rc0_txn(pcie_rc0_txn),                       //-- only for NVME_USED=TRUE 
-//nvme_ch0    .pcie_rc0_txp(pcie_rc0_txp),                       //-- only for NVME_USED=TRUE
-    .pcie_rc1_rxn(pcie_rc1_rxn),    		       //-- only for NVME_USED=TRUE
-    .pcie_rc1_rxp(pcie_rc1_rxp),    		       //-- only for NVME_USED=TRUE
-    .pcie_rc1_txn(pcie_rc1_txn),    		       //-- only for NVME_USED=TRUE
-    .pcie_rc1_txp(pcie_rc1_txp),                       //-- only for NVME_USED=TRUE	
+    .refclk_nvme_ch0_p(refclk_nvme_p),                      //-- only for NVME_USED=TRUE
+    .refclk_nvme_ch0_n(~refclk_nvme_p),                     //-- only for NVME_USED=TRUE
+    .refclk_nvme_ch1_p(refclk_nvme_p),                      //-- only for NVME_USED=TRUE
+    .refclk_nvme_ch1_n(~refclk_nvme_p),                     //-- only for NVME_USED=TRUE
+    .pcie_rc0_rxn(pcie_rc0_rxn),                            //-- only for NVME_USED=TRUE
+    .pcie_rc0_rxp(pcie_rc0_rxp),                            //-- only for NVME_USED=TRUE
+    .pcie_rc0_txn(pcie_rc0_txn),                            //-- only for NVME_USED=TRUE 
+    .pcie_rc0_txp(pcie_rc0_txp),                            //-- only for NVME_USED=TRUE
+    .pcie_rc1_rxn(pcie_rc1_rxn),    		            //-- only for NVME_USED=TRUE
+    .pcie_rc1_rxp(pcie_rc1_rxp),    		            //-- only for NVME_USED=TRUE
+    .pcie_rc1_txn(pcie_rc1_txn),    		            //-- only for NVME_USED=TRUE
+    .pcie_rc1_txp(pcie_rc1_txp),                            //-- only for NVME_USED=TRUE	
     .ha_pclock(ha_pclock)
   );
 

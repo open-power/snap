@@ -159,8 +159,8 @@ ENTITY psl_accel IS
     nvme_reset_n                        : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
     --                                                                                    -- only for NVME_USED=TRUE
     -- Clock inputs for NVMe                                                              -- only for NVME_USED=TRUE
---nvme_ch0    refclk_nvme_ch0_p                   : IN    STD_LOGIC;                               -- only for NVME_USED=TRUE
---nvme_ch0    refclk_nvme_ch0_n                   : IN    STD_LOGIC;                               -- only for NVME_USED=TRUE
+    refclk_nvme_ch0_p                   : IN    STD_LOGIC;                               -- only for NVME_USED=TRUE
+    refclk_nvme_ch0_n                   : IN    STD_LOGIC;                               -- only for NVME_USED=TRUE
     refclk_nvme_ch1_p                   : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
     refclk_nvme_ch1_n                   : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
     --                                                                                    -- only for NVME_USED=TRUE
@@ -168,10 +168,10 @@ ENTITY psl_accel IS
     nvme_reset_ctl                      : OUT   STD_LOGIC_VECTOR(SNAP_NVME_RST_L  DOWNTO SNAP_NVME_RST_R);   -- only for NVME_USED=TRUE  -- keeping NVMe drives in reset by driving 0's
     --                                                                                    -- only for NVME_USED=TRUE
     -- NVME <-> PCIE Interface                                                            -- only for NVME_USED=TRUE
---nvme_ch0    pcie_rc0_rxn                       : in   STD_LOGIC_VECTOR(3 downto 0);             -- only for NVME_USED=TRUE
---nvme_ch0    pcie_rc0_rxp                       : in   STD_LOGIC_VECTOR(3 downto 0);             -- only for NVME_USED=TRUE
---nvme_ch0    pcie_rc0_txn                       : out  STD_LOGIC_VECTOR(3 downto 0);             -- only for NVME_USED=TRUE
---nvme_ch0    pcie_rc0_txp                       : out  STD_LOGIC_VECTOR(3 downto 0);             -- only for NVME_USED=TRUE
+    pcie_rc0_rxn                       : in   STD_LOGIC_VECTOR(3 downto 0);             -- only for NVME_USED=TRUE
+    pcie_rc0_rxp                       : in   STD_LOGIC_VECTOR(3 downto 0);             -- only for NVME_USED=TRUE
+    pcie_rc0_txn                       : out  STD_LOGIC_VECTOR(3 downto 0);             -- only for NVME_USED=TRUE
+    pcie_rc0_txp                       : out  STD_LOGIC_VECTOR(3 downto 0);             -- only for NVME_USED=TRUE
     pcie_rc1_rxn                        : in   STD_LOGIC_VECTOR(3 downto 0);              -- only for NVME_USED=TRUE
     pcie_rc1_rxp                        : in   STD_LOGIC_VECTOR(3 downto 0);              -- only for NVME_USED=TRUE 
     pcie_rc1_txn                        : out  STD_LOGIC_VECTOR(3 downto 0);              -- only for NVME_USED=TRUE
@@ -818,7 +818,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
     DDR_M_AXI_araddr                    : OUT STD_LOGIC_VECTOR ( 33 downto 0 );                               -- only for NVME_USED=TRUE
     DDR_M_AXI_arburst                   : OUT STD_LOGIC_VECTOR ( 1 downto 0 );                                -- only for NVME_USED=TRUE
     DDR_M_AXI_arcache                   : OUT STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
-    DDR_M_AXI_arid                      : OUT STD_LOGIC_VECTOR ( 2 downto 0 );                                -- only for NVME_USED=TRUE
+    DDR_M_AXI_arid                      : OUT STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
     DDR_M_AXI_arlen                     : OUT STD_LOGIC_VECTOR ( 7 downto 0 );                                -- only for NVME_USED=TRUE
     DDR_M_AXI_arlock                    : OUT STD_LOGIC_VECTOR ( 0 to 0 );                                    -- only for NVME_USED=TRUE
     DDR_M_AXI_arprot                    : OUT STD_LOGIC_VECTOR ( 2 downto 0 );                                -- only for NVME_USED=TRUE
@@ -830,7 +830,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
     DDR_M_AXI_awaddr                    : OUT STD_LOGIC_VECTOR ( 33 downto 0 );                               -- only for NVME_USED=TRUE
     DDR_M_AXI_awburst                   : OUT STD_LOGIC_VECTOR ( 1 downto 0 );                                -- only for NVME_USED=TRUE
     DDR_M_AXI_awcache                   : OUT STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
-    DDR_M_AXI_awid                      : OUT STD_LOGIC_VECTOR ( 2 downto 0 );                                -- only for NVME_USED=TRUE
+    DDR_M_AXI_awid                      : OUT STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
     DDR_M_AXI_awlen                     : OUT STD_LOGIC_VECTOR ( 7 downto 0 );                                -- only for NVME_USED=TRUE
     DDR_M_AXI_awlock                    : OUT STD_LOGIC_VECTOR ( 0 to 0 );                                    -- only for NVME_USED=TRUE
     DDR_M_AXI_awprot                    : OUT STD_LOGIC_VECTOR ( 2 downto 0 );                                -- only for NVME_USED=TRUE
@@ -839,12 +839,12 @@ ARCHITECTURE psl_accel OF psl_accel IS
     DDR_M_AXI_awregion                  : OUT STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
     DDR_M_AXI_awsize                    : OUT STD_LOGIC_VECTOR ( 2 downto 0 );                                -- only for NVME_USED=TRUE
     DDR_M_AXI_awvalid                   : OUT STD_LOGIC_vector (0 to 0);                                      -- only for NVME_USED=TRUE
-    DDR_M_AXI_bid                       : IN  STD_LOGIC_VECTOR ( 2 downto 0 );                                -- only for NVME_USED=TRUE
+    DDR_M_AXI_bid                       : IN  STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
     DDR_M_AXI_bready                    : OUT STD_LOGIC_VECTOR ( 0 to 0 );                                    -- only for NVME_USED=TRUE
     DDR_M_AXI_bresp                     : IN  STD_LOGIC_VECTOR ( 1 downto 0 );                                -- only for NVME_USED=TRUE
     DDR_M_AXI_bvalid                    : IN  STD_LOGIC_VECTOR ( 0 to 0 );                                    -- only for NVME_USED=TRUE
     DDR_M_AXI_rdata                     : IN  STD_LOGIC_VECTOR ( 127 downto 0 );                              -- only for NVME_USED=TRUE
-    DDR_M_AXI_rid                       : IN  STD_LOGIC_VECTOR ( 2 downto 0 );                                -- only for NVME_USED=TRUE
+    DDR_M_AXI_rid                       : IN  STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
     DDR_M_AXI_rlast                     : IN  STD_LOGIC_VECTOR ( 0 to 0 );                                    -- only for NVME_USED=TRUE
     DDR_M_AXI_rready                    : OUT STD_LOGIC_VECTOR ( 0 to 0 );                                    -- only for NVME_USED=TRUE
     DDR_M_AXI_rresp                     : IN  STD_LOGIC_VECTOR ( 1 downto 0 );                                -- only for NVME_USED=TRUE
@@ -923,16 +923,16 @@ ARCHITECTURE psl_accel OF psl_accel IS
     nvme_reset_n                        : IN  STD_LOGIC;                                                      -- only for NVME_USED=TRUE
     --                                                                                                        -- only for NVME_USED=TRUE
     -- Clock inputs for NVMe                                                                                  -- only for NVME_USED=TRUE
---nvme_ch0    refclk_nvme_ch0_p                   : IN  STD_LOGIC;                                                      -- only for NVME_USED=TRUE
---nvme_ch0    refclk_nvme_ch0_n                   : IN  STD_LOGIC;                                                      -- only for NVME_USED=TRUE
+    refclk_nvme_ch0_p                   : IN  STD_LOGIC;                                                      -- only for NVME_USED=TRUE
+    refclk_nvme_ch0_n                   : IN  STD_LOGIC;                                                      -- only for NVME_USED=TRUE
     refclk_nvme_ch1_p                   : IN  STD_LOGIC;                                                      -- only for NVME_USED=TRUE
     refclk_nvme_ch1_n                   : IN  STD_LOGIC;                                                      -- only for NVME_USED=TRUE
     --                                                                                                        -- only for NVME_USED=TRUE
     -- NVME <-> PCIE Interface                                                                                -- only for NVME_USED=TRUE
---nvme_ch0    pcie_rc0_rxn                        : IN  STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
---nvme_ch0    pcie_rc0_rxp                        : IN  STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
---nvme_ch0    pcie_rc0_txn                        : OUT STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
---nvme_ch0    pcie_rc0_txp                        : OUT STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
+    pcie_rc0_rxn                        : IN  STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
+    pcie_rc0_rxp                        : IN  STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
+    pcie_rc0_txn                        : OUT STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
+    pcie_rc0_txp                        : OUT STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
     pcie_rc1_rxn                        : IN  STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
     pcie_rc1_rxp                        : IN  STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
     pcie_rc1_txn                        : OUT STD_LOGIC_VECTOR ( 3 downto 0 );                                -- only for NVME_USED=TRUE
@@ -1078,7 +1078,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL nvm_axi_card_mem0_araddr       : STD_LOGIC_VECTOR ( 33 downto 0 );                                   -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_arburst      : STD_LOGIC_VECTOR ( 1 downto 0 );                                    -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_arcache      : STD_LOGIC_VECTOR ( 3 downto 0 );                                    -- only for NVME_USED=TRUE
-  SIGNAL nvm_axi_card_mem0_arid         : STD_LOGIC_VECTOR ( 2 downto 0 );                                    -- only for NVME_USED=TRUE
+  SIGNAL nvm_axi_card_mem0_arid         : STD_LOGIC_VECTOR ( 3 downto 0 );                                    -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_arlen        : STD_LOGIC_VECTOR ( 7 downto 0 );                                    -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_arlock       : STD_LOGIC_VECTOR ( 0 to 0 );                                        -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_arprot       : STD_LOGIC_VECTOR ( 2 downto 0 );                                    -- only for NVME_USED=TRUE
@@ -1090,7 +1090,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL nvm_axi_card_mem0_awaddr       : STD_LOGIC_VECTOR ( 33 downto 0 );                                   -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_awburst      : STD_LOGIC_VECTOR ( 1 downto 0 );                                    -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_awcache      : STD_LOGIC_VECTOR ( 3 downto 0 );                                    -- only for NVME_USED=TRUE
-  SIGNAL nvm_axi_card_mem0_awid         : STD_LOGIC_VECTOR ( 2 downto 0 );                                    -- only for NVME_USED=TRUE
+  SIGNAL nvm_axi_card_mem0_awid         : STD_LOGIC_VECTOR ( 3 downto 0 );                                    -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_awlen        : STD_LOGIC_VECTOR ( 7 downto 0 );                                    -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_awlock       : STD_LOGIC_VECTOR ( 0 to 0 );                                        -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_awprot       : STD_LOGIC_VECTOR ( 2 downto 0 );                                    -- only for NVME_USED=TRUE
@@ -1099,12 +1099,12 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL nvm_axi_card_mem0_awregion     : STD_LOGIC_VECTOR ( 32 downto 0 );                                   -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_awsize       : STD_LOGIC_VECTOR ( 2 downto 0 );                                    -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_awvalid      : STD_LOGIC_vector ( 0 to 0);                                         -- only for NVME_USED=TRUE
-  SIGNAL nvm_axi_card_mem0_bid          : STD_LOGIC_VECTOR ( 2 downto 0 );                                    -- only for NVME_USED=TRUE
+  SIGNAL nvm_axi_card_mem0_bid          : STD_LOGIC_VECTOR ( 3 downto 0 );                                    -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_bready       : STD_LOGIC_VECTOR ( 0 to 0 );                                        -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_bresp        : STD_LOGIC_VECTOR ( 1 downto 0 );                                    -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_bvalid       : STD_LOGIC_VECTOR ( 0 to 0 );                                        -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_rdata        : STD_LOGIC_VECTOR ( 127 downto 0 );                                  -- only for NVME_USED=TRUE
-  SIGNAL nvm_axi_card_mem0_rid          : STD_LOGIC_VECTOR ( 2 downto 0 );                                    -- only for NVME_USED=TRUE
+  SIGNAL nvm_axi_card_mem0_rid          : STD_LOGIC_VECTOR ( 3 downto 0 );                                    -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_rlast        : STD_LOGIC_VECTOR ( 0 to 0 );                                        -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_rready       : STD_LOGIC_VECTOR ( 0 to 0 );                                        -- only for NVME_USED=TRUE
   SIGNAL nvm_axi_card_mem0_rresp        : STD_LOGIC_VECTOR ( 1 downto 0 );                                    -- only for NVME_USED=TRUE
@@ -1635,8 +1635,8 @@ BEGIN
   act_axi_card_mem0_bid  (3 downto 1) <= "000";                                         -- only for NVME_USED=TRUE
   act_axi_card_mem0_rid  (3 downto 1) <= "000";                                         -- only for NVME_USED=TRUE
                                                                                         -- only for NVME_USED=TRUE
-  nvm_axi_card_mem0_bid  (1 downto 0) <= "00";                                          -- only for NVME_USED=TRUE
-  nvm_axi_card_mem0_rid  (1 downto 0) <= "00";                                          -- only for NVME_USED=TRUE
+  nvm_axi_card_mem0_bid  (2 downto 0) <= "000";                                         -- only for NVME_USED=TRUE
+  nvm_axi_card_mem0_rid  (2 downto 0) <= "000";                                         -- only for NVME_USED=TRUE
                                                                                         -- only for NVME_USED=TRUE
                                                                                         -- only for NVME_USED=TRUE
   axi_interconnect_i : axi_interconnect                                                 -- only for NVME_USED=TRUE
@@ -1694,7 +1694,7 @@ BEGIN
       s01_axi_araddr          => nvm_axi_card_mem0_araddr(31 downto 0),                 -- only for NVME_USED=TRUE
       s01_axi_arburst         => nvm_axi_card_mem0_arburst,                             -- only for NVME_USED=TRUE
       s01_axi_arcache         => nvm_axi_card_mem0_arcache,                             -- only for NVME_USED=TRUE
-      s01_axi_arid            => nvm_axi_card_mem0_arid(2),                             -- only for NVME_USED=TRUE
+      s01_axi_arid            => nvm_axi_card_mem0_arid(3),                             -- only for NVME_USED=TRUE
       s01_axi_arlen           => nvm_axi_card_mem0_arlen,                               -- only for NVME_USED=TRUE
       s01_axi_arlock          => nvm_axi_card_mem0_arlock(0),                           -- only for NVME_USED=TRUE
       s01_axi_arprot          => nvm_axi_card_mem0_arprot,                              -- only for NVME_USED=TRUE
@@ -1705,7 +1705,7 @@ BEGIN
       s01_axi_awaddr          => nvm_axi_card_mem0_awaddr(31 downto 0),                 -- only for NVME_USED=TRUE
       s01_axi_awburst         => nvm_axi_card_mem0_awburst,                             -- only for NVME_USED=TRUE
       s01_axi_awcache         => nvm_axi_card_mem0_awcache,                             -- only for NVME_USED=TRUE
-      s01_axi_awid            => nvm_axi_card_mem0_awid(2),                             -- only for NVME_USED=TRUE
+      s01_axi_awid            => nvm_axi_card_mem0_awid(3),                             -- only for NVME_USED=TRUE
       s01_axi_awlen           => nvm_axi_card_mem0_awlen,                               -- only for NVME_USED=TRUE
       s01_axi_awlock          => nvm_axi_card_mem0_awlock(0),                           -- only for NVME_USED=TRUE
       s01_axi_awprot          => nvm_axi_card_mem0_awprot,                              -- only for NVME_USED=TRUE
@@ -1713,12 +1713,12 @@ BEGIN
       s01_axi_awready         => nvm_axi_card_mem0_awready(0),                          -- only for NVME_USED=TRUE
       s01_axi_awsize          => nvm_axi_card_mem0_awsize,                              -- only for NVME_USED=TRUE
       s01_axi_awvalid         => nvm_axi_card_mem0_awvalid(0),                          -- only for NVME_USED=TRUE
-      s01_axi_bid             => nvm_axi_card_mem0_bid(2),                              -- only for NVME_USED=TRUE
+      s01_axi_bid             => nvm_axi_card_mem0_bid(3),                              -- only for NVME_USED=TRUE
       s01_axi_bready          => nvm_axi_card_mem0_bready(0),                           -- only for NVME_USED=TRUE
       s01_axi_bresp           => nvm_axi_card_mem0_bresp,                               -- only for NVME_USED=TRUE
       s01_axi_bvalid          => nvm_axi_card_mem0_bvalid(0),                           -- only for NVME_USED=TRUE
       s01_axi_rdata           => nvm_axi_card_mem0_rdata,                               -- only for NVME_USED=TRUE
-      s01_axi_rid             => nvm_axi_card_mem0_rid(2),                              -- only for NVME_USED=TRUE
+      s01_axi_rid             => nvm_axi_card_mem0_rid(3),                              -- only for NVME_USED=TRUE
       s01_axi_rlast           => nvm_axi_card_mem0_rlast(0),                            -- only for NVME_USED=TRUE
       s01_axi_rready          => nvm_axi_card_mem0_rready(0),                           -- only for NVME_USED=TRUE
       s01_axi_rresp           => nvm_axi_card_mem0_rresp,                               -- only for NVME_USED=TRUE
@@ -1938,7 +1938,7 @@ BEGIN
       DDR_M_AXI_araddr(33 downto 0)    => nvm_axi_card_mem0_araddr(33 downto 0),                  -- only for NVME_USED=TRUE
       DDR_M_AXI_arburst(1 downto 0)    => nvm_axi_card_mem0_arburst(1 downto 0),                  -- only for NVME_USED=TRUE
       DDR_M_AXI_arcache(3 downto 0)    => nvm_axi_card_mem0_arcache(3 downto 0),                  -- only for NVME_USED=TRUE
-      DDR_M_AXI_arid(2 downto 0)       => nvm_axi_card_mem0_arid(2 downto 0),                     -- only for NVME_USED=TRUE
+      DDR_M_AXI_arid(3 downto 0)       => nvm_axi_card_mem0_arid(3 downto 0),                     -- only for NVME_USED=TRUE
       DDR_M_AXI_arlen(7 downto 0)      => nvm_axi_card_mem0_arlen(7 downto 0),                    -- only for NVME_USED=TRUE
       DDR_M_AXI_arlock(0)              => nvm_axi_card_mem0_arlock(0),                            -- only for NVME_USED=TRUE
       DDR_M_AXI_arprot(2 downto 0)     => nvm_axi_card_mem0_arprot(2 downto 0),                   -- only for NVME_USED=TRUE
@@ -1950,7 +1950,7 @@ BEGIN
       DDR_M_AXI_awaddr(33 downto 0)    => nvm_axi_card_mem0_awaddr(33 downto 0),                  -- only for NVME_USED=TRUE
       DDR_M_AXI_awburst(1 downto 0)    => nvm_axi_card_mem0_awburst(1 downto 0),                  -- only for NVME_USED=TRUE
       DDR_M_AXI_awcache(3 downto 0)    => nvm_axi_card_mem0_awcache(3 downto 0),                  -- only for NVME_USED=TRUE
-      DDR_M_AXI_awid(2 downto 0)       => nvm_axi_card_mem0_awid(2 downto 0),                     -- only for NVME_USED=TRUE
+      DDR_M_AXI_awid(3 downto 0)       => nvm_axi_card_mem0_awid(3 downto 0),                     -- only for NVME_USED=TRUE
       DDR_M_AXI_awlen(7 downto 0)      => nvm_axi_card_mem0_awlen(7 downto 0),                    -- only for NVME_USED=TRUE
       DDR_M_AXI_awlock(0)              => nvm_axi_card_mem0_awlock(0),                            -- only for NVME_USED=TRUE
       DDR_M_AXI_awprot(2 downto 0)     => nvm_axi_card_mem0_awprot(2 downto 0),                   -- only for NVME_USED=TRUE
@@ -1959,12 +1959,12 @@ BEGIN
       DDR_M_AXI_awregion(3 downto 0)   => nvm_axi_card_mem0_awregion(3 downto 0),                 -- only for NVME_USED=TRUE
       DDR_M_AXI_awsize(2 downto 0)     => nvm_axi_card_mem0_awsize(2 downto 0),                   -- only for NVME_USED=TRUE
       DDR_M_AXI_awvalid(0)             => nvm_axi_card_mem0_awvalid(0),                           -- only for NVME_USED=TRUE
-      DDR_M_AXI_bid                    => nvm_axi_card_mem0_bid(2 downto 0),                      -- only for NVME_USED=TRUE
+      DDR_M_AXI_bid                    => nvm_axi_card_mem0_bid(3 downto 0),                      -- only for NVME_USED=TRUE
       DDR_M_AXI_bready(0)              => nvm_axi_card_mem0_bready(0),                            -- only for NVME_USED=TRUE
       DDR_M_AXI_bresp(1 downto 0)      => nvm_axi_card_mem0_bresp(1 downto 0),                    -- only for NVME_USED=TRUE
       DDR_M_AXI_bvalid(0)              => nvm_axi_card_mem0_bvalid(0),                            -- only for NVME_USED=TRUE
       DDR_M_AXI_rdata(127 downto 0)    => nvm_axi_card_mem0_rdata(127 downto 0),                  -- only for NVME_USED=TRUE
-      DDR_M_AXI_rid(2 downto 0)        => nvm_axi_card_mem0_rid(2 downto 0),                      -- only for NVME_USED=TRUE
+      DDR_M_AXI_rid(3 downto 0)        => nvm_axi_card_mem0_rid(3 downto 0),                      -- only for NVME_USED=TRUE
       DDR_M_AXI_rlast(0)               => nvm_axi_card_mem0_rlast(0),                             -- only for NVME_USED=TRUE
       DDR_M_AXI_rready(0)              => nvm_axi_card_mem0_rready(0),                            -- only for NVME_USED=TRUE
       DDR_M_AXI_rresp(1 downto 0)      => nvm_axi_card_mem0_rresp(1 downto 0),                    -- only for NVME_USED=TRUE
@@ -2041,15 +2041,15 @@ BEGIN
                                                                                           -- only for NVME_USED=TRUE
       --                                                                                  -- only for NVME_USED=TRUE
       -- NVME <-> PCIE Interface                                                          -- only for NVME_USED=TRUE
---nvme_ch0      refclk_nvme_ch0_p                => refclk_nvme_ch0_p,                              -- only for NVME_USED=TRUE
---nvme_ch0      refclk_nvme_ch0_n                => refclk_nvme_ch0_n,                              -- only for NVME_USED=TRUE
+      refclk_nvme_ch0_p                => refclk_nvme_ch0_p,                              -- only for NVME_USED=TRUE
+      refclk_nvme_ch0_n                => refclk_nvme_ch0_n,                              -- only for NVME_USED=TRUE
       refclk_nvme_ch1_p                => refclk_nvme_ch1_p,                              -- only for NVME_USED=TRUE
       refclk_nvme_ch1_n                => refclk_nvme_ch1_n,                              -- only for NVME_USED=TRUE
       nvme_reset_n                     => nvme_reset_n,                                   -- only for NVME_USED=TRUE
---nvme_ch0      pcie_rc0_rxn(3 downto 0)         => pcie_rc0_rxn(3 downto 0),                       -- only for NVME_USED=TRUE
---nvme_ch0      pcie_rc0_rxp(3 downto 0)         => pcie_rc0_rxp(3 downto 0),                       -- only for NVME_USED=TRUE
---nvme_ch0      pcie_rc0_txn(3 downto 0)         => pcie_rc0_txn(3 downto 0),                       -- only for NVME_USED=TRUE
---nvme_ch0      pcie_rc0_txp(3 downto 0)         => pcie_rc0_txp(3 downto 0),                       -- only for NVME_USED=TRUE
+      pcie_rc0_rxn(3 downto 0)         => pcie_rc0_rxn(3 downto 0),                       -- only for NVME_USED=TRUE
+      pcie_rc0_rxp(3 downto 0)         => pcie_rc0_rxp(3 downto 0),                       -- only for NVME_USED=TRUE
+      pcie_rc0_txn(3 downto 0)         => pcie_rc0_txn(3 downto 0),                       -- only for NVME_USED=TRUE
+      pcie_rc0_txp(3 downto 0)         => pcie_rc0_txp(3 downto 0),                       -- only for NVME_USED=TRUE
       pcie_rc1_rxn(3 downto 0)         => pcie_rc1_rxn(3 downto 0),                       -- only for NVME_USED=TRUE
       pcie_rc1_rxp(3 downto 0)         => pcie_rc1_rxp(3 downto 0),                       -- only for NVME_USED=TRUE
       pcie_rc1_txn(3 downto 0)         => pcie_rc1_txn(3 downto 0),                       -- only for NVME_USED=TRUE
