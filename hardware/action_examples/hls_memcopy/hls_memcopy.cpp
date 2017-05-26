@@ -25,11 +25,6 @@
  * => Transfers must be 64 byte aligned and a size of multiples of 64 bytes
  * ----------------------------------------------------------------------------
  */
-/* Known bug for V1.8 + V1.9 : Issue #120 & #121 - Burst issue
- *  #120 has no solution yet
- *  #121 can be circumvented by replacing lines (151 and) 154 by 155
- * ----------------------------------------------------------------------------
- */
 
 // WRITE DATA TO MEMORY
 short write_burst_of_data_to_mem(snap_membus_t *dout_gmem,
@@ -129,8 +124,7 @@ static void process_action(snap_membus_t *din_gmem,
 	// transferring buffers one after the other
 	L0:
 	for ( i = 0; i < nb_blocks_to_xfer; i++ ) {
-		//#pragma HLS UNROLL
-		// cannot completely unroll a loop with a variable trip count
+#pragma HLS UNROLL		// cannot completely unroll a loop with a variable trip count
 
 		xfer_size = MIN(action_xfer_size,
 				(snapu32_t)MAX_NB_OF_BYTES_READ);
@@ -218,11 +212,14 @@ static snap_membus_t word_to_mbus(word_t text)
 
 int main(void)
 {
+#define MEMORY_LINES 1024 /* 64 KiB */
     int rc = 0;
     unsigned int i;
-    snap_membus_t  din_gmem[2048];
-    snap_membus_t  dout_gmem[2048];
-    snap_membus_t  d_ddrmem[2048];
+    static snap_membus_t  din_gmem[MEMORY_LINES];
+    static snap_membus_t  dout_gmem[MEMORY_LINES];
+    static snap_membus_t  d_ddrmem[MEMORY_LINES];
+    //snap_membus_t  dout_gmem[2048];
+    //snap_membus_t  d_ddrmem[2048];
     action_reg act_reg;
     action_RO_config_reg Action_Config;
 
@@ -237,43 +234,19 @@ int main(void)
 	    (unsigned int)Action_Config.release_level,
 	    (unsigned int)act_reg.Control.Retc);
 
-    char word_tmp[BPERDW];
-    FILE *fp;
 
-    int c;
-    int k=0, m=0;
-
-    // read data for text
-    fp = fopen("demo_search123.txt", "r");
-    if (fp) {
-        while((c = getc(fp)) != EOF) {
-                word_tmp[k] = c;
-                k++;
-                if(k == BPERDW) {
-                        din_gmem[m] = (snap_membus_t) word_to_mbus(word_tmp);
-                        if (m < MAX_NB_OF_WORDS_READ)
-                                m++;
-                        else
-                                break;
-                        k=0;
-                }
-        }
-        if(k != BPERDW) // flush
-        {
-                din_gmem[m] = (snap_membus_t) word_to_mbus(word_tmp);
-        }
-        if(ferror(fp)) return 1;
-    }
-    fclose(fp);
+    memset(din_gmem,  0xA, sizeof(din_gmem));
+    memset(din_gmem,  0xB, sizeof(dout_gmem));
+    memset(din_gmem,  0xC, sizeof(d_ddrmem));
 
     
     act_reg.Control.flags = 0x1; /* just not 0x0 */
 
-    act_reg.Data.in.address = 0x0;
+    act_reg.Data.in.addr = 0;
     act_reg.Data.in.size = 128;
     act_reg.Data.in.type = SNAP_ADDRTYPE_HOST_DRAM;
 
-    act_reg.Data.out.address = 256;
+    act_reg.Data.out.addr = 256;
     act_reg.Data.out.size = 128;
     act_reg.Data.out.type = SNAP_ADDRTYPE_HOST_DRAM;
 
@@ -287,6 +260,8 @@ int main(void)
 	    fprintf(stderr, " ==> DATA COMPARE FAILURE <==\n");
 	    return 1;
     }
+    else
+    	printf(" ==> DATA COMPARE OK <==\n");
 
     printf(">> ACTION TYPE = %08lx - RELEASE_LEVEL = %08lx <<\n",
                     (unsigned int)Action_Config.action_type,

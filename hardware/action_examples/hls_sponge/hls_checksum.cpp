@@ -49,16 +49,6 @@
 #include "sha3.H"
 #include "action_checksum.H"
 
-#define NB_SLICES    14
-#define NB_ROUND 100000
-
-
-/* Number of parallelization channels at hls_action level*/
-//#if NB_SLICES == 4
-//#  define CHANNELS 4
-//#else
-//#  define CHANNELS 16
-//#endif
 
 // read a hex string, return byte length or -1 on error.
 
@@ -95,7 +85,7 @@ static int test_readhex(uint8_t *buf, const char *str, int maxbytes)
 
 static int test_sha3()
 {
-	printf("FIPS 202 / SHA3  Self-Tests : ");
+	printf("FIPS 202 / SHA3  Self-Tests : \n");
     // message / digest pairs, lifted from ShortMsgKAT_SHA3-xxx.txt files
     // in the official package: https://github.com/gvanas/KeccakCodePackage
 
@@ -209,7 +199,7 @@ static int test_sha3()
 
 static int test_shake()
 {
-	printf("SHAKE128, SHAKE2563  Self-Tests : ");
+	printf("SHAKE128, SHAKE256  Self-Tests : \n");
     // Test vectors have bytes 480..511 of XOF output for given inputs.
     // From http://csrc.nist.gov/groups/ST/toolkit/examples.html#aHashing
 
@@ -225,13 +215,13 @@ static int test_shake()
         "6A1A9D7846436E4DCA5728B6F760EEF0CA92BF0BE5615E96959D767197A0BEEB"
     };*/
         // SHAKE128, message of length 0
-    char testvec128_0[]    = "43E41B45A653F2A5C4492C1ADD544512DDA2529833462B71A41A45BE97290B6F";
+    char testhex128_0[]    = "43E41B45A653F2A5C4492C1ADD544512DDA2529833462B71A41A45BE97290B6F";
         // SHAKE256, message of length 0
-    char testvec256_0[]    = "AB0BAE316339894304E35877B0C28A9B1FD166C796B9CC258A064A8F57E27F2A";
+    char testhex256_0[]    = "AB0BAE316339894304E35877B0C28A9B1FD166C796B9CC258A064A8F57E27F2A";
         // SHAKE128, 1600-bit test pattern
-    char testvec128_1600[] = "44C9FB359FD56AC0A9A75A743CFF6862F17D7259AB075216C0699511643B6439";
+    char testhex128_1600[] = "44C9FB359FD56AC0A9A75A743CFF6862F17D7259AB075216C0699511643B6439";
         // SHAKE256, 1600-bit test pattern
-    char testvec256_1600[] = "6A1A9D7846436E4DCA5728B6F760EEF0CA92BF0BE5615E96959D767197A0BEEB";
+    char testhex256_1600[] = "6A1A9D7846436E4DCA5728B6F760EEF0CA92BF0BE5615E96959D767197A0BEEB";
 
     int i, j, fails;
     sha3_ctx_t sha3;
@@ -266,16 +256,16 @@ static int test_shake()
         //test_readhex(ref, testhex[i], sizeof(ref));
         switch(i) {
         case(0) : // SHAKE128, message of length 0
-    	    	test_readhex(ref, testvec128_0, sizeof(ref));
+    	    	test_readhex(ref, testhex128_0, sizeof(ref));
         		break;
         case(1) : // SHAKE256, message of length 0
-    	    	test_readhex(ref, testvec256_0, sizeof(ref));
+    	    	test_readhex(ref, testhex256_0, sizeof(ref));
     	        break;
         case(2) : // SHAKE128, 1600-bit test pattern
-    	    	test_readhex(ref, testvec128_1600, sizeof(ref));
+    	    	test_readhex(ref, testhex128_1600, sizeof(ref));
     	        break;
         case(3) : // SHAKE256, 1600-bit test pattern
-    	    	test_readhex(ref, testvec256_1600, sizeof(ref));
+    	    	test_readhex(ref, testhex256_1600, sizeof(ref));
     	        break;
         default :
         		break;
@@ -296,25 +286,29 @@ static int test_shake()
 }
 
 // test speed of the comp
-static unsigned long test_speed()
+static uint64_t test_speed(const uint64_t slice,
+                                const uint32_t pe, 
+                                const uint32_t nb_pe)
 {
     int i;
-    uint64_t st[25], x, n, slice;
+    uint64_t st[25], x, n;
     //clock_t bg, us;
 
-    printf("Speed test : ");
+//adding this test to control number of calls of this test
+    if (pe <= (slice % nb_pe))
+        return 0;
 
     for (i = 0; i < 25; i++)
 #pragma HLS UNROLL
-        st[i] = i;
+        //st[i] = i;
+        st[i] = i + slice; // adding slice to have different checksum
 
     //bg = clock();
     n = 0;
 
     //do{
-    for (slice = 0; slice < NB_SLICES; slice++)
-    {
-        for (i = 0; i < NB_ROUND; i++)
+    //{
+        test_rounds:for (i = 0; i < NB_ROUNDS; i++)
         {
             // Successive tests of sha3 taking result of previous for next process
             //sha3_keccakf(st);
@@ -322,7 +316,7 @@ static unsigned long test_speed()
         }
         //n += i;
         //us = clock() - bg;
-    }
+    //}
     //} while (us < 3 * CLOCKS_PER_SEC);
 
     x = 0;
@@ -331,10 +325,6 @@ static unsigned long test_speed()
         x += st[i];
 
 
-
-    printf("(0x%016lX) - 0x%016lX Keccak-p[1600,24].\n",
-                (unsigned long) x, 
-                (unsigned long) (NB_SLICES * NB_ROUND));
 //    printf("(%016lX) %.3f Keccak-p[1600,24] / Second.\n",
 //    		(unsigned long) x, (CLOCKS_PER_SEC * ((double) n)) / ((double) us));
 
@@ -348,33 +338,49 @@ static unsigned long test_speed()
 void process_action( action_reg *Action_Register)
 {
 	int rc = 1;
+        uint64_t slice, j;
+        uint64_t checksum = 0;
+//        uint64_t checksum_tmp;
+        uint32_t pe, nb_pe;
 
 	switch(Action_Register->Data.test_choice) {
 	case(0):
-		Action_Register->Data.chk_out = test_speed();
+			pe    = Action_Register->Data.pe;
+			nb_pe = Action_Register->Data.nb_pe;
+
+
+	         for (slice = 0; slice < NB_SLICES; slice++)
+#pragma HLS UNROLL factor=32      // PARALLELIZATION FACTOR
+                 checksum ^= test_speed(slice, pe, nb_pe);
+
+     		Action_Register->Data.chk_out = checksum;
     		Action_Register->Data.nb_slices = NB_SLICES;
-    		Action_Register->Data.nb_round  = NB_ROUND;
+    		Action_Register->Data.nb_rounds  = NB_ROUNDS;
 		rc = 0;
 		break;
+
+#ifndef TEST_SPEED_ONLY // To leave only TEST_SPEED logic
 	case(1):
 		rc = test_sha3();
 		Action_Register->Data.chk_out = rc;
     		Action_Register->Data.nb_slices = 0;
-    		Action_Register->Data.nb_round  = 0;
+    		Action_Register->Data.nb_rounds  = 0;
 		break;
 	case(2):
 		rc = test_shake();
 		Action_Register->Data.chk_out = rc;
     		Action_Register->Data.nb_slices = 0;
-    		Action_Register->Data.nb_round  = 0;
+    		Action_Register->Data.nb_rounds  = 0;
 		break;
 	case(3):
 		rc = test_sha3();
 		rc |= test_shake();
 		Action_Register->Data.chk_out = rc;
     		Action_Register->Data.nb_slices = 0;
-    		Action_Register->Data.nb_round  = 0;
+    		Action_Register->Data.nb_rounds  = 0;
 		break;
+#endif
+
 	default:
 		rc = 1;
 		break;
@@ -387,6 +393,7 @@ void process_action( action_reg *Action_Register)
     }
     else
     {
+    	printf(" ==> Test completed with errors!! <==\n");
     	Action_Register->Control.Retc = SNAP_RETC_FAILURE;
     }
 
@@ -472,9 +479,30 @@ int main(void)
 
 	// Process the action
 	Action_Register.Control.flags = 1;
-	Action_Register.Data.test_choice = 0; //speed test
+
+	Action_Register.Data.test_choice = 0; 	//speed test
+	Action_Register.Data.pe = 2;			// 2 calls
+	Action_Register.Data.nb_pe = NB_SLICES; // every NB_SLICES until NB_SLICES
 	hls_action(din_gmem, dout_gmem, d_ddrmem,
 			    &Action_Register, &Action_Config);
+	printf(" ==> 2 test calls : checksum = %016llx",
+			(long long) Action_Register.Data.chk_out);
+	if (Action_Register.Data.chk_out == 0x2ccef6d61b67ad2f)
+		printf(" => checksum OK\n");
+	else
+		printf(" => WRONG checksum => expecting : 0x2ccef6d61b67ad2f\n");
+
+	Action_Register.Data.pe = 4;			// 4 calls
+	Action_Register.Data.nb_pe = NB_SLICES; // every NB_SLICES until NB_SLICES
+	hls_action(din_gmem, dout_gmem, d_ddrmem,
+			    &Action_Register, &Action_Config);
+	printf(" ==> 4 test calls : checksum = %016llx",
+			(long long) Action_Register.Data.chk_out);
+	if (Action_Register.Data.chk_out == 0x0796ca863ac8273f)
+		printf(" => checksum OK\n");
+	else
+		printf(" => WRONG checksum => expected : 0x0796ca863ac8273f\n");
+
 
 	Action_Register.Data.test_choice = 3; //SHA + SHAKE tests
 	hls_action(din_gmem, dout_gmem, d_ddrmem,
