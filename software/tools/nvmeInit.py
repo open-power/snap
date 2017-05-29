@@ -519,7 +519,7 @@ if (SSD1_USED and not ssd1initdone ):
     data = (data >> 20) & 0xf
     print ('max page size %x' % data)  
     #data = (4<<20) | (6<<16)| data 
-    data = (4<<20) | (6<<16) | (0x7<<6)   # the nvme host doesn't support max page size
+    data = (4<<20) | (6<<16) | (0x5<<7)   # the nvme host doesn't support max page size
     NVME_Drive.write(SSD1,0x14,data)                     # writing SSD0 controller register
     queue_entries = (((ADMIN_Q_ENTRIES-1)<<16) | (ADMIN_Q_ENTRIES-1)); 
     NVME_Drive.write(SSD1,0x24,queue_entries)            # AQA register  
