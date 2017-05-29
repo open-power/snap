@@ -117,6 +117,7 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL mmio_read_data_q                     : std_logic_vector(63 DOWNTO 0);
   SIGNAL mmio_read_datapar_q                  : std_logic;
   SIGNAL mmio_read_ack_q                      : std_logic;
+  SIGNAL mmio_read_calc_parity_q              : boolean;
   SIGNAL mmio_read_action_outstanding_q       : std_logic;
   SIGNAL mmio_master_read_q0                  : std_logic;
   SIGNAL mmio_master_read_q                   : std_logic;
@@ -362,6 +363,7 @@ BEGIN
         mmio_read_data_q               <= (OTHERS => '0');
         mmio_read_datapar_q            <= '1';
         mmio_read_ack_q                <= '0';
+        mmio_read_calc_parity_q        <= FALSE;
         ah_mm_q.data                   <= (OTHERS => '0');
         ah_mm_q.datapar                <= '1';
         ah_mm_read_ack_q               <= '0';
@@ -379,11 +381,16 @@ BEGIN
         mmio_master_read_q0            <= mmio_master_read_q0;
         mmio_master_read_q             <= mmio_master_read_q0;
         mmio_read_data_q0              <= (OTHERS => '1');
-        mmio_read_data_q               <= mmio_read_data_q0;
         mmio_read_datapar_q0           <= '1';
-        mmio_read_datapar_q            <= mmio_read_datapar_q0;
         mmio_read_ack_q0               <= '0';
+        mmio_read_data_q               <= mmio_read_data_q0;
+        IF mmio_read_calc_parity_q THEN
+          mmio_read_datapar_q <= parity_gen_odd(mmio_read_data_q0);
+        ELSE
+          mmio_read_datapar_q <= mmio_read_datapar_q0;
+        END IF;
         mmio_read_ack_q                <= mmio_read_ack_q0;
+        mmio_read_calc_parity_q        <= FALSE;
         ah_mm_q.data                   <= mmio_read_data_q;
         ah_mm_q.datapar                <= mmio_read_datapar_q;
         ah_mm_read_ack_q               <= mmio_read_ack_q;
@@ -602,6 +609,8 @@ BEGIN
             -- CONTEXT REGISTER READ
             --
             WHEN CONTEXT_REG_BASE =>
+              mmio_read_calc_parity_q <= TRUE;
+
               CASE mmio_read_reg_offset_q IS
                 WHEN CONTEXT_CONFIG_REG =>
                   mmio_read_data_q0 <= (OTHERS => '0');
@@ -635,6 +644,7 @@ BEGIN
                   -- invalid address
                   non_fatal_master_rd_errors_q(NFE_INV_RD_ADDRESS) <= mmio_read_master_access_q;
                   non_fatal_slave_rd_errors_q(NFE_INV_RD_ADDRESS)  <= NOT mmio_read_master_access_q;
+                  mmio_read_calc_parity_q                          <= FALSE;
               END CASE;
 
             WHEN OTHERS =>
