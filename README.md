@@ -39,8 +39,9 @@ Call the capi-flash script with the generated bitstream:
 This code uses libcxl to access the CAPI hardware. This library should be part of your Linux distribution. For more information, please see
 * https://github.com/ibm-capi/libcxl
 
-Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For the latest PSL checkpoint download, visit CAPI section of the IBM Portal for OpenPOWER at
+Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For the latest PSL checkpoint download, visit the CAPI section of the IBM Portal for OpenPOWER at
 * https://www.ibm.com/systems/power/openpower
+Download the required files under "PSL Checkpoint Files for the CAPI SNAP Design Kit".
 
 For simulation, SNAP relies on the PSL Simulation Environment (PSLSE) which is available on github:
 * https://github.com/ibm-capi/pslse
@@ -64,7 +65,7 @@ $ git config --global user.email johndoe@example.com
 ```
 Then, for every commit, use `git commit -s` to add the "signed-off by ..." message.
 
-The master branch is protected. You can no longer commit directly into the master branch. To contribute changes, please create a branch, make the changes there and issue a pull request
+The master branch is protected, so you can't commit directly into the master branch. To contribute changes, please create a branch, make the changes there and issue a pull request.
 
 By default the git repository is read-only. Users can fork the snap repository, make the changes there and issue a pull request.
 
