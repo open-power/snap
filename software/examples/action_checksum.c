@@ -213,28 +213,6 @@ static unsigned long do_crc(unsigned long crc, unsigned char *buf, int len)
 	return c ^ 0xffffffffL;
 }
 
-#undef TEST /* get faster turn-around time */
-#ifdef NO_SYNTH /* TEST */
-#  define NB_SLICES   (4)
-#  define NB_ROUND    (1 << 10)
-#else
-#  ifndef NB_SLICES
-#    define NB_SLICES (65536)   /* 65536 */ /* for real benchmark */
-#  endif
-#  ifndef NB_ROUND
-#    define NB_ROUND  (1 << 16) /* (1 << 24) */ /* for real benchmark */
-#  endif
-#endif
-
-/* Number of parallelization channels at hls_action level*/
-#if NB_SLICES == 4
-#  define CHANNELS 4
-#else
-#  define CHANNELS 16
-#endif
-
-#define RESULT_SIZE 8
-#define HASH_SIZE 64
 
 // read a hex string, return byte length or -1 on error.
 static int test_hexdigit(char ch)
@@ -270,10 +248,10 @@ static int test_readhex(uint8_t *buf, const char *str, int maxbytes)
 
 static int test_sha3()
 {
-        printf("FIPS 202 / SHA3  Self-Tests : ");
+        printf("FIPS 202 / SHA3  Self-Tests : \n");
     // message / digest pairs, lifted from ShortMsgKAT_SHA3-xxx.txt files
     // in the official package: https://github.com/gvanas/KeccakCodePackage
-/*    
+   
     const char *testvec[][2] = {
         {   // SHA3-224, corner case with 0-length message
             "",
@@ -304,7 +282,7 @@ static int test_sha3()
             "91FEE12205EDACAF82FFBBAF16DFF9E702A708862080166C2FF6BA379BC7FFC2"
         }
     };
-*/
+/*
  // SHA3-224, corner case with 0-length message
     char testvec224_0[] = "";
     char testvec224_1[] = "6B4E03423667DBB73B6E15454F0EB1ABD4597F9A1B078E3F5B5A6BC7";
@@ -329,8 +307,8 @@ static int test_sha3()
                           "5172E328807C02D011FFBF33785378D79DC266F6A5BE6BB0E4A92ECEEBAEB1";
     char testvec512_1[] = "6E8B8BD195BDD560689AF2348BDC74AB7CD05ED8B9A57711E9BE71E9726FDA45"
                           "91FEE12205EDACAF82FFBBAF16DFF9E702A708862080166C2FF6BA379BC7FFC2";
-
-    int i, k, fails, msg_len, sha_len;
+*/
+    int i, fails, msg_len, sha_len;
     uint8_t sha[64], buf[64], msg[256];
     //uint64_t sha64[8], buf64[8], msg64[32];
 
@@ -341,8 +319,9 @@ static int test_sha3()
         memset(buf, 0, sizeof(buf));
         memset(msg, 0, sizeof(msg));
 
-        //msg_len = test_readhex(msg, testvec[i][0], sizeof(msg));
-        //sha_len = test_readhex(sha, testvec[i][1], sizeof(sha));
+        msg_len = test_readhex(msg, testvec[i][0], sizeof(msg));
+        sha_len = test_readhex(sha, testvec[i][1], sizeof(sha));
+/* Following code is needed for HLS
         switch(i) {
         case(0) : // SHA3-224, corner case with 0-length message
                 msg_len = test_readhex(msg, testvec224_0, sizeof(msg));
@@ -363,16 +342,16 @@ static int test_sha3()
         default :
                 break;
         }
-
+*/
         sha3(msg, msg_len, buf, sha_len);
 
-        //if (memcmp(sha, buf, sha_len) != 0) {
-        for(k = 0; k < sha_len; k++) {
-                if (sha[k] != buf[k]) {
+        if (memcmp(sha, buf, sha_len) != 0) {
+        //for(k = 0; k < sha_len; k++) {
+        //        if (sha[k] != buf[k]) {
             fprintf(stderr, "[%d] SHA3-%d, len %d test FAILED.\n",
                 i, sha_len * 8, msg_len);
             fails++;
-                }
+        //        }
         }
     }
 
@@ -383,11 +362,11 @@ static int test_sha3()
 
 static int test_shake()
 {
-        printf("SHAKE128, SHAKE2563  Self-Tests : ");
+        printf("SHAKE128, SHAKE2563  Self-Tests : \n");
         // Test vectors have bytes 480..511 of XOF output for given inputs.
         // From http://csrc.nist.gov/groups/ST/toolkit/examples.html#aHashing
    
-        /*const char testhex[4] = {
+/*        const char testhex[4] = {
         // SHAKE128, message of length 0
         "43E41B45A653F2A5C4492C1ADD544512DDA2529833462B71A41A45BE97290B6F",
         // SHAKE256, message of length 0
@@ -396,18 +375,19 @@ static int test_shake()
         "44C9FB359FD56AC0A9A75A743CFF6862F17D7259AB075216C0699511643B6439",
         // SHAKE256, 1600-bit test pattern
         "6A1A9D7846436E4DCA5728B6F760EEF0CA92BF0BE5615E96959D767197A0BEEB"
-        };*/
+        };
+*/
 
         // SHAKE128, message of length 0
-        char testvec128_0[]    = "43E41B45A653F2A5C4492C1ADD544512DDA2529833462B71A41A45BE97290B6F";
+        char testhex128_0[]    = "43E41B45A653F2A5C4492C1ADD544512DDA2529833462B71A41A45BE97290B6F";
         // SHAKE256, message of length 0
-        char testvec256_0[]    = "AB0BAE316339894304E35877B0C28A9B1FD166C796B9CC258A064A8F57E27F2A";
+        char testhex256_0[]    = "AB0BAE316339894304E35877B0C28A9B1FD166C796B9CC258A064A8F57E27F2A";
         // SHAKE128, 1600-bit test pattern
-        char testvec128_1600[] = "44C9FB359FD56AC0A9A75A743CFF6862F17D7259AB075216C0699511643B6439";
+        char testhex128_1600[] = "44C9FB359FD56AC0A9A75A743CFF6862F17D7259AB075216C0699511643B6439";
         // SHAKE256, 1600-bit test pattern
-        char testvec256_1600[] = "6A1A9D7846436E4DCA5728B6F760EEF0CA92BF0BE5615E96959D767197A0BEEB";
+        char testhex256_1600[] = "6A1A9D7846436E4DCA5728B6F760EEF0CA92BF0BE5615E96959D767197A0BEEB";
         
-    int i, j, k, fails;
+    int i, j, fails;
     sha3_ctx_t sha3;
     uint8_t buf[32], ref[32];
 
@@ -423,9 +403,9 @@ static int test_shake()
         }
 
         if (i >= 2) {                   // 1600-bit test pattern
-            //memset(buf, 0xA3, 20);
-            for (j = 0; j < 20; j ++)
-                buf[j] = 0xA3;
+            memset(buf, 0xA3, 20);
+            //for (j = 0; j < 20; j ++)
+            //    buf[j] = 0xA3;
 
             for (j = 0; j < 200; j += 20)
                 shake_update(&sha3, buf, 20);
@@ -440,56 +420,60 @@ static int test_shake()
         //test_readhex(ref, testhex[i], sizeof(ref));
         switch(i) {
         case(0) : // SHAKE128, message of length 0
-                test_readhex(ref, testvec128_0, sizeof(ref));
+                test_readhex(ref, testhex128_0, sizeof(ref));
                         break;
         case(1) : // SHAKE256, message of length 0
-                test_readhex(ref, testvec256_0, sizeof(ref));
+                test_readhex(ref, testhex256_0, sizeof(ref));
                 break;
         case(2) : // SHAKE128, 1600-bit test pattern
-                test_readhex(ref, testvec128_1600, sizeof(ref));
+                test_readhex(ref, testhex128_1600, sizeof(ref));
                 break;
         case(3) : // SHAKE256, 1600-bit test pattern
-                test_readhex(ref, testvec256_1600, sizeof(ref));
+                test_readhex(ref, testhex256_1600, sizeof(ref));
                 break;
         default :
                         break;
         }
 
-        //if (memcmp(buf, ref, 32) != 0) {
-        for(k = 0; k < 32; k++) {
+        if (memcmp(buf, ref, 32) != 0) {
+        //for(k = 0; k < 32; k++) {
 /*#pragma HLS UNROLL*/
-                if (buf[k] != ref[k]) {
+        //        if (buf[k] != ref[k]) {
             fprintf(stderr, "[%d] SHAKE%d, len %d test FAILED.\n",
                 i, i & 1 ? 256 : 128, i >= 2 ? 1600 : 0);
             fails++;
-                }
+         //       }
         }
     }
 
     return fails;
 }
 
-#if !defined(CONFIG_USE_PTHREADS)
 // test speed of the comp
-static unsigned long test_speed()
+static uint64_t test_speed(const uint64_t run_number,
+                           const uint32_t nb_elmts, 
+                           const uint32_t freq)
 {
     int i;
-    uint64_t st[25], x, n, slice;
+    uint64_t st[25], x;
+    //uint64_t n;
     //clock_t bg, us;
 
-    printf("Speed test : ");
+//adding this test to control number of calls of this test
+    if (nb_elmts <= (run_number % freq))
+         return 0;
 
     for (i = 0; i < 25; i++)
 /*#pragma HLS UNROLL*/
-        st[i] = i;
+        //st[i] = i;
+        st[i] = i + run_number; // adding run_number to have different checksum
 
     //bg = clock();
-    n = 0;
+    //n = 0;
 
     //do{
-    for (slice = 0; slice < NB_SLICES; slice++)
-    {
-        for (i = 0; i < NB_ROUND; i++)
+    //{
+        for (i = 0; i < NB_ROUNDS; i++)
         {
             // Successive tests of sha3 taking result of previous for next process
             //sha3_keccakf(st);
@@ -497,7 +481,7 @@ static unsigned long test_speed()
         }
         //n += i;
         //us = clock() - bg;
-    }
+    //}
     //} while (us < 3 * CLOCKS_PER_SEC);
 
 
@@ -507,40 +491,144 @@ static unsigned long test_speed()
         x += st[i];
 
 
-/*
-    printf("(0x%016lX) - 0x%016lX Keccak-p[1600,24].\n",
-                (unsigned long) x,
-                (unsigned long) (NB_SLICES * NB_ROUND));
-*/
 //    printf("(%016lX) %.3f Keccak-p[1600,24] / Second.\n",
 //              (unsigned long) x, (CLOCKS_PER_SEC * ((double) n)) / ((double) us));
 
     return x;
 }
 
+#if !defined(CONFIG_USE_PTHREADS)
+static uint64_t sha3_main(uint32_t test_choice, uint32_t nb_elmts, uint32_t freq,
+                            uint32_t threads __attribute__((unused)))
+{
+        uint32_t run_number;
+        uint64_t checksum=0;
+
+        act_trace("%s(%d, %d)\n", __func__, nb_elmts, freq);
+        act_trace("  sw: NB_TEST_RUNS=%d NB_ROUNDS=%d\n", NB_TEST_RUNS, NB_ROUNDS);
+        switch(test_choice) {
+        case(CHECKSUM_SPEED):
+        {
+                for (run_number = 0; run_number < NB_TEST_RUNS; run_number++) {
+                   if (nb_elmts > (run_number % freq)) {
+                       uint64_t checksum_tmp;
+
+                       act_trace("  run_number=%d\n", run_number);
+                       checksum_tmp = test_speed(run_number, nb_elmts, freq);
+                       checksum ^= checksum_tmp;
+                       act_trace("    %016llx %016llx\n",
+                               (long long)checksum_tmp,
+                               (long long)checksum);
+                   }
+                }
+        }
+                break;
+        case(CHECKSUM_SHA3):
+                checksum = (uint64_t)test_sha3();
+                break;
+        case(CHECKSUM_SHAKE):
+                checksum = (uint64_t)test_shake();
+                break;
+        case(CHECKSUM_SHA3_SHAKE):
+                checksum = (uint64_t)test_sha3();
+                checksum += (uint64_t)test_shake();
+                break;
+        default:
+                checksum = 1;
+                break;
+        }
+
+        act_trace("checksum=%016llx\n", (unsigned long long)checksum);
+        return checksum;
+}
+
 #else
 
 #include <pthread.h>
-/*FIXEME - NOT TESTED PART */
+
 struct thread_data {
         pthread_t thread_id;    /* Thread id assigned by pthread_create() */
-        unsigned int slice;
+        unsigned int run_number;
         uint64_t checksum;
         int thread_rc;
 };
 
 static struct thread_data *d;
 
-static void *sponge_thread(void *data)
+static void *sha3_thread(void *data)
 {
         struct thread_data *d = (struct thread_data *)data;
 
         d->checksum = 0;
         d->thread_rc = 0;
-        d->checksum = test_speed();
+        d->checksum = test_speed(d->run_number, d->nb_elmts, d->freq);
         pthread_exit(&d->thread_rc);
 }
+static uint64_t sha3_main(uint32_t test_choice, uint32_t nb_elmts, uint32_t freq,
+                            uint32_t threads __attribute__((unused)))
+{
+       int rc;
+        uint32_t run_number;
+        uint64_t checksum = 0;
 
+        if (_threads == 0) {
+                fprintf(stderr, "err: Min threads must be 1\n");
+                return 0;
+        }
+
+        d = calloc(_threads * sizeof(struct thread_data), 1);
+        if (d == NULL) {
+                fprintf(stderr, "err: No memory available\n");
+                return 0;
+        }
+
+        act_trace("%s(%d, %d, %d)\n", __func__, nb_elmts, freq, _threads);
+        act_trace("  NB_TEST_RUNS=%d NB_ROUNDS=%d\n", NB_TEST_RUNS, NB_ROUNDS);
+        for (run_number = 0; run_number < NB_TEST_RUNS; ) {
+                unsigned int i;
+                unsigned int remaining_run_number = NB_TEST_RUNS - run_number;
+                unsigned int threads = MIN(remaining_srun_number, _threads);
+
+                act_trace("  [X] run_number=%d remaining=%d threads=%d\n",
+                          run_number, remaining_run_number, threads);
+
+                for (i = 0; i < threads; i++) {
+                        if (nb_elmts <= ((run_number + 1) % freq)) 
+                                continue;
+
+                        d[i].run_number = run_number + i;
+                        rc = pthread_create(&d[i].thread_id, NULL,
+                                            &sha3_thread, &d[i]);
+                        if (rc != 0) {
+                                free(d);
+                                fprintf(stderr, "starting %d failed!\n", i);
+                                return EXIT_FAILURE;
+                        }
+                }
+                for (i = 0; i < threads; i++) {
+                        act_trace("      run_number=%d checksum=%016llx\n",
+                                  run_number + i, (long long)d[i].checksum);
+
+                        if (nb_elmts <= ((run_number + i) % freq))
+                                continue;
+
+                        rc = pthread_join(d[i].thread_id, NULL);
+                        if (rc != 0) {
+                                free(d);
+                                fprintf(stderr, "joining threads failed!\n");
+                                return EXIT_FAILURE;
+                        }
+                        checksum ^= d[i].checksum;
+                }
+                run_number += threads;
+        }
+
+        free(d);
+
+        act_trace("checksum=%016llx\n", (unsigned long long)checksum);
+        return checksum;
+
+}
 #endif /* CONFIG_USE_PTHREADS */
 
 static int action_main(struct snap_sim_action *action, void *job,
@@ -548,7 +636,6 @@ static int action_main(struct snap_sim_action *action, void *job,
 {
 	struct checksum_job *js = (struct checksum_job *)job;
 	void *src;
-	int rc = 1;
 
 	act_trace("%s(%p, %p, %d) [%d]\n", __func__, action, job, job_len,
 		  (int)js->chk_type);
@@ -557,42 +644,23 @@ static int action_main(struct snap_sim_action *action, void *job,
 	case CHECKSUM_SPONGE: {
 		unsigned int threads;
 
-		act_trace("test_choice=%d nb_pe=%d\n", js->test_choice, js->nb_pe);
+		act_trace("test_choice=%d nb_elmts=%d freq=%d\n", js->test_choice, 
+                          js->nb_elmts, js->freq);
 
-		threads = js->nb_slices; /* misused for sw sim */
+		threads = js->nb_test_runs; /* misused for sw sim */
+                if(js->test_choice == CHECKSUM_SPEED) {
+                    js->nb_test_runs = NB_TEST_RUNS;
+                    js->nb_rounds = NB_ROUNDS;
+                    if (js->freq == 0)
+                        return 0;
+                }
+                else {
+                    js->nb_test_runs = 0;
+                    js->nb_rounds = 0;
+                }
 
-        	switch(js->test_choice) {
-        	case(0):
-                	js->chk_out = test_speed();
-                	js->nb_slices = NB_SLICES;
-                	js->nb_round  = NB_ROUND;
-                	rc = 0;
-                	break;
-        	case(1):
-                	rc = test_sha3();
-                	js->chk_out = rc;
-                	js->nb_slices = 0;
-                	js->nb_round  = 0;
-                	break;
-        	case(2):
-                	rc = test_shake();
-                	js->chk_out = rc;
-                	js->nb_slices = 0;
-                	js->nb_round  = 0;
-                	break;
-        	case(3):
-                	rc = test_sha3();
-                	rc |= test_shake();
-                	js->chk_out = rc;
-                	js->nb_slices = 0;
-                	js->nb_round  = 0;
-                	break;
-        	default:
-                	rc = 1;
-                	break;
-        	}
-
-		break;
+                js->chk_out = sha3_main(js->test_choice, js->nb_elmts, js->freq, threads);
+                break;
 	}
 	case CHECKSUM_CRC32:
 		/* checking parameters ... */
