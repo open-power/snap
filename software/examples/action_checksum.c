@@ -450,25 +450,26 @@ static int test_shake()
 }
 
 // test speed of the comp
-static uint64_t test_speed(const uint64_t slice,
-                           const uint32_t pe, 
-                           const uint32_t nb_pe)
+static uint64_t test_speed(const uint64_t run_number,
+                           const uint32_t nb_elmts, 
+                           const uint32_t freq)
 {
     int i;
-    uint64_t st[25], x, n;
+    uint64_t st[25], x;
+    //uint64_t n;
     //clock_t bg, us;
 
 //adding this test to control number of calls of this test
-    if (pe <= (slice % nb_pe))
+    if (nb_elmts <= (run_number % freq))
          return 0;
 
     for (i = 0; i < 25; i++)
 /*#pragma HLS UNROLL*/
         //st[i] = i;
-        st[i] = i + slice; // adding slice to have different checksum
+        st[i] = i + run_number; // adding run_number to have different checksum
 
     //bg = clock();
-    n = 0;
+    //n = 0;
 
     //do{
     //{
@@ -497,23 +498,23 @@ static uint64_t test_speed(const uint64_t slice,
 }
 
 #if !defined(CONFIG_USE_PTHREADS)
-static uint64_t sha3_main(uint32_t test_choice, uint32_t pe, uint32_t nb_pe,
+static uint64_t sha3_main(uint32_t test_choice, uint32_t nb_elmts, uint32_t freq,
                             uint32_t threads __attribute__((unused)))
 {
-        uint32_t slice;
+        uint32_t run_number;
         uint64_t checksum=0;
 
-        act_trace("%s(%d, %d)\n", __func__, pe, nb_pe);
-        act_trace("  sw: NB_SLICES=%d NB_ROUNDS=%d\n", NB_SLICES, NB_ROUNDS);
+        act_trace("%s(%d, %d)\n", __func__, nb_elmts, freq);
+        act_trace("  sw: NB_TEST_RUNS=%d NB_ROUNDS=%d\n", NB_TEST_RUNS, NB_ROUNDS);
         switch(test_choice) {
         case(CHECKSUM_SPEED):
         {
-                for (slice = 0; slice < NB_SLICES; slice++) {
-                   if (pe > (slice % nb_pe)) {
+                for (run_number = 0; run_number < NB_TEST_RUNS; run_number++) {
+                   if (nb_elmts > (run_number % freq)) {
                        uint64_t checksum_tmp;
 
-                       act_trace("  slice=%d\n", slice);
-                       checksum_tmp = test_speed(slice, pe, nb_pe);
+                       act_trace("  run_number=%d\n", run_number);
+                       checksum_tmp = test_speed(run_number, nb_elmts, freq);
                        checksum ^= checksum_tmp;
                        act_trace("    %016llx %016llx\n",
                                (long long)checksum_tmp,
@@ -547,7 +548,7 @@ static uint64_t sha3_main(uint32_t test_choice, uint32_t pe, uint32_t nb_pe,
 
 struct thread_data {
         pthread_t thread_id;    /* Thread id assigned by pthread_create() */
-        unsigned int slice;
+        unsigned int run_number;
         uint64_t checksum;
         int thread_rc;
 };
@@ -560,14 +561,14 @@ static void *sha3_thread(void *data)
 
         d->checksum = 0;
         d->thread_rc = 0;
-        d->checksum = test_speed(d->slice, d->pe, d->nb_pe);
+        d->checksum = test_speed(d->run_number, d->nb_elmts, d->freq);
         pthread_exit(&d->thread_rc);
 }
-static uint64_t sha3_main(uint32_t test_choice, uint32_t pe, uint32_t nb_pe,
+static uint64_t sha3_main(uint32_t test_choice, uint32_t nb_elmts, uint32_t freq,
                             uint32_t threads __attribute__((unused)))
 {
        int rc;
-        uint32_t slice;
+        uint32_t run_number;
         uint64_t checksum = 0;
 
         if (_threads == 0) {
@@ -581,21 +582,21 @@ static uint64_t sha3_main(uint32_t test_choice, uint32_t pe, uint32_t nb_pe,
                 return 0;
         }
 
-        act_trace("%s(%d, %d, %d)\n", __func__, pe, nb_pe, _threads);
-        act_trace("  NB_SLICES=%d NB_ROUNDS=%d\n", NB_SLICES, NB_ROUNDS);
-        for (slice = 0; slice < NB_SLICES; ) {
+        act_trace("%s(%d, %d, %d)\n", __func__, nb_elmts, freq, _threads);
+        act_trace("  NB_TEST_RUNS=%d NB_ROUNDS=%d\n", NB_TEST_RUNS, NB_ROUNDS);
+        for (run_number = 0; run_number < NB_TEST_RUNS; ) {
                 unsigned int i;
-                unsigned int remaining_slices = NB_SLICES - slice;
-                unsigned int threads = MIN(remaining_slices, _threads);
+                unsigned int remaining_run_number = NB_TEST_RUNS - run_number;
+                unsigned int threads = MIN(remaining_srun_number, _threads);
 
-                act_trace("  [X] slice=%d remaining=%d threads=%d\n",
-                          slice, remaining_slices, threads);
+                act_trace("  [X] run_number=%d remaining=%d threads=%d\n",
+                          run_number, remaining_run_number, threads);
 
                 for (i = 0; i < threads; i++) {
-                        if (pe <= ((slice + 1) % nb_pe)) 
+                        if (nb_elmts <= ((run_number + 1) % freq)) 
                                 continue;
 
-                        d[i].slice = slice + i;
+                        d[i].run_number = run_number + i;
                         rc = pthread_create(&d[i].thread_id, NULL,
                                             &sha3_thread, &d[i]);
                         if (rc != 0) {
@@ -605,10 +606,10 @@ static uint64_t sha3_main(uint32_t test_choice, uint32_t pe, uint32_t nb_pe,
                         }
                 }
                 for (i = 0; i < threads; i++) {
-                        act_trace("      slice=%d checksum=%016llx\n",
-                                  slice + i, (long long)d[i].checksum);
+                        act_trace("      run_number=%d checksum=%016llx\n",
+                                  run_number + i, (long long)d[i].checksum);
 
-                        if (pe <= ((slice + i) % nb_pe))
+                        if (nb_elmts <= ((run_number + i) % freq))
                                 continue;
 
                         rc = pthread_join(d[i].thread_id, NULL);
@@ -619,7 +620,7 @@ static uint64_t sha3_main(uint32_t test_choice, uint32_t pe, uint32_t nb_pe,
                         }
                         checksum ^= d[i].checksum;
                 }
-                slice += threads;
+                run_number += threads;
         }
 
         free(d);
@@ -643,22 +644,22 @@ static int action_main(struct snap_sim_action *action, void *job,
 	case CHECKSUM_SPONGE: {
 		unsigned int threads;
 
-		act_trace("test_choice=%d pe=%d nb_pe=%d\n", js->test_choice, 
-                          js->pe, js->nb_pe);
+		act_trace("test_choice=%d nb_elmts=%d freq=%d\n", js->test_choice, 
+                          js->nb_elmts, js->freq);
 
-		threads = js->nb_slices; /* misused for sw sim */
+		threads = js->nb_test_runs; /* misused for sw sim */
                 if(js->test_choice == CHECKSUM_SPEED) {
-                    js->nb_slices = NB_SLICES;
+                    js->nb_test_runs = NB_TEST_RUNS;
                     js->nb_rounds = NB_ROUNDS;
-                    if (js->nb_pe == 0)
+                    if (js->freq == 0)
                         return 0;
                 }
                 else {
-                    js->nb_slices = 0;
+                    js->nb_test_runs = 0;
                     js->nb_rounds = 0;
                 }
 
-                js->chk_out = sha3_main(js->test_choice, js->pe, js->nb_pe, threads);
+                js->chk_out = sha3_main(js->test_choice, js->nb_elmts, js->freq, threads);
                 break;
 	}
 	case CHECKSUM_CRC32:

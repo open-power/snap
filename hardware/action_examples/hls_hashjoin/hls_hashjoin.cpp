@@ -477,7 +477,7 @@ static table2_t table2[] = {
         { /* .name = */ "Thomy", /* .animal = */ "Austrich" },
         { /* .name = */ "Alomy", /* .animal = */ "Sharks"   },
         { /* .name = */ "Proof", /* .animal = */ "Fly"      },
-        { /* .name = */ "rlimb", /* .animal = */ "Birds"    },
+        { /* .name = */ "Climb", /* .animal = */ "Birds"    },
         { /* .name = */ "Blong", /* .animal = */ "Buffy"    },
         { /* .name = */ "Frank", /* .animal = */ "Turtles"  },
         { /* .name = */ "Frank", /* .animal = */ "Gorillas" },

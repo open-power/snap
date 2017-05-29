@@ -286,22 +286,22 @@ static int test_shake()
 }
 
 // test speed of the comp
-static uint64_t test_speed(const uint64_t slice,
-                                const uint32_t pe, 
-                                const uint32_t nb_pe)
+static uint64_t test_speed(const uint64_t run_number,
+                                const uint32_t nb_elmts, 
+                                const uint32_t freq)
 {
     int i;
     uint64_t st[25], x, n;
     //clock_t bg, us;
 
 //adding this test to control number of calls of this test
-    if (pe <= (slice % nb_pe))
+    if (nb_elmts <= (run_number % freq))
         return 0;
 
     for (i = 0; i < 25; i++)
 #pragma HLS UNROLL
         //st[i] = i;
-        st[i] = i + slice; // adding slice to have different checksum
+        st[i] = i + run_number; // adding run_number to have different checksum
 
     //bg = clock();
     n = 0;
@@ -338,23 +338,23 @@ static uint64_t test_speed(const uint64_t slice,
 void process_action( action_reg *Action_Register)
 {
 	int rc = 1;
-        uint64_t slice, j;
+        uint64_t run_number, j;
         uint64_t checksum = 0;
 //        uint64_t checksum_tmp;
-        uint32_t pe, nb_pe;
+        uint32_t nb_elmts, freq;
 
 	switch(Action_Register->Data.test_choice) {
 	case(0):
-			pe    = Action_Register->Data.pe;
-			nb_pe = Action_Register->Data.nb_pe;
+			nb_elmts    = Action_Register->Data.nb_elmts;
+			freq = Action_Register->Data.freq;
 
 
-	         for (slice = 0; slice < NB_SLICES; slice++)
-#pragma HLS UNROLL factor=32      // PARALLELIZATION FACTOR
-                 checksum ^= test_speed(slice, pe, nb_pe);
+	         for (run_number = 0; run_number < NB_TEST_RUNS; run_number++)
+#pragma HLS UNROLL factor=4      // PARALLELIZATION FACTOR
+                 checksum ^= test_speed(run_number, nb_elmts, freq);
 
      		Action_Register->Data.chk_out = checksum;
-    		Action_Register->Data.nb_slices = NB_SLICES;
+    		Action_Register->Data.nb_test_runs = NB_TEST_RUNS;
     		Action_Register->Data.nb_rounds  = NB_ROUNDS;
 		rc = 0;
 		break;
@@ -363,20 +363,20 @@ void process_action( action_reg *Action_Register)
 	case(1):
 		rc = test_sha3();
 		Action_Register->Data.chk_out = rc;
-    		Action_Register->Data.nb_slices = 0;
+    		Action_Register->Data.nb_test_runs = 0;
     		Action_Register->Data.nb_rounds  = 0;
 		break;
 	case(2):
 		rc = test_shake();
 		Action_Register->Data.chk_out = rc;
-    		Action_Register->Data.nb_slices = 0;
+    		Action_Register->Data.nb_test_runs = 0;
     		Action_Register->Data.nb_rounds  = 0;
 		break;
 	case(3):
 		rc = test_sha3();
 		rc |= test_shake();
 		Action_Register->Data.chk_out = rc;
-    		Action_Register->Data.nb_slices = 0;
+    		Action_Register->Data.nb_test_runs = 0;
     		Action_Register->Data.nb_rounds  = 0;
 		break;
 #endif
@@ -481,8 +481,8 @@ int main(void)
 	Action_Register.Control.flags = 1;
 
 	Action_Register.Data.test_choice = 0; 	//speed test
-	Action_Register.Data.pe = 2;			// 2 calls
-	Action_Register.Data.nb_pe = NB_SLICES; // every NB_SLICES until NB_SLICES
+	Action_Register.Data.nb_elmts = 2;			// 2 calls
+	Action_Register.Data.freq = NB_TEST_RUNS; // every NB_TEST_RUNS until NB_TEST_RUNS
 	hls_action(din_gmem, dout_gmem, d_ddrmem,
 			    &Action_Register, &Action_Config);
 	printf(" ==> 2 test calls : checksum = %016llx",
@@ -492,8 +492,8 @@ int main(void)
 	else
 		printf(" => WRONG checksum => expecting : 0x2ccef6d61b67ad2f\n");
 
-	Action_Register.Data.pe = 4;			// 4 calls
-	Action_Register.Data.nb_pe = NB_SLICES; // every NB_SLICES until NB_SLICES
+	Action_Register.Data.nb_elmts = 4;			// 4 calls
+	Action_Register.Data.freq = NB_TEST_RUNS; // every NB_TEST_RUNS until NB_TEST_RUNS
 	hls_action(din_gmem, dout_gmem, d_ddrmem,
 			    &Action_Register, &Action_Config);
 	printf(" ==> 4 test calls : checksum = %016llx",
