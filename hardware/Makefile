@@ -102,17 +102,29 @@ check_snap_settings:
 		exit 1; \
 	fi
 
+check_denali:
+	@if [ $(NVME_USED) = "TRUE" ]; then \
+	  if [ !  -d $(DENALI_TOOLS) ] || [ ! -d $(DENALI_CUSTOM) ]; then \
+		echo "Missing one or more environment variables for NVMe simulation."; \
+		echo "Please check the following variables."; \
+		echo "DENALI_TOOLS:   $(DENALI_TOOLS)"; \
+		echo "DENALI_CUSTOM:  $(DENALI_CUSTOM)"; \
+		exit 1; \
+	  fi \
+	fi
+
+
 
 setup_environment:
 	@echo -e "\t[COPY................] psl build env";
-	@mkdir $(BUILD_DIR); 
-	@mkdir $(BUILD_DIR)/Reports; 
-	@mkdir $(LOGS_DIR); 
-	@mkdir $(BUILD_DIR)/Images; 
-	@mkdir $(BUILD_DIR)/Checkpoints; 
-	@ln -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl     $(BUILD_DIR)/snap_build.tcl; 
-	@ln -s $(SNAP_HARDWARE_ROOT)/setup/snap_xpr_build.tcl $(BUILD_DIR)/snap_xpr_build.tcl; 
-	@cp -p $(PSL_DCP)                                     $(BUILD_DIR)/Checkpoints/; 
+	@mkdir -p $(BUILD_DIR); 
+	@mkdir -p $(BUILD_DIR)/Reports; 
+	@mkdir -p $(LOGS_DIR); 
+	@mkdir -p $(BUILD_DIR)/Images; 
+	@mkdir -p $(BUILD_DIR)/Checkpoints; 
+	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl     $(BUILD_DIR)/snap_build.tcl; 
+	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_xpr_build.tcl $(BUILD_DIR)/snap_xpr_build.tcl; 
+	@cp -p $(PSL_DCP)                                        $(BUILD_DIR)/Checkpoints/; 
 	@if [ $(FPGACARD) = "KU3" ]; then \
 	  ln -f -s $(SNAP_HDL_CORE)/psl_fpga_ku3.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
 	  ln -f -s $(SNAP_HDL_CORE)/psl_accel_ku3.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
@@ -152,7 +164,7 @@ create_environment:
 	@cd $(SNAP_HARDWARE_ROOT)/setup                                    && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
 	@echo -e "\t[CREATE_ENVIRONMENT..] done `date`"
 
-config: check_snap_settings setup_environment copy_denali snap_config action_config create_environment patch_version patch_NVMe
+config: check_snap_settings setup_environment snap_config action_config create_environment patch_version patch_NVMe
 	@echo -e "\t[CONFIG..............] done `date`"
 
 patch_version:
@@ -165,13 +177,6 @@ patch_NVMe:
 		echo  -e "\t[PATCH...............] NVMe PCIe Root Complex sim. files"; \
 	fi	
  
-copy_denali:
-	@if [[ -e "$(DENALI_TMP)" && $(NVME_USED) = "TRUE" ]]; then \
-                cp $(DENALI_TMP)/*  $(SNAP_HARDWARE_ROOT)/sim/nvme/. ;  \
-                echo  -e "\t                       NVMe: denali files"; \
-        fi
-
-
 image:  snap_config patch_version
 	@echo -e "\t[BUILD IMAGE.........] start `date`"
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log  -journal $(LOGS_DIR)/snap_build.jou
@@ -186,7 +191,7 @@ xpr_image: snap_config patch_version
 	@rm -r -f .bitstream_name.txt
 #	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/timing_summary_routed.rpt | egrep -v "^$|^\-\-"
 
-model: pslse software snap_config patch_version $(SIMULATOR)
+model: check_denali pslse software snap_config patch_version $(SIMULATOR)
 
 pslse:
 	@echo -e "\t[COMPILE PSLSE ......] start `date`"

@@ -174,12 +174,20 @@ while [ -z "$SETUP_DONE" ]; do
     fi
   fi
 
-  if [ -z "$DENALI" ]; then
+  if [ -z "$DENALI_TOOLS" ]; then
     if [[ $NVME_USED = "TRUE" ]]; then
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of NVME_USED=$NVME_USED but DENALI not set!"
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of NVME_USED=$NVME_USED but DENALI_TOOLS not set!"
     fi
   else
-    echo "DENALI                  is set to: \"$DENALI\""
+    echo "DENALI_TOOLS            is set to: \"$DENALI_TOOLS\""
+  fi
+
+  if [ -z "$DENALI_CUSTOM" ]; then
+    if [[ $NVME_USED = "TRUE" ]]; then
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of NVME_USED=$NVME_USED but DENALI_CUSTOM not set!"
+    fi
+  else
+    echo "DENALI_CUSTOM           is set to: \"$DENALI_CUSTOM\""
   fi
 
   if [ ! -z "$SETUP_WARNING" ]; then
