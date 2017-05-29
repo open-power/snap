@@ -105,8 +105,6 @@ void sha3_keccakf(uint64_t st_in[25], uint64_t st_out[25])
     int i, j, r;
     uint64_t t, bc[5];
     uint64_t st[25];
-#pragma HLS ARRAY_RESHAPE variable=st block factor=4 dim=1
-
 
     //separate entry port from logic
     for (i = 0; i < 25; i++)
@@ -128,7 +126,7 @@ void sha3_keccakf(uint64_t st_in[25], uint64_t st_out[25])
 
 
     // actual iteration
-    for (r = 0; r < KECCAKF_ROUNDS; r++) {
+    keccakfrounds:for (r = 0; r < KECCAKF_ROUNDS; r++) {
 #pragma HLS PIPELINE
         // Theta
         for (i = 0; i < 5; i++)
@@ -223,7 +221,7 @@ int sha3_update(sha3_ctx_t *c, const uint8_t *data, size_t len)
 				sha3_keccakf(st, st);
 			        cast_uint64_to_uint8(st, c->st.b, 25);
 				j = 0;
-			}
+		}
     }
     c->pt = j;
 
@@ -249,8 +247,10 @@ int sha3_final(uint8_t *md, sha3_ctx_t *c)
     cast_uint64_to_uint8(st, c->st.b, 25);
 
 
-    for (i = 0; i < c->mdlen; i++) {
+    //for (i = 0; i < c->mdlen; i++) {
+    for (i = 0; i < 64; i++) {
 #pragma HLS UNROLL
+         if (i < c->mdlen) 
     		((uint8_t *) md)[i] = c->st.b[i];
     }
 
@@ -279,8 +279,9 @@ void shake_xof(sha3_ctx_t *c)
 
     c->st.b[c->pt] ^= 0x1F;
     c->st.b[c->rsiz - 1] ^= 0x80;
-    //sha3_keccakf(c->st.q);
 
+    //sha3_keccakf(c->st.q);
+ 
     //FIXME these double cast could be optimized
     cast_uint8_to_uint64(c->st.b, st, 25);
     sha3_keccakf(st, st);

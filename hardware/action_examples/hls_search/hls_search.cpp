@@ -99,30 +99,6 @@ static void memcopy_table(snap_membus_t  *din_gmem,
 	} // end of L_COPY
 }
 
-// WRITE DATA TO MEMORY
-static short write_burst_of_data_to_mem(snap_membus_t *dout_gmem, 
-					snap_membus_t *d_ddrmem,
-					snapu16_t memory_type,
-					snapu64_t output_address,
-					snap_membus_t *buffer,
-					snapu64_t size_in_bytes_to_transfer)
-{
-	short rc = -1;
-    
-	switch (memory_type) {
-	case SNAP_ADDRTYPE_HOST_DRAM:
-       		memcpy((snap_membus_t  *) (dout_gmem + output_address), 
-		       buffer, size_in_bytes_to_transfer);
-       		rc =  0;
-		break;
-	case SNAP_ADDRTYPE_CARD_DRAM:
-       		memcpy((snap_membus_t  *) (d_ddrmem + output_address), 
-		       buffer, size_in_bytes_to_transfer);
-       		rc =  0;
-		break;
-	}
-	return rc;
-}
 
 // READ DATA FROM MEMORY
 static short read_burst_of_data_from_mem(snap_membus_t *din_gmem, 
@@ -170,26 +146,6 @@ static short read_single_word_of_data_from_mem(snap_membus_t *din_gmem,
 	return rc;
 }
 
-static short write_single_word_of_data_to_mem(snap_membus_t *din_gmem, 
-					      snap_membus_t *d_ddrmem,
-					      snapu16_t memory_type,
-					      snapu64_t input_address,
-					      snap_membus_t *buffer)
-{
-	short rc = -1;
-
-	switch (memory_type) {
-	case  SNAP_ADDRTYPE_HOST_DRAM:
-        	(din_gmem + input_address)[0] = buffer[0];
-       		rc = 0;
-		break;
-	case  SNAP_ADDRTYPE_CARD_DRAM:
-        	(d_ddrmem + input_address)[0] = buffer[0];
-       		rc = 0;
-		break;
-	}
-	return rc;
-}
 
 // Cast a word from input port (512b) to a char* word (64B)
 static void mbus_to_word(snap_membus_t mem, word_t text)
@@ -230,7 +186,7 @@ static snap_membus_t word_to_mbus(word_t text)
 /*******************************************************/
 
 static void strm_search_proc(const char pattern[PATTERN_SIZE], 
-	const int pat_size, int txt_size,
+	const int PatternSize, int TextSize,
         hls::stream<char> &txt_stream_in, 
 	hls::stream<long> &pos_stream_out,
         unsigned int &count)
@@ -246,21 +202,21 @@ static void strm_search_proc(const char pattern[PATTERN_SIZE],
     search_loop:for(int idx = 0; idx < TEXT_SIZE; idx++)
     {
 #pragma HLS PIPELINE
-    	if(idx < txt_size) {
+    	if(idx < TextSize) {
             curr_char = txt_stream_in.read();
 
             cmp = 1;
             cmp_loop:for(int j = 0; j < PATTERN_SIZE; j++) {
-            	if ( j < pat_size ) {
+            	if ( j < PatternSize ) {
             	    // shifting cache with new value as last one
-            	    cache[j] = (j < pat_size-1) ? cache[j + 1] : curr_char;
+            	    cache[j] = (j < PatternSize-1) ? cache[j + 1] : curr_char;
                     cmp &= (cache[j] == pattern[j]) ? 1 : 0;
             	}
             }
             // don't take care of cmp if cache not filled
-            count = (idx < pat_size - 1) ? 0 : count + (unsigned int)cmp; 
+            count = (idx < PatternSize - 1) ? 0 : count + (unsigned int)cmp;
  	    // send  position or -1
-            position = (cmp == 1) ? idx - (pat_size -1) : -1;
+            position = (cmp == 1) ? idx - (PatternSize -1) : -1;
 
             pos_stream_out.write(position); //pos_stream_out << position;
     	}
@@ -281,7 +237,7 @@ static void strm_search(snap_membus_t *din_gmem,
 
   // VARIABLES
   snapu32_t search_size;
-  snapu32_t txt_size;
+  snapu32_t TextSize;
   snapu32_t nb_blocks_to_process;
   short rc = 0;
 
@@ -383,21 +339,10 @@ static void strm_search(snap_membus_t *din_gmem,
 			pos_nb ++;
 			if(pos_nb%32 == 0) // 32 x 2*8 = 512 bits =
 			{
-			   //write_single_word_of_data_to_mem(din_gmem, d_ddrmem,
-			    //      Action_Register->Data.res_text.type,
-			    //      (Action_Register->Data.res_text.addr >> ADDR_RIGHT_SHIFT) + wr_address_text_offset,
-			    //	  PositionBuffer);
 				   wr_address_text_offset++;
 			}
 		   }
 	}
-//	if(pos_nb%32 != 0)
-//		   write_single_word_of_data_to_mem(din_gmem, d_ddrmem,
-//		          Action_Register->Data.res_text.type,
-//		          (Action_Register->Data.res_text.addr >> ADDR_RIGHT_SHIFT) + wr_address_text_offset,
-//				  PositionBuffer);
-
-
 
 	 Action_Register->Data.nb_of_occurrences = (snapu32_t) count;
 
@@ -444,13 +389,16 @@ static snapu32_t process_action_strm(snap_membus_t *din_gmem,
   return (snapu32_t) global_count;
 }
 
+/*******************************************************/
+/********* ARRAY  SEARCH *******************************/
+/*******************************************************/
 
 /*******************************************************/
 // Knuth Morris Pratt Pattern Searching algorithm
 // based on D. E. Knuth, J. H. Morris, Jr., and V. R. Pratt, i
 // Fast pattern matching in strings", SIAM J. Computing 6 (1977), 323--350
 
-void preprocess_KMP_table(char pat[PATTERN_SIZE], int PatternSize, 
+void preprocess_KMP_table(char Pattern[PATTERN_SIZE], int PatternSize,
 	int KMP_table[])
 {
    int i, j;
@@ -459,26 +407,26 @@ void preprocess_KMP_table(char pat[PATTERN_SIZE], int PatternSize,
    j = -1;
    KMP_table[0] = -1;
    while (i < PatternSize) {
-      while (j > -1 && pat[i] != pat[j])
+      while (j > -1 && Pattern[i] != Pattern[j])
          j = KMP_table[j];
       i++;
       j++;
-      if (pat[i] == pat[j])
+      if (Pattern[i] == Pattern[j])
     	  KMP_table[i] = KMP_table[j];
       else
     	  KMP_table[i] = j;
    }
 }
 
-int KMP_search(char pat[PATTERN_SIZE], int PatternSize, 
-               char txt[MAX_NB_OF_BYTES_READ], int TextSize)
+int KMP_search(char Pattern[PATTERN_SIZE], int PatternSize,
+               char Text[MAX_NB_OF_BYTES_READ], int TextSize)
 {
 #pragma HLS INLINE off
    int i, j;
    int KMP_table[PATTERN_SIZE];
    int count;
 
-   preprocess_KMP_table(pat, PatternSize, KMP_table);
+   preprocess_KMP_table(Pattern, PatternSize, KMP_table);
 
    i = j = 0;
    count = 0;
@@ -486,7 +434,7 @@ int KMP_search(char pat[PATTERN_SIZE], int PatternSize,
    while (j < MAX_NB_OF_BYTES_READ) {
 #pragma HLS UNROLL factor=32
 	   if (j < TextSize) {
-		  while (i > -1 && pat[i] != txt[j])
+		  while (i > -1 && Pattern[i] != Text[j])
 			 i = KMP_table[i];
 		  i++;
 		  j++;
@@ -508,8 +456,8 @@ int KMP_search(char pat[PATTERN_SIZE], int PatternSize,
 // based on D. E. Knuth, J. H. Morris, Jr., and V. R. Pratt, i
 // Fast pattern matching in strings", SIAM J. Computing 6 (1977), 323--350
 
-int Naive_search(char pat[PATTERN_SIZE], int PatternSize, 
-                 char txt[MAX_NB_OF_BYTES_READ], int TextSize)
+int Naive_search(char Pattern[PATTERN_SIZE], int PatternSize,
+                 char Text[MAX_NB_OF_BYTES_READ], int TextSize)
 {
 #pragma HLS INLINE off
    int i, j;
@@ -521,9 +469,9 @@ int Naive_search(char pat[PATTERN_SIZE], int PatternSize,
 #pragma HLS UNROLL factor=32
 	   if (j <= TextSize - PatternSize)
 	   {
-		  for (i = 0; i < PatternSize && pat[i] == txt[i + j]; ++i);
+		  for (i = 0; i < PatternSize && Pattern[i] == Text[i + j]; ++i);
 		  // for (i = 0; i < PatternSize; ++i);
-		  // 	   if (pat[i] == txt[i + j]) break;
+		  // 	   if (pattern[i] == txt[i + j]) break;
 		  if (i >= PatternSize)
 		  {
 			   count++;
@@ -534,9 +482,7 @@ int Naive_search(char pat[PATTERN_SIZE], int PatternSize,
    return count;
 }
 
-/*******************************************************/
-/********* ARRAY  SEARCH *******************************/
-/*******************************************************/
+
 unsigned int search(snapu16_t Method,
            char *Pattern,
            unsigned int PatternSize,
@@ -583,7 +529,7 @@ static snapu32_t process_action(snap_membus_t *din_gmem,
 
   // VARIABLES
   snapu32_t search_size;
-  snapu32_t txt_size;
+  snapu32_t TextSize;
   snapu32_t nb_blocks_to_process;
   snapu16_t i, j ;
   short rc = 0;
@@ -608,7 +554,6 @@ static snapu32_t process_action(snap_membus_t *din_gmem,
   snap_membus_t  PatternBuffer[1];
   char  Pattern[PATTERN_SIZE];
 
-   /* FIXME : let's first consider that pattern is less than a data width word */
   PatternSize = Action_Register->Data.src_pattern.size;
   if (PatternSize > PATTERN_SIZE) rc = 1;
 
@@ -628,7 +573,7 @@ static snapu32_t process_action(snap_membus_t *din_gmem,
 
 
   rd_address_text_offset = 0x0;
-  txt_size = InputSize;
+  TextSize = InputSize;
 
   // buffer size is hardware limited by MAX_NB_OF_BYTES_READ
   nb_blocks_to_process = (InputSize / MAX_NB_OF_BYTES_READ) + 1;
@@ -637,25 +582,22 @@ static snapu32_t process_action(snap_membus_t *din_gmem,
   process_text_per_block:
   for ( i = 0; i < nb_blocks_to_process; i++ ) {
 //#pragma HLS UNROLL // cannot completely unroll a loop with a variable trip count
-		search_size = MIN(txt_size, (snapu32_t) MAX_NB_OF_BYTES_READ);
+		search_size = MIN(TextSize, (snapu32_t) MAX_NB_OF_BYTES_READ);
 
 		rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, InputType,
 				(InputAddress >> ADDR_RIGHT_SHIFT) + rd_address_text_offset,
 		TextBuffer, search_size);
 		x_mbus_to_word(TextBuffer, Text); /* convert buffer to char*/
 
-		/* call search function */
+		/* ********************
+		 * call search function
+		 **********************/
+		/*FIXME we may miss a pattern that could be between 2 blocks / 2 calls */
 		nb_of_occurrences +=  search(Method, Pattern, PatternSize, 
                                             Text, search_size);
-                Action_Register->Data.nb_of_occurrences = (snapu32_t) nb_of_occurrences;
+		Action_Register->Data.nb_of_occurrences = (snapu32_t) nb_of_occurrences;
 
-
-		//rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem, 
-		//                           Action_Register->Data.out.type,
-		//                           OutputAddress + rd_address_text_offset, 
-		//                           TextBuffer, search_size);
-
-		txt_size -= search_size;
+		TextSize -= search_size;
 		rd_address_text_offset += (snapu64_t)(search_size >> ADDR_RIGHT_SHIFT);
 
   }
@@ -741,7 +683,7 @@ void hls_action(snap_membus_t *din_gmem,
 					Action_Register);
     		break;
 
-
+/* Reporting positions of pattern - Case not yet implemented
     	case 5: // HW : copy result array from DDR to Host
             //Copy Result from DDR to Host. // position is on 64 bits
             memcopy_table(din_gmem, dout_gmem, d_ddrmem,
@@ -750,7 +692,7 @@ void hls_action(snap_membus_t *din_gmem,
                          (Action_Register->Data.nb_of_occurrences * 8), 
                          DDR2HOST);
             break;
-
+*/
     	default:
             break;
         }
@@ -790,8 +732,20 @@ int main(void)
     int c;
     int k=0, m=0;
 
+    /* snap_search123.txt can be put in hardware/action_examples/hls_search directory
+     * and contain the following
+123456789_123456789_123456789
+111111111_222222222_333333333
+123412312_123123123_XXXXXXXXX
+123456789_123456789_123456789
+123456789_123456789_123456789
+123456789_123456789_123456789
+18_occurrences_of_123_pattern
+adding_padding_to_256bytes_to ensure test  ok
+     */
+
     // read data for text
-    fp = fopen("demo_search123.txt", "r");
+    fp = fopen("../../../../snap_search123.txt", "r");
     if (fp) {
         while((c = getc(fp)) != EOF) {
                 word_tmp[k] = c;
@@ -810,8 +764,14 @@ int main(void)
         	din_gmem[m] = (snap_membus_t) word_to_mbus(word_tmp);
         }
         if(ferror(fp)) return 1;
+        fclose(fp);
     }
-    fclose(fp);
+    else
+    {
+        printf("File not opened !\n");
+        return 1;
+    }
+
 
     Action_Register.Data.src_text1.addr = 0;
     Action_Register.Data.src_text1.size = (m*BPERDW) + k + 1;
@@ -835,7 +795,7 @@ int main(void)
 
 
     // process the action
-    Action_Register.Data.method = NAIVE_method; //  method
+    Action_Register.Data.method = NAIVE_method; //  method (NAIVE - KMP - STRM)
     Action_Register.Control.flags = 0x1; // mandatory to have flags !=0 to have processing start
 
     // SW + HW : copy all data from Host to DDR
@@ -862,9 +822,14 @@ int main(void)
     if(Action_Register.Control.Retc == SNAP_RETC_FAILURE)
 	    printf("Error in step 3\n");
     else printf("--Step 3--OK\n");
-    printf("Search : %d occurrences found\n=============================\n ",
+    printf("Search : %d occurrences found",
 	   (unsigned int)nb_of_occurrences);
+    if(nb_of_occurrences == 18)
+    	printf(" => Test OK\n=============================\n ");
+    else
+    	printf(" => Test failed : Expected 18 !!\n============================= \n");
 
+/* Positions reported - not yet implemented
     // HW : copy result array from DDR to Host
     Action_Register.Data.step = 5;
     printf("--Step 5--HW : copy result array from DDR to Host--");
@@ -872,7 +837,7 @@ int main(void)
     if(Action_Register.Control.Retc == SNAP_RETC_FAILURE)
 	    printf("Error in step 5\n");
     else printf("OK\n");
-
+*/
     if (Action_Register.Control.Retc == SNAP_RETC_FAILURE) {
 	    printf(" ==> RETURN CODE FAILURE <==\n");
 	    return 1;
