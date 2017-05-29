@@ -41,6 +41,7 @@ This code uses libcxl to access the CAPI hardware. This library should be part o
 
 Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For the latest PSL checkpoint download, visit the CAPI section of the IBM Portal for OpenPOWER at
 * https://www.ibm.com/systems/power/openpower
+
 Download the required files under "PSL Checkpoint Files for the CAPI SNAP Design Kit".
 
 For simulation, SNAP relies on the PSL Simulation Environment (PSLSE) which is available on github:
