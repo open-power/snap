@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
 	int rc = 1;
 	int i, iter = 1;
 	int timeout = ACTION_WAIT_TIME;
-	uint32_t size = (4 * KILO_BYTE);
+	long size = (4 * KILO_BYTE);
 	uint64_t begin = 0;
 	uint8_t pattern = 0x0;
 	int func = ACTION_CONFIG_MEMSET_H;
@@ -292,6 +292,15 @@ int main(int argc, char *argv[])
 			break;
 		case 's':	/* size */
 			size = strtol(optarg, (char **)NULL, 0);
+			if ((errno == ERANGE && (size == LONG_MAX || size == LONG_MIN))
+                   || (errno != 0 && size == 0)) {
+				PRINTF0("Error errno %d\n", errno);
+				exit(1);
+			}
+			if (size > 0x100000000) {
+				PRINTF0("Size (-s or --size Out of range\n");
+				exit(1);
+			}
 			break;
 		case 'b':	/* begin */
 			begin = strtoll(optarg, (char **)NULL, 0);
@@ -313,11 +322,6 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	if (0 == size) {
-		PRINTF0("Please Provide a Valid Size. (--size, -s)\n");
-		exit(1);
-	}
-
 	PRINTF2("Start Memset Test. Timeout: %d sec Device: ",
 		timeout);
 	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
@@ -331,7 +335,7 @@ int main(int argc, char *argv[])
 
 	if (ACTION_CONFIG_MEMSET_H == func) {
 		if (size > (32 * MEGA_BYTE)) {
-			PRINTF0("Size %d must be less than %d\n", size, (32*MEGA_BYTE));
+			PRINTF0("Size %ld must be less than %d\n", size, (32*MEGA_BYTE));
 			goto __exit1;
 		}
 		h_begin = (int)(begin & 0xF) + 16;
@@ -345,7 +349,7 @@ int main(int argc, char *argv[])
 		PRINTF1("Allocate Host Buffer at %p Size: %d Bytes\n", hb, h_mem_size);
 	}
 
-	PRINTF1("Fill %d Bytes from %lld to %lld with Pattern 0x%02x\n",
+	PRINTF1("Fill %ld Bytes from %lld to %lld with Pattern 0x%02x\n",
 		size, (long long)begin, (long long)begin+size-1, pattern);
 
 	for (i = 0; i < iter; i++) {
