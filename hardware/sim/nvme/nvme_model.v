@@ -28,21 +28,21 @@ module nvme_model (
     pcie_rc1_rxn,
     pcie_rc1_rxp,
     pcie_rc1_txn,
-    pcie_rc1_txp 		   
+    pcie_rc1_txp
 );
 
    input        sys_reset_n;
-   input  [3:0] pcie_rc0_rxn; 
-   input  [3:0] pcie_rc0_rxp; 
-   output [3:0] pcie_rc0_txn; 
-   output [3:0] pcie_rc0_txp; 
-   input  [3:0] pcie_rc1_rxn; 
-   input  [3:0] pcie_rc1_rxp; 
-   output [3:0] pcie_rc1_txn; 
-   output [3:0] pcie_rc1_txp; 
- 
+   input  [3:0] pcie_rc0_rxn;
+   input  [3:0] pcie_rc0_rxp;
+   output [3:0] pcie_rc0_txn;
+   output [3:0] pcie_rc0_txp;
+   input  [3:0] pcie_rc1_rxn;
+   input  [3:0] pcie_rc1_rxp;
+   output [3:0] pcie_rc1_txn;
+   output [3:0] pcie_rc1_txp;
 
- 
+
+
    initial
      begin
         `ifndef VERDI
@@ -61,7 +61,7 @@ module nvme_model (
         `endif
   end
   reg refclk_100;
- 
+
      //100Mhz
   always
      begin
@@ -70,14 +70,14 @@ module nvme_model (
         refclk_100 <= 1'b0;
         #(5.0);
      end
- 
+
 //   reg   unit_reset;
 //   initial begin
 //      refclk_100 <= 1'b0;
-//      unit_reset <= 1 ; 
+//      unit_reset <= 1 ;
 //      #50;
 //      unit_reset <= 0 ;
-//   end    
+//   end
 
    integer status;
    wire [3:0]pcie_rc0_rxn = 4'h0;
@@ -86,7 +86,7 @@ module nvme_model (
    wire [3:0]pcie_rc1_rxn = 4'h0;
    wire [3:0]pcie_rc1_rxp = 4'h0;
 
-     
+
    wire [25:0] pipe_common_commands_in_rp;
    wire [83:0] pipe_rx_0_rp;
    wire [83:0] pipe_rx_1_rp;
@@ -96,7 +96,7 @@ module nvme_model (
    wire [83:0] pipe_rx_5_rp;
    wire [83:0] pipe_rx_6_rp;
    wire [83:0] pipe_rx_7_rp;
-   
+
    wire [16:0] pipe_common_commands_out_rp;
    wire [69:0] pipe_tx_0_rp;
    wire [69:0] pipe_tx_1_rp;
@@ -106,7 +106,7 @@ module nvme_model (
    wire [69:0] pipe_tx_5_rp;
    wire [69:0] pipe_tx_6_rp;
    wire [69:0] pipe_tx_7_rp;
- 
+
    wire [25:0] pipe_common_commands_in_rp_1;
    wire [83:0] pipe_rx_0_rp_1;
    wire [83:0] pipe_rx_1_rp_1;
@@ -116,7 +116,7 @@ module nvme_model (
    wire [83:0] pipe_rx_5_rp_1;
    wire [83:0] pipe_rx_6_rp_1;
    wire [83:0] pipe_rx_7_rp_1;
- 
+
    wire [16:0] pipe_common_commands_out_rp_1;
    wire [69:0] pipe_tx_0_rp_1;
    wire [69:0] pipe_tx_1_rp_1;
@@ -126,7 +126,7 @@ module nvme_model (
    wire [69:0] pipe_tx_5_rp_1;
    wire [69:0] pipe_tx_6_rp_1;
    wire [69:0] pipe_tx_7_rp_1;
-   
+
    wire   pcie_clk_p;
    wire   pcie_clk_n;
 
@@ -134,55 +134,55 @@ module nvme_model (
    wire [3:0] cfg_width;
    wire [2:0] cfg_speed_1;
    wire [3:0] cfg_width_1;
-  
- 
-//   `define DUTP0 a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst 
+
+
+   `define DUTP0 a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst
    `define DUTP2 a0.nvme_top_i.axi_pcie3_1.inst.pcie3_ip_i.inst
 
 
    `define DUTe a0.nvme_top_i
 
 
-   
+
 //   `define DUTP1 afu
    `define DUTP1 a0              // ?????
-//   defparam a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst.EXT_PIPE_SIM = "TRUE";
-//   defparam a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
+   defparam a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst.EXT_PIPE_SIM = "TRUE";
+   defparam a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
    defparam a0.nvme_top_i.axi_pcie3_1.inst.pcie3_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
    defparam a0.nvme_top_i.axi_pcie3_1.inst.pcie3_ip_i.inst.EXT_PIPE_SIM = "TRUE";
 
-   
-//   assign `DUTP0.common_commands_in =   pipe_common_commands_in_rp;  
-//   assign `DUTP0.pipe_rx_0_sigs  = pipe_rx_0_rp;                
-//   assign `DUTP0.pipe_rx_1_sigs  = pipe_rx_1_rp;                
-//   assign `DUTP0.pipe_rx_2_sigs  = pipe_rx_2_rp;                
-//   assign `DUTP0.pipe_rx_3_sigs  = pipe_rx_3_rp;                
-//   assign `DUTP0.pipe_rx_4_sigs  = pipe_rx_4_rp;                
-//   assign `DUTP0.pipe_rx_5_sigs  = pipe_rx_5_rp;                
-//   assign `DUTP0.pipe_rx_6_sigs  = pipe_rx_6_rp;                
-//   assign `DUTP0.pipe_rx_7_sigs  = pipe_rx_7_rp;  
-          
- 
-   assign `DUTP2.common_commands_in =   pipe_common_commands_in_rp_1;  
-   assign `DUTP2.pipe_rx_0_sigs  = pipe_rx_0_rp_1;                
-   assign `DUTP2.pipe_rx_1_sigs  = pipe_rx_1_rp_1;                
-   assign `DUTP2.pipe_rx_2_sigs  = pipe_rx_2_rp_1;                
-   assign `DUTP2.pipe_rx_3_sigs  = pipe_rx_3_rp_1;                
-   assign `DUTP2.pipe_rx_4_sigs  = pipe_rx_4_rp_1;                
-   assign `DUTP2.pipe_rx_5_sigs  = pipe_rx_5_rp_1;                
-   assign `DUTP2.pipe_rx_6_sigs  = pipe_rx_6_rp_1;                
+
+   assign `DUTP0.common_commands_in =   pipe_common_commands_in_rp;
+   assign `DUTP0.pipe_rx_0_sigs  = pipe_rx_0_rp;
+   assign `DUTP0.pipe_rx_1_sigs  = pipe_rx_1_rp;
+   assign `DUTP0.pipe_rx_2_sigs  = pipe_rx_2_rp;
+   assign `DUTP0.pipe_rx_3_sigs  = pipe_rx_3_rp;
+   assign `DUTP0.pipe_rx_4_sigs  = pipe_rx_4_rp;
+   assign `DUTP0.pipe_rx_5_sigs  = pipe_rx_5_rp;
+   assign `DUTP0.pipe_rx_6_sigs  = pipe_rx_6_rp;
+   assign `DUTP0.pipe_rx_7_sigs  = pipe_rx_7_rp;
+
+
+   assign `DUTP2.common_commands_in =   pipe_common_commands_in_rp_1;
+   assign `DUTP2.pipe_rx_0_sigs  = pipe_rx_0_rp_1;
+   assign `DUTP2.pipe_rx_1_sigs  = pipe_rx_1_rp_1;
+   assign `DUTP2.pipe_rx_2_sigs  = pipe_rx_2_rp_1;
+   assign `DUTP2.pipe_rx_3_sigs  = pipe_rx_3_rp_1;
+   assign `DUTP2.pipe_rx_4_sigs  = pipe_rx_4_rp_1;
+   assign `DUTP2.pipe_rx_5_sigs  = pipe_rx_5_rp_1;
+   assign `DUTP2.pipe_rx_6_sigs  = pipe_rx_6_rp_1;
    assign `DUTP2.pipe_rx_7_sigs  = pipe_rx_7_rp_1;
- 
-//   assign  pipe_common_commands_out_rp = `DUTP0.common_commands_out; 
-//   assign  pipe_tx_0_rp                = `DUTP0.pipe_tx_0_sigs;                
-//   assign  pipe_tx_1_rp                = `DUTP0.pipe_tx_1_sigs;                
-//   assign  pipe_tx_2_rp                = `DUTP0.pipe_tx_2_sigs;                
-//   assign  pipe_tx_3_rp                = `DUTP0.pipe_tx_3_sigs;                
-//   assign  pipe_tx_4_rp                = `DUTP0.pipe_tx_4_sigs;                
-//   assign  pipe_tx_5_rp                = `DUTP0.pipe_tx_5_sigs;                
-//   assign  pipe_tx_6_rp                = `DUTP0.pipe_tx_6_sigs;                
-//   assign  pipe_tx_7_rp                = `DUTP0.pipe_tx_7_sigs;                
- 
+
+   assign  pipe_common_commands_out_rp = `DUTP0.common_commands_out;
+   assign  pipe_tx_0_rp                = `DUTP0.pipe_tx_0_sigs;
+   assign  pipe_tx_1_rp                = `DUTP0.pipe_tx_1_sigs;
+   assign  pipe_tx_2_rp                = `DUTP0.pipe_tx_2_sigs;
+   assign  pipe_tx_3_rp                = `DUTP0.pipe_tx_3_sigs;
+   assign  pipe_tx_4_rp                = `DUTP0.pipe_tx_4_sigs;
+   assign  pipe_tx_5_rp                = `DUTP0.pipe_tx_5_sigs;
+   assign  pipe_tx_6_rp                = `DUTP0.pipe_tx_6_sigs;
+   assign  pipe_tx_7_rp                = `DUTP0.pipe_tx_7_sigs;
+
    assign  pipe_common_commands_out_rp_1 = `DUTP2.common_commands_out;
    assign  pipe_tx_0_rp_1                = `DUTP2.pipe_tx_0_sigs;
    assign  pipe_tx_1_rp_1                = `DUTP2.pipe_tx_1_sigs;
@@ -193,13 +193,13 @@ module nvme_model (
    assign  pipe_tx_6_rp_1                = `DUTP2.pipe_tx_6_sigs;
    assign  pipe_tx_7_rp_1                = `DUTP2.pipe_tx_7_sigs;
 
- //  assign cfg_speed = a0.nvme_top_i.axi_pcie3_0.inst.cfg_current_speed[2:0];
- //  assign cfg_width = a0.nvme_top_i.axi_pcie3_0.inst.cfg_negotiated_width[3:0];
+   assign cfg_speed = a0.nvme_top_i.axi_pcie3_0.inst.cfg_current_speed[2:0];
+   assign cfg_width = a0.nvme_top_i.axi_pcie3_0.inst.cfg_negotiated_width[3:0];
 
    assign cfg_speed_1 = a0.nvme_top_i.axi_pcie3_1.inst.cfg_current_speed[2:0];
    assign cfg_width_1 = a0.nvme_top_i.axi_pcie3_1.inst.cfg_negotiated_width[3:0];
-   
-   
+
+
 //   assign pcie_clk_p =  unit_reset;
  //refclk_100;
 //   assign pcie_clk_n = ~refclk_100;
@@ -220,8 +220,8 @@ denaliPcie den();
    integer pcie_status;
    reg [31:0] pcie_data;
 
-   
-   pcie_endp_model pcie_endp_model0 
+
+   pcie_endp_model pcie_endp_model0
      (/*AUTOINST*/
       // Outputs
       .pipe_common_commands_in_rp(pipe_common_commands_in_rp[25:0]),
@@ -248,7 +248,7 @@ denaliPcie den();
       .sys_rst_n          (sys_reset_n),
       .nperst             (sys_reset_n)
       );
- 
+
     pcie_endp_model pcie_endp_model1
       (
       .pipe_common_commands_in_rp(pipe_common_commands_in_rp_1[25:0]),
@@ -274,7 +274,7 @@ denaliPcie den();
       .sys_rst_n          (sys_reset_n),
       .nperst             (sys_reset_n)
       );
- 
+
      initial
      begin
         ep_id0 = $mminstanceid("pcie_endp_model0.endp");
@@ -286,7 +286,7 @@ denaliPcie den();
  	   ep_nvmeregs = $mminstanceid("pcie_endp_model0.endp(mem_0_0_0)");
  	$display("Created nvme register space memory instance\n");
  	#1
-        
+
  	ep_id1 = $mminstanceid("pcie_endp_model1.endp");
         $display("Created endpoint memory instance\n");
         ep_cfg_id1 = $mminstanceid ("pcie_endp_model1.endp(cfg_0_0)");
@@ -296,34 +296,34 @@ denaliPcie den();
         ep_nvmeregs_1 = $mminstanceid("pcie_endp_model1.endp(mem_0_0_0)");
         $display("Created nvme register space memory instance\n");
         #1
- 
- 
- 
+
+
+
  // gen3 equalization phase - errors reported for illegal FC/C values in TS1
  // // sim isn't trying to validate the xilinx pcie IP, so ignore these
  	pcie_data = (PCIE_ERR_DESTINATION_none << 25) + (PCIE_ERR_CONFIG_disable_callback<<7) + (PCIE_ERR_CONFIG_DIRECTION_RX << 4) + PCIE_ERR_CONFIG_FORMAT_INFO;
  	pcie_status = $mmwriteword4( ep_cfg_id0, PCIE_REG_DEN_ERROR_CTRL,  pcie_data + (PCIE_PL_NONFATAL_8GT_EQ_FS_RNG_PHx<< 8));
  	pcie_status = $mmwriteword4( ep_cfg_id0, PCIE_REG_DEN_ERROR_CTRL,  pcie_data + (PCIE_PL_NONFATAL_8GT_EQ_COND_a<< 8));
  	pcie_status = $mmwriteword4( ep_cfg_id0, PCIE_REG_DEN_ERROR_CTRL,  pcie_data + (PCIE_PL_NONFATAL_8GT_EQ_COND_c<< 8));
- 
+
  	pcie_data = (PCIE_ERR_DESTINATION_none << 25) + (PCIE_ERR_CONFIG_disable_callback<<7) + (PCIE_ERR_CONFIG_DIRECTION_RX << 4) + PCIE_ERR_CONFIG_FORMAT_INFO;
         pcie_status = $mmwriteword4( ep_cfg_id1, PCIE_REG_DEN_ERROR_CTRL,  pcie_data + (PCIE_PL_NONFATAL_8GT_EQ_FS_RNG_PHx<< 8));
         pcie_status = $mmwriteword4( ep_cfg_id1, PCIE_REG_DEN_ERROR_CTRL,  pcie_data + (PCIE_PL_NONFATAL_8GT_EQ_COND_a<< 8));
         pcie_status = $mmwriteword4( ep_cfg_id1, PCIE_REG_DEN_ERROR_CTRL,  pcie_data + (PCIE_PL_NONFATAL_8GT_EQ_COND_c<< 8));
- 
+
  	$display("I've reached here before waitDLactive\n");
 //	waitPLactive(ep_cfg_id0);
-// 	$display("Waiting on link of SSD0 to be active\n"); 	@(posedge ( a0.nvme_top_i.axi_pcie3_0.user_link_up && a0.nvme_top_i.axi_pcie3_1.user_link_up));
- 	$display("Waiting on link of SSD1 to be active\n"); 	@(posedge ( a0.nvme_top_i.axi_pcie3_1.user_link_up));
+ 	$display("Waiting on links of SSDs to be active\n");    @(posedge ( a0.nvme_top_i.axi_pcie3_0.user_link_up && a0.nvme_top_i.axi_pcie3_1.user_link_up));
+// 	$display("Waiting on link of SSD1 to be active\n"); 	@(posedge ( a0.nvme_top_i.axi_pcie3_1.user_link_up));
  	$display("Link Training done");
  	$display("Link speed for SSD0 - Trained to G3[%x] - G2[%x] - G1[%x] ",cfg_speed[2],cfg_speed[1], cfg_speed[0]);
  	$display("Link Width for SSD0 - Trained to x%x", cfg_width);
 //	waitDLactive(ep_cfg_id0);//Not sure if TB needs to waits for DL to be up at this point
 //	$display("Post waitDLactive \n");
- 
+
  	//Initialization sequence for PCIe AXI bridge root complex
- 
- 
+
+
 //	$display("Waiting on link of SSD1 to be active\n");
   //      @(posedge afu.axi_pcie3_1.user_link_up);
     //    $display("Link Training done");
@@ -331,7 +331,7 @@ denaliPcie den();
         $display("Link Width for SSD1 - Trained to x%x", cfg_width_1);
 	//@(posedge(a0:snap_core_i:mmio_to_axi_master:nvme_q));
 
-        
+
 	$display("-------Configuring namespace for SSD0\n");
         nvme_write_cds(ep_adminsq0, NVME_CDS_FLD_NN, 32'h0000, 32'h0001);  // number of namespaces
         nvme_read_cds(ep_adminsq0, NVME_CDS_FLD_FR );  // Firmware Revision
@@ -347,7 +347,7 @@ denaliPcie den();
         nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_NUSE, 32'h0000, 32'h0000);
         nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_NSFEAT, 32'h0000, 32'h0000);
         nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_NLBAF, 32'h0000, 32'h0000);
-        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_FLBAS, 32'h0000, 32'h0000);        
+        nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_FLBAS, 32'h0000, 32'h0000);
         nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_MC, 32'h0000, 32'h0000);
         nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_DPC, 32'h0000, 32'h0000);
         nvme_write_nds(ep_adminsq0, ep_nsid0, NVME_NDS_FLD_DPS, 32'h0000, 32'h0000);
@@ -405,30 +405,30 @@ denaliPcie den();
         nvme_write_nds(ep_adminsq1, ep_nsid0, NVME_NDS_FLD_LBAF15, 32'h0000, 32'h0000);
 
 
-	
+
 
       end
 
    task nvme_read_cds;
-      input [31:0] id;   
+      input [31:0] id;
       input [31:0] field;
       reg   [31:0] data0, data1;
       begin
-         status = $mmwriteword4(id, NVME_REG_Q_OP_INDEX, field);   
+         status = $mmwriteword4(id, NVME_REG_Q_OP_INDEX, field);
          status = $mmwriteword4(id, NVME_REG_Q_OP, NVME_QOP_READ_CDS);
          status = $mmreadword2(id, NVME_REG_Q_DATA_0, data0);
          status = $mmreadword2(id, NVME_REG_Q_DATA_1, data1);
          $display(" data0: %x  data1: %x",data0, data1);
       end
-    endtask	
- 
+    endtask
+
    task nvme_write_cds;
-      input [31:0] id;   
+      input [31:0] id;
       input [31:0] field;
       input [31:0] data1;
       input [31:0] data0;
       begin
-        status = $mmwriteword4(id, NVME_REG_Q_OP_INDEX, field);   
+        status = $mmwriteword4(id, NVME_REG_Q_OP_INDEX, field);
         status = $mmwriteword4(id, NVME_REG_Q_DATA_0, data0);
         status = $mmwriteword4(id, NVME_REG_Q_DATA_1, data1);
         status = $mmwriteword4(id, NVME_REG_Q_OP, NVME_QOP_WRITE_CDS);
@@ -447,11 +447,11 @@ denaliPcie den();
         status = $mmwriteword4(id, NVME_REG_Q_DATA_0, data0);
         status = $mmwriteword4(id, NVME_REG_Q_DATA_1, data1);
         status = $mmwriteword4(id, NVME_REG_Q_OP, NVME_QOP_WRITE_NDS);
-   
+
       end
     endtask
- 
-   
+
+
 
 endmodule
 
