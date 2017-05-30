@@ -405,8 +405,15 @@ static int memcpy_test(struct snap_card* dnc,
 static struct snap_action *get_action(struct snap_card *handle,
 				      snap_action_flag_t flags, int timeout)
 {
-	return snap_attach_action(handle, ACTION_TYPE_EXAMPLE,
+	struct snap_action *act;
+
+	act = snap_attach_action(handle, ACTION_TYPE_EXAMPLE,
 				  flags, timeout);
+	if (NULL == act) {
+		VERBOSE0("Error: Can not attach Action: %x\n", ACTION_TYPE_EXAMPLE);
+		VERBOSE0("       Try to run snap_main tool\n");
+	}
+	return act;
 }
 
 static void usage(const char *prog)
