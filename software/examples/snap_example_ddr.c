@@ -600,13 +600,13 @@ static void usage(const char *prog)
 		"    -C, --card <cardno>  use this card for operation\n"
 		"    -V, --version\n"
 		"    -q, --quiet          quiece output\n"
-		"    -t, --timeout        timeout in sec (defaut 1 sec)n"
+		"    -t, --timeout        timeout in sec (defaut 1 sec)\n"
 		"    -i, --iter           Memcpy Iterations (default 1)\n"
 		"    -s, --start          Card Ram Start Address (default 0x%llx)\n"
 		"    -e, --end            Card Ram End Address (default 0x%llx)\n"
 		"    -b, --buffer         Host Buffer Size (default 0x%llx)\n"
 		"    -I, --irq            Use Interrupts\n"
-		"\tTool to check DDR3 Memory on KU3\n"
+		"\tTool to check DDR Memory on KU3 and FGT Card\n"
 		, prog,
 		(long long)DDR_MEM_BASE_ADDR,
 		(long long)DDR_MEM_SIZE,
