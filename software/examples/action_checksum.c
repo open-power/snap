@@ -612,7 +612,7 @@ static uint64_t sha3_main(uint32_t test_choice, uint32_t nb_elmts, uint32_t freq
                           run_number, remaining_run_number, threads);
 
                 for (i = 0; i < threads; i++) {
-                        if (nb_elmts <= ((run_number + 1) % freq)) 
+                        if (nb_elmts <= ((run_number + i) % freq)) 
                                 continue;
 
                         d[i].run_number = run_number + i;
