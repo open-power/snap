@@ -103,8 +103,8 @@ check_snap_settings:
 	fi
 
 check_denali:
-	@if [ $(NVME_USED) = "TRUE" ]; then \
-	  if [ !  -d $(DENALI_TOOLS) ] || [ ! -d $(DENALI_CUSTOM) ]; then \
+	@if [ $(NVME_USED) == "TRUE" ]; then \
+	  if [ !  -d "$(DENALI_TOOLS)" ] || [ ! -d "$(DENALI_CUSTOM)" ]; then \
 		echo "Missing one or more environment variables for NVMe simulation."; \
 		echo "Please check the following variables."; \
 		echo "DENALI_TOOLS:   $(DENALI_TOOLS)"; \
