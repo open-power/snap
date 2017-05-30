@@ -195,7 +195,7 @@ if { $nvme_used == TRUE } {
     add_files -fileset sim_1 -norecurse -scan_for_includes $denali_tools/ddvapi/verilog/denaliPcie.v
     set_property include_dirs                              $denali_tools/ddvapi/verilog [get_filesets sim_1]
   } else {
-    puts "	                        adding Denali simulation files failed, only image build will working"
+    puts "	                        adding Denali simulation files failed, only image build will work"
   }
 } else {
   remove_files $action_dir/action_axi_nvme.vhd -quiet
