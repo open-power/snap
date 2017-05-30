@@ -40,7 +40,7 @@
 #define	KILO_BYTE		(1024ull)
 #define	MEGA_BYTE		(1024 * KILO_BYTE)
 #define	GIGA_BYTE		(1024 * MEGA_BYTE)
-#define DDR_MEM_SIZE		(4 * GIGA_BYTE)	/* Default End of FPGA Ram */
+#define DDR_MEM_SIZE		(8 * GIGA_BYTE)	/* Default End of FPGA Ram */
 #define DDR_MEM_BASE_ADDR	0x00000000	/* Default Start of FPGA Ram */
 #define	HOST_BUFFER_SIZE	(256 * KILO_BYTE)	/* Default Size for Host Buffers */
 
