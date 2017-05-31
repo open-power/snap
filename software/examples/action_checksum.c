@@ -497,7 +497,7 @@ static uint64_t test_speed(const uint64_t run_number,
     return x;
 }
 
-#if !defined(CONFIG_USE_PTHREADS)
+#if defined(CONFIG_USE_NO_PTHREADS)
 static uint64_t sha3_main(uint32_t test_choice, uint32_t nb_elmts, uint32_t freq,
                             uint32_t threads __attribute__((unused)))
 {
@@ -549,6 +549,9 @@ static uint64_t sha3_main(uint32_t test_choice, uint32_t nb_elmts, uint32_t freq
 struct thread_data {
         pthread_t thread_id;    /* Thread id assigned by pthread_create() */
         unsigned int run_number;
+        uint32_t test_choice;
+        uint32_t nb_elmts;
+        uint32_t freq;
         uint64_t checksum;
         int thread_rc;
 };
@@ -561,11 +564,27 @@ static void *sha3_thread(void *data)
 
         d->checksum = 0;
         d->thread_rc = 0;
-        d->checksum = test_speed(d->run_number, d->nb_elmts, d->freq);
+        switch(d->test_choice) {
+        case(CHECKSUM_SPEED):
+                d->checksum = test_speed(d->run_number, d->nb_elmts, d->freq);
+                break;
+        case(CHECKSUM_SHA3):
+                d->checksum = (uint64_t)test_sha3();
+                break;
+        case(CHECKSUM_SHAKE):
+                d->checksum = (uint64_t)test_shake();
+                break;
+        case(CHECKSUM_SHA3_SHAKE):
+                d->checksum = (uint64_t)test_sha3();
+                d->checksum += (uint64_t)test_shake();
+                break;
+        default:
+                d->checksum = 1;
+                break;
+        }
         pthread_exit(&d->thread_rc);
 }
-static uint64_t sha3_main(uint32_t test_choice, uint32_t nb_elmts, uint32_t freq,
-                            uint32_t threads __attribute__((unused)))
+static uint64_t sha3_main(uint32_t test_choice, uint32_t nb_elmts, uint32_t freq, uint32_t _threads)
 {
        int rc;
         uint32_t run_number;
@@ -587,16 +606,19 @@ static uint64_t sha3_main(uint32_t test_choice, uint32_t nb_elmts, uint32_t freq
         for (run_number = 0; run_number < NB_TEST_RUNS; ) {
                 unsigned int i;
                 unsigned int remaining_run_number = NB_TEST_RUNS - run_number;
-                unsigned int threads = MIN(remaining_srun_number, _threads);
+                unsigned int threads = MIN(remaining_run_number, _threads);
 
                 act_trace("  [X] run_number=%d remaining=%d threads=%d\n",
                           run_number, remaining_run_number, threads);
 
                 for (i = 0; i < threads; i++) {
-                        if (nb_elmts <= ((run_number + 1) % freq)) 
+                        if (nb_elmts <= ((run_number + i) % freq)) 
                                 continue;
 
                         d[i].run_number = run_number + i;
+                        d[i].test_choice = test_choice;
+                        d[i].nb_elmts = nb_elmts;
+                        d[i].freq = freq;
                         rc = pthread_create(&d[i].thread_id, NULL,
                                             &sha3_thread, &d[i]);
                         if (rc != 0) {
@@ -629,7 +651,7 @@ static uint64_t sha3_main(uint32_t test_choice, uint32_t nb_elmts, uint32_t freq
         return checksum;
 
 }
-#endif /* CONFIG_USE_PTHREADS */
+#endif /* CONFIG_USE_NO_PTHREADS */
 
 static int action_main(struct snap_sim_action *action, void *job,
 		       unsigned int job_len)
