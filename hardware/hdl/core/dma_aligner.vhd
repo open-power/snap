@@ -44,7 +44,6 @@ ENTITY dma_aligner IS
     buf_rdata_v_i          : IN  std_logic;
     buf_rdata_e_i          : IN  std_logic;
     aln_wdata_o            : OUT std_logic_vector(511 DOWNTO 0);
-    aln_wdata_p_o          : OUT std_logic_vector(  7 DOWNTO 0);
     aln_wdata_v_o          : OUT std_logic;
     aln_wdata_be_o         : OUT std_logic_vector( 63 DOWNTO 0);
     --                     
@@ -188,7 +187,6 @@ BEGIN
         -- defaults
         --
         aln_wdata_o             <= sd_d_i.wr_data;
-        aln_wdata_p_o           <= AC_GENPARITY(sd_d_i.wr_data, 64);
         aln_wdata_be_o          <= (OTHERS => '0');
         aln_wdata_v_o           <= '0';
         aligner_write_fsm_err_q <= '0';

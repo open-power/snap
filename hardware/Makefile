@@ -206,7 +206,7 @@ xsim:
 	@cd $(SNAP_HARDWARE_ROOT)/sim/xsim; \
 	./top.sh > $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-	 echo -e "\t                       Error: please look into compile_$(SIMULATOR).log"; \
+	 echo -e "\t                        Error: please look into compile_$(SIMULATOR).log"; \
 	fi 
 	@echo -e "\t[BUILD xsim..........] done  `date`"
 
@@ -220,7 +220,7 @@ irun:
 	@cd $(SNAP_HARDWARE_ROOT)/sim/ies;\
 	./top.sh > $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-	 echo -e "\t                       Error: please look into compile_$(SIMULATOR).log"; \
+	 echo -e "\t                        Error: please look into compile_$(SIMULATOR).log"; \
 	fi 
 	@echo -e "\t[BUILD irun..........] done  `date`"
 
@@ -234,7 +234,7 @@ questa:
 	@cd $(SNAP_HARDWARE_ROOT)/sim/questa; \
 	./top.sh 4> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-	 echo -e "\t                       Error: please look into compile_$(SIMULATOR).log"; \
+	 echo -e "\t                        Error: please look into compile_$(SIMULATOR).log"; \
 	fi 
 	@echo -e "\t[BUILD questa........] done  `date`"
 
