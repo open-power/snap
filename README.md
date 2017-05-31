@@ -18,15 +18,15 @@ For detailed design information, please refer to the SNAP Workbook (available so
 
 # Getting started
 
-## Generating the Bitstream
+## Simulating the design and generating the bitstream
 
-The resources for generating an FPGA image using the SNAP framework are located in the [hardware](hardware) subdirectory of this repository. For information on how to use them please refer to the documentation in the
+The resources for generating a simulation model and an FPGA image using the SNAP framework are located in the [hardware](hardware) subdirectory of this repository. For information on how to use them please refer to the documentation in the
 
 * [README.md](hardware/README.md)
 
 file within that directory.
 
-## Flashing the Bitstream
+## Flashing the bitstream
 
 The tools flash the card bitstream are available on github:
 * https://github.com/ibm-capi/capi-utils
@@ -36,12 +36,13 @@ Call the capi-flash script with the generated bitstream:
 
 # Dependencies
 
-This code uses libcxl to access the CAPI hardware. This library should be part of your Linux distribution. For more information, please see
+This code uses libcxl to access the CAPI hardware. Install it with the package manager of your Linux distribution, e.g. 
+`sudo apt-get install libcxl-dev` for Ubuntu.  
+For more information, please see
 * https://github.com/ibm-capi/libcxl
 
 Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For the latest PSL checkpoint download, visit the CAPI section of the IBM Portal for OpenPOWER at
-* https://www.ibm.com/systems/power/openpower
-
+* https://www.ibm.com/systems/power/openpower  
 Download the required files under "PSL Checkpoint Files for the CAPI SNAP Design Kit".
 
 For simulation, SNAP relies on the PSL Simulation Environment (PSLSE) which is available on github:
