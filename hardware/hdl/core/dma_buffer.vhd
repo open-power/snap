@@ -451,14 +451,14 @@ BEGIN
           --
           --
           wram_rdata_q   <= wram_rmdata_v;
-          wram_rdata_p_q <= parity_gen_odd(wram_rmdata_p_v(63 DOWNTO 56) & wram_rdata_p_v(7) & inject_ah_b_rpar_error_i) &
-                            parity_gen_odd(wram_rmdata_p_v(55 DOWNTO 48) & wram_rdata_p_v(6)                           ) &
-                            parity_gen_odd(wram_rmdata_p_v(47 DOWNTO 40) & wram_rdata_p_v(5)                           ) &
-                            parity_gen_odd(wram_rmdata_p_v(39 DOWNTO 32) & wram_rdata_p_v(4)                           ) &
-                            parity_gen_odd(wram_rmdata_p_v(31 DOWNTO 24) & wram_rdata_p_v(3)                           ) &
-                            parity_gen_odd(wram_rmdata_p_v(23 DOWNTO 16) & wram_rdata_p_v(2)                           ) &
-                            parity_gen_odd(wram_rmdata_p_v(15 DOWNTO  8) & wram_rdata_p_v(1)                           ) &
-                            parity_gen_odd(wram_rmdata_p_v( 7 DOWNTO  0) & wram_rdata_p_v(0)                           );
+          wram_rdata_p_q <= parity_gen_even(wram_rmdata_p_v(63 DOWNTO 56) & wram_rdata_p_v(7) & inject_ah_b_rpar_error_i) &
+                            parity_gen_even(wram_rmdata_p_v(55 DOWNTO 48) & wram_rdata_p_v(6)                           ) &
+                            parity_gen_even(wram_rmdata_p_v(47 DOWNTO 40) & wram_rdata_p_v(5)                           ) &
+                            parity_gen_even(wram_rmdata_p_v(39 DOWNTO 32) & wram_rdata_p_v(4)                           ) &
+                            parity_gen_even(wram_rmdata_p_v(31 DOWNTO 24) & wram_rdata_p_v(3)                           ) &
+                            parity_gen_even(wram_rmdata_p_v(23 DOWNTO 16) & wram_rdata_p_v(2)                           ) &
+                            parity_gen_even(wram_rmdata_p_v(15 DOWNTO  8) & wram_rdata_p_v(1)                           ) &
+                            parity_gen_even(wram_rmdata_p_v( 7 DOWNTO  0) & wram_rdata_p_v(0)                           );
         END IF;
       END IF;
     END PROCESS wram_ctrl_clk;
