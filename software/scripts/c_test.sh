@@ -87,11 +87,20 @@ done
 
 echo "Check if /dev/cxl/afu$snap_card is AlphaDataKU60"
 rev=$(cat /sys/class/cxl/card$snap_card/device/subsystem_device | xargs printf "0x%.4X")
-if [ $rev != "0x0605" ]; then
-	echo "Capi Card $snap_card does have subsystem_device: $rev"
-	echo "I Expect to have 0x605, Check if -C $snap_card did move to other CAPI id and use other -C option!"
-	exit 1
-fi
+
+case $rev in
+"0x0605" )
+        echo "$rev -> AlphaDataKU60 Card"
+        ;;
+"0x060A" )
+        echo "$rev -> FlashGT Card"
+        ;;
+*)
+        echo "Capi Card $snap_card does have subsystem_device: $rev"
+        echo "I Expect to have 0x605 or 0x60a, Check if -C $snap_card was"
+        echo " move to other CAPI id and use other -C option !"
+        exit 1
+esac;
 
 for ((iter=1;iter <= iteration;iter++))
 {
