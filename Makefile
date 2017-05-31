@@ -14,22 +14,22 @@
 # limitations under the License.
 #
 
-subdirs += software
+software_subdirs += software
 hardware_subdirs += hardware
 action_subdirs += hardware/action_examples
 
-all: $(subdirs) $(hardware_subdirs)
+all: $(software_subdirs) $(hardware_subdirs)
 
 # Only build if the subdirectory is really existent
-.PHONY: $(subdirs)
-$(subdirs):
+.PHONY: $(software_subdirs) $(hardware_subdirs)
+$(software_subdirs) $(hardware_subdirs):
 	@if [ -d $@ ]; then				\
 		$(MAKE) -C $@ || exit 1;		\
 	fi
 
 # Install/uninstall
 test install uninstall:
-	@for dir in $(subdirs); do 			\
+	@for dir in $(software_subdirs); do 			\
 		if [ -d $$dir ]; then			\
 			$(MAKE) -C $$dir $@ || exit 1;	\
 		fi					\
@@ -44,7 +44,7 @@ config model image:
 	done
 
 clean:
-	@for dir in $(subdirs) $(hardware_subdirs) $(action_subdirs); do \
+	@for dir in $(software_subdirs) $(hardware_subdirs) $(action_subdirs); do \
 		if [ -d $$dir ]; then			\
 			$(MAKE) -C $$dir $@ || exit 1;	\
 		fi					\
