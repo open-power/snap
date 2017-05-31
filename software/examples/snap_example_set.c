@@ -297,8 +297,8 @@ int main(int argc, char *argv[])
 				PRINTF0("Error errno %d\n", errno);
 				exit(1);
 			}
-			if (size > 0x100000000) {
-				PRINTF0("Size (-s or --size Out of range\n");
+			if ((size > 0x100000000) || (size == 0)) {
+				PRINTF0("Error: Size %ld -s or --size Out of range\n", size);
 				exit(1);
 			}
 			break;
