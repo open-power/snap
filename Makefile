@@ -18,7 +18,7 @@ subdirs += software
 hardware_subdirs += hardware
 action_subdirs += hardware/action_examples
 
-all: $(subdirs)
+all: $(subdirs) $(hardware_subdirs)
 
 # Only build if the subdirectory is really existent
 .PHONY: $(subdirs)
