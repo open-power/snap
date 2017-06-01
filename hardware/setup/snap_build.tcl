@@ -163,7 +163,8 @@ if { $bram_used == "TRUE" } {
     set RAM_TYPE noSDRAM
 }
 append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_TNS]
- 
+append IMAGE_NAME [expr {$golden_image == "TRUE" ? "_FACTORY" : ""}] 
+
 ## 
 ## writing bitstream
 set step     write_bitstream
@@ -178,8 +179,8 @@ set_property BITSTREAM.CONFIG.BPI_1ST_READ_CYCLE 4 [current_design]
 set_property BITSTREAM.CONFIG.BPI_PAGE_SIZE 8 [current_design]
 
 # The factory bitstream has the above properties with one addition:
-if { $golden_image == "TRUE" } 
-{
+if { $golden_image == "TRUE" } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Golden/Factory Image!" $widthCol3 "" $widthCol4 "" ]
   set_property BITSTREAM.CONFIG.TIMER_CFG 0XFFFFFFFF [current_design]
 }
 
