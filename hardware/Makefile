@@ -155,10 +155,16 @@ action_config: $(ACTION_ROOT)
 # such that ACTION_ROOT does not exist. To build it, we go one directory
 # above and issue "make", such that the vhdl code can be synthesized.
 $(ACTION_ROOT):
-	$(MAKE) -C `dirname $(ACTION_ROOT)`
+	@echo -e "\t[CREATE_HLS_CODE.....] start `date`"
+	@echo -e "\t                        using `vivado_hls -v |grep Vivado`"
+	@make -C `dirname $(ACTION_ROOT)` > $(LOGS_DIR)/create_hls.log
+	@if [ $$? -ne 0 ]; then \
+	 echo -e "\t                        Error: please look into create_hls.log"; \
+	fi 
 
 create_environment:
 	@echo -e "\t[CREATE_ENVIRONMENT..] start `date`";
+	@echo -e "\t                        using `vivado -version |grep Vivado`"
 	@cd $(SNAP_HARDWARE_ROOT)/setup                                    && vivado -quiet -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -journal $(LOGS_DIR)/create_ip.jou
 	@if [ $(NVME_USED) = "TRUE" ]; then cd $(SNAP_HARDWARE_ROOT)/setup && vivado -quiet -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou; fi
 	@cd $(SNAP_HARDWARE_ROOT)/setup                                    && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou

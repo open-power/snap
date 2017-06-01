@@ -17,7 +17,7 @@
 #-----------------------------------------------------------
 
 set log_dir      $::env(LOGS_DIR)
-set log_file     $log_dir/noHDK_build.log
+set log_file     $log_dir/snap_build.log
 set fpgacard     $::env(FPGACARD)
 set sdram_used   $::env(SDRAM_USED)
 set nvme_used    $::env(NVME_USED)
