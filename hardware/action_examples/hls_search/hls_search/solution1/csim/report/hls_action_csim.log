@@ -1,0 +1,33 @@
+INFO: [SIM 2] *************** CSIM start ***************
+INFO: [SIM 4] CSIM will launch GCC as the compiler.
+   Compiling ../../../../hls_search.cpp in debug mode
+   Generating csim.exe
+--Step 1--SW + HW : copy all data from Host to DDR--OK
+--Step 2--SW : copy source from DDR to Host--OK
+--Step 3--HW : search processing--
+======== Naive method ========
+Pattern found at index 0 
+Pattern found at index 10 
+Pattern found at index 20 
+Pattern found at index 60 
+Pattern found at index 64 
+Pattern found at index 70 
+Pattern found at index 73 
+Pattern found at index 76 
+Pattern found at index 90 
+Pattern found at index 100 
+Pattern found at index 110 
+Pattern found at index 120 
+Pattern found at index 130 
+Pattern found at index 140 
+Pattern found at index 150 
+Pattern found at index 160 
+Pattern found at index 170 
+Pattern found at index 198 
+pattern size 3 - text size 210 - rc = 18 
+--Step 3--OK
+Search : 18 occurrences found => Test OK
+=============================
+ >> ACTION TYPE = 10141003 - RELEASE_LEVEL =       21 <<
+INFO: [SIM 1] CSim done with 0 errors.
+INFO: [SIM 3] *************** CSIM finish ***************

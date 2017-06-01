@@ -79,7 +79,13 @@ static void memcopy_table(snap_membus_t  *din_gmem,
 			copy_bytes = read_bulk (din_gmem, 
 						source_address + address_xfer_offset,  
 						left_bytes, buf_gmem);
-			write_bulk (d_ddrmem, 
+			// Always write 64 bytes data into DDR
+			if ((copy_bytes%64) != 0)
+				write_bulk (d_ddrmem,
+				    target_address + address_xfer_offset,
+					(copy_bytes - (copy_bytes%64) + 64), buf_gmem);
+			else
+				write_bulk (d_ddrmem,
 				    target_address + address_xfer_offset,  
 				    copy_bytes, buf_gmem);
 			break;
@@ -745,7 +751,7 @@ adding_padding_to_256bytes_to ensure test  ok
      */
 
     // read data for text
-    fp = fopen("../../../../snap_search123.txt", "r");
+    fp = fopen("../../../../snap_search123_210.txt", "r");
     if (fp) {
         while((c = getc(fp)) != EOF) {
                 word_tmp[k] = c;
@@ -774,11 +780,11 @@ adding_padding_to_256bytes_to ensure test  ok
 
 
     Action_Register.Data.src_text1.addr = 0;
-    Action_Register.Data.src_text1.size = (m*BPERDW) + k + 1;
+    Action_Register.Data.src_text1.size = (m*BPERDW) + k;
     Action_Register.Data.src_text1.type = SNAP_ADDRTYPE_HOST_DRAM;
 
     Action_Register.Data.ddr_text1.addr = 512; //0;
-    Action_Register.Data.ddr_text1.size = (m*BPERDW) + k + 1;
+    Action_Register.Data.ddr_text1.size = (m*BPERDW) + k;
     Action_Register.Data.ddr_text1.type = SNAP_ADDRTYPE_CARD_DRAM;
 
     Action_Register.Data.src_pattern.addr = 0;
