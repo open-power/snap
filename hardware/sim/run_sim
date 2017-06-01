@@ -163,7 +163,7 @@
    if   [ "$SIMDIR" == "ies" ];then
      ln -s $SNAP_HARDWARE_ROOT/sim/ies/ies        	# point to compiled model
      ln -s $SNAP_HARDWARE_ROOT/sim/ies/INCA_libs 	# point to compiled model
-     ln -s $DENALI_ROOT                                 # point to denali config files
+     ln -s $DENALI_CUSTOM/runtime denali                # point to denali runtime files
    elif [ "$SIMDIR" == "xsim" ];then
      ln -s $SNAP_HARDWARE_ROOT/sim/xsim/xsim.dir
    elif [ "$SIMDIR" == "questa" ];then
