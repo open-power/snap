@@ -37,13 +37,14 @@ In order to prepare the vivado environment for this project, call:
     make config
 ```
 
-from within `$SNAP_ROOT/hardware`. Pre-requisite for this is that the environment variables for this project
+from within `$SNAP_ROOT` or from `$SNAP_ROOT/hardware`.
+Pre-requisite for this is that the environment variables for this project
 are defined (e.g. by sourcing the [./snap_settings](./snap_settings) script).
 The variable `$SIMULATOR` is used to determine for which of the simulators xsim or ncsim
 the environment will be prepared.
 
-If the variable `$ACTION_ROOT` is not set the make process will terminate. 
-The VHDL based default action example will be included if the environment variable is set to
+If the variable `$ACTION_ROOT` is not set, the make process will terminate. 
+The VHDL based default action example will be included if that environment variable is set to
 `$SNAP_ROOT/hardware/action_examples/hdl_example`.
 As usual you may set the variable with the call of make:
 
@@ -54,7 +55,7 @@ As usual you may set the variable with the call of make:
 As part of the configuration step, a script `$ACTION_ROOT/action_config.sh` will be called if it exists.
 Specific configurations/preparations for the action may be added via this script.
 
-If you call make w/o any targets, then the environment is created and a simulation model build
+If you call make without any targets, then the environment is created and a simulation model build
 as well as a card image build are kicked off.
 In order to build a model and an image including the memcopy action example, call:
 
@@ -62,7 +63,7 @@ In order to build a model and an image including the memcopy action example, cal
     make ACTION_ROOT=$SNAP_ROOT/hardware/action_examples/memcopy
 ```
 
-If you want to build an image (a bitstream) for a given `$ACTION_ROOT`, you may call make with target image:
+If you want to build an image (a bitstream) for a given `$ACTION_ROOT`, you may call `make` with target `image`:
 
 ```bash
     make config image
@@ -74,19 +75,21 @@ If the configuration step was already executed, you may just call:
 ```bash
     make image
 ```
+**Note** that you must still build the software tools on the POWER target system.
 
 A simulation model (for the simulator defined by the environment variable `$SIMULATOR`) may be created
-via the target model:
+via the target `model`:
 
 ```bash
     make config model
 ```
+This will also build the software tools and the PSLSE which are required to run the simulation.
 
-Please refer to `$SNAP_ROOT/hardware/Makefile` for more supported targets like clean, gitclean, create_environment, copy, ...
+Please refer to `$SNAP_ROOT/hardware/Makefile` for more supported targets like clean, gitclean, create_environment, ...
 
 # Action wrapper
 
-The path to the set of actions that shall be included is defined via the environment variable `$ACTION_ROOT`.
+The environment variable `$ACTION_ROOT` defines the path to the set of actions that shall be included.
 **Currently it has to point to a directory within** [./action_examples](./action_examples).
 
 At this point SNAP supports the integration of one action. Multi-action support will follow.
@@ -96,8 +99,10 @@ Corresponding to the ports that the SNAP framework provides, each action has to 
 * an AXI master port for host DMA traffic
 * an optional AXI master port for on card SDRAM traffic
 * an optional AXI master port for communication with an NVMe host controller
+Furthermore, HDL actions have to implement the interrupt ports as shown in the [HDL example action wrapper](./action_examples/hdl_example/action_wrapper.vhd_source).  
+For HLS actions, the HLS compiler will automatically generate the necessary interrupt logic.
 
-**Note** that the ID widths of the AXI interfaces to host memory and to the on card SDRAM have to be
+**Note** that the ID widths of the AXI interfaces to host memory and to the on-card SDRAM have to be
 large enough to support the number of actions that shall be instantiated.
 For the build process this is controlled via the environment variable `$NUM_OF_ACTIONS`
 which defaults to `1` if not set differently.
@@ -108,12 +113,12 @@ The support for actions created with HLS as opposed to HDL actions written direc
 In order to integrate an HDL action into the SNAP framework the directory that `$ACTION_ROOT` is pointing to needs to contain an entity named `action_wrapper` which is serving as interface between the action and the SNAP framework.
 
 An example for such an action together with a corresponding wrapper may be found in [./action_examples/hdl_example](./action_examples/hdl_example).
-It can be used for various verification scenarios like moving memory content.
+It can be used for various verification scenarios like copying memory content.
 
 ### HLS Actions
 The top level entity for an HLS action needs to be named `hls_action`.
 
-You'll also find examples for HLS actions in [./action_examples](./action_examples). For each example, the HLS action to be integrated into the SNAP framework is contained in a file `hls_<action>.cpp`. Before initiating the SNAP framework's make process, you need to create the necessary RTL files (VHDL) out of the `hls_<action>.cpp` file. Each example contains a `Makefile` that takes care of this. In order to make sure that the resulting top level entity fits into the SNAP framework, the HLS actions top level function needs to be named `hls_action`. All RTL files generated by the example's make process will be placed into a subdirectory `vhdl`. The environment variable `$ACTION_ROOT` needs to point to that directory when initiating the SNAP framework's make process.
+You'll also find examples for HLS actions in [./action_examples](./action_examples). For each example, the HLS action to be integrated into the SNAP framework is contained in a file `hls_<action>.cpp`. Before initiating the SNAP framework's make process, you need to create the necessary RTL files (VHDL or Verilog) out of the `hls_<action>.cpp` file. Each example contains a `Makefile` that takes care of this. In order to make sure that the resulting top level entity fits into the SNAP framework, the HLS actions top level function needs to be named `hls_action`. All RTL files generated by the example's make process will be placed into the subdirectories `vhdl` and `verilog`. The environment variable `$ACTION_ROOT` needs to point to that directory when initiating the SNAP framework's make process.
 
 For instance, if you want to configure the SNAP framework for integrating the HLS memcopy example contained in `$SNAP_ROOT/hardware/action_examples/hls_memcopy`, call
 
@@ -139,21 +144,17 @@ the interface will be instantiated and the access to the SDRAM will be provided.
 
 # NVMe support
 
-For Flash GT cards the SNAP framework supports the integration of up to two Flash drives by providing an NVMe host controller that conntects to the drives via PCIe root complexes. When setting
+For FPGA cards with NVMe flash attached, the SNAP framework supports the integration of up to two Flash drives. When setting
 
 ```bash
     NVME_USED=TRUE
 ```
 
-the support will be enabled by instantiating the NVMe host controller togeter with the corresponding PCIe root complexes and the required AXI interfaces.
+the support will be enabled by instantiating an NVMe host controller together with the corresponding PCIe root complexes and the required AXI interfaces.
 
 # Simulation
 
-You may kick off simulation from within the subdirectory `sim` using the script `run_sim`.
-When calling this script without any parameter an xterm will open from which the simulation can be controlled interactively.
-
-For the VHDL based example `ACTION_ROOT=$SNAP_ROOT/hardware/action_examples/hdl_example` you may execute the example application
-`snap_example` contained in [software/examples](../software/examples). Calling this application with option `-h` will present usage informations.
+SNAP supports *Xilinx xsim* and *Cadence irun* tools for simulation.
 
 ### PSLSE setup
 The SNAP framework's simulation depends on the PSL simulation environment (PSLSE).
@@ -174,7 +175,7 @@ If you want to use Cadence tools (irun) for simulation you need to compile the X
 point to the resulting compiled library.
 
 Furthermore, the environment variables `$PATH` and `$LD_LIBRARY_PATH` need to contain the paths
-to the Cadence tools and libraries. In case `$SIMULATOR == irun` the script
+to the Cadence tools and libraries. In case `$SIMULATOR == irun`, the script
 [./snap_settings](./snap_settings) will set the Cadence specific environment variable
 
 ```
@@ -182,3 +183,13 @@ to the Cadence tools and libraries. In case `$SIMULATOR == irun` the script
 ```
 
 if it is not already pre-defined.
+
+### Running simulation
+You may kick off simulation from within the subdirectory `sim` using the script `run_sim`.
+Calling this script without any parameter will open an xterm window from which the simulation can be controlled interactively.
+
+To initialize the SNAP framework, run `$SNAP_ROOT/software/tools/snap_maint` first.
+
+For the VHDL based example `ACTION_ROOT=$SNAP_ROOT/hardware/action_examples/hdl_example` you may then execute the example application
+`snap_example` contained in [software/examples](../software/examples). Calling this application with option `-h` will present usage informations.
+
