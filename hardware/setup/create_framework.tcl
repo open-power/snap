@@ -123,8 +123,8 @@ update_compile_order -fileset sim_1 >> $log_file
 puts "	                        importing IPs"
 add_files -norecurse $ip_dir/ram_520x64_2p/ram_520x64_2p.xci >> $log_file
 export_ip_user_files -of_objects  [get_files "$ip_dir/ram_520x64_2p/ram_520x64_2p.xci"] -force >> $log_file
-add_files -norecurse $ip_dir/ram_584x64_2p/ram_584x64_2p.xci >> $log_file
-export_ip_user_files -of_objects  [get_files "$ip_dir/ram_584x64_2p/ram_584x64_2p.xci"] -force >> $log_file
+add_files -norecurse $ip_dir/ram_576x64_2p/ram_576x64_2p.xci >> $log_file
+export_ip_user_files -of_objects  [get_files "$ip_dir/ram_576x64_2p/ram_576x64_2p.xci"] -force >> $log_file
 add_files -norecurse  $ip_dir/fifo_4x512/fifo_4x512.xci >> $log_file
 export_ip_user_files -of_objects  [get_files  "$ip_dir/fifo_4x512/fifo_4x512.xci"] -force >> $log_file
 add_files -norecurse  $ip_dir/fifo_8x512/fifo_8x512.xci >> $log_file

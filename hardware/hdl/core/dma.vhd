@@ -162,7 +162,6 @@ ARCHITECTURE dma OF dma IS
   SIGNAL aln_wbusy                   : std_logic;
   SIGNAL aln_wdata                   : std_logic_vector(511 DOWNTO  0);
   SIGNAL aln_wdata_be                : std_logic_vector( 63 DOWNTO  0);
-  SIGNAL aln_wdata_p                 : std_logic_vector(  7 DOWNTO  0);
   SIGNAL aln_wdata_v                 : std_logic;
   SIGNAL aln_wfsm_idle               : std_logic;
   SIGNAL buf_rdata                   : std_logic_vector(511 DOWNTO  0);
@@ -175,7 +174,6 @@ ARCHITECTURE dma OF dma IS
   SIGNAL buf_rtag_valid_q            : boolean;
   SIGNAL buf_wactive_q               : boolean;
   SIGNAL buf_walmost_full_q          : std_logic;
-  SIGNAL buf_wdata_parity_err        : std_logic;
   SIGNAL buf_wfull_cnt_q             : integer RANGE 0 TO 32;
   SIGNAL buf_wtag_cl_partial_q       : boolean;
   SIGNAL buf_wtag_p_q                : std_logic;
@@ -1896,10 +1894,8 @@ BEGIN
       -- DMA control
       buf_rrdreq_i             => buf_rrdreq,
       buf_wdata_i              => aln_wdata,
-      buf_wdata_p_i            => aln_wdata_p,
       buf_wdata_v_i            => aln_wdata_v,
       buf_wdata_be_i           => aln_wdata_be,
-      buf_wdata_parity_err_o   => buf_wdata_parity_err,
       read_ctrl_buf_full_i     => read_ctrl_buf_full_q,
       --
       buf_rdata_o              => buf_rdata,
@@ -1924,7 +1920,7 @@ BEGIN
       ha_b_wdata_err_o       => dmm_e_q.ha_b_wdata_err
     );
 
-    dmm_e_q.write_data_p_err <= buf_wdata_parity_err;
+    dmm_e_q.write_data_p_err <= '0';
     buf_rrdreq               <= NOT rfifo_prog_full;
 
   ------------------------------------------------------------------------------
@@ -1950,7 +1946,6 @@ BEGIN
       buf_rdata_v_i          => buf_rdata_vld,
       buf_rdata_e_i          => buf_rdata_e_q,
       aln_wdata_o            => aln_wdata,
-      aln_wdata_p_o          => aln_wdata_p,
       aln_wdata_be_o         => aln_wdata_be,
       aln_wdata_v_o          => aln_wdata_v,
       --
