@@ -711,7 +711,7 @@ BEGIN
 
         dbg_regs_q                       <= (OTHERS => (OTHERS => '0'));
         dbg_regs_par_q                   <= (OTHERS => '1');
-        dbg_regs_q(SNAP_DEBUG_REG)(SNAP_DBG_AH_PAREN) <= '1';  -- TODO: Change reset value, when all parity problems are resolved
+        dbg_regs_q(SNAP_DEBUG_REG)(SNAP_DBG_AH_PAREN) <= '0';
         dbg_regs_par_q(SNAP_DEBUG_REG)                <= '0';
 
         exploration_done_q               <= '0';
@@ -1142,7 +1142,7 @@ BEGIN
     --
     -- Parity enable for ah interface in PSL
     --
-    ah_paren_mm_o   <= NOT dbg_regs_q(SNAP_DEBUG_REG)(SNAP_DBG_AH_PAREN);
+    ah_paren_mm_o   <= dbg_regs_q(SNAP_DEBUG_REG)(SNAP_DBG_AH_PAREN);
 
     --
     -- MMC
