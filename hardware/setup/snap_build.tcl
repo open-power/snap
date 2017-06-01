@@ -22,7 +22,11 @@ set fpgacard     $::env(FPGACARD)
 set sdram_used   $::env(SDRAM_USED)
 set nvme_used    $::env(NVME_USED)
 set bram_used    $::env(BRAM_USED)
-set golden_image $::env(GOLDEN_IMAGE)
+if {[info exists ::env(GOLDEN_IMAGE)]} {
+  set golden_image [string toupper $::env(GOLDEN_IMAGE)]
+} else {
+  set golden_image "FALSE"
+}
 
 #timing_lablimit  
 if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
