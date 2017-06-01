@@ -25,7 +25,7 @@
 #include <action_memcopy.h> /* Memcopy Job definition */
 
 #define RELEASE_LEVEL		0x00000020
-#define MAX_NB_OF_BYTES_READ	(4 * 1024)
+#define MAX_NB_OF_BYTES_READ	(256 * 1024)
 #define CARD_DRAM_SIZE		(1 * 1024 *1024 * 1024)
 #define MAX_NB_OF_WORDS_READ	(MAX_NB_OF_BYTES_READ/BPERDW)
 
