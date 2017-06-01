@@ -250,6 +250,7 @@ puts "	\                        generating AXI PCIe Root Complex"
 set axi_pcie3_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie3:3.0 axi_pcie3_0 >> $log_file ]
 set_property -dict [ list \
 CONFIG.pcie_blk_locn {X0Y1} \
+CONFIG.select_quad {GTH_Quad_227} \
 CONFIG.axi_addr_width {34} \
 CONFIG.axi_data_width {128_bit} \
 CONFIG.axisten_freq {250} \
@@ -273,6 +274,7 @@ CONFIG.plltype {QPLL1} \
 set axi_pcie3_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie3:3.0 axi_pcie3_1 >> $log_file ]
 set_property -dict [ list \
 CONFIG.pcie_blk_locn {X0Y2} \
+CONFIG.select_quad {GTH_Quad_228} \
 CONFIG.axi_addr_width {34} \
 CONFIG.axi_data_width {128_bit} \
 CONFIG.axisten_freq {250} \
