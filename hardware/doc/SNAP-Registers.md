@@ -181,6 +181,21 @@ Address: 0x0000028
 
 ---
 
+#### SNAP Capability Register (SCaR)
+```
+Address: 0x0000030
+  63..32 RO: Reserved
+  31..16 RO: Size of attached on-card SDRAM in MB
+  15..9  RO: Reserved
+      8  RO: NVMe enabled
+   7..0  RO: Card type:
+             0x01 : FGT
+             0x00 : KU3
+
+```
+
+---
+
 #### Freerunning Timer (FRT)
 ```
 Address: 0x0000080
@@ -475,6 +490,21 @@ Address: 0x0000028 + (s+n) * 0x0010000
              Bit i='1' : pull down M2_PERST_N(i)
 
   POR value: 0x0000000000000000
+```
+
+---
+
+#### SNAP Capability Register (SCaR)
+```
+Address: 0x0000030 + (s+n) * 0x0010000
+  63..32 RO: Reserved
+  31..16 RO: Size of attached on-card SDRAM in MB
+  15..9  RO: Reserved
+      8  RO: NVMe enabled
+   7..0  RO: Card type:
+             0x01 : FGT
+             0x00 : KU3
+
 ```
 
 ---
