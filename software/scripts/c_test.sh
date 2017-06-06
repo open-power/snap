@@ -22,6 +22,7 @@
 verbose=0
 snap_card=0
 iteration=1
+FUNC=./software/examples/snap_example_set
 
 function test_memset ()	# $1 = card
 {
@@ -29,7 +30,7 @@ function test_memset ()	# $1 = card
 
 	for  begin in ` seq 0 64 `; do
 		echo -n "."
-		cmd="./examples/snap_example_set -C ${card} -F -s 4096 -b 0 -p 0xff"
+		cmd="${FUNC} -C ${card} -F -s 4096 -b 0 -p 0xff"
 		eval ${cmd}
 		if [ $? -ne 0 ]; then
 			echo "cmd: ${cmd}"
@@ -37,14 +38,14 @@ function test_memset ()	# $1 = card
 			exit 1
 		fi
 		for  size in ` seq 1 256 `; do
-			cmd="./examples/snap_example_set -C ${card} -H -s $size -b $begin -p $size"
+			cmd="${FUNC} -C ${card} -H -s $size -b $begin -p $size"
 			eval ${cmd}
 			if [ $? -ne 0 ]; then
 				echo "cmd: ${cmd}"
 				echo "failed"
 				exit 1
 			fi
-			cmd="./examples/snap_example_set -C ${card} -F -s $size -b $begin -p $size"
+			cmd="${FUNC} -C ${card} -F -s $size -b $begin -p $size"
 			eval ${cmd}
 			if [ $? -ne 0 ]; then
 				echo "cmd: ${cmd}"
