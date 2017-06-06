@@ -86,15 +86,14 @@ while getopts "C:t:i:h" opt; do
 	esac
 done
 
-echo "Check if /dev/cxl/afu$snap_card is AlphaDataKU60"
 rev=$(cat /sys/class/cxl/card$snap_card/device/subsystem_device | xargs printf "0x%.4X")
 
 case $rev in
 "0x0605" )
-        echo "$rev -> AlphaDataKU60 Card"
+        echo "$rev -> Testing AlphaDataKU60 Card"
         ;;
 "0x060A" )
-        echo "$rev -> FlashGT Card"
+        echo "$rev -> Testing FlashGT Card"
         ;;
 *)
         echo "Capi Card $snap_card does have subsystem_device: $rev"

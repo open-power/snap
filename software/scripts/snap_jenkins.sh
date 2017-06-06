@@ -25,50 +25,59 @@ function usage() {
 	
 	echo "  snap_jenkins.sh -D TARGET_DIR"
 	echo "    [-D <Target Dir>]"
-	echo "    [-t <trace_level>] (0 .. 0xff)"
 	echo "    [-h] Print this help"
 }
 
 #
 # Main starts here
 #
-while getopts "D:t:h" opt; do
+while getopts "D:h" opt; do
 	case $opt in
 	D)
 		TARGET_DIR=$OPTARG;
 	;;
-	t)
-	SNAP_TRACE=$OPTARG;
-	;;
 	h)
-	usage;
-	exit 0;
+		usage;
+		exit 0;
 	;;
 	\?)
 	echo "Invalid option: -$OPTARG" >&2
 	;;
 	esac
 done
-echo "Target Dir set to ${TARGET_DIR}"
 
-cd ${TARGET_DIR}
+MY_DIR=`basename $PWD`
+echo "Target Dir: $TARGET_DIR Current Dir is: $MY_DIR"
+if [[ $TARGET_DIR != $MY_DIR ]] ; then
+	echo "Calling Mismatch, please fix"
+	exit 1;
+fi
+
 dmesg -T > dmesg_before_test.txt
 
 for accel in KU3 FGT ; do
-	echo "Accelerator: \${accel} ..."
-	for card in \`./software/tools/snap_find_card -A \${accel}\` ; do
-		echo "CHECKING ${accel} CARD ${card} VERSION BEFORE UPDATING ..."
+	MY_CARDS=`./software/tools/snap_find_card -A $accel`
+	MY_IMAGE=/opt/fpga/snap/$accel/latest.bin
+	for card in $MY_CARDS ; do
+		echo "CHECKING Capi Card [$card] Accel: [$accel] before updating ..."
 		./software/tools/snap_peek -C $card 0x0
 		./software/tools/snap_peek -C $card 0x8
-		pushd ../capi-utils
-		echo "UPDATING ${accel} CARD ${card} ..."
-		# sudo ./capi-flash-script.sh -f -C ${card} -f /opt/fpga/snap/\${accel}/latest.bin
-		echo "sudo ./capi-flash-script.sh -f -C ${card} -f /opt/fpga/snap/\${accel}/latest.bin"
-		popd
-		echo "CHECKING ${accel} CARD {$card} VERSION AFTER UPDATE ..."
-		./software/tools/snap_peek -C $card 0x0
-		./software/tools/snap_peek -C $card 0x8
+		if [ ! -f $MY_IMAGE ]; then
+			echo "Can not open FPGA Image: [$MY_IMAGE]"
+			echo "Skip Flash Update, contiue with Test"
+		else
+			pushd ../capi-utils > /dev/null
+			echo "UPDATING Capi Card: [$card] Accel: [$accel] Image: [$MY_IMAGE]"
+			# sudo ./capi-flash-script.sh -f -C $card -f $MY_IMAGE
+			echo "sudo ./capi-flash-script.sh -f -C $card -f $MY_IMAGE"
+			popd > /dev/null
+			echo "CHECKING Capi Card: [$card] Accel: [$accel] after update ..."
+			./software/tools/snap_peek -C $card 0x0
+			./software/tools/snap_peek -C $card 0x8
+		fi
 		./software/scripts/a_test.sh -C $card
+		./software/scripts/b_test.sh -C $card
+		./software/scripts/c_test.sh -C $card
 	done
 done
 exit 0
