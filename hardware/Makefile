@@ -23,30 +23,30 @@ export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 
 ifeq "$(FPGACARD)" "KU3"
-  export DDR3_USED=$(SDRAM_USED)
-  export DDR4_USED=FALSE
-  export DDRI_USED=$(SDRAM_USED)
-  export NVME_USED=FALSE
-endif 
+	export DDR3_USED=$(SDRAM_USED)
+	export DDR4_USED=FALSE
+	export DDRI_USED=$(SDRAM_USED)
+	export NVME_USED=FALSE
+endif
 
 ifeq "$(FPGACARD)" "FGT"
-  export DDR3_USED=FALSE
-  export DDR4_USED=$(SDRAM_USED)
-  export DDRI_USED=$(SDRAM_USED)
+	export DDR3_USED=FALSE
+	export DDR4_USED=$(SDRAM_USED)
+	export DDRI_USED=$(SDRAM_USED)
 endif
 
 ifndef BRAM_USED
-  export BRAM_USED=FALSE
+	export BRAM_USED=FALSE
 endif
 ifeq "$(BRAM_USED)" "TRUE"
-  export DDR3_USED=FALSE
-  export DDR4_USED=FALSE
-  export SDRAM_USED=FALSE
-  export DDRI_USED=TRUE
+	export DDR3_USED=FALSE
+	export DDR4_USED=FALSE
+	export SDRAM_USED=FALSE
+	export DDRI_USED=TRUE
 endif
 
 ifndef NVME_USED
-  export NVME_USED=FALSE
+	export NVME_USED=FALSE
 endif
 
 ## variables only for this Makefile
@@ -56,13 +56,13 @@ SNAP_HDL_HLS=$(SNAP_HARDWARE_ROOT)/hdl/hls
 SNAP_SIM_CORE=$(SNAP_HARDWARE_ROOT)/sim/core
 
 SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
-		  $(SNAP_HDL_CORE)/psl_accel.vhd \
-		  $(SNAP_HDL_CORE)/psl_accel_types.vhd \
-		  $(SNAP_HDL_CORE)/snap_core.vhd \
-		  $(SNAP_HDL_CORE)/snap_core_types.vhd \
-		  $(SNAP_HDL_CORE)/mmio.vhd \
-		  $(SNAP_HDL_HLS)/action_wrapper.vhd \
-		  $(SNAP_SIM_CORE)/top.sv
+                  $(SNAP_HDL_CORE)/psl_accel.vhd \
+                  $(SNAP_HDL_CORE)/psl_accel_types.vhd \
+                  $(SNAP_HDL_CORE)/snap_core.vhd \
+                  $(SNAP_HDL_CORE)/snap_core_types.vhd \
+                  $(SNAP_HDL_CORE)/mmio.vhd \
+                  $(SNAP_HDL_HLS)/action_wrapper.vhd \
+                  $(SNAP_SIM_CORE)/top.sv
 
 
 .PHONY: all clean gitclean check_snap_settings image model action_config setup_environment create_environment config patch_version xpr_image snap_config snap_config_start
@@ -104,34 +104,34 @@ check_snap_settings:
 
 check_denali:
 	@if [ $(NVME_USED) == "TRUE" ]; then \
-	  if [ !  -d "$(DENALI_TOOLS)" ] || [ ! -d "$(DENALI_CUSTOM)" ]; then \
-		echo "Missing one or more environment variables for NVMe simulation."; \
-		echo "Please check the following variables."; \
-		echo "DENALI_TOOLS:   $(DENALI_TOOLS)"; \
-		echo "DENALI_CUSTOM:  $(DENALI_CUSTOM)"; \
-		exit 1; \
-	  fi \
+		if [ !  -d "$(DENALI_TOOLS)" ] || [ ! -d "$(DENALI_CUSTOM)" ]; then \
+			echo "Missing one or more environment variables for NVMe simulation."; \
+			echo "Please check the following variables."; \
+			echo "DENALI_TOOLS:   $(DENALI_TOOLS)"; \
+			echo "DENALI_CUSTOM:  $(DENALI_CUSTOM)"; \
+			exit 1; \
+		fi \
 	fi
 
 
 
 setup_environment:
 	@echo -e "\t[COPY................] psl build env";
-	@mkdir -p $(BUILD_DIR); 
-	@mkdir -p $(BUILD_DIR)/Reports; 
-	@mkdir -p $(LOGS_DIR); 
-	@mkdir -p $(BUILD_DIR)/Images; 
-	@mkdir -p $(BUILD_DIR)/Checkpoints; 
-	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl     $(BUILD_DIR)/snap_build.tcl; 
-	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_xpr_build.tcl $(BUILD_DIR)/snap_xpr_build.tcl; 
-	@cp -p $(PSL_DCP)                                        $(BUILD_DIR)/Checkpoints/; 
+	@mkdir -p $(BUILD_DIR);
+	@mkdir -p $(BUILD_DIR)/Reports;
+	@mkdir -p $(LOGS_DIR);
+	@mkdir -p $(BUILD_DIR)/Images;
+	@mkdir -p $(BUILD_DIR)/Checkpoints;
+	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl     $(BUILD_DIR)/snap_build.tcl;
+	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_xpr_build.tcl $(BUILD_DIR)/snap_xpr_build.tcl;
+	@cp -p $(PSL_DCP)                                        $(BUILD_DIR)/Checkpoints/;
 	@if [ $(FPGACARD) = "KU3" ]; then \
-	  ln -f -s $(SNAP_HDL_CORE)/psl_fpga_ku3.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
-	  ln -f -s $(SNAP_HDL_CORE)/psl_accel_ku3.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
-        fi
+		ln -f -s $(SNAP_HDL_CORE)/psl_fpga_ku3.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
+		ln -f -s $(SNAP_HDL_CORE)/psl_accel_ku3.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
+	fi
 	@if [ $(FPGACARD) = "FGT" ]; then \
-	  ln -f -s $(SNAP_HDL_CORE)/psl_fpga_fgt.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
-	  ln -f -s $(SNAP_HDL_CORE)/psl_accel_fgt.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
+		ln -f -s $(SNAP_HDL_CORE)/psl_fpga_fgt.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
+		ln -f -s $(SNAP_HDL_CORE)/psl_accel_fgt.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
 	fi
 
 %.vhd: %.vhd_source
@@ -159,8 +159,8 @@ $(ACTION_ROOT):
 	@echo -e "\t                        using `vivado_hls -v |grep Vivado`"
 	@make -C `dirname $(ACTION_ROOT)` > $(LOGS_DIR)/create_hls.log
 	@if [ $$? -ne 0 ]; then \
-	 echo -e "\t                        Error: please look into create_hls.log"; \
-	fi 
+		echo -e "\t                        Error: please look into create_hls.log";exit -1; \
+	fi
 
 create_environment:
 	@echo -e "\t[CREATE_ENVIRONMENT..] start `date`";
@@ -174,25 +174,25 @@ config: check_snap_settings setup_environment snap_config action_config create_e
 	@echo -e "\t[CONFIG..............] done `date`"
 
 patch_version:
-	@echo  -e "\t[PATCH...............] SNAP version and build date registers"; \
+	@echo -e "\t[PATCH...............] SNAP version and build date registers"; \
 	$(SNAP_HARDWARE_ROOT)/setup/patch_version.sh $(SNAP_HDL_CORE) snap_core.vhd
 
 patch_NVMe:
 	@if [[ -e "$(SNAP_HARDWARE_ROOT)/setup/patch_NVMe.sh" && $(NVME_USED) = "TRUE" ]]; then \
 		cd $(SNAP_HARDWARE_ROOT)/setup && ./patch_NVMe.sh && cd .. ; \
-		echo  -e "\t[PATCH...............] NVMe PCIe Root Complex sim. files"; \
-	fi	
- 
-image:  snap_config patch_version
+		echo -e "\t[PATCH...............] NVMe PCIe Root Complex sim. files"; \
+	fi
+
+image: snap_config patch_version
 	@echo -e "\t[BUILD IMAGE.........] start `date`"
-	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log  -journal $(LOGS_DIR)/snap_build.jou
+	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log -journal $(LOGS_DIR)/snap_build.jou
 	@rm -r -f .bitstream_name.txt
 	@echo -e "\t[BUILD IMAGE.........] done  `date`"
 #	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/timing_summary.rpt | egrep -v "^$|^\-\-"
 
 xpr_image: snap_config patch_version
 	@echo -e "\t[BUILD XPR IMAGE.....] start `date`"
-	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_xpr_build.tcl -notrace -log $(LOGS_DIR)/snap_xpr_build.log  -journal $(LOGS_DIR)/snap_xpr_build.jou
+	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_xpr_build.tcl -notrace -log $(LOGS_DIR)/snap_xpr_build.log -journal $(LOGS_DIR)/snap_xpr_build.jou
 	@echo -e "\t[BUILD XPR IMAGE....] done  `date`"
 	@rm -r -f .bitstream_name.txt
 #	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/timing_summary_routed.rpt | egrep -v "^$|^\-\-"
@@ -220,8 +220,8 @@ xsim:
 	@cd $(SNAP_HARDWARE_ROOT)/sim/xsim; \
 	./top.sh > $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-	 echo -e "\t                        Error: please look into compile_$(SIMULATOR).log"; \
-	fi 
+		echo -e "\t                        Error: please look into compile_$(SIMULATOR).log";exit -1; \
+	fi
 	@echo -e "\t[BUILD xsim..........] done  `date`"
 
 irun:
@@ -234,8 +234,8 @@ irun:
 	@cd $(SNAP_HARDWARE_ROOT)/sim/ies;\
 	./top.sh > $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-	 echo -e "\t                        Error: please look into compile_$(SIMULATOR).log"; \
-	fi 
+		echo -e "\t                        Error: please look into compile_$(SIMULATOR).log";exit -1; \
+	fi
 	@echo -e "\t[BUILD irun..........] done  `date`"
 
 questa:
@@ -248,11 +248,11 @@ questa:
 	@cd $(SNAP_HARDWARE_ROOT)/sim/questa; \
 	./top.sh 4> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-	 echo -e "\t                        Error: please look into compile_$(SIMULATOR).log"; \
-	fi 
+		echo -e "\t                        Error: please look into compile_$(SIMULATOR).log";exit -1; \
+	fi
 	@echo -e "\t[BUILD questa........] done  `date`"
 
-clean: 
+clean:
 	@echo -e "\t[CLEAN ENVIRONMENT...] start";
 	@rm -r -f  $(SNAP_CONFIG_FILES)
 	@rm -r -f  $(SNAP_HDL_CORE)/psl_fpga.vhd_source
