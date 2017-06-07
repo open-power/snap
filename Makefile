@@ -1,5 +1,5 @@
 #
-# Copyright 2016, International Business Machines
+# Copyright 2016, 2017 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,46 +23,46 @@ all: $(software_subdirs) $(hardware_subdirs)
 # Only build if the subdirectory is really existent
 .PHONY: $(software_subdirs) $(hardware_subdirs)
 $(software_subdirs):
-	@if [ -d $@ ]; then				\
-		$(MAKE) -C $@ || exit 1;		\
+	@if [ -d $@ ]; then	          \
+		$(MAKE) -C $@ || exit 1;  \
 	fi
 
 $(hardware_subdirs):
-	@if [ -d $@ ]; then				\
-		if [ -d "$(SNAP_ROOT)" ]; then		\
-			$(MAKE) -C $@ || exit 1;	\
-		else					\
-			echo "WARNING: Environment variable SNAP_ROOT does not point to a directory.";	\
-			echo "         Please prepare hardware environment (see hardware/README.md) before building hardware.";	\
-		fi					\
+	@if [ -d $@ ]; then		                                                                                         \
+		if [ -d "$(SNAP_ROOT)" ]; then	                                                                                 \
+			$(MAKE) -C $@ || exit 1;                                                                                 \
+		else	                                                                                                         \
+			echo "WARNING: Environment variable SNAP_ROOT does not point to a directory.";                           \
+			echo "         Please prepare hardware environment (see hardware/README.md) before building hardware.";  \
+		fi	                                                                                                         \
 	fi
 
 # Install/uninstall
 test install uninstall:
 	@for dir in $(software_subdirs); do		\
-		if [ -d $$dir ]; then			\
-			$(MAKE) -C $$dir $@ || exit 1;	\
-		fi					\
+		if [ -d $$dir ]; then	                \
+			$(MAKE) -C $$dir $@ || exit 1;  \
+		fi	                                \
 	done
 
 # Model build and config
 config model image:
-	@for dir in $(hardware_subdirs); do		\
-		if [ -d $$dir ]; then			\
-			if [ -d "$(SNAP_ROOT)" ]; then	\
-				$(MAKE) -C $$dir $@ || exit 1;	\
-			else				\
-				echo "WARNING: Environment variable SNAP_ROOT does not point to a directory.";	\
-				echo "         Please prepare hardware environment (see hardware/README.md) before building hardware.";	\
-			fi				\
-                fi					\
+	@for dir in $(hardware_subdirs); do			                                                                         \
+		if [ -d $$dir ]; then		                                                                                         \
+			if [ -d "$(SNAP_ROOT)" ]; then	                                                                                 \
+				$(MAKE) -C $$dir $@ || exit 1;                                                                           \
+			else	                                                                                                         \
+				echo "WARNING: Environment variable SNAP_ROOT does not point to a directory.";                           \
+				echo "         Please prepare hardware environment (see hardware/README.md) before building hardware.";	 \
+			fi	                                                                                                         \
+		fi		                                                                                                         \
 	done
 
 clean:
-	@for dir in $(software_subdirs) $(hardware_subdirs) $(action_subdirs); do \
-		if [ -d $$dir ]; then			\
-			$(MAKE) -C $$dir $@ || exit 1;	\
-		fi					\
+	@for dir in $(software_subdirs) $(hardware_subdirs) $(action_subdirs); do		\
+		if [ -d $$dir ]; then	                                                        \
+			$(MAKE) -C $$dir $@ || exit 1;                                          \
+		fi	                                                                        \
 	done
 	@find . -depth -name '*~'  -exec rm -rf '{}' \; -print
 	@find . -depth -name '.#*' -exec rm -rf '{}' \; -print
