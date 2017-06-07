@@ -53,31 +53,80 @@ if [[ $TARGET_DIR != $MY_DIR ]] ; then
 	exit 1;
 fi
 
-dmesg -T > dmesg_before_test.txt
-
 for accel in KU3 FGT ; do
 	MY_CARDS=`./software/tools/snap_find_card -A $accel`
-	MY_IMAGE=/opt/fpga/snap/$accel/latest.bin
 	for card in $MY_CARDS ; do
-		echo "CHECKING Capi Card [$card] Accel: [$accel] before updating ..."
+		echo "----------------------------------------------------------------"
+		echo "CHECKING Capi Card [$card] Accel: [$accel] ..."
+		TEST_DONE=0
 		./software/tools/snap_peek -C $card 0x0
 		./software/tools/snap_peek -C $card 0x8
-		if [ ! -f $MY_IMAGE ]; then
-			echo "Can not open FPGA Image: [$MY_IMAGE]"
-			echo "Skip Flash Update, contiue with Test"
-		else
+		for MY_IMAGE in `ls -tr /opt/fpga/snap/$accel/latest*.bin 2>/dev/null`; do
 			pushd ../capi-utils > /dev/null
 			echo "UPDATING Capi Card: [$card] Accel: [$accel] Image: [$MY_IMAGE]"
 			# sudo ./capi-flash-script.sh -f -C $card -f $MY_IMAGE
 			echo "sudo ./capi-flash-script.sh -f -C $card -f $MY_IMAGE"
+			RC=$?
+			if [ $RC -ne 0 ]; then
+				mv $MY_IMAGE $MY_IMAGE.fault_flash
+				exit RC
+			fi
 			popd > /dev/null
 			echo "CHECKING Capi Card: [$card] Accel: [$accel] after update ..."
 			./software/tools/snap_peek -C $card 0x0
 			./software/tools/snap_peek -C $card 0x8
+			echo "CONFIG Capi Card: [$card] Accel: [$accel] ..."
+			./software/tools/snap_maint -C $card -v
+			RC=$?
+			if [ $RC -ne 0 ]; then
+				mv $MY_IMAGE $MY_IMAGE.fault_config
+				exit RC
+			fi
+			echo "TEST Capi Card: [$card] Accel: [$accel] ..."
+			./software/scripts/a_test.sh -C $card
+			RC=$?
+			if [ $RC -ne 0 ]; then
+				mv $MY_IMAGE $MY_IMAGE.fault1
+				exit RC
+			fi
+			./software/scripts/b_test.sh -C $card
+			RC=$?
+			if [ $RC -ne 0 ]; then
+				mv $MY_IMAGE $MY_IMAGE.fault2
+				exit RC
+			fi
+			./software/scripts/c_test.sh -C $card
+			RC=$?
+			if [ $RC -ne 0 ]; then
+				mv $MY_IMAGE $MY_IMAGE.fault3
+				exit RC
+			fi
+			mv $MY_IMAGE $MY_IMAGE.good
+			TEST_DONE=1
+		done
+		if [ $TEST_DONE -eq 0 ]; then
+			echo "TEST Capi Card: [$card] Accel: [$accel] Without updating ..."
+			./software/tools/snap_maint -C $card -v
+			RC=$?
+			if [ $RC -ne 0 ]; then
+				exit RC
+			fi
+			./software/scripts/a_test.sh -C $card
+			RC=$?
+			if [ $RC -ne 0 ]; then
+				exit RC
+			fi
+			./software/scripts/b_test.sh -C $card
+			RC=$?
+			if [ $RC -ne 0 ]; then
+				exit RC
+			fi
+			./software/scripts/c_test.sh -C $card
+			RC=$?
+			if [ $RC -ne 0 ]; then
+				exit RC
+			fi
 		fi
-		./software/scripts/a_test.sh -C $card
-		./software/scripts/b_test.sh -C $card
-		./software/scripts/c_test.sh -C $card
 	done
 done
 exit 0
