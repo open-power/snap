@@ -77,12 +77,10 @@ struct mdev_ctx {
 	uint64_t fir[SNAP_M_FIR_NUM];
 };
 
-struct cgzip_afu_fir {
-	__be32 fir_val;
-	__be32 fir_addr;
-};
-
 static struct mdev_ctx	master_ctx;
+
+#define MODE_SHOW_ACTION  0x0001
+#define MODE_2            0x0002
 
 /*
  * Open AFU Master Device
@@ -248,7 +246,7 @@ static void snap_decode(uint64_t reg)
 
 
 /*	Master Init */
-static int snap_m_init(void *handle)
+static int snap_m_init(void *handle, int mode)
 {
 	uint64_t reg, ssr, data;
 	uint32_t addr;
@@ -283,6 +281,8 @@ static int snap_m_init(void *handle)
 			reg = snap_read64(handle, SNAP_M_CTX, addr);
 			snap_decode(reg);
 			addr += 8;
+			if (MODE_SHOW_ACTION == (MODE_SHOW_ACTION & mode))
+				VERBOSE0("0x%8.8x ", (uint32_t)reg);
 		}
 		rc = 0;
 		goto _snap_m_init_exit;
@@ -358,8 +358,8 @@ static void help(char *prog)
 	       "\t-i, --interval <num>	Interval time in sec (default 1 sec)\n"
 	       "\t-d, --daemon		Start in Daemon process (background)\n"
 	       "\t-m, --mode		Mode:\n"
-	       "\t	1 = Check Master Firs\n"
-	       "\t	2 = Report Context Details\n"
+	       "\t	1 = Show Action number only\n"
+	       "\t	2 = Not Used for now\n"
 	       "\t-f, --log-file <file> Log File name when running in -d "
 	       "(daemon)\n"
 	       "\n"
@@ -453,8 +453,8 @@ int main(int argc, char *argv[])
 		case 'm':	/* --mode */
 			mode = strtoul(optarg, NULL, 0);
 			switch (mode) {
-			case 1: mctx->mode |= 1; break;
-			case 2: mctx->mode |= 2; break;
+			case 1: mctx->mode |= MODE_SHOW_ACTION; break;
+			case 2: mctx->mode |= MODE_2; break;
 			default:
 				fprintf(stderr, "Please provide correct "
 					"Mode Option (1..2)\n");
@@ -541,7 +541,7 @@ int main(int argc, char *argv[])
 	}
 	snap_version(mctx->handle);
 	/* Init Master */
-	rc = snap_m_init(mctx->handle);
+	rc = snap_m_init(mctx->handle, mctx->mode);
 	//if (0 != rc)
 	goto __main_exit;	/* Exit here.... for now */
 
