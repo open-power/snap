@@ -19,7 +19,67 @@
 # Jenkins Test for SNAP
 #
 
-verbose=0
+function test_hdl_example()
+{
+	local card=$1
+	local accel=$2
+
+	echo "TEST 10140000 Action on Capi Card: [$card] Accel: [$accel] ..."
+	./software/scripts/a_test.sh -C $card
+	RC=$?
+	if [ $RC -ne 0 ]; then
+		return $RC
+	fi
+	./software/scripts/b_test.sh -C $card
+	RC=$?
+	if [ $RC -ne 0 ]; then
+		return $RC
+	fi
+	./software/scripts/c_test.sh -C $card
+	RC=$?
+	if [ $RC -ne 0 ]; then
+		return $RC
+	fi
+	return 0
+}
+
+function test_all_actions() # $1 = card, $2 = accel
+{
+	local card=$1
+	local accel=$2
+
+	RC=0;
+	MY_ACTION=`./software/tools/snap_maint -C $card -m 1`
+	for action in $MY_ACTION ; do
+		case $action in
+		0x10140000)
+			test_hdl_example $card $accel
+		;;
+		10141000)
+			echo "IBM hls_memcopy"
+		;;
+		10141001)
+			echo "IBM hls_sponge"
+		;;
+		10141002)
+			echo "IBM hls_hashjoin"
+		;;
+		10141003)
+			echo "IBM hls_search"
+		;;
+		10141004)
+			echo "IBM hls_bfs"
+		;;
+		10141005)
+			echo "IBM hls_intersect"
+		;;
+		*)
+			echo "Error: Can not Run any test for Action $action"
+			RC=99
+		esac
+	done
+	return $RC
+}
 
 function usage() {
 	
@@ -69,7 +129,7 @@ for accel in KU3 FGT ; do
 			RC=$?
 			if [ $RC -ne 0 ]; then
 				mv $MY_IMAGE $MY_IMAGE.fault_flash
-				exit RC
+				exit $RC
 			fi
 			popd > /dev/null
 			echo "CHECKING Capi Card: [$card] Accel: [$accel] after update ..."
@@ -80,28 +140,13 @@ for accel in KU3 FGT ; do
 			RC=$?
 			if [ $RC -ne 0 ]; then
 				mv $MY_IMAGE $MY_IMAGE.fault_config
-				exit RC
+				exit $RC
 			fi
-			echo "TEST Capi Card: [$card] Accel: [$accel] ..."
-			./software/scripts/a_test.sh -C $card
+			test_all_actions $card $accel
 			RC=$?
-			if [ $RC -ne 0 ]; then
-				mv $MY_IMAGE $MY_IMAGE.fault1
-				exit RC
+			if [ $RC -eq 0 ]; then
+				mv $MY_IMAGE $MY_IMAGE.good
 			fi
-			./software/scripts/b_test.sh -C $card
-			RC=$?
-			if [ $RC -ne 0 ]; then
-				mv $MY_IMAGE $MY_IMAGE.fault2
-				exit RC
-			fi
-			./software/scripts/c_test.sh -C $card
-			RC=$?
-			if [ $RC -ne 0 ]; then
-				mv $MY_IMAGE $MY_IMAGE.fault3
-				exit RC
-			fi
-			mv $MY_IMAGE $MY_IMAGE.good
 			TEST_DONE=1
 		done
 		if [ $TEST_DONE -eq 0 ]; then
@@ -109,24 +154,11 @@ for accel in KU3 FGT ; do
 			./software/tools/snap_maint -C $card -v
 			RC=$?
 			if [ $RC -ne 0 ]; then
-				exit RC
+				exit $RC
 			fi
-			./software/scripts/a_test.sh -C $card
+			test_all_actions $card $accel
 			RC=$?
-			if [ $RC -ne 0 ]; then
-				exit RC
-			fi
-			./software/scripts/b_test.sh -C $card
-			RC=$?
-			if [ $RC -ne 0 ]; then
-				exit RC
-			fi
-			./software/scripts/c_test.sh -C $card
-			RC=$?
-			if [ $RC -ne 0 ]; then
-				exit RC
-			fi
 		fi
 	done
 done
-exit 0
+exit $RC
