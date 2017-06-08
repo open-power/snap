@@ -99,7 +99,7 @@ static void process_action(snap_membus_t *din_gmem,
 	snapu64_t InputAddress;
 	snapu64_t OutputAddress;
 	snapu64_t address_xfer_offset;
-	snap_membus_t  buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];
+	snap_membus_t  buf_gmem[MAX_NB_OF_WORDS_READ];
 	// if 4096 bytes max => 64 words
 
 	// byte address received need to be aligned with port width

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<autopilotfilemapping:AutoPilotFileMapping xmlns:autopilotfilemapping="www.autoesl.com/autopilotfilemapping">
+  <source>
+    <originFiles name="hls_search.cpp" path="/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/mesnet/snap/hardware/action_examples/hls_search/hls_search.cpp"/>
+  </source>
+  <testbench>
+    <originFiles name="hls_search.cpp" path="/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/mesnet/snap/hardware/action_examples/hls_search/hls_search.cpp"/>
+  </testbench>
+</autopilotfilemapping:AutoPilotFileMapping>
