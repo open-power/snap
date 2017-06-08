@@ -184,13 +184,33 @@
     fi # hdl_example
 
     if [[ "${env_action}" == "hdl_example" && "$NVME_USED" == "TRUE" ]];then echo -e "$del\ntesting nvme"
-      t="$SNAP_ROOT/software/tools/nvmeInit.py 1"                                              ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/snap_example_nvme -h"                                    ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/snap_example      -a6 -S2          -t100 -vv"            ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/tools/nvmeWR.py 1"                                                ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/snap_example      -a4 -S2 -D0x8000 -t100 -vv"            ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/snap_example_nvme -d1         -t100 -vv"                 ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
-      t="$SNAP_ROOT/software/examples/snap_example_nvme -d1 -b4     -t100 -vv"                 ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      # write FPGA memory to prevent reading unwritten adr 0
+      t="$SNAP_ROOT/software/examples/snap_example_set  -F -b0x0 -t50"                         ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/tools/nvmeInit.py          -h"                                    ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/tools/nvmeWR.py            -h"                                    ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/snap_example      -h"                                    ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/snap_example_set  -h"                                    ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/snap_example_nvme -h"                                    ;echo -e "$t $l";                   $t;echo -e "RC=$?$del" #
+
+#     t="$SNAP_ROOT/software/tools/nvmeInit.py          -d0"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/tools/nvmeInit.py          -db"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     t="$SNAP_ROOT/software/tools/nvmeInit.py          -d1"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/snap_example      -a6           -S2      -t100 -vv"      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+
+      t="$SNAP_ROOT/software/examples/snap_example_set  -F  -b0x8000  -s0x100  -p0x5 -t50"     ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/snap_example      -a4 -D0x8000  -S2      -t100 -vv"      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/tools/nvmeWR.py            -d1"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/snap_example      -a4 -D0x8000  -S2      -t100 -vv"      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+
+      t="$SNAP_ROOT/software/examples/snap_example_set  -F  -b0x10000 -s0x100  -p0xA -t50"     ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/snap_example      -a4 -D0x10000 -S2      -t100 -vv"      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/tools/nvmeWR.py            -d0"                                   ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/snap_example      -a4 -D0x10000 -S2      -t100 -vv"      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+
+      t="$SNAP_ROOT/software/examples/snap_example_nvme -d1                    -t100 -vv"      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     t="$SNAP_ROOT/software/examples/snap_example_nvme -d1 -b4                -t100 -vv"      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+      t="$SNAP_ROOT/software/examples/snap_example_nvme -d0                    -t100 -vv"      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
+#     t="$SNAP_ROOT/software/examples/snap_example_nvme -d0 -b5                -t100 -vv"      ;echo -e "$t $l";date;((n+=1));time $t;echo -e "RC=$?$del" #
     fi # nvme
 
     if [[ "$t0l" == "10141000" || "${env_action}" == "hls_memcopy"* ]];then echo -e "$del\ntesting snap_memcopy"
