@@ -160,71 +160,71 @@ AFU_MMIO.init()
 
 if (SSD0_USED):
     print ('start  SSD0 write')
-    AFU_MMIO.write(0x10030,0xa)  # write to nvme
-    AFU_MMIO.write(0x10034,0x0)
-    AFU_MMIO.write(0x10038,0x0)
-    AFU_MMIO.write(0x1003c,0x0)
-    AFU_MMIO.write(0x10040,0x0)
-    AFU_MMIO.write(0x10044,0x10)
-    AFU_MMIO.write(0x10000,1)
-    print ('waiting for command to complete')
-    data = 0
-    while (data != 0xc ):
+    AFU_MMIO.write(0x10030,0xa)  # write to NVMe drive 0
+    AFU_MMIO.write(0x10034,0x0)  # read from address 0 DRAM
+    AFU_MMIO.write(0x10038,0x0)  # read from address 0 DRAM
+    AFU_MMIO.write(0x1003c,0x0)  # write to LBA address 0
+    AFU_MMIO.write(0x10040,0x0)  # write to LBA address 0
+    AFU_MMIO.write(0x10044,0x10) # write 16 blocks each 512 bytes
+    AFU_MMIO.write(0x10000,1)    # start the action
+    print ('waiting for command to complete ')
+    while (True):
         data = AFU_MMIO.read(0x10000)
-        print (" rc = %x " % data)
-        if (data != 0xc ): break;
+        print ("\taction state = %x" % data)
+        if (data == 0xc ): break;
         time.sleep(1)
     print ('NVMe write command completed')
 
 
 if (SSD1_USED):
     print ('start  SSD1 write')
-    AFU_MMIO.write(0x10030,0x1a)  # write to nvme
-    AFU_MMIO.write(0x10034,0x0)   # read from address 0 DRAM
-    AFU_MMIO.write(0x10038,0x0)   # read from address 0 DRAM
-    AFU_MMIO.write(0x1003c,0x0)   # write to LBA address 0
-    AFU_MMIO.write(0x10040,0x0)   # write to LBA address 0
-    AFU_MMIO.write(0x10044,0x10)  # write 16 blocks each 512 bytes
-    AFU_MMIO.write(0x10000,1)     # start the action
-    print ('waiting for command to complete')
-    data = 0
-    while (data != 0xc ):
+    AFU_MMIO.write(0x10030,0x1a) # write to NVMe drive 1
+    AFU_MMIO.write(0x10034,0x0)  # read from address 0 DRAM
+    AFU_MMIO.write(0x10038,0x0)  # read from address 0 DRAM
+    AFU_MMIO.write(0x1003c,0x0)  # write to LBA address 0
+    AFU_MMIO.write(0x10040,0x0)  # write to LBA address 0
+    AFU_MMIO.write(0x10044,0x10) # write 16 blocks each 512 bytes
+    AFU_MMIO.write(0x10000,1)    # start the action
+    print ('waiting for command to complete ')
+    while (True):
         data = AFU_MMIO.read(0x10000)
-        print (" rc = %x " % data)
-        if (data != 0xc ): break;
+        print ("\taction state = %x" % data)
+        if (data == 0xc ): break;
         time.sleep(1)
     print ('NVMe write command completed')
 
 
 if (SSD0_USED):
-    AFU_MMIO.write(0x10030,0xb)
+    AFU_MMIO.write(0x10030,0xb)     # read from NVMe drive 0
+    AFU_MMIO.write(0x10034,0x0)     # read from LBA address 0
+    AFU_MMIO.write(0x10038,0x0)     # read from LBA address 0
     AFU_MMIO.write(0x1003c,0x10000) # write to DRAM address offset 0x10000
+    AFU_MMIO.write(0x10040,0x0)     # high order DRAM address 0
+    AFU_MMIO.write(0x10044,0x10)    # read 16 blocks each 512 bytes
     print ('start SSD0 read')
     AFU_MMIO.write(0x10000,1)
-    print ('waiting for command to complete')
-    data = 0
-    while (data != 0xc ):
+    print ('waiting for command to complete ')
+    while (True):
         data = AFU_MMIO.read(0x10000)
-        print (" rc = %x " % data)
-        if (data != 0xc ): break;
+        print ("\taction state = %x" % data)
+        if (data == 0xc ): break;
         time.sleep(1)
     print ('NVMe read command completed')
 
 
 if (SSD1_USED):
-    AFU_MMIO.write(0x10030,0x1b)  # read from NVMe
-    AFU_MMIO.write(0x10034,0x0)   # read from LBA address 0
-    AFU_MMIO.write(0x10038,0x0)   # read from LBA address 0
-    AFU_MMIO.write(0x1003c,0x8000)# write to DRAM address offset 0x8000
-    AFU_MMIO.write(0x10040,0x0)   # high order DRAM address  0
-    AFU_MMIO.write(0x10044,0x10)
+    AFU_MMIO.write(0x10030,0x1b)    # read from NVMe drive 1
+    AFU_MMIO.write(0x10034,0x0)     # read from LBA address 0
+    AFU_MMIO.write(0x10038,0x0)     # read from LBA address 0
+    AFU_MMIO.write(0x1003c,0x8000)  # write to DRAM address offset 0x8000
+    AFU_MMIO.write(0x10040,0x0)     # high order DRAM address 0
+    AFU_MMIO.write(0x10044,0x10)    # read 16 blocks each 512 bytes
     print ('start SSD1 read')
     AFU_MMIO.write(0x10000,1)
     print ('waiting for command to complete')
-    data = 0
-    while (data != 0xc ):
+    while (True):
         data = AFU_MMIO.read(0x10000)
-        print (" rc = %x " % data)
-        if (data != 0xc ): break;
+        print ("\taction state = %x" % data)
+        if (data == 0xc ): break;
         time.sleep(1)
     print ('NVMe read command completed')
