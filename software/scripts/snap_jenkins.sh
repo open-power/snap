@@ -24,7 +24,8 @@ function test_hdl_example()
 	local card=$1
 	local accel=$2
 
-	echo "TEST 10140000 Action on Capi Card: [$card] Accel: [$accel] ..."
+	echo "TEST HDL Example Action on Capi Card: [$card] Accel: [$accel] ..."
+	return 0
 	./software/scripts/a_test.sh -C $card
 	RC=$?
 	if [ $RC -ne 0 ]; then
@@ -46,7 +47,82 @@ function test_hls_memcopy()
 {
 	local card=$1
 	local accel=$2
-	echo "TEST 10141000 Action on Capi Card: [$card] Accel: [$accel] ..."
+	echo "TEST HLS Memcopy on Capi Card: [$card] Accel: [$accel] ..."
+	FUNC=./software/examples/snap_memcopy -C $card -x
+	for i in {1..10}; do
+		size=`d -A n -t d -N 3 /dev/urandom |tr -d ' '`
+		dd if=/dev/urandom bs=${size} count=1 -of=/tmp/snap_test.in
+		cmd="${FUNC} -i /tmp/snap_test.in -o /tmp/snap_test.out -I"
+		eval ${cmd}
+		RC=$?
+		if [ $RC -ne 0 ]; then
+			rm -f /tmp/snap_test*
+			return $RC
+		fi
+	done
+	rm -f /tmp/snap_test*
+	return 0
+}
+
+function test_hls_sponge () # $card $accel
+{
+	echo "TEST HLS Sponge Action on Capi Card: [$card] Accel: [$accel] ..."
+	return 0
+}
+
+function test_hls_hashjoin() #  $card $accel
+{
+	echo "TEST HLS Hash-join Action on Capi Card: [$card] Accel: [$accel] ..."
+	return 0
+}
+
+function test_hls_search() #  $card $accel
+{
+	echo "TEST HLS Search Action on Capi Card: [$card] Accel: [$accel] ..."
+	return 0
+}
+
+function test_hls_bfs() #  $card $accel
+{
+	echo "TEST HLS Bfs Action on Capi Card: [$card] Accel: [$accel] ..."
+	return 0
+}
+
+function test_hls_intersect()
+{
+	echo "TEST HLS Intersect Action on Capi Card: [$card] Accel: [$accel] ..."
+	FUNC=./software/examples/snap_intersect -C $card
+	cmd="${FUNC} -m1 -v"
+	eval ${cmd}
+	RC=$?
+	if [ $RC -ne 0 ]; then
+		return $RC
+	fi
+	cmd="${FUNC} -n1 -v"
+	eval ${cmd}
+	RC=$?
+	if [ $RC -ne 0 ]; then
+		return $RC
+	fi
+	cmd="${FUNC} -n4 -v"
+	eval ${cmd}
+	RC=$?
+	if [ $RC -ne 0 ]; then
+		return $RC
+	fi
+	cmd="${FUNC} -n8 -v"
+	eval ${cmd}
+	RC=$?
+	if [ $RC -ne 0 ]; then
+		return $RC
+	fi
+	cmd="${FUNC} -I -m8 -v"
+	eval ${cmd}
+	RC=$?
+	if [ $RC -ne 0 ]; then
+		return $RC
+	fi
+	return 0
 }
 
 function test_all_actions() # $1 = card, $2 = accel
@@ -67,27 +143,27 @@ function test_all_actions() # $1 = card, $2 = accel
 			RC=$?
 		;;
 		*"10141001")
-			echo "IBM hls_sponge"
+			test_hls_sponge $card $accel
 			RC=$?
 		;;
 		*"10141002")
-			echo "IBM hls_hashjoin"
+			test_hls_hashjoin $card $accel
 			RC=$?
 		;;
 		*"10141003")
-			echo "IBM hls_search"
+			test_hls_search $card $accel
 			RC=$?
 		;;
 		*"10141004")
-			echo "IBM hls_bfs"
+			test_hls_bfs $card $accel
 			RC=$?
 		;;
 		*"10141005")
-			echo "IBM hls_intersect"
+			test_hls_intersect $card $accel
 			RC=$?
 		;;
 		*)
-			echo "Error: Can not Run any test for Action $action"
+			echo "Error: No Test Case found for $action"
 			RC=99
 		esac
 	done
@@ -127,11 +203,13 @@ if [[ $TARGET_DIR != $MY_DIR ]] ; then
 fi
 
 FLASH_DONE=0
-SRC=0
+FLASH_RC=0
 
 for accel in KU3 FGT ; do
 	MY_CARDS=`./software/tools/snap_find_card -A $accel`
 	for card in $MY_CARDS ; do
+		FLASH_DONE=0
+		FLASH_RC=0
 		echo "----------------------------------------------------------------"
 		echo "CHECKING Capi Card [$card] Accel: [$accel] ..."
 		TEST_DONE=0
@@ -141,12 +219,12 @@ for accel in KU3 FGT ; do
 		for MY_IMAGE in `ls -tr /opt/fpga/snap/$accel/*.bin 2>/dev/null`; do
 			pushd ../capi-utils > /dev/null
 			echo "UPDATING Capi Card: [$card] Accel: [$accel] Image: [$MY_IMAGE]"
-			# sudo ./capi-flash-script.sh -f -C $card -f $MY_IMAGE
+			sudo ./capi-flash-script.sh -f -C $card -f $MY_IMAGE
 			echo "sudo ./capi-flash-script.sh -f -C $card -f $MY_IMAGE"
 			RC=$?
 			if [ $RC -ne 0 ]; then
 				mv $MY_IMAGE $MY_IMAGE.fault_flash
-				((SRC++))
+				exit $RC
 			fi
 			popd > /dev/null
 			echo "CHECKING Capi Card: [$card] Accel: [$accel] after update ..."
@@ -157,7 +235,7 @@ for accel in KU3 FGT ; do
 			RC=$?
 			if [ $RC -ne 0 ]; then
 				mv $MY_IMAGE $MY_IMAGE.fault_config
-				((SRC++))
+				((FLASH_RC++))
 			fi
 			test_all_actions $card $accel
 			RC=$?
@@ -165,7 +243,7 @@ for accel in KU3 FGT ; do
 				mv $MY_IMAGE $MY_IMAGE.good
 			else
 				mv $MY_IMAGE $MY_IMAGE.fault_test
-				((SRC++))
+				((FLASH_RC++))
 			fi
 			FLASH_DONE=1
 		done
@@ -183,6 +261,6 @@ for accel in KU3 FGT ; do
 done
 
 if [ $FLASH_DONE -eq 1 ]; then
-	exit $SRC
+	exit $FLASH_RC
 fi
 exit $RC
