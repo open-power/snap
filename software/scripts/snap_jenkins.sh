@@ -42,6 +42,12 @@ function test_hdl_example()
 	fi
 	return 0
 }
+function test_hls_memcopy()
+{
+	local card=$1
+	local accel=$2
+	echo "TEST 10141000 Action on Capi Card: [$card] Accel: [$accel] ..."
+}
 
 function test_all_actions() # $1 = card, $2 = accel
 {
@@ -52,26 +58,33 @@ function test_all_actions() # $1 = card, $2 = accel
 	MY_ACTION=`./software/tools/snap_maint -C $card -m 1`
 	for action in $MY_ACTION ; do
 		case $action in
-		0x10140000)
+		*"10140000")
 			test_hdl_example $card $accel
+			RC=$?
 		;;
-		10141000)
-			echo "IBM hls_memcopy"
+		*"10141000")
+			test_hls_memcopy $card $accel
+			RC=$?
 		;;
-		10141001)
+		*"10141001")
 			echo "IBM hls_sponge"
+			RC=$?
 		;;
-		10141002)
+		*"10141002")
 			echo "IBM hls_hashjoin"
+			RC=$?
 		;;
-		10141003)
+		*"10141003")
 			echo "IBM hls_search"
+			RC=$?
 		;;
-		10141004)
+		*"10141004")
 			echo "IBM hls_bfs"
+			RC=$?
 		;;
-		10141005)
+		*"10141005")
 			echo "IBM hls_intersect"
+			RC=$?
 		;;
 		*)
 			echo "Error: Can not Run any test for Action $action"
@@ -113,6 +126,9 @@ if [[ $TARGET_DIR != $MY_DIR ]] ; then
 	exit 1;
 fi
 
+FLASH_DONE=0
+SRC=0
+
 for accel in KU3 FGT ; do
 	MY_CARDS=`./software/tools/snap_find_card -A $accel`
 	for card in $MY_CARDS ; do
@@ -121,7 +137,8 @@ for accel in KU3 FGT ; do
 		TEST_DONE=0
 		./software/tools/snap_peek -C $card 0x0
 		./software/tools/snap_peek -C $card 0x8
-		for MY_IMAGE in `ls -tr /opt/fpga/snap/$accel/latest*.bin 2>/dev/null`; do
+		RC=0;
+		for MY_IMAGE in `ls -tr /opt/fpga/snap/$accel/*.bin 2>/dev/null`; do
 			pushd ../capi-utils > /dev/null
 			echo "UPDATING Capi Card: [$card] Accel: [$accel] Image: [$MY_IMAGE]"
 			# sudo ./capi-flash-script.sh -f -C $card -f $MY_IMAGE
@@ -129,7 +146,7 @@ for accel in KU3 FGT ; do
 			RC=$?
 			if [ $RC -ne 0 ]; then
 				mv $MY_IMAGE $MY_IMAGE.fault_flash
-				exit $RC
+				((SRC++))
 			fi
 			popd > /dev/null
 			echo "CHECKING Capi Card: [$card] Accel: [$accel] after update ..."
@@ -140,16 +157,19 @@ for accel in KU3 FGT ; do
 			RC=$?
 			if [ $RC -ne 0 ]; then
 				mv $MY_IMAGE $MY_IMAGE.fault_config
-				exit $RC
+				((SRC++))
 			fi
 			test_all_actions $card $accel
 			RC=$?
 			if [ $RC -eq 0 ]; then
 				mv $MY_IMAGE $MY_IMAGE.good
+			else
+				mv $MY_IMAGE $MY_IMAGE.fault_test
+				((SRC++))
 			fi
-			TEST_DONE=1
+			FLASH_DONE=1
 		done
-		if [ $TEST_DONE -eq 0 ]; then
+		if [ $FLASH_DONE -eq 0 ]; then
 			echo "TEST Capi Card: [$card] Accel: [$accel] Without updating ..."
 			./software/tools/snap_maint -C $card -v
 			RC=$?
@@ -161,4 +181,8 @@ for accel in KU3 FGT ; do
 		fi
 	done
 done
+
+if [ $FLASH_DONE -eq 1 ]; then
+	exit $SRC
+fi
 exit $RC
