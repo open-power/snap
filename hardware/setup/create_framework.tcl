@@ -96,7 +96,11 @@ if { $hls_support == "TRUE" } {
 }
 set_property used_in_simulation false [get_files $hdl_dir/core/psl_fpga.vhd]
 # Action Files
-add_files            -fileset sources_1 -scan_for_includes $action_dir/
+if { $hls_support == "TRUE" } {
+  add_files            -fileset sources_1 -scan_for_includes $action_dir/vhdl/
+} else {
+  add_files            -fileset sources_1 -scan_for_includes $action_dir/
+}
 # Sim Files
 set_property SOURCE_SET sources_1 [get_filesets sim_1]
 add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/top.sv  >> $log_file
