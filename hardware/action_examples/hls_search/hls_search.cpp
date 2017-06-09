@@ -70,7 +70,7 @@ static void memcopy_table(snap_membus_t  *din_gmem,
 	snapu64_t address_xfer_offset = 0;
 	snap_membus_t   buf_gmem[MAX_NB_OF_WORDS_READ];
 	snapu32_t  left_bytes = total_bytes_to_transfer;
-	snapu32_t  copy_bytes;
+	snapu32_t  copy_bytes, copy_64_bytes_aligned;
 
  L_COPY:
 	while (left_bytes > 0) {
@@ -79,9 +79,15 @@ static void memcopy_table(snap_membus_t  *din_gmem,
 			copy_bytes = read_bulk (din_gmem, 
 						source_address + address_xfer_offset,  
 						left_bytes, buf_gmem);
-			write_bulk (d_ddrmem, 
+			// Always write 64 bytes aligned data into DDR
+			if ((copy_bytes%64) == 0)
+				copy_64_bytes_aligned = copy_bytes;
+			else
+				copy_64_bytes_aligned = copy_bytes - (copy_bytes%64) + 64;
+
+			write_bulk (d_ddrmem,
 				    target_address + address_xfer_offset,  
-				    copy_bytes, buf_gmem);
+				    copy_64_bytes_aligned, buf_gmem);
 			break;
 		case DDR2HOST:
 			copy_bytes = read_bulk (d_ddrmem, 
@@ -470,8 +476,6 @@ int Naive_search(char Pattern[PATTERN_SIZE], int PatternSize,
 	   if (j <= TextSize - PatternSize)
 	   {
 		  for (i = 0; i < PatternSize && Pattern[i] == Text[i + j]; ++i);
-		  // for (i = 0; i < PatternSize; ++i);
-		  // 	   if (pattern[i] == txt[i + j]) break;
 		  if (i >= PatternSize)
 		  {
 			   count++;
@@ -741,7 +745,6 @@ int main(void)
 123456789_123456789_123456789
 123456789_123456789_123456789
 18_occurrences_of_123_pattern
-adding_padding_to_256bytes_to ensure test  ok
      */
 
     // read data for text
@@ -774,11 +777,11 @@ adding_padding_to_256bytes_to ensure test  ok
 
 
     Action_Register.Data.src_text1.addr = 0;
-    Action_Register.Data.src_text1.size = (m*BPERDW) + k + 1;
+    Action_Register.Data.src_text1.size = (m*BPERDW) + k;
     Action_Register.Data.src_text1.type = SNAP_ADDRTYPE_HOST_DRAM;
 
     Action_Register.Data.ddr_text1.addr = 512; //0;
-    Action_Register.Data.ddr_text1.size = (m*BPERDW) + k + 1;
+    Action_Register.Data.ddr_text1.size = (m*BPERDW) + k;
     Action_Register.Data.ddr_text1.type = SNAP_ADDRTYPE_CARD_DRAM;
 
     Action_Register.Data.src_pattern.addr = 0;

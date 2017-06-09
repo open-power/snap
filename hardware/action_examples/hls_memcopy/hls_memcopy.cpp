@@ -62,6 +62,7 @@ short read_burst_of_data_from_mem(snap_membus_t *din_gmem,
 				  snapu64_t size_in_bytes_to_transfer)
 {
 	short rc;
+        int i;
 
 	switch (memory_type) {
 	case SNAP_ADDRTYPE_HOST_DRAM:
@@ -99,7 +100,7 @@ static void process_action(snap_membus_t *din_gmem,
 	snapu64_t InputAddress;
 	snapu64_t OutputAddress;
 	snapu64_t address_xfer_offset;
-	snap_membus_t  buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];
+	snap_membus_t  buf_gmem[MAX_NB_OF_WORDS_READ];
 	// if 4096 bytes max => 64 words
 
 	// byte address received need to be aligned with port width
@@ -156,13 +157,22 @@ void hls_action(snap_membus_t *din_gmem,
 		action_RO_config_reg *Action_Config)
 {
 	// Host Memory AXI Interface
-#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
-#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
+#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512 \
+  latency=100 \
+  max_read_burst_length=64  num_read_outstanding=16 \
+  max_write_burst_length=64 num_write_outstanding=16
+#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512 \
+  latency=100 \
+  max_read_burst_length=64  num_read_outstanding=16 \
+  max_write_burst_length=64 num_write_outstanding=16
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg offset=0x030
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg offset=0x040
 
 	// DDR memory Interface
-#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
+#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512 \
+  latency=100 \
+  max_read_burst_length=64  num_read_outstanding=16 \
+  max_write_burst_length=64 num_write_outstanding=16
 #pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg offset=0x050
 
 	// Host Memory AXI Lite Master Interface
@@ -243,11 +253,11 @@ int main(void)
     act_reg.Control.flags = 0x1; /* just not 0x0 */
 
     act_reg.Data.in.addr = 0;
-    act_reg.Data.in.size = 128;
+    act_reg.Data.in.size = 4096;
     act_reg.Data.in.type = SNAP_ADDRTYPE_HOST_DRAM;
 
-    act_reg.Data.out.addr = 256;
-    act_reg.Data.out.size = 128;
+    act_reg.Data.out.addr = 4096;
+    act_reg.Data.out.size = 4096;
     act_reg.Data.out.type = SNAP_ADDRTYPE_HOST_DRAM;
 
     hls_action(din_gmem, dout_gmem, d_ddrmem, &act_reg, &Action_Config);
@@ -256,7 +266,7 @@ int main(void)
 	    return 1;
     }
     if (memcmp((void *)((unsigned long)din_gmem + 0),
-	       (void *)((unsigned long)dout_gmem + 256), 128) != 0) {
+	       (void *)((unsigned long)dout_gmem + 4096), 4096) != 0) {
 	    fprintf(stderr, " ==> DATA COMPARE FAILURE <==\n");
 	    return 1;
     }
