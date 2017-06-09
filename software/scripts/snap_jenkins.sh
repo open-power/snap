@@ -25,7 +25,6 @@ function test_hdl_example()
 	local accel=$2
 
 	echo "TEST HDL Example Action on Capi Card: [$card] Accel: [$accel] ..."
-	return 0
 	./software/scripts/a_test.sh -C $card
 	RC=$?
 	if [ $RC -ne 0 ]; then
