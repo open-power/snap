@@ -48,12 +48,9 @@
 #include <libsnap.h>
 #include <snap_s_regs.h>
 
-#define ACTION_REDAY_IRQ 4
 
 int verbose_flag = 0;
-
 static const char *version = GIT_VERSION;
-//static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME" };
 
 /**
  * @brief	prints valid command line options
@@ -86,8 +83,8 @@ static void usage(const char *prog)
 }
 
 static void snap_prepare_intersect(struct snap_job *cjob,
-        struct intersect_job *ijob_i,
-        struct intersect_job *ijob_o,
+        intersect_job_t *ijob_i,
+        intersect_job_t *ijob_o,
         uint32_t step,
         uint32_t method,
 
@@ -98,8 +95,7 @@ static void snap_prepare_intersect(struct snap_job *cjob,
 {
     uint64_t ddr_addr = 0x0ull;
 
-    if (step == 1)
-    {
+    if (step == 1) {
         //Memcopy, source
         snap_addr_set( &ijob_i->src_tables_host[0], input_addrs_host[0], input_sizes[0],SNAP_ADDRTYPE_HOST_DRAM ,
                 SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
@@ -117,8 +113,7 @@ static void snap_prepare_intersect(struct snap_job *cjob,
 
         //No relation to result_table
     }
-    else if (step == 2)
-    {
+    else if (step == 2) {
         //Memcopy, source
         ddr_addr = 0;
         snap_addr_set( &ijob_i->src_tables_ddr[0], (void *)ddr_addr, input_sizes[0],SNAP_ADDRTYPE_CARD_DRAM ,
@@ -136,8 +131,7 @@ static void snap_prepare_intersect(struct snap_job *cjob,
 
         //No relation to result_table
     }
-    else if (step == 3)
-    {
+    else if (step == 3) {
         ddr_addr = 0;
         snap_addr_set( &ijob_i->src_tables_ddr[0], (void *)ddr_addr, input_sizes[0],SNAP_ADDRTYPE_CARD_DRAM ,
                 SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
@@ -155,8 +149,7 @@ static void snap_prepare_intersect(struct snap_job *cjob,
                 SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST |
                 SNAP_ADDRFLAG_END);
     }
-    else if (step == 5)
-    {
+    else if (step == 5) {
         //Memcopy, source
         // reuse src_tables_ddr[0] for the result.
         ddr_addr = 2*MAX_TABLE_SIZE;
@@ -180,28 +173,21 @@ static void snap_prepare_intersect(struct snap_job *cjob,
 
 static int gen_random_table(value_t table[], uint32_t num,uint32_t len)
 {
-    //Parameters:
-    // num: how many elements in the table
-    //Value
     uint32_t i,j;
     value_t pattern;
 
 
-    if(len <=0 || len >= sizeof(value_t))
-    {
+    if(len <= 0 || len >= sizeof(value_t)) {
         printf(" Error length when generating a random table.\n");
         return -1;
     }
-    for (i = 0; i < num; i++)
-    {
+    for (i = 0; i < num; i++) {
         for(j = 0; j < len; j++)
-        {
             pattern[j] = (char)(rand()%26+97); //generate letters.
-        }
+
         for(j = len; j < sizeof(value_t)-1; j++)
-        {
             pattern[j] = 32; //space
-        }
+
         pattern[j] = '\0';
         copyvalue(table[i], pattern);
     }
@@ -215,9 +201,8 @@ static void dump_table(value_t* table, uint32_t num)
     uint32_t i;
     printf("Table: \n");
     for (i = 0; i < num; i++)
-    {
         printf("%d: %s,\n", i, table[i] );
-    }
+
     printf("\n");
 }
 
@@ -264,7 +249,7 @@ int main(int argc, char *argv[])
 
     //Function specific
     //long long time_us;
-    struct intersect_job ijob_i, ijob_o;
+    intersect_job_t ijob_i, ijob_o;
     value_t * src_tables[NUM_TABLES];
     uint32_t  src_sizes[NUM_TABLES];
     FILE *fp;
@@ -281,7 +266,7 @@ int main(int argc, char *argv[])
     uint32_t num = 20;
     uint32_t len = 1;
     //Several global variables.
-    uint32_t method = 1;
+    uint32_t method = HASH_METHOD;
     uint32_t sw = 0;
     const char *input[NUM_TABLES];
     for(i = 0; i < NUM_TABLES; i++)
@@ -368,11 +353,9 @@ int main(int argc, char *argv[])
 
 
     //Create Input tables
-    if (input[0] == NULL || input[1] == NULL)
-    {
+    if (input[0] == NULL || input[1] == NULL) {
         //Randomly generate the Table data
-        for (i = 0; i < NUM_TABLES; i++)
-        {
+        for (i = 0; i < NUM_TABLES; i++) {
             src_sizes[i] = num*sizeof(value_t); //All tables are of same size.
             src_tables[i] = memalign (page_size, src_sizes[i]);
             if(!src_tables[i])
@@ -388,14 +371,12 @@ int main(int argc, char *argv[])
 
 
     }
-    else
-    {
+    else {
 
         int filesize[2];
         uint32_t j;
 
-        for (i = 0; i < NUM_TABLES; i++)
-        {
+        for (i = 0; i < NUM_TABLES; i++) {
             filesize[i] = __file_size(input[i]);
             if (filesize[i] < 0)
                 goto out_error;
@@ -408,16 +389,13 @@ int main(int argc, char *argv[])
             if(!src_tables[i])
                 goto out_error2;
             fp = fopen(input[i], "rb");
-            if(!fp)
-            {
+            if(!fp) {
                 fprintf(stderr, "Err: cannot open file!\n");
                 goto out_error2;
             }
 
-            for( j = 0; j < num; j++)
-            {
-                if(fgets(src_tables[i][j], sizeof(value_t), fp) != NULL)
-                {
+            for( j = 0; j < num; j++) {
+                if(fgets(src_tables[i][j], sizeof(value_t), fp) != NULL) {
                     src_tables[i][j][sizeof(value_t)-1] = '\0';
                     fseek(fp, 1, SEEK_CUR);
                 }
@@ -453,14 +431,13 @@ int main(int argc, char *argv[])
         goto out_error;
     }
 
-    action = snap_attach_action(card, HLS_INTERSECT_ID, action_irq, 60);
+    action = snap_attach_action(card, INTERSECT_ACTION_TYPE, action_irq, 60);
     if (action == NULL) {
         fprintf(stderr, "err: failed to attach action %u: %s\n",
                 card_no, strerror(errno));
         goto out_error1;
     }
     //------------------------------------
-    // Action begin (1)
     printf("Start Step1 (Copy source data from Host to DDR) ..............\n");
     snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
             1, method, src_tables, src_sizes,result_table,99);
@@ -469,10 +446,8 @@ int main(int argc, char *argv[])
     if (rc != 0)
         goto out_error2;
 
-    if(sw)
-    {
+    if(sw) {
         //------------------------------------
-        // Action begin (2)
         printf("Start Step2 (Copy source data from DDR to Host) ..............\n");
         snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                 2, method, src_tables, src_sizes,result_table,99);
@@ -482,7 +457,6 @@ int main(int argc, char *argv[])
             goto out_error2;
 
         //------------------------------------
-        // Action begin (4)
         printf("Start Step4 (Do interesction by software) ..............\n");
         gettimeofday(&stime, NULL);
         result_num = run_sw_intersection (method, src_tables[0], src_sizes[0]/sizeof(value_t),
@@ -496,7 +470,6 @@ int main(int argc, char *argv[])
     else
     {
         //------------------------------------
-        // Action begin (3)
         printf("Start Step3 (Do intersection in DDR) ..............\n");
         snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                 3, method, src_tables, src_sizes, result_table, 99);
@@ -511,7 +484,6 @@ int main(int argc, char *argv[])
 
 
         //------------------------------------
-        // Action begin (5)
         printf("Start Step5 (Copy result from DDR to Host) ..............\n");
         snap_prepare_intersect(&cjob, &ijob_i, &ijob_o,
                 5, method, src_tables, src_sizes, result_table, result_num * sizeof(value_t));
@@ -521,8 +493,7 @@ int main(int argc, char *argv[])
             goto out_error2;
     }
 
-    if(output != NULL)
-    {
+    if(output != NULL) {
         printf("Writing intersection result %d lines to %s\n",
                 (int)result_num, output);
 
@@ -534,12 +505,10 @@ int main(int argc, char *argv[])
         if (rc < 0)
             goto out_error2;
     }
-    else
-    {
-        /// Print the results
+    else {
+        // Print the results
         temp_ptr = result_table;
-        for(i = 0;( i< result_num && verbose_flag); i++)
-        {
+        for(i = 0;( i< result_num && verbose_flag); i++) {
             printf("%s;\n", *temp_ptr);
             temp_ptr ++;
         }
