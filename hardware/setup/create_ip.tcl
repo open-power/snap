@@ -64,30 +64,30 @@ generate_target all                          [get_files $ip_dir/ram_520x64_2p/ra
 export_ip_user_files -of_objects             [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci] -no_script -force >> $log_file
 export_simulation -of_objects [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
-#create ram_584x64_2p  
-puts "	                        generating IP ram_584x64_2p"
-create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name ram_584x64_2p -dir $ip_dir >> $log_file
+#create ram_576x64_2p  
+puts "	                        generating IP ram_576x64_2p"
+create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name ram_576x64_2p -dir $ip_dir >> $log_file
 set_property -dict [list                                                            \
                     CONFIG.Memory_Type {Simple_Dual_Port_RAM} 		            \
                     CONFIG.Assume_Synchronous_Clk {true} 			    \
-                    CONFIG.Write_Width_A {584} 				            \
+                    CONFIG.Write_Width_A {576} 				            \
                     CONFIG.Write_Depth_A {64} 				            \
                     CONFIG.Operating_Mode_A {NO_CHANGE} 			    \
                     CONFIG.Enable_A {Always_Enabled} 			            \
-                    CONFIG.Write_Width_B {584} 				            \
+                    CONFIG.Write_Width_B {576} 				            \
                     CONFIG.Enable_B {Always_Enabled} 			            \
                     CONFIG.Register_PortA_Output_of_Memory_Primitives {false}       \
-                    CONFIG.Read_Width_A {584} 				            \
-                    CONFIG.Read_Width_B {584} 				            \
+                    CONFIG.Read_Width_A {576} 				            \
+                    CONFIG.Read_Width_B {576} 				            \
                     CONFIG.Operating_Mode_B {READ_FIRST} 			    \
                     CONFIG.Register_PortB_Output_of_Memory_Primitives {true}        \
                     CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}       \
-                   ] [get_ips ram_584x64_2p]
-set_property generate_synth_checkpoint false [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci]
-generate_target {instantiation_template}     [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] >> $log_file
-generate_target all                          [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] >> $log_file
-export_ip_user_files -of_objects             [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] -no_script -force >> $log_file
-export_simulation -of_objects [get_files $ip_dir/ram_584x64_2p/ram_584x64_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+                   ] [get_ips ram_576x64_2p]
+set_property generate_synth_checkpoint false [get_files $ip_dir/ram_576x64_2p/ram_576x64_2p.xci]
+generate_target {instantiation_template}     [get_files $ip_dir/ram_576x64_2p/ram_576x64_2p.xci] >> $log_file
+generate_target all                          [get_files $ip_dir/ram_576x64_2p/ram_576x64_2p.xci] >> $log_file
+export_ip_user_files -of_objects             [get_files $ip_dir/ram_576x64_2p/ram_576x64_2p.xci] -no_script -force >> $log_file
+export_simulation -of_objects [get_files $ip_dir/ram_576x64_2p/ram_576x64_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create fifo_513x512
 puts "	                        generating IP fifo_513x512"

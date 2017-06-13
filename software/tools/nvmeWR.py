@@ -26,75 +26,110 @@ import subprocess
 import time
 import os
 import inspect
+from optparse import OptionParser
 #trace = True
 trace = False
 
+SSD0_USED = False
+SSD1_USED = False
+CARD      = "-C0"
+CARD_TXT  = "Card 0"
+
+
 class AFU_MMIO:
 
-
     PROG_REG =0xd008   # debug register to store  init progress and currect NVMe Admin pointer
-    
+
     @staticmethod
     def init():
         tmp  = os.path.dirname(os.path.abspath(inspect.stack()[0][1]))
         AFU_MMIO.snap_peek = tmp + '/snap_peek'
         AFU_MMIO.snap_poke = tmp + '/snap_poke'
-        progress_reg = AFU_MMIO.read64(AFU_MMIO.PROG_REG)
-        if ((progress_reg & 0xff) == 0):
-            print("NVMe subsystem doesn't seem to be initialized! ... terminating script")
-            exit(0)
-        else:
-            print ("#")
-            print ("DRAM you read from must be initialized otherwise this program and the action will hang !!!!")
-            print ("#")
-        
-    
+        parser = OptionParser(usage='%prog [options]\n\nDescription:\nCopy 8KB of data from SDRAM at addr 0x0 to NVMe drive at LBA 0x0 and then\nback to SDRAM (to addr 0x10000 for drive 0 or to addr 0x8000 for drive 1)')
+        parser.add_option('-c', '--card', type = str, default = '0', help ="card:       select 0 or 1 (default 0)" )
+        parser.add_option('-d', '--drive', type = str, default = '1', help ="NVMe drive: select 0,1,b  (default 1)" )
+        global SSD0_USED
+        global SSD1_USED
+        (args,dummy) = parser.parse_args()
+        #args = parser.parse_args()
+        if (args.drive == '0') : SSD0_USED = True
+        if (args.drive == '1') : SSD1_USED = True
+        if (args.drive == 'b') :
+            SSD0_USED = True
+            SSD1_USED = True
+        global CARD
+        global CARD_TXT
+        if (args.card == '1'):
+            CARD     = "-C1"
+            CARD_TXT = "Card 1"
+
+#        progress_reg = AFU_MMIO.read64(AFU_MMIO.PROG_REG)
+#        if ((progress_reg & 0xff) == 0):
+#            print("NVMe subsystem doesn't seem to be initialized! ... terminating script")
+#            exit(0)
+#        else:
+#            print ("#")
+#            print ("DRAM you read from must be initialized otherwise this program and the action will hang !!!!")
+#            print ("#")
+
+
     @staticmethod
     def write(addr, data):
         if trace :
             print ('w', end ='')
             sys.stdout.flush()
-        p = subprocess.Popen ([AFU_MMIO.snap_poke, "-w32", str(addr), str(data)],stdout=subprocess.PIPE,)
+        p = subprocess.Popen ([AFU_MMIO.snap_poke, "-w32", CARD, str(addr), str(data)],stdout=subprocess.PIPE,)
         p.wait()
-        return 
+        return
+
+
+    @staticmethod
+    def write64(addr, data):
+        if trace :
+            print ('w', end ='')
+            sys.stdout.flush()
+        p = subprocess.Popen ([AFU_MMIO.snap_poke, CARD, str(addr), str(data)],stdout=subprocess.PIPE,)
+        p.wait()
+        return
+
+
+    @staticmethod
+    def read(addr):
+        if trace:
+            print ('r',end ='')
+            sys.stdout.flush()
+        p = subprocess.Popen ([AFU_MMIO.snap_peek, CARD, "-w32", str(addr),],stdout=subprocess.PIPE,)
+        p.wait()
+
+        txt = p.communicate()[0]
+        txt = txt.split(']',1)
+        txt = txt[1].split()
+	#print ('txt=', txt)
+
+        return int(txt[0],16)
+
 
     @staticmethod
     def read64(addr):
         if trace:
-            print ('r',end ='') 
+            print ('r',end ='')
             sys.stdout.flush()
-        p = subprocess.Popen ([AFU_MMIO.snap_peek, str(addr),],stdout=subprocess.PIPE,)
+        p = subprocess.Popen ([AFU_MMIO.snap_peek, CARD, str(addr),],stdout=subprocess.PIPE,)
         p.wait()
- 
+
         txt = p.communicate()[0]
         txt = txt.split(']',1)
         txt = txt[1].split()
         return int(txt[0],16)
 
-
-    
-    @staticmethod
-    def read(addr):
-        if trace:
-            print ('r',end ='') 
-            sys.stdout.flush()
-        p = subprocess.Popen ([AFU_MMIO.snap_peek, "-w32", str(addr),],stdout=subprocess.PIPE,)
-        p.wait()
- 
-        txt = p.communicate()[0]
-        txt = txt.split(']',1)
-        txt = txt[1].split()
-        
-        return int(txt[0],16)
 
     @staticmethod
     def nvme_write(addr, data):
         if (addr >= 0x30000) :
-            AFU_MMIO.write(0x30000, addr) 
+            AFU_MMIO.write(0x30000, addr)
             AFU_MMIO.write(0x30004, data)
         else :
             AFU_MMIO.write(0x20000 + addr, data)
-        
 
 
     @staticmethod
@@ -105,6 +140,7 @@ class AFU_MMIO:
         else:
             return AFU_MMIO.read (0x20000 + addr)
 
+
     @staticmethod
     def dump_buffer(drive, words):
         AFU_MMIO.nvme_write(0x88, 0x6f0)
@@ -112,85 +148,83 @@ class AFU_MMIO:
             data = AFU_MMIO.nvme_read(0x90)
             print('buffer data word %d : %8x' % (words, data))
             words -=1
-    
+
+
     @staticmethod
     def nvme_fill_buffer(array):
         for data in array:
             AFU_MMIO.nvme_write(0x90,data)
-    
 
-#SSD0_USED = True
-#SSD1_USED = True
-#if (len(sys.argv) > 1):
-#    if(sys.argv[1] == "0"): SSD1_USED = False
-#    if(sys.argv[1] == "1"): SSD0_USED = False
 
-# Currently only NVMe drive 1 is supported 
-SSD0_USED = False
-SSD1_USED = True
-
-AFU_MMIO.init()    
+AFU_MMIO.init()
 
 if (SSD0_USED):
     print ('start  SSD0 write')
-    AFU_MMIO.write(0x10030,0xa)  # write to nvme
-    AFU_MMIO.write(0x10034,0x0)
-    AFU_MMIO.write(0x10038,0x2)
-    AFU_MMIO.write(0x1003c,0x0)
-    AFU_MMIO.write(0x10040,0x0)
-    AFU_MMIO.write(0x10044,0x10)
-    AFU_MMIO.write(0x10000,1)
-    print ('waiting for command to complete')
-    data = 0
-    while (data != 0xc ):
+    AFU_MMIO.write(0x10030,0xa)  # write to NVMe drive 0
+    AFU_MMIO.write(0x10034,0x0)  # read from address 0 DRAM
+    AFU_MMIO.write(0x10038,0x0)  # read from address 0 DRAM
+    AFU_MMIO.write(0x1003c,0x0)  # write to LBA address 0
+    AFU_MMIO.write(0x10040,0x0)  # write to LBA address 0
+    AFU_MMIO.write(0x10044,0x10) # write 16 blocks each 512 bytes
+    AFU_MMIO.write(0x10000,1)    # start the action
+    print ('waiting for command to complete ')
+    while (True):
         data = AFU_MMIO.read(0x10000)
-        print (" rc = %x " % data)
+        print ("\taction state = %x" % data)
+        if (data == 0xc ): break;
+        time.sleep(1)
     print ('NVMe write command completed')
+
 
 if (SSD1_USED):
     print ('start  SSD1 write')
-    AFU_MMIO.write(0x10030,0x1a)  # write to nvme
-    AFU_MMIO.write(0x10034,0x0)   # read from address 0 DRAM
-    AFU_MMIO.write(0x10038,0x0)   # read from address 0 DRAM
-    AFU_MMIO.write(0x1003c,0x0)   # write to LBA address 0
-    AFU_MMIO.write(0x10040,0x0)   # write to LBA address 0
-    AFU_MMIO.write(0x10044,0x10)  # write 16 blocks each 512 bytes
-    AFU_MMIO.write(0x10000,1)     # start the action
-    print ('waiting for command to complete')
-    data = 0
-    while (data != 0xc ):
+    AFU_MMIO.write(0x10030,0x1a) # write to NVMe drive 1
+    AFU_MMIO.write(0x10034,0x0)  # read from address 0 DRAM
+    AFU_MMIO.write(0x10038,0x0)  # read from address 0 DRAM
+    AFU_MMIO.write(0x1003c,0x0)  # write to LBA address 0
+    AFU_MMIO.write(0x10040,0x0)  # write to LBA address 0
+    AFU_MMIO.write(0x10044,0x10) # write 16 blocks each 512 bytes
+    AFU_MMIO.write(0x10000,1)    # start the action
+    print ('waiting for command to complete ')
+    while (True):
         data = AFU_MMIO.read(0x10000)
-        print (" rc = %x " % data)
+        print ("\taction state = %x" % data)
+        if (data == 0xc ): break;
         time.sleep(1)
     print ('NVMe write command completed')
 
+
 if (SSD0_USED):
-    AFU_MMIO.write(0x10030,0xb)
-    AFU_MMIO.write(0x1003c,0x4000)
+    AFU_MMIO.write(0x10030,0xb)     # read from NVMe drive 0
+    AFU_MMIO.write(0x10034,0x0)     # read from LBA address 0
+    AFU_MMIO.write(0x10038,0x0)     # read from LBA address 0
+    AFU_MMIO.write(0x1003c,0x10000) # write to DRAM address offset 0x10000
+    AFU_MMIO.write(0x10040,0x0)     # high order DRAM address 0
+    AFU_MMIO.write(0x10044,0x10)    # read 16 blocks each 512 bytes
     print ('start SSD0 read')
     AFU_MMIO.write(0x10000,1)
-    print ('waiting for command to complete')
-    data = 0
-    while (data != 0xc ):
+    print ('waiting for command to complete ')
+    while (True):
         data = AFU_MMIO.read(0x10000)
-        print (" rc = %x " % data)
-    print ('NVMe read command completed')
-
-if (SSD1_USED):
-    AFU_MMIO.write(0x10030,0x1b)  # read from NVMe
-    AFU_MMIO.write(0x10034,0x0)   # read from LBA address 0
-    AFU_MMIO.write(0x10038,0x0)   # read from LBA address 0
-    AFU_MMIO.write(0x1003c,0x8000)# write to DRAM address offset 0x4000
-    AFU_MMIO.write(0x10040,0x0)   # high order DRAM address  0 
-    AFU_MMIO.write(0x10044,0x10)
-    print ('start SSD1 read')
-    AFU_MMIO.write(0x10000,1)
-    print ('waiting for command to complete')
-    data = 0
-    while (data != 0xc ):
-        data = AFU_MMIO.read(0x10000)
-        print (" rc = %x " % data)
+        print ("\taction state = %x" % data)
+        if (data == 0xc ): break;
         time.sleep(1)
     print ('NVMe read command completed')
 
 
+if (SSD1_USED):
+    AFU_MMIO.write(0x10030,0x1b)    # read from NVMe drive 1
+    AFU_MMIO.write(0x10034,0x0)     # read from LBA address 0
+    AFU_MMIO.write(0x10038,0x0)     # read from LBA address 0
+    AFU_MMIO.write(0x1003c,0x8000)  # write to DRAM address offset 0x8000
+    AFU_MMIO.write(0x10040,0x0)     # high order DRAM address 0
+    AFU_MMIO.write(0x10044,0x10)    # read 16 blocks each 512 bytes
+    print ('start SSD1 read')
+    AFU_MMIO.write(0x10000,1)
+    print ('waiting for command to complete')
+    while (True):
+        data = AFU_MMIO.read(0x10000)
+        print ("\taction state = %x" % data)
+        if (data == 0xc ): break;
+        time.sleep(1)
+    print ('NVMe read command completed')

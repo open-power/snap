@@ -176,32 +176,32 @@ CONFIG.FREQ_HZ {100000000} \
 ] $refclk_nvme_ch1_n
 set nvme_reset_n [ create_bd_port -dir I -type rst nvme_reset_n ]
 
-## Create instance: axi_interconnect_0, and set properties
-#puts "	\                        generating AXI interconnects"
-#set axi_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_0 ]
-#set_property -dict [ list \
-#CONFIG.NUM_MI {3}\
-#CONFIG.NUM_SI {2} \
-#CONFIG.STRATEGY {1} \
-#] $axi_interconnect_0 >> $log_file
-# 
-## Create instance: axi_interconnect_1, and set properties
-#set axi_interconnect_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_1 ]
-#set_property -dict [ list \
-#CONFIG.NUM_MI {2} \
-#CONFIG.NUM_SI {1} \
-#CONFIG.STRATEGY {1} \
-#] $axi_interconnect_1 >> $log_file
-# 
-## Create instance: axi_interconnect_2, and set properties
-#set axi_interconnect_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_2 ]
-#set_property -dict [ list \
-#CONFIG.NUM_MI {2} \
-#CONFIG.NUM_SI {2} \
-#CONFIG.S00_HAS_DATA_FIFO {2} \
-#CONFIG.S01_HAS_DATA_FIFO {2} \
-#CONFIG.STRATEGY {2} \
-#] $axi_interconnect_2 >> $log_file
+# Create instance: axi_interconnect_0, and set properties
+puts "	\                        generating AXI interconnects"
+set axi_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_0 ]
+set_property -dict [ list \
+CONFIG.NUM_MI {3}\
+CONFIG.NUM_SI {2} \
+CONFIG.STRATEGY {1} \
+] $axi_interconnect_0 >> $log_file
+ 
+# Create instance: axi_interconnect_1, and set properties
+set axi_interconnect_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_1 ]
+set_property -dict [ list \
+CONFIG.NUM_MI {2} \
+CONFIG.NUM_SI {1} \
+CONFIG.STRATEGY {1} \
+] $axi_interconnect_1 >> $log_file
+ 
+# Create instance: axi_interconnect_2, and set properties
+set axi_interconnect_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_2 ]
+set_property -dict [ list \
+CONFIG.NUM_MI {2} \
+CONFIG.NUM_SI {2} \
+CONFIG.S00_HAS_DATA_FIFO {2} \
+CONFIG.S01_HAS_DATA_FIFO {2} \
+CONFIG.STRATEGY {2} \
+] $axi_interconnect_2 >> $log_file
 
 # Create instance: util_buf_gte_0, and set properties
 puts "	\                        generating Utility Buffer"
@@ -216,31 +216,31 @@ set_property -dict [list  \
 CONFIG.C_BUF_TYPE {IBUFDSGTE} \
 ] $util_buf_gte_1 >> $log_file
 
-# Create instance: axi_interconnect_0, and set properties
-puts "	\                        generating AXI Interconnects"
-set axi_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_0 ]
-set_property -dict [ list \
-CONFIG.NUM_MI {2} \
-CONFIG.NUM_SI {2} \
-CONFIG.STRATEGY {1} \
-] $axi_interconnect_0 >> $log_file
-
-# Create instance: axi_interconnect_1, and set properties
-set axi_interconnect_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_1 ]
-set_property -dict [ list \
-CONFIG.NUM_MI {1} \
-CONFIG.NUM_SI {1} \
-CONFIG.STRATEGY {1} \
-] $axi_interconnect_1 >> $log_file
-
-# Create instance: axi_interconnect_2, and set properties
-set axi_interconnect_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_2 ]
-set_property -dict [ list \
-CONFIG.NUM_MI {2} \
-CONFIG.NUM_SI {1} \
-CONFIG.S00_HAS_DATA_FIFO {2} \
-CONFIG.STRATEGY {2} \
-] $axi_interconnect_2 >> $log_file
+#### Create instance: axi_interconnect_0, and set properties
+###puts "	\                        generating AXI Interconnects"
+###set axi_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_0 ]
+###set_property -dict [ list \
+###CONFIG.NUM_MI {2} \
+###CONFIG.NUM_SI {2} \
+###CONFIG.STRATEGY {1} \
+###] $axi_interconnect_0 >> $log_file
+### 
+#### Create instance: axi_interconnect_1, and set properties
+###set axi_interconnect_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_1 ]
+###set_property -dict [ list \
+###CONFIG.NUM_MI {1} \
+###CONFIG.NUM_SI {1} \
+###CONFIG.STRATEGY {1} \
+###] $axi_interconnect_1 >> $log_file
+### 
+#### Create instance: axi_interconnect_2, and set properties
+###set axi_interconnect_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_2 ]
+###set_property -dict [ list \
+###CONFIG.NUM_MI {2} \
+###CONFIG.NUM_SI {1} \
+###CONFIG.S00_HAS_DATA_FIFO {2} \
+###CONFIG.STRATEGY {2} \
+###] $axi_interconnect_2 >> $log_file
 
 
 
@@ -250,6 +250,7 @@ puts "	\                        generating AXI PCIe Root Complex"
 set axi_pcie3_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie3:3.0 axi_pcie3_0 >> $log_file ]
 set_property -dict [ list \
 CONFIG.pcie_blk_locn {X0Y1} \
+CONFIG.select_quad {GTH_Quad_227} \
 CONFIG.axi_addr_width {34} \
 CONFIG.axi_data_width {128_bit} \
 CONFIG.axisten_freq {250} \
@@ -273,6 +274,7 @@ CONFIG.plltype {QPLL1} \
 set axi_pcie3_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie3:3.0 axi_pcie3_1 >> $log_file ]
 set_property -dict [ list \
 CONFIG.pcie_blk_locn {X0Y2} \
+CONFIG.select_quad {GTH_Quad_228} \
 CONFIG.axi_addr_width {34} \
 CONFIG.axi_data_width {128_bit} \
 CONFIG.axisten_freq {250} \
@@ -298,18 +300,15 @@ create_bd_cell   -type ip -vlnv IP:user:nvme_host_wrap:1.0 nvme_host_wrap_0 >> $
 
 # Create interface connections
 puts "	\                        connecting all blocks and ports"
-connect_bd_intf_net -intf_net S00_AXI_1 [get_bd_intf_ports NVME_S_AXI] [get_bd_intf_pins axi_interconnect_0/S00_AXI]
-connect_bd_intf_net -intf_net S01_AXI_11 [get_bd_intf_ports ACT_NVME_AXI] [get_bd_intf_pins axi_interconnect_0/S01_AXI]
-##connect_bd_intf_net -intf_net S00_AXI_3 [get_bd_intf_pins axi_interconnect_2/S00_AXI] [get_bd_intf_pins axi_pcie3_0/M_AXI]
-##connect_bd_intf_net -intf_net S01_AXI_1 [get_bd_intf_pins axi_interconnect_2/S01_AXI] [get_bd_intf_pins axi_pcie3_1/M_AXI]
-connect_bd_intf_net -intf_net S00_AXI_11 [get_bd_intf_pins axi_interconnect_2/S00_AXI] [get_bd_intf_pins axi_pcie3_1/M_AXI]
+connect_bd_intf_net -intf_net S00_AXI_I0 [get_bd_intf_ports NVME_S_AXI] [get_bd_intf_pins axi_interconnect_0/S00_AXI]
+connect_bd_intf_net -intf_net S01_AXI_I0 [get_bd_intf_ports ACT_NVME_AXI] [get_bd_intf_pins axi_interconnect_0/S01_AXI]
+connect_bd_intf_net -intf_net S00_AXI_I2 [get_bd_intf_pins axi_interconnect_2/S00_AXI] [get_bd_intf_pins axi_pcie3_0/M_AXI]
+connect_bd_intf_net -intf_net S01_AXI_I2 [get_bd_intf_pins axi_interconnect_2/S01_AXI] [get_bd_intf_pins axi_pcie3_1/M_AXI]
 connect_bd_intf_net -intf_net axi_interconnect_0_M00_AXI [get_bd_intf_pins axi_interconnect_0/M00_AXI] [get_bd_intf_pins nvme_host_wrap_0/host_s_axi]
-##connect_bd_intf_net -intf_net axi_interconnect_0_M01_AXI [get_bd_intf_pins axi_interconnect_0/M01_AXI] [get_bd_intf_pins axi_pcie3_0/S_AXI_CTL]
-connect_bd_intf_net -intf_net axi_interconnect_0_M01_AXI [get_bd_intf_pins axi_interconnect_0/M01_AXI] [get_bd_intf_pins axi_pcie3_1/S_AXI_CTL]
-##connect_bd_intf_net -intf_net axi_interconnect_0_M02_AXI [get_bd_intf_pins axi_interconnect_0/M02_AXI] [get_bd_intf_pins axi_pcie3_1/S_AXI_CTL]
-##connect_bd_intf_net -intf_net axi_interconnect_1_M00_AXI [get_bd_intf_pins axi_interconnect_1/M00_AXI] [get_bd_intf_pins axi_pcie3_0/S_AXI]
-##connect_bd_intf_net -intf_net axi_interconnect_1_M01_AXI [get_bd_intf_pins axi_interconnect_1/M01_AXI] [get_bd_intf_pins axi_pcie3_1/S_AXI]
-connect_bd_intf_net -intf_net axi_interconnect_1_M00_AXI [get_bd_intf_pins axi_interconnect_1/M00_AXI] [get_bd_intf_pins axi_pcie3_1/S_AXI]
+connect_bd_intf_net -intf_net axi_interconnect_0_M01_AXI [get_bd_intf_pins axi_interconnect_0/M01_AXI] [get_bd_intf_pins axi_pcie3_0/S_AXI_CTL]
+connect_bd_intf_net -intf_net axi_interconnect_0_M02_AXI [get_bd_intf_pins axi_interconnect_0/M02_AXI] [get_bd_intf_pins axi_pcie3_1/S_AXI_CTL]
+connect_bd_intf_net -intf_net axi_interconnect_1_M00_AXI [get_bd_intf_pins axi_interconnect_1/M00_AXI] [get_bd_intf_pins axi_pcie3_0/S_AXI]
+connect_bd_intf_net -intf_net axi_interconnect_1_M01_AXI [get_bd_intf_pins axi_interconnect_1/M01_AXI] [get_bd_intf_pins axi_pcie3_1/S_AXI]
 connect_bd_intf_net -intf_net axi_interconnect_2_M00_AXI [get_bd_intf_pins axi_interconnect_2/M00_AXI] [get_bd_intf_pins nvme_host_wrap_0/pcie_s_axi]
 connect_bd_intf_net -intf_net axi_interconnect_2_M01_AXI [get_bd_intf_ports DDR_M_AXI] [get_bd_intf_pins axi_interconnect_2/M01_AXI]
 connect_bd_intf_net -intf_net axi_pcie3_0_pcie_7x_mgt [get_bd_intf_ports pcie_rc0] [get_bd_intf_pins axi_pcie3_0/pcie_7x_mgt]
@@ -322,15 +321,13 @@ connect_bd_net -net NVME_S_ACLK_1 [get_bd_ports NVME_S_ACLK] [get_bd_pins axi_in
 connect_bd_net -net ACT_NVME_ACLK_1 [get_bd_ports ACT_NVME_ACLK] [get_bd_pins axi_interconnect_0/S01_ACLK]
 connect_bd_net -net NVME_S_ARESETN_1 [get_bd_ports NVME_S_ARESETN] [get_bd_pins axi_interconnect_0/ARESETN] [get_bd_pins axi_interconnect_0/S00_ARESETN] [get_bd_pins axi_interconnect_0/M00_ARESETN] [get_bd_pins nvme_host_wrap_0/axi_aresetn] [get_bd_pins axi_interconnect_1/ARESETN] [get_bd_pins axi_interconnect_1/S00_ARESETN] [get_bd_pins axi_interconnect_2/ARESETN] [get_bd_pins axi_interconnect_2/M00_ARESETN] [get_bd_pins axi_interconnect_2/M01_ARESETN] [get_bd_ports ddr_aresetn]
 connect_bd_net -net ACT_NVME_ARESETN_1 [get_bd_ports ACT_NVME_ARESETN] [get_bd_pins axi_interconnect_0/S01_ARESETN]
-connect_bd_net -net axi_pcie3_1_axi_aclk [get_bd_pins axi_pcie3_1/axi_aclk] [get_bd_pins axi_interconnect_0/M01_ACLK] [get_bd_pins axi_interconnect_1/M00_ACLK] [get_bd_pins axi_interconnect_2/S00_ACLK]
-connect_bd_net -net axi_pcie3_1_axi_aresetn [get_bd_pins axi_pcie3_1/axi_aresetn] [get_bd_pins axi_interconnect_1/M00_ARESETN] [get_bd_pins axi_interconnect_2/S00_ARESETN]
-connect_bd_net -net axi_pcie3_1_axi_ctl_aresetn [get_bd_pins axi_pcie3_1/axi_ctl_aresetn] [get_bd_pins axi_interconnect_0/M01_ARESETN]
-connect_bd_net -net nvme_reset_n            [get_bd_ports nvme_reset_n] [get_bd_pins axi_pcie3_1/sys_rst_n]
-#connect_bd_net -net axi_pcie3_0_axi_aclk [get_bd_pins axi_pcie3_0/axi_aclk] [get_bd_pins axi_interconnect_0/M01_ACLK] [get_bd_pins axi_interconnect_1/M00_ACLK] [get_bd_pins axi_interconnect_2/S00_ACLK]
-#connect_bd_net -net axi_pcie3_0_axi_aresetn [get_bd_pins axi_pcie3_0/axi_aresetn] [get_bd_pins axi_interconnect_0/M01_ARESETN] [get_bd_pins axi_interconnect_1/M00_ARESETN] [get_bd_pins axi_interconnect_2/S00_ARESETN]
-#connect_bd_net -net axi_pcie3_1_axi_aclk [get_bd_pins axi_pcie3_1/axi_aclk] [get_bd_pins axi_interconnect_0/M02_ACLK] [get_bd_pins axi_interconnect_1/M01_ACLK] [get_bd_pins axi_interconnect_2/S01_ACLK]
-#connect_bd_net -net axi_pcie3_1_axi_aresetn [get_bd_pins axi_pcie3_1/axi_aresetn] [get_bd_pins axi_interconnect_0/M02_ARESETN] [get_bd_pins axi_interconnect_1/M01_ARESETN] [get_bd_pins axi_interconnect_2/S01_ARESETN]
-#connect_bd_net -net nvme_reset_n            [get_bd_ports nvme_reset_n] [get_bd_pins axi_pcie3_0/sys_rst_n] [get_bd_pins axi_pcie3_1/sys_rst_n]
+connect_bd_net -net axi_pcie3_0_axi_aclk        [get_bd_pins axi_pcie3_0/axi_aclk]        [get_bd_pins axi_interconnect_0/M01_ACLK]    [get_bd_pins axi_interconnect_1/M00_ACLK] [get_bd_pins axi_interconnect_2/S00_ACLK]
+connect_bd_net -net axi_pcie3_0_axi_aresetn     [get_bd_pins axi_pcie3_0/axi_aresetn]     [get_bd_pins axi_interconnect_1/M00_ARESETN] [get_bd_pins axi_interconnect_2/S00_ARESETN]
+connect_bd_net -net axi_pcie3_0_axi_ctl_aresetn [get_bd_pins axi_pcie3_0/axi_ctl_aresetn] [get_bd_pins axi_interconnect_0/M01_ARESETN] 
+connect_bd_net -net axi_pcie3_1_axi_aclk        [get_bd_pins axi_pcie3_1/axi_aclk]        [get_bd_pins axi_interconnect_0/M02_ACLK]    [get_bd_pins axi_interconnect_1/M01_ACLK] [get_bd_pins axi_interconnect_2/S01_ACLK]
+connect_bd_net -net axi_pcie3_1_axi_aresetn     [get_bd_pins axi_pcie3_1/axi_aresetn]     [get_bd_pins axi_interconnect_1/M01_ARESETN] [get_bd_pins axi_interconnect_2/S01_ARESETN]
+connect_bd_net -net axi_pcie3_1_axi_ctl_aresetn [get_bd_pins axi_pcie3_1/axi_ctl_aresetn] [get_bd_pins axi_interconnect_0/M02_ARESETN]
+connect_bd_net -net nvme_reset_n                [get_bd_ports nvme_reset_n] [get_bd_pins axi_pcie3_0/sys_rst_n] [get_bd_pins axi_pcie3_1/sys_rst_n]
 
 connect_bd_net [get_bd_ports refclk_nvme_ch0_p] [get_bd_pins util_buf_gte_0/IBUF_DS_P] 
 connect_bd_net [get_bd_ports refclk_nvme_ch0_n] [get_bd_pins util_buf_gte_0/IBUF_DS_N]
@@ -349,18 +346,15 @@ create_bd_addr_seg -range 0x000100000000 -offset 0x000200000000 [get_bd_addr_spa
 create_bd_addr_seg -range 0x00200000 -offset 0x00000000 [get_bd_addr_spaces axi_pcie3_1/M_AXI] [get_bd_addr_segs nvme_host_wrap_0/pcie_s_axi/reg0] SEG_nvme_host_wrap_0_reg0
 create_bd_addr_seg -range 0x00002000 -offset 0x00000000 [get_bd_addr_spaces nvme_host_wrap_0/pcie_m_axi] [get_bd_addr_segs axi_pcie3_0/S_AXI/BAR0] SEG_axi_pcie3_0_BAR0
 create_bd_addr_seg -range 0x00002000 -offset 0x00002000 [get_bd_addr_spaces nvme_host_wrap_0/pcie_m_axi] [get_bd_addr_segs axi_pcie3_1/S_AXI/BAR0] SEG_axi_pcie3_1_BAR0
-#create_bd_addr_seg -range 0x10000000 -offset 0x10000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs axi_pcie3_0/S_AXI_CTL/CTL0] SEG_axi_pcie3_0_CTL0
+create_bd_addr_seg -range 0x10000000 -offset 0x10000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs axi_pcie3_0/S_AXI_CTL/CTL0] SEG_axi_pcie3_0_CTL0
 create_bd_addr_seg -range 0x10000000 -offset 0x20000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs axi_pcie3_1/S_AXI_CTL/CTL0] SEG_axi_pcie3_1_CTL0
 create_bd_addr_seg -range 0x00001000 -offset 0x00000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs nvme_host_wrap_0/host_s_axi/reg0] SEG_nvme_host_wrap_0_reg0
 create_bd_addr_seg -range 0x00001000 -offset 0x00000000 [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs nvme_host_wrap_0/host_s_axi/reg0] SEG_nvme_host_wrap_0_reg0
+# No direct access from action to PCIe root complexes
+exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs axi_pcie3_0/S_AXI_CTL/CTL0]
+exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs axi_pcie3_1/S_AXI_CTL/CTL0]
 
-# temp fix to solve placement issue: remove axi_pcie3_0
-#delete_bd_objs [get_bd_nets refclk_nvme_ch0_p] [get_bd_nets refclk_nvme_ch0_n] [get_bd_intf_nets S00_AXI_3] [get_bd_intf_nets axi_interconnect_0_M01_AXI] [get_bd_intf_nets axi_interconnect_1_M00_AXI] [get_bd_intf_nets axi_pcie3_0_pcie_7x_mgt] [get_bd_cells axi_pcie3_0]
-delete_bd_objs [get_bd_intf_nets axi_pcie3_0_pcie_7x_mgt] [get_bd_cells axi_pcie3_0]
-delete_bd_objs [get_bd_ports refclk_nvme_ch0_p] [get_bd_ports refclk_nvme_ch0_n]
-delete_bd_objs [get_bd_intf_ports pcie_rc0]
-delete_bd_objs [get_bd_nets util_buf_gte_0_IBUF_OUT] [get_bd_nets util_buf_gte_0_IBUF_DS_ODIV2] [get_bd_cells util_buf_gte_0]
-# Save block design and close the project
+#### Save block design and close the project
 save_bd_design >> $log_file
 
 puts "	\[CREATE_NVMe.........\] done"

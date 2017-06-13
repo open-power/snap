@@ -273,11 +273,11 @@ Address: 0x00C000 + m * 0x0000008 (m = 0,..,15)
 ```
 Address: 0x000D000
   63..1  RO: Reserved
-      0  RW: Disable parity checking on ah Interface by PSL
-                 '1': Parity checking is disabled (default value, until all parity problems are fixed)
-                 '0': Parity checking is enabled
+      0  RW: Enable PSL parity checking via AFU Control Interface to PSL
+                 '1': Parity checking is enabled
+                 '0': Parity checking is disabled (default value)
 
-  POR value: 0x00000000_00000001
+  POR value: 0x00000000_00000000
 ```
 
 ---
@@ -731,11 +731,11 @@ Address: 0x00C000 + (s+n) * 0x0010000 + m * 0x0000008 (m = 0,..,15)
 ```
 Address: 0x000D000 + (s+n) * 0x0010000
   63..1  RO: Reserved
-      0  RO: Disable parity checking on ah Interface by PSL
-                 '1': Parity checking is disabled (default value, until all parity problems are fixed)
-                 '0': Parity checking is enabled
+      0  RW: Enable PSL parity checking via AFU Control Interface to PSL
+                 '1': Parity checking is enabled
+                 '0': Parity checking is disabled (default value)
 
-  POR value: 0x00000000_00000001
+  POR value: 0x00000000_00000000
 ```
 
 ---

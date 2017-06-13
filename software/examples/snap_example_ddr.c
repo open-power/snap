@@ -40,7 +40,7 @@
 #define	KILO_BYTE		(1024ull)
 #define	MEGA_BYTE		(1024 * KILO_BYTE)
 #define	GIGA_BYTE		(1024 * MEGA_BYTE)
-#define DDR_MEM_SIZE		(4 * GIGA_BYTE)	/* Default End of FPGA Ram */
+#define DDR_MEM_SIZE		(8 * GIGA_BYTE)	/* Default End of FPGA Ram */
 #define DDR_MEM_BASE_ADDR	0x00000000	/* Default Start of FPGA Ram */
 #define	HOST_BUFFER_SIZE	(256 * KILO_BYTE)	/* Default Size for Host Buffers */
 
@@ -600,13 +600,13 @@ static void usage(const char *prog)
 		"    -C, --card <cardno>  use this card for operation\n"
 		"    -V, --version\n"
 		"    -q, --quiet          quiece output\n"
-		"    -t, --timeout        timeout in sec (defaut 1 sec)n"
+		"    -t, --timeout        timeout in sec (defaut 1 sec)\n"
 		"    -i, --iter           Memcpy Iterations (default 1)\n"
 		"    -s, --start          Card Ram Start Address (default 0x%llx)\n"
 		"    -e, --end            Card Ram End Address (default 0x%llx)\n"
 		"    -b, --buffer         Host Buffer Size (default 0x%llx)\n"
 		"    -I, --irq            Use Interrupts\n"
-		"\tTool to check DDR3 Memory on KU3\n"
+		"\tTool to check DDR Memory on KU3 and FGT Card\n"
 		, prog,
 		(long long)DDR_MEM_BASE_ADDR,
 		(long long)DDR_MEM_SIZE,

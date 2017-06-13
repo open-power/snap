@@ -24,7 +24,7 @@ set hdl_dir     $root_dir/hdl
 set sim_dir     $root_dir/sim
 set fpga_part   $::env(FPGACHIP)
 set fpga_card   $::env(FPGACARD)
-set build_dir   $::env(BUILD_DIR)
+set psl_dcp     [file tail $::env(PSL_DCP)]
 set action_dir  $::env(ACTION_ROOT)
 set nvme_used   $::env(NVME_USED)
 set bram_used   $::env(BRAM_USED)
@@ -123,8 +123,8 @@ update_compile_order -fileset sim_1 >> $log_file
 puts "	                        importing IPs"
 add_files -norecurse $ip_dir/ram_520x64_2p/ram_520x64_2p.xci >> $log_file
 export_ip_user_files -of_objects  [get_files "$ip_dir/ram_520x64_2p/ram_520x64_2p.xci"] -force >> $log_file
-add_files -norecurse $ip_dir/ram_584x64_2p/ram_584x64_2p.xci >> $log_file
-export_ip_user_files -of_objects  [get_files "$ip_dir/ram_584x64_2p/ram_584x64_2p.xci"] -force >> $log_file
+add_files -norecurse $ip_dir/ram_576x64_2p/ram_576x64_2p.xci >> $log_file
+export_ip_user_files -of_objects  [get_files "$ip_dir/ram_576x64_2p/ram_576x64_2p.xci"] -force >> $log_file
 add_files -norecurse  $ip_dir/fifo_4x512/fifo_4x512.xci >> $log_file
 export_ip_user_files -of_objects  [get_files  "$ip_dir/fifo_4x512/fifo_4x512.xci"] -force >> $log_file
 add_files -norecurse  $ip_dir/fifo_8x512/fifo_8x512.xci >> $log_file
@@ -184,16 +184,26 @@ if { $nvme_used == TRUE } {
   puts "	                        generating NVMe output products"
   set_property synth_checkpoint_mode None [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
   generate_target all                     [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
-  add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme/
-  add_files -fileset sim_1 -norecurse -scan_for_includes $denali_dir/ddvapi/verilog/denaliPcie.v
-  set_property include_dirs                              $denali_dir/ddvapi/verilog [get_filesets sim_1]
+
+    if { ( [info exists ::env(DENALI_TOOLS) ] == 1)  &&  ( [info exists ::env(DENALI_CUSTOM)] == 1 ) } {
+    puts "	                        adding Denali simulation files"
+    set denali_custom $::env(DENALI_CUSTOM)
+    add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme/
+    add_files -fileset sim_1 -scan_for_includes $denali_custom/sim_model/
+
+    set denali_tools  $::env(DENALI_TOOLS)
+    add_files -fileset sim_1 -norecurse -scan_for_includes $denali_tools/ddvapi/verilog/denaliPcie.v
+    set_property include_dirs                              $denali_tools/ddvapi/verilog [get_filesets sim_1]
+  } else {
+    puts "	                        adding Denali simulation files failed, only image build will work"
+  }
 } else {
   remove_files $action_dir/action_axi_nvme.vhd -quiet
 }
 
 # Add PSL
 puts "	                        importing PSL design checkpoint"
-read_checkpoint -cell b $build_dir/Checkpoints/b_route_design.dcp -strict >> $log_file
+read_checkpoint -cell b $root_dir/build/Checkpoints/$psl_dcp -strict >> $log_file
 
 # XDC
 # SNAP CORE XDC
