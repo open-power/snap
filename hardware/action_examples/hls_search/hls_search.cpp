@@ -70,7 +70,7 @@ static void memcopy_table(snap_membus_t  *din_gmem,
 	snapu64_t address_xfer_offset = 0;
 	snap_membus_t   buf_gmem[MAX_NB_OF_WORDS_READ];
 	snapu32_t  left_bytes = total_bytes_to_transfer;
-	snapu32_t  copy_bytes;
+	snapu32_t  copy_bytes, copy_64_bytes_aligned;
 
  L_COPY:
 	while (left_bytes > 0) {
@@ -79,9 +79,15 @@ static void memcopy_table(snap_membus_t  *din_gmem,
 			copy_bytes = read_bulk (din_gmem, 
 						source_address + address_xfer_offset,  
 						left_bytes, buf_gmem);
-			write_bulk (d_ddrmem, 
+			// Always write 64 bytes aligned data into DDR
+			if ((copy_bytes%64) == 0)
+				copy_64_bytes_aligned = copy_bytes;
+			else
+				copy_64_bytes_aligned = copy_bytes - (copy_bytes%64) + 64;
+
+			write_bulk (d_ddrmem,
 				    target_address + address_xfer_offset,  
-				    copy_bytes, buf_gmem);
+				    copy_64_bytes_aligned, buf_gmem);
 			break;
 		case DDR2HOST:
 			copy_bytes = read_bulk (d_ddrmem, 
@@ -163,7 +169,7 @@ static void mbus_to_word(snap_membus_t mem, word_t text)
 static void x_mbus_to_word(snap_membus_t *buffer, char *text)
 {
 	loop_x_mbus_to_word:
-	for(unsigned char k=0; k < MAX_NB_OF_WORDS_READ; k++)
+	for(unsigned int k=0; k < MAX_NB_OF_WORDS_READ; k++)
 #pragma HLS UNROLL factor=4
                 mbus_to_word(buffer[k], &text[k*BPERDW]);
 }
@@ -181,6 +187,8 @@ static snap_membus_t word_to_mbus(word_t text)
         }
         return mem;
 }
+
+
 /*******************************************************/
 /********* STREAMING SEARCH ****************************/
 /*******************************************************/
@@ -366,6 +374,7 @@ static snapu32_t process_action_strm(snap_membus_t *din_gmem,
   char  Pattern[PATTERN_SIZE];
 
   short rc = 0;
+  global_count = 0;
 
 
   PatternSize = Action_Register->Data.src_pattern.size;
@@ -470,8 +479,6 @@ int Naive_search(char Pattern[PATTERN_SIZE], int PatternSize,
 	   if (j <= TextSize - PatternSize)
 	   {
 		  for (i = 0; i < PatternSize && Pattern[i] == Text[i + j]; ++i);
-		  // for (i = 0; i < PatternSize; ++i);
-		  // 	   if (pattern[i] == txt[i + j]) break;
 		  if (i >= PatternSize)
 		  {
 			   count++;
@@ -615,13 +622,17 @@ void hls_action(snap_membus_t *din_gmem,
 {
 
 // Host Memory AXI Interface
-#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
-#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
+#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512 \
+  max_read_burst_length=32  max_write_burst_length=32
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg 		offset=0x030
+
+#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512 \
+  max_read_burst_length=32  max_write_burst_length=32
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg 		offset=0x040
 
 //DDR memory Interface
-#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
+#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512 \
+  max_read_burst_length=32  max_write_burst_length=32
 #pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg 		offset=0x050
 
 // Host Memory AXI Lite Master Interface
@@ -632,7 +643,6 @@ void hls_action(snap_membus_t *din_gmem,
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 
 	snapu32_t result;
-	snap_membus_t  buf_gmem[MAX_NB_OF_BYTES_READ/BPERDW];
 	// Hardcoded numbers
   	/* test used to exit the action if no parameter has been set.
   	 * Used for the discovery phase of the cards */
@@ -741,7 +751,6 @@ int main(void)
 123456789_123456789_123456789
 123456789_123456789_123456789
 18_occurrences_of_123_pattern
-adding_padding_to_256bytes_to ensure test  ok
      */
 
     // read data for text
@@ -768,17 +777,17 @@ adding_padding_to_256bytes_to ensure test  ok
     }
     else
     {
-        printf("File not opened !\n");
+        printf("File used to look for the pattern occurrence couldn't be opened !\n");
         return 1;
     }
 
 
     Action_Register.Data.src_text1.addr = 0;
-    Action_Register.Data.src_text1.size = (m*BPERDW) + k + 1;
+    Action_Register.Data.src_text1.size = (m*BPERDW) + k;
     Action_Register.Data.src_text1.type = SNAP_ADDRTYPE_HOST_DRAM;
 
-    Action_Register.Data.ddr_text1.addr = 512; //0;
-    Action_Register.Data.ddr_text1.size = (m*BPERDW) + k + 1;
+    Action_Register.Data.ddr_text1.addr = 0;
+    Action_Register.Data.ddr_text1.size = (m*BPERDW) + k;
     Action_Register.Data.ddr_text1.type = SNAP_ADDRTYPE_CARD_DRAM;
 
     Action_Register.Data.src_pattern.addr = 0;
