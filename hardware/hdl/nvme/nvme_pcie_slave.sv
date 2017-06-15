@@ -87,9 +87,9 @@ module nvme_pcie_slave #
 
   always @(pcie_s_axi_araddr)
   begin : READ_DECODE_P
-    // Use bits 20-16 for queue selection
+    // Use bits 30-27 for queue selection
     // Use bits 15:4 for offset from queue base
-    unique case ({pcie_s_axi_araddr[16 +: 5], 16'h0000})
+    unique case ({pcie_s_axi_araddr[27 +: 4], 27'h000_0000})
       `PCIE_SSD0_SQ0_ADDR: begin
         decode_raddr = pcie_s_axi_araddr[4 +: 12] + sq_base[`CMD_SSD0_Q0];
       end
@@ -191,9 +191,9 @@ module nvme_pcie_slave #
 
   always @(pcie_s_axi_awaddr)
   begin : WRITE_DECODE_P
-    // Use bits 20-16 for queue selection
+    // Use bits 30-27 for queue selection
     // Use bits 15:4 for offset from queue base
-    unique case ({pcie_s_axi_awaddr[16 +: 5], 16'h0000})
+    unique case ({pcie_s_axi_awaddr[27 +: 4], 27'h000_0000})
       `PCIE_SSD0_CQ0_ADDR: begin
         decode_waddr = pcie_s_axi_awaddr[4 +: 12] + cq_base[`CMD_SSD0_Q0];
       end
