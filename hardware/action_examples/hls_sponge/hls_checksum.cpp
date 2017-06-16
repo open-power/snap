@@ -351,7 +351,7 @@ void process_action( action_reg *Action_Register)
 
 
 	         test_runs:for (run_number = 0; run_number < NB_TEST_RUNS; run_number++)
-#pragma HLS UNROLL factor=32      // PARALLELIZATION FACTOR
+#pragma HLS UNROLL factor=16      // PARALLELIZATION FACTOR - max is 32
                  checksum ^= test_speed(run_number, nb_elmts, freq);
 
      		Action_Register->Data.chk_out = checksum;

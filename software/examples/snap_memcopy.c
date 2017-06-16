@@ -223,15 +223,15 @@ int main(int argc, char *argv[])
 
 	/* if input file is defined, use that as input */
 	if (input != NULL) {
+		size = __file_size(input);
+		if (size < 0)
+			goto out_error;
+
 		/* source buffer */
 		ibuff = memalign(page_size, size);
 		if (ibuff == NULL)
 			goto out_error;
 		memset(ibuff, 0, size);
-
-		size = __file_size(input);
-		if (size < 0)
-			goto out_error;
 
 		fprintf(stdout, "reading input data %d bytes from %s\n",
 			(int)size, input);
@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
 	       "  addr_in:     %016llx\n"
 	       "  type_out:    %x %s\n"
 	       "  addr_out:    %016llx\n"
-	       "  size_in/out: %08lx\n"
+	       "  size_in/out: %08lx/\n"
 	       "  mode:        %08x\n",
 	       input  ? input  : "unknown",
 	       output ? output : "unknown",
