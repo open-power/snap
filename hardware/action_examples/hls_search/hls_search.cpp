@@ -754,7 +754,7 @@ int main(void)
      */
 
     // read data for text
-    fp = fopen("../../../../snap_search123.txt", "r");
+    fp = fopen("../../../../snap_search1.txt", "r");
     if (fp) {
         while((c = getc(fp)) != EOF) {
                 word_tmp[k] = c;
@@ -791,7 +791,7 @@ int main(void)
     Action_Register.Data.ddr_text1.type = SNAP_ADDRTYPE_CARD_DRAM;
 
     Action_Register.Data.src_pattern.addr = 0;
-    Action_Register.Data.src_pattern.size = 3; // Take 3 first characters of din_gmem as pattern
+    Action_Register.Data.src_pattern.size = 1;//3; // Take 3 first characters of din_gmem as pattern
     Action_Register.Data.src_pattern.type = SNAP_ADDRTYPE_HOST_DRAM;
 
     Action_Register.Data.ddr_result.addr = 0;
