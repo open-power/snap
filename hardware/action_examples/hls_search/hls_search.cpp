@@ -71,7 +71,7 @@ static snapu32_t write_bulk(snap_membus_t *tgt_mem,
 
 	//memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
 	//       buffer, xfer_size);
-        wb_dout_loop: for (int k=0; k<xfer_size_in_words; k++)
+        wb_loop: for (int k=0; k<xfer_size_in_words; k++)
 #pragma HLS PIPELINE
               (tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT))[k] = buffer[k];
 
