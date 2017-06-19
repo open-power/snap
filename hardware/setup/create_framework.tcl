@@ -29,6 +29,7 @@ set action_dir  $::env(ACTION_ROOT)
 set nvme_used   $::env(NVME_USED)
 set bram_used   $::env(BRAM_USED)
 set sdram_used  $::env(SDRAM_USED)
+set ila_debug   $::env(ILA_DEBUG)
 set simulator   $::env(SIMULATOR)
 set vivadoVer   [version -short]
 set log_dir      $::env(LOGS_DIR)
@@ -233,6 +234,9 @@ if { $fpga_card == "KU3" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/FGT/snap_refclk100.xdc
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/FGT/snap_nvme.xdc
   }
+}
+if { $ila_debug == "TRUE" } {
+  add_files -fileset constrs_1 -norecurse  $root_dir/setup/ila_debug.xdc
 }
 
 puts "	\[CREATE_FRAMEWORK....\] done"

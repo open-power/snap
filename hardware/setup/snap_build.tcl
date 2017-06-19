@@ -22,6 +22,7 @@ set fpgacard     $::env(FPGACARD)
 set sdram_used   $::env(SDRAM_USED)
 set nvme_used    $::env(NVME_USED)
 set bram_used    $::env(BRAM_USED)
+set ila_debug    $::env(ILA_DEBUG)
 
 #timing_lablimit  
 if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
@@ -176,6 +177,15 @@ if { [catch "$command > $logfile" errMsg] } {
 
 } else {
   write_cfgmem    -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME  -size 128 -interface  BPIx16 -force >> $logfile
+}
+
+##
+## writing debug probes
+if { $ila_debug == "TRUE" } {
+  set step     write_debug_probes
+  set logfile  $log_dir/${step}.log
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "writing debug probes" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+  write_debug_probes ./Images/$IMAGE_NAME.ltx >> $logfile
 }
 
 ## 
