@@ -35,10 +35,20 @@ static snapu32_t read_bulk(snap_membus_t *src_mem,
 	snapu32_t xfer_size;
 
 	xfer_size = MIN(byte_to_transfer, (snapu32_t) MAX_NB_OF_BYTES_READ);
+        // Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
+        int xfer_size_in_words;
+        if(xfer_size %BPERDW == 0)
+        	xfer_size_in_words = xfer_size/BPERDW;
+        else
+        	xfer_size_in_words = (xfer_size/BPERDW) + 1;
+        
+	//memcpy(buffer, 
+	//       (snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
+	//       xfer_size);
+	rb_loop: for (int k=0; k< xfer_size_in_words; k++)
+#pragma HLS PIPELINE
+            buffer[k] = (src_mem + (byte_address >> ADDR_RIGHT_SHIFT))[k];
 
-	memcpy(buffer, 
-	       (snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
-	       xfer_size);
 
 	return xfer_size;
 }
@@ -52,8 +62,19 @@ static snapu32_t write_bulk(snap_membus_t *tgt_mem,
 
 	xfer_size = MIN(byte_to_transfer, (snapu32_t)  MAX_NB_OF_BYTES_READ);
 
-	memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
-	       buffer, xfer_size);
+        // Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
+        int xfer_size_in_words;
+        if(xfer_size %BPERDW == 0)
+        	xfer_size_in_words = xfer_size/BPERDW;
+        else
+        	xfer_size_in_words = (xfer_size/BPERDW) + 1;
+
+	//memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
+	//       buffer, xfer_size);
+        wb_dout_loop: for (int k=0; k<xfer_size_in_words; k++)
+#pragma HLS PIPELINE
+              (tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT))[k] = buffer[k];
+
 
 	return xfer_size;
 }
@@ -116,15 +137,32 @@ static short read_burst_of_data_from_mem(snap_membus_t *din_gmem,
 {
 	short rc = -1;
 
+        // Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
+        int size_in_words;
+        if(size_in_bytes_to_transfer %BPERDW == 0)
+        	size_in_words = size_in_bytes_to_transfer/BPERDW;
+        else
+        	size_in_words = (size_in_bytes_to_transfer/BPERDW) + 1;
+
 	switch (memory_type) {
 	case SNAP_ADDRTYPE_HOST_DRAM:
-        	memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
-		       size_in_bytes_to_transfer);
+        	// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
+        	//memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
+		//       size_in_bytes_to_transfer);
+                rb_din_loop: for (int k=0; k<size_in_words; k++)
+#pragma HLS PIPELINE
+                    buffer[k] = (din_gmem + input_address)[k];
+
        		rc =  0;
 		break;
 	case SNAP_ADDRTYPE_CARD_DRAM:
-        	memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address), 
-		       size_in_bytes_to_transfer);
+        	// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
+        	//memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address), 
+		//       size_in_bytes_to_transfer);
+                rb_ddr_loop: for (int k=0; k<size_in_words; k++)
+#pragma HLS PIPELINE
+                    buffer[k] = (d_ddrmem + input_address)[k];
+
        		rc =  0;
 		break;
 	}
@@ -174,21 +212,8 @@ static void x_mbus_to_word(snap_membus_t *buffer, char *text)
                 mbus_to_word(buffer[k], &text[k*BPERDW]);
 }
 
-// Cast a char* word (64B) to a word for output port (512b)
-static snap_membus_t word_to_mbus(word_t text)
-{
-        snap_membus_t mem = 0;
 
- loop_word_to_mbus:
-        for (char k = sizeof(word_t)-1; k >= 0; k--) {
-#pragma HLS PIPELINE
-                mem = mem << 8;
-                mem(7, 0) = text[k];
-        }
-        return mem;
-}
-
-
+#ifdef STREAMING_METHOD
 /*******************************************************/
 /********* STREAMING SEARCH ****************************/
 /*******************************************************/
@@ -355,7 +380,6 @@ static void strm_search(snap_membus_t *din_gmem,
 	 Action_Register->Data.nb_of_occurrences = (snapu32_t) count;
 
 }
-
 //--------------------------------------------------------------------------------------------
 //--- MAIN PROGRAM FOR STREAMING -------------------------------------------------------------
 //--------------------------------------------------------------------------------------------
@@ -398,6 +422,7 @@ static snapu32_t process_action_strm(snap_membus_t *din_gmem,
   return (snapu32_t) global_count;
 }
 
+#endif
 /*******************************************************/
 /********* ARRAY  SEARCH *******************************/
 /*******************************************************/
@@ -583,17 +608,20 @@ static snapu32_t process_action(snap_membus_t *din_gmem,
   TextSize = InputSize;
 
   // buffer size is hardware limited by MAX_NB_OF_BYTES_READ
-  nb_blocks_to_process = (InputSize / MAX_NB_OF_BYTES_READ) + 1;
+  if(InputSize %MAX_NB_OF_BYTES_READ == 0)
+      nb_blocks_to_process = (InputSize / MAX_NB_OF_BYTES_READ);
+  else
+      nb_blocks_to_process = (InputSize / MAX_NB_OF_BYTES_READ) + 1;
 
   // processing buffers one after the other
   process_text_per_block:
   for ( i = 0; i < nb_blocks_to_process; i++ ) {
-//#pragma HLS UNROLL // cannot completely unroll a loop with a variable trip count
+#pragma HLS UNROLL // cannot completely unroll a loop with a variable trip count
 		search_size = MIN(TextSize, (snapu32_t) MAX_NB_OF_BYTES_READ);
 
 		rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, InputType,
 				(InputAddress >> ADDR_RIGHT_SHIFT) + rd_address_text_offset,
-		TextBuffer, search_size);
+				TextBuffer, search_size);
 		x_mbus_to_word(TextBuffer, Text); /* convert buffer to char*/
 
 		/* ********************
@@ -623,16 +651,16 @@ void hls_action(snap_membus_t *din_gmem,
 
 // Host Memory AXI Interface
 #pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512 \
-  max_read_burst_length=32  max_write_burst_length=32
+  max_read_burst_length=64  max_write_burst_length=64
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg 		offset=0x030
 
 #pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512 \
-  max_read_burst_length=32  max_write_burst_length=32
+  max_read_burst_length=64  max_write_burst_length=64
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg 		offset=0x040
 
 //DDR memory Interface
 #pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512 \
-  max_read_burst_length=32  max_write_burst_length=32
+  max_read_burst_length=64  max_write_burst_length=64
 #pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg 		offset=0x050
 
 // Host Memory AXI Lite Master Interface
@@ -685,10 +713,12 @@ void hls_action(snap_membus_t *din_gmem,
 
     		break;
     	case 3: // HW : search processing
+#ifdef STREAMING_METHOD
     		if(Action_Register->Data.method == STRM_method)
                     result = process_action_strm(din_gmem, dout_gmem, d_ddrmem, 
 					Action_Register);
     		else
+#endif
                     result = process_action(din_gmem, dout_gmem, d_ddrmem, 
 					Action_Register);
     		break;
@@ -722,6 +752,20 @@ void hls_action(snap_membus_t *din_gmem,
 
 #ifdef NO_SYNTH
 
+// Cast a char* word (64B) to a word for output port (512b)
+static snap_membus_t word_to_mbus(word_t text)
+{
+        snap_membus_t mem = 0;
+
+ loop_word_to_mbus:
+        for (char k = sizeof(word_t)-1; k >= 0; k--) {
+#pragma HLS PIPELINE
+                mem = mem << 8;
+                mem(7, 0) = text[k];
+        }
+        return mem;
+}
+
 int main(void)
 {
     int rc = 0;
@@ -754,7 +798,7 @@ int main(void)
      */
 
     // read data for text
-    fp = fopen("../../../../snap_search1.txt", "r");
+    fp = fopen("../../../../snap_search123.txt", "r");
     if (fp) {
         while((c = getc(fp)) != EOF) {
                 word_tmp[k] = c;
@@ -791,7 +835,7 @@ int main(void)
     Action_Register.Data.ddr_text1.type = SNAP_ADDRTYPE_CARD_DRAM;
 
     Action_Register.Data.src_pattern.addr = 0;
-    Action_Register.Data.src_pattern.size = 1;//3; // Take 3 first characters of din_gmem as pattern
+    Action_Register.Data.src_pattern.size = 3; // Take 3 first characters of din_gmem as pattern
     Action_Register.Data.src_pattern.type = SNAP_ADDRTYPE_HOST_DRAM;
 
     Action_Register.Data.ddr_result.addr = 0;
