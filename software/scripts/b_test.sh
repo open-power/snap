@@ -30,7 +30,7 @@ function test_ddr ()	# $1 = card, $2 = start, $2 = end, $3 = block size
 	local end=$3
 	local block_size=$4
 
-	cmd="./examples/snap_example_ddr -v -C ${card} -s $start -e $end -b $block_size"
+	cmd="./software/examples/snap_example_ddr -v -C ${card} -s $start -e $end -b $block_size"
 	eval ${cmd}
 	if [ $? -ne 0 ]; then
 		echo -n "Error: cmd: <${cmd}>"
@@ -68,15 +68,14 @@ while getopts "C:t:i:h" opt; do
 	esac
 done
 
-echo "Check if /dev/cxl/afu$snap_card is AlphaDataKU60"
 rev=$(cat /sys/class/cxl/card$snap_card/device/subsystem_device | xargs printf "0x%.4X")
 
 case $rev in
 "0x0605" )
-        echo "$rev -> AlphaDataKU60 Card"
+        echo "$rev -> Testing AlphaDataKU60 Card"
         ;;
 "0x060A" )
-        echo "$rev -> FlashGT Card"
+        echo "$rev -> Testing FlashGT Card"
         ;;
 *)
         echo "Capi Card $snap_card does have subsystem_device: $rev"
