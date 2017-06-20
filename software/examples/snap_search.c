@@ -252,7 +252,7 @@ static void usage(const char *prog)
 	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
 	       "  -C, --card <cardno> can be (0...3)\n"
 	       "  -s, --software         Test the software flow \n"
-	       "  -m, --method           Can be (0,1,2) different method search\n"
+	       "  -m, --method           Can be (1,2) different method search\n"
 	       "  -i, --input <data.bin> Input data.\n"
 	       "  -I, --items <items>    Max items to find.\n"
 	       "  -p, --pattern <str>    Pattern to search for\n"
@@ -492,7 +492,11 @@ int main(int argc, char *argv[])
                         printf(" >>> KMP method (%d) \n", method);
                         break;
                 case(0):
+#ifdef STREAMING_METHOD
                         printf(" >>> Streaming method (%d) \n", method);
+#else
+                        printf(" >>> Streaming method (%d) NOT IMPLEMENTED \n", method);
+#endif
                         break;
                 default:
                         printf(" >>> Default: Naive method (%d) \n", method);
