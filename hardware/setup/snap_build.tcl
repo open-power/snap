@@ -143,7 +143,7 @@ puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Timing (TNS)" $wid
 if { [expr $TIMING_TNS >= 0 ] } {
     puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "TIMING OK" $widthCol4 "" ]
     set remove_tmp_files TRUE
-} elseif { [expr $TIMING_TNS < $timing_lablimit ] } {
+} elseif { [expr $TIMING_TNS < $timing_lablimit ] && ( $ila_debug != "TRUE" ) } {
     puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: TIMING FAILED" $widthCol4 "" ]
     exit 42
 } else {
