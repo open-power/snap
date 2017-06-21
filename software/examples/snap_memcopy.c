@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
 	       "  addr_in:     %016llx\n"
 	       "  type_out:    %x %s\n"
 	       "  addr_out:    %016llx\n"
-	       "  size_in/out: %08lx/\n"
+	       "  size_in/out: %08lx\n"
 	       "  mode:        %08x\n",
 	       input  ? input  : "unknown",
 	       output ? output : "unknown",

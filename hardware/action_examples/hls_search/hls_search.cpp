@@ -25,6 +25,7 @@ unsigned int global_count;
 /* ----------------------------------------------------------------------------
  * Known Limitations => Issue #39 & #45
  * => Transfers must be 64 byte aligned and a size of multiples of 64 bytes
+ * Issue#320 - memcopy doesn't handle 4Kbytes xfer => use patch
  * ----------------------------------------------------------------------------
  */
 static snapu32_t read_bulk(snap_membus_t *src_mem,
@@ -36,9 +37,19 @@ static snapu32_t read_bulk(snap_membus_t *src_mem,
 
 	xfer_size = MIN(byte_to_transfer, (snapu32_t) MAX_NB_OF_BYTES_READ);
         
-	memcpy(buffer, 
-	       (snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
-	       xfer_size);
+        // Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
+        int xfer_size_in_words;
+        if(xfer_size %BPERDW == 0)
+        	xfer_size_in_words = xfer_size/BPERDW;
+        else
+        	xfer_size_in_words = (xfer_size/BPERDW) + 1;
+
+	//memcpy(buffer, 
+	//       (snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
+	//       xfer_size);
+	rb_loop: for (int k=0; k< xfer_size_in_words; k++)
+#pragma HLS PIPELINE
+            buffer[k] = (src_mem + (byte_address >> ADDR_RIGHT_SHIFT))[k];
 
 	return xfer_size;
 }
@@ -50,10 +61,19 @@ static snapu32_t write_bulk(snap_membus_t *tgt_mem,
 {
 	snapu32_t xfer_size;
 
+	// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
 	xfer_size = MIN(byte_to_transfer, (snapu32_t)  MAX_NB_OF_BYTES_READ);
+        int xfer_size_in_words;
+        if(xfer_size %BPERDW == 0)
+        	xfer_size_in_words = xfer_size/BPERDW;
+        else
+        	xfer_size_in_words = (xfer_size/BPERDW) + 1;
 
-	memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
-	       buffer, xfer_size);
+	//memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
+	//       buffer, xfer_size);
+	wb_loop: for (int k=0; k<xfer_size_in_words; k++)
+#pragma HLS PIPELINE
+              (tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT))[k] = buffer[k];
 
 	return xfer_size;
 }
@@ -115,16 +135,32 @@ static short read_burst_of_data_from_mem(snap_membus_t *din_gmem,
 					 snapu64_t size_in_bytes_to_transfer)
 {
 	short rc = -1;
+	// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
+        int size_in_words;
+        if(size_in_bytes_to_transfer %BPERDW == 0)
+        	size_in_words = size_in_bytes_to_transfer/BPERDW;
+        else
+        	size_in_words = (size_in_bytes_to_transfer/BPERDW) + 1;
 
 	switch (memory_type) {
 	case SNAP_ADDRTYPE_HOST_DRAM:
-        	memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
-		       size_in_bytes_to_transfer);
+		// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
+        	//memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
+		//       size_in_bytes_to_transfer);
+		rb_din_loop: for (int k=0; k<size_in_words; k++)
+#pragma HLS PIPELINE
+                    buffer[k] = (din_gmem + input_address)[k];
+
        		rc =  0;
 		break;
 	case SNAP_ADDRTYPE_CARD_DRAM:
-        	memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address), 
-		       size_in_bytes_to_transfer);
+		// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
+        	//memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address), 
+		//       size_in_bytes_to_transfer);
+		rb_ddr_loop: for (int k=0; k<size_in_words; k++)
+#pragma HLS PIPELINE
+                    buffer[k] = (d_ddrmem + input_address)[k];
+
        		rc =  0;
 		break;
 	}
