@@ -44,12 +44,12 @@ The variable `$SIMULATOR` is used to determine for which of the simulators xsim 
 the environment will be prepared.
 
 If the variable `$ACTION_ROOT` is not set, the make process will terminate. 
-The VHDL based default action example will be included if that environment variable is set to
+The HDL based default action example will be included if that environment variable is set to
 `$SNAP_ROOT/hardware/action_examples/hdl_example`.
 As usual you may set the variable with the call of make:
 
 ```bash
-    make config ACTION_ROOT=$SNAP_ROOT/hardware/action_examples/memcopy
+    make config ACTION_ROOT=$SNAP_ROOT/hardware/action_examples/hdl_example
 ```
 
 As part of the configuration step, a script `$ACTION_ROOT/action_config.sh` will be called if it exists.
@@ -57,10 +57,10 @@ Specific configurations/preparations for the action may be added via this script
 
 If you call make without any targets, then the environment is created and a simulation model build
 as well as a card image build are kicked off.
-In order to build a model and an image including the memcopy action example, call:
+In order to build a model and an image including the HDL action example, call:
 
 ```bash
-    make ACTION_ROOT=$SNAP_ROOT/hardware/action_examples/memcopy
+    make ACTION_ROOT=$SNAP_ROOT/hardware/action_examples/hdl_example
 ```
 
 If you want to build an image (a bitstream) for a given `$ACTION_ROOT`, you may call `make` with target `image`:
@@ -124,9 +124,8 @@ For instance, if you want to configure the SNAP framework for integrating the HL
 
 ```bash
   export ACTION_ROOT=$SNAP_ROOT/hardware/action_examples/hls_memcopy/vhdl
-```
-
-And, make sure to call `make` from within `$SNAP_ROOT/hardware/action_examples/hls_memcopy` before calling `make config` for the SNAP framework.
+```  
+Note the trailing `/vhdl`, and make sure to call `make` from within `$SNAP_ROOT/hardware/action_examples/hls_memcopy` before calling `make config` for the SNAP framework.
 
 ***Note*** that for the integration of HLS actions into the SNAP framework, the `$ACTION_ROOT` directory name needs to contain the term `HLS` (case doesn't matter), or the environment variable `$HLS_SUPPORT` needs to be defined and to be set to `TRUE` (case doesn't matter).
 
