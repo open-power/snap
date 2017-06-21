@@ -32,7 +32,6 @@
 typedef char word_t[BPERDW];
 typedef snapu64_t address_t;
 
-#define NO_OF_CHARS  256
 #define PATTERN_SIZE BPERDW
 #define TEXT_SIZE    4096 * MAX_NB_OF_BYTES_READ // used for streaming only
 #define HOST2DDR 0

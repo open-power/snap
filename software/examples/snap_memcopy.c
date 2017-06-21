@@ -223,15 +223,15 @@ int main(int argc, char *argv[])
 
 	/* if input file is defined, use that as input */
 	if (input != NULL) {
+		size = __file_size(input);
+		if (size < 0)
+			goto out_error;
+
 		/* source buffer */
 		ibuff = memalign(page_size, size);
 		if (ibuff == NULL)
 			goto out_error;
 		memset(ibuff, 0, size);
-
-		size = __file_size(input);
-		if (size < 0)
-			goto out_error;
 
 		fprintf(stdout, "reading input data %d bytes from %s\n",
 			(int)size, input);
