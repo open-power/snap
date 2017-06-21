@@ -23,6 +23,16 @@ logfile                      --log simulate.log
 # Running a simulation model
 The simulation script 'run_sim' is called from $SNAP_ROOT/hardware/sim.
 The environment variable `SIMULATOR` selects the simulator and can be set to 'xsim' or to 'irun'.
+run_sim will
+* start the simulator (irun, xsim) and wait for it to open an IP socket
+* start PSLSE and wait for it to connect to this socket and open a second IP socket
+* start an application (or list of applications or xwindow, where you can start any app)
+
+When the app or list or xwindow finishes, this is the signal for PSLSE and the simulator to also end and close all logfiles.
+This means, that PSLSE&sim only runs, as long as the app/list/xterm is avail.
+If you start an app in the xterm and cntl-C it without exiting from the xterm, the simulation keeps running.
+Or start run_sim -app <application> to run just this one app
+or start run_sim -list <list.sh> to run a list of testcases, before ending.
 
 ## environment prerequisites
 ```
@@ -36,6 +46,8 @@ The environment variable `SIMULATOR` selects the simulator and can be set to 'xs
  export CDS_LIC_FILE=                                # Cadence license server
  export IES_LIBS=                                    # Cadence IP compiled with Vivado
  export DENALI_TOOLS=                                # Cadence DENALI tools path for NVMe device simulation
+
+ export PSLSE_ROOT=                                  # path for the PSL simulation environment
 ```
 ## card and action settings
 Currently supported are Nallatech 250S (FlashGT) and AlphaData KU3, one action only
@@ -46,18 +58,19 @@ memory    DDR3           BRAM          none         DDR4         BRAM         no
 NVMe      no             no            no           yes          yes          yes               NVME_USED=TRUE
 action    hdl_example    hdl_example   hdl_example  hdl_example  hdl_example  hdl_example
           hls_intersect  hls_intersect hls_bfs
-          hls_hashjoin
+          hls_hashjoin                 hls_sponge
           hls_memcopy
           hls_search
-          hls_sponge
 ```
 
 ## run_sim arguments
 ```
  -app <app> | -list <list> | -x      # run a single application or a list of application or open another shell for manual input (default=-x)
+                                     # sim/testlist.sh is an example list with our sim regression tests for all actions
  -aet | -noaet                       # turn waveform generation on/off (default=on)
  -p <parmsfile>                      # use different PSLSE parameter settings (default=pslse.parms from $PSLSE_ROOT)
  -keep | -clean                      # keep succesful runs or clean them after running (for space reasons, default=keep)
+ -par <n>                            # start multiple parallel apps/lists/xterms. This is NOT part of the product support yet.
 ```
 
 ## Cadence irun
