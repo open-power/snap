@@ -145,7 +145,7 @@ snap_config: snap_config_start $(SNAP_CONFIG_FILES)
 snap_config_start:
 	@echo -e "\t[CONFIG SNAP_CORE....] start";
 
-action_config: $(ACTION_ROOT)
+action_config: $(ACTION_ROOT)/vhdl
 	@echo -e "\t[CONFIG ACTION.......] start";
 	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
 		cd $(ACTION_ROOT) && ./action_config.sh; \
@@ -154,7 +154,7 @@ action_config: $(ACTION_ROOT)
 # In case we have a HLS action there will be no vhdl directory,
 # such that ACTION_ROOT does not exist. To build it, we go one directory
 # above and issue "make", such that the vhdl code can be synthesized.
-$(ACTION_ROOT):
+$(ACTION_ROOT)/vhdl:
 	@echo -e "\t[CREATE_HLS_CODE.....] start `date`"
 	@echo -e "\t                        using `vivado_hls -v |grep Vivado`"
 	@make -C `dirname $(ACTION_ROOT)` > $(LOGS_DIR)/create_hls.log
