@@ -22,7 +22,7 @@ logfile                      --log simulate.log
 
 # Running a simulation model
 The simulation script `run_sim` is called from $SNAP_ROOT/hardware/sim.
-The environment variable `SIMULATOR` selects the simulator and can be set to `xsim` or to `irun`.
+The environment variable `SIMULATOR` selects the simulator and can be set to `xsim` or to `irun`.  
 `run_sim` will
 * start the simulator (irun, xsim) and wait for it to open an IP socket
 * start PSLSE and wait for it to connect to this socket and open a second IP socket
