@@ -1,10 +1,10 @@
 # Building a model
-see [../README.md] for further instructions
+see [../README.md](../README.md) for further instructions
 Note: The Makefile for building a model calls Vivado to export compile&run script `top.sh`.
-By default this already calls the simulator. In SNAP the simulator execution is disabled and replaced by [./run_sim]
+By default this already calls the simulator. In SNAP the simulator execution is disabled and replaced by [./run_sim](./run_sim)
 Cadence also supports a three-step compile/elab/run mode, which lists compile modules differently and is not used for SNAP.
 The Cadence one-step irun mode calls irun for compile and for simulator execution, the simulator underneath is called ncsim.
-Xilinx builds models in three steps compile/elaborate/simulate with a *.prj file similar to Cadence irun
+Xilinx builds models in three steps compile/elaborate/simulate with a `.prj` file similar to Cadence irun
 
 ## compile options
 ```
@@ -21,18 +21,18 @@ logfile                      --log simulate.log
 ```
 
 # Running a simulation model
-The simulation script 'run_sim' is called from $SNAP_ROOT/hardware/sim.
-The environment variable `SIMULATOR` selects the simulator and can be set to 'xsim' or to 'irun'.
-run_sim will
+The simulation script `run_sim` is called from $SNAP_ROOT/hardware/sim.
+The environment variable `SIMULATOR` selects the simulator and can be set to `xsim` or to `irun`.
+`run_sim` will
 * start the simulator (irun, xsim) and wait for it to open an IP socket
 * start PSLSE and wait for it to connect to this socket and open a second IP socket
 * start an application (or list of applications or xwindow, where you can start any app)
 
 When the app or list or xwindow finishes, this is the signal for PSLSE and the simulator to also end and close all logfiles.
 This means, that PSLSE&sim only runs, as long as the app/list/xterm is avail.
-If you start an app in the xterm and cntl-C it without exiting from the xterm, the simulation keeps running.
-Or start run_sim -app <application> to run just this one app
-or start run_sim -list <list.sh> to run a list of testcases, before ending.
+If you start an app in the xterm and cntl-C it without exiting from the xterm, the simulation keeps running.  
+Or start `run_sim -app <application>` to run just this one app  
+or start `run_sim -list <list.sh>` to run a list of testcases, before ending.
 
 ## environment prerequisites
 ```
@@ -87,7 +87,7 @@ action    hdl_example    hdl_example   hdl_example  hdl_example  hdl_example  hd
 
 # Debugging a model
 ## waveform generation
-run_sim with -aet (waveforms enabled, this is the default) starts a tcl script to include signals.
+Calling `run_sim` with -aet (waveforms enabled, this is the default) starts a tcl script to include signals.
 ```
  ncaet.tcl                           # for Cadence irun
  xsaet.tcl                           # for Xilinx xsim
