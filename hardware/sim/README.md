@@ -1,9 +1,9 @@
 # Building a model
 see [../README.md](../README.md) for further instructions
-Note: The Makefile for building a model calls Vivado to export compile&run script `top.sh`.
-By default this already calls the simulator. In SNAP the simulator execution is disabled and replaced by [./run_sim](./run_sim)
+Note: The Makefile for building a model calls Vivado to export a script `top.sh` for compile & elaborate & simulate.
+By default this already calls the simulator. In SNAP the simulator execution is disabled and replaced by [./run_sim](./run_sim).  
 Cadence also supports a three-step compile/elab/run mode, which lists compile modules differently and is not used for SNAP.
-The Cadence one-step irun mode calls irun for compile and for simulator execution, the simulator underneath is called ncsim.
+The Cadence one-step irun mode calls irun for compile and for simulator execution, the simulator underneath is called ncsim.  
 Xilinx builds models in three steps compile/elaborate/simulate with a `.prj` file similar to Cadence irun
 
 ## compile options
