@@ -34,16 +34,17 @@
 #include "snap_example.h"
 
 /*	defaults */
-#define ACTION_WAIT_TIME	1	/* Default timeout in sec */
+#define ACTION_WAIT_TIME        1                /* Default timeout in sec */
 
-#define	KILO_BYTE		(1024ull)
-#define	MEGA_BYTE		(1024 * KILO_BYTE)
-#define	GIGA_BYTE		(1024 * MEGA_BYTE)
-#define DDR_MEM_SIZE		(4 * GIGA_BYTE)	/* Default End of FPGA Ram */
-#define DDR_MEM_BASE_ADDR	0x00000000	/* Default Start of FPGA Ram */
-#define	HOST_BUFFER_SIZE	(256 * KILO_BYTE)	/* Default Size for Host Buffers */
-#define	NVME_LB_SIZE		512		/* NVME Block Size */
-#define	NVME_DRIVE_SIZE		(4 * GIGA_BYTE)	/* NVME Drive Size */
+#define KILO_BYTE               (1024ull)
+#define MEGA_BYTE               (1024 * KILO_BYTE)
+#define GIGA_BYTE               (1024 * MEGA_BYTE)
+#define DDR_MEM_SIZE            (4 * GIGA_BYTE)   /* Default End of FPGA Ram */
+#define DDR_MEM_BASE_ADDR       0x00000000        /* Default Start of FPGA Ram */
+#define HOST_BUFFER_SIZE        (256 * KILO_BYTE) /* Default Size for Host Buffers */
+#define NVME_LB_SIZE            512               /* NVME Block Size */
+#define NVME_DRIVE_SIZE         (4 * GIGA_BYTE)	  /* NVME Drive Size */
+#define NVME_MAX_TRANSFER_SIZE  (128 * MEGA_BYTE) /* NVME limit to Transfer in one chunk */
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
@@ -190,7 +191,7 @@ static void action_memcpy(struct snap_card* h,
 		uint64_t src,
 		size_t n)
 {
-	VERBOSE2(" memcpy_%x(%llx, %llx, %lx) ",
+	VERBOSE2(" memcpy_%x(0x%llx, 0x%llx, 0x%lx) ",
 		action, (long long)dest, (long long)src, n);
 	action_write(h, ACTION_CONFIG,  action);
 	action_write(h, ACTION_DEST_LOW, (uint32_t)(dest & 0xffffffff));
@@ -258,7 +259,7 @@ int main(int argc, char *argv[])
 	uint64_t ddr_dest = 0;
 	uint64_t host_src = 0;
 	uint64_t host_dest = 0;
-	unsigned long long max_blocks = (NVME_DRIVE_SIZE / NVME_LB_SIZE);
+	unsigned long long max_blocks = (NVME_MAX_TRANSFER_SIZE / NVME_LB_SIZE);
 	struct snap_action *act = NULL;
 
 	while (1) {
@@ -374,10 +375,11 @@ int main(int argc, char *argv[])
 	nvme_lb = nvme_offset / NVME_LB_SIZE;
 
 	VERBOSE1("Host: 0x%llx / 0x%llx DDR: 0x%llx / 0x%llx\n"
-		"    Drive: %d Size: 0x%x Nvme-Addr: 0x%llx LB: %d\n",
+		"    Drive: %d Size: 0x%x Addr: 0x%llx LB: %d (0x%x) BS: %d (0x%x)\n",
 		(long long)host_src, (long long)host_dest,
 		(long long)ddr_src, (long long)ddr_dest,
-		drive, mem_size, (long long)nvme_offset, (int)blocks);
+		drive, mem_size, (long long)nvme_offset,
+		(int)blocks, (int)blocks, NVME_LB_SIZE, NVME_LB_SIZE);
 
 	act = snap_attach_action(dn, ACTION_TYPE_EXAMPLE, attach_flags, 5*timeout);
 	if (NULL == act) {
@@ -385,24 +387,24 @@ int main(int argc, char *argv[])
 			ACTION_TYPE_EXAMPLE);
 		goto __exit;
 	}
-	VERBOSE1("\n        Host -> DDR ");
+	VERBOSE1("\n        DDR <- HOST ");
 	action_memcpy(dn, ACTION_CONFIG_COPY_HD, ddr_src, host_src, mem_size);
 	rc = action_wait_idle(dn, timeout, mem_size);
 	if (rc) goto __exit1;
 
-	VERBOSE1("\n        DDR -> NVME ");
+	VERBOSE1("\n        NVME <- DDR ");
 	drive_cmd = ACTION_CONFIG_COPY_DN | (NVME_DRIVE1 * drive);
 	action_memcpy(dn, drive_cmd, nvme_lb, ddr_src, blocks);
 	rc = action_wait_idle(dn, timeout, mem_size);
 	if (rc) goto __exit1;
 
-	VERBOSE1("\n        NVME -> DDR ");
+	VERBOSE1("\n        DDR <- NVME ");
 	drive_cmd = ACTION_CONFIG_COPY_ND | (NVME_DRIVE1 * drive);
 	action_memcpy(dn, drive_cmd, ddr_dest, nvme_lb, blocks);
 	rc = action_wait_idle(dn, timeout, mem_size);
 	if (rc) goto __exit1;
 
-	VERBOSE1("\n        DDR -> Host ");
+	VERBOSE1("\n        HOST <- DDR ");
 	action_memcpy(dn, ACTION_CONFIG_COPY_DH, host_dest, ddr_dest, mem_size);
 	rc = action_wait_idle(dn, timeout, mem_size);
 	if (rc) goto __exit1;
