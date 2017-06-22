@@ -1,3 +1,4 @@
+
 /*
  * The MIT License (MIT)
  *
@@ -152,10 +153,10 @@ static int test_sha3()
 
     fails = 0;
     for (i = 0; i < 4; i++) {
-#pragma HLS UNROLL
-        memset(sha, 0, sizeof(sha));
-        memset(buf, 0, sizeof(buf));
-        memset(msg, 0, sizeof(msg));
+    	// These 3 lines are not needed looking to the way test_readhex works
+        //memset(sha, 0, sizeof(sha));
+        //memset(buf, 0, sizeof(buf));
+        //memset(msg, 0, sizeof(msg));
 
         //msg_len = test_readhex(msg, testvec[i][0], sizeof(msg));
         //sha_len = test_readhex(sha, testvec[i][1], sizeof(sha));
@@ -183,7 +184,7 @@ static int test_sha3()
         sha3(msg, msg_len, buf, sha_len);
 
         //if (memcmp(sha, buf, sha_len) != 0) {
-        for(int k = 0; k < sha_len; k++) {
+        cmp_result:for(int k = 0; k < sha_len; k++) {
         	if (sha[k] != buf[k]) {
             fprintf(stderr, "[%d] SHA3-%d, len %d test FAILED.\n",
                 i, sha_len * 8, msg_len);
@@ -231,7 +232,7 @@ static int test_shake()
     fails = 0;
 
     for (i = 0; i < 4; i++) {
-#pragma HLS UNROLL
+//#pragma HLS UNROLL
         if ((i & 1) == 0) {             // test each twice
             shake128_init(&sha3);
         } else {
@@ -273,7 +274,7 @@ static int test_shake()
 
         //if (memcmp(buf, ref, 32) != 0) {
         for(int k = 0; k < 32; k++) {
-#pragma HLS UNROLL
+//#pragma HLS UNROLL
         	if (buf[k] != ref[k]) {
             fprintf(stderr, "[%d] SHAKE%d, len %d test FAILED.\n",
                 i, i & 1 ? 256 : 128, i >= 2 ? 1600 : 0);
@@ -349,8 +350,8 @@ void process_action( action_reg *Action_Register)
 			freq = Action_Register->Data.freq;
 
 
-	         for (run_number = 0; run_number < NB_TEST_RUNS; run_number++)
-#pragma HLS UNROLL factor=4      // PARALLELIZATION FACTOR
+	         test_runs:for (run_number = 0; run_number < NB_TEST_RUNS; run_number++)
+#pragma HLS UNROLL factor=16      // PARALLELIZATION FACTOR - max is 32
                  checksum ^= test_speed(run_number, nb_elmts, freq);
 
      		Action_Register->Data.chk_out = checksum;
@@ -358,15 +359,14 @@ void process_action( action_reg *Action_Register)
     		Action_Register->Data.nb_rounds  = NB_ROUNDS;
 		rc = 0;
 		break;
-
-#ifndef TEST_SPEED_ONLY // To leave only TEST_SPEED logic
+#ifdef TEST_SPEED_ONLY // To leave only TEST_SPEED logic
 	case(1):
 		rc = test_sha3();
 		Action_Register->Data.chk_out = rc;
     		Action_Register->Data.nb_test_runs = 0;
     		Action_Register->Data.nb_rounds  = 0;
 		break;
-	case(2):
+		case(2):
 		rc = test_shake();
 		Action_Register->Data.chk_out = rc;
     		Action_Register->Data.nb_test_runs = 0;
@@ -407,9 +407,11 @@ void process_action( action_reg *Action_Register)
  * the cosimulation will not work, since the width of the interface cannot
  * be determined. Using an array din_gmem[...] works too to fix that.
  */
+// This example doesn't use FPGA DDR.
+// Need to set Environment Variable "SDRAM_USED=FALSE" before compilation.
 void hls_action(snap_membus_t *din_gmem,
 		    snap_membus_t *dout_gmem,
-		    snap_membus_t *d_ddrmem, 
+		    //snap_membus_t *d_ddrmem, 
 		    action_reg *Action_Register,
 		    action_RO_config_reg *Action_Config)
 {
@@ -421,8 +423,8 @@ void hls_action(snap_membus_t *din_gmem,
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg          offset=0x040
 
 //DDR memory Interface 
-#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
-#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg           offset=0x050
+//#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
+//#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg           offset=0x050
 
 // Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Config
@@ -467,23 +469,25 @@ int main(void)
 
 	snap_membus_t din_gmem[1]; 	// Unused
 	snap_membus_t dout_gmem[1];	// Unused
-	snap_membus_t d_ddrmem[1];	// Unused
+	//snap_membus_t d_ddrmem[1];	// Unused
 	action_reg Action_Register;
 	action_RO_config_reg Action_Config;
 
 
 	// Get Config registers
 	Action_Register.Control.flags = 0;
-	hls_action(din_gmem, dout_gmem, d_ddrmem,
+	hls_action(din_gmem, dout_gmem, //d_ddrmem,
 			    &Action_Register, &Action_Config);
 
 	// Process the action
 	Action_Register.Control.flags = 1;
 
+	//********SPEED TESTS*******
 	Action_Register.Data.test_choice = 0; 	//speed test
 	Action_Register.Data.nb_elmts = 2;			// 2 calls
 	Action_Register.Data.freq = NB_TEST_RUNS; // every NB_TEST_RUNS until NB_TEST_RUNS
-	hls_action(din_gmem, dout_gmem, d_ddrmem,
+
+	hls_action(din_gmem, dout_gmem, //d_ddrmem,
 			    &Action_Register, &Action_Config);
 	printf(" ==> 2 test calls : checksum = %016llx",
 			(long long) Action_Register.Data.chk_out);
@@ -492,9 +496,10 @@ int main(void)
 	else
 		printf(" => WRONG checksum => expecting : 0x2ccef6d61b67ad2f\n");
 
+	//********SPEED TESTS*******
 	Action_Register.Data.nb_elmts = 4;			// 4 calls
 	Action_Register.Data.freq = NB_TEST_RUNS; // every NB_TEST_RUNS until NB_TEST_RUNS
-	hls_action(din_gmem, dout_gmem, d_ddrmem,
+	hls_action(din_gmem, dout_gmem, //d_ddrmem,
 			    &Action_Register, &Action_Config);
 	printf(" ==> 4 test calls : checksum = %016llx",
 			(long long) Action_Register.Data.chk_out);
@@ -503,10 +508,12 @@ int main(void)
 	else
 		printf(" => WRONG checksum => expected : 0x0796ca863ac8273f\n");
 
-
-	Action_Register.Data.test_choice = 3; //SHA + SHAKE tests
-	hls_action(din_gmem, dout_gmem, d_ddrmem,
+#ifdef TEST_SPEED_ONLY
+	//********SHA3 + SHAKE TESTS*******
+	Action_Register.Data.test_choice = 3; //SHA3 + SHAKE tests
+	hls_action(din_gmem, dout_gmem, //d_ddrmem,
 			    &Action_Register, &Action_Config);
+#endif // end of TEST_SPEED_ONLY flag
 
 	if (Action_Register.Control.Retc == SNAP_RETC_FAILURE) {
 				printf(" ==> RETURN CODE FAILURE <==\n");
@@ -524,4 +531,3 @@ int main(void)
 }
 
 #endif // end of NO_SYNTH flag
-

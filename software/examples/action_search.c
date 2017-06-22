@@ -87,7 +87,7 @@ int KMP_search(char *pat, int M, char *txt, int N)
       if (i >= M)
       {
          i = KMP_table[i];
-         printf("Found pattern at index %d\n", j-i-M);
+         //printf("Found pattern at index %d\n", j-i-M);
          count++;
       }
    }
@@ -107,7 +107,7 @@ int Naive_search(char *pat, int M, char *txt, int N)
       if (i >= M)
       {
            count++;
-           printf("Pattern found at index %d \n", j);
+           //printf("Pattern found at index %d \n", j);
       }
    }
    return count;
@@ -125,15 +125,15 @@ unsigned int run_sw_search(unsigned int Method,
 
         switch (Method) {
         case(1):
-		printf("======== Naive method ========\n");
+		printf("======== SW Naive method ========\n");
                 count = Naive_search (Pattern, PatternSize, Text, TextSize);
                 break;
         case(2):
-	        printf("========= KMP method =========\n");
+	        printf("========= SW KMP method =========\n");
                 count = KMP_search(Pattern, PatternSize, Text, TextSize);
                 break;
         default:
-	        printf("=== Default Naive method ===\n");;
+	        printf("=== SW Default Naive method ===\n");;
                 count = Naive_search(Pattern, PatternSize, Text, TextSize);
                 break;
         }
