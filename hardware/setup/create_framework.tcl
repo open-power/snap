@@ -236,7 +236,7 @@ if { $fpga_card == "KU3" } {
   }
 }
 if { $ila_debug == "TRUE" } {
-  add_files -fileset constrs_1 -norecurse  $root_dir/setup/ila_debug.xdc
+  add_files -fileset constrs_1 -norecurse  $root_dir/debug/ila_debug.xdc
 }
 
 puts "	\[CREATE_FRAMEWORK....\] done"
