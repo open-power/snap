@@ -101,6 +101,11 @@ check_snap_settings:
 		echo "NUM_OF_ACTIONS: $(NUM_OF_ACTIONS)"; \
 		exit 1; \
 	fi
+	@if ([ -z `echo "x$(ACTION_ROOT)" | grep -iv HLS` ] || [ -z `echo "x$(HLS_SUPPORT)" | grep -iv TRUE` ]) && [ `basename "x$(ACTION_ROOT)"` != "vhdl" ] && [ `basename "x$(ACTION_ROOT)"` != "verilog" ]; then \
+		echo "Looks like an HLS action shall be integrated."; \
+		echo "Please make sure that the environment variable ACTION_ROOT ends in vhdl or in verilog"; \
+		exit 1; \
+	fi
 
 check_denali:
 	@if [ $(NVME_USED) == "TRUE" ]; then \
