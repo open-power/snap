@@ -44,7 +44,7 @@
 #define HOST_BUFFER_SIZE        (256 * KILO_BYTE) /* Default Size for Host Buffers */
 #define NVME_LB_SIZE            512               /* NVME Block Size */
 #define NVME_DRIVE_SIZE         (4 * GIGA_BYTE)	  /* NVME Drive Size */
-#define NVME_MAX_TRANSFER_SIZE  (128 * MEGA_BYTE) /* NVME limit to Transfer in one chunk */
+#define NVME_MAX_TRANSFER_SIZE  (32 * MEGA_BYTE) /* NVME limit to Transfer in one chunk */
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
