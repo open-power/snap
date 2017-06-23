@@ -64,3 +64,11 @@ echo -e "\t                        generating $NAME"
 if ([ "$NAME" == "snap_core_types.vhd" ]); then
   sed -i 's/CONSTANT NUM_OF_ACTIONS[ ^I]*:[ ^I]*integer.*:=[ ^I]*[0-9]*/CONSTANT NUM_OF_ACTIONS                  : integer := '$NUM_OF_ACTIONS'/' $2
 fi
+
+if [ "$NAME" == "psl_fpga.vhd" ]; then
+  if [ "${GOLDEN_IMAGE^^}" == "TRUE" ]; then
+    sed -i "s/\(gold_factory <= \)'[0-1]'/\1'0'/" $2
+  else
+    sed -i "s/\(gold_factory <= \)'[0-1]'/\1'1'/" $2
+  fi
+fi

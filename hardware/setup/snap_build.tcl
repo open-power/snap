@@ -22,6 +22,11 @@ set fpgacard     $::env(FPGACARD)
 set sdram_used   $::env(SDRAM_USED)
 set nvme_used    $::env(NVME_USED)
 set bram_used    $::env(BRAM_USED)
+if {[info exists ::env(GOLDEN_IMAGE)]} {
+  set golden_image [string toupper $::env(GOLDEN_IMAGE)]
+} else {
+  set golden_image "FALSE"
+}
 
 #timing_lablimit  
 if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
@@ -162,7 +167,8 @@ if { $bram_used == "TRUE" } {
     set RAM_TYPE noSDRAM
 }
 append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_TNS]
- 
+append IMAGE_NAME [expr {$golden_image == "TRUE" ? "_FACTORY" : ""}] 
+
 ## 
 ## writing bitstream
 set step     write_bitstream
@@ -170,10 +176,21 @@ set logfile  $log_dir/${step}.log
 set command  "write_bitstream -force -file ./Images/$IMAGE_NAME"  
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
 
+set_property BITSTREAM.GENERAL.COMPRESS {TRUE} [ current_design ]
+set_property BITSTREAM.CONFIG.EXTMASTERCCLK_EN {DIV-4} [current_design]
+set_property CONFIG_MODE {BPI16} [current_design]
+set_property BITSTREAM.CONFIG.BPI_1ST_READ_CYCLE 4 [current_design]
+set_property BITSTREAM.CONFIG.BPI_PAGE_SIZE 8 [current_design]
+
+# The factory bitstream has the above properties with one addition:
+if { $golden_image == "TRUE" } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Golden/Factory Image!" $widthCol3 "" $widthCol4 "" ]
+  set_property BITSTREAM.CONFIG.TIMER_CFG 0XFFFFFFFF [current_design]
+}
+
 if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: write_bitstream failed" $widthCol4 "" ]
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
-
 } else {
   write_cfgmem    -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME  -size 128 -interface  BPIx16 -force >> $logfile
 }
@@ -189,3 +206,4 @@ if { $remove_tmp_files == "TRUE" } {
 }
 
 close_project >> $log_file
+
