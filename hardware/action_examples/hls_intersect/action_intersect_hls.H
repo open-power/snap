@@ -19,8 +19,11 @@
 
 #include "hls_snap.H"
 #include "action_intersect.h"
+#define USE_HASH   
 
+//////////////////////////////////////
 // General
+//////////////////////////////////////
 #define MAX_NB_OF_BYTES_READ  (4 * 1024)
 
 // Size of each element
@@ -36,26 +39,6 @@ typedef ap_uint<ELE_BYTES *8> ele_t;
 #define DDR2HOST 1
 #define DDR2DDR 2
 
-
-//////////////////////////////////////
-//  Sort Method
-//////////////////////////////////////
-
-#define NUM_SORT 64
-#define NUM_ENGINES 16
-#define ONE_BUF_SIZE NUM_SORT * ELE_BYTES
-//////////////////////////////////////
-//  Hash Method
-//////////////////////////////////////
-
-#define HW_HT_ENTRY_NUM_EXP 22
-#define HW_HT_ENTRY_NUM (1<<HW_HT_ENTRY_NUM_EXP)
-
-// A 512bit-width BRAM stays in local FPGA for "used" bits
-#define WIDTH_EXP 9
-#define BRAM_WIDTH (1<<WIDTH_EXP)
-static ap_uint<BRAM_WIDTH> hash_used[HW_HT_ENTRY_NUM/BRAM_WIDTH];
-
 //////////////////////////////////////
 //DDR Address map
 //////////////////////////////////////
@@ -64,17 +47,36 @@ static ap_uint<BRAM_WIDTH> hash_used[HW_HT_ENTRY_NUM/BRAM_WIDTH];
 //2GB: Result (Configured from SW)
 
 //4GB: Hash table start address or sort place
-#define HASH_TABLE_ADDR  (snapu64_t)4*1024*1024*1024
+
+
+
+
+//////////////////////////////////////
+//  Sort Method
+//////////////////////////////////////
+#ifdef USE_SORT
+
+#define NUM_SORT 64
+#define NUM_ENGINES 8
+#define ONE_BUF_SIZE NUM_SORT * ELE_BYTES
 #define DDR_SORT_SPACE   (snapu64_t)4*1024*1024*1024
+#else
+//////////////////////////////////////
+//  Hash Method
+//////////////////////////////////////
+#ifdef USE_HASH
 
+#define HW_HT_ENTRY_NUM_EXP 22
+#define HW_HT_ENTRY_NUM (1<<HW_HT_ENTRY_NUM_EXP)
 
+// A 512bit-width BRAM stays in local FPGA for "used" bits
+#define WIDTH_EXP 9
+#define BRAM_WIDTH (1<<WIDTH_EXP)
+ap_uint<BRAM_WIDTH> hash_used[HW_HT_ENTRY_NUM/BRAM_WIDTH];
+#define HASH_TABLE_ADDR  (snapu64_t)4*1024*1024*1024
+#endif
+#endif
 
-//---------------------------------------------------------------------
-//typedef struct {
-//	CONTROL Control;	/*  16 bytes */
-//	intersect_job_t Data;
-//	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(intersect_job_t)];
-//} action_reg;
 
 typedef struct {
 	struct snap_addr src_tables_host0;	 /* input tables */

@@ -51,18 +51,32 @@ using namespace std;
 // v1.3 : 05/09/2017 : Refine Hash method to 22bit HW_HT_ENTRY_NUM_EXP
 // V1.4 : 05/18/2017 : Add sort method
 // V1.5 : 05/26/2017 : Refine Sort for the small block. Split cpp files.
+// V1.6 : 06/21/2017 : USE ARRAY_PARITION to provide parallel sorting. 
+//                     Use #ifdef to compile hash method and sort method.
 //--------------------------------------------------------------------------------------------
-#define HW_RELEASE_LEVEL       0x00000015
+#define HW_RELEASE_LEVEL       0x00000016
 
 snapu32_t read_bulk ( snap_membus_t *src_mem,
         snapu64_t      byte_address,
         snapu32_t      byte_to_transfer,
         snap_membus_t *buffer)
 {
-
     snapu32_t xfer_size;
     xfer_size = MIN(byte_to_transfer, (snapu32_t) MAX_NB_OF_BYTES_READ);
-    memcpy(buffer, (snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)), xfer_size);
+// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
+    int xfer_size_in_words;
+    if(xfer_size %BPERDW == 0)
+        xfer_size_in_words = xfer_size/BPERDW;
+    else
+        xfer_size_in_words = (xfer_size/BPERDW) + 1;
+
+    //memcpy(buffer,
+    //       (snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)),
+    //       xfer_size);
+    rb_loop: for (int k=0; k< xfer_size_in_words; k++)
+#pragma HLS PIPELINE
+        buffer[k] = (src_mem + (byte_address >> ADDR_RIGHT_SHIFT))[k];
+    
     return xfer_size;
 }
 void read_single (snap_membus_t * src_mem, snapu64_t byte_address, snap_membus_t * data)
@@ -79,7 +93,18 @@ snapu32_t write_bulk (snap_membus_t *tgt_mem,
 {
     snapu32_t xfer_size;
     xfer_size = MIN(byte_to_transfer, (snapu32_t)  MAX_NB_OF_BYTES_READ);
-    memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), buffer, xfer_size);
+    // Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
+    int xfer_size_in_words;
+    if(xfer_size %BPERDW == 0)
+        xfer_size_in_words = xfer_size/BPERDW;
+    else
+        xfer_size_in_words = (xfer_size/BPERDW) + 1;
+    
+    //memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), buffer, xfer_size);
+
+    wb_loop: for (int k=0; k<xfer_size_in_words; k++)
+#pragma HLS PIPELINE
+          (tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT))[k] = buffer[k];
     return xfer_size;
 }
 void write_single (snap_membus_t * tgt_mem, snapu64_t byte_address, snap_membus_t data)
@@ -106,7 +131,7 @@ void memcopy_table(snap_membus_t  *din_gmem,
     snapu32_t  copy_bytes;
 
     // Be cautious with "unsigned", it always >=0
-L_COPY: while (left_bytes > 0) {
+copy_loop: while (left_bytes > 0) {
             if(direction == HOST2DDR) {
                 copy_bytes = read_bulk (din_gmem, source_address + address_xfer_offset,  left_bytes, buf_gmem);
                 write_bulk (d_ddrmem, target_address + address_xfer_offset,  copy_bytes, buf_gmem);
@@ -125,6 +150,26 @@ L_COPY: while (left_bytes > 0) {
         } // end of L_COPY
 
 }
+
+static short compare_eq(ele_t a, ele_t b)
+{
+
+    ap_uint<256> ah, al, bh, bl;
+    ah = a(511,256);
+    al = a(255,0);
+
+    bh = b(511,256);
+    bl = b(255,0);
+
+    if(ah != bh)
+        return 0;
+    else if (al != bl)
+        return 0;
+    else
+        return 1;
+}
+
+#ifdef USE_SORT
 //compare greater return 1, else return 0
 static short compare_gt (ele_t a, ele_t b)
 {
@@ -145,23 +190,6 @@ static short compare_gt (ele_t a, ele_t b)
 }
 
 //compare equal return 1, else return 0
-static short compare_eq(ele_t a, ele_t b)
-{
-
-    ap_uint<256> ah, al, bh, bl;
-    ah = a(511,256);
-    al = a(255,0);
-
-    bh = b(511,256);
-    bl = b(255,0);
-
-    if(ah != bh)
-        return 0;
-    else if (al != bl)
-        return 0;
-    else
-        return 1;
-}
 /////////////////////////////////////////////////////
 //   Sort Method
 /////////////////////////////////////////////////////
@@ -200,7 +228,7 @@ void bottomup_merge(snap_membus_t * ddr_mem, snapu64_t A_addr, snapu64_t B_addr,
 
     short cmp_gt;
 
-	for (k = low; k < end; k++) {
+bm_loop: for (k = low; k < end; k++) {
         read_single(ddr_mem, A_addr + i * ELE_BYTES, &val_i);
         read_single(ddr_mem, A_addr + j * ELE_BYTES, &val_j);
         cmp_gt =  compare_gt(val_i, val_j);
@@ -216,86 +244,41 @@ void bottomup_merge(snap_membus_t * ddr_mem, snapu64_t A_addr, snapu64_t B_addr,
 		}
 	}
 }
-/*
-void fill_bs_buffers(snap_membus_t * ddr_mem, snapu64_t ddr_addr, snapu32_t offset, 
-        ele_t * local_buf0, ele_t * local_buf1, ele_t * local_buf2, ele_t * local_buf3,
-        ele_t * local_buf4, ele_t * local_buf5, ele_t * local_buf6, ele_t * local_buf7)
+
+void init_paddings (snap_membus_t * ddr_mem,snapu64_t ddr_addr, snapu32_t offset_w, snapu32_t table_size)
 {
-    read_bulk(ddr_mem, (ddr_addr + offset                 ), ONE_BUF_SIZE, local_buf0);
-    read_bulk(ddr_mem, (ddr_addr + offset + ONE_BUF_SIZE*1), ONE_BUF_SIZE, local_buf1);
-    read_bulk(ddr_mem, (ddr_addr + offset + ONE_BUF_SIZE*2), ONE_BUF_SIZE, local_buf2);
-    read_bulk(ddr_mem, (ddr_addr + offset + ONE_BUF_SIZE*3), ONE_BUF_SIZE, local_buf3);
-    read_bulk(ddr_mem, (ddr_addr + offset + ONE_BUF_SIZE*4), ONE_BUF_SIZE, local_buf4);
-    read_bulk(ddr_mem, (ddr_addr + offset + ONE_BUF_SIZE*5), ONE_BUF_SIZE, local_buf5);
-    read_bulk(ddr_mem, (ddr_addr + offset + ONE_BUF_SIZE*6), ONE_BUF_SIZE, local_buf6);
-    read_bulk(ddr_mem, (ddr_addr + offset + ONE_BUF_SIZE*7), ONE_BUF_SIZE, local_buf7);
+    ele_t init_value = 0;
+    snapu32_t iii;
+    //Initialize the paddings of last block_group
+    //Address from table_size to the boundry of a block_group
+ip_loop: for ( iii = table_size; iii < offset_w + NUM_ENGINES * ONE_BUF_SIZE; iii += ELE_BYTES)
+#pragma HLS PIPELINE
+        write_single(ddr_mem, ddr_addr + iii, init_value);
 }
 
-void do_block_sort ( ele_t * local_buf0, ele_t * local_buf1, ele_t * local_buf2, ele_t * local_buf3,
-        ele_t * local_buf4, ele_t * local_buf5, ele_t * local_buf6, ele_t * local_buf7)
+void local_sort (snap_membus_t * ddr_mem, snapu64_t ddr_addr, snapu32_t table_size )
 {
-            bubble_sort(local_buf0);
-            bubble_sort(local_buf1);
-            bubble_sort(local_buf2);
-            bubble_sort(local_buf3);
-            bubble_sort(local_buf4);
-            bubble_sort(local_buf5);
-            bubble_sort(local_buf6);
-            bubble_sort(local_buf7);
-}
-
-void save_bs_buffers(snap_membus_t * ddr_mem, snapu32_t offset, 
-        ele_t * local_buf0, ele_t * local_buf1, ele_t * local_buf2, ele_t * local_buf3,
-        ele_t * local_buf4, ele_t * local_buf5, ele_t * local_buf6, ele_t * local_buf7)
-{
-
-    write_bulk(ddr_mem, (DDR_SORT_SPACE + offset                 ), ONE_BUF_SIZE, local_buf0);
-    write_bulk(ddr_mem, (DDR_SORT_SPACE + offset + ONE_BUF_SIZE*1), ONE_BUF_SIZE, local_buf1);
-    write_bulk(ddr_mem, (DDR_SORT_SPACE + offset + ONE_BUF_SIZE*2), ONE_BUF_SIZE, local_buf2);
-    write_bulk(ddr_mem, (DDR_SORT_SPACE + offset + ONE_BUF_SIZE*3), ONE_BUF_SIZE, local_buf3);
-    write_bulk(ddr_mem, (DDR_SORT_SPACE + offset + ONE_BUF_SIZE*4), ONE_BUF_SIZE, local_buf4);
-    write_bulk(ddr_mem, (DDR_SORT_SPACE + offset + ONE_BUF_SIZE*5), ONE_BUF_SIZE, local_buf5);
-    write_bulk(ddr_mem, (DDR_SORT_SPACE + offset + ONE_BUF_SIZE*6), ONE_BUF_SIZE, local_buf6);
-    write_bulk(ddr_mem, (DDR_SORT_SPACE + offset + ONE_BUF_SIZE*7), ONE_BUF_SIZE, local_buf7);
-}
-
-*/
-
-void merge_sort (snap_membus_t * ddr_mem, snapu64_t ddr_addr, snapu32_t table_size )
-{
-
-	snapu32_t width, low, mid, end;
-
-    ele_t init_value;
-
-
-    snapu32_t bytes_to_bs = table_size;
-    snapu32_t xfer_size;
     snapu32_t offset = 0;
     snapu32_t offset_w = 0;
     snapu32_t num = table_size/ELE_BYTES;
 
-    //Initialize DDR to be mutiples of BLOCKS
-    
     snapu32_t block_groups = num/(NUM_SORT * NUM_ENGINES);
     offset_w = block_groups * NUM_ENGINES * ONE_BUF_SIZE;
-    snapu32_t iii, jjj, kkk; 
+    snapu32_t jjj, kkk; 
+    
 
-    init_value = 0;
-    if(offset_w < table_size)
+    if (offset_w < table_size)
     {
-        block_groups ++; 
-        //Initialize the paddings of last block_group
-        for ( iii = table_size; iii < offset_w + NUM_ENGINES * ONE_BUF_SIZE; iii += ELE_BYTES)
-            write_single(ddr_mem, ddr_addr + iii, init_value);
+        block_groups ++;
+        init_paddings(ddr_mem, ddr_addr, offset_w, table_size);
     }
 
-    ele_t local_bufs[NUM_ENGINES][NUM_SORT];
-    #pragma HLS ARRAY_PARTITION variable=local_bufs complete dim=1
 
+    ele_t local_bufs[NUM_ENGINES][NUM_SORT];
+#pragma HLS ARRAY_PARTITION variable=local_bufs complete dim=1
     for (jjj = 0; jjj < block_groups; jjj++) {
 
-        for (kkk = 0; kkk < NUM_ENGINES; kkk ++)
+lsr_loop: for (kkk = 0; kkk < NUM_ENGINES; kkk ++)
         {
             offset = jjj * NUM_ENGINES * ONE_BUF_SIZE + kkk * ONE_BUF_SIZE;
             read_bulk(ddr_mem, (ddr_addr + offset), ONE_BUF_SIZE, local_bufs[kkk]);
@@ -307,17 +290,21 @@ void merge_sort (snap_membus_t * ddr_mem, snapu64_t ddr_addr, snapu32_t table_si
             bubble_sort(local_bufs[kkk]);
         }
 
-        for (kkk = 0; kkk < NUM_ENGINES; kkk ++)
+lsw_loop: for (kkk = 0; kkk < NUM_ENGINES; kkk ++)
         {
             offset = jjj * NUM_ENGINES * ONE_BUF_SIZE + kkk * ONE_BUF_SIZE;
             write_bulk(ddr_mem, (DDR_SORT_SPACE + offset), ONE_BUF_SIZE, local_bufs[kkk]);
         }
     }
+}
 
-
+void merge_sort (snap_membus_t * ddr_mem, snapu64_t ddr_addr, snapu32_t table_size )
+{
     //After local buffer sorting, the sorted data is in DDR_SORT_SPACE 
     //second round. Merge
     ap_uint<1> dir = 0;
+	snapu32_t width, low, mid, end;
+    snapu32_t num = table_size/ELE_BYTES;
     for (width = NUM_SORT; width < num; width = width*2)
     {
         for (low = 0; low < num; low = low + width*2)
@@ -372,8 +359,8 @@ snapu32_t merge_intersection(snap_membus_t * ddr_mem, action_reg *Action_Registe
     }
     return res_size;
 }
-
-
+#else
+#ifdef USE_HASH
 /////////////////////////////////////////////////////
 //   Hash Method
 /////////////////////////////////////////////////////
@@ -412,6 +399,26 @@ static ap_uint<HT_ENTRY_NUM_EXP> ht_hash(ele_t key)
     return hash_val ;
 }
 
+snap_bool_t  read_update_ram (ap_uint <HT_ENTRY_NUM_EXP> index, snap_bool_t with_update)
+{
+    snap_bool_t used;
+    ap_uint<BRAM_WIDTH> ram_q;
+    ap_uint<HT_ENTRY_NUM_EXP - WIDTH_EXP> index_high;
+    ap_uint<WIDTH_EXP> index_low;
+
+    index_high = index(HT_ENTRY_NUM_EXP-1, WIDTH_EXP);
+    index_low  = index(WIDTH_EXP-1,0);
+    
+    ram_q = hash_used[index_high];
+    used =  ram_q(index_low, index_low);
+
+    if (with_update)
+    {
+        ram_q(index_low, index_low) = 1;
+        hash_used[index_high] = ram_q;
+    }
+    return used;
+}
 
 
 short make_hashtable(snap_membus_t  *d_ddrmem,
@@ -420,8 +427,6 @@ short make_hashtable(snap_membus_t  *d_ddrmem,
     // int type can represent -2G~+2G
     // Input table size is designed to be <=1GB
     ap_uint<HT_ENTRY_NUM_EXP> index;
-    ap_uint<HT_ENTRY_NUM_EXP - WIDTH_EXP> index_high;
-    ap_uint<WIDTH_EXP> index_low;
 
     short ijk;
     snapu32_t read_bytes;
@@ -434,7 +439,6 @@ short make_hashtable(snap_membus_t  *d_ddrmem,
 
     ap_uint<5> count;
     snap_bool_t used = 0;
-    ap_uint<BRAM_WIDTH> ram_q;
 
 
     //Hash Table arrangement:
@@ -454,16 +458,8 @@ short make_hashtable(snap_membus_t  *d_ddrmem,
         for (ijk = 0; ijk < read_bytes/ELE_BYTES; ijk++)
         {
             index = ht_hash(keybuf[ijk]);
-            index_high = index(HT_ENTRY_NUM_EXP-1, WIDTH_EXP);
-            index_low  = index(WIDTH_EXP-1,0);
 
-            ram_q = hash_used[index_high];
-
-            used =  ram_q(index_low, index_low);
-
-            ram_q(index_low, index_low) = 1;
-            hash_used[index_high] = ram_q;
-
+            used = read_update_ram(index, 1);
 
 
             new_entry = 0;
@@ -504,8 +500,6 @@ snapu32_t check_table2(snap_membus_t  *d_ddrmem,
         action_reg      *Action_Register)
 {
     ap_uint<HT_ENTRY_NUM_EXP> index;
-    ap_uint<HT_ENTRY_NUM_EXP - WIDTH_EXP> index_high;
-    ap_uint<WIDTH_EXP> index_low;
 
     short iii;
     short j;
@@ -533,10 +527,8 @@ snapu32_t check_table2(snap_membus_t  *d_ddrmem,
         {
             //Current element in Table2 is keybuf[i]
             index = ht_hash(keybuf[iii]);
-            index_high = index(HT_ENTRY_NUM_EXP-1, WIDTH_EXP);
-            index_low  = index(WIDTH_EXP-1,0);
-            ram_q = hash_used[index_high];
-            used = ram_q(index_low, index_low);
+            used = read_update_ram(index, 0); //just read
+
             if(used == 1)
             {
                 read_single(d_ddrmem, HASH_TABLE_ADDR + index * ELE_BYTES, &hash_entry);
@@ -566,7 +558,8 @@ snapu32_t check_table2(snap_membus_t  *d_ddrmem,
     return res_size;
 }
 
-
+#endif
+#endif
 
 //--------------------------------------------------------------------------------------------
 //--- MAIN PROGRAM ---------------------------------------------------------------------------
@@ -578,13 +571,16 @@ void hls_action(snap_membus_t  *din_gmem,
         action_RO_config_reg  *Action_Config)
 {
     // Host Memory AXI Interface
-#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
-#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
+#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512 \
+    max_read_burst_length=64 max_write_burst_length=64
+#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512 \
+    max_read_burst_length=64 max_write_burst_length=64
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg 		offset=0x030
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg 		offset=0x040
 
     //DDR memory Interface
-#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
+#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512 \
+    max_read_burst_length=64 max_write_burst_length=64
 #pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg 		offset=0x050
 
     // Host Memory AXI Lite Master Interface
@@ -619,13 +615,15 @@ void hls_action(snap_membus_t  *din_gmem,
         memcopy_table(din_gmem, dout_gmem, d_ddrmem,
                 Action_Register->Data.src_tables_host1.addr, Action_Register->Data.src_tables_ddr1.addr,
                 Action_Register->Data.src_tables_host1.size, HOST2DDR);
-
+#ifdef USE_HASH
+        // Clear the content of hash_used RAM
         if(Action_Register->Data.method == HASH_METHOD)
         {
             snapu32_t i;
             for(i = 0; i < (HW_HT_ENTRY_NUM >> WIDTH_EXP); i++)
                 hash_used[i]=0;
         }
+#endif
     }
     else if(Action_Register->Data.step == 2)
     {
@@ -641,8 +639,9 @@ void hls_action(snap_membus_t  *din_gmem,
     }
     else if(Action_Register->Data.step == 3)
     {
-        if(Action_Register->Data.method == HASH_METHOD)
-        {
+ //       if(Action_Register->Data.method == HASH_METHOD)
+ //       {
+#ifdef USE_HASH
             //Make hash table
             rc = make_hashtable(d_ddrmem, Action_Register);
             if(rc != 0)
@@ -651,15 +650,29 @@ void hls_action(snap_membus_t  *din_gmem,
                 return;
             }
             result_size = check_table2(d_ddrmem, Action_Register);
-        }
-        else if (Action_Register->Data.method == SORT_METHOD)
-        {
+#else
+            Action_Register->Control.Retc = 0xAAAA;
+#endif
+ //       }
+ //       else if (Action_Register->Data.method == SORT_METHOD)
+ //       {
+#ifdef USE_SORT
+            //Table1
+            local_sort(d_ddrmem, Action_Register->Data.src_tables_ddr0.addr, 
+                    Action_Register->Data.src_tables_ddr0.size);
             merge_sort(d_ddrmem, Action_Register->Data.src_tables_ddr0.addr, 
                     Action_Register->Data.src_tables_ddr0.size);
+
+            //Table2
+            local_sort(d_ddrmem, Action_Register->Data.src_tables_ddr1.addr, 
+                    Action_Register->Data.src_tables_ddr1.size);
             merge_sort(d_ddrmem, Action_Register->Data.src_tables_ddr1.addr, 
                     Action_Register->Data.src_tables_ddr1.size);
             result_size = merge_intersection(d_ddrmem, Action_Register);
-        }
+#else
+            Action_Register->Control.Retc = 0xBBBB;
+#endif
+ //     }
     }
     else if (Action_Register->Data.step == 5)
     {
