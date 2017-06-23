@@ -73,18 +73,23 @@ shift $((OPTIND-1))
 # which is the unique id the card has. The combination of both, should
 # be more or less bullet prove.
 #
-function detect_ku3_cards() {
+function detect_snap_cards() {
+	local check_dev=$1
+	local check_sub=$2
 	# We have MAX 4 CAPI cards in one system
+
 	for card in `seq 0 3` ; do
 		if [ ! -d /sys/class/cxl/card${card} ]; then
 			continue
 		fi
+
 		psl_revision=`cat /sys/class/cxl/card${card}/psl_revision`
-		if [ $psl_revision != 12291 ] ; then
+		device=`cat /sys/class/cxl/card${card}/afu${card}.0/cr0/device`
+		if [ $device != $check_dev ]; then
 			continue
 		fi
-		device=`cat /sys/class/cxl/card${card}/afu${card}.0/cr0/device`
-		if [ $device = 0x0632 ]; then
+		sub=`cat /sys/class/cxl/card$card/device/subsystem_device`
+		if [ $sub = $check_sub ]; then
 			echo -n "${card} "
 		fi
 	done
@@ -121,7 +126,10 @@ case ${accel} in
 	;;
 	# KU3 Card from Alpha Data
 	"KU3")
-	detect_ku3_cards
+	detect_snap_cards "0x0632" "0x0605"
+	;;
+	"FGT")
+	detect_snap_cards "0x0632" "0x060a"
 	;;
 	# Set one or the other, but not miss to set the accelerator
 	"UNKNOWN")

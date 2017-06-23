@@ -50,7 +50,6 @@ void cast_uint8_to_uint64(uint8_t *st_in, uint64_t *st_out, unsigned int size)
     int j;
 
     cast_8to64:for( i = 0; i < size; i++ ) {
-#pragma HLS UNROLL
           mem = 0;
           for( j = 8; j >= 0; j--) {
                   mem = (mem << 8);
@@ -67,7 +66,6 @@ void cast_uint64_to_uint8(uint64_t *st_in, uint8_t *st_out, unsigned int size)
     unsigned int i, j;
 
     cast_64to8:for( i = 0; i < size; i++ ) {
-#pragma HLS UNROLL
           tmp = st_in[i];
           for( j = 0; j < 8; j++ ) {
                   st_out[i*8+j] = (uint8_t)tmp;
@@ -191,7 +189,6 @@ int sha3_init(sha3_ctx_t *c, int mdlen)
 //    for (i = 0; i < 25; i++)
 //        c->st.q[i] = 0; 
     for (i = 0; i < 200; i++)
-#pragma HLS UNROLL
     	c->st.b[i] = 0;
     c->mdlen = mdlen;
     c->rsiz = 200 - 2 * mdlen;
@@ -211,7 +208,6 @@ int sha3_update(sha3_ctx_t *c, const uint8_t *data, size_t len)
 
     j = c->pt;
     for (i = 0; i < len; i++) {
-#pragma HLS UNROLL
 			c->st.b[j++] ^= ((const uint8_t *) data)[i];
 			if (j >= c->rsiz) {
 				//sha3_keccakf(c->st.q);
@@ -247,10 +243,9 @@ int sha3_final(uint8_t *md, sha3_ctx_t *c)
     cast_uint64_to_uint8(st, c->st.b, 25);
 
 
-    //for (i = 0; i < c->mdlen; i++) {
-    for (i = 0; i < 64; i++) {
-#pragma HLS UNROLL
-         if (i < c->mdlen) 
+    for (i = 0; i < c->mdlen; i++) {
+    //for (i = 0; i < 64; i++) {
+    //     if (i < c->mdlen) 
     		((uint8_t *) md)[i] = c->st.b[i];
     }
 
@@ -310,4 +305,3 @@ void shake_out(sha3_ctx_t *c, void *out, size_t len)
     }
     c->pt = j;
 }
-
