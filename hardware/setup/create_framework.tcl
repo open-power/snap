@@ -238,8 +238,8 @@ add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_link.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/snap_link.xdc]
 add_files -fileset constrs_1 -norecurse $root_dir/setup/action_pblock.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/action_pblock.xdc]
-add_files -fileset constrs_1 -norecurse $root_dir/setup/flash_impl.xdc
-set_property used_in_synthesis false [get_files  $root_dir/setup/flash_impl.xdc]
+add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_impl.xdc
+set_property used_in_synthesis false [get_files  $root_dir/setup/snap_impl.xdc]
 add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_pblock.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/snap_pblock.xdc]
 update_compile_order -fileset sources_1 >> $log_file
