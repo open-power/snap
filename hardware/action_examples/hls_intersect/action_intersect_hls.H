@@ -19,7 +19,7 @@
 
 #include "hls_snap.H"
 #include "action_intersect.h"
-#define USE_HASH   
+#define USE_SORT   
 
 //////////////////////////////////////
 // General
@@ -56,8 +56,8 @@ typedef ap_uint<ELE_BYTES *8> ele_t;
 //////////////////////////////////////
 #ifdef USE_SORT
 
-#define NUM_SORT 64
-#define NUM_ENGINES 8
+#define NUM_SORT 32
+#define NUM_ENGINES 16
 #define ONE_BUF_SIZE NUM_SORT * ELE_BYTES
 #define DDR_SORT_SPACE   (snapu64_t)4*1024*1024*1024
 #else
