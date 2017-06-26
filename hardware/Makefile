@@ -184,7 +184,7 @@ config: check_snap_settings setup_environment snap_config action_config create_e
 
 patch_version:
 	@echo -e "\t[PATCH...............] SNAP version and build date registers"; \
-	$(SNAP_HARDWARE_ROOT)/setup/patch_version.sh $(SNAP_HDL_CORE) snap_core.vhd
+	$(SNAP_HARDWARE_ROOT)/setup/patch_version.sh $(SNAP_HDL_CORE) snap_core_types.vhd
 
 patch_NVMe:
 	@if [[ -e "$(SNAP_HARDWARE_ROOT)/setup/patch_NVMe.sh" && $(NVME_USED) = "TRUE" ]]; then \
