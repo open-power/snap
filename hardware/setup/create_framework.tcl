@@ -93,6 +93,10 @@ set_property STEPS.WRITE_BITSTREAM.TCL.POST $root_dir/setup/snap_bitstream_post.
 # Enable PR Flow
 set_property PR_FLOW 1 [current_project]
 
+# Create PR Region for SNAP Action
+create_partition_def -name snap_action -module action_wrapper
+create_reconfig_module -name hdl_example -partition_def [get_partition_defs snap_action] -top action_wrapper
+
 # Add Files
 # PSL Files
 puts "	                        importing design files"
@@ -104,7 +108,7 @@ if { $hls_support == "TRUE" } {
 set_property used_in_simulation false [get_files $hdl_dir/core/psl_fpga.vhd]
 set_property top psl_fpga [current_fileset]
 # Action Files for PR Region
-#add_files -scan_for_includes $action_dir/ -of_objects [get_reconfig_modules hdl_example] 
+add_files -scan_for_includes $action_dir/ -of_objects [get_reconfig_modules hdl_example] 
 # Sim Files
 set_property SOURCE_SET sources_1 [get_filesets sim_1]
 add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/top.sv  >> $log_file
@@ -212,10 +216,6 @@ if { $nvme_used == TRUE } {
 # Add PSL
 puts "	                        importing PSL design checkpoint"
 read_checkpoint -cell b $root_dir/build/Checkpoints/$psl_dcp -strict >> $log_file
-
-# Create PR Region for SNAP Action
-create_partition_def -name snap_action -module action_wrapper
-create_reconfig_module -name hdl_example -partition_def [get_partition_defs snap_action] -top action_wrapper
 
 # Create PR Configuration
 create_pr_configuration -name config_1 -partitions [list a0/action_w:hdl_example]
