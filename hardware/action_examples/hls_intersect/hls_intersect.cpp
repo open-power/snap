@@ -401,6 +401,7 @@ static ap_uint<HT_ENTRY_NUM_EXP> ht_hash(ele_t key)
 
 snap_bool_t  read_update_ram (ap_uint <HT_ENTRY_NUM_EXP> index, snap_bool_t with_update)
 {
+#pragma HLS INLINE off
     snap_bool_t used;
     ap_uint<BRAM_WIDTH> ram_q;
     ap_uint<HT_ENTRY_NUM_EXP - WIDTH_EXP> index_high;
@@ -572,15 +573,15 @@ void hls_action(snap_membus_t  *din_gmem,
 {
     // Host Memory AXI Interface
 #pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512 \
-    max_read_burst_length=64 max_write_burst_length=64
+    max_read_burst_length=32 max_write_burst_length=32
 #pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512 \
-    max_read_burst_length=64 max_write_burst_length=64
+    max_read_burst_length=32 max_write_burst_length=32
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg 		offset=0x030
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg 		offset=0x040
 
     //DDR memory Interface
 #pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512 \
-    max_read_burst_length=64 max_write_burst_length=64
+    max_read_burst_length=32 max_write_burst_length=32
 #pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg 		offset=0x050
 
     // Host Memory AXI Lite Master Interface
