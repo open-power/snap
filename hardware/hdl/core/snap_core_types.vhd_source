@@ -31,6 +31,25 @@ PACKAGE snap_core_types IS
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- ******************************************************
+-- ***** SNAP FRAMEWORK CONFIGURATION               *****
+-- ******************************************************
+--
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+  --
+  -- CONSTANT (values are being defined during "make config")
+  CONSTANT IMP_VERSION_DAT                 : std_logic_vector(63 DOWNTO 0);  -- Implementation version
+  CONSTANT BUILD_DATE_DAT                  : std_logic_vector(63 DOWNTO 0);  -- Build date
+  CONSTANT NUM_OF_ACTIONS                  : integer RANGE 0 TO 16;          -- Number of implemented actions
+  CONSTANT SDRAM_SIZE                      : std_logic_vector(15 DOWNTO 0);  -- Size of attached on-card SDRAM in MB
+  CONSTANT CARD_TYPE                       : std_logic_vector(7 DOWNTO 0);   -- Card type - currently specified:
+                                                                             --             0x00 Alphadata KU3
+                                                                             --             0x01 Nallatech 250S / FlashGT
+  CONSTANT NVME_ENABLED                    : std_logic;                      -- Is the NVMe host logic enabled for connecting to NVMe Flash drives
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- ******************************************************
 -- ***** SNAP CORE FUNCTION DEFINITION              *****
 -- ******************************************************
 --
@@ -216,11 +235,12 @@ PACKAGE snap_core_types IS
   CONSTANT BUILD_DATE_REG             : integer := 16#1#;
   CONSTANT SNAP_CMD_REG               : integer := 16#2#;
   CONSTANT SNAP_STATUS_REG            : integer := 16#3#;
+  CONSTANT SNAP_LOCK_REG              : integer := 16#4#;
   CONSTANT SNAP_RESET_REG             : integer := 16#5#;
-  CONSTANT MAX_SNAP_REG               : integer := 16#5#;  -- maximum index for snap register array
+  CONSTANT SNAP_CAPABILITY_REG        : integer := 16#6#;
+  CONSTANT MAX_SNAP_REG               : integer := 16#6#;  -- maximum index for snap register array
   -- SNAP extended registers
   CONSTANT SNAP_FRT_REG               : integer := 16#0#;
-  CONSTANT SNAP_LOCK_REG              : integer := 16#4#;
   CONSTANT SNAP_CTX_ID_REG            : integer := 16#4#;
   -- SNAP debug REGISTER
   CONSTANT SNAP_DEBUG_REG             : integer := 16#0#;
@@ -255,6 +275,12 @@ PACKAGE snap_core_types IS
   CONSTANT SNAP_CTX_ID_R              : integer :=  0;     -- SNAP_CTX_ID_REG
   CONSTANT SNAP_NVME_RST_L            : integer :=  4;     -- SNAP_RESET_REG
   CONSTANT SNAP_NVME_RST_R            : integer :=  0;     -- SNAP_RESET_REG
+  CONSTANT SNAP_CAP_SDRAM_SIZE_L      : integer := 31;     -- SNAP_CAPABILITY_REG
+  CONSTANT SNAP_CAP_SDRAM_SIZE_R      : integer := 16;     -- SNAP_CAPABILITY_REG
+  CONSTANT SNAP_CAP_NVME_ENABLED      : integer :=  8;     -- SNAP_CAPABILITY_REG
+  CONSTANT SNAP_CAP_CARD_TYPE_L       : integer :=  7;     -- SNAP_CAPABILITY_REG
+  CONSTANT SNAP_CAP_CARD_TYPE_R       : integer :=  0;     -- SNAP_CAPABILITY_REG
+  
   CONSTANT SNAP_DBG_AH_PAREN          : integer :=  0;     -- SNAP_DEBUG_REG
 
   CONSTANT CTX_CFG_SIZE_INT           : integer := 39;     -- CONTEXT_CONFIG_REG
@@ -480,7 +506,6 @@ PACKAGE snap_core_types IS
   CONSTANT ACTION_TYPE_BITS                : integer                       :=  4;      -- number of bits required to represent the action types
   CONSTANT NUM_OF_ACTION_TYPES             : integer                       := 16;      -- maximum number of supported action types
   CONSTANT ACTION_BITS                     : integer                       :=  4;      -- number of bits required to represent the action IDs
-  CONSTANT NUM_OF_ACTIONS                  : integer                       :=  1;      -- maximum number of supported actions
   CONSTANT ACTION_CONTEXT_REG              : std_logic_vector(11 DOWNTO 0) := x"020";
 
 

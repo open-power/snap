@@ -28,10 +28,6 @@ USE work.psl_accel_types.ALL;
 USE work.snap_core_types.all;
 
 ENTITY job_manager IS
-  GENERIC (
-    NUM_OF_ACTION_TYPES : integer RANGE 0 TO 16 := 16;
-    NUM_OF_ACTIONS      : integer RANGE 0 TO 16 :=  1
-  );
   PORT (
     --
     -- pervasive

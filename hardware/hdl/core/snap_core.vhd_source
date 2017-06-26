@@ -28,12 +28,6 @@ USE work.psl_accel_types.ALL;
 USE work.snap_core_types.ALL;
  
 ENTITY snap_core IS
-  GENERIC(
-    IMP_VERSION_DAT        : std_logic_vector(63 DOWNTO 0);
-    BUILD_DATE_DAT         : std_logic_vector(63 DOWNTO 0); 
-    NUM_OF_ACTION_TYPES    : integer RANGE 0 TO 16 := 16;
-    NUM_OF_ACTIONS         : integer RANGE 0 TO 16 :=  NUM_OF_ACTIONS
-  );
   PORT (
     --
     -- PSL Interface
@@ -357,10 +351,6 @@ BEGIN
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
     job_mgr: ENTITY work.job_manager
-    GENERIC MAP (
-      NUM_OF_ACTION_TYPES => NUM_OF_ACTION_TYPES,
-      NUM_OF_ACTIONS      => NUM_OF_ACTIONS
-    )
     PORT MAP (
       --
       -- pervasive
@@ -392,11 +382,6 @@ BEGIN
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
     mmio: ENTITY work.mmio
-    GENERIC MAP (
-      IMP_VERSION_DAT => IMP_VERSION_DAT,
-      BUILD_DATE_DAT  => BUILD_DATE_DAT,
-      NUM_OF_ACTIONS  => NUM_OF_ACTIONS
-    )
     PORT MAP (
       --
       -- pervasive
