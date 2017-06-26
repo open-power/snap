@@ -151,6 +151,25 @@ For FPGA cards with NVMe flash attached, the SNAP framework supports the integra
 
 the support will be enabled by instantiating an NVMe host controller together with the corresponding PCIe root complexes and the required AXI interfaces.
 
+# Hardware debug with ILA cores
+
+In order to create an image that allows debugging the design using the
+Vivado Integrated Logic Analyzer (ILA) you may prepare a `.xdc` file for
+adding ILA cores to the design
+(an example for such a file is located here: [./doc/ila_debug.xdc](./doc/ila_debug.xdc)).  
+Letting the environment variable
+```
+    ILA_SETUP_FILE
+```
+point to that `.xdc` file and setting
+```bash
+    ILA_DEBUG=TRUE
+```
+will prepare the ILA cores accordingly during the image build process.
+Additionally to the image files itself, the build process will create
+the required `.ltx` debug probes file which will be located in the results
+directory `$SNAP_ROOT/hardware/build/Images`.
+
 # Simulation
 
 SNAP supports *Xilinx xsim* and *Cadence irun* tools for simulation.
