@@ -22,7 +22,7 @@ set fpgacard     $::env(FPGACARD)
 set sdram_used   $::env(SDRAM_USED)
 set nvme_used    $::env(NVME_USED)
 set bram_used    $::env(BRAM_USED)
-set ila_debug    $::env(ILA_DEBUG)
+set ila_debug    [string toupper $::env(ILA_DEBUG)]
 
 #timing_lablimit  
 if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
@@ -147,7 +147,11 @@ if { [expr $TIMING_TNS >= 0 ] } {
     puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: TIMING FAILED" $widthCol4 "" ]
     exit 42
 } else {
-    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "WARNING: TIMING FAILED, but may be OK for lab use" $widthCol4 "" ]
+    if { $ila_debug == "TRUE" } {
+        puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "WARNING: TIMING FAILED, but may be OK for lab use with ILA" $widthCol4 "" ]
+    } else {
+        puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "WARNING: TIMING FAILED, but may be OK for lab use" $widthCol4 "" ]
+    }
     set remove_tmp_files TRUE
 }
 

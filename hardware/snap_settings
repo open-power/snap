@@ -143,11 +143,18 @@ while [ -z "$SETUP_DONE" ]; do
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of NVME_USED=$NVME_USED on KU3 is conflicting!"
     fi
   fi
+
   if [ -z "$ILA_DEBUG" ]; then
     export ILA_DEBUG="FALSE"
     echo "Setting ILA_DEBUG              to: \"$ILA_DEBUG\""
   else
     echo "ILA_DEBUG               is set to: \"$ILA_DEBUG\""
+  fi
+  if [ "${ILA_DEBUG^^}" == "TRUE" ]; then
+    echo "ILA_SETUP_FILE          is set to: \"$ILA_SETUP_FILE\""
+    if [ ! -e "$ILA_SETUP_FILE" ]; then
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### ILA_DEBUG is set to $ILA_DEBUG but ILA_SETUP_FILE does not point to a file."
+    fi
   fi
 
   ####### Cadence simulation setup:

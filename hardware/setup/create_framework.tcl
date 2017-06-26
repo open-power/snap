@@ -29,7 +29,7 @@ set action_dir  $::env(ACTION_ROOT)
 set nvme_used   $::env(NVME_USED)
 set bram_used   $::env(BRAM_USED)
 set sdram_used  $::env(SDRAM_USED)
-set ila_debug   $::env(ILA_DEBUG)
+set ila_debug   [string toupper $::env(ILA_DEBUG)]
 set simulator   $::env(SIMULATOR)
 set vivadoVer   [version -short]
 set log_dir      $::env(LOGS_DIR)
@@ -236,7 +236,7 @@ if { $fpga_card == "KU3" } {
   }
 }
 if { $ila_debug == "TRUE" } {
-  add_files -fileset constrs_1 -norecurse  $root_dir/debug/ila_debug.xdc
+  add_files -fileset constrs_1 -norecurse  $::env(ILA_SETUP_FILE)
 }
 
 puts "	\[CREATE_FRAMEWORK....\] done"
