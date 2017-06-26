@@ -6,7 +6,7 @@
  *  See the introductions of Hash function:
  *        https://en.wikipedia.org/wiki/Hash_function
  *  And Hash table:
- *        https://en.wikipedia.org/wiki/hash_ptr_table
+ *        https://en.wikipedia.org/wiki/hash_table
  *
  * 2) Sort both source tables, and then do intersection
  *  Use C build in library qsort  (quick sort)
