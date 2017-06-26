@@ -69,8 +69,8 @@ typedef ap_uint<ELE_BYTES *8> ele_t;
 #define HW_HT_ENTRY_NUM_EXP 22
 #define HW_HT_ENTRY_NUM (1<<HW_HT_ENTRY_NUM_EXP)
 
-// A 512bit-width BRAM stays in local FPGA for "used" bits
-#define WIDTH_EXP 9
+// A 256bit-width BRAM stays in local FPGA for "used" bits
+#define WIDTH_EXP 8
 #define BRAM_WIDTH (1<<WIDTH_EXP)
 ap_uint<BRAM_WIDTH> hash_used[HW_HT_ENTRY_NUM/BRAM_WIDTH];
 #define HASH_TABLE_ADDR  (snapu64_t)4*1024*1024*1024
