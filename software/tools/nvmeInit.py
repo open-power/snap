@@ -446,6 +446,10 @@ if (SSD0_USED):
     if (not ssd0initdone):
         # RC 0
         print ("RC 0 init ...")
+        while (True):
+            rc = AFU_MMIO.nvme_read(0x10000144)
+            print ('Link Status Register of SSD0: %x' % rc)
+            if ((rc & 0x800) > 0) : break
         AFU_MMIO.nvme_write(0x10000018, 0x10100)        # set bus, devive and function number
         AFU_MMIO.nvme_write(0x100000d4, 0x00)           # set device capabilities
         AFU_MMIO.nvme_write(0x10100010, 0x6000000c)     # PCIe Base Addr Register 0
@@ -460,7 +464,8 @@ if (SSD0_USED):
         AFU_MMIO.nvme_write(0x10000148, 0x00000001)     # PCI enable root port
         AFU_MMIO.nvme_write(0x1000020c, 0x60000000)     # set up AXI Base address translation register
         print ("RC 0 done")
-    print ('Link Status Register of SSD0: %x' % AFU_MMIO.nvme_read(0x10000144))
+    else:
+        print ('Link Status Register of SSD0: %x' % AFU_MMIO.nvme_read(0x10000144))
 
 
 if (SSD1_USED):
@@ -468,6 +473,10 @@ if (SSD1_USED):
     if (not ssd1initdone):
         # RC 1
         print ("RC 1 init ...")
+        while (True):
+            rc = AFU_MMIO.nvme_read(0x20000144)
+            print ('Link Status Register of SSD1: %x' % rc)
+            if ((rc & 0x800) > 0) : break
         AFU_MMIO.nvme_write(0x20000018, 0x10100)        # set bus, devive and function number
         AFU_MMIO.nvme_write(0x200000d4, 0x00)           # set device capabilities
         AFU_MMIO.nvme_write(0x20100010, 0x6000000c)     # PCIe Base Addr Register 0
@@ -482,7 +491,8 @@ if (SSD1_USED):
         AFU_MMIO.nvme_write(0x20000148, 0x00000001)     # PCI enable root port
         AFU_MMIO.nvme_write(0x2000020c, 0x60000000)     # set up AXI Base address translation register
         print ("RC 1 done")
-    print ('Link Status Register of SSD1: %x' % AFU_MMIO.nvme_read(0x20000144))
+    else:
+        print ('Link Status Register of SSD1: %x' % AFU_MMIO.nvme_read(0x20000144))
 
 
 if (SSD0_USED and not ssd0initdone ):
