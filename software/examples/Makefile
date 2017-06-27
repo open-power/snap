@@ -28,28 +28,38 @@ else
 LDLIBS += -lcxl
 endif
 
-snap_search_objs = action_search.o
-snap_memcopy_objs = action_memcopy.o
-snap_checksum_objs = action_checksum.o sha3.o
-snap_hashjoin_objs = action_hashjoin.o
-snap_bfs_objs = action_bfs.o
-snap_intersect_objs = action_intersect.o
-
-projs = snap_search snap_memcopy snap_checksum snap_hashjoin snap_bfs snap_intersect
-projs += snap_example snap_example_ddr snap_example_set snap_example_nvme
-
-all: $(objs) $(projs)
+# This rule should be the 1st one to find (default)
+all: all_build
 
 snap_search: action_search.o
+snap_search_objs = action_search.o
+
 snap_memcopy: action_memcopy.o
+snap_memcopy_objs = action_memcopy.o
+
 snap_checksum: action_checksum.o sha3.o
+snap_checksum_objs = action_checksum.o sha3.o
+
 snap_hashjoin: action_hashjoin.o
+snap_hashjoin_objs = action_hashjoin.o
+
 snap_bfs: action_bfs.o
+snap_bfs_objs = action_bfs.o
+
 snap_intersect: action_intersect.o
+snap_intersect_objs = action_intersect.o
+
+projs += snap_search snap_memcopy snap_checksum snap_hashjoin snap_bfs	\
+	snap_intersect snap_example snap_example_ddr snap_example_set	\
+	snap_example_nvme
+
+# Include sub-Makefile if there are any
+-include *.mk
+
+# This rule needs to be behind all the definitions above
+all_build: $(projs)
 
 $(projs): $(libs)
-
-objs += action_search.o action_memcopy.o action_checksum.o action_hashjoin.o keccak.o action_bfs.o action_intersect.o
 
 ### Deactivate existing implicit rule
 %: %.c
@@ -75,5 +85,5 @@ uninstall:
 	done
 
 clean distclean:
-	$(RM) $(objs) $(projs) *.log *.out
+	$(RM) $(projs) *.o *.log *.out
 
