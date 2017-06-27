@@ -63,13 +63,13 @@ static void usage(const char *prog)
             "  -C, --card     <cardno>   can be (0...3)\n"
             "  -t, --timeout  <seconds>  timeout seconds.\n"
             "----------------------------------------------\n"
-            "  -i, --input1    <file1.bin> input file 1.\n"
-            "  -j, --input2    <file2.bin> input file 2.\n"
-            "  -o, --output   <result.bin> output file.\n"
+            "  -i, --input1    <file1.txt> input file 1.\n"
+            "  -j, --input2    <file2.txt> input file 2.\n"
+            "  -o, --output   <result.txt> output file.\n"
             "----------------------------------------------\n"
             "  -n, --num      <int>      How many elements in the table for random generated array.\n"
             "  -l, --len      <int>      length of the random string.\n"
-            "  -s, --software            Use software methods.\n"
+            "  -s, --software            Use software approach.\n"
             "  -m, --method   <0/1>      0: compare one by one (Only in SW).\n"
             "                            1: Use hash table\n"
             "                            2: Sort and do intersection\n"
@@ -77,7 +77,7 @@ static void usage(const char *prog)
             "\n"
             "Example:\n"
             "HW:  sudo ./snap_intersect ...\n"
-            "SW:  SNAP_CONFIG=1 ./snap_intersect ...\n"
+            "SW:  SNAP_CONFIG=1 ./snap_intersect -s ...\n"
             "\n",
             prog);
 }
