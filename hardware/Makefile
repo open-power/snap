@@ -101,9 +101,8 @@ check_snap_settings:
 		echo "NUM_OF_ACTIONS: $(NUM_OF_ACTIONS)"; \
 		exit 1; \
 	fi
-	@if ([ -z `echo "x$(ACTION_ROOT)" | grep -iv HLS` ] || [ -z `echo "x$(HLS_SUPPORT)" | grep -iv TRUE` ]) && [ `basename "x$(ACTION_ROOT)"` != "vhdl" ] && [ `basename "x$(ACTION_ROOT)"` != "verilog" ]; then \
-		echo "Looks like an HLS action shall be integrated."; \
-		echo "Please make sure that the environment variable ACTION_ROOT ends in vhdl or in verilog"; \
+	@ if [ ! -d "$(ACTION_ROOT)" ] && ( ( [ -z `echo "x$(ACTION_ROOT)" | grep -i HLS` ] && [ -z `echo "x$(HLS_SUPPORT)" | grep -i TRUE` ] ) || [ `basename "x$(ACTION_ROOT)"` != "vhdl" ] ); then \
+		echo "Please make sure that the environment variable ACTION_ROOT points to a directory containing the action's source code."; \
 		exit 1; \
 	fi
 	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` == "TRUE" ] && [ ! -e "$(ILA_SETUP_FILE)" ]; then \
@@ -156,19 +155,28 @@ snap_config_start:
 
 action_config: $(ACTION_ROOT)
 	@echo -e "\t[CONFIG ACTION.......] start";
+	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then \
+		make -C $(ACTION_ROOT); > $(LOGS_DIR)/action_make.log; \
+		if [ $$? -ne 0 ]; then \
+			echo -e "\t                        Error: please look into $(LOGS_DIR)/action_make.log";exit -1; \
+		fi \
+	fi
 	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
-		cd $(ACTION_ROOT) && ./action_config.sh; \
+		cd $(ACTION_ROOT) && ./action_config.sh > $(LOGS_DIR)/action_config.log; \
+		if [ $$? -ne 0 ]; then \
+			echo -e "\t                        Error: please look into $(LOGS_DIR)/action_config.log";exit -1; \
+		fi \
 	fi
 
-# In case we have a HLS action there will be no vhdl directory,
-# such that ACTION_ROOT does not exist. To build it, we go one directory
-# above and issue "make", such that the vhdl code can be synthesized.
+# In case ACTION_ROOT does not exist and check_snap_settings did not stop
+# the make process, we assume that we have an HLS action and that the
+# corresponding VHDL code needs to be created.
 $(ACTION_ROOT):
 	@echo -e "\t[CREATE_HLS_CODE.....] start `date`"
 	@echo -e "\t                        using `vivado_hls -v |grep Vivado`"
 	@make -C `dirname $(ACTION_ROOT)` > $(LOGS_DIR)/create_hls.log
 	@if [ $$? -ne 0 ]; then \
-		echo -e "\t                        Error: please look into create_hls.log";exit -1; \
+		echo -e "\t                        Error: please look into $(LOGS_DIR)/create_hls.log";exit -1; \
 	fi
 
 create_environment:

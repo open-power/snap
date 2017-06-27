@@ -99,8 +99,9 @@ while [ -z "$SETUP_DONE" ]; do
     echo "Setting ACTION_ROOT            to: \"$ACTION_ROOT\""
   else
     echo "ACTION_ROOT             is set to: \"$ACTION_ROOT\""
-    if [ -z `echo "x$ACTION_ROOT" | grep -iv HLS` ] && [ `basename "x$ACTION_ROOT"` != "vhdl" ] && [ `basename "x$ACTION_ROOT"` != "verilog" ]; then
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### For HLS actions ACTION_ROOT needs to end in vhdl or in verilog"
+    # check if ACTION_ROOT points to an existing direcory or ACTION_ROOT ends in 'vhdl' for an HLS action
+    if [ ! -d "$ACTION_ROOT" ] && ( ( [ -z `echo "x$ACTION_ROOT" | grep -i HLS` ] && [ "${HLS_SUPPORT^^}" != "TRUE" ] ) || [ `basename "x$ACTION_ROOT"` != "vhdl" ] ); then
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Please make sure that ACTION_ROOT points to an existing directory."
     fi
   fi
 
