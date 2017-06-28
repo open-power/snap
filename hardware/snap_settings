@@ -158,6 +158,13 @@ while [ -z "$SETUP_DONE" ]; do
     fi
   fi
 
+  if [ -z "$FACTORY_IMAGE" ]; then
+    export FACTORY_IMAGE="FALSE"
+    echo "Setting FACTORY_IMAGE          to: \"$FACTORY_IMAGE\""
+  else
+    echo "FACTORY_IMAGE           is set to: \"$FACTORY_IMAGE\""
+  fi
+
   ####### Cadence simulation setup:
   if [ "$SIMULATOR" == "irun" ]; then
     echo "=====Cadence simulation setup=========================="
