@@ -21,6 +21,8 @@
 extern "C" {
 #endif
 
+#include <malloc.h>
+
 #define ACTION_CONTROL		0x00		/* Control signals */
 #define ACTION_CONTROL_START	0x00000001	/* ap_start (Clear on Handshake) */
 #define ACTION_CONTROL_DONE	0x00000002	/* ap_done (Clear on Read) */
@@ -47,10 +49,19 @@ extern "C" {
 #define ACTION_PARAMS_OUT	(ACTION_PARAMS_IN + 0x80)
 #define ACTION_RETC_OUT		(ACTION_PARAMS_OUT + 4)
 
-#define SNAP_ACTION_ID_REG	0x10	/* SNAP Action ID Register */
-#define SNAP_ACTION_VERS_REG	0x14	/* SNAP Action Version Register */
+#define SNAP_ACTION_ID_REG	0x10		/* SNAP Action ID Register */
+#define SNAP_ACTION_VERS_REG	0x14		/* SNAP Action Version Register */
 
-#define ACTION_DONE_IRQ		4	/* Int# asserted from Job Manager */
+#define ACTION_DONE_IRQ		4		/* Int# asserted from Job Manager */
+
+#define SNAP_MEMBUS_WIDTH	64		/* bytes */
+#define SNAP_ROUND_UP(x, width) (((x) + (width) - 1) & ~((width) - 1))
+
+static inline void *snap_malloc(size_t size)
+{
+	unsigned int page_size = sysconf(_SC_PAGESIZE);
+	return memalign(page_size, SNAP_ROUND_UP(size, SNAP_MEMBUS_WIDTH));
+}
 
 #ifdef __cplusplus
 }

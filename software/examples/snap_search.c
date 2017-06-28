@@ -84,6 +84,25 @@ file_read(const char *fname, uint8_t *buff, size_t len)
 	return rc;
 }
 
+static void print_snap_addr(struct snap_addr *a)
+{
+	fprintf(stderr, "  addr: %016llx size: %08llx\n",
+		(long long)a->addr, (long long)a->size);
+}
+
+static inline void print_sjob(struct search_job *sjob)
+{
+	print_snap_addr(&sjob->src_text1);
+	print_snap_addr(&sjob->src_pattern);
+	print_snap_addr(&sjob->ddr_text1);
+	print_snap_addr(&sjob->src_result);
+	print_snap_addr(&sjob->ddr_result);
+	fprintf(stderr, "  step=%d method=%d nb_of_occurrences=%d "
+		"next_input_addr=%016llx\n",
+		sjob->step, sjob->method, sjob->nb_of_occurrences,
+		(long long)sjob->next_input_addr);
+}
+
 static void snap_prepare_search(struct snap_job *cjob,
 				struct search_job *sjob_in,
 				struct search_job *sjob_out,
@@ -183,6 +202,11 @@ static int run_one_step(struct snap_action *action,
 	int rc;
 	struct timeval etime, stime;
 
+	if (verbose_flag > 2) {
+		fprintf(stderr, "JOB BEFORE:\n");
+		print_sjob((void *)cjob->win_addr);
+	}
+
 	gettimeofday(&stime, NULL);
 	rc = snap_action_sync_execute_job(action, cjob, timeout);
 	if (rc != 0) {
@@ -194,8 +218,14 @@ static int run_one_step(struct snap_action *action,
 	fprintf(stdout, "Step %ld took %lld usec\n",
 		step, (long long)timediff_usec(&etime, &stime));
 
+	if (verbose_flag > 2) {
+		fprintf(stderr, "JOB AFTER:\n");
+		print_sjob((void *)cjob->win_addr);
+	}
+
 	return rc;
 }
+
 static void snap_print_search_results(struct snap_job *cjob, unsigned int run)
 {
 	unsigned int i;
@@ -223,8 +253,8 @@ static void snap_print_search_results(struct snap_job *cjob, unsigned int run)
 		printf(PR_STD);
 	}
 	if (verbose_flag > 2) {
-		offs = (uint64_t *)(unsigned long)sjob->ddr_result.addr;
-		offs_max = sjob->ddr_result.size / sizeof(uint64_t);
+		offs = (uint64_t *)(unsigned long)sjob->src_result.addr;
+		offs_max = sjob->src_result.size / sizeof(uint64_t);
 		for (i = 0; i < MIN(sjob->nb_of_occurrences, offs_max); i++) {
 			printf("%3d: %016llx", i,
 			       (long long)__le64_to_cpu(offs[i]));
@@ -291,7 +321,6 @@ int main(int argc, char *argv[])
 	unsigned int timeout = 10;
 	unsigned int items = 42;
 	unsigned int total_found = 0;
-	unsigned int page_size = sysconf(_SC_PAGESIZE);
 	struct timeval etime, stime;
 	long int expected_patterns = -1;
 	int exit_code = EXIT_SUCCESS;
@@ -378,18 +407,17 @@ int main(int argc, char *argv[])
 	if (dsize < 0)
 		goto out_error;
 
-	dbuff = memalign(page_size, dsize);
+	dbuff = snap_malloc(dsize);
 	if (dbuff == NULL)
 		goto out_error;
 
 	psize = strlen(pattern_str);
 	/* FIXME pattern is limited to 64 Bytes by hardware in this preliminary release */
-	if(psize > 64)
-	{
+	if (psize > 64) {
 		printf("Pattern is limited to 64 bytes\n");
 		goto out_error0;
 	}
-	pbuff = memalign(page_size, psize);
+	pbuff = snap_malloc(psize);
 	if (pbuff == NULL)
 		goto out_error0;
 	memcpy(pbuff, pattern_str, psize);
@@ -398,7 +426,7 @@ int main(int argc, char *argv[])
 	if (rc < 0)
 		goto out_errorX;
 
-	offs = memalign(page_size, items * sizeof(*offs));
+	offs = snap_malloc(items * sizeof(*offs));
 	if (offs == NULL)
 		goto out_errorX;
 	memset(offs, 0xAB, items * sizeof(*offs));
