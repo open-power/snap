@@ -198,7 +198,7 @@ static int run_one_step(struct snap_action *action,
 }
 static void snap_print_search_results(struct snap_job *cjob, unsigned int run)
 {
-	unsigned int i;
+//	unsigned int i;
 	struct search_job *sjob = (struct search_job *)
 		(unsigned long)cjob->wout_addr;
 	uint64_t *offs;
@@ -225,12 +225,14 @@ static void snap_print_search_results(struct snap_job *cjob, unsigned int run)
 	if (verbose_flag > 2) {
 		offs = (uint64_t *)(unsigned long)sjob->ddr_result.addr;
 		offs_max = sjob->ddr_result.size / sizeof(uint64_t);
-		for (i = 0; i < MIN(sjob->nb_of_occurrences, offs_max); i++) {
-			printf("%3d: %016llx", i,
-			       (long long)__le64_to_cpu(offs[i]));
-			if (((i+1) % 3) == 0)
-				printf("\n");
-		}
+/* As long as action does not write position, no need to display meaningless values
+*		for (i = 0; i < MIN(sjob->nb_of_occurrences, offs_max); i++) {
+*			printf("%3d: %016llx", i,
+*			       (long long)__le64_to_cpu(offs[i]));
+*			if (((i+1) % 3) == 0)
+*				printf("\n");
+*		}
+*/
 		printf("\n");
 	}
 	if (verbose_flag > 1) {
