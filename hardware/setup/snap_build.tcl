@@ -22,6 +22,7 @@ set fpgacard     $::env(FPGACARD)
 set sdram_used   $::env(SDRAM_USED)
 set nvme_used    $::env(NVME_USED)
 set bram_used    $::env(BRAM_USED)
+set ila_debug    [string toupper $::env(ILA_DEBUG)]
 
 #timing_lablimit  
 if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
@@ -142,11 +143,15 @@ puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Timing (TNS)" $wid
 if { [expr $TIMING_TNS >= 0 ] } {
     puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "TIMING OK" $widthCol4 "" ]
     set remove_tmp_files TRUE
-} elseif { [expr $TIMING_TNS < $timing_lablimit ] } {
+} elseif { [expr $TIMING_TNS < $timing_lablimit ] && ( $ila_debug != "TRUE" ) } {
     puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: TIMING FAILED" $widthCol4 "" ]
     exit 42
 } else {
-    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "WARNING: TIMING FAILED, but may be OK for lab use" $widthCol4 "" ]
+    if { $ila_debug == "TRUE" } {
+        puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "WARNING: TIMING FAILED, but may be OK for lab use with ILA" $widthCol4 "" ]
+    } else {
+        puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "WARNING: TIMING FAILED, but may be OK for lab use" $widthCol4 "" ]
+    }
     set remove_tmp_files TRUE
 }
 
@@ -176,6 +181,15 @@ if { [catch "$command > $logfile" errMsg] } {
 
 } else {
   write_cfgmem    -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME  -size 128 -interface  BPIx16 -force >> $logfile
+}
+
+##
+## writing debug probes
+if { $ila_debug == "TRUE" } {
+  set step     write_debug_probes
+  set logfile  $log_dir/${step}.log
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "writing debug probes" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+  write_debug_probes ./Images/$IMAGE_NAME.ltx >> $logfile
 }
 
 ## 

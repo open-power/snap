@@ -77,12 +77,10 @@ struct mdev_ctx {
 	uint64_t fir[SNAP_M_FIR_NUM];
 };
 
-struct cgzip_afu_fir {
-	__be32 fir_val;
-	__be32 fir_addr;
-};
-
 static struct mdev_ctx	master_ctx;
+
+#define MODE_SHOW_ACTION  0x0001
+#define MODE_2            0x0002
 
 /*
  * Open AFU Master Device
@@ -160,9 +158,11 @@ static void snap_write32(void *handle, uint32_t addr, uint32_t data)
 static void snap_version(void *handle)
 {
 	uint64_t reg;
+	int up;
 
+	VERBOSE2("[%s] Enter\n", __func__);
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_IVR);
-	VERBOSE1("SNAP Release: %d/%d:%d Distance: %d GIT: 0x%8.8x\n",
+	VERBOSE1("SNAP FPGA Release: %d/%d:%d Distance: %d GIT: 0x%8.8x\n",
 		(int)(reg >> 56),
 		(int)(reg >> 48ll) & 0xff,
 		(int)(reg >> 40ll) & 0xff,
@@ -170,28 +170,33 @@ static void snap_version(void *handle)
 		(uint32_t)reg);
 
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_BDR);
-	VERBOSE1("SNAP Build (Y/M/D): %x/%x/%x Time (H:M): %x:%x\n",
+	VERBOSE1("SNAP FPGA Build (Y/M/D): %x/%x/%x Time (H:M): %x:%x\n",
 		(int)(reg >> 32ll) & 0xffff,
 		(int)(reg >> 24ll) & 0xff,
 		(int)(reg >> 16) & 0xff,
 		(int)(reg >> 8) & 0xff,
 		(int)(reg) & 0xff);
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_CIR);
-	VERBOSE1("SNAP CIR Master: %d My ID: %d\n",
+	VERBOSE1("SNAP FPGA CIR Master: %d My ID: %d\n",
 		(int)(reg >> 63ll), (int)(reg & 0x1ff));
+	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_FRT);
+	up = (int)(reg / (1000 * 1000 *250));
+	VERBOSE1("SNAP FPGA Up Time: %d sec\n", up);
+
+	VERBOSE2("[%s] Exit\n", __func__);
 	return;
 }
 
 static void hls_setup(void *handle, uint32_t offset)
 {
-	VERBOSE2("%s Enter Offset: %x\n", __func__, offset);
+	VERBOSE2("[%s] Enter Offset: %x\n", __func__, offset);
 	snap_write32(handle, offset + 0x30, 0);
 	snap_write32(handle, offset + 0x34, 0);
 	snap_write32(handle, offset + 0x40, 0);
 	snap_write32(handle, offset + 0x44, 0);
 	snap_write32(handle, offset + 0x50, 0);
 	snap_write32(handle, offset + 0x54, 0);
-	VERBOSE2("%s Exit\n", __func__);
+	VERBOSE2("[%s] Exit\n", __func__);
 }
 
 /* Some Action need inital start to unlock Registers */
@@ -200,7 +205,7 @@ static uint32_t unlock_action(void *handle, uint32_t addr)
 	int i;
 	uint32_t reg;
 
-	VERBOSE2("%s Enter\n", __func__);
+	VERBOSE2("[%s] Enter\n", __func__);
 	reg = snap_read32(handle, addr + SNAP_ACTION_ID_REG);
 	if (0x00000000 == reg) {
 		VERBOSE2("      Invoke Unlock\n");
@@ -220,17 +225,17 @@ static uint32_t unlock_action(void *handle, uint32_t addr)
 	if (0xffffffff == reg)
 		VERBOSE0("%s Error: Detect Invalid Action at Address: 0x%x\n",
 			__func__, addr);
-	VERBOSE2("%s Exit found Action: 0x%x\n", __func__, reg);
+	VERBOSE2("[%s] Exit found Action: 0x%x\n", __func__, reg);
 	return reg;
 }
 
-static void snap_decode(uint64_t reg)
+static void snap_decode(uint64_t reg, uint32_t level)
 {
 	uint32_t atype;
 
 	atype = (uint32_t)reg;
-	VERBOSE1("   %d          0x%8.8x   ",
-		(int)(reg >> 32ll), atype);
+	VERBOSE1("     %d     0x%8.8x     0x%8.8x  ",
+		(int)(reg >> 32ll), atype, level);
 	switch (atype) {
 	case 0x10140000: VERBOSE1("IBM Sample Code\n"); break;
 	case 0x10141000: VERBOSE1("HLS Memcopy\n"); break;
@@ -248,15 +253,16 @@ static void snap_decode(uint64_t reg)
 
 
 /*	Master Init */
-static int snap_m_init(void *handle)
+static int snap_m_init(void *handle, int mode)
 {
 	uint64_t reg, ssr, data;
 	uint32_t addr;
 	uint32_t atype, atype_next;
 	int msat, mact;
 	int i, sai, rc;
+	uint32_t v_addr, v_level;
 
-	VERBOSE2("%s Enter\n", __func__);
+	VERBOSE2("[%s] Enter\n", __func__);
 	for (i = 0; i < 10; i++) {
 		reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_SLR);	/* Get lock */
 		if (0 == reg) break;	/* Got Lock, continue */
@@ -268,32 +274,41 @@ static int snap_m_init(void *handle)
 	}
 	/* Have lock, check if done */
 	rc = 0;
+	/* Read SNAP Status Register (SSR) */
 	ssr = snap_read64(handle, SNAP_M_CTX, SNAP_M_SSR);
-	msat = (int)(ssr >> 4)& 0xf;	/* Get Maximum Short ID */
-	msat++;
-	mact = (int)ssr & 0xf;		/* Get Maximum Action ID */
-	mact++;				/* Make 1..16 */
-	if (0x100 == (ssr &  0x100)) {
-		VERBOSE1("   Setup already done (MSAI: %d MAID: %d)\n\n",
-			1+(int)((ssr&0xf0)>>4), (int)(ssr&0xf)+1);
-		VERBOSE1("   Short      Action Type\n");
-		VERBOSE1("   ----------------------------------------\n");
+	msat = (int)(ssr >> 4) & 0xf;   /* Get Maximum Short Action Type */
+	msat++;                         /* Make 1.. 16 */
+	mact = (int)ssr & 0xf;          /* Get Maximum Action ID */
+	mact++;                         /* Make 1..16 */
+	if (0x100 == (ssr &  0x100)) {  /* Check for Exploration Done */
+		VERBOSE1("SNAP FPGA Exploration already done (MSAT: %d MAID: %d)\n\n",
+			msat, mact);
+		VERBOSE1("   Short |  Action Type |   Level   |\n");
+		VERBOSE1("   ------+--------------+-----------+-----------\n");
 		addr = SNAP_M_ATRI;
+		/* Set Address to read Version */
+		v_addr = SNAP_M_ACT_OFFSET + SNAP_ACTION_VERS_REG;
 		for (i = 0; i < mact; i++) {
 			reg = snap_read64(handle, SNAP_M_CTX, addr);
-			snap_decode(reg);
+			v_level = snap_read32(handle, v_addr);
+			snap_decode(reg, v_level);
 			addr += 8;
+			/* Show mode is used to display Action id only */
+			/* do not use with -v flags */
+			if (MODE_SHOW_ACTION == (MODE_SHOW_ACTION & mode))
+				VERBOSE0("0x%8.8x ", (uint32_t)reg);
+			v_addr += SNAP_M_ACT_SIZE;    /* Jump to next Version Reg */
 		}
 		rc = 0;
 		goto _snap_m_init_exit;
 	}
 
 	/* Read Action Type and configure */
-	sai = 0;				/* Short Action Index */
-	addr = SNAP_M_ACT_OFFSET;		/* Base for 1st Action */
+	sai = 0;                                /* Short Action Index */
+	addr = SNAP_M_ACT_OFFSET;               /* Base for 1st Action */
 	atype = unlock_action(handle, addr);
 	if (0xffffffff == atype) {
-		rc = 2;				/* Can not unlock Action */
+		rc = 2;                         /* Can not unlock Action */
 		goto _snap_m_init_exit;
 	}
 	for (i = 0; i < mact; i++) {
@@ -302,24 +317,26 @@ static int snap_m_init(void *handle)
 			rc = 2;
 			goto _snap_m_init_exit;
 		}
+		v_level = snap_read32(handle, addr + SNAP_ACTION_VERS_REG);
 		VERBOSE1("   %d Max AT: %d Found AT: 0x%8.8x --> Assign Short AT: %d\n",
 			i, mact, atype_next, sai);
 		data = (uint64_t)sai << 32ll | (uint64_t)atype_next;
-		snap_decode(data);
+		snap_decode(data, v_level);
 		/* Configure Job Manager */
 		snap_write64(handle, SNAP_M_CTX, (SNAP_M_ATRI + i * 8), data);
 		if (atype != atype_next)
-			sai++;			/* Next Short Action Index */
+			sai++;                  /* Next Short Action Index */
 		atype = atype_next;
-		addr += SNAP_M_ACT_SIZE;	/* Next Action Address */
+		addr += SNAP_M_ACT_SIZE;        /* Next Action Address */
 	}
 	rc = 0;
 	/* Set Command Register (SCR) */
 	reg = 0x10 + ((uint64_t)sai << 48ll);	/* Exploration Done + Maximum Short Action Type */
 	snap_write64(handle, SNAP_M_CTX, SNAP_M_SCR, reg);
 _snap_m_init_exit:
-	snap_write64(handle, SNAP_M_CTX, SNAP_M_SLR, 0);	/* Release lock */
-	VERBOSE2("%s Exit rc: %d\n", __func__, rc);
+	VERBOSE1("\n");
+	snap_write64(handle, SNAP_M_CTX, SNAP_M_SLR, 0); /* Release lock */
+	VERBOSE2("[%s] Exit rc: %d\n", __func__, rc);
 	return rc;
 }
 
@@ -358,8 +375,8 @@ static void help(char *prog)
 	       "\t-i, --interval <num>	Interval time in sec (default 1 sec)\n"
 	       "\t-d, --daemon		Start in Daemon process (background)\n"
 	       "\t-m, --mode		Mode:\n"
-	       "\t	1 = Check Master Firs\n"
-	       "\t	2 = Report Context Details\n"
+	       "\t	1 = Show Action number only\n"
+	       "\t	2 = Not Used for now\n"
 	       "\t-f, --log-file <file> Log File name when running in -d "
 	       "(daemon)\n"
 	       "\n"
@@ -453,8 +470,8 @@ int main(int argc, char *argv[])
 		case 'm':	/* --mode */
 			mode = strtoul(optarg, NULL, 0);
 			switch (mode) {
-			case 1: mctx->mode |= 1; break;
-			case 2: mctx->mode |= 2; break;
+			case 1: mctx->mode |= MODE_SHOW_ACTION; break;
+			case 2: mctx->mode |= MODE_2; break;
 			default:
 				fprintf(stderr, "Please provide correct "
 					"Mode Option (1..2)\n");
@@ -475,6 +492,7 @@ int main(int argc, char *argv[])
 			"0..%d!\n", mctx->card, 3);
 		exit(EXIT_FAILURE);
 	}
+	VERBOSE2("[%s] Enter\n", __func__);
 
 	if (mctx->daemon) {
 		if (NULL == log_file) {
@@ -541,7 +559,7 @@ int main(int argc, char *argv[])
 	}
 	snap_version(mctx->handle);
 	/* Init Master */
-	rc = snap_m_init(mctx->handle);
+	rc = snap_m_init(mctx->handle, mctx->mode);
 	//if (0 != rc)
 	goto __main_exit;	/* Exit here.... for now */
 
@@ -561,6 +579,7 @@ int main(int argc, char *argv[])
 			 __func__, mctx->card, mctx->loop);
 
 __main_exit:
+	VERBOSE2("[%s] Exit rc: %d\n", __func__, rc);
 	snap_close(mctx);
 	fflush(fd_out);
 	fclose(fd_out);

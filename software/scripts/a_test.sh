@@ -22,6 +22,7 @@
 verbose=0
 snap_card=0
 iteration=1
+FUNC=./software/examples/snap_example
 
 function test () # $1 = card, $2 = 4k or 64, $3 = action
 {
@@ -33,9 +34,9 @@ function test () # $1 = card, $2 = 4k or 64, $3 = action
 		echo "Testing Action $action Align $a for (1...64) $2 Byte"
 		for ln in ` seq 1 64 `; do
 			if [ $size == 64 ] ; then
-				cmd="./examples/snap_example -a $action -A $a -C ${card} -S 0 -B $ln"
+				cmd="${FUNC} -a $action -A $a -C ${card} -S 0 -B $ln"
 			else
-				cmd="./examples/snap_example -a $action -A $a -C ${card} -S $ln -B 0"
+				cmd="${FUNC} -a $action -A $a -C ${card} -S $ln -B 0"
 			fi
 			eval ${cmd}
 			if [ $? -ne 0 ]; then
@@ -57,7 +58,7 @@ function test_sb () # $1 = card, $2=action
 		for  s in ` seq 1 16 `; do		# 4 K Blocks
 			echo -n "."
 			for b in ` seq 1 16 `; do	# 64 Byte Blocks
-				cmd="./examples/snap_example -a $action -A $a -C ${card} -S $s -B $b"
+				cmd="${FUNC} -a $action -A $a -C ${card} -S $s -B $b"
 				eval ${cmd}
 				if [ $? -ne 0 ]; then
         				echo "cmd: ${cmd}"
@@ -80,7 +81,7 @@ function test_bs () # $1 = card, $2 = action
 		for b in ` seq 1 16 `; do		# 64 Bytes Blocks
 			echo -n "."
 			for  s in ` seq 1 16 `; do	# 4K Blocks
-				cmd="./examples/snap_example -a $action -A $a -C ${card} -S $s -B $b"
+				cmd="${FUNC} -a $action -A $a -C ${card} -S $s -B $b"
 				eval ${cmd}
 				if [ $? -ne 0 ]; then
         				echo "cmd: ${cmd}"
@@ -106,7 +107,7 @@ function test_rnd () # $1 = card, $2 = action
 			if [ $size = 0 ] && [ $block = 0 ] ; then
 				continue	# ignore 0 0 combinations
 			fi
-			cmd="./examples/snap_example -a $action -A $a -C ${card} -S $size -B $block"
+			cmd="${FUNC} -a $action -A $a -C ${card} -S $size -B $block"
 			eval ${cmd}
 			if [ $? -ne 0 ]; then
 				echo "cmd: ${cmd}"
@@ -147,15 +148,14 @@ while getopts "C:t:i:h" opt; do
 	esac
 done
 
-echo "Using /dev/cxl/afu$snap_card"
 rev=$(cat /sys/class/cxl/card$snap_card/device/subsystem_device | xargs printf "0x%.4X")
 
 case $rev in
 "0x0605" )
-	echo "$rev -> AlphaDataKU60 Card"
+	echo "$rev -> Testing AlphaDataKU60 Card"
 	;;
 "0x060A" )
-	echo "$rev -> FlashGT Card"
+	echo "$rev -> Testing FlashGT Card"
 	;;
 *)
 	echo "Capi Card $snap_card does have subsystem_device: $rev"
@@ -168,7 +168,7 @@ for ((iter=1;iter <= iteration;iter++))
 {
 	echo "Iteration $iter of $iteration"
 	echo "Testing Action 1 from 200 msec to 1 sec in 200 msec steps"
-	cmd="./examples/snap_example -a 1 -C${snap_card} -e 1000 -t 2"
+	cmd="${FUNC} -a 1 -C${snap_card} -e 1000 -t 2"
 	eval ${cmd}
 	if [ $? -ne 0 ]; then
        		echo "cmd: ${cmd}"

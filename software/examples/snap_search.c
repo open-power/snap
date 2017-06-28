@@ -200,7 +200,7 @@ static void snap_print_search_results(struct snap_job *cjob, unsigned int run)
 {
 	unsigned int i;
 	struct search_job *sjob = (struct search_job *)
-		(unsigned long)cjob->win_addr;
+		(unsigned long)cjob->wout_addr;
 	uint64_t *offs;
 	unsigned long offs_max;
 	static const char *mem_tab[] = { "HOST_DRAM",
@@ -252,7 +252,7 @@ static void usage(const char *prog)
 	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
 	       "  -C, --card <cardno> can be (0...3)\n"
 	       "  -s, --software         Test the software flow \n"
-	       "  -m, --method           Can be (0,1,2) different method search\n"
+	       "  -m, --method           Can be (1,2) different method search\n"
 	       "  -i, --input <data.bin> Input data.\n"
 	       "  -I, --items <items>    Max items to find.\n"
 	       "  -p, --pattern <str>    Pattern to search for\n"
@@ -432,9 +432,9 @@ int main(int argc, char *argv[])
  	 * Run Step 1, 3, 5 for Hardware search
  	 */
 
-    	printf("**************************************************************\n");
-  	printf("Start Step1 (Copy source data from Host to DDR) ..............\n");
-   	printf("**************************************************************\n");
+    	printf("...................................................\n");
+  	printf("Start Step1 (Copy source data from Host to DDR) ...\n");
+   	printf("...................................................\n");
  	step = 1;
 
 	snap_prepare_search(&cjob, &sjob_in, &sjob_out,
@@ -452,9 +452,9 @@ int main(int argc, char *argv[])
 	gettimeofday(&stime, NULL);
     	if(sw)
     	{
-       		printf("*********************************************************\n");
-       		printf("Start Step2 (Copy source data from DDR to Host) .........\n");
-       		printf("*********************************************************\n");
+                printf("...................................................\n");
+       		printf("Start Step2 (Copy source data from DDR to Host) ...\n");
+                printf("...................................................\n");
  	 	step = 2;
         	snap_prepare_search(&cjob, &sjob_in, &sjob_out,
 				    dbuff, dsize,
@@ -467,9 +467,9 @@ int main(int argc, char *argv[])
        		if (rc != 0)
            		goto out_error3;
 
-        	printf("**************************************************\n");
-        	printf("Start Step4 (Do Search by software) ..............\n");
-        	printf("**************************************************\n");
+        	printf("...................................................\n");
+        	printf("Start Step4 (Do Search by software) ...............\n");
+        	printf("...................................................\n");
  	 	step = 4;
 
         	sjob_out.nb_of_occurrences = run_sw_search(method, (char *)pbuff, psize,
@@ -481,24 +481,27 @@ int main(int argc, char *argv[])
     	}
    	else
     	{
-           	printf("***************************************************\n");
-           	printf(" >>> Searching : iteration number %d \n", run);
-            	printf("***************************************************\n");
+           	printf("...................................................\n");
             	printf("Start Step3 (Do Search by hardware, in DDR) .......\n");
+           	printf(" >>> Searching : iteration number %d \n", run);
                 switch(method) {
                 case(1):
-                        printf(" >>>>>>>>>> Naive method (%d) \n", method);
+                        printf(" >>> Naive method (%d) \n", method);
                         break;
                 case(2):
-                        printf(" >>>>>>>>>> KMP method (%d) \n", method);
+                        printf(" >>> KMP method (%d) \n", method);
                         break;
                 case(0):
-                        printf(" >>>>>>>>>> Streaming method (%d) \n", method);
+#ifdef STREAMING_METHOD
+                        printf(" >>> Streaming method (%d) \n", method);
+#else
+                        printf(" >>> Streaming method (%d) NOT IMPLEMENTED \n", method);
+#endif
                         break;
                 default:
                         printf(" >>> Default: Naive method (%d) \n", method);
                 }
-                printf("***************************************************\n");
+                printf("...................................................\n");
 		step = 3;
 
         	run = 0;
@@ -527,10 +530,10 @@ int main(int argc, char *argv[])
             		total_found += sjob_out.nb_of_occurrences;
 
 			/*
-           		printf("****************************************************\n");
+           		printf("....................................................\n");
             		printf("Start Step5 (Copy pattern positions back to Host) ..\n");
             		printf("......no positions yet to transfer .............. ..\n");
-            		printf("****************************************************\n");
+            		printf("....................................................\n");
 			step = 5;
 
             		snap_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,

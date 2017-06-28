@@ -101,6 +101,15 @@ check_snap_settings:
 		echo "NUM_OF_ACTIONS: $(NUM_OF_ACTIONS)"; \
 		exit 1; \
 	fi
+	@if ([ -z `echo "x$(ACTION_ROOT)" | grep -iv HLS` ] || [ -z `echo "x$(HLS_SUPPORT)" | grep -iv TRUE` ]) && [ `basename "x$(ACTION_ROOT)"` != "vhdl" ] && [ `basename "x$(ACTION_ROOT)"` != "verilog" ]; then \
+		echo "Looks like an HLS action shall be integrated."; \
+		echo "Please make sure that the environment variable ACTION_ROOT ends in vhdl or in verilog"; \
+		exit 1; \
+	fi
+	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` == "TRUE" ] && [ ! -e "$(ILA_SETUP_FILE)" ]; then \
+		echo "ILA_DEBUG is set to ${ILA_DEBUG} but ILA_SETUP_FILE is not pointing to a file!"; \
+		exit 1; \
+	fi
 
 check_denali:
 	@if [ $(NVME_USED) == "TRUE" ]; then \
@@ -175,7 +184,7 @@ config: check_snap_settings setup_environment snap_config action_config create_e
 
 patch_version:
 	@echo -e "\t[PATCH...............] SNAP version and build date registers"; \
-	$(SNAP_HARDWARE_ROOT)/setup/patch_version.sh $(SNAP_HDL_CORE) snap_core.vhd
+	$(SNAP_HARDWARE_ROOT)/setup/patch_version.sh $(SNAP_HDL_CORE) snap_core_types.vhd
 
 patch_NVMe:
 	@if [[ -e "$(SNAP_HARDWARE_ROOT)/setup/patch_NVMe.sh" && $(NVME_USED) = "TRUE" ]]; then \
