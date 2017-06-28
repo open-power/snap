@@ -481,47 +481,51 @@ static void drive_dump_buffer(void *handle, int n)
 }
 #endif
 
-static int pcie_link(void *handle, int drive)
+static int wait_pcie_link_up(void *handle, int drive)
 {
 	int rc = 1;
 	uint32_t addr, data, offset;
-	int width;
+	int width, i, ltssm_state;
 
 	offset = 0;    /* for drive 0 */
 	if (1 == drive)
 		offset = 0x10000000;  /* for drive 1 */
 	addr = 0x10000144 + offset;
-	data = nvme_read(handle, addr);   /* 1884 */
+	data = nvme_read(handle, addr);
 	/* Decode Status */
-	VERBOSE1(" PCIE for SSD[%d] Link ", drive);
-	if (0x800 & data) {    /* Check for Link Up */
-		VERBOSE1("UP.");
-		rc = 0;
-	} else VERBOSE1("Down.");
-	VERBOSE1(" Link Rate: ");
+	VERBOSE1(" PCIE for SSD[%d]", drive);
+	/* Wait Until PCIE Link is up */
+	for (i = 0; i < 80; i++) {
+		data = nvme_read(handle, addr);
+		/* Decode PCIE State Machine state */
+		ltssm_state = (data & 0x1f8) >> 3;
+		VERBOSE2("\n  (%2.2d) PCIE State: %2.2d",
+			i, ltssm_state);
+		if (0x800 & data) {    /* Check for Link Up */
+			VERBOSE1(" -> UP (%d).\n", i);
+			rc = 0;
+			break;
+		}
+		sleep(2);
+	}
+	VERBOSE1("PCIE Link Rate: ");
 	if (0x1000 & data)
-		VERBOSE1("Gen3.");
+		VERBOSE1("Gen3");
 	else {
 		if (0x1 & data)
-			VERBOSE1(" Gen2 @ 5 GT/s.");
-		else    VERBOSE1(" Gen2 @ 2.5 GT/s.");
+			VERBOSE1("Gen2 @ 5 GT/s");
+		else    VERBOSE1("Gen2 @ 2.5 GT/s");
 	}
 	width = (data & 0x6) >> 1;
 	VERBOSE1(" Link With: ");
 	switch (width) {
-		case 0:
-			VERBOSE1("1\n");
-			break;
-		case 1:
-			VERBOSE1("2\n");
-			break;
-		case 2:
-			VERBOSE1("4\n");
-			break;
-		case 3:
-			VERBOSE1("8\n");
-			break;
+		case 0: VERBOSE1("1\n"); break;
+		case 1: VERBOSE1("2\n"); break;
+		case 2: VERBOSE1("4\n"); break;
+		case 3: VERBOSE1("8\n"); break;
 	}
+	if (0 != rc)
+		VERBOSE0("PCIE Link Error Reports: 0x%8.8x\n", data);
 	return rc;
 }
 
@@ -710,7 +714,7 @@ int main(int argc, char *argv[])
 	/* Get Prog Reg */
 	g_prog_reg = nvme_read(handle, ADMIN_SCRATCH_REG);
 	show_prog_reg();
-	rc = pcie_link(handle, drive);
+	rc = wait_pcie_link_up(handle, drive);
 	if (0 == rc) {
 		/* Init NVME PCIe */
 		if (false == ssdinitdone(drive)) {
