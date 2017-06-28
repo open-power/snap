@@ -24,6 +24,9 @@ USE ieee.std_logic_misc.all;
 USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
 
+LIBRARY unisim;                                                                       -- only for DDRI_USED=TRUE
+USE unisim.vcomponents.all;                                                           -- only for DDRI_USED=TRUE
+
 ENTITY psl_fpga IS
   PORT(
     -- DDR4 SDRAM Interface                                                     -- only for DDRI_USED=TRUE
@@ -458,35 +461,29 @@ Signal led_red: std_logic_vector(0 to 1);
 Signal led_green: std_logic_vector(0 to 1);
 Signal led_blue: std_logic_vector(0 to 1);
 -- NVME Reset Logic                                                         -- only for NVME_USED=TRUE
-Signal nvme_reset_cnt_q: std_logic_vector(15 downto 0);                     -- only for NVME_USED=TRUE
-Signal hold_nvme_reset_q: std_logic;                                        -- only for NVME_USED=TRUE
-Signal nvme_reset_n_q: std_logic;                                           -- only for NVME_USED=TRUE
+Signal nvme_reset_cnt_q: std_logic_vector(15 downto 0) := (others => '1');  -- only for NVME_USED=TRUE
+Signal nvme_reset_n_q: std_logic := '1';                                    -- only for NVME_USED=TRUE
 Signal nvme_reset_ctl: std_logic;                                           -- only for NVME_USED=TRUE
 Signal nvme_perst_ctl: std_logic_vector(3 downto 0);                        -- only for NVME_USED=TRUE
+Signal m2_perst_tmp_n: std_logic_vector(3 downto 0);                        -- only for NVME_USED=TRUE
 
 begin
   --                                                                        -- only for NVME_USED=TRUE
   -- NVMe Reset Logic                                                       -- only for NVME_USED=TRUE
   --                                                                        -- only for NVME_USED=TRUE
-  -- Note: generate a 32768x4ns=131ms reset pulse for NVMe                  -- only for NVME_USED=TRUE
+  -- Note: generate a 32768x4ns=131us reset pulse for NVMe                  -- only for NVME_USED=TRUE
   --                                                                        -- only for NVME_USED=TRUE
-  nvme_reset : PROCESS (ha0_pclock, nvme_reset_ctl)                         -- only for NVME_USED=TRUE
+  nvme_reset : PROCESS (ha0_pclock)                                         -- only for NVME_USED=TRUE
   BEGIN                                                                     -- only for NVME_USED=TRUE
-    IF (rising_edge(ha0_pclock)) THEN                                       -- only for NVME_USED=TRUE
-      hold_nvme_reset_q <= '0';                                             -- only for NVME_USED=TRUE
-      nvme_reset_n_q    <= NOT nvme_reset_ctl;                              -- only for NVME_USED=TRUE
-      nvme_reset_cnt_q  <= (OTHERS => '0');                                 -- only for NVME_USED=TRUE
-                                                                            -- only for NVME_USED=TRUE
-      IF ((pci_user_reset    = '1') OR                                      -- only for NVME_USED=TRUE
-          (hold_nvme_reset_q = '1')) THEN                                   -- only for NVME_USED=TRUE
-                                                                            -- only for NVME_USED=TRUE
-        hold_nvme_reset_q <= '1';                                           -- only for NVME_USED=TRUE
-        nvme_reset_n_q    <= '0';                                           -- only for NVME_USED=TRUE
-        nvme_reset_cnt_q  <= nvme_reset_cnt_q + '1';                        -- only for NVME_USED=TRUE
-                                                                            -- only for NVME_USED=TRUE
+    IF (rising_edge(ha0_pclock)) then                                       -- only for NVME_USED=TRUE
+      nvme_reset_n_q    <= '0';                                             -- only for NVME_USED=TRUE
+      IF (pci_user_reset  = '1') THEN                                       -- only for NVME_USED=TRUE
+        nvme_reset_cnt_q  <= (OTHERS => '0');                               -- only for NVME_USED=TRUE
+      else                                                                  -- only for NVME_USED=TRUE
         IF (nvme_reset_cnt_q(15) = '1') THEN                                -- only for NVME_USED=TRUE
-          hold_nvme_reset_q <= '0';                                         -- only for NVME_USED=TRUE
           nvme_reset_n_q    <= NOT nvme_reset_ctl;                          -- only for NVME_USED=TRUE
+        else                                                                -- only for NVME_USED=TRUE
+          nvme_reset_cnt_q  <= nvme_reset_cnt_q + '1';                      -- only for NVME_USED=TRUE
         END IF;                                                             -- only for NVME_USED=TRUE
       END IF;                                                               -- only for NVME_USED=TRUE
     END IF;                                                                 -- only for NVME_USED=TRUE
@@ -494,8 +491,16 @@ begin
                                                                             -- only for NVME_USED=TRUE
   --                                                                        -- only for NVME_USED=TRUE
   -- Drive resets to NVMe drives at M2 pins                                 -- only for NVME_USED=TRUE
-  m2_perst_n <=  (nvme_reset_n_q & nvme_reset_n_q &                         -- only for NVME_USED=TRUE
-                  nvme_reset_n_q & nvme_reset_n_q) AND NOT nvme_perst_ctl;  -- only for NVME_USED=TRUE
+  m2_perst_tmp_n <= (nvme_reset_cnt_q(15) & nvme_reset_cnt_q(15) &          -- only for NVME_USED=TRUE
+                     nvme_reset_cnt_q(15) & nvme_reset_cnt_q(15))           -- only for NVME_USED=TRUE
+                    AND NOT nvme_perst_ctl;                                 -- only for NVME_USED=TRUE
+
+  o0: OBUF port map (I => m2_perst_tmp_n(0), O => m2_perst_n(0));           -- only for NVME_USED=TRUE  
+  o1: OBUF port map (I => m2_perst_tmp_n(1), O => m2_perst_n(1));           -- only for NVME_USED=TRUE
+  o2: OBUF port map (I => m2_perst_tmp_n(2), O => m2_perst_n(2));           -- only for NVME_USED=TRUE
+  o3: OBUF port map (I => m2_perst_tmp_n(3), O => m2_perst_n(3));           -- only for NVME_USED=TRUE
+
+                   
   --                                                                        -- only for NVME_USED=TRUE
   -- Clock ties for NVMe drives at M2 pins                                  -- only for NVME_USED=TRUE
   m2_susclk  <= (OTHERS => '0');                                            -- only for NVME_USED=TRUE
