@@ -62,14 +62,14 @@ ENTITY psl_fpga IS
     pcie_clk2_n               : IN    STD_LOGIC;                                -- only for NVME_USED=TRUE
     --                                                                          -- only for NVME_USED=TRUE
     -- NVME <-> PCIE Interface                                                  -- only for NVME_USED=TRUE
-    pcie_rc0_rxn              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
-    pcie_rc0_rxp              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
-    pcie_rc0_txn              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
-    pcie_rc0_txp              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
-    pcie_rc1_rxn              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
-    pcie_rc1_rxp              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
-    pcie_rc1_txn              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
-    pcie_rc1_txp              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
+    pcie_rc0_rxn              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    pcie_rc0_rxp              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    pcie_rc0_txn              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    pcie_rc0_txp              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    pcie_rc1_rxn              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    pcie_rc1_rxp              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    pcie_rc1_txn              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    pcie_rc1_txp              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
     --                                                                          -- only for NVME_USED=TRUE
     -- Outputs to NVMe drive                                                    -- only for NVME_USED=TRUE
     m2_perst_n                : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
@@ -77,65 +77,65 @@ ENTITY psl_fpga IS
     --
     -- CAPI PSL Interface
     --
-    o_flash_oen: out std_logic;
-    o_flash_wen: out std_logic;
-    o_flash_rstn: out std_logic;
-    o_flash_a: out std_logic_vector(1 to 26);
-    o_flash_a_dup: out std_logic_vector(25 to 26);
-    o_flash_advn: out std_logic;
-    b_flash_dq: inout std_logic_vector(0 to 11);
+    o_flash_oen: OUT std_logic;
+    o_flash_wen: OUT std_logic;
+    o_flash_rstn: OUT std_logic;
+    o_flash_a: OUT std_logic_vector(1 TO 26);
+    o_flash_a_dup: OUT std_logic_vector(25 TO 26);
+    o_flash_advn: OUT std_logic;
+    b_flash_dq: INOUT std_logic_vector(0 TO 11);
 
     -- PTMON PMBUS
-    b_basei2c_scl: inout std_logic;                                             -- clock
-    b_basei2c_sda: inout std_logic;                                             -- data
-    b_smbus_scl: inout std_logic;                                               -- clock
-    b_smbus_sda: inout std_logic;                                               -- data
+    b_basei2c_scl: INOUT std_logic;                                             -- clock
+    b_basei2c_sda: INOUT std_logic;                                             -- data
+    b_smbus_scl: INOUT std_logic;                                               -- clock
+    b_smbus_sda: INOUT std_logic;                                               -- data
 
-    o_ucd_gpio21: out std_logic;     -- UCD smbus control signal
+    o_ucd_gpio21: OUT std_logic;     -- UCD smbus control signal
 
     --LED ports from NVME logic
-    o_led_red: out std_logic_vector(1 downto 0);
-    o_led_green: out std_logic_vector(1 downto 0);
-    o_led_blue: out std_logic_vector(1 downto 0);
+    o_led_red: OUT std_logic_vector(1 DOWNTO 0);
+    o_led_green: OUT std_logic_vector(1 DOWNTO 0);
+    o_led_blue: OUT std_logic_vector(1 DOWNTO 0);
 
     -- pci interface
-    pci_pi_nperst0: in std_logic;                                               -- Active low reset from the PCIe reset pin of the device
-    pci_pi_refclk_p0: in std_logic;                                             -- 100MHz Refclk
-    pci_pi_refclk_n0: in std_logic;                                             -- 100MHz Refclk
+    pci_pi_nperst0: IN std_logic;                                               -- Active low reset from the PCIe reset pin of the device
+    pci_pi_refclk_p0: IN std_logic;                                             -- 100MHz Refclk
+    pci_pi_refclk_n0: IN std_logic;                                             -- 100MHz Refclk
 
     -- Xilinx requires both pins of differential transceivers
-    pci0_i_rxp_in0: in std_logic;
-    pci0_i_rxn_in0: in std_logic;
-    pci0_i_rxp_in1: in std_logic;
-    pci0_i_rxn_in1: in std_logic;
-    pci0_i_rxp_in2: in std_logic;
-    pci0_i_rxn_in2: in std_logic;
-    pci0_i_rxp_in3: in std_logic;
-    pci0_i_rxn_in3: in std_logic;
-    pci0_i_rxp_in4: in std_logic;
-    pci0_i_rxn_in4: in std_logic;
-    pci0_i_rxp_in5: in std_logic;
-    pci0_i_rxn_in5: in std_logic;
-    pci0_i_rxp_in6: in std_logic;
-    pci0_i_rxn_in6: in std_logic;
-    pci0_i_rxp_in7: in std_logic;
-    pci0_i_rxn_in7: in std_logic;
-    pci0_o_txp_out0: out std_logic;
-    pci0_o_txn_out0: out std_logic;
-    pci0_o_txp_out1: out std_logic;
-    pci0_o_txn_out1: out std_logic;
-    pci0_o_txp_out2: out std_logic;
-    pci0_o_txn_out2: out std_logic;
-    pci0_o_txp_out3: out std_logic;
-    pci0_o_txn_out3: out std_logic;
-    pci0_o_txp_out4: out std_logic;
-    pci0_o_txn_out4: out std_logic;
-    pci0_o_txp_out5: out std_logic;
-    pci0_o_txn_out5: out std_logic;
-    pci0_o_txp_out6: out std_logic;
-    pci0_o_txn_out6: out std_logic;
-    pci0_o_txp_out7: out std_logic;
-    pci0_o_txn_out7: out std_logic
+    pci0_i_rxp_in0: IN std_logic;
+    pci0_i_rxn_in0: IN std_logic;
+    pci0_i_rxp_in1: IN std_logic;
+    pci0_i_rxn_in1: IN std_logic;
+    pci0_i_rxp_in2: IN std_logic;
+    pci0_i_rxn_in2: IN std_logic;
+    pci0_i_rxp_in3: IN std_logic;
+    pci0_i_rxn_in3: IN std_logic;
+    pci0_i_rxp_in4: IN std_logic;
+    pci0_i_rxn_in4: IN std_logic;
+    pci0_i_rxp_in5: IN std_logic;
+    pci0_i_rxn_in5: IN std_logic;
+    pci0_i_rxp_in6: IN std_logic;
+    pci0_i_rxn_in6: IN std_logic;
+    pci0_i_rxp_in7: IN std_logic;
+    pci0_i_rxn_in7: IN std_logic;
+    pci0_o_txp_out0: OUT std_logic;
+    pci0_o_txn_out0: OUT std_logic;
+    pci0_o_txp_out1: OUT std_logic;
+    pci0_o_txn_out1: OUT std_logic;
+    pci0_o_txp_out2: OUT std_logic;
+    pci0_o_txn_out2: OUT std_logic;
+    pci0_o_txp_out3: OUT std_logic;
+    pci0_o_txn_out3: OUT std_logic;
+    pci0_o_txp_out4: OUT std_logic;
+    pci0_o_txn_out4: OUT std_logic;
+    pci0_o_txp_out5: OUT std_logic;
+    pci0_o_txn_out5: OUT std_logic;
+    pci0_o_txp_out6: OUT std_logic;
+    pci0_o_txn_out6: OUT std_logic;
+    pci0_o_txp_out7: OUT std_logic;
+    pci0_o_txn_out7: OUT std_logic
   );
 END psl_fpga;
 
@@ -184,290 +184,290 @@ Component psl_accel
     nvme_reset_ctl            : OUT   STD_LOGIC_VECTOR(4 DOWNTO 0);             -- only for NVME_USED=TRUE  -- keeping NVMe drives in reset by driving 0's
     --                                                                          -- only for NVME_USED=TRUE
     -- NVME <-> PCIE Interface                                                  -- only for NVME_USED=TRUE
-    pcie_rc0_rxn              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
-    pcie_rc0_rxp              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
-    pcie_rc0_txn              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
-    pcie_rc0_txp              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
-    pcie_rc1_rxn              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
-    pcie_rc1_rxp              : IN    STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
-    pcie_rc1_txn              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
-    pcie_rc1_txp              : OUT   STD_LOGIC_VECTOR ( 3 downto 0 );          -- only for NVME_USED=TRUE
+    pcie_rc0_rxn              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    pcie_rc0_rxp              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    pcie_rc0_txn              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    pcie_rc0_txp              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    pcie_rc1_rxn              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    pcie_rc1_rxp              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    pcie_rc1_txn              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    pcie_rc1_txp              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
     --
     -- CAPI PSL Interface
     --
     -- Accelerator Command Interface
-    ah_cvalid: out std_logic;                                                   -- A valid command is present
-    ah_ctag: out std_logic_vector(0 to 7);                                      -- request id
-    ah_com: out std_logic_vector(0 to 12);                                      -- command PSL will execute
-    ah_cpad: out std_logic_vector(0 to 2);                                      -- prefetch attributes
-    ah_cabt: out std_logic_vector(0 to 2);                                      -- abort if translation intr is generated
-    ah_cea: out std_logic_vector(0 to 63);                                      -- Effective byte address for command
-    ah_cch: out std_logic_vector(0 to 15);                                      -- Context Handle
-    ah_csize: out std_logic_vector(0 to 11);                                    -- Number of bytes
-    ha_croom: in std_logic_vector(0 to 7);                                      -- Commands PSL is prepared to accept
+    ah_cvalid: OUT std_logic;                                                   -- A valid command is present
+    ah_ctag: OUT std_logic_vector(0 TO 7);                                      -- request id
+    ah_com: OUT std_logic_vector(0 TO 12);                                      -- command PSL will execute
+    ah_cpad: OUT std_logic_vector(0 TO 2);                                      -- prefetch attributes
+    ah_cabt: OUT std_logic_vector(0 TO 2);                                      -- abort if translation intr is generated
+    ah_cea: OUT std_logic_vector(0 TO 63);                                      -- Effective byte address for command
+    ah_cch: OUT std_logic_vector(0 TO 15);                                      -- Context Handle
+    ah_csize: OUT std_logic_vector(0 TO 11);                                    -- Number of bytes
+    ha_croom: IN std_logic_vector(0 TO 7);                                      -- Commands PSL is prepared to accept
     --
     -- command parity
-    ah_ctagpar: out std_logic;
-    ah_compar: out std_logic;
-    ah_ceapar: out std_logic;
+    ah_ctagpar: OUT std_logic;
+    ah_compar: OUT std_logic;
+    ah_ceapar: OUT std_logic;
     --
     -- Accelerator Buffer Interfaces
-    ha_brvalid: in std_logic;                                                   -- A read transfer is present
-    ha_brtag: in std_logic_vector(0 to 7);                                      -- Accelerator generated ID for read
-    ha_brad: in std_logic_vector(0 to 5);                                       -- half line index of read data
-    ah_brlat: out std_logic_vector(0 to 3);                                     -- Read data ready latency
-    ah_brdata: out std_logic_vector(0 to 511);                                  -- Read data
-    ah_brpar: out std_logic_vector(0 to 7);                                     -- Read data parity
-    ha_bwvalid: in std_logic;                                                   -- A write data transfer is present
-    ha_bwtag: in std_logic_vector(0 to 7);                                      -- Accelerator ID of the write
-    ha_bwad: in std_logic_vector(0 to 5);                                       -- half line index of write data
-    ha_bwdata: in std_logic_vector(0 to 511);                                   -- Write data
-    ha_bwpar: in std_logic_vector(0 to 7);                                      -- Write data parity
+    ha_brvalid: IN std_logic;                                                   -- A read transfer is present
+    ha_brtag: IN std_logic_vector(0 TO 7);                                      -- Accelerator generated ID for read
+    ha_brad: IN std_logic_vector(0 TO 5);                                       -- half line index of read data
+    ah_brlat: OUT std_logic_vector(0 TO 3);                                     -- Read data ready latency
+    ah_brdata: OUT std_logic_vector(0 TO 511);                                  -- Read data
+    ah_brpar: OUT std_logic_vector(0 TO 7);                                     -- Read data parity
+    ha_bwvalid: IN std_logic;                                                   -- A write data transfer is present
+    ha_bwtag: IN std_logic_vector(0 TO 7);                                      -- Accelerator ID of the write
+    ha_bwad: IN std_logic_vector(0 TO 5);                                       -- half line index of write data
+    ha_bwdata: IN std_logic_vector(0 TO 511);                                   -- Write data
+    ha_bwpar: IN std_logic_vector(0 TO 7);                                      -- Write data parity
     --
     -- buffer tag parity
-    ha_brtagpar: in std_logic;
-    ha_bwtagpar: in std_logic;
+    ha_brtagpar: IN std_logic;
+    ha_bwtagpar: IN std_logic;
     --
     -- PSL Response Interface
-    ha_rvalid: in std_logic;                                                    --A response is present
-    ha_rtag: in std_logic_vector(0 to 7);                                       --Accelerator generated request ID
-    ha_response: in std_logic_vector(0 to 7);                                   --response code
-    ha_rcredits: in std_logic_vector(0 to 8);                                   --twos compliment number of credits
-    ha_rcachestate: in std_logic_vector(0 to 1);                                --Resultant Cache State
-    ha_rcachepos: in std_logic_vector(0 to 12);                                 --Cache location id
-    ha_rtagpar: in std_logic;
+    ha_rvalid: IN std_logic;                                                    --A response is present
+    ha_rtag: IN std_logic_vector(0 TO 7);                                       --Accelerator generated request ID
+    ha_response: IN std_logic_vector(0 TO 7);                                   --response code
+    ha_rcredits: IN std_logic_vector(0 TO 8);                                   --twos compliment number of credits
+    ha_rcachestate: IN std_logic_vector(0 TO 1);                                --Resultant Cache State
+    ha_rcachepos: IN std_logic_vector(0 TO 12);                                 --Cache location id
+    ha_rtagpar: IN std_logic;
     --
     -- MMIO Interface
-    ha_mmval: in std_logic;                                                     -- A valid MMIO is present
-    ha_mmrnw: in std_logic;                                                     -- 1 = read, 0 = write
-    ha_mmdw: in std_logic;                                                      -- 1 = doubleword, 0 = word
-    ha_mmad: in std_logic_vector(0 to 23);                                      -- mmio address
-    ha_mmdata: in std_logic_vector(0 to 63);                                    -- Write data
-    ha_mmcfg: in std_logic;                                                     -- mmio is to afu descriptor space
-    ah_mmack: out std_logic;                                                    -- Write is complete or Read is valid pulse
-    ah_mmdata: out std_logic_vector(0 to 63);                                   -- Read data
+    ha_mmval: IN std_logic;                                                     -- A valid MMIO is present
+    ha_mmrnw: IN std_logic;                                                     -- 1 = read, 0 = write
+    ha_mmdw: IN std_logic;                                                      -- 1 = doubleword, 0 = word
+    ha_mmad: IN std_logic_vector(0 TO 23);                                      -- mmio address
+    ha_mmdata: IN std_logic_vector(0 TO 63);                                    -- Write data
+    ha_mmcfg: IN std_logic;                                                     -- mmio is to afu descriptor space
+    ah_mmack: OUT std_logic;                                                    -- Write is complete or Read is valid pulse
+    ah_mmdata: OUT std_logic_vector(0 TO 63);                                   -- Read data
     --
     -- mmio parity
-    ha_mmadpar: in std_logic;
-    ha_mmdatapar: in std_logic;
-    ah_mmdatapar: out std_logic;
+    ha_mmadpar: IN std_logic;
+    ha_mmdatapar: IN std_logic;
+    ah_mmdatapar: OUT std_logic;
     --
     -- Accelerator Control Interface
-    ha_jval: in std_logic;                                                      -- A valid job control command is present
-    ha_jcom: in std_logic_vector(0 to 7);                                       -- Job control command opcode
-    ha_jea: in std_logic_vector(0 to 63);                                       -- Save/Restore address
-    ah_jrunning: out std_logic;                                                 -- Accelerator is running level
-    ah_jdone: out std_logic;                                                    -- Accelerator is finished pulse
-    ah_jcack: out std_logic;                                                    -- Accelerator is with context llcmd pulse
-    ah_jerror: out std_logic_vector(0 to 63);                                   -- Accelerator error code. 0 = success
-    ah_tbreq: out std_logic;                                                    -- Timebase request pulse
-    ah_jyield: out std_logic;                                                   -- Accelerator wants to stop
-    ha_jeapar: in std_logic;
-    ha_jcompar: in std_logic;
+    ha_jval: IN std_logic;                                                      -- A valid job control command is present
+    ha_jcom: IN std_logic_vector(0 TO 7);                                       -- Job control command opcode
+    ha_jea: IN std_logic_vector(0 TO 63);                                       -- Save/Restore address
+    ah_jrunning: OUT std_logic;                                                 -- Accelerator is running level
+    ah_jdone: OUT std_logic;                                                    -- Accelerator is finished pulse
+    ah_jcack: OUT std_logic;                                                    -- Accelerator is with context llcmd pulse
+    ah_jerror: OUT std_logic_vector(0 TO 63);                                   -- Accelerator error code. 0 = success
+    ah_tbreq: OUT std_logic;                                                    -- Timebase request pulse
+    ah_jyield: OUT std_logic;                                                   -- Accelerator wants to stop
+    ha_jeapar: IN std_logic;
+    ha_jcompar: IN std_logic;
     --
     -- Misc Interface
-    ah_paren: out std_logic;
-    ha_pclock: in std_logic);
+    ah_paren: OUT std_logic;
+    ha_pclock: IN std_logic);
 End Component psl_accel;
 
 Component base_img
   PORT(
        -- flash bus
-       o_flash_oen: out std_logic;
-       o_flash_wen: out std_logic;
-       o_flash_rstn: out std_logic;
-       o_flash_a: out std_logic_vector(1 to 26);
-       o_flash_a_dup: out std_logic_vector(25 to 26);
-       o_flash_advn: out std_logic;
-       b_flash_dq: inout std_logic_vector(0 to 11);
+       o_flash_oen: OUT std_logic;
+       o_flash_wen: OUT std_logic;
+       o_flash_rstn: OUT std_logic;
+       o_flash_a: OUT std_logic_vector(1 TO 26);
+       o_flash_a_dup: OUT std_logic_vector(25 TO 26);
+       o_flash_advn: OUT std_logic;
+       b_flash_dq: INOUT std_logic_vector(0 TO 11);
 
        -- PTMON PMBUS
-       b_basei2c_scl: inout std_logic;                                          -- clock
-       b_basei2c_sda: inout std_logic;                                          -- data
-       b_smbus_scl: inout std_logic;                                            -- clock
-       b_smbus_sda: inout std_logic;                                            -- data
+       b_basei2c_scl: INOUT std_logic;                                          -- clock
+       b_basei2c_sda: INOUT std_logic;                                          -- data
+       b_smbus_scl: INOUT std_logic;                                            -- clock
+       b_smbus_sda: INOUT std_logic;                                            -- data
 
-       o_ucd_gpio21: out std_logic;
+       o_ucd_gpio21: OUT std_logic;
 
-       led_red: in std_logic_vector(1 downto 0);
-       led_green: in std_logic_vector(1 downto 0);
-       led_blue: in std_logic_vector(1 downto 0);
-       o_led_red: out std_logic_vector(1 downto 0);
-       o_led_green: out std_logic_vector(1 downto 0);
-       o_led_blue: out std_logic_vector(1 downto 0);
+       led_red: IN std_logic_vector(1 DOWNTO 0);
+       led_green: IN std_logic_vector(1 DOWNTO 0);
+       led_blue: IN std_logic_vector(1 DOWNTO 0);
+       o_led_red: OUT std_logic_vector(1 DOWNTO 0);
+       o_led_green: OUT std_logic_vector(1 DOWNTO 0);
+       o_led_blue: OUT std_logic_vector(1 DOWNTO 0);
 
        -- pci interface
-       pci_pi_nperst0: in std_logic;                                            -- Active low reset from the PCIe reset pin of the device
-       pci_pi_refclk_p0: in std_logic;                                          -- 100MHz Refclk
-       pci_pi_refclk_n0: in std_logic;                                          -- 100MHz Refclk
+       pci_pi_nperst0: IN std_logic;                                            -- Active low reset from the PCIe reset pin of the device
+       pci_pi_refclk_p0: IN std_logic;                                          -- 100MHz Refclk
+       pci_pi_refclk_n0: IN std_logic;                                          -- 100MHz Refclk
 
        -- Xilinx requires both pins of differential transceivers
-       pci0_i_rxp_in0: in std_logic;
-       pci0_i_rxn_in0: in std_logic;
-       pci0_i_rxp_in1: in std_logic;
-       pci0_i_rxn_in1: in std_logic;
-       pci0_i_rxp_in2: in std_logic;
-       pci0_i_rxn_in2: in std_logic;
-       pci0_i_rxp_in3: in std_logic;
-       pci0_i_rxn_in3: in std_logic;
-       pci0_i_rxp_in4: in std_logic;
-       pci0_i_rxn_in4: in std_logic;
-       pci0_i_rxp_in5: in std_logic;
-       pci0_i_rxn_in5: in std_logic;
-       pci0_i_rxp_in6: in std_logic;
-       pci0_i_rxn_in6: in std_logic;
-       pci0_i_rxp_in7: in std_logic;
-       pci0_i_rxn_in7: in std_logic;
-       pci0_o_txp_out0: out std_logic;
-       pci0_o_txn_out0: out std_logic;
-       pci0_o_txp_out1: out std_logic;
-       pci0_o_txn_out1: out std_logic;
-       pci0_o_txp_out2: out std_logic;
-       pci0_o_txn_out2: out std_logic;
-       pci0_o_txp_out3: out std_logic;
-       pci0_o_txn_out3: out std_logic;
-       pci0_o_txp_out4: out std_logic;
-       pci0_o_txn_out4: out std_logic;
-       pci0_o_txp_out5: out std_logic;
-       pci0_o_txn_out5: out std_logic;
-       pci0_o_txp_out6: out std_logic;
-       pci0_o_txn_out6: out std_logic;
-       pci0_o_txp_out7: out std_logic;
-       pci0_o_txn_out7: out std_logic;
+       pci0_i_rxp_in0: IN std_logic;
+       pci0_i_rxn_in0: IN std_logic;
+       pci0_i_rxp_in1: IN std_logic;
+       pci0_i_rxn_in1: IN std_logic;
+       pci0_i_rxp_in2: IN std_logic;
+       pci0_i_rxn_in2: IN std_logic;
+       pci0_i_rxp_in3: IN std_logic;
+       pci0_i_rxn_in3: IN std_logic;
+       pci0_i_rxp_in4: IN std_logic;
+       pci0_i_rxn_in4: IN std_logic;
+       pci0_i_rxp_in5: IN std_logic;
+       pci0_i_rxn_in5: IN std_logic;
+       pci0_i_rxp_in6: IN std_logic;
+       pci0_i_rxn_in6: IN std_logic;
+       pci0_i_rxp_in7: IN std_logic;
+       pci0_i_rxn_in7: IN std_logic;
+       pci0_o_txp_out0: OUT std_logic;
+       pci0_o_txn_out0: OUT std_logic;
+       pci0_o_txp_out1: OUT std_logic;
+       pci0_o_txn_out1: OUT std_logic;
+       pci0_o_txp_out2: OUT std_logic;
+       pci0_o_txn_out2: OUT std_logic;
+       pci0_o_txp_out3: OUT std_logic;
+       pci0_o_txn_out3: OUT std_logic;
+       pci0_o_txp_out4: OUT std_logic;
+       pci0_o_txn_out4: OUT std_logic;
+       pci0_o_txp_out5: OUT std_logic;
+       pci0_o_txn_out5: OUT std_logic;
+       pci0_o_txp_out6: OUT std_logic;
+       pci0_o_txn_out6: OUT std_logic;
+       pci0_o_txp_out7: OUT std_logic;
+       pci0_o_txn_out7: OUT std_logic;
 
-       a0h_cvalid: in std_logic;
-       a0h_ctag: in std_logic_vector(0 to 7);
-       a0h_com: in std_logic_vector(0 to 12);
-       a0h_cpad: in std_logic_vector(0 to 2);
-       a0h_cabt: in std_logic_vector(0 to 2);
-       a0h_cea: in std_logic_vector(0 to 63);
-       a0h_cch: in std_logic_vector(0 to 15);
-       a0h_csize: in std_logic_vector(0 to 11);
-       ha0_croom: out std_logic_vector(0 to 7);
-       a0h_ctagpar: in std_logic;
-       a0h_compar: in std_logic;
-       a0h_ceapar: in std_logic;
-       ha0_brvalid: out std_logic;
-       ha0_brtag: out std_logic_vector(0 to 7);
-       ha0_brad: out std_logic_vector(0 to 5);
-       a0h_brlat: in std_logic_vector(0 to 3);
-       a0h_brdata: in std_logic_vector(0 to 511);
-       a0h_brpar: in std_logic_vector(0 to 7);
-       ha0_bwvalid: out std_logic;
-       ha0_bwtag: out std_logic_vector(0 to 7);
-       ha0_bwad: out std_logic_vector(0 to 5);
-       ha0_bwdata: out std_logic_vector(0 to 511);
-       ha0_bwpar: out std_logic_vector(0 to 7);
-       ha0_brtagpar: out std_logic;
-       ha0_bwtagpar: out std_logic;
-       ha0_rvalid: out std_logic;
-       ha0_rtag: out std_logic_vector(0 to 7);
-       ha0_response: out std_logic_vector(0 to 7);
-       ha0_rcredits: out std_logic_vector(0 to 8);
-       ha0_rcachestate: out std_logic_vector(0 to 1);
-       ha0_rcachepos: out std_logic_vector(0 to 12);
-       ha0_rtagpar: out std_logic;
-       ha0_mmval: out std_logic;
-       ha0_mmrnw: out std_logic;
-       ha0_mmdw: out std_logic;
-       ha0_mmad: out std_logic_vector(0 to 23);
-       ha0_mmdata: out std_logic_vector(0 to 63);
-       ha0_mmcfg: out std_logic;
-       a0h_mmack: in std_logic;
-       a0h_mmdata: in std_logic_vector(0 to 63);
-       ha0_mmadpar: out std_logic;
-       ha0_mmdatapar: out std_logic;
-       a0h_mmdatapar: in std_logic;
-       ha0_jval: out std_logic;
-       ha0_jcom: out std_logic_vector(0 to 7);
-       ha0_jea: out std_logic_vector(0 to 63);
-       a0h_jrunning: in std_logic;
-       a0h_jdone: in std_logic;
-       a0h_jcack: in std_logic;
-       a0h_jerror: in std_logic_vector(0 to 63);
-       a0h_tbreq: in std_logic;
-       a0h_jyield: in std_logic;
-       ha0_jeapar: out std_logic;
-       ha0_jcompar: out std_logic;
-       a0h_paren: in std_logic;
-       ha0_pclock: out std_logic;
-       gold_factory: in std_logic;
-       pci_user_reset: out std_logic;  --PCI hip user_reset signal if needed
-       pci_clock_125MHz: out std_logic --125MHz clock if needed
+       a0h_cvalid: IN std_logic;
+       a0h_ctag: IN std_logic_vector(0 TO 7);
+       a0h_com: IN std_logic_vector(0 TO 12);
+       a0h_cpad: IN std_logic_vector(0 TO 2);
+       a0h_cabt: IN std_logic_vector(0 TO 2);
+       a0h_cea: IN std_logic_vector(0 TO 63);
+       a0h_cch: IN std_logic_vector(0 TO 15);
+       a0h_csize: IN std_logic_vector(0 TO 11);
+       ha0_croom: OUT std_logic_vector(0 TO 7);
+       a0h_ctagpar: IN std_logic;
+       a0h_compar: IN std_logic;
+       a0h_ceapar: IN std_logic;
+       ha0_brvalid: OUT std_logic;
+       ha0_brtag: OUT std_logic_vector(0 TO 7);
+       ha0_brad: OUT std_logic_vector(0 TO 5);
+       a0h_brlat: IN std_logic_vector(0 TO 3);
+       a0h_brdata: IN std_logic_vector(0 TO 511);
+       a0h_brpar: IN std_logic_vector(0 TO 7);
+       ha0_bwvalid: OUT std_logic;
+       ha0_bwtag: OUT std_logic_vector(0 TO 7);
+       ha0_bwad: OUT std_logic_vector(0 TO 5);
+       ha0_bwdata: OUT std_logic_vector(0 TO 511);
+       ha0_bwpar: OUT std_logic_vector(0 TO 7);
+       ha0_brtagpar: OUT std_logic;
+       ha0_bwtagpar: OUT std_logic;
+       ha0_rvalid: OUT std_logic;
+       ha0_rtag: OUT std_logic_vector(0 TO 7);
+       ha0_response: OUT std_logic_vector(0 TO 7);
+       ha0_rcredits: OUT std_logic_vector(0 TO 8);
+       ha0_rcachestate: OUT std_logic_vector(0 TO 1);
+       ha0_rcachepos: OUT std_logic_vector(0 TO 12);
+       ha0_rtagpar: OUT std_logic;
+       ha0_mmval: OUT std_logic;
+       ha0_mmrnw: OUT std_logic;
+       ha0_mmdw: OUT std_logic;
+       ha0_mmad: OUT std_logic_vector(0 TO 23);
+       ha0_mmdata: OUT std_logic_vector(0 TO 63);
+       ha0_mmcfg: OUT std_logic;
+       a0h_mmack: IN std_logic;
+       a0h_mmdata: IN std_logic_vector(0 TO 63);
+       ha0_mmadpar: OUT std_logic;
+       ha0_mmdatapar: OUT std_logic;
+       a0h_mmdatapar: IN std_logic;
+       ha0_jval: OUT std_logic;
+       ha0_jcom: OUT std_logic_vector(0 TO 7);
+       ha0_jea: OUT std_logic_vector(0 TO 63);
+       a0h_jrunning: IN std_logic;
+       a0h_jdone: IN std_logic;
+       a0h_jcack: IN std_logic;
+       a0h_jerror: IN std_logic_vector(0 TO 63);
+       a0h_tbreq: IN std_logic;
+       a0h_jyield: IN std_logic;
+       ha0_jeapar: OUT std_logic;
+       ha0_jcompar: OUT std_logic;
+       a0h_paren: IN std_logic;
+       ha0_pclock: OUT std_logic;
+       gold_factory: IN std_logic;
+       pci_user_reset: OUT std_logic;  --PCI hip user_reset signal if needed
+       pci_clock_125MHz: OUT std_logic --125MHz clock if needed
        );
 
 END Component base_img;
 
-Signal a0h_brdata: std_logic_vector(0 to 511);  -- hline
-Signal a0h_brlat: std_logic_vector(0 to 3);  -- v4bit
-Signal a0h_brpar: std_logic_vector(0 to 7);  -- v8bit
-Signal a0h_cabt: std_logic_vector(0 to 2);  -- cabt
-Signal a0h_cch: std_logic_vector(0 to 15);  -- ctxhndl
-Signal a0h_cea: std_logic_vector(0 to 63);  -- ead
-Signal a0h_ceapar: std_logic;  -- bool
-Signal a0h_com: std_logic_vector(0 to 12);  -- apcmd
-Signal a0h_compar: std_logic;  -- bool
-Signal a0h_cpad: std_logic_vector(0 to 2);  -- pade
-Signal a0h_csize: std_logic_vector(0 to 11);  -- v12bit
-Signal a0h_ctag: std_logic_vector(0 to 7);  -- acctag
-Signal a0h_ctagpar: std_logic;  -- bool
-Signal a0h_cvalid: std_logic;  -- bool
-Signal a0h_jcack: std_logic;  -- bool
-Signal a0h_jdone: std_logic;  -- bool
-Signal a0h_jerror: std_logic_vector(0 to 63);  -- v64bit
-Signal a0h_jrunning: std_logic;  -- bool
-Signal a0h_jyield: std_logic;  -- bool
-Signal a0h_mmack: std_logic;  -- bool
-Signal a0h_mmdata: std_logic_vector(0 to 63);  -- v64bit
-Signal a0h_mmdatapar: std_logic;  -- bool
-Signal a0h_paren: std_logic;  -- bool
-Signal a0h_tbreq: std_logic;  -- bool
-Signal ha0_brad: std_logic_vector(0 to 5);  -- v6bit
-Signal ha0_brtag: std_logic_vector(0 to 7);  -- acctag
-Signal ha0_brtagpar: std_logic;  -- bool
-Signal ha0_brvalid: std_logic;  -- bool
-Signal ha0_bwad: std_logic_vector(0 to 5);  -- v6bit
-Signal ha0_bwdata: std_logic_vector(0 to 511);  -- hline
-Signal ha0_bwpar: std_logic_vector(0 to 7);  -- v8bit
-Signal ha0_bwtag: std_logic_vector(0 to 7);  -- acctag
-Signal ha0_bwtagpar: std_logic;  -- bool
-Signal ha0_bwvalid: std_logic;  -- bool
-Signal ha0_croom: std_logic_vector(0 to 7);  -- v8bit
-Signal ha0_jcom: std_logic_vector(0 to 7);  -- jbcom
-Signal ha0_jcompar: std_logic;  -- bool
-Signal ha0_jea: std_logic_vector(0 to 63);  -- v64bit
-Signal ha0_jeapar: std_logic;  -- bool
-Signal ha0_jval: std_logic;  -- bool
-Signal ha0_mmad: std_logic_vector(0 to 23);  -- v24bit
-Signal ha0_mmadpar: std_logic;  -- bool
-Signal ha0_mmcfg: std_logic;  -- bool
-Signal ha0_mmdata: std_logic_vector(0 to 63);  -- v64bit
-Signal ha0_mmdatapar: std_logic;  -- bool
-Signal ha0_mmdw: std_logic;  -- bool
-Signal ha0_mmrnw: std_logic;  -- bool
-Signal ha0_mmval: std_logic;  -- bool
-Signal ha0_pclock: std_logic;  -- bool
-Signal ha0_rcachepos: std_logic_vector(0 to 12);  -- v13bit
-Signal ha0_rcachestate: std_logic_vector(0 to 1);  -- statespec
-Signal ha0_rcredits: std_logic_vector(0 to 8);  -- v9bit
-Signal ha0_response: std_logic_vector(0 to 7);  -- apresp
-Signal ha0_rtag: std_logic_vector(0 to 7);  -- acctag
-Signal ha0_rtagpar: std_logic;  -- bool
-Signal ha0_rvalid: std_logic;  -- bool
-Signal gold_factory: std_logic;
-Signal pci_user_reset: std_logic;
-Signal pci_clock_125MHz: std_logic;
-Signal led_red: std_logic_vector(0 to 1);
-Signal led_green: std_logic_vector(0 to 1);
-Signal led_blue: std_logic_vector(0 to 1);
+SIGNAL a0h_brdata: std_logic_vector(0 TO 511);  -- hline
+SIGNAL a0h_brlat: std_logic_vector(0 TO 3);  -- v4bit
+SIGNAL a0h_brpar: std_logic_vector(0 TO 7);  -- v8bit
+SIGNAL a0h_cabt: std_logic_vector(0 TO 2);  -- cabt
+SIGNAL a0h_cch: std_logic_vector(0 TO 15);  -- ctxhndl
+SIGNAL a0h_cea: std_logic_vector(0 TO 63);  -- ead
+SIGNAL a0h_ceapar: std_logic;  -- bool
+SIGNAL a0h_com: std_logic_vector(0 TO 12);  -- apcmd
+SIGNAL a0h_compar: std_logic;  -- bool
+SIGNAL a0h_cpad: std_logic_vector(0 TO 2);  -- pade
+SIGNAL a0h_csize: std_logic_vector(0 TO 11);  -- v12bit
+SIGNAL a0h_ctag: std_logic_vector(0 TO 7);  -- acctag
+SIGNAL a0h_ctagpar: std_logic;  -- bool
+SIGNAL a0h_cvalid: std_logic;  -- bool
+SIGNAL a0h_jcack: std_logic;  -- bool
+SIGNAL a0h_jdone: std_logic;  -- bool
+SIGNAL a0h_jerror: std_logic_vector(0 TO 63);  -- v64bit
+SIGNAL a0h_jrunning: std_logic;  -- bool
+SIGNAL a0h_jyield: std_logic;  -- bool
+SIGNAL a0h_mmack: std_logic;  -- bool
+SIGNAL a0h_mmdata: std_logic_vector(0 TO 63);  -- v64bit
+SIGNAL a0h_mmdatapar: std_logic;  -- bool
+SIGNAL a0h_paren: std_logic;  -- bool
+SIGNAL a0h_tbreq: std_logic;  -- bool
+SIGNAL ha0_brad: std_logic_vector(0 TO 5);  -- v6bit
+SIGNAL ha0_brtag: std_logic_vector(0 TO 7);  -- acctag
+SIGNAL ha0_brtagpar: std_logic;  -- bool
+SIGNAL ha0_brvalid: std_logic;  -- bool
+SIGNAL ha0_bwad: std_logic_vector(0 TO 5);  -- v6bit
+SIGNAL ha0_bwdata: std_logic_vector(0 TO 511);  -- hline
+SIGNAL ha0_bwpar: std_logic_vector(0 TO 7);  -- v8bit
+SIGNAL ha0_bwtag: std_logic_vector(0 TO 7);  -- acctag
+SIGNAL ha0_bwtagpar: std_logic;  -- bool
+SIGNAL ha0_bwvalid: std_logic;  -- bool
+SIGNAL ha0_croom: std_logic_vector(0 TO 7);  -- v8bit
+SIGNAL ha0_jcom: std_logic_vector(0 TO 7);  -- jbcom
+SIGNAL ha0_jcompar: std_logic;  -- bool
+SIGNAL ha0_jea: std_logic_vector(0 TO 63);  -- v64bit
+SIGNAL ha0_jeapar: std_logic;  -- bool
+SIGNAL ha0_jval: std_logic;  -- bool
+SIGNAL ha0_mmad: std_logic_vector(0 TO 23);  -- v24bit
+SIGNAL ha0_mmadpar: std_logic;  -- bool
+SIGNAL ha0_mmcfg: std_logic;  -- bool
+SIGNAL ha0_mmdata: std_logic_vector(0 TO 63);  -- v64bit
+SIGNAL ha0_mmdatapar: std_logic;  -- bool
+SIGNAL ha0_mmdw: std_logic;  -- bool
+SIGNAL ha0_mmrnw: std_logic;  -- bool
+SIGNAL ha0_mmval: std_logic;  -- bool
+SIGNAL ha0_pclock: std_logic;  -- bool
+SIGNAL ha0_rcachepos: std_logic_vector(0 TO 12);  -- v13bit
+SIGNAL ha0_rcachestate: std_logic_vector(0 TO 1);  -- statespec
+SIGNAL ha0_rcredits: std_logic_vector(0 TO 8);  -- v9bit
+SIGNAL ha0_response: std_logic_vector(0 TO 7);  -- apresp
+SIGNAL ha0_rtag: std_logic_vector(0 TO 7);  -- acctag
+SIGNAL ha0_rtagpar: std_logic;  -- bool
+SIGNAL ha0_rvalid: std_logic;  -- bool
+SIGNAL gold_factory: std_logic;
+SIGNAL pci_user_reset: std_logic;
+SIGNAL pci_clock_125MHz: std_logic;
+SIGNAL led_red: std_logic_vector(0 TO 1);
+SIGNAL led_green: std_logic_vector(0 TO 1);
+SIGNAL led_blue: std_logic_vector(0 TO 1);
 -- NVME Reset Logic                                                         -- only for NVME_USED=TRUE
-Signal nvme_reset_cnt_q: std_logic_vector(15 downto 0) := (others => '1');  -- only for NVME_USED=TRUE
-Signal nvme_reset_n_q: std_logic := '1';                                    -- only for NVME_USED=TRUE
-Signal nvme_reset_ctl: std_logic;                                           -- only for NVME_USED=TRUE
-Signal nvme_perst_ctl: std_logic_vector(3 downto 0);                        -- only for NVME_USED=TRUE
-Signal m2_perst_tmp_n: std_logic_vector(3 downto 0);                        -- only for NVME_USED=TRUE
+SIGNAL nvme_reset_cnt_q: std_logic_vector(15 DOWNTO 0) := (OTHERS => '1');  -- only for NVME_USED=TRUE
+SIGNAL nvme_reset_n: std_logic := '1';                                      -- only for NVME_USED=TRUE
+SIGNAL nvme_reset_ctl: std_logic;                                           -- only for NVME_USED=TRUE
+SIGNAL nvme_perst_ctl: std_logic_vector(3 DOWNTO 0);                        -- only for NVME_USED=TRUE
+SIGNAL m2_perst_tmp_n: std_logic_vector(3 DOWNTO 0);                        -- only for NVME_USED=TRUE
 
-begin
+BEGIN
   --                                                                        -- only for NVME_USED=TRUE
   -- NVMe Reset Logic                                                       -- only for NVME_USED=TRUE
   --                                                                        -- only for NVME_USED=TRUE
@@ -475,30 +475,28 @@ begin
   --                                                                        -- only for NVME_USED=TRUE
   nvme_reset : PROCESS (ha0_pclock)                                         -- only for NVME_USED=TRUE
   BEGIN                                                                     -- only for NVME_USED=TRUE
-    IF (rising_edge(ha0_pclock)) then                                       -- only for NVME_USED=TRUE
-      nvme_reset_n_q    <= '0';                                             -- only for NVME_USED=TRUE
+    IF (rising_edge(ha0_pclock)) THEN                                       -- only for NVME_USED=TRUE
       IF (pci_user_reset  = '1') THEN                                       -- only for NVME_USED=TRUE
-        nvme_reset_cnt_q  <= (OTHERS => '0');                               -- only for NVME_USED=TRUE
-      else                                                                  -- only for NVME_USED=TRUE
-        IF (nvme_reset_cnt_q(15) = '1') THEN                                -- only for NVME_USED=TRUE
-          nvme_reset_n_q    <= NOT nvme_reset_ctl;                          -- only for NVME_USED=TRUE
-        else                                                                -- only for NVME_USED=TRUE
-          nvme_reset_cnt_q  <= nvme_reset_cnt_q + '1';                      -- only for NVME_USED=TRUE
-        END IF;                                                             -- only for NVME_USED=TRUE
+        nvme_reset_cnt_q <= (OTHERS => '0');                                -- only for NVME_USED=TRUE
+      ELSIF (nvme_reset_cnt_q(15) = '0') THEN                               -- only for NVME_USED=TRUE
+        nvme_reset_cnt_q <= nvme_reset_cnt_q + '1';                         -- only for NVME_USED=TRUE
       END IF;                                                               -- only for NVME_USED=TRUE
     END IF;                                                                 -- only for NVME_USED=TRUE
   END PROCESS nvme_reset;                                                   -- only for NVME_USED=TRUE
                                                                             -- only for NVME_USED=TRUE
   --                                                                        -- only for NVME_USED=TRUE
+  -- Drive reset to PCIe cores for NVMe                                     -- only for NVME_USED=TRUE
+  nvme_reset_n   <= (nvme_reset_cnt_q(15) AND NOT nvme_reset_ctl            -- only for NVME_USED=TRUE
+  --                                                                        -- only for NVME_USED=TRUE
   -- Drive resets to NVMe drives at M2 pins                                 -- only for NVME_USED=TRUE
   m2_perst_tmp_n <= (nvme_reset_cnt_q(15) & nvme_reset_cnt_q(15) &          -- only for NVME_USED=TRUE
                      nvme_reset_cnt_q(15) & nvme_reset_cnt_q(15))           -- only for NVME_USED=TRUE
                     AND NOT nvme_perst_ctl;                                 -- only for NVME_USED=TRUE
-
-  o0: OBUF port map (I => m2_perst_tmp_n(0), O => m2_perst_n(0));           -- only for NVME_USED=TRUE
-  o1: OBUF port map (I => m2_perst_tmp_n(1), O => m2_perst_n(1));           -- only for NVME_USED=TRUE
-  o2: OBUF port map (I => m2_perst_tmp_n(2), O => m2_perst_n(2));           -- only for NVME_USED=TRUE
-  o3: OBUF port map (I => m2_perst_tmp_n(3), O => m2_perst_n(3));           -- only for NVME_USED=TRUE
+                                                                            -- only for NVME_USED=TRUE
+  o0: OBUF PORT MAP (I => m2_perst_tmp_n(0), O => m2_perst_n(0));           -- only for NVME_USED=TRUE
+  o1: OBUF PORT MAP (I => m2_perst_tmp_n(1), O => m2_perst_n(1));           -- only for NVME_USED=TRUE
+  o2: OBUF PORT MAP (I => m2_perst_tmp_n(2), O => m2_perst_n(2));           -- only for NVME_USED=TRUE
+  o3: OBUF PORT MAP (I => m2_perst_tmp_n(3), O => m2_perst_n(3));           -- only for NVME_USED=TRUE
 
 
   --                                                                        -- only for NVME_USED=TRUE
@@ -536,7 +534,7 @@ begin
       -- NVME Interface                                                     -- only for NVME_USED=TRUE
       --                                                                    -- only for NVME_USED=TRUE
       -- Reset Input                                                        -- only for NVME_USED=TRUE
-      nvme_reset_n                      => nvme_reset_n_q,                  -- only for NVME_USED=TRUE
+      nvme_reset_n                      => nvme_reset_n,                    -- only for NVME_USED=TRUE
       --                                                                    -- only for NVME_USED=TRUE
       -- Clock Inputs for NVMe                                              -- only for NVME_USED=TRUE
       refclk_nvme_ch0_p                 => pcie_clk1_p,                     -- only for NVME_USED=TRUE
@@ -549,14 +547,14 @@ begin
       nvme_reset_ctl(3 DOWNTO 0)        => nvme_perst_ctl,                  -- only for NVME_USED=TRUE
       --                                                                    -- only for NVME_USED=TRUE
       -- NVME <-> PCIE Interface                                            -- only for NVME_USED=TRUE
-      pcie_rc0_rxn(3 downto 0)          => pcie_rc0_rxn(3 downto 0),        -- only for NVME_USED=TRUE
-      pcie_rc0_rxp(3 downto 0)          => pcie_rc0_rxp(3 downto 0),        -- only for NVME_USED=TRUE
-      pcie_rc0_txn(3 downto 0)          => pcie_rc0_txn(3 downto 0),        -- only for NVME_USED=TRUE
-      pcie_rc0_txp(3 downto 0)          => pcie_rc0_txp(3 downto 0),        -- only for NVME_USED=TRUE
-      pcie_rc1_rxn(3 downto 0)          => pcie_rc1_rxn(3 downto 0),        -- only for NVME_USED=TRUE
-      pcie_rc1_rxp(3 downto 0)          => pcie_rc1_rxp(3 downto 0),        -- only for NVME_USED=TRUE
-      pcie_rc1_txn(3 downto 0)          => pcie_rc1_txn(3 downto 0),        -- only for NVME_USED=TRUE
-      pcie_rc1_txp(3 downto 0)          => pcie_rc1_txp(3 downto 0),        -- only for NVME_USED=TRUE
+      pcie_rc0_rxn(3 DOWNTO 0)          => pcie_rc0_rxn(3 DOWNTO 0),        -- only for NVME_USED=TRUE
+      pcie_rc0_rxp(3 DOWNTO 0)          => pcie_rc0_rxp(3 DOWNTO 0),        -- only for NVME_USED=TRUE
+      pcie_rc0_txn(3 DOWNTO 0)          => pcie_rc0_txn(3 DOWNTO 0),        -- only for NVME_USED=TRUE
+      pcie_rc0_txp(3 DOWNTO 0)          => pcie_rc0_txp(3 DOWNTO 0),        -- only for NVME_USED=TRUE
+      pcie_rc1_rxn(3 DOWNTO 0)          => pcie_rc1_rxn(3 DOWNTO 0),        -- only for NVME_USED=TRUE
+      pcie_rc1_rxp(3 DOWNTO 0)          => pcie_rc1_rxp(3 DOWNTO 0),        -- only for NVME_USED=TRUE
+      pcie_rc1_txn(3 DOWNTO 0)          => pcie_rc1_txn(3 DOWNTO 0),        -- only for NVME_USED=TRUE
+      pcie_rc1_txp(3 DOWNTO 0)          => pcie_rc1_txp(3 DOWNTO 0),        -- only for NVME_USED=TRUE
       --
       -- CAPI PSL Interface
       --
