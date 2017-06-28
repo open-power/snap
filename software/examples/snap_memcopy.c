@@ -107,7 +107,6 @@ int main(int argc, char *argv[])
 	struct timeval etime, stime;
 	ssize_t size = 1024 * 1024;
 	uint8_t *ibuff = NULL, *obuff = NULL;
-	unsigned int page_size = sysconf(_SC_PAGESIZE);
 	uint8_t type_in = SNAP_ADDRTYPE_HOST_DRAM;
 	uint64_t addr_in = 0x0ull;
 	uint8_t type_out = SNAP_ADDRTYPE_HOST_DRAM;
@@ -228,7 +227,7 @@ int main(int argc, char *argv[])
 			goto out_error;
 
 		/* source buffer */
-		ibuff = memalign(page_size, size);
+		ibuff = snap_malloc(size);
 		if (ibuff == NULL)
 			goto out_error;
 		memset(ibuff, 0, size);
@@ -248,7 +247,7 @@ int main(int argc, char *argv[])
 	if (output != NULL) {
 		size_t set_size = size + (verify ? sizeof(trailing_zeros) : 0);
 
-		obuff = memalign(page_size, set_size);
+		obuff = snap_malloc(set_size);
 		if (obuff == NULL)
 			goto out_error;
 		memset(obuff, 0x0, set_size);
