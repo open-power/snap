@@ -486,7 +486,7 @@ BEGIN
                                                                             -- only for NVME_USED=TRUE
   --                                                                        -- only for NVME_USED=TRUE
   -- Drive reset to PCIe cores for NVMe                                     -- only for NVME_USED=TRUE
-  nvme_reset_n   <= (nvme_reset_cnt_q(15) AND NOT nvme_reset_ctl            -- only for NVME_USED=TRUE
+  nvme_reset_n   <= (nvme_reset_cnt_q(15) AND NOT nvme_reset_ctl;           -- only for NVME_USED=TRUE
   --                                                                        -- only for NVME_USED=TRUE
   -- Drive resets to NVMe drives at M2 pins                                 -- only for NVME_USED=TRUE
   m2_perst_tmp_n <= (nvme_reset_cnt_q(15) & nvme_reset_cnt_q(15) &          -- only for NVME_USED=TRUE
