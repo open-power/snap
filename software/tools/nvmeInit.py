@@ -41,7 +41,7 @@ CARD_TXT  = "Card 0"
 
 class  AFU_MMIO:
 
-    PROG_REG =0xd008   # debug register to store  init progress and currect NVMe Admin pointer
+    PROG_REG =0x98   # scratch register to store  init progress
 
     @staticmethod
     def init():
@@ -144,7 +144,7 @@ class  AFU_MMIO:
         AFU_MMIO.nvme_write(0x88, 0x6f0)
         counter = 0
         while (words > 0):
-            data = AFU_MMIO.nvme_read(0x90)
+            data = AFU_MMIO.nvme_read(0x100)
             print('buffer data word %d : %8x' % (counter, data))
             words   -= 1
 	    counter += 1
@@ -154,61 +154,22 @@ class  AFU_MMIO:
     def nvme_fill_buffer(array):
         AFU_MMIO.nvme_write(0x80, 0x7)      # auto increment, Enable NVME Host, Clear Error status
         for data in array:
-            AFU_MMIO.nvme_write(0x90,data)
+            AFU_MMIO.nvme_write(0x100,data)
 
 
 class NVME_Drive:
 
-    AQ0_PTR = 0x00
-    AQ1_PTR = 0x00
-
-    @staticmethod
-    def init_AQ_PTR(drive):
-
-        if (drive == SSD0) : offset = 0     + 0xc
-        else               : offset = 0xde0 + 0xc
-
-        index = 0
-        # read all phase bits of admin queue completion queue and
-        # determine the next entry pointer
-        for i in range (0,4):
-
-            AFU_MMIO.nvme_write(0x88, offset)
-            tmp = AFU_MMIO.nvme_read(0x90)
-            current = (tmp >> 16) & 1
-            if (i > 0) :
-                if (last != current):
-                    index = i
-                    break
-            offset += 0x10
-            last = current
-
-	if (drive == SSD0):
-	    NVME_Drive.AQ0_PTR = index  * 0x40
-            print ('AQ Pointer for drive 0 is set to %4x' % NVME_Drive.AQ0_PTR)
-	else :
-            NVME_Drive.AQ1_PTR = 0x3780 + index * 0x40
-            print ('AQ Pointer for drive 1 after init is set to %4x' % NVME_Drive.AQ1_PTR)
-
 
     @staticmethod
     def get_AQ_PTR(drive):
+       
+        index = AFU_MMIO.nvme_read(0x94)
         if (drive == SSD0 ):
-            temp = NVME_Drive.AQ0_PTR;
-            if (NVME_Drive.AQ0_PTR == 0xc0):
-                NVME_Drive.AQ0_PTR = 0x00
-            else:
-               NVME_Drive.AQ0_PTR += 0x40
-            print ('AQ Pointer (SSD0) for current Command is set to %4x' % temp)
+            tmp = (index & 0xf) * 0x40
         else:
-            temp = NVME_Drive.AQ1_PTR;
-            if (NVME_Drive.AQ1_PTR == 0x3840):
-                NVME_Drive.AQ1_PTR =  0x3780
-            else:
-                NVME_Drive.AQ1_PTR += 0x40
-            print ('AQ Pointer (SSD1) for current Command is set to %4x' % temp)
-        return temp
-
+            tmp = ((index & 0xf0000) >> 16) * 0x40 + 0x3780 
+        print ('AQ Pointer for current Command is set to %4x' % tmp)  
+        return tmp
 
     @staticmethod
     def read(drive, addr):
@@ -216,7 +177,7 @@ class NVME_Drive:
             addr += 0x2000
         AFU_MMIO.write(0x2008c, addr)
         #print (' write on 2008c: %4x' % addr)
-        return AFU_MMIO.read (0x20094)
+        return AFU_MMIO.read (0x20104)
 
 
     @staticmethod
@@ -224,7 +185,7 @@ class NVME_Drive:
         if (drive == 1 ):
             addr += 0x2000
         AFU_MMIO.write(0x2008c, addr)
-        AFU_MMIO.write(0x20094, data)
+        AFU_MMIO.write(0x20104, data)
 
 
     @staticmethod
@@ -258,9 +219,9 @@ class NVME_Drive:
         offset = NVME_Drive.get_AQ_PTR(drive)
         AFU_MMIO.nvme_write(0x88, offset)  # set TX buffer address
         if (drive == SSD0):
-            array = [    0x5,0,0,0,0,0,0x120000,0,0,0,0xd90001,1,0,0,0,0]
+            array = [    0x5,0,0,0,0,0,0x38000000,0,0,0,0xd90001,1,0,0,0,0]
         else:
-            array = [0x20005,0,0,0,0,0,0x140000,0,0,0,0xd90001,1,0,0,0,0]
+            array = [0x20005,0,0,0,0,0,0x48000000,0,0,0,0xd90001,1,0,0,0,0]
         AFU_MMIO.nvme_fill_buffer(array)
         # notify drive
         cmd = 0x02
@@ -274,9 +235,9 @@ class NVME_Drive:
         offset = NVME_Drive.get_AQ_PTR(drive)
         AFU_MMIO.nvme_write(0x88,offset)  # set TX  buffer address
         if (drive == SSD0):
-            array = [    0x1,0,0,0,0,0,0x20000,0,0,0,0xd90001,0x10005,0,0,0,0]
+            array = [    0x1,0,0,0,0,0,0x10000000,0,0,0,0xd90001,0x10005,0,0,0,0]
         else:
-            array = [0x20001,0,0,0,0,0,0x40000,0,0,0,0xd90001,0x10005,0,0,0,0]
+            array = [0x20001,0,0,0,0,0,0x20000000,0,0,0,0xd90001,0x10005,0,0,0,0]
         AFU_MMIO.nvme_fill_buffer(array)
         # notify drive
         cmd = 0x02
@@ -285,7 +246,7 @@ class NVME_Drive:
         print ('waiting for Command to complete')
         status = NVME_Drive.wait_for_complete(drive)
         print ('completion code %x' % status)
-        AFU_MMIO.write64(AFU_MMIO.PROG_REG, AFU_MMIO.read64(AFU_MMIO.PROG_REG) | 2 << (drive * 2))
+        AFU_MMIO.nvme_write(AFU_MMIO.PROG_REG, AFU_MMIO.nvme_read(AFU_MMIO.PROG_REG) | 2 << (drive * 2))
 
 
     @staticmethod
@@ -294,9 +255,9 @@ class NVME_Drive:
         offset = NVME_Drive.get_AQ_PTR(drive)
         AFU_MMIO.nvme_write(0x88, offset)  # set TX buffer address
         if (drive == SSD0):
-            array = [0x6,    0,0,0,0,0,0x180000,0,0,0,1,0,0,0,0,0]
+            array = [0x6,    0,0,0,0,0,0x50000000,0,0,0,1,0,0,0,0,0]
         else:
-            array = [0x20006,0,0,0,0,0,0x180000,0,0,0,1,0,0,0,0,0]
+            array = [0x20006,0,0,0,0,0,0x50000000,0,0,0,1,0,0,0,0,0]
         AFU_MMIO.nvme_fill_buffer(array)
 
         # notify drive
@@ -317,9 +278,9 @@ class NVME_Drive:
         offset = NVME_Drive.get_AQ_PTR(drive)
         AFU_MMIO.nvme_write(0x88, offset)  # set buffer address
         if (drive == SSD0):
-            array = [    0x6,1,0,0,0,0,0x180000,0,0,0,0,0,0,0,0,0]
+            array = [    0x6,1,0,0,0,0,0x50000000,0,0,0,0,0,0,0,0,0]
         else:
-            array = [0x20006,1,0,0,0,0,0x180000,0,0,0,0,0,0,0,0,0]
+            array = [0x20006,1,0,0,0,0,0x50000000,0,0,0,0,0,0,0,0,0]
         AFU_MMIO.nvme_fill_buffer(array)
         # notify drive
         cmd = 0x02
@@ -339,9 +300,9 @@ class NVME_Drive:
         offset = NVME_Drive.get_AQ_PTR(drive)
         AFU_MMIO.nvme_write(0x88, offset)  # set buffer address
         if (drive == SSD0):
-            array =     [0x2,0,0,0,0,0,0x180000,0,0,0,1,2,0,0,0,0]
+            array =     [0x2,0,0,0,0,0,0x50000000,0,0,0,1,2,0,0,0,0]
         else:
-            array = [0x20002,0,0,0,0,0,0x180000,0,0,0,0x00ff0001,0,0,0,0,0]
+            array = [0x20002,0,0,0,0,0,0x50000000,0,0,0,0x00ff0001,0,0,0,0,0]
         AFU_MMIO.nvme_fill_buffer(array)
         # notify drive
         cmd = 0x02
@@ -404,7 +365,7 @@ class NVME_Drive:
         AFU_MMIO.nvme_write(0x80, 7)
         counter = 0
         while (words > 0):
-            data = AFU_MMIO.nvme_read(0x90)
+            data = AFU_MMIO.nvme_read(0x100)
             print('buffer data word %d : %8x' % (counter, data))
             words   -= 1
 	    counter += 1
@@ -416,7 +377,7 @@ class NVME_Drive:
         AFU_MMIO.nvme_write(0x80, 7)
         counter = 0
         while (words > 0):
-            data = AFU_MMIO.nvme_read(0x90)
+            data = AFU_MMIO.nvme_read(0x100)
             print('buffer data word %d : %8x' % (counter, data))
             words   -= 1
 	    counter += 1
@@ -444,7 +405,7 @@ class NVME_Drive:
 
 ADMIN_Q_ENTRIES = 4;
 AFU_MMIO.init()
-
+AFU_MMIO.nvme_write(0x90, 1)  # set Namespace Identifier to 1
 AFU_MMIO.write(0x10020, 0xb)
 data = AFU_MMIO.read(0x10020)
 if (data != 0xb):
@@ -457,7 +418,7 @@ if (SSD1_USED) : print("will initialize SSD1 subsystem" + " on " + CARD_TXT)
 print ("configure NVMe host, RC and drive")
 
 AFU_MMIO.nvme_write(0x80, 0x01)                 # enable NVMe host
-progress_reg = AFU_MMIO.read64(AFU_MMIO.PROG_REG)
+progress_reg = AFU_MMIO.nvme_read(AFU_MMIO.PROG_REG)
 print ('progress_reg is %x' % progress_reg)
 if ((progress_reg & 0x1) == 1):
     ssd0initdone = True
@@ -485,9 +446,13 @@ if (SSD0_USED):
     if (not ssd0initdone):
         # RC 0
         print ("RC 0 init ...")
+        while (True):
+            rc = AFU_MMIO.nvme_read(0x10000144)
+            print ('Link Status Register of SSD0: %x' % rc)
+            if ((rc & 0x800) > 0) : break
         AFU_MMIO.nvme_write(0x10000018, 0x10100)        # set bus, devive and function number
         AFU_MMIO.nvme_write(0x100000d4, 0x00)           # set device capabilities
-        AFU_MMIO.nvme_write(0x10100010, 0x1000000c)     # PCIe Base Addr Register 0
+        AFU_MMIO.nvme_write(0x10100010, 0x6000000c)     # PCIe Base Addr Register 0
         AFU_MMIO.nvme_write(0x10100014, 0x00000000)     # PCIe Base Addr Register 1
         AFU_MMIO.nvme_write(0x10100018, 0x00000000)     # PCIe Base Addr Register 2
         AFU_MMIO.nvme_write(0x1010001C, 0x00000000)     # PCIe Base Addr Register 3
@@ -497,9 +462,10 @@ if (SSD0_USED):
         AFU_MMIO.nvme_write(0x101000d0, 0x00000041)     # Telling endpoint what common clock and power management states are enable
         AFU_MMIO.nvme_write(0x10100004, 0x00000006)     # PCI command register
         AFU_MMIO.nvme_write(0x10000148, 0x00000001)     # PCI enable root port
-        AFU_MMIO.nvme_write(0x1000020c, 0x10000000)     # set up AXI Base address translation register
+        AFU_MMIO.nvme_write(0x1000020c, 0x60000000)     # set up AXI Base address translation register
         print ("RC 0 done")
-    print ('Link Status Register of SSD0: %x' % AFU_MMIO.nvme_read(0x10000144))
+    else:
+        print ('Link Status Register of SSD0: %x' % AFU_MMIO.nvme_read(0x10000144))
 
 
 if (SSD1_USED):
@@ -507,9 +473,13 @@ if (SSD1_USED):
     if (not ssd1initdone):
         # RC 1
         print ("RC 1 init ...")
+        while (True):
+            rc = AFU_MMIO.nvme_read(0x20000144)
+            print ('Link Status Register of SSD1: %x' % rc)
+            if ((rc & 0x800) > 0) : break
         AFU_MMIO.nvme_write(0x20000018, 0x10100)        # set bus, devive and function number
         AFU_MMIO.nvme_write(0x200000d4, 0x00)           # set device capabilities
-        AFU_MMIO.nvme_write(0x20100010, 0x1000000c)     # PCIe Base Addr Register 0
+        AFU_MMIO.nvme_write(0x20100010, 0x6000000c)     # PCIe Base Addr Register 0
         AFU_MMIO.nvme_write(0x20100014, 0x00000000)     # PCIe Base Addr Register 1
         AFU_MMIO.nvme_write(0x20100018, 0x00000000)     # PCIe Base Addr Register 2
         AFU_MMIO.nvme_write(0x2010001C, 0x00000000)     # PCIe Base Addr Register 3
@@ -519,9 +489,10 @@ if (SSD1_USED):
         AFU_MMIO.nvme_write(0x201000d0, 0x00000041)     # Telling endpoint what common clock and power management states are enable
         AFU_MMIO.nvme_write(0x20100004, 0x00000006)     # PCI command register
         AFU_MMIO.nvme_write(0x20000148, 0x00000001)     # PCI enable root port
-        AFU_MMIO.nvme_write(0x2000020c, 0x10000000)     # set up AXI Base address translation register
+        AFU_MMIO.nvme_write(0x2000020c, 0x60000000)     # set up AXI Base address translation register
         print ("RC 1 done")
-    print ('Link Status Register of SSD1: %x' % AFU_MMIO.nvme_read(0x20000144))
+    else:
+        print ('Link Status Register of SSD1: %x' % AFU_MMIO.nvme_read(0x20000144))
 
 
 if (SSD0_USED and not ssd0initdone ):
@@ -529,23 +500,23 @@ if (SSD0_USED and not ssd0initdone ):
     print ('\ncap register(0) SSD0 = %x' % data)
     data = NVME_Drive.read(SSD0,4)                    # read nvme drive: capability register
     print ('\ncap register(4) SSD0 = %x' % data)
-    data = (data >> 20) & 0xf
-    print ('max page size %x' % data)
+    mps = (data >> 20) & 0xf
+    print ('max page size %x' % mps)
     #data = (0x4<<20) | (0x6<<16) | data
-    data = (0x4<<20) | (0x6<<16) | (0x5<<7)           # the nvme host currently doesn't support max page size
+    data = (0x4<<20) | (0x6<<16) | (mps<<7)           # the nvme host currently doesn't support max page size
     NVME_Drive.write(0,0x14,data)                     # writing SSD0 controller register
     queue_entries = (((ADMIN_Q_ENTRIES-1)<<16) | (ADMIN_Q_ENTRIES-1));
     NVME_Drive.write(SSD0,0x24,queue_entries)         # AQA register
-    NVME_Drive.write(SSD0,0x30,0x110000)              # ACQ low
+    NVME_Drive.write(SSD0,0x30,0x30000000)              # ACQ low
     NVME_Drive.write(SSD0,0x34,0x00)                  # ACQ high
-    NVME_Drive.write(SSD0,0x28,0x10000)               # Admission Queue low
+    NVME_Drive.write(SSD0,0x28,0x8000000)               # Admission Queue low
     NVME_Drive.write(SSD0,0x2c,0x00000)               # Admission Queue high
     NVME_Drive.write(SSD0,0x14,data | 1)              # enable SSD0
     AFU_MMIO.nvme_write(0x80, 0x1)                    # disable auto increment of NVMe host
     print ("SSD0 config done")
     NVME_Drive.wait_for_ready(SSD0)
     progress_reg = progress_reg | 0x1
-    AFU_MMIO.write64(AFU_MMIO.PROG_REG, progress_reg)
+    AFU_MMIO.nvme_write(AFU_MMIO.PROG_REG, progress_reg)
 else:
     if(ssd0initdone):  print ('SSD0 already initialized')
 
@@ -556,23 +527,23 @@ if (SSD1_USED and not ssd1initdone ):
     print ('\ncap register(0) SSD1 = %x' % data)
     data = NVME_Drive.read(SSD1,4)                    # read nvme drive: capability register
     print ('\ncap register(4) SSD1 = %x' % data)
-    data = (data >> 20) & 0xf
-    print ('max page size %x' % data)
+    mps = (data >> 20) & 0xf                 
+    print ('max page size %x' % mps)
     #data = (0x4<<20) | (0x6<<16) | data
-    data = (0x4<<20) | (0x6<<16) | (0x5<<7)           # the nvme host currently doesn't support max page size
+    data = (0x4<<20) | (0x6<<16) | (mps<<7)           # the nvme host currently doesn't support max page size
     NVME_Drive.write(SSD1,0x14,data)                  # writing SSD0 controller register
     queue_entries = (((ADMIN_Q_ENTRIES-1)<<16) | (ADMIN_Q_ENTRIES-1));
     NVME_Drive.write(SSD1,0x24,queue_entries)         # AQA register
-    NVME_Drive.write(SSD1,0x30,0x130000)              # ACQ low
+    NVME_Drive.write(SSD1,0x30,0x40000000)            # ACQ low
     NVME_Drive.write(SSD1,0x34,0x00)                  # ACQ high
-    NVME_Drive.write(SSD1,0x28,0x30000)               # Admission Queue low
+    NVME_Drive.write(SSD1,0x28,0x18000000)             # Admission Queue low
     NVME_Drive.write(SSD1,0x2c,0x00000)               # Admission Queue high
     NVME_Drive.write(SSD1,0x14,data | 1)              # enable SSD1
     AFU_MMIO.nvme_write(0x80, 0x1)                    # disable auto increment of NVMe host
     print ("SSD1 config done")
     NVME_Drive.wait_for_ready(SSD1)
     progress_reg = progress_reg | 0x4
-    AFU_MMIO.write64(AFU_MMIO.PROG_REG, progress_reg);
+    AFU_MMIO.nvme_write(AFU_MMIO.PROG_REG, progress_reg);
 
 else:
     if(ssd1initdone): print ('SSD1 already initialized')
@@ -580,10 +551,9 @@ else:
 
 if (SSD0_USED):
     data = NVME_Drive.read(SSD0,0x3c)                    # read nvme drive: capability register
-    NVME_Drive.init_AQ_PTR(SSD0)
-    NVME_Drive.get_Features(SSD0)
+#    NVME_Drive.get_Features(SSD0)
     NVME_Drive.set_Features(SSD0)
-    NVME_Drive.send_identify2(SSD0)
+#    NVME_Drive.send_identify2(SSD0)
     if ( not ssd0IOQueueUp):
         NVME_Drive.create_IO_Queues(SSD0)
         print('created IO queues for SSD0')
@@ -593,7 +563,6 @@ if (SSD0_USED):
 
 if (SSD1_USED):
     data = NVME_Drive.read(SSD1,0x3c)                    # read nvme drive: capability register
-    NVME_Drive.init_AQ_PTR(SSD1)
     NVME_Drive.get_Features(SSD1)
     NVME_Drive.set_Features(SSD1)
     NVME_Drive.send_identify2(SSD1)

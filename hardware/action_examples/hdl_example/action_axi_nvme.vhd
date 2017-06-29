@@ -209,9 +209,9 @@ with wr_count select
     nvme_lba_count_i(31 downto 0)       when x"1",
     (31 downto 12 => '0') & nvme_cmd_i  when others ;
 
-   M_AXI_WLAST   <= '1' when wr_count = x"0" else '0';
+   axi_wlast     <= '1' when wr_count = x"0" else '0';
    axi_awaddr    <= (others => '0');
-   axi_awlen      <= x"05";
+   axi_awlen     <= x"05";
 
 axi_w:	process(M_AXI_ACLK)
 	begin

@@ -15,7 +15,7 @@
 
 `define HOST_ADDR_BITS 12
 `define PCIE_M_ADDR_BITS 14
-`define PCIE_S_ADDR_BITS 21
+`define PCIE_S_ADDR_BITS 31
 `define PCIE_S_ID_BITS 4
 
 // Use PRP entry for data transfer
@@ -53,24 +53,24 @@
 `define PCIE_SSD1_CQ1HDBL_ADDR 'h300C
 
 // PCIE Virtual Mem Map (for SSD -> NVME Host addressing)
-// The RTL selection is done using only bits 20:16
-`define PCIE_SSD0_SQ0_ADDR 'h010000
-`define PCIE_SSD0_SQ1_ADDR 'h020000
-`define PCIE_SSD1_SQ0_ADDR 'h030000
-`define PCIE_SSD1_SQ1_ADDR 'h040000
-`define PCIE_TX_DATA_ADDR  'h080000
+// The RTL selection is done using only bits 30:27
+`define PCIE_SSD0_SQ0_ADDR 'h0800_0000
+`define PCIE_SSD0_SQ1_ADDR 'h1000_0000
+`define PCIE_SSD1_SQ0_ADDR 'h1800_0000
+`define PCIE_SSD1_SQ1_ADDR 'h2000_0000
+`define PCIE_TX_DATA_ADDR  'h2800_0000
 
-`define PCIE_SSD0_CQ0_ADDR 'h110000
-`define PCIE_SSD0_CQ1_ADDR 'h120000
-`define PCIE_SSD1_CQ0_ADDR 'h130000
-`define PCIE_SSD1_CQ1_ADDR 'h140000
-`define PCIE_RX_DATA_ADDR  'h180000
+`define PCIE_SSD0_CQ0_ADDR 'h3000_0000
+`define PCIE_SSD0_CQ1_ADDR 'h3800_0000
+`define PCIE_SSD1_CQ0_ADDR 'h4000_0000
+`define PCIE_SSD1_CQ1_ADDR 'h4800_0000
+`define PCIE_RX_DATA_ADDR  'h5000_0000
 
 // Memory Map for host
 `define HOST_ACTION_REGS  'h00
 `define HOST_ADMIN_REGS   'h80
-`define HOST_BUFFER_DATA  'h90
-`define HOST_PCIE_DATA    'h94
+`define HOST_BUFFER_DATA  'h100
+`define HOST_PCIE_DATA    'h104
 
 // Action Write Registers
 `define ACTION_W_DPTR_LOW   0
@@ -94,7 +94,10 @@
 `define ADMIN_STATUS      1
 `define ADMIN_BUFFER_ADDR 2
 `define ADMIN_PCIE_ADDR   3
-`define ADMIN_NUM_REGS    4
+`define ADMIN_NSID        4
+`define ADMIN_ASQ_INDEX   5
+`define ADMIN_SCRATCH     6
+`define ADMIN_NUM_REGS    7
 
 // Control Reg Bits
 `define CONTROL_ENABLE          0

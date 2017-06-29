@@ -341,9 +341,9 @@ connect_bd_net [get_bd_pins  util_buf_gte_1/IBUF_OUT]      [get_bd_pins axi_pcie
 
 # Create address segments
 create_bd_addr_seg -range 0x000100000000 -offset 0x000200000000 [get_bd_addr_spaces axi_pcie3_0/M_AXI] [get_bd_addr_segs DDR_M_AXI/Reg] SEG_DDR_M_AXI_Reg
-create_bd_addr_seg -range 0x00200000 -offset 0x00000000 [get_bd_addr_spaces axi_pcie3_0/M_AXI] [get_bd_addr_segs nvme_host_wrap_0/pcie_s_axi/reg0] SEG_nvme_host_wrap_0_reg0
+create_bd_addr_seg -range 0x80000000 -offset 0x00000000 [get_bd_addr_spaces axi_pcie3_0/M_AXI] [get_bd_addr_segs nvme_host_wrap_0/pcie_s_axi/reg0] SEG_nvme_host_wrap_0_reg0
 create_bd_addr_seg -range 0x000100000000 -offset 0x000200000000 [get_bd_addr_spaces axi_pcie3_1/M_AXI] [get_bd_addr_segs DDR_M_AXI/Reg] SEG_DDR_M_AXI_Reg
-create_bd_addr_seg -range 0x00200000 -offset 0x00000000 [get_bd_addr_spaces axi_pcie3_1/M_AXI] [get_bd_addr_segs nvme_host_wrap_0/pcie_s_axi/reg0] SEG_nvme_host_wrap_0_reg0
+create_bd_addr_seg -range 0x80000000 -offset 0x00000000 [get_bd_addr_spaces axi_pcie3_1/M_AXI] [get_bd_addr_segs nvme_host_wrap_0/pcie_s_axi/reg0] SEG_nvme_host_wrap_0_reg0
 create_bd_addr_seg -range 0x00002000 -offset 0x00000000 [get_bd_addr_spaces nvme_host_wrap_0/pcie_m_axi] [get_bd_addr_segs axi_pcie3_0/S_AXI/BAR0] SEG_axi_pcie3_0_BAR0
 create_bd_addr_seg -range 0x00002000 -offset 0x00002000 [get_bd_addr_spaces nvme_host_wrap_0/pcie_m_axi] [get_bd_addr_segs axi_pcie3_1/S_AXI/BAR0] SEG_axi_pcie3_1_BAR0
 create_bd_addr_seg -range 0x10000000 -offset 0x10000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs axi_pcie3_0/S_AXI_CTL/CTL0] SEG_axi_pcie3_0_CTL0
