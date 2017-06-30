@@ -200,7 +200,9 @@ if { $bram_used == "TRUE" } {
     set RAM_TYPE noSDRAM
 }
 append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_TNS]
- 
+append IMAGE_NAME [expr {$factory_image == "TRUE" ? "_FACTORY" : ""}]
+
+
 ## 
 ## writing bitstream
 set step     write_bitstream
