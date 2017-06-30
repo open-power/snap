@@ -73,7 +73,7 @@ SNAP_TMP_FILES =  $(SNAP_HARDWARE_ROOT)/sim/README.txt \
 #      due to missing dependencies between the different targets.
 #
 
-.PHONY: all clean gitclean check_snap_settings image model action_hw action_sw software pslse setup_environment create_environment config patch_version xpr_image snap_config snap_config_start
+.PHONY: all clean gitclean check_snap_settings image model action_hw action_sw software pslse setup_environment create_environment config patch_version cloud_image snap_config snap_config_start
 
 all: config model image
 
@@ -135,7 +135,7 @@ setup_environment:
 	@mkdir -p $(BUILD_DIR)/Images;
 	@mkdir -p $(BUILD_DIR)/Checkpoints;
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl     $(BUILD_DIR)/snap_build.tcl;
-	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_xpr_build.tcl $(BUILD_DIR)/snap_xpr_build.tcl;
+	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_build.tcl $(BUILD_DIR)/snap_cloud_build.tcl;
 	@cp -p $(PSL_DCP)                                        $(BUILD_DIR)/Checkpoints/;
 	@if [ $(FPGACARD) = "KU3" ]; then \
 		ln -f -s $(SNAP_HDL_CORE)/psl_fpga_ku3.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
@@ -197,11 +197,11 @@ image: snap_config patch_version
 	@$(RM) -r .bitstream_name.txt
 	@echo -e "\t[BUILD IMAGE.........] done  `date`"
 
-xpr_image: snap_config patch_version
-	@echo -e "\t[BUILD XPR IMAGE.....] start `date`"
-	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_xpr_build.tcl -notrace -log $(LOGS_DIR)/snap_xpr_build.log -journal $(LOGS_DIR)/snap_xpr_build.jou
-	@$(RM) -r .bitstream_name.txt
-	@echo -e "\t[BUILD XPR IMAGE....] done  `date`"
+cloud_image: snap_config patch_version
+	@echo -e "\t[BUILD CLOUD IMAGE...] start `date`"
+	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
+	@rm -r -f .bitstream_name.txt
+	@echo -e "\t[BUILD CLOUD IMAGE...] done  `date`"
 
 model: action_sw snap_config patch_version $(SIMULATOR)
 
