@@ -56,13 +56,13 @@ SNAP_HDL_HLS=$(SNAP_HARDWARE_ROOT)/hdl/hls
 SNAP_SIM_CORE=$(SNAP_HARDWARE_ROOT)/sim/core
 
 SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
-                  $(SNAP_HDL_CORE)/psl_accel.vhd \
-                  $(SNAP_HDL_CORE)/psl_accel_types.vhd \
-                  $(SNAP_HDL_CORE)/snap_core.vhd \
-                  $(SNAP_HDL_CORE)/snap_core_types.vhd \
-                  $(SNAP_HDL_CORE)/mmio.vhd \
-                  $(SNAP_HDL_HLS)/action_wrapper.vhd \
-                  $(SNAP_SIM_CORE)/top.sv
+		  $(SNAP_HDL_CORE)/psl_accel.vhd \
+		  $(SNAP_HDL_CORE)/psl_accel_types.vhd \
+		  $(SNAP_HDL_CORE)/snap_core.vhd \
+		  $(SNAP_HDL_CORE)/snap_core_types.vhd \
+		  $(SNAP_HDL_CORE)/mmio.vhd \
+		  $(SNAP_HDL_HLS)/action_wrapper.vhd \
+		  $(SNAP_SIM_CORE)/top.sv
 
 
 .PHONY: all clean gitclean check_snap_settings image model action_config setup_environment create_environment config patch_version xpr_image snap_config snap_config_start
@@ -75,7 +75,7 @@ check_snap_settings:
 		echo "Please source snap_settings before calling make!"; \
 		exit 1; \
 	fi
-	@if [[ $(SIMULATOR) != "irun" && $(SIMULATOR) != "xsim" && $(SIMULATOR) != "questa" ]];then \
+	@if test $(SIMULATOR) != "irun" && test $(SIMULATOR) != "xsim" && test $(SIMULATOR) != "questa" ;then \
 		echo "unknown simulator=$SIMULATOR"; \
 		exit 1; \
 	fi
@@ -93,11 +93,11 @@ check_snap_settings:
 	@if [ -z $(FPGACARD) ] || [ -z $(SDRAM_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ] || [ -z $(PSL_DCP) ]; then \
 		echo "Missing one or more environment  variables"; \
 		echo "Please check the following variables and source snap_settings before calling make!"; \
-		echo "FPGACARD:       $(FPGACARD)"; \
-		echo "PSL_DCP :       $(PSL_DCP)"; \
-		echo "ACTION_ROOT:    $(ACTION_ROOT)"; \
-		echo "SDRAM_USED:     $(SDRAM_USED)"; \
-		echo "ILA_DEBUG:      $(ILA_DEBUG)"; \
+		echo "FPGACARD:	$(FPGACARD)"; \
+		echo "PSL_DCP :	$(PSL_DCP)"; \
+		echo "ACTION_ROOT:	$(ACTION_ROOT)"; \
+		echo "SDRAM_USED:	$(SDRAM_USED)"; \
+		echo "ILA_DEBUG:	$(ILA_DEBUG)"; \
 		echo "NUM_OF_ACTIONS: $(NUM_OF_ACTIONS)"; \
 		exit 1; \
 	fi
@@ -115,7 +115,7 @@ check_denali:
 		if [ !  -d "$(DENALI_TOOLS)" ] || [ ! -d "$(DENALI_CUSTOM)" ]; then \
 			echo "Missing one or more environment variables for NVMe simulation."; \
 			echo "Please check the following variables."; \
-			echo "DENALI_TOOLS:   $(DENALI_TOOLS)"; \
+			echo "DENALI_TOOLS:	 $(DENALI_TOOLS)"; \
 			echo "DENALI_CUSTOM:  $(DENALI_CUSTOM)"; \
 			exit 1; \
 		fi \
@@ -130,9 +130,9 @@ setup_environment:
 	@mkdir -p $(LOGS_DIR);
 	@mkdir -p $(BUILD_DIR)/Images;
 	@mkdir -p $(BUILD_DIR)/Checkpoints;
-	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl     $(BUILD_DIR)/snap_build.tcl;
+	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl	  $(BUILD_DIR)/snap_build.tcl;
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_xpr_build.tcl $(BUILD_DIR)/snap_xpr_build.tcl;
-	@cp -p $(PSL_DCP)                                        $(BUILD_DIR)/Checkpoints/;
+	@cp -p $(PSL_DCP)					  $(BUILD_DIR)/Checkpoints/;
 	@if [ $(FPGACARD) = "KU3" ]; then \
 		ln -f -s $(SNAP_HDL_CORE)/psl_fpga_ku3.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
 		ln -f -s $(SNAP_HDL_CORE)/psl_accel_ku3.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
@@ -158,13 +158,13 @@ action_config: $(ACTION_ROOT)
 	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then \
 		make -C $(ACTION_ROOT); > $(LOGS_DIR)/action_make.log; \
 		if [ $$? -ne 0 ]; then \
-			echo -e "\t                        Error: please look into $(LOGS_DIR)/action_make.log";exit -1; \
+			echo -e "\t			      Error: please look into $(LOGS_DIR)/action_make.log";exit -1; \
 		fi \
 	fi
 	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
 		cd $(ACTION_ROOT) && ./action_config.sh > $(LOGS_DIR)/action_config.log; \
 		if [ $$? -ne 0 ]; then \
-			echo -e "\t                        Error: please look into $(LOGS_DIR)/action_config.log";exit -1; \
+			echo -e "\t			      Error: please look into $(LOGS_DIR)/action_config.log";exit -1; \
 		fi \
 	fi
 
@@ -173,18 +173,18 @@ action_config: $(ACTION_ROOT)
 # corresponding VHDL code needs to be created.
 $(ACTION_ROOT):
 	@echo -e "\t[CREATE_HLS_CODE.....] start `date`"
-	@echo -e "\t                        using `vivado_hls -v |grep Vivado`"
+	@echo -e "\t			     using `vivado_hls -v |grep Vivado`"
 	@make -C `dirname $(ACTION_ROOT)` > $(LOGS_DIR)/create_hls.log
 	@if [ $$? -ne 0 ]; then \
-		echo -e "\t                        Error: please look into $(LOGS_DIR)/create_hls.log";exit -1; \
+		echo -e "\t			     Error: please look into $(LOGS_DIR)/create_hls.log";exit -1; \
 	fi
 
 create_environment:
 	@echo -e "\t[CREATE_ENVIRONMENT..] start `date`";
-	@echo -e "\t                        using `vivado -version |grep Vivado`"
-	@cd $(SNAP_HARDWARE_ROOT)/setup                                    && vivado -quiet -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -journal $(LOGS_DIR)/create_ip.jou
+	@echo -e "\t			     using `vivado -version |grep Vivado`"
+	@cd $(SNAP_HARDWARE_ROOT)/setup				    && vivado -quiet -mode batch -source create_ip.tcl	      -notrace -log $(LOGS_DIR)/create_ip.log	      -journal $(LOGS_DIR)/create_ip.jou
 	@if [ $(NVME_USED) = "TRUE" ]; then cd $(SNAP_HARDWARE_ROOT)/setup && vivado -quiet -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou; fi
-	@cd $(SNAP_HARDWARE_ROOT)/setup                                    && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
+	@cd $(SNAP_HARDWARE_ROOT)/setup				    && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
 	@echo -e "\t[CREATE_ENVIRONMENT..] done `date`"
 
 config: check_snap_settings setup_environment snap_config action_config create_environment patch_version patch_NVMe
@@ -219,9 +219,9 @@ model: check_denali pslse software snap_config patch_version $(SIMULATOR)
 pslse:
 	@echo -e "\t[COMPILE PSLSE ......] start `date`"
 	@make -C $(PSLSE_ROOT)/afu_driver/src > $(LOGS_DIR)/compile_pslse.log 2>&1
-	@make -C $(PSLSE_ROOT)/pslse         >> $(LOGS_DIR)/compile_pslse.log 2>&1
-	@make -C $(PSLSE_ROOT)/libcxl        >> $(LOGS_DIR)/compile_pslse.log 2>&1
-	@make -C $(PSLSE_ROOT)/debug         >> $(LOGS_DIR)/compile_pslse.log 2>&1
+	@make -C $(PSLSE_ROOT)/pslse	      >> $(LOGS_DIR)/compile_pslse.log 2>&1
+	@make -C $(PSLSE_ROOT)/libcxl	      >> $(LOGS_DIR)/compile_pslse.log 2>&1
+	@make -C $(PSLSE_ROOT)/debug	      >> $(LOGS_DIR)/compile_pslse.log 2>&1
 
 software:
 	@echo -e "\t[COMPILE SOFTWARE....] start `date`"
@@ -237,7 +237,7 @@ xsim:
 	@cd $(SNAP_HARDWARE_ROOT)/sim/xsim; \
 	./top.sh > $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log";exit -1; \
+		echo -e "\t			     Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log";exit -1; \
 	fi
 	@echo -e "\t[BUILD xsim..........] done  `date`"
 
@@ -251,7 +251,7 @@ irun:
 	@cd $(SNAP_HARDWARE_ROOT)/sim/ies;\
 	./top.sh > $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log";exit -1; \
+		echo -e "\t			     Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log";exit -1; \
 	fi
 	@echo -e "\t[BUILD irun..........] done  `date`"
 
@@ -265,7 +265,7 @@ questa:
 	@cd $(SNAP_HARDWARE_ROOT)/sim/questa; \
 	./top.sh 4> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log";exit -1; \
+		echo -e "\t			     Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log";exit -1; \
 	fi
 	@echo -e "\t[BUILD questa........] done  `date`"
 
@@ -275,13 +275,13 @@ clean:
 	@rm -r -f  $(SNAP_HDL_CORE)/psl_fpga.vhd_source
 	@rm -r -f  $(SNAP_HDL_CORE)/psl_accel.vhd_source
 	@rm -r -f  *build
-	@echo -e "\t                        vivado project";
+	@echo -e "\t			     vivado project";
 	@rm -r -f  viv_project*
-	@echo -e "\t                        IPs";
+	@echo -e "\t			     IPs";
 	@rm -r -f  ip
-	@echo -e "\t                        sim files";
+	@echo -e "\t			     sim files";
 	@rm -r -f  sim/ies sim/xsim sim/questa hdl/nvme/component.xml hdl/nvme/xgui
-	@echo -e "\t                        log files";
+	@echo -e "\t			     log files";
 	@rm -r -f  logs
 
 gitclean:
