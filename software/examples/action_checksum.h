@@ -26,8 +26,9 @@ extern "C" {
 #define CHECKSUM_ACTION_TYPE 0x10141001
 #define RELEASE_LEVEL        0x00000020 
 
-#define NB_ROUNDS      100000 
-#define NB_TEST_RUNS     65536
+// For simulation use smaller numbers like 8 for both
+#define NB_ROUNDS      65536
+#define NB_TEST_RUNS   65536
 
 typedef enum {
 	CHECKSUM_CRC32 = 0x0,
