@@ -19,6 +19,8 @@
 # Jenkins Test for SNAP
 #
 
+test_without_flashing=0
+
 function test_hdl_example()
 {
 	local card=$1
@@ -173,16 +175,21 @@ function usage() {
 	
 	echo "  snap_jenkins.sh -D TARGET_DIR"
 	echo "    [-D <Target Dir>]"
+	echo "    [-x Test without flashing]"
 	echo "    [-h] Print this help"
 }
 
 #
 # Main starts here
 #
-while getopts "D:h" opt; do
+while getopts "D:xh" opt; do
 	case $opt in
 	D)
 		TARGET_DIR=$OPTARG;
+	;;
+	x)
+		test_without_flashing=1
+		exit 0;
 	;;
 	h)
 		usage;
@@ -246,7 +253,7 @@ for accel in KU3 FGT ; do
 			fi
 			FLASH_DONE=1
 		done
-		if [ $FLASH_DONE -eq 0 ]; then
+		if [ $test_without_flashing -eq 1 ] && [ $FLASH_DONE -eq 0 ]; then
 			echo "TEST Capi Card: [$card] Accel: [$accel] Without updating ..."
 			./software/tools/snap_maint -C $card -v
 			RC=$?
