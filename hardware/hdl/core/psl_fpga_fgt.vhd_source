@@ -74,8 +74,10 @@ ENTITY psl_fpga IS
     -- Outputs to NVMe drive                                                    -- only for NVME_USED=TRUE
     m2_perst_n                : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
     m2_susclk                 : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
-    --
-    -- CAPI PSL Interface
+    m2_clkreq_n	              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    m2_pewake_n	              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );          -- only for NVME_USED=TRUE
+    -- 
+    -- CAPI PSL Interface 
     --
     o_flash_oen: OUT std_logic;
     o_flash_wen: OUT std_logic;
