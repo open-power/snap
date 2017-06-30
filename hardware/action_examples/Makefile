@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-subdirs += $(wildcard hls_*)
+subdirs += $(wildcard hls_*) $(wildcard hdl_*)
 
 all: $(subdirs)
 
@@ -26,7 +26,7 @@ $(subdirs):
 	fi
 
 clean:
-	@for dir in $(subdirs) $(hardware_subdirs); do	\
+	@for dir in $(subdirs); do	\
 		if [ -d $$dir ]; then			\
 			$(MAKE) -C $$dir $@ || exit 1;	\
 		fi					\
