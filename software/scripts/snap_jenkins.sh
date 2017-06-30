@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2017, International Business Machines
+# Copyright 2017 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -188,8 +188,7 @@ while getopts "D:xh" opt; do
 		TARGET_DIR=$OPTARG;
 	;;
 	x)
-		test_without_flashing=1
-		exit 0;
+		test_without_flashing=1;
 	;;
 	h)
 		usage;
