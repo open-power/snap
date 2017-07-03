@@ -283,6 +283,13 @@ clean:
 	@rm -r -f  sim/ies sim/xsim sim/questa hdl/nvme/component.xml hdl/nvme/xgui
 	@echo -e "\t                        log files";
 	@rm -r -f  logs
+	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then          \
+		echo -e "\t                        action"; \
+		make -C $(ACTION_ROOT) $@ > /dev/null;      \
+		if [ $$? -ne 0 ]; then                      \
+			echo -e "\tError: [make "$@"] failed for action in $(ACTION_ROOT)";exit -1; \
+		fi                                          \
+	fi
 
 gitclean:
 	@echo -e "\t[GITCLEAN............] cleaning and resetting snap git";
