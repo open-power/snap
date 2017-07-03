@@ -16,13 +16,15 @@
 #
 #-----------------------------------------------------------
 
-set log_dir      $::env(LOGS_DIR)
-set log_file     $log_dir/snap_build.log
-set fpgacard     $::env(FPGACARD)
-set sdram_used   $::env(SDRAM_USED)
-set nvme_used    $::env(NVME_USED)
-set bram_used    $::env(BRAM_USED)
-set ila_debug    [string toupper $::env(ILA_DEBUG)]
+set root_dir      $::env(SNAP_HARDWARE_ROOT)
+set log_dir       $::env(LOGS_DIR)
+set log_file      $log_dir/snap_build.log
+set fpgacard      $::env(FPGACARD)
+set sdram_used    $::env(SDRAM_USED)
+set nvme_used     $::env(NVME_USED)
+set bram_used     $::env(BRAM_USED)
+set factory_image [string toupper $::env(FACTORY_IMAGE)]
+set ila_debug     [string toupper $::env(ILA_DEBUG)]
 
 #timing_lablimit  
 if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
@@ -58,12 +60,13 @@ if { [catch "$command > $logfile" errMsg] } {
 
   if { ![catch {current_instance}] } {
       write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
-    exit 42
   }
+  exit 42
 } else {
   write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
   report_utilization -file  ./Reports/${step}_utilization.rpt -quiet
 }
+
  
 ## 
 ## locking PSL
@@ -72,12 +75,28 @@ lock_design -level routing b > $log_dir/lock_design.log
 
 read_xdc ../setup/snap_impl.xdc >> $logfile
 
+
 ## 
 ## optimizing design
+set step      opt_design
+set logfile   $log_dir/${step}.log
 set directive [get_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+set command   "opt_design -directive $directive"
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start opt_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-opt_design       -directive $directive                 > $log_dir/opt_design.log
-write_checkpoint -force ./Checkpoints/opt_design.dcp  >> $log_dir/opt_design.log
+
+if { [catch "$command > $logfile" errMsg] } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: opt_design failed" $widthCol4 "" ]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
+
+  if { ![catch {current_instance}] } {
+      write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
+  }
+  exit 42
+} else {
+  write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
+  report_utilization -file  ./Reports/${step}_utilization.rpt -quiet
+}
+
  
 ## 
 ## placing design
@@ -92,9 +111,9 @@ if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
 
   if { ![catch {current_instance}] } {
-      write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
-    exit 42
+    write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
   }
+  exit 42
 } else {
   write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
 }
@@ -102,10 +121,24 @@ if { [catch "$command > $logfile" errMsg] } {
  
 ## 
 ## physical optimizing design
+set step      phys_opt_design
+set logfile   $log_dir/${step}.log
 set directive [get_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start phys_opt_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-phys_opt_design  -directive $directive                     > $log_dir/phys_opt_design.log
-write_checkpoint -force ./Checkpoints/phys_opt_design.dcp >> $log_dir/phys_opt_design.log
+set command   "phys_opt_design  -directive $directive"
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start place_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+
+if { [catch "$command > $logfile" errMsg] } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: place_design failed" $widthCol4 "" ]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
+
+  if { ![catch {current_instance}] } {
+    write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
+  }
+  exit 42
+} else {
+  write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
+}
+
  
 ## 
 ## routing design
@@ -120,9 +153,9 @@ if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
 
   if { ![catch {current_instance}] } {
-      write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
-    exit 42
+    write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
   }
+  exit 42
 } else {
   write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
 }
@@ -167,21 +200,32 @@ if { $bram_used == "TRUE" } {
     set RAM_TYPE noSDRAM
 }
 append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_TNS]
- 
+append IMAGE_NAME [expr {$factory_image == "TRUE" ? "_FACTORY" : ""}]
+
+
 ## 
 ## writing bitstream
 set step     write_bitstream
 set logfile  $log_dir/${step}.log
 set command  "write_bitstream -force -file ./Images/$IMAGE_NAME"  
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+
+# source the common bitstream settings before creating a bit and bin file
+source $root_dir/setup/snap_bitstream_pre.tcl
+
+if { $factory_image == "TRUE" } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: factory image" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+} else { 
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+}
 
 if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: write_bitstream failed" $widthCol4 "" ]
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
 
 } else {
-  write_cfgmem    -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME  -size 128 -interface  BPIx16 -force >> $logfile
+  write_cfgmem -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME  -size 128 -interface  BPIx16 -force >> $logfile
 }
+
 
 ##
 ## writing debug probes
@@ -191,6 +235,7 @@ if { $ila_debug == "TRUE" } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "writing debug probes" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
   write_debug_probes ./Images/$IMAGE_NAME.ltx >> $logfile
 }
+
 
 ## 
 ## removing unnecessary files

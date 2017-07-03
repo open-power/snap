@@ -78,3 +78,11 @@ if ([ "$NAME" == "snap_core_types.vhd" ]); then
   sed -i 's/CONSTANT[ ^I]*CARD_TYPE[ ^I]*:[ ^I]*std_logic_vector(7 DOWNTO 0).*;/CONSTANT CARD_TYPE                       : std_logic_vector(7 DOWNTO 0)  := '$CARD_TYPE';                /' $2
   sed -i 's/CONSTANT[ ^I]*NVME_ENABLED[ ^I]*:[ ^I]*std_logic.*; /CONSTANT NVME_ENABLED                    : std_logic                     := '$NVME_ENABLED';/' $2
 fi
+
+if [ "$NAME" == "psl_fpga.vhd" ]; then
+  if [ "${FACTORY_IMAGE^^}" == "TRUE" ]; then
+    sed -i "s/\(gold_factory <= \)'[0-1]'/\1'0'/" $2
+  else
+    sed -i "s/\(gold_factory <= \)'[0-1]'/\1'1'/" $2
+  fi
+fi
