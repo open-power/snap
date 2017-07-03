@@ -15,7 +15,6 @@
 # limitations under the License.
 #
 #-----------------------------------------------------------
-create_pblock pblock_action
-resize_pblock pblock_action -add CLOCKREGION_X0Y0:CLOCKREGION_X1Y4
-resize_pblcok pblock_action -add CLOCKREGION_X2Y4:CLOCKREGION_X5Y4 -locs keep_all
-add_cells_to_pblock pblock_action [get_cells [list a0/action_w]] -clear_locs
+create_pblock pblock_sdram_ku3
+resize_pblock pblock_sdram_ku3 -add CLOCKREGION_X2Y0:CLOCKREGION_X2Y2
+add_cells_to_pblock pblock_sdram_ku3 [get_cells [list a0/ddr3sdram_bank1]] -clear_locs
