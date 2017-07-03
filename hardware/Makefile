@@ -75,7 +75,7 @@ check_snap_settings:
 		echo "Please source snap_settings before calling make!"; \
 		exit 1; \
 	fi
-	@if [[ $(SIMULATOR) != "irun" && $(SIMULATOR) != "xsim" && $(SIMULATOR) != "questa" ]];then \
+	@if [ $(SIMULATOR) != "irun" ] && [ $(SIMULATOR) != "xsim" ] && [ $(SIMULATOR) != "questa" ];then \
 		echo "unknown simulator=$SIMULATOR"; \
 		exit 1; \
 	fi
@@ -111,7 +111,7 @@ check_snap_settings:
 	fi
 
 check_denali:
-	@if [ $(NVME_USED) == "TRUE" ]; then \
+	@if [ $(NVME_USED) = "TRUE" ]; then \
 		if [ !  -d "$(DENALI_TOOLS)" ] || [ ! -d "$(DENALI_CUSTOM)" ]; then \
 			echo "Missing one or more environment variables for NVMe simulation."; \
 			echo "Please check the following variables."; \
@@ -195,7 +195,7 @@ patch_version:
 	$(SNAP_HARDWARE_ROOT)/setup/patch_version.sh $(SNAP_HDL_CORE) snap_core_types.vhd
 
 patch_NVMe:
-	@if [[ -e "$(SNAP_HARDWARE_ROOT)/setup/patch_NVMe.sh" && $(NVME_USED) = "TRUE" ]]; then \
+	@if [ -e "$(SNAP_HARDWARE_ROOT)/setup/patch_NVMe.sh" ] && [ $(NVME_USED) = "TRUE" ]; then \
 		cd $(SNAP_HARDWARE_ROOT)/setup && ./patch_NVMe.sh && cd .. ; \
 		echo -e "\t[PATCH...............] NVMe PCIe Root Complex sim. files"; \
 	fi
