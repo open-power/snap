@@ -97,6 +97,7 @@ if { $hls_support == "TRUE" } {
   add_files -scan_for_includes $hdl_dir/hls/  >> $log_file
 }
 set_property used_in_simulation false [get_files $hdl_dir/core/psl_fpga.vhd]
+set_property top psl_fpga [current_fileset]
 # Action Files
 add_files            -fileset sources_1 -scan_for_includes $action_dir/
 # Sim Files
