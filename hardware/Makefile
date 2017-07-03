@@ -105,7 +105,7 @@ check_snap_settings:
 		echo "Please make sure that the environment variable ACTION_ROOT points to a directory containing the action's source code."; \
 		exit 1; \
 	fi
-	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` == "TRUE" ] && [ ! -e "$(ILA_SETUP_FILE)" ]; then \
+	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` = "TRUE" ] && [ ! -e "$(ILA_SETUP_FILE)" ]; then \
 		echo "ILA_DEBUG is set to ${ILA_DEBUG} but ILA_SETUP_FILE is not pointing to a file!"; \
 		exit 1; \
 	fi
