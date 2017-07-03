@@ -233,12 +233,14 @@ static int do_checksum(int card_no, unsigned long timeout,
 		goto out_error2;
 	}
 
-	fprintf(fp, "RETC=%x\n"
+	fprintf(fp, "------------------\n"
+                "RETC=%x => %s\n"
 		"CHECKSUM=%016llx\n"
 		"NB_TEST_RUNS=%d\n"
 		"NB_ROUND=%d\n"
-		"%lld usec\n",
-		cjob.retc,
+		"%lld usec\n"
+                "------------------\n",
+		cjob.retc, (cjob.retc == SNAP_RETC_SUCCESS ? "SUCCESS" : "FAILURE"),
 		(long long)mjob_out.chk_out,
 		mjob_out.nb_test_runs,
 		mjob_out.nb_rounds,

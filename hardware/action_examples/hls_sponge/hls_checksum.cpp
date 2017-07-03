@@ -50,6 +50,7 @@
 #include "sha3.H"
 #include "action_checksum.H"
 
+//#define TEST_SPEED_ONLY
 
 // read a hex string, return byte length or -1 on error.
 
@@ -351,7 +352,7 @@ void process_action( action_reg *Action_Register)
 
 
 	         test_runs:for (run_number = 0; run_number < NB_TEST_RUNS; run_number++)
-#pragma HLS UNROLL factor=16      // PARALLELIZATION FACTOR - max is 32
+#pragma HLS UNROLL factor=2      // PARALLELIZATION FACTOR - max is 32
                  checksum ^= test_speed(run_number, nb_elmts, freq);
 
      		Action_Register->Data.chk_out = checksum;
@@ -359,7 +360,7 @@ void process_action( action_reg *Action_Register)
     		Action_Register->Data.nb_rounds  = NB_ROUNDS;
 		rc = 0;
 		break;
-#ifdef TEST_SPEED_ONLY // To leave only TEST_SPEED logic
+#ifndef TEST_SPEED_ONLY // To leave only TEST_SPEED logic
 	case(1):
 		rc = test_sha3();
 		Action_Register->Data.chk_out = rc;
@@ -418,8 +419,9 @@ void hls_action(snap_membus_t *din_gmem,
 
 // Host Memory AXI Interface
 #pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
-#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg           offset=0x030
+
+#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg          offset=0x040
 
 //DDR memory Interface 
@@ -508,7 +510,7 @@ int main(void)
 	else
 		printf(" => WRONG checksum => expected : 0x0796ca863ac8273f\n");
 
-#ifdef TEST_SPEED_ONLY
+#ifndef TEST_SPEED_ONLY
 	//********SHA3 + SHAKE TESTS*******
 	Action_Register.Data.test_choice = 3; //SHA3 + SHAKE tests
 	hls_action(din_gmem, dout_gmem, //d_ddrmem,
