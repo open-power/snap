@@ -463,11 +463,12 @@ SIGNAL led_red: std_logic_vector(0 TO 1);
 SIGNAL led_green: std_logic_vector(0 TO 1);
 SIGNAL led_blue: std_logic_vector(0 TO 1);
 -- NVME Reset Logic                                                         -- only for NVME_USED=TRUE
-SIGNAL nvme_reset_cnt_q: std_logic_vector(15 DOWNTO 0) := (OTHERS => '1');  -- only for NVME_USED=TRUE
-SIGNAL nvme_reset_n: std_logic := '1';                                      -- only for NVME_USED=TRUE
-SIGNAL nvme_reset_ctl: std_logic;                                           -- only for NVME_USED=TRUE
-SIGNAL nvme_perst_ctl: std_logic_vector(3 DOWNTO 0);                        -- only for NVME_USED=TRUE
-SIGNAL m2_perst_tmp_n: std_logic_vector(3 DOWNTO 0);                        -- only for NVME_USED=TRUE
+SIGNAL nvme_reset_cnt_q : std_logic_vector(15 DOWNTO 0) := (OTHERS => '1'); -- only for NVME_USED=TRUE
+SIGNAL nvme_reset_n_q   : std_logic := '1';                                 -- only for NVME_USED=TRUE
+SIGNAL nvme_reset_n_qq  : std_logic := '1';                                 -- only for NVME_USED=TRUE
+SIGNAL nvme_reset_ctl   : std_logic;                                        -- only for NVME_USED=TRUE
+SIGNAL nvme_perst_ctl   : std_logic_vector(3 DOWNTO 0);                     -- only for NVME_USED=TRUE
+SIGNAL m2_perst_tmp_n   : std_logic_vector(3 DOWNTO 0);                     -- only for NVME_USED=TRUE
 
 BEGIN
   --                                                                        -- only for NVME_USED=TRUE
@@ -480,20 +481,26 @@ BEGIN
     IF (rising_edge(ha0_pclock)) THEN                                       -- only for NVME_USED=TRUE
       IF (pci_user_reset  = '1') THEN                                       -- only for NVME_USED=TRUE
         nvme_reset_cnt_q <= (OTHERS => '0');                                -- only for NVME_USED=TRUE
-      ELSIF (nvme_reset_cnt_q(15) = '0') THEN                               -- only for NVME_USED=TRUE
+      ELSIF (nvme_reset_cnt_q(15 downto 14) /= "11") THEN                   -- only for NVME_USED=TRUE
         nvme_reset_cnt_q <= nvme_reset_cnt_q + '1';                         -- only for NVME_USED=TRUE
-      END IF;                                                               -- only for NVME_USED=TRUE
+      END IF;
+      --                                                                    -- only for NVME_USED=TRUE
+      -- Drive reset to PCIe cores for NVMe                                 -- only for NVME_USED=TRUE
+      if  nvme_reset_cnt_q(15 downto 14) = "11" then                        -- only for NVME_USED=TRUE
+        nvme_reset_n_q <= NOT nvme_reset_ctl;                               -- only for NVME_USED=TRUE
+      else                                                                  -- only for NVME_USED=TRUE
+        nvme_reset_n_q <= '0';                                              -- only for NVME_USED=TRUE
+      end if;                                                               -- only for NVME_USED=TRUE
+      --                                                                    -- only for NVME_USED=TRUE
+      nvme_reset_n_qq  <= nvme_reset_n_q;                                   -- only for NVME_USED=TRUE
+      -- Drive resets to NVMe drives at M2 pins                             -- only for NVME_USED=TRUE
+      m2_perst_tmp_n <= (nvme_reset_cnt_q(15) & nvme_reset_cnt_q(15) &      -- only for NVME_USED=TRUE
+                         nvme_reset_cnt_q(15) & nvme_reset_cnt_q(15))       -- only for NVME_USED=TRUE
+                        AND NOT nvme_perst_ctl;                             -- only for NVME_USED=TRUE
     END IF;                                                                 -- only for NVME_USED=TRUE
   END PROCESS nvme_reset;                                                   -- only for NVME_USED=TRUE
                                                                             -- only for NVME_USED=TRUE
-  --                                                                        -- only for NVME_USED=TRUE
-  -- Drive reset to PCIe cores for NVMe                                     -- only for NVME_USED=TRUE
-  nvme_reset_n   <= nvme_reset_cnt_q(15) AND NOT nvme_reset_ctl;           -- only for NVME_USED=TRUE
-  --                                                                        -- only for NVME_USED=TRUE
-  -- Drive resets to NVMe drives at M2 pins                                 -- only for NVME_USED=TRUE
-  m2_perst_tmp_n <= (nvme_reset_cnt_q(15) & nvme_reset_cnt_q(15) &          -- only for NVME_USED=TRUE
-                     nvme_reset_cnt_q(15) & nvme_reset_cnt_q(15))           -- only for NVME_USED=TRUE
-                    AND NOT nvme_perst_ctl;                                 -- only for NVME_USED=TRUE
+
                                                                             -- only for NVME_USED=TRUE
   o0: OBUF PORT MAP (I => m2_perst_tmp_n(0), O => m2_perst_n(0));           -- only for NVME_USED=TRUE
   o1: OBUF PORT MAP (I => m2_perst_tmp_n(1), O => m2_perst_n(1));           -- only for NVME_USED=TRUE
@@ -536,7 +543,7 @@ BEGIN
       -- NVME Interface                                                     -- only for NVME_USED=TRUE
       --                                                                    -- only for NVME_USED=TRUE
       -- Reset Input                                                        -- only for NVME_USED=TRUE
-      nvme_reset_n                      => nvme_reset_n,                    -- only for NVME_USED=TRUE
+      nvme_reset_n                      => nvme_reset_n_qq,                 -- only for NVME_USED=TRUE
       --                                                                    -- only for NVME_USED=TRUE
       -- Clock Inputs for NVMe                                              -- only for NVME_USED=TRUE
       refclk_nvme_ch0_p                 => pcie_clk1_p,                     -- only for NVME_USED=TRUE
