@@ -172,7 +172,7 @@ Additionally to the image files itself, the build process will create
 the required `.ltx` debug probes file which will be located in the results
 directory `$SNAP_ROOT/hardware/build/Images`.
 
-# Building a factory (golden) bitstream
+# Building a factory ("golden") bitstream image
 
 Both supported FPGA cards have two flash partitions for the FPGA bitstream. The *user* partition is loaded by default on power-on. The FPGA loader automatically loads the *factory* partition if loading the user partition fails. That may happen if the flashing process for the user partition was interrupted, or if the flash device on the card or the bitstream file used for flashing got corrupted.  
 Normally there is no need to update the factory bitstream, because its main purpose is to allow to program the user partition of the flash safely again. It may also be used to test if the card is still functioning correctly with a known good bitstream.
