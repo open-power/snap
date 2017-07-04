@@ -50,44 +50,44 @@ static int mmio_read32(struct snap_card *card,
 // based on D. E. Knuth, J. H. Morris, Jr., and V. R. Pratt, i
 // Fast pattern matching in strings", SIAM J. Computing 6 (1977), 323--350
 //
-void preprocess_KMP_table(char *pat, int M, int KMP_table[])
+void preprocess_KMP_table(char *Pattern, int PatternSize, int KMP_table[])
 {
    int i, j;
 
    i = 0;
    j = -1;
    KMP_table[0] = -1;
-   while (i < M) {
-      while (j > -1 && pat[i] != pat[j])
+   while (i < PatternSize) {
+      while (j > -1 && Pattern[i] != Pattern[j])
          j = KMP_table[j];
       i++;
       j++;
-      if (pat[i] == pat[j])
+      if (Pattern[i] == Pattern[j])
           KMP_table[i] = KMP_table[j];
       else
           KMP_table[i] = j;
    }
 }
-int KMP_search(char *pat, int M, char *txt, int N)
+int KMP_search(char *Pattern, int PatternSize, char *Text, int TextSize)
 {
    int i, j;
    /*FIXME Pattern is currently hardware limited to 64 Bytes */
    int KMP_table[64];
    int count;
 
-   preprocess_KMP_table(pat, M, KMP_table);
+   preprocess_KMP_table(Pattern, PatternSize, KMP_table);
 
    i = j = 0;
    count = 0;
-   while (j < N) {
-      while (i > -1 && pat[i] != txt[j])
+   while (j < TextSize) {
+      while (i > -1 && Pattern[i] != Text[j])
          i = KMP_table[i];
       i++;
       j++;
-      if (i >= M)
+      if (i >= PatternSize)
       {
          i = KMP_table[i];
-         //printf("Found pattern at index %d\n", j-i-M);
+         //printf("Found pattern at index %d\n", j-i-PatternSize);
          count++;
       }
    }
@@ -97,14 +97,14 @@ int KMP_search(char *pat, int M, char *txt, int N)
 // based on D. E. Knuth, J. H. Morris, Jr., and V. R. Pratt, i
 // Fast pattern matching in strings", SIAM J. Computing 6 (1977), 323--350
 //
-int Naive_search(char *pat, int M, char *txt, int N)
+int Naive_search(char *Pattern, int PatternSize, char *Text, int TextSize)
 {
    int i, j;
    int count=0;
 
-   for (j = 0; j <= N - M; ++j) {
-      for (i = 0; i < M && pat[i] == txt[i + j]; ++i);
-      if (i >= M)
+   for (j = 0; j <= TextSize - PatternSize; ++j) {
+      for (i = 0; i < PatternSize && Pattern[i] == Text[i + j]; ++i);
+      if (i >= PatternSize)
       {
            count++;
            //printf("Pattern found at index %d \n", j);
