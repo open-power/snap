@@ -240,7 +240,6 @@
       for size in 1 64 80 85 240 $rnd1k $rnd1k4k; do to=$((size*50+10))   # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
         #### select 1 type of data generation
         # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                         # same char mult times
-        # cmd='print("A" * '${size}', end="")'; python3 -c "$cmd" >${size}.in;head ${size}.in;echo      # deterministic char string generated with python
         # cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w ${size}|head -n 1 >${size}.in;head ${size}.in     # random data alphanumeric, includes EOF
           dd if=/dev/urandom bs=${size} count=1 >${size}.in                                             # random data any char, no echo due to unprintable char
         #### select 1 checking method
@@ -286,18 +285,10 @@
       step "$SNAP_ROOT/software/examples/snap_search -h"
 #     step "$SNAP_ROOT/software/examples/snap_search -p'A' -C0 -i ../../1KB.txt   -t100"
       for size in 1 2 30 257 1024 $rnd1k4k; do to=$((size*60+400))
-        #### select 1 search char
-          char=$(cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w 1|head -n 1)                               # one random ASCII  char to search for
-        # char='A'                                                                                      # one deterministic char to search for
-        #### select 1 type of data generation
-        # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                         # same char mult times
-          cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w ${size}|head -n 1 >${size}.rnd;head ${size}.rnd   # random data alphanumeric, includes EOF
-        # dd if=/dev/urandom bs=${size} count=1 >${size}.in;                                            # random data any char, no echo due to unprintable char
-          cmd='print("A" * '${size}', end="")';
-          which python3
-          /usr/local/bin/python3 -c "$cmd" >${size}.uni;                         # uniform data generated with python
-          python3 -c "$cmd" >${size}.uni;                         # uniform data generated with python
-        count=$(fgrep -o $char ${size}.rnd|wc -l);                                                      # expected occurence of char in random file
+        char=$(cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w 1|head -n 1)                               # one random ASCII  char to search for
+        head -c $size </dev/zero|tr '\0' 'A' >${size}.uni                                             # same char mult times
+        cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w ${size}|head -n 1 >${size}.rnd;head ${size}.rnd   # random data alphanumeric, includes EOF
+        count=$(fgrep -o $char ${size}.rnd|wc -l)                                                     # expected occurence of char in random file
         step "$SNAP_ROOT/software/examples/snap_search -m2 -p${char} -i${size}.rnd -E${count} -t$to -v"
         step "$SNAP_ROOT/software/examples/snap_search -m2 -pA       -i${size}.uni -E${size}  -t$to -v"
         step "$SNAP_ROOT/software/examples/snap_search -m1 -p${char} -i${size}.rnd -E${count} -t$to -v"
