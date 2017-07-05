@@ -301,8 +301,8 @@ static int drive_wait_for_ready(void *handle, int drive)
 		usleep(DEFAULT_WAIT_US);
 	}
 	if (0 != rc)
-		VERBOSE0("[%s] Error SSD[%d] Not Ready after %d Retries. 0x%x\n",
-			__func__, drive, i, data);
+		VERBOSE0("     Error SSD[%d] Not Ready after %d Retries. 0x%x\n",
+			drive, i, data);
 	VERBOSE2("[%s] Exit SSD[%d] after: %d data: 0x%x rc: %d\n",
 		__func__, drive, i, data, rc);
 	return rc;
@@ -324,8 +324,8 @@ static int drive_wait_for_complete(void *handle, int drive)
 	for (i = 0; i < 100; i++) {
 		data = nvme_read(handle, ADMIN_STATUS_REG);
 		if (data & ADMIN_STATUS_ERROR) {
-			VERBOSE2("   Error waiting for Admin Command to complete: 0x%x\n",
-				data);
+			VERBOSE0("   Error: SSD[%d] waiting for Admin Command to complete: 0x%x\n",
+				drive, data);
 			break;
 		}
 		if (data & mask) {
@@ -335,8 +335,8 @@ static int drive_wait_for_complete(void *handle, int drive)
 		usleep(DEFAULT_WAIT_US);
 	}
 	if (0 != rc)
-		VERBOSE0("[%s] Error SSD[%d] Not Ready after %d Retries. Status Reg: 0x%x\n",
-			__func__, drive, i, data);
+		VERBOSE0("     Error: SSD[%d] Not Ready after %d Retries. Status Reg: 0x%x\n",
+			drive, i, data);
 	VERBOSE2("[%s] Exit SSD[%d] Data: 0x%x rc: %d\n",
 		__func__, drive, data, rc);
 	return rc;
@@ -493,22 +493,22 @@ static int wait_pcie_link_up(void *handle, int drive)
 	addr = 0x10000144 + offset;
 	data = nvme_read(handle, addr);
 	/* Decode Status */
-	VERBOSE1(" PCIE for SSD[%d]", drive);
+	VERBOSE1("SSD[%d] PCIE ", drive);
 	/* Wait Until PCIE Link is up */
 	for (i = 0; i < 80; i++) {
 		data = nvme_read(handle, addr);
 		/* Decode PCIE State Machine state */
 		ltssm_state = (data & 0x1f8) >> 3;
-		VERBOSE2("\n  (%2.2d) PCIE State: %2.2d",
-			i, ltssm_state);
+		VERBOSE2("\nSSD[%d] (%2.2d) PCIE State: %2.2d",
+			drive, i, ltssm_state);
 		if (0x800 & data) {    /* Check for Link Up */
-			VERBOSE1(" -> UP (%d).\n", i);
+			VERBOSE1(" -> UP (after %d sec).\n", i*2);
 			rc = 0;
 			break;
 		}
 		sleep(2);
 	}
-	VERBOSE1("PCIE Link Rate: ");
+	VERBOSE1("SSD[%d] PCIE Link Rate: ", drive);
 	if (0x1000 & data)
 		VERBOSE1("Gen3");
 	else {
@@ -525,7 +525,7 @@ static int wait_pcie_link_up(void *handle, int drive)
 		case 3: VERBOSE1("8\n"); break;
 	}
 	if (0 != rc)
-		VERBOSE0("PCIE Link Error Reports: 0x%8.8x\n", data);
+		VERBOSE0("Error: PCIE Link Reports: 0x%8.8x\n", data);
 	return rc;
 }
 
@@ -627,17 +627,14 @@ static int nvme_init2(void *handle, int drive)
 
 static void help(char *prog)
 {
-	printf("Usage: %s [-CvhV] [-d drive] [-t time]\n"
+	printf("\n\tSNAP tool to Init NVME Drives.\n");
+	printf("Usage: %s [-CvhV] [-d drive]\n"
 		"\t-C, --card <num> Card to use (default 0)\n"
 		"\t-V, --version  Print Version number\n"
 		"\t-h, --help     this help message\n"
 		"\t-v, --verbose  verbose mode, up to -vvv\n"
-		"\t-d, --drive    Nvme Drive (0 or 1)\n"
-		"\t              Default: %d usec. Increase this for SIM\n\n",
-	       prog, DEFAULT_WAIT_US);
-	printf("\t+-----------------------------------------------------+\n");
-	printf("\t| Attention: Use This Utility only for FGT Card !!!!! |\n");
-	printf("\t+-----------------------------------------------------+\n");
+		"\t-d, --drive    Nvme Drive (0 or 1), default: 0 and 1\n\n",
+	       prog);
 }
 
 /**
@@ -651,6 +648,9 @@ int main(int argc, char *argv[])
 	int card = 0;        /* Default, Card 0 */
 	int drive = 0;
 	fd_out = stdout; /* Default */
+	unsigned long have_nvme = 0;
+	unsigned int drive_mask = 0x03;       /* Enable drive 0 and 1 bits in mask */
+	unsigned int new_drive_mask = 0x00;
 
 	while (1) {
 		int option_index = 0;
@@ -687,12 +687,13 @@ int main(int argc, char *argv[])
 			verbose++;
 			break;
 		case 'd':       /* drive */
-			drive = strtoul(optarg, NULL, 0);
-			if (drive > 1) {
+			drive = strtol(optarg, NULL, 0);
+			if ((drive > 1) || (drive < 0)) {
 				fprintf(stderr, "Please provide correct "
-					"Drive (0 or 1)\n");
+					"SSD[%d] (Must be 0 or 1)\n", drive);
 				exit(EXIT_FAILURE);
 			}
+			new_drive_mask |= 1 << drive;
 			break;
 		default:
 			help(argv[0]);
@@ -706,6 +707,17 @@ int main(int argc, char *argv[])
 		goto __main_exit;
 	}
 
+	if (0 != new_drive_mask)
+		drive_mask = new_drive_mask;
+
+	/* Check if i do have NVME on this card */
+	snap_card_ioctl(handle, GET_NVME_ENABLED, (unsigned long)&have_nvme);
+	if (0 == have_nvme) {
+		VERBOSE0("Error SNAP NVME is not enabled on CAPI Card %d!\n", card);
+		rc = ENODEV;
+		goto __main_exit1;
+	}
+
 	/* set Namespace Identifier to 1 */
 	nvme_write(handle, ADMIN_NSID_REG, 1);
 	/* enable NVMe host */
@@ -713,21 +725,30 @@ int main(int argc, char *argv[])
 
 	/* Get Prog Reg */
 	g_prog_reg = nvme_read(handle, ADMIN_SCRATCH_REG);
-	show_prog_reg();
-	rc = wait_pcie_link_up(handle, drive);
-	if (0 == rc) {
-		/* Init NVME PCIe */
-		if (false == ssdinitdone(drive)) {
-			pcie_setup(handle, drive);
-			rc = nvme_init(handle, drive);
-			if (0 == rc)
-				set_ssdinitdone(drive);
+
+	for (drive = 0; drive < MAX_SNAP_DRIVES; drive++) {
+		/* Check which drive to init */
+		if (0 == (drive_mask & (1 << drive)))
+			continue;
+		VERBOSE1("Init SSD[%d]\n", drive);
+		show_prog_reg();
+		rc = wait_pcie_link_up(handle, drive);
+		if (0 == rc) {
+			/* Init NVME PCIe */
+			if (false == ssdinitdone(drive)) {
+				pcie_setup(handle, drive);
+				rc = nvme_init(handle, drive);
+				if (0 == rc)
+					set_ssdinitdone(drive);
+			}
+			if (ssdinitdone(drive))
+				rc = nvme_init2(handle, drive);
 		}
-		if (ssdinitdone(drive))
-			rc = nvme_init2(handle, drive);
 	}
+
 	/* Save Prog Reg */
 	nvme_write(handle, ADMIN_SCRATCH_REG, g_prog_reg);
+__main_exit1:
 	VERBOSE1("Exit rc: %d\n", rc);
 
 	snap_close(handle);
