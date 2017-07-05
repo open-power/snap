@@ -326,7 +326,8 @@ BEGIN
     wram_wdata(             0) <= buf_wdata_i(0) XOR inject_dma_write_error_i;
     wram_wdata(511 DOWNTO   1) <= buf_wdata_i(511 DOWNTO 1);
     wram_wdata(575 DOWNTO 512) <= buf_wdata_be_i;
-    wram_raddr                 <= ha_b_q.rtag(4 DOWNTO 0) & (ha_b_q.rad(0) xor flip_bit_q) ;
+--    wram_raddr                 <= ha_b_q.rtag(4 DOWNTO 0) & (ha_b_q.rad(0) xor flip_bit_q) ;
+    wram_raddr                 <= ha_b_q.rtag(4 DOWNTO 0) & ha_b_q.rad(0) ;
     wram_wen                   <= buf_wdata_v_i;
 
 
