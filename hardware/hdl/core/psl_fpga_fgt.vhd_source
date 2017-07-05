@@ -483,7 +483,7 @@ BEGIN
         nvme_reset_cnt_q <= (OTHERS => '0');                                -- only for NVME_USED=TRUE
       ELSIF (nvme_reset_cnt_q(15 downto 14) /= "11") THEN                   -- only for NVME_USED=TRUE
         nvme_reset_cnt_q <= nvme_reset_cnt_q + '1';                         -- only for NVME_USED=TRUE
-      END IF;
+      END IF;                                                               -- only for NVME_USED=TRUE
       --                                                                    -- only for NVME_USED=TRUE
       -- Drive reset to PCIe cores for NVMe                                 -- only for NVME_USED=TRUE
       if  nvme_reset_cnt_q(15 downto 14) = "11" then                        -- only for NVME_USED=TRUE
