@@ -241,6 +241,7 @@ int main(int argc, char *argv[])
 	int h_begin = 0;
 	uint64_t start, stop;
 	snap_action_flag_t attach_flags = 0;
+	unsigned long ram_in_mb = 0;
 
 	while (1) {
                 int option_index = 0;
@@ -333,6 +334,14 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	/* Check if SDRAM on Card */
+        snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&ram_in_mb);
+	if (0 == ram_in_mb) {
+		PRINTF0("No SNAP SDRAM in Card: %s\n", device);
+		rc = 0;      /* Exit OK */
+		goto __exit1;
+	}
+
 	if (ACTION_CONFIG_MEMSET_H == func) {
 		if (size > (32 * MEGA_BYTE)) {
 			PRINTF0("Size %ld must be less than %d\n", size, (32*MEGA_BYTE));
@@ -349,8 +358,9 @@ int main(int argc, char *argv[])
 		PRINTF1("Allocate Host Buffer at %p Size: %d Bytes\n", hb, h_mem_size);
 	}
 
-	PRINTF1("Fill %ld Bytes from %lld to %lld with Pattern 0x%02x\n",
-		size, (long long)begin, (long long)begin+size-1, pattern);
+	PRINTF1("Fill %ld Bytes from %lld to %lld with Pattern: 0x%02x FPGA RAM: %d MB\n",
+		size, (long long)begin, (long long)begin+size-1,
+		pattern, (int)ram_in_mb);
 
 	for (i = 0; i < iter; i++) {
 		struct snap_action *act;

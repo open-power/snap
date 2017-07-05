@@ -326,7 +326,8 @@ static void action_memcpy(struct snap_card* h,
 static int check_parms(
 		unsigned int host_mem_size,	/* Size for Host Buffer */
 		uint64_t ram_start_addr,	/* Start of Card Mem */
-		uint64_t ram_end_addr)		/* End of Card Mem */
+		uint64_t ram_end_addr,          /* End of Card Mem */
+		uint64_t ddr_mem_size)          /* Real Mem on card */
 {
 	uint64_t ram_mem_size;
 	int ram_blocks;
@@ -339,11 +340,11 @@ static int check_parms(
 			(long long)ram_end_addr);
 		return -1;
 	}
-	if (ram_end_addr > DDR_MEM_SIZE) {
+	if (ram_end_addr > ddr_mem_size) {
 		errno = EFAULT;
 		VERBOSE0("FAILED: End: 0x%llx > Size: 0x%llx\n",
 			(long long)ram_end_addr,
-			(long long)DDR_MEM_SIZE);
+			(long long)ddr_mem_size);
 		return -1;
 	}
 	ram_mem_size = ram_end_addr - ram_start_addr;
@@ -603,13 +604,12 @@ static void usage(const char *prog)
 		"    -t, --timeout        timeout in sec (defaut 1 sec)\n"
 		"    -i, --iter           Memcpy Iterations (default 1)\n"
 		"    -s, --start          Card Ram Start Address (default 0x%llx)\n"
-		"    -e, --end            Card Ram End Address (default 0x%llx)\n"
+		"    -e, --end            Card Ram End Address (From card)\n"
 		"    -b, --buffer         Host Buffer Size (default 0x%llx)\n"
 		"    -I, --irq            Use Interrupts\n"
 		"\tTool to check DDR Memory on KU3 and FGT Card\n"
 		, prog,
 		(long long)DDR_MEM_BASE_ADDR,
-		(long long)DDR_MEM_SIZE,
 		(long long)HOST_BUFFER_SIZE);
 }
 
@@ -623,7 +623,8 @@ int main(int argc, char *argv[])
 	int i, iter = 1;
 	int timeout = ACTION_WAIT_TIME;
 	uint64_t start_addr = DDR_MEM_BASE_ADDR;
-	uint64_t end_addr = DDR_MEM_SIZE;
+	uint64_t end_addr = 0;
+	uint64_t snap_mem = 0;
 	unsigned int mem_size = HOST_BUFFER_SIZE;
 	void *src_buf = NULL;
 	void *dest_buf = NULL;
@@ -704,10 +705,15 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	if (0 != check_parms(mem_size, start_addr, end_addr)) {
+	/* Get Mem Size */
+	snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&snap_mem);
+        VERBOSE1("   %d MB of Card Ram avilable.\n", (int)snap_mem);
+	snap_mem = snap_mem * MEGA_BYTE;
+	if (0 != check_parms(mem_size, start_addr, end_addr, snap_mem)) {
 		rc = -1;
 		goto __exit;
 	}
+
 	VERBOSE1("Test Ram on FPGA Card from 0x%016llx to 0x%016llx (%d * 0x%x Bytes) ",
 		(long long)start_addr, (long long)end_addr,
 		(int)((end_addr - start_addr)/(long)mem_size), mem_size);
