@@ -159,8 +159,25 @@ static void snap_version(void *handle)
 {
 	uint64_t reg;
 	int up;
+	unsigned long ioctl_data;
 
 	VERBOSE2("[%s] Enter\n", __func__);
+	/* Read Card Capabilities */
+        snap_card_ioctl(handle, GET_CARD_TYPE, (unsigned long)&ioctl_data);
+        VERBOSE1("SNAP on ");
+        switch (ioctl_data) {
+                case 0: VERBOSE1("KU3"); break;
+                case 1: VERBOSE1("FGT"); break;
+                default: VERBOSE1("Unknown"); break;
+        }
+        VERBOSE1(" Card, NVME ");
+        snap_card_ioctl(handle, GET_NVME_ENABLED, (unsigned long)&ioctl_data);
+	if (1 == ioctl_data)
+		VERBOSE1("enabled");
+	else    VERBOSE1("disabled");
+        snap_card_ioctl(handle, GET_SDRAM_SIZE, (unsigned long)&ioctl_data);
+        VERBOSE1(", %d MB SRAM available.\n", (int)ioctl_data);
+
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_IVR);
 	VERBOSE1("SNAP FPGA Release: %d/%d:%d Distance: %d GIT: 0x%8.8x\n",
 		(int)(reg >> 56),
