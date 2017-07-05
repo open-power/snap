@@ -218,18 +218,19 @@ static void action_memcpy(struct snap_card* h,
 
 static int memcpy_test(struct snap_card* dnc,
 			int action,
-			int blocks_4k,	/* Number of DEFAULT_MEMCPY_BLOCK */
-			int blocks_64,	/* Number of 64 Bytes Blocks */
+			int blocks_4k,  /* Number of DEFAULT_MEMCPY_BLOCK */
+			int blocks_64,  /* Number of 64 Bytes Blocks */
 			int align,
 			uint64_t card_ram_base,
-			int timeout)		/* Timeout to wait in sec */
+			int timeout)    /* Timeout to wait in sec */
 {
 	int rc;
 	void *src = NULL;
 	void *dest = NULL;
 	void *ddr3;
 	int blocks;
-	unsigned int memsize;
+	unsigned long memsize;
+	unsigned long ddr_mem_size;
 	uint64_t td;
 
 	rc = 0;
@@ -250,18 +251,20 @@ static int memcpy_test(struct snap_card* dnc,
 	/* Number of 64 Bytes Blocks */
 	blocks = (blocks_4k * 64) + blocks_64;
 
+	snap_card_ioctl(dnc, GET_SDRAM_SIZE, (unsigned long)&ddr_mem_size);
+	ddr_mem_size = ddr_mem_size * MEGAB;
 	/* Check Size */
-	if (blocks > (int)(DDR_MEM_SIZE / 64 / 2)) {
+	if (blocks > (int)(ddr_mem_size / 64 / 2)) {
 		VERBOSE0("Error: Number of Blocks: %d exceeds: %d\n",
-			blocks, (int)(DDR_MEM_SIZE/DEFAULT_MEMCPY_BLOCK/2));
+			blocks, (int)(ddr_mem_size/DEFAULT_MEMCPY_BLOCK/2));
 		return 0;
 	}
 
 	memsize = blocks * 64;
 	/* Check Card Ram base and Size */
-	if ((card_ram_base + memsize) > DDR_MEM_SIZE) {
-		VERBOSE0("Error: Size: 0x%8.8x exceeds DDR3 Limit: 0x%llx for Offset: 0x%llx\n",
-			memsize, (long long)DDR_MEM_SIZE, (long long)card_ram_base);
+	if ((card_ram_base + memsize) > ddr_mem_size) {
+		VERBOSE0("Error: Size: 0x%llx exceeds DDR3 Limit: 0x%llx for Offset: 0x%llx\n",
+			(long long)memsize, (long long)ddr_mem_size, (long long)card_ram_base);
 		return 0;
 	}
 	if (0 == memsize) {
@@ -275,8 +278,8 @@ static int memcpy_test(struct snap_card* dnc,
 		src = alloc_mem(align, memsize);
 		if (NULL == src)
 			return 1;
-		VERBOSE1("  From Host:  %p Size: 0x%x (%d * 4K + %d * 64 Byte) Align: %d\n",
-			src, memsize, blocks_4k, blocks_64, align);
+		VERBOSE1("  From Host:  %p Size: 0x%llx (%d * 4K + %d * 64 Byte) Align: %d\n",
+			src, (long long)memsize, blocks_4k, blocks_64, align);
 		memset2(src, card_ram_base, memsize);
 		/* Allocate Host Dest Buffer */
 		dest = alloc_mem(align, memsize);
@@ -309,8 +312,8 @@ static int memcpy_test(struct snap_card* dnc,
 		if (NULL == src)
 			return 1;
 		memset2(src, card_ram_base, memsize);
-		VERBOSE1("  From Host:  %p Size: 0x%x (%d * 4K + %d * 64 Byte) Align: %d\n",
-			src, memsize, blocks_4k, blocks_64, align);
+		VERBOSE1("  From Host:  %p Size: 0x%llx (%d * 4K + %d * 64 Byte) Align: %d\n",
+			src, (long long)memsize, blocks_4k, blocks_64, align);
 		/* Set Dest to DDR Ram Address */
 		dest = (void*)card_ram_base;
 		VERBOSE1("  To DDR: %p timeout: %d sec\n", dest, timeout);
@@ -323,8 +326,8 @@ static int memcpy_test(struct snap_card* dnc,
 	case ACTION_CONFIG_COPY_DH:
 		/* Set Src to DDR Ram Address */
 		src = (void*)card_ram_base;
-		VERBOSE1("  From DDR:  %p Size: 0x%x (%d * 4K + %d * 64 Byte) Align: %d\n",
-			src, memsize, blocks_4k, blocks_64, align);
+		VERBOSE1("  From DDR:  %p Size: 0x%llx (%d * 4K + %d * 64 Byte) Align: %d\n",
+			src, (long long)memsize, blocks_4k, blocks_64, align);
 		/* Allocate Host Dest Buffer */
 		dest = alloc_mem(align, memsize);
 		if (NULL == dest)
@@ -342,12 +345,12 @@ static int memcpy_test(struct snap_card* dnc,
 		break;
 	case ACTION_CONFIG_COPY_DD:
 		src = (void*)card_ram_base;
-		VERBOSE1("  From DDR:  %p Size: 0x%x (%d * 4K + %d * 64 Byte) Align: %d\n",
-			src, memsize, blocks_4k, blocks_64, align);
+		VERBOSE1("  From DDR:  %p Size: 0x%llx (%d * 4K + %d * 64 Byte) Align: %d\n",
+			src, (long long)memsize, blocks_4k, blocks_64, align);
 		dest = src + memsize;	/* Need to check */
-		if ((uint64_t)(dest + memsize) > DDR_MEM_SIZE) {
-			VERBOSE0("Error Size 0x%x and Offset 0x%llx Exceed Memory\n",
-				memsize, (long long)card_ram_base);
+		if ((uint64_t)(dest + memsize) > ddr_mem_size) {
+			VERBOSE0("Error Size 0x%llx and Offset 0x%llx Exceed Memory\n",
+				(long long)memsize, (long long)card_ram_base);
 			break;
 		}
 		VERBOSE1("  To DDR: %p timeout: %d sec\n", dest, timeout);
@@ -361,8 +364,8 @@ static int memcpy_test(struct snap_card* dnc,
 		src = alloc_mem(align, memsize);
 		if (NULL == src)
 			return 1;
-		VERBOSE1("  From Host:  %p Size: 0x%x (%d * 4K + %d * 64 Byte) Align: %d\n",
-			src, memsize, blocks_4k, blocks_64, align);
+		VERBOSE1("  From Host:  %p Size: 0x%llx (%d * 4K + %d * 64 Byte) Align: %d\n",
+			src, (long long)memsize, blocks_4k, blocks_64, align);
 		memset2(src, card_ram_base, memsize);
 		ddr3 = (void*)card_ram_base;
 		VERBOSE1("  To DDR: %p timeout: %d sec\n", ddr3, timeout);
@@ -475,6 +478,7 @@ int main(int argc, char *argv[])
 	snap_action_flag_t attach_flags = 0;
 	uint64_t td;
 	struct snap_action *act = NULL;
+	unsigned long ioctl_data;
 
 	while (1) {
                 int option_index = 0;
@@ -577,6 +581,18 @@ int main(int argc, char *argv[])
 		VERBOSE0("ERROR: snap_card_alloc_dev(%s)\n", device);
 		return -1;
 	}
+
+	/* Read Card Capabilities */
+	snap_card_ioctl(dn, GET_CARD_TYPE, (unsigned long)&ioctl_data);
+	VERBOSE1("SNAP on ");
+	switch (ioctl_data) {
+		case 0: VERBOSE1("KU3"); break;
+		case 1: VERBOSE1("FGT"); break;
+		default: VERBOSE1("Unknown"); break;
+	}
+	snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&ioctl_data);
+	VERBOSE1(" Card, %d MB of Card Ram avilable.\n", (int)ioctl_data);
+
 	snap_mmio_read64(dn, SNAP_S_CIR, &cir);
 	VERBOSE1("Start of Action: %d Card Handle: %p Context: %d\n", action, dn,
 		(int)(cir & 0x1ff));
