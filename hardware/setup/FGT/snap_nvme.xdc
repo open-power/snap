@@ -55,9 +55,9 @@ set_property IOSTANDARD LVCMOS33 [get_ports {m2_susclk[*]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {m2_perst_n[*]}]
 
 set_property IOSTANDARD LVCMOS33 [get_ports {m2_clkreq_n[*]}]
-set_set_property PULLUP true     [get_ports {m2_clkreq_n[*]}]
+set_property PULLUP true     [get_ports {m2_clkreq_n[*]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {m2_pewake_n[*]}]
-set_set_property PULLUP true     [get_ports {m2_pewake_n[*]}]
+set_property PULLUP true     [get_ports {m2_pewake_n[*]}]
 
 
 
