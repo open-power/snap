@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2017, International Business Machines
+# Copyright 2017 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
 #
 # Jenkins Test for SNAP
 #
+
+test_without_flashing=0
 
 function test_hdl_example()
 {
@@ -173,16 +175,20 @@ function usage() {
 	
 	echo "  snap_jenkins.sh -D TARGET_DIR"
 	echo "    [-D <Target Dir>]"
+	echo "    [-x Test without flashing]"
 	echo "    [-h] Print this help"
 }
 
 #
 # Main starts here
 #
-while getopts "D:h" opt; do
+while getopts "D:xh" opt; do
 	case $opt in
 	D)
 		TARGET_DIR=$OPTARG;
+	;;
+	x)
+		test_without_flashing=1;
 	;;
 	h)
 		usage;
@@ -246,7 +252,7 @@ for accel in KU3 FGT ; do
 			fi
 			FLASH_DONE=1
 		done
-		if [ $FLASH_DONE -eq 0 ]; then
+		if [ $test_without_flashing -eq 1 ] && [ $FLASH_DONE -eq 0 ]; then
 			echo "TEST Capi Card: [$card] Accel: [$accel] Without updating ..."
 			./software/tools/snap_maint -C $card -v
 			RC=$?
