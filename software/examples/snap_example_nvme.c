@@ -261,6 +261,7 @@ int main(int argc, char *argv[])
 	uint64_t host_dest = 0;
 	unsigned long long max_blocks = (NVME_MAX_TRANSFER_SIZE / NVME_LB_SIZE);
 	struct snap_action *act = NULL;
+	unsigned long have_nvme = 0;
 
 	while (1) {
                 int option_index = 0;
@@ -358,6 +359,14 @@ int main(int argc, char *argv[])
 		errno = ENODEV;
 		VERBOSE0("ERROR: snap_card_alloc_dev(%s)\n", device);
 		return -1;
+	}
+
+	/* Check if i do have NVME */
+	snap_card_ioctl(dn, GET_NVME_ENABLED, (unsigned long)&have_nvme);
+	if (0 == have_nvme) {
+		VERBOSE0("ERROR: NVME not enabled on: %s\n", device);
+		rc = ENODEV;
+		goto __exit;
 	}
 
 	src_buf = get_mem(mem_size);
