@@ -92,6 +92,8 @@ struct snap_card {
 	size_t errinfo_size;            /* Size of errinfo */
 	void *errinfo;                  /* Err info Buffer */
 	struct cxl_event event;         /* Buffer to keep event from IRQ */
+	unsigned int attach_timeout_sec;
+	unsigned int queue_length;      /* unused */
 };
 
 /* To be used for software simulation, use funcs provided by action */
@@ -570,10 +572,32 @@ void snap_card_free(struct snap_card *_card)
 struct snap_queue *snap_queue_alloc(struct snap_card *card,
 				    snap_action_type_t action_type,
 				    unsigned int queue_length __unused,
-				    unsigned int attach_timeout_sec __unused)
+				    unsigned int attach_timeout_sec)
 {
 	card->queue_type = action_type;
+	card->queue_length = queue_length;
+	card->attach_timeout_sec = attach_timeout_sec;
+
 	return (struct snap_queue *)card;
+}
+
+/*
+ * @note At this point in time we emulate a real queue behavior by 
+ * doing the same as we do when using snap_sync_execute_job directly.
+ * This is basically a queue of length 1. Once there are use-cases
+ * which will profit from a real hardware job queue, this must be
+ * changed along with a real hardware queue implementation.
+ */
+int snap_queue_sync_execute_job(struct snap_queue *queue,
+                          struct snap_job *cjob,
+                          unsigned int timeout_sec)
+{
+	struct snap_card *card = (struct snap_card *)queue;
+
+	return snap_sync_execute_job(card, card->action_type,
+				     (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ),
+				     cjob, card->attach_timeout_sec,
+				     timeout_sec);
 }
 
 void snap_queue_free(struct snap_queue *queue __unused)
