@@ -33,7 +33,7 @@
     ts5=$(date +%s%N)                                   # begin of step
     free1=$free2                                        # old counter, if one exists
     ${call_args}; step_rc=$?                            # execute step
-    ts6=$(date +%s%N);                                  # gein of step
+    ts6=$(date +%s%N);                                  # begin of step
     free2=$($SNAP_ROOT/software/tools/snap_peek 0x80|grep ']'|awk '{print $2}')  # cycle timestamp from freerunning counter
     deltasim=$(( ($ts6-$ts5)/1000000 ));    s=$((deltasim/1000)); ms=$((deltasim%1000))
     deltans=$(( (16#$free2-16#$free1)*4 )); us=$((deltans/1000)); ns=$((deltans%1000))
@@ -259,15 +259,27 @@
 
     if [[ "$t0l" == "10141001" || "${env_action}" == "hls_sponge"* ]];then echo -e "$del\ntesting sponge"
       step "$SNAP_ROOT/software/examples/snap_checksum -h"
-#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSPEED      -n1 -f256'"
-      step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSHA3       -n1 -f256'"
-      step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSHAKE      -n1 -f256'"
-      step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSHA3_SHAKE -n1 -f256'"
-      export SNAP_CONFIG=0x1  # SW execution
-#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSPEED -n1 -s2 -f4'"
-#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSPEED -n128   -f256'"
-#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSPEED -n4096  -f256'"
-#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSPEED -n1     -f128' " # will generate 65536*1/128 = 512 calls
+      step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mSPONGE  -cSHA3                 " # 23s
+      step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mSPONGE  -cSHA3_SHAKE           " # 44s
+      step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mSPONGE  -cSHAKE                " # 43s
+## not implemented in HW, just in SW
+## -m <empty> defaults to -mCRC32
+## -s only for -mADLER32/CRC32
+#     export SNAP_CONFIG=0x1;echo "SW execution"
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200           -cSHA3                 " # 22s
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200           -cSHA3_SHAKE           " # 42s
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200           -cSHAKE                " # 41s
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mADLER32 -cSHA3            -s256" # 21s
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mADLER32 -cSHA3_SHAKE      -s256" #
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mADLER32 -cSHAKE           -s256" #
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mCRC32   -cSHA3            -s256" # 21s
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mCRC32   -cSHA3_SHAKE      -s256" #
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mCRC32   -cSHAKE           -s256" #
+## too long for sim
+## -n -f only for -mSPONGE -cSPEED
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mADLER32 -cSPEED           -s256" #
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mSPONGE  -cSPEED -n1 -f256      " #
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mCRC32   -cSPEED           -s256" #
     fi # sponge
 
     if [[ "$t0l" == "10141002" || "${env_action}" == "hls_hashjoin"* ]];then echo -e "$del\ntesting snap_hashjoin"
