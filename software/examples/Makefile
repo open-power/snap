@@ -16,6 +16,7 @@
 
 include ../config.mk
 
+CFLAGS += -std=c99
 DESTDIR ?= /usr
 libs = ../lib/libsnap.a
 LDLIBS += $(libs) -lpthread
