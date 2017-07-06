@@ -402,7 +402,11 @@ int snap_action_free_irq(struct snap_action *action, int irq);
 #endif /* IRQ_SUPPORT */
 
 /**
- * This call will retunr
+ * Get a or set snap lib option.
+ * @card          Valid SNAP card handle
+ * @cmd           CMD (see below).
+ * @parm          Pointer for GET command or value for SET command
+ * @return        0 success
  */
 #define GET_CARD_TYPE       1   /* Returns Card type */
 #define GET_NVME_ENABLED    2   /* Returns 1 if NVME is enabled */
