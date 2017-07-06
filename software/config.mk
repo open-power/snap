@@ -85,7 +85,7 @@ VERSION:=$(VERSION)-$(GIT_BRANCH)
 endif
 
 CFLAGS ?= -W -Wall -Werror -Wwrite-strings -Wextra -O2 -g \
-	-Wmissing-prototypes -std=c99 # -Wstrict-prototypes -Warray-bounds
+	-Wmissing-prototypes # -Wstrict-prototypes -Warray-bounds
 CFLAGS += -DGIT_VERSION=\"$(VERSION)\" \
 	-I. -I../include -D_GNU_SOURCE=1
 
