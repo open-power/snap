@@ -86,8 +86,12 @@ endif
 
 CFLAGS ?= -W -Wall -Werror -Wwrite-strings -Wextra -O2 -g \
 	-Wmissing-prototypes # -Wstrict-prototypes -Warray-bounds
+
 CFLAGS += -DGIT_VERSION=\"$(VERSION)\" \
 	-I. -I../include -D_GNU_SOURCE=1
+
+# Optimizations
+CFLAGS += -funroll-all-loops
 
 # Force 32-bit build
 #   This is needed to generate the code for special environments. We have
