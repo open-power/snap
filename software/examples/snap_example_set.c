@@ -338,7 +338,7 @@ int main(int argc, char *argv[])
         snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&ram_in_mb);
 	if (0 == ram_in_mb) {
 		PRINTF0("No SNAP SDRAM in Card: %s\n", device);
-		rc = 0;      /* Exit OK */
+		rc = ENODEV;      /* Exit BAD */
 		goto __exit1;
 	}
 

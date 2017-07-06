@@ -365,7 +365,7 @@ int main(int argc, char *argv[])
 	snap_card_ioctl(dn, GET_NVME_ENABLED, (unsigned long)&have_nvme);
 	if (0 == have_nvme) {
 		VERBOSE0("ERROR: NVME not enabled on: %s\n", device);
-		rc = 0;          /* Set rc to be ok */
+		rc = ENODEV;
 		goto __exit;
 	}
 
