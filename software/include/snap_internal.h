@@ -70,6 +70,7 @@ struct snap_funcs {
 	int (* mmio_write64)(struct snap_card *card, uint64_t offset, uint64_t data);
 	int (* mmio_read64)(struct snap_card *card, uint64_t offset, uint64_t *data);
 	void (* card_free)(struct snap_card *card);
+	int (* card_ioctl)(struct snap_card *card, unsigned int cmd, unsigned long arg);
 };
 
 int action_trace_enabled(void);

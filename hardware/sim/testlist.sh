@@ -33,7 +33,7 @@
     ts5=$(date +%s%N)                                   # begin of step
     free1=$free2                                        # old counter, if one exists
     ${call_args}; step_rc=$?                            # execute step
-    ts6=$(date +%s%N);                                  # gein of step
+    ts6=$(date +%s%N);                                  # begin of step
     free2=$($SNAP_ROOT/software/tools/snap_peek 0x80|grep ']'|awk '{print $2}')  # cycle timestamp from freerunning counter
     deltasim=$(( ($ts6-$ts5)/1000000 ));    s=$((deltasim/1000)); ms=$((deltasim%1000))
     deltans=$(( (16#$free2-16#$free1)*4 )); us=$((deltans/1000)); ns=$((deltans%1000))
@@ -51,8 +51,11 @@
     done=${r:14:1};echo "exploration done=$done";
     t="$SNAP_ROOT/software/tools/snap_peek 0x18        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
     done=${r:13:1};numact=${r:14:1};(( numact += 1 ));echo "exploration done=$done num_actions=$numact"
+#   t="$SNAP_ROOT/software/tools/snap_peek 0x20        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Lockreg 0x1=locked"
+    t="$SNAP_ROOT/software/tools/snap_peek 0x30        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # capabilityreg bit31-16=DRAM size bit8=NVMe bit7..0=card type"
+    dram=$(( 16#${r:8:4} )); nvme=${r:13:1}; type=${r:14:2}; echo "card_type=$type NVMe=$nvme ${NVME_USED} DRAM=$dram MB"
     if [[ "$done" == "0" ]];then echo "exploration not done yet"
-      env_action=$(echo $ACTION_ROOT|sed -e "s/action_examples\// /g"|awk '{print $2}');echo "ENV_action=${env_action} ${NVME_USED}"
+      env_action=$(echo $ACTION_ROOT|sed -e "s/action_examples\// /g"|awk '{print $2}');echo "ENV_action=${env_action}"
 #     if [[ "${env_action}" == *"hdl_example"* ]];then echo -e "$del\ntesting hdl_example in master mode"
 #       step "$SNAP_ROOT/software/examples/snap_example -a1 -m -s1 -e2 -i1 -t100 -vv"
 #       step "$SNAP_ROOT/software/examples/snap_example -a2 -m -A4096 -S0 -B1 -t30"
@@ -65,15 +68,15 @@
       echo -e "start exploration$del"
 #     step "$SNAP_ROOT/software/tools/snap_maint -h -V"
 #     step "$SNAP_ROOT/software/tools/snap_maint"
-#     step "$SNAP_ROOT/software/tools/snap_maint -m1 -c1"
-      step "$SNAP_ROOT/software/tools/snap_maint -m1 -c1 -vvv"
+      step "$SNAP_ROOT/software/tools/snap_maint -m1 -c1"
+#     step "$SNAP_ROOT/software/tools/snap_maint -m1 -c1 -vvv"
 #     step "$SNAP_ROOT/software/tools/snap_maint -m2 -c1 -vvv"
-      t="$SNAP_ROOT/software/tools/snap_peek 0x10        ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
+      step "$SNAP_ROOT/software/tools/snap_maint -m1 -m2 -m3 -m4"
+      t="$SNAP_ROOT/software/tools/snap_maint -m1 -m2 -m3 -m4";r=$($t);echo -e "$t result=$r"
       t="$SNAP_ROOT/software/tools/snap_peek 0x18        ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
       done=${r:13:1};numact=${r:14:1};(( numact += 1 ));echo "exploration done=$done num_actions=$numact"
       if [[ "$done" == "0" ]];then echo "exploration still not shown as done, subsequent runs may fail !!!!";
         step "$SNAP_ROOT/software/tools/snap_maint -m1 -c1 -vvv"
-        t="$SNAP_ROOT/software/tools/snap_peek 0x10        "; r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
         t="$SNAP_ROOT/software/tools/snap_peek 0x18        "; r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
       fi
     fi
@@ -82,7 +85,8 @@
       t0s=${r:7:1};t0l=${r:8:8};
       case $t0l in
         "10140000") a0="hdl_example"
-          if [[ "$SDRAM_USED" == "TRUE" ]];then echo -e "write FPGA memory to prevent reading unwritten adr 0"
+#         if [[ "$SDRAM_USED" == "TRUE" ]];then echo -e "write FPGA memory to prevent reading unwritten adr 0"
+          if (( dram > 0 ));then echo -e "write FPGA memory to prevent reading unwritten adr 0"
 #           step "$SNAP_ROOT/software/examples/snap_example_set -h"
             step "$SNAP_ROOT/software/examples/snap_example_set -F -b0x0 -s0x100 -p0x5 -t50"
           fi
@@ -120,7 +124,6 @@
       t="$SNAP_ROOT/software/tools/snap_peek 0x11010 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg"
       t="$SNAP_ROOT/software/tools/snap_peek 0x11018 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg"
     fi
-#   t="$SNAP_ROOT/software/tools/snap_peek 0x20        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Lockreg 0x1=locked"
     t="$SNAP_ROOT/software/tools/snap_peek 0x80        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # freerunning timer"
 #   t="$SNAP_ROOT/software/tools/snap_peek 0x88        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Job timeout reg"
 #   t="$SNAP_ROOT/software/tools/snap_peek 0x90        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action active counter"
@@ -134,7 +137,8 @@
 #   t="$SNAP_ROOT/software/tools/snap_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # DMA    ErrInj"
 
     if [[ "$t0l" == "10140000" || "${env_action}" == "hdl_example" ]];then echo -e "$del\ntesting hdl_example"
-    if [[ "$NVME_USED" == "TRUE" ]];then echo -e "\nskipped due to NVMe"
+#   if [[ "$NVME_USED" == "TRUE" ]];then echo -e "\nskipped due to NVMe"
+    if [[ "$nvme" == "1" ]];then echo -e "\nskipped due to NVMe"
     else
 #     step "$SNAP_ROOT/software/examples/snap_example -h"
       step "$SNAP_ROOT/software/examples/snap_example -a1 -s1 -e2 -i1 -t100  -vv"
@@ -163,7 +167,7 @@
         step "$SNAP_ROOT/software/examples/snap_example_ddr -h"
         for strt in 0x1000 0x2000; do      # start adr
         for iter in 1 2; do                # number of blocks
-        for bsize in 64 0x1000; do        # block size
+        for bsize in 64 0x1000; do         # block size
           let end=${strt}+${iter}*${bsize}; to=$((iter*iter*bsize/4+300))                       # rough timeout dependent on filesize
           step "$SNAP_ROOT/software/examples/snap_example_ddr -s${strt} -e${end} -b${bsize} -i${iter} -t$to"
         done
@@ -181,14 +185,8 @@
     fi # NVMe
     fi # hdl_example
 
-    if [[ "${env_action}" == "hdl_example" && "$NVME_USED" == "TRUE" ]];then echo -e "$del\ntesting nvme"
-      # help menu
-#     step "$SNAP_ROOT/software/tools/nvmeInit.py          -h"
-#     step "$SNAP_ROOT/software/tools/nvmeWR.py            -h"
-#     step "$SNAP_ROOT/software/examples/snap_example      -h"
-#     step "$SNAP_ROOT/software/examples/snap_example_set  -h"
-#     step "$SNAP_ROOT/software/examples/snap_example_nvme -h"
-
+#   if [[ "${env_action}" == "hdl_example" && "$NVME_USED" == "TRUE" ]];then echo -e "$del\ntesting nvme"
+    if [[ "${env_action}" == "hdl_example" && "$nvme" == "1" ]];then echo -e "$del\ntesting nvme"
 #     # optional: wait for SSD0 link to be up
 #     t="$SNAP_ROOT/software/tools/snap_poke -w32 0x30000 0x10000144"; r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # check SSD0 link status"
 #     t="$SNAP_ROOT/software/tools/snap_peek 0x80";                    r=$($t|grep ']'|awk '{print $2}'); free1=${r:8:8}
@@ -207,17 +205,20 @@
 #     done; delta=$(( (16#$free2-16#$free1)/250 )); echo "SSD1 link_up=$up i=$i freerun_delta=$delta us"
 
 #     # init FPGA drives
+#     step "$SNAP_ROOT/software/tools/nvmeInit.py          -h"
 #     step "$SNAP_ROOT/software/tools/nvmeInit.py          -d0"
       step "$SNAP_ROOT/software/tools/snap_nvme_init       -d0 -v"
 #     step "$SNAP_ROOT/software/tools/nvmeInit.py          -d1"
       step "$SNAP_ROOT/software/tools/snap_nvme_init       -d1 -v"
 #     step "$SNAP_ROOT/software/tools/nvmeInit.py          -db"
-#     t="$SNAP_ROOT/software/tools/snap_peek 0x80      ";              r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # freerunning timer"
+#     step "$SNAP_ROOT/software/examples/snap_example      -h"
 #     step "$SNAP_ROOT/software/examples/snap_example      -a6           -S2      -t100 -vv"
 
 #     # test with Python and check visually
+#     step "$SNAP_ROOT/software/examples/snap_example_set  -h"
 #     step "$SNAP_ROOT/software/examples/snap_example_set  -F  -b0x8000  -s0x2000 -p0x5 -t50"
 #     step "$SNAP_ROOT/software/examples/snap_example      -a4 -D0x8000  -S2      -t100 -vv"
+#     step "$SNAP_ROOT/software/tools/nvmeWR.py            -h"
 #     step "$SNAP_ROOT/software/tools/nvmeWR.py            -d1"
 #     step "$SNAP_ROOT/software/examples/snap_example      -a4 -D0x8000  -S2      -t100 -vv"
 #     step "$SNAP_ROOT/software/examples/snap_example_set  -F  -b0x10000 -s0x2000 -p0xA -t50"
@@ -226,12 +227,13 @@
 #     step "$SNAP_ROOT/software/examples/snap_example      -a4 -D0x10000 -S2      -t100 -vv"
 
 #     # test with C and check automatically
-#     step "$SNAP_ROOT/software/examples/snap_example_nvme -d1                    -t100 -vv"
+#     step "$SNAP_ROOT/software/examples/snap_example_nvme -h"
+      step "$SNAP_ROOT/software/examples/snap_example_nvme -d1                    -t100 -vv"
       step "$SNAP_ROOT/software/examples/snap_example_nvme -d1 -b4                -t100 -v "
-      step "$SNAP_ROOT/software/examples/snap_example_nvme -d1 -b${rnd20}         -t100 -vv"
-#     step "$SNAP_ROOT/software/examples/snap_example_nvme -d0                    -t100 -vv"
+      step "$SNAP_ROOT/software/examples/snap_example_nvme -d1 -b${rnd20}         -t100 -v "
+      step "$SNAP_ROOT/software/examples/snap_example_nvme -d0                    -t100 -vv"
       step "$SNAP_ROOT/software/examples/snap_example_nvme -d0 -b5                -t100 -v "
-      step "$SNAP_ROOT/software/examples/snap_example_nvme -d0 -b${rnd20}         -t100 -vv"
+      step "$SNAP_ROOT/software/examples/snap_example_nvme -d0 -b${rnd20}         -t100 -v "
     fi # nvme
 
     if [[ "$t0l" == "10141000" || "${env_action}" == "hls_memcopy"* ]];then echo -e "$del\ntesting snap_memcopy"
@@ -259,15 +261,27 @@
 
     if [[ "$t0l" == "10141001" || "${env_action}" == "hls_sponge"* ]];then echo -e "$del\ntesting sponge"
       step "$SNAP_ROOT/software/examples/snap_checksum -h"
-#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSPEED      -n1 -f256'"
-      step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSHA3       -n1 -f256'"
-      step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSHAKE      -n1 -f256'"
-      step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSHA3_SHAKE -n1 -f256'"
-      export SNAP_CONFIG=0x1  # SW execution
-#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSPEED -n1 -s2 -f4'"
-#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSPEED -n128   -f256'"
-#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSPEED -n4096  -f256'"
-#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -arg '-mSPONGE -cSPEED -n1     -f128' " # will generate 65536*1/128 = 512 calls
+      step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mSPONGE  -cSHA3                 " # 23s
+      step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mSPONGE  -cSHA3_SHAKE           " # 44s
+      step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mSPONGE  -cSHAKE                " # 43s
+## not implemented in HW, just in SW
+## -m <empty> defaults to -mCRC32
+## -s only for -mADLER32/CRC32
+#     export SNAP_CONFIG=0x1;echo "SW execution"
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200           -cSHA3                 " # 22s
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200           -cSHA3_SHAKE           " # 42s
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200           -cSHAKE                " # 41s
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mADLER32 -cSHA3            -s256" # 21s
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mADLER32 -cSHA3_SHAKE      -s256" #
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mADLER32 -cSHAKE           -s256" #
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mCRC32   -cSHA3            -s256" # 21s
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mCRC32   -cSHA3_SHAKE      -s256" #
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mCRC32   -cSHAKE           -s256" #
+## too long for sim
+## -n -f only for -mSPONGE -cSPEED
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mADLER32 -cSPEED           -s256" #
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mSPONGE  -cSPEED -n1 -f256      " #
+#     step "$SNAP_ROOT/software/examples/snap_checksum -I -v -t200 -mCRC32   -cSPEED           -s256" #
     fi # sponge
 
     if [[ "$t0l" == "10141002" || "${env_action}" == "hls_hashjoin"* ]];then echo -e "$del\ntesting snap_hashjoin"
