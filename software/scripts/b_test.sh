@@ -84,45 +84,69 @@ case $rev in
         exit 1
 esac;
 
-bl=$((1024*1024))
+# Get RAM in MB from Card
+RAM=`./software/tools/snap_maint -C $snap_card -m 3`
+if [ -z $RAM ]; then
+	echo "No SRAM on Card, Skip this test"
+	exit 0
+fi
+
+KB=$((1024))
+MB=$((1024*1024))
+GB=$((1024*1024*1024))
+BLOCKSIZE=$((1*MB))
+echo "Testing $RAM MB SRAM on Card"
 
 for ((iter=1;iter <= iteration;iter++))
 {
-	echo "Memory Test $iter of $iteration (4 x 1GB)"
-	# (1) 4 GB in 4 step's
-	start=0
-	ends=$((1*1024*$bl))
-	end=${ends}
-	test_ddr "${snap_card}" "${start}" "${end}" "${bl}"
-
-	start=${end}
-	end=$(($start+$ends))
-	test_ddr "${snap_card}" "${start}" "${end}" "${bl}"
-
-	start=${end}
-	end=$(($start+$ends))
-	test_ddr "${snap_card}" "${start}" "${end}" "${bl}"
-
-	start=${end}
-	end=$(($start+$ends))
-	test_ddr "${snap_card}" "${start}" "${end}" "${bl}"
-
-	# (2) 4 GB in 2 step's
-	echo "Memory Test $iter of $iteration (2 x 2GB)"
-	start=0
-	ends=$((2*1024*$bl))
-	end=${ends}
-	test_ddr "${snap_card}" "${start}" "${end}" "${bl}"
-
-	start=${end}
-	end=$(($start+2*$ends))
-	test_ddr "${snap_card}" "${start}" "${end}" "${bl}"
-
-	# (3) 4 GB in one step
-	echo "Memory Test $iter of $iteration (1 x 4GB)"
-	start=0
-	ends=$((4*1024*$bl))
-	end=${ends}
-	test_ddr "${snap_card}" "${start}" "${end}" "${bl}"
+	if [ "$RAM" -ge "1024" ]; then
+		echo "Memory Test $iter of $iteration (1GB)"
+		start=0
+		size=$((1*$GB))
+		end=$(($start+$size))
+		test_ddr "${snap_card}" "${start}" "${end}" "${BLOCKSIZE}"
+	fi
+	if [ "$RAM" -ge "2048" ]; then
+		echo "Memory Test $iter of $iteration (1GB)"
+		start=${end}
+		end=$(($start+1*$GB))
+		test_ddr "${snap_card}" "${start}" "${end}" "${BLOCKSIZE}"
+	fi
+	if [ "$RAM" -ge "3072" ]; then
+		echo "Memory Test $iter of $iteration (1GB)"
+		start=${end}
+		end=$(($start+$GB))
+		test_ddr "${snap_card}" "${start}" "${end}" "${BLOCKSIZE}"
+	fi
+	if [ "$RAM" -ge "4096" ]; then
+		echo "Memory Test $iter of $iteration (1GB)"
+		start=${end}
+		end=$(($start+1*$GB))
+		test_ddr "${snap_card}" "${start}" "${end}" "${BLOCKSIZE}"
+	fi
+	if [ "$RAM" -ge "4096" ]; then
+		echo "Memory Test $iter of $iteration (2 x 2GB)"
+		start=0
+		size=$((2*$GB))
+		end=$(($start+$size))
+		test_ddr "${snap_card}" "${start}" "${end}" "${BLOCKSIZE}"
+		start=${end}
+		end=$(($start+$size))
+		test_ddr "${snap_card}" "${start}" "${end}" "${BLOCKSIZE}"
+	fi
+	if [ "$RAM" -ge "4096" ]; then
+		echo "Memory Test $iter of $iteration (1 x 4GB)"
+		start=0
+		size=$((4*$GB))
+		end=$(($start+$size))
+		test_ddr "${snap_card}" "${start}" "${end}" "${BLOCKSIZE}"
+	fi
+	if [ "$RAM" -ge "8192" ]; then
+		echo "Memory Test $iter of $iteration (1 x 8GB)"
+		size=$((8*$GB))
+		start=0
+		end=$(($start+$size))
+		test_ddr "${snap_card}" "${start}" "${end}" "${BLOCKSIZE}"
+	fi
 }
 exit 0

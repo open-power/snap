@@ -102,6 +102,13 @@ case $rev in
         exit 1
 esac;
 
+RAM=`./software/tools/snap_maint -C $snap_card -m 3`
+if [ -z $RAM ]; then
+        echo "No SRAM on SNAP Card $snap_card, Skip this test"
+        exit 0
+fi
+
+
 for ((iter=1;iter <= iteration;iter++))
 {
 	echo -n "Testing Memory Set Function "
