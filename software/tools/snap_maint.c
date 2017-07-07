@@ -366,18 +366,18 @@ static void snap_show_cap(void *handle, int mode)
 	if (MODE_SHOW_NVME == (MODE_SHOW_NVME & mode)) {
 		snap_card_ioctl(handle, GET_NVME_ENABLED, (unsigned long)&val);
 		if (1 == val)
-			VERBOSE0("NVME ");
+			VERBOSE0("NVME");
 	}
 	if (MODE_SHOW_SDRAM == (MODE_SHOW_SDRAM & mode)) {
 		snap_card_ioctl(handle, GET_SDRAM_SIZE, (unsigned long)&val);
 		if (0 != val)
-			VERBOSE0("%d ", (int)val);
+			VERBOSE0("%d", (int)val);
 	}
 	if (MODE_SHOW_CARD == (MODE_SHOW_CARD & mode)) {
 		snap_card_ioctl(handle, GET_CARD_TYPE, (unsigned long)&val);
 		switch (val) {
-			case 0: VERBOSE0("KU3 "); break;
-			case 1: VERBOSE0("FGT "); break;
+			case 0: VERBOSE0("KU3"); break;
+			case 1: VERBOSE0("FGT"); break;
 		}
 	}
 }
