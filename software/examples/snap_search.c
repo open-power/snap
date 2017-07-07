@@ -194,7 +194,7 @@ static void snap_prepare_search(struct snap_job *cjob,
     snap_job_set(cjob, sjob_in, sizeof(*sjob_in),
 		     sjob_out, sizeof(*sjob_out));
 }
-static int run_one_step(struct snap_action *action,
+static int run_one_step(struct snap_queue *queue,
 			struct snap_job *cjob,
 			unsigned long timeout,
 			uint64_t step)
@@ -208,7 +208,7 @@ static int run_one_step(struct snap_action *action,
 	}
 
 	gettimeofday(&stime, NULL);
-	rc = snap_action_sync_execute_job(action, cjob, timeout);
+	rc = snap_queue_sync_execute_job(queue, cjob, timeout);
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n\n\n", rc,
 			strerror(errno));
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
 	int ch, run, psize = 0, rc = 0;
 	int card_no = 0;
 	struct snap_card *card = NULL;
-	struct snap_action *action = NULL;
+	struct snap_queue *queue = NULL;
 	char device[128];
 	const char *fname = NULL;
 	const char *pattern_str = "Snap";
@@ -318,6 +318,7 @@ int main(int argc, char *argv[])
 	uint64_t *offs;		/* offset buffer */
 	uint8_t *input_addr;
 	uint32_t input_size;
+	unsigned int attach_timeout = 60;
 	unsigned int timeout = 10;
 	unsigned int items = 42;
 	unsigned int total_found = 0;
@@ -447,9 +448,10 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
-	action = snap_attach_action(card, SEARCH_ACTION_TYPE, action_irq, 60);
-	if (action == NULL) {
-		fprintf(stderr, "err: failed to attach action %u: %s\n",
+	queue = snap_queue_alloc(card, SEARCH_ACTION_TYPE, action_irq, 32,
+				 attach_timeout);
+	if (queue == NULL) {
+		fprintf(stderr, "err: failed allocate queue %u: %s\n",
 			card_no, strerror(errno));
 		goto out_error2;
 	}
@@ -473,7 +475,7 @@ int main(int argc, char *argv[])
 
         printf("INITIALIZATION : move %d bytes from Host mem to DDR\n",
 	       (int) dsize);
-       	rc = run_one_step(action, &cjob, timeout, step);
+       	rc = run_one_step(queue, &cjob, timeout, step);
 	if (rc != 0)
 		goto out_error3;
 
@@ -491,7 +493,7 @@ int main(int argc, char *argv[])
 				    method, step);
 
         	printf("dsize = %d - psize = %d \n", (int)dsize, (int)psize);
-       		rc |= run_one_step(action, &cjob, timeout, step);
+       		rc |= run_one_step(queue, &cjob, timeout, step);
        		if (rc != 0)
            		goto out_error3;
 
@@ -541,7 +543,7 @@ int main(int argc, char *argv[])
 					    method, step);
         		printf("dsize = %d - psize = %d \n", (int)dsize, (int)psize);
 
-            		rc |= run_one_step(action, &cjob, timeout, step);
+            		rc |= run_one_step(queue, &cjob, timeout, step);
             		if (rc != 0) {
                 		printf("Error out of Step3.\n");
                 		goto out_error3;
@@ -554,7 +556,8 @@ int main(int argc, char *argv[])
                 		goto out_error3;
             		}
 
-        		printf("nb of occurrences = %d \n", (int)sjob_out.nb_of_occurrences);
+        		printf("nb of occurrences = %d \n",
+			       (int)sjob_out.nb_of_occurrences);
             		total_found += sjob_out.nb_of_occurrences;
 
 			/*
@@ -613,12 +616,12 @@ int main(int argc, char *argv[])
 	free(pbuff);
 	free(offs);
 
-	snap_detach_action(action);
+	snap_queue_free(queue);
 	snap_card_free(card);
 	exit(exit_code);
 
  out_error3:
-	snap_detach_action(action);
+	snap_queue_free(queue);
  out_error2:
 	snap_card_free(card);
  out_error1:

@@ -429,6 +429,7 @@ int snap_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long parm
 
 struct snap_queue *snap_queue_alloc(struct snap_card *card,
 			snap_action_type_t action_type,
+			snap_action_flag_t action_flags,
 			unsigned int queue_length,
 			unsigned int attach_timeout_sec);
 
