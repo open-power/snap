@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <hls_minibuf.H>
 
 #include "action_hashjoin_hls.H"
 
