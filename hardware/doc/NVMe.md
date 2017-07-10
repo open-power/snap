@@ -1,5 +1,5 @@
 # NVMe Usage
-When SNAP is built for the FGT card with NVMe support enabled, the SNAP framework provides an easy to use interface to initiate NVMe writes and reads to and from the onboard main memory. Before the NVMe sub-system can be used, it needs to be initialized. The "snap_nvme_init utility" program in the software/tools directory can be used to perform the initalization. 
+When SNAP is built for the FGT card with NVMe support enabled, the SNAP framework provides an easy to use interface to initiate NVMe writes and reads to and from the onboard main memory. Before the NVMe sub-system can be used, it needs to be initialized. The **"snap_nvme_init"** utility program in the software/tools directory can be used to perform the initalization. 
 Once initalization is done,  SNAP actions must use the NVMe action interface (AXI MM write burst) to initiate transfers. The following registers must be programmed to do so.
 
 
@@ -20,6 +20,7 @@ command register bits:
  ``` 
 
 The NVMe subsystem can handle up to 218 read or write requests per drive. If the submission queue is full, the write request to the NVMe action register is blocked until the oldest occupied queue entry is freed. The user action must poll the NVMe Action Track Register to read and clear the command completion bit.
+
 For the NVMe subsystem the onboard DRAM starts at offset 0x2_0000_0000. This offset must always be added to desired DRAM address. 
 
 ## NVMe Action Track Register (read only)
