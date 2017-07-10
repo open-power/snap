@@ -58,8 +58,9 @@ function test_memset ()	# $1 = card
 }
 
 function usage() {
+	echo "SNAP Example Action 10140000 Set Operation Test"
 	echo "Usage:"
-	echo "  c_test.sh"
+	echo "  10140000_set_test.sh"
 	echo "    [-C <card>]        card to be used for the test"
 	echo "    [-t <trace_level>]"
 	echo "    [-i <iteration>]"
@@ -104,14 +105,15 @@ esac;
 
 RAM=`./software/tools/snap_maint -C $snap_card -m 3`
 if [ -z $RAM ]; then
-        echo "No SRAM on SNAP Card $snap_card, Skip this test"
+        echo "Skip Test: No SRAM on Card $snap_card"
         exit 0
 fi
 
+echo "Testing Memory Set Function Card $snap_card SDRAM Size = $RAM MB"
 
 for ((iter=1;iter <= iteration;iter++))
 {
-	echo -n "Testing Memory Set Function "
+	echo -n "Testing: "
 	echo -n "$iter of $iteration"
 	test_memset "${snap_card}"
 }

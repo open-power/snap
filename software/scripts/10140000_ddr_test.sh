@@ -35,13 +35,14 @@ function test_ddr ()	# $1 = card, $2 = start, $2 = end, $3 = block size
 	if [ $? -ne 0 ]; then
 		echo -n "Error: cmd: <${cmd}>"
 		echo " failed"
-		#exit 1
+		exit 1
 	fi
 }
 
 function usage() {
+	echo "SNAP Example Action 10140000 SDRAM Test"
 	echo "Usage:"
-	echo "  b_test.sh"
+	echo "  10140000_ddr_test.sh"
 	echo "    [-C <card>]        card to be used for the test"
 	echo "    [-t <trace_level>]"
 	echo "    [-i <iteration>]"
@@ -87,7 +88,7 @@ esac;
 # Get RAM in MB from Card
 RAM=`./software/tools/snap_maint -C $snap_card -m 3`
 if [ -z $RAM ]; then
-	echo "No SRAM on Card, Skip this test"
+	echo "Skip Test: No SRAM on Card $snap_card"
 	exit 0
 fi
 
@@ -95,7 +96,7 @@ KB=$((1024))
 MB=$((1024*1024))
 GB=$((1024*1024*1024))
 BLOCKSIZE=$((1*MB))
-echo "Testing $RAM MB SRAM on Card"
+echo "Testing $RAM MB SRAM on Card $snap_card"
 
 for ((iter=1;iter <= iteration;iter++))
 {

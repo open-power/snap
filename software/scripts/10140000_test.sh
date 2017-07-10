@@ -120,8 +120,9 @@ function test_rnd () # $1 = card, $2 = action
 }
 
 function usage() {
+	echo "SNAP Example Action 10140000 Basic Test's"
 	echo "Usage:"
-	echo "  a_test.sh"
+	echo "  10140000_test.sh"
 	echo "    [-C <card>]        card to be used for the test"
 	echo "    [-t <trace_level>]"
 	echo "    [-i <iteration>]"
