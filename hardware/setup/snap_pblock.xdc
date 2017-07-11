@@ -16,5 +16,18 @@
 #
 #-----------------------------------------------------------
 create_pblock pblock_snap
-resize_pblock pblock_snap -add CLOCKREGION_X3Y0:CLOCKREGION_X3Y2
-add_cells_to_pblock pblock_snap [get_cells [list a0/snap_core_i]] -clear_locs
+resize_pblock pblock_snap -add CLOCKREGION_X2Y0:CLOCKREGION_X3Y3
+add_cells_to_pblock pblock_snap [ get_cells [ list a0/ddr3sdram_bank1 a0/snap_core_i a0/axi_clock_converter_i ] ] -clear_locs
+
+# create_pblock pblock_sdram
+# resize_pblock pblock_sdram -add CLOCKREGION_X2Y0:CLOCKREGION_X2Y2
+# add_cells_to_pblock pblock_sdram [ get_cells [ list a0/ddr3sdram_bank1 ] ] -clear_locs
+
+# create_pblock pblock_core 
+#  resize_pblock pblock_core -add CLOCKREGION_X3Y0:CLOCKREGION_X3Y2
+# add_cells_to_pblock pblock_core [ get_cells [ list a0/snap_core_i ] ] -clear_locs
+
+# create_pblock pblock_axi_clock
+# resize_pblock pblock_axi_clock -add CLOCKREGION_X2Y3:CLOCKREGION_X2Y3
+# add_cells_to_pblock pblock_axi_clock [ get_cells [ list a0/axi_clock_converter_i ] ] -clear_locs
+

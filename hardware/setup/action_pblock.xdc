@@ -17,5 +17,5 @@
 #-----------------------------------------------------------
 create_pblock pblock_action
 resize_pblock pblock_action -add CLOCKREGION_X0Y0:CLOCKREGION_X1Y4
-resize_pblcok pblock_action -add CLOCKREGION_X2Y4:CLOCKREGION_X5Y4 -locs keep_all
-add_cells_to_pblock pblock_action [get_cells [list a0/action_w]] -clear_locs
+resize_pblock pblock_action -add CLOCKREGION_X2Y4:CLOCKREGION_X5Y4 -locs keep_all
+add_cells_to_pblock pblock_action [get_cells [list a0/action_w ]] -clear_locs
