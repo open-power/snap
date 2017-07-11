@@ -86,12 +86,14 @@ set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 # Bitstream
 set_property STEPS.WRITE_BITSTREAM.ARGS.BIN_FILE true [get_runs impl_1]
 
-# Enable PR Flow
-set_property PR_FLOW 1 [current_project]
+if { USE_PRFLOW = "TRUE" } {
+  # Enable PR Flow
+  set_property PR_FLOW 1 [current_project]
 
-# Create PR Region for SNAP Action
-create_partition_def -name snap_action -module action_wrapper
-create_reconfig_module -name user_action -partition_def [get_partition_defs snap_action] -top action_wrapper
+  # Create PR Region for SNAP Action
+  create_partition_def -name snap_action -module action_wrapper
+  create_reconfig_module -name user_action -partition_def [get_partition_defs snap_action] -top action_wrapper
+} 
 
 # Add Files
 # PSL Files
@@ -100,11 +102,23 @@ puts "	                        importing design files"
 add_files -scan_for_includes $hdl_dir/core/  >> $log_file
 
 set_property used_in_simulation false [get_files $hdl_dir/core/psl_fpga.vhd]
-# Action Files for PR Region
-if { $hls_support == "TRUE" } {
-  add_files -scan_for_includes $hdl_dir/hls/ -of_objects [get_reconfig_modules user_action] >> $log_file
+
+if { USE_PRFLOW = "TRUE" } {
+  # Action Files for PR Region
+  if { $hls_support == "TRUE" } {
+    add_files -scan_for_includes $hdl_dir/hls/ -of_objects [get_reconfig_modules user_action] >> $log_file
+  }
+  add_files -scan_for_includes $action_dir/ -of_objects [get_reconfig_modules user_action] >> $log_file
+  # Constant types for PR module
+  add_files -scan_for_includes $hdl_dir/core/psl_accel_types.vhd -of_objects [get_reconfig_modules user_action] >> $log_file
+  add_files -scan_for_includes $hdl_dir/core/action_types.vhd -of_objects [get_reconfig_modules user_action] >> $log_file
+else {
+  if { $hls_support == "TRUE" } {
+    add_files -scan_for_includes $hdl_dir/hls/  >> $log_file
+  }
+  add_files -scan_for_includes $action_dir/  >> $log_file
 }
-add_files -scan_for_includes $action_dir/ -of_objects [get_reconfig_modules user_action] >> $log_file
+
 # Sim Files
 set_property SOURCE_SET sources_1 [get_filesets sim_1]
 add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/top.sv  >> $log_file
@@ -213,33 +227,35 @@ if { $nvme_used == TRUE } {
 puts "	                        importing PSL design checkpoint"
 read_checkpoint -cell b $root_dir/build/Checkpoints/$psl_dcp -strict >> $log_file
 
-# Create PR Configuration
-create_pr_configuration -name config_1 -partitions [list a0/action_w:user_action]
-# PR Synthesis
-set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT              400     [get_runs user_action_synth_1]
-set_property STEPS.SYNTH_DESIGN.ARGS.FSM_EXTRACTION            one_hot [get_runs user_action_synth_1]
-set_property STEPS.SYNTH_DESIGN.ARGS.RESOURCE_SHARING          off     [get_runs user_action_synth_1]
-set_property STEPS.SYNTH_DESIGN.ARGS.SHREG_MIN_SIZE            5       [get_runs user_action_synth_1]
-set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS true    [get_runs user_action_synth_1]
-set_property STEPS.SYNTH_DESIGN.ARGS.NO_LC                     true    [get_runs user_action_synth_1]
-set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY         none    [get_runs user_action_synth_1]
+if { USE_PRFLOW = "TRUE" } {
+  # Create PR Configuration
+  create_pr_configuration -name config_1 -partitions [list a0/action_w:user_action]
+  # PR Synthesis
+  set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT              400     [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.FSM_EXTRACTION            one_hot [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.RESOURCE_SHARING          off     [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.SHREG_MIN_SIZE            5       [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS true    [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.NO_LC                     true    [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY         none    [get_runs user_action_synth_1]
 
-# PR Implementation
-set_property PR_CONFIGURATION config_1 [get_runs impl_1]
+  # PR Implementation
+  set_property PR_CONFIGURATION config_1 [get_runs impl_1]
+}
 
 # XDC
 # SNAP CORE XDC
 puts "	                        importing XDCs"
 add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_link.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/snap_link.xdc]
-add_files -fileset constrs_1 -norecurse $root_dir/setup/action_pblock.xdc
-set_property used_in_synthesis false [get_files  $root_dir/setup/action_pblock.xdc]
-add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_pblock.xdc
-set_property used_in_synthesis false [get_files  $root_dir/setup/snap_pblock.xdc]
-# if { $sdram_used == "TRUE" } {
-#   add_files -fileset constrs_1 -norecurse $root_dir/setup/sdram_ku3_pblock.xdc
-#   set_property used_in_synthesis false [get_files  $root_dir/setup/sdram_ku3_pblock.xdc]
-# } 
+
+if { USE_PRFLOW = "TRUE" } {
+  add_files -fileset constrs_1 -norecurse $root_dir/setup/action_pblock.xdc
+  set_property used_in_synthesis false [get_files  $root_dir/setup/action_pblock.xdc]
+  add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_pblock.xdc
+  set_property used_in_synthesis false [get_files  $root_dir/setup/snap_pblock.xdc]
+}
+
 update_compile_order -fileset sources_1 >> $log_file
 # DDR XDCs
 if { $fpga_card == "KU3" } {
