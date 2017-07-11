@@ -23,7 +23,9 @@ USE ieee.std_logic_1164.all;
 USE ieee.std_logic_misc.all;
 USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
-use work.action_types.all;
+
+USE work.psl_accel_types.ALL;
+USE work.action_types.ALL;
 
 ENTITY action_wrapper IS
 

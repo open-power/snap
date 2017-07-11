@@ -41,13 +41,6 @@ set widthCol4 22
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "open framework project" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
 open_project ../viv_project/framework.xpr >> $log_file
  
- 
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
-reset_run    synth_1 >> $log_file
-launch_runs  synth_1 >> $log_file
-wait_on_run  synth_1 >> $log_file
-file copy -force ../viv_project/framework.runs/synth_1/psl_fpga.dcp                       ./Checkpoints/framework_synth.dcp
-file copy -force ../viv_project/framework.runs/synth_1/psl_fpga_utilization_synth.rpt     ./Reports/framework_utilization_synth.rpt
 
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
 reset_run    user_action_synth_1 >> $log_file
@@ -55,7 +48,14 @@ launch_runs  user_action_synth_1 >> $log_file
 wait_on_run  user_action_synth_1 >> $log_file
 file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper.dcp                       ./Checkpoints/user_action_synth.dcp
 file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper_utilization_synth.rpt     ./Reports/user_action_utilization_synth.rpt
- 
+  
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+reset_run    synth_1 >> $log_file
+launch_runs  synth_1 >> $log_file
+wait_on_run  synth_1 >> $log_file
+file copy -force ../viv_project/framework.runs/synth_1/psl_fpga.dcp                       ./Checkpoints/framework_synth.dcp
+file copy -force ../viv_project/framework.runs/synth_1/psl_fpga_utilization_synth.rpt     ./Reports/framework_utilization_synth.rpt
+
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
 open_run     synth_1 -name synth_1 >> $log_file
 lock_design  -level routing b      >> $log_file
@@ -100,36 +100,36 @@ if { [expr $TIMING_TNS >= 0 ] } {
     set remove_tmp_files TRUE
 }
 
-##
-## generating bitstream name
-set IMAGE_NAME [exec cat ../.bitstream_name.txt]
-append IMAGE_NAME [expr {$nvme_used == "TRUE" ? "_NVME" : ""}]
-if { $bram_used == "TRUE" } {
-  set RAM_TYPE BRAM
-} elseif { $sdram_used == "TRUE" } {
-  set RAM_TYPE SDRAM
-} else {
-  set RAM_TYPE noSDRAM
-}
+if { CLOUD_BUILD_BITFILE = "TRUE" } {
+ ##
+  ## generating bitstream name
+  set IMAGE_NAME [exec cat ../.bitstream_name.txt]
+  append IMAGE_NAME [expr {$nvme_used == "TRUE" ? "_NVME" : ""}]
+  if { $bram_used == "TRUE" } {
+    set RAM_TYPE BRAM
+  } elseif { $sdram_used == "TRUE" } {
+    set RAM_TYPE SDRAM
+  } else {
+    set RAM_TYPE noSDRAM
+  }
+  append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_TNS]
 
-append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_TNS]
-append IMAGE_NAME [expr {$factory_image == "TRUE" ? "_FACTORY" : ""}]
+  open_run     impl_1 -name impl_1 >> $log_file
 
-##
-### writing bitstream
-set step write_bitstream
-set logfile $log_dir/${step}.log
-set command "write_bitstream -force -file ./Images/$IMAGE_NAME"
-if { $factory_image == "TRUE" } {
-  puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: factory image" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-} else {
+  ##
+  ### writing bitstream
+  set step write_bitstream
+  set logfile $log_dir/${step}.log
+  set command "write_bitstream -force -file ./Images/$IMAGE_NAME"
   puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-}
-if { [catch "$command > $logfile" errMsg] } {
-  puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: write_bitstream failed" $widthCol4 "" ]
-  puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "" $widthCol3 " please check $logfile" $widthCol4 "" ]
-} else {
-  write_cfgmem -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME -size 128 -interface BPIx16 -force >> $logfile
+
+  if { [catch "$command > $logfile" errMsg] } {
+    puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: write_bitstream failed" $widthCol4 "" ]
+    puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "" $widthCol3 " please check $logfile" $widthCol4 "" ]
+  } else {
+    write_cfgmem -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME -size 128 -interface BPIx16 -force >> $logfile
+  }
+
 }
 
 ##
