@@ -98,12 +98,13 @@ create_reconfig_module -name user_action -partition_def [get_partition_defs snap
 puts "	                        importing design files"
 # HDL Files
 add_files -scan_for_includes $hdl_dir/core/  >> $log_file
-if { $hls_support == "TRUE" } {
-  add_files -scan_for_includes $hdl_dir/hls/  >> $log_file
-}
+
 set_property used_in_simulation false [get_files $hdl_dir/core/psl_fpga.vhd]
 # Action Files for PR Region
-add_files -scan_for_includes $action_dir/ -of_objects [get_reconfig_modules user_action] 
+if { $hls_support == "TRUE" } {
+  add_files -scan_for_includes $hdl_dir/hls/ -of_objects [get_reconfig_modules user_action] >> $log_file
+}
+add_files -scan_for_includes $action_dir/ -of_objects [get_reconfig_modules user_action] >> $log_file
 # Sim Files
 set_property SOURCE_SET sources_1 [get_filesets sim_1]
 add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/top.sv  >> $log_file
@@ -235,10 +236,10 @@ add_files -fileset constrs_1 -norecurse $root_dir/setup/action_pblock.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/action_pblock.xdc]
 add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_pblock.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/snap_pblock.xdc]
-if { $sdram_used == "TRUE" } {
-  add_files -fileset constrs_1 -norecurse $root_dir/setup/sdram_ku3_pblock.xdc
-  set_property used_in_synthesis false [get_files  $root_dir/setup/sdram_ku3_pblock.xdc]
-}
+# if { $sdram_used == "TRUE" } {
+#   add_files -fileset constrs_1 -norecurse $root_dir/setup/sdram_ku3_pblock.xdc
+#   set_property used_in_synthesis false [get_files  $root_dir/setup/sdram_ku3_pblock.xdc]
+# } 
 update_compile_order -fileset sources_1 >> $log_file
 # DDR XDCs
 if { $fpga_card == "KU3" } {
