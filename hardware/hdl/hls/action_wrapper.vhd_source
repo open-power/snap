@@ -18,47 +18,6 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 LIBRARY ieee;
-USE ieee.std_logic_1164.all;
-USE ieee.std_logic_misc.all;
-USE ieee.std_logic_unsigned.all;
-USE ieee.numeric_std.all;
-
-PACKAGE action_types IS
-
-CONSTANT    C_M_AXI_CARD_MEM0_ID_WIDTH       : integer   := 1;
-CONSTANT    C_M_AXI_CARD_MEM0_ADDR_WIDTH     : integer   := 33;
-CONSTANT    C_M_AXI_CARD_MEM0_DATA_WIDTH     : integer   := 512;
-CONSTANT    C_M_AXI_CARD_MEM0_AWUSER_WIDTH   : integer   := 1;
-CONSTANT    C_M_AXI_CARD_MEM0_ARUSER_WIDTH   : integer   := 1;
-CONSTANT    C_M_AXI_CARD_MEM0_WUSER_WIDTH    : integer   := 1;
-CONSTANT    C_M_AXI_CARD_MEM0_RUSER_WIDTH    : integer   := 1;
-CONSTANT    C_M_AXI_CARD_MEM0_BUSER_WIDTH    : integer   := 1;
-
-    -- Parameters for Axi Slave Bus Interface AXI_CTRL_REG
-CONSTANT    C_S_AXI_CTRL_REG_DATA_WIDTH      : integer   := 32;
-CONSTANT    C_S_AXI_CTRL_REG_ADDR_WIDTH      : integer   := 32;
-
-CONSTANT    INT_BITS                         : integer   := 3;
-CONSTANT    CONTEXT_BITS                     : integer   := 8;
-    -- Parameters for Axi Master Bus Interface AXI_HOST_MEM : to Host memory
-CONSTANT    C_M_AXI_HOST_MEM_ID_WIDTH        : integer   := 1;
-CONSTANT    C_M_AXI_HOST_MEM_ADDR_WIDTH      : integer   := 64;
-CONSTANT    C_M_AXI_HOST_MEM_DATA_WIDTH      : integer   := 512;
-CONSTANT    C_M_AXI_HOST_MEM_AWUSER_WIDTH    : integer   := 1;
-CONSTANT    C_M_AXI_HOST_MEM_ARUSER_WIDTH    : integer   := 1;
-CONSTANT    C_M_AXI_HOST_MEM_WUSER_WIDTH     : integer   := 1;
-CONSTANT    C_M_AXI_HOST_MEM_RUSER_WIDTH     : integer   := 1;
-CONSTANT    C_M_AXI_HOST_MEM_BUSER_WIDTH     : integer   := 1;
-
-
-END action_types;
-
-
-PACKAGE BODY action_types IS
-
-
-
-END action_types;LIBRARY ieee;
 
 USE ieee.std_logic_1164.all;
 USE ieee.std_logic_misc.all;
@@ -243,6 +202,9 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
   SIGNAL interrupt_q            : STD_LOGIC;
   SIGNAL interrupt_wait_ack_q   : STD_LOGIC;
   SIGNAL context_q              : STD_LOGIC_VECTOR(CONTEXT_BITS-1 DOWNTO 0);
+-- TODO: Remove
+  SIGNAL temp_rst_buf           : STD_LOGIC;
+-- End of Remove
 
   COMPONENT hls_action
     GENERIC (
@@ -470,7 +432,10 @@ BEGIN
   )
   PORT MAP (
     ap_clk                       => ap_clk,
-    ap_rst_n                     => ap_rst_n,
+--    ap_rst_n                     => ap_rst_n,
+-- TODO: Remove
+    ap_rst_n  => temp_rst_buf,
+-- End of Remove
     m_axi_card_mem0_araddr       => m_axi_card_mem0_araddr,                                -- only for DDRI_USED=TRUE
     m_axi_card_mem0_arburst      => m_axi_card_mem0_arburst,                               -- only for DDRI_USED=TRUE
     m_axi_card_mem0_arcache      => m_axi_card_mem0_arcache,                               -- only for DDRI_USED=TRUE
@@ -642,6 +607,9 @@ BEGIN
   int: PROCESS (ap_clk)
   BEGIN  -- PROCESS int
     IF rising_edge(ap_clk) THEN
+-- TODO: Remove
+      temp_rst_buf <= ap_rst_n;
+-- End of remove
       IF ap_rst_n = '0' THEN
         interrupt_q          <= '0';
         interrupt_wait_ack_q <= '0';

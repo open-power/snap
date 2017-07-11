@@ -100,4 +100,46 @@ if { [expr $TIMING_TNS >= 0 ] } {
     set remove_tmp_files TRUE
 }
 
+##
+## generating bitstream name
+set IMAGE_NAME [exec cat ../.bitstream_name.txt]
+append IMAGE_NAME [expr {$nvme_used == "TRUE" ? "_NVME" : ""}]
+if { $bram_used == "TRUE" } {
+  set RAM_TYPE BRAM
+} elseif { $sdram_used == "TRUE" } {
+  set RAM_TYPE SDRAM
+} else {
+  set RAM_TYPE noSDRAM
+}
+
+append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_TNS]
+append IMAGE_NAME [expr {$factory_image == "TRUE" ? "_FACTORY" : ""}]
+
+##
+### writing bitstream
+set step write_bitstream
+set logfile $log_dir/${step}.log
+set command "write_bitstream -force -file ./Images/$IMAGE_NAME"
+if { $factory_image == "TRUE" } {
+  puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: factory image" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+} else {
+  puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+}
+if { [catch "$command > $logfile" errMsg] } {
+  puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: write_bitstream failed" $widthCol4 "" ]
+  puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "" $widthCol3 " please check $logfile" $widthCol4 "" ]
+} else {
+  write_cfgmem -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME -size 128 -interface BPIx16 -force >> $logfile
+}
+
+##
+## removing unnecessary files
+if { $remove_tmp_files == "TRUE" } {
+puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+exec rm -rf ./Checkpoints/framework_synth.dcp
+exec rm -rf ./Checkpoints/framework_opt.dcp
+exec rm -rf ./Checkpoints/framework_physopt.dcp
+exec rm -rf ./Checkpoints/framework_placed.dcp
+}
+
 close_project  >> $log_file
