@@ -86,6 +86,20 @@ while [ -z "$SETUP_DONE" ]; do
       echo "PSL_DCP                 is set to: \"$PSL_DCP\""
   fi
 
+  if [ -z "$USE_PRFLOW" ]; then
+    export USE_PRFLOW=FALSE
+    echo "Setting USE_PRFLOW             to: \"$USE_PRFLOW\""
+  else
+    echo "USER_PRFLOW             is set to: \"$USE_PRFLOW\""
+  fi
+
+  if [ -z "$CLOUD_BUILD_BITFILE" ]; then
+    export CLOUD_BUILD_BITFILE=FALSE
+    echo "Setting CLOUD_BUILD_BITFILE    to: \"$CLOUD_BUILD_BITFILE\""
+  else
+    echo "CLOUD_BUILD_BITFILE     is set to: \"$CLOUD_BUILD_BITFILE\""
+  fi
+
   echo "=====SNAP PATH variables==============================="
   if [ -z "$SNAP_ROOT" ]; then
     export SNAP_ROOT=$snapdir

@@ -26,6 +26,7 @@
 
   USE work.psl_accel_types.ALL;
   USE work.snap_core_types.ALL;
+  USE work.action_types.ALL;
 
   LIBRARY unisim;                                                                       -- only for DDRI_USED=TRUE
   USE unisim.vcomponents.all;                                                           -- only for DDRI_USED=TRUE
