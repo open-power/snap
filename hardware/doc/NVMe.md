@@ -3,7 +3,7 @@ When SNAP is built for the FGT card with NVMe support enabled, the SNAP framewor
 Once initalization is done,  SNAP actions must use the NVMe action interface (AXI MM write burst) to initiate transfers. The following registers must be programmed to do so.
 
 
-## NVMe Action Registers (write only)
+## NVMe Host Action Registers (write only)
 ```
 offset (write only registers)
   0x0 :  onboard memory address (low  32 bits)
@@ -23,7 +23,7 @@ The NVMe subsystem can handle up to 218 read or write requests per drive. If the
 
 For the NVMe subsystem the onboard DRAM starts at offset 0x2_0000_0000. This offset must always be added to desired SDRAM address. 
 
-## NVMe Action Track Register (read only)
+## NVMe Host Action Track Register (read only)
 ```
   offset 0x4
   - bit 0 : if set, action command completed (self clearing)
@@ -34,12 +34,13 @@ The user action must poll for completion for each submitted read or write comman
 ## Pseudo code example
 ```
  ; write 16 x 512 byte blocks from SDRAM address 0x1_0700_0000 to block address 0x1000 at SSD0
- write 0x0: 0x0700_0000, 0x000_0003, 0x0000_1000, 0x0000_0000, 0xf,  0x11 
+ write_burst(addr: 0 to 0x14): 0x0700_0000, 0x000_0003, 0x0000_1000, 0x0000_0000, 0xf,  0x11 
 
  ; read  17 x 512 byte blocks from SSD1 block address 0 to SDRAM address 0x0800_0000
- write 0x0: 0x0800_0000, 0x000_0002, 0x0000_0000, 0x0000_0000, 0x10, 0x30  
+ write_burst(addr: 0 to 0x14): 0x0800_0000, 0x000_0002, 0x0000_0000, 0x0000_0000, 0x10, 0x30  
 
- ; check for command completion
+ ; check for command completion 
+ ; the completion bits are set in same order as the commands habe been submitted
  ; poll NVMe track register
  while (1) # poll for write command completion
     data = read(0x4);
@@ -54,6 +55,6 @@ The user action must poll for completion for each submitted read or write comman
 
 ## Remark:
 
-When reading or writing data from/to DRAM, a data transfer cannot cross a 32MB boundary. If required, the transaction needs to be split in two indpendent transactions.
-The maximum number of blocks per transaction is limited to 65536
+When reading or writing data from/to DRAM, a data transfer cannot cross a 32MB boundary. If required, the transaction needs to be split in two independent transactions.
+The maximum number of blocks per transaction is limited to 65536.
 
