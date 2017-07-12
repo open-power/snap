@@ -16,12 +16,13 @@
 #
 #-----------------------------------------------------------
 
-set log_dir      $::env(LOGS_DIR)
-set log_file     $log_dir/snap_build.log
-set fpgacard     $::env(FPGACARD)
-set sdram_used   $::env(SDRAM_USED)
-set nvme_used    $::env(NVME_USED)
-set bram_used    $::env(BRAM_USED)
+set log_dir               $::env(LOGS_DIR)
+set log_file              $log_dir/snap_build.log
+set fpgacard              $::env(FPGACARD)
+set sdram_used            $::env(SDRAM_USED)
+set nvme_used             $::env(NVME_USED)
+set bram_used             $::env(BRAM_USED)
+set cloud_build_bitfile   $::env(CLOUD_BUILD_BITFILE)
 
 #timing_lablimit  
 if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
@@ -60,7 +61,7 @@ puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL"
 open_run     synth_1 -name synth_1 >> $log_file
 lock_design  -level routing b      >> $log_file
  
-read_xdc ../setup/snap_impl.xdc
+read_xdc ../setup/snap_impl.xdc >> $log_file
 
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start implementation" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
 reset_run    impl_1 >> $log_file
@@ -100,7 +101,7 @@ if { [expr $TIMING_TNS >= 0 ] } {
     set remove_tmp_files TRUE
 }
 
-if { CLOUD_BUILD_BITFILE = "TRUE" } {
+if { $cloud_build_bitfile == "TRUE" } {
  ##
   ## generating bitstream name
   set IMAGE_NAME [exec cat ../.bitstream_name.txt]

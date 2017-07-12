@@ -34,6 +34,7 @@ set simulator   $::env(SIMULATOR)
 set vivadoVer   [version -short]
 set log_dir      $::env(LOGS_DIR)
 set log_file     $log_dir/create_framework.log
+set use_prflow  $::env(USE_PRFLOW)
 
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
     set hls_support [string toupper $::env(HLS_SUPPORT)]
@@ -90,9 +91,9 @@ set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs i
 set_property STEPS.WRITE_BITSTREAM.TCL.PRE  $root_dir/setup/snap_bitstream_pre.tcl  [get_runs impl_1]
 set_property STEPS.WRITE_BITSTREAM.TCL.POST $root_dir/setup/snap_bitstream_post.tcl [get_runs impl_1]
 
-if { USE_PRFLOW = "TRUE" } {
+if { $use_prflow == "TRUE" } {
   # Enable PR Flow
-  set_property PR_FLOW 1 [current_project]
+  set_property PR_FLOW 1 [current_project]  >> $log_file
 
   # Create PR Region for SNAP Action
   create_partition_def -name snap_action -module action_wrapper
@@ -108,7 +109,7 @@ add_files -scan_for_includes $hdl_dir/core/  >> $log_file
 set_property used_in_simulation false [get_files $hdl_dir/core/psl_fpga.vhd]
 set_property top psl_fpga [current_fileset]
 
-if { USE_PRFLOW = "TRUE" } {
+if { $use_prflow == "TRUE" } {
   # Action Files for PR Region
   if { $hls_support == "TRUE" } {
     add_files -scan_for_includes $hdl_dir/hls/ -of_objects [get_reconfig_modules user_action] >> $log_file
@@ -117,7 +118,8 @@ if { USE_PRFLOW = "TRUE" } {
   # Constant types for PR module
   add_files -scan_for_includes $hdl_dir/core/psl_accel_types.vhd -of_objects [get_reconfig_modules user_action] >> $log_file
   add_files -scan_for_includes $hdl_dir/core/action_types.vhd -of_objects [get_reconfig_modules user_action] >> $log_file
-else {
+  
+} else {
   if { $hls_support == "TRUE" } {
     add_files -scan_for_includes $hdl_dir/hls/  >> $log_file
   }
@@ -232,7 +234,7 @@ if { $nvme_used == TRUE } {
 puts "	                        importing PSL design checkpoint"
 read_checkpoint -cell b $root_dir/build/Checkpoints/$psl_dcp -strict >> $log_file
 
-if { USE_PRFLOW = "TRUE" } {
+if { $use_prflow == "TRUE" } {
   # Create PR Configuration
   create_pr_configuration -name config_1 -partitions [list a0/action_w:user_action]
   # PR Synthesis
@@ -254,7 +256,7 @@ puts "	                        importing XDCs"
 add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_link.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/snap_link.xdc]
 
-if { USE_PRFLOW = "TRUE" } {
+if { $use_prflow == "TRUE" } {
   add_files -fileset constrs_1 -norecurse $root_dir/setup/action_pblock.xdc
   set_property used_in_synthesis false [get_files  $root_dir/setup/action_pblock.xdc]
   add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_pblock.xdc
