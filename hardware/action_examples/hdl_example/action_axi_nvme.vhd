@@ -199,7 +199,7 @@ begin
 	M_AXI_RREADY	<= axi_rready;
 
 
-
+-- data for NVMe host write burst
 with wr_count select
   axi_wdata <=
     nvme_mem_addr_i(31 downto  0)       when x"5",
@@ -213,6 +213,7 @@ with wr_count select
    axi_awaddr    <= (others => '0');
    axi_awlen     <= x"05";
 
+
 axi_w:	process(M_AXI_ACLK)
 	begin
 	  if (rising_edge (M_AXI_ACLK)) then
@@ -223,12 +224,15 @@ axi_w:	process(M_AXI_ACLK)
                axi_wvalid        <= '0';
                nvme_status       <= (others => '0');
              else
+               -- wait for valid command
                if nvme_cmd_valid_i = '1' then
+                 -- send command to NVMe host
                  nvme_status    <= (others => '0');
                  axi_awvalid    <= '1';
                  wr_count       <= x"5";
                  axi_wvalid     <= '1';
                end if;
+               -- wait for NVMe host poll completion
                if cmd_complete /= "00" then
                   nvme_status(2 downto 1) <= cmd_complete;
                   nvme_status(8)          <= '1';
@@ -239,6 +243,8 @@ axi_w:	process(M_AXI_ACLK)
                end if;
 
                start_polling <= '0';
+               -- wait until command has been send to NVMe host
+               -- and then start polling for completion
                if M_AXI_BVALID = '1' and axi_bready = '1' then
                  axi_bready <= '0';
                  nvme_status(0) <= '1';
@@ -263,6 +269,11 @@ axi_w:	process(M_AXI_ACLK)
 axi_araddr   <= x"0000_0004";
 axi_arlen    <= x"00";
 
+-- poll NVMe host Action Track register until
+-- bit 0 (command complete) or
+-- bit 1 (error) is set 
+
+        
 axi_r:	 process(M_AXI_ACLK)
 	 begin
 	   if (rising_edge (M_AXI_ACLK)) then
