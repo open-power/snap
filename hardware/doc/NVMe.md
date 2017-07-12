@@ -40,7 +40,7 @@ The user action must poll for completion for each submitted read or write comman
  write_burst(addr: 0 to 0x14): 0x0800_0000, 0x000_0002, 0x0000_0000, 0x0000_0000, 0x10, 0x30  
 
  ; check for command completion 
- ; the completion bits are set in same order as the commands habe been submitted
+ ; the completion bits are set in same order as the commands have been submitted
  ; poll NVMe track register
  while (1) # poll for write command completion
     data = read(0x4);
