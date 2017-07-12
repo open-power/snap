@@ -183,8 +183,8 @@ for ((iter=1;iter <= iteration;iter++))
 	test_bs "${snap_card}" "2"
 	test_rnd "$snap_card" "2"
 
-	# Check if i do have SDRAM
-	RAM=`./software/tools/snap_maint -C $card -m 3`
+	# Check SDRAM
+	RAM=`./software/tools/snap_maint -C $snap_card -m 3`
 	if [ ! -z $RAM ]; then
 		test "$snap_card" "4k" "6"
 		test "$snap_card" "64" "6"
@@ -192,7 +192,7 @@ for ((iter=1;iter <= iteration;iter++))
 		test_bs "${snap_card}" "6"
 		test_rnd "$snap_card" "6"
 	else
-		echo "No SRAM configure, skipping this test"
+		echo "No SDRAM, skipping this test"
 	fi
 }
 exit 0
