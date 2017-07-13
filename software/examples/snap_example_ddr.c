@@ -624,6 +624,7 @@ int main(int argc, char *argv[])
 	int timeout = ACTION_WAIT_TIME;
 	uint64_t start_addr = DDR_MEM_BASE_ADDR;
 	uint64_t end_addr = 0;
+        int end_addr_override = 0;
 	uint64_t snap_mem = 0;
 	unsigned int mem_size = HOST_BUFFER_SIZE;
 	void *src_buf = NULL;
@@ -675,6 +676,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'e':	/* end */
 			end_addr = strtoll(optarg, (char **)NULL, 0);
+			end_addr_override = 1;
 			break;
 		case 'b':	/* buffer */
 			mem_size = strtol(optarg, (char **)NULL, 0);
@@ -709,6 +711,9 @@ int main(int argc, char *argv[])
 	snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&snap_mem);
         VERBOSE1("   %d MB of Card Ram avilable.\n", (int)snap_mem);
 	snap_mem = snap_mem * MEGA_BYTE;
+	if (0 == end_addr_override) {
+		end_addr = snap_mem;
+	}
 	if (0 != check_parms(mem_size, start_addr, end_addr, snap_mem)) {
 		rc = -1;
 		goto __exit;
