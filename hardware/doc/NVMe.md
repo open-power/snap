@@ -52,7 +52,7 @@ The user action must poll for completion for each submitted read or write comman
     if ( data and 0x3) > 0) break;  # break loop if completion bit or error bit has been set
  print  (read command completed !); 
 ```
-An example design can be found under ../hardware/action_examples/hdl_example/
+An example design can be found under [snap/hardware/action_examples/hdl_example/](../../hardware/action_examples/hdl_example/)
 
 ## Remark:
 
