@@ -63,9 +63,25 @@ Then you can use the capi-utils as described above to permanently program a user
 Note so far there is no documented way to program the factory bitstream with this method.
 
 ## 2. Programming the flash device with a .mcs file 
-TBD: More details needed
+
 * Build user bitstream *.bit file
 * Build factory bitstream *_FACTORY.bit file
-* Use create_mcs_KU60.tcl to build the mcs file from the bit files
-* Program the flash using program_flash_fgt.tcl or program_flash_ku3.tcl
-
+* Use [../setup/build_mcs.tcl](../setup/build_mcs.tcl) to build the MCS file from the bit file
+  ### Example:
+  ```bash
+  export FACTORY_IMAGE=TRUE
+  make config image
+  export FACTORY_IMAGE=FALSE
+  make config image
+  factory_bitstream=`ls -t  build/Images/fw_*[0-9]_FACTORY.bit | head -n1`
+  echo $factory_bitstream 
+  user_bitstream=`ls -t  build/Images/fw_*[0-9].bit | head -n1`
+  echo $user_bitstream 
+  setup/build_mcs.tcl $factory_bitstream $user_bitstream "build/Images/${FPGACARD}_flash.mcs"
+  ```
+* Program the flash using [../setup/flash_mcs.tcl](../setup/flash_mcs.tcl)  
+  Programming the flash will take several minutes, please be patient.
+  ### Example:
+  ```bash
+  setup/flash_mcs.tcl "build/Images/${FPGACARD}_flash.mcs"
+  ```
