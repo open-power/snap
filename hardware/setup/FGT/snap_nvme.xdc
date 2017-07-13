@@ -53,11 +53,12 @@ set_property PACKAGE_PIN AP11 [get_ports {m2_pewake_n[0]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {m2_susclk[*]}]
 #set_property IOSTANDARD LVCMOS33 [get_ports {m2_pedet_n[*]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {m2_perst_n[*]}]
+set_property PULLDOWN true       [get_ports {m2_perst_n[*]}]
 
 set_property IOSTANDARD LVCMOS33 [get_ports {m2_clkreq_n[*]}]
-set_property PULLUP true     [get_ports {m2_clkreq_n[*]}]
+set_property PULLUP true         [get_ports {m2_clkreq_n[*]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {m2_pewake_n[*]}]
-set_property PULLUP true     [get_ports {m2_pewake_n[*]}]
+set_property PULLUP true         [get_ports {m2_pewake_n[*]}]
 
 
 
