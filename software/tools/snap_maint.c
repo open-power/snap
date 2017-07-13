@@ -181,7 +181,7 @@ static void snap_version(void *handle)
         VERBOSE1(", %d MB SRAM available.\n", (int)ioctl_data);
 
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_IVR);
-	VERBOSE1("SNAP FPGA Release: %d/%d:%d Distance: %d GIT: 0x%8.8x\n",
+	VERBOSE1("SNAP FPGA Release: v%d.%d.%d Distance: %d GIT: 0x%8.8x\n",
 		(int)(reg >> 56),
 		(int)(reg >> 48ll) & 0xff,
 		(int)(reg >> 40ll) & 0xff,
@@ -189,7 +189,7 @@ static void snap_version(void *handle)
 		(uint32_t)reg);
 
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_BDR);
-	VERBOSE1("SNAP FPGA Build (Y/M/D): %x/%x/%x Time (H:M): %x:%x\n",
+	VERBOSE1("SNAP FPGA Build (Y/M/D): %04x/%02x/%02x Time (H:M): %02x:%02x\n",
 		(int)(reg >> 32ll) & 0xffff,
 		(int)(reg >> 24ll) & 0xff,
 		(int)(reg >> 16) & 0xff,
