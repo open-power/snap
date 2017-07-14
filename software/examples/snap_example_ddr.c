@@ -624,7 +624,7 @@ int main(int argc, char *argv[])
 	int timeout = ACTION_WAIT_TIME;
 	uint64_t start_addr = DDR_MEM_BASE_ADDR;
 	uint64_t end_addr = 0;
-        int end_addr_override = 0;
+	int end_addr_override = 0;
 	uint64_t snap_mem = 0;
 	unsigned int mem_size = HOST_BUFFER_SIZE;
 	void *src_buf = NULL;
