@@ -22,6 +22,7 @@ if { $argc != 1 && $argc != 2 } {
 }
 
 set mcsfile     [lindex $argv 0]
+set fpgapartnum xcku061
 switch $fpgacard {
   FGT { set flashdevice mt28gu512aax1e-bpi-x16 }
   KU3 { set flashdevice mt28gu01gaax1e-bpi-x16 }
@@ -52,17 +53,23 @@ open_hw_target [lindex [get_hw_targets] $hwtarget]
 
 # Hardware configuration
 create_hw_cfgmem -hw_device [lindex [get_hw_devices] 0] -mem_dev [lindex [get_cfgmem_parts $flashdevice] 0]
-set_property PROGRAM.ADDRESS_RANGE {use_file} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
-set_property PROGRAM.FILES [list $mcsfile] [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0]]
-set_property PROGRAM.BPI_RS_PINS {25:24} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
-set_property PROGRAM.UNUSED_PIN_TERMINATION {pull-none} [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
-set_property PROGRAM.BLANK_CHECK 0 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
-set_property PROGRAM.ERASE 1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
-set_property PROGRAM.CFG_PROGRAM 1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
-set_property PROGRAM.VERIFY 1 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
-set_property PROGRAM.CHECKSUM 0 [ get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
+set fpgadevice [lindex [get_hw_devices] 0 ]
+if { [get_property PART $fpgadevice] != $fpgapartnum } {
+  puts "Error: wrong FPGA device: [get_property PART $fpgadevice] instead of $fpgapartnum"
+  exit 98
+}
+set fpga_cfgmem [get_property PROGRAM.HW_CFGMEM $fpgadevice]
+set_property PROGRAM.ADDRESS_RANGE {use_file} $fpga_cfgmem
+set_property PROGRAM.FILES [list $mcsfile] $fpga_cfgmem
+set_property PROGRAM.BPI_RS_PINS {25:24} $fpga_cfgmem
+set_property PROGRAM.UNUSED_PIN_TERMINATION {pull-none} $fpga_cfgmem
+set_property PROGRAM.BLANK_CHECK 0 $fpga_cfgmem
+set_property PROGRAM.ERASE 1 $fpga_cfgmem
+set_property PROGRAM.CFG_PROGRAM 1 $fpga_cfgmem
+set_property PROGRAM.VERIFY 1 $fpga_cfgmem
+set_property PROGRAM.CHECKSUM 0 $fpga_cfgmem
 startgroup
-if {![string equal [get_property PROGRAM.HW_CFGMEM_TYPE [lindex [get_hw_devices] 0]] [get_property MEM_TYPE [get_property CFGMEM_PART [get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]]]] } { create_hw_bitstream -hw_device [lindex [get_hw_devices] 0] [get_property PROGRAM.HW_CFGMEM_BITFILE [lindex [get_hw_devices] 0]]; program_hw_devices [lindex [get_hw_devices] 0]; };
-program_hw_cfgmem -hw_cfgmem [get_property PROGRAM.HW_CFGMEM [lindex [get_hw_devices] 0 ]]
+if {![string equal [get_property PROGRAM.HW_CFGMEM_TYPE $fpgadevice ] [get_property MEM_TYPE [get_property CFGMEM_PART $fpga_cfgmem]]] } { create_hw_bitstream -hw_device $fpgadevice [get_property PROGRAM.HW_CFGMEM_BITFILE $fpgadevice ]; program_hw_devices $fpgadevice ; };
+program_hw_cfgmem -hw_cfgmem $fpga_cfgmem
 
 
