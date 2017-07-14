@@ -87,6 +87,9 @@ This will also build the software tools and the PSLSE which are required to run 
 
 Please refer to `$SNAP_ROOT/hardware/Makefile` for more supported targets like clean, gitclean, create_environment, ...
 
+## FPGA bitstream image update
+Please see [hardware/doc/Bitstream_flashing.md](./doc/Bitstream_flashing.md) for instructions how to update the FPGA bitstream image, how to build factory images and program cards from scratch.
+
 # Action wrapper
 
 The environment variable `$ACTION_ROOT` defines the path to the set of actions that shall be included.
@@ -171,18 +174,6 @@ will prepare the ILA cores accordingly during the image build process.
 Additionally to the image files itself, the build process will create
 the required `.ltx` debug probes file which will be located in the results
 directory `$SNAP_ROOT/hardware/build/Images`.
-
-# Building a factory ("golden") bitstream image
-
-Both supported FPGA cards have two flash partitions for the FPGA bitstream. The *user* partition is loaded by default on power-on. The FPGA loader automatically loads the *factory* partition if loading the user partition fails. That may happen if the flashing process for the user partition was interrupted, or if the flash device on the card or the bitstream file used for flashing got corrupted.  
-Normally there is no need to update the factory bitstream, because its main purpose is to allow to program the user partition of the flash safely again. It may also be used to test if the card is still functioning correctly with a known good bitstream.
-Therefore, when that test functionality or the software interface changes, it may be needed to also update the factory bitstream.  
-To build a factory bitstream, set `FACTORY_IMAGE=TRUE` and proceed with the image build as usual.
-```bash
-  export FACTORY_IMAGE=TRUE
-  make config image
-```
-The output bitstream file names will have `_FACTORY` appended.
 
 # Simulation
 
