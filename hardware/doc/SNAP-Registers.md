@@ -1046,7 +1046,7 @@ Address: BAR2 + 0x010028 + n * 0x000100
 
 ---
 
-#### PSL Slice Error Register (PSL_SErr_An)
+#### PSL AFU Debug Register (PSL_AFU_DEBUG_An)
 n = 0,1,2,3
 ```
 Address: BAR2 + 0x0100C8 + n * 0x000100
