@@ -37,15 +37,17 @@ Programming User Partition with my_user_image.bin
 Erasing Flash
 ...
 ```
-# How to build the bitstream for the factory partition
+# How to build the factory ("golden") bitstream image
 
-Normally there is no need to update the factory bitstream, because its main purpose is to allow to program the user partition of the flash safely again. It may also be used to test if the card is still functioning correctly with a known good bitstream. Therefore, when that test functionality or the software interface changes, it may be needed to also update the factory bitstream.
-To build a factory bitstream, set FACTORY_IMAGE=TRUE and proceed with the image build as usual.
-
+All supported FPGA cards have at least two flash partitions for the FPGA bitstream. The *user* partition is loaded by default on power-on. The FPGA loader will automatically load the *factory* partition if loading the user partition fails. That may happen if the flashing process for the user partition was interrupted, or if the flash device on the card or the bitstream file used for flashing got corrupted.  
+Normally there is no need to update the factory bitstream, because its main purpose is to allow to program the user partition of the flash safely again. It may also be used to test if the card is still functioning correctly with a known good bitstream.
+Therefore, when that test functionality or the software interface changes, the factory bitstream may have to be updated, too.
+To build a factory bitstream, set `FACTORY_IMAGE=TRUE` and proceed with the image build as usual.
+```bash
   export FACTORY_IMAGE=TRUE
   make config image
-
-The output bitstream file names will have _FACTORY appended.
+```
+The output bitstream file names will have `_FACTORY` appended.
 
 # Initial programming of a blank or bricked card
 
@@ -66,7 +68,7 @@ Note so far there is no documented way to program the factory bitstream with thi
 
 * Build user bitstream *.bit file
 * Build factory bitstream *_FACTORY.bit file
-* Use [../setup/build_mcs.tcl](../setup/build_mcs.tcl) to build the MCS file from the bit file
+* Use [hardware/setup/build_mcs.tcl](../setup/build_mcs.tcl) to build the MCS file from the bit file
   ### Example:
   ```bash
   export FACTORY_IMAGE=TRUE
@@ -79,7 +81,7 @@ Note so far there is no documented way to program the factory bitstream with thi
   echo $user_bitstream 
   setup/build_mcs.tcl $factory_bitstream $user_bitstream "build/Images/${FPGACARD}_flash.mcs"
   ```
-* Program the flash using [../setup/flash_mcs.tcl](../setup/flash_mcs.tcl)  
+* Program the flash using [hardware/setup/flash_mcs.tcl](../setup/flash_mcs.tcl)  
   Programming the flash will take several minutes, please be patient.
   ### Example:
   ```bash
