@@ -38,14 +38,12 @@ endif
 endif
 
 distro = $(shell lsb_release -d | cut -f2)
-subdirs += lib tools examples
+subdirs += lib tools
 
 all: $(subdirs)
 
 # Rules for the recursive build
 tools: lib
-
-examples: lib
 
 PLATFORM ?= $(shell uname -i)
 ifeq ($(PLATFORM),x86_64)
