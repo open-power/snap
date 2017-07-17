@@ -85,5 +85,5 @@ Note so far there is no documented way to program the factory bitstream with thi
   Programming the flash will take several minutes, please be patient.
   ### Example:
   ```bash
-  vivado_lab -nolog -nojournal  -mode batch -source flash_mcs.tcl -tclargs FGT_flash.mcs
+  vivado_lab -nolog -nojournal -mode batch -source flash_mcs.tcl -tclargs "build/Images/${FPGACARD}_flash.mcs"
   ```
