@@ -335,10 +335,12 @@
      elif [ "$TST_NAME" == "LIST" ];then
        filename="${LISTNAME%.*}"; parfilename="${LISTNAME%.*}${i}";echo "listname=${LISTNAME}"|tee -a stim.log
         if [ -f "${parfilename}.sh" ];then
-         sh  ${parfilename}.sh 2>&1|tee -a ${parfilename}.log &
+#        sh  ${parfilename}.sh 2>&1|tee -a ${parfilename}.log &
+         ./${parfilename}.sh 2>&1|tee -a ${parfilename}.log &
        elif [ -f  "${filename}.sh" ];then
          cp  ${filename}.sh ${parfilename}.sh;
-         sh  ${parfilename}.sh 2>&1|tee -a ${parfilename}.log &
+#        sh  ${parfilename}.sh 2>&1|tee -a ${parfilename}.log &
+         ./${parfilename}.sh 2>&1|tee -a ${parfilename}.log &
        else echo "cannot start list for par=$PAR"|tee -a stim.log; fi
      elif [ "$TST_NAME" == "EBERHARD" ];then
        $SNAP_SOFTWARE_ROOT/mmio/app0 -vv 2>&1 |tee -a $STIMLOG &  # for Eberhard
@@ -384,8 +386,10 @@
      else missing+="2";echo "pslse not running anymore"|tee -a stim.log;
      fi
      if [[ "$missing" -ne "00" ]];then 				# sim/pslse missing
-       echo "kill remaining apps ${array[@]}"|tee -a stim.log
-       `kill -SIGKILL ${array[@]}`; sleep 10; TCRC=-5;break;
+       echo "kill remaining apps incl children ${array[@]}"|tee -a stim.log
+       `kill -SIGKILL -${array[@]}`; sleep 10;                  # kill processes and wait some time to get them off the list
+       PSLSE_PID=""                                             # remove PSLSE_PID to show it is already killed
+       TCRC=-5;break;
      fi
      if [[ "$num" -lt 4  &&  "$rndmask_pid" -ne "0" ]];then 	# stop rndmask
        for i in -15 -2 -3 -9; do	# try stopping with different signals: term,int,quit,kill
