@@ -807,8 +807,7 @@ int snap_action_sync_execute_job(struct snap_action *action,
 	}
 	if (completed == 0) {
 		/* Not done */
-		snap_trace("%s: ETIME rc=%d completed=%d\n", __func__,
-			   rc, completed);
+		snap_trace("%s: rc=%d\n", __func__, rc);
 		if (rc == 0) {
 			errno = ETIME;
 			rc = SNAP_ETIMEDOUT;
