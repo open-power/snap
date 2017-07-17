@@ -88,7 +88,7 @@ This will also build the software tools and the PSLSE which are required to run 
 Please refer to `$SNAP_ROOT/hardware/Makefile` for more supported targets like clean, gitclean, create_environment, ...
 
 ## FPGA bitstream image update
-Please see [hardware/doc/Bitstream_flashing.md](./doc/Bitstream_flashing.md) for instructions how to update the FPGA bitstream image, how to build factory images and program cards from scratch.
+Please see [hardware/doc/Bitstream_flashing.md](./doc/Bitstream_flashing.md) for instructions on how to update the FPGA bitstream image, build factory images and program cards from scratch.
 
 # Action wrapper
 
