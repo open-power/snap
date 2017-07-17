@@ -45,9 +45,9 @@ Therefore, when that test functionality or the software interface changes, the f
 To build a factory bitstream, set `FACTORY_IMAGE=TRUE` and proceed with the image build as usual.
 ```bash
   export FACTORY_IMAGE=TRUE
-  make config image
+  make clean config image
 ```
-The output bitstream file names will have `_FACTORY` appended.
+The output bitstream file names will have `_FACTORY` appended. Note the environment variable change requires the `make clean` step to come into effect. 
 
 # Initial programming of a blank or bricked card
 
@@ -72,8 +72,10 @@ Note so far there is no documented way to program the factory bitstream with thi
   ### Example:
   ```bash
   export FACTORY_IMAGE=TRUE
+  rm $SNAP_ROOT/hardware/hdl/core/psl_fpga.vhd
   make config image
   export FACTORY_IMAGE=FALSE
+  rm $SNAP_ROOT/hardware/hdl/core/psl_fpga.vhd
   make config image
   factory_bitstream=`ls -t  build/Images/fw_*[0-9]_FACTORY.bit | head -n1`
   echo $factory_bitstream 
