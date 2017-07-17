@@ -69,13 +69,15 @@ If you want to build an image (a bitstream) for a given `$ACTION_ROOT`, you may 
     make config image
 ```
 
-Note: All preparations for the build process, including the decision which actions get included, are made in the configuration step.
+***Note:*** All preparations for the build process, including the decision which actions get included, are made in the configuration step.
+Each environment variable change requires to execute a `make clean` step prior to `make config`.
+
 If the configuration step was already executed, you may just call:
 
 ```bash
     make image
 ```
-**Note** that you must still build the software tools on the POWER target system.
+***Note*** that you must still build the software tools on the POWER target system.
 
 A simulation model (for the simulator defined by the environment variable `$SIMULATOR`) may be created
 via the target `model`:
@@ -86,6 +88,9 @@ via the target `model`:
 This will also build the software tools and the PSLSE which are required to run the simulation.
 
 Please refer to `$SNAP_ROOT/hardware/Makefile` for more supported targets like clean, gitclean, create_environment, ...
+
+## FPGA bitstream image update
+Please see [snap/hardware/doc/Bitstream_flashing.md](./doc/Bitstream_flashing.md) for instructions on how to update the FPGA bitstream image, build factory images and program cards from scratch.
 
 # Action wrapper
 
@@ -102,7 +107,7 @@ Corresponding to the ports that the SNAP framework provides, each action has to 
 Furthermore, HDL actions have to implement the interrupt ports as shown in the [HDL example action wrapper](./action_examples/hdl_example/action_wrapper.vhd_source).  
 For HLS actions, the HLS compiler will automatically generate the necessary interrupt logic.
 
-**Note** that the ID widths of the AXI interfaces to host memory and to the on-card SDRAM have to be
+***Note*** that the ID widths of the AXI interfaces to host memory and to the on-card SDRAM have to be
 large enough to support the number of actions that shall be instantiated.
 For the build process this is controlled via the environment variable `$NUM_OF_ACTIONS`
 which defaults to `1` if not set differently.
