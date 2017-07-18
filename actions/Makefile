@@ -22,6 +22,11 @@ hardware_subdirs = $(addsuffix /hw,$(subdirs))
 # all HLS code synthesizes well.
 all: software_all
 
+software_all: software
+
+software:
+	$(MAKE) -C ../software
+
 software_all: $(software_subdirs)
 
 hardware_all: $(hardware_subdirs)
