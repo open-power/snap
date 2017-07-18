@@ -35,6 +35,9 @@ $(software_subdirs) $(hardware_subdirs):
 		echo "INFO: No Makefile available in $@ ...";	\
 	fi
 
+test:
+	@echo "Noting to be done here yet."
+
 # Cleanup for all subdirectories.
 # Only dive into subdirectory if existent and if Makefile is there.
 clean:

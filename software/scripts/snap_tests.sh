@@ -94,7 +94,7 @@ if [ $search -eq 1 ]; then
 
     echo -n "Trying snap_search ... "
     cmd="snap_search -C${snap_card} -E 98 	\
-		-i snap_search.txt -p snap >		\
+		-i ../actions/hls_search/sw/snap_search.txt -p snap > \
 		snap_search.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then

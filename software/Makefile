@@ -79,8 +79,11 @@ install uninstall:
 
 test: test_software
 
-test_software: all
+test_software: all actions
 	SNAP_CONFIG=0x1 ./scripts/snap_tests.sh -a
+
+actions:
+	$(MAKE) -C ../actions
 
 test_hardware:
 	./scripts/snap_tests.sh -h
