@@ -20,7 +20,7 @@ hardware_subdirs = $(addsuffix /hw,$(subdirs))
 
 # Build all subdirs is normally not needed, but useful to check if
 # all HLS code synthesizes well.
-all: software_all hardware_all
+all: software_all
 
 software_all: $(software_subdirs)
 
