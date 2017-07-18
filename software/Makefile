@@ -51,15 +51,10 @@ BUILD_SIMCODE=1
 endif
 
 ifdef BUILD_SIMCODE
-lib: ..check_pslse
+lib:  $(PSLSE_ROOT)/libcxl/libcxl.a
 
-..check_pslse:
-	@if [ ! -f $(PSLSE_ROOT)/libcxl/libcxl.h ]; then		\
-		echo "Please install pslse in $(PSLSE_ROOT)";		\
-		echo "  use: git clone https://github.com/ibm-capi/pslse";\
-		echo;							\
-		exit 1;							\
-	fi
+$(PSLSE_ROOT)/libcxl/libcxl.a:
+	$(MAKE) -C $(PSLSE_ROOT)/libcxl
 endif
 
 # Only build if the subdirectory is really existent
