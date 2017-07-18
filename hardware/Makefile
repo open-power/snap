@@ -234,7 +234,7 @@ software:
 
 actions: software
 	@echo -e "\t[COMPILE ACTIONS.....] start `date`"
-	@make -C $(SNAP_ROOT)actions        >> $(LOGS_DIR)/compile_sw.log 2>&1
+	@make -C $(SNAP_ROOT)/actions        >> $(LOGS_DIR)/compile_sw.log 2>&1
 
 xsim:
 	@echo -e "\t[BUILD xsim..........] start `date`"
