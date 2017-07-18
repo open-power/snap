@@ -219,7 +219,7 @@ xpr_image: snap_config patch_version
 	@rm -r -f .bitstream_name.txt
 #	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/timing_summary_routed.rpt | egrep -v "^$|^\-\-"
 
-model: check_denali pslse software snap_config patch_version $(SIMULATOR)
+model: check_denali pslse software actions snap_config patch_version $(SIMULATOR)
 
 pslse:
 	@echo -e "\t[COMPILE PSLSE ......] start `date`"
@@ -231,6 +231,10 @@ pslse:
 software:
 	@echo -e "\t[COMPILE SOFTWARE....] start `date`"
 	@make -C $(SNAP_ROOT)/software       > $(LOGS_DIR)/compile_sw.log 2>&1
+
+actions: software
+	@echo -e "\t[COMPILE ACTIONS.....] start `date`"
+	@make -C $(SNAP_ROOT)actions        >> $(LOGS_DIR)/compile_sw.log 2>&1
 
 xsim:
 	@echo -e "\t[BUILD xsim..........] start `date`"
