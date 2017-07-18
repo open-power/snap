@@ -1,7 +1,7 @@
 ############################################################################
 ############################################################################
 ##
-## Copyright 2016,2017 International Business Machines
+## Copyright 2016, 2017 International Business Machines
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -64,6 +64,11 @@ SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
                   $(SNAP_HDL_HLS)/action_wrapper.vhd \
                   $(SNAP_SIM_CORE)/top.sv
 
+#
+# FIXME Targets in this Makefile are to be build in the correct order.
+#      Parallelizaiton e.g. by using -jN will not work at this point in time
+#      due to missing dependencies between the different targets.
+#
 
 .PHONY: all clean gitclean check_snap_settings image model action_config setup_environment create_environment config patch_version xpr_image snap_config snap_config_start
 
