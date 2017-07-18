@@ -47,7 +47,7 @@ $(hardware_subdirs):
 
 # Install/uninstall
 test install uninstall:
-	@for dir in $(software_subdirs); do			\
+	@for dir in $(software_subdirs) $(action_subdirs); do	\
 		if [ -d $$dir ]; then	                	\
 			$(MAKE) -C $$dir $@ || exit 1;  	\
 		fi	                                	\
@@ -55,7 +55,7 @@ test install uninstall:
 
 # Model build and config
 config model image:
-	@for dir in $(hardware_subdirs); do			\
+	@for dir in $(hardware_subdirs); do	\
 		if [ -d $$dir ]; then				\
 			if [ -d "$(SNAP_ROOT)" ]; then		\
 				$(MAKE) -C $$dir $@ || exit 1;	\
