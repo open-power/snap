@@ -48,6 +48,9 @@ all_build: $(projs)
 
 $(projs): $(libs)
 
+$(PSLSE_ROOT)/libcxl/libcxl.a ../../../software/lib/libsnap.a:
+	$(MAKE) -C `dirname $@`
+
 ### Deactivate existing implicit rule
 %: %.c
 %: %.sh
