@@ -17,7 +17,12 @@
 vhd_srcs=$(wildcard *.vhd_source)
 vhd_files=$(vhd_srcs:.vhd_source=.vhd)
 
-all config:
+.PHONY: all config clean
+
+all: config
+
+config:
+	./action_config.sh
 
 clean:
 	@$(RM) $(vhd_files)

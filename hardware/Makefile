@@ -159,19 +159,14 @@ snap_config_start:
 	@echo -e "\t[CONFIG SNAP_CORE....] start";
 
 action_config: $(ACTION_ROOT)
-	@echo -e "\t[CONFIG ACTION.......] start";
+	@echo -e "\t[CONFIG ACTION.......] start `date`";
 	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then \
 		make -C $(ACTION_ROOT) > $(LOGS_DIR)/action_make.log; \
 		if [ $$? -ne 0 ]; then \
 			echo -e "\t                        Error: please look into $(LOGS_DIR)/action_make.log";exit -1; \
 		fi \
 	fi
-	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
-		cd $(ACTION_ROOT) && ./action_config.sh > $(LOGS_DIR)/action_config.log; \
-		if [ $$? -ne 0 ]; then \
-			echo -e "\t                        Error: please look into $(LOGS_DIR)/action_config.log";exit -1; \
-		fi \
-	fi
+	@echo -e "\t[CONFIG ACTION.......] done `date`";
 
 # In case ACTION_ROOT does not exist and check_snap_settings did not stop
 # the make process, we assume that we have an HLS action and that the
