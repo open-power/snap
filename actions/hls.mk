@@ -26,22 +26,17 @@ PART_NUMBER ?= $(FPGACHIP)
 WRAPPER ?= hls_action
 
 syn_dir=$(SOLUTION_DIR)_$(PART_NUMBER)/$(SOLUTION_NAME)/syn
-symlinks=vhdl report
 
 # gcc test-bench stuff
 objs = $(srcs:.cpp=.o)
 CXX = g++
 CXXFLAGS = -Wall -W -Wextra -Werror -O2 -DNO_SYNTH -Wno-unknown-pragmas -I../include
 
-all: $(syn_dir) $(symlinks) check
+all: $(syn_dir) check
 
 $(syn_dir): $(srcs) run_hls_script.tcl
 	vivado_hls -f run_hls_script.tcl
 	$(RM) -rf $@/systemc $@/verilog
-
-# Create symlink for simpler access
-$(symlinks): $(syn_dir)
-	@ln -sf $(syn_dir)/$@ $@
 
 run_hls_script.tcl: ../../scripts/create_run_hls_script.sh
 	../../scripts/create_run_hls_script.sh	\
@@ -64,18 +59,16 @@ $(SOLUTION_NAME): $(objs)
 # Check for reserved HLS MMIO reg at offset 0x17c.
 # Check for register duplication (0x184/Action_Output_o).
 #
-check: $(symlinks)
+check: $(syn_dir)
 	@echo -n "Checking for critical warnings during HLS synthesis ... "
 	@grep -A8 critical $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ; \
 		test $$? = 1
 	@echo "OK"
 	@echo -n "Checking for reserved MMIO area during HLS synthesis ... "
-	@grep -A8 0x17c vhdl/$(WRAPPER)_ctrl_reg_s_axi.vhd | grep reserved > \
+	@grep -A8 0x17c $(syn_dir)/vhdl/$(WRAPPER)_ctrl_reg_s_axi.vhd | grep reserved > \
 		/dev/null; test $$? = 0
 	@echo "OK"
-#	@grep -A8 0x184 vhdl/$(WRAPPER)_ctrl_reg_s_axi.vhd ; \
-#		test $$? = 1
 
 clean:
 	@$(RM) -r $(SOLUTION_DIR)* run_hls_script.tcl *~ *.log \
-		$(symlinks) $(objs) $(SOLUTION_NAME)
+		$(objs) $(SOLUTION_NAME)

@@ -106,10 +106,6 @@ check_snap_settings:
 		echo "NUM_OF_ACTIONS: $(NUM_OF_ACTIONS)"; \
 		exit 1; \
 	fi
-	@ if [ ! -d "$(ACTION_ROOT)" ] && ( ( [ -z `echo "x$(ACTION_ROOT)" | grep -i HLS` ] && [ -z `echo "x$(HLS_SUPPORT)" | grep -i TRUE` ] ) || [ `basename "x$(ACTION_ROOT)"` != "vhdl" ] ); then \
-		echo "Please make sure that the environment variable ACTION_ROOT points to a directory containing the action's source code."; \
-		exit 1; \
-	fi
 	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` = "TRUE" ] && [ ! -e "$(ILA_SETUP_FILE)" ]; then \
 		echo "ILA_DEBUG is set to ${ILA_DEBUG} but ILA_SETUP_FILE is not pointing to a file!"; \
 		exit 1; \
@@ -158,7 +154,7 @@ snap_config: snap_config_start $(SNAP_CONFIG_FILES)
 snap_config_start:
 	@echo -e "\t[CONFIG SNAP_CORE....] start";
 
-action_config: $(ACTION_ROOT)
+action_config:
 	@echo -e "\t[CONFIG ACTION.......] start `date`";
 	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then \
 		make -C $(ACTION_ROOT) > $(LOGS_DIR)/action_make.log; \
@@ -167,17 +163,6 @@ action_config: $(ACTION_ROOT)
 		fi \
 	fi
 	@echo -e "\t[CONFIG ACTION.......] done `date`";
-
-# In case ACTION_ROOT does not exist and check_snap_settings did not stop
-# the make process, we assume that we have an HLS action and that the
-# corresponding VHDL code needs to be created.
-$(ACTION_ROOT):
-	@echo -e "\t[CREATE_HLS_CODE.....] start `date`"
-	@echo -e "\t                        using `vivado_hls -v |grep Vivado`"
-	@make -C `dirname $(ACTION_ROOT)` > $(LOGS_DIR)/create_hls.log
-	@if [ $$? -ne 0 ]; then \
-		echo -e "\t                        Error: please look into $(LOGS_DIR)/create_hls.log";exit -1; \
-	fi
 
 create_environment:
 	@echo -e "\t[CREATE_ENVIRONMENT..] start `date`";

@@ -21,12 +21,13 @@ differently):
     FPGACARD            = FGT                                                    # CAPI FPGA card to be used - currently supported are KU3, FGT
     FPGACHIP            = xcku060-ffva1156-2-e                                   # version of the FPGA chip
     SNAP_ROOT           = <parent of the directory containing snap_settings>     # snap clone from github
-    ACTION_ROOT         = $SNAP_ROOT/hardware/action_examples/hdl_example        # directory containing the action's source code
+    ACTION_ROOT         = $SNAP_ROOT/actions/hdl_example                         # directory containing the action's source code
     SIMULATOR           = xsim                                                   # currently supported simulators are xsim, irun (IES)
     NUM_OF_ACTIONS      = 1                                                      # number of actions to be implemented with the card (up to 16)
     SDRAM_USED          = FALSE                                                  # adding access to the on card SDRAM via an AXI interface?
     NVME_USED           = FALSE                                                  # adding access to flash memory via NVMe
     ILA_DEBUG           = FALSE                                                  # adding debug support? (expecting probes definition in $SNAP_ROOT/hardware/setup/debug.xdc)
+    FACTORY_IMAGE       = FALSE                                                  # build a factory image?
 ```
 
 # Image and model build
@@ -39,17 +40,17 @@ In order to prepare the vivado environment for this project, call:
 
 from within `$SNAP_ROOT` or from `$SNAP_ROOT/hardware`.
 Pre-requisite for this is that the environment variables for this project
-are defined (e.g. by sourcing the [./snap_settings](./snap_settings) script).
+are defined (e.g. by sourcing the [./snap_settings](./snap_settings) script).  
 The variable `$SIMULATOR` is used to determine for which of the simulators xsim or ncsim
 the environment will be prepared.
 
 If the variable `$ACTION_ROOT` is not set, the make process will terminate. 
 The HDL based default action example will be included if that environment variable is set to
-`$SNAP_ROOT/hardware/action_examples/hdl_example`.
+`$SNAP_ROOT/actions/hdl_example`.
 As usual you may set the variable with the call of make:
 
 ```bash
-    make config ACTION_ROOT=$SNAP_ROOT/hardware/action_examples/hdl_example
+    make config ACTION_ROOT=$SNAP_ROOT/actions/hdl_example
 ```
 
 As part of the configuration step, a script `$ACTION_ROOT/action_config.sh` will be called if it exists.
@@ -60,7 +61,7 @@ as well as a card image build are kicked off.
 In order to build a model and an image including the HDL action example, call:
 
 ```bash
-    make ACTION_ROOT=$SNAP_ROOT/hardware/action_examples/hdl_example
+    make ACTION_ROOT=$SNAP_ROOT/actions/hdl_example
 ```
 
 If you want to build an image (a bitstream) for a given `$ACTION_ROOT`, you may call `make` with target `image`:
@@ -95,7 +96,7 @@ Please see [snap/hardware/doc/Bitstream_flashing.md](./doc/Bitstream_flashing.md
 # Action wrapper
 
 The environment variable `$ACTION_ROOT` defines the path to the set of actions that shall be included.
-**Currently it has to point to a directory within** [./action_examples](./action_examples).
+**It has to point to a directory within** [snap/actions](../actions).
 
 At this point SNAP supports the integration of one action. Multi-action support will follow.
 
@@ -104,7 +105,7 @@ Corresponding to the ports that the SNAP framework provides, each action has to 
 * an AXI master port for host DMA traffic
 * an optional AXI master port for on card SDRAM traffic
 * an optional AXI master port for communication with an NVMe host controller
-Furthermore, HDL actions have to implement the interrupt ports as shown in the [HDL example action wrapper](./action_examples/hdl_example/action_wrapper.vhd_source).  
+Furthermore, HDL actions have to implement the interrupt ports as shown in the [HDL example action wrapper](../actions/hdl_example/hw/action_wrapper.vhd_source).  
 For HLS actions, the HLS compiler will automatically generate the necessary interrupt logic.
 
 ***Note*** that the ID widths of the AXI interfaces to host memory and to the on-card SDRAM have to be
@@ -117,20 +118,20 @@ The support for actions created with HLS as opposed to HDL actions written direc
 ### HDL Action
 In order to integrate an HDL action into the SNAP framework the directory that `$ACTION_ROOT` is pointing to needs to contain an entity named `action_wrapper` which is serving as interface between the action and the SNAP framework.
 
-An example for such an action together with a corresponding wrapper may be found in [./action_examples/hdl_example](./action_examples/hdl_example).
+An example for such an action together with a corresponding wrapper may be found in [snap/actions/hdl_example/hw](../actions/hdl_example/hw).
 It can be used for various verification scenarios like copying memory content.
 
 ### HLS Actions
 The top level entity for an HLS action needs to be named `hls_action`.
 
-You'll also find examples for HLS actions in [./action_examples](./action_examples). For each example, the HLS action to be integrated into the SNAP framework is contained in a file `hls_<action>.cpp`. Before initiating the SNAP framework's make process, you need to create the necessary RTL files (VHDL or Verilog) out of the `hls_<action>.cpp` file. Each example contains a `Makefile` that takes care of this. In order to make sure that the resulting top level entity fits into the SNAP framework, the HLS actions top level function needs to be named `hls_action`.
+You'll also find examples for HLS actions in [snap/actions](../actions). For each example, the HLS action to be integrated into the SNAP framework is contained in a file `hls_<action>.cpp`. Before initiating the SNAP framework's make process, you need to create the necessary RTL files (VHDL or Verilog) out of the `hls_<action>.cpp` file. Each example contains a `Makefile` that takes care of this. In order to make sure that the resulting top level entity fits into the SNAP framework, the HLS actions top level function needs to be named `hls_action`.
 
-The environment variable `$ACTION_ROOT` should point to a directory containing a `Makefile` for generating the RTL code from the HLS `.cpp` sources. As shown in the examples, the `Makefile` should include the file [./action_examples/hls.mk](./action_examples/hls.mk). That way the RTL code for the HLS action will be placed below the directory that `$ACTION_ROOT` points to, and the SNAP framework's make process is able to include it.
+The environment variable `$ACTION_ROOT` needs to point to a subdirectory of [snap/actions](../actions). That directory should  contain a `Makefile` for generating the RTL code from the HLS `.cpp` sources. As shown in the examples, the `Makefile` should include the file [snap/actions/hls.mk](../actions/hls.mk). That way the RTL code for the HLS action will be placed into a subdirectory `hw` contained in the directory that `$ACTION_ROOT` points to, and the SNAP framework's make process is able to include it.
 
-For instance, if you want to configure the SNAP framework for integrating the HLS memcopy example contained in [./action_examples/hls_memcopy](./action_examples/hls_memcopy), call
+For instance, if you want to configure the SNAP framework for integrating the HLS memcopy example contained in [snap/actions/hls_memcopy](../actions/hls_memcopy), call
 
 ```bash
-  export ACTION_ROOT=$SNAP_ROOT/hardware/action_examples/hls_memcopy
+  export ACTION_ROOT=$SNAP_ROOT/actions/hls_memcopy
 ```  
 before initiating the SNAP framework's make process.
 
@@ -215,6 +216,6 @@ Calling this script without any parameter will open an xterm window from which t
 
 To initialize the SNAP framework, run `$SNAP_ROOT/software/tools/snap_maint` first.
 
-For the VHDL based example `ACTION_ROOT=$SNAP_ROOT/hardware/action_examples/hdl_example` you may then execute the example application
-`snap_example` contained in [software/examples](../software/examples). Calling this application with option `-h` will present usage informations.
+For the VHDL based example `ACTION_ROOT=$SNAP_ROOT/hardware/actions/hdl_example` you may then execute the example application
+`snap_example` contained in [$ACTION_ROOT/sw](../actions/hdl_example/sw). Calling this application with option `-h` will present usage informations.
 
