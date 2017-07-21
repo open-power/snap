@@ -22,8 +22,8 @@
 verbose=0
 snap_card=0
 iteration=1
-FUNC=./software/examples/snap_example_nvme
-CONF=./software/tools/snap_nvme_init
+FUNC="./actions/hdl_example/sw/snap_example_nvme"
+CONF="./software/tools/snap_nvme_init"
 
 function test () # $1 = card, $2 = drive
 {

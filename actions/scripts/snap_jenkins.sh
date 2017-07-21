@@ -23,24 +23,25 @@ function test_hdl_example()
 {
 	local card=$1
 	local accel=$2
+	mytest="./actions/hdl_example"
 
 	echo "TEST HDL Example Action on Accel: $accel[$card] ..."
-	./software/scripts/10140000_test.sh -C $card
+	$my_test/tests/10140000_test.sh -C $card
 	RC=$?
 	if [ $RC -ne 0 ]; then
 		return $RC
 	fi
-	./software/scripts/10140000_ddr_test.sh -C $card
+	$my_test/tests/10140000_ddr_test.sh -C $card
 	RC=$?
 	if [ $RC -ne 0 ]; then
 		return $RC
 	fi
-	./software/scripts/10140000_set_test.sh -C $card
+	$my_test/tests/10140000_set_test.sh -C $card
 	RC=$?
 	if [ $RC -ne 0 ]; then
 		return $RC
 	fi
-	./software/scripts/10140000_nvme_test.sh -C $card
+	$my_test/tests/10140000_nvme_test.sh -C $card
 	RC=$?
 	if [ $RC -ne 0 ]; then
 		return $RC
@@ -52,8 +53,10 @@ function test_hls_memcopy()
 {
 	local card=$1
 	local accel=$2
+	mytest="./actions/hls_memcopy"
+
 	echo "TEST HLS Memcopy on Accel: $accel[$card] ..."
-	FUNC=./software/examples/snap_memcopy -C $card -x
+	FUNC=$my_test/sw/snap_memcopy -C $card -x
 	for i in {1..10}; do
 		size=`d -A n -t d -N 3 /dev/urandom |tr -d ' '`
 		dd if=/dev/urandom bs=${size} count=1 -of=/tmp/snap_test.in
@@ -95,8 +98,12 @@ function test_hls_bfs() #  $card $accel
 
 function test_hls_intersect()
 {
+	local card=$1
+	local accel=$2
+	mytest="./actions/hls_intersect"
+
 	echo "TEST HLS Intersect Action on Accel: $accel[$card] ..."
-	FUNC=./software/examples/snap_intersect -C $card
+	FUNC=$mytest/sw/snap_intersect -C $card
 	cmd="${FUNC} -m1 -v"
 	eval ${cmd}
 	RC=$?
@@ -136,6 +143,7 @@ function test_all_actions() # $1 = card, $2 = accel
 	local accel=$2
 
 	RC=0;
+	# Get SNAP Action number from Card
 	MY_ACTION=`./software/tools/snap_maint -C $card -m 1`
 	for action in $MY_ACTION ; do
 		case $action in
@@ -198,8 +206,11 @@ function test_hard()
 
 	echo "UPDATING Accel: $accel[$card] with Image: $IMAGE"
 	pushd ../capi-utils > /dev/null
+	if [ $? -ne 0 ]; then
+		echo "Error: Can not start capi-flash-script.sh"
+		exit 1
+	fi
 	sudo ./capi-flash-script.sh -f -C $card -f $IMAGE
-	echo "sudo ./capi-flash-script.sh -f -C $card -f $IMAGE"
 	RC=$?
 	if [ $RC -ne 0 ]; then
 		mv $IMAGE $IMAGE.fault_flash
@@ -233,8 +244,11 @@ function test_hard()
 function usage() {
 	echo "Usage: $PROGRAM -D [] -A [] -F []"
 	echo "    [-D <Target Dir>]"
-	echo "    [-A <KU3> <FGT>    : Set Accel to use if -F is used"
+	echo "    [-A <KU3> : Select KU3 Cards"
+	echo "        <FGT> : Select FGT Cards"
+	echo "        <ALL> : Select ALL Cards"
 	echo "    [-F <Image> : Set Image file for Accelerator -A"
+	echo "                -A ALL is not valid if -F is used"
 	echo "    [-h] Print this help"
 	echo "    Option -D must be set"
 	echo "    following combinations can happen"
@@ -258,7 +272,7 @@ function usage() {
 
 PROGRAM=$0
 BINFILE=""
-accel=""
+accel="ALL"
 
 echo "Executing: $PROGRAM $*"
 

@@ -22,7 +22,7 @@
 verbose=0
 snap_card=0
 iteration=1
-FUNC=./software/examples/snap_example_set
+FUNC="./actions/hdl_example/sw/snap_example_set"
 
 function test_memset ()	# $1 = card
 {

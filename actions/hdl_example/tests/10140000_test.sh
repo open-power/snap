@@ -22,7 +22,7 @@
 verbose=0
 snap_card=0
 iteration=1
-FUNC=./software/examples/snap_example
+FUNC="./actions/hdl_example/sw/snap_example"
 
 function test () # $1 = card, $2 = 4k or 64, $3 = action
 {
