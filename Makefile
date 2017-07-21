@@ -13,22 +13,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+PLATFORM ?= $(shell uname -i)
 
 software_subdirs += software
 hardware_subdirs += hardware
 action_subdirs += actions
 
-subdirs += $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
+clean_subdirs += $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
 
-
-all: $(software_subdirs) $(hardware_subdirs)
+ifeq ($(PLATFORM),x86_64)
+all: $(software_subdirs) $(action_subdirs) $(hardware_subdirs)
+else
+all: $(software_subdirs) $(action_subdirs)
+endif
 
 # Only build if the subdirectory is really existent
-.PHONY: $(software_subdirs) $(hardware_subdirs)
+.PHONY: $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
 $(software_subdirs):
 	@if [ -d $@ ]; then	         			\
 		$(MAKE) -C $@ || exit 1;			\
 	fi
+
+$(action_subdirs):
+	@if [ -d $@ ]; then	         			\
+		$(MAKE) -C $@ || exit 1;		        \
+	 fi
 
 define print_NO_SNAP_ROOT
 	echo "WARNING: Environment variable SNAP_ROOT does not point to a" ; \
@@ -66,7 +75,7 @@ config model image:
 	done
 
 clean:
-	@for dir in $(subdirs); do				\
+	@for dir in $(clean_subdirs); do			\
 		if [ -d $$dir ]; then				\
 			$(MAKE) -C $$dir $@ || exit 1;		\
 		fi						\
