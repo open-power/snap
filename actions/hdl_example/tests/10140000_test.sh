@@ -122,11 +122,16 @@ function test_rnd () # $1 = card, $2 = action
 function usage() {
 	echo "SNAP Example Action 10140000 Basic Test's"
 	echo "Usage:"
-	echo "  10140000_test.sh"
+	echo "  $PROGRAM"
 	echo "    [-C <card>]        card to be used for the test"
 	echo "    [-t <trace_level>]"
 	echo "    [-i <iteration>]"
 }
+
+#
+# Main start here
+#
+PROGRAM=$0
 
 while getopts "C:t:i:h" opt; do
 	case $opt in
@@ -175,6 +180,14 @@ for ((iter=1;iter <= iteration;iter++))
        		echo "cmd: ${cmd}"
        		echo "failed"
        		exit 1
+	fi
+	echo "Testing Action 1 from 200 msec to 1 sec in 200 msec steps with Interrupts"
+	cmd="${FUNC} -a 1 -C${snap_card} -e 1000 -t 2 -I"
+	eval ${cmd}
+	if [ $? -ne 0 ]; then
+		echo "cmd: ${cmd}"
+		echo "failed"
+		exit 1
 	fi
 
 	test "${snap_card}" "4k" "2"

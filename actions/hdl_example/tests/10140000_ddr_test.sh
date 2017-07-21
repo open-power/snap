@@ -31,9 +31,18 @@ function test_ddr ()	# $1 = card, $2 = start, $2 = end, $3 = block size
 	local end=$3
 	local block_size=$4
 
+	echo "Using Polling Mode"
 	cmd="$FUNC -v -C ${card} -s $start -e $end -b $block_size"
 	eval ${cmd}
 	if [ $? -ne 0 ]; then
+		echo -n "Error: cmd: <${cmd}>"
+		echo " failed"
+		exit 1
+	fi
+	echo "Using IRQ Mode"
+	cmd="$FUNC -v -C ${card} -s $start -e $end -b $block_size -I"
+	eval ${cmd}
+	if [ $? -ne 0 ] ; then
 		echo -n "Error: cmd: <${cmd}>"
 		echo " failed"
 		exit 1
@@ -43,11 +52,16 @@ function test_ddr ()	# $1 = card, $2 = start, $2 = end, $3 = block size
 function usage() {
 	echo "SNAP Example Action 10140000 SDRAM Test"
 	echo "Usage:"
-	echo "  10140000_ddr_test.sh"
+	echo "  $PROGRAM"
 	echo "    [-C <card>]        card to be used for the test"
 	echo "    [-t <trace_level>]"
 	echo "    [-i <iteration>]"
 }
+
+#
+# main starts here
+#
+PROGRAM=$0
 
 while getopts "C:t:i:h" opt; do
 	case $opt in

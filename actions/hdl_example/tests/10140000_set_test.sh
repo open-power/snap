@@ -45,7 +45,7 @@ function test_memset ()	# $1 = card
 				echo "failed"
 				exit 1
 			fi
-			cmd="${FUNC} -C ${card} -F -s $size -b $begin -p $size"
+			cmd="${FUNC} -C ${card} -F -s $size -b $begin -p $size -I"
 			eval ${cmd}
 			if [ $? -ne 0 ]; then
 				echo "cmd: ${cmd}"
@@ -60,11 +60,16 @@ function test_memset ()	# $1 = card
 function usage() {
 	echo "SNAP Example Action 10140000 Set Operation Test"
 	echo "Usage:"
-	echo "  10140000_set_test.sh"
+	echo "  $PROGRAM"
 	echo "    [-C <card>]        card to be used for the test"
 	echo "    [-t <trace_level>]"
 	echo "    [-i <iteration>]"
 }
+
+#
+# Main start here
+#
+PROGRAM=$0
 
 while getopts "C:t:i:h" opt; do
 	case $opt in
