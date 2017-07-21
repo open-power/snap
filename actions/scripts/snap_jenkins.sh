@@ -26,22 +26,22 @@ function test_hdl_example()
 	mytest="./actions/hdl_example"
 
 	echo "TEST HDL Example Action on Accel: $accel[$card] ..."
-	$my_test/tests/10140000_test.sh -C $card
+	$mytest/tests/10140000_test.sh -C $card
 	RC=$?
 	if [ $RC -ne 0 ]; then
 		return $RC
 	fi
-	$my_test/tests/10140000_ddr_test.sh -C $card
+	$mytest/tests/10140000_ddr_test.sh -C $card
 	RC=$?
 	if [ $RC -ne 0 ]; then
 		return $RC
 	fi
-	$my_test/tests/10140000_set_test.sh -C $card
+	$mytest/tests/10140000_set_test.sh -C $card
 	RC=$?
 	if [ $RC -ne 0 ]; then
 		return $RC
 	fi
-	$my_test/tests/10140000_nvme_test.sh -C $card
+	$mytest/tests/10140000_nvme_test.sh -C $card
 	RC=$?
 	if [ $RC -ne 0 ]; then
 		return $RC

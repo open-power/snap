@@ -30,6 +30,7 @@ function test () # $1 = card, $2 = drive
 	local card=$1
 	local drive=$2
 
+	echo "Testing in Polling mode"
 	for b in 1 32 128 512 ; do
 		cmd="$FUNC -C $card -d $drive -b $b -v"
 		eval ${cmd}
@@ -39,16 +40,32 @@ function test () # $1 = card, $2 = drive
        			exit 1
 		fi
 	done
+	echo "Testing in IRQ mode"
+	for b in 512 1024 ; do
+		echo "Using IRQ mode"
+		cmd="$FUNC -C $card -d $drive -b $b -I"
+		eval ${cmd}
+		if [ $? -ne 0 ]; then
+			echo "cmd: $cmd"
+			echo "failed"
+			exit 1
+		fi
+	done
 }
 
 function usage() {
 	echo "SNAP Example Action 10140000 NVME drive 0 and 1 Test"
 	echo "Usage:"
-	echo "  10140000_nvme_test.sh"
+	echo "  $PROGRAM"
 	echo "    [-C <card>]  Snap Card to be used for the test (default 0)"
 	echo "    [-t <trace_level>]"
 	echo "    [-i <iteration>]"
 }
+
+#
+# main starts here
+#
+PROGRAM=$0
 
 while getopts "C:t:i:h" opt; do
 	case $opt in
@@ -75,7 +92,8 @@ rev=$(cat /sys/class/cxl/card$snap_card/device/subsystem_device | xargs printf "
 
 case $rev in
 "0x0605" )
-	echo "$rev -> Testing AlphaDataKU60 Card"
+	echo "$rev -> Skip $PROGRAM on AlphaDataKU60 Card"
+	exit 0
 	;;
 "0x060A" )
 	echo "$rev -> Testing FlashGT Card"
