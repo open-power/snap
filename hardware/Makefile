@@ -18,7 +18,11 @@
 ############################################################################
 ############################################################################
 
-## variables that other scripts needed
+## Variables that other scripts need.
+## If SNAP_ROOT is not set, we assume that we in the hardware directory.
+## So the root directory is one above.
+##
+SNAP_ROOT ?= ..
 export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 
@@ -63,6 +67,9 @@ SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
                   $(SNAP_HDL_CORE)/mmio.vhd \
                   $(SNAP_HDL_HLS)/action_wrapper.vhd \
                   $(SNAP_SIM_CORE)/top.sv
+
+SNAP_TMP_FILES =  $(SNAP_HARDWARE_ROOT)/sim/README.txt \
+		  $(SNAP_HARDWARE_ROOT)/vivado.jou
 
 #
 # FIXME Targets in this Makefile are to be build in the correct order.
@@ -266,10 +273,10 @@ questa:
 
 clean:
 	@echo -e "\t[CLEAN ENVIRONMENT...] start `date`"
-	@rm -r -f  $(SNAP_CONFIG_FILES)
-	@rm -r -f  $(SNAP_HDL_CORE)/psl_fpga.vhd_source
-	@rm -r -f  $(SNAP_HDL_CORE)/psl_accel.vhd_source
-	@rm -r -f  *build
+	@$(RM) -r $(SNAP_CONFIG_FILES) $(SNAP_TMP_FILES)	\
+		  $(SNAP_HDL_CORE)/psl_fpga.vhd_source		\
+		  $(SNAP_HDL_CORE)/psl_accel.vhd_source		\
+		  *build
 	@echo -e "\t                        vivado project";
 	@rm -r -f  viv_project*
 	@echo -e "\t                        IPs";
