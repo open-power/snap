@@ -165,8 +165,8 @@ snap_config_start:
 
 action_hw:
 	@echo -e "\t[CONFIG ACTION HW....] start `date`";
-	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then \
-		make -C $(ACTION_ROOT) hw > $(LOGS_DIR)/action_make.log; \
+	@if [ -e "$(ACTION_ROOT)/hw/Makefile" ]; then \
+		make -C $(ACTION_ROOT)/hw > $(LOGS_DIR)/action_make.log; \
 		if [ $$? -ne 0 ]; then \
 			echo -e "\t                        Error: please look into $(LOGS_DIR)/action_make.log";exit -1; \
 		fi \
