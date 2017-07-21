@@ -22,8 +22,6 @@ hardware_subdirs = $(addsuffix /hw,$(subdirs))
 # all HLS code synthesizes well.
 all: software_all
 
-software_all: software
-
 software:
 	$(MAKE) -C ../software
 
@@ -33,7 +31,15 @@ hardware_all: $(hardware_subdirs)
 
 # Only build if the subdirectory is existent and if Makefile is there
 .PHONY: $(software_subdirs) $(hardware_subdirs)
-$(software_subdirs) $(hardware_subdirs):
+
+$(software_subdirs): software
+	@if [ -d $@ -a -f $@/Makefile ]; then			\
+		$(MAKE) -C $@ || exit 1;			\
+	else							\
+		echo "INFO: No Makefile available in $@ ...";	\
+	fi
+
+$(hardware_subdirs): 
 	@if [ -d $@ -a -f $@/Makefile ]; then			\
 		$(MAKE) -C $@ || exit 1;			\
 	else							\
