@@ -22,6 +22,7 @@
 verbose=0
 snap_card=0
 iteration=1
+FUNC="./actions/hdl_example/sw/snap_example_ddr"
 
 function test_ddr ()	# $1 = card, $2 = start, $2 = end, $3 = block size
 {
@@ -30,7 +31,7 @@ function test_ddr ()	# $1 = card, $2 = start, $2 = end, $3 = block size
 	local end=$3
 	local block_size=$4
 
-	cmd="./software/examples/snap_example_ddr -v -C ${card} -s $start -e $end -b $block_size"
+	cmd="$FUNC -v -C ${card} -s $start -e $end -b $block_size"
 	eval ${cmd}
 	if [ $? -ne 0 ]; then
 		echo -n "Error: cmd: <${cmd}>"
