@@ -56,7 +56,7 @@
     t="$SNAP_ROOT/software/tools/snap_peek 0x30        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # capabilityreg bit31-16=DRAM size bit8=NVMe bit7..0=card type"
     dram=$(( 16#${r:8:4} )); nvme=${r:13:1}; type=${r:14:2}; echo "card_type=$type NVMe=$nvme ${NVME_USED} DRAM=$dram MB"
     if [[ "$done" == "0" ]];then echo "exploration not done yet"
-      env_action=$(echo $ACTION_ROOT|sed -e "s/action_examples\// /g"|awk '{print $2}');echo "ENV_action=${env_action}"
+      env_action=$(echo $ACTION_ROOT|sed -e "s/actions\// /g"|awk '{print $2}');echo "ENV_action=${env_action}"
 #     if [[ "${env_action}" == *"hdl_example"* ]];then echo -e "$del\ntesting hdl_example in master mode"
 #       step "$ACTION_ROOT/sw/snap_example -a1 -m -s1 -e2 -i1 -t100 -vv"
 #       step "$ACTION_ROOT/sw/snap_example -a2 -m -A4096 -S0 -B1 -t30"
