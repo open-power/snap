@@ -222,8 +222,8 @@ if { $fpga_card == "KU3" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc
   } elseif { $sdram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc
-    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_ddr3_b1pins.xdc
-    set_property used_in_synthesis false [get_files $root_dir/setup/KU3/snap_ddr3_b1pins.xdc]
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_ddr3_b0pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/KU3/snap_ddr3_b0pins.xdc]
   }
 } elseif { $fpga_card == "FGT" } {
   if { $bram_used == "TRUE" } {
