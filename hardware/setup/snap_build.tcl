@@ -46,7 +46,7 @@ puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "open framework pro
 open_project ../viv_project/framework.xpr >> $log_file
 
 # for test!
-#set_param synth.elaboration.rodinMoreOptions {set rt::doParallel false}
+set_param synth.elaboration.rodinMoreOptions {set rt::doParallel false}
 
 ##
 ## synthesis project
