@@ -45,6 +45,8 @@ set widthCol4 22
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "open framework project" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
 open_project ../viv_project/framework.xpr >> $log_file
 
+# for test!
+#set_param synth.elaboration.rodinMoreOptions {set rt::doParallel false}
 
 ##
 ## synthesis project

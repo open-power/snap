@@ -25,7 +25,7 @@ set sim_dir     $root_dir/sim
 set fpga_part   $::env(FPGACHIP)
 set fpga_card   $::env(FPGACARD)
 set psl_dcp     [file tail $::env(PSL_DCP)]
-set action_dir  $::env(ACTION_ROOT)
+set action_dir  $::env(ACTION_ROOT)/hw
 set nvme_used   $::env(NVME_USED)
 set bram_used   $::env(BRAM_USED)
 set sdram_used  $::env(SDRAM_USED)
@@ -222,6 +222,7 @@ if { $fpga_card == "KU3" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc
   } elseif { $sdram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_ddr3_b0pblock.xdc
     add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_ddr3_b0pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/KU3/snap_ddr3_b0pins.xdc]
   }
