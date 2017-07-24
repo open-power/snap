@@ -271,6 +271,8 @@ if { $remove_tmp_files == "TRUE" } {
   exec rm -rf ./Checkpoints/opt_design.dcp
   exec rm -rf ./Checkpoints/place_design.dcp
   exec rm -rf ./Checkpoints/phys_opt_design.dcp
+  exec rm -rf ./Checkpoints/route_design.dcp
+  exec rm -rf .Xil
 }
 
 close_project >> $log_file
