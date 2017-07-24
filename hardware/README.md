@@ -96,7 +96,9 @@ Please see [snap/hardware/doc/Bitstream_flashing.md](./doc/Bitstream_flashing.md
 # Action wrapper
 
 The environment variable `$ACTION_ROOT` defines the path to the set of actions that shall be included.
-**It has to point to a directory within** [snap/actions](../actions).
+**It has to point to a directory within** [snap/actions](../actions).  
+The SNAP hardware build process is expecting each action example's root directory to contain a Makefile
+providing at least the targets `clean` and `hw` (see also [snap/actions/README.md](../actions/README.md).
 
 At this point SNAP supports the integration of one action. Multi-action support will follow.
 
