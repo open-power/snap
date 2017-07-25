@@ -103,6 +103,7 @@ set_top ${wrapper}
 # Can that be a list?
 foreach file [ list ${files} ] {
   add_files \${file} -cflags "-I../../include -I../../../software/include -I../../../software/examples -I../include"
+  add_files -tb \${file} -cflags "-DNO_SYNTH -I../../include -I../../../software/include -I../../../software/examples -I../include"
 }
 
 open_solution "${name}"
@@ -113,5 +114,6 @@ config_interface -m_axi_addr64=true
 #config_rtl -reset all -reset_level low
 
 csynth_design
+export_design -format ip_catalog
 exit
 EOF
