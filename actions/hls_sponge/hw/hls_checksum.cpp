@@ -493,10 +493,10 @@ int main(void)
 			    &Action_Register, &Action_Config);
 	printf(" ==> 2 test calls : checksum = %016llx",
 			(long long) Action_Register.Data.chk_out);
-	if (Action_Register.Data.chk_out == 0x2ccef6d61b67ad2f)
+	if (Action_Register.Data.chk_out == 0x83f5b14f2a6a5d8e)
 		printf(" => checksum OK\n");
 	else
-		printf(" => WRONG checksum => expecting : 0x2ccef6d61b67ad2f\n");
+		printf(" => WRONG checksum => expecting : 0x83f5b14f2a6a5d8e\n");
 
 	//********SPEED TESTS*******
 	Action_Register.Data.nb_elmts = 4;			// 4 calls
@@ -505,10 +505,10 @@ int main(void)
 			    &Action_Register, &Action_Config);
 	printf(" ==> 4 test calls : checksum = %016llx",
 			(long long) Action_Register.Data.chk_out);
-	if (Action_Register.Data.chk_out == 0x0796ca863ac8273f)
+	if (Action_Register.Data.chk_out == 0x6408901251fce870)
 		printf(" => checksum OK\n");
 	else
-		printf(" => WRONG checksum => expected : 0x0796ca863ac8273f\n");
+		printf(" => WRONG checksum => expected : 0x6408901251fce870\n");
 
 #ifndef TEST_SPEED_ONLY
 	//********SHA3 + SHAKE TESTS*******
