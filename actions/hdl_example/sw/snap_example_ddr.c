@@ -35,14 +35,15 @@
 
 /*	defaults */
 #define	DEFAULT_MEMCPY_ITER	1
-#define ACTION_WAIT_TIME	1	/* Default timeout in sec */
+#define ACTION_WAIT_TIME	1                 /* Default timeout in sec */
 
 #define	KILO_BYTE		(1024ull)
 #define	MEGA_BYTE		(1024 * KILO_BYTE)
 #define	GIGA_BYTE		(1024 * MEGA_BYTE)
-#define DDR_MEM_SIZE		(8 * GIGA_BYTE)	/* Default End of FPGA Ram */
-#define DDR_MEM_BASE_ADDR	0x00000000	/* Default Start of FPGA Ram */
-#define	HOST_BUFFER_SIZE	(256 * KILO_BYTE)	/* Default Size for Host Buffers */
+
+#define DDR_MEM_SIZE		(8 * GIGA_BYTE)   /* Default End of FPGA Ram */
+#define DDR_MEM_BASE_ADDR	0x00000000        /* Default Start of FPGA Ram */
+#define	HOST_BUFFER_SIZE	(256 * KILO_BYTE) /* Default Size for Host Buffers */
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
@@ -333,32 +334,43 @@ static int check_parms(
 	int ram_blocks;
 
 	/* Check */
+	if (0 != (host_mem_size & 0x3f)) {
+		errno = EINVAL;
+		VERBOSE0("Error: Host Buffer (-b) must be a a multiple of 64\n");
+		return -1;
+	}
+	if (host_mem_size > (16 * HOST_BUFFER_SIZE)) {
+		errno = EINVAL;
+		VERBOSE0("Error: Host Buffer (-b 0x%x) must less than 0x%x\n",
+			host_mem_size, (uint32_t)(16 * HOST_BUFFER_SIZE));
+		return -1;
+	}
 	if (ram_start_addr >= ram_end_addr) {
-		errno = EFAULT;
-		VERBOSE0("FAILED: Start: 0x%llx < End: 0x%llx Address\n",
+		errno = EINVAL;
+		VERBOSE0("Error: Start: 0x%llx < End: 0x%llx Address\n",
 			(long long)ram_start_addr,
 			(long long)ram_end_addr);
 		return -1;
 	}
 	if (ram_end_addr > ddr_mem_size) {
-		errno = EFAULT;
-		VERBOSE0("FAILED: End: 0x%llx > Size: 0x%llx\n",
+		errno = EINVAL;
+		VERBOSE0("Error: End: 0x%llx > DDR mem Size: 0x%llx\n",
 			(long long)ram_end_addr,
 			(long long)ddr_mem_size);
 		return -1;
 	}
 	ram_mem_size = ram_end_addr - ram_start_addr;
 	if (ram_mem_size < host_mem_size) {
-		errno = EFAULT;
-		VERBOSE0("FAILED: Size: 0x%llx < Host Buffer: 0x%llx\n",
+		errno = EINVAL;
+		VERBOSE0("Error: Size: 0x%llx < Host Buffer: 0x%llx\n",
 			(long long)ram_mem_size,
 			(long long)host_mem_size);
 		return -1;
 	}
 	ram_blocks = ram_mem_size / host_mem_size;
 	if (((uint64_t)ram_blocks * (uint64_t)host_mem_size) != ram_mem_size) {
-		errno = EFAULT;
-		perror("FAILED: Invalid (3) End or Start Address (-e, -s)");
+		errno = EINVAL;
+		perror("Error: Invalid (3) End or Start Address (-e, -s)");
 		return -1;
 	}
 
@@ -607,7 +619,8 @@ static void usage(const char *prog)
 		"    -e, --end            Card Ram End Address (From card)\n"
 		"    -b, --buffer         Host Buffer Size (default 0x%llx)\n"
 		"    -I, --irq            Use Interrupts\n"
-		"\tTool to check DDR Memory on KU3 and FGT Card\n"
+		"\tTool to check DDR Memory (SDRAM) on KU3 and FGT Card.\n"
+		"\t     Note: values for -s -b -e must be 64 Bytes aligned.\n"
 		, prog,
 		(long long)DDR_MEM_BASE_ADDR,
 		(long long)HOST_BUFFER_SIZE);
