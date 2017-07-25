@@ -18,7 +18,11 @@
 ############################################################################
 ############################################################################
 
-## variables that other scripts needed
+## Variables that other scripts need.
+## If SNAP_ROOT is not set, we assume that we are in the hardware directory.
+## So, the root directory is one level above.
+##
+export SNAP_ROOT ?= $(abspath ..)
 export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 
@@ -35,9 +39,7 @@ ifeq "$(FPGACARD)" "FGT"
 	export DDRI_USED=$(SDRAM_USED)
 endif
 
-ifndef BRAM_USED
-	export BRAM_USED=FALSE
-endif
+export BRAM_USED ?= FALSE
 ifeq "$(BRAM_USED)" "TRUE"
 	export DDR3_USED=FALSE
 	export DDR4_USED=FALSE
@@ -45,11 +47,9 @@ ifeq "$(BRAM_USED)" "TRUE"
 	export DDRI_USED=TRUE
 endif
 
-ifndef NVME_USED
-	export NVME_USED=FALSE
-endif
+export NVME_USED ?= FALSE
 
-## variables only for this Makefile
+## variables just for this Makefile
 BUILD_DIR=$(SNAP_HARDWARE_ROOT)/build
 SNAP_HDL_CORE=$(SNAP_HARDWARE_ROOT)/hdl/core
 SNAP_HDL_HLS=$(SNAP_HARDWARE_ROOT)/hdl/hls
@@ -64,9 +64,12 @@ SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
                   $(SNAP_HDL_HLS)/action_wrapper.vhd \
                   $(SNAP_SIM_CORE)/top.sv
 
+SNAP_TMP_FILES =  $(SNAP_HARDWARE_ROOT)/sim/README.txt \
+		  $(SNAP_HARDWARE_ROOT)/vivado.jou
+
 #
 # FIXME Targets in this Makefile are to be build in the correct order.
-#      Parallelizaiton e.g. by using -jN will not work at this point in time
+#      Parallelization e.g. by using -jN will not work at this point in time
 #      due to missing dependencies between the different targets.
 #
 
@@ -158,11 +161,9 @@ snap_config_start:
 
 action_hw:
 	@echo -e "\t[CONFIG ACTION HW....] start `date`";
-	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then \
-		make -C $(ACTION_ROOT) hw > $(LOGS_DIR)/action_make.log; \
-		if [ $$? -ne 0 ]; then \
-			echo -e "\t                        Error: please look into $(LOGS_DIR)/action_make.log";exit -1; \
-		fi \
+	@$(MAKE) -C $(ACTION_ROOT) hw > $(LOGS_DIR)/action_make.log;
+	@if [ $$? -ne 0 ]; then \
+		echo -e "\t                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
 	fi
 	@echo -e "\t[CONFIG ACTION HW....] done `date`";
 
@@ -193,33 +194,33 @@ patch_NVMe:
 image: snap_config patch_version
 	@echo -e "\t[BUILD IMAGE.........] start `date`"
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log -journal $(LOGS_DIR)/snap_build.jou
-	@rm -r -f .bitstream_name.txt
+	@$(RM) -r .bitstream_name.txt
 	@echo -e "\t[BUILD IMAGE.........] done  `date`"
 
 xpr_image: snap_config patch_version
 	@echo -e "\t[BUILD XPR IMAGE.....] start `date`"
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_xpr_build.tcl -notrace -log $(LOGS_DIR)/snap_xpr_build.log -journal $(LOGS_DIR)/snap_xpr_build.jou
-	@rm -r -f .bitstream_name.txt
+	@$(RM) -r .bitstream_name.txt
 	@echo -e "\t[BUILD XPR IMAGE....] done  `date`"
 
 model: action_sw snap_config patch_version $(SIMULATOR)
 
 pslse:
 	@echo -e "\t[COMPILE PSLSE ......] start `date`"
-	@make -C $(PSLSE_ROOT)/afu_driver/src > $(LOGS_DIR)/compile_pslse.log 2>&1
-	@make -C $(PSLSE_ROOT)/pslse         >> $(LOGS_DIR)/compile_pslse.log 2>&1
-	@make -C $(PSLSE_ROOT)/libcxl        >> $(LOGS_DIR)/compile_pslse.log 2>&1
-	@make -C $(PSLSE_ROOT)/debug         >> $(LOGS_DIR)/compile_pslse.log 2>&1
+	@$(MAKE) -C $(PSLSE_ROOT)/afu_driver/src > $(LOGS_DIR)/compile_pslse.log 2>&1
+	@$(MAKE) -C $(PSLSE_ROOT)/pslse         >> $(LOGS_DIR)/compile_pslse.log 2>&1
+	@$(MAKE) -C $(PSLSE_ROOT)/libcxl        >> $(LOGS_DIR)/compile_pslse.log 2>&1
+	@$(MAKE) -C $(PSLSE_ROOT)/debug         >> $(LOGS_DIR)/compile_pslse.log 2>&1
 	@echo -e "\t[COMPILE PSLSE ......] done `date`"
 
 software: pslse
 	@echo -e "\t[COMPILE SOFTWARE....] start `date`"
-	@make -C $(SNAP_ROOT)/software       > $(LOGS_DIR)/compile_sw.log 2>&1
+	@$(MAKE) -C $(SNAP_ROOT)/software       > $(LOGS_DIR)/compile_sw.log 2>&1
 	@echo -e "\t[COMPILE SOFTWARE....] done `date`"
 
 action_sw: software
 	@echo -e "\t[COMPILE ACTION SW...] start `date`"
-	@make -C $(ACTION_ROOT)/sw        >> $(LOGS_DIR)/compile_sw.log 2>&1
+	@$(MAKE) -C $(ACTION_ROOT)/sw        >> $(LOGS_DIR)/compile_sw.log 2>&1
 	@echo -e "\t[COMPILE ACTION SW...] done `date`"
 
 xsim:
@@ -232,7 +233,7 @@ xsim:
 	@cd $(SNAP_HARDWARE_ROOT)/sim/xsim; \
 	./top.sh > $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log";exit -1; \
+		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log"; exit -1; \
 	fi
 	@echo -e "\t[BUILD xsim..........] done  `date`"
 
@@ -246,7 +247,7 @@ irun: check_denali
 	@cd $(SNAP_HARDWARE_ROOT)/sim/ies;\
 	./top.sh > $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log";exit -1; \
+		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log"; exit -1; \
 	fi
 	@echo -e "\t[BUILD irun..........] done  `date`"
 
@@ -260,29 +261,29 @@ questa:
 	@cd $(SNAP_HARDWARE_ROOT)/sim/questa; \
 	./top.sh 4> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log";exit -1; \
+		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log"; exit -1; \
 	fi
 	@echo -e "\t[BUILD questa........] done  `date`"
 
 clean:
 	@echo -e "\t[CLEAN ENVIRONMENT...] start `date`"
-	@rm -r -f  $(SNAP_CONFIG_FILES)
-	@rm -r -f  $(SNAP_HDL_CORE)/psl_fpga.vhd_source
-	@rm -r -f  $(SNAP_HDL_CORE)/psl_accel.vhd_source
-	@rm -r -f  *build
+	@$(RM) -r $(SNAP_CONFIG_FILES) $(SNAP_TMP_FILES)	\
+		  $(SNAP_HDL_CORE)/psl_fpga.vhd_source		\
+		  $(SNAP_HDL_CORE)/psl_accel.vhd_source		\
+		  *build
 	@echo -e "\t                        vivado project";
-	@rm -r -f  viv_project*
+	@$(RM) -r viv_project*
 	@echo -e "\t                        IPs";
-	@rm -r -f  ip
+	@$(RM) -r ip
 	@echo -e "\t                        sim files";
-	@rm -r -f  sim/ies sim/xsim sim/questa hdl/nvme/component.xml hdl/nvme/xgui
+	@$(RM) -r sim/ies sim/xsim sim/questa hdl/nvme/component.xml hdl/nvme/xgui
 	@echo -e "\t                        log files";
-	@rm -r -f  logs
+	@$(RM) -r logs
 	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then          \
 		echo -e "\t                        action"; \
 		make -C $(ACTION_ROOT) $@ > /dev/null;      \
 		if [ $$? -ne 0 ]; then                      \
-			echo -e "\tError: [make "$@"] failed for action in $(ACTION_ROOT)";exit -1; \
+			echo -e "\tError: [make "$@"] failed for action in $(ACTION_ROOT)"; exit -1; \
 		fi                                          \
 	fi
 	@echo -e "\t[CLEAN ENVIRONMENT...] done `date`"

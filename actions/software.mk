@@ -41,7 +41,7 @@ endif
 all: all_build
 
 # Include sub-Makefile if there are any
--include *.mk
+# -include *.mk
 
 # This rule needs to be behind all the definitions above
 all_build: $(projs)

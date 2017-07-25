@@ -22,7 +22,7 @@
 verbose=0
 snap_card=0
 iteration=1
-FUNC=./software/examples/snap_example
+FUNC="./actions/hdl_example/sw/snap_example"
 
 function test () # $1 = card, $2 = 4k or 64, $3 = action
 {
@@ -120,12 +120,18 @@ function test_rnd () # $1 = card, $2 = action
 }
 
 function usage() {
+	echo "SNAP Example Action 10140000 Basic Test's"
 	echo "Usage:"
-	echo "  a_test.sh"
+	echo "  $PROGRAM"
 	echo "    [-C <card>]        card to be used for the test"
 	echo "    [-t <trace_level>]"
 	echo "    [-i <iteration>]"
 }
+
+#
+# Main start here
+#
+PROGRAM=$0
 
 while getopts "C:t:i:h" opt; do
 	case $opt in
@@ -175,6 +181,14 @@ for ((iter=1;iter <= iteration;iter++))
        		echo "failed"
        		exit 1
 	fi
+	echo "Testing Action 1 from 200 msec to 1 sec in 200 msec steps with Interrupts"
+	cmd="${FUNC} -a 1 -C${snap_card} -e 1000 -t 2 -I"
+	eval ${cmd}
+	if [ $? -ne 0 ]; then
+		echo "cmd: ${cmd}"
+		echo "failed"
+		exit 1
+	fi
 
 	test "${snap_card}" "4k" "2"
 	test "${snap_card}" "64" "2"
@@ -182,10 +196,16 @@ for ((iter=1;iter <= iteration;iter++))
 	test_bs "${snap_card}" "2"
 	test_rnd "$snap_card" "2"
 
-	test "$snap_card" "4k" "6"
-	test "$snap_card" "64" "6"
-	test_sb "${snap_card}" "6"
-	test_bs "${snap_card}" "6"
-	test_rnd "$snap_card" "6"
+	# Check SDRAM
+	RAM=`./software/tools/snap_maint -C $snap_card -m 3`
+	if [ ! -z $RAM ]; then
+		test "$snap_card" "4k" "6"
+		test "$snap_card" "64" "6"
+		test_sb "${snap_card}" "6"
+		test_bs "${snap_card}" "6"
+		test_rnd "$snap_card" "6"
+	else
+		echo "No SDRAM, skipping this test"
+	fi
 }
 exit 0
