@@ -237,39 +237,46 @@ static int memcpy_test(struct snap_card* dnc,
 	/* align can be 64 .. 4096 */
 	if (align < 64) {
 		VERBOSE0("align: %d must be 64 or higher\n", align);
-		return 0;
+		return 1;
 	}
 	if ((align & 0x3f) != 0) {
 		VERBOSE0("align: %d must be a multible of 64\n", align);
-		return 0;
+		return 1;
 	}
 	if (align > DEFAULT_MEMCPY_BLOCK) {
 		VERBOSE0("align=%d is to much for me\n", align);
-		return 0;
+		return 1;
 	}
 
 	/* Number of 64 Bytes Blocks */
 	blocks = (blocks_4k * 64) + blocks_64;
-
-	snap_card_ioctl(dnc, GET_SDRAM_SIZE, (unsigned long)&ddr_mem_size);
-	ddr_mem_size = ddr_mem_size * MEGAB;
-	/* Check Size */
-	if (blocks > (int)(ddr_mem_size / 64 / 2)) {
-		VERBOSE0("Error: Number of Blocks: %d exceeds: %d\n",
-			blocks, (int)(ddr_mem_size/DEFAULT_MEMCPY_BLOCK/2));
-		return 0;
-	}
-
-	memsize = blocks * 64;
-	/* Check Card Ram base and Size */
-	if ((card_ram_base + memsize) > ddr_mem_size) {
-		VERBOSE0("Error: Size: 0x%llx exceeds DDR3 Limit: 0x%llx for Offset: 0x%llx\n",
-			(long long)memsize, (long long)ddr_mem_size, (long long)card_ram_base);
-		return 0;
-	}
+	/* Number of bytes */
+	memsize = (unsigned long)blocks * 64;
 	if (0 == memsize) {
 		VERBOSE0("Error: blocks_4k: %d and blocks_64: %d is not valid\n", blocks_4k, blocks_64);
-		return 0;
+		return 1;
+	}
+
+	if (action > 2) {
+		/* Make sure to have SDRAM for action 2,3,4,5,6 */
+		snap_card_ioctl(dnc, GET_SDRAM_SIZE, (unsigned long)&ddr_mem_size);
+		if (0 == ddr_mem_size) {
+			VERBOSE0("Error: No SDRAM configured on SNAP Card\n");
+			return 1;
+		}
+		ddr_mem_size = ddr_mem_size * MEGAB;
+		if (blocks > (int)(ddr_mem_size / 64 / 2)) {
+			VERBOSE0("Error: Number of Blocks: %d exceeds Card Mem Blocks: %lld\n",
+				blocks, (long long)(ddr_mem_size/64/2));
+			return 1;
+		}
+
+		/* Check Card Ram base and Size */
+		if ((card_ram_base + memsize) > ddr_mem_size) {
+			VERBOSE0("Error: Size: 0x%llx exceeds DDR3 Limit: 0x%llx for Offset: 0x%llx\n",
+				(long long)memsize, (long long)ddr_mem_size, (long long)card_ram_base);
+			return 1;
+		}
 	}
 
 	switch (action) {
