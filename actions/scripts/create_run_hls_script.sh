@@ -114,6 +114,6 @@ config_interface -m_axi_addr64=true
 #config_rtl -reset all -reset_level low
 
 csynth_design
-export_design -format ip_catalog
+#export_design -format ip_catalog -rtl vhdl
 exit
 EOF
