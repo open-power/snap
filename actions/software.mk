@@ -27,7 +27,7 @@ include ../../../software/config.mk
 CFLAGS += -std=c99 -I../../../software/include
 DESTDIR ?= /usr
 libs += ../../../software/lib/libsnap.a
-LDLIBS += $(libs) -lpthread
+LDLIBS += $(libs) -lpthread -lm
 
 # Link statically for PSLSE simulation and dynamically for real version
 ifdef BUILD_SIMCODE
