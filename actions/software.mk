@@ -24,7 +24,12 @@ endif
 
 ifndef SNAP_ROOT
 # assume we are in sw folder of an action
+ifneq ("$(wildcard ../../../ActionTypes.md)","")
 SNAP_ROOT=$(abspath ../../../)
+else
+$(info You are not building your software from the default directory (/path/to/snap/actions/<action_name>/sw) or specified a wrong $$SNAP_ROOT.)
+$(error Please source /path/to/snap/hardware/snap_settings.sh or set $$SNAP_ROOT manually.)
+endif
 endif
 
 include $(SNAP_ROOT)/software/config.mk
@@ -43,14 +48,7 @@ LDLIBS += -lcxl
 endif
 
 # This rule should be the 1st one to find (default)
-all: check_snap_root all_build
-
-check_snap_root:
-	@if [ ! -f "$(SNAP_ROOT)/ActionTypes.md" ]; then \
-		echo "You are not building your software from the default directory (/path/to/snap/actions/<action_name>/sw) or specified a wrong \$SNAP_ROOT."; \
-		echo "Please source /path/to/snap/hardware/snap_settings.sh or set \$SNAP_ROOT manually."; \
-		exit 1; \
-	fi
+all: all_build
 
 # Include sub-Makefile if there are any
 # -include *.mk
