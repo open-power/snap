@@ -32,4 +32,6 @@ snap_bfs_objs = action_bfs.o
 
 projs += snap_bfs
 
+# If you have the host code outside of the default snap directory structure, 
+# change to /path/to/snap/actions/software.mk
 include ../../software.mk

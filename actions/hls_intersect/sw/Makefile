@@ -32,4 +32,6 @@ snap_intersect_objs = action_intersect.o
 
 projs += snap_intersect
 
+# If you have the host code outside of the default snap directory structure, 
+# change to /path/to/snap/actions/software.mk
 include ../../software.mk
