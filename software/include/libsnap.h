@@ -401,6 +401,20 @@ int snap_action_free_irq(struct snap_action *action, int irq);
 
 #endif /* IRQ_SUPPORT */
 
+/**
+ * Get a or set snap lib option.
+ * @card          Valid SNAP card handle
+ * @cmd           CMD (see below).
+ * @parm          Pointer for GET command or value for SET command
+ * @return        0 success
+ */
+#define GET_CARD_TYPE       1   /* Returns Card type */
+#define GET_NVME_ENABLED    2   /* Returns 1 if NVME is enabled */
+#define GET_SDRAM_SIZE      3   /* Get Size in MB of Card  sdram */
+#define SET_SDRAM_SIZE      103 /* Set SD Ram size in MB */
+
+int snap_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long parm);
+
 /******************************************************************************
  * SNAP Queue Operations
  *****************************************************************************/
@@ -415,6 +429,7 @@ int snap_action_free_irq(struct snap_action *action, int irq);
 
 struct snap_queue *snap_queue_alloc(struct snap_card *card,
 			snap_action_type_t action_type,
+			snap_action_flag_t action_flags,
 			unsigned int queue_length,
 			unsigned int attach_timeout_sec);
 

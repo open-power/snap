@@ -19,8 +19,7 @@
 ############################################################################
 
 ## 
-set_false_path -from [get_pins nvme_reset_n_q_reg/C] -to [get_pins {a0/nvme_top_i/axi_pcie3_1/inst/pcie3_ip_i/inst/gt_top_i/phy_rst_i/rrst_n_r_reg[?]/CLR}]
-
+set_false_path -from [get_ports sys_rst_n]
 # ------------------------------
 # Pin Locations & I/O Standards
 # ------------------------------
@@ -41,6 +40,25 @@ set_property PACKAGE_PIN AL8  [get_ports {m2_perst_n[2]}]
 set_property PACKAGE_PIN AK13 [get_ports {m2_perst_n[1]}]
 set_property PACKAGE_PIN AP13 [get_ports {m2_perst_n[0]}]
 
+set_property PACKAGE_PIN AG12 [get_ports {m2_clkreq_n[3]}]
+set_property PACKAGE_PIN AP9  [get_ports {m2_clkreq_n[2]}]
+set_property PACKAGE_PIN AH13 [get_ports {m2_clkreq_n[1]}]
+set_property PACKAGE_PIN AP10 [get_ports {m2_clkreq_n[0]}]
+
+set_property PACKAGE_PIN AH12 [get_ports {m2_pewake_n[3]}]
+set_property PACKAGE_PIN AN9  [get_ports {m2_pewake_n[2]}]
+set_property PACKAGE_PIN AJ13 [get_ports {m2_pewake_n[1]}]
+set_property PACKAGE_PIN AP11 [get_ports {m2_pewake_n[0]}]
+
 set_property IOSTANDARD LVCMOS33 [get_ports {m2_susclk[*]}]
 #set_property IOSTANDARD LVCMOS33 [get_ports {m2_pedet_n[*]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {m2_perst_n[*]}]
+set_property PULLDOWN true       [get_ports {m2_perst_n[*]}]
+
+set_property IOSTANDARD LVCMOS33 [get_ports {m2_clkreq_n[*]}]
+set_property PULLUP true         [get_ports {m2_clkreq_n[*]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {m2_pewake_n[*]}]
+set_property PULLUP true         [get_ports {m2_pewake_n[*]}]
+
+
+

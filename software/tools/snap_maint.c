@@ -80,7 +80,9 @@ struct mdev_ctx {
 static struct mdev_ctx	master_ctx;
 
 #define MODE_SHOW_ACTION  0x0001
-#define MODE_2            0x0002
+#define MODE_SHOW_NVME    0x0002
+#define MODE_SHOW_CARD    0x0004
+#define MODE_SHOW_SDRAM   0x0008
 
 /*
  * Open AFU Master Device
@@ -159,10 +161,27 @@ static void snap_version(void *handle)
 {
 	uint64_t reg;
 	int up;
+	unsigned long ioctl_data;
 
 	VERBOSE2("[%s] Enter\n", __func__);
+	/* Read Card Capabilities */
+        snap_card_ioctl(handle, GET_CARD_TYPE, (unsigned long)&ioctl_data);
+        VERBOSE1("SNAP on ");
+        switch (ioctl_data) {
+                case 0: VERBOSE1("KU3"); break;
+                case 1: VERBOSE1("FGT"); break;
+                default: VERBOSE1("Unknown"); break;
+        }
+        VERBOSE1(" Card, NVME ");
+        snap_card_ioctl(handle, GET_NVME_ENABLED, (unsigned long)&ioctl_data);
+	if (1 == ioctl_data)
+		VERBOSE1("enabled");
+	else    VERBOSE1("disabled");
+        snap_card_ioctl(handle, GET_SDRAM_SIZE, (unsigned long)&ioctl_data);
+        VERBOSE1(", %d MB SRAM available.\n", (int)ioctl_data);
+
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_IVR);
-	VERBOSE1("SNAP FPGA Release: %d/%d:%d Distance: %d GIT: 0x%8.8x\n",
+	VERBOSE1("SNAP FPGA Release: v%d.%d.%d Distance: %d GIT: 0x%8.8x\n",
 		(int)(reg >> 56),
 		(int)(reg >> 48ll) & 0xff,
 		(int)(reg >> 40ll) & 0xff,
@@ -170,7 +189,7 @@ static void snap_version(void *handle)
 		(uint32_t)reg);
 
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_BDR);
-	VERBOSE1("SNAP FPGA Build (Y/M/D): %x/%x/%x Time (H:M): %x:%x\n",
+	VERBOSE1("SNAP FPGA Build (Y/M/D): %04x/%02x/%02x Time (H:M): %02x:%02x\n",
 		(int)(reg >> 32ll) & 0xffff,
 		(int)(reg >> 24ll) & 0xff,
 		(int)(reg >> 16) & 0xff,
@@ -340,6 +359,29 @@ _snap_m_init_exit:
 	return rc;
 }
 
+static void snap_show_cap(void *handle, int mode)
+{
+	unsigned long val;
+
+	if (MODE_SHOW_NVME == (MODE_SHOW_NVME & mode)) {
+		snap_card_ioctl(handle, GET_NVME_ENABLED, (unsigned long)&val);
+		if (1 == val)
+			VERBOSE0("NVME");
+	}
+	if (MODE_SHOW_SDRAM == (MODE_SHOW_SDRAM & mode)) {
+		snap_card_ioctl(handle, GET_SDRAM_SIZE, (unsigned long)&val);
+		if (0 != val)
+			VERBOSE0("%d", (int)val);
+	}
+	if (MODE_SHOW_CARD == (MODE_SHOW_CARD & mode)) {
+		snap_card_ioctl(handle, GET_CARD_TYPE, (unsigned long)&val);
+		switch (val) {
+			case 0: VERBOSE0("KU3"); break;
+			case 1: VERBOSE0("FGT"); break;
+		}
+	}
+}
+
 static int snap_do_master(struct mdev_ctx *mctx)
 {
 	int dt = mctx->dt;
@@ -376,7 +418,9 @@ static void help(char *prog)
 	       "\t-d, --daemon		Start in Daemon process (background)\n"
 	       "\t-m, --mode		Mode:\n"
 	       "\t	1 = Show Action number only\n"
-	       "\t	2 = Not Used for now\n"
+	       "\t	2 = Show NVME if enabled\n"
+	       "\t	3 = Show SDRAM Size in MB\n"
+	       "\t	4 = Show Card\n"
 	       "\t-f, --log-file <file> Log File name when running in -d "
 	       "(daemon)\n"
 	       "\n"
@@ -471,10 +515,12 @@ int main(int argc, char *argv[])
 			mode = strtoul(optarg, NULL, 0);
 			switch (mode) {
 			case 1: mctx->mode |= MODE_SHOW_ACTION; break;
-			case 2: mctx->mode |= MODE_2; break;
+			case 2: mctx->mode |= MODE_SHOW_NVME; break;
+			case 3: mctx->mode |= MODE_SHOW_SDRAM; break;
+			case 4: mctx->mode |= MODE_SHOW_CARD; break;
 			default:
 				fprintf(stderr, "Please provide correct "
-					"Mode Option (1..2)\n");
+					"Mode Option (1..4)\n");
 				exit(EXIT_FAILURE);
 			}
 			break;
@@ -560,6 +606,10 @@ int main(int argc, char *argv[])
 	snap_version(mctx->handle);
 	/* Init Master */
 	rc = snap_m_init(mctx->handle, mctx->mode);
+
+	/* Show Capabilities for diffrent modes */
+	snap_show_cap(mctx->handle, mctx->mode);
+
 	//if (0 != rc)
 	goto __main_exit;	/* Exit here.... for now */
 

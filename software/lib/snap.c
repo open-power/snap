@@ -81,7 +81,8 @@ struct snap_card {
 	uint16_t vendor_id;
 	uint16_t device_id;
 	snap_action_type_t action_type;	/* Action Type */
-	snap_action_type_t queue_type;  /* Action type for queue */
+	snap_action_flag_t action_flags;
+	
 	uint32_t sat;                   /* Short Action Type */
 	bool start_attach;
 	snap_action_flag_t flags;       /* Flags from Application */
@@ -92,6 +93,9 @@ struct snap_card {
 	size_t errinfo_size;            /* Size of errinfo */
 	void *errinfo;                  /* Err info Buffer */
 	struct cxl_event event;         /* Buffer to keep event from IRQ */
+	unsigned int attach_timeout_sec;
+	unsigned int queue_length;      /* unused */
+	uint64_t cap_reg;               /* Capability Register */
 };
 
 /* To be used for software simulation, use funcs provided by action */
@@ -188,6 +192,11 @@ static void *hw_snap_card_alloc_dev(const char *path,
 		dn->master = true;
 	else	dn->master = false;
 	dn->cir = (int)(reg & 0xffff);
+
+	/* Read and save Capability reg */
+	cxl_mmio_read64(afu_h, SNAP_S_CAP, &reg);
+	dn->cap_reg = reg;
+
 	dn->afu_h = afu_h;
 	snap_trace("%s Exit %p OK Context: %d Master: %d\n", __func__,
 		dn, dn->cir, dn->master);
@@ -465,6 +474,44 @@ static int hw_detach_action(struct snap_action *action)
 	return rc;
 }
 
+static int hw_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long parm)
+{
+	int rc = 0;
+	unsigned long rc_val = 0;
+	unsigned long *arg = (unsigned long *)parm;
+
+	switch (cmd) {
+	case GET_CARD_TYPE:
+		rc_val = (unsigned long)(card->cap_reg & 0xff);
+		snap_trace("  %s CARD_TYPE: %d\n", __func__, (int)rc_val);
+		*arg = rc_val;
+		break;
+	case GET_NVME_ENABLED:
+		if (card->cap_reg & 0x100)
+			rc_val = 1;
+		else rc_val = 0;
+		snap_trace("  %s NVME: %d\n", __func__, (int)rc_val);
+		*arg = rc_val;
+		break;
+	case GET_SDRAM_SIZE:
+		rc_val = (unsigned long)(card->cap_reg >> 16);   /* in MB */
+		snap_trace("  %s Get MEM: %d MB\n", __func__, (int)rc_val);
+		*arg = rc_val;
+		break;
+	case SET_SDRAM_SIZE:
+		card->cap_reg = (card->cap_reg & 0xffff) | (parm << 16);
+		snap_trace("  %s Set MEM: %d MB\n", __func__, (int)parm);
+		break;
+	default:
+		snap_trace("  %s Error\n", __func__);
+		*arg = 0;
+		rc = -1;
+		break;
+	}
+	return rc;
+
+}
+
 /* Hardware version of the lowlevel functions */
 static struct snap_funcs hardware_funcs = {
 	.card_alloc_dev = hw_snap_card_alloc_dev,
@@ -475,6 +522,7 @@ static struct snap_funcs hardware_funcs = {
 	.mmio_write64 = hw_snap_mmio_write64,
 	.mmio_read64 = hw_snap_mmio_read64,
 	.card_free = hw_snap_card_free,
+	.card_ioctl = hw_card_ioctl,
 };
 
 /* We access the hardware via this function pointer struct */
@@ -563,23 +611,53 @@ void snap_card_free(struct snap_card *_card)
 	df->card_free(_card);
 }
 
+int snap_card_ioctl(struct snap_card *_card, unsigned int cmd, unsigned long arg)
+{
+	return df->card_ioctl(_card, cmd, arg);
+}
+
 /******************************************************************************
  * JOB QUEUE Operations
  *****************************************************************************/
 
 struct snap_queue *snap_queue_alloc(struct snap_card *card,
 				    snap_action_type_t action_type,
+				    snap_action_flag_t action_flags,
 				    unsigned int queue_length __unused,
-				    unsigned int attach_timeout_sec __unused)
+				    unsigned int attach_timeout_sec)
 {
-	card->queue_type = action_type;
+	card->action_type = action_type;
+	card->action_flags = action_flags;
+	card->queue_length = queue_length;
+	card->attach_timeout_sec = attach_timeout_sec;
+
 	return (struct snap_queue *)card;
+}
+
+/*
+ * @note At this point in time we emulate a real queue behavior by 
+ * doing the same as we do when using snap_sync_execute_job directly.
+ * This is basically a queue of length 1. Once there are use-cases
+ * which will profit from a real hardware job queue, this must be
+ * changed along with a real hardware queue implementation.
+ */
+int snap_queue_sync_execute_job(struct snap_queue *queue,
+                          struct snap_job *cjob,
+                          unsigned int timeout_sec)
+{
+	struct snap_card *card = (struct snap_card *)queue;
+
+	return snap_sync_execute_job(card, card->action_type,
+				     card->action_flags,
+				     cjob,
+				     card->attach_timeout_sec,
+				     timeout_sec);
 }
 
 void snap_queue_free(struct snap_queue *queue __unused)
 {
 	struct snap_card *card = (struct snap_card *)queue;
-	card->queue_type = 0xffffffff;
+	card->action_type = 0xffffffff;
 }
 
 /*****************************************************************************
@@ -634,6 +712,7 @@ int snap_action_completed(struct snap_action *action, int *rc, int timeout)
 	}
 	if (rc)
 		*rc = _rc;
+
 	return (action_data & ACTION_CONTROL_IDLE) == ACTION_CONTROL_IDLE;
 }
 
@@ -719,10 +798,16 @@ int snap_action_sync_execute_job(struct snap_action *action,
 	snap_action_start(action);
 	completed = snap_action_completed(action, &rc, timeout_sec);
 
+	/* Issue #360 */
+	if (rc != 0) {
+		snap_trace("%s: EIO rc=%d completed=%d\n", __func__,
+			   rc, completed);
+		rc = SNAP_EIO;
+		goto __snap_action_sync_execute_job_exit;
+	}
 	if (completed == 0) {
 		/* Not done */
-		snap_trace("%s: rc=%d completed=%d\n", __func__,
-			   rc, completed);
+		snap_trace("%s: rc=%d\n", __func__, rc);
 		if (rc == 0) {
 			errno = ETIME;
 			rc = SNAP_ETIMEDOUT;
@@ -752,7 +837,8 @@ int snap_action_sync_execute_job(struct snap_action *action,
 		rc = snap_mmio_read32(card, action_addr, &job_data[i]);
 		if (rc != 0)
 			goto __snap_action_sync_execute_job_exit;
-		snap_trace("  %s: %d Addr: %x Data: %x\n", __func__, i, action_addr, job_data[i]);
+		snap_trace("  %s: %d Addr: %x Data: %x\n", __func__, i,
+			   action_addr, job_data[i]);
 	}
 
 __snap_action_sync_execute_job_exit:
@@ -998,6 +1084,32 @@ static int sw_detach_action(struct snap_action *action)
 	return 0;
 }
 
+static int sw_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long parm)
+{
+	int rc = 0;
+	unsigned long *arg = (unsigned long *)parm;
+
+	snap_trace("  %s Handle: %p CMD: %d\n", __func__, card, cmd);
+	switch (cmd) {
+	case GET_CARD_TYPE:
+		*arg = 255;    /* Some Unknown */
+		break;
+	case GET_NVME_ENABLED:
+		*arg  = 0;     /* No NVME in SW Mode */
+		break;
+	case GET_SDRAM_SIZE:
+		*arg = 0;      /* No Card Ram in SW Mode */
+		break;
+	case SET_SDRAM_SIZE:
+		card->cap_reg = (card->cap_reg & 0xffff) | (parm << 16);
+		break;
+	default:
+		rc = -1;
+		break;
+	}
+	return rc;
+}
+
 /* Software version of the lowlevel functions */
 static struct snap_funcs software_funcs = {
 	.card_alloc_dev = sw_card_alloc_dev,
@@ -1008,6 +1120,7 @@ static struct snap_funcs software_funcs = {
 	.mmio_write64 = sw_mmio_write64,
 	.mmio_read64 = sw_mmio_read64,
 	.card_free = sw_card_free,
+	.card_ioctl = sw_card_ioctl,
 };
 
 /**********************************************************************

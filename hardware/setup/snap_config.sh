@@ -33,6 +33,9 @@ else
     SDRAM_SIZE="x\"1000\""
   fi
 fi
+if [ "${BRAM_USED^^}" == "TRUE" ]; then
+  SDRAM_SIZE="x\"0001\""
+fi
 
 if [ "${DDRI_USED^^}" == "TRUE" ]; then
   DDRI_FILTER="\-\- only for DDRI_USED!=TRUE"

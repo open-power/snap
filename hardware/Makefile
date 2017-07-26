@@ -1,7 +1,7 @@
 ############################################################################
 ############################################################################
 ##
-## Copyright 2016,2017 International Business Machines
+## Copyright 2016, 2017 International Business Machines
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -18,7 +18,11 @@
 ############################################################################
 ############################################################################
 
-## variables that other scripts needed
+## Variables that other scripts need.
+## If SNAP_ROOT is not set, we assume that we are in the hardware directory.
+## So, the root directory is one level above.
+##
+export SNAP_ROOT ?= $(abspath ..)
 export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 
@@ -35,9 +39,7 @@ ifeq "$(FPGACARD)" "FGT"
 	export DDRI_USED=$(SDRAM_USED)
 endif
 
-ifndef BRAM_USED
-	export BRAM_USED=FALSE
-endif
+export BRAM_USED ?= FALSE
 ifeq "$(BRAM_USED)" "TRUE"
 	export DDR3_USED=FALSE
 	export DDR4_USED=FALSE
@@ -45,11 +47,9 @@ ifeq "$(BRAM_USED)" "TRUE"
 	export DDRI_USED=TRUE
 endif
 
-ifndef NVME_USED
-	export NVME_USED=FALSE
-endif
+export NVME_USED ?= FALSE
 
-## variables only for this Makefile
+## variables just for this Makefile
 BUILD_DIR=$(SNAP_HARDWARE_ROOT)/build
 SNAP_HDL_CORE=$(SNAP_HARDWARE_ROOT)/hdl/core
 SNAP_HDL_HLS=$(SNAP_HARDWARE_ROOT)/hdl/hls
@@ -64,8 +64,16 @@ SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
                   $(SNAP_HDL_HLS)/action_wrapper.vhd \
                   $(SNAP_SIM_CORE)/top.sv
 
+SNAP_TMP_FILES =  $(SNAP_HARDWARE_ROOT)/sim/README.txt \
+		  $(SNAP_HARDWARE_ROOT)/vivado.jou
 
-.PHONY: all clean gitclean check_snap_settings image model action_config setup_environment create_environment config patch_version xpr_image snap_config snap_config_start
+#
+# FIXME Targets in this Makefile are to be build in the correct order.
+#      Parallelization e.g. by using -jN will not work at this point in time
+#      due to missing dependencies between the different targets.
+#
+
+.PHONY: all clean gitclean check_snap_settings image model action_hw action_sw software pslse setup_environment create_environment config patch_version xpr_image snap_config snap_config_start
 
 all: config model image
 
@@ -101,10 +109,6 @@ check_snap_settings:
 		echo "NUM_OF_ACTIONS: $(NUM_OF_ACTIONS)"; \
 		exit 1; \
 	fi
-	@ if [ ! -d "$(ACTION_ROOT)" ] && ( ( [ -z `echo "x$(ACTION_ROOT)" | grep -i HLS` ] && [ -z `echo "x$(HLS_SUPPORT)" | grep -i TRUE` ] ) || [ `basename "x$(ACTION_ROOT)"` != "vhdl" ] ); then \
-		echo "Please make sure that the environment variable ACTION_ROOT points to a directory containing the action's source code."; \
-		exit 1; \
-	fi
 	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` = "TRUE" ] && [ ! -e "$(ILA_SETUP_FILE)" ]; then \
 		echo "ILA_DEBUG is set to ${ILA_DEBUG} but ILA_SETUP_FILE is not pointing to a file!"; \
 		exit 1; \
@@ -124,7 +128,7 @@ check_denali:
 
 
 setup_environment:
-	@echo -e "\t[COPY................] psl build env";
+	@echo -e "\t[PREPARE ENV.........] start `date`";
 	@mkdir -p $(BUILD_DIR);
 	@mkdir -p $(BUILD_DIR)/Reports;
 	@mkdir -p $(LOGS_DIR);
@@ -141,6 +145,7 @@ setup_environment:
 		ln -f -s $(SNAP_HDL_CORE)/psl_fpga_fgt.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
 		ln -f -s $(SNAP_HDL_CORE)/psl_accel_fgt.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
 	fi
+	@echo -e "\t[PREPARE ENV.........] done `date`";
 
 %.vhd: %.vhd_source
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
@@ -149,35 +154,18 @@ setup_environment:
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 snap_config: snap_config_start $(SNAP_CONFIG_FILES)
+	@echo -e "\t[CONFIG SNAP CORE....] done `date`";
 
 snap_config_start:
-	@echo -e "\t[CONFIG SNAP_CORE....] start";
+	@echo -e "\t[CONFIG SNAP CORE....] start `date`";
 
-action_config: $(ACTION_ROOT)
-	@echo -e "\t[CONFIG ACTION.......] start";
-	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then \
-		make -C $(ACTION_ROOT) > $(LOGS_DIR)/action_make.log; \
-		if [ $$? -ne 0 ]; then \
-			echo -e "\t                        Error: please look into $(LOGS_DIR)/action_make.log";exit -1; \
-		fi \
-	fi
-	@if [ -e "$(ACTION_ROOT)/action_config.sh" ]; then \
-		cd $(ACTION_ROOT) && ./action_config.sh > $(LOGS_DIR)/action_config.log; \
-		if [ $$? -ne 0 ]; then \
-			echo -e "\t                        Error: please look into $(LOGS_DIR)/action_config.log";exit -1; \
-		fi \
-	fi
-
-# In case ACTION_ROOT does not exist and check_snap_settings did not stop
-# the make process, we assume that we have an HLS action and that the
-# corresponding VHDL code needs to be created.
-$(ACTION_ROOT):
-	@echo -e "\t[CREATE_HLS_CODE.....] start `date`"
-	@echo -e "\t                        using `vivado_hls -v |grep Vivado`"
-	@make -C `dirname $(ACTION_ROOT)` > $(LOGS_DIR)/create_hls.log
+action_hw:
+	@echo -e "\t[CONFIG ACTION HW....] start `date`";
+	@$(MAKE) -C $(ACTION_ROOT) hw > $(LOGS_DIR)/action_make.log;
 	@if [ $$? -ne 0 ]; then \
-		echo -e "\t                        Error: please look into $(LOGS_DIR)/create_hls.log";exit -1; \
+		echo -e "\t                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
 	fi
+	@echo -e "\t[CONFIG ACTION HW....] done `date`";
 
 create_environment:
 	@echo -e "\t[CREATE_ENVIRONMENT..] start `date`";
@@ -187,7 +175,10 @@ create_environment:
 	@cd $(SNAP_HARDWARE_ROOT)/setup                                    && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
 	@echo -e "\t[CREATE_ENVIRONMENT..] done `date`"
 
-config: check_snap_settings setup_environment snap_config action_config create_environment patch_version patch_NVMe
+config_start:
+	@echo -e "\t[CONFIG..............] start `date`"
+
+config: config_start check_snap_settings setup_environment snap_config action_hw create_environment patch_version patch_NVMe
 	@echo -e "\t[CONFIG..............] done `date`"
 
 patch_version:
@@ -203,29 +194,34 @@ patch_NVMe:
 image: snap_config patch_version
 	@echo -e "\t[BUILD IMAGE.........] start `date`"
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log -journal $(LOGS_DIR)/snap_build.jou
-	@rm -r -f .bitstream_name.txt
+	@$(RM) -r .bitstream_name.txt
 	@echo -e "\t[BUILD IMAGE.........] done  `date`"
-#	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/timing_summary.rpt | egrep -v "^$|^\-\-"
 
 xpr_image: snap_config patch_version
 	@echo -e "\t[BUILD XPR IMAGE.....] start `date`"
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_xpr_build.tcl -notrace -log $(LOGS_DIR)/snap_xpr_build.log -journal $(LOGS_DIR)/snap_xpr_build.jou
+	@$(RM) -r .bitstream_name.txt
 	@echo -e "\t[BUILD XPR IMAGE....] done  `date`"
-	@rm -r -f .bitstream_name.txt
-#	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/timing_summary_routed.rpt | egrep -v "^$|^\-\-"
 
-model: check_denali pslse software snap_config patch_version $(SIMULATOR)
+model: action_sw snap_config patch_version $(SIMULATOR)
 
 pslse:
 	@echo -e "\t[COMPILE PSLSE ......] start `date`"
-	@make -C $(PSLSE_ROOT)/afu_driver/src > $(LOGS_DIR)/compile_pslse.log 2>&1
-	@make -C $(PSLSE_ROOT)/pslse         >> $(LOGS_DIR)/compile_pslse.log 2>&1
-	@make -C $(PSLSE_ROOT)/libcxl        >> $(LOGS_DIR)/compile_pslse.log 2>&1
-	@make -C $(PSLSE_ROOT)/debug         >> $(LOGS_DIR)/compile_pslse.log 2>&1
+	@$(MAKE) -C $(PSLSE_ROOT)/afu_driver/src > $(LOGS_DIR)/compile_pslse.log 2>&1
+	@$(MAKE) -C $(PSLSE_ROOT)/pslse         >> $(LOGS_DIR)/compile_pslse.log 2>&1
+	@$(MAKE) -C $(PSLSE_ROOT)/libcxl        >> $(LOGS_DIR)/compile_pslse.log 2>&1
+	@$(MAKE) -C $(PSLSE_ROOT)/debug         >> $(LOGS_DIR)/compile_pslse.log 2>&1
+	@echo -e "\t[COMPILE PSLSE ......] done `date`"
 
-software:
+software: pslse
 	@echo -e "\t[COMPILE SOFTWARE....] start `date`"
-	@make -C $(SNAP_ROOT)/software       > $(LOGS_DIR)/compile_sw.log 2>&1
+	@$(MAKE) -C $(SNAP_ROOT)/software       > $(LOGS_DIR)/compile_sw.log 2>&1
+	@echo -e "\t[COMPILE SOFTWARE....] done `date`"
+
+action_sw: software
+	@echo -e "\t[COMPILE ACTION SW...] start `date`"
+	@$(MAKE) -C $(ACTION_ROOT)/sw        >> $(LOGS_DIR)/compile_sw.log 2>&1
+	@echo -e "\t[COMPILE ACTION SW...] done `date`"
 
 xsim:
 	@echo -e "\t[BUILD xsim..........] start `date`"
@@ -237,11 +233,11 @@ xsim:
 	@cd $(SNAP_HARDWARE_ROOT)/sim/xsim; \
 	./top.sh > $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log";exit -1; \
+		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log"; exit -1; \
 	fi
 	@echo -e "\t[BUILD xsim..........] done  `date`"
 
-irun:
+irun: check_denali
 	@echo -e "\t[BUILD irun..........] start `date`"
 	@if [ ! -d "$(SNAP_HARDWARE_ROOT)/sim/ies" ];then \
 		vivado -quiet -mode batch -source setup/export_irun.tcl -notrace -log $(LOGS_DIR)/compile_$(SIMULATOR).log; \
@@ -251,7 +247,7 @@ irun:
 	@cd $(SNAP_HARDWARE_ROOT)/sim/ies;\
 	./top.sh > $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log";exit -1; \
+		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log"; exit -1; \
 	fi
 	@echo -e "\t[BUILD irun..........] done  `date`"
 
@@ -265,24 +261,32 @@ questa:
 	@cd $(SNAP_HARDWARE_ROOT)/sim/questa; \
 	./top.sh 4> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log";exit -1; \
+		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log"; exit -1; \
 	fi
 	@echo -e "\t[BUILD questa........] done  `date`"
 
 clean:
-	@echo -e "\t[CLEAN ENVIRONMENT...] start";
-	@rm -r -f  $(SNAP_CONFIG_FILES)
-	@rm -r -f  $(SNAP_HDL_CORE)/psl_fpga.vhd_source
-	@rm -r -f  $(SNAP_HDL_CORE)/psl_accel.vhd_source
-	@rm -r -f  *build
+	@echo -e "\t[CLEAN ENVIRONMENT...] start `date`"
+	@$(RM) -r $(SNAP_CONFIG_FILES) $(SNAP_TMP_FILES)	\
+		  $(SNAP_HDL_CORE)/psl_fpga.vhd_source		\
+		  $(SNAP_HDL_CORE)/psl_accel.vhd_source		\
+		  *build
 	@echo -e "\t                        vivado project";
-	@rm -r -f  viv_project*
+	@$(RM) -r viv_project*
 	@echo -e "\t                        IPs";
-	@rm -r -f  ip
+	@$(RM) -r ip
 	@echo -e "\t                        sim files";
-	@rm -r -f  sim/ies sim/xsim sim/questa hdl/nvme/component.xml hdl/nvme/xgui
+	@$(RM) -r sim/ies sim/xsim sim/questa hdl/nvme/component.xml hdl/nvme/xgui
 	@echo -e "\t                        log files";
-	@rm -r -f  logs
+	@$(RM) -r logs
+	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then          \
+		echo -e "\t                        action"; \
+		make -C $(ACTION_ROOT) $@ > /dev/null;      \
+		if [ $$? -ne 0 ]; then                      \
+			echo -e "\tError: [make "$@"] failed for action in $(ACTION_ROOT)"; exit -1; \
+		fi                                          \
+	fi
+	@echo -e "\t[CLEAN ENVIRONMENT...] done `date`"
 
 gitclean:
 	@echo -e "\t[GITCLEAN............] cleaning and resetting snap git";

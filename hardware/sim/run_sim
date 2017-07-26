@@ -59,8 +59,8 @@
  if [ -z $SNAP_ROOT ];then echo "variable SNAP_ROOT not found, leaving"; exit 11; fi
  if [ -z $PSLSE_ROOT ];then echo "variable PSLSE_ROOT not found, leaving"; exit 11; fi
 
- SNAP_SOFTWARE_ROOT=$SNAP_ROOT/software 
- SNAP_HARDWARE_ROOT=$SNAP_ROOT/hardware 
+ SNAP_SOFTWARE_ROOT=$SNAP_ROOT/software
+ SNAP_HARDWARE_ROOT=$SNAP_ROOT/hardware
  HOSTNAME=`hostname -s`; echo "hostname=$HOSTNAME arguments=$@"
  runsim_args=$@
  while [[ $# > 0 ]]; do         # consume multiple args per loop with shift
@@ -263,8 +263,6 @@
    TST_ARG+=" ${VERBOSE}"
  fi
  echo "SNAP_root=$SNAP_ROOT"		 |tee sim.log
-#echo "SW root=   ${SNAP_ROOT}/software"|tee sim.log
-#echo "HW root=   ${SNAP_ROOT}/hardware"|tee -a sim.log
  echo "pslse_root=$PSLSE_ROOT"		 |tee -a sim.log
  echo "simbase=   $SIMBASE"		 |tee -a sim.log
  echo "simout=    $SIMOUT"		 |tee -a sim.log
@@ -273,53 +271,45 @@
 ##### call Simulator
  echo "**** call simulator=$SIMULATOR in background, wait for socket in $SIMULATOR.log->shim_host.dat"|tee -a sim.log &
  if [ "$SIMULATOR" == "irun" ];then SIM_ARG+=" -r";fi
- $SIMULATOR $SIM_ARG $SIMTOP           |tee -a sim.log &	# sim.log records 1st socket
- SIMLOG_PID=$!	
+ $SIMULATOR $SIM_ARG $SIMTOP |tee -a sim.log &
+ SIMLOG_PID=$!                          # sim.log records 1st socket
  SIMLOG_PPID=`ps -ef|grep $SIMLOG_PID |grep tee  |awk '{print $3}'`
- for i in {1..10};do 				# wait for SIM_PID to show up
+ if [ "$SIMLOG_PPID" == "" ];then echo "could not start $SIMULATOR, did you successfully compile the model ?";TCRC=-1;fi
+
+ if [ "$TCRC" == "0" ];then for i in {1..10};do                  # wait for SIM_PID to show up
    SIM_PID=`ps -ef|grep $SIMLOG_PPID|grep $SIMULATOR|awk '{print $2}'`
-   if [ "$SIM_PID" == "" ];then sleep 1;else break;fi
- done
- echo "tee sim.log PID=$SIMLOG_PID ppid=$SIMLOG_PPID sim_pid=$SIM_PID after $i sec"|tee -a sim.log
-#ps -efl |grep $SIMLOG_PPID
- if [ "$SIM_PID" == "" ];then echo "could not start $SIMULATOR"; TCRC=-1
- else for i in {1..200};do
+   if [ "$SIM_PID" != "" ];then echo "sim.log PID=$SIMLOG_PID ppid=$SIMLOG_PPID sim_pid=$SIM_PID started after $i sec"|tee -a sim.log;break;fi
+   if [ "$i" -eq "10" ];then echo "**** timeout $i sec waiting for $SIMULATOR PID"; TCRC=-1;break;fi
+   sleep 1
+ done; fi
+
+ if [ "$TCRC" == "0" ];then for i in {1..45};do
    grep 'waiting for connection' sim.log >/dev/null 2>&1 # returns 2=filenotfound 1=notfound 0=found
    if [ "$?" -eq "0" ];then
      echo "$SIMULATOR socket avail after $i sec";
      grep 'waiting for connection' sim.log |awk '{print $8}'|awk '{printf("afu0.0,%s\n",$0);}'|tee shim_host.dat
      break
    fi
-   if [ "$i" -eq "45" ];then echo "**** timeout $i sec waiting for $SIMULATOR $SIM_PID socket";
-     kill -9 $SIM_PID
-     TCRC=-2; break
-   fi
+   if [ "$i" -eq "45" ];then echo "**** timeout $i sec waiting for $SIMULATOR $SIM_PID socket"; kill -9 $SIM_PID; TCRC=-2; break; fi
    sleep 1
- done;fi
+ done; fi
 
 ##### call PSLSE
  if [ "$TCRC" == "0" ];then
    echo "**** call pslse in background, wait for socket in pslse.log->pslse_server.dat"
    $PSLSE_ROOT/pslse/pslse >pslse.log 2>&1 &
-   PSLSELOG_PID=$!;
-   for i in {1..30};do 				# wait for pslse pid to show up
-     PSLSE_PID=`ps -ef|grep $SIMLOG_PPID|grep '/pslse'|awk '{print $2}'`
-     if [ "$PSLSE_PID" == "" ];then sleep 1;else break;fi	
-   done
-   echo "tee pslse.log PID=$PSLSELOG_PID ppid=$SIMLOG_PPID pslse_pid=$PSLSE_PID after $i sec"|tee -a sim.log
-#  ps -efl |grep $SIMLOG_PPID
+   PSLSE_PID=$!;
    if [ "$PSLSE_PID" == "" ];then echo "could not start pslse"; kill -9 $SIM_PID; TCRC=-3
    else for i in {1..200};do
      grep listening pslse.log >/dev/null 2>&1	# returns 2=filenotfound 1=notfound 0=found
      if [ "$?" -eq "0" ];then
        PSLSE_SOCKET=`grep listening pslse.log |sed 's/\(.* listening on \)\(.*\)/\2/'`
        echo $PSLSE_SOCKET >pslse_server.dat
-       echo "pslse socket=$PSLSE_SOCKET avail after $i sec"
+       echo "pslse $PSLSE_PID socket=$PSLSE_SOCKET avail after $i sec"
        break
      fi
      if [ "$i" -eq "45" ];then echo "**** timeout $i sec waiting for pslse $PSLSE_PID socket ";
-       kill -SIGINT $PSLSE_PID;
-#      kill -9 $SIM_PID; 			# killing pslse should also stop the simulator
+       kill -SIGINT $PSLSE_PID;                 # killing pslse should also stop the simulator
        TCRC=-4; break
      fi
      sleep 1
@@ -345,10 +335,12 @@
      elif [ "$TST_NAME" == "LIST" ];then
        filename="${LISTNAME%.*}"; parfilename="${LISTNAME%.*}${i}";echo "listname=${LISTNAME}"|tee -a stim.log
         if [ -f "${parfilename}.sh" ];then
-         sh  ${parfilename}.sh 2>&1|tee -a ${parfilename}.log &
+#        sh  ${parfilename}.sh 2>&1|tee -a ${parfilename}.log &
+         ./${parfilename}.sh 2>&1|tee -a ${parfilename}.log &
        elif [ -f  "${filename}.sh" ];then
          cp  ${filename}.sh ${parfilename}.sh;
-         sh  ${parfilename}.sh 2>&1|tee -a ${parfilename}.log &
+#        sh  ${parfilename}.sh 2>&1|tee -a ${parfilename}.log &
+         ./${parfilename}.sh 2>&1|tee -a ${parfilename}.log &
        else echo "cannot start list for par=$PAR"|tee -a stim.log; fi
      elif [ "$TST_NAME" == "EBERHARD" ];then
        $SNAP_SOFTWARE_ROOT/mmio/app0 -vv 2>&1 |tee -a $STIMLOG &  # for Eberhard
@@ -394,8 +386,10 @@
      else missing+="2";echo "pslse not running anymore"|tee -a stim.log;
      fi
      if [[ "$missing" -ne "00" ]];then 				# sim/pslse missing
-       echo "kill remaining apps ${array[@]}"|tee -a stim.log
-       `kill -SIGKILL ${array[@]}`; sleep 10; TCRC=-5;break;
+       echo "kill remaining apps incl children ${array[@]}"|tee -a stim.log
+       `kill -SIGKILL -${array[@]}`; sleep 10;                  # kill processes and wait some time to get them off the list
+       PSLSE_PID=""                                             # remove PSLSE_PID to show it is already killed
+       TCRC=-5;break;
      fi
      if [[ "$num" -lt 4  &&  "$rndmask_pid" -ne "0" ]];then 	# stop rndmask
        for i in -15 -2 -3 -9; do	# try stopping with different signals: term,int,quit,kill

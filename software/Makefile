@@ -38,14 +38,12 @@ endif
 endif
 
 distro = $(shell lsb_release -d | cut -f2)
-subdirs += lib tools examples
+subdirs += lib tools
 
 all: $(subdirs)
 
 # Rules for the recursive build
 tools: lib
-
-examples: lib
 
 PLATFORM ?= $(shell uname -i)
 ifeq ($(PLATFORM),x86_64)
@@ -53,15 +51,10 @@ BUILD_SIMCODE=1
 endif
 
 ifdef BUILD_SIMCODE
-lib: ..check_pslse
+lib:  $(PSLSE_ROOT)/libcxl/libcxl.a
 
-..check_pslse:
-	@if [ ! -f $(PSLSE_ROOT)/libcxl/libcxl.h ]; then		\
-		echo "Please install pslse in $(PSLSE_ROOT)";		\
-		echo "  use: git clone https://github.com/ibm-capi/pslse";\
-		echo;							\
-		exit 1;							\
-	fi
+$(PSLSE_ROOT)/libcxl/libcxl.a:
+	$(MAKE) -C $(PSLSE_ROOT)/libcxl
 endif
 
 # Only build if the subdirectory is really existent
@@ -81,8 +74,11 @@ install uninstall:
 
 test: test_software
 
-test_software: all
+test_software: all actions
 	SNAP_CONFIG=0x1 ./scripts/snap_tests.sh -a
+
+actions:
+	$(MAKE) -C ../actions
 
 test_hardware:
 	./scripts/snap_tests.sh -h
@@ -106,5 +102,6 @@ clean:
 			$(MAKE) -C $$dir $@ || exit 1;	\
 		fi					\
 	done
+	$(RM) *.log *.bin
 	@find . -depth -name '*~'  -exec rm -rf '{}' \; -print
 	@find . -depth -name '.#*' -exec rm -rf '{}' \; -print
