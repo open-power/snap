@@ -33,4 +33,6 @@ srcs += hls_hashjoin.cpp action_hashjoin_hls.cpp
 # FIXME Remove this once it is not needed anymore
 # srcs += action_hashjoin_fct_hls.cpp
 
+# If you have the action code outside of the default snap directory structure, 
+# change to /path/to/snap/actions/hls.mk
 include ../../hls.mk

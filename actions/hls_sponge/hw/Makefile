@@ -30,5 +30,7 @@ SOLUTION_NAME ?= sponge
 SOLUTION_DIR ?= hlsSponge
 srcs += hls_checksum.cpp sha3.cpp
 
+# If you have the action code outside of the default snap directory structure, 
+# change to /path/to/snap/actions/hls.mk
 include ../../hls.mk
 

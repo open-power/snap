@@ -30,4 +30,6 @@ SOLUTION_NAME ?= intersect
 SOLUTION_DIR ?= hlsIntersect
 srcs += hls_intersect.cpp
 
+# If you have the action code outside of the default snap directory structure, 
+# change to /path/to/snap/actions/hls.mk
 include ../../hls.mk
