@@ -67,13 +67,15 @@ SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
 SNAP_TMP_FILES =  $(SNAP_HARDWARE_ROOT)/sim/README.txt \
 		  $(SNAP_HARDWARE_ROOT)/vivado.jou
 
+SNAP_CLOUD_DCP=$(SNAP_HARDWARE_ROOT)/build/Checkpoints/user_action_synth.dcp
+
 #
 # FIXME Targets in this Makefile are to be build in the correct order.
 #      Parallelization e.g. by using -jN will not work at this point in time
 #      due to missing dependencies between the different targets.
 #
 
-.PHONY: all clean gitclean check_snap_settings image model action_hw action_sw software pslse setup_environment create_environment config patch_version cloud_image snap_config snap_config_start
+.PHONY: all clean gitclean check_snap_settings image model action_hw action_sw software pslse setup_environment create_environment config patch_version cloud_base cloud_image snap_config snap_config_start
 
 all: config model image
 
@@ -197,11 +199,20 @@ image: snap_config patch_version
 	@$(RM) -r .bitstream_name.txt
 	@echo -e "\t[BUILD IMAGE.........] done  `date`"
 
-cloud_image: snap_config patch_version
+cloud_base: snap_config patch_version
+	@echo -e "\t[BUILD CLOUD BASE...] start `date`"
+	@cd $(BUILD_DIR) && env CLOUD_RUN=BASE vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
+	@echo -e "\t[BUILD CLOUD BASE...] done  `date`"
+
+cloud_image: $(SNAP_CLOUD_DCP)
 	@echo -e "\t[BUILD CLOUD IMAGE...] start `date`"
-	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
+	@cd $(BUILD_DIR) && env CLOUD_RUN=IMAGE vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
 	@rm -r -f .bitstream_name.txt
 	@echo -e "\t[BUILD CLOUD IMAGE...] done  `date`"
+
+$(SNAP_CLOUD_DCP): 
+	@echo -e "\tNeed to run cloud_base first"
+	@exit 1
 
 model: action_sw snap_config patch_version $(SIMULATOR)
 
