@@ -99,12 +99,12 @@ int cmpvalue(const value_t s1, const value_t s2)
             break;
 
         if (*s1 != *s2)
-            return *s1 - *s2;
+            return *s2 - *s1;
 
         s1 += 1;
         s2 += 1;
     }
-    return *s1 - *s2;
+    return *s2 - *s1;
 }
 static int qs_cmp(const void *a, const void *b)
 {
