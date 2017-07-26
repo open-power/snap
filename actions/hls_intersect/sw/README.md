@@ -1,6 +1,14 @@
-# Two methods
-Intersection has two methods and are implemented in two Actions. 
-One is in hw_h (hash, -m1) and one is in hw_s (sort, -m2).
+# Several modes for snap_intersect
 
-In Simulation, you need to create a symbolic link "hw" points to either "hw_s" or "hw_h"
-depending on the method you want to test.
+## With HW (simulation or real FPGA run)
+
+	./snap_intersect -m1  (default using hash method)
+	./snap_intersect -m2  (need to change the symbolic link of hw, pointint to hw_s)
+
+## Run SW
+
+	SNAP_CONFIG=1 ./snap_intersect -m0 -s  (software naive way for intersection)
+	SNAP_CONFIG=1 ./snap_intersect -m1 -s  (software hash method)
+	SNAP_CONFIG=1 ./snap_intersect -m2 -s  (software sort method)
+
+	"-s" is needed. 
