@@ -18,7 +18,7 @@
 ############################################################################
 ############################################################################
 
-## Variables that other scripts need.
+## Variables required by other scripts.
 ## If SNAP_ROOT is not set, we assume that we are in the hardware directory.
 ## So, the root directory is one level above.
 ##
@@ -49,6 +49,8 @@ endif
 
 export NVME_USED ?= FALSE
 
+export USE_PRFLOW ?= FALSE
+
 ## variables just for this Makefile
 BUILD_DIR=$(SNAP_HARDWARE_ROOT)/build
 SNAP_HDL_CORE=$(SNAP_HARDWARE_ROOT)/hdl/core
@@ -76,7 +78,7 @@ SNAP_CLOUD_DCP=$(SNAP_HARDWARE_ROOT)/build/Checkpoints/user_action_synth.dcp
 #      due to missing dependencies between the different targets.
 #
 
-.PHONY: all clean gitclean check_snap_settings image model action_hw action_sw software pslse setup_environment create_environment config patch_version cloud_base cloud_image snap_config snap_config_start
+.PHONY: all clean gitclean check_snap_settings check_denali model action_hw action_sw software pslse prepare_environment create_environment config patch_version patch_NVMe image cloud_base cloud_image snap_config snap_config_start xsim irun questa
 
 all: config model image
 
@@ -128,10 +130,8 @@ check_denali:
 		fi \
 	fi
 
-
-
-setup_environment:
-	@echo -e "\t[PREPARE ENV.........] start `date`";
+prepare_environment:
+	@echo -e "\t[PREPARE ENVIRONMENT.] start `date`";
 	@mkdir -p $(BUILD_DIR);
 	@mkdir -p $(BUILD_DIR)/Reports;
 	@mkdir -p $(LOGS_DIR);
@@ -148,7 +148,7 @@ setup_environment:
 		ln -f -s $(SNAP_HDL_CORE)/psl_fpga_fgt.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
 		ln -f -s $(SNAP_HDL_CORE)/psl_accel_fgt.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
 	fi
-	@echo -e "\t[PREPARE ENV.........] done `date`";
+	@echo -e "\t[PREPARE ENVIRONMENT.] done `date`";
 
 %.vhd: %.vhd_source
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
@@ -168,6 +168,9 @@ action_hw:
 	@if [ $$? -ne 0 ]; then \
 		echo -e "\t                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
 	fi
+	@if [ $(USE_PRFLOW) = "TRUE" ]; then \
+		$(MAKE) -kC $(ACTION_ROOT)/hw vhdl; \
+	fi
 	@echo -e "\t[CONFIG ACTION HW....] done `date`";
 
 create_environment:
@@ -181,7 +184,7 @@ create_environment:
 config_start:
 	@echo -e "\t[CONFIG..............] start `date`"
 
-config: config_start check_snap_settings setup_environment snap_config action_hw create_environment patch_version patch_NVMe
+config: config_start check_snap_settings prepare_environment snap_config action_hw create_environment patch_version patch_NVMe
 	@echo -e "\t[CONFIG..............] done `date`"
 
 patch_version:
@@ -291,8 +294,9 @@ clean:
 	@$(RM) -r sim/ies sim/xsim sim/questa hdl/nvme/component.xml hdl/nvme/xgui
 	@echo -e "\t                        log files";
 	@$(RM) -r logs
+	@echo -e "\t                        action";
+	@$(RM) $(ACTION_ROOT)/hw/vhdl
 	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then          \
-		echo -e "\t                        action"; \
 		make -C $(ACTION_ROOT) $@ > /dev/null;      \
 		if [ $$? -ne 0 ]; then                      \
 			echo -e "\tError: [make "$@"] failed for action in $(ACTION_ROOT)"; exit -1; \

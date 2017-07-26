@@ -16,11 +16,11 @@
 #
 #-----------------------------------------------------------
 
-create_pblock pblock_sdram
-resize_pblock pblock_sdram -add CLOCKREGION_X4Y4:CLOCKREGION_X5Y4
-resize_pblock pblock_sdram -add CLOCKREGION_X3Y2:CLOCKREGION_X3Y4 -locs keep_all
-resize_pblock pblock_sdram -add { BITSLICE_RX_TX_X2Y104:BITSLICE_RX_TX_X2Y207 PLLE3_ADV_X2Y4:PLLE3_ADV_X2Y7 } -locs keep_all
-add_cells_to_pblock pblock_sdram [ get_cells [ list a0/ddr3sdram_bank0 ] ] -clear_locs
+# create_pblock pblock_sdram
+# resize_pblock pblock_sdram -add CLOCKREGION_X4Y4:CLOCKREGION_X5Y4
+# resize_pblock pblock_sdram -add CLOCKREGION_X3Y2:CLOCKREGION_X3Y4 -locs keep_all
+# resize_pblock pblock_sdram -add { BITSLICE_RX_TX_X2Y104:BITSLICE_RX_TX_X2Y207 PLLE3_ADV_X2Y4:PLLE3_ADV_X2Y7 } -locs keep_all
+# add_cells_to_pblock pblock_sdram [ get_cells [ list a0/ddr3sdram_bank0 ] ] -clear_locs
 
 create_pblock pblock_core
 resize_pblock pblock_core -add CLOCKREGION_X3Y0:CLOCKREGION_X3Y0

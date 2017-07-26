@@ -31,17 +31,25 @@ set bram_used   $::env(BRAM_USED)
 set sdram_used  $::env(SDRAM_USED)
 set ila_debug   [string toupper $::env(ILA_DEBUG)]
 set simulator   $::env(SIMULATOR)
-set vivadoVer   [version -short]
-set log_dir      $::env(LOGS_DIR)
-set log_file     $log_dir/create_framework.log
-set use_prflow  $::env(USE_PRFLOW)
+set log_dir     $::env(LOGS_DIR)
+set log_file    $log_dir/create_framework.log
 
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
-    set hls_support [string toupper $::env(HLS_SUPPORT)]
+  set hls_support [string toupper $::env(HLS_SUPPORT)]
 } elseif { [string first "HLS" [string toupper $action_dir]] != -1 } {
   set hls_support "TRUE"
 } else {
   set hls_support "not defined"
+}
+
+if { [info exists ::env(USE_PRFLOW)] == 1 } {
+  set use_prflow [string toupper $::env(USE_PRFLOW)]
+} else {
+  set use_prflow "FALSE"
+}
+
+if { $hls_support == "TRUE" } {
+  set action_dir $::env(ACTION_ROOT)/hw/vhdl
 }
 
 if { [info exists ::env(DENALI)] == 1 } {
@@ -98,7 +106,7 @@ if { $use_prflow == "TRUE" } {
   # Create PR Region for SNAP Action
   create_partition_def -name snap_action -module action_wrapper
   create_reconfig_module -name user_action -partition_def [get_partition_defs snap_action] -top action_wrapper
-} 
+}
 
 # Add Files
 # PSL Files
@@ -109,21 +117,20 @@ add_files -scan_for_includes $hdl_dir/core/  >> $log_file
 set_property used_in_simulation false [get_files $hdl_dir/core/psl_fpga.vhd]
 set_property top psl_fpga [current_fileset]
 
+# Action Files
 if { $use_prflow == "TRUE" } {
-  # Action Files for PR Region
+  # Files for PR module
+  add_files -scan_for_includes $hdl_dir/core/psl_accel_types.vhd -of_objects [get_reconfig_modules user_action] >> $log_file
+  add_files -scan_for_includes $hdl_dir/core/action_types.vhd -of_objects [get_reconfig_modules user_action] >> $log_file
   if { $hls_support == "TRUE" } {
     add_files -scan_for_includes $hdl_dir/hls/ -of_objects [get_reconfig_modules user_action] >> $log_file
   }
   add_files -scan_for_includes $action_dir/ -of_objects [get_reconfig_modules user_action] >> $log_file
-  # Constant types for PR module
-  add_files -scan_for_includes $hdl_dir/core/psl_accel_types.vhd -of_objects [get_reconfig_modules user_action] >> $log_file
-  add_files -scan_for_includes $hdl_dir/core/action_types.vhd -of_objects [get_reconfig_modules user_action] >> $log_file
-  
 } else {
   if { $hls_support == "TRUE" } {
     add_files -scan_for_includes $hdl_dir/hls/  >> $log_file
   }
-  add_files -scan_for_includes $action_dir/  >> $log_file
+  add_files -scan_for_includes $action_dir/ >> $log_file
 }
 
 # Sim Files
@@ -214,7 +221,7 @@ if { $nvme_used == TRUE } {
   set_property synth_checkpoint_mode None [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
   generate_target all                     [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
 
-    if { ( [info exists ::env(DENALI_TOOLS) ] == 1)  &&  ( [info exists ::env(DENALI_CUSTOM)] == 1 ) } {
+  if { ( [info exists ::env(DENALI_TOOLS) ] == 1)  &&  ( [info exists ::env(DENALI_CUSTOM)] == 1 ) } {
     puts "	                        adding Denali simulation files"
     set denali_custom $::env(DENALI_CUSTOM)
     add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme/
@@ -255,10 +262,8 @@ if { $use_prflow == "TRUE" } {
 puts "	                        importing XDCs"
 add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_link.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/snap_link.xdc]
-
-
-
 update_compile_order -fileset sources_1 >> $log_file
+
 # DDR XDCs
 if { $fpga_card == "KU3" } {
   if { $bram_used == "TRUE" } {
@@ -269,9 +274,10 @@ if { $fpga_card == "KU3" } {
       set_property used_in_synthesis false [get_files  $root_dir/setup/KU3/action_pblock.xdc]
       add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_pblock.xdc
       set_property used_in_synthesis false [get_files  $root_dir/setup/KU3/snap_pblock.xdc]
-    }    
-    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc 
+    }
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc
     add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_ddr3_b0pblock.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/KU3/snap_ddr3_b0pblock.xdc]
     add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_ddr3_b0pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/KU3/snap_ddr3_b0pins.xdc]
   }
