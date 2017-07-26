@@ -1,6 +1,6 @@
 #-----------------------------------------------------------
 #
-# Copyright 2016, International Business Machines
+# Copyright 2016,2017 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,19 +17,25 @@
 #-----------------------------------------------------------
 
 set log_dir               $::env(LOGS_DIR)
-set log_file              $log_dir/snap_build.log
+set log_file              $log_dir/snap_cloud_build.log
 set fpgacard              $::env(FPGACARD)
 set sdram_used            $::env(SDRAM_USED)
 set nvme_used             $::env(NVME_USED)
 set bram_used             $::env(BRAM_USED)
-set cloud_build_bitfile   $::env(CLOUD_BUILD_BITFILE)
 set cloud_run             $::env(CLOUD_RUN)
+set remove_tmp_files      "FALSE"
 
 #timing_lablimit  
 if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
-    set timing_lablimit [string toupper $::env(TIMING_LABLIMIT)]
+  set timing_lablimit [string toupper $::env(TIMING_LABLIMIT)]
 } else {
   set timing_lablimit "-250"
+}
+
+if { [info exists ::env(CLOUD_BUILD_BITFILE)] == 1 } {
+  set cloud_build_bitfile [string toupper $::env(CLOUD_BUILD_BITFILE)]
+} else {
+  set cloud_build_bitfile "FALSE"
 }
 
 #Define widths of each column
@@ -71,13 +77,17 @@ if { $cloud_run == "BASE" } {
   wait_on_run  impl_1 >> $log_file
 
 
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "collecting reports and checkpoints" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_opt.dcp                   ./Checkpoints/framework_opt.dcp    
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_physopt.dcp               ./Checkpoints/framework_physopt.dcp
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_placed.dcp                ./Checkpoints/framework_placed.dcp 
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_routed.dcp                ./Checkpoints/framework_routed.dcp 
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_route_status.rpt          ./Reports/framework_route_status.rpt
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_timing_summary_routed.rpt ./Reports/framework_timing_summary_routed.rpt
+  puts [format "%-*s %-*s %-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3 + 1] "collecting reports and checkpoints" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_opt.dcp                         ./Checkpoints/framework_opt.dcp    
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_physopt.dcp                     ./Checkpoints/framework_physopt.dcp
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_placed.dcp                      ./Checkpoints/framework_placed.dcp 
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_routed.dcp                      ./Checkpoints/framework_routed.dcp 
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_postroute_physopt.dcp           ./Checkpoints/snap_and_action_postroute_physopt.dcp
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_postroute_physopt_bb.dcp        ./Checkpoints/snap_static_region_bb.dcp
+  file copy -force ../viv_project/framework.runs/impl_1/a0_action_w_user_action_routed.dcp       ./Checkpoints/user_action_routed.dcp
+  file copy -force ../viv_project/framework.runs/impl_1/a0_action_w_user_action_post_routed.dcp  ./Checkpoints/user_action_postroute_physopt.dcp
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_route_status.rpt                ./Reports/framework_route_status.rpt
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_timing_summary_routed.rpt       ./Reports/framework_timing_summary_routed.rpt
 
   ##  
   ## generating reports
@@ -94,13 +104,13 @@ if { $cloud_run == "BASE" } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Timing (TNS)" $widthCol3 "$TIMING_TNS ps" $widthCol4 "" ]
   if { [expr $TIMING_TNS >= 0 ] } {
       puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "TIMING OK" $widthCol4 "" ]
-      set remove_tmp_files TRUE
+      set remove_tmp_files "TRUE"
   } elseif { [expr $TIMING_TNS < $timing_lablimit ] } {
       puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: TIMING FAILED" $widthCol4 "" ]
       exit 42
   } else {
       puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "WARNING: TIMING FAILED, but may be OK for lab use" $widthCol4 "" ]
-      set remove_tmp_files TRUE
+      set remove_tmp_files "TRUE"
   }
 
 } elseif { $cloud_run == "IMAGE" } {
@@ -161,11 +171,13 @@ if { $cloud_run == "BASE" } {
 ##
 ## removing unnecessary files
 if { $remove_tmp_files == "TRUE" } {
-puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-exec rm -rf ./Checkpoints/framework_synth.dcp
-exec rm -rf ./Checkpoints/framework_opt.dcp
-exec rm -rf ./Checkpoints/framework_physopt.dcp
-exec rm -rf ./Checkpoints/framework_placed.dcp
+  puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+  exec rm -rf ./Checkpoints/framework_synth.dcp
+  exec rm -rf ./Checkpoints/framework_opt.dcp
+  exec rm -rf ./Checkpoints/framework_physopt.dcp
+  exec rm -rf ./Checkpoints/framework_placed.dcp
+  exec rm -rf ./Checkpoints/framework_routed.dcp
+  exec rm -rf ./Checkpoints/user_action_routed.dcp
 }
 
 close_project  >> $log_file
