@@ -326,9 +326,7 @@ BEGIN
     wram_wdata(             0) <= buf_wdata_i(0) XOR inject_dma_write_error_i;
     wram_wdata(511 DOWNTO   1) <= buf_wdata_i(511 DOWNTO 1);
     wram_wdata(575 DOWNTO 512) <= buf_wdata_be_i;
--- looks like we don't need the fix anymore
---    wram_raddr                 <= ha_b_q.rtag(4 DOWNTO 0) & (ha_b_q.rad(0) xor flip_bit_q) ;
-    wram_raddr                 <= ha_b_q.rtag(4 DOWNTO 0) & ha_b_q.rad(0) ;
+    wram_raddr                 <= ha_b_q.rtag(4 DOWNTO 0) & (ha_b_q.rad(0) xor flip_bit_q);
     wram_wen                   <= buf_wdata_v_i;
 
 
@@ -376,35 +374,35 @@ BEGIN
           IF buf_wdata_v_i = '1' THEN
             --
             -- check that the first 64 bytes of a CL are written into the buffer
-            -- 
+            --
             IF (wram_waddr_q(0) = '0') THEN
               IF (and_reduce(buf_wdata_be_i) = '1') THEN
                 even_wdata_complete_q <= TRUE;
               ELSE
                 even_wdata_complete_q <= FALSE;
-              END IF;  
+              END IF;
             END IF;
 
             --
             -- check that the second 64 bytes of a CL are written into the buffer
-            -- 
+            --
             IF (wram_waddr_q(0) = '1') THEN
               IF (and_reduce(buf_wdata_be_i) = '1') THEN
                 odd_wdata_complete_v := TRUE;
               ELSE
                 odd_wdata_complete_v := FALSE;
-              END IF;  
+              END IF;
             END IF;
           end if;
 
           --
           -- check that the full CL is written into the buffer
-          -- 
+          --
           IF (even_wdata_complete_q = TRUE) AND
              (odd_wdata_complete_v  = TRUE) THEN
             buf_wtag_cl_partial_q <= FALSE;
           END IF;
-          
+
           IF (wram_waddr_d(1) /= wram_waddr_q(1))  THEN
             buf_wtag_valid_q <= TRUE;
           END IF;
@@ -575,7 +573,9 @@ BEGIN
           rram_rdata_vld_q    <= '0';
           rram_rdata_vld_qq   <= '0';
           rram_rdata_vld_qqq  <= '0';
-          flip_bit_valid_q    <= '0';
+          flip_bit_valid_q    <= '0';             -- only for FPGACARD=FGT
+          flip_bit_valid_q    <= '1';             -- only for FPGACARD=KU3
+          flip_bit_q          <= '0';
 
         ELSE
           -- capture state of first rad bit and use the bit to
@@ -583,7 +583,7 @@ BEGIN
           if ha_b_i.rvalid = '1' and flip_bit_valid_q = '0' then
             flip_bit_valid_q <= '1';
             flip_bit_q       <=  ha_b_i.rad(0);
-          end if;  
+          end if;
           ha_b_q             <= ha_b_i;
           ha_b_rad_q         <= ha_b_q.rad(0);
           ha_b_rad_qq        <= ha_b_rad_q;
