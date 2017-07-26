@@ -77,7 +77,7 @@ static void usage(const char *prog)
             "\n"
             "Example:\n"
             "HW:  sudo ./snap_intersect ...\n"
-            "SW:  SNAP_CONFIG=1 ./snap_intersect -s ...\n"
+            "SW:  SNAP_CONFIG=1 ./snap_intersect -s ... (must with -s)\n"
             "\n",
             prog);
 }
@@ -431,7 +431,24 @@ int main(int argc, char *argv[])
         goto out_error;
     }
 
-    action = snap_attach_action(card, INTERSECT_ACTION_TYPE, action_irq, 60);
+    if(sw == 0) {
+
+        fprintf(stdout, "Run in HW steps 1-3-5\n");
+        if( method == HASH_METHOD) 
+            action = snap_attach_action(card, INTERSECT_H_ACTION_TYPE, action_irq, 60);
+        else if ( method == SORT_METHOD)
+            action = snap_attach_action(card, INTERSECT_S_ACTION_TYPE, action_irq, 60);
+        else {
+            fprintf(stderr, "ERROR: Other methods are not supported in HW run.\n");
+            goto out_error1;
+        }
+    } else {
+        fprintf(stdout, "Run in SW steps 1-2-4\n");
+        fprintf(stdout, "Just attach a single ACTION_TYPE. \n");
+        action = snap_attach_action(card, INTERSECT_H_ACTION_TYPE, action_irq, 60);
+    }
+
+
     if (action == NULL) {
         fprintf(stderr, "err: failed to attach action %u: %s\n",
                 card_no, strerror(errno));

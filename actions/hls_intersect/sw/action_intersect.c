@@ -298,6 +298,7 @@ static int action_main(struct snap_sim_action *action,
     struct intersect_job *js = (struct intersect_job *)job;
     act_trace("%s(%p, %p, %d) table1_size = %d, table2_size = %d\n",
             __func__, action, job, job_len, js->src_tables_host[0].size,  js->src_tables_host[1].size);
+
     //Do Nothing.
 
     action->job.retc = SNAP_RETC_SUCCESS;
@@ -309,7 +310,9 @@ static int action_main(struct snap_sim_action *action,
 static struct snap_sim_action action = {
     .vendor_id = SNAP_VENDOR_ID_ANY,
     .device_id = SNAP_DEVICE_ID_ANY,
-    .action_type = INTERSECT_ACTION_TYPE,
+    .action_type = INTERSECT_H_ACTION_TYPE,
+    // For SNAP_CONFIG = 0: it is ignored. 
+    // For SNAP_CONFIG = 1: Just use one ACTION_TYPE to make match.
 
     .job = { .retc = SNAP_RETC_FAILURE, },
     .state = ACTION_IDLE,

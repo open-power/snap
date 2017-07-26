@@ -22,10 +22,12 @@
 extern "C" {
 #endif
 
+// Two hardware implementations and use two Action IDs
+// H for Hash method
+// S for Sort method
+#define INTERSECT_H_ACTION_TYPE 0x10141005
+#define INTERSECT_S_ACTION_TYPE 0x10141006
 
-#define INTERSECT_ACTION_TYPE 0x10141005
-
-#define END_SIGN 0xFFFFFFFF
 #define NUM_TABLES  2
 #define MAX_TABLE_SIZE (uint64_t)(1<<30)
 
