@@ -90,7 +90,7 @@ while [ -z "$SETUP_DONE" ]; do
     export USE_PRFLOW=FALSE
     echo "Setting USE_PRFLOW             to: \"$USE_PRFLOW\""
   else
-    echo "USER_PRFLOW             is set to: \"$USE_PRFLOW\""
+    echo "USE_PRFLOW              is set to: \"$USE_PRFLOW\""
   fi
 
   if [ -z "$CLOUD_BUILD_BITFILE" ]; then

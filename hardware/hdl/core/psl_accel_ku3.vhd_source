@@ -135,23 +135,23 @@ ENTITY psl_accel IS
     refclk_sdram_n                      : IN    STD_LOGIC;                      -- only for DDRI_USED=TRUE
                                                                                 -- only for DDR3_USED=TRUE
     -- DDR3 SDRAM Interface                                                     -- only for DDR3_USED=TRUE
-    c1_sys_clk_p                        : IN    STD_LOGIC;                      -- only for DDR3_USED=TRUE
-    c1_sys_clk_n                        : IN    STD_LOGIC;                      -- only for DDR3_USED=TRUE
-    c1_ddr3_addr                        : OUT   STD_LOGIC_VECTOR(15 DOWNTO 0);  -- only for DDR3_USED=TRUE
-    c1_ddr3_ba                          : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);   -- only for DDR3_USED=TRUE
-    c1_ddr3_ras_n                       : OUT   STD_LOGIC;                      -- only for DDR3_USED=TRUE
-    c1_ddr3_cas_n                       : OUT   STD_LOGIC;                      -- only for DDR3_USED=TRUE
-    c1_ddr3_reset_n                     : OUT   STD_LOGIC;                      -- only for DDR3_USED=TRUE
-    c1_ddr3_cs_n                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);   -- only for DDR3_USED=TRUE
-    c1_ddr3_cke                         : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);   -- only for DDR3_USED=TRUE
-    c1_ddr3_ck_p                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);   -- only for DDR3_USED=TRUE
-    c1_ddr3_ck_n                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);   -- only for DDR3_USED=TRUE
-    c1_ddr3_we_n                        : OUT   STD_LOGIC;                      -- only for DDR3_USED=TRUE
-    c1_ddr3_dm                          : OUT   STD_LOGIC_VECTOR(8 DOWNTO 0);   -- only for DDR3_USED=TRUE
-    c1_ddr3_dq                          : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);  -- only for DDR3_USED=TRUE
-    c1_ddr3_dqs_p                       : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);   -- only for DDR3_USED=TRUE
-    c1_ddr3_dqs_n                       : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);   -- only for DDR3_USED=TRUE
-    c1_ddr3_odt                         : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);   -- only for DDR3_USED=TRUE
+    c0_sys_clk_p                        : IN    STD_LOGIC;                      -- only for DDR3_USED=TRUE
+    c0_sys_clk_n                        : IN    STD_LOGIC;                      -- only for DDR3_USED=TRUE
+    c0_ddr3_addr                        : OUT   STD_LOGIC_VECTOR(15 DOWNTO 0);  -- only for DDR3_USED=TRUE
+    c0_ddr3_ba                          : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);   -- only for DDR3_USED=TRUE
+    c0_ddr3_ras_n                       : OUT   STD_LOGIC;                      -- only for DDR3_USED=TRUE
+    c0_ddr3_cas_n                       : OUT   STD_LOGIC;                      -- only for DDR3_USED=TRUE
+    c0_ddr3_reset_n                     : OUT   STD_LOGIC;                      -- only for DDR3_USED=TRUE
+    c0_ddr3_cs_n                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);   -- only for DDR3_USED=TRUE
+    c0_ddr3_cke                         : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);   -- only for DDR3_USED=TRUE
+    c0_ddr3_ck_p                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);   -- only for DDR3_USED=TRUE
+    c0_ddr3_ck_n                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);   -- only for DDR3_USED=TRUE
+    c0_ddr3_we_n                        : OUT   STD_LOGIC;                      -- only for DDR3_USED=TRUE
+    c0_ddr3_dm                          : OUT   STD_LOGIC_VECTOR(8 DOWNTO 0);   -- only for DDR3_USED=TRUE
+    c0_ddr3_dq                          : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);  -- only for DDR3_USED=TRUE
+    c0_ddr3_dqs_p                       : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);   -- only for DDR3_USED=TRUE
+    c0_ddr3_dqs_n                       : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);   -- only for DDR3_USED=TRUE
+    c0_ddr3_odt                         : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);   -- only for DDR3_USED=TRUE
 
     -- Parity Enable output and 250MHz Clock input
     ah_paren                            : OUT   STD_LOGIC;
@@ -750,7 +750,7 @@ BEGIN
     O => refclk_sdram_bufg                                                                -- only for DDRI_USED=TRUE
   );                                                                                      -- only for DDRI_USED=TRUE
                                                                                           -- only for DDR3_USED=TRUE
-  c1_ddr3_dm <= (OTHERS => '0');                                                          -- only for DDR3_USED=TRUE
+  c0_ddr3_dm <= (OTHERS => '0');                                                          -- only for DDR3_USED=TRUE
 
   snap_core_i: snap_core
     PORT MAP (
@@ -1144,26 +1144,26 @@ BEGIN
       s_axi_wvalid   => sdram_axi_wvalid                                                                            -- only for BRAM_USED=TRUE
     );                                                                                                              -- only for BRAM_USED=TRUE
 
-  ddr3sdram_bank1 : ddr3sdram                                                           -- only for DDR3_USED=TRUE
+  ddr3sdram_bank0 : ddr3sdram                                                           -- only for DDR3_USED=TRUE
     PORT MAP (                                                                          -- only for DDR3_USED=TRUE
       c0_init_calib_complete       => sdram_init_calib_complete,                        -- only for DDR3_USED=TRUE
-      c0_sys_clk_p                 => c1_sys_clk_p,                                     -- only for DDR3_USED=TRUE
-      c0_sys_clk_n                 => c1_sys_clk_n,                                     -- only for DDR3_USED=TRUE
-      c0_ddr3_addr                 => c1_ddr3_addr,                                     -- only for DDR3_USED=TRUE
-      c0_ddr3_ba                   => c1_ddr3_ba,                                       -- only for DDR3_USED=TRUE
-      c0_ddr3_cas_n                => c1_ddr3_cas_n,                                    -- only for DDR3_USED=TRUE
-      c0_ddr3_cke                  => c1_ddr3_cke,                                      -- only for DDR3_USED=TRUE
-      c0_ddr3_ck_n                 => c1_ddr3_ck_n,                                     -- only for DDR3_USED=TRUE
-      c0_ddr3_ck_p                 => c1_ddr3_ck_p,                                     -- only for DDR3_USED=TRUE
-      c0_ddr3_cs_n                 => c1_ddr3_cs_n,                                     -- only for DDR3_USED=TRUE
+      c0_sys_clk_p                 => c0_sys_clk_p,                                     -- only for DDR3_USED=TRUE
+      c0_sys_clk_n                 => c0_sys_clk_n,                                     -- only for DDR3_USED=TRUE
+      c0_ddr3_addr                 => c0_ddr3_addr,                                     -- only for DDR3_USED=TRUE
+      c0_ddr3_ba                   => c0_ddr3_ba,                                       -- only for DDR3_USED=TRUE
+      c0_ddr3_cas_n                => c0_ddr3_cas_n,                                    -- only for DDR3_USED=TRUE
+      c0_ddr3_cke                  => c0_ddr3_cke,                                      -- only for DDR3_USED=TRUE
+      c0_ddr3_ck_n                 => c0_ddr3_ck_n,                                     -- only for DDR3_USED=TRUE
+      c0_ddr3_ck_p                 => c0_ddr3_ck_p,                                     -- only for DDR3_USED=TRUE
+      c0_ddr3_cs_n                 => c0_ddr3_cs_n,                                     -- only for DDR3_USED=TRUE
       -- c0_ddr3_dm => OPEN, -- ECC DIMM, don't use dm. dm is assigned above.           -- only for DDR3_USED=TRUE
-      c0_ddr3_dq                   => c1_ddr3_dq,                                       -- only for DDR3_USED=TRUE
-      c0_ddr3_dqs_n                => c1_ddr3_dqs_n,                                    -- only for DDR3_USED=TRUE
-      c0_ddr3_dqs_p                => c1_ddr3_dqs_p,                                    -- only for DDR3_USED=TRUE
-      c0_ddr3_odt                  => c1_ddr3_odt,                                      -- only for DDR3_USED=TRUE
-      c0_ddr3_ras_n                => c1_ddr3_ras_n,                                    -- only for DDR3_USED=TRUE
-      c0_ddr3_reset_n              => c1_ddr3_reset_n,                                  -- only for DDR3_USED=TRUE
-      c0_ddr3_we_n                 => c1_ddr3_we_n,                                     -- only for DDR3_USED=TRUE
+      c0_ddr3_dq                   => c0_ddr3_dq,                                       -- only for DDR3_USED=TRUE
+      c0_ddr3_dqs_n                => c0_ddr3_dqs_n,                                    -- only for DDR3_USED=TRUE
+      c0_ddr3_dqs_p                => c0_ddr3_dqs_p,                                    -- only for DDR3_USED=TRUE
+      c0_ddr3_odt                  => c0_ddr3_odt,                                      -- only for DDR3_USED=TRUE
+      c0_ddr3_ras_n                => c0_ddr3_ras_n,                                    -- only for DDR3_USED=TRUE
+      c0_ddr3_reset_n              => c0_ddr3_reset_n,                                  -- only for DDR3_USED=TRUE
+      c0_ddr3_we_n                 => c0_ddr3_we_n,                                     -- only for DDR3_USED=TRUE
       c0_ddr3_ui_clk               => sdram_ui_clk,                                     -- only for DDR3_USED=TRUE
       c0_ddr3_ui_clk_sync_rst      => sdram_ui_clk_sync_rst,                            -- only for DDR3_USED=TRUE
       c0_ddr3_aresetn              => sdram_reset_n_q,                                  -- only for DDR3_USED=TRUE

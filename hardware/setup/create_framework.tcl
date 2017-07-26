@@ -251,12 +251,7 @@ puts "	                        importing XDCs"
 add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_link.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/snap_link.xdc]
 
-if { $use_prflow == "TRUE" } {
-  add_files -fileset constrs_1 -norecurse $root_dir/setup/action_pblock.xdc
-  set_property used_in_synthesis false [get_files  $root_dir/setup/action_pblock.xdc]
-  add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_pblock.xdc
-  set_property used_in_synthesis false [get_files  $root_dir/setup/snap_pblock.xdc]
-}
+
 
 update_compile_order -fileset sources_1 >> $log_file
 # DDR XDCs
@@ -264,9 +259,15 @@ if { $fpga_card == "KU3" } {
   if { $bram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc 
   } elseif { $sdram_used == "TRUE" } {
+    if { $use_prflow == "TRUE" } {
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/action_pblock.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/KU3/action_pblock.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_pblock.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/KU3/snap_pblock.xdc]
+    }    
     add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc 
-    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_ddr3_b1pins.xdc
-    set_property used_in_synthesis false [get_files $root_dir/setup/KU3/snap_ddr3_b1pins.xdc]
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_ddr3_b0pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/KU3/snap_ddr3_b0pins.xdc]
   }
 } elseif { $fpga_card == "FGT" } {
   if { $bram_used == "TRUE" } {

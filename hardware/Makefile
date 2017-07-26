@@ -64,8 +64,9 @@ SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
                   $(SNAP_HDL_HLS)/action_wrapper.vhd \
                   $(SNAP_SIM_CORE)/top.sv
 
+SNAP_CLOUD_DCP=$(SNAP_HARDWARE_ROOT)/build/Checkpoints/user_action_synth.dcp
 
-.PHONY: all clean gitclean check_snap_settings image model action_config setup_environment create_environment config patch_version cloud_image snap_config snap_config_start
+.PHONY: all clean gitclean check_snap_settings image model action_config setup_environment create_environment config patch_version cloud_base cloud_image snap_config snap_config_start
 
 all: config model image
 
@@ -190,12 +191,20 @@ image: snap_config patch_version
 	@echo -e "\t[BUILD IMAGE.........] done  `date`"
 #	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/timing_summary.rpt | egrep -v "^$|^\-\-"
 
-cloud_image: snap_config patch_version
+cloud_base: snap_config patch_version
+	@echo -e "\t[BUILD CLOUD BASE...] start `date`"
+	@cd $(BUILD_DIR) && env CLOUD_RUN=BASE vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
+	@echo -e "\t[BUILD CLOUD BASE...] done  `date`"
+
+cloud_image: $(SNAP_CLOUD_DCP)
 	@echo -e "\t[BUILD CLOUD IMAGE...] start `date`"
-	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
+	@cd $(BUILD_DIR) && env CLOUD_RUN=IMAGE vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
 	@echo -e "\t[BUILD CLOUD IMAGE...] done  `date`"
 	@rm -r -f .bitstream_name.txt
-#	@grep -A6 "Design Timing Summary" $(BUILD_DIR)/Reports/timing_summary_routed.rpt | egrep -v "^$|^\-\-"
+
+$(SNAP_CLOUD_DCP): 
+	@echo -e "\tNeed to run cloud_base first"
+	@exit 1
 
 model: check_denali pslse software snap_config patch_version $(SIMULATOR)
 

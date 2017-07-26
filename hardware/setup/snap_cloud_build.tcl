@@ -23,6 +23,7 @@ set sdram_used            $::env(SDRAM_USED)
 set nvme_used             $::env(NVME_USED)
 set bram_used             $::env(BRAM_USED)
 set cloud_build_bitfile   $::env(CLOUD_BUILD_BITFILE)
+set cloud_run             $::env(CLOUD_RUN)
 
 #timing_lablimit  
 if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
@@ -42,93 +43,117 @@ set widthCol4 22
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "open framework project" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
 open_project ../viv_project/framework.xpr >> $log_file
  
+if { $cloud_run == "BASE" } {
 
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
-reset_run    user_action_synth_1 >> $log_file
-launch_runs  user_action_synth_1 >> $log_file
-wait_on_run  user_action_synth_1 >> $log_file
-file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper.dcp                       ./Checkpoints/user_action_synth.dcp
-file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper_utilization_synth.rpt     ./Reports/user_action_utilization_synth.rpt
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  reset_run    user_action_synth_1 >> $log_file
+  launch_runs  user_action_synth_1 >> $log_file
+  wait_on_run  user_action_synth_1 >> $log_file
+  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper.dcp                       ./Checkpoints/user_action_synth.dcp
+  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper_utilization_synth.rpt     ./Reports/user_action_utilization_synth.rpt
   
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
-reset_run    synth_1 >> $log_file
-launch_runs  synth_1 >> $log_file
-wait_on_run  synth_1 >> $log_file
-file copy -force ../viv_project/framework.runs/synth_1/psl_fpga.dcp                       ./Checkpoints/framework_synth.dcp
-file copy -force ../viv_project/framework.runs/synth_1/psl_fpga_utilization_synth.rpt     ./Reports/framework_utilization_synth.rpt
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  reset_run    synth_1 >> $log_file
+  launch_runs  synth_1 >> $log_file
+  wait_on_run  synth_1 >> $log_file
+  file copy -force ../viv_project/framework.runs/synth_1/psl_fpga.dcp                       ./Checkpoints/framework_synth.dcp
+  file copy -force ../viv_project/framework.runs/synth_1/psl_fpga_utilization_synth.rpt     ./Reports/framework_utilization_synth.rpt
 
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
-open_run     synth_1 -name synth_1 >> $log_file
-lock_design  -level routing b      >> $log_file
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  open_run     synth_1 -name synth_1 >> $log_file
+  lock_design  -level routing b      >> $log_file
  
-read_xdc ../setup/snap_impl.xdc >> $log_file
+  read_xdc ../setup/snap_impl.xdc >> $log_file
 
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start implementation" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
-reset_run    impl_1 >> $log_file
-launch_runs  impl_1 >> $log_file
-wait_on_run  impl_1 >> $log_file
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start implementation" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  reset_run    impl_1 >> $log_file
+  launch_runs  impl_1 >> $log_file
+  wait_on_run  impl_1 >> $log_file
 
 
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "collecting reports and checkpoints" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
-file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_opt.dcp                   ./Checkpoints/framework_opt.dcp    
-file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_physopt.dcp               ./Checkpoints/framework_physopt.dcp
-file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_placed.dcp                ./Checkpoints/framework_placed.dcp 
-file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_routed.dcp                ./Checkpoints/framework_routed.dcp 
-file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_route_status.rpt          ./Reports/framework_route_status.rpt
-file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_timing_summary_routed.rpt ./Reports/framework_timing_summary_routed.rpt
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "collecting reports and checkpoints" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_opt.dcp                   ./Checkpoints/framework_opt.dcp    
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_physopt.dcp               ./Checkpoints/framework_physopt.dcp
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_placed.dcp                ./Checkpoints/framework_placed.dcp 
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_routed.dcp                ./Checkpoints/framework_routed.dcp 
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_route_status.rpt          ./Reports/framework_route_status.rpt
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_timing_summary_routed.rpt ./Reports/framework_timing_summary_routed.rpt
 
-## 
-## generating reports
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating reports" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-report_utilization    -quiet -file  ./Reports/utilization_route_design.rpt
-report_route_status   -quiet -file  ./Reports/route_status.rpt
-report_timing_summary -quiet -max_paths 100 -file ./Reports/timing_summary.rpt
-report_drc            -quiet -ruledeck bitstream_checks -name psl_fpga -file ./Reports/drc_bitstream_checks.rpt
+  ##  
+  ## generating reports
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating reports" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+  report_utilization    -quiet -file  ./Reports/utilization_route_design.rpt
+  report_route_status   -quiet -file  ./Reports/route_status.rpt
+  report_timing_summary -quiet -max_paths 100 -file ./Reports/timing_summary.rpt
+  report_drc            -quiet -ruledeck bitstream_checks -name psl_fpga -file ./Reports/drc_bitstream_checks.rpt
 
-## 
-## checking timing
-## Extract timing information, change ns to ps, remove leading 0's in number to avoid treatment as octal.
-set TIMING_TNS [exec grep -A6 "Design Timing Summary" ./Reports/timing_summary.rpt | tail -n 1 | tr -s " " | cut -d " " -f 2 | tr -d "." | sed {s/^\(\-*\)0*\([0-9]*\)/\1\2/}]
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Timing (TNS)" $widthCol3 "$TIMING_TNS ps" $widthCol4 "" ]
-if { [expr $TIMING_TNS >= 0 ] } {
-    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "TIMING OK" $widthCol4 "" ]
-    set remove_tmp_files TRUE
-} elseif { [expr $TIMING_TNS < $timing_lablimit ] } {
-    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: TIMING FAILED" $widthCol4 "" ]
-    exit 42
-} else {
-    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "WARNING: TIMING FAILED, but may be OK for lab use" $widthCol4 "" ]
-    set remove_tmp_files TRUE
-}
-
-if { $cloud_build_bitfile == "TRUE" } {
- ##
-  ## generating bitstream name
-  set IMAGE_NAME [exec cat ../.bitstream_name.txt]
-  append IMAGE_NAME [expr {$nvme_used == "TRUE" ? "_NVME" : ""}]
-  if { $bram_used == "TRUE" } {
-    set RAM_TYPE BRAM
-  } elseif { $sdram_used == "TRUE" } {
-    set RAM_TYPE SDRAM
+  ## 
+  ## checking timing
+  ## Extract timing information, change ns to ps, remove leading 0's in number to avoid treatment as octal.
+  set TIMING_TNS [exec grep -A6 "Design Timing Summary" ./Reports/timing_summary.rpt | tail -n 1 | tr -s " " | cut -d " " -f 2 | tr -d "." | sed {s/^\(\-*\)0*\([0-9]*\)/\1\2/}]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Timing (TNS)" $widthCol3 "$TIMING_TNS ps" $widthCol4 "" ]
+  if { [expr $TIMING_TNS >= 0 ] } {
+      puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "TIMING OK" $widthCol4 "" ]
+      set remove_tmp_files TRUE
+  } elseif { [expr $TIMING_TNS < $timing_lablimit ] } {
+      puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: TIMING FAILED" $widthCol4 "" ]
+      exit 42
   } else {
-    set RAM_TYPE noSDRAM
+      puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "WARNING: TIMING FAILED, but may be OK for lab use" $widthCol4 "" ]
+      set remove_tmp_files TRUE
   }
-  append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_TNS]
 
-  open_run     impl_1 -name impl_1 >> $log_file
+} elseif { $cloud_run == "IMAGE" } {
 
-  ##
-  ### writing bitstream
-  set step write_bitstream
-  set logfile $log_dir/${step}.log
-  set command "write_bitstream -force -file ./Images/$IMAGE_NAME"
-  puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "create SNAP cloud_run" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  # Create PR run
+  create_reconfig_module -name cloud_build -partition_def [get_partition_defs snap_action ] -gate_level -top action_wrapper >> $log_file
+  add_files -norecurse ./Checkpoints/user_action_synth.dcp -of_objects [get_reconfig_modules cloud_build] >> $log_file
+  create_pr_configuration -name cloud_config -partitions [list a0/action_w:cloud_build ] >> $log_file
+  create_run cloud_run -parent_run impl_1 -flow {Vivado Implementation 2016} -pr_config cloud_config >> $log_file
 
-  if { [catch "$command > $logfile" errMsg] } {
-    puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: write_bitstream failed" $widthCol4 "" ]
-    puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "" $widthCol3 " please check $logfile" $widthCol4 "" ]
-  } else {
-    write_cfgmem -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME -size 128 -interface BPIx16 -force >> $logfile
+  set_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE        Explore [get_runs cloud_run]
+  set_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE      Explore [get_runs cloud_run]
+  set_property STEPS.PHYS_OPT_DESIGN.IS_ENABLED       true    [get_runs cloud_run]
+  set_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE   Explore [get_runs cloud_run]
+  set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE      Explore [get_runs cloud_run]  
+
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start implementation" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+
+  reset_run    cloud_run >> $log_file
+  launch_runs  cloud_run >> $log_file
+  wait_on_run  cloud_run >> $log_file
+
+  if { $cloud_build_bitfile == "TRUE" } {
+    ##
+    ## generating bitstream name
+    set IMAGE_NAME [exec cat ../.bitstream_name.txt]
+    append IMAGE_NAME [expr {$nvme_used == "TRUE" ? "_NVME" : ""}]
+    if { $bram_used == "TRUE" } {
+      set RAM_TYPE BRAM
+    } elseif { $sdram_used == "TRUE" } {
+      set RAM_TYPE SDRAM
+    } else {
+      set RAM_TYPE noSDRAM
+    }
+    append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_TNS]
+
+    open_run     cloud_run -name cloud_run >> $log_file
+
+    ##
+    ### writing bitstream
+    set step write_bitstream
+    set logfile $log_dir/${step}.log
+    set command "write_bitstream -force -file ./Images/$IMAGE_NAME"
+    puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+
+    if { [catch "$command > $logfile" errMsg] } {
+      puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: write_bitstream failed" $widthCol4 "" ]
+      puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "" $widthCol3 " please check $logfile" $widthCol4 "" ]
+    } else {
+      write_cfgmem -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME -size 128 -interface BPIx16 -force >> $logfile
+    }
+
   }
 
 }
