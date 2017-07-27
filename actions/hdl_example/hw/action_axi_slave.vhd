@@ -369,10 +369,11 @@ begin
 	            slv_reg12 <= slv_reg12;
 	            slv_reg13 <= slv_reg13;
 	            slv_reg14 <= slv_reg14;
-	            slv_reg15 <= slv_reg16;
-	            slv_reg15 <= slv_reg17;
-	            slv_reg15 <= slv_reg18;
-	            slv_reg15 <= slv_reg19;
+	            slv_reg15 <= slv_reg15;
+	            slv_reg16 <= slv_reg16;
+	            slv_reg17 <= slv_reg17;
+	            slv_reg18 <= slv_reg18;
+	            slv_reg19 <= slv_reg19;
 	        end case;
 	      end if;
               if app_start_q = '1' then
