@@ -166,6 +166,13 @@ if { $cloud_run == "BASE" } {
 
   }
 
+} elseif { $cloud_run == "ACTION" } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  reset_run    user_action_synth_1 >> $log_file
+  launch_runs  user_action_synth_1 >> $log_file
+  wait_on_run  user_action_synth_1 >> $log_file
+  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper.dcp                       ./Checkpoints/user_action_synth.dcp
+  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper_utilization_synth.rpt     ./Reports/user_action_utilization_synth.rpt
 }
 
 ##
