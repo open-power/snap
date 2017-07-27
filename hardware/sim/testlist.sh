@@ -99,7 +99,8 @@
         "10141002") a0="hls_hashjoin";;
         "10141003") a0="hls_search";;
         "10141004") a0="hls_bfs";;
-        "10141005") a0="hls_intersect";;
+        "10141005") a0="hls_intersect_h";;
+        "10141006") a0="hls_intersect_s";;
         *) a0="unknown";;
       esac; echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="$SNAP_ROOT/software/tools/snap_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
@@ -118,7 +119,8 @@
         "10141002") a1="hls_hashjoin";;
         "10141003") a1="hls_search";;
         "10141004") a1="hls_bfs";;
-        "10141005") a1="hls_intersect";;
+        "10141005") a1="hls_intersect_h";;
+        "10141006") a1="hls_intersect_s";;
         *) a1="unknown";;
       esac; echo "action0 type1s=$t1s type1l=$t1l $a1"
       t="$SNAP_ROOT/software/tools/snap_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
@@ -325,13 +327,17 @@
 #     done
     fi # bfs
 
-    if [[ "$t0l" == "10141005" || "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect"
+    if [[ "$t0l" == "10141005" || "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect hash"
       step "$ACTION_ROOT/sw/snap_intersect -h"
       step "$ACTION_ROOT/sw/snap_intersect    -m1 -v -t300"
-      step "$ACTION_ROOT/sw/snap_intersect    -n1 -v -t600"
-      step "$ACTION_ROOT/sw/snap_intersect    -n2 -v -t1200"
       step "$ACTION_ROOT/sw/snap_intersect -I -m1 -v -t300"
     fi # intersect
+    if [[ "$t0l" == "10141006" || "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect sort"
+      step "$ACTION_ROOT/sw/snap_intersect -h"
+      step "$ACTION_ROOT/sw/snap_intersect    -m2 -v -t300"
+      step "$ACTION_ROOT/sw/snap_intersect -I -m2 -v -t300"
+    fi # intersect
+
 
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"  # end of loop
   done; l=""; ts3=$(date +%s); totaltime=`expr $ts3 - $ts0`; echo "loops=$loops tests=$n total_time=$totaltime" # end of test

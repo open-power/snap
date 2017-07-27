@@ -10,8 +10,8 @@ IBM | 10.14.10.01 | 10.14.10.01 | HLS Sponge
 IBM | 10.14.10.02 | 10.14.10.02 | HLS HashJoin
 IBM | 10.14.10.03 | 10.14.10.03 | HLS Text Search
 IBM | 10.14.10.04 | 10.14.10.04 | HLS BFS (Breadth First Search)
-IBM | 10.14.10.05 | 10.14.10.05 | HLS Intersection
-IBM | 10.14.00.06 | 10.14.FF.FF | Reserved for IBM Actions
+IBM | 10.14.10.05 | 10.14.10.06 | HLS Intersection (Two methods)
+IBM | 10.14.00.07 | 10.14.FF.FF | Reserved for IBM Actions
 Reserved | FF.FF.00.00 | FF.FF.FF.FF | Reserved
 
 ### How to apply for a new Action Type

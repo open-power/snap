@@ -27,6 +27,15 @@ $(subdirs):
 		echo "INFO: No Makefile available in $@ ...";	\
 	fi
 
+.PHONY: config_s config_h
+config_s:
+	@ln -sf hw_s hw
+
+config_h:
+	@ln -sf hw_h hw
+
+hw: config_h
+
 # Cleanup for all subdirectories.
 # Only dive into subdirectory if existent and if Makefile is there.
 clean:
@@ -37,3 +46,4 @@ clean:
 	done
 	@find . -depth -name '*~'  -exec rm -rf '{}' \; -print
 	@find . -depth -name '.#*' -exec rm -rf '{}' \; -print
+	@$(RM) hw
