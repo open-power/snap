@@ -329,13 +329,13 @@
 
     if [[ "$t0l" == "10141005" && "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect hash"
       step "$ACTION_ROOT/sw/snap_intersect -h"
-      step "$ACTION_ROOT/sw/snap_intersect    -m1 -v -t300"
-      step "$ACTION_ROOT/sw/snap_intersect -I -m1 -v -t300"
+      step "$ACTION_ROOT/sw/snap_intersect    -m1 -v -t1200"
+      step "$ACTION_ROOT/sw/snap_intersect -I -m1 -v -t1200"
     fi # intersect
     if [[ "$t0l" == "10141006" && "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect sort"
       step "$ACTION_ROOT/sw/snap_intersect -h"
-      step "$ACTION_ROOT/sw/snap_intersect    -m2 -v -t300"
-      step "$ACTION_ROOT/sw/snap_intersect -I -m2 -v -t300"
+      step "$ACTION_ROOT/sw/snap_intersect    -m2 -v -t1200"
+      step "$ACTION_ROOT/sw/snap_intersect -I -m2 -v -t1200"
     fi # intersect
 
 
