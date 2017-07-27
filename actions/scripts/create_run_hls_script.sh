@@ -43,6 +43,7 @@ function usage() {
   echo "    [-p <part_number>]   FPGA part number."
   echo "    [-c <clock_period>]  HLS clock period."
   echo "    [-f <files>]         files to be used."
+  echo "    [-s <snap_root>]     snap root directory."
   echo "    [-V] Print program version (${version})"
   echo "    [-h] Print this help message."
   echo "    <path-to-bit-file>"
@@ -52,7 +53,7 @@ function usage() {
 }
 
 # Parse any options given on the command line
-while getopts ":n:d:w:p:c:f:Vh" opt; do
+while getopts ":n:d:w:p:c:f:s:Vh" opt; do
   case ${opt} in
       n)
       name=$OPTARG
@@ -71,6 +72,9 @@ while getopts ":n:d:w:p:c:f:Vh" opt; do
       ;;
       f)
       files=$OPTARG
+      ;;
+      s)
+      snap_root=$OPTARG
       ;;
       V)
       echo "${version}" >&2
@@ -102,8 +106,8 @@ set_top ${wrapper}
 
 # Can that be a list?
 foreach file [ list ${files} ] {
-  add_files \${file} -cflags "-I../../include -I../../../software/include -I../../../software/examples -I../include"
-  add_files -tb \${file} -cflags "-DNO_SYNTH -I../../include -I../../../software/include -I../../../software/examples -I../include"
+  add_files \${file} -cflags "-I$snap_root/actions/include -I$snap_root/software/include -I../../../software/examples -I../include"
+  add_files -tb \${file} -cflags "-DNO_SYNTH -I$snap_root/actions/include -I$SNAP_ROOT/software/include -I../../../software/examples -I../include"
 }
 
 open_solution "${name}"

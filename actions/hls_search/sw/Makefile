@@ -32,4 +32,6 @@ snap_search_objs = action_search.o
 
 projs += snap_search
 
+# If you have the host code outside of the default snap directory structure, 
+# change to /path/to/snap/actions/software.mk
 include ../../software.mk

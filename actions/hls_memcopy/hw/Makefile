@@ -30,4 +30,6 @@ SOLUTION_NAME ?= memcopy
 SOLUTION_DIR ?= hlsMemcopy
 srcs += hls_memcopy.cpp 
 
+# If you have the action code outside of the default snap directory structure, 
+# change to /path/to/snap/actions/hls.mk
 include ../../hls.mk

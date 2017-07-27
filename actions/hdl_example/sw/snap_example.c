@@ -244,7 +244,8 @@ static int memcpy_test(struct snap_card* dnc,
 		return 1;
 	}
 	if (align > DEFAULT_MEMCPY_BLOCK) {
-		VERBOSE0("align=%d is to much for me\n", align);
+		VERBOSE0("align: %d is to much for me. Max: %d\n",
+			align, DEFAULT_MEMCPY_BLOCK);
 		return 1;
 	}
 
