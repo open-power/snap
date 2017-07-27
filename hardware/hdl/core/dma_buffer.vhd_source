@@ -202,7 +202,7 @@ BEGIN
     --       Throttling in between a CL transfer is not possible.
     ----------------------------------------------------------------------------
     buf_rtag              <= to_integer(unsigned(rram_raddr_q(5 DOWNTO 1)));
-    rram_waddr            <= ha_b_q.wtag(4 DOWNTO 0) & ha_b_q.wad(0);
+    rram_waddr            <= ha_b_q.wtag(4 DOWNTO 0) & (ha_b_q.wad(0) xor flip_bit_q);
     rram_raddr            <= rram_raddr_q(5 DOWNTO 0);
 
     rram_raddr_d     <=               rram_raddr_q       +          "0000001"        WHEN buf_rrdreq_i = '1' AND (read_ctrl_buf_full_i(buf_rtag) = '1') else rram_raddr_q;
