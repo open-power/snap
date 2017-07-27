@@ -80,9 +80,9 @@ struct snap_card {
 	uint32_t action_base;
 	uint16_t vendor_id;
 	uint16_t device_id;
-	snap_action_type_t action_type;	/* Action Type */
+	snap_action_type_t action_type;	/* Action Type for attach */
+	snap_action_type_t action_typeq;/* Action Type i like to have for q */
 	snap_action_flag_t action_flags;
-	
 	uint32_t sat;                   /* Short Action Type */
 	bool start_attach;
 	snap_action_flag_t flags;       /* Flags from Application */
@@ -626,7 +626,7 @@ struct snap_queue *snap_queue_alloc(struct snap_card *card,
 				    unsigned int queue_length __unused,
 				    unsigned int attach_timeout_sec)
 {
-	card->action_type = action_type;
+	card->action_typeq = action_type;     /* Save Action Type */
 	card->action_flags = action_flags;
 	card->queue_length = queue_length;
 	card->attach_timeout_sec = attach_timeout_sec;
@@ -635,7 +635,7 @@ struct snap_queue *snap_queue_alloc(struct snap_card *card,
 }
 
 /*
- * @note At this point in time we emulate a real queue behavior by 
+ * @note At this point in time we emulate a real queue behavior by
  * doing the same as we do when using snap_sync_execute_job directly.
  * This is basically a queue of length 1. Once there are use-cases
  * which will profit from a real hardware job queue, this must be
@@ -647,7 +647,7 @@ int snap_queue_sync_execute_job(struct snap_queue *queue,
 {
 	struct snap_card *card = (struct snap_card *)queue;
 
-	return snap_sync_execute_job(card, card->action_type,
+	return snap_sync_execute_job(card, card->action_typeq, /* Uses Save Action type */
 				     card->action_flags,
 				     cjob,
 				     card->attach_timeout_sec,
