@@ -30,4 +30,6 @@ SOLUTION_NAME ?= search
 SOLUTION_DIR ?= hlsSearch
 srcs += hls_search.cpp 
 
+# If you have the action code outside of the default snap directory structure, 
+# change to /path/to/snap/actions/hls.mk
 include ../../hls.mk

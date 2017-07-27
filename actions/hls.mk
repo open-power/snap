@@ -14,6 +14,16 @@
 # limitations under the License.
 #
 
+ifndef SNAP_ROOT
+# check if we are in hw folder of an action (three directories below snap root)
+ifneq ("$(wildcard ../../../ActionTypes.md)","")
+SNAP_ROOT=$(abspath ../../../)
+else
+$(info You are not building your software from the default directory (/path/to/snap/actions/<action_name>/sw) or specified a wrong $$SNAP_ROOT.)
+$(error Please source /path/to/snap/hardware/snap_settings.sh or set $$SNAP_ROOT manually.)
+endif
+endif
+
 # Examples:
 #   xcku060-ffva1156-2-e
 #   xc7vx690tffg1157-2
@@ -38,13 +48,14 @@ $(syn_dir): $(srcs) run_hls_script.tcl
 	vivado_hls -f run_hls_script.tcl
 	$(RM) -rf $@/systemc $@/verilog
 
-run_hls_script.tcl: ../../scripts/create_run_hls_script.sh
-	../../scripts/create_run_hls_script.sh	\
+run_hls_script.tcl: $(SNAP_ROOT)/actions/scripts/create_run_hls_script.sh
+	$(SNAP_ROOT)/actions/scripts/create_run_hls_script.sh	\
 		-n $(SOLUTION_NAME)		\
 		-d $(SOLUTION_DIR) 		\
 		-w $(WRAPPER)			\
 		-p $(PART_NUMBER)		\
-		-f "$(srcs)" > $@
+		-f "$(srcs)" 			\
+		-s $(SNAP_ROOT) > $@
 
 $(SOLUTION_NAME): $(objs)
 	$(CXX) -o $@ $^

@@ -32,4 +32,6 @@ snap_checksum_objs = action_checksum.o sha3.o
 
 projs += snap_checksum
 
+# If you have the host code outside of the default snap directory structure, 
+# change to /path/to/snap/actions/software.mk
 include ../../software.mk

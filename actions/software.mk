@@ -22,11 +22,21 @@ ifndef PSLSE_ROOT
 PSLSE_ROOT=$(abspath ../../../../pslse)
 endif
 
-include ../../../software/config.mk
+ifndef SNAP_ROOT
+# assume we are in sw folder of an action
+ifneq ("$(wildcard ../../../ActionTypes.md)","")
+SNAP_ROOT=$(abspath ../../../)
+else
+$(info You are not building your software from the default directory (/path/to/snap/actions/<action_name>/sw) or specified a wrong $$SNAP_ROOT.)
+$(error Please source /path/to/snap/hardware/snap_settings.sh or set $$SNAP_ROOT manually.)
+endif
+endif
 
-CFLAGS += -std=c99 -I../../../software/include
+include $(SNAP_ROOT)/software/config.mk
+
+CFLAGS += -std=c99 -I$(SNAP_ROOT)/software/include
 DESTDIR ?= /usr
-libs += ../../../software/lib/libsnap.a
+libs += $(SNAP_ROOT)/software/lib/libsnap.a
 LDLIBS += $(libs) -lpthread
 
 # Link statically for PSLSE simulation and dynamically for real version
@@ -48,7 +58,7 @@ all_build: $(projs)
 
 $(projs): $(libs)
 
-$(PSLSE_ROOT)/libcxl/libcxl.a ../../../software/lib/libsnap.a:
+$(PSLSE_ROOT)/libcxl/libcxl.a $(SNAP_ROOT)/software/lib/libsnap.a:
 	$(MAKE) -C `dirname $@`
 
 ### Deactivate existing implicit rule
