@@ -19,7 +19,7 @@
   n=0                                                   # count amount of tests executed (exception for subsecond calls)
   max_rc=0                                              # track the maximum RC to return at the end
   loops=1;
-  ln -s ../sw $ACTION_ROOT/hw/sw 2>/dev/null |echo      # circumvention to deal with ACTION_ROOT pointing to hw subdirectory, ignore RC
+# ln -s ../sw $ACTION_ROOT/hw/sw 2>/dev/null |echo      # circumvention to deal with ACTION_ROOT pointing to hw subdirectory, ignore RC
   rnd20=$((1+RANDOM%20))
   rnd32=$((1+RANDOM%32))
   rnd1k=$((1+RANDOM%1024))
@@ -155,7 +155,7 @@
       fi
       for num4k in 0 1; do
       for num64 in 1 2; do
-      for align in 4096 1024 256 64 $(($rnd20*64)); do
+      for align in 4096 1024 256 64; do  # posix memalign only allows power of 2
         step "$ACTION_ROOT/sw/snap_example -a2 -A${align} -S${num4k} -B${num64} -t200"
       done
       done
@@ -327,12 +327,12 @@
 #     done
     fi # bfs
 
-    if [[ "$t0l" == "10141005" || "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect hash"
+    if [[ "$t0l" == "10141005" && "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect hash"
       step "$ACTION_ROOT/sw/snap_intersect -h"
       step "$ACTION_ROOT/sw/snap_intersect    -m1 -v -t300"
       step "$ACTION_ROOT/sw/snap_intersect -I -m1 -v -t300"
     fi # intersect
-    if [[ "$t0l" == "10141006" || "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect sort"
+    if [[ "$t0l" == "10141006" && "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect sort"
       step "$ACTION_ROOT/sw/snap_intersect -h"
       step "$ACTION_ROOT/sw/snap_intersect    -m2 -v -t300"
       step "$ACTION_ROOT/sw/snap_intersect -I -m2 -v -t300"
@@ -341,4 +341,3 @@
 
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"  # end of loop
   done; l=""; ts3=$(date +%s); totaltime=`expr $ts3 - $ts0`; echo "loops=$loops tests=$n total_time=$totaltime" # end of test
-  return $max_rc
