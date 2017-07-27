@@ -77,7 +77,7 @@ SNAP_CLOUD_DCP=$(SNAP_HARDWARE_ROOT)/build/Checkpoints/user_action_synth.dcp
 #      due to missing dependencies between the different targets.
 #
 
-.PHONY: all clean gitclean check_snap_settings check_denali model action_hw action_sw software pslse prepare_environment create_environment config patch_version patch_NVMe image cloud_base cloud_image cloud_action snap_config snap_config_start xsim irun questa
+.PHONY: all clean gitclean check_snap_settings check_denali model action_hw action_sw software pslse prepare_environment create_environment config patch_version patch_NVMe image cloud_base cloud_image cloud_action cloud_merge snap_config snap_config_start xsim irun questa
 
 all: config model image
 
@@ -139,7 +139,7 @@ prepare_environment:
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl         $(BUILD_DIR)/snap_build.tcl;
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_build.tcl   $(BUILD_DIR)/snap_cloud_build.tcl;
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/user_action_synth.tcl  $(BUILD_DIR)/user_action_synth.tcl;
-	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/user_action.tcl        $(BUILD_DIR)/user_action.tcl;
+	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_merge.tcl   $(BUILD_DIR)/snap_cloud_merge.tcl;
 	@cp -p $(PSL_DCP)                                            $(BUILD_DIR)/Checkpoints/;
 	@if [ $(FPGACARD) = "KU3" ]; then \
 		ln -f -s $(SNAP_HDL_CORE)/psl_fpga_ku3.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
@@ -236,6 +236,15 @@ cloud_action: snap_config action_hw patch_version
 	@echo -e "\t                        using `vivado -version |grep Vivado`"
 	@cd $(BUILD_DIR) && env CLOUD_RUN=ACTION vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/cloud_action.log -journal $(LOGS_DIR)/cloud_action.jou
 	@echo -e "\t[CLOUD ACTION SYNTH..] done  `date`"
+
+cloud_merge: prepare_environment
+	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
+		echo -e "\tMakefile target $@ is only allowed for PR flow!"; exit -1; \
+	fi
+	@echo -e "\t[CLOUD MERGE ........] start `date`"
+	@echo -e "\t                        using `vivado -version |grep Vivado`"
+	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_cloud_merge.tcl -notrace -log $(LOGS_DIR)/cloud_merge.log -journal $(LOGS_DIR)/cloud_merge.jou
+	@echo -e "\t[CLOUD MERGE ........] done  `date`"
 
 model: action_sw snap_config patch_version $(SIMULATOR)
 
