@@ -82,6 +82,8 @@ set_property SCOPED_TO_CELLS {a0/action_w} [get_files $dcp_dir/$user_action_dcp]
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "linking design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
 link_design -mode default -reconfig_partitions {user_action} -part $fpga_part -top psl_fpga >> $log_file
 
+read_xdc ../setup/snap_impl.xdc >> $log_file
+
 ## 
 ## optimizing design
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "optimizing design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
