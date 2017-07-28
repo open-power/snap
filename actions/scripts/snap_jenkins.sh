@@ -59,7 +59,7 @@ function test_hls_memcopy()
 	cmd="$mytest/tests/test_0x10141000.sh -C $card"
 	eval ${cmd}
 	RC=$?
-	return RC
+	return $RC
 }
 
 function test_hls_sponge () # $card $accel
