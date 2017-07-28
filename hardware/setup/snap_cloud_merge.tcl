@@ -143,6 +143,8 @@ if { $cloud_build_bitfile == "TRUE" } {
 
   ##
   ### writing bitstream
+  set step write_bitstream
+  set logfile $log_dir/${step}.log
   set command "write_bitstream -force -file ./Images/$IMAGE_NAME"
   puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
 
