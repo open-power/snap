@@ -262,7 +262,7 @@ BEGIN
         -- only reacts on the read lock tag
         IF (ha_b_q.wtag(7 DOWNTO 0) = x"20")  AND
            (ha_b_q.wvalid           = '1'  ) THEN
-          IF ha_b_q.wad(0) = '0' THEN
+          IF (ha_b_q.wad(0) xor flip_bit_q) = '0' THEN
             rlck_data_q(0)   <= ha_b_q.wdata;
             rlck_data_p_q(0) <= ha_b_q.wpar;
           ELSE
