@@ -28,6 +28,7 @@
 # This is solution specific. Check if we can replace this by generics too.
 
 projs += snap_example snap_example_ddr snap_example_nvme snap_example_set
+projs += snap_example_qnvme
 
 # If you have the host code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/software.mk
