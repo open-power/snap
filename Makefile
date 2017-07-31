@@ -32,13 +32,13 @@ endif
 .PHONY: $(config_subdirs) $(software_subdirs) $(hardware_subdirs) $(action_subdirs) test install uninstall config model image cloud_base cloud_action cloud_merge clean
 
 $(software_subdirs):
-	@if [ -d $@ ]; then	         			\
-		$(MAKE) -C $@ || exit 1;			\
+	@if [ -d $@ ]; then	         \
+		$(MAKE) -C $@ || exit 1; \
 	fi
 
 $(action_subdirs):
-	@if [ -d $@ ]; then	         			\
-		$(MAKE) -C $@ || exit 1;		        \
+	@if [ -d $@ ]; then	         \
+		$(MAKE) -C $@ || exit 1; \
 	fi
 
 define print_NO_SNAP_ROOT
@@ -48,20 +48,20 @@ define print_NO_SNAP_ROOT
 endef
 
 $(hardware_subdirs):
-	@if [ -d $@ ]; then					\
-		if [ -d "$(SNAP_ROOT)" ]; then			\
-			$(MAKE) -C $@ || exit 1;		\
-		else						\
-			$(call print_NO_SNAP_ROOT);		\
-		fi						\
+	@if [ -d $@ ]; then		            \
+		if [ -d "$(SNAP_ROOT)" ]; then	    \
+			$(MAKE) -C $@ || exit 1;    \
+		else	                            \
+			$(call print_NO_SNAP_ROOT); \
+		fi	                            \
 	fi
 
 # Install/uninstall
 test install uninstall:
-	@for dir in $(software_subdirs) $(action_subdirs); do	\
-		if [ -d $$dir ]; then	                	\
-			$(MAKE) -C $$dir $@ || exit 1;  	\
-		fi	                                	\
+	@for dir in $(software_subdirs) $(action_subdirs); do		\
+		if [ -d $$dir ]; then	                                \
+			$(MAKE) -C $$dir $@ || exit 1;                  \
+		fi	                                                \
 	done
 
 # Model build and config
@@ -78,17 +78,17 @@ config model image cloud_base cloud_action cloud_merge:
 
 # Config
 menuconfig xconfig gconfig oldconfig:
-	@for dir in $(config_subdirs); do               \
-		if [ -d $$dir ]; then                   \
-			$(MAKE) -C $$dir $@ || exit 1;  \
-		fi                                      \
+	@. ./snap_paths && for dir in $(config_subdirs); do		\
+		if [ -d $$dir ]; then	                                \
+			$(MAKE) -C $$dir $@ || exit 1;                  \
+		fi	                                                \
 	done
 
 clean:
-	@for dir in $(clean_subdirs); do			\
-		if [ -d $$dir ]; then				\
-			$(MAKE) -C $$dir $@ || exit 1;		\
-		fi						\
+	@for dir in $(clean_subdirs); do		\
+		if [ -d $$dir ]; then	                \
+			$(MAKE) -C $$dir $@ || exit 1;  \
+		fi	                                \
 	done
 	@find . -depth -name '*~'  -exec rm -rf '{}' \; -print
 	@find . -depth -name '.#*' -exec rm -rf '{}' \; -print
