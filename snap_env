@@ -23,8 +23,7 @@
 # the goal is to be able to source this file and have everything set as needed
 called=$BASH_SOURCE                # can be path+name, absolut or relative
 script=$(readlink -f "$called")    # absolute path+name
-scriptdir=$(dirname  "$script")    # just path
-snapdir=$(dirname "$scriptdir")
+snapdir=$(dirname "$script")       # just path
 
 unset SETUP_DONE;
 while [ -z "$SETUP_DONE" ]; do
@@ -33,13 +32,6 @@ while [ -z "$SETUP_DONE" ]; do
   echo "== SNAP SETUP                                        =="
   echo "======================================================="
 
-  if [ ! -d "$XILINX_VIVADO" ] || [ -z "$XILINXD_LICENSE_FILE" ]; then
-    echo "Error: The following commands need to be executed before calling this script:"
-    echo "	source <xilinx_root>/Vivado/<version>/settings64.sh"
-    echo "	export XILINXD_LICENSE_FILE=<pointer to Vivado license>"
-    echo "For more information see also README.md"
-    break
-  fi
   if [ ! -f "$PSL_DCP" ]; then
     echo "Error: The following environment variable must be set before calling this script:"
     echo "	export PSL_DCP=<CAPI PSL Checkpoint file (b_route_design.dcp)>"
@@ -47,19 +39,36 @@ while [ -z "$SETUP_DONE" ]; do
     break
   fi
 
-  ####### Checking Xilinx Vivado:
-  echo "=====Checking Xilinx Vivado:==========================="
+  ####### checking Xilinx Vivado:
+  echo "=====Checking Xilinx Vivado============================"
   if [ ! -d "$XILINX_VIVADO" ]; then
     echo "XILINX_VIVADO is not set, please source settings64.sh from your Vivado installation"
     break
   fi
+  if [ -z "$XILINXD_LICENSE_FILE" ]; then
+    echo "XILINXD_LICENSE_FILE is not set. The following commands needs to be executed before calling this script:"
+    echo "	export XILINXD_LICENSE_FILE=<pointer to Vivado license>"
+    break
+  fi
+
   if [ -z `which vivado 2> /dev/null` ]; then
     echo "Path to vivado not set, please add to environment variable \$PATH"
     break
   fi
-  # checking Vivado version
+  # printing Vivado version
   echo "Path to vivado          is set to: `which vivado`"
   echo "Vivado version          is set to: `vivado -version|head -n1`"
+
+  # checking path to PSL design checkpoint
+  echo "=====Checking Path to PSL design checkpoint============"
+  if [ ! -f "$PSL_DCP" ]; then
+    echo "Error: The following environment variable must be set before calling this script:"
+    echo "	export PSL_DCP=<CAPI PSL Checkpoint file (b_route_design.dcp)>"
+    echo "For more information see also README.md"
+    break
+  fi
+  # printing path to PSL design checkpoint
+  echo "PSL_DCP                 is set to: \"$PSL_DCP\""
 
   ####### user settings for CAPI STREAMING FRAMEWORK
   echo "=====CARD variables===================================="
@@ -142,7 +151,7 @@ while [ -z "$SETUP_DONE" ]; do
 
 
   if [ -z "$SIMULATOR" ]; then
-    export SIMULATOR=xsim                                      # xsim, questa and ncsim are supported, currently
+    export SIMULATOR=xsim                                      # xsim, irun and ncsim are supported, currently
     echo "Setting SIMULATOR              to: \"$SIMULATOR\""
   else
     echo "SIMULATOR               is set to: \"$SIMULATOR\""
