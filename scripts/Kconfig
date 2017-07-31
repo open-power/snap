@@ -5,180 +5,174 @@
 #
 ###############################################################################
 
-choice
-        prompt "Card type"
-        help
-          There are multiple card the framework supports. Please select
-          one of them.
+menu "SNAP Paths"
+        config SNAP_ROOT_ENV
+                string
+                option env="SNAP_ROOT"
+                prompt "SNAP ROOT"
 
-config FLASHGT
-        bool "Flash GT with DDR4, NVMe and Xilinx FPGA"
-        help
-          Nallatech Flash GT card originally used for CAPI Flash using NVMe
-          storage. Uses Xilinx FPGA.
+        config ACTION_ROOT_ENV
+                string
+                option env="ACTION_ROOT"
+                prompt "ACTION ROOT"
 
-config KU3
-        bool "KU3 Card with Ethernet, DDR3 and Xilinx FPGA"
-        help
-          Alpha Data KU3 has ethernet and DDR3. Uses Xilinx FPGA.
-
-endchoice
-
-############# FPGA CHIP #######################################################
-
-# Depends on the card which was selected. E.g. xcku060-ffva1156-2-e for
-# KU3 as well as for FLASHGT.
-
-############# Xinlinx Tools ###################################################
-
-menu "Xilinx Tools"
-        depends on FLASHGT || KU3
-
-choice
-        prompt "Xilinx Tools"
-        default VIVADO_1604
-
-config VIVADO_1604
-        bool "Vivado 16.04"
-
-config VIVADO_1704
-        bool "Vivado 17.04"
-
-endchoice
-
+        config PSL_DCP_ENV
+                string
+                option env="PSL_DCP"
+                prompt "PSL DCP"
 endmenu
 
-# Try selecting different default path settings for the differet versions
-# of the Xilinx tools. The AFS example is for our IBM internal setup.
-#
-config XLINIX_PATH
-        string "Path to Xilinx tools 16.04"
-        depends on VIVADO_1604
-        default "/afs/bb/proj/fpga/xilinx/Vivado_HLS/2016.4/bin"
+config SNAP_ROOT
+        string
+        default $SNAP_ROOT_ENV
 
-############# Simulator #######################################################
+config ACTION_ROOT
+        string
+        default $ACTION_ROOT_ENV
 
-menu "Simulator"
-        depends on FLASHGT || KU3
+config PSL_DCP
+        string
+        default $PSL_DCP_ENV
 
-choice
-        prompt "ncsim"
-        default SIMULATOR_XSIM
 
-config SIMULATOR_XSIM
-        bool "XSIM"
+menu "FPGA Setup"
+        choice
+                bool "Card Type"
+                default FGT
+                help
+                  There are multiple card the framework supports. Please select
+                  one of them.
 
-config SIMULATOR_NCSIM
-        bool "NCSIM"
+                config FGT
+                        bool "Flash GT with DDR4, NVMe and Xilinx FPGA"
+                        help
+                          Nallatech Flash GT card originally used for CAPI Flash using NVMe
+                          storage. Uses Xilinx FPGA.
 
-config SIMULATOR_IRUN
-        bool "IRUN"
+                config KU3
+                        bool "KU3 Card with Ethernet, DDR3 and Xilinx FPGA"
+                        help
+                          Alpha Data KU3 has ethernet and DDR3. Uses Xilinx FPGA.
+        endchoice
 
-endchoice
+        config FPGACARD
+                string
+                default "FGT" if FGT
+                default "KU3" if KU3
 
+        config FPGACHIP
+                string
+                default "xcku060-ffva1156-2-e" if FGT || KU3
+
+        config NUM_OF_ACTIONS
+                int
+                default 1
+                prompt "Number Of Actions (Only one action is supported, currently)"
+                range 1 1
+
+        choice
+                bool "Action Type"
+                default HDL_EXAMPLE
+
+                config HDL_EXAMPLE
+                    bool "HDL Example"
+
+                config HLS_BFS
+                    bool "HLS Breadth First Search"
+
+                config HLS_HASHJOIN
+                    bool "HLS Hashjoin"
+
+                config HLS_INTERSECT
+                    bool "HLS Intersect"
+
+                config HLS_MEMCOPY
+                    bool "HLS Memcopy"
+
+                config HLS_SEARCH
+                    bool "HLS Search"
+
+                config HLS_SPONGE
+                    bool "HLS Sponge"
+
+                config ACTION_OTHER
+                    bool "Other Action"
+        endchoice
+
+        config ENABLE_SDRAM
+                bool
+                prompt "Enable SDRAM"
+                depends on ! (HLS_BFS || HLS_SPONGE)
+
+        config SDRAM_USED
+                string
+                default "TRUE"  if ENABLE_SDRAM
+                default "FALSE" if ! ENABLE_SDRAM
+
+        config ENABLE_NVME
+                bool "Enable NVMe"
+                depends on FGT && HDL_EXAMPLE
+
+        config NVME_USED
+                string
+                default "TRUE"  if ENABLE_NVME
+                default "FALSE" if ! ENABLE_NVME
+
+        config ENABLE_ILA
+                bool "Enable ILA Debug"
+
+        config ILA_DEBUG
+                string
+                default "TRUE"  if ENABLE_ILA
+                default "FALSE" if ! ENABLE_ILA
+
+        config ENABLE_FACTORY
+                bool "Create Factory Image"
+
+        config FACTORY_IMAGE
+                string
+                default "TRUE"  if ENABLE_FACTORY
+                default "FALSE" if ! ENABLE_FACTORY
 endmenu
 
-############# Peripherals ######################################################
-
-# Available peripherals depend on the card which was selected and if they make
-# sense for the respective configuration e.g. action.
-#
 
 choice
-        prompt "Card RAM Selection"
-        default SDRAM_USED
+        bool "Simulator"
+        default SIM_XSIM
 
-config SDRAM
-        bool "SDRAM"
-        default y
-        depends on KU3 || FLASHGT
-        help
-          This option selects whether to use the SDRAM inferface or not.
+        config SIM_XSIM
+            bool "xsim"
 
-config BRAM
-        bool "BRAM"
-        default y
-        depends on KU3 || FLASHGT
-        help
-          This option selects whether to use the BRAM interface or not.
+        config SIM_IRUN
+            bool "irun"
 
-config NORAM
-        bool "No CARD RAM"
-        default y
-        depends on KU3 || FLASHGT
-        help
-          Select this if you neither need SDRAM nor BRAM.
-
+        config SIM_NCSIM
+            bool "ncsim"
 endchoice
 
-config NVME
-        bool "NVME Support"
-        default n
-        depends on FLASHGT
-        help
-          This option selects whether to use NVME or not.
+config SIMULATOR
+        string
+        default "xsim"  if SIM_XSIM
+        default "irun"  if SIM_IRUN
+        default "ncsim" if SIM_NCSIM
 
-config ETHERNET
-        bool "ETHERNET Support"
-        default n
-        depends on KU3
-        help
-          This option selects whether to use ETHERNET or not.
 
-config NUM_OF_ACTIONS
-        int "Number of available SNAP actions"
-        default 1
-        help
-          Maximum number of possible FPGA actions for the SNAP framework.
+menu "Vivado Setup"
+        config XILINX_VIVADO_ENV
+                string
+                option env="XILINX_VIVADO"
+                prompt "XILINX_VIVADO"
 
-config AFU_CONTEXTS
-        int "Number of possible AFU contexts"
-        default 128
-        help
-          Adjust the possible numbers of AFU contexts for CAPI directed
-          mode. 1 - 256 is making sense.
+        config XILINXD_LICENSE_FILE_ENV
+                string
+                option env="XILINXD_LICENSE_FILE"
+                prompt "XILINXD_LICENSE_FILE"
+endmenu
 
-############# Action Setup ####################################################
+config XILINX_VIVADO
+        string
+        default $XILINX_VIVADO_ENV
 
-config DEFAULT_MEMCOPY
-        bool "VHDL written MemCopy"
-        depends on KU3 || FLASHGT
-	select SDRAM
-        default y
-        help
-          VHDL written simple example for a memcopy.
-          Use stage2 to call the action.
-
-config HLS_MEMCOPY
-        bool "HLS MemCopy"
-        depends on KU3 || FLASHGT
-	select SDRAM
-        default n
-        help
-          HLS written simple example for memcopy. Use demo_memcopy to
-          call the action.
-
-config HLS_SEARCH
-        bool "HLS Search"
-        depends on KU3 || FLASHGT
-        select SDRAM
-        default n
-        help
-          HLS written simple example for searching a byte in a buffer.
-          Use demo_search to call the action.
-
-config HLS_HASHJOIN
-        bool "HLS HashJoin"
-        depends on KU3 || FLASHGT
-        default n
-        help
-          HLS written simple example for a hash join operation. Use 
-          demo_hashjoin to call the action.
-
-config HLS_SPONGE
-        bool "HLS Sponge"
-        depends on KU3 || FLASHGT
-        default n
-        help
-          HLS written simple example for a sponge checksum benchmark.
-          Use demo_checksum -m SPONGE to call the action.
+config XILINXD_LICENSE_FILE
+        string
+        default $XILINXD_LICENSE_FILE_ENV
