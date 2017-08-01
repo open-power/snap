@@ -5,135 +5,106 @@
 #
 ###############################################################################
 
-menu "SNAP Paths"
-        config SNAP_ROOT_ENV
-                string
-                option env="SNAP_ROOT"
-                prompt "SNAP ROOT"
+choice
+        bool "Card Type"
+        default FGT
+        help
+          There are multiple card the framework supports. Please select
+          one of them.
 
-        config ACTION_ROOT_ENV
-                string
-                option env="ACTION_ROOT"
-                prompt "ACTION ROOT"
-
-        config PSL_DCP_ENV
-                string
-                option env="PSL_DCP"
-                prompt "PSL DCP"
-endmenu
-
-config SNAP_ROOT
-        string
-        default $SNAP_ROOT_ENV
-
-config ACTION_ROOT
-        string
-        default $ACTION_ROOT_ENV
-
-config PSL_DCP
-        string
-        default $PSL_DCP_ENV
-
-
-menu "FPGA Setup"
-        choice
-                bool "Card Type"
-                default FGT
+        config FGT
+                bool "Flash GT with DDR4, NVMe and Xilinx FPGA"
                 help
-                  There are multiple card the framework supports. Please select
-                  one of them.
+                  Nallatech Flash GT card originally used for CAPI Flash using NVMe
+                  storage. Uses Xilinx FPGA.
 
-                config FGT
-                        bool "Flash GT with DDR4, NVMe and Xilinx FPGA"
-                        help
-                          Nallatech Flash GT card originally used for CAPI Flash using NVMe
-                          storage. Uses Xilinx FPGA.
+        config KU3
+                bool "KU3 Card with Ethernet, DDR3 and Xilinx FPGA"
+                help
+                  Alpha Data KU3 has ethernet and DDR3. Uses Xilinx FPGA.
+endchoice
 
-                config KU3
-                        bool "KU3 Card with Ethernet, DDR3 and Xilinx FPGA"
-                        help
-                          Alpha Data KU3 has ethernet and DDR3. Uses Xilinx FPGA.
-        endchoice
+config FPGACARD
+        string
+        default "FGT" if FGT
+        default "KU3" if KU3
 
-        config FPGACARD
-                string
-                default "FGT" if FGT
-                default "KU3" if KU3
+config FPGACHIP
+        string
+        default "xcku060-ffva1156-2-e" if FGT || KU3
 
-        config FPGACHIP
-                string
-                default "xcku060-ffva1156-2-e" if FGT || KU3
+config NUM_OF_ACTIONS
+        int
+        default 1
+        prompt "Number Of Actions (Only one action is supported, currently)"
+        range 1 1
 
-        config NUM_OF_ACTIONS
-                int
-                default 1
-                prompt "Number Of Actions (Only one action is supported, currently)"
-                range 1 1
+choice
+        bool "Action Type"
+        default HDL_EXAMPLE
 
-        choice
-                bool "Action Type"
-                default HDL_EXAMPLE
+        config HDL_EXAMPLE
+            bool "HDL Example"
 
-                config HDL_EXAMPLE
-                    bool "HDL Example"
+        config HLS_BFS
+            bool "HLS Breadth First Search"
 
-                config HLS_BFS
-                    bool "HLS Breadth First Search"
+        config HLS_HASHJOIN
+            bool "HLS Hashjoin"
 
-                config HLS_HASHJOIN
-                    bool "HLS Hashjoin"
+        config HLS_INTERSECT
+            bool "HLS Intersect"
+            select ENABLE_SDRAM
 
-                config HLS_INTERSECT
-                    bool "HLS Intersect"
+        config HLS_MEMCOPY
+            bool "HLS Memcopy"
+            select ENABLE_SDRAM
 
-                config HLS_MEMCOPY
-                    bool "HLS Memcopy"
+        config HLS_SEARCH
+            bool "HLS Search"
+            select ENABLE_SDRAM
 
-                config HLS_SEARCH
-                    bool "HLS Search"
+        config HLS_SPONGE
+            bool "HLS Sponge"
 
-                config HLS_SPONGE
-                    bool "HLS Sponge"
+        config ACTION_OTHER
+            bool "Other Action"
+endchoice
 
-                config ACTION_OTHER
-                    bool "Other Action"
-        endchoice
+config ENABLE_SDRAM
+        bool
+        prompt "Enable SDRAM"
+        depends on ! (HLS_BFS || HLS_SPONGE)
 
-        config ENABLE_SDRAM
-                bool
-                prompt "Enable SDRAM"
-                depends on ! (HLS_BFS || HLS_SPONGE)
+config SDRAM_USED
+        string
+        default "TRUE"  if ENABLE_SDRAM
+        default "FALSE" if ! ENABLE_SDRAM
 
-        config SDRAM_USED
-                string
-                default "TRUE"  if ENABLE_SDRAM
-                default "FALSE" if ! ENABLE_SDRAM
+config ENABLE_NVME
+        bool "Enable NVMe"
+        depends on FGT && HDL_EXAMPLE
 
-        config ENABLE_NVME
-                bool "Enable NVMe"
-                depends on FGT && HDL_EXAMPLE
+config NVME_USED
+        string
+        default "TRUE"  if ENABLE_NVME
+        default "FALSE" if ! ENABLE_NVME
 
-        config NVME_USED
-                string
-                default "TRUE"  if ENABLE_NVME
-                default "FALSE" if ! ENABLE_NVME
+config ENABLE_ILA
+        bool "Enable ILA Debug"
 
-        config ENABLE_ILA
-                bool "Enable ILA Debug"
+config ILA_DEBUG
+        string
+        default "TRUE"  if ENABLE_ILA
+        default "FALSE" if ! ENABLE_ILA
 
-        config ILA_DEBUG
-                string
-                default "TRUE"  if ENABLE_ILA
-                default "FALSE" if ! ENABLE_ILA
+config ENABLE_FACTORY
+        bool "Create Factory Image"
 
-        config ENABLE_FACTORY
-                bool "Create Factory Image"
-
-        config FACTORY_IMAGE
-                string
-                default "TRUE"  if ENABLE_FACTORY
-                default "FALSE" if ! ENABLE_FACTORY
-endmenu
+config FACTORY_IMAGE
+        string
+        default "TRUE"  if ENABLE_FACTORY
+        default "FALSE" if ! ENABLE_FACTORY
 
 
 choice
@@ -142,37 +113,13 @@ choice
 
         config SIM_XSIM
             bool "xsim"
+            depends on ! ENABLE_NVME
 
         config SIM_IRUN
             bool "irun"
-
-        config SIM_NCSIM
-            bool "ncsim"
 endchoice
 
 config SIMULATOR
         string
         default "xsim"  if SIM_XSIM
         default "irun"  if SIM_IRUN
-        default "ncsim" if SIM_NCSIM
-
-
-menu "Vivado Setup"
-        config XILINX_VIVADO_ENV
-                string
-                option env="XILINX_VIVADO"
-                prompt "XILINX_VIVADO"
-
-        config XILINXD_LICENSE_FILE_ENV
-                string
-                option env="XILINXD_LICENSE_FILE"
-                prompt "XILINXD_LICENSE_FILE"
-endmenu
-
-config XILINX_VIVADO
-        string
-        default $XILINX_VIVADO_ENV
-
-config XILINXD_LICENSE_FILE
-        string
-        default $XILINXD_LICENSE_FILE_ENV
