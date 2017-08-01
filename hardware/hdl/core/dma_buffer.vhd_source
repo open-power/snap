@@ -99,7 +99,6 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL buf_wtag_valid_q                 : boolean;
   SIGNAL ha_b_q                           : HA_B_T;
   SIGNAL ha_b_rad_q                       : std_logic;
-  SIGNAL ha_b_rad_qq                      : std_logic;
   SIGNAL ha_b_wvalid_q                    : std_logic;
   SIGNAL ha_b_rtag_err_q                  : std_logic := '0';
   SIGNAL ha_b_wdata_err_q                 : std_logic_vector(7 DOWNTO 0) := (OTHERS => '0') ;
@@ -137,8 +136,10 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL wdata_parity_err_q               : std_logic_vector(  7 DOWNTO 0) := (OTHERS => '0');
   SIGNAL wdata_parity_fir_q               : std_logic := '0';
 
-  signal flip_bit_q                       : std_logic;
-  signal flip_bit_valid_q                 : std_logic;
+  signal flip_rbit_q                      : std_logic;
+  signal flip_wbit_q                      : std_logic;
+  signal flip_rbit_valid_q                : std_logic;
+  signal flip_wbit_valid_q                : std_logic;
 
   COMPONENT ram_520x64_2p
     PORT(
@@ -202,7 +203,7 @@ BEGIN
     --       Throttling in between a CL transfer is not possible.
     ----------------------------------------------------------------------------
     buf_rtag              <= to_integer(unsigned(rram_raddr_q(5 DOWNTO 1)));
-    rram_waddr            <= ha_b_q.wtag(4 DOWNTO 0) & ha_b_q.wad(0);
+    rram_waddr            <= ha_b_q.wtag(4 DOWNTO 0) & (ha_b_q.wad(0) xor flip_wbit_q);
     rram_raddr            <= rram_raddr_q(5 DOWNTO 0);
 
     rram_raddr_d     <=               rram_raddr_q       +          "0000001"        WHEN buf_rrdreq_i = '1' AND (read_ctrl_buf_full_i(buf_rtag) = '1') else rram_raddr_q;
@@ -262,7 +263,7 @@ BEGIN
         -- only reacts on the read lock tag
         IF (ha_b_q.wtag(7 DOWNTO 0) = x"20")  AND
            (ha_b_q.wvalid           = '1'  ) THEN
-          IF ha_b_q.wad(0) = '0' THEN
+          IF (ha_b_q.wad(0) xor flip_wbit_q) = '0' THEN
             rlck_data_q(0)   <= ha_b_q.wdata;
             rlck_data_p_q(0) <= ha_b_q.wpar;
           ELSE
@@ -326,9 +327,7 @@ BEGIN
     wram_wdata(             0) <= buf_wdata_i(0) XOR inject_dma_write_error_i;
     wram_wdata(511 DOWNTO   1) <= buf_wdata_i(511 DOWNTO 1);
     wram_wdata(575 DOWNTO 512) <= buf_wdata_be_i;
--- looks like we don't need the fix anymore
---    wram_raddr                 <= ha_b_q.rtag(4 DOWNTO 0) & (ha_b_q.rad(0) xor flip_bit_q) ;
-    wram_raddr                 <= ha_b_q.rtag(4 DOWNTO 0) & ha_b_q.rad(0) ;
+    wram_raddr                 <= ha_b_q.rtag(4 DOWNTO 0) & (ha_b_q.rad(0) xor flip_rbit_q);
     wram_wen                   <= buf_wdata_v_i;
 
 
@@ -376,35 +375,35 @@ BEGIN
           IF buf_wdata_v_i = '1' THEN
             --
             -- check that the first 64 bytes of a CL are written into the buffer
-            -- 
+            --
             IF (wram_waddr_q(0) = '0') THEN
               IF (and_reduce(buf_wdata_be_i) = '1') THEN
                 even_wdata_complete_q <= TRUE;
               ELSE
                 even_wdata_complete_q <= FALSE;
-              END IF;  
+              END IF;
             END IF;
 
             --
             -- check that the second 64 bytes of a CL are written into the buffer
-            -- 
+            --
             IF (wram_waddr_q(0) = '1') THEN
               IF (and_reduce(buf_wdata_be_i) = '1') THEN
                 odd_wdata_complete_v := TRUE;
               ELSE
                 odd_wdata_complete_v := FALSE;
-              END IF;  
+              END IF;
             END IF;
           end if;
 
           --
           -- check that the full CL is written into the buffer
-          -- 
+          --
           IF (even_wdata_complete_q = TRUE) AND
              (odd_wdata_complete_v  = TRUE) THEN
             buf_wtag_cl_partial_q <= FALSE;
           END IF;
-          
+
           IF (wram_waddr_d(1) /= wram_waddr_q(1))  THEN
             buf_wtag_valid_q <= TRUE;
           END IF;
@@ -568,31 +567,38 @@ BEGIN
                                   '0',  (OTHERS => '0'), '1',  (OTHERS => '0'),
                                   (OTHERS => '0'), (OTHERS => '1'));
           ha_b_rad_q          <= '0';
-          ha_b_rad_qq         <= '0';
           ha_b_wvalid_q       <= '0';
           rram_raddr_q        <= (OTHERS => '0');
           rram_raddr_p_q      <= '1';
           rram_rdata_vld_q    <= '0';
           rram_rdata_vld_qq   <= '0';
           rram_rdata_vld_qqq  <= '0';
-          flip_bit_valid_q    <= '0';
+          flip_rbit_valid_q   <= '0';             -- only for FPGACARD=FGT
+          flip_rbit_valid_q   <= '1';             -- only for FPGACARD=KU3
+          flip_rbit_q         <= '0';
+          flip_wbit_valid_q   <= '0';             -- only for FPGACARD=FGT
+          flip_wbit_valid_q   <= '1';             -- only for FPGACARD=KU3
+          flip_wbit_q         <= '0';          
 
         ELSE
           -- capture state of first rad bit and use the bit to
           -- circumvent page flip issue
-          if ha_b_i.rvalid = '1' and flip_bit_valid_q = '0' then
-            flip_bit_valid_q <= '1';
-            flip_bit_q       <=  ha_b_i.rad(0);
-          end if;  
-          ha_b_q             <= ha_b_i;
-          ha_b_rad_q         <= ha_b_q.rad(0);
-          ha_b_rad_qq        <= ha_b_rad_q;
-          ha_b_wvalid_q      <= ha_b_q.wvalid;
-          rram_raddr_q       <= rram_raddr_d;
-          rram_raddr_p_q     <= rram_raddr_p_d;
-          rram_rdata_vld_q   <= rram_rdata_vld_d;
-          rram_rdata_vld_qq  <= rram_rdata_vld_q;
-          rram_rdata_vld_qqq <= rram_rdata_vld_qq;
+          if ha_b_i.rvalid = '1' and flip_rbit_valid_q = '0' then
+            flip_rbit_valid_q <= '1';
+            flip_rbit_q       <=  ha_b_i.rad(0);
+          end if;
+          if ha_b_i.wvalid = '1' and flip_wbit_valid_q = '0' then
+            flip_wbit_valid_q <= '1';
+            flip_wbit_q       <=  ha_b_i.wad(0);
+          end if;          
+          ha_b_q              <= ha_b_i;
+          ha_b_rad_q          <= ha_b_q.rad(0) xor flip_rbit_q;
+          ha_b_wvalid_q       <= ha_b_q.wvalid;
+          rram_raddr_q        <= rram_raddr_d;
+          rram_raddr_p_q      <= rram_raddr_p_d;
+          rram_rdata_vld_q    <= rram_rdata_vld_d;
+          rram_rdata_vld_qq   <= rram_rdata_vld_q;
+          rram_rdata_vld_qqq  <= rram_rdata_vld_qq;
         END IF;
       END IF;
     END PROCESS registers;
