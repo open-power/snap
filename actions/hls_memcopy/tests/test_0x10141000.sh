@@ -218,7 +218,7 @@ fi
 
 echo
 echo "READ from Card-DDR Performance Results"
-grep "memcopy of" snap_memcopy_to_ddr.log
+grep "memcopy of" snap_memcopy_from_ddr.log
 echo
 
 #### MEMCOPY CARD #####################################################
