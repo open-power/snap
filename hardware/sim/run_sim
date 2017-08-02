@@ -283,14 +283,14 @@
    sleep 1
  done; fi
 
- if [ "$TCRC" == "0" ];then for i in {1..45};do
+ if [ "$TCRC" == "0" ];then for i in {1..200};do
    grep 'waiting for connection' sim.log >/dev/null 2>&1 # returns 2=filenotfound 1=notfound 0=found
    if [ "$?" -eq "0" ];then
      echo "$SIMULATOR socket avail after $i sec";
      grep 'waiting for connection' sim.log |awk '{print $8}'|awk '{printf("afu0.0,%s\n",$0);}'|tee shim_host.dat
      break
    fi
-   if [ "$i" -eq "45" ];then echo "**** timeout $i sec waiting for $SIMULATOR $SIM_PID socket"; kill -9 $SIM_PID; TCRC=-2; break; fi
+   if [ "$i" -eq "90" ];then echo "**** timeout $i sec waiting for $SIMULATOR $SIM_PID socket"; kill -9 $SIM_PID; TCRC=-2; break; fi
    sleep 1
  done; fi
 

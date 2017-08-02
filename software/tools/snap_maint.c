@@ -262,7 +262,8 @@ static void snap_decode(uint64_t reg, uint32_t level)
 	case 0x10141002: VERBOSE1("HLS Hash Join\n"); break;
 	case 0x10141003: VERBOSE1("HLS Text Search\n"); break;
 	case 0x10141004: VERBOSE1("HLS Breadth first search (BFS)\n"); break;
-	case 0x10141005: VERBOSE1("HLS Intersect\n"); break;
+	case 0x10141005: VERBOSE1("HLS Intersect (hash)\n"); break;
+	case 0x10141006: VERBOSE1("HLS Intersect (sort)\n"); break;
 	default:
 		VERBOSE1("UNKNOWN Code.....\n");
 		break;

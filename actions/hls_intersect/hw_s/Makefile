@@ -26,9 +26,9 @@
 #
 
 # This is solution specific. Check if we can replace this by generics too.
-SOLUTION_NAME ?= intersect
-SOLUTION_DIR ?= hlsIntersect
-srcs += hls_intersect.cpp
+SOLUTION_NAME ?= intersect_s
+SOLUTION_DIR ?= hlsIntersect_s
+srcs += hls_intersect_s.cpp
 
 # If you have the action code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/hls.mk

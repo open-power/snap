@@ -60,6 +60,7 @@ SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
                   $(SNAP_HDL_CORE)/psl_accel_types.vhd \
                   $(SNAP_HDL_CORE)/snap_core.vhd \
                   $(SNAP_HDL_CORE)/snap_core_types.vhd \
+                  $(SNAP_HDL_CORE)/dma_buffer.vhd \
                   $(SNAP_HDL_CORE)/mmio.vhd \
                   $(SNAP_HDL_HLS)/action_wrapper.vhd \
                   $(SNAP_SIM_CORE)/top.sv

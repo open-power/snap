@@ -17,8 +17,9 @@
   del="\n#######################################"       # delimiter
   set -e                                                # exit on error
   n=0                                                   # count amount of tests executed (exception for subsecond calls)
+  max_rc=0                                              # track the maximum RC to return at the end
   loops=1;
-  ln -s ../sw $ACTION_ROOT/hw/sw 2>/dev/null            # circumvention to deal with ACTION_ROOT pointing to hw subdirectory
+# ln -s ../sw $ACTION_ROOT/hw/sw 2>/dev/null |echo      # circumvention to deal with ACTION_ROOT pointing to hw subdirectory, ignore RC
   rnd20=$((1+RANDOM%20))
   rnd32=$((1+RANDOM%32))
   rnd1k=$((1+RANDOM%1024))
@@ -39,7 +40,8 @@
     deltasim=$(( ($ts6-$ts5)/1000000 ));    s=$((deltasim/1000)); ms=$((deltasim%1000))
     deltans=$(( (16#$free2-16#$free1)*4 )); us=$((deltans/1000)); ns=$((deltans%1000))
     ts4=$(date||awk '{print $4}')                       # end of step
-    echo -e "RC=$step_rc free_ctr=$free2 HW=$us.${ns}us SIM=$s.${ms}s ts=$ts4 $del"
+    if [[ "$step_rc" > "$max_rc" ]];then max_rc=$step_rc;fi
+    echo -e "RC=$step_rc max_rc=$max_rc free_ctr=$free2 HW=$us.${ns}us SIM=$s.${ms}s ts=$ts4 $del"
     return $step_rc
   }
   for((loop=1;loop<=loops;loop++));do
@@ -97,7 +99,8 @@
         "10141002") a0="hls_hashjoin";;
         "10141003") a0="hls_search";;
         "10141004") a0="hls_bfs";;
-        "10141005") a0="hls_intersect";;
+        "10141005") a0="hls_intersect_h";;
+        "10141006") a0="hls_intersect_s";;
         *) a0="unknown";;
       esac; echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="$SNAP_ROOT/software/tools/snap_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
@@ -116,7 +119,8 @@
         "10141002") a1="hls_hashjoin";;
         "10141003") a1="hls_search";;
         "10141004") a1="hls_bfs";;
-        "10141005") a1="hls_intersect";;
+        "10141005") a1="hls_intersect_h";;
+        "10141006") a1="hls_intersect_s";;
         *) a1="unknown";;
       esac; echo "action0 type1s=$t1s type1l=$t1l $a1"
       t="$SNAP_ROOT/software/tools/snap_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
@@ -151,11 +155,12 @@
       fi
       for num4k in 0 1; do
       for num64 in 1 2; do
-      for align in 4096 1024 256 64; do
+      for align in 4096 1024 256 64; do  # posix memalign only allows power of 2
         step "$ACTION_ROOT/sw/snap_example -a2 -A${align} -S${num4k} -B${num64} -t200"
       done
       done
       done
+      step "$ACTION_ROOT/sw/snap_example -a2 -B${rnd20} -t200"
       if [[ "$DDR3_USED" == "TRUE" || "$DDR4_USED" == "TRUE" || "$BRAM_USED" == "TRUE" || "$SDRAM_USED" == "TRUE" ]]; then echo -e "$del\ntesting DDR"
         for num4k in 0 1 3; do to=$((80+num4k*80))     # irun 1=6sec, 7=20sec, xsim 1=60sec 3=150sec
         for num64 in 1 64; do                          # 1..64
@@ -166,9 +171,9 @@
         done
         #### check DDR3 memory in KU3, stay under 512k for BRAM
         step "$ACTION_ROOT/sw/snap_example_ddr -h"
-        for strt in 0x1000 0x2000; do      # start adr
+        for strt in 0x1000 0x2000 $rnd1k; do      # start adr
         for iter in 1 2; do                # number of blocks
-        for bsize in 64 0x1000; do         # block size
+        for bsize in 64 0x1000 $(($rnd20*64)); do         # block size
           let end=${strt}+${iter}*${bsize}; to=$((iter*iter*bsize/4+300))                       # rough timeout dependent on filesize
           step "$ACTION_ROOT/sw/snap_example_ddr -s${strt} -e${end} -b${bsize} -i${iter} -t$to"
         done
@@ -322,13 +327,17 @@
 #     done
     fi # bfs
 
-    if [[ "$t0l" == "10141005" || "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect"
+    if [[ "$t0l" == "10141005" && "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect hash"
       step "$ACTION_ROOT/sw/snap_intersect -h"
-      step "$ACTION_ROOT/sw/snap_intersect    -m1 -v -t300"
-      step "$ACTION_ROOT/sw/snap_intersect    -n1 -v -t600"
-      step "$ACTION_ROOT/sw/snap_intersect    -n2 -v -t1200"
-      step "$ACTION_ROOT/sw/snap_intersect -I -m1 -v -t300"
+      step "$ACTION_ROOT/sw/snap_intersect    -m1 -v -t1200"
+      step "$ACTION_ROOT/sw/snap_intersect -I -m1 -v -t1200"
     fi # intersect
+    if [[ "$t0l" == "10141006" && "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect sort"
+      step "$ACTION_ROOT/sw/snap_intersect -h"
+      step "$ACTION_ROOT/sw/snap_intersect    -m2 -v -t1200"
+      step "$ACTION_ROOT/sw/snap_intersect -I -m2 -v -t1200"
+    fi # intersect
+
 
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"  # end of loop
   done; l=""; ts3=$(date +%s); totaltime=`expr $ts3 - $ts0`; echo "loops=$loops tests=$n total_time=$totaltime" # end of test

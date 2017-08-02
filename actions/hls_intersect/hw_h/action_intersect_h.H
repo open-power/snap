@@ -1,5 +1,5 @@
-#ifndef __ACTION_INTERSECT_HLS_H__
-#define __ACTION_INTERSECT_HLS_H__
+#ifndef __ACTION_INTERSECT_H_HLS_H__
+#define __ACTION_INTERSECT_H_HLS_H__
 
 /*
  * Copyright 2016, 2017 International Business Machines
@@ -19,12 +19,11 @@
 
 #include "hls_snap.H"
 #include "action_intersect.h"
-#define USE_SORT   
 
 //////////////////////////////////////
 // General
 //////////////////////////////////////
-#define MAX_NB_OF_BYTES_READ  (4 * 1024)
+#define MAX_NB_OF_BYTES_READ  (64 * 1024)
 
 // Size of each element
 // 6 = log2(64)
@@ -52,19 +51,8 @@ typedef ap_uint<ELE_BYTES *8> ele_t;
 
 
 //////////////////////////////////////
-//  Sort Method
-//////////////////////////////////////
-#ifdef USE_SORT
-
-#define NUM_SORT 32
-#define NUM_ENGINES 16
-#define ONE_BUF_SIZE NUM_SORT * ELE_BYTES
-#define DDR_SORT_SPACE   (snapu64_t)4*1024*1024*1024
-#else
-//////////////////////////////////////
 //  Hash Method
 //////////////////////////////////////
-#ifdef USE_HASH
 
 #define HW_HT_ENTRY_NUM_EXP 22
 #define HW_HT_ENTRY_NUM (1<<HW_HT_ENTRY_NUM_EXP)
@@ -74,8 +62,6 @@ typedef ap_uint<ELE_BYTES *8> ele_t;
 #define BRAM_WIDTH (1<<WIDTH_EXP)
 ap_uint<BRAM_WIDTH> hash_used[HW_HT_ENTRY_NUM/BRAM_WIDTH];
 #define HASH_TABLE_ADDR  (snapu64_t)4*1024*1024*1024
-#endif
-#endif
 
 
 typedef struct {
@@ -96,4 +82,4 @@ typedef struct {
 } action_reg;
 
 
-#endif	/* __ACTION_INTERSECT_HLS_H__ */
+#endif	/* __ACTION_INTERSECT_H_HLS_H__ */
