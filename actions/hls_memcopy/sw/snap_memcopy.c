@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
 
 	/* if output file is defined, use that as output */
 	if (output != NULL) {
-		size_t set_size = size + (verify ? sizeof(trailing_zeros) : 0);
+		ssize_t set_size = size + (verify ? sizeof(trailing_zeros) : 0);
 
 		obuff = snap_malloc(set_size);
 		if (obuff == NULL)
