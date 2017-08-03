@@ -86,20 +86,6 @@ while [ -z "$SETUP_DONE" ]; do
       echo "PSL_DCP                 is set to: \"$PSL_DCP\""
   fi
 
-  if [ -z "$USE_PRFLOW" ]; then
-    export USE_PRFLOW=FALSE
-    echo "Setting USE_PRFLOW             to: \"$USE_PRFLOW\""
-  else
-    echo "USE_PRFLOW              is set to: \"$USE_PRFLOW\""
-  fi
-
-  if [ -z "$CLOUD_BUILD_BITFILE" ]; then
-    export CLOUD_BUILD_BITFILE=FALSE
-    echo "Setting CLOUD_BUILD_BITFILE    to: \"$CLOUD_BUILD_BITFILE\""
-  else
-    echo "CLOUD_BUILD_BITFILE     is set to: \"$CLOUD_BUILD_BITFILE\""
-  fi
-
   echo "=====SNAP PATH variables==============================="
   if [ -z "$SNAP_ROOT" ]; then
     export SNAP_ROOT=$snapdir
@@ -116,6 +102,34 @@ while [ -z "$SETUP_DONE" ]; do
     # check if ACTION_ROOT points to an existing direcory or ACTION_ROOT ends in 'vhdl' for an HLS action
     if [ ! -d "$ACTION_ROOT" ] && ( ( [ -z `echo "x$ACTION_ROOT" | grep -i HLS` ] && [ "${HLS_SUPPORT^^}" != "TRUE" ] ) || [ `basename "x$ACTION_ROOT"` != "vhdl" ] ); then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Please make sure that ACTION_ROOT points to an existing directory."
+    fi
+  fi
+
+  ####### settings for Partial Reconfiguration flow
+  echo "=====PR flow setup====================================="
+  if [ -z "$USE_PRFLOW" ]; then
+    export USE_PRFLOW=FALSE
+    echo "Setting USE_PRFLOW             to: \"$USE_PRFLOW\""
+  else
+    echo "USE_PRFLOW              is set to: \"$USE_PRFLOW\""
+  fi
+
+  if [ "$USE_PRFLOW" = "TRUE" ]; then
+    if [ -z "$DCP_ROOT" ]; then
+      export DCP_ROOT=$SNAP_ROOT/dcp
+      echo "Setting DCP_ROOT               to: \"$DCP_ROOT\""
+    else
+      echo "DCP_ROOT                is set to: \"$DCP_ROOT\""
+    fi
+    if [ -d "$SNAP_ROOT" ]; then
+      mkdir -p $DCP_ROOT
+    fi
+
+    if [ -z "$CLOUD_BUILD_BITFILE" ]; then
+      export CLOUD_BUILD_BITFILE=TRUE
+      echo "Setting CLOUD_BUILD_BITFILE    to: \"$CLOUD_BUILD_BITFILE\""
+    else
+      echo "CLOUD_BUILD_BITFILE     is set to: \"$CLOUD_BUILD_BITFILE\""
     fi
   fi
 

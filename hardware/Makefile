@@ -50,6 +50,7 @@ endif
 export NVME_USED ?= FALSE
 
 export USE_PRFLOW ?= FALSE
+export DCP_ROOT ?= $(SNAP_ROOT)/dcp
 
 ## variables just for this Makefile
 BUILD_DIR=$(SNAP_HARDWARE_ROOT)/build
@@ -70,7 +71,8 @@ SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
 SNAP_TMP_FILES =  $(SNAP_HARDWARE_ROOT)/sim/README.txt \
 		  $(SNAP_HARDWARE_ROOT)/vivado.jou
 
-SNAP_CLOUD_DCP=$(SNAP_HARDWARE_ROOT)/build/Checkpoints/user_action_synth.dcp
+SNAP_ACTION_DCP=$(DCP_ROOT)/user_action_synth.dcp
+SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 
 #
 # FIXME Targets in this Makefile are to be build in the correct order.
@@ -139,7 +141,6 @@ prepare_environment:
 	@mkdir -p $(BUILD_DIR)/Checkpoints;
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl         $(BUILD_DIR)/snap_build.tcl;
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_build.tcl   $(BUILD_DIR)/snap_cloud_build.tcl;
-	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/user_action_synth.tcl  $(BUILD_DIR)/user_action_synth.tcl;
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_merge.tcl   $(BUILD_DIR)/snap_cloud_merge.tcl;
 	@cp -p $(PSL_DCP)                                            $(BUILD_DIR)/Checkpoints/;
 	@if [ $(FPGACARD) = "KU3" ]; then \
@@ -216,16 +217,11 @@ cloud_base: snap_config patch_version
 	@cd $(BUILD_DIR) && env CLOUD_RUN=BASE vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
 	@echo -e "\t[BUILD CLOUD BASE...] done  `date`"
 
-cloud_image: $(SNAP_CLOUD_DCP)
-	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
-		echo -e "\tMakefile target $@ is only allowed for PR flow!"; exit -1; \
-	fi
-	@echo -e "\t[BUILD CLOUD IMAGE...] start `date`"
-	@cd $(BUILD_DIR) && env CLOUD_RUN=IMAGE vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
-	@rm -r -f .bitstream_name.txt
-	@echo -e "\t[BUILD CLOUD IMAGE...] done  `date`"
+$(SNAP_ACTION_DCP): 
+	@echo -e "\tNeed to run cloud_action first"
+	@exit 1
 
-$(SNAP_CLOUD_DCP): 
+$(SNAP_BASE_DCP): 
 	@echo -e "\tNeed to run cloud_base first"
 	@exit 1
 
@@ -238,7 +234,7 @@ cloud_action: snap_config action_hw patch_version
 	@cd $(BUILD_DIR) && env CLOUD_RUN=ACTION vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/cloud_action.log -journal $(LOGS_DIR)/cloud_action.jou
 	@echo -e "\t[CLOUD ACTION SYNTH..] done  `date`"
 
-cloud_merge: prepare_environment
+cloud_merge: $(SNAP_BASE_DCP) $(SNAP_ACTION_DCP) prepare_environment
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
 		echo -e "\tMakefile target $@ is only allowed for PR flow!"; exit -1; \
 	fi

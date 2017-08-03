@@ -25,6 +25,14 @@ set bram_used             $::env(BRAM_USED)
 set cloud_run             $::env(CLOUD_RUN)
 set remove_tmp_files      "FALSE"
 
+#checkpoint_dir
+if { [info exists ::env(DCP_ROOT)] == 1 } {
+    set dcp_dir $::env(DCP_ROOT)
+} else {
+    puts "Error: For cloud builds the environment variable DCP_ROOT needs to point to a path for input and output design checkpoints."
+    exit 42
+}
+
 #timing_lablimit  
 if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
   set timing_lablimit [string toupper $::env(TIMING_LABLIMIT)]
@@ -55,14 +63,14 @@ if { $cloud_run == "BASE" } {
   reset_run    user_action_synth_1 >> $log_file
   launch_runs  user_action_synth_1 >> $log_file
   wait_on_run  user_action_synth_1 >> $log_file
-  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper.dcp                       ./Checkpoints/user_action_synth.dcp
+  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper.dcp                       $dcp_dir/user_action_synth.dcp
   file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper_utilization_synth.rpt     ./Reports/user_action_utilization_synth.rpt
   
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
   reset_run    synth_1 >> $log_file
   launch_runs  synth_1 >> $log_file
   wait_on_run  synth_1 >> $log_file
-  file copy -force ../viv_project/framework.runs/synth_1/psl_fpga.dcp                       ./Checkpoints/framework_synth.dcp
+  file copy -force ../viv_project/framework.runs/synth_1/psl_fpga.dcp                       $dcp_dir/framework_synth.dcp
   file copy -force ../viv_project/framework.runs/synth_1/psl_fpga_utilization_synth.rpt     ./Reports/framework_utilization_synth.rpt
 
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
@@ -78,14 +86,14 @@ if { $cloud_run == "BASE" } {
 
 
   puts [format "%-*s %-*s %-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3 + 1] "collecting reports and checkpoints" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_opt.dcp                         ./Checkpoints/framework_opt.dcp    
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_physopt.dcp                     ./Checkpoints/framework_physopt.dcp
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_placed.dcp                      ./Checkpoints/framework_placed.dcp 
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_routed.dcp                      ./Checkpoints/framework_routed.dcp 
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_postroute_physopt.dcp           ./Checkpoints/snap_and_action_postroute_physopt.dcp
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_postroute_physopt_bb.dcp        ./Checkpoints/snap_static_region_bb.dcp
-  file copy -force ../viv_project/framework.runs/impl_1/a0_action_w_user_action_routed.dcp       ./Checkpoints/user_action_routed.dcp
-  file copy -force ../viv_project/framework.runs/impl_1/a0_action_w_user_action_post_routed.dcp  ./Checkpoints/user_action_postroute_physopt.dcp
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_opt.dcp                         $dcp_dir/framework_opt.dcp    
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_physopt.dcp                     $dcp_dir/framework_physopt.dcp
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_placed.dcp                      $dcp_dir/framework_placed.dcp 
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_routed.dcp                      $dcp_dir/framework_routed.dcp 
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_postroute_physopt.dcp           $dcp_dir/snap_and_action_postroute_physopt.dcp
+  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_postroute_physopt_bb.dcp        $dcp_dir/snap_static_region_bb.dcp
+  file copy -force ../viv_project/framework.runs/impl_1/a0_action_w_user_action_routed.dcp       $dcp_dir/user_action_routed.dcp
+  file copy -force ../viv_project/framework.runs/impl_1/a0_action_w_user_action_post_routed.dcp  $dcp_dir/user_action_postroute_physopt.dcp
   file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_route_status.rpt                ./Reports/framework_route_status.rpt
   file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_timing_summary_routed.rpt       ./Reports/framework_timing_summary_routed.rpt
 
@@ -118,7 +126,7 @@ if { $cloud_run == "BASE" } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "create SNAP cloud_run" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
   # Create PR run
   create_reconfig_module -name cloud_build -partition_def [get_partition_defs snap_action ] -gate_level -top action_wrapper >> $log_file
-  add_files -norecurse ./Checkpoints/user_action_synth.dcp -of_objects [get_reconfig_modules cloud_build] >> $log_file
+  add_files -norecurse $dcp_dir/user_action_synth.dcp -of_objects [get_reconfig_modules cloud_build] >> $log_file
   create_pr_configuration -name cloud_config -partitions [list a0/action_w:cloud_build ] >> $log_file
   create_run cloud_run -parent_run impl_1 -flow {Vivado Implementation 2016} -pr_config cloud_config >> $log_file
 
@@ -171,7 +179,7 @@ if { $cloud_run == "BASE" } {
   reset_run    user_action_synth_1 >> $log_file
   launch_runs  user_action_synth_1 >> $log_file
   wait_on_run  user_action_synth_1 >> $log_file
-  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper.dcp                       ./Checkpoints/user_action_synth.dcp
+  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper.dcp                       $dcp_dir/user_action_synth.dcp
   file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper_utilization_synth.rpt     ./Reports/user_action_utilization_synth.rpt
 }
 
@@ -179,12 +187,12 @@ if { $cloud_run == "BASE" } {
 ## removing unnecessary files
 if { $remove_tmp_files == "TRUE" } {
   puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
-  exec rm -rf ./Checkpoints/framework_synth.dcp
-  exec rm -rf ./Checkpoints/framework_opt.dcp
-  exec rm -rf ./Checkpoints/framework_physopt.dcp
-  exec rm -rf ./Checkpoints/framework_placed.dcp
-  exec rm -rf ./Checkpoints/framework_routed.dcp
-  exec rm -rf ./Checkpoints/user_action_routed.dcp
+  exec rm -rf $dcp_dir/framework_synth.dcp
+  exec rm -rf $dcp_dir/framework_opt.dcp
+  exec rm -rf $dcp_dir/framework_physopt.dcp
+  exec rm -rf $dcp_dir/framework_placed.dcp
+  exec rm -rf $dcp_dir/framework_routed.dcp
+  exec rm -rf $dcp_dir/user_action_routed.dcp
 }
 
 close_project  >> $log_file
