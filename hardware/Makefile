@@ -107,7 +107,7 @@ check_snap_settings:
 	fi
 	@if [ -z $(FPGACARD) ] || [ -z $(SDRAM_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ] || [ -z $(PSL_DCP) ]; then \
 		echo "Missing one or more environment  variables"; \
-		echo "Please check the following variables and source snap_settings before calling make!"; \
+		echo "Please make sure all of the following variables are prepared!"; \
 		echo "FPGACARD:       $(FPGACARD)"; \
 		echo "PSL_DCP :       $(PSL_DCP)"; \
 		echo "ACTION_ROOT:    $(ACTION_ROOT)"; \
