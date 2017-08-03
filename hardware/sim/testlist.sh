@@ -82,15 +82,15 @@
         step "$SNAP_ROOT/software/tools/snap_maint -m1 -c1 -vvv"
         t="$SNAP_ROOT/software/tools/snap_peek 0x18        "; r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
       fi
-      if (( dram > 0 ));then echo -e "write FPGA memory to prevent reading unwritten adr 0"
-        step "$ACTION_ROOT/sw/snap_example_set -F -b0x0 -s0x100 -p0x5 -t50"
-      fi
     fi
     if (( numact > 0 ));then
       t="$SNAP_ROOT/software/tools/snap_peek 0x100       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 type 0.0.0.shrt.4B_long"
       t0s=${r:7:1};t0l=${r:8:8};
       case $t0l in
-        "10140000") a0="hdl_example";;
+        "10140000") a0="hdl_example"
+                    if (( dram > 0 ));then echo -e "write FPGA memory to prevent reading unwritten adr 0"
+                      step "$ACTION_ROOT/sw/snap_example_set -F -b0x0 -s0x100 -p0x5 -t50"
+                    fi;;
         "10141000") a0="hls_memcopy";;
         "10141001") a0="hls_sponge";;
         "10141002") a0="hls_hashjoin";;
