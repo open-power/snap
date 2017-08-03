@@ -183,7 +183,7 @@ function test_memcopy_from_ddr {
     echo -n "Doing snap_memcopy (aligned) ${size} bytes ... "
     cmd="snap_memcopy -C${snap_card} -X	\
 		-o ${size}_A.out	\
-                -a 0x0 -A CARD_DRAM >>  \
+                -a 0x0 -A CARD_DRAM -s ${size} >>  \
 		snap_memcopy_from_ddr.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then
