@@ -28,7 +28,8 @@ all: $(software_subdirs) $(action_subdirs)
 endif
 
 # Only build if the subdirectory is really existent
-.PHONY: $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
+.PHONY: $(software_subdirs) $(hardware_subdirs) $(action_subdirs) test install uninstall config model image cloud_base cloud_action cloud_merge clean
+
 $(software_subdirs):
 	@if [ -d $@ ]; then	         			\
 		$(MAKE) -C $@ || exit 1;			\
@@ -63,7 +64,7 @@ test install uninstall:
 	done
 
 # Model build and config
-config model image:
+config model image cloud_base cloud_action cloud_merge:
 	@for dir in $(hardware_subdirs); do	\
 		if [ -d $$dir ]; then				\
 			if [ -d "$(SNAP_ROOT)" ]; then		\
