@@ -24,7 +24,8 @@ normal=$(tput sgr0)
 
 # Name of global config file
 kconfig="`pwd`/Kconfig"
-config=../.config
+snap_config=../.snap_config
+snap_config_sh=../.snap_config.sh
 autoconf=../software/include/autoconf.h
 linux_dir="/usr/src/kernels/`uname -r`"
 build_dir="`pwd`/build"
@@ -54,7 +55,8 @@ while getopts ":a:o:c:Vh" opt; do
       option=$OPTARG
       ;;
       c)
-      config=$OPTARG
+      snap_config=$OPTARG
+      snap_config_sh=$OPTARG.sh
       ;;
       V)
       echo "${version}" >&2
@@ -82,7 +84,7 @@ echo "SNAP Build Options"
 echo "  Linux:    $linux_dir"
 echo "  Build:    $build_dir"
 echo "  Kconfig:  $kconfig"
-echo "  config:   $config"
+echo "  config:   $snap_config"
 echo "  autoconf: $autoconf"
 
 mkdir -p $build_dir
@@ -92,8 +94,10 @@ echo "Executing:"
 echo "  $cmd"
 $cmd
 
-echo "Copy resulting $config file ..."
-cp $build_dir/.config $config
+echo "Copying resulting config file to $snap_config ..."
+cp $build_dir/.config $snap_config
+cat $snap_config | sed 's/^CONFIG_\(.*\)/export \1/' > $snap_config_sh
+echo "Copying done"
 
 if [ -f $build_dir/include/linux/autoconf.h ]; then
 	echo "Copy resulting $autoconf file ..."
