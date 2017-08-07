@@ -266,8 +266,7 @@ action_sw: software
 xsim:
 	@echo -e "\t[BUILD xsim..........] start `date`"
 	@if [ ! -d "$(SNAP_HARDWARE_ROOT)/sim/xsim" ];then \
-		vivado -mode batch -source setup/export_xsim.tcl -notrace -log $(LOGS_DIR)/compile_$(SIMULATOR).log; \
-		ls $(SNAP_HARDWARE_ROOT)/sim/xsim >> $(LOGS_DIR)/compile_$(SIMULATOR).log; \
+		vivado -quiet -mode batch -source setup/export_xsim.tcl -notrace -log $(LOGS_DIR)/compile_$(SIMULATOR).log; \
 		$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/xsim top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 		cd $(SNAP_HARDWARE_ROOT)/sim/xsim && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
 	fi
