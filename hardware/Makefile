@@ -26,6 +26,8 @@ export SNAP_ROOT ?= $(abspath ..)
 export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 
+include $(SNAP_ROOT)/.snap_config.cflags
+
 ifeq "$(FPGACARD)" "KU3"
 	export DDR3_USED=$(SDRAM_USED)
 	export DDR4_USED=FALSE
@@ -58,13 +60,14 @@ SNAP_HDL_CORE=$(SNAP_HARDWARE_ROOT)/hdl/core
 SNAP_HDL_HLS=$(SNAP_HARDWARE_ROOT)/hdl/hls
 SNAP_SIM_CORE=$(SNAP_HARDWARE_ROOT)/sim/core
 
+SNAP_PP_FILES=$(SNAP_HDL_CORE)/psl_accel.vhd \
+              $(SNAP_HDL_CORE)/snap_core.vhd \
+              $(SNAP_HDL_CORE)/mmio.vhd
+
 SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
-                  $(SNAP_HDL_CORE)/psl_accel.vhd \
                   $(SNAP_HDL_CORE)/psl_accel_types.vhd \
-                  $(SNAP_HDL_CORE)/snap_core.vhd \
                   $(SNAP_HDL_CORE)/snap_core_types.vhd \
                   $(SNAP_HDL_CORE)/dma_buffer.vhd \
-                  $(SNAP_HDL_CORE)/mmio.vhd \
                   $(SNAP_HDL_HLS)/action_wrapper.vhd \
                   $(SNAP_SIM_CORE)/top.sv
 
@@ -120,6 +123,24 @@ check_snap_settings:
 		echo "ILA_DEBUG is set to ${ILA_DEBUG} but ILA_SETUP_FILE is not pointing to a file!"; \
 		exit 1; \
 	fi
+	@echo "=============================================="
+	@echo "==== hardware/Makefile called with:       ===="
+	@echo "=============================================="
+	@echo "SNAP_ROOT      = $(SNAP_ROOT)"
+	@echo "ACTION_ROOT    = $(ACTION_ROOT)"
+	@echo "PSL_DCP        = $(PSL_DCP)"
+	@echo "FPGACARD       = $(FPGACARD)"
+	@echo "FPGACHIP       = $(FPGACHIP)"
+	@echo "NUM_OF_ACTIONS = $(NUM_OF_ACTIONS)"
+	@echo "BRAM_USED      = $(BRAM_USED)"
+	@echo "SDRAM_USED     = $(SDRAM_USED)"
+	@echo "DDR3_USED      = $(DDR3_USED)"
+	@echo "DDR4_USED      = $(DDR4_USED)"
+	@echo "DDRI_USED      = $(DDRI_USED)"
+	@echo "NVME_USED      = $(NVME_USED)"
+	@echo "ILA_DEBUG      = $(ILA_DEBUG)"
+	@echo "SIMULATOR      = $(SIMULATOR)"
+	@echo "=============================================="
 
 check_denali:
 	@if [ $(NVME_USED) = "TRUE" ]; then \
@@ -153,13 +174,20 @@ prepare_environment:
 	fi
 	@echo -e "\t[PREPARE ENVIRONMENT.] done `date`";
 
+$(SNAP_PP_FILES):
+	@echo "Creating $@ ..."
+	@$(CC) -E -xc $(SNAP_CFLAGS) $@_source | grep -v "^#" > $@
+
 %.vhd: %.vhd_source
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 %.sv: %.sv_source
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
-snap_config: snap_config_start $(SNAP_CONFIG_FILES)
+$(SNAP_ROOT)/.snap_config.cflags:
+	@$(MAKE) -C $(SNAP_ROOT) snap_config
+
+snap_config: snap_config_start $(SNAP_PP_FILES) $(SNAP_CONFIG_FILES)
 	@echo -e "\t[CONFIG SNAP CORE....] done `date`";
 
 snap_config_start:
@@ -307,10 +335,11 @@ questa:
 
 clean:
 	@echo -e "\t[CLEAN ENVIRONMENT...] start `date`"
-	@$(RM) -r $(SNAP_CONFIG_FILES) $(SNAP_TMP_FILES)	\
-		  $(SNAP_HDL_CORE)/psl_fpga.vhd_source		\
-		  $(SNAP_HDL_CORE)/psl_accel.vhd_source		\
-		  *build
+	@$(RM)    .setup_environment
+	@$(RM) -r $(SNAP_PP_FILES) $(SNAP_CONFIG_FILES) $(SNAP_TMP_FILES) \
+	          $(SNAP_HDL_CORE)/psl_fpga.vhd_source                    \
+	          $(SNAP_HDL_CORE)/psl_accel.vhd_source                   \
+	          *build
 	@echo -e "\t                        vivado project";
 	@$(RM) -r viv_project*
 	@echo -e "\t                        IPs";

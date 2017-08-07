@@ -26,6 +26,7 @@ normal=$(tput sgr0)
 kconfig="`pwd`/Kconfig"
 snap_config=../.snap_config
 snap_config_sh=../.snap_config.sh
+snap_config_cflags=../.snap_config.cflags
 autoconf=../software/include/autoconf.h
 linux_dir="/usr/src/kernels/`uname -r`"
 build_dir="`pwd`/build"
@@ -94,10 +95,14 @@ echo "Executing:"
 echo "  $cmd"
 $cmd
 
-echo "Copying resulting config file to $snap_config ..."
+echo "Generating SNAP config files $snap_config, $snap_config_sh and $snap_config_cflags ..."
 cp $build_dir/.config $snap_config
-cat $snap_config | sed 's/^CONFIG_\(.*\)/export \1/' > $snap_config_sh
-echo "Copying done"
+#cat $snap_config | sed 's/^CONFIG_\(.*\)/export \1/' > $snap_config_sh
+cat $snap_config | sed 's/^CONFIG_/export /' > $snap_config_sh
+cat $snap_config | tr -d '"' | sed 's/^CONFIG_\(.*\)/SNAP_CFLAGS += "-DCONFIG_\1"/' > $snap_config_cflags
+#grep "^CONFIG_" $snap_config | sed 's/^CONFIG_\(.*\)/-D CONFIG_\1 /' | tr -d '\n' > $snap_config_def
+#grep "^CONFIG_" $snap_config | tr '\n' ' ' | sed 's/^C/-D C/' > $snap_config_def
+echo "Generation of SNAP config files done."
 
 if [ -f $build_dir/include/linux/autoconf.h ]; then
 	echo "Copy resulting $autoconf file ..."
