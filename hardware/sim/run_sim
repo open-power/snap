@@ -18,6 +18,13 @@
 #
 # entry point for simulation, after model has been built
 #
+ if [ -z $SNAP_ROOT ]; then
+   snapdir=$(dirname $(dirname $(dirname $(readlink -f "$BASH_SOURCE"))))
+   if [ -f "$snapdir/.snap_env" ] && [ -f "$snapdir/.snap_config.sh" ]; then
+     . "$snapdir/.snap_env"
+     . "$snapdir/.snap_config.sh"
+   fi
+ fi
  if [[ -z $SIMDIR && -z $SIMULATOR ]];then SIMULATOR="ncsim"; fi
  if [[ "$SIMULATOR" == "ncsim" || "$SIMULATOR" == "irun" ]];then
    if [ -z $CDS_INST_DIR ];then echo "CDS_INST_DIR not defined for ncsim"; exit 1; fi
