@@ -88,12 +88,9 @@
       t0s=${r:7:1};t0l=${r:8:8};
       case $t0l in
         "10140000") a0="hdl_example"
-#         if [[ "$SDRAM_USED" == "TRUE" ]];then echo -e "write FPGA memory to prevent reading unwritten adr 0"
-          if (( dram > 0 ));then echo -e "write FPGA memory to prevent reading unwritten adr 0"
-#           step "$ACTION_ROOT/sw/snap_example_set -h"
-            step "$ACTION_ROOT/sw/snap_example_set -F -b0x0 -s0x100 -p0x5 -t50"
-          fi
-          ;;
+                    if (( dram > 0 ));then echo -e "write FPGA memory to prevent reading unwritten adr 0"
+                      step "$ACTION_ROOT/sw/snap_example_set -F -b0x0 -s0x100 -p0x5 -t50"
+                    fi;;
         "10141000") a0="hls_memcopy";;
         "10141001") a0="hls_sponge";;
         "10141002") a0="hls_hashjoin";;

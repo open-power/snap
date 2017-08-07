@@ -18,41 +18,17 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 LIBRARY ieee;
+
 USE ieee.std_logic_1164.all;
 USE ieee.std_logic_misc.all;
 USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
 
+USE work.psl_accel_types.ALL;
+USE work.action_types.ALL;
+
 
 ENTITY action_wrapper IS
-  GENERIC (
-    -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory
-    C_M_AXI_CARD_MEM0_ID_WIDTH       : integer   := 1;
-    C_M_AXI_CARD_MEM0_ADDR_WIDTH     : integer   := 33;
-    C_M_AXI_CARD_MEM0_DATA_WIDTH     : integer   := 512;
-    C_M_AXI_CARD_MEM0_AWUSER_WIDTH   : integer   := 1;
-    C_M_AXI_CARD_MEM0_ARUSER_WIDTH   : integer   := 1;
-    C_M_AXI_CARD_MEM0_WUSER_WIDTH    : integer   := 1;
-    C_M_AXI_CARD_MEM0_RUSER_WIDTH    : integer   := 1;
-    C_M_AXI_CARD_MEM0_BUSER_WIDTH    : integer   := 1;
-
-    -- Parameters for Axi Slave Bus Interface AXI_CTRL_REG
-    C_S_AXI_CTRL_REG_DATA_WIDTH      : integer   := 32;
-    C_S_AXI_CTRL_REG_ADDR_WIDTH      : integer   := 32;
-
-    -- Parameters for Axi Master Bus Interface AXI_HOST_MEM : to Host memory
-    C_M_AXI_HOST_MEM_ID_WIDTH        : integer   := 1;
-    C_M_AXI_HOST_MEM_ADDR_WIDTH      : integer   := 64;
-    C_M_AXI_HOST_MEM_DATA_WIDTH      : integer   := 512;
-    C_M_AXI_HOST_MEM_AWUSER_WIDTH    : integer   := 1;
-    C_M_AXI_HOST_MEM_ARUSER_WIDTH    : integer   := 1;
-    C_M_AXI_HOST_MEM_WUSER_WIDTH     : integer   := 1;
-    C_M_AXI_HOST_MEM_RUSER_WIDTH     : integer   := 1;
-    C_M_AXI_HOST_MEM_BUSER_WIDTH     : integer   := 1;
-    INT_BITS                         : integer   := 3;
-    CONTEXT_BITS                     : integer   := 8
-  );
-
   PORT (
     ap_clk                     : IN STD_LOGIC;
     ap_rst_n                   : IN STD_LOGIC;
@@ -228,6 +204,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
   SIGNAL interrupt_q            : STD_LOGIC;
   SIGNAL interrupt_wait_ack_q   : STD_LOGIC;
   SIGNAL context_q              : STD_LOGIC_VECTOR(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL hls_rst_buf            : STD_LOGIC;
 
   COMPONENT hls_action
     GENERIC (
@@ -455,7 +432,7 @@ BEGIN
   )
   PORT MAP (
     ap_clk                       => ap_clk,
-    ap_rst_n                     => ap_rst_n,
+    ap_rst_n  => hls_rst_buf,
     m_axi_card_mem0_araddr       => m_axi_card_mem0_araddr,                                -- only for DDRI_USED=TRUE
     m_axi_card_mem0_arburst      => m_axi_card_mem0_arburst,                               -- only for DDRI_USED=TRUE
     m_axi_card_mem0_arcache      => m_axi_card_mem0_arcache,                               -- only for DDRI_USED=TRUE
@@ -627,6 +604,7 @@ BEGIN
   int: PROCESS (ap_clk)
   BEGIN  -- PROCESS int
     IF rising_edge(ap_clk) THEN
+      hls_rst_buf <= ap_rst_n;
       IF ap_rst_n = '0' THEN
         interrupt_q          <= '0';
         interrupt_wait_ack_q <= '0';

@@ -53,23 +53,13 @@ function test_hls_memcopy()
 {
 	local card=$1
 	local accel=$2
-	mytest="./actions/hls_memcopy"
 
+	mytest="./actions/hls_memcopy"
 	echo "TEST HLS Memcopy on Accel: $accel[$card] ..."
-	FUNC=$my_test/sw/snap_memcopy -C $card -x
-	for i in {1..10}; do
-		size=`d -A n -t d -N 3 /dev/urandom |tr -d ' '`
-		dd if=/dev/urandom bs=${size} count=1 -of=/tmp/snap_test.in
-		cmd="${FUNC} -i /tmp/snap_test.in -o /tmp/snap_test.out -I"
-		eval ${cmd}
-		RC=$?
-		if [ $RC -ne 0 ]; then
-			rm -f /tmp/snap_test*
-			return $RC
-		fi
-	done
-	rm -f /tmp/snap_test*
-	return 0
+	cmd="$mytest/tests/test_0x10141000.sh -C $card"
+	eval ${cmd}
+	RC=$?
+	return $RC
 }
 
 function test_hls_sponge () # $card $accel

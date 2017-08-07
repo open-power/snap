@@ -50,25 +50,15 @@ while getopts ":C:t:d:h" opt; do
     esac
 done
 
-export PATH=$PATH:../software/tools
-
-snap_peek --help > /dev/null || exit 1;
-snap_poke --help > /dev/null || exit 1;
-
-#### VERSION ##########################################################
-
-# [ -z "$STATE" ] && echo "Need to set STATE" && exit 1;
-
-if [ -z "$SNAP_CONFIG" ]; then
-	echo "CARD VERSION"
-	snap_peek -C ${snap_card} 0x0 || exit 1;
-	snap_peek -C ${snap_card} 0x8 || exit 1;
-	echo
+export PATH=$PATH:./software/tools
+snap_maint -C ${snap_card} -v
+if [ $? -ne 0 ]; then
+    echo "snap_maint failed"
+    exit 1
 fi
 
 #### MEMCOPY ##########################################################
-
-export PATH=$PATH:./hls_memcopy/sw
+export PATH=$PATH:./actions/hls_memcopy/sw
 
 python3 -c 'print("A" * 1024, end="")' > 1KiB_A.bin
 

@@ -31,16 +31,25 @@ set bram_used   $::env(BRAM_USED)
 set sdram_used  $::env(SDRAM_USED)
 set ila_debug   [string toupper $::env(ILA_DEBUG)]
 set simulator   $::env(SIMULATOR)
-set vivadoVer   [version -short]
-set log_dir      $::env(LOGS_DIR)
-set log_file     $log_dir/create_framework.log
+set log_dir     $::env(LOGS_DIR)
+set log_file    $log_dir/create_framework.log
 
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
-    set hls_support [string toupper $::env(HLS_SUPPORT)]
+  set hls_support [string toupper $::env(HLS_SUPPORT)]
 } elseif { [string first "HLS" [string toupper $action_dir]] != -1 } {
   set hls_support "TRUE"
 } else {
   set hls_support "not defined"
+}
+
+if { [info exists ::env(USE_PRFLOW)] == 1 } {
+  set use_prflow [string toupper $::env(USE_PRFLOW)]
+} else {
+  set use_prflow "FALSE"
+}
+
+if { $hls_support == "TRUE" } {
+  set action_dir $::env(ACTION_ROOT)/hw/vhdl
 }
 
 if { [info exists ::env(DENALI)] == 1 } {
@@ -90,18 +99,40 @@ set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs i
 set_property STEPS.WRITE_BITSTREAM.TCL.PRE  $root_dir/setup/snap_bitstream_pre.tcl  [get_runs impl_1]
 set_property STEPS.WRITE_BITSTREAM.TCL.POST $root_dir/setup/snap_bitstream_post.tcl [get_runs impl_1]
 
+if { $use_prflow == "TRUE" } {
+  # Enable PR Flow
+  set_property PR_FLOW 1 [current_project]  >> $log_file
+
+  # Create PR Region for SNAP Action
+  create_partition_def -name snap_action -module action_wrapper
+  create_reconfig_module -name user_action -partition_def [get_partition_defs snap_action] -top action_wrapper
+}
+
 # Add Files
 # PSL Files
 puts "	                        importing design files"
 # HDL Files
 add_files -scan_for_includes $hdl_dir/core/  >> $log_file
-if { $hls_support == "TRUE" } {
-  add_files -scan_for_includes $hdl_dir/hls/  >> $log_file
-}
+
 set_property used_in_simulation false [get_files $hdl_dir/core/psl_fpga.vhd]
 set_property top psl_fpga [current_fileset]
+
 # Action Files
-add_files            -fileset sources_1 -scan_for_includes $action_dir/
+if { $use_prflow == "TRUE" } {
+  # Files for PR module
+  add_files -scan_for_includes $hdl_dir/core/psl_accel_types.vhd -of_objects [get_reconfig_modules user_action] >> $log_file
+  add_files -scan_for_includes $hdl_dir/core/action_types.vhd -of_objects [get_reconfig_modules user_action] >> $log_file
+  if { $hls_support == "TRUE" } {
+    add_files -scan_for_includes $hdl_dir/hls/ -of_objects [get_reconfig_modules user_action] >> $log_file
+  }
+  add_files -scan_for_includes $action_dir/ -of_objects [get_reconfig_modules user_action] >> $log_file
+} else {
+  if { $hls_support == "TRUE" } {
+    add_files -scan_for_includes $hdl_dir/hls/  >> $log_file
+  }
+  add_files -scan_for_includes $action_dir/ >> $log_file
+}
+
 # Sim Files
 set_property SOURCE_SET sources_1 [get_filesets sim_1]
 add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/top.sv  >> $log_file
@@ -190,7 +221,7 @@ if { $nvme_used == TRUE } {
   set_property synth_checkpoint_mode None [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
   generate_target all                     [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
 
-    if { ( [info exists ::env(DENALI_TOOLS) ] == 1)  &&  ( [info exists ::env(DENALI_CUSTOM)] == 1 ) } {
+  if { ( [info exists ::env(DENALI_TOOLS) ] == 1)  &&  ( [info exists ::env(DENALI_CUSTOM)] == 1 ) } {
     puts "	                        adding Denali simulation files"
     set denali_custom $::env(DENALI_CUSTOM)
     add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme/
@@ -210,19 +241,43 @@ if { $nvme_used == TRUE } {
 puts "	                        importing PSL design checkpoint"
 read_checkpoint -cell b $root_dir/build/Checkpoints/$psl_dcp -strict >> $log_file
 
+if { $use_prflow == "TRUE" } {
+  # Create PR Configuration
+  create_pr_configuration -name config_1 -partitions [list a0/action_w:user_action]
+  # PR Synthesis
+  set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT              400     [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.FSM_EXTRACTION            one_hot [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.RESOURCE_SHARING          off     [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.SHREG_MIN_SIZE            5       [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS true    [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.NO_LC                     true    [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY         none    [get_runs user_action_synth_1]
+
+  # PR Implementation
+  set_property PR_CONFIGURATION config_1 [get_runs impl_1]
+}
+
 # XDC
 # SNAP CORE XDC
 puts "	                        importing XDCs"
 add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_link.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/snap_link.xdc]
 update_compile_order -fileset sources_1 >> $log_file
+
 # DDR XDCs
 if { $fpga_card == "KU3" } {
   if { $bram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc
   } elseif { $sdram_used == "TRUE" } {
+    if { $use_prflow == "TRUE" } {
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/action_pblock.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/KU3/action_pblock.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_pblock.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/KU3/snap_pblock.xdc]
+    }
     add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc
     add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_ddr3_b0pblock.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/KU3/snap_ddr3_b0pblock.xdc]
     add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_ddr3_b0pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/KU3/snap_ddr3_b0pins.xdc]
   }
