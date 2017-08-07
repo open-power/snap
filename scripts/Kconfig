@@ -54,15 +54,15 @@ choice
 
         config HLS_INTERSECT
             bool "HLS Intersect"
-            select ENABLE_SDRAM
+            select FORCE_SDRAM_OR_BRAM
 
         config HLS_MEMCOPY
             bool "HLS Memcopy"
-            select ENABLE_SDRAM
+            select FORCE_SDRAM_OR_BRAM
 
         config HLS_SEARCH
             bool "HLS Search"
-            select ENABLE_SDRAM
+            select FORCE_SDRAM_OR_BRAM
 
         config HLS_SPONGE
             bool "HLS Sponge"
@@ -71,15 +71,65 @@ choice
             bool "Other Action"
 endchoice
 
+config FORCE_SDRAM_OR_BRAM
+        bool
+	depends on (HLS_Intersect || HLS_MEMCOPY || HLS_SEARCH)
+
+config FORCE_SDRAM
+        bool
+	default y
+        depends on (FORCE_SDRAM_OR_BRAM && ! ENABLE_BRAM)
+	select ENABLE_SDRAM
+
+config ENABLE_BRAM
+        bool
+        prompt "Enable BRAM"
+        
+config BRAM_USED
+        string
+        default "TRUE"  if ENABLE_BRAM
+        default "FALSE" if ! ENABLE_BRAM
+        depends on ! (HLS_BFS || HLS_SPONGE )
+
 config ENABLE_SDRAM
         bool
         prompt "Enable SDRAM"
-        depends on ! (HLS_BFS || HLS_SPONGE)
+        depends on ! (HLS_BFS || HLS_SPONGE || ENABLE_BRAM)
 
 config SDRAM_USED
         string
         default "TRUE"  if ENABLE_SDRAM
         default "FALSE" if ! ENABLE_SDRAM
+
+config ENABLE_DDR3
+        bool
+        default y
+        depends on (ENABLE_SDRAM && KU3)
+
+config DDR3_USED
+        string
+        default "TRUE"  if ENABLE_DDR3
+        default "FALSE" if ! ENABLE_DDR3
+
+config ENABLE_DDR4
+        bool
+        default y
+        depends on (ENABLE_SDRAM && FGT)
+
+config DDR4_USED
+        string
+        default "TRUE"  if ENABLE_DDR4
+        default "FALSE" if ! ENABLE_DDR4
+
+config ENABLE_DDRI
+        bool
+        default y
+        depends on (ENABLE_SDRAM || ENABLE_BRAM)
+
+config DDRI_USED
+        string
+        default "TRUE"  if ENABLE_DDRI
+        default "FALSE" if ! ENABLE_DDRI
 
 config ENABLE_NVME
         bool "Enable NVMe"
