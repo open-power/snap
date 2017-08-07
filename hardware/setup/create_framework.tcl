@@ -48,7 +48,7 @@ if { [info exists ::env(USE_PRFLOW)] == 1 } {
   set use_prflow "FALSE"
 }
 
-if { $hls_support == "TRUE" } {
+if { ($use_prflow == "TRUE") && ($hls_support == "TRUE") } {
   set action_dir $::env(ACTION_ROOT)/hw/vhdl
 }
 
