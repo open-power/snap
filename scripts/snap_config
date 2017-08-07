@@ -1,0 +1,101 @@
+#!/bin/bash
+#
+# Copyright 2017 International Business Machines
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+version=1.0
+program=`basename "$0"`
+
+# output formatting
+bold=$(tput bold)
+normal=$(tput sgr0)
+
+# Name of global config file
+kconfig="`pwd`/Kconfig"
+config=.config
+autoconf=autoconf.h
+linux_dir="/usr/src/kernels/`uname -r`"
+build_dir="`pwd`/build"
+option=menuconfig
+
+# Print usage message helper function
+function usage() {
+  echo "Usage: ${program} [OPTIONS]"
+  echo "    [-o <oldconfig/menuconfig/...>] Use this as option."
+  echo "    [-c <config>]        Copy results to this config file."
+  echo "    [-a <autoconf>]    Location of autoconf.h."
+  echo "    [-V] Print program version (${version})"
+  echo "    [-h] Print this help message."
+  echo "    <path-to-bit-file>"
+  echo
+  echo "Utility to generate vivado_hls tcl configuration file."
+  echo
+}
+
+# Parse any options given on the command line
+while getopts ":a:o:c:Vh" opt; do
+  case ${opt} in
+      a)
+      autoconf=$OPTARG
+      ;;
+      o)
+      option=$OPTARG
+      ;;
+      c)
+      config=$OPTARG
+      ;;
+      V)
+      echo "${version}" >&2
+      exit 0
+      ;;
+      h)
+      usage;
+      exit 0
+      ;;
+      \?)
+      printf "${bold}ERROR:${normal} Invalid option: -${OPTARG}\n" >&2
+      exit 1
+      ;;
+      :)
+      printf "${bold}ERROR:${normal} Option -$OPTARG requires an argument.\n" >&2
+      exit 1
+      ;;
+  esac
+done
+
+shift $((OPTIND-1))
+# now do something with $@
+
+echo "SNAP Build Options"
+echo "  Linux:    $linux_dir"
+echo "  Build:    $build_dir"
+echo "  Kconfig:  $kconfig"
+echo "  config:   $config"
+echo "  autoconf: $autoconf"
+
+mkdir -p $build_dir
+cmd="make -C $linux_dir O=$build_dir KBUILD_KCONFIG=$kconfig $option"
+
+echo "Executing:"
+echo "  $cmd"
+$cmd
+
+echo "Copy resulting $config file ..."
+cp $build_dir/.config $config
+
+if [ -f $build_dir/include/linux/autoconf.h ]; then
+	echo "Copy resulting $autoconf file ..."
+	cp $build_dir/include/linux/autoconf.h $autoconf
+fi
