@@ -1,4 +1,6 @@
 .config
+.snap*
+hardware/.setup*
 hardware/setup/*.jou
 hardware/setup/*.log
 hardware/sim/ies
