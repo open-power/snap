@@ -132,6 +132,7 @@ check_snap_settings:
 	@echo "FPGACARD       = $(FPGACARD)"
 	@echo "FPGACHIP       = $(FPGACHIP)"
 	@echo "NUM_OF_ACTIONS = $(NUM_OF_ACTIONS)"
+	@echo "HLS_SUPPORT    = $(HLS_SUPPORT)"
 	@echo "BRAM_USED      = $(BRAM_USED)"
 	@echo "SDRAM_USED     = $(SDRAM_USED)"
 	@echo "DDR3_USED      = $(DDR3_USED)"
