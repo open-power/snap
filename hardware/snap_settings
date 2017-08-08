@@ -100,7 +100,7 @@ while [ -z "$SETUP_DONE" ]; do
   else
     echo "ACTION_ROOT             is set to: \"$ACTION_ROOT\""
     # check if ACTION_ROOT points to an existing direcory or ACTION_ROOT ends in 'vhdl' for an HLS action
-    if [ ! -d "$ACTION_ROOT" ] && ( ( [ -z `echo "x$ACTION_ROOT" | grep -i HLS` ] && [ "${HLS_SUPPORT^^}" != "TRUE" ] ) || [ `basename "x$ACTION_ROOT"` != "vhdl" ] ); then
+    if [ ! -d "$ACTION_ROOT" ] && ( ( [ -z `echo "x$ACTION_ROOT" | grep -i /HLS` ] && [ "${HLS_SUPPORT^^}" != "TRUE" ] ) || [ `basename "x$ACTION_ROOT"` != "vhdl" ] ); then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Please make sure that ACTION_ROOT points to an existing directory."
     fi
   fi
