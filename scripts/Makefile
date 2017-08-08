@@ -23,7 +23,7 @@ help:
 
 .PHONY += menuconfig gconfig xconfig config oldconfig prepare clean distclean
 menuconfig gconfig xconfig config oldconfig prepare:
-	./snap_config -o $@
+	./snap_cfg -o $@
 
 install:
 
