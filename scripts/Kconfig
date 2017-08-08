@@ -48,6 +48,7 @@ choice
 
         config HLS_BFS
             bool "HLS Breadth First Search"
+	    select ENABLE_HLS_SUPPORT
 
         config HLS_HASHJOIN
             bool "HLS Hashjoin"
@@ -55,21 +56,35 @@ choice
         config HLS_INTERSECT
             bool "HLS Intersect"
             select FORCE_SDRAM_OR_BRAM
+	    select ENABLE_HLS_SUPPORT
 
         config HLS_MEMCOPY
             bool "HLS Memcopy"
             select FORCE_SDRAM_OR_BRAM
+	    select ENABLE_HLS_SUPPORT
 
         config HLS_SEARCH
             bool "HLS Search"
             select FORCE_SDRAM_OR_BRAM
+	    select ENABLE_HLS_SUPPORT
 
         config HLS_SPONGE
             bool "HLS Sponge"
+	    select ENABLE_HLS_SUPPORT
 
         config ACTION_OTHER
             bool "Other Action"
 endchoice
+
+config ENABLE_HLS_SUPPORT
+        bool
+	prompt "Enable HLS support"
+	depends on ! HDL_EXAMPLE
+
+config HLS_SUPPORT
+        string
+        default "TRUE"  if ENABLE_HLS_SUPPORT
+        default "FALSE" if ! ENABLE_HLS_SUPPORT
 
 config FORCE_SDRAM_OR_BRAM
         bool
