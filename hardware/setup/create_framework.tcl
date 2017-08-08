@@ -36,7 +36,9 @@ set log_file    $log_dir/create_framework.log
 
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support [string toupper $::env(HLS_SUPPORT)]
-} elseif { [string first "HLS" [string toupper $action_dir]] != -1 } {
+} elseif { [string first "/HLS" [string toupper $action_dir]] != -1 } {
+  puts "	                        INFO: action is contained in path starting with \"HLS\"."
+  puts "                                      Setting HLS_SUPPORT to TRUE."
   set hls_support "TRUE"
 } else {
   set hls_support "not defined"
