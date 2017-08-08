@@ -195,11 +195,11 @@ while [ -z "$SETUP_DONE" ]; do
 
 
   ####### Print warning messages and create .snap_env
-  if [ ! -z "$SETUP_WARNING" ]; then
+  if [ -n "$SETUP_WARNING" ]; then
     echo -e "$SETUP_WARNING"
   fi
 
-  if [ ! -z "$SNAP_ENV" ]; then
+  if [ -n "$SNAP_ENV" ]; then
     echo -e "$SNAP_ENV" > .snap_env;
   fi
   echo
