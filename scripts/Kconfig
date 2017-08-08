@@ -202,3 +202,13 @@ config SIMULATOR
         string
         default "xsim"  if SIM_XSIM
         default "irun"  if SIM_IRUN
+
+config ENABLE_PRFLOW
+        bool "Cloud build"
+	depends on KU3
+
+config USE_PRFLOW
+        string
+        default "TRUE" if ENABLE_PRFLOW
+        default "FALSE" if ! ENABLE_PRFLOW
+

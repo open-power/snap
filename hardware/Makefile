@@ -141,6 +141,7 @@ check_snap_settings:
 	@echo "NVME_USED      = $(NVME_USED)"
 	@echo "ILA_DEBUG      = $(ILA_DEBUG)"
 	@echo "SIMULATOR      = $(SIMULATOR)"
+	@echo "USE_PRFLOW     = $(USE_PRFLOW)"
 	@echo "=============================================="
 
 check_denali:
