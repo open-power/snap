@@ -20,7 +20,9 @@
 ############################################################################
 #
 snapdir=$(dirname $(readlink -f "$BASH_SOURCE")) # path containing this script
-echo "snapdir = $snapdir"
+
+snap_env=$snapdir/.snap_env
+snap_env_sh=$snapdir/.snap_env.sh
 
 if [ -f "$1" ]; then
   source $1
@@ -197,8 +199,8 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
   if [ -n "$SNAP_ENV" ]; then
-    echo -e "$SNAP_ENV" > .snap_env.sh
-    touch .snap_env
+    echo -e "$SNAP_ENV" > $snap_env_sh
+    touch $snap_env
   fi
   echo
 

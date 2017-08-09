@@ -19,9 +19,11 @@
 ############################################################################
 ############################################################################
 #
-snap_config=.snap_config
-snap_config_sh=.snap_config.sh
-snap_config_cflags=.snap_config.cflags
+snapdir=$(dirname $(readlink -f "$BASH_SOURCE")) # path containing this script
+
+snap_config=$snapdir/.snap_config
+snap_config_sh=$snapdir/.snap_config.sh
+snap_config_cflags=$snapdir/.snap_config.cflags
 
 if [ -f "$1" ]; then
   echo "$0: Sourcing $1 ..."
