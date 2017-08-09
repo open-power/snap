@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
--include .snap_env
+-include .snap_env.sh
 
 PLATFORM ?= $(shell uname -i)
 
@@ -33,6 +33,9 @@ endif
 # Only build if the subdirectory is really existent
 .PHONY: $(software_subdirs) $(action_subdirs) $(hardware_subdirs) test install uninstall snap_env config model image cloud_base cloud_action cloud_merge snap_config menuconfig xconfig gconfig oldconfig clean clean_config
 
+# Disabling implicit rule for shell scripts
+%: %.sh
+
 $(software_subdirs):
 	@if [ -d $@ ]; then          \
 	    $(MAKE) -C $@ || exit 1; \
@@ -43,19 +46,14 @@ $(action_subdirs):
 	    $(MAKE) -C $@ || exit 1; \
 	fi
 
-define print_NO_SNAP_ROOT
-	echo "WARNING: Environment variable SNAP_ROOT does not point to a" ; \
-	echo "         directory. Please prepare hardware environment";	     \
-	echo "         (see hardware/README.md) before building hardware."
-endef
-
-$(hardware_subdirs):
-	@if [ -d $@ ]; then                 \
-	    if [ -d "$(SNAP_ROOT)" ]; then  \
-	        $(MAKE) -C $@ || exit 1;    \
-	    else                            \
-	        $(call print_NO_SNAP_ROOT); \
-	    fi                              \
+$(hardware_subdirs): .snap_env
+	@. .snap_config.sh && . .snap_env.sh && \
+	if [ -d $@ ]; then                      \
+	    if [ -d "$(SNAP_ROOT)" ]; then      \
+	        $(MAKE) -C $@ || exit 1;        \
+	    else                                \
+	        $(call print_NO_SNAP_ROOT);     \
+	    fi                                  \
 	fi
 
 # Install/uninstall
@@ -66,42 +64,16 @@ test install uninstall:
 	    fi                                                \
 	done
 
-snap_env: .snap_config
-	@echo "$@: Setting up SNAP environment variables"
-	@. ./snap_env .snap_config.sh
-
-.snap_env:
-	@echo "$@: Setting up SNAP environment variables"
-	@./snap_env .snap_config.sh
-
 # Model build and config
-config model image cloud_base cloud_action cloud_merge: snap_env
-	@for dir in $(hardware_subdirs); do             \
-	    if [ -d $$dir ]; then                       \
-	        if [ -d "$(SNAP_ROOT)" ]; then          \
-	            . .snap_config.sh && . .snap_env && \
-	            $(MAKE) -C $$dir $@ || exit 1;      \
-	        else                                    \
-	            $(call print_NO_SNAP_ROOT);         \
-	        fi                                      \
-	    fi                                          \
+config model image cloud_base cloud_action cloud_merge: .snap_env
+	@. .snap_config.sh && . .snap_env.sh && \
+	for dir in $(hardware_subdirs); do      \
+	    if [ -d $$dir ]; then               \
+	        $(MAKE) -C $$dir $@ || exit 1;  \
+	    fi                                  \
 	done
 
 # Config
-snap_config: menuconfig
-	@echo "SNAP config done"
-
-# Disabling implicit rule for shell scripts
-%: %.sh
-
-.snap_config:
-	@echo "$@: Setting up SNAP configuration"
-	@for dir in $(config_subdirs); do              \
-	    if [ -d $$dir ]; then                      \
-	        $(MAKE) -C $$dir menuconfig || exit 1; \
-	    fi                                         \
-	done                                           \
-
 menuconfig xconfig gconfig oldconfig:
 	@echo "$@: Setting up SNAP configuration"
 	@for dir in $(config_subdirs); do      \
@@ -109,6 +81,20 @@ menuconfig xconfig gconfig oldconfig:
 	        $(MAKE) -C $$dir $@ || exit 1; \
 	    fi                                 \
 	done
+
+snap_config: menuconfig
+	@echo "SNAP config done"
+
+.snap_config: menuconfig
+	@echo "SNAP config done"
+
+snap_env: .snap_config
+	@echo "$@: Setting up SNAP environment variables"
+	@./snap_env .snap_config.sh
+
+.snap_env: .snap_config
+	@echo "$@: Setting up SNAP environment variables"
+	@./snap_env .snap_config.sh
 
 clean:
 	@for dir in $(clean_subdirs); do       \
@@ -118,7 +104,7 @@ clean:
 	done
 	@find . -depth -name '*~'  -exec rm -rf '{}' \; -print
 	@find . -depth -name '.#*' -exec rm -rf '{}' \; -print
-	@$(RM) .snap_env
+	@$(RM) .snap_env*
 
 clean_config: clean
 	@$(RM) .snap_config*

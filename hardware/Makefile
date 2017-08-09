@@ -26,7 +26,7 @@ export SNAP_ROOT ?= $(abspath ..)
 export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 
-include $(SNAP_ROOT)/.snap_config.cflags
+-include $(SNAP_ROOT)/.snap_config.cflags
 
 ifeq "$(FPGACARD)" "KU3"
 	export DDR3_USED=$(SDRAM_USED)
@@ -176,7 +176,10 @@ prepare_environment:
 	fi
 	@echo -e "\t[PREPARE ENVIRONMENT.] done `date`";
 
-$(SNAP_PP_FILES):
+$(SNAP_ROOT)/.snap_config:
+	@echo -e "\tNeed to run \"$(MAKE) -C $(SNAP_ROOT) snap_config\" first"
+
+$(SNAP_PP_FILES): $(SNAP_ROOT)/.snap_config
 	@echo "Creating $@ ..."
 	@$(CC) -E -xc $(SNAP_CFLAGS) $@_source | grep -v "^#" > $@
 
@@ -185,9 +188,6 @@ $(SNAP_PP_FILES):
 
 %.sv: %.sv_source
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
-
-$(SNAP_ROOT)/.snap_config.cflags:
-	@$(MAKE) -C $(SNAP_ROOT) snap_config
 
 snap_config: snap_config_start $(SNAP_PP_FILES) $(SNAP_CONFIG_FILES)
 	@echo -e "\t[CONFIG SNAP CORE....] done `date`";
