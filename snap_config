@@ -19,9 +19,11 @@
 ############################################################################
 ############################################################################
 #
-snap_config=.snap_config
-snap_config_sh=.snap_config.sh
-snap_config_cflags=.snap_config.cflags
+snapdir=$(dirname $(readlink -f "$BASH_SOURCE")) # path containing this script
+
+snap_config=$snapdir/.snap_config
+snap_config_sh=$snapdir/.snap_config.sh
+snap_config_cflags=$snapdir/.snap_config.cflags
 
 if [ -f "$1" ]; then
   echo "$0: Sourcing $1 ..."
@@ -60,9 +62,9 @@ while [ -z "$SETUP_DONE" ]; do
   ####### checking HLS support
   if [ -z "$HLS_SUPPORT" ]; then
     if [ -z `echo "x$ACTION_ROOT" | grep -i /HLS` ]; then
-       HLS_SUPPORT="FALSE"
+      HLS_SUPPORT="FALSE"
     else
-       HLS_SUPPORT="TRUE"
+      HLS_SUPPORT="TRUE"
     fi
   fi
   SNAP_CFG="$SNAP_CFG""CONFIG_HLS_SUPPORT=\"${HLS_SUPPORT^^}\"\n"
@@ -71,23 +73,27 @@ while [ -z "$SETUP_DONE" ]; do
   ####### checking SDRAM and BRAM
    BRAM_USED=${BRAM_USED^^}
   if [ "$BRAM_USED" = "TRUE" ]; then
-     SDRAM_USED="FALSE"
-     DDR3_USED="FALSE"
-     DDR4_USED="FALSE"
-     DDRI_USED="TRUE"
+    SDRAM_USED="FALSE"
+    DDR3_USED="FALSE"
+    DDR4_USED="FALSE"
+    DDRI_USED="TRUE"
     SNAP_CFG="$SNAP_CFG""CONFIG_ENABLE_BRAM=y\n"
+    SNAP_CFG="$SNAP_CFG""CONFIG_ENABLE_DDRI=y\n"
   else
-     BRAM_USED="FALSE"
-     SDRAM_USED=${SDRAM_USED^^}
+    BRAM_USED="FALSE"
+    SDRAM_USED=${SDRAM_USED^^}
     if [ "$SDRAM_USED" = "TRUE" ]; then
       if [ "$FPGACARD" = "KU3" ]; then
-         DDR3_USED="TRUE"
-         DDR4_USED="FALSE"
+        DDR3_USED="TRUE"
+        DDR4_USED="FALSE"
+        SNAP_CFG="$SNAP_CFG""CONFIG_ENABLE_DDR3=y\n"
       else
-         DDR3_USED="FALSE"
-         DDR4_USED="TRUE"
+        DDR3_USED="FALSE"
+        DDR4_USED="TRUE"
+        SNAP_CFG="$SNAP_CFG""CONFIG_ENABLE_DDR4=y\n"
       fi
       SNAP_CFG="$SNAP_CFG""CONFIG_ENABLE_SDRAM=y\n"
+      SNAP_CFG="$SNAP_CFG""CONFIG_ENABLE_DDRI=y\n"
     else
       SDRAM_USED="FALSE"
       DDR3_USED="FALSE"
