@@ -19,17 +19,14 @@
 ############################################################################
 ############################################################################
 #
-# important path variables for SNAP
-called=$BASH_SOURCE                # can be path+name, absolut or relative
-script=$(readlink -f "$called")    # absolute path+name
-snapdir=$(dirname "$script")       # just path
+snapdir=$(dirname $(readlink -f "$BASH_SOURCE")) # path containing this script
+echo "snapdir = $snapdir"
 
 if [ -f "$1" ]; then
-  echo "$0: Sourcing $1 ..."
   source $1
 fi
 
-unset SETUP_DONE;
+unset SETUP_DONE
 while [ -z "$SETUP_DONE" ]; do
   SETUP_WARNING=""
   SNAP_ENV=""
@@ -194,13 +191,14 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
 
-  ####### Print warning messages and create .snap_env
+  ####### Print warning messages and create .snap_env.sh
   if [ -n "$SETUP_WARNING" ]; then
     echo -e "$SETUP_WARNING"
   fi
 
   if [ -n "$SNAP_ENV" ]; then
-    echo -e "$SNAP_ENV" > .snap_env;
+    echo -e "$SNAP_ENV" > .snap_env.sh
+    touch .snap_env
   fi
   echo
 
@@ -208,5 +206,5 @@ while [ -z "$SETUP_DONE" ]; do
 done
 # set a return value in case that the file was sourced
 if [[ "$_" = "$0" ]]; then
-  if [[ "$SETUP_DONE" == "1" ]];then return 0;else return 1;fi
+  if [[ "$SETUP_DONE" == "1" ]]; then return 0; else return 1; fi
 fi

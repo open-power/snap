@@ -28,7 +28,7 @@ if [ -f "$1" ]; then
   source $1
 fi
 
-unset SETUP_DONE;
+unset SETUP_DONE
 while [ -z "$SETUP_DONE" ]; do
   SNAP_CFG=""
   echo "======================================================="
@@ -107,7 +107,7 @@ while [ -z "$SETUP_DONE" ]; do
   if [ "$NVME_USED" = "TRUE" ]; then
     if [ "$FPGACARD" != "FGT" ]; then
       echo "($0) ERROR: NVME is enabled but FPGACARD is not set to FGT. Not generating config files."
-      break;
+      break
     fi
     SNAP_CFG="$SNAP_CFG""CONFIG_ENABLE_NVME=y\n"
   else
@@ -115,7 +115,7 @@ while [ -z "$SETUP_DONE" ]; do
   fi
   SNAP_CFG="$SNAP_CFG""CONFIG_NVME_USED=\"$NVME_USED\"\n"
 
-  
+
   ####### checking ILA DEBUG
   ILA_DEBUG=${ILA_DEBUG^^}
   if [ "$ILA_DEBUG" = "TRUE" ]; then
@@ -146,14 +146,14 @@ while [ -z "$SETUP_DONE" ]; do
     SNAP_CFG="$SNAP_CFG""CONFIG_SIM_XSIM=y\n"
   else
     echo "($0) ERROR: SIMULATOR $SIMULATOR is not supported by SNAP. Not generating config files."
-    break;
+    break
   fi
   SNAP_CFG="$SNAP_CFG""CONFIG_SIMULATOR=\"$SIMULATOR\"\n"
 
 
   ####### Creating .snap_config files
   if [ -n "$SNAP_CFG" ]; then
-    echo -e "$SNAP_CFG" > $snap_config;
+    echo -e "$SNAP_CFG" > $snap_config
     cat $snap_config | sed 's/^CONFIG_/export /' > $snap_config.sh
     cat $snap_config | tr -d '"' | sed 's/^CONFIG_\(.*\)/SNAP_CFLAGS += "-DCONFIG_\1"/' > $snap_config_cflags
     echo "Generation of SNAP config files done. Content of .snap_config is:"
@@ -165,5 +165,5 @@ while [ -z "$SETUP_DONE" ]; do
 done
 # set a return value in case that the file was sourced
 if [[ "$_" = "$0" ]]; then
-  if [[ "$SETUP_DONE" == "1" ]];then return 0;else return 1;fi
+  if [[ "$SETUP_DONE" == "1" ]]; then return 0; else return 1; fi
 fi
