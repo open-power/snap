@@ -27,6 +27,17 @@
 
 # This is solution specific. Check if we can replace this by generics too.
 
+# Finding $SNAP_ROOT
+ifndef SNAP_ROOT
+# check if we are in sw folder of an action (three directories below snap root)
+ifneq ("$(wildcard ../../../ActionTypes.md)","")
+SNAP_ROOT=$(abspath ../../../)
+else
+$(info You are not building your software from the default directory (/path/to/snap/actions/<action_name>/sw) or specified a wrong $$SNAP_ROOT.)
+$(error Please source /path/to/snap/hardware/snap_settings.sh or set $$SNAP_ROOT manually.)
+endif
+endif
+
 snap_hashjoin: action_hashjoin.o
 snap_hashjoin_objs = action_hashjoin.o
 
@@ -34,4 +45,4 @@ projs += snap_hashjoin
 
 # If you have the host code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/software.mk
-include ../../software.mk
+include $(SNAP_ROOT)/actions/software.mk
