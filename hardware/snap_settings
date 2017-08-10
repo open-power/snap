@@ -30,6 +30,11 @@ snap_env_sh=$snapdir/.snap_env.sh
 cd $snapdir
 
 . ./snap_config
+
+if [ -z "$ACTION_ROOT" ]; then
+  export ACTION_ROOT=$snapdir/actions/hdl_example
+fi
 . ./snap_env "$snap_config_sh"
+
 
 cd $currdir
