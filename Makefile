@@ -36,7 +36,7 @@ all: $(config_subdirs) $(software_subdirs) $(action_subdirs)
 endif
 
 # Only build if the subdirectory is really existent
-.PHONY: $(software_subdirs) $(action_subdirs) $(hardware_subdirs) test install uninstall snap_env config model image cloud_base cloud_action cloud_merge snap_config menuconfig xconfig gconfig oldconfig clean clean_config
+.PHONY: $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env config model image cloud_base cloud_action cloud_merge snap_config $(config_subdirs) scripts menuconfig xconfig gconfig oldconfig clean clean_config
 
 # Disabling implicit rule for shell scripts
 %: %.sh
@@ -46,10 +46,14 @@ $(software_subdirs):
 	    $(MAKE) -C $@ || exit 1; \
 	fi
 
+software: $(software_subdirs)
+
 $(action_subdirs):
 	@if [ -d $@ ]; then          \
 	    $(MAKE) -C $@ || exit 1; \
 	fi
+
+actions: $(action_subdirs)
 
 $(hardware_subdirs): $(snap_env)
 	@. $(snap_config_sh) && . $(snap_env_sh) && \
@@ -60,6 +64,12 @@ $(hardware_subdirs): $(snap_env)
 	        $(call print_NO_SNAP_ROOT);         \
 	    fi                                      \
 	fi
+
+hardware: $(hardware_subdirs)
+
+$(config_subdirs): menuconfig
+
+scripts: $(config_subdirs)
 
 # Install/uninstall
 test install uninstall:
