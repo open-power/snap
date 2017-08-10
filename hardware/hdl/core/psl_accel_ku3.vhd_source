@@ -769,7 +769,9 @@ BEGIN
     I => refclk_sdram_ibuf,
     O => refclk_sdram_bufg
   );
+#endif
 
+#ifdef CONFIG_ENABLE_DDR3
   c0_ddr3_dm <= (OTHERS => '0');
 #endif
 
