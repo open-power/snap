@@ -30,13 +30,13 @@ snap_env_sh = $(CURDIR)/.snap_env.sh
 clean_subdirs += $(config_subdirs) $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
 
 ifeq ($(PLATFORM),x86_64)
-all: $(config_subdirs) $(software_subdirs) $(action_subdirs) $(hardware_subdirs)
+all: $(software_subdirs) $(action_subdirs) $(hardware_subdirs)
 else
-all: $(config_subdirs) $(software_subdirs) $(action_subdirs)
+all: $(software_subdirs) $(action_subdirs)
 endif
 
 # Only build if the subdirectory is really existent
-.PHONY: $(software_subdirs) $(action_subdirs) $(hardware_subdirs) test install uninstall snap_env config model image cloud_base cloud_action cloud_merge snap_config menuconfig xconfig gconfig oldconfig clean clean_config
+.PHONY: $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env config model image cloud_base cloud_action cloud_merge snap_config menuconfig xconfig gconfig oldconfig clean clean_config
 
 # Disabling implicit rule for shell scripts
 %: %.sh
@@ -46,20 +46,22 @@ $(software_subdirs):
 	    $(MAKE) -C $@ || exit 1; \
 	fi
 
+software: $(software_subdirs)
+
 $(action_subdirs):
 	@if [ -d $@ ]; then          \
 	    $(MAKE) -C $@ || exit 1; \
 	fi
 
+actions: $(action_subdirs)
+
 $(hardware_subdirs): $(snap_env)
 	@. $(snap_config_sh) && . $(snap_env_sh) && \
 	if [ -d $@ ]; then                          \
-	    if [ -d "$(SNAP_ROOT)" ]; then          \
-	        $(MAKE) -C $@ || exit 1;            \
-	    else                                    \
-	        $(call print_NO_SNAP_ROOT);         \
-	    fi                                      \
+	    $(MAKE) -C $@ || exit 1;                \
 	fi
+
+hardware: $(hardware_subdirs)
 
 # Install/uninstall
 test install uninstall:
@@ -101,11 +103,11 @@ $(snap_config):
 
 snap_env: $(snap_config)
 	@echo "$@: Setting up SNAP environment variables"
-	@. snap_env $(snap_config_sh)
+	@. $(CURDIR)/snap_env $(snap_config_sh)
 
 $(snap_env): $(snap_config)
 	@echo "$@: Setting up SNAP environment variables"
-	@. snap_env $(snap_config_sh)
+	@. $(CURDIR)/snap_env $(snap_config_sh)
 
 clean:
 	@for dir in $(clean_subdirs); do       \
@@ -115,7 +117,7 @@ clean:
 	done
 	@find . -depth -name '*~'  -exec rm -rf '{}' \; -print
 	@find . -depth -name '.#*' -exec rm -rf '{}' \; -print
-	@$(RM) .snap_env*
 
 clean_config: clean
-	@$(RM) .snap_config*
+	@$(RM) $(CURDIR)/.snap_env*
+	@$(RM) $(CURDIR)/.snap_config*
