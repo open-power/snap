@@ -28,12 +28,23 @@ snap_env=$snapdir/.snap_env
 snap_env_sh=$snapdir/.snap_env.sh
 
 cd $snapdir
+if [ -f $snap_config_sh ]; then
+  . $snap_config_sh
+fi
+if [ -f $snap_env_sh ]; then
+  . $snap_env_sh
+fi
+
+# Setting Defaults
+if [ -z "$FPGACARD" ]; then
+  export FPGACARD="FGT"
+fi
+if [ -z "$ACTION_ROOT" ]; then
+  export HDL_EXAMPLE=y
+fi
 
 . ./snap_config
 
-if [ -z "$ACTION_ROOT" ]; then
-  export ACTION_ROOT=$snapdir/actions/hdl_example
-fi
 . ./snap_env "$snap_config_sh"
 
 
