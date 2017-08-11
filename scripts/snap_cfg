@@ -97,7 +97,7 @@ $cmd
 
 echo "Generating SNAP config files $snap_config, $snap_config_sh and $snap_config_cflags ..."
 cp $build_dir/.config $snap_config
-cat $snap_config | sed 's/^CONFIG_/export /' > $snap_config_sh
+cat $snap_config | sed 's/^CONFIG_/export /' | tr -d '"' > $snap_config_sh
 cat $snap_config | tr -d '"' | sed 's/^CONFIG_\(.*\)/SNAP_CFLAGS += "-DCONFIG_\1"/' > $snap_config_cflags
 echo "Generation of SNAP config files done."
 

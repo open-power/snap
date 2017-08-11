@@ -14,3 +14,4 @@ ip/
 sim/*.log
 sim/20*
 .bitstream_name.txt
+.config_done
