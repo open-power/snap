@@ -44,7 +44,7 @@
 #define HOST_BUFFER_SIZE        (256 * KILO_BYTE) /* Default Size for Host Buffers */
 
 #define NVME_LB_SIZE            512               /* NVME Block Size */
-#define NVME_DRIVE_SIZE         (900 * MEGA_BYTE) /* NVME Drive Size */
+#define NVME_MAX_BLOCKS         1875385008        /* From NVME Namespace Identify command */
 #define NVME_MAX_TRANSFER_SIZE  (32 * MEGA_BYTE)  /* NVME limit to Transfer in one chunk */
 
 static const char *version = GIT_VERSION;
@@ -136,7 +136,7 @@ static int memcmp2(void *dest,  /* Data from Card RAM */
 	uint64_t *a64d = dest;   /* Read data from NVME */
 
 
-	VERBOSE1("\n      Compare Buffer Source: %p <-> Destination: %p", src, dest);
+	VERBOSE2("\n      Compare Buffer Source: %p <-> Destination: %p", src, dest);
 	rc = 0;
 	for (i = 0; i < size; i+=8) {
 		data = *a64d;	/* Get data from Host Buffer */
@@ -154,7 +154,7 @@ static int memcmp2(void *dest,  /* Data from Card RAM */
 	}
 	rc = 0;
 __memcmp2_exit:
-	VERBOSE1("  RC: %d\n", rc);
+	VERBOSE2("  RC: %d\n", rc);
 	if (0 != rc)
 		VERBOSE0("\n");
 	return rc;
@@ -283,28 +283,36 @@ static void card_free(struct snap_card *handle)
 #define TRACK_REG    0x04
 
 static int nvme_qtest(struct snap_card *handle, /* My handle */
-		bool write,                /* Set to true if doing write */
-		uint64_t ram_address,      /* Set any ram address for sorce ore dest buffer */
-		int drive,                 /* Use SSD drive 0 or 1 */
-		int blocks, int nmax,
-		int use_aid)
+		bool write,                     /* Set to true if doing write */
+		uint64_t ram_address,           /* Set any ram address for sorce ore dest buffer */
+		int drive,                      /* Use SSD drive 0 or 1 */
+		int blocks,                     /* How many blocks to write or read */
+		int blocks_offset,              /* Offset (block#) to start write or read */
+		int nmax,                       /* queue counter */
+		int use_aid)                    /* Action id */
 {
 	int qin, n;
 	uint32_t dptr_low;
 	uint32_t dptr_high;
-	uint32_t lba_low = 0;
+	uint32_t lba_low = blocks_offset;           /* Lba to Start */
 	uint32_t ssd_ioq_full = SUB_Q_FULL_SSD0_IO; /* Mask to check for drive 0 */
 	uint32_t cmd_reg = 0;                       /* Command Reg */
 	uint32_t val32;                             /* Scratch data */
 	uint32_t aid_val = 0x0;                     /* Action Value */
 	uint32_t track_reg = TRACK_REG * (use_aid + 1);
-	uint64_t t_start;	/* time in usec */
-	uint64_t td;		/* Diff time in usec */
+	uint64_t t_start = 0;                           /* time in usec */
+	uint64_t t_end;                             /* End in usec */
+	uint64_t t_q;                             /* End in usec */
+	uint64_t t_0;                               /* q in usec */
+	uint64_t t_1;                               /* q in usec */
 	uint64_t total_size = (uint64_t)(nmax * blocks * NVME_LB_SIZE);
+	int t_i = 0;
 
-	VERBOSE1("\n%s Enter %s SSD[%d] Blocks: %d N: %d (Total: %lld bytes) AID: %d\n"
-		"Using RAM@: 0x%016llx\n",
-		__func__, write?"Write":"Read", drive, blocks, nmax,
+	int *t_dlist = malloc(nmax * sizeof(int));
+	VERBOSE2("\n%s Enter %s SSD[%d] Blocks: %d (%d Bytes) N: %d (Total: %lld Bytes) AID: %d\n"
+		"   Using RAM: 0x%016llx\n",
+		__func__, write?"Write":"Read", drive, blocks,
+		blocks * NVME_LB_SIZE, nmax,
 		(long long)total_size, use_aid,
 		(long long)ram_address);
 
@@ -323,60 +331,73 @@ static int nvme_qtest(struct snap_card *handle, /* My handle */
 	/* Make values for DPTR_LOW */
 	dptr_low = (uint32_t)ram_address;
 
-	VERBOSE2("Write DPTR_HIGH: 0x%x\n", dptr_high);
+	VERBOSE3("   Write DPTR_HIGH: 0x%x\n", dptr_high);
 	nvme_mmio_write(handle, DPTR_HIGH, dptr_high); /* DPTR_HIGH Transfer data pointer high 32 bits */
-	VERBOSE2("Write LBA_HIGH:  0\n");
+	VERBOSE3("   Write LBA_HIGH:  0\n");
 	nvme_mmio_write(handle, LBA_HIGH, 0);          /* LBA_High SSD LBA high 32 bit */
-	VERBOSE2("Write LBA_NUM:   %d\n", blocks-1);
+	VERBOSE3("   Write LBA_NUM:   %d\n", blocks-1);
 	nvme_mmio_write(handle, LBA_NUM, blocks-1);    /* LBA_NUM Number of LBA Block in transfer 0..65536 */
-	VERBOSE2("Using Track Reg: 0x%x\n", track_reg);
+	VERBOSE3("   Using Track Reg: 0x%x\n", track_reg);
 	qin = 0;
-	t_start = get_usec();
+	t_0 = get_usec();
+	t_start = t_0;
 	for (n = 0; n < nmax; n++) {
-		VERBOSE2("\nLoop N: %d qin: %d\n", n, qin);
+		VERBOSE3("\n   Loop N: %d qin: %d\n", n, qin);
 		while (1) {
 			val32 = nvme_mmio_read(handle, STATUS_REG);
 			aid_val = 1 & (val32 >> (16 + use_aid));
-			VERBOSE2("Read STATUS_REG:   0x%8.8x AID[%d] Fifo Status: %d\n",
+			VERBOSE3("   Read STATUS_REG:   0x%8.8x AID[%d] Fifo Status: %d\n",
 				val32, use_aid, aid_val);
 			if (0 == (ssd_ioq_full & val32))
 				break;
 		}
 		val32 = nvme_mmio_read(handle, track_reg);
-		VERBOSE2("Read TRACK_REG:    0x%8.8x AID[%d]\n", val32, use_aid);
+		VERBOSE3("   Read TRACK_REG:    0x%8.8x AID[%d]\n", val32, use_aid);
 		if (val32 > 0) {
+			t_1 = get_usec();
+			t_dlist[t_i++] = (int)(t_1 - t_0);
+			t_0 = t_1;
 			qin--;
-			VERBOSE2("     TRACK_REG:         AID[%d] Done\n",
+			VERBOSE3("     TRACK_REG:         AID[%d] Done\n",
 				use_aid);
 		}
-		VERBOSE2("Write DPTR_low:    0x%8.8x\n", dptr_low);
+		VERBOSE3("   Write DPTR_low:    0x%8.8x\n", dptr_low);
 		nvme_mmio_write(handle, DPTR_LOW, dptr_low);
-		VERBOSE2("Write LBA_LOW:     0x%8.8x\n", lba_low);
+		VERBOSE3("   Write LBA_LOW:     0x%8.8x\n", lba_low);
 		nvme_mmio_write(handle, LBA_LOW, lba_low);
-		VERBOSE2("Write COMMAND_REG: 0x%8.8x\n", cmd_reg);
+		VERBOSE3("   Write COMMAND_REG: 0x%8.8x\n", cmd_reg);
 		nvme_mmio_write(handle, COMMAND_REG, cmd_reg);
 		qin++;
 		lba_low += blocks;
-		//dptr_low += NVME_LB_SIZE * blocks;
+		dptr_low += NVME_LB_SIZE * blocks;
 	}
-	td = get_usec() - t_start;
-	VERBOSE1("%d QUEUE in done wait until %d command complete", nmax, qin);
-	print_time(td, total_size);
-	/* Done, wait for others to finish */
-	t_start = get_usec();
+	t_q = get_usec();
+	t_0 = t_q;
 	while (qin) {
 		val32= nvme_mmio_read(handle, track_reg);
-		VERBOSE2("Read TRACK_REG:    0x%8.8x AID[%d] qin: %d\n",
+		VERBOSE3("   Read TRACK_REG:    0x%8.8x AID[%d] qin: %d\n",
 			val32, use_aid, qin);
 		if (val32 > 0) {
 			qin--;
-			VERBOSE2("     TRACK_REG:         AID[%d] Done\n",
+			t_1 = get_usec();
+			t_dlist[t_i++] = (int)(t_1 - t_0);
+			t_0 = t_1;
+			VERBOSE3("     TRACK_REG:         AID[%d] Done\n",
 				use_aid);
 		}
 	}
-	td = get_usec() - t_start;
-	VERBOSE1("%s Exit ", __func__);
-	print_time(td, total_size);
+	t_end = get_usec();
+	VERBOSE2("   t_all: %d usec (qt: %d t2: %d)  [",
+		(int)(t_end - t_start),
+		(int)(t_q - t_start),
+		(int)(t_end - t_q));
+
+	for (n = 0; n < t_i; n++)
+		VERBOSE2("%d ", t_dlist[n]);
+	VERBOSE2("]  ");
+	print_time((t_end - t_start), total_size);
+	free(t_dlist);
+	VERBOSE2("%s Exit\n", __func__);
 	return 0;
 }
 
@@ -390,12 +411,16 @@ static void usage(const char *prog)
 		"    -q, --quiet          quiece output\n"
 		"    -t, --timeout        timeout in sec (defaut 1 sec)n\n"
 		"    --------------------------------------------------------\n"
-		"    -b, --blocks         Number of %d Byte Blocks (default 1)\n"
-		"    -d, --drive          NVME Drive (0 or 1) to use (default 0)\n"
-		"    -n, --nblk           Number cwof Blocks to use (default 1)\n"
+		"    -b, --blocks         Number of %d Byte Blocks (default 1, max %d)\n"
+		"    -o, --offset         NVME Offset to use (default 0, max %d)\n"
+		"    -d, --drive          NVME SSD Drive (0 or 1) to use (default 0)\n"
+		"    -n, --nblk           Number of Blocks to use (default 1)\n"
 		"    -a, --aid            Action ID (0..15) to use (default 0)\n"
+		"    -w, --write          Set SSD Write Flag to On (default: Off)\n"
+		"    -r, --read           Set SSD Read Flag to On (default: Off)\n"
 		"    -i, --irq            Use Interrupts\n"
-		"\tTool to check SNAP NVME\n", prog, NVME_LB_SIZE);
+		"\tTool to check SNAP NVME\n", prog, NVME_LB_SIZE,
+		(int)NVME_MAX_TRANSFER_SIZE/NVME_LB_SIZE, NVME_MAX_BLOCKS);
 }
 
 int main(int argc, char *argv[])
@@ -409,16 +434,14 @@ int main(int argc, char *argv[])
 	int rc = 1;
 	int timeout = ACTION_WAIT_TIME;
 	uint32_t mem_size = 0;
-	uint32_t drive_cmd = ACTION_CONFIG_COPY_HD;
-	uint32_t blocks = 1;                /* Default 1 Block*/
+	uint32_t blocks = 1;                /* Default 1 Block */
+	uint32_t block_offset = 0;          /* Default Block to use */
 	uint32_t nblk = 1;                  /* Default 1 time blocks */
 	int aid = 0;                        /* Default Action id to use 0..15 */
 	void *src_buf = NULL;
 	void *dest_buf = NULL;
 	snap_action_flag_t attach_flags = 0;
 	int drive = 0;
-	uint64_t nvme_offset = 0;
-	uint64_t nvme_lb = 0;
 	uint64_t ddr_src = 0;
 	uint64_t ddr_dest = 0;
 	uint64_t host_src = 0;
@@ -426,6 +449,8 @@ int main(int argc, char *argv[])
 	uint64_t snap_mem = 0;           /* Memory in Bytes on FPGA Card */
 	unsigned long long max_blocks = (NVME_MAX_TRANSFER_SIZE / NVME_LB_SIZE);
 	unsigned long have_nvme = 0;     /* Flag if i do have NVME */
+	bool ssd_write_flag = false;
+	bool ssd_read_flag = false;
 
 	while (1) {
                 int option_index = 0;
@@ -438,12 +463,15 @@ int main(int argc, char *argv[])
 			{ "timeout",  required_argument, NULL, 't' },
 			{ "drive",    required_argument, NULL, 'd' },
 			{ "blocks",   required_argument, NULL, 'b' },
+			{ "offset",   required_argument, NULL, 'o' },
 			{ "nblk",     required_argument, NULL, 'n' },
 			{ "aid",      required_argument, NULL, 'a' },
 			{ "irq",      required_argument, NULL, 'i' },
+			{ "write",    required_argument, NULL, 'w' },
+			{ "read",     no_argument,       NULL, 'r' },
 			{ 0,          no_argument,       NULL, 0   },
 		};
-		cmd = getopt_long(argc, argv, "C:t:d:o:b:n:a:iqvVh",
+		cmd = getopt_long(argc, argv, "C:t:d:o:b:n:a:iwrqvVh",
 			long_options, &option_index);
 		if (cmd == -1)  /* all params processed ? */
 			break;
@@ -483,6 +511,9 @@ int main(int argc, char *argv[])
 				exit(1);
 			}
 			break;
+		case 'o':       /* offset */
+			block_offset = strtoll(optarg, (char **)NULL, 0);
+			break;
 		case 'n':        /* nblk */
 			nblk = strtoll(optarg, (char **)NULL, 0);
 			break;
@@ -496,15 +527,25 @@ int main(int argc, char *argv[])
 		case 'i':
 			attach_flags |= SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ;
 			break;
+		case 'w':    /* write */
+			if (ssd_write_flag)
+				ssd_write_flag = false;
+			else	ssd_write_flag = true;
+			break;
+		case 'r':    /* read */
+			if (ssd_read_flag)
+				ssd_read_flag = false;
+			else    ssd_read_flag = true;
+			break;
 		default:
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
 		}
 	}
 
-	mem_size = blocks * NVME_LB_SIZE;
-	if ((nvme_offset + mem_size) > NVME_DRIVE_SIZE) {
-		VERBOSE0("Error. Offset + blocks to high for Drive Size\n");
+	if ((block_offset + blocks) > NVME_MAX_BLOCKS) {
+		VERBOSE0("Error: Option (-o, --offset) + (-b, --blocks) to high for Drive Size (%d)\n",
+			NVME_MAX_BLOCKS);
 		exit(1);
 	}
 	if (card_no > 3) {
@@ -514,7 +555,7 @@ int main(int argc, char *argv[])
 
 	/* Open Slave Context */
 	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
-	VERBOSE1("NVME Test: Timeout: %d sec NVME Drive: %d\n", timeout, drive);
+	VERBOSE1("NVME Test: Timeout: %d sec SSD[%d]\n", timeout, drive);
 	VERBOSE1("           SNAP Slave:  %s\n", device);
 	slave_h = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM, SNAP_DEVICE_ID_SNAP);
 
@@ -534,12 +575,11 @@ int main(int argc, char *argv[])
 	snap_card_ioctl(slave_h, GET_SDRAM_SIZE, (unsigned long)&snap_mem);
         VERBOSE1("   %d MB of Card Ram avilable.\n", (int)snap_mem);
 	if (0 == snap_mem) {
-		VERBOSE0("ERROR: No SNAP NVME enabled on Card: %d\n", card_no);
+		VERBOSE0("ERROR: No SNAP RAM enabled on Card: %d\n", card_no);
 		rc = -1;
 		errno = ENODEV;
 		goto __exit;
 	}
-        snap_mem = snap_mem * MEGA_BYTE;
 
 	/* Check if i do have NVME */
 	snap_card_ioctl(slave_h, GET_NVME_ENABLED, (unsigned long)&have_nvme);
@@ -550,6 +590,8 @@ int main(int argc, char *argv[])
 		goto __exit;
 	}
 
+	/* Allocate Host Buffers */
+	mem_size = blocks * NVME_LB_SIZE;
 	src_buf = get_mem(mem_size);
 	dest_buf = get_mem(mem_size);
 	if ((NULL == src_buf) || (NULL == dest_buf)) {
@@ -558,22 +600,23 @@ int main(int argc, char *argv[])
 		rc = -1;
 		goto __exit;
 	}
-	memset_ad(src_buf, nvme_offset, mem_size);
+	memset_ad(src_buf, (block_offset * NVME_LB_SIZE), mem_size);
 
 	host_src = (uint64_t)src_buf;
 	host_dest = (uint64_t)dest_buf;
 	ddr_src = 0;
-	ddr_dest = ddr_src + mem_size;
-	nvme_lb = nvme_offset / NVME_LB_SIZE;
+	/* Set other ddr dest addr. if write and read is set */
+	if ((ssd_write_flag) && (ssd_read_flag))
+		ddr_dest = ddr_src + mem_size;
+	else    ddr_dest = ddr_src;
 
-	VERBOSE1("Host: Src: 0x%016llx DDR Dest:  0x%016llx\n"
-                 "DDR:  Src: 0x%016llx Host Dest: 0x%016llx\n"
-		"    Drive: %d Size: 0x%x Addr: 0x%llx LB: %d (0x%x) BS: %d (0x%x) nvme_lb: %lld\n",
-		(long long)host_src, (long long)ddr_src,
-		(long long)ddr_dest, (long long)host_dest,
-		drive, mem_size, (long long)nvme_offset,
-		(int)blocks, (int)blocks, NVME_LB_SIZE, NVME_LB_SIZE,
-		(long long)nvme_lb);
+	VERBOSE1("Host Src: 0x%016llx Dest: 0x%016llx\n"
+                 "DDR: Src: 0x%016llx Dest: 0x%016llx\n"
+		"    SSD[%d] Blocks: %d Block Offset: %d Block Size: %d\n",
+		(long long)host_src, (long long)host_dest,
+		(long long)ddr_src,  (long long)ddr_dest,
+		drive, blocks, block_offset,
+		NVME_LB_SIZE);
 
 	/* Need to get Action to copy Data fro Host to FPGA RAM */
 	action_h = snap_attach_action(slave_h, ACTION_TYPE_EXAMPLE, attach_flags, 5*timeout);
@@ -583,16 +626,19 @@ int main(int argc, char *argv[])
 		goto __exit;
 	}
 	VERBOSE1("\n        DDR <- HOST ");
-	drive_cmd = ACTION_CONFIG_COPY_HD;
-	action_memcpy(action_h, drive_cmd, ddr_src, host_src, mem_size);
+	action_memcpy(action_h, ACTION_CONFIG_COPY_HD, ddr_src, host_src, mem_size);
 	rc = action_wait_idle(action_h, timeout, mem_size);
 	if (rc) goto __exit1;
 
-	VERBOSE1("\n        NVME <- DDR ");
-	nvme_qtest(master_h, true, ddr_src, drive, blocks, nblk, 2);
+	if (ssd_write_flag) {
+		VERBOSE1("\n        NVME <- DDR ");
+		nvme_qtest(master_h, true, ddr_src, drive, blocks, block_offset, nblk, aid);
+	}
 
-        VERBOSE1("\n        DDR <- NVME ");
-	nvme_qtest(master_h, false, ddr_dest, drive, blocks, nblk, 2);
+	if (ssd_read_flag) {
+		VERBOSE1("\n        DDR <- NVME ");
+		nvme_qtest(master_h, false, ddr_dest, drive, blocks, block_offset, nblk, aid);
+	}
 
 	VERBOSE1("\n        HOST <- DDR ");
 	action_memcpy(action_h, ACTION_CONFIG_COPY_DH, host_dest, ddr_dest, mem_size);
