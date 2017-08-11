@@ -58,11 +58,7 @@ actions: $(action_subdirs)
 $(hardware_subdirs): $(snap_env)
 	@. $(snap_config_sh) && . $(snap_env_sh) && \
 	if [ -d $@ ]; then                          \
-	    if [ -d "$(SNAP_ROOT)" ]; then          \
-	        $(MAKE) -C $@ || exit 1;            \
-	    else                                    \
-	        $(call print_NO_SNAP_ROOT);         \
-	    fi                                      \
+	    $(MAKE) -C $@ || exit 1;                \
 	fi
 
 hardware: $(hardware_subdirs)
