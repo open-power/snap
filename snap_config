@@ -47,8 +47,8 @@ while [ -z "$SETUP_DONE" ]; do
     echo "($0) ERROR: FPGACARD is not set correctly. Not generating config files."
     break
   fi
-  SNAP_CFG="$SNAP_CFG""CONFIG_FPGACARD=\"$FPGACARD\"\n"
-  SNAP_CFG="$SNAP_CFG""CONFIG_FPGACHIP=\"xcku060-ffva1156-2-e\"\n"
+  SNAP_CFG="$SNAP_CFG""CONFIG_FPGACARD=$FPGACARD\n"
+  SNAP_CFG="$SNAP_CFG""CONFIG_FPGACHIP=xcku060-ffva1156-2-e\n"
 
 
   ####### checking num of actions
@@ -67,7 +67,7 @@ while [ -z "$SETUP_DONE" ]; do
       HLS_SUPPORT="TRUE"
     fi
   fi
-  SNAP_CFG="$SNAP_CFG""CONFIG_HLS_SUPPORT=\"${HLS_SUPPORT^^}\"\n"
+  SNAP_CFG="$SNAP_CFG""CONFIG_HLS_SUPPORT=${HLS_SUPPORT^^}\n"
 
 
   ####### checking SDRAM and BRAM
@@ -101,11 +101,11 @@ while [ -z "$SETUP_DONE" ]; do
     fi
     DDRI_USED="$SDRAM_USED"
   fi
-  SNAP_CFG="$SNAP_CFG""CONFIG_BRAM_USED=\"$BRAM_USED\"\n"
-  SNAP_CFG="$SNAP_CFG""CONFIG_SDRAM_USED=\"$SDRAM_USED\"\n"
-  SNAP_CFG="$SNAP_CFG""CONFIG_DDR3_USED=\"$DDR3_USED\"\n"
-  SNAP_CFG="$SNAP_CFG""CONFIG_DDR4_USED=\"$DDR4_USED\"\n"
-  SNAP_CFG="$SNAP_CFG""CONFIG_DDRI_USED=\"$DDRI_USED\"\n"
+  SNAP_CFG="$SNAP_CFG""CONFIG_BRAM_USED=$BRAM_USED\n"
+  SNAP_CFG="$SNAP_CFG""CONFIG_SDRAM_USED=$SDRAM_USED\n"
+  SNAP_CFG="$SNAP_CFG""CONFIG_DDR3_USED=$DDR3_USED\n"
+  SNAP_CFG="$SNAP_CFG""CONFIG_DDR4_USED=$DDR4_USED\n"
+  SNAP_CFG="$SNAP_CFG""CONFIG_DDRI_USED=$DDRI_USED\n"
 
 
   ####### checking NVME
@@ -119,7 +119,7 @@ while [ -z "$SETUP_DONE" ]; do
   else
     NVME_USED="FALSE"
   fi
-  SNAP_CFG="$SNAP_CFG""CONFIG_NVME_USED=\"$NVME_USED\"\n"
+  SNAP_CFG="$SNAP_CFG""CONFIG_NVME_USED=$NVME_USED\n"
 
 
   ####### checking ILA DEBUG
@@ -129,7 +129,7 @@ while [ -z "$SETUP_DONE" ]; do
   else
     ILA_DEBUG="FALSE"
   fi
-  SNAP_CFG="$SNAP_CFG""CONFIG_ILA_DEBUG=\"$ILA_DEBUG\"\n"
+  SNAP_CFG="$SNAP_CFG""CONFIG_ILA_DEBUG=$ILA_DEBUG\n"
 
 
   ####### checking FACTORY_IMAGE
@@ -139,7 +139,7 @@ while [ -z "$SETUP_DONE" ]; do
   else
     FACTORY_IMAGE="FALSE"
   fi
-  SNAP_CFG="$SNAP_CFG""CONFIG_FACTORY_IMAGE=\"$FACTORY_IMAGE\"\n"
+  SNAP_CFG="$SNAP_CFG""CONFIG_FACTORY_IMAGE=$FACTORY_IMAGE\n"
 
 
   ####### checking SIMULATOR
@@ -154,7 +154,7 @@ while [ -z "$SETUP_DONE" ]; do
     echo "($0) ERROR: SIMULATOR $SIMULATOR is not supported by SNAP. Not generating config files."
     break
   fi
-  SNAP_CFG="$SNAP_CFG""CONFIG_SIMULATOR=\"$SIMULATOR\"\n"
+  SNAP_CFG="$SNAP_CFG""CONFIG_SIMULATOR=$SIMULATOR\n"
 
 
   ####### Creating .snap_config files

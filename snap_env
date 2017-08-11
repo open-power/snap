@@ -60,55 +60,54 @@ while [ -z "$SETUP_DONE" ]; do
 
   ####### checking path to PSL design checkpoint
   echo "=====Checking path to PSL design checkpoint============"
-  if [ ! -f "$PSL_DCP" ]; then
-    echo "WARNING: The environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
-    echo "For more information see also README.md"
-  else
+  if [ -f "$PSL_DCP" ]; then
     # printing path to PSL design checkpoint
     echo "PSL_DCP                 is set to: \"$PSL_DCP\""
     SNAP_ENV="export PSL_DCP=$PSL_DCP\n"
+  else
+    echo "WARNING: The environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
+    echo "For more information see also README.md"
   fi
   ####### checking path to PSLSE 
   echo "=====Simulation setup: Checking path to PSLSE=========="
-  if [ ! -d "$PSLSE_ROOT" ]; then
-    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set properly. For simulation please clone PSL Simulation Environment from https://github.com/ibm-capi/pslse and let \$PSLSE_ROOT point to it"
-  else
+  if [ -d "$PSLSE_ROOT" ]; then
     echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
+  else
+    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set properly. For simulation please clone PSL Simulation Environment from https://github.com/ibm-capi/pslse and let \$PSLSE_ROOT point to it"
   fi
   SNAP_ENV="$SNAP_ENV""export PSLSE_ROOT=$PSLSE_ROOT\n"
 
 
   ####### SNAP path variables
-  echo "=====SNAP PATH variables==============================="
-  if [ -z "$SNAP_ROOT" ]; then
-    export SNAP_ROOT=$snapdir
-    echo "Setting SNAP_ROOT              to: \"$snapdir\""
-  else
-    echo "SNAP_ROOT               is set to: \"$SNAP_ROOT\""
-  fi
-  SNAP_ENV="$SNAP_ENV""export SNAP_ROOT=$SNAP_ROOT\n"
-
+  echo "=====ACTION ROOT setup================================="
+  unset AR
   if [ -n "$HDL_EXAMPLE" ]; then
-    export ACTION_ROOT=$SNAP_ROOT/actions/hdl_example
+    AR='${SNAP_ROOT}/actions/hdl_example'
   elif [ -n "$HLS_BFS" ]; then
-    export ACTION_ROOT=$SNAP_ROOT/actions/hls_bfs
+    AR='${SNAP_ROOT}/actions/hls_bfs'
   elif [ -n "$HLS_HASHJOIN" ]; then
-    export ACTION_ROOT=$SNAP_ROOT/actions/hls_hashjoin
+    AR='${SNAP_ROOT}/actions/hls_hashjoin'
   elif [ -n "$HLS_INTERSECT" ]; then
-    export ACTION_ROOT=$SNAP_ROOT/actions/hls_intersect
+    AR='${SNAP_ROOT}/actions/hls_intersect'
   elif [ -n "$HLS_MEMCOPY" ]; then
-    export ACTION_ROOT=$SNAP_ROOT/actions/hls_memcopy
+    AR='${SNAP_ROOT}/actions/hls_memcopy'
   elif [ -n "$HLS_SEARCH" ]; then
-    export ACTION_ROOT=$SNAP_ROOT/actions/hls_search
+    AR='${SNAP_ROOT}/actions/hls_search'
   elif [ -n "$HLS_SPONGE" ]; then
-    export ACTION_ROOT=$SNAP_ROOT/actions/hls_sponge
+    AR='${SNAP_ROOT}/actions/hls_sponge'
   fi
-  echo "ACTION_ROOT             is set to: \"$ACTION_ROOT\""
-  # check if ACTION_ROOT points to an existing direcory or ACTION_ROOT ends in 'vhdl' for an HLS action
-  if [ ! -d "$ACTION_ROOT" ] && ( ( [ -z `echo "x$ACTION_ROOT" | grep -i /HLS` ] && [ "${HLS_SUPPORT^^}" != "TRUE" ] ) || [ `basename "x$ACTION_ROOT"` != "vhdl" ] ); then
-    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Please make sure that ACTION_ROOT points to an existing directory."
+  if [ -z "$AR" ]; then
+    AR=$ACTION_ROOT
+    echo "ACTION_ROOT             is set to: \"$ACTION_ROOT\""
+    # check if ACTION_ROOT points to an existing direcory or ACTION_ROOT ends in 'vhdl' for an HLS action
+    if [ ! -d "$ACTION_ROOT" ] && ( ( [ -z `echo "x$ACTION_ROOT" | grep -i /HLS` ] && [ "${HLS_SUPPORT^^}" != "TRUE" ] ) || [ `basename "x$ACTION_ROOT"` != "vhdl" ] ); then
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Please make sure that ACTION_ROOT points to an existing directory."
+    fi
+  else
+    echo "Setting ACTION_ROOT            to: \"$AR\""
   fi
-  SNAP_ENV="$SNAP_ENV""export ACTION_ROOT=$ACTION_ROOT\n"
+  
+  SNAP_ENV="$SNAP_ENV""export ACTION_ROOT=$AR\n"
 
 
   ####### settings for Partial Reconfiguration flow
@@ -123,13 +122,11 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ "$USE_PRFLOW" = "TRUE" ]; then
     if [ -z "$DCP_ROOT" ]; then
-      export DCP_ROOT=$SNAP_ROOT/dcp
+      export DCP_ROOT='${SNAP_ROOT}/dcp'
       echo "Setting DCP_ROOT               to: \"$DCP_ROOT\""
+      mkdir -p $snapdir/dcp
     else
       echo "DCP_ROOT                is set to: \"$DCP_ROOT\""
-    fi
-    if [ -d "$SNAP_ROOT" ]; then
-      mkdir -p $DCP_ROOT
     fi
     SNAP_ENV="$SNAP_ENV""export DCP_ROOT=$DCP_ROOT\n"
 

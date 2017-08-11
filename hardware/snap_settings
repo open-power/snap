@@ -37,10 +37,10 @@ fi
 
 # Setting Defaults
 if [ -z "$FPGACARD" ]; then
-  export FPGACARD="FGT"
+  FPGACARD="FGT"
 fi
 if [ -z "$ACTION_ROOT" ]; then
-  export HDL_EXAMPLE=y
+  HDL_EXAMPLE=y
 fi
 
 . ./snap_config
