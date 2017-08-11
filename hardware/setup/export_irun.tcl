@@ -20,7 +20,7 @@ set xilinx_version [version -short]
 set root_dir      $::env(SNAP_HARDWARE_ROOT)
 set ies_libs      $::env(IES_LIBS)
 set log_dir       $::env(LOGS_DIR)
-set log_file      $log_dir/compile_xsim.log
+set log_file      $log_dir/compile_$::env(SIMULATOR).log
 
 puts "\t                        export simulation for version=$xilinx_version"
 open_project $root_dir/viv_project/framework.xpr  >> $log_file

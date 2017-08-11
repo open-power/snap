@@ -52,9 +52,6 @@ done
 
 export PATH=$PATH:../software/tools:./hls_memcopy/sw:../../software/tools:./sw
 
-snap_peek --help > /dev/null || exit 1;
-snap_poke --help > /dev/null || exit 1;
-
 #### VERSION ##########################################################
 
 # [ -z "$STATE" ] && echo "Need to set STATE" && exit 1;

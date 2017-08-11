@@ -17,6 +17,6 @@
 #-----------------------------------------------------------
 
 create_pblock pblock_ddr3sdram_bank0
-resize_pblock pblock_ddr3sdram_bank0 -add {SLICE_X71Y120:SLICE_X96Y299 DSP48E2_X14Y48:DSP48E2_X17Y119 LAGUNA_X12Y120:LAGUNA_X15Y239 RAMB18_X9Y48:RAMB18_X11Y119 RAMB36_X9Y24:RAMB36_X11Y59}
+resize_pblock pblock_ddr3sdram_bank0 -add {SLICE_X71Y120:SLICE_X96Y299 DSP48E2_X14Y48:DSP48E2_X17Y119 LAGUNA_X12Y120:LAGUNA_X15Y239 RAMB18_X9Y48:RAMB18_X11Y119 RAMB36_X9Y24:RAMB36_X11Y59} -locs keep_all
 add_cells_to_pblock pblock_ddr3sdram_bank0 [get_cells [list a0/ddr3sdram_bank0]] -clear_locs
 

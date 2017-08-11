@@ -18,7 +18,7 @@
 ############################################################################
 ############################################################################
 
-## Variables that other scripts need.
+## Variables required by other scripts.
 ## If SNAP_ROOT is not set, we assume that we are in the hardware directory.
 ## So, the root directory is one level above.
 ##
@@ -49,6 +49,9 @@ endif
 
 export NVME_USED ?= FALSE
 
+export USE_PRFLOW ?= FALSE
+export DCP_ROOT ?= $(SNAP_ROOT)/dcp
+
 ## variables just for this Makefile
 BUILD_DIR=$(SNAP_HARDWARE_ROOT)/build
 SNAP_HDL_CORE=$(SNAP_HARDWARE_ROOT)/hdl/core
@@ -68,13 +71,16 @@ SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
 SNAP_TMP_FILES =  $(SNAP_HARDWARE_ROOT)/sim/README.txt \
 		  $(SNAP_HARDWARE_ROOT)/vivado.jou
 
+SNAP_ACTION_DCP=$(DCP_ROOT)/user_action_synth.dcp
+SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
+
 #
 # FIXME Targets in this Makefile are to be build in the correct order.
 #      Parallelization e.g. by using -jN will not work at this point in time
 #      due to missing dependencies between the different targets.
 #
 
-.PHONY: all clean gitclean check_snap_settings image model action_hw action_sw software pslse setup_environment create_environment config patch_version xpr_image snap_config snap_config_start
+.PHONY: all clean gitclean check_snap_settings check_denali model action_hw action_sw software pslse prepare_environment create_environment config patch_version patch_NVMe image cloud_base cloud_image cloud_action cloud_merge snap_config snap_config_start xsim irun questa
 
 all: config model image
 
@@ -126,18 +132,17 @@ check_denali:
 		fi \
 	fi
 
-
-
-setup_environment:
-	@echo -e "\t[PREPARE ENV.........] start `date`";
+prepare_environment:
+	@echo -e "\t[PREPARE ENVIRONMENT.] start `date`";
 	@mkdir -p $(BUILD_DIR);
 	@mkdir -p $(BUILD_DIR)/Reports;
 	@mkdir -p $(LOGS_DIR);
 	@mkdir -p $(BUILD_DIR)/Images;
 	@mkdir -p $(BUILD_DIR)/Checkpoints;
-	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl     $(BUILD_DIR)/snap_build.tcl;
-	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_xpr_build.tcl $(BUILD_DIR)/snap_xpr_build.tcl;
-	@cp -p $(PSL_DCP)                                        $(BUILD_DIR)/Checkpoints/;
+	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl         $(BUILD_DIR)/snap_build.tcl;
+	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_build.tcl   $(BUILD_DIR)/snap_cloud_build.tcl;
+	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_merge.tcl   $(BUILD_DIR)/snap_cloud_merge.tcl;
+	@cp -p $(PSL_DCP)                                            $(BUILD_DIR)/Checkpoints/;
 	@if [ $(FPGACARD) = "KU3" ]; then \
 		ln -f -s $(SNAP_HDL_CORE)/psl_fpga_ku3.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
 		ln -f -s $(SNAP_HDL_CORE)/psl_accel_ku3.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
@@ -146,7 +151,7 @@ setup_environment:
 		ln -f -s $(SNAP_HDL_CORE)/psl_fpga_fgt.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
 		ln -f -s $(SNAP_HDL_CORE)/psl_accel_fgt.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
 	fi
-	@echo -e "\t[PREPARE ENV.........] done `date`";
+	@echo -e "\t[PREPARE ENVIRONMENT.] done `date`";
 
 %.vhd: %.vhd_source
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
@@ -166,6 +171,9 @@ action_hw:
 	@if [ $$? -ne 0 ]; then \
 		echo -e "\t                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
 	fi
+	-@if [ $(USE_PRFLOW) = "TRUE" ]; then \
+		$(MAKE) -kC $(ACTION_ROOT)/hw vhdl >> $(LOGS_DIR)/action_make.log; \
+	fi
 	@echo -e "\t[CONFIG ACTION HW....] done `date`";
 
 create_environment:
@@ -179,7 +187,7 @@ create_environment:
 config_start:
 	@echo -e "\t[CONFIG..............] start `date`"
 
-config: config_start check_snap_settings setup_environment snap_config action_hw create_environment patch_version patch_NVMe
+config: config_start check_snap_settings prepare_environment snap_config action_hw create_environment patch_version patch_NVMe
 	@echo -e "\t[CONFIG..............] done `date`"
 
 patch_version:
@@ -193,16 +201,47 @@ patch_NVMe:
 	fi
 
 image: snap_config patch_version
+	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
+		echo -e "\tMakefile target $@ not allowed for PR flow!"; exit -1; \
+	fi
 	@echo -e "\t[BUILD IMAGE.........] start `date`"
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log -journal $(LOGS_DIR)/snap_build.jou
 	@$(RM) -r .bitstream_name.txt
 	@echo -e "\t[BUILD IMAGE.........] done  `date`"
 
-xpr_image: snap_config patch_version
-	@echo -e "\t[BUILD XPR IMAGE.....] start `date`"
-	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_xpr_build.tcl -notrace -log $(LOGS_DIR)/snap_xpr_build.log -journal $(LOGS_DIR)/snap_xpr_build.jou
-	@$(RM) -r .bitstream_name.txt
-	@echo -e "\t[BUILD XPR IMAGE....] done  `date`"
+cloud_base: snap_config patch_version
+	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
+		echo -e "\tMakefile target $@ is only allowed for PR flow!"; exit -1; \
+	fi
+	@echo -e "\t[BUILD CLOUD BASE...] start `date`"
+	@cd $(BUILD_DIR) && env CLOUD_RUN=BASE vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
+	@echo -e "\t[BUILD CLOUD BASE...] done  `date`"
+
+$(SNAP_ACTION_DCP): 
+	@echo -e "\tNeed to run cloud_action first"
+	@exit 1
+
+$(SNAP_BASE_DCP): 
+	@echo -e "\tNeed to run cloud_base first"
+	@exit 1
+
+cloud_action: snap_config action_hw patch_version
+	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
+		echo -e "\tMakefile target $@ is only allowed for PR flow!"; exit -1; \
+	fi
+	@echo -e "\t[CLOUD ACTION SYNTH..] start `date`"
+	@echo -e "\t                        using `vivado -version |grep Vivado`"
+	@cd $(BUILD_DIR) && env CLOUD_RUN=ACTION vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/cloud_action.log -journal $(LOGS_DIR)/cloud_action.jou
+	@echo -e "\t[CLOUD ACTION SYNTH..] done  `date`"
+
+cloud_merge: $(SNAP_BASE_DCP) $(SNAP_ACTION_DCP) prepare_environment
+	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
+		echo -e "\tMakefile target $@ is only allowed for PR flow!"; exit -1; \
+	fi
+	@echo -e "\t[CLOUD MERGE ........] start `date`"
+	@echo -e "\t                        using `vivado -version |grep Vivado`"
+	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_cloud_merge.tcl -notrace -log $(LOGS_DIR)/cloud_merge.log -journal $(LOGS_DIR)/cloud_merge.jou
+	@echo -e "\t[CLOUD MERGE ........] done  `date`"
 
 model: action_sw snap_config patch_version $(SIMULATOR)
 
@@ -232,7 +271,7 @@ xsim:
 		cd $(SNAP_HARDWARE_ROOT)/sim/xsim && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
 	fi
 	@cd $(SNAP_HARDWARE_ROOT)/sim/xsim; \
-	./top.sh > $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
+	./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
 		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log"; exit -1; \
 	fi
@@ -246,7 +285,7 @@ irun: check_denali
 		cd $(SNAP_HARDWARE_ROOT)/sim/ies && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
 	fi
 	@cd $(SNAP_HARDWARE_ROOT)/sim/ies;\
-	./top.sh > $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
+	./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
 		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log"; exit -1; \
 	fi
@@ -260,7 +299,7 @@ questa:
 		cd $(SNAP_HARDWARE_ROOT)/sim/questa && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
 	fi
 	@cd $(SNAP_HARDWARE_ROOT)/sim/questa; \
-	./top.sh 4> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
+	./top.sh >> $(LOGS_DIR)/compile_$(SIMULATOR).log 2>&1; \
 	if [ $$? -ne 0 ]; then \
 		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$(SIMULATOR).log"; exit -1; \
 	fi
@@ -280,8 +319,9 @@ clean:
 	@$(RM) -r sim/ies sim/xsim sim/questa hdl/nvme/component.xml hdl/nvme/xgui
 	@echo -e "\t                        log files";
 	@$(RM) -r logs
+	@echo -e "\t                        action";
+	@$(RM) $(ACTION_ROOT)/hw/vhdl
 	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then          \
-		echo -e "\t                        action"; \
 		make -C $(ACTION_ROOT) $@ > /dev/null;      \
 		if [ $$? -ne 0 ]; then                      \
 			echo -e "\tError: [make "$@"] failed for action in $(ACTION_ROOT)"; exit -1; \

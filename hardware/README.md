@@ -22,7 +22,7 @@ differently):
     FPGACHIP            = xcku060-ffva1156-2-e                                   # version of the FPGA chip
     SNAP_ROOT           = <parent of the directory containing snap_settings>     # snap clone from github
     ACTION_ROOT         = $SNAP_ROOT/actions/hdl_example                         # directory containing the action's source code
-    SIMULATOR           = xsim                                                   # currently supported simulators are xsim, irun (IES)
+    SIMULATOR           = xsim                                                   # currently supported simulators are xsim and irun (IES)
     NUM_OF_ACTIONS      = 1                                                      # number of actions to be implemented with the card (up to 16)
     SDRAM_USED          = FALSE                                                  # adding access to the on card SDRAM via an AXI interface?
     NVME_USED           = FALSE                                                  # adding access to flash memory via NVMe
@@ -53,8 +53,9 @@ As usual you may set the variable with the call of make:
     make config ACTION_ROOT=$SNAP_ROOT/actions/hdl_example
 ```
 
-As part of the configuration step, a script `$ACTION_ROOT/action_config.sh` will be called if it exists.
-Specific configurations/preparations for the action may be added via this script.
+As part of the configuration step, the make process will call the target `hw` that is expected to exist in a `Makefile`
+contained in the directory that `$ACTION_ROOT` is pointing to (see section [Action wrapper](#action-wrapper)).
+Specific configurations/preparations for the action may be added via this make process step.
 
 If you call make without any targets, then the environment is created and a simulation model build
 as well as a card image build are kicked off.
@@ -137,7 +138,7 @@ For instance, if you want to configure the SNAP framework for integrating the HL
 ```  
 before initiating the SNAP framework's make process.
 
-***Note*** that for the integration of HLS actions into the SNAP framework, the `$ACTION_ROOT` directory name needs to contain the term `HLS` (case doesn't matter), or the environment variable `$HLS_SUPPORT` needs to be defined and to be set to `TRUE` (case doesn't matter).
+***Note*** that for the integration of HLS actions into the SNAP framework, the environment variable `$ACTION_ROOT` needs to point to (a subdirectory of) a directory starting with `hls` (case doesn't matter), or the environment variable `$HLS_SUPPORT` needs to be defined and to be set to `TRUE` (case doesn't matter).
 
 # SDRAM Card Memory
 

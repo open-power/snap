@@ -15,8 +15,7 @@
 # limitations under the License.
 #
 #-----------------------------------------------------------
-
-create_pblock snap_core
-add_cells_to_pblock [get_pblocks snap_core] [get_cells -quiet [list a0/snap_core_i]] -clear_locs
-resize_pblock [get_pblocks snap_core] -add {CLOCKREGION_X3Y3:CLOCKREGION_X5Y3}
-
+create_pblock pblock_action
+resize_pblock pblock_action -add CLOCKREGION_X0Y0:CLOCKREGION_X1Y4
+resize_pblock pblock_action -add {SLICE_X48Y0:SLICE_X70Y299 DSP48E2_X9Y0:DSP48E2_X13Y119 LAGUNA_X8Y0:LAGUNA_X11Y239 RAMB18_X6Y0:RAMB18_X8Y119 RAMB36_X6Y0:RAMB36_X8Y59} -locs keep_all
+add_cells_to_pblock pblock_action [get_cells [list a0/action_w ]] -clear_locs
