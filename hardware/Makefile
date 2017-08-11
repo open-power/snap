@@ -26,7 +26,13 @@ export SNAP_ROOT ?= $(abspath ..)
 export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 
--include $(SNAP_ROOT)/.snap_config.cflags
+snap_config_cflags = $(SNAP_ROOT)/.snap_config.cflags
+snap_config_sh     = $(SNAP_ROOT)/.snap_config.sh
+snap_env_sh        = $(SNAP_ROOT)/.snap_env.sh
+
+-include $(snap_config_cflags)
+-include $(snap_config_sh)
+-include $(snap_env_sh)
 
 ifeq "$(FPGACARD)" "KU3"
 	export DDR3_USED=$(SDRAM_USED)

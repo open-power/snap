@@ -25,7 +25,7 @@ snap_config_sh = $(CURDIR)/.snap_config.sh
 snap_env = $(CURDIR)/.snap_env
 snap_env_sh = $(CURDIR)/.snap_env.sh
 
--include $snap_env_sh
+-include $(snap_env_sh)
 
 clean_subdirs += $(config_subdirs) $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
 
@@ -56,8 +56,7 @@ $(action_subdirs):
 actions: $(action_subdirs)
 
 $(hardware_subdirs): $(snap_env)
-	@. $(snap_config_sh) && . $(snap_env_sh) && \
-	if [ -d $@ ]; then                          \
+	@if [ -d $@ ]; then                          \
 	    $(MAKE) -C $@ || exit 1;                \
 	fi
 
@@ -73,8 +72,7 @@ test install uninstall:
 
 # Model build and config
 config model image cloud_base cloud_action cloud_merge: $(snap_env)
-	@. $(snap_config_sh) && . $(snap_env_sh) && \
-	for dir in $(hardware_subdirs); do                         \
+	@for dir in $(hardware_subdirs); do                         \
 	    if [ -d $$dir ]; then                                  \
 	        $(MAKE) -C $$dir $@ || exit 1;                     \
 	    fi                                                     \
