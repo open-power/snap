@@ -73,8 +73,8 @@ echo "Doing snap_intersect (Hash method) ... "
 rm -f snap_intersect_h.log
 touch snap_intersect_h.log
 
-for table_num in 10 23 256 512 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 ; do
-#for table_num in 10 23 256 512 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576 2097152 4194304 8388608 ; do
+for table_num in 10 256 512 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 ; do
+#for table_num in 10 256 512 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576 2097152 4194304 8388608 ; do
     echo -n "... ${table_num} entries for each input tables ... "
     rm -f table1.txt
     rm -f table2.txt
