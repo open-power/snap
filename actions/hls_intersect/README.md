@@ -1,7 +1,4 @@
-# Several modes for snap_intersect
-
-
-#How to build
+# How to build
 
 Intersection has two methods and are implemented in two Actions. 
 One is in hw_h (hash, -m1) and one is in hw_s (sort, -m2).
@@ -25,7 +22,7 @@ make config image
 ```
 
 
-#How to run
+# How to run
 
 - Step1: Copy Tables from Host memory to FPGA Card memory
 - Step2: Copy Tables from FPGA Card memory to Host memory
