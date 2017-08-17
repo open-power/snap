@@ -64,10 +64,10 @@ $(libnameA).so:  $(libnameA).so.$(libversion)
 
 $(libnameA).so.$(MAJOR_VERSION): $(libnameA).so.$(libversion)
 	ln -sf $< $@
-# SONAME=-Wl,-soname,$(libnameA).so.$(MAJOR_VERSION)
+# SONAMEA=-Wl,-soname,$(libnameA).so.$(MAJOR_VERSION)
 
 $(libnameA).so.$(libversion): __$(libnameA).o
-	$(CC) $(LDFLAGS) -shared  $(SONAME) \
+	$(CC) $(LDFLAGS) -shared  $(SONAMEA) \
 		 -o $@ $^ $(libsA)
 
 ### libB
@@ -82,10 +82,10 @@ $(libnameB).so:  $(libnameB).so.$(libversion)
 
 $(libnameB).so.$(MAJOR_VERSION): $(libnameB).so.$(libversion)
 	ln -sf $< $@
-# SONAME=-Wl,-soname,$(libnameB).so.$(MAJOR_VERSION)
+# SONAMEB=-Wl,-soname,$(libnameB).so.$(MAJOR_VERSION)
 
 $(libnameB).so.$(libversion): __$(libnameB).o
-	$(CC) $(LDFLAGS) -shared  $(SONAME) \
+	$(CC) $(LDFLAGS) -shared  $(SONAMEB) \
 		 -o $@ $^ $(libsB)
 
 install: all
@@ -101,4 +101,4 @@ install: all
 clean distclean:
 	$(RM) *.o *.d $(projs) *.so *.so.*
 
--include $(objs:.o=.d)
+-include $(objsA:.o=.d) $(objsB:.o=.d)

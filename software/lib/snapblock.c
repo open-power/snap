@@ -51,6 +51,7 @@ typedef struct {
 	unsigned int drive;
 	size_t nblocks; /* total size of the device in blocks */
 	int timeout;
+	uint8_t *buf;
 } snap_Chunk_t;
 
 /* Use just one ... */
@@ -223,6 +224,7 @@ chunk_id_t cblk_open(const char *path,
 		goto out_err1;
 	}
 
+	chunk.buf = snap_malloc(__CBLK_BLOCK_SIZE * 2);
 	chunk.drive = 0;
 	chunk.nblocks = SNAP_FLASHGT_NVME_SIZE / __CBLK_BLOCK_SIZE;
 	chunk.timeout = timeout;
@@ -250,6 +252,7 @@ int cblk_close(chunk_id_t id __attribute__((unused)),
 
 	snap_detach_action(chunk.act);
 	snap_card_free(chunk.card);
+	__free(chunk.buf);
 
 	chunk.act = NULL;
 	chunk.card = NULL;
@@ -294,11 +297,17 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 	uint32_t drive_cmd = ACTION_CONFIG_COPY_HD;
 	uint64_t ddr_dest = 0;
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
+	uint8_t *_buf = buf;
 
 	block_trace("%s: reading (%p lba=%zu nblocks=%zu) ...\n", __func__, buf, lba, nblocks);
 	if ((uint64_t)buf % 64) {
-		errno = EINVAL;
-		return -1;
+		fprintf(stderr, "warn: buffer address not aligned! %p", buf);
+		if (nblocks > 2) {
+			fprintf(stderr, "warn: temp buffer too small!\n");
+			errno = EFAULT;
+			return -1;
+		}
+		_buf = chunk.buf;
 	}
 
 	pthread_mutex_lock(&globalLock);
@@ -307,17 +316,21 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 
 	/* DDR <- NVME */
 	drive_cmd = ACTION_CONFIG_COPY_ND | (NVME_DRIVE1 * chunk.drive);
-	action_memcpy(chunk.card, drive_cmd, ddr_dest, lba,
+	action_memcpy(chunk.card, drive_cmd, ddr_dest,
+		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,
 		nblocks * __CBLK_BLOCK_SIZE/NVME_LB_SIZE);
 	rc = action_wait_idle(chunk.card, chunk.timeout, mem_size);
 	if (rc)
 		goto __exit1;
 
 	/* HOST <- DDR */
-	action_memcpy(chunk.card, ACTION_CONFIG_COPY_DH, (uint64_t)buf, ddr_dest, mem_size);
+	action_memcpy(chunk.card, ACTION_CONFIG_COPY_DH, (uint64_t)_buf, ddr_dest, mem_size);
 	rc = action_wait_idle(chunk.card, chunk.timeout, mem_size);
 	if (rc)
 		goto __exit1;
+
+	if ((uint64_t)buf % 64)
+		memcpy(buf, _buf, nblocks * __CBLK_BLOCK_SIZE);
 
 	pthread_mutex_unlock(&globalLock);
 	return nblocks;
@@ -337,10 +350,15 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
 
 	block_trace("%s: writing (%p lba=%zu nblocks=%zu) ...\n", __func__, buf, lba, nblocks);
-
 	if ((uint64_t)buf % 64) {
-		errno = EINVAL;
-		return -1;
+		fprintf(stderr, "warn: buffer address not aligned! %p", buf);
+		if (nblocks > 2) {
+			fprintf(stderr, "warn: temp buffer too small!\n");
+			errno = EFAULT;
+			return -1;
+		}
+		memcpy(chunk.buf, buf, nblocks * __CBLK_BLOCK_SIZE);
+		buf = chunk.buf;
 	}
 
 	pthread_mutex_lock(&globalLock);
@@ -353,7 +371,9 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 
 	/* NVME <- DDR */
 	drive_cmd = ACTION_CONFIG_COPY_DN | (NVME_DRIVE1 * chunk.drive);
-	action_memcpy(chunk.card, drive_cmd, lba, ddr_src,
+	action_memcpy(chunk.card, drive_cmd,
+		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,
+		ddr_src,
 		nblocks * __CBLK_BLOCK_SIZE/NVME_LB_SIZE);
 	rc = action_wait_idle(chunk.card, chunk.timeout, mem_size);
 	if (rc)
