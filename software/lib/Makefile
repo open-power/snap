@@ -46,6 +46,8 @@ srcB = snapblock.c
 objsB = $(srcB:.c=.o)
 libsB += -L. -lsnap $(LDLIBS)
 
+$(projB): $(projA)
+
 projs += $(projA) $(projB)
 
 all: $(projs)
