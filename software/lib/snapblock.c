@@ -25,6 +25,7 @@
 #include <sys/mman.h>
 #include <pthread.h>
 
+#include "snap_internal.h"
 #include "libsnap.h"
 #include "snap_hls_if.h"
 #include "capiblock.h"
@@ -113,7 +114,7 @@ static int action_write(struct snap_card* h, uint32_t addr, uint32_t data)
 
 	rc = snap_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
-		fprintf(stderr, "Write MMIO 32 Err\n");
+		fprintf(stderr, "err: Write MMIO 32 Err %d\n", rc);
 	return rc;
 }
 
@@ -133,7 +134,7 @@ static inline int action_wait_idle(struct snap_card* h, int timeout,
 	/* FIXME Use act and not h */
 	rc = snap_action_completed((void*)h, NULL, timeout);
 	if (0 == rc)
-		fprintf(stderr, "Error: Timeout while Waiting for Idle\n");
+		fprintf(stderr, "err: Timeout while Waiting for Idle %d\n", rc);
 
 	return !rc;
 }
@@ -144,7 +145,7 @@ static inline void action_memcpy(struct snap_card *h,
 				 uint64_t src,
 				 size_t n)
 {
-	fprintf(stderr, "  %12s memcpy_%x(dest=0x%llx, src=0x%llx, n=0x%lx)\n",
+	block_trace("  %12s memcpy_%x(dest=0x%llx, src=0x%llx, n=0x%lx)\n",
 		action_name[action % ACTION_CONFIG_MAX], action,
 		(long long)dest, (long long)src, n);
 	action_write(h, ACTION_CONFIG,	  action);
@@ -177,7 +178,7 @@ chunk_id_t cblk_open(const char *path,
 	snap_action_flag_t attach_flags =
 		(SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 
-	fprintf(stderr, "%s: opening (%s) ...\n", __func__, path);
+	block_trace("%s: opening (%s) ...\n", __func__, path);
 
 	pthread_mutex_lock(&globalLock);
 	if (flags & CBLK_OPN_VIRT_LUN) {
@@ -292,7 +293,7 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 	uint64_t ddr_dest = 0;
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
 
-	fprintf(stderr, "%s: reading (%p lba=%zu nblocks=%zu) ...\n", __func__, buf, lba, nblocks);
+	block_trace("%s: reading (%p lba=%zu nblocks=%zu) ...\n", __func__, buf, lba, nblocks);
 	if (__CBLK_BLOCK_SIZE * nblocks > __CBLK_BLOCK_MAX) {
 		errno = EFAULT;
 		return -1;
@@ -338,7 +339,7 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 	uint64_t ddr_src = 0;
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
 
-	fprintf(stderr, "%s: writing (%p lba=%zu nblocks=%zu) ...\n", __func__, buf, lba, nblocks);
+	block_trace("%s: writing (%p lba=%zu nblocks=%zu) ...\n", __func__, buf, lba, nblocks);
 	if (mem_size > __CBLK_BLOCK_MAX) {
 		errno = EFAULT;
 		return -1;

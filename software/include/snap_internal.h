@@ -74,10 +74,16 @@ struct snap_funcs {
 };
 
 int action_trace_enabled(void);
+int block_trace_enabled(void);
 
 #define act_trace(fmt, ...) do {					\
 		if (action_trace_enabled())				\
 			fprintf(stderr, "A " fmt, ## __VA_ARGS__);	\
+	} while (0)
+
+#define block_trace(fmt, ...) do {                                     \
+		if (action_trace_enabled())                            \
+			fprintf(stderr, "A " fmt, ## __VA_ARGS__);     \
 	} while (0)
 
 /**

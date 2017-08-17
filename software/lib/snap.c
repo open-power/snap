@@ -45,10 +45,15 @@ static struct snap_sim_action *actions = NULL;
 
 int action_trace_enabled(void)
 {
-	return snap_trace & 0x8;
+	return snap_trace & 0x08;
 }
 
-#define simulation_enabled()  (snap_config & 0x1)
+int block_trace_enabled(void)
+{
+	return snap_trace & 0x20;
+}
+
+#define simulation_enabled()  (snap_config & 0x01)
 
 #define snap_trace(fmt, ...) do {					\
 		if (snap_trace_enabled())				\

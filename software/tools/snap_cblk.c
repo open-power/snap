@@ -21,12 +21,14 @@
 #include <endian.h>
 #include <asm/byteorder.h>
 #include <sys/mman.h>
+#include <sys/time.h>
 #include <getopt.h>
 #include <snap_tools.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "snap_internal.h"
 #include "force_cpu.h"
 #include <capiblock.h> /* FIXME fake fake */
 
@@ -147,6 +149,9 @@ int main(int argc, char *argv[])
 	unsigned int lba;
 	unsigned int num_lba = 0;
 	unsigned int start_lba = 0;
+	struct timeval etime, stime;
+	long long diff_usec = 0;
+	double mib_sec;
 
 	while (1) {
 		int option_index = 0;
@@ -220,16 +225,11 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (optind + 1 != argc) {
-		usage(argv[0]);
-		exit(EXIT_FAILURE);
-	}
+	if (argc >= optind + 1)
+		fname = argv[optind++];
 
-	fname = argv[optind++];
 	switch_cpu(cpu, verbose_flag);
-
 	cblk_init(NULL, 0);
-
 
 	if ((card_no < 0) || (card_no > 4)) {
 		fprintf(stderr, "err: (%d) is a invalid card number!\n",
@@ -243,23 +243,27 @@ int main(int argc, char *argv[])
 
 	cid = cblk_open(device, 128, O_RDWR, 0ull, 0);
 	if (cid < 0) {
-		fprintf(stderr, "err: openging %s failed rc=%d!\n", device, (int)cid);
+		fprintf(stderr, "err: openging %s failed rc=%d!\n",
+			device, (int)cid);
 		goto err_out;
 	}
 
 	rc = cblk_get_lun_size(cid, &lun_size, 0);
 	if (rc < 0) {
-		fprintf(stderr, "err: reading lun_size failed rc=%d!\n", rc);
+		fprintf(stderr, "err: reading lun_size failed rc=%d!\n",
+			rc);
 		goto err_out;
 	}
-	fprintf(stderr, "lun_size is %zu blocks of %zu bytes\n", lun_size, lba_size);
+	fprintf(stderr, "NVMe device has %zu blocks of each %zu bytes\n",
+		lun_size, lba_size);
 
 	if (num_lba == 0)
 		num_lba = lun_size;
 
 	switch (_op) {
 	case OP_READ: {
-		fprintf(stderr, "reading from card NVMe ... to %s\n", fname);
+		fprintf(stderr, "Reading NVMe to %s\n",
+			fname);
 
 		if (start_lba + num_lba > lun_size) {
 			fprintf(stderr, "err: device not large enougn %zu lbas\n",
@@ -271,22 +275,31 @@ int main(int argc, char *argv[])
 		if (rc != 0)
 			goto err_out;
 
+		gettimeofday(&stime, NULL);
 		for (lba = start_lba; lba < (start_lba + num_lba); lba++) {
 			fprintf(stderr, "  reading lba %d ...\n", lba);
 			rc = cblk_read(cid, &buf[lba * lba_size], lba, 1, 0);
 			if (rc != 1)
 				goto err_out;
 		}
+		gettimeofday(&etime, NULL);
 
 		rc = file_write(fname, buf, lun_size * lba_size);
 		if (rc != 0)
 			goto err_out;
 
+		diff_usec = timediff_usec(&etime, &stime);
+		mib_sec = (diff_usec == 0) ? 0.0 :
+			(double)(num_lba * lba_size) / diff_usec;
+
+		fprintf(stdout, "Weading of %lld bytes took %lld usec @ %.3f MiB/sec\n",
+		(long long)num_lba * lba_size, (long long)diff_usec, mib_sec);
+
 	}
 	case OP_WRITE: {
 		ssize_t len;
 
-		fprintf(stderr, "writing to card NVMe ... from %s\n", fname);
+		fprintf(stderr, "Writing NVMe from %s\n", fname);
 		len = file_size(fname);
 		if (len < 0)
 			goto err_out;
@@ -312,15 +325,25 @@ int main(int argc, char *argv[])
 		if (rc != 0)
 			goto err_out;
 
+		gettimeofday(&stime, NULL);
 		for (lba = start_lba; lba < (start_lba + num_lba); lba++) {
-			fprintf(stderr, "  writing lba %d ...\n", lba);
+			block_trace("  writing lba %d ...\n", lba);
 			rc = cblk_write(cid, &buf[lba * lba_size], lba, 1, 0);
 			if (rc != 1)
 				goto err_out;
 		}
+		gettimeofday(&etime, NULL);
+
+		diff_usec = timediff_usec(&etime, &stime);
+		mib_sec = (diff_usec == 0) ? 0.0 :
+			(double)(num_lba * lba_size) / diff_usec;
+
+		fprintf(stdout, "Writing of %lld bytes took %lld usec @ %.3f MiB/sec\n",
+		(long long)num_lba * lba_size, (long long)diff_usec, mib_sec);
 	}
 	case OP_FORMAT: {
-		fprintf(stderr, "formatting card NVMe ...\n");
+		fprintf(stderr, "Formatting NVMe drive %zu MiB ...\n",
+			(lun_size * lba_size) / (1024 * 1024));
 
 		rc = posix_memalign((void **)&buf, 64, lba_size);
 		if (rc != 0)
@@ -328,12 +351,21 @@ int main(int argc, char *argv[])
 
 		memset(buf, 0xff, lba_size);
 
+		gettimeofday(&stime, NULL);
 		for (lba = 0; lba < num_lba; lba++) {
-			fprintf(stderr, "  formatting lba %d ...\n", lba);
+			block_trace("  formatting lba %d ...\n", lba);
 			rc = cblk_write(cid, buf, lba, 1, 0);
 			if (rc != 1)
 				goto err_out;
 		}
+		gettimeofday(&etime, NULL);
+
+		diff_usec = timediff_usec(&etime, &stime);
+		mib_sec = (diff_usec == 0) ? 0.0 :
+			(double)(lun_size * lba_size) / diff_usec;
+
+		fprintf(stdout, "Formatting of %lld bytes took %lld usec @ %.3f MiB/sec\n",
+		(long long)lun_size * lba_size, (long long)diff_usec, mib_sec);
 	}
 	}
 
