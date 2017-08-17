@@ -42,7 +42,6 @@
 
 #define SNAP_FLASHGT_NVME_SIZE (1ull * 1024 * 1024 * 1024) /* FIXME n TiB */
 #define __CBLK_BLOCK_SIZE 4096
-#define __CBLK_BLOCK_MAX (16 * __CBLK_BLOCK_SIZE)
 
 pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -139,6 +138,10 @@ static inline int action_wait_idle(struct snap_card* h, int timeout,
 	return !rc;
 }
 
+/*
+ * NVMe: For NVMe transfers n is representing a NVME_LB_SIZE (512)
+ *       byte block.
+ */
 static inline void action_memcpy(struct snap_card *h,
 				 uint32_t action,
 				 uint64_t dest,
@@ -284,9 +287,8 @@ int cblk_set_size(chunk_id_t id __attribute__((unused)),
 }
 
 int cblk_read(chunk_id_t id __attribute__((unused)),
-	      void *buf, off_t lba __attribute__((unused)),
-	      size_t nblocks __attribute__((unused)),
-	      int flags __attribute__((unused)))
+	      void *buf, off_t lba, size_t nblocks,
+	      int flags  __attribute__((unused)))
 {
 	int rc;
 	uint32_t drive_cmd = ACTION_CONFIG_COPY_HD;
@@ -294,10 +296,6 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
 
 	block_trace("%s: reading (%p lba=%zu nblocks=%zu) ...\n", __func__, buf, lba, nblocks);
-	if (__CBLK_BLOCK_SIZE * nblocks > __CBLK_BLOCK_MAX) {
-		errno = EFAULT;
-		return -1;
-	}
 	if ((uint64_t)buf % 64) {
 		errno = EINVAL;
 		return -1;
@@ -309,7 +307,8 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 
 	/* DDR <- NVME */
 	drive_cmd = ACTION_CONFIG_COPY_ND | (NVME_DRIVE1 * chunk.drive);
-	action_memcpy(chunk.card, drive_cmd, ddr_dest, lba, nblocks);
+	action_memcpy(chunk.card, drive_cmd, ddr_dest, lba,
+		nblocks * __CBLK_BLOCK_SIZE/NVME_LB_SIZE);
 	rc = action_wait_idle(chunk.card, chunk.timeout, mem_size);
 	if (rc)
 		goto __exit1;
@@ -329,9 +328,7 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 }
 
 int cblk_write(chunk_id_t id __attribute__((unused)),
-	       void *buf __attribute__((unused)),
-	       off_t lba __attribute__((unused)),
-	       size_t nblocks __attribute__((unused)),
+	       void *buf, off_t lba, size_t nblocks,
 	       int flags __attribute__((unused)))
 {
 	int rc;
@@ -340,10 +337,7 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
 
 	block_trace("%s: writing (%p lba=%zu nblocks=%zu) ...\n", __func__, buf, lba, nblocks);
-	if (mem_size > __CBLK_BLOCK_MAX) {
-		errno = EFAULT;
-		return -1;
-	}
+
 	if ((uint64_t)buf % 64) {
 		errno = EINVAL;
 		return -1;
@@ -359,7 +353,8 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 
 	/* NVME <- DDR */
 	drive_cmd = ACTION_CONFIG_COPY_DN | (NVME_DRIVE1 * chunk.drive);
-	action_memcpy(chunk.card, drive_cmd, lba, ddr_src, nblocks);
+	action_memcpy(chunk.card, drive_cmd, lba, ddr_src,
+		nblocks * __CBLK_BLOCK_SIZE/NVME_LB_SIZE);
 	rc = action_wait_idle(chunk.card, chunk.timeout, mem_size);
 	if (rc)
 		goto __exit1;

@@ -56,6 +56,8 @@ static void usage(const char *prog)
 	       "  -r, --read		    read entire device.\n"
 	       "  -s, --start_lba <start_lba> start offset\n"
 	       "  -n, --num_lba <num_lba>   number of lbas to read or write\n"
+	       "  -b, --lba_blocks <lba_blocks> number of lbas to read or write\n"
+	       "  -p, --pattern <pattern>   pattern for formatting\n"
 	       "  <file.bin>\n"
 	       "\n"
 	       "Example:\n"
@@ -146,12 +148,14 @@ int main(int argc, char *argv[])
 	chunk_id_t cid = (chunk_id_t)-1;
 	size_t lun_size = 0;
 	size_t lba_size = 4 * 1024;
+	size_t lba_blocks = 1;
 	unsigned int lba;
 	unsigned int num_lba = 0;
 	unsigned int start_lba = 0;
 	struct timeval etime, stime;
 	long long diff_usec = 0;
 	double mib_sec;
+	int pattern = 0xff;
 
 	while (1) {
 		int option_index = 0;
@@ -160,9 +164,10 @@ int main(int argc, char *argv[])
 			{ "card",	required_argument, NULL, 'C' },
 			{ "cpu",	required_argument, NULL, 'X' },
 
-			{ "lba_size",	required_argument, NULL, 'b' },
+			{ "lba_blocks",	required_argument, NULL, 'b' },
 			{ "start_lba",	required_argument, NULL, 's' },
 			{ "num_lba",	required_argument, NULL, 'n' },
+			{ "pattern",	required_argument, NULL, 'p' },
 
 			{ "format",	no_argument,	   NULL, 'f' },
 			{ "write",	no_argument,	   NULL, 'w' },
@@ -177,7 +182,7 @@ int main(int argc, char *argv[])
 			{ 0,		no_argument,	   NULL, 0   },
 		};
 
-		ch = getopt_long(argc, argv, "p:C:X:fwrs:n:b:Vqrvh",
+		ch = getopt_long(argc, argv, "p:C:X:fwrs:n:b:p:Vqrvh",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -191,10 +196,13 @@ int main(int argc, char *argv[])
 			cpu = strtoul(optarg, NULL, 0);
 			break;
 		case 'b':
-			lba_size = strtoul(optarg, NULL, 0);
+			lba_blocks = strtoul(optarg, NULL, 0);
 			break;
 		case 's':
 			start_lba = strtoul(optarg, NULL, 0);
+			break;
+		case 'p':
+			pattern = strtoul(optarg, NULL, 0);
 			break;
 		case 'n':
 			num_lba = strtoul(optarg, NULL, 0);
@@ -262,7 +270,8 @@ int main(int argc, char *argv[])
 
 	switch (_op) {
 	case OP_READ: {
-		fprintf(stderr, "Reading NVMe to %s\n",
+		fprintf(stderr, "Reading %lld MiB NVMe into %s\n",
+			(long long)num_lba * lba_size / (1024 * 1024),
 			fname);
 
 		if (start_lba + num_lba > lun_size) {
@@ -272,36 +281,44 @@ int main(int argc, char *argv[])
 		}
 
 		rc = posix_memalign((void **)&buf, 64, lun_size * lba_size);
-		if (rc != 0)
+		if (rc != 0) {
+			fprintf(stderr, "err: Cannot allocate enough memory!\n");
 			goto err_out;
+		}
 
 		gettimeofday(&stime, NULL);
-		for (lba = start_lba; lba < (start_lba + num_lba); lba++) {
-			fprintf(stderr, "  reading lba %d ...\n", lba);
-			rc = cblk_read(cid, &buf[lba * lba_size], lba, 1, 0);
-			if (rc != 1)
+		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
+			block_trace("  reading lba %d ...\n", lba);
+			rc = cblk_read(cid, &buf[lba * lba_size], lba, lba_blocks, 0);
+			if (rc != (int)lba_blocks) {
+				fprintf(stderr, "err: cblk_read unhappy rc=%d!\n",
+					rc);
 				goto err_out;
+			}
 		}
 		gettimeofday(&etime, NULL);
 
 		rc = file_write(fname, buf, lun_size * lba_size);
-		if (rc != 0)
+		if (rc <= 0) {
+			fprintf(stderr, "err: Could not write %s, rc=%d\n",
+				fname, rc);
 			goto err_out;
+		}
 
 		diff_usec = timediff_usec(&etime, &stime);
 		mib_sec = (diff_usec == 0) ? 0.0 :
 			(double)(num_lba * lba_size) / diff_usec;
 
-		fprintf(stdout, "Weading of %lld bytes took %lld usec @ %.3f MiB/sec\n",
-		(long long)num_lba * lba_size, (long long)diff_usec, mib_sec);
-
+		fprintf(stderr, "Reading of %lld bytes took %lld usec @ %.3f MiB/sec\n",
+			(long long)num_lba * lba_size, (long long)diff_usec, mib_sec);
+		break;
 	}
 	case OP_WRITE: {
 		ssize_t len;
 
 		fprintf(stderr, "Writing NVMe from %s\n", fname);
 		len = file_size(fname);
-		if (len < 0)
+		if (len <= 0)
 			goto err_out;
 
 		if (len % lba_size) {
@@ -318,18 +335,22 @@ int main(int argc, char *argv[])
 		}
 
 		rc = posix_memalign((void **)&buf, 64, num_lba * lba_size);
-		if (rc != 0)
+		if (rc != 0) {
+			fprintf(stderr, "err: Cannot allocate enough memory!\n");
 			goto err_out;
+		}
 
-		rc = file_read(fname, buf, lun_size * lba_size);
-		if (rc != 0)
+		rc = file_read(fname, buf, num_lba * lba_size);
+		if (rc < 0) {
+			fprintf(stderr, "err: Reading file did not work rc=%d!\n", rc);
 			goto err_out;
+		}
 
 		gettimeofday(&stime, NULL);
-		for (lba = start_lba; lba < (start_lba + num_lba); lba++) {
+		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
 			block_trace("  writing lba %d ...\n", lba);
-			rc = cblk_write(cid, &buf[lba * lba_size], lba, 1, 0);
-			if (rc != 1)
+			rc = cblk_write(cid, &buf[lba * lba_size], lba, lba_blocks, 0);
+			if (rc != (int)lba_blocks)
 				goto err_out;
 		}
 		gettimeofday(&etime, NULL);
@@ -338,24 +359,25 @@ int main(int argc, char *argv[])
 		mib_sec = (diff_usec == 0) ? 0.0 :
 			(double)(num_lba * lba_size) / diff_usec;
 
-		fprintf(stdout, "Writing of %lld bytes took %lld usec @ %.3f MiB/sec\n",
-		(long long)num_lba * lba_size, (long long)diff_usec, mib_sec);
+		fprintf(stderr, "Writing of %lld bytes took %lld usec @ %.3f MiB/sec\n",
+			(long long)num_lba * lba_size, (long long)diff_usec, mib_sec);
+		break;
 	}
 	case OP_FORMAT: {
 		fprintf(stderr, "Formatting NVMe drive %zu MiB ...\n",
 			(lun_size * lba_size) / (1024 * 1024));
 
-		rc = posix_memalign((void **)&buf, 64, lba_size);
+		rc = posix_memalign((void **)&buf, 64, lba_size * lba_blocks);
 		if (rc != 0)
 			goto err_out;
 
-		memset(buf, 0xff, lba_size);
+		memset(buf, pattern, lba_size * lba_blocks);
 
 		gettimeofday(&stime, NULL);
-		for (lba = 0; lba < num_lba; lba++) {
+		for (lba = 0; lba < num_lba; lba += lba_blocks) {
 			block_trace("  formatting lba %d ...\n", lba);
-			rc = cblk_write(cid, buf, lba, 1, 0);
-			if (rc != 1)
+			rc = cblk_write(cid, buf, lba, lba_blocks, 0);
+			if (rc != (int)lba_blocks)
 				goto err_out;
 		}
 		gettimeofday(&etime, NULL);
@@ -364,8 +386,9 @@ int main(int argc, char *argv[])
 		mib_sec = (diff_usec == 0) ? 0.0 :
 			(double)(lun_size * lba_size) / diff_usec;
 
-		fprintf(stdout, "Formatting of %lld bytes took %lld usec @ %.3f MiB/sec\n",
-		(long long)lun_size * lba_size, (long long)diff_usec, mib_sec);
+		fprintf(stderr, "Formatting of %lld bytes took %lld usec @ %.3f MiB/sec\n",
+			(long long)lun_size * lba_size, (long long)diff_usec, mib_sec);
+		break;
 	}
 	}
 

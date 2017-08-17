@@ -82,8 +82,8 @@ int block_trace_enabled(void);
 	} while (0)
 
 #define block_trace(fmt, ...) do {                                     \
-		if (action_trace_enabled())                            \
-			fprintf(stderr, "A " fmt, ## __VA_ARGS__);     \
+		if (block_trace_enabled())                             \
+			fprintf(stderr, "B " fmt, ## __VA_ARGS__);     \
 	} while (0)
 
 /**
