@@ -70,7 +70,15 @@ static snap_Chunk_t chunk;
 #define ACTION_CONFIG_MEMSET_F	9	/* Memset FPGA Memory */
 #define ACTION_CONFIG_COPY_DN	0x0a	/* Copy DDR to NVME drive 0 */
 #define ACTION_CONFIG_COPY_ND	0x0b	/* Copy NVME drive 0 to DDR */
+#define ACTION_CONFIG_MAX	0x0c
+
 #define NVME_DRIVE1		0x10	/* Select Drive 1 for 0a and 0b */
+
+static const char *action_name[] = {
+	"UNKNOWN", "COUNT", "COPY_HH", "COPY_HD", "COPY_DH", "COPY_DD",
+	"COPY_HDH", "UNKOWN", "MEMSET_H", "MEMSET_F", "COPY_DN",
+	"COPY_ND"
+};
 
 #define ACTION_SRC_LOW		0x34	/* LBA for 0A, 1A, 0B and 1B */
 #define ACTION_SRC_HIGH		0x38
@@ -136,8 +144,9 @@ static inline void action_memcpy(struct snap_card *h,
 				 uint64_t src,
 				 size_t n)
 {
-	fprintf(stderr, " memcpy_%x(0x%llx, 0x%llx, 0x%lx) ",
-		action, (long long)dest, (long long)src, n);
+	fprintf(stderr, "  %12s memcpy_%x(dest=0x%llx, src=0x%llx, n=0x%lx)\n",
+		action_name[action % ACTION_CONFIG_MAX], action,
+		(long long)dest, (long long)src, n);
 	action_write(h, ACTION_CONFIG,	  action);
 	action_write(h, ACTION_DEST_LOW,  (uint32_t)(dest & 0xffffffff));
 	action_write(h, ACTION_DEST_HIGH, (uint32_t)(dest >> 32));
@@ -229,7 +238,7 @@ int cblk_close(chunk_id_t id __attribute__((unused)),
 	       int flags __attribute__((unused)))
 {
 	pthread_mutex_lock(&globalLock);
-	if (NULL != chunk.card) {
+	if (chunk.card == NULL) {
 		fprintf(stderr, "err: SNAP device already closed\n");
 		pthread_mutex_unlock(&globalLock);
 		return -1;

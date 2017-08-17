@@ -28,11 +28,16 @@
 #include <fcntl.h>
 
 #include "force_cpu.h"
-
 #include <capiblock.h> /* FIXME fake fake */
 
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
+
+typedef enum {
+	OP_READ = 0,
+	OP_WRITE = 1,
+	OP_FORMAT = 2,
+} cblk_operation_t;
 
 /**
  * @brief Prints valid command line options
@@ -135,7 +140,7 @@ int main(int argc, char *argv[])
 	const char *fname = "snap_cblk.bin";
 	uint8_t *buf = NULL;
 	char device[128];
-	int _read = 1;
+	cblk_operation_t _op = OP_READ;
 	chunk_id_t cid = (chunk_id_t)-1;
 	size_t lun_size = 0;
 	size_t lba_size = 4 * 1024;
@@ -153,6 +158,8 @@ int main(int argc, char *argv[])
 			{ "lba_size",	required_argument, NULL, 'b' },
 			{ "start_lba",	required_argument, NULL, 's' },
 			{ "num_lba",	required_argument, NULL, 'n' },
+
+			{ "format",	no_argument,	   NULL, 'f' },
 			{ "write",	no_argument,	   NULL, 'w' },
 			{ "read",	no_argument,	   NULL, 'r' },
 
@@ -165,7 +172,7 @@ int main(int argc, char *argv[])
 			{ 0,		no_argument,	   NULL, 0   },
 		};
 
-		ch = getopt_long(argc, argv, "p:C:X:wrs:n:b:Vqrvh",
+		ch = getopt_long(argc, argv, "p:C:X:fwrs:n:b:Vqrvh",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -188,10 +195,13 @@ int main(int argc, char *argv[])
 			num_lba = strtoul(optarg, NULL, 0);
 			break;
 		case 'w':
-			_read = 0;
+			_op = OP_WRITE;
 			break;
 		case 'r':
-			_read = 1;
+			_op = OP_READ;
+			break;
+		case 'f':
+			_op = OP_FORMAT;
 			break;
 		case 'V':
 			printf("%s\n", version);
@@ -229,7 +239,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* FIXME Fill in function ... */
-	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0m", card_no);
+	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 
 	cid = cblk_open(device, 128, O_RDWR, 0ull, 0);
 	if (cid < 0) {
@@ -247,7 +257,8 @@ int main(int argc, char *argv[])
 	if (num_lba == 0)
 		num_lba = lun_size;
 
-	if (_read) {
+	switch (_op) {
+	case OP_READ: {
 		fprintf(stderr, "reading from card NVMe ... to %s\n", fname);
 
 		if (start_lba + num_lba > lun_size) {
@@ -262,8 +273,8 @@ int main(int argc, char *argv[])
 
 		for (lba = start_lba; lba < (start_lba + num_lba); lba++) {
 			fprintf(stderr, "  reading lba %d ...\n", lba);
-			rc = cblk_read(cid, &buf[lba], lba, 1, 0);
-			if (rc != 0)
+			rc = cblk_read(cid, &buf[lba * lba_size], lba, 1, 0);
+			if (rc != 1)
 				goto err_out;
 		}
 
@@ -271,7 +282,8 @@ int main(int argc, char *argv[])
 		if (rc != 0)
 			goto err_out;
 
-	} else {
+	}
+	case OP_WRITE: {
 		ssize_t len;
 
 		fprintf(stderr, "writing to card NVMe ... from %s\n", fname);
@@ -302,10 +314,27 @@ int main(int argc, char *argv[])
 
 		for (lba = start_lba; lba < (start_lba + num_lba); lba++) {
 			fprintf(stderr, "  writing lba %d ...\n", lba);
-			rc = cblk_write(cid, &buf[lba], lba, 1, 0);
-			if (rc != 0)
+			rc = cblk_write(cid, &buf[lba * lba_size], lba, 1, 0);
+			if (rc != 1)
 				goto err_out;
 		}
+	}
+	case OP_FORMAT: {
+		fprintf(stderr, "formatting card NVMe ...\n");
+
+		rc = posix_memalign((void **)&buf, 64, lba_size);
+		if (rc != 0)
+			goto err_out;
+
+		memset(buf, 0xff, lba_size);
+
+		for (lba = 0; lba < num_lba; lba++) {
+			fprintf(stderr, "  formatting lba %d ...\n", lba);
+			rc = cblk_write(cid, buf, lba, 1, 0);
+			if (rc != 1)
+				goto err_out;
+		}
+	}
 	}
 
 	__free(buf);
