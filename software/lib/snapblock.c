@@ -247,15 +247,14 @@ chunk_id_t cblk_open(const char *path,
 int cblk_close(chunk_id_t id __attribute__((unused)),
 	       int flags __attribute__((unused)))
 {
-	block_trace("%s: id=%d ...\n", __func__, (int)id);
-
 	pthread_mutex_lock(&globalLock);
 	if (chunk.card == NULL) {
-		fprintf(stderr, "err: SNAP device already closed\n");
 		pthread_mutex_unlock(&globalLock);
+		errno = EINVAL;
 		return -1;
 	}
 
+	block_trace("%s: id=%d ...\n", __func__, (int)id);
 	snap_detach_action(chunk.act);
 	snap_card_free(chunk.card);
 	__free(chunk.buf);
@@ -396,4 +395,11 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
  __exit1:
 	pthread_mutex_unlock(&globalLock);
 	return -1;
+}
+
+static void _done(void) __attribute__((destructor));
+
+static void _done(void)
+{
+	cblk_close(0, 0);
 }
