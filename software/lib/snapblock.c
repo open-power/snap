@@ -243,6 +243,8 @@ chunk_id_t cblk_open(const char *path,
 int cblk_close(chunk_id_t id __attribute__((unused)),
 	       int flags __attribute__((unused)))
 {
+	block_trace("%s: id=%d ...\n", __func__, (int)id);
+
 	pthread_mutex_lock(&globalLock);
 	if (chunk.card == NULL) {
 		fprintf(stderr, "err: SNAP device already closed\n");
@@ -268,10 +270,10 @@ int cblk_get_lun_size(chunk_id_t id __attribute__((unused)),
 		      size_t *size __attribute__((unused)),
 		      int flags __attribute__((unused)))
 {
-	pthread_mutex_lock(&globalLock);
+	block_trace("%s: lun_size=%zu block of %d bytes ...\n",
+		__func__, chunk.nblocks, __CBLK_BLOCK_SIZE);
 	if (size)
 		*size = chunk.nblocks;
-	pthread_mutex_unlock(&globalLock);
 	return 0;
 }
 
