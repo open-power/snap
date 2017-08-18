@@ -401,5 +401,6 @@ static void _done(void) __attribute__((destructor));
 
 static void _done(void)
 {
+	block_trace("%s: exit\n", __func__);
 	cblk_close(0, 0);
 }
