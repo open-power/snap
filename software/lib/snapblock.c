@@ -31,13 +31,17 @@
 #include "capiblock.h"
 
 /*
- * FIXME The following stuff most likely neesd to go in a header file which can be accessed
- * outside this code, or the functionalty in this file needs to be provided in a usable
- * fashion outside this code.
+ * FIXME The following stuff most likely neesd to go in a header file 
+ * which can be accessed outside this code, or the functionalty in this
+ * file needs to be provided in a usable fashion outside this code.
  *
- * We need to use the HDL example here, since that is the only one at this point in time
- * which can trigger NVMe memory moves as well as transfers of DRAM from/to host and card
- * DRAM.
+ * We need to use the HDL example here, since that is the only one at
+ * this point in time which can trigger NVMe memory moves as well as
+ * transfers of DRAM from/to host and card DRAM.
+ * 
+ * Fix the lun_size since we fake here the device to be 1 GiB.
+ * Having multiple NVMe requests in flight will hopefully help to
+ * improve the performance.
  */
 
 #define SNAP_FLASHGT_NVME_SIZE (1ull * 1024 * 1024 * 1024) /* FIXME n TiB */
@@ -301,9 +305,11 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
 	uint8_t *_buf = buf;
 
-	block_trace("%s: reading (%p lba=%zu nblocks=%zu) ...\n", __func__, buf, lba, nblocks);
+	block_trace("%s: reading (%p lba=%zu nblocks=%zu) ...\n",
+		__func__, buf, lba, nblocks);
 	if ((uint64_t)buf % 64) {
-		fprintf(stderr, "warn: buffer address not aligned! %p", buf);
+		fprintf(stderr, "warn: buffer address not aligned! %p\n",
+			buf);
 		if (nblocks > 2) {
 			fprintf(stderr, "warn: temp buffer too small!\n");
 			errno = EFAULT;
@@ -335,6 +341,7 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 		memcpy(buf, _buf, nblocks * __CBLK_BLOCK_SIZE);
 
 	pthread_mutex_unlock(&globalLock);
+	block_trace("%s: exit lba=%zu nblocks=%zu\n", __func__, lba, nblocks);
 	return nblocks;
 
  __exit1:
@@ -353,7 +360,8 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 
 	block_trace("%s: writing (%p lba=%zu nblocks=%zu) ...\n", __func__, buf, lba, nblocks);
 	if ((uint64_t)buf % 64) {
-		fprintf(stderr, "warn: buffer address not aligned! %p", buf);
+		fprintf(stderr, "warn: buffer address not aligned! %p\n",
+			buf);
 		if (nblocks > 2) {
 			fprintf(stderr, "warn: temp buffer too small!\n");
 			errno = EFAULT;
@@ -382,6 +390,7 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 		goto __exit1;
 
 	pthread_mutex_unlock(&globalLock);
+	block_trace("%s: exit lba=%zu nblocks=%zu\n", __func__, lba, nblocks);
 	return nblocks;
 
  __exit1:
