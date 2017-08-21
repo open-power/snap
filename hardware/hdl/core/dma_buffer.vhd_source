@@ -27,6 +27,7 @@ USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
 
 USE work.snap_core_types.all;
+USE work.dma_types.all;
 
 ENTITY dma_buffer IS
   PORT (
@@ -39,23 +40,25 @@ ENTITY dma_buffer IS
     ha_b_i                   : IN  HA_B_T;
     ah_b_o                   : OUT AH_B_T;
     --
-    -- DMA control
-    buf_rrdreq_i             : IN  std_logic;
-    buf_wdata_i              : IN  std_logic_vector(511 DOWNTO 0);
-    buf_wdata_v_i            : IN  std_logic;
-    buf_wdata_be_i           : IN  std_logic_vector( 63 DOWNTO 0);
-    read_ctrl_buf_full_i     : IN  std_logic_vector(31 DOWNTO 0);
-    --
-    buf_rdata_o              : OUT std_logic_vector(511 DOWNTO 0);
-    buf_rdata_p_o            : OUT std_logic_vector(  7 DOWNTO 0);
-    buf_rdata_vld_o          : OUT std_logic;
-    buf_rtag_o               : OUT std_logic_vector(5 DOWNTO 0);
-    buf_rtag_p_o             : OUT std_logic;
-    buf_rtag_valid_o         : OUT boolean;
+    -- DMA WRITE IOs
+    write_ctrl_i             : IN  ARR_DMA_CTL_T;
+    sd_d_i                   : IN  SD_D_T;
     buf_wtag_o               : OUT std_logic_vector(5 DOWNTO 0);
     buf_wtag_p_o             : OUT std_logic;
     buf_wtag_cl_partial_o    : OUT boolean;
     buf_wtag_valid_o         : OUT boolean;
+    --
+    --
+    -- DMA READ IOs
+    read_ctrl_i              : IN  ARR_DMA_CTL_T;
+    buf_rrdreq_i             : IN  std_logic;
+    buf_rdata_o              : OUT std_logic_vector(511 DOWNTO 0);
+    buf_rdata_p_o            : OUT std_logic_vector(  7 DOWNTO 0);
+    buf_rdata_vld_o          : OUT std_logic;
+    buf_rdata_end_o          : OUT std_logic;
+    buf_rtag_o               : OUT std_logic_vector(5 DOWNTO 0);
+    buf_rtag_p_o             : OUT std_logic;
+    buf_rtag_valid_o         : OUT boolean;
     --
     -- Error Inject
     inject_dma_read_error_i  : IN  std_logic;
@@ -78,17 +81,23 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   -- TYPE
   TYPE ARR_RLCK_DATA_T   IS ARRAY (0 TO 1) OF std_logic_vector(511 DOWNTO 0);
   TYPE ARR_RLCK_DATA_P_T IS ARRAY (0 TO 1) OF std_logic_vector(  7 DOWNTO 0);
+
   --
   -- ATTRIBUTE
 
   --
   -- SIGNAL
-  SIGNAL buf_rrdreq                       : std_logic;
   SIGNAL buf_rtag                         : integer RANGE 0 TO 31;
+  SIGNAL buf_wtag                         : integer RANGE 0 TO 31;
   SIGNAL buf_rtag_q                       : std_logic_vector(  5 DOWNTO 0);
+  SIGNAL buf_wdata_extra_v                : std_logic;
   SIGNAL buf_rtag_qq                      : std_logic_vector(  5 DOWNTO 0);
   SIGNAL buf_rtag_qqq                     : std_logic_vector(  5 DOWNTO 0);
   SIGNAL buf_rtag_p_q                     : std_logic;
+  SIGNAL buf_rdata_vld                    : std_logic;
+  SIGNAL rram_ren                         : std_logic;
+  SIGNAL rram_rdata_v                     : std_logic;
+  SIGNAL rram_rdata_e                     : std_logic;
   SIGNAL buf_rtag_p_qq                    : std_logic;
   SIGNAL buf_rtag_p_qqq                   : std_logic;
   SIGNAL buf_rtag_valid_q                 : boolean;
@@ -113,9 +122,12 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL rram_rdata_vld_q                 : std_logic;
   SIGNAL rram_rdata_vld_qq                : std_logic;
   SIGNAL rram_rdata_vld_qqq               : std_logic;
+  SIGNAL rram_rdata_end_d                 : std_logic;
+  SIGNAL rram_rdata_end_q                 : std_logic;
+  SIGNAL rram_rdata_end_qq                : std_logic;
+  SIGNAL rram_rdata_end_qqq               : std_logic;
   SIGNAL rram_rdata_p_q                   : std_logic_vector( 7 DOWNTO 0);
   SIGNAL rram_rdata_q                     : std_logic_vector(511 DOWNTO 0);
-  SIGNAL rram_ren_q                       : std_logic_vector(  1 DOWNTO 0);
   SIGNAL rram_waddr                       : std_logic_vector(  5 DOWNTO 0);
   SIGNAL rram_wdata                       : std_logic_vector(519 DOWNTO 0);
   SIGNAL rram_wdata_p_q                   : std_logic_vector(  7 DOWNTO 0);
@@ -202,13 +214,22 @@ BEGIN
     -- Note: Only a full CL will be transfered to job_manager or data_bridge.
     --       Throttling in between a CL transfer is not possible.
     ----------------------------------------------------------------------------
-    buf_rtag              <= to_integer(unsigned(rram_raddr_q(5 DOWNTO 1)));
-    rram_waddr            <= ha_b_q.wtag(4 DOWNTO 0) & (ha_b_q.wad(0) xor flip_wbit_q);
-    rram_raddr            <= rram_raddr_q(5 DOWNTO 0);
+    buf_rtag      <= to_integer(unsigned(rram_raddr_q(5 DOWNTO 1)));
 
-    rram_raddr_d     <=               rram_raddr_q       +          "0000001"        WHEN buf_rrdreq_i = '1' AND (read_ctrl_buf_full_i(buf_rtag) = '1') else rram_raddr_q;
-    rram_raddr_p_d   <= AC_PPARITH(1, rram_raddr_q, rram_raddr_p_q, "0000001", '0')  WHEN buf_rrdreq_i = '1' AND (read_ctrl_buf_full_i(buf_rtag) = '1') else rram_raddr_p_q;
-    rram_rdata_vld_d <=                                                          '1' WHEN buf_rrdreq_i = '1' AND (read_ctrl_buf_full_i(buf_rtag) = '1') else '0';
+    rram_ren      <= '1' WHEN (buf_rrdreq_i     = '1' AND (read_ctrl_i(buf_rtag).buf   = FULL))  ELSE '0';
+    rram_rdata_v  <= '1' WHEN ((rram_raddr_q(0) = '0' AND (read_ctrl_i(buf_rtag).clt(EVEN_64B_CL) = '1')) OR 
+                               (rram_raddr_q(0) = '1' AND (read_ctrl_i(buf_rtag).clt(ODD_64B_CL)  = '1'))) ELSE '0';
+    rram_rdata_e  <= '1' WHEN ((rram_raddr_q(0) = '0' AND (read_ctrl_i(buf_rtag).clt(ODD_64B_CL) = '0')) OR 
+                               (rram_raddr_q(0) = '1' AND (read_ctrl_i(buf_rtag).clt(ODD_64B_CL) = '1'))) AND read_ctrl_i(buf_rtag).clt(LAST_CL) = '1' ELSE '0';
+
+                                                                                                         
+    rram_waddr <= ha_b_q.wtag(4 DOWNTO 0) & (ha_b_q.wad(0) xor flip_wbit_q);
+    rram_raddr <= rram_raddr_q(5 DOWNTO 0);
+
+    rram_raddr_d     <=               rram_raddr_q       +          "0000001"        WHEN (rram_ren = '1'                       ) ELSE rram_raddr_q;
+    rram_raddr_p_d   <= AC_PPARITH(1, rram_raddr_q, rram_raddr_p_q, "0000001", '0')  WHEN (rram_ren = '1'                       ) ELSE rram_raddr_p_q;
+    rram_rdata_vld_d <=                                                          '1' WHEN (rram_ren = '1' AND rram_rdata_v = '1') ELSE '0';
+    rram_rdata_end_d <=                                                          '1' WHEN (rram_ren = '1' AND rram_rdata_e = '1') ELSE '0';
 
     -- rram_wen only reacts on read tags
     rram_wen                   <= ha_b_q.wvalid when (ha_b_q.wtag(7 DOWNTO 5) = "000") else '0';
@@ -321,16 +342,21 @@ BEGIN
     ----------------------------------------------------------------------------
     -- none clk process
     ----------------------------------------------------------------------------
-    wram_waddr_d               <=               wram_waddr_q       +          "0000001"       when buf_wdata_v_i = '1' else wram_waddr_q;
-    wram_waddr_p_d             <= AC_PPARITH(1, wram_waddr_q, wram_waddr_p_q, "0000001", '0') when buf_wdata_v_i = '1' else wram_waddr_p_q;
+    wram_waddr_d               <=               wram_waddr_q       +          "0000001"       when wram_wen = '1' else wram_waddr_q;
+    wram_waddr_p_d             <= AC_PPARITH(1, wram_waddr_q, wram_waddr_p_q, "0000001", '0') when wram_wen = '1' else wram_waddr_p_q;
     wram_waddr                 <= wram_waddr_q(5 DOWNTO 0);
-    wram_wdata(             0) <= buf_wdata_i(0) XOR inject_dma_write_error_i;
-    wram_wdata(511 DOWNTO   1) <= buf_wdata_i(511 DOWNTO 1);
-    wram_wdata(575 DOWNTO 512) <= buf_wdata_be_i;
+    wram_wdata(             0) <= sd_d_i.wr_data(0) XOR inject_dma_write_error_i;
+    wram_wdata(511 DOWNTO   1) <= sd_d_i.wr_data(511 DOWNTO 1);
+    wram_wdata(575 DOWNTO 512) <= sd_d_i.wr_strobe WHEN buf_wdata_extra_v = '0' ELSE (OTHERS => '0');
     wram_raddr                 <= ha_b_q.rtag(4 DOWNTO 0) & (ha_b_q.rad(0) xor flip_rbit_q);
-    wram_wen                   <= buf_wdata_v_i;
+    wram_wen                   <= or_reduce(sd_d_i.wr_strobe & buf_wdata_extra_v);
 
-
+    buf_wtag                   <= to_integer(unsigned(wram_waddr_q(5 DOWNTO 1)));
+    buf_wdata_extra_v          <= '1' WHEN (wram_waddr_q(0) = '0' AND write_ctrl_i(buf_wtag).clt(EVEN_64B_CL) = '0'
+                                                                  AND write_ctrl_i(buf_wtag).clt(ODD_64B_CL)  = '1') OR
+                                           (wram_waddr_q(0) = '1' AND write_ctrl_i(buf_wtag).clt(EVEN_64B_CL) = '1' 
+                                                                  AND write_ctrl_i(buf_wtag).clt(ODD_64B_CL)  = '0') ELSE '0';
+ 
     ----------------------------------------------------------------------------
     -- clk process
     ----------------------------------------------------------------------------
@@ -372,12 +398,12 @@ BEGIN
 
           --
           -- wdata
-          IF buf_wdata_v_i = '1' THEN
+          IF wram_wen = '1' THEN
             --
             -- check that the first 64 bytes of a CL are written into the buffer
             --
             IF (wram_waddr_q(0) = '0') THEN
-              IF (and_reduce(buf_wdata_be_i) = '1') THEN
+              IF (and_reduce(sd_d_i.wr_strobe) = '1') THEN
                 even_wdata_complete_q <= TRUE;
               ELSE
                 even_wdata_complete_q <= FALSE;
@@ -388,7 +414,7 @@ BEGIN
             -- check that the second 64 bytes of a CL are written into the buffer
             --
             IF (wram_waddr_q(0) = '1') THEN
-              IF (and_reduce(buf_wdata_be_i) = '1') THEN
+              IF (and_reduce(sd_d_i.wr_strobe) = '1') THEN
                 odd_wdata_complete_v := TRUE;
               ELSE
                 odd_wdata_complete_v := FALSE;
@@ -542,9 +568,10 @@ BEGIN
     buf_wtag_cl_partial_o <= buf_wtag_cl_partial_q;
 
 
-    buf_rdata_vld_o  <= rram_rdata_vld_qqq;
     buf_rdata_o      <= rram_rdata_q;
     buf_rdata_p_o    <= rram_rdata_p_q;
+    buf_rdata_vld_o  <= rram_rdata_vld_qqq;
+    buf_rdata_end_o  <= rram_rdata_end_qqq;
 
 
     --
@@ -573,6 +600,9 @@ BEGIN
           rram_rdata_vld_q    <= '0';
           rram_rdata_vld_qq   <= '0';
           rram_rdata_vld_qqq  <= '0';
+          rram_rdata_end_q    <= '0';
+          rram_rdata_end_qq   <= '0';
+          rram_rdata_end_qqq  <= '0';
           flip_rbit_valid_q   <= '0';             -- only for FPGACARD=FGT
           flip_rbit_valid_q   <= '1';             -- only for FPGACARD=KU3
           flip_rbit_q         <= '0';
@@ -599,6 +629,9 @@ BEGIN
           rram_rdata_vld_q    <= rram_rdata_vld_d;
           rram_rdata_vld_qq   <= rram_rdata_vld_q;
           rram_rdata_vld_qqq  <= rram_rdata_vld_qq;
+          rram_rdata_end_q    <= rram_rdata_end_d;
+          rram_rdata_end_qq   <= rram_rdata_end_q;
+          rram_rdata_end_qqq  <= rram_rdata_end_qq;
         END IF;
       END IF;
     END PROCESS registers;

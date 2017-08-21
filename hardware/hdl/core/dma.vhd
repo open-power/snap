@@ -51,7 +51,9 @@ USE ieee.numeric_std.all;
 
 USE work.psl_accel_types.ALL;
 USE work.snap_core_types.all;
+USE work.dma_types.all;
 
+      
 ENTITY dma IS
   PORT (
     --
@@ -83,19 +85,16 @@ ARCHITECTURE dma OF dma IS
   --
   -- CONSTANT
   CONSTANT INTSRC     : std_logic_vector(11 DOWNTO 0) := x"001";
+  CONSTANT VALUE_64   : std_logic_vector(63 DOWNTO 6) := x"0000_0000_0000_00" & "01";
   CONSTANT VALUE_128  : std_logic_vector(63 DOWNTO 7) := x"0000_0000_0000_00" & '1';
   CONSTANT VALUE_128_P: std_logic                     := '0';
 
   --
   -- TYPE
-  TYPE COM_INDICATION_T IS (ACTIVE, INACTIVE);
-  TYPE BUF_INDICATION_T IS (EMPTY, FULL);
-  TYPE CLT_INDICATION_T IS (NOT_USED, IN_USE, PARTIAL_DATA, COMPLETE_DATA);
   TYPE GATE_INDICATION_T IS (OPENED, CLOSED);
-  TYPE FSM_REQ_T IS (NONE, RESTART, COMMAND);
+  TYPE FSM_REQ_T         IS (NONE, RESTART, COMMAND);
 
   TYPE READ_CTRL_FSM_T IS (ST_FSM_ERROR, ST_RSP_ERROR, ST_IDLE,
-                           ST_SETUP_READ_CTRL_REG, ST_SEND_RD_REQ_ACK,
                            ST_RESTART, ST_READ_RSP,
                            ST_WAIT_4_CTRL_UPDTAE, ST_WAIT_4_RSP_OR_BUF,
                            ST_COM_TOUCH_I, ST_COM_READ_CL_NA
@@ -112,19 +111,11 @@ ARCHITECTURE dma OF dma IS
                       ST_READ_FSM_ACTIVE, ST_WRITE_FSM_ACTIVE
                      );
 
-  TYPE DMA_CTL_T IS RECORD
-    com        : COM_INDICATION_T;  -- command indication
-    rsp        : RSP_CODES_T;       -- response indication
-    buf        : BUF_INDICATION_T;  -- buffer indication
-    clt        : CLT_INDICATION_T;  -- cache line type indication
-  END RECORD DMA_CTL_T;
-  TYPE ARR_DMA_CTL_T IS ARRAY (0 TO 31) OF DMA_CTL_T;
-
   TYPE AH_RWC_T IS RECORD
     valid       : std_logic;                           -- Command valid
     tag         : std_logic_vector(7  DOWNTO 0);       -- Command tag
     tagpar      : std_logic;                           -- Command tag parity
-    com         : CMD_CODES_T;                          -- Command code
+    com         : CMD_CODES_T;                         -- Command code
     compar      : std_logic;                           -- Command code parity
     abt         : std_logic_vector(2 DOWNTO 0);        -- Command ABT
     ea          : std_logic_vector(63 DOWNTO 7);       -- Command address
@@ -154,20 +145,11 @@ ARCHITECTURE dma OF dma IS
   SIGNAL ah_c_wgate_q                : GATE_INDICATION_T;
   SIGNAL ah_rc_q                     : AH_RWC_T;
   SIGNAL ah_wc_q                     : AH_RWC_T;
-  SIGNAL aln_db_wb_rdreq             : std_logic;
-  SIGNAL aln_rdata                   : std_logic_vector(511 DOWNTO  0);
-  SIGNAL aln_rdata_e                 : std_logic;
-  SIGNAL aln_rdata_p                 : std_logic_vector(  7 DOWNTO  0);
-  SIGNAL aln_rdata_v                 : std_logic;
-  SIGNAL aln_wbusy                   : std_logic;
-  SIGNAL aln_wdata                   : std_logic_vector(511 DOWNTO  0);
-  SIGNAL aln_wdata_be                : std_logic_vector( 63 DOWNTO  0);
-  SIGNAL aln_wdata_v                 : std_logic;
-  SIGNAL aln_wfsm_idle               : std_logic;
   SIGNAL buf_rdata                   : std_logic_vector(511 DOWNTO  0);
   SIGNAL buf_rdata_e_q               : std_logic;
   SIGNAL buf_rdata_p                 : std_logic_vector(  7 DOWNTO  0);
   SIGNAL buf_rdata_vld               : std_logic;
+  SIGNAL buf_rdata_end               : std_logic;
   SIGNAL buf_rrdreq                  : std_logic;
   SIGNAL buf_rtag_p_q                : std_logic;
   SIGNAL buf_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
@@ -197,7 +179,6 @@ ARCHITECTURE dma OF dma IS
   SIGNAL com_wtag_valid_q            : boolean;
   SIGNAL context_handle_q            : std_logic_vector(15 DOWNTO 0);
   SIGNAL dmm_e_q                     : DMM_E_T := (OTHERS => '0');
-  SIGNAL force_rfifo_empty_q         : std_logic;
   SIGNAL ha_c_q                      : HA_C_T;
   SIGNAL ha_r_q                      : HA_R_T;
   SIGNAL intreq_active_q             : boolean;
@@ -207,12 +188,8 @@ ARCHITECTURE dma OF dma IS
   SIGNAL mmd_a_q                     : MMD_A_T;
   SIGNAL mmd_i_q                     : MMD_I_T;
   SIGNAL raddr_id_q                  : std_logic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
-  SIGNAL raddr_offset_p_q            : std_logic;
-  SIGNAL raddr_offset_q              : std_logic_vector( 12 DOWNTO  7);
-  SIGNAL raddr_p_q                   : std_logic;
-  SIGNAL raddr_q                     : std_logic_vector( 63 DOWNTO  7);
-  SIGNAL rclen_q                     : std_logic_vector(  5 DOWNTO  0);
-  SIGNAL read_ctrl_buf_full_q        : std_logic_vector( 31 DOWNTO  0);
+  SIGNAL raddr_q                     : std_logic_vector( 63 DOWNTO  6);
+  SIGNAL rlen_q                      : std_logic_vector(  8 DOWNTO  0);
   SIGNAL read_ctrl_fsm_q             : READ_CTRL_FSM_T;
   SIGNAL read_ctrl_q                 : ARR_DMA_CTL_T;
   SIGNAL read_ctrl_q_err_q           : std_logic_vector( 31 DOWNTO  0);
@@ -221,17 +198,17 @@ ARCHITECTURE dma OF dma IS
   SIGNAL read_rsp_err_addr_p_q       : std_logic;
   SIGNAL read_rsp_err_addr_q         : std_logic_vector(63 DOWNTO 0);
   SIGNAL read_rsp_err_first_q        : boolean;
+  SIGNAL rd_req_ack_q                : boolean;
+  SIGNAL wr_req_ack_q                : boolean;
   SIGNAL read_rsp_err_type_q         : RSP_CODES_T;
   SIGNAL read_rsp_err_valid_q        : boolean;
   SIGNAL restart_active_q            : boolean;
   SIGNAL rfifo_empty                 : std_logic;
-  SIGNAL rfifo_empty_tmp             : std_logic;
   SIGNAL rfifo_full                  : std_logic;
   SIGNAL rfifo_prog_full             : std_logic;
   SIGNAL rfifo_rd_rst_busy           : std_logic;
   SIGNAL rfifo_rdata                 : std_logic_vector(512 DOWNTO 0);
   SIGNAL rfifo_wdata                 : std_logic_vector(512 DOWNTO 0);
-  SIGNAL rfifo_wr_in_process_q       : std_logic_vector(1 DOWNTO 0);
   SIGNAL rfifo_wr_rst_busy           : std_logic;
   SIGNAL rsp_rtag_next_q             : std_logic_vector(  5 DOWNTO  0);
   SIGNAL rsp_rtag_p_q                : std_logic;
@@ -247,11 +224,8 @@ ARCHITECTURE dma OF dma IS
   SIGNAL rd_ctx_q                    : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
   SIGNAL wr_ctx_q                    : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
   SIGNAL waddr_id_q                  : std_logic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
-  SIGNAL waddr_offset_p_q            : std_logic;
-  SIGNAL waddr_offset_q              : std_logic_vector( 12 DOWNTO  7);
-  SIGNAL waddr_p_q                   : std_logic;
-  SIGNAL waddr_q                     : std_logic_vector( 63 DOWNTO  7);
-  SIGNAL wclen_q                     : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL waddr_q                     : std_logic_vector( 63 DOWNTO  6);
+  SIGNAL wlen_q                      : std_logic_vector(  8 DOWNTO  0);
   SIGNAL wr_id_valid_q               : std_logic;
   SIGNAL write_ctrl_fsm_q            : WRITE_CTRL_FSM_T;
   SIGNAL write_ctrl_q                : ARR_DMA_CTL_T;
@@ -299,7 +273,7 @@ BEGIN
     --
     read_ctrl_fsm : PROCESS (ha_pclock)
       VARIABLE com_active_v     : boolean;
-      VARIABLE buf_active_v     : boolean;
+      VARIABLE clt_in_use_v     : boolean;
       VARIABLE com_rtag_v       : integer RANGE 0 TO 31;
       VARIABLE com_rtag_next_v  : integer RANGE 0 TO 31;
       VARIABLE rsp_rtag_v       : integer RANGE 0 TO 31;
@@ -322,10 +296,6 @@ BEGIN
           com_rtag_next_q       <= "000001";
           com_rtag_p_q          <= '1';
           com_rtag_valid_q      <= FALSE;
-          raddr_offset_q        <= (OTHERS => '0');
-          raddr_offset_p_q      <= '1';
-          raddr_q               <= (OTHERS => '0');
-          raddr_p_q             <= '1';
           context_handle_q      <= (OTHERS => '0');
           read_rsp_err_first_q  <= FALSE;
           read_rsp_err_valid_q  <= FALSE;
@@ -333,7 +303,7 @@ BEGIN
           read_rsp_err_addr_q   <= (OTHERS => '0');
           read_rsp_err_addr_p_q <= '1';
           read_ctrl_fsm_q       <= ST_IDLE;
-          read_ctrl_rsp_rtag_q  <= (INACTIVE, ILLEGAL_RSP, EMPTY, NOT_USED);
+          read_ctrl_rsp_rtag_q  <= (INACTIVE, ILLEGAL_RSP, EMPTY, CL_NOT_USED, (OTHERS => '0'));
           read_fsm_req_q        <= NONE;
           rsp_rtag_q            <= (OTHERS => '0');
           rsp_rtag_next_q       <= "000001";
@@ -363,11 +333,6 @@ BEGIN
           com_rtag_next_q       <= com_rtag_next_q;
           com_rtag_p_q          <= com_rtag_p_q;
           com_rtag_valid_q      <= FALSE;
-          raddr_offset_q        <= raddr_offset_q;
-          raddr_offset_p_q      <= raddr_offset_p_q;
-          raddr_q               <= raddr_q;
-          raddr_p_q             <= raddr_p_q;
-          raddr_id_q            <= raddr_id_q;
           context_handle_q      <= context_handle_q;
           read_rsp_err_valid_q  <= read_rsp_err_valid_q;
           read_rsp_err_first_q  <= read_rsp_err_first_q;
@@ -393,38 +358,22 @@ BEGIN
             --
             WHEN ST_IDLE =>
               --
-              -- NEW SLAVE Request, save data read address
+              -- FSM starts if one CL in use
               --
-              IF sd_c_q.rd_req = '1' THEN
-                raddr_q         <= sd_c_q.rd_addr(63 DOWNTO 7);
-                raddr_p_q       <= parity_gen_odd(sd_c_q.rd_addr(63 DOWNTO 7));
-                raddr_id_q      <= sd_c_q.rd_id;
-                read_ctrl_fsm_q <= ST_SETUP_READ_CTRL_REG;
+              --
+              -- check all CLs
+              clt_in_use_v := FALSE;
+
+              FOR i IN 0 TO 31 LOOP
+                IF read_ctrl_q(i).clt /= CL_NOT_USED THEN
+                  clt_in_use_v := TRUE;
+                END IF;
+              END LOOP;  -- i
+
+              IF clt_in_use_v = TRUE THEN
+                read_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
               END IF;
 
-              --
-              -- set raddr_offset to zero
-              raddr_offset_q   <= (OTHERS => '0');
-              raddr_offset_p_q <= '1';
-              
-            --
-            -- STATE SETUP READ CONTROL REGISTER
-            --
-            WHEN ST_SETUP_READ_CTRL_REG =>
-              --
-              -- wait until a CL is active
-              IF (com_rtag_q /= clt_rtag_q) THEN
-                read_ctrl_fsm_q <= ST_SEND_RD_REQ_ACK;
-              END IF;
-              
-            --
-            -- STATE SEND READ REQUEST ACKNOWLEDGE
-            --
-            WHEN ST_SEND_RD_REQ_ACK =>
-              --
-              -- send read request acknowledge back to the slave
-              read_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
-              
             --
             -- STATE RESTART
             --
@@ -432,8 +381,6 @@ BEGIN
               com_rtag_q       <= rsp_rtag_q;
               com_rtag_next_q  <= rsp_rtag_next_q;
               com_rtag_p_q     <= rsp_rtag_p_q;
-              raddr_offset_q   <= (OTHERS => '0');
-              raddr_offset_p_q <= '1';
 
               --
               -- check all commands done
@@ -473,7 +420,7 @@ BEGIN
               END IF;
 
               --
-              -- load to the next write_ctrl_q slice
+              -- load to the next read_ctrl_q slice
               --
               read_ctrl_rsp_rtag_q <= read_ctrl_q(rsp_rtag_next_v);
 
@@ -487,16 +434,6 @@ BEGIN
                 rsp_rtag_p_q        <= AC_PPARITH(1, rsp_rtag_q, rsp_rtag_p_q,
                                                        "000001"  , '0');
 
-                IF ((read_ctrl_rsp_rtag_q.clt = COMPLETE_DATA) OR
-                    (read_ctrl_rsp_rtag_q.clt = PARTIAL_DATA )) THEN
-                  raddr_q        <= raddr_q + VALUE_128;
-                  raddr_p_q      <= AC_PPARITH(1, raddr_q  , raddr_p_q,
-                                                  VALUE_128, VALUE_128_P);
-
-                  raddr_offset_q   <= raddr_offset_q - 1;
-                  raddr_offset_p_q <= AC_PPARITH(-1, raddr_offset_q, raddr_offset_p_q,
-                                                     "000001"      , '0');
-                END IF;
               ELSIF (read_ctrl_rsp_rtag_q.rsp = AERROR) OR
                     (read_ctrl_rsp_rtag_q.rsp = DERROR) OR
                     (read_ctrl_rsp_rtag_q.rsp = FAILED) OR
@@ -547,24 +484,17 @@ BEGIN
 
               --
               -- check all CL transferred
-              buf_active_v := FALSE;
+              clt_in_use_v := FALSE;
 
               FOR i IN 0 TO 31 LOOP
-                IF read_ctrl_q(i).clt /= NOT_USED THEN
-                  buf_active_v := TRUE;
+                IF read_ctrl_q(i).clt /= CL_NOT_USED THEN
+                  clt_in_use_v := TRUE;
                 END IF;
               END LOOP;  -- i
 
-              IF buf_active_v = FALSE THEN
+              IF clt_in_use_v = FALSE THEN
                 read_fsm_req_q <= NONE;
-
-                --
-                -- 
-                -- 
-                IF (rfifo_empty           = '1') AND
-                   (rfifo_wr_in_process_q = "00") THEN
-                  read_ctrl_fsm_q <= ST_IDLE;
-                END IF;
+                read_ctrl_fsm_q <= ST_IDLE;
               END IF;
 
             --------------------------------------------------------------------
@@ -595,13 +525,9 @@ BEGIN
                 read_fsm_req_q  <= NONE;
               END IF;
 
-              ah_rc_q.ea          <= (raddr_q(63 DOWNTO 7) + (x"0000_0000_0000_0" & raddr_offset_q(11 DOWNTO 7)));
-              ah_rc_q.eapar       <= AC_PPARITH(1, raddr_q(63 DOWNTO 7)                             , raddr_p_q,
-                                                   x"0000_0000_0000_0" & raddr_offset_q(11 DOWNTO 7), raddr_offset_p_q);
+              ah_rc_q.ea          <= read_ctrl_q(com_rtag_v).cla;
+              ah_rc_q.eapar       <= parity_gen_odd(read_ctrl_q(com_rtag_v).cla(63 DOWNTO 7));
 
-              raddr_offset_q   <= raddr_offset_q + 1;
-              raddr_offset_p_q <= AC_PPARITH(1, raddr_offset_q, raddr_offset_p_q,
-                                                "000001"      , '0');
               com_rtag_valid_q   <= TRUE;
               com_rtag_q         <= com_rtag_q      + 1;
               com_rtag_next_q    <= com_rtag_next_q + 1;
@@ -636,8 +562,8 @@ BEGIN
               --
               -- collect all information
               read_rsp_err_type_q  <= read_ctrl_rsp_rtag_q.rsp;
-              read_rsp_err_addr_q   <= raddr_q(63 DOWNTO 7) & "0000000";
-              read_rsp_err_addr_p_q <= raddr_p_q;
+              read_rsp_err_addr_q   <= (OTHERS => '0'); -- raddr_q(63 DOWNTO 7) & "0000000";
+              read_rsp_err_addr_p_q <= '0';             -- raddr_p_q;
 
               --
               -- how is first check
@@ -678,15 +604,16 @@ BEGIN
   ------------------------------------------------------------------------------
   -- READ CONTROL REGISTER
   --
-  -- Content: 32x(com 1    -- command valid bit
-  --              rsp 4    -- response codes
-  --              buf 1    -- buffer valid bit
-  --              clt 2    -- cache line type
+  -- Content: 32x(com   1    -- command valid bit
+  --              rsp   4    -- response codes
+  --              buf   1    -- buffer valid bit
+  --              clt   3    -- cache line type
+  --              cla   57   -- cache line address
   --
   -- Indication:
   --                               |    COM   |     RSP     |  buf  | CLT
-  --  =========================================================================
-  --  1)tag is free and the        | INACTIVE | ILLEGAL_RSP | EMPTY | NOT_USED
+  --  ===========================================================================
+  --  1)tag is free and the        | INACTIVE | ILLEGAL_RSP | EMPTY | CL_NOT_USED
   --    buffer is empty            |          |             |       |
   --  2)request a complete CL      | INACTIVE | ILLEGAL_RSP | EMPTY | COMPLETE
   --                               |          |             |       |
@@ -701,8 +628,8 @@ BEGIN
   -- Flow Control:
   --    steps                  | read_ctrl_q          |  H<->A Interface
   --  ==========================================================================
-  --    1) rclen > 1 CL AND    | clt=COMPLETE         |
-  --       clt  = NOT_USED     |                      |
+  --    1) rlen > 1 CL AND     | clt=COMPLETE         |
+  --       clt  = CL_NOT_USED  |                      |
   --                           |                      |
   --    2)                     | com=ACTIVE           |  READ COMMAND VALID
   --                           | rsp=ILLEGAL_RSP      |
@@ -720,7 +647,6 @@ BEGIN
     --
     read_ctrl_reg : PROCESS (ha_pclock)
       VARIABLE buf_rtag_v      : integer RANGE 0 TO 31;
-      VARIABLE buf_active_v    : boolean;
       VARIABLE clt_rtag_v      : integer RANGE 0 TO 31;
       VARIABLE clt_rtag_next_v : integer RANGE 0 TO 31;
       VARIABLE cl_calc_v       : std_logic_vector(5 DOWNTO 0);
@@ -732,7 +658,7 @@ BEGIN
           -- initial values
           --
           FOR i IN 0 TO 31 LOOP
-            read_ctrl_q(i) <= (INACTIVE, ILLEGAL_RSP, EMPTY, NOT_USED);
+            read_ctrl_q(i) <= (INACTIVE, ILLEGAL_RSP, EMPTY, CL_NOT_USED, (OTHERS => '0'));
           END LOOP;  -- i
 
           buf_rdata_e_q      <= '0';
@@ -740,8 +666,10 @@ BEGIN
           clt_rtag_next_q    <= "000001";
           clt_rtag_p_q       <= '1';
           com_rtag_qq        <= 0;
-          rclen_q            <= (OTHERS => '0');
           rsp_rtag_qq        <= 0;
+
+          raddr_q            <= (OTHERS => '0');
+          rlen_q             <= (OTHERS => '0');
 
         ELSE
           --
@@ -753,8 +681,13 @@ BEGIN
           clt_rtag_p_q       <= clt_rtag_p_q;
           com_rtag_qq        <= to_integer(unsigned(com_rtag_q(4 DOWNTO 0)));
           rsp_rtag_qq        <= to_integer(unsigned(rsp_rtag_q(4 DOWNTO 0)));
-          rclen_q            <= rclen_q;
+
+          raddr_q            <= raddr_q;
+          raddr_id_q         <= raddr_id_q;
+          rlen_q             <= rlen_q;
           read_ctrl_q        <= read_ctrl_q;
+          rd_req_ack_q       <= FALSE;
+          rd_ctx_q           <= rd_ctx_q;
 
           buf_rtag_v         := to_integer(unsigned(buf_rtag_q     (4 DOWNTO 0)));
           clt_rtag_v         := to_integer(unsigned(clt_rtag_q     (4 DOWNTO 0)));
@@ -764,40 +697,103 @@ BEGIN
           --
           -- CLT: CACHE LINE TYPE TAG IS VALID
           --
-          IF (read_ctrl_q(clt_rtag_v).clt  = NOT_USED) AND
-             (rclen_q                     /= 0       ) THEN
-            read_ctrl_q(clt_rtag_v).clt <= COMPLETE_DATA;
-            clt_rtag_q                  <= clt_rtag_q      + 1;
-            clt_rtag_next_q             <= clt_rtag_next_q + 1;
-            clt_rtag_p_q                <= AC_PPARITH(1, clt_rtag_q, clt_rtag_p_q,
-                                                         "000001"  , '0');
-            rclen_q                     <= rclen_q         - 1;
+          IF (read_ctrl_q(clt_rtag_v).clt  = CL_NOT_USED) AND
+             (rlen_q                      /= 0          ) THEN
+            --
+            -- update the clt in the read control register
+            --
+            -- bit "even 64 bytes of CL are valid indication"
+            IF raddr_q(6) = '0' THEN
+              read_ctrl_q(clt_rtag_v).clt(EVEN_64B_CL) <= '1';
+            ELSE
+              read_ctrl_q(clt_rtag_v).clt(EVEN_64B_CL) <= '0';
+            END IF;
+
+            --
+            -- bit "odd 64 bytes of CL are valid indication"
+            IF rlen_q     = 1 AND
+               raddr_q(6) = '0' THEN               
+              read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '0';
+            ELSE
+              read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '1';
+            END IF;
+            
+            --
+            -- bit "last CL of a AXI request indication"
+            IF rlen_q = 2 THEN
+              IF raddr_q(6) = '0' THEN
+                read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '1';
+              ELSE
+                read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '0';
+              END IF;
+            ELSIF rlen_q = 1 THEN
+              read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '1';
+            ELSE
+              read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '0';
+            END IF;
+
+            --
+            -- CL Read Address
+            read_ctrl_q(clt_rtag_v).cla   <= raddr_q(63 DOWNTO 7);
+
+            --
+            -- calculate the next read address and the read cache length
+            IF raddr_q(6) = '1' THEN
+              raddr_q <= raddr_q + VALUE_64;
+              rlen_q  <= rlen_q - 1;
+            ELSE
+              raddr_q <= raddr_q + (VALUE_128 & '0');
+
+              IF rlen_q = 1 THEN
+                rlen_q <= (OTHERS => '0');
+              ELSE
+                rlen_q <= rlen_q - 2;
+              END IF;
+            END IF;
+            
+            --
+            -- calculate the next clt rtag
+            clt_rtag_q      <= clt_rtag_q      + 1;
+            clt_rtag_next_q <= clt_rtag_next_q + 1;
+            clt_rtag_p_q    <= AC_PPARITH(1, clt_rtag_q, clt_rtag_p_q,
+                                             "000001"  , '0');
           END IF;
 
           --
           -- request
-          IF (sd_c_q.rd_req   = '1'    ) AND
-             (read_ctrl_fsm_q = ST_IDLE) THEN
+          IF (sd_c_q.rd_req  = '1') AND
+             (rlen_q         = 0  ) THEN
+            --
+            -- save the read address, id and length for later use
+            raddr_q    <=  sd_c_q.rd_addr(63 DOWNTO 6);
+            raddr_id_q <=  sd_c_q.rd_id;
+            rd_ctx_q   <=  sd_c_q.rd_ctx;
+            rlen_q     <= ('0' & sd_c_q.rd_len) + 1;
+
+            --
+            -- send back a AXI read acknowledge
+            rd_req_ack_q <= TRUE;
+           
             --
             -- calculate the amount of CLT
-            IF sd_c_q.rd_len(0) = '0' THEN
-              -- rd_len even
-              -- example:
-              --         rd_len = 0x6 = 0x0110
-              --         => means 0x7 axi beats
-              --         => 4 CLs needed independent from the start address
-              rclen_q <= ('0' & sd_c_q.rd_len(5 DOWNTO 1))  +  
-                           (                   (5 DOWNTO 1  => '0') & '1');
-            ELSE
-              -- rd_len odd
-              -- example:
-              --         rd_len = 0x7 = 0x0111
-              --         => means 0x8 axi beats
-              --         => 4 or 5 CLs needed dependent from the start address
-              rclen_q <= ('0' &  sd_c_q.rd_len(5 DOWNTO 1))               +  
-                         (                    (5 DOWNTO 1  => '0') & '1') +
-                         (                    (5 DOWNTO 1  => '0') & sd_c_q.rd_addr(6));
-            END IF;
+            --IF sd_c_q.rd_len(0) = '0' THEN
+            --  -- rd_len even
+            --  -- example:
+            --  --         rd_len = 0x6 = 0x0110
+            --  --         => means 0x7 axi beats
+            --  --         => 4 CLs needed independent from the start address
+            --  rclen_q <= ('0' & sd_c_q.rd_len(5 DOWNTO 1))  +  
+            --             (                   (5 DOWNTO 1  => '0') & '1');
+            --ELSE
+            --  -- rd_len odd
+            --  -- example:
+            --  --         rd_len = 0x7 = 0x0111
+            --  --         => means 0x8 axi beats
+            --  --         => 4 or 5 CLs needed dependent from the start address
+            --  rclen_q <= ('0' &  sd_c_q.rd_len(5 DOWNTO 1))               +  
+            --             (                    (5 DOWNTO 1  => '0') & '1') +
+            --             (                    (5 DOWNTO 1  => '0') & sd_c_q.rd_addr(6));
+            --END IF;
           END IF;
 
           --
@@ -830,25 +826,24 @@ BEGIN
           --
           IF buf_rtag_valid_q = TRUE THEN
             read_ctrl_q(buf_rtag_v).buf <= EMPTY;
-            read_ctrl_q(buf_rtag_v).clt <= NOT_USED;
+            read_ctrl_q(buf_rtag_v).clt <= CL_NOT_USED;
           END IF;
 
           --
           -- check all CL transferred, sent read data end to
           -- aligner
-          buf_active_v := FALSE;
-
-          FOR i IN 0 TO 31 LOOP
-            IF read_ctrl_q(i).clt /= NOT_USED THEN
-              buf_active_v := TRUE;
-            END IF;
-          END LOOP;  -- i
-
-          IF (buf_active_v     = FALSE  ) AND
-             (read_ctrl_fsm_q /= ST_SETUP_READ_CTRL_REG) AND 
-             (read_ctrl_fsm_q /= ST_IDLE) THEN
-            buf_rdata_e_q   <= '1';
-          END IF;
+          --buf_active_v := FALSE;
+          -- 
+          --FOR i IN 0 TO 31 LOOP
+          --  IF read_ctrl_q(i).clt /= CL_NOT_USED THEN
+          --    buf_active_v := TRUE;
+          --  END IF;
+          --END LOOP;  -- i
+          -- 
+          --IF (buf_active_v     = FALSE  ) AND
+          --   (read_ctrl_fsm_q /= ST_IDLE) THEN
+          --  buf_rdata_e_q   <= '1';
+          --END IF;
 
         END IF;
       END IF;
@@ -899,12 +894,8 @@ BEGIN
           rsp_wtag_p_q           <= '1';
           rsp_wtag_q             <= (OTHERS => '0');
           rsp_wtag_valid_q       <= FALSE;
-          waddr_offset_p_q       <= '1';
-          waddr_offset_q         <= (OTHERS => '0');
-          waddr_p_q              <= '1';
-          waddr_q                <= (OTHERS => '0');
           write_ctrl_fsm_q       <= ST_IDLE;
-          write_ctrl_rsp_wtag_q  <= (INACTIVE, ILLEGAL_RSP, EMPTY, NOT_USED);
+          write_ctrl_rsp_wtag_q  <= (INACTIVE, ILLEGAL_RSP, EMPTY, CL_NOT_USED, (OTHERS => '0'));
           write_fsm_req_q        <= NONE;
           write_rsp_err_addr_p_q <= '1';
           write_rsp_err_addr_q   <= (OTHERS => '0');
@@ -933,11 +924,6 @@ BEGIN
                                       '1');            -- address parity
           com_wtag_valid_q       <= FALSE;
           rsp_wtag_valid_q       <= FALSE;
-          waddr_offset_p_q       <= waddr_offset_p_q;
-          waddr_offset_q         <= waddr_offset_q;
-          waddr_p_q              <= waddr_p_q;
-          waddr_q                <= waddr_q;
-          waddr_id_q             <= waddr_id_q;
           write_ctrl_fsm_q       <= write_ctrl_fsm_q;
           write_ctrl_rsp_wtag_q  <= write_ctrl_q(rsp_wtag_v);
           write_fsm_req_q        <= write_fsm_req_q;
@@ -969,16 +955,8 @@ BEGIN
               -- NEW SLAVE Request, save data read address
               --
               IF sd_c_q.wr_req = '1' THEN
-                waddr_q          <= sd_c_q.wr_addr(63 DOWNTO 7);
-                waddr_p_q        <= parity_gen_odd(sd_c_q.wr_addr(63 DOWNTO 7));
-                waddr_id_q       <= sd_c_q.wr_id;
                 write_ctrl_fsm_q <= ST_SETUP_WRITE_CTRL_REG;
               END IF;
-
-              --
-              -- set waddr_offset to zero
-              waddr_offset_q   <= (OTHERS => '0');
-              waddr_offset_p_q <= '1';
 
             --
             -- STATE SETUP WRITE CONTROL REGISTER
@@ -1006,8 +984,6 @@ BEGIN
               com_wtag_q       <= rsp_wtag_q;
               com_wtag_next_q  <= rsp_wtag_next_q;
               com_wtag_p_q     <= rsp_wtag_p_q;
-              waddr_offset_q   <= (OTHERS => '0');
-              waddr_offset_p_q <= '1';
 
               --
               -- check all commands done
@@ -1022,7 +998,8 @@ BEGIN
               IF com_active_v = FALSE THEN
                 IF (write_fsm_req_q = COMMAND) THEN
                   IF (ah_c_wgate_q = OPENED) THEN
-                    IF write_ctrl_q(com_wtag_v).clt = COMPLETE_DATA THEN
+                    IF (write_ctrl_q(com_wtag_v).clt(EVEN_64B_CL) = '1') AND
+                       (write_ctrl_q(com_wtag_v).clt(ODD_64B_CL)  = '1') THEN
                       write_ctrl_fsm_q <= ST_COM_WRITE_NA;
                     ELSE
                       write_ctrl_fsm_q <= ST_COM_READ_CL_LCK;
@@ -1060,18 +1037,13 @@ BEGIN
               -- process current response
               --
               IF write_ctrl_rsp_wtag_q.rsp = DONE THEN
-                IF write_ctrl_rsp_wtag_q.clt = COMPLETE_DATA THEN
+                IF (write_ctrl_rsp_wtag_q.clt(EVEN_64B_CL) = '1') AND
+                   (write_ctrl_rsp_wtag_q.clt(ODD_64B_CL)  = '1') THEN
                   rsp_wtag_valid_q <= TRUE;
                   rsp_wtag_q       <= rsp_wtag_q      + 1;
                   rsp_wtag_next_q  <= rsp_wtag_next_q + 1;
                   rsp_wtag_p_q     <= AC_PPARITH(1, rsp_wtag_q, rsp_wtag_p_q,
                                                     "000001"  , '0');
-                  waddr_q          <= waddr_q + VALUE_128;
-                  waddr_p_q        <= AC_PPARITH(1, waddr_q  , waddr_p_q,
-                                                    VALUE_128, VALUE_128_P);
-                  waddr_offset_q   <= waddr_offset_q - 1;
-                  waddr_offset_p_q <= AC_PPARITH(-1, waddr_offset_q, waddr_offset_p_q,
-                                                     "000001"      ,'0');
                 ELSE
                   write_ctrl_fsm_q <= ST_COM_READ_CL_LCK;
                 END IF;
@@ -1126,9 +1098,6 @@ BEGIN
                   com_wtag_next_q   <= com_wtag_next_q + 1;
                   com_wtag_p_q      <= AC_PPARITH(1, com_wtag_q, com_wtag_p_q,
                                                      "000001"  , '0');
-                  waddr_q          <= waddr_q + VALUE_128;
-                  waddr_p_q        <= AC_PPARITH(1, waddr_q  , waddr_p_q,
-                                                    VALUE_128, VALUE_128_P);
                 ELSE
                   write_ctrl_fsm_q <= ST_RESTART;
                 END IF;
@@ -1162,7 +1131,8 @@ BEGIN
                   --
                   -- check if the "full buffer" is  a COMPLETE_DATA or PARTIAL_DATA
                   --
-                  IF write_ctrl_q(com_wtag_v).clt = COMPLETE_DATA THEN
+                  IF (write_ctrl_q(com_wtag_v).clt(EVEN_64B_CL) = '1') AND
+                     (write_ctrl_q(com_wtag_v).clt(ODD_64B_CL)  = '1') THEN
                     write_ctrl_fsm_q <= ST_COM_WRITE_NA;
 
                   ELSE
@@ -1186,18 +1156,15 @@ BEGIN
               buf_active_v := FALSE;
 
               FOR i IN 0 TO 31 LOOP
-                IF write_ctrl_q(i).clt /= NOT_USED THEN
+                IF write_ctrl_q(i).clt /= CL_NOT_USED THEN
                   buf_active_v := TRUE;
                 END IF;
               END LOOP;  -- i
 
               IF buf_active_v = FALSE THEN
                 write_fsm_req_q   <= NONE;
-
-            --512    IF aln_wfsm_idle = '1' THEN
-                  write_ctrl_fsm_q    <= ST_IDLE;
-                  wr_id_valid_q       <= '1';
-            --512    END IF;
+                write_ctrl_fsm_q  <= ST_IDLE;
+                wr_id_valid_q     <= '1';
               END IF;
 
             --------------------------------------------------------------------
@@ -1228,8 +1195,9 @@ BEGIN
                 ah_wc_q.com    <= READ_CL_LCK;
                 ah_wc_q.compar <= parity_gen_odd(ENCODE_CMD_CODES(READ_CL_LCK));
                 ah_wc_q.abt    <= "010";
-                ah_wc_q.ea     <= waddr_q(63 DOWNTO 7);
-                ah_wc_q.eapar  <= waddr_p_q;
+                ah_wc_q.ea     <= write_ctrl_q(com_wtag_v).cla;
+                ah_wc_q.eapar  <= parity_gen_odd(write_ctrl_q(com_wtag_v).cla(63 DOWNTO 7));
+
               END IF;
 
             --
@@ -1249,17 +1217,18 @@ BEGIN
                 ah_wc_q.com    <= WRITE_UNLOCK;
                 ah_wc_q.compar <= parity_gen_odd(ENCODE_CMD_CODES(WRITE_UNLOCK));
                 ah_wc_q.abt    <= "010";
-                ah_wc_q.ea     <= waddr_q(63 DOWNTO 7) ;
-                ah_wc_q.eapar  <= waddr_p_q;
+                ah_wc_q.ea     <= write_ctrl_q(com_wtag_v).cla;
+                ah_wc_q.eapar  <= parity_gen_odd(write_ctrl_q(com_wtag_v).cla(63 DOWNTO 7));
               END IF;
 
             --
             -- STATE COMMAND: WRITE_NA
             --
             WHEN ST_COM_WRITE_NA =>
-              IF (ah_c_wgate_q                       = OPENED       ) AND
-                 (write_ctrl_q(com_wtag_next_v).clt  = COMPLETE_DATA) AND
-                 (com_wtag_next_q                   /= buf_wtag_q   ) THEN
+              IF (ah_c_wgate_q                                    = OPENED    ) AND
+                 (write_ctrl_q(com_wtag_next_v).clt(EVEN_64B_CL)  = '1'       ) AND
+                 (write_ctrl_q(com_wtag_next_v).clt(ODD_64B_CL)   = '1'       ) AND
+                 (com_wtag_next_q                                /= buf_wtag_q) THEN
                 write_ctrl_fsm_q <= ST_COM_WRITE_NA;
               ELSE
                 write_ctrl_fsm_q <= ST_WAIT_4_CTRL_UPDTAE;
@@ -1271,9 +1240,6 @@ BEGIN
               com_wtag_next_q   <= com_wtag_next_q + 1;
               com_wtag_p_q      <= AC_PPARITH(1, com_wtag_q, com_wtag_p_q,
                                                  "000001"  , '0');
-              waddr_offset_q    <= waddr_offset_q + 1;
-              waddr_offset_p_q  <= AC_PPARITH(1, waddr_offset_q, waddr_offset_p_q,
-                                                 "000001"      ,'0');
 
               ah_wc_q.valid     <= '1';
               ah_wc_q.tag       <= "100" & com_wtag_q(4 DOWNTO 0);
@@ -1281,9 +1247,8 @@ BEGIN
               ah_wc_q.com       <= WRITE_NA;
               ah_wc_q.compar    <= parity_gen_odd(ENCODE_CMD_CODES(WRITE_NA));
               ah_wc_q.abt       <= "010";
-              ah_wc_q.ea        <= waddr_q(63 DOWNTO 7) + (x"0000_0000_0000_0" & waddr_offset_q(11 DOWNTO 7));
-              ah_wc_q.eapar     <= AC_PPARITH(1, waddr_q(63 DOWNTO 7),        waddr_p_q,
-                                                 x"0000_0000_0000_0" & waddr_offset_q(11 DOWNTO 7), waddr_offset_p_q);
+              ah_wc_q.ea        <= write_ctrl_q(com_wtag_v).cla;
+              ah_wc_q.eapar     <= parity_gen_odd(write_ctrl_q(com_wtag_v).cla(63 DOWNTO 7));
 
               -- HW357397: Repeating each command after a restart, Independent of the response
               --           before the restart. Also commands that have seen a "DONE" will be repeated.
@@ -1305,8 +1270,8 @@ BEGIN
               --
               -- collect all information
               write_rsp_err_type_q   <= write_ctrl_rsp_wtag_q.rsp;
-              write_rsp_err_addr_q   <= waddr_q & "0000000";
-              write_rsp_err_addr_p_q <= waddr_p_q;
+              write_rsp_err_addr_q   <= (OTHERS => '0'); -- waddr_q & "0000000";
+              write_rsp_err_addr_p_q <= '0';             -- waddr_p_q;
 
               --
               -- how is first check
@@ -1346,15 +1311,16 @@ BEGIN
   ------------------------------------------------------------------------------
   -- WRITE CONTROL REGISTER
   --
-  -- Content: 32x(com 1    -- command valid bit
-  --              rsp 4    -- response codes
-  --              buf 1    -- buffer valid bit
-  --              clt 2    -- cache line type
+  -- Content: 32x(com   1    -- command valid bit
+  --              rsp   4    -- response codes
+  --              buf   1    -- buffer valid bit
+  --              clt   3    -- cache line type
+  --              cla   57   -- cache line address
   --
   -- Indication:
   --                               |    COM   |     RSP     |  buf  | CLT
   --  =========================================================================
-  --  1) tag and buffer are free   | INACTIVE | ILLEGAL_RSP | EMPTY | NOT_USED
+  --  1) tag and buffer are free   | INACTIVE | ILLEGAL_RSP | EMPTY | CL_NOT_USED
   --     ready to fill up          |          |             |       |
   --  2) request a complete CL     | INACTIVE | ILLEGAL_RSP | EMPTY | COMPLETE
   --                               |          |             |       |
@@ -1364,14 +1330,14 @@ BEGIN
   --                               |          |             |       |
   --  5) received response from HA | INACTIVE | HA_RSP_CODE | FULL  | COMPLETE
   --                               |          |             |       |
-  --  *)special state, see comments| INACTIVE | ILLEGAL_RSP | FULL  | NOT_USED
+  --  *)special state, see comments| INACTIVE | ILLEGAL_RSP | FULL  | CL_NOT_USED
   --    in ST_WAIT_4_RSP_OR_BUF    |          |             |       |
   --
   -- Flow Control:
   --    steps                  | write_ctrl_q         |  H<->A Interface
   --  ==========================================================================
   --    1) wclen > 1 CL AND    | clt=COMPLETE         |
-  --       clt  = NOT_USED     |                      |
+  --       clt  = CL_NOT_USED  |                      |
   --                           |                      |
   --    2) 128 bytes written   | buf=FULL             |
   --       into DMAW           |                      |
@@ -1384,7 +1350,7 @@ BEGIN
   --                           |                      |
   --    5) rsp = DONE          | rsp=ILLEGAL_RSP      |
   --                           | buf=EMPTY            |
-  --                           | clt=NOT_USED         |
+  --                           | clt=CL_NOT_USED      |
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
     --
@@ -1402,7 +1368,7 @@ BEGIN
           -- initial values
           --
           FOR i IN 0 TO 31 LOOP
-            write_ctrl_q(i)     <= (INACTIVE, ILLEGAL_RSP, EMPTY, NOT_USED);
+            write_ctrl_q(i)     <= (INACTIVE, ILLEGAL_RSP, EMPTY, CL_NOT_USED, (OTHERS => '0'));
           END LOOP;  -- i
 
           buf_wfull_cnt_q       <= 0;
@@ -1412,13 +1378,14 @@ BEGIN
           clt_wtag_p_q          <= '1';
           com_wtag_qq           <= 0;
           rsp_wtag_qq           <= 0;
-          wclen_q               <= (OTHERS => '0');
+
+          waddr_q               <= (OTHERS => '0');
+          wlen_q                <= (OTHERS => '0');
 
         ELSE
           --
           -- defaults
           --
-          write_ctrl_q          <= write_ctrl_q;
           buf_wfull_cnt_q       <= buf_wfull_cnt_q;
           buf_walmost_full_q    <= buf_walmost_full_q;
           clt_wtag_q            <= clt_wtag_q;
@@ -1426,8 +1393,14 @@ BEGIN
           clt_wtag_p_q          <= clt_wtag_p_q;
           com_wtag_qq           <= to_integer(unsigned(com_wtag_q(4 DOWNTO 0)));
           rsp_wtag_qq           <= to_integer(unsigned(rsp_wtag_q(4 DOWNTO 0)));
-          wclen_q               <= wclen_q;
 
+          waddr_q               <= waddr_q;
+          waddr_id_q            <= waddr_id_q;
+          write_ctrl_q          <= write_ctrl_q;
+          wlen_q                <= wlen_q;
+          wr_req_ack_q          <= FALSE;
+          wr_ctx_q              <= wr_ctx_q;
+          
           buf_wtag_v            := to_integer(unsigned(buf_wtag_q     (4 DOWNTO 0)));
           clt_wtag_v            := to_integer(unsigned(clt_wtag_q     (4 DOWNTO 0)));
           clt_wtag_next_v       := to_integer(unsigned(clt_wtag_next_q(4 DOWNTO 0)));
@@ -1436,16 +1409,66 @@ BEGIN
           --
           -- CLT: CACHE LINE TYPE TAG IS VALID
           --
-          IF (write_ctrl_q(clt_wtag_v).clt  = NOT_USED) AND
-             (wclen_q                      /= 0       ) THEN
+          IF (write_ctrl_q(clt_wtag_v).clt  = CL_NOT_USED) AND
+             (wlen_q                       /= 0          ) THEN
+            --
+            -- update the clt in the write control register
+            --
+            -- bit "even 64 bytes of CL are valid indication"
+            IF waddr_q(6) = '0' THEN
+              write_ctrl_q(clt_wtag_v).clt(EVEN_64B_CL) <= '1';
+            ELSE
+              write_ctrl_q(clt_wtag_v).clt(EVEN_64B_CL) <= '0';
+            END IF;
 
-            wclen_q         <= wclen_q         - 1;
+            --
+            -- bit "odd 64 bytes of CL are valid indication"
+            IF wlen_q     = 1 AND
+               waddr_q(6) = '0' THEN               
+              write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '0';
+            ELSE
+              write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '1';
+            END IF;
+            
+            --
+            -- bit "last CL of a AXI request indication"
+            IF wlen_q = 2 THEN
+              IF waddr_q(6) = '0' THEN
+                write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '1';
+              ELSE
+                write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '0';
+              END IF;
+            ELSIF wlen_q = 1 THEN
+              write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '1';
+            ELSE
+              write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '0';
+            END IF;
+            
+            --
+            -- CL Write Address
+            write_ctrl_q(clt_wtag_v).cla   <= waddr_q(63 DOWNTO 7);
+
+            --
+            -- calculate the next read address and the read cache length
+            IF waddr_q(6) = '1' THEN
+              waddr_q <= waddr_q + VALUE_64;
+              wlen_q  <= wlen_q - 1;
+            ELSE
+              waddr_q <= waddr_q + (VALUE_128 & '0');
+
+              IF wlen_q = 1 THEN
+                wlen_q <= (OTHERS => '0');
+              ELSE
+                wlen_q <= wlen_q - 2;
+              END IF;
+            END IF;
+
+            --
+            -- calculate the next clt wtag
             clt_wtag_q      <= clt_wtag_q      + 1;
             clt_wtag_next_q <= clt_wtag_next_q + 1;
             clt_wtag_p_q    <= AC_PPARITH(1, clt_wtag_q, clt_wtag_p_q,
                                              "000001"  , '0');
-
-            write_ctrl_q(clt_wtag_v).clt <= IN_USE;
           END IF;
 
           --
@@ -1454,25 +1477,37 @@ BEGIN
              (write_ctrl_fsm_q = ST_IDLE) THEN
 
             --
+            -- save the write address for later use
+            waddr_q    <= sd_c_q.wr_addr(63 DOWNTO 6);
+            waddr_id_q <= sd_c_q.wr_id;
+            wr_ctx_q   <= sd_c_q.wr_ctx;
+            wlen_q     <= ('0' & sd_c_q.wr_len) + 1;
+           
+
+             --
+            -- send back a AXI read acknowledge
+            wr_req_ack_q <= TRUE;
+
+            --
             -- calculate the amount of CLT
-            IF sd_c_q.wr_len(0) = '0' THEN
-              -- wr_len even
-              -- example:
-              --         wr_len = 0x6 = 0x0110
-              --         => means 0x7 axi beats
-              --         => 4 CLs needed independent from the start address
-              wclen_q <= ('0' & sd_c_q.wr_len(5 DOWNTO 1))  +  
-                           (                   (5 DOWNTO 1  => '0') & '1');
-            ELSE
-              -- wr_len odd
-              -- example:
-              --         wr_len = 0x7 = 0x0111
-              --         => means 0x8 axi beats
-              --         => 4 or 5 CLs needed dependent from the start address
-              wclen_q <= ('0' &  sd_c_q.wr_len(5 DOWNTO 1))               +  
-                         (                    (5 DOWNTO 1  => '0') & '1') +
-                         (                    (5 DOWNTO 1  => '0') & sd_c_q.wr_addr(6));
-            END IF;
+            --IF sd_c_q.wr_len(0) = '0' THEN
+            --  -- wr_len even
+            --  -- example:
+            --  --         wr_len = 0x6 = 0x0110
+            --  --         => means 0x7 axi beats
+            --  --         => 4 CLs needed independent from the start address
+            --  wclen_q <= ('0' & sd_c_q.wr_len(5 DOWNTO 1))  +  
+            --             (                   (5 DOWNTO 1  => '0') & '1');
+            --ELSE
+            --  -- wr_len odd
+            --  -- example:
+            --  --         wr_len = 0x7 = 0x0111
+            --  --         => means 0x8 axi beats
+            --  --         => 4 or 5 CLs needed dependent from the start address
+            --  wclen_q <= ('0' &  sd_c_q.wr_len(5 DOWNTO 1))               +  
+            --             (                    (5 DOWNTO 1  => '0') & '1') +
+            --             (                    (5 DOWNTO 1  => '0') & sd_c_q.wr_addr(6));
+            --END IF;
           END IF;
 
           --
@@ -1480,13 +1515,15 @@ BEGIN
           --
           IF (buf_wtag_valid_q = TRUE) THEN
             write_ctrl_q(buf_wtag_v).buf <= FULL;
-   
-            IF buf_wtag_cl_partial_q = TRUE THEN
-              write_ctrl_q(buf_wtag_v).clt <= PARTIAL_DATA;
-            ELSE
-              write_ctrl_q(buf_wtag_v).clt <= COMPLETE_DATA;
+
+            IF (buf_wtag_cl_partial_q                          = TRUE) AND
+               (write_ctrl_q(buf_wtag_v).clt(EVEN_64B_CL) = '1' ) AND
+               (write_ctrl_q(buf_wtag_v).clt(ODD_64B_CL)  = '1' ) THEN
+              
+              write_ctrl_q(buf_wtag_v).clt(EVEN_64B_CL) <= '0';
             END IF;
    
+            
             IF rsp_wtag_valid_q = FALSE THEN
               buf_wfull_cnt_q <= buf_wfull_cnt_q + 1;
             END IF;
@@ -1518,7 +1555,7 @@ BEGIN
           IF rsp_wtag_valid_q = TRUE THEN
             write_ctrl_q(rsp_wtag_qq).rsp <= ILLEGAL_RSP;
             write_ctrl_q(rsp_wtag_qq).buf <= EMPTY;
-            write_ctrl_q(rsp_wtag_qq).clt <= NOT_USED;
+            write_ctrl_q(rsp_wtag_qq).clt <= CL_NOT_USED;
 
             IF buf_wtag_valid_q = FALSE THEN
               buf_wfull_cnt_q <= buf_wfull_cnt_q -1;
@@ -1547,7 +1584,7 @@ BEGIN
           IF buf_wfull_cnt_q >= 31 THEN
             buf_walmost_full_q <= '1';
           ELSE
-            buf_walmost_full_q <= aln_wbusy;
+            buf_walmost_full_q <= '0';
           END IF;
         END IF;
       END IF;
@@ -1876,10 +1913,6 @@ BEGIN
   -- DMA BUFFER
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
-    read_ctrl_buf_ctl: FOR i IN 0 TO 31 GENERATE
-      read_ctrl_buf_full_q(i) <= '0' WHEN read_ctrl_q(i).buf = EMPTY         ELSE '1';
-    END GENERATE read_ctrl_buf_ctl;
-
     dma_buf: ENTITY work.dma_buffer
     PORT MAP (
       --
@@ -1891,23 +1924,24 @@ BEGIN
       ha_b_i                   => ha_b_i,
       ah_b_o                   => ah_b_o,
       --
-      -- DMA control
-      buf_rrdreq_i             => buf_rrdreq,
-      buf_wdata_i              => aln_wdata,
-      buf_wdata_v_i            => aln_wdata_v,
-      buf_wdata_be_i           => aln_wdata_be,
-      read_ctrl_buf_full_i     => read_ctrl_buf_full_q,
-      --
-      buf_rdata_o              => buf_rdata,
-      buf_rdata_p_o            => buf_rdata_p,
-      buf_rdata_vld_o          => buf_rdata_vld,
-      buf_rtag_o               => buf_rtag_q,
-      buf_rtag_p_o             => buf_rtag_p_q,
-      buf_rtag_valid_o         => buf_rtag_valid_q,
+      -- DMA WRITE IOs
+      write_ctrl_i             => write_ctrl_q,
+      sd_d_i                   => sd_d_i,
       buf_wtag_o               => buf_wtag_q,
       buf_wtag_p_o             => buf_wtag_p_q,
       buf_wtag_cl_partial_o    => buf_wtag_cl_partial_q,
       buf_wtag_valid_o         => buf_wtag_valid_q,
+      --
+      -- DMA READ IOs
+      read_ctrl_i              => read_ctrl_q,
+      buf_rrdreq_i             => buf_rrdreq,
+      buf_rdata_o              => buf_rdata,
+      buf_rdata_p_o            => buf_rdata_p,
+      buf_rdata_vld_o          => buf_rdata_vld,
+      buf_rdata_end_o          => buf_rdata_end,
+      buf_rtag_o               => buf_rtag_q,
+      buf_rtag_p_o             => buf_rtag_p_q,
+      buf_rtag_valid_o         => buf_rtag_valid_q,
       --
       -- Error Inject
       inject_dma_read_error_i  => mmd_i_q.inject_dma_read_error,
@@ -1925,43 +1959,6 @@ BEGIN
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
-  -- DMA ALIGNER
-  ------------------------------------------------------------------------------
-  ------------------------------------------------------------------------------
-    dma_aligner: ENTITY work.dma_aligner
-    PORT MAP (
-      --
-      -- pervasive
-      ha_pclock              => ha_pclock,
-      afu_reset              => afu_reset,
-      --
-      -- Alinger Conrol
-      sd_c_i                 => sd_c_q,
-      aln_wbusy_o            => aln_wbusy,
-      aln_wfsm_idle_o        => aln_wfsm_idle,
-      --
-      -- Unaligned Data
-      buf_rdata_i            => buf_rdata,
-      buf_rdata_p_i          => buf_rdata_p,
-      buf_rdata_v_i          => buf_rdata_vld,
-      buf_rdata_e_i          => buf_rdata_e_q,
-      aln_wdata_o            => aln_wdata,
-      aln_wdata_be_o         => aln_wdata_be,
-      aln_wdata_v_o          => aln_wdata_v,
-      --
-      -- Aligned Data
-      sd_d_i                 => sd_d_i,
-      aln_rdata_o            => aln_rdata,
-      aln_rdata_p_o          => aln_rdata_p,
-      aln_rdata_v_o          => aln_rdata_v,
-      aln_rdata_e_o          => aln_rdata_e,
-      --
-      -- Error Checker
-      aln_read_fsm_err_o     => dmm_e_q.aln_read_fsm_err,
-      aln_write_fsm_err_o    => dmm_e_q.aln_write_fsm_err
-    );
-  ------------------------------------------------------------------------------
-  ------------------------------------------------------------------------------
   -- DMA READ OUTPUT FIFO
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -1969,24 +1966,22 @@ BEGIN
     -- FIFO: fifo_513x512
     ----------------------------------------------------------------------------
     --
-    rfifo_wdata <= aln_rdata_e & aln_rdata;
+    rfifo_wdata <= buf_rdata_end & buf_rdata;
     
     dma_read_fifo : fifo_513x512
     PORT MAP (
       clk          => ha_pclock,
       srst         => afu_reset,
       din          => rfifo_wdata,
-      wr_en        => aln_rdata_v,
+      wr_en        => buf_rdata_vld,
       rd_en        => sd_d_i.rd_data_ack,
       dout         => rfifo_rdata,
       full         => rfifo_full,
-      empty        => rfifo_empty_tmp,
+      empty        => rfifo_empty,
       prog_full    => rfifo_prog_full,
       wr_rst_busy  => rfifo_wr_rst_busy,
       rd_rst_busy  => rfifo_rd_rst_busy
     );
-
-     rfifo_empty  <= '1' WHEN force_rfifo_empty_q = '1' ELSE rfifo_empty_tmp;
 
 ----------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------
@@ -2159,17 +2154,17 @@ BEGIN
           END IF;
           --
           -- raddr_q parity failure
-          IF parity_gen_odd(raddr_q) /= raddr_p_q THEN
-            dmm_e_q.raddr_err <= '1';
-          END IF;
+          --IF parity_gen_odd(raddr_q) /= raddr_p_q THEN
+          --  dmm_e_q.raddr_err <= '1';
+          --END IF;
           --
           -- read_ctrl register checking
           FOR i IN 0 TO 31 LOOP
-            IF ((read_ctrl_q(i).com = INACTIVE) AND (read_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (read_ctrl_q(i).buf = EMPTY) AND (read_ctrl_q(i).clt  = NOT_USED)) OR
-               ((read_ctrl_q(i).com = INACTIVE) AND (read_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (read_ctrl_q(i).buf = EMPTY) AND (read_ctrl_q(i).clt /= NOT_USED)) OR
-               ((read_ctrl_q(i).com =   ACTIVE) AND (read_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (read_ctrl_q(i).buf = EMPTY) AND (read_ctrl_q(i).clt /= NOT_USED)) OR
-               ((read_ctrl_q(i).com = INACTIVE) AND (read_ctrl_q(i).rsp /= ILLEGAL_RSP) AND (read_ctrl_q(i).buf = EMPTY) AND (read_ctrl_q(i).clt /= NOT_USED)) OR
-               ((read_ctrl_q(i).com = INACTIVE) AND (read_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (read_ctrl_q(i).buf = FULL ) AND (read_ctrl_q(i).clt /= NOT_USED)) THEN
+            IF ((read_ctrl_q(i).com = INACTIVE) AND (read_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (read_ctrl_q(i).buf = EMPTY) AND (read_ctrl_q(i).clt  = CL_NOT_USED)) OR
+               ((read_ctrl_q(i).com = INACTIVE) AND (read_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (read_ctrl_q(i).buf = EMPTY) AND (read_ctrl_q(i).clt /= CL_NOT_USED)) OR
+               ((read_ctrl_q(i).com =   ACTIVE) AND (read_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (read_ctrl_q(i).buf = EMPTY) AND (read_ctrl_q(i).clt /= CL_NOT_USED)) OR
+               ((read_ctrl_q(i).com = INACTIVE) AND (read_ctrl_q(i).rsp /= ILLEGAL_RSP) AND (read_ctrl_q(i).buf = EMPTY) AND (read_ctrl_q(i).clt /= CL_NOT_USED)) OR
+               ((read_ctrl_q(i).com = INACTIVE) AND (read_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (read_ctrl_q(i).buf = FULL ) AND (read_ctrl_q(i).clt /= CL_NOT_USED)) THEN
               read_ctrl_q_err_q(i) <= '0';
             ELSE
               read_ctrl_q_err_q(i) <= '1';
@@ -2244,20 +2239,16 @@ BEGIN
           IF parity_gen_odd(buf_wtag_q) /= buf_wtag_p_q THEN
             dmm_e_q.buf_wtag_err <= '1';
           END IF;
-          --
-          -- waddr_q parity failure
-          IF parity_gen_odd(waddr_q) /= waddr_p_q THEN
-            dmm_e_q.waddr_err <= '1';
-          END IF;
+
           --
           -- read_ctrl register checking
           FOR i IN 0 TO 31 LOOP
-            IF ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = EMPTY) AND (write_ctrl_q(i).clt  = NOT_USED)) OR
-               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = EMPTY) AND (write_ctrl_q(i).clt /= NOT_USED)) OR
-               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt  = NOT_USED)) OR  -- see comments IN  ST_WAIT_4_RSP_OR_BUF
-               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt /= NOT_USED)) OR
-               ((write_ctrl_q(i).com =   ACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt /= NOT_USED)) OR
-               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp /= ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt /= NOT_USED)) THEN
+            IF ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = EMPTY) AND (write_ctrl_q(i).clt  = CL_NOT_USED)) OR
+               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = EMPTY) AND (write_ctrl_q(i).clt /= CL_NOT_USED)) OR
+               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt  = CL_NOT_USED)) OR  -- see comments IN  ST_WAIT_4_RSP_OR_BUF
+               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt /= CL_NOT_USED)) OR
+               ((write_ctrl_q(i).com =   ACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt /= CL_NOT_USED)) OR
+               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp /= ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt /= CL_NOT_USED)) THEN
               write_ctrl_q_err_q(i) <= '0';
             ELSE
               write_ctrl_q_err_q(i) <= '1';
@@ -2297,8 +2288,8 @@ BEGIN
     ds_d_o.rd_data         <= rfifo_rdata(511 DOWNTO 0);
     ds_d_o.rd_id           <= raddr_id_q;
 
-    ds_c_o.wr_req_ack  <= '1' WHEN write_ctrl_fsm_q = ST_SEND_WR_REQ_ACK ELSE '0';
-    ds_c_o.rd_req_ack  <= '1' WHEN read_ctrl_fsm_q  = ST_SEND_RD_REQ_ACK ELSE '0';
+    ds_c_o.wr_req_ack  <= '1' WHEN wr_req_ack_q = TRUE ELSE '0';
+    ds_c_o.rd_req_ack  <= '1' WHEN rd_req_ack_q = TRUE ELSE '0';
     ds_c_o.wr_id_valid <= wr_id_valid_q;
     ds_c_o.wr_id       <= waddr_id_q;
     ds_c_o.int_req_ack <= int_req_ack_q;
@@ -2322,11 +2313,7 @@ BEGIN
           sd_c_q               <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
                                    '0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
                                    '0', (OTHERS => '0'), (OTHERS => '0'));
-          wr_ctx_q             <= (OTHERS => '0');
-          rd_ctx_q             <= (OTHERS => '0');
           mmd_i_q              <= (OTHERS => ('0'));
-
-          force_rfifo_empty_q  <= '1';
 
         ELSE
           --
@@ -2336,46 +2323,8 @@ BEGIN
           ha_r_q               <= ha_r_i;
 
           sd_c_q               <= sd_c_i;
-          wr_ctx_q             <= wr_ctx_q;
-          rd_ctx_q             <= rd_ctx_q;
-
-          IF write_ctrl_fsm_q = ST_IDLE THEN
-            sd_c_q.wr_req <= sd_c_i.wr_req;
-            wr_ctx_q      <= sd_c_i.wr_ctx;
-          ELSE
-            sd_c_q.wr_req <= '0';
-          END IF;
-
-          IF read_ctrl_fsm_q = ST_IDLE THEN
-            sd_c_q.rd_req <= sd_c_i.rd_req;
-            rd_ctx_q      <= sd_c_i.rd_ctx;
-          ELSE
-            sd_c_q.rd_req <= '0';
-          END IF;
-
           mmd_i_q              <= (OTHERS => '0'); --mmd_i_i;
         END IF;
-
-        --
-        -- force empty logic
-        --
-        force_rfifo_empty_q <= force_rfifo_empty_q;
-        
-        IF ((rfifo_rdata(512)   = '1') AND 
-            (rfifo_empty_tmp    = '0') AND
-            (sd_d_i.rd_data_ack = '1')) THEN                 
-          force_rfifo_empty_q  <= '1';
-        ELSE
-          IF (aln_rdata_v = '1') THEN 
-           force_rfifo_empty_q <= '0';
-          END IF;
-        END IF;
-
-        --
-        -- force empty logic
-        --
-        rfifo_wr_in_process_q(1 DOWNTO 0) <= rfifo_wr_in_process_q(0) & buf_rdata_vld; 
-
       END IF;
     END PROCESS registers;
 
