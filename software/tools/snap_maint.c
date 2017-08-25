@@ -264,6 +264,7 @@ static void snap_decode(uint64_t reg, uint32_t level)
 	case 0x10141004: VERBOSE1("HLS Breadth first search (BFS)\n"); break;
 	case 0x10141005: VERBOSE1("HLS Intersect (hash)\n"); break;
 	case 0x10141006: VERBOSE1("HLS Intersect (sort)\n"); break;
+	case 0x10141007: VERBOSE1("HLS NVMe Memcopy (FGT card)\n"); break;
 	default:
 		VERBOSE1("UNKNOWN Code.....\n");
 		break;
