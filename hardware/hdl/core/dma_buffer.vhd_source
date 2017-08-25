@@ -43,6 +43,7 @@ ENTITY dma_buffer IS
     -- DMA WRITE IOs
     write_ctrl_i             : IN  ARR_DMA_CTL_T;
     sd_d_i                   : IN  SD_D_T;
+    buf_walmost_full_i       : IN  std_logic;
     buf_wtag_o               : OUT std_logic_vector(5 DOWNTO 0);
     buf_wtag_p_o             : OUT std_logic;
     buf_wtag_cl_partial_o    : OUT boolean;
@@ -349,7 +350,7 @@ BEGIN
     wram_wdata(511 DOWNTO   1) <= sd_d_i.wr_data(511 DOWNTO 1);
     wram_wdata(575 DOWNTO 512) <= sd_d_i.wr_strobe WHEN buf_wdata_extra_v = '0' ELSE (OTHERS => '0');
     wram_raddr                 <= ha_b_q.rtag(4 DOWNTO 0) & (ha_b_q.rad(0) xor flip_rbit_q);
-    wram_wen                   <= or_reduce(sd_d_i.wr_strobe & buf_wdata_extra_v);
+    wram_wen                   <= (or_reduce(sd_d_i.wr_strobe) AND NOT buf_walmost_full_i) OR buf_wdata_extra_v;
 
     buf_wtag                   <= to_integer(unsigned(wram_waddr_q(5 DOWNTO 1)));
     buf_wdata_extra_v          <= '1' WHEN (wram_waddr_q(0) = '0' AND write_ctrl_i(buf_wtag).clt(EVEN_64B_CL) = '0'

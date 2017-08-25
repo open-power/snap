@@ -100,7 +100,6 @@ ARCHITECTURE dma OF dma IS
                            ST_COM_TOUCH_I, ST_COM_READ_CL_NA
                           );
   TYPE WRITE_CTRL_FSM_T IS (ST_FSM_ERROR, ST_RSP_ERROR, ST_IDLE,
-                            ST_SETUP_WRITE_CTRL_REG, ST_SEND_WR_REQ_ACK,
                             ST_RESTART, ST_READ_RSP,
                             ST_WAIT_4_READ_CL_LCK, ST_WAIT_4_WRITE_UNLOCK, ST_WAIT_4_CTRL_UPDTAE, ST_WAIT_4_RSP_OR_BUF,
                             ST_COM_WRITE_NA, ST_COM_WRITE_UNLOCK, ST_COM_READ_CL_LCK,
@@ -156,6 +155,8 @@ ARCHITECTURE dma OF dma IS
   SIGNAL buf_rtag_valid_q            : boolean;
   SIGNAL buf_wactive_q               : boolean;
   SIGNAL buf_walmost_full_q          : std_logic;
+  SIGNAL buf_walmost_full_qq         : std_logic;
+  SIGNAL buf_walmost_full_qqq        : std_logic;
   SIGNAL buf_wfull_cnt_q             : integer RANGE 0 TO 32;
   SIGNAL buf_wtag_cl_partial_q       : boolean;
   SIGNAL buf_wtag_p_q                : std_logic;
@@ -866,7 +867,7 @@ BEGIN
   ------------------------------------------------------------------------------
     --
     write_ctrl_fsm : PROCESS (ha_pclock)
-      VARIABLE buf_active_v     : boolean;
+      VARIABLE clt_in_use_v     : boolean;
       VARIABLE com_active_v     : boolean;
       VARIABLE com_wtag_v       : integer RANGE 0 TO 31;
       VARIABLE com_wtag_next_v  : integer RANGE 0 TO 31;
@@ -932,7 +933,6 @@ BEGIN
           write_rsp_err_first_q  <= write_rsp_err_first_q;
           write_rsp_err_type_q   <= write_rsp_err_type_q;
           write_rsp_err_valid_q  <= write_rsp_err_valid_q;
-          wr_id_valid_q          <= '0';
 
           dmm_e_q.write_ctrl_fsm_err <= '0';
 
@@ -952,30 +952,21 @@ BEGIN
             --
             WHEN ST_IDLE =>
               --
-              -- NEW SLAVE Request, save data read address
+              -- FSM starts if one CL in use
               --
-              IF sd_c_q.wr_req = '1' THEN
-                write_ctrl_fsm_q <= ST_SETUP_WRITE_CTRL_REG;
-              END IF;
+              --
+              -- check all CLs
+              clt_in_use_v := FALSE;
 
-            --
-            -- STATE SETUP WRITE CONTROL REGISTER
-            --
-            WHEN ST_SETUP_WRITE_CTRL_REG =>
-              --
-              -- wait unitl a CL is active
-             IF (com_wtag_q /= clt_wtag_q) THEN
-                write_ctrl_fsm_q <= ST_SEND_WR_REQ_ACK;
-              END IF;
+              FOR i IN 0 TO 31 LOOP
+                IF write_ctrl_q(i).clt /= CL_NOT_USED THEN
+                  clt_in_use_v := TRUE;
+                END IF;
+              END LOOP;  -- i
 
-            
-            --
-            -- STATE SEND WRITE REQUEST ACKNOWLEDGE
-            --
-            WHEN ST_SEND_WR_REQ_ACK =>
-              --
-              --  send write request acknowledge back to the slave
-              write_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
+              IF clt_in_use_v = TRUE THEN
+                write_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
+              END IF;
 
             --
             -- STATE RESTART
@@ -1153,18 +1144,17 @@ BEGIN
 
               --
               -- all CL transferred
-              buf_active_v := FALSE;
+              clt_in_use_v := FALSE;
 
               FOR i IN 0 TO 31 LOOP
                 IF write_ctrl_q(i).clt /= CL_NOT_USED THEN
-                  buf_active_v := TRUE;
+                  clt_in_use_v := TRUE;
                 END IF;
               END LOOP;  -- i
 
-              IF buf_active_v = FALSE THEN
+              IF clt_in_use_v = FALSE THEN
                 write_fsm_req_q   <= NONE;
                 write_ctrl_fsm_q  <= ST_IDLE;
-                wr_id_valid_q     <= '1';
               END IF;
 
             --------------------------------------------------------------------
@@ -1373,6 +1363,8 @@ BEGIN
 
           buf_wfull_cnt_q       <= 0;
           buf_walmost_full_q    <= '0';
+          buf_walmost_full_qq   <= '0';
+          buf_walmost_full_qqq  <= '0';
           clt_wtag_q            <= (OTHERS => '0');
           clt_wtag_next_q       <= "000001";
           clt_wtag_p_q          <= '1';
@@ -1388,6 +1380,8 @@ BEGIN
           --
           buf_wfull_cnt_q       <= buf_wfull_cnt_q;
           buf_walmost_full_q    <= buf_walmost_full_q;
+          buf_walmost_full_qq   <= buf_walmost_full_q;
+          buf_walmost_full_qqq  <= buf_walmost_full_qq;
           clt_wtag_q            <= clt_wtag_q;
           clt_wtag_next_q       <= clt_wtag_next_q;
           clt_wtag_p_q          <= clt_wtag_p_q;
@@ -1396,6 +1390,7 @@ BEGIN
 
           waddr_q               <= waddr_q;
           waddr_id_q            <= waddr_id_q;
+          wr_id_valid_q         <= '0';
           write_ctrl_q          <= write_ctrl_q;
           wlen_q                <= wlen_q;
           wr_req_ack_q          <= FALSE;
@@ -1473,8 +1468,8 @@ BEGIN
 
           --
           -- request
-          IF (sd_c_q.wr_req    = '1'    ) AND
-             (write_ctrl_fsm_q = ST_IDLE) THEN
+          IF (sd_c_q.wr_req = '1') AND
+             (wlen_q        = 0  ) THEN
 
             --
             -- save the write address for later use
@@ -1553,6 +1548,13 @@ BEGIN
           -- RSP: WRITE_CTRL_FSM_Q HAS READ THE RESPONSE
           --
           IF rsp_wtag_valid_q = TRUE THEN
+            --
+            -- send back wr_id_valid if the last CL of a request was
+            -- transfered
+            IF write_ctrl_q(rsp_wtag_qq).clt(LAST_CL) = '1' THEN 
+              wr_id_valid_q <= '1';
+            END IF;
+
             write_ctrl_q(rsp_wtag_qq).rsp <= ILLEGAL_RSP;
             write_ctrl_q(rsp_wtag_qq).buf <= EMPTY;
             write_ctrl_q(rsp_wtag_qq).clt <= CL_NOT_USED;
@@ -1581,7 +1583,7 @@ BEGIN
           --
           -- DMA ALMOST FULL INDICATION
           --
-          IF buf_wfull_cnt_q >= 31 THEN
+          IF buf_wfull_cnt_q >= 29 THEN
             buf_walmost_full_q <= '1';
           ELSE
             buf_walmost_full_q <= '0';
@@ -1931,6 +1933,7 @@ BEGIN
       buf_wtag_p_o             => buf_wtag_p_q,
       buf_wtag_cl_partial_o    => buf_wtag_cl_partial_q,
       buf_wtag_valid_o         => buf_wtag_valid_q,
+      buf_walmost_full_i       => buf_walmost_full_qqq,
       --
       -- DMA READ IOs
       read_ctrl_i              => read_ctrl_q,
@@ -2286,12 +2289,13 @@ BEGIN
     ds_d_o.rd_data_strobe  <= NOT rfifo_empty;
     ds_d_o.rd_last         <= rfifo_rdata(512) AND NOT rfifo_empty;
     ds_d_o.rd_data         <= rfifo_rdata(511 DOWNTO 0);
-    ds_d_o.rd_id           <= raddr_id_q;
+    ds_d_o.rd_id           <= raddr_id_q;       -- Multi Action support: should be part of read_ctrl_q;
+    ds_d_o.wr_data_ready   <= NOT buf_walmost_full_q;
 
     ds_c_o.wr_req_ack  <= '1' WHEN wr_req_ack_q = TRUE ELSE '0';
     ds_c_o.rd_req_ack  <= '1' WHEN rd_req_ack_q = TRUE ELSE '0';
     ds_c_o.wr_id_valid <= wr_id_valid_q;
-    ds_c_o.wr_id       <= waddr_id_q;
+    ds_c_o.wr_id       <= waddr_id_q;             -- Multi Action support: should be part of write_ctrl_q
     ds_c_o.int_req_ack <= int_req_ack_q;
 
 
@@ -2319,11 +2323,24 @@ BEGIN
           --
           -- defaults
           --
-          ha_c_q               <= ha_c_i;
-          ha_r_q               <= ha_r_i;
+          ha_c_q        <= ha_c_i;
+          ha_r_q        <= ha_r_i;
 
-          sd_c_q               <= sd_c_i;
-          mmd_i_q              <= (OTHERS => '0'); --mmd_i_i;
+          mmd_i_q       <= (OTHERS => '0'); --mmd_i_i;
+          sd_c_q        <= sd_c_i;
+          sd_c_q.rd_req <= '0';
+          sd_c_q.wr_req <= '0';
+
+          --
+          -- 
+          IF rd_req_ack_q = FALSE THEN
+            sd_c_q.rd_req <= sd_c_i.rd_req;
+          END IF;
+
+          IF wr_req_ack_q = FALSE THEN
+            sd_c_q.wr_req <= sd_c_i.wr_req;
+          END IF;
+
         END IF;
       END IF;
     END PROCESS registers;

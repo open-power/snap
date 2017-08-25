@@ -778,6 +778,7 @@ PACKAGE snap_core_types IS
       rd_last           : std_logic;
       rd_data           : std_logic_vector(C_S_AXI_DATA_WIDTH - 1 DOWNTO 0);   -- data
       rd_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
+      wr_data_ready     : std_logic;
     END RECORD DS_D_T;
 
     --
