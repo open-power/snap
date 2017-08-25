@@ -83,6 +83,15 @@ PACKAGE psl_accel_types IS
     CONSTANT C_DDR_AXI_RUSER_WIDTH  : integer  := 1;
     CONSTANT C_DDR_AXI_BUSER_WIDTH  : integer  := 1;
     
+	CONSTANT C_NVME_AXI_ID_WIDTH     : integer  := 1;
+    CONSTANT C_NVME_AXI_DATA_WIDTH   : integer  := 32;
+    CONSTANT C_NVME_AXI_ADDR_WIDTH   : integer  := 32;
+    CONSTANT C_NVME_AXI_AWUSER_WIDTH : integer  := 1;
+    CONSTANT C_NVME_AXI_ARUSER_WIDTH : integer  := 1;
+    CONSTANT C_NVME_AXI_WUSER_WIDTH  : integer  := 1;
+    CONSTANT C_NVME_AXI_RUSER_WIDTH  : integer  := 1;
+    CONSTANT C_NVME_AXI_BUSER_WIDTH  : integer  := 1;
+    
     CONSTANT C_HOST_AXI_ID_WIDTH     : integer  := 1;
     CONSTANT C_HOST_AXI_DATA_WIDTH   : integer  := 512;
     CONSTANT C_HOST_AXI_ADDR_WIDTH   : integer  := 64;
