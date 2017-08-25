@@ -18,6 +18,7 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 LIBRARY ieee;
+
 USE ieee.std_logic_1164.all;
 USE ieee.std_logic_misc.all;
 USE ieee.std_logic_unsigned.all;
@@ -25,6 +26,7 @@ USE ieee.numeric_std.all;
 
 USE work.psl_accel_types.ALL;
 USE work.action_types.ALL;
+
 
 ENTITY action_wrapper IS
   PORT (
@@ -202,6 +204,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
   SIGNAL interrupt_q            : STD_LOGIC;
   SIGNAL interrupt_wait_ack_q   : STD_LOGIC;
   SIGNAL context_q              : STD_LOGIC_VECTOR(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL hls_rst_buf            : STD_LOGIC;
 
   COMPONENT hls_action
     GENERIC (
@@ -450,7 +453,7 @@ BEGIN
   )
   PORT MAP (
     ap_clk                       => ap_clk,
-    ap_rst_n                     => ap_rst_n,
+    ap_rst_n  => hls_rst_buf,
     m_axi_card_mem0_araddr       => m_axi_card_mem0_araddr,                                -- only for DDRI_USED=TRUE
     m_axi_card_mem0_arburst      => m_axi_card_mem0_arburst,                               -- only for DDRI_USED=TRUE
     m_axi_card_mem0_arcache      => m_axi_card_mem0_arcache,                               -- only for DDRI_USED=TRUE
@@ -623,6 +626,7 @@ BEGIN
   int: PROCESS (ap_clk)
   BEGIN  -- PROCESS int
     IF rising_edge(ap_clk) THEN
+      hls_rst_buf <= ap_rst_n;
       IF ap_rst_n = '0' THEN
         interrupt_q          <= '0';
         interrupt_wait_ack_q <= '0';
