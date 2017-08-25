@@ -1583,7 +1583,7 @@ BEGIN
           --
           -- DMA ALMOST FULL INDICATION
           --
-          IF buf_wfull_cnt_q >= 29 THEN
+          IF buf_wfull_cnt_q >= 25 THEN
             buf_walmost_full_q <= '1';
           ELSE
             buf_walmost_full_q <= '0';
