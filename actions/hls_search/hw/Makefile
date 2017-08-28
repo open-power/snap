@@ -25,6 +25,17 @@
 #      build-system as required.
 #
 
+# Finding $SNAP_ROOT
+ifndef SNAP_ROOT
+# check if we are in hw folder of an action (three directories below snap root)
+ifneq ("$(wildcard ../../../ActionTypes.md)","")
+SNAP_ROOT=$(abspath ../../../)
+else
+$(info You are not building your software from the default directory (/path/to/snap/actions/<action_name>/sw) or specified a wrong $$SNAP_ROOT.)
+$(error Please make sure that $$SNAP_ROOT is set up correctly.)
+endif
+endif
+
 # This is solution specific. Check if we can replace this by generics too.
 SOLUTION_NAME ?= search
 SOLUTION_DIR ?= hlsSearch
@@ -32,4 +43,4 @@ srcs += hls_search.cpp
 
 # If you have the action code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/hls.mk
-include ../../hls.mk
+include $(SNAP_ROOT)/actions/hls.mk

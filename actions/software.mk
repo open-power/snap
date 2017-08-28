@@ -22,16 +22,6 @@ ifndef PSLSE_ROOT
 PSLSE_ROOT=$(abspath ../../../../pslse)
 endif
 
-ifndef SNAP_ROOT
-# assume we are in sw folder of an action
-ifneq ("$(wildcard ../../../ActionTypes.md)","")
-SNAP_ROOT=$(abspath ../../../)
-else
-$(info You are not building your software from the default directory (/path/to/snap/actions/<action_name>/sw) or specified a wrong $$SNAP_ROOT.)
-$(error Please source /path/to/snap/hardware/snap_settings.sh or set $$SNAP_ROOT manually.)
-endif
-endif
-
 include $(SNAP_ROOT)/software/config.mk
 
 CFLAGS += -std=c99 -I$(SNAP_ROOT)/software/include
