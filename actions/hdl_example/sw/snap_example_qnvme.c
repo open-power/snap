@@ -39,13 +39,15 @@
 
 #define KILO_BYTE               (1024ull)
 #define MEGA_BYTE               (1024 * KILO_BYTE)
-#define GIGA_BYTE               (1024 * MEGA_BYTE)
-#define DDR_MEM_BASE_ADDR       0x00000000        /* Default Start of FPGA Ram */
-#define HOST_BUFFER_SIZE        (256 * KILO_BYTE) /* Default Size for Host Buffers */
+#define DDR_MEM_BASE_ADDR       0x00000000       /* Default Start of FPGA Ram */
 
-#define NVME_LB_SIZE            512               /* NVME Block Size */
-#define NVME_MAX_BLOCKS         1875385008        /* From NVME Namespace Identify command */
-#define NVME_MAX_TRANSFER_SIZE  (32 * MEGA_BYTE)  /* NVME limit to Transfer in one chunk */
+/*
+ * Hard code this numbres for FGT Card for now.
+ * This values can be accesd via Namespace Identify command.
+ */
+#define NVME_LB_SIZE            512              /* NVME Block Size */
+#define NVME_MAX_BLOCKS         1875385008       /* From NVME Namespace Identify command */
+#define NVME_MAX_TRANSFER_SIZE  (32 * MEGA_BYTE) /* NVME limit to Transfer in one chunk */
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
@@ -284,7 +286,7 @@ static void card_free(struct snap_card *handle)
 
 static int nvme_qtest(struct snap_card *handle, /* My handle */
 		bool write,                     /* Set to true if doing write */
-		uint64_t ram_address,           /* Set any ram address for sorce ore dest buffer */
+		uint64_t ram_address,           /* SNAP SRAM Source or Destination Addr. */
 		int drive,                      /* Use SSD drive 0 or 1 */
 		int blocks,                     /* How many blocks to write or read */
 		int blocks_offset,              /* Offset (block#) to start write or read */
@@ -442,7 +444,7 @@ int main(int argc, char *argv[])
 	void *dest_buf = NULL;
 	snap_action_flag_t attach_flags = 0;
 	int drive = 0;
-	uint64_t ddr_src = 0;
+	uint64_t ddr_src = DDR_MEM_BASE_ADDR;
 	uint64_t ddr_dest = 0;
 	uint64_t host_src = 0;
 	uint64_t host_dest = 0;
@@ -604,7 +606,6 @@ int main(int argc, char *argv[])
 
 	host_src = (uint64_t)src_buf;
 	host_dest = (uint64_t)dest_buf;
-	ddr_src = 0;
 	/* Set other ddr dest addr. if write and read is set */
 	if ((ssd_write_flag) && (ssd_read_flag))
 		ddr_dest = ddr_src + mem_size;
