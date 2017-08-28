@@ -98,6 +98,7 @@
         "10141004") a0="hls_bfs";;
         "10141005") a0="hls_intersect_h";;
         "10141006") a0="hls_intersect_s";;
+        "00000108") a0="hls_blowfish";;
         *) a0="unknown";;
       esac; echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="$SNAP_ROOT/software/tools/snap_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
@@ -118,6 +119,7 @@
         "10141004") a1="hls_bfs";;
         "10141005") a1="hls_intersect_h";;
         "10141006") a1="hls_intersect_s";;
+        "00000108") a1="hls_blowfish";;
         *) a1="unknown";;
       esac; echo "action0 type1s=$t1s type1l=$t1l $a1"
       t="$SNAP_ROOT/software/tools/snap_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
@@ -150,16 +152,19 @@
         step "$ACTION_ROOT/sw/snap_example -I -a1 -s1 -e2 -i1 -t100 -vv"
         step "$ACTION_ROOT/sw/snap_example -I -a2 -A256 -S1 -B0 -t200"
       fi
-      for num4k in 0 1; do
-      for num64 in 1 2; do
-      for align in 4096 1024 256 64; do  # posix memalign only allows power of 2
-        step "$ACTION_ROOT/sw/snap_example -a2 -A${align} -S${num4k} -B${num64} -t200"
+      for num4k in 0 1 2 3 4 5 6 7 8; do
+#     for num64 in 0 1 2; do
+      for num64 in 0; do
+      if [[ "$num4k" == "0" && "$num64" == "0" ]];then echo "skip $num4k $num64";continue;fi  # bot args=0 is not allowed
+#     for align in 4096 1024 256 64; do  # posix memalign only allows power of 2
+      for align in 4096;do
+        step "$ACTION_ROOT/sw/snap_example -a2 -S${num4k} -B${num64} -A${align} -t200"
       done
       done
       done
       step "$ACTION_ROOT/sw/snap_example -a2 -B${rnd20} -t200"
       if [[ "$DDR3_USED" == "TRUE" || "$DDR4_USED" == "TRUE" || "$BRAM_USED" == "TRUE" || "$SDRAM_USED" == "TRUE" ]]; then echo -e "$del\ntesting DDR"
-        for num4k in 0 1 3; do to=$((80+num4k*80))     # irun 1=6sec, 7=20sec, xsim 1=60sec 3=150sec
+        for num4k in 0 1 3; do to=$((180+num4k*180))
         for num64 in 1 64; do                          # 1..64
         for align in 4096 256 64; do                   # must be mult of 64
           step "$ACTION_ROOT/sw/snap_example -a6 -A${align} -S${num4k} -B${num64} -t$to"
@@ -335,6 +340,15 @@
       step "$ACTION_ROOT/sw/snap_intersect -I -m2 -v -t1200"
     fi # intersect
 
+    if [[ "$t0l" == "00000108" || "${env_action}" == "hls_blowfish" ]];then echo -e "$del\ntesting blowfish"
+      for blocks in 1 16 32 128 1024 4096 ; do  # blocks of 64B
+        dd if=/dev/urandom of=input.bin count=${blocks} bs=64 2>/dev/null
+        dd if=/dev/urandom of=key.bin   count=1         bs=16 2>/dev/null
+        snap_blowfish -t${timeout} -k key.bin -i input.bin -o encrypted.bin
+        snap_blowfish -t${timeout} -k key.bin -d -i encrypted.bin -o decrypted.bin
+        diff input.bin decrypted.bin
+      done
+    fi # blowfish
 
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"  # end of loop
   done; l=""; ts3=$(date +%s); totaltime=`expr $ts3 - $ts0`; echo "loops=$loops tests=$n total_time=$totaltime" # end of test
