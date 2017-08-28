@@ -168,6 +168,7 @@ if { $cloud_run == "BASE" } {
     if { [catch "$command > $logfile" errMsg] } {
       puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: write_bitstream failed" $widthCol4 "" ]
       puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "" $widthCol3 " please check $logfile" $widthCol4 "" ]
+      exit 42
     } else {
       write_cfgmem -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME -size 128 -interface BPIx16 -force >> $logfile
     }
