@@ -19,10 +19,10 @@
 ############################################################################
 
 ## Variables required by other scripts.
-## If SNAP_ROOT is not set, we assume that we are in the hardware directory.
+## This Makefile is contained in the hardware directory.
 ## So, the root directory is one level above.
 ##
-export SNAP_ROOT ?= $(abspath ..)
+export SNAP_ROOT=$(abspath ..)
 export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 

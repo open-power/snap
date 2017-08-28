@@ -14,16 +14,16 @@
 # limitations under the License.
 #
 PLATFORM ?= $(shell uname -i)
+export SNAP_ROOT=$(abspath .)
+config_subdirs += $(SNAP_ROOT)/scripts
+software_subdirs += $(SNAP_ROOT)/software
+hardware_subdirs += $(SNAP_ROOT)/hardware
+action_subdirs += $(SNAP_ROOT)/actions
 
-config_subdirs += $(CURDIR)/scripts
-software_subdirs += $(CURDIR)/software
-hardware_subdirs += $(CURDIR)/hardware
-action_subdirs += $(CURDIR)/actions
-
-snap_config = $(CURDIR)/.snap_config
-snap_config_sh = $(CURDIR)/.snap_config.sh
-snap_env = $(CURDIR)/.snap_env
-snap_env_sh = $(CURDIR)/.snap_env.sh
+snap_config = $(SNAP_ROOT)/.snap_config
+snap_config_sh = $(SNAP_ROOT)/.snap_config.sh
+snap_env = $(SNAP_ROOT)/.snap_env
+snap_env_sh = $(SNAP_ROOT)/.snap_env.sh
 
 -include $(snap_env_sh)
 
@@ -101,11 +101,11 @@ $(snap_config):
 
 snap_env: $(snap_config)
 	@echo "$@: Setting up SNAP environment variables"
-	@. $(CURDIR)/snap_env $(snap_config_sh)
+	@. $(SNAP_ROOT)/snap_env $(snap_config_sh)
 
 $(snap_env): $(snap_config)
 	@echo "$@: Setting up SNAP environment variables"
-	@. $(CURDIR)/snap_env $(snap_config_sh)
+	@. $(SNAP_ROOT)/snap_env $(snap_config_sh)
 
 clean:
 	@for dir in $(clean_subdirs); do       \
@@ -117,5 +117,5 @@ clean:
 	@find . -depth -name '.#*' -exec rm -rf '{}' \; -print
 
 clean_config: clean
-	@$(RM) $(CURDIR)/.snap_env*
-	@$(RM) $(CURDIR)/.snap_config*
+	@$(RM) $(SNAP_ROOT)/.snap_env*
+	@$(RM) $(SNAP_ROOT)/.snap_config*
