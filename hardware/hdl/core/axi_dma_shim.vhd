@@ -199,11 +199,12 @@ axi_wr: process(ha_pclock)
                     end if;
 
                   when DMA_WR_DATA =>
+                    axi_wready_q      <= ds_d_i.wr_data_ready;
+
                     if ks_d_i.S_AXI_WVALID = '1' then
                       for i in 0 to (C_S_AXI_DATA_WIDTH / 8) -1 LOOP
                         sd_d_o.wr_strobe(((C_S_AXI_DATA_WIDTH / 8) -1) - i) <= ks_d_i.S_AXI_WSTRB(i);
                       end loop;  -- i
-                      axi_wready_q      <= ds_d_i.wr_data_ready;
 
                       if (ks_d_i.S_AXI_WLAST = '1' AND
                           axi_wready_q      = '1') then
