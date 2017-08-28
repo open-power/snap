@@ -32,7 +32,7 @@ ifneq ("$(wildcard ../../../ActionTypes.md)","")
 SNAP_ROOT=$(abspath ../../../)
 else
 $(info You are not building your software from the default directory (/path/to/snap/actions/<action_name>/sw) or specified a wrong $$SNAP_ROOT.)
-$(error Please source /path/to/snap/hardware/snap_settings.sh or set $$SNAP_ROOT manually.)
+$(error Please make sure that $$SNAP_ROOT is set up correctly.)
 endif
 endif
 
