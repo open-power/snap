@@ -80,7 +80,7 @@ entity action_axi_master is
 		M_AXI_AWLEN	: out std_logic_vector(7 downto 0);
 		M_AXI_AWSIZE	: out std_logic_vector(2 downto 0);
 		M_AXI_AWBURST	: out std_logic_vector(1 downto 0);
-		M_AXI_AWLOCK	: out std_logic;
+		M_AXI_AWLOCK	: out std_logic_vector(1 downto 0);
 		M_AXI_AWCACHE	: out std_logic_vector(3 downto 0);
 		M_AXI_AWPROT	: out std_logic_vector(2 downto 0);
 		M_AXI_AWQOS	: out std_logic_vector(3 downto 0);
@@ -104,7 +104,7 @@ entity action_axi_master is
 		M_AXI_ARLEN	: out std_logic_vector(7 downto 0);
 		M_AXI_ARSIZE	: out std_logic_vector(2 downto 0);
 		M_AXI_ARBURST	: out std_logic_vector(1 downto 0);
-		M_AXI_ARLOCK	: out std_logic;
+		M_AXI_ARLOCK	: out std_logic_vector(1 downto 0);
 		M_AXI_ARCACHE	: out std_logic_vector(3 downto 0);
 		M_AXI_ARPROT	: out std_logic_vector(2 downto 0);
 		M_AXI_ARQOS	: out std_logic_vector(3 downto 0);
@@ -183,7 +183,7 @@ begin
 	M_AXI_AWLEN	<= axi_awlen;
 	M_AXI_AWSIZE	<= std_logic_vector( to_unsigned(clogb2((C_M_AXI_DATA_WIDTH/8)-1), 3) );
 	M_AXI_AWBURST	<= "01";
-	M_AXI_AWLOCK	<= '0';
+	M_AXI_AWLOCK	<= (others => '0');
 	M_AXI_AWCACHE	<= "0010";
 	M_AXI_AWPROT	<= "000";
 	M_AXI_AWQOS	<= x"0";
@@ -200,7 +200,7 @@ begin
 	M_AXI_ARLEN	<= axi_arlen;
 	M_AXI_ARSIZE	<= std_logic_vector( to_unsigned( clogb2((C_M_AXI_DATA_WIDTH/8)-1),3 ));
 	M_AXI_ARBURST	<= "01";
-	M_AXI_ARLOCK	<= '0';
+	M_AXI_ARLOCK	<= (others => '0');
 	M_AXI_ARCACHE	<= "0010";
 	M_AXI_ARPROT	<= "000";
 	M_AXI_ARQOS	<= x"0";
