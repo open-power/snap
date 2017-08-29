@@ -101,11 +101,14 @@ static void print_time(uint64_t elapsed, uint64_t size)
 static void *alloc_mem(int align, int size)
 {
 	void *a;
+	int size2 = size + align;
 
-	if (posix_memalign((void **)&a, align, size ) != 0) {
-		perror("FAILED: posix_memalign");
+	VERBOSE2("%s Enter Align: %d Size: %d\n", __func__, align, size);
+	if (posix_memalign((void **)&a, 4096, size2) != 0) {
+		perror("FAILED: posix_memalign()");
 		return NULL;
 	}
+	VERBOSE2("%s Exit %p\n", __func__, a);
 	return a;
 }
 
@@ -227,6 +230,8 @@ static int memcpy_test(struct snap_card* dnc,
 	int rc;
 	void *src = NULL;
 	void *dest = NULL;
+	void *f_src = NULL;
+	void *f_dest = NULL;
 	void *ddr3;
 	int blocks;
 	unsigned long memsize;
@@ -283,19 +288,21 @@ static int memcpy_test(struct snap_card* dnc,
 	switch (action) {
 	case ACTION_CONFIG_COPY_HH:
 		/* Allocate Host Src Buffer */
-		src = alloc_mem(align, memsize);
-		if (NULL == src)
+		f_src = alloc_mem(align, memsize);
+		if (NULL == f_src)
 			return 1;
-		VERBOSE1("  From Host:  %p Size: 0x%llx (%d * 4K + %d * 64 Byte) Align: %d\n",
-			src, (long long)memsize, blocks_4k, blocks_64, align);
+		src = f_src + align;
+		VERBOSE1("  From Host: %p (%p) Size: 0x%llx (%d * 4K + %d * 64 Byte) Align: %d\n",
+			src, f_src, (long long)memsize, blocks_4k, blocks_64, align);
 		memset2(src, card_ram_base, memsize);
 		/* Allocate Host Dest Buffer */
-		dest = alloc_mem(align, memsize);
-		if (NULL == dest) {
-			free_mem(src);
+		f_dest = alloc_mem(align, memsize);
+		if (NULL == f_dest) {
+			free_mem(f_src);
 			return 1;
 		}
-		VERBOSE1("  To Host: %p timeout: %d sec\n", dest, timeout);
+		dest = f_dest + align;
+		VERBOSE1("  To Host:   %p (%p) timeout: %d sec\n", dest, f_dest, timeout);
 
 		action_memcpy(dnc, action, dest, src, memsize);
 		rc = action_wait_idle(dnc, timeout, &td);
@@ -311,14 +318,15 @@ static int memcpy_test(struct snap_card* dnc,
 		}
 		if (rc)
 			VERBOSE0("Error Memcmp failed rc: %d\n", rc);
-		free_mem(src);
-		free_mem(dest);
+		free_mem(f_src);
+		free_mem(f_dest);
 		break;
 	case ACTION_CONFIG_COPY_HD:	/* Host to Card RAM */
 		/* Allocate Host Src Buffer */
-		src = alloc_mem(align, memsize);
-		if (NULL == src)
+		f_src = alloc_mem(align, memsize);
+		if (NULL == f_src)
 			return 1;
+		src = f_src + align;
 		memset2(src, card_ram_base, memsize);
 		VERBOSE1("  From Host:  %p Size: 0x%llx (%d * 4K + %d * 64 Byte) Align: %d\n",
 			src, (long long)memsize, blocks_4k, blocks_64, align);
@@ -329,7 +337,7 @@ static int memcpy_test(struct snap_card* dnc,
 		action_memcpy(dnc, action, dest, src, memsize);
 		rc = action_wait_idle(dnc, timeout, &td);
 		print_time(td, memsize);
-		free_mem(src);
+		free_mem(f_src);
 		break;
 	case ACTION_CONFIG_COPY_DH:
 		/* Set Src to DDR Ram Address */
@@ -337,9 +345,10 @@ static int memcpy_test(struct snap_card* dnc,
 		VERBOSE1("  From DDR:  %p Size: 0x%llx (%d * 4K + %d * 64 Byte) Align: %d\n",
 			src, (long long)memsize, blocks_4k, blocks_64, align);
 		/* Allocate Host Dest Buffer */
-		dest = alloc_mem(align, memsize);
-		if (NULL == dest)
+		f_dest = alloc_mem(align, memsize);
+		if (NULL == f_dest)
 			return 1;
+		dest = f_dest + align;
 		VERBOSE1("  To Host: %p timeout: %d sec\n", dest, timeout);
 
 		action_memcpy(dnc, action, dest, src, memsize);
@@ -349,7 +358,7 @@ static int memcpy_test(struct snap_card* dnc,
 			VERBOSE0("---------- dest Buffer: %p\n", dest);
 			__hexdump(stdout, dest, memsize);
 		}
-		free_mem(dest);
+		free_mem(f_dest);
 		break;
 	case ACTION_CONFIG_COPY_DD:
 		src = (void*)card_ram_base;
@@ -369,9 +378,10 @@ static int memcpy_test(struct snap_card* dnc,
 		break;
 	case ACTION_CONFIG_COPY_HDH:	/* Host -> DDR -> Host */
 		/* Allocate Host Src Buffer */
-		src = alloc_mem(align, memsize);
-		if (NULL == src)
+		f_src = alloc_mem(align, memsize);
+		if (NULL == f_src)
 			return 1;
+		src = f_src + align;
 		VERBOSE1("  From Host:  %p Size: 0x%llx (%d * 4K + %d * 64 Byte) Align: %d\n",
 			src, (long long)memsize, blocks_4k, blocks_64, align);
 		memset2(src, card_ram_base, memsize);
@@ -384,11 +394,12 @@ static int memcpy_test(struct snap_card* dnc,
 		if (0 != rc) break;
 
 		/* Allocate Host Dest Buffer */
-		dest = alloc_mem(align, memsize);
-		if (NULL == dest) {
-			free_mem(src);
+		f_dest = alloc_mem(align, memsize);
+		if (NULL == f_dest) {
+			free_mem(f_src);
 			return 1;
 		}
+		dest = f_dest + align;
 		VERBOSE1("  From DDR Src: %p\n", ddr3);
 		VERBOSE1("  To Host: %p timeout: %d sec\n", dest, timeout);
 		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
@@ -406,8 +417,8 @@ static int memcpy_test(struct snap_card* dnc,
 		}
 		if (rc)
 			VERBOSE0("Error Memcmp failed rc: %d\n", rc);
-		free_mem(src);
-		free_mem(dest);
+		free_mem(f_src);
+		free_mem(f_dest);
 		break;
 	}
 	return rc;
