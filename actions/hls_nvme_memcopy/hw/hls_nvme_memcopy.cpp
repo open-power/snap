@@ -138,7 +138,7 @@ short write_burst_to_ssd(snapu32_t *d_nvme,
 	// Poll the status register until the operation is finished
 	while(1)
 	{
-		if(status = ((volatile int*)d_nvme)[1])
+		if((status = ((volatile int*)d_nvme)[1]))
 		{
 			if(status & 0x10)
 				rc = 1;
@@ -180,7 +180,7 @@ short read_burst_from_ssd(snapu32_t *d_nvme,
 	// Poll the status register until the operation is finished
 	while(1)
 	{
-		if(status = ((volatile int*)d_nvme)[1])
+		if((status = ((volatile int*)d_nvme)[1]))
 		{
 			if(status & 0x10)
 				rc = 1;
