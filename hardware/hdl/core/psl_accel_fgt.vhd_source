@@ -46,14 +46,14 @@ ENTITY psl_accel IS
     C_AXI_CARD_MEM0_BUSER_WIDTH         : integer   := C_DDR_AXI_BUSER_WIDTH;
 
     -- Parameters for Axi Master Bus Interface AXI_NVME : to NVMe
-    C_AXI_NVME_ID_WIDTH            : integer   := C_NVME_AXI_ID_WIDTH;
-    C_AXI_NVME_ADDR_WIDTH          : integer   := C_NVME_AXI_ADDR_WIDTH;
-    C_AXI_NVME_DATA_WIDTH          : integer   := C_NVME_AXI_DATA_WIDTH;
-    C_AXI_NVME_AWUSER_WIDTH        : integer   := C_NVME_AXI_AWUSER_WIDTH;
-    C_AXI_NVME_ARUSER_WIDTH        : integer   := C_NVME_AXI_ARUSER_WIDTH;
-    C_AXI_NVME_WUSER_WIDTH         : integer   := C_NVME_AXI_WUSER_WIDTH;
-    C_AXI_NVME_RUSER_WIDTH         : integer   := C_NVME_AXI_RUSER_WIDTH;
-    C_AXI_NVME_BUSER_WIDTH         : integer   := C_NVME_AXI_BUSER_WIDTH;
+    C_AXI_NVME_ID_WIDTH                 : integer   := C_NVME_AXI_ID_WIDTH;
+    C_AXI_NVME_ADDR_WIDTH               : integer   := C_NVME_AXI_ADDR_WIDTH;
+    C_AXI_NVME_DATA_WIDTH               : integer   := C_NVME_AXI_DATA_WIDTH;
+    C_AXI_NVME_AWUSER_WIDTH             : integer   := C_NVME_AXI_AWUSER_WIDTH;
+    C_AXI_NVME_ARUSER_WIDTH             : integer   := C_NVME_AXI_ARUSER_WIDTH;
+    C_AXI_NVME_WUSER_WIDTH              : integer   := C_NVME_AXI_WUSER_WIDTH;
+    C_AXI_NVME_RUSER_WIDTH              : integer   := C_NVME_AXI_RUSER_WIDTH;
+    C_AXI_NVME_BUSER_WIDTH              : integer   := C_NVME_AXI_BUSER_WIDTH;
 
     -- Parameters for Axi Slave Bus Interface AXI_CTRL_REG
     C_AXI_CTRL_REG_DATA_WIDTH           : integer   := C_REG_DATA_WIDTH;
