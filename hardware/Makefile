@@ -89,9 +89,12 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 #      due to missing dependencies between the different targets.
 #
 
-.PHONY: all clean gitclean check_snap_settings check_denali model action_hw action_sw software pslse prepare_environment create_environment config patch_version patch_NVMe image cloud_base cloud_image cloud_action cloud_merge snap_config snap_config_start xsim irun questa
+.PHONY: all snap_env clean gitclean check_snap_settings check_denali model action_hw action_sw software pslse prepare_environment create_environment config patch_version patch_NVMe image cloud_base cloud_image cloud_action cloud_merge snap_config snap_config_start xsim irun questa
 
 all: config model image
+
+snap_env:
+	@$(MAKE)  -C ${SNAP_ROOT} snap_env
 
 check_snap_settings:
 	@if [ ! -d "$(SNAP_HARDWARE_ROOT)" ]; then \
@@ -100,7 +103,7 @@ check_snap_settings:
 		exit 1; \
 	fi
 	@if [ $(SIMULATOR) != "irun" ] && [ $(SIMULATOR) != "xsim" ] && [ $(SIMULATOR) != "questa" ];then \
-		echo "unknown simulator=$SIMULATOR"; \
+		echo "unknown simulator \"$(SIMULATOR)\""; \
 		exit 1; \
 	fi
 	@if [ -z `which git 2> /dev/null` ]; then \
@@ -110,13 +113,14 @@ check_snap_settings:
 		exit 1; \
 	fi
 	@cd $(SNAP_HARDWARE_ROOT); if [ -z `git describe HEAD 2> /dev/null` ]; then \
-		echo "$(SNAP_HARDWARE_ROOT) (SNAP_HARDWARE_ROOT) does not belong to a git repository."; \
-		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/donut.git"; \
+		echo "$(SNAP_HARDWARE_ROOT) does not belong to a git repository."; \
+		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/snap.git"; \
 		exit 1; \
 	fi
 	@if [ -z $(FPGACARD) ] || [ -z $(SDRAM_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ] || [ -z $(PSL_DCP) ]; then \
 		echo "Missing one or more environment  variables"; \
-		echo "Please make sure all of the following variables are prepared!"; \
+		echo "Please make sure that all of the following variables are prepared!"; \
+		echo "(e.g. by calling 'make snap_env')"; \
 		echo "FPGACARD:       $(FPGACARD)"; \
 		echo "PSL_DCP :       $(PSL_DCP)"; \
 		echo "ACTION_ROOT:    $(ACTION_ROOT)"; \
@@ -126,7 +130,7 @@ check_snap_settings:
 		exit 1; \
 	fi
 	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` = "TRUE" ] && [ ! -e "$(ILA_SETUP_FILE)" ]; then \
-		echo "ILA_DEBUG is set to ${ILA_DEBUG} but ILA_SETUP_FILE is not pointing to a file!"; \
+		echo "ILA_DEBUG is set to ${ILA_DEBUG} but ILA_SETUP_FILE (\"${ILA_SETUP_FILE}\") is not pointing to a file!"; \
 		exit 1; \
 	fi
 	@echo "=============================================="
