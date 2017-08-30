@@ -285,7 +285,7 @@
  if [ "$SIMLOG_PPID" == "" ];then echo "could not start $SIMULATOR, did you successfully compile the model ?";TCRC=-1;fi
 
  if [ "$TCRC" == "0" ];then for i in {1..10};do                  # wait for SIM_PID to show up
-   SIM_PID=`ps -ef|grep $SIMLOG_PPID|grep $SIMULATOR|awk '{print $2}'`
+   SIM_PID=`ps -ef|grep $SIMLOG_PPID|grep -v run_sim|grep -v grep|grep $SIMULATOR|awk '{print $2}'`
    if [ "$SIM_PID" != "" ];then echo "sim.log PID=$SIMLOG_PID ppid=$SIMLOG_PPID sim_pid=$SIM_PID started after $i sec"|tee -a sim.log;break;fi
    if [ "$i" -eq "10" ];then echo "**** timeout $i sec waiting for $SIMULATOR PID"; TCRC=-1;break;fi
    sleep 1
