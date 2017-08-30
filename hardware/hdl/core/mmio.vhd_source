@@ -33,7 +33,9 @@ ENTITY mmio IS
     -- pervasive
     ha_pclock              : IN  std_logic;
     afu_reset              : IN  std_logic;
-    nvme_reset_ctl         : OUT std_logic_vector(SNAP_NVME_RST_L  DOWNTO SNAP_NVME_RST_R);   -- only for NVME_USED=TRUE  -- keeping NVMe drives in reset by driving 0's
+#ifdef CONFIG_ENABLE_NVME
+    nvme_reset_ctl         : OUT std_logic_vector(SNAP_NVME_RST_L  DOWNTO SNAP_NVME_RST_R);   -- keeping NVMe drives in reset by driving 0s
+#endif
     ah_paren_mm_o          : OUT std_logic;
     --
     -- PSL IOs
@@ -1179,10 +1181,12 @@ BEGIN
     mmj_d_o.cpl_int_enable     <= context_config_hw_dout(CTX_CFG_CPLINT_ENA_INT);
     mmj_d_o.job_queue_mode     <= NOT context_config_hw_dout(CTX_CFG_DIRECT_MODE_INT);
 
-    --                                                                                             -- only for NVME_USED=TRUE
-    -- PERST gates for NVMe drives                                                                 -- only for NVME_USED=TRUE
-    --                                                                                             -- only for NVME_USED=TRUE
-    nvme_reset_ctl <= snap_regs_q(SNAP_RESET_REG)(SNAP_NVME_RST_L DOWNTO SNAP_NVME_RST_R);         -- only for NVME_USED=TRUE
+#ifdef CONFIG_ENABLE_NVME
+    --
+    -- PERST gates for NVMe drives
+    --
+    nvme_reset_ctl <= snap_regs_q(SNAP_RESET_REG)(SNAP_NVME_RST_L DOWNTO SNAP_NVME_RST_R);
+#endif
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------

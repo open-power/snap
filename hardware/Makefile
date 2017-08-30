@@ -19,12 +19,20 @@
 ############################################################################
 
 ## Variables required by other scripts.
-## If SNAP_ROOT is not set, we assume that we are in the hardware directory.
+## This Makefile is contained in the hardware directory.
 ## So, the root directory is one level above.
 ##
-export SNAP_ROOT ?= $(abspath ..)
+export SNAP_ROOT=$(abspath ..)
 export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
+
+snap_config_cflags = $(SNAP_ROOT)/.snap_config.cflags
+snap_config_sh     = $(SNAP_ROOT)/.snap_config.sh
+snap_env_sh        = $(SNAP_ROOT)/.snap_env.sh
+
+-include $(snap_config_cflags)
+-include $(snap_config_sh)
+-include $(snap_env_sh)
 
 ifeq "$(FPGACARD)" "KU3"
 	export DDR3_USED=$(SDRAM_USED)
@@ -58,13 +66,14 @@ SNAP_HDL_CORE=$(SNAP_HARDWARE_ROOT)/hdl/core
 SNAP_HDL_HLS=$(SNAP_HARDWARE_ROOT)/hdl/hls
 SNAP_SIM_CORE=$(SNAP_HARDWARE_ROOT)/sim/core
 
+SNAP_PP_FILES=$(SNAP_HDL_CORE)/psl_accel.vhd \
+              $(SNAP_HDL_CORE)/snap_core.vhd \
+              $(SNAP_HDL_CORE)/mmio.vhd
+
 SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
-                  $(SNAP_HDL_CORE)/psl_accel.vhd \
                   $(SNAP_HDL_CORE)/psl_accel_types.vhd \
-                  $(SNAP_HDL_CORE)/snap_core.vhd \
                   $(SNAP_HDL_CORE)/snap_core_types.vhd \
                   $(SNAP_HDL_CORE)/dma_buffer.vhd \
-                  $(SNAP_HDL_CORE)/mmio.vhd \
                   $(SNAP_HDL_HLS)/action_wrapper.vhd \
                   $(SNAP_SIM_CORE)/top.sv
 
@@ -80,9 +89,12 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 #      due to missing dependencies between the different targets.
 #
 
-.PHONY: all clean gitclean check_snap_settings check_denali model action_hw action_sw software pslse prepare_environment create_environment config patch_version patch_NVMe image cloud_base cloud_image cloud_action cloud_merge snap_config snap_config_start xsim irun questa
+.PHONY: all snap_env clean gitclean check_snap_settings check_denali model action_hw action_sw software pslse prepare_environment create_environment config patch_version patch_NVMe image cloud_base cloud_image cloud_action cloud_merge snap_config snap_config_start xsim irun questa
 
 all: config model image
+
+snap_env:
+	@$(MAKE)  -C ${SNAP_ROOT} snap_env
 
 check_snap_settings:
 	@if [ ! -d "$(SNAP_HARDWARE_ROOT)" ]; then \
@@ -91,7 +103,7 @@ check_snap_settings:
 		exit 1; \
 	fi
 	@if [ $(SIMULATOR) != "irun" ] && [ $(SIMULATOR) != "xsim" ] && [ $(SIMULATOR) != "questa" ];then \
-		echo "unknown simulator=$SIMULATOR"; \
+		echo "unknown simulator \"$(SIMULATOR)\""; \
 		exit 1; \
 	fi
 	@if [ -z `which git 2> /dev/null` ]; then \
@@ -101,13 +113,14 @@ check_snap_settings:
 		exit 1; \
 	fi
 	@cd $(SNAP_HARDWARE_ROOT); if [ -z `git describe HEAD 2> /dev/null` ]; then \
-		echo "$(SNAP_HARDWARE_ROOT) (SNAP_HARDWARE_ROOT) does not belong to a git repository."; \
-		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/donut.git"; \
+		echo "$(SNAP_HARDWARE_ROOT) does not belong to a git repository."; \
+		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/snap.git"; \
 		exit 1; \
 	fi
 	@if [ -z $(FPGACARD) ] || [ -z $(SDRAM_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ] || [ -z $(PSL_DCP) ]; then \
 		echo "Missing one or more environment  variables"; \
-		echo "Please check the following variables and source snap_settings before calling make!"; \
+		echo "Please make sure that all of the following variables are prepared!"; \
+		echo "(e.g. by calling 'make snap_env')"; \
 		echo "FPGACARD:       $(FPGACARD)"; \
 		echo "PSL_DCP :       $(PSL_DCP)"; \
 		echo "ACTION_ROOT:    $(ACTION_ROOT)"; \
@@ -117,9 +130,29 @@ check_snap_settings:
 		exit 1; \
 	fi
 	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` = "TRUE" ] && [ ! -e "$(ILA_SETUP_FILE)" ]; then \
-		echo "ILA_DEBUG is set to ${ILA_DEBUG} but ILA_SETUP_FILE is not pointing to a file!"; \
+		echo "ILA_DEBUG is set to ${ILA_DEBUG} but ILA_SETUP_FILE (\"${ILA_SETUP_FILE}\") is not pointing to a file!"; \
 		exit 1; \
 	fi
+	@echo "=============================================="
+	@echo "==== hardware/Makefile called with:       ===="
+	@echo "=============================================="
+	@echo "SNAP_ROOT      = $(SNAP_ROOT)"
+	@echo "ACTION_ROOT    = $(ACTION_ROOT)"
+	@echo "PSL_DCP        = $(PSL_DCP)"
+	@echo "FPGACARD       = $(FPGACARD)"
+	@echo "FPGACHIP       = $(FPGACHIP)"
+	@echo "NUM_OF_ACTIONS = $(NUM_OF_ACTIONS)"
+	@echo "HLS_SUPPORT    = $(HLS_SUPPORT)"
+	@echo "BRAM_USED      = $(BRAM_USED)"
+	@echo "SDRAM_USED     = $(SDRAM_USED)"
+	@echo "DDR3_USED      = $(DDR3_USED)"
+	@echo "DDR4_USED      = $(DDR4_USED)"
+	@echo "DDRI_USED      = $(DDRI_USED)"
+	@echo "NVME_USED      = $(NVME_USED)"
+	@echo "ILA_DEBUG      = $(ILA_DEBUG)"
+	@echo "SIMULATOR      = $(SIMULATOR)"
+	@echo "USE_PRFLOW     = $(USE_PRFLOW)"
+	@echo "=============================================="
 
 check_denali:
 	@if [ $(NVME_USED) = "TRUE" ]; then \
@@ -153,13 +186,20 @@ prepare_environment:
 	fi
 	@echo -e "\t[PREPARE ENVIRONMENT.] done `date`";
 
+$(SNAP_ROOT)/.snap_config:
+	@echo -e "\tNeed to run \"$(MAKE) -C $(SNAP_ROOT) snap_config\" first"
+
+$(SNAP_PP_FILES): $(SNAP_ROOT)/.snap_config
+	@echo "Creating $@ ..."
+	@$(CC) -E -xc $(SNAP_CFLAGS) $@_source | grep -v "^#" > $@
+
 %.vhd: %.vhd_source
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 %.sv: %.sv_source
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
-snap_config: snap_config_start $(SNAP_CONFIG_FILES)
+snap_config: snap_config_start $(SNAP_PP_FILES) $(SNAP_CONFIG_FILES)
 	@echo -e "\t[CONFIG SNAP CORE....] done `date`";
 
 snap_config_start:
@@ -307,10 +347,11 @@ questa:
 
 clean:
 	@echo -e "\t[CLEAN ENVIRONMENT...] start `date`"
-	@$(RM) -r $(SNAP_CONFIG_FILES) $(SNAP_TMP_FILES)	\
-		  $(SNAP_HDL_CORE)/psl_fpga.vhd_source		\
-		  $(SNAP_HDL_CORE)/psl_accel.vhd_source		\
-		  *build
+	@$(RM)    .setup_environment
+	@$(RM) -r $(SNAP_PP_FILES) $(SNAP_CONFIG_FILES) $(SNAP_TMP_FILES) \
+	          $(SNAP_HDL_CORE)/psl_fpga.vhd_source                    \
+	          $(SNAP_HDL_CORE)/psl_accel.vhd_source                   \
+	          *build
 	@echo -e "\t                        vivado project";
 	@$(RM) -r viv_project*
 	@echo -e "\t                        IPs";
