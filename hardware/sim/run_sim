@@ -55,8 +55,8 @@
  while [[ $# > 0 ]]; do         # consume multiple args per loop with shift
 #  echo "arg1=$1 arg2=$2"
    case $1 in				
-     -ncsim|-xsim|-irun) SIM_OVER="$2";shift
-     -app)		TST_NAME="$2";shift
+     -ncsim|-xsim|-irun) SIM_OVER="$2";;
+     -app)		TST_NAME="$2";shift;;
      			if [[ ! -f ${SNAP_ROOT}/software/${TST_NAME} ]];then echo "file ${SNAP_ROOT}/software/${TST_NAME} not found, leaving";exit 11;fi;;
      -list)		TST_NAME='LIST';LISTNAME="$2";shift
      			if [[ ! -f ${SNAP_ROOT}/hardware/sim/${LISTNAME} ]];then echo "testlist ${SNAP_ROOT}/hardware/sim/${LISTNAME} not found, leaving"; exit 11; fi;;
