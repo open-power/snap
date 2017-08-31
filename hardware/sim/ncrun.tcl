@@ -18,7 +18,7 @@
  input ncaet.tcl				;# enabled through run_sim
  set  intovf_severity_level {warning};
  set myrc [run 2000 ns]; puts "run2000 rc= $myrc" ;# assertions off until after 2800ns
-#assertion -on  -all 				;# Turn assertions back on after reset is done.
+ assertion -on  -all 				;# Turn assertions back on after reset is done.
  set severity_pack_assert_off {warning}
  set pack_assert_off { ieee.std_logic_arith ieee.numeric_std }
 #run 50000 ns					;# limit test length

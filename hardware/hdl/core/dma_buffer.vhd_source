@@ -499,14 +499,14 @@ BEGIN
 
           -- FIXME: please fix the bit swap in the AC_GENPARITY function
           IF ha_b_wvalid_q  = '1' THEN
-             ha_b_wdata_err_q <= (rram_wdata_p_q(7) XOR ha_b_q.wpar(0)) &
-                                 (rram_wdata_p_q(6) XOR ha_b_q.wpar(1)) &
-                                 (rram_wdata_p_q(5) XOR ha_b_q.wpar(2)) &
-                                 (rram_wdata_p_q(4) XOR ha_b_q.wpar(3)) &
-                                 (rram_wdata_p_q(3) XOR ha_b_q.wpar(4)) &
-                                 (rram_wdata_p_q(2) XOR ha_b_q.wpar(5)) &
-                                 (rram_wdata_p_q(1) XOR ha_b_q.wpar(6)) &
-                                 (rram_wdata_p_q(0) XOR ha_b_q.wpar(7));
+             ha_b_wdata_err_q <= (rram_wdata_p_q(7) XOR ha_b_q.wpar(7)) &
+                                 (rram_wdata_p_q(6) XOR ha_b_q.wpar(6)) &
+                                 (rram_wdata_p_q(5) XOR ha_b_q.wpar(5)) &
+                                 (rram_wdata_p_q(4) XOR ha_b_q.wpar(4)) &
+                                 (rram_wdata_p_q(3) XOR ha_b_q.wpar(3)) &
+                                 (rram_wdata_p_q(2) XOR ha_b_q.wpar(2)) &
+                                 (rram_wdata_p_q(1) XOR ha_b_q.wpar(1)) &
+                                 (rram_wdata_p_q(0) XOR ha_b_q.wpar(0));
 
           END IF;
         END IF;
