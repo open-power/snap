@@ -115,6 +115,8 @@ int main(int argc, char *argv[])
 	int exit_code = EXIT_SUCCESS;
 	uint8_t trailing_zeros[1024] = { 0, };
 	snap_action_flag_t action_irq = 0;
+	long long diff_usec = 0;
+	double mib_sec;
 
 	while (1) {
 		int option_index = 0;
@@ -245,7 +247,7 @@ int main(int argc, char *argv[])
 
 	/* if output file is defined, use that as output */
 	if (output != NULL) {
-		size_t set_size = size + (verify ? sizeof(trailing_zeros) : 0);
+		ssize_t set_size = size + (verify ? sizeof(trailing_zeros) : 0);
 
 		obuff = snap_malloc(set_size);
 		if (obuff == NULL)
@@ -337,8 +339,12 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "warn: Verification works currently "
 				"only with HOST_DRAM\n");
 	}
-	fprintf(stdout, "memcopy took %lld usec\n",
-		(long long)timediff_usec(&etime, &stime));
+
+	diff_usec = timediff_usec(&etime, &stime);
+	mib_sec = (diff_usec == 0) ? 0.0 : (double)size / diff_usec;
+
+	fprintf(stdout, "memcopy of %lld bytes took %lld usec @ %.3f MiB/sec\n",
+		(long long)size, (long long)diff_usec, mib_sec);
 
 	snap_detach_action(action);
 	snap_card_free(card);
