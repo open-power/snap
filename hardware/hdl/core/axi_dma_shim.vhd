@@ -166,6 +166,7 @@ axi_wr: process(ha_pclock)
                  sd_d_o.wr_data(i * 8 - 1 downto (i-1) *8)         <= ks_d_i.S_AXI_WDATA((C_S_AXI_DATA_WIDTH + 7)- i*8 downto C_S_AXI_DATA_WIDTH -  i*8);
               end loop;  -- i
           --    sd_d_o.wr_data    <= ks_d_i.S_AXI_WDATA;
+              
               if afu_reset = '1' then
                 fsm_write_q     <= IDLE;
                 axi_awready_q   <= '0';
@@ -192,16 +193,21 @@ axi_wr: process(ha_pclock)
                   when DMA_WR_REQ =>
                     if ds_c_i.wr_req_ack = '1' then
                       sd_c_o.wr_req     <= '0';
-                      axi_wready_q      <= '1';
+                      -- axi_wready_q      <= '1';
+                      axi_wready_q      <= ds_d_i.wr_data_ready;
                       fsm_write_q       <= DMA_WR_DATA;
                     end if;
 
                   when DMA_WR_DATA =>
+                    axi_wready_q      <= ds_d_i.wr_data_ready;
+
                     if ks_d_i.S_AXI_WVALID = '1' then
                       for i in 0 to (C_S_AXI_DATA_WIDTH / 8) -1 LOOP
                         sd_d_o.wr_strobe(((C_S_AXI_DATA_WIDTH / 8) -1) - i) <= ks_d_i.S_AXI_WSTRB(i);
                       end loop;  -- i
-                      if ks_d_i.S_AXI_WLAST = '1' then
+
+                      if (ks_d_i.S_AXI_WLAST = '1' AND
+                          axi_wready_q      = '1') then
                         sd_d_o.wr_last <= '1';
                         axi_wready_q      <= '0';
                         fsm_write_q       <= IDLE;
