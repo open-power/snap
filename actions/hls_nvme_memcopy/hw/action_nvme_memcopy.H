@@ -24,24 +24,24 @@
 #include "hls_snap.H"
 #include <action_nvme_memcopy.h> /* Memcopy Job definition */
 
-#define RELEASE_LEVEL		0x00000001
+#define RELEASE_LEVEL         0x00000001
 
-#define MAX_NB_OF_BYTES_READ	(256 * 1024)
-#define SSD_BLOCK_SIZE		512
+#define MAX_NB_OF_BYTES_READ  (256 * 1024)
+#define SSD_BLOCK_SIZE        512
 #define SSD_BLOCK_SIZE_SHIFT  9 
-#define MAX_SSD_BLOCK_XFER	128 
+#define MAX_SSD_BLOCK_XFER    128 
 //The NVMe subsystem can handle up to 218 read or write requests per drive.
 
-#define CARD_DRAM_SIZE		(1 * 1024 *1024 * 1024)
-#define MAX_NB_OF_WORDS_READ	(MAX_NB_OF_BYTES_READ/BPERDW)
+#define CARD_DRAM_SIZE        (1 * 1024 *1024 * 1024)
+#define MAX_NB_OF_WORDS_READ    (MAX_NB_OF_BYTES_READ/BPERDW)
 
 #define DRAM_ADDR_TO_SSD   0x00000000
 #define DRAM_ADDR_FROM_SSD 0x80000000
 //---------------------------------------------------------------------
 typedef struct {
-	CONTROL Control;	/*  16 bytes */
-	nvme_memcopy_job_t Data;	/* 108 bytes */
-	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(nvme_memcopy_job_t)];
+    CONTROL Control;    /*  16 bytes */
+    nvme_memcopy_job_t Data;    /* 108 bytes */
+    uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(nvme_memcopy_job_t)];
 } action_reg;
 
 #endif  /* __ACTION_HLS_NVME_MEMCOPY_H__ */
