@@ -16,14 +16,21 @@
 # limitations under the License.
 #
 
-echo "OLD! Nothing is done. Return."
-exit 0
 
 verbose=0
 snap_card=0
 duration="NORMAL"
 
+PWD=`pwd`
+if [ -z "$ACTION_ROOT" ]; then
+    ACTION_ROOT="${PWD}/.."
+fi
+echo "ACTION_ROOT=$ACTION_ROOT"
+echo "please make sure ACTION_ROOT is pointed to actions/hls_nvme_memcopy"
+
 function usage() {
+    echo "This script is supposed to run under actions/hls_nvme_memcopy/tests"
+    echo "please make sure ACTION_ROOT is pointed to actions/hls_nvme_memcopy"
     echo "Usage:"
     echo "  test_<action_type>.sh"
     echo "    [-C <card>] card to be used for the test"
@@ -53,14 +60,12 @@ while getopts ":C:t:d:h" opt; do
     esac
 done
 
-export PATH=$PATH:../software/tools
+export PATH=$PATH:$ACTION_ROOT/../../software/tools:$ACTION_ROOT/sw
 
 snap_peek --help > /dev/null || exit 1;
 snap_poke --help > /dev/null || exit 1;
 
 #### VERSION ##########################################################
-
-# [ -z "$STATE" ] && echo "Need to set STATE" && exit 1;
 
 if [ -z "$SNAP_CONFIG" ]; then
 	echo "CARD VERSION"
@@ -70,79 +75,58 @@ if [ -z "$SNAP_CONFIG" ]; then
 fi
 
 #### MEMCOPY ##########################################################
+rm -f snap_nvme_memcopy.log
+snap_maint -C${snap_card} -v
+snap_nvme_init -C${snap_card} -v
+#snap_nvme_memcopy -h
+for size in 512 2048 1048576; do to=$((size*50+10))
+     echo "Start testing $size......................................."
+     dd if=/dev/urandom bs=${size} count=1 > ${size}.in
+     echo -n "Doing snap_nvme_memcopy (aligned)... "
+   
+     #from host
+     cmd="snap_nvme_memcopy -C${snap_card} -A HOST_DRAM -D HOST_DRAM -i ${size}.in -o${size}a.out -v -t$to >> snap_nvme_memcopy.log 2>&1" 
+     echo "$cmd" >> snap_nvme_memcopy.log; eval ${cmd}
+     cmd="snap_nvme_memcopy -C${snap_card} -A HOST_DRAM -D CARD_DRAM -i ${size}.in -d 0x22220000 -v -t$to >> snap_nvme_memcopy.log 2>&1" 
+     echo "$cmd" >> snap_nvme_memcopy.log; eval ${cmd}
+     cmd="snap_nvme_memcopy -C${snap_card} -A HOST_DRAM -D NVME_SSD  -i ${size}.in -d 0x55550000 -v -t$to >> snap_nvme_memcopy.log 2>&1" 
+     echo "$cmd" >> snap_nvme_memcopy.log; eval ${cmd}
+     cmd="snap_nvme_memcopy -C${snap_card} -A HOST_DRAM -D NVME_SSD  -i ${size}.in -n1 -d 0x77770000 -v -t$to >> snap_nvme_memcopy.log 2>&1" 
+     echo "$cmd" >> snap_nvme_memcopy.log; eval ${cmd}
+     #from card
+     cmd="snap_nvme_memcopy -C${snap_card} -A CARD_DRAM -D HOST_DRAM -a 0x22220000 -o${size}b.out -s ${size} -v -t$to >> snap_nvme_memcopy.log 2>&1" 
+     echo "$cmd" >> snap_nvme_memcopy.log; eval ${cmd}
+     cmd="snap_nvme_memcopy -C${snap_card} -A CARD_DRAM -D NVME_SSD  -a 0x22220000 -d 0x33330000 -s ${size} -v -t$to >> snap_nvme_memcopy.log 2>&1" 
+     echo "$cmd" >> snap_nvme_memcopy.log; eval ${cmd}
+     cmd="snap_nvme_memcopy -C${snap_card} -A CARD_DRAM -D CARD_DRAM -a 0x22220000 -d 0x44440000 -s ${size} -v -t$to >> snap_nvme_memcopy.log 2>&1" 
+     echo "$cmd" >> snap_nvme_memcopy.log; eval ${cmd}
+     #from nvme
+     cmd="snap_nvme_memcopy -C${snap_card} -A NVME_SSD  -D HOST_DRAM -a 0x55550000 -o${size}c.out -s ${size} -v -t$to >> snap_nvme_memcopy.log 2>&1" 
+     echo "$cmd" >> snap_nvme_memcopy.log; eval ${cmd}
+     cmd="snap_nvme_memcopy -C${snap_card} -A NVME_SSD  -D CARD_DRAM -a 0x55550000 -d 0x66660000 -s ${size} -v -t$to >> snap_nvme_memcopy.log 2>&1" 
+     echo "$cmd" >> snap_nvme_memcopy.log; eval ${cmd}
 
-export PATH=$PATH:./hls_nvme_memcopy/sw
+     #check contents
+     cmd="snap_nvme_memcopy -C${snap_card} -A CARD_DRAM -D HOST_DRAM -a 0x44440000 -o${size}d.out -s ${size} -v -t$to >> snap_nvme_memcopy.log 2>&1" 
+     echo "$cmd" >> snap_nvme_memcopy.log; eval ${cmd}
+     cmd="snap_nvme_memcopy -C${snap_card} -A CARD_DRAM -D HOST_DRAM -a 0x66660000 -o${size}e.out -s ${size} -v -t$to >> snap_nvme_memcopy.log 2>&1" 
+     echo "$cmd" >> snap_nvme_memcopy.log; eval ${cmd}
+     cmd="snap_nvme_memcopy -C${snap_card} -A NVME_SSD  -D HOST_DRAM -a 0x33330000 -o${size}f.out -s ${size} -v -t$to >> snap_nvme_memcopy.log 2>&1" 
+     echo "$cmd" >> snap_nvme_memcopy.log; eval ${cmd}
+     cmd="snap_nvme_memcopy -C${snap_card} -A NVME_SSD  -D HOST_DRAM -a 0x77770000 -n1 -o${size}g.out -s ${size} -v -t$to >> snap_nvme_memcopy.log 2>&1" 
+     echo "$cmd" >> snap_nvme_memcopy.log; eval ${cmd}
 
-python3 -c 'print("A" * 1024, end="")' > 1KiB_A.bin
+     echo -n "Check results ... "
+     for suffix in a b c d e f g; do ofname=${size}${suffix}.out
+        if diff ${size}.in ${ofname} >/dev/null; then
+            echo "file diff $ofname OK"
+        else
+            echo "file diff $ofname ERROR"
+            exit 1
+        fi 
+     done
+done
 
-echo -n "Doing snap_nvme_memcopy (aligned)... "
-cmd="snap_nvme_memcopy -C${snap_card} -X	\
-		-i 1KiB_A.bin			\
-		-o 1KiB_A.out >		\
-		snap_nvme_memcopy.log 2>&1"
-eval ${cmd}
-if [ $? -ne 0 ]; then
-    cat snap_nvme_memcopy.log
-    echo "cmd: ${cmd}"
-    echo "failed"
-    exit 1
-fi
-echo "ok"
-
-echo -n "Check results ... "
-diff 1KiB_A.bin 1KiB_A.out 2>&1 > /dev/null
-if [ $? -ne 0 ]; then
-    echo "failed"
-    echo "  1KiB_A.bin 1KiB_A.out are different!"
-    exit 1
-fi
-echo "ok"
-
-#### MEMCOPY CARD #####################################################
-
-### Trying DRAM on card ...
-test_data=LARGE_A.bin
-python3 -c 'print("A" * (1 * 1024 * 1024), end="")' > $test_data
-# snap_search.txt
-
-size=`ls -l $test_data | cut -d' ' -f5`
-
-echo -n "Doing snap_nvme_memcopy (CARD_DRAM) ${size} bytes to card ... "
-cmd="snap_nvme_memcopy -C${snap_card}		\
-		-i $test_data -D CARD_DRAM -d 0x00000000 >	\
-		snap_memcopy_card.log 2>&1"
-eval ${cmd}
-if [ $? -ne 0 ]; then
-    cat snap_nvme_memcopy_card.log
-    echo "cmd: ${cmd}"
-    echo "failed"
-    exit 1
-fi
-echo "ok"
-
-echo -n "Doing snap_nvme_memcopy (CARD_DRAM) ${size} bytes from card... "
-cmd="snap_nvme_memcopy -C${snap_card}	\
-		-A CARD_DRAM -a 0x00000000 -s ${size}	\
-		-o snap_search.out >>		\
-		snap_nvme_memcopy_card.log 2>&1"
-eval ${cmd}
-if [ $? -ne 0 ]; then
-    cat snap_nvme_memcopy_card.log
-    echo "cmd: ${cmd}"
-    echo "failed"
-    exit 1
-fi
-echo "ok"
-
-echo -n "Check results ... "
-diff $test_data snap_search.out 2>&1 > /dev/null
-if [ $? -ne 0 ]; then
-    echo "failed"
-    echo "  snap_search.txt snap_search.out are different!"
-    exit 1
-fi
-echo "ok"
-
-rm -f *.bin *.bin *.out
+rm -f *.in *.out
 echo "Test OK"
 exit 0
