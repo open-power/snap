@@ -354,7 +354,7 @@
     if [[ "$t0l" == "10141007" && "${env_action}" == "hls_nvme_memcopy"* && "$nvme" == "1" ]];then echo -e "$del\ntesting snap_nvme_memcopy"
       step "$ACTION_ROOT/sw/snap_nvme_memcopy -h"
       step "$SNAP_ROOT/software/tools/snap_nvme_init  -v"
-      for size in 512 2048 $rnd1k4k; do to=$((size*50+10)) 
+      for size in 512 2048 ; do to=$((size*50+10)) 
           dd if=/dev/urandom bs=${size} count=1 >${size}.in
 #    if [[ $((size%64)) == 0 ]];then echo "size is aligned"
           step "$ACTION_ROOT/sw/snap_nvme_memcopy -A HOST_DRAM -D HOST_DRAM -i ${size}.in -o ${size}a.out -v -t$to"
