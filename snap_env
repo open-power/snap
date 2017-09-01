@@ -106,8 +106,10 @@ while [ -z "$SETUP_DONE" ]; do
   else
     echo "Setting ACTION_ROOT            to: \"$AR\""
   fi
-  
-  SNAP_ENV="$SNAP_ENV""export ACTION_ROOT=$AR\n"
+
+  if [ -n "$AR" ]; then  
+    SNAP_ENV="$SNAP_ENV""export ACTION_ROOT=$AR\n"
+  fi
 
 
   ####### settings for Partial Reconfiguration flow

@@ -168,9 +168,11 @@ config NVME_USED
         default "FALSE" if ! ENABLE_NVME
 
 config ENABLE_ILA
-        bool "Enable ILA Debug"
+        bool "Enable ILA Debug (Definition of $ILA_SETUP_FILE required)"
 	help
           Enable the usage of Vivado's integrated logic analyzer.
+          Please make sure that $ILA_SETUP_FILE points to the .xdc file
+          defining the debug cores.
 
 config ILA_DEBUG
         string
