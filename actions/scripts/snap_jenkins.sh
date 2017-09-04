@@ -127,6 +127,19 @@ function test_hls_intersect()
 	return 0
 }
 
+function test_hls_nvme_memcopy()
+{
+	local card=$1
+	local accel=$2
+	mytest="./actions/hls_nvme_memcopy"
+
+	echo "TEST HLS NVME Memcopy on Accel: $accel[$card] ..."
+	cmd="$mytest/tests/test_0x10141007.sh -C $card"
+	eval ${cmd}
+	RC=$?
+	return $RC
+}
+
 function test_all_actions() # $1 = card, $2 = accel
 {
 	local card=$1
