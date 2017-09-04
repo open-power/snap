@@ -1,0 +1,108 @@
+===================================
+==      CAPI SNAP Overview       ==
+==   Let's get our hands dirty   ==
+==    SNAP flow from A to Z      ==
+===================================
+
+===================================
+Slide 5: SNAP development pre-requisites for x86 on SuperVessel
+-----------------------------------
+cd /home/opuser
+export PSL_DCP=/mnt/cloud-data/CAPI_PSL_Checkpoints/KU3_Checkpoint/b_route_design.dcp
+git clone https://github.com/ibm-capi/pslse 
+export PSLSE_ROOT=/home/opuser/pslse
+git clone https://github.com/open-power/snap 
+export FPGACARD=KU3
+-----------------------------------
+cd snap/hardware
+source snap_settings
+-----------------------------------
+make config
+make model
+
+===================================
+Slide 15 : Let's discover how the Application code is structured
+-----------------------------------
+cd /home/opuser/snap/software/examples
+vi snap_helloworld.c
+vi action_helloworld.c 
+
+===================================
+Slide 17: Application : code and run
+-----------------------------------
+vi /tmp/t1
+SNAP_CONFIG=0x1 ./snap_helloworld -v -t600  -I -i /tmp/t1 -o /tmp/t2
+cat /tmp/t1
+cat /tmp/t2
+
+===================================
+Slide 20: Let's discover how the Action code is structured
+-----------------------------------
+cd /home/opuser/snap/hardware/action_examples/hls_helloworld
+vi snap_helloworld.cpp
+
+===================================
+Slide 23: HLS compilation
+-----------------------------------
+make
+
+===================================
+Slide 25: Simulate the hardware action
+-----------------------------------
+cd /home/opuser/snap/hardware
+export ACTION_ROOT=/home/opuser/snap/hardware/action_examples/hls_helloworld/vhdl
+source snap_settings
+make config model
+
+===================================
+Slide 27: Run the simulation
+-----------------------------------
+cd sim
+./run_sim
+-----------------------------------
+$SNAP_ROOT/software/tools/snap_maint -v
+$SNAP_ROOT/software/examples/snap_hello_world -v -t600  -I -i /tmp/t1 -o /tmp/t2
+cat /tmp/t1
+cat /tmp/t2
+-----------------------------------
+
+===================================
+Slide 31: Build the program to download into the FPGA
+-----------------------------------
+cd /home/opuser/snap/hardware
+make config image
+
+===================================
+Slide 33: Download / Flash the image into the FPGA
+-----------------------------------
+scp image.bin lab-01@10.12.1.32:~/
+ssh lab-01@10.12.1.32 (password is snap-the-lab)
+-----------------------------------
+sudo /usr/local/capi_utils/capi-flash-script.sh image.bin
+
+===================================
+Slide 34: Initial setting and Actions discovery of the FPGA
+-----------------------------------
+./software/tools/snap_find_card -A KU3
+-----------------------------------
+cd ~
+git clone https://github.com/open-power/snap
+cd snap
+make
+-----------------------------------
+cd snap/software/tools
+SNAP_CONFIG=0x0 ./snap_maint -C1 -v
+-----------------------------------
+SNAP_TRACE=0xF SNAP_CONFIG=0x0 ./snap_maint -C1 -v
+
+===================================
+Slide 25: Running hls_helloworld action on FPGA
+-----------------------------------
+cd ../examples
+./snap_hello_world -v -t250 -I -i /tmp/t1 -o /tmp/t2
+
+===================================
+===================================
+patch to use xsim with CentOS
+sudo mv /opt/Xilinx/Vivado/2016.4/tps/lnx64/jre /opt/Xilinx/Vivado/2016.4/tps/lnx64/jre.bak
+sudo cp -r /mnt/cloud-data/jdk1.8.0_152/jre /opt/Xilinx/Vivado/2016.4/tps/lnx64/
