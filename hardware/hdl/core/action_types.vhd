@@ -50,12 +50,20 @@ CONSTANT    C_M_AXI_HOST_MEM_WUSER_WIDTH     : integer   := C_HOST_AXI_WUSER_WID
 CONSTANT    C_M_AXI_HOST_MEM_RUSER_WIDTH     : integer   := C_HOST_AXI_RUSER_WIDTH;
 CONSTANT    C_M_AXI_HOST_MEM_BUSER_WIDTH     : integer   := C_HOST_AXI_BUSER_WIDTH;
 
+         -- Parameters for Axi Master Bus Interface AXI_NVME : to NVMe controller
+CONSTANT    C_M_AXI_NVME_ID_WIDTH            : integer  :=  C_NVME_AXI_ID_WIDTH;
+CONSTANT    C_M_AXI_NVME_ADDR_WIDTH          : integer  :=  C_NVME_AXI_ADDR_WIDTH;
+CONSTANT    C_M_AXI_NVME_DATA_WIDTH          : integer  :=  C_NVME_AXI_DATA_WIDTH;
+CONSTANT    C_M_AXI_NVME_AWUSER_WIDTH        : integer  :=  C_NVME_AXI_AWUSER_WIDTH;
+CONSTANT    C_M_AXI_NVME_ARUSER_WIDTH        : integer  :=  C_NVME_AXI_ARUSER_WIDTH;
+CONSTANT    C_M_AXI_NVME_WUSER_WIDTH         : integer  :=  C_NVME_AXI_WUSER_WIDTH;
+CONSTANT    C_M_AXI_NVME_RUSER_WIDTH         : integer  :=  C_NVME_AXI_RUSER_WIDTH;
+CONSTANT    C_M_AXI_NVME_BUSER_WIDTH         : integer  :=  C_NVME_AXI_BUSER_WIDTH;
 
 END action_types;
 
 
 PACKAGE BODY action_types IS
-
 
 
 END action_types;

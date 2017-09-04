@@ -99,6 +99,7 @@
         "10141005") a0="hls_intersect_h";;
         "10141006") a0="hls_intersect_s";;
         "00000108") a0="hls_blowfish";;
+        "10141007") a0="hls_nvme_memcopy";;
         *) a0="unknown";;
       esac; echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="$SNAP_ROOT/software/tools/snap_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
@@ -120,6 +121,7 @@
         "10141005") a1="hls_intersect_h";;
         "10141006") a1="hls_intersect_s";;
         "00000108") a1="hls_blowfish";;
+        "10141007") a1="hls_nvme_memcopy";;
         *) a1="unknown";;
       esac; echo "action0 type1s=$t1s type1l=$t1l $a1"
       t="$SNAP_ROOT/software/tools/snap_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
@@ -349,6 +351,41 @@
         diff input.bin decrypted.bin
       done
     fi # blowfish
+    if [[ "$t0l" == "10141007" && "${env_action}" == "hls_nvme_memcopy"* && "$nvme" == "1" ]];then echo -e "$del\ntesting snap_nvme_memcopy"
+      step "$ACTION_ROOT/sw/snap_nvme_memcopy -h"
+      step "$SNAP_ROOT/software/tools/snap_nvme_init  -v"
+      for size in 512 2048 ; do to=$((size*50+10)) 
+          dd if=/dev/urandom bs=${size} count=1 >${size}.in
+#    if [[ $((size%64)) == 0 ]];then echo "size is aligned"
+          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A HOST_DRAM -D HOST_DRAM -i ${size}.in -o ${size}a.out -v -t$to"
+          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A HOST_DRAM -D CARD_DRAM -i ${size}.in -d 0x22220000  -v -t$to"
+          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A HOST_DRAM -D NVME_SSD  -i ${size}.in -n1 -d 0x55550000  -v -t$to"
+          
+		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D HOST_DRAM -a 0x22220000 -o ${size}b.out -s ${size}  -v -t$to"
+		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D NVME_SSD  -a 0x22220000 -d 0x33330000   -s ${size}  -v -t$to"
+		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D CARD_DRAM -a 0x22220000 -d 0x44440000   -s ${size}  -v -t$to"
+		  
+		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A NVME_SSD -D HOST_DRAM -n1 -a 0x55550000 -o ${size}c.out -s ${size}  -v -t$to"
+		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A NVME_SSD -D CARD_DRAM -n1 -a 0x55550000 -d 0x66660000   -s ${size}  -v -t$to"
+		  
+		  #check contents
+		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D HOST_DRAM -a 0x44440000 -o ${size}d.out -s ${size}  -v -t$to"
+		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D HOST_DRAM -a 0x66660000 -o ${size}e.out -s ${size}  -v -t$to"
+		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A NVME_SSD  -D HOST_DRAM -a 0x33330000 -o ${size}f.out -s ${size}  -v -t$to"
+
+
+if diff ${size}.in ${size}a.out>/dev/null;then echo -e "RC=$rc file_diff a ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
+if diff ${size}.in ${size}b.out>/dev/null;then echo -e "RC=$rc file_diff b ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
+if diff ${size}.in ${size}c.out>/dev/null;then echo -e "RC=$rc file_diff c ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
+if diff ${size}.in ${size}d.out>/dev/null;then echo -e "RC=$rc file_diff d ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
+if diff ${size}.in ${size}e.out>/dev/null;then echo -e "RC=$rc file_diff e ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
+if diff ${size}.in ${size}f.out>/dev/null;then echo -e "RC=$rc file_diff f ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
+#else echo "size is not aligned"
+#        fi
+      done
+    fi # hls_nvme_memcopy
+
+
 
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"  # end of loop
   done; l=""; ts3=$(date +%s); totaltime=`expr $ts3 - $ts0`; echo "loops=$loops tests=$n total_time=$totaltime" # end of test

@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 --
--- Copyright 2016 International Business Machines
+-- Copyright 2016,2017 International Business Machines
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -36,17 +36,17 @@ PACKAGE psl_accel_types IS
 --------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
-  -- 
+  --
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
     ----------------------------------------------------------------------------
     ----------------------------------------------------------------------------
     --
-    -- 
+    --
     --
 
 
-  
+
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- ******************************************************
@@ -64,25 +64,34 @@ PACKAGE psl_accel_types IS
     -- AXI Constants
     ----------------------------------------------------------------------------
     --
-    -- 
     --
-    CONSTANT C_S_AXI_ID_WIDTH       : integer  := 20;
-    CONSTANT C_S_AXI_DATA_WIDTH     : integer  := 512;
-    CONSTANT C_S_AXI_ADDR_WIDTH     : integer  := 64;
-                                              
-    CONSTANT C_REG_DATA_WIDTH       : integer  := 32;
-    CONSTANT C_REG_ADDR_WIDTH       : integer  := 32;
-                                              
-    CONSTANT C_DDR_AXI_ID_WIDTH     : integer  := 4;
-    CONSTANT C_DDR_AXI_DATA_WIDTH   : integer  := 512;
-    CONSTANT C_DDR_AXI_ADDR_WIDTH   : integer  := 33;  -- only for DDR3_USED=TRUE
-    CONSTANT C_DDR_AXI_ADDR_WIDTH   : integer  := 32;  -- only for DDR3_USED!=TRUE
-    CONSTANT C_DDR_AXI_AWUSER_WIDTH : integer  := 1;
-    CONSTANT C_DDR_AXI_ARUSER_WIDTH : integer  := 1;
-    CONSTANT C_DDR_AXI_WUSER_WIDTH  : integer  := 1;
-    CONSTANT C_DDR_AXI_RUSER_WIDTH  : integer  := 1;
-    CONSTANT C_DDR_AXI_BUSER_WIDTH  : integer  := 1;
-    
+    --
+    CONSTANT C_S_AXI_ID_WIDTH        : integer  := 20;
+    CONSTANT C_S_AXI_DATA_WIDTH      : integer  := 512;
+    CONSTANT C_S_AXI_ADDR_WIDTH      : integer  := 64;
+
+    CONSTANT C_REG_DATA_WIDTH        : integer  := 32;
+    CONSTANT C_REG_ADDR_WIDTH        : integer  := 32;
+
+    CONSTANT C_DDR_AXI_ID_WIDTH      : integer  := 4;
+    CONSTANT C_DDR_AXI_DATA_WIDTH    : integer  := 512;
+    CONSTANT C_DDR_AXI_ADDR_WIDTH    : integer  := 33;  -- only for DDR3_USED=TRUE
+    CONSTANT C_DDR_AXI_ADDR_WIDTH    : integer  := 32;  -- only for DDR3_USED!=TRUE
+    CONSTANT C_DDR_AXI_AWUSER_WIDTH  : integer  := 1;
+    CONSTANT C_DDR_AXI_ARUSER_WIDTH  : integer  := 1;
+    CONSTANT C_DDR_AXI_WUSER_WIDTH   : integer  := 1;
+    CONSTANT C_DDR_AXI_RUSER_WIDTH   : integer  := 1;
+    CONSTANT C_DDR_AXI_BUSER_WIDTH   : integer  := 1;
+
+    CONSTANT C_NVME_AXI_ID_WIDTH     : integer  := 1;
+    CONSTANT C_NVME_AXI_DATA_WIDTH   : integer  := 32;
+    CONSTANT C_NVME_AXI_ADDR_WIDTH   : integer  := 32;
+    CONSTANT C_NVME_AXI_AWUSER_WIDTH : integer  := 1;
+    CONSTANT C_NVME_AXI_ARUSER_WIDTH : integer  := 1;
+    CONSTANT C_NVME_AXI_WUSER_WIDTH  : integer  := 1;
+    CONSTANT C_NVME_AXI_RUSER_WIDTH  : integer  := 1;
+    CONSTANT C_NVME_AXI_BUSER_WIDTH  : integer  := 1;
+
     CONSTANT C_HOST_AXI_ID_WIDTH     : integer  := 1;
     CONSTANT C_HOST_AXI_DATA_WIDTH   : integer  := 512;
     CONSTANT C_HOST_AXI_ADDR_WIDTH   : integer  := 64;
@@ -92,14 +101,14 @@ PACKAGE psl_accel_types IS
 
 
 
-    CONSTANT INT_BITS               : integer :=  3;      -- number of bits required to represent the seven interrupt
-                                                          -- source IDs at the interface between "AXI-DMA shim" and DMA
+    CONSTANT INT_BITS                : integer :=  3;      -- number of bits required to represent the seven interrupt
+                                                           -- source IDs at the interface between "AXI-DMA shim" and DMA
 
-    CONSTANT CONTEXT_BITS           : integer :=  8;      -- number of bits required to represent the supported contexts as integer
+    CONSTANT CONTEXT_BITS            : integer :=  8;      -- number of bits required to represent the supported contexts as integer
 
 
 
-  
+
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- ******************************************************
@@ -109,13 +118,13 @@ PACKAGE psl_accel_types IS
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
-  -- 
+  --
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
     ----------------------------------------------------------------------------
     ----------------------------------------------------------------------------
     --
-    -- 
+    --
     --
 
 
@@ -129,10 +138,10 @@ PACKAGE psl_accel_types IS
 --
 --  kx_d   : action(kernel) -> AXI_Master     : Data Interface
 --  xk_d   : AXI_Master     -> action(kernel) : Data Interface
---          
+--
 --  ks_d   : action(kernel) -> AXI_Slave      : Data Interface
 --  sk_d   : AXI_Slave      -> action(kernel) : Data Interface
---  
+--
 --  kddr_d : action(kernel) -> DDR3           : AXI Interface
 --  ddrk_d : DDR3           -> action(kernel) : AXI Interface
 --------------------------------------------------------------------------------
@@ -143,7 +152,7 @@ PACKAGE psl_accel_types IS
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
 
-   
+
     --
     -- kx_d
     --
@@ -213,7 +222,7 @@ PACKAGE psl_accel_types IS
       int_src         : std_logic_vector(INT_BITS -2  downto 0);
       int_ctx         : std_logic_vector(CONTEXT_BITS - 1 downto 0);
     END RECORD KS_D_T;
- 
+
     --
     -- sk_d
     --

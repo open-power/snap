@@ -53,13 +53,23 @@ function test_hls_memcopy()
 {
 	local card=$1
 	local accel=$2
-
 	mytest="./actions/hls_memcopy"
+
 	echo "TEST HLS Memcopy on Accel: $accel[$card] ..."
-	cmd="$mytest/tests/test_0x10141000.sh -C $card"
-	eval ${cmd}
-	RC=$?
-	return $RC
+	FUNC=$my_test/sw/snap_memcopy -C $card -x
+	for i in {1..10}; do
+		size=`d -A n -t d -N 3 /dev/urandom |tr -d ' '`
+		dd if=/dev/urandom bs=${size} count=1 -of=/tmp/snap_test.in
+		cmd="${FUNC} -i /tmp/snap_test.in -o /tmp/snap_test.out -I"
+		eval ${cmd}
+		RC=$?
+		if [ $RC -ne 0 ]; then
+			rm -f /tmp/snap_test*
+			return $RC
+		fi
+	done
+	rm -f /tmp/snap_test*
+	return 0
 }
 
 function test_hls_sponge () # $card $accel
@@ -163,6 +173,10 @@ function test_all_actions() # $1 = card, $2 = accel
 		;;
 		*"10141005")
 			test_hls_intersect $card $accel
+			RC=$?
+		;;
+		*"10141007")
+			test_hls_nvme_memcopy $card $accel
 			RC=$?
 		;;
 		*)
