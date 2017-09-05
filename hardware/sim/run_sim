@@ -45,9 +45,9 @@
  HOSTNAME=`hostname -s`; echo "hostname=$HOSTNAME arguments=$@"
  TS=`date +%Y%m%d_%H%M%S`; if [ "$TST_TITLE" != "" ];then TS="${TS}_${TST_TITLE}";fi
  export SNAP_ROOT=${PWD%/hardware/sim*};echo "root=$SNAP_ROOT"      # default root, in case its not overwritten
+ [ -f "${SNAP_ROOT}/.snap_env" ]       && . ${SNAP_ROOT}/.snap_env.sh
+ [ -f "${SNAP_ROOT}/.snap_config.sh" ] && . ${SNAP_ROOT}/.snap_config.sh
 
-
- if [ -z $SNAP_ROOT ];then echo "variable SNAP_ROOT not found, leaving"; exit 11; fi
  if [ -z $PSLSE_ROOT ];then echo "variable PSLSE_ROOT not found, leaving"; exit 11; fi
 
 # ARGUMENTS #############

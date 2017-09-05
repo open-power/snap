@@ -14,12 +14,20 @@
 # limitations under the License.
 #
 PLATFORM ?= $(shell uname -i)
+export SNAP_ROOT=$(abspath .)
+config_subdirs += $(SNAP_ROOT)/scripts
+software_subdirs += $(SNAP_ROOT)/software
+hardware_subdirs += $(SNAP_ROOT)/hardware
+action_subdirs += $(SNAP_ROOT)/actions
 
-software_subdirs += software
-hardware_subdirs += hardware
-action_subdirs += actions
+snap_config = $(SNAP_ROOT)/.snap_config
+snap_config_sh = $(SNAP_ROOT)/.snap_config.sh
+snap_env = $(SNAP_ROOT)/.snap_env
+snap_env_sh = $(SNAP_ROOT)/.snap_env.sh
 
-clean_subdirs += $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
+-include $(snap_env_sh)
+
+clean_subdirs += $(config_subdirs) $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
 
 ifeq ($(PLATFORM),x86_64)
 all: $(software_subdirs) $(action_subdirs) $(hardware_subdirs)
@@ -28,58 +36,86 @@ all: $(software_subdirs) $(action_subdirs)
 endif
 
 # Only build if the subdirectory is really existent
-.PHONY: $(software_subdirs) $(hardware_subdirs) $(action_subdirs) test install uninstall config model image cloud_base cloud_action cloud_merge clean
+.PHONY: $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env config model image cloud_base cloud_action cloud_merge snap_config menuconfig xconfig gconfig oldconfig clean clean_config
+
+# Disabling implicit rule for shell scripts
+%: %.sh
 
 $(software_subdirs):
-	@if [ -d $@ ]; then	         			\
-		$(MAKE) -C $@ || exit 1;			\
+	@if [ -d $@ ]; then          \
+	    $(MAKE) -C $@ || exit 1; \
 	fi
+
+software: $(software_subdirs)
 
 $(action_subdirs):
-	@if [ -d $@ ]; then	         			\
-		$(MAKE) -C $@ || exit 1;		        \
-	 fi
-
-define print_NO_SNAP_ROOT
-	echo "WARNING: Environment variable SNAP_ROOT does not point to a" ; \
-	echo "         directory. Please prepare hardware environment";	     \
-	echo "         (see hardware/README.md) before building hardware."
-endef
-
-$(hardware_subdirs):
-	@if [ -d $@ ]; then					\
-		if [ -d "$(SNAP_ROOT)" ]; then			\
-			$(MAKE) -C $@ || exit 1;		\
-		else						\
-			$(call print_NO_SNAP_ROOT);		\
-		fi						\
+	@if [ -d $@ ]; then          \
+	    $(MAKE) -C $@ || exit 1; \
 	fi
+
+actions: $(action_subdirs)
+
+$(hardware_subdirs): $(snap_env)
+	@if [ -d $@ ]; then                          \
+	    $(MAKE) -C $@ || exit 1;                \
+	fi
+
+hardware: $(hardware_subdirs)
 
 # Install/uninstall
 test install uninstall:
-	@for dir in $(software_subdirs) $(action_subdirs); do	\
-		if [ -d $$dir ]; then	                	\
-			$(MAKE) -C $$dir $@ || exit 1;  	\
-		fi	                                	\
+	@for dir in $(software_subdirs) $(action_subdirs); do \
+	    if [ -d $$dir ]; then                             \
+	        $(MAKE) -C $$dir $@ || exit 1;                \
+	    fi                                                \
 	done
 
 # Model build and config
-config model image cloud_base cloud_action cloud_merge:
-	@for dir in $(hardware_subdirs); do	\
-		if [ -d $$dir ]; then				\
-			if [ -d "$(SNAP_ROOT)" ]; then		\
-				$(MAKE) -C $$dir $@ || exit 1;	\
-			else					\
-				$(call print_NO_SNAP_ROOT);	\
-			fi					\
-		fi						\
+config model image cloud_base cloud_action cloud_merge: $(snap_env)
+	@for dir in $(hardware_subdirs); do                         \
+	    if [ -d $$dir ]; then                                  \
+	        $(MAKE) -C $$dir $@ || exit 1;                     \
+	    fi                                                     \
 	done
 
+# Config
+menuconfig xconfig gconfig oldconfig:
+	@echo "$@: Setting up SNAP configuration"
+	@for dir in $(config_subdirs); do      \
+	    if [ -d $$dir ]; then              \
+	        $(MAKE) -C $$dir $@ || exit 1; \
+	    fi                                 \
+	done
+
+snap_config: menuconfig
+	@echo "SNAP config done"
+
+$(snap_config):
+	@echo "$@: Setting up SNAP configuration"
+	@for dir in $(config_subdirs); do              \
+	    if [ -d $$dir ]; then                      \
+	        $(MAKE) -C $$dir menuconfig || exit 1; \
+	    fi                                         \
+	done
+	@echo "SNAP config done"
+
+snap_env: $(snap_config)
+	@echo "$@: Setting up SNAP environment variables"
+	@. $(SNAP_ROOT)/snap_env $(snap_config_sh)
+
+$(snap_env): $(snap_config)
+	@echo "$@: Setting up SNAP environment variables"
+	@. $(SNAP_ROOT)/snap_env $(snap_config_sh)
+
 clean:
-	@for dir in $(clean_subdirs); do			\
-		if [ -d $$dir ]; then				\
-			$(MAKE) -C $$dir $@ || exit 1;		\
-		fi						\
+	@for dir in $(clean_subdirs); do       \
+	    if [ -d $$dir ]; then              \
+	        $(MAKE) -C $$dir $@ || exit 1; \
+	    fi                                 \
 	done
 	@find . -depth -name '*~'  -exec rm -rf '{}' \; -print
 	@find . -depth -name '.#*' -exec rm -rf '{}' \; -print
+
+clean_config: clean
+	@$(RM) $(SNAP_ROOT)/.snap_env*
+	@$(RM) $(SNAP_ROOT)/.snap_config*

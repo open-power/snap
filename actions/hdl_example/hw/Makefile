@@ -17,7 +17,7 @@
 vhd_srcs=$(wildcard *.vhd_source)
 vhd_files=$(vhd_srcs:.vhd_source=.vhd)
 
-.PHONY: all config clean
+.PHONY: all config clean vhdl
 
 all: config
 
@@ -26,6 +26,8 @@ config:
 
 clean:
 	@$(RM) $(vhd_files)
+
+vhdl:
 
 #
 # FIXME Consider moving the functionality from action_config.sh into
