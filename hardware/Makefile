@@ -22,7 +22,7 @@
 ## This Makefile is contained in the hardware directory.
 ## So, the root directory is one level above.
 ##
-export SNAP_ROOT=$(abspath ..)
+export SNAP_ROOT=$(shell pwd)/..
 export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 
