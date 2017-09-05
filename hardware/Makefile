@@ -99,27 +99,29 @@ snap_env:
 	@$(MAKE) -C ${SNAP_ROOT} snap_env
 
 snap_config:
-	@$(MAKE) -C $(SNAP_ROOT) snap_config 
+	@$(MAKE) -C $(SNAP_ROOT) snap_config
 
 check_snap_settings:
 	@if [ -z `which git 2> /dev/null` ]; then \
 		echo "The SNAP framework make process relies on git."; \
 		echo "Please make sure that you have installed git and that"; \
 		echo "the environment variable PATH points to its executable."; \
-		exit 1; \
+		exit -1; \
 	fi
 	@cd $(SNAP_HARDWARE_ROOT); if [ -z `git describe HEAD 2> /dev/null` ]; then \
 		echo "$(SNAP_HARDWARE_ROOT) does not belong to a git repository."; \
 		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/snap.git"; \
-		exit 1; \
+		exit -1; \
 	fi
 	@if [ ! -e $(snap_env_sh) ]; then \
 		echo "Missing snap environment setup file \"$(snap_env_sh)\""; \
 		echo "Please make sure that the snap environment is prepared by calling 'make snap_env'"; \
+		exit -1; \
 	fi
 	@if [ ! -e $(snap_config_sh) ]; then \
 		echo "Missing snap config setup file \"$(snap_config_sh)\""; \
 		echo "Please make sure that the snap configuration is prepared by calling 'make snap_config'"; \
+		exit -1; \
 	fi
 	@if [ -z $(FPGACARD) ] || [ -z $(SDRAM_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ] || [ -z $(PSL_DCP) ]; then \
 		echo "Missing one or more environment  variables"; \
@@ -131,11 +133,11 @@ check_snap_settings:
 		echo "SDRAM_USED:     $(SDRAM_USED)"; \
 		echo "ILA_DEBUG:      $(ILA_DEBUG)"; \
 		echo "NUM_OF_ACTIONS: $(NUM_OF_ACTIONS)"; \
-		exit 1; \
+		exit -1; \
 	fi
 	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` = "TRUE" ] && [ ! -e "$(ILA_SETUP_FILE)" ]; then \
 		echo "ILA_DEBUG is set to ${ILA_DEBUG} but ILA_SETUP_FILE (\"${ILA_SETUP_FILE}\") is not pointing to a file!"; \
-		exit 1; \
+		exit -1; \
 	fi
 	@echo "=============================================="
 	@echo "==== hardware/Makefile called with:       ===="
@@ -164,7 +166,7 @@ check_snap_settings:
 check_simulator:
 	@if [ $(SIMULATOR) != "irun" ] && [ $(SIMULATOR) != "xsim" ]; then \
 		echo "unknown simulator=$SIMULATOR"; \
-		exit 1; \
+		exit -1; \
 	fi
 
 check_denali:
@@ -174,7 +176,7 @@ check_denali:
 			echo "Please check the following variables."; \
 			echo "DENALI_TOOLS:   $(DENALI_TOOLS)"; \
 			echo "DENALI_CUSTOM:  $(DENALI_CUSTOM)"; \
-			exit 1; \
+			exit -1; \
 		fi \
 	fi
 
@@ -204,10 +206,17 @@ snap_preprocess_start:
 
 $(SNAP_ROOT)/.snap_config:
 	@echo -e "\tNeed to run \"make snap_config\" first"
+	exit -1
 
 $(SNAP_PP_FILES): $(SNAP_ROOT)/.snap_config
-	@echo "Creating $@ ..."
-	@$(CC) -E -xc $(SNAP_CFLAGS) $@_source | grep -v "^#" > $@
+	@echo -e "\t                        generating $(notdir $@)"
+	@$(CC) -E -xc $(SNAP_CFLAGS) $@_source 2> $(LOGS_DIR)/$(notdir $@)_pp.log > $@_tmp; \
+	if [ $$? -ne 0 ]; then \
+		$(RM) $@_tmp; \
+		echo -e "\t                        Error: please look into $(LOGS_DIR)/$(notdir $@)_pp.log"; exit -1; \
+	fi
+	@grep -v "^#" $@_tmp > $@
+	@$(RM) $@_tmp
 
 %.vhd: %.vhd_source
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
@@ -274,13 +283,13 @@ cloud_base: .config_done check_snap_settings snap_preprocess patch_version
 	@cd $(BUILD_DIR) && env CLOUD_RUN=BASE vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
 	@echo -e "\t[BUILD CLOUD BASE...] done  `date`"
 
-$(SNAP_ACTION_DCP): 
+$(SNAP_ACTION_DCP):
 	@echo -e "\tNeed to run cloud_action first"
-	@exit 1
+	@exit -1
 
-$(SNAP_BASE_DCP): 
+$(SNAP_BASE_DCP):
 	@echo -e "\tNeed to run cloud_base first"
-	@exit 1
+	@exit -1
 
 cloud_action: config_done check_snap_settings snap_preprocess action_hw patch_version
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
@@ -322,7 +331,7 @@ $(SNAP_SIMULATORS): .config_done action_sw snap_preprocess patch_version
 	@echo -e "\t[BUILD $@..........] start `date`"
 	@if [ "$(SIMULATOR)" != "$@" ]; then \
 		echo "Error: Makefile target $@ called with SIMULATOR set to \"$(SIMULATOR)\""; \
-		exit 1; \
+		exit -1; \
 	fi
 	@if [ ! -d "$(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@)" ];then \
 		vivado -quiet -mode batch -source setup/export_$@.tcl -notrace -log $(LOGS_DIR)/compile_$@.log; \
