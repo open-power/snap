@@ -38,7 +38,6 @@ extern "C" {
 #define HASH_METHOD 1
 #define SORT_METHOD 2
 
-
 typedef struct intersect_job {
 	struct snap_addr src_tables_host[NUM_TABLES];	 /* input tables */
 	struct snap_addr src_tables_ddr[NUM_TABLES];	 /* input tables */
@@ -52,7 +51,7 @@ typedef unsigned int ptr_t;
 
 void copyvalue(value_t dst, value_t src);
 int cmpvalue(const value_t src1, const value_t src2);
-uint32_t run_sw_intersection(int method, value_t * table1, uint32_t n1, value_t* table2, uint32_t n2, value_t * result_array);
+uint32_t run_sw_intersection(uint32_t method, value_t * table1, uint32_t n1, value_t* table2, uint32_t n2, value_t * result_array);
 
 struct entry_t
 {
