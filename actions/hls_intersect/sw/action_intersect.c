@@ -269,7 +269,7 @@ static uint32_t intersect_sort( value_t table1[], uint32_t n1,
 //   Intersect Overall
 //////////////////////////////////////////////////////////////////
 
-uint32_t run_sw_intersection(int method, value_t *table1, uint32_t n1, value_t * table2, uint32_t n2, value_t *result_array)
+uint32_t run_sw_intersection(uint32_t method, value_t *table1, uint32_t n1, value_t * table2, uint32_t n2, value_t *result_array)
 {
     printf("SW intersection, method = %d, table1 (%p) num is %d, table2 (%p) num is %d, out (%p) \n",
             method, table1, n1, table2, n2, result_array);
@@ -310,9 +310,10 @@ static int action_main(struct snap_sim_action *action,
 static struct snap_sim_action action = {
     .vendor_id = SNAP_VENDOR_ID_ANY,
     .device_id = SNAP_DEVICE_ID_ANY,
+
     .action_type = INTERSECT_H_ACTION_TYPE,
-    // For SNAP_CONFIG = 0: it is ignored. 
-    // For SNAP_CONFIG = 1: Just use one ACTION_TYPE to make match.
+    // CONFIG=0 HW Action doesn't look at this. 
+    // CONFIG=1 SW Action just make a match. So pickup one TYPE.
 
     .job = { .retc = SNAP_RETC_FAILURE, },
     .state = ACTION_IDLE,

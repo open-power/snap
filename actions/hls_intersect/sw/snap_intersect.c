@@ -63,21 +63,23 @@ static void usage(const char *prog)
             "  -C, --card     <cardno>   can be (0...3)\n"
             "  -t, --timeout  <seconds>  timeout seconds.\n"
             "----------------------------------------------\n"
-            "  -i, --input1    <file1.txt> input file 1.\n"
-            "  -j, --input2    <file2.txt> input file 2.\n"
-            "  -o, --output   <result.txt> output file.\n"
+            "  -i, --input1   <file1.txt> input file 1.\n"
+            "  -j, --input2   <file2.txt> input file 2.\n"
             "----------------------------------------------\n"
             "  -n, --num      <int>      How many elements in the table for random generated array.\n"
             "  -l, --len      <int>      length of the random string.\n"
-            "  -s, --software            Use software approach.\n"
-            "  -m, --method   <0/1/2>    0: compare one by one (Slow, and only in SW).\n"
+            "----------------------------------------------\n"
+            "  -o, --output    <result.txt> output file.\n"
+            "  -s, --software            CPU approach (Step 1-2-4)\n"
+            "  -m, --method   <0/1/2>    0: compare one by one (only available  software approach.in software action).\n"
             "                            1: Use Hash table\n"
             "                            2: Use Sort and merge\n"
             "  -I, --irq                 Enable Interrupts\n"
             "\n"
             "Example:\n"
-            "HW:  sudo ./snap_intersect ...\n"
-            "SW:  SNAP_CONFIG=1 ./snap_intersect -s ... (must with -s)\n"
+            "HW Action:  sudo ./snap_intersect        (Step1-3-5)\n"
+            "HW Action:  sudo ./snap_intersect -s     (Step1-2-4)\n"
+            "SW Action:  SNAP_CONFIG=1 ./snap_intersect -s ... (must with -s, only Step4)\n"
             "\n",
             prog);
 }
@@ -262,12 +264,19 @@ int main(int argc, char *argv[])
     uint32_t i;
     uint32_t min_num = -1; //MAX for unsigned.
 
+    //Use HW Action or SW Action. SNAP_CONFIG=1 means using sw action.
+    const char *config_env;
+    static uint32_t snap_config;
+    config_env = getenv("SNAP_CONFIG");
+    if (config_env != NULL)
+        snap_config = strtol(config_env, (char **)NULL, 0);
+    uint32_t sw_action = snap_config & 0x1;
+
     //For random generated table....
     uint32_t num = 20;
     uint32_t len = 1;
-    //Several global variables.
-    uint32_t method = HASH_METHOD;
     uint32_t sw = 0;
+    uint32_t method = HASH_METHOD;
     const char *input[NUM_TABLES];
     for(i = 0; i < NUM_TABLES; i++)
         input[i] = NULL;
@@ -431,22 +440,26 @@ int main(int argc, char *argv[])
         goto out_error;
     }
 
-    if(sw == 0) {
-
-        fprintf(stdout, "Run in HW steps 1-3-5\n");
+    if (sw_action) {
+        //only one type is picked up to match with snap_sim_action
+        action = snap_attach_action(card, INTERSECT_H_ACTION_TYPE, action_irq, 60);
+    }
+    else {
+        //With HW Action, need to tell two types.
         if( method == HASH_METHOD) 
             action = snap_attach_action(card, INTERSECT_H_ACTION_TYPE, action_irq, 60);
         else if ( method == SORT_METHOD)
             action = snap_attach_action(card, INTERSECT_S_ACTION_TYPE, action_irq, 60);
         else {
-            fprintf(stderr, "ERROR: Other methods are not supported in HW run.\n");
+            fprintf(stderr, "ERROR: Other methods are not supported in FPGA run.\n");
             goto out_error1;
         }
-    } else {
-        fprintf(stdout, "Run in SW steps 1-2-4\n");
-        fprintf(stdout, "Just attach a single ACTION_TYPE. \n");
-        action = snap_attach_action(card, INTERSECT_H_ACTION_TYPE, action_irq, 60);
     }
+
+    if(sw == 0)
+        fprintf(stdout, "Run in HW steps 1-3-5\n");
+    else
+        fprintf(stdout, "Run in SW steps 1-2-4\n");
 
 
     if (action == NULL) {
