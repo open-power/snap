@@ -38,18 +38,18 @@ if { [info exists ::env(DCP_ROOT)] == 1 } {
     set dcp_dir $::env(DCP_ROOT)
     set file_missing 0
     if { [file exists $dcp_dir/$static_region_dcp] != 1 } {
-        puts "Error: File \$DCP_ROOT/$static_region_dcp does not exist"
+        puts "                        Error: File \$DCP_ROOT/$static_region_dcp does not exist"
         set file_missing 1
     }
     if { [file exists $dcp_dir/$user_action_dcp] != 1 } {
-        puts "Error: File \$DCP_ROOT/$user_action_dcp does not exist"
+        puts "                        Error: File \$DCP_ROOT/$user_action_dcp does not exist"
         set file_missing 1
     }
     if { $file_missing == 1 } {
         exit 42
     }
 } else {
-    puts "Error: For merging user action DCP into snap_static_region DCP the environment variable DCP_ROOT needs to point to the path containing the checkpoints."
+    puts "                        Error: For merging user action DCP into snap_static_region DCP the environment variable DCP_ROOT needs to point to the path containing the checkpoints."
     exit 42
 }
 
@@ -60,54 +60,54 @@ if { [info exists ::env(CLOUD_BUILD_BITFILE)] == 1 } {
 }
 
 #Define widths of each column
-set widthCol1 31
+set widthCol1 23
 set widthCol2 23
 set widthCol3 35
 set widthCol4 22
 
 ## 
 ## create temporary in memory project
-puts [format "%-*s %-*s %-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3 + 1] "creating in memory project" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3 + 1] "creating in memory project" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 create_project -in_memory -part $fpga_part >> $log_file
 
 ## 
 ## adding static region and user_action checkpoints
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "adding checkpoints" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "adding checkpoints" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 add_files $dcp_dir/$static_region_dcp >> $log_file
 add_file $dcp_dir/$user_action_dcp >> $log_file
 set_property SCOPED_TO_CELLS {a0/action_w} [get_files $dcp_dir/$user_action_dcp] >> $log_file
 
 ## 
 ## linking design
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "linking design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "linking design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 link_design -mode default -reconfig_partitions {user_action} -part $fpga_part -top psl_fpga >> $log_file
 
 read_xdc ../setup/snap_impl.xdc >> $log_file
 
 ## 
 ## optimizing design
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "optimizing design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "optimizing design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 opt_design -directive Explore >> $log_file
 ## 
 ## placing design
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "placing design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "placing design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 place_design -directive Explore >> $log_file
 ## 
 ## routing design
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "routing design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "routing design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 route_design -directive Explore >> $log_file
 ## 
 ## phys_opt design
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "phys_optimizing design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "phys_optimizing design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 phys_opt_design -directive Explore >> $log_file
 ## 
 ## writing checkpoint
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "writing checkpoint" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "writing checkpoint" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 write_checkpoint -force ./Checkpoints/psl_fpga_routed.dcp >> $log_file
 
 ##  
 ## generating reports
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating reports" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating reports" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 report_utilization    -quiet -file  ./Reports/psl_fpga_utilization_route_design.rpt
 report_route_status   -quiet -file  ./Reports/psl_fpga_route_status.rpt
 report_timing_summary -quiet -max_paths 100 -file ./Reports/psl_fpga_timing_summary.rpt
@@ -146,7 +146,7 @@ if { $cloud_build_bitfile == "TRUE" } {
   set step write_bitstream
   set logfile $log_dir/${step}.log
   set command "write_bitstream -force -file ./Images/$IMAGE_NAME"
-  puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
   if { [catch "$command > $logfile" errMsg] } {
     puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: write_bitstream failed" $widthCol4 "" ]

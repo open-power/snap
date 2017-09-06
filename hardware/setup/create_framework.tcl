@@ -37,8 +37,8 @@ set log_file    $log_dir/create_framework.log
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support [string toupper $::env(HLS_SUPPORT)]
 } elseif { [string first "/HLS" [string toupper $action_dir]] != -1 } {
-  puts "	                        INFO: action is contained in path starting with \"HLS\"."
-  puts "                                      Setting HLS_SUPPORT to TRUE."
+  puts "                        INFO: action is contained in path starting with \"HLS\"."
+  puts "                              Setting HLS_SUPPORT to TRUE."
   set hls_support "TRUE"
 } else {
   set hls_support "not defined"
@@ -61,12 +61,12 @@ if { [info exists ::env(DENALI)] == 1 } {
 }
 
 # Create a new Vivado Project
-puts "	\[CREATE_FRAMEWORK....\] start"
+puts "\[CREATE_FRAMEWORK....\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 create_project framework $root_dir/viv_project -part $fpga_part -force >> $log_file
 
 # Project Settings
 # General
-puts "	                        setting up project settings"
+puts "                        setting up project settings"
 set_property target_language VHDL [current_project]
 set_property default_lib work [current_project]
 # Simulation
@@ -112,7 +112,7 @@ if { $use_prflow == "TRUE" } {
 
 # Add Files
 # PSL Files
-puts "	                        importing design files"
+puts "                        importing design files"
 # HDL Files
 add_files -scan_for_includes $hdl_dir/core/  >> $log_file
 
@@ -158,7 +158,7 @@ update_compile_order -fileset sim_1 >> $log_file
 
 # Add IPs
 # SNAP CORE IPs
-puts "	                        importing IPs"
+puts "                        importing IPs"
 add_files -norecurse $ip_dir/ram_520x64_2p/ram_520x64_2p.xci >> $log_file
 export_ip_user_files -of_objects  [get_files "$ip_dir/ram_520x64_2p/ram_520x64_2p.xci"] -force >> $log_file
 add_files -norecurse $ip_dir/ram_576x64_2p/ram_576x64_2p.xci >> $log_file
@@ -213,18 +213,18 @@ update_compile_order -fileset sources_1 >> $log_file
 
 # Add NVME
 if { $nvme_used == TRUE } {
-  puts "  	                        adding NVMe block design"
+  puts "                        adding NVMe block design"
   set_property  ip_repo_paths $hdl_dir/nvme/ [current_project]
   update_ip_catalog  >> $log_file
   add_files -norecurse                          $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd  >> $log_file
   export_ip_user_files -of_objects  [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
   update_compile_order -fileset sources_1
-  puts "	                        generating NVMe output products"
+  puts "                        generating NVMe output products"
   set_property synth_checkpoint_mode None [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
   generate_target all                     [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
 
   if { ( [info exists ::env(DENALI_TOOLS) ] == 1)  &&  ( [info exists ::env(DENALI_CUSTOM)] == 1 ) } {
-    puts "	                        adding Denali simulation files"
+    puts "                        adding Denali simulation files"
     set denali_custom $::env(DENALI_CUSTOM)
     add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme/
     add_files -fileset sim_1 -scan_for_includes $denali_custom/sim_model/
@@ -233,14 +233,14 @@ if { $nvme_used == TRUE } {
     add_files -fileset sim_1 -norecurse -scan_for_includes $denali_tools/ddvapi/verilog/denaliPcie.v
     set_property include_dirs                              $denali_tools/ddvapi/verilog [get_filesets sim_1]
   } else {
-    puts "	                        adding Denali simulation files failed, only image build will work"
+    puts "                        adding Denali simulation files failed, only image build will work"
   }
 } else {
   remove_files $action_dir/action_axi_nvme.vhd -quiet
 }
 
 # Add PSL
-puts "	                        importing PSL design checkpoint"
+puts "                        importing PSL design checkpoint"
 read_checkpoint -cell b $root_dir/build/Checkpoints/$psl_dcp -strict >> $log_file
 
 if { $use_prflow == "TRUE" } {
@@ -261,7 +261,7 @@ if { $use_prflow == "TRUE" } {
 
 # XDC
 # SNAP CORE XDC
-puts "	                        importing XDCs"
+puts "                        importing XDCs"
 add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_link.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/snap_link.xdc]
 update_compile_order -fileset sources_1 >> $log_file
@@ -301,5 +301,5 @@ if { $ila_debug == "TRUE" } {
   add_files -fileset constrs_1 -norecurse  $::env(ILA_SETUP_FILE)
 }
 
-puts "	\[CREATE_FRAMEWORK....\] done"
+puts "\[CREATE_FRAMEWORK....\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 close_project >> $log_file

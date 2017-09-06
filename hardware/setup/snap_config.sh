@@ -71,7 +71,7 @@ fi
 
 NAME=`basename $2`
 
-echo -e "\t                        generating $NAME"
+echo -e "                        generating $NAME"
 
 grep -v "$FPGA_FILTER" $1 | grep -v "$DDRI_FILTER" |  grep -v "$DDR3_FILTER" | grep -v "$DDR4_FILTER" | grep -v "$BRAM_FILTER" | grep -v "$NVME_FILTER" > $2
 

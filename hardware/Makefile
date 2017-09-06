@@ -59,6 +59,7 @@ export NVME_USED ?= FALSE
 
 export USE_PRFLOW ?= FALSE
 export DCP_ROOT ?= $(SNAP_ROOT)/dcp
+rm_logo := $(shell rm -f $(SNAP_HARDWARE_ROOT)/.logo)
 
 ## variables just for this Makefile
 BUILD_DIR=$(SNAP_HARDWARE_ROOT)/build
@@ -101,87 +102,84 @@ snap_env:
 snap_config:
 	@$(MAKE) -C $(SNAP_ROOT) snap_config
 
-check_snap_settings:
+check_snap_settings: 
 	@if [ -z `which git 2> /dev/null` ]; then \
-		echo "The SNAP framework make process relies on git."; \
-		echo "Please make sure that you have installed git and that"; \
-		echo "the environment variable PATH points to its executable."; \
+		echo "                        The SNAP framework make process relies on git."; \
+		echo "                        Please make sure that you have installed git and that"; \
+		echo "                        the environment variable PATH points to its executable."; \
 		exit -1; \
 	fi
 	@cd $(SNAP_HARDWARE_ROOT); if [ -z `git describe HEAD 2> /dev/null` ]; then \
-		echo "$(SNAP_HARDWARE_ROOT) does not belong to a git repository."; \
-		echo "Please check out the SNAP framework as git clone from git@github.com:open-power/snap.git"; \
+		echo "                        $(SNAP_HARDWARE_ROOT) does not belong to a git repository."; \
+		echo "                        Please check out the SNAP framework as git clone from git@github.com:open-power/snap.git"; \
 		exit -1; \
 	fi
 	@if [ ! -e $(snap_env_sh) ]; then \
-		echo "Missing snap environment setup file \"$(snap_env_sh)\""; \
-		echo "Please make sure that the snap environment is prepared by calling 'make snap_env'"; \
+		echo "                        Missing snap environment setup file \"$(snap_env_sh)\""; \
+		echo "                        Please make sure that the snap environment is prepared by calling 'make snap_env'"; \
 		exit -1; \
 	fi
 	@if [ ! -e $(snap_config_sh) ]; then \
-		echo "Missing snap config setup file \"$(snap_config_sh)\""; \
-		echo "Please make sure that the snap configuration is prepared by calling 'make snap_config'"; \
+		echo "                        Missing snap config setup file \"$(snap_config_sh)\""; \
+		echo "                        Please make sure that the snap configuration is prepared by calling 'make snap_config'"; \
 		exit -1; \
 	fi
 	@if [ -z $(FPGACARD) ] || [ -z $(SDRAM_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ] || [ -z $(PSL_DCP) ]; then \
-		echo "Missing one or more environment  variables"; \
-		echo "Please make sure that all of the following variables are prepared!"; \
-		echo "(e.g. by calling 'make snap_env')"; \
-		echo "FPGACARD:       $(FPGACARD)"; \
-		echo "PSL_DCP :       $(PSL_DCP)"; \
-		echo "ACTION_ROOT:    $(ACTION_ROOT)"; \
-		echo "SDRAM_USED:     $(SDRAM_USED)"; \
-		echo "ILA_DEBUG:      $(ILA_DEBUG)"; \
-		echo "NUM_OF_ACTIONS: $(NUM_OF_ACTIONS)"; \
+		echo "                        Missing one or more environment  variables"; \
+		echo "                        Please make sure that all of the following variables are prepared!"; \
+		echo "                        (e.g. by calling 'make snap_env')"; \
+		echo "                        FPGACARD:       $(FPGACARD)"; \
+		echo "                        PSL_DCP :       $(PSL_DCP)"; \
+		echo "                        ACTION_ROOT:    $(ACTION_ROOT)"; \
+		echo "                        SDRAM_USED:     $(SDRAM_USED)"; \
+		echo "                        ILA_DEBUG:      $(ILA_DEBUG)"; \
+		echo "                        NUM_OF_ACTIONS: $(NUM_OF_ACTIONS)"; \
 		exit -1; \
 	fi
 	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` = "TRUE" ] && [ ! -e "$(ILA_SETUP_FILE)" ]; then \
-		echo "ILA_DEBUG is set to ${ILA_DEBUG} but ILA_SETUP_FILE (\"${ILA_SETUP_FILE}\") is not pointing to a file!"; \
+		echo "                        ILA_DEBUG is set to ${ILA_DEBUG} but ILA_SETUP_FILE (\"${ILA_SETUP_FILE}\") is not pointing to a file!"; \
 		exit -1; \
 	fi
-	@echo "=============================================="
-	@echo "==== hardware/Makefile called with:       ===="
-	@echo "=============================================="
-	@echo "SNAP_ROOT      = $(SNAP_ROOT)"
-	@echo "ACTION_ROOT    = $(ACTION_ROOT)"
-	@echo "PSL_DCP        = $(PSL_DCP)"
-	@echo "FPGACARD       = $(FPGACARD)"
-	@echo "FPGACHIP       = $(FPGACHIP)"
-	@echo "NUM_OF_ACTIONS = $(NUM_OF_ACTIONS)"
-	@echo "HLS_SUPPORT    = $(HLS_SUPPORT)"
-	@echo "BRAM_USED      = $(BRAM_USED)"
-	@echo "SDRAM_USED     = $(SDRAM_USED)"
-	@echo "DDR3_USED      = $(DDR3_USED)"
-	@echo "DDR4_USED      = $(DDR4_USED)"
-	@echo "DDRI_USED      = $(DDRI_USED)"
-	@echo "NVME_USED      = $(NVME_USED)"
-	@echo "ILA_DEBUG      = $(ILA_DEBUG)"
+	@echo "                        HARDWARE / MAKEFILE CALLED WITH:"
+	@echo "                        SNAP_ROOT      = $(SNAP_ROOT)"
+	@echo "                        ACTION_ROOT    = $(ACTION_ROOT)"
+	@echo "                        PSL_DCP        = $(PSL_DCP)"
+	@echo "                        FPGACARD       = $(FPGACARD)"
+	@echo "                        FPGACHIP       = $(FPGACHIP)"
+	@echo "                        NUM_OF_ACTIONS = $(NUM_OF_ACTIONS)"
+	@echo "                        HLS_SUPPORT    = $(HLS_SUPPORT)"
+	@echo "                        BRAM_USED      = $(BRAM_USED)"
+	@echo "                        SDRAM_USED     = $(SDRAM_USED)"
+	@echo "                        DDR3_USED      = $(DDR3_USED)"
+	@echo "                        DDR4_USED      = $(DDR4_USED)"
+	@echo "                        DDRI_USED      = $(DDRI_USED)"
+	@echo "                        NVME_USED      = $(NVME_USED)"
+	@echo "                        ILA_DEBUG      = $(ILA_DEBUG)"
 	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` = "TRUE" ]; then \
-		echo "ILA_SETUP_FILE = $(ILA_SETUP_FILE)"; \
+		echo "                        ILA_SETUP_FILE = $(ILA_SETUP_FILE)"; \
 	fi
-	@echo "SIMULATOR      = $(SIMULATOR)"
-	@echo "USE_PRFLOW     = $(USE_PRFLOW)"
-	@echo "=============================================="
+	@echo "                        SIMULATOR      = $(SIMULATOR)"
+	@echo "                        USE_PRFLOW     = $(USE_PRFLOW)"
 
 check_simulator:
 	@if [ $(SIMULATOR) != "irun" ] && [ $(SIMULATOR) != "xsim" ]; then \
-		echo "unknown simulator=$SIMULATOR"; \
+		echo "                        unknown simulator=$SIMULATOR"; \
 		exit -1; \
 	fi
 
 check_denali:
 	@if [ $(NVME_USED) = "TRUE" ]; then \
 		if [ !  -d "$(DENALI_TOOLS)" ] || [ ! -d "$(DENALI_CUSTOM)" ]; then \
-			echo "Missing one or more environment variables for NVMe simulation."; \
-			echo "Please check the following variables."; \
-			echo "DENALI_TOOLS:   $(DENALI_TOOLS)"; \
-			echo "DENALI_CUSTOM:  $(DENALI_CUSTOM)"; \
+			echo "                        Missing one or more environment variables for NVMe simulation."; \
+			echo "                        Please check the following variables."; \
+			echo "                        DENALI_TOOLS:   $(DENALI_TOOLS)"; \
+			echo "                        DENALI_CUSTOM:  $(DENALI_CUSTOM)"; \
 			exit -1; \
 		fi \
 	fi
 
 prepare_build:
-	@echo -e "\t[PREPARE BUILD.......] start `date`";
+	@echo -e "[PREPARE BUILD.......] start `date +"%T %a %b %d %Y"`";
 	@mkdir -p $(BUILD_DIR);
 	@mkdir -p $(BUILD_DIR)/Reports;
 	@mkdir -p $(LOGS_DIR);
@@ -199,21 +197,21 @@ prepare_build:
 		ln -f -s $(SNAP_HDL_CORE)/psl_fpga_fgt.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
 		ln -f -s $(SNAP_HDL_CORE)/psl_accel_fgt.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
 	fi
-	@echo -e "\t[PREPARE BUILD.......] done `date`";
+	@echo -e "[PREPARE BUILD.......] done  `date +"%T %a %b %d %Y"`";
 
 snap_preprocess_start:
-	@echo -e "\t[SNAP PREPROCESS.....] start `date`";
+	@echo -e "[SNAP PREPROCESS.....] start `date +"%T %a %b %d %Y"`";
 
 $(SNAP_ROOT)/.snap_config:
-	@echo -e "\tNeed to run \"make snap_config\" first"
+	@echo -e "                        Need to run \"make snap_config\" first"
 	exit -1
 
 $(SNAP_PP_FILES): $(SNAP_ROOT)/.snap_config
-	@echo -e "\t                        generating $(notdir $@)"
+	@echo -e "                        generating $(notdir $@)"
 	@$(CC) -E -xc $(SNAP_CFLAGS) $@_source 2> $(LOGS_DIR)/$(notdir $@)_pp.log > $@_tmp; \
 	if [ $$? -ne 0 ]; then \
 		$(RM) $@_tmp; \
-		echo -e "\t                        Error: please look into $(LOGS_DIR)/$(notdir $@)_pp.log"; exit -1; \
+		echo -e "                        Error: please look into $(LOGS_DIR)/$(notdir $@)_pp.log"; exit -1; \
 	fi
 	@grep -v "^#" $@_tmp > $@
 	@$(RM) $@_tmp
@@ -225,112 +223,112 @@ $(SNAP_PP_FILES): $(SNAP_ROOT)/.snap_config
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 snap_preprocess: snap_preprocess_start $(SNAP_PP_FILES) $(SNAP_CONFIG_FILES)
-	@echo -e "\t[SNAP PREPROCESS.....] done `date`";
+	@echo -e "[SNAP PREPROCESS.....] done  `date +"%T %a %b %d %Y"`";
 
 patch_version:
-	@echo -e "\t[PATCH...............] SNAP version and build date registers"; \
+	@echo -e "[PATCH...............] SNAP version and build date registers"; \
 	$(SNAP_HARDWARE_ROOT)/setup/patch_version.sh $(SNAP_HDL_CORE) snap_core_types.vhd
 
 patch_NVMe:
 	@if [ -e "$(SNAP_HARDWARE_ROOT)/setup/patch_NVMe.sh" ] && [ $(NVME_USED) = "TRUE" ]; then \
 		cd $(SNAP_HARDWARE_ROOT)/setup && ./patch_NVMe.sh && cd .. ; \
-		echo -e "\t[PATCH...............] NVMe PCIe Root Complex sim. files"; \
+		echo -e "[PATCH...............] NVMe PCIe Root Complex sim. files"; \
 	fi
 
 action_hw:
-	@echo -e "\t[CONFIG ACTION HW....] start `date`";
+	@echo -e "[CONFIG ACTION HW....] start `date +"%T %a %b %d %Y"`";
 	@$(MAKE) -C $(ACTION_ROOT) hw > $(LOGS_DIR)/action_make.log;
 	@if [ $$? -ne 0 ]; then \
-		echo -e "\t                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
+		echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
 	fi
 	-@if [ $(USE_PRFLOW) = "TRUE" ]; then \
 		$(MAKE) -kC $(ACTION_ROOT)/hw vhdl >> $(LOGS_DIR)/action_make.log; \
 	fi
-	@echo -e "\t[CONFIG ACTION HW....] done `date`";
+	@echo -e "[CONFIG ACTION HW....] done  `date +"%T %a %b %d %Y"`";
 
 create_environment:
-	@echo -e "\t[CREATE_ENVIRONMENT..] start `date`";
-	@echo -e "\t                        using `vivado -version |grep Vivado`"
+	@echo -e "[CREATE_ENVIRONMENT..] start `date +"%T %a %b %d %Y"`";
+	@echo -e "                        using `vivado -version |grep Vivado`"
 	@cd $(SNAP_HARDWARE_ROOT)/setup                                          && vivado -quiet -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -journal $(LOGS_DIR)/create_ip.jou
 	@if [ $(NVME_USED) = "TRUE" ]; then cd $(SNAP_HARDWARE_ROOT)/setup       && vivado -quiet -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou; fi
 	@eval ILA_SETUP_FILE=$(ILA_SETUP_FILE) && cd $(SNAP_HARDWARE_ROOT)/setup && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
-	@echo -e "\t[CREATE_ENVIRONMENT..] done `date`"
+	@echo -e "[CREATE_ENVIRONMENT..] done  `date +"%T %a %b %d %Y"`"
 
 config_start:
-	@echo -e "\t[CONFIG..............] start `date`"
+	@echo -e "[CONFIG..............] start `date +"%T %a %b %d %Y"`"
 
-config: config_start check_snap_settings prepare_build snap_preprocess action_hw create_environment patch_version patch_NVMe
+config: .logo config_start check_snap_settings prepare_build snap_preprocess action_hw create_environment patch_version patch_NVMe
 	@touch .config_done
-	@echo -e "\t[CONFIG..............] done `date`"
+	@echo -e "[CONFIG..............] done  `date +"%T %a %b %d %Y"`"
 
 .config_done:
 	$(MAKE) config
 
-image: .config_done check_snap_settings snap_preprocess patch_version
+image: .logo .config_done check_snap_settings snap_preprocess patch_version
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
-		echo -e "\tMakefile target $@ not allowed for PR flow!"; exit -1; \
+		echo -e "                        Makefile target $@ not allowed for PR flow!"; exit -1; \
 	fi
-	@echo -e "\t[BUILD IMAGE.........] start `date`"
+	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`"
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log -journal $(LOGS_DIR)/snap_build.jou
 	@$(RM) -r .bitstream_name.txt
-	@echo -e "\t[BUILD IMAGE.........] done  `date`"
+	@echo -e "[BUILD IMAGE.........] done  `date +"%T %a %b %d %Y"`"
 
-cloud_base: .config_done check_snap_settings snap_preprocess patch_version
+cloud_base: .logo .config_done check_snap_settings snap_preprocess patch_version
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
-		echo -e "\tMakefile target $@ is only allowed for PR flow!"; exit -1; \
+		echo -e "                        Makefile target $@ is only allowed for PR flow!"; exit -1; \
 	fi
-	@echo -e "\t[BUILD CLOUD BASE...] start `date`"
+	@echo -e "[BUILD CLOUD BASE...] start `date +"%T %a %b %d %Y"`"
 	@cd $(BUILD_DIR) && env CLOUD_RUN=BASE vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
-	@echo -e "\t[BUILD CLOUD BASE...] done  `date`"
+	@echo -e "[BUILD CLOUD BASE....] done  `date +"%T %a %b %d %Y"`"
 
 $(SNAP_ACTION_DCP):
-	@echo -e "\tNeed to run cloud_action first"
+	@echo -e "                        Need to run cloud_action first"
 	@exit -1
 
 $(SNAP_BASE_DCP):
-	@echo -e "\tNeed to run cloud_base first"
+	@echo -e "                        Need to run cloud_base first"
 	@exit -1
 
-cloud_action: config_done check_snap_settings snap_preprocess action_hw patch_version
+cloud_action: .logo .config_done check_snap_settings snap_preprocess action_hw patch_version
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
-		echo -e "\tMakefile target $@ is only allowed for PR flow!"; exit -1; \
+		echo -e "                        Makefile target $@ is only allowed for PR flow!"; exit -1; \
 	fi
-	@echo -e "\t[CLOUD ACTION SYNTH..] start `date`"
-	@echo -e "\t                        using `vivado -version |grep Vivado`"
+	@echo -e "[CLOUD ACTION SYNTH..] start `dat +"%T %a %b %d %Y"e`"
+	@echo -e "                        using `vivado -version |grep Vivado`"
 	@cd $(BUILD_DIR) && env CLOUD_RUN=ACTION vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/cloud_action.log -journal $(LOGS_DIR)/cloud_action.jou
-	@echo -e "\t[CLOUD ACTION SYNTH..] done  `date`"
+	@echo -e "[CLOUD ACTION SYNTH..] done  `date +"%T %a %b %d %Y"`"
 
 cloud_merge: $(SNAP_BASE_DCP) $(SNAP_ACTION_DCP) prepare_build
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
-		echo -e "\tMakefile target $@ is only allowed for PR flow!"; exit -1; \
+		echo -e "                        Makefile target $@ is only allowed for PR flow!"; exit -1; \
 	fi
-	@echo -e "\t[CLOUD MERGE ........] start `date`"
-	@echo -e "\t                        using `vivado -version |grep Vivado`"
+	@echo -e "[CLOUD MERGE ........] start `date +"%T %a %b %d %Y"`"
+	@echo -e "                        using `vivado -version |grep Vivado`"
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_cloud_merge.tcl -notrace -log $(LOGS_DIR)/cloud_merge.log -journal $(LOGS_DIR)/cloud_merge.jou
-	@echo -e "\t[CLOUD MERGE ........] done  `date`"
+	@echo -e "[CLOUD MERGE ........] done  `date +"%T %a %b %d %Y"`"
 
 pslse:
-	@echo -e "\t[COMPILE PSLSE ......] start `date`"
+	@echo -e "[COMPILE PSLSE ......] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -C $(PSLSE_ROOT)/afu_driver/src > $(LOGS_DIR)/compile_pslse.log 2>&1
 	@$(MAKE) -C $(PSLSE_ROOT)/pslse         >> $(LOGS_DIR)/compile_pslse.log 2>&1
 	@$(MAKE) -C $(PSLSE_ROOT)/libcxl        >> $(LOGS_DIR)/compile_pslse.log 2>&1
 	@$(MAKE) -C $(PSLSE_ROOT)/debug         >> $(LOGS_DIR)/compile_pslse.log 2>&1
-	@echo -e "\t[COMPILE PSLSE ......] done `date`"
+	@echo -e "[COMPILE PSLSE ......] done  `date +"%T %a %b %d %Y"`"
 
 software: pslse
-	@echo -e "\t[COMPILE SOFTWARE....] start `date`"
+	@echo -e "[COMPILE SOFTWARE....] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -C $(SNAP_ROOT)/software       > $(LOGS_DIR)/compile_sw.log 2>&1
-	@echo -e "\t[COMPILE SOFTWARE....] done `date`"
+	@echo -e "[COMPILE SOFTWARE....] done  `date`"
 
 action_sw: software
-	@echo -e "\t[COMPILE ACTION SW...] start `date`"
+	@echo -e "[COMPILE ACTION SW...] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -C $(ACTION_ROOT)/sw        >> $(LOGS_DIR)/compile_sw.log 2>&1
-	@echo -e "\t[COMPILE ACTION SW...] done `date`"
+	@echo -e "[COMPILE ACTION SW...] done  `date +"%T %a %b %d %Y"`"
 
 $(SNAP_SIMULATORS): .config_done action_sw snap_preprocess patch_version
-	@echo -e "\t[BUILD $@..........] start `date`"
+	@echo -e "[BUILD $@..........] start `date +"%T %a %b %d %Y"`"
 	@if [ "$(SIMULATOR)" != "$@" ]; then \
-		echo "Error: Makefile target $@ called with SIMULATOR set to \"$(SIMULATOR)\""; \
+		echo "                        Error: Makefile target $@ called with SIMULATOR set to \"$(SIMULATOR)\""; \
 		exit -1; \
 	fi
 	@if [ ! -d "$(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@)" ];then \
@@ -341,38 +339,48 @@ $(SNAP_SIMULATORS): .config_done action_sw snap_preprocess patch_version
 	@cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@); \
 	./top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1; \
 	if [ $$? -ne 0 ]; then \
-		echo -e "\t                        Error: please look into $(LOGS_DIR)/compile_$@.log"; exit -1; \
+		echo -e "                        Error: please look into $(LOGS_DIR)/compile_$@.log"; exit -1; \
 	fi
-	@echo -e "\t[BUILD $@..........] done  `date`"
+	@echo -e "[BUILD $@..........] done  `date +"%T %a %b %d %Y"`"
 
-model: check_simulator $(SIMULATOR)
+model: .logo check_simulator $(SIMULATOR)
 
-clean:
-	@echo -e "\t[CLEAN ENVIRONMENT...] start `date`"
+.logo: 
+	@touch .logo
+	@echo -e "-------------------------------------------" 
+	@echo -e "---SSSSSS---NN----NN-------A-------PPPPP---" 
+	@echo -e "--SS--------NNN---NN------AAA------PP--PP--" 
+	@echo -e "---SSSSS----NN-N--NN-----AA-AA-----PPPPP---" 
+	@echo -e "-------SS---NN--N-NN----AAAAAAA----PP------" 
+	@echo -e "---SSSSS----NN---NNN---AA-----AA---PP------" 
+	@echo -e "-------------------------------------------" 
+
+clean: .logo
+	@echo -e "[CLEAN ENVIRONMENT...] start `date +"%T %a %b %d %Y"`"
 	@$(RM)    .config_done
 	@$(RM) -r $(SNAP_PP_FILES) $(SNAP_CONFIG_FILES) $(SNAP_TMP_FILES) \
 	          $(SNAP_HDL_CORE)/psl_fpga.vhd_source                    \
 	          $(SNAP_HDL_CORE)/psl_accel.vhd_source                   \
 	          *build
-	@echo -e "\t                        vivado project";
+	@echo -e "                        vivado project";
 	@$(RM) -r viv_project*
-	@echo -e "\t                        IPs";
+	@echo -e "                        IPs";
 	@$(RM) -r ip
-	@echo -e "\t                        sim files";
+	@echo -e "                        sim files";
 	@$(RM) -r sim/ies sim/xsim sim/questa hdl/nvme/component.xml hdl/nvme/xgui
-	@echo -e "\t                        log files";
+	@echo -e "                        log files";
 	@$(RM) -r logs
-	@echo -e "\t                        action";
+	@echo -e "                        action";
 	@$(RM) $(ACTION_ROOT)/hw/vhdl
 	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then	    \
 		$(MAKE) -C $(ACTION_ROOT) $@ > /dev/null;   \
 		if [ $$? -ne 0 ]; then                      \
-			echo -e "\tError: [make "$@"] failed for action in $(ACTION_ROOT)"; exit -1; \
+			echo -e "                        Error: [make "$@"] failed for action in $(ACTION_ROOT)"; exit -1; \
 		fi                                          \
 	fi
-	@echo -e "\t[CLEAN ENVIRONMENT...] done `date`"
+	@echo -e "[CLEAN ENVIRONMENT...] done  `date +"%T %a %b %d %Y"`"
 
 gitclean:
-	@echo -e "\t[GITCLEAN............] cleaning and resetting snap git";
+	@echo -e "[GITCLEAN............] cleaning and resetting snap git";
 	git clean -f -d -x
 	git reset --hard

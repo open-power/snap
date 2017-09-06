@@ -24,13 +24,13 @@ set log_file   $log_dir/create_nvme_host.log
 set prj_name nvme
 set bd_name  nvme_top
 
-puts "	\[CREATE_NVMe.........\] start"
+puts "\[CREATE_NVMe.........\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 # Create NVME project
 create_project   $prj_name $root_dir/ip/nvme -part $fpga_part -force >> $log_file
 create_bd_design $bd_name  >> $log_file
 
 # Create NVME_HOST IP
-puts "	\                        generating NVMe Host IP"
+puts "                        generating NVMe Host IP"
 ipx::infer_core -vendor IP -library user -taxonomy /UserIP $root_dir/hdl/nvme >> $log_file
 ipx::edit_ip_in_project -upgrade true -name edit_ip_project -directory $root_dir/ip/nvme/nvme_host_ip/nvme.tmp $root_dir/hdl/nvme/component.xml >> $log_file
 ipx::current_core $root_dir/hdl/nvme/component.xml 
@@ -177,7 +177,7 @@ CONFIG.FREQ_HZ {100000000} \
 set nvme_reset_n [ create_bd_port -dir I -type rst nvme_reset_n ]
 
 # Create instance: axi_interconnect_0, and set properties
-puts "	\                        generating AXI interconnects"
+puts "                        generating AXI interconnects"
 set axi_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_0 ]
 set_property -dict [ list \
 CONFIG.NUM_MI {3}\
@@ -204,7 +204,7 @@ CONFIG.STRATEGY {2} \
 ] $axi_interconnect_2 >> $log_file
 
 # Create instance: util_buf_gte_0, and set properties
-puts "	\                        generating Utility Buffer"
+puts "                        generating Utility Buffer"
 set util_buf_gte_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 util_buf_gte_0 ]
 set_property -dict [list  \
 CONFIG.C_BUF_TYPE {IBUFDSGTE} \
@@ -246,7 +246,7 @@ CONFIG.C_BUF_TYPE {IBUFDSGTE} \
 
 
 # Create instance: axi_pcie3_0, and set properties
-puts "	\                        generating AXI PCIe Root Complex"
+puts "                        generating AXI PCIe Root Complex"
 set axi_pcie3_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie3:3.0 axi_pcie3_0 >> $log_file ]
 set_property -dict [ list \
 CONFIG.pcie_blk_locn {X0Y1} \
@@ -295,11 +295,11 @@ CONFIG.plltype {QPLL1} \
 ] $axi_pcie3_1 >> $log_file
 
 # Create instance: nvme_host_wrap_0, and set properties
-puts "	\                        generating NVMe Host"
+puts "                        generating NVMe Host"
 create_bd_cell   -type ip -vlnv IP:user:nvme_host_wrap:1.0 nvme_host_wrap_0 >> $log_file
 
 # Create interface connections
-puts "	\                        connecting all blocks and ports"
+puts "                        connecting all blocks and ports"
 connect_bd_intf_net -intf_net S00_AXI_I0 [get_bd_intf_ports NVME_S_AXI] [get_bd_intf_pins axi_interconnect_0/S00_AXI]
 connect_bd_intf_net -intf_net S01_AXI_I0 [get_bd_intf_ports ACT_NVME_AXI] [get_bd_intf_pins axi_interconnect_0/S01_AXI]
 connect_bd_intf_net -intf_net S00_AXI_I2 [get_bd_intf_pins axi_interconnect_2/S00_AXI] [get_bd_intf_pins axi_pcie3_0/M_AXI]
@@ -357,7 +357,7 @@ exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get
 #### Save block design and close the project
 save_bd_design >> $log_file
 
-puts "	\[CREATE_NVMe.........\] done"
+puts "\[CREATE_NVMe.........\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
  
 close_project >> $log_file
 
