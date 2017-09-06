@@ -24,6 +24,7 @@ snap_config = $(SNAP_ROOT)/.snap_config
 snap_config_sh = $(SNAP_ROOT)/.snap_config.sh
 snap_env = $(SNAP_ROOT)/.snap_env
 snap_env_sh = $(SNAP_ROOT)/.snap_env.sh
+rm_logo := $(shell rm -f $(SNAP_ROOT)/.logo)
 
 -include $(snap_env_sh)
 
@@ -43,30 +44,30 @@ endif
 
 $(software_subdirs):
 	@if [ -d $@ ]; then          \
-	    $(MAKE) -C $@ || exit 1; \
+	    $(MAKE) -s -C $@ || exit 1; \
 	fi
 
-software: $(software_subdirs)
+software: $(SNAP_ROOT)/.logo $(software_subdirs)
 
 $(action_subdirs):
 	@if [ -d $@ ]; then          \
-	    $(MAKE) -C $@ || exit 1; \
+	    $(MAKE) -s -C $@ || exit 1; \
 	fi
 
 actions: $(action_subdirs)
 
 $(hardware_subdirs): $(snap_env)
 	@if [ -d $@ ]; then                          \
-	    $(MAKE) -C $@ || exit 1;                \
+	    $(MAKE) -s -C $@ || exit 1;                \
 	fi
 
-hardware: $(hardware_subdirs)
+hardware: $(SNAP_ROOT)/.logo $(hardware_subdirs)
 
 # Install/uninstall
 test install uninstall:
 	@for dir in $(software_subdirs) $(action_subdirs); do \
 	    if [ -d $$dir ]; then                             \
-	        $(MAKE) -C $$dir $@ || exit 1;                \
+	        $(MAKE) -s -C $$dir $@ || exit 1;                \
 	    fi                                                \
 	done
 
@@ -74,7 +75,7 @@ test install uninstall:
 config model image cloud_base cloud_action cloud_merge: $(snap_env)
 	@for dir in $(hardware_subdirs); do                         \
 	    if [ -d $$dir ]; then                                  \
-	        $(MAKE) -C $$dir $@ || exit 1;                     \
+	        $(MAKE) -s -C $$dir $@ || exit 1;                     \
 	    fi                                                     \
 	done
 
@@ -83,7 +84,7 @@ menuconfig xconfig gconfig oldconfig:
 	@echo "$@: Setting up SNAP configuration"
 	@for dir in $(config_subdirs); do      \
 	    if [ -d $$dir ]; then              \
-	        $(MAKE) -C $$dir $@ || exit 1; \
+	        $(MAKE) -s -C $$dir $@ || exit 1; \
 	    fi                                 \
 	done
 
@@ -94,7 +95,7 @@ $(snap_config):
 	@echo "$@: Setting up SNAP configuration"
 	@for dir in $(config_subdirs); do              \
 	    if [ -d $$dir ]; then                      \
-	        $(MAKE) -C $$dir menuconfig || exit 1; \
+	        $(MAKE) -s -C $$dir menuconfig || exit 1; \
 	    fi                                         \
 	done
 	@echo "SNAP config done"
@@ -107,15 +108,27 @@ $(snap_env): $(snap_config)
 	@echo "$@: Setting up SNAP environment variables"
 	@. $(SNAP_ROOT)/snap_env $(snap_config_sh)
 
-clean:
+clean: $(SNAP_ROOT)/.logo
 	@for dir in $(clean_subdirs); do       \
 	    if [ -d $$dir ]; then              \
-	        $(MAKE) -C $$dir $@ || exit 1; \
+	        $(MAKE) -s -C  $$dir $@ || exit 1; \
 	    fi                                 \
 	done
 	@find . -depth -name '*~'  -exec rm -rf '{}' \; -print
 	@find . -depth -name '.#*' -exec rm -rf '{}' \; -print
 
-clean_config: clean
+clean_config: $(SNAP_ROOT)/.logo clean
 	@$(RM) $(SNAP_ROOT)/.snap_env*
 	@$(RM) $(SNAP_ROOT)/.snap_config*
+
+$(SNAP_ROOT)/.logo: 
+	@touch $(SNAP_ROOT)/.logo
+	@echo -e "-------------------------------------------" 
+	@echo -e "---SSSSSS---NN----NN-------A-------PPPPP---" 
+	@echo -e "--SS--------NNN---NN------AAA------PP--PP--" 
+	@echo -e "---SSSSS----NN-N--NN-----AA-AA-----PPPPP---" 
+	@echo -e "-------SS---NN--N-NN----AAAAAAA----PP------" 
+	@echo -e "---SSSSS----NN---NNN---AA-----AA---PP------" 
+	@echo -e "-------------------------------------------" 
+
+
