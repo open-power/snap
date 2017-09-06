@@ -29,7 +29,7 @@ set remove_tmp_files      "FALSE"
 if { [info exists ::env(DCP_ROOT)] == 1 } {
     set dcp_dir $::env(DCP_ROOT)
 } else {
-    puts "Error: For cloud builds the environment variable DCP_ROOT needs to point to a path for input and output design checkpoints."
+    puts "                        Error: For cloud builds the environment variable DCP_ROOT needs to point to a path for input and output design checkpoints."
     exit 42
 }
 
@@ -47,45 +47,45 @@ if { [info exists ::env(CLOUD_BUILD_BITFILE)] == 1 } {
 }
 
 #Define widths of each column
-set widthCol1 31
+set widthCol1 23
 set widthCol2 23
 set widthCol3 35
 set widthCol4 22
 
 ## 
 ## open snap project
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "open framework project" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "open framework project" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 open_project ../viv_project/framework.xpr >> $log_file
  
 if { $cloud_run == "BASE" } {
 
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   reset_run    user_action_synth_1 >> $log_file
   launch_runs  user_action_synth_1 >> $log_file
   wait_on_run  user_action_synth_1 >> $log_file
   file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper.dcp                       $dcp_dir/user_action_synth.dcp
   file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper_utilization_synth.rpt     ./Reports/user_action_utilization_synth.rpt
   
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   reset_run    synth_1 >> $log_file
   launch_runs  synth_1 >> $log_file
   wait_on_run  synth_1 >> $log_file
   file copy -force ../viv_project/framework.runs/synth_1/psl_fpga.dcp                       $dcp_dir/framework_synth.dcp
   file copy -force ../viv_project/framework.runs/synth_1/psl_fpga_utilization_synth.rpt     ./Reports/framework_utilization_synth.rpt
 
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   open_run     synth_1 -name synth_1 >> $log_file
   lock_design  -level routing b      >> $log_file
  
   read_xdc ../setup/snap_impl.xdc >> $log_file
 
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start implementation" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start implementation" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   reset_run    impl_1 >> $log_file
   launch_runs  impl_1 >> $log_file
   wait_on_run  impl_1 >> $log_file
 
 
-  puts [format "%-*s %-*s %-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3 + 1] "collecting reports and checkpoints" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3 + 1] "collecting reports and checkpoints" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_opt.dcp                         $dcp_dir/framework_opt.dcp    
   file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_physopt.dcp                     $dcp_dir/framework_physopt.dcp
   file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_placed.dcp                      $dcp_dir/framework_placed.dcp 
@@ -99,7 +99,7 @@ if { $cloud_run == "BASE" } {
 
   ##  
   ## generating reports
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating reports" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating reports" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   report_utilization    -quiet -file  ./Reports/utilization_route_design.rpt
   report_route_status   -quiet -file  ./Reports/route_status.rpt
   report_timing_summary -quiet -max_paths 100 -file ./Reports/timing_summary.rpt
@@ -123,7 +123,7 @@ if { $cloud_run == "BASE" } {
 
 } elseif { $cloud_run == "IMAGE" } {
 
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "create SNAP cloud_run" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "create SNAP cloud_run" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format{%T %a %b %d %Y}]"]
   # Create PR run
   create_reconfig_module -name cloud_build -partition_def [get_partition_defs snap_action ] -gate_level -top action_wrapper >> $log_file
   add_files -norecurse $dcp_dir/user_action_synth.dcp -of_objects [get_reconfig_modules cloud_build] >> $log_file
@@ -136,7 +136,7 @@ if { $cloud_run == "BASE" } {
   set_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE   Explore [get_runs cloud_run]
   set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE      Explore [get_runs cloud_run]  
 
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start implementation" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start implementation" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
   reset_run    cloud_run >> $log_file
   launch_runs  cloud_run >> $log_file
@@ -163,7 +163,7 @@ if { $cloud_run == "BASE" } {
     set step write_bitstream
     set logfile $log_dir/${step}.log
     set command "write_bitstream -force -file ./Images/$IMAGE_NAME"
-    puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+    puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
     if { [catch "$command > $logfile" errMsg] } {
       puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: write_bitstream failed" $widthCol4 "" ]
@@ -176,7 +176,7 @@ if { $cloud_run == "BASE" } {
   }
 
 } elseif { $cloud_run == "ACTION" } {
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   reset_run    user_action_synth_1 >> $log_file
   launch_runs  user_action_synth_1 >> $log_file
   wait_on_run  user_action_synth_1 >> $log_file
@@ -187,7 +187,7 @@ if { $cloud_run == "BASE" } {
 ##
 ## removing unnecessary files
 if { $remove_tmp_files == "TRUE" } {
-  puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s %-*s" $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   exec rm -rf $dcp_dir/framework_synth.dcp
   exec rm -rf $dcp_dir/framework_opt.dcp
   exec rm -rf $dcp_dir/framework_physopt.dcp

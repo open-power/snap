@@ -29,7 +29,7 @@ set log_dir      $::env(LOGS_DIR)
 set log_file     $log_dir/create_ip.log
 
 ## Create a new Vivado IP Project
-puts "	\[CREATE_IPs..........\] start"
+puts "\[CREATE_IPs..........\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 exec rm -rf $ip_dir
 create_project managed_ip_project $ip_dir/managed_ip_project -part $fpga_part -ip  >> $log_file
 
@@ -39,7 +39,7 @@ set_property target_language VHDL [current_project]
 set_property target_simulator IES [current_project]
 
 #create ram_520x64_2p  
-puts "	                        generating IP ram_520x64_2p"
+puts "                        generating IP ram_520x64_2p"
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name ram_520x64_2p -dir $ip_dir  >> $log_file
 set_property -dict [list                                                         \
                     CONFIG.Memory_Type {Simple_Dual_Port_RAM} 		         \
@@ -65,7 +65,7 @@ export_ip_user_files -of_objects             [get_files $ip_dir/ram_520x64_2p/ra
 export_simulation -of_objects [get_files $ip_dir/ram_520x64_2p/ram_520x64_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create ram_576x64_2p  
-puts "	                        generating IP ram_576x64_2p"
+puts "                        generating IP ram_576x64_2p"
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name ram_576x64_2p -dir $ip_dir >> $log_file
 set_property -dict [list                                                            \
                     CONFIG.Memory_Type {Simple_Dual_Port_RAM} 		            \
@@ -90,7 +90,7 @@ export_ip_user_files -of_objects             [get_files $ip_dir/ram_576x64_2p/ra
 export_simulation -of_objects [get_files $ip_dir/ram_576x64_2p/ram_576x64_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create fifo_513x512
-puts "	                        generating IP fifo_513x512"
+puts "                        generating IP fifo_513x512"
 create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_513x512 -dir $ip_dir >> $log_file
 set_property -dict [list                                                                              \
                     CONFIG.Performance_Options {First_Word_Fall_Through} 			      \
@@ -114,7 +114,7 @@ export_ip_user_files -of_objects             [get_files $ip_dir/fifo_513x512/fif
 export_simulation -of_objects [get_files $ip_dir/fifo_513x512/fifo_513x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create fifo_10x512
-puts "	                        generating IP fifo_10x512"
+puts "                        generating IP fifo_10x512"
 create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_10x512 -dir $ip_dir >> $log_file
 set_property -dict [list                                          \
                     CONFIG.Input_Data_Width {10} 		  \
@@ -135,7 +135,7 @@ export_ip_user_files -of_objects             [get_files $ip_dir/fifo_10x512/fifo
 export_simulation -of_objects [get_files $ip_dir/fifo_10x512/fifo_10x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create fifo_8x512
-puts "	                        generating IP fifo_8x512"
+puts "                        generating IP fifo_8x512"
 create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_8x512 -dir $ip_dir >> $log_file
 set_property -dict [list                                         \
                     CONFIG.Input_Data_Width {8} 		 \
@@ -155,7 +155,7 @@ export_ip_user_files -of_objects             [get_files $ip_dir/fifo_8x512/fifo_
 export_simulation -of_objects [get_files $ip_dir/fifo_8x512/fifo_8x512.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create fifo_4x512 (depth of 16 would be sufficient but, 512 is the smallest possible depth) 
-puts "	                        generating IP fifo_4x512"
+puts "                        generating IP fifo_4x512"
 create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.* -module_name fifo_4x512 -dir $ip_dir >> $log_file
 set_property -dict [list                                        \
                     CONFIG.Input_Data_Width {4} 		\
@@ -212,7 +212,7 @@ if { $fpga_card == "KU3" } {
 
 #create clock converter 
 if { $create_clock_conv == "TRUE" } {
-  puts "	                        generating IP axi_clock_converter"
+  puts "                        generating IP axi_clock_converter"
   create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir  >> $log_file
 
   if { ($sdram_used == "TRUE") && ( $fpga_card == "KU3" ) } {
@@ -230,7 +230,7 @@ if { $create_clock_conv == "TRUE" } {
 
 #create axi interconect
 if { $create_interconect == "TRUE" } {
-  puts "	                        generating IP axi_interconect"
+  puts "                        generating IP axi_interconect"
   create_ip -name axi_interconnect -vendor xilinx.com -library ip -version 1.7 -module_name axi_interconnect -dir $ip_dir  >> $log_file
   set_property -dict [list                                  \
                       CONFIG.NUM_SLAVE_PORTS {2} 	    \
@@ -255,7 +255,7 @@ if { $create_interconect == "TRUE" } {
 
 #create BlockRAM
 if { $create_bram == "TRUE" } {
-  puts "	                        generating IP block_RAM"
+  puts "                        generating IP block_RAM"
   create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.3 -module_name block_RAM -dir  $ip_dir >> $log_file
   set_property -dict [list                                                           \
                       CONFIG.Interface_Type {AXI4} 				     \
@@ -287,7 +287,7 @@ if { $create_bram == "TRUE" } {
 
 #DDR3 create ddr3sdramm with ECC
 if { $create_ddr3 == "TRUE" } {
-  puts "	                        generating IP ddr3sdram"
+  puts "                        generating IP ddr3sdram"
   create_ip -name ddr3 -vendor xilinx.com -library ip -version 1.* -module_name ddr3sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                   \
                       CONFIG.C0.DDR3_TimePeriod {1250} 					     \
@@ -315,13 +315,13 @@ if { $create_ddr3 == "TRUE" } {
   export_simulation -of_objects [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
   #DDR3 create ddr3sdramm example design
-  puts "	                        generating ddr3sdram example"
+  puts "                        generating ddr3sdram example"
   open_example_project -in_process -force -dir $ip_dir [get_ips  ddr3sdram] >> $log_file  
 }
 
 #DDR4 create ddr4sdramm with ECC
 if { $create_ddr4 == "TRUE" } {
-  puts "	                        generating IP ddr4sdram"
+  puts "                        generating IP ddr4sdram"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                   \
                       CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-083E} 			     \
@@ -348,9 +348,9 @@ if { $create_ddr4 == "TRUE" } {
   export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
   #DDR4 create ddr4sdramm example design
-  puts "	                        generating ddr4sdram example"
+  puts "                        generating ddr4sdram example"
   open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
 }
 
-puts "	\[CREATE_IPs..........\] done"
+puts "\[CREATE_IPs..........\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 close_project >> $log_file
