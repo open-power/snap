@@ -124,7 +124,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ "$USE_PRFLOW" = "TRUE" ]; then
     if [ -z "$DCP_ROOT" ]; then
-      export DCP_ROOT='${SNAP_ROOT}/dcp'
+      export DCP_ROOT=$snapdir/dcp
       echo "Setting DCP_ROOT               to: \"$DCP_ROOT\""
       mkdir -p $snapdir/dcp
     else
