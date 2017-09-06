@@ -282,7 +282,7 @@ $(SNAP_BASE_DCP):
 	@echo -e "\tNeed to run cloud_base first"
 	@exit 1
 
-cloud_action: config_done check_snap_settings snap_preprocess action_hw patch_version
+cloud_action: .config_done check_snap_settings snap_preprocess action_hw patch_version
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
 		echo -e "\tMakefile target $@ is only allowed for PR flow!"; exit -1; \
 	fi
