@@ -59,7 +59,6 @@ export NVME_USED ?= FALSE
 
 export USE_PRFLOW ?= FALSE
 export DCP_ROOT ?= $(SNAP_ROOT)/dcp
-rm_logo := $(shell rm -f $(SNAP_HARDWARE_ROOT)/.logo)
 
 ## variables just for this Makefile
 BUILD_DIR=$(SNAP_HARDWARE_ROOT)/build
@@ -257,14 +256,14 @@ create_environment:
 config_start:
 	@echo -e "[CONFIG..............] start `date +"%T %a %b %d %Y"`"
 
-config: .logo config_start check_snap_settings prepare_build snap_preprocess action_hw create_environment patch_version patch_NVMe
+config: config_start check_snap_settings prepare_build snap_preprocess action_hw create_environment patch_version patch_NVMe
 	@touch .config_done
 	@echo -e "[CONFIG..............] done  `date +"%T %a %b %d %Y"`"
 
 .config_done:
 	$(MAKE) config
 
-image: .logo .config_done check_snap_settings snap_preprocess patch_version
+image: .config_done check_snap_settings snap_preprocess patch_version
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
 		echo -e "                        Makefile target $@ not allowed for PR flow!"; exit -1; \
 	fi
@@ -273,7 +272,7 @@ image: .logo .config_done check_snap_settings snap_preprocess patch_version
 	@$(RM) -r .bitstream_name.txt
 	@echo -e "[BUILD IMAGE.........] done  `date +"%T %a %b %d %Y"`"
 
-cloud_base: .logo .config_done check_snap_settings snap_preprocess patch_version
+cloud_base: .config_done check_snap_settings snap_preprocess patch_version
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
 		echo -e "                        Makefile target $@ is only allowed for PR flow!"; exit -1; \
 	fi
@@ -289,7 +288,7 @@ $(SNAP_BASE_DCP):
 	@echo -e "                        Need to run cloud_base first"
 	@exit -1
 
-cloud_action: .logo .config_done check_snap_settings snap_preprocess action_hw patch_version
+cloud_action: .config_done check_snap_settings snap_preprocess action_hw patch_version
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
 		echo -e "                        Makefile target $@ is only allowed for PR flow!"; exit -1; \
 	fi
@@ -343,19 +342,9 @@ $(SNAP_SIMULATORS): .config_done action_sw snap_preprocess patch_version
 	fi
 	@echo -e "[BUILD $@..........] done  `date +"%T %a %b %d %Y"`"
 
-model: .logo check_simulator $(SIMULATOR)
+model: check_simulator $(SIMULATOR)
 
-.logo: 
-	@touch .logo
-	@echo -e "-------------------------------------------" 
-	@echo -e "---SSSSSS---NN----NN-------A-------PPPPP---" 
-	@echo -e "--SS--------NNN---NN------AAA------PP--PP--" 
-	@echo -e "---SSSSS----NN-N--NN-----AA-AA-----PPPPP---" 
-	@echo -e "-------SS---NN--N-NN----AAAAAAA----PP------" 
-	@echo -e "---SSSSS----NN---NNN---AA-----AA---PP------" 
-	@echo -e "-------------------------------------------" 
-
-clean: .logo
+clean: 
 	@echo -e "[CLEAN ENVIRONMENT...] start `date +"%T %a %b %d %Y"`"
 	@$(RM)    .config_done
 	@$(RM) -r $(SNAP_PP_FILES) $(SNAP_CONFIG_FILES) $(SNAP_TMP_FILES) \
