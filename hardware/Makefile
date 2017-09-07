@@ -139,7 +139,8 @@ check_snap_settings:
 		echo "                        ILA_DEBUG is set to ${ILA_DEBUG} but ILA_SETUP_FILE (\"${ILA_SETUP_FILE}\") is not pointing to a file!"; \
 		exit -1; \
 	fi
-	@echo "                        HARDWARE / MAKEFILE CALLED WITH:"
+	@echo "                        =============================="
+	@echo "                        hardware/Makefile called with:"
 	@echo "                        SNAP_ROOT      = $(SNAP_ROOT)"
 	@echo "                        ACTION_ROOT    = $(ACTION_ROOT)"
 	@echo "                        PSL_DCP        = $(PSL_DCP)"
@@ -159,6 +160,7 @@ check_snap_settings:
 	fi
 	@echo "                        SIMULATOR      = $(SIMULATOR)"
 	@echo "                        USE_PRFLOW     = $(USE_PRFLOW)"
+	@echo "                        =============================="
 
 check_simulator:
 	@if [ $(SIMULATOR) != "irun" ] && [ $(SIMULATOR) != "xsim" ]; then \
