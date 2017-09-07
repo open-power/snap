@@ -141,7 +141,6 @@ check_snap_settings:
 	fi
 	@echo "                        =============================="
 	@echo "                        hardware/Makefile called with:"
-	@echo "                        SNAP_ROOT      = $(SNAP_ROOT)"
 	@echo "                        ACTION_ROOT    = $(ACTION_ROOT)"
 	@echo "                        PSL_DCP        = $(PSL_DCP)"
 	@echo "                        FPGACARD       = $(FPGACARD)"
@@ -150,9 +149,6 @@ check_snap_settings:
 	@echo "                        HLS_SUPPORT    = $(HLS_SUPPORT)"
 	@echo "                        BRAM_USED      = $(BRAM_USED)"
 	@echo "                        SDRAM_USED     = $(SDRAM_USED)"
-	@echo "                        DDR3_USED      = $(DDR3_USED)"
-	@echo "                        DDR4_USED      = $(DDR4_USED)"
-	@echo "                        DDRI_USED      = $(DDRI_USED)"
 	@echo "                        NVME_USED      = $(NVME_USED)"
 	@echo "                        ILA_DEBUG      = $(ILA_DEBUG)"
 	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` = "TRUE" ]; then \
