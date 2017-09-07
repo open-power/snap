@@ -29,10 +29,10 @@ snap_env_sh=$snapdir/.snap_env.sh
 
 cd $snapdir
 if [ -f $snap_config_sh ]; then
-  . $snap_config_sh
+  $snap_config_sh
 fi
 if [ -f $snap_env_sh ]; then
-  . $snap_env_sh
+  $snap_env_sh
 fi
 
 # Setting Defaults
