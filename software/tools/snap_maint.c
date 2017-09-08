@@ -38,6 +38,7 @@
 #include <snap_tools.h>
 #include <snap_m_regs.h>
 #include <snap_hls_if.h>
+#include "snap_actions.h"
 
 static const char *version = GIT_VERSION;
 static int verbose = 0;
@@ -248,6 +249,23 @@ static uint32_t unlock_action(void *handle, uint32_t addr)
 	return reg;
 }
 
+static bool decode_action(uint32_t atype)
+{
+	int i;
+	int md_size = sizeof(snap_actions)/sizeof(struct actions_tab);
+
+	for (i = 0; i < md_size; i++) {
+		if (atype == snap_actions[i].dev1) {
+			if (snap_actions[i].dev1 == snap_actions[i].dev2) {
+				VERBOSE1("%s %s\n", snap_actions[i].vendor,
+						snap_actions[i].description);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 static void snap_decode(uint64_t reg, uint32_t level)
 {
 	uint32_t atype;
@@ -255,20 +273,9 @@ static void snap_decode(uint64_t reg, uint32_t level)
 	atype = (uint32_t)reg;
 	VERBOSE1("     %d     0x%8.8x     0x%8.8x  ",
 		(int)(reg >> 32ll), atype, level);
-	switch (atype) {
-	case 0x10140000: VERBOSE1("IBM Sample Code\n"); break;
-	case 0x10141000: VERBOSE1("HLS Memcopy\n"); break;
-	case 0x10141001: VERBOSE1("HLS Checksum\n"); break;
-	case 0x10141002: VERBOSE1("HLS Hash Join\n"); break;
-	case 0x10141003: VERBOSE1("HLS Text Search\n"); break;
-	case 0x10141004: VERBOSE1("HLS Breadth first search (BFS)\n"); break;
-	case 0x10141005: VERBOSE1("HLS Intersect (hash)\n"); break;
-	case 0x10141006: VERBOSE1("HLS Intersect (sort)\n"); break;
-	case 0x10141007: VERBOSE1("HLS NVMe Memcopy (FGT card)\n"); break;
-	default:
-		VERBOSE1("UNKNOWN Code.....\n");
-		break;
-	}
+	if (decode_action(atype))
+		return;
+	VERBOSE1("UNKNOWN Action.....\n");
 	return;
 }
 
