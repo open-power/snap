@@ -9,4 +9,3 @@ hardware/sim/questa
 software/*/*.o
 software/*/*.d
 software/*/*.so
-software/tools/snap_actions.h
