@@ -17,7 +17,19 @@
 #ifndef __SNAP_ACTIONS_H__
 #define __SNAP_ACTIONS_H__
 
+/*
+ * This file will be changed by cfg_snap_actions.sh
+ * Do not Edit or change
+ */ 
+
+struct actions_tab {
+        const char *vendor;
+        const uint32_t dev1;
+        const uint32_t dev2;
+        const char *description;
+};
+
 struct actions_tab snap_actions[] = {
-}
+};
  
 #endif  /* __SNAP_ACTIONS_H__ */

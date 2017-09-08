@@ -27,6 +27,6 @@ SNAP_ACTIONS_H=$snapdir/software/tools/snap_actions.h
 
 grep '\(|[ ^I]*\([0-9A-Fa-f]\{2\}\.\)\{3\}[0-9A-Fa-f]\{2\}[ ^I]*\)\{2\}|' $ACTION_TYPES_FILE | sed 's/\(.*\)[ ^I]|[ ^I]\([0-9A-Fa-f]\{2\}\)\.\([0-9A-Fa-f]\{2\}\)\.\([0-9A-Fa-f]\{2\}\)\.\([0-9A-Fa-f]\{2\}\)[ ^I]|[ ^I]\([0-9A-Fa-f]\{2\}\.[0-9A-Fa-f]\{2\}\.[0-9A-Fa-f]\{2\}\.[0-9A-Fa-f]\{2\}\)[ ^I]|[ ^I]\(.*\)/  \{\"\1\"\, 0x\2\3\4\5\, 0x\6\, \"\7\"\},/' | sed 's/\(.* 0x[0-9A-Fa-f]\{8\}\, 0x\)\([0-9A-Fa-f]\{2\}\)\.\([0-9A-Fa-f]\{2\}\)\.\([0-9A-Fa-f]\{2\}\)\.\([0-9A-Fa-f]\{2\}\)\(.*\)/\1\2\3\4\5\6/' | sed '$ s/\"},/\"}/' > $SNAP_ACTIONS_TMP
 
-sed -i.tmp '/struct[ ^I]actions_tab/ r '$SNAP_ACTIONS_TMP $SNAP_ACTIONS_H
+sed -i.tmp '/struct[ ^I]actions_tab[ ^I]snap_actions/ r '$SNAP_ACTIONS_TMP $SNAP_ACTIONS_H
 
 rm $SNAP_ACTIONS_TMP
