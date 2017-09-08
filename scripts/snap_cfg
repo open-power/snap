@@ -17,6 +17,7 @@
 
 version=1.0
 program=`basename "$0"`
+prgdir=$(dirname $(readlink -f "$BASH_SOURCE")) # path containing this script
 
 # output formatting
 bold=$(tput bold)
@@ -24,6 +25,7 @@ normal=$(tput sgr0)
 
 # Name of global config file
 kconfig="`pwd`/Kconfig"
+kconfig_dir="`pwd`/kconfig"
 snap_config=../.snap_config
 snap_config_sh=../.snap_config.sh
 snap_config_cflags=../.snap_config.cflags
@@ -31,6 +33,9 @@ autoconf=../software/include/autoconf.h
 linux_dir="/usr/src/kernels/`uname -r`"
 build_dir="`pwd`/build"
 option=menuconfig
+if [ -e $linux_dir ]; then
+  kconfig_dir=$linux_dir
+fi
 
 # Print usage message helper function
 function usage() {
@@ -82,18 +87,34 @@ shift $((OPTIND-1))
 # now do something with $@
 
 echo "SNAP Build Options"
-echo "  Linux:    $linux_dir"
-echo "  Build:    $build_dir"
-echo "  Kconfig:  $kconfig"
-echo "  config:   $snap_config"
-echo "  autoconf: $autoconf"
+echo "  linux_dir:   $linux_dir"
+echo "  kconfig_dir: $kconfig_dir"
+echo "  Build:       $build_dir"
+echo "  Kconfig:     $kconfig"
+echo "  config:      $snap_config"
+echo "  autoconf:    $autoconf"
+
+if [ ! -e $kconfig_dir ]; then
+  echo "Cloning kconfig from github.com:guillon/kconfig into $kconfig_dir"
+  git clone git@github.com:guillon/kconfig $kconfig_dir
+fi
 
 mkdir -p $build_dir
-cmd="make -C $linux_dir O=$build_dir KBUILD_KCONFIG=$kconfig $option"
+if [ "$kconfig_dir" != "$linux_dir" ]; then
+  cmd="make -f $kconfig_dir/GNUmakefile TOPDIR=. SRCDIR=kconfig KBUILD_KCONFIG=$kconfig $option"
+else
+  cmd="make -C $kconfig_dir O=$build_dir KBUILD_KCONFIG=$kconfig $option"
+fi
 
 echo "Executing:"
 echo "  $cmd"
+pushd $prgdir
 $cmd
+popd
+
+if [ "$kconfig_dir" != "linux_dir" ]; then
+  mv -f $prgdir/config $build_dir/.config
+fi
 
 echo "Generating SNAP config files $snap_config, $snap_config_sh and $snap_config_cflags ..."
 cp $build_dir/.config $snap_config
