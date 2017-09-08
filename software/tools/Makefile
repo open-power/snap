@@ -38,7 +38,10 @@ hfiles = force_cpu.h  snap_fw_example.h
 
 all: $(projs)
 
-$(projs): $(objs) $(libs)
+snap_actions.h.tmp:
+	./cfg_snap_actions.sh
+
+$(projs): snap_actions.h.tmp $(objs) $(libs)
 
 ### Deactivate existing implicit rule
 %: %.c
@@ -63,4 +66,5 @@ uninstall:
 	done
 
 clean distclean:
-	@$(RM) $(objs) $(projs)
+	@if [ -f snap_actions.h.tmp ]; then mv -f snap_actions.h.tmp snap_actions.h; fi
+	@$(RM) cfg_snap_actions.tmp $(objs) $(projs)
