@@ -20,7 +20,7 @@
 /*
  * This file will be changed by cfg_snap_actions.sh
  * Do not Edit or change
- */ 
+ */
 
 struct actions_tab {
         const char *vendor;
@@ -31,5 +31,5 @@ struct actions_tab {
 
 struct actions_tab snap_actions[] = {
 };
- 
+
 #endif  /* __SNAP_ACTIONS_H__ */

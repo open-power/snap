@@ -22,11 +22,11 @@
 
 snapdir=$(dirname $(dirname $(dirname $(readlink -f "$BASH_SOURCE")))) # SNAP root directory
 ACTION_TYPES_FILE=$snapdir/ActionTypes.md
-SNAP_ACTIONS_TMP=$snapdir/cfg_snap_actions.tmp
 SNAP_ACTIONS_H=$snapdir/software/tools/snap_actions.h
+SNAP_ACTIONS_TMP=$SNAP_ACTIONS_H.tmp
 
 grep '\(|[ ^I]*\([0-9A-Fa-f]\{2\}\.\)\{3\}[0-9A-Fa-f]\{2\}[ ^I]*\)\{2\}|' $ACTION_TYPES_FILE | sed 's/\(.*\)[ ^I]|[ ^I]\([0-9A-Fa-f]\{2\}\)\.\([0-9A-Fa-f]\{2\}\)\.\([0-9A-Fa-f]\{2\}\)\.\([0-9A-Fa-f]\{2\}\)[ ^I]|[ ^I]\([0-9A-Fa-f]\{2\}\.[0-9A-Fa-f]\{2\}\.[0-9A-Fa-f]\{2\}\.[0-9A-Fa-f]\{2\}\)[ ^I]|[ ^I]\(.*\)/  \{\"\1\"\, 0x\2\3\4\5\, 0x\6\, \"\7\"\},/' | sed 's/\(.* 0x[0-9A-Fa-f]\{8\}\, 0x\)\([0-9A-Fa-f]\{2\}\)\.\([0-9A-Fa-f]\{2\}\)\.\([0-9A-Fa-f]\{2\}\)\.\([0-9A-Fa-f]\{2\}\)\(.*\)/\1\2\3\4\5\6/' | sed '$ s/\"},/\"}/' > $SNAP_ACTIONS_TMP
 
-sed -i.tmp '/struct[ ^I]actions_tab[ ^I]snap_actions/ r '$SNAP_ACTIONS_TMP $SNAP_ACTIONS_H
+sed '/struct[ ^I]actions_tab[ ^I]snap_actions/ r '$SNAP_ACTIONS_TMP <"$SNAP_ACTIONS_H"_template >$SNAP_ACTIONS_H
 
-rm $SNAP_ACTIONS_TMP
+rm -f $SNAP_ACTIONS_TMP
