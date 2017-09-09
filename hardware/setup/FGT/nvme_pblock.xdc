@@ -17,6 +17,7 @@
 #-----------------------------------------------------------
 create_pblock pblock_nvme
 resize_pblock pblock_nvme -add CLOCKREGION_X4Y4:CLOCKREGION_X5Y4
+resize_pblock pblock_nvme -add {SLICE_X84Y180:SLICE_X95Y299 DSP48E2_X16Y72:DSP48E2_X17Y119 LAGUNA_X14Y120:LAGUNA_X15Y239 RAMB18_X11Y72:RAMB18_X11Y119 RAMB36_X11Y36:RAMB36_X11Y59} -locs keep_all
 resize_pblock pblock_nvme -add {SLICE_X128Y180:SLICE_X142Y239 RAMB18_X16Y72:RAMB18_X17Y95 RAMB36_X16Y36:RAMB36_X17Y47} -locs keep_all
 resize_pblock pblock_nvme -add {SLICE_X96Y120:SLICE_X98Y239} -locs keep_all
 resize_pblock pblock_nvme -add {PCIE_3_1_X0Y1:PCIE_3_1_X0Y1} -locs keep_all
