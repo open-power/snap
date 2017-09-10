@@ -28,7 +28,7 @@ snap_config=../.snap_config
 snap_config_sh=../.snap_config.sh
 snap_config_cflags=../.snap_config.cflags
 autoconf=../software/include/autoconf.h
-linux_dir=/usr/src/kernels/2.6.32-696.10.1.el6.x86_64/
+linux_dir="/usr/src/kernels/`uname -r`"
 build_dir="`pwd`/build"
 option=menuconfig
 
