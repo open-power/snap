@@ -95,6 +95,8 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hls_search'
   elif [ -n "$HLS_SPONGE" ]; then
     AR='${SNAP_ROOT}/actions/hls_sponge'
+  elif [ -n "$HLS_NVME_MEMCOPY" ]; then
+    AR='${SNAP_ROOT}/actions/hls_nvme_memcopy'
   fi
   if [ -z "$AR" ]; then
     AR=$ACTION_ROOT
