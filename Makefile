@@ -30,12 +30,12 @@ snap_env_sh = $(SNAP_ROOT)/.snap_env.sh
 clean_subdirs += $(config_subdirs) $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
 
 # Only build if the subdirectory is really existent
-.PHONY: $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env config model image cloud_base cloud_action cloud_merge snap_config menuconfig xconfig gconfig oldconfig clean clean_config LOGO
+.PHONY: $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env config model image cloud_base cloud_action cloud_merge snap_config menuconfig xconfig gconfig oldconfig clean clean_config
 
 ifeq ($(PLATFORM),x86_64)
-all: LOGO $(software_subdirs) $(action_subdirs) $(hardware_subdirs)
+all: $(software_subdirs) $(action_subdirs) $(hardware_subdirs)
 else
-all: LOGO $(software_subdirs) $(action_subdirs)
+all: $(software_subdirs) $(action_subdirs)
 endif
 
 # Disabling implicit rule for shell scripts
@@ -48,7 +48,7 @@ $(software_subdirs):
 	    echo "Exit:  $@";           \
 	fi
 
-software: $(LOGO) $(software_subdirs)
+software: $(software_subdirs)
 
 $(action_subdirs):
 	@if [ -d $@ ]; then             \
@@ -119,22 +119,7 @@ clean:
 	done
 	@find . -depth -name '*~'  -exec rm -rf '{}' \; -print
 	@find . -depth -name '.#*' -exec rm -rf '{}' \; -print
-	@rm $(SNAP_ROOT)/.logo
 
-clean_config: $(SNAP_ROOT)/.logo clean
+clean_config: clean
 	@$(RM) $(SNAP_ROOT)/.snap_env*
 	@$(RM) $(SNAP_ROOT)/.snap_config*
-
-
-$(SNAP_ROOT)/.logo:
-	@echo Generate: $@
-	@echo "-------------------------------------------"  > $(SNAP_ROOT)/.logo
-	@echo "---SSSSSS---NN----NN-------A-------PPPPP---"  >> $(SNAP_ROOT)/.logo
-	@echo "--SS--------NNN---NN------AAA------PP--PP--"  >> $(SNAP_ROOT)/.logo
-	@echo "---SSSSS----NN-N--NN-----AA-AA-----PPPPP---"  >> $(SNAP_ROOT)/.logo
-	@echo "-------SS---NN--N-NN----AAAAAAA----PP------"  >> $(SNAP_ROOT)/.logo
-	@echo "---SSSSS----NN---NNN---AA-----AA---PP------"  >> $(SNAP_ROOT)/.logo
-	@echo "-------------------------------------------"  >> $(SNAP_ROOT)/.logo
-	@date >> $(SNAP_ROOT)/.logo
-
-LOGO:	$(SNAP_ROOT)/.logo
