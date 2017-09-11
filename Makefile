@@ -30,7 +30,7 @@ snap_env_sh = $(SNAP_ROOT)/.snap_env.sh
 clean_subdirs += $(config_subdirs) $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
 
 # Only build if the subdirectory is really existent
-.PHONY: $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env config model image cloud_base cloud_action cloud_merge snap_config menuconfig xconfig gconfig oldconfig clean clean_config LOGO
+.PHONY: $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env hw_config model image cloud_base cloud_action cloud_merge snap_config config menuconfig xconfig gconfig oldconfig clean clean_config LOGO
 
 ifeq ($(PLATFORM),x86_64)
 all: LOGO $(software_subdirs) $(action_subdirs) $(hardware_subdirs)
@@ -75,7 +75,7 @@ test install uninstall:
 	done
 
 # Model build and config
-config model image cloud_base cloud_action cloud_merge: $(snap_env)
+hw_config model image cloud_base cloud_action cloud_merge: $(snap_env)
 	@for dir in $(hardware_subdirs); do                \
 	    if [ -d $$dir ]; then                          \
 	        $(MAKE) -s -C $$dir $@ || exit 1;          \
@@ -83,7 +83,7 @@ config model image cloud_base cloud_action cloud_merge: $(snap_env)
 	done
 
 # Config
-menuconfig xconfig gconfig oldconfig:
+config menuconfig xconfig gconfig oldconfig:
 	@echo "$@: Setting up SNAP configuration"
 	@for dir in $(config_subdirs); do         \
 	    if [ -d $$dir ]; then                 \
