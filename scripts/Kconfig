@@ -36,7 +36,9 @@ config FPGACHIP
 config NUM_OF_ACTIONS
         int
         default 1
-        prompt "Number Of Actions"
+# as long as only one action is supported we do not need to prompt the number of actions
+# prompt should be enabled as soon as multiple action support is implemented
+#        prompt "Number Of Actions"
         range 1 1
         help
           SNAP currently supports one action.
