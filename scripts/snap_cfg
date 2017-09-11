@@ -95,8 +95,8 @@ echo "  config:      $snap_config"
 echo "  autoconf:    $autoconf"
 
 if [ ! -e $kconfig_dir ]; then
-  echo "Cloning kconfig from github.com:guillon/kconfig into $kconfig_dir"
-  git clone git@github.com:guillon/kconfig $kconfig_dir
+  echo "Cloning kconfig from github.com/guillon/kconfig into $kconfig_dir"
+  git clone https://github.com/guillon/kconfig $kconfig_dir
 fi
 
 mkdir -p $build_dir
