@@ -168,7 +168,6 @@ check_psl_dcp:
 	else \
 		echo "Error: PSL_DCP=$(PSL_DCP) is not pointing to a file"; \
 		exit -1; \
-
 	fi
 
 check_simulator:
