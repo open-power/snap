@@ -115,16 +115,9 @@ while [ -z "$SETUP_DONE" ]; do
 
 
   ####### settings for Partial Reconfiguration flow
-  echo "=====PR flow setup====================================="
-  if [ -z "$USE_PRFLOW" ]; then
-    export USE_PRFLOW=FALSE
-    echo "Setting USE_PRFLOW             to: \"$USE_PRFLOW\""
-  else
-    echo "USE_PRFLOW              is set to: \"$USE_PRFLOW\""
-  fi
-  SNAP_ENV="$SNAP_ENV""export USE_PRFLOW=$USE_PRFLOW\n"
-
+  # Note: USE_PRFLOW is defined via snap_config
   if [ "$USE_PRFLOW" = "TRUE" ]; then
+    echo "=====PR flow setup====================================="
     if [ -z "$DCP_ROOT" ]; then
       export DCP_ROOT='${SNAP_ROOT}/dcp'
       echo "Setting DCP_ROOT               to: \"$DCP_ROOT\""
@@ -145,6 +138,7 @@ while [ -z "$SETUP_DONE" ]; do
 
 
   ####### Cadence simulation setup:
+  # Note: SIMULATOR is defined via snap_config
   if [ "$SIMULATOR" == "irun" ]; then
     echo "=====Cadence simulation setup=========================="
 
@@ -176,6 +170,7 @@ while [ -z "$SETUP_DONE" ]; do
     fi
   fi
 
+  # Note: NVME_USED is defined via snap_config
   if [[ "$NVME_USED" = "TRUE" ]]; then
     echo "=====Denali setup======================================"
     if [ -z "$DENALI_TOOLS" ]; then
