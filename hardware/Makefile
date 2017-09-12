@@ -91,7 +91,7 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 #      due to missing dependencies between the different targets.
 #
 
-.PHONY: all snap_env snap_config check_snap_settings check_simulator check_denali prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment config_start config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun questa clean gitclean
+.PHONY: all snap_env snap_config check_snap_settings check_psl_dcp check_simulator check_denali prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment config_start config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun questa clean gitclean
 
 all: config model image
 
@@ -158,6 +158,18 @@ check_snap_settings:
 	@echo "                        USE_PRFLOW     = $(USE_PRFLOW)"
 	@echo "                        =============================="
 
+check_psl_dcp:
+	@if [ -f $(PSL_DCP) ]; then \
+		export PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl $(PSL_DCP)); \
+		if [ "$$PSL_DCP_TYPE" != "$(FPGACARD)" ]; then \
+			echo "Error: PSL_DCP=$(PSL_DCP) is not pointing to a design checkpoint of card tpye FPGACARD=$(FPGACARD)"; \
+			exit -1; \
+		fi \
+	else \
+		echo "Error: PSL_DCP=$(PSL_DCP) is not pointing to a file"; \
+		exit -1; \
+	fi
+
 check_simulator:
 	@if [ $(SIMULATOR) != "irun" ] && [ $(SIMULATOR) != "xsim" ]; then \
 		echo "                        unknown simulator=$SIMULATOR"; \
@@ -175,7 +187,7 @@ check_denali:
 		fi \
 	fi
 
-prepare_build:
+prepare_build: check_psl_dcp
 	@echo -e "[PREPARE BUILD.......] start `date +"%T %a %b %d %Y"`";
 	@mkdir -p $(BUILD_DIR);
 	@mkdir -p $(BUILD_DIR)/Reports;
