@@ -60,22 +60,24 @@ while [ -z "$SETUP_DONE" ]; do
 
   ####### checking path to PSL design checkpoint
   echo "=====Checking path to PSL design checkpoint============"
+  echo "PSL_DCP                 is set to: \"$PSL_DCP\""
+  SNAP_ENV="$SNAP_ENV""export PSL_DCP=$PSL_DCP\n"
   if [ -f "$PSL_DCP" ]; then
-    # printing path to PSL design checkpoint
-    echo "PSL_DCP                 is set to: \"$PSL_DCP\""
-    SNAP_ENV="export PSL_DCP=$PSL_DCP\n"
+    # checking card type for PSL design checkpoint 
+    PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $PSL_DCP`
+    if [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD"
+    fi
   else
-    echo "WARNING: The environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
-    echo "For more information see also README.md"
+    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### The environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
   fi
   ####### checking path to PSLSE 
   echo "=====Simulation setup: Checking path to PSLSE=========="
-  if [ -d "$PSLSE_ROOT" ]; then
-    echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
-  else
+  echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
+  SNAP_ENV="$SNAP_ENV""export PSLSE_ROOT=$PSLSE_ROOT\n"
+  if [ ! -d "$PSLSE_ROOT" ]; then
     SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set properly. For simulation please clone PSL Simulation Environment from https://github.com/ibm-capi/pslse and let \$PSLSE_ROOT point to it"
   fi
-  SNAP_ENV="$SNAP_ENV""export PSLSE_ROOT=$PSLSE_ROOT\n"
 
 
   ####### SNAP path variables
