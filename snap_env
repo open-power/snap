@@ -21,11 +21,17 @@
 #
 snapdir=$(dirname $(readlink -f "$BASH_SOURCE")) # path containing this script
 
-snap_env=$snapdir/.snap_env
 snap_env_sh=$snapdir/.snap_env.sh
 
+unset PSL_DCP
+unset ACTION_ROOT
+unset PSLSE_ROOT
+unset DCP_ROOT
 if [ -f "$1" ]; then
   source $1
+fi
+if [ -f "$snap_env_sh" ]; then
+  source "$snap_env_sh"
 fi
 
 unset SETUP_DONE
@@ -63,7 +69,7 @@ while [ -z "$SETUP_DONE" ]; do
   echo "PSL_DCP                 is set to: \"$PSL_DCP\""
   SNAP_ENV="$SNAP_ENV""export PSL_DCP=$PSL_DCP\n"
   if [ -f "$PSL_DCP" ]; then
-    # checking card type for PSL design checkpoint 
+    # checking card type for PSL design checkpoint
     PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $PSL_DCP`
     if [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD"
@@ -71,7 +77,7 @@ while [ -z "$SETUP_DONE" ]; do
   else
     SETUP_WARNING="$SETUP_WARNING\n### WARNING ### The environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
   fi
-  ####### checking path to PSLSE 
+  ####### checking path to PSLSE
   echo "=====Simulation setup: Checking path to PSLSE=========="
   echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
   SNAP_ENV="$SNAP_ENV""export PSLSE_ROOT=$PSLSE_ROOT\n"
@@ -111,7 +117,7 @@ while [ -z "$SETUP_DONE" ]; do
     echo "Setting ACTION_ROOT            to: \"$AR\""
   fi
 
-  if [ -n "$AR" ]; then  
+  if [ -n "$AR" ]; then
     SNAP_ENV="$SNAP_ENV""export ACTION_ROOT=$AR\n"
   fi
 
@@ -128,14 +134,6 @@ while [ -z "$SETUP_DONE" ]; do
       echo "DCP_ROOT                is set to: \"$DCP_ROOT\""
     fi
     SNAP_ENV="$SNAP_ENV""export DCP_ROOT=$DCP_ROOT\n"
-
-    if [ -z "$CLOUD_BUILD_BITFILE" ]; then
-      export CLOUD_BUILD_BITFILE=TRUE
-      echo "Setting CLOUD_BUILD_BITFILE    to: \"$CLOUD_BUILD_BITFILE\""
-    else
-      echo "CLOUD_BUILD_BITFILE     is set to: \"$CLOUD_BUILD_BITFILE\""
-    fi
-    SNAP_ENV="$SNAP_ENV""export CLOUD_BUILD_BITFILE=$CLOUD_BUILD_BITFILE\n"
   fi
 
 
@@ -147,28 +145,28 @@ while [ -z "$SETUP_DONE" ]; do
     if [ -z `which irun 2> /dev/null` ]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to irun not set, Cadence simulation won't work"
     else
-      echo "Path to irun            is set to: \"`which irun`\""
+      echo "Path to irun                   is: \"`which irun`\""
       # checking version
-      echo "irun version            is set to: \"$(irun -version| cut -f 3)\""
+      echo "irun version                   is: \"$(irun -version| cut -f 3)\""
       if [ -z "$CDS_INST_DIR" ]; then
-        export CDS_INST_DIR=$(dirname $(dirname `which irun`))
-        echo "Setting CDS_INST_DIR           to: \"$CDS_INST_DIR\""
-      else
-        echo "CDS_INST_DIR            is set to: \"$CDS_INST_DIR\""
+        SETUP_WARNING="$SETUP_WARNING\n### WARNING ### SIMULATOR is $SIMULATOR but CDS_INST_DIR is not set. Simulation may not work."
       fi
-      SNAP_ENV="$SNAP_ENV""export CDS_INST_DIR=$CDS_INST_DIR\n"
+      echo "CDS_INST_DIR            is set to: \"$CDS_INST_DIR\""
     fi
     if [ -f "$IES_LIBS/cds.lib" ]; then
       echo "cds.lib (IES_LIBS)       found in: \"$IES_LIBS\""
-      SNAP_ENV="$SNAP_ENV""export IES_LIBS=$IES_LIBS\n"
     else
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Cannot find cds.lib in IES_LIBS=$IES_LIBS, Cadence compilation won't work"
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Cannot find cds.lib in IES_LIBS=$IES_LIBS. Cadence compilation won't work."
     fi
     if [ -z "$CDS_LIC_FILE" ] && [ -z "$LM_LICENSE_FILE" ]; then
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Cadence license not defined with CDS_LIC_FILE or LM_LICENSE_FILE, simulation may not work"
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Cadence license not defined with CDS_LIC_FILE or LM_LICENSE_FILE. Simulation may not work."
     else
-      SNAP_ENV="$SNAP_ENV""export CDS_LIC_FILE=$CDS_LIC_FILE\n"
-      SNAP_ENV="$SNAP_ENV""export LM_LICENSE_FILE=$LM_LICENSE_FILE\n"
+      if [ -n "$CDS_LIC_FILE" ]; then
+        echo "CDS_LIC_FILE            is set to: \"$CDS_LIC_FILE\""
+      fi
+      if [ -n "$LM_LICENSE_FILE" ]; then
+        echo "LM_LICENSE_FILE         is set to: \"$LM_LICENSE_FILE\""
+      fi
     fi
   fi
 
@@ -179,14 +177,12 @@ while [ -z "$SETUP_DONE" ]; do
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of NVME_USED=$NVME_USED but DENALI_TOOLS not set!"
     else
       echo "DENALI_TOOLS            is set to: \"$DENALI_TOOLS\""
-      SNAP_ENV="$SNAP_ENV""export DENALI_TOOLS=$DENALI_TOOLS\n"
     fi
 
     if [ -z "$DENALI_CUSTOM" ]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of NVME_USED=$NVME_USED but DENALI_CUSTOM not set!"
     else
       echo "DENALI_CUSTOM           is set to: \"$DENALI_CUSTOM\""
-      SNAP_ENV="$SNAP_ENV""export DENALI_CUSTOM=$DENALI_CUSTOM\n"
     fi
   fi
 
@@ -198,7 +194,6 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ -n "$SNAP_ENV" ]; then
     echo -e "$SNAP_ENV" > $snap_env_sh
-    touch $snap_env
   fi
   echo
 

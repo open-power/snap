@@ -119,7 +119,7 @@ config ENABLE_BRAM
         prompt "Enable BRAM"
         help
           This is a debug option. The AXI attached on-card SDRAM will be replaced by 512KB SDRAM.
-        
+
 config BRAM_USED
         string
         default "TRUE"  if ENABLE_BRAM
@@ -227,3 +227,12 @@ config USE_PRFLOW
         default "TRUE" if ENABLE_PRFLOW
         default "FALSE" if ! ENABLE_PRFLOW
 
+config ENABLE_CLOUD_BITFILE
+        bool "Build bitstream file"
+        default y
+        depends on ENABLE_PRFLOW
+
+config CLOUD_BUILD_BITFILE
+        string
+        default "TRUE" if ENABLE_CLOUD_BUILD_BITFILE
+        default "FALSE" if ! ENABLE_CLOUD_BUILD_BITFILE
