@@ -52,7 +52,8 @@ module ddr3_dimm
   //  2 Ranks
   //  8+1 Chips each 4Gb => 8GB + ECC
   ////////////////////////////////////////////////////////////////////////////
-  parameter DEBUG = 0; // Turn on / off  Debug messages
+  parameter DEBUG    = 0;  // Turn on / off  Debug messages
+  parameter MEM_BITS = 12; // this parameter is control how many write data bursts can be stored in memory.  The default is 2^10=1024.
  
   genvar r;
   genvar i;
@@ -60,7 +61,7 @@ module ddr3_dimm
      begin: mem
       for (r = 0; r < 2 ; r=r+1) begin:rank
         for (i = 0; i < 9; i=i+1) begin:sodimm
-          ddr3 #(.DEBUG(DEBUG)) ddr3 (
+          ddr3 #(.DEBUG(DEBUG), .MEM_BITS(MEM_BITS)) ddr3 (
             .tdqs_n  (),
             .addr    (c0_ddr3_addr),
             .ba      (c0_ddr3_ba),
