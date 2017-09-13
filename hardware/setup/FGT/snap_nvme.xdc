@@ -19,7 +19,8 @@
 ############################################################################
 
 ## 
-set_false_path -from [get_ports sys_rst_n]
+set_false_path -from [get_pins nvme_reset_n_q*/C] -to [get_clocks pcie_clk?]
+
 # ------------------------------
 # Pin Locations & I/O Standards
 # ------------------------------
