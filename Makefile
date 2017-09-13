@@ -20,12 +20,8 @@ software_subdirs += $(SNAP_ROOT)/software
 hardware_subdirs += $(SNAP_ROOT)/hardware
 action_subdirs += $(SNAP_ROOT)/actions
 
-snap_config = $(SNAP_ROOT)/.snap_config
-snap_config_sh = $(SNAP_ROOT)/.snap_config.sh
-snap_env = $(SNAP_ROOT)/.snap_env
-snap_env_sh = $(SNAP_ROOT)/.snap_env.sh
-
--include $(snap_env_sh)
+snap_config_sh = .snap_config.sh
+snap_env_sh = .snap_env.sh
 
 clean_subdirs += $(config_subdirs) $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
 
@@ -59,7 +55,7 @@ $(action_subdirs):
 
 actions: $(action_subdirs)
 
-$(hardware_subdirs): $(snap_env)
+$(hardware_subdirs): $(snap_env_sh)
 	@if [ -d $@ ]; then              \
 	    $(MAKE) -s -C $@ || exit 1;  \
 	fi
@@ -75,14 +71,14 @@ test install uninstall:
 	done
 
 # Model build and config
-config model image cloud_base cloud_action cloud_merge: $(snap_env)
+config model image cloud_base cloud_action cloud_merge: $(snap_env_sh)
 	@for dir in $(hardware_subdirs); do                \
 	    if [ -d $$dir ]; then                          \
 	        $(MAKE) -s -C $$dir $@ || exit 1;          \
 	    fi                                             \
 	done
 
-# Config
+# SNAP Config
 menuconfig xconfig gconfig oldconfig:
 	@echo "$@: Setting up SNAP configuration"
 	@for dir in $(config_subdirs); do         \
@@ -91,25 +87,18 @@ menuconfig xconfig gconfig oldconfig:
 	    fi                                    \
 	done
 
-snap_config: menuconfig
+snap_config:
+	@$(MAKE) -s menuconfig || exit 1
+	@$(MAKE) -s snap_env || exit 1
 	@echo "SNAP config done"
 
-$(snap_config):
-	@echo "$@: Setting up SNAP configuration"
-	@for dir in $(config_subdirs); do                 \
-	    if [ -d $$dir ]; then                         \
-	        $(MAKE) -s -C $$dir menuconfig || exit 1; \
-	    fi                                            \
-	done
+$(snap_config_sh):
+	@$(MAKE) -s menuconfig || exit 1
 	@echo "SNAP config done"
 
-snap_env: $(snap_config)
-	@echo "$@: Setting up SNAP environment variables"
-	@. $(SNAP_ROOT)/snap_env $(snap_config_sh)
-
-$(snap_env): $(snap_config)
-	@echo "$@: Setting up SNAP environment variables"
-	@. $(SNAP_ROOT)/snap_env $(snap_config_sh)
+# Prepare SNAP Environment
+$(snap_env_sh) snap_env: $(snap_config_sh)
+	@$(SNAP_ROOT)/snap_env $(snap_config_sh)
 
 clean:
 	@for dir in $(clean_subdirs); do           \
