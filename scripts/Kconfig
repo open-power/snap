@@ -47,76 +47,86 @@ choice
         bool "Action Type"
         default HDL_EXAMPLE
 
+        config HLS_ACTION
+            bool "HLS Action"
+            select ENABLE_HLS_SUPPORT
+
+        config HDL_ACTION
+            bool "HDL Action"
+
         config HDL_EXAMPLE
             bool "HDL Example"
 
-        config HLS_BFS
-            bool "HLS Breadth First Search"
-	    select ENABLE_HLS_SUPPORT
-
-        config HLS_HASHJOIN
-            bool "HLS Hashjoin"
-
-        config HLS_INTERSECT
-            bool "HLS Intersect"
-            select FORCE_SDRAM_OR_BRAM
-	    select ENABLE_HLS_SUPPORT
+#        config HDL_NVME_EXAMPLE
+#            bool "HDL NVMe Example"
+#            depends on FGT
+#            select FORCE_SDRAM_OR_BRAM
+#            select FORCE_NVME
 
         config HLS_MEMCOPY
             bool "HLS Memcopy"
+            select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
-	    select ENABLE_HLS_SUPPORT
-
-        config HLS_SEARCH
-            bool "HLS Search"
-            select FORCE_SDRAM_OR_BRAM
-	    select ENABLE_HLS_SUPPORT
 
         config HLS_SPONGE
             bool "HLS Sponge"
-	    select ENABLE_HLS_SUPPORT
+            select ENABLE_HLS_SUPPORT
+            select DISABLE_SDRAM_AND_BRAM
+
+        config HLS_HASHJOIN
+            bool "HLS Hashjoin"
+            select ENABLE_HLS_SUPPORT
+
+        config HLS_SEARCH
+            bool "HLS Search"
+            select ENABLE_HLS_SUPPORT
+            select FORCE_SDRAM_OR_BRAM
+
+        config HLS_BFS
+            bool "HLS Breadth First Search"
+            select ENABLE_HLS_SUPPORT
+            select DISABLE_SDRAM_AND_BRAM
+
+        config HLS_INTERSECT
+            bool "HLS Intersect"
+            select ENABLE_HLS_SUPPORT
+            select FORCE_SDRAM_OR_BRAM
 
         config HLS_NVME_MEMCOPY
             bool "HLS NVMe Memcopy"
             depends on FGT
+            select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
             select FORCE_NVME
-            select ENABLE_HLS_SUPPORT
-
-        config ACTION_OTHER
-            bool "Other Action"
 endchoice
 
 config ENABLE_HLS_SUPPORT
         bool
-	prompt "Enable HLS support"
-	depends on ! HDL_EXAMPLE
-        help
-          A special action wrapper will be used for HLS actions.
+        default n
 
 config HLS_SUPPORT
         string
         default "TRUE"  if ENABLE_HLS_SUPPORT
         default "FALSE" if ! ENABLE_HLS_SUPPORT
 
+config DISABLE_SDRAM_AND_BRAM
+        bool
+        default n
+
 config FORCE_SDRAM_OR_BRAM
         bool
-	depends on (HLS_Intersect || HLS_MEMCOPY || HLS_SEARCH || HLS_NVME_MEMCOPY)
+        default n
 
 config FORCE_SDRAM
         bool
-	default y
+        default y
         depends on (FORCE_SDRAM_OR_BRAM && ! ENABLE_BRAM)
-	select ENABLE_SDRAM
-
-config FORCE_NVME
-        bool
-        depends on (FGT && HLS_NVME_MEMCOPY)
-	select ENABLE_NVME
+        select ENABLE_SDRAM
 
 config ENABLE_BRAM
         bool
-        prompt "Enable BRAM"
+        prompt "Enable BRAM (replacing SDRAM for debug)"
+        depends on ! DISABLE_SDRAM_AND_BRAM
         help
           This is a debug option. The AXI attached on-card SDRAM will be replaced by 512KB SDRAM.
 
@@ -124,12 +134,11 @@ config BRAM_USED
         string
         default "TRUE"  if ENABLE_BRAM
         default "FALSE" if ! ENABLE_BRAM
-        depends on ! (HLS_BFS || HLS_SPONGE )
 
 config ENABLE_SDRAM
         bool
         prompt "Enable SDRAM"
-        depends on ! (HLS_BFS || HLS_SPONGE || ENABLE_BRAM)
+        depends on ! (DISABLE_SDRAM_AND_BRAM || ENABLE_BRAM)
         help
           This option enables the on-card SDRAM.
           SNAP supports 8GB of DDR3 SDRAM on the KU3 card and 4GB of DDR4 SDRAM on the Flash GT card.
@@ -169,10 +178,16 @@ config DDRI_USED
         default "TRUE"  if ENABLE_DDRI
         default "FALSE" if ! ENABLE_DDRI
 
+config FORCE_NVME
+        bool
+        default n
+        select ENABLE_NVME
+
 config ENABLE_NVME
         bool "Enable NVMe"
-        depends on (FGT && (HDL_EXAMPLE || HLS_NVME_MEMCOPY))
-	help
+        depends on FGT && (HLS_ACTION || HDL_ACTION || HDL_EXAMPLE || HLS_NVME_MEMCOPY)
+#        depends on FGT && (HLS_ACTION || HDL_ACTION || HDL_NVME_EXAMPLE || HDL_EXAMPLE || HLS_NVME_MEMCOPY)
+        help
           This option controls the instantiation of an NVMe host controller
           together with the AXI interfaces for MMIO control and action access.
 
@@ -183,7 +198,7 @@ config NVME_USED
 
 config ENABLE_ILA
         bool "Enable ILA Debug (Definition of $ILA_SETUP_FILE required)"
-	help
+        help
           Enable the usage of Vivado's integrated logic analyzer.
           Please make sure that $ILA_SETUP_FILE points to the .xdc file
           defining the debug cores.
@@ -205,6 +220,9 @@ config FACTORY_IMAGE
 choice
         bool "Simulator"
         default SIM_XSIM
+        help
+          Supported simulators are Xilinx' xsim and Cadence's irun.
+          If NVMe support is enabled it is only possible to use irun.
 
         config SIM_XSIM
             bool "xsim"
