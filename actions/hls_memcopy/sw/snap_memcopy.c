@@ -56,7 +56,7 @@ static void usage(const char *prog)
 	       "  -m, --mode <mode>         mode flags.\n"
 	       "  -t, --timeout             Timeout in sec to wait for done. (10 sec default)\n"
 	       "  -X, --verify              verify result if possible\n"
-	       "  -I, --irq                 Enable Interrupts\n"
+	       "  -N, --no irq              Disable Interrupts\n"
 	       "\n"
 	       "Example:\n"
 	       "  snap_memcopy ...\n"
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 	int verify = 0;
 	int exit_code = EXIT_SUCCESS;
 	uint8_t trailing_zeros[1024] = { 0, };
-	snap_action_flag_t action_irq = 0;
+	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 	long long diff_usec = 0;
 	double mib_sec;
 
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
-			{ "irq",	 no_argument,	    NULL, 'I' },
+			{ "no_irq",	 no_argument,	    NULL, 'N' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
@@ -208,8 +208,8 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
-		case 'I':
-			action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
+		case 'N':
+			action_irq = 0;
 			break;
 		default:
 			usage(argv[0]);
