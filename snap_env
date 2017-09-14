@@ -122,6 +122,15 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
 
+  ####### settings for ILA Debug
+  # Note: ILA_DEBUG is defined via snap_config
+  if [ "$ILA_DEBUG" = "TRUE" ]; then
+    echo "=====ILA Debug setup==================================="
+    echo "Setting ILA_SETUP_FILE         to: \"$ILA_SETUP_FILE\""
+    SNAP_ENV="$SNAP_ENV""export ILA_SETUP_FILE=$ILA_SETUP_FILE\n"
+  fi
+
+
   ####### settings for Partial Reconfiguration flow
   # Note: USE_PRFLOW is defined via snap_config
   if [ "$USE_PRFLOW" = "TRUE" ]; then
