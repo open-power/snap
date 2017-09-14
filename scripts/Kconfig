@@ -57,11 +57,11 @@ choice
         config HDL_EXAMPLE
             bool "HDL Example"
 
-#        config HDL_NVME_EXAMPLE
-#            bool "HDL NVMe Example"
-#            depends on FGT
-#            select FORCE_SDRAM_OR_BRAM
-#            select FORCE_NVME
+        config HDL_NVME_EXAMPLE
+            bool "HDL NVMe Example"
+            depends on FGT
+            select FORCE_SDRAM_OR_BRAM
+            select FORCE_NVME
 
         config HLS_MEMCOPY
             bool "HLS Memcopy"
@@ -190,8 +190,7 @@ config FORCE_NVME
 
 config ENABLE_NVME
         bool "Enable NVMe"
-        depends on FGT && (HLS_ACTION || HDL_ACTION || HDL_EXAMPLE || HLS_NVME_MEMCOPY)
-#        depends on FGT && (HLS_ACTION || HDL_ACTION || HDL_NVME_EXAMPLE || HDL_EXAMPLE || HLS_NVME_MEMCOPY)
+        depends on FGT && (HLS_ACTION || HDL_ACTION || HDL_NVME_EXAMPLE || HDL_EXAMPLE || HLS_NVME_MEMCOPY)
         help
           This option controls the instantiation of an NVMe host controller
           together with the AXI interfaces for MMIO control and action access.
