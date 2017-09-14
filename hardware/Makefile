@@ -91,12 +91,9 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 #      due to missing dependencies between the different targets.
 #
 
-.PHONY: all snap_env snap_config check_snap_settings check_psl_dcp check_simulator check_denali prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment config_start config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun questa clean gitclean
+.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_denali prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment config_start config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun questa clean gitclean
 
 all: config model image
-
-snap_env:
-	@$(MAKE) -C ${SNAP_ROOT} snap_env
 
 snap_config:
 	@$(MAKE) -C $(SNAP_ROOT) snap_config
@@ -113,20 +110,20 @@ check_snap_settings:
 		echo "                        Please check out the SNAP framework as git clone from git@github.com:open-power/snap.git"; \
 		exit -1; \
 	fi
-	@if [ ! -e $(snap_env_sh) ]; then \
-		echo "                        Missing snap environment setup file \"$(snap_env_sh)\""; \
-		echo "                        Please make sure that the snap environment is prepared by calling 'make snap_env'"; \
-		exit -1; \
-	fi
 	@if [ ! -e $(snap_config_sh) ]; then \
 		echo "                        Missing snap config setup file \"$(snap_config_sh)\""; \
 		echo "                        Please make sure that the snap configuration is prepared by calling 'make snap_config'"; \
 		exit -1; \
 	fi
+	@if [ ! -e $(snap_env_sh) ]; then \
+		echo "                        Missing snap environment setup file \"$(snap_env_sh)\""; \
+		echo "                        Please make sure that the snap environment is prepared by calling 'make snap_config'"; \
+		exit -1; \
+	fi
 	@if [ -z $(FPGACARD) ] || [ -z $(SDRAM_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ] || [ -z $(PSL_DCP) ]; then \
 		echo "                        Missing one or more environment  variables"; \
 		echo "                        Please make sure that all of the following variables are prepared!"; \
-		echo "                        (e.g. by calling 'make snap_env')"; \
+		echo "                        (e.g. by calling 'make snap_config')"; \
 		echo "                        FPGACARD:       $(FPGACARD)"; \
 		echo "                        PSL_DCP :       $(PSL_DCP)"; \
 		echo "                        ACTION_ROOT:    $(ACTION_ROOT)"; \
@@ -159,7 +156,7 @@ check_snap_settings:
 	@echo "                        =============================="
 
 check_psl_dcp:
-	@if [ -f $(PSL_DCP) ]; then \
+	@if [ -e $(PSL_DCP) ]; then \
 		export PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl $(PSL_DCP)); \
 		if [ "$$PSL_DCP_TYPE" != "$(FPGACARD)" ]; then \
 			echo "Error: PSL_DCP=$(PSL_DCP) is not pointing to a design checkpoint of card tpye FPGACARD=$(FPGACARD)"; \
@@ -211,13 +208,13 @@ prepare_build: check_psl_dcp
 snap_preprocess_start:
 	@echo -e "[SNAP PREPROCESS.....] start `date +"%T %a %b %d %Y"`";
 
-$(SNAP_ROOT)/.snap_config:
-	@echo -e "                        Need to run \"make snap_config\" first"
-	exit -1
-
-$(SNAP_PP_FILES): $(SNAP_ROOT)/.snap_config
-	@echo -e "                        generating $(notdir $@)"
-	@$(CC) -E -xc $(SNAP_CFLAGS) $@_source 2> $(LOGS_DIR)/$(notdir $@)_pp.log > $@_tmp; \
+$(SNAP_PP_FILES):
+	@if [ -e $(snap_config_cflags) ]; then \
+		echo -e "                        generating $(notdir $@)"; \
+	else \
+		echo -e "                        Need to run \"make snap_config\" first"; exit -1; \
+	fi
+	@$(CC) -E -xc $(SNAP_CFLAGS) $@_source 2> $(LOGS_DIR)/$(notdir $@)_pp.log > $@_tmp;
 	if [ $$? -ne 0 ]; then \
 		$(RM) $@_tmp; \
 		echo -e "                        Error: please look into $(LOGS_DIR)/$(notdir $@)_pp.log"; exit -1; \

@@ -130,11 +130,11 @@ In order to create an image that allows debugging the design using the
 Vivado Integrated Logic Analyzer (ILA) you may prepare a `.xdc` file for
 adding ILA cores to the design
 (an example for such a file is located here: [./doc/ila_debug.xdc](./doc/ila_debug.xdc)).  
-Letting the environment variable
+Enabling `ILA_DEBUG` in the SNAP configuration and defining the environment variable
 ```
     ILA_SETUP_FILE
 ```
-point to that `.xdc` file and enabling 'ILA Debug' during environment setup
+in `${SNAP_ROOT}/.snap_env.sh` such that it points to a `.xdc` file with ILA core definitions,
 will configure the preparation of the ILA cores during the image build process.
 Additionally to the image files itself, the build process will create
 the required `.ltx` debug probes file which will be located in the results
