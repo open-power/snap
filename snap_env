@@ -128,18 +128,20 @@ while [ -z "$SETUP_DONE" ]; do
   unset AR
   if [ -n "$HDL_EXAMPLE" ]; then
     AR='${SNAP_ROOT}/actions/hdl_example'
-  elif [ -n "$HLS_BFS" ]; then
-    AR='${SNAP_ROOT}/actions/hls_bfs'
-  elif [ -n "$HLS_HASHJOIN" ]; then
-    AR='${SNAP_ROOT}/actions/hls_hashjoin'
-  elif [ -n "$HLS_INTERSECT" ]; then
-    AR='${SNAP_ROOT}/actions/hls_intersect'
+  elif [ -n "$HDL_NVME_EXAMPLE" ]; then
+    AR='${SNAP_ROOT}/actions/hdl_nvme_example'
   elif [ -n "$HLS_MEMCOPY" ]; then
     AR='${SNAP_ROOT}/actions/hls_memcopy'
-  elif [ -n "$HLS_SEARCH" ]; then
-    AR='${SNAP_ROOT}/actions/hls_search'
   elif [ -n "$HLS_SPONGE" ]; then
     AR='${SNAP_ROOT}/actions/hls_sponge'
+  elif [ -n "$HLS_HASHJOIN" ]; then
+    AR='${SNAP_ROOT}/actions/hls_hashjoin'
+  elif [ -n "$HLS_SEARCH" ]; then
+    AR='${SNAP_ROOT}/actions/hls_search'
+  elif [ -n "$HLS_BFS" ]; then
+    AR='${SNAP_ROOT}/actions/hls_bfs'
+  elif [ -n "$HLS_INTERSECT" ]; then
+    AR='${SNAP_ROOT}/actions/hls_intersect'
   elif [ -n "$HLS_NVME_MEMCOPY" ]; then
     AR='${SNAP_ROOT}/actions/hls_nvme_memcopy'
   elif [ -n "$HLS_HELLOWORLD" ]; then

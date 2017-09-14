@@ -37,7 +37,7 @@ ENTITY action_wrapper IS
     interrupt_ctx              : OUT STD_LOGIC_VECTOR(CONTEXT_BITS-1 DOWNTO 0);
     interrupt_ack              : IN STD_LOGIC;
     --                                                                                                 -- only for DDRI_USED=TRUE
-    -- AXI DDR3 Interface                                                                              -- only for DDRI_USED=TRUE
+    -- AXI SDRAM Interface                                                                             -- only for DDRI_USED=TRUE
     m_axi_card_mem0_araddr     : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );     -- only for DDRI_USED=TRUE
     m_axi_card_mem0_arburst    : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );                                  -- only for DDRI_USED=TRUE
     m_axi_card_mem0_arcache    : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );                                  -- only for DDRI_USED=TRUE
@@ -199,7 +199,7 @@ END action_wrapper;
 ARCHITECTURE STRUCTURE OF action_wrapper IS
   COMPONENT action_example IS
     GENERIC (
-      -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory
+      -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to on-card SDRAM
       C_AXI_CARD_MEM0_ID_WIDTH       : integer;
       C_AXI_CARD_MEM0_ADDR_WIDTH     : integer;
       C_AXI_CARD_MEM0_DATA_WIDTH     : integer;
@@ -235,7 +235,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       int_req_ack              : IN  STD_LOGIC;
 
       -- Ports of Axi Master Bus Interface AXI_CARD_MEM0                                            -- only for DDRI_USED=TRUE
-      -- to DDR memory                                                                              -- only for DDRI_USED=TRUE
+      -- to on-card SDRAM                                                                           -- only for DDRI_USED=TRUE
       axi_card_mem0_awaddr     : OUT STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0);     -- only for DDRI_USED=TRUE
       axi_card_mem0_awlen      : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);                                  -- only for DDRI_USED=TRUE
       axi_card_mem0_awsize     : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);                                  -- only for DDRI_USED=TRUE
@@ -399,7 +399,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
 BEGIN
 action_0: COMPONENT action_example
   GENERIC MAP (
-    -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory
+    -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to on-card SDRAM
     C_AXI_CARD_MEM0_ID_WIDTH       => C_M_AXI_CARD_MEM0_ID_WIDTH,
     C_AXI_CARD_MEM0_ADDR_WIDTH     => C_M_AXI_CARD_MEM0_ADDR_WIDTH,
     C_AXI_CARD_MEM0_DATA_WIDTH     => C_M_AXI_CARD_MEM0_DATA_WIDTH,
