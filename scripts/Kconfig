@@ -36,7 +36,9 @@ config FPGACHIP
 config NUM_OF_ACTIONS
         int
         default 1
-        prompt "Number Of Actions"
+# as long as only one action is supported we do not need to prompt the number of actions
+# prompt should be enabled as soon as multiple action support is implemented
+#        prompt "Number Of Actions"
         range 1 1
         help
           SNAP currently supports one action.
@@ -74,6 +76,13 @@ choice
             bool "HLS Sponge"
 	    select ENABLE_HLS_SUPPORT
 
+        config HLS_NVME_MEMCOPY
+            bool "HLS NVMe Memcopy"
+            depends on FGT
+            select FORCE_SDRAM_OR_BRAM
+            select FORCE_NVME
+            select ENABLE_HLS_SUPPORT
+
         config ACTION_OTHER
             bool "Other Action"
 endchoice
@@ -92,13 +101,18 @@ config HLS_SUPPORT
 
 config FORCE_SDRAM_OR_BRAM
         bool
-	depends on (HLS_Intersect || HLS_MEMCOPY || HLS_SEARCH)
+	depends on (HLS_Intersect || HLS_MEMCOPY || HLS_SEARCH || HLS_NVME_MEMCOPY)
 
 config FORCE_SDRAM
         bool
 	default y
         depends on (FORCE_SDRAM_OR_BRAM && ! ENABLE_BRAM)
 	select ENABLE_SDRAM
+
+config FORCE_NVME
+        bool
+        depends on (FGT && HLS_NVME_MEMCOPY)
+	select ENABLE_NVME
 
 config ENABLE_BRAM
         bool
@@ -157,7 +171,7 @@ config DDRI_USED
 
 config ENABLE_NVME
         bool "Enable NVMe"
-        depends on FGT && HDL_EXAMPLE
+        depends on (FGT && (HDL_EXAMPLE || HLS_NVME_MEMCOPY))
 	help
           This option controls the instantiation of an NVMe host controller
           together with the AXI interfaces for MMIO control and action access.
@@ -207,7 +221,6 @@ config SIMULATOR
 
 config ENABLE_PRFLOW
         bool "Cloud build"
-	depends on KU3
 
 config USE_PRFLOW
         string

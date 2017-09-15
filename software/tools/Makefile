@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+SNAP_ROOT=$(abspath ../..)
 
 include ../config.mk
 
@@ -38,7 +39,11 @@ hfiles = force_cpu.h  snap_fw_example.h
 
 all: $(projs)
 
-$(projs): $(objs) $(libs)
+snap_actions.h: $(SNAP_ROOT)/ActionTypes.md
+	@echo "Creating $@..."
+	./cfg_snap_actions.sh
+
+$(projs): snap_actions.h $(objs) $(libs)
 
 ### Deactivate existing implicit rule
 %: %.c
@@ -63,4 +68,4 @@ uninstall:
 	done
 
 clean distclean:
-	@$(RM) $(objs) $(projs)
+	@$(RM) snap_actions.h $(objs) $(projs)

@@ -15,14 +15,7 @@
 # limitations under the License.
 #
 #-----------------------------------------------------------
-
-set xilinx_version [version -short]
-set root_dir      $::env(SNAP_HARDWARE_ROOT)
-set mentor_libs   $::env(MENTOR_LIBS)
-set log_dir       $::env(LOGS_DIR)
-set log_file      $log_dir/compile_xsim.log
-
-puts "                        export simulation for version=$xilinx_version"
-open_project $root_dir/viv_project/framework.xpr  >> $log_file
-export_simulation -force -directory "$root_dir/sim" -simulator questa -lib_map_path "$mentor_libs" -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs  >> $log_file
-close_project  >> $log_file
+create_pblock pblock_action
+resize_pblock pblock_action -add CLOCKREGION_X0Y0:CLOCKREGION_X1Y4
+resize_pblock pblock_action -add {SLICE_X48Y0:SLICE_X70Y299 DSP48E2_X9Y0:DSP48E2_X13Y119 LAGUNA_X8Y0:LAGUNA_X11Y239 RAMB18_X6Y0:RAMB18_X8Y119 RAMB36_X6Y0:RAMB36_X8Y59} -locs keep_all
+add_cells_to_pblock pblock_action [get_cells [list a0/action_w ]] -clear_locs

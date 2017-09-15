@@ -17,7 +17,7 @@
 ###############################################################################
 NAME=`basename $2`
 if [ "$NAME" == "top.sh" ]; then
-  echo "	                     patch $NAME for $SIMULATOR"
+  echo "                     patch $NAME for $SIMULATOR"
   if [ "$SIMULATOR" == "xsim" ]; then
     sed -i "s/  simulate/# simulate/g"                   $1/$2 # run up to elaboration, skip execution
     sed -i "s/-log elaborate.log/-log elaborate.log -sv_lib libdpi -sv_root ./g" $1/$2
@@ -26,7 +26,7 @@ if [ "$NAME" == "top.sh" ]; then
     sed -i "s/93 -relax/93 -elaborate -relax/gI"         $1/$2 # run irun up to elaboration, skip execution
     sed -i "s/-top xil_defaultlib.top/-top work.top/gI"  $1/$2 # build top in work library
      if [[ "$NVME_USED" == "TRUE" && -n "$DENALI" ]]; then :
-      echo "	                     patch $irun include denali files for NVMe"
+      echo "                     patch $irun include denali files for NVMe"
       perl -i.ori -pe 'use Env qw(DENALI);s/(glbl.v)/$1 \\\n       +incdir+"${DENALI}\/ddvapi\/verilog"/mg' $1/$2 # add denali include directory
       perl -i.ori -pe 'use Env qw(DENALI);s/(-namemap_mixgen)/$1 -disable_sem2009 -loadpli1 ${DENALI}\/verilog\/libdenpli.so:den_PLIPtr/mg' $1/$2 # add denali .so
     fi

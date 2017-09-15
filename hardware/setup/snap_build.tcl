@@ -34,7 +34,7 @@ if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
 }
 
 #Define widths of each column
-set widthCol1 31
+set widthCol1 23
 set widthCol2 23
 set widthCol3 35
 set widthCol4 22
@@ -42,11 +42,11 @@ set widthCol4 22
 
 ##
 ## open snap project
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "open framework project" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "open framework project" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 open_project ../viv_project/framework.xpr >> $log_file
 
 # for test!
-set_param synth.elaboration.rodinMoreOptions {set rt::doParallel false}
+#set_param synth.elaboration.rodinMoreOptions {set rt::doParallel false}
 
 ##
 ## synthesis project
@@ -54,7 +54,7 @@ set step      synth_design
 set logfile   $log_dir/${step}.log
 set directive [get_property STEPS.SYNTH_DESIGN.ARGS.DIRECTIVE [get_runs synth_1]]
 set command   "synth_design -mode default -directive $directive"
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
 if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: synthesis failed" $widthCol4 "" ]
@@ -72,7 +72,7 @@ if { [catch "$command > $logfile" errMsg] } {
 
 ##
 ## locking PSL
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 lock_design -level routing b > $log_dir/lock_design.log
 
 read_xdc ../setup/snap_impl.xdc >> $logfile
@@ -84,7 +84,7 @@ set step      opt_design
 set logfile   $log_dir/${step}.log
 set directive [get_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 set command   "opt_design -directive $directive"
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start opt_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start opt_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
 if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: opt_design failed" $widthCol4 "" ]
@@ -106,7 +106,7 @@ set step      place_design
 set logfile   $log_dir/${step}.log
 set directive [get_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 set command   "place_design -directive $directive"
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start place_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start place_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
 if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: place_design failed" $widthCol4 "" ]
@@ -127,7 +127,7 @@ set step      phys_opt_design
 set logfile   $log_dir/${step}.log
 set directive [get_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 set command   "phys_opt_design  -directive $directive"
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start phys_opt_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start phys_opt_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
 if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: phys_opt_design failed" $widthCol4 "" ]
@@ -148,7 +148,7 @@ set step      route_design
 set logfile   $log_dir/${step}.log
 set directive [get_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 set command   "route_design -directive $directive"
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start route_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start route_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
 if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: route_design failed" $widthCol4 "" ]
@@ -169,7 +169,7 @@ set step      opt_routed_design
 set logfile   $log_dir/${step}.log
 set directive [get_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 set command   "phys_opt_design  -directive $directive"
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start opt_routed_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start opt_routed_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
 if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: opt_routed_design failed" $widthCol4 "" ]
@@ -186,7 +186,7 @@ if { [catch "$command > $logfile" errMsg] } {
 
 ##
 ## generating reports
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating reports" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating reports" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 report_utilization    -quiet -file  ./Reports/utilization_route_design.rpt
 report_route_status   -quiet -file  ./Reports/route_status.rpt
 report_timing_summary -quiet -max_paths 100 -file ./Reports/timing_summary.rpt
@@ -239,9 +239,9 @@ set command  "write_bitstream -force -file ./Images/$IMAGE_NAME"
 source $root_dir/setup/snap_bitstream_pre.tcl
 
 if { $factory_image == "TRUE" } {
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: factory image" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: factory image" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 } else {
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 }
 
 if { [catch "$command > $logfile" errMsg] } {
@@ -258,7 +258,7 @@ if { [catch "$command > $logfile" errMsg] } {
 if { $ila_debug == "TRUE" } {
   set step     write_debug_probes
   set logfile  $log_dir/${step}.log
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "writing debug probes" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "writing debug probes" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   write_debug_probes ./Images/$IMAGE_NAME.ltx >> $logfile
 }
 
@@ -266,7 +266,7 @@ if { $ila_debug == "TRUE" } {
 ##
 ## removing unnecessary files
 if { $remove_tmp_files == "TRUE" } {
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format %H:%M:%S]"]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   exec rm -rf ./Checkpoints/synth.dcp
   exec rm -rf ./Checkpoints/opt_design.dcp
   exec rm -rf ./Checkpoints/place_design.dcp

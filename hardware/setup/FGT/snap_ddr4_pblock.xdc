@@ -15,14 +15,11 @@
 # limitations under the License.
 #
 #-----------------------------------------------------------
-
-set xilinx_version [version -short]
-set root_dir      $::env(SNAP_HARDWARE_ROOT)
-set mentor_libs   $::env(MENTOR_LIBS)
-set log_dir       $::env(LOGS_DIR)
-set log_file      $log_dir/compile_xsim.log
-
-puts "                        export simulation for version=$xilinx_version"
-open_project $root_dir/viv_project/framework.xpr  >> $log_file
-export_simulation -force -directory "$root_dir/sim" -simulator questa -lib_map_path "$mentor_libs" -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs  >> $log_file
-close_project  >> $log_file
+create_pblock pblock_snap
+resize_pblock pblock_snap -add CLOCKREGION_X3Y0:CLOCKREGION_X3Y4
+resize_pblock pblock_snap -add {BITSLICE_RX_TX_X1Y0:BITSLICE_RX_TX_X1Y155} -locs keep_all
+resize_pblock pblock_snap -add {BITSLICE_CONTROL_X1Y0:BITSLICE_CONTROL_X1Y23} -locs keep_all
+resize_pblock pblock_snap -add {PLLE3_ADV_X1Y0:PLLE3_ADV_X1Y5} -locs keep_all
+resize_pblock pblock_snap -add {MMCME3_ADV_X1Y0:MMCME3_ADV_X1Y2} -locs keep_all
+resize_pblock pblock_snap -add {HPIO_VREF_SITE_X1Y0:HPIO_VREF_SITE_X1Y5} -locs keep_all
+add_cells_to_pblock pblock_snap [get_cells [list a0/ddr4sdram_bank]]

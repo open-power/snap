@@ -88,6 +88,11 @@ echo "  Kconfig:  $kconfig"
 echo "  config:   $snap_config"
 echo "  autoconf: $autoconf"
 
+if [ ! -d "$linux_dir" ]; then
+    echo "ERROR: Not able to generate SNAP config files via kconfig, because directory $linux_dir does not exist." >&2
+    exit 1
+fi
+
 mkdir -p $build_dir
 cmd="make -C $linux_dir O=$build_dir KBUILD_KCONFIG=$kconfig $option"
 

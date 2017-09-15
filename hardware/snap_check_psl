@@ -2,7 +2,7 @@
 ############################################################################
 ############################################################################
 ##
-## Copyright 2016,2017 International Business Machines
+## Copyright 2017 International Business Machines
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -19,33 +19,15 @@
 ############################################################################
 ############################################################################
 #
-snapdir=$(dirname $(dirname $(readlink -f "$BASH_SOURCE"))) # parent of path containing this script
-currdir=`pwd`
 
-snap_config=$snapdir/.snap_config
-snap_config_sh=$snapdir/.snap_config.sh
-snap_env=$snapdir/.snap_env
-snap_env_sh=$snapdir/.snap_env.sh
+export PSL_DCP_TYPE="UNKNOWN"
 
-cd $snapdir
-if [ -f $snap_config_sh ]; then
-  $snap_config_sh
-fi
-if [ -f $snap_env_sh ]; then
-  $snap_env_sh
+PSL_MD5=`md5sum $1 | cut -d " " -f 1`
+if [ "$PSL_MD5" = "d051aa72ce08b60fd587a74a5146bf88" ] || 
+   [ "$PSL_MD5" = "5bf24f90f52e6959e8e6082245a2ac3c" ];   then
+  export PSL_DCP_TYPE="FGT"
+elif [ "$PSL_MD5" = "1b1526c0d3cb61815c886f83d3b4f202" ]; then
+  export PSL_DCP_TYPE="KU3"
 fi
 
-# Setting Defaults
-if [ -z "$FPGACARD" ]; then
-  FPGACARD="FGT"
-fi
-if [ -z "$ACTION_ROOT" ]; then
-  HDL_EXAMPLE=y
-fi
-
-. ./snap_config
-
-. ./snap_env "$snap_config_sh"
-
-
-cd $currdir
+echo "$PSL_DCP_TYPE"

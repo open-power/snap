@@ -29,35 +29,39 @@ snap_env_sh = $(SNAP_ROOT)/.snap_env.sh
 
 clean_subdirs += $(config_subdirs) $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
 
+# Only build if the subdirectory is really existent
+.PHONY: $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env config model image cloud_base cloud_action cloud_merge snap_config menuconfig xconfig gconfig oldconfig clean clean_config
+
 ifeq ($(PLATFORM),x86_64)
 all: $(software_subdirs) $(action_subdirs) $(hardware_subdirs)
 else
 all: $(software_subdirs) $(action_subdirs)
 endif
 
-# Only build if the subdirectory is really existent
-.PHONY: $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env config model image cloud_base cloud_action cloud_merge snap_config menuconfig xconfig gconfig oldconfig clean clean_config
-
 # Disabling implicit rule for shell scripts
 %: %.sh
 
 $(software_subdirs):
-	@if [ -d $@ ]; then          \
-	    $(MAKE) -C $@ || exit 1; \
+	@if [ -d $@ ]; then             \
+	    echo "Enter: $@";           \
+	    $(MAKE) -s -C $@ || exit 1; \
+	    echo "Exit:  $@";           \
 	fi
 
 software: $(software_subdirs)
 
 $(action_subdirs):
-	@if [ -d $@ ]; then          \
-	    $(MAKE) -C $@ || exit 1; \
+	@if [ -d $@ ]; then             \
+	    echo "Enter: $@";           \
+	    $(MAKE) -s -C $@ || exit 1; \
+	    echo "Exit:  $@";           \
 	fi
 
 actions: $(action_subdirs)
 
 $(hardware_subdirs): $(snap_env)
-	@if [ -d $@ ]; then                          \
-	    $(MAKE) -C $@ || exit 1;                \
+	@if [ -d $@ ]; then              \
+	    $(MAKE) -s -C $@ || exit 1;  \
 	fi
 
 hardware: $(hardware_subdirs)
@@ -66,25 +70,25 @@ hardware: $(hardware_subdirs)
 test install uninstall:
 	@for dir in $(software_subdirs) $(action_subdirs); do \
 	    if [ -d $$dir ]; then                             \
-	        $(MAKE) -C $$dir $@ || exit 1;                \
+	        $(MAKE) -s -C $$dir $@ || exit 1;             \
 	    fi                                                \
 	done
 
 # Model build and config
 config model image cloud_base cloud_action cloud_merge: $(snap_env)
-	@for dir in $(hardware_subdirs); do                         \
-	    if [ -d $$dir ]; then                                  \
-	        $(MAKE) -C $$dir $@ || exit 1;                     \
-	    fi                                                     \
+	@for dir in $(hardware_subdirs); do                \
+	    if [ -d $$dir ]; then                          \
+	        $(MAKE) -s -C $$dir $@ || exit 1;          \
+	    fi                                             \
 	done
 
 # Config
 menuconfig xconfig gconfig oldconfig:
 	@echo "$@: Setting up SNAP configuration"
-	@for dir in $(config_subdirs); do      \
-	    if [ -d $$dir ]; then              \
-	        $(MAKE) -C $$dir $@ || exit 1; \
-	    fi                                 \
+	@for dir in $(config_subdirs); do         \
+	    if [ -d $$dir ]; then                 \
+	        $(MAKE) -s -C $$dir $@ || exit 1; \
+	    fi                                    \
 	done
 
 snap_config: menuconfig
@@ -92,10 +96,10 @@ snap_config: menuconfig
 
 $(snap_config):
 	@echo "$@: Setting up SNAP configuration"
-	@for dir in $(config_subdirs); do              \
-	    if [ -d $$dir ]; then                      \
-	        $(MAKE) -C $$dir menuconfig || exit 1; \
-	    fi                                         \
+	@for dir in $(config_subdirs); do                 \
+	    if [ -d $$dir ]; then                         \
+	        $(MAKE) -s -C $$dir menuconfig || exit 1; \
+	    fi                                            \
 	done
 	@echo "SNAP config done"
 
@@ -108,10 +112,10 @@ $(snap_env): $(snap_config)
 	@. $(SNAP_ROOT)/snap_env $(snap_config_sh)
 
 clean:
-	@for dir in $(clean_subdirs); do       \
-	    if [ -d $$dir ]; then              \
-	        $(MAKE) -C $$dir $@ || exit 1; \
-	    fi                                 \
+	@for dir in $(clean_subdirs); do           \
+	    if [ -d $$dir ]; then                  \
+	        $(MAKE) -s -C  $$dir $@ || exit 1; \
+	    fi                                     \
 	done
 	@find . -depth -name '*~'  -exec rm -rf '{}' \; -print
 	@find . -depth -name '.#*' -exec rm -rf '{}' \; -print

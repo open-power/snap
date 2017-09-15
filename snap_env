@@ -60,22 +60,24 @@ while [ -z "$SETUP_DONE" ]; do
 
   ####### checking path to PSL design checkpoint
   echo "=====Checking path to PSL design checkpoint============"
+  echo "PSL_DCP                 is set to: \"$PSL_DCP\""
+  SNAP_ENV="$SNAP_ENV""export PSL_DCP=$PSL_DCP\n"
   if [ -f "$PSL_DCP" ]; then
-    # printing path to PSL design checkpoint
-    echo "PSL_DCP                 is set to: \"$PSL_DCP\""
-    SNAP_ENV="export PSL_DCP=$PSL_DCP\n"
+    # checking card type for PSL design checkpoint 
+    PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $PSL_DCP`
+    if [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD"
+    fi
   else
-    echo "WARNING: The environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
-    echo "For more information see also README.md"
+    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### The environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
   fi
   ####### checking path to PSLSE 
   echo "=====Simulation setup: Checking path to PSLSE=========="
-  if [ -d "$PSLSE_ROOT" ]; then
-    echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
-  else
+  echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
+  SNAP_ENV="$SNAP_ENV""export PSLSE_ROOT=$PSLSE_ROOT\n"
+  if [ ! -d "$PSLSE_ROOT" ]; then
     SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set properly. For simulation please clone PSL Simulation Environment from https://github.com/ibm-capi/pslse and let \$PSLSE_ROOT point to it"
   fi
-  SNAP_ENV="$SNAP_ENV""export PSLSE_ROOT=$PSLSE_ROOT\n"
 
 
   ####### SNAP path variables
@@ -95,6 +97,8 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hls_search'
   elif [ -n "$HLS_SPONGE" ]; then
     AR='${SNAP_ROOT}/actions/hls_sponge'
+  elif [ -n "$HLS_NVME_MEMCOPY" ]; then
+    AR='${SNAP_ROOT}/actions/hls_nvme_memcopy'
   fi
   if [ -z "$AR" ]; then
     AR=$ACTION_ROOT
@@ -113,16 +117,9 @@ while [ -z "$SETUP_DONE" ]; do
 
 
   ####### settings for Partial Reconfiguration flow
-  echo "=====PR flow setup====================================="
-  if [ -z "$USE_PRFLOW" ]; then
-    export USE_PRFLOW=FALSE
-    echo "Setting USE_PRFLOW             to: \"$USE_PRFLOW\""
-  else
-    echo "USE_PRFLOW              is set to: \"$USE_PRFLOW\""
-  fi
-  SNAP_ENV="$SNAP_ENV""export USE_PRFLOW=$USE_PRFLOW\n"
-
+  # Note: USE_PRFLOW is defined via snap_config
   if [ "$USE_PRFLOW" = "TRUE" ]; then
+    echo "=====PR flow setup====================================="
     if [ -z "$DCP_ROOT" ]; then
       export DCP_ROOT='${SNAP_ROOT}/dcp'
       echo "Setting DCP_ROOT               to: \"$DCP_ROOT\""
@@ -143,6 +140,7 @@ while [ -z "$SETUP_DONE" ]; do
 
 
   ####### Cadence simulation setup:
+  # Note: SIMULATOR is defined via snap_config
   if [ "$SIMULATOR" == "irun" ]; then
     echo "=====Cadence simulation setup=========================="
 
@@ -174,6 +172,7 @@ while [ -z "$SETUP_DONE" ]; do
     fi
   fi
 
+  # Note: NVME_USED is defined via snap_config
   if [[ "$NVME_USED" = "TRUE" ]]; then
     echo "=====Denali setup======================================"
     if [ -z "$DENALI_TOOLS" ]; then
