@@ -74,11 +74,13 @@ if { ( $simulator == "ncsim" ) || ( $simulator == "irun" ) } {
   set_property target_simulator IES [current_project]
   set_property compxlib.ies_compiled_library_dir $::env(IES_LIBS) [current_project]
   set_property -name {ies.elaborate.ncelab.more_options} -value {-access +rwc} -objects [current_fileset -simset]
-} else {
+} elseif { $simulator == "xsim" } {
   set_property -name {xsim.elaborate.xelab.more_options} -value {-sv_lib libdpi -sv_root .} -objects [current_fileset -simset]
 }
-set_property top top [get_filesets sim_1]
-set_property export.sim.base_dir $root_dir [current_project]
+if { $simulator != "nosim" } {
+  set_property top top [get_filesets sim_1]
+  set_property export.sim.base_dir $root_dir [current_project]
+}
 
 
 # Synthesis
@@ -136,25 +138,27 @@ if { $use_prflow == "TRUE" } {
 }
 
 # Sim Files
-set_property SOURCE_SET sources_1 [get_filesets sim_1]
-add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/top.sv  >> $log_file
-set_property file_type SystemVerilog [get_files $sim_dir/core/top.sv]
-set_property used_in_synthesis false [get_files $sim_dir/core/top.sv]
-# DDR3 Sim Files
-if { ($fpga_card == "KU3") && ($sdram_used == "TRUE") } {
-  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr3sdram_ex/imports/ddr3.v  >> $log_file
-  set_property file_type {Verilog Header}        [get_files $ip_dir/ddr3sdram_ex/imports/ddr3.v]
-  add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr3_dimm.sv      >> $log_file
-  set_property used_in_synthesis false           [get_files $sim_dir/core/ddr3_dimm.sv]
+if { $simulator != "nosim" } {
+  set_property SOURCE_SET sources_1 [get_filesets sim_1]
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/top.sv  >> $log_file
+  set_property file_type SystemVerilog [get_files $sim_dir/core/top.sv]
+  set_property used_in_synthesis false [get_files $sim_dir/core/top.sv]
+  # DDR3 Sim Files
+  if { ($fpga_card == "KU3") && ($sdram_used == "TRUE") } {
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr3sdram_ex/imports/ddr3.v  >> $log_file
+    set_property file_type {Verilog Header}        [get_files $ip_dir/ddr3sdram_ex/imports/ddr3.v]
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr3_dimm.sv      >> $log_file
+    set_property used_in_synthesis false           [get_files $sim_dir/core/ddr3_dimm.sv]
+  }
+  # DDR4 Sim Files
+  if { ($fpga_card == "FGT") && ($sdram_used == "TRUE") } {
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm.sv  >> $log_file
+    set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm.sv]
+  }
+  update_compile_order -fileset sources_1 >> $log_file
+  update_compile_order -fileset sim_1 >> $log_file
 }
-# DDR4 Sim Files
-if { ($fpga_card == "FGT") && ($sdram_used == "TRUE") } {
-  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
-  add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm.sv  >> $log_file
-  set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm.sv]
-}
-update_compile_order -fileset sources_1 >> $log_file
-update_compile_order -fileset sim_1 >> $log_file
 
 # Add IPs
 # SNAP CORE IPs
@@ -223,17 +227,19 @@ if { $nvme_used == TRUE } {
   set_property synth_checkpoint_mode None [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
   generate_target all                     [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
 
-  if { ( [info exists ::env(DENALI_TOOLS) ] == 1)  &&  ( [info exists ::env(DENALI_CUSTOM)] == 1 ) } {
-    puts "                        adding Denali simulation files"
-    set denali_custom $::env(DENALI_CUSTOM)
-    add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme/
-    add_files -fileset sim_1 -scan_for_includes $denali_custom/sim_model/
-
-    set denali_tools  $::env(DENALI_TOOLS)
-    add_files -fileset sim_1 -norecurse -scan_for_includes $denali_tools/ddvapi/verilog/denaliPcie.v
-    set_property include_dirs                              $denali_tools/ddvapi/verilog [get_filesets sim_1]
-  } else {
-    puts "                        adding Denali simulation files failed, only image build will work"
+  if { $simulator != "nosim" } {
+    if { ( [info exists ::env(DENALI_TOOLS) ] == 1)  &&  ( [info exists ::env(DENALI_CUSTOM)] == 1 ) } {
+      puts "                        adding Denali simulation files"
+      set denali_custom $::env(DENALI_CUSTOM)
+      add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme/
+      add_files -fileset sim_1 -scan_for_includes $denali_custom/sim_model/
+     
+      set denali_tools  $::env(DENALI_TOOLS)
+      add_files -fileset sim_1 -norecurse -scan_for_includes $denali_tools/ddvapi/verilog/denaliPcie.v
+      set_property include_dirs                              $denali_tools/ddvapi/verilog [get_filesets sim_1]
+    } else {
+      puts "                        adding Denali simulation files failed, only image build will work"
+    }
   }
 } else {
   remove_files $action_dir/action_axi_nvme.vhd -quiet

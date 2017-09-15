@@ -222,7 +222,9 @@ choice
         default SIM_XSIM
         help
           Supported simulators are Xilinx' xsim and Cadence's irun.
-          If NVMe support is enabled it is only possible to use irun.
+          If NVMe support is enabled it is only possible to use irun
+          or to set the simulator to "nosim" to disable model build
+          and simulation.
 
         config SIM_XSIM
             bool "xsim"
@@ -230,12 +232,17 @@ choice
 
         config SIM_IRUN
             bool "irun"
+
+        config NO_SIM
+            bool "nosim"
+
 endchoice
 
 config SIMULATOR
         string
         default "xsim"  if SIM_XSIM
         default "irun"  if SIM_IRUN
+        default "nosim" if NO_SIM
 
 config ENABLE_PRFLOW
         bool "Cloud build"
