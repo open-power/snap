@@ -64,6 +64,9 @@ short write_burst_of_data_to_mem(snap_membus_t *dout_gmem,
 
        		rc =  0;
 		break;
+	case SNAP_ADDRTYPE_UNUSED: /* no copy but with rc =0 */
+       		rc =  0;
+		break;
 	default:
 		rc = 1;
 	}
@@ -109,6 +112,9 @@ short read_burst_of_data_from_mem(snap_membus_t *din_gmem,
 #pragma HLS PIPELINE
                     buffer[k] = (d_ddrmem + input_address)[k];
 
+       		rc =  0;
+		break;
+	case SNAP_ADDRTYPE_UNUSED: /* no copy but with rc =0 */
        		rc =  0;
 		break;
 	default:
