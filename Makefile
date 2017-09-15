@@ -108,6 +108,7 @@ $(snap_env_sh) snap_env: $(snap_config_sh)
 	@mkdir -p scripts/build
 	@cp defconfig/$@ scripts/build/.config
 	@$(MAKE) -s oldconfig
+	@$(MAKE) -s snap_env
 
 clean:
 	@for dir in $(clean_subdirs); do           \

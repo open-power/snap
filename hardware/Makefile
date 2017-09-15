@@ -91,7 +91,7 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 #      due to missing dependencies between the different targets.
 #
 
-.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_denali prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment config_start config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun questa clean gitclean
+.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_denali prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment config_start config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim clean gitclean
 
 all: config model image
 
@@ -168,7 +168,7 @@ check_psl_dcp:
 	fi
 
 check_simulator:
-	@if [ $(SIMULATOR) != "irun" ] && [ $(SIMULATOR) != "xsim" ]; then \
+	@if [ $(SIMULATOR) != "irun" ] && [ $(SIMULATOR) != "xsim" ] && [ $(SIMULATOR) != "nosim" ]; then \
 		echo "                        unknown simulator=$SIMULATOR"; \
 		exit -1; \
 	fi
@@ -331,6 +331,11 @@ action_sw: software
 	@$(MAKE) -C $(ACTION_ROOT)/sw        >> $(LOGS_DIR)/compile_sw.log 2>&1
 	@echo -e "[COMPILE ACTION SW...] done  `date +"%T %a %b %d %Y"`"
 
+nosim:
+	@echo -e "[BUILD $@..........] start `date +"%T %a %b %d %Y"`"
+	@echo -e "                        Info: Not building a simulation model, since SIMULATOR is set to \"nosim\"";
+	@echo -e "[BUILD $@..........] done  `date +"%T %a %b %d %Y"`"
+
 $(SNAP_SIMULATORS): .config_done action_sw snap_preprocess patch_version
 	@echo -e "[BUILD $@..........] start `date +"%T %a %b %d %Y"`"
 	@if [ "$(SIMULATOR)" != "$@" ]; then \
@@ -363,7 +368,7 @@ clean:
 	@echo -e "                        IPs";
 	@$(RM) -r ip
 	@echo -e "                        sim files";
-	@$(RM) -r sim/ies sim/xsim sim/questa hdl/nvme/component.xml hdl/nvme/xgui
+	@$(RM) -r sim/ies sim/xsim hdl/nvme/component.xml hdl/nvme/xgui
 	@echo -e "                        log files";
 	@$(RM) -r logs
 	@echo -e "                        action";

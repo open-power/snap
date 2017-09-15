@@ -37,6 +37,7 @@ fi
 unset SETUP_DONE
 while [ -z "$SETUP_DONE" ]; do
   SETUP_WARNING=""
+  SETUP_INFO=""
   SNAP_ENV=""
   echo "======================================================="
   echo "== SNAP ENVIRONMENT SETUP                            =="
@@ -47,21 +48,19 @@ while [ -z "$SETUP_DONE" ]; do
   echo "=====Checking Xilinx Vivado============================"
   if [ ! -d "$XILINX_VIVADO" ]; then
     echo "XILINX_VIVADO is not set, please source settings64.sh from your Vivado installation"
-    break
   fi
   if [ -z "$XILINXD_LICENSE_FILE" ]; then
-    echo "XILINXD_LICENSE_FILE is not set. The following commands needs to be executed before calling this script:"
-    echo "	export XILINXD_LICENSE_FILE=<pointer to Vivado license>"
-    break
+    echo "XILINXD_LICENSE_FILE is not set. The following command needs to be executed before initiating hardware builds:"
+    echo "    export XILINXD_LICENSE_FILE=<pointer to Vivado license>"
   fi
 
+  # printing Vivado version
   if [ -z `which vivado 2> /dev/null` ]; then
     echo "Path to vivado not set, please add to environment variable \$PATH"
-    break
+  else
+    echo "Path to vivado          is set to: `which vivado`"
+    echo "Vivado version          is set to: `vivado -version|head -n1`"
   fi
-  # printing Vivado version
-  echo "Path to vivado          is set to: `which vivado`"
-  echo "Vivado version          is set to: `vivado -version|head -n1`"
 
 
   ####### checking path to PSL design checkpoint
@@ -109,9 +108,10 @@ while [ -z "$SETUP_DONE" ]; do
   if [ -z "$AR" ]; then
     AR=$ACTION_ROOT
     echo "ACTION_ROOT             is set to: \"$ACTION_ROOT\""
-    # check if ACTION_ROOT points to an existing direcory or ACTION_ROOT ends in 'vhdl' for an HLS action
     if [ ! -d "$ACTION_ROOT" ] && ( ( [ -z `echo "x$ACTION_ROOT" | grep -i /HLS` ] && [ "${HLS_SUPPORT^^}" != "TRUE" ] ) || [ `basename "x$ACTION_ROOT"` != "vhdl" ] ); then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Please make sure that ACTION_ROOT points to an existing directory."
+    else
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Kept ACTION_ROOT from previous configuration."
     fi
   else
     echo "Setting ACTION_ROOT            to: \"$AR\""
@@ -199,6 +199,11 @@ while [ -z "$SETUP_DONE" ]; do
   ####### Print warning messages and create .snap_env.sh
   if [ -n "$SETUP_WARNING" ]; then
     echo -e "$SETUP_WARNING"
+    echo -e "\nPlease add the required environment settings to the file $snap_env_sh"
+  fi
+
+  if [ -n "$SETUP_INFO" ]; then
+    echo -e "$SETUP_INFO"
   fi
 
   if [ -n "$SNAP_ENV" ]; then
