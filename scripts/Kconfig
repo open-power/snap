@@ -83,6 +83,10 @@ choice
             select FORCE_NVME
             select ENABLE_HLS_SUPPORT
 
+        config HLS_HELLOWORLD
+            bool "HLS HelloWorld"
+	    select ENABLE_HLS_SUPPORT
+
         config ACTION_OTHER
             bool "Other Action"
 endchoice
