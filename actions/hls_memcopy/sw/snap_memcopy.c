@@ -35,7 +35,7 @@ int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
 
-static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME" };
+static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME", "UNUSED"};
 
 /**
  * @brief	prints valid command line options
@@ -68,10 +68,10 @@ static void snap_prepare_memcopy(struct snap_job *cjob,
 				 struct memcopy_job *mjob,
 				 void *addr_in,
 				 uint32_t size_in,
-				 uint8_t type_in,
+				 uint16_t type_in,
 				 void *addr_out,
 				 uint32_t size_out,
-				 uint8_t type_out)
+				 uint16_t type_out)
 {
 	fprintf(stderr, "  prepare memcopy job of %ld bytes size\n", sizeof(*mjob));
 
@@ -107,9 +107,9 @@ int main(int argc, char *argv[])
 	struct timeval etime, stime;
 	ssize_t size = 1024 * 1024;
 	uint8_t *ibuff = NULL, *obuff = NULL;
-	uint8_t type_in = SNAP_ADDRTYPE_HOST_DRAM;
+	uint16_t type_in = SNAP_ADDRTYPE_UNUSED;
 	uint64_t addr_in = 0x0ull;
-	uint8_t type_out = SNAP_ADDRTYPE_HOST_DRAM;
+	uint16_t type_out = SNAP_ADDRTYPE_UNUSED;
 	uint64_t addr_out = 0x0ull;
 	int verify = 0;
 	int exit_code = EXIT_SUCCESS;
@@ -268,8 +268,8 @@ int main(int argc, char *argv[])
 	       "  mode:        %08x\n",
 	       input  ? input  : "unknown",
 	       output ? output : "unknown",
-	       type_in,  mem_tab[type_in],  (long long)addr_in,
-	       type_out, mem_tab[type_out], (long long)addr_out,
+	       type_in,  mem_tab[type_in%4],  (long long)addr_in,
+	       type_out, mem_tab[type_out%4], (long long)addr_out,
 	       size, mode);
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
