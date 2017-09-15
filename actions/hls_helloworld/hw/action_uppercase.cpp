@@ -33,7 +33,7 @@ static void mbus_to_word(snap_membus_t mem, word_t text)
 
         loop_mbus_to_word:
         for (unsigned char k = 0; k < sizeof(word_t); k++) {
-#pragma HLS UNROLL
+//#pragma HLS UNROLL
                 text[k] = tmp(7, 0);
                 tmp = tmp >> 8;
         }
@@ -46,7 +46,7 @@ static snap_membus_t word_to_mbus(word_t text)
 
  loop_word_to_mbus:
 	for (char k = sizeof(word_t)-1; k >= 0; k--) {
-#pragma HLS UNROLL
+//#pragma HLS UNROLL
 		mem = mem << 8;
 		mem(7, 0) = text[k];
 	}
@@ -70,26 +70,37 @@ static int process_action(snap_membus_t *din_gmem,
 	o_idx = act_reg->Data.out.addr >> ADDR_RIGHT_SHIFT;
 	size = act_reg->Data.in.size;
 
+	main_loop:
 	while (size > 0) {
+//#pragma HLS PIPELINE
 		word_t text;
 		unsigned char i;
 		snap_membus_t buffer_in = 0, buffer_out = 0;
 
 		/* Limit the number of bytes to process to a 64B word */
 		bytes_to_transfer = MIN(size, (uint32_t)sizeof(buffer_in));
-		memcpy(&buffer_in, din_gmem + i_idx, sizeof(buffer_in));
+
+		// Temporary workaround due to Xilinx memcpy issue - fixed in HLS 2017.4 */
+		//memcpy(&buffer_in, din_gmem + i_idx, sizeof(buffer_in));
+		buffer_in = (din_gmem + i_idx)[0];
+
+		/* cast 64B word buffer to a char[64] text */
 		mbus_to_word(buffer_in, text);
 
 		/* Convert lower cases to upper cases byte per byte */
 	uppercase_conversion:
 		for (i = 0; i < sizeof(text); i++ ) {
-#pragma HLS UNROLL
+//#pragma HLS UNROLL
 			if (text[i] >= 'a' && text[i] <= 'z')
 				text[i] = text[i] - ('a' - 'A');
 		}
 
+		/* cast char[64] text to a 64B word buffer */
 		buffer_out = word_to_mbus(text);
-		memcpy(dout_gmem + o_idx, &buffer_out, sizeof(buffer_out));
+
+		// Temporary workaround due to Xilinx memcpy issue - fixed in HLS 2017.4 */
+		//memcpy(dout_gmem + o_idx, &buffer_out, sizeof(buffer_out));
+		(dout_gmem + o_idx)[0] = buffer_out;
 
 		size -= bytes_to_transfer;
 		i_idx++;
@@ -103,21 +114,24 @@ static int process_action(snap_membus_t *din_gmem,
 //--- TOP LEVEL MODULE -------------------------------------------------
 void hls_action(snap_membus_t *din_gmem,
 		snap_membus_t *dout_gmem,
-		//snap_membus_t *d_ddrmem,
+		/* snap_membus_t *d_ddrmem, */ /* if unused => export SDRAM_USED=FALSE */
 		action_reg *act_reg,
 		action_RO_config_reg *Action_Config)
 {
 	// Host Memory AXI Interface
-#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512
+#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512 \
+  max_read_burst_length=64  max_write_burst_length=64
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg offset=0x030
 
-#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512
+#pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512 \
+  max_read_burst_length=64  max_write_burst_length=64
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg offset=0x040
 
-	// DDR memory Interface
-//#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512
-//#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg offset=0x050
-
+/*	// DDR memory Interface
+ * #pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512 \
+ *   max_read_burst_length=64  max_write_burst_length=64
+ * #pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg offset=0x050
+ */
 	// Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Config
 #pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg offset=0x010
@@ -137,7 +151,7 @@ void hls_action(snap_membus_t *din_gmem,
 		return;
 		break;
 	default:
-        	//process_action(din_gmem, dout_gmem, d_ddrmem, act_reg);
+        	/* process_action(din_gmem, dout_gmem, d_ddrmem, act_reg); */
         	process_action(din_gmem, dout_gmem, act_reg);
 		break;
 	}
@@ -165,6 +179,7 @@ int main(void)
 
     /* Query ACTION_TYPE ... */
     act_reg.Control.flags = 0x0;
+    printf("Discovery : calling action to get config data\n");
     hls_action(din_gmem, dout_gmem, &act_reg, &Action_Config);
     fprintf(stderr,
 	    "ACTION_TYPE:   %08x\n"
@@ -187,6 +202,7 @@ int main(void)
     act_reg.Data.out.size = 64;
     act_reg.Data.out.type = SNAP_ADDRTYPE_HOST_DRAM;
 
+    printf("Action call \n");
     hls_action(din_gmem, dout_gmem, &act_reg, &Action_Config);
     if (act_reg.Control.Retc == SNAP_RETC_FAILURE) {
 	    fprintf(stderr, " ==> RETURN CODE FAILURE <==\n");
