@@ -64,6 +64,9 @@ short write_burst_of_data_to_mem(snap_membus_t *dout_gmem,
 
        		rc =  0;
 		break;
+	case SNAP_ADDRTYPE_UNUSED: /* no copy but with rc =0 */
+       		rc =  0;
+		break;
 	default:
 		rc = 1;
 	}
@@ -109,6 +112,9 @@ short read_burst_of_data_from_mem(snap_membus_t *din_gmem,
 #pragma HLS PIPELINE
                     buffer[k] = (d_ddrmem + input_address)[k];
 
+       		rc =  0;
+		break;
+	case SNAP_ADDRTYPE_UNUSED: /* no copy but with rc =0 */
        		rc =  0;
 		break;
 	default:
@@ -180,7 +186,6 @@ static void process_action(snap_membus_t *din_gmem,
 		rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem,
 						 act_reg->Data.out.type,
 			OutputAddress + address_xfer_offset, buf_gmem, xfer_size);
-
 		action_xfer_size -= xfer_size;
 		address_xfer_offset += (snapu64_t)(xfer_size >> ADDR_RIGHT_SHIFT);
 	} // end of L0 loop

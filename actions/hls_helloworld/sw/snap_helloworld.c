@@ -1,18 +1,25 @@
 /*
- *  * Copyright 2016, 2017 International Business Machines
- *   *
- *    * Licensed under the Apache License, Version 2.0 (the "License");
- *     * you may not use this file except in compliance with the License.
- *      * You may obtain a copy of the License at
- *       *
- *        *     http://www.apache.org/licenses/LICENSE-2.0
- *         *
- *          * Unless required by applicable law or agreed to in writing, software
- *           * distributed under the License is distributed on an "AS IS" BASIS,
- *            * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *             * See the License for the specific language governing permissions and
- *              * limitations under the License.
- *               */
+ * Copyright 2017 International Business Machines
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * SNAP HelloWorld Example
+ *
+ * Demonstration how to get data into the FPGA, process it using a SNAP
+ * action and move the data out of the FPGA back to host-DRAM.
+ */
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -27,21 +34,21 @@
 #include <assert.h>
 
 #include <snap_tools.h>
-#include <action_memcopy.h>
 #include <libsnap.h>
+#include <action_changecase.h>
 #include <snap_hls_if.h>
 
 int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
 
-static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME", "UNUSED"};
+static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME" };
 
 /**
- *  * @brief	prints valid command line options
- *   *
- *    * @param prog	current program's name
- *     */
+ * @brief	prints valid command line options
+ *
+ * @param prog	current program's name
+ */
 static void usage(const char *prog)
 {
 	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
@@ -53,27 +60,26 @@ static void usage(const char *prog)
 	       "  -D, --type-out <CARD_DRAM, HOST_DRAM, ...>.\n"
 	       "  -d, --addr-out <addr>     address e.g. in CARD_RAM.\n"
 	       "  -s, --size <size>         size of data.\n"
-	       "  -m, --mode <mode>         mode flags.\n"
-	       "  -t, --timeout             Timeout in sec to wait for done. (10 sec default)\n"
+	       "  -t, --timeout             timeout in sec to wait for done.\n"
 	       "  -X, --verify              verify result if possible\n"
-	       "  -N, --no irq              Disable Interrupts\n"
+	       "  -N, --no-irq              disable Interrupts\n"
 	       "\n"
 	       "Example:\n"
-	       "  snap_memcopy ...\n"
+	       "  snap_helloworld ...\n"
 	       "\n",
 	       prog);
 }
 
-static void snap_prepare_memcopy(struct snap_job *cjob,
-				 struct memcopy_job *mjob,
+static void snap_prepare_helloworld(struct snap_job *cjob,
+				 struct helloworld_job *mjob,
 				 void *addr_in,
 				 uint32_t size_in,
-				 uint16_t type_in,
+				 uint8_t type_in,
 				 void *addr_out,
 				 uint32_t size_out,
-				 uint16_t type_out)
+				 uint8_t type_out)
 {
-	fprintf(stderr, "  prepare memcopy job of %ld bytes size\n", sizeof(*mjob));
+	fprintf(stderr, "  prepare helloworld job of %ld bytes size\n", sizeof(*mjob));
 
 	assert(sizeof(*mjob) <= SNAP_JOBSIZE);
 	memset(mjob, 0, sizeof(*mjob));
@@ -87,9 +93,6 @@ static void snap_prepare_memcopy(struct snap_job *cjob,
 	snap_job_set(cjob, mjob, sizeof(*mjob), NULL, 0);
 }
 
-/**
- *  * Read accelerator specific registers. Must be called as root!
- *   */
 int main(int argc, char *argv[])
 {
 	int ch, rc = 0;
@@ -98,25 +101,22 @@ int main(int argc, char *argv[])
 	struct snap_action *action = NULL;
 	char device[128];
 	struct snap_job cjob;
-	struct memcopy_job mjob;
+	struct helloworld_job mjob;
 	const char *input = NULL;
 	const char *output = NULL;
-	unsigned long timeout = 10;
-	unsigned int mode = 0x0;
+	unsigned long timeout = 600;
 	const char *space = "CARD_RAM";
 	struct timeval etime, stime;
 	ssize_t size = 1024 * 1024;
 	uint8_t *ibuff = NULL, *obuff = NULL;
-	uint16_t type_in = SNAP_ADDRTYPE_UNUSED;
+	uint8_t type_in = SNAP_ADDRTYPE_HOST_DRAM;
 	uint64_t addr_in = 0x0ull;
-	uint16_t type_out = SNAP_ADDRTYPE_UNUSED;
+	uint8_t type_out = SNAP_ADDRTYPE_HOST_DRAM;
 	uint64_t addr_out = 0x0ull;
 	int verify = 0;
 	int exit_code = EXIT_SUCCESS;
 	uint8_t trailing_zeros[1024] = { 0, };
 	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
-	long long diff_usec = 0;
-	double mib_sec;
 
 	while (1) {
 		int option_index = 0;
@@ -129,18 +129,17 @@ int main(int argc, char *argv[])
 			{ "dst-type",	 required_argument, NULL, 'D' },
 			{ "dst-addr",	 required_argument, NULL, 'd' },
 			{ "size",	 required_argument, NULL, 's' },
-			{ "mode",	 required_argument, NULL, 'm' },
 			{ "timeout",	 required_argument, NULL, 't' },
 			{ "verify",	 no_argument,	    NULL, 'X' },
+			{ "no-irq",	 no_argument,	    NULL, 'N' },
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
-			{ "no_irq",	 no_argument,	    NULL, 'N' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-				 "A:C:i:o:a:S:D:d:x:s:t:XVqvhI",
+				 "A:C:i:o:a:S:D:d:x:s:t:XVNvh",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -160,9 +159,6 @@ int main(int argc, char *argv[])
 			break;
 		case 't':
 			timeout = strtol(optarg, (char **)NULL, 0);
-			break;
-		case 'm':
-			mode = strtol(optarg, (char **)NULL, 0);
 			break;
 			/* input data */
 		case 'A':
@@ -247,7 +243,7 @@ int main(int argc, char *argv[])
 
 	/* if output file is defined, use that as output */
 	if (output != NULL) {
-		ssize_t set_size = size + (verify ? sizeof(trailing_zeros) : 0);
+		size_t set_size = size + (verify ? sizeof(trailing_zeros) : 0);
 
 		obuff = snap_malloc(set_size);
 		if (obuff == NULL)
@@ -264,13 +260,11 @@ int main(int argc, char *argv[])
 	       "  addr_in:     %016llx\n"
 	       "  type_out:    %x %s\n"
 	       "  addr_out:    %016llx\n"
-	       "  size_in/out: %08lx\n"
-	       "  mode:        %08x\n",
-	       input  ? input  : "unknown",
-	       output ? output : "unknown",
-	       type_in,  mem_tab[type_in%4],  (long long)addr_in,
-	       type_out, mem_tab[type_out%4], (long long)addr_out,
-	       size, mode);
+	       "  size_in/out: %08lx\n",
+	       input  ? input  : "unknown", output ? output : "unknown",
+	       type_in,  mem_tab[type_in],  (long long)addr_in,
+	       type_out, mem_tab[type_out], (long long)addr_out,
+	       size);
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
@@ -281,18 +275,18 @@ int main(int argc, char *argv[])
 		goto out_error;
 	}
 
-	action = snap_attach_action(card, MEMCOPY_ACTION_TYPE, action_irq, 60);
+	action = snap_attach_action(card, HELLOWORLD_ACTION_TYPE, action_irq, 60);
 	if (action == NULL) {
 		fprintf(stderr, "err: failed to attach action %u: %s\n",
 			card_no, strerror(errno));
 		goto out_error1;
 	}
 
-	snap_prepare_memcopy(&cjob, &mjob,
+	snap_prepare_helloworld(&cjob, &mjob,
 			     (void *)addr_in,  size, type_in,
 			     (void *)addr_out, size, type_out);
 
-	__hexdump(stderr, &mjob, sizeof(mjob));
+	//__hexdump(stderr, &mjob, sizeof(mjob));
 
 	gettimeofday(&stime, NULL);
 	rc = snap_action_sync_execute_job(action, &cjob, timeout);
@@ -313,7 +307,6 @@ int main(int argc, char *argv[])
 			goto out_error2;
 	}
 
-	/* obuff[size] = 0xff; */
 	fprintf(stdout, "RETC=%x\n", cjob.retc);
 	if (cjob.retc != SNAP_RETC_SUCCESS) {
 		fprintf(stderr, "err: Unexpected RETC=%x!\n", cjob.retc);
@@ -339,12 +332,8 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "warn: Verification works currently "
 				"only with HOST_DRAM\n");
 	}
-
-	diff_usec = timediff_usec(&etime, &stime);
-	mib_sec = (diff_usec == 0) ? 0.0 : (double)size / diff_usec;
-
-	fprintf(stdout, "memcopy of %lld bytes took %lld usec @ %.3f MiB/sec\n",
-		(long long)size, (long long)diff_usec, mib_sec);
+	fprintf(stdout, "SNAP helloworld took %lld usec\n",
+		(long long)timediff_usec(&etime, &stime));
 
 	snap_detach_action(action);
 	snap_card_free(card);
