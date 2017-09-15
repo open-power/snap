@@ -100,6 +100,15 @@ $(snap_config_sh):
 $(snap_env_sh) snap_env: $(snap_config_sh)
 	@$(SNAP_ROOT)/snap_env $(snap_config_sh)
 
+%.defconfig:
+	@if [ ! -f defconfig/$@ ]; then			        \
+		echo "ERROR: Configuration $@ not existing!";	\
+		exit 2 ; 					\
+	fi
+	@mkdir -p scripts/build
+	@cp defconfig/$@ scripts/build/.config
+	@$(MAKE) -s oldconfig
+
 clean:
 	@for dir in $(clean_subdirs); do           \
 	    if [ -d $$dir ]; then                  \
