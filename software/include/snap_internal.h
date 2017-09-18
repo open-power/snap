@@ -21,6 +21,10 @@
 
 #include <stdint.h>
 #include <libsnap.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <sys/syscall.h>   /* For SYS_xxx definitions */
+
 #include "snap_queue.h"
 
 #ifdef __cplusplus
@@ -73,11 +77,32 @@ struct snap_funcs {
 	int (* card_ioctl)(struct snap_card *card, unsigned int cmd, unsigned long arg);
 };
 
+static inline pid_t __gettid(void)
+{
+	return (pid_t)syscall(SYS_gettid);
+}
+
+static inline long long __get_usec(void)
+{
+	struct timeval t;
+	gettimeofday(&t, NULL);
+	return t.tv_sec * 1000 + t.tv_usec;
+}
+
 int action_trace_enabled(void);
+int block_trace_enabled(void);
 
 #define act_trace(fmt, ...) do {					\
 		if (action_trace_enabled())				\
 			fprintf(stderr, "A " fmt, ## __VA_ARGS__);	\
+	} while (0)
+
+#define block_trace(fmt, ...) do {                                     \
+		if (block_trace_enabled()) {                           \
+			fprintf(stderr, "B %08x.%08x %-16lld " fmt,    \
+				getpid(), __gettid(), __get_usec(),    \
+			## __VA_ARGS__);                               \
+		}                                                      \
 	} while (0)
 
 /**
