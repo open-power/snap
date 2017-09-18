@@ -98,6 +98,11 @@ choice
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
             select FORCE_NVME
+
+        config HLS_HELLOWORLD
+            bool "HLS HelloWorld"
+            select ENABLE_HLS_SUPPORT
+
 endchoice
 
 config ENABLE_HLS_SUPPORT
