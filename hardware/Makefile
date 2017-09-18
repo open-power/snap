@@ -257,7 +257,7 @@ create_environment:
 	@echo -e "                        using `vivado -version |grep Vivado`"
 	@cd $(SNAP_HARDWARE_ROOT)/setup                                          && vivado -quiet -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -journal $(LOGS_DIR)/create_ip.jou
 	@if [ $(NVME_USED) = "TRUE" ]; then cd $(SNAP_HARDWARE_ROOT)/setup       && vivado -quiet -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou; fi
-	@eval ILA_SETUP_FILE=$(ILA_SETUP_FILE) && cd $(SNAP_HARDWARE_ROOT)/setup && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
+	@eval ACTION_ROOT=$(ACTION_ROOT) && eval PSL_DCP=$(PSL_DCP) && eval ILA_SETUP_FILE=$(ILA_SETUP_FILE) && cd $(SNAP_HARDWARE_ROOT)/setup && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
 	@echo -e "[CREATE_ENVIRONMENT..] done  `date +"%T %a %b %d %Y"`"
 
 config_start:

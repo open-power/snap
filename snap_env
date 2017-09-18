@@ -26,12 +26,13 @@ snap_env_sh=$snapdir/.snap_env.sh
 unset PSL_DCP
 unset ACTION_ROOT
 unset PSLSE_ROOT
+unset ILA_SETUP_FILE
 unset DCP_ROOT
-if [ -f "$1" ]; then
-  source $1
+if [ -e "$snap_env_sh" ]; then
+  source $snap_env_sh
 fi
-if [ -f "$snap_env_sh" ]; then
-  source "$snap_env_sh"
+if [ -e "$1" ]; then
+  source $1
 fi
 
 unset SETUP_DONE
@@ -66,7 +67,7 @@ while [ -z "$SETUP_DONE" ]; do
   ####### checking path to PSL design checkpoint
   echo "=====Checking path to PSL design checkpoint============"
   echo "PSL_DCP                 is set to: \"$PSL_DCP\""
-  SNAP_ENV="$SNAP_ENV""export PSL_DCP=$PSL_DCP\n"
+  SNAP_ENV="$SNAP_ENV""export PSL_DCP='$PSL_DCP'\n"
   if [ -f "$PSL_DCP" ]; then
     # checking card type for PSL design checkpoint
     PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $PSL_DCP`
@@ -106,7 +107,7 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hls_nvme_memcopy'
   fi
   if [ -z "$AR" ]; then
-    AR=$ACTION_ROOT
+    AR='$ACTION_ROOT'
     echo "ACTION_ROOT             is set to: \"$ACTION_ROOT\""
     if [ ! -d "$ACTION_ROOT" ] && ( ( [ -z `echo "x$ACTION_ROOT" | grep -i /HLS` ] && [ "${HLS_SUPPORT^^}" != "TRUE" ] ) || [ `basename "x$ACTION_ROOT"` != "vhdl" ] ); then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Please make sure that ACTION_ROOT points to an existing directory."
@@ -118,7 +119,7 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
   if [ -n "$AR" ]; then
-    SNAP_ENV="$SNAP_ENV""export ACTION_ROOT=$AR\n"
+    SNAP_ENV="$SNAP_ENV""export ACTION_ROOT='$AR'\n"
   fi
 
 
@@ -208,6 +209,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ -n "$SNAP_ENV" ]; then
     echo -e "$SNAP_ENV" > $snap_env_sh
+    chmod +x $snap_env_sh
   fi
   echo
 
