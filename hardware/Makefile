@@ -324,7 +324,7 @@ pslse:
 software: pslse
 	@echo -e "[COMPILE SOFTWARE....] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -C $(SNAP_ROOT)/software       > $(LOGS_DIR)/compile_sw.log 2>&1
-	@echo -e "[COMPILE SOFTWARE....] done  `date`"
+	@echo -e "[COMPILE SOFTWARE....] done  `date +"%T %a %b %d %Y"`"
 
 action_sw: software
 	@echo -e "[COMPILE ACTION SW...] start `date +"%T %a %b %d %Y"`"
