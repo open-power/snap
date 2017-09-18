@@ -45,10 +45,15 @@ static struct snap_sim_action *actions = NULL;
 
 int action_trace_enabled(void)
 {
-	return snap_trace & 0x8;
+	return snap_trace & 0x08;
 }
 
-#define simulation_enabled()  (snap_config & 0x1)
+int block_trace_enabled(void)
+{
+	return snap_trace & 0x20;
+}
+
+#define simulation_enabled()  (snap_config & 0x01)
 
 #define snap_trace(fmt, ...) do {					\
 		if (snap_trace_enabled())				\
@@ -356,6 +361,11 @@ static struct snap_action *hw_attach_action(struct snap_card *card,
 	int t0, dt;
 	struct snap_action *action = NULL;
 
+	if (card == NULL) {
+		errno = EINVAL;
+		return NULL;
+	}
+
 	snap_trace("%s Enter Action: 0x%x Old Action: %x "
 		   "Flags: 0x%x Base: %x timeout: %d sec Seq: %x\n",
 		   __func__, action_type, card->action_type, action_flags,
@@ -459,6 +469,11 @@ static int hw_detach_action(struct snap_action *action)
 	int rc = 0;
 	uint64_t data;
 	struct snap_card *card = (struct snap_card *)action;
+
+	if (action == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
 
 	card->start_attach = true;              /* Set Flag to Attach next Time again */
 	hw_snap_mmio_write64(card, SNAP_S_JCR, 2); /* Stop:  Detach action */

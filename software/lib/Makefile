@@ -21,44 +21,77 @@ libversion = $(VERSION)
 CFLAGS += -fPIC -fno-strict-aliasing
 LDLIBS += -lpthread
 
-libname=libsnap
-projA = $(libname).a \
-	$(libname).so \
-	$(libname).so.$(MAJOR_VERSION) \
-	$(libname).so.$(libversion)
-
-src = snap.c
-objs = $(src:.c=.o)
-projs += $(projA)
-
 # Link statically for PSLSE simulation and dynamically for real version
 ifndef BUILD_SIMCODE
 LDLIBS += -lcxl
 endif
 
+libnameA = libsnap
+projA = $(libnameA).a \
+	$(libnameA).so \
+	$(libnameA).so.$(MAJOR_VERSION) \
+	$(libnameA).so.$(libversion)
+
+libnameB = libsnapcblk
+projB = $(libnameB).a \
+	$(libnameB).so \
+	$(libnameB).so.$(MAJOR_VERSION) \
+	$(libnameB).so.$(libversion)
+
+srcA = snap.c
+objsA = $(srcA:.c=.o)
+libsB += $(LDLIBS)
+
+srcB = snapblock.c
+objsB = $(srcB:.c=.o)
+libsB += -L. -lsnap $(LDLIBS)
+
+projs += $(projA) $(projB)
+
 all: $(projs)
 
-__$(libname).o: $(objs)
+$(projB): $(projA)
+
+### libA
+__$(libnameA).o: $(objsA)
 	$(LD) $(XLDFLAGS) -r -o $@ $^
 
-$(libname).a: __$(libname).o
+$(libnameA).a: __$(libnameA).o
 	$(AR) rcs $@ $^
 
-$(libname).so:  $(libname).so.$(libversion)
+$(libnameA).so:  $(libnameA).so.$(libversion)
 	ln -sf $< $@
 
-$(libname).so.$(MAJOR_VERSION): $(libname).so.$(libversion)
+$(libnameA).so.$(MAJOR_VERSION): $(libnameA).so.$(libversion)
+	ln -sf $< $@
+# SONAMEA=-Wl,-soname,$(libnameA).so.$(MAJOR_VERSION)
+
+$(libnameA).so.$(libversion): __$(libnameA).o
+	$(CC) $(LDFLAGS) -shared  $(SONAMEA) \
+		 -o $@ $^ $(libsA)
+
+### libB
+__$(libnameB).o: $(objsB)
+	$(LD) $(XLDFLAGS) -r -o $@ $^
+
+$(libnameB).a: __$(libnameB).o
+	$(AR) rcs $@ $^
+
+$(libnameB).so:  $(libnameB).so.$(libversion)
 	ln -sf $< $@
 
-# SONAME=-Wl,-soname,$(libname).so.$(MAJOR_VERSION)
+$(libnameB).so.$(MAJOR_VERSION): $(libnameB).so.$(libversion)
+	ln -sf $< $@
+# SONAMEB=-Wl,-soname,$(libnameB).so.$(MAJOR_VERSION)
 
-$(libname).so.$(libversion): __$(libname).o
-	$(CC) $(LDFLAGS) -shared  $(SONAME) \
-		 -o $@ $^ $(LDLIBS)
+$(libnameB).so.$(libversion): __$(libnameB).o
+	$(CC) $(LDFLAGS) -shared  $(SONAMEB) \
+		 -o $@ $^ $(libsB)
 
 install: all
 	mkdir -p $(LIB_INSTALL_PATH)
 	cp -auv $(projA) $(LIB_INSTALL_PATH)
+	cp -auv $(projB) $(LIB_INSTALL_PATH)
 
 # general things
 %.o: %.c
@@ -68,4 +101,4 @@ install: all
 clean distclean:
 	$(RM) *.o *.d $(projs) *.so *.so.*
 
--include $(objs:.o=.d)
+-include $(objsA:.o=.d) $(objsB:.o=.d)
