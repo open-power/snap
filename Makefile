@@ -20,7 +20,9 @@ software_subdirs += $(SNAP_ROOT)/software
 hardware_subdirs += $(SNAP_ROOT)/hardware
 action_subdirs += $(SNAP_ROOT)/actions
 
+snap_config = .snap_config
 snap_config_sh = .snap_config.sh
+snap_config_cflags = .snap_config.cflags
 snap_env_sh = .snap_env.sh
 
 clean_subdirs += $(config_subdirs) $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
@@ -81,10 +83,16 @@ config model image cloud_base cloud_action cloud_merge: $(snap_env_sh)
 # SNAP Config
 menuconfig xconfig gconfig oldconfig:
 	@echo "$@: Setting up SNAP configuration"
-	@for dir in $(config_subdirs); do         \
-	    if [ -d $$dir ]; then                 \
-	        $(MAKE) -s -C $$dir $@ || exit 1; \
-	    fi                                    \
+	@if [ -e $(snap_config) ]; then                  \
+		mkdir -p scripts/build;                  \
+		cp $(snap_config) scripts/build/.config; \
+	else                                             \
+		$(RM) scripts/build/.config;             \
+	fi
+	@for dir in $(config_subdirs); do                \
+	    if [ -d $$dir ]; then                        \
+	        $(MAKE) -s -C $$dir $@ || exit 1;        \
+	    fi                                           \
 	done
 
 snap_config:
@@ -106,7 +114,7 @@ $(snap_env_sh) snap_env: $(snap_config_sh)
 		exit 2 ; 					\
 	fi
 	@mkdir -p scripts/build
-	@cp defconfig/$@ scripts/build/.config
+	@cp defconfig/$@ $(snap_config)
 	@$(MAKE) -s oldconfig
 	@$(MAKE) -s snap_env
 
@@ -120,5 +128,7 @@ clean:
 	@find . -depth -name '.#*' -exec rm -rf '{}' \; -print
 
 clean_config: clean
-	@$(RM) $(SNAP_ROOT)/.snap_env*
-	@$(RM) $(SNAP_ROOT)/.snap_config*
+	@$(RM) $(snap_env)
+	@$(RM) $(snap_config)
+	@$(RM) $(snap_config_sh)
+	@$(RM) $(snap_config_cflags)
