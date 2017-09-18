@@ -1,18 +1,18 @@
 /*
- *  * Copyright 2016, 2017 International Business Machines
- *   *
- *    * Licensed under the Apache License, Version 2.0 (the "License");
- *     * you may not use this file except in compliance with the License.
- *      * You may obtain a copy of the License at
- *       *
- *        *     http://www.apache.org/licenses/LICENSE-2.0
- *         *
- *          * Unless required by applicable law or agreed to in writing, software
- *           * distributed under the License is distributed on an "AS IS" BASIS,
- *            * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *             * See the License for the specific language governing permissions and
- *              * limitations under the License.
- *               */
+ * Copyright 2016, 2017 International Business Machines
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -37,11 +37,11 @@ static const char *version = GIT_VERSION;
 
 static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME", "UNUSED"};
 
-/**
- *  * @brief	prints valid command line options
- *   *
- *    * @param prog	current program's name
- *     */
+/*
+ * @brief	prints valid command line options
+ *
+ * @param prog	current program's name
+ */
 static void usage(const char *prog)
 {
 	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
@@ -87,9 +87,9 @@ static void snap_prepare_memcopy(struct snap_job *cjob,
 	snap_job_set(cjob, mjob, sizeof(*mjob), NULL, 0);
 }
 
-/**
- *  * Read accelerator specific registers. Must be called as root!
- *   */
+/*
+ * Read accelerator specific registers. Must be called as root!
+ */
 int main(int argc, char *argv[])
 {
 	int ch, rc = 0;
