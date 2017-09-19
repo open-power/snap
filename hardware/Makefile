@@ -299,7 +299,7 @@ cloud_action: .config_done check_snap_settings snap_preprocess action_hw patch_v
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
 		echo -e "                        Makefile target $@ is only allowed for PR flow!"; exit -1; \
 	fi
-	@echo -e "[CLOUD ACTION SYNTH..] start `dat +"%T %a %b %d %Y"e`"
+	@echo -e "[CLOUD ACTION SYNTH..] start `date +"%T %a %b %d %Y"e`"
 	@echo -e "                        using `vivado -version |grep Vivado`"
 	@cd $(BUILD_DIR) && env CLOUD_RUN=ACTION vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/cloud_action.log -journal $(LOGS_DIR)/cloud_action.jou
 	@echo -e "[CLOUD ACTION SYNTH..] done  `date +"%T %a %b %d %Y"`"
