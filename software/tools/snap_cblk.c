@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, International Business Machines
+ * Copyright 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,12 +52,14 @@ static void usage(const char *prog)
 	       "  -C,--card <cardno> can be (0...3)\n"
 	       "  -V, --version		    print version.\n"
 	       "  -X, --cpu <id>	    only run on this CPU.\n"
+	       "  -f, --format		    write entire device with pattern.\n"
 	       "  -w, --write		    write entire device.\n"
 	       "  -r, --read		    read entire device.\n"
 	       "  -s, --start_lba <start_lba> start offset\n"
 	       "  -n, --num_lba <num_lba>   number of lbas to read or write\n"
-	       "  -b, --lba_blocks <lba_blocks> number of lbas to read or write\n"
-	       "  -p, --pattern <pattern>   pattern for formatting\n"
+	       "  -b, --lba_blocks <lba_blocks> number of lbas to read"
+	       " or write in one operation.\n"
+	       "  -p, --pattern <pattern>   pattern for formatting/INC\n"
 	       "  <file.bin>\n"
 	       "\n"
 	       "Example:\n"
@@ -156,6 +158,7 @@ int main(int argc, char *argv[])
 	long long diff_usec = 0;
 	double mib_sec;
 	int pattern = 0xff;
+	int incremental_pattern = 0;
 
 	while (1) {
 		int option_index = 0;
@@ -202,6 +205,8 @@ int main(int argc, char *argv[])
 			start_lba = strtoul(optarg, NULL, 0);
 			break;
 		case 'p':
+			if (strcmp("INC", optarg) == 0)
+				incremental_pattern = 1;
 			pattern = strtoul(optarg, NULL, 0);
 			break;
 		case 'n':
@@ -236,6 +241,13 @@ int main(int argc, char *argv[])
 	if (argc >= optind + 1)
 		fname = argv[optind++];
 
+	if (lba_blocks > 2) {
+		fprintf(stderr, "err: %zu blocks not yet supported (1 or 2)!\n",
+			lba_blocks);
+		usage(argv[0]);
+		goto err_out;
+	}
+
 	switch_cpu(cpu, verbose_flag);
 	cblk_init(NULL, 0);
 
@@ -262,16 +274,16 @@ int main(int argc, char *argv[])
 			rc);
 		goto err_out;
 	}
-	fprintf(stderr, "NVMe device has %zu blocks of each %zu bytes\n",
-		lun_size, lba_size);
+	fprintf(stderr, "NVMe device has %zu blocks of each %zu bytes; %zu MiB\n",
+		lun_size, lba_size, lun_size * lba_size / (1024 * 1024));
 
 	if (num_lba == 0)
 		num_lba = lun_size;
 
 	switch (_op) {
 	case OP_READ: {
-		fprintf(stderr, "Reading %lld MiB NVMe into %s\n",
-			(long long)num_lba * lba_size / (1024 * 1024),
+		fprintf(stderr, "Reading %d times %zu bytes: %zu KiB NVMe into %s\n",
+			num_lba, lba_blocks * lba_size, num_lba * lba_size / 1024,
 			fname);
 
 		if (start_lba + num_lba > lun_size) {
@@ -285,6 +297,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "err: Cannot allocate enough memory!\n");
 			goto err_out;
 		}
+		memset(buf, 0xff, lun_size * lba_size);
 
 		gettimeofday(&stime, NULL);
 		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
@@ -298,7 +311,7 @@ int main(int argc, char *argv[])
 		}
 		gettimeofday(&etime, NULL);
 
-		rc = file_write(fname, buf, lun_size * lba_size);
+		rc = file_write(fname, buf, num_lba * lba_size);
 		if (rc <= 0) {
 			fprintf(stderr, "err: Could not write %s, rc=%d\n",
 				fname, rc);
@@ -364,14 +377,19 @@ int main(int argc, char *argv[])
 		break;
 	}
 	case OP_FORMAT: {
-		fprintf(stderr, "Formatting NVMe drive %zu MiB ...\n",
-			(lun_size * lba_size) / (1024 * 1024));
+		fprintf(stderr, "Formatting NVMe drive %zu MiB with pattern %02x ...\n",
+			(lun_size * lba_size) / (1024 * 1024), pattern);
 
 		rc = posix_memalign((void **)&buf, 64, lba_size * lba_blocks);
 		if (rc != 0)
 			goto err_out;
 
-		memset(buf, pattern, lba_size * lba_blocks);
+		if (incremental_pattern) {
+			uint64_t p;
+			for (p = 0; p < lba_size * lba_blocks / sizeof(p); p++)
+				((uint64_t *)buf)[p] = __cpu_to_be64(p);
+		} else
+			memset(buf, pattern, lba_size * lba_blocks);
 
 		gettimeofday(&stime, NULL);
 		for (lba = 0; lba < num_lba; lba += lba_blocks) {
