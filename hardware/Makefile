@@ -91,9 +91,9 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 #      due to missing dependencies between the different targets.
 #
 
-.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_denali prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment config_start config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim clean gitclean
+.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_denali prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment hw_config_start hw_config config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim clean gitclean
 
-all: config model image
+all: hw_config model image
 
 snap_config:
 	@$(MAKE) -C $(SNAP_ROOT) snap_config
@@ -260,17 +260,20 @@ create_environment:
 	@eval ILA_SETUP_FILE=$(ILA_SETUP_FILE) && cd $(SNAP_HARDWARE_ROOT)/setup && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
 	@echo -e "[CREATE_ENVIRONMENT..] done  `date +"%T %a %b %d %Y"`"
 
-config_start:
-	@echo -e "[CONFIG..............] start `date +"%T %a %b %d %Y"`"
+hw_config_start:
+	@echo -e "[HW CONFIG...........] start `date +"%T %a %b %d %Y"`"
 
-config: config_start check_snap_settings prepare_build snap_preprocess action_hw create_environment patch_version patch_NVMe
-	@touch .config_done
-	@echo -e "[CONFIG..............] done  `date +"%T %a %b %d %Y"`"
+hw_config: hw_config_start check_snap_settings prepare_build snap_preprocess action_hw create_environment patch_version patch_NVMe
+	@touch .hw_config_done
+	@echo -e "[HW CONFIG...........] done  `date +"%T %a %b %d %Y"`"
 
-.config_done:
-	$(MAKE) config
+.hw_config_done:
+	$(MAKE) -s hw_config
 
-image: .config_done check_snap_settings snap_preprocess patch_version
+# Adding target 'config' for backward compatibility
+config: hw_config
+
+image: .hw_config_done check_snap_settings snap_preprocess patch_version
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
 		echo -e "                        Makefile target $@ not allowed for PR flow!"; exit -1; \
 	fi
@@ -279,7 +282,7 @@ image: .config_done check_snap_settings snap_preprocess patch_version
 	@$(RM) -r .bitstream_name.txt
 	@echo -e "[BUILD IMAGE.........] done  `date +"%T %a %b %d %Y"`"
 
-cloud_base: .config_done check_snap_settings snap_preprocess patch_version
+cloud_base: .hw_config_done check_snap_settings snap_preprocess patch_version
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
 		echo -e "                        Makefile target $@ is only allowed for PR flow!"; exit -1; \
 	fi
@@ -295,7 +298,7 @@ $(SNAP_BASE_DCP):
 	@echo -e "                        Need to run cloud_base first"
 	@exit -1
 
-cloud_action: .config_done check_snap_settings snap_preprocess action_hw patch_version
+cloud_action: .hw_config_done check_snap_settings snap_preprocess action_hw patch_version
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
 		echo -e "                        Makefile target $@ is only allowed for PR flow!"; exit -1; \
 	fi
@@ -336,7 +339,7 @@ nosim:
 	@echo -e "                        Info: Not building a simulation model, since SIMULATOR is set to \"nosim\"";
 	@echo -e "[BUILD $@..........] done  `date +"%T %a %b %d %Y"`"
 
-$(SNAP_SIMULATORS): .config_done action_sw snap_preprocess patch_version
+$(SNAP_SIMULATORS): .hw_config_done action_sw snap_preprocess patch_version
 	@echo -e "[BUILD $@..........] start `date +"%T %a %b %d %Y"`"
 	@if [ "$(SIMULATOR)" != "$@" ]; then \
 		echo "                        Error: Makefile target $@ called with SIMULATOR set to \"$(SIMULATOR)\""; \
@@ -358,7 +361,7 @@ model: check_simulator $(SIMULATOR)
 
 clean: 
 	@echo -e "[CLEAN ENVIRONMENT...] start `date +"%T %a %b %d %Y"`"
-	@$(RM)    .config_done
+	@$(RM)    .hw_config_done
 	@$(RM) -r $(SNAP_PP_FILES) $(SNAP_CONFIG_FILES) $(SNAP_TMP_FILES) \
 	          $(SNAP_HDL_CORE)/psl_fpga.vhd_source                    \
 	          $(SNAP_HDL_CORE)/psl_accel.vhd_source                   \
