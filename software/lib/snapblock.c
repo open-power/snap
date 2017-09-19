@@ -62,34 +62,30 @@ typedef struct {
 static snap_Chunk_t chunk;
 
 /* Header file for SNAP Framework example code */
-#define ACTION_TYPE_EXAMPLE	0x10140000	/* Action Type */
+#define ACTION_TYPE_NVME_EXAMPLE	0x10140001	/* Action Type */
 
 #define ACTION_CONFIG		0x30
-#define ACTION_CONFIG_COUNT	1	/* Count Mode */
-#define ACTION_CONFIG_COPY_HH	2	/* Memcopy Host to Host */
-#define ACTION_CONFIG_COPY_HD	3	/* Memcopy Host to DDR */
-#define ACTION_CONFIG_COPY_DH	4	/* Memcopy DDR to Host */
-#define ACTION_CONFIG_COPY_DD	5	/* Memcopy DDR to DDR */
-#define ACTION_CONFIG_COPY_HDH	6	/* Memcopy Host to DDR to Host */
-#define ACTION_CONFIG_MEMSET_H	8	/* Memset Host Memory */
-#define ACTION_CONFIG_MEMSET_F	9	/* Memset FPGA Memory */
-#define ACTION_CONFIG_COPY_DN	0x0a	/* Copy DDR to NVME drive 0 */
-#define ACTION_CONFIG_COPY_ND	0x0b	/* Copy NVME drive 0 to DDR */
-#define ACTION_CONFIG_MAX	0x0c
+#define  ACTION_CONFIG_COPY_HN	0x03	/* Memcopy Host DRAM to NVMe */
+#define  ACTION_CONFIG_COPY_NH	0x04	/* Memcopy NVMe to Host DRAM */
+#define  ACTION_CONFIG_MAX	0x05
 
 #define NVME_DRIVE1		0x10	/* Select Drive 1 for 0a and 0b */
 
 static const char *action_name[] = {
-	"UNKNOWN", "COUNT", "COPY_HH", "COPY_HD", "COPY_DH", "COPY_DD",
-	"COPY_HDH", "UNKOWN", "MEMSET_H", "MEMSET_F", "COPY_DN",
-	"COPY_ND"
+	/* 0         1          2          3          4     */
+	"UNKNOWN", "UNKNOWN", "UNKNOWN", "COPY_HN", "COPY_NH",
 };
 
-#define ACTION_SRC_LOW		0x34	/* LBA for 0A, 1A, 0B and 1B */
+#define ACTION_SRC_LOW		0x34	/* LBA for 03, 04 */
 #define ACTION_SRC_HIGH		0x38
-#define ACTION_DEST_LOW		0x3c	/* LBA for 0A, 1A, 0B and 1B */
+#define ACTION_DEST_LOW		0x3c	/* LBA for 03, 04 */
 #define ACTION_DEST_HIGH	0x40
 #define ACTION_CNT		0x44	/* Count Register or # of 512 Byte Blocks for NVME */
+
+#define ACTION_STATUS		0x4c
+#define  ACTION_STATUS_WRITE_COMPLETED	0x10
+#define  ACTION_STATUS_READ_COMPLETED	0x1f /* mask id 0x0f */
+#define  ACTION_STATUS_NO_COMPLETION	0x00 /* no completion seen */
 
 /* defaults */
 #define ACTION_WAIT_TIME	10	/* Default timeout in sec */
@@ -102,7 +98,7 @@ static const char *action_name[] = {
 #define HOST_BUFFER_SIZE	(256 * KILO_BYTE) /* Default Size for Host Buffers */
 #define NVME_LB_SIZE		512		  /* NVME Block Size */
 #define NVME_DRIVE_SIZE		(4 * GIGA_BYTE)	  /* NVME Drive Size */
-#define NVME_MAX_TRANSFER_SIZE	(32 * MEGA_BYTE) /* NVME limit to Transfer in one chunk */
+#define NVME_MAX_TRANSFER_SIZE	(32 * MEGA_BYTE)  /* NVME limit to Transfer in one chunk */
 
 static inline void __free(void *ptr)
 {
@@ -119,6 +115,20 @@ static int action_write(struct snap_card* h, uint32_t addr, uint32_t data)
 	rc = snap_mmio_write32(h, (uint64_t)addr, data);
 	if (0 != rc)
 		fprintf(stderr, "err: Write MMIO 32 Err %d\n", rc);
+
+	return rc;
+}
+
+
+/* Action or Kernel Write and Read are 32 bit MMIO */
+static int action_read(struct snap_card* h, uint32_t addr, uint32_t *data)
+{
+	int rc;
+
+	rc = snap_mmio_read32(h, (uint64_t)addr, data);
+	if (0 != rc)
+		fprintf(stderr, "err: Read MMIO 32 Err %d\n", rc);
+
 	return rc;
 }
 
@@ -129,6 +139,7 @@ static inline int action_wait_idle(struct snap_card* h, int timeout,
 				   uint32_t mem_size __attribute__((unused)))
 {
 	int rc = ETIME;
+	uint32_t status = 0x0;
 
 	/* FIXME Use act and not h */
 	snap_action_start((void*)h);
@@ -137,10 +148,23 @@ static inline int action_wait_idle(struct snap_card* h, int timeout,
 
 	/* FIXME Use act and not h */
 	rc = snap_action_completed((void*)h, NULL, timeout);
-	if (0 == rc)
+	if (0 == rc) {
 		fprintf(stderr, "err: Timeout while Waiting for Idle %d\n", rc);
+		return !rc;
+	}
 
-	return !rc;
+	rc = action_read(h, ACTION_STATUS, &status);
+	if (rc != 0)
+		fprintf(stderr, "err: MMIO32 read ACTION_STATUS %d\n", rc);
+
+	if (status == ACTION_STATUS_NO_COMPLETION) {
+		block_trace("  NO COMPLETION %02x\n", status);
+	} else if (status == ACTION_STATUS_WRITE_COMPLETED) {
+		block_trace("  WRITE_COMPLETED %02x\n", status);
+	} else {
+		block_trace("  READ_COMPLETED %02x\n", status);
+	}
+	return rc;
 }
 
 /*
@@ -148,19 +172,25 @@ static inline int action_wait_idle(struct snap_card* h, int timeout,
  *       byte block.
  */
 static inline void action_memcpy(struct snap_card *h,
-				 uint32_t action,
-				 uint64_t dest,
-				 uint64_t src,
-				 size_t n)
+				uint32_t action,
+				uint64_t dest,
+				uint64_t src,
+				uint32_t n)
 {
-	block_trace("  %12s memcpy_%x(dest=0x%llx, src=0x%llx, n=0x%lx)\n",
-		action_name[action % ACTION_CONFIG_MAX], action,
-		(long long)dest, (long long)src, n);
-	action_write(h, ACTION_CONFIG,	  action);
+	uint8_t action_code = action & 0x00ff;
+
+	block_trace("  %12s memcpy_%x(dest=0x%llx, src=0x%llx n=%lld bytes)\n",
+		action_name[action_code % ACTION_CONFIG_MAX], action,
+		(long long)dest, (long long)src, (long long)n);
+
+	action_write(h, ACTION_CONFIG, action);
+
 	action_write(h, ACTION_DEST_LOW,  (uint32_t)(dest & 0xffffffff));
 	action_write(h, ACTION_DEST_HIGH, (uint32_t)(dest >> 32));
+
 	action_write(h, ACTION_SRC_LOW,	  (uint32_t)(src & 0xffffffff));
 	action_write(h, ACTION_SRC_HIGH,  (uint32_t)(src >> 32));
+
 	action_write(h, ACTION_CNT, n);
 }
 
@@ -220,11 +250,11 @@ chunk_id_t cblk_open(const char *path,
 		goto out_err1;
 	}
 
-	chunk.act = snap_attach_action(chunk.card, ACTION_TYPE_EXAMPLE,
+	chunk.act = snap_attach_action(chunk.card, ACTION_TYPE_NVME_EXAMPLE,
 				       attach_flags, timeout);
 	if (NULL == chunk.act) {
 		fprintf(stderr, "err: Cannot Attach Action: %x\n",
-			ACTION_TYPE_EXAMPLE);
+			ACTION_TYPE_NVME_EXAMPLE);
 		goto out_err1;
 	}
 
@@ -299,8 +329,6 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 	      int flags  __attribute__((unused)))
 {
 	int rc;
-	uint32_t drive_cmd = ACTION_CONFIG_COPY_HD;
-	uint64_t ddr_dest = 0;
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
 	uint8_t *_buf = buf;
 
@@ -319,19 +347,12 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 
 	pthread_mutex_lock(&globalLock);
 
-	/* FIXME Put function here ... */
+	action_memcpy(chunk.card,
+		ACTION_CONFIG_COPY_NH | 0x0100,			/* NVMe to Host DDR */
+		(uint64_t)buf,					/* dst */
+		nblocks * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* src */
+		mem_size);					/* size */
 
-	/* DDR <- NVME */
-	drive_cmd = ACTION_CONFIG_COPY_ND | (NVME_DRIVE1 * chunk.drive);
-	action_memcpy(chunk.card, drive_cmd, ddr_dest,
-		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,
-		nblocks * __CBLK_BLOCK_SIZE/NVME_LB_SIZE);
-	rc = action_wait_idle(chunk.card, chunk.timeout, mem_size);
-	if (rc)
-		goto __exit1;
-
-	/* HOST <- DDR */
-	action_memcpy(chunk.card, ACTION_CONFIG_COPY_DH, (uint64_t)_buf, ddr_dest, mem_size);
 	rc = action_wait_idle(chunk.card, chunk.timeout, mem_size);
 	if (rc)
 		goto __exit1;
@@ -353,8 +374,6 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 	       int flags __attribute__((unused)))
 {
 	int rc;
-	uint32_t drive_cmd = ACTION_CONFIG_COPY_HD;
-	uint64_t ddr_src = 0;
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
 
 	block_trace("%s: writing (%p lba=%zu nblocks=%zu) ...\n", __func__, buf, lba, nblocks);
@@ -372,21 +391,16 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 
 	pthread_mutex_lock(&globalLock);
 
-	/* DDR <- HOST */
-	action_memcpy(chunk.card, ACTION_CONFIG_COPY_HD, ddr_src, (uint64_t)buf, mem_size);
+	action_memcpy(chunk.card,
+		ACTION_CONFIG_COPY_HN | 0x0000,			/* Host DDR to NVMe */
+		nblocks * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* dst */
+		(uint64_t)buf,					/* src */
+		mem_size);					/* size */
+
 	rc = action_wait_idle(chunk.card, chunk.timeout, mem_size);
 	if (rc)
 		goto __exit1;
 
-	/* NVME <- DDR */
-	drive_cmd = ACTION_CONFIG_COPY_DN | (NVME_DRIVE1 * chunk.drive);
-	action_memcpy(chunk.card, drive_cmd,
-		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,
-		ddr_src,
-		nblocks * __CBLK_BLOCK_SIZE/NVME_LB_SIZE);
-	rc = action_wait_idle(chunk.card, chunk.timeout, mem_size);
-	if (rc)
-		goto __exit1;
 
 	pthread_mutex_unlock(&globalLock);
 	block_trace("%s: exit lba=%zu nblocks=%zu\n", __func__, lba, nblocks);
