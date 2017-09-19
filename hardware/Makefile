@@ -28,7 +28,7 @@ export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 
 snap_config_cflags = $(SNAP_ROOT)/.snap_config.cflags
 snap_config_sh     = $(SNAP_ROOT)/.snap_config.sh
-snap_env_sh        = $(SNAP_ROOT)/.snap_env.sh
+snap_env_sh        = $(SNAP_ROOT)/snap_env.sh
 
 -include $(snap_config_cflags)
 -include $(snap_config_sh)
@@ -98,7 +98,7 @@ all: hw_config model image
 snap_config:
 	@$(MAKE) -C $(SNAP_ROOT) snap_config
 
-check_snap_settings: 
+check_snap_settings:
 	@if [ -z `which git 2> /dev/null` ]; then \
 		echo "                        The SNAP framework make process relies on git."; \
 		echo "                        Please make sure that you have installed git and that"; \
@@ -120,22 +120,7 @@ check_snap_settings:
 		echo "                        Please make sure that the snap environment is prepared by calling 'make snap_config'"; \
 		exit -1; \
 	fi
-	@if [ -z $(FPGACARD) ] || [ -z $(SDRAM_USED) ] || [ -z $(ILA_DEBUG) ] || [ -z $(NUM_OF_ACTIONS) ] || [ -z $(ACTION_ROOT) ] || [ -z $(PSL_DCP) ]; then \
-		echo "                        Missing one or more environment  variables"; \
-		echo "                        Please make sure that all of the following variables are prepared!"; \
-		echo "                        (e.g. by calling 'make snap_config')"; \
-		echo "                        FPGACARD:       $(FPGACARD)"; \
-		echo "                        PSL_DCP :       $(PSL_DCP)"; \
-		echo "                        ACTION_ROOT:    $(ACTION_ROOT)"; \
-		echo "                        SDRAM_USED:     $(SDRAM_USED)"; \
-		echo "                        ILA_DEBUG:      $(ILA_DEBUG)"; \
-		echo "                        NUM_OF_ACTIONS: $(NUM_OF_ACTIONS)"; \
-		exit -1; \
-	fi
-	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` = "TRUE" ] && [ ! -e "$(ILA_SETUP_FILE)" ]; then \
-		echo "                        ILA_DEBUG is set to ${ILA_DEBUG} but ILA_SETUP_FILE (\"${ILA_SETUP_FILE}\") is not pointing to a file!"; \
-		exit -1; \
-	fi
+	@source $(SNAP_ROOT)/snap_env;
 	@echo "                        =============================="
 	@echo "                        hardware/Makefile called with:"
 	@echo "                        ACTION_ROOT    = $(ACTION_ROOT)"
@@ -153,6 +138,9 @@ check_snap_settings:
 	fi
 	@echo "                        SIMULATOR      = $(SIMULATOR)"
 	@echo "                        USE_PRFLOW     = $(USE_PRFLOW)"
+	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
+		echo "                        DCP_ROOT       = $(DCP_ROOT)"; \
+	fi
 	@echo "                        =============================="
 
 check_psl_dcp:
@@ -257,7 +245,7 @@ create_environment:
 	@echo -e "                        using `vivado -version |grep Vivado`"
 	@cd $(SNAP_HARDWARE_ROOT)/setup                                          && vivado -quiet -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -journal $(LOGS_DIR)/create_ip.jou
 	@if [ $(NVME_USED) = "TRUE" ]; then cd $(SNAP_HARDWARE_ROOT)/setup       && vivado -quiet -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou; fi
-	@eval ACTION_ROOT=$(ACTION_ROOT) && eval PSL_DCP=$(PSL_DCP) && eval ILA_SETUP_FILE=$(ILA_SETUP_FILE) && cd $(SNAP_HARDWARE_ROOT)/setup && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
+	@cd $(SNAP_HARDWARE_ROOT)/setup && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
 	@echo -e "[CREATE_ENVIRONMENT..] done  `date +"%T %a %b %d %Y"`"
 
 hw_config_start:
@@ -359,7 +347,7 @@ $(SNAP_SIMULATORS): .hw_config_done action_sw snap_preprocess patch_version
 
 model: check_simulator $(SIMULATOR)
 
-clean: 
+clean:
 	@echo -e "[CLEAN ENVIRONMENT...] start `date +"%T %a %b %d %Y"`"
 	@$(RM)    .hw_config_done
 	@$(RM) -r $(SNAP_PP_FILES) $(SNAP_CONFIG_FILES) $(SNAP_TMP_FILES) \

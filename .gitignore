@@ -1,5 +1,5 @@
-.config
 .snap*
+snap_env.sh
 hardware/.setup*
 hardware/setup/*.jou
 hardware/setup/*.log
