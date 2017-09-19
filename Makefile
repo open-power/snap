@@ -128,7 +128,7 @@ clean:
 	@find . -depth -name '.#*' -exec rm -rf '{}' \; -print
 
 clean_config: clean
-	@$(RM) $(snap_env)
 	@$(RM) $(snap_config)
 	@$(RM) $(snap_config_sh)
 	@$(RM) $(snap_config_cflags)
+	@$(RM) $(snap_env_sh)
