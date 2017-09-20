@@ -292,22 +292,28 @@ int main(int argc, char *argv[])
 			goto err_out;
 		}
 
-		rc = posix_memalign((void **)&buf, 64, lun_size * lba_size);
+		rc = posix_memalign((void **)&buf, 64, num_lba * lba_size);
 		if (rc != 0) {
 			fprintf(stderr, "err: Cannot allocate enough memory!\n");
 			goto err_out;
 		}
-		memset(buf, 0xff, lun_size * lba_size);
+		memset(buf, 0xff, num_lba * lba_size);
 
 		gettimeofday(&stime, NULL);
 		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
 			block_trace("  reading lba %d ...\n", lba);
-			rc = cblk_read(cid, &buf[lba * lba_size], lba, lba_blocks, 0);
+			rc = cblk_read(cid, buf + ((lba - start_lba) * lba_size * lba_blocks),
+					lba, lba_blocks, 0);
 			if (rc != (int)lba_blocks) {
 				fprintf(stderr, "err: cblk_read unhappy rc=%d!\n",
 					rc);
 				goto err_out;
 			}
+
+			if (verbose_flag == 1)
+				__hexdump(stderr, buf + ((lba - start_lba) * lba_size * lba_blocks),
+					lba_size * lba_blocks);
+
 		}
 		gettimeofday(&etime, NULL);
 
@@ -362,7 +368,8 @@ int main(int argc, char *argv[])
 		gettimeofday(&stime, NULL);
 		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
 			block_trace("  writing lba %d ...\n", lba);
-			rc = cblk_write(cid, &buf[lba * lba_size], lba, lba_blocks, 0);
+			rc = cblk_write(cid, buf + ((lba - start_lba) * lba_size * lba_blocks),
+					lba, lba_blocks, 0);
 			if (rc != (int)lba_blocks)
 				goto err_out;
 		}
@@ -378,23 +385,30 @@ int main(int argc, char *argv[])
 	}
 	case OP_FORMAT: {
 		fprintf(stderr, "Formatting NVMe drive %zu MiB with pattern %02x ...\n",
-			(lun_size * lba_size) / (1024 * 1024), pattern);
+			(num_lba * lba_size) / (1024 * 1024), pattern);
 
-		rc = posix_memalign((void **)&buf, 64, lba_size * lba_blocks);
+		/* Allocate memory for entire device (simplicity first) */
+		rc = posix_memalign((void **)&buf, 64, num_lba * lba_size);
 		if (rc != 0)
 			goto err_out;
 
 		if (incremental_pattern) {
 			uint64_t p;
-			for (p = 0; p < lba_size * lba_blocks / sizeof(p); p++)
+			for (p = 0; p < (num_lba * lba_size)/sizeof(p); p++)
 				((uint64_t *)buf)[p] = __cpu_to_be64(p);
 		} else
-			memset(buf, pattern, lba_size * lba_blocks);
+			memset(buf, pattern, num_lba * lba_size);
 
 		gettimeofday(&stime, NULL);
-		for (lba = 0; lba < num_lba; lba += lba_blocks) {
+		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
 			block_trace("  formatting lba %d ...\n", lba);
-			rc = cblk_write(cid, buf, lba, lba_blocks, 0);
+
+			if (verbose_flag == 1)
+				__hexdump(stderr, buf + ((lba - start_lba) * lba_size * lba_blocks),
+					lba_size * lba_blocks);
+
+			rc = cblk_write(cid, buf + ((lba - start_lba) * lba_size * lba_blocks),
+					lba, lba_blocks, 0);
 			if (rc != (int)lba_blocks)
 				goto err_out;
 		}
@@ -402,11 +416,13 @@ int main(int argc, char *argv[])
 
 		diff_usec = timediff_usec(&etime, &stime);
 		mib_sec = (diff_usec == 0) ? 0.0 :
-			(double)(lun_size * lba_size) / diff_usec;
+			(double)(num_lba * lba_size) / diff_usec;
 
 		fprintf(stderr, "Formatting of %lld bytes took %lld usec @ %.3f MiB/sec\n",
-			(long long)lun_size * lba_size, (long long)diff_usec, mib_sec);
+			(long long)num_lba * lba_size, (long long)diff_usec, mib_sec);
 		break;
+	default:
+		goto err_out;
 	}
 	}
 
