@@ -31,31 +31,31 @@ function usage() {
 }
 
 while getopts ":A:C:Vvh" opt; do
-        case ${opt} in
-        C)
-                card=${OPTARG};
-                if [[ $card -gt 3 ]]; then
-                        echo "Invalid option for -C -$OPTARG" >&2
-                        usage
-                fi
-                ;;
-        V)
-                echo "${version}" >&2
-                exit 0
-                ;;
-        h)
-                usage;
-                exit 0;
-                ;;
-        \?)
-                printf "${bold}ERROR:${normal} Invalid option: -${OPTARG}\n" >&2
-                exit 1
-                ;;
-        :)
-                printf "${bold}ERROR:${normal} Option -$OPTARG requires an argument.\n" >&2
-                exit 1
-                ;;
-        esac
+	case ${opt} in
+	C)
+		card=${OPTARG};
+		if [[ $card -gt 3 ]]; then
+			echo "Invalid option for -C -$OPTARG" >&2
+			usage
+		fi
+		;;
+	V)
+		echo "${version}" >&2
+		exit 0
+		;;
+	h)
+		usage;
+		exit 0;
+		;;
+	\?)
+		printf "${bold}ERROR:${normal} Invalid option: -${OPTARG}\n" >&2
+		exit 1
+		;;
+	:)
+		printf "${bold}ERROR:${normal} Option -$OPTARG requires an argument.\n" >&2
+		exit 1
+		;;
+	esac
 done
 
 shift $((OPTIND-1))
