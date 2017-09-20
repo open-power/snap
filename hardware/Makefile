@@ -91,7 +91,7 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 #      due to missing dependencies between the different targets.
 #
 
-.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_denali prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment hw_config_start hw_config config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim clean gitclean
+.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_nvme prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment hw_config_start hw_config config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim clean gitclean
 
 all: hw_config model image
 
@@ -155,14 +155,12 @@ check_psl_dcp:
 		exit -1; \
 	fi
 
-check_simulator:
-	@if [ $(SIMULATOR) != "irun" ] && [ $(SIMULATOR) != "xsim" ] && [ $(SIMULATOR) != "nosim" ]; then \
-		echo "                        unknown simulator=$SIMULATOR"; \
-		exit -1; \
-	fi
-
-check_denali:
-	@if [ $(NVME_USED) = "TRUE" ]; then \
+check_nvme:
+	@if [ $(SIMULATOR) != "nosim" ] && [ $(NVME_USED) = "TRUE" ]; then \
+		if [ $(SIMULATOR) != "irun" ]; then  \
+			echo "                        NVMe simulation is not supported for SIMULATOR $(SIMULATOR)"; \
+			exit -1; \
+		fi; \
 		if [ !  -d "$(DENALI_TOOLS)" ] || [ ! -d "$(DENALI_CUSTOM)" ]; then \
 			echo "                        Missing one or more environment variables for NVMe simulation."; \
 			echo "                        Please check the following variables."; \
@@ -170,6 +168,12 @@ check_denali:
 			echo "                        DENALI_CUSTOM:  $(DENALI_CUSTOM)"; \
 			exit -1; \
 		fi \
+	fi
+
+check_simulator:
+	@if [ $(SIMULATOR) != "irun" ] && [ $(SIMULATOR) != "xsim" ] && [ $(SIMULATOR) != "nosim" ]; then \
+		echo "                        unknown simulator=$SIMULATOR"; \
+		exit -1; \
 	fi
 
 prepare_build: check_psl_dcp
@@ -327,7 +331,7 @@ nosim:
 	@echo -e "                        Info: Not building a simulation model, since SIMULATOR is set to \"nosim\"";
 	@echo -e "[BUILD $@..........] done  `date +"%T %a %b %d %Y"`"
 
-$(SNAP_SIMULATORS): .hw_config_done action_sw snap_preprocess patch_version
+$(SNAP_SIMULATORS): check_nvme .hw_config_done action_sw snap_preprocess patch_version
 	@echo -e "[BUILD $@..........] start `date +"%T %a %b %d %Y"`"
 	@if [ "$(SIMULATOR)" != "$@" ]; then \
 		echo "                        Error: Makefile target $@ called with SIMULATOR set to \"$(SIMULATOR)\""; \
