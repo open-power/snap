@@ -348,10 +348,10 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 	pthread_mutex_lock(&globalLock);
 
 	action_memcpy(chunk.card,
-		ACTION_CONFIG_COPY_NH | 0x0100,			/* NVMe to Host DDR */
-		(uint64_t)buf,					/* dst */
-		nblocks * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* src */
-		mem_size);					/* size */
+		ACTION_CONFIG_COPY_NH | 0x0100,		/* NVMe to Host DDR */
+		(uint64_t)buf,				/* dst */
+		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* src */
+		mem_size);				/* size */
 
 	rc = action_wait_idle(chunk.card, chunk.timeout, mem_size);
 	if (rc)
@@ -392,10 +392,10 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 	pthread_mutex_lock(&globalLock);
 
 	action_memcpy(chunk.card,
-		ACTION_CONFIG_COPY_HN | 0x0000,			/* Host DDR to NVMe */
-		nblocks * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* dst */
-		(uint64_t)buf,					/* src */
-		mem_size);					/* size */
+		ACTION_CONFIG_COPY_HN | 0x0000,		/* Host DDR to NVMe */
+		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* dst */
+		(uint64_t)buf,				/* src */
+		mem_size);				/* size */
 
 	rc = action_wait_idle(chunk.card, chunk.timeout, mem_size);
 	if (rc)
