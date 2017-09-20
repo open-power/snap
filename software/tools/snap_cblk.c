@@ -302,7 +302,7 @@ int main(int argc, char *argv[])
 		gettimeofday(&stime, NULL);
 		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
 			block_trace("  reading lba %d ...\n", lba);
-			rc = cblk_read(cid, buf + ((lba - start_lba) * lba_size * lba_blocks),
+			rc = cblk_read(cid, buf + ((lba - start_lba) * lba_size),
 					lba, lba_blocks, 0);
 			if (rc != (int)lba_blocks) {
 				fprintf(stderr, "err: cblk_read unhappy rc=%d!\n",
@@ -311,7 +311,7 @@ int main(int argc, char *argv[])
 			}
 
 			if (verbose_flag == 1)
-				__hexdump(stderr, buf + ((lba - start_lba) * lba_size * lba_blocks),
+				__hexdump(stderr, buf + ((lba - start_lba) * lba_size),
 					lba_size * lba_blocks);
 
 		}
@@ -384,8 +384,8 @@ int main(int argc, char *argv[])
 		break;
 	}
 	case OP_FORMAT: {
-		fprintf(stderr, "Formatting NVMe drive %zu MiB with pattern %02x ...\n",
-			(num_lba * lba_size) / (1024 * 1024), pattern);
+		fprintf(stderr, "Formatting NVMe drive %zu KiB with pattern %02x ...\n",
+			(num_lba * lba_size) / 1024, pattern);
 
 		/* Allocate memory for entire device (simplicity first) */
 		rc = posix_memalign((void **)&buf, 64, num_lba * lba_size);
@@ -394,20 +394,25 @@ int main(int argc, char *argv[])
 
 		if (incremental_pattern) {
 			uint64_t p;
-			for (p = 0; p < (num_lba * lba_size)/sizeof(p); p++)
+			for (p = 0; p < (num_lba * lba_size)/sizeof(uint64_t); p++)
 				((uint64_t *)buf)[p] = __cpu_to_be64(p);
 		} else
 			memset(buf, pattern, num_lba * lba_size);
+
+		if (verbose_flag == 2) {
+			__hexdump(stderr, buf, num_lba * lba_size);
+		}
 
 		gettimeofday(&stime, NULL);
 		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
 			block_trace("  formatting lba %d ...\n", lba);
 
-			if (verbose_flag == 1)
-				__hexdump(stderr, buf + ((lba - start_lba) * lba_size * lba_blocks),
+			if (verbose_flag == 1) {
+				__hexdump(stderr, buf + ((lba - start_lba) * lba_size),
 					lba_size * lba_blocks);
+			}
 
-			rc = cblk_write(cid, buf + ((lba - start_lba) * lba_size * lba_blocks),
+			rc = cblk_write(cid, buf + ((lba - start_lba) * lba_size),
 					lba, lba_blocks, 0);
 			if (rc != (int)lba_blocks)
 				goto err_out;
