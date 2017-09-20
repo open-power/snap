@@ -61,6 +61,12 @@ done
 shift $((OPTIND-1))
 # now do something with $@
 
+which snap_maint 2> /dev/null
+if [ $? -ne 0 ]; then
+	printf "${bold}ERROR:${normal} Path not pointing to required binaries (snap_maint, snap_nvme_init)!\n" >&2
+	exit 1
+fi
+
 snap_maint -C${card} -v
 snap_nvme_init -C${card} -d0 -d1 -v
 
