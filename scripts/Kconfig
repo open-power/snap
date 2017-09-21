@@ -133,7 +133,7 @@ config ENABLE_BRAM
         prompt "Enable BRAM (replacing SDRAM for debug)"
         depends on ! DISABLE_SDRAM_AND_BRAM
         help
-          This is a debug option. The AXI attached on-card SDRAM will be replaced by 512KB SDRAM.
+          This is a debug option. The AXI attached on-card SDRAM will be replaced by 512KB BRAM.
 
 config BRAM_USED
         string
