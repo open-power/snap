@@ -51,9 +51,23 @@
 
 pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
 
+enum cblk_status {
+	CBLK_IDLE = 0,
+	CBLK_READING = 1,
+	CBLK_WRITING = 2,
+	CBLK_ERROR = 3,
+};
+
+static const char *status_str[] = { "IDLE", "READING", "WRITING", "ERROR" };
+
 struct cblk_req {
+	unsigned int num;
+	enum cblk_status status;
 	sem_t wait_sem;
 };
+
+#define CBLK_WIDX_MAX	1	/* Just one for now */
+#define CBLK_RIDX_MAX	15	/* 15 read slots */
 
 struct cblk_dev {
 	struct snap_card *card;
@@ -62,7 +76,12 @@ struct cblk_dev {
 	size_t nblocks; /* total size of the device in blocks */
 	int timeout;
 	uint8_t *buf;
-	struct cblk_req req[16];
+
+	unsigned int widx;
+	unsigned int ridx;
+	struct cblk_req req[CBLK_WIDX_MAX + CBLK_RIDX_MAX];
+
+	pthread_t done_tid;
 };
 
 /* Use just one ... */
@@ -204,13 +223,40 @@ static inline void chunk_memcpy(struct cblk_dev *c,
 int cblk_init(void *arg __attribute__((unused)),
 	      uint64_t flags __attribute__((unused)))
 {
+	block_trace("[%s] arg=%p flags=%llx\n", __func__, arg,
+		(long long)flags);
 	return 0;
 }
 
 int cblk_term(void *arg __attribute__((unused)),
 	      uint64_t flags __attribute__((unused)))
 {
+	block_trace("[%s] arg=%p flags=%llx\n", __func__, arg,
+		(long long)flags);
 	return 0;
+}
+
+static void done_thread_cleanup(void *arg)
+{
+	block_trace("[%s] p=%p\n", __func__, arg);
+}
+
+static void *done_thread(void *arg)
+{
+	struct cblk_dev *c = (struct cblk_dev *)arg;
+
+	block_trace("[%s] arg=%p enter\n", __func__, arg);
+
+	pthread_cleanup_push(done_thread_cleanup, c);
+
+	while (1) {
+		pthread_testcancel();
+	}
+
+	pthread_cleanup_pop(1);
+
+	block_trace("[%s] arg=%p exit\n", __func__, arg);
+	return NULL;
 }
 
 chunk_id_t cblk_open(const char *path,
@@ -218,6 +264,8 @@ chunk_id_t cblk_open(const char *path,
 		     int mode, uint64_t ext_arg __attribute__((unused)),
 		     int flags)
 {
+	int rc;
+	unsigned int i;
 	int timeout = ACTION_WAIT_TIME;
 	unsigned long have_nvme = 0;
 	snap_action_flag_t attach_flags =
@@ -226,6 +274,13 @@ chunk_id_t cblk_open(const char *path,
 	block_trace("%s: opening (%s) ...\n", __func__, path);
 
 	pthread_mutex_lock(&globalLock);
+
+	for (i = 0; i < ARRAY_SIZE(chunk.req); i++) {
+		chunk.req[i].num = 0;
+		chunk.req[i].status = CBLK_IDLE;
+		sem_init(&chunk.req[i].wait_sem, 0, i);
+	}
+
 	if (flags & CBLK_OPN_VIRT_LUN) {
 		fprintf(stderr, "virtual luns not supported in capi stub\n");
 		goto out_err0;
@@ -258,7 +313,7 @@ chunk_id_t cblk_open(const char *path,
 	}
 
 	chunk.act = snap_attach_action(chunk.card, ACTION_TYPE_NVME_EXAMPLE,
-				       attach_flags, timeout);
+					attach_flags, timeout);
 	if (NULL == chunk.act) {
 		fprintf(stderr, "err: Cannot Attach Action: %x\n",
 			ACTION_TYPE_NVME_EXAMPLE);
@@ -269,14 +324,26 @@ chunk_id_t cblk_open(const char *path,
 	chunk.drive = 0;
 	chunk.nblocks = SNAP_FLASHGT_NVME_SIZE / __CBLK_BLOCK_SIZE;
 	chunk.timeout = timeout;
-	pthread_mutex_unlock(&globalLock);
+	chunk.done_tid = 0;
+	chunk.widx = 0;
+	chunk.ridx = 0;
 
+	rc = pthread_create(&chunk.done_tid, NULL, &done_thread, &chunk);
+	if (rc != 0)
+		goto out_err2;
+
+	pthread_mutex_unlock(&globalLock);
 	return 0;
 
-
+ out_err2:
+	snap_detach_action(chunk.act);
  out_err1:
 	snap_card_free(chunk.card);
  out_err0:
+ 	for (i = 0; i < ARRAY_SIZE(chunk.req); i++) {
+		chunk.req[i].status = CBLK_IDLE;
+		sem_destroy(&chunk.req[i].wait_sem);
+	}
 	pthread_mutex_unlock(&globalLock);
 	return (chunk_id_t)(-1);
 }
@@ -284,6 +351,8 @@ chunk_id_t cblk_open(const char *path,
 int cblk_close(chunk_id_t id __attribute__((unused)),
 	       int flags __attribute__((unused)))
 {
+	unsigned int i;
+
 	pthread_mutex_lock(&globalLock);
 	if (chunk.card == NULL) {
 		pthread_mutex_unlock(&globalLock);
@@ -291,7 +360,22 @@ int cblk_close(chunk_id_t id __attribute__((unused)),
 		return -1;
 	}
 
+	if (chunk.done_tid) {
+		pthread_cancel(chunk.done_tid);
+		pthread_join(chunk.done_tid, NULL);
+		chunk.done_tid = 0;
+	}
+
 	block_trace("%s: id=%d ...\n", __func__, (int)id);
+
+	for (i = 0; i < ARRAY_SIZE(chunk.req); i++) {
+		block_trace("  req[%2d]: %s %d\n", i,
+			status_str[chunk.req[i].status],
+			chunk.req[i].num);
+		chunk.req[i].status = CBLK_IDLE;
+		sem_destroy(&chunk.req[i].wait_sem);
+	}
+
 	snap_detach_action(chunk.act);
 	snap_card_free(chunk.card);
 	__free(chunk.buf);
@@ -354,12 +438,15 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 
 	pthread_mutex_lock(&globalLock);
 
+	chunk.req[CBLK_WIDX_MAX + chunk.ridx].status = CBLK_READING;
+	chunk.req[CBLK_WIDX_MAX + chunk.ridx].num++;
 	chunk_memcpy(&chunk,
-		ACTION_CONFIG_COPY_NH | 0x0100,		/* NVMe to Host DDR */
-		(uint64_t)buf,				/* dst */
-		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* src */
-		mem_size);				/* size */
+		ACTION_CONFIG_COPY_NH | (chunk.ridx << 8),	/* NVMe to Host DDR */
+		(uint64_t)buf,					/* dst */
+		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,		/* src */
+		mem_size);					/* size */
 
+	/* FIXME Kick the done thread */
 	rc = chunk_wait_idle(&chunk, chunk.timeout, mem_size);
 	if (rc)
 		goto __exit1;
@@ -367,11 +454,16 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 	if ((uint64_t)buf % 64)
 		memcpy(buf, _buf, nblocks * __CBLK_BLOCK_SIZE);
 
+	chunk.req[CBLK_WIDX_MAX + chunk.ridx].status = CBLK_IDLE;
+	chunk.ridx = (chunk.ridx + 1) % CBLK_RIDX_MAX;
+	
 	pthread_mutex_unlock(&globalLock);
-	block_trace("%s: exit lba=%zu nblocks=%zu\n", __func__, lba, nblocks);
+	block_trace("%s: exit lba=%zu nblocks=%zu\n",
+		__func__, lba, nblocks);
 	return nblocks;
 
  __exit1:
+	chunk.req[CBLK_WIDX_MAX + chunk.ridx].status = CBLK_ERROR;
 	pthread_mutex_unlock(&globalLock);
 	return -1;
 }
@@ -383,7 +475,8 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 	int rc;
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
 
-	block_trace("%s: writing (%p lba=%zu nblocks=%zu) ...\n", __func__, buf, lba, nblocks);
+	block_trace("%s: writing (%p lba=%zu nblocks=%zu) ...\n",
+		__func__, buf, lba, nblocks);
 	if ((uint64_t)buf % 64) {
 		fprintf(stderr, "warn: buffer address not aligned! %p\n",
 			buf);
@@ -398,24 +491,38 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 
 	pthread_mutex_lock(&globalLock);
 
+	chunk.req[chunk.widx].status = CBLK_WRITING;
+	chunk.req[chunk.widx].num++;
 	chunk_memcpy(&chunk,
-		ACTION_CONFIG_COPY_HN | 0x0000,		/* Host DDR to NVMe */
-		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* dst */
-		(uint64_t)buf,				/* src */
-		mem_size);				/* size */
+		ACTION_CONFIG_COPY_HN | (chunk.widx << 8),	/* Host DDR to NVMe */
+		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,		/* dst */
+		(uint64_t)buf,					/* src */
+		mem_size);					/* size */
 
+	/* FIXME Kick the done thread */
 	rc = chunk_wait_idle(&chunk, chunk.timeout, mem_size);
 	if (rc)
 		goto __exit1;
 
+	chunk.req[chunk.widx].status = CBLK_IDLE;
+	chunk.widx = (chunk.widx + 1) % CBLK_WIDX_MAX;
 
 	pthread_mutex_unlock(&globalLock);
 	block_trace("%s: exit lba=%zu nblocks=%zu\n", __func__, lba, nblocks);
 	return nblocks;
 
  __exit1:
+	chunk.req[chunk.widx].status = CBLK_ERROR;
 	pthread_mutex_unlock(&globalLock);
 	return -1;
+}
+
+static void _init(void) __attribute__((constructor));
+
+static void _init(void)
+{
+	block_trace("%s: init\n", __func__);
+
 }
 
 static void _done(void) __attribute__((destructor));
