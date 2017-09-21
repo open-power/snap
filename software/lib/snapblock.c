@@ -49,7 +49,7 @@
 
 pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
 
-typedef struct {
+typedef struct snap_Chunk_t {
 	struct snap_card *card;
 	struct snap_action *act;
 	unsigned int drive;
@@ -108,11 +108,11 @@ static inline void __free(void *ptr)
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
-static int action_write(struct snap_card* h, uint32_t addr, uint32_t data)
+static int chunk_write(snap_Chunk_t *c, uint32_t addr, uint32_t data)
 {
 	int rc;
 
-	rc = snap_mmio_write32(h, (uint64_t)addr, data);
+	rc = snap_mmio_write32(c->card, (uint64_t)addr, data);
 	if (0 != rc)
 		fprintf(stderr, "err: Write MMIO 32 Err %d\n", rc);
 
@@ -121,11 +121,11 @@ static int action_write(struct snap_card* h, uint32_t addr, uint32_t data)
 
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
-static int action_read(struct snap_card* h, uint32_t addr, uint32_t *data)
+static int chunk_read(snap_Chunk_t *c, uint32_t addr, uint32_t *data)
 {
 	int rc;
 
-	rc = snap_mmio_read32(h, (uint64_t)addr, data);
+	rc = snap_mmio_read32(c->card, (uint64_t)addr, data);
 	if (0 != rc)
 		fprintf(stderr, "err: Read MMIO 32 Err %d\n", rc);
 
@@ -135,25 +135,25 @@ static int action_read(struct snap_card* h, uint32_t addr, uint32_t *data)
 /*
  *	Start Action and wait for Idle.
  */
-static inline int action_wait_idle(struct snap_card* h, int timeout,
+static inline int chunk_wait_idle(snap_Chunk_t *c, int timeout,
 				   uint32_t mem_size __attribute__((unused)))
 {
 	int rc = ETIME;
 	uint32_t status = 0x0;
 
 	/* FIXME Use act and not h */
-	snap_action_start((void*)h);
+	snap_action_start(c->act);
 
 	/* Wait for Action to go back to Idle */
 
 	/* FIXME Use act and not h */
-	rc = snap_action_completed((void*)h, NULL, timeout);
+	rc = snap_action_completed(c->act, NULL, timeout);
 	if (0 == rc) {
 		fprintf(stderr, "err: Timeout while Waiting for Idle %d\n", rc);
 		return !rc;
 	}
 
-	rc = action_read(h, ACTION_STATUS, &status);
+	rc = chunk_read(c, ACTION_STATUS, &status);
 	if (rc != 0)
 		fprintf(stderr, "err: MMIO32 read ACTION_STATUS %d\n", rc);
 
@@ -171,7 +171,7 @@ static inline int action_wait_idle(struct snap_card* h, int timeout,
  * NVMe: For NVMe transfers n is representing a NVME_LB_SIZE (512)
  *       byte block.
  */
-static inline void action_memcpy(struct snap_card *h,
+static inline void chunk_memcpy(snap_Chunk_t *c,
 				uint32_t action,
 				uint64_t dest,
 				uint64_t src,
@@ -183,15 +183,15 @@ static inline void action_memcpy(struct snap_card *h,
 		action_name[action_code % ACTION_CONFIG_MAX], action,
 		(long long)dest, (long long)src, (long long)n);
 
-	action_write(h, ACTION_CONFIG, action);
+	chunk_write(c, ACTION_CONFIG, action);
 
-	action_write(h, ACTION_DEST_LOW,  (uint32_t)(dest & 0xffffffff));
-	action_write(h, ACTION_DEST_HIGH, (uint32_t)(dest >> 32));
+	chunk_write(c, ACTION_DEST_LOW,  (uint32_t)(dest & 0xffffffff));
+	chunk_write(c, ACTION_DEST_HIGH, (uint32_t)(dest >> 32));
 
-	action_write(h, ACTION_SRC_LOW,	  (uint32_t)(src & 0xffffffff));
-	action_write(h, ACTION_SRC_HIGH,  (uint32_t)(src >> 32));
+	chunk_write(c, ACTION_SRC_LOW,	  (uint32_t)(src & 0xffffffff));
+	chunk_write(c, ACTION_SRC_HIGH,  (uint32_t)(src >> 32));
 
-	action_write(h, ACTION_CNT, n);
+	chunk_write(c, ACTION_CNT, n);
 }
 
 int cblk_init(void *arg __attribute__((unused)),
@@ -347,13 +347,13 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 
 	pthread_mutex_lock(&globalLock);
 
-	action_memcpy(chunk.card,
+	chunk_memcpy(&chunk,
 		ACTION_CONFIG_COPY_NH | 0x0100,		/* NVMe to Host DDR */
 		(uint64_t)buf,				/* dst */
 		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* src */
 		mem_size);				/* size */
 
-	rc = action_wait_idle(chunk.card, chunk.timeout, mem_size);
+	rc = chunk_wait_idle(&chunk, chunk.timeout, mem_size);
 	if (rc)
 		goto __exit1;
 
@@ -391,13 +391,13 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 
 	pthread_mutex_lock(&globalLock);
 
-	action_memcpy(chunk.card,
+	chunk_memcpy(&chunk,
 		ACTION_CONFIG_COPY_HN | 0x0000,		/* Host DDR to NVMe */
 		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* dst */
 		(uint64_t)buf,				/* src */
 		mem_size);				/* size */
 
-	rc = action_wait_idle(chunk.card, chunk.timeout, mem_size);
+	rc = chunk_wait_idle(&chunk, chunk.timeout, mem_size);
 	if (rc)
 		goto __exit1;
 
