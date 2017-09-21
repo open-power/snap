@@ -1,4 +1,5 @@
 # SNAP setup
+Please check [../README.md](../README.md) for [dependencies](../README.md#dependencies).
 
 Executing the following commands is pre-requisite for the usage of the SNAP framework:
 ```bash
@@ -6,37 +7,67 @@ Executing the following commands is pre-requisite for the usage of the SNAP fram
     export XILINXD_LICENSE_FILE=<pointer to Xilinx license>
 ```
 
+The SNAP make process is internally defining a variable `${SNAP_ROOT}` which is pointing to SNAP's [root directory](..).
+From now on we will use this variable in the notation of file names.
+
+## snap_config
 In order to configure the SNAP framework and to prepare the environment
 for the SNAP build process, you may call
-
 ```bash
     make snap_config
 ```
 
-from the SNAP root directory (called `${SNAP_ROOT}` from now on, which is a variable internally
-defined and used by SNAP make process).  
-This step basically produces two files: `${SNAP_ROOT}/.snap_config.sh` and `${SNAP_ROOT}/.snap_env.sh`  
-The file `${SNAP_ROOT}/.snap_env.sh` is defining at least three paths:
+from the SNAP root directory.  
+Making use of the Linux kconfig process the main output of this step are the files `${SNAP_ROOT}/.snap_config.sh` and `${SNAP_ROOT}/.snap_config.cflags`.  
+Additionally a stub for the file `${SNAP_ROOT}/snap_env.sh` is created if it does not already exist (see [snap_env](#snap-env)).
 
-```
-    PSL_DCP=<pointer to the Vivado CAPI PSL design checkpoint file (b_route_design.dcp)>
-    ACTION_ROOT=<pointer to the directory containing the action sources>
-    PSLSE_ROOT=<pointer to the path containing the PSLSE github clone>
+Among the features that get configured via `make snap_config` are
+* the card type
+* the action type
+* enablement of the on card SDRAM
+* enablement of the Xilinx Integrated Logic Analyzer
+* the simulator
+
+## snap_env
+The main purpose of the file `${SNAP_ROOT}/snap_env.sh` is the definition of paths that are required during the SNAP build and simulation process. The file gets sourced during SNAP's `make` process.
+As a result of the execution of `make snap_config` a version of `${SNAP_ROOT}/snap_env.sh` containing at least three lines will exist:
+```bash
+    export PSL_DCP=<pointer to the Vivado CAPI PSL design checkpoint file (b_route_design.dcp)>
+    export ACTION_ROOT=<pointer to the directory containing the action sources>
+    export PSLSE_ROOT=<pointer to the path containing the PSLSE github clone>
 ```
 
-In case of a setup for cloud builds (see [Cloud Support](#cloud-support)) the file `${SNAP_ROOT}/.snap_env.sh`
-needs to also define the following path:
+The notation `${SNAP_ROOT}` may be used when pointing to directories or files below the SNAP root directory.
 
+If a file `${SNAP_ROOT}/snap_env.sh` is already existing when calling `make snap_config` that file will be taken, and the definition of
+`ACTION_ROOT` will be adapted according to the selection of the action type.
+In case of a setup for cloud builds (see [Cloud Support](#cloud-support)) the following setup will be modified
+as well:
 ```
-    DCP_ROOT=<pointer to the directory for design checkpoints required in the PR flow>
+    DCP_ROOT=<pointer to the directory for design checkpoints required in the Partial Reconfiguration flow>
 ```
+
+If you want to clean your repository you may do so by calling
+```bash
+    make clean
+```
+
+But, that call won't remove the configuration files. In order to get rid of them as well you may call
+```bash
+    make clean_config
+```
+
+It is recommended to call `make clean_config` each time you want to start over with a new configuration.
+
+***Note:*** When calling `make snap_config` for the first time, you need to edit the generated
+file `${SNAP_ROOT}/snap_env.sh` in order to set the correct path names.
 
 # Image and model build
 
-Which action is getting integrated into the SNAP framework is specified in `${SNAP_ROOT}/.snap_env.sh`
+Which action is getting integrated into the SNAP framework is specified in `${SNAP_ROOT}/snap_env.sh`
 via the path `ACTION_ROOT`.
 If that is not automatically set by calling `make snap_config`, you may simply modify the file
-`${SNAP_ROOT}/.snap_env.sh` manually to let `ACTION_ROOT` point to the directory containing the action.
+`${SNAP_ROOT}/snap_env.sh` manually to let `ACTION_ROOT` point to the directory containing the action.
 
 As part of the Vivado project configuration step, the make process will call the target `hw` that is expected to exist in a `Makefile`
 contained in the directory that `ACTION_ROOT` is pointing to (see section [Action wrapper](#action-wrapper)).
@@ -75,7 +106,7 @@ Please see [snap/hardware/doc/Bitstream_flashing.md](./doc/Bitstream_flashing.md
 
 # Action wrapper
 
-The definition of `ACTION_ROOT` in `${SNAP_ROOT}/.snap_env.sh` specifies the path to the set of actions that shall be included.
+The definition of `ACTION_ROOT` in `${SNAP_ROOT}/snap_env.sh` specifies the path to the set of actions that shall be included.
 **It has to point to a directory within** [snap/actions](../actions).  
 The SNAP hardware build process is expecting each action example's root directory to contain a Makefile
 providing at least the targets `clean` and `hw` (see also [snap/actions/README.md](../actions/README.md)).
@@ -111,7 +142,7 @@ You'll also find examples for HLS actions in [snap/actions](../actions). For eac
 
 The variable `ACTION_ROOT` needs to point to a subdirectory of [snap/actions](../actions). That directory should  contain a `Makefile` for generating the RTL code from the HLS `.cpp` sources. As shown in the examples, the `Makefile` should include the file [snap/actions/hls.mk](../actions/hls.mk). That way the RTL code for the HLS action will be placed into a subdirectory `hw` contained in the directory that `$ACTION_ROOT` points to, and the SNAP framework's make process is able to include it.
 
-Example: By setting up `${SNAP_ROOT}/.snap_env.sh` such that `ACTION_ROOT` points to `${SNAP_ROOT}/actions/hls_memcopy` the HLS memcopy example contained in [snap/actions/hls_memcopy](../actions/hls_memcopy) will get integrated into the SNAP framework.
+Example: By setting up `${SNAP_ROOT}/snap_env.sh` such that `ACTION_ROOT` points to `${SNAP_ROOT}/actions/hls_memcopy` the HLS memcopy example contained in [snap/actions/hls_memcopy](../actions/hls_memcopy) will get integrated into the SNAP framework.
 
 ***Note:*** For the integration of HLS actions into the SNAP framework, `ACTION_ROOT` needs to point to (a subdirectory of) a directory starting with `hls` (case doesn't matter), or the environment variable `$HLS_SUPPORT` needs to be defined and to be set to `TRUE` (this is an option that is handled during the environment setup via `make snap_env`).
 
@@ -134,7 +165,7 @@ Enabling `ILA_DEBUG` in the SNAP configuration and defining the environment vari
 ```
     ILA_SETUP_FILE
 ```
-in `${SNAP_ROOT}/.snap_env.sh` such that it points to a `.xdc` file with ILA core definitions,
+in `${SNAP_ROOT}/snap_env.sh` such that it points to a `.xdc` file with ILA core definitions,
 will configure the preparation of the ILA cores during the image build process.
 Additionally to the image files itself, the build process will create
 the required `.ltx` debug probes file which will be located in the results
@@ -153,7 +184,7 @@ The SNAP framework's simulation depends on the PSL simulation environment (PSLSE
 
 You may clone `PSLSE` from github [https://github.com/ibm-capi/pslse](https://github.com/ibm-capi/pslse).
 
-In order to enable SNAP's build and simulation process to make use of `PSLSE` the variable `PSLSE_ROOT` (defined in `${SNAP_ROOT}/.snap_env.sh`) needs to point to the directory containing the github pslse clone.
+In order to enable SNAP's build and simulation process to make use of `PSLSE` the variable `PSLSE_ROOT` (defined in `${SNAP_ROOT}/snap_env.sh`) needs to point to the directory containing the github pslse clone.
 
 ### Cadence setup
 
