@@ -94,13 +94,6 @@ make image
 
 ***Note:*** You must still build the software tools on the POWER target system.
 
-If you want to change the configuration (another card, another action, different NVMe and/or SDRAM settings, ...)
-it is recommended that you clear the current configuration settings by calling
-
-```bash
-make clean_config
-```
-
 Please refer to [snap/Makefile](../Makefile) for more supported targets like clean, ...
 
 ## FPGA bitstream image update
@@ -125,9 +118,8 @@ For HLS actions, the HLS compiler will automatically generate the necessary inte
 
 ***Note*** that the ID widths of the AXI interfaces to host memory and to the on-card SDRAM have to be
 large enough to support the number of actions that shall be instantiated.
-For the build process this is controlled via the variable `NUM_OF_ACTIONS`
-which is defined in `${SNAP_ROOT}/snap_config.sh`.  
-***Note*** The SNAP framework currently does not support more than one action.
+For the build process this is controlled via the option `NUM_OF_ACTIONS` which is configurable in the `make snap_config` step.  
+**Note*** The SNAP framework currently does not support more than one action.
 
 The support for actions created with HLS as opposed to HDL actions written directly in VHDL or Verilog differs slightly.
 
@@ -151,7 +143,7 @@ Example: By setting up `${SNAP_ROOT}/snap_env.sh` such that `ACTION_ROOT` points
 # SDRAM Card Memory
 
 The SNAP framework supports the usage of the on-card SDRAM. It is accessible for the actions via the action wrapper
-through an AXI master interface. In the SNAP configuration step the existence of that interface is controlled via the option 'Enable SDRAM' which is defining the value of `SDRAM_USED` in `${SNAP_ROOT}/.snap_config.sh`.
+through an AXI master interface. In the SNAP configuration step the existence of that interface is controlled via the option 'Enable SDRAM'.
 
 # NVMe support
 
