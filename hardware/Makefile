@@ -147,7 +147,7 @@ check_psl_dcp:
 	@if [ -e $(PSL_DCP) ]; then \
 		export PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl $(PSL_DCP)); \
 		if [ "$$PSL_DCP_TYPE" != "$(FPGACARD)" ]; then \
-			echo "Error: PSL_DCP=$(PSL_DCP) is not pointing to a design checkpoint of card tpye FPGACARD=$(FPGACARD)"; \
+			echo "Error: PSL_DCP=$(PSL_DCP) is not pointing to a design checkpoint of card type FPGACARD=$(FPGACARD)"; \
 			exit -1; \
 		fi \
 	else \
