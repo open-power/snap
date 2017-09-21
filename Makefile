@@ -23,12 +23,12 @@ action_subdirs += $(SNAP_ROOT)/actions
 snap_config = .snap_config
 snap_config_sh = .snap_config.sh
 snap_config_cflags = .snap_config.cflags
-snap_env_sh = .snap_env.sh
+snap_env_sh = snap_env.sh
 
 clean_subdirs += $(config_subdirs) $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
 
 # Only build if the subdirectory is really existent
-.PHONY: $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env hw_config model image cloud_base cloud_action cloud_merge snap_config config menuconfig xconfig gconfig oldconfig clean clean_config
+.PHONY: $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env hw_config model image cloud_base cloud_action cloud_merge snap_config config menuconfig xconfig gconfig oldconfig clean clean_config clean_env
 
 ifeq ($(PLATFORM),x86_64)
 all: $(software_subdirs) $(action_subdirs) $(hardware_subdirs)
@@ -97,7 +97,7 @@ config menuconfig xconfig gconfig oldconfig:
 
 snap_config:
 	@$(MAKE) -s menuconfig || exit 1
-	@$(MAKE) -s snap_env || exit 1
+	@$(MAKE) -s snap_env snap_env_parm=config
 	@echo "SNAP config done"
 
 $(snap_config_sh):
@@ -106,7 +106,7 @@ $(snap_config_sh):
 
 # Prepare SNAP Environment
 $(snap_env_sh) snap_env: $(snap_config_sh)
-	@$(SNAP_ROOT)/snap_env $(snap_config_sh)
+	@$(SNAP_ROOT)/snap_env $(snap_env_parm) $(snap_config_sh)
 
 %.defconfig:
 	@if [ ! -f defconfig/$@ ]; then			        \
@@ -131,4 +131,6 @@ clean_config: clean
 	@$(RM) $(snap_config)
 	@$(RM) $(snap_config_sh)
 	@$(RM) $(snap_config_cflags)
+
+clean_env: clean_config
 	@$(RM) $(snap_env_sh)

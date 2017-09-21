@@ -21,43 +21,63 @@
 #
 snapdir=$(dirname $(readlink -f "$BASH_SOURCE")) # path containing this script
 
-snap_env_sh=$snapdir/.snap_env.sh
+snap_env_sh=$snapdir/snap_env.sh
 
 unset PSL_DCP
 unset ACTION_ROOT
 unset PSLSE_ROOT
 unset ILA_SETUP_FILE
 unset DCP_ROOT
-if [ -e "$snap_env_sh" ]; then
-  source $snap_env_sh
+
+while [[ $# -gt 0 ]]; do
+  opt=$1
+  case "$1" in
+    "config")
+      snap_env_info=y
+      shift
+      ;;
+    *)
+      config_script=$1
+      shift
+      ;;
+  esac
+done
+
+if [ -e "$config_script" ]; then
+  source $config_script
 fi
-if [ -e "$1" ]; then
-  source $1
+
+if [ -e "$snap_env_sh" ]; then
+  source "$snap_env_sh"
+else
+  touch "$snap_env_sh"
 fi
 
 unset SETUP_DONE
 while [ -z "$SETUP_DONE" ]; do
   SETUP_WARNING=""
   SETUP_INFO=""
-  SNAP_ENV=""
+  SETUP_EMPTY=""
   echo "======================================================="
   echo "== SNAP ENVIRONMENT SETUP                            =="
   echo "======================================================="
 
 
   ####### checking Xilinx Vivado
-  echo "=====Checking Xilinx Vivado============================"
   if [ ! -d "$XILINX_VIVADO" ]; then
-    echo "XILINX_VIVADO is not set, please source settings64.sh from your Vivado installation"
+    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### XILINX_VIVADO  (set to  \"$XILINX_VIVADO\") is not pointing to a directory:"
+    SETUP_WARNING="$SETUP_WARNING\n    Please source settings64.sh from your Vivado installation"
   fi
   if [ -z "$XILINXD_LICENSE_FILE" ]; then
-    echo "XILINXD_LICENSE_FILE is not set. The following command needs to be executed before initiating hardware builds:"
-    echo "    export XILINXD_LICENSE_FILE=<pointer to Vivado license>"
+    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### XILINXD_LICENSE_FILE is not set:"
+    SETUP_WARNING="$SETUP_WARNING\n    The following command needs to be executed before initiating hardware builds:"
+    SETUP_WARNING="$SETUP_WARNING\n    export XILINXD_LICENSE_FILE=<pointer to Vivado license>"
   fi
 
   # printing Vivado version
   if [ -z `which vivado 2> /dev/null` ]; then
-    echo "Path to vivado not set, please add to environment variable \$PATH"
+    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to vivado is not set:"
+    SETUP_WARNING="$SETUP_WARNING\n    Please add to environment variable \$PATH"
   else
     echo "Path to vivado          is set to: `which vivado`"
     echo "Vivado version          is set to: `vivado -version|head -n1`"
@@ -67,22 +87,37 @@ while [ -z "$SETUP_DONE" ]; do
   ####### checking path to PSL design checkpoint
   echo "=====Checking path to PSL design checkpoint============"
   echo "PSL_DCP                 is set to: \"$PSL_DCP\""
-  SNAP_ENV="$SNAP_ENV""export PSL_DCP='$PSL_DCP'\n"
-  if [ -f "$PSL_DCP" ]; then
+  RESP=`grep PSL_DCP $snap_env_sh`
+  if [ -z "$RESP" ]; then
+    echo "export PSL_DCP=" >> $snap_env_sh
+  fi
+  if [ -e "$PSL_DCP" ]; then
     # checking card type for PSL design checkpoint
     PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $PSL_DCP`
     if [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD"
     fi
+  elif [ -z "$PSL_DCP" ]; then
+    SETUP_EMPTY="$SETUP_EMPTY\n  PSL_DCP"
   else
     SETUP_WARNING="$SETUP_WARNING\n### WARNING ### The environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
   fi
+
+
   ####### checking path to PSLSE
   echo "=====Simulation setup: Checking path to PSLSE=========="
   echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
-  SNAP_ENV="$SNAP_ENV""export PSLSE_ROOT=$PSLSE_ROOT\n"
-  if [ ! -d "$PSLSE_ROOT" ]; then
-    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set properly. For simulation please clone PSL Simulation Environment from https://github.com/ibm-capi/pslse and let \$PSLSE_ROOT point to it"
+  RESP=`grep PSLSE_ROOT $snap_env_sh`
+  if [ -z "$RESP" ]; then
+    echo "export PSLSE_ROOT=" >> $snap_env_sh
+  fi
+  if [ -z "$PSLSE_ROOT" ]; then
+    SETUP_EMPTY="$SETUP_EMPTY\n  PSLSE_ROOT"
+  elif [ ! -d "$PSLSE_ROOT" ]; then
+    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set properly."
+    SETUP_WARNING="$SETUP_WARNING\n    For simulation please clone PSL Simulation Environment"
+    SETUP_WARNING="$SETUP_WARNING\n    from https://github.com/ibm-capi/pslse"
+    SETUP_WARNING="$SETUP_WARNING\n    and let \$PSLSE_ROOT point to it"
   fi
 
 
@@ -108,20 +143,24 @@ while [ -z "$SETUP_DONE" ]; do
   elif [ -n "$HLS_HELLOWORLD" ]; then
     AR='${SNAP_ROOT}/actions/hls_helloworld'
   fi
-  if [ -z "$AR" ]; then
-    AR='$ACTION_ROOT'
+  if [ -z "$AR" ] && [ -n "$ACTION_ROOT" ]; then
+    AR=$ACTION_ROOT
     echo "ACTION_ROOT             is set to: \"$ACTION_ROOT\""
-    if [ ! -d "$ACTION_ROOT" ] && ( ( [ -z `echo "x$ACTION_ROOT" | grep -i /HLS` ] && [ "${HLS_SUPPORT^^}" != "TRUE" ] ) || [ `basename "x$ACTION_ROOT"` != "vhdl" ] ); then
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Please make sure that ACTION_ROOT points to an existing directory."
-    else
-      SETUP_INFO="$SETUP_INFO\n### INFO ### Kept ACTION_ROOT from previous configuration."
-    fi
+    SETUP_INFO="$SETUP_INFO\n### INFO ### Kept ACTION_ROOT from previous configuration."
   else
     echo "Setting ACTION_ROOT            to: \"$AR\""
+    sed -i '/export[ ^]*ACTION_ROOT[ ^]*=/ d' $snap_env_sh
+    echo "export ACTION_ROOT=$AR" >> $snap_env_sh
   fi
 
-  if [ -n "$AR" ]; then
-    SNAP_ENV="$SNAP_ENV""export ACTION_ROOT='$AR'\n"
+  if [ -z "$AR" ]; then
+    SETUP_EMPTY="$SETUP_EMPTY\n  ACTION_ROOT"
+  else
+    SNAP_ROOT=$snapdir
+    eval ACTION_ROOT=$AR
+    if [ ! -d "$ACTION_ROOT" ] && ( ( [ -z `echo "x$ACTION_ROOT" | grep -i /HLS` ] && [ "${HLS_SUPPORT^^}" != "TRUE" ] ) || [ `basename "x$ACTION_ROOT"` != "vhdl" ] ); then
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Please make sure that ACTION_ROOT points to an existing directory."
+    fi
   fi
 
 
@@ -129,8 +168,18 @@ while [ -z "$SETUP_DONE" ]; do
   # Note: ILA_DEBUG is defined via snap_config
   if [ "$ILA_DEBUG" = "TRUE" ]; then
     echo "=====ILA Debug setup==================================="
-    echo "Setting ILA_SETUP_FILE         to: \"$ILA_SETUP_FILE\""
-    SNAP_ENV="$SNAP_ENV""export ILA_SETUP_FILE=$ILA_SETUP_FILE\n"
+    echo "ILA_SETUP_FILE          is set to: \"$ILA_SETUP_FILE\""
+    RESP=`grep ILA_SETUP_FILE $snap_env_sh`
+    if [ -z "$RESP" ]; then
+      echo "export ILA_SETUP_FILE=" >> $snap_env_sh
+    fi
+    if [ -z "$ILA_SETUP_FILE" ]; then
+      SETUP_EMPTY="$SETUP_EMPTY\n  ILA_SETUP_FILE"
+    else
+      if [ `echo "$ILA_SETUP_FILE" | tr a-z A-Z` = "TRUE" ] && [ ! -e "$ILA_SETUP_FILE" ]; then
+        SETUP_WARNING="$SETUP_WARNING\n### WARNING ### ILA_DEBUG is set to $ILA_DEBUG but ILA_SETUP_FILE (set to \"$ILA_SETUP_FILE\") is not pointing to a file!"
+      fi
+    fi
   fi
 
 
@@ -145,7 +194,13 @@ while [ -z "$SETUP_DONE" ]; do
     else
       echo "DCP_ROOT                is set to: \"$DCP_ROOT\""
     fi
-    SNAP_ENV="$SNAP_ENV""export DCP_ROOT=$DCP_ROOT\n"
+    RESP=`grep DCP_ROOT $snap_env_sh`
+    if [ -z "$RESP" ]; then
+      echo "export DCP_ROOT=" >> $snap_env_sh
+    fi
+    if [ -z "$DCP_ROOT" ]; then
+      SETUP_EMPTY="$SETUP_EMPTY\n  DCP_ROOT"
+    fi
   fi
 
 
@@ -186,38 +241,53 @@ while [ -z "$SETUP_DONE" ]; do
   if [[ "$NVME_USED" = "TRUE" ]]; then
     echo "=====Denali setup======================================"
     if [ -z "$DENALI_TOOLS" ]; then
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of NVME_USED=$NVME_USED but DENALI_TOOLS not set!"
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of NVME_USED=$NVME_USED but DENALI_TOOLS not set!"
     else
       echo "DENALI_TOOLS            is set to: \"$DENALI_TOOLS\""
     fi
 
     if [ -z "$DENALI_CUSTOM" ]; then
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Setting of NVME_USED=$NVME_USED but DENALI_CUSTOM not set!"
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of NVME_USED=$NVME_USED but DENALI_CUSTOM not set!"
     else
       echo "DENALI_CUSTOM           is set to: \"$DENALI_CUSTOM\""
     fi
   fi
 
 
-  ####### Print warning messages and create .snap_env.sh
+  ####### Print warning messages and create $snap_env_sh
+  echo -e "======================================================="
+  echo -e "\n=====Content of $(basename $snap_env_sh)============================"
+  cat $snap_env_sh
+  echo -e "======================================================="
+
+  RC=0
   if [ -n "$SETUP_WARNING" ]; then
+    RC=1
     echo -e "$SETUP_WARNING"
-    echo -e "\nPlease add the required environment settings to the file $snap_env_sh"
+    echo -e "\nPlease add the required environment settings to the file $(basename $snap_env_sh)"
+    echo -e "All of the variables above have to be filled with the correct values."
   fi
 
-  if [ -n "$SETUP_INFO" ]; then
+  if [ "$snap_env_info" = "y" ] && [ -n "$SETUP_INFO" ]; then
     echo -e "$SETUP_INFO"
   fi
 
-  if [ -n "$SNAP_ENV" ]; then
-    echo -e "$SNAP_ENV" > $snap_env_sh
-    chmod +x $snap_env_sh
+  if [ -n "$SETUP_EMPTY" ]; then
+    let "RC = 2 - $RC"
+    echo -e "\nThe following environment variables need to get defined:$SETUP_EMPTY"
+    echo -e "Please edit $(basename $snap_env_sh) and add the correct values"
   fi
   echo
 
   SETUP_DONE="1"
 done
-# set a return value in case that the file was sourced
-if [[ "$_" = "$0" ]]; then
-  if [[ "$SETUP_DONE" == "1" ]]; then return 0; else return 1; fi
+
+if [ -z "$snap_env_info" ]; then
+  if [ "$0" = "bash" ]; then
+    # return value in case that this file was sourced
+    return $RC
+  else
+    # otherwise set an exit state
+    exit $RC
+  fi
 fi
