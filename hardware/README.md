@@ -3,8 +3,8 @@ Please check [../README.md](../README.md) for [dependencies](../README.md#depend
 
 Executing the following commands is pre-requisite for the usage of the SNAP framework:
 ```bash
-    source <xilinx_root>/Vivado/<version>/settings64.sh
-    export XILINXD_LICENSE_FILE=<pointer to Xilinx license>
+source <xilinx_root>/Vivado/<version>/settings64.sh
+export XILINXD_LICENSE_FILE=<pointer to Xilinx license>
 ```
 
 The SNAP make process is internally defining a variable `${SNAP_ROOT}` which is pointing to SNAP's [root directory](..).
@@ -14,13 +14,10 @@ From now on we will use this variable in the notation of file names.
 In order to configure the SNAP framework and to prepare the environment
 for the SNAP build process, you may call
 ```bash
-    make snap_config
+make snap_config
 ```
 
-from the SNAP root directory.  
-Making use of the Linux kconfig process the main output of this step are the files `${SNAP_ROOT}/.snap_config.sh` and `${SNAP_ROOT}/.snap_config.cflags`.  
-Additionally a stub for the file `${SNAP_ROOT}/snap_env.sh` is created if it does not already exist (see [snap_env](#snap-env)).
-
+from the SNAP root directory. Making use of the Linux kconfig process the features for a specific SNAP framework configuration can be selected.
 Among the features that get configured via `make snap_config` are
 * the card type
 * the action type
@@ -28,36 +25,41 @@ Among the features that get configured via `make snap_config` are
 * enablement of the Xilinx Integrated Logic Analyzer
 * the simulator
 
+By calling `make snap_config` again a previously defined configuratio may be modified.
+
+If you want to clean your repository (i.e. remove the generated files) you may do so by calling
+```bash
+make clean
+```
+But, that call will keep the configuration settings. If you want to also reset the configuration settings you may call
+```bash
+make clean_config
+```
+It is recommended to call `make clean_config` each time you want to start over with a new configuration.
+
 ## snap_env
-The main purpose of the file `${SNAP_ROOT}/snap_env.sh` is the definition of paths that are required during the SNAP build and simulation process. The file gets sourced during SNAP's `make` process.
+A side effect of calling `make snap_config` is the modification of the file `${SNAP_ROOT}/snap_env.sh`.
+The main purpose of this file is the definition of paths that are required during the SNAP build and simulation process. The file gets sourced during SNAP's `make` process.
 As a result of the execution of `make snap_config` a version of `${SNAP_ROOT}/snap_env.sh` containing at least three lines will exist:
 ```bash
-    export PSL_DCP=<pointer to the Vivado CAPI PSL design checkpoint file (b_route_design.dcp)>
-    export ACTION_ROOT=<pointer to the directory containing the action sources>
-    export PSLSE_ROOT=<pointer to the path containing the PSLSE github clone>
+export PSL_DCP=<pointer to the Vivado CAPI PSL design checkpoint file (b_route_design.dcp)>
+export ACTION_ROOT=<pointer to the directory containing the action sources>
+export PSLSE_ROOT=<pointer to the path containing the PSLSE github clone>
 ```
-
-The notation `${SNAP_ROOT}` may be used when pointing to directories or files below the SNAP root directory.
 
 If a file `${SNAP_ROOT}/snap_env.sh` is already existing when calling `make snap_config` that file will be taken, and the definition of
 `ACTION_ROOT` will be adapted according to the selection of the action type.
+
 In case of a setup for cloud builds (see [Cloud Support](#cloud-support)) the following setup will be modified
 as well:
 ```
-    DCP_ROOT=<pointer to the directory for design checkpoints required in the Partial Reconfiguration flow>
+DCP_ROOT=<pointer to the directory for design checkpoints required in the Partial Reconfiguration flow>
 ```
 
-If you want to clean your repository you may do so by calling
+The notation `${SNAP_ROOT}` may be used when pointing to directories or files below the SNAP root directory. For instance, if during the `make snap_config` process you select `hdl_example` as action the file `${SNAP_ROOT}/snap_env.sh` will contain the line
 ```bash
-    make clean
+export ACTION_ROOT=${SNAP_ROOT}/actions/hdl_example
 ```
-
-But, that call won't remove the configuration files. In order to get rid of them as well you may call
-```bash
-    make clean_config
-```
-
-It is recommended to call `make clean_config` each time you want to start over with a new configuration.
 
 ***Note:*** When calling `make snap_config` for the first time, you need to edit the generated
 file `${SNAP_ROOT}/snap_env.sh` in order to set the correct path names.
@@ -80,14 +82,14 @@ Just a simulation model (for the simulator defined in the `snap_config` step) ma
 via the target `model`:
 
 ```bash
-    make model
+make model
 ```
 This will also build the software tools and the PSLSE which are required to run the simulation.
 
 If you want to build an image (a bitstream), you may call `make` with target `image`:
 
 ```bash
-    make image
+make image
 ```
 
 ***Note:*** You must still build the software tools on the POWER target system.
@@ -96,7 +98,7 @@ If you want to change the configuration (another card, another action, different
 it is recommended that you clear the current configuration settings by calling
 
 ```bash
-    make clean_config
+make clean_config
 ```
 
 Please refer to [snap/Makefile](../Makefile) for more supported targets like clean, ...
@@ -163,7 +165,7 @@ adding ILA cores to the design
 (an example for such a file is located here: [./doc/ila_debug.xdc](./doc/ila_debug.xdc)).  
 Enabling `ILA_DEBUG` in the SNAP configuration and defining the environment variable
 ```
-    ILA_SETUP_FILE
+ILA_SETUP_FILE
 ```
 in `${SNAP_ROOT}/snap_env.sh` such that it points to a `.xdc` file with ILA core definitions,
 will configure the preparation of the ILA cores during the image build process.
@@ -191,8 +193,8 @@ In order to enable SNAP's build and simulation process to make use of `PSLSE` th
 If you want to use Cadence tools (irun) for simulation you need to compile the Xilinx IP and let the environment variable
 
 ```bash
-   export IES_LIBS      = <pointer to precompiled Xilinx IP for Cadence tools>
-   export CDS_LIC_FILE  = <pointer to Cadence license>
+export IES_LIBS      = <pointer to precompiled Xilinx IP for Cadence tools>
+export CDS_LIC_FILE  = <pointer to Cadence license>
 ```
 
 point to the resulting compiled library.
@@ -202,7 +204,7 @@ to the Cadence tools and libraries. In case `$SIMULATOR == irun`, the SNAP envir
 expect the Cadence specific environment variable being set up via:
 
 ```bash
-   export CDS_INST_DIR  = <pointer to Cadence Installation Directory>
+export CDS_INST_DIR  = <pointer to Cadence Installation Directory>
 ```
 
 ### Running simulation
