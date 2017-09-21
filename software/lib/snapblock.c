@@ -112,6 +112,7 @@ static const char *action_name[] = {
 #define  ACTION_STATUS_WRITE_COMPLETED	0x10
 #define  ACTION_STATUS_READ_COMPLETED	0x1f /* mask id 0x0f */
 #define  ACTION_STATUS_NO_COMPLETION	0x00 /* no completion seen */
+#define  ACTION_STATUS_COMPLETION_MASK	0x0f /* mask completion bits */
 
 /* defaults */
 #define ACTION_WAIT_TIME	10	/* Default timeout in sec */
@@ -190,6 +191,8 @@ static inline int chunk_wait_idle(struct cblk_dev *c, int timeout,
 	} else {
 		block_trace("  READ_COMPLETED %02x\n", status);
 	}
+	
+	block_trace("  SLOT: %d\n", status & ACTION_STATUS_COMPLETION_MASK);
 	return rc;
 }
 
@@ -441,7 +444,7 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 	chunk.req[CBLK_WIDX_MAX + chunk.ridx].status = CBLK_READING;
 	chunk.req[CBLK_WIDX_MAX + chunk.ridx].num++;
 	chunk_memcpy(&chunk,
-		ACTION_CONFIG_COPY_NH | (chunk.ridx << 8),	/* NVMe to Host DDR */
+		ACTION_CONFIG_COPY_NH | ((CBLK_WIDX_MAX + chunk.ridx) << 8), /* NVMe to Host DDR */
 		(uint64_t)buf,					/* dst */
 		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,		/* src */
 		mem_size);					/* size */
