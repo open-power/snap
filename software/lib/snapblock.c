@@ -21,9 +21,11 @@
 #include <string.h>
 #include <errno.h>
 #include <err.h>
+#include <pthread.h>
+#include <semaphore.h>
+
 #include <sys/stat.h>
 #include <sys/mman.h>
-#include <pthread.h>
 
 #include "snap_internal.h"
 #include "libsnap.h"
@@ -49,17 +51,22 @@
 
 pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
 
-typedef struct snap_cblk_dev {
+struct cblk_req {
+	sem_t wait_sem;
+};
+
+struct cblk_dev {
 	struct snap_card *card;
 	struct snap_action *act;
 	unsigned int drive;
 	size_t nblocks; /* total size of the device in blocks */
 	int timeout;
 	uint8_t *buf;
-} snap_cblk_dev;
+	struct cblk_req req[16];
+};
 
 /* Use just one ... */
-static snap_cblk_dev chunk;
+static struct cblk_dev chunk;
 
 /* Header file for SNAP Framework example code */
 #define ACTION_TYPE_NVME_EXAMPLE	0x10140001	/* Action Type */
@@ -108,7 +115,7 @@ static inline void __free(void *ptr)
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
-static int chunk_write(snap_cblk_dev *c, uint32_t addr, uint32_t data)
+static int chunk_write(struct cblk_dev *c, uint32_t addr, uint32_t data)
 {
 	int rc;
 
@@ -121,7 +128,7 @@ static int chunk_write(snap_cblk_dev *c, uint32_t addr, uint32_t data)
 
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
-static int chunk_read(snap_cblk_dev *c, uint32_t addr, uint32_t *data)
+static int chunk_read(struct cblk_dev *c, uint32_t addr, uint32_t *data)
 {
 	int rc;
 
@@ -135,8 +142,8 @@ static int chunk_read(snap_cblk_dev *c, uint32_t addr, uint32_t *data)
 /*
  *	Start Action and wait for Idle.
  */
-static inline int chunk_wait_idle(snap_cblk_dev *c, int timeout,
-				   uint32_t mem_size __attribute__((unused)))
+static inline int chunk_wait_idle(struct cblk_dev *c, int timeout,
+				uint32_t mem_size __attribute__((unused)))
 {
 	int rc = ETIME;
 	uint32_t status = 0x0;
@@ -171,7 +178,7 @@ static inline int chunk_wait_idle(snap_cblk_dev *c, int timeout,
  * NVMe: For NVMe transfers n is representing a NVME_LB_SIZE (512)
  *       byte block.
  */
-static inline void chunk_memcpy(snap_cblk_dev *c,
+static inline void chunk_memcpy(struct cblk_dev *c,
 				uint32_t action,
 				uint64_t dest,
 				uint64_t src,
