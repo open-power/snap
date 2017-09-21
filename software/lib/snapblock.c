@@ -49,17 +49,17 @@
 
 pthread_mutex_t globalLock = PTHREAD_MUTEX_INITIALIZER;
 
-typedef struct snap_Chunk_t {
+typedef struct snap_cblk_dev {
 	struct snap_card *card;
 	struct snap_action *act;
 	unsigned int drive;
 	size_t nblocks; /* total size of the device in blocks */
 	int timeout;
 	uint8_t *buf;
-} snap_Chunk_t;
+} snap_cblk_dev;
 
 /* Use just one ... */
-static snap_Chunk_t chunk;
+static snap_cblk_dev chunk;
 
 /* Header file for SNAP Framework example code */
 #define ACTION_TYPE_NVME_EXAMPLE	0x10140001	/* Action Type */
@@ -108,7 +108,7 @@ static inline void __free(void *ptr)
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
-static int chunk_write(snap_Chunk_t *c, uint32_t addr, uint32_t data)
+static int chunk_write(snap_cblk_dev *c, uint32_t addr, uint32_t data)
 {
 	int rc;
 
@@ -121,7 +121,7 @@ static int chunk_write(snap_Chunk_t *c, uint32_t addr, uint32_t data)
 
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
-static int chunk_read(snap_Chunk_t *c, uint32_t addr, uint32_t *data)
+static int chunk_read(snap_cblk_dev *c, uint32_t addr, uint32_t *data)
 {
 	int rc;
 
@@ -135,7 +135,7 @@ static int chunk_read(snap_Chunk_t *c, uint32_t addr, uint32_t *data)
 /*
  *	Start Action and wait for Idle.
  */
-static inline int chunk_wait_idle(snap_Chunk_t *c, int timeout,
+static inline int chunk_wait_idle(snap_cblk_dev *c, int timeout,
 				   uint32_t mem_size __attribute__((unused)))
 {
 	int rc = ETIME;
@@ -171,7 +171,7 @@ static inline int chunk_wait_idle(snap_Chunk_t *c, int timeout,
  * NVMe: For NVMe transfers n is representing a NVME_LB_SIZE (512)
  *       byte block.
  */
-static inline void chunk_memcpy(snap_Chunk_t *c,
+static inline void chunk_memcpy(snap_cblk_dev *c,
 				uint32_t action,
 				uint64_t dest,
 				uint64_t src,
