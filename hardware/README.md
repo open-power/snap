@@ -25,7 +25,7 @@ Among the features that get configured via `make snap_config` are
 * enablement of the Xilinx Integrated Logic Analyzer
 * the simulator
 
-By calling `make snap_config` again a previously defined configuratio may be modified.
+By calling `make snap_config` again a previously defined configuration may be modified.
 
 If you want to clean your repository (i.e. remove the generated files) you may do so by calling
 ```bash
