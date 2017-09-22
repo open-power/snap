@@ -7,7 +7,7 @@ source <xilinx_root>/Vivado/<version>/settings64.sh
 export XILINXD_LICENSE_FILE=<pointer to Xilinx license>
 ```
 
-The SNAP make process is internally defining a variable `${SNAP_ROOT}` which is pointing to SNAP's [root directory](..).
+The SNAP make process is internally defining a variable `${SNAP_ROOT}` which is pointing to SNAP's [root directory](https://github.com/open-power/snap).
 From now on we will use this variable in the notation of file names.
 
 ## snap_config
