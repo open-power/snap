@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+PLATFORM ?= $(shell uname -i)
 
 subdirs += $(wildcard hls_*) $(wildcard hdl_*)
 software_subdirs = $(addsuffix /sw,$(subdirs))
@@ -27,7 +28,9 @@ software:
 
 software_all: $(software_subdirs)
 
+ifeq ($(PLATFORM),x86_64)
 hardware_all: $(hardware_subdirs)
+endif
 
 # Only build if the subdirectory is existent and if Makefile is there
 .PHONY: $(software_subdirs) $(hardware_subdirs)
@@ -41,7 +44,8 @@ $(software_subdirs): software
 		echo "INFO: No Makefile available in $@ ...";	\
 	fi
 
-$(hardware_subdirs): 
+ifeq ($(PLATFORM),x86_64)
+$(hardware_subdirs):
 	@if [ -d $@ -a -f $@/Makefile ]; then			\
 		echo "Enter: $@";                               \
 		$(MAKE) -C $@ || exit 1;			\
@@ -49,6 +53,7 @@ $(hardware_subdirs):
 	else							\
 		echo "INFO: No Makefile available in $@ ...";	\
 	fi
+endif
 
 test:
 	@echo "Noting to be done here yet."

@@ -22,6 +22,9 @@
 ## This Makefile is contained in the hardware directory.
 ## So, the root directory is one level above.
 ##
+PLATFORM ?= $(shell uname -i)
+
+ifeq ($(PLATFORM),x86_64)
 export SNAP_ROOT=$(abspath ..)
 export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
@@ -34,6 +37,7 @@ snap_env_sh        = $(SNAP_ROOT)/snap_env.sh
 -include $(snap_config_sh)
 -include $(snap_env_sh)
 
+SIMULATOR ?= nosim
 ifeq "$(FPGACARD)" "KU3"
 	export DDR3_USED=$(SDRAM_USED)
 	export DDR4_USED=FALSE
@@ -93,7 +97,7 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 
 .PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_nvme prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment hw_config_start hw_config config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim clean gitclean
 
-all: hw_config model image
+all: model image
 
 snap_config:
 	@$(MAKE) -C $(SNAP_ROOT) snap_config
@@ -269,7 +273,11 @@ image: .hw_config_done check_snap_settings snap_preprocess patch_version
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
 		echo -e "                        Makefile target $@ not allowed for PR flow!"; exit -1; \
 	fi
-	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`"
+	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
+	@echo "A complete FPGA bitstream build got kicked off.";
+	@echo "This will take more than an hour.";
+	@echo "The process may be terminated by pressing <CTRL>-C at any time.";
+	@echo -e "After termination it can be restarted later.\n"
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log -journal $(LOGS_DIR)/snap_build.jou
 	@$(RM) -r .bitstream_name.txt
 	@echo -e "[BUILD IMAGE.........] done  `date +"%T %a %b %d %Y"`"
@@ -380,3 +388,12 @@ gitclean:
 	@echo -e "[GITCLEAN............] cleaning and resetting snap git";
 	git clean -f -d -x
 	git reset --hard
+
+else #noteq ($(PLATFORM),x86_64)
+.PHONY: wrong_platform all model image
+
+wrong_platform:
+	@echo; echo "\nSNAP hardware builds are possible on x86 platform only\n"; echo;
+
+all model image: wrong_platform
+endif
