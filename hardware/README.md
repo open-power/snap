@@ -21,7 +21,7 @@ from the SNAP root directory. Making use of the Linux kconfig process the featur
 Among the features that get configured via `make snap_config` are
 * the card type
 * the action type
-* enablement of the on card SDRAM
+* enablement of the on-card SDRAM
 * enablement of the Xilinx Integrated Logic Analyzer
 * the simulator
 
@@ -111,7 +111,7 @@ At this point SNAP supports the integration of one action. Multi-action support 
 Corresponding to the ports that the SNAP framework provides, each action has to provide ports for the following AXI interfaces:
 * an AXI slave port for MMIO based control
 * an AXI master port for host DMA traffic
-* an optional AXI master port for on card SDRAM traffic
+* an optional AXI master port for on-card SDRAM traffic
 * an optional AXI master port for communication with an NVMe host controller
 Furthermore, HDL actions have to implement the interrupt ports as shown in the [HDL example action wrapper](../actions/hdl_example/hw/action_wrapper.vhd_source).  
 For HLS actions, the HLS compiler will automatically generate the necessary interrupt logic.
