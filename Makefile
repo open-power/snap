@@ -97,6 +97,14 @@ hw_config model image cloud_base cloud_action cloud_merge: $(snap_env_sh)
 	        $(MAKE) -s -C $$dir $@ || exit 1;          \
 	    fi                                             \
 	done
+
+else #noteq ($(PLATFORM),x86_64)
+.PHONY: wrong_platform
+
+wrong_platform:
+	@echo; echo "\nSNAP hardware builds are possible on x86 platform only\n"; echo;
+
+$(hardware_subdirs) hardware hw_config model image cloud_base cloud_action cloud_merge: wrong_platform
 endif
 
 # SNAP Config

@@ -388,9 +388,12 @@ gitclean:
 	@echo -e "[GITCLEAN............] cleaning and resetting snap git";
 	git clean -f -d -x
 	git reset --hard
-else
-.PHONY wrong_plattform all model image
-wrong_plattform:
 
-all model image: wrong_plattform
+else #noteq ($(PLATFORM),x86_64)
+.PHONY: wrong_platform all model image
+
+wrong_platform:
+	@echo; echo "\nSNAP hardware builds are possible on x86 platform only\n"; echo;
+
+all model image: wrong_platform
 endif
