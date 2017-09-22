@@ -28,7 +28,24 @@ snap_env_sh = snap_env.sh
 clean_subdirs += $(config_subdirs) $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
 
 # Only build if the subdirectory is really existent
-.PHONY: $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env hw_config model image cloud_base cloud_action cloud_merge snap_config config menuconfig xconfig gconfig oldconfig clean clean_config clean_env
+.PHONY: help $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env hw_config model image cloud_base cloud_action cloud_merge snap_config config menuconfig xconfig gconfig oldconfig clean clean_config clean_env
+
+help:
+	@echo "Main targets for the SNAP Framework make process:";
+	@echo "=================================================";
+	@echo "* snap_config    Configure SNAP framework";
+	@echo "* model          Build simulation model for simulator specified via target snap_config";
+	@echo "* image          Build a complete FPGA bitstream (will take more than one hour)";
+	@echo "* hardware       Build simulation model and FPGA bitstream (combines targets 'model' and 'image')";
+	@echo "* software       Build software libraries and tools for SNAP";
+	@echo "* actions        Build the applications for all actions";
+	@echo "* clean          Remove all files generated in make process";
+	@echo "* clean_config   As target 'clean' plus reset of the configuration";
+	@echo "* help           Print this message";
+	@echo;
+	@echo "The hardware related targets 'model', 'image' and 'hardware'";
+	@echo "do only exist on an x86 platform";
+	@echo;
 
 ifeq ($(PLATFORM),x86_64)
 all: $(software_subdirs) $(action_subdirs) $(hardware_subdirs)
@@ -57,13 +74,6 @@ $(action_subdirs):
 
 actions: $(action_subdirs)
 
-$(hardware_subdirs): $(snap_env_sh)
-	@if [ -d $@ ]; then              \
-	    $(MAKE) -s -C $@ || exit 1;  \
-	fi
-
-hardware: $(hardware_subdirs)
-
 # Install/uninstall
 test install uninstall:
 	@for dir in $(software_subdirs) $(action_subdirs); do \
@@ -72,6 +82,14 @@ test install uninstall:
 	    fi                                                \
 	done
 
+ifeq ($(PLATFORM),x86_64)
+$(hardware_subdirs): $(snap_env_sh)
+	@if [ -d $@ ]; then              \
+	    $(MAKE) -s -C $@ || exit 1;  \
+	fi
+
+hardware: $(hardware_subdirs)
+
 # Model build and config
 hw_config model image cloud_base cloud_action cloud_merge: $(snap_env_sh)
 	@for dir in $(hardware_subdirs); do                \
@@ -79,6 +97,7 @@ hw_config model image cloud_base cloud_action cloud_merge: $(snap_env_sh)
 	        $(MAKE) -s -C $$dir $@ || exit 1;          \
 	    fi                                             \
 	done
+endif
 
 # SNAP Config
 config menuconfig xconfig gconfig oldconfig:
