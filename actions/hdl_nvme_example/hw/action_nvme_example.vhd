@@ -238,10 +238,11 @@ ARCHITECTURE action_nvme_example OF action_nvme_example IS
   END INCR;
 
   TYPE FSM_APP_t    IS (IDLE,  WAIT_FOR_MEMCOPY_DONE);
-  TYPE FSM_DMA_WR_t IS (IDLE, DMA_WR_REQ, DMA_WR_REQ_2);
+  TYPE FSM_DMA_WR_t IS (IDLE, DMA_WR_REQ);
   TYPE FSM_DMA_RD_t IS (IDLE, DMA_RD_REQ, DMA_RD_REQ_2);
   TYPE DMA_WR_ADDR_BUFFER_t IS ARRAY (0 TO WR_BUFFER_SIZE -1) OF STD_LOGIC_VECTOR(63 DOWNTO 0);
   TYPE LBA_RD_ADDR_BUFFER_t IS ARRAY (0 TO WR_BUFFER_SIZE -1) OF STD_LOGIC_VECTOR(63 DOWNTO 0);
+  TYPE BLOCK_RD_COUNT_t     IS ARRAY (0 TO WR_BUFFER_SIZE -1) OF STD_LOGIC_VECTOR(13 DOWNTO 0);
   TYPE ID_BUFFER_t          IS ARRAY (0 TO WR_BUFFER_SIZE -1) OF STD_LOGIC_VECTOR( 4 DOWNTO 0);
   TYPE ID_BUFFER2_t         IS ARRAY (0 TO 1)                 OF STD_LOGIC_VECTOR( 3 DOWNTO 0);
 
@@ -260,7 +261,7 @@ ARCHITECTURE action_nvme_example OF action_nvme_example IS
     id_buf          : ID_BUFFER2_t;
     dest_addr_buf   : DMA_WR_ADDR_BUFFER_t;
     src_lba_buf     : LBA_RD_ADDR_BUFFER_t;
-    size_vector     : STD_LOGIC_VECTOR(WR_BUFFER_SIZE -1  DOWNTO 0);
+    size_vector     : BLOCK_RD_COUNT_t;
     ready           : STD_LOGIC_VECTOR(WR_BUFFER_SIZE -1  DOWNTO 0);
   END RECORD DMA_WR_CMD_BUFFER_t ;
 
@@ -314,6 +315,7 @@ ARCHITECTURE action_nvme_example OF action_nvme_example IS
   SIGNAL nvme_wr_done           : BOOLEAN;
   SIGNAL nvme_wr_done_into_fifo : BOOLEAN;
 
+  SIGNAL dma_wr_count           : STD_LOGIC_VECTOR(13 DOWNTO 0);
   SIGNAL reg_0x4c               : STD_LOGIC_VECTOR(4 DOWNTO 0);
   SIGNAL reg_0x4c_rd_strobe     : STD_LOGIC;
 
@@ -615,8 +617,12 @@ BEGIN
     ALIAS    wr_ptr          : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1 IS dma_wr_cmd_buffer.wr_ptr;
     ALIAS    done_ptr_active : INTEGER RANGE 0 TO 1 IS dma_wr_cmd_buffer.done_ptr_active;
     ALIAS    rd_ptr          : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1 IS id_completion_fifo.id_rd_ptr;
-    VARIABLE temp5           : STD_LOGIC_VECTOR(4 DOWNTO 0);
+    VARIABLE temp5           : STD_LOGIC_VECTOR( 4 DOWNTO 0);
+    VARIABLE lba_count       : STD_LOGIC_VECTOR(16 DOWNTO 0);
+    VARIABLE lba_count_dec   : STD_LOGIC_VECTOR(16 DOWNTO 0);
     VARIABLE int_ptr         : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1;
+    VARIABLE dma_ptr         : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1;
+    
   BEGIN
     IF (rising_edge (action_clk)) THEN
       nvme_cmd_valid      <= '0';
@@ -638,7 +644,8 @@ BEGIN
           mmio_rd_enqueue_req                      <= true;
           dma_wr_cmd_buffer.src_lba_buf(int_ptr)   <= reg_0x38 & reg_0x34;
           dma_wr_cmd_buffer.dest_addr_buf(int_ptr) <= reg_0x40 & reg_0x3c;
-          dma_wr_cmd_buffer.size_VECTOR(int_ptr)   <= reg_0x44(13);
+          -- save size as number of 4k blocks to transfer
+          dma_wr_cmd_buffer.size_vector(int_ptr)   <= reg_0x44(13 + 12 downto 12);
           wr_ptr                                   <= int_ptr;
         END IF;
 
@@ -649,16 +656,14 @@ BEGIN
         IF nvme_busy = '0' THEN
           -- handle nvme rd requests triggered by mmio
           IF mmio_rd_enqueue_req THEN
-            mmio_rd_enqueue_req  <= false;
-            nvme_cmd_valid       <= '1';
-            nvme_cmd             <= STD_LOGIC_VECTOR(to_unsigned(wr_ptr,4)) &  x"10";
-            nvme_mem_addr        <= x"0000_0002_0000_0000" + (x"2000" * STD_LOGIC_VECTOR(to_unsigned (wr_ptr,10)));
-            nvme_lba_addr        <= dma_wr_cmd_buffer.src_lba_buf(wr_ptr);
-            IF dma_wr_cmd_buffer.size_VECTOR(wr_ptr) = '1' THEN
-              nvme_lba_count <= x"0000_000f";
-            ELSE
-              nvme_lba_count <= x"0000_0007";
-            END IF;
+            mmio_rd_enqueue_req   <= false;
+            nvme_cmd_valid        <= '1';
+            nvme_cmd              <= STD_LOGIC_VECTOR(to_unsigned(wr_ptr,4)) &  x"10";
+            nvme_mem_addr         <= x"0000_0002_0000_0000" + (x"20000" * STD_LOGIC_VECTOR(to_unsigned (wr_ptr,10)));
+            nvme_lba_addr         <= dma_wr_cmd_buffer.src_lba_buf(wr_ptr);
+            lba_count             := dma_wr_cmd_buffer.size_vector(wr_ptr) & "000";
+            lba_count_dec         := lba_count - 1;
+            nvme_lba_count        <= x"0000" & lba_count_dec(15 downto 0);
             INCR(wr_ptr);
           -- handle NVMe write triggered by completion of DMA read
           ELSIF nvme_wr_enqueue_req THEN
@@ -674,13 +679,11 @@ BEGIN
             END IF;
           END IF;
         END IF;
-
+        -- get the id of the dma in progess
+        dma_ptr := to_integer(unsigned (dma_wr_cmd_buffer.id_buf(done_ptr_active)));
         IF axi_host_mem_bvalid = '1' THEN
           -- when dma to host has finished
-          IF dma_wr_cmd_buffer.size_VECTOR(done_ptr_active) = '1' THEN
-            -- this transfer was the first of two 4k transfers
-            dma_wr_cmd_buffer.size_VECTOR(done_ptr_active) <= '0';
-          ELSE
+          IF dma_wr_cmd_buffer.size_vector(dma_ptr) = "00" & x"0001" THEN
             -- we are done with this id
             -- put the id in the completion queue
             id_completion_fifo.id_buf(id_completion_fifo.id_wr_ptr)<= '1' & dma_wr_cmd_buffer.id_buf(done_ptr_active);
@@ -695,7 +698,10 @@ BEGIN
               done_ptr_active <= 0;
             END IF;
             transfer_done   <= '1';
+          else
+             dma_wr_cmd_buffer.size_vector(dma_ptr) <= dma_wr_cmd_buffer.size_vector(dma_ptr) - 1; 
           END IF;
+          
         END IF;
 
         -- catch the NVMe write pulse
@@ -787,9 +793,11 @@ BEGIN
             process_ptr <= process_index;
             -- determine host and card memory address on buffer postion
             host_mem_awaddr      <= dma_wr_cmd_buffer.dest_addr_buf(process_index);
-            card_mem_araddr <= x"0000_0000" + (x"2000" * STD_LOGIC_VECTOR(to_unsigned(process_index,8)));
+            card_mem_araddr <= x"0000_0000" + (x"20000" * STD_LOGIC_VECTOR(to_unsigned(process_index,8)));
             -- initiate SDRAM to host memory data transfer
+            
             IF or_reduce(dma_wr_cmd_buffer.ready) = '1'  THEN
+              dma_wr_count       <= (dma_wr_cmd_buffer.size_VECTOR(process_index)) - '1';
               host_mem_awvalid   <= '1';
               card_mem_arvalid   <= '1';
               fsm_dma_wr         <= DMA_WR_REQ;
@@ -797,19 +805,22 @@ BEGIN
 
           WHEN DMA_WR_REQ =>
 
+            dma_wr_cmd_buffer.id_buf(done_ptr)   <= STD_LOGIC_VECTOR(to_unsigned(process_ptr,4));
             IF  host_mem_awvalid   = '0' and card_mem_arvalid = '0' THEN
-              IF dma_wr_cmd_buffer.size_VECTOR(process_ptr) = '1' THEN
-                -- IF we have 2 4K blocks, initiate the second
+              IF or_reduce(dma_wr_count) = '1' THEN
+--              IF or_reduce(dma_wr_cmd_buffer.size_VECTOR(process_ptr)) = '1' THEN
+                -- If we have further 4k blocks to transfer
+                dma_wr_count          <= dma_wr_count - '1';
                 host_mem_awaddr       <= host_mem_awaddr + x"1000";
                 card_mem_araddr       <= card_mem_araddr + x"1000";
                 host_mem_awvalid      <= '1';
                 card_mem_arvalid      <= '1';
-                fsm_dma_wr            <= DMA_WR_REQ_2;
+                fsm_dma_wr            <= DMA_WR_REQ;
               ELSE
                 -- clear the ready bit
                 dma_wr_cmd_buffer.ready(process_ptr) <= '0';
                 -- put in action id in buffer
-                dma_wr_cmd_buffer.id_buf(done_ptr)   <= STD_LOGIC_VECTOR(to_unsigned(process_ptr,4));
+                
                 IF done_ptr = 0 THEN
                   done_ptr <= 1;
                 ELSE
@@ -818,21 +829,6 @@ BEGIN
                 read_complete_int     <= true;
                 fsm_dma_wr            <= IDLE;
               END IF;
-            END IF;
-
-          WHEN DMA_WR_REQ_2 =>
-            IF  host_mem_awvalid = '0' and card_mem_arvalid = '0' THEN
-             -- save the id of the current initiated buffer
-              dma_wr_cmd_buffer.id_buf(done_ptr) <=  STD_LOGIC_VECTOR(to_unsigned(process_ptr,4));
-              -- point to the second buffer
-              IF done_ptr = 0 THEN
-                done_ptr <= 1;
-              ELSE
-                done_ptr <= 0;
-              END IF;
-              dma_wr_cmd_buffer.ready(process_ptr) <= '0';
-              read_complete_int                    <= true;
-              fsm_dma_wr                           <= IDLE;
             END IF;
 
           WHEN OTHERS => null;
