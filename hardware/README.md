@@ -6,7 +6,7 @@ Executing the following commands is pre-requisite for the usage of the SNAP fram
 source <xilinx_root>/Vivado/<version>/settings64.sh
 export XILINXD_LICENSE_FILE=<pointer to Xilinx license>
 ```
-In order to handle paths and other environment settings the SNAP `make` process is always sourcing the script `${SNAP_ROOT}/snap_env.sh`. You may modify that script (or create it if it doesn't already exist) and add your environment settings to that script (see also [snap_env](#snap_env).
+In order to handle paths and other environment settings, the SNAP `make` process is always sourcing the script `${SNAP_ROOT}/snap_env.sh`. You may modify that script (or create it if it doesn't already exist) and add your environment settings to that script (see also [snap_env](#snap_env)).
 
 ***Note:*** The SNAP `make` process is internally defining a variable `${SNAP_ROOT}` which is pointing to SNAP's [root directory](https://github.com/open-power/snap).
 Therefore, this variable may be used in the specification of paths for the `make` process, and we are using this variable in this document in the notation of file names.
