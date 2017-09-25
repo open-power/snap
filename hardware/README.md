@@ -6,9 +6,10 @@ Executing the following commands is pre-requisite for the usage of the SNAP fram
 source <xilinx_root>/Vivado/<version>/settings64.sh
 export XILINXD_LICENSE_FILE=<pointer to Xilinx license>
 ```
+In order to handle paths and other environment settings, the SNAP `make` process is always sourcing the script `${SNAP_ROOT}/snap_env.sh`. You may modify that script (or create it if it doesn't already exist) and add your environment settings to that script (see also [snap_env](#snap_env)).
 
-The SNAP make process is internally defining a variable `${SNAP_ROOT}` which is pointing to SNAP's [root directory](https://github.com/open-power/snap).
-From now on we will use this variable in the notation of file names.
+***Note:*** The SNAP `make` process is internally defining a variable `${SNAP_ROOT}` which is pointing to SNAP's [root directory](https://github.com/open-power/snap).
+Therefore, this variable may be used in the specification of paths for the `make` process, and we are using this variable in this document in the notation of file names.
 
 ## snap_config
 In order to configure the SNAP framework and to prepare the environment
@@ -25,7 +26,9 @@ Among the features that get configured via `make snap_config` are
 * enablement of the Xilinx Integrated Logic Analyzer
 * the simulator
 
-By calling `make snap_config` again a previously defined configuration may be modified.
+If additional path settings are required, the step `make snap_config` will tell you which variable definitions to add to the script `${SNAP_ROOT}/snap_env.sh` (see also [snap_env](#snap_env)).
+
+By calling `make snap_config` again, a previously defined configuration may be modified.
 
 If you want to clean your repository (i.e. remove the generated files) you may do so by calling
 ```bash
@@ -56,12 +59,12 @@ as well:
 DCP_ROOT=<pointer to the directory for design checkpoints required in the Partial Reconfiguration flow>
 ```
 
-The notation `${SNAP_ROOT}` may be used when pointing to directories or files below the SNAP root directory. For instance, if during the `make snap_config` process you select `hdl_example` as action the file `${SNAP_ROOT}/snap_env.sh` will contain the line
+As already indicated above, the notation `${SNAP_ROOT}` may be used when pointing to directories or files below the SNAP root directory. For instance, if during the `make snap_config` step you select `hdl_example` as action the file `${SNAP_ROOT}/snap_env.sh` will contain the line
 ```bash
 export ACTION_ROOT=${SNAP_ROOT}/actions/hdl_example
 ```
 
-***Note:*** When calling `make snap_config` for the first time, you need to edit the generated
+***Note:*** When calling `make snap_config` for the first time without a given `${SNAP_ROOT}/snap_env.sh`, you need to edit the generated
 file `${SNAP_ROOT}/snap_env.sh` in order to set the correct path names.
 
 # Image and model build
