@@ -191,6 +191,7 @@ int main(void)
 
 
     memset(din_gmem,  'c', sizeof(din_gmem[0]));
+    printf("Input is : %s\n", (char *)((unsigned long)din_gmem + 0));
     
     act_reg.Control.flags = 0x1; /* just not 0x0 */
 
@@ -208,7 +209,7 @@ int main(void)
 	    fprintf(stderr, " ==> RETURN CODE FAILURE <==\n");
 	    return 1;
     }
-    printf("Input is : %s\n", (char *)((unsigned long)din_gmem + 0));
+
     printf("Output is : %s\n", (char *)((unsigned long)dout_gmem + 0));
 
 
