@@ -293,9 +293,9 @@ if { $fpga_card == "KU3" } {
   if { $bram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/FGT/snap_refclk266.xdc
   } elseif { $sdram_used == "TRUE" } {
-    add_files -fileset constrs_1 -norecurse $root_dir/setup/FGT/snap_ddr4_pblock.xdc
-    set_property used_in_synthesis false [get_files $root_dir/setup/FGT/snap_ddr4_pblock.xdc]
     if { $use_prflow == "TRUE" } {
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/FGT/snap_ddr4_pblock.xdc
+      set_property used_in_synthesis false [get_files $root_dir/setup/FGT/snap_ddr4_pblock.xdc]
       add_files -fileset constrs_1 -norecurse $root_dir/setup/FGT/action_pblock.xdc
       set_property used_in_synthesis false [get_files  $root_dir/setup/FGT/action_pblock.xdc]
       add_files -fileset constrs_1 -norecurse $root_dir/setup/FGT/snap_pblock.xdc
