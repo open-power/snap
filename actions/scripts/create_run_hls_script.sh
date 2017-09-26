@@ -107,7 +107,7 @@ set_top ${wrapper}
 # Can that be a list?
 foreach file [ list ${files} ] {
   add_files \${file} -cflags "-I$snap_root/actions/include -I$snap_root/software/include -I../../../software/examples -I../include"
-  add_files -tb \${file} -cflags "-DNO_SYNTH -I$snap_root/actions/include -I$SNAP_ROOT/software/include -I../../../software/examples -I../include"
+  add_files -tb \${file} -cflags "-DNO_SYNTH -I$snap_root/actions/include -I$snap_root/software/include -I../../../software/examples -I../include"
 }
 
 open_solution "${name}"
