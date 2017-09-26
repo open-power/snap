@@ -277,7 +277,7 @@ int main(int argc, char *argv[])
 
 	cid = cblk_open(device, 128, O_RDWR, 0ull, 0);
 	if (cid < 0) {
-		fprintf(stderr, "err: openging %s failed rc=%d!\n",
+		fprintf(stderr, "err: opening %s failed rc=%d!\n",
 			device, (int)cid);
 		goto err_out;
 	}
