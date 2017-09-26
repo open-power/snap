@@ -646,11 +646,8 @@ int cblk_close(chunk_id_t id __attribute__((unused)),
 		sem_destroy(&c->req[i].wait_sem);
 	}
 
-fprintf(stderr, "1 %p\n", c->act);
 	snap_detach_action(c->act);
-fprintf(stderr, "2 %p\n", c->card);
 	snap_card_free(c->card);
-fprintf(stderr, "3\n");
 	__free(c->buf);
 
 	c->act = NULL;

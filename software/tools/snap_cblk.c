@@ -142,12 +142,13 @@ static void INT_handler(int sig);
 
 static void INT_handler(int sig)
 {
-	signal(sig, SIG_IGN);
-
+	fprintf(stderr, "\nCntl+C (%d)\n", sig);
 	cblk_close(cid, 0);
 	cblk_term(NULL, 0);
 
+	/* signal(sig, SIG_IGN); */
 	/* signal(SIGINT, INT_handler); *//* Try again */
+	exit (EXIT_FAILURE);
 }
 
 /**
@@ -303,8 +304,14 @@ int main(int argc, char *argv[])
 			fname);
 
 		if (start_lba + num_lba > lun_size) {
-			fprintf(stderr, "err: device not large enougn %zu lbas\n",
+			fprintf(stderr, "err: device not large enough %zu lbas\n",
 				lun_size);
+			goto err_out;
+		}
+
+		if (num_lba < lba_blocks) {
+			fprintf(stderr, "err: num_lba %u smaller than lba_blocks %zu\n",
+				num_lba, lba_blocks);
 			goto err_out;
 		}
 
@@ -369,6 +376,12 @@ int main(int argc, char *argv[])
 			goto err_out;
 		}
 
+		if (num_lba < lba_blocks) {
+			fprintf(stderr, "err: num_lba %u smaller than lba_blocks %zu\n",
+				num_lba, lba_blocks);
+			goto err_out;
+		}
+
 		rc = posix_memalign((void **)&buf, 64, num_lba * lba_size);
 		if (rc != 0) {
 			fprintf(stderr, "err: Cannot allocate enough memory!\n");
@@ -402,6 +415,12 @@ int main(int argc, char *argv[])
 	case OP_FORMAT: {
 		fprintf(stderr, "Formatting NVMe drive %zu KiB with pattern %02x ...\n",
 			(num_lba * lba_size) / 1024, pattern);
+
+		if (num_lba < lba_blocks) {
+			fprintf(stderr, "err: num_lba %u smaller than lba_blocks %zu\n",
+				num_lba, lba_blocks);
+			goto err_out;
+		}
 
 		/* Allocate memory for entire device (simplicity first) */
 		rc = posix_memalign((void **)&buf, 64, num_lba * lba_size);
