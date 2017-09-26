@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <endian.h>
+#include <signal.h>
 #include <asm/byteorder.h>
 #include <sys/mman.h>
 #include <sys/time.h>
@@ -40,6 +41,8 @@ typedef enum {
 	OP_WRITE = 1,
 	OP_FORMAT = 2,
 } cblk_operation_t;
+
+static chunk_id_t cid = (chunk_id_t)-1; /* global to close device via sig_INT */
 
 /**
  * @brief Prints valid command line options
@@ -135,6 +138,18 @@ file_write(const char *fname, const uint8_t *buff, size_t len)
 	return rc;
 }
 
+static void INT_handler(int sig);
+
+static void INT_handler(int sig)
+{
+	signal(sig, SIG_IGN);
+
+	cblk_close(cid, 0);
+	cblk_term(NULL, 0);
+
+	/* signal(SIGINT, INT_handler); *//* Try again */
+}
+
 /**
  * @brief Tool to write to zEDC registers. Must be called as root!
  */
@@ -147,7 +162,6 @@ int main(int argc, char *argv[])
 	uint8_t *buf = NULL;
 	char device[128];
 	cblk_operation_t _op = OP_READ;
-	chunk_id_t cid = (chunk_id_t)-1;
 	size_t lun_size = 0;
 	size_t lba_size = 4 * 1024;
 	size_t lba_blocks = 1;
@@ -267,6 +281,8 @@ int main(int argc, char *argv[])
 			device, (int)cid);
 		goto err_out;
 	}
+	
+	signal(SIGINT, INT_handler);
 
 	rc = cblk_get_lun_size(cid, &lun_size, 0);
 	if (rc < 0) {

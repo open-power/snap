@@ -80,17 +80,29 @@ enum cblk_status {
 	CBLK_IDLE = 0,
 	CBLK_READING = 1,
 	CBLK_WRITING = 2,
-	CBLK_ERROR = 3,
+	CBLK_READY = 3,
+	CBLK_ERROR = 4,
 };
 
-static const char *status_str[] = { "IDLE", "READING", "WRITING", "ERROR" };
+static const char *status_str[] =
+	{ "IDLE", "READING", "WRITING", "READY", "ERROR" };
+		
 
 struct cblk_req {
 	unsigned int num;
+	uint8_t slot;
 	enum cblk_status status;
 	sem_t wait_sem;
 	uint8_t *buf;
 };
+
+static inline void cblk_set_status(struct cblk_req *req,
+				enum cblk_status status)
+{
+	block_trace("  [%s] req slot %d new status is %s\n", __func__,
+		req->slot, status_str[status]);
+	req->status = status;
+}
 
 #define CBLK_WIDX_MAX	1	/* Just one for now */
 #define CBLK_RIDX_MAX	15	/* 15 read slots */
@@ -106,10 +118,16 @@ struct cblk_dev {
 	int timeout;
 	uint8_t *buf;
 
+	unsigned int w_in_flight;	/* write transfers in flight */
+	unsigned int r_in_flight;	/* read transfers in flight */
+
 	unsigned int widx;
 	unsigned int ridx;
 
 	struct cblk_req req[CBLK_IDX_MAX];
+
+	sem_t busy_sem;			/* wait here if there is no free slot */
+	sem_t idle_sem;			/* wait here if there is no work */
 	pthread_t done_tid;
 };
 
@@ -117,6 +135,11 @@ struct cblk_dev {
 static struct cblk_dev chunk = {
 	.dev_lock = PTHREAD_MUTEX_INITIALIZER,
 };
+
+static inline unsigned int work_in_flight(struct cblk_dev *c)
+{
+	return c->w_in_flight + c->r_in_flight;
+}
 
 /* Action related definitions. Used to access the hardware */
 
@@ -183,7 +206,7 @@ static const char *action_name[] = {
 #define NVME_MAX_TRANSFER_SIZE	(32 * MEGA_BYTE)  /* NVME limit to Transfer in one chunk */
 
 /* NVME lba cache */
-#define CACHE_MASK	0x0000000f
+#define CACHE_MASK	0x00000003
 #define CACHE_WAYS	4
 #define CACHE_ENTRIES	(CACHE_MASK + 1)
 
@@ -330,7 +353,7 @@ static inline int cache_write(off_t lba, const void *buf)
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
-static int chunk_write(struct cblk_dev *c, uint32_t addr, uint32_t data)
+static int __cblk_write(struct cblk_dev *c, uint32_t addr, uint32_t data)
 {
 	int rc;
 
@@ -343,7 +366,7 @@ static int chunk_write(struct cblk_dev *c, uint32_t addr, uint32_t data)
 
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
-static int chunk_read(struct cblk_dev *c, uint32_t addr, uint32_t *data)
+static int __cblk_read(struct cblk_dev *c, uint32_t addr, uint32_t *data)
 {
 	int rc;
 
@@ -355,47 +378,10 @@ static int chunk_read(struct cblk_dev *c, uint32_t addr, uint32_t *data)
 }
 
 /*
- *	Start Action and wait for Idle.
- */
-static inline int chunk_wait_idle(struct cblk_dev *c, int timeout,
-				uint32_t mem_size __attribute__((unused)))
-{
-	int rc = ETIME;
-	uint32_t status = 0x0;
-
-	/* FIXME Use act and not h */
-	snap_action_start(c->act);
-
-	/* Wait for Action to go back to Idle */
-
-	/* FIXME Use act and not h */
-	rc = snap_action_completed(c->act, NULL, timeout);
-	if (0 == rc) {
-		fprintf(stderr, "err: Timeout while Waiting for Idle %d\n", rc);
-		return !rc;
-	}
-
-	rc = chunk_read(c, ACTION_STATUS, &status);
-	if (rc != 0)
-		fprintf(stderr, "err: MMIO32 read ACTION_STATUS %d\n", rc);
-
-	if (status == ACTION_STATUS_NO_COMPLETION) {
-		block_trace("  NO COMPLETION %02x\n", status);
-	} else if (status == ACTION_STATUS_WRITE_COMPLETED) {
-		block_trace("  WRITE_COMPLETED %02x\n", status);
-	} else {
-		block_trace("  READ_COMPLETED %02x\n", status);
-	}
-	
-	block_trace("  SLOT: %d\n", status & ACTION_STATUS_COMPLETION_MASK);
-	return rc;
-}
-
-/*
  * NVMe: For NVMe transfers n is representing a NVME_LB_SIZE (512)
  *       byte block.
  */
-static inline void chunk_memcpy(struct cblk_dev *c,
+static inline void start_memcpy(struct cblk_dev *c,
 				uint32_t action,
 				uint64_t dest,
 				uint64_t src,
@@ -407,15 +393,16 @@ static inline void chunk_memcpy(struct cblk_dev *c,
 		action_name[action_code % ACTION_CONFIG_MAX], action,
 		(long long)dest, (long long)src, (long long)n);
 
-	chunk_write(c, ACTION_CONFIG, action);
+	__cblk_write(c, ACTION_CONFIG, action);
+	__cblk_write(c, ACTION_DEST_LOW, (uint32_t)(dest & 0xffffffff));
+	__cblk_write(c, ACTION_DEST_HIGH, (uint32_t)(dest >> 32));
+	__cblk_write(c, ACTION_SRC_LOW, (uint32_t)(src & 0xffffffff));
+	__cblk_write(c, ACTION_SRC_HIGH, (uint32_t)(src >> 32));
+	__cblk_write(c, ACTION_CNT, n);
 
-	chunk_write(c, ACTION_DEST_LOW,  (uint32_t)(dest & 0xffffffff));
-	chunk_write(c, ACTION_DEST_HIGH, (uint32_t)(dest >> 32));
+	/* Wait for Action to go back to Idle */
+	snap_action_start(c->act);
 
-	chunk_write(c, ACTION_SRC_LOW,	  (uint32_t)(src & 0xffffffff));
-	chunk_write(c, ACTION_SRC_HIGH,  (uint32_t)(src >> 32));
-
-	chunk_write(c, ACTION_CNT, n);
 }
 
 int cblk_init(void *arg __attribute__((unused)),
@@ -434,6 +421,42 @@ int cblk_term(void *arg __attribute__((unused)),
 	return 0;
 }
 
+/**
+ * Check action results and kick potential waiting threads.
+ */
+static inline int cblk_wait_done(struct cblk_dev *c, int timeout __attribute__((unused)))
+{
+	int rc = ETIME;
+	uint32_t status = 0x0;
+	int slot = -1;
+
+#if 1
+	rc = snap_action_completed(c->act, NULL, timeout);
+	if (rc == 0) {
+		fprintf(stderr, "err: Timeout while Waiting for Idle %d\n", rc);
+		return -1;
+	}
+#endif
+
+	rc = __cblk_read(c, ACTION_STATUS, &status);
+	if (rc != 0) {
+		fprintf(stderr, "err: MMIO32 read ACTION_STATUS %d\n", rc);
+		return -2;
+	}
+
+	slot = status & ACTION_STATUS_COMPLETION_MASK;
+
+	if (status == ACTION_STATUS_NO_COMPLETION) {
+		block_trace("  NO COMPLETION %02x\n", status);
+	} else if (status == ACTION_STATUS_WRITE_COMPLETED) {
+		block_trace("  WRITE_COMPLETED %02x SLOT: %d\n", status, slot);
+	} else {
+		block_trace("  READ_COMPLETED %02x SLOT: %d\n", status, slot);
+	}
+
+	return slot;
+}
+
 static void done_thread_cleanup(void *arg)
 {
 	block_trace("[%s] p=%p\n", __func__, arg);
@@ -448,7 +471,32 @@ static void *done_thread(void *arg)
 	pthread_cleanup_push(done_thread_cleanup, c);
 
 	while (1) {
-		pthread_testcancel();
+		block_trace("  [%s] waiting for work ... WORK NEEDED WORK NEEDED\n",
+			__func__);
+		sem_wait(&c->idle_sem);	/* wait until work is to be done */
+		block_trace("  [%s] worken up ...\n", __func__);
+		pthread_testcancel();	/* go home if requested */
+
+		/* FIXME Do we need the device lock here? */
+		while (work_in_flight(c)) {
+			int slot;
+
+			slot = cblk_wait_done(c, c->timeout);
+			if (slot < 0) {
+				block_trace("  [%s] wait_done returned slot=%d\n",
+					__func__, slot);
+			} else {
+				if ((c->req[slot].status == CBLK_READING) ||
+				    (c->req[slot].status == CBLK_WRITING)) {
+					block_trace("  [%s] waking up slot %d\n",
+						__func__, slot);
+					cblk_set_status(&c->req[slot], CBLK_READY);
+					sem_post(&c->req[slot].wait_sem);
+				} else
+					block_trace("  [%s] slot %d status is %s NOTHING TO BE DONE\n",
+						__func__, slot, status_str[slot]);
+			}
+		}
 	}
 
 	pthread_cleanup_pop(1);
@@ -525,12 +573,15 @@ chunk_id_t cblk_open(const char *path,
 	c->done_tid = 0;
 	c->widx = 0;
 	c->ridx = 0;
-	
+	sem_init(&c->busy_sem, 0, 0);
+	sem_init(&c->idle_sem, 0, 0);
+
 	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
+		c->req[i].slot = i;
 		c->req[i].num = 0;
 		c->req[i].buf = c->buf + i * 2 * __CBLK_BLOCK_SIZE;
-		c->req[i].status = CBLK_IDLE;
-		sem_init(&c->req[i].wait_sem, 0, i);
+		cblk_set_status(&c->req[i], CBLK_IDLE);
+		sem_init(&c->req[i].wait_sem, 0, 0);
 	}
 
 	rc = pthread_create(&c->done_tid, NULL, &done_thread, &chunk);
@@ -638,55 +689,63 @@ int cblk_set_size(chunk_id_t id __attribute__((unused)),
 static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 		size_t nblocks)
 {
-	int rc;
+	int slot, count;
 	struct cblk_req *req;
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
-	uint8_t *_buf = buf;
 
 	block_trace("[%s] reading (%p lba=%zu nblocks=%zu) ...\n",
 		__func__, buf, lba, nblocks);
-	
-	pthread_mutex_lock(&c->dev_lock);
 
-	req = &c->req[CBLK_WIDX_MAX + c->ridx];
-	if ((uint64_t)buf % 64) {
-		fprintf(stderr, "warn: buffer address not aligned! %p\n",
-			buf);
-		if (nblocks > 2) {
-			fprintf(stderr, "warn: temp buffer too small!\n");
-			errno = EFAULT;
-			pthread_mutex_unlock(&c->dev_lock);
-			return -1;
-		}
-		_buf = req->buf;
+	if (nblocks > 2) {
+		fprintf(stderr, "err: temp buffer too small!\n");
+		errno = EFAULT;
+		return -1;
 	}
 
-	req->status = CBLK_READING;
-	req->num++;
-	chunk_memcpy(c,
-		ACTION_CONFIG_COPY_NH | ((CBLK_WIDX_MAX + c->ridx) << 8), /* NVMe to Host DDR */
-		(uint64_t)buf,					/* dst */
-		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,		/* src */
-		mem_size);					/* size */
+	pthread_mutex_lock(&c->dev_lock);
 
-	/* FIXME Kick the done thread */
-	rc = chunk_wait_idle(c, c->timeout, mem_size);
-	if (rc)
+	slot = CBLK_WIDX_MAX + c->ridx;
+	req = &c->req[slot];
+
+	if (req->status != CBLK_IDLE) {	/* FATAL error scenario */
+			fprintf(stderr, "err: req[%d].status not CBLK_IDLE!\n", slot);
+		errno = EBUSY;
+		pthread_mutex_unlock(&c->dev_lock);
 		goto __exit1;
+	}
 
-	if ((uint64_t)buf % 64)
-		memcpy(buf, _buf, nblocks * __CBLK_BLOCK_SIZE);
+	cblk_set_status(req, CBLK_READING);
+	c->r_in_flight++;
+	start_memcpy(c,
+		ACTION_CONFIG_COPY_NH | (slot << 8), /* NVMe to Host DDR */
+		(uint64_t)req->buf,			/* dst */
+		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* src */
+		mem_size);				/* size */
 
-	req->status = CBLK_IDLE;
-	c->ridx = (c->ridx + 1) % CBLK_RIDX_MAX;
+	/* Kick the thread if we are the 1st one */
+	if (c->r_in_flight == 1)
+		sem_post(&c->idle_sem);
+
+	count = 0;
+	while (req->status == CBLK_READING) {
+		block_trace("  [%s] sleeping %d. slot %d status: %s\n",
+			__func__, count++, slot, status_str[req->status]);
+		sem_wait(&req->wait_sem);
+		block_trace("  [%s] continuing slot %d\n", __func__, slot);
+	}
+
+	memcpy(buf, req->buf, nblocks * __CBLK_BLOCK_SIZE);
+	cblk_set_status(req, CBLK_IDLE);
+	c->r_in_flight--;
+	c->ridx = (c->ridx + 1) % CBLK_RIDX_MAX; /* pick next slot */
 	
 	pthread_mutex_unlock(&c->dev_lock);
-	block_trace("[%s] exit lba=%zu nblocks=%zu\n",
-		__func__, lba, nblocks);
+
+	block_trace("[%s] exit lba=%zu nblocks=%zu\n", __func__, lba, nblocks);
 	return nblocks;
 
  __exit1:
-	req->status = CBLK_ERROR;
+	cblk_set_status(req, CBLK_ERROR);
 	pthread_mutex_unlock(&c->dev_lock);
 	return -1;
 }
@@ -712,51 +771,61 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 		size_t nblocks)
 {
-	int rc;
+	int slot;
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
 	struct cblk_req *req;
 
 	block_trace("[%s] writing (%p lba=%zu nblocks=%zu) ...\n",
 		__func__, buf, lba, nblocks);
-	
-	pthread_mutex_lock(&c->dev_lock);
 
-	req = &c->req[c->widx];
-	if ((uint64_t)buf % 64) {
-		fprintf(stderr, "warn: buffer address not aligned! %p\n",
-			buf);
-		if (nblocks > 2) {
-			fprintf(stderr, "warn: temp buffer too small!\n");
-			errno = EFAULT;
-			pthread_mutex_unlock(&c->dev_lock);
-			return -1;
-		}
-		memcpy(req->buf, buf, nblocks * __CBLK_BLOCK_SIZE);
-		buf = req->buf;
+	if (nblocks > 2) {
+		fprintf(stderr, "err: temp buffer too small!\n");
+		errno = EFAULT;
+		return -1;
 	}
 
-	req->status = CBLK_WRITING;
-	req->num++;
-	chunk_memcpy(c,
-		ACTION_CONFIG_COPY_HN | (c->widx << 8),	/* Host DDR to NVMe */
-		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,		/* dst */
-		(uint64_t)buf,					/* src */
-		mem_size);					/* size */
+	pthread_mutex_lock(&c->dev_lock);
 
-	/* FIXME Kick the done thread */
-	rc = chunk_wait_idle(c, c->timeout, mem_size);
-	if (rc)
+	slot = c->widx;
+	req = &c->req[slot];
+
+	if (req->status != CBLK_IDLE) {	/* FATAL error scenario */
+		fprintf(stderr, "err: req[%d].status not CBLK_IDLE!\n", slot);
+		errno = EBUSY;
+		pthread_mutex_unlock(&c->dev_lock);
 		goto __exit1;
+	}
 
-	req->status = CBLK_IDLE;
-	c->widx = (c->widx + 1) % CBLK_WIDX_MAX;
+	cblk_set_status(req, CBLK_WRITING);
+	memcpy(req->buf, buf, nblocks * __CBLK_BLOCK_SIZE);
+	c->w_in_flight++;
+	start_memcpy(c,
+		ACTION_CONFIG_COPY_HN | (slot << 8),	/* Host DDR to NVMe */
+		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* dst */
+		(uint64_t)req->buf,			/* src */
+		mem_size);				/* size */
+
+	/* Kick the thread if we are the 1st one */
+	if (c->w_in_flight == 1)
+		sem_post(&c->idle_sem);
+
+	while (req->status == CBLK_WRITING) {
+		block_trace("  [%s] sleeping slot %d\n", __func__, slot);
+		sem_wait(&req->wait_sem);
+		block_trace("  [%s] continuing slot %d\n", __func__, slot);
+	}
+	
+	cblk_set_status(req, CBLK_IDLE);
+	c->w_in_flight--;
+	c->widx = (c->widx + 1) % CBLK_WIDX_MAX;	 /* pick next slot */
 
 	pthread_mutex_unlock(&c->dev_lock);
+
 	block_trace("[%s] exit lba=%zu nblocks=%zu\n", __func__, lba, nblocks);
 	return nblocks;
 
  __exit1:
-	req->status = CBLK_ERROR;
+	cblk_set_status(req, CBLK_ERROR);
 	pthread_mutex_unlock(&c->dev_lock);
 	return -1;
 }
