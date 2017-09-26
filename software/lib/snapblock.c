@@ -604,8 +604,10 @@ chunk_id_t cblk_open(const char *path,
 	c->buf = NULL;
  out_err2:
 	snap_detach_action(c->act);
+	c->act = NULL;
  out_err1:
 	snap_card_free(c->card);
+	c->card = NULL;
  out_err0:
  	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
 		c->req[i].status = CBLK_IDLE;
@@ -644,8 +646,11 @@ int cblk_close(chunk_id_t id __attribute__((unused)),
 		sem_destroy(&c->req[i].wait_sem);
 	}
 
+fprintf(stderr, "1 %p\n", c->act);
 	snap_detach_action(c->act);
+fprintf(stderr, "2 %p\n", c->card);
 	snap_card_free(c->card);
+fprintf(stderr, "3\n");
 	__free(c->buf);
 
 	c->act = NULL;
