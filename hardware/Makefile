@@ -166,11 +166,10 @@ check_nvme:
 			echo "                        NVMe simulation is not supported for SIMULATOR $(SIMULATOR)"; \
 			exit -1; \
 		fi; \
-		if [ !  -d "$(DENALI_TOOLS)" ] || [ ! -d "$(DENALI_CUSTOM)" ]; then \
-			echo "                        Missing one or more environment variables for NVMe simulation."; \
-			echo "                        Please check the following variables."; \
+		if [ !  -d "$(DENALI_TOOLS)" ]; then \
+			echo "                        Missing or invalid environment variable for NVMe simulation."; \
+			echo "                        Please check the setting of:"; \
 			echo "                        DENALI_TOOLS:   $(DENALI_TOOLS)"; \
-			echo "                        DENALI_CUSTOM:  $(DENALI_CUSTOM)"; \
 			exit -1; \
 		fi \
 	fi

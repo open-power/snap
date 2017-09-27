@@ -247,12 +247,6 @@ while [ -z "$SETUP_DONE" ]; do
     else
       echo "DENALI_TOOLS            is set to: \"$DENALI_TOOLS\""
     fi
-
-    if [ -z "$DENALI_CUSTOM" ]; then
-      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of NVME_USED=$NVME_USED but DENALI_CUSTOM not set!"
-    else
-      echo "DENALI_CUSTOM           is set to: \"$DENALI_CUSTOM\""
-    fi
   fi
 
 
