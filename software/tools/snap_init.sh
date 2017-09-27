@@ -18,19 +18,24 @@
 
 card=0
 version=0.1
-PATH=.:software/tools:tools:$PATH
-LD_LIBRARY_PATH=.:software/lib:lib
+TEST=NONE
+
+export PATH=.:software/tools:tools:$PATH
+export LD_LIBRARY_PATH=.:software/lib:lib:`pwd`/lib
 
 function usage() {
 	echo "Usage: $PROGRAM"
-	echo "    [-C] <0..3> Print accelerator name for this Card"
+	echo "    [-V]              print version"
+	echo "    [-h|-?]           help"
+	echo "    [-C <0..3>]       card number"
+	echo "    [-T <testcase>]   testcase e.g. CBLK"
 	echo
 	echo "  Perform SNAP card initialization and action_type "
 	echo "  detection. Initialize NVMe disk 0 and 1 if existent."
 	echo
 }
 
-while getopts ":A:C:Vvh" opt; do
+while getopts ":A:C:T:Vvh" opt; do
 	case ${opt} in
 	C)
 		card=${OPTARG};
@@ -42,6 +47,9 @@ while getopts ":A:C:Vvh" opt; do
 	V)
 		echo "${version}" >&2
 		exit 0
+		;;
+	T)
+		TEST=${OPTARG}
 		;;
 	h)
 		usage;
@@ -69,5 +77,73 @@ fi
 
 snap_maint -C${card} -v
 snap_nvme_init -C${card} -d0 -d1 -v
+
+if [ ${TEST} = "CBLK" ]; then
+	###############################################################
+	echo "# Formatting using 1 block increasing pattern ..."
+	snap_cblk -C${card} -b1 --format --pattern INC
+	if [ $? -ne 0 ]; then
+		printf "${bold}ERROR:${normal} Cannot format NVMe device!\n" >&2
+		exit 1
+	fi
+	echo "# Reading using 1 block ..."
+	snap_cblk -C${card} -b1 --read cblk_read1.bin
+	if [ $? -ne 0 ]; then
+		printf "${bold}ERROR:${normal} Reading NVMe device!\n" >&2
+		exit 1
+	fi
+	echo "# Reading using 2 blocks ..."
+	snap_cblk -C${card} -b2 --read cblk_read2.bin
+	if [ $? -ne 0 ]; then
+		printf "${bold}ERROR:${normal} Reading NVMe device!\n" >&2
+		exit 1
+	fi
+	echo "Compare results ..."
+	diff cblk_read1.bin cblk_read2.bin
+	if [ $? -ne 0 ]; then
+		printf "${bold}ERROR:${normal} Data differs!\n" >&2
+		exit 1
+	fi
+
+	###############################################################
+	echo "# Writing 2 blocks ..."
+	snap_cblk -C${card} -b2 --write cblk_read2.bin
+	if [ $? -ne 0 ]; then
+		printf "${bold}ERROR:${normal} Writing NVMe device!\n" >&2
+		exit 1
+	fi
+	echo "# Reading using 2 blocks ..."
+	snap_cblk -C${card} -b2 --read cblk_read3.bin
+	if [ $? -ne 0 ]; then
+		printf "${bold}ERROR:${normal} Reading NVMe device!\n" >&2
+		exit 1
+	fi
+	echo "Compare results ..."
+	diff cblk_read2.bin cblk_read3.bin
+	if [ $? -ne 0 ]; then
+		printf "${bold}ERROR:${normal} Data differs!\n" >&2
+		exit 1
+	fi
+
+	###############################################################
+	echo "# Writing 1 blocks ..."
+	snap_cblk -C${card} -b1 --write cblk_read2.bin
+	if [ $? -ne 0 ]; then
+		printf "${bold}ERROR:${normal} Writing NVMe device!\n" >&2
+		exit 1
+	fi
+	echo "# Reading using 1 blocks ..."
+	snap_cblk -C${card} -b1 --read cblk_read4.bin
+	if [ $? -ne 0 ]; then
+		printf "${bold}ERROR:${normal} Reading NVMe device!\n" >&2
+		exit 1
+	fi
+	echo "Compare results ..."
+	diff cblk_read2.bin cblk_read4.bin
+	if [ $? -ne 0 ]; then
+		printf "${bold}ERROR:${normal} Data differs!\n" >&2
+		exit 1
+	fi
+fi
 
 exit 0
