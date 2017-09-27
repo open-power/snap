@@ -706,6 +706,14 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 
 	pthread_mutex_lock(&c->dev_lock);
 
+	while (c->r_in_flight == CBLK_WIDX_MAX) { /* block in case of busy hardware */
+		pthread_mutex_unlock(&c->dev_lock);
+		block_trace("  [%s] wait for free slot\n", __func__);
+		sem_wait(&c->idle_sem);
+		block_trace("  [%s] check if we have a free slot\n", __func__);
+		pthread_mutex_lock(&c->dev_lock);
+	}
+
 	slot = CBLK_WIDX_MAX + c->ridx;
 	req = &c->req[slot];
 
@@ -740,7 +748,8 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 	cblk_set_status(req, CBLK_IDLE);
 	c->r_in_flight--;
 	c->ridx = (c->ridx + 1) % CBLK_RIDX_MAX; /* pick next slot */
-	
+
+	sem_post(&c->idle_sem);		/* kick potential waiters */
 	pthread_mutex_unlock(&c->dev_lock);
 
 	block_trace("[%s] exit lba=%zu nblocks=%zu\n", __func__, lba, nblocks);
@@ -788,6 +797,14 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 
 	pthread_mutex_lock(&c->dev_lock);
 
+	while (c->w_in_flight == CBLK_WIDX_MAX) { /* block in case of busy hardware */
+		pthread_mutex_unlock(&c->dev_lock);
+		block_trace("  [%s] wait for free slot\n", __func__);
+		sem_wait(&c->idle_sem);
+		block_trace("  [%s] check if we have a free slot\n", __func__);
+		pthread_mutex_lock(&c->dev_lock);
+	}
+
 	slot = c->widx;
 	req = &c->req[slot];
 
@@ -821,6 +838,7 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 	c->w_in_flight--;
 	c->widx = (c->widx + 1) % CBLK_WIDX_MAX;	 /* pick next slot */
 
+	sem_post(&c->idle_sem);		/* kick potential waiters */
 	pthread_mutex_unlock(&c->dev_lock);
 
 	block_trace("[%s] exit lba=%zu nblocks=%zu\n", __func__, lba, nblocks);
