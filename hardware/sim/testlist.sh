@@ -19,7 +19,7 @@
   n=0                                                   # count amount of tests executed (exception for subsecond calls)
   max_rc=0                                              # track the maximum RC to return at the end
   loops=1;
-# ln -s ../sw $ACTION_ROOT/hw/sw 2>/dev/null |echo      # circumvention to deal with ACTION_ROOT pointing to hw subdirectory, ignore RC
+  rnd10=$((1+RANDOM%10))
   rnd20=$((1+RANDOM%20))
   rnd32=$((1+RANDOM%32))
   rnd1k=$((1+RANDOM%1024))
@@ -143,7 +143,6 @@
 #   t="$SNAP_ROOT/software/tools/snap_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # DMA    ErrInj"
 
     if [[ "$t0l" == "10140000" || "${env_action}" == "hdl_example" ]];then echo -e "$del\ntesting hdl_example"
-#   if [[ "$NVME_USED" == "TRUE" ]];then echo -e "\nskipped due to NVMe"
     if [[ "$nvme" == "1" ]];then echo -e "\nskipped due to NVMe"
     else
 #     step "$ACTION_ROOT/sw/snap_example -h"
@@ -154,32 +153,36 @@
         step "$ACTION_ROOT/sw/snap_example -I -a1 -s1 -e2 -i1 -t100 -vv"
         step "$ACTION_ROOT/sw/snap_example -I -a2 -A256 -S1 -B0 -t200"
       fi
-      for num4k in 0 1 2 3 4 5 6 7 8; do
-#     for num64 in 0 1 2; do
-      for num64 in 0; do
-      if [[ "$num4k" == "0" && "$num64" == "0" ]];then echo "skip $num4k $num64";continue;fi  # bot args=0 is not allowed
-#     for align in 4096 1024 256 64; do  # posix memalign only allows power of 2
-      for align in 4096;do
-        step "$ACTION_ROOT/sw/snap_example -a2 -S${num4k} -B${num64} -A${align} -t200"
+      for num4k in 0 1 $rnd20; do to=$((num4k*60+200))
+      for num64 in 0 1 $rnd32; do
+      for align in 4096 64; do  # posix memalign only allows power of 2
+        if [[ "$num4k" == "0" && "$num64" == "0" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
+        if [[ "$num4k" > "1"  && "$num64" < "2"  ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+        if [[ "$num4k" > "1"  && "$align" > "64" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+        step "$ACTION_ROOT/sw/snap_example -a2 -S${num4k} -B${num64} -A${align} -t$to"
       done
       done
       done
       step "$ACTION_ROOT/sw/snap_example -a2 -B${rnd20} -t200"
       if [[ "$DDR3_USED" == "TRUE" || "$DDR4_USED" == "TRUE" || "$BRAM_USED" == "TRUE" || "$SDRAM_USED" == "TRUE" ]]; then echo -e "$del\ntesting DDR"
-        for num4k in 0 1 3; do to=$((180+num4k*180))
-        for num64 in 1 64; do                          # 1..64
-        for align in 4096 256 64; do                   # must be mult of 64
-          step "$ACTION_ROOT/sw/snap_example -a6 -A${align} -S${num4k} -B${num64} -t$to"
+        for num4k in 0 1 $rnd20; do to=$((num4k*180+180))
+        for num64 in 0 1 $rnd32; do                # 1..64
+        for align in 4096 64; do                   # must be mult of 64
+          if [[ "$num4k" == "0" && "$num64" == "0" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
+          if [[ "$num4k" > "1"  && "$num64" < "2"  ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+          if [[ "$num4k" > "1"  && "$align" > "64" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+          step "$ACTION_ROOT/sw/snap_example -a6 -S${num4k} -B${num64} -A${align} -t$to"
         done
         done
         done
         #### check DDR3 memory in KU3, stay under 512k for BRAM
         step "$ACTION_ROOT/sw/snap_example_ddr -h"
-        for strt in 0x1000 0x2000 $rnd1k; do      # start adr
-        for iter in 1 2; do                # number of blocks
-        for bsize in 64 0x1000 $(($rnd20*64)); do         # block size
+        for iter in 1 $rnd10; do                    # number of blocks
+        for bsize in 64 $(($rnd10*64)); do          # block size mult of 64
+        for strt in 1024 $rnd1k4k; do               # start adr
+          if [[ "iter" > "1" && ("$bsize" == "64" || "$strt" == "1024") ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
           let end=${strt}+${iter}*${bsize}; to=$((iter*iter*bsize/4+300))                       # rough timeout dependent on filesize
-          step "$ACTION_ROOT/sw/snap_example_ddr -s${strt} -e${end} -b${bsize} -i${iter} -t$to"
+          step "$ACTION_ROOT/sw/snap_example_ddr -i${iter} -b${bsize} -s${strt} -e${end} -t$to"
         done
         done
         done
@@ -248,7 +251,6 @@
 
     if [[ "$t0l" == "10141000" || "${env_action}" == "hls_memcopy"* ]];then echo -e "$del\ntesting snap_memcopy"
       step "$ACTION_ROOT/sw/snap_memcopy -h"
-#     step "$ACTION_ROOT/sw/snap_memcopy -C0 -i ../../1KB.txt -o 1KB.out -t10"
       for size in 1 64 80 85 240 $rnd1k $rnd1k4k; do to=$((size*50+10))   # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
         #### select 1 type of data generation
         # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                         # same char mult times
@@ -258,12 +260,12 @@
         if [[ $((size%64)) == 0 ]];then echo "size is aligned"
           step "$ACTION_ROOT/sw/snap_memcopy -i ${size}.in -o ${size}.out -v -X -t$to"
           if diff ${size}.in ${size}.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
-          step "$ACTION_ROOT/sw/snap_memcopy -I -i ${size}.in -o ${size}.out -v -X -t$to"
+          step "$ACTION_ROOT/sw/snap_memcopy -N -i ${size}.in -o ${size}.out -v -X -t$to"
           if diff ${size}.in ${size}.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
         else echo "size is not aligned"
           step "$ACTION_ROOT/sw/snap_memcopy -i ${size}.in -o ${size}.out -v -t$to"
           if diff ${size}.in ${size}.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
-          step "$ACTION_ROOT/sw/snap_memcopy -I -i ${size}.in -o ${size}.out -v -t$to"
+          step "$ACTION_ROOT/sw/snap_memcopy -N -i ${size}.in -o ${size}.out -v -t$to"
           if diff ${size}.in ${size}.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
         fi
       done
@@ -301,13 +303,12 @@
         step "$ACTION_ROOT/sw/snap_hashjoin -T$vart -t$to -vvv"
       done
       for varq in 1 5 $rnd32; do to=$((varq*3+500))
-        step "$ACTION_ROOT/sw/snap_hashjoin -Q$vart -t$to -vvv"
+        step "$ACTION_ROOT/sw/snap_hashjoin -Q$varq -t$to -vvv"
       done
     fi # hls_hashjoin
 
     if [[ "$t0l" == "10141003" || "${env_action}" == "hls_search"* ]];then echo -e "$del\ntesting snap_search"
       step "$ACTION_ROOT/sw/snap_search -h"
-#     step "$ACTION_ROOT/sw/snap_search -p'A' -C0 -i ../../1KB.txt   -t100"
       for size in 1 2 30 257 1024 $rnd1k4k; do to=$((size*60+400))
         char=$(cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w 1|head -n 1)                               # one random ASCII  char to search for
         head -c $size </dev/zero|tr '\0' 'A' >${size}.uni                                             # same char mult times
@@ -325,67 +326,70 @@
 
     if [[ "$t0l" == "10141004" || "${env_action}" == "hls_bfs"* ]];then echo -e "$del\ntesting BFS"
       step "$ACTION_ROOT/sw/snap_bfs -h"
-      step "$ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v"
-#     for size in {1..3}; do
-#       step "$ACTION_ROOT/sw/snap_bfs -r50 -t30000 -v"
-#     done
+      step "$ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v -o hw.out"
+      step "SNAP_CONFIG=1 $ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v -o sw.out"
+      if diff hw.out sw.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
     fi # bfs
 
     if [[ "$t0l" == "10141005" && "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect hash"
       step "$ACTION_ROOT/sw/snap_intersect -h"
       step "$ACTION_ROOT/sw/snap_intersect    -m1 -v -t1200"
       step "$ACTION_ROOT/sw/snap_intersect -I -m1 -v -t1200"
-    fi # intersect
+      for table_num in 1 5 10; do
+        let max=2*$table_num; rm table1.txt table2.txt
+        gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
+        step "$ACTION_ROOT/sw/snap_intersect -m1    -i table1.txt -j table2.txt -v -t2000"
+        step "$ACTION_ROOT/sw/snap_intersect -m1 -s -i table1.txt -j table2.txt -v -t2000"
+      done
+    fi # intersect hash
+
     if [[ "$t0l" == "10141006" && "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect sort"
       step "$ACTION_ROOT/sw/snap_intersect -h"
       step "$ACTION_ROOT/sw/snap_intersect    -m2 -v -t1200"
       step "$ACTION_ROOT/sw/snap_intersect -I -m2 -v -t1200"
-    fi # intersect
-
-    if [[ "$t0l" == "00000108" || "${env_action}" == "hls_blowfish" ]];then echo -e "$del\ntesting blowfish"
-      for blocks in 1 16 32 128 1024 4096 ; do  # blocks of 64B
-        dd if=/dev/urandom of=input.bin count=${blocks} bs=64 2>/dev/null
-        dd if=/dev/urandom of=key.bin   count=1         bs=16 2>/dev/null
-        snap_blowfish -t${timeout} -k key.bin -i input.bin -o encrypted.bin
-        snap_blowfish -t${timeout} -k key.bin -d -i encrypted.bin -o decrypted.bin
-        diff input.bin decrypted.bin
+      for table_num in 1 5 10; do
+        let max=2*$table_num; rm table1.txt table2.txt
+        gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
+        step "$ACTION_ROOT/sw/snap_intersect -m2    -i table1.txt -j table2.txt -v -t2000"
+        step "$ACTION_ROOT/sw/snap_intersect -m2 -s -i table1.txt -j table2.txt -v -t2000"
       done
-    fi # blowfish
+    fi # intersect sort
+
     if [[ "$t0l" == "10141007" && "${env_action}" == "hls_nvme_memcopy"* && "$nvme" == "1" ]];then echo -e "$del\ntesting snap_nvme_memcopy"
       step "$ACTION_ROOT/sw/snap_nvme_memcopy -h"
       step "$SNAP_ROOT/software/tools/snap_nvme_init  -v"
-      for size in 512 2048 ; do to=$((size*50+10)) 
-          dd if=/dev/urandom bs=${size} count=1 >${size}.in
-#    if [[ $((size%64)) == 0 ]];then echo "size is aligned"
-          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A HOST_DRAM -D HOST_DRAM -i ${size}.in -o ${size}a.out -v -t$to"
-          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A HOST_DRAM -D CARD_DRAM -i ${size}.in -d 0x22220000  -v -t$to"
-          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A HOST_DRAM -D NVME_SSD  -i ${size}.in -n1 -d 0x55550000  -v -t$to"
-          
-		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D HOST_DRAM -a 0x22220000 -o ${size}b.out -s ${size}  -v -t$to"
-		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D NVME_SSD  -a 0x22220000 -d 0x33330000   -s ${size}  -v -t$to"
-		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D CARD_DRAM -a 0x22220000 -d 0x44440000   -s ${size}  -v -t$to"
-		  
-		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A NVME_SSD -D HOST_DRAM -n1 -a 0x55550000 -o ${size}c.out -s ${size}  -v -t$to"
-		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A NVME_SSD -D CARD_DRAM -n1 -a 0x55550000 -d 0x66660000   -s ${size}  -v -t$to"
-		  
-		  #check contents
-		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D HOST_DRAM -a 0x44440000 -o ${size}d.out -s ${size}  -v -t$to"
-		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D HOST_DRAM -a 0x66660000 -o ${size}e.out -s ${size}  -v -t$to"
-		  step "$ACTION_ROOT/sw/snap_nvme_memcopy -A NVME_SSD  -D HOST_DRAM -a 0x33330000 -o ${size}f.out -s ${size}  -v -t$to"
-
-
-if diff ${size}.in ${size}a.out>/dev/null;then echo -e "RC=$rc file_diff a ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
-if diff ${size}.in ${size}b.out>/dev/null;then echo -e "RC=$rc file_diff b ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
-if diff ${size}.in ${size}c.out>/dev/null;then echo -e "RC=$rc file_diff c ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
-if diff ${size}.in ${size}d.out>/dev/null;then echo -e "RC=$rc file_diff d ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
-if diff ${size}.in ${size}e.out>/dev/null;then echo -e "RC=$rc file_diff e ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
-if diff ${size}.in ${size}f.out>/dev/null;then echo -e "RC=$rc file_diff f ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
-#else echo "size is not aligned"
-#        fi
+      for size in 512 2048 ; do to=$((size*50+10))
+        dd if=/dev/urandom bs=${size} count=1 >${size}.in
+        if [[ $((size%64)) == 0 ]];then    # size is aligned
+          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A HOST_DRAM -D HOST_DRAM     -i ${size}.in -o ${size}a.out            -v -t$to"
+          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A HOST_DRAM -D CARD_DRAM     -i ${size}.in -d 0x22220000              -v -t$to"
+          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A HOST_DRAM -D NVME_SSD  -n1 -i ${size}.in -d 0x55550000              -v -t$to"
+          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D HOST_DRAM     -a 0x22220000 -o ${size}b.out -s ${size} -v -t$to"
+          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D NVME_SSD      -a 0x22220000 -d 0x33330000   -s ${size} -v -t$to"
+          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D CARD_DRAM     -a 0x22220000 -d 0x44440000   -s ${size} -v -t$to"
+          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A NVME_SSD  -D HOST_DRAM -n1 -a 0x55550000 -o ${size}c.out -s ${size} -v -t$to"
+          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A NVME_SSD  -D CARD_DRAM -n1 -a 0x55550000 -d 0x66660000   -s ${size} -v -t$to"
+          #check contents
+          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D HOST_DRAM     -a 0x44440000 -o ${size}d.out -s ${size} -v -t$to"
+          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D HOST_DRAM     -a 0x66660000 -o ${size}e.out -s ${size} -v -t$to"
+          step "$ACTION_ROOT/sw/snap_nvme_memcopy -A NVME_SSD  -D HOST_DRAM     -a 0x33330000 -o ${size}f.out -s ${size} -v -t$to"
+          for suf in a b c d e f;
+            if diff ${size}.in ${size}${suf}.out >/dev/null;then echo -e "RC=$rc file_diff $suf ok$del";else echo -e "$t RC=$rc file_diff $suf is wrong$del";exit 1;fi
+          done
+        else echo "size $size is not aligned, skipped"
+        fi
       done
     fi # hls_nvme_memcopy
 
-
+    if [[ "$t0l" == "00000108" || "${env_action}" == "hls_blowfish" ]];then echo -e "$del\ntesting blowfish"
+      for blocks in 1 16 32 128 1024 4096 ; do  # blocks of 64B
+        dd if=/dev/urandom of=in.bin  count=${blocks} bs=64 2>/dev/null
+        dd if=/dev/urandom of=key.bin count=1         bs=16 2>/dev/null
+        step "$ACTION_ROOT/sw/snap_blowfish -t${timeout} -k key.bin    -i in.bin  -o enc.bin"
+        step "$ACTION_ROOT/sw/snap_blowfish -t${timeout} -k key.bin -d -i enc.bin -o dec.bin"
+        if diff in.in decr.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
+      done
+    fi # blowfish
 
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"  # end of loop
   done; l=""; ts3=$(date +%s); totaltime=`expr $ts3 - $ts0`; echo "loops=$loops tests=$n total_time=$totaltime" # end of test
