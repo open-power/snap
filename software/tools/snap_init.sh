@@ -79,8 +79,7 @@ snap_maint -C${card} -v
 snap_nvme_init -C${card} -d0 -d1 -v
 
 if [ ${TEST} = "CBLK" ]; then
-	###############################################################
-	echo "# Formatting using 1 block increasing pattern ..."
+	echo "### (1) Formatting using 1 block increasing pattern ..."
 	snap_cblk -C${card} -b1 --format --pattern INC
 	if [ $? -ne 0 ]; then
 		printf "${bold}ERROR:${normal} Cannot format NVMe device!\n" >&2
@@ -105,45 +104,27 @@ if [ ${TEST} = "CBLK" ]; then
 		exit 1
 	fi
 
-	###############################################################
-	echo "# Writing 2 blocks ..."
-	snap_cblk -C${card} -b2 --write cblk_read2.bin
-	if [ $? -ne 0 ]; then
-		printf "${bold}ERROR:${normal} Writing NVMe device!\n" >&2
-		exit 1
-	fi
-	echo "# Reading using 2 blocks ..."
-	snap_cblk -C${card} -b2 --read cblk_read3.bin
-	if [ $? -ne 0 ]; then
-		printf "${bold}ERROR:${normal} Reading NVMe device!\n" >&2
-		exit 1
-	fi
-	echo "Compare results ..."
-	diff cblk_read2.bin cblk_read3.bin
-	if [ $? -ne 0 ]; then
-		printf "${bold}ERROR:${normal} Data differs!\n" >&2
-		exit 1
-	fi
-
-	###############################################################
-	echo "# Writing 1 blocks ..."
-	snap_cblk -C${card} -b1 --write cblk_read2.bin
-	if [ $? -ne 0 ]; then
-		printf "${bold}ERROR:${normal} Writing NVMe device!\n" >&2
-		exit 1
-	fi
-	echo "# Reading using 1 blocks ..."
-	snap_cblk -C${card} -b1 --read cblk_read4.bin
-	if [ $? -ne 0 ]; then
-		printf "${bold}ERROR:${normal} Reading NVMe device!\n" >&2
-		exit 1
-	fi
-	echo "Compare results ..."
-	diff cblk_read2.bin cblk_read4.bin
-	if [ $? -ne 0 ]; then
-		printf "${bold}ERROR:${normal} Data differs!\n" >&2
-		exit 1
-	fi
+	for nblocks in 1 2 ; do
+		echo "### (2.${nblocks}) Writing ${nblocks} blocks ..."
+		snap_cblk -C${card} -b${nblocks} --write cblk_read2.bin
+		if [ $? -ne 0 ]; then
+			printf "${bold}ERROR:${normal} Writing NVMe device!\n" >&2
+			exit 1
+		fi
+		echo "# Reading using 2 blocks ..."
+		snap_cblk -C${card} -b${nblocks} --read cblk_read3.bin
+		if [ $? -ne 0 ]; then
+			printf "${bold}ERROR:${normal} Reading NVMe device!\n" >&2
+			exit 1
+		fi
+		echo "Compare results ..."
+		diff cblk_read2.bin cblk_read3.bin
+		if [ $? -ne 0 ]; then
+			printf "${bold}ERROR:${normal} Data differs!\n" >&2
+			exit 1
+		fi
+	done
+	echo "SUCCESS"
 fi
 
 exit 0
