@@ -24,7 +24,6 @@
 ##
 PLATFORM ?= $(shell uname -i)
 
-ifeq ($(PLATFORM),x86_64)
 export SNAP_ROOT=$(abspath ..)
 export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
@@ -95,7 +94,9 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 #      due to missing dependencies between the different targets.
 #
 
-.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_nvme prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment hw_config_start hw_config config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim clean gitclean
+ifeq ($(PLATFORM),x86_64)
+
+.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_nvme prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment hw_config_start hw_config config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim
 
 all: model image
 
@@ -359,6 +360,16 @@ $(SNAP_SIMULATORS): check_nvme .hw_config_done action_sw snap_preprocess patch_v
 
 model: check_simulator $(SIMULATOR)
 
+else #noteq ($(PLATFORM),x86_64)
+.PHONY: wrong_platform all model image
+
+wrong_platform:
+	@echo; echo "\nSNAP hardware builds are possible on x86 platform only\n"; echo;
+
+all model image: wrong_platform
+endif
+
+.PHONY: clean
 clean:
 	@echo -e "[CLEAN ENVIRONMENT...] start `date +"%T %a %b %d %Y"`"
 	@$(RM)    .hw_config_done
@@ -383,17 +394,3 @@ clean:
 		fi                                          \
 	fi
 	@echo -e "[CLEAN ENVIRONMENT...] done  `date +"%T %a %b %d %Y"`"
-
-gitclean:
-	@echo -e "[GITCLEAN............] cleaning and resetting snap git";
-	git clean -f -d -x
-	git reset --hard
-
-else #noteq ($(PLATFORM),x86_64)
-.PHONY: wrong_platform all model image
-
-wrong_platform:
-	@echo; echo "\nSNAP hardware builds are possible on x86 platform only\n"; echo;
-
-all model image: wrong_platform
-endif

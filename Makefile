@@ -28,7 +28,7 @@ snap_env_sh = snap_env.sh
 clean_subdirs += $(config_subdirs) $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
 
 # Only build if the subdirectory is really existent
-.PHONY: help $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env hw_config model image cloud_base cloud_action cloud_merge snap_config config menuconfig xconfig gconfig oldconfig clean clean_config clean_env
+.PHONY: help $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env hw_config model image cloud_base cloud_action cloud_merge snap_config config menuconfig xconfig gconfig oldconfig clean clean_config clean_env gitclean
 
 help:
 	@echo "Main targets for the SNAP Framework make process:";
@@ -161,3 +161,8 @@ clean_config: clean
 
 clean_env: clean_config
 	@$(RM) $(snap_env_sh)
+
+gitclean:
+	@echo -e "[GITCLEAN............] cleaning and resetting snap git";
+	git clean -f -d -x
+	git reset --hard
