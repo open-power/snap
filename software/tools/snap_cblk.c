@@ -371,7 +371,7 @@ int main(int argc, char *argv[])
 		num_lba = len / lba_size;
 
 		if (start_lba + num_lba > lun_size) {
-			fprintf(stderr, "err: device not large enougn %zu lbas\n",
+			fprintf(stderr, "err: device not large enough %zu lbas\n",
 				lun_size);
 			goto err_out;
 		}
@@ -396,8 +396,8 @@ int main(int argc, char *argv[])
 
 		gettimeofday(&stime, NULL);
 		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
-			block_trace("  writing lba %d ...\n", lba);
-			rc = cblk_write(cid, buf + ((lba - start_lba) * lba_size * lba_blocks),
+			block_trace("  writing lba %d max: %d ...\n", lba, start_lba + num_lba - 1);
+			rc = cblk_write(cid, buf + ((lba - start_lba) * lba_size),
 					lba, lba_blocks, 0);
 			if (rc != (int)lba_blocks)
 				goto err_out;
