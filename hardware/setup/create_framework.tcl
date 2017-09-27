@@ -54,12 +54,6 @@ if { ($use_prflow == "TRUE") && ($hls_support == "TRUE") } {
   set action_dir $::env(ACTION_ROOT)/hw/vhdl
 }
 
-if { [info exists ::env(DENALI)] == 1 } {
-  set denali_dir  $::env(DENALI)
-} else {
-  set denali_dir .
-}
-
 # Create a new Vivado Project
 puts "\[CREATE_FRAMEWORK....\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 create_project framework $root_dir/viv_project -part $fpga_part -force >> $log_file
@@ -228,12 +222,11 @@ if { $nvme_used == TRUE } {
   generate_target all                     [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
 
   if { $simulator != "nosim" } {
-    if { ( [info exists ::env(DENALI_TOOLS) ] == 1)  &&  ( [info exists ::env(DENALI_CUSTOM)] == 1 ) } {
+    if { ( [info exists ::env(DENALI_TOOLS) ] == 1) } {
       puts "                        adding Denali simulation files"
-      set denali_custom $::env(DENALI_CUSTOM)
       add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme/
-      add_files -fileset sim_1 -scan_for_includes $denali_custom/sim_model/
-     
+      add_files -fileset sim_1 -scan_for_includes $ip_dir/nvme/axi_pcie3_0_ex/imports/xil_sig2pipe.v   
+
       set denali_tools  $::env(DENALI_TOOLS)
       add_files -fileset sim_1 -norecurse -scan_for_includes $denali_tools/ddvapi/verilog/denaliPcie.v
       set_property include_dirs                              $denali_tools/ddvapi/verilog [get_filesets sim_1]

@@ -315,7 +315,7 @@ if { $create_ddr3 == "TRUE" } {
   export_simulation -of_objects [get_files $ip_dir/ddr3sdram/ddr3sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
   #DDR3 create ddr3sdramm example design
-  puts "                        generating ddr3sdram example"
+  puts "                        generating ddr3sdram example design"
   open_example_project -in_process -force -dir $ip_dir [get_ips  ddr3sdram] >> $log_file  
 }
 
@@ -348,7 +348,7 @@ if { $create_ddr4 == "TRUE" } {
   export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
   #DDR4 create ddr4sdramm example design
-  puts "                        generating ddr4sdram example"
+  puts "                        generating ddr4sdram example design"
   open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
 }
 
