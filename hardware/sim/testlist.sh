@@ -374,7 +374,8 @@
           step "$ACTION_ROOT/sw/snap_nvme_memcopy -A CARD_DRAM -D HOST_DRAM     -a 0x66660000 -o ${size}e.out -s ${size} -v -t$to"
           step "$ACTION_ROOT/sw/snap_nvme_memcopy -A NVME_SSD  -D HOST_DRAM     -a 0x33330000 -o ${size}f.out -s ${size} -v -t$to"
           for suf in a b c d e f;
-            if diff ${size}.in ${size}${suf}.out >/dev/null;then echo -e "RC=$rc file_diff $suf ok$del";else echo -e "$t RC=$rc file_diff $suf is wrong$del";exit 1;fi
+            outfile="${size}${suf}.out"
+            if diff ${size}.in $outfile >/dev/null;then echo -e "RC=$rc file_diff $suf ok$del";else echo -e "$t RC=$rc file_diff $suf is wrong$del";exit 1;fi
           done
         else echo "size $size is not aligned, skipped"
         fi
