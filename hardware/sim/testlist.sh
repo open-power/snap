@@ -260,13 +260,13 @@
         if [[ $((size%64)) == 0 ]];then echo "size is aligned"
           step "$ACTION_ROOT/sw/snap_memcopy -i ${size}.in -o ${size}.out -v -X -t$to"
           if diff ${size}.in ${size}.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
-          step "$ACTION_ROOT/sw/snap_memcopy -N -i ${size}.in -o ${size}.out -v -X -t$to"
-          if diff ${size}.in ${size}.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
+#         step "$ACTION_ROOT/sw/snap_memcopy -N -i ${size}.in -o ${size}.out -v -X -t$to"
+#         if diff ${size}.in ${size}.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
         else echo "size is not aligned"
           step "$ACTION_ROOT/sw/snap_memcopy -i ${size}.in -o ${size}.out -v -t$to"
           if diff ${size}.in ${size}.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";             else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
-          step "$ACTION_ROOT/sw/snap_memcopy -N -i ${size}.in -o ${size}.out -v -t$to"
-          if diff ${size}.in ${size}.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
+#         step "$ACTION_ROOT/sw/snap_memcopy -N -i ${size}.in -o ${size}.out -v -t$to"
+#         if diff ${size}.in ${size}.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
         fi
       done
     fi # hls_memcopy
@@ -327,7 +327,9 @@
     if [[ "$t0l" == "10141004" || "${env_action}" == "hls_bfs"* ]];then echo -e "$del\ntesting BFS"
       step "$ACTION_ROOT/sw/snap_bfs -h"
       step "$ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v -o hw.out"
-      step "SNAP_CONFIG=1 $ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v -o sw.out"
+      export SNAP_CONFIG=0x1;echo "SW execution"
+      step "$ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v -o sw.out"
+      unset SNAP_CONFIG
       if diff hw.out sw.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
     fi # bfs
 
@@ -336,7 +338,7 @@
       step "$ACTION_ROOT/sw/snap_intersect    -m1 -v -t1200"
       step "$ACTION_ROOT/sw/snap_intersect -I -m1 -v -t1200"
       for table_num in 1 5 10; do
-        let max=2*$table_num; rm table1.txt table2.txt
+        let max=2*$table_num; rm -f table1.txt table2.txt
         gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
         step "$ACTION_ROOT/sw/snap_intersect -m1    -i table1.txt -j table2.txt -v -t2000"
         step "$ACTION_ROOT/sw/snap_intersect -m1 -s -i table1.txt -j table2.txt -v -t2000"
@@ -348,7 +350,7 @@
       step "$ACTION_ROOT/sw/snap_intersect    -m2 -v -t1200"
       step "$ACTION_ROOT/sw/snap_intersect -I -m2 -v -t1200"
       for table_num in 1 5 10; do
-        let max=2*$table_num; rm table1.txt table2.txt
+        let max=2*$table_num; rm -f table1.txt table2.txt
         gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
         step "$ACTION_ROOT/sw/snap_intersect -m2    -i table1.txt -j table2.txt -v -t2000"
         step "$ACTION_ROOT/sw/snap_intersect -m2 -s -i table1.txt -j table2.txt -v -t2000"
