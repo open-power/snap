@@ -68,12 +68,13 @@ BUILD_DIR=$(SNAP_HARDWARE_ROOT)/build
 SNAP_HDL_CORE=$(SNAP_HARDWARE_ROOT)/hdl/core
 SNAP_HDL_HLS=$(SNAP_HARDWARE_ROOT)/hdl/hls
 SNAP_SIM_CORE=$(SNAP_HARDWARE_ROOT)/sim/core
+SNAP_SIM_NVME=$(SNAP_HARDWARE_ROOT)/sim/nvme
 
 SNAP_SIMULATORS += irun xsim
 
-SNAP_PP_FILES=$(SNAP_HDL_CORE)/psl_accel.vhd \
-              $(SNAP_HDL_CORE)/snap_core.vhd \
-              $(SNAP_HDL_CORE)/mmio.vhd
+SNAP_PP_FILES_VHD=$(SNAP_HDL_CORE)/psl_accel.vhd   \
+                  $(SNAP_HDL_CORE)/snap_core.vhd   \
+                  $(SNAP_HDL_CORE)/mmio.vhd        
 
 SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
                   $(SNAP_HDL_CORE)/psl_accel_types.vhd \
@@ -166,10 +167,10 @@ check_nvme:
 			echo "                        NVMe simulation is not supported for SIMULATOR $(SIMULATOR)"; \
 			exit -1; \
 		fi; \
-		if [ !  -d "$(DENALI_TOOLS)" ]; then \
+		if [ !  -d "$(DENALI)" ]; then \
 			echo "                        Missing or invalid environment variable for NVMe simulation."; \
 			echo "                        Please check the setting of:"; \
-			echo "                        DENALI_TOOLS:   $(DENALI_TOOLS)"; \
+			echo "                        DENALI:   $(DENALI)"; \
 			exit -1; \
 		fi \
 	fi
@@ -187,24 +188,18 @@ prepare_build: check_psl_dcp
 	@mkdir -p $(LOGS_DIR);
 	@mkdir -p $(BUILD_DIR)/Images;
 	@mkdir -p $(BUILD_DIR)/Checkpoints;
-	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl         $(BUILD_DIR)/snap_build.tcl;
-	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_build.tcl   $(BUILD_DIR)/snap_cloud_build.tcl;
-	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_merge.tcl   $(BUILD_DIR)/snap_cloud_merge.tcl;
-	@cp -p $(PSL_DCP)                                            $(BUILD_DIR)/Checkpoints/;
-	@if [ $(FPGACARD) = "KU3" ]; then \
-		ln -f -s $(SNAP_HDL_CORE)/psl_fpga_ku3.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
-		ln -f -s $(SNAP_HDL_CORE)/psl_accel_ku3.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
-	fi
-	@if [ $(FPGACARD) = "FGT" ]; then \
-		ln -f -s $(SNAP_HDL_CORE)/psl_fpga_fgt.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source; \
-		ln -f -s $(SNAP_HDL_CORE)/psl_accel_fgt.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source; \
-	fi
+	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl          $(BUILD_DIR)/snap_build.tcl;
+	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_build.tcl    $(BUILD_DIR)/snap_cloud_build.tcl;
+	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_merge.tcl    $(BUILD_DIR)/snap_cloud_merge.tcl;
+	@cp -p $(PSL_DCP)                                             $(BUILD_DIR)/Checkpoints/;
+	@ln -f -s $(SNAP_HDL_CORE)/psl_fpga_`echo "$(FPGACARD)" | tr A-Z a-z`.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source;
+	@ln -f -s $(SNAP_HDL_CORE)/psl_accel_`echo "$(FPGACARD)" | tr A-Z a-z`.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source;
 	@echo -e "[PREPARE BUILD.......] done  `date +"%T %a %b %d %Y"`";
 
 snap_preprocess_start:
 	@echo -e "[SNAP PREPROCESS.....] start `date +"%T %a %b %d %Y"`";
 
-$(SNAP_PP_FILES):
+$(SNAP_PP_FILES_VHD):
 	@if [ -e $(snap_config_cflags) ]; then \
 		echo -e "                        generating $(notdir $@)"; \
 	else \
@@ -218,13 +213,19 @@ $(SNAP_PP_FILES):
 	@grep -v "^#" $@_tmp > $@
 	@$(RM) $@_tmp
 
+$(SNAP_SIM_NVME)/endp_4_pipe32.v:
+	@if [ $(SIMULATOR) != "nosim" ] && [ $(NVME_USED) = "TRUE" ]; then \
+	  echo -e "                        generating $(notdir $@)"; \
+	  $(DENALI)/bin/pureview -quiet -batch  -generate all . -genoutput  $(SNAP_SIM_NVME)/endp_4_pipe32.v $(SNAP_SIM_NVME)/endp_4_pipe32.soma; \
+	fi
+
 %.vhd: %.vhd_source
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
 %.sv: %.sv_source
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
-snap_preprocess: snap_preprocess_start $(SNAP_PP_FILES) $(SNAP_CONFIG_FILES)
+snap_preprocess: snap_preprocess_start $(SNAP_PP_FILES_VHD) $(SNAP_SIM_NVME)/endp_4_pipe32.v $(SNAP_CONFIG_FILES)
 	@echo -e "[SNAP PREPROCESS.....] done  `date +"%T %a %b %d %Y"`";
 
 patch_version:
@@ -372,9 +373,12 @@ endif
 clean:
 	@echo -e "[CLEAN ENVIRONMENT...] start `date +"%T %a %b %d %Y"`"
 	@$(RM)    .hw_config_done
-	@$(RM) -r $(SNAP_PP_FILES) $(SNAP_CONFIG_FILES) $(SNAP_TMP_FILES) \
-	          $(SNAP_HDL_CORE)/psl_fpga.vhd_source                    \
-	          $(SNAP_HDL_CORE)/psl_accel.vhd_source                   \
+	@$(RM) -r $(SNAP_PP_FILES_VHD)                   \
+                  $(SNAP_SIM_NVME)/endp_4_pipe32.v       \
+                  $(SNAP_CONFIG_FILES)                   \
+                  $(SNAP_TMP_FILES)                      \
+	          $(SNAP_HDL_CORE)/psl_fpga.vhd_source   \
+	          $(SNAP_HDL_CORE)/psl_accel.vhd_source  \
 	          *build
 	@echo -e "                        vivado project";
 	@$(RM) -r viv_project*
