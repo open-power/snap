@@ -32,7 +32,7 @@ endif
 snap_peek_objs = force_cpu.o
 snap_poke_objs = force_cpu.o
 
-projs = snap_peek snap_poke bfs_diff
+projs = snap_peek snap_poke
 projs += snap_maint snap_nvme_init
 objs = force_cpu.o $(projs:=.o)
 hfiles = force_cpu.h  snap_fw_example.h

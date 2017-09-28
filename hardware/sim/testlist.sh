@@ -279,7 +279,7 @@
 ## not implemented in HW, just in SW
 ## -m <empty> defaults to -mCRC32
 ## -s only for -mADLER32/CRC32
-#     export SNAP_CONFIG=0x1;echo "SW execution"
+#     export SNAP_CONFIG=0x1;echo "${del}\n SW execution"   # SNAP_CONFIG=1 doesnt allow step() due to MMIO access to 0x80
 #     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200           -cSHA3                 " # 22s
 #     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200           -cSHA3_SHAKE           " # 42s
 #     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200           -cSHAKE                " # 41s
@@ -294,6 +294,7 @@
 #     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200 -mADLER32 -cSPEED           -s256" #
 #     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200 -mSPONGE  -cSPEED -n1 -f256      " #
 #     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200 -mCRC32   -cSPEED           -s256" #
+#     unset SNAP_CONFIG
     fi # sponge
 
     if [[ "$t0l" == "10141002" || "${env_action}" == "hls_hashjoin"* ]];then echo -e "$del\ntesting snap_hashjoin"
@@ -327,10 +328,10 @@
     if [[ "$t0l" == "10141004" || "${env_action}" == "hls_bfs"* ]];then echo -e "$del\ntesting BFS"
       step "$ACTION_ROOT/sw/snap_bfs -h"
       step "$ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v -o hw.out"
-      export SNAP_CONFIG=0x1;echo "SW execution"
+      export SNAP_CONFIG=0x1;echo "${del}\n SW execution"   # SNAP_CONFIG=1 doesnt allow step() due to MMIO access to 0x80
       $ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v -o sw.out
       unset SNAP_CONFIG
-      if diff hw.out sw.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
+      if $ACTION_ROOT/sw/bfs_diff hw.out sw.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
     fi # bfs
 
     if [[ "$t0l" == "10141005" && "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect hash"
@@ -339,7 +340,7 @@
       step "$ACTION_ROOT/sw/snap_intersect -I -m1 -v -t1200"
       for table_num in 1 5 10; do
         let max=2*$table_num; rm -f table1.txt table2.txt
-        gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
+        $ACTION_ROOT/tests/gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
         step "$ACTION_ROOT/sw/snap_intersect -m1    -i table1.txt -j table2.txt -v -t2000"
         step "$ACTION_ROOT/sw/snap_intersect -m1 -s -i table1.txt -j table2.txt -v -t2000"
       done
@@ -351,7 +352,7 @@
       step "$ACTION_ROOT/sw/snap_intersect -I -m2 -v -t1200"
       for table_num in 1 5 10; do
         let max=2*$table_num; rm -f table1.txt table2.txt
-        gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
+        $ACTION_ROOT/tests/gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
         step "$ACTION_ROOT/sw/snap_intersect -m2    -i table1.txt -j table2.txt -v -t2000"
         step "$ACTION_ROOT/sw/snap_intersect -m2 -s -i table1.txt -j table2.txt -v -t2000"
       done
