@@ -21,6 +21,10 @@ version=0.1
 reset=0
 TEST=NONE
 
+# output formatting
+bold=$(tput bold)
+normal=$(tput sgr0)
+
 export PATH=.:software/tools:tools:$PATH
 export LD_LIBRARY_PATH=.:software/lib:lib:`pwd`/lib
 
@@ -107,18 +111,26 @@ snap_maint -C${card} -v
 snap_nvme_init -C${card} -d0 -d1 -v
 
 if [ ${TEST} = "CBLK" ]; then
-	for nblocks in 1 8 16 32 ; do
+	for nblocks in 1 2 ; do
 		echo "### (1.${nblocks}) Formatting using ${nblocks} block increasing pattern ..."
 		snap_cblk -C${card} -b${nblocks} --format --pattern ${nblocks}
 		if [ $? -ne 0 ]; then
 			printf "${bold}ERROR:${normal} Cannot format NVMe device!\n" >&2
 			exit 1
 		fi
+		echo "# Reading using 32 blocks ..."
+		snap_cblk -C${card} -b32 --read cblk_read.bin
+		if [ $? -ne 0 ]; then
+			printf "${bold}ERROR:${normal} Reading NVMe device!\n" >&2
+			exit 1
+		fi
+		printf "${bold}NOTE:${normal} Please manually inspect if pattern is really ${nblocks}\n"
+		hexdump cblk_read.bin
 		echo
 	done
 
-	echo "### (2) Formatting using 8 block increasing pattern ..."
-	snap_cblk -C${card} -b8 --format --pattern INC
+	echo "### (2) Formatting using 2 blocks increasing pattern ..."
+	snap_cblk -C${card} -b2 --format --pattern INC
 	if [ $? -ne 0 ]; then
 		printf "${bold}ERROR:${normal} Cannot format NVMe device!\n" >&2
 		exit 1
@@ -144,13 +156,13 @@ if [ ${TEST} = "CBLK" ]; then
 	echo
 
 	for nblocks in 1 2 4 8 16 32 ; do
-		echo "### (3.${nblocks}) Writing ${nblocks} blocks ..."
-		snap_cblk -C${card} -b${nblocks} --write cblk_read2.bin
+		echo "### (3.${nblocks}) Writing 2 blocks ..."
+		snap_cblk -C${card} -b2 --write cblk_read2.bin
 		if [ $? -ne 0 ]; then
 			printf "${bold}ERROR:${normal} Writing NVMe device!\n" >&2
 			exit 1
 		fi
-		echo "# Reading using ${nblocks} blocks ..."
+		echo "# Reading ${nblocks} blocks ..."
 		snap_cblk -C${card} -b${nblocks} --read cblk_read3.bin
 		if [ $? -ne 0 ]; then
 			printf "${bold}ERROR:${normal} Reading NVMe device!\n" >&2
