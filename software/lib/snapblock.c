@@ -104,9 +104,10 @@ static inline void cblk_set_status(struct cblk_req *req,
 	req->status = status;
 }
 
-#define CBLK_WIDX_MAX	1	/* Just one for now */
-#define CBLK_RIDX_MAX	15	/* 15 read slots */
-#define CBLK_IDX_MAX	(CBLK_WIDX_MAX + CBLK_RIDX_MAX)
+#define CBLK_WIDX_MAX		1	/* Just one for now */
+#define CBLK_RIDX_MAX		15	/* 15 read slots */
+#define CBLK_IDX_MAX		(CBLK_WIDX_MAX + CBLK_RIDX_MAX)
+#define CBLK_NBLOCKS_MAX	32	/* 128 KiB / 4KiB */
 
 struct cblk_dev {
 	struct snap_card *card;
@@ -444,16 +445,17 @@ static inline int cblk_wait_done(struct cblk_dev *c, int timeout __attribute__((
 		return -2;
 	}
 
-	slot = status & ACTION_STATUS_COMPLETION_MASK;
-
 	if (status == ACTION_STATUS_NO_COMPLETION) {
 		block_trace("  NO COMPLETION %02x\n", status);
-	} else if (status == ACTION_STATUS_WRITE_COMPLETED) {
+		return -3;
+	}
+
+	slot = status & ACTION_STATUS_COMPLETION_MASK;
+	if (status == ACTION_STATUS_WRITE_COMPLETED) {
 		block_trace("  WRITE_COMPLETED %02x SLOT: %d\n", status, slot);
 	} else {
 		block_trace("  READ_COMPLETED %02x SLOT: %d\n", status, slot);
 	}
-
 	return slot;
 }
 
@@ -493,9 +495,12 @@ static void *done_thread(void *arg)
 					cblk_set_status(&c->req[slot], CBLK_READY);
 					sem_post(&c->req[slot].wait_sem);
 				} else
-					block_trace("  [%s] slot %d status is %s NOTHING TO BE DONE\n",
-						__func__, slot, status_str[slot]);
+					block_trace("  [%s] slot %d status is %s, in_flight=%d/%d "
+						"NOTHING TO BE DONE\n",
+						__func__, slot, status_str[slot],
+						c->w_in_flight, c->r_in_flight);
 			}
+			pthread_testcancel();	/* go home if requested */
 		}
 	}
 
@@ -561,7 +566,7 @@ chunk_id_t cblk_open(const char *path,
 		goto out_err1;
 	}
 
-	c->buf = snap_malloc(CBLK_IDX_MAX * __CBLK_BLOCK_SIZE * 2);
+	c->buf = snap_malloc(CBLK_IDX_MAX * __CBLK_BLOCK_SIZE * CBLK_NBLOCKS_MAX);
 	if (c->buf == NULL) {
 		fprintf(stderr, "err: Cannot alloc temporary buffer\n");
 		goto out_err2;
@@ -579,7 +584,7 @@ chunk_id_t cblk_open(const char *path,
 	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
 		c->req[i].slot = i;
 		c->req[i].num = 0;
-		c->req[i].buf = c->buf + i * 2 * __CBLK_BLOCK_SIZE;
+		c->req[i].buf = c->buf + i * CBLK_NBLOCKS_MAX * __CBLK_BLOCK_SIZE;
 		cblk_set_status(&c->req[i], CBLK_IDLE);
 		sem_init(&c->req[i].wait_sem, 0, 0);
 	}
@@ -623,9 +628,7 @@ int cblk_close(chunk_id_t id __attribute__((unused)),
 	unsigned int i;
 	struct cblk_dev *c = &chunk;
 
-	pthread_mutex_lock(&c->dev_lock);
 	if (c->card == NULL) {
-		pthread_mutex_unlock(&c->dev_lock);
 		errno = EINVAL;
 		return -1;
 	}
@@ -657,13 +660,11 @@ int cblk_close(chunk_id_t id __attribute__((unused)),
 	c->drive = -1;
 
 	cache_done();
-	pthread_mutex_unlock(&c->dev_lock);
 	return 0;
 }
 
 int cblk_get_lun_size(chunk_id_t id __attribute__((unused)),
-		      size_t *size __attribute__((unused)),
-		      int flags __attribute__((unused)))
+		      size_t *size, int flags __attribute__((unused)))
 {
 	struct cblk_dev *c = &chunk;
 
@@ -698,7 +699,7 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 	block_trace("[%s] reading (%p lba=%zu nblocks=%zu) ...\n",
 		__func__, buf, lba, nblocks);
 
-	if (nblocks > 2) {
+	if (nblocks > CBLK_NBLOCKS_MAX) {
 		fprintf(stderr, "err: temp buffer too small!\n");
 		errno = EFAULT;
 		return -1;
@@ -789,7 +790,7 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 	block_trace("[%s] writing (%p lba=%zu nblocks=%zu) ...\n",
 		__func__, buf, lba, nblocks);
 
-	if (nblocks > 2) {
+	if (nblocks > CBLK_NBLOCKS_MAX) {
 		fprintf(stderr, "err: temp buffer too small!\n");
 		errno = EFAULT;
 		return -1;

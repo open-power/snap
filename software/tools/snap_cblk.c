@@ -148,7 +148,7 @@ static void INT_handler(int sig)
 
 	/* signal(sig, SIG_IGN); */
 	/* signal(SIGINT, INT_handler); *//* Try again */
-	exit (EXIT_FAILURE);
+	exit(EXIT_FAILURE);
 }
 
 /**
@@ -220,8 +220,10 @@ int main(int argc, char *argv[])
 			start_lba = strtoul(optarg, NULL, 0);
 			break;
 		case 'p':
-			if (strcmp("INC", optarg) == 0)
+			if (strcmp("INC", optarg) == 0) {
 				incremental_pattern = 1;
+				break;
+			}
 			pattern = strtoul(optarg, NULL, 0);
 			break;
 		case 'n':
@@ -256,8 +258,8 @@ int main(int argc, char *argv[])
 	if (argc >= optind + 1)
 		fname = argv[optind++];
 
-	if (lba_blocks > 2) {
-		fprintf(stderr, "err: %zu blocks not yet supported (1 or 2)!\n",
+	if (lba_blocks > 32) {
+		fprintf(stderr, "err: %zu blocks not yet supported (1, 2, 4, ..., 32)!\n",
 			lba_blocks);
 		usage(argv[0]);
 		goto err_out;
@@ -299,8 +301,8 @@ int main(int argc, char *argv[])
 
 	switch (_op) {
 	case OP_READ: {
-		fprintf(stderr, "Reading %d times %zu bytes: %zu KiB NVMe into %s\n",
-			num_lba, lba_blocks * lba_size, num_lba * lba_size / 1024,
+		fprintf(stderr, "Reading %zu times %zu bytes: %zu KiB NVMe into %s\n",
+			num_lba/lba_blocks, lba_blocks * lba_size, num_lba * lba_size / 1024,
 			fname);
 
 		if (start_lba + num_lba > lun_size) {
