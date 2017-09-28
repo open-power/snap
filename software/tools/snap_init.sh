@@ -18,6 +18,7 @@
 
 card=0
 version=0.1
+reset=0
 TEST=NONE
 
 export PATH=.:software/tools:tools:$PATH
@@ -28,6 +29,7 @@ function usage() {
 	echo "    [-V]              print version"
 	echo "    [-h|-?]           help"
 	echo "    [-C <0..3>]       card number"
+	echo "    [-r]              card reset (sudo needed)"
 	echo "    [-T <testcase>]   testcase e.g. CBLK"
 	echo
 	echo "  Perform SNAP card initialization and action_type "
@@ -35,7 +37,26 @@ function usage() {
 	echo
 }
 
-while getopts ":A:C:T:Vvh" opt; do
+function reset_card() {
+	echo -n "Resetting card ${card} (takes a while) "
+	sudo bash -c "echo 100000 > /sys/kernel/debug/powerpc/eeh_max_freezes"
+	sudo bash -c "echo 1 > /sys/class/cxl/card${card}/reset"
+	for ((i=0;i<20;i++)); do
+		sleep 1
+		echo -n "."
+	done
+	echo " OK"
+	echo -n "Check if card reappeared ... "
+	ls -l /dev/cxl/afu${card}.0 > /dev/null
+	if [ $? -ne 0 ]; then
+		echo "recovery failed, sorry!"
+		exit 1;
+	else
+		echo "OK"
+	fi
+}
+
+while getopts ":A:C:T:rVvh" opt; do
 	case ${opt} in
 	C)
 		card=${OPTARG};
@@ -50,6 +71,9 @@ while getopts ":A:C:T:Vvh" opt; do
 		;;
 	T)
 		TEST=${OPTARG}
+		;;
+	r)
+		reset=1;
 		;;
 	h)
 		usage;
@@ -69,18 +93,32 @@ done
 shift $((OPTIND-1))
 # now do something with $@
 
-which snap_maint 2> /dev/null
+which snap_maint 2>&1 > /dev/null
 if [ $? -ne 0 ]; then
 	printf "${bold}ERROR:${normal} Path not pointing to required binaries (snap_maint, snap_nvme_init)!\n" >&2
 	exit 1
+fi
+
+if [ $reset -eq 1 ]; then
+	reset_card
 fi
 
 snap_maint -C${card} -v
 snap_nvme_init -C${card} -d0 -d1 -v
 
 if [ ${TEST} = "CBLK" ]; then
-	echo "### (1) Formatting using 1 block increasing pattern ..."
-	snap_cblk -C${card} -b1 --format --pattern INC
+	for nblocks in 1 8 16 32 ; do
+		echo "### (1.${nblocks}) Formatting using ${nblocks} block increasing pattern ..."
+		snap_cblk -C${card} -b${nblocks} --format --pattern ${nblocks}
+		if [ $? -ne 0 ]; then
+			printf "${bold}ERROR:${normal} Cannot format NVMe device!\n" >&2
+			exit 1
+		fi
+		echo
+	done
+
+	echo "### (2) Formatting using 8 block increasing pattern ..."
+	snap_cblk -C${card} -b8 --format --pattern INC
 	if [ $? -ne 0 ]; then
 		printf "${bold}ERROR:${normal} Cannot format NVMe device!\n" >&2
 		exit 1
@@ -103,15 +141,16 @@ if [ ${TEST} = "CBLK" ]; then
 		printf "${bold}ERROR:${normal} Data differs!\n" >&2
 		exit 1
 	fi
+	echo
 
-	for nblocks in 1 2 ; do
-		echo "### (2.${nblocks}) Writing ${nblocks} blocks ..."
+	for nblocks in 1 2 4 8 16 32 ; do
+		echo "### (3.${nblocks}) Writing ${nblocks} blocks ..."
 		snap_cblk -C${card} -b${nblocks} --write cblk_read2.bin
 		if [ $? -ne 0 ]; then
 			printf "${bold}ERROR:${normal} Writing NVMe device!\n" >&2
 			exit 1
 		fi
-		echo "# Reading using 2 blocks ..."
+		echo "# Reading using ${nblocks} blocks ..."
 		snap_cblk -C${card} -b${nblocks} --read cblk_read3.bin
 		if [ $? -ne 0 ]; then
 			printf "${bold}ERROR:${normal} Reading NVMe device!\n" >&2
@@ -123,6 +162,7 @@ if [ ${TEST} = "CBLK" ]; then
 			printf "${bold}ERROR:${normal} Data differs!\n" >&2
 			exit 1
 		fi
+		echo
 	done
 	echo "SUCCESS"
 fi
