@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <endian.h>
 #include <signal.h>
+#include <pthread.h>
 #include <asm/byteorder.h>
 #include <sys/mman.h>
 #include <sys/time.h>
@@ -32,6 +33,8 @@
 #include "snap_internal.h"
 #include "force_cpu.h"
 #include <capiblock.h> /* FIXME fake fake */
+
+#undef CONFIG_SINGLE_THREADED
 
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
@@ -151,6 +154,125 @@ static void INT_handler(int sig)
 	exit(EXIT_FAILURE);
 }
 
+struct rqueue {
+	pthread_mutex_t read_lock;
+	void *buf;
+	unsigned long start_lba;	/* starting lba */
+	unsigned long lba_size;		/* size of lba e.g. 4KiB */
+	unsigned long lba;		/* current lba */
+	unsigned long num_lba;		/* maximum number to read */
+	unsigned int nblocks;		/* how many blocks to read */
+};
+
+struct thread_data {
+	pthread_t thread_id;
+	int thread_rc;			/* ret: rc of thread */
+	struct rqueue *rq;
+};
+
+#define THREAD_MAX	160		/* max number of possible threads */
+
+static struct rqueue rq;
+static struct thread_data thread_data[THREAD_MAX];
+
+static void rqueue_init(struct rqueue *rq, void *buf,
+			unsigned long start_lba,
+			unsigned long lba_size,
+			unsigned long num_lba,
+			unsigned int nblocks)
+{
+	pthread_mutex_init(&rq->read_lock, NULL);
+	rq->buf = buf;
+	rq->start_lba = start_lba;
+	rq->lba_size = lba_size;
+	rq->lba = start_lba;
+	rq->num_lba = num_lba;
+	rq->nblocks = nblocks;
+}
+
+/**
+ * Get block from the queue, trigger read and collect results.
+ */
+static void *read_thread(void *data)
+{
+	int rc;
+	void *buf;
+	unsigned long lba;
+	unsigned long nblocks;
+	struct thread_data *d = (struct thread_data *)data;
+	struct rqueue *rq = d->rq;
+
+	while (1) {
+		pthread_mutex_lock(&rq->read_lock);
+
+		/* Exit loop if there is no more work to be done */
+		if (rq->lba == rq->start_lba + rq->num_lba) {
+			pthread_mutex_unlock(&rq->read_lock);
+			break;
+		}
+
+		/* Calculate current positions parameters */
+		buf = rq->buf + (rq->lba - rq->start_lba) * rq->lba_size;
+		lba = rq->lba;
+		nblocks = rq->nblocks;
+
+		/* Select next lba for follow up thread */
+		rq->lba += rq->nblocks;
+		pthread_mutex_unlock(&rq->read_lock);
+
+		/* Perform read operation */
+		block_trace("  reading lba %lu ...\n", lba);
+		rc = cblk_read(cid, buf, lba, nblocks, 0);
+		if (rc != (int)nblocks) {
+			fprintf(stderr, "err: cblk_read unhappy rc=%d!\n", rc);
+			goto err_out;
+		}
+		pthread_testcancel();
+	}
+	d->thread_rc = 0;
+	pthread_exit(&d->thread_rc);
+
+err_out:
+	d->thread_rc = -2;
+	pthread_exit(&d->thread_rc);
+}
+
+static int run_threads(struct thread_data *d, unsigned int threads,
+			struct rqueue *rq)
+{
+	int rc;
+	unsigned int i;
+
+	if (threads > THREAD_MAX) {
+		fprintf(stderr, "err: too many threads %u!\n", threads);
+		return -1;
+	}
+	
+	for (i = 0; i < threads; i++) {
+		d[i].thread_rc = -1;
+		d[i].rq = rq;
+	}
+
+	for (i = 0; i < threads; i++) {
+		rc = pthread_create(&d[i].thread_id, NULL,
+				&read_thread, &d[i]);
+		if (rc != 0) {
+			fprintf(stderr, "err: starting %d. read_thread failed!\n", i);
+			return -1;
+		}
+	}
+
+	for (i = 0; i < threads; i++) {
+		rc = pthread_join(d[i].thread_id, NULL);
+		if (rc != 0) {
+			fprintf(stderr, "err: joining threads failed!\n");
+			return -2;
+		}
+	}
+
+	return 0;
+}
+
 /**
  * @brief Tool to write to zEDC registers. Must be called as root!
  */
@@ -174,6 +296,7 @@ int main(int argc, char *argv[])
 	double mib_sec;
 	int pattern = 0xff;
 	int incremental_pattern = 0;
+	unsigned int threads = 1;
 
 	while (1) {
 		int option_index = 0;
@@ -182,6 +305,8 @@ int main(int argc, char *argv[])
 			{ "card",	required_argument, NULL, 'C' },
 			{ "cpu",	required_argument, NULL, 'X' },
 
+			{ "threads",	required_argument, NULL, 't' },
+			{ "start_lba",	required_argument, NULL, 's' },
 			{ "lba_blocks",	required_argument, NULL, 'b' },
 			{ "start_lba",	required_argument, NULL, 's' },
 			{ "num_lba",	required_argument, NULL, 'n' },
@@ -200,7 +325,7 @@ int main(int argc, char *argv[])
 			{ 0,		no_argument,	   NULL, 0   },
 		};
 
-		ch = getopt_long(argc, argv, "p:C:X:fwrs:n:b:p:Vqrvh",
+		ch = getopt_long(argc, argv, "p:C:X:fwrs:t:n:b:p:Vqrvh",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -212,6 +337,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'X':
 			cpu = strtoul(optarg, NULL, 0);
+			break;
+		case 't':
+			threads = strtoul(optarg, NULL, 0);
 			break;
 		case 'b':
 			lba_blocks = strtoul(optarg, NULL, 0);
@@ -293,8 +421,9 @@ int main(int argc, char *argv[])
 			rc);
 		goto err_out;
 	}
-	fprintf(stderr, "NVMe device has %zu blocks of each %zu bytes; %zu MiB\n",
-		lun_size, lba_size, lun_size * lba_size / (1024 * 1024));
+	fprintf(stderr, "NVMe device has %zu blocks of each %zu bytes; %zu MiB @ %u threads\n",
+		lun_size, lba_size, lun_size * lba_size / (1024 * 1024),
+		threads);
 
 	if (num_lba == 0)
 		num_lba = lun_size;
@@ -331,6 +460,8 @@ int main(int argc, char *argv[])
 		memset(buf, 0xff, num_lba * lba_size);
 
 		gettimeofday(&stime, NULL);
+
+#ifdef CONFIG_SINGLE_THREADED /* single threaded */
 		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
 			block_trace("  reading lba %d ...\n", lba);
 			rc = cblk_read(cid, buf + ((lba - start_lba) * lba_size),
@@ -346,6 +477,16 @@ int main(int argc, char *argv[])
 					lba_size * lba_blocks);
 
 		}
+#else
+		rqueue_init(&rq, buf, start_lba, lba_size, num_lba, lba_blocks);
+
+		rc = run_threads(thread_data, threads, &rq);
+		if (rc != 0) {
+			fprintf(stderr, "err: run_threads unhappy rc=%d!\n", rc);
+			goto err_out;
+		}
+#endif
+
 		gettimeofday(&etime, NULL);
 
 		rc = file_write(fname, buf, num_lba * lba_size);
