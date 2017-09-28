@@ -317,6 +317,12 @@ int main(int argc, char *argv[])
 			goto err_out;
 		}
 
+		if (num_lba % lba_blocks) {
+			fprintf(stderr, "err: num_lba %u not multiple of lba_blocks %zu\n",
+				num_lba, lba_blocks);
+			goto err_out;
+		}
+
 		rc = posix_memalign((void **)&buf, 64, num_lba * lba_size);
 		if (rc != 0) {
 			fprintf(stderr, "err: Cannot allocate enough memory!\n");
@@ -384,6 +390,12 @@ int main(int argc, char *argv[])
 			goto err_out;
 		}
 
+		if (num_lba % lba_blocks) {
+			fprintf(stderr, "err: num_lba %u not multiple of lba_blocks %zu\n",
+				num_lba, lba_blocks);
+			goto err_out;
+		}
+
 		rc = posix_memalign((void **)&buf, 64, num_lba * lba_size);
 		if (rc != 0) {
 			fprintf(stderr, "err: Cannot allocate enough memory!\n");
@@ -420,6 +432,12 @@ int main(int argc, char *argv[])
 
 		if (num_lba < lba_blocks) {
 			fprintf(stderr, "err: num_lba %u smaller than lba_blocks %zu\n",
+				num_lba, lba_blocks);
+			goto err_out;
+		}
+
+		if (num_lba % lba_blocks) {
+			fprintf(stderr, "err: num_lba %u not multiple of lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}

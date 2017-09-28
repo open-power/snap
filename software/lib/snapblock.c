@@ -107,7 +107,9 @@ static inline void cblk_set_status(struct cblk_req *req,
 #define CBLK_WIDX_MAX		1	/* Just one for now */
 #define CBLK_RIDX_MAX		15	/* 15 read slots */
 #define CBLK_IDX_MAX		(CBLK_WIDX_MAX + CBLK_RIDX_MAX)
+
 #define CBLK_NBLOCKS_MAX	32	/* 128 KiB / 4KiB */
+#define CBLK_NBLOCKS_WRITE_MAX	2	/* writing is just 1 or 2 blocks */
 
 struct cblk_dev {
 	struct snap_card *card;
@@ -790,8 +792,8 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 	block_trace("[%s] writing (%p lba=%zu nblocks=%zu) ...\n",
 		__func__, buf, lba, nblocks);
 
-	if (nblocks > CBLK_NBLOCKS_MAX) {
-		fprintf(stderr, "err: temp buffer too small!\n");
+	if (nblocks > CBLK_NBLOCKS_WRITE_MAX) {
+		fprintf(stderr, "err: just 1 and 2 supported for NBLOCKS!\n");
 		errno = EFAULT;
 		return -1;
 	}
