@@ -38,11 +38,11 @@ endif
 
 # This is solution specific. Check if we can replace this by generics too.
 
-snap_bfs: action_bfs.o
-snap_bfs_objs = action_bfs.o
+snap_bfs: action_bfs.o bfs_diff.o
+snap_bfs_objs = action_bfs.o bfs_diff.o
 
 projs += snap_bfs
 
-# If you have the host code outside of the default snap directory structure, 
+# If you have the host code outside of the default snap directory structure,
 # change to /path/to/snap/actions/software.mk
 include $(SNAP_ROOT)/actions/software.mk
