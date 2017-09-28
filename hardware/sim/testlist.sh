@@ -327,11 +327,11 @@
 
     if [[ "$t0l" == "10141004" || "${env_action}" == "hls_bfs"* ]];then echo -e "$del\ntesting BFS"
       step "$ACTION_ROOT/sw/snap_bfs -h"
-      step "$ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v -o hw.out"
+      step "$ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v -o bfshw.out"
       export SNAP_CONFIG=0x1;echo "${del}\n SW execution"   # SNAP_CONFIG=1 doesnt allow step() due to MMIO access to 0x80
-      $ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v -o sw.out
+      $ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v -o bfssw.out
       unset SNAP_CONFIG
-      if $ACTION_ROOT/sw/bfs_diff hw.out sw.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
+      if $ACTION_ROOT/sw/bfs_diff bfshw.out bfssw.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm -f bfs*.out;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
     fi # bfs
 
     if [[ "$t0l" == "10141005" && "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect hash"
