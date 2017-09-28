@@ -328,7 +328,7 @@
       step "$ACTION_ROOT/sw/snap_bfs -h"
       step "$ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v -o hw.out"
       export SNAP_CONFIG=0x1;echo "SW execution"
-      step "$ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v -o sw.out"
+      $ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v -o sw.out
       unset SNAP_CONFIG
       if diff hw.out sw.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
     fi # bfs
