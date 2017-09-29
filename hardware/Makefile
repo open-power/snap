@@ -71,6 +71,7 @@ SNAP_SIM_CORE=$(SNAP_HARDWARE_ROOT)/sim/core
 SNAP_SIM_NVME=$(SNAP_HARDWARE_ROOT)/sim/nvme
 
 SNAP_SIMULATORS += irun xsim
+SNAP_MODELS += .model_irun .model_xsim
 
 SNAP_PP_FILES_VHD=$(SNAP_HDL_CORE)/psl_accel.vhd   \
                   $(SNAP_HDL_CORE)/snap_core.vhd   \
@@ -97,7 +98,7 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 
 ifeq ($(PLATFORM),x86_64)
 
-.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_nvme prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment hw_config_start hw_config config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim sim
+.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_config_start hw_config config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim sim
 
 all: model image
 
@@ -181,11 +182,13 @@ check_simulator:
 		exit -1; \
 	fi
 
-prepare_build: check_psl_dcp
-	@echo -e "[PREPARE BUILD.......] start `date +"%T %a %b %d %Y"`";
+prepare_logs:
+	@mkdir -p $(LOGS_DIR);
+
+prepare_project: check_snap_settings check_psl_dcp prepare_logs
+	@echo -e "[PREPARE PROJECT.....] start `date +"%T %a %b %d %Y"`";
 	@mkdir -p $(BUILD_DIR);
 	@mkdir -p $(BUILD_DIR)/Reports;
-	@mkdir -p $(LOGS_DIR);
 	@mkdir -p $(BUILD_DIR)/Images;
 	@mkdir -p $(BUILD_DIR)/Checkpoints;
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl          $(BUILD_DIR)/snap_build.tcl;
@@ -194,9 +197,9 @@ prepare_build: check_psl_dcp
 	@cp -p $(PSL_DCP)                                             $(BUILD_DIR)/Checkpoints/;
 	@ln -f -s $(SNAP_HDL_CORE)/psl_fpga_`echo "$(FPGACARD)" | tr A-Z a-z`.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source;
 	@ln -f -s $(SNAP_HDL_CORE)/psl_accel_`echo "$(FPGACARD)" | tr A-Z a-z`.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source;
-	@echo -e "[PREPARE BUILD.......] done  `date +"%T %a %b %d %Y"`";
+	@echo -e "[PREPARE PROJECT.....] done  `date +"%T %a %b %d %Y"`";
 
-snap_preprocess_start:
+snap_preprocess_start: prepare_project
 	@echo -e "[SNAP PREPROCESS.....] start `date +"%T %a %b %d %Y"`";
 
 $(SNAP_PP_FILES_VHD):
@@ -228,21 +231,25 @@ $(SNAP_SIM_NVME)/endp_4_pipe32.v:
 %.sv: %.sv_source
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
-snap_preprocess: snap_preprocess_start $(SNAP_PP_FILES_VHD) $(SNAP_SIM_NVME)/endp_4_pipe32.v $(SNAP_CONFIG_FILES)
+snap_preprocess_execute: $(SNAP_PP_FILES_VHD) $(SNAP_SIM_NVME)/endp_4_pipe32.v $(SNAP_CONFIG_FILES)
 	@echo -e "[SNAP PREPROCESS.....] done  `date +"%T %a %b %d %Y"`";
 
+snap_preprocess: snap_preprocess_start
+	@$(MAKE) -s snap_preprocess_execute
+
 patch_version:
-	@echo -e "[PATCH...............] SNAP version and build date registers"; \
+	@echo -e "                        patching SNAP version and build date registers"; \
 	$(SNAP_HARDWARE_ROOT)/setup/patch_version.sh $(SNAP_HDL_CORE) snap_core_types.vhd
 
 patch_NVMe:
 	@if [ -e "$(SNAP_HARDWARE_ROOT)/setup/patch_NVMe.sh" ] && [ $(NVME_USED) = "TRUE" ]; then \
+		echo -e "                        patching NVMe PCIe Root Complex sim files"; \
 		cd $(SNAP_HARDWARE_ROOT)/setup && ./patch_NVMe.sh && cd .. ; \
-		echo -e "[PATCH...............] NVMe PCIe Root Complex sim. files"; \
 	fi
 
-action_hw:
+action_hw: prepare_logs
 	@echo -e "[CONFIG ACTION HW....] start `date +"%T %a %b %d %Y"`";
+	echo "Calling make $(ACTION_ROOT) hw"
 	@$(MAKE) -C $(ACTION_ROOT) hw > $(LOGS_DIR)/action_make.log;
 	@if [ $$? -ne 0 ]; then \
 		echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
@@ -252,18 +259,20 @@ action_hw:
 	fi
 	@echo -e "[CONFIG ACTION HW....] done  `date +"%T %a %b %d %Y"`";
 
-create_environment:
-	@echo -e "[CREATE_ENVIRONMENT..] start `date +"%T %a %b %d %Y"`";
+create_project: snap_preprocess
+	@echo -e "[CREATE PROJECT......] start `date +"%T %a %b %d %Y"`";
 	@echo -e "                        using `vivado -version |grep Vivado`"
 	@cd $(SNAP_HARDWARE_ROOT)/setup                                          && vivado -quiet -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -journal $(LOGS_DIR)/create_ip.jou
 	@if [ $(NVME_USED) = "TRUE" ]; then cd $(SNAP_HARDWARE_ROOT)/setup       && vivado -quiet -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou; fi
 	@cd $(SNAP_HARDWARE_ROOT)/setup && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
-	@echo -e "[CREATE_ENVIRONMENT..] done  `date +"%T %a %b %d %Y"`"
+	@$(MAKE) -s patch_NVMe
+	@echo -e "[CREATE PROJECT......] done  `date +"%T %a %b %d %Y"`"
 
 hw_config_start:
 	@echo -e "[HW CONFIG...........] start `date +"%T %a %b %d %Y"`"
 
-hw_config: hw_config_start check_snap_settings prepare_build snap_preprocess action_hw create_environment patch_version patch_NVMe
+hw_config: hw_config_start action_hw
+	@$(MAKE) -s create_project
 	@touch .hw_config_done
 	@echo -e "[HW CONFIG...........] done  `date +"%T %a %b %d %Y"`"
 
@@ -273,24 +282,29 @@ hw_config: hw_config_start check_snap_settings prepare_build snap_preprocess act
 # Adding target 'config' for backward compatibility
 config: hw_config
 
-image: .hw_config_done check_snap_settings snap_preprocess patch_version
+image: .hw_config_done
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
-		echo -e "                        Makefile target $@ not allowed for PR flow!"; exit -1; \
+		echo; echo -e "Error: Makefile target $* not allowed for PR flow!"; exit -1; \
 	fi
 	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
 	@echo "A complete FPGA bitstream build got kicked off.";
 	@echo "This will take more than an hour.";
 	@echo "The process may be terminated by pressing <CTRL>-C at any time.";
-	@echo -e "After termination it can be restarted later.\n"
+	@echo "After termination it can be restarted later.\n"; echo
+	@$(MAKE) -s patch_version
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log -journal $(LOGS_DIR)/snap_build.jou
 	@$(RM) -r .bitstream_name.txt
 	@echo -e "[BUILD IMAGE.........] done  `date +"%T %a %b %d %Y"`"
 
-cloud_base: .hw_config_done check_snap_settings snap_preprocess patch_version
+allow_%:
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
-		echo -e "                        Makefile target $@ is only allowed for PR flow!"; exit -1; \
+		echo; echo -e "Error: Makefile target $* is only allowed for PR flow!"; exit -1; \
 	fi
+
+cloud_base: .hw_config_done
+	@$(MAKE) -s allow_cloud_base
 	@echo -e "[BUILD CLOUD BASE...] start `date +"%T %a %b %d %Y"`"
+	@$(MAKE) -s patch_version
 	@cd $(BUILD_DIR) && env CLOUD_RUN=BASE vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
 	@echo -e "[BUILD CLOUD BASE....] done  `date +"%T %a %b %d %Y"`"
 
@@ -302,25 +316,21 @@ $(SNAP_BASE_DCP):
 	@echo -e "                        Need to run cloud_base first"
 	@exit -1
 
-cloud_action: .hw_config_done check_snap_settings snap_preprocess action_hw patch_version
-	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
-		echo -e "                        Makefile target $@ is only allowed for PR flow!"; exit -1; \
-	fi
+cloud_action: .hw_config_done
+	@$(MAKE) -s allow_cloud_action
 	@echo -e "[CLOUD ACTION SYNTH..] start `date +"%T %a %b %d %Y"e`"
+	@$(MAKE) -s patch_version
 	@echo -e "                        using `vivado -version |grep Vivado`"
 	@cd $(BUILD_DIR) && env CLOUD_RUN=ACTION vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/cloud_action.log -journal $(LOGS_DIR)/cloud_action.jou
 	@echo -e "[CLOUD ACTION SYNTH..] done  `date +"%T %a %b %d %Y"`"
 
-cloud_merge: $(SNAP_BASE_DCP) $(SNAP_ACTION_DCP) prepare_build
-	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
-		echo -e "                        Makefile target $@ is only allowed for PR flow!"; exit -1; \
-	fi
+cloud_merge: allow_cloud_merge $(SNAP_BASE_DCP) $(SNAP_ACTION_DCP) prepare_project
 	@echo -e "[CLOUD MERGE ........] start `date +"%T %a %b %d %Y"`"
 	@echo -e "                        using `vivado -version |grep Vivado`"
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_cloud_merge.tcl -notrace -log $(LOGS_DIR)/cloud_merge.log -journal $(LOGS_DIR)/cloud_merge.jou
 	@echo -e "[CLOUD MERGE ........] done  `date +"%T %a %b %d %Y"`"
 
-pslse:
+pslse: prepare_logs
 	@echo -e "[COMPILE PSLSE ......] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -C $(PSLSE_ROOT)/afu_driver/src > $(LOGS_DIR)/compile_pslse.log 2>&1
 	@$(MAKE) -C $(PSLSE_ROOT)/pslse         >> $(LOGS_DIR)/compile_pslse.log 2>&1
@@ -339,16 +349,17 @@ action_sw: software
 	@echo -e "[COMPILE ACTION SW...] done  `date +"%T %a %b %d %Y"`"
 
 nosim:
-	@echo -e "[BUILD $@..........] start `date +"%T %a %b %d %Y"`"
+	@echo -e "[BUILD $@ MODEL....] start `date +"%T %a %b %d %Y"`"
 	@echo -e "                        Info: Not building a simulation model, since SIMULATOR is set to \"nosim\"";
-	@echo -e "[BUILD $@..........] done  `date +"%T %a %b %d %Y"`"
+	@echo -e "[BUILD $@ MODEL....] done  `date +"%T %a %b %d %Y"`"
 
-$(SNAP_SIMULATORS): check_nvme .hw_config_done action_sw snap_preprocess patch_version
-	@echo -e "[BUILD $@..........] start `date +"%T %a %b %d %Y"`"
+$(SNAP_SIMULATORS): check_nvme .hw_config_done action_sw
 	@if [ "$(SIMULATOR)" != "$@" ]; then \
-		echo "                        Error: Makefile target $@ called with SIMULATOR set to \"$(SIMULATOR)\""; \
+		echo; echo "Error: Makefile target $@ called with SIMULATOR set to \"$(SIMULATOR)\""; \
 		exit -1; \
 	fi
+	@echo -e "[BUILD $@ MODEL....] start `date +"%T %a %b %d %Y"`"
+	@$(MAKE) -s patch_version
 	@if [ ! -d "$(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@)" ];then \
 		vivado -quiet -mode batch -source setup/export_$@.tcl -notrace -log $(LOGS_DIR)/compile_$@.log; \
 		$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1; \
@@ -361,15 +372,17 @@ $(SNAP_SIMULATORS): check_nvme .hw_config_done action_sw snap_preprocess patch_v
 	if [ $$? -ne 0 ]; then \
 		echo -e "                        Error: please look into $(LOGS_DIR)/compile_$@.log"; exit -1; \
 	fi
-	@touch .model_done
-	@echo -e "[BUILD $@..........] done  `date +"%T %a %b %d %Y"`"
+	@touch .model_$@
+	@echo -e "[BUILD $@ MODEL....] done  `date +"%T %a %b %d %Y"`"
 
-model: check_simulator $(SIMULATOR)
+$(SNAP_MODELS):
+	@$(MAKE) -s $(subst .model_,,$@)
 
-.model_done:
-	@$(MAKE) -s model
+model: check_simulator
+	@$(MAKE) -s $(SIMULATOR)
 
-sim: check_simulator .model_done
+sim: check_simulator
+	@$(MAKE) -s .model_$(SIMULATOR)
 	@echo -e "[SIMULATION........] start `date +"%T %a %b %d %Y"`"
 	@echo "                        SIMULATOR is set to $(SIMULATOR)"
 	@if [ "$(SIMULATOR)" != "nosim" ]; then cd sim; ./run_sim; fi
@@ -387,13 +400,14 @@ endif
 .PHONY: clean
 clean:
 	@echo -e "[CLEAN ENVIRONMENT...] start `date +"%T %a %b %d %Y"`"
-	@$(RM)    .hw_config_done .model_done
+	@$(RM)    .hw_config_done
 	@$(RM) -r $(SNAP_PP_FILES_VHD)                   \
                   $(SNAP_SIM_NVME)/endp_4_pipe32.v       \
                   $(SNAP_CONFIG_FILES)                   \
                   $(SNAP_TMP_FILES)                      \
 	          $(SNAP_HDL_CORE)/psl_fpga.vhd_source   \
 	          $(SNAP_HDL_CORE)/psl_accel.vhd_source  \
+	          $(SNAP_MODELS)                         \
 	          *build
 	@echo -e "                        vivado project";
 	@$(RM) -r viv_project*
