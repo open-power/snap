@@ -216,7 +216,10 @@ $(SNAP_PP_FILES_VHD):
 $(SNAP_SIM_NVME)/endp_4_pipe32.v:
 	@if [ $(SIMULATOR) != "nosim" ] && [ $(NVME_USED) = "TRUE" ]; then \
 	  echo -e "                        generating $(notdir $@)"; \
-	  $(DENALI)/bin/pureview -quiet -batch  -generate all . -genoutput  $(SNAP_SIM_NVME)/endp_4_pipe32.v $(SNAP_SIM_NVME)/endp_4_pipe32.soma; \
+	  $(DENALI)/bin/pureview -batch -generate all . -genoutput  $(SNAP_SIM_NVME)/endp_4_pipe32.v $(SNAP_SIM_NVME)/endp_4_pipe32.soma > $(LOGS_DIR)/pureview.log 2>&1; \
+	  if [ $$? -ne 0 ]; then \
+		  echo -e "                        Error: please look into $(LOGS_DIR)/pureview.log"; exit -1; \
+	  fi; \
 	fi
 
 %.vhd: %.vhd_source
@@ -350,6 +353,8 @@ $(SNAP_SIMULATORS): check_nvme .hw_config_done action_sw snap_preprocess patch_v
 		vivado -quiet -mode batch -source setup/export_$@.tcl -notrace -log $(LOGS_DIR)/compile_$@.log; \
 		$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1; \
 		cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
+	else \
+		$(RM) $(LOGS_DIR)/compile_$@.log; \
 	fi
 	@cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@); \
 	./top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1; \

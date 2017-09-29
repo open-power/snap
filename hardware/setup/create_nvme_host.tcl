@@ -241,6 +241,13 @@ CONFIG.coreclk_freq {500} \
 CONFIG.plltype {QPLL1} \
 ] $axi_pcie3_0 >> $log_file
 
+#AXI_PCIE3 create axi_pcie3 example design
+puts "                        generating AXI PCIe Root Complex example design"
+open_example_project -in_process -verbose -force -dir $root_dir/ip/nvme [get_ips nvme_top_axi_pcie3_0_0] >> $log_file  
+
+current_project $prj_name
+open_bd_design [get_files */$bd_name.bd]
+
 # Create instance: axi_pcie3_1, and set properties
 set axi_pcie3_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie3:3.0 axi_pcie3_1 >> $log_file ]
 set_property -dict [ list \
@@ -327,10 +334,6 @@ exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get
 
 #### Save block design and close the project
 save_bd_design >> $log_file
-
-#AXI_PCIE3 create axi_pcie3 example design
-puts "                        generating AXI PCIe Root Complex example design"
-open_example_project -in_process -verbose -force -dir $root_dir/ip/nvme [get_ips nvme_top_axi_pcie3_0_0] >> $log_file  
 
 puts "\[CREATE_NVMe.........\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
  

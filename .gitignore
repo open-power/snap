@@ -1,11 +1,7 @@
 .snap*
 snap_env.sh
-hardware/.setup*
-hardware/setup/*.jou
-hardware/setup/*.log
-hardware/sim/ies
-hardware/sim/xsim
-hardware/sim/questa
 software/*/*.o
 software/*/*.d
 software/*/*.so
+*.jou
+*.log
