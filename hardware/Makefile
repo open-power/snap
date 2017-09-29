@@ -74,7 +74,7 @@ SNAP_SIMULATORS += irun xsim
 
 SNAP_PP_FILES_VHD=$(SNAP_HDL_CORE)/psl_accel.vhd   \
                   $(SNAP_HDL_CORE)/snap_core.vhd   \
-                  $(SNAP_HDL_CORE)/mmio.vhd        
+                  $(SNAP_HDL_CORE)/mmio.vhd
 
 SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
                   $(SNAP_HDL_CORE)/psl_accel_types.vhd \
@@ -97,7 +97,7 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 
 ifeq ($(PLATFORM),x86_64)
 
-.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_nvme prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment hw_config_start hw_config config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim
+.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_nvme prepare_build snap_preprocess_start snap_preprocess patch_version patch_NVMe action_hw create_environment hw_config_start hw_config config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim sim
 
 all: model image
 
@@ -361,23 +361,33 @@ $(SNAP_SIMULATORS): check_nvme .hw_config_done action_sw snap_preprocess patch_v
 	if [ $$? -ne 0 ]; then \
 		echo -e "                        Error: please look into $(LOGS_DIR)/compile_$@.log"; exit -1; \
 	fi
+	@touch .model_done
 	@echo -e "[BUILD $@..........] done  `date +"%T %a %b %d %Y"`"
 
 model: check_simulator $(SIMULATOR)
 
+.model_done:
+	@$(MAKE) -s model
+
+sim: check_simulator .model_done
+	@echo -e "[SIMULATION........] start `date +"%T %a %b %d %Y"`"
+	@echo "                        SIMULATOR is set to $(SIMULATOR)"
+	@if [ "$(SIMULATOR)" != "nosim" ]; then cd sim; ./run_sim; fi
+	@echo -e "[SIMULATION........] done  `date +"%T %a %b %d %Y"`"
+
 else #noteq ($(PLATFORM),x86_64)
-.PHONY: wrong_platform all model image
+.PHONY: wrong_platform all model sim image
 
 wrong_platform:
 	@echo; echo "\nSNAP hardware builds are possible on x86 platform only\n"; echo;
 
-all model image: wrong_platform
+all model sim image: wrong_platform
 endif
 
 .PHONY: clean
 clean:
 	@echo -e "[CLEAN ENVIRONMENT...] start `date +"%T %a %b %d %Y"`"
-	@$(RM)    .hw_config_done
+	@$(RM)    .hw_config_done .model_done
 	@$(RM) -r $(SNAP_PP_FILES_VHD)                   \
                   $(SNAP_SIM_NVME)/endp_4_pipe32.v       \
                   $(SNAP_CONFIG_FILES)                   \

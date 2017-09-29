@@ -203,10 +203,10 @@ export CDS_INST_DIR  = <pointer to Cadence Installation Directory>
 ```
 
 ### Running simulation
-You may kick off simulation from within the subdirectory `sim` using the script `run_sim`.
-Calling this script without any parameter will open an xterm window from which the simulation can be controlled interactively.
+You may kick off simulation by calling `make sim` from the SNAP root directory.
+This will start the simulation and then open an xterm window from which the simulation can be controlled interactively.
 
 To initialize the SNAP framework, run `${SNAP_ROOT}/software/tools/snap_maint` first.
 
-For the VHDL based example `ACTION_ROOT=${SNAP_ROOT}/actions/hdl_example` you may then execute the example application
+For the VHDL based example 'hdl_example' you may then execute the example application
 `snap_example` contained in [snap/actions/hdl_example/sw](../actions/hdl_example/sw). Calling this application with option `-h` will present usage informations.
