@@ -122,6 +122,7 @@ config menuconfig xconfig gconfig oldconfig:
 	        $(MAKE) -s -C $$dir $@ || exit 1;        \
 	    fi                                           \
 	done
+	@$(MAKE) -C hardware clean
 
 snap_config:
 	@$(MAKE) -s menuconfig || exit 1
