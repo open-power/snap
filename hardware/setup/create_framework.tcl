@@ -20,6 +20,7 @@
 
 set root_dir    $::env(SNAP_HARDWARE_ROOT)
 set ip_dir      $root_dir/ip
+set usr_ip_dir  $ip_dir/managed_ip_project/managed_ip_project.srcs/sources_1/ip
 set hdl_dir     $root_dir/hdl
 set sim_dir     $root_dir/sim
 set fpga_part   $::env(FPGACHIP)
@@ -207,12 +208,19 @@ if { $fpga_card == "KU3" } {
       add_files -norecurse $ip_dir/axi_clock_converter/axi_clock_converter.xci >> $log_file
       export_ip_user_files -of_objects  [get_files "$ip_dir/axi_clock_converter/axi_clock_converter.xci"] -force >> $log_file
     }
-#    open_example_project -force -dir $ip_dir     [get_ips ddr4sdram]
-#    close project
     add_files -norecurse $ip_dir/ddr4sdram/ddr4sdram.xci >> $log_file
     export_ip_user_files -of_objects  [get_files "$ip_dir/ddr4sdram/ddr4sdram.xci"] -force >> $log_file
   }
 }
+# User IPs
+foreach usr_ip [glob -nocomplain -dir $usr_ip_dir *] {
+  set usr_ip_name [exec basename $usr_ip]
+  puts "                        importing user IP $usr_ip_name"
+  set usr_ip_xci [glob -dir $usr_ip *.xci]
+  add_files -norecurse $usr_ip_xci >> $log_file
+  export_ip_user_files -of_objects  [get_files "$usr_ip_xci"] -force >> $log_file
+}
+ 
 update_compile_order -fileset sources_1 >> $log_file
 
 # Add NVME
