@@ -53,6 +53,11 @@ int block_trace_enabled(void)
 	return snap_trace & 0x20;
 }
 
+int cache_trace_enabled(void)
+{
+	return snap_trace & 0x40;
+}
+
 #define simulation_enabled()  (snap_config & 0x01)
 
 #define snap_trace(fmt, ...) do {					\

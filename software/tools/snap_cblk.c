@@ -167,6 +167,7 @@ struct rqueue {
 struct thread_data {
 	pthread_t thread_id;
 	int thread_rc;			/* ret: rc of thread */
+	unsigned int num;
 	struct rqueue *rq;
 };
 
@@ -202,6 +203,7 @@ static void *read_thread(void *data)
 	struct thread_data *d = (struct thread_data *)data;
 	struct rqueue *rq = d->rq;
 
+	block_trace("[%s] NEW THREAD ALIVE %u\n", __func__, d->num);
 	while (1) {
 		pthread_mutex_lock(&rq->read_lock);
 
@@ -221,14 +223,16 @@ static void *read_thread(void *data)
 		pthread_mutex_unlock(&rq->read_lock);
 
 		/* Perform read operation */
-		block_trace("  reading lba %lu ...\n", lba);
+		block_trace("[%s] reading lba %lu ...\n", __func__, lba);
 		rc = cblk_read(cid, buf, lba, nblocks, 0);
 		if (rc != (int)nblocks) {
-			fprintf(stderr, "err: cblk_read unhappy rc=%d!\n", rc);
+			fprintf(stderr, "err: cblk_read unhappy rc=%d! %s\n",
+				rc, strerror(errno));
 			goto err_out;
 		}
 		pthread_testcancel();
 	}
+	block_trace("[%s] THREAD %u STOPPED\n", __func__, d->num);
 	d->thread_rc = 0;
 	pthread_exit(&d->thread_rc);
 
@@ -251,6 +255,7 @@ static int run_threads(struct thread_data *d, unsigned int threads,
 	for (i = 0; i < threads; i++) {
 		d[i].thread_rc = -1;
 		d[i].rq = rq;
+		d[i].num = i;
 	}
 
 	for (i = 0; i < threads; i++) {
@@ -412,7 +417,7 @@ int main(int argc, char *argv[])
 			device, (int)cid);
 		goto err_out;
 	}
-	
+
 	signal(SIGINT, INT_handler);
 
 	rc = cblk_get_lun_size(cid, &lun_size, 0);
@@ -467,8 +472,8 @@ int main(int argc, char *argv[])
 			rc = cblk_read(cid, buf + ((lba - start_lba) * lba_size),
 					lba, lba_blocks, 0);
 			if (rc != (int)lba_blocks) {
-				fprintf(stderr, "err: cblk_read unhappy rc=%d!\n",
-					rc);
+				fprintf(stderr, "err: cblk_read unhappy rc=%d! %s\n",
+					rc, strerror(errno));
 				goto err_out;
 			}
 
@@ -482,7 +487,8 @@ int main(int argc, char *argv[])
 
 		rc = run_threads(thread_data, threads, &rq);
 		if (rc != 0) {
-			fprintf(stderr, "err: run_threads unhappy rc=%d!\n", rc);
+			fprintf(stderr, "err: run_threads unhappy rc=%d! %s\n", rc,
+				strerror(errno));
 			goto err_out;
 		}
 #endif
