@@ -354,13 +354,17 @@ if { $create_ddr4 == "TRUE" } {
   open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
 }
 
+# User IPs
 if { [file exists $action_vhdl] == 1 } {
-  foreach tcl_file [glob -nocomplain -dir $action_vhdl *.tcl] {
-    set tcl_file_name [exec basename $tcl_file]
-    puts "                        sourcing $tcl_file_name"
-    source $tcl_file >> $log_file
+  set tcl_exists [exec find $action_vhdl -name *.tcl]
+  if { $tcl_exists != "" } {
+    foreach tcl_file [glob -nocomplain -dir $action_vhdl *.tcl] {
+      set tcl_file_name [exec basename $tcl_file]
+      puts "                        sourcing $tcl_file_name"
+      source $tcl_file >> $log_file
+    }
   }
-  foreach usr_ip [glob -dir $usr_ip_dir *] {
+  foreach usr_ip [glob -nocomplain -dir $usr_ip_dir *] {
     set usr_ip_name [exec basename $usr_ip]
     puts "                        generating user IP $usr_ip_name"
     set usr_ip_xci [glob -dir $usr_ip *.xci]
