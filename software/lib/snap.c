@@ -1139,8 +1139,17 @@ static void _init(void)
 		snap_trace = strtol(trace_env, (char **)NULL, 0);
 
 	config_env = getenv("SNAP_CONFIG");
-	if (config_env != NULL)
-		snap_config = strtol(config_env, (char **)NULL, 0);
+	if (config_env != NULL) {
+                if ( (strcmp(config_env, "FPGA") == 0) ||
+                     (strcmp(config_env, "fpga") == 0) )
+                        snap_config = 0x0;
+                else if ( (strcmp(config_env, "CPU") == 0) ||
+                          (strcmp(config_env, "cpu") == 0) )
+                        snap_config = 0x1;
+                else {
+		        snap_config = strtol(config_env, (char **)NULL, 0);
+                }
+        }
 
 	if (simulation_enabled())
 		df = &software_funcs;
