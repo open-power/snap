@@ -242,16 +242,10 @@ while [ -z "$SETUP_DONE" ]; do
   # Note: NVME_USED is defined via snap_config
   if [[ "$NVME_USED" = "TRUE" ]]; then
     echo "=====Denali setup======================================"
-    if [ -z "$DENALI_TOOLS" ]; then
-      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of NVME_USED=$NVME_USED but DENALI_TOOLS not set!"
+    if [ -z "$DENALI" ]; then
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of NVME_USED=$NVME_USED but DENALI not set!"
     else
-      echo "DENALI_TOOLS            is set to: \"$DENALI_TOOLS\""
-    fi
-
-    if [ -z "$DENALI_CUSTOM" ]; then
-      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of NVME_USED=$NVME_USED but DENALI_CUSTOM not set!"
-    else
-      echo "DENALI_CUSTOM           is set to: \"$DENALI_CUSTOM\""
+      echo "DENALI                  is set to: \"$DENALI\""
     fi
   fi
 

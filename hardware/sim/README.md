@@ -45,7 +45,7 @@ or start `run_sim -list <list.sh>` to run a list of testcases, before ending.
  export LD_LIBRARY_PATH=$CDS_INST_DIR/tools/lib/64bit:$LD_LIBRARY_PATH
  export CDS_LIC_FILE=                                # Cadence license server
  export IES_LIBS=                                    # Cadence IP compiled with Vivado
- export DENALI_TOOLS=                                # Cadence DENALI tools path for NVMe device simulation
+ export DENALI=                                      # Cadence DENALI tools path for NVMe device simulation
 
  export PSLSE_ROOT=                                  # path for the PSL simulation environment
 ```
