@@ -805,8 +805,8 @@ BEGIN
 
           WHEN DMA_WR_REQ =>
 
-            dma_wr_cmd_buffer.id_buf(done_ptr)   <= STD_LOGIC_VECTOR(to_unsigned(process_ptr,4));
             IF  host_mem_awvalid   = '0' and card_mem_arvalid = '0' THEN
+              dma_wr_cmd_buffer.id_buf(done_ptr)   <= STD_LOGIC_VECTOR(to_unsigned(process_ptr,4));
               IF or_reduce(dma_wr_count) = '1' THEN
 --              IF or_reduce(dma_wr_cmd_buffer.size_VECTOR(process_ptr)) = '1' THEN
                 -- If we have further 4k blocks to transfer
