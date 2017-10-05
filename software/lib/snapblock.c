@@ -126,6 +126,7 @@ struct cblk_dev {
 	struct snap_card *card;
 	struct snap_action *act;
 	pthread_mutex_t dev_lock;
+	enum cblk_status status;
 
 	unsigned int drive;
 	size_t nblocks; /* total size of the device in blocks */
@@ -458,6 +459,7 @@ static inline int read_status(struct cblk_dev *c, int timeout __attribute__((unu
 	rc = __cblk_read(c, ACTION_STATUS, &status);
 	if (rc != 0) {
 		fprintf(stderr, "err: MMIO32 read ACTION_STATUS %d\n", rc);
+		c->status = CBLK_ERROR;
 		return -2;
 	}
 	/* if (status != 0)
@@ -472,8 +474,8 @@ static inline int read_status(struct cblk_dev *c, int timeout __attribute__((unu
 	if ((status & ACTION_STATUS_ZERO_MASK) != 0x0) {
 		fprintf(stderr, "err: FATAL! STATUS_ZERO_BITs not 0 %08x\n",
 			status);
-		exit(EXIT_FAILURE);
-		/* return -4; */ /* FIXME */
+		c->status = CBLK_ERROR;
+		return -4;
 	}
 
 	slot = status & ACTION_STATUS_COMPLETION_MASK;
@@ -514,9 +516,11 @@ static int check_request_timeouts(struct cblk_dev *c, struct timeval *etime,
 			diff_msec = timediff_msec(etime, &req->stime);
 			if (diff_msec > timeout_msec) {
 				err++;
-				block_trace("  err: req[%2d]: %s %d %llu/%llu TIMEOUT!\n", i,
-				req_status_str[req->status], req->num, timeout_msec, diff_msec);
+				block_trace("  err: req[%2d]: %s %d %llu/%llu TIMEOUT!\n",
+					i, req_status_str[req->status],
+					req->num, timeout_msec, diff_msec);
 
+				errno = ETIME;
 				cblk_set_status(req, CBLK_ERROR);
 				sem_post(&req->wait_sem);
 			}
@@ -567,7 +571,7 @@ static void *done_thread(void *arg)
 						no_result_counter);
 
 					/* FIXME Gracefull return needed */
-					exit(EXIT_FAILURE);
+					/* exit(EXIT_FAILURE); */
 				}
 			}
 				else no_result_counter++;
@@ -579,8 +583,6 @@ static void *done_thread(void *arg)
 	}
 
 	pthread_cleanup_pop(1);
-
-	/* block_trace("[%s] arg=%p exit\n", __func__, arg); */
 	return NULL;
 }
 
@@ -645,7 +647,8 @@ chunk_id_t cblk_open(const char *path,
 		fprintf(stderr, "err: Cannot alloc temporary buffer\n");
 		goto out_err2;
 	}
-	
+
+	c->status = CBLK_READY;
 	c->drive = 0;
 	c->nblocks = SNAP_FLASHGT_NVME_SIZE / __CBLK_BLOCK_SIZE;
 	c->timeout = timeout;
@@ -821,6 +824,11 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 	block_trace("[%s] reading (%p lba=%zu nblocks=%zu) ...\n",
 		__func__, buf, lba, nblocks);
 
+	if (c->status != CBLK_READY) {	/* device in fatal error */
+		errno = EBADFD;
+		return -1;
+	}
+
 	if (nblocks > CBLK_NBLOCKS_MAX) {
 		fprintf(stderr, "err: temp buffer too small!\n");
 		errno = EFAULT;
@@ -830,6 +838,11 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 	while ((req = get_read_req(c)) == NULL) {
 		block_trace("  [%s] wait for free slot lba=%ld\n", __func__, lba);
 		sem_wait(&c->idle_sem);
+
+		if (c->status != CBLK_READY) {	/* device in fatal error */
+			errno = EBADFD;
+			return -1;
+		}
 		block_trace("  [%s] check if we have a free slot lba=%ld\n", __func__, lba);
 	}
 
@@ -843,13 +856,13 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 
 	count = 0;
 	while (req->status == CBLK_READING) {
-		block_trace("  [%s] sleeping %d. slot %d status: %s\n",
-			__func__, count++, req->slot, req_status_str[req->status]);
+		block_trace("  [%s] sleeping %d times slot %d status: %s\n",
+			__func__, 1 + count++, req->slot, req_status_str[req->status]);
 		sem_wait(&req->wait_sem);
 		block_trace("  [%s] continuing slot %d\n", __func__, req->slot);
 	}
 
-	if (req->status == CBLK_ERROR) {
+	if ((c->status == CBLK_ERROR) || (req->status == CBLK_ERROR)) {
 		errno = ETIME;
 		nblocks = 0;
 	} else
@@ -928,6 +941,11 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 	block_trace("[%s] writing (%p lba=%zu nblocks=%zu) ...\n",
 		__func__, buf, lba, nblocks);
 
+	if (c->status != CBLK_READY) {	/* device in fatal error */
+		errno = EBADFD;
+		return -1;
+	}
+
 	if (nblocks > CBLK_NBLOCKS_WRITE_MAX) {
 		fprintf(stderr, "err: just 1 and %u supported for NBLOCKS!\n",
 			CBLK_NBLOCKS_WRITE_MAX);
@@ -938,6 +956,11 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 	while ((req = get_write_req(c)) == NULL) {
 		block_trace("  [%s] wait for free slot lba=%ld\n", __func__, lba);
 		sem_wait(&c->idle_sem);
+
+		if (c->status != CBLK_READY) {	/* device in fatal error */
+			errno = EBADFD;
+			return -1;
+		}
 		block_trace("  [%s] check if we have a free slot lba=%ld\n", __func__, lba);
 	}
 
@@ -956,7 +979,7 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 		block_trace("  [%s] continuing slot %d\n", __func__, req->slot);
 	}
 
-	if (req->status == CBLK_ERROR) {
+	if ((c->status == CBLK_ERROR) || (req->status == CBLK_ERROR)) {
 		errno = ETIME;
 		nblocks = 0;
 	}
