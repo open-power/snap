@@ -36,6 +36,8 @@
 #undef CONFIG_WAIT_FOR_IRQ /* Not fully working */
 #define CONFIG_REQUEST_TIMEOUT 5
 
+static int cblk_reqtimeout = CONFIG_REQUEST_TIMEOUT;
+
 /*
  * FIXME The following stuff most likely neesd to go in a header file 
  * which can be accessed outside this code, or the functionalty in this
@@ -560,7 +562,7 @@ static void *done_thread(void *arg)
 				else no_result_counter++;
 
 			gettimeofday(&etime, NULL);
-			check_request_timeouts(c, &etime, CONFIG_REQUEST_TIMEOUT * 1000);
+			check_request_timeouts(c, &etime, cblk_reqtimeout * 1000);
 			pthread_testcancel();	/* go home if requested */
 		}
 	}
@@ -966,8 +968,14 @@ static void _init(void) __attribute__((constructor));
 
 static void _init(void)
 {
-	block_trace("[%s] init\n", __func__);
+	const char *reqtimeout_env;
 
+	reqtimeout_env = getenv("CBLK_REQTIMEOUT");
+	if (reqtimeout_env != NULL)
+		cblk_reqtimeout = strtol(reqtimeout_env, (char **)NULL, 0);
+
+	block_trace("[%s] init CBLK_REQTIMEOUT=%d\n",
+		__func__, cblk_reqtimeout);
 }
 
 static void _done(void) __attribute__((destructor));
