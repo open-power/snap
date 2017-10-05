@@ -205,6 +205,7 @@ static const char *action_name[] = {
 #define  ACTION_STATUS_READ_COMPLETED	0x1f /* mask id 0x0f */
 #define  ACTION_STATUS_NO_COMPLETION	0x00 /* no completion seen */
 #define  ACTION_STATUS_COMPLETION_MASK	0x0f /* mask completion bits */
+#define  ACTION_STATUS_ZERO_MASK	0xffffffe0
 
 /* defaults */
 #define ACTION_WAIT_TIME	10	/* Default timeout in sec */
@@ -467,6 +468,13 @@ static inline int read_status(struct cblk_dev *c, int timeout __attribute__((unu
 		/* block_trace("  NO COMPLETION %02x\n", status); */
 		return -3;
 	}
+	
+	if ((status & ACTION_STATUS_ZERO_MASK) != 0x0) {
+		fprintf(stderr, "err: FATAL! STATUS_ZERO_BITs not 0 %08x\n",
+			status);
+		exit(EXIT_FAILURE);
+		/* return -4; */ /* FIXME */
+	}
 
 	slot = status & ACTION_STATUS_COMPLETION_MASK;
 	if (status == ACTION_STATUS_WRITE_COMPLETED) {
@@ -557,6 +565,9 @@ static void *done_thread(void *arg)
 						__func__, slot, req_status_str[c->req[slot].status],
 						c->w_in_flight, c->r_in_flight,
 						no_result_counter);
+
+					/* FIXME Gracefull return needed */
+					exit(EXIT_FAILURE);
 				}
 			}
 				else no_result_counter++;
