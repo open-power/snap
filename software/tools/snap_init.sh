@@ -25,8 +25,8 @@ TEST=NONE
 bold=$(tput bold)
 normal=$(tput sgr0)
 
-export PATH=.:software/tools:tools:$PATH
-export LD_LIBRARY_PATH=.:software/lib:lib:`pwd`/lib
+export PATH=.:software/tools:tools:`pwd`/tools:${PATH}
+export LD_LIBRARY_PATH=.:software/lib:lib:`pwd`/lib:${LD_LIBRARY_PATH}
 
 function usage() {
 	echo "Usage: $PROGRAM"
