@@ -34,6 +34,7 @@
 #include "capiblock.h"
 
 #undef CONFIG_WAIT_FOR_IRQ /* Not fully working */
+#define CONFIG_REQUEST_TIMEOUT 5
 
 /*
  * FIXME The following stuff most likely neesd to go in a header file 
@@ -559,7 +560,7 @@ static void *done_thread(void *arg)
 				else no_result_counter++;
 
 			gettimeofday(&etime, NULL);
-			check_request_timeouts(c, &etime, 5 * 1000);
+			check_request_timeouts(c, &etime, CONFIG_REQUEST_TIMEOUT * 1000);
 			pthread_testcancel();	/* go home if requested */
 		}
 	}
