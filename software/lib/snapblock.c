@@ -406,11 +406,12 @@ static inline void start_memcpy(struct cblk_dev *c,
 	uint8_t action_code = action & 0x00ff;
 	int slot = (action & 0x0f00) >> 8;
 
+	pthread_mutex_lock(&c->dev_lock);
+
 	block_trace("    [%s] HW %s memcpy_%x(slot=%u dest=0x%llx, src=0x%llx n=%lld bytes)\n",
 		__func__, action_name[action_code % ACTION_CONFIG_MAX],
 		action, slot, (long long)dest, (long long)src, (long long)n);
 
-	pthread_mutex_lock(&c->dev_lock);
 	__cblk_write(c, ACTION_CONFIG, action);
 	__cblk_write(c, ACTION_DEST_LOW, (uint32_t)(dest & 0xffffffff));
 	__cblk_write(c, ACTION_DEST_HIGH, (uint32_t)(dest >> 32));
