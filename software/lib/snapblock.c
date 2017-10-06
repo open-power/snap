@@ -33,7 +33,9 @@
 #include "snap_hls_if.h"
 #include "capiblock.h"
 
-#undef CONFIG_WAIT_FOR_IRQ /* Not fully working */
+#undef CONFIG_WAIT_FOR_IRQ	/* Not fully working */
+#undef CONFIG_PRINT_STATUS	/* health checking if needed */
+
 #define CONFIG_REQUEST_TIMEOUT 5
 
 static int cblk_reqtimeout = CONFIG_REQUEST_TIMEOUT;
@@ -59,10 +61,9 @@ static inline void __free(void *ptr)
 	free(ptr);
 }
 
-#define timediff_msec(t0, t1)                                          \
-	((long long)                                                   \
-		(((t0)->tv_sec * 1000 + (t0)->tv_usec/1000) -          \
-		 ((t1)->tv_sec * 1000 + (t1)->tv_usec/1000)))
+/* FIXME gettimeofday() is affected by readjusting of time during program runtime */
+#define timediff_sec(t0, t1)                                           \
+	((unsigned long long)((t0)->tv_sec - (t1)->tv_sec))
 
 typedef struct atomic_t {
 	pthread_mutex_t lock;
@@ -95,7 +96,7 @@ enum cblk_status {
 	CBLK_ERROR = 4,
 };
 
-static const char *req_status_str[] =
+static const char *cblk_status_str[] =
 	{ "IDLE", "READING", "WRITING", "READY", "ERROR" };
 
 struct cblk_req {
@@ -111,7 +112,7 @@ static inline void cblk_set_status(struct cblk_req *req,
 				enum cblk_status status)
 {
 	block_trace("  [%s] req slot %d new status is %s\n", __func__,
-		req->slot, req_status_str[status]);
+		req->slot, cblk_status_str[status]);
 	req->status = status;
 }
 
@@ -127,6 +128,7 @@ struct cblk_dev {
 	struct snap_action *act;
 	pthread_mutex_t dev_lock;
 	enum cblk_status status;
+	unsigned int status_read_count;
 
 	unsigned int drive;
 	size_t nblocks; /* total size of the device in blocks */
@@ -232,7 +234,7 @@ enum cache_block_status {
 	CACHE_BLOCK_DIRTY = 2,	/* data was written */
 };
 
-static const char *block_status_str[] = { "UNUSED", "VALID", "DIRTY"};
+static const char *block_status_str[] = { "UNUSED", "VALID", "DIRTY" };
 
 struct cache_way {
 	enum cache_block_status status;
@@ -406,12 +408,11 @@ static inline void start_memcpy(struct cblk_dev *c,
 	uint8_t action_code = action & 0x00ff;
 	int slot = (action & 0x0f00) >> 8;
 
-	pthread_mutex_lock(&c->dev_lock);
-
 	block_trace("    [%s] HW %s memcpy_%x(slot=%u dest=0x%llx, src=0x%llx n=%lld bytes)\n",
 		__func__, action_name[action_code % ACTION_CONFIG_MAX],
 		action, slot, (long long)dest, (long long)src, (long long)n);
 
+	pthread_mutex_lock(&c->dev_lock);
 	__cblk_write(c, ACTION_CONFIG, action);
 	__cblk_write(c, ACTION_DEST_LOW, (uint32_t)(dest & 0xffffffff));
 	__cblk_write(c, ACTION_DEST_HIGH, (uint32_t)(dest >> 32));
@@ -463,8 +464,13 @@ static inline int read_status(struct cblk_dev *c, int timeout __attribute__((unu
 		c->status = CBLK_ERROR;
 		return -2;
 	}
-	/* if (status != 0)
-		fprintf(stderr, "STATUS: %08x\n", status); */
+
+#ifdef CONFIG_PRINT_STATUS
+	if (c->status_read_count++ == 100000) {
+		fprintf(stderr, "STATUS: %08x\n", status);
+		c->status_read_count = 0;
+	}
+#endif
 
 	if (status == ACTION_STATUS_NO_COMPLETION) {
 		/* FIXME Very verbose when doing polling */
@@ -496,16 +502,16 @@ static void cblk_req_dump(struct cblk_dev *c)
 	
 	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
 		block_trace("  req[%2d]: %s %d\n", i,
-			req_status_str[c->req[i].status],
+			cblk_status_str[c->req[i].status],
 			c->req[i].num);
 	}
 }
 
 static int check_request_timeouts(struct cblk_dev *c, struct timeval *etime,
-				unsigned long long timeout_msec)
+				unsigned long long timeout_sec)
 {
 	unsigned int i;
-	unsigned long long diff_msec = 0;
+	unsigned long long diff_sec = 0;
 	int err = 0;
 
 	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
@@ -514,12 +520,12 @@ static int check_request_timeouts(struct cblk_dev *c, struct timeval *etime,
 		if ((req->status == CBLK_READING) ||
 		    (req->status == CBLK_WRITING)) {
 
-			diff_msec = timediff_msec(etime, &req->stime);
-			if (diff_msec > timeout_msec) {
+			diff_sec = timediff_sec(etime, &req->stime);
+			if (diff_sec > timeout_sec) {
 				err++;
 				block_trace("  err: req[%2d]: %s %d %llu/%llu TIMEOUT!\n",
-					i, req_status_str[req->status],
-					req->num, timeout_msec, diff_msec);
+					i, cblk_status_str[req->status],
+					req->num, timeout_sec, diff_sec);
 
 				errno = ETIME;
 				cblk_set_status(req, CBLK_ERROR);
@@ -546,10 +552,13 @@ static void *done_thread(void *arg)
 	pthread_cleanup_push(done_thread_cleanup, c);
 
 	while (1) {
-		block_trace("  [%s] WORK NEEDED (in_flight=%u/%u)\n",
-			__func__, c->w_in_flight, c->r_in_flight);
+		block_trace("  [%s] WORK NEEDED (in_flight=%u/%u) status=%s\n",
+			__func__, c->w_in_flight, c->r_in_flight,
+			cblk_status_str[c->status]);
 		sem_wait(&c->idle_sem);	/* wait until work is to be done */
-		block_trace("  [%s] woken up ...\n", __func__);
+		block_trace("  [%s] WOKEN UP (in_flight=%u/%u) status=%s...\n",
+			__func__, c->w_in_flight, c->r_in_flight,
+			cblk_status_str[c->status]);
 		pthread_testcancel();	/* go home if requested */
 
 		/* FIXME Do we need the device lock here? */
@@ -567,7 +576,7 @@ static void *done_thread(void *arg)
 				} else {
 					block_trace("  [%s] err: slot %d status is %s, in_flight=%d/%d "
 						"ILLEGAL STATUS (%lu)\n",
-						__func__, slot, req_status_str[c->req[slot].status],
+						__func__, slot, cblk_status_str[c->req[slot].status],
 						c->w_in_flight, c->r_in_flight,
 						no_result_counter);
 
@@ -656,6 +665,7 @@ chunk_id_t cblk_open(const char *path,
 	c->done_tid = 0;
 	c->widx = 0;
 	c->ridx = 0;
+	c->status_read_count = 0;
 	sem_init(&c->busy_sem, 0, 0);
 	sem_init(&c->idle_sem, 0, 0);
 
@@ -774,12 +784,15 @@ int cblk_set_size(chunk_id_t id __attribute__((unused)),
  * internal device status. Sets c->ridx to enable round robin searching
  * for a free slot.
  */
-static struct cblk_req *get_read_req(struct cblk_dev *c)
+static struct cblk_req *get_read_req(struct cblk_dev *c, int *in_flight)
 {
 	int i, slot;
 	struct cblk_req *req;
 
 	pthread_mutex_lock(&c->dev_lock);
+	if (in_flight)
+		*in_flight = c->r_in_flight;
+
 	if (c->r_in_flight == CBLK_RIDX_MAX) {		/* BUSY */
 		pthread_mutex_unlock(&c->dev_lock);
 		return NULL;
@@ -790,7 +803,8 @@ static struct cblk_req *get_read_req(struct cblk_dev *c)
 
 		req = &c->req[slot];
 		if (req->status == CBLK_IDLE) {		/* nice it is free */
-			block_trace("[%s] GIVE OUT slot %u\n", __func__, slot);
+			block_trace("[%s] GIVE OUT slot %u in_flight=%d\n",
+				__func__, slot, c->r_in_flight);
 			c->r_in_flight++;
 			gettimeofday(&req->stime, NULL);
 			cblk_set_status(req, CBLK_READING);
@@ -801,7 +815,7 @@ static struct cblk_req *get_read_req(struct cblk_dev *c)
 	}
 
 	pthread_mutex_unlock(&c->dev_lock);
-	fprintf(stderr, "err: No IDLE req found!\n");
+	block_trace("[%s] warning: No IDLE req found!\n", __func__);
 	return NULL;
 }
 
@@ -820,6 +834,7 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 {
 	int count;
 	struct cblk_req *req;
+	int in_flight = 0;
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
 
 	block_trace("[%s] reading (%p lba=%zu nblocks=%zu) ...\n",
@@ -836,7 +851,7 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 		return -1;
 	}
 
-	while ((req = get_read_req(c)) == NULL) {
+	while ((req = get_read_req(c, &in_flight)) == NULL) {
 		block_trace("  [%s] wait for free slot lba=%ld\n", __func__, lba);
 		sem_wait(&c->idle_sem);
 
@@ -853,12 +868,15 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* src */
 		mem_size);				/* size */
 
-	sem_post(&c->idle_sem);		/* kick completion detection */
+	if (in_flight == 0) {
+		block_trace("  [%s] KICKING idle_sem\n", __func__);
+		sem_post(&c->idle_sem);		/* kick completion detection */
+	}
 
 	count = 0;
 	while (req->status == CBLK_READING) {
 		block_trace("  [%s] sleeping %d times slot %d status: %s\n",
-			__func__, 1 + count++, req->slot, req_status_str[req->status]);
+			__func__, 1 + count++, req->slot, cblk_status_str[req->status]);
 		sem_wait(&req->wait_sem);
 		block_trace("  [%s] continuing slot %d\n", __func__, req->slot);
 	}
@@ -894,12 +912,15 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 	return rc;
 }
 
-static struct cblk_req *get_write_req(struct cblk_dev *c)
+static struct cblk_req *get_write_req(struct cblk_dev *c, int *in_flight)
 {
 	int i, slot;
 	struct cblk_req *req;
 
 	pthread_mutex_lock(&c->dev_lock);
+	if (in_flight)
+		*in_flight = c->w_in_flight;
+
 	if (c->w_in_flight == CBLK_WIDX_MAX) {		/* BUSY */
 		pthread_mutex_unlock(&c->dev_lock);
 		return NULL;
@@ -936,6 +957,7 @@ static void put_write_req(struct cblk_dev *c, struct cblk_req *req)
 static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 		size_t nblocks)
 {
+	int in_flight = 0;
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
 	struct cblk_req *req;
 
@@ -954,7 +976,7 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 		return -1;
 	}
 
-	while ((req = get_write_req(c)) == NULL) {
+	while ((req = get_write_req(c, &in_flight)) == NULL) {
 		block_trace("  [%s] wait for free slot lba=%ld\n", __func__, lba);
 		sem_wait(&c->idle_sem);
 
@@ -972,7 +994,8 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 		(uint64_t)req->buf,			/* src */
 		mem_size);				/* size */
 
-	sem_post(&c->idle_sem);		/* kick completion detection */
+	if (in_flight == 0)
+		sem_post(&c->idle_sem);		/* kick completion detection */
 
 	while (req->status == CBLK_WRITING) {
 		block_trace("  [%s] sleeping slot %d\n", __func__, req->slot);
