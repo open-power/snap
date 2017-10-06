@@ -35,6 +35,7 @@ Or start `run_sim -app <application>` to run just this one app
 or start `run_sim -list <list.sh>` to run a list of testcases, before ending.
 
 ## environment prerequisites
+The necessary information to call the simulator and retrieve license keys can be placed into snap_env.sh, or it is already known to your LINUX system from your default settings.
 ```
  export XILINX_ROOT=                                 # Xilinx tools installation root
  export XILINXD_LICENSE_FILE=                        # Xilinx license server
@@ -43,12 +44,13 @@ or start `run_sim -list <list.sh>` to run a list of testcases, before ending.
  export CDS_INST_DIR=                                # Cadence tools installation root
  export PATH=$CDS_INST_DIR/tools/bin:$PATH
  export LD_LIBRARY_PATH=$CDS_INST_DIR/tools/lib/64bit:$LD_LIBRARY_PATH
- export CDS_LIC_FILE=                                # Cadence license server
+ export CDS_LIC_FILE=                                # IP socket to your Cadence license server
  export IES_LIBS=                                    # Cadence IP compiled with Vivado
- export DENALI=                                      # Cadence DENALI tools path for NVMe device simulation
-
+ export DENALI=                                      # Cadence DENALI tools path for NVMe+PCIe device simulation
  export PSLSE_ROOT=                                  # path for the PSL simulation environment
+ export PSL_DCP=                                     # path to the PSL checkpoint fitting your target card
 ```
+
 ## card and action settings
 Currently supported are Nallatech 250S (FlashGT) and AlphaData KU3, one action only
 Regression tests are in place for
