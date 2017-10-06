@@ -111,8 +111,8 @@ struct cblk_req {
 static inline void cblk_set_status(struct cblk_req *req,
 				enum cblk_status status)
 {
-	block_trace("  [%s] req slot %d new status is %s\n", __func__,
-		req->slot, cblk_status_str[status]);
+	/* block_trace("  [%s] req slot %d new status is %s\n", __func__,
+		req->slot, cblk_status_str[status]); */
 	req->status = status;
 }
 
@@ -137,11 +137,10 @@ struct cblk_dev {
 
 	unsigned int w_in_flight;	/* write transfers in flight */
 	unsigned int r_in_flight;	/* read transfers in flight */
-
 	unsigned int widx;
 	unsigned int ridx;
-
 	struct cblk_req req[CBLK_IDX_MAX];
+	enum cblk_status req_status;
 
 	sem_t busy_sem;			/* wait here if there is no free slot */
 	sem_t idle_sem;			/* wait here if there is no work */
@@ -467,7 +466,7 @@ static inline int read_status(struct cblk_dev *c, int timeout __attribute__((unu
 
 #ifdef CONFIG_PRINT_STATUS
 	if (c->status_read_count++ == 100000) {
-		fprintf(stderr, "STATUS: %08x\n", status);
+		block_trace("  [%s] ACTION_STATUS=%08x\n", __func__, status);
 		c->status_read_count = 0;
 	}
 #endif
@@ -501,9 +500,9 @@ static void cblk_req_dump(struct cblk_dev *c)
 	unsigned int i;
 	
 	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
-		block_trace("  req[%2d]: %s %d\n", i,
-			cblk_status_str[c->req[i].status],
-			c->req[i].num);
+		block_trace("  req[%2d]: %s %d %ld sec %ld usec\n", i,
+			cblk_status_str[c->req[i].status], c->req[i].num,
+			(long)c->req[i].stime.tv_sec, (long)c->req[i].stime.tv_usec);
 	}
 }
 
@@ -552,11 +551,15 @@ static void *done_thread(void *arg)
 	pthread_cleanup_push(done_thread_cleanup, c);
 
 	while (1) {
+		c->req_status = CBLK_IDLE;
 		block_trace("  [%s] WORK NEEDED (in_flight=%u/%u) status=%s\n",
 			__func__, c->w_in_flight, c->r_in_flight,
 			cblk_status_str[c->status]);
+
 		sem_wait(&c->idle_sem);	/* wait until work is to be done */
-		block_trace("  [%s] WOKEN UP (in_flight=%u/%u) status=%s...\n",
+
+		c->req_status = CBLK_READY;
+		block_trace("  [%s] WOKEN UP (in_flight=%u/%u) status=%s\n",
 			__func__, c->w_in_flight, c->r_in_flight,
 			cblk_status_str[c->status]);
 		pthread_testcancel();	/* go home if requested */
@@ -659,6 +662,7 @@ chunk_id_t cblk_open(const char *path,
 	}
 
 	c->status = CBLK_READY;
+	c->req_status = CBLK_IDLE;
 	c->drive = 0;
 	c->nblocks = SNAP_FLASHGT_NVME_SIZE / __CBLK_BLOCK_SIZE;
 	c->timeout = timeout;
@@ -715,6 +719,7 @@ int cblk_close(chunk_id_t id __attribute__((unused)),
 {
 	unsigned int i;
 	struct cblk_dev *c = &chunk;
+	struct timeval etime;
 
 	if (c->card == NULL) {
 		errno = EINVAL;
@@ -727,7 +732,12 @@ int cblk_close(chunk_id_t id __attribute__((unused)),
 		c->done_tid = 0;
 	}
 
-	block_trace("[%s] id=%d ...\n", __func__, (int)id);
+	gettimeofday(&etime, NULL);
+	block_trace("[%s] id=%d req_status=%s work_in_flight=%d "
+		"now: %lu sec %lu usec ...\n",
+		__func__, (int)id, cblk_status_str[c->req_status],
+		work_in_flight(c),
+		(long)etime.tv_sec, (long)etime.tv_usec);
 	cblk_req_dump(c);
 
 	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
@@ -805,9 +815,16 @@ static struct cblk_req *get_read_req(struct cblk_dev *c, int *in_flight)
 		if (req->status == CBLK_IDLE) {		/* nice it is free */
 			block_trace("[%s] GIVE OUT slot %u in_flight=%d\n",
 				__func__, slot, c->r_in_flight);
+
 			c->r_in_flight++;
 			gettimeofday(&req->stime, NULL);
 			cblk_set_status(req, CBLK_READING);
+
+			if (c->r_in_flight == 1) {
+				block_trace("  [%s] KICKING idle_sem\n", __func__);
+				sem_post(&c->idle_sem);	/* kick completion detection */
+			}
+
 			pthread_mutex_unlock(&c->dev_lock);
 			return req;
 		}
@@ -822,10 +839,12 @@ static struct cblk_req *get_read_req(struct cblk_dev *c, int *in_flight)
 static void put_read_req(struct cblk_dev *c, struct cblk_req *req)
 {
 	pthread_mutex_lock(&c->dev_lock);
+
 	c->r_in_flight--;
 	if (req->status != CBLK_ERROR)
 		cblk_set_status(req, CBLK_IDLE);
 	block_trace("[%s] RETURN slot %u\n", __func__, req->slot);
+
 	pthread_mutex_unlock(&c->dev_lock);
 }
 
@@ -851,9 +870,11 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 		return -1;
 	}
 
+	count = 0;
 	while ((req = get_read_req(c, &in_flight)) == NULL) {
-		block_trace("  [%s] wait for free slot lba=%ld\n", __func__, lba);
-		sem_wait(&c->idle_sem);
+		block_trace("  [%s] wait %d times for free slot lba=%ld\n",
+			__func__, 1 + count++, lba);
+		sem_wait(&c->busy_sem);
 
 		if (c->status != CBLK_READY) {	/* device in fatal error */
 			errno = EBADFD;
@@ -867,11 +888,6 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 		(uint64_t)req->buf,			/* dst */
 		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* src */
 		mem_size);				/* size */
-
-	if (in_flight == 0) {
-		block_trace("  [%s] KICKING idle_sem\n", __func__);
-		sem_post(&c->idle_sem);		/* kick completion detection */
-	}
 
 	count = 0;
 	while (req->status == CBLK_READING) {
@@ -890,7 +906,7 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 	put_read_req(c, req);
 	sem_post(&c->busy_sem);		/* kick potential waiters */
 
-	block_trace("[%s] exit lba=%zu nblocks=%zu\n", __func__, lba, nblocks);
+	/* block_trace("[%s] exit lba=%zu nblocks=%zu\n", __func__, lba, nblocks); */
 	return nblocks;
 }
 
@@ -932,8 +948,15 @@ static struct cblk_req *get_write_req(struct cblk_dev *c, int *in_flight)
 		req = &c->req[slot];
 		if (req->status == CBLK_IDLE) {		/* nice it is free */
 			gettimeofday(&req->stime, NULL);
+
 			c->w_in_flight++;
 			cblk_set_status(req, CBLK_WRITING);
+
+			if (c->w_in_flight == 1) {
+				block_trace("  [%s] KICKING idle_sem\n", __func__);
+				sem_post(&c->idle_sem);	/* kick completion detection */
+			}
+
 			pthread_mutex_unlock(&c->dev_lock);
 			return req;
 		}
@@ -948,9 +971,11 @@ static struct cblk_req *get_write_req(struct cblk_dev *c, int *in_flight)
 static void put_write_req(struct cblk_dev *c, struct cblk_req *req)
 {
 	pthread_mutex_lock(&c->dev_lock);
+
 	c->w_in_flight--;
 	if (req->status != CBLK_ERROR)
 		cblk_set_status(req, CBLK_IDLE);
+
 	pthread_mutex_unlock(&c->dev_lock);
 }
 
@@ -978,7 +1003,7 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 
 	while ((req = get_write_req(c, &in_flight)) == NULL) {
 		block_trace("  [%s] wait for free slot lba=%ld\n", __func__, lba);
-		sem_wait(&c->idle_sem);
+		sem_wait(&c->busy_sem);
 
 		if (c->status != CBLK_READY) {	/* device in fatal error */
 			errno = EBADFD;
@@ -993,9 +1018,6 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* dst */
 		(uint64_t)req->buf,			/* src */
 		mem_size);				/* size */
-
-	if (in_flight == 0)
-		sem_post(&c->idle_sem);		/* kick completion detection */
 
 	while (req->status == CBLK_WRITING) {
 		block_trace("  [%s] sleeping slot %d\n", __func__, req->slot);
