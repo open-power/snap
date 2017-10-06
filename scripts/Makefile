@@ -30,7 +30,7 @@ install:
 uninstall:
 
 clean:
-	$(RM) -r build *~
+	$(RM) build/config build/*~ *~
 
 distclean: clean
-	$(RM) ../.config ../software/include/autoconf.h
+	$(RM) ../software/include/autoconf.h

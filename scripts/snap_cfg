@@ -16,20 +16,21 @@
 #
 
 version=1.0
-program=`basename "$0"`
+program=$(basename "$0")
+prgdir=$(dirname $(readlink -f "$BASH_SOURCE")) # path containing this script
+snap_root=$(dirname "$prgdir")
 
 # output formatting
 bold=$(tput bold)
 normal=$(tput sgr0)
 
 # Name of global config file
-kconfig="`pwd`/Kconfig"
-snap_config=../.snap_config
-snap_config_sh=../.snap_config.sh
-snap_config_cflags=../.snap_config.cflags
-autoconf=../software/include/autoconf.h
-linux_dir="/usr/src/kernels/`uname -r`"
-build_dir="`pwd`/build"
+kconfig="$prgdir/Kconfig"
+snap_config="$snap_root/.snap_config"
+snap_config_sh="$snap_config".sh
+snap_config_cflags="$snap_config".cflags
+autoconf=$snap_root/software/include/autoconf.h
+build_dir="$prgdir/build"
 option=menuconfig
 
 # Print usage message helper function
@@ -58,6 +59,7 @@ while getopts ":a:o:c:Vh" opt; do
       c)
       snap_config=$OPTARG
       snap_config_sh=$OPTARG.sh
+      snap_config_cflags=$OPTARG.cflags
       ;;
       V)
       echo "${version}" >&2
@@ -78,34 +80,35 @@ while getopts ":a:o:c:Vh" opt; do
   esac
 done
 
-shift $((OPTIND-1))
-# now do something with $@
-
 echo "SNAP Build Options"
-echo "  Linux:    $linux_dir"
-echo "  Build:    $build_dir"
-echo "  Kconfig:  $kconfig"
-echo "  config:   $snap_config"
-echo "  autoconf: $autoconf"
+echo "  Kconfig:          $kconfig"
+echo "  Build directory:  $build_dir"
+echo "  config:           $snap_config"
+echo "  autoconf:         $autoconf"
 
-if [ ! -d "$linux_dir" ]; then
-    echo "ERROR: Not able to generate SNAP config files via kconfig, because directory $linux_dir does not exist." >&2
-    exit 1
+if [ ! -e $build_dir/GNUmakefile ]; then
+  echo "Cloning kconfig from github.com/guillon/kconfig into $build_dir"
+  git clone https://github.com/guillon/kconfig $build_dir
+fi
+if [ -e $snap_config ]; then
+  cp -p $snap_config $build_dir/config
+else
+  rm -f $build_dir/config
 fi
 
-mkdir -p $build_dir
-cmd="make -C $linux_dir O=$build_dir KBUILD_KCONFIG=$kconfig $option"
+cmd="make -C $build_dir -f GNUmakefile TOPDIR=. SRCDIR=. KBUILD_KCONFIG=$kconfig $option"
 
 echo "Executing:"
 echo "  $cmd"
 $cmd
 
 echo "Generating SNAP config files $snap_config, $snap_config_sh and $snap_config_cflags ..."
-cp $build_dir/.config $snap_config
+cp $build_dir/config $snap_config
 cat $snap_config | sed 's/^CONFIG_/export /' | tr -d '"' > $snap_config_sh
 chmod +x $snap_config_sh
 cat $snap_config | tr -d '"' | sed 's/^CONFIG_\(.*\)/SNAP_CFLAGS += "-DCONFIG_\1"/' > $snap_config_cflags
 echo "Generation of SNAP config files done."
+echo
 
 if [ -f $build_dir/include/linux/autoconf.h ]; then
 	echo "Copy resulting $autoconf file ..."
