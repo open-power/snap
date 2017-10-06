@@ -45,15 +45,18 @@ Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For th
 * https://www.ibm.com/systems/power/openpower  
 Download the required files under "PSL Checkpoint Files for the CAPI SNAP Design Kit".
 
-For simulation, SNAP relies on the PSL Simulation Environment (PSLSE) which is available on github:
-* https://github.com/ibm-capi/pslse
-
 SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulation model and image build, SNAP requires the Xilinx Vivado 2016.4 tool suite.
 * https://www.xilinx.com/products/design-tools/hardware-zone.html
 
 As of now, two FPGA cards can be used with SNAP:
 * Alpha-Data ADM-PCIE-KU3 http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
 * Nallatech 250S-2T with two on-card NVMe M.2 960GB drives http://www.nallatech.com/250s
+
+For simulation, SNAP relies on the PSL Simulation Environment (PSLSE) which is available on github:
+* https://github.com/ibm-capi/pslse
+
+Simulating the NVMe host controller including flash storage devices requires licenses for the Cadence Incisive Simulator (IES) and DENALI Verification IP (PCIe and NVMe). Building images is possible without this.
+For more info see the [Simulation README](hardware/sim/README.md).
 
 # Contributing
 
