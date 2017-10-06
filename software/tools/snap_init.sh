@@ -17,8 +17,10 @@
 #
 
 card=0
-version=0.1
+version=0.2
 reset=0
+threads=1
+
 TEST=NONE
 
 # output formatting
@@ -34,6 +36,7 @@ function usage() {
 	echo "    [-h|-?]           help"
 	echo "    [-C <0..3>]       card number"
 	echo "    [-r]              card reset (sudo needed)"
+	echo "    [-t <threads>]    threads to be used"
 	echo "    [-T <testcase>]   testcase e.g. CBLK"
 	echo
 	echo "  Perform SNAP card initialization and action_type "
@@ -60,7 +63,7 @@ function reset_card() {
 	fi
 }
 
-while getopts ":A:C:T:rVvh" opt; do
+while getopts ":A:C:T:t:rVvh" opt; do
 	case ${opt} in
 	C)
 		card=${OPTARG};
@@ -75,6 +78,9 @@ while getopts ":A:C:T:rVvh" opt; do
 		;;
 	T)
 		TEST=${OPTARG}
+		;;
+	t)
+		threads=${OPTARG}
 		;;
 	r)
 		reset=1;
@@ -113,13 +119,13 @@ snap_nvme_init -C${card} -d0 -d1 -v
 if [ ${TEST} = "CBLK" ]; then
 	for nblocks in 1 2 ; do
 		echo "### (1.${nblocks}) Formatting using ${nblocks} block increasing pattern ..."
-		snap_cblk -C${card} -b${nblocks} --format --pattern ${nblocks}
+		snap_cblk -C${card} -t${threads} -b${nblocks} --format --pattern ${nblocks}
 		if [ $? -ne 0 ]; then
 			printf "${bold}ERROR:${normal} Cannot format NVMe device!\n" >&2
 			exit 1
 		fi
 		echo "# Reading using 32 blocks ..."
-		snap_cblk -C${card} -b32 --read cblk_read.bin
+		snap_cblk -C${card} -t${threads} -b32 --read cblk_read.bin
 		if [ $? -ne 0 ]; then
 			printf "${bold}ERROR:${normal} Reading NVMe device!\n" >&2
 			exit 1
@@ -130,19 +136,19 @@ if [ ${TEST} = "CBLK" ]; then
 	done
 
 	echo "### (2) Formatting using 2 blocks increasing pattern ..."
-	snap_cblk -C${card} -b2 --format --pattern INC
+	snap_cblk -C${card} -t${threads} -b2 --format --pattern INC
 	if [ $? -ne 0 ]; then
 		printf "${bold}ERROR:${normal} Cannot format NVMe device!\n" >&2
 		exit 1
 	fi
 	echo "# Reading using 1 block ..."
-	snap_cblk -C${card} -b1 --read cblk_read1.bin
+	snap_cblk -C${card} -t${threads} -b1 --read cblk_read1.bin
 	if [ $? -ne 0 ]; then
 		printf "${bold}ERROR:${normal} Reading NVMe device!\n" >&2
 		exit 1
 	fi
 	echo "# Reading using 2 blocks ..."
-	snap_cblk -C${card} -b2 --read cblk_read2.bin
+	snap_cblk -C${card} -t${threads} -b2 --read cblk_read2.bin
 	if [ $? -ne 0 ]; then
 		printf "${bold}ERROR:${normal} Reading NVMe device!\n" >&2
 		exit 1
@@ -157,13 +163,13 @@ if [ ${TEST} = "CBLK" ]; then
 
 	for nblocks in 1 2 4 8 16 32 ; do
 		echo "### (3.${nblocks}) Writing 2 blocks ..."
-		snap_cblk -C${card} -b2 --write cblk_read2.bin
+		snap_cblk -C${card} -t${threads} -b2 --write cblk_read2.bin
 		if [ $? -ne 0 ]; then
 			printf "${bold}ERROR:${normal} Writing NVMe device!\n" >&2
 			exit 1
 		fi
 		echo "# Reading ${nblocks} blocks ..."
-		snap_cblk -C${card} -b${nblocks} --read cblk_read3.bin
+		snap_cblk -C${card} -t${threads} -b${nblocks} --read cblk_read3.bin
 		if [ $? -ne 0 ]; then
 			printf "${bold}ERROR:${normal} Reading NVMe device!\n" >&2
 			exit 1
