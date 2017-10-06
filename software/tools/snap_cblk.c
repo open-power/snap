@@ -39,6 +39,8 @@
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
 
+static int err_detected = 0;
+
 typedef enum {
 	OP_READ = 0,
 	OP_WRITE = 1,
@@ -204,7 +206,7 @@ static void *read_thread(void *data)
 	struct rqueue *rq = d->rq;
 
 	block_trace("[%s] NEW THREAD ALIVE %u\n", __func__, d->num);
-	while (1) {
+	while (!err_detected) {
 		pthread_mutex_lock(&rq->read_lock);
 
 		/* Exit loop if there is no more work to be done */
@@ -237,6 +239,7 @@ static void *read_thread(void *data)
 	pthread_exit(&d->thread_rc);
 
 err_out:
+	err_detected = 1;		/* inform others to stop */
 	d->thread_rc = -2;
 	pthread_exit(&d->thread_rc);
 }
@@ -636,7 +639,7 @@ int main(int argc, char *argv[])
 	__free(buf);
 	cblk_close(cid, 0);
 	cblk_term(NULL, 0);
-	exit(EXIT_SUCCESS);
+	exit(err_detected ? EXIT_FAILURE : EXIT_SUCCESS);
 
  err_out:
 	__free(buf);
