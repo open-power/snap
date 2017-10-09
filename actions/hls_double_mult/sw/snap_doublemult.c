@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 	const char *output = NULL;
 	unsigned long timeout = 600;
 	const char *space = "CARD_RAM";
-	struct timeval etime, stime;
+	struct timeval etime, stime, etime2, stime2;
 	ssize_t size = 1024 * 1024;
 	uint8_t *ibuff = NULL, *obuff = NULL;
 	uint8_t type_in = SNAP_ADDRTYPE_HOST_DRAM;
@@ -117,6 +117,9 @@ int main(int argc, char *argv[])
 	int exit_code = EXIT_SUCCESS;
 	uint8_t trailing_zeros[1024] = { 0, };
 	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
+
+	double double1 = 0, double2 = 0, result = 0;
+	double *cache_line;
 
 	while (1) {
 		int option_index = 0;
@@ -240,8 +243,33 @@ int main(int argc, char *argv[])
 		type_in = SNAP_ADDRTYPE_HOST_DRAM;
 		addr_in = (unsigned long)ibuff;
 	}
+	else {
+		printf("Please enter first float!\n");
+		scanf("%lf", &double1);
+		printf("Please enter second float!\n");
+		scanf("%lf", &double2);
+
+		// reserve a cache_line with 128 byte / 16 doubles
+		//TODO inbuild "snap_malloc"???
+		cache_line = (double *) malloc(128);
+		if (cache_line == NULL)
+			goto out_error;
+		// write 0 into this buffer
+		memset(cache_line, 0, 128);
+
+		//write doubles into it
+		*cache_line = double1;
+		*(cache_line+1) = double2;
+
+
+		type_in = SNAP_ADDRTYPE_HOST_DRAM;
+		addr_in = (unsigned long)cache_line;
+
+		//ibuff = cache_line;
+	}
 
 	/* if output file is defined, use that as output */
+	// TODO
 	if (output != NULL) {
 		size_t set_size = size + (verify ? sizeof(trailing_zeros) : 0);
 
@@ -249,6 +277,14 @@ int main(int argc, char *argv[])
 		if (obuff == NULL)
 			goto out_error;
 		memset(obuff, 0x0, set_size);
+		type_out = SNAP_ADDRTYPE_HOST_DRAM;
+		addr_out = (unsigned long)obuff;
+	}
+	else {
+		obuff = snap_malloc(128);
+		if (obuff == NULL)
+			goto out_error;
+		memset(obuff, 0x0, 128);
 		type_out = SNAP_ADDRTYPE_HOST_DRAM;
 		addr_out = (unsigned long)obuff;
 	}
@@ -312,28 +348,22 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "err: Unexpected RETC=%x!\n", cjob.retc);
 		goto out_error2;
 	}
-
+/*
 	if (verify) {
-		if ((type_in  == SNAP_ADDRTYPE_HOST_DRAM) &&
-		    (type_out == SNAP_ADDRTYPE_HOST_DRAM)) {
-			rc = memcmp(ibuff, obuff, size);
-			if (rc != 0)
-				exit_code = EX_ERR_VERIFY;
-
-			rc = memcmp(obuff + size, trailing_zeros, 1024);
-			if (rc != 0) {
-				fprintf(stderr, "err: trailing zero "
-					"verification failed!\n");
-				__hexdump(stderr, obuff + size, 1024);
-				exit_code = EX_ERR_VERIFY;
-			}
-
-		} else
-			fprintf(stderr, "warn: Verification works currently "
-				"only with HOST_DRAM\n");
-	}
+	
+}
+*/
+	gettimeofday(&stime2, NULL);
+	result = double1 * double2;
+	gettimeofday(&etime2, NULL);
+	
+	fprintf(stdout, "DEFAULT doublemult took %lld usec\n",
+		(long long)timediff_usec(&etime2, &stime2));
 	fprintf(stdout, "SNAP doublemult took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
+	
+	fprintf(stdout, "Host Result = %lf, FPGA Result = %lf", result, *(double *) obuff);
+	fprintf(stdout, "A = %lf & B = %lf", *(((double *)obuff) +14),  *(((double *)obuff) +15)); 
 
 	snap_detach_action(action);
 	snap_card_free(card);

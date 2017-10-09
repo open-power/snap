@@ -43,7 +43,7 @@ static void mbus_to_doubles(snap_membus_t mem, double *ptr_a, double *ptr_b)
 }
 
 // Cast a char* word (64B) to a word to output port (512b)
-static snap_membus_t double_to_mbus(double val)
+static snap_membus_t double_to_mbus(double val, double a, double b)
 {
 	snap_membus_t mem = 0;
 	uint64_t tmp_val;
@@ -51,6 +51,9 @@ static snap_membus_t double_to_mbus(double val)
 	tmp_val = *(uint64_t *)&val;
 
 	mem(63,0) = tmp_val;
+	mem(511, 448) = b;
+	mem(447, 384) = a;
+	
 	return mem;
 }
 
@@ -87,7 +90,7 @@ static int process_action(snap_membus_t *din_gmem,
 		product = a * b;
 
 		/* cast char[64] text to a 64B word buffer */
-		buffer_out = double_to_mbus(product);
+		buffer_out = double_to_mbus(product,a,b);
 
 		// Temporary workaround due to Xilinx memcpy issue - fixed in HLS 2017.4 */
 		//memcpy(dout_gmem + o_idx, &buffer_out, sizeof(buffer_out));
