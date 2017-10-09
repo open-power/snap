@@ -136,7 +136,6 @@ $(snap_env_sh) snap_env: $(snap_config_sh)
 		echo "ERROR: Configuration $@ not existing!";	\
 		exit 2 ; 					\
 	fi
-	@mkdir -p scripts/build
 	@cp defconfig/$@ $(snap_config)
 	@$(MAKE) -s oldconfig
 	@$(MAKE) -s snap_env
