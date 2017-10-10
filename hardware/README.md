@@ -18,7 +18,7 @@ for the SNAP build process, you may call
 make snap_config
 ```
 
-from the SNAP root directory. Making use of the Linux kconfig process the features for a specific SNAP framework configuration can be selected.
+from the SNAP root directory. Making use of [a standalone application configuration tool based on kernel kconfig](https://github.com/guillon/kconfig) the features for a specific SNAP framework configuration can be selected.
 Among the features that get configured via `make snap_config` are
 * the card type
 * the action type

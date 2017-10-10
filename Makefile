@@ -111,16 +111,10 @@ endif
 # SNAP Config
 config menuconfig xconfig gconfig oldconfig:
 	@echo "$@: Setting up SNAP configuration"
-	@if [ -e $(snap_config) ]; then                  \
-		mkdir -p scripts/build;                  \
-		cp $(snap_config) scripts/build/.config; \
-	else                                             \
-		$(RM) scripts/build/.config;             \
-	fi
-	@for dir in $(config_subdirs); do                \
-	    if [ -d $$dir ]; then                        \
-	        $(MAKE) -s -C $$dir $@ || exit 1;        \
-	    fi                                           \
+	@for dir in $(config_subdirs); do          \
+	    if [ -d $$dir ]; then                  \
+	        $(MAKE) -s -C $$dir $@ || exit 1;  \
+	    fi                                     \
 	done
 	@$(MAKE) -C hardware clean
 
@@ -142,7 +136,6 @@ $(snap_env_sh) snap_env: $(snap_config_sh)
 		echo "ERROR: Configuration $@ not existing!";	\
 		exit 2 ; 					\
 	fi
-	@mkdir -p scripts/build
 	@cp defconfig/$@ $(snap_config)
 	@$(MAKE) -s oldconfig
 	@$(MAKE) -s snap_env
