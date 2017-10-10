@@ -52,6 +52,9 @@ As of now, two FPGA cards can be used with SNAP:
 * Alpha-Data ADM-PCIE-KU3 http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
 * Nallatech 250S-2T with two on-card NVMe M.2 960GB drives http://www.nallatech.com/250s
 
+Building the code and running the make environment requires the usual development tools `gcc, make, sed, awk`. If not installed already, the installer package `build-essential` will set up the most important tools.  
+The simulation environment expects the `xterm` program, and the `ncurses` library must be installed to use the menu-driven `make snap_config`.
+
 For simulation, SNAP relies on the PSL Simulation Environment (PSLSE) which is available on github:
 * https://github.com/ibm-capi/pslse
 
