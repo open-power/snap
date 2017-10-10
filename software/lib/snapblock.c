@@ -37,6 +37,7 @@
 #undef CONFIG_PRINT_STATUS	/* health checking if needed */
 
 #define CONFIG_REQUEST_TIMEOUT 5
+#define CONFIG_REQUEST_DURATION 100 /* usec */
 
 static int cblk_reqtimeout = CONFIG_REQUEST_TIMEOUT;
 static int cblk_prefetch = 0;
@@ -96,7 +97,7 @@ static inline unsigned long atomic_inc(atomic_t *a)
 #define CBLK_NBLOCKS_MAX	32	/* 128 KiB / 4KiB */
 #define CBLK_NBLOCKS_WRITE_MAX	2	/* writing is just 1 or 2 blocks */
 
-#define CBLK_PREFETCH_BLOCKS	8
+#define CBLK_PREFETCH_BLOCKS	4
 
 enum cblk_status {
 	CBLK_IDLE = 0,
@@ -323,6 +324,11 @@ static void cache_done(void)
 	cache_blocks = NULL;
 }
 
+/**
+ * Returns 0 if data was found and copied to the output buffer.
+ *         1 if data is in flight and requested for reading.
+ *         negative on error.
+ */
 static inline int cache_read(off_t lba, void *buf)
 {
 	unsigned int i = lba & CACHE_MASK, j;
@@ -335,12 +341,18 @@ static inline int cache_read(off_t lba, void *buf)
 	pthread_mutex_lock(&entry->way_lock);
 	for (j = 0; j < CACHE_WAYS; j++) {
 		if ((way[j].status == CACHE_BLOCK_VALID) && (lba == way[j].lba)) {
-			cache_trace("  [%s] found lba=%lld\n", __func__, (long long)lba);
+			cache_trace("  [%s] found lba=%lld VALID\n", __func__, (long long)lba);
 			way[j].count = entry->count++;
 			memcpy(buf, way[j].buf, __CBLK_BLOCK_SIZE);
 			pthread_mutex_unlock(&entry->way_lock);
 			return 0;
 		}
+		if  ((way[j].status == CACHE_BLOCK_READING) && (lba == way[j].lba)) {
+			cache_trace("  [%s] found lba=%lld READING\n", __func__, (long long)lba);
+			pthread_mutex_unlock(&entry->way_lock);
+			return 1;
+		}
+		
 		cache_trace("  [%s] entry[%d].way[%d].status=%s buf=%p lba=%lld\n",
 			__func__, i, j, block_status_str[way[j].status],
 			way[j].buf, (long long)way[j].lba);
@@ -486,9 +498,11 @@ static inline void start_memcpy(struct cblk_dev *c,
 	uint8_t action_code = action & 0x00ff;
 	int slot = (action & 0x0f00) >> 8;
 
-	block_trace("    [%s] HW %s memcpy_%x(slot=%u dest=0x%llx, src=0x%llx n=%lld bytes)\n",
+	block_trace("    [%s] HW %s memcpy_%x(slot=%u dest=0x%llx, "
+		"src=0x%llx n=%lld bytes)\n",
 		__func__, action_name[action_code % ACTION_CONFIG_MAX],
-		action, slot, (long long)dest, (long long)src, (long long)n);
+		action, slot, (long long)dest, (long long)src,
+		(long long)n);
 
 	pthread_mutex_lock(&c->dev_lock);
 	__cblk_write(c, ACTION_CONFIG, action);
@@ -761,7 +775,7 @@ static int __prefetch_read_start(struct cblk_dev *c,
 	struct cblk_req *req;
 
 	/* check if we can really prefetch the next nblocks */
-	lba = lba_start + nblocks + prefetch_offs * nblocks;
+	lba = lba_start + prefetch_offs * nblocks;
 	if (lba >= (off_t)c->nblocks)
 		return -1;
 
@@ -789,7 +803,8 @@ static int __prefetch_read_start(struct cblk_dev *c,
 
 err_out:
 	/* Something went wrong ... */
-	block_trace("[%s] Simple prefetch unhappy i=%d/%d\n", __func__, i, (int)nblocks);
+	block_trace("[%s] Simple prefetch unhappy i=%d/%d\n", __func__,
+		i, (int)nblocks);
 	put_req(c, req);
 	return -1;
 }
@@ -1116,8 +1131,9 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* src */
 		mem_size);				/* size */
 
-	if (cblk_prefetch)
+	if (cblk_prefetch) {
 		__prefetch_read_start(c, lba, nblocks, cblk_prefetch, mem_size);
+	}
 
 	count = 0;
 	while (req->status == CBLK_READING) {
@@ -1140,6 +1156,39 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 	return nblocks;
 }
 
+static int __cache_read_timeout(struct cblk_dev *c, off_t lba,
+			void *buf, size_t nblocks,
+			uint32_t mem_size, unsigned int timeout_usec)
+{
+	int rc;
+	int prefetch_triggered = 0;
+	uint32_t usecs = 0;
+
+	while (usecs < timeout_usec) {
+		rc = cache_read(lba, buf);
+		if (rc == 1) {		/* READING lba is requested */
+			if (cblk_prefetch && !prefetch_triggered) {
+				__prefetch_read_start(c, lba, nblocks,
+						cblk_prefetch, mem_size);
+				prefetch_triggered = 1;
+			}
+			usecs++;
+			usleep(1);
+			continue;	/* Try again */
+		}
+
+		if (rc == 0) {		/* Success */
+			block_trace("    [%s] got LBA=%ld after %d usecs\n",
+				__func__, lba, usecs);
+			return rc;
+		}
+
+		if (rc < 0)		/* Not in cache, not requested */
+			return rc;
+	}
+	return -1;		/* Timeout */
+}
+
 int cblk_read(chunk_id_t id __attribute__((unused)),
 		void *buf, off_t lba, size_t nblocks,
 		int flags __attribute__((unused)))
@@ -1151,16 +1200,16 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 
 	/* Trying to get data from CACHE if we got all blocks ... */
 	for (i = 0; i < nblocks; i++) {
-		rc = cache_read(lba + i, buf + i * __CBLK_BLOCK_SIZE);
+		rc = __cache_read_timeout(c, lba + i,
+				buf + i * __CBLK_BLOCK_SIZE,
+				nblocks, mem_size,
+				CONFIG_REQUEST_DURATION);
 		if (rc != 0)
 			break;
 	}
 
 	/* ... we don't need to ask the NVMe hardware */
 	if ((rc == 0) && (i == nblocks)) {
-		if (cblk_prefetch)
-			__prefetch_read_start(c, lba, nblocks, cblk_prefetch, mem_size);
-
 		return nblocks;
 	}
 
