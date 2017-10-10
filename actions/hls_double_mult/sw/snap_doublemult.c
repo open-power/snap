@@ -107,19 +107,18 @@ int main(int argc, char *argv[])
 	unsigned long timeout = 600;
 	const char *space = "CARD_RAM";
 	struct timeval etime, stime, etime2, stime2;
-	ssize_t size = 1024 * 1024;
-	uint8_t *ibuff = NULL, *obuff = NULL;
+	ssize_t size = 128;
 	uint8_t type_in = SNAP_ADDRTYPE_HOST_DRAM;
 	uint64_t addr_in = 0x0ull;
 	uint8_t type_out = SNAP_ADDRTYPE_HOST_DRAM;
 	uint64_t addr_out = 0x0ull;
 	int verify = 0;
 	int exit_code = EXIT_SUCCESS;
-	uint8_t trailing_zeros[1024] = { 0, };
+//	uint8_t trailing_zeros[1024] = { 0, };
 	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 
 	double double1 = 0, double2 = 0, result = 0;
-	double *cache_line;
+	double *cache_line_in = NULL, *cache_line_out = NULL;
 
 	while (1) {
 		int option_index = 0;
@@ -221,73 +220,33 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	/* if input file is defined, use that as input */
-	if (input != NULL) {
-		size = __file_size(input);
-		if (size < 0)
-			goto out_error;
+	printf("Please enter first float!\n");
+	scanf("%lf", &double1);
+	printf("Please enter second float!\n");
+	scanf("%lf", &double2);
 
-		/* source buffer */
-		ibuff = snap_malloc(size);
-		if (ibuff == NULL)
-			goto out_error;
-		memset(ibuff, 0, size);
+	// reserve a cache_line_in with 128 byte / 16 doubles
+	cache_line_in = (double *)snap_malloc(128);
+	if (cache_line_in == NULL)
+		goto out_error;
+	// write 0 into this buffer
+	memset(cache_line_in, 0, 128);
 
-		fprintf(stdout, "reading input data %d bytes from %s\n",
-			(int)size, input);
-
-		rc = __file_read(input, ibuff, size);
-		if (rc < 0)
-			goto out_error;
-
-		type_in = SNAP_ADDRTYPE_HOST_DRAM;
-		addr_in = (unsigned long)ibuff;
-	}
-	else {
-		printf("Please enter first float!\n");
-		scanf("%lf", &double1);
-		printf("Please enter second float!\n");
-		scanf("%lf", &double2);
-
-		// reserve a cache_line with 128 byte / 16 doubles
-		//TODO inbuild "snap_malloc"???
-		cache_line = (double *) malloc(128);
-		if (cache_line == NULL)
-			goto out_error;
-		// write 0 into this buffer
-		memset(cache_line, 0, 128);
-
-		//write doubles into it
-		*cache_line = double1;
-		*(cache_line+1) = double2;
+	//write doubles into it
+	*cache_line_in = double1;
+	*(cache_line_in+1) = double2;
 
 
-		type_in = SNAP_ADDRTYPE_HOST_DRAM;
-		addr_in = (unsigned long)cache_line;
+	type_in = SNAP_ADDRTYPE_HOST_DRAM;
+	addr_in = (unsigned long)cache_line_in;
 
-		//ibuff = cache_line;
-	}
-
-	/* if output file is defined, use that as output */
-	// TODO
-	if (output != NULL) {
-		size_t set_size = size + (verify ? sizeof(trailing_zeros) : 0);
-
-		obuff = snap_malloc(set_size);
-		if (obuff == NULL)
-			goto out_error;
-		memset(obuff, 0x0, set_size);
-		type_out = SNAP_ADDRTYPE_HOST_DRAM;
-		addr_out = (unsigned long)obuff;
-	}
-	else {
-		obuff = snap_malloc(128);
-		if (obuff == NULL)
-			goto out_error;
-		memset(obuff, 0x0, 128);
-		type_out = SNAP_ADDRTYPE_HOST_DRAM;
-		addr_out = (unsigned long)obuff;
-	}
+	cache_line_out = (double *)snap_malloc(128);
+	if (cache_line_out == NULL)
+		goto out_error;
+	memset(cache_line_out, 0, 128);
+	type_out = SNAP_ADDRTYPE_HOST_DRAM;
+	addr_out = (unsigned long)cache_line_out;
+//	}
 
 	printf("PARAMETERS:\n"
 	       "  input:       %s\n"
@@ -334,11 +293,21 @@ int main(int argc, char *argv[])
 	}
 
 	/* If the output buffer is in host DRAM we can write it to a file */
+	if (input != NULL) {
+		fprintf(stdout, "writing input data %p %d bytes to %s\n",
+			cache_line_in, (int)size, input);
+
+		rc = __file_write(input, (const uint8_t *)cache_line_in, size);
+		if (rc < 0)
+			goto out_error2;
+	}
+
+	/* If the output buffer is in host DRAM we can write it to a file */
 	if (output != NULL) {
 		fprintf(stdout, "writing output data %p %d bytes to %s\n",
-			obuff, (int)size, output);
+			cache_line_out, (int)size, output);
 
-		rc = __file_write(output, obuff, size);
+		rc = __file_write(output, (const uint8_t *)cache_line_out, size);
 		if (rc < 0)
 			goto out_error2;
 	}
@@ -350,26 +319,26 @@ int main(int argc, char *argv[])
 	}
 /*
 	if (verify) {
-	
+
 }
 */
 	gettimeofday(&stime2, NULL);
 	result = double1 * double2;
 	gettimeofday(&etime2, NULL);
-	
+
 	fprintf(stdout, "DEFAULT doublemult took %lld usec\n",
 		(long long)timediff_usec(&etime2, &stime2));
 	fprintf(stdout, "SNAP doublemult took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
-	
-	fprintf(stdout, "Host Result = %lf, FPGA Result = %lf", result, *(double *) obuff);
-	fprintf(stdout, "A = %lf & B = %lf", *(((double *)obuff) +14),  *(((double *)obuff) +15)); 
+
+	fprintf(stdout, "Host Result = %lf, FPGA Result = %lf\n", result, *cache_line_out);
+	fprintf(stdout, "A = %lf & B = %lf\n", *(cache_line_out + 6),  *(cache_line_out + 7));
 
 	snap_detach_action(action);
 	snap_card_free(card);
 
-	__free(obuff);
-	__free(ibuff);
+	__free(cache_line_out);
+	__free(cache_line_in);
 	exit(exit_code);
 
  out_error2:
@@ -377,7 +346,7 @@ int main(int argc, char *argv[])
  out_error1:
 	snap_card_free(card);
  out_error:
-	__free(obuff);
-	__free(ibuff);
+	__free(cache_line_out);
+	__free(cache_line_in);
 	exit(EXIT_FAILURE);
 }

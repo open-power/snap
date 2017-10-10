@@ -46,13 +46,10 @@ static void mbus_to_doubles(snap_membus_t mem, double *ptr_a, double *ptr_b)
 static snap_membus_t double_to_mbus(double val, double a, double b)
 {
 	snap_membus_t mem = 0;
-	uint64_t tmp_val;
 
-	tmp_val = *(uint64_t *)&val;
-
-	mem(63,0) = tmp_val;
-	mem(511, 448) = b;
-	mem(447, 384) = a;
+	mem(63,0) = *(uint64_t *)&val;
+	mem(447, 384) = *(uint64_t *)&a;
+	mem(511, 448) = *(uint64_t *)&b;
 	
 	return mem;
 }

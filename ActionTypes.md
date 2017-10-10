@@ -13,7 +13,8 @@ IBM | 10.14.10.04 | 10.14.10.04 | HLS BFS (Breadth First Search)
 IBM | 10.14.10.05 | 10.14.10.06 | HLS Intersection (Two methods)
 IBM | 10.14.10.07 | 10.14.10.07 | HLS NVMe memcopy (only for FGT card)
 IBM | 10.14.10.08 | 10.14.10.08 | HLS Hello World
-IBM | 10.14.10.09 | 10.14.FF.FF | Reserved for IBM Actions
+IBM | 10.14.10.09 | 10.14.10.09 | HLS Double precision FP product
+IBM | 10.14.10.0A | 10.14.FF.FF | Reserved for IBM Actions
 Reserved | FF.FF.00.00 | FF.FF.FF.FF | Reserved
 
 ### How to apply for a new Action Type
