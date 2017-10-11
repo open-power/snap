@@ -98,6 +98,7 @@ static inline unsigned long atomic_inc(atomic_t *a)
 #define CBLK_NBLOCKS_WRITE_MAX	2	/* writing is just 1 or 2 blocks */
 
 #define CBLK_PREFETCH_BLOCKS	4
+#define CBLK_PREFETCH_THRESHOLD	10	/* only prefetch if r_in_flight is small than the threshold */
 
 enum cblk_status {
 	CBLK_IDLE = 0,
@@ -175,6 +176,11 @@ static struct cblk_dev chunk = {
 static inline unsigned int work_in_flight(struct cblk_dev *c)
 {
 	return c->w_in_flight + c->r_in_flight;
+}
+
+static inline unsigned int reads_in_flight(struct cblk_dev *c)
+{
+	return c->r_in_flight;
 }
 
 /* Action related definitions. Used to access the hardware */
@@ -1132,7 +1138,12 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 		mem_size);				/* size */
 
 	if (cblk_prefetch) {
-		__prefetch_read_start(c, lba, nblocks, cblk_prefetch, mem_size);
+		unsigned int k;
+
+		for (k = 0; (k < CBLK_PREFETCH_BLOCKS) &&
+			(reads_in_flight(c) < CBLK_PREFETCH_THRESHOLD); k++)
+			__prefetch_read_start(c, lba, nblocks,
+				cblk_prefetch + k, mem_size);
 	}
 
 	count = 0;
@@ -1156,24 +1167,18 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 	return nblocks;
 }
 
-static int __cache_read_timeout(struct cblk_dev *c, off_t lba,
-			void *buf, size_t nblocks,
-			uint32_t mem_size, unsigned int timeout_usec)
+static int __cache_read_timeout(struct cblk_dev *c __attribute__((unused)),
+			off_t lba, void *buf,
+			unsigned int timeout_usec)
 {
 	int rc;
-	int prefetch_triggered = 0;
 	uint32_t usecs = 0;
 
 	while (usecs < timeout_usec) {
 		rc = cache_read(lba, buf);
 		if (rc == 1) {		/* READING lba is requested */
-			if (cblk_prefetch && !prefetch_triggered) {
-				__prefetch_read_start(c, lba, nblocks,
-						cblk_prefetch, mem_size);
-				prefetch_triggered = 1;
-			}
 			usecs++;
-			usleep(1);
+			/* usleep(1); */
 			continue;	/* Try again */
 		}
 
@@ -1196,13 +1201,11 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 	int rc;
 	size_t i;
 	struct cblk_dev *c = &chunk;
-	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
 
 	/* Trying to get data from CACHE if we got all blocks ... */
 	for (i = 0; i < nblocks; i++) {
 		rc = __cache_read_timeout(c, lba + i,
 				buf + i * __CBLK_BLOCK_SIZE,
-				nblocks, mem_size,
 				CONFIG_REQUEST_DURATION);
 		if (rc != 0)
 			break;
@@ -1210,6 +1213,8 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 
 	/* ... we don't need to ask the NVMe hardware */
 	if ((rc == 0) && (i == nblocks)) {
+		block_trace("    [%s] Got %ld..%ld, nice\n", __func__,
+			lba, lba + nblocks - 1);
 		return nblocks;
 	}
 
