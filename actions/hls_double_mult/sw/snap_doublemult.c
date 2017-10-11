@@ -221,9 +221,9 @@ int main(int argc, char *argv[])
 	}
 
 	printf("Please enter first float!\n");
-	scanf("%lf", &double1);
+	rc = scanf("%lf", &double1);
 	printf("Please enter second float!\n");
-	scanf("%lf", &double2);
+	rc = scanf("%lf", &double2);
 
 	// reserve a cache_line_in with 128 byte / 16 doubles
 	cache_line_in = (double *)snap_malloc(128);
