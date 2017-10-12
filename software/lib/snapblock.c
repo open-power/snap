@@ -64,8 +64,39 @@ static inline void __free(void *ptr)
 }
 
 /* FIXME gettimeofday() is affected by readjusting of time during program runtime */
-#define timediff_sec(t0, t1)                                           \
-	((unsigned long long)((t0)->tv_sec - (t1)->tv_sec))
+static inline long int timediff_sec(struct timeval *a, struct timeval *b)
+{
+	struct timeval res;
+
+	timersub(a, b , &res);
+
+	/* fprintf(stderr, "err: Strange time diff "
+	 * 	"a.tv_sec=%ld a.tv_usec=%ld "
+	 * 	"b.tv_sec=%ld b.tv_usec=%ld "
+	 * 	"r.tv_sec=%ld r.tv_usec=%ld\n",
+	 *		(long int)a->tv_sec, (long int)a->tv_usec,
+	 *	(long int)b->tv_sec, (long int)b->tv_usec,
+	 *	(long int)res.tv_sec, (long int)res.tv_usec);
+	 */
+
+	return res.tv_sec;
+}
+
+static inline long int timediff_msec(struct timeval *a, struct timeval *b)
+{
+	struct timeval res;
+
+	timersub(a, b , &res);
+	return res.tv_sec * 1000 + res.tv_usec / 1000;
+}
+
+static inline long int timediff_usec(struct timeval *a, struct timeval *b)
+{
+	struct timeval res;
+
+	timersub(a, b , &res);
+	return res.tv_sec * 1000000 + res.tv_usec;
+}
 
 typedef struct atomic_t {
 	pthread_mutex_t lock;
@@ -98,7 +129,7 @@ static inline unsigned long atomic_inc(atomic_t *a)
 #define CBLK_NBLOCKS_WRITE_MAX	2	/* writing is just 1 or 2 blocks */
 
 #define CBLK_PREFETCH_BLOCKS	4
-#define CBLK_PREFETCH_THRESHOLD	10	/* only prefetch if r_in_flight is small than the threshold */
+#define CBLK_PREFETCH_THRESHOLD	8	/* only prefetch if r_in_flight is small than the threshold */
 
 enum cblk_status {
 	CBLK_IDLE = 0,
@@ -249,7 +280,7 @@ static const char *action_name[] = {
 #define NVME_MAX_TRANSFER_SIZE	(32 * MEGA_BYTE)  /* NVME limit to Transfer in one chunk */
 
 /* NVME lba cache */
-#define CACHE_MASK		0x00000003
+#define CACHE_MASK		0x0000000f
 #define CACHE_WAYS		4
 #define CACHE_ENTRIES		(CACHE_MASK + 1)
 
@@ -346,26 +377,27 @@ static inline int cache_read(off_t lba, void *buf)
 
 	pthread_mutex_lock(&entry->way_lock);
 	for (j = 0; j < CACHE_WAYS; j++) {
+
+		cache_trace("  [%s] entry[%d].way[%d].status=%s buf=%p lba=%lld\n",
+			__func__, i, j, block_status_str[way[j].status],
+			way[j].buf, (long long)way[j].lba);
+
 		if ((way[j].status == CACHE_BLOCK_VALID) && (lba == way[j].lba)) {
-			cache_trace("  [%s] found lba=%lld VALID\n", __func__, (long long)lba);
+			cache_trace("  [%s] FOUND lba=%lld VALID\n", __func__, (long long)lba);
 			way[j].count = entry->count++;
 			memcpy(buf, way[j].buf, __CBLK_BLOCK_SIZE);
 			pthread_mutex_unlock(&entry->way_lock);
 			return 0;
 		}
 		if  ((way[j].status == CACHE_BLOCK_READING) && (lba == way[j].lba)) {
-			cache_trace("  [%s] found lba=%lld READING\n", __func__, (long long)lba);
+			cache_trace("  [%s] FOUND lba=%lld READING\n", __func__, (long long)lba);
 			pthread_mutex_unlock(&entry->way_lock);
 			return 1;
 		}
-		
-		cache_trace("  [%s] entry[%d].way[%d].status=%s buf=%p lba=%lld\n",
-			__func__, i, j, block_status_str[way[j].status],
-			way[j].buf, (long long)way[j].lba);
 	}
 	pthread_mutex_unlock(&entry->way_lock);
 
-	cache_trace("  [%s] not found lba=%lld\n", __func__, (long long)lba);
+	cache_trace("  [%s] NOT FOUND lba=%lld\n", __func__, (long long)lba);
 	return -1; /* not found */
 }
 
@@ -503,12 +535,16 @@ static inline void start_memcpy(struct cblk_dev *c,
 {
 	uint8_t action_code = action & 0x00ff;
 	int slot = (action & 0x0f00) >> 8;
+	off_t lba;
+
+	lba = ((action_code == ACTION_CONFIG_COPY_HN) ? dest : src) /
+		(__CBLK_BLOCK_SIZE/NVME_LB_SIZE);
 
 	block_trace("    [%s] HW %s memcpy_%x(slot=%u dest=0x%llx, "
-		"src=0x%llx n=%lld bytes)\n",
+		"src=0x%llx n=%lld bytes) LBA=%lld\n",
 		__func__, action_name[action_code % ACTION_CONFIG_MAX],
 		action, slot, (long long)dest, (long long)src,
-		(long long)n);
+		(long long)n, (long long)lba);
 
 	pthread_mutex_lock(&c->dev_lock);
 	__cblk_write(c, ACTION_CONFIG, action);
@@ -553,6 +589,7 @@ static struct cblk_req *get_read_req(struct cblk_dev *c, int *in_flight,
 				off_t lba, size_t nblocks)
 {
 	int i, slot;
+	unsigned int j;
 	struct cblk_req *req;
 
 	pthread_mutex_lock(&c->dev_lock);
@@ -575,6 +612,10 @@ static struct cblk_req *get_read_req(struct cblk_dev *c, int *in_flight,
 			req->use_wait_sem = use_wait_sem;
 			req->lba = lba;
 			req->nblocks = nblocks;
+	
+			/* Ignore reservation misses, does not matter */
+			for (j = 0; j < nblocks; j++)
+				req->pblock[j] = cache_reserve(lba + j);
 
 			c->r_in_flight++;
 			gettimeofday(&req->stime, NULL);
@@ -732,10 +773,10 @@ static void cblk_req_dump(struct cblk_dev *c)
 }
 
 static int check_request_timeouts(struct cblk_dev *c, struct timeval *etime,
-				unsigned long long timeout_sec)
+				long int timeout_sec)
 {
 	unsigned int i;
-	unsigned long long diff_sec = 0;
+	long int diff_sec = 0;
 	int err = 0;
 
 	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
@@ -747,7 +788,7 @@ static int check_request_timeouts(struct cblk_dev *c, struct timeval *etime,
 			diff_sec = timediff_sec(etime, &req->stime);
 			if (diff_sec > timeout_sec) {
 				err++;
-				block_trace("  err: req[%2d]: %s %llu/%llu TIMEOUT!\n",
+				block_trace("  err: req[%2d]: %s %lu/%lu TIMEOUT!\n",
 					i, cblk_status_str[req->status],
 					timeout_sec, diff_sec);
 
@@ -776,7 +817,6 @@ static int __prefetch_read_start(struct cblk_dev *c,
 			uint32_t prefetch_offs,
 			uint32_t mem_size)
 {
-	unsigned int i;
 	off_t lba;
 	struct cblk_req *req;
 
@@ -791,14 +831,8 @@ static int __prefetch_read_start(struct cblk_dev *c,
 	/* get a free read slot, we can read CBLK_NBLOCKS_MAX blocks */
 	req = get_read_req(c, NULL, 0, lba, nblocks);
 	if (req == NULL)
-		return -1;
+		return -2;
 
-	for (i = 0; i < nblocks; i++) {
-		req->pblock[i] = cache_reserve(lba + i);
-		if (req->pblock[i] == NULL)
-			goto err_out;
-	}
-	
 	start_memcpy(c,					/* NVMe to Host DDR */
 		ACTION_CONFIG_COPY_NH | (req->slot << 8),
 		(uint64_t)req->buf,			/* dst */
@@ -806,13 +840,6 @@ static int __prefetch_read_start(struct cblk_dev *c,
 		mem_size);				/* size */
 
 	return 0;
-
-err_out:
-	/* Something went wrong ... */
-	block_trace("[%s] Simple prefetch unhappy i=%d/%d\n", __func__,
-		i, (int)nblocks);
-	put_req(c, req);
-	return -1;
 }
 
 static inline int __prefetch_read_complete(struct cblk_dev *c,
@@ -916,7 +943,8 @@ chunk_id_t cblk_open(const char *path,
 		(SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 	struct cblk_dev *c = &chunk;
 
-	block_trace("[%s] opening (%s) ...\n", __func__, path);
+	block_trace("[%s] opening (%s) CBLK_REQTIMEOUT=%d CBLK_PREFETCH=%d\n",
+		__func__, path, cblk_reqtimeout, cblk_prefetch);
 
 	pthread_mutex_lock(&c->dev_lock);
 
@@ -1173,12 +1201,19 @@ static int __cache_read_timeout(struct cblk_dev *c __attribute__((unused)),
 {
 	int rc;
 	uint32_t usecs = 0;
+	struct timeval s, e;
 
+	gettimeofday(&s, NULL);
 	while (usecs < timeout_usec) {
+		/*
+		 * Consider using pthread_cond_wait() and
+		 * pthread_cond_broadcast() once the data is ready to
+		 * be absorbed.
+		 */
 		rc = cache_read(lba, buf);
 		if (rc == 1) {		/* READING lba is requested */
-			usecs++;
-			/* usleep(1); */
+			gettimeofday(&e, NULL);
+			usecs = timediff_usec(&e, &s);
 			continue;	/* Try again */
 		}
 
