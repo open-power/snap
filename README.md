@@ -28,11 +28,7 @@ file within that directory.
 
 ## Flashing the bitstream
 
-The tools flash the card bitstream are available on github:
-* https://github.com/ibm-capi/capi-utils
-
-Call the capi-flash script with the generated bitstream:
-`$ sudo capi-flash-script.sh <your-bitstream.bin>`
+Please see [Bitstream_flashing.md](hardware/doc/Bitstream_flashing.md) for instructions how to update the FPGA bitstream.
 
 # Dependencies
 
@@ -58,6 +54,9 @@ Configuring the SNAP framework via `make snap_config` will call a standalone too
 * https://github.com/guillon/kconfig
 
 In order to use the menu-driven user interface for kconfig the `ncurses` library must be installed.
+
+SNAP uses the generic tools to update CAPI card FPGA bitstreams from
+* https://github.com/ibm-capi/capi-utils
 
 For simulation, SNAP relies on the `xterm` program and on the PSL Simulation Environment (PSLSE) which is available on github:
 * https://github.com/ibm-capi/pslse
