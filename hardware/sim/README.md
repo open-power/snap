@@ -3,9 +3,9 @@ SNAP supports *Xilinx xsim* and *Cadence irun* tools for simulation.
 The environment variable `SIMULATOR` (see make snap_config) selects the simulator and can be set to `xsim` or to `irun`.  
 
 ## Building a model
-see [../README.md](../README.md) for further instructions
+see [Image and model build](../#image-and-model-build) for further instructions
 Note: The Makefile for building a model calls Vivado to export a script `top.sh` for compile & elaborate & simulate.
-By default this already calls the simulator. In SNAP the simulator execution is disabled and replaced by [./run_sim](./run_sim).  
+In SNAP the call of the simulator from `top.sh` is disabled. For instructions on simulation please refer to [Running simulation](#running-simulation) instead.  
 Cadence also supports a three-step compile/elab/run mode, which lists compile modules differently and is not used for SNAP.
 The Cadence one-step irun mode calls irun for compile and for simulator execution, the simulator underneath is called ncsim.  
 Xilinx builds models in three steps compile/elaborate/simulate with a `.prj` file similar to Cadence irun
