@@ -351,7 +351,7 @@ static int cache_init(void)
 		pthread_mutex_init(&entry->way_lock, NULL);
 		for (j = 0; j < CACHE_WAYS; j++) {
 			way[j].status = CACHE_BLOCK_UNUSED;
-			way[i].count = 0;
+			way[j].count = 0;
 			way[j].buf = &cache_blocks[i * CACHE_WAYS + j];
 		}
 	}
