@@ -44,7 +44,7 @@ PACKAGE snap_core_types IS
   CONSTANT SDRAM_SIZE                      : std_logic_vector(15 DOWNTO 0);  -- Size of attached on-card SDRAM in MB
   CONSTANT CARD_TYPE                       : std_logic_vector(7 DOWNTO 0);   -- Card type - currently specified:
                                                                              --             0x00 Alphadata KU3
-                                                                             --             0x01 Nallatech 250S / FlashGT
+                                                                             --             0x01 Nallatech 250S
   CONSTANT NVME_ENABLED                    : std_logic;                      -- Is the NVMe host logic enabled for connecting to NVMe Flash drives
 
 --------------------------------------------------------------------------------

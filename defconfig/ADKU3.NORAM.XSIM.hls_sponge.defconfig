@@ -3,9 +3,9 @@
 # Linux kernel version: KERNELVERSION
 # Fri Sep 15 12:24:49 2017
 #
-# FGT is not set
-KU3=y
-FPGACARD="KU3"
+# N250S is not set
+ADKU3=y
+FPGACARD="ADKU3"
 FPGACHIP="xcku060-ffva1156-2-e"
 NUM_OF_ACTIONS=1
 # HLS_ACTION is not set

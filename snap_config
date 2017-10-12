@@ -39,10 +39,10 @@ while [ -z "$SETUP_DONE" ]; do
 
 
   ####### checking card type
-  if [ "$FPGACARD" = "FGT" ]; then
-    SNAP_CFG="CONFIG_FGT=y\n"
-  elif [ "$FPGACARD" = "KU3" ]; then
-    SNAP_CFG="CONFIG_KU3=y\n"
+  if [ "$FPGACARD" = "N250S" ]; then
+    SNAP_CFG="CONFIG_N250S=y\n"
+  elif [ "$FPGACARD" = "ADKU3" ]; then
+    SNAP_CFG="CONFIG_ADKU3=y\n"
   else
     echo "($0) ERROR: FPGACARD is not set correctly. Not generating config files."
     break
@@ -83,7 +83,7 @@ while [ -z "$SETUP_DONE" ]; do
     BRAM_USED="FALSE"
     SDRAM_USED=${SDRAM_USED^^}
     if [ "$SDRAM_USED" = "TRUE" ]; then
-      if [ "$FPGACARD" = "KU3" ]; then
+      if [ "$FPGACARD" = "ADKU3" ]; then
         DDR3_USED="TRUE"
         DDR4_USED="FALSE"
         SNAP_CFG="$SNAP_CFG""CONFIG_ENABLE_DDR3=y\n"
@@ -111,8 +111,8 @@ while [ -z "$SETUP_DONE" ]; do
   ####### checking NVME
   NVME_USED=${NVME_USED^^}
   if [ "$NVME_USED" = "TRUE" ]; then
-    if [ "$FPGACARD" != "FGT" ]; then
-      echo "($0) ERROR: NVME is enabled but FPGACARD is not set to FGT. Not generating config files."
+    if [ "$FPGACARD" != "N250S" ]; then
+      echo "($0) ERROR: NVME is enabled but FPGACARD is not set to N250S. Not generating config files."
       break
     fi
     SNAP_CFG="$SNAP_CFG""CONFIG_ENABLE_NVME=y\n"

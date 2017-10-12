@@ -20,14 +20,14 @@
 ############################################################################
 
 SDRAM_SIZE="x\"0000\""
-if [ "$FPGACARD" == "KU3" ]; then
-  FPGA_FILTER="\-\- only for FPGACARD=FGT"
+if [ "$FPGACARD" == "ADKU3" ]; then
+  FPGA_FILTER="\-\- only for FPGACARD=N250S"
   CARD_TYPE="x\"00\""
   if [ "${SDRAM_USED^^}" == "TRUE" ]; then
     SDRAM_SIZE="x\"2000\""
   fi
 else
-  FPGA_FILTER="\-\- only for FPGACARD=KU3"
+  FPGA_FILTER="\-\- only for FPGACARD=ADKU3"
   CARD_TYPE="x\"01\""
   if [ "${SDRAM_USED^^}" == "TRUE" ]; then
     SDRAM_SIZE="x\"1000\""

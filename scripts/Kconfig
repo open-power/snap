@@ -7,31 +7,31 @@
 
 choice
         bool "Card Type"
-        default FGT
+        default N250S
         help
           There are multiple card the framework supports. Please select
           one of them.
 
-        config FGT
-                bool "Flash GT with 4GB DDR4 SDRAM, NVMe and Xilinx FPGA"
+        config N250S
+                bool "Nallatech 250S with 4GB DDR4 SDRAM, NVMe and Xilinx FPGA"
                 help
-                  Nallatech Flash GT card originally used for CAPI Flash using NVMe
+                  Nallatech 250S card originally used for CAPI Flash using NVMe
                   storage. Uses Xilinx FPGA.
 
-        config KU3
-                bool "KU3 Card with Ethernet, 8GB DDR3 SDRAM and Xilinx FPGA"
+        config ADKU3
+                bool "AlphaData KU3 Card with Ethernet, 8GB DDR3 SDRAM and Xilinx FPGA"
                 help
-                  Alpha Data KU3 has ethernet and 8GB DDR3 SDRAM. Uses Xilinx FPGA.
+                  AlphaData KU3 has ethernet and 8GB DDR3 SDRAM. Uses Xilinx FPGA.
 endchoice
 
 config FPGACARD
         string
-        default "FGT" if FGT
-        default "KU3" if KU3
+        default "N250S" if N250S
+        default "ADKU3" if ADKU3
 
 config FPGACHIP
         string
-        default "xcku060-ffva1156-2-e" if FGT || KU3
+        default "xcku060-ffva1156-2-e" if N250S || ADKU3
 
 config NUM_OF_ACTIONS
         int
@@ -59,7 +59,7 @@ choice
 
         config HDL_NVME_EXAMPLE
             bool "HDL NVMe Example"
-            depends on FGT
+            depends on N250S
             select FORCE_SDRAM_OR_BRAM
             select FORCE_NVME
 
@@ -94,7 +94,7 @@ choice
 
         config HLS_NVME_MEMCOPY
             bool "HLS NVMe Memcopy"
-            depends on FGT
+            depends on N250S
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
             select FORCE_NVME
@@ -146,7 +146,7 @@ config ENABLE_SDRAM
         depends on ! (DISABLE_SDRAM_AND_BRAM || ENABLE_BRAM)
         help
           This option enables the on-card SDRAM.
-          SNAP supports 8GB of DDR3 SDRAM on the KU3 card and 4GB of DDR4 SDRAM on the Flash GT card.
+          SNAP supports 8GB of DDR3 SDRAM on the AlphaData KU3 card and 4GB of DDR4 SDRAM on the Nallatech 250S card.
 
 config SDRAM_USED
         string
@@ -156,7 +156,7 @@ config SDRAM_USED
 config ENABLE_DDR3
         bool
         default y
-        depends on (ENABLE_SDRAM && KU3)
+        depends on (ENABLE_SDRAM && ADKU3)
 
 config DDR3_USED
         string
@@ -166,7 +166,7 @@ config DDR3_USED
 config ENABLE_DDR4
         bool
         default y
-        depends on (ENABLE_SDRAM && FGT)
+        depends on (ENABLE_SDRAM && N250S)
 
 config DDR4_USED
         string
@@ -190,7 +190,7 @@ config FORCE_NVME
 
 config ENABLE_NVME
         bool "Enable NVMe"
-        depends on FGT && (HLS_ACTION || HDL_ACTION || HDL_NVME_EXAMPLE || HDL_EXAMPLE || HLS_NVME_MEMCOPY)
+        depends on N250S && (HLS_ACTION || HDL_ACTION || HDL_NVME_EXAMPLE || HDL_EXAMPLE || HLS_NVME_MEMCOPY)
         help
           This option controls the instantiation of an NVMe host controller
           together with the AXI interfaces for MMIO control and action access.

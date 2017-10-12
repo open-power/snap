@@ -28,7 +28,7 @@ ENTITY psl_fpga IS
   PORT(
     -- DDR3 SDRAM Interface                                                     -- only for DDR3_USED=TRUE
     --                                                                          -- only for DDR3_USED=TRUE
-    -- Alpha-Data KU3 card has two DDR3 SO-DIMMs                                -- only for DDR3_USED=TRUE
+    -- AlphaData KU3 card has two DDR3 SO-DIMMs                                 -- only for DDR3_USED=TRUE
     -- SNAP is only using the C0 DIMM                                           -- only for DDR3_USED=TRUE
     c0_sys_clk_p       : IN    STD_LOGIC;                                       -- only for DDR3_USED=TRUE
     c0_sys_clk_n       : IN    STD_LOGIC;                                       -- only for DDR3_USED=TRUE

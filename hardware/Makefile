@@ -37,14 +37,14 @@ snap_env_sh        = $(SNAP_ROOT)/snap_env.sh
 -include $(snap_env_sh)
 
 SIMULATOR ?= nosim
-ifeq "$(FPGACARD)" "KU3"
+ifeq "$(FPGACARD)" "ADKU3"
 	export DDR3_USED=$(SDRAM_USED)
 	export DDR4_USED=FALSE
 	export DDRI_USED=$(SDRAM_USED)
 	export NVME_USED=FALSE
 endif
 
-ifeq "$(FPGACARD)" "FGT"
+ifeq "$(FPGACARD)" "N250S"
 	export DDR3_USED=FALSE
 	export DDR4_USED=$(SDRAM_USED)
 	export DDRI_USED=$(SDRAM_USED)

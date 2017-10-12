@@ -139,14 +139,14 @@ if { $simulator != "nosim" } {
   set_property file_type SystemVerilog [get_files $sim_dir/core/top.sv]
   set_property used_in_synthesis false [get_files $sim_dir/core/top.sv]
   # DDR3 Sim Files
-  if { ($fpga_card == "KU3") && ($sdram_used == "TRUE") } {
+  if { ($fpga_card == "ADKU3") && ($sdram_used == "TRUE") } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr3sdram_ex/imports/ddr3.v  >> $log_file
     set_property file_type {Verilog Header}        [get_files $ip_dir/ddr3sdram_ex/imports/ddr3.v]
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr3_dimm.sv      >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr3_dimm.sv]
   }
   # DDR4 Sim Files
-  if { ($fpga_card == "FGT") && ($sdram_used == "TRUE") } {
+  if { ($fpga_card == "N250S") && ($sdram_used == "TRUE") } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm.sv  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm.sv]
@@ -171,7 +171,7 @@ export_ip_user_files -of_objects  [get_files  "$ip_dir/fifo_10x512/fifo_10x512.x
 add_files -norecurse  $ip_dir/fifo_513x512/fifo_513x512.xci >> $log_file
 export_ip_user_files -of_objects  [get_files  "$ip_dir/fifo_513x512/fifo_513x512.xci"] -force >> $log_file
 # DDR3 / BRAM IPs
-if { $fpga_card == "KU3" } {
+if { $fpga_card == "ADKU3" } {
   if { $bram_used == "TRUE" } {
     add_files -norecurse $ip_dir/axi_clock_converter/axi_clock_converter.xci >> $log_file
     export_ip_user_files -of_objects  [get_files "$ip_dir/axi_clock_converter/axi_clock_converter.xci"] -force >> $log_file
@@ -183,7 +183,7 @@ if { $fpga_card == "KU3" } {
     add_files -norecurse $ip_dir/ddr3sdram/ddr3sdram.xci >> $log_file
     export_ip_user_files -of_objects  [get_files "$ip_dir/ddr3sdram/ddr3sdram.xci"] -force >> $log_file
   }
-} elseif { $fpga_card == "FGT" } {
+} elseif { $fpga_card == "N250S" } {
   if { $bram_used == "TRUE" } {
     if { $nvme_used == "TRUE" } {
       add_files -norecurse $ip_dir/axi_interconnect/axi_interconnect.xci >> $log_file
@@ -270,46 +270,46 @@ set_property used_in_synthesis false [get_files  $root_dir/setup/snap_link.xdc]
 update_compile_order -fileset sources_1 >> $log_file
 
 # DDR XDCs
-if { $fpga_card == "KU3" } {
+if { $fpga_card == "ADKU3" } {
   if { $bram_used == "TRUE" } {
-    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_refclk200.xdc
   } elseif { $sdram_used == "TRUE" } {
     if { $use_prflow == "TRUE" } {
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/action_pblock.xdc
-      set_property used_in_synthesis false [get_files  $root_dir/setup/KU3/action_pblock.xdc]
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_pblock.xdc
-      set_property used_in_synthesis false [get_files  $root_dir/setup/KU3/snap_pblock.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/action_pblock.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/action_pblock.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_pblock.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/snap_pblock.xdc]
     }
-    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_refclk200.xdc
-    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_ddr3_b0pblock.xdc
-    set_property used_in_synthesis false [get_files $root_dir/setup/KU3/snap_ddr3_b0pblock.xdc]
-    add_files -fileset constrs_1 -norecurse $root_dir/setup/KU3/snap_ddr3_b0pins.xdc
-    set_property used_in_synthesis false [get_files $root_dir/setup/KU3/snap_ddr3_b0pins.xdc]
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_refclk200.xdc
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_ddr3_b0pblock.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_ddr3_b0pblock.xdc]
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_ddr3_b0pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_ddr3_b0pins.xdc]
   }
-} elseif { $fpga_card == "FGT" } {
+} elseif { $fpga_card == "N250S" } {
   if { $bram_used == "TRUE" } {
-    add_files -fileset constrs_1 -norecurse  $root_dir/setup/FGT/snap_refclk266.xdc
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_refclk266.xdc
   } elseif { $sdram_used == "TRUE" } {
     if { $use_prflow == "TRUE" } {
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/FGT/snap_ddr4_pblock.xdc
-      set_property used_in_synthesis false [get_files $root_dir/setup/FGT/snap_ddr4_pblock.xdc]
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/FGT/action_pblock.xdc
-      set_property used_in_synthesis false [get_files  $root_dir/setup/FGT/action_pblock.xdc]
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/FGT/snap_pblock.xdc
-      set_property used_in_synthesis false [get_files  $root_dir/setup/FGT/snap_pblock.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/snap_ddr4_pblock.xdc
+      set_property used_in_synthesis false [get_files $root_dir/setup/N250S/snap_ddr4_pblock.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/action_pblock.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/action_pblock.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/snap_pblock.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/snap_pblock.xdc]
     }    
-    add_files -fileset constrs_1 -norecurse  $root_dir/setup/FGT/snap_refclk266.xdc
-    add_files -fileset constrs_1 -norecurse  $root_dir/setup/FGT/snap_ddr4pins.xdc
-    set_property used_in_synthesis false [get_files $root_dir/setup/FGT/snap_ddr4pins.xdc]
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_refclk266.xdc
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_ddr4pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/N250S/snap_ddr4pins.xdc]
   }
 
   if { $nvme_used == "TRUE" } {
     if { $use_prflow == "TRUE" } {
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/FGT/nvme_pblock.xdc
-      set_property used_in_synthesis false [get_files  $root_dir/setup/FGT/nvme_pblock.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/nvme_pblock.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/nvme_pblock.xdc]
     }    
-    add_files -fileset constrs_1 -norecurse  $root_dir/setup/FGT/snap_refclk100.xdc
-    add_files -fileset constrs_1 -norecurse  $root_dir/setup/FGT/snap_nvme.xdc
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_refclk100.xdc
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_nvme.xdc
   }
 }
 if { $ila_debug == "TRUE" } {

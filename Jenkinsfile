@@ -3,7 +3,7 @@
   def enable = ['0'        ,'0'        ,'0'        ,'0'        ,'0'        ,'0'        ,'1'          ,'0'        ,'0'           ] // 0 = disabled
   def XIL    = ['2016.4'   ,'2016.4'   ,'2016.4'   ,'2016.4'   ,'2016.4'   ,'2016.4'   ,'2016.4'     ,'2016.3'   ,'2016.4'      ] // Xilinx Vivado version
   def IES    = ['15.10.s19','15.10.s19','15.10.s19','15.10.s19','15.10.s19','15.10.s19','15.10.s19'  ,'15.10.s19','15.10.s19'   ] // Cadence IES versions
-  def CRD    = ['ku3'      ,'ku3b'     ,'ku3n'     ,'fgt'      ,'fgtb'     ,'fgtn'     ,'ku3'        ,'ku3'      ,'fgt'         ] // card versions(ku3/fgt)+settings(RAM/NVMe)
+  def CRD    = ['adku3'    ,'adku3b'   ,'adku3n'   ,'n250s'    ,'n250sb'   ,'n250sn'   ,'adku3'      ,'adku3'    ,'n250s'       ] // card versions(adku3/n250s)+settings(RAM/NVMe)
   def ACT    = ['memcopy'  ,'memcopy'  ,'memcopy'  ,'memcopy'  ,'memcopy'  ,'memcopy'  ,'hls_memcopy','memcopy'  ,'memcopy'     ] // path to action
   def configurations = [:]
   for(int i = 0; i < XIL.size(); i++) {

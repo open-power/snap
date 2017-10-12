@@ -1,11 +1,11 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: KERNELVERSION
-# Fri Sep 15 12:23:30 2017
+# Fri Sep 15 12:16:01 2017
 #
-# FGT is not set
-KU3=y
-FPGACARD="KU3"
+N250S=y
+# ADKU3 is not set
+FPGACARD="N250S"
 FPGACHIP="xcku060-ffva1156-2-e"
 NUM_OF_ACTIONS=1
 # HLS_ACTION is not set
@@ -29,9 +29,9 @@ FORCE_SDRAM=y
 BRAM_USED="FALSE"
 ENABLE_SDRAM=y
 SDRAM_USED="TRUE"
-ENABLE_DDR3=y
-DDR3_USED="TRUE"
-DDR4_USED="FALSE"
+DDR3_USED="FALSE"
+ENABLE_DDR4=y
+DDR4_USED="TRUE"
 ENABLE_DDRI=y
 DDRI_USED="TRUE"
 # FORCE_NVME is not set
