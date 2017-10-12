@@ -118,7 +118,7 @@ static inline unsigned long atomic_inc(atomic_t *a)
 	return v;
 }
 
-#define SNAP_FLASHGT_NVME_SIZE (1ull * 1024 * 1024 * 1024) /* FIXME n TiB */
+#define SNAP_FLASHGT_NVME_SIZE (800ull * 1024 * 1024 * 1024) /* FIXME n TiB */
 #define __CBLK_BLOCK_SIZE 4096
 
 #define CBLK_WIDX_MAX		1	/* Just one for now */
