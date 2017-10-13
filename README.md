@@ -28,11 +28,7 @@ file within that directory.
 
 ## Flashing the bitstream
 
-The tools flash the card bitstream are available on github:
-* https://github.com/ibm-capi/capi-utils
-
-Call the capi-flash script with the generated bitstream:
-`$ sudo capi-flash-script.sh <your-bitstream.bin>`
+Please see [Bitstream_flashing.md](hardware/doc/Bitstream_flashing.md) for instructions on how to update the FPGA bitstream.
 
 # Dependencies
 
@@ -45,15 +41,28 @@ Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For th
 * https://www.ibm.com/systems/power/openpower  
 Download the required files under "PSL Checkpoint Files for the CAPI SNAP Design Kit".
 
-For simulation, SNAP relies on the PSL Simulation Environment (PSLSE) which is available on github:
-* https://github.com/ibm-capi/pslse
-
 SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulation model and image build, SNAP requires the Xilinx Vivado 2016.4 tool suite.
 * https://www.xilinx.com/products/design-tools/hardware-zone.html
 
 As of now, two FPGA cards can be used with SNAP:
 * Alpha-Data ADM-PCIE-KU3 http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
 * Nallatech 250S-2T with two on-card NVMe M.2 960GB drives http://www.nallatech.com/250s
+
+Building the code and running the make environment requires the usual development tools `gcc, make, sed, awk`. If not installed already, the installer package `build-essential` will set up the most important tools.
+
+Configuring the SNAP framework via `make snap_config` will call a standalone tool that is based on kernel kconfig. This tool gets automatically cloned from
+* https://github.com/guillon/kconfig
+
+In order to use the menu-driven user interface for kconfig the `ncurses` library must be installed.
+
+SNAP uses the generic tools to update CAPI card FPGA bitstreams from
+* https://github.com/ibm-capi/capi-utils
+
+For simulation, SNAP relies on the `xterm` program and on the PSL Simulation Environment (PSLSE) which is available on github:
+* https://github.com/ibm-capi/pslse
+
+Simulating the NVMe host controller including flash storage devices requires licenses for the Cadence Incisive Simulator (IES) and DENALI Verification IP (PCIe and NVMe). Building images is possible without this.
+For more info see the [Simulation README](hardware/sim/README.md).
 
 # Contributing
 

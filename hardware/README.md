@@ -68,7 +68,6 @@ export ACTION_ROOT=${SNAP_ROOT}/actions/hdl_example
 file `${SNAP_ROOT}/snap_env.sh` in order to set the correct path names.
 
 # Image and model build
-
 Which action is getting integrated into the SNAP framework is specified in `${SNAP_ROOT}/snap_env.sh`
 via the path `ACTION_ROOT`.
 If that is not automatically set by calling `make snap_config`, you may simply modify the file
@@ -103,7 +102,6 @@ Please refer to [snap/Makefile](../Makefile) for more supported targets like cle
 Please see [snap/hardware/doc/Bitstream_flashing.md](./doc/Bitstream_flashing.md) for instructions on how to update the FPGA bitstream image, build factory images and program cards from scratch.
 
 # Action wrapper
-
 The definition of `ACTION_ROOT` in `${SNAP_ROOT}/snap_env.sh` specifies the path to the set of actions that shall be included.
 **It has to point to a directory within** [snap/actions](../actions).  
 The SNAP hardware build process is expecting each action example's root directory to contain a Makefile
@@ -144,16 +142,13 @@ Example: By setting up `${SNAP_ROOT}/snap_env.sh` such that `ACTION_ROOT` points
 ***Note:*** For the integration of HLS actions into the SNAP framework, `ACTION_ROOT` needs to point to (a subdirectory of) a directory starting with `hls` (case doesn't matter), or the environment variable `$HLS_SUPPORT` needs to be defined and to be set to `TRUE` (this is an option that is handled during the environment setup via `make snap_env`).
 
 # SDRAM Card Memory
-
 The SNAP framework supports the usage of the on-card SDRAM. It is accessible for the actions via the action wrapper
 through an AXI master interface. In the SNAP configuration step the existence of that interface is controlled via the option 'Enable SDRAM'.
 
 # NVMe support
-
 For FPGA cards with NVMe flash attached, the SNAP framework supports the integration of up to two Flash drives. Via the SNAP configuration option 'Enable NVMe' the instantiation of the NVMe host controller together with the corresponding PCIe root complexes and the required AXI interfaces can be configured.
 
 # Hardware debug with ILA cores
-
 In order to create an image that allows debugging the design using the
 Vivado Integrated Logic Analyzer (ILA) you may prepare a `.xdc` file for
 adding ILA cores to the design
@@ -169,44 +164,7 @@ the required `.ltx` debug probes file which will be located in the results
 directory `${SNAP_ROOT}/hardware/build/Images`.
 
 # Cloud support
-
 TBD...
 
 # Simulation
-
-SNAP supports *Xilinx xsim* and *Cadence irun* tools for simulation.
-
-### PSLSE setup
-The SNAP framework's simulation depends on the PSL simulation environment (PSLSE).
-
-You may clone `PSLSE` from github [https://github.com/ibm-capi/pslse](https://github.com/ibm-capi/pslse).
-
-In order to enable SNAP's build and simulation process to make use of `PSLSE` the variable `PSLSE_ROOT` (defined in `${SNAP_ROOT}/snap_env.sh`) needs to point to the directory containing the github pslse clone.
-
-### Cadence setup
-
-If you want to use Cadence tools (irun) for simulation you need to compile the Xilinx IP and let the environment variable
-
-```bash
-export IES_LIBS      = <pointer to precompiled Xilinx IP for Cadence tools>
-export CDS_LIC_FILE  = <pointer to Cadence license>
-```
-
-point to the resulting compiled library.
-
-Furthermore, the environment variables `$PATH` and `$LD_LIBRARY_PATH` need to contain the paths
-to the Cadence tools and libraries. In case `$SIMULATOR == irun`, the SNAP environment setup process will
-expect the Cadence specific environment variable being set up via:
-
-```bash
-export CDS_INST_DIR  = <pointer to Cadence Installation Directory>
-```
-
-### Running simulation
-You may kick off simulation by calling `make sim` from the SNAP root directory.
-This will start the simulation and then open an xterm window from which the simulation can be controlled interactively.
-
-To initialize the SNAP framework, run `${SNAP_ROOT}/software/tools/snap_maint` first.
-
-For the VHDL based example 'hdl_example' you may then execute the example application
-`snap_example` contained in [snap/actions/hdl_example/sw](../actions/hdl_example/sw). Calling this application with option `-h` will present usage informations.
+see [./sim/README.md](./sim/README.md) for further instructions about Simulation

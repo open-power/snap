@@ -1,12 +1,15 @@
-# Building a model
-see [../README.md](../README.md) for further instructions
+# Simulation
+SNAP supports *Xilinx xsim* and *Cadence irun* tools for simulation.
+The environment variable `SIMULATOR` (see make snap_config) selects the simulator and can be set to `xsim` or to `irun`.  
+
+## Building a model
+see [Image and model build](../#image-and-model-build) for further instructions
 Note: The Makefile for building a model calls Vivado to export a script `top.sh` for compile & elaborate & simulate.
-By default this already calls the simulator. In SNAP the simulator execution is disabled and replaced by [./run_sim](./run_sim).  
+In SNAP the call of the simulator from `top.sh` is disabled. For instructions on simulation please refer to [Running simulation](#running-simulation) instead.  
 Cadence also supports a three-step compile/elab/run mode, which lists compile modules differently and is not used for SNAP.
 The Cadence one-step irun mode calls irun for compile and for simulator execution, the simulator underneath is called ncsim.  
 Xilinx builds models in three steps compile/elaborate/simulate with a `.prj` file similar to Cadence irun
-
-## compile options
+### compile options
 ```
             Cadence          Xilinx
 all         -64bit           -m64
@@ -19,36 +22,73 @@ elaborate   -access +rwc
 simulate                     -tclbatch cmd.tcl
 logfile                      --log simulate.log
 ```
+## PSLSE setup
+The SNAP framework's simulation depends on the PSL simulation environment (PSLSE).
 
-# Running a simulation model
-The simulation script `run_sim` is called from $SNAP_ROOT/hardware/sim.
-The environment variable `SIMULATOR` selects the simulator and can be set to `xsim` or to `irun`.  
-`run_sim` will
-* start the simulator (irun, xsim) and wait for it to open an IP socket
-* start PSLSE and wait for it to connect to this socket and open a second IP socket
-* start an application (or list of applications or xwindow, where you can start any app)
+You may clone `PSLSE` from github [https://github.com/ibm-capi/pslse](https://github.com/ibm-capi/pslse).
 
-When the app or list or xwindow finishes, this is the signal for PSLSE and the simulator to also end and close all logfiles.
-This means, that PSLSE&sim only runs, as long as the app/list/xterm is avail.
-If you start an app in the xterm and cntl-C it without exiting from the xterm, the simulation keeps running.  
-Or start `run_sim -app <application>` to run just this one app  
-or start `run_sim -list <list.sh>` to run a list of testcases, before ending.
+In order to enable SNAP's build and simulation process to make use of `PSLSE` the variable `PSLSE_ROOT` (defined in `${SNAP_ROOT}/snap_env.sh`) needs to point to the directory containing the github pslse clone.
+```
+ export PSLSE_ROOT=                                  # path for the PSL simulation environment
+ export PSL_DCP=                                     # path to the PSL checkpoint fitting your target card
+```
 
-## environment prerequisites
+## Cadence irun
+* model resides in              $SNAP_ROOT/hardware/sim/ies/ies
+* output generated in           $SNAP_ROOT/hardware/sim/ies/<yyyymmdd_hhmmss>
+* waveforms in                  $SNAP_ROOT/hardware/sim/ies/<yyyymmdd_hhmmss>/capiWave.shm
+* last output seen with symlink $SNAP_ROOT/hardware/sim/ies/latest
+If you want to use Cadence tools (irun) for simulation, you need to compile the Xilinx IP and let the environment variable
+```bash
+export IES_LIBS      = <pointer to precompiled Xilinx IP for Cadence tools>
+export CDS_LIC_FILE  = <pointer to Cadence license>
+```
+point to the resulting compiled library.
+
+Furthermore, the environment variables `$PATH` and `$LD_LIBRARY_PATH` need to contain the paths
+to the Cadence tools and libraries. In case `$SIMULATOR == irun`, the SNAP environment setup process will
+expect the Cadence specific environment variable being set up via:
+```bash
+export CDS_INST_DIR=                                # Cadence tools installation root
+export PATH=$CDS_INST_DIR/tools/bin:$PATH
+export LD_LIBRARY_PATH=$CDS_INST_DIR/tools/lib/64bit:$LD_LIBRARY_PATH
+export CDS_LIC_FILE=                                # IP socket to your Cadence license server
+export IES_LIBS=                                    # Cadence IP compiled with Vivado
+export DENALI=                                      # Cadence DENALI tools path for NVMe+PCIe device simulation
+
+```
+## Xilinx xsim
+* model resides in              $SNAP_ROOT/hardware/sim/xsim/xsim.dir
+* output generated in           $SNAP_ROOT/hardware/sim/xsim/<yyyymmdd_hhmmss>
+* waveforms in                  $SNAP_ROOT/hardware/sim/xsim/<yyyymmdd_hhmmss>/top.wdb
+* last output seen with symlink $SNAP_ROOT/hardware/sim/xsim/latest
 ```
  export XILINX_ROOT=                                 # Xilinx tools installation root
  export XILINXD_LICENSE_FILE=                        # Xilinx license server
  . $XILINX_ROOT/Vivado/${VIV_VERSION}/settings64.sh  # settings for SDK+HLS+docnav+vivado
-
- export CDS_INST_DIR=                                # Cadence tools installation root
- export PATH=$CDS_INST_DIR/tools/bin:$PATH
- export LD_LIBRARY_PATH=$CDS_INST_DIR/tools/lib/64bit:$LD_LIBRARY_PATH
- export CDS_LIC_FILE=                                # Cadence license server
- export IES_LIBS=                                    # Cadence IP compiled with Vivado
- export DENALI=                                      # Cadence DENALI tools path for NVMe device simulation
-
- export PSLSE_ROOT=                                  # path for the PSL simulation environment
 ```
+
+## Running simulation
+You may kick off simulation by calling `make sim` from the SNAP root directory.
+This will start the simulation and then open an xterm window from which the simulation can be controlled interactively.
+
+For the VHDL based example 'hdl_example' you may then execute the example application
+`snap_example` contained in [snap/actions/hdl_example/sw](../actions/hdl_example/sw). 
+Calling this application with option `-h` will present usage informations.
+
+If you want to run automated from a test list, you can call the simulation script `run_sim` with additional arguments instead.
+`run_sim` is called from $SNAP_ROOT/hardware/sim. It will
+* start the simulator (irun, xsim) and wait for it to open an IP socket
+* start PSLSE and wait for it to connect to this socket and open a second IP socket
+* start an application (or list of applications or xwindow, where you can start any app)
+
+    `run_sim -app <application>` to run just this one app  
+    `run_sim -list <list.sh>` to run a list of testcases, before ending.
+
+When the app or list or xwindow finishes, this is the signal for PSLSE and the simulator to also end and close all logfiles.
+This means, that PSLSE&sim only runs, as long as the app/list/xterm is avail.
+If you start an app in the xterm and cntl-C it without exiting from the xterm, the simulation keeps running.  
+
 ## card and action settings
 Currently supported are Nallatech 250S (FlashGT) and AlphaData KU3, one action only
 Regression tests are in place for
@@ -62,7 +102,6 @@ action    hdl_example    hdl_example   hdl_example  hdl_example  hdl_example  hd
           hls_memcopy
           hls_search
 ```
-
 ## run_sim arguments
 ```
  -app <app> | -list <list> | -x      # run a single application or a list of application or open another shell for manual input (default=-x)
@@ -72,19 +111,6 @@ action    hdl_example    hdl_example   hdl_example  hdl_example  hdl_example  hd
  -keep | -clean                      # keep succesful runs or clean them after running (for space reasons, default=keep)
  -par <n>                            # start multiple parallel apps/lists/xterms. This is NOT part of the product support yet.
 ```
-
-## Cadence irun
-* model resides in              $SNAP_ROOT/hardware/sim/ies/ies
-* output generated in           $SNAP_ROOT/hardware/sim/ies/<yyyymmdd_hhmmss>
-* waveforms in                  $SNAP_ROOT/hardware/sim/ies/<yyyymmdd_hhmmss>/capiWave.shm
-* last output seen with symlink $SNAP_ROOT/hardware/sim/ies/latest
-
-## Xilinx xsim
-* model resides in              $SNAP_ROOT/hardware/sim/xsim/xsim.dir
-* output generated in           $SNAP_ROOT/hardware/sim/xsim/<yyyymmdd_hhmmss>
-* waveforms in                  $SNAP_ROOT/hardware/sim/xsim/<yyyymmdd_hhmmss>/top.wdb
-* last output seen with symlink $SNAP_ROOT/hardware/sim/xsim/latest
-
 # Debugging a model
 ## waveform generation
 Calling `run_sim` with -aet (waveforms enabled, this is the default) starts a tcl script to include signals.
@@ -100,7 +126,6 @@ The generated waveform can be viewed with
 
  xsim top.wdb -gui                   # for Xilinx waveforms
 ```
-
 ## controlling PSLSE randomness
 By default the PSLSE environment reorders and delays commands/responses in order to get more variations.
 ```
