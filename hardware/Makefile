@@ -256,6 +256,9 @@ action_hw: prepare_logs
 	fi
 	-@if [ $(USE_PRFLOW) = "TRUE" ]; then \
 		$(MAKE) -kC $(ACTION_ROOT)/hw vhdl >> $(LOGS_DIR)/action_make.log; \
+		@if [ $$? -ne 0 ]; then \
+			echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
+		fi
 	fi
 	@echo -e "[CONFIG ACTION HW....] done  `date +"%T %a %b %d %Y"`";
 
@@ -332,20 +335,38 @@ cloud_merge: allow_cloud_merge $(SNAP_BASE_DCP) $(SNAP_ACTION_DCP) prepare_proje
 
 pslse: prepare_logs
 	@echo -e "[COMPILE PSLSE ......] start `date +"%T %a %b %d %Y"`"
-	@$(MAKE) -C $(PSLSE_ROOT)/afu_driver/src > $(LOGS_DIR)/compile_pslse.log 2>&1
-	@$(MAKE) -C $(PSLSE_ROOT)/pslse         >> $(LOGS_DIR)/compile_pslse.log 2>&1
-	@$(MAKE) -C $(PSLSE_ROOT)/libcxl        >> $(LOGS_DIR)/compile_pslse.log 2>&1
-	@$(MAKE) -C $(PSLSE_ROOT)/debug         >> $(LOGS_DIR)/compile_pslse.log 2>&1
+	@$(MAKE) -C $(PSLSE_ROOT)/afu_driver/src > $(LOGS_DIR)/compile_pslse.log 2>&1; \
+	if [ $$? -ne 0 ]; then \
+		echo -e "                        Error: please look into $(LOGS_DIR)/compile_pslse.log"; exit -1; \
+	fi
+	@$(MAKE) -C $(PSLSE_ROOT)/pslse         >> $(LOGS_DIR)/compile_pslse.log 2>&1; \
+	if [ $$? -ne 0 ]; then \
+		echo -e "                        Error: please look into $(LOGS_DIR)/compile_pslse.log"; exit -1; \
+	fi
+	@$(MAKE) -C $(PSLSE_ROOT)/libcxl        >> $(LOGS_DIR)/compile_pslse.log 2>&1; \
+	if [ $$? -ne 0 ]; then \
+		echo -e "                        Error: please look into $(LOGS_DIR)/compile_pslse.log"; exit -1; \
+	fi
+	@$(MAKE) -C $(PSLSE_ROOT)/debug         >> $(LOGS_DIR)/compile_pslse.log 2>&1; \
+	if [ $$? -ne 0 ]; then \
+		echo -e "                        Error: please look into $(LOGS_DIR)/compile_pslse.log"; exit -1; \
+	fi
 	@echo -e "[COMPILE PSLSE ......] done  `date +"%T %a %b %d %Y"`"
 
 software: pslse
 	@echo -e "[COMPILE SOFTWARE....] start `date +"%T %a %b %d %Y"`"
-	@$(MAKE) -C $(SNAP_ROOT)/software       > $(LOGS_DIR)/compile_sw.log 2>&1
+	@$(MAKE) -C $(SNAP_ROOT)/software       > $(LOGS_DIR)/compile_sw.log 2>&1; \
+	if [ $$? -ne 0 ]; then \
+		echo -e "                        Error: please look into $(LOGS_DIR)/compile_sw.log"; exit -1; \
+	fi
 	@echo -e "[COMPILE SOFTWARE....] done  `date +"%T %a %b %d %Y"`"
 
 action_sw: software
 	@echo -e "[COMPILE ACTION SW...] start `date +"%T %a %b %d %Y"`"
-	@$(MAKE) -C $(ACTION_ROOT)/sw        >> $(LOGS_DIR)/compile_sw.log 2>&1
+	@$(MAKE) -C $(ACTION_ROOT)/sw        >> $(LOGS_DIR)/compile_sw.log 2>&1; \
+	if [ $$? -ne 0 ]; then \
+		echo -e "                        Error: please look into $(LOGS_DIR)/compile_sw.log"; exit -1; \
+	fi
 	@echo -e "[COMPILE ACTION SW...] done  `date +"%T %a %b %d %Y"`"
 
 nosim:
