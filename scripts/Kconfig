@@ -256,7 +256,7 @@ config USE_PRFLOW
         default "TRUE" if ENABLE_PRFLOW
         default "FALSE" if ! ENABLE_PRFLOW
 
-config ENABLE_CLOUD_BITFILE
+config ENABLE_CLOUD_BUILD_BITFILE
         bool "Build bitstream file"
         default y
         depends on ENABLE_PRFLOW
