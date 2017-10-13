@@ -11,6 +11,7 @@ NUM_OF_ACTIONS=1
 # HLS_ACTION is not set
 # HDL_ACTION is not set
 # HDL_EXAMPLE is not set
+# HDL_NVME_EXAMPLE is not set
 # HLS_MEMCOPY is not set
 HLS_SPONGE=y
 # HLS_HASHJOIN is not set
