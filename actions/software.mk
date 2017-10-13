@@ -25,15 +25,18 @@ endif
 include $(SNAP_ROOT)/software/config.mk
 
 CFLAGS += -std=c99 -I$(SNAP_ROOT)/software/include
+LDFLAGS += -L$(SNAP_ROOT)/software/lib
+LDLIBS += -lsnap -lpthread
+
 DESTDIR ?= /usr
 libs += $(SNAP_ROOT)/software/lib/libsnap.a
-LDLIBS += $(libs) -lpthread
 
 # Link statically for PSLSE simulation and dynamically for real version
 ifdef BUILD_SIMCODE
 libs += $(PSLSE_ROOT)/libcxl/libcxl.a
 CFLAGS += -D_SIM_
 else
+# FIXME If we link against libsnap.so we should have this dependency covered
 LDLIBS += -lcxl
 endif
 
@@ -57,10 +60,10 @@ $(PSLSE_ROOT)/libcxl/libcxl.a $(SNAP_ROOT)/software/lib/libsnap.a:
 
 ### Generic rule to build a tool
 %: %.o
-	$(CC) $(LDFLAGS) $@.o $($(@)_objs) $($(@)_libs) $(LDLIBS) -o $@
+	$(CC) $(LDFLAGS) $($(@)_LDFLAGS) $@.o $($(@)_objs) $($(@)_libs) $(LDLIBS) -o $@
 
-%.o: %.c $(libs)
-	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
+%.o: %.c
+	$(CC) -c $(CPPFLAGS) $($(@:.o=)_CPPFLAGS) $(CFLAGS) $< -o $@
 
 install: all
 	@mkdir -p $(DESTDIR)/bin
@@ -75,5 +78,5 @@ uninstall:
 	done
 
 clean distclean:
-	$(RM) $(projs) *.o *.log *.out
+	$(RM) $(projs) $(libs) *.o *.log *.out
 
