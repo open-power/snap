@@ -28,7 +28,7 @@ file within that directory.
 
 ## Flashing the bitstream
 
-Please see [Bitstream_flashing.md](hardware/doc/Bitstream_flashing.md) for instructions how to update the FPGA bitstream.
+Please see [Bitstream_flashing.md](hardware/doc/Bitstream_flashing.md) for instructions on how to update the FPGA bitstream.
 
 # Dependencies
 
