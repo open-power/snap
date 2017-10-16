@@ -175,7 +175,7 @@
         done
         done
         done
-        #### check DDR3 memory in KU3, stay under 512k for BRAM
+        #### check DDR3 memory in AlphaData KU3, stay under 512k for BRAM
         step "$ACTION_ROOT/sw/snap_example_ddr -h"
         for iter in 1 $rnd10; do                    # number of blocks
         for bsize in 64 $(($rnd10*64)); do          # block size mult of 64

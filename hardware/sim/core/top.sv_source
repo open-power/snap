@@ -761,34 +761,34 @@ module top (
   // SDRAM Reference Clock generation                  //-- only for DDRI_USED=TRUE
   reg       refclk_sdram_p;                            //-- only for DDRI_USED=TRUE
   initial   refclk_sdram_p <= 0;                       //-- only for DDRI_USED=TRUE 	
- 						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=KU3	
-  // 200MHz KU3 reference clock		               //-- only for DDRI_USED=TRUE -- only for FPGACARD=KU3
-  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=KU3	
-     #(5ns / 2.0);				       //-- only for DDRI_USED=TRUE -- only for FPGACARD=KU3	
-     refclk_sdram_p = !refclk_sdram_p;	               //-- only for DDRI_USED=TRUE -- only for FPGACARD=KU3	
-  end						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=KU3	
- 						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT	
-  // 266MHz FGT reference clock		               //-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT
-  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT	
-     #(3.752ns / 2.0);				       //-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT	
-     refclk_sdram_p = !refclk_sdram_p;	               //-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT	
-  end						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT	
+ 						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3	
+  // 200MHz ADKU3 reference clock		       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
+  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3	
+     #(5ns / 2.0);				       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3	
+     refclk_sdram_p = !refclk_sdram_p;	               //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3	
+  end						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3	
+ 						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S	
+  // 266MHz N250S reference clock		       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S
+  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S	
+     #(3.752ns / 2.0);				       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S	
+     refclk_sdram_p = !refclk_sdram_p;	               //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S	
+  end						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S	
                                                        //-- only for DDRI_USED=TRUE
   // SDRAM System Clock generation                     //-- only for DDRI_USED=TRUE
   reg       sys_clk_p;		           	       //-- only for DDRI_USED=TRUE 	
   initial   sys_clk_p <= 0;			       //-- only for DDRI_USED=TRUE 	
-                                                       //-- only for DDRI_USED=TRUE -- only for FPGACARD=KU3 
-  // 400MHz DDR3 system clock			       //-- only for DDRI_USED=TRUE -- only for FPGACARD=KU3 	
-  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=KU3 	
-     #(2.5ns / 2.0);   			               //-- only for DDRI_USED=TRUE -- only for FPGACARD=KU3 	
-     sys_clk_p = !sys_clk_p;		               //-- only for DDRI_USED=TRUE -- only for FPGACARD=KU3 	
-  end                                                  //-- only for DDRI_USED=TRUE -- only for FPGACARD=KU3
-                                                       //-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT 
-  // 266MHz DDR4 system clock			       //-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT 	
-  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT 	
-     #(3.752ns / 2.0);			               //-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT 	
-     sys_clk_p = !sys_clk_p;		               //-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT 	
-  end						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=FGT 	
+                                                       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3 
+  // 400MHz DDR3 system clock			       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3 	
+  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3 	
+     #(2.5ns / 2.0);   			               //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3 	
+     sys_clk_p = !sys_clk_p;		               //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3 	
+  end                                                  //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
+                                                       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 
+  // 266MHz DDR4 system clock			       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 	
+  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 	
+     #(3.752ns / 2.0);			               //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 	
+     sys_clk_p = !sys_clk_p;		               //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 	
+  end						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 	
                                                        //-- only for NVME_USED=TRUE
   // NVME Reference Clock generation                   //-- only for NVME_USED=TRUE
   reg refclk_nvme_p;                                   //-- only for NVME_USED=TRUE

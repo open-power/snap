@@ -1,11 +1,11 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: KERNELVERSION
-# Fri Sep 15 12:16:37 2017
+# Fri Sep 15 12:22:43 2017
 #
-# FGT is not set
-KU3=y
-FPGACARD="KU3"
+N250S=y
+# ADKU3 is not set
+FPGACARD="N250S"
 FPGACHIP="xcku060-ffva1156-2-e"
 NUM_OF_ACTIONS=1
 # HLS_ACTION is not set
@@ -15,9 +15,9 @@ NUM_OF_ACTIONS=1
 # HLS_MEMCOPY is not set
 # HLS_SPONGE is not set
 # HLS_HASHJOIN is not set
-HLS_SEARCH=y
+# HLS_SEARCH is not set
 # HLS_BFS is not set
-# HLS_INTERSECT is not set
+HLS_INTERSECT=y
 # HLS_NVME_MEMCOPY is not set
 # HLS_HELLOWORLD is not set
 ENABLE_HLS_SUPPORT=y
@@ -29,9 +29,9 @@ FORCE_SDRAM=y
 BRAM_USED="FALSE"
 ENABLE_SDRAM=y
 SDRAM_USED="TRUE"
-DDR3_USED="FALSE"
-ENABLE_DDR4=y
-DDR4_USED="TRUE"
+ENABLE_DDR3=y
+DDR3_USED="TRUE"
+DDR4_USED="FALSE"
 ENABLE_DDRI=y
 DDRI_USED="TRUE"
 # FORCE_NVME is not set

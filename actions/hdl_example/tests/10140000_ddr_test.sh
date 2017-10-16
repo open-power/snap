@@ -88,10 +88,10 @@ rev=$(cat /sys/class/cxl/card$snap_card/device/subsystem_device | xargs printf "
 
 case $rev in
 "0x0605" )
-        echo "$rev -> Testing AlphaDataKU60 Card"
+        echo "$rev -> Testing AlphaData KU3 Card"
         ;;
 "0x060A" )
-        echo "$rev -> Testing FlashGT Card"
+        echo "$rev -> Testing Nallatech 250S Card"
         ;;
 *)
         echo "Capi Card $snap_card does have subsystem_device: $rev"

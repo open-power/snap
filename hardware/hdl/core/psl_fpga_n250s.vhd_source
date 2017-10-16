@@ -35,7 +35,7 @@ ENTITY psl_fpga IS
     refclk266_p               : IN    STD_LOGIC;                                -- only for DDRI_USED=TRUE
     refclk266_n               : IN    STD_LOGIC;                                -- only for DDRI_USED=TRUE
     --                                                                          -- only for DDR4_USED=TRUE
-    -- Nalatech FlashGT card has one DDR4 SO-DIMMs                              -- only for DDR4_USED=TRUE
+    -- Nallatech 250S card has one DDR4 SO-DIMMs                                -- only for DDR4_USED=TRUE
     c0_sys_clk_p              : IN    STD_LOGIC;                                -- only for DDR4_USED=TRUE
     c0_sys_clk_n              : IN    STD_LOGIC;                                -- only for DDR4_USED=TRUE
     c0_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);            -- only for DDR4_USED=TRUE
@@ -153,7 +153,7 @@ Component psl_accel
     refclk_sdram_p            : IN    STD_LOGIC;                                -- only for DDRI_USED=TRUE
     refclk_sdram_n            : IN    STD_LOGIC;                                -- only for DDRI_USED=TRUE
     --                                                                          -- only for DDR4_USED=TRUE
-    -- Nalatech FlashGT card has one DDR4 SO-DIMMs                              -- only for DDR4_USED=TRUE
+    -- Nallatech 250S card has one DDR4 SO-DIMMs                                -- only for DDR4_USED=TRUE
     c0_sys_clk_p              : IN    STD_LOGIC;                                -- only for DDR4_USED=TRUE
     c0_sys_clk_n              : IN    STD_LOGIC;                                -- only for DDR4_USED=TRUE
     c0_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);            -- only for DDR4_USED=TRUE
@@ -519,7 +519,7 @@ BEGIN
       refclk_sdram_p                    => refclk266_p,                     -- only for DDRI_USED=TRUE
       refclk_sdram_n                    => refclk266_n,                     -- only for DDRI_USED=TRUE
       --                                                                    -- only for DDR4_USED=TRUE
-      -- Nalatech FlashGT card has one DDR4 SO-DIMMs                        -- only for DDR4_USED=TRUE
+      -- Nallatech 250S card has one DDR4 SO-DIMMs                          -- only for DDR4_USED=TRUE
       c0_sys_clk_p                      => c0_sys_clk_p,                    -- only for DDR4_USED=TRUE
       c0_sys_clk_n                      => c0_sys_clk_n,                    -- only for DDR4_USED=TRUE
       c0_ddr4_adr                       => c0_ddr4_adr,                     -- only for DDR4_USED=TRUE

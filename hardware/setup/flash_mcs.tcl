@@ -2,15 +2,15 @@
 # shell wrapper for tcl - the next line is treated as comment by Vivado or Vivado_lab \
 exec vivado -nolog -nojournal -mode batch -source "$0" -tclargs "$@"
 
-# For initial programming, flash the file flashgt.mcs to the current open JTAG target in vivado_lab
-# Example: vivado_lab -nolog -nojournal  -mode batch -source flash_mcs.tcl -tclargs FGT_flash.mcs
-# Default to Nallatech 250S (FGT)
+# For initial programming, flash the file n250s.mcs to the current open JTAG target in vivado_lab
+# Example: vivado_lab -nolog -nojournal  -mode batch -source flash_mcs.tcl -tclargs n250s.mcs
+# Default to Nallatech 250S 
 
 if { [info exists ::env(FPGACARD)] == 1 } {
     set fpgacard [string toupper $::env(FPGACARD)]
 } else {
-  set fpgacard "FGT"
-  puts "Warning: Environment FPGACARD is not set. Default to FGT"
+  set fpgacard "N250S"
+  puts "Warning: Environment FPGACARD is not set. Default to N250S"
 }
 
 proc flash_help {} {
@@ -29,10 +29,10 @@ if { $argc != 1 && $argc != 2 } {
 set mcsfile     [lindex $argv 0]
 set fpgapartnum xcku060
 switch $fpgacard {
-  FGT { set flashdevice mt28gu512aax1e-bpi-x16 }
-  KU3 { set flashdevice mt28gu01gaax1e-bpi-x16 }
+  N250S { set flashdevice mt28gu512aax1e-bpi-x16 }
+  ADKU3 { set flashdevice mt28gu01gaax1e-bpi-x16 }
   default {
-    puts "Error: Environment FPGACARD must be set to FGT or KU3"
+    puts "Error: Environment FPGACARD must be set to N250S or ADKU3"
     exit 96
   }
 }
