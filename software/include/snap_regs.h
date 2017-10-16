@@ -110,8 +110,8 @@ extern "C" {
  *   15..9  RO: Reserved
  *       8  RO: NVMe enabled
  *    7..0  RO: Card type:
- *              0x01 : FGT
- *              0x00 : KU3
+ *              0x01 : N250S
+ *              0x00 : ADKU3
  */
 #define SNAP_CAP        0x30
 

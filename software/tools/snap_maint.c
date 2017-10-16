@@ -169,8 +169,8 @@ static void snap_version(void *handle)
         snap_card_ioctl(handle, GET_CARD_TYPE, (unsigned long)&ioctl_data);
         VERBOSE1("SNAP on ");
         switch (ioctl_data) {
-                case 0: VERBOSE1("KU3"); break;
-                case 1: VERBOSE1("FGT"); break;
+                case 0: VERBOSE1("ADKU3"); break;
+                case 1: VERBOSE1("N250S"); break;
                 default: VERBOSE1("Unknown"); break;
         }
         VERBOSE1(" Card, NVME ");
@@ -385,8 +385,8 @@ static void snap_show_cap(void *handle, int mode)
 	if (MODE_SHOW_CARD == (MODE_SHOW_CARD & mode)) {
 		snap_card_ioctl(handle, GET_CARD_TYPE, (unsigned long)&val);
 		switch (val) {
-			case 0: VERBOSE0("KU3"); break;
-			case 1: VERBOSE0("FGT"); break;
+			case 0: VERBOSE0("ADKU3"); break;
+			case 1: VERBOSE0("N250S"); break;
 		}
 	}
 }

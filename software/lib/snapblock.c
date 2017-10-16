@@ -118,7 +118,7 @@ static inline unsigned long atomic_inc(atomic_t *a)
 	return v;
 }
 
-#define SNAP_FLASHGT_NVME_SIZE (800ull * 1024 * 1024 * 1024) /* FIXME n TiB */
+#define SNAP_N250S_NVME_SIZE (800ull * 1024 * 1024 * 1024) /* FIXME n TiB */
 #define __CBLK_BLOCK_SIZE 4096
 
 #define CBLK_WIDX_MAX		1	/* Just one for now */
@@ -1017,7 +1017,7 @@ chunk_id_t cblk_open(const char *path,
 	c->status = CBLK_READY;
 	c->req_status = CBLK_IDLE;
 	c->drive = 0;
-	c->nblocks = SNAP_FLASHGT_NVME_SIZE / __CBLK_BLOCK_SIZE;
+	c->nblocks = SNAP_N250S_NVME_SIZE / __CBLK_BLOCK_SIZE;
 	c->timeout = timeout;
 	c->done_tid = 0;
 	c->widx = 0;

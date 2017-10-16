@@ -37,14 +37,14 @@ snap_env_sh        = $(SNAP_ROOT)/snap_env.sh
 -include $(snap_env_sh)
 
 SIMULATOR ?= nosim
-ifeq "$(FPGACARD)" "KU3"
+ifeq "$(FPGACARD)" "ADKU3"
 	export DDR3_USED=$(SDRAM_USED)
 	export DDR4_USED=FALSE
 	export DDRI_USED=$(SDRAM_USED)
 	export NVME_USED=FALSE
 endif
 
-ifeq "$(FPGACARD)" "FGT"
+ifeq "$(FPGACARD)" "N250S"
 	export DDR3_USED=FALSE
 	export DDR4_USED=$(SDRAM_USED)
 	export DDRI_USED=$(SDRAM_USED)
@@ -209,7 +209,7 @@ $(SNAP_PP_FILES_VHD):
 		echo -e "                        Need to run \"make snap_config\" first"; exit -1; \
 	fi
 	@$(CC) -E -xc $(SNAP_CFLAGS) $@_source 2> $(LOGS_DIR)/$(notdir $@)_pp.log > $@_tmp;
-	if [ $$? -ne 0 ]; then \
+	@if [ $$? -ne 0 ]; then \
 		$(RM) $@_tmp; \
 		echo -e "                        Error: please look into $(LOGS_DIR)/$(notdir $@)_pp.log"; exit -1; \
 	fi
@@ -251,11 +251,14 @@ action_hw: prepare_logs
 	@echo -e "[CONFIG ACTION HW....] start `date +"%T %a %b %d %Y"`";
 	echo "Calling make $(ACTION_ROOT) hw"
 	@$(MAKE) -C $(ACTION_ROOT) hw > $(LOGS_DIR)/action_make.log;
-	@if [ $$? -ne 0 ]; then \
+	if [ $$? -ne 0 ]; then \
 		echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
 	fi
-	-@if [ $(USE_PRFLOW) = "TRUE" ]; then \
+	@if [ $(USE_PRFLOW) = "TRUE" ]; then \
 		$(MAKE) -kC $(ACTION_ROOT)/hw vhdl >> $(LOGS_DIR)/action_make.log; \
+		if [ $$? -ne 0 ]; then \
+			echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
+		fi; \
 	fi
 	@echo -e "[CONFIG ACTION HW....] done  `date +"%T %a %b %d %Y"`";
 
@@ -332,20 +335,38 @@ cloud_merge: allow_cloud_merge $(SNAP_BASE_DCP) $(SNAP_ACTION_DCP) prepare_proje
 
 pslse: prepare_logs
 	@echo -e "[COMPILE PSLSE ......] start `date +"%T %a %b %d %Y"`"
-	@$(MAKE) -C $(PSLSE_ROOT)/afu_driver/src > $(LOGS_DIR)/compile_pslse.log 2>&1
-	@$(MAKE) -C $(PSLSE_ROOT)/pslse         >> $(LOGS_DIR)/compile_pslse.log 2>&1
-	@$(MAKE) -C $(PSLSE_ROOT)/libcxl        >> $(LOGS_DIR)/compile_pslse.log 2>&1
-	@$(MAKE) -C $(PSLSE_ROOT)/debug         >> $(LOGS_DIR)/compile_pslse.log 2>&1
+	@$(MAKE) -C $(PSLSE_ROOT)/afu_driver/src > $(LOGS_DIR)/compile_pslse.log 2>&1; \
+	if [ $$? -ne 0 ]; then \
+		echo -e "                        Error: please look into $(LOGS_DIR)/compile_pslse.log"; exit -1; \
+	fi
+	@$(MAKE) -C $(PSLSE_ROOT)/pslse         >> $(LOGS_DIR)/compile_pslse.log 2>&1; \
+	if [ $$? -ne 0 ]; then \
+		echo -e "                        Error: please look into $(LOGS_DIR)/compile_pslse.log"; exit -1; \
+	fi
+	@$(MAKE) -C $(PSLSE_ROOT)/libcxl        >> $(LOGS_DIR)/compile_pslse.log 2>&1; \
+	if [ $$? -ne 0 ]; then \
+		echo -e "                        Error: please look into $(LOGS_DIR)/compile_pslse.log"; exit -1; \
+	fi
+	@$(MAKE) -C $(PSLSE_ROOT)/debug         >> $(LOGS_DIR)/compile_pslse.log 2>&1; \
+	if [ $$? -ne 0 ]; then \
+		echo -e "                        Error: please look into $(LOGS_DIR)/compile_pslse.log"; exit -1; \
+	fi
 	@echo -e "[COMPILE PSLSE ......] done  `date +"%T %a %b %d %Y"`"
 
 software: pslse
 	@echo -e "[COMPILE SOFTWARE....] start `date +"%T %a %b %d %Y"`"
-	@$(MAKE) -C $(SNAP_ROOT)/software       > $(LOGS_DIR)/compile_sw.log 2>&1
+	@$(MAKE) -C $(SNAP_ROOT)/software       > $(LOGS_DIR)/compile_sw.log 2>&1; \
+	if [ $$? -ne 0 ]; then \
+		echo -e "                        Error: please look into $(LOGS_DIR)/compile_sw.log"; exit -1; \
+	fi
 	@echo -e "[COMPILE SOFTWARE....] done  `date +"%T %a %b %d %Y"`"
 
 action_sw: software
 	@echo -e "[COMPILE ACTION SW...] start `date +"%T %a %b %d %Y"`"
-	@$(MAKE) -C $(ACTION_ROOT)/sw        >> $(LOGS_DIR)/compile_sw.log 2>&1
+	@$(MAKE) -C $(ACTION_ROOT)/sw        >> $(LOGS_DIR)/compile_sw.log 2>&1; \
+	if [ $$? -ne 0 ]; then \
+		echo -e "                        Error: please look into $(LOGS_DIR)/compile_sw.log"; exit -1; \
+	fi
 	@echo -e "[COMPILE ACTION SW...] done  `date +"%T %a %b %d %Y"`"
 
 nosim:

@@ -42,7 +42,7 @@
 #define DDR_MEM_BASE_ADDR       0x00000000       /* Default Start of FPGA Ram */
 
 /*
- * Hard code this numbres for FGT Card for now.
+ * Hard code this numbres for Nallatech 250S Card for now.
  * This values can be accesd via Namespace Identify command.
  */
 #define NVME_LB_SIZE            512              /* NVME Block Size */

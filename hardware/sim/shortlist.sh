@@ -63,7 +63,7 @@
       done
       done
 
-      #### check DDR3 memory in KU3
+      #### check DDR3 memory in AlphaData KU3
       t="$SNAP_ROOT/software/tools/stage2_ddr -h"                                              ;echo -e "$del\n$t $l";             $t;echo "RC=$?" #
       for strt in 0x1000 0x2000;do      # start adr
       for iter in 1 2 3;do              # number of blocks
