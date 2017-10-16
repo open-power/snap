@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright 2017, International Business Machines
+# Copyright 2017 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@ TEST=NONE
 bold=$(tput bold)
 normal=$(tput sgr0)
 
-export PATH=.:software/tools:tools:`pwd`/tools:${PATH}
-export LD_LIBRARY_PATH=.:software/lib:lib:`pwd`/lib:${LD_LIBRARY_PATH}
+export PATH=.:actions/hdl_nvme_example/sw:software/tools:tools:`pwd`/tools:${PATH}
+export LD_LIBRARY_PATH=.:actions/hdl_nvme_example/sw:software/lib:lib:`pwd`/lib:${LD_LIBRARY_PATH}
 
 function usage() {
 	echo "Usage: $PROGRAM"
