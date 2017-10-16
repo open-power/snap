@@ -20,6 +20,7 @@ card=0
 version=0.2
 reset=0
 threads=1
+nblocks=2
 prefetch=0
 options="-n 0x40000"
 
@@ -29,8 +30,8 @@ TEST=NONE
 bold=$(tput bold)
 normal=$(tput sgr0)
 
-export PATH=.:actions/hdl_nvme_example/sw:software/tools:tools:`pwd`/tools:${PATH}
-export LD_LIBRARY_PATH=.:actions/hdl_nvme_example/sw:software/lib:lib:`pwd`/lib:${LD_LIBRARY_PATH}
+export PATH=.:`pwd`/actions/hdl_nvme_example/sw:`pwd`/software/tools:${PATH}
+export LD_LIBRARY_PATH=.:`pwd`/actions/hdl_nvme_example/sw:`pwd`/software/lib:${LD_LIBRARY_PATH}
 
 function usage() {
 	echo "Usage: $PROGRAM"
@@ -39,6 +40,7 @@ function usage() {
 	echo "    [-C <0..3>]       card number"
 	echo "    [-r]              card reset (sudo needed)"
 	echo "    [-n <lbas>]       number of lbas to try, e.g. 0x40000 for 1 GiB"
+	echo "    [-b <nblocks>]    number of blocks per transfer"
 	echo "    [-t <threads>]    threads to be used"
 	echo "    [-p <prefetch>]   0/1 disable/enable prefetching"
 	echo "    [-T <testcase>]   testcase e.g. CBLK"
@@ -67,7 +69,7 @@ function reset_card() {
 	fi
 }
 
-while getopts ":A:C:T:t:n:p:rVvh" opt; do
+while getopts ":A:b:C:T:t:n:p:rVvh" opt; do
 	case ${opt} in
 	C)
 		card=${OPTARG};
@@ -82,6 +84,9 @@ while getopts ":A:C:T:t:n:p:rVvh" opt; do
 		;;
 	T)
 		TEST=${OPTARG}
+		;;
+	b)
+		nblocks=${OPTARG}
 		;;
 	t)
 		threads=${OPTARG}
@@ -126,7 +131,21 @@ fi
 snap_maint -C${card} -v
 snap_nvme_init -C${card} -d0 -d1 -v
 
-if [ ${TEST} = "CBLK" ]; then
+if [ "${TEST}" == "READ_BENCHMARK" ]; then
+	echo "SNAP NVME READ BENCHMARK"
+	for p in 0 1 ; do
+		echo "PREFETCH: $p";
+		for t in 1 4 8 12 ; do
+			echo "THREADS: $t" ;
+			CBLK_PREFETCH=$p SNAP_TRACE=0x0 \
+			snap_cblk -C0 ${options} -b${nblocks} -s0 -t${t} \
+				--read block0.bin ;
+			echo
+		done
+	done
+fi
+
+if [ "${TEST}" == "CBLK" ]; then
 	export CBLK_PREFETCH=${prefetch}
 
 	for nblocks in 1 2 ; do
