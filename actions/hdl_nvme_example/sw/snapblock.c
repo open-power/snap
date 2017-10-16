@@ -581,11 +581,6 @@ static inline void start_memcpy(struct cblk_dev *c,
 	int slot = (action & 0x0f00) >> 8;
 	off_t lba;
 
-	if (action_code == ACTION_CONFIG_COPY_HN)
-		c->block_writes++;
-	else
-		c->block_reads++;
-
 	lba = ((action_code == ACTION_CONFIG_COPY_HN) ? dest : src) /
 		(__CBLK_BLOCK_SIZE/NVME_LB_SIZE);
 
@@ -605,6 +600,13 @@ static inline void start_memcpy(struct cblk_dev *c,
 
 	/* Wait for Action to go back to Idle */
 	snap_action_start(c->act);
+	
+	/* Update statistics under lock. Otherwise it might be off a little bit. */
+	if (action_code == ACTION_CONFIG_COPY_HN)
+		c->block_writes++;
+	else
+		c->block_reads++;
+
 	pthread_mutex_unlock(&c->dev_lock);
 
 	sem_post(&c->idle_sem);	/* kick completion detection */
@@ -1339,11 +1341,17 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 		void *buf, off_t lba, size_t nblocks,
 		int flags __attribute__((unused)))
 {
+	int rc;
 	unsigned  int i;
 
 	nblocks = block_write(&chunk, buf, lba, nblocks);
 	for (i = 0; i < nblocks; i++) {
-		cache_write(lba + i, buf + i * __CBLK_BLOCK_SIZE);
+		rc = cache_write(lba + i, buf + i * __CBLK_BLOCK_SIZE);
+		if (rc != 0) {
+			fprintf(stderr, "err: cache_write LBA=%ld "
+				"failed rc=%d!\n", (long int)lba, rc);
+			return 0;
+		}
 	}
 
 	return nblocks;
