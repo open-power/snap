@@ -199,7 +199,7 @@ struct cblk_dev {
 
 	/* statistics */
 	long int prefetches;
-	long int prefetch_hits;
+	long int cache_hits;
 	long int prefetch_collisions;
 	long int block_reads;
 	long int block_writes;
@@ -1025,7 +1025,7 @@ chunk_id_t cblk_open(const char *path,
 	c->widx = 0;
 	c->ridx = 0;
 	c->status_read_count = 0;
-	c->prefetch_hits = 0;
+	c->cache_hits = 0;
 	c->prefetch_collisions = 0;
 	c->block_reads = 0;
 	c->block_writes = 0;
@@ -1268,7 +1268,7 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 	if ((rc == 0) && (i == nblocks)) {
 		block_trace("    [%s] Got %ld..%ld, nice\n", __func__,
 			lba, lba + nblocks - 1);
-		c->prefetch_hits++;
+		c->cache_hits++;
 		return nblocks;
 	}
 
@@ -1387,12 +1387,12 @@ static void _done(void)
 	fprintf(stderr, "Statistics\n"
 		"  prefetches:          %ld\n"
 		"  prefetch_collisions: %ld\n"
-		"  prefetch_hits:       %ld\n"
+		"  cache_hits:          %ld\n"
 		"  block_reads:         %ld\n"
 		"  block_writes:        %ld\n",
 		c->prefetches,
 		c->prefetch_collisions,
-		c->prefetch_hits,
+		c->cache_hits,
 		c->block_reads,
 		c->block_writes);
 
