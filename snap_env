@@ -191,17 +191,11 @@ while [ -z "$SETUP_DONE" ]; do
   # Note: USE_PRFLOW is defined via snap_config
   if [ "$USE_PRFLOW" = "TRUE" ]; then
     echo "=====PR flow setup====================================="
-    if [ -z "$DCP_ROOT" ]; then
-      export DCP_ROOT='${SNAP_ROOT}/dcp'
-      echo "Setting DCP_ROOT               to: \"$DCP_ROOT\""
-      mkdir -p $snapdir/dcp
-    else
-      echo "DCP_ROOT                is set to: \"$DCP_ROOT\""
-    fi
     RESP=`grep DCP_ROOT $snap_env_sh`
     if [ -z "$RESP" ]; then
       echo "export DCP_ROOT=" >> $snap_env_sh
     fi
+    echo "DCP_ROOT                is set to: \"$DCP_ROOT\""
     if [ -z "$DCP_ROOT" ]; then
       SETUP_EMPTY="$SETUP_EMPTY\n  DCP_ROOT"
     fi
