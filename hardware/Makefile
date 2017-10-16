@@ -209,7 +209,7 @@ $(SNAP_PP_FILES_VHD):
 		echo -e "                        Need to run \"make snap_config\" first"; exit -1; \
 	fi
 	@$(CC) -E -xc $(SNAP_CFLAGS) $@_source 2> $(LOGS_DIR)/$(notdir $@)_pp.log > $@_tmp;
-	if [ $$? -ne 0 ]; then \
+	@if [ $$? -ne 0 ]; then \
 		$(RM) $@_tmp; \
 		echo -e "                        Error: please look into $(LOGS_DIR)/$(notdir $@)_pp.log"; exit -1; \
 	fi
@@ -251,14 +251,14 @@ action_hw: prepare_logs
 	@echo -e "[CONFIG ACTION HW....] start `date +"%T %a %b %d %Y"`";
 	echo "Calling make $(ACTION_ROOT) hw"
 	@$(MAKE) -C $(ACTION_ROOT) hw > $(LOGS_DIR)/action_make.log;
-	@if [ $$? -ne 0 ]; then \
+	if [ $$? -ne 0 ]; then \
 		echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
 	fi
-	-@if [ $(USE_PRFLOW) = "TRUE" ]; then \
+	@if [ $(USE_PRFLOW) = "TRUE" ]; then \
 		$(MAKE) -kC $(ACTION_ROOT)/hw vhdl >> $(LOGS_DIR)/action_make.log; \
-		@if [ $$? -ne 0 ]; then \
+		if [ $$? -ne 0 ]; then \
 			echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
-		fi
+		fi; \
 	fi
 	@echo -e "[CONFIG ACTION HW....] done  `date +"%T %a %b %d %Y"`";
 
