@@ -53,7 +53,7 @@ snap_cblk_objs += force_cpu.o
 snap_cblk: force_cpu.o $(projB)
 
 MAJOR_VERSION=1
-libversion=$(MAJOR_VERSION).0
+libversion:=$(MAJOR_VERSION).0
 
 libnameB = libsnapcblk
 projB = $(libnameB).a \
@@ -83,6 +83,7 @@ $(libnameB).so.$(libversion): __$(libnameB).o
 		 -o $@ $^ $(libsB)
 
 projs += snap_nvme_example snap_cblk
+libs += $(projB)
 
 # If you have the host code outside of the default snap directory structure,
 # change to /path/to/snap/actions/software.mk
