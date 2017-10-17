@@ -201,9 +201,14 @@ struct cblk_dev {
 	/* statistics */
 	long int prefetches;
 	long int cache_hits;
+	long int   cache_hits_4k;
 	long int prefetch_collisions;
+	long int hw_block_reads;
+	long int hw_block_writes;
 	long int block_reads;
+	long int   block_reads_4k;
 	long int block_writes;
+	long int   block_writes_4k;
 };
 
 /* Use just one for now ... */
@@ -604,9 +609,9 @@ static inline void start_memcpy(struct cblk_dev *c,
 	
 	/* Update statistics under lock. Otherwise it might be off a little bit. */
 	if (action_code == ACTION_CONFIG_COPY_HN)
-		c->block_writes++;
+		c->hw_block_writes++;
 	else
-		c->block_reads++;
+		c->hw_block_reads++;
 
 	pthread_mutex_unlock(&c->dev_lock);
 
@@ -1027,9 +1032,14 @@ chunk_id_t cblk_open(const char *path,
 	c->ridx = 0;
 	c->status_read_count = 0;
 	c->cache_hits = 0;
+	c->cache_hits_4k = 0;
 	c->prefetch_collisions = 0;
+	c->hw_block_reads = 0;
+	c->hw_block_writes = 0;
 	c->block_reads = 0;
 	c->block_writes = 0;
+	c->block_reads_4k = 0;
+	c->block_writes_4k = 0;
 
 	sem_init(&c->idle_sem, 0, 0);
 	sem_init(&c->r_busy_sem, 0, CBLK_RIDX_MAX);
@@ -1256,6 +1266,10 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 	size_t i;
 	struct cblk_dev *c = &chunk;
 
+	c->block_reads++;
+	if (nblocks == 1)
+		c->block_reads_4k++;
+
 	if (cblk_caching) {
 		/* Trying to get data from CACHE if we got all blocks ... */
 		for (i = 0; i < nblocks; i++) {
@@ -1271,6 +1285,8 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 			block_trace("    [%s] Got %ld..%ld, nice\n", __func__,
 				lba, lba + nblocks - 1);
 			c->cache_hits++;
+			if (nblocks == 1)
+				c->cache_hits_4k++;
 			return nblocks;
 		}
 	}
@@ -1347,7 +1363,12 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 {
 	int rc;
 	unsigned  int i;
+	struct cblk_dev *c = &chunk;
 
+	c->block_writes++;
+	if (nblocks == 1)
+		c->block_writes_4k++;
+	
 	nblocks = block_write(&chunk, buf, lba, nblocks);
 
 	if (cblk_caching) {
@@ -1403,13 +1424,23 @@ static void _done(void)
 		"  prefetches:          %ld\n"
 		"  prefetch_collisions: %ld\n"
 		"  cache_hits:          %ld\n"
+		"    cache_hits_4k:     %ld\n"
+		"  hw_block_reads:      %ld\n"
+		"  hw_block_writes:     %ld\n"
 		"  block_reads:         %ld\n"
-		"  block_writes:        %ld\n",
+		"    block_reads_4k:    %ld\n"
+		"  block_writes:        %ld\n"
+		"    block_writes_4k:   %ld\n",
 		c->prefetches,
 		c->prefetch_collisions,
 		c->cache_hits,
+		c->cache_hits_4k,
+		c->hw_block_reads,
+		c->hw_block_writes,
 		c->block_reads,
-		c->block_writes);
+		c->block_reads_4k,
+		c->block_writes,
+		c->block_writes_4k);
 
 	fprintf(stderr, "Cache Info\n"
 		"  entries/ways:        %d/%d per block %d KiB\n"
