@@ -22,6 +22,7 @@ reset=0
 threads=1
 nblocks=2
 prefetch=0
+random_seed=0
 options="-n 0x40000"
 
 TEST=NONE
@@ -43,6 +44,7 @@ function usage() {
 	echo "    [-b <nblocks>]    number of blocks per transfer"
 	echo "    [-t <threads>]    threads to be used"
 	echo "    [-p <prefetch>]   0/1 disable/enable prefetching"
+	echo "    [-R <seed>]       random seed, if not 0, random read odering"
 	echo "    [-T <testcase>]   testcase e.g. CBLK"
 	echo
 	echo "  Perform SNAP card initialization and action_type "
@@ -69,7 +71,7 @@ function reset_card() {
 	fi
 }
 
-while getopts ":A:b:C:T:t:n:p:rVvh" opt; do
+while getopts ":A:b:C:T:t:R:n:p:rVvh" opt; do
 	case ${opt} in
 	C)
 		card=${OPTARG};
@@ -93,6 +95,9 @@ while getopts ":A:b:C:T:t:n:p:rVvh" opt; do
 		;;
 	n)
 		options="-n ${OPTARG}"
+		;;
+	R)
+		random_seed=${OPTARG}
 		;;
 	p)
 		prefetch=${OPTARG}
@@ -138,7 +143,8 @@ if [ "${TEST}" == "READ_BENCHMARK" ]; then
 		for t in 1 4 8 12 ; do
 			echo "THREADS: $t" ;
 			CBLK_PREFETCH=$p SNAP_TRACE=0x0 \
-			snap_cblk -C0 ${options} -b${nblocks} -s0 -t${t} \
+			snap_cblk -C0 ${options} -b${nblocks} \
+				-R${random_seed} -s0 -t${t} \
 				--read block0.bin ;
 			echo
 		done

@@ -40,6 +40,7 @@ int verbose_flag = 0;
 static const char *version = GIT_VERSION;
 
 static int err_detected = 0;
+static int random_seed = 0;
 
 typedef enum {
 	OP_READ = 0,
@@ -63,6 +64,7 @@ static void usage(const char *prog)
 	       "  -f, --format		    write entire device with pattern.\n"
 	       "  -w, --write		    write entire device.\n"
 	       "  -r, --read		    read entire device.\n"
+	       "  -R, --random <seed>	    random seek ordering"
 	       "  -s, --start_lba <start_lba> start offset\n"
 	       "  -n, --num_lba <num_lba>   number of lbas to read or write\n"
 	       "  -b, --lba_blocks <lba_blocks> number of lbas to read"
@@ -161,9 +163,10 @@ struct rqueue {
 	void *buf;
 	unsigned long start_lba;	/* starting lba */
 	unsigned long lba_size;		/* size of lba e.g. 4KiB */
-	unsigned long lba;		/* current lba */
+	unsigned long *lba;		/* current lba */
+	unsigned int lba_idx;
 	unsigned long num_lba;		/* maximum number to read */
-	unsigned int nblocks;		/* how many blocks to read */
+	unsigned int nblocks;		/* how many blocks to read each time */
 };
 
 struct thread_data {
@@ -178,19 +181,58 @@ struct thread_data {
 static struct rqueue rq;
 static struct thread_data thread_data[THREAD_MAX];
 
-static void rqueue_init(struct rqueue *rq, void *buf,
+static inline void __swap(unsigned long *a, unsigned long *b)
+{
+	unsigned long t;
+
+	t = *a;
+	*a = *b;
+	*b = t;
+}
+
+static inline void randperm(unsigned long *P, unsigned int n)
+{
+	int i;
+
+	for (i = n - 1; i > 0; i--) {
+		unsigned int z = rand() % i;
+		__swap(&P[i], &P[z]);
+	}
+}
+
+static int rqueue_init(struct rqueue *rq, void *buf,
 			unsigned long start_lba,
 			unsigned long lba_size,
 			unsigned long num_lba,
 			unsigned int nblocks)
 {
+	unsigned int i;
+
 	pthread_mutex_init(&rq->read_lock, NULL);
 	rq->buf = buf;
 	rq->start_lba = start_lba;
 	rq->lba_size = lba_size;
-	rq->lba = start_lba;
+	rq->lba_idx = 0;
 	rq->num_lba = num_lba;
 	rq->nblocks = nblocks;
+
+	rq->lba= malloc(num_lba/nblocks * sizeof(unsigned long));
+	if (rq->lba == NULL)
+		return -1;
+	
+	for (i = 0; i < num_lba/nblocks; i++)
+		rq->lba[i] = start_lba + i * nblocks;
+
+	if (random_seed)
+		randperm(rq->buf, num_lba/nblocks);
+
+	return 0;
+}
+
+static void rqueue_free(struct rqueue *rq)
+{
+	__free(rq->lba);
+	rq->lba = NULL;
 }
 
 /**
@@ -210,18 +252,18 @@ static void *read_thread(void *data)
 		pthread_mutex_lock(&rq->read_lock);
 
 		/* Exit loop if there is no more work to be done */
-		if (rq->lba == rq->start_lba + rq->num_lba) {
+		if (rq->lba_idx == rq->num_lba/rq->nblocks) {
 			pthread_mutex_unlock(&rq->read_lock);
 			break;
 		}
 
 		/* Calculate current positions parameters */
-		buf = rq->buf + (rq->lba - rq->start_lba) * rq->lba_size;
-		lba = rq->lba;
+		lba = rq->lba[rq->lba_idx];
+		buf = rq->buf + (lba - rq->start_lba) * rq->lba_size;
 		nblocks = rq->nblocks;
 
 		/* Select next lba for follow up thread */
-		rq->lba += rq->nblocks;
+		rq->lba_idx++;
 		pthread_mutex_unlock(&rq->read_lock);
 
 		/* Perform read operation */
@@ -305,6 +347,7 @@ int main(int argc, char *argv[])
 	int pattern = 0xff;
 	int incremental_pattern = 0;
 	unsigned int threads = 1;
+	int random_seed = 0;
 
 	while (1) {
 		int option_index = 0;
@@ -319,6 +362,7 @@ int main(int argc, char *argv[])
 			{ "start_lba",	required_argument, NULL, 's' },
 			{ "num_lba",	required_argument, NULL, 'n' },
 			{ "pattern",	required_argument, NULL, 'p' },
+			{ "random",	required_argument, NULL, 'R' },
 
 			{ "format",	no_argument,	   NULL, 'f' },
 			{ "write",	no_argument,	   NULL, 'w' },
@@ -333,7 +377,7 @@ int main(int argc, char *argv[])
 			{ 0,		no_argument,	   NULL, 0   },
 		};
 
-		ch = getopt_long(argc, argv, "p:C:X:fwrs:t:n:b:p:Vqrvh",
+		ch = getopt_long(argc, argv, "R:p:C:X:fwrs:t:n:b:p:Vqrvh",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -354,6 +398,9 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			start_lba = strtoul(optarg, NULL, 0);
+			break;
+		case 'R':
+			random_seed = strtoul(optarg, NULL, 0);
 			break;
 		case 'p':
 			if (strcmp("INC", optarg) == 0) {
@@ -394,13 +441,14 @@ int main(int argc, char *argv[])
 	if (argc >= optind + 1)
 		fname = argv[optind++];
 
-	if (lba_blocks > 32) {
+	if ((lba_blocks <= 0) || (lba_blocks > 32)) {
 		fprintf(stderr, "err: %zu blocks not yet supported (1, 2, 4, ..., 32)!\n",
 			lba_blocks);
 		usage(argv[0]);
 		goto err_out;
 	}
 
+	srand(random_seed);
 	switch_cpu(cpu, verbose_flag);
 	cblk_init(NULL, 0);
 
@@ -467,9 +515,10 @@ int main(int argc, char *argv[])
 		}
 		memset(buf, 0xff, num_lba * lba_size);
 
-		gettimeofday(&stime, NULL);
 
 #ifdef CONFIG_SINGLE_THREADED /* single threaded */
+		gettimeofday(&stime, NULL);
+
 		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
 			block_trace("  reading lba %d ...\n", lba);
 			rc = cblk_read(cid, buf + ((lba - start_lba) * lba_size),
@@ -485,19 +534,21 @@ int main(int argc, char *argv[])
 					lba_size * lba_blocks);
 
 		}
+		gettimeofday(&etime, NULL);
 #else
 		rqueue_init(&rq, buf, start_lba, lba_size, num_lba, lba_blocks);
 
+		gettimeofday(&stime, NULL);
 		rc = run_threads(thread_data, threads, &rq);
 		if (rc != 0) {
 			fprintf(stderr, "err: run_threads unhappy rc=%d! %s\n", rc,
 				strerror(errno));
 			goto err_out;
 		}
-#endif
 
 		gettimeofday(&etime, NULL);
-
+		rqueue_free(&rq);
+#endif
 		rc = file_write(fname, buf, num_lba * lba_size);
 		if (rc <= 0) {
 			fprintf(stderr, "err: Could not write %s, rc=%d\n",
