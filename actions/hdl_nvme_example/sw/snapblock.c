@@ -41,6 +41,7 @@
 
 static int cblk_reqtimeout = CONFIG_REQUEST_TIMEOUT;
 static int cblk_prefetch = 0;
+static int cblk_caching = 1;
 
 /*
  * FIXME The following stuff most likely neesd to go in a header file 
@@ -298,7 +299,7 @@ static const char *action_name[] = {
 #define NVME_MAX_TRANSFER_SIZE	(32 * MEGA_BYTE)  /* NVME limit to Transfer in one chunk */
 
 /* NVME lba cache */
-#define CACHE_MASK		0x0000000f
+#define CACHE_MASK		0x000000ff
 #define CACHE_WAYS		4
 #define CACHE_ENTRIES		(CACHE_MASK + 1)
 
@@ -1255,21 +1256,23 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 	size_t i;
 	struct cblk_dev *c = &chunk;
 
-	/* Trying to get data from CACHE if we got all blocks ... */
-	for (i = 0; i < nblocks; i++) {
-		rc = __cache_read_timeout(c, lba + i,
-				buf + i * __CBLK_BLOCK_SIZE,
-				CONFIG_REQUEST_DURATION);
-		if (rc != 0)
-			break;
-	}
+	if (cblk_caching) {
+		/* Trying to get data from CACHE if we got all blocks ... */
+		for (i = 0; i < nblocks; i++) {
+			rc = __cache_read_timeout(c, lba + i,
+					buf + i * __CBLK_BLOCK_SIZE,
+					CONFIG_REQUEST_DURATION);
+			if (rc != 0)
+				break;
+		}
 
-	/* ... we don't need to ask the NVMe hardware */
-	if ((rc == 0) && (i == nblocks)) {
-		block_trace("    [%s] Got %ld..%ld, nice\n", __func__,
-			lba, lba + nblocks - 1);
-		c->cache_hits++;
-		return nblocks;
+		/* ... we don't need to ask the NVMe hardware */
+		if ((rc == 0) && (i == nblocks)) {
+			block_trace("    [%s] Got %ld..%ld, nice\n", __func__,
+				lba, lba + nblocks - 1);
+			c->cache_hits++;
+			return nblocks;
+		}
 	}
 
 	/* Else read them all for simplicity at this point in time ... */
@@ -1278,8 +1281,9 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 		return rc;
 
 	/* ... push blocks to cache for later use */
-	for (i = 0; i < nblocks; i++) {
-		cache_write(lba + i, buf + i * __CBLK_BLOCK_SIZE);
+	if (cblk_caching) {
+		for (i = 0; i < nblocks; i++)
+			cache_write(lba + i, buf + i * __CBLK_BLOCK_SIZE);
 	}
 
 	return rc;
@@ -1345,12 +1349,15 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 	unsigned  int i;
 
 	nblocks = block_write(&chunk, buf, lba, nblocks);
-	for (i = 0; i < nblocks; i++) {
-		rc = cache_write(lba + i, buf + i * __CBLK_BLOCK_SIZE);
-		if (rc != 0) {
-			fprintf(stderr, "err: cache_write LBA=%ld "
-				"failed rc=%d!\n", (long int)lba, rc);
-			return 0;
+
+	if (cblk_caching) {
+		for (i = 0; i < nblocks; i++) {
+			rc = cache_write(lba + i, buf + i * __CBLK_BLOCK_SIZE);
+			if (rc != 0) {
+				fprintf(stderr, "err: cache_write LBA=%ld "
+					"failed rc=%d!\n", (long int)lba, rc);
+				return 0;
+			}
 		}
 	}
 
@@ -1361,19 +1368,27 @@ static void _init(void) __attribute__((constructor));
 
 static void _init(void)
 {
-	const char *reqtimeout_env;
-	const char *prefetch_env;
+	const char *env;
 
-	reqtimeout_env = getenv("CBLK_REQTIMEOUT");
-	if (reqtimeout_env != NULL)
-		cblk_reqtimeout = strtol(reqtimeout_env, (char **)NULL, 0);
+	env = getenv("CBLK_REQTIMEOUT");
+	if (env != NULL)
+		cblk_reqtimeout = strtol(env, (char **)NULL, 0);
 
-	prefetch_env = getenv("CBLK_PREFETCH");
-	if (prefetch_env != NULL)
-		cblk_prefetch = strtol(prefetch_env, (char **)NULL, 0);
+	env = getenv("CBLK_CACHING");
+	if (env != NULL)
+		cblk_caching = strtol(env, (char **)NULL, 0);
 
-	block_trace("[%s] init CBLK_REQTIMEOUT=%d CBLK_PREFETCH=%d\n",
-		__func__, cblk_reqtimeout, cblk_prefetch);
+	env = getenv("CBLK_PREFETCH");
+	if (env != NULL) {
+		cblk_prefetch = strtol(env, (char **)NULL, 0);
+
+		/* NOTE: prefetch implies caching */
+		if (cblk_prefetch)
+			cblk_caching = 1;
+	}
+
+	block_trace("[%s] init CBLK_REQTIMEOUT=%d CBLK_PREFETCH=%d CBLK_CACHING=%d\n",
+		__func__, cblk_reqtimeout, cblk_prefetch, cblk_caching);
 }
 
 static void _done(void) __attribute__((destructor));
@@ -1395,6 +1410,12 @@ static void _done(void)
 		c->cache_hits,
 		c->block_reads,
 		c->block_writes);
+
+	fprintf(stderr, "Cache Info\n"
+		"  entries/ways:        %d/%d per block %d KiB\n"
+		"  total_size:          %d MiB\n",
+		CACHE_ENTRIES, CACHE_WAYS, __CBLK_BLOCK_SIZE / 1024,
+		CACHE_ENTRIES * CACHE_WAYS * __CBLK_BLOCK_SIZE / (1024*1024));
 
 	cblk_close(0, 0);
 }
