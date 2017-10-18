@@ -138,7 +138,8 @@ $(snap_env_sh) snap_env: $(snap_config_sh)
 	fi
 	@cp defconfig/$@ $(snap_config)
 	@$(MAKE) -s oldconfig
-	@$(MAKE) -s snap_env
+	@$(MAKE) -s snap_env snap_env_parm=config
+	@echo "SNAP defconfig done"
 
 clean:
 	@for dir in $(clean_subdirs); do           \
