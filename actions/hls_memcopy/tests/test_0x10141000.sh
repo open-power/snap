@@ -20,6 +20,13 @@ verbose=0
 snap_card=0
 duration="NORMAL"
 
+PWD=`pwd`
+if [ -z "$ACTION_ROOT" ]; then
+    ACTION_ROOT="${PWD}/.."
+fi
+echo "ACTION_ROOT=$ACTION_ROOT"
+echo "please make sure ACTION_ROOT is pointed to actions/hls_memcopy"
+
 function usage() {
     echo "Usage:"
     echo "  test_<action_type>.sh"
@@ -50,7 +57,7 @@ while getopts ":C:t:d:h" opt; do
     esac
 done
 
-export PATH=$PATH:../software/tools:./hls_memcopy/sw:../../software/tools:./sw
+export PATH=$PATH:$ACTION_ROOT/../../software/tools:$ACTION_ROOT/sw
 
 #### VERSION ##########################################################
 
