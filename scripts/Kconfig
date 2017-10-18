@@ -128,18 +128,6 @@ config FORCE_SDRAM
         depends on (FORCE_SDRAM_OR_BRAM && ! ENABLE_BRAM)
         select ENABLE_SDRAM
 
-config ENABLE_BRAM
-        bool
-        prompt "Enable BRAM (replacing SDRAM for debug)"
-        depends on ! DISABLE_SDRAM_AND_BRAM
-        help
-          This is a debug option. The AXI attached on-card SDRAM will be replaced by 512KB BRAM.
-
-config BRAM_USED
-        string
-        default "TRUE"  if ENABLE_BRAM
-        default "FALSE" if ! ENABLE_BRAM
-
 config ENABLE_SDRAM
         bool
         prompt "Enable SDRAM"
@@ -152,6 +140,18 @@ config SDRAM_USED
         string
         default "TRUE"  if ENABLE_SDRAM
         default "FALSE" if ! ENABLE_SDRAM
+
+config ENABLE_BRAM
+        bool
+        prompt "Enable BRAM (replacing SDRAM for experimental use)"
+        depends on ! DISABLE_SDRAM_AND_BRAM
+        help
+          This is a development option. The AXI attached on-card SDRAM will be replaced by 512KB BRAM.
+
+config BRAM_USED
+        string
+        default "TRUE"  if ENABLE_BRAM
+        default "FALSE" if ! ENABLE_BRAM
 
 config ENABLE_DDR3
         bool
@@ -200,27 +200,6 @@ config NVME_USED
         default "TRUE"  if ENABLE_NVME
         default "FALSE" if ! ENABLE_NVME
 
-config ENABLE_ILA
-        bool "Enable ILA Debug (Definition of $ILA_SETUP_FILE required)"
-        help
-          Enable the usage of Vivado's integrated logic analyzer.
-          Please make sure that $ILA_SETUP_FILE points to the .xdc file
-          defining the debug cores.
-
-config ILA_DEBUG
-        string
-        default "TRUE"  if ENABLE_ILA
-        default "FALSE" if ! ENABLE_ILA
-
-config ENABLE_FACTORY
-        bool "Create Factory Image"
-
-config FACTORY_IMAGE
-        string
-        default "TRUE"  if ENABLE_FACTORY
-        default "FALSE" if ! ENABLE_FACTORY
-
-
 choice
         bool "Simulator"
         default SIM_XSIM
@@ -247,6 +226,28 @@ config SIMULATOR
         default "xsim"  if SIM_XSIM
         default "irun"  if SIM_IRUN
         default "nosim" if NO_SIM
+
+comment "================= Advanced Options: ================="
+
+config ENABLE_ILA
+        bool "Enable ILA Debug (Definition of $ILA_SETUP_FILE required)"
+        help
+          Enable the usage of Vivado's integrated logic analyzer.
+          Please make sure that $ILA_SETUP_FILE points to the .xdc file
+          defining the debug cores.
+
+config ILA_DEBUG
+        string
+        default "TRUE"  if ENABLE_ILA
+        default "FALSE" if ! ENABLE_ILA
+
+config ENABLE_FACTORY
+        bool "Create Factory Image"
+
+config FACTORY_IMAGE
+        string
+        default "TRUE"  if ENABLE_FACTORY
+        default "FALSE" if ! ENABLE_FACTORY
 
 config ENABLE_PRFLOW
         bool "Cloud build"
