@@ -209,6 +209,11 @@ struct cblk_dev {
 	long int   block_reads_4k;
 	long int block_writes;
 	long int   block_writes_4k;
+	long long int wbytes_total;
+	long long int rbytes_total;
+	struct timeval start_time;	/* time when loading this */
+	struct timeval rtime_total;	/* total time spent in reads */
+	struct timeval wtime_total;	/* total time spent in writes */
 };
 
 /* Use just one for now ... */
@@ -606,12 +611,15 @@ static inline void start_memcpy(struct cblk_dev *c,
 
 	/* Wait for Action to go back to Idle */
 	snap_action_start(c->act);
-	
-	/* Update statistics under lock. Otherwise it might be off a little bit. */
-	if (action_code == ACTION_CONFIG_COPY_HN)
+
+	/* Update statistics under device lock. Otherwise it might be off a little bit. */
+	if (action_code == ACTION_CONFIG_COPY_HN) {
 		c->hw_block_writes++;
-	else
+		c->wbytes_total += n;
+	} else {
 		c->hw_block_reads++;
+		c->rbytes_total += n;
+	}
 
 	pthread_mutex_unlock(&c->dev_lock);
 
@@ -1041,6 +1049,15 @@ chunk_id_t cblk_open(const char *path,
 	c->block_reads_4k = 0;
 	c->block_writes_4k = 0;
 
+	c->wbytes_total = 0;
+	c->rbytes_total = 0;
+
+	c->wtime_total.tv_sec = 0;
+	c->wtime_total.tv_usec = 0;
+	c->rtime_total.tv_sec = 0;
+	c->rtime_total.tv_usec = 0;
+	gettimeofday(&c->start_time, NULL);
+
 	sem_init(&c->idle_sem, 0, 0);
 	sem_init(&c->r_busy_sem, 0, CBLK_RIDX_MAX);
 	sem_init(&c->w_busy_sem, 0, CBLK_WIDX_MAX);
@@ -1417,6 +1434,11 @@ static void _done(void) __attribute__((destructor));
 static void _done(void)
 {
 	struct cblk_dev *c = &chunk;
+	struct timeval end_time;
+	time_t usec;
+
+	gettimeofday(&end_time, NULL);
+	usec = timediff_usec(&end_time, &c->start_time);
 
 	block_trace("[%s] exit\n", __func__);
 
@@ -1430,7 +1452,10 @@ static void _done(void)
 		"  block_reads:         %ld\n"
 		"    block_reads_4k:    %ld\n"
 		"  block_writes:        %ld\n"
-		"    block_writes_4k:   %ld\n",
+		"    block_writes_4k:   %ld\n"
+		"  running:             %ld usec\n"
+		"  rbytes_total:        %lld %.3f MiB/sec\n"
+		"  wbytes_total:        %lld %.3f MiB/sec\n",
 		c->prefetches,
 		c->prefetch_collisions,
 		c->cache_hits,
@@ -1440,7 +1465,10 @@ static void _done(void)
 		c->block_reads,
 		c->block_reads_4k,
 		c->block_writes,
-		c->block_writes_4k);
+		c->block_writes_4k,
+		(long int)usec,
+		c->rbytes_total, usec ? (double)c->rbytes_total / usec : 0.0,
+		c->wbytes_total, usec ? (double)c->wbytes_total / usec : 0.0);
 
 	fprintf(stderr, "Cache Info\n"
 		"  entries/ways:        %d/%d per block %d KiB\n"

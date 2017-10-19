@@ -140,12 +140,12 @@ if [ "${TEST}" == "READ_BENCHMARK" ]; then
 	echo "SNAP NVME READ BENCHMARK"
 	for p in 0 1 ; do
 		echo "PREFETCH: $p";
-		for t in 1 4 8 12 ; do
+		for t in 1 2 4 6 8 10 12 14 16 32 64 ; do
 			echo "THREADS: $t" ;
 			CBLK_PREFETCH=$p SNAP_TRACE=0x0 \
 			snap_cblk -C0 ${options} -b${nblocks} \
 				-R${random_seed} -s0 -t${t} \
-				--read block0.bin ;
+				--read /dev/null ;
 			echo
 		done
 	done
