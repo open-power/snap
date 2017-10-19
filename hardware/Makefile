@@ -98,7 +98,7 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 
 ifeq ($(PLATFORM),x86_64)
 
-.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_config_start hw_config config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim sim
+.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim sim
 
 all: model image
 
@@ -271,21 +271,21 @@ create_project: snap_preprocess
 	@$(MAKE) -s patch_NVMe
 	@echo -e "[CREATE PROJECT......] done  `date +"%T %a %b %d %Y"`"
 
-hw_config_start:
-	@echo -e "[HW CONFIG...........] start `date +"%T %a %b %d %Y"`"
+hw_project_start:
+	@echo -e "[HW PROJECT..........] start `date +"%T %a %b %d %Y"`"
 
-hw_config: hw_config_start action_hw
+hw_project: hw_project_start action_hw
 	@$(MAKE) -s create_project
-	@touch .hw_config_done
-	@echo -e "[HW CONFIG...........] done  `date +"%T %a %b %d %Y"`"
+	@touch .hw_project_done
+	@echo -e "[HW PROJECT..........] done  `date +"%T %a %b %d %Y"`"
 
-.hw_config_done:
-	$(MAKE) -s hw_config
+.hw_project_done:
+	$(MAKE) -s hw_project
 
 # Adding target 'config' for backward compatibility
-config: hw_config
+config: hw_project
 
-image: .hw_config_done
+image: .hw_project_done
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
 		echo; echo -e "Error: Makefile target $* not allowed for PR flow!"; exit -1; \
 	fi
@@ -304,7 +304,7 @@ allow_%:
 		echo; echo -e "Error: Makefile target $* is only allowed for PR flow!"; exit -1; \
 	fi
 
-cloud_base: .hw_config_done
+cloud_base: .hw_project_done
 	@$(MAKE) -s allow_cloud_base
 	@echo -e "[BUILD CLOUD BASE...] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -s patch_version
@@ -319,7 +319,7 @@ $(SNAP_BASE_DCP):
 	@echo -e "                        Need to run cloud_base first"
 	@exit -1
 
-cloud_action: .hw_config_done
+cloud_action: .hw_project_done
 	@$(MAKE) -s allow_cloud_action
 	@echo -e "[CLOUD ACTION SYNTH..] start `date +"%T %a %b %d %Y"e`"
 	@$(MAKE) -s patch_version
@@ -374,7 +374,7 @@ nosim:
 	@echo -e "                        Info: Not building a simulation model, since SIMULATOR is set to \"nosim\"";
 	@echo -e "[BUILD $@ MODEL....] done  `date +"%T %a %b %d %Y"`"
 
-$(SNAP_SIMULATORS): check_nvme .hw_config_done action_sw
+$(SNAP_SIMULATORS): check_nvme .hw_project_done action_sw
 	@if [ "$(SIMULATOR)" != "$@" ]; then \
 		echo; echo "Error: Makefile target $@ called with SIMULATOR set to \"$(SIMULATOR)\""; \
 		exit -1; \
@@ -421,7 +421,7 @@ endif
 .PHONY: clean
 clean:
 	@echo -e "[CLEAN ENVIRONMENT...] start `date +"%T %a %b %d %Y"`"
-	@$(RM)    .hw_config_done
+	@$(RM)    .hw_project_done
 	@$(RM) -r $(SNAP_PP_FILES_VHD)                   \
                   $(SNAP_SIM_NVME)/endp_4_pipe32.v       \
                   $(SNAP_CONFIG_FILES)                   \
