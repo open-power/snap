@@ -20,6 +20,15 @@ verbose=0
 snap_card=0
 duration="NORMAL"
 
+# Get path of this script
+THIS_DIR=$(dirname $(readlink -f "$BASH_SOURCE"))
+ACTION_ROOT=$(dirname ${THIS_DIR})
+SNAP_ROOT=$(dirname $(dirname ${ACTION_ROOT}))
+
+echo "Starting :    $0"
+echo "SNAP_ROOT :   ${SNAP_ROOT}"
+echo "ACTION_ROOT : ${ACTION_ROOT}"
+
 function usage() {
     echo "Usage:"
     echo "  test_<action_type>.sh"
@@ -50,14 +59,14 @@ while getopts ":C:t:d:h" opt; do
     esac
 done
 
-export PATH=$PATH:../software/tools:./hls_memcopy/sw:../../software/tools:./sw
+export PATH=$PATH:${SNAP_ROOT}/software/tools:${ACTION_ROOT}/sw
 
 #### VERSION ##########################################################
 
 # [ -z "$STATE" ] && echo "Need to set STATE" && exit 1;
 
 if [ -z "$SNAP_CONFIG" ]; then
-	echo "CARD VERSION"
+	echo "Get CARD VERSION"
 	snap_maint -C ${snap_card} -v || exit 1;
 	snap_peek -C ${snap_card} 0x0 || exit 1;
 	snap_peek -C ${snap_card} 0x8 || exit 1;
