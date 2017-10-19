@@ -487,7 +487,8 @@ int main(int argc, char *argv[])
 	switch (_op) {
 	case OP_READ: {
 		fprintf(stderr, "Reading %zu times %zu bytes: %zu KiB NVMe into %s\n",
-			num_lba/lba_blocks, lba_blocks * lba_size, num_lba * lba_size / 1024,
+			num_lba/lba_blocks, lba_blocks * lba_size,
+			num_lba * lba_size / 1024,
 			fname);
 
 		if (start_lba + num_lba > lun_size) {
@@ -537,8 +538,8 @@ int main(int argc, char *argv[])
 		gettimeofday(&etime, NULL);
 #else
 		rqueue_init(&rq, buf, start_lba, lba_size, num_lba, lba_blocks);
-
 		gettimeofday(&stime, NULL);
+
 		rc = run_threads(thread_data, threads, &rq);
 		if (rc != 0) {
 			fprintf(stderr, "err: run_threads unhappy rc=%d! %s\n", rc,
@@ -560,8 +561,10 @@ int main(int argc, char *argv[])
 		mib_sec = (diff_usec == 0) ? 0.0 :
 			(double)(num_lba * lba_size) / diff_usec;
 
-		fprintf(stderr, "Reading of %lld bytes took %lld usec @ %.3f MiB/sec\n",
-			(long long)num_lba * lba_size, (long long)diff_usec, mib_sec);
+		fprintf(stderr, "Reading of %lld bytes with %d threads took %lld usec @ %.3f MiB/sec %s\n",
+			(long long)num_lba * lba_size, threads,
+			(long long)diff_usec, mib_sec,
+			random_seed ? "random ordering" : "linear ordering");
 		break;
 	}
 	case OP_WRITE: {
