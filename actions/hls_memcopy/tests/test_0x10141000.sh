@@ -22,8 +22,8 @@ duration="NORMAL"
 
 # Get path of this script
 THIS_DIR=$(dirname $(readlink -f "$BASH_SOURCE"))
-ACTION_ROOT=${THIS_DIR}/..
-SNAP_ROOT=${ACTION_ROOT}/../..
+ACTION_ROOT=$(dirname ${THIS_DIR})
+SNAP_ROOT=$(dirname $(dirname ${ACTION_ROOT}))
 
 echo "Starting :    $0"
 echo "SNAP_ROOT :   ${SNAP_ROOT}"
