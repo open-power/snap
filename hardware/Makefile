@@ -381,13 +381,9 @@ $(SNAP_SIMULATORS): check_nvme .hw_project_done action_sw
 	fi
 	@echo -e "[BUILD $@ MODEL....] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -s patch_version
-	@if [ ! -d "$(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@)" ];then \
-		vivado -quiet -mode batch -source setup/export_$@.tcl -notrace -log $(LOGS_DIR)/compile_$@.log; \
-		$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1; \
-		cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
-	else \
-		$(RM) $(LOGS_DIR)/compile_$@.log; \
-	fi
+	vivado -quiet -mode batch -source setup/export_$@.tcl -notrace -log $(LOGS_DIR)/compile_$@.log
+	$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1
+	cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; 
 	@cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@); \
 	./top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1; \
 	if [ $$? -ne 0 ]; then \
