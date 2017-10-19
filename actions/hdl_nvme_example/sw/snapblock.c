@@ -39,6 +39,7 @@
 #undef CONFIG_FIFO_SCHEDULING	/* only root */
 #undef CONFIG_PIN_COMPLETION_THREAD	/* try to pin completion thread */
 #define CONFIG_SOFTWARE_TIME	/* measure hardware */
+#define CONFIG_SLEEP_WHEN_IDLE	/* Sleep when there is no work to be done */
 
 #define CONFIG_REQUEST_TIMEOUT 5
 #define CONFIG_REQUEST_DURATION 100 /* usec */
@@ -1032,13 +1033,14 @@ static void *completion_thread(void *arg)
 			run_cpu = new_cpu;
 		}
 #endif
-
+#ifdef CONFIG_SLEEP_WHEN_IDLE
 		block_trace("  [%s] idle_sem WAITING %d/%d...\n", __func__,
 			reads_in_flight(c), writes_in_flight(c));
 		sem_wait(&c->idle_sem);	/* wait until work is to be done */
 		c->idle_wakeups++;
 		block_trace("  [%s] idle_sem WAKEUP %d/%d\n", __func__,
 			reads_in_flight(c), writes_in_flight(c));
+#endif
 
 		while (work_in_flight(c)) {
 			slot = read_status(c, c->timeout);
@@ -1068,6 +1070,7 @@ static void *completion_thread(void *arg)
 			check_request_timeouts(c, &etime, cblk_reqtimeout * 1000);
 			pthread_testcancel();	/* go home if requested */
 		}
+		pthread_testcancel();	/* go home if requested */
 	}
 
 	pthread_cleanup_pop(1);
