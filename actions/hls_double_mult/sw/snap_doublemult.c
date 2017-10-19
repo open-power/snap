@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 //	uint8_t trailing_zeros[1024] = { 0, };
 	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 
-	double double1 = 0, double2 = 0, result = 0;
+	double double1 = 0, double2 = 0, double3 = 0; result = 0;
 	double *cache_line_in = NULL, *cache_line_out = NULL;
 
 	while (1) {
@@ -220,10 +220,13 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	//CHANGE
+	/*
 	printf("Please enter first float!\n");
 	rc = scanf("%lf", &double1);
 	printf("Please enter second float!\n");
 	rc = scanf("%lf", &double2);
+	*/
 
 	// reserve a cache_line_in with 128 byte / 16 doubles
 	cache_line_in = (double *)snap_malloc(128);
@@ -233,8 +236,18 @@ int main(int argc, char *argv[])
 	memset(cache_line_in, 0, 128);
 
 	//write doubles into it
-	*cache_line_in = double1;
-	*(cache_line_in+1) = double2;
+	//CHANGE
+	//*cache_line_in = double1;
+	//*(cache_line_in+1) = double2;
+
+	//TO
+	for(int i=0; i<16; i++){
+		*(cache_line_in+i) = 1 + 0.5*i;
+	}
+
+	double1 = *cache_line_in;
+	double2 = *(cache_line_in+1);
+	double3 = *(cache_line_in+2);
 
 
 	type_in = SNAP_ADDRTYPE_HOST_DRAM;
@@ -323,7 +336,7 @@ int main(int argc, char *argv[])
 }
 */
 	gettimeofday(&stime2, NULL);
-	result = double1 * double2;
+	result = double1 * double2 * double3;
 	gettimeofday(&etime2, NULL);
 
 	fprintf(stdout, "DEFAULT doublemult took %lld usec\n",
@@ -332,7 +345,7 @@ int main(int argc, char *argv[])
 		(long long)timediff_usec(&etime, &stime));
 
 	fprintf(stdout, "Host Result = %lf, FPGA Result = %lf\n", result, *cache_line_out);
-	fprintf(stdout, "A = %lf & B = %lf\n", *(cache_line_out + 6),  *(cache_line_out + 7));
+	fprintf(stdout, "A = %lf & B = %lf & C = %lf\n", *(cache_line_out + 6),  *(cache_line_out + 7), *(cache_line_out + 8));
 
 	snap_detach_action(action);
 	snap_card_free(card);

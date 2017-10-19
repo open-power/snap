@@ -28,29 +28,32 @@
 #include "action_doublemult.H"
 
 // Cast two 128b from input port (512b) to two doubles
-static void mbus_to_doubles(snap_membus_t mem, double *ptr_a, double *ptr_b)
+static void mbus_to_doubles(snap_membus_t mem, double *ptr_a, double *ptr_b, double *ptr_c)
 {
 	double *memptr_b;
-	uint64_t tmp_a, tmp_b;
+	uint64_t tmp_a, tmp_b, tmp_c;
 
 	tmp_a = (uint64_t)mem(63,0);
 	tmp_b = (uint64_t)mem(127,64);
+	tmp_c = (uint64_t)mem(191,128);
 
 	memptr_b = (double *)&tmp_b;
 
 	*ptr_a = *(double *)&tmp_a;
 	*ptr_b = *memptr_b;
+	*ptr_c = *(double *)&tmp_c
 }
 
 // Cast a char* word (64B) to a word to output port (512b)
-static snap_membus_t double_to_mbus(double val, double a, double b)
+static snap_membus_t double_to_mbus(double val, double a, double b, double c)
 {
 	snap_membus_t mem = 0;
 
 	mem(63,0) = *(uint64_t *)&val;
 	mem(447, 384) = *(uint64_t *)&a;
 	mem(511, 448) = *(uint64_t *)&b;
-	
+	mem(575, 512) = *(uint64_t *)&c;
+
 	return mem;
 }
 
@@ -73,7 +76,7 @@ static int process_action(snap_membus_t *din_gmem,
 
 	if (size > 15) {
 //#pragma HLS PIPELINE
-		double a, b, product;
+		double a, b, c, product;
 		snap_membus_t buffer_in = 0, buffer_out = 0;
 
 		// Temporary workaround due to Xilinx memcpy issue - fixed in HLS 2017.4 */
@@ -81,13 +84,13 @@ static int process_action(snap_membus_t *din_gmem,
 		buffer_in = (din_gmem + i_idx)[0];
 
 		/* cast 128b of data buffer to two doubles */
-		mbus_to_doubles(buffer_in, &a, &b);
+		mbus_to_doubles(buffer_in, &a, &b, &c);
 
 		/* Calculate result */
-		product = a * b;
+		product = a * b * c;
 
 		/* cast char[64] text to a 64B word buffer */
-		buffer_out = double_to_mbus(product,a,b);
+		buffer_out = double_to_mbus(product,a,b,c);
 
 		// Temporary workaround due to Xilinx memcpy issue - fixed in HLS 2017.4 */
 		//memcpy(dout_gmem + o_idx, &buffer_out, sizeof(buffer_out));
@@ -181,7 +184,7 @@ int main(void)
 
     memset(din_gmem,  'c', sizeof(din_gmem[0]));
     printf("Input is : %s\n", (char *)((unsigned long)din_gmem + 0));
-    
+
     act_reg.Control.flags = 0x1; /* just not 0x0 */
 
     act_reg.Data.in.addr = 0;
