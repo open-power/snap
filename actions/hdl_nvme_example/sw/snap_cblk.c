@@ -486,6 +486,9 @@ int main(int argc, char *argv[])
 
 	switch (_op) {
 	case OP_READ: {
+		/* fprintf(stderr, "num_lba=%u lba_blocks=%zu lun_size=%zu\n",
+			num_lba, lba_blocks, lun_size); */
+
 		fprintf(stderr, "Reading %zu times %zu bytes: %zu KiB NVMe into %s\n",
 			num_lba/lba_blocks, lba_blocks * lba_size,
 			num_lba * lba_size / 1024,

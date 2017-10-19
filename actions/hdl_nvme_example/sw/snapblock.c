@@ -23,6 +23,7 @@
 #include <err.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <sched.h>
 
 #include <sys/stat.h>
 #include <sys/mman.h>
@@ -35,6 +36,9 @@
 
 #undef CONFIG_WAIT_FOR_IRQ	/* Not fully working */
 #undef CONFIG_PRINT_STATUS	/* health checking if needed */
+#undef CONFIG_FIFO_SCHEDULING	/* only root */
+#undef CONFIG_PIN_COMPLETION_THREAD	/* try to pin completion thread */
+#define CONFIG_SOFTWARE_TIME	/* measure hardware */
 
 #define CONFIG_REQUEST_TIMEOUT 5
 #define CONFIG_REQUEST_DURATION 100 /* usec */
@@ -147,13 +151,16 @@ static const char *cblk_status_str[] = {
 struct cache_way;
 
 struct cblk_req {
-	uint8_t slot;
-	off_t lba;
-	size_t nblocks;
+	uint8_t slot;		/* r/w request slot number */
+	off_t lba;		/* address */
+	size_t nblocks;		/* number of blocks for the transfer */
 	enum cblk_status status;
-	sem_t wait_sem;
-	uint8_t *buf;
-	struct timeval stime;
+	sem_t wait_sem;		/* wait here for completion */
+	uint8_t *buf;		/* data is r/w from there */
+	struct timeval stime;	/* start time */
+	struct timeval etime;	/* completion time */
+	struct timeval h_stime;	/* hardware start time */
+	struct timeval h_etime;	/* hardware completion time */
 	int use_wait_sem;	/* blocking or prefetch */
 	struct cache_way *pblock[CBLK_NBLOCKS_MAX];
 };
@@ -214,6 +221,16 @@ struct cblk_dev {
 	struct timeval start_time;	/* time when loading this */
 	struct timeval rtime_total;	/* total time spent in reads */
 	struct timeval wtime_total;	/* total time spent in writes */
+	long int idle_wakeups;
+
+	time_t max_read_usecs;
+	time_t max_write_usecs;
+	time_t avg_read_usecs;
+	time_t avg_write_usecs;
+	time_t min_read_usecs;
+	time_t min_write_usecs;
+	time_t avg_hw_read_usecs;
+	time_t avg_hw_write_usecs;
 };
 
 /* Use just one for now ... */
@@ -591,6 +608,7 @@ static inline void start_memcpy(struct cblk_dev *c,
 	uint8_t action_code = action & 0x00ff;
 	int slot = (action & 0x0f00) >> 8;
 	off_t lba;
+	struct cblk_req *req = &c->req[slot];
 
 	lba = ((action_code == ACTION_CONFIG_COPY_HN) ? dest : src) /
 		(__CBLK_BLOCK_SIZE/NVME_LB_SIZE);
@@ -602,6 +620,8 @@ static inline void start_memcpy(struct cblk_dev *c,
 		(long long)n, (long long)lba);
 
 	pthread_mutex_lock(&c->dev_lock);
+	gettimeofday(&req->h_stime, NULL);
+
 	__cblk_write(c, ACTION_CONFIG, action);
 	__cblk_write(c, ACTION_DEST_LOW, (uint32_t)(dest & 0xffffffff));
 	__cblk_write(c, ACTION_DEST_HIGH, (uint32_t)(dest >> 32));
@@ -731,11 +751,27 @@ static struct cblk_req *get_write_req(struct cblk_dev *c,
 static void put_req(struct cblk_dev *c, struct cblk_req *req)
 {
 	unsigned int i;
+	time_t usecs;
 	pthread_mutex_lock(&c->dev_lock);
 
+	gettimeofday(&req->etime, NULL);
+	usecs = timediff_usec(&req->etime, &req->stime);
+
 	if (cblk_is_write(req)) {
+		if (usecs > c->max_write_usecs)
+			c->max_write_usecs = usecs;
+		if ((c->min_write_usecs == 0) || (usecs < c->min_write_usecs))
+			c->min_write_usecs = usecs;
+		c->avg_write_usecs += usecs;
+
 		sem_post(&c->w_busy_sem);
 	} else {
+		if (usecs > c->max_read_usecs)
+			c->max_read_usecs = usecs;
+		if ((c->min_read_usecs == 0) || (usecs < c->min_read_usecs))
+			c->min_read_usecs = usecs;
+		c->avg_read_usecs += usecs;
+
 		for (i = 0; i < ARRAY_SIZE(req->pblock); i++) {
 			cache_unreserve(req->pblock[i]);
 			req->pblock[i] = NULL;
@@ -757,6 +793,8 @@ static inline int read_status(struct cblk_dev *c, int timeout __attribute__((unu
 	int rc = ETIME;
 	uint32_t status = 0x0;
 	int slot = -1;
+	struct cblk_req *req;
+	time_t usecs;
 
 #ifdef CONFIG_WAIT_FOR_IRQ
 	rc = snap_action_completed(c->act, NULL, timeout);
@@ -801,6 +839,16 @@ static inline int read_status(struct cblk_dev *c, int timeout __attribute__((unu
 		block_trace("    [%s] HW READ_COMPLETED %08x slot: %d\n",
 			__func__, status, slot);
 	}
+
+	/* statistics: figure out hardware completion time ... */
+	req = &c->req[slot];
+	gettimeofday(&req->h_etime, NULL);
+	usecs = timediff_usec(&req->h_etime, &req->h_stime);
+	if (cblk_is_write(req))
+		c->avg_hw_write_usecs += usecs;
+	else
+		c->avg_hw_read_usecs += usecs;
+
 	return slot;
 }
 
@@ -844,7 +892,7 @@ static int check_request_timeouts(struct cblk_dev *c, struct timeval *etime,
 	return err;
 }
 
-static void done_thread_cleanup(void *arg)
+static void completion_thread_cleanup(void *arg)
 {
 	block_trace("[%s] p=%p\n", __func__, arg);
 }
@@ -914,22 +962,81 @@ static inline int __prefetch_read_complete(struct cblk_dev *c,
 	return 0;
 }
 
-static void *done_thread(void *arg)
+/**
+ * Try to ping process to a specific CPU. Returns the CPU we are
+ * currently running on.
+ */
+static inline int __pin_cpu(void)
+{
+	cpu_set_t *cpusetp;
+	size_t size;
+	int num_cpus, run_cpu = sched_getcpu();
+
+	num_cpus = CPU_SETSIZE; /* take default, currently 1024 */
+	cpusetp = CPU_ALLOC(num_cpus);
+	if (cpusetp == NULL)
+		return -1;
+
+	size = CPU_ALLOC_SIZE(num_cpus);
+	CPU_ZERO_S(size, cpusetp);
+	CPU_SET_S(run_cpu, size, cpusetp);
+
+	if (sched_setaffinity(0, size, cpusetp) < 0) {
+		CPU_FREE(cpusetp);
+		return -2;
+	}
+
+	CPU_FREE(cpusetp);
+	return run_cpu;
+}
+
+/**
+ * This thread contains performane critical code which is supposed
+ * to identify request/slot completion and inform  the waiting threads
+ * as quick as possible. Rescheduling or any other delay will have
+ * direct influence on performance.
+ */
+static void *completion_thread(void *arg)
 {
 	static unsigned long no_result_counter = 0;
 	struct cblk_dev *c = (struct cblk_dev *)arg;
 	struct timeval etime;
 
+#ifdef CONFIG_FIFO_SCHEDULING /* only root */
+	int rc;
+	struct sched_param sched_param;
+
+	sched_param.sched_priority = sched_get_priority_max(SCHED_FIFO);
+	rc = pthread_setschedparam(c->done_tid, SCHED_FIFO, &sched_param);
+	if (rc != 0)
+		fprintf(stderr, "warning: pthread_setschedparam() rc=%d errno=%d %s\n",
+			rc, errno, strerror(errno));
+#endif
+
 	block_trace("[%s] arg=%p enter\n", __func__, arg);
+	pthread_cleanup_push(completion_thread_cleanup, c);
 
-	pthread_cleanup_push(done_thread_cleanup, c);
-
+#ifdef CONFIG_PIN_COMPLETION_THREAD
+	int new_cpu, run_cpu;
+	run_cpu = sched_getcpu();
+	__pin_cpu();
+#endif
 	while (1) {
 		int slot;
+
+#ifdef CONFIG_PIN_COMPLETION_THREAD
+		new_cpu = sched_getcpu();
+		if (run_cpu != new_cpu) {
+			fprintf(stderr, "info: switched cpu from %d to %d\n",
+				run_cpu, new_cpu);
+			run_cpu = new_cpu;
+		}
+#endif
 
 		block_trace("  [%s] idle_sem WAITING %d/%d...\n", __func__,
 			reads_in_flight(c), writes_in_flight(c));
 		sem_wait(&c->idle_sem);	/* wait until work is to be done */
+		c->idle_wakeups++;
 		block_trace("  [%s] idle_sem WAKEUP %d/%d\n", __func__,
 			reads_in_flight(c), writes_in_flight(c));
 
@@ -1048,9 +1155,17 @@ chunk_id_t cblk_open(const char *path,
 	c->block_writes = 0;
 	c->block_reads_4k = 0;
 	c->block_writes_4k = 0;
-
+	c->max_read_usecs = 0;
+	c->max_write_usecs = 0;
+	c->avg_read_usecs = 0;
+	c->avg_write_usecs = 0;
+	c->min_read_usecs = 0;
+	c->min_write_usecs = 0;
+	c->avg_hw_read_usecs = 0;
+	c->avg_hw_write_usecs = 0;
 	c->wbytes_total = 0;
 	c->rbytes_total = 0;
+	c->idle_wakeups = 0;
 
 	c->wtime_total.tv_sec = 0;
 	c->wtime_total.tv_usec = 0;
@@ -1077,7 +1192,7 @@ chunk_id_t cblk_open(const char *path,
 		}
 	}
 
-	rc = pthread_create(&c->done_tid, NULL, &done_thread, &chunk);
+	rc = pthread_create(&c->done_tid, NULL, &completion_thread, &chunk);
 	if (rc != 0)
 		goto out_err3;
 
@@ -1453,9 +1568,18 @@ static void _done(void)
 		"    block_reads_4k:    %ld\n"
 		"  block_writes:        %ld\n"
 		"    block_writes_4k:   %ld\n"
+		"  idle_wakeups:        %ld\n"
 		"  running:             %ld usec\n"
 		"  rbytes_total:        %lld %.3f MiB/sec\n"
-		"  wbytes_total:        %lld %.3f MiB/sec\n",
+		"  wbytes_total:        %lld %.3f MiB/sec\n"
+		"  max_read_usecs:      %ld usec\n"
+		"  max_write_usecs:     %ld usec\n"
+		"  avg_read_usecs:      %ld usec\n"
+		"  avg_write_usecs:     %ld usec\n"
+		"  min_read_usecs:      %ld usec\n"
+		"  min_write_usecs:     %ld usec\n"
+		"  avg_hw_read_usecs:   %ld usec\n"
+		"  avg_hw_write_usecs:  %ld usec\n",
 		c->prefetches,
 		c->prefetch_collisions,
 		c->cache_hits,
@@ -1466,9 +1590,18 @@ static void _done(void)
 		c->block_reads_4k,
 		c->block_writes,
 		c->block_writes_4k,
+		c->idle_wakeups,
 		(long int)usec,
 		c->rbytes_total, usec ? (double)c->rbytes_total / usec : 0.0,
-		c->wbytes_total, usec ? (double)c->wbytes_total / usec : 0.0);
+		c->wbytes_total, usec ? (double)c->wbytes_total / usec : 0.0,
+		c->max_read_usecs,
+		c->max_write_usecs,
+		c->block_reads ? c->avg_read_usecs/c->block_reads : 0,
+		c->block_writes ? c->avg_write_usecs/c->block_writes : 0,
+		c->min_read_usecs,
+		c->min_write_usecs,
+		c->block_reads ? c->avg_hw_read_usecs/c->block_reads : 0,
+		c->block_writes ? c->avg_hw_write_usecs/c->block_writes : 0);
 
 	fprintf(stderr, "Cache Info\n"
 		"  entries/ways:        %d/%d per block %d KiB\n"
