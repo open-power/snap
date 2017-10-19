@@ -1,0 +1,23 @@
+<AutoPilot:solution xmlns:AutoPilot="com.autoesl.autopilot.solution">
+    <config>
+        <config_interface m_axi_addr64="1"/>
+        <schedule model="hls_action"/>
+    </config>
+    <name>
+        <value string="doublemult"/>
+    </name>
+    <project>
+        <value string="hlsDoubleMult_xcku060-ffva1156-2-e"/>
+    </project>
+    <targetInfo>
+        <TargetInfo value="xcku060:-ffva1156:-2-e"/>
+    </targetInfo>
+    <libraryList>
+        <library value="xilinx/kintexu/kintexu" name="DefaultPlatform"/>
+        <library value="xilinx/kintexu/kintexu_fpv7" name="DefaultPlatform"/>
+    </libraryList>
+    <clockList>
+        <clock default="false" name="default" period="4"/>
+    </clockList>
+</AutoPilot:solution>
+
