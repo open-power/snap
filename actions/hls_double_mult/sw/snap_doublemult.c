@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 //	uint8_t trailing_zeros[1024] = { 0, };
 	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 
-	double double1 = 0, double2 = 0, double3 = 0; result = 0;
+	double double1 = 0, double2 = 0, double3 = 0, result = 0;
 	double *cache_line_in = NULL, *cache_line_out = NULL;
 
 	while (1) {
@@ -345,7 +345,7 @@ int main(int argc, char *argv[])
 		(long long)timediff_usec(&etime, &stime));
 
 	fprintf(stdout, "Host Result = %lf, FPGA Result = %lf\n", result, *cache_line_out);
-	fprintf(stdout, "A = %lf & B = %lf & C = %lf\n", *(cache_line_out + 6),  *(cache_line_out + 7), *(cache_line_out + 8));
+	fprintf(stdout, "A = %lf & B = %lf & C = %lf\n", *(cache_line_out + 5),  *(cache_line_out + 6), *(cache_line_out + 7));
 
 	snap_detach_action(action);
 	snap_card_free(card);

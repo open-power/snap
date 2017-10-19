@@ -41,7 +41,7 @@ static void mbus_to_doubles(snap_membus_t mem, double *ptr_a, double *ptr_b, dou
 
 	*ptr_a = *(double *)&tmp_a;
 	*ptr_b = *memptr_b;
-	*ptr_c = *(double *)&tmp_c
+	*ptr_c = *(double *)&tmp_c;
 }
 
 // Cast a char* word (64B) to a word to output port (512b)
@@ -50,9 +50,9 @@ static snap_membus_t double_to_mbus(double val, double a, double b, double c)
 	snap_membus_t mem = 0;
 
 	mem(63,0) = *(uint64_t *)&val;
-	mem(447, 384) = *(uint64_t *)&a;
-	mem(511, 448) = *(uint64_t *)&b;
-	mem(575, 512) = *(uint64_t *)&c;
+	mem(383, 320) = *(uint64_t *)&a;
+	mem(447, 384) = *(uint64_t *)&b;
+	mem(511, 448) = *(uint64_t *)&c;
 
 	return mem;
 }
