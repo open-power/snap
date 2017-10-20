@@ -33,10 +33,13 @@ libs += $(SNAP_ROOT)/software/lib/libsnap.a
 
 # Link statically for PSLSE simulation and dynamically for real version
 ifdef BUILD_SIMCODE
-libs += $(PSLSE_ROOT)/libcxl/libcxl.a
+# libs += $(PSLSE_ROOT)/libcxl/libcxl.a
 CFLAGS += -D_SIM_
+LDFLAGS += -L$(PSLSE_ROOT)/libcxl
+LDLIBS += -lcxl
 else
-# FIXME If we link against libsnap.so we should have this dependency covered
+# FIXME If we link against libsnap.so we should have this dependency covered.
+#      No -L<path_to_libcxl> required here, since it should be in the distro.
 LDLIBS += -lcxl
 endif
 
