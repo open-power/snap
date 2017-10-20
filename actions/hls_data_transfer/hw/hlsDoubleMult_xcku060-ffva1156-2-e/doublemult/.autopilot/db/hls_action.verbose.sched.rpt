@@ -1,0 +1,218 @@
+
+
+================================================================
+== Vivado HLS Report for 'hls_action'
+================================================================
+* Date:           Fri Oct 20 11:07:17 2017
+
+* Version:        2016.4 (Build 1733598 on Wed Dec 14 22:59:20 MST 2016)
+* Project:        hlsDoubleMult_xcku060-ffva1156-2-e
+* Solution:       doublemult
+* Product family: kintexu
+* Target device:  xcku060-ffva1156-2-e
+
+
+================================================================
+== Performance Estimates
+================================================================
++ Timing (ns): 
+    * Summary: 
+    +--------+-------+----------+------------+
+    |  Clock | Target| Estimated| Uncertainty|
+    +--------+-------+----------+------------+
+    |ap_clk  |   4.00|      3.50|        0.50|
+    +--------+-------+----------+------------+
+
++ Latency (clock cycles): 
+    * Summary: 
+    +-----+-----+-----+-----+---------+
+    |  Latency  |  Interval | Pipeline|
+    | min | max | min | max |   Type  |
+    +-----+-----+-----+-----+---------+
+    |    1|   35|    2|   36|   none  |
+    +-----+-----+-----+-----+---------+
+
+    + Detail: 
+        * Instance: 
+        N/A
+
+        * Loop: 
+        N/A
+
+============================================================
++ Verbose Summary: Synthesis Manager
+============================================================
+InlineROM: 1
+ExposeGlobal: 0
+============================================================
++ Verbose Summary: CDFG Model
+============================================================
+IsTopModel: 1
+ResetActiveHigh: 1
+IsCombinational: 0
+IsDatapathOnly: 0
+HasWiredReturn: 1
+HasMFsm: 0
+HasVarLatency: 1
+IsPipeline: 0
+IsRtlPipelined: 0
+IsInstanceOverlapped: 0
+IsDontTouch: 0
+HasImplIP: 0
+IsGatedGlobalClock: 0
+
+
+============================================================
++ Verbose Summary: Schedule
+============================================================
+* Number of FSM states: 2
+* Pipeline: 0
+* Dataflow Pipeline: 0
+
+* FSM state transitions: 
+1 --> 
+	2  / true
+2 --> 
+* FSM state operations: 
+
+ <State 1>: 3.33ns
+ST_1: dout_gmem_V_read (6)  [1/1] 1.00ns
+:0  %dout_gmem_V_read = call i64 @_ssdm_op_Read.s_axilite.i64(i64 %dout_gmem_V)
+
+ST_1: din_gmem_V_read (7)  [1/1] 1.00ns
+:1  %din_gmem_V_read = call i64 @_ssdm_op_Read.s_axilite.i64(i64 %din_gmem_V)
+
+ST_1: dout_gmem_V3 (8)  [1/1] 0.00ns
+:2  %dout_gmem_V3 = call i58 @_ssdm_op_PartSelect.i58.i64.i32.i32(i64 %dout_gmem_V_read, i32 6, i32 63)
+
+ST_1: din_gmem_V1 (9)  [1/1] 0.00ns
+:3  %din_gmem_V1 = call i58 @_ssdm_op_PartSelect.i58.i64.i32.i32(i64 %din_gmem_V_read, i32 6, i32 63)
+
+ST_1: StgValue_7 (10)  [1/1] 0.00ns
+:4  call void (...)* @_ssdm_op_SpecBitsMap(i512* %host_mem), !map !65
+
+ST_1: StgValue_8 (11)  [1/1] 0.00ns
+:5  call void (...)* @_ssdm_op_SpecBitsMap(i992* %act_reg), !map !72
+
+ST_1: StgValue_9 (12)  [1/1] 0.00ns
+:6  call void (...)* @_ssdm_op_SpecBitsMap(i64* %Action_Config), !map !492
+
+ST_1: StgValue_10 (13)  [1/1] 0.00ns
+:7  call void (...)* @_ssdm_op_SpecTopModule([11 x i8]* @hls_action_str) nounwind
+
+ST_1: StgValue_11 (14)  [1/1] 0.00ns  loc: action_doublemult.cpp:128
+:8  call void (...)* @_ssdm_op_SpecInterface(i512* %host_mem, [6 x i8]* @p_str, i32 0, i32 0, [1 x i8]* @p_str1, i32 0, i32 512, [9 x i8]* @p_str2, [6 x i8]* @p_str3, [1 x i8]* @p_str1, i32 16, i32 16, i32 64, i32 64, [1 x i8]* @p_str1, [1 x i8]* @p_str1) nounwind
+
+ST_1: StgValue_12 (15)  [1/1] 0.00ns  loc: action_doublemult.cpp:130
+:9  call void (...)* @_ssdm_op_SpecInterface(i64 %din_gmem_V, [10 x i8]* @p_str4, i32 0, i32 0, [1 x i8]* @p_str1, i32 0, i32 0, [9 x i8]* @p_str5, [6 x i8]* @p_str6, [1 x i8]* @p_str1, i32 0, i32 0, i32 0, i32 0, [1 x i8]* @p_str1, [1 x i8]* @p_str1) nounwind
+
+ST_1: StgValue_13 (16)  [1/1] 0.00ns  loc: action_doublemult.cpp:134
+:10  call void (...)* @_ssdm_op_SpecInterface(i64 %dout_gmem_V, [10 x i8]* @p_str4, i32 0, i32 0, [1 x i8]* @p_str1, i32 0, i32 0, [9 x i8]* @p_str5, [6 x i8]* @p_str7, [1 x i8]* @p_str1, i32 0, i32 0, i32 0, i32 0, [1 x i8]* @p_str1, [1 x i8]* @p_str1) nounwind
+
+ST_1: StgValue_14 (17)  [1/1] 0.00ns
+:11  call void (...)* @_ssdm_op_SpecInterface(i64* %Action_Config, [10 x i8]* @p_str4, i32 0, i32 0, [1 x i8]* @p_str1, i32 0, i32 0, [9 x i8]* @p_str5, [6 x i8]* @p_str8, [1 x i8]* @p_str1, i32 0, i32 0, i32 0, i32 0, [1 x i8]* @p_str1, [1 x i8]* @p_str1) nounwind
+
+ST_1: StgValue_15 (18)  [1/1] 0.00ns
+:12  call void (...)* @_ssdm_op_SpecInterface(i992* %act_reg, [10 x i8]* @p_str4, i32 0, i32 0, [1 x i8]* @p_str1, i32 0, i32 0, [9 x i8]* @p_str5, [6 x i8]* @p_str9, [1 x i8]* @p_str1, i32 0, i32 0, i32 0, i32 0, [1 x i8]* @p_str1, [1 x i8]* @p_str1) nounwind
+
+ST_1: StgValue_16 (19)  [1/1] 0.00ns  loc: action_doublemult.cpp:146
+:13  call void (...)* @_ssdm_op_SpecInterface(i32 0, [10 x i8]* @p_str4, i32 0, i32 0, [1 x i8]* @p_str1, i32 0, i32 0, [9 x i8]* @p_str5, [1 x i8]* @p_str1, [1 x i8]* @p_str1, i32 0, i32 0, i32 0, i32 0, [1 x i8]* @p_str1, [1 x i8]* @p_str1) nounwind
+
+ST_1: act_reg_read (20)  [1/1] 1.00ns  loc: action_doublemult.cpp:152
+:14  %act_reg_read = call i992 @_ssdm_op_Read.s_axilite.i992P(i992* %act_reg)
+
+ST_1: act_reg_Control_flag (21)  [1/1] 0.00ns  loc: action_doublemult.cpp:152
+:15  %act_reg_Control_flag = call i8 @_ssdm_op_PartSelect.i8.i992.i32.i32(i992 %act_reg_read, i32 8, i32 15)
+
+ST_1: cond (22)  [1/1] 1.34ns  loc: action_doublemult.cpp:152
+:16  %cond = icmp eq i8 %act_reg_Control_flag, 0
+
+ST_1: StgValue_20 (23)  [1/1] 0.00ns  loc: action_doublemult.cpp:152
+:17  br i1 %cond, label %1, label %2
+
+ST_1: act_reg_Data_in_addr (25)  [1/1] 0.00ns  loc: action_doublemult.cpp:161
+:0  %act_reg_Data_in_addr = call i64 @_ssdm_op_PartSelect.i64.i992.i32.i32(i992 %act_reg_read, i32 128, i32 191)
+
+ST_1: act_reg_Data_in_size (26)  [1/1] 0.00ns  loc: action_doublemult.cpp:161
+:1  %act_reg_Data_in_size = call i32 @_ssdm_op_PartSelect.i32.i992.i32.i32(i992 %act_reg_read, i32 192, i32 223)
+
+ST_1: act_reg_Data_out_add (27)  [1/1] 0.00ns  loc: action_doublemult.cpp:161
+:2  %act_reg_Data_out_add = call i64 @_ssdm_op_PartSelect.i64.i992.i32.i32(i992 %act_reg_read, i32 256, i32 319)
+
+ST_1: tmp_6 (28)  [2/2] 2.33ns  loc: action_doublemult.cpp:161
+:3  %tmp_6 = call fastcc i9 @process_action(i512* %host_mem, i58 %din_gmem_V1, i58 %dout_gmem_V3, i64 %act_reg_Data_in_addr, i32 %act_reg_Data_in_size, i64 %act_reg_Data_out_add)
+
+ST_1: StgValue_25 (32)  [1/1] 1.00ns  loc: action_doublemult.cpp:155
+:0  call void @_ssdm_op_Write.s_axilite.i64P(i64* %Action_Config, i64 142003671049)
+
+ST_1: StgValue_26 (33)  [1/1] 0.89ns  loc: action_doublemult.cpp:157
+:1  br label %3
+
+
+ <State 2>: 2.78ns
+ST_2: tmp_6 (28)  [1/2] 0.89ns  loc: action_doublemult.cpp:161
+:3  %tmp_6 = call fastcc i9 @process_action(i512* %host_mem, i58 %din_gmem_V1, i58 %dout_gmem_V3, i64 %act_reg_Data_in_addr, i32 %act_reg_Data_in_size, i64 %act_reg_Data_out_add)
+
+ST_2: storemerge_trunc_ext (29)  [1/1] 0.00ns  loc: action_doublemult.cpp:162
+:4  %storemerge_trunc_ext = zext i9 %tmp_6 to i14
+
+ST_2: StgValue_29 (30)  [1/1] 0.89ns  loc: action_doublemult.cpp:162
+:5  br label %3
+
+ST_2: storemerge (35)  [1/1] 0.00ns  loc: action_doublemult.cpp:162
+:0  %storemerge = phi i14 [ %storemerge_trunc_ext, %2 ], [ -8177, %1 ]
+
+ST_2: storemerge_cast5 (36)  [1/1] 0.00ns  loc: action_doublemult.cpp:156
+:1  %storemerge_cast5 = sext i14 %storemerge to i16
+
+ST_2: storemerge_cast1 (37)  [1/1] 0.00ns  loc: action_doublemult.cpp:156
+:2  %storemerge_cast1 = zext i16 %storemerge_cast5 to i32
+
+ST_2: act_reg_read_1 (38)  [1/1] 1.00ns  loc: action_doublemult.cpp:156
+:3  %act_reg_read_1 = call i992 @_ssdm_op_Read.s_axilite.i992P(i992* %act_reg)
+
+ST_2: act_reg11_part_set (39)  [1/1] 0.00ns  loc: action_doublemult.cpp:156
+:4  %act_reg11_part_set = call i992 @llvm.part.set.i992.i32(i992 %act_reg_read_1, i32 %storemerge_cast1, i32 32, i32 63)
+
+ST_2: StgValue_35 (40)  [1/1] 1.00ns  loc: action_doublemult.cpp:156
+:5  call void @_ssdm_op_Write.s_axilite.i992P(i992* %act_reg, i992 %act_reg11_part_set)
+
+ST_2: StgValue_36 (41)  [1/1] 0.00ns  loc: action_doublemult.cpp:164
+:6  ret void
+
+
+
+============================================================
++ Verbose Summary: Timing violations
+============================================================
+Target clock period: 4ns, clock uncertainty: 0.5ns.
+
+ <State 1>: 3.33ns
+The critical path consists of the following:
+	s_axi read on port 'dout_gmem_V' [6]  (1 ns)
+	'call' operation ('tmp_6', action_doublemult.cpp:161) to 'process_action' [28]  (2.33 ns)
+
+ <State 2>: 2.78ns
+The critical path consists of the following:
+	'call' operation ('tmp_6', action_doublemult.cpp:161) to 'process_action' [28]  (0.892 ns)
+	multiplexor before 'phi' operation ('storemerge', action_doublemult.cpp:162) with incoming values : ('storemerge_trunc_ext', action_doublemult.cpp:162) [35]  (0.892 ns)
+	'phi' operation ('storemerge', action_doublemult.cpp:162) with incoming values : ('storemerge_trunc_ext', action_doublemult.cpp:162) [35]  (0 ns)
+	s_axi write on port 'act_reg' (action_doublemult.cpp:156) [40]  (1 ns)
+
+
+============================================================
++ Verbose Summary: Binding
+============================================================
+N/A
+* FSMD analyzer results:
+  - Output states:
+ - Input state : 
+  - Chain level:
+	State 1
+	State 2
+
+
+============================================================
++ Verbose Summary: Datapath Resource usage 
+============================================================
+N/A

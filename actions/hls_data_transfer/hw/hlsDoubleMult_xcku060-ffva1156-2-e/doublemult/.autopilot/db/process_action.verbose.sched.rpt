@@ -1,0 +1,624 @@
+
+
+================================================================
+== Vivado HLS Report for 'process_action'
+================================================================
+* Date:           Fri Oct 20 11:07:17 2017
+
+* Version:        2016.4 (Build 1733598 on Wed Dec 14 22:59:20 MST 2016)
+* Project:        hlsDoubleMult_xcku060-ffva1156-2-e
+* Solution:       doublemult
+* Product family: kintexu
+* Target device:  xcku060-ffva1156-2-e
+
+
+================================================================
+== Performance Estimates
+================================================================
++ Timing (ns): 
+    * Summary: 
+    +--------+-------+----------+------------+
+    |  Clock | Target| Estimated| Uncertainty|
+    +--------+-------+----------+------------+
+    |ap_clk  |   4.00|      3.50|        0.50|
+    +--------+-------+----------+------------+
+
++ Latency (clock cycles): 
+    * Summary: 
+    +-----+-----+-----+-----+---------+
+    |  Latency  |  Interval | Pipeline|
+    | min | max | min | max |   Type  |
+    +-----+-----+-----+-----+---------+
+    |    1|   34|    1|   34|   none  |
+    +-----+-----+-----+-----+---------+
+
+    + Detail: 
+        * Instance: 
+        N/A
+
+        * Loop: 
+        N/A
+
+============================================================
++ Verbose Summary: Synthesis Manager
+============================================================
+InlineROM: 1
+ExposeGlobal: 0
+============================================================
++ Verbose Summary: CDFG Model
+============================================================
+IsTopModel: 0
+ResetActiveHigh: 1
+IsCombinational: 0
+IsDatapathOnly: 0
+HasWiredReturn: 1
+HasMFsm: 0
+HasVarLatency: 1
+IsPipeline: 0
+IsRtlPipelined: 0
+IsInstanceOverlapped: 0
+IsDontTouch: 0
+HasImplIP: 0
+IsGatedGlobalClock: 0
+
+
+============================================================
++ Verbose Summary: Schedule
+============================================================
+* Number of FSM states: 35
+* Pipeline: 0
+* Dataflow Pipeline: 0
+
+* FSM state transitions: 
+1 --> 
+	2  / (!icmp)
+	35  / (icmp)
+2 --> 
+	3  / true
+3 --> 
+	4  / true
+4 --> 
+	5  / true
+5 --> 
+	6  / true
+6 --> 
+	7  / true
+7 --> 
+	8  / true
+8 --> 
+	9  / true
+9 --> 
+	10  / true
+10 --> 
+	11  / true
+11 --> 
+	12  / true
+12 --> 
+	13  / true
+13 --> 
+	14  / true
+14 --> 
+	15  / true
+15 --> 
+	16  / true
+16 --> 
+	17  / true
+17 --> 
+	18  / true
+18 --> 
+	19  / true
+19 --> 
+	20  / true
+20 --> 
+	21  / true
+21 --> 
+	22  / true
+22 --> 
+	23  / true
+23 --> 
+	24  / true
+24 --> 
+	25  / true
+25 --> 
+	26  / true
+26 --> 
+	27  / true
+27 --> 
+	28  / true
+28 --> 
+	29  / true
+29 --> 
+	30  / true
+30 --> 
+	31  / true
+31 --> 
+	32  / true
+32 --> 
+	33  / true
+33 --> 
+	34  / true
+34 --> 
+	35  / true
+35 --> 
+* FSM state operations: 
+
+ <State 1>: 2.33ns
+ST_1: act_reg_Data_out_add_1 (7)  [1/1] 0.00ns
+:0  %act_reg_Data_out_add_1 = call i64 @_ssdm_op_Read.ap_auto.i64(i64 %act_reg_Data_out_add)
+
+ST_1: act_reg_Data_in_size_1 (8)  [1/1] 0.00ns
+:1  %act_reg_Data_in_size_1 = call i32 @_ssdm_op_Read.ap_auto.i32(i32 %act_reg_Data_in_size)
+
+ST_1: act_reg_Data_in_addr_1 (9)  [1/1] 0.00ns
+:2  %act_reg_Data_in_addr_1 = call i64 @_ssdm_op_Read.ap_auto.i64(i64 %act_reg_Data_in_addr)
+
+ST_1: dout_gmem_V3_read (10)  [1/1] 0.00ns
+:3  %dout_gmem_V3_read = call i58 @_ssdm_op_Read.ap_auto.i58(i58 %dout_gmem_V3)
+
+ST_1: din_gmem_V1_read (11)  [1/1] 0.00ns
+:4  %din_gmem_V1_read = call i58 @_ssdm_op_Read.ap_auto.i58(i58 %din_gmem_V1)
+
+ST_1: StgValue_41 (12)  [1/1] 0.00ns
+:5  call void (...)* @_ssdm_op_SpecInterface(i512* %din_gmem_V, [6 x i8]* @p_str, i32 0, i32 0, [1 x i8]* @p_str1, i32 0, i32 512, [9 x i8]* @p_str2, [6 x i8]* @p_str3, [1 x i8]* @p_str1, i32 16, i32 16, i32 64, i32 64, [1 x i8]* @p_str1, [1 x i8]* @p_str1)
+
+ST_1: StgValue_42 (13)  [1/1] 0.00ns
+:6  call void (...)* @_ssdm_op_SpecInterface(i512* %din_gmem_V, [6 x i8]* @p_str, i32 0, i32 0, [1 x i8]* @p_str1, i32 0, i32 512, [9 x i8]* @p_str2, [6 x i8]* @p_str3, [1 x i8]* @p_str1, i32 16, i32 16, i32 64, i32 64, [1 x i8]* @p_str1, [1 x i8]* @p_str1)
+
+ST_1: tmp (14)  [1/1] 0.00ns  loc: action_doublemult.cpp:86
+:7  %tmp = call i58 @_ssdm_op_PartSelect.i58.i64.i32.i32(i64 %act_reg_Data_in_addr_1, i32 6, i32 63)
+
+ST_1: i_idx_1_cast (15)  [1/1] 0.00ns  loc: action_doublemult.cpp:86
+:8  %i_idx_1_cast = zext i58 %tmp to i59
+
+ST_1: tmp_3 (16)  [1/1] 0.00ns  loc: action_doublemult.cpp:87
+:9  %tmp_3 = call i58 @_ssdm_op_PartSelect.i58.i64.i32.i32(i64 %act_reg_Data_out_add_1, i32 6, i32 63)
+
+ST_1: o_idx_1_cast (17)  [1/1] 0.00ns  loc: action_doublemult.cpp:87
+:10  %o_idx_1_cast = zext i58 %tmp_3 to i59
+
+ST_1: tmp_4 (18)  [1/1] 0.00ns  loc: action_doublemult.cpp:90
+:11  %tmp_4 = call i28 @_ssdm_op_PartSelect.i28.i32.i32.i32(i32 %act_reg_Data_in_size_1, i32 4, i32 31)
+
+ST_1: icmp (19)  [1/1] 1.44ns  loc: action_doublemult.cpp:90
+:12  %icmp = icmp eq i28 %tmp_4, 0
+
+ST_1: StgValue_49 (20)  [1/1] 0.89ns  loc: action_doublemult.cpp:90
+:13  br i1 %icmp, label %2, label %1
+
+ST_1: din_gmem_V1_cast (22)  [1/1] 0.00ns
+:0  %din_gmem_V1_cast = zext i58 %din_gmem_V1_read to i59
+
+ST_1: sum (23)  [1/1] 2.02ns  loc: action_doublemult.cpp:86
+:1  %sum = add i59 %din_gmem_V1_cast, %i_idx_1_cast
+
+ST_1: dout_gmem_V3_cast (40)  [1/1] 0.00ns
+:18  %dout_gmem_V3_cast = zext i58 %dout_gmem_V3_read to i59
+
+ST_1: sum3 (41)  [1/1] 2.02ns  loc: action_doublemult.cpp:87
+:19  %sum3 = add i59 %dout_gmem_V3_cast, %o_idx_1_cast
+
+
+ <State 2>: 3.50ns
+ST_2: sum_cast (24)  [1/1] 0.00ns  loc: action_doublemult.cpp:86
+:2  %sum_cast = zext i59 %sum to i64
+
+ST_2: dout_gmem_V_addr (25)  [1/1] 0.00ns  loc: action_doublemult.cpp:98
+:3  %dout_gmem_V_addr = getelementptr i512* %din_gmem_V, i64 %sum_cast
+
+ST_2: buffer_in_V_req (26)  [7/7] 3.50ns  loc: action_doublemult.cpp:98
+:4  %buffer_in_V_req = call i1 @_ssdm_op_ReadReq.m_axi.i512P(i512* %dout_gmem_V_addr, i32 1)
+
+
+ <State 3>: 3.50ns
+ST_3: buffer_in_V_req (26)  [6/7] 3.50ns  loc: action_doublemult.cpp:98
+:4  %buffer_in_V_req = call i1 @_ssdm_op_ReadReq.m_axi.i512P(i512* %dout_gmem_V_addr, i32 1)
+
+
+ <State 4>: 3.50ns
+ST_4: buffer_in_V_req (26)  [5/7] 3.50ns  loc: action_doublemult.cpp:98
+:4  %buffer_in_V_req = call i1 @_ssdm_op_ReadReq.m_axi.i512P(i512* %dout_gmem_V_addr, i32 1)
+
+
+ <State 5>: 3.50ns
+ST_5: buffer_in_V_req (26)  [4/7] 3.50ns  loc: action_doublemult.cpp:98
+:4  %buffer_in_V_req = call i1 @_ssdm_op_ReadReq.m_axi.i512P(i512* %dout_gmem_V_addr, i32 1)
+
+
+ <State 6>: 3.50ns
+ST_6: buffer_in_V_req (26)  [3/7] 3.50ns  loc: action_doublemult.cpp:98
+:4  %buffer_in_V_req = call i1 @_ssdm_op_ReadReq.m_axi.i512P(i512* %dout_gmem_V_addr, i32 1)
+
+
+ <State 7>: 3.50ns
+ST_7: buffer_in_V_req (26)  [2/7] 3.50ns  loc: action_doublemult.cpp:98
+:4  %buffer_in_V_req = call i1 @_ssdm_op_ReadReq.m_axi.i512P(i512* %dout_gmem_V_addr, i32 1)
+
+
+ <State 8>: 3.50ns
+ST_8: buffer_in_V_req (26)  [1/7] 3.50ns  loc: action_doublemult.cpp:98
+:4  %buffer_in_V_req = call i1 @_ssdm_op_ReadReq.m_axi.i512P(i512* %dout_gmem_V_addr, i32 1)
+
+
+ <State 9>: 3.50ns
+ST_9: buffer_in_V (27)  [1/1] 3.50ns  loc: action_doublemult.cpp:98
+:5  %buffer_in_V = call i512 @_ssdm_op_Read.m_axi.i512P(i512* %dout_gmem_V_addr)
+
+ST_9: tmp_beta (28)  [1/1] 0.00ns  loc: action_doublemult.cpp:38->action_doublemult.cpp:101
+:6  %tmp_beta = call i64 @_ssdm_op_PartSelect.i64.i512.i32.i32(i512 %buffer_in_V, i32 128, i32 191)
+
+ST_9: tmp_gamma (29)  [1/1] 0.00ns  loc: action_doublemult.cpp:39->action_doublemult.cpp:101
+:7  %tmp_gamma = call i64 @_ssdm_op_PartSelect.i64.i512.i32.i32(i512 %buffer_in_V, i32 192, i32 255)
+
+ST_9: tmp_theta (30)  [1/1] 0.00ns  loc: action_doublemult.cpp:40->action_doublemult.cpp:101
+:8  %tmp_theta = call i64 @_ssdm_op_PartSelect.i64.i512.i32.i32(i512 %buffer_in_V, i32 256, i32 319)
+
+ST_9: tmp_2 (37)  [1/1] 0.00ns  loc: action_doublemult.cpp:67->action_doublemult.cpp:107
+:15  %tmp_2 = call i192 @_ssdm_op_PartSelect.i192.i512.i32.i32(i512 %buffer_in_V, i32 128, i32 319)
+
+
+ <State 10>: 3.06ns
+ST_10: beta (31)  [1/1] 0.00ns  loc: action_doublemult.cpp:48->action_doublemult.cpp:101
+:9  %beta = bitcast i64 %tmp_beta to double
+
+ST_10: gamma (32)  [1/1] 0.00ns  loc: action_doublemult.cpp:49->action_doublemult.cpp:101
+:10  %gamma = bitcast i64 %tmp_gamma to double
+
+ST_10: tmp_1 (34)  [10/10] 3.06ns  loc: action_doublemult.cpp:104
+:12  %tmp_1 = fmul double %beta, %gamma
+
+
+ <State 11>: 3.06ns
+ST_11: tmp_1 (34)  [9/10] 3.06ns  loc: action_doublemult.cpp:104
+:12  %tmp_1 = fmul double %beta, %gamma
+
+
+ <State 12>: 3.06ns
+ST_12: tmp_1 (34)  [8/10] 3.06ns  loc: action_doublemult.cpp:104
+:12  %tmp_1 = fmul double %beta, %gamma
+
+
+ <State 13>: 3.06ns
+ST_13: tmp_1 (34)  [7/10] 3.06ns  loc: action_doublemult.cpp:104
+:12  %tmp_1 = fmul double %beta, %gamma
+
+
+ <State 14>: 3.06ns
+ST_14: tmp_1 (34)  [6/10] 3.06ns  loc: action_doublemult.cpp:104
+:12  %tmp_1 = fmul double %beta, %gamma
+
+
+ <State 15>: 3.06ns
+ST_15: tmp_1 (34)  [5/10] 3.06ns  loc: action_doublemult.cpp:104
+:12  %tmp_1 = fmul double %beta, %gamma
+
+
+ <State 16>: 3.06ns
+ST_16: tmp_1 (34)  [4/10] 3.06ns  loc: action_doublemult.cpp:104
+:12  %tmp_1 = fmul double %beta, %gamma
+
+
+ <State 17>: 3.06ns
+ST_17: tmp_1 (34)  [3/10] 3.06ns  loc: action_doublemult.cpp:104
+:12  %tmp_1 = fmul double %beta, %gamma
+
+
+ <State 18>: 3.06ns
+ST_18: tmp_1 (34)  [2/10] 3.06ns  loc: action_doublemult.cpp:104
+:12  %tmp_1 = fmul double %beta, %gamma
+
+
+ <State 19>: 3.06ns
+ST_19: tmp_1 (34)  [1/10] 3.06ns  loc: action_doublemult.cpp:104
+:12  %tmp_1 = fmul double %beta, %gamma
+
+
+ <State 20>: 3.06ns
+ST_20: theta (33)  [1/1] 0.00ns  loc: action_doublemult.cpp:50->action_doublemult.cpp:101
+:11  %theta = bitcast i64 %tmp_theta to double
+
+ST_20: product (35)  [10/10] 3.06ns  loc: action_doublemult.cpp:104
+:13  %product = fmul double %tmp_1, %theta
+
+
+ <State 21>: 3.06ns
+ST_21: product (35)  [9/10] 3.06ns  loc: action_doublemult.cpp:104
+:13  %product = fmul double %tmp_1, %theta
+
+
+ <State 22>: 3.06ns
+ST_22: product (35)  [8/10] 3.06ns  loc: action_doublemult.cpp:104
+:13  %product = fmul double %tmp_1, %theta
+
+
+ <State 23>: 3.06ns
+ST_23: product (35)  [7/10] 3.06ns  loc: action_doublemult.cpp:104
+:13  %product = fmul double %tmp_1, %theta
+
+
+ <State 24>: 3.06ns
+ST_24: product (35)  [6/10] 3.06ns  loc: action_doublemult.cpp:104
+:13  %product = fmul double %tmp_1, %theta
+
+
+ <State 25>: 3.06ns
+ST_25: product (35)  [5/10] 3.06ns  loc: action_doublemult.cpp:104
+:13  %product = fmul double %tmp_1, %theta
+
+
+ <State 26>: 3.06ns
+ST_26: product (35)  [4/10] 3.06ns  loc: action_doublemult.cpp:104
+:13  %product = fmul double %tmp_1, %theta
+
+
+ <State 27>: 3.06ns
+ST_27: product (35)  [3/10] 3.06ns  loc: action_doublemult.cpp:104
+:13  %product = fmul double %tmp_1, %theta
+
+
+ <State 28>: 3.06ns
+ST_28: product (35)  [2/10] 3.06ns  loc: action_doublemult.cpp:104
+:13  %product = fmul double %tmp_1, %theta
+
+
+ <State 29>: 3.50ns
+ST_29: product (35)  [1/10] 3.06ns  loc: action_doublemult.cpp:104
+:13  %product = fmul double %tmp_1, %theta
+
+ST_29: sum3_cast (42)  [1/1] 0.00ns  loc: action_doublemult.cpp:87
+:20  %sum3_cast = zext i59 %sum3 to i64
+
+ST_29: dout_gmem_V_addr_1 (43)  [1/1] 0.00ns  loc: action_doublemult.cpp:111
+:21  %dout_gmem_V_addr_1 = getelementptr i512* %din_gmem_V, i64 %sum3_cast
+
+ST_29: dout_gmem_V_addr_1_r (44)  [1/1] 3.50ns  loc: action_doublemult.cpp:111
+:22  %dout_gmem_V_addr_1_r = call i1 @_ssdm_op_WriteReq.m_axi.i512P(i512* %dout_gmem_V_addr_1, i32 1)
+
+
+ <State 30>: 3.50ns
+ST_30: val_assign (36)  [1/1] 0.00ns  loc: action_doublemult.cpp:104
+:14  %val_assign = bitcast double %product to i64
+
+ST_30: tmp_i (38)  [1/1] 0.00ns  loc: action_doublemult.cpp:67->action_doublemult.cpp:107
+:16  %tmp_i = call i320 @_ssdm_op_BitConcatenate.i320.i192.i64.i64(i192 %tmp_2, i64 1, i64 %val_assign)
+
+ST_30: p_Result_s (39)  [1/1] 0.00ns  loc: action_doublemult.cpp:67->action_doublemult.cpp:107
+:17  %p_Result_s = zext i320 %tmp_i to i512
+
+ST_30: StgValue_97 (45)  [1/1] 3.50ns  loc: action_doublemult.cpp:111
+:23  call void @_ssdm_op_Write.m_axi.i512P(i512* %dout_gmem_V_addr_1, i512 %p_Result_s, i64 -1)
+
+
+ <State 31>: 3.50ns
+ST_31: dout_gmem_V_addr_1_r_1 (46)  [5/5] 3.50ns  loc: action_doublemult.cpp:111
+:24  %dout_gmem_V_addr_1_r_1 = call i1 @_ssdm_op_WriteResp.m_axi.i512P(i512* %dout_gmem_V_addr_1)
+
+
+ <State 32>: 3.50ns
+ST_32: dout_gmem_V_addr_1_r_1 (46)  [4/5] 3.50ns  loc: action_doublemult.cpp:111
+:24  %dout_gmem_V_addr_1_r_1 = call i1 @_ssdm_op_WriteResp.m_axi.i512P(i512* %dout_gmem_V_addr_1)
+
+
+ <State 33>: 3.50ns
+ST_33: dout_gmem_V_addr_1_r_1 (46)  [3/5] 3.50ns  loc: action_doublemult.cpp:111
+:24  %dout_gmem_V_addr_1_r_1 = call i1 @_ssdm_op_WriteResp.m_axi.i512P(i512* %dout_gmem_V_addr_1)
+
+
+ <State 34>: 3.50ns
+ST_34: dout_gmem_V_addr_1_r_1 (46)  [2/5] 3.50ns  loc: action_doublemult.cpp:111
+:24  %dout_gmem_V_addr_1_r_1 = call i1 @_ssdm_op_WriteResp.m_axi.i512P(i512* %dout_gmem_V_addr_1)
+
+
+ <State 35>: 3.50ns
+ST_35: dout_gmem_V_addr_1_r_1 (46)  [1/5] 3.50ns  loc: action_doublemult.cpp:111
+:24  %dout_gmem_V_addr_1_r_1 = call i1 @_ssdm_op_WriteResp.m_axi.i512P(i512* %dout_gmem_V_addr_1)
+
+ST_35: StgValue_103 (47)  [1/1] 0.89ns  loc: action_doublemult.cpp:114
+:25  br label %2
+
+ST_35: act_reg_Control_Retc (49)  [1/1] 0.00ns
+:0  %act_reg_Control_Retc = phi i9 [ -254, %1 ], [ -252, %0 ]
+
+ST_35: StgValue_105 (50)  [1/1] 0.00ns
+:1  ret i9 %act_reg_Control_Retc
+
+
+
+============================================================
++ Verbose Summary: Timing violations
+============================================================
+Target clock period: 4ns, clock uncertainty: 0.5ns.
+
+ <State 1>: 2.33ns
+The critical path consists of the following:
+	wire read on port 'act_reg_Data_in_size' [8]  (0 ns)
+	'icmp' operation ('icmp', action_doublemult.cpp:90) [19]  (1.44 ns)
+	multiplexor before 'phi' operation ('act_reg.Control.Retc.V') [49]  (0.892 ns)
+
+ <State 2>: 3.5ns
+The critical path consists of the following:
+	'getelementptr' operation ('dout_gmem_V_addr', action_doublemult.cpp:98) [25]  (0 ns)
+	bus request on port 'din_gmem_V' (action_doublemult.cpp:98) [26]  (3.5 ns)
+
+ <State 3>: 3.5ns
+The critical path consists of the following:
+	bus request on port 'din_gmem_V' (action_doublemult.cpp:98) [26]  (3.5 ns)
+
+ <State 4>: 3.5ns
+The critical path consists of the following:
+	bus request on port 'din_gmem_V' (action_doublemult.cpp:98) [26]  (3.5 ns)
+
+ <State 5>: 3.5ns
+The critical path consists of the following:
+	bus request on port 'din_gmem_V' (action_doublemult.cpp:98) [26]  (3.5 ns)
+
+ <State 6>: 3.5ns
+The critical path consists of the following:
+	bus request on port 'din_gmem_V' (action_doublemult.cpp:98) [26]  (3.5 ns)
+
+ <State 7>: 3.5ns
+The critical path consists of the following:
+	bus request on port 'din_gmem_V' (action_doublemult.cpp:98) [26]  (3.5 ns)
+
+ <State 8>: 3.5ns
+The critical path consists of the following:
+	bus request on port 'din_gmem_V' (action_doublemult.cpp:98) [26]  (3.5 ns)
+
+ <State 9>: 3.5ns
+The critical path consists of the following:
+	bus read on port 'din_gmem_V' (action_doublemult.cpp:98) [27]  (3.5 ns)
+
+ <State 10>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('tmp_1', action_doublemult.cpp:104) [34]  (3.06 ns)
+
+ <State 11>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('tmp_1', action_doublemult.cpp:104) [34]  (3.06 ns)
+
+ <State 12>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('tmp_1', action_doublemult.cpp:104) [34]  (3.06 ns)
+
+ <State 13>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('tmp_1', action_doublemult.cpp:104) [34]  (3.06 ns)
+
+ <State 14>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('tmp_1', action_doublemult.cpp:104) [34]  (3.06 ns)
+
+ <State 15>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('tmp_1', action_doublemult.cpp:104) [34]  (3.06 ns)
+
+ <State 16>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('tmp_1', action_doublemult.cpp:104) [34]  (3.06 ns)
+
+ <State 17>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('tmp_1', action_doublemult.cpp:104) [34]  (3.06 ns)
+
+ <State 18>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('tmp_1', action_doublemult.cpp:104) [34]  (3.06 ns)
+
+ <State 19>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('tmp_1', action_doublemult.cpp:104) [34]  (3.06 ns)
+
+ <State 20>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('product', action_doublemult.cpp:104) [35]  (3.06 ns)
+
+ <State 21>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('product', action_doublemult.cpp:104) [35]  (3.06 ns)
+
+ <State 22>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('product', action_doublemult.cpp:104) [35]  (3.06 ns)
+
+ <State 23>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('product', action_doublemult.cpp:104) [35]  (3.06 ns)
+
+ <State 24>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('product', action_doublemult.cpp:104) [35]  (3.06 ns)
+
+ <State 25>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('product', action_doublemult.cpp:104) [35]  (3.06 ns)
+
+ <State 26>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('product', action_doublemult.cpp:104) [35]  (3.06 ns)
+
+ <State 27>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('product', action_doublemult.cpp:104) [35]  (3.06 ns)
+
+ <State 28>: 3.06ns
+The critical path consists of the following:
+	'dmul' operation ('product', action_doublemult.cpp:104) [35]  (3.06 ns)
+
+ <State 29>: 3.5ns
+The critical path consists of the following:
+	'getelementptr' operation ('dout_gmem_V_addr_1', action_doublemult.cpp:111) [43]  (0 ns)
+	bus request on port 'din_gmem_V' (action_doublemult.cpp:111) [44]  (3.5 ns)
+
+ <State 30>: 3.5ns
+The critical path consists of the following:
+	bus write on port 'din_gmem_V' (action_doublemult.cpp:111) [45]  (3.5 ns)
+
+ <State 31>: 3.5ns
+The critical path consists of the following:
+	bus access on port 'din_gmem_V' (action_doublemult.cpp:111) [46]  (3.5 ns)
+
+ <State 32>: 3.5ns
+The critical path consists of the following:
+	bus access on port 'din_gmem_V' (action_doublemult.cpp:111) [46]  (3.5 ns)
+
+ <State 33>: 3.5ns
+The critical path consists of the following:
+	bus access on port 'din_gmem_V' (action_doublemult.cpp:111) [46]  (3.5 ns)
+
+ <State 34>: 3.5ns
+The critical path consists of the following:
+	bus access on port 'din_gmem_V' (action_doublemult.cpp:111) [46]  (3.5 ns)
+
+ <State 35>: 3.5ns
+The critical path consists of the following:
+	bus access on port 'din_gmem_V' (action_doublemult.cpp:111) [46]  (3.5 ns)
+
+
+============================================================
++ Verbose Summary: Binding
+============================================================
+N/A
+* FSMD analyzer results:
+  - Output states:
+ - Input state : 
+  - Chain level:
+	State 1
+	State 2
+	State 3
+	State 4
+	State 5
+	State 6
+	State 7
+	State 8
+	State 9
+	State 10
+	State 11
+	State 12
+	State 13
+	State 14
+	State 15
+	State 16
+	State 17
+	State 18
+	State 19
+	State 20
+	State 21
+	State 22
+	State 23
+	State 24
+	State 25
+	State 26
+	State 27
+	State 28
+	State 29
+	State 30
+	State 31
+	State 32
+	State 33
+	State 34
+	State 35
+
+
+============================================================
++ Verbose Summary: Datapath Resource usage 
+============================================================
+N/A

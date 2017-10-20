@@ -25,34 +25,48 @@
 #include <stdint.h>
 #include <string.h>
 #include "ap_int.h"
-#include "action_doublemult.H"
+#include "action_datatransfer.H"
 
 // Cast two 128b from input port (512b) to two doubles
-static void mbus_to_doubles(snap_membus_t mem, double *ptr_a, double *ptr_b, double *ptr_c)
+static void mbus_to_params(snap_membus_t mem, unsigned long *ptr_array_addr, double *ptr_beta, double *ptr_gamma, double *ptr_theta, int *ptr_cycles, int *ptr_N, int *ptr_M, int *ptr_alpha, int *ptr_padding)
 {
-	double *memptr_b;
-	uint64_t tmp_a, tmp_b, tmp_c;
+	uint64_t tmp_beta, tmp_gamma, tmp_theta, tmp_array_addr;
+	uint32_t tmp_cycles, tmp_N, tmp_M, tmp_alpha, tmp_padding;
 
-	tmp_a = (uint64_t)mem(63,0);
-	tmp_b = (uint64_t)mem(127,64);
-	tmp_c = (uint64_t)mem(191,128);
+	tmp_array_addr = (uint64_t)mem(63,0);
+	//tmp_addr_out = (uint64_t)mem(127,64);
+	tmp_beta = (uint64_t)mem(191,128);
+	tmp_gamma = (uint64_t)mem(255,192);
+	tmp_theta = (uint64_t)mem(319,256);
+	tmp_cycles = (uint32_t)mem(351,320);
+	tmp_N = (uint32_t)mem(383,352);
+	tmp_M = (uint32_t)mem(415,384);
+	tmp_alpha = (uint32_t)mem(447,416);
+	tmp_padding = (uint32_t)mem(479,448);
 
-	memptr_b = (double *)&tmp_b;
 
-	*ptr_a = *(double *)&tmp_a;
-	*ptr_b = *memptr_b;
-	*ptr_c = *(double *)&tmp_c;
+	*ptr_array_addr = *(unsigned long *)&tmp_array_addr;
+	*ptr_beta = *(double *)&tmp_beta;
+	*ptr_gamma = *(double *)&tmp_gamma;
+	*ptr_theta = *(double *)&tmp_theta;
+	*ptr_cycles = *(int *)&tmp_cycles;
+	*ptr_N = *(int *)&tmp_N;
+	*ptr_M = *(int *)&tmp_M;
+	*ptr_alpha = *(int *)&tmp_alpha;
+	*ptr_padding = *(int *)&tmp_padding;
 }
 
 // Cast a char* word (64B) to a word to output port (512b)
-static snap_membus_t double_to_mbus(double val, double a, double b, double c)
+static snap_membus_t params_to_mbus(double val, double beta, double gamma, double theta)
 {
 	snap_membus_t mem = 0;
 
 	mem(63,0) = *(uint64_t *)&val;
-	mem(383, 320) = *(uint64_t *)&a;
-	mem(447, 384) = *(uint64_t *)&b;
-	mem(511, 448) = *(uint64_t *)&c;
+	mem(127,64) = 1;
+	mem(191, 128) = *(uint64_t *)&beta;
+	mem(255, 192) = *(uint64_t *)&gamma;
+	mem(319, 256) = *(uint64_t *)&theta;
+	//mem(383, 320) = *(uint64_t *)&;
 
 	return mem;
 }
@@ -67,7 +81,7 @@ static int process_action(snap_membus_t *din_gmem,
 			  action_reg *act_reg)
 {
 	uint32_t size;
-	uint64_t i_idx, o_idx;
+	uint64_t i_idx, o_idx, array_idx;
 
 	/* byte address received need to be aligned with port width */
 	i_idx = act_reg->Data.in.addr >> ADDR_RIGHT_SHIFT;
@@ -76,21 +90,33 @@ static int process_action(snap_membus_t *din_gmem,
 
 	if (size > 15) {
 //#pragma HLS PIPELINE
-		double a, b, c, product;
-		snap_membus_t buffer_in = 0, buffer_out = 0;
+		double beta, gamma, theta, product;
+		int cycles, N, M, alpha, padding;
+		unsigned long array_addr;
+		snap_membus_t buffer_in = 0, buffer_out = 0, array_in = 0;
 
 		// Temporary workaround due to Xilinx memcpy issue - fixed in HLS 2017.4 */
 		//memcpy(&buffer_in, din_gmem + i_idx, sizeof(buffer_in));
 		buffer_in = (din_gmem + i_idx)[0];
 
 		/* cast 128b of data buffer to two doubles */
-		mbus_to_doubles(buffer_in, &a, &b, &c);
+		mbus_to_params(buffer_in, &array_addr, &beta, &gamma, &theta, &cycles, &N, &M, &alpha, &padding);
 
+		/*
+		array_idx = array_addr >> ADDR_RIGHT_SHIFT;
+		array_in = (din_gmem + array_idx)[0];
+		do work ...
+		mbus_to_data(array_in, dat_array);
+		for i  {
+			array_in = (din_gmem + array_idx)[i];
+			mbus_to_data(array_in, dat_array + i*8);
+		}
+		do*/
 		/* Calculate result */
-		product = a * b * c;
+		product = beta * gamma * theta;
 
 		/* cast char[64] text to a 64B word buffer */
-		buffer_out = double_to_mbus(product,a,b,c);
+		buffer_out = params_to_mbus(product, beta, gamma, theta);
 
 		// Temporary workaround due to Xilinx memcpy issue - fixed in HLS 2017.4 */
 		//memcpy(dout_gmem + o_idx, &buffer_out, sizeof(buffer_out));
@@ -137,7 +163,7 @@ void hls_action(snap_membus_t *din_gmem,
  	// Used for the discovery phase of the cards */
 	switch (act_reg->Control.flags) {
 	case 0:
-		Action_Config->action_type = DOUBLEMULT_ACTION_TYPE;
+		Action_Config->action_type = DATATRANSFER_ACTION_TYPE;
 		Action_Config->release_level = RELEASE_LEVEL;
 		act_reg->Control.Retc = 0xe00f;
 		return;

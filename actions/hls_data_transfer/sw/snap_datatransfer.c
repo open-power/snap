@@ -35,7 +35,7 @@
 
 #include <snap_tools.h>
 #include <libsnap.h>
-#include <action_double.h>
+#include <action_datatransfer.h>
 #include <snap_hls_if.h>
 
 int verbose_flag = 0;
@@ -65,13 +65,13 @@ static void usage(const char *prog)
 	       "  -N, --no-irq              disable Interrupts\n"
 	       "\n"
 	       "Example:\n"
-	       "  snap_doublemult. ...\n"
+	       "  snap_datatransfer. ...\n"
 	       "\n",
 	       prog);
 }
 
-static void snap_prepare_doublemult(struct snap_job *cjob,
-				 struct doublemult_job *mjob,
+static void snap_prepare_datatransfer(struct snap_job *cjob,
+				 struct datatransfer_job *mjob,
 				 void *addr_in,
 				 uint32_t size_in,
 				 uint8_t type_in,
@@ -79,7 +79,7 @@ static void snap_prepare_doublemult(struct snap_job *cjob,
 				 uint32_t size_out,
 				 uint8_t type_out)
 {
-	fprintf(stderr, "  prepare doublemult job of %ld bytes size\n", sizeof(*mjob));
+	fprintf(stderr, "  prepare datatransfer job of %ld bytes size\n", sizeof(*mjob));
 
 	assert(sizeof(*mjob) <= SNAP_JOBSIZE);
 	memset(mjob, 0, sizeof(*mjob));
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 	struct snap_action *action = NULL;
 	char device[128];
 	struct snap_job cjob;
-	struct doublemult_job mjob;
+	struct datatransfer_job mjob;
 	const char *input = NULL;
 	const char *output = NULL;
 	unsigned long timeout = 600;
@@ -117,8 +117,11 @@ int main(int argc, char *argv[])
 //	uint8_t trailing_zeros[1024] = { 0, };
 	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 
-	double double1 = 0, double2 = 0, double3 = 0, result = 0;
-	double *cache_line_in = NULL, *cache_line_out = NULL;
+	double gamma=0.05, theta=0.6, beta=0.4, result;
+	int padding=3, cycles=40000, N=328, M=450, alpha=1;
+	uint8_t *array = NULL, *cache_line_in = NULL, *cache_line_out = NULL;
+	
+	printf("[TEST1]");
 
 	while (1) {
 		int option_index = 0;
@@ -220,46 +223,51 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	//CHANGE
-	/*
-	printf("Please enter first float!\n");
-	rc = scanf("%lf", &double1);
-	printf("Please enter second float!\n");
-	rc = scanf("%lf", &double2);
-	*/
 
 	// reserve a cache_line_in with 128 byte / 16 doubles
-	cache_line_in = (double *)snap_malloc(128);
+	cache_line_in = snap_malloc(128);
+	array = snap_malloc(192);
 	if (cache_line_in == NULL)
 		goto out_error;
 	// write 0 into this buffer
 	memset(cache_line_in, 0, 128);
 
-	//write doubles into it
-	//CHANGE
-	//*cache_line_in = double1;
-	//*(cache_line_in+1) = double2;
-
-	//TO
-	for(int i=0; i<16; i++){
-		*(cache_line_in+i) = 1 + 0.5*i;
-	}
-
-	double1 = *cache_line_in;
-	double2 = *(cache_line_in+1);
-	double3 = *(cache_line_in+2);
-
+	// fill cache_line_in with parameters
+	//addr_in --> double at 0 (size 8)
+	*(unsigned long *)cache_line_in = (unsigned long)array;
+	//addr_out --> double at 8 (size 8)
+	//*((double *)(cache_line_in+1)) = 1;
+	//beta --> double at 16 (size 8)
+	*((double *)(cache_line_in+2*8)) = beta;
+	//gamma --> double at 24 (size 8)
+	*((double *)(cache_line_in+3*8)) = gamma;
+	//theta --> double at 32 (size 8)
+	*((double *)(cache_line_in+4*8)) = theta;
+	//cycles --> int at 40 (size 4)
+	*((int *)(cache_line_in+10*4)) = cycles;
+	//N --> int at 44 (size 4)
+	*((int *)(cache_line_in+11*4)) = N;
+	//M --> int at 48 (size 4)
+	*((int *)(cache_line_in+12*4)) = M;
+	//alpha --> int at 52 (size 4)
+	*((int *)(cache_line_in+13*4)) = alpha;
+	//padding --> int at 56 (size 4)
+	*((int *)(cache_line_in+14*4)) = padding;
+	//complete size --> 60 byte
+	__hexdump(stderr, cache_line_in, 128);
+		
 
 	type_in = SNAP_ADDRTYPE_HOST_DRAM;
 	addr_in = (unsigned long)cache_line_in;
 
-	cache_line_out = (double *)snap_malloc(128);
+	cache_line_out = snap_malloc(128);
 	if (cache_line_out == NULL)
 		goto out_error;
-	memset(cache_line_out, 0, 128);
+	memset(cache_line_out, 1, 128);
 	type_out = SNAP_ADDRTYPE_HOST_DRAM;
 	addr_out = (unsigned long)cache_line_out;
 //	}
+	__hexdump(stderr, cache_line_out, 128);
 
 	printf("PARAMETERS:\n"
 	       "  input:       %s\n"
@@ -283,14 +291,14 @@ int main(int argc, char *argv[])
 		goto out_error;
 	}
 
-	action = snap_attach_action(card, DOUBLEMULT_ACTION_TYPE, action_irq, 60);
+	action = snap_attach_action(card, DATATRANSFER_ACTION_TYPE, action_irq, 60);
 	if (action == NULL) {
 		fprintf(stderr, "err: failed to attach action %u: %s\n",
 			card_no, strerror(errno));
 		goto out_error1;
 	}
 
-	snap_prepare_doublemult(&cjob, &mjob,
+	snap_prepare_datatransfer(&cjob, &mjob,
 			     (void *)addr_in,  size, type_in,
 			     (void *)addr_out, size, type_out);
 
@@ -336,16 +344,14 @@ int main(int argc, char *argv[])
 }
 */
 	gettimeofday(&stime2, NULL);
-	result = double1 * double2 * double3;
+	result = gamma*beta*theta; 
 	gettimeofday(&etime2, NULL);
 
-	fprintf(stdout, "DEFAULT doublemult took %lld usec\n",
-		(long long)timediff_usec(&etime2, &stime2));
-	fprintf(stdout, "SNAP doublemult took %lld usec\n",
-		(long long)timediff_usec(&etime, &stime));
+	__hexdump(stderr, cache_line_in, 128);
+	__hexdump(stderr, cache_line_out, 128);
 
-	fprintf(stdout, "Host Result = %lf, FPGA Result = %lf\n", result, *cache_line_out);
-	fprintf(stdout, "A = %lf & B = %lf & C = %lf\n", *(cache_line_out + 5),  *(cache_line_out + 6), *(cache_line_out + 7));
+	fprintf(stdout, "Host Result = %lf, FPGA Result = %lf\n", result, *(double *)cache_line_out);
+	fprintf(stdout, "Beta = %lf & Gamma = %lf & Theta = %lf\n", *((double *)(cache_line_out + 2*8)),  *((double *)(cache_line_out + 3*8)), *((double *)(cache_line_out + 4*8)));
 
 	snap_detach_action(action);
 	snap_card_free(card);
