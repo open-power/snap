@@ -133,5 +133,3 @@ DESTDIR ?= /usr
 LIB_INSTALL_PATH ?= $(DESTDIR)/lib64
 INCLUDE_INSTALL_PATH ?= $(DESTDIR)/include
 MAN_INSTALL_PATH ?= $(DESTDIR)/share/man/man1
-
-export V
