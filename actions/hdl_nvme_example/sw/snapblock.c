@@ -886,7 +886,8 @@ static int check_request_timeouts(struct cblk_dev *c, struct timeval *etime,
 
 				errno = ETIME;
 				cblk_set_status(req, CBLK_ERROR);
-				sem_post(&req->wait_sem);
+				if (req->use_wait_sem)
+					sem_post(&req->wait_sem);
 			}
 		}
 	}
@@ -1575,6 +1576,8 @@ static void _done(void)
 		"    block_writes_4k:   %ld\n"
 		"  idle_wakeups:        %ld\n"
 		"  running:             %ld usec\n"
+		"  reading:             %ld usec\n"
+		"  writing:             %ld usec\n"
 		"  rbytes_total:        %lld %.3f MiB/sec\n"
 		"  wbytes_total:        %lld %.3f MiB/sec\n"
 		"  max_read_usecs:      %ld usec\n"
@@ -1597,16 +1600,18 @@ static void _done(void)
 		c->block_writes_4k,
 		c->idle_wakeups,
 		(long int)usec,
+		c->avg_read_usecs,
+		c->avg_write_usecs,
 		c->rbytes_total, usec ? (double)c->rbytes_total / usec : 0.0,
 		c->wbytes_total, usec ? (double)c->wbytes_total / usec : 0.0,
 		c->max_read_usecs,
 		c->max_write_usecs,
-		c->block_reads ? c->avg_read_usecs/c->block_reads : 0,
-		c->block_writes ? c->avg_write_usecs/c->block_writes : 0,
+		c->hw_block_reads ? c->avg_read_usecs/c->hw_block_reads : 0,
+		c->hw_block_writes ? c->avg_write_usecs/c->hw_block_writes : 0,
 		c->min_read_usecs,
 		c->min_write_usecs,
-		c->block_reads ? c->avg_hw_read_usecs/c->block_reads : 0,
-		c->block_writes ? c->avg_hw_write_usecs/c->block_writes : 0);
+		c->hw_block_reads ? c->avg_hw_read_usecs/c->hw_block_reads : 0,
+		c->hw_block_writes ? c->avg_hw_write_usecs/c->hw_block_writes : 0);
 
 	fprintf(stderr, "Cache Info\n"
 		"  entries/ways:        %d/%d per block %d KiB\n"
