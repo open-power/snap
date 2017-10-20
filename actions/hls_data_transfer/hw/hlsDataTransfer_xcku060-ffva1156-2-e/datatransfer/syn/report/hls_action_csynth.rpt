@@ -1,0 +1,209 @@
+
+
+================================================================
+== Vivado HLS Report for 'hls_action'
+================================================================
+* Date:           Fri Oct 20 12:35:18 2017
+
+* Version:        2016.4 (Build 1733598 on Wed Dec 14 22:59:20 MST 2016)
+* Project:        hlsDataTransfer_xcku060-ffva1156-2-e
+* Solution:       datatransfer
+* Product family: kintexu
+* Target device:  xcku060-ffva1156-2-e
+
+
+================================================================
+== Performance Estimates
+================================================================
++ Timing (ns): 
+    * Summary: 
+    +--------+-------+----------+------------+
+    |  Clock | Target| Estimated| Uncertainty|
+    +--------+-------+----------+------------+
+    |ap_clk  |   4.00|      3.50|        0.50|
+    +--------+-------+----------+------------+
+
++ Latency (clock cycles): 
+    * Summary: 
+    +-----+-----+-----+-----+---------+
+    |  Latency  |  Interval | Pipeline|
+    | min | max | min | max |   Type  |
+    +-----+-----+-----+-----+---------+
+    |    1|   35|    2|   36|   none  |
+    +-----+-----+-----+-----+---------+
+
+    + Detail: 
+        * Instance: 
+        +---------------------------+----------------+-----+-----+-----+-----+---------+
+        |                           |                |  Latency  |  Interval | Pipeline|
+        |          Instance         |     Module     | min | max | min | max |   Type  |
+        +---------------------------+----------------+-----+-----+-----+-----+---------+
+        |grp_process_action_fu_138  |process_action  |    1|   34|    1|   34|   none  |
+        +---------------------------+----------------+-----+-----+-----+-----+---------+
+
+        * Loop: 
+        N/A
+
+
+
+================================================================
+== Utilization Estimates
+================================================================
+* Summary: 
++-----------------+---------+-------+--------+--------+
+|       Name      | BRAM_18K| DSP48E|   FF   |   LUT  |
++-----------------+---------+-------+--------+--------+
+|DSP              |        -|      -|       -|       -|
+|Expression       |        -|      -|       0|       3|
+|FIFO             |        -|      -|       -|       -|
+|Instance         |       58|     11|    4723|    6552|
+|Memory           |        -|      -|       -|       -|
+|Multiplexer      |        -|      -|       -|      26|
+|Register         |        -|      -|     290|       -|
++-----------------+---------+-------+--------+--------+
+|Total            |       58|     11|    5013|    6581|
++-----------------+---------+-------+--------+--------+
+|Available        |     2160|   2760|  663360|  331680|
++-----------------+---------+-------+--------+--------+
+|Utilization (%)  |        2|   ~0  |   ~0   |       1|
++-----------------+---------+-------+--------+--------+
+
++ Detail: 
+    * Instance: 
+    +-----------------------------+---------------------------+---------+-------+------+------+
+    |           Instance          |           Module          | BRAM_18K| DSP48E|  FF  |  LUT |
+    +-----------------------------+---------------------------+---------+-------+------+------+
+    |hls_action_ctrl_reg_s_axi_U  |hls_action_ctrl_reg_s_axi  |        0|      0|  2242|  4392|
+    |hls_action_host_mem_m_axi_U  |hls_action_host_mem_m_axi  |       58|      0|  1415|  1585|
+    |grp_process_action_fu_138    |process_action             |        0|     11|  1066|   575|
+    +-----------------------------+---------------------------+---------+-------+------+------+
+    |Total                        |                           |       58|     11|  4723|  6552|
+    +-----------------------------+---------------------------+---------+-------+------+------+
+
+    * DSP48: 
+    N/A
+
+    * Memory: 
+    N/A
+
+    * FIFO: 
+    N/A
+
+    * Expression: 
+    +----------------+----------+-------+---+----+------------+------------+
+    |  Variable Name | Operation| DSP48E| FF| LUT| Bitwidth P0| Bitwidth P1|
+    +----------------+----------+-------+---+----+------------+------------+
+    |cond_fu_181_p2  |   icmp   |      0|  0|   3|           8|           1|
+    +----------------+----------+-------+---+----+------------+------------+
+    |Total           |          |      0|  0|   3|           8|           1|
+    +----------------+----------+-------+---+----+------------+------------+
+
+    * Multiplexer: 
+    +--------------------------+----+-----------+-----+-----------+
+    |           Name           | LUT| Input Size| Bits| Total Bits|
+    +--------------------------+----+-----------+-----+-----------+
+    |ap_NS_fsm                 |   1|          3|    1|          3|
+    |host_mem_ARVALID          |   1|          2|    1|          2|
+    |host_mem_AWVALID          |   1|          2|    1|          2|
+    |host_mem_BREADY           |   1|          2|    1|          2|
+    |host_mem_RREADY           |   1|          2|    1|          2|
+    |host_mem_WVALID           |   1|          2|    1|          2|
+    |storemerge_phi_fu_131_p4  |  10|          2|   10|         20|
+    |storemerge_reg_127        |  10|          2|   10|         20|
+    +--------------------------+----+-----------+-----+-----------+
+    |Total                     |  26|         17|   26|         53|
+    +--------------------------+----+-----------+-----+-----------+
+
+    * Register: 
+    +-------------------------------------------+----+----+-----+-----------+
+    |                    Name                   | FF | LUT| Bits| Const Bits|
+    +-------------------------------------------+----+----+-----+-----------+
+    |act_reg_Data_in_addr_reg_260               |  64|   0|   64|          0|
+    |act_reg_Data_in_size_reg_265               |  32|   0|   32|          0|
+    |act_reg_Data_out_add_reg_270               |  64|   0|   64|          0|
+    |ap_CS_fsm                                  |   2|   0|    2|          0|
+    |ap_reg_grp_process_action_fu_138_ap_start  |   1|   0|    1|          0|
+    |cond_reg_256                               |   1|   0|    1|          0|
+    |din_gmem_V1_reg_251                        |  58|   0|   58|          0|
+    |dout_gmem_V3_reg_246                       |  58|   0|   58|          0|
+    |storemerge_reg_127                         |  10|   0|   14|          4|
+    +-------------------------------------------+----+----+-----+-----------+
+    |Total                                      | 290|   0|  294|          4|
+    +-------------------------------------------+----+----+-----+-----------+
+
+
+
+================================================================
+== Interface
+================================================================
+* Summary: 
++-------------------------+-----+-----+------------+--------------+--------------+
+|        RTL Ports        | Dir | Bits|  Protocol  | Source Object|    C Type    |
++-------------------------+-----+-----+------------+--------------+--------------+
+|s_axi_ctrl_reg_AWVALID   |  in |    1|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_AWREADY   | out |    1|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_AWADDR    |  in |    9|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_WVALID    |  in |    1|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_WREADY    | out |    1|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_WDATA     |  in |   32|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_WSTRB     |  in |    4|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_ARVALID   |  in |    1|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_ARREADY   | out |    1|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_ARADDR    |  in |    9|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_RVALID    | out |    1|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_RREADY    |  in |    1|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_RDATA     | out |   32|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_RRESP     | out |    2|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_BVALID    | out |    1|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_BREADY    |  in |    1|    s_axi   |   ctrl_reg   |  return void |
+|s_axi_ctrl_reg_BRESP     | out |    2|    s_axi   |   ctrl_reg   |  return void |
+|ap_clk                   |  in |    1| ap_ctrl_hs |  hls_action  | return value |
+|ap_rst_n                 |  in |    1| ap_ctrl_hs |  hls_action  | return value |
+|interrupt                | out |    1| ap_ctrl_hs |  hls_action  | return value |
+|m_axi_host_mem_AWVALID   | out |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_AWREADY   |  in |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_AWADDR    | out |   64|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_AWID      | out |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_AWLEN     | out |    8|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_AWSIZE    | out |    3|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_AWBURST   | out |    2|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_AWLOCK    | out |    2|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_AWCACHE   | out |    4|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_AWPROT    | out |    3|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_AWQOS     | out |    4|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_AWREGION  | out |    4|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_AWUSER    | out |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_WVALID    | out |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_WREADY    |  in |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_WDATA     | out |  512|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_WSTRB     | out |   64|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_WLAST     | out |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_WID       | out |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_WUSER     | out |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_ARVALID   | out |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_ARREADY   |  in |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_ARADDR    | out |   64|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_ARID      | out |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_ARLEN     | out |    8|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_ARSIZE    | out |    3|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_ARBURST   | out |    2|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_ARLOCK    | out |    2|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_ARCACHE   | out |    4|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_ARPROT    | out |    3|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_ARQOS     | out |    4|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_ARREGION  | out |    4|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_ARUSER    | out |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_RVALID    |  in |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_RREADY    | out |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_RDATA     |  in |  512|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_RLAST     |  in |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_RID       |  in |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_RUSER     |  in |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_RRESP     |  in |    2|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_BVALID    |  in |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_BREADY    | out |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_BRESP     |  in |    2|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_BID       |  in |    1|    m_axi   |   host_mem   |    pointer   |
+|m_axi_host_mem_BUSER     |  in |    1|    m_axi   |   host_mem   |    pointer   |
++-------------------------+-----+-----+------------+--------------+--------------+
+

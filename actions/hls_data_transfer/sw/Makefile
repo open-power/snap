@@ -38,10 +38,10 @@ endif
 
 # This is solution specific. Check if we can replace this by generics too.
 
-snap_doublemult: action_doublemult.o
-snap_doublemult_objs = action_doublemult.o
+snap_datatransfer: action_datatransfer.o
+snap_datatransfer_objs = action_datatransfer.o
 
-projs += snap_doublemult
+projs += snap_datatransfer
 
 # If you have the host code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/software.mk

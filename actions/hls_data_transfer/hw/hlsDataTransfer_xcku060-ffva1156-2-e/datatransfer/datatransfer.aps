@@ -1,0 +1,23 @@
+<AutoPilot:solution xmlns:AutoPilot="com.autoesl.autopilot.solution">
+    <name>
+        <value string="datatransfer"/>
+    </name>
+    <project>
+        <value string="hlsDataTransfer_xcku060-ffva1156-2-e"/>
+    </project>
+    <targetInfo>
+        <TargetInfo value="xcku060:-ffva1156:-2-e"/>
+    </targetInfo>
+    <libraryList>
+        <library value="xilinx/kintexu/kintexu" name="DefaultPlatform"/>
+        <library value="xilinx/kintexu/kintexu_fpv7" name="DefaultPlatform"/>
+    </libraryList>
+    <clockList>
+        <clock name="default" period="4" default="false"/>
+    </clockList>
+    <config>
+        <config_interface m_axi_addr64="1"/>
+        <schedule model="hls_action"/>
+    </config>
+</AutoPilot:solution>
+
