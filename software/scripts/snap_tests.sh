@@ -73,6 +73,8 @@ while getopts ":C:t:aMSHh" opt; do
 	esac
 done
 
+export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH
+
 ./tools/snap_peek --help > /dev/null || exit 1;
 ./tools/snap_poke --help > /dev/null || exit 1;
 
