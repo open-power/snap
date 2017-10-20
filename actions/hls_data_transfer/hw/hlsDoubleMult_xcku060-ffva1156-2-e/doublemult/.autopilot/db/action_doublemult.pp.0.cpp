@@ -39910,7 +39910,7 @@ static snap_membus_t double_to_mbus(double val, double beta, double gamma, doubl
  snap_membus_t mem = 0;
 
  mem(63,0) = *(uint64_t *)&val;
-//	mem(127,64) = 1;
+ mem(127,64) = 1;
  mem(191, 128) = *(uint64_t *)&beta;
  mem(255, 192) = *(uint64_t *)&gamma;
  mem(319, 256) = *(uint64_t *)&theta;

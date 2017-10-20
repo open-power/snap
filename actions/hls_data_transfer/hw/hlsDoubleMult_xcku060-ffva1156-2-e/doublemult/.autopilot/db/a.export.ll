@@ -49,7 +49,8 @@ define internal fastcc i9 @process_action(i512* %din_gmem_V, i58 %din_gmem_V1, i
   %product = fmul double %tmp_1, %theta
   %val_assign = bitcast double %product to i64
   %tmp_2 = call i192 @_ssdm_op_PartSelect.i192.i512.i32.i32(i512 %buffer_in_V, i32 128, i32 319)
-  %p_Result_s = call i512 @_ssdm_op_BitConcatenate.i512.i192.i192.i64.i64(i192 0, i192 %tmp_2, i64 0, i64 %val_assign)
+  %tmp_i = call i320 @_ssdm_op_BitConcatenate.i320.i192.i64.i64(i192 %tmp_2, i64 1, i64 %val_assign)
+  %p_Result_s = zext i320 %tmp_i to i512
   %dout_gmem_V3_cast = zext i58 %dout_gmem_V3_read to i59
   %sum3 = add i59 %dout_gmem_V3_cast, %o_idx_1_cast
   %sum3_cast = zext i59 %sum3 to i64
@@ -246,21 +247,17 @@ entry:
   ret i192 %empty_19
 }
 
-define weak i512 @_ssdm_op_BitConcatenate.i512.i192.i192.i64.i64(i192, i192, i64, i64) nounwind readnone {
+define weak i320 @_ssdm_op_BitConcatenate.i320.i192.i64.i64(i192, i64, i64) nounwind readnone {
 entry:
-  %empty = zext i64 %2 to i128
-  %empty_20 = zext i64 %3 to i128
+  %empty = zext i64 %1 to i128
+  %empty_20 = zext i64 %2 to i128
   %empty_21 = shl i128 %empty, 64
   %empty_22 = or i128 %empty_21, %empty_20
-  %empty_23 = zext i192 %1 to i320
+  %empty_23 = zext i192 %0 to i320
   %empty_24 = zext i128 %empty_22 to i320
   %empty_25 = shl i320 %empty_23, 128
   %empty_26 = or i320 %empty_25, %empty_24
-  %empty_27 = zext i192 %0 to i512
-  %empty_28 = zext i320 %empty_26 to i512
-  %empty_29 = shl i512 %empty_27, 320
-  %empty_30 = or i512 %empty_29, %empty_28
-  ret i512 %empty_30
+  ret i320 %empty_26
 }
 
 declare void @_GLOBAL__I_a() nounwind section ".text.startup"

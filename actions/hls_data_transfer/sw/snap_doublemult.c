@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
 	type_out = SNAP_ADDRTYPE_HOST_DRAM;
 	addr_out = (unsigned long)cache_line_out;
 //	}
-	__hexdump(stderr, cache_line_out, 64);
+	__hexdump(stderr, cache_line_out, 128);
 
 	printf("PARAMETERS:\n"
 	       "  input:       %s\n"
@@ -351,10 +351,10 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "SNAP doublemult took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 	__hexdump(stderr, cache_line_in, 128);
-	__hexdump(stderr, cache_line_out, 64);
+	__hexdump(stderr, cache_line_out, 128);
 
 	fprintf(stdout, "Host Result = %lf, FPGA Result = %lf\n", result, *(double *)cache_line_out);
-	fprintf(stdout, "Beta = %lf & Gamma = %lf & Theta = %lf\n", *((double *)(cache_line_out + 7*8)),  *((double *)(cache_line_out + 8*8)), *((double *)(cache_line_out + 9*8)));
+	fprintf(stdout, "Beta = %lf & Gamma = %lf & Theta = %lf\n", *((double *)(cache_line_out + 2*8)),  *((double *)(cache_line_out + 3*8)), *((double *)(cache_line_out + 4*8)));
 
 	snap_detach_action(action);
 	snap_card_free(card);

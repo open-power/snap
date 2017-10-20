@@ -1,8 +1,4 @@
 <AutoPilot:solution xmlns:AutoPilot="com.autoesl.autopilot.solution">
-    <config>
-        <config_interface m_axi_addr64="1"/>
-        <schedule model="hls_action"/>
-    </config>
     <name>
         <value string="doublemult"/>
     </name>
@@ -17,7 +13,11 @@
         <library value="xilinx/kintexu/kintexu_fpv7" name="DefaultPlatform"/>
     </libraryList>
     <clockList>
-        <clock default="false" name="default" period="4"/>
+        <clock name="default" period="4" default="false"/>
     </clockList>
+    <config>
+        <config_interface m_axi_addr64="1"/>
+        <schedule model="hls_action"/>
+    </config>
 </AutoPilot:solution>
 

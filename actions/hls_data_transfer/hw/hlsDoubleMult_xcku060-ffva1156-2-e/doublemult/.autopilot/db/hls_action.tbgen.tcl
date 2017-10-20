@@ -12,19 +12,19 @@ set C_TypeInfoList {{
 "14": [ "", {"struct": [[],[],[{ "action_type": [[32], "11"]},{ "release_level": [[32], "11"]}],""]}], 
 "6": [ "doublemult_job_t", {"typedef": [[[],"15"],""]}], 
 "15": [ "doublemult_job", {"struct": [[],[],[{ "in": [[], "16"]},{ "out": [[], "16"]}],""]}], 
-"11": [ "snapu32_t", {"typedef": [[[],"17"],""]}], 
-"17": [ "ap_uint<32>", {"hls_type": {"ap_uint": [[[[], {"scalar": { "int": 32}}]],""]}}], 
-"12": [ "snapu64_t", {"typedef": [[[],"18"],""]}], 
-"18": [ "ap_uint<64>", {"hls_type": {"ap_uint": [[[[], {"scalar": { "int": 64}}]],""]}}], 
+"9": [ "snapu8_t", {"typedef": [[[],"17"],""]}], 
+"11": [ "snapu32_t", {"typedef": [[[],"18"],""]}], 
+"18": [ "ap_uint<32>", {"hls_type": {"ap_uint": [[[[], {"scalar": { "int": 32}}]],""]}}], 
+"12": [ "snapu64_t", {"typedef": [[[],"19"],""]}], 
+"19": [ "ap_uint<64>", {"hls_type": {"ap_uint": [[[[], {"scalar": { "int": 64}}]],""]}}], 
 "7": [ "uint8_t", {"typedef": [[[], {"scalar": "unsigned char"}],""]}], 
-"16": [ "snap_addr", {"struct": [[],[],[{ "addr": [[64], "19"]},{ "size": [[32], "20"]},{ "type": [[16], "21"]},{ "flags": [[16], "22"]}],""]}], 
-"19": [ "uint64_t", {"typedef": [[[], {"scalar": "long unsigned int"}],""]}], 
-"20": [ "uint32_t", {"typedef": [[[], {"scalar": "unsigned int"}],""]}], 
-"9": [ "snapu8_t", {"typedef": [[[],"23"],""]}], 
-"23": [ "ap_uint<8>", {"hls_type": {"ap_uint": [[[[], {"scalar": { "int": 8}}]],""]}}], 
-"21": [ "snap_addrtype_t", {"typedef": [[[],"24"],""]}], 
+"16": [ "snap_addr", {"struct": [[],[],[{ "addr": [[64], "20"]},{ "size": [[32], "21"]},{ "type": [[16], "22"]},{ "flags": [[16], "23"]}],""]}], 
+"20": [ "uint64_t", {"typedef": [[[], {"scalar": "long unsigned int"}],""]}], 
+"21": [ "uint32_t", {"typedef": [[[], {"scalar": "unsigned int"}],""]}], 
+"17": [ "ap_uint<8>", {"hls_type": {"ap_uint": [[[[], {"scalar": { "int": 8}}]],""]}}], 
+"22": [ "snap_addrtype_t", {"typedef": [[[],"24"],""]}], 
 "24": [ "uint16_t", {"typedef": [[[], {"scalar": "unsigned short"}],""]}], 
-"22": [ "snap_addrflag_t", {"typedef": [[[],"24"],""]}]
+"23": [ "snap_addrflag_t", {"typedef": [[[],"24"],""]}]
 }}
 set moduleName hls_action
 set isCombinational 0

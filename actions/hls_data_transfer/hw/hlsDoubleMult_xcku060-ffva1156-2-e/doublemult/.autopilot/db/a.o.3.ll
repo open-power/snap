@@ -87,7 +87,8 @@ define internal fastcc i9 @process_action(i512* %din_gmem_V, i58 %din_gmem_V1, i
   call void @llvm.dbg.value(metadata !{i64 %tmp_theta}, i64 0, metadata !3131), !dbg !3133 ; [debug line = 2411:73@948:43@67:2@107:16] [debug variable = op]
   call void @llvm.dbg.value(metadata !{i64 %tmp_theta}, i64 0, metadata !3134), !dbg !3136 ; [debug line = 2411:73@2411:93@948:43@67:2@107:16] [debug variable = op]
   %tmp_2 = call i192 @_ssdm_op_PartSelect.i192.i512.i32.i32(i512 %buffer_in_V, i32 128, i32 319), !dbg !3137 ; [#uses=1 type=i192] [debug line = 949:119@67:2@107:16]
-  %p_Result_s = call i512 @_ssdm_op_BitConcatenate.i512.i192.i192.i64.i64(i192 0, i192 %tmp_2, i64 0, i64 %val_assign), !dbg !3137 ; [#uses=1 type=i512] [debug line = 949:119@67:2@107:16]
+  %tmp_i = call i320 @_ssdm_op_BitConcatenate.i320.i192.i64.i64(i192 %tmp_2, i64 1, i64 %val_assign), !dbg !3137 ; [#uses=1 type=i320] [debug line = 949:119@67:2@107:16]
+  %p_Result_s = zext i320 %tmp_i to i512, !dbg !3137 ; [#uses=1 type=i512] [debug line = 949:119@67:2@107:16]
   call void @llvm.dbg.value(metadata !{i512 %p_Result_s}, i64 0, metadata !3139), !dbg !3137 ; [debug line = 949:119@67:2@107:16] [debug variable = __Result__]
   call void @llvm.dbg.value(metadata !{i512 %p_Result_s}, i64 0, metadata !3140), !dbg !3143 ; [debug line = 949:236@67:2@107:16] [debug variable = mem.V]
   call void @llvm.dbg.value(metadata !{i512 %p_Result_s}, i64 0, metadata !3144), !dbg !3146 ; [debug line = 277:10@107:16] [debug variable = buffer_out.V]
@@ -324,21 +325,17 @@ entry:
 }
 
 ; [#uses=1]
-define weak i512 @_ssdm_op_BitConcatenate.i512.i192.i192.i64.i64(i192, i192, i64, i64) nounwind readnone {
+define weak i320 @_ssdm_op_BitConcatenate.i320.i192.i64.i64(i192, i64, i64) nounwind readnone {
 entry:
-  %empty = zext i64 %2 to i128                    ; [#uses=1 type=i128]
-  %empty_20 = zext i64 %3 to i128                 ; [#uses=1 type=i128]
+  %empty = zext i64 %1 to i128                    ; [#uses=1 type=i128]
+  %empty_20 = zext i64 %2 to i128                 ; [#uses=1 type=i128]
   %empty_21 = shl i128 %empty, 64                 ; [#uses=1 type=i128]
   %empty_22 = or i128 %empty_21, %empty_20        ; [#uses=1 type=i128]
-  %empty_23 = zext i192 %1 to i320                ; [#uses=1 type=i320]
+  %empty_23 = zext i192 %0 to i320                ; [#uses=1 type=i320]
   %empty_24 = zext i128 %empty_22 to i320         ; [#uses=1 type=i320]
   %empty_25 = shl i320 %empty_23, 128             ; [#uses=1 type=i320]
   %empty_26 = or i320 %empty_25, %empty_24        ; [#uses=1 type=i320]
-  %empty_27 = zext i192 %0 to i512                ; [#uses=1 type=i512]
-  %empty_28 = zext i320 %empty_26 to i512         ; [#uses=1 type=i512]
-  %empty_29 = shl i512 %empty_27, 320             ; [#uses=1 type=i512]
-  %empty_30 = or i512 %empty_29, %empty_28        ; [#uses=1 type=i512]
-  ret i512 %empty_30
+  ret i320 %empty_26
 }
 
 ; [#uses=1]
@@ -418,22 +415,22 @@ declare void @_GLOBAL__I_a() nounwind section ".text.startup"
 !65 = metadata !{i32 790533, metadata !66, metadata !"act_reg.Data.out.addr", null, i32 80, metadata !3001, i32 0, i32 0} ; [ DW_TAG_arg_variable_field_ro ]
 !66 = metadata !{i32 786689, metadata !67, metadata !"act_reg", metadata !68, i32 50331728, metadata !507, i32 0, i32 0} ; [ DW_TAG_arg_variable ]
 !67 = metadata !{i32 786478, i32 0, metadata !68, metadata !"process_action", metadata !"process_action", metadata !"_ZL14process_actionP7ap_uintILi512EES1_P10action_reg", metadata !68, i32 77, metadata !69, i1 true, i1 true, i32 0, i32 0, null, i32 256, i1 false, null, null, null, metadata !91, i32 81} ; [ DW_TAG_subprogram ]
-!68 = metadata !{i32 786473, metadata !"action_doublemult.cpp", metadata !"/afs/bb/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
+!68 = metadata !{i32 786473, metadata !"action_doublemult.cpp", metadata !"/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
 !69 = metadata !{i32 786453, i32 0, metadata !"", i32 0, i32 0, i64 0, i64 0, i64 0, i32 0, null, metadata !70, i32 0, i32 0} ; [ DW_TAG_subroutine_type ]
 !70 = metadata !{metadata !71, metadata !72, metadata !72, metadata !507}
 !71 = metadata !{i32 786468, null, metadata !"int", null, i32 0, i64 32, i64 32, i64 0, i32 0, i32 5} ; [ DW_TAG_base_type ]
 !72 = metadata !{i32 786447, null, metadata !"", null, i32 0, i64 64, i64 64, i64 0, i32 0, metadata !73} ; [ DW_TAG_pointer_type ]
 !73 = metadata !{i32 786454, null, metadata !"snap_membus_t", metadata !68, i32 57, i64 0, i64 0, i64 0, i32 0, metadata !74} ; [ DW_TAG_typedef ]
 !74 = metadata !{i32 786434, null, metadata !"ap_uint<512>", metadata !75, i32 180, i64 512, i64 512, i32 0, i32 0, null, metadata !76, i32 0, null, metadata !506} ; [ DW_TAG_class_type ]
-!75 = metadata !{i32 786473, metadata !"/afs/bb/proj/fpga/xilinx/Vivado_HLS/2016.4/common/technology/autopilot/ap_int.h", metadata !"/afs/bb/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
+!75 = metadata !{i32 786473, metadata !"/afs/bb/proj/fpga/xilinx/Vivado_HLS/2016.4/common/technology/autopilot/ap_int.h", metadata !"/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
 !76 = metadata !{metadata !77, metadata !426, metadata !430, metadata !436, metadata !442, metadata !445, metadata !448, metadata !451, metadata !454, metadata !457, metadata !460, metadata !463, metadata !466, metadata !469, metadata !472, metadata !475, metadata !478, metadata !481, metadata !484, metadata !487, metadata !490, metadata !494, metadata !497, metadata !501, metadata !504, metadata !505}
 !77 = metadata !{i32 786460, metadata !74, null, metadata !75, i32 0, i64 0, i64 0, i64 0, i32 0, metadata !78} ; [ DW_TAG_inheritance ]
 !78 = metadata !{i32 786434, null, metadata !"ap_int_base<512, false, false>", metadata !79, i32 2341, i64 512, i64 512, i32 0, i32 0, null, metadata !80, i32 0, null, metadata !424} ; [ DW_TAG_class_type ]
-!79 = metadata !{i32 786473, metadata !"/afs/bb/proj/fpga/xilinx/Vivado_HLS/2016.4/common/technology/autopilot/ap_int_syn.h", metadata !"/afs/bb/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
+!79 = metadata !{i32 786473, metadata !"/afs/bb/proj/fpga/xilinx/Vivado_HLS/2016.4/common/technology/autopilot/ap_int_syn.h", metadata !"/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
 !80 = metadata !{metadata !81, metadata !102, metadata !106, metadata !114, metadata !120, metadata !123, metadata !127, metadata !131, metadata !135, metadata !139, metadata !142, metadata !146, metadata !150, metadata !154, metadata !159, metadata !164, metadata !168, metadata !172, metadata !178, metadata !181, metadata !185, metadata !188, metadata !191, metadata !192, metadata !196, metadata !199, metadata !202, metadata !205, metadata !208, metadata !211, metadata !214, metadata !217, metadata !220, metadata !223, metadata !226, metadata !229, metadata !239, metadata !242, metadata !243, metadata !244, metadata !245, metadata !246, metadata !249, metadata !252, metadata !255, metadata !258, metadata !261, metadata !264, metadata !267, metadata !268, metadata !272, metadata !275, metadata !276, metadata !277, metadata !278, metadata !279, metadata !280, metadata !283, metadata !284, metadata !287, metadata !288, metadata !289, metadata !290, metadata !291, metadata !292, metadata !295, metadata !296, metadata !297, metadata !300, metadata !301, metadata !304, metadata !312, metadata !313, metadata !316, metadata !381, metadata !382, metadata !385, metadata !386, metadata !390, metadata !391, metadata !392, metadata !393, metadata !396, metadata !397, metadata !398, metadata !399, metadata !400, metadata !401, metadata !402, metadata !403, metadata !404, metadata !405, metadata !406, metadata !407, metadata !417, metadata !420, metadata !423}
 !81 = metadata !{i32 786460, metadata !78, null, metadata !79, i32 0, i64 0, i64 0, i64 0, i32 0, metadata !82} ; [ DW_TAG_inheritance ]
 !82 = metadata !{i32 786434, null, metadata !"ssdm_int<512 + 1024 * 0, false>", metadata !83, i32 526, i64 512, i64 512, i32 0, i32 0, null, metadata !84, i32 0, null, metadata !98} ; [ DW_TAG_class_type ]
-!83 = metadata !{i32 786473, metadata !"/afs/bb/proj/fpga/xilinx/Vivado_HLS/2016.4/common/technology/autopilot/etc/autopilot_dt.def", metadata !"/afs/bb/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
+!83 = metadata !{i32 786473, metadata !"/afs/bb/proj/fpga/xilinx/Vivado_HLS/2016.4/common/technology/autopilot/etc/autopilot_dt.def", metadata !"/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
 !84 = metadata !{metadata !85, metadata !87, metadata !93}
 !85 = metadata !{i32 786445, metadata !82, metadata !"V", metadata !83, i32 526, i64 512, i64 512, i64 0, i32 0, metadata !86} ; [ DW_TAG_member ]
 !86 = metadata !{i32 786468, null, metadata !"uint512", null, i32 0, i64 512, i64 512, i64 0, i32 0, i32 7} ; [ DW_TAG_base_type ]
@@ -860,12 +857,12 @@ declare void @_GLOBAL__I_a() nounwind section ".text.startup"
 !507 = metadata !{i32 786447, null, metadata !"", null, i32 0, i64 64, i64 64, i64 0, i32 0, metadata !508} ; [ DW_TAG_pointer_type ]
 !508 = metadata !{i32 786454, null, metadata !"action_reg", metadata !68, i32 39, i64 0, i64 0, i64 0, i32 0, metadata !509} ; [ DW_TAG_typedef ]
 !509 = metadata !{i32 786434, null, metadata !"", metadata !510, i32 35, i64 1024, i64 64, i32 0, i32 0, null, metadata !511, i32 0, null, null} ; [ DW_TAG_class_type ]
-!510 = metadata !{i32 786473, metadata !"./action_doublemult.H", metadata !"/afs/bb/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
+!510 = metadata !{i32 786473, metadata !"./action_doublemult.H", metadata !"/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
 !511 = metadata !{metadata !512, metadata !2977, metadata !2996}
 !512 = metadata !{i32 786445, metadata !509, metadata !"Control", metadata !510, i32 36, i64 128, i64 64, i64 0, i32 0, metadata !513} ; [ DW_TAG_member ]
 !513 = metadata !{i32 786454, null, metadata !"CONTROL", metadata !510, i32 70, i64 0, i64 0, i64 0, i32 0, metadata !514} ; [ DW_TAG_typedef ]
 !514 = metadata !{i32 786434, null, metadata !"", metadata !515, i32 64, i64 128, i64 64, i32 0, i32 0, null, metadata !516, i32 0, null, null} ; [ DW_TAG_class_type ]
-!515 = metadata !{i32 786473, metadata !"/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/include/hls_snap.H", metadata !"/afs/bb/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
+!515 = metadata !{i32 786473, metadata !"/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/include/hls_snap.H", metadata !"/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
 !516 = metadata !{metadata !517, metadata !1110, metadata !1111, metadata !1703, metadata !2371}
 !517 = metadata !{i32 786445, metadata !514, metadata !"sat", metadata !515, i32 65, i64 8, i64 8, i64 0, i32 0, metadata !518} ; [ DW_TAG_member ]
 !518 = metadata !{i32 786454, null, metadata !"snapu8_t", metadata !515, i32 61, i64 0, i64 0, i64 0, i32 0, metadata !519} ; [ DW_TAG_typedef ]
@@ -3330,11 +3327,11 @@ declare void @_GLOBAL__I_a() nounwind section ".text.startup"
 !2977 = metadata !{i32 786445, metadata !509, metadata !"Data", metadata !510, i32 37, i64 256, i64 64, i64 128, i32 0, metadata !2978} ; [ DW_TAG_member ]
 !2978 = metadata !{i32 786454, null, metadata !"doublemult_job_t", metadata !510, i32 31, i64 0, i64 0, i64 0, i32 0, metadata !2979} ; [ DW_TAG_typedef ]
 !2979 = metadata !{i32 786434, null, metadata !"doublemult_job", metadata !2980, i32 28, i64 256, i64 64, i32 0, i32 0, null, metadata !2981, i32 0, null, null} ; [ DW_TAG_class_type ]
-!2980 = metadata !{i32 786473, metadata !"../include/action_double.h", metadata !"/afs/bb/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
+!2980 = metadata !{i32 786473, metadata !"../include/action_double.h", metadata !"/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
 !2981 = metadata !{metadata !2982, metadata !2995}
 !2982 = metadata !{i32 786445, metadata !2979, metadata !"in", metadata !2980, i32 29, i64 128, i64 64, i64 0, i32 0, metadata !2983} ; [ DW_TAG_member ]
 !2983 = metadata !{i32 786434, null, metadata !"snap_addr", metadata !2984, i32 52, i64 128, i64 64, i32 0, i32 0, null, metadata !2985, i32 0, null, null} ; [ DW_TAG_class_type ]
-!2984 = metadata !{i32 786473, metadata !"/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/dcelik/GitRepo/snap_fork/software/include/snap_types.h", metadata !"/afs/bb/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
+!2984 = metadata !{i32 786473, metadata !"/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/dcelik/GitRepo/snap_fork/software/include/snap_types.h", metadata !"/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/dcelik/GitRepo/snap_fork/actions/hls_data_transfer/hw", null} ; [ DW_TAG_file_type ]
 !2985 = metadata !{metadata !2986, metadata !2988, metadata !2990, metadata !2993}
 !2986 = metadata !{i32 786445, metadata !2983, metadata !"addr", metadata !2984, i32 53, i64 64, i64 64, i64 0, i32 0, metadata !2987} ; [ DW_TAG_member ]
 !2987 = metadata !{i32 786454, null, metadata !"uint64_t", metadata !2984, i32 56, i64 0, i64 0, i64 0, i32 0, metadata !153} ; [ DW_TAG_typedef ]
