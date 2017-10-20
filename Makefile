@@ -14,7 +14,9 @@
 # limitations under the License.
 #
 PLATFORM ?= $(shell uname -i)
+
 export SNAP_ROOT=$(abspath .)
+
 config_subdirs += $(SNAP_ROOT)/scripts
 software_subdirs += $(SNAP_ROOT)/software
 hardware_subdirs += $(SNAP_ROOT)/hardware
@@ -59,18 +61,18 @@ endif
 %: %.sh
 
 $(software_subdirs):
-	@if [ -d $@ ]; then             \
+	if [ -d $@ ]; then             \
 	    echo "Enter: $@";           \
-	    $(MAKE) -s -C $@ || exit 1; \
+	    $(MAKE) -C $@ || exit 1; \
 	    echo "Exit:  $@";           \
 	fi
 
 software: $(software_subdirs)
 
 $(action_subdirs):
-	@if [ -d $@ ]; then             \
+	if [ -d $@ ]; then             \
 	    echo "Enter: $@";           \
-	    $(MAKE) -s -C $@ || exit 1; \
+	    $(MAKE) -C $@ || exit 1; \
 	    echo "Exit:  $@";           \
 	fi
 

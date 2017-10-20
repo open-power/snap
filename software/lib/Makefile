@@ -19,11 +19,15 @@ include ../config.mk
 libversion = $(VERSION)
 
 CFLAGS += -fPIC -fno-strict-aliasing
-LDLIBS += -lpthread
+LDLIBS += -lcxl -lpthread
 
 # Link statically for PSLSE simulation and dynamically for real version
-ifndef BUILD_SIMCODE
-LDLIBS += -lcxl
+#ifndef BUILD_SIMCODE
+#LDLIBS += -lcxl
+#endif
+
+ifdef BUILD_SIMCODE
+LDFLAGS += -L$(PSLSE_ROOT)/libcxl
 endif
 
 libnameA = libsnap
@@ -55,7 +59,7 @@ $(libnameA).so.$(MAJOR_VERSION): $(libnameA).so.$(libversion)
 
 $(libnameA).so.$(libversion): __$(libnameA).o
 	$(CC) $(LDFLAGS) -shared  $(SONAMEA) \
-		 -o $@ $^ $(libsA)
+		 -o $@ $^ $(libsA) $(LDLIBS)
 
 install: all
 	mkdir -p $(LIB_INSTALL_PATH)
