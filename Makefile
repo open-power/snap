@@ -28,7 +28,7 @@ snap_env_sh = snap_env.sh
 clean_subdirs += $(config_subdirs) $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
 
 # Only build if the subdirectory is really existent
-.PHONY: help $(software_subdirs) software $(action_subdirs) actions $(hardware_subdirs) hardware test install uninstall snap_env hw_project model sim image cloud_base cloud_action cloud_merge snap_config config menuconfig xconfig gconfig oldconfig clean clean_config clean_env gitclean
+.PHONY: help $(software_subdirs) software $(action_subdirs) apps actions $(hardware_subdirs) hardware test install uninstall snap_env hw_project model sim image cloud_base cloud_action cloud_merge snap_config config menuconfig xconfig gconfig oldconfig clean clean_config clean_env gitclean
 
 help:
 	@echo "Main targets for the SNAP Framework make process:";
@@ -40,7 +40,7 @@ help:
 	@echo "* hw_project     Create Vivado project";
 	@echo "* sim            Start a simulation";
 	@echo "* software       Build software libraries and tools for SNAP";
-	@echo "* actions        Build the applications for all actions";
+	@echo "* apps           Build the applications for all actions";
 	@echo "* clean          Remove all files generated in make process";
 	@echo "* clean_config   As target 'clean' plus reset of the configuration";
 	@echo "* help           Print this message";
@@ -74,7 +74,7 @@ $(action_subdirs):
 	    echo "Exit:  $@";           \
 	fi
 
-actions: $(action_subdirs)
+apps actions: $(action_subdirs)
 
 # Install/uninstall
 test install uninstall:

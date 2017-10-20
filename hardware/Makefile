@@ -98,7 +98,7 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 
 ifeq ($(PLATFORM),x86_64)
 
-.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim sim
+.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project config image cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
 
 all: model image
 
@@ -361,20 +361,20 @@ software: pslse
 	fi
 	@echo -e "[COMPILE SOFTWARE....] done  `date +"%T %a %b %d %Y"`"
 
-action_sw: software
-	@echo -e "[COMPILE ACTION SW...] start `date +"%T %a %b %d %Y"`"
+app: software
+	@echo -e "[COMPILE APPLICATION.] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -C $(ACTION_ROOT)/sw        >> $(LOGS_DIR)/compile_sw.log 2>&1; \
 	if [ $$? -ne 0 ]; then \
 		echo -e "                        Error: please look into $(LOGS_DIR)/compile_sw.log"; exit -1; \
 	fi
-	@echo -e "[COMPILE ACTION SW...] done  `date +"%T %a %b %d %Y"`"
+	@echo -e "[COMPILE APPLICATION.] done  `date +"%T %a %b %d %Y"`"
 
 nosim:
 	@echo -e "[BUILD $@ MODEL....] start `date +"%T %a %b %d %Y"`"
 	@echo -e "                        Info: Not building a simulation model, since SIMULATOR is set to \"nosim\"";
 	@echo -e "[BUILD $@ MODEL....] done  `date +"%T %a %b %d %Y"`"
 
-$(SNAP_SIMULATORS): check_nvme .hw_project_done action_sw
+$(SNAP_SIMULATORS): check_nvme .hw_project_done app
 	@if [ "$(SIMULATOR)" != "$@" ]; then \
 		echo; echo "Error: Makefile target $@ called with SIMULATOR set to \"$(SIMULATOR)\""; \
 		exit -1; \
@@ -434,12 +434,12 @@ clean:
 	@$(RM) -r sim/ies sim/xsim hdl/nvme/component.xml hdl/nvme/xgui
 	@echo -e "                        log files";
 	@$(RM) -r logs
-	@echo -e "                        action";
+	@echo -e "                        action / application";
 	@$(RM) $(ACTION_ROOT)/hw/vhdl
 	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then	    \
 		$(MAKE) -C $(ACTION_ROOT) $@ > /dev/null;   \
 		if [ $$? -ne 0 ]; then                      \
-			echo -e "                        Error: [make "$@"] failed for action in $(ACTION_ROOT)"; exit -1; \
+			echo -e "                        Error: [make "$@"] failed for action/application in $(ACTION_ROOT)"; exit -1; \
 		fi                                          \
 	fi
 	@echo -e "[CLEAN ENVIRONMENT...] done  `date +"%T %a %b %d %Y"`"
