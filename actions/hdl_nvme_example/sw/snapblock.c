@@ -34,15 +34,15 @@
 #include "snap_hls_if.h"
 #include "capiblock.h"
 
-#undef CONFIG_WAIT_FOR_IRQ	/* Not fully working */
+#undef CONFIG_WAIT_FOR_IRQ	/* Not working */
 #undef CONFIG_PRINT_STATUS	/* health checking if needed */
 #undef CONFIG_FIFO_SCHEDULING	/* only root */
 #undef CONFIG_PIN_COMPLETION_THREAD	/* try to pin completion thread */
 #define CONFIG_SOFTWARE_TIME	/* measure hardware */
 #define CONFIG_SLEEP_WHEN_IDLE	/* Sleep when there is no work to be done */
 
-#define CONFIG_REQUEST_TIMEOUT 5
-#define CONFIG_REQUEST_DURATION 100 /* usec */
+#define CONFIG_REQUEST_TIMEOUT	5
+#define CONFIG_REQUEST_DURATION	1000 /* usec */
 
 static int cblk_reqtimeout = CONFIG_REQUEST_TIMEOUT;
 static int cblk_prefetch = 0;
@@ -1086,8 +1086,7 @@ chunk_id_t cblk_open(const char *path,
 	unsigned int i, j;
 	int timeout = ACTION_WAIT_TIME;
 	unsigned long have_nvme = 0;
-	snap_action_flag_t attach_flags =
-		(SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
+	snap_action_flag_t attach_flags = 0;
 	struct cblk_dev *c = &chunk;
 
 	block_trace("[%s] opening (%s) CBLK_REQTIMEOUT=%d CBLK_PREFETCH=%d\n",
@@ -1095,6 +1094,9 @@ chunk_id_t cblk_open(const char *path,
 
 	pthread_mutex_lock(&c->dev_lock);
 
+#ifdef CONFIG_WAIT_FOR_IRQ
+	attach_flags |= (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
+#endif
 	if (flags & CBLK_OPN_VIRT_LUN) {
 		fprintf(stderr, "err: Virtual luns not supported in capi stub\n");
 		goto out_err0;
