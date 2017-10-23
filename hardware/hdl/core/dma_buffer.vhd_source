@@ -40,7 +40,7 @@ ENTITY dma_buffer IS
     ha_b_i                   : IN  HA_B_T;
     ah_b_o                   : OUT AH_B_T;
     --
-    -- DMA WRITE IOs
+    -- DMA WRITE IOs  
     write_ctrl_i             : IN  ARR_DMA_CTL_T;
     sd_d_i                   : IN  SD_D_T;
     buf_walmost_full_i       : IN  std_logic;

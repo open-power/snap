@@ -178,10 +178,18 @@ if { ($fpga_card == "S121B") && ($sdram_used == "TRUE") } {
 # Add IPs
 # SNAP CORE IPs
 puts "                        importing IPs"
-add_files -norecurse $ip_dir/ram_520x64_2p/ram_520x64_2p.xci >> $log_file
-export_ip_user_files -of_objects  [get_files "$ip_dir/ram_520x64_2p/ram_520x64_2p.xci"] -force >> $log_file
-add_files -norecurse $ip_dir/ram_576x64_2p/ram_576x64_2p.xci >> $log_file
-export_ip_user_files -of_objects  [get_files "$ip_dir/ram_576x64_2p/ram_576x64_2p.xci"] -force >> $log_file
+if { $fpga_card == "N250SP" } {
+  set DMA_IB_RAM 1040x32
+  set DMA_OB_RAM 576x64
+} else {
+  set DMA_IB_RAM 520x64
+  set DMA_OB_RAM 576x64
+}
+
+add_files -norecurse $ip_dir/ram_${DMA_IB_RAM}_2p/ram_${DMA_IB_RAM}_2p.xci >> $log_file
+export_ip_user_files -of_objects  [get_files "$ip_dir/ram_${DMA_IB_RAM}_2p/ram_${DMA_IB_RAM}_2p.xci"] -force >> $log_file
+add_files -norecurse $ip_dir/ram_${DMA_OB_RAM}_2p/ram_${DMA_OB_RAM}_2p.xci >> $log_file
+export_ip_user_files -of_objects  [get_files "$ip_dir/ram_${DMA_OB_RAM}_2p/ram_${DMA_OB_RAM}_2p.xci"] -force >> $log_file
 add_files -norecurse  $ip_dir/fifo_4x512/fifo_4x512.xci >> $log_file
 export_ip_user_files -of_objects  [get_files  "$ip_dir/fifo_4x512/fifo_4x512.xci"] -force >> $log_file
 add_files -norecurse  $ip_dir/fifo_8x512/fifo_8x512.xci >> $log_file
