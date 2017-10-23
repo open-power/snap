@@ -834,6 +834,7 @@ module top (
   // AFU instance
   //////////////////////////////////////////////////////////////////////////////
   psl_accel a0 (
+    // Command interface
     .ah_cvalid(ah_cvalid),
     .ah_ctag(ah_ctag),
     .ah_ctagpar(ah_ctagpar),
@@ -846,6 +847,7 @@ module top (
     .ah_cch(ah_cch),
     .ah_csize(ah_csize),
     .ha_croom(ha_croom),
+    // Buffer interface
     .ha_brvalid(ha_brvalid),
     .ha_brtag(ha_brtag),
     .ha_brtagpar(ha_brtagpar),
@@ -859,6 +861,7 @@ module top (
     .ha_bwad(ha_bwad),
     .ha_bwdata(ha_bwdata),
     .ha_bwpar(ha_bwpar),
+    // Response interface
     .ha_rvalid(ha_rvalid),
     .ha_rtag(ha_rtag),
     .ha_rtagpar(ha_rtagpar),
@@ -866,6 +869,7 @@ module top (
     .ha_rcredits(ha_rcredits),
     .ha_rcachestate(ha_rcachestate),
     .ha_rcachepos(ha_rcachepos),
+    // MMIO interface
     .ha_mmval(ha_mmval),
     .ha_mmcfg(ha_mmcfg),
     .ha_mmrnw(ha_mmrnw),
@@ -877,6 +881,7 @@ module top (
     .ah_mmack(ah_mmack),
     .ah_mmdata(ah_mmdata),
     .ah_mmdatapar(ah_mmdatapar),
+    // Control interface
     .ha_jval(ha_jval),
     .ha_jcom(ha_jcom),
     .ha_jcompar(ha_jcompar),
