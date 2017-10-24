@@ -293,7 +293,7 @@ image: .hw_project_done
 	@echo "A complete FPGA bitstream build got kicked off.";
 	@echo "This will take more than an hour.";
 	@echo "The process may be terminated by pressing <CTRL>-C at any time.";
-	@echo "After termination it can be restarted later.\n"; echo
+	@echo "After termination it can be restarted later."; echo
 	@$(MAKE) -s patch_version
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log -journal $(LOGS_DIR)/snap_build.jou
 	@$(RM) -r .bitstream_name.txt
