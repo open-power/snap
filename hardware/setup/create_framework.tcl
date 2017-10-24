@@ -25,6 +25,11 @@ set hdl_dir     $root_dir/hdl
 set sim_dir     $root_dir/sim
 set fpga_part   $::env(FPGACHIP)
 set fpga_card   $::env(FPGACARD)
+if { $fpga_card == "N250SP" } {
+  set psl_dir     $::env(PSL_DCP)
+} else {
+  set psl_dcp     [file tail $::env(PSL_DCP)]
+}
 set action_dir  $::env(ACTION_ROOT)/hw
 set nvme_used   $::env(NVME_USED)
 set bram_used   $::env(BRAM_USED)
@@ -282,10 +287,16 @@ if { $nvme_used == TRUE } {
   remove_files $action_dir/action_axi_nvme.vhd -quiet
 }
 
+# Add PSL
 if { $cloud_user_flow == "FALSE" } {
-  # Add PSL
+  if { $fpga_card == "N250SP" } {
+    puts "                        adding PSL source files"
+    add_files -scan_for_includes $psl_dir >> $log_file
+   
+  } else {
   puts "                        importing PSL design checkpoint"
   read_checkpoint -cell b $root_dir/build/Checkpoints/$psl_dcp -strict >> $log_file
+  }
 }
 
 if { $use_prflow == "TRUE" } {
