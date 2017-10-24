@@ -67,8 +67,9 @@ static void usage(const char *prog)
 	       "  -R, --random <seed>	    random seek ordering"
 	       "  -s, --start_lba <start_lba> start offset\n"
 	       "  -n, --num_lba <num_lba>   number of lbas to read or write\n"
+	       "                            0x40000 for 1 GiB\n"
 	       "  -b, --lba_blocks <lba_blocks> number of lbas to read"
-	       " or write in one operation.\n"
+	       "                            or write in one operation.\n"
 	       "  -p, --pattern <pattern>   pattern for formatting/INC\n"
 	       "  <file.bin>\n"
 	       "\n"
@@ -143,6 +144,57 @@ file_write(const char *fname, const uint8_t *buff, size_t len)
 	}
 	fclose(fp);
 	return rc;
+}
+
+static inline int
+file_map(const char *fname, uint8_t **buf, size_t len)
+{
+	int fd;
+	off64_t rc;
+
+	if ((fname == NULL) || (buf == NULL) || (len == 0)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	fd = open(fname, O_CREAT | O_TRUNC | O_RDWR, 0644);
+	if (fd < 0) {
+		fprintf(stderr, "err: Cannot open file %s: %s\n",
+			fname, strerror(errno));
+		return fd;
+	}
+
+	rc = lseek64(fd, len, SEEK_SET);	/* Empty file */
+	if (rc == (off_t) -1)
+		fprintf(stderr, "err: rc=%ld %s\n", rc, strerror(errno));
+
+	rc = write(fd, "", 1);
+	if (rc == -1)
+		fprintf(stderr, "err: rc=%ld %s\n", rc, strerror(errno));
+
+	rc = lseek64(fd, 0, SEEK_SET);		/* Go to start */
+	if (rc == (off_t) -1)
+		fprintf(stderr, "err: rc=%ld %s\n", rc, strerror(errno));
+
+	*buf = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	if (*buf == MAP_FAILED) {
+		*buf = NULL;
+		close(fd);
+		return -1;
+	}
+
+	return fd;
+}
+
+static inline void
+file_unmap(int fd, uint8_t **buf, size_t len)
+{
+	if (buf) {
+		munmap(*buf, len);
+		*buf = NULL;
+	}
+	if (fd >= 0)
+		close(fd);
 }
 
 static void INT_handler(int sig);
@@ -477,8 +529,10 @@ int main(int argc, char *argv[])
 			rc);
 		goto err_out;
 	}
-	fprintf(stderr, "NVMe device has %zu blocks of each %zu bytes; %zu MiB @ %u threads\n",
+	fprintf(stderr, "NVMe device has %zu blocks of each %zu bytes; "
+		"%zu MiB (MAX 0x%lx blocks) @ %u threads\n",
 		lun_size, lba_size, lun_size * lba_size / (1024 * 1024),
+		lun_size,
 		threads);
 
 	if (num_lba == 0)
@@ -486,6 +540,8 @@ int main(int argc, char *argv[])
 
 	switch (_op) {
 	case OP_READ: {
+		int fd;
+
 		/* fprintf(stderr, "num_lba=%u lba_blocks=%zu lun_size=%zu\n",
 			num_lba, lba_blocks, lun_size); */
 
@@ -512,15 +568,15 @@ int main(int argc, char *argv[])
 			goto err_out;
 		}
 
+#ifdef CONFIG_SINGLE_THREADED /* single threaded */
 		rc = posix_memalign((void **)&buf, 64, num_lba * lba_size);
 		if (rc != 0) {
-			fprintf(stderr, "err: Cannot allocate enough memory!\n");
+			fprintf(stderr, "[%s] err: Cannot allocate enough memory! %s\n",
+				__func__, strerror(errno));
 			goto err_out;
 		}
 		memset(buf, 0xff, num_lba * lba_size);
 
-
-#ifdef CONFIG_SINGLE_THREADED /* single threaded */
 		gettimeofday(&stime, NULL);
 
 		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
@@ -539,7 +595,22 @@ int main(int argc, char *argv[])
 
 		}
 		gettimeofday(&etime, NULL);
+
+		rc = file_write(fname, buf, num_lba * lba_size);
+		if (rc <= 0) {
+			fprintf(stderr, "err: Could not write %s, rc=%d\n",
+				fname, rc);
+			goto err_out;
+		}
+
 #else
+		fd = file_map(fname, &buf, num_lba * lba_size);
+		if (fd < 0) {
+			fprintf(stderr, "[%s] err: Cannot map output file! %s\n",
+				__func__, strerror(errno));
+			goto err_out;
+		}
+
 		rqueue_init(&rq, buf, start_lba, lba_size, num_lba, lba_blocks);
 		gettimeofday(&stime, NULL);
 
@@ -552,13 +623,8 @@ int main(int argc, char *argv[])
 
 		gettimeofday(&etime, NULL);
 		rqueue_free(&rq);
+		file_unmap(fd, &buf, num_lba * lba_size);
 #endif
-		rc = file_write(fname, buf, num_lba * lba_size);
-		if (rc <= 0) {
-			fprintf(stderr, "err: Could not write %s, rc=%d\n",
-				fname, rc);
-			goto err_out;
-		}
 
 		diff_usec = timediff_usec(&etime, &stime);
 		mib_sec = (diff_usec == 0) ? 0.0 :

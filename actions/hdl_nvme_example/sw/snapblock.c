@@ -24,6 +24,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <sched.h>
+#include <execinfo.h>
 
 #include <sys/stat.h>
 #include <sys/mman.h>
@@ -47,6 +48,21 @@
 static int cblk_reqtimeout = CONFIG_REQUEST_TIMEOUT;
 static int cblk_prefetch = 0;
 static int cblk_caching = 1;
+
+static inline void _backtrace(const char *file, int line)
+{
+	void *callstack[128];
+	int i, frames = backtrace(callstack, 128);
+	char **strs = backtrace_symbols(callstack, frames);
+
+	fprintf(stderr, "%s: %d\n", file, line);
+	for (i = 0; i < frames; ++i) {
+		fprintf(stderr, "%s\n", strs[i]);
+	}
+	free(strs);
+}
+
+#define __backtrace() _backtrace(__FILE__, __LINE__)
 
 /*
  * FIXME The following stuff most likely neesd to go in a header file 
@@ -535,21 +551,57 @@ reserve_block:
 	return e;
 }
 
+/**
+ * It might happen that a prefetch operation changes the state of the
+ * way entry. If that should happen the status would not be reading
+ * anymore and we should not write for now to avoid problems when
+ * it is e.g. valid. We might like to check if the LBA is right, but
+ * even that could have been overwritten if the READING state was
+ * changed!
+ */
 static inline int cache_write_reserved(struct cache_way *e, const void *buf)
 {
+	struct cache_entry *entry;
+
+	if (e == NULL)
+		return -1;
+
+	entry = &cache_entries[e->lba & CACHE_MASK];
+	pthread_mutex_lock(&entry->way_lock);
+
+	if (e->status != CACHE_BLOCK_READING) {
+		fprintf(stderr, "[%s] warning: LBA=%ld State is not READING but %s\n",
+			__func__, e->lba, block_status_str[e->status]);
+		pthread_mutex_unlock(&entry->way_lock);
+		return -1;
+	}
+
 	memcpy(e->buf, buf, __CBLK_BLOCK_SIZE);
 	e->status = CACHE_BLOCK_VALID;
+
+	pthread_mutex_unlock(&entry->way_lock);
 	return 0;
 }
 
 static inline int cache_unreserve(struct cache_way *e)
 {
+	struct cache_entry *entry;
+
 	if (e == NULL)
 		return -1;
 
-	if (e->status == CACHE_BLOCK_READING)
-		e->status = CACHE_BLOCK_UNUSED;
+	entry = &cache_entries[e->lba & CACHE_MASK];
+	pthread_mutex_lock(&entry->way_lock);
 
+	/* FIXME Do I need a lock here?? */
+	if (e->status == CACHE_BLOCK_READING) {
+		fprintf(stderr, "[%s] warning: forcing status LBA=%ld "
+			"cache from READING to UNUSED!\n", __func__, e->lba);
+		e->status = CACHE_BLOCK_UNUSED;
+		/* __backtrace(); */
+	}
+
+	pthread_mutex_unlock(&entry->way_lock);
 	return 0;
 }
 
@@ -695,7 +747,7 @@ static struct cblk_req *get_read_req(struct cblk_dev *c,
 			req->use_wait_sem = use_wait_sem;
 			req->lba = lba;
 			req->nblocks = nblocks;
-	
+
 			/* Ignore reservation misses, does not matter */
 			for (j = 0; j < nblocks; j++)
 				req->pblock[j] = cache_reserve(lba + j);
@@ -944,20 +996,23 @@ static int __prefetch_read_start(struct cblk_dev *c,
 	return 0;
 }
 
-static inline int __prefetch_read_complete(struct cblk_dev *c,
-					struct cblk_req *req)
+static inline int __read_complete(struct cblk_dev *c,
+				struct cblk_req *req)
 {
 	unsigned int i;
 
 	if ((c->status == CBLK_ERROR) || (req->status == CBLK_ERROR)) {
 		errno = ETIME;
+		put_req(c, req);
 		return -1;
 	}
 
-	/* ... push blocks to cache for later use */
-	for (i = 0; i < req->nblocks; i++) {
-		cache_write_reserved(req->pblock[i],
-				req->buf + i * __CBLK_BLOCK_SIZE);
+	if (cblk_caching) {
+		/* ... push blocks to cache for later use */
+		for (i = 0; i < req->nblocks; i++) {
+			cache_write_reserved(req->pblock[i],
+					req->buf + i * __CBLK_BLOCK_SIZE);
+		}
 	}
 
 	put_req(c, req);
@@ -1057,7 +1112,7 @@ static void *completion_thread(void *arg)
 					if (req->use_wait_sem) {
 						sem_post(&req->wait_sem);
 					} else {
-						__prefetch_read_complete(c, req);
+						__read_complete(c, req);
 					}
 				} else {
 					block_trace("  [%s] err: slot %d status is %s "
@@ -1358,7 +1413,7 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 	} else
 		memcpy(buf, req->buf, nblocks * __CBLK_BLOCK_SIZE);
 
-	put_req(c, req);
+	__read_complete(c, req);
 	return nblocks;
 }
 
@@ -1433,12 +1488,6 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 	rc = block_read(c, buf, lba, nblocks);
 	if (rc <= 0)
 		return rc;
-
-	/* ... push blocks to cache for later use */
-	if (cblk_caching) {
-		for (i = 0; i < nblocks; i++)
-			cache_write(lba + i, buf + i * __CBLK_BLOCK_SIZE);
-	}
 
 	return rc;
 }
