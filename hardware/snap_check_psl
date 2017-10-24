@@ -22,16 +22,18 @@
 
 export PSL_DCP_TYPE="UNKNOWN"
 
-PSL_MD5=`md5sum $1 | cut -d " " -f 1`
-if [ "$PSL_MD5" = "d051aa72ce08b60fd587a74a5146bf88" ] || 
-   [ "$PSL_MD5" = "5bf24f90f52e6959e8e6082245a2ac3c" ];   then
-  export PSL_DCP_TYPE="N250S"
-elif [ "$PSL_MD5" = "fcda87afa155cd6b982a0665eadedd98" ]; then
-  export PSL_DCP_TYPE="N250SP"
-elif [ "$PSL_MD5" = "1b1526c0d3cb61815c886f83d3b4f202" ]; then
-  export PSL_DCP_TYPE="ADKU3"
-elif [ "$PSL_MD5" = "3fa538efab1bc3e3fabe06477445d314" ]; then
-  export PSL_DCP_TYPE="S121B"
+if [ "$FPGACARD" = "N250SP" ]; then
+  export PSL_DCP_TYPE=$FPGACARD
+else
+  PSL_MD5=`md5sum $1 | cut -d " " -f 1`
+  if [ "$PSL_MD5" = "d051aa72ce08b60fd587a74a5146bf88" ] || 
+     [ "$PSL_MD5" = "5bf24f90f52e6959e8e6082245a2ac3c" ];   then
+    export PSL_DCP_TYPE="N250S"
+  elif [ "$PSL_MD5" = "1b1526c0d3cb61815c886f83d3b4f202" ]; then
+    export PSL_DCP_TYPE="ADKU3"
+  elif [ "$PSL_MD5" = "3fa538efab1bc3e3fabe06477445d314" ]; then
+    export PSL_DCP_TYPE="S121B"
+  fi
 fi
 
 echo "$PSL_DCP_TYPE"
