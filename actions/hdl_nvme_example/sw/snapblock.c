@@ -1428,7 +1428,7 @@ static int __cache_read_timeout(struct cblk_dev *c __attribute__((unused)),
 			unsigned int timeout_usec)
 {
 	int rc;
-	uint32_t usecs = 0;
+	unsigned long usecs = 0;
 	struct timeval s, e;
 
 	gettimeofday(&s, NULL);
@@ -1446,7 +1446,7 @@ static int __cache_read_timeout(struct cblk_dev *c __attribute__((unused)),
 		}
 
 		if (rc == 0) {		/* Success */
-			block_trace("    [%s] got LBA=%ld after %d usecs\n",
+			block_trace("    [%s] got LBA=%ld after %ld usecs\n",
 				__func__, lba, usecs);
 			return rc;
 		}
@@ -1454,6 +1454,9 @@ static int __cache_read_timeout(struct cblk_dev *c __attribute__((unused)),
 		if (rc < 0)		/* Not in cache, not requested */
 			return rc;
 	}
+
+	fprintf(stderr, "[%s] Block did not arrive in time %ld usecs\n",
+		__func__, usecs);
 	return -1;		/* Timeout */
 }
 
