@@ -98,7 +98,7 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 
 ifeq ($(PLATFORM),x86_64)
 
-.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_config_start hw_config config image cloud_base cloud_action cloud_merge pslse software action_sw model xsim irun nosim sim
+.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config image cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
 
 all: model image
 
@@ -271,21 +271,21 @@ create_project: snap_preprocess
 	@$(MAKE) -s patch_NVMe
 	@echo -e "[CREATE PROJECT......] done  `date +"%T %a %b %d %Y"`"
 
-hw_config_start:
-	@echo -e "[HW CONFIG...........] start `date +"%T %a %b %d %Y"`"
+hw_project_start:
+	@echo -e "[HW PROJECT..........] start `date +"%T %a %b %d %Y"`"
 
-hw_config: hw_config_start action_hw
+hw_project: hw_project_start action_hw
 	@$(MAKE) -s create_project
-	@touch .hw_config_done
-	@echo -e "[HW CONFIG...........] done  `date +"%T %a %b %d %Y"`"
+	@touch .hw_project_done
+	@echo -e "[HW PROJECT..........] done  `date +"%T %a %b %d %Y"`"
 
-.hw_config_done:
-	$(MAKE) -s hw_config
+.hw_project_done:
+	$(MAKE) -s hw_project
 
 # Adding target 'config' for backward compatibility
-config: hw_config
+config: hw_project
 
-image: .hw_config_done
+image: .hw_project_done
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
 		echo; echo -e "Error: Makefile target $* not allowed for PR flow!"; exit -1; \
 	fi
@@ -293,7 +293,7 @@ image: .hw_config_done
 	@echo "A complete FPGA bitstream build got kicked off.";
 	@echo "This will take more than an hour.";
 	@echo "The process may be terminated by pressing <CTRL>-C at any time.";
-	@echo "After termination it can be restarted later.\n"; echo
+	@echo "After termination it can be restarted later."; echo
 	@$(MAKE) -s patch_version
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log -journal $(LOGS_DIR)/snap_build.jou
 	@$(RM) -r .bitstream_name.txt
@@ -304,7 +304,7 @@ allow_%:
 		echo; echo -e "Error: Makefile target $* is only allowed for PR flow!"; exit -1; \
 	fi
 
-cloud_base: .hw_config_done
+cloud_base: .hw_project_done
 	@$(MAKE) -s allow_cloud_base
 	@echo -e "[BUILD CLOUD BASE...] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -s patch_version
@@ -319,7 +319,7 @@ $(SNAP_BASE_DCP):
 	@echo -e "                        Need to run cloud_base first"
 	@exit -1
 
-cloud_action: .hw_config_done
+cloud_action: .hw_project_done
 	@$(MAKE) -s allow_cloud_action
 	@echo -e "[CLOUD ACTION SYNTH..] start `date +"%T %a %b %d %Y"e`"
 	@$(MAKE) -s patch_version
@@ -361,33 +361,29 @@ software: pslse
 	fi
 	@echo -e "[COMPILE SOFTWARE....] done  `date +"%T %a %b %d %Y"`"
 
-action_sw: software
-	@echo -e "[COMPILE ACTION SW...] start `date +"%T %a %b %d %Y"`"
+app: software
+	@echo -e "[COMPILE APPLICATION.] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -C $(ACTION_ROOT)/sw        >> $(LOGS_DIR)/compile_sw.log 2>&1; \
 	if [ $$? -ne 0 ]; then \
 		echo -e "                        Error: please look into $(LOGS_DIR)/compile_sw.log"; exit -1; \
 	fi
-	@echo -e "[COMPILE ACTION SW...] done  `date +"%T %a %b %d %Y"`"
+	@echo -e "[COMPILE APPLICATION.] done  `date +"%T %a %b %d %Y"`"
 
 nosim:
 	@echo -e "[BUILD $@ MODEL....] start `date +"%T %a %b %d %Y"`"
 	@echo -e "                        Info: Not building a simulation model, since SIMULATOR is set to \"nosim\"";
 	@echo -e "[BUILD $@ MODEL....] done  `date +"%T %a %b %d %Y"`"
 
-$(SNAP_SIMULATORS): check_nvme .hw_config_done action_sw
+$(SNAP_SIMULATORS): check_nvme .hw_project_done app
 	@if [ "$(SIMULATOR)" != "$@" ]; then \
 		echo; echo "Error: Makefile target $@ called with SIMULATOR set to \"$(SIMULATOR)\""; \
 		exit -1; \
 	fi
 	@echo -e "[BUILD $@ MODEL....] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -s patch_version
-	@if [ ! -d "$(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@)" ];then \
-		vivado -quiet -mode batch -source setup/export_$@.tcl -notrace -log $(LOGS_DIR)/compile_$@.log; \
-		$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1; \
-		cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; \
-	else \
-		$(RM) $(LOGS_DIR)/compile_$@.log; \
-	fi
+	vivado -quiet -mode batch -source setup/export_$@.tcl -notrace -log $(LOGS_DIR)/compile_$@.log
+	$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1
+	cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; 
 	@cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@); \
 	./top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1; \
 	if [ $$? -ne 0 ]; then \
@@ -421,7 +417,7 @@ endif
 .PHONY: clean
 clean:
 	@echo -e "[CLEAN ENVIRONMENT...] start `date +"%T %a %b %d %Y"`"
-	@$(RM)    .hw_config_done
+	@$(RM)    .hw_project_done
 	@$(RM) -r $(SNAP_PP_FILES_VHD)                   \
                   $(SNAP_SIM_NVME)/endp_4_pipe32.v       \
                   $(SNAP_CONFIG_FILES)                   \
@@ -438,12 +434,12 @@ clean:
 	@$(RM) -r sim/ies sim/xsim hdl/nvme/component.xml hdl/nvme/xgui
 	@echo -e "                        log files";
 	@$(RM) -r logs
-	@echo -e "                        action";
+	@echo -e "                        action / application";
 	@$(RM) $(ACTION_ROOT)/hw/vhdl
 	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then	    \
 		$(MAKE) -C $(ACTION_ROOT) $@ > /dev/null;   \
 		if [ $$? -ne 0 ]; then                      \
-			echo -e "                        Error: [make "$@"] failed for action in $(ACTION_ROOT)"; exit -1; \
+			echo -e "                        Error: [make "$@"] failed for action/application in $(ACTION_ROOT)"; exit -1; \
 		fi                                          \
 	fi
 	@echo -e "[CLEAN ENVIRONMENT...] done  `date +"%T %a %b %d %Y"`"
