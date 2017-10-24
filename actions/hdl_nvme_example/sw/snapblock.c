@@ -529,6 +529,12 @@ static inline struct cache_way *cache_reserve(off_t lba)
 			}
 			break;
 		case CACHE_BLOCK_READING:	/* do not throw this out */
+			if (e->lba == lba) {	/* entry is already in cache */
+				fprintf(stderr, "[%s] LBA=%ld is already READING!\n",
+					__func__, e->lba);
+				pthread_mutex_unlock(&entry->way_lock);
+				return NULL;	/* no entry found! */
+			}
 			break;
 		}
 	}
