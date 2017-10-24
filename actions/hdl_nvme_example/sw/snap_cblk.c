@@ -71,6 +71,7 @@ static void usage(const char *prog)
 	       "  -b, --lba_blocks <lba_blocks> number of lbas to read"
 	       "                            or write in one operation.\n"
 	       "  -p, --pattern <pattern>   pattern for formatting/INC\n"
+	       "  -M, --use-mmap            create output file using mmap\n"
 	       "  <file.bin>\n"
 	       "\n"
 	       "Example:\n"
@@ -400,6 +401,7 @@ int main(int argc, char *argv[])
 	int incremental_pattern = 0;
 	unsigned int threads = 1;
 	int random_seed = 0;
+	int use_mmap = 0;
 
 	while (1) {
 		int option_index = 0;
@@ -415,6 +417,7 @@ int main(int argc, char *argv[])
 			{ "num_lba",	required_argument, NULL, 'n' },
 			{ "pattern",	required_argument, NULL, 'p' },
 			{ "random",	required_argument, NULL, 'R' },
+			{ "use-mmap",	no_argument,	   NULL, 'M' },
 
 			{ "format",	no_argument,	   NULL, 'f' },
 			{ "write",	no_argument,	   NULL, 'w' },
@@ -429,7 +432,7 @@ int main(int argc, char *argv[])
 			{ 0,		no_argument,	   NULL, 0   },
 		};
 
-		ch = getopt_long(argc, argv, "R:p:C:X:fwrs:t:n:b:p:Vqrvh",
+		ch = getopt_long(argc, argv, "MR:p:C:X:fwrs:t:n:b:p:Vqrvh",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -463,6 +466,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'n':
 			num_lba = strtoul(optarg, NULL, 0);
+			break;
+		case 'M':
+			use_mmap = 1;
 			break;
 		case 'w':
 			_op = OP_WRITE;
@@ -540,7 +546,7 @@ int main(int argc, char *argv[])
 
 	switch (_op) {
 	case OP_READ: {
-		int fd;
+		int fd = -1;
 
 		/* fprintf(stderr, "num_lba=%u lba_blocks=%zu lun_size=%zu\n",
 			num_lba, lba_blocks, lun_size); */
@@ -604,11 +610,21 @@ int main(int argc, char *argv[])
 		}
 
 #else
-		fd = file_map(fname, &buf, num_lba * lba_size);
-		if (fd < 0) {
-			fprintf(stderr, "[%s] err: Cannot map output file! %s\n",
-				__func__, strerror(errno));
-			goto err_out;
+		if (use_mmap) {
+			fd = file_map(fname, &buf, num_lba * lba_size);
+			if (fd < 0) {
+				fprintf(stderr, "[%s] err: Cannot map output file! %s\n",
+					__func__, strerror(errno));
+				goto err_out;
+			}
+		} else {
+			rc = posix_memalign((void **)&buf, 64, num_lba * lba_size);
+			if (rc != 0) {
+				fprintf(stderr, "[%s] err: Cannot allocate enough memory! %s\n",
+					__func__, strerror(errno));
+				goto err_out;
+			}
+			memset(buf, 0xff, num_lba * lba_size);
 		}
 
 		rqueue_init(&rq, buf, start_lba, lba_size, num_lba, lba_blocks);
@@ -623,7 +639,9 @@ int main(int argc, char *argv[])
 
 		gettimeofday(&etime, NULL);
 		rqueue_free(&rq);
-		file_unmap(fd, &buf, num_lba * lba_size);
+
+		if (use_mmap)
+			file_unmap(fd, &buf, num_lba * lba_size);
 #endif
 
 		diff_usec = timediff_usec(&etime, &stime);
