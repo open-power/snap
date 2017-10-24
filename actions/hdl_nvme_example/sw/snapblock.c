@@ -64,6 +64,15 @@ static inline void _backtrace(const char *file, int line)
 
 #define __backtrace() _backtrace(__FILE__, __LINE__)
 
+#undef DEBUG
+
+#ifdef DEBUG
+#define dfprintf(fp, fmt, ...) do {                                    \
+		fprintf(fp, "D " fmt, ## __VA_ARGS__);                 \
+	} while (0)
+#else
+#define dfprintf(fp, fmt, ...)
+#endif
 /*
  * FIXME The following stuff most likely neesd to go in a header file 
  * which can be accessed outside this code, or the functionalty in this
@@ -530,7 +539,7 @@ static inline struct cache_way *cache_reserve(off_t lba)
 			break;
 		case CACHE_BLOCK_READING:	/* do not throw this out */
 			if (e->lba == lba) {	/* entry is already in cache */
-				fprintf(stderr, "[%s] LBA=%ld is already READING!\n",
+				dfprintf(stderr, "[%s] LBA=%ld is already READING!\n",
 					__func__, e->lba);
 				pthread_mutex_unlock(&entry->way_lock);
 				return NULL;	/* no entry found! */
@@ -576,7 +585,7 @@ static inline int cache_write_reserved(struct cache_way *e, const void *buf)
 	pthread_mutex_lock(&entry->way_lock);
 
 	if (e->status != CACHE_BLOCK_READING) {
-		fprintf(stderr, "[%s] warning: LBA=%ld State is not READING but %s\n",
+		dfprintf(stderr, "[%s] warning: LBA=%ld State is not READING but %s\n",
 			__func__, e->lba, block_status_str[e->status]);
 		pthread_mutex_unlock(&entry->way_lock);
 		return -1;
@@ -601,7 +610,7 @@ static inline int cache_unreserve(struct cache_way *e)
 
 	/* FIXME Do I need a lock here?? */
 	if (e->status == CACHE_BLOCK_READING) {
-		fprintf(stderr, "[%s] warning: forcing status LBA=%ld "
+		dfprintf(stderr, "[%s] warning: forcing status LBA=%ld "
 			"cache from READING to UNUSED!\n", __func__, e->lba);
 		e->status = CACHE_BLOCK_UNUSED;
 		/* __backtrace(); */
@@ -1455,7 +1464,7 @@ static int __cache_read_timeout(struct cblk_dev *c __attribute__((unused)),
 			return rc;
 	}
 
-	fprintf(stderr, "[%s] Block did not arrive in time %ld usecs\n",
+	dfprintf(stderr, "[%s] Block did not arrive in time %ld usecs\n",
 		__func__, usecs);
 	return -1;		/* Timeout */
 }
@@ -1571,7 +1580,7 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 		for (i = 0; i < nblocks; i++) {
 			rc = cache_write(lba + i, buf + i * __CBLK_BLOCK_SIZE);
 			if (rc != 0) {
-				fprintf(stderr, "err: cache_write LBA=%ld "
+				dfprintf(stderr, "warning: cache_write LBA=%ld "
 					"failed rc=%d!\n", (long int)lba, rc);
 				return 0;
 			}
