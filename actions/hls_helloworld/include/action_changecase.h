@@ -24,10 +24,18 @@ extern "C" {
 #endif
 
 #define HELLOWORLD_ACTION_TYPE 0x10141008
-
+/*struct ring_buffer {
+        uint8_t front;
+        uint8_t rear;
+        uint8_t is_full;
+        uint8_t is_empty;
+        uint8_t spare[4];
+} ;
+*/
 typedef struct helloworld_job {
 	struct snap_addr in;	/* input data */
 	struct snap_addr out;   /* offset table */
+//	struct ring_buffer queue;   /* offset table */
 } helloworld_job_t;
 
 #ifdef __cplusplus

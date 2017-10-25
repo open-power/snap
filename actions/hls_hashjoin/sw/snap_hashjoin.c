@@ -196,7 +196,7 @@ static void usage(const char *prog)
 	       "  -Q, --t1-entries <items> Entries in table1.\n"
 	       "  -T, --t2-entries <items> Entries in table2.\n"
 	       "  -s, --seed <seed>        Random seed to enable recreation.\n"
-	       "  -I, --irq                Enable Interrupts\n"
+	       "  -N, --no irq             Disable Interrupts (polling)\n"
 	       "\n"
 	       "Example:\n"
 	       "  snap_hashjoin ...\n"
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
 	unsigned int t2_entries = 23;
 	unsigned int t2_tocopy = 0;
 	unsigned int seed = 1974;
-	snap_action_flag_t action_irq = 0;
+	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 
 	while (1) {
 		int option_index = 0;
@@ -237,12 +237,12 @@ int main(int argc, char *argv[])
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
-			{ "irq",	 no_argument,	    NULL, 'I' },
+			{ "noirq",	 no_argument,	    NULL, 'N' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-				 "s:Q:T:C:t:VvhI",
+				 "s:Q:T:C:t:VvhN",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 			exit(EXIT_SUCCESS);
 			break;
 		case 'I':
-			action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
+			action_irq = 0;
 			break;
 		default:
 			usage(argv[0]);

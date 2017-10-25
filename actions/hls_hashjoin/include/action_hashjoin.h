@@ -24,7 +24,6 @@ extern "C" {
 #endif
 
 #define HASHJOIN_ACTION_TYPE 0x10141002
-#define RELEASE_LEVEL        0x00000020
 
 #define TABLE1_SIZE 32
 #define TABLE2_SIZE 32

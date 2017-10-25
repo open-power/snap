@@ -22,7 +22,7 @@
 #include <iostream>
 #include <hls_minibuf.H>
 
-#include "action_hashjoin_hls.H"
+#include "action_hashjoin.H"
 
 using namespace std;
 
@@ -174,7 +174,7 @@ static void write_table3(snap_membus_t *mem, unsigned int max_lines,
 //-----------------------------------------------------------------------------
 static void process_action(snap_membus_t *din_gmem,
 			   snap_membus_t *dout_gmem,
-			   snap_membus_t *d_ddrmem,
+			  // snap_membus_t *d_ddrmem,
 			   action_reg *Action_Register)
 {
 	snapu16_t i, j;
@@ -236,7 +236,7 @@ static void process_action(snap_membus_t *din_gmem,
 		    T2_lines, &t2_fifo, T2_items);
 
 	__table3_idx = 0;
-	rc = action_hashjoin_hls(&t1_fifo, T1_items,
+	rc = action_hashjoin(&t1_fifo, T1_items,
 				 &t2_fifo, T2_items,
 				 &t3_fifo, &__table3_idx);
 	if (rc == 0) {
@@ -258,7 +258,7 @@ static void process_action(snap_membus_t *din_gmem,
  */
 void hls_action(snap_membus_t *din_gmem,
                     snap_membus_t *dout_gmem,
-                    snap_membus_t *d_ddrmem,
+                    //snap_membus_t *d_ddrmem,
                     action_reg *Action_Register,
                     action_RO_config_reg *Action_Config)
 {
@@ -272,9 +272,9 @@ void hls_action(snap_membus_t *din_gmem,
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg        offset=0x040
 
 	// DDR memory Interface
-#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512 \
- max_read_burst_length=32  max_write_burst_length=32
-#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg         offset=0x050
+//#pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512 \
+// max_read_burst_length=32  max_write_burst_length=32
+//#pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg         offset=0x050
 
 	// Host Memory AXI Lite Master Interface
 #pragma HLS DATA_PACK variable=Action_Config
@@ -292,7 +292,8 @@ void hls_action(snap_membus_t *din_gmem,
 		return;
 		break;
 	default:
-		process_action(din_gmem, dout_gmem, d_ddrmem, Action_Register);
+		//process_action(din_gmem, dout_gmem, d_ddrmem, Action_Register);
+		process_action(din_gmem, dout_gmem, Action_Register);
 		break;
 
 	}

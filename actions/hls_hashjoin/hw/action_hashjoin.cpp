@@ -77,7 +77,7 @@
  * limitations under the License.
  */
 
-#include "action_hashjoin_hls.H"
+#include "action_hashjoin.H"
 
 /*
  * The strcmp() function compares the two strings s1 and s2. It
@@ -327,7 +327,7 @@ void table3_dump(table3_t *table3, unsigned int table3_idx)
 
 #if defined(CONFIG_HOSTSTYLE_ALGO)
 
-int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
+int action_hashjoin(t1_fifo_t *fifo1, unsigned int table1_used,
 			t2_fifo_t *fifo2, unsigned int table2_used,
 			t3_fifo_t *fifo3, unsigned int *table3_used)
 {
@@ -410,7 +410,7 @@ static void hashkey_zero(hashkey_t s)
  * to get the performance/optimizations better. But it is there as
  * way to try out different things.
  */
-int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
+int action_hashjoin(t1_fifo_t *fifo1, unsigned int table1_used,
 			t2_fifo_t *fifo2, unsigned int table2_used,
 			t3_fifo_t *fifo3, unsigned int *table3_used)
 {
