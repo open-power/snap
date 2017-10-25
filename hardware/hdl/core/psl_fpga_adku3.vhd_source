@@ -26,31 +26,33 @@ USE ieee.numeric_std.all;
 
 ENTITY psl_fpga IS
   PORT(
-    -- DDR3 SDRAM Interface                                                     -- only for DDR3_USED=TRUE
-    --                                                                          -- only for DDR3_USED=TRUE
-    -- AlphaData KU3 card has two DDR3 SO-DIMMs                                 -- only for DDR3_USED=TRUE
-    -- SNAP is only using the C0 DIMM                                           -- only for DDR3_USED=TRUE
-    c0_sys_clk_p       : IN    STD_LOGIC;                                       -- only for DDR3_USED=TRUE
-    c0_sys_clk_n       : IN    STD_LOGIC;                                       -- only for DDR3_USED=TRUE
-    c0_ddr3_addr       : OUT   STD_LOGIC_VECTOR(15 DOWNTO 0);                   -- only for DDR3_USED=TRUE
-    c0_ddr3_ba         : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);                    -- only for DDR3_USED=TRUE
-    c0_ddr3_ras_n      : OUT   STD_LOGIC;                                       -- only for DDR3_USED=TRUE
-    c0_ddr3_cas_n      : OUT   STD_LOGIC;                                       -- only for DDR3_USED=TRUE
-    c0_ddr3_reset_n    : OUT   STD_LOGIC;                                       -- only for DDR3_USED=TRUE
-    c0_ddr3_cs_n       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);                    -- only for DDR3_USED=TRUE
-    c0_ddr3_cke        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);                    -- only for DDR3_USED=TRUE
-    c0_ddr3_ck_p       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);                    -- only for DDR3_USED=TRUE
-    c0_ddr3_ck_n       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);                    -- only for DDR3_USED=TRUE
-    c0_ddr3_we_n       : OUT   STD_LOGIC;                                       -- only for DDR3_USED=TRUE
-    c0_ddr3_dm         : OUT   STD_LOGIC_VECTOR(8 DOWNTO 0);                    -- only for DDR3_USED=TRUE
-    c0_ddr3_dq         : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);                   -- only for DDR3_USED=TRUE
-    c0_ddr3_dqs_p      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);                    -- only for DDR3_USED=TRUE
-    c0_ddr3_dqs_n      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);                    -- only for DDR3_USED=TRUE
-    c0_ddr3_odt        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);                    -- only for DDR3_USED=TRUE
-
-    -- Clock inputs for SDRAM                                                   -- only for DDRI_USED=TRUE
-    refclk200_p        : in      std_logic;                                     -- only for DDRI_USED=TRUE
-    refclk200_n        : in      std_logic;                                     -- only for DDRI_USED=TRUE
+#ifdef CONFIG_ENABLE_DDRI
+    -- Clock inputs for SDRAM
+    refclk200_p        : IN      STD_LOGIC;
+    refclk200_n        : IN      STD_LOGIC;
+#endif
+#ifdef CONFIG_ENABLE_DDR3
+    -- DDR3 SDRAM Interface
+    -- AlphaData KU3 card has two DDR3 SO-DIMMs
+    -- SNAP is only using the C0 DIMM
+    c0_sys_clk_p       : IN    STD_LOGIC;
+    c0_sys_clk_n       : IN    STD_LOGIC;
+    c0_ddr3_addr       : OUT   STD_LOGIC_VECTOR(15 DOWNTO 0);
+    c0_ddr3_ba         : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
+    c0_ddr3_ras_n      : OUT   STD_LOGIC;
+    c0_ddr3_cas_n      : OUT   STD_LOGIC;
+    c0_ddr3_reset_n    : OUT   STD_LOGIC;
+    c0_ddr3_cs_n       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+    c0_ddr3_cke        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+    c0_ddr3_ck_p       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+    c0_ddr3_ck_n       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+    c0_ddr3_we_n       : OUT   STD_LOGIC;
+    c0_ddr3_dm         : OUT   STD_LOGIC_VECTOR(8 DOWNTO 0);
+    c0_ddr3_dq         : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
+    c0_ddr3_dqs_p      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+    c0_ddr3_dqs_n      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+    c0_ddr3_odt        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+#endif
 
     -- flash bus
     o_flash_oen: out std_logic;
@@ -122,12 +124,12 @@ Component psl_accel
        ah_cch: out std_logic_vector(0 to 15);                               -- Context Handle
        ah_csize: out std_logic_vector(0 to 11);                             -- Number of bytes
        ha_croom: in std_logic_vector(0 to 7);                               -- Commands PSL is prepared to accept
-       
+
        -- command parity
        ah_ctagpar: out std_logic;
        ah_compar: out std_logic;
        ah_ceapar: out std_logic;
-       
+
        -- Accelerator Buffer Interfaces
        ha_brvalid: in std_logic;                                            -- A read transfer is present
        ha_brtag: in std_logic_vector(0 to 7);                               -- Accelerator generated ID for read
@@ -140,11 +142,11 @@ Component psl_accel
        ha_bwad: in std_logic_vector(0 to 5);                                -- half line index of write data
        ha_bwdata: in std_logic_vector(0 to 511);                            -- Write data
        ha_bwpar: in std_logic_vector(0 to 7);                               -- Write data parity
-       
+
        -- buffer tag parity
        ha_brtagpar: in std_logic;
        ha_bwtagpar: in std_logic;
-       
+
        -- PSL Response Interface
        ha_rvalid: in std_logic;                                             --A response is present
        ha_rtag: in std_logic_vector(0 to 7);                                --Accelerator generated request ID
@@ -153,7 +155,7 @@ Component psl_accel
        ha_rcachestate: in std_logic_vector(0 to 1);                         --Resultant Cache State
        ha_rcachepos: in std_logic_vector(0 to 12);                          --Cache location id
        ha_rtagpar: in std_logic;
-       
+
        -- MMIO Interface
        ha_mmval: in std_logic;                                              -- A valid MMIO is present
        ha_mmrnw: in std_logic;                                              -- 1 = read, 0 = write
@@ -163,12 +165,12 @@ Component psl_accel
        ha_mmcfg: in std_logic;                                              -- mmio is to afu descriptor space
        ah_mmack: out std_logic;                                             -- Write is complete or Read is valid pulse
        ah_mmdata: out std_logic_vector(0 to 63);                            -- Read data
-       
+
        -- mmio parity
        ha_mmadpar: in std_logic;
        ha_mmdatapar: in std_logic;
        ah_mmdatapar: out std_logic;
-       
+
        -- Accelerator Control Interface
        ha_jval: in std_logic;                                               -- A valid job control command is present
        ha_jcom: in std_logic_vector(0 to 7);                                -- Job control command opcode
@@ -181,30 +183,32 @@ Component psl_accel
        ah_jyield: out std_logic;                                            -- Accelerator wants to stop
        ha_jeapar: in std_logic;
        ha_jcompar: in std_logic;
-                                                                                          -- only for DDRI_USED=TRUE
-       -- Clock inputs for SDRAM                                                          -- only for DDRI_USED=TRUE
-       refclk_sdram_p                     : IN    STD_LOGIC;                              -- only for DDRI_USED=TRUE
-       refclk_sdram_n                     : IN    STD_LOGIC;                              -- only for DDRI_USED=TRUE
-                                                                                          -- only for DDR3_USED=TRUE 
-       -- DDR3 SDRAM Interface                                                            -- only for DDR3_USED=TRUE
-       c0_sys_clk_p                       : IN    STD_LOGIC;                              -- only for DDR3_USED=TRUE
-       c0_sys_clk_n                       : IN    STD_LOGIC;                              -- only for DDR3_USED=TRUE
-       c0_ddr3_addr                       : OUT   STD_LOGIC_VECTOR(15 DOWNTO 0);          -- only for DDR3_USED=TRUE
-       c0_ddr3_ba                         : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);           -- only for DDR3_USED=TRUE
-       c0_ddr3_ras_n                      : OUT   STD_LOGIC;                              -- only for DDR3_USED=TRUE
-       c0_ddr3_cas_n                      : OUT   STD_LOGIC;                              -- only for DDR3_USED=TRUE
-       c0_ddr3_reset_n                    : OUT   STD_LOGIC;                              -- only for DDR3_USED=TRUE
-       c0_ddr3_cs_n                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);           -- only for DDR3_USED=TRUE
-       c0_ddr3_cke                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);           -- only for DDR3_USED=TRUE
-       c0_ddr3_ck_p                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);           -- only for DDR3_USED=TRUE
-       c0_ddr3_ck_n                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);           -- only for DDR3_USED=TRUE
-       c0_ddr3_we_n                       : OUT   STD_LOGIC;                              -- only for DDR3_USED=TRUE
-       c0_ddr3_dm                         : OUT   STD_LOGIC_VECTOR(8 DOWNTO 0);           -- only for DDR3_USED=TRUE
-       c0_ddr3_dq                         : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);          -- only for DDR3_USED=TRUE
-       c0_ddr3_dqs_p                      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);           -- only for DDR3_USED=TRUE
-       c0_ddr3_dqs_n                      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);           -- only for DDR3_USED=TRUE
-       c0_ddr3_odt                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);           -- only for DDR3_USED=TRUE
 
+#ifdef CONFIG_ENABLE_DDRI
+       -- Clock inputs for SDRAM
+       refclk_sdram_p                     : IN    STD_LOGIC;
+       refclk_sdram_n                     : IN    STD_LOGIC;
+#endif
+#ifdef CONFIG_ENABLE_DDR3
+       -- DDR3 SDRAM Interface
+       c0_sys_clk_p                       : IN    STD_LOGIC;
+       c0_sys_clk_n                       : IN    STD_LOGIC;
+       c0_ddr3_addr                       : OUT   STD_LOGIC_VECTOR(15 DOWNTO 0);
+       c0_ddr3_ba                         : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
+       c0_ddr3_ras_n                      : OUT   STD_LOGIC;
+       c0_ddr3_cas_n                      : OUT   STD_LOGIC;
+       c0_ddr3_reset_n                    : OUT   STD_LOGIC;
+       c0_ddr3_cs_n                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+       c0_ddr3_cke                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+       c0_ddr3_ck_p                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+       c0_ddr3_ck_n                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+       c0_ddr3_we_n                       : OUT   STD_LOGIC;
+       c0_ddr3_dm                         : OUT   STD_LOGIC_VECTOR(8 DOWNTO 0);
+       c0_ddr3_dq                         : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
+       c0_ddr3_dqs_p                      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+       c0_ddr3_dqs_n                      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+       c0_ddr3_odt                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+#endif
        -- Parity Check enable and Host Clock input
        ah_paren: out std_logic;
        ha_pclock: in std_logic);
@@ -445,25 +449,29 @@ begin
          ah_jyield            => a0h_jyield,
          ha_jeapar            => ha0_jeapar,
          ha_jcompar           => ha0_jcompar,
-         refclk_sdram_n       => refclk200_n,               -- only for DDRI_USED=TRUE 
-         refclk_sdram_p       => refclk200_p,		    -- only for DDRI_USED=TRUE 
-         c0_sys_clk_p         => c0_sys_clk_p,		    -- only for DDR3_USED=TRUE 
-         c0_sys_clk_n         => c0_sys_clk_n,		    -- only for DDR3_USED=TRUE 
-         c0_ddr3_addr         => c0_ddr3_addr,		    -- only for DDR3_USED=TRUE 
-         c0_ddr3_ba           => c0_ddr3_ba,		    -- only for DDR3_USED=TRUE 
-         c0_ddr3_ras_n        => c0_ddr3_ras_n,		    -- only for DDR3_USED=TRUE 
-         c0_ddr3_cas_n        => c0_ddr3_cas_n,		    -- only for DDR3_USED=TRUE 
-         c0_ddr3_reset_n      => c0_ddr3_reset_n,	    -- only for DDR3_USED=TRUE 
-         c0_ddr3_cs_n         => c0_ddr3_cs_n,		    -- only for DDR3_USED=TRUE 
-         c0_ddr3_cke          => c0_ddr3_cke,		    -- only for DDR3_USED=TRUE 
-         c0_ddr3_ck_p         => c0_ddr3_ck_p,		    -- only for DDR3_USED=TRUE 
-         c0_ddr3_ck_n         => c0_ddr3_ck_n,		    -- only for DDR3_USED=TRUE 
-         c0_ddr3_we_n         => c0_ddr3_we_n,		    -- only for DDR3_USED=TRUE 
-         c0_ddr3_dm           => c0_ddr3_dm,		    -- only for DDR3_USED=TRUE 
-         c0_ddr3_dq           => c0_ddr3_dq,		    -- only for DDR3_USED=TRUE 
-         c0_ddr3_dqs_p        => c0_ddr3_dqs_p,		    -- only for DDR3_USED=TRUE 
-         c0_ddr3_dqs_n        => c0_ddr3_dqs_n,		    -- only for DDR3_USED=TRUE 
-         c0_ddr3_odt          => c0_ddr3_odt,		    -- only for DDR3_USED=TRUE 
+#ifdef CONFIG_ENABLE_DDRI
+         refclk_sdram_n       => refclk200_n,
+         refclk_sdram_p       => refclk200_p,
+#endif
+#ifdef CONFIG_ENABLE_DDR3
+         c0_sys_clk_p         => c0_sys_clk_p,
+         c0_sys_clk_n         => c0_sys_clk_n,
+         c0_ddr3_addr         => c0_ddr3_addr,
+         c0_ddr3_ba           => c0_ddr3_ba,
+         c0_ddr3_ras_n        => c0_ddr3_ras_n,
+         c0_ddr3_cas_n        => c0_ddr3_cas_n,
+         c0_ddr3_reset_n      => c0_ddr3_reset_n,
+         c0_ddr3_cs_n         => c0_ddr3_cs_n,
+         c0_ddr3_cke          => c0_ddr3_cke,
+         c0_ddr3_ck_p         => c0_ddr3_ck_p,
+         c0_ddr3_ck_n         => c0_ddr3_ck_n,
+         c0_ddr3_we_n         => c0_ddr3_we_n,
+         c0_ddr3_dm           => c0_ddr3_dm,
+         c0_ddr3_dq           => c0_ddr3_dq,
+         c0_ddr3_dqs_p        => c0_ddr3_dqs_p,
+         c0_ddr3_dqs_n        => c0_ddr3_dqs_n,
+         c0_ddr3_odt          => c0_ddr3_odt,
+#endi
          ah_paren             => a0h_paren,
          ha_pclock            => ha0_pclock
     );
@@ -472,9 +480,9 @@ begin
 
     b: base_img
      PORT MAP (
-         pci_pi_nperst0 => pci_pi_nperst0,                                
-         pci_pi_refclk_p0 => pci_pi_refclk_p0,       
-         pci_pi_refclk_n0 => pci_pi_refclk_n0,                                       
+         pci_pi_nperst0 => pci_pi_nperst0,
+         pci_pi_refclk_p0 => pci_pi_refclk_p0,
+         pci_pi_refclk_n0 => pci_pi_refclk_n0,
          pci0_i_rxp_in0 => pci0_i_rxp_in0,
          pci0_i_rxn_in0 => pci0_i_rxn_in0,
          pci0_i_rxp_in1 => pci0_i_rxp_in1,
