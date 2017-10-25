@@ -25,6 +25,8 @@
 #include <hls_snap.H>
 #include <action_hashjoin.h>
 
+#define RELEASE_LEVEL        0x00000021
+
 /* Define memory buffers to keep the data we read from CARD or HOST DRAM */
 #define TABLE1_BYTES         (sizeof(table1_t) * TABLE1_SIZE)
 #define TABLE2_BYTES         (sizeof(table2_t) * TABLE2_SIZE)
@@ -48,7 +50,7 @@ typedef struct {
 
 void hashkey_cpy(hashkey_t dst, hashkey_t src);
 
-int action_hashjoin_hls(t1_fifo_t *fifo1, unsigned int table1_used,
+int action_hashjoin(t1_fifo_t *fifo1, unsigned int table1_used,
 			t2_fifo_t *fifo2, unsigned int table2_used,
 			t3_fifo_t *fifo3, unsigned int *table3_used);
 
