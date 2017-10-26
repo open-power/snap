@@ -287,7 +287,8 @@ config: hw_config
 
 image: .hw_config_done
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
-		echo; echo -e "Error: Makefile target $* not allowed for PR flow!"; exit -1; \
+		$(MAKE) -s cloud_action; \
+		snap-submit-build ${snap_env_sh}; exit 0; \
 	fi
 	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
 	@echo "A complete FPGA bitstream build got kicked off.";
