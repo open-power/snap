@@ -690,7 +690,7 @@ BEGIN
 #endif
 #ifdef CONFIG_N250SP
     ah_b_o.rdata <= wram_rdata_q(1023 DOWNTO 0);
-    ah_b_o.rpar  <= wram_rdata_p_q;(15 DOWNTO 0)
+    ah_b_o.rpar  <= wram_rdata_p_q(15 DOWNTO 0);
     ah_b_o.rlat  <= x"2";
 #endif
 
