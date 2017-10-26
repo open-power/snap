@@ -61,7 +61,7 @@ static inline void _backtrace(const char *file, int line)
 
 #define __backtrace() _backtrace(__FILE__, __LINE__)
 
-#undef DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #define dfprintf(fp, fmt, ...) do {                                    \
@@ -557,7 +557,7 @@ static inline struct cache_way *cache_reserve(off_t lba)
 			break;
 		case CACHE_BLOCK_READING:	/* do not throw this out */
 			if (e->lba == lba) {	/* entry is already in cache */
-				dfprintf(stderr, "[%s] LBA=%ld is already READING!\n",
+				cache_trace("[%s] LBA=%ld is already READING!\n",
 					__func__, e->lba);
 				pthread_mutex_unlock(&entry->way_lock);
 				return NULL;	/* no entry found! */
@@ -566,6 +566,8 @@ static inline struct cache_way *cache_reserve(off_t lba)
 		}
 	}
 	if (reserve_idx == -1) {
+		dfprintf(stderr, "[%s] warning: No entry found for LBA=%ld\n",
+			__func__, lba);
 		pthread_mutex_unlock(&entry->way_lock);
 		return NULL;	/* no entry found! */
 	}
@@ -595,6 +597,9 @@ reserve_block:
  * it is e.g. valid. We might like to check if the LBA is right, but
  * even that could have been overwritten if the READING state was
  * changed!
+ *
+ * We added _used to identify entries which were read by the prefetch
+ * code but thrown out before they got actually used.
  */
 static inline int cache_write_reserved(struct cache_way *e, const void *buf,
 					int _used)
