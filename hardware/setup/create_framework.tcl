@@ -180,7 +180,7 @@ if { ($fpga_card == "S121B") && ($sdram_used == "TRUE") } {
 puts "                        importing IPs"
 if { $fpga_card == "N250SP" } {
   set DMA_IB_RAM 1040x32
-  set DMA_OB_RAM 576x64
+  set DMA_OB_RAM 1152x32
 } else {
   set DMA_IB_RAM 520x64
   set DMA_OB_RAM 576x64

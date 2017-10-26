@@ -47,6 +47,8 @@ PACKAGE snap_core_types IS
                                                                              --             0x01 Nallatech 250S
   CONSTANT NVME_ENABLED                    : std_logic;                      -- Is the NVMe host logic enabled for connecting to NVMe Flash drives
 
+  CONSTANT CAPI_VER                        : integer RANGE 1 TO 2 := 1;      -- 
+
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- ******************************************************
@@ -591,25 +593,25 @@ PACKAGE snap_core_types IS
     --  ha_b (from PSL)
     --
     TYPE HA_B_T IS RECORD
-      rvalid      : std_logic;                           -- Buffer Read valid
-      rtag        : std_logic_vector(7 DOWNTO 0);        -- Buffer Read tag
-      rtagpar     : std_logic;                           -- Buffer Read tag parity
-      rad         : std_logic_vector(5 DOWNTO 0);        -- Buffer Read address
-      wvalid      : std_logic;                           -- Buffer Write valid
-      wtag        : std_logic_vector(7 DOWNTO 0);        -- Buffer Write tag
-      wtagpar     : std_logic;                           -- Buffer Write tag parity
-      wad         : std_logic_vector(5   DOWNTO 0);      -- Buffer Write address
-      wdata       : std_logic_vector(511 DOWNTO 0);      -- Buffer Write data
-      wpar        : std_logic_vector(7   DOWNTO 0);      -- Buffer Write parity
+      rvalid      : std_logic;                                        -- Buffer Read valid
+      rtag        : std_logic_vector(7 DOWNTO 0);                     -- Buffer Read tag
+      rtagpar     : std_logic;                                        -- Buffer Read tag parity
+      rad         : std_logic_vector(5 DOWNTO 0);                     -- Buffer Read address
+      wvalid      : std_logic;                                        -- Buffer Write valid
+      wtag        : std_logic_vector(7 DOWNTO 0);                     -- Buffer Write tag
+      wtagpar     : std_logic;                                        -- Buffer Write tag parity
+      wad         : std_logic_vector(5   DOWNTO 0);                   -- Buffer Write address
+      wdata       : std_logic_vector((512*CAPI_VER)-1 DOWNTO 0);      -- Buffer Write data
+      wpar        : std_logic_vector((  8*CAPI_VER)-1 DOWNTO 0);      -- Buffer Write parity
     END RECORD HA_B_T;
 
     --
     --  ah_b (to   PSL)
     --
     TYPE AH_B_T IS RECORD
-      rlat        : std_logic_vector(3   DOWNTO 0);      -- Buffer Read latency
-      rdata       : std_logic_vector(511 DOWNTO 0);      -- Buffer Read data
-      rpar        : std_logic_vector(7   DOWNTO 0);      -- Buffer Read parity
+      rlat        : std_logic_vector(3   DOWNTO 0);                   -- Buffer Read latency
+      rdata       : std_logic_vector((512*CAPI_VER)-1 DOWNTO 0);      -- Buffer Read data
+      rpar        : std_logic_vector((  8*CAPI_VER)-1 DOWNTO 0);      -- Buffer Read parity
     END RECORD AH_B_T;
 
 

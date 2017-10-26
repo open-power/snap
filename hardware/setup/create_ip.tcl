@@ -41,33 +41,32 @@ create_project managed_ip_project $ip_dir/managed_ip_project -part $fpga_part -i
 set_property target_language VHDL [current_project]
 set_property target_simulator IES [current_project]
 
-#create ram_520x64_2p  
+#create DMA Input RAM
 if { $fpga_card == "N250SP" } {
   set RAM_WIDTH 1040
   set RAM_DEPTH 32
 } else {
-  set BIT_WIDTH 520
+  set RAM_WIDTH 520
   set RAM_DEPTH 64
 }
 puts "                        generating IP ram_${RAM_WIDTH}x${RAM_DEPTH}_2p"
 
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.* -module_name ram_${RAM_WIDTH}x${RAM_DEPTH}_2p -dir $ip_dir  >> $log_file
 set_property -dict [list                                                         \
-                    CONFIG.Memory_Type {Simple_Dual_Port_RAM} 		         \
+                    CONFIG.Memory_Type {True_Dual_Port_RAM} 		         \
                     CONFIG.Assume_Synchronous_Clk {true} 		         \
 		    CONFIG.Write_Width_A "${RAM_WIDTH}"                          \
+		    CONFIG.Write_Width_B "${RAM_WIDTH}"                          \
                     CONFIG.Write_Depth_A "${RAM_DEPTH}" 	                 \
                     CONFIG.Operating_Mode_A {NO_CHANGE}       		         \
                     CONFIG.Enable_A {Always_Enabled} 			         \
-		    CONFIG.Write_Width_B "${RAM_WIDTH}"		                 \
-                    CONFIG.Enable_B {Always_Enabled} 			         \
+                    CONFIG.Enable_B {Use_ENB_Pin}                                \
                     CONFIG.Register_PortA_Output_of_Memory_Primitives {false}    \
-                    CONFIG.Read_Width_A "${RAM_WIDTH}"		                 \
-                    CONFIG.Read_Width_B "${RAM_WIDTH}"                           \
-                    CONFIG.Operating_Mode_B {READ_FIRST} 		         \
-                    CONFIG.Register_PortB_Output_of_Memory_Primitives {true}     \
-                    CONFIG.Port_B_Clock {100} 				         \
-                    CONFIG.Port_B_Enable_Rate {100}				 \
+		    CONFIG.Read_Width_A {520}		                         \
+		    CONFIG.Read_Width_B {520}		                         \
+                    CONFIG.Port_B_Clock {100}                                    \
+                    CONFIG.Port_B_Write_Rate {50}                                \
+                    CONFIG.Port_B_Enable_Rate {100}                              \
 		   ] [get_ips ram_${RAM_WIDTH}x${RAM_DEPTH}_2p]
 set_property generate_synth_checkpoint false [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci] 
 generate_target {instantiation_template}     [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci]  >> $log_file
@@ -75,31 +74,31 @@ generate_target all                          [get_files $ip_dir/ram_${RAM_WIDTH}
 export_ip_user_files -of_objects             [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci] -no_script -force >> $log_file
 export_simulation -of_objects [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
-#create ram_576x64_2p  
+#create DMA Output RAM
 if { $fpga_card == "N250SP" } {
-  set RAM_WIDTH 576
-  set RAM_DEPTH 64
+  set RAM_WIDTH 1152
+  set RAM_DEPTH 32
 } else {
-  set BIT_WIDTH 576
+  set RAM_WIDTH 576
   set RAM_DEPTH 64
 }
 puts "                        generating IP ram_${RAM_WIDTH}x${RAM_DEPTH}_2p"
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.* -module_name ram_${RAM_WIDTH}x${RAM_DEPTH}_2p -dir $ip_dir >> $log_file
 set_property -dict [list                                                            \
-                    CONFIG.Memory_Type {Simple_Dual_Port_RAM} 		            \
-                    CONFIG.Assume_Synchronous_Clk {true} 			    \
-                    CONFIG.Write_Width_A "${RAM_WIDTH}"			            \
-                    CONFIG.Write_Depth_A "${RAM_DEPTH}"			            \
-                    CONFIG.Operating_Mode_A {NO_CHANGE} 			    \
-                    CONFIG.Enable_A {Always_Enabled} 			            \
-                    CONFIG.Write_Width_B "${RAM_WIDTH}"			            \
-                    CONFIG.Enable_B {Always_Enabled} 			            \
-                    CONFIG.Register_PortA_Output_of_Memory_Primitives {false}       \
-                    CONFIG.Read_Width_A "${RAM_WIDTH}"			            \
-                    CONFIG.Read_Width_B "${RAM_WIDTH}"			            \
-                    CONFIG.Operating_Mode_B {READ_FIRST} 			    \
-                    CONFIG.Register_PortB_Output_of_Memory_Primitives {true}        \
-                    CONFIG.Port_B_Clock {100} CONFIG.Port_B_Enable_Rate {100}       \
+                    CONFIG.Memory_Type {True_Dual_Port_RAM} 		         \
+                    CONFIG.Assume_Synchronous_Clk {true} 		         \
+		    CONFIG.Write_Width_A {576}                          \
+		    CONFIG.Write_Width_B {576}                          \
+                    CONFIG.Write_Depth_A {64}  	                 \
+                    CONFIG.Operating_Mode_A {NO_CHANGE}       		         \
+                    CONFIG.Enable_A {Always_Enabled} 			         \
+                    CONFIG.Enable_B {Use_ENB_Pin}                                \
+                    CONFIG.Register_PortA_Output_of_Memory_Primitives {false}    \
+		    CONFIG.Read_Width_A "${RAM_WIDTH}"                           \
+		    CONFIG.Read_Width_B "${RAM_WIDTH}"                         \
+                    CONFIG.Port_B_Clock {100}                                    \
+                    CONFIG.Port_B_Write_Rate {50}                                \
+                    CONFIG.Port_B_Enable_Rate {100}                              \
                    ] [get_ips ram_${RAM_WIDTH}x${RAM_DEPTH}_2p]
 set_property generate_synth_checkpoint false [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci]
 generate_target {instantiation_template}     [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci] >> $log_file

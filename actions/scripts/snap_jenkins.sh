@@ -180,20 +180,21 @@ function test_hard()
 function usage() {
 	echo "Usage: $PROGRAM -D [] -A [] -F []"
 	echo "    [-D <Target Dir>]"
-	echo "    [-A <ADKU3> : Select AlphaData KU3 Card"
-	echo "        <N250S> : Select Nallatech 250S Card"
-	echo "        <S121B> : Select Semptian NSA121B Card"
-	echo "        <ALL> : Select ALL Cards"
-	echo "    [-F <Image> : Set Image file for Accelerator -A"
-	echo "                -A ALL is not valid if -F is used"
+	echo "    [-A <ADKU3>  : Select AlphaData KU3 Card"
+	echo "        <N250S>  : Select Nallatech 250S Card"
+	echo "        <N250SP> : Select Nallatech 250SP Card"
+	echo "        <S121B>  : Select Semptian NSA121B Card"
+	echo "        <ALL>    : Select ALL Cards"
+	echo "    [-F <Image>  : Set Image file for Accelerator -A"
+	echo "                   -A ALL is not valid if -F is used"
 	echo "    [-h] Print this help"
 	echo "    Option -D must be set"
 	echo "    following combinations can happen"
-	echo "    1.) Option -A [N250S or ADKU3 or S121B] and -F is set"
+	echo "    1.) Option -A [N250S, N250SP, ADKU3 or S121B] and -F is set"
 	echo "        for Card in all Accelerators (-A)"
 	echo "           Image will be flashed on Card"
 	echo "           Software Test will run on Card"
-	echo "    2.) Option -A [N250S or ADKU3 or S121B]"
+	echo "    2.) Option -A [N250S, N250SP, ADKU3 or S121B]"
 	echo "        for Card in all given Accelerators (-A)"
 	echo "           Software Test will run on Card"
 	echo "    3.) Option -A ALL"
@@ -220,10 +221,11 @@ while getopts "D:A:F:h" opt; do
 		;;
 	A)
 		accel=$OPTARG;
-		if [[ $accel != "N250S" ]] &&
-		   [[ $accel != "ADKU3" ]] &&
-		   [[ $accel != "S121B" ]] &&
-		   [[ $accel != "ALL"   ]]; then
+		if [[ $accel != "N250S"  ]] &&
+		   [[ $accel != "N250SP" ]] &&
+		   [[ $accel != "ADKU3"  ]] &&
+		   [[ $accel != "S121B"  ]] &&
+		   [[ $accel != "ALL"    ]]; then
 			echo "Error: -A $OPTARG is not valid !" >&2
 			exit 1
 		fi
@@ -337,8 +339,8 @@ for card in $MY_CARDS ; do
 		continue
 	fi
 	# snap_find_card also detects GZIP cards, i will skip this cards
-	if [[ $accel != "N250S" ]] && [[ $accel != "ADKU3" ]] && [[ $accel != "S121B" ]]; then
-		echo "Invalid Accelerator $accel[$card] skip, maybe Gzip Card"
+	if [[ $accel != "N250S" ]]  && [[ $accel != "N250SP" ]] && [[ $accel != "ADKU3" ]] && [[ $accel != "S121B" ]]; then
+		echo "Invalid Accelerator $accel for Card $card, skip"
 		continue
 	fi
 	test_soft $accel $card
