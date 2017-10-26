@@ -156,7 +156,7 @@ static inline unsigned long atomic_inc(atomic_t *a)
 #define CBLK_NBLOCKS_MAX	32	/* 128 KiB / 4KiB */
 #define CBLK_NBLOCKS_WRITE_MAX	2	/* writing is just 1 or 2 blocks */
 
-#define CBLK_PREFETCH_THRESHOLD	8	/* only prefetch if reads_in_flight is small than the threshold */
+#define CBLK_PREFETCH_THRESHOLD	10	/* only prefetch if reads_in_flight is small than the threshold */
 
 enum cblk_status {
 	CBLK_IDLE = 0,
@@ -247,7 +247,6 @@ struct cblk_dev {
 	struct timeval rtime_total;	/* total time spent in reads */
 	struct timeval wtime_total;	/* total time spent in writes */
 	long int idle_wakeups;
-	long int cache_trashing;
 
 	time_t max_read_usecs;
 	time_t max_write_usecs;
@@ -401,6 +400,7 @@ typedef uint8_t cache_block_t[__CBLK_BLOCK_SIZE];
 
 static struct cache_entry cache_entries[CACHE_ENTRIES];
 static cache_block_t *cache_blocks = NULL;
+static long int cache_trashing = 0;	/* statistics */
 
 static int cache_init(void)
 {
@@ -422,6 +422,7 @@ static int cache_init(void)
 		for (j = 0; j < CACHE_WAYS; j++) {
 			way[j].status = CACHE_BLOCK_UNUSED;
 			way[j].count = 0;
+			way[j].used = 0;
 			way[j].buf = &cache_blocks[i * CACHE_WAYS + j];
 		}
 	}
@@ -473,6 +474,7 @@ static inline int cache_read(off_t lba, void *buf)
 		if ((way[j].status == CACHE_BLOCK_VALID) && (lba == way[j].lba)) {
 			cache_trace("  [%s] FOUND lba=%lld VALID\n", __func__, (long long)lba);
 			way[j].count = entry->count++;
+			way[j].used++;
 			memcpy(buf, way[j].buf, __CBLK_BLOCK_SIZE);
 			pthread_mutex_unlock(&entry->way_lock);
 			return 0;
@@ -570,8 +572,12 @@ static inline struct cache_way *cache_reserve(off_t lba)
 reserve_block:
 	/* Now reserve */
 	e = &way[reserve_idx];
+	if ((e->status == CACHE_BLOCK_VALID) && (e->used == 0))
+		cache_trashing++;	/* discarding an used entry */
+
 	e->lba = lba;
 	e->count = entry->count++;
+	e->used = 0;
 	e->status = CACHE_BLOCK_READING;
 
 	cache_trace("    [%s] entry[%d].way[%d].status=%s lba=%lld reserved\n",
@@ -590,7 +596,8 @@ reserve_block:
  * even that could have been overwritten if the READING state was
  * changed!
  */
-static inline int cache_write_reserved(struct cache_way *e, const void *buf)
+static inline int cache_write_reserved(struct cache_way *e, const void *buf,
+					int _used)
 {
 	struct cache_entry *entry;
 
@@ -608,6 +615,7 @@ static inline int cache_write_reserved(struct cache_way *e, const void *buf)
 	}
 
 	memcpy(e->buf, buf, __CBLK_BLOCK_SIZE);
+	e->used = _used;
 	e->status = CACHE_BLOCK_VALID;
 
 	pthread_mutex_unlock(&entry->way_lock);
@@ -636,7 +644,7 @@ static inline int cache_unreserve(struct cache_way *e)
 	return 0;
 }
 
-static inline int cache_write(off_t lba, const void *buf)
+static inline int cache_write(off_t lba, const void *buf, int _used)
 {
 	struct cache_way *e;
 
@@ -648,10 +656,7 @@ static inline int cache_write(off_t lba, const void *buf)
 		return -1;	/* no entry free! */
 
 	/* Now replace entry with new data */
-	cache_trace("  [%s] e->status=%s buf=%p lba=%lld replaced\n",
-		__func__, block_status_str[e->status], e->buf, (long long)e->lba);
-
-	return cache_write_reserved(e, buf);
+	return cache_write_reserved(e, buf, _used);
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
@@ -1030,7 +1035,7 @@ static int __prefetch_read_start(struct cblk_dev *c,
 }
 
 static inline int __read_complete(struct cblk_dev *c,
-				struct cblk_req *req)
+				struct cblk_req *req, int _used)
 {
 	unsigned int i;
 
@@ -1044,7 +1049,8 @@ static inline int __read_complete(struct cblk_dev *c,
 		/* ... push blocks to cache for later use */
 		for (i = 0; i < req->nblocks; i++) {
 			cache_write_reserved(req->pblock[i],
-					req->buf + i * __CBLK_BLOCK_SIZE);
+					req->buf + i * __CBLK_BLOCK_SIZE,
+					_used);
 		}
 	}
 
@@ -1117,7 +1123,7 @@ static void *completion_thread(void *arg)
 				if (req->use_wait_sem) {
 					sem_post(&req->wait_sem);
 				} else {
-					__read_complete(c, req);
+					__read_complete(c, req, 0);
 				}
 			} else {
 				block_trace("  [%s] err: slot %d status is %s "
@@ -1230,7 +1236,6 @@ chunk_id_t cblk_open(const char *path,
 	c->wbytes_total = 0;
 	c->rbytes_total = 0;
 	c->idle_wakeups = 0;
-	c->cache_trashing = 0;
 
 	c->wtime_total.tv_sec = 0;
 	c->wtime_total.tv_usec = 0;
@@ -1419,7 +1424,7 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 	} else
 		memcpy(buf, req->buf, nblocks * __CBLK_BLOCK_SIZE);
 
-	__read_complete(c, req);
+	__read_complete(c, req, 1);	/* mark as used one time */
 	return nblocks;
 }
 
@@ -1569,7 +1574,7 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 
 	if (cblk_caching) {
 		for (i = 0; i < nblocks; i++) {
-			rc = cache_write(lba + i, buf + i * __CBLK_BLOCK_SIZE);
+			rc = cache_write(lba + i, buf + i * __CBLK_BLOCK_SIZE, 0);
 			if (rc != 0) {
 				dfprintf(stderr, "warning: cache_write LBA=%ld "
 					"failed rc=%d!\n", (long int)lba, rc);
@@ -1623,7 +1628,7 @@ static void _done(void)
 
 	stat_trace("Statistics\n"
 		"  prefetches:          %ld\n"
-		"  prefetch_collisions: %ld\n"
+		"  prefetch_collis_4k:  %ld\n"
 		"  cache_hits:          %ld\n"
 		"    cache_hits_4k:     %ld\n"
 		"  hw_block_reads:      %ld\n"
@@ -1633,6 +1638,7 @@ static void _done(void)
 		"  block_writes:        %ld\n"
 		"    block_writes_4k:   %ld\n"
 		"  idle_wakeups:        %ld\n"
+		"  cache_trashing_4k:   %ld\n"
 		"  running:             %ld usec\n"
 		"  reading:             %ld usec\n"
 		"  writing:             %ld usec\n"
@@ -1657,6 +1663,7 @@ static void _done(void)
 		c->block_writes,
 		c->block_writes_4k,
 		c->idle_wakeups,
+		cache_trashing,
 		(long int)usec,
 		c->avg_read_usecs,
 		c->avg_write_usecs,
