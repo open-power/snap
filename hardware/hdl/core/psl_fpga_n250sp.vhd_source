@@ -77,71 +77,84 @@ ENTITY psl_fpga IS
     -- Outputs to NVMe drive
     m2_perst_n                : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
     m2_susclk                 : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    m2_clkreq_n	              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    m2_pewake_n	              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+    m2_clkreq_n               : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+    m2_pewake_n               : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
 #endif
 
     -- CAPI PSL Interface
     --
-    o_flash_oen: OUT std_logic;
-    o_flash_wen: OUT std_logic;
-    o_flash_rstn: OUT std_logic;
-    o_flash_a: OUT std_logic_vector(1 TO 26);
-    o_flash_a_dup: OUT std_logic_vector(25 TO 26);
-    o_flash_advn: OUT std_logic;
-    b_flash_dq: INOUT std_logic_vector(0 TO 11);
+    sys_clk_p        : in std_logic ;
+    sys_clk_n        : in std_logic ;
+    sys_rst_n        : in std_logic ;
 
-    -- PTMON PMBUS
-    b_basei2c_scl: INOUT std_logic;                                             -- clock
-    b_basei2c_sda: INOUT std_logic;                                             -- data
-    b_smbus_scl: INOUT std_logic;                                               -- clock
-    b_smbus_sda: INOUT std_logic;                                               -- data
+    pci_exp_txn :  out STD_LOGIC_VECTOR ( 7 downto 0 );
+    pci_exp_txp :  out STD_LOGIC_VECTOR ( 7 downto 0 );
+    pci_exp_rxn :  in STD_LOGIC_VECTOR ( 7 downto 0 );
+    pci_exp_rxp :  in STD_LOGIC_VECTOR ( 7 downto 0 );
 
-    o_ucd_gpio21: OUT std_logic;     -- UCD smbus control signal
+    --#define   crc_error_inout
 
-    --LED ports from NVME logic
-    o_led_red: OUT std_logic_vector(1 DOWNTO 0);
-    o_led_green: OUT std_logic_vector(1 DOWNTO 0);
-    o_led_blue: OUT std_logic_vector(1 DOWNTO 0);
+-- Six? (Eight) Active High LEDs
+    GPIO_LED_0      : out std_logic;
+    GPIO_LED_1      : out std_logic;
+    GPIO_LED_2      : out std_logic;
+    GPIO_LED_3      : out std_logic;
+    GPIO_LED_4      : out std_logic;
+    GPIO_LED_5      : out std_logic;
+    GPIO_LED_6      : out std_logic;
+    GPIO_LED_7      : out std_logic;
 
-    -- pci interface
-    pci_pi_nperst0: IN std_logic;                                               -- Active low reset from the PCIe reset pin of the device
-    pci_pi_refclk_p0: IN std_logic;                                             -- 100MHz Refclk
-    pci_pi_refclk_n0: IN std_logic;                                             -- 100MHz Refclk
 
-    -- Xilinx requires both pins of differential transceivers
-    pci0_i_rxp_in0: IN std_logic;
-    pci0_i_rxn_in0: IN std_logic;
-    pci0_i_rxp_in1: IN std_logic;
-    pci0_i_rxn_in1: IN std_logic;
-    pci0_i_rxp_in2: IN std_logic;
-    pci0_i_rxn_in2: IN std_logic;
-    pci0_i_rxp_in3: IN std_logic;
-    pci0_i_rxn_in3: IN std_logic;
-    pci0_i_rxp_in4: IN std_logic;
-    pci0_i_rxn_in4: IN std_logic;
-    pci0_i_rxp_in5: IN std_logic;
-    pci0_i_rxn_in5: IN std_logic;
-    pci0_i_rxp_in6: IN std_logic;
-    pci0_i_rxn_in6: IN std_logic;
-    pci0_i_rxp_in7: IN std_logic;
-    pci0_i_rxn_in7: IN std_logic;
-    pci0_o_txp_out0: OUT std_logic;
-    pci0_o_txn_out0: OUT std_logic;
-    pci0_o_txp_out1: OUT std_logic;
-    pci0_o_txn_out1: OUT std_logic;
-    pci0_o_txp_out2: OUT std_logic;
-    pci0_o_txn_out2: OUT std_logic;
-    pci0_o_txp_out3: OUT std_logic;
-    pci0_o_txn_out3: OUT std_logic;
-    pci0_o_txp_out4: OUT std_logic;
-    pci0_o_txn_out4: OUT std_logic;
-    pci0_o_txp_out5: OUT std_logic;
-    pci0_o_txn_out5: OUT std_logic;
-    pci0_o_txp_out6: OUT std_logic;
-    pci0_o_txn_out6: OUT std_logic;
-    pci0_o_txp_out7: OUT std_logic;
-    pci0_o_txn_out7: OUT std_logic
+    PCIE_PERST_LS   : in std_logic;
+--    EMCCLK          : in std_logic;
+
+-- Flash Interface
+    BPI_FLASH_ADV   : out std_logic;
+
+    BPI_FLASH_D4    : inout std_logic;
+    BPI_FLASH_D5    : inout std_logic;
+    BPI_FLASH_D7    : inout std_logic;
+    BPI_FLASH_D6    : inout std_logic;
+    BPI_FLASH_D9    : inout std_logic;
+    BPI_FLASH_D8    : inout std_logic;
+    BPI_FLASH_D10   : inout std_logic;
+    BPI_FLASH_D11   : inout std_logic;
+    BPI_FLASH_D12   : inout std_logic;
+    BPI_FLASH_D13   : inout std_logic;
+    BPI_FLASH_D14   : inout std_logic;
+    BPI_FLASH_D15   : inout std_logic;
+
+    BPI_FLASH_A0    : out std_logic;
+    BPI_FLASH_A1    : out std_logic;
+    BPI_FLASH_A2    : out std_logic;
+    BPI_FLASH_A3    : out std_logic;
+    BPI_FLASH_A4    : out std_logic;
+    BPI_FLASH_A5    : out std_logic;
+    BPI_FLASH_A6    : out std_logic;
+    BPI_FLASH_A7    : out std_logic;
+    BPI_FLASH_A8    : out std_logic;
+    BPI_FLASH_A9    : out std_logic;
+    BPI_FLASH_A10   : out std_logic;
+    BPI_FLASH_A11   : out std_logic;
+    BPI_FLASH_A12   : out std_logic;
+    BPI_FLASH_A13   : out std_logic;
+    BPI_FLASH_A14   : out std_logic;
+    BPI_FLASH_A15   : out std_logic;
+    BPI_FLASH_A16   : out std_logic;
+    BPI_FLASH_A17   : out std_logic;
+    BPI_FLASH_A18   : out std_logic;
+    BPI_FLASH_A19   : out std_logic;
+    BPI_FLASH_A20   : out std_logic;
+    BPI_FLASH_A21   : out std_logic;
+    BPI_FLASH_A22   : out std_logic;
+    BPI_FLASH_A23   : out std_logic;
+    BPI_FLASH_A24   : out std_logic;
+    BPI_FLASH_A25   : out std_logic;
+
+    PCIE_WAKE_B_LS  : out std_logic;
+    BPI_FLASH_FWE_B : out std_logic;
+    BPI_FLASH_OE_B  : out std_logic;
+    BPI_WAIT        : in std_logic
   );
 END psl_fpga;
 
@@ -151,273 +164,367 @@ ARCHITECTURE psl_fpga OF psl_fpga IS
 
 Component psl_accel
   PORT(
-#ifdef CONFIG_ENABLE_DDRI
-    -- Clock inputs for SDRAM
-    refclk_sdram_p            : IN    STD_LOGIC;
-    refclk_sdram_n            : IN    STD_LOGIC;
-#endif
+    -- Command interface
+    ah_cvalid                        : OUT   STD_LOGIC                  ; -- Command valid
+    ah_ctag                          : OUT   STD_LOGIC_VECTOR(0 to 7)   ; -- Command tag
+    ah_ctagpar                       : OUT   STD_LOGIC                  ; -- Command tag parity
+    ah_com                           : OUT   STD_LOGIC_VECTOR(0 to 12)  ; -- Command code
+    ah_compar                        : OUT   STD_LOGIC                  ; -- Command code parity
+    ah_cabt                          : OUT   STD_LOGIC_VECTOR(0 to 2)   ; -- Command ABT
+    ah_cea                           : OUT   STD_LOGIC_VECTOR(0 to 63)  ; -- Command address
+    ah_ceapar                        : OUT   STD_LOGIC                  ; -- Command address parity
+    ah_cch                           : OUT   STD_LOGIC_VECTOR(0 to 15)  ; -- Command context handle
+    ah_csize                         : OUT   STD_LOGIC_VECTOR(0 to 11)  ; -- Command size
+    ah_cpagesize                     : OUT   STD_LOGIC_VECTOR(0 to 3)   := (others => '0'); -- ** New tie to 0000
+    ha_croom                         : IN    STD_LOGIC_VECTOR(0 to 7)   ; -- Command room
+    -- Buffer interface
+    ha_brvalid                       : IN    STD_LOGIC                  ; -- Buffer Read valid
+    ha_brtag                         : IN    STD_LOGIC_VECTOR(0 to 7)   ; -- Buffer Read tag
+    ha_brtagpar                      : IN    STD_LOGIC                  ; -- Buffer Read tag parity
+    ha_brad                          : IN    STD_LOGIC_VECTOR(0 to 5)   ; -- Buffer Read address
+    ah_brlat                         : OUT   STD_LOGIC_VECTOR(0 to 3)   ; -- Buffer Read latency
+    ah_brdata                        : OUT   STD_LOGIC_VECTOR(0 to 1023); -- Buffer Read data
+    ah_brpar                         : OUT   STD_LOGIC_VECTOR(0 to 15)  ; -- Buffer Read data parity
+    ha_bwvalid                       : IN    STD_LOGIC                  ; -- Buffer Write valid
+    ha_bwtag                         : IN    STD_LOGIC_VECTOR(0 to 7)   ; -- Buffer Write tag
+    ha_bwtagpar                      : IN    STD_LOGIC                  ; -- Buffer Write tag parity
+    ha_bwad                          : IN    STD_LOGIC_VECTOR(0 to 5)   ; -- Buffer Write address
+    ha_bwdata                        : IN    STD_LOGIC_VECTOR(0 to 1023); -- Buffer Write data
+    ha_bwpar                         : IN    STD_LOGIC_VECTOR(0 to 15)  ; -- Buffer Write data parity
+    -- Response interface
+    ha_rvalid                        : IN    STD_LOGIC                  ; -- Response valid
+    ha_rtag                          : IN    STD_LOGIC_VECTOR(0 to 7)   ; -- Response tag
+    ha_rtagpar                       : IN    STD_LOGIC                  ; -- Response tag parity
+    ha_rditag                        : IN    STD_LOGIC_VECTOR(0 to 8)   ; -- **New DMA Translation Tag for xlat_* requests
+    ha_rditagpar                     : IN    STD_LOGIC                  ; -- **New Parity bit for above
+    ha_response                      : IN    STD_LOGIC_VECTOR(0 to 7)   ; -- Response
+    ha_response_ext                  : IN    STD_LOGIC_VECTOR(0 to 7)   ; -- **New Response Ext
+    ha_rpagesize                     : IN    STD_LOGIC_VECTOR(0 to 3)   ; -- **New Command translated Page size.  Provided by PSL to allow
+    ha_rcachestate                   : IN    STD_LOGIC_VECTOR(0 to 1)   ; -- Response cache state
+    ha_rcachepos                     : IN    STD_LOGIC_VECTOR(0 to 12)  ; -- Response cache pos
+    ha_rcredits                      : IN    STD_LOGIC_VECTOR(0 to 8)   ; -- Response credits
+    --ha_reoa                          : IN    STD_LOGIC_VECTOR(0 to 185) ; -- **New unknown width or use
+    -- MMIO interface
+    ha_mmval                         : IN    STD_LOGIC                  ; -- A valid MMIO is present
+    ha_mmcfg                         : IN    STD_LOGIC                  ; -- afu descriptor space access
+    ha_mmrnw                         : IN    STD_LOGIC                  ; -- 1 = read, 0 = write
+    ha_mmdw                          : IN    STD_LOGIC                  ; -- 1 = doubleword, 0 = word
+    ha_mmad                          : IN    STD_LOGIC_VECTOR(0 to 23)  ; -- mmio address
+    ha_mmadpar                       : IN    STD_LOGIC                  ; -- mmio address parity
+    ha_mmdata                        : IN    STD_LOGIC_VECTOR(0 to 63)  ; -- Write data
+    ha_mmdatapar                     : IN    STD_LOGIC                  ; -- mmio data parity
+    ah_mmack                         : OUT   STD_LOGIC                  ; -- Write is complete or Read is valid
+    ah_mmdata                        : OUT   STD_LOGIC_VECTOR(0 to 63)  ; -- Read data
+    ah_mmdatapar                     : OUT   STD_LOGIC                  ; -- mmio data parity
+    -- Control interface
+    ha_jval                          : IN    STD_LOGIC                  ; -- Job valid
+    ha_jcom                          : IN    STD_LOGIC_VECTOR(0 to 7)   ; -- Job command
+    ha_jcompar                       : IN    STD_LOGIC                  ; -- Job command parity
+    ha_jea                           : IN    STD_LOGIC_VECTOR(0 to 63)  ; -- Job address
+    ha_jeapar                        : IN    STD_LOGIC                  ; -- Job address parity
+    ah_jrunning                      : OUT   STD_LOGIC                  ; -- Job running
+    ah_jdone                         : OUT   STD_LOGIC                  ; -- Job done
+    ah_jcack                         : OUT   STD_LOGIC                  ; -- completion of llcmd
+    ah_jerror                        : OUT   STD_LOGIC_VECTOR(0 to 63)  ; -- Job error
+    ah_jyield                        : OUT   STD_LOGIC                  ; -- Job yield
+
+    -- DMA port 0 Req
+    d0h_dvalid                       : OUT   STD_LOGIC                  ;
+    d0h_req_utag                     : OUT   STD_LOGIC_VECTOR(0 to 9)   ;
+    d0h_req_itag                     : OUT   STD_LOGIC_VECTOR(0 to 8)   ;
+    d0h_dtype                        : OUT   STD_LOGIC_VECTOR(0 to 2)   ;
+    d0h_datomic_op                   : OUT   STD_LOGIC_VECTOR(0 to 5)   ;
+    d0h_datomic_le                   : OUT   STD_LOGIC                  ;
+    d0h_dsize                        : OUT   STD_LOGIC_VECTOR(0 to 9)   ;
+    d0h_ddata                        : OUT   STD_LOGIC_VECTOR(0 to 1023);
+    -- DMA port 0 Sent
+    hd0_sent_utag_valid              : IN    STD_LOGIC                  ;
+    hd0_sent_utag                    : IN    STD_LOGIC_VECTOR(0 to 9)   ;
+    hd0_sent_utag_sts                : IN    STD_LOGIC_VECTOR(0 to 2)   ;
+    -- DMA port 0 Completion interface
+    hd0_cpl_valid                    : IN    STD_LOGIC                  ;
+    hd0_cpl_utag                     : IN    STD_LOGIC_VECTOR(0 to 9)   ;
+    hd0_cpl_type                     : IN    STD_LOGIC_VECTOR(0 to 2)   ;
+    hd0_cpl_size                     : IN    STD_LOGIC_VECTOR(0 to 9)   ;
+    hd0_cpl_laddr                    : IN    STD_LOGIC_VECTOR(0 to 9)   ;
+    hd0_cpl_byte_count               : IN    STD_LOGIC_VECTOR(0 to 9)   ;
+    hd0_cpl_data                     : IN    STD_LOGIC_VECTOR(0 to 1023);
+
+    -- DMA port 1 Request
+    d1h_dvalid                       : OUT   STD_LOGIC                  ;
+    d1h_req_utag                     : OUT   STD_LOGIC_VECTOR(0 to 9)   ;
+    d1h_req_itag                     : OUT   STD_LOGIC_VECTOR(0 to 8)   ;
+    d1h_dtype                        : OUT   STD_LOGIC_VECTOR(0 to 2)   ;
+    d1h_datomic_op                   : OUT   STD_LOGIC_VECTOR(0 to 5)   ;
+    d1h_datomic_le                   : OUT   STD_LOGIC                  ;
+    d1h_dsize                        : OUT   STD_LOGIC_VECTOR(0 to 9)   ;
+    d1h_ddata                        : OUT   STD_LOGIC_VECTOR(0 to 1023);
+    -- DMA port 1 Sent
+    hd1_sent_utag_valid              : IN    STD_LOGIC                  ;
+    hd1_sent_utag                    : IN    STD_LOGIC_VECTOR(0 to 9)   ;
+    hd1_sent_utag_sts                : IN    STD_LOGIC_VECTOR(0 to 2)   ;
+    -- DMA port 1 Completion
+    hd1_cpl_valid                    : IN    STD_LOGIC                  ;
+    hd1_cpl_utag                     : IN    STD_LOGIC_VECTOR(0 to 9)   ;
+    hd1_cpl_type                     : IN    STD_LOGIC_VECTOR(0 to 2)   ;
+    hd1_cpl_size                     : IN    STD_LOGIC_VECTOR(0 to 9)   ;
+    hd1_cpl_laddr                    : IN    STD_LOGIC_VECTOR(0 to 9)   ;
+    hd1_cpl_byte_count               : IN    STD_LOGIC_VECTOR(0 to 9)   ;
+    hd1_cpl_data                     : IN    STD_LOGIC_VECTOR(0 to 1023);
 #ifdef CONFIG_ENABLE_DDR4
     -- DDR4 SDRAM Interface
-    -- Nallatech 250S card has one DDR4 SO-DIMMs
-    c0_sys_clk_p              : IN    STD_LOGIC;
-    c0_sys_clk_n              : IN    STD_LOGIC;
-    c0_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);
-    c0_ddr4_ba                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-    c0_ddr4_cke               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_cs_n              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_dm_dbi_n          : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c0_ddr4_dq                : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
-    c0_ddr4_dqs_c             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c0_ddr4_dqs_t             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c0_ddr4_odt               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_bg                : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_reset_n           : OUT   STD_LOGIC;
-    c0_ddr4_act_n             : OUT   STD_LOGIC;
-    c0_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+-- TODO:    dbg_bus                             : OUT   STD_LOGIC_VECTOR(511 DOWNTO 0);
+    c0_sys_clk_p                        : IN    STD_LOGIC;
+    c0_sys_clk_n                        : IN    STD_LOGIC;
+    c0_ddr4_adr                         : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);
+    c0_ddr4_ba                          : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+    c0_ddr4_cke                         : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c0_ddr4_cs_n                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c0_ddr4_dm_dbi_n                    : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+    c0_ddr4_dq                          : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
+    c0_ddr4_dqs_c                       : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+    c0_ddr4_dqs_t                       : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+    c0_ddr4_odt                         : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c0_ddr4_bg                          : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c0_ddr4_reset_n                     : OUT   STD_LOGIC;
+    c0_ddr4_act_n                       : OUT   STD_LOGIC;
+    c0_ddr4_ck_c                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c0_ddr4_ck_t                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+-- TODO:    c0_ddr4_ten                         : OUT   STD_LOGIC;
+#endif
+#ifdef CONFIG_ENABLE_DDRI
+    --
+    -- Clock inputs for SDRAM
+    refclk_sdram_p                      : IN    STD_LOGIC;
+    refclk_sdram_n                      : IN    STD_LOGIC;
 #endif
 #ifdef CONFIG_ENABLE_NVME
+    --
     -- NVME Interface
     --
     -- Reset Input
-    nvme_reset_n              : IN    STD_LOGIC;
+    nvme_reset_n                        : IN    STD_LOGIC;
     --
     -- Clock inputs for NVMe
-    refclk_nvme_ch0_p         : IN    STD_LOGIC;
-    refclk_nvme_ch0_n         : IN    STD_LOGIC;
-    refclk_nvme_ch1_p         : IN    STD_LOGIC;
-    refclk_nvme_ch1_n         : IN    STD_LOGIC;
+    refclk_nvme_ch0_p                   : IN    STD_LOGIC;
+    refclk_nvme_ch0_n                   : IN    STD_LOGIC;
+    refclk_nvme_ch1_p                   : IN    STD_LOGIC;
+    refclk_nvme_ch1_n                   : IN    STD_LOGIC;
     --
     -- NVMe reset control
-    nvme_reset_ctl            : OUT   STD_LOGIC_VECTOR(4 DOWNTO 0);             -- keeping NVMe drives in reset by driving 0's
+    nvme_reset_ctl                      : OUT   STD_LOGIC_VECTOR(SNAP_NVME_RST_L  DOWNTO SNAP_NVME_RST_R);  -- keeping NVMe drives in reset by driving 0s
     --
     -- NVME <-> PCIE Interface
-    pcie_rc0_rxn              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    pcie_rc0_rxp              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    pcie_rc0_txn              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    pcie_rc0_txp              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    pcie_rc1_rxn              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    pcie_rc1_rxp              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    pcie_rc1_txn              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    pcie_rc1_txp              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+    pcie_rc0_rxn                        : IN    STD_LOGIC_VECTOR(3 downto 0);
+    pcie_rc0_rxp                        : IN    STD_LOGIC_VECTOR(3 downto 0);
+    pcie_rc0_txn                        : OUT   STD_LOGIC_VECTOR(3 downto 0);
+    pcie_rc0_txp                        : OUT   STD_LOGIC_VECTOR(3 downto 0);
+    pcie_rc1_rxn                        : IN    STD_LOGIC_VECTOR(3 downto 0);
+    pcie_rc1_rxp                        : IN    STD_LOGIC_VECTOR(3 downto 0);
+    pcie_rc1_txn                        : OUT   STD_LOGIC_VECTOR(3 downto 0);
+    pcie_rc1_txp                        : OUT   STD_LOGIC_VECTOR(3 downto 0);
 #endif
 
-    -- CAPI PSL Interface
-    --
-    -- Accelerator Command Interface
-    ah_cvalid: OUT std_logic;                                                   -- A valid command is present
-    ah_ctag: OUT std_logic_vector(0 TO 7);                                      -- request id
-    ah_com: OUT std_logic_vector(0 TO 12);                                      -- command PSL will execute
-    ah_cpad: OUT std_logic_vector(0 TO 2);                                      -- prefetch attributes
-    ah_cabt: OUT std_logic_vector(0 TO 2);                                      -- abort if translation intr is generated
-    ah_cea: OUT std_logic_vector(0 TO 63);                                      -- Effective byte address for command
-    ah_cch: OUT std_logic_vector(0 TO 15);                                      -- Context Handle
-    ah_csize: OUT std_logic_vector(0 TO 11);                                    -- Number of bytes
-    ha_croom: IN std_logic_vector(0 TO 7);                                      -- Commands PSL is prepared to accept
-    --
-    -- command parity
-    ah_ctagpar: OUT std_logic;
-    ah_compar: OUT std_logic;
-    ah_ceapar: OUT std_logic;
-    --
-    -- Accelerator Buffer Interfaces
-    ha_brvalid: IN std_logic;                                                   -- A read transfer is present
-    ha_brtag: IN std_logic_vector(0 TO 7);                                      -- Accelerator generated ID for read
-    ha_brad: IN std_logic_vector(0 TO 5);                                       -- half line index of read data
-    ah_brlat: OUT std_logic_vector(0 TO 3);                                     -- Read data ready latency
-    ah_brdata: OUT std_logic_vector(0 TO 511);                                  -- Read data
-    ah_brpar: OUT std_logic_vector(0 TO 7);                                     -- Read data parity
-    ha_bwvalid: IN std_logic;                                                   -- A write data transfer is present
-    ha_bwtag: IN std_logic_vector(0 TO 7);                                      -- Accelerator ID of the write
-    ha_bwad: IN std_logic_vector(0 TO 5);                                       -- half line index of write data
-    ha_bwdata: IN std_logic_vector(0 TO 511);                                   -- Write data
-    ha_bwpar: IN std_logic_vector(0 TO 7);                                      -- Write data parity
-    --
-    -- buffer tag parity
-    ha_brtagpar: IN std_logic;
-    ha_bwtagpar: IN std_logic;
-    --
-    -- PSL Response Interface
-    ha_rvalid: IN std_logic;                                                    --A response is present
-    ha_rtag: IN std_logic_vector(0 TO 7);                                       --Accelerator generated request ID
-    ha_response: IN std_logic_vector(0 TO 7);                                   --response code
-    ha_rcredits: IN std_logic_vector(0 TO 8);                                   --twos compliment number of credits
-    ha_rcachestate: IN std_logic_vector(0 TO 1);                                --Resultant Cache State
-    ha_rcachepos: IN std_logic_vector(0 TO 12);                                 --Cache location id
-    ha_rtagpar: IN std_logic;
-    --
-    -- MMIO Interface
-    ha_mmval: IN std_logic;                                                     -- A valid MMIO is present
-    ha_mmrnw: IN std_logic;                                                     -- 1 = read, 0 = write
-    ha_mmdw: IN std_logic;                                                      -- 1 = doubleword, 0 = word
-    ha_mmad: IN std_logic_vector(0 TO 23);                                      -- mmio address
-    ha_mmdata: IN std_logic_vector(0 TO 63);                                    -- Write data
-    ha_mmcfg: IN std_logic;                                                     -- mmio is to afu descriptor space
-    ah_mmack: OUT std_logic;                                                    -- Write is complete or Read is valid pulse
-    ah_mmdata: OUT std_logic_vector(0 TO 63);                                   -- Read data
-    --
-    -- mmio parity
-    ha_mmadpar: IN std_logic;
-    ha_mmdatapar: IN std_logic;
-    ah_mmdatapar: OUT std_logic;
-    --
-    -- Accelerator Control Interface
-    ha_jval: IN std_logic;                                                      -- A valid job control command is present
-    ha_jcom: IN std_logic_vector(0 TO 7);                                       -- Job control command opcode
-    ha_jea: IN std_logic_vector(0 TO 63);                                       -- Save/Restore address
-    ah_jrunning: OUT std_logic;                                                 -- Accelerator is running level
-    ah_jdone: OUT std_logic;                                                    -- Accelerator is finished pulse
-    ah_jcack: OUT std_logic;                                                    -- Accelerator is with context llcmd pulse
-    ah_jerror: OUT std_logic_vector(0 TO 63);                                   -- Accelerator error code. 0 = success
-    ah_tbreq: OUT std_logic;                                                    -- Timebase request pulse
-    ah_jyield: OUT std_logic;                                                   -- Accelerator wants to stop
-    ha_jeapar: IN std_logic;
-    ha_jcompar: IN std_logic;
-    --
-    -- Misc Interface
-    ah_paren: OUT std_logic;
-    ha_pclock: IN std_logic);
+    -- Parity Enable output and 250MHz Clock input
+    ah_tbreq                            : OUT   STD_LOGIC;                      -- Timebase command request
+    ah_paren                            : OUT   STD_LOGIC;
+    ha_pclock                           : IN    STD_LOGIC
+  );
 End Component psl_accel;
 
-Component base_img
+Component psl4snap
   PORT(
-       -- flash bus
-       o_flash_oen: OUT std_logic;
-       o_flash_wen: OUT std_logic;
-       o_flash_rstn: OUT std_logic;
-       o_flash_a: OUT std_logic_vector(1 TO 26);
-       o_flash_a_dup: OUT std_logic_vector(25 TO 26);
-       o_flash_advn: OUT std_logic;
-       b_flash_dq: INOUT std_logic_vector(0 TO 11);
+    sys_clk_p        : in std_logic ;
+    sys_clk_n        : in std_logic ;
+    sys_rst_n        : in std_logic ;
 
-       -- PTMON PMBUS
-       b_basei2c_scl: INOUT std_logic;                                          -- clock
-       b_basei2c_sda: INOUT std_logic;                                          -- data
-       b_smbus_scl: INOUT std_logic;                                            -- clock
-       b_smbus_sda: INOUT std_logic;                                            -- data
+    pci_exp_txn :  out STD_LOGIC_VECTOR ( 7 downto 0 );
+    pci_exp_txp :  out STD_LOGIC_VECTOR ( 7 downto 0 );
+    pci_exp_rxn :  in STD_LOGIC_VECTOR ( 7 downto 0 );
+    pci_exp_rxp :  in STD_LOGIC_VECTOR ( 7 downto 0 );
 
-       o_ucd_gpio21: OUT std_logic;
+    --#define   crc_error_inout
 
-       led_red: IN std_logic_vector(1 DOWNTO 0);
-       led_green: IN std_logic_vector(1 DOWNTO 0);
-       led_blue: IN std_logic_vector(1 DOWNTO 0);
-       o_led_red: OUT std_logic_vector(1 DOWNTO 0);
-       o_led_green: OUT std_logic_vector(1 DOWNTO 0);
-       o_led_blue: OUT std_logic_vector(1 DOWNTO 0);
+-- Six? (Eight) Active High LEDs
+    GPIO_LED_0      : out std_logic;
+    GPIO_LED_1      : out std_logic;
+    GPIO_LED_2      : out std_logic;
+    GPIO_LED_3      : out std_logic;
+    GPIO_LED_4      : out std_logic;
+    GPIO_LED_5      : out std_logic;
+    GPIO_LED_6      : out std_logic;
+    GPIO_LED_7      : out std_logic;
 
-       -- pci interface
-       pci_pi_nperst0: IN std_logic;                                            -- Active low reset from the PCIe reset pin of the device
-       pci_pi_refclk_p0: IN std_logic;                                          -- 100MHz Refclk
-       pci_pi_refclk_n0: IN std_logic;                                          -- 100MHz Refclk
 
-       -- Xilinx requires both pins of differential transceivers
-       pci0_i_rxp_in0: IN std_logic;
-       pci0_i_rxn_in0: IN std_logic;
-       pci0_i_rxp_in1: IN std_logic;
-       pci0_i_rxn_in1: IN std_logic;
-       pci0_i_rxp_in2: IN std_logic;
-       pci0_i_rxn_in2: IN std_logic;
-       pci0_i_rxp_in3: IN std_logic;
-       pci0_i_rxn_in3: IN std_logic;
-       pci0_i_rxp_in4: IN std_logic;
-       pci0_i_rxn_in4: IN std_logic;
-       pci0_i_rxp_in5: IN std_logic;
-       pci0_i_rxn_in5: IN std_logic;
-       pci0_i_rxp_in6: IN std_logic;
-       pci0_i_rxn_in6: IN std_logic;
-       pci0_i_rxp_in7: IN std_logic;
-       pci0_i_rxn_in7: IN std_logic;
-       pci0_o_txp_out0: OUT std_logic;
-       pci0_o_txn_out0: OUT std_logic;
-       pci0_o_txp_out1: OUT std_logic;
-       pci0_o_txn_out1: OUT std_logic;
-       pci0_o_txp_out2: OUT std_logic;
-       pci0_o_txn_out2: OUT std_logic;
-       pci0_o_txp_out3: OUT std_logic;
-       pci0_o_txn_out3: OUT std_logic;
-       pci0_o_txp_out4: OUT std_logic;
-       pci0_o_txn_out4: OUT std_logic;
-       pci0_o_txp_out5: OUT std_logic;
-       pci0_o_txn_out5: OUT std_logic;
-       pci0_o_txp_out6: OUT std_logic;
-       pci0_o_txn_out6: OUT std_logic;
-       pci0_o_txp_out7: OUT std_logic;
-       pci0_o_txn_out7: OUT std_logic;
+    PCIE_PERST_LS   : in std_logic;
+--    EMCCLK          : in std_logic;
 
-       a0h_cvalid: IN std_logic;
-       a0h_ctag: IN std_logic_vector(0 TO 7);
-       a0h_com: IN std_logic_vector(0 TO 12);
-       a0h_cpad: IN std_logic_vector(0 TO 2);
-       a0h_cabt: IN std_logic_vector(0 TO 2);
-       a0h_cea: IN std_logic_vector(0 TO 63);
-       a0h_cch: IN std_logic_vector(0 TO 15);
-       a0h_csize: IN std_logic_vector(0 TO 11);
-       ha0_croom: OUT std_logic_vector(0 TO 7);
-       a0h_ctagpar: IN std_logic;
-       a0h_compar: IN std_logic;
-       a0h_ceapar: IN std_logic;
-       ha0_brvalid: OUT std_logic;
-       ha0_brtag: OUT std_logic_vector(0 TO 7);
-       ha0_brad: OUT std_logic_vector(0 TO 5);
-       a0h_brlat: IN std_logic_vector(0 TO 3);
-       a0h_brdata: IN std_logic_vector(0 TO 511);
-       a0h_brpar: IN std_logic_vector(0 TO 7);
-       ha0_bwvalid: OUT std_logic;
-       ha0_bwtag: OUT std_logic_vector(0 TO 7);
-       ha0_bwad: OUT std_logic_vector(0 TO 5);
-       ha0_bwdata: OUT std_logic_vector(0 TO 511);
-       ha0_bwpar: OUT std_logic_vector(0 TO 7);
-       ha0_brtagpar: OUT std_logic;
-       ha0_bwtagpar: OUT std_logic;
-       ha0_rvalid: OUT std_logic;
-       ha0_rtag: OUT std_logic_vector(0 TO 7);
-       ha0_response: OUT std_logic_vector(0 TO 7);
-       ha0_rcredits: OUT std_logic_vector(0 TO 8);
-       ha0_rcachestate: OUT std_logic_vector(0 TO 1);
-       ha0_rcachepos: OUT std_logic_vector(0 TO 12);
-       ha0_rtagpar: OUT std_logic;
-       ha0_mmval: OUT std_logic;
-       ha0_mmrnw: OUT std_logic;
-       ha0_mmdw: OUT std_logic;
-       ha0_mmad: OUT std_logic_vector(0 TO 23);
-       ha0_mmdata: OUT std_logic_vector(0 TO 63);
-       ha0_mmcfg: OUT std_logic;
-       a0h_mmack: IN std_logic;
-       a0h_mmdata: IN std_logic_vector(0 TO 63);
-       ha0_mmadpar: OUT std_logic;
-       ha0_mmdatapar: OUT std_logic;
-       a0h_mmdatapar: IN std_logic;
-       ha0_jval: OUT std_logic;
-       ha0_jcom: OUT std_logic_vector(0 TO 7);
-       ha0_jea: OUT std_logic_vector(0 TO 63);
-       a0h_jrunning: IN std_logic;
-       a0h_jdone: IN std_logic;
-       a0h_jcack: IN std_logic;
-       a0h_jerror: IN std_logic_vector(0 TO 63);
-       a0h_tbreq: IN std_logic;
-       a0h_jyield: IN std_logic;
-       ha0_jeapar: OUT std_logic;
-       ha0_jcompar: OUT std_logic;
-       a0h_paren: IN std_logic;
-       ha0_pclock: OUT std_logic;
-       gold_factory: IN std_logic;
-       pci_user_reset: OUT std_logic;  --PCI hip user_reset signal if needed
-       pci_clock_125MHz: OUT std_logic --125MHz clock if needed
-       );
+-- Flash Interface
+    BPI_FLASH_ADV   : out std_logic;
 
-END Component base_img;
+    BPI_FLASH_D4    : inout std_logic;
+    BPI_FLASH_D5    : inout std_logic;
+    BPI_FLASH_D7    : inout std_logic;
+    BPI_FLASH_D6    : inout std_logic;
+    BPI_FLASH_D9    : inout std_logic;
+    BPI_FLASH_D8    : inout std_logic;
+    BPI_FLASH_D10   : inout std_logic;
+    BPI_FLASH_D11   : inout std_logic;
+    BPI_FLASH_D12   : inout std_logic;
+    BPI_FLASH_D13   : inout std_logic;
+    BPI_FLASH_D14   : inout std_logic;
+    BPI_FLASH_D15   : inout std_logic;
 
-SIGNAL a0h_brdata: std_logic_vector(0 TO 511);  -- hline
+    BPI_FLASH_A0    : out std_logic;
+    BPI_FLASH_A1    : out std_logic;
+    BPI_FLASH_A2    : out std_logic;
+    BPI_FLASH_A3    : out std_logic;
+    BPI_FLASH_A4    : out std_logic;
+    BPI_FLASH_A5    : out std_logic;
+    BPI_FLASH_A6    : out std_logic;
+    BPI_FLASH_A7    : out std_logic;
+    BPI_FLASH_A8    : out std_logic;
+    BPI_FLASH_A9    : out std_logic;
+    BPI_FLASH_A10   : out std_logic;
+    BPI_FLASH_A11   : out std_logic;
+    BPI_FLASH_A12   : out std_logic;
+    BPI_FLASH_A13   : out std_logic;
+    BPI_FLASH_A14   : out std_logic;
+    BPI_FLASH_A15   : out std_logic;
+    BPI_FLASH_A16   : out std_logic;
+    BPI_FLASH_A17   : out std_logic;
+    BPI_FLASH_A18   : out std_logic;
+    BPI_FLASH_A19   : out std_logic;
+    BPI_FLASH_A20   : out std_logic;
+    BPI_FLASH_A21   : out std_logic;
+    BPI_FLASH_A22   : out std_logic;
+    BPI_FLASH_A23   : out std_logic;
+    BPI_FLASH_A24   : out std_logic;
+    BPI_FLASH_A25   : out std_logic;
+
+    PCIE_WAKE_B_LS  : out std_logic;
+    BPI_FLASH_FWE_B : out std_logic;
+    BPI_FLASH_OE_B  : out std_logic;
+    BPI_WAIT        : in std_logic;
+
+-- AFU interface (psl_accel)
+    -- Command interface
+    a0h_cvalid          : in  std_ulogic                  ; -- Command valid
+    a0h_ctag            : in  std_ulogic_vector(0 to 7)   ; -- Command tag
+    a0h_ctagpar         : in  std_ulogic                  ; -- Command tag parity
+    a0h_com             : in  std_ulogic_vector(0 to 12)  ; -- Command code
+    a0h_compar          : in  std_ulogic                  ; -- Command code parity
+    a0h_cabt            : in  std_ulogic_vector(0 to 2)   ; -- Command ABT
+    a0h_cea             : in  std_ulogic_vector(0 to 63)  ; -- Command address
+    a0h_ceapar          : in  std_ulogic                  ; -- Command address parity
+    a0h_cch             : in  std_ulogic_vector(0 to 15)  ; -- Command context handle
+    a0h_csize           : in  std_ulogic_vector(0 to 11)  ; -- Command size
+    a0h_cpagesize       : in  std_ulogic_vector(0 to 3)   ; -- ** New tie to 0000
+    ha0_croom           : out std_ulogic_vector(0 to 7)   ; -- Command room
+    -- Buffer interface
+    ha0_brvalid         : out std_ulogic                  ; -- Buffer Read valid
+    ha0_brtag           : out std_ulogic_vector(0 to 7)   ; -- Buffer Read tag
+    ha0_brtagpar        : out std_ulogic                  ; -- Buffer Read tag parity
+    ha0_brad            : out std_ulogic_vector(0 to 5)   ; -- Buffer Read address
+    a0h_brlat           : in  std_ulogic_vector(0 to 3)   ; -- Buffer Read latency
+    a0h_brdata          : in  std_ulogic_vector(0 to 1023); -- Buffer Read data
+    a0h_brpar           : in  std_ulogic_vector(0 to 15)  ; -- Buffer Read data parity
+    ha0_bwvalid         : out std_ulogic                  ; -- Buffer Write valid
+    ha0_bwtag           : out std_ulogic_vector(0 to 7)   ; -- Buffer Write tag
+    ha0_bwtagpar        : out std_ulogic                  ; -- Buffer Write tag parity
+    ha0_bwad            : out std_ulogic_vector(0 to 5)   ; -- Buffer Write address
+    ha0_bwdata          : out std_ulogic_vector(0 to 1023); -- Buffer Write data
+    ha0_bwpar           : out std_ulogic_vector(0 to 15)  ; -- Buffer Write data parity
+    -- Response interface
+    ha0_rvalid          : out std_ulogic                  ; -- Response valid
+    ha0_rtag            : out std_ulogic_vector(0 to 7)   ; -- Response tag
+    ha0_rtagpar         : out std_ulogic                  ; -- Response tag parity
+    ha0_rditag          : out std_ulogic_vector(0 to 8);    -- **New DMA Translation Tag for xlat_* requests
+    ha0_rditagpar       : out std_ulogic;                   -- **New Parity bit for above
+    ha0_response        : out std_ulogic_vector(0 to 7)   ; -- Response
+    ha0_response_ext    : out std_ulogic_vector(0 to 7)   ; -- **New Response Ext
+    ha0_rpagesize       : out std_ulogic_vector(0 to 3);    -- **New Command translated Page size.  Provided by PSL to allow
+    ha0_rcachestate     : out std_ulogic_vector(0 to 1)   ; -- Response cache state
+    ha0_rcachepos       : out std_ulogic_vector(0 to 12)  ; -- Response cache pos
+    ha0_rcredits        : out std_ulogic_vector(0 to 8)   ; -- Response credits
+--     ha0_reoa            : OUT std_ulogic_vector(0 to 185);  -- **New unknown width or use
+    -- MMIO interface
+    ha0_mmval           : out std_ulogic                  ; -- A valid MMIO is present
+    ha0_mmcfg           : out std_ulogic                  ; -- afu descriptor space access
+    ha0_mmrnw           : out std_ulogic                  ; -- 1 = read, 0 = write
+    ha0_mmdw            : out std_ulogic                  ; -- 1 = doubleword, 0 = word
+    ha0_mmad            : out std_ulogic_vector(0 to 23)  ; -- mmio address
+    ha0_mmadpar         : out std_ulogic                  ; -- mmio address parity
+    ha0_mmdata          : out std_ulogic_vector(0 to 63)  ; -- Write data
+    ha0_mmdatapar       : out std_ulogic                  ; -- mmio data parity
+    a0h_mmack           : in  std_ulogic                  ; -- Write is complete or Read is valid
+    a0h_mmdata          : in  std_ulogic_vector(0 to 63)  ; -- Read data
+    a0h_mmdatapar       : in  std_ulogic                  ; -- mmio data parity
+    -- Control interface
+    ha0_jval            : out std_ulogic                  ; -- Job valid
+    ha0_jcom            : out std_ulogic_vector(0 to 7)   ; -- Job command
+    ha0_jcompar         : out std_ulogic                  ; -- Job command parity
+    ha0_jea             : out std_ulogic_vector(0 to 63)  ; -- Job address
+    ha0_jeapar          : out std_ulogic                  ; -- Job address parity
+--  ha0_lop             : out std_ulogic_vector(0 to 4)   ; -- LPC/Internal Cache Op code
+--  ha0_loppar          : out std_ulogic                  ; -- Job address parity
+--  ha0_lsize           : out std_ulogic_vector(0 to 6)   ; -- Size/Secondary Op code
+--  ha0_ltag            : out std_ulogic_vector(0 to 11)  ; -- LPC Tag/Internal Cache Tag
+--  ha0_ltagpar         : out std_ulogic                  ; -- LPC Tag/Internal Cache Tag parity
+    a0h_jrunning        : in  std_ulogic                  ; -- Job running
+    a0h_jdone           : in  std_ulogic                  ; -- Job done
+    a0h_jcack           : in  std_ulogic                  ; -- completion of llcmd
+    a0h_jerror          : in  std_ulogic_vector(0 to 63)  ; -- Job error
+-- AM. Sept08, 2016              a0h_jyield          : in  std_ulogic                  ; -- Job yield
+--  a0h_ldone           : in  std_ulogic                  ; -- LPC/Internal Cache Op done
+--  a0h_ldtag           : in  std_ulogic_vector(0 to 11)  ; -- ltag is done
+--  a0h_ldtagpar        : in  std_ulogic                  ; -- ldtag parity
+--  a0h_lroom           : in  std_ulogic_vector(0 to 7)   ; -- LPC/Internal Cache Op AFU can handle
+    a0h_tbreq           : in  std_ulogic                  ; -- Timebase command request
+    a0h_paren           : in  std_ulogic                  ; -- parity enable
+    ha0_pclock          : out std_ulogic                  ;
+
+-- New DMA Interface
+    -- Port 0
+    -- DMA port 0 Request interface
+    d0h_dvalid          : in  std_ulogic                  ; -- New PSL/AFU interface
+    d0h_req_utag        : in  std_ulogic_vector(0 to 9)   ; -- New PSL/AFU interface
+    d0h_req_itag        : in  std_ulogic_vector(0 to 8)   ; -- New PSL/AFU interface
+    d0h_dtype           : in  std_ulogic_vector(0 to 2)   ; -- New PSL/AFU interface
+    d0h_datomic_op      : in  std_ulogic_vector(0 to 5)   ; -- New PSL/AFU interface
+    d0h_datomic_le      : in  std_ulogic                  ; -- New PSL/AFU interface
+    d0h_dsize           : in  std_ulogic_vector(0 to 9)   ; -- New PSL/AFU interface
+    d0h_ddata           : in  std_ulogic_vector(0 to 1023); -- New PSL/AFU interface
+--    d0h_dpar            : in  std_ulogic_vector(0 to 15)  ; -- New PSL/AFU interface
+    -- DMA port 0 Sent interface
+    hd0_sent_utag_valid : in  std_ulogic                  ;
+    hd0_sent_utag       : out std_ulogic_vector(0 to 9)   ;
+    hd0_sent_utag_sts   : out std_ulogic_vector(0 to 2)   ;
+    -- DMA port 0 Completion interface
+    hd0_cpl_valid       : out std_ulogic                  ;
+    hd0_cpl_utag        : out std_ulogic_vector(0 to 9)   ;
+    hd0_cpl_type        : out std_ulogic_vector(0 to 2)   ;
+    hd0_cpl_laddr       : out std_ulogic_vector(0 to 9)   ;
+    hd0_cpl_byte_count  : out std_ulogic_vector(0 to 9)   ;
+    hd0_cpl_size        : out std_ulogic_vector(0 to 9)   ;
+    hd0_cpl_data        : out std_ulogic_vector(0 to 1023)
+--     hd0_cpl_dpar        : out std_ulogic_vector(0 to 15)
+  );
+
+END Component psl4snap;
+
+SIGNAL a0h_brdata: std_logic_vector(0 TO 1023);  -- hline
 SIGNAL a0h_brlat: std_logic_vector(0 TO 3);  -- v4bit
-SIGNAL a0h_brpar: std_logic_vector(0 TO 7);  -- v8bit
+SIGNAL a0h_brpar: std_logic_vector(0 TO 15);  -- v15bit
 SIGNAL a0h_cabt: std_logic_vector(0 TO 2);  -- cabt
 SIGNAL a0h_cch: std_logic_vector(0 TO 15);  -- ctxhndl
 SIGNAL a0h_cea: std_logic_vector(0 TO 63);  -- ead
 SIGNAL a0h_ceapar: std_logic;  -- bool
 SIGNAL a0h_com: std_logic_vector(0 TO 12);  -- apcmd
 SIGNAL a0h_compar: std_logic;  -- bool
-SIGNAL a0h_cpad: std_logic_vector(0 TO 2);  -- pade
+-- SIGNAL a0h_cpad: std_logic_vector(0 TO 2);  -- pade
 SIGNAL a0h_csize: std_logic_vector(0 TO 11);  -- v12bit
+SIGNAL a0h_cpagesize: std_logic_vector(0 TO 3);  -- v4bit
 SIGNAL a0h_ctag: std_logic_vector(0 TO 7);  -- acctag
 SIGNAL a0h_ctagpar: std_logic;  -- bool
 SIGNAL a0h_cvalid: std_logic;  -- bool
@@ -436,8 +543,8 @@ SIGNAL ha0_brtag: std_logic_vector(0 TO 7);  -- acctag
 SIGNAL ha0_brtagpar: std_logic;  -- bool
 SIGNAL ha0_brvalid: std_logic;  -- bool
 SIGNAL ha0_bwad: std_logic_vector(0 TO 5);  -- v6bit
-SIGNAL ha0_bwdata: std_logic_vector(0 TO 511);  -- hline
-SIGNAL ha0_bwpar: std_logic_vector(0 TO 7);  -- v8bit
+SIGNAL ha0_bwdata: std_logic_vector(0 TO 1023);  -- hline
+SIGNAL ha0_bwpar: std_logic_vector(0 TO 15);  -- v8bit
 SIGNAL ha0_bwtag: std_logic_vector(0 TO 7);  -- acctag
 SIGNAL ha0_bwtagpar: std_logic;  -- bool
 SIGNAL ha0_bwvalid: std_logic;  -- bool
@@ -459,16 +566,40 @@ SIGNAL ha0_pclock: std_logic;  -- bool
 SIGNAL ha0_rcachepos: std_logic_vector(0 TO 12);  -- v13bit
 SIGNAL ha0_rcachestate: std_logic_vector(0 TO 1);  -- statespec
 SIGNAL ha0_rcredits: std_logic_vector(0 TO 8);  -- v9bit
+--SIGNAL ha0_reoa: std_logic_vector(0 TO 185);  -- v186bit
 SIGNAL ha0_response: std_logic_vector(0 TO 7);  -- apresp
+SIGNAL ha0_response_ext: std_logic_vector(0 TO 7);  -- apresp_exp
+SIGNAL ha0_rpagesize: std_logic_vector(0 TO 3);  -- v4bit
 SIGNAL ha0_rtag: std_logic_vector(0 TO 7);  -- acctag
 SIGNAL ha0_rtagpar: std_logic;  -- bool
+SIGNAL ha0_rditag: std_logic_vector(0 TO 8);  -- acctag
+SIGNAL ha0_rditagpar: std_logic;  -- bool
 SIGNAL ha0_rvalid: std_logic;  -- bool
+SIGNAL d0h_dvalid          : std_ulogic                  ; -- New PSL/AFU interface
+SIGNAL d0h_req_utag        : std_ulogic_vector(0 to 9)   ; -- New PSL/AFU interface
+SIGNAL d0h_req_itag        : std_ulogic_vector(0 to 8)   ; -- New PSL/AFU interface
+SIGNAL d0h_dtype           : std_ulogic_vector(0 to 2)   ; -- New PSL/AFU interface
+SIGNAL d0h_datomic_op      : std_ulogic_vector(0 to 5)   ; -- New PSL/AFU interface
+SIGNAL d0h_datomic_le      : std_ulogic                  ; -- New PSL/AFU interface
+SIGNAL d0h_dsize           : std_ulogic_vector(0 to 9)   ; -- New PSL/AFU interface
+SIGNAL d0h_ddata           : std_ulogic_vector(0 to 1023); -- New PSL/AFU interface
+SIGNAL hd0_sent_utag_valid : std_ulogic                  ;
+SIGNAL hd0_sent_utag       : std_ulogic_vector(0 to 9)   ;
+SIGNAL hd0_sent_utag_sts   : std_ulogic_vector(0 to 2)   ;
+SIGNAL hd0_cpl_valid       : std_ulogic                  ;
+SIGNAL hd0_cpl_utag        : std_ulogic_vector(0 to 9)   ;
+SIGNAL hd0_cpl_type        : std_ulogic_vector(0 to 2)   ;
+SIGNAL hd0_cpl_laddr       : std_ulogic_vector(0 to 9)   ;
+SIGNAL hd0_cpl_byte_count  : std_ulogic_vector(0 to 9)   ;
+SIGNAL hd0_cpl_size        : std_ulogic_vector(0 to 9)   ;
+SIGNAL hd0_cpl_data        : std_ulogic_vector(0 to 1023);
+
 SIGNAL gold_factory: std_logic;
 SIGNAL pci_user_reset: std_logic;
-SIGNAL pci_clock_125MHz: std_logic;
-SIGNAL led_red: std_logic_vector(0 TO 1);
-SIGNAL led_green: std_logic_vector(0 TO 1);
-SIGNAL led_blue: std_logic_vector(0 TO 1);
+-- SIGNAL pci_clock_125MHz: std_logic;
+-- SIGNAL led_red: std_logic_vector(0 TO 1);
+-- SIGNAL led_green: std_logic_vector(0 TO 1);
+-- SIGNAL led_blue: std_logic_vector(0 TO 1);
 #ifdef CONFIG_ENABLE_NVME
 -- NVME Reset Logic
 SIGNAL nvme_reset_cnt_q : std_logic_vector(15 DOWNTO 0) := (OTHERS => '1');
@@ -580,11 +711,11 @@ BEGIN
       ah_cvalid                         => a0h_cvalid,
       ah_ctag                           => a0h_ctag,
       ah_com                            => a0h_com,
-      ah_cpad                           => a0h_cpad,
       ah_cabt                           => a0h_cabt,
       ah_cea                            => a0h_cea,
       ah_cch                            => a0h_cch,
       ah_csize                          => a0h_csize,
+      ah_cpagesize                      => a0h_cpagesize,
       ha_croom                          => ha0_croom,
       --
       -- command parity
@@ -612,11 +743,15 @@ BEGIN
       -- PSL Response Interface
       ha_rvalid                         => ha0_rvalid,
       ha_rtag                           => ha0_rtag,
+      ha_rditag                         => ha0_rditag,
       ha_response                       => ha0_response,
+      ha_response_ext                   => ha0_response_ext,
+      ha_rpagesize                      => ha0_rpagesize,
       ha_rcredits                       => ha0_rcredits,
       ha_rcachestate                    => ha0_rcachestate,
       ha_rcachepos                      => ha0_rcachepos,
       ha_rtagpar                        => ha0_rtagpar,
+      ha_rditagpar                      => ha0_rditagpar,
       --
       -- MMIO Interface
       ha_mmval                          => ha0_mmval,
@@ -639,145 +774,219 @@ BEGIN
       ah_jdone                          => a0h_jdone,
       ah_jcack                          => a0h_jcack,
       ah_jerror                         => a0h_jerror,
-      ah_tbreq                          => a0h_tbreq,
       ah_jyield                         => a0h_jyield,
       ha_jeapar                         => ha0_jeapar,
       ha_jcompar                        => ha0_jcompar,
       --
       -- Misc Interface
+      ah_tbreq                          => a0h_tbreq,
       ah_paren                          => a0h_paren,
-      ha_pclock                         => ha0_pclock
+      ha_pclock                         => ha0_pclock,
+      -- DMA port 0 Req
+      d0h_dvalid                        => d0h_dvalid
+      d0h_req_utag                      => d0h_req_utag
+      d0h_req_itag                      => d0h_req_itag
+      d0h_dtype                         => d0h_dtype
+      d0h_datomic_op                    => d0h_datomic_op
+      d0h_datomic_le                    => d0h_datomic_le
+      d0h_dsize                         => d0h_dsize
+      d0h_ddata                         => d0h_ddata
+      -- DMA port 0 Sent
+      hd0_sent_utag_valid               => hd0_sent_utag_valid
+      hd0_sent_utag                     => hd0_sent_utag
+      hd0_sent_utag_sts                 => hd0_sent_utag_sts
+      -- DMA port 0 Completion interface
+      hd0_cpl_valid                     => hd0_cpl_valid
+      hd0_cpl_utag                      => hd0_cpl_utag
+      hd0_cpl_type                      => hd0_cpl_type
+      hd0_cpl_size                      => hd0_cpl_size
+      hd0_cpl_laddr                     => hd0_cpl_laddr
+      hd0_cpl_byte_count                => hd0_cpl_byte_count
+      hd0_cpl_data                      => hd0_cpl_data
+
+      -- DMA port 1 Request
+      d1h_dvalid                        => open,
+      d1h_req_utag                      => open,
+      d1h_req_itag                      => open,
+      d1h_dtype                         => open,
+      d1h_datomic_op                    => open,
+      d1h_datomic_le                    => open,
+      d1h_dsize                         => open,
+      d1h_ddata                         => open,
+      -- DMA port 1 Sent
+      hd1_sent_utag_valid               => '0',
+      hd1_sent_utag                     => efes1024(9 downto 0),
+      hd1_sent_utag_sts                 => efes1024(2 downto 0),
+      -- DMA port 1 Completion
+      hd1_cpl_valid                     => '0',
+      hd1_cpl_utag                      => efes1024(9 downto 0),
+      hd1_cpl_type                      => efes1024(2 downto 0),
+      hd1_cpl_size                      => efes1024(9 downto 0),
+      hd1_cpl_laddr                     => efes1024(9 downto 0),
+      hd1_cpl_byte_count                => efes1024(9 downto 0),
+      hd1_cpl_data                      => efes1024(1023 downto 0)
     );
 
     gold_factory <= '1'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
 
     -- led controls
-    led_red <= "11";
-    led_green <= "11";
-    led_blue <= "11";
+--    led_red <= "11";
+--    led_green <= "11";
+--    led_blue <= "11";
 
-    b: base_img
-     PORT MAP (
-         pci_pi_nperst0   => pci_pi_nperst0,
-         pci_pi_refclk_p0 => pci_pi_refclk_p0,
-         pci_pi_refclk_n0 => pci_pi_refclk_n0,
-         pci0_i_rxp_in0   => pci0_i_rxp_in0,
-         pci0_i_rxn_in0   => pci0_i_rxn_in0,
-         pci0_i_rxp_in1   => pci0_i_rxp_in1,
-         pci0_i_rxn_in1   => pci0_i_rxn_in1,
-         pci0_i_rxp_in2   => pci0_i_rxp_in2,
-         pci0_i_rxn_in2   => pci0_i_rxn_in2,
-         pci0_i_rxp_in3   => pci0_i_rxp_in3,
-         pci0_i_rxn_in3   => pci0_i_rxn_in3,
-         pci0_i_rxp_in4   => pci0_i_rxp_in4,
-         pci0_i_rxn_in4   => pci0_i_rxn_in4,
-         pci0_i_rxp_in5   => pci0_i_rxp_in5,
-         pci0_i_rxn_in5   => pci0_i_rxn_in5,
-         pci0_i_rxp_in6   => pci0_i_rxp_in6,
-         pci0_i_rxn_in6   => pci0_i_rxn_in6,
-         pci0_i_rxp_in7   => pci0_i_rxp_in7,
-         pci0_i_rxn_in7   => pci0_i_rxn_in7,
-         pci0_o_txp_out0  => pci0_o_txp_out0,
-         pci0_o_txn_out0  => pci0_o_txn_out0,
-         pci0_o_txp_out1  => pci0_o_txp_out1,
-         pci0_o_txn_out1  => pci0_o_txn_out1,
-         pci0_o_txp_out2  => pci0_o_txp_out2,
-         pci0_o_txn_out2  => pci0_o_txn_out2,
-         pci0_o_txp_out3  => pci0_o_txp_out3,
-         pci0_o_txn_out3  => pci0_o_txn_out3,
-         pci0_o_txp_out4  => pci0_o_txp_out4,
-         pci0_o_txn_out4  => pci0_o_txn_out4,
-         pci0_o_txp_out5  => pci0_o_txp_out5,
-         pci0_o_txn_out5  => pci0_o_txn_out5,
-         pci0_o_txp_out6  => pci0_o_txp_out6,
-         pci0_o_txn_out6  => pci0_o_txn_out6,
-         pci0_o_txp_out7  => pci0_o_txp_out7,
-         pci0_o_txn_out7  => pci0_o_txn_out7,
+  psl: psl4snap
+    PORT MAP (
+      sys_clk_p       => sys_clk_p,
+      sys_clk_n       => sys_clk_n,
+      sys_rst_n       => sys_rst_n,
 
-         -- flash bus
-         o_flash_oen      => o_flash_oen,
-         o_flash_wen      => o_flash_wen,
-         o_flash_rstn     => o_flash_rstn,
-         o_flash_a        => o_flash_a,
-         o_flash_a_dup    => o_flash_a_dup,
-         o_flash_advn     => o_flash_advn,
-         b_flash_dq       => b_flash_dq,
+      pci_exp_txn     => pci_exp_txn,
+      pci_exp_txp     => pci_exp_txp,
+      pci_exp_rxn     => pci_exp_rxn,
+      pci_exp_rxp     => pci_exp_rxp,
 
-         --PTMON PMBUS
-         b_basei2c_scl    => b_basei2c_scl,
-         b_basei2c_sda    => b_basei2c_sda,
-         b_smbus_scl      => b_smbus_scl,
-         b_smbus_sda      => b_smbus_sda,
+      GPIO_LED_0      => GPIO_LED_0,
+      GPIO_LED_1      => GPIO_LED_1,
+      GPIO_LED_2      => GPIO_LED_2,
+      GPIO_LED_3      => GPIO_LED_3,
+      GPIO_LED_4      => GPIO_LED_4,
+      GPIO_LED_5      => GPIO_LED_5,
+      GPIO_LED_6      => GPIO_LED_6,
+      GPIO_LED_7      => GPIO_LED_7,
 
-         o_ucd_gpio21     => o_ucd_gpio21,
+      PCIE_PERST_LS   => PCIE_PERST_LS,
+--      EMCCLK          => EMCCLK,
 
-         --LED ports from NVME logic
-         led_red          => led_red,
-         led_green        => led_green,
-         led_blue         => led_blue,
-         o_led_red        => o_led_red,
-         o_led_green      => o_led_green,
-         o_led_blue       => o_led_blue,
+-- Flash Interface
+      BPI_FLASH_ADV   => BPI_FLASH_ADV,
 
-         a0h_cvalid       => a0h_cvalid,
-         a0h_ctag         => a0h_ctag,
-         a0h_com          => a0h_com,
-         a0h_cpad         => a0h_cpad,
-         a0h_cabt         => a0h_cabt,
-         a0h_cea          => a0h_cea,
-         a0h_cch          => a0h_cch,
-         a0h_csize        => a0h_csize,
-         ha0_croom        => ha0_croom,
-         a0h_ctagpar      => a0h_ctagpar,
-         a0h_compar       => a0h_compar,
-         a0h_ceapar       => a0h_ceapar,
-         ha0_brvalid      => ha0_brvalid,
-         ha0_brtag        => ha0_brtag,
-         ha0_brad         => ha0_brad,
-         a0h_brlat        => a0h_brlat,
-         a0h_brdata       => a0h_brdata,
-         a0h_brpar        => a0h_brpar,
-         ha0_bwvalid      => ha0_bwvalid,
-         ha0_bwtag        => ha0_bwtag,
-         ha0_bwad         => ha0_bwad,
-         ha0_bwdata       => ha0_bwdata,
-         ha0_bwpar        => ha0_bwpar,
-         ha0_brtagpar     => ha0_brtagpar,
-         ha0_bwtagpar     => ha0_bwtagpar,
-         ha0_rvalid       => ha0_rvalid,
-         ha0_rtag         => ha0_rtag,
-         ha0_response     => ha0_response,
-         ha0_rcredits     => ha0_rcredits,
-         ha0_rcachestate  => ha0_rcachestate,
-         ha0_rcachepos    => ha0_rcachepos,
-         ha0_rtagpar      => ha0_rtagpar,
-         ha0_mmval        => ha0_mmval,
-         ha0_mmrnw        => ha0_mmrnw,
-         ha0_mmdw         => ha0_mmdw,
-         ha0_mmad         => ha0_mmad,
-         ha0_mmdata       => ha0_mmdata,
-         ha0_mmcfg        => ha0_mmcfg,
-         a0h_mmack        => a0h_mmack,
-         a0h_mmdata       => a0h_mmdata,
-         ha0_mmadpar      => ha0_mmadpar,
-         ha0_mmdatapar    => ha0_mmdatapar,
-         a0h_mmdatapar    => a0h_mmdatapar,
-         ha0_jval         => ha0_jval,
-         ha0_jcom         => ha0_jcom,
-         ha0_jea          => ha0_jea,
-         a0h_jrunning     => a0h_jrunning,
-         a0h_jdone        => a0h_jdone,
-         a0h_jcack        => a0h_jcack,
-         a0h_jerror       => a0h_jerror,
-         a0h_tbreq        => a0h_tbreq,
-         a0h_jyield       => a0h_jyield,
-         ha0_jeapar       => ha0_jeapar,
-         ha0_jcompar      => ha0_jcompar,
-         a0h_paren        => a0h_paren,
-         ha0_pclock       => ha0_pclock,
-         gold_factory     => gold_factory,
-         pci_user_reset   => pci_user_reset,
-         pci_clock_125MHz => pci_clock_125MHz
+      BPI_FLASH_D4    => BPI_FLASH_D4,
+      BPI_FLASH_D5    => BPI_FLASH_D5,
+      BPI_FLASH_D7    => BPI_FLASH_D7,
+      BPI_FLASH_D6    => BPI_FLASH_D6,
+      BPI_FLASH_D9    => BPI_FLASH_D9,
+      BPI_FLASH_D8    => BPI_FLASH_D8,
+      BPI_FLASH_D10   => BPI_FLASH_D10,
+      BPI_FLASH_D11   => BPI_FLASH_D11,
+      BPI_FLASH_D12   => BPI_FLASH_D12,
+      BPI_FLASH_D13   => BPI_FLASH_D13,
+      BPI_FLASH_D14   => BPI_FLASH_D14,
+      BPI_FLASH_D15   => BPI_FLASH_D15,
+
+      BPI_FLASH_A0    => BPI_FLASH_A0,
+      BPI_FLASH_A1    => BPI_FLASH_A1,
+      BPI_FLASH_A2    => BPI_FLASH_A2,
+      BPI_FLASH_A3    => BPI_FLASH_A3,
+      BPI_FLASH_A4    => BPI_FLASH_A4,
+      BPI_FLASH_A5    => BPI_FLASH_A5,
+      BPI_FLASH_A6    => BPI_FLASH_A6,
+      BPI_FLASH_A7    => BPI_FLASH_A7,
+      BPI_FLASH_A8    => BPI_FLASH_A8,
+      BPI_FLASH_A9    => BPI_FLASH_A9,
+      BPI_FLASH_A10   => BPI_FLASH_A10,
+      BPI_FLASH_A11   => BPI_FLASH_A11,
+      BPI_FLASH_A12   => BPI_FLASH_A12,
+      BPI_FLASH_A13   => BPI_FLASH_A13,
+      BPI_FLASH_A14   => BPI_FLASH_A14,
+      BPI_FLASH_A15   => BPI_FLASH_A15,
+      BPI_FLASH_A16   => BPI_FLASH_A16,
+      BPI_FLASH_A17   => BPI_FLASH_A17,
+      BPI_FLASH_A18   => BPI_FLASH_A18,
+      BPI_FLASH_A19   => BPI_FLASH_A19,
+      BPI_FLASH_A20   => BPI_FLASH_A20,
+      BPI_FLASH_A21   => BPI_FLASH_A21,
+      BPI_FLASH_A22   => BPI_FLASH_A22,
+      BPI_FLASH_A23   => BPI_FLASH_A23,
+      BPI_FLASH_A24   => BPI_FLASH_A24,
+      BPI_FLASH_A25   => BPI_FLASH_A25,
+
+      PCIE_WAKE_B_LS  => PCIE_WAKE_B_LS,
+      BPI_FLASH_FWE_B => BPI_FLASH_FWE_B,
+      BPI_FLASH_OE_B  => BPI_FLASH_OE_B,
+      BPI_WAIT        => BPI_WAIT,
+
+      a0h_cvalid          => a0h_cvalid,
+      a0h_ctag            => a0h_ctag,
+      a0h_ctagpar         => a0h_ctagpar,
+      a0h_com             => a0h_com,
+      a0h_compar          => a0h_compar,
+      a0h_cabt            => a0h_cabt,
+      a0h_cea             => a0h_cea,
+      a0h_ceapar          => a0h_ceapar,
+      a0h_cch             => a0h_cch,
+      a0h_csize           => a0h_csize,
+      a0h_cpagesize       => a0h_cpagesize,
+      ha0_croom           => ha0_croom,
+
+      ha0_brvalid         => ha0_brvalid,
+      ha0_brtag           => ha0_brtag,
+      ha0_brtagpar        => ha0_brtagpa,r
+      ha0_brad            => ha0_brad,
+      a0h_brlat           => a0h_brlat,
+      a0h_brdata          => a0h_brdata,
+      a0h_brpar           => a0h_brpar,
+      ha0_bwvalid         => ha0_bwvalid,
+      ha0_bwtag           => ha0_bwtag,
+      ha0_bwtagpar        => ha0_bwtagpar,
+      ha0_bwad            => ha0_bwad,
+      ha0_bwdata          => ha0_bwdata,
+      ha0_bwpar           => ha0_bwpar,
+
+      ha0_rvalid          => ha0_rvalid,
+      ha0_rtag            => ha0_rtag,
+      ha0_rtagpar         => ha0_rtagpar,
+      ha0_rditag          => ha0_rditag,
+      ha0_rditagpar       => ha0_rditagpar,
+      ha0_response        => ha0_response,
+      ha0_response_ext    => ha0_response_ext,
+      ha0_rpagesize       => ha0_rpagesize,
+      ha0_rcachestate     => ha0_rcachestate,
+      ha0_rcachepos       => ha0_rcachepos,
+      ha0_rcredits        => ha0_rcredits,
+
+      ha0_mmval           => ha0_mmval,
+      ha0_mmcfg           => ha0_mmcfg,
+      ha0_mmrnw           => ha0_mmrnw,
+      ha0_mmdw            => ha0_mmdw,
+      ha0_mmad            => ha0_mmad,
+      ha0_mmadpar         => ha0_mmadpar,
+      ha0_mmdata          => ha0_mmdata,
+      ha0_mmdatapar       => ha0_mmdatapar,
+      a0h_mmack           => a0h_mmack,
+      a0h_mmdata          => a0h_mmdata,
+      a0h_mmdatapar       => a0h_mmdatapar,
+
+      ha0_jval            => ha0_jval,
+      ha0_jcom            => ha0_jcom,
+      ha0_jcompar         => ha0_jcompar,
+      ha0_jea             => ha0_jea,
+      ha0_jeapar          => ha0_jeapar,
+      a0h_jrunning        => a0h_jrunning,
+      a0h_jdone           => a0h_jdone,
+      a0h_jcack           => a0h_jcack,
+      a0h_jerror          => a0h_jerror,
+      a0h_tbreq           => a0h_tbreq,
+      a0h_paren           => a0h_paren,
+      ha0_pclock          => ha0_pclock,
+
+      d0h_dvalid          => d0h_dvalid,
+      d0h_req_utag        => d0h_req_utag,
+      d0h_req_itag        => d0h_req_itag,
+      d0h_dtype           => d0h_dtype,
+      d0h_datomic_op      => d0h_datomic_op,
+      d0h_datomic_le      => d0h_datomic_le,
+      d0h_dsize           => d0h_dsize,
+      d0h_ddata           => d0h_ddata,
+      hd0_sent_utag_valid => hd0_sent_utag_valid,
+      hd0_sent_utag       => hd0_sent_utag,
+      hd0_sent_utag_sts   => hd0_sent_utag_sts,
+      hd0_cpl_valid       => hd0_cpl_valid,
+      hd0_cpl_utag        => hd0_cpl_utag,
+      hd0_cpl_type        => hd0_cpl_type,
+      hd0_cpl_laddr       => hd0_cpl_laddr,
+      hd0_cpl_byte_count  => hd0_cpl_byte_count,
+      hd0_cpl_size        => hd0_cpl_size,
+      hd0_cpl_data        => hd0_cpl_data
     );
 
 END psl_fpga;
