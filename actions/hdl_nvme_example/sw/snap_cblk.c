@@ -535,7 +535,7 @@ int main(int argc, char *argv[])
 			rc);
 		goto err_out;
 	}
-	fprintf(stderr, "NVMe device has %zu blocks of each %zu bytes; "
+	fprintf(stdout, "NVMe device has %zu blocks of each %zu bytes; "
 		"%zu MiB (MAX 0x%lx blocks) @ %u threads\n",
 		lun_size, lba_size, lun_size * lba_size / (1024 * 1024),
 		lun_size,
@@ -551,7 +551,7 @@ int main(int argc, char *argv[])
 		/* fprintf(stderr, "num_lba=%u lba_blocks=%zu lun_size=%zu\n",
 			num_lba, lba_blocks, lun_size); */
 
-		fprintf(stderr, "Reading %zu times %zu bytes: %zu KiB NVMe into %s\n",
+		fprintf(stdout, "Reading %zu times %zu bytes: %zu KiB NVMe into %s\n",
 			num_lba/lba_blocks, lba_blocks * lba_size,
 			num_lba * lba_size / 1024,
 			fname);
@@ -648,7 +648,7 @@ int main(int argc, char *argv[])
 		mib_sec = (diff_usec == 0) ? 0.0 :
 			(double)(num_lba * lba_size) / diff_usec;
 
-		fprintf(stderr, "Reading of %lld bytes with %d threads took %lld usec @ %.3f MiB/sec %s\n",
+		fprintf(stdout, "Reading of %lld bytes with %d threads took %lld usec @ %.3f MiB/sec %s\n",
 			(long long)num_lba * lba_size, threads,
 			(long long)diff_usec, mib_sec,
 			random_seed ? "random ordering" : "linear ordering");
@@ -657,7 +657,7 @@ int main(int argc, char *argv[])
 	case OP_WRITE: {
 		ssize_t len;
 
-		fprintf(stderr, "Writing NVMe from %s\n", fname);
+		fprintf(stdout, "Writing NVMe from %s\n", fname);
 		len = file_size(fname);
 		if (len <= 0)
 			goto err_out;
@@ -713,12 +713,12 @@ int main(int argc, char *argv[])
 		mib_sec = (diff_usec == 0) ? 0.0 :
 			(double)(num_lba * lba_size) / diff_usec;
 
-		fprintf(stderr, "Writing of %lld bytes took %lld usec @ %.3f MiB/sec\n",
+		fprintf(stdout, "Writing of %lld bytes took %lld usec @ %.3f MiB/sec\n",
 			(long long)num_lba * lba_size, (long long)diff_usec, mib_sec);
 		break;
 	}
 	case OP_FORMAT: {
-		fprintf(stderr, "Formatting NVMe drive %zu KiB with pattern %02x ...\n",
+		fprintf(stdout, "Formatting NVMe drive %zu KiB with pattern %02x ...\n",
 			(num_lba * lba_size) / 1024, pattern);
 
 		if (num_lba < lba_blocks) {
@@ -769,7 +769,7 @@ int main(int argc, char *argv[])
 		mib_sec = (diff_usec == 0) ? 0.0 :
 			(double)(num_lba * lba_size) / diff_usec;
 
-		fprintf(stderr, "Formatting of %lld bytes took %lld usec @ %.3f MiB/sec\n",
+		fprintf(stdout, "Formatting of %lld bytes took %lld usec @ %.3f MiB/sec\n",
 			(long long)num_lba * lba_size, (long long)diff_usec, mib_sec);
 		break;
 	default:
