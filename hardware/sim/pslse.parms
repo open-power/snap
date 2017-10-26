@@ -54,7 +54,7 @@ RESPONSE_PERCENT:10,20
 PAGED_PERCENT:2,4
 
 # Percentage chance of PSL reordering the execution of commands.
-REORDER_PERCENT:80,90
+REORDER_PERCENT: 0
 
 # Percentage chance of PSL generating extra buffer read/write activity.
 BUFFER_PERCENT:80,90

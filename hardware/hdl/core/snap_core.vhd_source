@@ -33,69 +33,69 @@ ENTITY snap_core IS
     -- PSL Interface
     --
     -- Command interface
-    ah_cvalid       : OUT std_logic;                  -- Command valid
-    ah_ctag         : OUT std_logic_vector(0 TO 7);   -- Command tag
-    ah_ctagpar      : OUT std_logic;                  -- Command tag parity
-    ah_com          : OUT std_logic_vector(0 TO 12);  -- Command code
-    ah_compar       : OUT std_logic;                  -- Command code parity
-    ah_cabt         : OUT std_logic_vector(0 TO 2);   -- Command ABT
-    ah_cea          : OUT std_logic_vector(0 TO 63);  -- Command address
-    ah_ceapar       : OUT std_logic;                  -- Command address parity
-    ah_cch          : OUT std_logic_vector(0 TO 15);  -- Command context handle
-    ah_csize        : OUT std_logic_vector(0 TO 11);  -- Command size
-    ha_croom        : IN  std_logic_vector(0 TO 7);   -- Command room
-    --
-    -- Buffer interface
-    ha_brvalid      : IN  std_logic;                  -- Buffer Read valid
-    ha_brtag        : IN  std_logic_vector(0 TO 7);   -- Buffer Read tag
-    ha_brtagpar     : IN  std_logic;                  -- Buffer Read tag parity
-    ha_brad         : IN  std_logic_vector(0 TO 5);   -- Buffer Read address
-    ah_brlat        : OUT std_logic_vector(0 TO 3);   -- Buffer Read latency
-    ah_brdata       : OUT std_logic_vector(0 TO 511); -- Buffer Read data
-    ah_brpar        : OUT std_logic_vector(0 TO 7);   -- Buffer Read parity
-    ha_bwvalid      : IN  std_logic;                  -- Buffer Write valid
-    ha_bwtag        : IN  std_logic_vector(0 TO 7);   -- Buffer Write tag
-    ha_bwtagpar     : IN  std_logic;                  -- Buffer Write tag parity
-    ha_bwad         : IN  std_logic_vector(0 TO 5);   -- Buffer Write address
-    ha_bwdata       : IN  std_logic_vector(0 TO 511); -- Buffer Write data
-    ha_bwpar        : IN  std_logic_vector(0 TO 7);   -- Buffer Write parity
+    ah_cvalid       : OUT std_logic;                                  -- Command valid
+    ah_ctag         : OUT std_logic_vector(0 TO 7);                   -- Command tag
+    ah_ctagpar      : OUT std_logic;                                  -- Command tag parity
+    ah_com          : OUT std_logic_vector(0 TO 12);                  -- Command code
+    ah_compar       : OUT std_logic;                                  -- Command code parity
+    ah_cabt         : OUT std_logic_vector(0 TO 2);                   -- Command ABT
+    ah_cea          : OUT std_logic_vector(0 TO 63);                  -- Command address
+    ah_ceapar       : OUT std_logic;                                  -- Command address parity
+    ah_cch          : OUT std_logic_vector(0 TO 15);                  -- Command context handle
+    ah_csize        : OUT std_logic_vector(0 TO 11);                  -- Command size
+    ha_croom        : IN  std_logic_vector(0 TO 7);                   -- Command room
+    --                                                                 
+    -- Buffer interface                                                
+    ha_brvalid      : IN  std_logic;                                  -- Buffer Read valid
+    ha_brtag        : IN  std_logic_vector(0 TO 7);                   -- Buffer Read tag
+    ha_brtagpar     : IN  std_logic;                                  -- Buffer Read tag parity
+    ha_brad         : IN  std_logic_vector(0 TO 5);                   -- Buffer Read address
+    ah_brlat        : OUT std_logic_vector(0 TO 3);                   -- Buffer Read latency
+    ah_brdata       : OUT std_logic_vector(0 TO (512*CAPI_VER)-1);    -- Buffer Read data
+    ah_brpar        : OUT std_logic_vector(0 TO (8*CAPI_VER)-1);      -- Buffer Read parity
+    ha_bwvalid      : IN  std_logic;                                  -- Buffer Write valid
+    ha_bwtag        : IN  std_logic_vector(0 TO 7);                   -- Buffer Write tag
+    ha_bwtagpar     : IN  std_logic;                                  -- Buffer Write tag parity
+    ha_bwad         : IN  std_logic_vector(0 TO 5);                   -- Buffer Write address
+    ha_bwdata       : IN  std_logic_vector(0 TO (512*CAPI_VER)-1);    -- Buffer Write data
+    ha_bwpar        : IN  std_logic_vector(0 TO (8*CAPI_VER)-1);      -- Buffer Write parity
     --
     --  Response interface
-    ha_rvalid       : IN  std_logic;                  -- Response valid
-    ha_rtag         : IN  std_logic_vector(0 TO 7);   -- Response tag
-    ha_rtagpar      : IN  std_logic;                  -- Response tag parity
-    ha_response     : IN  std_logic_vector(0 TO 7);   -- Response
-    ha_rcredits     : IN  std_logic_vector(0 TO 8);   -- Response credits
-    ha_rcachestate  : IN  std_logic_vector(0 TO 1);   -- Response cache state
-    ha_rcachepos    : IN  std_logic_vector(0 TO 12);  -- Response cache pos
-    --
-    -- MMIO interface
-    ha_mmval        : IN  std_logic;                  -- A valid MMIO is present
-    ha_mmcfg        : IN  std_logic;                  -- MMIO is AFU descriptor space access
-    ha_mmrnw        : IN  std_logic;                  -- 1 = read  0 = write
-    ha_mmdw         : IN  std_logic;                  -- 1 = doubleword  0 = word
-    ha_mmad         : IN  std_logic_vector(0 TO 23);  -- mmio address
-    ha_mmadpar      : IN  std_logic;                  -- mmio address parity
-    ha_mmdata       : IN  std_logic_vector(0 TO 63);  -- Write data
-    ha_mmdatapar    : IN  std_logic;                  -- Write data parity
-    ah_mmack        : OUT std_logic;                  -- Write is complete or Read is valid
-    ah_mmdata       : OUT std_logic_vector(0 TO 63);  -- Read data
-    ah_mmdatapar    : OUT std_logic;                  -- Read data parity
-    --
-    -- Control interface
-    ha_jval         : IN  std_logic;                  -- Job valid
-    ha_jcom         : IN  std_logic_vector(0 TO 7);   -- Job command
-    ha_jcompar      : IN  std_logic;                  -- Job command parity
-    ha_jea          : IN  std_logic_vector(0 TO 63);  -- Job address
-    ha_jeapar       : IN  std_logic;                  -- Job address parity
-    ah_jrunning     : OUT std_logic;                  -- Job running
-    ah_jdone        : OUT std_logic;                  -- Job done
-    ah_jcack        : OUT std_logic;                  -- Acknowledge completion of LLCMD
-    ah_jerror       : OUT std_logic_vector(0 TO 63);  -- Job error
-    ah_jyield       : OUT std_logic;                  -- Job yield
-    ah_tbreq        : OUT std_logic := '0';           -- Timebase command request
-    ah_paren        : OUT std_logic;                  -- Parity enable
-    ha_pclock       : IN  std_logic;                  -- clock
+    ha_rvalid       : IN  std_logic;                                  -- Response valid
+    ha_rtag         : IN  std_logic_vector(0 TO 7);                   -- Response tag
+    ha_rtagpar      : IN  std_logic;                                  -- Response tag parity
+    ha_response     : IN  std_logic_vector(0 TO 7);                   -- Response
+    ha_rcredits     : IN  std_logic_vector(0 TO 8);                   -- Response credits
+    ha_rcachestate  : IN  std_logic_vector(0 TO 1);                   -- Response cache state
+    ha_rcachepos    : IN  std_logic_vector(0 TO 12);                  -- Response cache pos
+    --                                                                 
+    -- MMIO interface                                                  
+    ha_mmval        : IN  std_logic;                                  -- A valid MMIO is present
+    ha_mmcfg        : IN  std_logic;                                  -- MMIO is AFU descriptor space access
+    ha_mmrnw        : IN  std_logic;                                  -- 1 = read  0 = write
+    ha_mmdw         : IN  std_logic;                                  -- 1 = doubleword  0 = word
+    ha_mmad         : IN  std_logic_vector(0 TO 23);                  -- mmio address
+    ha_mmadpar      : IN  std_logic;                                  -- mmio address parity
+    ha_mmdata       : IN  std_logic_vector(0 TO 63);                  -- Write data
+    ha_mmdatapar    : IN  std_logic;                                  -- Write data parity
+    ah_mmack        : OUT std_logic;                                  -- Write is complete or Read is valid
+    ah_mmdata       : OUT std_logic_vector(0 TO 63);                  -- Read data
+    ah_mmdatapar    : OUT std_logic;                                  -- Read data parity
+    --                                                                 
+    -- Control interface                                               
+    ha_jval         : IN  std_logic;                                  -- Job valid
+    ha_jcom         : IN  std_logic_vector(0 TO 7);                   -- Job command
+    ha_jcompar      : IN  std_logic;                                  -- Job command parity
+    ha_jea          : IN  std_logic_vector(0 TO 63);                  -- Job address
+    ha_jeapar       : IN  std_logic;                                  -- Job address parity
+    ah_jrunning     : OUT std_logic;                                  -- Job running
+    ah_jdone        : OUT std_logic;                                  -- Job done
+    ah_jcack        : OUT std_logic;                                  -- Acknowledge completion of LLCMD
+    ah_jerror       : OUT std_logic_vector(0 TO 63);                  -- Job error
+    ah_jyield       : OUT std_logic;                                  -- Job yield
+    ah_tbreq        : OUT std_logic := '0';                           -- Timebase command request
+    ah_paren        : OUT std_logic;                                  -- Parity enable
+    ha_pclock       : IN  std_logic;                                  -- clock
     --
     -- ACTION Interface
     -- misc
@@ -214,20 +214,20 @@ BEGIN
   -- Buffer Interface
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
-    ha_b.rvalid                 <=                  ha_brvalid;
-    ha_b.rtag(7 DOWNTO 0)       <= v2vhdl_connector(ha_brtag(0 TO 7));
-    ha_b.rtagpar                <=                  ha_brtagpar;
-    ha_b.rad(5 DOWNTO 0)        <= v2vhdl_connector(ha_brad(0 TO 5));
-    ha_b.wvalid                 <=                  ha_bwvalid;
-    ha_b.wtag(7 DOWNTO 0)       <= v2vhdl_connector(ha_bwtag(0 TO 7));
-    ha_b.wtagpar                <=                  ha_bwtagpar;
-    ha_b.wad(5 DOWNTO 0)        <= v2vhdl_connector(ha_bwad(0 TO 5));
-    ha_b.wdata(511 DOWNTO 0)    <= v2vhdl_connector(ha_bwdata(0 TO 511));
-    ha_b.wpar(7 DOWNTO 0)       <= v2vhdl_connector(ha_bwpar(0 TO 7));
+    ha_b.rvalid                           <=                  ha_brvalid;
+    ha_b.rtag(7 DOWNTO 0)                 <= v2vhdl_connector(ha_brtag(0 TO 7));
+    ha_b.rtagpar                          <=                  ha_brtagpar;
+    ha_b.rad(5 DOWNTO 0)                  <= v2vhdl_connector(ha_brad(0 TO 5));
+    ha_b.wvalid                           <=                  ha_bwvalid;
+    ha_b.wtag(7 DOWNTO 0)                 <= v2vhdl_connector(ha_bwtag(0 TO 7));
+    ha_b.wtagpar                          <=                  ha_bwtagpar;
+    ha_b.wad(5 DOWNTO 0)                  <= v2vhdl_connector(ha_bwad(0 TO 5));
+    ha_b.wdata((512*CAPI_VER)-1 DOWNTO 0) <= v2vhdl_connector(ha_bwdata(0 TO (512*CAPI_VER)-1));
+    ha_b.wpar( (  8*CAPI_VER)-1 DOWNTO 0) <= v2vhdl_connector(ha_bwpar( 0 TO (  8*CAPI_VER)-1));
 
-    ah_brlat(0 TO 3)            <= vhdl2v_connector(ah_b.rlat(3 DOWNTO 0));
-    ah_brdata(0 TO 511)         <= vhdl2v_connector(ah_b.rdata(511 DOWNTO 0));
-    ah_brpar(0 TO 7)            <= vhdl2v_connector(ah_b.rpar(7 DOWNTO 0));
+    ah_brlat(0 TO 3)                      <= vhdl2v_connector(ah_b.rlat(3 DOWNTO 0));
+    ah_brdata(0 TO (512*CAPI_VER)-1)      <= vhdl2v_connector(ah_b.rdata((512*CAPI_VER)-1 DOWNTO 0));
+    ah_brpar( 0 TO (  8*CAPI_VER)-1)      <= vhdl2v_connector(ah_b.rpar( (  8*CAPI_VER)-1 DOWNTO 0));
 
 
   ------------------------------------------------------------------------------
