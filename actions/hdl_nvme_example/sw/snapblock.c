@@ -39,10 +39,10 @@
 #undef CONFIG_PRINT_STATUS	/* health checking if needed */
 #define CONFIG_SOFTWARE_TIME	/* measure hardware */
 
-#define CONFIG_REQUEST_TIMEOUT	5
-#define CONFIG_REQUEST_DURATION	1000 /* usec */
+#define CONFIG_REQ_TIMEOUT_SEC		5
+#define CONFIG_REQ_DURATION_USEC	100000 /* usec */
 
-static int cblk_reqtimeout = CONFIG_REQUEST_TIMEOUT;
+static int cblk_reqtimeout = CONFIG_REQ_TIMEOUT_SEC;
 static int cblk_prefetch = 0;
 static int cblk_caching = 1;
 
@@ -601,7 +601,8 @@ reserve_block:
  * We added _used to identify entries which were read by the prefetch
  * code but thrown out before they got actually used.
  */
-static inline int cache_write_reserved(struct cache_way *e, const void *buf,
+static inline int cache_write_reserved(struct cache_way *e,
+					off_t lba, const void *buf,
 					int _used)
 {
 	struct cache_entry *entry;
@@ -612,9 +613,9 @@ static inline int cache_write_reserved(struct cache_way *e, const void *buf,
 	entry = &cache_entries[e->lba & CACHE_MASK];
 	pthread_mutex_lock(&entry->way_lock);
 
-	if (e->status != CACHE_BLOCK_READING) {
-		dfprintf(stderr, "[%s] warning: LBA=%ld State is not READING but %s\n",
-			__func__, e->lba, block_status_str[e->status]);
+	if ((e->status != CACHE_BLOCK_READING) || (e->lba != lba)) {
+		dfprintf(stderr, "[%s] warning: LBA=%ld/%ld State is not READING but %s\n",
+			__func__, lba, e->lba, block_status_str[e->status]);
 		pthread_mutex_unlock(&entry->way_lock);
 		return -1;
 	}
@@ -637,7 +638,6 @@ static inline int cache_unreserve(struct cache_way *e)
 	entry = &cache_entries[e->lba & CACHE_MASK];
 	pthread_mutex_lock(&entry->way_lock);
 
-	/* FIXME Do I need a lock here?? */
 	if (e->status == CACHE_BLOCK_READING) {
 		dfprintf(stderr, "[%s] warning: forcing status LBA=%ld "
 			"cache from READING to UNUSED!\n", __func__, e->lba);
@@ -661,7 +661,7 @@ static inline int cache_write(off_t lba, const void *buf, int _used)
 		return -1;	/* no entry free! */
 
 	/* Now replace entry with new data */
-	return cache_write_reserved(e, buf, _used);
+	return cache_write_reserved(e, lba, buf, _used);
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
@@ -1053,7 +1053,7 @@ static inline int __read_complete(struct cblk_dev *c,
 	if (cblk_caching) {
 		/* ... push blocks to cache for later use */
 		for (i = 0; i < req->nblocks; i++) {
-			cache_write_reserved(req->pblock[i],
+			cache_write_reserved(req->pblock[i], req->lba + i,
 					req->buf + i * __CBLK_BLOCK_SIZE,
 					_used);
 		}
@@ -1465,8 +1465,8 @@ static int __cache_read_timeout(struct cblk_dev *c __attribute__((unused)),
 			return rc;
 	}
 
-	dfprintf(stderr, "[%s] Block did not arrive in time %ld usecs\n",
-		__func__, usecs);
+	dfprintf(stderr, "[%s] LBA=%ld did not arrive in time %ld usecs\n",
+		__func__, lba, usecs);
 	return -1;		/* Timeout */
 }
 
@@ -1487,7 +1487,7 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 		for (i = 0; i < nblocks; i++) {
 			rc = __cache_read_timeout(c, lba + i,
 					buf + i * __CBLK_BLOCK_SIZE,
-					CONFIG_REQUEST_DURATION);
+					CONFIG_REQ_DURATION_USEC);
 			if (rc != 0)
 				break;
 		}
