@@ -139,12 +139,12 @@ snap_nvme_init -C${card} -d0 -d1 -v
 if [ "${TEST}" == "READ_BENCHMARK" ]; then
 	echo "SNAP NVME READ BENCHMARK"
 	for p in 0 4 ; do
-		for t in 1 4 6 8 10 12 16 24 32 64 ; do
+		for t in 1 4 8 10 16 24 32 64 ; do
 			echo "PREFETCH: $p ; THREADS: $t ; NBLOCKS=${nblocks}" ;
-			CBLK_PREFETCH=$p SNAP_TRACE=0x0 \
+			(time CBLK_PREFETCH=$p SNAP_TRACE=0x0 \
 			snap_cblk -C0 ${options} -b${nblocks} \
 				-R${random_seed} -s0 -t${t} \
-				--read /dev/null ;
+				--read /dev/null );
 			echo
 		done
 	done
