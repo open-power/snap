@@ -649,6 +649,11 @@ static inline int cache_unreserve(struct cache_way *e)
 	return 0;
 }
 
+/**
+ * FIXME The non-atomic cache_reserve() -> cache_write_reserved() 
+ *       sequence is not working if we allow reservations to be
+ *       changed in certain cases. This needs fixups.
+ */
 static inline int cache_write(off_t lba, const void *buf, int _used)
 {
 	struct cache_way *e;
