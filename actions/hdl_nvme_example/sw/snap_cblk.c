@@ -346,7 +346,6 @@ static void *read_thread(void *data)
 				rc, strerror(errno));
 			goto err_out;
 		}
-		fprintf(stderr, "[%s] needed %ld usecs\n", __func__, diff_usec);
 
 		/* Update statistics under lock to make it consistent */
 		pthread_mutex_lock(&rq->read_lock);

@@ -92,6 +92,7 @@ static inline long long __get_usec(void)
 int action_trace_enabled(void);
 int block_trace_enabled(void);
 int cache_trace_enabled(void);
+int stat_trace_enabled(void);
 
 #define act_trace(fmt, ...) do {					\
 		if (action_trace_enabled())				\
@@ -109,6 +110,14 @@ int cache_trace_enabled(void);
 #define cache_trace(fmt, ...) do {                                     \
 		if (cache_trace_enabled()) {                           \
 			fprintf(stderr, "C %08x.%08x %-16lld " fmt,    \
+				getpid(), __gettid(), __get_usec(),    \
+			## __VA_ARGS__);                               \
+		}                                                      \
+	} while (0)
+
+#define stat_trace(fmt, ...) do {                                      \
+		if (stat_trace_enabled()) {                            \
+			fprintf(stderr, "S %08x.%08x %-16lld " fmt,    \
 				getpid(), __gettid(), __get_usec(),    \
 			## __VA_ARGS__);                               \
 		}                                                      \

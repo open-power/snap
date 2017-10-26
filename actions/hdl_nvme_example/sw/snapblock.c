@@ -1629,7 +1629,7 @@ static void _done(void)
 
 	block_trace("[%s] exit\n", __func__);
 
-	fprintf(stderr, "Statistics\n"
+	stat_trace("Statistics\n"
 		"  prefetches:          %ld\n"
 		"  prefetch_collisions: %ld\n"
 		"  cache_hits:          %ld\n"
@@ -1679,7 +1679,7 @@ static void _done(void)
 		c->hw_block_reads ? c->avg_hw_read_usecs/c->hw_block_reads : 0,
 		c->hw_block_writes ? c->avg_hw_write_usecs/c->hw_block_writes : 0);
 
-	fprintf(stderr, "Cache Info\n"
+	cache_trace("Cache Info\n"
 		"  entries/ways:        %d/%d per block %d KiB\n"
 		"  total_size:          %d MiB\n",
 		CACHE_ENTRIES, CACHE_WAYS, __CBLK_BLOCK_SIZE / 1024,
