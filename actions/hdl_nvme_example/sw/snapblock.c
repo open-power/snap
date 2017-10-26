@@ -37,10 +37,7 @@
 
 #undef CONFIG_WAIT_FOR_IRQ	/* Not working */
 #undef CONFIG_PRINT_STATUS	/* health checking if needed */
-#undef CONFIG_FIFO_SCHEDULING	/* only root */
-#undef CONFIG_PIN_COMPLETION_THREAD	/* try to pin completion thread */
 #define CONFIG_SOFTWARE_TIME	/* measure hardware */
-#define CONFIG_SLEEP_WHEN_IDLE	/* Sleep when there is no work to be done */
 
 #define CONFIG_REQUEST_TIMEOUT	5
 #define CONFIG_REQUEST_DURATION	1000 /* usec */
@@ -227,8 +224,11 @@ struct cblk_dev {
 
 	sem_t w_busy_sem;	/* wait if there is no write slot */
 	sem_t r_busy_sem;	/* wait if there is no read slot */
-	sem_t idle_sem;		/* wait if there is no work */
 	pthread_t done_tid;
+
+	pthread_cond_t idle_c;	/* idle management for completion thread */
+	pthread_mutex_t idle_m;
+	int work_in_flight;
 
 	/* statistics */
 	long int prefetches;
@@ -247,6 +247,7 @@ struct cblk_dev {
 	struct timeval rtime_total;	/* total time spent in reads */
 	struct timeval wtime_total;	/* total time spent in writes */
 	long int idle_wakeups;
+	long int cache_trashing;
 
 	time_t max_read_usecs;
 	time_t max_write_usecs;
@@ -262,6 +263,22 @@ struct cblk_dev {
 static struct cblk_dev chunk = {
 	.dev_lock = PTHREAD_MUTEX_INITIALIZER,
 };
+
+static void inc_work_in_flight(struct cblk_dev *c)
+{
+	pthread_mutex_lock(&c->idle_m);
+	c->work_in_flight++;
+	if (c->work_in_flight == 1)
+		pthread_cond_signal(&c->idle_c);
+	pthread_mutex_unlock(&c->idle_m);
+}
+
+static void dec_work_in_flight(struct cblk_dev *c)
+{
+	pthread_mutex_lock(&c->idle_m);
+	c->work_in_flight--;
+	pthread_mutex_unlock(&c->idle_m);
+}
 
 static inline unsigned int reads_in_flight(struct cblk_dev *c)
 {
@@ -709,8 +726,6 @@ static inline void start_memcpy(struct cblk_dev *c,
 	}
 
 	pthread_mutex_unlock(&c->dev_lock);
-
-	sem_post(&c->idle_sem);	/* kick completion detection */
 }
 
 int cblk_init(void *arg __attribute__((unused)),
@@ -770,12 +785,14 @@ static struct cblk_req *get_read_req(struct cblk_dev *c,
 			cblk_set_status(req, CBLK_READING);
 
 			pthread_mutex_unlock(&c->dev_lock);
+			inc_work_in_flight(c);
 			return req;
 		}
 		c->ridx = (c->ridx + 1) % CBLK_RIDX_MAX;	/* pick next ridx */
 	}
 
 	pthread_mutex_unlock(&c->dev_lock);
+	
 	block_trace("[%s] warning: No IDLE req found!\n", __func__);
 	return NULL;
 }
@@ -805,6 +822,7 @@ static struct cblk_req *get_write_req(struct cblk_dev *c,
 			cblk_set_status(req, CBLK_WRITING);
 
 			pthread_mutex_unlock(&c->dev_lock);
+			inc_work_in_flight(c);
 			return req;
 		}
 		c->widx = (c->widx + 1) % CBLK_WIDX_MAX;	/* pick next widx */
@@ -850,6 +868,7 @@ static void put_req(struct cblk_dev *c, struct cblk_req *req)
 		cblk_set_status(req, CBLK_IDLE);
 
 	pthread_mutex_unlock(&c->dev_lock);
+	dec_work_in_flight(c);
 }
 
 /**
@@ -1073,73 +1092,43 @@ static void *completion_thread(void *arg)
 	struct cblk_dev *c = (struct cblk_dev *)arg;
 	struct timeval etime;
 
-#ifdef CONFIG_FIFO_SCHEDULING /* only root */
-	int rc;
-	struct sched_param sched_param;
-
-	sched_param.sched_priority = sched_get_priority_max(SCHED_FIFO);
-	rc = pthread_setschedparam(c->done_tid, SCHED_FIFO, &sched_param);
-	if (rc != 0)
-		fprintf(stderr, "warning: pthread_setschedparam() rc=%d errno=%d %s\n",
-			rc, errno, strerror(errno));
-#endif
-
 	block_trace("[%s] arg=%p enter\n", __func__, arg);
 	pthread_cleanup_push(completion_thread_cleanup, c);
 
-#ifdef CONFIG_PIN_COMPLETION_THREAD
-	int new_cpu, run_cpu;
-	run_cpu = sched_getcpu();
-	__pin_cpu();
-#endif
 	while (1) {
 		int slot;
 
-#ifdef CONFIG_PIN_COMPLETION_THREAD
-		new_cpu = sched_getcpu();
-		if (run_cpu != new_cpu) {
-			fprintf(stderr, "info: switched cpu from %d to %d\n",
-				run_cpu, new_cpu);
-			run_cpu = new_cpu;
+		pthread_mutex_lock(&c->idle_m);
+		while (c->work_in_flight == 0) {
+			pthread_cond_wait(&c->idle_c, &c->idle_m);
+			c->idle_wakeups++;
 		}
-#endif
-#ifdef CONFIG_SLEEP_WHEN_IDLE
-		block_trace("  [%s] idle_sem WAITING %d/%d...\n", __func__,
-			reads_in_flight(c), writes_in_flight(c));
-		sem_wait(&c->idle_sem);	/* wait until work is to be done */
-		c->idle_wakeups++;
-		block_trace("  [%s] idle_sem WAKEUP %d/%d\n", __func__,
-			reads_in_flight(c), writes_in_flight(c));
-#endif
+		pthread_mutex_unlock(&c->idle_m);
 
-		while (work_in_flight(c)) {
-			slot = read_status(c, c->timeout);
-			if ((slot >= 0) && (slot < CBLK_IDX_MAX)) {
-				struct cblk_req *req = &c->req[slot];
+		slot = read_status(c, c->timeout);
+		if ((slot >= 0) && (slot < CBLK_IDX_MAX)) {
+			struct cblk_req *req = &c->req[slot];
+			if ((req->status == CBLK_READING) ||
+			    (req->status == CBLK_WRITING)) {
+				block_trace("  [%s] waking up slot %d\n",
+					__func__, slot);
 
-				if ((req->status == CBLK_READING) ||
-				    (req->status == CBLK_WRITING)) {
-					block_trace("  [%s] waking up slot %d\n",
-						__func__, slot);
-
-					cblk_set_status(req, CBLK_READY);
-					if (req->use_wait_sem) {
-						sem_post(&req->wait_sem);
-					} else {
-						__read_complete(c, req);
-					}
+				cblk_set_status(req, CBLK_READY);
+				if (req->use_wait_sem) {
+					sem_post(&req->wait_sem);
 				} else {
-					block_trace("  [%s] err: slot %d status is %s "
-						"ILLEGAL STATUS (%lu)\n", __func__,
-						slot, cblk_status_str[req->status],
-						no_result_counter);
+					__read_complete(c, req);
 				}
-			} else no_result_counter++;
+			} else {
+				block_trace("  [%s] err: slot %d status is %s "
+					"ILLEGAL STATUS (%lu)\n", __func__,
+					slot, cblk_status_str[req->status],
+					no_result_counter);
+			}
+		} else no_result_counter++;
 
-			gettimeofday(&etime, NULL);
-			check_request_timeouts(c, &etime, cblk_reqtimeout * 1000);
-			pthread_testcancel();	/* go home if requested */
-		}
+		gettimeofday(&etime, NULL);
+		check_request_timeouts(c, &etime, cblk_reqtimeout * 1000);
 		pthread_testcancel();	/* go home if requested */
 	}
 
@@ -1241,6 +1230,7 @@ chunk_id_t cblk_open(const char *path,
 	c->wbytes_total = 0;
 	c->rbytes_total = 0;
 	c->idle_wakeups = 0;
+	c->cache_trashing = 0;
 
 	c->wtime_total.tv_sec = 0;
 	c->wtime_total.tv_usec = 0;
@@ -1248,9 +1238,10 @@ chunk_id_t cblk_open(const char *path,
 	c->rtime_total.tv_usec = 0;
 	gettimeofday(&c->start_time, NULL);
 
-	sem_init(&c->idle_sem, 0, 0);
 	sem_init(&c->r_busy_sem, 0, CBLK_RIDX_MAX);
 	sem_init(&c->w_busy_sem, 0, CBLK_WIDX_MAX);
+	pthread_mutex_init(&c->idle_m, NULL);
+	pthread_cond_init(&c->idle_c, NULL);
 
 	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
 		struct cblk_req *req = &c->req[i];
@@ -1331,6 +1322,7 @@ int cblk_close(chunk_id_t id __attribute__((unused)),
 		sem_destroy(&c->req[i].wait_sem);
 	}
 
+        pthread_cond_destroy(&c->idle_c);
 	snap_detach_action(c->act);
 	snap_card_free(c->card);
 	__free(c->buf);

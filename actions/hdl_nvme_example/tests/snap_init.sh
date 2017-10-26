@@ -141,7 +141,7 @@ if [ "${TEST}" == "READ_BENCHMARK" ]; then
 	for p in 0 4 ; do
 		for t in 1 4 8 10 16 24 32 64 ; do
 			echo "PREFETCH: $p ; THREADS: $t ; NBLOCKS=${nblocks}" ;
-			(time CBLK_PREFETCH=$p SNAP_TRACE=0x0 \
+			(time CBLK_PREFETCH=$p \
 			snap_cblk -C0 ${options} -b${nblocks} \
 				-R${random_seed} -s0 -t${t} \
 				--read /dev/null );
@@ -157,7 +157,7 @@ if [ "${TEST}" == "PERF" ]; then
 			perf_log="snap_nvme_prefetch_${p}_threads_${t}.log"
 
 			echo "PREFETCH: $p ; THREADS: $t ; NBLOCKS=${nblocks}" ;
-			CBLK_PREFETCH=$p SNAP_TRACE=0x0 \
+			CBLK_PREFETCH=$p \
 			perf record snap_cblk -C0 ${options} -b${nblocks} \
 				-R${random_seed} -s0 -t${t} \
 				--read /dev/null ;
