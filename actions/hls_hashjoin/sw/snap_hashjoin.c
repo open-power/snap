@@ -199,7 +199,10 @@ static void usage(const char *prog)
 	       "  -N, --no irq             Disable Interrupts (polling)\n"
 	       "\n"
 	       "Example:\n"
-	       "  snap_hashjoin ...\n"
+	       "echo Random generation of 2 tables with default table size (T1 = 25 entries / T2 = 23 entries)\n"
+	       "SNAP_CONFIG=CPU ./snap_hashjoin -C1 -vv -t2500\n"
+	       "echo Random generation of 2 tables with 30 entries for T1 and 60 for T2 => action will call 2 times the action\n"
+	       "SNAP_CONFIG=CPU ./snap_hashjoin -C1 -vv -t2500 -Q 30 -T 60\n"
 	       "\n",
 	       prog);
 }
@@ -283,6 +286,11 @@ int main(int argc, char *argv[])
 		}
 	}
 
+        if (argc == 1) {               // to provide help when program is called without argument
+          usage(argv[0]);
+          exit(EXIT_FAILURE);
+        }
+        
 	if (optind != argc) {
 		usage(argv[0]);
 		exit(EXIT_FAILURE);
