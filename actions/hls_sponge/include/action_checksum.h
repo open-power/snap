@@ -24,7 +24,7 @@ extern "C" {
 #endif
 
 #define CHECKSUM_ACTION_TYPE 0x10141001
-#define RELEASE_LEVEL        0x00000020 
+#define RELEASE_LEVEL        0x00000021 
 
 // For simulation use smaller numbers like 8 for both
 #define NB_ROUNDS      65536
