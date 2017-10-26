@@ -220,6 +220,12 @@ struct rqueue {
 	unsigned int lba_idx;
 	unsigned long num_lba;		/* maximum number to read */
 	unsigned int nblocks;		/* how many blocks to read each time */
+
+	unsigned long total_bytes;
+	unsigned long total_usecs;	/* total usecs in read */
+	unsigned long max_read_usecs;
+	unsigned long min_read_usecs;
+	unsigned long avg_read_usecs;
 };
 
 struct thread_data {
@@ -268,8 +274,13 @@ static int rqueue_init(struct rqueue *rq, void *buf,
 	rq->lba_idx = 0;
 	rq->num_lba = num_lba;
 	rq->nblocks = nblocks;
+	rq->total_usecs = 0;
+	rq->total_bytes = 0;
+	rq->min_read_usecs = 0xffffffff;
+	rq->max_read_usecs = 0;
+	rq->avg_read_usecs = 0;
 
-	rq->lba= malloc(num_lba/nblocks * sizeof(unsigned long));
+	rq->lba = malloc(num_lba/nblocks * sizeof(unsigned long));
 	if (rq->lba == NULL)
 		return -1;
 	
@@ -299,9 +310,12 @@ static void *read_thread(void *data)
 	unsigned long nblocks;
 	struct thread_data *d = (struct thread_data *)data;
 	struct rqueue *rq = d->rq;
+	struct timeval stime, etime;
 
 	block_trace("[%s] NEW THREAD ALIVE %u\n", __func__, d->num);
 	while (!err_detected) {
+		unsigned long diff_usec;
+
 		pthread_mutex_lock(&rq->read_lock);
 
 		/* Exit loop if there is no more work to be done */
@@ -321,12 +335,28 @@ static void *read_thread(void *data)
 
 		/* Perform read operation */
 		block_trace("[%s] reading lba %lu ...\n", __func__, lba);
+
+		gettimeofday(&stime, NULL);
 		rc = cblk_read(cid, buf, lba, nblocks, 0);
+		gettimeofday(&etime, NULL);
+		diff_usec = timediff_usec(&etime, &stime);
+
 		if (rc != (int)nblocks) {
 			fprintf(stderr, "err: cblk_read unhappy rc=%d! %s\n",
 				rc, strerror(errno));
 			goto err_out;
 		}
+		fprintf(stderr, "[%s] needed %ld usecs\n", __func__, diff_usec);
+
+		/* Update statistics under lock to make it consistent */
+		pthread_mutex_lock(&rq->read_lock);
+		if (diff_usec < rq->min_read_usecs)
+			rq->min_read_usecs = diff_usec;
+		if (diff_usec > rq->max_read_usecs)
+			rq->max_read_usecs = diff_usec;
+		rq->total_usecs += diff_usec;
+		rq->total_bytes += nblocks * rq->lba_size;
+		pthread_mutex_unlock(&rq->read_lock);
 		pthread_testcancel();
 	}
 	block_trace("[%s] THREAD %u STOPPED\n", __func__, d->num);
@@ -396,7 +426,7 @@ int main(int argc, char *argv[])
 	unsigned int start_lba = 0;
 	struct timeval etime, stime;
 	long long diff_usec = 0;
-	double mib_sec;
+	double mib_sec = 0.0;
 	int pattern = 0xff;
 	int incremental_pattern = 0;
 	unsigned int threads = 1;
@@ -601,6 +631,7 @@ int main(int argc, char *argv[])
 
 		}
 		gettimeofday(&etime, NULL);
+		diff_usec = timediff_usec(&etime, &stime);
 
 		rc = file_write(fname, buf, num_lba * lba_size);
 		if (rc <= 0) {
@@ -638,17 +669,23 @@ int main(int argc, char *argv[])
 		}
 
 		gettimeofday(&etime, NULL);
+		diff_usec = timediff_usec(&etime, &stime);
+
+		rq.avg_read_usecs = rq.total_usecs / (num_lba/lba_blocks);
+		fprintf(stdout, "MIN: %ld usecs, MAX: %ld usecs, AVG: %ld usecs\n",
+			rq.min_read_usecs, rq.max_read_usecs, rq.avg_read_usecs);
+
 		rqueue_free(&rq);
 
 		if (use_mmap)
 			file_unmap(fd, &buf, num_lba * lba_size);
 #endif
 
-		diff_usec = timediff_usec(&etime, &stime);
 		mib_sec = (diff_usec == 0) ? 0.0 :
 			(double)(num_lba * lba_size) / diff_usec;
 
-		fprintf(stdout, "Reading of %lld bytes with %d threads took %lld usec @ %.3f MiB/sec %s\n",
+		fprintf(stdout, "Reading of %lld bytes with %d threads "
+			"took %lld usec @ %.3f MiB/sec %s\n",
 			(long long)num_lba * lba_size, threads,
 			(long long)diff_usec, mib_sec,
 			random_seed ? "random ordering" : "linear ordering");

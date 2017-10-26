@@ -159,7 +159,6 @@ static inline unsigned long atomic_inc(atomic_t *a)
 #define CBLK_NBLOCKS_MAX	32	/* 128 KiB / 4KiB */
 #define CBLK_NBLOCKS_WRITE_MAX	2	/* writing is just 1 or 2 blocks */
 
-#define CBLK_PREFETCH_BLOCKS	4
 #define CBLK_PREFETCH_THRESHOLD	8	/* only prefetch if reads_in_flight is small than the threshold */
 
 enum cblk_status {
@@ -1409,10 +1408,10 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 	if (cblk_prefetch) {
 		unsigned int k;
 
-		for (k = 0; (k < CBLK_PREFETCH_BLOCKS) &&
+		for (k = 0; (k < (unsigned int)cblk_prefetch) &&
 			(reads_in_flight(c) < CBLK_PREFETCH_THRESHOLD); k++)
 			__prefetch_read_start(c, lba, nblocks,
-				cblk_prefetch + k, mem_size);
+				1 + k, mem_size);
 	}
 
 	while (req->status == CBLK_READING) {
