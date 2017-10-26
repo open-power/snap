@@ -45,7 +45,7 @@ function usage() {
 	echo "    [-t <threads>]    threads to be used"
 	echo "    [-p <prefetch>]   0/1 disable/enable prefetching"
 	echo "    [-R <seed>]       random seed, if not 0, random read odering"
-	echo "    [-T <testcase>]   testcase e.g. CBLK"
+	echo "    [-T <testcase>]   testcase e.g. CBLK, READ_BENCHMARK, PERF, ..."
 	echo
 	echo "  Perform SNAP card initialization and action_type "
 	echo "  detection. Initialize NVMe disk 0 and 1 if existent."
@@ -138,14 +138,33 @@ snap_nvme_init -C${card} -d0 -d1 -v
 
 if [ "${TEST}" == "READ_BENCHMARK" ]; then
 	echo "SNAP NVME READ BENCHMARK"
-	for p in 0 1 ; do
-		for t in 1 2 4 6 8 10 12 14 15 16 20 24 28 32 64 ; do
+	for p in 0 4 ; do
+		for t in 1 4 6 8 10 12 16 24 32 64 ; do
 			echo "PREFETCH: $p ; THREADS: $t ; NBLOCKS=${nblocks}" ;
 			CBLK_PREFETCH=$p SNAP_TRACE=0x0 \
 			snap_cblk -C0 ${options} -b${nblocks} \
 				-R${random_seed} -s0 -t${t} \
 				--read /dev/null ;
 			echo
+		done
+	done
+fi
+
+if [ "${TEST}" == "PERF" ]; then
+	echo "SNAP NVME PERF BENCHMARK"
+	for p in 0 1 ; do
+		for t in 1 8 16 32 ; do
+			perf_log="snap_nvme_prefetch_${p}_threads_${t}.log"
+
+			echo "PREFETCH: $p ; THREADS: $t ; NBLOCKS=${nblocks}" ;
+			CBLK_PREFETCH=$p SNAP_TRACE=0x0 \
+			perf record snap_cblk -C0 ${options} -b${nblocks} \
+				-R${random_seed} -s0 -t${t} \
+				--read /dev/null ;
+			echo
+			echo -n "Generating perf output ${perf_log} ... "
+			sudo perf report -f > $perf_log
+			echo "OK"
 		done
 	done
 fi
