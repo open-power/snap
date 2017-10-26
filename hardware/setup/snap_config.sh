@@ -42,6 +42,9 @@ else
     SDRAM_SIZE="x\"2000\""
   fi
 fi
+if [ "$FPGACARD" == "N250SP" ]; then
+  CARD_TYPE="x\"10\""
+fi
 if [ "${BRAM_USED^^}" == "TRUE" ]; then
   SDRAM_SIZE="x\"0001\""
 fi
@@ -89,6 +92,9 @@ if ([ "$NAME" == "snap_core_types.vhd" ]); then
   sed -i 's/CONSTANT[ ^I]*SDRAM_SIZE[ ^I]*:[ ^I]*std_logic_vector(15 DOWNTO 0).*;/CONSTANT SDRAM_SIZE                      : std_logic_vector(15 DOWNTO 0) := '$SDRAM_SIZE';               /' $2
   sed -i 's/CONSTANT[ ^I]*CARD_TYPE[ ^I]*:[ ^I]*std_logic_vector(7 DOWNTO 0).*;/CONSTANT CARD_TYPE                       : std_logic_vector(7 DOWNTO 0)  := '$CARD_TYPE';                /' $2
   sed -i 's/CONSTANT[ ^I]*NVME_ENABLED[ ^I]*:[ ^I]*std_logic.*; /CONSTANT NVME_ENABLED                    : std_logic                     := '$NVME_ENABLED';/' $2
+  if [ "$FPGACARD" == "N250SP" ]; then
+    sed -i 's/CONSTANT[ ^I]*CAPI_VER[ ^I]*:[ ^I]*integer.*; /CONSTANT CAPI_VER                        : integer RANGE 1 TO 2 := 2;/' $2
+  fi
 fi
 
 if [ "$NAME" == "psl_fpga.vhd" ]; then

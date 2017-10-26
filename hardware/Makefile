@@ -57,6 +57,12 @@ ifeq "$(FPGACARD)" "N250S"
 	export DDRI_USED=$(SDRAM_USED)
 endif
 
+ifeq "$(FPGACARD)" "N250SP"
+	export DDR3_USED=FALSE
+	export DDR4_USED=$(SDRAM_USED)
+	export DDRI_USED=$(SDRAM_USED)
+endif
+
 export BRAM_USED ?= FALSE
 ifeq "$(BRAM_USED)" "TRUE"
 	export DDR3_USED=FALSE
@@ -82,12 +88,12 @@ SNAP_MODELS += .model_irun .model_xsim
 
 SNAP_PP_FILES_VHD=$(SNAP_HDL_CORE)/psl_accel.vhd   \
                   $(SNAP_HDL_CORE)/snap_core.vhd   \
+                  $(SNAP_HDL_CORE)/dma_buffer.vhd \
                   $(SNAP_HDL_CORE)/mmio.vhd
 
 SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
                   $(SNAP_HDL_CORE)/psl_accel_types.vhd \
                   $(SNAP_HDL_CORE)/snap_core_types.vhd \
-                  $(SNAP_HDL_CORE)/dma_buffer.vhd \
                   $(SNAP_HDL_HLS)/action_wrapper.vhd \
                   $(SNAP_SIM_CORE)/top.sv
 

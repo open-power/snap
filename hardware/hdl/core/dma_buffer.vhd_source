@@ -130,15 +130,13 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL rram_rdata_p_q                   : std_logic_vector( 7 DOWNTO 0);
   SIGNAL rram_rdata_q                     : std_logic_vector(511 DOWNTO 0);
   SIGNAL rram_waddr                       : std_logic_vector(  5 DOWNTO 0);
-  SIGNAL rram_wdata                       : std_logic_vector(519 DOWNTO 0);
-  SIGNAL rram_wdata_p_q                   : std_logic_vector(  7 DOWNTO 0);
+  SIGNAL rram_wdata_p_q                   : std_logic_vector((  8*CAPI_VER)-1 DOWNTO 0);
   SIGNAL rram_wen                         : std_logic;
-  SIGNAL wback_data_p_q                   : std_logic_vector( 63 DOWNTO 0);
-  SIGNAL wback_data_q                     : std_logic_vector(511 DOWNTO 0);
+  SIGNAL wback_data_q                     : std_logic_vector((512*CAPI_VER)-1 DOWNTO 0);
   SIGNAL wram_raddr                       : std_logic_vector(  5 DOWNTO 0);
-  SIGNAL wram_rdata                       : std_logic_vector(575 DOWNTO 0);
-  SIGNAL wram_rdata_p_q                   : std_logic_vector(  7 DOWNTO 0);
-  SIGNAL wram_rdata_q                     : std_logic_vector(511 DOWNTO 0);
+  SIGNAL wram_rdata                       : std_logic_vector((576*CAPI_VER)-1 DOWNTO 0);
+  SIGNAL wram_rdata_p_q                   : std_logic_vector((  8*CAPI_VER)-1 DOWNTO 0);
+  SIGNAL wram_rdata_q                     : std_logic_vector((512*CAPI_VER)-1 DOWNTO 0);
   SIGNAL wram_waddr                       : std_logic_vector(  5 DOWNTO 0);
   SIGNAL wram_waddr_d, wram_waddr_q       : std_logic_vector(  6 DOWNTO 0);
   SIGNAL wram_waddr_p_d, wram_waddr_p_q   : std_logic;
@@ -154,29 +152,75 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   signal flip_rbit_valid_q                : std_logic;
   signal flip_wbit_valid_q                : std_logic;
 
+#if !defined(CONFIG_N250SP)
   COMPONENT ram_520x64_2p
     PORT(
-      clka  : IN STD_LOGIC;
-      wea   : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-      addra : IN STD_LOGIC_VECTOR(5 DOWNTO 0);
-      dina  : IN STD_LOGIC_VECTOR(519 DOWNTO 0);
-      clkb  : IN STD_LOGIC;
-      addrb : IN STD_LOGIC_VECTOR(5 DOWNTO 0);
+      clka  : IN  STD_LOGIC;
+      wea   : IN  STD_LOGIC_VECTOR(  0 DOWNTO 0);
+      addra : IN  STD_LOGIC_VECTOR(  5 DOWNTO 0);
+      dina  : IN  STD_LOGIC_VECTOR(519 DOWNTO 0);
+      douta : OUT STD_LOGIC_VECTOR(519 DOWNTO 0);
+      clkb  : IN  STD_LOGIC;
+      enb   : IN  STD_LOGIC;
+      web   : IN  STD_LOGIC_VECTOR(  0 DOWNTO 0);
+      addrb : IN  STD_LOGIC_VECTOR(  5 DOWNTO 0);
+      dinb  : IN  STD_LOGIC_VECTOR(519 DOWNTO 0);
       doutb : OUT STD_LOGIC_VECTOR(519 DOWNTO 0)
     );
   END COMPONENT ram_520x64_2p;
+#endif
+#ifdef CONFIG_N250SP
+  COMPONENT ram_1040x32_2p
+    PORT(
+      clka  : IN  STD_LOGIC;
+      wea   : IN  STD_LOGIC_VECTOR(   0 DOWNTO 0);
+      addra : IN  STD_LOGIC_VECTOR(   5 DOWNTO 0);
+      dina  : IN  STD_LOGIC_VECTOR(1039 DOWNTO 0);
+      douta : OUT STD_LOGIC_VECTOR( 519 DOWNTO 0);
+      clkb  : IN  STD_LOGIC;
+      enb   : IN  STD_LOGIC;
+      web   : IN  STD_LOGIC_VECTOR(   0 DOWNTO 0);
+      addrb : IN  STD_LOGIC_VECTOR(   5 DOWNTO 0);
+      dinb  : IN  STD_LOGIC_VECTOR(1039 DOWNTO 0);
+      doutb : OUT STD_LOGIC_VECTOR( 519 DOWNTO 0)
+    );
+  END COMPONENT ram_1040x32_2p;
+#endif
 
+#if !defined(CONFIG_N250SP)
   COMPONENT ram_576x64_2p
     PORT(
-      clka  : IN STD_LOGIC;
-      wea   : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-      addra : IN STD_LOGIC_VECTOR(5 DOWNTO 0);
-      dina  : IN STD_LOGIC_VECTOR(575 DOWNTO 0);
-      clkb  : IN STD_LOGIC;
-      addrb : IN STD_LOGIC_VECTOR(5 DOWNTO 0);
+      clka  : IN  STD_LOGIC;
+      wea   : IN  STD_LOGIC_VECTOR(  0 DOWNTO 0);
+      addra : IN  STD_LOGIC_VECTOR(  5 DOWNTO 0);
+      dina  : IN  STD_LOGIC_VECTOR(575 DOWNTO 0);
+      douta : OUT STD_LOGIC_VECTOR(575 DOWNTO 0);
+      clkb  : IN  STD_LOGIC;
+      enb   : IN  STD_LOGIC;
+      web   : IN  STD_LOGIC_VECTOR(  0 DOWNTO 0);
+      addrb : IN  STD_LOGIC_VECTOR(  5 DOWNTO 0);
+      dinb  : IN  STD_LOGIC_VECTOR(575 DOWNTO 0);
       doutb : OUT STD_LOGIC_VECTOR(575 DOWNTO 0)
     );
   END COMPONENT ram_576x64_2p;
+#endif
+#ifdef CONFIG_N250SP
+  COMPONENT ram_1152x32_2p
+    PORT(
+      clka  : IN  STD_LOGIC;
+      wea   : IN  STD_LOGIC_VECTOR(   0 DOWNTO 0);
+      addra : IN  STD_LOGIC_VECTOR(   5 DOWNTO 0);
+      dina  : IN  STD_LOGIC_VECTOR( 575 DOWNTO 0);
+      douta : OUT STD_LOGIC_VECTOR(1151 DOWNTO 0);
+      clkb  : IN  STD_LOGIC;
+      enb   : IN  STD_LOGIC;
+      web   : IN  STD_LOGIC_VECTOR(   0 DOWNTO 0);
+      addrb : IN  STD_LOGIC_VECTOR(   5 DOWNTO 0);
+      dinb  : IN  STD_LOGIC_VECTOR( 575 DOWNTO 0);
+      doutb : OUT STD_LOGIC_VECTOR(1151 DOWNTO 0)
+    );
+  END COMPONENT ram_1152x32_2p;
+#endif
 
 BEGIN
 --------------------------------------------------------------------------------
@@ -194,22 +238,50 @@ BEGIN
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
     ----------------------------------------------------------------------------
-    -- RAM: ram_520x64_2p
+    -- RAM: ram_520x64_2p  for P8 CAPI1.0
+    --      ram_1040x32_2p for P9 CAPI2.0
     ----------------------------------------------------------------------------
     --
+#if !defined(CONFIG_N250SP)
     dma_read_ram: ram_520x64_2p
     PORT MAP (
       --
       -- pervasive
-      clka    => ha_pclock,
-      clkb    => ha_pclock,
-      dina    => rram_wdata,
-      addra   => rram_waddr,
-      wea(0)  => rram_wen,
-      addrb   => rram_raddr,
-      doutb   => rram_rdata
+      clka                 => ha_pclock,
+      wea(0)               => rram_wen,
+      addra                => rram_waddr,
+      dina(511 DOWNTO   0) => ha_b_q.wdata,
+      dina(519 DOWNTO 512) => ha_b_q.wpar,
+      douta                => open,
+      enb                  => '1',
+      clkb                 => ha_pclock,
+      web(0)               => '0',
+      addrb                => rram_raddr,
+      dinb                 => (OTHERS => '0'),
+      doutb                => rram_rdata
     );
-
+#endif
+#ifdef CONFIG_N250SP
+    dma_read_ram: ram_1040x32_2p
+    PORT MAP (
+      --
+      -- pervasive
+      clka                   => ha_pclock,
+      wea(0)                 => rram_wen,
+      addra                  => rram_waddr,
+      dina( 511 DOWNTO    0) => ha_b_q.wdata(1023 DOWNTO 512),
+      dina( 519 DOWNTO  512) => ha_b_q.wpar (  15 DOWNTO   8),
+      dina(1031 DOWNTO  520) => ha_b_q.wdata( 511 DOWNTO   0),
+      dina(1039 DOWNTO 1032) => ha_b_q.wpar (   7 DOWNTO   0),
+      douta                  => open,
+      enb                    => '1',
+      clkb                   => ha_pclock,
+      web(0)                 => '0',
+      addrb                  => rram_raddr,
+      dinb                   => (OTHERS => '0'),
+      doutb                  => rram_rdata
+    );
+#endif
     ----------------------------------------------------------------------------
     -- RAM control none clock
     -- Note: Only a full CL will be transfered to job_manager or data_bridge.
@@ -217,14 +289,19 @@ BEGIN
     ----------------------------------------------------------------------------
     buf_rtag      <= to_integer(unsigned(rram_raddr_q(5 DOWNTO 1)));
 
-    rram_ren      <= '1' WHEN (buf_rrdreq_i     = '1' AND (read_ctrl_i(buf_rtag).buf   = FULL))  ELSE '0';
+    rram_ren      <= '1' WHEN ( buf_rrdreq_i    = '1' AND (read_ctrl_i(buf_rtag).buf   = FULL))  ELSE '0';
     rram_rdata_v  <= '1' WHEN ((rram_raddr_q(0) = '0' AND (read_ctrl_i(buf_rtag).clt(EVEN_64B_CL) = '1')) OR 
                                (rram_raddr_q(0) = '1' AND (read_ctrl_i(buf_rtag).clt(ODD_64B_CL)  = '1'))) ELSE '0';
     rram_rdata_e  <= '1' WHEN ((rram_raddr_q(0) = '0' AND (read_ctrl_i(buf_rtag).clt(ODD_64B_CL) = '0')) OR 
                                (rram_raddr_q(0) = '1' AND (read_ctrl_i(buf_rtag).clt(ODD_64B_CL) = '1'))) AND read_ctrl_i(buf_rtag).clt(LAST_CL) = '1' ELSE '0';
 
                                                                                                          
+#if !defined(CONFIG_N250SP)
     rram_waddr <= ha_b_q.wtag(4 DOWNTO 0) & (ha_b_q.wad(0) xor flip_wbit_q);
+#endif
+#ifdef CONFIG_N250SP
+    rram_waddr <=  ha_b_q.wtag(4 DOWNTO 0) & '0' ;
+#endif
     rram_raddr <= rram_raddr_q(5 DOWNTO 0);
 
     rram_raddr_d     <=               rram_raddr_q       +          "0000001"        WHEN (rram_ren = '1'                       ) ELSE rram_raddr_q;
@@ -233,13 +310,11 @@ BEGIN
     rram_rdata_end_d <=                                                          '1' WHEN (rram_ren = '1' AND rram_rdata_e = '1') ELSE '0';
 
     -- rram_wen only reacts on read tags
-    rram_wen                   <= ha_b_q.wvalid when (ha_b_q.wtag(7 DOWNTO 5) = "000") else '0';
-    rram_wdata(511 DOWNTO   0) <= ha_b_q.wdata;
-    rram_wdata(519 DOWNTO 512) <= ha_b_q.wpar;
+    rram_wen   <= ha_b_q.wvalid when (ha_b_q.wtag(7 DOWNTO 5) = "000") else '0';
 
     ----------------------------------------------------------------------------
     -- RAM control clock
-    ----------------------------------------------------------------------------
+   ----------------------------------------------------------------------------
     rram_ctrl_clk : PROCESS (ha_pclock)
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
@@ -270,6 +345,7 @@ BEGIN
   -- DMA Read Lock Register
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
+#if !defined(CONFIG_N250SP)
     rlock_reg : PROCESS (ha_pclock)
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
@@ -279,7 +355,6 @@ BEGIN
         rlck_data_q    <= rlck_data_q;
         rlck_data_p_q  <= rlck_data_p_q;
         wback_data_q   <= wback_data_q;
-        wback_data_p_q <= wback_data_p_q;
 
         --
         -- only reacts on the read lock tag
@@ -301,6 +376,25 @@ BEGIN
         END IF;
       END IF;
     END PROCESS rlock_reg;
+#endif
+#ifdef CONFIG_N250SP
+    rlock_reg : PROCESS (ha_pclock)
+    BEGIN
+      IF (rising_edge(ha_pclock)) THEN
+        --
+        -- defaults
+        --
+        wback_data_q   <= wback_data_q;
+
+        --
+        -- only reacts on the read lock tag
+        IF (ha_b_q.wtag(7 DOWNTO 0) = x"20")  AND
+           (ha_b_q.wvalid           = '1'  ) THEN
+          wback_data_q <= ha_b_q.wdata;
+        END IF;
+      END IF;
+    END PROCESS rlock_reg;
+#endif
 
 
 
@@ -319,21 +413,47 @@ BEGIN
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
     ----------------------------------------------------------------------------
-    -- RAM: ram_576x64_2p
+    -- RAM: ram_576x64_2p  for P8 CAPI1.0
+    --      ram_1152x32_2p for P9 CAPI2.0
     ----------------------------------------------------------------------------
     --
-    dma_write_ram: ram_576x64_2p
+#if !defined(CONFIG_N250SP)
+   dma_write_ram: ram_576x64_2p
     PORT MAP (
       --
       -- pervasive
-      clka   => ha_pclock,
-      clkb   => ha_pclock,
-      dina   => wram_wdata,
-      addra  => wram_waddr,
-      wea(0) => wram_wen,
-      addrb  => wram_raddr,
-      doutb  => wram_rdata
+      clka    => ha_pclock,
+      wea(0)  => wram_wen,
+      addra   => wram_waddr,
+      dina    => wram_wdata,
+      douta   => open,
+      enb     => '1',
+      clkb    => ha_pclock,
+      web(0)  => '0',
+      addrb   => wram_raddr,
+      dinb    => (OTHERS => '0'),
+      doutb   => wram_rdata
     );
+#endif
+#ifdef CONFIG_N250SP
+   dma_write_ram: ram_1152x32_2p
+    PORT MAP (
+      --
+      -- pervasive
+      clka                   => ha_pclock,
+      wea(0)                 => wram_wen,
+      addra                  => wram_waddr,
+      dina                   => wram_wdata,
+      douta                  => open,
+      enb                    => '1',
+      clkb                   => ha_pclock,
+      web(0)                 => '0',
+      addrb                  => wram_raddr,
+      dinb                   => (OTHERS => '0'),
+      doutb( 575 DOWNTO   0) => wram_rdata(1151 DOWNTO 576),
+      doutb(1151 DOWNTO 576) => wram_rdata( 575 DOWNTO   0)
+    );
+#endif
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -349,7 +469,12 @@ BEGIN
     wram_wdata(             0) <= sd_d_i.wr_data(0) XOR inject_dma_write_error_i;
     wram_wdata(511 DOWNTO   1) <= sd_d_i.wr_data(511 DOWNTO 1);
     wram_wdata(575 DOWNTO 512) <= sd_d_i.wr_strobe WHEN buf_wdata_extra_v = '0' ELSE (OTHERS => '0');
+#if !defined(CONFIG_N250SP)
     wram_raddr                 <= ha_b_q.rtag(4 DOWNTO 0) & (ha_b_q.rad(0) xor flip_rbit_q);
+#endif
+#ifdef CONFIG_N250SP
+    wram_raddr                 <= ha_b_i.rtag(4 DOWNTO 0) & '0';
+#endif
     wram_wen                   <= (or_reduce(sd_d_i.wr_strobe) AND NOT buf_walmost_full_i) OR buf_wdata_extra_v;
 
     buf_wtag                   <= to_integer(unsigned(wram_waddr_q(5 DOWNTO 1)));
@@ -363,11 +488,10 @@ BEGIN
     ----------------------------------------------------------------------------
     wram_ctrl_clk : PROCESS (ha_pclock)
       VARIABLE odd_wdata_complete_v : boolean;
-      VARIABLE wram_rdata_v         : std_logic_vector(511 DOWNTO 0);
-      VARIABLE wram_rdata_p_v       : std_logic_vector(  7 DOWNTO 0);
-      VARIABLE wram_rdata_be_v      : std_logic_vector( 63 DOWNTO 0);
-      VARIABLE wram_rmdata_v        : std_logic_vector(511 DOWNTO 0);
-      VARIABLE wram_rmdata_p_v      : std_logic_vector( 63 DOWNTO 0);
+      VARIABLE wram_rdata_v         : std_logic_vector((512*CAPI_VER)-1 DOWNTO 0);
+      VARIABLE wram_rdata_be_v      : std_logic_vector(( 64*CAPI_VER)-1 DOWNTO 0);
+      VARIABLE wram_rmdata_v        : std_logic_vector((512*CAPI_VER)-1 DOWNTO 0);
+      VARIABLE wram_rmdata_p_v      : std_logic_vector((  8*CAPI_VER)-1 DOWNTO 0);
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
         IF afu_reset = '1' THEN
@@ -437,30 +561,33 @@ BEGIN
 
           --
           -- RAM output wiring
-          wram_rdata_v   (511 DOWNTO 0) := wram_rdata(511 DOWNTO 0  );
-          wram_rdata_be_v( 63 DOWNTO 0) := wram_rdata(575 DOWNTO 512);
-
-          --
-          -- wram read and modified data
-          FOR i IN 63 DOWNTO 0 LOOP
-            IF wram_rdata_be_v(i) = '1' THEN
-              wram_rmdata_v(i*8+7 DOWNTO i*8) := wram_rdata_v(i*8+7 DOWNTO i*8);
-            ELSE
-              wram_rmdata_v(i*8+7 DOWNTO i*8) := wback_data_q(i*8+7 DOWNTO i*8);
-            END IF;
-          END LOOP;  -- i
+          FOR w IN 0 TO CAPI_VER-1 LOOP
+            wram_rdata_v   ((512*w+512)-1 DOWNTO 512*w) := wram_rdata((576*w+512)-1 DOWNTO 576*w);
+            wram_rdata_be_v(( 64*w+ 64)-1 DOWNTO  64*w) := wram_rdata((576*w+576)-1 DOWNTO 576*w+512);
+   
+            --
+            -- wram read and modified data
+            FOR i IN (64*(w+1))-1 DOWNTO 0 LOOP
+              IF wram_rdata_be_v(i) = '1' THEN
+                wram_rmdata_v(i*8+7 DOWNTO i*8) := wram_rdata_v(i*8+7 DOWNTO i*8);
+              ELSE
+                wram_rmdata_v(i*8+7 DOWNTO i*8) := wback_data_q(i*8+7 DOWNTO i*8);
+              END IF;
+            END LOOP;  -- i
+            wram_rmdata_p_v(8*w+7 DOWNTO 8*w) := AC_GENPARITY(wram_rmdata_v(512*w+511 DOWNTO 512*w+448), 64) &
+                                                 AC_GENPARITY(wram_rmdata_v(512*w+447 DOWNTO 512*w+384), 64) &
+                                                 AC_GENPARITY(wram_rmdata_v(512*w+383 DOWNTO 512*w+320), 64) &
+                                                 AC_GENPARITY(wram_rmdata_v(512*w+319 DOWNTO 512*w+256), 64) &
+                                                 AC_GENPARITY(wram_rmdata_v(512*w+255 DOWNTO 512*w+192), 64) &
+                                                 AC_GENPARITY(wram_rmdata_v(512*w+191 DOWNTO 512*w+128), 64) &
+                                                 AC_GENPARITY(wram_rmdata_v(512*w+127 DOWNTO 512*w+64) , 64) &
+                                                 AC_GENPARITY(wram_rmdata_v(512*w+ 63 DOWNTO 512*w+0)  , 64);
+          END LOOP; -- W
 
           --
           --
           wram_rdata_q   <= wram_rmdata_v;
-          wram_rdata_p_q <= AC_GENPARITY(wram_rmdata_v(511 DOWNTO 448), 64) &
-                            AC_GENPARITY(wram_rmdata_v(447 DOWNTO 384), 64) &
-                            AC_GENPARITY(wram_rmdata_v(383 DOWNTO 320), 64) &
-                            AC_GENPARITY(wram_rmdata_v(319 DOWNTO 256), 64) &
-                            AC_GENPARITY(wram_rmdata_v(255 DOWNTO 192), 64) &
-                            AC_GENPARITY(wram_rmdata_v(191 DOWNTO 128), 64) &
-                            AC_GENPARITY(wram_rmdata_v(127 DOWNTO  64), 64) &
-                            AC_GENPARITY(wram_rmdata_v( 63 DOWNTO   0), 64);
+          wram_rdata_p_q <= wram_rmdata_p_v;            
         END IF;
       END IF;
     END PROCESS wram_ctrl_clk;
@@ -556,9 +683,16 @@ BEGIN
     --
     --
     --
+#if !defined(CONFIG_N250SP)
     ah_b_o.rdata <= wram_rdata_q(511 DOWNTO 0);
     ah_b_o.rpar  <= wram_rdata_p_q(7 DOWNTO 0);
     ah_b_o.rlat  <= x"3";
+#endif
+#ifdef CONFIG_N250SP
+    ah_b_o.rdata <= wram_rdata_q(1023 DOWNTO 0);
+    ah_b_o.rpar  <= wram_rdata_p_q(15 DOWNTO 0);
+    ah_b_o.rlat  <= x"2";
+#endif
 
     buf_rtag_o            <= buf_rtag_qqq;
     buf_rtag_p_o          <= buf_rtag_p_qqq;
@@ -604,11 +738,19 @@ BEGIN
           rram_rdata_end_q    <= '0';
           rram_rdata_end_qq   <= '0';
           rram_rdata_end_qqq  <= '0';
-          flip_rbit_valid_q   <= '0';             -- only for FPGACARD=N250S
-          flip_rbit_valid_q   <= '1';             -- only for FPGACARD=ADKU3 -- only for FPGACARD=S121B
+#ifdef CONFIG_N250S          
+          flip_rbit_valid_q   <= '1';             
+          flip_wbit_valid_q   <= '1';
+#endif          
+#ifdef CONFIG_ADKU3          
+          flip_rbit_valid_q   <= '1';
+          flip_wbit_valid_q   <= '1';
+#endif          
+#ifdef CONFIG_S121B
+          flip_rbit_valid_q   <= '1';
+          flip_wbit_valid_q   <= '1';
+#endif          
           flip_rbit_q         <= '0';
-          flip_wbit_valid_q   <= '0';             -- only for FPGACARD=N250S
-          flip_wbit_valid_q   <= '1';             -- only for FPGACARD=ADKU3 -- only for FPGACARD=S121B
           flip_wbit_q         <= '0';          
 
         ELSE

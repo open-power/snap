@@ -261,14 +261,14 @@ ARCHITECTURE psl_accel OF psl_accel IS
       ha_brvalid              : IN  STD_LOGIC;
       ha_brtag                : IN  STD_LOGIC_VECTOR(0 TO 7);
       ha_brad                 : IN  STD_LOGIC_VECTOR(0 TO 5);
-      ah_brlat                : OUT STD_LOGIC_VECTOR(0 TO 3);
-      ah_brdata               : OUT STD_LOGIC_VECTOR(0 TO 511);
-      ah_brpar                : OUT STD_LOGIC_VECTOR(0 TO 7);
+      ah_brlat                : OUT STD_LOGIC_VECTOR(0 TO 3); 
+      ah_brdata               : OUT STD_LOGIC_VECTOR(0 TO 1023);
+      ah_brpar                : OUT STD_LOGIC_VECTOR(0 TO 15);
       ha_bwvalid              : IN  STD_LOGIC;
       ha_bwtag                : IN  STD_LOGIC_VECTOR(0 TO 7);
       ha_bwad                 : IN  STD_LOGIC_VECTOR(0 TO 5);
-      ha_bwdata               : IN  STD_LOGIC_VECTOR(0 TO 511);
-      ha_bwpar                : IN  STD_LOGIC_VECTOR(0 TO 7);
+      ha_bwdata               : IN  STD_LOGIC_VECTOR(0 TO 1023);
+      ha_bwpar                : IN  STD_LOGIC_VECTOR(0 TO 15);
       ha_brtagpar             : IN  STD_LOGIC;
       ha_bwtagpar             : IN  STD_LOGIC;
       ha_rvalid               : IN  STD_LOGIC;
@@ -1318,13 +1318,13 @@ BEGIN
       ha_brtag       => ha_brtag,
       ha_brad        => ha_brad,
       ah_brlat       => ah_brlat,
-      ah_brdata => ah_brdata(0 TO 511),       -- CAPI2.0,
-      ah_brpar => ah_brpar(0 TO 7),           -- CAPI2.0,
+      ah_brdata      => ah_brdata,  
+      ah_brpar       => ah_brpar,     
       ha_bwvalid     => ha_bwvalid,
       ha_bwtag       => ha_bwtag,
       ha_bwad        => ha_bwad,
-      ha_bwdata => ha_bwdata(0 TO 511),       -- CAPI2.0
-      ha_bwpar => ha_bwpar(0 TO 7),           -- CAPI2.0
+      ha_bwdata      => ha_bwdata,  
+      ha_bwpar       => ha_bwpar,     
       ha_brtagpar    => ha_brtagpar,
       ha_bwtagpar    => ha_bwtagpar,
       --
