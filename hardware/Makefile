@@ -286,10 +286,10 @@ hw_config: hw_config_start action_hw
 config: hw_config
 
 image: .hw_config_done
-	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
-		$(MAKE) -s cloud_action; \
-		snap-submit-build ${snap_env_sh}; exit 0; \
-	fi
+ifeq ($(USE_PRFLOW),TRUE)
+	@rm -f /tmp/auth /tmp/params 
+	@snap-submit-build ${snap_env_sh}
+else
 	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
 	@echo "A complete FPGA bitstream build got kicked off.";
 	@echo "This will take more than an hour.";
@@ -299,6 +299,7 @@ image: .hw_config_done
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log -journal $(LOGS_DIR)/snap_build.jou
 	@$(RM) -r .bitstream_name.txt
 	@echo -e "[BUILD IMAGE.........] done  `date +"%T %a %b %d %Y"`"
+endif
 
 allow_%:
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
