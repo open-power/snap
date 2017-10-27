@@ -441,9 +441,11 @@ static void cache_done(void)
 
 		cache_trace("  entry[%d]\n", i);
 		for (j = 0; j < CACHE_WAYS; j++) {
-			cache_trace("    way[%d].status=%s buf=%p lba=%lld\n", j,
+			cache_trace("    way[%d].status=%s buf=%p "
+				"lba=%lld count=%d used=%d\n", j,
 				block_status_str[way[j].status],
-				way[j].buf, (long long)way[j].lba);
+				way[j].buf, (long long)way[j].lba,
+				way[j].count, way[j].used);
 		}
 	}
 
@@ -462,18 +464,9 @@ static int cache_read(off_t lba, void *buf)
 	struct cache_entry *entry = &cache_entries[i];
 	struct cache_way *way = entry->way;
 
-	cache_trace("[%s] searching read entry[%d] lba=%lld\n",
-		 __func__, i, (long long)lba);
-
 	pthread_mutex_lock(&entry->way_lock);
 	for (j = 0; j < CACHE_WAYS; j++) {
-
-		cache_trace("  [%s] entry[%d].way[%d].status=%s buf=%p lba=%lld\n",
-			__func__, i, j, block_status_str[way[j].status],
-			way[j].buf, (long long)way[j].lba);
-
 		if ((way[j].status == CACHE_BLOCK_VALID) && (lba == way[j].lba)) {
-			cache_trace("  [%s] FOUND lba=%lld VALID\n", __func__, (long long)lba);
 			way[j].count = entry->count++;
 			way[j].used++;
 			memcpy(buf, way[j].buf, __CBLK_BLOCK_SIZE);
@@ -481,14 +474,12 @@ static int cache_read(off_t lba, void *buf)
 			return 0;
 		}
 		if  ((way[j].status == CACHE_BLOCK_READING) && (lba == way[j].lba)) {
-			cache_trace("  [%s] FOUND lba=%lld READING\n", __func__, (long long)lba);
 			pthread_mutex_unlock(&entry->way_lock);
 			return 1;
 		}
 	}
 	pthread_mutex_unlock(&entry->way_lock);
 
-	cache_trace("  [%s] NOT FOUND lba=%lld\n", __func__, (long long)lba);
 	return -1; /* not found */
 }
 
@@ -524,9 +515,10 @@ static inline void __dump_entry(struct cache_entry *entry)
 	struct cache_way *way = entry->way;
 
 	for (j = 0; j < CACHE_WAYS; j++) {
-		dfprintf(stderr, "[%s]    way[%d] LBA=%ld %s\n",
+		dfprintf(stderr, "[%s]    way[%d] LBA=%ld %s count=%d used=%d\n",
 			__func__, j, way[j].lba,
-			block_status_str[way[j].status]);
+			block_status_str[way[j].status],
+			way[j].count, way[j].used);
 	}
 }
 
@@ -542,24 +534,25 @@ static struct cache_way *__cache_reserve(off_t lba)
 	int reserve_idx = -1;
 	unsigned int min_count = INT_MAX;
 
-	cache_trace("[%s] searching reserve LBA=%lld\n", __func__, (long long)lba);
-
 	for (j = 0; j < CACHE_WAYS; j++) {
 		e = &way[j];
 
 		switch (e->status) {
 		case CACHE_BLOCK_UNUSED:
 			reserve_idx = j;	/* continue, since maybe we find one with matching lba */
+			min_count = e->count;
 			break;
-		case CACHE_BLOCK_VALID:
+		case CACHE_BLOCK_VALID:		/* avoid double entries */
 			if (e->lba == lba) {	/* entry is already in cache */
 				cache_trace("[%s] %p LBA=%ld is already VALID!\n",
 					__func__, e, e->lba);
+				min_count = e->count;
 				reserve_idx = j;
 				goto reserve_entry;
 				/* return NULL; */
 			}
 			if (e->count < min_count) {
+				min_count = e->count;
 				reserve_idx = j;/* replace candidate with smallest count */
 			}
 			break;
