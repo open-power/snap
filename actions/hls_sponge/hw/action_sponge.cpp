@@ -48,7 +48,7 @@
 #include <string.h>
 
 #include "sha3.H"
-#include "action_checksum.H"
+#include "action_sponge.H"
 
 //#define TEST_SPEED_ONLY
 

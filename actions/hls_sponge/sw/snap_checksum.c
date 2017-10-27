@@ -57,12 +57,20 @@ static void usage(const char *prog)
 	       "  -m, --mode <CRC32|ADLER32|SPONGE> mode flags.\n"
 	       "  -T, --test                execute a test if available.\n"
 	       "  -t, --timeout             Timeout in sec (default 3600 sec).\n"
-	       "  -I, --irq                 Enable Interrupts\n"
+	       "  -N, --irq                 Enable Interrupts\n"
 	       "\n"
 	       "Example:\n"
-	       "  snap_checksum -mSPONGE -I -t200 -cSPEED -n2 -f65536 will generate 65536*2/65536 = 2 calls \n"
-	       "  snap_checksum -mSPONGE -I -t200 -cSPEED -n1 -f4     will generate 65536*1/4 = 16384 calls\n"
-               "               (1 call every 4 calls until 65536...\n"
+	       "//echo Generation of 65536*2/65536 = 2 callsn"
+	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -I -cSPEED -n1 -f65536\n"
+	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -I -cSPEED -n128 -f65536\n"
+	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -I -cSPEED -n4096 -f65536\n"
+	       "//echo Generation of 65536*1/4 = 16384 calls ie 1 call every 4 calls until 65536...\n"
+	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -I -cSPEED -n1 -f4\n"
+	       "\n"
+	       "//echo to run tests SHA3 or/and SHAKE\n"
+	       "SNAP_CONFIG=FPGA ./snap_checksum -mSPONGE -I -t800 -cSHA3\n"
+	       "SNAP_CONFIG=FPGA ./snap_checksum -mSPONGE -I -t800 -cSHAKE\n"
+	       "SNAP_CONFIG=FPGA ./snap_checksum -mSPONGE -I -t800 -cSHA3_SHAKE\n"
 	       "\n",
 	       prog);
 }
@@ -302,7 +310,7 @@ int main(int argc, char *argv[])
 	uint32_t test_choice = CHECKSUM_SPEED, nb_elmts = 0, freq = 1;
 	int test = 0;
 	unsigned int threads = 160;
-	snap_action_flag_t action_irq = 0;
+        snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 
 	while (1) {
 		int option_index = 0;
@@ -323,12 +331,12 @@ int main(int argc, char *argv[])
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
-			{ "irq", 	 no_argument,	    NULL, 'I' },
+			{ "noirq", 	 no_argument,	    NULL, 'N' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-				 "A:C:i:a:S:Tx:c:n:f:m:s:t:x:VqvhI",
+				 "A:C:i:a:S:Tx:c:n:f:m:s:t:x:VqvhN",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -417,8 +425,8 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
-		case 'I':
-			action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
+		case 'N':
+			action_irq = 0;
 			break;
 		default:
 			usage(argv[0]);
@@ -426,6 +434,11 @@ int main(int argc, char *argv[])
 		}
 	}
 
+        if (argc == 1) {               // to provide help when program is called without argument
+          usage(argv[0]);
+          exit(EXIT_FAILURE);
+        }
+        
 	if (optind != argc) {
 		usage(argv[0]);
 		exit(EXIT_FAILURE);
