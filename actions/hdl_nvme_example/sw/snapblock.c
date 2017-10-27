@@ -555,7 +555,9 @@ static struct cache_way *__cache_reserve(off_t lba)
 			if (e->lba == lba) {	/* entry is already in cache */
 				cache_trace("[%s] %p LBA=%ld is already VALID!\n",
 					__func__, e, e->lba);
-				return NULL;	/* do not overwrite */
+				reserve_idx = j;
+				goto reserve_entry;
+				/* return NULL; */
 			}
 			if (e->count < min_count) {
 				reserve_idx = j;/* replace candidate with smallest count */
@@ -577,6 +579,7 @@ static struct cache_way *__cache_reserve(off_t lba)
 		return NULL;	/* no entry found! */
 	}
 
+reserve_entry:
 	/* Now reserve */
 	e = &way[reserve_idx];
 	if ((e->status == CACHE_BLOCK_VALID) && (e->used == 0))
@@ -709,6 +712,7 @@ static int cache_write(off_t lba, const void *buf, int _used)
 
 	e = __cache_reserve(lba);
 	if (e == NULL) {
+		__dump_entry(entry);
 		pthread_mutex_unlock(&entry->way_lock);
 		return -1;	/* no entry free! */
 	}
@@ -1637,7 +1641,7 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 		for (i = 0; i < nblocks; i++) {
 			rc = cache_write(lba + i, buf + i * __CBLK_BLOCK_SIZE, 0);
 			if (rc != 0) {
-				dfprintf(stderr, "warning: cache_write LBA=%ld "
+				dfprintf(stderr, "error: cache_write LBA=%ld "
 					"failed rc=%d!\n", (long int)lba, rc);
 				return 0;
 			}
