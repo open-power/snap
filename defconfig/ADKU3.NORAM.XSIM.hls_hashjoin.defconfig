@@ -3,9 +3,9 @@
 # Linux kernel version: KERNELVERSION
 # Fri Sep 15 12:15:19 2017
 #
-N250S=y
-# ADKU3 is not set
-FPGACARD="N250S"
+# N250S is not set
+ADKU3=y
+FPGACARD="ADKU3"
 FPGACHIP="xcku060-ffva1156-2-e"
 NUM_OF_ACTIONS=1
 # HLS_ACTION is not set
@@ -26,7 +26,7 @@ HLS_SUPPORT="TRUE"
 # FORCE_SDRAM_OR_BRAM is not set
 # ENABLE_BRAM is not set
 BRAM_USED="FALSE"
-ENABLE_SDRAM=y
+# ENABLE_SDRAM is not set
 SDRAM_USED="FALSE"
 DDR3_USED="FALSE"
 ENABLE_DDR4=y
