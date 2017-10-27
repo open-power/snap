@@ -25,6 +25,7 @@
 #include <semaphore.h>
 #include <sched.h>
 #include <execinfo.h>
+#include <limits.h>
 
 #include <sys/stat.h>
 #include <sys/mman.h>
@@ -54,7 +55,7 @@ static inline void _backtrace(const char *file, int line)
 
 	fprintf(stderr, "%s: %d\n", file, line);
 	for (i = 0; i < frames; ++i) {
-		fprintf(stderr, "%s\n", strs[i]);
+		fprintf(stderr, "  %s\n", strs[i]);
 	}
 	free(strs);
 }
@@ -455,7 +456,7 @@ static void cache_done(void)
  *         1 if data is in flight and requested for reading.
  *         negative on error.
  */
-static inline int cache_read(off_t lba, void *buf)
+static int cache_read(off_t lba, void *buf)
 {
 	unsigned int i = lba & CACHE_MASK, j;
 	struct cache_entry *entry = &cache_entries[i];
@@ -496,7 +497,7 @@ static inline int cache_read(off_t lba, void *buf)
  *         1 if data is in flight and requested for reading.
  *         negative on error.
  */
-static inline enum cblk_status cache_info(off_t lba)
+static enum cblk_status cache_info(off_t lba)
 {
 	unsigned int j;
 	struct cache_entry *entry = &cache_entries[lba & CACHE_MASK];
@@ -517,27 +518,31 @@ static inline enum cblk_status cache_info(off_t lba)
 	return CACHE_BLOCK_UNUSED;
 }
 
-/**
- * Reserve entry for reading later. Set status to READING and
- * therefore take it out of the replacement circle. After reserving
- * Filling it needs to happen under the way_lock, such that it can
- * be reused later on. Failing to fill the entry will cause resource
- * leakage and cache malfunction.
- */
-static inline struct cache_way *cache_reserve(off_t lba)
+static inline void __dump_entry(struct cache_entry *entry)
 {
-	unsigned int i = lba & CACHE_MASK, j;
-	struct cache_entry *entry = &cache_entries[i];
+	unsigned int j;
+	struct cache_way *way = entry->way;
+
+	for (j = 0; j < CACHE_WAYS; j++) {
+		dfprintf(stderr, "[%s]    way[%d] LBA=%ld %s\n",
+			__func__, j, way[j].lba,
+			block_status_str[way[j].status]);
+	}
+}
+
+/**
+ * Lockfree version of cache_reserve. Please use this only if you hold
+ * the lock to the cache entry.
+ */
+static struct cache_way *__cache_reserve(off_t lba)
+{
+	unsigned int j;
+	struct cache_entry *entry = &cache_entries[lba & CACHE_MASK];
 	struct cache_way *e, *way = entry->way;
 	int reserve_idx = -1;
-	unsigned int min_count;
+	unsigned int min_count = INT_MAX;
 
-	cache_trace("[%s] searching reserve entry[%d] lba=%lld\n",
-		__func__, i, (long long)lba);
-
-	pthread_mutex_lock(&entry->way_lock);
-	reserve_idx = 0;
-	min_count = way[0].count;
+	cache_trace("[%s] searching reserve LBA=%lld\n", __func__, (long long)lba);
 
 	for (j = 0; j < CACHE_WAYS; j++) {
 		e = &way[j];
@@ -548,8 +553,9 @@ static inline struct cache_way *cache_reserve(off_t lba)
 			break;
 		case CACHE_BLOCK_VALID:
 			if (e->lba == lba) {	/* entry is already in cache */
-				reserve_idx = j;
-				goto reserve_block;
+				cache_trace("[%s] %p LBA=%ld is already VALID!\n",
+					__func__, e, e->lba);
+				return NULL;	/* do not overwrite */
 			}
 			if (e->count < min_count) {
 				reserve_idx = j;/* replace candidate with smallest count */
@@ -557,36 +563,51 @@ static inline struct cache_way *cache_reserve(off_t lba)
 			break;
 		case CACHE_BLOCK_READING:	/* do not throw this out */
 			if (e->lba == lba) {	/* entry is already in cache */
-				cache_trace("[%s] LBA=%ld is already READING!\n",
-					__func__, e->lba);
-				pthread_mutex_unlock(&entry->way_lock);
+				cache_trace("[%s] %p LBA=%ld is already READING!\n",
+					__func__, e, e->lba);
 				return NULL;	/* no entry found! */
 			}
 			break;
 		}
 	}
 	if (reserve_idx == -1) {
-		dfprintf(stderr, "[%s] warning: No entry found for LBA=%ld\n",
+		dfprintf(stderr, "[%s] warning: No free entry found for LBA=%ld\n",
 			__func__, lba);
-		pthread_mutex_unlock(&entry->way_lock);
+		__dump_entry(entry);
 		return NULL;	/* no entry found! */
 	}
-reserve_block:
+
 	/* Now reserve */
 	e = &way[reserve_idx];
 	if ((e->status == CACHE_BLOCK_VALID) && (e->used == 0))
 		cache_trashing++;	/* discarding an used entry */
 
+	/* dfprintf(stderr, "[%s] debug: reserve %p for LBA=%ld %s\n",
+		__func__, e, lba, block_status_str[e->status]); */
 	e->lba = lba;
 	e->count = entry->count++;
 	e->used = 0;
 	e->status = CACHE_BLOCK_READING;
+	
+	return e;
+}
 
-	cache_trace("    [%s] entry[%d].way[%d].status=%s lba=%lld reserved\n",
-		__func__, i, reserve_idx, block_status_str[e->status],
-		(long long)e->lba);
+/**
+ * Reserve entry for reading later. Set status to READING and
+ * therefore take it out of the replacement circle. After reserving
+ * Filling it needs to happen under the way_lock, such that it can
+ * be reused later on. Failing to fill the entry will cause resource
+ * leakage and cache malfunction.
+ */
+static struct cache_way *cache_reserve(off_t lba)
+{
+	struct cache_way *e;
+	struct cache_entry *entry = &cache_entries[lba & CACHE_MASK];
 
+	pthread_mutex_lock(&entry->way_lock);
+	e = __cache_reserve(lba);
 	pthread_mutex_unlock(&entry->way_lock);
+
 	return e;
 }
 
@@ -601,48 +622,72 @@ reserve_block:
  * We added _used to identify entries which were read by the prefetch
  * code but thrown out before they got actually used.
  */
-static inline int cache_write_reserved(struct cache_way *e,
-					off_t lba, const void *buf,
-					int _used)
+static int cache_write_reserved(struct cache_way **e,
+				off_t lba, const void *buf,
+				int _used)
 {
+	struct cache_way *_e;
 	struct cache_entry *entry;
 
 	if (e == NULL)
 		return -1;
 
-	entry = &cache_entries[e->lba & CACHE_MASK];
+	_e = *e;
+	if (_e == NULL)
+		return -2;
+
+	entry = &cache_entries[lba & CACHE_MASK];
 	pthread_mutex_lock(&entry->way_lock);
 
-	if ((e->status != CACHE_BLOCK_READING) || (e->lba != lba)) {
-		dfprintf(stderr, "[%s] warning: LBA=%ld/%ld State is not READING but %s\n",
-			__func__, lba, e->lba, block_status_str[e->status]);
+	if (_e->lba != lba) {
+		dfprintf(stderr, "[%s] warning: %p LBA=%ld/%ld reservation lost %s\n",
+			__func__, _e, lba, _e->lba, block_status_str[_e->status]);
 		pthread_mutex_unlock(&entry->way_lock);
 		return -1;
 	}
+	if (_e->status != CACHE_BLOCK_READING) {
+		dfprintf(stderr, "[%s] warning: %p LBA=%ld/%ld State is not READING but %s\n",
+			__func__, _e, lba, _e->lba, block_status_str[_e->status]);
+		pthread_mutex_unlock(&entry->way_lock);
+		return -2;
+	}
 
-	memcpy(e->buf, buf, __CBLK_BLOCK_SIZE);
-	e->used = _used;
-	e->status = CACHE_BLOCK_VALID;
+	memcpy(_e->buf, buf, __CBLK_BLOCK_SIZE);
+	_e->used = _used;
+	_e->status = CACHE_BLOCK_VALID;
+	*e = NULL;	/* mark as not accessible anymore */
 
 	pthread_mutex_unlock(&entry->way_lock);
 	return 0;
 }
 
-static inline int cache_unreserve(struct cache_way *e)
+static int cache_unreserve(struct cache_way *e, off_t lba)
 {
 	struct cache_entry *entry;
 
 	if (e == NULL)
 		return -1;
 
-	entry = &cache_entries[e->lba & CACHE_MASK];
+	/* dfprintf(stderr, "[%s] debug: unreserve %p for LBA=%ld %s\n",
+		__func__, e, lba, block_status_str[e->status]); */
+
+	entry = &cache_entries[lba & CACHE_MASK];
 	pthread_mutex_lock(&entry->way_lock);
 
-	if (e->status == CACHE_BLOCK_READING) {
-		dfprintf(stderr, "[%s] warning: forcing status LBA=%ld "
-			"cache from READING to UNUSED!\n", __func__, e->lba);
+	if (e->lba != lba) {
+		dfprintf(stderr, "[%s] err: LBA=%ld/%ld not consistent!\n",
+			__func__, lba, e->lba);
 		e->status = CACHE_BLOCK_UNUSED;
-		/* __backtrace(); */
+		__backtrace();
+		pthread_mutex_unlock(&entry->way_lock);
+		return -1;
+	}
+	if (e->status == CACHE_BLOCK_READING) {
+		dfprintf(stderr, "[%s] warning: %p forcing status LBA=%ld/%ld "
+			"cache from %s to UNUSED!\n",
+			__func__, e, lba, e->lba, block_status_str[e->status]);
+		e->status = CACHE_BLOCK_UNUSED;
+		__backtrace();
 	}
 
 	pthread_mutex_unlock(&entry->way_lock);
@@ -654,19 +699,26 @@ static inline int cache_unreserve(struct cache_way *e)
  *       sequence is not working if we allow reservations to be
  *       changed in certain cases. This needs fixups.
  */
-static inline int cache_write(off_t lba, const void *buf, int _used)
+static int cache_write(off_t lba, const void *buf, int _used)
 {
 	struct cache_way *e;
+	struct cache_entry *entry;
 
-	cache_trace("[%s] searching write entry lba=%lld\n",
-		__func__, (long long)lba);
+	entry = &cache_entries[lba & CACHE_MASK];
+	pthread_mutex_lock(&entry->way_lock);
 
-	e = cache_reserve(lba);
-	if (e == NULL)
+	e = __cache_reserve(lba);
+	if (e == NULL) {
+		pthread_mutex_unlock(&entry->way_lock);
 		return -1;	/* no entry free! */
+	}
 
-	/* Now replace entry with new data */
-	return cache_write_reserved(e, lba, buf, _used);
+	memcpy(e->buf, buf, __CBLK_BLOCK_SIZE);
+	e->used = _used;
+	e->status = CACHE_BLOCK_VALID;
+	pthread_mutex_unlock(&entry->way_lock);
+
+	return 0;
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
@@ -698,11 +750,11 @@ static int __cblk_read(struct cblk_dev *c, uint32_t addr, uint32_t *data)
  * NVMe: For NVMe transfers n is representing a NVME_LB_SIZE (512)
  *       byte block.
  */
-static inline void start_memcpy(struct cblk_dev *c,
-				uint32_t action,
-				uint64_t dest,
-				uint64_t src,
-				uint32_t n)
+static void start_memcpy(struct cblk_dev *c,
+			uint32_t action,
+			uint64_t dest,
+			uint64_t src,
+			uint32_t n)
 {
 	uint8_t action_code = action & 0x00ff;
 	int slot = (action & 0x0f00) >> 8;
@@ -812,7 +864,6 @@ static struct cblk_req *get_read_req(struct cblk_dev *c,
 	return NULL;
 }
 
-
 static struct cblk_req *get_write_req(struct cblk_dev *c,
 				int use_wait_sem,
 				off_t lba, size_t nblocks)
@@ -873,7 +924,7 @@ static void put_req(struct cblk_dev *c, struct cblk_req *req)
 		c->avg_read_usecs += usecs;
 
 		for (i = 0; i < ARRAY_SIZE(req->pblock); i++) {
-			cache_unreserve(req->pblock[i]);
+			cache_unreserve(req->pblock[i], req->lba + i);
 			req->pblock[i] = NULL;
 		}
 		sem_post(&c->r_busy_sem);
@@ -889,7 +940,7 @@ static void put_req(struct cblk_dev *c, struct cblk_req *req)
 /**
  * Check action results and kick potential waiting threads.
  */
-static inline int read_status(struct cblk_dev *c, int timeout __attribute__((unused)))
+static int read_status(struct cblk_dev *c, int timeout __attribute__((unused)))
 {
 	int rc = ETIME;
 	uint32_t status = 0x0;
@@ -1024,7 +1075,7 @@ static int __prefetch_read_start(struct cblk_dev *c,
 	block_trace("[%s] Simple prefetch LBA=%lu nblocks=%d status=%s\n",
 		__func__, lba, (int)nblocks, cblk_status_str[status]);
 
-	if (status != CACHE_BLOCK_UNUSED) {
+	if ((status != CACHE_BLOCK_UNUSED) && (status != CACHE_BLOCK_VALID)) {
 		c->prefetch_collisions++;
 		return -2;
 	}
@@ -1044,7 +1095,7 @@ static int __prefetch_read_start(struct cblk_dev *c,
 	return 0;
 }
 
-static inline int __read_complete(struct cblk_dev *c,
+static int __read_complete(struct cblk_dev *c,
 				struct cblk_req *req, int _used)
 {
 	unsigned int i;
@@ -1058,7 +1109,7 @@ static inline int __read_complete(struct cblk_dev *c,
 	if (cblk_caching) {
 		/* ... push blocks to cache for later use */
 		for (i = 0; i < req->nblocks; i++) {
-			cache_write_reserved(req->pblock[i], req->lba + i,
+			cache_write_reserved(&req->pblock[i], req->lba + i,
 					req->buf + i * __CBLK_BLOCK_SIZE,
 					_used);
 		}
