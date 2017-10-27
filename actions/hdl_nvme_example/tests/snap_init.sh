@@ -145,6 +145,10 @@ if [ "${TEST}" == "READ_BENCHMARK" ]; then
 			snap_cblk -C0 ${options} -b${nblocks} \
 				-R${random_seed} -s0 -t${t} \
 				--read /dev/null );
+			if [ $? -ne 0 ]; then
+				printf "${bold}ERROR:${normal} bad exit code!\n" >&2
+				exit 1
+			fi
 			echo
 		done
 	done
@@ -161,6 +165,11 @@ if [ "${TEST}" == "PERF" ]; then
 			perf record snap_cblk -C0 ${options} -b${nblocks} \
 				-R${random_seed} -s0 -t${t} \
 				--read /dev/null ;
+			if [ $? -ne 0 ]; then
+				printf "${bold}ERROR:${normal} bad exit code!\n" >&2
+				exit 1
+			fi
+
 			echo
 			echo -n "Generating perf output ${perf_log} ... "
 			sudo perf report -f > $perf_log
