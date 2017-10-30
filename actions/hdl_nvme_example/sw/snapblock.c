@@ -891,10 +891,11 @@ static struct cblk_req *get_read_req(struct cblk_dev *c,
 				req->lba = lba;
 				req->nblocks = nblocks;
 
-				/* Ignore reservation misses, does not matter */
-				for (j = 0; j < nblocks; j++)
-					req->pblock[j] = cache_reserve(lba + j, 0);
-
+				if (cblk_caching) {
+					/* Ignore reservation misses, does not matter */
+					for (j = 0; j < nblocks; j++)
+						req->pblock[j] = cache_reserve(lba + j, 0);
+				}
 				gettimeofday(&req->stime, NULL);
 				cblk_set_status(req, CBLK_READING);
 
@@ -976,9 +977,11 @@ static void put_req(struct cblk_dev *c, struct cblk_req *req)
 			c->min_read_usecs = usecs;
 		c->avg_read_usecs += usecs;
 
-		for (i = 0; i < ARRAY_SIZE(req->pblock); i++) {
-			cache_unreserve(req->pblock[i], req->lba + i);
-			req->pblock[i] = NULL;
+		if (cblk_caching) {
+			for (i = 0; i < ARRAY_SIZE(req->pblock); i++) {
+				cache_unreserve(req->pblock[i], req->lba + i);
+				req->pblock[i] = NULL;
+			}
 		}
 		sem_post(&c->r_busy_sem);
 	}
