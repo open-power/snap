@@ -1058,8 +1058,8 @@ static int completion_status(struct cblk_dev *c, int timeout __attribute__((unus
 	return slot;
 }
 
-static int check_request_timeouts(struct cblk_dev *c, struct timeval *etime,
-				long int timeout_sec)
+static int check_req_timeouts(struct cblk_dev *c, struct timeval *etime,
+			long int timeout_sec)
 {
 	unsigned int i;
 	long int diff_sec = 0;
@@ -1074,8 +1074,9 @@ static int check_request_timeouts(struct cblk_dev *c, struct timeval *etime,
 			diff_sec = timediff_sec(etime, &req->stime);
 			if (diff_sec > timeout_sec) {
 				err++;
-				block_trace("  err: req[%2d]: %s %lu/%lu TIMEOUT!\n",
-					i, cblk_status_str[req->status],
+				fprintf(stderr, "[%s] err: req[%2d]: "
+					"%s %lu/%lu sec TIMEOUT!\n",
+					__func__, i, cblk_status_str[req->status],
 					timeout_sec, diff_sec);
 
 				errno = ETIME;
@@ -1249,7 +1250,7 @@ static void *completion_thread(void *arg)
 		} else no_result_counter++;
 
 		gettimeofday(&etime, NULL);
-		check_request_timeouts(c, &etime, cblk_reqtimeout * 1000);
+		check_req_timeouts(c, &etime, cblk_reqtimeout); /* sec */
 		pthread_testcancel();	/* go home if requested */
 	}
 
@@ -1687,7 +1688,9 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 	c->block_writes++;
 	if (nblocks == 1)
 		c->block_writes_4k++;
-	
+
+	nblocks = block_write(&chunk, buf, lba, nblocks);
+
 	if (cblk_caching) {
 		for (i = 0; i < nblocks; i++) {
 			rc = cache_write(lba + i, buf + i * __CBLK_BLOCK_SIZE, 0);
@@ -1699,7 +1702,6 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 		}
 	}
 
-	nblocks = block_write(&chunk, buf, lba, nblocks);
 	return nblocks;
 }
 
