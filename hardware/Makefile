@@ -22,6 +22,7 @@
 ## This Makefile is contained in the hardware directory.
 ## So, the root directory is one level above.
 ##
+SHELL=/bin/bash
 PLATFORM ?= $(shell uname -i)
 
 export SNAP_ROOT=$(abspath ..)

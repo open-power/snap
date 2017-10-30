@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+SHELL=/bin/bash
 PLATFORM ?= $(shell uname -i)
 
 export SNAP_ROOT=$(abspath .)
