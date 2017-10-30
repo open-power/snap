@@ -154,17 +154,24 @@ if [ "${TEST}" == "READ_BENCHMARK" ]; then
 	done
 fi
 
+#
+# System p specific performance counter registers. Try this if you do
+# not know what it means.
+#
+# perf stat -e "{r100F8,r2D01A,r30004,r4E010},{r100F8,r2D01E,r30004,r4D01C},{r100F8,r2D01C,r30004,r4D01A},{r100F8,r2E010,r30004,r4D01E},{r100F8,r2001A,r30028,r4000A},{r1001C,r2D018,r30036,r4D018},{r100F8,r2D012,r30028,r4000A},{r1001C,r2D016,r30038,r4D016},{r100F8,r2D014,r30026,r4D012},{r1001C,r2D010,r30038,r4D010},{r100F8,r2C010,r30004,r4000A},{r1001C,r2C012,r30004,r4C01A},{r100F8,r2C016,r30004,r4C016},{r1001C,r2C01C,r30004,r4C01A},{r100F8,r2C018,r30004,r4C018},{r10036,r2C01A,r30036,r4C010},{r1001C,r2E01E,r30028,r4C014},{r1001C,r2001A,r30038,r4C012},{r1001C,r2C014,r30026,r4D014},{r1001C,r2C010,r30038,r4C01C}" <command>
+#
 if [ "${TEST}" == "PERF" ]; then
 	echo "SNAP NVME PERF BENCHMARK"
-	for p in 0 1 ; do
+	for p in 0 4 ; do
 		for t in 1 8 16 32 ; do
 			perf_log="snap_nvme_prefetch_${p}_threads_${t}.log"
 
 			echo "PREFETCH: $p ; THREADS: $t ; NBLOCKS=${nblocks}" ;
-			CBLK_PREFETCH=$p \
-			perf record snap_cblk -C0 ${options} -b${nblocks} \
-				-R${random_seed} -s0 -t${t} \
-				--read /dev/null ;
+			sudo -E -- perf record -a -g -- \
+				CBLK_PREFETCH=$p \
+				snap_cblk -C0 ${options} -b${nblocks} \
+					-R${random_seed} -s0 -t${t} \
+					--read /dev/null ;
 			if [ $? -ne 0 ]; then
 				printf "${bold}ERROR:${normal} bad exit code!\n" >&2
 				exit 1
