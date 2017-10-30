@@ -430,24 +430,25 @@ static int cache_init(void)
 	return 0;
 }
 
+static inline void __dump_entry(struct cache_entry *entry)
+{
+	struct cache_way *w = entry->way;
+
+	cache_trace("  e[%p]: "
+			"%s %ld %d %d | %s %ld %d %d | %s %ld %d %d | %s %ld %d %d\n", entry,
+			block_status_str[w[0].status], w[0].lba, w[0].count, w[0].used,
+			block_status_str[w[1].status], w[1].lba, w[1].count, w[1].used,
+			block_status_str[w[2].status], w[2].lba, w[2].count, w[2].used,
+			block_status_str[w[3].status], w[3].lba, w[3].count, w[3].used);
+}
+
 static void cache_done(void)
 {
-	unsigned int i, j;
+	unsigned int i;
 
 	cache_trace("CACHE\n");
-	for (i = 0; i < CACHE_ENTRIES; i++) {
-		struct cache_entry *entry = &cache_entries[i];
-		struct cache_way *way = entry->way;
-
-		cache_trace("  entry[%d]\n", i);
-		for (j = 0; j < CACHE_WAYS; j++) {
-			cache_trace("    way[%d].status=%s buf=%p "
-				"lba=%lld count=%d used=%d\n", j,
-				block_status_str[way[j].status],
-				way[j].buf, (long long)way[j].lba,
-				way[j].count, way[j].used);
-		}
-	}
+	for (i = 0; i < CACHE_ENTRIES; i++)
+		__dump_entry(&cache_entries[i]);
 
 	__free(cache_blocks);
 	cache_blocks = NULL;
@@ -509,24 +510,15 @@ static enum cblk_status cache_info(off_t lba)
 	return CACHE_BLOCK_UNUSED;
 }
 
-static inline void __dump_entry(struct cache_entry *entry)
-{
-	unsigned int j;
-	struct cache_way *way = entry->way;
-
-	for (j = 0; j < CACHE_WAYS; j++) {
-		dfprintf(stderr, "[%s]    way[%d] LBA=%ld %s count=%d used=%d\n",
-			__func__, j, way[j].lba,
-			block_status_str[way[j].status],
-			way[j].count, way[j].used);
-	}
-}
-
 /**
  * Lockfree version of cache_reserve. Please use this only if you hold
  * the lock to the cache entry.
+ *
+ * @force Enforce reservation. For read this is no trecommended, but
+ *        for write it is, since we like to replace the old data as
+ *        fast as needed once this LBA is written to.
  */
-static struct cache_way *__cache_reserve(off_t lba)
+static struct cache_way *__cache_reserve(off_t lba, int force)
 {
 	unsigned int j;
 	struct cache_entry *entry = &cache_entries[lba & CACHE_MASK];
@@ -544,12 +536,14 @@ static struct cache_way *__cache_reserve(off_t lba)
 			break;
 		case CACHE_BLOCK_VALID:		/* avoid double entries */
 			if (e->lba == lba) {	/* entry is already in cache */
-				cache_trace("[%s] %p LBA=%ld is already VALID!\n",
-					__func__, e, e->lba);
-				min_count = e->count;
-				reserve_idx = j;
-				goto reserve_entry;
-				/* return NULL; */
+				/* cache_trace("[%s] %p LBA=%ld/%ld is already VALID!\n",
+					__func__, e, lba, e->lba); */
+				if (force) {
+					min_count = e->count;
+					reserve_idx = j;
+					goto reserve_entry;
+				} else
+					return NULL;
 			}
 			if (e->count < min_count) {
 				min_count = e->count;
@@ -558,8 +552,8 @@ static struct cache_way *__cache_reserve(off_t lba)
 			break;
 		case CACHE_BLOCK_READING:	/* do not throw this out */
 			if (e->lba == lba) {	/* entry is already in cache */
-				cache_trace("[%s] %p LBA=%ld is already READING!\n",
-					__func__, e, e->lba);
+				cache_trace("[%s] %p LBA=%ld/%ld is already READING!\n",
+					__func__, e, lba, e->lba);
 				return NULL;	/* no entry found! */
 			}
 			break;
@@ -595,13 +589,13 @@ reserve_entry:
  * be reused later on. Failing to fill the entry will cause resource
  * leakage and cache malfunction.
  */
-static struct cache_way *cache_reserve(off_t lba)
+static struct cache_way *cache_reserve(off_t lba, int force)
 {
 	struct cache_way *e;
 	struct cache_entry *entry = &cache_entries[lba & CACHE_MASK];
 
 	pthread_mutex_lock(&entry->way_lock);
-	e = __cache_reserve(lba);
+	e = __cache_reserve(lba, force);
 	pthread_mutex_unlock(&entry->way_lock);
 
 	return e;
@@ -703,8 +697,10 @@ static int cache_write(off_t lba, const void *buf, int _used)
 	entry = &cache_entries[lba & CACHE_MASK];
 	pthread_mutex_lock(&entry->way_lock);
 
-	e = __cache_reserve(lba);
+	e = __cache_reserve(lba, 1);	/* enforce reservation */
 	if (e == NULL) {
+		fprintf(stderr, "[%s] cache reservation for LBA=%ld failed!\n",
+			__func__, lba);
 		__dump_entry(entry);
 		pthread_mutex_unlock(&entry->way_lock);
 		return -1;	/* no entry free! */
@@ -793,7 +789,7 @@ static void start_memcpy(struct cblk_dev *c,
 }
 
 int cblk_init(void *arg __attribute__((unused)),
-	      uint64_t flags __attribute__((unused)))
+		uint64_t flags __attribute__((unused)))
 {
 	block_trace("[%s] arg=%p flags=%llx\n", __func__, arg,
 		(long long)flags);
@@ -801,11 +797,65 @@ int cblk_init(void *arg __attribute__((unused)),
 }
 
 int cblk_term(void *arg __attribute__((unused)),
-	      uint64_t flags __attribute__((unused)))
+		uint64_t flags __attribute__((unused)))
 {
 	block_trace("[%s] arg=%p flags=%llx\n", __func__, arg,
 		(long long)flags);
 	return 0;
+}
+
+static void cblk_req_dump(struct cblk_dev *c)
+{
+	unsigned int i;
+	struct timeval now;
+	time_t usecs;
+
+	gettimeofday(&now, NULL);
+	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
+		struct cblk_req *req = &c->req[i];
+
+		switch (req->status) {
+		case CBLK_IDLE:
+			usecs = 0;
+			if (req->lba == 0)
+				break;
+		case CBLK_READY:
+			usecs = timediff_usec(&req->etime, &req->stime);
+			break;
+		default:
+			usecs = timediff_usec(&now, &req->stime);
+			break;
+		}
+		block_trace("  req[%2d]: %s LBA=%ld %ld usec\n", i,
+			cblk_status_str[req->status], req->lba, usecs);
+	}
+}
+
+static void stat_req_dump(struct cblk_dev *c)
+{
+	unsigned int i;
+	struct timeval now;
+	time_t usecs;
+
+	gettimeofday(&now, NULL);
+	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
+		struct cblk_req *req = &c->req[i];
+
+		switch (req->status) {
+		case CBLK_IDLE:
+			usecs = 0;
+			if (req->lba == 0)
+				break;
+		case CBLK_READY:
+			usecs = timediff_usec(&req->etime, &req->stime);
+			break;
+		default:
+			usecs = timediff_usec(&now, &req->stime);
+			break;
+		}
+		stat_trace("  req[%2d]: %s LBA=%ld %ld usec\n", i,
+			cblk_status_str[req->status], req->lba, usecs);
+	}
 }
 
 /**
@@ -825,39 +875,40 @@ static struct cblk_req *get_read_req(struct cblk_dev *c,
 	unsigned int j;
 	struct cblk_req *req;
 
-	sem_wait(&c->r_busy_sem);
+	while (1) {
+		sem_wait(&c->r_busy_sem);
+		pthread_mutex_lock(&c->dev_lock);
 
-	pthread_mutex_lock(&c->dev_lock);
+		for (i = 0; i < CBLK_RIDX_MAX; i++) {
+			slot = CBLK_WIDX_MAX + c->ridx;		/* try next slot */
 
-	for (i = 0; i < CBLK_RIDX_MAX; i++) {
-		slot = CBLK_WIDX_MAX + c->ridx;		/* try next slot */
+			req = &c->req[slot];
+			if (req->status == CBLK_IDLE) {		/* nice it is free */
+				block_trace("[%s] GIVE OUT READ slot %u LBA=%ld\n",
+					__func__, slot, lba);
 
-		req = &c->req[slot];
-		if (req->status == CBLK_IDLE) {		/* nice it is free */
-			block_trace("[%s] GIVE OUT slot %u\n",
-				__func__, slot);
+				req->use_wait_sem = use_wait_sem;
+				req->lba = lba;
+				req->nblocks = nblocks;
 
-			req->use_wait_sem = use_wait_sem;
-			req->lba = lba;
-			req->nblocks = nblocks;
+				/* Ignore reservation misses, does not matter */
+				for (j = 0; j < nblocks; j++)
+					req->pblock[j] = cache_reserve(lba + j, 0);
 
-			/* Ignore reservation misses, does not matter */
-			for (j = 0; j < nblocks; j++)
-				req->pblock[j] = cache_reserve(lba + j);
+				gettimeofday(&req->stime, NULL);
+				cblk_set_status(req, CBLK_READING);
 
-			gettimeofday(&req->stime, NULL);
-			cblk_set_status(req, CBLK_READING);
-
-			pthread_mutex_unlock(&c->dev_lock);
-			inc_work_in_flight(c);
-			return req;
+				inc_work_in_flight(c);
+				pthread_mutex_unlock(&c->dev_lock);
+				return req;
+			}
+			c->ridx = (c->ridx + 1) % CBLK_RIDX_MAX;	/* pick next ridx */
 		}
-		c->ridx = (c->ridx + 1) % CBLK_RIDX_MAX;	/* pick next ridx */
-	}
 
-	pthread_mutex_unlock(&c->dev_lock);
-	
-	block_trace("[%s] warning: No IDLE req found!\n", __func__);
+		pthread_mutex_unlock(&c->dev_lock);
+		block_trace("[%s] warning: No IDLE read req found!\n", __func__);
+		cblk_req_dump(c);
+	}
 	return NULL;
 }
 
@@ -868,31 +919,36 @@ static struct cblk_req *get_write_req(struct cblk_dev *c,
 	int i, slot;
 	struct cblk_req *req;
 
-	sem_wait(&c->w_busy_sem);
+	while (1) {
+		sem_wait(&c->w_busy_sem);
+		pthread_mutex_lock(&c->dev_lock);
 
-	pthread_mutex_lock(&c->dev_lock);
+		for (i = 0; i < CBLK_WIDX_MAX; i++) {
+			slot = c->widx;				/* try next slot */
 
-	for (i = 0; i < CBLK_WIDX_MAX; i++) {
-		slot = c->widx;				/* try next slot */
+			req = &c->req[slot];
+			if (req->status == CBLK_IDLE) {		/* nice it is free */
+				block_trace("[%s] GIVE OUT WRITE slot %u LBA=%ld\n",
+					__func__, slot, lba);
 
-		req = &c->req[slot];
-		if (req->status == CBLK_IDLE) {		/* nice it is free */
-			gettimeofday(&req->stime, NULL);
+				gettimeofday(&req->stime, NULL);
 
-			req->use_wait_sem = use_wait_sem;
-			req->lba = lba;
-			req->nblocks = nblocks;
-			cblk_set_status(req, CBLK_WRITING);
+				req->use_wait_sem = use_wait_sem;
+				req->lba = lba;
+				req->nblocks = nblocks;
+				cblk_set_status(req, CBLK_WRITING);
 
-			pthread_mutex_unlock(&c->dev_lock);
-			inc_work_in_flight(c);
-			return req;
+				inc_work_in_flight(c);
+				pthread_mutex_unlock(&c->dev_lock);
+				return req;
+			}
+			c->widx = (c->widx + 1) % CBLK_WIDX_MAX;	/* pick next widx */
 		}
-		c->widx = (c->widx + 1) % CBLK_WIDX_MAX;	/* pick next widx */
+		pthread_mutex_unlock(&c->dev_lock);
+		fprintf(stderr, "[%s] warning: No IDLE write req found!\n", __func__);
+		cblk_req_dump(c);
 	}
 
-	pthread_mutex_unlock(&c->dev_lock);
-	fprintf(stderr, "err: No IDLE req found!\n");
 	return NULL;
 }
 
@@ -930,14 +986,14 @@ static void put_req(struct cblk_dev *c, struct cblk_req *req)
 	if (req->status != CBLK_ERROR)
 		cblk_set_status(req, CBLK_IDLE);
 
-	pthread_mutex_unlock(&c->dev_lock);
 	dec_work_in_flight(c);
+	pthread_mutex_unlock(&c->dev_lock);
 }
 
 /**
  * Check action results and kick potential waiting threads.
  */
-static int read_status(struct cblk_dev *c, int timeout __attribute__((unused)))
+static int completion_status(struct cblk_dev *c, int timeout __attribute__((unused)))
 {
 	int rc = ETIME;
 	uint32_t status = 0x0;
@@ -981,16 +1037,17 @@ static int read_status(struct cblk_dev *c, int timeout __attribute__((unused)))
 	}
 
 	slot = status & ACTION_STATUS_COMPLETION_MASK;
+	req = &c->req[slot];
+
 	if (status == ACTION_STATUS_WRITE_COMPLETED) {
-		block_trace("    [%s] HW WRITE_COMPLETED %08x slot: %d\n",
-			__func__, status, slot);
+		block_trace("    [%s] HW WRITE_COMPLETED %08x slot: %d LBA=%ld\n",
+			__func__, status, slot, req->lba);
 	} else {
-		block_trace("    [%s] HW READ_COMPLETED %08x slot: %d\n",
-			__func__, status, slot);
+		block_trace("    [%s] HW READ_COMPLETED %08x slot: %d LBA=%ld\n",
+			__func__, status, slot, req->lba);
 	}
 
 	/* statistics: figure out hardware completion time ... */
-	req = &c->req[slot];
 	gettimeofday(&req->h_etime, NULL);
 	usecs = timediff_usec(&req->h_etime, &req->h_stime);
 	if (cblk_is_write(req))
@@ -999,17 +1056,6 @@ static int read_status(struct cblk_dev *c, int timeout __attribute__((unused)))
 		c->avg_hw_read_usecs += usecs;
 
 	return slot;
-}
-
-static void cblk_req_dump(struct cblk_dev *c)
-{
-	unsigned int i;
-	
-	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
-		block_trace("  req[%2d]: %s %ld sec %ld usec\n", i,
-			cblk_status_str[c->req[i].status],
-			(long)c->req[i].stime.tv_sec, (long)c->req[i].stime.tv_usec);
-	}
 }
 
 static int check_request_timeouts(struct cblk_dev *c, struct timeval *etime,
@@ -1152,6 +1198,7 @@ static inline int __pin_cpu(void)
  */
 static void *completion_thread(void *arg)
 {
+	int rc;
 	static unsigned long no_result_counter = 0;
 	struct cblk_dev *c = (struct cblk_dev *)arg;
 	struct timeval etime;
@@ -1161,21 +1208,30 @@ static void *completion_thread(void *arg)
 
 	while (1) {
 		int slot;
+		struct timeval now;
+		struct timespec timeout;
 
 		pthread_mutex_lock(&c->idle_m);
 		while (c->work_in_flight == 0) {
-			pthread_cond_wait(&c->idle_c, &c->idle_m);
+			gettimeofday(&now, NULL);
+			timeout.tv_sec = now.tv_sec + 5;
+			/* 5 sec delay should be noticable ... */
+			timeout.tv_nsec = now.tv_usec;
+			rc = pthread_cond_timedwait(&c->idle_c, &c->idle_m, &timeout);
+			if (rc == ETIMEDOUT)
+				fprintf(stderr, "[%s] info: timedwait returned ETIMEDOUT\n",
+					__func__);
 			c->idle_wakeups++;
 		}
 		pthread_mutex_unlock(&c->idle_m);
 
-		slot = read_status(c, c->timeout);
+		slot = completion_status(c, c->timeout);
 		if ((slot >= 0) && (slot < CBLK_IDX_MAX)) {
 			struct cblk_req *req = &c->req[slot];
 			if ((req->status == CBLK_READING) ||
 			    (req->status == CBLK_WRITING)) {
-				block_trace("  [%s] waking up slot %d\n",
-					__func__, slot);
+				block_trace("  [%s] waking up slot %d LBA=%ld\n",
+					__func__, slot, req->lba);
 
 				cblk_set_status(req, CBLK_READY);
 				if (req->use_wait_sem) {
@@ -1185,9 +1241,10 @@ static void *completion_thread(void *arg)
 				}
 			} else {
 				block_trace("  [%s] err: slot %d status is %s "
-					"ILLEGAL STATUS (%lu)\n", __func__,
+					"ILLEGAL STATUS (%lu) LBA=%ld\n", __func__,
 					slot, cblk_status_str[req->status],
-					no_result_counter);
+					no_result_counter,
+					req->lba);
 			}
 		} else no_result_counter++;
 
@@ -1432,7 +1489,7 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 	struct cblk_req *req;
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
 
-	block_trace("[%s] reading (%p lba=%zu nblocks=%zu) ...\n",
+	block_trace("[%s] reading (%p LBA=%zu nblocks=%zu) ...\n",
 		__func__, buf, lba, nblocks);
 
 	if (c->status != CBLK_READY) {	/* device in fatal error */
@@ -1470,10 +1527,11 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 	}
 
 	while (req->status == CBLK_READING) {
-		block_trace("  [%s] sleeping slot %d status: %s\n",
-			__func__, req->slot, cblk_status_str[req->status]);
+		/* block_trace("  [%s] sleeping slot %d status: %s\n",
+			__func__, req->slot, cblk_status_str[req->status]); */
 		sem_wait(&req->wait_sem);
-		block_trace("  [%s] continuing slot %d\n", __func__, req->slot);
+		/* block_trace("  [%s] continuing slot %d\n",
+			__func__, req->slot); */
 	}
 
 	if ((c->status == CBLK_ERROR) || (req->status == CBLK_ERROR)) {
@@ -1570,7 +1628,7 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 	uint32_t mem_size = __CBLK_BLOCK_SIZE * nblocks;
 	struct cblk_req *req;
 
-	block_trace("[%s] writing (%p lba=%zu nblocks=%zu) ...\n",
+	block_trace("[%s] writing (%p LBA=%zu nblocks=%zu) ...\n",
 		__func__, buf, lba, nblocks);
 
 	if (c->status != CBLK_READY) {	/* device in fatal error */
@@ -1601,9 +1659,11 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 		mem_size);				/* size */
 
 	while (req->status == CBLK_WRITING) {
-		block_trace("  [%s] sleeping slot %d\n", __func__, req->slot);
+		/* block_trace("  [%s] sleeping slot %d\n",
+			__func__, req->slot); */
 		sem_wait(&req->wait_sem);
-		block_trace("  [%s] continuing slot %d\n", __func__, req->slot);
+		/* block_trace("  [%s] continuing slot %d\n",
+			__func__, req->slot); */
 	}
 
 	if ((c->status == CBLK_ERROR) || (req->status == CBLK_ERROR)) {
@@ -1612,7 +1672,7 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 	}
 
 	put_req(c, req);
-	block_trace("[%s] exit lba=%zu nblocks=%zu\n", __func__, lba, nblocks);
+	/* block_trace("[%s] exit LBA=%zu nblocks=%zu\n", __func__, lba, nblocks); */
 	return nblocks;
 }
 
@@ -1628,8 +1688,6 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 	if (nblocks == 1)
 		c->block_writes_4k++;
 	
-	nblocks = block_write(&chunk, buf, lba, nblocks);
-
 	if (cblk_caching) {
 		for (i = 0; i < nblocks; i++) {
 			rc = cache_write(lba + i, buf + i * __CBLK_BLOCK_SIZE, 0);
@@ -1641,6 +1699,7 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 		}
 	}
 
+	nblocks = block_write(&chunk, buf, lba, nblocks);
 	return nblocks;
 }
 
@@ -1735,6 +1794,8 @@ static void _done(void)
 		c->min_write_usecs,
 		c->hw_block_reads ? c->avg_hw_read_usecs/c->hw_block_reads : 0,
 		c->hw_block_writes ? c->avg_hw_write_usecs/c->hw_block_writes : 0);
+
+	stat_req_dump(c);
 
 	cache_trace("Cache Info\n"
 		"  entries/ways:        %d/%d per block %d KiB\n"
