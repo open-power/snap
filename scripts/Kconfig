@@ -24,10 +24,66 @@ choice
                   AlphaData KU3 has ethernet and 8GB DDR3 SDRAM. Uses Xilinx FPGA.
 endchoice
 
+config USER_BOARD
+        bool
+        default y if ! ENABLE_PRFLOW
+        default n if ENABLE_PRFLOW
+
+config USER_NVME_BOARD
+        bool
+        default y if (! ENABLE_PRFLOW && N250S)
+        default n if ENABLE_PRFLOW
+
+config NVME_SDRAM_BOARD
+        bool
+        default n
+
+config NVME_BOARD
+        bool 
+        default n
+ 
+config SDRAM_BOARD
+        bool
+        default n
+
+config NORAM_BOARD
+         bool
+        default n
+
+choice
+        bool "Cloud Configuration"
+        depends on ENABLE_PRFLOW
+        config N250S_SDRAM_NVME
+                bool "Nallatech 250s w/ SDRAM and NVMe"
+                depends on N250S
+                select NVME_SDRAM_BOARD
+
+        config N250S_SDRAM
+                bool "Nallatech 250s w/ SDRAM"
+                depends on N250S
+                select SDRAM_BOARD
+
+        config N250S_NORAM
+                bool "Nallatech 250s w NORAM"
+                depends on N250S
+                select NORAM_BOARD
+
+        config ADKU3_SDRAM
+                bool "Alpha-Data KU3 w/ SDRAM"
+                depends on ADKU3
+                select SDRAM_BOARD
+
+        config ADKU3_NORAM
+                bool "Alpha-Data KU3 w/ NORAM"
+                depends on ADKU3
+                select NORAM_BOARD
+endchoice
+
 config FPGACARD
         string
         default "N250S" if N250S
         default "ADKU3" if ADKU3
+
 
 config FPGACHIP
         string
@@ -42,6 +98,10 @@ config NUM_OF_ACTIONS
         range 1 1
         help
           SNAP currently supports one action.
+
+
+
+
 
 choice
         bool "Action Type"
@@ -59,49 +119,57 @@ choice
 
         config HDL_NVME_EXAMPLE
             bool "HDL NVMe Example"
-            depends on N250S
+            depends on (USER_NVME_BOARD || NVME_SDRAM_BOARD)
             select FORCE_SDRAM_OR_BRAM
             select FORCE_NVME
 
         config HLS_MEMCOPY
             bool "HLS Memcopy"
+            depends on (USER_BOARD || SDRAM_BOARD)
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
 
         config HLS_SPONGE
             bool "HLS Sponge"
+            depends on (USER_BOARD || NORAM_BOARD)
             select ENABLE_HLS_SUPPORT
             select DISABLE_SDRAM_AND_BRAM
 
         config HLS_HASHJOIN
             bool "HLS Hashjoin"
+            depends on (USER_BOARD || NORAM_BOARD)
             select ENABLE_HLS_SUPPORT
 
         config HLS_SEARCH
             bool "HLS Search"
+            depends on (USER_BOARD || SDRAM_BOARD)
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
 
         config HLS_BFS
             bool "HLS Breadth First Search"
+            depends on (USER_BOARD || NORAM_BOARD)
             select ENABLE_HLS_SUPPORT
             select DISABLE_SDRAM_AND_BRAM
 
         config HLS_INTERSECT
             bool "HLS Intersect"
+            depends on (USER_BOARD || SDRAM_BOARD)
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
 
         config HLS_NVME_MEMCOPY
             bool "HLS NVMe Memcopy"
-            depends on N250S
+            depends on (User_NVME_BOARD || NVME_SDRAM_BOARD)
             select ENABLE_HLS_SUPPORT
-            select FORCE_SDRAM_OR_BRAM
             select FORCE_NVME
+            select FORCE_SDRAM_OR_BRAM
 
         config HLS_HELLOWORLD
             bool "HLS HelloWorld"
+            depends on (USER_BOARD || NORAM_BOARD)
             select ENABLE_HLS_SUPPORT
+            select DISABLE_SDRAM_AND_BRAM
 
 endchoice
 
@@ -144,7 +212,7 @@ config SDRAM_USED
 config ENABLE_BRAM
         bool
         prompt "Enable BRAM (replacing SDRAM for experimental use)"
-        depends on ! DISABLE_SDRAM_AND_BRAM
+        depends on (! DISABLE_SDRAM_AND_BRAM && ! ENABLE_PRFLOW)
         help
           This is a development option. The AXI attached on-card SDRAM will be replaced by 512KB BRAM.
 
@@ -215,6 +283,7 @@ choice
 
         config SIM_IRUN
             bool "irun"
+            depends on ! ENABLE_PRFLOW
 
         config NO_SIM
             bool "nosim"
@@ -231,6 +300,7 @@ comment "================= Advanced Options: ================="
 
 config ENABLE_ILA
         bool "Enable ILA Debug (Definition of $ILA_SETUP_FILE required)"
+        depends on ! ENABLE_PRFLOW
         help
           Enable the usage of Vivado's integrated logic analyzer.
           Please make sure that $ILA_SETUP_FILE points to the .xdc file
@@ -243,6 +313,7 @@ config ILA_DEBUG
 
 config ENABLE_FACTORY
         bool "Create Factory Image"
+        depends on ! ENABLE_PRFLOW
 
 config FACTORY_IMAGE
         string
@@ -266,3 +337,6 @@ config CLOUD_BUILD_BITFILE
         string
         default "TRUE" if ENABLE_CLOUD_BUILD_BITFILE
         default "FALSE" if ! ENABLE_CLOUD_BUILD_BITFILE
+
+
+
