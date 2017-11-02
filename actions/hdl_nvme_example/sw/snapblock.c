@@ -302,6 +302,13 @@ static inline unsigned int work_in_flight(struct cblk_dev *c)
 	return reads_in_flight(c) + writes_in_flight(c);
 }
 
+static inline void dev_set_status(struct cblk_dev *c,
+				enum cblk_status status)
+{
+	/* block_trace("  [%s] device new status is %s\n", __func__,
+		cblk_status_str[status]); */
+	c->status = status;
+}
 /* Action related definitions. Used to access the hardware */
 
 /*
@@ -826,7 +833,7 @@ static void cblk_req_dump(struct cblk_dev *c)
 			usecs = timediff_usec(&now, &req->stime);
 			break;
 		}
-		block_trace("  req[%2d]: %s LBA=%ld %ld usec\n", i,
+		fprintf(stderr, "  req[%2d]: %s LBA=%ld %ld usec\n", i,
 			cblk_status_str[req->status], req->lba, usecs);
 	}
 }
@@ -1015,7 +1022,7 @@ static int completion_status(struct cblk_dev *c, int timeout __attribute__((unus
 	rc = __cblk_read(c, ACTION_STATUS, &status);
 	if (rc != 0) {
 		fprintf(stderr, "err: MMIO32 read ACTION_STATUS %d\n", rc);
-		c->status = CBLK_ERROR;
+		dev_set_status(c, CBLK_ERROR);
 		return -2;
 	}
 
@@ -1035,7 +1042,7 @@ static int completion_status(struct cblk_dev *c, int timeout __attribute__((unus
 	if ((status & ACTION_STATUS_ZERO_MASK) != 0x0) {
 		fprintf(stderr, "err: FATAL! STATUS_ZERO_BITs not 0 %08x\n",
 			status);
-		c->status = CBLK_ERROR;
+		dev_set_status(c, CBLK_ERROR);
 		return -4;
 	}
 
@@ -1078,12 +1085,14 @@ static int check_req_timeouts(struct cblk_dev *c, struct timeval *etime,
 			if (diff_sec > timeout_sec) {
 				err++;
 				fprintf(stderr, "[%s] err: req[%2d]: "
-					"%s %lu/%lu sec TIMEOUT!\n",
+					"%s %lu/%lu sec LBA=%ld TIMEOUT!\n",
 					__func__, i, cblk_status_str[req->status],
-					timeout_sec, diff_sec);
+					timeout_sec, diff_sec, req->lba);
 
 				errno = ETIME;
 				cblk_set_status(req, CBLK_ERROR);
+				dev_set_status(c, CBLK_ERROR);
+
 				if (req->use_wait_sem)
 					sem_post(&req->wait_sem);
 			}
@@ -1202,7 +1211,6 @@ static inline int __pin_cpu(void)
  */
 static void *completion_thread(void *arg)
 {
-	int rc;
 	static unsigned long no_result_counter = 0;
 	struct cblk_dev *c = (struct cblk_dev *)arg;
 	struct timeval etime;
@@ -1217,14 +1225,17 @@ static void *completion_thread(void *arg)
 
 		pthread_mutex_lock(&c->idle_m);
 		while (c->work_in_flight == 0) {
+			/* int rc; */
+
 			gettimeofday(&now, NULL);
 			timeout.tv_sec = now.tv_sec + 5;
 			/* 5 sec delay should be noticable ... */
 			timeout.tv_nsec = now.tv_usec;
-			rc = pthread_cond_timedwait(&c->idle_c, &c->idle_m, &timeout);
-			if (rc == ETIMEDOUT)
+			/* rc =  */
+			pthread_cond_timedwait(&c->idle_c, &c->idle_m, &timeout);
+			/* if (rc == ETIMEDOUT)
 				fprintf(stderr, "[%s] info: timedwait returned ETIMEDOUT\n",
-					__func__);
+					__func__); */
 			c->idle_wakeups++;
 		}
 		pthread_mutex_unlock(&c->idle_m);
@@ -1439,10 +1450,9 @@ int cblk_close(chunk_id_t id __attribute__((unused)),
 		__func__, (int)id, cblk_status_str[c->req_status],
 		work_in_flight(c),
 		(long)etime.tv_sec, (long)etime.tv_usec);
-	cblk_req_dump(c);
 
 	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
-		c->req[i].status = CBLK_IDLE;
+		/* c->req[i].status = CBLK_IDLE; */
 		sem_destroy(&c->req[i].wait_sem);
 	}
 
