@@ -34,8 +34,6 @@
 #include "force_cpu.h"
 #include <capiblock.h> /* FIXME fake fake */
 
-#undef CONFIG_SINGLE_THREADED
-
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
 
@@ -46,6 +44,7 @@ typedef enum {
 	OP_READ = 0,
 	OP_WRITE = 1,
 	OP_FORMAT = 2,
+	OP_RW = 3,
 } cblk_operation_t;
 
 static chunk_id_t cid = (chunk_id_t)-1; /* global to close device via sig_INT */
@@ -59,12 +58,13 @@ static void usage(const char *prog)
 {
 	printf("Usage: %s [-h] [-v,--verbose]\n"
 	       "  -C,--card <cardno> can be (0...3)\n"
-	       "  -V, --version		    print version.\n"
-	       "  -X, --cpu <id>	    only run on this CPU.\n"
-	       "  -f, --format		    write entire device with pattern.\n"
-	       "  -w, --write		    write entire device.\n"
-	       "  -r, --read		    read entire device.\n"
-	       "  -R, --random <seed>	    random seek ordering"
+	       "  -V, --version             print version.\n"
+	       "  -X, --cpu <id>            only run on this CPU.\n"
+	       "  -f, --format              write entire device with pattern.\n"
+	       "  -w, --write               write entire device.\n"
+	       "  -r, --read                read entire device.\n"
+	       "  -x, --rw                  read write testcase.\n"
+	       "  -R, --random <seed>       random seek ordering"
 	       "  -s, --start_lba <start_lba> start offset\n"
 	       "  -n, --num_lba <num_lba>   number of lbas to read or write\n"
 	       "                            0x40000 for 1 GiB\n"
@@ -299,6 +299,8 @@ static void rqueue_free(struct rqueue *rq)
 	rq->lba = NULL;
 }
 
+typedef void * (* worker_thread_t)(void *data);
+
 /**
  * Get block from the queue, trigger read and collect results.
  */
@@ -368,7 +370,68 @@ err_out:
 	pthread_exit(&d->thread_rc);
 }
 
+/**
+ * Testcase to excersise read and write in parallel.
+ */
+static void *rw_thread(void *data)
+{
+	int rc;
+	void *buf;
+	unsigned long lba;
+	unsigned long nblocks;
+	struct thread_data *d = (struct thread_data *)data;
+	struct rqueue *rq = d->rq;
+	int do_read = 0;
+
+	block_trace("[%s] NEW THREAD ALIVE %u\n", __func__, d->num);
+	while (!err_detected) {
+		pthread_mutex_lock(&rq->read_lock);
+
+		/* Exit loop if there is no more work to be done */
+		if (rq->lba_idx == rq->num_lba/rq->nblocks) {
+			pthread_mutex_unlock(&rq->read_lock);
+			break;
+		}
+
+		/* Calculate current positions parameters */
+		lba = rq->lba[rq->lba_idx];
+		buf = rq->buf + (lba - rq->start_lba) * rq->lba_size;
+		nblocks = rq->nblocks;
+
+		/* Select next lba for follow up thread */
+		rq->lba_idx++;
+		pthread_mutex_unlock(&rq->read_lock);
+
+		do_read = (((lba/nblocks) % 2) == 0);
+
+		/* Perform operation */
+		if (do_read) {
+			block_trace("[%s] READING LBA=%lu ...\n", __func__, lba);
+			rc = cblk_read(cid, buf, lba, nblocks, 0);
+		} else {
+			block_trace("[%s] WRITING LBA=%lu ...\n", __func__, lba);
+			rc = cblk_write(cid, buf, lba, nblocks, 0);
+		}
+		if (rc != (int)nblocks) {
+			fprintf(stderr, "err: cblk_%s unhappy rc=%d! %s\n",
+				do_read ? "READ" : "WRITE",
+				rc, strerror(errno));
+			goto err_out;
+		}
+		pthread_testcancel();
+	}
+	block_trace("[%s] THREAD %u STOPPED\n", __func__, d->num);
+	d->thread_rc = 0;
+	pthread_exit(&d->thread_rc);
+
+err_out:
+	err_detected = 1;		/* inform others to stop */
+	d->thread_rc = -2;
+	pthread_exit(&d->thread_rc);
+}
+
 static int run_threads(struct thread_data *d, unsigned int threads,
+			worker_thread_t func,
 			struct rqueue *rq)
 {
 	int rc;
@@ -387,7 +450,7 @@ static int run_threads(struct thread_data *d, unsigned int threads,
 
 	for (i = 0; i < threads; i++) {
 		rc = pthread_create(&d[i].thread_id, NULL,
-				&read_thread, &d[i]);
+				func, &d[i]);
 		if (rc != 0) {
 			fprintf(stderr, "err: starting %d. read_thread failed!\n", i);
 			return -1;
@@ -451,6 +514,7 @@ int main(int argc, char *argv[])
 			{ "format",	no_argument,	   NULL, 'f' },
 			{ "write",	no_argument,	   NULL, 'w' },
 			{ "read",	no_argument,	   NULL, 'r' },
+			{ "rw",		no_argument,	   NULL, 'x' },
 
 			/* misc/support */
 			{ "version",	no_argument,	   NULL, 'V' },
@@ -461,7 +525,7 @@ int main(int argc, char *argv[])
 			{ 0,		no_argument,	   NULL, 0   },
 		};
 
-		ch = getopt_long(argc, argv, "MR:p:C:X:fwrs:t:n:b:p:Vqrvh",
+		ch = getopt_long(argc, argv, "MR:p:C:X:xfwrs:t:n:b:p:Vqrvh",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -507,6 +571,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'f':
 			_op = OP_FORMAT;
+			break;
+		case 'x':
+			_op = OP_RW;
 			break;
 		case 'V':
 			printf("%s\n", version);
@@ -603,43 +670,7 @@ int main(int argc, char *argv[])
 			goto err_out;
 		}
 
-#ifdef CONFIG_SINGLE_THREADED /* single threaded */
-		rc = posix_memalign((void **)&buf, 64, num_lba * lba_size);
-		if (rc != 0) {
-			fprintf(stderr, "[%s] err: Cannot allocate enough memory! %s\n",
-				__func__, strerror(errno));
-			goto err_out;
-		}
-		memset(buf, 0xff, num_lba * lba_size);
 
-		gettimeofday(&stime, NULL);
-
-		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
-			block_trace("  reading lba %d ...\n", lba);
-			rc = cblk_read(cid, buf + ((lba - start_lba) * lba_size),
-					lba, lba_blocks, 0);
-			if (rc != (int)lba_blocks) {
-				fprintf(stderr, "err: cblk_read unhappy rc=%d! %s\n",
-					rc, strerror(errno));
-				goto err_out;
-			}
-
-			if (verbose_flag == 1)
-				__hexdump(stderr, buf + ((lba - start_lba) * lba_size),
-					lba_size * lba_blocks);
-
-		}
-		gettimeofday(&etime, NULL);
-		diff_usec = timediff_usec(&etime, &stime);
-
-		rc = file_write(fname, buf, num_lba * lba_size);
-		if (rc <= 0) {
-			fprintf(stderr, "err: Could not write %s, rc=%d\n",
-				fname, rc);
-			goto err_out;
-		}
-
-#else
 		if (use_mmap) {
 			fd = file_map(fname, &buf, num_lba * lba_size);
 			if (fd < 0) {
@@ -660,7 +691,7 @@ int main(int argc, char *argv[])
 		rqueue_init(&rq, buf, start_lba, lba_size, num_lba, lba_blocks);
 		gettimeofday(&stime, NULL);
 
-		rc = run_threads(thread_data, threads, &rq);
+		rc = run_threads(thread_data, threads, &read_thread, &rq);
 		if (rc != 0) {
 			fprintf(stderr, "err: run_threads unhappy rc=%d! %s\n", rc,
 				strerror(errno));
@@ -678,12 +709,71 @@ int main(int argc, char *argv[])
 
 		if (use_mmap)
 			file_unmap(fd, &buf, num_lba * lba_size);
-#endif
 
 		mib_sec = (diff_usec == 0) ? 0.0 :
 			(double)(num_lba * lba_size) / diff_usec;
 
 		fprintf(stdout, "Reading of %lld bytes with %d threads "
+			"took %lld usec @ %.3f MiB/sec %s\n",
+			(long long)num_lba * lba_size, threads,
+			(long long)diff_usec, mib_sec,
+			random_seed ? "random ordering" : "linear ordering");
+		break;
+	}
+	case OP_RW: {
+		fprintf(stdout, "Reading/writing %zu times %zu bytes: %zu KiB NVMe into %s\n",
+			num_lba/lba_blocks, lba_blocks * lba_size,
+			num_lba * lba_size / 1024,
+			fname);
+
+		if (start_lba + num_lba > lun_size) {
+			fprintf(stderr, "err: device not large enough %zu lbas\n",
+				lun_size);
+			goto err_out;
+		}
+
+		if (num_lba < lba_blocks) {
+			fprintf(stderr, "err: num_lba %u smaller than lba_blocks %zu\n",
+				num_lba, lba_blocks);
+			goto err_out;
+		}
+
+		if (num_lba % lba_blocks) {
+			fprintf(stderr, "err: num_lba %u not multiple of lba_blocks %zu\n",
+				num_lba, lba_blocks);
+			goto err_out;
+		}
+		rc = posix_memalign((void **)&buf, 64, num_lba * lba_size);
+		if (rc != 0) {
+			fprintf(stderr, "[%s] err: Cannot allocate enough memory! %s\n",
+				__func__, strerror(errno));
+			goto err_out;
+		}
+		memset(buf, 0xff, num_lba * lba_size);
+
+		rqueue_init(&rq, buf, start_lba, lba_size, num_lba, lba_blocks);
+		gettimeofday(&stime, NULL);
+
+		rc = run_threads(thread_data, threads, &rw_thread, &rq);
+		if (rc != 0) {
+			fprintf(stderr, "err: run_threads unhappy rc=%d! %s\n", rc,
+				strerror(errno));
+			goto err_out;
+		}
+
+		gettimeofday(&etime, NULL);
+		diff_usec = timediff_usec(&etime, &stime);
+
+		rq.avg_read_usecs = rq.total_usecs / (num_lba/lba_blocks);
+		fprintf(stdout, "MIN: %ld usecs, MAX: %ld usecs, AVG: %ld usecs\n",
+			rq.min_read_usecs, rq.max_read_usecs, rq.avg_read_usecs);
+
+		rqueue_free(&rq);
+
+		mib_sec = (diff_usec == 0) ? 0.0 :
+			(double)(num_lba * lba_size) / diff_usec;
+
+		fprintf(stdout, "Reading/writing of %lld bytes with %d threads "
 			"took %lld usec @ %.3f MiB/sec %s\n",
 			(long long)num_lba * lba_size, threads,
 			(long long)diff_usec, mib_sec,
