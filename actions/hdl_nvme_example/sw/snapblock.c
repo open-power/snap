@@ -675,7 +675,7 @@ static int cache_unreserve(struct cache_way *e, off_t lba)
 		dfprintf(stderr, "[%s] err: LBA=%ld/%ld not consistent!\n",
 			__func__, lba, e->lba);
 		e->status = CACHE_BLOCK_UNUSED;
-		__backtrace();
+		/* __backtrace(); */
 		pthread_mutex_unlock(&entry->way_lock);
 		return -1;
 	}
@@ -684,7 +684,7 @@ static int cache_unreserve(struct cache_way *e, off_t lba)
 			"cache from %s to UNUSED!\n",
 			__func__, e, lba, e->lba, block_status_str[e->status]);
 		e->status = CACHE_BLOCK_UNUSED;
-		__backtrace();
+		/* __backtrace(); */
 	}
 
 	pthread_mutex_unlock(&entry->way_lock);
@@ -882,7 +882,7 @@ static struct cblk_req *get_read_req(struct cblk_dev *c,
 	unsigned int j;
 	struct cblk_req *req;
 
-	while (1) {
+	while (c->status == CBLK_READY) {
 		sem_wait(&c->r_busy_sem);
 		pthread_mutex_lock(&c->dev_lock);
 
@@ -927,7 +927,7 @@ static struct cblk_req *get_write_req(struct cblk_dev *c,
 	int i, slot;
 	struct cblk_req *req;
 
-	while (1) {
+	while (c->status == CBLK_READY) {
 		sem_wait(&c->w_busy_sem);
 		pthread_mutex_lock(&c->dev_lock);
 
