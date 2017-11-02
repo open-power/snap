@@ -38,12 +38,15 @@
 
 #undef CONFIG_WAIT_FOR_IRQ	/* Not working */
 #undef CONFIG_PRINT_STATUS	/* health checking if needed */
-#define CONFIG_SOFTWARE_TIME	/* measure hardware */
 
+#define CONFIG_MAX_RETRIES		5
+#define CONFIG_BUSY_TIMEOUT_SEC		10
 #define CONFIG_REQ_TIMEOUT_SEC		5
 #define CONFIG_REQ_DURATION_USEC	100000 /* usec */
 
 static int cblk_reqtimeout = CONFIG_REQ_TIMEOUT_SEC;
+static int cblk_busytimeout = CONFIG_BUSY_TIMEOUT_SEC;
+
 static int cblk_prefetch = 0;
 static int cblk_caching = 1;
 
@@ -180,6 +183,14 @@ struct cblk_req {
 	enum cblk_status status;
 	sem_t wait_sem;		/* wait here for completion */
 	uint8_t *buf;		/* data is r/w from there */
+
+	uint32_t action;
+	uint64_t dst;
+	uint64_t src;
+	uint32_t size;
+	unsigned int tries;
+	unsigned int err_total;
+
 	struct timeval stime;	/* start time */
 	struct timeval etime;	/* completion time */
 	struct timeval h_stime;	/* hardware start time */
@@ -746,50 +757,57 @@ static int __cblk_read(struct cblk_dev *c, uint32_t addr, uint32_t *data)
 	return rc;
 }
 
+static void req_setup(struct cblk_req *req,
+		uint32_t action_code,
+		uint64_t dst,
+		uint64_t src,
+		uint32_t size)
+{
+	req->action = action_code | (req->slot << 8);
+	req->dst = dst;
+	req->src = src;
+	req->size = size;
+	req->tries = 0;
+}
+
 /*
  * NVMe: For NVMe transfers n is representing a NVME_LB_SIZE (512)
  *       byte block.
  */
-static void start_memcpy(struct cblk_dev *c,
-			uint32_t action,
-			uint64_t dest,
-			uint64_t src,
-			uint32_t n)
+static void req_start(struct cblk_req *req, struct cblk_dev *c)
 {
-	uint8_t action_code = action & 0x00ff;
-	int slot = (action & 0x0f00) >> 8;
-	off_t lba;
-	struct cblk_req *req = &c->req[slot];
+	uint8_t action_code = req->action & 0x00ff;
+	int slot = req->slot;
 
-	lba = ((action_code == ACTION_CONFIG_COPY_HN) ? dest : src) /
-		(__CBLK_BLOCK_SIZE/NVME_LB_SIZE);
-
+	req->tries++;
 	block_trace("    [%s] HW %s memcpy_%x(slot=%u dest=0x%llx, "
-		"src=0x%llx n=%lld bytes) LBA=%lld\n",
+		"src=0x%llx n=%lld bytes) LBA=%ld attempts=%d\n",
 		__func__, action_name[action_code % ACTION_CONFIG_MAX],
-		action, slot, (long long)dest, (long long)src,
-		(long long)n, (long long)lba);
+		req->action, slot, (long long)req->dst, (long long)req->src,
+		(long long)req->size, req->lba, req->tries);
 
 	pthread_mutex_lock(&c->dev_lock);
+	gettimeofday(&req->stime, NULL);
 	gettimeofday(&req->h_stime, NULL);
 
-	__cblk_write(c, ACTION_CONFIG, action);
-	__cblk_write(c, ACTION_DEST_LOW, (uint32_t)(dest & 0xffffffff));
-	__cblk_write(c, ACTION_DEST_HIGH, (uint32_t)(dest >> 32));
-	__cblk_write(c, ACTION_SRC_LOW, (uint32_t)(src & 0xffffffff));
-	__cblk_write(c, ACTION_SRC_HIGH, (uint32_t)(src >> 32));
-	__cblk_write(c, ACTION_CNT, n);
+	__cblk_write(c, ACTION_CONFIG,    req->action);
+	__cblk_write(c, ACTION_DEST_LOW,  (uint32_t)(req->dst & 0xffffffff));
+	__cblk_write(c, ACTION_DEST_HIGH, (uint32_t)(req->dst >> 32));
+	__cblk_write(c, ACTION_SRC_LOW,   (uint32_t)(req->src & 0xffffffff));
+	__cblk_write(c, ACTION_SRC_HIGH,  (uint32_t)(req->src >> 32));
+	__cblk_write(c, ACTION_CNT,       req->size);
 
 	/* Wait for Action to go back to Idle */
 	snap_action_start(c->act);
 
 	/* Update statistics under device lock. Otherwise it might be off a little bit. */
+	req->tries++;
 	if (action_code == ACTION_CONFIG_COPY_HN) {
 		c->hw_block_writes++;
-		c->wbytes_total += n;
+		c->wbytes_total += req->size;
 	} else {
 		c->hw_block_reads++;
-		c->rbytes_total += n;
+		c->rbytes_total += req->size;
 	}
 
 	pthread_mutex_unlock(&c->dev_lock);
@@ -833,8 +851,9 @@ static void cblk_req_dump(struct cblk_dev *c)
 			usecs = timediff_usec(&now, &req->stime);
 			break;
 		}
-		fprintf(stderr, "  req[%2d]: %s LBA=%ld %ld usec\n", i,
-			cblk_status_str[req->status], req->lba, usecs);
+		fprintf(stderr, "  req[%2d]: %s LBA=%ld %ld usec err_total=%d\n", i,
+			cblk_status_str[req->status], req->lba, usecs,
+			req->err_total);
 	}
 }
 
@@ -860,8 +879,9 @@ static void stat_req_dump(struct cblk_dev *c)
 			usecs = timediff_usec(&now, &req->stime);
 			break;
 		}
-		stat_trace("  req[%2d]: %s LBA=%ld %ld usec\n", i,
-			cblk_status_str[req->status], req->lba, usecs);
+		stat_trace("  req[%2d]: %s LBA=%ld %ld usec err_total=%d\n", i,
+			cblk_status_str[req->status], req->lba, usecs,
+			req->err_total);
 	}
 }
 
@@ -887,7 +907,7 @@ static struct cblk_req *get_read_req(struct cblk_dev *c,
 		struct timespec ts;
 
 		clock_gettime(CLOCK_REALTIME, &ts);
-		ts.tv_sec += CONFIG_REQ_TIMEOUT_SEC;
+		ts.tv_sec += cblk_busytimeout;
 	retry:
 		rc = sem_timedwait(&c->r_busy_sem, &ts);
 		if (rc == -1) {
@@ -955,7 +975,7 @@ static struct cblk_req *get_write_req(struct cblk_dev *c,
 		struct timespec ts;
 
 		clock_gettime(CLOCK_REALTIME, &ts);
-		ts.tv_sec += CONFIG_REQ_TIMEOUT_SEC;
+		ts.tv_sec += cblk_busytimeout;
 	retry:
 		rc = sem_timedwait(&c->w_busy_sem, &ts);
 		if (rc == -1) {
@@ -1135,12 +1155,17 @@ static int check_req_timeouts(struct cblk_dev *c, struct timeval *etime,
 					__func__, i, cblk_status_str[req->status],
 					timeout_sec, diff_sec, req->lba);
 
-				errno = ETIME;
-				cblk_set_status(req, CBLK_ERROR);
-				dev_set_status(c, CBLK_ERROR);
-
-				if (req->use_wait_sem)
-					sem_post(&req->wait_sem);
+				if (req->tries >= CONFIG_MAX_RETRIES) {
+					errno = ETIME;
+					cblk_set_status(req, CBLK_ERROR);
+					dev_set_status(c, CBLK_ERROR);
+					if (req->use_wait_sem)
+						sem_post(&req->wait_sem);
+				} else {
+					/* FIXME Wonder if that helps ... */
+					req->err_total++;
+					req_start(req, c);
+				}
 			}
 		}
 	}
@@ -1188,11 +1213,11 @@ static int __prefetch_read_start(struct cblk_dev *c,
 		return -2;
 
 	c->prefetches++;
-	start_memcpy(c,					/* NVMe to Host DDR */
-		ACTION_CONFIG_COPY_NH | (req->slot << 8),
+	req_setup(req, ACTION_CONFIG_COPY_NH,		/* NVMe to Host DDR */
 		(uint64_t)req->buf,			/* dst */
 		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* src */
 		mem_size);				/* size */
+	req_start(req, c);
 
 	return 0;
 }
@@ -1426,11 +1451,17 @@ chunk_id_t cblk_open(const char *path,
 
 	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
 		struct cblk_req *req = &c->req[i];
-		
+
 		req->slot = i;
 		req->lba = 0;
 		req->nblocks = 0;
 		req->buf = c->buf + i * CBLK_NBLOCKS_MAX * __CBLK_BLOCK_SIZE;
+		req->action = 0;
+		req->dst = 0;
+		req->src = 0;
+		req->size = 0;
+		req->tries = 0;
+		req->err_total = 0;
 		cblk_set_status(req, CBLK_IDLE);
 		sem_init(&req->wait_sem, 0, 0);
 
@@ -1571,11 +1602,11 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 		return -1;
 	}
 
-	start_memcpy(c,					/* NVMe to Host DDR */
-		ACTION_CONFIG_COPY_NH | (req->slot << 8),
+	req_setup(req, ACTION_CONFIG_COPY_NH,		/* NVMe to Host DDR */
 		(uint64_t)req->buf,			/* dst */
 		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* src */
 		mem_size);				/* size */
+	req_start(req, c);
 
 	if (cblk_prefetch) {
 		unsigned int k;
@@ -1712,11 +1743,11 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 	}
 
 	memcpy(req->buf, buf, nblocks * __CBLK_BLOCK_SIZE);
-	start_memcpy(c,					/* Host DDR to NVMe */
-		ACTION_CONFIG_COPY_HN | (req->slot << 8),
+	req_setup(req, ACTION_CONFIG_COPY_HN,		/* NVMe to Host DDR */
 		lba * __CBLK_BLOCK_SIZE/NVME_LB_SIZE,	/* dst */
 		(uint64_t)req->buf,			/* src */
 		mem_size);				/* size */
+	req_start(req, c);
 
 	while (req->status == CBLK_WRITING) {
 		/* block_trace("  [%s] sleeping slot %d\n",
@@ -1773,6 +1804,10 @@ static void _init(void)
 	env = getenv("CBLK_REQTIMEOUT");
 	if (env != NULL)
 		cblk_reqtimeout = strtol(env, (char **)NULL, 0);
+
+	env = getenv("CBLK_BUSYTIMEOUT");
+	if (env != NULL)
+		cblk_busytimeout = strtol(env, (char **)NULL, 0);
 
 	env = getenv("CBLK_CACHING");
 	if (env != NULL)
