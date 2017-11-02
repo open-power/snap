@@ -884,6 +884,14 @@ static struct cblk_req *get_read_req(struct cblk_dev *c,
 
 	while (c->status == CBLK_READY) {
 		sem_wait(&c->r_busy_sem);
+
+		/* Check if device is still healthy after waiting */
+		if (c->status != CBLK_READY) {
+			block_trace("[%s] err: Device not READY, no read req given out!\n",
+				__func__);
+			return NULL;
+		}
+
 		pthread_mutex_lock(&c->dev_lock);
 
 		for (i = 0; i < CBLK_RIDX_MAX; i++) {
@@ -929,6 +937,14 @@ static struct cblk_req *get_write_req(struct cblk_dev *c,
 
 	while (c->status == CBLK_READY) {
 		sem_wait(&c->w_busy_sem);
+
+		/* Check if device is still healthy after waiting */
+		if (c->status != CBLK_READY) {
+			block_trace("[%s] err: Device not READY, no write req given out!\n",
+				__func__);
+			return NULL;
+		}
+
 		pthread_mutex_lock(&c->dev_lock);
 
 		for (i = 0; i < CBLK_WIDX_MAX; i++) {
@@ -1647,22 +1663,22 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 
 	if (c->status != CBLK_READY) {	/* device in fatal error */
 		errno = EBADFD;
-		return -1;
+		return 0;
 	}
 	if (nblocks > CBLK_NBLOCKS_WRITE_MAX) {
 		fprintf(stderr, "err: just 1 and %u supported for NBLOCKS!\n",
 			CBLK_NBLOCKS_WRITE_MAX);
 		errno = EFAULT;
-		return -1;
+		return 0;
 	}
 	req = get_write_req(c, 1, lba, nblocks);
 	if (req == NULL) {
 		errno = EIO;
-		return -1;
+		return 0;
 	}
 	if (c->status != CBLK_READY) {	/* device in fatal error */
 		errno = EBADFD;
-		return -1;
+		return 0;
 	}
 
 	memcpy(req->buf, buf, nblocks * __CBLK_BLOCK_SIZE);
