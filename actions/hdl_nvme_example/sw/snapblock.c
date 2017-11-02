@@ -883,12 +883,26 @@ static struct cblk_req *get_read_req(struct cblk_dev *c,
 	struct cblk_req *req;
 
 	while (c->status == CBLK_READY) {
-		sem_wait(&c->r_busy_sem);
+		int rc;
+		struct timespec ts;
+
+		clock_gettime(CLOCK_REALTIME, &ts);
+		ts.tv_sec += CONFIG_REQ_TIMEOUT_SEC;
+	retry:
+		rc = sem_timedwait(&c->r_busy_sem, &ts);
+		if (rc == -1) {
+			if (errno == EINTR)
+				goto retry;
+			if (errno == ETIMEDOUT)
+				return NULL;
+			fprintf(stderr, "[%s] warning: sem_timedwait returned rc=%d %s\n",
+				__func__, rc, strerror(errno));
+		}
 
 		/* Check if device is still healthy after waiting */
 		if (c->status != CBLK_READY) {
-			block_trace("[%s] err: Device not READY, no read req given out!\n",
-				__func__);
+			block_trace("[%s] err: Device not READY, no read req LBA=%ld given out!\n",
+				__func__, lba);
 			return NULL;
 		}
 
@@ -922,7 +936,8 @@ static struct cblk_req *get_read_req(struct cblk_dev *c,
 		}
 
 		pthread_mutex_unlock(&c->dev_lock);
-		block_trace("[%s] warning: No IDLE read req found!\n", __func__);
+		block_trace("[%s] warning: No IDLE read req LBA=%ld found!\n",
+			__func__, lba);
 		cblk_req_dump(c);
 	}
 	return NULL;
@@ -936,12 +951,26 @@ static struct cblk_req *get_write_req(struct cblk_dev *c,
 	struct cblk_req *req;
 
 	while (c->status == CBLK_READY) {
-		sem_wait(&c->w_busy_sem);
+		int rc;
+		struct timespec ts;
+
+		clock_gettime(CLOCK_REALTIME, &ts);
+		ts.tv_sec += CONFIG_REQ_TIMEOUT_SEC;
+	retry:
+		rc = sem_timedwait(&c->w_busy_sem, &ts);
+		if (rc == -1) {
+			if (errno == EINTR)
+				goto retry;
+			if (errno == ETIMEDOUT)
+				return NULL;
+			fprintf(stderr, "[%s] warning: sem_timedwait returned rc=%d %s\n",
+				__func__, rc, strerror(errno));
+		}
 
 		/* Check if device is still healthy after waiting */
 		if (c->status != CBLK_READY) {
-			block_trace("[%s] err: Device not READY, no write req given out!\n",
-				__func__);
+			block_trace("[%s] err: Device not READY, no write req LBA=%ld given out!\n",
+				__func__, lba);
 			return NULL;
 		}
 
@@ -969,7 +998,8 @@ static struct cblk_req *get_write_req(struct cblk_dev *c,
 			c->widx = (c->widx + 1) % CBLK_WIDX_MAX;	/* pick next widx */
 		}
 		pthread_mutex_unlock(&c->dev_lock);
-		fprintf(stderr, "[%s] warning: No IDLE write req found!\n", __func__);
+		fprintf(stderr, "[%s] warning: No IDLE write req for LBA=%ld found!\n",
+			__func__, lba);
 		cblk_req_dump(c);
 	}
 
