@@ -754,7 +754,7 @@ static int __cblk_read(struct cblk_dev *c, uint32_t addr, uint32_t *data)
 #ifdef CONFIG_MMIO32_NOHWSYNC
 	rc = snap_mmio_read32_nohwsync(c->card, (uint64_t)addr, data);
 #else
-	rc = snap_mmio_read32_nohwsync(c->card, (uint64_t)addr, data);
+	rc = snap_mmio_read32(c->card, (uint64_t)addr, data);
 #endif
 	if (0 != rc)
 		fprintf(stderr, "err: Read MMIO 32 Err %d\n", rc);
