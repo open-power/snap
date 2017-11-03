@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <endian.h>
 #include <sys/time.h>
 
 #include <libsnap.h>
@@ -92,6 +93,7 @@ struct snap_card {
 	struct cxl_afu_h *afu_h;
 	bool master;                    /* True if this is Master Device */
 	int cir;                        /* Context id */
+	void *mmio_ptr;
 	uint32_t action_base;
 	uint16_t vendor_id;
 	uint16_t device_id;
@@ -202,6 +204,11 @@ static void *hw_snap_card_alloc_dev(const char *path,
 		goto __snap_alloc_err;
 	}
 
+	rc = cxl_mmio_ptr(afu_h, &dn->mmio_ptr);
+	if (rc != 0)
+		fprintf(stderr, "[%s] cannot get mmio_ptr rc=%d %s\n",
+			__func__, rc, strerror(errno));
+
 	dn->action_base = 0;
 	cxl_mmio_read64(afu_h, SNAP_S_CIR, &reg);
 	if (0x8000000000000000 & reg)
@@ -240,7 +247,10 @@ static int hw_snap_mmio_write32(struct snap_card *card,
 		reg_trace("  %s(%p, %llx, %lx)\n", __func__, card,
 			(long long)offset, (long)data);
 		rc = cxl_mmio_write32(card->afu_h, offset, data);
-	} else reg_trace("  %s Error\n", __func__);
+	} else {
+		reg_trace("  %s Error\n", __func__);
+		errno = EINVAL;
+	}
 
 	return rc;
 }
@@ -256,9 +266,37 @@ static int hw_snap_mmio_read32(struct snap_card *card,
 		rc = cxl_mmio_read32(card->afu_h, offset, data);
 		reg_trace("  %s(%p, %llx, %lx) %d\n", __func__, card,
 			(long long)offset, (long)*data, rc);
-	} else reg_trace("  %s Error\n", __func__);
+	} else {
+		reg_trace("  %s Error\n", __func__);
+		errno = EINVAL;
+	}
 
 	return rc;
+}
+
+/**
+ * FIXME Currently experimental use. We like to figure out if extensive
+ *       use of hwsync has negative impact on performance when # threads
+ *       raises up.
+ */
+int snap_mmio_read32_nohwsync(struct snap_card *card,
+		uint64_t offset, uint32_t *data)
+{
+	int rc = -1;
+
+	if ((!card) || (!card->afu_h)) {
+		reg_trace("  %s Error\n", __func__);
+		errno = EINVAL;
+		return -1;
+	}
+
+	offset += card->action_base; /* FIXME use action_*32 instead */
+	*data = be32toh(*(uint32_t *)(card->mmio_ptr + offset));
+
+	reg_trace("  %s(%p, %llx, %lx) %d\n", __func__, card,
+		(long long)offset, (long)*data, rc);
+
+	return 0;
 }
 
 static int hw_snap_mmio_write64(struct snap_card *card,
@@ -268,8 +306,11 @@ static int hw_snap_mmio_write64(struct snap_card *card,
 
 	reg_trace("  %s(%p, %llx, %llx)\n", __func__, card,
 		  (long long)offset, (long long)data);
-	if ((card) && (card->afu_h))
+	if ((card) && (card->afu_h)) {
 		rc = cxl_mmio_write64(card->afu_h, offset, data);
+	} else {
+		errno = EINVAL;
+	}
 	return rc;
 }
 
@@ -278,9 +319,11 @@ static int hw_snap_mmio_read64(struct snap_card *card,
 {
 	int rc = -1;
 
-	if ((card) && (card->afu_h))
+	if ((card) && (card->afu_h)) {
 		rc = cxl_mmio_read64(card->afu_h, offset, data);
-
+	} else {
+		errno = EINVAL;
+	}
 	reg_trace("  %s(%p, %llx, %llx) %d\n", __func__, card,
 		  (long long)offset, (long long)*data, rc);
 

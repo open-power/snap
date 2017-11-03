@@ -257,6 +257,9 @@ int snap_mmio_write32(struct snap_card *card, uint64_t offset,
 int snap_mmio_read32(struct snap_card *card, uint64_t offset,
 			uint32_t *data);
 
+int snap_mmio_read32_nohwsync(struct snap_card *card,
+		uint64_t offset, uint32_t *data);
+
 int snap_mmio_write64(struct snap_card *card, uint64_t offset,
 			uint64_t data);
 int snap_mmio_read64(struct snap_card *card, uint64_t offset,
