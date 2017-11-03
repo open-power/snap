@@ -40,7 +40,7 @@
 #undef CONFIG_PRINT_STATUS	/* health checking if needed */
 
 #define CONFIG_MAX_RETRIES		5
-#define CONFIG_BUSY_TIMEOUT_SEC		4
+#define CONFIG_BUSY_TIMEOUT_SEC		5
 #define CONFIG_REQ_TIMEOUT_SEC		3
 #define CONFIG_REQ_DURATION_USEC	100000 /* usec */
 
