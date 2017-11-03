@@ -44,7 +44,10 @@ all: all_build
 ifdef BUILD_SIMCODE
 snap_cblk_libs += libsnapcblk.a
 else
-snap_cblk_LDFLAGS += -L.
+snap_cblk_LDFLAGS += -L. \
+	-Wl,-rpath,$(SNAP_ROOT)/actions/hdl_nvme_example/sw \
+	-Wl,-rpath,$(SNAP_ROOT)/software/lib
+
 snap_cblk_libs += -lsnapcblk
 endif
 
@@ -80,7 +83,8 @@ $(libnameB).so.$(MAJOR_VERSION): $(libnameB).so.$(libversion)
 
 $(libnameB).so.$(libversion): __$(libnameB).o
 	$(CC) $(LDFLAGS) -shared  $(SONAMEB) \
-		 -o $@ $^ $(libsB)
+		-Wl,-rpath,$(SNAP_ROOT)/software/lib \
+		-o $@ $^ $(libsB)
 
 projs += snap_nvme_example snap_cblk
 libs += $(projB)

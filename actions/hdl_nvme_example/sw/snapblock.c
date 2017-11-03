@@ -38,6 +38,7 @@
 
 #undef CONFIG_WAIT_FOR_IRQ	/* Not working */
 #undef CONFIG_PRINT_STATUS	/* health checking if needed */
+#undef CONFIG_MMIO32_NOHWSYNC	/* Do not use hwsync behind lwz */
 
 #define CONFIG_MAX_RETRIES		5
 #define CONFIG_BUSY_TIMEOUT_SEC		5
@@ -750,7 +751,11 @@ static int __cblk_read(struct cblk_dev *c, uint32_t addr, uint32_t *data)
 {
 	int rc;
 
-	rc = snap_mmio_read32(c->card, (uint64_t)addr, data);
+#ifdef CONFIG_MMIO32_NOHWSYNC
+	rc = snap_mmio_read32_nohwsync(c->card, (uint64_t)addr, data);
+#else
+	rc = snap_mmio_read32_nohwsync(c->card, (uint64_t)addr, data);
+#endif
 	if (0 != rc)
 		fprintf(stderr, "err: Read MMIO 32 Err %d\n", rc);
 
