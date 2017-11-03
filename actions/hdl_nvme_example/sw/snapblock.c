@@ -40,8 +40,8 @@
 #undef CONFIG_PRINT_STATUS	/* health checking if needed */
 
 #define CONFIG_MAX_RETRIES		5
-#define CONFIG_BUSY_TIMEOUT_SEC		10
-#define CONFIG_REQ_TIMEOUT_SEC		5
+#define CONFIG_BUSY_TIMEOUT_SEC		4
+#define CONFIG_REQ_TIMEOUT_SEC		3
 #define CONFIG_REQ_DURATION_USEC	100000 /* usec */
 
 static int cblk_reqtimeout = CONFIG_REQ_TIMEOUT_SEC;
@@ -1587,6 +1587,10 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 		errno = EBADFD;
 		return -1;
 	}
+	if ((lba < 0) || (lba >= (off_t)c->nblocks)) {	/* no valid LBA */
+		errno = EFAULT;
+		return 0;
+	}
 	if (nblocks > CBLK_NBLOCKS_MAX) {
 		fprintf(stderr, "err: temp buffer too small!\n");
 		errno = EFAULT;
@@ -1724,6 +1728,10 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 
 	if (c->status != CBLK_READY) {	/* device in fatal error */
 		errno = EBADFD;
+		return 0;
+	}
+	if ((lba < 0) || (lba >= (off_t)c->nblocks)) {	/* no valid LBA */
+		errno = EFAULT;
 		return 0;
 	}
 	if (nblocks > CBLK_NBLOCKS_WRITE_MAX) {
