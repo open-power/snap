@@ -37,6 +37,8 @@
 int verbose_flag = 0;
 static const char *version = GIT_VERSION;
 
+#define __CBLK_BLOCK_SIZE 4096	/* hardcoded this for simplicity */
+
 static int err_detected = 0;
 static int random_seed = 0;
 
@@ -382,6 +384,7 @@ static void *rw_thread(void *data)
 	struct thread_data *d = (struct thread_data *)data;
 	struct rqueue *rq = d->rq;
 	int do_read = 0;
+	uint8_t _buf[__CBLK_BLOCK_SIZE * 32];
 
 	block_trace("[%s] NEW THREAD ALIVE %u\n", __func__, d->num);
 	while (!err_detected) {
@@ -407,16 +410,32 @@ static void *rw_thread(void *data)
 		/* Perform operation */
 		if (do_read) {
 			block_trace("[%s] READING LBA=%lu ...\n", __func__, lba);
-			rc = cblk_read(cid, buf, lba, nblocks, 0);
+			rc = cblk_read(cid, _buf, lba, nblocks, 0);
+			if (rc != (int)nblocks) {
+				fprintf(stderr, "err: cblk_READ unhappy rc=%d! %s\n",
+					rc, strerror(errno));
+				goto err_out;
+			}
+			rc = memcmp(buf, _buf, rq->lba_size * nblocks);
+			if (rc != 0) {
+				fprintf(stderr, "err: verification for LBA=%ld failed\n",
+					lba);
+
+				fprintf(stderr, "ORIGINAL:\n");
+				__hexdump(stderr, buf, rq->lba_size * nblocks);
+
+				fprintf(stderr, "READOUT:\n");
+				__hexdump(stderr, _buf, rq->lba_size * nblocks);
+				goto err_out;
+			}
 		} else {
 			block_trace("[%s] WRITING LBA=%lu ...\n", __func__, lba);
 			rc = cblk_write(cid, buf, lba, nblocks, 0);
-		}
-		if (rc != (int)nblocks) {
-			fprintf(stderr, "err: cblk_%s unhappy rc=%d! %s\n",
-				do_read ? "READ" : "WRITE",
-				rc, strerror(errno));
-			goto err_out;
+			if (rc != (int)nblocks) {
+				fprintf(stderr, "err: cblk_WRITE unhappy rc=%d! %s\n",
+					rc, strerror(errno));
+				goto err_out;
+			}
 		}
 		pthread_testcancel();
 	}
@@ -721,6 +740,8 @@ int main(int argc, char *argv[])
 		break;
 	}
 	case OP_RW: {
+		uint8_t *_buf;
+		
 		fprintf(stdout, "Reading/writing %zu times %zu bytes: %zu KiB NVMe into %s\n",
 			num_lba/lba_blocks, lba_blocks * lba_size,
 			num_lba * lba_size / 1024,
@@ -751,6 +772,34 @@ int main(int argc, char *argv[])
 		}
 		memset(buf, 0xff, num_lba * lba_size);
 
+		/* Formatting part */
+		gettimeofday(&stime, NULL);
+		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
+			block_trace("  formatting lba %d ...\n", lba);
+
+			if (verbose_flag == 1) {
+				__hexdump(stderr, buf + ((lba - start_lba) * lba_size),
+					lba_size * lba_blocks);
+			}
+
+			_buf = buf + (lba - start_lba) * lba_size;
+			memset(_buf, lba, lba_size * lba_blocks);
+
+			rc = cblk_write(cid, _buf, lba, lba_blocks, 0);
+			if (rc != (int)lba_blocks)
+				goto err_out;
+		}
+		gettimeofday(&etime, NULL);
+
+		diff_usec = timediff_usec(&etime, &stime);
+		mib_sec = (diff_usec == 0) ? 0.0 :
+			(double)(num_lba * lba_size) / diff_usec;
+
+		fprintf(stdout, "Formatting of %lld bytes took %lld usec @ %.3f MiB/sec\n",
+			(long long)num_lba * lba_size, (long long)diff_usec, mib_sec);
+
+
+		/* Test part */
 		rqueue_init(&rq, buf, start_lba, lba_size, num_lba, lba_blocks);
 		gettimeofday(&stime, NULL);
 
