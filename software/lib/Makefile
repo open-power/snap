@@ -27,6 +27,7 @@ LDLIBS += -lcxl -lpthread
 #endif
 
 ifdef BUILD_SIMCODE
+CFLAGS += -D_SIM_
 LDFLAGS += -L$(PSLSE_ROOT)/libcxl
 endif
 
