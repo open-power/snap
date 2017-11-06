@@ -204,10 +204,12 @@ static void *hw_snap_card_alloc_dev(const char *path,
 		goto __snap_alloc_err;
 	}
 
+#if !defined(_SIM_)
 	rc = cxl_mmio_ptr(afu_h, &dn->mmio_ptr);
 	if (rc != 0)
 		fprintf(stderr, "[%s] cannot get mmio_ptr rc=%d %s\n",
 			__func__, rc, strerror(errno));
+#endif
 
 	dn->action_base = 0;
 	cxl_mmio_read64(afu_h, SNAP_S_CIR, &reg);
@@ -274,6 +276,7 @@ static int hw_snap_mmio_read32(struct snap_card *card,
 	return rc;
 }
 
+#if !defined(_SIM_)
 /**
  * FIXME Currently experimental use. We like to figure out if extensive
  *       use of hwsync has negative impact on performance when # threads
@@ -298,6 +301,7 @@ int snap_mmio_read32_nohwsync(struct snap_card *card,
 
 	return 0;
 }
+#endif
 
 static int hw_snap_mmio_write64(struct snap_card *card,
 				uint64_t offset, uint64_t data)
