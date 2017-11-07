@@ -1593,6 +1593,8 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 		return -1;
 	}
 	if ((lba < 0) || (lba >= (off_t)c->nblocks)) {	/* no valid LBA */
+		fprintf(stderr, "[%s] err: LBA=%ld out of range (max=%ld)!\n",
+			__func__, lba, c->nblocks);
 		errno = EFAULT;
 		return 0;
 	}
@@ -1736,6 +1738,8 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 		return 0;
 	}
 	if ((lba < 0) || (lba >= (off_t)c->nblocks)) {	/* no valid LBA */
+		fprintf(stderr, "[%s] err: LBA=%ld out of range (max=%ld)!\n",
+			__func__, lba, c->nblocks);
 		errno = EFAULT;
 		return 0;
 	}
