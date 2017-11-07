@@ -125,16 +125,21 @@ if { $use_prflow == "TRUE" } {
     add_files -scan_for_includes $hdl_dir/hls/ -of_objects [get_reconfig_modules user_action] >> $log_file
   }
   add_files -scan_for_includes $action_dir/ -of_objects [get_reconfig_modules user_action] >> $log_file
+  if { $simulator != "nosim" } {
+    if { $hls_support == "TRUE" } {
+      add_files -fileset sim_1 -norecurse -scan_for_includes $hdl_dir/hls/ >> $log_file
+    }
+    add_files -fileset sim_1 -norecurse -scan_for_includes $action_dir/ >> $log_file
+  }
 } else {
   if { $hls_support == "TRUE" } {
-    add_files -scan_for_includes $hdl_dir/hls/  >> $log_file
+    add_files -scan_for_includes $hdl_dir/hls/ >> $log_file
   }
   add_files -scan_for_includes $action_dir/ >> $log_file
 }
 
 # Sim Files
 if { $simulator != "nosim" } {
-  set_property SOURCE_SET sources_1 [get_filesets sim_1]
   add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/top.sv  >> $log_file
   set_property file_type SystemVerilog [get_files $sim_dir/core/top.sv]
   set_property used_in_synthesis false [get_files $sim_dir/core/top.sv]
@@ -214,7 +219,7 @@ foreach usr_ip [glob -nocomplain -dir $usr_ip_dir *] {
   add_files -norecurse $usr_ip_xci >> $log_file
   export_ip_user_files -of_objects  [get_files "$usr_ip_xci"] -force >> $log_file
 }
- 
+
 update_compile_order -fileset sources_1 >> $log_file
 
 # Add NVME
@@ -232,7 +237,7 @@ if { $nvme_used == TRUE } {
   if { $simulator != "nosim" } {
     puts "                        adding Denali simulation files"
     add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme/
-    add_files -fileset sim_1 -scan_for_includes $ip_dir/nvme/axi_pcie3_0_ex/imports/xil_sig2pipe.v   
+    add_files -fileset sim_1 -scan_for_includes $ip_dir/nvme/axi_pcie3_0_ex/imports/xil_sig2pipe.v
 
     set denali $::env(DENALI)
     add_files -fileset sim_1 -norecurse -scan_for_includes $denali/ddvapi/verilog/denaliPcie.v
@@ -297,7 +302,7 @@ if { $fpga_card == "ADKU3" } {
       set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/action_pblock.xdc]
       add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/snap_pblock.xdc
       set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/snap_pblock.xdc]
-    }    
+    }
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_refclk266.xdc
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_ddr4pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/N250S/snap_ddr4pins.xdc]
@@ -307,7 +312,7 @@ if { $fpga_card == "ADKU3" } {
     if { $use_prflow == "TRUE" } {
       add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/nvme_pblock.xdc
       set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/nvme_pblock.xdc]
-    }    
+    }
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_refclk100.xdc
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_nvme.xdc
   }
