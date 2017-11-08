@@ -294,7 +294,7 @@ config: hw_project
 image: .hw_project_done
 ifeq ($(USE_PRFLOW),TRUE)
 	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
-	snap-cloud-build
+	snap-cloud-build ${SNAP_ROOT}/snap_env.sh
 	@echo -e "[BUILD IMAGE.........] end `date +"%T %a %b %d %Y"`\n"
 else
   @if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
