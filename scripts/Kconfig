@@ -102,6 +102,7 @@ choice
         config HLS_HELLOWORLD
             bool "HLS HelloWorld"
             select ENABLE_HLS_SUPPORT
+            select DISABLE_SDRAM_AND_BRAM
 
 endchoice
 
