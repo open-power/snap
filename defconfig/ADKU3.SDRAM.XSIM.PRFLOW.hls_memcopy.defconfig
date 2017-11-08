@@ -1,0 +1,47 @@
+#
+# Automatically generated file; DO NOT EDIT.
+# Kernel Configuration
+#
+# N250S is not set
+ADKU3=y
+FPGACARD="ADKU3"
+FPGACHIP="xcku060-ffva1156-2-e"
+NUM_OF_ACTIONS=1
+# HLS_ACTION is not set
+# HDL_ACTION is not set
+# HDL_EXAMPLE is not set
+HLS_MEMCOPY=y
+# HLS_SPONGE is not set
+# HLS_HASHJOIN is not set
+# HLS_SEARCH is not set
+# HLS_BFS is not set
+# HLS_INTERSECT is not set
+# HLS_HELLOWORLD is not set
+ENABLE_HLS_SUPPORT=y
+HLS_SUPPORT="TRUE"
+# DISABLE_SDRAM_AND_BRAM is not set
+FORCE_SDRAM_OR_BRAM=y
+FORCE_SDRAM=y
+ENABLE_SDRAM=y
+SDRAM_USED="TRUE"
+BRAM_USED="FALSE"
+ENABLE_DDR3=y
+DDR3_USED="TRUE"
+DDR4_USED="FALSE"
+ENABLE_DDRI=y
+DDRI_USED="TRUE"
+# FORCE_NVME is not set
+NVME_USED="FALSE"
+SIM_XSIM=y
+# NO_SIM is not set
+SIMULATOR="xsim"
+
+#
+# ================= Advanced Options: =================
+#
+ILA_DEBUG="FALSE"
+FACTORY_IMAGE="FALSE"
+ENABLE_PRFLOW=y
+USE_PRFLOW="TRUE"
+ENABLE_CLOUD_BUILD_BITFILE=y
+CLOUD_BUILD_BITFILE="TRUE"
