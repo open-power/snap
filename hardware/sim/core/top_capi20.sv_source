@@ -27,56 +27,56 @@ module top (
    import "DPI-C" function void psl_bfm_init( );
    import "DPI-C" function void set_simulation_time(input [0:63] simulationTime);
    import "DPI-C" function void get_simuation_error(inout simulationError);
-   import "DPI-C" function void psl_bfm( input ha_pclock, 
-             inout           ha_jval_top, 
-             inout  [0:7]    ha_jcom_top, 
-             inout           ha_jcompar_top, 
+   import "DPI-C" function void psl_bfm( input ha_pclock,
+             inout           ha_jval_top,
+             inout  [0:7]    ha_jcom_top,
+             inout           ha_jcompar_top,
              inout  [0:63]   ha_jea_top,
-	     inout           ha_jeapar_top, 
-             input           ah_jrunning_top,  
+	     inout           ha_jeapar_top,
+             input           ah_jrunning_top,
              input           ah_jdone_top,
-	     input           ah_jcack_top, 
-             input  [0:63]   ah_jerror_top, 
-             input  [0:3]    ah_brlat_top,  
+	     input           ah_jcack_top,
+             input  [0:63]   ah_jerror_top,
+             input  [0:3]    ah_brlat_top,
 //             input           ah_jyield,
-	     input           ah_tbreq_top, 
-             input           ah_paren_top, 
+	     input           ah_tbreq_top,
+             input           ah_paren_top,
              inout           ha_mmval_top,
-             inout           ha_mmcfg_top, 
-             inout           ha_mmrnw_top, 
+             inout           ha_mmcfg_top,
+             inout           ha_mmrnw_top,
              inout           ha_mmdw_top,
-             inout  [0:23]   ha_mmad_top, 
-             inout           ha_mmadpar_top, 
-             inout  [0:63]   ha_mmdata_top, 
+             inout  [0:23]   ha_mmad_top,
+             inout           ha_mmadpar_top,
+             inout  [0:63]   ha_mmdata_top,
              inout           ha_mmdatapar_top,
-             input           ah_mmack_top, 
-             input [0:63]    ah_mmdata_top, 
+             input           ah_mmack_top,
+             input [0:63]    ah_mmdata_top,
              input           ah_mmdatapar_top,
              inout  [0:7]    ha_croom_top,
-             input           ah_cvalid_top, 
-             input  [0:7]    ah_ctag_top, 
-             input           ah_ctagpar_top, 
-             input  [0:12]   ah_com_top, 
-             input           ah_compar_top, 
-             input  [0:2]    ah_cabt_top, 
-             input  [0:63]   ah_cea_top, 
-             input           ah_ceapar_top, 
-             input  [0:15]   ah_cch_top, 
-             input  [0:11]   ah_csize_top, 
-             input  [0:3]    ah_cpagesize_top, 
-             inout           ha_brvalid_top, 
-             inout  [0:7]    ha_brtag_top, 
-             inout           ha_brtagpar_top, 
-             input [0:1023]  ah_brdata_top, 
-             input [0:15]    ah_brpar_top, 
-             input           ah_brvalid_top, 
+             input           ah_cvalid_top,
+             input  [0:7]    ah_ctag_top,
+             input           ah_ctagpar_top,
+             input  [0:12]   ah_com_top,
+             input           ah_compar_top,
+             input  [0:2]    ah_cabt_top,
+             input  [0:63]   ah_cea_top,
+             input           ah_ceapar_top,
+             input  [0:15]   ah_cch_top,
+             input  [0:11]   ah_csize_top,
+             input  [0:3]    ah_cpagesize_top,
+             inout           ha_brvalid_top,
+             inout  [0:7]    ha_brtag_top,
+             inout           ha_brtagpar_top,
+             input [0:1023]  ah_brdata_top,
+             input [0:15]    ah_brpar_top,
+             input           ah_brvalid_top,
              input [0:7]     ah_brtag_top,
-             inout           ha_bwvalid_top, 
+             inout           ha_bwvalid_top,
              inout  [0:7]    ha_bwtag_top, 		// 8 bits
              inout           ha_bwtagpar_top,
              inout  [0:1023] ha_bwdata_top, 		// 1024 bits
              inout  [0:15]   ha_bwpar_top,	// 16 bits
-             inout           ha_rvalid_top, 
+             inout           ha_rvalid_top,
              inout  [0:7]    ha_rtag_top, 		// 8 bits
              inout           ha_rtagpar_top,
              inout  [0:8]    ha_rditag_top,
@@ -95,15 +95,15 @@ module top (
              input  [0:1023] d0h_ddata_top,
              input  [0:5]    d0h_datomic_op_top,
              input           d0h_datomic_le_top,
-	     inout           hd0_sent_utag_valid_top, 
-	     inout  [0:9]    hd0_sent_utag_top, 
-	     inout  [0:2]    hd0_sent_utag_sts_top, 
-	     inout           hd0_cpl_valid_top, 
-	     inout  [0:9]    hd0_cpl_utag_top, 
-	     inout  [0:2]    hd0_cpl_type_top, 
-	     inout  [0:9]    hd0_cpl_size_top, 
-	     inout  [0:9]    hd0_cpl_laddr_top, 
-	     inout  [0:9]    hd0_cpl_byte_count_top, 
+	     inout           hd0_sent_utag_valid_top,
+	     inout  [0:9]    hd0_sent_utag_top,
+	     inout  [0:2]    hd0_sent_utag_sts_top,
+	     inout           hd0_cpl_valid_top,
+	     inout  [0:9]    hd0_cpl_utag_top,
+	     inout  [0:2]    hd0_cpl_type_top,
+	     inout  [0:9]    hd0_cpl_size_top,
+	     inout  [0:9]    hd0_cpl_laddr_top,
+	     inout  [0:9]    hd0_cpl_byte_count_top,
              inout  [0:1023] hd0_cpl_data_top,
              input           d1h_dvalid_top,
              input  [0:9]    d1h_req_utag_top,
@@ -113,15 +113,15 @@ module top (
              input  [0:1023] d1h_ddata_top,
              input  [0:5]    d1h_datomic_op_top,
              input           d1h_datomic_le_top,
-	     inout           hd1_sent_utag_valid_top, 
-	     inout  [0:9]    hd1_sent_utag_top, 
-	     inout  [0:2]    hd1_sent_utag_sts_top, 
-	     inout           hd1_cpl_valid_top, 
-	     inout  [0:9]    hd1_cpl_utag_top, 
-	     inout  [0:2]    hd1_cpl_type_top, 
-	     inout  [0:9]    hd1_cpl_size_top, 
-	     inout  [0:9]    hd1_cpl_laddr_top, 
-	     inout  [0:9]    hd1_cpl_byte_count_top, 
+	     inout           hd1_sent_utag_valid_top,
+	     inout  [0:9]    hd1_sent_utag_top,
+	     inout  [0:2]    hd1_sent_utag_sts_top,
+	     inout           hd1_cpl_valid_top,
+	     inout  [0:9]    hd1_cpl_utag_top,
+	     inout  [0:2]    hd1_cpl_type_top,
+	     inout  [0:9]    hd1_cpl_size_top,
+	     inout  [0:9]    hd1_cpl_laddr_top,
+	     inout  [0:9]    hd1_cpl_byte_count_top,
              inout  [0:1023] hd1_cpl_data_top
              );
   // Input
@@ -520,23 +520,20 @@ module top (
   // Clock generation
   // 250MHz AFU clock
   always begin
-     #(4.0ns / 2.0);
-     ha_pclock = !ha_pclock;
+     ha_pclock = !ha_pclock; #(4.0ns / 2.0);  // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 
   //
-  // System Reset Logic 
-  // Note: The HW generates a 16384x8ns=131ms reset pulse for NVMe, 
-  //       in simulation a 100ns pulse should be sufficient. 
-  //       Also use the reset to reset the DDR4 DIMM model 
-  reg sys_reset_n_q;		
-  initial begin                 
-     sys_reset_n_q <= 1;
-     #10ns           
-     sys_reset_n_q <= 0;        
-     #100ns;                       
-     sys_reset_n_q <= 1 ;        
-  end                           
+  // System Reset Logic
+  // Note: The HW generates a 16384x8ns=131ms reset pulse for NVMe,
+  //       in simulation a 100ns pulse should be sufficient.
+  //       Also use the reset to reset the DDR4 DIMM model
+  reg sys_reset_n_q;
+  initial begin
+     sys_reset_n_q <= 1;  #10ns;   // a line can not start with "#", because SNAP is unsing the C preprocessor
+     sys_reset_n_q <= 0;  #100ns;  // a line can not start with "#", because SNAP is unsing the C preprocessor
+     sys_reset_n_q <= 1 ;
+  end
   // Currently unused inputs
   assign ha_rcachestate = 0;
   assign ha_rcachepos   = 0;
@@ -582,56 +579,56 @@ module top (
     simulationTime = $time;
     set_simulation_time(simulationTime);
 //    $display("%d : Calling to C ", simulationTime);
-    psl_bfm( ha_pclock, 
-             ha_jval_top, 
-             ha_jcom_top, 
-             ha_jcompar_top, 
+    psl_bfm( ha_pclock,
+             ha_jval_top,
+             ha_jcom_top,
+             ha_jcompar_top,
              ha_jea_top,
-	     ha_jeapar_top, 
-             ah_jrunning_top,  
+	     ha_jeapar_top,
+             ah_jrunning_top,
              ah_jdone_top,
-	     ah_jcack_top, 
-             ah_jerror_top, 
-             ah_brlat_top,  
+	     ah_jcack_top,
+             ah_jerror_top,
+             ah_brlat_top,
 //             ah_jyield,
-	     ah_tbreq_top, 
-             ah_paren_top, 
+	     ah_tbreq_top,
+             ah_paren_top,
              ha_mmval_top,
-             ha_mmcfg_top, 
-             ha_mmrnw_top, 
+             ha_mmcfg_top,
+             ha_mmrnw_top,
              ha_mmdw_top,
-             ha_mmad_top, 
-             ha_mmadpar_top, 
-             ha_mmdata_top, 
+             ha_mmad_top,
+             ha_mmadpar_top,
+             ha_mmdata_top,
              ha_mmdatapar_top,
-             ah_mmack_top, 
-             ah_mmdata_top, 
+             ah_mmack_top,
+             ah_mmdata_top,
              ah_mmdatapar_top,
              ha_croom_top,
-             ah_cvalid_top, 
-             ah_ctag_top, 
-             ah_ctagpar_top, 
-             ah_com_top, 
-             ah_compar_top, 
-             ah_cabt_top, 
-             ah_cea_top, 
-             ah_ceapar_top, 
-             ah_cch_top, 
-             ah_csize_top, 
-             ah_cpagesize_top, 
-             ha_brvalid_top, 
-             ha_brtag_top, 
-             ha_brtagpar_top, 
-             ah_brdata_top, 
-             ah_brpar_top, 
-             ah_brvalid_top, 
+             ah_cvalid_top,
+             ah_ctag_top,
+             ah_ctagpar_top,
+             ah_com_top,
+             ah_compar_top,
+             ah_cabt_top,
+             ah_cea_top,
+             ah_ceapar_top,
+             ah_cch_top,
+             ah_csize_top,
+             ah_cpagesize_top,
+             ha_brvalid_top,
+             ha_brtag_top,
+             ha_brtagpar_top,
+             ah_brdata_top,
+             ah_brpar_top,
+             ah_brvalid_top,
              ah_brtag_top,
-             ha_bwvalid_top, 
+             ha_bwvalid_top,
              ha_bwtag_top, 		// 8 bits
              ha_bwtagpar_top,
              ha_bwdata_top, 		// 1024 bits
              ha_bwpar_top,	// 16 bits
-             ha_rvalid_top, 
+             ha_rvalid_top,
              ha_rtag_top, 		// 8 bits
              ha_rtagpar_top,
              ha_rditag_top,		// 9 bits
@@ -643,40 +640,40 @@ module top (
              ha_rcachepos_top, 		// 13 bits
              ha_rcredits_top,		// 9 bits
              d0h_dvalid_top, 		// DMA Port 0
-             d0h_req_utag_top, 
-             d0h_req_itag_top, 
-             d0h_dtype_top, 
-             d0h_dsize_top, 
-             d0h_ddata_top, 
-             d0h_datomic_op_top, 
-             d0h_datomic_le_top, 
-	     hd0_sent_utag_valid_top, 
-	     hd0_sent_utag_top, 
-	     hd0_sent_utag_sts_top, 
-	     hd0_cpl_valid_top,  
-	     hd0_cpl_utag_top,  
-	     hd0_cpl_type_top,  
-	     hd0_cpl_size_top,  
-	     hd0_cpl_laddr_top,  
-	     hd0_cpl_byte_count_top,  
-	     hd0_cpl_data_top,  
+             d0h_req_utag_top,
+             d0h_req_itag_top,
+             d0h_dtype_top,
+             d0h_dsize_top,
+             d0h_ddata_top,
+             d0h_datomic_op_top,
+             d0h_datomic_le_top,
+	     hd0_sent_utag_valid_top,
+	     hd0_sent_utag_top,
+	     hd0_sent_utag_sts_top,
+	     hd0_cpl_valid_top,
+	     hd0_cpl_utag_top,
+	     hd0_cpl_type_top,
+	     hd0_cpl_size_top,
+	     hd0_cpl_laddr_top,
+	     hd0_cpl_byte_count_top,
+	     hd0_cpl_data_top,
              d1h_dvalid_top, 		// DMA Port 1
-             d1h_req_utag_top, 
-             d1h_req_itag_top, 
-             d1h_dtype_top, 
-             d1h_dsize_top, 
-             d1h_ddata_top, 
-             d1h_datomic_op_top, 
-             d1h_datomic_le_top, 
-	     hd1_sent_utag_valid_top, 
-	     hd1_sent_utag_top, 
-	     hd1_sent_utag_sts_top, 
-	     hd1_cpl_valid_top,  
-	     hd1_cpl_utag_top,  
-	     hd1_cpl_type_top,  
-	     hd1_cpl_size_top,  
-	     hd1_cpl_laddr_top,  
-	     hd1_cpl_byte_count_top,  
+             d1h_req_utag_top,
+             d1h_req_itag_top,
+             d1h_dtype_top,
+             d1h_dsize_top,
+             d1h_ddata_top,
+             d1h_datomic_op_top,
+             d1h_datomic_le_top,
+	     hd1_sent_utag_valid_top,
+	     hd1_sent_utag_top,
+	     hd1_sent_utag_sts_top,
+	     hd1_cpl_valid_top,
+	     hd1_cpl_utag_top,
+	     hd1_cpl_type_top,
+	     hd1_cpl_size_top,
+	     hd1_cpl_laddr_top,
+	     hd1_cpl_byte_count_top,
 	     hd1_cpl_data_top
              );
   end
@@ -941,7 +938,7 @@ module top (
 
 //  assign ha_brad = {5'b0, brhalf};
   assign ha_brad = {6'b0};
- 
+
   always @ (posedge ha_pclock) begin
 //    brdata_delay <= ah_brdata;
   end
@@ -1046,96 +1043,70 @@ module top (
     ha_rcredits <= 9'h1;		// Defined as reserved, but requires a static value of 9'b000000001 to indicate 1 credit is always
   end
 
-  //////////////////////////////////////////////////////////////////////////////
-  // SNAP LOGIC
-  //////////////////////////////////////////////////////////////////////////////
-  // Signal definition 
-  // DDR3 Sinals                                       //-- only for DDR3_USED=TRUE 
-  wire  [ 1:0] c0_ddr3_ck_p;                           //-- only for DDR3_USED=TRUE 	
-  wire  [ 1:0] c0_ddr3_ck_n;  			       //-- only for DDR3_USED=TRUE 	
-  wire         c0_ddr3_reset_n;			       //-- only for DDR3_USED=TRUE 	
-  wire  [ 1:0] c0_ddr3_cke;			       //-- only for DDR3_USED=TRUE 	
-  wire  [ 1:0] c0_ddr3_cs_n;			       //-- only for DDR3_USED=TRUE 	
-  wire         c0_ddr3_ras_n; 			       //-- only for DDR3_USED=TRUE 	
-  wire         c0_ddr3_cas_n;			       //-- only for DDR3_USED=TRUE 	
-  wire         c0_ddr3_we_n; 			       //-- only for DDR3_USED=TRUE 	
-  wire  [ 1:0] c0_ddr3_odt;			       //-- only for DDR3_USED=TRUE 	
-  wire  [ 8:0] c0_ddr3_dm;  			       //-- only for DDR3_USED=TRUE 	
-  wire  [ 2:0] c0_ddr3_ba;  			       //-- only for DDR3_USED=TRUE 	
-  wire  [15:0] c0_ddr3_addr;  			       //-- only for DDR3_USED=TRUE 	
-  wire  [71:0] c0_ddr3_dq;      		       //-- only for DDR3_USED=TRUE 	
-  wire  [ 8:0] c0_ddr3_dqs_p;    		       //-- only for DDR3_USED=TRUE 	
-  wire  [ 8:0] c0_ddr3_dqs_n;			       //-- only for DDR3_USED=TRUE 	
-  // DDR4 Signals        			       //-- only for DDR4_USED=TRUE 	
-  wire          c0_ddr4_act_n;                         //-- only for DDR4_USED=TRUE 	
-  wire  [16:0]  c0_ddr4_adr;     		       //-- only for DDR4_USED=TRUE 	
-  wire  [1:0]   c0_ddr4_ba;      		       //-- only for DDR4_USED=TRUE 	
-  wire  [0:0]   c0_ddr4_bg;      		       //-- only for DDR4_USED=TRUE 	
-  wire  [0:0]   c0_ddr4_cke;     		       //-- only for DDR4_USED=TRUE 	
-  wire  [0:0]   c0_ddr4_odt;     		       //-- only for DDR4_USED=TRUE 	
-  wire  [0:0]   c0_ddr4_cs_n;    		       //-- only for DDR4_USED=TRUE 	
-  wire  [0:0]   c0_ddr4_ck_t;     		       //-- only for DDR4_USED=TRUE 	
-  wire  [0:0]   c0_ddr4_ck_c;     		       //-- only for DDR4_USED=TRUE 	
-  wire          c0_ddr4_reset_n; 		       //-- only for DDR4_USED=TRUE 	
-  wire  [8:0]   c0_ddr4_dm_dbi_n;		       //-- only for DDR4_USED=TRUE 	
-  wire  [71:0]  c0_ddr4_dq;      		       //-- only for DDR4_USED=TRUE 	
-  wire  [8:0]   c0_ddr4_dqs_c;   		       //-- only for DDR4_USED=TRUE 	
-  wire  [8:0]   c0_ddr4_dqs_t;   		       //-- only for DDR4_USED=TRUE 	
-  // NVME Signals        			       //-- only for NVME_USED=TRUE 	
-  wire  [ 3:0] pcie_rc0_rxn;                           //-- only for NVME_USED=TRUE
-  wire  [ 3:0] pcie_rc0_rxp;                           //-- only for NVME_USED=TRUE
-  wire  [ 3:0] pcie_rc0_txn;                           //-- only for NVME_USED=TRUE
-  wire  [ 3:0] pcie_rc0_txp;                           //-- only for NVME_USED=TRUE
-  wire  [ 3:0] pcie_rc1_rxn;                           //-- only for NVME_USED=TRUE
-  wire  [ 3:0] pcie_rc1_rxp;                           //-- only for NVME_USED=TRUE
-  wire  [ 3:0] pcie_rc1_txn;                           //-- only for NVME_USED=TRUE
-  wire  [ 3:0] pcie_rc1_txp;                           //-- only for NVME_USED=TRUE
-                                                       //-- only for DDRI_USED=TRUE
-  // SDRAM Reference Clock generation                  //-- only for DDRI_USED=TRUE
-  reg       refclk_sdram_p;                            //-- only for DDRI_USED=TRUE
-  initial   refclk_sdram_p <= 0;                       //-- only for DDRI_USED=TRUE 	
- 						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3	
-  // 200MHz ADKU3 reference clock		       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
-  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3	
-     #(5ns / 2.0);				       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3	
-     refclk_sdram_p = !refclk_sdram_p;	               //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3	
-  end						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3	
- 						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S	
-  // 266MHz N250S reference clock		       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S
-  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S	
-     #(3.752ns / 2.0);				       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S	
-     refclk_sdram_p = !refclk_sdram_p;	               //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S	
-  end						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S	
-                                                       //-- only for DDRI_USED=TRUE
-  // SDRAM System Clock generation                     //-- only for DDRI_USED=TRUE
-  reg       sys_clk_p;		           	       //-- only for DDRI_USED=TRUE 	
-  initial   sys_clk_p <= 0;			       //-- only for DDRI_USED=TRUE 	
-                                                       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3 
-  // 400MHz DDR3 system clock			       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3 	
-  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3 	
-     #(2.5ns / 2.0);   			               //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3 	
-     sys_clk_p = !sys_clk_p;		               //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3 	
-  end                                                  //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
-                                                       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 
-  // 266MHz DDR4 system clock			       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 	
-  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 	
-     #(3.752ns / 2.0);			               //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 	
-     sys_clk_p = !sys_clk_p;		               //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 	
-  end						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 	
-                                                       //-- only for NVME_USED=TRUE
-  // NVME Reference Clock generation                   //-- only for NVME_USED=TRUE
-  reg refclk_nvme_p;                                   //-- only for NVME_USED=TRUE
-  initial refclk_nvme_p <= 0;			       //-- only for NVME_USED=TRUE
-                                                       //-- only for NVME_USED=TRUE
-  // 100MHz NVME reference clock                       //-- only for NVME_USED=TRUE
-  always begin					       //-- only for NVME_USED=TRUE
-     #(10.0ns / 2);			               //-- only for NVME_USED=TRUE
-     refclk_nvme_p = !refclk_nvme_p;		       //-- only for NVME_USED=TRUE
-  end						       //-- only for NVME_USED=TRUE
-    						       //-- only for NVME_USED=TRUE
-  //////////////////////////////////////////////////////////////////////////////
-  // AFU instance
-  //////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////
+  // SNAP LOGIC                                             //
+  ////////////////////////////////////////////////////////////
+  // Signal definition
+#ifdef CONFIG_ENABLE_DDR4
+  // DDR4 Signals
+  wire          c0_ddr4_act_n;
+  wire  [16:0]  c0_ddr4_adr;
+  wire  [1:0]   c0_ddr4_ba;
+  wire  [0:0]   c0_ddr4_bg;
+  wire  [0:0]   c0_ddr4_cke;
+  wire  [0:0]   c0_ddr4_odt;
+  wire  [0:0]   c0_ddr4_cs_n;
+  wire  [0:0]   c0_ddr4_ck_t;
+  wire  [0:0]   c0_ddr4_ck_c;
+  wire          c0_ddr4_reset_n;
+  wire  [8:0]   c0_ddr4_dm_dbi_n;
+  wire  [71:0]  c0_ddr4_dq;
+  wire  [8:0]   c0_ddr4_dqs_c;
+  wire  [8:0]   c0_ddr4_dqs_t;
+#endif
+#ifdef CONFIG_ENABLE_NVME
+  // NVME Signals
+  wire  [ 3:0] pcie_rc0_rxn;
+  wire  [ 3:0] pcie_rc0_rxp;
+  wire  [ 3:0] pcie_rc0_txn;
+  wire  [ 3:0] pcie_rc0_txp;
+  wire  [ 3:0] pcie_rc1_rxn;
+  wire  [ 3:0] pcie_rc1_rxp;
+  wire  [ 3:0] pcie_rc1_txn;
+  wire  [ 3:0] pcie_rc1_txp;
+#endif
+#ifdef CONFIG_ENABLE_DDRI
+  // SDRAM Reference Clock generation
+  reg       refclk_sdram_p;
+  initial   refclk_sdram_p <= 0;
+
+  // 266MHz N250SP reference clock
+  always begin
+     refclk_sdram_p = !refclk_sdram_p; #(3.752ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end
+
+  // SDRAM System Clock generation
+  reg       sys_clk_p;
+  initial   sys_clk_p <= 0;
+
+  // 266MHz DDR4 system clock
+  always begin
+     sys_clk_p = !sys_clk_p; #(3.752ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end
+#endif
+#if CONFIG_ENABLE_NVME
+  // NVME Reference Clock generation
+  reg refclk_nvme_p;
+  initial refclk_nvme_p <= 0;
+
+  // 100MHz NVME reference clock
+  always begin
+     refclk_nvme_p = !refclk_nvme_p; #(10.0ns / 2); // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end
+#endif
+  ////////////////////////////////////////////////////////////
+  // AFU instance                                           //
+  ////////////////////////////////////////////////////////////
   psl_accel a0 (
     // Command interface
     .ah_cvalid(ah_cvalid),
@@ -1202,57 +1173,65 @@ module top (
 //    .ah_jyield(ah_jyield),	- mcp004 does not seem to have this port
     .ah_tbreq(ah_tbreq),
     .ah_paren(ah_paren),
-    .refclk_sdram_p         (refclk_sdram_p),               //-- only for DDRI_USED=TRUE
-    .refclk_sdram_n         (~refclk_sdram_p),              //-- only for DDRI_USED=TRUE
-    // DDR3                                                 //-- only for DDR3_USED=TRUE
-    .c0_sys_clk_p           (sys_clk_p),                    //-- only for DDR3_USED=TRUE
-    .c0_sys_clk_n           (~sys_clk_p),                   //-- only for DDR3_USED=TRUE
-    .c0_ddr3_ck_p           (c0_ddr3_ck_p),                 //-- only for DDR3_USED=TRUE
-    .c0_ddr3_ck_n           (c0_ddr3_ck_n),                 //-- only for DDR3_USED=TRUE
-    .c0_ddr3_reset_n        (c0_ddr3_reset_n),              //-- only for DDR3_USED=TRUE
-    .c0_ddr3_cke            (c0_ddr3_cke),                  //-- only for DDR3_USED=TRUE
-    .c0_ddr3_cs_n           (c0_ddr3_cs_n),                 //-- only for DDR3_USED=TRUE
-    .c0_ddr3_ras_n          (c0_ddr3_ras_n),                //-- only for DDR3_USED=TRUE
-    .c0_ddr3_cas_n          (c0_ddr3_cas_n),                //-- only for DDR3_USED=TRUE
-    .c0_ddr3_we_n           (c0_ddr3_we_n),                 //-- only for DDR3_USED=TRUE
-    .c0_ddr3_odt            (c0_ddr3_odt),                  //-- only for DDR3_USED=TRUE
-    .c0_ddr3_dm             (c0_ddr3_dm),                   //-- only for DDR3_USED=TRUE
-    .c0_ddr3_ba             (c0_ddr3_ba),                   //-- only for DDR3_USED=TRUE
-    .c0_ddr3_addr           (c0_ddr3_addr),                 //-- only for DDR3_USED=TRUE
-    .c0_ddr3_dq             (c0_ddr3_dq),                   //-- only for DDR3_USED=TRUE
-    .c0_ddr3_dqs_p          (c0_ddr3_dqs_p),                //-- only for DDR3_USED=TRUE
-    .c0_ddr3_dqs_n          (c0_ddr3_dqs_n),                //-- only for DDR3_USED=TRUE
-    // DDR4                                                 //-- only for DDR4_USED=TRUE
-    .c0_sys_clk_p           (sys_clk_p),                    //-- only for DDR4_USED=TRUE
-    .c0_sys_clk_n           (~sys_clk_p),                   //-- only for DDR4_USED=TRUE
-    .c0_ddr4_act_n          (c0_ddr4_act_n),                //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_adr            (c0_ddr4_adr),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_ba             (c0_ddr4_ba),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_bg             (c0_ddr4_bg),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_cke            (c0_ddr4_cke),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_odt            (c0_ddr4_odt),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_cs_n           (c0_ddr4_cs_n),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_ck_t           (c0_ddr4_ck_t),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_ck_c           (c0_ddr4_ck_c),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_reset_n        (c0_ddr4_reset_n),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_dq             (c0_ddr4_dq),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t),		    //-- only for DDR4_USED=TRUE  
-    // NVME                                                 //-- only for NVME_USED=TRUE
-    .nvme_reset_n           (sys_reset_n_q),                //-- only for NVME_USED=TRUE
-    .refclk_nvme_ch0_p(refclk_nvme_p),                      //-- only for NVME_USED=TRUE
-    .refclk_nvme_ch0_n(~refclk_nvme_p),                     //-- only for NVME_USED=TRUE
-    .refclk_nvme_ch1_p(refclk_nvme_p),                      //-- only for NVME_USED=TRUE
-    .refclk_nvme_ch1_n(~refclk_nvme_p),                     //-- only for NVME_USED=TRUE
-    .pcie_rc0_rxn(pcie_rc0_rxn),                            //-- only for NVME_USED=TRUE
-    .pcie_rc0_rxp(pcie_rc0_rxp),                            //-- only for NVME_USED=TRUE
-    .pcie_rc0_txn(pcie_rc0_txn),                            //-- only for NVME_USED=TRUE 
-    .pcie_rc0_txp(pcie_rc0_txp),                            //-- only for NVME_USED=TRUE
-    .pcie_rc1_rxn(pcie_rc1_rxn),    		            //-- only for NVME_USED=TRUE
-    .pcie_rc1_rxp(pcie_rc1_rxp),    		            //-- only for NVME_USED=TRUE
-    .pcie_rc1_txn(pcie_rc1_txn),    		            //-- only for NVME_USED=TRUE
-    .pcie_rc1_txp(pcie_rc1_txp),                            //-- only for NVME_USED=TRUE	
+#ifdef CONFIG_ENABLE_DDRI
+    .refclk_sdram_p         (refclk_sdram_p),
+    .refclk_sdram_n         (~refclk_sdram_p),
+#endif
+#ifdef CONFIG_ENABLE_DDR3
+    // DDR3
+    .c0_sys_clk_p           (sys_clk_p),
+    .c0_sys_clk_n           (~sys_clk_p),
+    .c0_ddr3_ck_p           (c0_ddr3_ck_p),
+    .c0_ddr3_ck_n           (c0_ddr3_ck_n),
+    .c0_ddr3_reset_n        (c0_ddr3_reset_n),
+    .c0_ddr3_cke            (c0_ddr3_cke),
+    .c0_ddr3_cs_n           (c0_ddr3_cs_n),
+    .c0_ddr3_ras_n          (c0_ddr3_ras_n),
+    .c0_ddr3_cas_n          (c0_ddr3_cas_n),
+    .c0_ddr3_we_n           (c0_ddr3_we_n),
+    .c0_ddr3_odt            (c0_ddr3_odt),
+    .c0_ddr3_dm             (c0_ddr3_dm),
+    .c0_ddr3_ba             (c0_ddr3_ba),
+    .c0_ddr3_addr           (c0_ddr3_addr),
+    .c0_ddr3_dq             (c0_ddr3_dq),
+    .c0_ddr3_dqs_p          (c0_ddr3_dqs_p),
+    .c0_ddr3_dqs_n          (c0_ddr3_dqs_n),
+#endif
+#ifdef CONFIG_ENABLE_DDR4
+    // DDR4
+    .c0_sys_clk_p           (sys_clk_p),
+    .c0_sys_clk_n           (~sys_clk_p),
+    .c0_ddr4_act_n          (c0_ddr4_act_n),
+    .c0_ddr4_adr            (c0_ddr4_adr),
+    .c0_ddr4_ba             (c0_ddr4_ba),
+    .c0_ddr4_bg             (c0_ddr4_bg),
+    .c0_ddr4_cke            (c0_ddr4_cke),
+    .c0_ddr4_odt            (c0_ddr4_odt),
+    .c0_ddr4_cs_n           (c0_ddr4_cs_n),
+    .c0_ddr4_ck_t           (c0_ddr4_ck_t),
+    .c0_ddr4_ck_c           (c0_ddr4_ck_c),
+    .c0_ddr4_reset_n        (c0_ddr4_reset_n),
+    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n),
+    .c0_ddr4_dq             (c0_ddr4_dq),
+    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),
+    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t),
+#endif
+#ifdef CONFIG_ENABLE_NVME
+    // NVME
+    .nvme_reset_n           (sys_reset_n_q),
+    .refclk_nvme_ch0_p(refclk_nvme_p),
+    .refclk_nvme_ch0_n(~refclk_nvme_p),
+    .refclk_nvme_ch1_p(refclk_nvme_p),
+    .refclk_nvme_ch1_n(~refclk_nvme_p),
+    .pcie_rc0_rxn(pcie_rc0_rxn),
+    .pcie_rc0_rxp(pcie_rc0_rxp),
+    .pcie_rc0_txn(pcie_rc0_txn),
+    .pcie_rc0_txp(pcie_rc0_txp),
+    .pcie_rc1_rxn(pcie_rc1_rxn),
+    .pcie_rc1_rxp(pcie_rc1_rxp),
+    .pcie_rc1_txn(pcie_rc1_txn),
+    .pcie_rc1_txp(pcie_rc1_txp),
+#endif
     .ha_pclock(ha_pclock),
     // DMA 0 Req interface
     .d0h_dvalid(d0h_dvalid),
@@ -1261,8 +1240,8 @@ module top (
     .d0h_dtype(d0h_dtype),
     .d0h_dsize(d0h_dsize),
     .d0h_ddata(d0h_ddata),
-    .d0h_datomic_op(d0h_datomic_op),				
-    .d0h_datomic_le(d0h_datomic_le),		
+    .d0h_datomic_op(d0h_datomic_op),
+    .d0h_datomic_le(d0h_datomic_le),
 //    .d0h_dpar(d0h_dpar),
     // DMA 0 Sent interface
     .hd0_sent_utag_valid(hd0_sent_utag_valid),
@@ -1284,8 +1263,8 @@ module top (
     .d1h_dtype(d1h_dtype),
     .d1h_dsize(d1h_dsize),
     .d1h_ddata(d1h_ddata),
-    .d1h_datomic_op(d1h_datomic_op),				
-    .d1h_datomic_le(d1h_datomic_le),			
+    .d1h_datomic_op(d1h_datomic_op),
+    .d1h_datomic_le(d1h_datomic_le),
     // DMA 1 Sent interface
     .hd1_sent_utag_valid(hd1_sent_utag_valid),
     .hd1_sent_utag(hd1_sent_utag),
@@ -1300,59 +1279,64 @@ module top (
     .hd1_cpl_data(hd1_cpl_data)
   );
 
-  ////////////////////////////////////////////////////////////-- only for DDR3_USED=TRUE
-  // DDR3 DIMM INSTANCE                                     //-- only for DDR3_USED=TRUE
-  ////////////////////////////////////////////////////////////-- only for DDR3_USED=TRUE
-  ddr3_dimm ddr3_dimm (                                     //-- only for DDR3_USED=TRUE
-    .c0_ddr3_ck_p(c0_ddr3_ck_p),                            //-- only for DDR3_USED=TRUE
-    .c0_ddr3_ck_n(c0_ddr3_ck_n),                            //-- only for DDR3_USED=TRUE
-    .c0_ddr3_reset_n(c0_ddr3_reset_n),                      //-- only for DDR3_USED=TRUE
-    .c0_ddr3_cke(c0_ddr3_cke),                              //-- only for DDR3_USED=TRUE
-    .c0_ddr3_cs_n(c0_ddr3_cs_n),                            //-- only for DDR3_USED=TRUE
-    .c0_ddr3_ras_n(c0_ddr3_ras_n),                          //-- only for DDR3_USED=TRUE
-    .c0_ddr3_cas_n(c0_ddr3_cas_n),                          //-- only for DDR3_USED=TRUE
-    .c0_ddr3_we_n(c0_ddr3_we_n),                            //-- only for DDR3_USED=TRUE
-    .c0_ddr3_odt(c0_ddr3_odt),                              //-- only for DDR3_USED=TRUE
-    .c0_ddr3_ba(c0_ddr3_ba),                                //-- only for DDR3_USED=TRUE
-    .c0_ddr3_addr(c0_ddr3_addr),                            //-- only for DDR3_USED=TRUE
-    .c0_ddr3_dm(c0_ddr3_dm),                                //-- only for DDR3_USED=TRUE
-    .c0_ddr3_dq(c0_ddr3_dq),                                //-- only for DDR3_USED=TRUE
-    .c0_ddr3_dqs_p(c0_ddr3_dqs_p),                          //-- only for DDR3_USED=TRUE
-    .c0_ddr3_dqs_n(c0_ddr3_dqs_n)                           //-- only for DDR3_USED=TRUE
-    );                                                      //-- only for DDR3_USED=TRUE
- /////////////////////////////////////////////////////////////-- only for DDR4_USED=TRUE
-  // DDR4 DIMM INSTANCE                                     //-- only for DDR4_USED=TRUE
-  ////////////////////////////////////////////////////////////-- only for DDR4_USED=TRUE
-  ddr4_dimm ddr4_dimm (                                     //-- only for DDR4_USED=TRUE
-    .sys_reset              (~sys_reset_n_q),               //-- only for DDR4_USED=TRUE
-    .c0_ddr4_act_n          (c0_ddr4_act_n),                //-- only for DDR4_USED=TRUE
-    .c0_ddr4_adr            (c0_ddr4_adr),                  //-- only for DDR4_USED=TRUE
-    .c0_ddr4_ba             (c0_ddr4_ba),                   //-- only for DDR4_USED=TRUE
-    .c0_ddr4_bg             (c0_ddr4_bg),                   //-- only for DDR4_USED=TRUE
-    .c0_ddr4_cke            (c0_ddr4_cke),                  //-- only for DDR4_USED=TRUE
-    .c0_ddr4_odt            (c0_ddr4_odt),                  //-- only for DDR4_USED=TRUE
-    .c0_ddr4_cs_n           (c0_ddr4_cs_n),                 //-- only for DDR4_USED=TRUE
-    .c0_ddr4_ck_t           (c0_ddr4_ck_t),                 //-- only for DDR4_USED=TRUE
-    .c0_ddr4_ck_c           (c0_ddr4_ck_c),                 //-- only for DDR4_USED=TRUE
-    .c0_ddr4_reset_n        (c0_ddr4_reset_n),              //-- only for DDR4_USED=TRUE
-    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n),             //-- only for DDR4_USED=TRUE
-    .c0_ddr4_dq             (c0_ddr4_dq),                   //-- only for DDR4_USED=TRUE
-    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),                //-- only for DDR4_USED=TRUE
-    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)                 //-- only for DDR4_USED=TRUE
-    );                                                      //-- only for DDR4_USED=TRUE
-                                                            //-- only for NVME_USED=TRUE
-  ////////////////////////////////////////////////////////////-- only for NVME_USED=TRUE
-  // NVMe model                                             //-- only for NVME_USED=TRUE
-  ////////////////////////////////////////////////////////////-- only for NVME_USED=TRUE
-  nvme_model nvme_model (                                   //-- only for NVME_USED=TRUE
-    .sys_reset_n(sys_reset_n_q),                            //-- only for NVME_USED=TRUE
-    .pcie_rc0_rxn(pcie_rc0_rxn),      		            //-- only for NVME_USED=TRUE
-    .pcie_rc0_rxp(pcie_rc0_rxp), 		            //-- only for NVME_USED=TRUE
-    .pcie_rc0_txn(pcie_rc0_txn),                            //-- only for NVME_USED=TRUE
-    .pcie_rc0_txp(pcie_rc0_txp), 		            //-- only for NVME_USED=TRUE
-    .pcie_rc1_rxn(pcie_rc1_rxn),                            //-- only for NVME_USED=TRUE
-    .pcie_rc1_rxp(pcie_rc1_rxp), 		            //-- only for NVME_USED=TRUE
-    .pcie_rc1_txn(pcie_rc1_txn),                            //-- only for NVME_USED=TRUE
-    .pcie_rc1_txp(pcie_rc1_txp)                             //-- only for NVME_USED=TRUE
-    );                                                      //-- only for NVME_USED=TRUE 
+#ifdef CONFIG_ENABLE_DDR3
+  ////////////////////////////////////////////////////////////
+  // DDR3 DIMM INSTANCE                                     //
+  ////////////////////////////////////////////////////////////
+  ddr3_dimm ddr3_dimm (
+    .c0_ddr3_ck_p(c0_ddr3_ck_p),
+    .c0_ddr3_ck_n(c0_ddr3_ck_n),
+    .c0_ddr3_reset_n(c0_ddr3_reset_n),
+    .c0_ddr3_cke(c0_ddr3_cke),
+    .c0_ddr3_cs_n(c0_ddr3_cs_n),
+    .c0_ddr3_ras_n(c0_ddr3_ras_n),
+    .c0_ddr3_cas_n(c0_ddr3_cas_n),
+    .c0_ddr3_we_n(c0_ddr3_we_n),
+    .c0_ddr3_odt(c0_ddr3_odt),
+    .c0_ddr3_ba(c0_ddr3_ba),
+    .c0_ddr3_addr(c0_ddr3_addr),
+    .c0_ddr3_dm(c0_ddr3_dm),
+    .c0_ddr3_dq(c0_ddr3_dq),
+    .c0_ddr3_dqs_p(c0_ddr3_dqs_p),
+    .c0_ddr3_dqs_n(c0_ddr3_dqs_n)
+    );
+#endif
+#ifdef CONFIG_ENABLE_DDR4
+ /////////////////////////////////////////////////////////////
+  // DDR4 DIMM INSTANCE                                     //
+  ////////////////////////////////////////////////////////////
+  ddr4_dimm ddr4_dimm (
+    .sys_reset              (~sys_reset_n_q),
+    .c0_ddr4_act_n          (c0_ddr4_act_n),
+    .c0_ddr4_adr            (c0_ddr4_adr),
+    .c0_ddr4_ba             (c0_ddr4_ba),
+    .c0_ddr4_bg             (c0_ddr4_bg),
+    .c0_ddr4_cke            (c0_ddr4_cke),
+    .c0_ddr4_odt            (c0_ddr4_odt),
+    .c0_ddr4_cs_n           (c0_ddr4_cs_n),
+    .c0_ddr4_ck_t           (c0_ddr4_ck_t),
+    .c0_ddr4_ck_c           (c0_ddr4_ck_c),
+    .c0_ddr4_reset_n        (c0_ddr4_reset_n),
+    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n),
+    .c0_ddr4_dq             (c0_ddr4_dq),
+    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),
+    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
+    );
+#endif
+#ifdef CONFIG_ENABLE_NVME
+  ////////////////////////////////////////////////////////////
+  // NVMe model                                             //
+  ////////////////////////////////////////////////////////////
+  nvme_model nvme_model (
+    .sys_reset_n(sys_reset_n_q),
+    .pcie_rc0_rxn(pcie_rc0_rxn),
+    .pcie_rc0_rxp(pcie_rc0_rxp),
+    .pcie_rc0_txn(pcie_rc0_txn),
+    .pcie_rc0_txp(pcie_rc0_txp),
+    .pcie_rc1_rxn(pcie_rc1_rxn),
+    .pcie_rc1_rxp(pcie_rc1_rxp),
+    .pcie_rc1_txn(pcie_rc1_txn),
+    .pcie_rc1_txp(pcie_rc1_txp)
+    );
+#endif
 endmodule
