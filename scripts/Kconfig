@@ -171,7 +171,7 @@ config SDRAM_USED
 config ENABLE_BRAM
         bool
         prompt "Enable BRAM (replacing SDRAM for experimental use)"
-        depends on ! DISABLE_SDRAM_AND_BRAM
+        depends on ! (DISABLE_SDRAM_AND_BRAM || ENABLE_PRFLOW) 
         help
           This is a development option. The AXI attached on-card SDRAM will be replaced by 512KB BRAM.
 
@@ -246,6 +246,7 @@ choice
 
         config SIM_IRUN
             bool "irun"
+            depends on ! ENABLE_PRFLOW
 
         config NO_SIM
             bool "nosim"
@@ -262,6 +263,7 @@ comment "================= Advanced Options: ================="
 
 config ENABLE_ILA
         bool "Enable ILA Debug (Definition of $ILA_SETUP_FILE required)"
+        depends on ! ENABLE_PRFLOW
         help
           Enable the usage of Vivado's integrated logic analyzer.
           Please make sure that $ILA_SETUP_FILE points to the .xdc file
@@ -274,6 +276,7 @@ config ILA_DEBUG
 
 config ENABLE_FACTORY
         bool "Create Factory Image"
+        depends on ! ENABLE_PRFLOW
 
 config FACTORY_IMAGE
         string

@@ -292,7 +292,12 @@ hw_project: hw_project_start action_hw
 config: hw_project
 
 image: .hw_project_done
-	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
+ifeq ($(USE_PRFLOW),TRUE)
+	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
+	snap-cloud-build
+	@echo -e "[BUILD IMAGE.........] end `date +"%T %a %b %d %Y"`\n"
+else
+  @if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
 		echo; echo -e "Error: Makefile target $* not allowed for PR flow!"; exit -1; \
 	fi
 	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
@@ -304,6 +309,7 @@ image: .hw_project_done
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log -journal $(LOGS_DIR)/snap_build.jou
 	@$(RM) -r .bitstream_name.txt
 	@echo -e "[BUILD IMAGE.........] done  `date +"%T %a %b %d %Y"`"
+endif
 
 allow_%:
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
