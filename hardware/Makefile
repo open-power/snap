@@ -292,15 +292,10 @@ hw_project: hw_project_start action_hw
 config: hw_project
 
 image: .hw_project_done
+	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
 ifeq ($(USE_PRFLOW),TRUE)
-	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
 	snap-cloud-build ${SNAP_ROOT}/snap_env.sh
-	@echo -e "[BUILD IMAGE.........] end `date +"%T %a %b %d %Y"`\n"
 else
-  @if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
-		echo; echo -e "Error: Makefile target $* not allowed for PR flow!"; exit -1; \
-	fi
-	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
 	@echo "A complete FPGA bitstream build got kicked off.";
 	@echo "This will take more than an hour.";
 	@echo "The process may be terminated by pressing <CTRL>-C at any time.";
@@ -308,8 +303,8 @@ else
 	@$(MAKE) -s patch_version
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log -journal $(LOGS_DIR)/snap_build.jou
 	@$(RM) -r .bitstream_name.txt
-	@echo -e "[BUILD IMAGE.........] done  `date +"%T %a %b %d %Y"`"
 endif
+	@echo -e "[BUILD IMAGE.........] done  `date +"%T %a %b %d %Y"`"
 
 allow_%:
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
