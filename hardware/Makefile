@@ -86,16 +86,16 @@ SNAP_SIM_NVME=$(SNAP_HARDWARE_ROOT)/sim/nvme
 SNAP_SIMULATORS += irun xsim
 SNAP_MODELS += .model_irun .model_xsim
 
-SNAP_PP_FILES_VHD=$(SNAP_HDL_CORE)/psl_accel.vhd   \
-                  $(SNAP_HDL_CORE)/snap_core.vhd   \
-                  $(SNAP_HDL_CORE)/dma_buffer.vhd \
-                  $(SNAP_HDL_CORE)/mmio.vhd
+SNAP_PP_FILES_VHD=$(SNAP_HDL_CORE)/psl_accel.vhd       \
+                  $(SNAP_HDL_CORE)/psl_accel_types.vhd \
+                  $(SNAP_HDL_CORE)/snap_core.vhd       \
+                  $(SNAP_HDL_CORE)/dma_buffer.vhd      \
+                  $(SNAP_HDL_CORE)/mmio.vhd            \
+                  $(SNAP_SIM_CORE)/top.sv              \
+                  $(SNAP_HDL_HLS)/action_wrapper.vhd 
 
 SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
-                  $(SNAP_HDL_CORE)/psl_accel_types.vhd \
-                  $(SNAP_HDL_CORE)/snap_core_types.vhd \
-                  $(SNAP_HDL_HLS)/action_wrapper.vhd \
-                  $(SNAP_SIM_CORE)/top.sv
+                  $(SNAP_HDL_CORE)/snap_core_types.vhd
 
 SNAP_TMP_FILES =  $(SNAP_HARDWARE_ROOT)/sim/README.txt \
 		  $(SNAP_HARDWARE_ROOT)/vivado.jou
@@ -253,9 +253,6 @@ $(SNAP_SIM_NVME)/endp_4_pipe32.v:
 %.vhd: %.vhd_source
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
 
-%.sv: %.sv_source
-	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
-
 snap_preprocess_execute: $(SNAP_PP_FILES_VHD) $(SNAP_SIM_NVME)/endp_4_pipe32.v $(SNAP_CONFIG_FILES)
 	@echo -e "[SNAP PREPROCESS.....] done  `date +"%T %a %b %d %Y"`";
 
@@ -290,8 +287,8 @@ action_hw: prepare_logs
 create_project: snap_preprocess
 	@echo -e "[CREATE PROJECT......] start `date +"%T %a %b %d %Y"`";
 	@echo -e "                        using `vivado -version |grep Vivado`"
-	@cd $(SNAP_HARDWARE_ROOT)/setup                                          && vivado -quiet -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -journal $(LOGS_DIR)/create_ip.jou
-	@if [ $(NVME_USED) = "TRUE" ]; then cd $(SNAP_HARDWARE_ROOT)/setup       && vivado -quiet -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou; fi
+	@cd $(SNAP_HARDWARE_ROOT)/setup                                          && vivado -quiet -notrace -mode batch -source create_ip.tcl        -log $(LOGS_DIR)/create_ip.log         -nojournal
+	@if [ $(NVME_USED) = "TRUE" ]; then cd $(SNAP_HARDWARE_ROOT)/setup       && vivado -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou; fi
 	@cd $(SNAP_HARDWARE_ROOT)/setup && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
 	@$(MAKE) -s patch_NVMe
 	@echo -e "[CREATE PROJECT......] done  `date +"%T %a %b %d %Y"`"

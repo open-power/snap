@@ -75,10 +75,11 @@ PACKAGE psl_accel_types IS
 
     CONSTANT C_DDR_AXI_ID_WIDTH      : integer  := 4;
     CONSTANT C_DDR_AXI_DATA_WIDTH    : integer  := 512;
-    CONSTANT C_DDR_AXI_ADDR_WIDTH    : integer  := 33;  -- only for FPGACARD=ADKU3 -- only for BRAM_USED!=TRUE
-    CONSTANT C_DDR_AXI_ADDR_WIDTH    : integer  := 33;  -- only for FPGACARD=S121B -- only for BRAM_USED!=TRUE
-    CONSTANT C_DDR_AXI_ADDR_WIDTH    : integer  := 32;  -- only for FPGACARD=N250S -- only for BRAM_USED!=TRUE
-    CONSTANT C_DDR_AXI_ADDR_WIDTH    : integer  := 32;  -- only for BRAM_USED=TRUE
+#if defined(CONFIG_ENABLE_BRAM) || defined(CONFIG_N250S)
+    CONSTANT C_DDR_AXI_ADDR_WIDTH    : integer  := 32;
+#else
+    CONSTANT C_DDR_AXI_ADDR_WIDTH    : integer  := 33;
+#endif
     CONSTANT C_DDR_AXI_AWUSER_WIDTH  : integer  := 1;
     CONSTANT C_DDR_AXI_ARUSER_WIDTH  : integer  := 1;
     CONSTANT C_DDR_AXI_WUSER_WIDTH   : integer  := 1;
