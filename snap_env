@@ -94,7 +94,9 @@ while [ -z "$SETUP_DONE" ]; do
   if [ -e "$PSL_DCP" ]; then
     # checking card type for PSL design checkpoint
     PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $PSL_DCP`
-    if [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
+    if [ "$USE_PRFLOW" == "TRUE" ]; then
+      SETUP_INFO="$SETUP_INFO\n### INFO ### USE_PRFLOW is skipping PSL_DCP check"
+    elif [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD"
     fi
   elif [ -z "$PSL_DCP" ]; then
