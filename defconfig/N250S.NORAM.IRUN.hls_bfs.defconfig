@@ -4,6 +4,7 @@
 # Mon Sep 18 16:04:46 2017
 #
 N250S=y
+# N250SP is not set
 # ADKU3 is not set
 # S121B is not set
 FPGACARD="N250S"
