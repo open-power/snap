@@ -157,6 +157,9 @@ check_snap_settings:
 	@echo "                        =============================="
 
 check_psl_dcp:
+ifeq ($(USE_PRFLOW),TRUE)
+	echo "check_psl_dcp disabled for PRFLOW"
+else
 	@if [ -e $(PSL_DCP) ]; then \
 		export PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl $(PSL_DCP)); \
 		if [ "$$PSL_DCP_TYPE" != "$(FPGACARD)" ]; then \
@@ -167,6 +170,7 @@ check_psl_dcp:
 		echo "Error: PSL_DCP=$(PSL_DCP) is not pointing to a file"; \
 		exit -1; \
 	fi
+endif
 
 check_nvme:
 	@if [ $(SIMULATOR) != "nosim" ] && [ $(NVME_USED) = "TRUE" ]; then \
