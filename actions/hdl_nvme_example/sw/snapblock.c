@@ -1645,10 +1645,10 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 	if (cblk_prefetch) {
 		unsigned int k;
 
-		for (k = 0; (k < (unsigned int)cblk_prefetch) &&
-			(reads_in_flight(c) < CBLK_PREFETCH_THRESHOLD); k++)
-			__prefetch_read_start(c, lba, nblocks,
-				1 + k, mem_size);
+		for (k = 0; (k < (unsigned int)cblk_prefetch); k++)
+			if (reads_in_flight(c) < CBLK_PREFETCH_THRESHOLD)
+				__prefetch_read_start(c, lba, nblocks,
+					1 + k, mem_size);
 	}
 
 	while (req->status == CBLK_READING) {
