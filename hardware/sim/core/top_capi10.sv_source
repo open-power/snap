@@ -317,21 +317,18 @@ module top (
   // Clock generation
   // 250MHz AFU clock
   always begin
-     #(4.0ns / 2.0);
-     ha_pclock = !ha_pclock;
+     ha_pclock = !ha_pclock; #(4.0ns / 2.0);                // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 
   //
-  // System Reset Logic 
-  // Note: The HW generates a 16384x8ns=131ms reset pulse for NVMe, 
-  //       in simulation a 100ns pulse should be sufficient. 
-  //       Also use the reset to reset the DDR4 DIMM model 
-  reg sys_reset_n_q;            
-  initial begin                 
-     sys_reset_n_q <= 1;
-     #10ns
-     sys_reset_n_q <= 0;
-     #100ns;
+  // System Reset Logic
+  // Note: The HW generates a 16384x8ns=131ms reset pulse for NVMe,
+  //       in simulation a 100ns pulse should be sufficient.
+  //       Also use the reset to reset the DDR4 DIMM model
+  reg sys_reset_n_q;
+  initial begin
+     sys_reset_n_q <= 1;  #10ns
+     sys_reset_n_q <= 0;  #100ns;
      sys_reset_n_q <= 1 ;
   end
 
@@ -788,14 +785,12 @@ module top (
 #ifdef defined(CONFIG_ENABLE_DDRI && CONFIG_ADKU3)
   // 200MHz ADKU3 reference clock
   always begin
-     #(5ns / 2.0);
-     refclk_sdram_p = !refclk_sdram_p;
+     refclk_sdram_p = !refclk_sdram_p; #(5ns / 2.0);         // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 
   // 266MHz N250S reference clock
   always begin
-     #(3.752ns / 2.0);
-     refclk_sdram_p = !refclk_sdram_p;
+     refclk_sdram_p = !refclk_sdram_p; #(3.752ns / 2.0);    // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 #endif
 #if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_S121B)
@@ -813,15 +808,13 @@ module top (
 #ifdef defined(CONFIG_ENABLE_DDRI && CONFIG_ADKU3)
   // 400MHz DDR3 system clock
   always begin
-     #(2.5ns / 2.0);
-     sys_clk_p = !sys_clk_p;
+     sys_clk_p = !sys_clk_p; #(2.5ns / 2.0);                // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 #endif
 #ifdef defined(CONFIG_ENABLE_DDRI && CONFIG_N250S)
   // 266MHz DDR4 system clock
   always begin
-     #(3.752ns / 2.0);
-     sys_clk_p = !sys_clk_p;
+     sys_clk_p = !sys_clk_p; #(3.752ns / 2.0);              // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 #endif
 #iff defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_S121B)
@@ -838,8 +831,7 @@ module top (
 
   // 100MHz NVME reference clock
   always begin
-     #(10.0ns / 2);
-     refclk_nvme_p = !refclk_nvme_p;
+     refclk_nvme_p = !refclk_nvme_p; #(10.0ns / 2);         // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 #endif
 
