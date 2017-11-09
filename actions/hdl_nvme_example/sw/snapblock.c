@@ -40,6 +40,7 @@
 #undef CONFIG_PRINT_STATUS	/* health checking if needed */
 #undef CONFIG_MMIO32_NOHWSYNC	/* Do not use hwsync behind lwz */
 
+#define CONFIG_COMPLETION_THREADS	1	/* 1 works best */
 #define CONFIG_MAX_RETRIES		5
 #define CONFIG_BUSY_TIMEOUT_SEC		5
 #define CONFIG_REQ_TIMEOUT_SEC		3
@@ -237,8 +238,8 @@ struct cblk_dev {
 
 	sem_t w_busy_sem;	/* wait if there is no write slot */
 	sem_t r_busy_sem;	/* wait if there is no read slot */
-	pthread_t done_tid;
 
+	pthread_t done_tid[CONFIG_COMPLETION_THREADS];	/* completion thread(s) */
 	pthread_cond_t idle_c;	/* idle management for completion thread */
 	pthread_mutex_t idle_m;
 	int work_in_flight;
@@ -281,7 +282,8 @@ static void inc_work_in_flight(struct cblk_dev *c)
 	pthread_mutex_lock(&c->idle_m);
 	c->work_in_flight++;
 	if (c->work_in_flight == 1)
-		pthread_cond_signal(&c->idle_c);
+		/* pthread_cond_signal(&c->idle_c); */
+		pthread_cond_broadcast(&c->idle_c);
 	pthread_mutex_unlock(&c->idle_m);
 }
 
@@ -1179,7 +1181,10 @@ static int check_req_timeouts(struct cblk_dev *c, struct timeval *etime,
 
 static void completion_thread_cleanup(void *arg)
 {
-	block_trace("[%s] p=%p\n", __func__, arg);
+	struct cblk_dev *c = (struct cblk_dev *)arg;
+
+	block_trace("[%s] tid=%d tidy up ...\n", __func__, __gettid());
+	pthread_mutex_unlock(&c->idle_m);
 }
 
 /**
@@ -1301,17 +1306,16 @@ static void *completion_thread(void *arg)
 
 		pthread_mutex_lock(&c->idle_m);
 		while (c->work_in_flight == 0) {
-			/* int rc; */
-
+			/* 5 sec delay should be noticable ... */
 			gettimeofday(&now, NULL);
 			timeout.tv_sec = now.tv_sec + 5;
-			/* 5 sec delay should be noticable ... */
 			timeout.tv_nsec = now.tv_usec;
-			/* rc =  */
-			pthread_cond_timedwait(&c->idle_c, &c->idle_m, &timeout);
-			/* if (rc == ETIMEDOUT)
+
+			int rc = pthread_cond_timedwait(&c->idle_c, &c->idle_m, &timeout);
+			if (rc == ETIMEDOUT)
 				fprintf(stderr, "[%s] info: timedwait returned ETIMEDOUT\n",
-					__func__); */
+					__func__);
+
 			c->idle_wakeups++;
 		}
 		pthread_mutex_unlock(&c->idle_m);
@@ -1418,7 +1422,8 @@ chunk_id_t cblk_open(const char *path,
 	c->drive = 0;
 	c->nblocks = SNAP_N250S_NVME_SIZE / __CBLK_BLOCK_SIZE;
 	c->timeout = timeout;
-	c->done_tid = 0;
+	for (i = 0; i < ARRAY_SIZE(c->done_tid); i++)
+		c->done_tid[i] = 0;
 	c->widx = 0;
 	c->ridx = 0;
 	c->status_read_count = 0;
@@ -1475,9 +1480,12 @@ chunk_id_t cblk_open(const char *path,
 		}
 	}
 
-	rc = pthread_create(&c->done_tid, NULL, &completion_thread, &chunk);
-	if (rc != 0)
-		goto out_err3;
+	for (i = 0; i < ARRAY_SIZE(c->done_tid); i++) {
+		rc = pthread_create(&c->done_tid[i], NULL,
+				&completion_thread, &chunk);
+		if (rc != 0)
+			goto out_err3;
+	}
 
 	rc = cache_init();
 	if (rc != 0)
@@ -1487,9 +1495,13 @@ chunk_id_t cblk_open(const char *path,
 	return 0;
 
  out_err4:
-	pthread_cancel(c->done_tid);
-	pthread_join(c->done_tid, NULL);
-	c->done_tid = 0;
+	for (i = 0; i < ARRAY_SIZE(c->done_tid); i++) {
+		if (c->done_tid[i] == 0)
+			continue;
+		pthread_cancel(c->done_tid[i]);
+		pthread_join(c->done_tid[i], NULL);
+		c->done_tid[i] = 0;
+	}
  out_err3:
 	__free(c->buf);
 	c->buf = NULL;
@@ -1511,6 +1523,7 @@ chunk_id_t cblk_open(const char *path,
 int cblk_close(chunk_id_t id __attribute__((unused)),
 		int flags __attribute__((unused)))
 {
+	int rc;
 	unsigned int i;
 	struct cblk_dev *c = &chunk;
 	struct timeval etime;
@@ -1520,10 +1533,20 @@ int cblk_close(chunk_id_t id __attribute__((unused)),
 		return -1;
 	}
 
-	if (c->done_tid) {
-		pthread_cancel(c->done_tid);
-		pthread_join(c->done_tid, NULL);
-		c->done_tid = 0;
+	for (i = 0; i < ARRAY_SIZE(c->done_tid); i++) {
+		if (c->done_tid[i] == 0)
+			continue;
+		rc = pthread_cancel(c->done_tid[i]);
+		if (rc != 0)
+			fprintf(stderr, "  [%s] canceling tid %u rc=%d\n",
+				__func__, (unsigned int)c->done_tid[i], rc);
+		
+		rc = pthread_join(c->done_tid[i], NULL);
+		if (rc != 0)
+			fprintf(stderr, "  [%s] joining tid %u rc=%d\n",
+				__func__, (unsigned int)c->done_tid[i], rc);
+
+		c->done_tid[i] = 0;
 	}
 
 	gettimeofday(&etime, NULL);
