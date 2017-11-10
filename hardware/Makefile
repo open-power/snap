@@ -123,12 +123,12 @@ check_snap_settings:
 		echo "                        Please check out the SNAP framework as git clone from git@github.com:open-power/snap.git"; \
 		exit -1; \
 	fi
-	@if [ ! -e $(snap_config_sh) ]; then \
+	@if [ ! -e "$(snap_config_sh)" ]; then \
 		echo "                        Missing snap config setup file \"$(snap_config_sh)\""; \
 		echo "                        Please make sure that the snap configuration is prepared by calling 'make snap_config'"; \
 		exit -1; \
 	fi
-	@if [ ! -e $(snap_env_sh) ]; then \
+	@if [ ! -e "$(snap_env_sh)" ]; then \
 		echo "                        Missing snap environment setup file \"$(snap_env_sh)\""; \
 		echo "                        Please make sure that the snap environment is prepared by calling 'make snap_config'"; \
 		exit -1; \
@@ -160,7 +160,7 @@ check_psl_dcp:
 ifeq ($(USE_PRFLOW),TRUE)
 	echo "check_psl_dcp disabled for PRFLOW"
 else
-	@if [ -e $(PSL_DCP) ]; then \
+	@if [ -e "$(PSL_DCP)" ]; then \
 		export PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl $(PSL_DCP)); \
 		if [ "$$PSL_DCP_TYPE" != "$(FPGACARD)" ]; then \
 			echo "Error: PSL_DCP=$(PSL_DCP) is not pointing to a design checkpoint of card type FPGACARD=$(FPGACARD)"; \
@@ -213,7 +213,7 @@ snap_preprocess_start: prepare_project
 	@echo -e "[SNAP PREPROCESS.....] start `date +"%T %a %b %d %Y"`";
 
 $(SNAP_PP_FILES_VHD):
-	@if [ -e $(snap_config_cflags) ]; then \
+	@if [ -e "$(snap_config_cflags)" ]; then \
 		echo -e "                        generating $(notdir $@)"; \
 	else \
 		echo -e "                        Need to run \"make snap_config\" first"; exit -1; \
@@ -259,7 +259,7 @@ patch_NVMe:
 
 action_hw: prepare_logs
 	@echo -e "[CONFIG ACTION HW....] start `date +"%T %a %b %d %Y"`";
-	echo "Calling make $(ACTION_ROOT) hw"
+	echo "Calling make -C $(ACTION_ROOT) hw"
 	@$(MAKE) -C $(ACTION_ROOT) hw > $(LOGS_DIR)/action_make.log;
 	if [ $$? -ne 0 ]; then \
 		echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
