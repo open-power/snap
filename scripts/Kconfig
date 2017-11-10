@@ -284,12 +284,22 @@ config FACTORY_IMAGE
         default "FALSE" if ! ENABLE_FACTORY
 
 config ENABLE_PRFLOW
-        bool "Cloud build"
+        bool "Cloud build (enabling Partial Reconfiguration)"
 
 config USE_PRFLOW
         string
         default "TRUE" if ENABLE_PRFLOW
         default "FALSE" if ! ENABLE_PRFLOW
+
+config ENABLE_CLOUD_USER_FLOW
+        bool "Cloud user flow"
+        default y
+        depends on ENABLE_PRFLOW
+
+config CLOUD_USER_FLOW
+        string
+        default "TRUE" if ENABLE_CLOUD_USER_FLOW
+        default "FALSE" if ! ENABLE_CLOUD_USER_FLOW
 
 config ENABLE_CLOUD_BUILD_BITFILE
         bool "Build bitstream file"

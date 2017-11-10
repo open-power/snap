@@ -136,29 +136,30 @@ check_snap_settings:
 	@source $(SNAP_ROOT)/snap_env;
 	@echo "                        =============================="
 	@echo "                        hardware/Makefile called with:"
-	@echo "                        ACTION_ROOT    = $(ACTION_ROOT)"
-	@echo "                        PSL_DCP        = $(PSL_DCP)"
-	@echo "                        FPGACARD       = $(FPGACARD)"
-	@echo "                        FPGACHIP       = $(FPGACHIP)"
-	@echo "                        NUM_OF_ACTIONS = $(NUM_OF_ACTIONS)"
-	@echo "                        HLS_SUPPORT    = $(HLS_SUPPORT)"
-	@echo "                        BRAM_USED      = $(BRAM_USED)"
-	@echo "                        SDRAM_USED     = $(SDRAM_USED)"
-	@echo "                        NVME_USED      = $(NVME_USED)"
-	@echo "                        ILA_DEBUG      = $(ILA_DEBUG)"
+	@echo "                        ACTION_ROOT     = $(ACTION_ROOT)"
+	@echo "                        PSL_DCP         = $(PSL_DCP)"
+	@echo "                        FPGACARD        = $(FPGACARD)"
+	@echo "                        FPGACHIP        = $(FPGACHIP)"
+	@echo "                        NUM_OF_ACTIONS  = $(NUM_OF_ACTIONS)"
+	@echo "                        HLS_SUPPORT     = $(HLS_SUPPORT)"
+	@echo "                        BRAM_USED       = $(BRAM_USED)"
+	@echo "                        SDRAM_USED      = $(SDRAM_USED)"
+	@echo "                        NVME_USED       = $(NVME_USED)"
+	@echo "                        ILA_DEBUG       = $(ILA_DEBUG)"
 	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` = "TRUE" ]; then \
-		echo "                        ILA_SETUP_FILE = $(ILA_SETUP_FILE)"; \
+		echo "                        ILA_SETUP_FILE  = $(ILA_SETUP_FILE)"; \
 	fi
-	@echo "                        SIMULATOR      = $(SIMULATOR)"
-	@echo "                        USE_PRFLOW     = $(USE_PRFLOW)"
+	@echo "                        SIMULATOR       = $(SIMULATOR)"
+	@echo "                        USE_PRFLOW      = $(USE_PRFLOW)"
 	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
-		echo "                        DCP_ROOT       = $(DCP_ROOT)"; \
+		echo "                        CLOUD_USER_FLOW = $(CLOUD_USER_FLOW)"; \
+		echo "                        DCP_ROOT        = $(DCP_ROOT)"; \
 	fi
 	@echo "                        =============================="
 
 check_psl_dcp:
-ifeq ($(USE_PRFLOW),TRUE)
-	echo "check_psl_dcp disabled for PRFLOW"
+ifeq ($(CLOUD_USER_FLOW),TRUE)
+	echo "check_psl_dcp disabled for cloud user flow"
 else
 	@if [ -e "$(PSL_DCP)" ]; then \
 		export PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl $(PSL_DCP)); \
@@ -204,7 +205,9 @@ prepare_project: check_snap_settings check_psl_dcp prepare_logs
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl          $(BUILD_DIR)/snap_build.tcl;
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_build.tcl    $(BUILD_DIR)/snap_cloud_build.tcl;
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_merge.tcl    $(BUILD_DIR)/snap_cloud_merge.tcl;
-	@cp -p $(PSL_DCP)                                             $(BUILD_DIR)/Checkpoints/;
+	@if [ -e "$(PSL_DCP)" ]; then \
+		cp -p $(PSL_DCP)                                             $(BUILD_DIR)/Checkpoints/; \
+	fi
 	@ln -f -s $(SNAP_HDL_CORE)/psl_fpga_`echo "$(FPGACARD)" | tr A-Z a-z`.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source;
 	@ln -f -s $(SNAP_HDL_CORE)/psl_accel_`echo "$(FPGACARD)" | tr A-Z a-z`.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source;
 	@echo -e "[PREPARE PROJECT.....] done  `date +"%T %a %b %d %Y"`";
@@ -311,12 +314,13 @@ endif
 	@echo -e "[BUILD IMAGE.........] done  `date +"%T %a %b %d %Y"`"
 
 allow_%:
-	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` != "TRUE" ]; then \
-		echo; echo -e "Error: Makefile target $* is only allowed for PR flow!"; exit -1; \
+	@if [ "$(USE_PRFLOW)" != "TRUE" ]; then \
+		echo; echo "Error: Makefile target $* is only allowed for PR flow!"; exit -1; \
+	elif [ "$(CLOUD_USER_FLOW)" = "TRUE" ] && [ "$*" = "cloud_base" ]; then \
+		echo; echo "Error: Makefile target $* is not allowed for cloud user flow!"; exit -1; \
 	fi
 
-cloud_base: .hw_project_done
-	@$(MAKE) -s allow_cloud_base
+cloud_base: allow_cloud_base .hw_project_done
 	@echo -e "[BUILD CLOUD BASE...] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -s patch_version
 	@cd $(BUILD_DIR) && env CLOUD_RUN=BASE vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
@@ -330,8 +334,7 @@ $(SNAP_BASE_DCP):
 	@echo -e "                        Need to run cloud_base first"
 	@exit -1
 
-cloud_action: .hw_project_done
-	@$(MAKE) -s allow_cloud_action
+cloud_action: allow_cloud_action .hw_project_done
 	@echo -e "[CLOUD ACTION SYNTH..] start `date +"%T %a %b %d %Y"e`"
 	@$(MAKE) -s patch_version
 	@echo -e "                        using `vivado -version |grep Vivado`"
@@ -394,7 +397,7 @@ $(SNAP_SIMULATORS): check_nvme .hw_project_done app
 	@$(MAKE) -s patch_version
 	vivado -quiet -mode batch -source setup/export_$@.tcl -notrace -log $(LOGS_DIR)/compile_$@.log
 	$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1
-	cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so; 
+	cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so;
 	@cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@); \
 	./top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1; \
 	if [ $$? -ne 0 ]; then \
