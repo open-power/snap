@@ -85,28 +85,32 @@ while [ -z "$SETUP_DONE" ]; do
 
 
   ####### checking path to PSL design checkpoint
-  echo "=====Checking path to PSL design checkpoint============"
-  echo "PSL_DCP                 is set to: \"$PSL_DCP\""
-  RESP=`grep PSL_DCP $snap_env_sh`
-  if [ -z "$RESP" ]; then
-    echo "export PSL_DCP=" >> $snap_env_sh
-  fi
-  if [ -e "$PSL_DCP" ]; then
-    # checking card type for PSL design checkpoint
-    PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $PSL_DCP`
-    if [ "$USE_PRFLOW" == "TRUE" ]; then
-      SETUP_INFO="$SETUP_INFO\n### INFO ### USE_PRFLOW is skipping PSL_DCP check"
-    elif [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD"
-    fi
-  elif [ -z "$PSL_DCP" ]; then
-    SETUP_EMPTY="$SETUP_EMPTY\n  PSL_DCP"
+  # Note: CLOUD_USER_FLOW is defined via snap_config
+  if [ "$CLOUD_USER_FLOW" == "TRUE" ]; then
+    SETUP_INFO="$SETUP_INFO\n### INFO ### Cloud user flow is skipping PSL_DCP check"
   else
-    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### The environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
+    echo "=====Checking path to PSL design checkpoint============"
+    echo "PSL_DCP                 is set to: \"$PSL_DCP\""
+    RESP=`grep PSL_DCP $snap_env_sh`
+    if [ -z "$RESP" ]; then
+      echo "export PSL_DCP=" >> $snap_env_sh
+    fi
+    if [ -e "$PSL_DCP" ]; then
+      # checking card type for PSL design checkpoint
+      PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $PSL_DCP`
+      if [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
+        SETUP_WARNING="$SETUP_WARNING\n### WARNING ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD"
+      fi
+    elif [ -z "$PSL_DCP" ]; then
+      SETUP_EMPTY="$SETUP_EMPTY\n  PSL_DCP"
+    else
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### The environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
+    fi
   fi
 
 
   ####### checking path to PSLSE (only if simulation is enabled)
+  # Note: SIMULATOR is defined via snap_config
   if [ $SIMULATOR != "nosim" ]; then
     echo "=====Simulation setup: Checking path to PSLSE=========="
     echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
