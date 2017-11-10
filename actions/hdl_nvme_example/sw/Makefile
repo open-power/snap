@@ -48,7 +48,7 @@ snap_cblk_LDFLAGS += -L. \
 	-Wl,-rpath,$(SNAP_ROOT)/actions/hdl_nvme_example/sw \
 	-Wl,-rpath,$(SNAP_ROOT)/software/lib
 
-snap_cblk_libs += -lsnapcblk
+snap_cblk_libs += -lsnapcblk -lrt
 endif
 
 snap_cblk_objs += force_cpu.o
