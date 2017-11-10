@@ -781,6 +781,10 @@ module top (
   // SDRAM Reference Clock generation
   reg       refclk_sdram_p;
   initial   refclk_sdram_p <= 0;
+
+  // SDRAM System Clock generation
+  reg       sys_clk_p;
+  initial   sys_clk_p <= 0;
 #endif
 #if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_ADKU3)
   // 200MHz ADKU3 reference clock
@@ -812,6 +816,11 @@ module top (
   end
 #endif
 #if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_N250S)
+  // 266MHz N250S reference clock
+  always begin
+     refclk_sdram_p = !refclk_sdram_p; #(3.752ns / 2.0);    // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end
+
   // 266MHz DDR4 system clock
   always begin
      sys_clk_p = !sys_clk_p; #(3.752ns / 2.0);              // a line can not start with "#", because SNAP is unsing the C preprocessor
