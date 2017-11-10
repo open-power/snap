@@ -443,6 +443,7 @@ clean:
 	@$(RM)    .hw_project_done
 	@$(RM) -r $(SNAP_PP_FILES_VHD)                   \
                   $(SNAP_SIM_NVME)/endp_4_pipe32.v       \
+	          $(SNAP_SIM_CORE)/top.sv_source         \
                   $(SNAP_CONFIG_FILES)                   \
                   $(SNAP_TMP_FILES)                      \
 	          $(SNAP_HDL_CORE)/psl_fpga.vhd_source   \
