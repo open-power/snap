@@ -40,8 +40,9 @@
 #undef CONFIG_PRINT_STATUS	/* health checking if needed */
 #undef CONFIG_MMIO32_NOHWSYNC	/* Do not use hwsync behind lwz */
 #define CONFIG_NEGATIVE_PREFETCHES	1
+#define CBLK_PREFETCH_THRESHOLD		10 /* only prefetch if reads_in_flight is small than the threshold */
 
-#define CONFIG_COMPLETION_THREADS	1	/* 1 works best */
+#define CONFIG_COMPLETION_THREADS	1 /* 1 works best */
 #define CONFIG_MAX_RETRIES		5
 #define CONFIG_BUSY_TIMEOUT_SEC		5
 #define CONFIG_REQ_TIMEOUT_SEC		3
@@ -53,6 +54,7 @@ static int cblk_busytimeout = CONFIG_BUSY_TIMEOUT_SEC;
 static int cblk_prefetch = 0;
 static int cblk_negative_prefetches = CONFIG_NEGATIVE_PREFETCHES;
 static int cblk_caching = 1;
+static int cblk_prefetch_threshold = CBLK_PREFETCH_THRESHOLD;
 
 static inline void _backtrace(const char *file, int line)
 {
@@ -163,8 +165,6 @@ static inline unsigned long atomic_inc(atomic_t *a)
 
 #define CBLK_NBLOCKS_MAX	32	/* 128 KiB / 4KiB */
 #define CBLK_NBLOCKS_WRITE_MAX	2	/* writing is just 1 or 2 blocks */
-
-#define CBLK_PREFETCH_THRESHOLD	10	/* only prefetch if reads_in_flight is small than the threshold */
 
 enum cblk_status {
 	CBLK_IDLE = 0,
@@ -1897,10 +1897,15 @@ static void _init(void)
 	if (env != NULL)
 		cblk_negative_prefetches = strtol(env, (char **)NULL, 0);
 
+	env = getenv("CBLK_PREFETCH_THRESHOLD");
+	if (env != NULL)
+		cblk_prefetch_threshold = strtol(env, (char **)NULL, 0);
+
 	block_trace("[%s] init CBLK_REQTIMEOUT=%d CBLK_PREFETCH=%d "
-		"CBLK_NEGATIVE_PREFETCHES=%d CBLK_CACHING=%d\n",
-		__func__, cblk_reqtimeout, cblk_prefetch,
-		cblk_negative_prefetches, cblk_caching);
+		"CBLK_NEGATIVE_PREFETCHES=%d CBLK_PREFETCH_THRESHOLD=%d "
+		"CBLK_CACHING=%d\n", __func__, cblk_reqtimeout,
+		cblk_prefetch, cblk_negative_prefetches,
+		cblk_prefetch_threshold, cblk_caching);
 }
 
 static void _done(void) __attribute__((destructor));
