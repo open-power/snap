@@ -61,16 +61,16 @@ static void usage(const char *prog)
 	       "\n"
 	       "Example:\n"
 	       "//echo Generation of 65536*2/65536 = 2 callsn"
-	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -I -cSPEED -n1 -f65536\n"
-	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -I -cSPEED -n128 -f65536\n"
-	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -I -cSPEED -n4096 -f65536\n"
+	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -N -cSPEED -n1 -f65536\n"
+	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -N -cSPEED -n128 -f65536\n"
+	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -N -cSPEED -n4096 -f65536\n"
 	       "//echo Generation of 65536*1/4 = 16384 calls ie 1 call every 4 calls until 65536...\n"
-	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -I -cSPEED -n1 -f4\n"
+	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -N -cSPEED -n1 -f4\n"
 	       "\n"
 	       "//echo to run tests SHA3 or/and SHAKE\n"
-	       "SNAP_CONFIG=FPGA ./snap_checksum -mSPONGE -I -t800 -cSHA3\n"
-	       "SNAP_CONFIG=FPGA ./snap_checksum -mSPONGE -I -t800 -cSHAKE\n"
-	       "SNAP_CONFIG=FPGA ./snap_checksum -mSPONGE -I -t800 -cSHA3_SHAKE\n"
+	       "SNAP_CONFIG=FPGA ./snap_checksum -mSPONGE -N -t800 -cSHA3\n"
+	       "SNAP_CONFIG=FPGA ./snap_checksum -mSPONGE -N -t800 -cSHAKE\n"
+	       "SNAP_CONFIG=FPGA ./snap_checksum -mSPONGE -N -t800 -cSHA3_SHAKE\n"
 	       "\n",
 	       prog);
 }
@@ -176,7 +176,7 @@ static int do_checksum(int card_no, unsigned long timeout,
 		       unsigned char type_in,  unsigned long size,
 		       uint64_t checksum_start,
 		       checksum_mode_t mode,
-		       test_choice_t test_choice, 
+		       test_choice_t test_choice,
                        uint32_t nb_elmts, uint32_t freq,
 		       uint64_t *_checksum,
 		       uint64_t *_usec,
@@ -207,7 +207,7 @@ static int do_checksum(int card_no, unsigned long timeout,
 		"  job_size: %ld bytes\n",
 		type_in, (long long)addr_in,
 		size, (long long)checksum_start, mode,
-		checksum_mode_str[mode % CHECKSUM_MODE_MAX], test_choice, 
+		checksum_mode_str[mode % CHECKSUM_MODE_MAX], test_choice,
 		test_choice_str[test_choice % CHECKSUM_TYPE_MAX],
 		nb_elmts, freq, sizeof(struct checksum_job));
 
@@ -263,7 +263,7 @@ static int do_checksum(int card_no, unsigned long timeout,
             nb_keccak_calls = nb_of_runs * mjob_out.nb_rounds;
 	    fprintf(fp, "%lld Keccak-p[1600,24] calls\n", (long long)nb_keccak_calls);
 	    fprintf(fp, "%.3f Keccak-p[1600,24] / Second.\n",
-		((double)(1000000 * nb_keccak_calls)) / 
+		((double)(1000000 * nb_keccak_calls)) /
                  (double)(timediff_usec(&etime, &stime)));
         }
 
@@ -438,7 +438,7 @@ int main(int argc, char *argv[])
           usage(argv[0]);
           exit(EXIT_FAILURE);
         }
-        
+
 	if (optind != argc) {
 		usage(argv[0]);
 		exit(EXIT_FAILURE);

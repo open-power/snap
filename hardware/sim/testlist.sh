@@ -273,27 +273,27 @@
 
     if [[ "$t0l" == "10141001" || "${env_action}" == "hls_sponge"* ]];then echo -e "$del\ntesting sponge"
       step "$ACTION_ROOT/sw/snap_checksum -h"
-      step "$ACTION_ROOT/sw/snap_checksum -I -v -t200 -mSPONGE  -cSHA3                 " # 23s
-      step "$ACTION_ROOT/sw/snap_checksum -I -v -t200 -mSPONGE  -cSHA3_SHAKE           " # 44s
-      step "$ACTION_ROOT/sw/snap_checksum -I -v -t200 -mSPONGE  -cSHAKE                " # 43s
+      step "$ACTION_ROOT/sw/snap_checksum -N -v -t200 -mSPONGE  -cSHA3                 " # 23s
+      step "$ACTION_ROOT/sw/snap_checksum -N -v -t200 -mSPONGE  -cSHA3_SHAKE           " # 44s
+      step "$ACTION_ROOT/sw/snap_checksum -N -v -t200 -mSPONGE  -cSHAKE                " # 43s
 ## not implemented in HW, just in SW
 ## -m <empty> defaults to -mCRC32
 ## -s only for -mADLER32/CRC32
 #     export SNAP_CONFIG=0x1;echo "${del}\n SW execution"   # SNAP_CONFIG=1 doesnt allow step() due to MMIO access to 0x80
-#     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200           -cSHA3                 " # 22s
-#     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200           -cSHA3_SHAKE           " # 42s
-#     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200           -cSHAKE                " # 41s
-#     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200 -mADLER32 -cSHA3            -s256" # 21s
-#     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200 -mADLER32 -cSHA3_SHAKE      -s256" #
-#     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200 -mADLER32 -cSHAKE           -s256" #
-#     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200 -mCRC32   -cSHA3            -s256" # 21s
-#     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200 -mCRC32   -cSHA3_SHAKE      -s256" #
-#     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200 -mCRC32   -cSHAKE           -s256" #
+#     step "$ACTION_ROOT/sw/snap_checksum -N -v -t200           -cSHA3                 " # 22s
+#     step "$ACTION_ROOT/sw/snap_checksum -N -v -t200           -cSHA3_SHAKE           " # 42s
+#     step "$ACTION_ROOT/sw/snap_checksum -N -v -t200           -cSHAKE                " # 41s
+#     step "$ACTION_ROOT/sw/snap_checksum -N -v -t200 -mADLER32 -cSHA3            -s256" # 21s
+#     step "$ACTION_ROOT/sw/snap_checksum -N -v -t200 -mADLER32 -cSHA3_SHAKE      -s256" #
+#     step "$ACTION_ROOT/sw/snap_checksum -N -v -t200 -mADLER32 -cSHAKE           -s256" #
+#     step "$ACTION_ROOT/sw/snap_checksum -N -v -t200 -mCRC32   -cSHA3            -s256" # 21s
+#     step "$ACTION_ROOT/sw/snap_checksum -N -v -t200 -mCRC32   -cSHA3_SHAKE      -s256" #
+#     step "$ACTION_ROOT/sw/snap_checksum -N -v -t200 -mCRC32   -cSHAKE           -s256" #
 ## too long for sim
 ## -n -f only for -mSPONGE -cSPEED
-#     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200 -mADLER32 -cSPEED           -s256" #
-#     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200 -mSPONGE  -cSPEED -n1 -f256      " #
-#     step "$ACTION_ROOT/sw/snap_checksum -I -v -t200 -mCRC32   -cSPEED           -s256" #
+#     step "$ACTION_ROOT/sw/snap_checksum -N -v -t200 -mADLER32 -cSPEED           -s256" #
+#     step "$ACTION_ROOT/sw/snap_checksum -N -v -t200 -mSPONGE  -cSPEED -n1 -f256      " #
+#     step "$ACTION_ROOT/sw/snap_checksum -N -v -t200 -mCRC32   -cSPEED           -s256" #
 #     unset SNAP_CONFIG
     fi # sponge
 
