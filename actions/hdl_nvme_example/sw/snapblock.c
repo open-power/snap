@@ -39,6 +39,7 @@
 #undef CONFIG_WAIT_FOR_IRQ	/* Not working */
 #undef CONFIG_PRINT_STATUS	/* health checking if needed */
 #undef CONFIG_MMIO32_NOHWSYNC	/* Do not use hwsync behind lwz */
+#define CONFIG_NEGATIVE_PREFETCHES	1
 
 #define CONFIG_COMPLETION_THREADS	1	/* 1 works best */
 #define CONFIG_MAX_RETRIES		5
@@ -50,6 +51,7 @@ static int cblk_reqtimeout = CONFIG_REQ_TIMEOUT_SEC;
 static int cblk_busytimeout = CONFIG_BUSY_TIMEOUT_SEC;
 
 static int cblk_prefetch = 0;
+static int cblk_negative_prefetches = CONFIG_NEGATIVE_PREFETCHES;
 static int cblk_caching = 1;
 
 static inline void _backtrace(const char *file, int line)
@@ -1193,31 +1195,34 @@ static void completion_thread_cleanup(void *arg)
  * Only prefetch if there are read slots free. Use cache reserve
  * and buffers in cache such that completion is just a markup task.
  */
-static int __prefetch_read_start(struct cblk_dev *c,
-			off_t lba_start, size_t nblocks,
-			uint32_t prefetch_offs,
-			uint32_t mem_size)
+static int __prefetch_read_start(struct cblk_dev *c, off_t lba, 
+			unsigned int nblocks)
 {
-	off_t lba;
 	struct cblk_req *req;
 	enum cache_block_status status;
+	uint32_t mem_size = nblocks * __CBLK_BLOCK_SIZE;
 
-	/* check if we can really prefetch the next nblocks */
-	lba = lba_start + prefetch_offs * nblocks;
-	if (lba >= (off_t)c->nblocks)
+	/* Check if we can really prefetch this lba */
+	if ((lba < 0) || (lba >= (off_t)c->nblocks))
 		return -1;
 
 	status = cache_info(lba);
 
-	block_trace("[%s] Simple prefetch LBA=%lu nblocks=%d status=%s\n",
-		__func__, lba, (int)nblocks, cblk_status_str[status]);
-
-	if ((status != CACHE_BLOCK_UNUSED) && (status != CACHE_BLOCK_VALID)) {
+	/* Check if the block is already in cache */
+	if ((status == CACHE_BLOCK_VALID) || (status == CACHE_BLOCK_READING)) {
+		block_trace("[%s] Skip prefetch LBA=%lu %d KiB status=%s\n",
+			__func__, lba, mem_size/1024, cblk_status_str[status]);
 		c->prefetch_collisions++;
 		return -2;
 	}
 
-	/* get a free read slot, we can read CBLK_NBLOCKS_MAX blocks */
+	block_trace("[%s] Simple prefetch LBA=%lu %d KiB status=%s\n",
+		__func__, lba, mem_size/1024, cblk_status_str[status]);
+
+	/*
+	 * Get a free read slot, we can read CBLK_NBLOCKS_MAX blocks,
+	 * pysically request the block.
+	 */
 	req = get_read_req(c, 0, lba, nblocks);
 	if (req == NULL)
 		return -2;
@@ -1230,6 +1235,36 @@ static int __prefetch_read_start(struct cblk_dev *c,
 	req_start(req, c);
 
 	return 0;
+}
+
+static int __prefetch_blocks(struct cblk_dev *c, off_t lba, unsigned int nblocks)
+{
+	int rc = 0;
+	unsigned int k, n = 0;
+
+	if (!cblk_prefetch)
+		return -1;
+
+	for (k = 0; (k < (unsigned int)cblk_prefetch); k++) {
+		/* backward */
+		if (cblk_negative_prefetches) {
+			if (reads_in_flight(c) < CBLK_PREFETCH_THRESHOLD) {
+				rc = __prefetch_read_start(c, lba - (k+1) * nblocks,
+							nblocks);
+				if (rc >= 0)
+					n++;
+			}
+		}
+		/* forward */
+		if (reads_in_flight(c) < CBLK_PREFETCH_THRESHOLD) {
+			rc = __prefetch_read_start(c, lba + (k+1) * nblocks,
+						nblocks);
+			if (rc >= 0)
+				n++;
+		}
+	}
+
+	return n;
 }
 
 static int __read_complete(struct cblk_dev *c,
@@ -1642,14 +1677,7 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 		mem_size);				/* size */
 	req_start(req, c);
 
-	if (cblk_prefetch) {
-		unsigned int k;
-
-		for (k = 0; (k < (unsigned int)cblk_prefetch); k++)
-			if (reads_in_flight(c) < CBLK_PREFETCH_THRESHOLD)
-				__prefetch_read_start(c, lba, nblocks,
-					1 + k, mem_size);
-	}
+	__prefetch_blocks(c, lba, nblocks);
 
 	while (req->status == CBLK_READING) {
 		/* block_trace("  [%s] sleeping slot %d status: %s\n",
@@ -1735,6 +1763,9 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 			c->cache_hits++;
 			if (nblocks == 1)
 				c->cache_hits_4k++;
+			
+			
+			__prefetch_blocks(c, lba, nblocks);
 			return nblocks;
 		}
 	}
@@ -1862,8 +1893,14 @@ static void _init(void)
 			cblk_caching = 1;
 	}
 
-	block_trace("[%s] init CBLK_REQTIMEOUT=%d CBLK_PREFETCH=%d CBLK_CACHING=%d\n",
-		__func__, cblk_reqtimeout, cblk_prefetch, cblk_caching);
+	env = getenv("CBLK_NEGATIVE_PREFETCHES");
+	if (env != NULL)
+		cblk_negative_prefetches = strtol(env, (char **)NULL, 0);
+
+	block_trace("[%s] init CBLK_REQTIMEOUT=%d CBLK_PREFETCH=%d "
+		"CBLK_NEGATIVE_PREFETCHES=%d CBLK_CACHING=%d\n",
+		__func__, cblk_reqtimeout, cblk_prefetch,
+		cblk_negative_prefetches, cblk_caching);
 }
 
 static void _done(void) __attribute__((destructor));
