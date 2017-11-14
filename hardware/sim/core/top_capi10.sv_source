@@ -732,7 +732,7 @@ module top (
   wire  [ 8:0] c0_ddr3_dqs_p;
   wire  [ 8:0] c0_ddr3_dqs_n;
 #endif
-#if defined (CONFIG_ENABLE_DDR4) && denfined(!CONFIG_S121B)
+#if defined(CONFIG_ENABLE_DDR4) && defined(!CONFIG_S121B)
   // DDR4 Signals
   wire          c0_ddr4_act_n;
   wire  [16:0]  c0_ddr4_adr;
@@ -749,7 +749,7 @@ module top (
   wire  [8:0]   c0_ddr4_dqs_c;
   wire  [8:0]   c0_ddr4_dqs_t;
 #endif
-#if defined (CONFIG_ENABLE_DDR4) && denfined(CONFIG_S121B)
+#if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_S121B)
   // DDR4 Signals                 
   wire          c2_ddr4_act_n;    
   wire  [16:0]  c2_ddr4_adr;      
@@ -792,24 +792,6 @@ module top (
      refclk_sdram_p = !refclk_sdram_p; #(5ns / 2.0);         // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 
-  // 266MHz N250S reference clock
-  always begin
-     refclk_sdram_p = !refclk_sdram_p; #(3.752ns / 2.0);    // a line can not start with "#", because SNAP is unsing the C preprocessor
-  end
-#endif
-#if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_S121B)
-  // 100MHz S121B reference clock          
-  always begin                             
-     #(10ns / 2.0);                        
-     refclk_sdram_p = !refclk_sdram_p;     
-  end                                      
-#endif
-#ifdef CONFIG_ENABLE_DDRI
-  // SDRAM System Clock generation
-  reg       sys_clk_p;
-  initial   sys_clk_p <= 0;
-#endif
-#if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_ADKU3)
   // 400MHz DDR3 system clock
   always begin
      sys_clk_p = !sys_clk_p; #(2.5ns / 2.0);                // a line can not start with "#", because SNAP is unsing the C preprocessor
@@ -826,11 +808,15 @@ module top (
      sys_clk_p = !sys_clk_p; #(3.752ns / 2.0);              // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 #endif
-#iff defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_S121B)
+#if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_S121B)
+  // 100MHz S121B reference clock          
+  always begin                             
+     refclk_sdram_p = !refclk_sdram_p; #(10ns / 2.0);       // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end                                      
+
   // 100MHz S121B system clock  
   always begin                  
-     #(10ns / 2.0);             
-     sys_clk_p = !sys_clk_p;    
+     sys_clk_p = !sys_clk_p; #(10ns / 2.0);                 // a line can not start with "#", because SNAP is unsing the C preprocessor    
   end                           
 #endif
 #ifdef CONFIG_ENABLE_NVME
@@ -1011,7 +997,7 @@ module top (
     .c0_ddr3_dqs_n(c0_ddr3_dqs_n)
     );
 #endif
-#if defined(CONFIG_ENABLE_DDR4) && definded(CONFIG_N250S)
+#if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_N250S)
  /////////////////////////////////////////////////////////////
   // DDR4 DIMM INSTANCE                                     //
   ////////////////////////////////////////////////////////////
@@ -1033,7 +1019,7 @@ module top (
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
     );
 #endif
-#if defined(CONFIG_ENABLE_DDR4) && definded(CONFIG_S121B)
+#if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_S121B)
   ddr4_dimm_s121b ddr4_dimm_s121b (             
     .sys_reset              (~sys_reset_n_q),   
     .c0_ddr4_act_n          (c2_ddr4_act_n),    
