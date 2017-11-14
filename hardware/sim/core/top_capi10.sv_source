@@ -732,7 +732,7 @@ module top (
   wire  [ 8:0] c0_ddr3_dqs_p;
   wire  [ 8:0] c0_ddr3_dqs_n;
 #endif
-#if defined (CONFIG_ENABLE_DDR4) && denfined(!CONFIG_S121B)
+#if defined(CONFIG_ENABLE_DDR4) && defined(!CONFIG_S121B)
   // DDR4 Signals
   wire          c0_ddr4_act_n;
   wire  [16:0]  c0_ddr4_adr;
@@ -749,7 +749,7 @@ module top (
   wire  [8:0]   c0_ddr4_dqs_c;
   wire  [8:0]   c0_ddr4_dqs_t;
 #endif
-#if defined (CONFIG_ENABLE_DDR4) && denfined(CONFIG_S121B)
+#if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_S121B)
   // DDR4 Signals                 
   wire          c2_ddr4_act_n;    
   wire  [16:0]  c2_ddr4_adr;      
@@ -997,7 +997,7 @@ module top (
     .c0_ddr3_dqs_n(c0_ddr3_dqs_n)
     );
 #endif
-#if defined(CONFIG_ENABLE_DDR4) && definded(CONFIG_N250S)
+#if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_N250S)
  /////////////////////////////////////////////////////////////
   // DDR4 DIMM INSTANCE                                     //
   ////////////////////////////////////////////////////////////
@@ -1019,7 +1019,7 @@ module top (
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
     );
 #endif
-#if defined(CONFIG_ENABLE_DDR4) && definded(CONFIG_S121B)
+#if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_S121B)
   ddr4_dimm_s121b ddr4_dimm_s121b (             
     .sys_reset              (~sys_reset_n_q),   
     .c0_ddr4_act_n          (c2_ddr4_act_n),    
