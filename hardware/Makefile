@@ -43,6 +43,12 @@ ifeq "$(FPGACARD)" "ADKU3"
 	export DDRI_USED=$(SDRAM_USED)
 	export NVME_USED=FALSE
 endif
+ifeq "$(FPGACARD)" "S121B"
+	export DDR3_USED=FALSE
+	export DDR4_USED=$(SDRAM_USED)
+	export DDRI_USED=$(SDRAM_USED)
+	export NVME_USED=FALSE
+endif
 
 ifeq "$(FPGACARD)" "N250S"
 	export DDR3_USED=FALSE

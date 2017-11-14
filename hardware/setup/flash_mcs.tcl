@@ -27,12 +27,18 @@ if { $argc != 1 && $argc != 2 } {
 }
 
 set mcsfile     [lindex $argv 0]
-set fpgapartnum xcku060
 switch $fpgacard {
-  N250S { set flashdevice mt28gu512aax1e-bpi-x16 }
-  ADKU3 { set flashdevice mt28gu01gaax1e-bpi-x16 }
+  N250S { set flashdevice mt28gu512aax1e-bpi-x16
+        set fpgapartnum xcku060
+      }
+  ADKU3 { set flashdevice mt28gu01gaax1e-bpi-x16
+        set fpgapartnum xcku060
+      }
+  S121B { set flashdevice mt28gu01gaax1e-bpi-x16
+        set fpgapartnum xcku115
+      }
   default {
-    puts "Error: Environment FPGACARD must be set to N250S or ADKU3"
+    puts "Error: Environment FPGACARD must be set to N250S or ADKU3 or S121B"
     exit 96
   }
 }

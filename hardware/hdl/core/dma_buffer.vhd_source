@@ -605,10 +605,10 @@ BEGIN
           rram_rdata_end_qq   <= '0';
           rram_rdata_end_qqq  <= '0';
           flip_rbit_valid_q   <= '0';             -- only for FPGACARD=N250S
-          flip_rbit_valid_q   <= '1';             -- only for FPGACARD=ADKU3
+          flip_rbit_valid_q   <= '1';             -- only for FPGACARD=ADKU3 -- only for FPGACARD=S121B
           flip_rbit_q         <= '0';
           flip_wbit_valid_q   <= '0';             -- only for FPGACARD=N250S
-          flip_wbit_valid_q   <= '1';             -- only for FPGACARD=ADKU3
+          flip_wbit_valid_q   <= '1';             -- only for FPGACARD=ADKU3 -- only for FPGACARD=S121B
           flip_wbit_q         <= '0';          
 
         ELSE

@@ -253,17 +253,18 @@ function usage() {
 	echo "    [-D <Target Dir>]"
 	echo "    [-A <ADKU3> : Select AlphaData KU3 Card"
 	echo "        <N250S> : Select Nallatech 250S Card"
+	echo "        <S121B> : Select Semptian NSA121B Card"
 	echo "        <ALL> : Select ALL Cards"
 	echo "    [-F <Image> : Set Image file for Accelerator -A"
 	echo "                -A ALL is not valid if -F is used"
 	echo "    [-h] Print this help"
 	echo "    Option -D must be set"
 	echo "    following combinations can happen"
-	echo "    1.) Option -A [N250S or ADKU3] and -F is set"
+	echo "    1.) Option -A [N250S or ADKU3 or S121B] and -F is set"
 	echo "        for Card in all Accelerators (-A)"
 	echo "           Image will be flashed on Card"
 	echo "           Software Test will run on Card"
-	echo "    2.) Option -A [N250S or ADKU3]"
+	echo "    2.) Option -A [N250S or ADKU3 or S121B]"
 	echo "        for Card in all given Accelerators (-A)"
 	echo "           Software Test will run on Card"
 	echo "    3.) Option -A ALL"
@@ -292,6 +293,7 @@ while getopts "D:A:F:h" opt; do
 		accel=$OPTARG;
 		if [[ $accel != "N250S" ]] &&
 		   [[ $accel != "ADKU3" ]] &&
+		   [[ $accel != "S121B" ]] &&
 		   [[ $accel != "ALL"   ]]; then
 			echo "Error: -A $OPTARG is not valid !" >&2
 			exit 1
@@ -323,7 +325,7 @@ fi
 
 test_done=0
 if [[ $accel != "ALL" ]]; then
-	# accel can be AlphaData KU3 or Nallatech 250S only
+	# accel can be AlphaData KU3 or Nallatech 250S or Semptian NSA121B only
 	if [[ $BINFILE != "" ]]; then
 		echo "Flash and test Accel: $accel using: $BINFILE"
 		for IMAGE in `ls -tr $BINFILE 2>/dev/null`; do
@@ -353,7 +355,7 @@ if [[ $accel != "ALL" ]]; then
 		echo "Image Test on Accel: $accel was executed $test_done times"
 		exit 0
 	fi
-	# Parm (-A Nallatech 250S or AlphaData KU3) was set, but no file (-F) to test
+	# Parm (-A Nallatech 250S or AlphaData KU3 or Semptian NSA121B) was set, but no file (-F) to test
 	# Run Software Test on one Type of Card
 	echo "Test Software on Accel: $accel"
 	MY_CARDS=`./software/tools/snap_find_card -A $accel`
@@ -397,7 +399,7 @@ for card in $MY_CARDS ; do
 		echo "Can not find valid Accelerator for Card# $card"
 		continue
 	fi
-	if [[ $accel != "N250S" ]] && [[ $accel != "ADKU3" ]]; then
+	if [[ $accel != "N250S" ]] && [[ $accel != "ADKU3" ]] && [[ $accel != "S121B" ]]; then
 		echo "Invalid Accelerator $accel for Card $card, skip"
 		continue
 	fi
