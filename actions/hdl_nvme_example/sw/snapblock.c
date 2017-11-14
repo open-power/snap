@@ -37,13 +37,12 @@
 #include "capiblock.h"
 
 #undef CONFIG_WAIT_FOR_IRQ	/* Not working */
-#undef CONFIG_PRINT_STATUS	/* health checking if needed */
 #undef CONFIG_MMIO32_NOHWSYNC	/* Do not use hwsync behind lwz */
 #define CONFIG_NEGATIVE_PREFETCHES	1
 #define CBLK_PREFETCH_THRESHOLD		10 /* only prefetch if reads_in_flight is small than the threshold */
 
 #define CONFIG_COMPLETION_THREADS	1 /* 1 works best */
-#define CONFIG_MAX_RETRIES		5
+#define CONFIG_MAX_RETRIES		5	/* 5 is good, 0: no retries */
 #define CONFIG_BUSY_TIMEOUT_SEC		5
 #define CONFIG_REQ_TIMEOUT_SEC		3
 #define CONFIG_REQ_DURATION_USEC	100000 /* usec */
@@ -192,7 +191,7 @@ struct cblk_req {
 	uint64_t dst;
 	uint64_t src;
 	uint32_t size;
-	unsigned int tries;
+	int tries;
 	unsigned int err_total;
 
 	struct timeval stime;	/* start time */
@@ -328,27 +327,27 @@ static inline void dev_set_status(struct cblk_dev *c,
 /* Action related definitions. Used to access the hardware */
 
 /*
-* Die neue NVMe Action ist im Branch copy4k8k und stellt zwei 
-* Funktionen zur Verfügung. Host Memory nach NVMe (action reg 0x30=3)
-* und NVMe nach Host Memory ( reg 0x30=4).
-* 
-* Source, desination und size Register- Zuordnung haben sich nicht 
-* geändert. Size ist entweder 4k oder 8k. Ein Read or Write Transfer
-* wird mit action start getriggert. Unterstützt werden bis zu 15 Reads
-* und 1 Write zur einer Zeit. Alle Transfers müssen eine unterschiedliche
-* ID haben. ID 0 ist für den Write Transfer reserviert. ID1 bis 15 für
-* die Reads. Die ID muss in Register 0x30 bit 8 bis 11 mit angegeben
-* werden.
-* 
-* Über Register 0x4c kann der Transfer- Status abgefragt
-* werden. Bit 4 zeigt an, ob ein Transfer abgeschlossen wurde.
-* Bit 0 bis 3 gibt die zugehörige ID an.
-* 
-* Beispiel:
-*  reg 0x4c = 0x10 -> write transfer completed
-*  reg 0x4c = 0x1f -> read transfer with ID 15 completed
-*  reg 0x4c = 0x00 -> no completion
-*/ 
+ * Die neue NVMe Action ist im Branch copy4k8k und stellt zwei
+ * Funktionen zur Verfügung. Host Memory nach NVMe (action reg 0x30=3)
+ * und NVMe nach Host Memory ( reg 0x30=4).
+ *
+ * Source, desination und size Register- Zuordnung haben sich nicht
+ * geändert. Size ist entweder 4k oder 8k. Ein Read or Write Transfer
+ * wird mit action start getriggert. Unterstützt werden bis zu 15 Reads
+ * und 1 Write zur einer Zeit. Alle Transfers müssen eine unterschiedliche
+ * ID haben. ID 0 ist für den Write Transfer reserviert. ID1 bis 15 für
+ * die Reads. Die ID muss in Register 0x30 bit 8 bis 11 mit angegeben
+ * werden.
+ *
+ * Über Register 0x4c kann der Transfer- Status abgefragt
+ * werden. Bit 4 zeigt an, ob ein Transfer abgeschlossen wurde.
+ * Bit 0 bis 3 gibt die zugehörige ID an.
+ *
+ * Beispiel:
+ *  reg 0x4c = 0x10 -> write transfer completed
+ *  reg 0x4c = 0x1f -> read transfer with ID 15 completed
+ *  reg 0x4c = 0x00 -> no completion
+ */ 
 
 #define ACTION_TYPE_NVME_EXAMPLE	0x10140001	/* Action Type */
 
@@ -373,9 +372,12 @@ static const char *action_name[] = {
 #define ACTION_STATUS		0x4c
 #define  ACTION_STATUS_WRITE_COMPLETED	0x10
 #define  ACTION_STATUS_READ_COMPLETED	0x1f /* mask id 0x0f */
+#define  ACTION_STATUS_COMPLETED	0x10 /* set if there is r/w completed */
 #define  ACTION_STATUS_NO_COMPLETION	0x00 /* no completion seen */
 #define  ACTION_STATUS_COMPLETION_MASK	0x0f /* mask completion bits */
-#define  ACTION_STATUS_ZERO_MASK	0xffffffe0
+#define  ACTION_STATUS_ERROR_MASK	0xffffffe0
+
+#define ACTION_ERROR_BITS		0x48	/* Error Bits */
 
 /* defaults */
 #define ACTION_WAIT_TIME	10	/* Default timeout in sec */
@@ -1082,9 +1084,11 @@ static int completion_status(struct cblk_dev *c, int timeout __attribute__((unus
 {
 	int rc = ETIME;
 	uint32_t status = 0x0;
+	uint32_t errbits = 0x0;
 	int slot = -1;
 	struct cblk_req *req;
 	time_t usecs;
+	static int count = 0;
 
 #ifdef CONFIG_WAIT_FOR_IRQ
 	rc = snap_action_completed(c->act, NULL, timeout);
@@ -1101,24 +1105,21 @@ static int completion_status(struct cblk_dev *c, int timeout __attribute__((unus
 		return -2;
 	}
 
-#ifdef CONFIG_PRINT_STATUS
-	if (c->status_read_count++ == 100000) {
-		block_trace("  [%s] ACTION_STATUS=%08x\n", __func__, status);
-		c->status_read_count = 0;
-	}
-#endif
+	if (((status & ACTION_STATUS_ERROR_MASK) != 0x0) && (count++ < 2)) {
+		__cblk_read(c, ACTION_ERROR_BITS, &errbits);
 
-	if (status == ACTION_STATUS_NO_COMPLETION) {
+		fprintf(stderr, "[%s] warn: ACTION_STATUS=%08x ERROR_MASK not 0 "
+			"ACTION_ERROR_BITS=%08x\n",
+			__func__, status, errbits);
+		/* FIXME */
+		/* dev_set_status(c, CBLK_ERROR);
+		return -4; */
+	}
+
+	if ((status & ACTION_STATUS_COMPLETED) != ACTION_STATUS_COMPLETED) {
 		/* FIXME Very verbose when doing polling */
 		/* block_trace("  NO COMPLETION %02x\n", status); */
 		return -3;
-	}
-	
-	if ((status & ACTION_STATUS_ZERO_MASK) != 0x0) {
-		fprintf(stderr, "err: FATAL! STATUS_ZERO_BITs not 0 %08x\n",
-			status);
-		dev_set_status(c, CBLK_ERROR);
-		return -4;
 	}
 
 	slot = status & ACTION_STATUS_COMPLETION_MASK;
@@ -1153,28 +1154,32 @@ static int check_req_timeouts(struct cblk_dev *c, struct timeval *etime,
 	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
 		struct cblk_req *req = &c->req[i];
 
-		if ((req->status == CBLK_READING) ||
-		    (req->status == CBLK_WRITING)) {
+		if ((req->status != CBLK_READING) && (req->status != CBLK_WRITING))
+			continue;
 
-			diff_sec = timediff_sec(etime, &req->stime);
-			if (diff_sec > timeout_sec) {
-				err++;
+		diff_sec = timediff_sec(etime, &req->stime);
+		if (diff_sec > timeout_sec) {
+			err++;
+			if (req->tries >= CONFIG_MAX_RETRIES) {
+				uint32_t errbits;
+
+				errno = ETIME;
+				cblk_set_status(req, CBLK_ERROR);
+				dev_set_status(c, CBLK_ERROR);
+				__cblk_read(c, ACTION_ERROR_BITS, &errbits);
+
 				fprintf(stderr, "[%s] err: req[%2d]: "
-					"%s %lu/%lu sec LBA=%ld TIMEOUT!\n",
+					"%s %lu/%lu sec LBA=%ld TIMEOUT! "
+					"ACTION_ERROR_BITS=%08x\n",
 					__func__, i, cblk_status_str[req->status],
-					timeout_sec, diff_sec, req->lba);
+					timeout_sec, diff_sec, req->lba, errbits);
 
-				if (req->tries >= CONFIG_MAX_RETRIES) {
-					errno = ETIME;
-					cblk_set_status(req, CBLK_ERROR);
-					dev_set_status(c, CBLK_ERROR);
-					if (req->use_wait_sem)
-						sem_post(&req->wait_sem);
-				} else {
-					/* FIXME Wonder if that helps ... */
-					req->err_total++;
-					req_start(req, c);
-				}
+				if (req->use_wait_sem)
+					sem_post(&req->wait_sem);
+			} else {
+				/* FIXME Wonder if that helps ... */
+				req->err_total++;
+				req_start(req, c);
 			}
 		}
 	}

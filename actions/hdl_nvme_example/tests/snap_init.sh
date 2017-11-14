@@ -43,6 +43,7 @@ function usage() {
 	echo "    [-n <lbas>]       number of lbas to try, e.g. 0x40000 for 1 GiB"
 	echo "    [-b <nblocks>]    number of blocks per transfer"
 	echo "    [-t <threads>]    threads to be used"
+	echo "    [-H <threads>]    hardware threads per CPU to be used (see ppc64_cpu)"
 	echo "    [-p <prefetch>]   0/1 disable/enable prefetching"
 	echo "    [-R <seed>]       random seed, if not 0, random read odering"
 	echo "    [-T <testcase>]   testcase e.g. CBLK, READ_BENCHMARK, PERF, ..."
@@ -71,7 +72,7 @@ function reset_card() {
 	fi
 }
 
-while getopts ":A:b:C:T:t:R:n:p:rVvh" opt; do
+while getopts ":H:A:b:C:T:t:R:n:p:rVvh" opt; do
 	case ${opt} in
 	C)
 		card=${OPTARG};
@@ -92,6 +93,11 @@ while getopts ":A:b:C:T:t:R:n:p:rVvh" opt; do
 		;;
 	t)
 		threads=${OPTARG}
+		;;
+	H)
+		hw_threads=${OPTARG}
+		sudo ppc64_cpu --smt=${hw_threads}
+		ppc64_cpu --smt
 		;;
 	n)
 		options="-n ${OPTARG}"
