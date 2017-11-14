@@ -4,6 +4,7 @@
 # Fri Sep 15 12:23:51 2017
 #
 # N250S is not set
+# ADKU3 is not set
 S121B=y
 FPGACARD="S121B"
 FPGACHIP="xcku115-flva1517-2-e"

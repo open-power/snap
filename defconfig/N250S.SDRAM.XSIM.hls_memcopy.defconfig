@@ -5,6 +5,7 @@
 #
 N250S=y
 # ADKU3 is not set
+# S121B is not set
 FPGACARD="N250S"
 FPGACHIP="xcku060-ffva1156-2-e"
 NUM_OF_ACTIONS=1
