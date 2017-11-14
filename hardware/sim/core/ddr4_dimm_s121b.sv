@@ -36,7 +36,7 @@ module own_tran(in1, in1);
   inout in1;
 endmodule
 
-module ddr4_dimm_nsa121b
+module ddr4_dimm_s121b
 (
   input             sys_reset,
   input             c0_ddr4_act_n,
