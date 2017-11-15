@@ -1160,6 +1160,12 @@ static int check_req_timeouts(struct cblk_dev *c, struct timeval *etime,
 		diff_sec = timediff_sec(etime, &req->stime);
 		if (diff_sec > timeout_sec) {
 			err++;
+			
+			fprintf(stderr, "[%s] err: req[%2d]: "
+				"%s %lu/%lu sec LBA=%ld TIMEOUT\n",
+				__func__, i, cblk_status_str[req->status],
+				timeout_sec, diff_sec, req->lba);
+
 			if (req->tries >= CONFIG_MAX_RETRIES) {
 				uint32_t errbits;
 
@@ -1168,16 +1174,15 @@ static int check_req_timeouts(struct cblk_dev *c, struct timeval *etime,
 				dev_set_status(c, CBLK_ERROR);
 				__cblk_read(c, ACTION_ERROR_BITS, &errbits);
 
-				fprintf(stderr, "[%s] err: req[%2d]: "
-					"%s %lu/%lu sec LBA=%ld TIMEOUT! "
-					"ACTION_ERROR_BITS=%08x\n",
-					__func__, i, cblk_status_str[req->status],
-					timeout_sec, diff_sec, req->lba, errbits);
+				if (errbits != 0)
+					fprintf(stderr, "[%s] err: req[%2d]: "
+						"ACTION_ERROR_BITS=%08x\n",
+						__func__, i, errbits);
 
 				if (req->use_wait_sem)
 					sem_post(&req->wait_sem);
 			} else {
-				/* FIXME Wonder if that helps ... */
+				/* FIXME Helps but is not optimal ... */
 				req->err_total++;
 				req_start(req, c);
 			}
