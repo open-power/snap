@@ -20,6 +20,7 @@ choice
 
         config ADKU3
                 bool "AlphaData KU3 Card with Ethernet, 8GB DDR3 SDRAM and Xilinx FPGA"
+                select DISABLE_NVME
                 help
                   AlphaData KU3 has ethernet and 8GB DDR3 SDRAM. Uses Xilinx FPGA.
 endchoice
@@ -67,30 +68,37 @@ choice
             bool "HLS Memcopy"
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
+            select DISABLE_NVME
 
         config HLS_SPONGE
             bool "HLS Sponge"
             select ENABLE_HLS_SUPPORT
             select DISABLE_SDRAM_AND_BRAM
+            select DISABLE_NVME
 
         config HLS_HASHJOIN
             bool "HLS Hashjoin"
             select ENABLE_HLS_SUPPORT
+            select DISABLE_SDRAM_AND_BRAM
+            select DISABLE_NVME
 
         config HLS_SEARCH
             bool "HLS Search"
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
+            select DISABLE_NVME
 
         config HLS_BFS
             bool "HLS Breadth First Search"
             select ENABLE_HLS_SUPPORT
             select DISABLE_SDRAM_AND_BRAM
+            select DISABLE_NVME
 
         config HLS_INTERSECT
             bool "HLS Intersect"
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
+            select DISABLE_NVME
 
         config HLS_NVME_MEMCOPY
             bool "HLS NVMe Memcopy"
@@ -103,6 +111,7 @@ choice
             bool "HLS HelloWorld"
             select ENABLE_HLS_SUPPORT
             select DISABLE_SDRAM_AND_BRAM
+            select DISABLE_NVME
 
 endchoice
 
@@ -184,6 +193,10 @@ config DDRI_USED
         default "TRUE"  if ENABLE_DDRI
         default "FALSE" if ! ENABLE_DDRI
 
+config DISABLE_NVME
+        bool
+        default n
+
 config FORCE_NVME
         bool
         default n
@@ -191,7 +204,7 @@ config FORCE_NVME
 
 config ENABLE_NVME
         bool "Enable NVMe"
-        depends on N250S && (HLS_ACTION || HDL_ACTION || HDL_NVME_EXAMPLE || HDL_EXAMPLE || HLS_NVME_MEMCOPY)
+        depends on ! DISABLE_NVME
         help
           This option controls the instantiation of an NVMe host controller
           together with the AXI interfaces for MMIO control and action access.
