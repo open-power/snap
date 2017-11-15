@@ -29,7 +29,7 @@ LDFLAGS += -L$(SNAP_ROOT)/software/lib
 LDLIBS += -lsnap -lpthread
 
 DESTDIR ?= /usr
-libs += $(SNAP_ROOT)/software/lib/libsnap.a
+# libs += $(SNAP_ROOT)/software/lib/libsnap.a
 
 # Link statically for PSLSE simulation and dynamically for real version
 ifdef BUILD_SIMCODE
