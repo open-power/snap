@@ -49,11 +49,17 @@ choice
         default HDL_EXAMPLE
 
         config HLS_ACTION
-            bool "HLS Action"
+            bool "HLS Action - manually set ACTION_ROOT in snap_env.sh!"
             select ENABLE_HLS_SUPPORT
+	    help
+                This option is a placeholder for an action written by the user in HLS.
+                Please remember to set the environment variable "ACTION_ROOT" in snap_env.sh to the directory of the action source code.
 
         config HDL_ACTION
-            bool "HDL Action"
+            bool "HDL Action - manually set ACTION_ROOT in snap_env.sh!"
+	    help
+                This option is a placeholder for an action written by the user in a hardware description language such as VHDL or Verilog.
+                Please remember to set the environment variable "ACTION_ROOT" in snap_env.sh to the directory of the action source code.
 
         config HDL_EXAMPLE
             bool "HDL Example"
