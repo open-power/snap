@@ -20,6 +20,7 @@ choice
 
         config ADKU3
                 bool "AlphaData KU3 Card with Ethernet, 8GB DDR3 SDRAM and Xilinx FPGA"
+                select DISABLE_NVME
                 help
                   AlphaData KU3 has ethernet and 8GB DDR3 SDRAM. Uses Xilinx FPGA.
 endchoice
@@ -48,11 +49,20 @@ choice
         default HDL_EXAMPLE
 
         config HLS_ACTION
-            bool "HLS Action"
+            bool "HLS Action - manually set ACTION_ROOT in snap_env.sh!"
             select ENABLE_HLS_SUPPORT
+	    help
+                This option is a placeholder for an action written by the user in HLS.
+                Please remember to set the environment variable "ACTION_ROOT"
+                in snap_env.sh to the directory of the action source code.
 
         config HDL_ACTION
-            bool "HDL Action"
+            bool "HDL Action - manually set ACTION_ROOT in snap_env.sh!"
+	    help
+                This option is a placeholder for an action written by the user in a
+                hardware description language such as VHDL or Verilog.
+                Please remember to set the environment variable "ACTION_ROOT"
+                in snap_env.sh to the directory of the action source code.
 
         config HDL_EXAMPLE
             bool "HDL Example"
@@ -67,30 +77,37 @@ choice
             bool "HLS Memcopy"
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
+            select DISABLE_NVME
 
         config HLS_SPONGE
             bool "HLS Sponge"
             select ENABLE_HLS_SUPPORT
             select DISABLE_SDRAM_AND_BRAM
+            select DISABLE_NVME
 
         config HLS_HASHJOIN
             bool "HLS Hashjoin"
             select ENABLE_HLS_SUPPORT
+            select DISABLE_SDRAM_AND_BRAM
+            select DISABLE_NVME
 
         config HLS_SEARCH
             bool "HLS Search"
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
+            select DISABLE_NVME
 
         config HLS_BFS
             bool "HLS Breadth First Search"
             select ENABLE_HLS_SUPPORT
             select DISABLE_SDRAM_AND_BRAM
+            select DISABLE_NVME
 
         config HLS_INTERSECT
             bool "HLS Intersect"
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
+            select DISABLE_NVME
 
         config HLS_NVME_MEMCOPY
             bool "HLS NVMe Memcopy"
@@ -102,6 +119,8 @@ choice
         config HLS_HELLOWORLD
             bool "HLS HelloWorld"
             select ENABLE_HLS_SUPPORT
+            select DISABLE_SDRAM_AND_BRAM
+            select DISABLE_NVME
 
 endchoice
 
@@ -183,6 +202,10 @@ config DDRI_USED
         default "TRUE"  if ENABLE_DDRI
         default "FALSE" if ! ENABLE_DDRI
 
+config DISABLE_NVME
+        bool
+        default n
+
 config FORCE_NVME
         bool
         default n
@@ -190,7 +213,7 @@ config FORCE_NVME
 
 config ENABLE_NVME
         bool "Enable NVMe"
-        depends on N250S && (HLS_ACTION || HDL_ACTION || HDL_NVME_EXAMPLE || HDL_EXAMPLE || HLS_NVME_MEMCOPY)
+        depends on ! DISABLE_NVME
         help
           This option controls the instantiation of an NVMe host controller
           together with the AXI interfaces for MMIO control and action access.
