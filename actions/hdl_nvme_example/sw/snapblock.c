@@ -42,7 +42,7 @@
 #define CBLK_PREFETCH_THRESHOLD		10 /* only prefetch if reads_in_flight is small than the threshold */
 
 #define CONFIG_COMPLETION_THREADS	1 /* 1 works best */
-#define CONFIG_MAX_RETRIES		5	/* 5 is good, 0: no retries */
+#define CONFIG_MAX_RETRIES		5 /* 5 is good, 0: no retries */
 #define CONFIG_BUSY_TIMEOUT_SEC		5
 #define CONFIG_REQ_TIMEOUT_SEC		3
 #define CONFIG_REQ_DURATION_USEC	100000 /* usec */
@@ -460,11 +460,12 @@ static inline void __dump_entry(struct cache_entry *entry)
 	struct cache_way *w = entry->way;
 
 	cache_trace("  e[%p]: "
-			"%s %ld %d %d | %s %ld %d %d | %s %ld %d %d | %s %ld %d %d\n", entry,
-			block_status_str[w[0].status], w[0].lba, w[0].count, w[0].used,
-			block_status_str[w[1].status], w[1].lba, w[1].count, w[1].used,
-			block_status_str[w[2].status], w[2].lba, w[2].count, w[2].used,
-			block_status_str[w[3].status], w[3].lba, w[3].count, w[3].used);
+		"%s %ld %d %d | %s %ld %d %d | %s %ld %d %d | %s %ld %d %d\n",
+		entry,
+		block_status_str[w[0].status], w[0].lba, w[0].count, w[0].used,
+		block_status_str[w[1].status], w[1].lba, w[1].count, w[1].used,
+		block_status_str[w[2].status], w[2].lba, w[2].count, w[2].used,
+		block_status_str[w[3].status], w[3].lba, w[3].count, w[3].used);
 }
 
 static void cache_done(void)
@@ -555,11 +556,13 @@ static struct cache_way *__cache_reserve(off_t lba, int force)
 		e = &way[j];
 
 		switch (e->status) {
+		/* continue, since maybe we find one with matching lba */
 		case CACHE_BLOCK_UNUSED:
-			reserve_idx = j;	/* continue, since maybe we find one with matching lba */
+			reserve_idx = j;
 			min_count = e->count;
 			break;
-		case CACHE_BLOCK_VALID:		/* avoid double entries */
+		/* avoid double entries */
+		case CACHE_BLOCK_VALID:
 			if (e->lba == lba) {	/* entry is already in cache */
 				/* cache_trace("[%s] %p LBA=%ld/%ld is already VALID!\n",
 					__func__, e, lba, e->lba); */
@@ -575,7 +578,8 @@ static struct cache_way *__cache_reserve(off_t lba, int force)
 				reserve_idx = j;/* replace candidate with smallest count */
 			}
 			break;
-		case CACHE_BLOCK_READING:	/* do not throw this out */
+		/* do not throw this out */
+		case CACHE_BLOCK_READING:
 			if (e->lba == lba) {	/* entry is already in cache */
 				cache_trace("[%s] %p LBA=%ld/%ld is already READING!\n",
 					__func__, e, lba, e->lba);
@@ -811,7 +815,10 @@ static void req_start(struct cblk_req *req, struct cblk_dev *c)
 	/* Wait for Action to go back to Idle */
 	snap_action_start(c->act);
 
-	/* Update statistics under device lock. Otherwise it might be off a little bit. */
+	/*
+	 * Update statistics under device lock.
+	 * Otherwise it might be off a little bit.
+	 */
 	req->tries++;
 	if (action_code == ACTION_CONFIG_COPY_HN) {
 		c->hw_block_writes++;
@@ -862,9 +869,9 @@ static void cblk_req_dump(struct cblk_dev *c)
 			usecs = timediff_usec(&now, &req->stime);
 			break;
 		}
-		fprintf(stderr, "  req[%2d]: %s LBA=%ld %ld usec err_total=%d\n", i,
-			cblk_status_str[req->status], req->lba, usecs,
-			req->err_total);
+		fprintf(stderr, "  req[%2d]: %s LBA=%ld %ld usec err_total=%d\n",
+			i, cblk_status_str[req->status], req->lba,
+			usecs, req->err_total);
 	}
 }
 
@@ -890,9 +897,9 @@ static void stat_req_dump(struct cblk_dev *c)
 			usecs = timediff_usec(&now, &req->stime);
 			break;
 		}
-		stat_trace("  req[%2d]: %s LBA=%ld %ld usec err_total=%d\n", i,
-			cblk_status_str[req->status], req->lba, usecs,
-			req->err_total);
+		stat_trace("  req[%2d]: %s LBA=%ld %ld usec err_total=%d\n",
+			i, cblk_status_str[req->status], req->lba,
+			usecs, req->err_total);
 	}
 }
 
@@ -932,7 +939,8 @@ static struct cblk_req *get_read_req(struct cblk_dev *c,
 
 		/* Check if device is still healthy after waiting */
 		if (c->status != CBLK_READY) {
-			block_trace("[%s] err: Device not READY, no read req LBA=%ld given out!\n",
+			block_trace("[%s] err: Device not READY, no "
+				"read req LBA=%ld given out!\n",
 				__func__, lba);
 			return NULL;
 		}
@@ -1000,7 +1008,8 @@ static struct cblk_req *get_write_req(struct cblk_dev *c,
 
 		/* Check if device is still healthy after waiting */
 		if (c->status != CBLK_READY) {
-			block_trace("[%s] err: Device not READY, no write req LBA=%ld given out!\n",
+			block_trace("[%s] err: Device not READY, no "
+				"write req LBA=%ld given out!\n",
 				__func__, lba);
 			return NULL;
 		}
@@ -1008,10 +1017,10 @@ static struct cblk_req *get_write_req(struct cblk_dev *c,
 		pthread_mutex_lock(&c->dev_lock);
 
 		for (i = 0; i < CBLK_WIDX_MAX; i++) {
-			slot = c->widx;				/* try next slot */
+			slot = c->widx;			/* try next slot */
 
 			req = &c->req[slot];
-			if (req->status == CBLK_IDLE) {		/* nice it is free */
+			if (req->status == CBLK_IDLE) {	/* nice it is free */
 				block_trace("[%s] GIVE OUT WRITE slot %u LBA=%ld\n",
 					__func__, slot, lba);
 
