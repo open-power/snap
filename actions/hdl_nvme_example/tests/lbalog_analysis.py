@@ -1,9 +1,27 @@
 #!/usr/bin/python
-import re
 
-def main():
+#
+# Copyright 2017 International Business Machines
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+import re
+import getopt, sys
+
+def analyze_file(fname):
 	seqs = []
-	with open("run_threads1_prefetch0_lbas.log", "r") as ins:
+	with open(fname, "r") as ins:
 		lba_last = 0
 		last_seq = 0
 		for line in ins:
@@ -38,6 +56,32 @@ def main():
 	for e in count_seqs:
 		print("[" + str(i) + "] " + str(e))
 		i += 1
+
+def usage():
+	print("lbalog_analysis.py [-help] -i filename.log")
+
+def main():
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], "hi:", ["help", "input="])
+	except getopt.GetoptError as err:
+        # print help information and exit:
+		print str(err)
+		usage()
+		sys.exit(2)
+
+	# fname = None
+	fname = "run_threads1_prefetch0_lbas.log"
+
+	for o, a in opts:
+		if o in ("-h", "--help"):
+			usage()
+			sys.exit()
+		elif o in ("-i", "--input"):
+			fname = a
+		else:
+			assert False, "unhandled option"
+
+	analyze_file(fname)
 
 if __name__ == "__main__":
 	main()
