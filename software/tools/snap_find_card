@@ -196,6 +196,7 @@ case ${accel} in
 		# detect all cards
 		detect_gzip_cards
 		detect_snap_cards "0x0632" "0x0605"
+		detect_snap_cards "0x0632" "0x0607"
 		detect_snap_cards "0x0632" "0x060a"
 		;;
 	*)
