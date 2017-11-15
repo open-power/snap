@@ -15,6 +15,8 @@
 # limitations under the License.
 #
 ###############################################################################
+
+# This script needs to get sourced in order to effectively change $PATH
 export SNAP_ROOT=$(dirname $(readlink -f "$BASH_SOURCE"))
 [ -f "${SNAP_ROOT}/snap_env.sh" ] && . ${SNAP_ROOT}/snap_env.sh
 export PATH=$PATH:$SNAP_ROOT/software/tools:$ACTION_ROOT/sw
