@@ -589,7 +589,7 @@ static struct cache_way *__cache_reserve(off_t lba, int force)
 		}
 	}
 	if (reserve_idx == -1) {
-		dfprintf(stderr, "[%s] warning: No free entry found for LBA=%ld\n",
+		dfprintf(stderr, "[%s] warn: No free entry found for LBA=%ld\n",
 			__func__, lba);
 		__dump_entry(entry);
 		return NULL;	/* no entry found! */
@@ -659,13 +659,13 @@ static int cache_write_reserved(struct cache_way **e,
 	pthread_mutex_lock(&entry->way_lock);
 
 	if (_e->lba != lba) {
-		dfprintf(stderr, "[%s] warning: %p LBA=%ld/%ld reservation lost %s\n",
+		dfprintf(stderr, "[%s] warn: %p LBA=%ld/%ld reservation lost %s\n",
 			__func__, _e, lba, _e->lba, block_status_str[_e->status]);
 		pthread_mutex_unlock(&entry->way_lock);
 		return -1;
 	}
 	if (_e->status != CACHE_BLOCK_READING) {
-		dfprintf(stderr, "[%s] warning: %p LBA=%ld/%ld State is not READING but %s\n",
+		dfprintf(stderr, "[%s] warn: %p LBA=%ld/%ld State is not READING but %s\n",
 			__func__, _e, lba, _e->lba, block_status_str[_e->status]);
 		pthread_mutex_unlock(&entry->way_lock);
 		return -2;
@@ -702,7 +702,7 @@ static int cache_unreserve(struct cache_way *e, off_t lba)
 		return -1;
 	}
 	if (e->status == CACHE_BLOCK_READING) {
-		dfprintf(stderr, "[%s] warning: %p forcing status LBA=%ld/%ld "
+		dfprintf(stderr, "[%s] warn: %p forcing status LBA=%ld/%ld "
 			"cache from %s to UNUSED!\n",
 			__func__, e, lba, e->lba, block_status_str[e->status]);
 		e->status = CACHE_BLOCK_UNUSED;
@@ -931,9 +931,12 @@ static struct cblk_req *get_read_req(struct cblk_dev *c,
 		if (rc == -1) {
 			if (errno == EINTR)
 				goto retry;
-			if (errno == ETIMEDOUT)
+			if (errno == ETIMEDOUT) {
+				fprintf(stderr, "[%s] warn: %s\n",
+				__func__, strerror(errno));
 				return NULL;
-			fprintf(stderr, "[%s] warning: sem_timedwait returned rc=%d %s\n",
+			}
+			fprintf(stderr, "[%s] warn: sem_timedwait returned rc=%d %s\n",
 				__func__, rc, strerror(errno));
 		}
 
@@ -942,6 +945,7 @@ static struct cblk_req *get_read_req(struct cblk_dev *c,
 			block_trace("[%s] err: Device not READY, no "
 				"read req LBA=%ld given out!\n",
 				__func__, lba);
+			errno = ENOENT;
 			return NULL;
 		}
 
@@ -975,10 +979,11 @@ static struct cblk_req *get_read_req(struct cblk_dev *c,
 		}
 
 		pthread_mutex_unlock(&c->dev_lock);
-		block_trace("[%s] warning: No IDLE read req LBA=%ld found!\n",
+		block_trace("[%s] warn: No IDLE read req LBA=%ld found!\n",
 			__func__, lba);
 		cblk_req_dump(c);
 	}
+	errno = EIO;
 	return NULL;
 }
 
@@ -1000,9 +1005,12 @@ static struct cblk_req *get_write_req(struct cblk_dev *c,
 		if (rc == -1) {
 			if (errno == EINTR)
 				goto retry;
-			if (errno == ETIMEDOUT)
+			if (errno == ETIMEDOUT) {
+				fprintf(stderr, "[%s] warn: %s\n",
+					__func__, strerror(errno));
 				return NULL;
-			fprintf(stderr, "[%s] warning: sem_timedwait returned rc=%d %s\n",
+			}
+			fprintf(stderr, "[%s] warn: sem_timedwait returned rc=%d %s\n",
 				__func__, rc, strerror(errno));
 		}
 
@@ -1011,6 +1019,7 @@ static struct cblk_req *get_write_req(struct cblk_dev *c,
 			block_trace("[%s] err: Device not READY, no "
 				"write req LBA=%ld given out!\n",
 				__func__, lba);
+			errno = ENOENT;
 			return NULL;
 		}
 
@@ -1038,11 +1047,11 @@ static struct cblk_req *get_write_req(struct cblk_dev *c,
 			c->widx = (c->widx + 1) % CBLK_WIDX_MAX;	/* pick next widx */
 		}
 		pthread_mutex_unlock(&c->dev_lock);
-		fprintf(stderr, "[%s] warning: No IDLE write req for LBA=%ld found!\n",
+		fprintf(stderr, "[%s] warn: No IDLE write req for LBA=%ld found!\n",
 			__func__, lba);
 		cblk_req_dump(c);
 	}
-
+	errno = EIO;
 	return NULL;
 }
 
@@ -1681,10 +1690,9 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 		return -1;
 	}
 	req = get_read_req(c, 1, lba, nblocks);
-	if (req == NULL) {
-		errno = EIO;
+	if (req == NULL)
 		return -1;
-	}
+
 	if (c->status != CBLK_READY) {	/* device in fatal error */
 		errno = EBADFD;
 		return -1;
@@ -1823,10 +1831,9 @@ static int block_write(struct cblk_dev *c, void *buf, off_t lba,
 		return 0;
 	}
 	req = get_write_req(c, 1, lba, nblocks);
-	if (req == NULL) {
-		errno = EIO;
+	if (req == NULL)
 		return 0;
-	}
+
 	if (c->status != CBLK_READY) {	/* device in fatal error */
 		errno = EBADFD;
 		return 0;
