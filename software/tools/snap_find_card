@@ -33,7 +33,7 @@ accel=UNKNOWN
 # Print usage message helper function
 function usage() {
 	echo "Usage: $PROGRAM"
-	echo "    [-A] <accelerator> use either GZIP, ADKU3, N250S or ALL"
+	echo "    [-A] <accelerator> use either GZIP, ADKU3, N250S, S121B or ALL"
 	echo "    [-C] <0..3> Print accelerator name for this Card"
 	echo "  prints out a list of cards found for the accelerator."
 	echo "  The numbers reflect /dev/cxl/afu<n>.0."
@@ -142,9 +142,12 @@ while getopts ":A:C:Vvh" opt; do
 		if [ $? != 0 ]; then
 			detect_card_name $card  "0x0632" "0x060a" "N250S"
 			if [ $? != 0 ]; then
-				detect_card_name $card  "0x0602" "" "GZIP"
+				detect_card_name $card  "0x0632" "0x0607" "S121B"
 				if [ $? != 0 ]; then
-					exit 1  # No accel fond fond Card
+					detect_card_name $card  "0x0602" "" "GZIP"
+					if [ $? != 0 ]; then
+						exit 1  # No accel fond fond Card
+					fi
 				fi
 			fi
 		fi
@@ -181,6 +184,10 @@ case ${accel} in
 	"ADKU3")
 		detect_snap_cards "0x0632" "0x0605"
 		;;
+	# NSA121B Card from Semptian
+	"S121B")
+		detect_snap_cards "0x0632" "0x0607"
+		;;		
 	# 250s Card from Nallatech
 	"N250S")
 		detect_snap_cards "0x0632" "0x060a"
@@ -189,6 +196,7 @@ case ${accel} in
 		# detect all cards
 		detect_gzip_cards
 		detect_snap_cards "0x0632" "0x0605"
+		detect_snap_cards "0x0632" "0x0607"
 		detect_snap_cards "0x0632" "0x060a"
 		;;
 	*)

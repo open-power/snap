@@ -17,7 +17,7 @@
 # Examples:
 #   xcku060-ffva1156-2-e
 #   xc7vx690tffg1157-2
-#
+#   xcku115-flva1517-2-e
 FPGACHIP    ?= xcku060-ffva1156-2-e
 PART_NUMBER ?= $(FPGACHIP)
 

@@ -156,6 +156,12 @@ if { $simulator != "nosim" } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm.sv  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm.sv]
   }
+# DDR4 Sim Files
+if { ($fpga_card == "S121B") && ($sdram_used == "TRUE") } {
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
+  add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_s121b.sv  >> $log_file
+  set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_s121b.sv]
+}
   update_compile_order -fileset sources_1 >> $log_file
   update_compile_order -fileset sim_1 >> $log_file
 }
@@ -187,6 +193,18 @@ if { $fpga_card == "ADKU3" } {
     export_ip_user_files -of_objects  [get_files "$ip_dir/axi_clock_converter/axi_clock_converter.xci"] -force >> $log_file
     add_files -norecurse $ip_dir/ddr3sdram/ddr3sdram.xci >> $log_file
     export_ip_user_files -of_objects  [get_files "$ip_dir/ddr3sdram/ddr3sdram.xci"] -force >> $log_file
+  }
+} elseif { $fpga_card == "S121B" } {
+  if { $bram_used == "TRUE" } {
+    add_files -norecurse $ip_dir/axi_clock_converter/axi_clock_converter.xci >> $log_file
+    export_ip_user_files -of_objects  [get_files "$ip_dir/axi_clock_converter/axi_clock_converter.xci"] -force >> $log_file
+    add_files -norecurse $ip_dir/block_RAM/block_RAM.xci >> $log_file
+    export_ip_user_files -of_objects  [get_files "$ip_dir/block_RAM/block_RAM.xci"] -force >> $log_file
+  } elseif { $sdram_used == "TRUE" } {
+    add_files -norecurse $ip_dir/axi_clock_converter/axi_clock_converter.xci >> $log_file
+    export_ip_user_files -of_objects  [get_files "$ip_dir/axi_clock_converter/axi_clock_converter.xci"] -force >> $log_file
+    add_files -norecurse $ip_dir/ddr4sdram/ddr4sdram.xci >> $log_file
+    export_ip_user_files -of_objects  [get_files "$ip_dir/ddr4sdram/ddr4sdram.xci"] -force >> $log_file
   }
 } elseif { $fpga_card == "N250S" } {
   if { $bram_used == "TRUE" } {
@@ -290,6 +308,15 @@ if { $fpga_card == "ADKU3" } {
     set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_ddr3_b0pblock.xdc]
     add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_ddr3_b0pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_ddr3_b0pins.xdc]
+  }
+} elseif {$fpga_card == "S121B" } {
+#doesn't support prflow now
+  if { $bram_used == "TRUE" } {
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/S121B/snap_refclk100.xdc
+  } elseif { $sdram_used == "TRUE" } {
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/S121B/snap_refclk100.xdc
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/S121B/snap_ddr4_c2pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/S121B/snap_ddr4_c2pins.xdc]
   }
 } elseif { $fpga_card == "N250S" } {
   if { $bram_used == "TRUE" } {

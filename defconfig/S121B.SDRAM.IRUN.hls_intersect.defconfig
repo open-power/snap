@@ -1,13 +1,13 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: KERNELVERSION
-# Fri Sep 15 12:15:19 2017
+# Mon Sep 18 16:32:38 2017
 #
-N250S=y
+# N250S is not set
 # ADKU3 is not set
-# S121B is not set
-FPGACARD="N250S"
-FPGACHIP="xcku060-ffva1156-2-e"
+S121B=y
+FPGACARD="S121B"
+FPGACHIP="xcku115-flva1517-2-e"
 NUM_OF_ACTIONS=1
 # HLS_ACTION is not set
 # HDL_ACTION is not set
@@ -15,22 +15,23 @@ NUM_OF_ACTIONS=1
 # HDL_NVME_EXAMPLE is not set
 # HLS_MEMCOPY is not set
 # HLS_SPONGE is not set
-HLS_HASHJOIN=y
+# HLS_HASHJOIN is not set
 # HLS_SEARCH is not set
 # HLS_BFS is not set
-# HLS_INTERSECT is not set
+HLS_INTERSECT=y
 # HLS_NVME_MEMCOPY is not set
 # HLS_HELLOWORLD is not set
 ENABLE_HLS_SUPPORT=y
 HLS_SUPPORT="TRUE"
 # DISABLE_SDRAM_AND_BRAM is not set
-# FORCE_SDRAM_OR_BRAM is not set
+FORCE_SDRAM_OR_BRAM=y
+FORCE_SDRAM=y
 # ENABLE_BRAM is not set
 BRAM_USED="FALSE"
-# ENABLE_SDRAM is not set
-SDRAM_USED="FALSE"
-DDR3_USED="FALSE"
+ENABLE_SDRAM=y
+SDRAM_USED="TRUE"
 ENABLE_DDR4=y
+DDR3_USED="FALSE"
 DDR4_USED="TRUE"
 ENABLE_DDRI=y
 DDRI_USED="TRUE"
@@ -40,10 +41,10 @@ NVME_USED="FALSE"
 ILA_DEBUG="FALSE"
 # ENABLE_FACTORY is not set
 FACTORY_IMAGE="FALSE"
-SIM_XSIM=y
-# SIM_IRUN is not set
+# SIM_XSIM is not set
+SIM_IRUN=y
 # NO_SIM is not set
-SIMULATOR="xsim"
+SIMULATOR="irun"
 # ENABLE_PRFLOW is not set
 USE_PRFLOW="FALSE"
 CLOUD_BUILD_BITFILE="FALSE"

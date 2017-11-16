@@ -90,11 +90,11 @@ This means, that PSLSE&sim only runs, as long as the app/list/xterm is avail.
 If you start an app in the xterm and cntl-C it without exiting from the xterm, the simulation keeps running.  
 
 ## card and action settings
-Currently supported are Nallatech 250S and AlphaData KU3, one action only
+Currently supported are Nallatech 250S, AlphaData KU3 and Semptian NSA121B, one action only
 Regression tests are in place for
 ```
-card      ADKU3          ADKU3         ADKU3        N250S        N250S        N250S             set with
-memory    DDR3           BRAM          none         DDR4         BRAM         none              SDRAM_USED, BRAM_USED
+card      ADKU3/S121B    ADKU3/S121B   ADKU3/S121B  N250S        N250S        N250S             set with
+memory    DDR3/DDR4      BRAM          none         DDR4         BRAM         none              SDRAM_USED, BRAM_USED
 NVMe      no             no            no           yes          yes          yes               NVME_USED=TRUE
 action    hdl_example    hdl_example   hdl_example  hdl_example  hdl_example  hdl_example
           hls_intersect  hls_intersect hls_bfs

@@ -3,11 +3,11 @@
 # Linux kernel version: KERNELVERSION
 # Fri Sep 15 12:15:19 2017
 #
-N250S=y
+# N250S is not set
 # ADKU3 is not set
-# S121B is not set
-FPGACARD="N250S"
-FPGACHIP="xcku060-ffva1156-2-e"
+S121B=y
+FPGACARD="S121B"
+FPGACHIP="xcku115-flva1517-2-e"
 NUM_OF_ACTIONS=1
 # HLS_ACTION is not set
 # HDL_ACTION is not set

@@ -32,14 +32,14 @@ module top (
              inout  [0:7]    ha_jcom_top,
              inout           ha_jcompar_top,
              inout  [0:63]   ha_jea_top,
-	     inout           ha_jeapar_top,
+             inout           ha_jeapar_top,
              input           ah_jrunning_top,
              input           ah_jdone_top,
-	     input           ah_jcack_top,
+             input           ah_jcack_top,
              input  [0:63]   ah_jerror_top,
              input  [0:3]    ah_brlat_top,
              input           ah_jyield,
-	     input           ah_tbreq_top,
+             input           ah_tbreq_top,
              input           ah_paren_top,
              inout           ha_mmval_top,
              inout           ha_mmcfg_top,
@@ -71,15 +71,15 @@ module top (
              input           ah_brvalid_top,
              input [0:7]     ah_brtag_top,
              inout           ha_bwvalid_top,
-             inout  [0:7]    ha_bwtag_top, 		// 8 bits
+             inout  [0:7]    ha_bwtag_top,              // 8 bits
              inout           ha_bwtagpar_top,
-             inout  [0:1023] ha_bwdata_top, 		// 1024 bits
-             inout  [0:15]   ha_bwpar_top,	// 16 bits
+             inout  [0:1023] ha_bwdata_top,             // 1024 bits
+             inout  [0:15]   ha_bwpar_top,      // 16 bits
              inout           ha_rvalid_top,
-             inout  [0:7]    ha_rtag_top, 		// 8 bits
+             inout  [0:7]    ha_rtag_top,               // 8 bits
              inout           ha_rtagpar_top,
-             inout  [0:7]    ha_response_top, 		// 8 bits
-             inout  [0:8]    ha_rcredits_top		// 9 bits
+             inout  [0:7]    ha_response_top,           // 8 bits
+             inout  [0:8]    ha_rcredits_top            // 9 bits
              );
   // Input
   reg    [0:7]    ha_croom_top;
@@ -326,7 +326,7 @@ module top (
   // Note: The HW generates a 16384x8ns=131ms reset pulse for NVMe, 
   //       in simulation a 100ns pulse should be sufficient. 
   //       Also use the reset to reset the DDR4 DIMM model 
-  reg sys_reset_n_q;		
+  reg sys_reset_n_q;            
   initial begin                 
      sys_reset_n_q <= 1;
      #10ns           
@@ -366,14 +366,14 @@ module top (
              ha_jcom_top,
              ha_jcompar_top,
              ha_jea_top,
-	     ha_jeapar_top,
+             ha_jeapar_top,
              ah_jrunning_top,
              ah_jdone_top,
-	     ah_jcack_top,
+             ah_jcack_top,
              ah_jerror_top,
              ah_brlat_top,
              ah_jyield,
-	     ah_tbreq_top,
+             ah_tbreq_top,
              ah_paren_top,
              ha_mmval_top,
              ha_mmcfg_top,
@@ -405,15 +405,15 @@ module top (
              ah_brvalid_top,
              ah_brtag_top,
              ha_bwvalid_top,
-             ha_bwtag_top, 		// 8 bits
+             ha_bwtag_top,              // 8 bits
              ha_bwtagpar_top,
-             ha_bwdata_top, 		// 1024 bits
-             ha_bwpar_top,	// 16 bits
+             ha_bwdata_top,             // 1024 bits
+             ha_bwpar_top,      // 16 bits
              ha_rvalid_top,
-             ha_rtag_top, 		// 8 bits
+             ha_rtag_top,               // 8 bits
              ha_rtagpar_top,
-             ha_response_top, 		// 8 bits
-             ha_rcredits_top		// 9 bits
+             ha_response_top,           // 8 bits
+             ha_rcredits_top            // 9 bits
              );
   end
 
@@ -716,39 +716,55 @@ module top (
   //////////////////////////////////////////////////////////////////////////////
   // SNAP LOGIC
   //////////////////////////////////////////////////////////////////////////////
-  // Signal definition 
-  // DDR3 Sinals                                       //-- only for DDR3_USED=TRUE 
-  wire  [ 1:0] c0_ddr3_ck_p;                           //-- only for DDR3_USED=TRUE 	
-  wire  [ 1:0] c0_ddr3_ck_n;  			       //-- only for DDR3_USED=TRUE 	
-  wire         c0_ddr3_reset_n;			       //-- only for DDR3_USED=TRUE 	
-  wire  [ 1:0] c0_ddr3_cke;			       //-- only for DDR3_USED=TRUE 	
-  wire  [ 1:0] c0_ddr3_cs_n;			       //-- only for DDR3_USED=TRUE 	
-  wire         c0_ddr3_ras_n; 			       //-- only for DDR3_USED=TRUE 	
-  wire         c0_ddr3_cas_n;			       //-- only for DDR3_USED=TRUE 	
-  wire         c0_ddr3_we_n; 			       //-- only for DDR3_USED=TRUE 	
-  wire  [ 1:0] c0_ddr3_odt;			       //-- only for DDR3_USED=TRUE 	
-  wire  [ 8:0] c0_ddr3_dm;  			       //-- only for DDR3_USED=TRUE 	
-  wire  [ 2:0] c0_ddr3_ba;  			       //-- only for DDR3_USED=TRUE 	
-  wire  [15:0] c0_ddr3_addr;  			       //-- only for DDR3_USED=TRUE 	
-  wire  [71:0] c0_ddr3_dq;      		       //-- only for DDR3_USED=TRUE 	
-  wire  [ 8:0] c0_ddr3_dqs_p;    		       //-- only for DDR3_USED=TRUE 	
-  wire  [ 8:0] c0_ddr3_dqs_n;			       //-- only for DDR3_USED=TRUE 	
-  // DDR4 Signals        			       //-- only for DDR4_USED=TRUE 	
-  wire          c0_ddr4_act_n;                         //-- only for DDR4_USED=TRUE 	
-  wire  [16:0]  c0_ddr4_adr;     		       //-- only for DDR4_USED=TRUE 	
-  wire  [1:0]   c0_ddr4_ba;      		       //-- only for DDR4_USED=TRUE 	
-  wire  [0:0]   c0_ddr4_bg;      		       //-- only for DDR4_USED=TRUE 	
-  wire  [0:0]   c0_ddr4_cke;     		       //-- only for DDR4_USED=TRUE 	
-  wire  [0:0]   c0_ddr4_odt;     		       //-- only for DDR4_USED=TRUE 	
-  wire  [0:0]   c0_ddr4_cs_n;    		       //-- only for DDR4_USED=TRUE 	
-  wire  [0:0]   c0_ddr4_ck_t;     		       //-- only for DDR4_USED=TRUE 	
-  wire  [0:0]   c0_ddr4_ck_c;     		       //-- only for DDR4_USED=TRUE 	
-  wire          c0_ddr4_reset_n; 		       //-- only for DDR4_USED=TRUE 	
-  wire  [8:0]   c0_ddr4_dm_dbi_n;		       //-- only for DDR4_USED=TRUE 	
-  wire  [71:0]  c0_ddr4_dq;      		       //-- only for DDR4_USED=TRUE 	
-  wire  [8:0]   c0_ddr4_dqs_c;   		       //-- only for DDR4_USED=TRUE 	
-  wire  [8:0]   c0_ddr4_dqs_t;   		       //-- only for DDR4_USED=TRUE 	
-  // NVME Signals        			       //-- only for NVME_USED=TRUE 	
+  // Signal definition
+  // DDR3 Sinals                                       //-- only for DDR3_USED=TRUE
+  wire  [ 1:0] c0_ddr3_ck_p;                           //-- only for DDR3_USED=TRUE
+  wire  [ 1:0] c0_ddr3_ck_n;                           //-- only for DDR3_USED=TRUE
+  wire         c0_ddr3_reset_n;                        //-- only for DDR3_USED=TRUE
+  wire  [ 1:0] c0_ddr3_cke;                            //-- only for DDR3_USED=TRUE
+  wire  [ 1:0] c0_ddr3_cs_n;                           //-- only for DDR3_USED=TRUE
+  wire         c0_ddr3_ras_n;                          //-- only for DDR3_USED=TRUE
+  wire         c0_ddr3_cas_n;                          //-- only for DDR3_USED=TRUE
+  wire         c0_ddr3_we_n;                           //-- only for DDR3_USED=TRUE
+  wire  [ 1:0] c0_ddr3_odt;                            //-- only for DDR3_USED=TRUE
+  wire  [ 8:0] c0_ddr3_dm;                             //-- only for DDR3_USED=TRUE
+  wire  [ 2:0] c0_ddr3_ba;                             //-- only for DDR3_USED=TRUE
+  wire  [15:0] c0_ddr3_addr;                           //-- only for DDR3_USED=TRUE
+  wire  [71:0] c0_ddr3_dq;                             //-- only for DDR3_USED=TRUE
+  wire  [ 8:0] c0_ddr3_dqs_p;                          //-- only for DDR3_USED=TRUE
+  wire  [ 8:0] c0_ddr3_dqs_n;                          //-- only for DDR3_USED=TRUE
+  // DDR4 Signals                                      //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+  wire          c0_ddr4_act_n;                         //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+  wire  [16:0]  c0_ddr4_adr;                           //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+  wire  [1:0]   c0_ddr4_ba;                            //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+  wire  [0:0]   c0_ddr4_bg;                            //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+  wire  [0:0]   c0_ddr4_cke;                           //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+  wire  [0:0]   c0_ddr4_odt;                           //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+  wire  [0:0]   c0_ddr4_cs_n;                          //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+  wire  [0:0]   c0_ddr4_ck_t;                          //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+  wire  [0:0]   c0_ddr4_ck_c;                          //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+  wire          c0_ddr4_reset_n;                       //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+  wire  [8:0]   c0_ddr4_dm_dbi_n;                      //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+  wire  [71:0]  c0_ddr4_dq;                            //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+  wire  [8:0]   c0_ddr4_dqs_c;                         //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+  wire  [8:0]   c0_ddr4_dqs_t;                         //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+
+  // DDR4 Signals                                      //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+  wire          c2_ddr4_act_n;                         //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+  wire  [16:0]  c2_ddr4_adr;                           //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+  wire  [1:0]   c2_ddr4_ba;                            //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+  wire  [1:0]   c2_ddr4_bg;                            //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+  wire  [0:0]   c2_ddr4_cke;                           //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+  wire  [0:0]   c2_ddr4_odt;                           //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+  wire  [0:0]   c2_ddr4_cs_n;                          //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+  wire  [0:0]   c2_ddr4_ck_t;                          //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+  wire  [0:0]   c2_ddr4_ck_c;                          //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+  wire          c2_ddr4_reset_n;                       //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+  wire  [8:0]   c2_ddr4_dm_dbi_n;                      //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+  wire  [71:0]  c2_ddr4_dq;                            //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+  wire  [8:0]   c2_ddr4_dqs_c;                         //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+  wire  [8:0]   c2_ddr4_dqs_t;                         //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+  // NVME Signals                                      //-- only for NVME_USED=TRUE
   wire  [ 3:0] pcie_rc0_rxn;                           //-- only for NVME_USED=TRUE
   wire  [ 3:0] pcie_rc0_rxp;                           //-- only for NVME_USED=TRUE
   wire  [ 3:0] pcie_rc0_txn;                           //-- only for NVME_USED=TRUE
@@ -760,46 +776,59 @@ module top (
                                                        //-- only for DDRI_USED=TRUE
   // SDRAM Reference Clock generation                  //-- only for DDRI_USED=TRUE
   reg       refclk_sdram_p;                            //-- only for DDRI_USED=TRUE
-  initial   refclk_sdram_p <= 0;                       //-- only for DDRI_USED=TRUE 	
- 						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3	
-  // 200MHz ADKU3 reference clock		       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
-  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3	
-     #(5ns / 2.0);				       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3	
-     refclk_sdram_p = !refclk_sdram_p;	               //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3	
-  end						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3	
- 						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S	
-  // 266MHz N250S reference clock		       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S
-  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S	
-     #(3.752ns / 2.0);				       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S	
-     refclk_sdram_p = !refclk_sdram_p;	               //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S	
-  end						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S	
+  initial   refclk_sdram_p <= 0;                       //-- only for DDRI_USED=TRUE
+                                                       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
+  // 200MHz ADKU3 reference clock                      //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
+  always begin                                         //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
+     #(5ns / 2.0);                                     //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
+     refclk_sdram_p = !refclk_sdram_p;                 //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
+  end                                                  //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
+                                                       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S
+  // 266MHz N250S reference clock                              //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S
+  always begin                                         //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S
+     #(3.752ns / 2.0);                                 //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S
+     refclk_sdram_p = !refclk_sdram_p;                 //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S
+  end                                                  //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S
+                                                       //-- only for DDRI_USED=TRUE -- only for FPGACARD=S121B
+  // 100MHz S121B reference clock                      //-- only for DDRI_USED=TRUE -- only for FPGACARD=S121B
+  always begin                                         //-- only for DDRI_USED=TRUE -- only for FPGACARD=S121B
+     #(10ns / 2.0);                                    //-- only for DDRI_USED=TRUE -- only for FPGACARD=S121B
+     refclk_sdram_p = !refclk_sdram_p;                 //-- only for DDRI_USED=TRUE -- only for FPGACARD=S121B
+  end                                                  //-- only for DDRI_USED=TRUE -- only for FPGACARD=S121B
+
                                                        //-- only for DDRI_USED=TRUE
   // SDRAM System Clock generation                     //-- only for DDRI_USED=TRUE
-  reg       sys_clk_p;		           	       //-- only for DDRI_USED=TRUE 	
-  initial   sys_clk_p <= 0;			       //-- only for DDRI_USED=TRUE 	
-                                                       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3 
-  // 400MHz DDR3 system clock			       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3 	
-  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3 	
-     #(2.5ns / 2.0);   			               //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3 	
-     sys_clk_p = !sys_clk_p;		               //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3 	
+  reg       sys_clk_p;                                 //-- only for DDRI_USED=TRUE
+  initial   sys_clk_p <= 0;                            //-- only for DDRI_USED=TRUE
+                                                       //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
+  // 400MHz DDR3 system clock                          //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
+  always begin                                         //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
+     #(2.5ns / 2.0);                                   //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
+     sys_clk_p = !sys_clk_p;                           //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
   end                                                  //-- only for DDRI_USED=TRUE -- only for FPGACARD=ADKU3
-                                                       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 
-  // 266MHz DDR4 system clock			       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 	
-  always begin					       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 	
-     #(3.752ns / 2.0);			               //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 	
-     sys_clk_p = !sys_clk_p;		               //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 	
-  end						       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S 	
+                                                       //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S
+  // 266MHz DDR4 system clock                          //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S
+  always begin                                         //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S
+     #(3.752ns / 2.0);                                 //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S
+     sys_clk_p = !sys_clk_p;                           //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S
+  end                                                  //-- only for DDRI_USED=TRUE -- only for FPGACARD=N250S
+                                                       //-- only for DDRI_USED=TRUE -- only for FPGACARD=S121B
+  // 100MHz S121B system clock                 //-- only for DDRI_USED=TRUE -- only for FPGACARD=S121B
+  always begin                                         //-- only for DDRI_USED=TRUE -- only for FPGACARD=S121B
+     #(10ns / 2.0);                                    //-- only for DDRI_USED=TRUE -- only for FPGACARD=S121B
+     sys_clk_p = !sys_clk_p;                           //-- only for DDRI_USED=TRUE -- only for FPGACARD=S121B
+  end                                                  //-- only for DDRI_USED=TRUE -- only for FPGACARD=S121B
                                                        //-- only for NVME_USED=TRUE
   // NVME Reference Clock generation                   //-- only for NVME_USED=TRUE
   reg refclk_nvme_p;                                   //-- only for NVME_USED=TRUE
-  initial refclk_nvme_p <= 0;			       //-- only for NVME_USED=TRUE
+  initial refclk_nvme_p <= 0;                          //-- only for NVME_USED=TRUE
                                                        //-- only for NVME_USED=TRUE
   // 100MHz NVME reference clock                       //-- only for NVME_USED=TRUE
-  always begin					       //-- only for NVME_USED=TRUE
-     #(10.0ns / 2);			               //-- only for NVME_USED=TRUE
-     refclk_nvme_p = !refclk_nvme_p;		       //-- only for NVME_USED=TRUE
-  end						       //-- only for NVME_USED=TRUE
-    						       //-- only for NVME_USED=TRUE
+  always begin                                         //-- only for NVME_USED=TRUE
+     #(10.0ns / 2);                                    //-- only for NVME_USED=TRUE
+     refclk_nvme_p = !refclk_nvme_p;                   //-- only for NVME_USED=TRUE
+  end                                                  //-- only for NVME_USED=TRUE
+                                                       //-- only for NVME_USED=TRUE
 
   //////////////////////////////////////////////////////////////////////////////
   // AFU instance
@@ -880,23 +909,41 @@ module top (
     .c0_ddr3_dq             (c0_ddr3_dq),                   //-- only for DDR3_USED=TRUE
     .c0_ddr3_dqs_p          (c0_ddr3_dqs_p),                //-- only for DDR3_USED=TRUE
     .c0_ddr3_dqs_n          (c0_ddr3_dqs_n),                //-- only for DDR3_USED=TRUE
-    // DDR4                                                 //-- only for DDR4_USED=TRUE
-    .c0_sys_clk_p           (sys_clk_p),                    //-- only for DDR4_USED=TRUE
-    .c0_sys_clk_n           (~sys_clk_p),                   //-- only for DDR4_USED=TRUE
-    .c0_ddr4_act_n          (c0_ddr4_act_n),                //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_adr            (c0_ddr4_adr),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_ba             (c0_ddr4_ba),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_bg             (c0_ddr4_bg),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_cke            (c0_ddr4_cke),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_odt            (c0_ddr4_odt),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_cs_n           (c0_ddr4_cs_n),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_ck_t           (c0_ddr4_ck_t),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_ck_c           (c0_ddr4_ck_c),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_reset_n        (c0_ddr4_reset_n),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_dq             (c0_ddr4_dq),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),		    //-- only for DDR4_USED=TRUE  
-    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t),		    //-- only for DDR4_USED=TRUE  
+    // DDR4                                                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_sys_clk_p           (sys_clk_p),                    //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_sys_clk_n           (~sys_clk_p),                   //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_act_n          (c0_ddr4_act_n),                //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_adr            (c0_ddr4_adr),                  //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_ba             (c0_ddr4_ba),                   //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_bg             (c0_ddr4_bg),                   //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_cke            (c0_ddr4_cke),                  //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_odt            (c0_ddr4_odt),                  //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_cs_n           (c0_ddr4_cs_n),                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_ck_t           (c0_ddr4_ck_t),                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_ck_c           (c0_ddr4_ck_c),                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_reset_n        (c0_ddr4_reset_n),              //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n),             //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_dq             (c0_ddr4_dq),                   //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),                //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t),                //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    // DDR4                                                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_sys_clk_p           (sys_clk_p),                    //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_sys_clk_n           (~sys_clk_p),                   //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_ddr4_act_n          (c2_ddr4_act_n),                //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_ddr4_adr            (c2_ddr4_adr),                  //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_ddr4_ba             (c2_ddr4_ba),                   //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_ddr4_bg             (c2_ddr4_bg),                   //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_ddr4_cke            (c2_ddr4_cke),                  //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_ddr4_odt            (c2_ddr4_odt),                  //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_ddr4_cs_n           (c2_ddr4_cs_n),                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_ddr4_ck_t           (c2_ddr4_ck_t),                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_ddr4_ck_c           (c2_ddr4_ck_c),                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_ddr4_reset_n        (c2_ddr4_reset_n),              //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_ddr4_dm_dbi_n       (c2_ddr4_dm_dbi_n),             //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_ddr4_dq             (c2_ddr4_dq),                   //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_ddr4_dqs_c          (c2_ddr4_dqs_c),                //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c2_ddr4_dqs_t          (c2_ddr4_dqs_t),                //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+
     // NVME                                                 //-- only for NVME_USED=TRUE
     .nvme_reset_n           (sys_reset_n_q),                //-- only for NVME_USED=TRUE
     .refclk_nvme_ch0_p(refclk_nvme_p),                      //-- only for NVME_USED=TRUE
@@ -905,12 +952,12 @@ module top (
     .refclk_nvme_ch1_n(~refclk_nvme_p),                     //-- only for NVME_USED=TRUE
     .pcie_rc0_rxn(pcie_rc0_rxn),                            //-- only for NVME_USED=TRUE
     .pcie_rc0_rxp(pcie_rc0_rxp),                            //-- only for NVME_USED=TRUE
-    .pcie_rc0_txn(pcie_rc0_txn),                            //-- only for NVME_USED=TRUE 
+    .pcie_rc0_txn(pcie_rc0_txn),                            //-- only for NVME_USED=TRUE
     .pcie_rc0_txp(pcie_rc0_txp),                            //-- only for NVME_USED=TRUE
-    .pcie_rc1_rxn(pcie_rc1_rxn),    		            //-- only for NVME_USED=TRUE
-    .pcie_rc1_rxp(pcie_rc1_rxp),    		            //-- only for NVME_USED=TRUE
-    .pcie_rc1_txn(pcie_rc1_txn),    		            //-- only for NVME_USED=TRUE
-    .pcie_rc1_txp(pcie_rc1_txp),                            //-- only for NVME_USED=TRUE	
+    .pcie_rc1_rxn(pcie_rc1_rxn),                            //-- only for NVME_USED=TRUE
+    .pcie_rc1_rxp(pcie_rc1_rxp),                            //-- only for NVME_USED=TRUE
+    .pcie_rc1_txn(pcie_rc1_txn),                            //-- only for NVME_USED=TRUE
+    .pcie_rc1_txp(pcie_rc1_txp),                            //-- only for NVME_USED=TRUE
     .ha_pclock(ha_pclock)
   );
 
@@ -937,36 +984,54 @@ module top (
  /////////////////////////////////////////////////////////////-- only for DDR4_USED=TRUE
   // DDR4 DIMM INSTANCE                                     //-- only for DDR4_USED=TRUE
   ////////////////////////////////////////////////////////////-- only for DDR4_USED=TRUE
-  ddr4_dimm ddr4_dimm (                                     //-- only for DDR4_USED=TRUE
-    .sys_reset              (~sys_reset_n_q),               //-- only for DDR4_USED=TRUE
-    .c0_ddr4_act_n          (c0_ddr4_act_n),                //-- only for DDR4_USED=TRUE
-    .c0_ddr4_adr            (c0_ddr4_adr),                  //-- only for DDR4_USED=TRUE
-    .c0_ddr4_ba             (c0_ddr4_ba),                   //-- only for DDR4_USED=TRUE
-    .c0_ddr4_bg             (c0_ddr4_bg),                   //-- only for DDR4_USED=TRUE
-    .c0_ddr4_cke            (c0_ddr4_cke),                  //-- only for DDR4_USED=TRUE
-    .c0_ddr4_odt            (c0_ddr4_odt),                  //-- only for DDR4_USED=TRUE
-    .c0_ddr4_cs_n           (c0_ddr4_cs_n),                 //-- only for DDR4_USED=TRUE
-    .c0_ddr4_ck_t           (c0_ddr4_ck_t),                 //-- only for DDR4_USED=TRUE
-    .c0_ddr4_ck_c           (c0_ddr4_ck_c),                 //-- only for DDR4_USED=TRUE
-    .c0_ddr4_reset_n        (c0_ddr4_reset_n),              //-- only for DDR4_USED=TRUE
-    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n),             //-- only for DDR4_USED=TRUE
-    .c0_ddr4_dq             (c0_ddr4_dq),                   //-- only for DDR4_USED=TRUE
-    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),                //-- only for DDR4_USED=TRUE
-    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)                 //-- only for DDR4_USED=TRUE
-    );                                                      //-- only for DDR4_USED=TRUE
+  ddr4_dimm ddr4_dimm (                                     //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .sys_reset              (~sys_reset_n_q),               //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_act_n          (c0_ddr4_act_n),                //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_adr            (c0_ddr4_adr),                  //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_ba             (c0_ddr4_ba),                   //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_bg             (c0_ddr4_bg),                   //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_cke            (c0_ddr4_cke),                  //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_odt            (c0_ddr4_odt),                  //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_cs_n           (c0_ddr4_cs_n),                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_ck_t           (c0_ddr4_ck_t),                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_ck_c           (c0_ddr4_ck_c),                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_reset_n        (c0_ddr4_reset_n),              //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n),             //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_dq             (c0_ddr4_dq),                   //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),                //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+    );                                                      //-- only for DDR4_USED=TRUE  -- only for FPGACARD=N250S
+  ddr4_dimm_s121b ddr4_dimm_s121b (                         //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .sys_reset              (~sys_reset_n_q),               //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c0_ddr4_act_n          (c2_ddr4_act_n),                //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c0_ddr4_adr            (c2_ddr4_adr),                  //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c0_ddr4_ba             (c2_ddr4_ba),                   //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c0_ddr4_bg             (c2_ddr4_bg),                   //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c0_ddr4_cke            (c2_ddr4_cke),                  //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c0_ddr4_odt            (c2_ddr4_odt),                  //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c0_ddr4_cs_n           (c2_ddr4_cs_n),                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c0_ddr4_ck_t           (c2_ddr4_ck_t),                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c0_ddr4_ck_c           (c2_ddr4_ck_c),                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c0_ddr4_reset_n        (c2_ddr4_reset_n),              //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c0_ddr4_dm_dbi_n       (c2_ddr4_dm_dbi_n),             //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c0_ddr4_dq             (c2_ddr4_dq),                   //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c0_ddr4_dqs_c          (c2_ddr4_dqs_c),                //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    .c0_ddr4_dqs_t          (c2_ddr4_dqs_t)                 //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+    );                                                      //-- only for DDR4_USED=TRUE  -- only for FPGACARD=S121B
+
                                                             //-- only for NVME_USED=TRUE
   ////////////////////////////////////////////////////////////-- only for NVME_USED=TRUE
   // NVMe model                                             //-- only for NVME_USED=TRUE
   ////////////////////////////////////////////////////////////-- only for NVME_USED=TRUE
   nvme_model nvme_model (                                   //-- only for NVME_USED=TRUE
     .sys_reset_n(sys_reset_n_q),                            //-- only for NVME_USED=TRUE
-    .pcie_rc0_rxn(pcie_rc0_rxn),      		            //-- only for NVME_USED=TRUE
-    .pcie_rc0_rxp(pcie_rc0_rxp), 		            //-- only for NVME_USED=TRUE
+    .pcie_rc0_rxn(pcie_rc0_rxn),                            //-- only for NVME_USED=TRUE
+    .pcie_rc0_rxp(pcie_rc0_rxp),                            //-- only for NVME_USED=TRUE
     .pcie_rc0_txn(pcie_rc0_txn),                            //-- only for NVME_USED=TRUE
-    .pcie_rc0_txp(pcie_rc0_txp), 		            //-- only for NVME_USED=TRUE
+    .pcie_rc0_txp(pcie_rc0_txp),                            //-- only for NVME_USED=TRUE
     .pcie_rc1_rxn(pcie_rc1_rxn),                            //-- only for NVME_USED=TRUE
-    .pcie_rc1_rxp(pcie_rc1_rxp), 		            //-- only for NVME_USED=TRUE
+    .pcie_rc1_rxp(pcie_rc1_rxp),                            //-- only for NVME_USED=TRUE
     .pcie_rc1_txn(pcie_rc1_txn),                            //-- only for NVME_USED=TRUE
     .pcie_rc1_txp(pcie_rc1_txp)                             //-- only for NVME_USED=TRUE
-    );                                                      //-- only for NVME_USED=TRUE 
+    );                                                      //-- only for NVME_USED=TRUE
 endmodule

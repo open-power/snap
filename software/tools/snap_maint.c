@@ -171,6 +171,7 @@ static void snap_version(void *handle)
         switch (ioctl_data) {
                 case 0: VERBOSE1("ADKU3"); break;
                 case 1: VERBOSE1("N250S"); break;
+                case 2: VERBOSE1("S121B"); break;
                 default: VERBOSE1("Unknown"); break;
         }
         VERBOSE1(" Card, NVME ");
@@ -387,6 +388,7 @@ static void snap_show_cap(void *handle, int mode)
 		switch (val) {
 			case 0: VERBOSE0("ADKU3"); break;
 			case 1: VERBOSE0("N250S"); break;
+			case 2: VERBOSE0("S121B"); break;
 		}
 	}
 }
