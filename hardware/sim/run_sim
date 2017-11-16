@@ -47,6 +47,7 @@
  export SNAP_ROOT=${PWD%/hardware/sim*};echo "root=$SNAP_ROOT"      # default root, in case its not overwritten
  [ -f "${SNAP_ROOT}/snap_env.sh" ]    && . ${SNAP_ROOT}/snap_env.sh
  [ -f "${SNAP_ROOT}/.snap_config.sh" ] && . ${SNAP_ROOT}/.snap_config.sh
+ export PATH=$PATH:$SNAP_ROOT/software/tools:$ACTION_ROOT/sw
 
  if [ -z $PSLSE_ROOT ];then echo "variable PSLSE_ROOT not found, leaving"; exit 11; fi
 
