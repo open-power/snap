@@ -52,22 +52,42 @@ static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME" };
 static void usage(const char *prog)
 {
 	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
-	       "  -C, --card <cardno> can be (0...3)\n"
-	       "  -i, --input <file.bin>    input file.\n"
-	       "  -o, --output <file.bin>   output file.\n"
-	       "  -A, --type-in <CARD_DRAM, HOST_DRAM, ...>.\n"
-	       "  -a, --addr-in <addr>      address e.g. in CARD_RAM.\n"
-	       "  -D, --type-out <CARD_DRAM, HOST_DRAM, ...>.\n"
-	       "  -d, --addr-out <addr>     address e.g. in CARD_RAM.\n"
-	       "  -s, --size <size>         size of data.\n"
-	       "  -t, --timeout             timeout in sec to wait for done.\n"
-	       "  -X, --verify              verify result if possible\n"
-	       "  -N, --no-irq              disable Interrupts\n"
-	       "\n"
-	       "Example:\n"
-	       "  snap_helloworld ...\n"
-	       "\n",
-	       prog);
+	"  -C, --card <cardno>       can be (0...3)\n"
+	"  -i, --input <file.bin>    input file.\n"
+	"  -o, --output <file.bin>   output file.\n"
+	"  -A, --type-in <CARD_DRAM, HOST_DRAM, ...>.\n"
+	"  -a, --addr-in <addr>      address e.g. in CARD_RAM.\n"
+	"  -D, --type-out <CARD_DRAM,HOST_DRAM, ...>.\n"
+	"  -d, --addr-out <addr>     address e.g. in CARD_RAM.\n"
+	"  -s, --size <size>         size of data.\n"
+	"  -t, --timeout             timeout in sec to wait for done.\n"
+	"  -X, --verify              verify result if possible\n"
+	"  -N, --no-irq              disable Interrupts\n"
+	"\n"
+	"Useful parameters :\n"
+	"-------------------\n"
+	"SNAP_TRACE  = 0x0  no debug trace  (default mode)\n"
+	"SNAP_TRACE  = 0xF  full debug trace\n"
+	"SNAP_CONFIG = CPU  hardware execution   (default mode)\n"
+	"SNAP_CONFIG = FPGA software execution\n"
+	"\n"
+	"Example:\n"
+	"----------\n"
+	"export SNAP_TRACE=0x0\n"
+	"$SNAP_ROOT/software/tools/snap_maint -vvv -C0\n"
+	
+	"rm /tmp/t2; rm /tmp/t3\n"
+	"echo \"Hello world. This is my first CAPI SNAP experience. It's real fun!\n\" > /tmp/t1\n"
+	"$SNAP_CONFIG=FPGA $ACTION_ROOT/sw/snap_helloworld -i /tmp/t1 -o /tmp/t2\n"
+	"$SNAP_CONFIG=CPU  $ACTION_ROOT/sw/snap_helloworld -i /tmp/t1 -o /tmp/t3\n"
+	"echo \"Display input file\"; cat /tmp/t1\n"
+	"Hello world. This is my first CAPI SNAP experience. It's real fun!\n"
+	"echo \"Display output file from FPGA EXECUTED ACTION\"; cat /tmp/t2\n"
+	"HELLO WORLD. THIS IS MY FIRST CAPI SNAP EXPERIENCE. IT'S REAL FUN!\n"
+	"echo \"Display output file from CPU EXECUTED ACTION\"; cat /tmp/t3\n"
+	"hello world. this is my first capi snap experience. it's real fun!\n"
+	"\n",
+        prog);
 }
 
 // Function that fills the MMIO registers / data structure 
@@ -149,7 +169,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-				 "A:C:i:o:a:S:D:d:x:s:t:XVNvh",
+                                 "C:i:o:A:a:D:d:s:t:XNVvh",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -163,12 +183,6 @@ int main(int argc, char *argv[])
 			break;
 		case 'o':
 			output = optarg;
-			break;
-		case 's':
-			size = __str_to_num(optarg);
-			break;
-		case 't':
-			timeout = strtol(optarg, (char **)NULL, 0);
 			break;
 			/* input data */
 		case 'A':
@@ -200,9 +214,18 @@ int main(int argc, char *argv[])
 		case 'd':
 			addr_out = strtol(optarg, (char **)NULL, 0);
 			break;
-		case 'X':
+                case 's':
+                        size = __str_to_num(optarg);
+                        break;
+                case 't':
+                        timeout = strtol(optarg, (char **)NULL, 0);
+                        break;		
+                case 'X':
 			verify++;
 			break;
+                case 'N':
+                        action_irq = 0;
+                        break;
 			/* service */
 		case 'V':
 			printf("%s\n", version);
@@ -214,9 +237,6 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
-		case 'N':
-			action_irq = 0;
-			break;
 		default:
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
@@ -227,6 +247,10 @@ int main(int argc, char *argv[])
 		usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
+	if (argc == 1) {       // to provide help when program is called without argument
+          usage(argv[0]);
+          exit(EXIT_FAILURE);
+        }
 
 	/* if input file is defined, use that as input */
 	if (input != NULL) {
