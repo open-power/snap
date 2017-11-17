@@ -25,7 +25,6 @@ set hdl_dir     $root_dir/hdl
 set sim_dir     $root_dir/sim
 set fpga_part   $::env(FPGACHIP)
 set fpga_card   $::env(FPGACARD)
-set psl_dcp     [file tail $::env(PSL_DCP)]
 set action_dir  $::env(ACTION_ROOT)/hw
 set nvme_used   $::env(NVME_USED)
 set bram_used   $::env(BRAM_USED)
@@ -49,6 +48,16 @@ if { [info exists ::env(USE_PRFLOW)] == 1 } {
   set use_prflow [string toupper $::env(USE_PRFLOW)]
 } else {
   set use_prflow "FALSE"
+}
+
+if { [info exists ::env(CLOUD_USER_FLOW)] == 1 } {
+  set cloud_user_flow [string toupper $::env(CLOUD_USER_FLOW)]
+} else {
+  set cloud_user_flow "FALSE"
+}
+
+if { $cloud_user_flow == "FALSE" } {
+  set psl_dcp     [file tail $::env(PSL_DCP)]
 }
 
 if { ($use_prflow == "TRUE") && ($hls_support == "TRUE") } {
@@ -265,9 +274,11 @@ if { $nvme_used == TRUE } {
   remove_files $action_dir/action_axi_nvme.vhd -quiet
 }
 
-# Add PSL
-puts "                        importing PSL design checkpoint"
-read_checkpoint -cell b $root_dir/build/Checkpoints/$psl_dcp -strict >> $log_file
+if { $cloud_user_flow == "FALSE" } {
+  # Add PSL
+  puts "                        importing PSL design checkpoint"
+  read_checkpoint -cell b $root_dir/build/Checkpoints/$psl_dcp -strict >> $log_file
+}
 
 if { $use_prflow == "TRUE" } {
   # Create PR Configuration
