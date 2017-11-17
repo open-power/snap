@@ -1,3 +1,3 @@
 # README.md Example
 
-Please put some more information here.
+pdf document will all information is in ~snap/actions/hls_helloworld/doc

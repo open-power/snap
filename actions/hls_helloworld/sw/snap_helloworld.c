@@ -70,6 +70,8 @@ static void usage(const char *prog)
 	       prog);
 }
 
+// Function that fills the MMIO registers / data structure 
+// these are all data exchanged between the application and the action
 static void snap_prepare_helloworld(struct snap_job *cjob,
 				 struct helloworld_job *mjob,
 				 void *addr_in,
@@ -84,8 +86,10 @@ static void snap_prepare_helloworld(struct snap_job *cjob,
 	assert(sizeof(*mjob) <= SNAP_JOBSIZE);
 	memset(mjob, 0, sizeof(*mjob));
 
+	// Setting input params : where text is located in host memory
 	snap_addr_set(&mjob->in, addr_in, size_in, type_in,
 		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
+	// Setting output params : where result will be written in host memory
 	snap_addr_set(&mjob->out, addr_out, size_out, type_out,
 		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST |
 		      SNAP_ADDRFLAG_END);
@@ -93,8 +97,12 @@ static void snap_prepare_helloworld(struct snap_job *cjob,
 	snap_job_set(cjob, mjob, sizeof(*mjob), NULL, 0);
 }
 
+/* main program of the application for the hls_helloworld example        */
+/* This application will always be run on CPU and will call either       */
+/* a software action (CPU executed) or a hardware action (FPGA executed) */
 int main(int argc, char *argv[])
 {
+	// Init of all the default values used 
 	int ch, rc = 0;
 	int card_no = 0;
 	struct snap_card *card = NULL;
@@ -116,8 +124,10 @@ int main(int argc, char *argv[])
 	int verify = 0;
 	int exit_code = EXIT_SUCCESS;
 	uint8_t trailing_zeros[1024] = { 0, };
+	// default is interrupt mode enabled (vs polling)
 	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 
+	// collecting the command line arguments
 	while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {
@@ -224,8 +234,8 @@ int main(int argc, char *argv[])
 		if (size < 0)
 			goto out_error;
 
-		/* source buffer */
-		ibuff = snap_malloc(size);
+		/* Allocate in host memory the place to put the text to process */
+		ibuff = snap_malloc(size); //64Bytes aligned malloc
 		if (ibuff == NULL)
 			goto out_error;
 		memset(ibuff, 0, size);
@@ -233,10 +243,12 @@ int main(int argc, char *argv[])
 		fprintf(stdout, "reading input data %d bytes from %s\n",
 			(int)size, input);
 
+		// copy text from file to host memory
 		rc = __file_read(input, ibuff, size);
 		if (rc < 0)
 			goto out_error;
 
+		// prepare params to be written in MMIO registers for action
 		type_in = SNAP_ADDRTYPE_HOST_DRAM;
 		addr_in = (unsigned long)ibuff;
 	}
@@ -245,14 +257,19 @@ int main(int argc, char *argv[])
 	if (output != NULL) {
 		size_t set_size = size + (verify ? sizeof(trailing_zeros) : 0);
 
-		obuff = snap_malloc(set_size);
+		/* Allocate in host memory the place to put the text processed */
+		obuff = snap_malloc(set_size); //64Bytes aligned malloc
 		if (obuff == NULL)
 			goto out_error;
 		memset(obuff, 0x0, set_size);
+
+		// prepare params to be written in MMIO registers for action
 		type_out = SNAP_ADDRTYPE_HOST_DRAM;
 		addr_out = (unsigned long)obuff;
 	}
 
+
+	/* Display the parameters that will be used for the example */
 	printf("PARAMETERS:\n"
 	       "  input:       %s\n"
 	       "  output:      %s\n"
@@ -266,6 +283,8 @@ int main(int argc, char *argv[])
 	       type_out, mem_tab[type_out], (long long)addr_out,
 	       size);
 
+
+	// Allocate the card that will be used
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
 				   SNAP_DEVICE_ID_SNAP);
@@ -275,6 +294,7 @@ int main(int argc, char *argv[])
 		goto out_error;
 	}
 
+	// Attach the action that will be used on the allocated card
 	action = snap_attach_action(card, HELLOWORLD_ACTION_TYPE, action_irq, 60);
 	if (action == NULL) {
 		fprintf(stderr, "err: failed to attach action %u: %s\n",
@@ -282,14 +302,26 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
+	// Fill the stucture of data exchanged with the action
 	snap_prepare_helloworld(&cjob, &mjob,
 			     (void *)addr_in,  size, type_in,
 			     (void *)addr_out, size, type_out);
 
+	// uncomment to dump the job structure
 	//__hexdump(stderr, &mjob, sizeof(mjob));
 
+
+	// Collect the timestamp BEFORE the call of the action
 	gettimeofday(&stime, NULL);
+
+	// Call the action will:
+	//    write all the registers to the action (MMIO) 
+	//  + start the action 
+	//  + wait for completion
+	//  + read all the registers from the action (MMIO) 
 	rc = snap_action_sync_execute_job(action, &cjob, timeout);
+
+	// Collect the timestamp AFTER the call of the action
 	gettimeofday(&etime, NULL);
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
@@ -307,12 +339,14 @@ int main(int argc, char *argv[])
 			goto out_error2;
 	}
 
+	// test return code
 	fprintf(stdout, "RETC=%x\n", cjob.retc);
 	if (cjob.retc != SNAP_RETC_SUCCESS) {
 		fprintf(stderr, "err: Unexpected RETC=%x!\n", cjob.retc);
 		goto out_error2;
 	}
 
+	// Compare the input and output if verify option -X is enabled
 	if (verify) {
 		if ((type_in  == SNAP_ADDRTYPE_HOST_DRAM) &&
 		    (type_out == SNAP_ADDRTYPE_HOST_DRAM)) {
@@ -332,9 +366,11 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "warn: Verification works currently "
 				"only with HOST_DRAM\n");
 	}
+	// Display the time of the action call (MMIO registers filled + execution)
 	fprintf(stdout, "SNAP helloworld took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
+	// Detach action + disallocate the card
 	snap_detach_action(action);
 	snap_card_free(card);
 

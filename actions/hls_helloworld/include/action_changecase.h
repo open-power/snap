@@ -23,8 +23,11 @@
 extern "C" {
 #endif
 
+/* This number is unique and is declared in ~snap/ActionTypes.md */
 #define HELLOWORLD_ACTION_TYPE 0x10141008
 
+/* Data structure used to exchange information between action and application */
+/* Size limit is 108 Bytes */
 typedef struct helloworld_job {
 	struct snap_addr in;	/* input data */
 	struct snap_addr out;   /* offset table */

@@ -51,6 +51,7 @@ static int mmio_read32(struct snap_card *card,
 	return 0;
 }
 
+/* Main program of the software action */
 static int action_main(struct snap_sim_action *action,
 		       void *job, unsigned int job_len)
 {
@@ -64,15 +65,17 @@ static int action_main(struct snap_sim_action *action,
 		  __func__, action, job, job_len, js->in.type, js->out.type,
 		  sizeof(*js));
 
+	// Uncomment to dump the action params
 	//__hexdump(stderr, js, sizeof(*js));
 
+	// get the parameters from the structure
 	len = js->in.size;
 	dst = (char *)(unsigned long)js->out.addr;
 	src = (char *)(unsigned long)js->in.addr;
 
 	act_trace("   copy %p to %p %ld bytes\n", src, dst, len);
 
-	// Convert all char to lower case
+	// software action processing : Convert all char to lower case
         for ( i = 0; i < len; i++ ) {
             if (src[i] >= 'A' && src[i] <= 'Z')
                 dst[i] = src[i] + ('a' - 'A');
@@ -80,17 +83,18 @@ static int action_main(struct snap_sim_action *action,
                 dst[i] = src[i];
         }
 
-	//memcpy(dst, src, len);
-
+	// update the return code to the SNAP job manager
 	action->job.retc = SNAP_RETC_SUCCESS;
 	return 0;
 
 }
 
+/* This is the switch call when software action is called */
+/* NO CHANGE TO BE APPLIED BELOW OTHER THAN ADAPTING THE ACTION_TYPE NAME */
 static struct snap_sim_action action = {
 	.vendor_id = SNAP_VENDOR_ID_ANY,
 	.device_id = SNAP_DEVICE_ID_ANY,
-	.action_type = HELLOWORLD_ACTION_TYPE,
+	.action_type = HELLOWORLD_ACTION_TYPE, // Adapt with your ACTION NAME
 
 	.job = { .retc = SNAP_RETC_FAILURE, },
 	.state = ACTION_IDLE,
