@@ -79,6 +79,7 @@ static inline void _backtrace(const char *file, int line)
 #else
 #define dfprintf(fp, fmt, ...)
 #endif
+
 /*
  * FIXME The following stuff most likely neesd to go in a header file 
  * which can be accessed outside this code, or the functionalty in this
@@ -278,52 +279,6 @@ static struct cblk_dev chunk = {
 	.dev_lock = PTHREAD_MUTEX_INITIALIZER,
 };
 
-static void inc_work_in_flight(struct cblk_dev *c)
-{
-	pthread_mutex_lock(&c->idle_m);
-	c->work_in_flight++;
-	if (c->work_in_flight == 1)
-		/* pthread_cond_signal(&c->idle_c); */
-		pthread_cond_broadcast(&c->idle_c);
-	pthread_mutex_unlock(&c->idle_m);
-}
-
-static void dec_work_in_flight(struct cblk_dev *c)
-{
-	pthread_mutex_lock(&c->idle_m);
-	c->work_in_flight--;
-	pthread_mutex_unlock(&c->idle_m);
-}
-
-static inline unsigned int reads_in_flight(struct cblk_dev *c)
-{
-	int r;
-
-	sem_getvalue(&c->r_busy_sem, &r);
-	return CBLK_RIDX_MAX - r;
-}
-
-static inline unsigned int writes_in_flight(struct cblk_dev *c)
-{
-	int w;
-
-	sem_getvalue(&c->w_busy_sem, &w);
-	return CBLK_WIDX_MAX - w;
-}
-
-
-static inline unsigned int work_in_flight(struct cblk_dev *c)
-{
-	return reads_in_flight(c) + writes_in_flight(c);
-}
-
-static inline void dev_set_status(struct cblk_dev *c,
-				enum cblk_status status)
-{
-	/* block_trace("  [%s] device new status is %s\n", __func__,
-		cblk_status_str[status]); */
-	c->status = status;
-}
 /* Action related definitions. Used to access the hardware */
 
 /*
@@ -377,7 +332,7 @@ static const char *action_name[] = {
 #define  ACTION_STATUS_COMPLETION_MASK	0x0f /* mask completion bits */
 #define  ACTION_STATUS_ERROR_MASK	0xffffffe0
 
-#define ACTION_ERROR_BITS		0x48	/* Error Bits */
+#define ACTION_ERROR_BITS	0x48	/* Error Bits */
 
 /* defaults */
 #define ACTION_WAIT_TIME	10	/* Default timeout in sec */
@@ -394,7 +349,7 @@ static const char *action_name[] = {
 
 /* NVME lba cache */
 #define CACHE_MASK		0x000000ff
-#define CACHE_WAYS		4
+#define CACHE_WAYS		16 /* 4 * n */
 #define CACHE_ENTRIES		(CACHE_MASK + 1)
 
 enum cache_block_status {
@@ -457,25 +412,22 @@ static int cache_init(void)
 
 static inline void __dump_entry(struct cache_entry *entry)
 {
+	unsigned int i;
 	struct cache_way *w = entry->way;
 
-	cache_trace("  e[%p]: "
-		"%s %ld %d %d | %s %ld %d %d | %s %ld %d %d | %s %ld %d %d\n",
-		entry,
-		block_status_str[w[0].status], w[0].lba, w[0].count, w[0].used,
-		block_status_str[w[1].status], w[1].lba, w[1].count, w[1].used,
-		block_status_str[w[2].status], w[2].lba, w[2].count, w[2].used,
-		block_status_str[w[3].status], w[3].lba, w[3].count, w[3].used);
+	for (i = 0; i < CACHE_WAYS; i += 4) {
+		fprintf(stderr, "  e[%p/%2d]: "
+			"%s %ld %2d %d | %s %ld %2d %d | %s %ld %2d %d | %s %ld %2d %d\n",
+			entry, i,
+			block_status_str[w[i+0].status], w[i+0].lba, w[i+0].count, w[i+0].used,
+			block_status_str[w[i+1].status], w[i+1].lba, w[i+1].count, w[i+1].used,
+			block_status_str[w[i+2].status], w[i+2].lba, w[i+2].count, w[i+2].used,
+			block_status_str[w[i+3].status], w[i+3].lba, w[i+3].count, w[i+3].used);
+	}
 }
 
 static void cache_done(void)
 {
-	unsigned int i;
-
-	cache_trace("CACHE\n");
-	for (i = 0; i < CACHE_ENTRIES; i++)
-		__dump_entry(&cache_entries[i]);
-
 	__free(cache_blocks);
 	cache_blocks = NULL;
 }
@@ -578,12 +530,17 @@ static struct cache_way *__cache_reserve(off_t lba, int force)
 				reserve_idx = j;/* replace candidate with smallest count */
 			}
 			break;
-		/* do not throw this out */
+		/* do not throw this out unless forced to */
 		case CACHE_BLOCK_READING:
 			if (e->lba == lba) {	/* entry is already in cache */
-				cache_trace("[%s] %p LBA=%ld/%ld is already READING!\n",
-					__func__, e, lba, e->lba);
-				return NULL;	/* no entry found! */
+				/* cache_trace("[%s] %p LBA=%ld/%ld is already READING!\n",
+					__func__, e, lba, e->lba); */
+				if (force) {
+					min_count = e->count;
+					reserve_idx = j;
+					goto reserve_entry;
+				} else
+					return NULL;
 			}
 			break;
 		}
@@ -631,11 +588,11 @@ static struct cache_way *cache_reserve(off_t lba, int force)
 }
 
 /**
- * It might happen that a prefetch operation changes the state of the
- * way entry. If that should happen the status would not be reading
- * anymore and we should not write for now to avoid problems when
- * it is e.g. valid. We might like to check if the LBA is right, but
- * even that could have been overwritten if the READING state was
+ * It might happen that a prefetch/write operation changes the state
+ * of the way entry. If that should happen, the status would not be
+ * READING anymore and we should not write for now to avoid problems
+ * when it is e.g. VALID. We might like to check, if the LBA is right,
+ * but even that could have been overwritten if the READING state was
  * changed!
  *
  * We added _used to identify entries which were read by the prefetch
@@ -664,9 +621,11 @@ static int cache_write_reserved(struct cache_way **e,
 		pthread_mutex_unlock(&entry->way_lock);
 		return -1;
 	}
+
+	/* Reservation can be lost due to write happening in parallel */
 	if (_e->status != CACHE_BLOCK_READING) {
-		dfprintf(stderr, "[%s] warn: %p LBA=%ld/%ld State is not READING but %s\n",
-			__func__, _e, lba, _e->lba, block_status_str[_e->status]);
+		/* dfprintf(stderr, "[%s] warn: %p LBA=%ld/%ld State is not READING but %s\n",
+			__func__, _e, lba, _e->lba, block_status_str[_e->status]); */
 		pthread_mutex_unlock(&entry->way_lock);
 		return -2;
 	}
@@ -741,6 +700,53 @@ static int cache_write(off_t lba, const void *buf, int _used)
 	pthread_mutex_unlock(&entry->way_lock);
 
 	return 0;
+}
+
+static void inc_work_in_flight(struct cblk_dev *c)
+{
+	pthread_mutex_lock(&c->idle_m);
+	c->work_in_flight++;
+	if (c->work_in_flight == 1)
+		/* pthread_cond_signal(&c->idle_c); */
+		pthread_cond_broadcast(&c->idle_c);
+	pthread_mutex_unlock(&c->idle_m);
+}
+
+static void dec_work_in_flight(struct cblk_dev *c)
+{
+	pthread_mutex_lock(&c->idle_m);
+	c->work_in_flight--;
+	pthread_mutex_unlock(&c->idle_m);
+}
+
+static inline unsigned int reads_in_flight(struct cblk_dev *c)
+{
+	int r;
+
+	sem_getvalue(&c->r_busy_sem, &r);
+	return CBLK_RIDX_MAX - r;
+}
+
+static inline unsigned int writes_in_flight(struct cblk_dev *c)
+{
+	int w;
+
+	sem_getvalue(&c->w_busy_sem, &w);
+	return CBLK_WIDX_MAX - w;
+}
+
+
+static inline unsigned int work_in_flight(struct cblk_dev *c)
+{
+	return reads_in_flight(c) + writes_in_flight(c);
+}
+
+static inline void dev_set_status(struct cblk_dev *c,
+				enum cblk_status status)
+{
+	/* block_trace("  [%s] device new status is %s\n", __func__,
+		cblk_status_str[status]); */
+	c->status = status;
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
