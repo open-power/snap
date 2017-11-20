@@ -99,10 +99,10 @@
         "10141005") a0="hls_intersect_h";;
         "10141006") a0="hls_intersect_s";;
         "00000108") a0="hls_blowfish";;
-        "10141007") a0="hls_nvme_memcopy"
-                    if (( dram > 0 ));then echo -e "write FPGA memory to prevent reading unwritten adr 0"
-                      step "$ACTION_ROOT/sw/snap_example_set -F -b0x0 -s0x100 -p0x5 -t50"
-                    fi;;
+        "10141007") a0="hls_nvme_memcopy";;
+#                    if (( dram > 0 ));then echo -e "write FPGA memory to prevent reading unwritten adr 0"
+#                      step "$ACTION_ROOT/sw/snap_example_set -F -b0x0 -s0x100 -p0x5 -t50"
+#                    fi;;
         *) a0="unknown";;
       esac; echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="$SNAP_ROOT/software/tools/snap_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
