@@ -20,6 +20,11 @@ verbose=0
 snap_card=0
 duration="NORMAL"
 
+# Get path of this script
+THIS_DIR=$(dirname $(readlink -f "$BASH_SOURCE"))
+ACTION_ROOT=$(dirname ${THIS_DIR})
+SNAP_ROOT=$(dirname $(dirname ${ACTION_ROOT}))
+
 function usage() {
     echo "Usage:"
     echo "  test_<action_type>.sh"
@@ -49,9 +54,9 @@ while getopts ":C:t:d:h" opt; do
 	;;
     esac
 done
-echo "The script needs to be executed under ...snap/actions directory"
-export PATH=$PATH:../software/tools
-export PATH=$PATH:./hls_intersect/sw:./hls_intersect/tests
+
+export PATH=$PATH:${SNAP_ROOT}/software/tools:${ACTION_ROOT}/sw
+echo "Path is set to: $PATH"
 
 snap_peek --help > /dev/null || exit 1;
 snap_poke --help > /dev/null || exit 1;
