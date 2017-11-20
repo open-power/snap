@@ -63,6 +63,8 @@ projB = $(libnameB).a \
 	$(libnameB).so.$(libversion)
 
 snapblock_CPPFLAGS += -fPIC
+pp_CPPFLAGS += -fPIC
+
 srcB = snapblock.c pp.c
 objsB = $(srcB:.c=.o)
 libsB += $(LDLIBS)
