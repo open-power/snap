@@ -89,12 +89,16 @@ int pp_add_lba(off_t lba __attribute__((unused)),
  * @priolist:  array of lba offsets e.g. -4, -2, 2, 4
  * @n:         size of priorization list
  */
-int pp_get_priolist(int *priolist, unsigned int n, size_t nblocks)
+int pp_get_offslist(int *offslist, unsigned int n, size_t nblocks)
 {
 	unsigned int i;
+	int offs;
 
-	for (i = 0; i < n; i++)
-		priolist[i] = (i - n/2) + nblocks * i;
+	for (i = 0, offs = nblocks; i < n/2; i++, offs += nblocks)
+		offslist[i] = offs;
+
+	for (i = n/2, offs = -nblocks; i < n; i++, offs -= nblocks)
+		offslist[i] = offs;
 
 	return 0;
 }
