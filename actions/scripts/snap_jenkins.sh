@@ -19,7 +19,8 @@
 # Jenkins Test for SNAP
 #
 
-function test_hdl_example()
+# SNAP framework example
+function test_10140000
 {
 	local card=$1
 	local accel=$2
@@ -49,95 +50,124 @@ function test_hdl_example()
 	return 0
 }
 
-function test_hls_memcopy()
+# HDL NVMe example
+function test_10140001()
 {
 	local card=$1
 	local accel=$2
-	mytest="./actions/hls_memcopy"
 
-	echo "TEST HLS Memcopy on Accel: $accel[$card] ..."
-	cmd="$mytest/tests/test_0x10141000.sh -C $card"
+	cmd="./actions/hdl_nvme_example/tests/test_0x10140001.sh -C $card -d NORMAL"
+	echo "RUN: $cmd on $accel[$card]"
 	eval ${cmd}
-	RC=$?
-	return $RC
+	return $?
 }
 
-function test_hls_sponge () # $card $accel
-{
-	echo "TEST HLS Sponge Action on Accel: $accel[$card] ..."
-	return 0
-}
-
-function test_hls_hashjoin() #  $card $accel
-{
-	echo "TEST HLS Hash-join Action on Accel: $accel[$card] ..."
-	return 0
-}
-
-function test_hls_search() #  $card $accel
-{
-	echo "TEST HLS Search Action on Accel: $accel[$card] ..."
-	return 0
-}
-
-function test_hls_bfs() #  $card $accel
-{
-	echo "TEST HLS Bfs Action on Accel: $accel[$card] ..."
-	return 0
-}
-
-function test_hls_intersect()
+# HLS Memcopy
+function test_10141000()
 {
 	local card=$1
 	local accel=$2
-	mytest="./actions/hls_intersect"
 
-	echo "TEST HLS Intersect Action on Accel: $accel[$card] ..."
-	FUNC=$mytest/sw/snap_intersect -C $card
-	cmd="${FUNC} -m1 -v"
+	cmd="./actions/hls_memcopy/tests/test_0x10141000.sh -C $card -d NORMAL"
+	echo "RUN: $cmd on $accel[$card]"
 	eval ${cmd}
-	RC=$?
-	if [ $RC -ne 0 ]; then
-		return $RC
-	fi
-	cmd="${FUNC} -n1 -v"
-	eval ${cmd}
-	RC=$?
-	if [ $RC -ne 0 ]; then
-		return $RC
-	fi
-	cmd="${FUNC} -n4 -v"
-	eval ${cmd}
-	RC=$?
-	if [ $RC -ne 0 ]; then
-		return $RC
-	fi
-	cmd="${FUNC} -n8 -v"
-	eval ${cmd}
-	RC=$?
-	if [ $RC -ne 0 ]; then
-		return $RC
-	fi
-	cmd="${FUNC} -I -m8 -v"
-	eval ${cmd}
-	RC=$?
-	if [ $RC -ne 0 ]; then
-		return $RC
-	fi
-	return 0
+	return $?
 }
 
+# HLS Sponge
+function test_10141001()
+{
+	local card=$1
+	local accel=$2
+
+	cmd="./actions/hls_sponge/tests/test_0x10141001.sh -C $card -d NORMAL"
+	echo "RUN: $cmd on $accel[$card]"
+	eval ${cmd}
+	return $?
+}
+
+# HLS HashJoin
+function test_10141002()
+{
+	local card=$1
+	local accel=$2
+
+	cmd="./actions/hls_hashjoin/tests/test_0x10141002.sh -C $card -d NORMAL"
+	echo "RUN: $cmd on $accel[$card]"
+	eval ${cmd}
+	return $?
+}
+
+# HLS Text Search
+function test_10141003()
+{
+	local card=$1
+	local accel=$2
+
+	cmd="./actions/hls_search/tests/test_0x10141003.sh -C $card -d NORMAL"
+	echo "RUN: $cmd on $accel[$card]"
+	eval ${cmd}
+	return $?
+}
+
+# HLS BFS (Breadth First Search)
+function test_10141004()
+{
+	local card=$1
+	local accel=$2
+
+	cmd="./actions/hls_bfs/tests/test_0x10141004.sh -C $card -d NORMAL"
+	echo "RUN: $cmd on $accel[$card]"
+	eval ${cmd}
+	return $?
+}
+
+# HLS Intersection (Two methods)
+function test_10141005()
+{
+	local card=$1
+	local accel=$2
+
+	cmd="./actions/hls_intersect/tests/test_0x10141005.sh -C $card -d NORMAL"
+	echo "RUN: $cmd on $accel[$card]"
+	eval ${cmd}
+	return $?
+}
+
+# HLS Intersection (Two methods)
+function test_10141006()
+{
+	local card=$1
+	local accel=$2
+
+	cmd="./actions/hls_intersect/tests/test_0x10141006.sh -C $card -d NORMAL"
+	echo "RUN: $cmd on $accel[$card]"
+	eval ${cmd}
+	return $?
+}
+
+# HLS NVMe memcopy
+function test_10141007()
+{
+	local card=$1
+	local accel=$2
+
+	cmd="./actions/hls_nvme_memcopy/tests/test_0x10141007.sh -C $card"
+	echo "RUN: $cmd on $accel[$card]"
+	eval ${cmd}
+	return $?
+}
+
+# HLS Hello World
 function test_hls_nvme_memcopy()
 {
 	local card=$1
 	local accel=$2
-	mytest="./actions/hls_nvme_memcopy"
 
-	echo "TEST HLS NVME Memcopy on Accel: $accel[$card] ..."
-	cmd="$mytest/tests/test_0x10141007.sh -C $card"
+	cmd="./actions/hls_nvme_memcopy/tests/test_0x10141007.sh -C $card"
+	echo "RUN: $cmd on $accel[$card]"
 	eval ${cmd}
-	RC=$?
-	return $RC
+	return $?
 }
 
 function test_hls_helloworld()
@@ -164,35 +194,39 @@ function test_all_actions() # $1 = card, $2 = accel
 	for action in $MY_ACTION ; do
 		case $action in
 		*"10140000")
-			test_hdl_example $card $accel
+			test_10140000 $card $accel
 			RC=$?
 		;;
 		*"10141000")
-			test_hls_memcopy $card $accel
+			test_10141000 $card $accel
 			RC=$?
 		;;
 		*"10141001")
-			test_hls_sponge $card $accel
+			test_10141001 $card $accel
 			RC=$?
 		;;
 		*"10141002")
-			test_hls_hashjoin $card $accel
+			test_10141002 $card $accel
 			RC=$?
 		;;
 		*"10141003")
-			test_hls_search $card $accel
+			test_10141003 $card $accel
 			RC=$?
 		;;
 		*"10141004")
-			test_hls_bfs $card $accel
+			test_10141004 $card $accel
 			RC=$?
 		;;
 		*"10141005")
-			test_hls_intersect $card $accel
+			test_10141005 $card $accel
+			RC=$?
+		;;
+		*"10141006")
+			test_10141006 $card $accel
 			RC=$?
 		;;
 		*"10141007")
-			test_hls_nvme_memcopy $card $accel
+			test_10141007 $card $accel
 			RC=$?
 		;;
                 *"10141008")
@@ -340,9 +374,14 @@ if [[ $TARGET_DIR != $MY_DIR ]] ; then
 	exit 1;
 fi
 
+# accel can be:
+#     1: ADKU3 - flash and test AlphaData KU3
+#     2: N250S - flash and test Nallatech 250S
+#     3: S121B - flash and test Semptian NSA121B
+#     4: ALL   - test Software on all cards in this system
+
 test_done=0
 if [[ $accel != "ALL" ]]; then
-	# accel can be AlphaData KU3 or Nallatech 250S or Semptian NSA121B only
 	if [[ $BINFILE != "" ]]; then
 		echo "Flash and test Accel: $accel using: $BINFILE"
 		for IMAGE in `ls -tr $BINFILE 2>/dev/null`; do
