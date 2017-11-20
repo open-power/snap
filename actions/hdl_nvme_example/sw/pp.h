@@ -31,6 +31,11 @@
 
 #include <stdint.h>
 
+#define PP_STRATEGY_POSITIVE	1
+#define PP_STRATEGY_NEGATIVE	2
+#define PP_STRATEGY_POSNEG	3 /* default */
+#define PP_STRATEGY_SMART	4
+
 int pp_init(int strategy, int prefetch_count, unsigned int lba_max);
 void pp_done(void);
 
@@ -51,6 +56,6 @@ int pp_add_lba(off_t lba, size_t nblocks);
  * @priolist:  array of lba offsets e.g. -4, -2, 2, 4
  * @n:         size of priorization list
  */
-int pp_get_priolist(int *priolist, unsigned int n, size_t nblocks);
+int pp_get_offslist(int *offslist, unsigned int n, size_t nblocks);
 
 #endif /* __PP_H__ */
