@@ -35,7 +35,12 @@
 #define CARD_DRAM_SIZE        (1 * 1024 *1024 * 1024)
 #define MAX_NB_OF_WORDS_READ    (MAX_NB_OF_BYTES_READ/BPERDW)
 
+// WARNING : the following addresses are used when SSD transfers are performed
+// the application should handle the fact that previously existing data might be erased
+
+// This is the DRAM address from which data are buffered when a "write" to SSD is performed
 #define DRAM_ADDR_TO_SSD   0x00000000
+// This is the DRAM address from which data are buffered when a "read"  to SSD is performed
 #define DRAM_ADDR_FROM_SSD 0x80000000
 //---------------------------------------------------------------------
 typedef struct {
