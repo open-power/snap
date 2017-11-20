@@ -43,7 +43,7 @@ function test () # $1 = card, $2 = drive
 	echo "Testing in IRQ mode"
 	for b in 512 1024 ; do
 		echo "Using IRQ mode"
-		cmd="$FUNC -C $card -d $drive -b $b -I"
+		cmd="$FUNC -C $card -d $drive -b $b -i"
 		eval ${cmd}
 		if [ $? -ne 0 ]; then
 			echo "cmd: $cmd"
