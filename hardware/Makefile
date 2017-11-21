@@ -284,12 +284,20 @@ action_hw: prepare_logs
 	fi
 	@echo -e "[CONFIG ACTION HW....] done  `date +"%T %a %b %d %Y"`";
 
+.create_ip_done:
+	@cd $(SNAP_HARDWARE_ROOT)/setup  &&  vivado -quiet -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -nojournal
+	@touch .create_ip_done
+
+.create_nvme_done:
+	@cd $(SNAP_HARDWARE_ROOT)/setup  &&  vivado -quiet -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou
+	@touch .create_nvme_done
+
 create_project: snap_preprocess
 	@echo -e "[CREATE PROJECT......] start `date +"%T %a %b %d %Y"`";
 	@echo -e "                        using `vivado -version |grep Vivado`"
-	@cd $(SNAP_HARDWARE_ROOT)/setup                                          && vivado -quiet -notrace -mode batch -source create_ip.tcl        -log $(LOGS_DIR)/create_ip.log         -nojournal
-	@if [ $(NVME_USED) = "TRUE" ]; then cd $(SNAP_HARDWARE_ROOT)/setup       && vivado -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou; fi
-	@cd $(SNAP_HARDWARE_ROOT)/setup && vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
+	@$(MAKE) -s .create_ip_done
+	@if [ $(NVME_USED) = "TRUE" ]; then $(MAKE) -s .create_nvme_done; fi
+	@cd $(SNAP_HARDWARE_ROOT)/setup  &&  vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
 	@$(MAKE) -s patch_NVMe
 	@echo -e "[CREATE PROJECT......] done  `date +"%T %a %b %d %Y"`"
 
@@ -440,12 +448,12 @@ endif
 .PHONY: clean
 clean:
 	@echo -e "[CLEAN ENVIRONMENT...] start `date +"%T %a %b %d %Y"`"
-	@$(RM)    .hw_project_done
+	@$(RM)    .hw_project_done .create_ip_done .create_nvme_done
 	@$(RM) -r $(SNAP_PP_FILES_VHD)                   \
-                  $(SNAP_SIM_NVME)/endp_4_pipe32.v       \
 	          $(SNAP_SIM_CORE)/top.sv_source         \
-                  $(SNAP_CONFIG_FILES)                   \
-                  $(SNAP_TMP_FILES)                      \
+	          $(SNAP_SIM_NVME)/endp_4_pipe32.v       \
+	          $(SNAP_CONFIG_FILES)                   \
+	          $(SNAP_TMP_FILES)                      \
 	          $(SNAP_HDL_CORE)/psl_fpga.vhd_source   \
 	          $(SNAP_HDL_CORE)/psl_accel.vhd_source  \
 	          $(SNAP_MODELS)                         \
