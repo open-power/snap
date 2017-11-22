@@ -35,11 +35,13 @@
 #include "libsnap.h"
 #include "snap_hls_if.h"
 #include "capiblock.h"
+#include "pp.h"
 
 #undef CONFIG_WAIT_FOR_IRQ	/* Not working */
 #undef CONFIG_MMIO32_NOHWSYNC	/* Do not use hwsync behind lwz */
-#define CONFIG_NEGATIVE_PREFETCHES	1
+
 #define CBLK_PREFETCH_THRESHOLD		10 /* only prefetch if reads_in_flight is small than the threshold */
+#define CBLK_NBLOCKS			2 /* tuneup for the prefetch strategy */
 
 #define CONFIG_COMPLETION_THREADS	1 /* 1 works best */
 #define CONFIG_MAX_RETRIES		5 /* 5 is good, 0: no retries */
@@ -51,7 +53,8 @@ static int cblk_reqtimeout = CONFIG_REQ_TIMEOUT_SEC;
 static int cblk_busytimeout = CONFIG_BUSY_TIMEOUT_SEC;
 
 static int cblk_prefetch = 0;
-static int cblk_negative_prefetches = CONFIG_NEGATIVE_PREFETCHES;
+static int cblk_nblocks = CBLK_NBLOCKS;
+
 static int cblk_caching = 1;
 static int cblk_prefetch_threshold = CBLK_PREFETCH_THRESHOLD;
 
@@ -237,6 +240,7 @@ struct cblk_dev {
 	unsigned int ridx;
 	struct cblk_req req[CBLK_IDX_MAX];
 	enum cblk_status req_status;
+	int prefetch_offs[CBLK_IDX_MAX];
 
 	sem_t w_busy_sem;	/* wait if there is no write slot */
 	sem_t r_busy_sem;	/* wait if there is no read slot */
@@ -1065,8 +1069,8 @@ static void put_req(struct cblk_dev *c, struct cblk_req *req)
 {
 	unsigned int i;
 	time_t usecs;
-	pthread_mutex_lock(&c->dev_lock);
 
+	pthread_mutex_lock(&c->dev_lock);
 	gettimeofday(&req->etime, NULL);
 	usecs = timediff_usec(&req->etime, &req->stime);
 
@@ -1279,23 +1283,16 @@ static int __prefetch_blocks(struct cblk_dev *c, off_t lba, unsigned int nblocks
 	if (!cblk_prefetch)
 		return -1;
 
+	/* pp_get_offslist(c->prefetch_offs, cblk_prefetch, nblocks); */
+
 	for (k = 0; (k < (unsigned int)cblk_prefetch); k++) {
-		/* backward */
-		if (cblk_negative_prefetches) {
-			if (reads_in_flight(c) < CBLK_PREFETCH_THRESHOLD) {
-				rc = __prefetch_read_start(c, lba - (k+1) * nblocks,
-							nblocks);
-				if (rc >= 0)
-					n++;
-			}
-		}
-		/* forward */
-		if (reads_in_flight(c) < CBLK_PREFETCH_THRESHOLD) {
-			rc = __prefetch_read_start(c, lba + (k+1) * nblocks,
-						nblocks);
-			if (rc >= 0)
-				n++;
-		}
+		if (reads_in_flight(c) >= CBLK_PREFETCH_THRESHOLD)
+			break;
+
+		rc = __prefetch_read_start(c, lba + c->prefetch_offs[k],
+					nblocks);
+		if (rc >= 0)
+			n++;
 	}
 
 	return n;
@@ -1380,10 +1377,11 @@ static void *completion_thread(void *arg)
 			timeout.tv_sec = now.tv_sec + 5;
 			timeout.tv_nsec = now.tv_usec;
 
-			int rc = pthread_cond_timedwait(&c->idle_c, &c->idle_m, &timeout);
-			if (rc == ETIMEDOUT)
+			/* int rc =  */
+			pthread_cond_timedwait(&c->idle_c, &c->idle_m, &timeout);
+			/* if (rc == ETIMEDOUT)
 				fprintf(stderr, "[%s] info: timedwait returned ETIMEDOUT\n",
-					__func__);
+					__func__); */
 
 			c->idle_wakeups++;
 		}
@@ -1421,6 +1419,22 @@ static void *completion_thread(void *arg)
 	return NULL;
 }
 
+static int put_offslist(void *put_data, int *offslist, unsigned int n,
+			size_t nblocks __attribute__((unused)))
+{
+	struct cblk_dev *c = (struct cblk_dev *)put_data;
+
+	if (offslist == NULL) {
+		fprintf(stderr, "[%s] no offset list provided!\n", __func__);
+		return -1;
+	}
+
+	pthread_mutex_lock(&c->dev_lock);
+	memcpy(c->prefetch_offs, offslist, n * sizeof(int));
+	pthread_mutex_unlock(&c->dev_lock);
+	return 0;
+}
+
 chunk_id_t cblk_open(const char *path,
 		int max_num_requests __attribute__((unused)),
 		int mode, uint64_t ext_arg __attribute__((unused)),
@@ -1433,8 +1447,7 @@ chunk_id_t cblk_open(const char *path,
 	snap_action_flag_t attach_flags = 0;
 	struct cblk_dev *c = &chunk;
 
-	block_trace("[%s] opening (%s) CBLK_REQTIMEOUT=%d CBLK_PREFETCH=%d\n",
-		__func__, path, cblk_reqtimeout, cblk_prefetch);
+	block_trace("[%s] opening (%s)\n", __func__, path);
 
 	pthread_mutex_lock(&c->dev_lock);
 
@@ -1559,10 +1572,18 @@ chunk_id_t cblk_open(const char *path,
 	rc = cache_init();
 	if (rc != 0)
 		goto out_err4;
-	
+
+	rc = pp_init(cblk_prefetch, put_offslist, cblk_nblocks, c);
+	if (rc != 0)
+		goto out_err5;
+
+	pp_get_offslist(c->prefetch_offs, cblk_prefetch, cblk_nblocks);
+
 	pthread_mutex_unlock(&c->dev_lock);
 	return 0;
 
+ out_err5:
+	cache_done();
  out_err4:
 	for (i = 0; i < ARRAY_SIZE(c->done_tid); i++) {
 		if (c->done_tid[i] == 0)
@@ -1642,6 +1663,7 @@ int cblk_close(chunk_id_t id __attribute__((unused)),
 	c->drive = -1;
 
 	cache_done();
+	pp_done();
 	return 0;
 }
 
@@ -1774,6 +1796,10 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 	int rc;
 	size_t i;
 	struct cblk_dev *c = &chunk;
+	struct timeval start_time, end_time;
+	time_t usecs;
+
+	gettimeofday(&start_time, NULL);
 
 	c->block_reads++;
 	if (nblocks == 1)
@@ -1796,17 +1822,20 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 			c->cache_hits++;
 			if (nblocks == 1)
 				c->cache_hits_4k++;
-			
-			
+
 			__prefetch_blocks(c, lba, nblocks);
-			return nblocks;
+			rc = nblocks;
+			goto out;
 		}
 	}
 
 	/* Else read them all for simplicity at this point in time ... */
 	rc = block_read(c, buf, lba, nblocks);
-	if (rc <= 0)
-		return rc;
+
+out:
+	gettimeofday(&end_time, NULL);
+	usecs = timediff_usec(&end_time, &start_time);
+	pp_add_lba(lba, nblocks, usecs, 1);
 
 	return rc;
 }
@@ -1877,6 +1906,10 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 	int rc;
 	unsigned  int i;
 	struct cblk_dev *c = &chunk;
+	struct timeval start_time, end_time;
+	time_t usecs;
+
+	gettimeofday(&start_time, NULL);
 
 	c->block_writes++;
 	if (nblocks == 1)
@@ -1888,12 +1921,16 @@ int cblk_write(chunk_id_t id __attribute__((unused)),
 		for (i = 0; i < nblocks; i++) {
 			rc = cache_write(lba + i, buf + i * __CBLK_BLOCK_SIZE, 0);
 			if (rc != 0) {
-				dfprintf(stderr, "error: cache_write LBA=%ld "
+				dfprintf(stderr, "err: cache_write LBA=%ld "
 					"failed rc=%d!\n", (long int)lba, rc);
 				return 0;
 			}
 		}
 	}
+
+	gettimeofday(&end_time, NULL);
+	usecs = timediff_usec(&end_time, &start_time);
+	pp_add_lba(lba, nblocks, usecs, 0);
 
 	return nblocks;
 }
@@ -1916,27 +1953,27 @@ static void _init(void)
 	if (env != NULL)
 		cblk_caching = strtol(env, (char **)NULL, 0);
 
+	env = getenv("CBLK_NBLOCKS");
+	if (env != NULL)
+		cblk_nblocks = strtol(env, (char **)NULL, 0);
+
 	env = getenv("CBLK_PREFETCH");
 	if (env != NULL) {
-		cblk_prefetch = strtol(env, (char **)NULL, 0);
+		cblk_prefetch = MIN(strtol(env, (char **)NULL, 0),
+				CBLK_IDX_MAX);
 
 		/* NOTE: prefetch implies caching */
 		if (cblk_prefetch)
 			cblk_caching = 1;
 	}
 
-	env = getenv("CBLK_NEGATIVE_PREFETCHES");
-	if (env != NULL)
-		cblk_negative_prefetches = strtol(env, (char **)NULL, 0);
-
 	env = getenv("CBLK_PREFETCH_THRESHOLD");
 	if (env != NULL)
 		cblk_prefetch_threshold = strtol(env, (char **)NULL, 0);
 
 	block_trace("[%s] init CBLK_REQTIMEOUT=%d CBLK_PREFETCH=%d "
-		"CBLK_NEGATIVE_PREFETCHES=%d CBLK_PREFETCH_THRESHOLD=%d "
-		"CBLK_CACHING=%d\n", __func__, cblk_reqtimeout,
-		cblk_prefetch, cblk_negative_prefetches,
+		"CBLK_PREFETCH_THRESHOLD=%d CBLK_CACHING=%d\n",
+		__func__, cblk_reqtimeout, cblk_prefetch,
 		cblk_prefetch_threshold, cblk_caching);
 }
 

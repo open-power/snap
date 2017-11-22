@@ -39,29 +39,34 @@ static unsigned int snap_trace = 0x0;
 static unsigned int snap_config = 0x0;
 static struct snap_sim_action *actions = NULL;
 
-#define snap_trace_enabled()  (snap_trace & 0x01)
-#define reg_trace_enabled()   (snap_trace & 0x02)
-#define sim_trace_enabled()   (snap_trace & 0x04)
-#define poll_trace_enabled()  (snap_trace & 0x10)
+#define snap_trace_enabled()  (snap_trace & 0x0001)
+#define reg_trace_enabled()   (snap_trace & 0x0002)
+#define sim_trace_enabled()   (snap_trace & 0x0004)
+#define poll_trace_enabled()  (snap_trace & 0x0010)
 
 int action_trace_enabled(void)
 {
-	return snap_trace & 0x08;
+	return snap_trace & 0x0008;
 }
 
 int block_trace_enabled(void)
 {
-	return snap_trace & 0x20;
+	return snap_trace & 0x0020;
 }
 
 int cache_trace_enabled(void)
 {
-	return snap_trace & 0x40;
+	return snap_trace & 0x0040;
 }
 
 int stat_trace_enabled(void)
 {
-	return snap_trace & 0x80;
+	return snap_trace & 0x0080;
+}
+
+int pp_trace_enabled(void)
+{
+	return snap_trace & 0x0100;
 }
 
 #define simulation_enabled()  (snap_config & 0x01)
