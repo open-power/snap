@@ -50,139 +50,6 @@ function test_10140000
 	return 0
 }
 
-# HDL NVMe example
-function test_10140001()
-{
-	local card=$1
-	local accel=$2
-
-	cmd="./actions/hdl_nvme_example/tests/test_0x10140001.sh -C $card -d NORMAL"
-	echo "RUN: $cmd on $accel[$card]"
-	eval ${cmd}
-	return $?
-}
-
-# HLS Memcopy
-function test_10141000()
-{
-	local card=$1
-	local accel=$2
-
-	cmd="./actions/hls_memcopy/tests/test_0x10141000.sh -C $card -d NORMAL"
-	echo "RUN: $cmd on $accel[$card]"
-	eval ${cmd}
-	return $?
-}
-
-# HLS Sponge
-function test_10141001()
-{
-	local card=$1
-	local accel=$2
-
-	cmd="./actions/hls_sponge/tests/test_0x10141001.sh -C $card -d NORMAL"
-	echo "RUN: $cmd on $accel[$card]"
-	eval ${cmd}
-	return $?
-}
-
-# HLS HashJoin
-function test_10141002()
-{
-	local card=$1
-	local accel=$2
-
-	cmd="./actions/hls_hashjoin/tests/test_0x10141002.sh -C $card -d NORMAL"
-	echo "RUN: $cmd on $accel[$card]"
-	eval ${cmd}
-	return $?
-}
-
-# HLS Text Search
-function test_10141003()
-{
-	local card=$1
-	local accel=$2
-
-	cmd="./actions/hls_search/tests/test_0x10141003.sh -C $card -d NORMAL"
-	echo "RUN: $cmd on $accel[$card]"
-	eval ${cmd}
-	return $?
-}
-
-# HLS BFS (Breadth First Search)
-function test_10141004()
-{
-	local card=$1
-	local accel=$2
-
-	cmd="./actions/hls_bfs/tests/test_0x10141004.sh -C $card -d NORMAL"
-	echo "RUN: $cmd on $accel[$card]"
-	eval ${cmd}
-	return $?
-}
-
-# HLS Intersection (Two methods)
-function test_10141005()
-{
-	local card=$1
-	local accel=$2
-
-	cmd="./actions/hls_intersect/tests/test_0x10141005.sh -C $card -d NORMAL"
-	echo "RUN: $cmd on $accel[$card]"
-	eval ${cmd}
-	return $?
-}
-
-# HLS Intersection (Two methods)
-function test_10141006()
-{
-	local card=$1
-	local accel=$2
-
-	cmd="./actions/hls_intersect/tests/test_0x10141006.sh -C $card -d NORMAL"
-	echo "RUN: $cmd on $accel[$card]"
-	eval ${cmd}
-	return $?
-}
-
-# HLS NVMe memcopy
-function test_10141007()
-{
-	local card=$1
-	local accel=$2
-
-	cmd="./actions/hls_nvme_memcopy/tests/test_0x10141007.sh -C $card"
-	echo "RUN: $cmd on $accel[$card]"
-	eval ${cmd}
-	return $?
-}
-
-# HLS Hello World
-function test_hls_nvme_memcopy()
-{
-	local card=$1
-	local accel=$2
-
-	cmd="./actions/hls_nvme_memcopy/tests/test_0x10141007.sh -C $card"
-	echo "RUN: $cmd on $accel[$card]"
-	eval ${cmd}
-	return $?
-}
-
-function test_hls_helloworld()
-{
-        local card=$1
-        local accel=$2
-        mytest="./actions/hls_helloworld"
-
-        echo "TEST HLS helloworld on Accel: $accel[$card] ..."
-        cmd="$mytest/tests/test_0x10141008.sh -C $card"
-        eval ${cmd}
-        RC=$?
-        return $RC
-}
-
 function test_all_actions() # $1 = card, $2 = accel
 {
 	local card=$1
@@ -192,51 +59,62 @@ function test_all_actions() # $1 = card, $2 = accel
 	# Get SNAP Action number from Card
 	MY_ACTION=`./software/tools/snap_maint -C $card -m 1`
 	for action in $MY_ACTION ; do
+		run_test=1;
 		case $action in
 		*"10140000")
 			test_10140000 $card $accel
 			RC=$?
+			run_test=0
 		;;
-		*"10141000")
-			test_10141000 $card $accel
-			RC=$?
+		*"10140001") # HDL NVMe example
+			cmd="./actions/hdl_nvme_example/tests/test_0x10140001.sh"
 		;;
-		*"10141001")
-			test_10141001 $card $accel
-			RC=$?
+		*"10141000") # HLS Memcopy
+			cmd="./actions/hls_memcopy/tests/test_0x10141000.sh"
 		;;
-		*"10141002")
-			test_10141002 $card $accel
-			RC=$?
+		*"10141001") # HLS Sponge
+			cmd="./actions/hls_sponge/tests/test_0x10141001.sh"
 		;;
-		*"10141003")
-			test_10141003 $card $accel
-			RC=$?
+		*"10141002") # HLS HashJoin
+			cmd="./actions/hls_hashjoin/tests/test_0x10141002.sh"
 		;;
-		*"10141004")
-			test_10141004 $card $accel
-			RC=$?
+		*"10141003") # HLS Text Search
+			cmd="./actions/hls_search/tests/test_0x10141003.sh"
 		;;
-		*"10141005")
-			test_10141005 $card $accel
-			RC=$?
+		*"10141004") # HLS BFS (Breadth First Search)
+			cmd="./actions/hls_bfs/tests/test_0x10141004.sh"
 		;;
-		*"10141006")
-			test_10141006 $card $accel
-			RC=$?
+		*"10141005") # HLS Intersection (1)
+			cmd="./actions/hls_intersect/tests/test_0x10141005.sh"
 		;;
-		*"10141007")
-			test_10141007 $card $accel
-			RC=$?
+		*"10141006") # HLS Intersection (2)
+			cmd="./actions/hls_intersect/tests/test_0x10141006.sh"
 		;;
-                *"10141008")
-                        test_hls_helloworld $card $accel
-                        RC=$?
-                ;;
+		*"10141007") # HLS NVMe memcopy
+			cmd="./actions/hls_nvme_memcopy/tests/test_0x10141007"
+		;;
+		*"10141008") # HLS Hello World
+			cmd="./actions/hls_helloworld/tests/test_0x10141008.sh"
+		;;
 		*)
-			echo "Error: No Test Case found for $action"
-			RC=99
+			echo "Error: Action: $action is not valid !"
+			run_test=0
 		esac
+
+		# Check run_test flag and check if test case is there
+		if [ $run_test -eq 1 ]; then
+			if [ -f $cmd ]; then
+				cmd=$cmd" -C $card -d NORMAL"
+				echo "RUN: $cmd on $accel[$card] Start"
+				eval ${cmd}
+				RC=$?
+				echo "RUN: $cmd on $accel[$card] Done RC=$RC"
+			else
+				echo "Error: No Test case found for Action: $action on $accel[$card]"
+				echo "       Missing File: $cmd"
+				RC=99
+			fi
+		fi
 	done
 	return $RC
 }
@@ -333,7 +211,7 @@ PROGRAM=$0
 BINFILE=""
 accel="ALL"
 
-echo "Executing: $PROGRAM $*"
+echo "---- `date`---- Executing: $PROGRAM $*"
 
 while getopts "D:A:F:h" opt; do
 	case $opt in
@@ -373,6 +251,8 @@ if [[ $TARGET_DIR != $MY_DIR ]] ; then
 	echo "Error: Dir Mismatch, please fix"
 	exit 1;
 fi
+echo "Source PATH and LD_LIBRARY_PATH"
+. ./snap_path.sh
 
 # accel can be:
 #     1: ADKU3 - flash and test AlphaData KU3
@@ -389,10 +269,10 @@ if [[ $accel != "ALL" ]]; then
 				echo "Error: Can not locate: $BINFILE"
 				exit 1
 			fi
-			echo "---> Test Image# $test_done File: $IMAGE on $accel Cards"
+			echo "---> Test Image# $test_done File: $IMAGE on $accel"
 			MY_CARDS=`./software/tools/snap_find_card -A $accel`
-			if [ $? -ne 0 ]; then
-				echo "Error: No $accel Cards found in this System."
+			if [ $? -eq 0 ]; then
+				echo "Error: Can not find $accel Card in `hostname` !"
 				exit 1;
 			fi
 			for card in $MY_CARDS ; do
@@ -408,19 +288,19 @@ if [[ $accel != "ALL" ]]; then
 			echo "       File: $BINFILE not found"
 			exit 1
 		fi
-		echo "Image Test on Accel: $accel was executed $test_done times"
+		echo "Image Test on Accel: $accel was executed $test_done time(s)"
 		exit 0
 	fi
 	# Parm (-A Nallatech 250S or AlphaData KU3 or Semptian NSA121B) was set, but no file (-F) to test
 	# Run Software Test on one Type of Card
-	echo "Test Software on Accel: $accel"
+	echo "Test Software on: $accel"
 	MY_CARDS=`./software/tools/snap_find_card -A $accel`
-	if [ $? -ne 0 ]; then
-		echo "Error: Accel: $accel not found in this System."
+	if [ $? -eq 0 ]; then
+		echo "Error: Can not find Accel: $accel"
 		exit 1;
 	fi
-	# MY_CARDS is a list of cards from type accel
-	echo "Found Accel#: $MY_CARDS for Accel: $accel"
+	# MY_CARDS is a list of cards from type accel e.g: 0 1
+	echo "Testing on  $accel[$MY_CARDS]"
 	for card in $MY_CARDS ; do
 		test_soft $accel $card
 		if [ $? -ne 0 ]; then
@@ -429,34 +309,36 @@ if [[ $accel != "ALL" ]]; then
 		test_done=$((test_done + 1))
 	done
 	if [ $test_done -eq 0 ]; then
-		echo "Error Software Test on Accel: $accel failed"
+		echo "Error: Software Test on Accel: $accel[$card] failed"
 		exit 1
 	fi
-	echo "Software Test on Accel: $accel was executed $test_done times"
+	echo "Software Test on Accel: $accel was executed on $test_done Cards"
 	exit 0
 fi
 
 # Run Software Test on ALL Cards
 if [[ $BINFILE != "" ]]; then
-	echo "Error: Accel was set to: $accel and Binfile is given: $BINFILE"
-	echo "       Bot valid, Please remove -F option from Parm"
+	# Error: I can not use the same BINFILE for ALL cards
+	echo "Error: Option -A $accel and -F $BINFILE is not valid"
 	exit 1
 fi
-echo "Test Software on Accel: $accel"
+
+echo "Test Software on: $accel"
 MY_CARDS=`./software/tools/snap_find_card -A ALL`
-if [ $? -ne 0 ]; then
-	echo "Error: No valid Accelerator Cards found in this System."
+if [ $? -eq 0 ]; then
+	echo "Error: No Accelerator Cards found."
 	exit 1;
 fi
 echo "Found Accel#: [$MY_CARDS]"
 for card in $MY_CARDS ; do
 	accel=`./software/tools/snap_find_card -C $card`
-	if [ $? -ne 0 ]; then
+	if [ $? -eq 0 ]; then
 		echo "Can not find valid Accelerator for Card# $card"
 		continue
 	fi
+	# snap_find_card also detects GZIP cards, i will skip this cards
 	if [[ $accel != "N250S" ]] && [[ $accel != "ADKU3" ]] && [[ $accel != "S121B" ]]; then
-		echo "Invalid Accelerator $accel for Card $card, skip"
+		echo "Invalid Accelerator $accel[$card] skip, maybe Gzip Card"
 		continue
 	fi
 	test_soft $accel $card

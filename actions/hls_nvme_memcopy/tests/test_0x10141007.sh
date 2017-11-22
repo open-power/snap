@@ -21,10 +21,11 @@ verbose=0
 snap_card=0
 duration="NORMAL"
 
-PWD=`pwd`
-if [ -z "$ACTION_ROOT" ]; then
-    ACTION_ROOT="${PWD}/.."
-fi
+# Get path of this script
+THIS_DIR=$(dirname $(readlink -f "$BASH_SOURCE"))
+ACTION_ROOT=$(dirname ${THIS_DIR})
+SNAP_ROOT=$(dirname $(dirname ${ACTION_ROOT}))
+
 echo "ACTION_ROOT=$ACTION_ROOT"
 echo "please make sure ACTION_ROOT is pointed to actions/hls_nvme_memcopy"
 
@@ -60,7 +61,7 @@ while getopts ":C:t:d:h" opt; do
     esac
 done
 
-export PATH=$PATH:$ACTION_ROOT/../../software/tools:$ACTION_ROOT/sw
+export PATH=$PATH:${SNAP_ROOT}/software/tools:${ACTION_ROOT}/sw
 
 snap_peek --help > /dev/null || exit 1;
 snap_poke --help > /dev/null || exit 1;
