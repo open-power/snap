@@ -240,7 +240,7 @@ struct cblk_dev {
 	unsigned int ridx;
 	struct cblk_req req[CBLK_IDX_MAX];
 	enum cblk_status req_status;
-	int prefetch_offs[CBLK_IDX_MAX];
+	int prefetch_offs[CBLK_IDX_MAX];	/* list of LBA offsets to prefetch */
 
 	sem_t w_busy_sem;	/* wait if there is no write slot */
 	sem_t r_busy_sem;	/* wait if there is no read slot */
