@@ -140,6 +140,19 @@ function test_hls_nvme_memcopy()
 	return $RC
 }
 
+function test_hls_helloworld()
+{
+        local card=$1
+        local accel=$2
+        mytest="./actions/hls_helloworld"
+
+        echo "TEST HLS helloworld on Accel: $accel[$card] ..."
+        cmd="$mytest/tests/test_0x10141008.sh -C $card"
+        eval ${cmd}
+        RC=$?
+        return $RC
+}
+
 function test_all_actions() # $1 = card, $2 = accel
 {
 	local card=$1
@@ -182,6 +195,10 @@ function test_all_actions() # $1 = card, $2 = accel
 			test_hls_nvme_memcopy $card $accel
 			RC=$?
 		;;
+                *"10141008")
+                        test_hls_helloworld $card $accel
+                        RC=$?
+                ;;
 		*)
 			echo "Error: No Test Case found for $action"
 			RC=99
