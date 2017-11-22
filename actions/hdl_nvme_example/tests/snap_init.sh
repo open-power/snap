@@ -144,18 +144,20 @@ snap_nvme_init -C${card} -d0 -d1 -v
 
 if [ "${TEST}" == "READ_BENCHMARK" ]; then
 	echo "SNAP NVME READ BENCHMARK"
-	for p in 0 2 4 ; do
-		for t in 1 2 4 8 10 14 16 32 ; do
-			echo "PREFETCH: $p ; THREADS: $t ; NBLOCKS=${nblocks}" ;
-			(time CBLK_PREFETCH=$p \
-			snap_cblk -C0 ${options} -b${nblocks} \
-				-R${random_seed} -s0 -t${t} \
-				--read /dev/null );
-			if [ $? -ne 0 ]; then
-				printf "${bold}ERROR:${normal} bad exit code!\n" >&2
-				exit 1
-			fi
-			echo
+	for s in UP DOWN UPDOWN ; do
+		for p in 0 1 4 8 ; do
+			for t in 1 2 4 8 10 14 16 32 ; do
+				echo "PREFETCH: $p ; THREADS: $t ; NBLOCKS=${nblocks} ; STRATEGY=${s}" ;
+				(time CBLK_PREFETCH=$p CBLK_STRATEGY=${s} \
+				snap_cblk -C0 ${options} -b${nblocks} \
+					-R${random_seed} -s0 -t${t} \
+					--read /dev/null );
+				if [ $? -ne 0 ]; then
+					printf "${bold}ERROR:${normal} bad exit code!\n" >&2
+					exit 1
+				fi
+				echo
+			done
 		done
 	done
 fi

@@ -63,7 +63,11 @@ struct __pp {
 	int (* pp_put_offslist)(void *put_data, int *offslist, unsigned int n, size_t nblocks);
 };
 
+#define PP_FLAG_ALLOC_LBA_LIST	0x0001
+#define PP_FLAG_START_THREAD	0x0002
+
 struct pp_funcs {
+	unsigned int flags;
 	int (* pp_add_lba)(off_t lba, size_t nblocks, unsigned long usecs, int _read);
 	int (* pp_get_offslist)(int *offslist, unsigned int n, size_t nblocks);
 	void * (* pp_thread)(struct __pp *pp);
@@ -85,15 +89,14 @@ static int __pp_add_lba(off_t lba  __attribute__((unused)),
 		unsigned long usecs  __attribute__((unused)),
 		int _read __attribute__((unused)))
 {
+	if ((pp.f->flags & PP_FLAG_ALLOC_LBA_LIST) != PP_FLAG_ALLOC_LBA_LIST)
+		return -1;
+
 	pthread_mutex_lock(&pp.lock);
 
 	pp.lba_list[pp.lba_widx].lba = lba;
 	pp.lba_list[pp.lba_widx].nblocks = nblocks;
 	pp.lba_list[pp.lba_widx].usecs = usecs;
-
-	pp_trace("  [%s] %s[%4u] LBA=%ld nblocks=%i %ld usecs\n",
-		__func__, _read ? "lba_read" : "lba_write",
-		pp.lba_widx, lba, (int)nblocks, usecs);
 
 	if (pp.lba_num < pp.lba_max) {
 		pp.lba_num++;
@@ -186,26 +189,32 @@ static void *__pp_thread(struct __pp *pp)
 
 static struct pp_funcs pp_funcs[] = {
 	/* 0: PP_STRATEGY_UP */
-	{ .pp_add_lba = __pp_add_lba,
+	{ .flags = 0x0,
+	  .pp_add_lba = NULL,
 	  .pp_get_offslist = __pp_up_offslist,
 	  .pp_thread = __pp_thread },
 	/* 1: PP_STRATEGY_DOWN */
-	{ .pp_add_lba = __pp_add_lba,
+	{ .flags = 0x0,
+	  .pp_add_lba = NULL,
 	  .pp_get_offslist = __pp_down_offslist,
 	  .pp_thread = __pp_thread },
 	/* 2: PP_STRATEGY_UPDOWN */
-	{ .pp_add_lba = __pp_add_lba,
+	{ .flags = 0x0,
+	  .pp_add_lba = NULL,
 	  .pp_get_offslist = __pp_updown_offslist,
 	  .pp_thread = __pp_thread },
 	/* 3: PP_STRATEGY_SMART */
-	{ .pp_add_lba = __pp_add_lba,
+	{ .flags = (PP_FLAG_ALLOC_LBA_LIST | PP_FLAG_START_THREAD),
+	  .pp_add_lba = __pp_add_lba,
 	  .pp_get_offslist = __pp_updown_offslist,
 	  .pp_thread = __pp_thread },
 };
 
 int pp_add_lba(off_t lba, size_t nblocks, unsigned long usecs, int _read)
 {
-	/* pp_trace("[%s]\n", __func__); */
+	pp_trace("  [%s] %s[%4u] LBA=%ld nblocks=%i %ld usecs\n",
+		__func__, _read ? "lba_read" : "lba_write",
+		pp.lba_widx, lba, (int)nblocks, usecs);
 
 	if (pp.f->pp_add_lba)
 		return pp.f->pp_add_lba(lba, nblocks, usecs, _read);
@@ -248,30 +257,36 @@ static void *pp_thread(void *arg __attribute__((unused)))
  * @pp_prefetch:  How many entries should be prefetched
  * @pp_history:   How many LBAs should be kept for the calculation
  */
-int pp_init(int pp_prefetch, pp_put_offslist_t put,  size_t put_nblocks, void *put_data)
+int pp_init(int pp_prefetch, pp_put_offslist_t put,  size_t put_nblocks,
+	void *put_data)
 {
 	int rc;
 
 	pthread_mutex_init(&pp.lock, NULL);
 
-	pp.lba_list = calloc(1, _pp_history * sizeof(struct __lba));
-	if (!pp.lba_list)
-		return -1;
-
 	pp.f = &pp_funcs[_pp_strategy];
-	pp.lba_ridx = 0;
-	pp.lba_widx = 0;
-	pp.lba_max = _pp_history;
-	pp.pp_prefetch = pp_prefetch;
+	pp.lba_list = NULL;
 
+	if (pp.f->flags & PP_FLAG_ALLOC_LBA_LIST) {
+		pp.lba_list = calloc(1, _pp_history * sizeof(struct __lba));
+		if (!pp.lba_list)
+			return -1;
+		pp.lba_ridx = 0;
+		pp.lba_widx = 0;
+		pp.lba_max = _pp_history;
+	}
+
+	pp.pp_prefetch = pp_prefetch;
 	pp.pp_put_offslist = put;
 	pp.put_nblocks = put_nblocks;
 	pp.put_data = put_data;
+	pp.tid = 0;
 
-	rc = pthread_create(&pp.tid, NULL, &pp_thread, &pp);
-	if (rc != 0)
-		goto err_out;
-
+	if (pp.f->flags & PP_FLAG_START_THREAD) {
+		rc = pthread_create(&pp.tid, NULL, &pp_thread, &pp);
+		if (rc != 0)
+			goto err_out;
+	}
 	return 0;
  err_out:
 	free(pp.lba_list);
@@ -297,13 +312,13 @@ static void _init(void)
 {
 	const char *env;
 
-	env = getenv("CLBK_HISTORY");
+	env = getenv("CBLK_HISTORY");
 	if (env != NULL)
 		_pp_history = strtol(env, (char **)NULL, 0);
 	if (_pp_history <= 0)
 		_pp_history = PP_HISTORY;
 
-	env = getenv("CLBK_STRATEGY");
+	env = getenv("CBLK_STRATEGY");
 	if (env != NULL) {
 		if (strcmp(env, "UP") == 0)
 			_pp_strategy = PP_STRATEGY_UP;
@@ -320,8 +335,8 @@ static void _init(void)
 		}
 	}
 
-	pp_trace("[%s] CLBK_HISTORY=%d CLBD_STRATEGY=%s\n", __func__, _pp_history,
-		getenv("CLBK_STRATEGY")); 
+	pp_trace("[%s] CBLK_HISTORY=%d CBLK_STRATEGY=%s\n", __func__, _pp_history,
+		getenv("CBLK_STRATEGY")); 
 }
 
 static void _done(void) __attribute__((destructor));
