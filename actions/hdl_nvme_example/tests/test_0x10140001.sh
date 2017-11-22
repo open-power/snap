@@ -23,9 +23,9 @@ threads=1
 nblocks=2
 prefetch=0
 random_seed=0
-duration="NORMAL"
+duration="NONE"
 options="-n 0x40000"
-TEST="READ_BENCHMARK"
+TEST="NONE"
 
 # output formatting
 bold=$(tput bold)
@@ -102,6 +102,7 @@ while getopts ":H:A:b:C:d:T:t:R:n:p:rVvh" opt; do
 		;;
 	d)
 		duration=${OPTARG}
+		TEST="READ_BENCHMARK"
 		;;
 	n)
 		options="-n ${OPTARG}"
