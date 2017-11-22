@@ -31,12 +31,17 @@
 
 #include <stdint.h>
 
-#define PP_STRATEGY_POSITIVE	1
-#define PP_STRATEGY_NEGATIVE	2
-#define PP_STRATEGY_POSNEG	3 /* default */
-#define PP_STRATEGY_SMART	4
+enum pp_strategy {
+	PP_STRATEGY_UP = 0,
+	PP_STRATEGY_DOWN,
+	PP_STRATEGY_UPDOWN, /* default */
+	PP_STRATEGY_SMART,
+	PP_STRATEGY_MAX,
+};
 
-int pp_init(int strategy, int prefetch_count, unsigned int lba_max);
+typedef int (* pp_put_offslist_t)(void *put_data, int *offslist, unsigned int n, size_t nblocks);
+
+int pp_init(int pp_prefetch, pp_put_offslist_t put,  size_t put_nblocks, void *put_data);
 void pp_done(void);
 
 /*
@@ -47,7 +52,7 @@ void pp_done(void);
  * @lba:       requested LBA
  * @nblocks:   how many blocks per LBA
  */
-int pp_add_lba(off_t lba, size_t nblocks);
+int pp_add_lba(off_t lba, size_t nblocks, unsigned long usecs, int _read);
 
 /*
  * The user is asked to update the priolist in a regular fashion such

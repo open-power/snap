@@ -93,6 +93,7 @@ int action_trace_enabled(void);
 int block_trace_enabled(void);
 int cache_trace_enabled(void);
 int stat_trace_enabled(void);
+int pp_trace_enabled(void);
 
 #define act_trace(fmt, ...) do {					\
 		if (action_trace_enabled())				\
@@ -122,6 +123,15 @@ int stat_trace_enabled(void);
 			## __VA_ARGS__);                               \
 		}                                                      \
 	} while (0)
+
+#define pp_trace(fmt, ...) do {                                        \
+		if (pp_trace_enabled()) {                              \
+			fprintf(stderr, "P %08x.%08x %-16lld " fmt,    \
+				getpid(), __gettid(), __get_usec(),    \
+			## __VA_ARGS__);                               \
+		}                                                      \
+	} while (0)
+
 /**
  * Register a software version of the FPGA action to enable us
  * simulating high-level behavior of the same and allowing us to
