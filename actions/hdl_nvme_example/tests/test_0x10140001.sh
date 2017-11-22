@@ -17,15 +17,15 @@
 #
 
 card=0
-version=0.2
+version=0.3
 reset=0
 threads=1
 nblocks=2
 prefetch=0
 random_seed=0
+duration="NORMAL"
 options="-n 0x40000"
-
-TEST=NONE
+TEST="READ_BENCHMARK"
 
 # output formatting
 bold=$(tput bold)
@@ -39,6 +39,7 @@ function usage() {
 	echo "    [-V]              print version"
 	echo "    [-h|-?]           help"
 	echo "    [-C <0..3>]       card number"
+	echo "    [-d SHORT/NORMAL/LONG] duration of tests"
 	echo "    [-r]              card reset (sudo needed)"
 	echo "    [-n <lbas>]       number of lbas to try, e.g. 0x40000 for 1 GiB"
 	echo "    [-b <nblocks>]    number of blocks per transfer"
@@ -46,7 +47,7 @@ function usage() {
 	echo "    [-H <threads>]    hardware threads per CPU to be used (see ppc64_cpu)"
 	echo "    [-p <prefetch>]   0/1 disable/enable prefetching"
 	echo "    [-R <seed>]       random seed, if not 0, random read odering"
-	echo "    [-T <testcase>]   testcase e.g. CBLK, READ_BENCHMARK, PERF, ..."
+	echo "    [-T <testcase>]   testcase e.g. NONE, CBLK, READ_BENCHMARK, PERF, ..."
 	echo
 	echo "  Perform SNAP card initialization and action_type "
 	echo "  detection. Initialize NVMe disk 0 and 1 if existent."
@@ -72,7 +73,7 @@ function reset_card() {
 	fi
 }
 
-while getopts ":H:A:b:C:T:t:R:n:p:rVvh" opt; do
+while getopts ":H:A:b:C:d:T:t:R:n:p:rVvh" opt; do
 	case ${opt} in
 	C)
 		card=${OPTARG};
@@ -98,6 +99,9 @@ while getopts ":H:A:b:C:T:t:R:n:p:rVvh" opt; do
 		hw_threads=${OPTARG}
 		sudo ppc64_cpu --smt=${hw_threads}
 		ppc64_cpu --smt
+		;;
+	d)
+		duration=${OPTARG}
 		;;
 	n)
 		options="-n ${OPTARG}"
@@ -142,7 +146,7 @@ fi
 snap_maint -C${card} -v
 snap_nvme_init -C${card} -d0 -d1 -v
 
-if [ "${TEST}" == "READ_BENCHMARK" ]; then
+function nvme_read_benchmark () {
 	echo "SNAP NVME READ BENCHMARK"
 	for s in UP DOWN UPDOWN ; do
 		for p in 0 1 4 8 ; do
@@ -160,15 +164,9 @@ if [ "${TEST}" == "READ_BENCHMARK" ]; then
 			done
 		done
 	done
-fi
+}
 
-#
-# System p specific performance counter registers. Try this if you do
-# not know what it means.
-#
-# perf stat -e "{r100F8,r2D01A,r30004,r4E010},{r100F8,r2D01E,r30004,r4D01C},{r100F8,r2D01C,r30004,r4D01A},{r100F8,r2E010,r30004,r4D01E},{r100F8,r2001A,r30028,r4000A},{r1001C,r2D018,r30036,r4D018},{r100F8,r2D012,r30028,r4000A},{r1001C,r2D016,r30038,r4D016},{r100F8,r2D014,r30026,r4D012},{r1001C,r2D010,r30038,r4D010},{r100F8,r2C010,r30004,r4000A},{r1001C,r2C012,r30004,r4C01A},{r100F8,r2C016,r30004,r4C016},{r1001C,r2C01C,r30004,r4C01A},{r100F8,r2C018,r30004,r4C018},{r10036,r2C01A,r30036,r4C010},{r1001C,r2E01E,r30028,r4C014},{r1001C,r2001A,r30038,r4C012},{r1001C,r2C014,r30026,r4D014},{r1001C,r2C010,r30038,r4C01C}" <command>
-#
-if [ "${TEST}" == "PERF" ]; then
+function perf_test () {
 	echo "SNAP NVME PERF BENCHMARK"
 	for p in 0 4 ; do
 		for t in 1 8 16 32 ; do
@@ -191,9 +189,9 @@ if [ "${TEST}" == "PERF" ]; then
 			echo "OK"
 		done
 	done
-fi
+}
 
-if [ "${TEST}" == "CBLK" ]; then
+function cblk_test () {
 	export CBLK_PREFETCH=${prefetch}
 
 	for nblocks in 1 2 ; do
@@ -262,6 +260,24 @@ if [ "${TEST}" == "CBLK" ]; then
 		echo
 	done
 	echo "SUCCESS"
+}
+
+if [ "${TEST}" == "READ_BENCHMARK" ]; then
+	nvme_read_benchmark
+fi
+
+#
+# System p specific performance counter registers. Try this if you do
+# not know what it means.
+#
+# perf stat -e "{r100F8,r2D01A,r30004,r4E010},{r100F8,r2D01E,r30004,r4D01C},{r100F8,r2D01C,r30004,r4D01A},{r100F8,r2E010,r30004,r4D01E},{r100F8,r2001A,r30028,r4000A},{r1001C,r2D018,r30036,r4D018},{r100F8,r2D012,r30028,r4000A},{r1001C,r2D016,r30038,r4D016},{r100F8,r2D014,r30026,r4D012},{r1001C,r2D010,r30038,r4D010},{r100F8,r2C010,r30004,r4000A},{r1001C,r2C012,r30004,r4C01A},{r100F8,r2C016,r30004,r4C016},{r1001C,r2C01C,r30004,r4C01A},{r100F8,r2C018,r30004,r4C018},{r10036,r2C01A,r30036,r4C010},{r1001C,r2E01E,r30028,r4C014},{r1001C,r2001A,r30038,r4C012},{r1001C,r2C014,r30026,r4D014},{r1001C,r2C010,r30038,r4C01C}" <command>
+#
+if [ "${TEST}" == "PERF" ]; then
+	perf_test
+fi
+
+if [ "${TEST}" == "CBLK" ]; then
+	cblk_test
 fi
 
 exit 0
