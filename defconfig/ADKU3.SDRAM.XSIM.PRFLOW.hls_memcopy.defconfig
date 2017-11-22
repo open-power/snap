@@ -4,18 +4,21 @@
 #
 # N250S is not set
 ADKU3=y
+# S121B is not set
 FPGACARD="ADKU3"
 FPGACHIP="xcku060-ffva1156-2-e"
 NUM_OF_ACTIONS=1
 # HLS_ACTION is not set
 # HDL_ACTION is not set
 # HDL_EXAMPLE is not set
+# HDL_NVME_EXAMPLE is not set
 HLS_MEMCOPY=y
 # HLS_SPONGE is not set
 # HLS_HASHJOIN is not set
 # HLS_SEARCH is not set
 # HLS_BFS is not set
 # HLS_INTERSECT is not set
+# HLS_NVME_MEMCOPY is not set
 # HLS_HELLOWORLD is not set
 ENABLE_HLS_SUPPORT=y
 HLS_SUPPORT="TRUE"
@@ -30,9 +33,11 @@ DDR3_USED="TRUE"
 DDR4_USED="FALSE"
 ENABLE_DDRI=y
 DDRI_USED="TRUE"
+DISABLE_NVME=y
 # FORCE_NVME is not set
 NVME_USED="FALSE"
 SIM_XSIM=y
+# SIM_IRUN is not set
 # NO_SIM is not set
 SIMULATOR="xsim"
 
