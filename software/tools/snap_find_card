@@ -51,6 +51,7 @@ function usage() {
 function detect_snap_cards() {
 	local check_dev=$1
 	local check_sub=$2
+	local rc=0
 	# We have MAX 4 CAPI cards in one system
 
 	for card in `seq 0 3` ; do
@@ -66,8 +67,10 @@ function detect_snap_cards() {
 		sub=`cat /sys/class/cxl/card$card/device/subsystem_device`
 		if [ $sub = $check_sub ]; then
 			echo -n "${card} "
+			rc=$((rc +1))
 		fi
 	done
+	return $rc
 }
 
 #
@@ -78,6 +81,7 @@ function detect_snap_cards() {
 # be more or less bullet prove.
 #
 function detect_gzip_cards() {
+	local rc=0
 	# We have MAX 4 CAPI cards in one system
 	for card in `seq 0 3` ; do
 		if [ ! -d /sys/class/cxl/card${card} ]; then
@@ -90,8 +94,10 @@ function detect_gzip_cards() {
 		device=`cat /sys/class/cxl/card${card}/afu${card}.0/cr0/device`
 		if [ $device = 0x0602 ]; then
 			echo -n "${card} "
+			rc=$((rc +1))
 		fi
 	done
+	return $rc
 }
 
 function detect_card_name()
@@ -115,12 +121,12 @@ function detect_card_name()
 				this_sub=`cat /sys/class/cxl/card$card/device/subsystem_device`
 				if [ $this_sub = $sub ]; then
 					echo -n $name
-					return 0
+					return 1
 				fi
 			fi
 		fi
 	fi
-	return 1
+	return 0
 }
 
 # Main Start here
@@ -137,19 +143,23 @@ while getopts ":A:C:Vvh" opt; do
 		if [[ $card -gt 3 ]]; then
 			echo "Invalid option for -C -$OPTARG" >&2
 			usage
+			exit 0
 		fi
 		detect_card_name $card  "0x0632" "0x0605" "ADKU3"
-		if [ $? != 0 ]; then
-			detect_card_name $card  "0x0632" "0x060a" "N250S"
-			if [ $? != 0 ]; then
-				detect_card_name $card  "0x0632" "0x0607" "S121B"
-				if [ $? != 0 ]; then
-					detect_card_name $card  "0x0602" "" "GZIP"
-					if [ $? != 0 ]; then
-						exit 1  # No accel fond fond Card
-					fi
-				fi
-			fi
+		if [ $? == 1 ]; then
+			exit 1
+		fi
+		detect_card_name $card  "0x0632" "0x060a" "N250S"
+		if [ $? == 1 ]; then
+			exit 1
+		fi
+		detect_card_name $card  "0x0632" "0x0607" "S121B"
+		if [ $? == 1 ]; then
+			exit 1
+		fi
+		detect_card_name $card  "0x0602" "" "GZIP"
+		if [ $? == 1 ]; then
+			exit 1
 		fi
 		exit 0
 		;;
@@ -174,35 +184,44 @@ done
 
 shift $((OPTIND-1))
 # now do something with $@
+RC=0
 
 case ${accel} in
 	# GZIP Card from Nallatech
 	"GZIP")
 		detect_gzip_cards
+		RC=$?
 		;;
 	# KU3 Card from AlphaData
 	"ADKU3")
 		detect_snap_cards "0x0632" "0x0605"
+		RC=$?
 		;;
 	# NSA121B Card from Semptian
 	"S121B")
 		detect_snap_cards "0x0632" "0x0607"
+		RC=$?
 		;;		
 	# 250s Card from Nallatech
 	"N250S")
 		detect_snap_cards "0x0632" "0x060a"
+		RC=$?
 		;;
 	"ALL")
 		# detect all cards
 		detect_gzip_cards
+		RC=$((RC + $?))
 		detect_snap_cards "0x0632" "0x0605"
+		RC=$((RC + $?))
 		detect_snap_cards "0x0632" "0x0607"
+		RC=$((RC + $?))
 		detect_snap_cards "0x0632" "0x060a"
+		RC=$((RC + $?))
 		;;
 	*)
 		usage
-		exit 1
+		exit 0
 		;;
 esac
 
-exit 0
+exit $RC
