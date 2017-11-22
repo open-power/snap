@@ -1136,7 +1136,7 @@ static int completion_status(struct cblk_dev *c, int timeout __attribute__((unus
 	if (((status & ACTION_STATUS_ERROR_MASK) != 0x0) && (count++ < 2)) {
 		__cblk_read(c, ACTION_ERROR_BITS, &errbits);
 
-		fprintf(stderr, "[%s] warn: ACTION_STATUS=%08x ERROR_MASK not 0 "
+		block_trace("[%s] warn: ACTION_STATUS=%08x ERROR_MASK not 0 "
 			"ACTION_ERROR_BITS=%08x\n",
 			__func__, status, errbits);
 		/* FIXME */
@@ -1244,18 +1244,17 @@ static int __prefetch_read_start(struct cblk_dev *c, off_t lba,
 	if ((lba < 0) || (lba >= (off_t)c->nblocks))
 		return -1;
 
+	/* Check if the block is already in cache or requested */
 	status = cache_info(lba);
-
-	/* Check if the block is already in cache */
 	if ((status == CACHE_BLOCK_VALID) || (status == CACHE_BLOCK_READING)) {
-		block_trace("[%s] Skip prefetch LBA=%lu %d KiB status=%s\n",
-			__func__, lba, mem_size/1024, cblk_status_str[status]);
+		block_trace("[%s] skip prefetch LBA=%lu %d KiB status=%s\n",
+			__func__, lba, mem_size/1024, block_status_str[status]);
 		c->prefetch_collisions++;
 		return -2;
 	}
 
-	block_trace("[%s] Simple prefetch LBA=%lu %d KiB status=%s\n",
-		__func__, lba, mem_size/1024, cblk_status_str[status]);
+	block_trace("[%s] do prefetch LBA=%lu %d KiB status=%s\n",
+		__func__, lba, mem_size/1024, block_status_str[status]);
 
 	/*
 	 * Get a free read slot, we can read CBLK_NBLOCKS_MAX blocks,
@@ -1287,8 +1286,10 @@ static int __prefetch_blocks(struct cblk_dev *c, off_t lba, unsigned int nblocks
 
 	for (k = 0; (k < (unsigned int)cblk_prefetch); k++) {
 		if (reads_in_flight(c) >= CBLK_PREFETCH_THRESHOLD)
-			break;
+			continue;
 
+		block_trace("[%s] LBA=%ld+(%d)\n",
+			__func__, lba, c->prefetch_offs[k]);
 		rc = __prefetch_read_start(c, lba + c->prefetch_offs[k],
 					nblocks);
 		if (rc >= 0)
@@ -1425,7 +1426,7 @@ static int put_offslist(void *put_data, int *offslist, unsigned int n,
 	struct cblk_dev *c = (struct cblk_dev *)put_data;
 
 	if (offslist == NULL) {
-		fprintf(stderr, "[%s] no offset list provided!\n", __func__);
+		block_trace("[%s] warn: no offset list provided!\n", __func__);
 		return -1;
 	}
 
@@ -1752,41 +1753,58 @@ static int block_read(struct cblk_dev *c, void *buf, off_t lba,
 	return nblocks;
 }
 
-static int __cache_read_timeout(struct cblk_dev *c __attribute__((unused)),
-			off_t lba, void *buf,
+/*
+ * Consider using pthread_cond_wait() and pthread_cond_broadcast()
+ * once the data is ready to be absorbed.
+ */
+static int __cache_try_read(struct cblk_dev *c __attribute__((unused)),
+			off_t lba, void *buf, size_t nblocks,
 			unsigned int timeout_usec)
 {
 	int rc;
 	unsigned long usecs = 0;
 	struct timeval s, e;
+	size_t i;
+	size_t from_cache = 0;
+	int prefetch_requested = 0;
 
-	gettimeofday(&s, NULL);
-	while (usecs < timeout_usec) {
-		/*
-		 * Consider using pthread_cond_wait() and
-		 * pthread_cond_broadcast() once the data is ready to
-		 * be absorbed.
-		 */
-		rc = cache_read(lba, buf);
-		if (rc == 1) {		/* READING lba is requested */
-			gettimeofday(&e, NULL);
-			usecs = timediff_usec(&e, &s);
-			continue;	/* Try again */
+	/* Trying to get data from CACHE if we got all blocks ... */
+	for (i = 0; i < nblocks; i++) {
+		gettimeofday(&s, NULL);
+		while (usecs < timeout_usec) {
+			rc = cache_read(lba + i, buf + i * __CBLK_BLOCK_SIZE);
+			if (rc == 1) {		/* READING LBA was requested */
+				if (!prefetch_requested) {
+					__prefetch_blocks(c, lba, nblocks);
+					prefetch_requested = 1;
+				}
+				gettimeofday(&e, NULL);
+				usecs = timediff_usec(&e, &s);
+				continue;	/* Try again */
+			}
+			if (rc == 0) {		/* Success */
+				block_trace("    [%s] got LBA=%ld after %ld usecs\n",
+					__func__, lba + i, usecs);
+				from_cache++;
+				break;
+			}
+			if (rc < 0)		/* Not in cache, not requested */
+				goto out;
 		}
-
-		if (rc == 0) {		/* Success */
-			block_trace("    [%s] got LBA=%ld after %ld usecs\n",
-				__func__, lba, usecs);
-			return rc;
-		}
-
-		if (rc < 0)		/* Not in cache, not requested */
-			return rc;
+		if (usecs >= timeout_usec)
+			dfprintf(stderr, "[%s] LBA=%ld did not arrive "
+				"n time %ld usecs\n", __func__, lba + i, usecs);
 	}
 
-	dfprintf(stderr, "[%s] LBA=%ld did not arrive in time %ld usecs\n",
-		__func__, lba, usecs);
-	return -1;		/* Timeout */
+ out:
+	if (!prefetch_requested && (nblocks == from_cache)) {
+		block_trace("    [%s] trigger prefetching for LBA=%ld "
+			"nblocks=%ld from_cache=%ld\n",
+			__func__, lba, nblocks, from_cache);
+		__prefetch_blocks(c, lba, nblocks);
+		prefetch_requested = 1;
+	}
+	return from_cache;
 }
 
 int cblk_read(chunk_id_t id __attribute__((unused)),
@@ -1794,10 +1812,9 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 		int flags __attribute__((unused)))
 {
 	int rc;
-	size_t i;
 	struct cblk_dev *c = &chunk;
 	struct timeval start_time, end_time;
-	time_t usecs;
+	unsigned long usecs = 0;
 
 	gettimeofday(&start_time, NULL);
 
@@ -1807,31 +1824,22 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 
 	if (cblk_caching) {
 		/* Trying to get data from CACHE if we got all blocks ... */
-		for (i = 0; i < nblocks; i++) {
-			rc = __cache_read_timeout(c, lba + i,
-					buf + i * __CBLK_BLOCK_SIZE,
-					CONFIG_REQ_DURATION_USEC);
-			if (rc != 0)
-				break;
-		}
+		rc = __cache_try_read(c, lba, buf, nblocks ,CONFIG_REQ_DURATION_USEC);
 
 		/* ... we don't need to ask the NVMe hardware */
-		if ((rc == 0) && (i == nblocks)) {
+		if (rc == (int)nblocks) {
 			block_trace("    [%s] Got %ld..%ld, nice\n", __func__,
 				lba, lba + nblocks - 1);
+
 			c->cache_hits++;
 			if (nblocks == 1)
 				c->cache_hits_4k++;
-
-			__prefetch_blocks(c, lba, nblocks);
-			rc = nblocks;
 			goto out;
 		}
 	}
 
 	/* Else read them all for simplicity at this point in time ... */
 	rc = block_read(c, buf, lba, nblocks);
-
 out:
 	gettimeofday(&end_time, NULL);
 	usecs = timediff_usec(&end_time, &start_time);
@@ -1971,7 +1979,7 @@ static void _init(void)
 	if (env != NULL)
 		cblk_prefetch_threshold = strtol(env, (char **)NULL, 0);
 
-	block_trace("[%s] init CBLK_REQTIMEOUT=%d CBLK_PREFETCH=%d "
+	block_trace("[%s] CBLK_REQTIMEOUT=%d CBLK_PREFETCH=%d "
 		"CBLK_PREFETCH_THRESHOLD=%d CBLK_CACHING=%d\n",
 		__func__, cblk_reqtimeout, cblk_prefetch,
 		cblk_prefetch_threshold, cblk_caching);
