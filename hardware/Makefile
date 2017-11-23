@@ -297,7 +297,7 @@ image: .hw_project_done
 	fi
 	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
 	@echo "A complete FPGA bitstream build got kicked off.";
-	@echo "This will take more than an hour.";
+	@echo "This might take more than an hour depending on the machine used";
 	@echo "The process may be terminated by pressing <CTRL>-C at any time.";
 	@echo "After termination it can be restarted later."; echo
 	@$(MAKE) -s patch_version
