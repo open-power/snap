@@ -182,22 +182,22 @@ ENTITY psl_accel IS
 #ifdef CONFIG_ENABLE_DDR4
     -- DDR4 SDRAM Interface
 -- TODO:    dbg_bus                             : OUT   STD_LOGIC_VECTOR(511 DOWNTO 0);
-    c0_sys_clk_p                        : IN    STD_LOGIC;
-    c0_sys_clk_n                        : IN    STD_LOGIC;
-    c0_ddr4_adr                         : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);
-    c0_ddr4_ba                          : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-    c0_ddr4_cke                         : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_cs_n                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_dm_dbi_n                    : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c0_ddr4_dq                          : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
-    c0_ddr4_dqs_c                       : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c0_ddr4_dqs_t                       : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c0_ddr4_odt                         : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_bg                          : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_reset_n                     : OUT   STD_LOGIC;
-    c0_ddr4_act_n                       : OUT   STD_LOGIC;
-    c0_ddr4_ck_c                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_ck_t                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+       c0_sys_clk_p                     : IN    STD_LOGIC;
+       c0_sys_clk_n                     : IN    STD_LOGIC;
+       c0_ddr4_adr                      : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);
+       c0_ddr4_ba                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+       c0_ddr4_cke                      : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+       c0_ddr4_cs_n                     : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+       c0_ddr4_dm_dbi_n                 : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+       c0_ddr4_dq                       : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
+       c0_ddr4_dqs_c                    : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+       c0_ddr4_dqs_t                    : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+       c0_ddr4_odt                      : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+       c0_ddr4_bg                       : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+       c0_ddr4_reset_n                  : OUT   STD_LOGIC;
+       c0_ddr4_act_n                    : OUT   STD_LOGIC;
+       c0_ddr4_ck_c                     : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+       c0_ddr4_ck_t                     : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 -- TODO:    c0_ddr4_ten                         : OUT   STD_LOGIC;
 #endif
 #ifdef CONFIG_ENABLE_DDRI
@@ -273,7 +273,11 @@ ARCHITECTURE psl_accel OF psl_accel IS
       ha_bwtagpar             : IN  STD_LOGIC;
       ha_rvalid               : IN  STD_LOGIC;
       ha_rtag                 : IN  STD_LOGIC_VECTOR(0 TO 7);
+      ha_rditag               : IN  STD_LOGIC_VECTOR(0 TO 8);
+      ha_rditagpar            : IN  STD_LOGIC;               
       ha_response             : IN  STD_LOGIC_VECTOR(0 TO 7);
+      ha_response_ext         : IN  STD_LOGIC_VECTOR(0 TO 7);
+      ha_rpagesize            : IN  STD_LOGIC_VECTOR(0 TO 3);
       ha_rcredits             : IN  STD_LOGIC_VECTOR(0 TO 8);
       ha_rcachestate          : IN  STD_LOGIC_VECTOR(0 TO 1);
       ha_rcachepos            : IN  STD_LOGIC_VECTOR(0 TO 12);
@@ -302,6 +306,24 @@ ARCHITECTURE psl_accel OF psl_accel IS
       ha_jcompar              : IN  STD_LOGIC;
       ah_paren                : OUT STD_LOGIC;
       ha_pclock               : IN  STD_LOGIC;
+      d0h_dvalid              : OUT std_logic                  ;
+      d0h_req_utag            : OUT std_logic_vector(0 to 9)   ;
+      d0h_req_itag            : OUT std_logic_vector(0 to 8)   ;
+      d0h_dtype               : OUT std_logic_vector(0 to 2)   ;
+      d0h_datomic_op          : OUT std_logic_vector(0 to 5)   ;
+      d0h_datomic_le          : OUT std_logic                  ;
+      d0h_dsize               : OUT std_logic_vector(0 to 9)   ;
+      d0h_ddata               : OUT std_logic_vector(0 to 1023);
+      hd0_sent_utag_valid     : IN  std_logic                  ;
+      hd0_sent_utag           : IN  std_logic_vector(0 to 9)   ;
+      hd0_sent_utag_sts       : IN  std_logic_vector(0 to 2)   ;
+      hd0_cpl_valid           : IN  std_logic                  ;
+      hd0_cpl_utag            : IN  std_logic_vector(0 to 9)   ;
+      hd0_cpl_type            : IN  std_logic_vector(0 to 2)   ;
+      hd0_cpl_size            : IN  std_logic_vector(0 to 9)   ;
+      hd0_cpl_laddr           : IN  std_logic_vector(0 to 9)   ;
+      hd0_cpl_byte_count      : IN  std_logic_vector(0 to 9)   ;
+      hd0_cpl_data            : IN  std_logic_vector(0 to 1023);
       --
       -- ACTION Interface
       --
@@ -1331,11 +1353,15 @@ BEGIN
       --  Response interface
       ha_rvalid      => ha_rvalid,
       ha_rtag        => ha_rtag,
+      ha_rditag      => ha_rditag,
       ha_response    => ha_response,
+      ha_response_ext=> ha_response_ext,
+      ha_rpagesize   => ha_rpagesize,
       ha_rcredits    => ha_rcredits,
       ha_rcachestate => ha_rcachestate,
       ha_rcachepos   => ha_rcachepos,
       ha_rtagpar     => ha_rtagpar,
+      ha_rditagpar   => ha_rditagpar,
       --
       -- MMIO interface
       ha_mmval       => ha_mmval,
@@ -1364,6 +1390,25 @@ BEGIN
       ha_jcompar     => ha_jcompar,
       ah_paren       => ah_paren,
       ha_pclock      => ha_pclock,
+      -- DMA interface
+      d0h_dvalid          => d0h_dvalid,         
+      d0h_req_utag        => d0h_req_utag,       
+      d0h_req_itag        => d0h_req_itag,       
+      d0h_dtype           => d0h_dtype,          
+      d0h_datomic_op      => d0h_datomic_op,     
+      d0h_datomic_le      => d0h_datomic_le,     
+      d0h_dsize           => d0h_dsize,          
+      d0h_ddata           => d0h_ddata,          
+      hd0_sent_utag_valid => hd0_sent_utag_valid,
+      hd0_sent_utag       => hd0_sent_utag,      
+      hd0_sent_utag_sts   => hd0_sent_utag_sts,  
+      hd0_cpl_valid       => hd0_cpl_valid,      
+      hd0_cpl_utag        => hd0_cpl_utag,      
+      hd0_cpl_type        => hd0_cpl_type,       
+      hd0_cpl_size        => hd0_cpl_size,       
+      hd0_cpl_laddr       => hd0_cpl_laddr,      
+      hd0_cpl_byte_count  => hd0_cpl_byte_count, 
+      hd0_cpl_data        => hd0_cpl_data,       
       --
       -- ACTION Interface
       --

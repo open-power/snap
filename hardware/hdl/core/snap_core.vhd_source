@@ -68,6 +68,12 @@ ENTITY snap_core IS
     ha_rcredits     : IN  std_logic_vector(0 TO 8);                   -- Response credits
     ha_rcachestate  : IN  std_logic_vector(0 TO 1);                   -- Response cache state
     ha_rcachepos    : IN  std_logic_vector(0 TO 12);                  -- Response cache pos
+#ifdef CONFIG_CAPI20
+    ha_rditag       : IN  std_logic_vector(0 to 8);                   -- DMA Translation Tag for xlat_* requests
+    ha_rditagpar    : IN  std_logic;                                  -- Parity bit for above
+    ha_response_ext : IN  std_logic_vector(0 to 7);                   -- Response Ext
+    ha_rpagesize    : IN  std_logic_vector(0 to 3);                   -- Command translated Page size.  Provided by PSL to allow
+#endif
     --                                                                 
     -- MMIO interface                                                  
     ha_mmval        : IN  std_logic;                                  -- A valid MMIO is present
@@ -96,6 +102,29 @@ ENTITY snap_core IS
     ah_tbreq        : OUT std_logic := '0';                           -- Timebase command request
     ah_paren        : OUT std_logic;                                  -- Parity enable
     ha_pclock       : IN  std_logic;                                  -- clock
+#ifdef CONFIG_CAPI20
+    -- DMA port 0 Req                         
+    d0h_dvalid          : OUT   std_logic;
+    d0h_req_utag        : OUT   std_logic_vector(0 to 9);
+    d0h_req_itag        : OUT   std_logic_vector(0 to 8);
+    d0h_dtype           : OUT   std_logic_vector(0 to 2);
+    d0h_datomic_op      : OUT   std_logic_vector(0 to 5);
+    d0h_datomic_le      : OUT   std_logic;
+    d0h_dsize           : OUT   std_logic_vector(0 to 9);
+    d0h_ddata           : OUT   std_logic_vector(0 to 1023);
+    -- DMA port 0 Sent           
+    hd0_sent_utag_valid : IN    std_logic;
+    hd0_sent_utag       : IN    std_logic_vector(0 to 9);
+    hd0_sent_utag_sts   : IN    std_logic_vector(0 to 2);
+    -- DMA port 0 Completion interface        
+    hd0_cpl_valid       : IN    std_logic;
+    hd0_cpl_utag        : IN    std_logic_vector(0 to 9);
+    hd0_cpl_type        : IN    std_logic_vector(0 to 2);
+    hd0_cpl_size        : IN    std_logic_vector(0 to 9);
+    hd0_cpl_laddr       : IN    std_logic_vector(0 to 9);
+    hd0_cpl_byte_count  : IN    std_logic_vector(0 to 9);
+    hd0_cpl_data        : IN    std_logic_vector(0 to 1023);
+#endif
     --
     -- ACTION Interface
     -- misc
@@ -138,11 +167,14 @@ ARCHITECTURE snap_core OF snap_core IS
   SIGNAL ah_c                : AH_C_T;
   SIGNAL ah_j                : AH_J_T;
   SIGNAL ah_mm               : AH_MM_T;
+  SIGNAL dh_d                : DH_D_T;
   SIGNAL cmm_e               : CMM_E_T;
   SIGNAL dmm_e               : DMM_E_T;
   SIGNAL ha_b                : HA_B_T;
   SIGNAL ha_c                : HA_C_T;
   SIGNAL ha_j                : HA_J_T;
+  SIGNAL hd_s                : HD_S_T;
+  SIGNAL hd_c                : HD_C_T;
   SIGNAL ha_mm               : HA_MM_T;
   SIGNAL ha_r                : HA_R_T;
   SIGNAL jmm_c               : JMM_C_T;
@@ -235,14 +267,19 @@ BEGIN
   -- Response Interface
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
-    ha_r.valid                  <=                  ha_rvalid;
-    ha_r.tag(7 DOWNTO 0)        <= v2vhdl_connector(ha_rtag(0 TO 7));
-    ha_r.tagpar                 <=                  ha_rtagpar;
-    ha_r.response               <= ENCODE_RSP_CODES(to_integer(unsigned(ha_response(0 TO 7))));
-    ha_r.credits(8 DOWNTO 0)    <= v2vhdl_connector(ha_rcredits(0 TO 8));
-    ha_r.cachestate(1 DOWNTO 0) <= v2vhdl_connector(ha_rcachestate(0 TO 1));
-    ha_r.cachepos(12 DOWNTO 0)  <= v2vhdl_connector(ha_rcachepos(0 TO 12));
-
+    ha_r.valid                    <=                  ha_rvalid;
+    ha_r.tag(7 DOWNTO 0)          <= v2vhdl_connector(ha_rtag(0 TO 7));
+    ha_r.tagpar                   <=                  ha_rtagpar;
+    ha_r.response                 <= ENCODE_RSP_CODES(to_integer(unsigned(ha_response(0 TO 7))));
+    ha_r.credits(8 DOWNTO 0)      <= v2vhdl_connector(ha_rcredits(0 TO 8));
+    ha_r.cachestate(1 DOWNTO 0)   <= v2vhdl_connector(ha_rcachestate(0 TO 1));
+    ha_r.cachepos(12 DOWNTO 0)    <= v2vhdl_connector(ha_rcachepos(0 TO 12));
+#ifdef CONFIG_CAPI20
+    ha_r.ditag(8 DOWNTO 0)        <= v2vhdl_connector(ha_rditag(0 TO 8));
+    ha_r.ditagpar                 <=                  ha_rditagpar;
+    ha_r.response_ext(7 DOWNTO 0) <= v2vhdl_connector(ha_response_ext(0 TO 7));
+    ha_r.pagesize(3 DOWNTO 0)     <= v2vhdl_connector(ha_rpagesize(0 TO 3));
+#endif
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -280,8 +317,34 @@ BEGIN
     ah_jerror(0 TO 63)          <= vhdl2v_connector(ah_j.error(63 DOWNTO 0));
     ah_jyield                   <=                  ah_j.yield;
 
+#ifdef CONFIG_CAPI20
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- CAPI 2.0 Interface
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+    hd_s.utag_valid         <=                  hd0_sent_utag_valid;
+    hd_s.utag               <= v2vhdl_connector(hd0_sent_utag(0 to 9));
+    hd_s.utag_sts           <= v2vhdl_connector(hd0_sent_utag_sts(0 to 2));
+    hd_c.valid              <=                  hd0_cpl_valid;
+    hd_c.utag               <= v2vhdl_connector(hd0_cpl_utag(0 to 9));
+    hd_c.ctype              <= v2vhdl_connector(hd0_cpl_type(0 to 2));
+    hd_c.size               <= v2vhdl_connector(hd0_cpl_size(0 to 9));
+    hd_c.laddr              <= v2vhdl_connector(hd0_cpl_laddr(0 to 9));
+    hd_c.byte_count         <= v2vhdl_connector(hd0_cpl_byte_count(0 to 9));
+    hd_c.data               <= v2vhdl_connector(hd0_cpl_data(0 to 1023));
 
+    d0h_dvalid              <=                 dh_d.valid;
+    d0h_req_utag            <=vhdl2v_connector(dh_d.req_utag(9 DOWNTO 0));
+    d0h_req_itag            <=vhdl2v_connector(dh_d.req_itag(8 DOWNTO 0));
+    d0h_dtype               <=vhdl2v_connector(dh_d.req_type(2 DOWNTO 0));
+    d0h_datomic_op          <=vhdl2v_connector(dh_d.atomic_op(5 DOWNTO 0));
+    d0h_datomic_le          <=                 dh_d.atomic_le;
+    d0h_dsize               <=vhdl2v_connector(dh_d.size(9    DOWNTO 0));
+    d0h_ddata               <=vhdl2v_connector(dh_d.data(1023 DOWNTO 0));
+#endif    
 
+    
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- ******************************************************
@@ -312,6 +375,9 @@ BEGIN
       ha_b_i                 => ha_b,
       ah_c_o                 => ah_c,
       ah_b_o                 => ah_b,
+      hd_s_i                 => hd_s,
+      hd_c_i                 => hd_c,
+      dh_d_o                 => dh_d,
       --
       -- AXI SLAVE Interface
       sd_c_i                 => sd_c,
