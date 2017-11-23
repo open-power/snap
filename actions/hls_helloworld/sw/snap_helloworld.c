@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
 	}
 
 	// test return code
-	fprintf(stdout, "RETC=%x\n", cjob.retc);
+	(cjob.retc == SNAP_RETC_SUCCESS) ? fprintf(stdout, "SUCCESS\n") : fprintf(stdout, "FAILED\n");
 	if (cjob.retc != SNAP_RETC_SUCCESS) {
 		fprintf(stderr, "err: Unexpected RETC=%x!\n", cjob.retc);
 		goto out_error2;
