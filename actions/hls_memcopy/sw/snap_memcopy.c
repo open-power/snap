@@ -45,35 +45,72 @@ static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME", "UNUSED"
 static void usage(const char *prog)
 {
 	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
-	       "  -C, --card <cardno> can be (0...3)\n"
-	       "  -i, --input <file.bin>    input file.\n"
-	       "  -o, --output <file.bin>   output file.\n"
-	       "  -A, --type-in <CARD_DRAM, HOST_DRAM, ...>.\n"
-	       "  -a, --addr-in <addr>      address e.g. in CARD_RAM.\n"
-	       "  -D, --type-out <CARD_DRAM, HOST_DRAM, ...>.\n"
-	       "  -d, --addr-out <addr>     address e.g. in CARD_RAM.\n"
-	       "  -s, --size <size>         size of data.\n"
-	       "  -m, --mode <mode>         mode flags.\n"
-	       "  -t, --timeout             Timeout in sec to wait for done. (10 sec default)\n"
-	       "  -X, --verify              verify result if possible\n"
-	       "  -N, --no irq              Disable Interrupts\n"
+	       "  -C, --card <cardno>        can be (0...3)\n"
+	       "  -i, --input <file.bin>     input file.\n"
+	       "  -o, --output <file.bin>    output file.\n"
+	       "  -A, --type-in <HOST_DRAM,  CARD_DRAM, UNUSED, ...>.\n"
+	       "  -a, --addr-in <addr>       address e.g. in CARD_RAM.\n"
+	       "  -D, --type-out <HOST_DRAM, CARD_DRAM, UNUSED, ...>.\n"
+	       "  -d, --addr-out <addr>      address e.g. in CARD_RAM.\n"
+	       "  -s, --size <size>          size of data.\n"
+	       "  -m, --mode <mode>          mode flags.\n"
+	       "  -t, --timeout              timeout in sec to wait for done. (10 sec default)\n"
+	       "  -X, --verify               verify result if possible\n"
+	       "  -V, --version              provides version of software\n"
+	       "  -v, --verbose              provides extra (debug) information if any\n"
+	       "  -h, --help                 provides help summary\n"
+	       "  -N, --no irq               disables Interrupts\n"
 	       "\n"
-	       "Example:\n"
-	       "  snap_memcopy ...\n"
+	       "NOTES : \n"
+	       "  - HOST_DRAM is the Host machine (Power cpu based) attached memory\n"
+	       "  - CARD_DRAM is the FPGA generally DDR attached memory\n"
+	       "  - NVMe usage requires specific driver, use hls_nvme_memcopy example instead\n"
+	       "  - When providing an input file, a corresponding memory allocation will be performed\n"
+	       "    in the HOST_DRAM at the reported adress\n"
+	       "    and then used for transfer, using its size, the same occurs with an output file,\n"
+	       "    this allows to ease control of input and output data\n"
+	       "\n"
+	       "Useful parameters(to be placed before the command)  :\n"
+	       "-------------------\n"
+	       "SNAP_TRACE  = 0x0 no debug trace  (default mode)\n"
+	       "SNAP_TRACE  = 0xF full debug trace\n"
+	       "SNAP_CONFIG = FPGA (or 0x0) hardware execution   (default mode)\n"
+	       "SNAP_CONFIG = CPU  (or 0x1) software execution\n"
+	       "\n"
+	       "Examples :\n"
+	       "----------\n"
+	       "echo create a 512MB file with random data ...wait...\n"
+	       "dd if=/dev/urandom of=t1 bs=1M count=512\n"
+	       
+	       "echo READ 512MB from Host - one direction\n"
+	       "snap_memcopy -C0 -i t1\n"
+	       
+	       "echo WRITE 512MB to Host - one direction\n"
+	       "snap_memcopy -C0 -o t2 -s0x20000000\n"
+	       
+	       "echo READ 512MB from DDR - one direction\n"
+	       "snap_memcopy -C0 -s0x20000000 -ACARD_DRAM -a0x0\n"
+	       
+	       "echo WRITE 512MB to DDR - one direction\n"
+	       "snap_memcopy -C0 -s0x20000000 -DCARD_DRAM -d0x0\n"
+	       
+	       "echo READ file t1 from host memory THEN write it at @0x0 in card\n"
+	       "SNAP_CONFIG=0x0 snap_memcopy -i t1 -D CARD_DRAM -d 0x0\n"
+	       
+	       "echo READ 4KB from card DDR at @0x0 THEN write them to Host and file t2\n"
+	       "SNAP_CONFIG=0x0 snap_memcopy -o t2 -A CARD_DRAM -a 0x0 -s0x1000\n"
+	       "echo same test using polling instead of IRQ waiting for the result\n"
+	       "SNAP_CONFIG=0x0 snap_memcopy -o t2 -A CARD_DRAM -a 0x0 -s0x1000 -N\n"
 	       "\n",
 	       prog);
 }
 
-static void snap_prepare_memcopy(struct snap_job *cjob,
-				 struct memcopy_job *mjob,
-				 void *addr_in,
-				 uint32_t size_in,
-				 uint16_t type_in,
-				 void *addr_out,
-				 uint32_t size_out,
-				 uint16_t type_out)
+static void snap_prepare_memcopy(struct snap_job *cjob, struct memcopy_job *mjob,
+				 void *addr_in,  uint32_t size_in,  uint16_t type_in,
+				 void *addr_out, uint32_t size_out, uint16_t type_out)
 {
-	fprintf(stderr, "  prepare memcopy job of %ld bytes size\n", sizeof(*mjob));
+  fprintf(stderr, "  prepare memcopy job of %ld bytes size\n"
+  "  This is the register information exchanged between host and fpga\n", sizeof(*mjob));
 
 	assert(sizeof(*mjob) <= SNAP_JOBSIZE);
 	memset(mjob, 0, sizeof(*mjob));
@@ -87,7 +124,7 @@ static void snap_prepare_memcopy(struct snap_job *cjob,
 	snap_job_set(cjob, mjob, sizeof(*mjob), NULL, 0);
 }
 
-/*
+/**
  * Read accelerator specific registers. Must be called as root!
  */
 int main(int argc, char *argv[])
@@ -130,18 +167,20 @@ int main(int argc, char *argv[])
 			{ "dst-addr",	 required_argument, NULL, 'd' },
 			{ "size",	 required_argument, NULL, 's' },
 			{ "mode",	 required_argument, NULL, 'm' },
-			{ "timeout",	 required_argument, NULL, 't' },
+			{ "timeout", 	 required_argument, NULL, 't' },
 			{ "verify",	 no_argument,	    NULL, 'X' },
-			{ "version",	 no_argument,	    NULL, 'V' },
-			{ "verbose",	 no_argument,	    NULL, 'v' },
+			{ "version", 	 no_argument,	    NULL, 'V' },
+			{ "verbose", 	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
 			{ "no_irq",	 no_argument,	    NULL, 'N' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-				 "A:C:i:o:a:S:D:d:x:s:t:XVqvhN",
+//			 "A:C:i:o:a:S:D:d:x:s:t:XVqvhI",
+         "C:i:o:A:a:D:d:s:m:t:XVvhN",
 				 long_options, &option_index);
+         
 		if (ch == -1)
 			break;
 
@@ -154,15 +193,6 @@ int main(int argc, char *argv[])
 			break;
 		case 'o':
 			output = optarg;
-			break;
-		case 's':
-			size = __str_to_num(optarg);
-			break;
-		case 't':
-			timeout = strtol(optarg, (char **)NULL, 0);
-			break;
-		case 'm':
-			mode = strtol(optarg, (char **)NULL, 0);
 			break;
 			/* input data */
 		case 'A':
@@ -194,6 +224,15 @@ int main(int argc, char *argv[])
 		case 'd':
 			addr_out = strtol(optarg, (char **)NULL, 0);
 			break;
+		case 's':
+			size = __str_to_num(optarg);
+			break;
+		case 'm':
+			mode = strtol(optarg, (char **)NULL, 0);
+			break;
+                case 't':
+			timeout = strtol(optarg, (char **)NULL, 0);
+			break;
 		case 'X':
 			verify++;
 			break;
@@ -213,10 +252,16 @@ int main(int argc, char *argv[])
 			break;
 		default:
 			usage(argv[0]);
+      printf("bad function argument provided!\n");
 			exit(EXIT_FAILURE);
 		}
 	}
 
+        if (argc == 1) {               // to provide help when program is called without argument
+          usage(argv[0]);
+          exit(EXIT_FAILURE);
+        }
+                     
 	if (optind != argc) {
 		usage(argv[0]);
 		exit(EXIT_FAILURE);
@@ -288,15 +333,23 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
+        // The following snap_prepare_memcopy will fill the software mjob and cjob
+        // structures with the appropriate content
 	snap_prepare_memcopy(&cjob, &mjob,
 			     (void *)addr_in,  size, type_in,
 			     (void *)addr_out, size, type_out);
 
 	__hexdump(stderr, &mjob, sizeof(mjob));
 
-	gettimeofday(&stime, NULL);
+        printf("      get starting time\nAction is running ....");
+        gettimeofday(&stime, NULL);
+        // The following snap_action_sync_execute_job will transfer the
+        // structures cjob and mjob contents to fpga registers and launch
+        // the specified action.
+        // => timing will thus take into account the registers transfer time added to the action duration
 	rc = snap_action_sync_execute_job(action, &cjob, timeout);
 	gettimeofday(&etime, NULL);
+        printf("      got end of exec. time\n");
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
 			strerror(errno));
@@ -314,7 +367,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* obuff[size] = 0xff; */
-	fprintf(stdout, "RETC=%x\n", cjob.retc);
+	(cjob.retc == SNAP_RETC_SUCCESS) ? fprintf(stdout, "SUCCESS\n") : fprintf(stdout, "FAILED\n");
 	if (cjob.retc != SNAP_RETC_SUCCESS) {
 		fprintf(stderr, "err: Unexpected RETC=%x!\n", cjob.retc);
 		goto out_error2;
@@ -345,6 +398,7 @@ int main(int argc, char *argv[])
 
 	fprintf(stdout, "memcopy of %lld bytes took %lld usec @ %.3f MiB/sec\n",
 		(long long)size, (long long)diff_usec, mib_sec);
+        fprintf(stdout, "This represents the register transfer time + memcopy action time");       
 
 	snap_detach_action(action);
 	snap_card_free(card);
