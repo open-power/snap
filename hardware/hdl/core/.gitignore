@@ -1,0 +1,12 @@
+*~
+psl_fpga.vhd
+psl_fpga.vhd_source
+psl_accel.vhd
+psl_accel.vhd_source
+psl_accel_types.vhd
+dma.vhd
+dma_types.vhd
+dma_buffer.vhd
+mmio.vhd
+snap_core.vhd
+snap_core_types.vhd

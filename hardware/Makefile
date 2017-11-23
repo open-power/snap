@@ -43,24 +43,32 @@ ifeq "$(FPGACARD)" "ADKU3"
 	export DDR4_USED=FALSE
 	export DDRI_USED=$(SDRAM_USED)
 	export NVME_USED=FALSE
+	       FPGA_CARD=adku3
+	       CAPI_VER=capi10
 endif
 ifeq "$(FPGACARD)" "S121B"
 	export DDR3_USED=FALSE
 	export DDR4_USED=$(SDRAM_USED)
 	export DDRI_USED=$(SDRAM_USED)
 	export NVME_USED=FALSE
+	       FPGA_CARD=s121b
+	       CAPI_VER=capi10
 endif
 
 ifeq "$(FPGACARD)" "N250S"
 	export DDR3_USED=FALSE
 	export DDR4_USED=$(SDRAM_USED)
 	export DDRI_USED=$(SDRAM_USED)
+	       FPGA_CARD=n250s
+	       CAPI_VER=capi10
 endif
 
 ifeq "$(FPGACARD)" "N250SP"
 	export DDR3_USED=FALSE
 	export DDR4_USED=$(SDRAM_USED)
 	export DDRI_USED=$(SDRAM_USED)
+	       FPGA_CARD=s250sp
+	       CAPI_VER=capi20
 endif
 
 export BRAM_USED ?= FALSE
@@ -92,10 +100,10 @@ SNAP_PP_FILES_VHD=$(SNAP_HDL_CORE)/psl_accel.vhd       \
                   $(SNAP_HDL_CORE)/dma_buffer.vhd      \
                   $(SNAP_HDL_CORE)/mmio.vhd            \
                   $(SNAP_SIM_CORE)/top.sv              \
-                  $(SNAP_HDL_HLS)/action_wrapper.vhd 
-
-SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd \
+                  $(SNAP_HDL_HLS)/action_wrapper.vhd   \
                   $(SNAP_HDL_CORE)/snap_core_types.vhd
+
+SNAP_CONFIG_FILES=$(SNAP_HDL_CORE)/psl_fpga.vhd
 
 SNAP_TMP_FILES =  $(SNAP_HARDWARE_ROOT)/sim/README.txt \
 		  $(SNAP_HARDWARE_ROOT)/vivado.jou
@@ -215,13 +223,12 @@ prepare_project: check_snap_settings check_psl_dcp prepare_logs
 	@if [ -e "$(PSL_DCP)" ]; then \
 		cp -p $(PSL_DCP)                                             $(BUILD_DIR)/Checkpoints/; \
 	fi
-	@ln -f -s $(SNAP_HDL_CORE)/psl_fpga_`echo "$(FPGACARD)" | tr A-Z a-z`.vhd_source  $(SNAP_HDL_CORE)/psl_fpga.vhd_source;
-	@ln -f -s $(SNAP_HDL_CORE)/psl_accel_`echo "$(FPGACARD)" | tr A-Z a-z`.vhd_source $(SNAP_HDL_CORE)/psl_accel.vhd_source;
-	@if [ $(FPGACARD) = "N250SP" ]; then \
-	   ln -f -s $(SNAP_SIM_CORE)/top_capi20.sv_source  $(SNAP_SIM_CORE)/top.sv_source; \
-	else \
-	   ln -f -s $(SNAP_SIM_CORE)/top_capi10.sv_source  $(SNAP_SIM_CORE)/top.sv_source; \
-	fi 
+	@ln -f -s $(SNAP_HDL_CORE)/psl_fpga_$(FPGA_CARD).vhd_source   $(SNAP_HDL_CORE)/psl_fpga.vhd_source;
+	@ln -f -s $(SNAP_HDL_CORE)/psl_accel_$(FPGA_CARD).vhd_source  $(SNAP_HDL_CORE)/psl_accel.vhd_source;
+	@ln -f -s $(SNAP_SIM_CORE)/top_$(CAPI_VER)_source             $(SNAP_SIM_CORE)/top.sv_source;
+	@ln -f -s $(SNAP_HDL_CORE)/dma_$(CAPI_VER).vhd_source         $(SNAP_HDL_CORE)/dma.vhd;
+	@ln -f -s $(SNAP_HDL_CORE)/dma_type_$(CAPI_VER).vhd_source    $(SNAP_HDL_CORE)/dma_types.vhd;
+	@ln -f -s $(SNAP_HDL_CORE)/dma_buffer_$(CAPI_VER).vhd_source  $(SNAP_HDL_CORE)/dma_buffer.vhd;
 	@echo -e "[PREPARE PROJECT.....] done  `date +"%T %a %b %d %Y"`";
 
 snap_preprocess_start: prepare_project
@@ -456,6 +463,9 @@ clean:
 	          $(SNAP_TMP_FILES)                      \
 	          $(SNAP_HDL_CORE)/psl_fpga.vhd_source   \
 	          $(SNAP_HDL_CORE)/psl_accel.vhd_source  \
+	          $(SNAP_HDL_CORE)/dma.vhd               \
+	          $(SNAP_HDL_CORE)/dma_types.vhd         \
+	          $(SNAP_HDL_CORE)/dma_buffer.vhd        \
 	          $(SNAP_MODELS)                         \
 	          *build
 	@echo -e "                        vivado project";

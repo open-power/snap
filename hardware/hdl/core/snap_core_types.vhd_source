@@ -99,21 +99,32 @@ PACKAGE snap_core_types IS
   --
   -- AH Command Interface Encoding
   --
-  TYPE CMD_CODES_T IS (READ_CL_NA, READ_CL_S, READ_PE, READ_CL_M, READ_CL_LCK, READ_CL_RES, READ_PNA,
+  TYPE CMD_CODES_T IS (READ_CL_NA, READ_CL_S, READ_PE, READ_CL_M, READ_PNA,
                        TOUCH_I, TOUCH_S, TOUCH_M,
-                       WRITE_NA, WRITE_INJ, WRITE_MI, WRITE_MS, WRITE_UNLOCK, WRITE_C,
+                       WRITE_NA, WRITE_INJ, WRITE_MI, WRITE_MS,
                        PUSH_I, PUSH_S,
-                       EVICT_I, RESERVED,
+                       EVICT_I,
+#ifdef CONFIG_CAPI10
+                       READ_CL_LCK, READ_CL_RES,
+                       WRITE_C, WRITE_UNLOCK, 
                        LOCK, UNLOCK,
-                       FLUSH, INTREQ, RESTART);
+                       FLUSH,
+#else
+                       CAS_E_4B, CAS_NE_4B, CAS_U_4B,
+                       CAS_E_8B, CAS_NE_8B, CAS_U_8B,
+                       ZERO_M,
+                       XLAT_RD_P0, XLAT_WR_P0, XLAT_RD_P1, XLAT_WR_P1,
+                       ITAG_ABRT_RD, ITAG_ABRT_WR,
+                       XLAT_RD_TOUCH, XLAT_WR_TOUCH ,
+#endif
+                       INTREQ, RESTART,INVALID);
+  
   TYPE ENCODING_CMD_CODES_ARRAY IS ARRAY(CMD_CODES_T) OF std_logic_vector(0 TO 12);
   CONSTANT ENCODE_CMD_CODES : ENCODING_CMD_CODES_ARRAY :=
     (READ_CL_NA    => '0' & x"A00",
      READ_CL_S     => '0' & x"A50",
      READ_PE       => '0' & x"A52",
      READ_CL_M     => '0' & x"A60",
-     READ_CL_RES   => '0' & x"A67",
-     READ_CL_LCK   => '0' & x"A6B",
      READ_PNA      => '0' & x"E00",
      TOUCH_I       => '0' & x"240",
      TOUCH_S       => '0' & x"250",
@@ -121,35 +132,68 @@ PACKAGE snap_core_types IS
      WRITE_NA      => '0' & x"D00",
      WRITE_INJ     => '0' & x"D10",
      WRITE_MI      => '0' & x"D60",
-     WRITE_C       => '0' & x"D67",
-     WRITE_UNLOCK  => '0' & x"D6B",
      WRITE_MS      => '0' & x"D70",
      PUSH_I        => '0' & x"140",
      PUSH_S        => '0' & x"150",
      EVICT_I       => '1' & x"140",
-     RESERVED      => '1' & x"260",
+#ifdef CONFIG_CAPI10
+     READ_CL_RES   => '0' & x"A67",
+     READ_CL_LCK   => '0' & x"A6B",
+     WRITE_C       => '0' & x"D67",
+     WRITE_UNLOCK  => '0' & x"D6B",
      LOCK          => '0' & x"16B",
      UNLOCK        => '0' & x"17B",
      FLUSH         => '0' & x"100",
+#else
+     CAS_E_4B      => '0' & x"180",
+     CAS_NE_4B     => '0' & x"181",
+     CAS_U_4B      => '0' & x"182",
+     CAS_E_8B      => '0' & x"183",
+     CAS_NE_8B     => '0' & x"184",
+     CAS_U_8B      => '0' & x"185",
+     ZERO_M        => '1' & x"260",
+     XLAT_RD_P0    => '1' & x"F00",
+     XLAT_WR_P0    => '1' & x"F01",
+     XLAT_RD_P1    => '1' & x"F08",
+     XLAT_WR_P1    => '1' & x"F09",
+     ITAG_ABRT_RD  => '1' & x"F02",
+     ITAG_ABRT_WR  => '1' & x"F03",
+     XLAT_RD_TOUCH => '1' & x"F10",
+     XLAT_WR_TOUCH => '1' & x"F11",
+#endif
      INTREQ        => '0' & x"000",
-     RESTART       => '0' & x"001");
+     RESTART       => '0' & x"001",
+     INVALID       => '1' & x"FFF");
 
   --
   -- HA Response Interface Encoding
   --
-  TYPE RSP_CODES_T IS (DONE, AERROR, DERROR, NLOCK, NRES, FLUSHED, FAULT, FAILED, PAGED, CONTXT, ILLEGAL_RSP);
+  TYPE RSP_CODES_T IS (DONE, AERROR, DERROR,
+                       FLUSHED, FAULT, FAILED, PAGED, CONTEXT,
+#ifdef CONFIG_CAPI10
+                       NLOCK, NRES,
+#else
+                       COMP_EQ, COMP_NEQ, COMP_INV,
+#endif                       
+                       ILLEGAL_RSP);
   TYPE CODING_RSP_ENCODES_ARRAY IS ARRAY (0 TO 255) OF RSP_CODES_T;
   CONSTANT ENCODE_RSP_CODES : CODING_RSP_ENCODES_ARRAY :=
     (     0 => DONE,
           1 => AERROR,
           3 => DERROR,
-          4 => NLOCK,
-          5 => NRES,
           6 => FLUSHED,
           7 => FAULT,
           8 => FAILED,
          10 => PAGED,
-         11 => CONTXT,
+         11 => CONTEXT,
+#ifdef CONFIG_CAPI10
+          4 => NLOCK,
+          5 => NRES,
+#else
+         12 => COMP_EQ,
+         13 => COMP_NEQ,
+         14 => COMP_INV,
+#endif          
      OTHERS => ILLEGAL_RSP);
 
   --
@@ -629,10 +673,16 @@ PACKAGE snap_core_types IS
       valid       : std_logic;                           -- Response valid
       tag         : std_logic_vector(7  DOWNTO 0);       -- Response tag
       tagpar      : std_logic;                           -- Response tag parity
-      response    : RSP_CODES_T;                          -- Response
+      response    : RSP_CODES_T;                         -- Response code
       credits     : std_logic_vector(8  DOWNTO 0);       -- Response credits
       cachestate  : std_logic_vector(1  DOWNTO 0);       -- Response cache state
       cachepos    : std_logic_vector(12 DOWNTO 0);       -- Response cache pos
+#ifdef CONFIG_CAPI20
+      ditag       : std_logic_vector(8  DOWNTO 0);       -- DMA Translation tag
+      ditagpar    : std_logic;                           -- DMA Translation tag parity
+      response_ext: std_logic_vector(7  DOWNTO 0);       -- Response extra response information
+      pagesize    : std_logic_vector(3  DOWNTO 0);       -- Command translated page size
+#endif
     END RECORD HA_R_T;
 
 
@@ -713,6 +763,53 @@ PACKAGE snap_core_types IS
       error            : std_logic_vector(63 DOWNTO 0);  -- AFU error
       yield            : std_logic;                      -- Job yield
     END RECORD AH_J_T;
+
+#ifdef CONFIG_CAPI20
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  --  CAPI 2.0 DMA Interface
+  --
+  --  hd_s (from PSL) sent interface
+  --  hd_c (from PSL) completion interface  
+  --  dh_d (to   PSL) request interface
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+    --
+    -- hd_s (from PSL) sent interface
+    --
+    TYPE HD_S_T IS RECORD
+      utag_valid              : std_logic                  ;
+      utag                    : std_logic_vector(9 DOWNTO 0);
+      utag_sts                : std_logic_vector(2 DOWNTO 0);
+    END RECORD HD_S_T;
+
+    --
+    -- hd_c (from PSL) completion interface  
+    --
+    TYPE HD_C_T IS RECORD
+      valid                    : std_logic                  ;
+      utag                     : std_logic_vector(9 DOWNTO 0)   ;
+      ctype                    : std_logic_vector(2 DOWNTO 0)   ;
+      size                     : std_logic_vector(9 DOWNTO 0)   ;
+      laddr                    : std_logic_vector(9 DOWNTO 0)   ;
+      byte_count               : std_logic_vector(9 DOWNTO 0)   ;
+      data                     : std_logic_vector(1023 DOWNTO 0);
+    END RECORD HD_C_T;
+
+    --
+    -- dh_d (to   PSL) request interface
+    --
+    TYPE DH_D_T IS RECORD
+      valid                       : std_logic                  ;
+      req_utag                    : std_logic_vector(9 DOWNTO 0)   ;
+      req_itag                    : std_logic_vector(8 DOWNTO 0)   ;
+      req_type                    : std_logic_vector(2 DOWNTO 0)   ;
+      atomic_op                   : std_logic_vector(5 DOWNTO 0)   ;
+      atomic_le                   : std_logic                ; 
+      size                        : std_logic_vector(9 DOWNTO 0)   ;
+      data                        : std_logic_vector(1023 DOWNTO 0);
+    END RECORD DH_D_T;
+#endif
 
 
 --------------------------------------------------------------------------------

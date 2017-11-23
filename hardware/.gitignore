@@ -1,12 +1,4 @@
 *~
-hdl/core/psl_fpga.vhd*
-hdl/core/psl_accel.vhd_source
-hdl/core/psl_accel.vhd
-hdl/core/psl_accel_types.vhd
-hdl/core/dma_buffer.vhd
-hdl/core/mmio.vhd
-hdl/core/snap_core.vhd
-hdl/core/snap_core_types.vhd
 hdl/hls/action_wrapper.vhd
 hdl/nvme/component.xml
 hdl/nvme/xgui
@@ -22,5 +14,6 @@ ip/
 sim/*.log
 sim/20*
 .bitstream_name.txt
-.hw_config_done
+.create_ip_done
+.hw_project_done
 

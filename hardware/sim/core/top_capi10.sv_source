@@ -732,7 +732,7 @@ module top (
   wire  [ 8:0] c0_ddr3_dqs_p;
   wire  [ 8:0] c0_ddr3_dqs_n;
 #endif
-#if defined(CONFIG_ENABLE_DDR4) && defined(!CONFIG_S121B)
+#if defined(CONFIG_ENABLE_DDR4) && !defined(CONFIG_S121B)
   // DDR4 Signals
   wire          c0_ddr4_act_n;
   wire  [16:0]  c0_ddr4_adr;
@@ -1037,7 +1037,7 @@ module top (
     .c0_ddr4_dqs_c          (c2_ddr4_dqs_c),    
     .c0_ddr4_dqs_t          (c2_ddr4_dqs_t)     
     );                                          
-
+#endif
 #ifdef CONFIG_ENABLE_NVME
   ////////////////////////////////////////////////////////////
   // NVMe model                                             //
