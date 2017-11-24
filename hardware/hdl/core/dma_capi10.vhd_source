@@ -288,7 +288,7 @@ BEGIN
           ah_rc_q               <= ( '0',             -- valid
                                     (OTHERS => '0'),  -- tag
                                      '1',             -- tag parity
-                                     RESERVED,        -- command
+                                     INVALID,         -- command
                                      '1',             -- command parity
                                   (OTHERS => '0'),  -- abt
                                   (OTHERS => '0'),  -- address
@@ -325,7 +325,7 @@ BEGIN
           ah_rc_q               <= ( '0',             -- valid
                                     (OTHERS => '0'),  -- tag
                                      '1',             -- tag parity
-                                     RESERVED,        -- command
+                                     INVALID,         -- command
                                      '1',             -- command parity
                                     (OTHERS => '0'),  -- abt
                                     (OTHERS => '0'),  -- address
@@ -438,7 +438,7 @@ BEGIN
               ELSIF (read_ctrl_rsp_rtag_q.rsp = AERROR) OR
                     (read_ctrl_rsp_rtag_q.rsp = DERROR) OR
                     (read_ctrl_rsp_rtag_q.rsp = FAILED) OR
-                    (read_ctrl_rsp_rtag_q.rsp = CONTXT) THEN
+                    (read_ctrl_rsp_rtag_q.rsp = CONTEXT) THEN
                 read_ctrl_fsm_q      <= ST_RSP_ERROR;
 
               ELSE
@@ -882,7 +882,7 @@ BEGIN
           ah_wc_q                <= ( '0',             -- valid
                                      (OTHERS => '0'),  -- tag
                                       '1',             -- tag parity
-                                      RESERVED,        -- command
+                                      INVALID,         -- command
                                       '1',             -- command parity
                                      (OTHERS => '0'),  -- abt
                                      (OTHERS => '0'),  -- address
@@ -918,7 +918,7 @@ BEGIN
           ah_wc_q                <= ( '0',             -- valid
                                      (OTHERS => '0'),  -- tag
                                       '1',             -- tag parity
-                                      RESERVED,        -- command
+                                      INVALID,         -- command
                                       '1',             -- command parity
                                      (OTHERS => '0'),  -- abt
                                      (OTHERS => '0'),  -- address
@@ -1042,7 +1042,7 @@ BEGIN
               ELSIF (write_ctrl_rsp_wtag_q.rsp = AERROR) OR
                     (write_ctrl_rsp_wtag_q.rsp = DERROR) OR
                     (write_ctrl_rsp_wtag_q.rsp = FAILED) OR
-                    (write_ctrl_rsp_wtag_q.rsp = CONTXT) THEN
+                    (write_ctrl_rsp_wtag_q.rsp = CONTEXT) THEN
                 write_ctrl_fsm_q   <= ST_RSP_ERROR;
 
               ELSE
@@ -1622,7 +1622,7 @@ BEGIN
           ah_c_q                <= ( '0',                    -- valid
                                     (OTHERS => '0'),         -- tag
                                      '1',                    -- tagpar
-                                     RESERVED,               -- com
+                                     INVALID,                -- com
                                      '1',                    -- compar
                                     (OTHERS => '0'),         -- abt
                                     (OTHERS => '0'),         -- ea
@@ -1652,7 +1652,7 @@ BEGIN
           --
           -- defaults
           --
-          ah_c_q                <= ('0', (OTHERS => '0'), '1', RESERVED, '1', (OTHERS => '0'),
+          ah_c_q                <= ('0', (OTHERS => '0'), '1', INVALID, '1', (OTHERS => '0'),
                                    (OTHERS => '0'), '1', (OTHERS => '0'), (OTHERS => '0'));
           ah_c_fsm_q            <= ah_c_fsm_q;
           ah_c_max_q            <= ha_c_q.room - x"04";

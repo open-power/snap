@@ -160,8 +160,12 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
       wea   : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
       addra : IN STD_LOGIC_VECTOR(5 DOWNTO 0);
       dina  : IN STD_LOGIC_VECTOR(519 DOWNTO 0);
+      douta : OUT STD_LOGIC_VECTOR(519 DOWNTO 0);
       clkb  : IN STD_LOGIC;
+      enb   : IN  STD_LOGIC;
+      web   : IN  STD_LOGIC_VECTOR(   0 DOWNTO 0);
       addrb : IN STD_LOGIC_VECTOR(5 DOWNTO 0);
+      dinb  : IN STD_LOGIC_VECTOR(519 DOWNTO 0);
       doutb : OUT STD_LOGIC_VECTOR(519 DOWNTO 0)
     );
   END COMPONENT ram_520x64_2p;
@@ -172,8 +176,12 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
       wea   : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
       addra : IN STD_LOGIC_VECTOR(5 DOWNTO 0);
       dina  : IN STD_LOGIC_VECTOR(575 DOWNTO 0);
+      douta : OUT STD_LOGIC_VECTOR(575 DOWNTO 0);
       clkb  : IN STD_LOGIC;
+      enb   : IN  STD_LOGIC;
+      web   : IN  STD_LOGIC_VECTOR(   0 DOWNTO 0);
       addrb : IN STD_LOGIC_VECTOR(5 DOWNTO 0);
+      dinb  : IN STD_LOGIC_VECTOR(575 DOWNTO 0);
       doutb : OUT STD_LOGIC_VECTOR(575 DOWNTO 0)
     );
   END COMPONENT ram_576x64_2p;
@@ -202,11 +210,15 @@ BEGIN
       --
       -- pervasive
       clka    => ha_pclock,
-      clkb    => ha_pclock,
       dina    => rram_wdata,
       addra   => rram_waddr,
       wea(0)  => rram_wen,
+      douta   => open,
+      clkb    => ha_pclock,
+      enb     => '1',
+      web(0)  => '0',
       addrb   => rram_raddr,
+      dinb    => (OTHERS => '0'),
       doutb   => rram_rdata
     );
 
@@ -327,11 +339,15 @@ BEGIN
       --
       -- pervasive
       clka   => ha_pclock,
-      clkb   => ha_pclock,
-      dina   => wram_wdata,
-      addra  => wram_waddr,
       wea(0) => wram_wen,
+      addra  => wram_waddr,
+      dina   => wram_wdata,
+      douta  => open,
+      clkb   => ha_pclock,
+      enb     => '1',
+      web(0)  => '0',
       addrb  => wram_raddr,
+      dinb   => (OTHERS => '0'),
       doutb  => wram_rdata
     );
 

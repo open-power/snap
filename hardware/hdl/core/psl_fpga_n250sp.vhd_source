@@ -827,8 +827,11 @@ BEGIN
       hd1_cpl_data                      => efes1024(1023 downto 0)
     );
 
+#ifdef CONFIG_ENABLE_FACTORY
+    gold_factory <= '0'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
+#else
     gold_factory <= '1'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
-
+#endif
     -- led controls
 --    led_red <= "11";
 --    led_green <= "11";

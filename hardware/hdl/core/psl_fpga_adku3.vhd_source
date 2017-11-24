@@ -471,13 +471,17 @@ begin
          c0_ddr3_dqs_p        => c0_ddr3_dqs_p,
          c0_ddr3_dqs_n        => c0_ddr3_dqs_n,
          c0_ddr3_odt          => c0_ddr3_odt,
-#endi
+#endif
          ah_paren             => a0h_paren,
          ha_pclock            => ha0_pclock
     );
 
+#ifdef CONFIG_ENABLE_FACTORY
+    gold_factory <= '0'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
+#else
     gold_factory <= '1'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
-
+#endif
+     
     b: base_img
      PORT MAP (
          pci_pi_nperst0 => pci_pi_nperst0,
