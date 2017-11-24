@@ -49,6 +49,7 @@
 #define CONFIG_REQ_TIMEOUT_SEC		3
 #define CONFIG_REQ_DURATION_USEC	100000 /* usec */
 
+static int cblk_maxretries = CONFIG_MAX_RETRIES;
 static int cblk_reqtimeout = CONFIG_REQ_TIMEOUT_SEC;
 static int cblk_busytimeout = CONFIG_BUSY_TIMEOUT_SEC;
 
@@ -1194,7 +1195,7 @@ static int check_req_timeouts(struct cblk_dev *c, struct timeval *etime,
 				__func__, i, cblk_status_str[req->status],
 				timeout_sec, diff_sec, req->lba);
 
-			if (req->tries >= CONFIG_MAX_RETRIES) {
+			if (req->tries >= cblk_maxretries) {
 				uint32_t errbits;
 
 				errno = ETIME;
@@ -1949,6 +1950,10 @@ static void _init(void)
 {
 	const char *env;
 
+	env = getenv("CBLK_MAXRETRIES");
+	if (env != NULL)
+		cblk_maxretries = strtol(env, (char **)NULL, 0);
+
 	env = getenv("CBLK_REQTIMEOUT");
 	if (env != NULL)
 		cblk_reqtimeout = strtol(env, (char **)NULL, 0);
@@ -1979,9 +1984,9 @@ static void _init(void)
 	if (env != NULL)
 		cblk_prefetch_threshold = strtol(env, (char **)NULL, 0);
 
-	block_trace("[%s] CBLK_REQTIMEOUT=%d CBLK_PREFETCH=%d "
+	block_trace("[%s] CBLK_MAXRETRIES=%d CBLK_REQTIMEOUT=%d CBLK_PREFETCH=%d "
 		"CBLK_PREFETCH_THRESHOLD=%d CBLK_CACHING=%d\n",
-		__func__, cblk_reqtimeout, cblk_prefetch,
+		    __func__, cblk_maxretries, cblk_reqtimeout, cblk_prefetch,
 		cblk_prefetch_threshold, cblk_caching);
 }
 
