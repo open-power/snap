@@ -167,14 +167,16 @@ ARCHITECTURE snap_core OF snap_core IS
   SIGNAL ah_c                : AH_C_T;
   SIGNAL ah_j                : AH_J_T;
   SIGNAL ah_mm               : AH_MM_T;
-  SIGNAL dh_d                : DH_D_T;
   SIGNAL cmm_e               : CMM_E_T;
   SIGNAL dmm_e               : DMM_E_T;
   SIGNAL ha_b                : HA_B_T;
   SIGNAL ha_c                : HA_C_T;
   SIGNAL ha_j                : HA_J_T;
+#ifdef CONFIG_CAPI20
   SIGNAL hd_s                : HD_S_T;
   SIGNAL hd_c                : HD_C_T;
+  SIGNAL dh_d                : DH_D_T;
+#endif
   SIGNAL ha_mm               : HA_MM_T;
   SIGNAL ha_r                : HA_R_T;
   SIGNAL jmm_c               : JMM_C_T;
@@ -375,9 +377,11 @@ BEGIN
       ha_b_i                 => ha_b,
       ah_c_o                 => ah_c,
       ah_b_o                 => ah_b,
+#ifdef CONFIG_CAPI20
       hd_s_i                 => hd_s,
       hd_c_i                 => hd_c,
       dh_d_o                 => dh_d,
+#endif
       --
       -- AXI SLAVE Interface
       sd_c_i                 => sd_c,

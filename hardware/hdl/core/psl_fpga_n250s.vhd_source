@@ -649,7 +649,11 @@ BEGIN
       ha_pclock                         => ha0_pclock
     );
 
+#ifdef CONFIG_ENABLE_FACTORY
+    gold_factory <= '0'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
+#else
     gold_factory <= '1'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
+#endif
 
     -- led controls
     led_red <= "11";

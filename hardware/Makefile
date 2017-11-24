@@ -67,7 +67,7 @@ ifeq "$(FPGACARD)" "N250SP"
 	export DDR3_USED=FALSE
 	export DDR4_USED=$(SDRAM_USED)
 	export DDRI_USED=$(SDRAM_USED)
-	       FPGA_CARD=s250sp
+	       FPGA_CARD=n250sp
 	       CAPI_VER=capi20
 endif
 
@@ -226,7 +226,7 @@ prepare_project: check_snap_settings check_psl_dcp prepare_logs
 	@ln -f -s $(SNAP_HDL_CORE)/psl_accel_$(FPGA_CARD).vhd_source  $(SNAP_HDL_CORE)/psl_accel.vhd_source;
 	@ln -f -s $(SNAP_SIM_CORE)/top_$(CAPI_VER)_source             $(SNAP_SIM_CORE)/top.sv_source;
 	@ln -f -s $(SNAP_HDL_CORE)/dma_$(CAPI_VER).vhd_source         $(SNAP_HDL_CORE)/dma.vhd;
-	@ln -f -s $(SNAP_HDL_CORE)/dma_type_$(CAPI_VER).vhd_source    $(SNAP_HDL_CORE)/dma_types.vhd;
+	@ln -f -s $(SNAP_HDL_CORE)/dma_types_$(CAPI_VER).vhd_source   $(SNAP_HDL_CORE)/dma_types.vhd;
 	@ln -f -s $(SNAP_HDL_CORE)/dma_buffer_$(CAPI_VER).vhd_source  $(SNAP_HDL_CORE)/dma_buffer.vhd;
 	@echo -e "[PREPARE PROJECT.....] done  `date +"%T %a %b %d %Y"`";
 
@@ -256,10 +256,12 @@ $(SNAP_SIM_NVME)/endp_4_pipe32.v:
 	  fi; \
 	fi
 
-%.vhd: %.vhd_source
-	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh $@_source $@
+ snap_core_config:
+	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh  $(SNAP_HDL_CORE)/snap_core_types.vhd 
 
-snap_preprocess_execute: $(SNAP_PP_FILES_VHD) $(SNAP_SIM_NVME)/endp_4_pipe32.v
+%.vhd: %.vhd_source
+
+snap_preprocess_execute: $(SNAP_PP_FILES_VHD) $(SNAP_SIM_NVME)/endp_4_pipe32.v snap_core_config
 	@echo -e "[SNAP PREPROCESS.....] done  `date +"%T %a %b %d %Y"`";
 
 snap_preprocess: snap_preprocess_start
@@ -303,7 +305,7 @@ create_project: snap_preprocess
 	@echo -e "                        using `vivado -version |grep Vivado`"
 	@$(MAKE) -s .create_ip_done
 	@if [ $(NVME_USED) = "TRUE" ]; then $(MAKE) -s .create_nvme_done; fi
-	@cd $(SNAP_HARDWARE_ROOT)/setup  &&  vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
+	@cd $(SNAP_HARDWARE_ROOT)/setup  &&  vivado  -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
 	@$(MAKE) -s patch_NVMe
 	@echo -e "[CREATE PROJECT......] done  `date +"%T %a %b %d %Y"`"
 

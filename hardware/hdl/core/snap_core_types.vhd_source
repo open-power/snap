@@ -45,10 +45,17 @@ PACKAGE snap_core_types IS
   CONSTANT CARD_TYPE                       : std_logic_vector(7 DOWNTO 0);   -- Card type - currently specified:
                                                                              --             0x00 Alphadata KU3
                                                                              --             0x01 Nallatech 250S
-  CONSTANT NVME_ENABLED                    : std_logic;                      -- Is the NVMe host logic enabled for connecting to NVMe Flash drives
+#ifdef CONFIG_ENABLE_NVME
+  CONSTANT NVME_ENABLED                    : std_logic := '1';                      -- Is the NVMe host logic enabled for connecting to NVMe Flash drives
+#else
+  CONSTANT NVME_ENABLED                    : std_logic := '0';                      -- Is the NVMe host logic enabled for connecting to NVMe Flash drives
+#endif
 
+#ifdef CONFIG_CAPI10
   CONSTANT CAPI_VER                        : integer RANGE 1 TO 2 := 1;      -- 
-
+#else
+  CONSTANT CAPI_VER                        : integer RANGE 1 TO 2 := 2;      -- 
+#endif
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- ******************************************************

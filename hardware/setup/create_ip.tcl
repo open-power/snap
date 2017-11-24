@@ -45,15 +45,17 @@ set_property target_simulator IES [current_project]
 if { $fpga_card == "N250SP" } {
   set RAM_WIDTH 1040
   set RAM_DEPTH 32
+  set MEMORY_TYPE True_Dual_Port_RAM
 } else {
   set RAM_WIDTH 520
   set RAM_DEPTH 64
+  set MEMORY_TYPE Simple_Dual_Port_RAM
 }
 puts "                        generating IP ram_${RAM_WIDTH}x${RAM_DEPTH}_2p"
 
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.* -module_name ram_${RAM_WIDTH}x${RAM_DEPTH}_2p -dir $ip_dir  >> $log_file
 set_property -dict [list                                                         \
-                    CONFIG.Memory_Type {True_Dual_Port_RAM} 		         \
+                    CONFIG.Memory_Type {True_Dual_Port_RAM}  		         \
                     CONFIG.Assume_Synchronous_Clk {true} 		         \
 		    CONFIG.Write_Width_A "${RAM_WIDTH}"                          \
 		    CONFIG.Write_Width_B "${RAM_WIDTH}"                          \
@@ -78,24 +80,26 @@ export_simulation -of_objects [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2
 if { $fpga_card == "N250SP" } {
   set RAM_WIDTH 1152
   set RAM_DEPTH 32
+  set MEMORY_TYPE True_Dual_Port_RAM
 } else {
   set RAM_WIDTH 576
   set RAM_DEPTH 64
+  set MEMORY_TYPE Simple_Dual_Port_RAM
 }
 puts "                        generating IP ram_${RAM_WIDTH}x${RAM_DEPTH}_2p"
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.* -module_name ram_${RAM_WIDTH}x${RAM_DEPTH}_2p -dir $ip_dir >> $log_file
-set_property -dict [list                                                            \
-                    CONFIG.Memory_Type {True_Dual_Port_RAM} 		         \
+set_property -dict [list                                                         \
+                    CONFIG.Memory_Type {True_Dual_Port_RAM}  		         \
                     CONFIG.Assume_Synchronous_Clk {true} 		         \
-		    CONFIG.Write_Width_A {576}                          \
-		    CONFIG.Write_Width_B {576}                          \
-                    CONFIG.Write_Depth_A {64}  	                 \
+		    CONFIG.Write_Width_A {576}                                   \
+		    CONFIG.Write_Width_B {576}                                   \
+                    CONFIG.Write_Depth_A {64}  	                                 \
                     CONFIG.Operating_Mode_A {NO_CHANGE}       		         \
                     CONFIG.Enable_A {Always_Enabled} 			         \
                     CONFIG.Enable_B {Use_ENB_Pin}                                \
                     CONFIG.Register_PortA_Output_of_Memory_Primitives {false}    \
 		    CONFIG.Read_Width_A "${RAM_WIDTH}"                           \
-		    CONFIG.Read_Width_B "${RAM_WIDTH}"                         \
+		    CONFIG.Read_Width_B "${RAM_WIDTH}"                           \
                     CONFIG.Port_B_Clock {100}                                    \
                     CONFIG.Port_B_Write_Rate {50}                                \
                     CONFIG.Port_B_Enable_Rate {100}                              \
