@@ -2,11 +2,6 @@
 hdl/hls/action_wrapper.vhd
 hdl/nvme/component.xml
 hdl/nvme/xgui
-sim/ies
-sim/xsim
-sim/questa
-sim/core/top.sv
-sim/nvme/endp_4_pipe32.v
 build/
 logs/*
 viv_project*/
