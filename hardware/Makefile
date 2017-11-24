@@ -224,7 +224,7 @@ prepare_project: check_snap_settings check_psl_dcp prepare_logs
 	fi
 	@ln -f -s $(SNAP_HDL_CORE)/psl_fpga_$(FPGA_CARD).vhd_source   $(SNAP_HDL_CORE)/psl_fpga.vhd_source;
 	@ln -f -s $(SNAP_HDL_CORE)/psl_accel_$(FPGA_CARD).vhd_source  $(SNAP_HDL_CORE)/psl_accel.vhd_source;
-	@ln -f -s $(SNAP_SIM_CORE)/top_$(CAPI_VER)_source             $(SNAP_SIM_CORE)/top.sv_source;
+	@ln -f -s $(SNAP_SIM_CORE)/top_$(CAPI_VER).sv_source          $(SNAP_SIM_CORE)/top.sv_source;
 	@ln -f -s $(SNAP_HDL_CORE)/dma_$(CAPI_VER).vhd_source         $(SNAP_HDL_CORE)/dma.vhd;
 	@ln -f -s $(SNAP_HDL_CORE)/dma_types_$(CAPI_VER).vhd_source   $(SNAP_HDL_CORE)/dma_types.vhd;
 	@ln -f -s $(SNAP_HDL_CORE)/dma_buffer_$(CAPI_VER).vhd_source  $(SNAP_HDL_CORE)/dma_buffer.vhd;
