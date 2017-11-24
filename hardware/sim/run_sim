@@ -197,9 +197,9 @@
  fi
 
  if [ "$PARM_FILE" != "" ];then cp ${SIMBASE}/${PARM_FILE} pslse.parms;fi       # overwrite with specified parms file
- export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PSLSE_ROOT/afu_driver/src:$PSLSE_ROOT/libcxl    # to find libvpi.so and libcxl.so
+ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PSLSE_ROOT/afu_driver/src:$PSLSE_ROOT/libcxl:$SNAP_ROOT/software/lib    # to find libvpi.so and libcxl.so and libsnap.so
  if [[ "$NVME_USED" == "TRUE" && -n "$DENALI" ]]; then
-   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DENALI/verilog                                # to find libvpi.so and libdenpli.so
+   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DENALI/verilog                                                        # to find libvpi.so and libdenpli.so
  fi
  if [ "$SIMDIR" == "ies" ];then
 #  if [ "$SIM_INIT" == "" ];then SIM_INIT='-ncinitialize x';fi                  # default init value for ncsim
