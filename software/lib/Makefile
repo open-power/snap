@@ -71,6 +71,6 @@ install: all
 	$(CC) -MM $(CPPFLAGS) $($(@:.o=)_CPPFLAGS) $(CFLAGS) $< > $*.d
 
 clean distclean:
-	$(RM) *.o *.d $(projs) *.so *.so.*
+	$(RM) *.o *.d $(projs) *.so *.so.* *~
 
 -include $(objsA:.o=.d) $(objsB:.o=.d)
