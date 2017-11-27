@@ -21,7 +21,7 @@
 #
 
 ifndef SNAP_ROOT
-$(error Please setup SNAP_ROOT pointing to the repositories root directory.)
+$(error Please set SNAP_ROOT to the repository root directory.)
 endif
 ifeq ("$(wildcard $(SNAP_ROOT)/ActionTypes.md)","")
 $(error Please make sure that SNAP_ROOT=$$SNAP_ROOT is set up correctly.)
