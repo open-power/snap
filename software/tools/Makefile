@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-SNAP_ROOT=$(abspath ../..)
+SNAP_ROOT ?= $(abspath ../..)
 
 include ../config.mk
 
