@@ -25,6 +25,7 @@ CFG_SNAP_ACTIONS_H = ./cfg_snap_actions.sh
 endif
 
 LDLIBS += -lsnap -lcxl -lpthread
+libs += $(SNAP_ROOT)/software/lib/libsnap.so
 
 snap_peek_objs = force_cpu.o
 snap_poke_objs = force_cpu.o
@@ -35,12 +36,15 @@ hfiles = force_cpu.h  snap_fw_example.h
 
 all: $(projs)
 
+$(projs): $(objs)
+
+$(objs): snap_actions.h $(libs)
+
+$(libs):
+	$(MAKE) -C $(shell dirname $@)
+
 snap_actions.h: $(SNAP_ROOT)/ActionTypes.md
 	$(CFG_SNAP_ACTIONS_H)
-
-$(projs): $(objs) $(libs)
-
-$(objs): snap_actions.h
 
 ### Deactivate existing implicit rule
 %: %.c
@@ -50,7 +54,7 @@ $(objs): snap_actions.h
 %: %.o
 	$(CC) $(LDFLAGS) $($(@)_LDFLAGS) $@.o $($(@)_objs) $($(@)_libs) $(LDLIBS) -o $@
 
-%.o: %.c $(libs) $(hfiles)
+%.o: %.c $(hfiles)
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
 install: all

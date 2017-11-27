@@ -25,6 +25,7 @@
 # relative path settings nicely. If that does not work for some valid reason,
 # we should discuss creating a new generic.mk or alike file.
 #
+
 PLATFORM ?= $(shell uname -i)
 
 ifeq ($(PLATFORM),x86_64)
@@ -51,9 +52,9 @@ BUILD_SIMCODE=1
 endif
 
 ifdef BUILD_SIMCODE
-lib:  $(PSLSE_ROOT)/libcxl/libcxl.a
+lib:  $(PSLSE_ROOT)/libcxl/libcxl.so
 
-$(PSLSE_ROOT)/libcxl/libcxl.a:
+$(PSLSE_ROOT)/libcxl/libcxl.so:
 	$(MAKE) -C $(PSLSE_ROOT)/libcxl
 endif
 
