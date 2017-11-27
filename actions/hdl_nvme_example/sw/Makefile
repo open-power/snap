@@ -41,16 +41,11 @@ endif
 # Use rule defined in software.mk
 all: all_build
 
-#ifdef BUILD_SIMCODE
-#snap_cblk_libs += libsnapcblk.a
-#else
 snap_cblk_LDFLAGS += -L. \
 	-Wl,-rpath,$(SNAP_ROOT)/actions/hdl_nvme_example/sw \
 	-Wl,-rpath,$(SNAP_ROOT)/software/lib
 
 snap_cblk_libs += -lsnapcblk -lrt
-#endif
-
 snap_cblk_objs += force_cpu.o
 
 snap_cblk: force_cpu.o $(projB)
@@ -62,6 +57,7 @@ libnameB = libsnapcblk
 projB = $(libnameB).a \
 	$(libnameB).so.$(libversion)
 
+# We need -fPIC for shared library build
 snapblock_CPPFLAGS += -fPIC
 pp_CPPFLAGS += -fPIC
 
@@ -91,7 +87,4 @@ $(libnameB).so.$(libversion): __$(libnameB).o
 projs += snap_nvme_example snap_cblk
 libs += $(projB)
 
-# If you have the host code outside of the default snap directory structure,
-# change to /path/to/snap/actions/software.mk
-#include ../../software.mk
 include $(SNAP_ROOT)/actions/software.mk
