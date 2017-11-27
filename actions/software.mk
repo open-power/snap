@@ -24,24 +24,8 @@ endif
 
 include $(SNAP_ROOT)/software/config.mk
 
-CFLAGS += -std=c99 -I$(SNAP_ROOT)/software/include
-LDFLAGS += -L$(SNAP_ROOT)/software/lib
-LDLIBS += -lsnap -lpthread
-
-DESTDIR ?= /usr
-# libs += $(SNAP_ROOT)/software/lib/libsnap.a
-
-# Link statically for PSLSE simulation and dynamically for real version
-ifdef BUILD_SIMCODE
-# libs += $(PSLSE_ROOT)/libcxl/libcxl.a
-CFLAGS += -D_SIM_
-LDFLAGS += -L$(PSLSE_ROOT)/libcxl
-LDLIBS += -lcxl
-else
-# FIXME If we link against libsnap.so we should have this dependency covered.
-#      No -L<path_to_libcxl> required here, since it should be in the distro.
-LDLIBS += -lcxl
-endif
+CFLAGS += -std=c99
+LDLIBS += -lsnap -lcxl -lpthread
 
 # This rule should be the 1st one to find (default)
 all: all_build
@@ -54,8 +38,11 @@ all_build: $(projs)
 
 $(projs): $(libs)
 
-$(PSLSE_ROOT)/libcxl/libcxl.a $(SNAP_ROOT)/software/lib/libsnap.a:
-	$(MAKE) -C `dirname $@`
+# Resolve dependencies to required libraries
+#$(projs) $(libs): $(PSLSE_ROOT)/libcxl/libcxl.so $(SNAP_ROOT)/software/lib/libsnap.so
+#
+#$(PSLSE_ROOT)/libcxl/libcxl.so $(SNAP_ROOT)/software/lib/libsnap.so:
+#	$(MAKE) -C `dirname $@`
 
 ### Deactivate existing implicit rule
 %: %.c
@@ -71,13 +58,22 @@ $(PSLSE_ROOT)/libcxl/libcxl.a $(SNAP_ROOT)/software/lib/libsnap.a:
 install: all
 	@mkdir -p $(DESTDIR)/bin
 	@for f in $(projs); do 					\
+		echo "installing $(DESTDIR)/bin/$$f ...";	\
 		intall -D -m 755 $$f -T $(DESTDIR)/bin/$$f	\
+	done
+	@for f in $(libs); do 					\
+		echo "installing $(DESTDIR)/lib/$$f ...";	\
+		intall -D -m 755 $$f -T $(DESTDIR)/lib/$$f	\
 	done
 
 uninstall:
 	@for f in $(projs) ; do					\
 		echo "removing $(DESTDIR)/bin/$$f ...";		\
 		$(RM) $(DESTDIR)/bin/$$f;			\
+	done
+	@for f in $(libs) ; do					\
+		echo "removing $(DESTDIR)/lib/$$f ...";		\
+		$(RM) $(DESTDIR)/lib/$$f;			\
 	done
 
 clean distclean:

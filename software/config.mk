@@ -14,6 +14,19 @@
 # limitations under the License.
 #
 
+# Check if SNAP_ROOT is set. Having SNAP_ROOT set allows simplifications
+# in the Makeefiles all over the place. We tried with relative path setups
+# but that is cumbersome if we like to use this from different levels
+# in the directory tree.
+#
+
+ifndef SNAP_ROOT
+$(error Please setup SNAP_ROOT pointing to the repositories root directory.)
+endif
+ifeq ("$(wildcard $(SNAP_ROOT)/ActionTypes.md)","")
+$(error Please make sure that SNAP_ROOT=$$SNAP_ROOT is set up correctly.)
+endif
+
 # Verbosity level:
 #   V=0 means completely silent
 #   V=1 means brief output
@@ -93,6 +106,10 @@ CFLAGS += -DGIT_VERSION=\"$(VERSION)\" \
 # Optimizations
 CFLAGS += -funroll-all-loops
 
+# General settings: Include and library search path
+CFLAGS += -I$(SNAP_ROOT)/software/include 
+LDFLAGS += -L$(SNAP_ROOT)/software/lib
+
 # Force 32-bit build
 #   This is needed to generate the code for special environments. We have
 #   some 64-bit machines where we need to support binaries compiled for
@@ -111,8 +128,7 @@ ifndef PSLSE_ROOT
 PSLSE_ROOT=$(abspath ../../../pslse)
 endif
 
-CFLAGS += -I $(PSLSE_ROOT)/libcxl -I $(PSLSE_ROOT)/common
-FORCE_32BIT     ?= 0
+FORCE_32BIT ?= 0
 
 ifeq ($(FORCE_32BIT),1)
 CFLAGS += -m32
@@ -127,6 +143,16 @@ ARFLAGS =
 endif
 else
 ARFLAGS =
+endif
+
+#
+# If we build for simulation we need to take the PSLSE version
+# of libcxl. This is true for linage as well as when we setup
+# the LD_LIBRARY_PATH on program execution.
+#
+ifdef BUILD_SIMCODE
+CFLAGS += -D_SIM_ -I$(PSLSE_ROOT)/libcxl -I$(PSLSE_ROOT)/common
+LDFLAGS += -L$(PSLSE_ROOT)/libcxl
 endif
 
 DESTDIR ?= /usr

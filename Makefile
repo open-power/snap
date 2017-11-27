@@ -63,18 +63,18 @@ endif
 %: %.sh
 
 $(software_subdirs):
-	if [ -d $@ ]; then             \
+	@if [ -d $@ ]; then             \
 	    echo "Enter: $@";           \
-	    $(MAKE) -C $@ || exit 1; \
+	    $(MAKE) -C $@ || exit 1; 	\
 	    echo "Exit:  $@";           \
 	fi
 
 software: $(software_subdirs)
 
 $(action_subdirs):
-	if [ -d $@ ]; then             \
+	@if [ -d $@ ]; then             \
 	    echo "Enter: $@";           \
-	    $(MAKE) -C $@ || exit 1; \
+	    $(MAKE) -C $@ || exit 1; 	\
 	    echo "Exit:  $@";           \
 	fi
 
