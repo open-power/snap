@@ -14,6 +14,15 @@
 # limitations under the License.
 #
 
+ifndef SNAP_ROOT
+ifneq ("$(wildcard ../../ActionTypes.md)","")
+SNAP_ROOT=$(abspath ../../)
+else
+$(info You probably have defined a wrong $$SNAP_ROOT.)
+$(error Please make sure that $$SNAP_ROOT is set up correctly.)
+endif
+endif
+
 include ../config.mk
 
 libversion = $(VERSION)
