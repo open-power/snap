@@ -19,7 +19,7 @@ SNAP_ROOT=$(abspath ../..)
 include ../config.mk
 
 ifeq ($(V),1)
-CFG_SNAP_ACTIONS_H = printf "\t[HH]\t%s\n" `basename "$@"`; ./cfg_snap_actions.sh
+CFG_SNAP_ACTIONS_H = printf "\t[HH]\t%s\n" `basename "$@"`; ./cfg_snap_actions.pl
 else
 CFG_SNAP_ACTIONS_H = ./cfg_snap_actions.sh
 endif
@@ -44,7 +44,7 @@ $(libs):
 	$(MAKE) -C $(shell dirname $@)
 
 snap_actions.h: $(SNAP_ROOT)/ActionTypes.md
-	$(CFG_SNAP_ACTIONS_H)
+	$(CFG_SNAP_ACTIONS_H) < $< > $@
 
 ### Deactivate existing implicit rule
 %: %.c
@@ -71,4 +71,4 @@ uninstall:
 	done
 
 clean distclean:
-	@$(RM) snap_actions.h $(objs) $(projs)
+	$(RM) snap_actions.h $(objs) $(projs) *.o *~
