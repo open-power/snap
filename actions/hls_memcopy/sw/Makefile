@@ -40,6 +40,7 @@ endif
 
 snap_memcopy: action_memcopy.o
 snap_memcopy_objs = action_memcopy.o
+snap_memcopy_libs = -lm
 
 projs += snap_memcopy
 

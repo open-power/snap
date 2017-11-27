@@ -21,16 +21,6 @@ libversion = $(VERSION)
 CFLAGS += -fPIC -fno-strict-aliasing
 LDLIBS += -lcxl -lpthread
 
-# Link statically for PSLSE simulation and dynamically for real version
-#ifndef BUILD_SIMCODE
-#LDLIBS += -lcxl
-#endif
-
-ifdef BUILD_SIMCODE
-CFLAGS += -D_SIM_
-LDFLAGS += -L$(PSLSE_ROOT)/libcxl
-endif
-
 libnameA = libsnap
 projA = $(libnameA).a \
 	$(libnameA).so \
