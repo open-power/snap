@@ -398,7 +398,16 @@ __hw_wait_irq_retry:
 			}
 			rc = 0;
 			break;
-		case CXL_EVENT_DATA_STORAGE:
+
+		case CXL_EVENT_DATA_STORAGE:  {
+			struct cxl_event_data_storage *ds = &card->event.fault;
+
+			snap_trace("  %s: CXL_EVENT_DATA_STORAGE\n", __func__);
+			snap_trace("      flags=%04x addr=%08llx dsisr=%08llx\n",
+				ds->flags, (long long)ds->addr, (long long)ds->dsisr);
+			break;
+		}
+
 		case CXL_EVENT_AFU_ERROR:
 		//case CXL_EVENT_READ_FAIL:
 		default:
