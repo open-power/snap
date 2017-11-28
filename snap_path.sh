@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2016, International Business Machines
+# Copyright 2017 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,5 +19,6 @@
 # This script needs to get sourced in order to effectively change $PATH
 export SNAP_ROOT=$(dirname $(readlink -f "$BASH_SOURCE"))
 [ -f "${SNAP_ROOT}/snap_env.sh" ] && . ${SNAP_ROOT}/snap_env.sh
-export PATH=$PATH:$SNAP_ROOT/software/tools:$ACTION_ROOT/sw
+export PATH=$PATH:$SNAP_ROOT/software/tools
+[ -n "$ACTION_ROOT" ] &&  export $PATH=$PATH:$ACTION_ROOT/sw
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SNAP_ROOT/software/lib
