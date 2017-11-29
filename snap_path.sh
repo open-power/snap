@@ -20,5 +20,5 @@
 export SNAP_ROOT=$(dirname $(readlink -f "$BASH_SOURCE"))
 [ -f "${SNAP_ROOT}/snap_env.sh" ] && . ${SNAP_ROOT}/snap_env.sh
 export PATH=$PATH:$SNAP_ROOT/software/tools
-[ -n "$ACTION_ROOT" ] &&  export $PATH=$PATH:$ACTION_ROOT/sw
+[ -n "$ACTION_ROOT" ] &&  export PATH=$PATH:$ACTION_ROOT/sw
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SNAP_ROOT/software/lib
