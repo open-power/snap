@@ -256,7 +256,7 @@ static bool decode_action(uint32_t atype)
 	int md_size = sizeof(snap_actions)/sizeof(struct actions_tab);
 
 	for (i = 0; i < md_size; i++) {
-		if (atype == snap_actions[i].dev1) {
+		if (atype >= snap_actions[i].dev1) {
 			if (atype <= snap_actions[i].dev2) {
 				VERBOSE1("%s %s\n", snap_actions[i].vendor,
 						snap_actions[i].description);
