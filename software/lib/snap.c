@@ -125,14 +125,14 @@ static int snap_map_funcs(struct snap_card *card,
 			  snap_action_type_t action_type);
 
 /*	Get Time in msec */
-static unsigned int tget_ms(void)
+static unsigned long tget_ms(void)
 {
 	struct timeval now;
-	unsigned int tms;
+	unsigned long tms;
 
 	gettimeofday(&now, NULL);
-	tms = (unsigned int)(now.tv_sec * 1000) +
-		(unsigned int)(now.tv_usec / 1000);
+	tms = (unsigned long)(now.tv_sec * 1000) +
+		(unsigned long)(now.tv_usec / 1000);
 	return tms;
 }
 
@@ -425,7 +425,8 @@ static struct snap_action *hw_attach_action(struct snap_card *card,
 	uint32_t mode;
 	uint32_t sat = INVALID_SAT;     /* Invalid short Action type */
 	int maid;                       /* Max Acition Id's */
-	int t0, dt;
+	unsigned long t0;               /* Time in msec */
+	int dt;
 	struct snap_action *action = NULL;
 
 	if (card == NULL) {
@@ -517,7 +518,7 @@ static struct snap_action *hw_attach_action(struct snap_card *card,
 				rc = 0;
 				break;
 			}
-			dt = tget_ms() - t0;
+			dt = (int)(tget_ms() - t0);
 		}
 	}
 	/* Return Pointer if all went well */
@@ -772,7 +773,8 @@ int snap_action_completed(struct snap_action *action, int *rc, int timeout)
 	int _rc = 0;
 	uint32_t action_data = 0;
 	struct snap_card *card = (struct snap_card *)action;
-	int t0, dt, timeout_ms;
+	unsigned long t0;
+	int dt, timeout_ms;
 
 	if (SNAP_ACTION_DONE_IRQ & card->flags) {
 		hw_wait_irq(card, timeout, SNAP_ACTION_IRQ_NUM);
@@ -789,7 +791,7 @@ int snap_action_completed(struct snap_action *action, int *rc, int timeout)
 			_rc = snap_mmio_read32(card, ACTION_CONTROL, &action_data);
 			if ((action_data & ACTION_CONTROL_IDLE) == ACTION_CONTROL_IDLE)
 				break;
-			dt = tget_ms() - t0;
+			dt = (int)(tget_ms() - t0);
 		}
 	}
 	if (rc)
