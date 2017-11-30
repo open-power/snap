@@ -257,7 +257,7 @@ static bool decode_action(uint32_t atype)
 
 	for (i = 0; i < md_size; i++) {
 		if (atype == snap_actions[i].dev1) {
-			if (snap_actions[i].dev1 == snap_actions[i].dev2) {
+			if (atype <= snap_actions[i].dev2) {
 				VERBOSE1("%s %s\n", snap_actions[i].vendor,
 						snap_actions[i].description);
 				return true;
