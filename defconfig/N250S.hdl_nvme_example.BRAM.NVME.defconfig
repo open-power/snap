@@ -1,42 +1,40 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: KERNELVERSION
-# Mon Sep 18 16:32:38 2017
+# Fri Sep 15 12:18:48 2017
 #
-# N250S is not set
-ADKU3=y
+N250S=y
+# ADKU3 is not set
 # S121B is not set
-FPGACARD="ADKU3"
+FPGACARD="N250S"
 FPGACHIP="xcku060-ffva1156-2-e"
 NUM_OF_ACTIONS=1
 # HLS_ACTION is not set
 # HDL_ACTION is not set
 # HDL_EXAMPLE is not set
-# HDL_NVME_EXAMPLE is not set
+HDL_NVME_EXAMPLE=y
 # HLS_MEMCOPY is not set
 # HLS_SPONGE is not set
 # HLS_HASHJOIN is not set
 # HLS_SEARCH is not set
 # HLS_BFS is not set
-HLS_INTERSECT=y
+# HLS_INTERSECT is not set
 # HLS_NVME_MEMCOPY is not set
 # HLS_HELLOWORLD is not set
-ENABLE_HLS_SUPPORT=y
-HLS_SUPPORT="TRUE"
+# ENABLE_HLS_SUPPORT is not set
+HLS_SUPPORT="FALSE"
 # DISABLE_SDRAM_AND_BRAM is not set
-FORCE_SDRAM_OR_BRAM=y
-FORCE_SDRAM=y
-# ENABLE_BRAM is not set
-BRAM_USED="FALSE"
-ENABLE_SDRAM=y
-SDRAM_USED="TRUE"
-ENABLE_DDR3=y
-DDR3_USED="TRUE"
+# FORCE_SDRAM_OR_BRAM is not set
+ENABLE_BRAM=y
+BRAM_USED="TRUE"
+SDRAM_USED="FALSE"
+DDR3_USED="FALSE"
 DDR4_USED="FALSE"
 ENABLE_DDRI=y
 DDRI_USED="TRUE"
 # FORCE_NVME is not set
-NVME_USED="FALSE"
+ENABLE_NVME=y
+NVME_USED="TRUE"
 # ENABLE_ILA is not set
 ILA_DEBUG="FALSE"
 # ENABLE_FACTORY is not set
