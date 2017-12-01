@@ -47,6 +47,8 @@ all_build: $(projs)
 
 $(projs): $(LIBS) $(libs)
 
+$(libs): $(LIBS)
+
 $(PSLSE_ROOT)/libcxl/libcxl.so $(SNAP_ROOT)/software/lib/libsnap.so:
 	$(MAKE) -C `dirname $@`
 
