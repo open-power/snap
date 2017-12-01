@@ -102,15 +102,15 @@ ARCHITECTURE dma OF dma IS
                            ST_WAIT_4_CTRL_UPDTAE, ST_WAIT_4_RSP_OR_BUF,
                            ST_COM_XLAT_RD_P0
                           );
-  TYPE READ_DMA_FSM_T IS (ST_FSM_ERROR, ST_IDLE,
-                          ST_DMA_READ_REQ
-                         );
   TYPE WRITE_CTRL_FSM_T IS (ST_FSM_ERROR, ST_RSP_ERROR, ST_IDLE,
                             ST_RESTART, ST_READ_RSP,
-                            ST_WAIT_4_READ_CL_LCK, ST_WAIT_4_WRITE_UNLOCK, ST_WAIT_4_CTRL_UPDTAE, ST_WAIT_4_RSP_OR_BUF,
-                            ST_COM_WRITE_NA, ST_COM_WRITE_UNLOCK, ST_COM_READ_CL_LCK,
-                            ST_COM_TOUCH
+                            ST_WAIT_4_CTRL_UPDTAE, ST_WAIT_4_RSP_OR_BUF,
+                            ST_COM_XLAT_WR_P0
                            );
+  TYPE DMA_FSM_T IS (ST_FSM_ERROR, ST_IDLE,
+                     ST_UPDATE_WRITE_BUF_READ_ADD,
+                     ST_DMA_READ_REQ, ST_DMA_WRITE_REQ
+                    );
   TYPE AH_C_FSM_T IS (ST_FSM_ERROR, ST_RSP_ERROR, ST_IDLE,
                       ST_COM_RESTART, ST_COM_INT_REQ, ST_WAIT_4_RSP,
                       ST_READ_FSM_ACTIVE, ST_WRITE_FSM_ACTIVE
@@ -123,7 +123,7 @@ ARCHITECTURE dma OF dma IS
     com         : CMD_CODES_T;                         -- Command code
     compar      : std_logic;                           -- Command code parity
     abt         : std_logic_vector(2 DOWNTO 0);        -- Command ABT
-    ea          : std_logic_vector(63 DOWNTO 7);       -- Command address
+    ea          : std_logic_vector(63 DOWNTO 6);       -- Command address
     eapar       : std_logic;                           -- Command address parity
   END RECORD AH_RWC_T;
 
@@ -131,7 +131,7 @@ ARCHITECTURE dma OF dma IS
   -- ATTRIBUTE
   ATTRIBUTE syn_encoding : string;
   ATTRIBUTE syn_encoding OF READ_CTRL_FSM_T  : TYPE IS "safe";
-  ATTRIBUTE syn_encoding OF READ_DMA_FSM_T   : TYPE IS "safe";
+  ATTRIBUTE syn_encoding OF DMA_FSM_T        : TYPE IS "safe";
   ATTRIBUTE syn_encoding OF WRITE_CTRL_FSM_T : TYPE IS "safe";
   ATTRIBUTE syn_encoding OF AH_C_FSM_T       : TYPE IS "safe";
 
@@ -139,7 +139,7 @@ ARCHITECTURE dma OF dma IS
   -- SIGNAL
   SIGNAL ah_c_counter_q              : integer RANGE 0 TO 255;
   SIGNAL ah_c_fsm_q                  : AH_C_FSM_T;
-  SIGNAL read_dma_fsm_q              : READ_DMA_FSM_T;
+  SIGNAL dma_fsm_q                   : DMA_FSM_T;
   SIGNAL ah_c_max_q                  : std_logic_vector(7 DOWNTO 0);
   SIGNAL ah_c_max_reached_q          : boolean;
   SIGNAL ah_c_q                      : AH_C_T;
@@ -174,6 +174,8 @@ ARCHITECTURE dma OF dma IS
   SIGNAL clt_rtag_next_q             : std_logic_vector(  5 DOWNTO  0);
   SIGNAL dma_rtag_next_q             : std_logic_vector(  5 DOWNTO  0);
   SIGNAL dma_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL dma_wtag_next_q             : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL dma_wtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL clt_rtag_p_q                : std_logic;
   SIGNAL clt_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL clt_wtag_next_q             : std_logic_vector(  5 DOWNTO  0);
@@ -189,6 +191,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL com_wtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL com_wtag_qq                 : integer RANGE 0 TO 31;
   SIGNAL dma_rreq_cnt_q              : integer RANGE 0 TO 8;
+  SIGNAL dma_wreq_cnt_q              : integer RANGE 0 TO 8;
   SIGNAL com_wtag_valid_q            : boolean;
   SIGNAL context_handle_q            : std_logic_vector(15 DOWNTO 0);
   SIGNAL dmm_e_q                     : DMM_E_T := (OTHERS => '0');
@@ -222,6 +225,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL rfifo_rd_rst_busy           : std_logic;
   SIGNAL rfifo_rdata                 : std_logic_vector(512 DOWNTO 0);
   SIGNAL rfifo_wdata                 : std_logic_vector(512 DOWNTO 0);
+  SIGNAL buf_wdata                   : std_logic_vector(1023 DOWNTO 0);
   SIGNAL rfifo_wr_rst_busy           : std_logic;
   SIGNAL rsp_rtag_next_q             : std_logic_vector(  5 DOWNTO  0);
   SIGNAL rsp_rtag_p_q                : std_logic;
@@ -239,6 +243,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL waddr_id_q                  : std_logic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
   SIGNAL waddr_q                     : std_logic_vector( 63 DOWNTO  6);
   SIGNAL wlen_q                      : std_logic_vector(  8 DOWNTO  0);
+  SIGNAL wram_raddr_q                : std_logic_vector(  5 DOWNTO  0);
   SIGNAL wr_id_valid_q               : std_logic;
   SIGNAL write_ctrl_fsm_q            : WRITE_CTRL_FSM_T;
   SIGNAL write_ctrl_q                : ARR_DMA_CTL_T;
@@ -316,7 +321,7 @@ BEGIN
           read_rsp_err_addr_q   <= (OTHERS => '0');
           read_rsp_err_addr_p_q <= '1';
           read_ctrl_fsm_q       <= ST_IDLE;
-          read_ctrl_rsp_rtag_q  <= (INACTIVE, ILLEGAL_RSP, EMPTY, CL_NOT_USED, (OTHERS => '0'), (OTHERS => '0'));
+          read_ctrl_rsp_rtag_q  <= (INACTIVE, ILLEGAL_RSP, EMPTY, EMPTY, CL_NOT_USED, (OTHERS => '0'), (OTHERS => '0'));
           read_fsm_req_q        <= NONE;
           rsp_rtag_q            <= (OTHERS => '0');
           rsp_rtag_next_q       <= "000001";
@@ -525,15 +530,11 @@ BEGIN
                 read_fsm_req_q  <= NONE;
               END IF;
 
-              ah_rc_q.ea          <= read_ctrl_q(com_rtag_v).cla;
-              ah_rc_q.eapar       <= parity_gen_odd(read_ctrl_q(com_rtag_v).cla(63 DOWNTO 7));
-
               com_rtag_valid_q   <= TRUE;
               com_rtag_q         <= com_rtag_q      + 1;
               com_rtag_next_q    <= com_rtag_next_q + 1;
               com_rtag_p_q       <= AC_PPARITH(1, com_rtag_q, com_rtag_p_q,
                                                   "000001"  , '0');
-
               ah_rc_q.valid      <= '1';
               ah_rc_q.tag        <= "000" & com_rtag_q(4 DOWNTO 0);
               ah_rc_q.tagpar     <= com_rtag_q(5) XOR com_rtag_p_q;
@@ -541,6 +542,8 @@ BEGIN
               ah_rc_q.compar     <= parity_gen_odd(ENCODE_CMD_CODES(XLAT_RD_P0));
               ah_rc_q.abt        <= "010";
 
+              ah_rc_q.ea          <= read_ctrl_q(com_rtag_v).cla;
+              ah_rc_q.eapar       <= parity_gen_odd(read_ctrl_q(com_rtag_v).cla(63 DOWNTO 6));
 
             --------------------------------------------------------------------
             -- ERROR STATES
@@ -549,7 +552,6 @@ BEGIN
             -- STATE RESPONSE ERROR
             --
             WHEN ST_RSP_ERROR =>
-
               --
               -- collect all information
               read_rsp_err_type_q  <= read_ctrl_rsp_rtag_q.rsp;
@@ -585,98 +587,9 @@ BEGIN
               dmm_e_q.read_ctrl_fsm_err <= '1';
 
           END CASE;
-
         END IF;
       END IF;
     END PROCESS read_ctrl_fsm;
-
-
-  ------------------------------------------------------------------------------
-  ------------------------------------------------------------------------------
-  -- DMA Read FSM
-  ------------------------------------------------------------------------------
-  ------------------------------------------------------------------------------
-    --
-    dma_read_fsm : PROCESS (ha_pclock)
-      VARIABLE dma_rtag_v       : integer RANGE 0 TO 31;
-      VARIABLE dma_rtag_next_v  : integer RANGE 0 TO 31;
-    BEGIN
-      IF (rising_edge(ha_pclock)) THEN
-        IF afu_reset = '1' THEN
-          read_dma_fsm_q  <= ST_IDLE;
-          dma_rreq_cnt_q  <= 0;
-          dma_rtag_q      <= (OTHERS => '0');
-          dma_rtag_next_q <= "000001";
-          dh_d_q          <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), 
-                              '0', (OTHERS => '0'), (OTHERS => '0'));
-        ELSE
-          --
-          -- defaults
-          --
-          dma_rreq_cnt_q    <= dma_rreq_cnt_q;
-          dma_rtag_v        := to_integer(unsigned(dma_rtag_q     (4 DOWNTO 0)));
-          dma_rtag_next_v   := to_integer(unsigned(dma_rtag_next_q(4 DOWNTO 0)));
-          dh_d_q          <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), 
-                              '0', (OTHERS => '0'), (OTHERS => '0'));
-          
-          --
-          -- F S M
-          --
-          CASE read_dma_fsm_q IS
-            --
-            -- STATE IDLE
-            --
-            WHEN ST_IDLE =>
-              IF read_ctrl_q(dma_rtag_v).buf = XLAT_DONE  THEN
-                read_dma_fsm_q <= ST_DMA_READ_REQ;
-              END IF;
-          
-              IF hd_s_i.utag_valid = '1' THEN
-                dma_rreq_cnt_q <= dma_rreq_cnt_q - 1;
-              END IF;
-              
-            --------------------------------------------------------------------
-            -- COMMAND STATES
-            --------------------------------------------------------------------
-            --
-            -- STATE COMMAND: DMA READ REQUEST
-            --
-            WHEN ST_DMA_READ_REQ =>
-              IF dma_rreq_cnt_q < 8 THEN
-                IF read_ctrl_q(dma_rtag_next_v).buf = XLAT_DONE  THEN
-                  read_dma_fsm_q <= ST_DMA_READ_REQ;
-                ELSE
-                  read_dma_fsm_q <= ST_IDLE;
-                END IF;
-
-                --
-                -- send out the DMA request
-                --
-                dma_rtag_q      <= dma_rtag_q      + 1;
-                dma_rtag_next_q <= dma_rtag_next_q + 1;
-                dh_d_q.valid    <= '1';
-                dh_d_q.req_utag <= "0000" & dma_rtag_q;
-                dh_d_q.req_itag <= read_ctrl_q(dma_rtag_v).itag;
-                dh_d_q.req_type <= "000";
-                dh_d_q.size     <= std_logic_vector(to_unsigned(128, 10));
-
-                IF hd_s_i.utag_valid /= '1' THEN
-                  dma_rreq_cnt_q <=   dma_rreq_cnt_q + 1;
-                END IF;
-              ELSIF hd_s_i.utag_valid = '1' THEN              
-                  dma_rreq_cnt_q <=   dma_rreq_cnt_q - 1;
-              END IF;
-              
-            --
-            -- STATE FSM ERROR
-            --
-            WHEN ST_FSM_ERROR =>
-
-          END CASE;
-
-        END IF;
-      END IF;
-    END PROCESS dma_read_fsm;
 
 
   ------------------------------------------------------------------------------
@@ -685,31 +598,33 @@ BEGIN
   --
   -- Content: 32x(com   1    -- command valid bit
   --              rsp   4    -- response codes
+  --              dma   2    -- psl dma control
   --              buf   2    -- dma buffer status
   --              clt   3    -- cache line type
-  --              cla   57   -- cache line address
+  --              cla   58   -- cache line address
   --
   -- Indication:
-  --                               |    COM   |     RSP     |  BUF      | CLT
-  --  ===============================================================================
-  --  1)tag is free and the        | INACTIVE | ILLEGAL_RSP | EMPTY     | CL_NOT_USED
-  --    buffer is empty            |          |             |           |
-  --                               |          |             |           |
-  --  2)request a complete CL      | INACTIVE | ILLEGAL_RSP | EMPTY     | COMPLETE
-  --                               |          |             |           |
-  --  3)command active             | ACTIVE   | ILLEGAL_RSP | EMPTY     | COMPLETE
-  --                               |          |             |           |
-  --  4)received response from HA  | INACTIVE | HA_RSP_CODE | EMPTY     | COMPLETE
-  --                               |          |             |           |
-  --  5)response DONE and the ITAG | INACTIVE | ILLEGAL_RSP | XLAT_DONE | COMPLETE
-  --    is available               |          |             |           |
-  --                               |          |             |           |
-  --  6)PSL have resived the DMA   | INACTIVE | ILLEGAL_RSP | REQ_DONE  | COMPLETE
-  --    request                    |          |             |           |
-  --                               |          |             |           |
-  --  7)DMA request DONE and DATA  | INACTIVE | ILLEGAL_RSP | FULL      | COMPLETE
-  --    available, ready to read   |          |             |           |
- --
+  --                               |    COM   |     RSP     |  BUF  | DMA       |  CLT
+  --  ========================================================================================
+  --  1)tag is free and the        | INACTIVE | ILLEGAL_RSP | EMPTY | EMPTY     |  CL_NOT_USED
+  --    buffer is empty            |          |             |       |           | 
+  --                               |          |             |       |           | 
+  --  2)reserve buffer space       | INACTIVE | ILLEGAL_RSP | EMPTY | EMPTY     |  COMPLETE
+  --                               |          |             |       |           | 
+  --  3)request a xlat for this CL | ACTIVE   | ILLEGAL_RSP | EMPTY | EMPTY     |  COMPLETE
+  --                               |          |             |       |           | 
+  --  4)received xlat response     | INACTIVE | HA_RSP_CODE | EMPTY | EMPTY     |  COMPLETE
+  --    from HA                    |          |             |       |           | 
+  --                               |          |             |       |           | 
+  --  5)response DONE and the ITAG | INACTIVE | ILLEGAL_RSP | EMPTY | XLAT_DONE |  COMPLETE
+  --    is available, request data |          |             |       |           | 
+  --                               |          |             |       |           | 
+  --  6)PSL have accept the DMA    | INACTIVE | ILLEGAL_RSP | EMPTY | REQ_DONE  |  COMPLETE
+  --    request                    |          |             |       |           | 
+  --                               |          |             |       |           | 
+  --  7)DMA request DONE and DATA  | INACTIVE | ILLEGAL_RSP | FULL  | EMPTY     |  COMPLETE
+  --    available, ready to read   |          |             |       |           | 
+  --
   --
   -- Flow Control:
   --    steps                  | read_ctrl_q          |  H<->A Interface
@@ -717,7 +632,7 @@ BEGIN
   --    1) rlen > 1 CL AND     | clt=COMPLETE         |
   --       clt  = CL_NOT_USED  |                      |
   --                           |                      |
-  --    2)                     | com=ACTIVE           |  READ COMMAND VALID
+  --    2)                     | com=ACTIVE           |  READ XLAT COMMAND VALID
   --                           | rsp=ILLEGAL_RSP      |
   --                           |                      |
   --    3) response from PSL   | rsp=ha_r_q.response  |  RSP VALID
@@ -728,7 +643,7 @@ BEGIN
   --                           |                      |
   --    5) hd_s.valid = '1'    | dma=REQ_DONE         | PSL accept the request
   --                           |                      |
-  --    6) hd_s.valid = '1'    | dma=FULL             | DATA are available
+  --    6) hd_c.valid = '1'    | dma=FULL             | DATA are available
   --                           |                      |
   --    7) 1 CL reads out of   | buf=EMPTY            |
   --       the dma_buffer      |                      |
@@ -748,7 +663,7 @@ BEGIN
           -- initial values
           --
           FOR i IN 0 TO 31 LOOP
-            read_ctrl_q(i) <= (INACTIVE, ILLEGAL_RSP, EMPTY, CL_NOT_USED, (OTHERS => '0'), (OTHERS => '0'));
+            read_ctrl_q(i) <= (INACTIVE, ILLEGAL_RSP, EMPTY, EMPTY, CL_NOT_USED, (OTHERS => '0'), (OTHERS => '0'));
           END LOOP;  -- i
 
           buf_rdata_e_q      <= '0';
@@ -824,7 +739,7 @@ BEGIN
 
             --
             -- CL Read Address
-            read_ctrl_q(clt_rtag_v).cla   <= raddr_q(63 DOWNTO 7);
+            read_ctrl_q(clt_rtag_v).cla   <= raddr_q(63 DOWNTO 6);
 
             --
             -- calculate the next read address and the read cache length
@@ -887,21 +802,24 @@ BEGIN
           -- RSP: READ_CTRL_FSM_Q HAS READ THE RESPONSE
           --
           IF rsp_rtag_valid_q = TRUE THEN
-            read_ctrl_q(rsp_rtag_qq).buf <= XLAT_DONE;
+            read_ctrl_q(rsp_rtag_qq).dma <= XLAT_DONE;
             read_ctrl_q(rsp_rtag_qq).rsp <= ILLEGAL_RSP;
           END IF;
           
           --
-          -- BUF: DMA REQ was accepted by the PSL
+          -- DMA: DMA TAG ACCEPT the REQUEST
           --
-          IF hd_s_i.utag_valid = '1' THEN
-            read_ctrl_q(to_integer(unsigned(hd_s_i.utag(4 DOWNTO 0)))).buf <= REQ_DONE;
+          IF (hd_s_i.utag_valid       = '1'    ) AND 
+             (hd_s_i.utag(9 DOWNTO 5) = "00000") THEN
+            read_ctrl_q(to_integer(unsigned(hd_s_i.utag(4 DOWNTO 0)))).dma <= REQ_DONE;
           END IF;
 
           --
-          -- BUF: DMA TAG is valid
+          -- BUF: Buffer is valid
           --
-          IF hd_c_i.valid = '1' THEN
+          IF (hd_c_i.valid            = '1'    ) AND 
+             (hd_c_i.utag(9 DOWNTO 5) = "00000") THEN
+            read_ctrl_q(to_integer(unsigned(hd_c_i.utag(4 DOWNTO 0)))).dma <= EMPTY;
             read_ctrl_q(to_integer(unsigned(hd_c_i.utag(4 DOWNTO 0)))).buf <= FULL;
           END IF;
 
@@ -962,7 +880,7 @@ BEGIN
           rsp_wtag_q             <= (OTHERS => '0');
           rsp_wtag_valid_q       <= FALSE;
           write_ctrl_fsm_q       <= ST_IDLE;
-          write_ctrl_rsp_wtag_q  <= (INACTIVE, ILLEGAL_RSP, EMPTY, CL_NOT_USED, (OTHERS => '0'), (OTHERS => '0'));
+          write_ctrl_rsp_wtag_q  <= (INACTIVE, ILLEGAL_RSP, EMPTY, EMPTY, CL_NOT_USED, (OTHERS => '0'), (OTHERS => '0'));
           write_fsm_req_q        <= NONE;
           write_rsp_err_addr_p_q <= '1';
           write_rsp_err_addr_q   <= (OTHERS => '0');
@@ -1055,12 +973,7 @@ BEGIN
               IF com_active_v = FALSE THEN
                 IF (write_fsm_req_q = COMMAND) THEN
                   IF (ah_c_wgate_q = OPENED) THEN
-                    IF (write_ctrl_q(com_wtag_v).clt(EVEN_64B_CL) = '1') AND
-                       (write_ctrl_q(com_wtag_v).clt(ODD_64B_CL)  = '1') THEN
-                      write_ctrl_fsm_q <= ST_COM_WRITE_NA;
-                    ELSE
-                      write_ctrl_fsm_q <= ST_COM_READ_CL_LCK;
-                    END IF;
+                    write_ctrl_fsm_q <= ST_COM_XLAT_WR_P0;
                   END IF;
                 ELSE
                   write_fsm_req_q  <= RESTART;
@@ -1094,18 +1007,12 @@ BEGIN
               -- process current response
               --
               IF write_ctrl_rsp_wtag_q.rsp = DONE THEN
-                IF (write_ctrl_rsp_wtag_q.clt(EVEN_64B_CL) = '1') AND
-                   (write_ctrl_rsp_wtag_q.clt(ODD_64B_CL)  = '1') THEN
-                  rsp_wtag_valid_q <= TRUE;
-                  rsp_wtag_q       <= rsp_wtag_q      + 1;
-                  rsp_wtag_next_q  <= rsp_wtag_next_q + 1;
-                  rsp_wtag_p_q     <= AC_PPARITH(1, rsp_wtag_q, rsp_wtag_p_q,
-                                                    "000001"  , '0');
-                ELSE
-                  write_ctrl_fsm_q <= ST_COM_READ_CL_LCK;
-                END IF;
-
-              ELSIF (write_ctrl_rsp_wtag_q.rsp = AERROR ) OR
+                rsp_wtag_valid_q <= TRUE;
+                rsp_wtag_q       <= rsp_wtag_q      + 1;
+                rsp_wtag_next_q  <= rsp_wtag_next_q + 1;
+                rsp_wtag_p_q     <= AC_PPARITH(1, rsp_wtag_q, rsp_wtag_p_q,
+                                                  "000001"  , '0');
+              ELSIF (write_ctrl_rsp_wtag_q.rsp = AERROR) OR
                     (write_ctrl_rsp_wtag_q.rsp = DERROR ) OR
                     (write_ctrl_rsp_wtag_q.rsp = FAILED ) OR
                     (write_ctrl_rsp_wtag_q.rsp = CONTEXT) THEN
@@ -1119,46 +1026,10 @@ BEGIN
             -- WAIT STATES
             --------------------------------------------------------------------
             --
-            -- STATE WAIT: READ CACHE LINE LOCK
-            --
-            WHEN ST_WAIT_4_READ_CL_LCK =>
-              IF (ha_r_q.valid           = '1'  ) AND
-                 (ha_r_q.tag(7 DOWNTO 0) = x"20") THEN
-                IF (ha_r_q.response      = DONE) THEN
-                  write_ctrl_fsm_q <= ST_COM_WRITE_UNLOCK;
-                ELSE
-                  write_ctrl_fsm_q <= ST_RESTART;
-                END IF;
-              END IF;
-
-            --
-            --
-            -- STATE WAIT: FOR crtl register update
+            -- STATE WAIT: FOR ctrl register update
             --
             WHEN ST_WAIT_4_CTRL_UPDTAE =>
                 write_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
-
-            --
-            -- STATE WAIT: WRITE UNLOCK
-            --
-            WHEN ST_WAIT_4_WRITE_UNLOCK =>
-              IF (ha_r_q.valid           = '1'  ) AND
-                 (ha_r_q.tag(7 DOWNTO 5) = "101") THEN
-                IF (ha_r_q.response      = DONE) THEN
-                  write_ctrl_fsm_q  <= ST_WAIT_4_RSP_OR_BUF;
-                  rsp_wtag_valid_q  <= TRUE;
-                  rsp_wtag_q        <= rsp_wtag_q      + 1;
-                  rsp_wtag_next_q   <= rsp_wtag_next_q + 1;
-                  rsp_wtag_p_q      <= AC_PPARITH(1, rsp_wtag_q, rsp_wtag_p_q,
-                                                     "000001"  , '0');
-                  com_wtag_q        <= com_wtag_q      + 1;
-                  com_wtag_next_q   <= com_wtag_next_q + 1;
-                  com_wtag_p_q      <= AC_PPARITH(1, com_wtag_q, com_wtag_p_q,
-                                                     "000001"  , '0');
-                ELSE
-                  write_ctrl_fsm_q <= ST_RESTART;
-                END IF;
-              END IF;
 
             --
             -- STATE WAIT: FOR RESPONSE OR BUFFER
@@ -1182,24 +1053,10 @@ BEGIN
                 write_fsm_req_q  <= COMMAND;
 
                 --
-                -- trigger a full CL transfer
+                -- trigger a full CL XLAT
                 IF (ah_c_wgate_q    = OPENED ) AND
                    (write_fsm_req_q = COMMAND) THEN
-                  --
-                  -- check if the "full buffer" is  a COMPLETE_DATA or PARTIAL_DATA
-                  --
-                  IF (write_ctrl_q(com_wtag_v).clt(EVEN_64B_CL) = '1') AND
-                     (write_ctrl_q(com_wtag_v).clt(ODD_64B_CL)  = '1') THEN
-                    write_ctrl_fsm_q <= ST_COM_WRITE_NA;
-
-                  ELSE
-                    --
-                    -- check that all responses are processed
-                    IF rsp_wtag_q = com_wtag_q THEN
-                      write_fsm_req_q  <= COMMAND;
-                      write_ctrl_fsm_q <= ST_COM_READ_CL_LCK;
-                    END IF;
-                  END IF;
+                  write_ctrl_fsm_q <= ST_COM_XLAT_WR_P0;
                 END IF;
 
               -- READ FSM AH_C_FSM detects a response error
@@ -1227,65 +1084,12 @@ BEGIN
             -- COMMAND STATES
             --------------------------------------------------------------------
             --
-            -- STATE COMMAND: TOUCH
+            -- STATE COMMAND: XLAT_WR_P0
             --
-            WHEN ST_COM_TOUCH =>
-
-              write_ctrl_fsm_q  <= ST_WAIT_4_RSP_OR_BUF;
-              write_fsm_req_q   <= NONE;
-
-              ah_wc_q.valid    <= '1';
-              ah_wc_q.abt      <= "011";
-
-            --
-            -- STATE COMMAND: READ_CL_LCK
-            --
-            WHEN ST_COM_READ_CL_LCK =>
-              IF (ah_c_wgate_q = OPENED) THEN
-                write_ctrl_fsm_q <= ST_WAIT_4_READ_CL_LCK;
-                write_fsm_req_q  <= NONE;
-
-                ah_wc_q.valid  <= '1';
-                ah_wc_q.tag    <= x"20";
-                ah_wc_q.tagpar <= '0';
-                ah_wc_q.com    <= READ_CL_NA;
-                ah_wc_q.compar <= parity_gen_odd(ENCODE_CMD_CODES(READ_CL_NA));
-                ah_wc_q.abt    <= "010";
-                ah_wc_q.ea     <= write_ctrl_q(com_wtag_v).cla;
-                ah_wc_q.eapar  <= parity_gen_odd(write_ctrl_q(com_wtag_v).cla(63 DOWNTO 7));
-
-              END IF;
-
-            --
-            -- STATE COMMAND: WRITE_UNLOCK
-            --
-            WHEN ST_COM_WRITE_UNLOCK =>
-
-              write_fsm_req_q <= COMMAND;
-
-              IF (ah_c_wgate_q = OPENED) THEN
-                write_ctrl_fsm_q <= ST_WAIT_4_WRITE_UNLOCK;
-                write_fsm_req_q  <= NONE;
-
-                ah_wc_q.valid  <= '1';
-                ah_wc_q.tag    <= "101" & rsp_wtag_q(4 DOWNTO 0);
-                ah_wc_q.tagpar <= rsp_wtag_q(5) XOR rsp_wtag_p_q;
-                ah_wc_q.com    <= WRITE_NA;
-                ah_wc_q.compar <= parity_gen_odd(ENCODE_CMD_CODES(WRITE_NA));
-                ah_wc_q.abt    <= "010";
-                ah_wc_q.ea     <= write_ctrl_q(com_wtag_v).cla;
-                ah_wc_q.eapar  <= parity_gen_odd(write_ctrl_q(com_wtag_v).cla(63 DOWNTO 7));
-              END IF;
-
-            --
-            -- STATE COMMAND: WRITE_NA
-            --
-            WHEN ST_COM_WRITE_NA =>
-              IF (ah_c_wgate_q                                    = OPENED    ) AND
-                 (write_ctrl_q(com_wtag_next_v).clt(EVEN_64B_CL)  = '1'       ) AND
-                 (write_ctrl_q(com_wtag_next_v).clt(ODD_64B_CL)   = '1'       ) AND
-                 (com_wtag_next_q                                /= buf_wtag_q) THEN
-                write_ctrl_fsm_q <= ST_COM_WRITE_NA;
+            WHEN ST_COM_XLAT_WR_P0 =>
+              IF (ah_c_wgate_q     = OPENED    ) AND
+                 (com_wtag_next_q /= buf_wtag_q) THEN
+                write_ctrl_fsm_q <= ST_COM_XLAT_WR_P0;
               ELSE
                 write_ctrl_fsm_q <= ST_WAIT_4_CTRL_UPDTAE;
                 write_fsm_req_q  <= NONE;
@@ -1300,11 +1104,12 @@ BEGIN
               ah_wc_q.valid     <= '1';
               ah_wc_q.tag       <= "100" & com_wtag_q(4 DOWNTO 0);
               ah_wc_q.tagpar    <= NOT (com_wtag_q(5) XOR com_wtag_p_q);
-              ah_wc_q.com       <= WRITE_NA;
-              ah_wc_q.compar    <= parity_gen_odd(ENCODE_CMD_CODES(WRITE_NA));
+              ah_wc_q.com       <= XLAT_WR_P0;
+              ah_wc_q.compar    <= parity_gen_odd(ENCODE_CMD_CODES(XLAT_WR_P0));
               ah_wc_q.abt       <= "010";
+              
               ah_wc_q.ea        <= write_ctrl_q(com_wtag_v).cla;
-              ah_wc_q.eapar     <= parity_gen_odd(write_ctrl_q(com_wtag_v).cla(63 DOWNTO 7));
+              ah_wc_q.eapar     <= parity_gen_odd(write_ctrl_q(com_wtag_v).cla(63 DOWNTO 6));
 
             --------------------------------------------------------------------
             -- ERROR STATES
@@ -1347,7 +1152,6 @@ BEGIN
               dmm_e_q.write_ctrl_fsm_err <= '1';
 
           END CASE;
-
         END IF;
       END IF;
     END PROCESS write_ctrl_fsm;
@@ -1359,44 +1163,55 @@ BEGIN
   --
   -- Content: 32x(com   1    -- command valid bit
   --              rsp   4    -- response codes
-  --              buf   1    -- buffer valid bit
+  --              buf   2    -- buffer valid bit
+  --              dma   2    -- psl dma control
   --              clt   3    -- cache line type
-  --              cla   57   -- cache line address
+  --              cla   58   -- cache line address
   --
   -- Indication:
-  --                               |    COM   |     RSP     |  buf  | CLT
-  --  =========================================================================
-  --  1) tag and buffer are free   | INACTIVE | ILLEGAL_RSP | EMPTY | CL_NOT_USED
-  --     ready to fill up          |          |             |       |
-  --  2) request a complete CL     | INACTIVE | ILLEGAL_RSP | EMPTY | COMPLETE
-  --                               |          |             |       |
-  --  3) CL in buffer, ready to    | INACTIVE | ILLEGAL_RSP | FULL  | COMPLETE
-  --     write                     |          |             |       |
-  --  4) request a write CL        | ACTIVE   | ILLEGAL_RSP | FULL  | COMPLETE
-  --                               |          |             |       |
-  --  5) received response from HA | INACTIVE | HA_RSP_CODE | FULL  | COMPLETE
-  --                               |          |             |       |
-  --  *)special state, see comments| INACTIVE | ILLEGAL_RSP | FULL  | CL_NOT_USED
-  --    in ST_WAIT_4_RSP_OR_BUF    |          |             |       |
+  --                               |    COM   |     RSP     |  BUF  | DMA       | CLT
+  --  =====================================================================================
+  --  1)tag and buffer are free    | INACTIVE | ILLEGAL_RSP | EMPTY | EMPTY     | CL_NOT_USED
+  --    ready to fill up           |          |             |       |           |
+  --                               |          |             |       |           |
+  --  2)reserve buffer space       | INACTIVE | ILLEGAL_RSP | EMPTY | EMPTY     | COMPLETE
+  --                               |          |             |       |           |
+  --  3)data in buffer, ready to   | INACTIVE | ILLEGAL_RSP | FULL  | EMPTY     | COMPLETE
+  --    write                      |          |             |       |           |
+  --                               |          |             |       |           |
+  --  4)request a xlat for this CL | ACTIVE   | ILLEGAL_RSP | FULL  | EMPTY     | COMPLETE
+  --                               |          |             |       |           |
+  --  5)received xlat response     | INACTIVE | HA_RSP_CODE | FULL  | EMPTY     |  COMPLETE
+  --    from HA                    |          |             |       |           | 
+  --                               |          |             |       |           | 
+  --  6)response DONE and the ITAG | INACTIVE | ILLEGAL_RSP | FULL  | XLAT_DONE |  COMPLETE
+  --    is available, write data   |          |             |       |           | 
+  --                               |          |             |       |           | 
+  --  7)DMA accept the write Data  | INACTIVE | ILLEGAL_RSP | EMPTY | EMPTY     | CL_NOT_USED
   --
-  -- Flow Control:
+  --
+  -- Flow Control:                                                    
   --    steps                  | write_ctrl_q         |  H<->A Interface
   --  ==========================================================================
-  --    1) wclen > 1 CL AND    | clt=COMPLETE         |
-  --       clt  = CL_NOT_USED  |                      |
+  --    1) wclen > 1 CL AND    | clt=COMPLETE         |               
+  --       clt  = CL_NOT_USED  |                      |                           
   --                           |                      |
   --    2) 128 bytes written   | buf=FULL             |
   --       into DMAW           |                      |
   --                           |                      |
-  --    3) buf = FULL          | com=ACTIVE           |  WRITE COMMAND VALID
+  --    3) buf = FULL          | com=ACTIVE           |  WRITE XLAT COMMAND VALID
   --                           | rsp=ILLEGAL_RSP      |
   --                           |                      |
   --    4) response from PSL   | rsp=ha_r_q.response  |  RSP VALID
   --                           | com=INACTIVE         |
   --                           |                      |
   --    5) rsp = DONE          | rsp=ILLEGAL_RSP      |
-  --                           | buf=EMPTY            |
-  --                           | clt=CL_NOT_USED      |
+  --                           | dma=XLAT_DONE        |
+  --                           |                      |
+  --    6) hd_s.valid = '1'    | dma=REQ_DONE         | PSL accept the request
+  --                           |                      |
+  --    7) buffer ready for    | buf=EMPTY            |
+  --       reuse               |                      |
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
     --
@@ -1414,7 +1229,7 @@ BEGIN
           -- initial values
           --
           FOR i IN 0 TO 31 LOOP
-            write_ctrl_q(i)     <= (INACTIVE, ILLEGAL_RSP, EMPTY, CL_NOT_USED, (OTHERS => '0'), (OTHERS => '0'));
+            write_ctrl_q(i)     <= (INACTIVE, ILLEGAL_RSP, EMPTY, EMPTY, CL_NOT_USED, (OTHERS => '0'), (OTHERS => '0'));
           END LOOP;  -- i
 
           buf_wfull_cnt_q       <= 0;
@@ -1497,7 +1312,7 @@ BEGIN
             
             --
             -- CL Write Address
-            write_ctrl_q(clt_wtag_v).cla   <= waddr_q(63 DOWNTO 7);
+            write_ctrl_q(clt_wtag_v).cla   <= waddr_q(63 DOWNTO 6);
 
             --
             -- calculate the next read address and the read cache length
@@ -1553,8 +1368,11 @@ BEGIN
               write_ctrl_q(buf_wtag_v).clt(EVEN_64B_CL) <= '0';
             END IF;
    
-            
-            IF rsp_wtag_valid_q = FALSE THEN
+
+            IF (hd_s_i.utag_valid       = '1'    ) AND 
+               (hd_s_i.utag(9 DOWNTO 5) = "00100") THEN
+              buf_wfull_cnt_q <= buf_wfull_cnt_q;
+            ELSE
               buf_wfull_cnt_q <= buf_wfull_cnt_q + 1;
             END IF;
           END IF;
@@ -1574,8 +1392,9 @@ BEGIN
             --
             -- write tag is valid
             IF (ha_r_q.tag(7 DOWNTO 5) = "100") THEN
-              write_ctrl_q(ha_r_tag_v).com <= INACTIVE;
-              write_ctrl_q(ha_r_tag_v).rsp <= ha_r_q.response;
+              write_ctrl_q(ha_r_tag_v).com  <= INACTIVE;
+              write_ctrl_q(ha_r_tag_v).rsp  <= ha_r_q.response;
+              write_ctrl_q(ha_r_tag_v).itag <= ha_r_q.ditag;              
             END IF;
           END IF;
 
@@ -1590,9 +1409,18 @@ BEGIN
               wr_id_valid_q <= '1';
             END IF;
 
+            write_ctrl_q(rsp_wtag_qq).dma <= XLAT_DONE;
             write_ctrl_q(rsp_wtag_qq).rsp <= ILLEGAL_RSP;
-            write_ctrl_q(rsp_wtag_qq).buf <= EMPTY;
-            write_ctrl_q(rsp_wtag_qq).clt <= CL_NOT_USED;
+          END IF;
+
+          --
+          -- BUF: DMA TAG is valid
+          --
+          IF (hd_s_i.utag_valid       = '1'    ) AND 
+             (hd_s_i.utag(9 DOWNTO 5) = "00100") THEN
+            write_ctrl_q(to_integer(unsigned(hd_s_i.utag(4 DOWNTO 0)))).dma <= EMPTY;
+            write_ctrl_q(to_integer(unsigned(hd_s_i.utag(4 DOWNTO 0)))).buf <= EMPTY;
+            write_ctrl_q(to_integer(unsigned(hd_s_i.utag(4 DOWNTO 0)))).clt <= CL_NOT_USED;
 
             IF buf_wtag_valid_q = FALSE THEN
               buf_wfull_cnt_q <= buf_wfull_cnt_q -1;
@@ -1626,6 +1454,201 @@ BEGIN
         END IF;
       END IF;
     END PROCESS write_ctrl_reg;
+
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- ******************************************************
+-- ***** PSL DMA INTERFACE                          *****
+-- ******************************************************
+--
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- DMA FSM
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+    --
+    --
+    --
+    dma_fsm : PROCESS (ha_pclock)
+      VARIABLE dma_rtag_v       : integer RANGE 0 TO 31;
+      VARIABLE dma_rtag_next_v  : integer RANGE 0 TO 31;
+      VARIABLE dma_wtag_v       : integer RANGE 0 TO 31;
+      VARIABLE dma_wtag_next_v  : integer RANGE 0 TO 31;
+    BEGIN
+      IF (rising_edge(ha_pclock)) THEN
+        IF afu_reset = '1' THEN
+          dma_fsm_q       <= ST_IDLE;
+
+          dma_rtag_q      <= (OTHERS => '0');
+          dma_rtag_next_q <= "000001";
+
+          dma_wtag_q      <= (OTHERS => '0');
+          dma_wtag_next_q <= "000001";
+
+          dh_d_q          <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), 
+                              '0', (OTHERS => '0'), (OTHERS => '0'));
+        ELSE
+          --
+          -- defaults
+          --
+          dma_rtag_v        := to_integer(unsigned(dma_rtag_q     (4 DOWNTO 0)));
+          dma_rtag_next_v   := to_integer(unsigned(dma_rtag_next_q(4 DOWNTO 0)));
+
+          dma_wtag_v        := to_integer(unsigned(dma_wtag_q     (4 DOWNTO 0)));
+          dma_wtag_next_v   := to_integer(unsigned(dma_wtag_next_q(4 DOWNTO 0)));
+
+          dh_d_q          <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), 
+                              '0', (OTHERS => '0'), (OTHERS => '0'));
+
+          wram_raddr_q <= dma_wtag_q(4 DOWNTO 0) & '0';
+
+          --
+          -- F S M
+          --
+          CASE dma_fsm_q IS
+            --
+            -- STATE IDLE
+            --
+            WHEN ST_IDLE =>
+              IF (read_ctrl_q(dma_rtag_v).dma = XLAT_DONE) AND
+                 (dma_rreq_cnt_q              < 7        )THEN
+                dma_fsm_q <= ST_DMA_READ_REQ;
+              ELSIF  (write_ctrl_q(dma_wtag_v).dma = XLAT_DONE) AND
+                     (dma_wreq_cnt_q               < 7        )THEN
+                dma_fsm_q    <= ST_UPDATE_WRITE_BUF_READ_ADD;
+                wram_raddr_q <= wram_raddr_q + 2;
+              END IF;
+          
+            --
+            -- STATE IDLE
+            --
+            WHEN ST_UPDATE_WRITE_BUF_READ_ADD =>
+                wram_raddr_q <= wram_raddr_q + 2;
+                dma_fsm_q    <= ST_DMA_WRITE_REQ;
+                
+
+            --------------------------------------------------------------------
+            -- COMMAND STATES
+            --------------------------------------------------------------------
+            --
+            -- STATE COMMAND: DMA READ REQUEST
+            --
+            WHEN ST_DMA_READ_REQ =>
+              IF dma_rreq_cnt_q < 7 THEN
+                IF read_ctrl_q(dma_rtag_next_v).dma = XLAT_DONE  THEN
+                  dma_fsm_q <= ST_DMA_READ_REQ;
+                ELSE
+                  dma_fsm_q <= ST_IDLE;
+                END IF;
+
+                --
+                -- send out the DMA request
+                --
+                dma_rtag_q      <= dma_rtag_q      + 1;
+                dma_rtag_next_q <= dma_rtag_next_q + 1;
+
+                dh_d_q.valid    <= '1';
+                dh_d_q.req_utag <= "00000" & dma_rtag_q(4 DOWNTO 0);
+                dh_d_q.req_itag <= read_ctrl_q(dma_rtag_v).itag;
+                dh_d_q.req_type <= "000";
+                dh_d_q.size     <= std_logic_vector(to_unsigned(128, 10));
+              ELSE
+                dma_fsm_q <= ST_IDLE;
+              END IF;
+              
+            --
+            -- STATE COMMAND: DMA WRITE REQUEST
+            --
+            WHEN ST_DMA_WRITE_REQ =>
+              IF dma_wreq_cnt_q < 7 THEN
+                IF write_ctrl_q(dma_wtag_next_v).dma = XLAT_DONE  THEN
+                  dma_fsm_q <= ST_DMA_WRITE_REQ;
+                ELSE
+                  dma_fsm_q <= ST_IDLE;
+                END IF;
+
+                --
+                -- send out the DMA request
+                --
+                dma_wtag_q      <= dma_wtag_q      + 1;
+                dma_wtag_next_q <= dma_wtag_next_q + 1;
+                wram_raddr_q    <= wram_raddr_q    + 2;
+
+                dh_d_q.valid    <= '1';
+                dh_d_q.req_utag <= "00100" & dma_wtag_q(4 DOWNTO 0);
+                dh_d_q.req_itag <= write_ctrl_q(dma_wtag_v).itag;
+                dh_d_q.req_type <= "001";
+                dh_d_q.size     <= std_logic_vector(to_unsigned(128, 10));
+
+              ELSE
+                dma_fsm_q <= ST_IDLE;
+              END IF;
+              
+            --
+            -- STATE FSM ERROR
+            --
+            WHEN ST_FSM_ERROR =>
+
+          END CASE;
+        END IF;
+      END IF;
+    END PROCESS dma_fsm;
+
+    
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- MISC Logic
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+    --
+    --
+    --
+    psl_dma : PROCESS (ha_pclock)
+    BEGIN
+      IF (rising_edge(ha_pclock)) THEN
+        IF afu_reset = '1' THEN
+          dma_rreq_cnt_q <= 0;
+          dma_wreq_cnt_q <= 0;
+        ELSE
+          --
+          -- defaults
+          -- 
+          dma_rreq_cnt_q <= dma_rreq_cnt_q;
+          dma_wreq_cnt_q <= dma_wreq_cnt_q;
+
+          --
+          -- DMA Read Request Counter
+          -- 
+          IF (hd_s_i.utag_valid       = '1') AND
+             (hd_s_i.utag(9 DOWNTO 5) = "00000") THEN
+            IF dma_fsm_q /= ST_DMA_READ_REQ THEN
+              dma_rreq_cnt_q <= dma_rreq_cnt_q - 1;              
+            END IF;
+          ELSE
+            IF dma_fsm_q = ST_DMA_READ_REQ THEN
+              dma_rreq_cnt_q <= dma_rreq_cnt_q + 1;              
+            END IF;
+          END IF;
+            
+          --
+          -- DMA Write Request Counter
+          -- 
+          IF (hd_s_i.utag_valid       = '1') AND
+             (hd_s_i.utag(9 DOWNTO 5) = "00100") THEN
+            IF dma_fsm_q /= ST_DMA_WRITE_REQ THEN
+              dma_wreq_cnt_q <= dma_wreq_cnt_q - 1;              
+            END IF;
+          ELSE
+            IF dma_fsm_q = ST_DMA_WRITE_REQ THEN
+              dma_wreq_cnt_q <= dma_wreq_cnt_q + 1;              
+            END IF;
+          END IF;
+        END IF;
+      END IF;
+    END PROCESS psl_dma;
 
 
 
@@ -1795,7 +1818,7 @@ BEGIN
               ah_c_q.com                         <= ah_rc_q.com;
               ah_c_q.compar                      <= ah_rc_q.compar XOR mmd_i_q.inject_ah_c_compar_error;
               ah_c_q.abt                         <= ah_rc_q.abt;
-              ah_c_q.ea                          <= ah_rc_q.ea & "0000000";
+              ah_c_q.ea                          <= ah_rc_q.ea & "000000";
               ah_c_q.eapar                       <= ah_rc_q.eapar XOR mmd_i_q.inject_ah_c_eapar_error;
               ah_c_q.ch(CONTEXT_BITS-1 DOWNTO 0) <= rd_ctx_q;
               ah_c_q.size                        <= x"080";
@@ -1829,7 +1852,7 @@ BEGIN
               ah_c_q.com                         <= ah_wc_q.com;
               ah_c_q.compar                      <= ah_wc_q.compar XOR mmd_i_q.inject_ah_c_compar_error;
               ah_c_q.abt                         <= ah_wc_q.abt;
-              ah_c_q.ea                          <= ah_wc_q.ea & "0000000";
+              ah_c_q.ea                          <= ah_wc_q.ea & "000000";
               ah_c_q.eapar                       <= ah_wc_q.eapar XOR mmd_i_q.inject_ah_c_eapar_error;
               ah_c_q.ch(CONTEXT_BITS-1 DOWNTO 0) <= wr_ctx_q;
               ah_c_q.size                        <= x"080";
@@ -1959,17 +1982,17 @@ BEGIN
       --
       -- PSL IOs
       hd_c_i                   => hd_c_i,
-      ha_b_i                   => ha_b_i,
-      ah_b_o                   => ah_b_o,
       --
       -- DMA WRITE IOs
       write_ctrl_i             => write_ctrl_q,
       sd_d_i                   => sd_d_i,
+      buf_walmost_full_i       => buf_walmost_full_qqq,
+      wram_raddr_i             => wram_raddr_q,
       buf_wtag_o               => buf_wtag_q,
       buf_wtag_p_o             => buf_wtag_p_q,
       buf_wtag_cl_partial_o    => buf_wtag_cl_partial_q,
       buf_wtag_valid_o         => buf_wtag_valid_q,
-      buf_walmost_full_i       => buf_walmost_full_qqq,
+      buf_wdata_o              => buf_wdata,
       --
       -- DMA READ IOs
       read_ctrl_i              => read_ctrl_q,
@@ -1985,12 +2008,7 @@ BEGIN
       -- Error Inject
       inject_dma_read_error_i  => mmd_i_q.inject_dma_read_error,
       inject_dma_write_error_i => mmd_i_q.inject_dma_write_error,
-      inject_ah_b_rpar_error_i => mmd_i_q.inject_ah_b_rpar_error,
-      --
-      -- Error Checker
-      ha_b_rtag_err_o        => dmm_e_q.ha_b_rtag_err,
-      ha_b_wtag_err_o        => dmm_e_q.ha_b_wtag_err,
-      ha_b_wdata_err_o       => dmm_e_q.ha_b_wdata_err
+      inject_ah_b_rpar_error_i => mmd_i_q.inject_ah_b_rpar_error
     );
 
     dmm_e_q.write_data_p_err <= '0';
@@ -2040,9 +2058,6 @@ BEGIN
   assert dmm_e_q.write_ctrl_q_err   = '0' report "FIR: DMA write control register error" severity FIR_MSG_LEVEL;
   assert dmm_e_q.ha_r_tag_err       = '0' report "FIR: HA_R tag parity error" severity FIR_MSG_LEVEL;
   assert dmm_e_q.ha_r_code_err      = '0' report "FIR: HA_R code error" severity FIR_MSG_LEVEL;
-  assert dmm_e_q.ha_b_rtag_err      = '0' report "FIR: HA_B read tag parity error" severity FIR_MSG_LEVEL;
-  assert dmm_e_q.ha_b_wtag_err      = '0' report "FIR: HA_B write tag parity error" severity FIR_MSG_LEVEL;
-  assert dmm_e_q.ha_b_wdata_err     = '0' report "FIR: HA_B write data parity error" severity FIR_MSG_LEVEL;
   assert dmm_e_q.aln_read_fsm_err   = '0' report "FIR: DMA aligner read fsm error" severity FIR_MSG_LEVEL;
   assert dmm_e_q.aln_write_fsm_err  = '0' report "FIR: DMA aligner write fsm error" severity FIR_MSG_LEVEL;
   assert dmm_e_q.sd_p_err           = '0' report "FIR: AXI SLAVE parity error" severity FIR_MSG_LEVEL;
@@ -2322,7 +2337,14 @@ BEGIN
     --
     -- PSL AH_C CONNECTION
     --
-    dh_d_o <= dh_d_q;
+    dh_d_o.valid     <= dh_d_q.valid;
+    dh_d_o.req_utag  <= dh_d_q.req_utag;
+    dh_d_o.req_itag  <= dh_d_q.req_itag;
+    dh_d_o.req_type  <= dh_d_q.req_type;
+    dh_d_o.atomic_op <= (OTHERS => '0');
+    dh_d_o.atomic_le <=  '0';
+    dh_d_o.size      <= dh_d_q.size;
+    dh_d_o.data      <= buf_wdata;
 
     --
     -- AXI SLAVE CONNECTION

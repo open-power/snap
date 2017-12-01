@@ -47,9 +47,9 @@ PACKAGE dma_types IS
 
   --
   -- TYPES
-  TYPE BUF_INDICATION_T  IS (EMPTY, XLAT_DONE, REQ_DONE, FULL);
   TYPE COM_INDICATION_T  IS (ACTIVE, INACTIVE);
-  TYPE CLT_INDICATION_T  IS (NOT_USED, PARTIAL_DATA, COMPLETE_DATA);
+  TYPE BUF_INDICATION_T  IS (EMPTY, FULL);
+  TYPE DMA_INDICATION_T  IS (EMPTY, XLAT_DONE, REQ_DONE);
 
   --
   --
@@ -57,8 +57,9 @@ PACKAGE dma_types IS
     com        : COM_INDICATION_T;               -- command indication
     rsp        : RSP_CODES_T;                    -- response indication
     buf        : BUF_INDICATION_T;               -- buffer indication
+    dma        : DMA_INDICATION_T;               -- PSL DMA indication
     clt        : std_logic_vector( 2 DOWNTO 0);  -- cache line type indication
-    cla        : std_logic_vector(63 DOWNTO 7);  -- cache line address
+    cla        : std_logic_vector(63 DOWNTO 6);  -- cache line address
     itag       : std_logic_vector( 8 DOWNTO 0);  -- PSL DMA itag
   END RECORD DMA_CTL_T;
   TYPE ARR_DMA_CTL_T IS ARRAY (0 TO 31) OF DMA_CTL_T;    
