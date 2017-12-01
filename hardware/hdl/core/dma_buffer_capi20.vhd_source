@@ -38,17 +38,18 @@ ENTITY dma_buffer IS
     --
     -- PSL IOs
     hd_c_i                   : IN  HD_C_T;
-    ha_b_i                   : IN  HA_B_T;
-    ah_b_o                   : OUT AH_B_T;
     --
     -- DMA WRITE IOs  
     write_ctrl_i             : IN  ARR_DMA_CTL_T;
     sd_d_i                   : IN  SD_D_T;
     buf_walmost_full_i       : IN  std_logic;
+    wram_raddr_i             : IN  std_logic_vector(5 DOWNTO 0);
     buf_wtag_o               : OUT std_logic_vector(5 DOWNTO 0);
     buf_wtag_p_o             : OUT std_logic;
     buf_wtag_cl_partial_o    : OUT boolean;
     buf_wtag_valid_o         : OUT boolean;
+    buf_wdata_o              : OUT std_logic_vector(1023 DOWNTO 0);
+
     --
     --
     -- DMA READ IOs
@@ -65,13 +66,7 @@ ENTITY dma_buffer IS
     -- Error Inject
     inject_dma_read_error_i  : IN  std_logic;
     inject_dma_write_error_i : IN  std_logic;
-    inject_ah_b_rpar_error_i : IN  std_logic;
-    --
-    -- Error Checker
-    ha_b_rtag_err_o          : OUT std_logic := '0';
-    ha_b_wtag_err_o          : OUT std_logic := '0';
-    ha_b_wdata_err_o         : OUT std_logic := '0'
-
+    inject_ah_b_rpar_error_i : IN  std_logic
   );
 END dma_buffer;
 
@@ -108,13 +103,7 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL buf_wtag_q                       : std_logic_vector(  5 DOWNTO 0);
   SIGNAL buf_wtag_p_q                     : std_logic;
   SIGNAL buf_wtag_valid_q                 : boolean;
-  SIGNAL ha_b_q                           : HA_B_T;
   SIGNAL hd_c_q                           : HD_C_T;
-  SIGNAL ha_b_rad_q                       : std_logic;
-  SIGNAL ha_b_wvalid_q                    : std_logic;
-  SIGNAL ha_b_rtag_err_q                  : std_logic := '0';
-  SIGNAL ha_b_wdata_err_q                 : std_logic_vector(7 DOWNTO 0) := (OTHERS => '0') ;
-  SIGNAL ha_b_wtag_err_q                  : std_logic := '0';
   SIGNAL rlck_data_p_q                    : ARR_RLCK_DATA_P_T;
   SIGNAL rlck_data_q                      : ARR_RLCK_DATA_T;
   SIGNAL rram_raddr                       : std_logic_vector(  5 DOWNTO 0);
@@ -135,11 +124,10 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL rram_wdata_p_q                   : std_logic_vector((  8*CAPI_VER)-1 DOWNTO 0);
   SIGNAL rram_wen                         : std_logic;
   SIGNAL wback_data_q                     : std_logic_vector((512*CAPI_VER)-1 DOWNTO 0);
-  SIGNAL wram_raddr                       : std_logic_vector(  5 DOWNTO 0);
+  SIGNAL wram_waddr                       : std_logic_vector(  5 DOWNTO 0);
   SIGNAL wram_rdata                       : std_logic_vector((576*CAPI_VER)-1 DOWNTO 0);
   SIGNAL wram_rdata_p_q                   : std_logic_vector((  8*CAPI_VER)-1 DOWNTO 0);
   SIGNAL wram_rdata_q                     : std_logic_vector((512*CAPI_VER)-1 DOWNTO 0);
-  SIGNAL wram_waddr                       : std_logic_vector(  5 DOWNTO 0);
   SIGNAL wram_waddr_d, wram_waddr_q       : std_logic_vector(  6 DOWNTO 0);
   SIGNAL wram_waddr_p_d, wram_waddr_p_q   : std_logic;
   SIGNAL wram_wdata                       : std_logic_vector(575 DOWNTO 0);
@@ -330,7 +318,7 @@ BEGIN
       enb                    => '1',
       clkb                   => ha_pclock,
       web(0)                 => '0',
-      addrb                  => wram_raddr,
+      addrb                  => wram_raddr_i,
       dinb                   => (OTHERS => '0'),
       doutb( 575 DOWNTO   0) => wram_rdata(1151 DOWNTO 576),
       doutb(1151 DOWNTO 576) => wram_rdata( 575 DOWNTO   0)
@@ -350,7 +338,6 @@ BEGIN
     wram_wdata(             0) <= sd_d_i.wr_data(0) XOR inject_dma_write_error_i;
     wram_wdata(511 DOWNTO   1) <= sd_d_i.wr_data(511 DOWNTO 1);
     wram_wdata(575 DOWNTO 512) <= sd_d_i.wr_strobe WHEN buf_wdata_extra_v = '0' ELSE (OTHERS => '0');
-    wram_raddr                 <= ha_b_i.rtag(4 DOWNTO 0) & '0';
     wram_wen                   <= (or_reduce(sd_d_i.wr_strobe) AND NOT buf_walmost_full_i) OR buf_wdata_extra_v;
 
     buf_wtag                   <= to_integer(unsigned(wram_waddr_q(5 DOWNTO 1)));
@@ -483,65 +470,6 @@ BEGIN
   -- PSL INPUT Checker
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
-    --------------------------------------------------------------------------
-    -- Read Buffer Checking
-    --------------------------------------------------------------------------
-    ha_b_check : PROCESS (ha_pclock)
-    BEGIN
-
-      IF (rising_edge(ha_pclock)) THEN
-        IF afu_reset = '1' THEN
-          ha_b_rtag_err_q  <= '0';
-          ha_b_wtag_err_q  <= '0';
-          ha_b_wdata_err_q <= (OTHERS => '0');
-
-        ELSE
-          --
-          -- defaults
-          --
-          ha_b_rtag_err_q  <= '0';
-          ha_b_wtag_err_q  <= '0';
-          ha_b_wdata_err_q <= (OTHERS => '0');
-
-          --
-          -- read tag checker
-          --
-          IF ha_b_q.rvalid  = '1' THEN
-            IF parity_gen_odd(ha_b_q.rtag) /= ha_b_q.rtagpar THEN
-              ha_b_rtag_err_q  <= '1';
-            END IF;
-          END IF;
-
-          --
-          -- write tag checker
-          --
-          IF ha_b_q.wvalid  = '1' THEN
-            IF parity_gen_odd(ha_b_q.wtag) /= ha_b_q.wtagpar THEN
-              ha_b_wtag_err_q  <= '1';
-            END IF;
-          END IF;
-
-          --
-          -- write data checker
-          --
-          -- ha_b.wpar have a one cycle delay
-          rram_wdata_p_q <= AC_GENPARITY(ha_b_q.wdata, 64);
-
-          -- FIXME: please fix the bit swap in the AC_GENPARITY function
-          IF ha_b_wvalid_q  = '1' THEN
-             ha_b_wdata_err_q <= (rram_wdata_p_q(7) XOR ha_b_q.wpar(7)) &
-                                 (rram_wdata_p_q(6) XOR ha_b_q.wpar(6)) &
-                                 (rram_wdata_p_q(5) XOR ha_b_q.wpar(5)) &
-                                 (rram_wdata_p_q(4) XOR ha_b_q.wpar(4)) &
-                                 (rram_wdata_p_q(3) XOR ha_b_q.wpar(3)) &
-                                 (rram_wdata_p_q(2) XOR ha_b_q.wpar(2)) &
-                                 (rram_wdata_p_q(1) XOR ha_b_q.wpar(1)) &
-                                 (rram_wdata_p_q(0) XOR ha_b_q.wpar(0));
-
-          END IF;
-        END IF;
-      END IF;
-    END PROCESS ha_b_check;
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -559,10 +487,6 @@ BEGIN
     --
     --
     --
-    ah_b_o.rdata <= wram_rdata_q(1023 DOWNTO 0);
-    ah_b_o.rpar  <= wram_rdata_p_q(15 DOWNTO 0);
-    ah_b_o.rlat  <= x"2";
-
     buf_rtag_o            <= buf_rtag_qqq;
     buf_rtag_p_o          <= buf_rtag_p_qqq;
     buf_rtag_valid_o      <= buf_rtag_valid_qqq;
@@ -577,12 +501,7 @@ BEGIN
     buf_rdata_vld_o  <= rram_rdata_vld_qqq;
     buf_rdata_end_o  <= rram_rdata_end_qqq;
 
-
-    --
-    -- error output
-    ha_b_rtag_err_o  <= ha_b_rtag_err_q;
-    ha_b_wtag_err_o  <= ha_b_wtag_err_q;
-    ha_b_wdata_err_o <= or_reduce(ha_b_wdata_err_q);
+    buf_wdata_o <= wram_rdata_q(1023 DOWNTO 0);
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -594,11 +513,6 @@ BEGIN
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
         IF afu_reset = '1' THEN
-          ha_b_q              <= ('0',  (OTHERS => '0'), '1',  (OTHERS => '0'),
-                                  '0',  (OTHERS => '0'), '1',  (OTHERS => '0'),
-                                  (OTHERS => '0'), (OTHERS => '1'));
-          ha_b_rad_q          <= '0';
-          ha_b_wvalid_q       <= '0';
           rram_raddr_q        <= (OTHERS => '0');
           rram_raddr_p_q      <= '1';
           rram_rdata_vld_q    <= '0';
@@ -613,20 +527,7 @@ BEGIN
           flip_wbit_q         <= '0';          
 
         ELSE
-          -- capture state of first rad bit and use the bit to
-          -- circumvent page flip issue
-          if ha_b_i.rvalid = '1' and flip_rbit_valid_q = '0' then
-            flip_rbit_valid_q <= '1';
-            flip_rbit_q       <=  ha_b_i.rad(0);
-          end if;
-          if ha_b_i.wvalid = '1' and flip_wbit_valid_q = '0' then
-            flip_wbit_valid_q <= '1';
-            flip_wbit_q       <=  ha_b_i.wad(0);
-          end if;          
-          ha_b_q              <= ha_b_i;
           hd_c_q              <= hd_c_i;
-          ha_b_rad_q          <= ha_b_q.rad(0) xor flip_rbit_q;
-          ha_b_wvalid_q       <= ha_b_q.wvalid;
           rram_raddr_q        <= rram_raddr_d;
           rram_raddr_p_q      <= rram_raddr_p_d;
           rram_rdata_vld_q    <= rram_rdata_vld_d;

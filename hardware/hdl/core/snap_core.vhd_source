@@ -248,6 +248,7 @@ BEGIN
   -- Buffer Interface
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
+#ifdef CONFIG_CAPI10
     ha_b.rvalid                           <=                  ha_brvalid;
     ha_b.rtag(7 DOWNTO 0)                 <= v2vhdl_connector(ha_brtag(0 TO 7));
     ha_b.rtagpar                          <=                  ha_brtagpar;
@@ -262,8 +263,10 @@ BEGIN
     ah_brlat(0 TO 3)                      <= vhdl2v_connector(ah_b.rlat(3 DOWNTO 0));
     ah_brdata(0 TO (512*CAPI_VER)-1)      <= vhdl2v_connector(ah_b.rdata((512*CAPI_VER)-1 DOWNTO 0));
     ah_brpar( 0 TO (  8*CAPI_VER)-1)      <= vhdl2v_connector(ah_b.rpar( (  8*CAPI_VER)-1 DOWNTO 0));
-
-
+#else 
+    ah_brlat(0 TO 3)                      <= "0000";
+#endif
+    
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   -- Response Interface
