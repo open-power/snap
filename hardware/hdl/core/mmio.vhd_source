@@ -1381,21 +1381,21 @@ BEGIN
         mmx_d_q.rd_strobe   <= '0';
         mmio_action_addr_q  <= mmio_action_addr_q;
         mmio_action_data_q  <= mmio_action_data_q;
-        IF ha_mm_w_q.valid = '1' THEN
-          IF mmio_write_master_access_q = '1' THEN
-            mmio_action_addr_q(17 DOWNTO 12) <= ha_mm_w_q.ad(15 DOWNTO 10);
-          ELSE
-            mmio_action_addr_q(17 DOWNTO 12) <= "01" & context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R);
-          END IF;
-          mmio_action_addr_q(11 DOWNTO  2) <= ha_mm_w_q.ad(9 DOWNTO 0);
-          mmio_action_data_q               <= ha_mm_w_q.data(31 DOWNTO 0);
-        ELSIF ha_mm_r_q.valid = '1' THEN
+        IF (ha_mm_r_q.valid AND ha_mm_r_q.rnw) = '1' THEN
           IF mmio_read_master_access_q = '1' THEN
             mmio_action_addr_q(17 DOWNTO 12) <= ha_mm_r_q.ad(15 DOWNTO 10);
           ELSE
             mmio_action_addr_q(17 DOWNTO 12) <= "01" & context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R);
           END IF;
-          mmio_action_addr_q(11 DOWNTO  2) <= ha_mm_r_q.ad(9 DOWNTO 0);
+          mmio_action_addr_q(11 DOWNTO 2) <= ha_mm_r_q.ad(9 DOWNTO 0);
+        ELSIF ha_mm_w_q.valid = '1' THEN
+          IF mmio_write_master_access_q = '1' THEN
+            mmio_action_addr_q(17 DOWNTO 12) <= ha_mm_w_q.ad(15 DOWNTO 10);
+          ELSE
+            mmio_action_addr_q(17 DOWNTO 12) <= "01" & context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R);
+          END IF;
+          mmio_action_addr_q(11 DOWNTO 2) <= ha_mm_w_q.ad(9 DOWNTO 0);
+          mmio_action_data_q <= ha_mm_w_q.data(31 DOWNTO 0);
         END IF;
 
         mmio_action_write_q <= mmio_action_write_q OR
