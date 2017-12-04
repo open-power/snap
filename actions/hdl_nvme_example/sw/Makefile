@@ -45,8 +45,7 @@ all: all_build
 #snap_cblk_libs += libsnapcblk.a
 #else
 snap_cblk_LDFLAGS += -L. \
-	-Wl,-rpath,$(SNAP_ROOT)/actions/hdl_nvme_example/sw \
-	-Wl,-rpath,$(SNAP_ROOT)/software/lib
+	-Wl,-rpath,$(SNAP_ROOT)/actions/hdl_nvme_example/sw
 
 snap_cblk_libs += -lsnapcblk -lrt
 #endif

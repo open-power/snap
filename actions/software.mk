@@ -25,22 +25,15 @@ endif
 include $(SNAP_ROOT)/software/config.mk
 
 CFLAGS += -std=c99 -I$(SNAP_ROOT)/software/include
-LDFLAGS += -L$(SNAP_ROOT)/software/lib
-LDLIBS += -lsnap -lpthread
-
-DESTDIR ?= /usr
-# libs += $(SNAP_ROOT)/software/lib/libsnap.a
+LDFLAGS += -L$(SNAP_ROOT)/software/lib -Wl,-rpath,$(SNAP_ROOT)/software/lib
+LDLIBS += -lsnap -lcxl -lpthread
+LIBS += $(SNAP_ROOT)/software/lib/libsnap.so
 
 # Link statically for PSLSE simulation and dynamically for real version
 ifdef BUILD_SIMCODE
-# libs += $(PSLSE_ROOT)/libcxl/libcxl.a
 CFLAGS += -D_SIM_
-LDFLAGS += -L$(PSLSE_ROOT)/libcxl
-LDLIBS += -lcxl
-else
-# FIXME If we link against libsnap.so we should have this dependency covered.
-#      No -L<path_to_libcxl> required here, since it should be in the distro.
-LDLIBS += -lcxl
+LDFLAGS += -L$(PSLSE_ROOT)/libcxl -Wl,-rpath,$(PSLSE_ROOT)/libcxl
+LIBS += $(PSLSE_ROOT)/libcxl/libcxl.so
 endif
 
 # This rule should be the 1st one to find (default)
@@ -52,9 +45,11 @@ all: all_build
 # This rule needs to be behind all the definitions above
 all_build: $(projs)
 
-$(projs): $(libs)
+$(projs): $(LIBS) $(libs)
 
-$(PSLSE_ROOT)/libcxl/libcxl.a $(SNAP_ROOT)/software/lib/libsnap.a:
+$(libs): $(LIBS)
+
+$(PSLSE_ROOT)/libcxl/libcxl.so $(SNAP_ROOT)/software/lib/libsnap.so:
 	$(MAKE) -C `dirname $@`
 
 ### Deactivate existing implicit rule
@@ -81,5 +76,5 @@ uninstall:
 	done
 
 clean distclean:
-	$(RM) $(projs) $(libs) *.o *.log *.out
+	$(RM) $(projs) $(libs) *.o *.log *.out *~
 
