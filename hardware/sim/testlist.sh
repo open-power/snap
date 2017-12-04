@@ -56,7 +56,8 @@
     done=${r:13:1};numact=${r:14:1};(( numact += 1 ));echo "exploration done=$done num_actions=$numact"
 #   t="$SNAP_ROOT/software/tools/snap_peek 0x20        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Lockreg 0x1=locked"
     t="$SNAP_ROOT/software/tools/snap_peek 0x30        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # capabilityreg bit31-16=DRAM size bit8=NVMe bit7..0=card type"
-    dram=$(( 16#${r:8:4} )); nvme=${r:13:1}; type=${r:14:2}; echo "card_type=$type NVMe=$nvme ${NVME_USED} DRAM=$dram MB"
+    dram=$(( 16#${r:8:4} )); nvme=${r:13:1}; cardtype=${r:14:2};
+    echo "card_type=$cardtype NVMe=$nvme ${NVME_USED} DRAM=$dram MB"
     if [[ "$done" == "0" ]];then echo "exploration not done yet"
       env_action=$(echo $ACTION_ROOT|sed -e "s/actions\// /g"|awk '{print $2}');echo "ENV_action=${env_action}"
 #     if [[ "${env_action}" == *"hdl_example"* ]];then echo -e "$del\ntesting hdl_example in master mode"
@@ -156,6 +157,7 @@
       for num4k in 0 1 $rnd20; do to=$((num4k*60+200))
       for num64 in 0 1 $rnd32; do
       for align in 4096 64; do  # posix memalign only allows power of 2
+        if [[ $((num64%2)) == 1 && $cardtype == "10" ]];then echo "skip num64=$num64 for N250SP";continue;fi             # odd 64B xfer not allowed on N250SP
         if [[ "$num4k" == "0" && "$num64" == "0" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
         if [[ "$num4k" > "1"  && "$num64" < "2"  ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
         if [[ "$num4k" > "1"  && "$align" > "64" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
@@ -168,6 +170,7 @@
         for num4k in 0 1 $rnd20; do to=$((num4k*180+180))
         for num64 in 0 1 $rnd32; do                # 1..64
         for align in 4096 64; do                   # must be mult of 64
+          if [[ $((num64%2)) == 1 && $cardtype == "10" ]];then echo "skip num64=$num64 for N250SP";continue;fi             # odd 64B xfer not allowed on N250SP
           if [[ "$num4k" == "0" && "$num64" == "0" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
           if [[ "$num4k" > "1"  && "$num64" < "2"  ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
           if [[ "$num4k" > "1"  && "$align" > "64" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
