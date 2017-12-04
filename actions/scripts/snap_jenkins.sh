@@ -91,7 +91,7 @@ function test_all_actions() # $1 = card, $2 = accel
 			cmd="./actions/hls_intersect/tests/test_0x10141006.sh"
 		;;
 		*"10141007") # HLS NVMe memcopy
-			cmd="./actions/hls_nvme_memcopy/tests/test_0x10141007"
+			cmd="./actions/hls_nvme_memcopy/tests/test_0x10141007.sh"
 		;;
 		*"10141008") # HLS Hello World
 			cmd="./actions/hls_helloworld/tests/test_0x10141008.sh"
