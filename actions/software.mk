@@ -25,14 +25,14 @@ endif
 include $(SNAP_ROOT)/software/config.mk
 
 CFLAGS += -std=c99 -I$(SNAP_ROOT)/software/include
-LDFLAGS += -L$(SNAP_ROOT)/software/lib
+LDFLAGS += -L$(SNAP_ROOT)/software/lib -Wl,-rpath,$(SNAP_ROOT)/software/lib
 LDLIBS += -lsnap -lcxl -lpthread
 LIBS += $(SNAP_ROOT)/software/lib/libsnap.so
 
 # Link statically for PSLSE simulation and dynamically for real version
 ifdef BUILD_SIMCODE
 CFLAGS += -D_SIM_
-LDFLAGS += -L$(PSLSE_ROOT)/libcxl
+LDFLAGS += -L$(PSLSE_ROOT)/libcxl -Wl,-rpath,$(PSLSE_ROOT)/libcxl
 LIBS += $(PSLSE_ROOT)/libcxl/libcxl.so
 endif
 
