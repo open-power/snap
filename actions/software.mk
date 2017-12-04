@@ -26,6 +26,15 @@ include $(SNAP_ROOT)/software/config.mk
 
 CFLAGS += -std=c99
 LDLIBS += -lsnap -lcxl -lpthread
+LDFLAGS += -Wl,-rpath,$(SNAP_ROOT)/software/lib
+
+LIBS += $(SNAP_ROOT)/software/lib/libsnap.so
+
+ifdef BUILD_SIMCODE
+CFLAGS += -D_SIM_
+LDFLAGS += -L$(PSLSE_ROOT)/libcxl -Wl,-rpath,$(PSLSE_ROOT)/libcxl
+LIBS += $(PSLSE_ROOT)/libcxl/libcxl.so
+endif
 
 # This rule should be the 1st one to find (default)
 all: all_build
@@ -36,7 +45,17 @@ all: all_build
 # This rule needs to be behind all the definitions above
 all_build: $(projs)
 
-$(projs): $(libs)
+$(projs): $(LIBS) $(libs)
+
+$(libs): $(LIBS)
+
+$(SNAP_ROOT)/software/lib/libsnap.so:
+	$(MAKE) -C `dirname $@`
+
+ifdef BUILD_SIMCODE
+$(PSLSE_ROOT)/libcxl/libcxl.so:
+	$(MAKE) -C `dirname $@`
+endif
 
 # Resolve dependencies to required libraries
 #$(projs) $(libs): $(PSLSE_ROOT)/libcxl/libcxl.so $(SNAP_ROOT)/software/lib/libsnap.so
@@ -77,5 +96,5 @@ uninstall:
 	done
 
 clean distclean:
-	$(RM) $(projs) $(libs) *.o *.log *.out
+	$(RM) $(projs) $(libs) *.o *.log *.out *~
 

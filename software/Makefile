@@ -55,7 +55,7 @@ ifdef BUILD_SIMCODE
 lib:  $(PSLSE_ROOT)/libcxl/libcxl.so
 
 $(PSLSE_ROOT)/libcxl/libcxl.so:
-	$(MAKE) -C $(PSLSE_ROOT)/libcxl
+	$(MAKE) -C `dirname $@`
 endif
 
 # Only build if the subdirectory is really existent
