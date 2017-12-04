@@ -30,6 +30,12 @@ libversion = $(VERSION)
 CFLAGS += -fPIC -fno-strict-aliasing
 LDLIBS += -lcxl -lpthread
 
+ifdef BUILD_SIMCODE
+CFLAGS += -D_SIM_
+LDFLAGS += -L$(PSLSE_ROOT)/libcxl -Wl,-rpath,$(PSLSE_ROOT)/libcxl
+LIBS += $(PSLSE_ROOT)/libcxl/libcxl.so
+endif
+
 libnameA = libsnap
 projA = $(libnameA).a \
 	$(libnameA).so \
@@ -42,6 +48,13 @@ objsA = $(srcA:.c=.o)
 projs += $(projA)
 
 all: $(projs)
+
+ifdef BUILD_SIMCODE
+$(projs): $(PSLSE_ROOT)/libcxl/libcxl.so
+
+$(PSLSE_ROOT)/libcxl/libcxl.so:
+	$(MAKE) -C `dirname $@`
+endif
 
 ### libA
 __$(libnameA).o: $(objsA)
