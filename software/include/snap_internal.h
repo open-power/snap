@@ -86,7 +86,7 @@ static inline long long __get_usec(void)
 {
 	struct timeval t;
 	gettimeofday(&t, NULL);
-	return t.tv_sec * 1000 + t.tv_usec;
+	return t.tv_sec * 1000000LL + t.tv_usec;
 }
 
 int action_trace_enabled(void);
