@@ -37,9 +37,7 @@ endif
 
 $(software_subdirs): software
 	@if [ -d $@ -a -f $@/Makefile ]; then			\
-		echo "Enter: $@";                               \
 		$(MAKE) -C $@ || exit 1;			\
-		echo "Exit:  $@";                               \
 	else							\
 		echo "INFO: No Makefile available in $@ ...";	\
 	fi

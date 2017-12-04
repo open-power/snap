@@ -13,21 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-SNAP_ROOT=$(abspath ../..)
+
+SNAP_ROOT ?= $(abspath ../..)
 
 include ../config.mk
 
-DESTDIR ?= /usr
-libs = ../lib/libsnap.a
-LDLIBS += $(libs) -lpthread
-
-# Link statically for PSLSE simulation and dynamically for real version
-ifdef BUILD_SIMCODE
-libs += $(PSLSE_ROOT)/libcxl/libcxl.a
-CFLAGS+=-D_SIM_ -I$(PSLSE_ROOT)/libcxl
+ifeq ($(V),1)
+CFG_SNAP_ACTIONS_H = printf "\t[HH]\t%s\n" `basename "$@"`; ./cfg_snap_actions.pl
 else
-LDLIBS += -lcxl
+CFG_SNAP_ACTIONS_H = ./cfg_snap_actions.sh
 endif
+
+LDLIBS += -lsnap -lcxl -lpthread
+libs += $(SNAP_ROOT)/software/lib/libsnap.so
 
 snap_peek_objs = force_cpu.o
 snap_poke_objs = force_cpu.o
@@ -38,11 +36,15 @@ hfiles = force_cpu.h  snap_fw_example.h
 
 all: $(projs)
 
-snap_actions.h: $(SNAP_ROOT)/ActionTypes.md
-	@echo "Creating $@..."
-	./cfg_snap_actions.sh
+$(projs): $(objs)
 
-$(projs): snap_actions.h $(objs) $(libs)
+$(objs): snap_actions.h $(libs)
+
+$(libs):
+	$(MAKE) -C $(shell dirname $@)
+
+snap_actions.h: $(SNAP_ROOT)/ActionTypes.md
+	$(CFG_SNAP_ACTIONS_H) < $< > $@
 
 ### Deactivate existing implicit rule
 %: %.c
@@ -52,13 +54,15 @@ $(projs): snap_actions.h $(objs) $(libs)
 %: %.o
 	$(CC) $(LDFLAGS) $($(@)_LDFLAGS) $@.o $($(@)_objs) $($(@)_libs) $(LDLIBS) -o $@
 
-%.o: %.c $(libs) $(hfiles)
+%.o: %.c $(hfiles)
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
 install: all
 	@mkdir -p $(DESTDIR)/bin
-	install -D -m 755 snap_peek -T $(DESTDIR)/bin/snap_peek
-	install -D -m 755 snap_poke -T $(DESTDIR)/bin/snap_poke
+	for f in $(projs) ; do					\
+		echo "installing $(DESTDIR)/bin/$$f ...";	\
+		install -D -m 755 $$f -T $(DESTDIR)/bin/$$f;	\
+	done
 
 uninstall:
 	@for f in $(projs) ; do					\
@@ -67,4 +71,4 @@ uninstall:
 	done
 
 clean distclean:
-	@$(RM) snap_actions.h $(objs) $(projs)
+	$(RM) snap_actions.h $(objs) $(projs) *.o *~

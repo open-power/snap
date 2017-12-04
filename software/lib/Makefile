@@ -14,22 +14,21 @@
 # limitations under the License.
 #
 
+ifndef SNAP_ROOT
+ifneq ("$(wildcard ../../ActionTypes.md)","")
+SNAP_ROOT=$(abspath ../../)
+else
+$(info You probably have defined a wrong $$SNAP_ROOT.)
+$(error Please make sure that $$SNAP_ROOT is set up correctly.)
+endif
+endif
+
 include ../config.mk
 
 libversion = $(VERSION)
 
 CFLAGS += -fPIC -fno-strict-aliasing
 LDLIBS += -lcxl -lpthread
-
-# Link statically for PSLSE simulation and dynamically for real version
-#ifndef BUILD_SIMCODE
-#LDLIBS += -lcxl
-#endif
-
-ifdef BUILD_SIMCODE
-CFLAGS += -D_SIM_
-LDFLAGS += -L$(PSLSE_ROOT)/libcxl
-endif
 
 libnameA = libsnap
 projA = $(libnameA).a \
@@ -72,6 +71,6 @@ install: all
 	$(CC) -MM $(CPPFLAGS) $($(@:.o=)_CPPFLAGS) $(CFLAGS) $< > $*.d
 
 clean distclean:
-	$(RM) *.o *.d $(projs) *.so *.so.*
+	$(RM) *.o *.d $(projs) *.so *.so.* *~
 
 -include $(objsA:.o=.d) $(objsB:.o=.d)
