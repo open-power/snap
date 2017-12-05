@@ -35,7 +35,6 @@ tracing=0
 trace_file="snap_kill.log"
 PLATFORM=`uname -p`
 start_time=`date`
-do_build=0
 
 function usage() {
     echo "Usage:"
@@ -79,21 +78,21 @@ function cleanup {
 }
 
 function start_cxl_traces {
-    if [ ${accelerator} == "CAPI" -a ${tracing} -eq 1 ]; then
+    if [ ${tracing} -eq 1 ]; then
 	echo "Starting CXL tracing ...";
 	sudo sh -c 'echo 1 > /sys/kernel/debug/tracing/events/cxl/enable';
     fi
 }
 
 function stop_cxl_traces {
-    if [ ${accelerator} == "CAPI" -a ${tracing} -eq 1 ]; then
+    if [ ${tracing} -eq 1 ]; then
 	echo "Stopping CXL tracing ...";
 	sudo sh -c 'echo 0 > /sys/kernel/debug/tracing/events/cxl/enable';
     fi
 }
 
 function collect_cxl_traces {
-    if [ ${accelerator} == "CAPI" -a ${tracing} -eq 1 ]; then
+    if [ ${tracing} -eq 1 ]; then
 	echo "Collect CXL traces ...";
 	sudo sh -c 'cat /sys/kernel/debug/tracing/trace_pipe > $trace_file';
     fi
