@@ -103,68 +103,59 @@ trap cleanup SIGINT
 trap cleanup SIGKILL
 trap cleanup SIGTERM
 
-while getopts "TPA:C:c:p:i:k:l:t:bh" opt; do
-    case $opt in
-	A)
-	accelerator=$OPTARG;
-	;;
+while getopts "C:c:p:i:k:h" opt; do
+	case $opt in
 	C)
 	card=$OPTARG;
 	;;
 	c)
 	count="-c $OPTARG";
 	;;
-        i)
-        iterations=$OPTARG;
-        ;;
-        p)
-        processes=$OPTARG;
-        ;;
+	p)
+	processes=$OPTARG;
+	;;
+	i)
+	iterations=$OPTARG;
+	;;
 	k)
 	killtimeout=$OPTARG;
 	;;
 	T)
 	tracing=1;
 	;;
-        h)
-        usage;
-        exit 0;
-        ;;
-	b)
-	do_build=1;
+	h)
+	usage;
+	exit 0;
 	;;
-	t)
-	tools_dir=$OPTARG;
+	\?)
+	echo "Invalid option: -$OPTARG" >&2
 	;;
-        \?)
-        echo "Invalid option: -$OPTARG" >&2
-        ;;
-    esac
+	esac
 done
 
 function test_memcopy ()
 {
-    ### Start in background ...
-    echo "Starting snap_example in the background ... "
-    for s in `seq 1 $processes` ; do
-	start_job snap_example -C ${card} \
-	    > snap_memcopy_$s.stdout.log 2> snap_memcopy_$s.stderr.log
-    done
-    echo "ok"
-
-    if [ ${killtimeout} -ne -1 ]; then
-	echo "Waiting ${killtimeout} seconds ..."
-	for s in `seq 0 ${killtimeout}` ; do
-	    sleep 1;
-	    echo -n "."
+	### Start in background ...
+	echo "Starting snap_example in the background ... "
+	for s in `seq 1 $processes` ; do
+		start_job snap_example -C ${card} \
+			> snap_memcopy_$s.stdout.log 2> snap_memcopy_$s.stderr.log
 	done
-	echo " ok"
-	echo "Sending SIGKILL to all ... "
-	stop_jobs
 	echo "ok"
-    else
-	echo "Skipp killing processes but wait until they terminate ..."
-    fi
+
+	if [ ${killtimeout} -ne -1 ]; then
+		echo "Waiting ${killtimeout} seconds ..."
+		for s in `seq 0 ${killtimeout}` ; do
+			sleep 1;
+			echo -n "."
+		done
+		echo " ok"
+		echo "Sending SIGKILL to all ... "
+		stop_jobs
+		echo "ok"
+	else
+		echo "Skip killing processes wait until they terminate ..."
+	fi
 }
 
 function cleanup_files ()
@@ -181,44 +172,43 @@ cleanup_files
 start_cxl_traces
 
 for i in `seq 1 ${iterations}` ; do
+	echo -n "(1) Check if card is replying to an echo request ($i) ... "
+	date
 
-    echo -n "(1) Check if card is replying to an echo request ($i) ... "
-    date
+	snap_example -C ${card}
+	if [ $? -ne 0 ]; then
+		echo "Single snap_memcopy took to long, please review results!"
+		collect_cxl_traces
+		stop_cxl_traces
+		exit 1
+	fi
 
-    snap_example -C ${card}
-    if [ $? -ne 0 ]; then
-	echo "Single snap_memcopy took to long, please review results!"
-	collect_cxl_traces
-	stop_cxl_traces
-	exit 1
-    fi
+	echo "(2) Perform massive stress and killing applications ..."
+	test_memcopy;
 
-    echo "(2) Perform massive stress and killing applications ..."
-    test_memcopy;
+	echo "(3) Check logfiles for string \"err\" ..."
+	grep err snap_memcopy_*.stderr.log
+	if [ $? -ne 1 ]; then
+		echo "Found potential errors ... please check logfiles"
+		collect_cxl_traces
+		stop_cxl_traces
+		exit 2
+	fi
 
-    echo "(3) Check logfiles for string \"err\" ..."
-    grep err snap_memcopy_*.stderr.log
-    if [ $? -ne 1 ]; then
-	echo "Found potential errors ... please check logfiles"
-	collect_cxl_traces
-	stop_cxl_traces
-	exit 2
-    fi
+	echo "(4) Check if card is still replying to an echo request ..."
+	snap_example -C ${card}
+	if [ $? -ne 0 ]; then
+		echo "Single snap_memcopy took to long, please review results!"
+		collect_cxl_traces
+		stop_cxl_traces
+		exit 3
+	fi
 
-    echo "(4) Check if card is still replying to an echo request ..."
-    snap_example -C ${card}
-    if [ $? -ne 0 ]; then
-	echo "Single snap_memcopy took to long, please review results!"
-	collect_cxl_traces
-	stop_cxl_traces
-	exit 3
-    fi
+	echo "(5) Remove old logfiles ..."
+	cleanup_files
 
-    echo "(5) Remove old logfiles ..."
-    cleanup_files
-
-    echo "Running since ${start_time} until now `date` ($i)"
-    echo
+	echo "Running since ${start_time} until now `date` ($i)"
+	echo
 done
 
 stop_cxl_traces
