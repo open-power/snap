@@ -389,7 +389,7 @@ __hw_wait_irq_retry:
 		//cxl_fprint_event(stdout, card->event);
 		if (rc < 0) {
 			snap_trace("  %s: cxl_read_event returned %d\n", __func__, rc);
-			break;
+			goto err_out;
 		}
 
 		switch (card->event.header.type) {
@@ -426,6 +426,8 @@ __hw_wait_irq_retry:
 			break;
 		}
 	}
+
+ err_out:
 	snap_trace("  %s: Exit fd: %d rc: %d\n", __func__,
 		card->afu_fd, rc);
 	return rc;
