@@ -387,7 +387,13 @@ __hw_wait_irq_retry:
 	if (0 == rc) {
 		rc = cxl_read_event(card->afu_h, &card->event);
 		//cxl_fprint_event(stdout, card->event);
+		if (rc < 0) {
+			snap_trace("  %s: cxl_read_event returned %d\n", __func__, rc);
+			break;
+		}
+
 		switch (card->event.header.type) {
+
 		case CXL_EVENT_AFU_INTERRUPT:
 			snap_trace("  %s:     Got Event flags: %d irq: %d\n", __func__,
 				card->event.irq.flags,
@@ -405,6 +411,7 @@ __hw_wait_irq_retry:
 			snap_trace("  %s: CXL_EVENT_DATA_STORAGE\n", __func__);
 			snap_trace("      flags=%04x addr=%08llx dsisr=%08llx\n",
 				ds->flags, (long long)ds->addr, (long long)ds->dsisr);
+			rc = EFAULT;
 			break;
 		}
 
