@@ -44,7 +44,7 @@ Download the required files under "PSL Checkpoint Files for the CAPI SNAP Design
 SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulation model and image build, SNAP requires the Xilinx Vivado 2016.4 tool suite.
 * https://www.xilinx.com/products/design-tools/hardware-zone.html
 
-As of now, two FPGA cards can be used with SNAP:
+As of now, three FPGA cards can be used with SNAP:
 * Alpha-Data ADM-PCIE-KU3 http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
 * Nallatech 250S-2T with two on-card NVMe M.2 960GB drives http://www.nallatech.com/250s
 * Semptian NSA121B http://www.semptian.com/index.php?_m=mod_product&_a=view&p_id=160
