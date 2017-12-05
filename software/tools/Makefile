@@ -25,7 +25,14 @@ CFG_SNAP_ACTIONS_H = ./cfg_snap_actions.sh
 endif
 
 LDLIBS += -lsnap -lcxl -lpthread
+LDFLAGS += -Wl,-rpath,$(SNAP_ROOT)/software/lib
 libs += $(SNAP_ROOT)/software/lib/libsnap.so
+
+ifdef BUILD_SIMCODE
+CFLAGS += -D_SIM_
+LDFLAGS += -L$(PSLSE_ROOT)/libcxl -Wl,-rpath,$(PSLSE_ROOT)/libcxl
+LIBS += $(PSLSE_ROOT)/libcxl/libcxl.so
+endif
 
 snap_peek_objs = force_cpu.o
 snap_poke_objs = force_cpu.o
