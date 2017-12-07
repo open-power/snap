@@ -77,15 +77,10 @@ fi
 
 function test_sponge {
     local size=$1
-
-    cmd="echo \"Hello world. This is my first CAPI SNAP experience. It's real fun!\n\" > tin"
-    echo "cmd: ${cmd}"
-    cmd="echo \"HELLO WORLD. THIS IS MY FIRST CAPI SNAP EXPERIENCE. IT'S REAL FUN!\n\" > tCAP"
-    echo "cmd: ${cmd}"
+    
     echo -n "Doing snap_sponge "
-    cmd="snap_sponge -C${snap_card} -X	\
-		-i tin	\
-		-o tout >>	\
+    cmd="snap_sponge -C${snap_card} -C1 -vv -t2500 -mSPONGE \
+                -N -cSPEED -n1 -f65536 >>	\
 		snap_sponge.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then

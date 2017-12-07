@@ -445,6 +445,7 @@ int main(int argc, char *argv[])
 	if (card == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n",
 			card_no, strerror(errno));
+                        
 		goto out_error1;
 	}
 
