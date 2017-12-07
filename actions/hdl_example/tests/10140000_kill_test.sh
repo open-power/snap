@@ -211,6 +211,9 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
+cleanup_files
+start_cxl_traces
+
 if [ $reset -eq 1 ]; then
 	reset_card
 	if [ $? -ne 0 ]; then
@@ -218,11 +221,6 @@ if [ $reset -eq 1 ]; then
 		exit 1
 	fi
 fi
-
-snap_maint -C${card} -v
-
-cleanup_files
-start_cxl_traces
 
 snap_maint -C${card} -vv
 
