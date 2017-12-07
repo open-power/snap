@@ -35,6 +35,14 @@ tracing=0
 trace_file="snap_kill.log"
 PLATFORM=`uname -p`
 start_time=`date`
+reset=0
+
+# output formatting
+bold=$(tput bold)
+normal=$(tput sgr0)
+
+export PATH=.:`pwd`/actions/hdl_example/sw:`pwd`/software/tools:${PATH}
+export LD_LIBRARY_PATH=.:`pwd`/actions/hdl_example/sw:`pwd`/software/lib:${LD_LIBRARY_PATH}
 
 function usage() {
     echo "Usage:"
@@ -44,8 +52,30 @@ function usage() {
     echo "     -i <iterations>  repeat  multiple times for more testing"
     echo "     -p <processes>   how many processed in parallel"
     echo "     -k <seconds>     kill timeout"
+    echo "     -r               reset card"
     echo "     -T               start traces (CAPI only)"
     echo
+}
+
+function reset_card() {
+	echo -n "Resetting card ${card} (takes a while) "
+	sudo bash -c "echo 100000 > /sys/kernel/debug/powerpc/eeh_max_freezes"
+
+	sudo bash -c "echo 1 > /sys/class/cxl/card${card}/reset"
+	for ((i=0;i<20;i++)); do
+		sleep 1
+		echo -n "."
+	done
+	echo " OK"
+
+	echo -n "Check if card reappeared ... "
+	ls -l /dev/cxl/afu${card}.0 > /dev/null
+	if [ $? -ne 0 ]; then
+		echo "recovery failed, sorry!"
+		exit 1;
+	else
+		echo "OK"
+	fi
 }
 
 function start_job {
@@ -102,7 +132,7 @@ trap cleanup SIGINT
 trap cleanup SIGKILL
 trap cleanup SIGTERM
 
-while getopts "C:c:p:i:k:h" opt; do
+while getopts "C:c:p:i:k:rh" opt; do
 	case $opt in
 	C)
 	card=$OPTARG;
@@ -119,6 +149,9 @@ while getopts "C:c:p:i:k:h" opt; do
 	k)
 	killtimeout=$OPTARG;
 	;;
+	r)
+	reset=1;
+	;;
 	T)
 	tracing=1;
 	;;
@@ -127,7 +160,12 @@ while getopts "C:c:p:i:k:h" opt; do
 	exit 0;
 	;;
 	\?)
-	echo "Invalid option: -$OPTARG" >&2
+	printf "${bold}ERROR:${normal} Invalid option: -${OPTARG}\n" >&2
+	exit 1
+	;;
+	:)
+	printf "${bold}ERROR:${normal} Option -$OPTARG requires an argument.\n" >&2
+	exit 1
 	;;
 	esac
 done
@@ -137,7 +175,7 @@ function test_memcopy ()
 	### Start in background ...
 	echo "Starting snap_example in the background ... "
 	for s in `seq 1 $processes` ; do
-		start_job snap_example -C ${card} \
+		start_job snap_example -C ${card} -S100000 -N1 -I \
 			> snap_memcopy_$s.stdout.log 2> snap_memcopy_$s.stderr.log
 	done
 	echo "ok"
@@ -163,20 +201,39 @@ function cleanup_files ()
 }
 
 echo "********************************************************************"
-echo "Parallel TEST for card ${card} starting ${processes}"
+echo "Parallel TEST for card ${card} starting ${processes} processes"
 echo "********************************************************************"
 echo
+
+which snap_maint 2>&1 > /dev/null
+if [ $? -ne 0 ]; then
+	printf "${bold}ERROR:${normal} Path not pointing to required binaries (snap_maint, snap_nvme_init)!\n" >&2
+	exit 1
+fi
+
+if [ $reset -eq 1 ]; then
+	reset_card
+	if [ $? -ne 0 ]; then
+		echo "err: Resetting resulted in error!"
+		exit 1
+	fi
+fi
+
+snap_maint -C${card} -v
 
 cleanup_files
 start_cxl_traces
 
+snap_maint -C${card} -vv
+
 for i in `seq 1 ${iterations}` ; do
-	echo -n "(1) Check if card is replying to an echo request ($i) ... "
+	echo -n "(1) Check if card is replying to a single memcopy request ($i) ... "
 	date
 
-	snap_example -C ${card}
+	# copy -S<blocks> and that -N<times> should be long enough runtime
+	snap_example -C ${card} -S1000 -N1 -I
 	if [ $? -ne 0 ]; then
-		echo "Single snap_memcopy took to long, please review results!"
+		echo "err: Single snap_example took to long, please review results!"
 		collect_cxl_traces
 		stop_cxl_traces
 		exit 1
@@ -188,16 +245,16 @@ for i in `seq 1 ${iterations}` ; do
 	echo "(3) Check logfiles for string \"err\" ..."
 	grep err snap_memcopy_*.stderr.log
 	if [ $? -ne 1 ]; then
-		echo "Found potential errors ... please check logfiles"
+		echo "err: Found potential errors ... please check logfiles"
 		collect_cxl_traces
 		stop_cxl_traces
 		exit 2
 	fi
 
-	echo "(4) Check if card is still replying to an echo request ..."
-	snap_example -C ${card}
+	echo "(4) Check if card is still replying to a single memcopy request ..."
+	snap_example -C ${card} -S1000 -N1 -I
 	if [ $? -ne 0 ]; then
-		echo "Single snap_memcopy took to long, please review results!"
+		echo "err: Single snap_example took to long, please review results!"
 		collect_cxl_traces
 		stop_cxl_traces
 		exit 3
@@ -210,5 +267,7 @@ for i in `seq 1 ${iterations}` ; do
 	echo
 done
 
+cleanup_files
 stop_cxl_traces
+
 exit 0
