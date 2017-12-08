@@ -814,6 +814,10 @@ BEGIN
           --
           FOR i IN 0 TO 31 LOOP
             read_ctrl_q(i).clt <= CL_NOT_USED;
+            read_ctrl_q(i).rsp <= ILLEGAL_RSP;
+            read_ctrl_q(i).com <= INACTIVE;
+            read_ctrl_q(i).buf <= EMPTY;
+            read_ctrl_q(i).dma <= EMPTY;
           END LOOP;  -- i
 
           clt_rtag_q         <= (OTHERS => '0');
@@ -1427,7 +1431,11 @@ BEGIN
           --
           FOR i IN 0 TO 31 LOOP
             write_ctrl_q(i).clt <= CL_NOT_USED;
-          END LOOP;  -- i
+            write_ctrl_q(i).rsp <= ILLEGAL_RSP;
+            write_ctrl_q(i).com <= INACTIVE;
+            write_ctrl_q(i).buf <= EMPTY;
+            write_ctrl_q(i).dma <= EMPTY;
+         END LOOP;  -- i
 
           buf_wfull_cnt_q       <= 0;
           buf_walmost_full_q    <= '0';
