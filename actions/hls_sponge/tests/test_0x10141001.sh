@@ -73,7 +73,7 @@ if [ -z "$SNAP_CONFIG" ]; then
 	echo
 fi
 
-#### MEMCOPY ##########################################################
+#### SPONGE ##########################################################
 
 function test_sponge {
     local size=$1
@@ -103,7 +103,17 @@ function test_sponge {
 }
 
 rm -f snap_sponge.log
+touch snap_sponge.log
 
+if [ "$duration" = "NORMAL" ]; then
+  test_sponge 
+fi
+
+
+echo
+echo "READ/WRITE Performance Results"
+grep "memcopy of" snap_memcopy.log
+echo
 
 
 rm -f *.bin *.bin *.out
