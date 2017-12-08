@@ -16,7 +16,6 @@
 -- limitations under the License.
 --
 -- change log:
--- 12/20/2016 R. Rieke add flip bit for rad bit to circumvent page flip
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 
@@ -136,12 +135,7 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL buf_wtag_cl_partial_q            : boolean;
   SIGNAL wdata_parity_err_q               : std_logic_vector(  7 DOWNTO 0) := (OTHERS => '0');
   SIGNAL wdata_parity_fir_q               : std_logic := '0';
-
-  signal flip_rbit_q                      : std_logic;
-  signal flip_wbit_q                      : std_logic;
-  signal flip_rbit_valid_q                : std_logic;
-  signal flip_wbit_valid_q                : std_logic;
-
+  
   COMPONENT ram_1040x32_2p
     PORT(
       clka  : IN  STD_LOGIC;
@@ -357,100 +351,95 @@ BEGIN
       VARIABLE wram_rmdata_p_v      : std_logic_vector((  8*CAPI_VER)-1 DOWNTO 0);
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
+        --
+        -- defaults
+        --
+        buf_wtag_q            <= wram_waddr_q(6 DOWNTO 1);
+        buf_wtag_p_q          <= parity_gen_even(wram_waddr_p_q & wram_waddr_q(0));
+        buf_wtag_valid_q      <= FALSE;
+        buf_wtag_cl_partial_q <= TRUE;
+        wdata_parity_err_q    <= (OTHERS => '0');
+        wdata_parity_fir_q    <= '0';
+        wram_waddr_q          <= wram_waddr_d;
+        wram_waddr_p_q        <= wram_waddr_p_d;
+
+        --
+        -- wdata
+        IF wram_wen = '1' THEN
+          --
+          -- check that the first 64 bytes of a CL are written into the buffer
+          --
+          IF (wram_waddr_q(0) = '0') THEN
+            IF (and_reduce(sd_d_i.wr_strobe) = '1') THEN
+              even_wdata_complete_q <= TRUE;
+            ELSE
+              even_wdata_complete_q <= FALSE;
+            END IF;
+          END IF;
+
+          --
+          -- check that the second 64 bytes of a CL are written into the buffer
+          --
+          IF (wram_waddr_q(0) = '1') THEN
+            IF (and_reduce(sd_d_i.wr_strobe) = '1') THEN
+              odd_wdata_complete_v := TRUE;
+            ELSE
+              odd_wdata_complete_v := FALSE;
+            END IF;
+          END IF;
+        end if;
+
+        --
+        -- check that the full CL is written into the buffer
+        --
+        IF (even_wdata_complete_q = TRUE) AND
+           (odd_wdata_complete_v  = TRUE) THEN
+          buf_wtag_cl_partial_q <= FALSE;
+        END IF;
+
+        IF (wram_waddr_d(1) /= wram_waddr_q(1))  THEN
+          buf_wtag_valid_q <= TRUE;
+        END IF;
+
+        --
+        -- RAM output wiring
+        FOR w IN 0 TO CAPI_VER-1 LOOP
+          wram_rdata_v   ((512*w+512)-1 DOWNTO 512*w) := wram_rdata((576*w+512)-1 DOWNTO 576*w);
+          wram_rdata_be_v(( 64*w+ 64)-1 DOWNTO  64*w) := wram_rdata((576*w+576)-1 DOWNTO 576*w+512);
+   
+          --
+          -- wram read and modified data
+          FOR i IN (64*(w+1))-1 DOWNTO 0 LOOP
+            IF wram_rdata_be_v(i) = '1' THEN
+              wram_rmdata_v(i*8+7 DOWNTO i*8) := wram_rdata_v(i*8+7 DOWNTO i*8);
+            ELSE
+              wram_rmdata_v(i*8+7 DOWNTO i*8) := wback_data_q(i*8+7 DOWNTO i*8);
+            END IF;
+          END LOOP;  -- i
+          wram_rmdata_p_v(8*w+7 DOWNTO 8*w) := AC_GENPARITY(wram_rmdata_v(512*w+511 DOWNTO 512*w+448), 64) &
+                                               AC_GENPARITY(wram_rmdata_v(512*w+447 DOWNTO 512*w+384), 64) &
+                                               AC_GENPARITY(wram_rmdata_v(512*w+383 DOWNTO 512*w+320), 64) &
+                                               AC_GENPARITY(wram_rmdata_v(512*w+319 DOWNTO 512*w+256), 64) &
+                                               AC_GENPARITY(wram_rmdata_v(512*w+255 DOWNTO 512*w+192), 64) &
+                                               AC_GENPARITY(wram_rmdata_v(512*w+191 DOWNTO 512*w+128), 64) &
+                                               AC_GENPARITY(wram_rmdata_v(512*w+127 DOWNTO 512*w+64) , 64) &
+                                               AC_GENPARITY(wram_rmdata_v(512*w+ 63 DOWNTO 512*w+0)  , 64);
+        END LOOP; -- W
+
+        --
+        --
+        wram_rdata_q   <= wram_rmdata_v;
+        wram_rdata_p_q <= wram_rmdata_p_v;            
+
+        --
+        -- Reset Logic
+        -- 
         IF afu_reset = '1' THEN
           --
           -- initial values
           --
-          buf_wtag_q         <= (OTHERS => '0');
-          buf_wtag_p_q       <= '1';
-          buf_wtag_valid_q   <= FALSE;
-          wram_rdata_q       <= (OTHERS => '0');
-          wram_rdata_p_q     <= (OTHERS => '1');
           wram_waddr_q       <= (OTHERS => '0');
           wram_waddr_p_q     <= '1';
-          wdata_parity_err_q <= (OTHERS => '0');
-          wdata_parity_fir_q <= '0';
-
-        ELSE
-          --
-          -- defaults
-          --
-          buf_wtag_q            <= wram_waddr_q(6 DOWNTO 1);
-          buf_wtag_p_q          <= parity_gen_even(wram_waddr_p_q & wram_waddr_q(0));
-          buf_wtag_valid_q      <= FALSE;
-          buf_wtag_cl_partial_q <= TRUE;
-          wdata_parity_err_q    <= (OTHERS => '0');
-          wdata_parity_fir_q    <= '0';
-          wram_waddr_q          <= wram_waddr_d;
-          wram_waddr_p_q        <= wram_waddr_p_d;
-
-          --
-          -- wdata
-          IF wram_wen = '1' THEN
-            --
-            -- check that the first 64 bytes of a CL are written into the buffer
-            --
-            IF (wram_waddr_q(0) = '0') THEN
-              IF (and_reduce(sd_d_i.wr_strobe) = '1') THEN
-                even_wdata_complete_q <= TRUE;
-              ELSE
-                even_wdata_complete_q <= FALSE;
-              END IF;
-            END IF;
-
-            --
-            -- check that the second 64 bytes of a CL are written into the buffer
-            --
-            IF (wram_waddr_q(0) = '1') THEN
-              IF (and_reduce(sd_d_i.wr_strobe) = '1') THEN
-                odd_wdata_complete_v := TRUE;
-              ELSE
-                odd_wdata_complete_v := FALSE;
-              END IF;
-            END IF;
-          end if;
-
-          --
-          -- check that the full CL is written into the buffer
-          --
-          IF (even_wdata_complete_q = TRUE) AND
-             (odd_wdata_complete_v  = TRUE) THEN
-            buf_wtag_cl_partial_q <= FALSE;
-          END IF;
-
-          IF (wram_waddr_d(1) /= wram_waddr_q(1))  THEN
-            buf_wtag_valid_q <= TRUE;
-          END IF;
-
-          --
-          -- RAM output wiring
-          FOR w IN 0 TO CAPI_VER-1 LOOP
-            wram_rdata_v   ((512*w+512)-1 DOWNTO 512*w) := wram_rdata((576*w+512)-1 DOWNTO 576*w);
-            wram_rdata_be_v(( 64*w+ 64)-1 DOWNTO  64*w) := wram_rdata((576*w+576)-1 DOWNTO 576*w+512);
-   
-            --
-            -- wram read and modified data
-            FOR i IN (64*(w+1))-1 DOWNTO 0 LOOP
-              IF wram_rdata_be_v(i) = '1' THEN
-                wram_rmdata_v(i*8+7 DOWNTO i*8) := wram_rdata_v(i*8+7 DOWNTO i*8);
-              ELSE
-                wram_rmdata_v(i*8+7 DOWNTO i*8) := wback_data_q(i*8+7 DOWNTO i*8);
-              END IF;
-            END LOOP;  -- i
-            wram_rmdata_p_v(8*w+7 DOWNTO 8*w) := AC_GENPARITY(wram_rmdata_v(512*w+511 DOWNTO 512*w+448), 64) &
-                                                 AC_GENPARITY(wram_rmdata_v(512*w+447 DOWNTO 512*w+384), 64) &
-                                                 AC_GENPARITY(wram_rmdata_v(512*w+383 DOWNTO 512*w+320), 64) &
-                                                 AC_GENPARITY(wram_rmdata_v(512*w+319 DOWNTO 512*w+256), 64) &
-                                                 AC_GENPARITY(wram_rmdata_v(512*w+255 DOWNTO 512*w+192), 64) &
-                                                 AC_GENPARITY(wram_rmdata_v(512*w+191 DOWNTO 512*w+128), 64) &
-                                                 AC_GENPARITY(wram_rmdata_v(512*w+127 DOWNTO 512*w+64) , 64) &
-                                                 AC_GENPARITY(wram_rmdata_v(512*w+ 63 DOWNTO 512*w+0)  , 64);
-          END LOOP; -- W
-
-          --
-          --
-          wram_rdata_q   <= wram_rmdata_v;
-          wram_rdata_p_q <= wram_rmdata_p_v;            
         END IF;
       END IF;
     END PROCESS wram_ctrl_clk;
@@ -512,6 +501,16 @@ BEGIN
     registers : PROCESS (ha_pclock)
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
+        hd_c_q              <= hd_c_i;
+        rram_raddr_q        <= rram_raddr_d;
+        rram_raddr_p_q      <= rram_raddr_p_d;
+        rram_rdata_vld_q    <= rram_rdata_vld_d;
+        rram_rdata_vld_qq   <= rram_rdata_vld_q;
+        rram_rdata_vld_qqq  <= rram_rdata_vld_qq;
+        rram_rdata_end_q    <= rram_rdata_end_d;
+        rram_rdata_end_qq   <= rram_rdata_end_q;
+        rram_rdata_end_qqq  <= rram_rdata_end_qq;
+
         IF afu_reset = '1' THEN
           rram_raddr_q        <= (OTHERS => '0');
           rram_raddr_p_q      <= '1';
@@ -521,21 +520,6 @@ BEGIN
           rram_rdata_end_q    <= '0';
           rram_rdata_end_qq   <= '0';
           rram_rdata_end_qqq  <= '0';
-          flip_rbit_valid_q   <= '1';             
-          flip_wbit_valid_q   <= '1';
-          flip_rbit_q         <= '0';
-          flip_wbit_q         <= '0';          
-
-        ELSE
-          hd_c_q              <= hd_c_i;
-          rram_raddr_q        <= rram_raddr_d;
-          rram_raddr_p_q      <= rram_raddr_p_d;
-          rram_rdata_vld_q    <= rram_rdata_vld_d;
-          rram_rdata_vld_qq   <= rram_rdata_vld_q;
-          rram_rdata_vld_qqq  <= rram_rdata_vld_qq;
-          rram_rdata_end_q    <= rram_rdata_end_d;
-          rram_rdata_end_qq   <= rram_rdata_end_q;
-          rram_rdata_end_qqq  <= rram_rdata_end_qq;
         END IF;
       END IF;
     END PROCESS registers;
