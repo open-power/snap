@@ -79,7 +79,7 @@ function test_sponge {
     local size=$1
     
     echo -n "Doing snap_sponge "
-    cmd="snap_sponge -C${snap_card} -C1 -vv -t2500 -mSPONGE \
+    cmd="snap_checksum -C${snap_card} -vv -t2500 -mSPONGE \
                 -N -cSPEED -n1 -f65536 >>	\
 		snap_sponge.log 2>&1"
     eval ${cmd}
@@ -87,15 +87,6 @@ function test_sponge {
 	cat snap_sponge.log
 	echo "cmd: ${cmd}"
 	echo "failed"
-	exit 1
-    fi
-    echo "ok"
-
-    echo -n "Check results ... "
-    diff $tout tCAP 2>&1 > /dev/null
-    if [ $? -ne 0 ]; then
-	echo "failed"
-	echo "  Out and expected files are different!"
 	exit 1
     fi
     echo "ok"
