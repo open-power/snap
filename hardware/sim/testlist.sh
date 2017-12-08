@@ -36,7 +36,8 @@
     free1=$free2                                        # old counter, if one exists
     ${call_args}; step_rc=$?                            # execute step
     ts6=$(date +%s%N);                                  # begin of step
-    free2=$($SNAP_ROOT/software/tools/snap_peek 0x80|grep ']'|awk '{print $2}')  # cycle timestamp from freerunning counter
+#   free2=$($SNAP_ROOT/software/tools/snap_peek 0x80|grep ']'|awk '{print $2}')  # cycle timestamp from freerunning counter
+    free2=$(snap_peek 0x80|grep ']'|awk '{print $2}')  # cycle timestamp from freerunning counter
     deltasim=$(( ($ts6-$ts5)/1000000 ));    s=$((deltasim/1000)); ms=$((deltasim%1000))
     deltans=$(( (16#$free2-16#$free1)*4 )); us=$((deltans/1000)); ns=$((deltans%1000))
     ts4=$(date||awk '{print $4}')                       # end of step
@@ -47,7 +48,8 @@
   for((loop=1;loop<=loops;loop++));do
     ts1=$(date +%s);                                    # begin of loop
 #   step "$SNAP_ROOT/software/tools/snap_peek -h"
-    t="$SNAP_ROOT/software/tools/snap_peek 0x0         ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release maj.int.min.dist.4Bsha"
+#   t="$SNAP_ROOT/software/tools/snap_peek 0x0         ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release maj.int.min.dist.4Bsha"
+    t="snap_peek 0x0         ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release maj.int.min.dist.4Bsha"
     vers=${r:0:6}; vers1=${r:0:2}; vers2=${r:2:2}; vers3=${r:4:2}; dist=${r:6:2};echo "SNAP version=$vers1.$vers2.$vers3 dist=$dist"
     t="$SNAP_ROOT/software/tools/snap_peek 0x8         ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # build date 0000YYYY.MM.DD.hh.mm"
     t="$SNAP_ROOT/software/tools/snap_peek 0x10        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
@@ -56,8 +58,7 @@
     done=${r:13:1};numact=${r:14:1};(( numact += 1 ));echo "exploration done=$done num_actions=$numact"
 #   t="$SNAP_ROOT/software/tools/snap_peek 0x20        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Lockreg 0x1=locked"
     t="$SNAP_ROOT/software/tools/snap_peek 0x30        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # capabilityreg bit31-16=DRAM size bit8=NVMe bit7..0=card type"
-    dram=$(( 16#${r:8:4} )); nvme=${r:13:1}; cardtype=${r:14:2};
-    echo "card_type=$cardtype NVMe=$nvme ${NVME_USED} DRAM=$dram MB"
+    dram=$(( 16#${r:8:4} )); nvme=${r:13:1}; type=${r:14:2}; echo "card_type=$type NVMe=$nvme ${NVME_USED} DRAM=$dram MB"
     if [[ "$done" == "0" ]];then echo "exploration not done yet"
       env_action=$(echo $ACTION_ROOT|sed -e "s/actions\// /g"|awk '{print $2}');echo "ENV_action=${env_action}"
 #     if [[ "${env_action}" == *"hdl_example"* ]];then echo -e "$del\ntesting hdl_example in master mode"
@@ -72,7 +73,8 @@
       echo -e "start exploration$del"
 #     step "$SNAP_ROOT/software/tools/snap_maint -h -V"
 #     step "$SNAP_ROOT/software/tools/snap_maint"
-      step "$SNAP_ROOT/software/tools/snap_maint -m1 -c1"
+#     step "$SNAP_ROOT/software/tools/snap_maint -m1 -c1"
+      step "snap_maint -m1 -c1"
 #     step "$SNAP_ROOT/software/tools/snap_maint -m1 -c1 -vvv"
 #     step "$SNAP_ROOT/software/tools/snap_maint -m2 -c1 -vvv"
       step "$SNAP_ROOT/software/tools/snap_maint -m1 -m2 -m3 -m4"
@@ -92,6 +94,10 @@
                     if (( dram > 0 ));then echo -e "write FPGA memory to prevent reading unwritten adr 0"
                       step "$ACTION_ROOT/sw/snap_example_set -F -b0x0 -s0x100 -p0x5 -t50"
                     fi;;
+        "10140001") a0="hdl_nvme_example"
+                    if (( dram > 0 ));then echo -e "write FPGA memory to prevent reading unwritten adr 0"
+                      step "$ACTION_ROOT/sw/snap_example_set -F -b0x0 -s0x100 -p0x5 -t50"
+                    fi;;
         "10141000") a0="hls_memcopy";;
         "10141001") a0="hls_sponge";;
         "10141002") a0="hls_hashjoin";;
@@ -101,7 +107,7 @@
         "10141006") a0="hls_intersect_s";;
         "00000108") a0="hls_blowfish";;
         "10141007") a0="hls_nvme_memcopy";;
-        *) a0="unknown";;
+        *) echo "unknown action0 type=$t0l, exiting";exit 1;;
       esac; echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="$SNAP_ROOT/software/tools/snap_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
       t="$SNAP_ROOT/software/tools/snap_peek 0x10000 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release"
@@ -123,7 +129,7 @@
         "10141006") a1="hls_intersect_s";;
         "00000108") a1="hls_blowfish";;
         "10141007") a1="hls_nvme_memcopy";;
-        *) a1="unknown";;
+        *) echo "unknown action1 type=$t1l, exiting";exit 1;;
       esac; echo "action0 type1s=$t1s type1l=$t1l $a1"
       t="$SNAP_ROOT/software/tools/snap_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
       t="$SNAP_ROOT/software/tools/snap_peek 0x11000 -w32";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release"
@@ -143,21 +149,26 @@
 #   t="$SNAP_ROOT/software/tools/snap_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # MMIO   ErrInj"
 #   t="$SNAP_ROOT/software/tools/snap_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # DMA    ErrInj"
 
-    if [[ "$t0l" == "10140000" || "${env_action}" == "hdl_example" ]];then echo -e "$del\ntesting hdl_example"
+    if [[ "$t0l" == "10140000" ||
+          "$t0l" == "10140001" ||
+          "${env_action}" == "hdl_example" ||
+          "${env_action}" == "hdl_nvme_example" ]];then echo -e "$del\ntesting hdl_example"
     if [[ "$nvme" == "1" ]];then echo -e "\nskipped due to NVMe"
     else
 #     step "$ACTION_ROOT/sw/snap_example -h"
-      step "$ACTION_ROOT/sw/snap_example -a1 -s1 -e2 -i1 -t100  -vv"
+#     step "$ACTION_ROOT/sw/snap_example -a1 -s1 -e2 -i1 -t100  -vv"
+      step "snap_example -a1 -s1 -e2 -i1 -t100  -vv"
       step "$ACTION_ROOT/sw/snap_example -a1 -s2 -e4 -i1 -t200"
       step "$ACTION_ROOT/sw/snap_example -a1 -s2 -e8 -i1 -t500"
       if [[ "$ver" == "000800" && "$dist" > "40" || "$vers" > "000800" ]];then echo "including interrupts starting with version00.08.00 dist41"
         step "$ACTION_ROOT/sw/snap_example -I -a1 -s1 -e2 -i1 -t100 -vv"
-        step "$ACTION_ROOT/sw/snap_example -I -a2 -A256 -S1 -B0 -t200"
+        step "$ACTION_ROOT/sw/snap_example -I -a2 -S1 -B0 -A256 -t400"
       fi
       for num4k in 0 1 $rnd20; do to=$((num4k*60+200))
-      for num64 in 0 1 $rnd32; do
+      for num64 in 0 1 2 $rnd32; do
       for align in 4096 64; do  # posix memalign only allows power of 2
-        if [[ $((num64%2)) == 1 && $cardtype == "10" ]];then echo "skip num64=$num64 for N250SP";continue;fi             # odd 64B xfer not allowed on N250SP
+        if [[ $((num64%2)) == 1      && $cardtype == "10" ]];then echo "skip num64=$num64 for N250SP";continue;fi        # odd 64B xfer not allowed on N250SP
+        if [[ $(((align/64)%2)) == 1 && $cardtype == "10" ]];then echo "skip align=$align for N250SP";continue;fi        # 64B aligns not allowed on N250SP
         if [[ "$num4k" == "0" && "$num64" == "0" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
         if [[ "$num4k" > "1"  && "$num64" < "2"  ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
         if [[ "$num4k" > "1"  && "$align" > "64" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
@@ -170,7 +181,8 @@
         for num4k in 0 1 $rnd20; do to=$((num4k*180+180))
         for num64 in 0 1 $rnd32; do                # 1..64
         for align in 4096 64; do                   # must be mult of 64
-          if [[ $((num64%2)) == 1 && $cardtype == "10" ]];then echo "skip num64=$num64 for N250SP";continue;fi             # odd 64B xfer not allowed on N250SP
+          if [[ $((num64%2)) == 1      && $cardtype == "10" ]];then echo "skip num64=$num64 for N250SP";continue;fi        # odd 64B xfer not allowed on N250SP
+          if [[ $(((align/64)%2)) == 1 && $cardtype == "10" ]];then echo "skip align=$align for N250SP";continue;fi        # 64B aligns not allowed on N250SP
           if [[ "$num4k" == "0" && "$num64" == "0" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
           if [[ "$num4k" > "1"  && "$num64" < "2"  ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
           if [[ "$num4k" > "1"  && "$align" > "64" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
@@ -179,7 +191,8 @@
         done
         done
         #### check DDR3 memory in AlphaData KU3, stay under 512k for BRAM
-        step "$ACTION_ROOT/sw/snap_example_ddr -h"
+#       step "$ACTION_ROOT/sw/snap_example_ddr -h"
+        step "snap_example_ddr -h"
         for iter in 1 $rnd10; do                    # number of blocks
         for bsize in 64 $(($rnd10*64)); do          # block size mult of 64
         for strt in 1024 $rnd1k4k; do               # start adr
@@ -190,7 +203,8 @@
         done
         done
         #### use memset in host or in fpga memory, stay under 512k for BRAM
-        step "$ACTION_ROOT/sw/snap_example_set -h"
+#       step "$ACTION_ROOT/sw/snap_example_set -h"
+        step "snap_example_set -h"
         for beg in 0 11 63; do                                    # start adr
         for size in 7 4097; do to=$((size/20+300))                                              # block size to copy, rough timeout dependent on filesize
           step "$ACTION_ROOT/sw/snap_example_set -H -b${beg} -s${size} -p${size} -t$to"
@@ -201,8 +215,8 @@
     fi # NVMe
     fi # hdl_example
 
-#   if [[ "${env_action}" == "hdl_example" && "$NVME_USED" == "TRUE" ]];then echo -e "$del\ntesting nvme"
-    if [[ "${env_action}" == "hdl_example" && "$nvme" == "1" ]];then echo -e "$del\ntesting nvme"
+    if [[ "${env_action}" == "hdl_example" && "$nvme" == "1" ]] ||
+       [[ "${env_action}" == "hdl_nvme_example" ]];then echo -e "$del\ntesting nvme"
 #     # optional: wait for SSD0 link to be up
 #     t="$SNAP_ROOT/software/tools/snap_poke -w32 0x30000 0x10000144"; r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # check SSD0 link status"
 #     t="$SNAP_ROOT/software/tools/snap_peek 0x80";                    r=$($t|grep ']'|awk '{print $2}'); free1=${r:8:8}
@@ -253,7 +267,8 @@
     fi # nvme
 
     if [[ "$t0l" == "10141000" || "${env_action}" == "hls_memcopy"* ]];then echo -e "$del\ntesting snap_memcopy"
-      step "$ACTION_ROOT/sw/snap_memcopy -h"
+#     step "$ACTION_ROOT/sw/snap_memcopy -h"
+      step "snap_memcopy -h"
       for size in 1 64 80 85 240 $rnd1k $rnd1k4k; do to=$((size*50+10))   # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
         #### select 1 type of data generation
         # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                         # same char mult times
@@ -363,7 +378,8 @@
 
     if [[ "$t0l" == "10141007" && "${env_action}" == "hls_nvme_memcopy"* && "$nvme" == "1" ]];then echo -e "$del\ntesting snap_nvme_memcopy"
       step "$ACTION_ROOT/sw/snap_nvme_memcopy -h"
-      step "$SNAP_ROOT/software/tools/snap_nvme_init  -v"
+#     step "$SNAP_ROOT/software/tools/snap_nvme_init  -v"
+      step "snap_nvme_init  -v"
       for size in 512 2048 ; do to=$((size*50+10))
         dd if=/dev/urandom bs=${size} count=1 >${size}.in
         if [[ $((size%64)) == 0 ]];then    # size is aligned
