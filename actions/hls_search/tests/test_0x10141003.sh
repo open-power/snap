@@ -79,7 +79,8 @@ function test_search {
     local size=$1
 
     echo -n "Doing search "
-    cmd="snap_search -C${snap_card} -i ../sw/snap_search.txt -p include -t 120  >>       \
+    #cmd="snap_search -C${snap_card} -i ../sw/snap_search.txt -p include -t 120  >>       \
+    cmd="snap_search -h >> 
     snap_search.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then
