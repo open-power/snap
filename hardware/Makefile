@@ -484,4 +484,5 @@ clean:
 			echo -e "                        Error: [make "$@"] failed for action/application in $(ACTION_ROOT)"; exit -1; \
 		fi                                          \
 	fi
+	$(MAKE) -C $(PSLSE_ROOT)/libcxl clean
 	@echo -e "[CLEAN ENVIRONMENT...] done  `date +"%T %a %b %d %Y"`"
