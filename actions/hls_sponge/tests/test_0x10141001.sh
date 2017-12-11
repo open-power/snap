@@ -90,8 +90,26 @@ function test_sponge {
 	exit 1
     fi
     echo "ok"
-
 }
+
+#### SPONGE ##########################################################
+
+function test_sha3_shake {
+  local size=$1
+  
+  echo -n "Doing snap_sponge "
+  cmd="snap_checksum -mSPONGE -N -t800 -cSHA3_SHAKE >>       \
+  snap_sponge.log 2>&1"
+  eval ${cmd}
+  if [ $? -ne 0 ]; then
+    cat snap_sponge.log
+    echo "cmd: ${cmd}"
+    echo "failed"
+    exit 1
+    fi
+    echo "ok"
+  }
+
 
 rm -f snap_sponge.log
 touch snap_sponge.log
@@ -100,13 +118,10 @@ if [ "$duration" = "NORMAL" ]; then
   test_sponge 
 fi
 
-
-echo
-echo "READ/WRITE Performance Results"
-grep "memcopy of" snap_memcopy.log
-echo
-
-
+if [ "$duration" = "NORMAL" ]; then
+  test_sha3_shake 
+  fi
+  
 rm -f *.bin *.bin *.out
 echo "Test OK"
 exit 0
