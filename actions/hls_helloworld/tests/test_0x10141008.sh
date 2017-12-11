@@ -73,7 +73,7 @@ if [ -z "$SNAP_CONFIG" ]; then
 	echo
 fi
 
-#### MEMCOPY ##########################################################
+#### HELLOWORLD ##########################################################
 
 function test_helloworld {
     local size=$1

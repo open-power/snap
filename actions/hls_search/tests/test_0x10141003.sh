@@ -78,9 +78,17 @@ fi
 function test_search {
     local size=$1
 
-# TEST TO BE WRITTEN HERE !!
-	echo "No test written yet => failed"
-	exit 1
+    echo -n "Doing search "
+    cmd="snap_search -C${snap_card} -i ../sw/snap_search.txt -p include -t 120  >>       \
+    snap_search.log 2>&1"
+    eval ${cmd}
+    if [ $? -ne 0 ]; then
+      cat snap_search.log
+      echo "cmd: ${cmd}"
+      echo "failed"
+      exit 1
+    fi
+    echo "ok"
 
 
 }
