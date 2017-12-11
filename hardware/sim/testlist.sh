@@ -1,19 +1,19 @@
 #!/bin/bash
-#
+ #
 # Copyright 2017 International Business Machines
-#
+ #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+ #
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
+ #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+ #
   del="\n#######################################"       # delimiter
   set -e                                                # exit on error
   n=0                                                   # count amount of tests executed (exception for subsecond calls)
@@ -58,7 +58,7 @@
     done=${r:13:1};numact=${r:14:1};(( numact += 1 ));echo "exploration done=$done num_actions=$numact"
 #   t="$SNAP_ROOT/software/tools/snap_peek 0x20        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Lockreg 0x1=locked"
     t="$SNAP_ROOT/software/tools/snap_peek 0x30        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # capabilityreg bit31-16=DRAM size bit8=NVMe bit7..0=card type"
-    dram=$(( 16#${r:8:4} )); nvme=${r:13:1}; type=${r:14:2}; echo "card_type=$type NVMe=$nvme ${NVME_USED} DRAM=$dram MB"
+    dram=$(( 16#${r:8:4} )); nvme=${r:13:1}; cardtype=${r:14:2}; echo "cardtype=$cardtype NVMe=$nvme ${NVME_USED} DRAM=$dram MB"
     if [[ "$done" == "0" ]];then echo "exploration not done yet"
       env_action=$(echo $ACTION_ROOT|sed -e "s/actions\// /g"|awk '{print $2}');echo "ENV_action=${env_action}"
 #     if [[ "${env_action}" == *"hdl_example"* ]];then echo -e "$del\ntesting hdl_example in master mode"
@@ -148,7 +148,7 @@
 #   t="$SNAP_ROOT/software/tools/snap_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Jobmgr ErrInj"
 #   t="$SNAP_ROOT/software/tools/snap_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # MMIO   ErrInj"
 #   t="$SNAP_ROOT/software/tools/snap_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # DMA    ErrInj"
-
+ #
     if [[ "$t0l" == "10140000" ||
           "$t0l" == "10140001" ||
           "${env_action}" == "hdl_example" ||
@@ -214,7 +214,7 @@
       fi
     fi # NVMe
     fi # hdl_example
-
+ #
     if [[ "${env_action}" == "hdl_example" && "$nvme" == "1" ]] ||
        [[ "${env_action}" == "hdl_nvme_example" ]];then echo -e "$del\ntesting nvme"
 #     # optional: wait for SSD0 link to be up
@@ -233,7 +233,6 @@
 #       t="$SNAP_ROOT/software/tools/snap_peek 0x80";                  r=$($t|grep ']'|awk '{print $2}'); free2=${r:8:8}
 #       if (( "$up" < "8" )); then printf '.'; else break; fi
 #     done; delta=$(( (16#$free2-16#$free1)/250 )); echo "SSD1 link_up=$up i=$i freerun_delta=$delta us"
-
 #     # init FPGA drives
 #     step "$SNAP_ROOT/software/tools/nvmeInit.py          -h"
 #     step "$SNAP_ROOT/software/tools/nvmeInit.py          -d0"
@@ -243,7 +242,6 @@
 #     step "$SNAP_ROOT/software/tools/nvmeInit.py          -db"
 #     step "$ACTION_ROOT/sw/snap_example      -h"
 #     step "$ACTION_ROOT/sw/snap_example      -a6           -S2      -t100 -vv"
-
 #     # test with Python and check visually
 #     step "$ACTION_ROOT/sw/snap_example_set  -h"
 #     step "$ACTION_ROOT/sw/snap_example_set  -F  -b0x8000  -s0x2000 -p0x5 -t50"
@@ -255,7 +253,6 @@
 #     step "$ACTION_ROOT/sw/snap_example      -a4 -D0x10000 -S2      -t100 -vv"
 #     step "$SNAP_ROOT/software/tools/nvmeWR.py            -d0"
 #     step "$ACTION_ROOT/sw/snap_example      -a4 -D0x10000 -S2      -t100 -vv"
-
 #     # test with C and check automatically
 #     step "$ACTION_ROOT/sw/snap_example_nvme -h"
       step "$ACTION_ROOT/sw/snap_example_nvme -d1                    -t100 -vv"
@@ -265,7 +262,7 @@
       step "$ACTION_ROOT/sw/snap_example_nvme -d0 -b5                -t100 -v "
       step "$ACTION_ROOT/sw/snap_example_nvme -d0 -b${rnd20}         -t100 -v "
     fi # nvme
-
+ #
     if [[ "$t0l" == "10141000" || "${env_action}" == "hls_memcopy"* ]];then echo -e "$del\ntesting snap_memcopy"
 #     step "$ACTION_ROOT/sw/snap_memcopy -h"
       step "snap_memcopy -h"
@@ -288,7 +285,7 @@
         fi
       done
     fi # hls_memcopy
-
+ #
     if [[ "$t0l" == "10141001" || "${env_action}" == "hls_sponge"* ]];then echo -e "$del\ntesting sponge"
       step "$ACTION_ROOT/sw/snap_checksum -h"
       step "$ACTION_ROOT/sw/snap_checksum -N -v -t200 -mSPONGE  -cSHA3                 " # 23s
@@ -314,7 +311,7 @@
 #     step "$ACTION_ROOT/sw/snap_checksum -N -v -t200 -mCRC32   -cSPEED           -s256" #
 #     unset SNAP_CONFIG
     fi # sponge
-
+ #
     if [[ "$t0l" == "10141002" || "${env_action}" == "hls_hashjoin"* ]];then echo -e "$del\ntesting snap_hashjoin"
       step "$ACTION_ROOT/sw/snap_hashjoin -h"
       step "$ACTION_ROOT/sw/snap_hashjoin           -t600 -vvv"
@@ -325,7 +322,7 @@
         step "$ACTION_ROOT/sw/snap_hashjoin -Q$varq -t$to -vvv"
       done
     fi # hls_hashjoin
-
+ #
     if [[ "$t0l" == "10141003" || "${env_action}" == "hls_search"* ]];then echo -e "$del\ntesting snap_search"
       step "$ACTION_ROOT/sw/snap_search -h"
       for size in 1 2 30 257 1024 $rnd1k4k; do to=$((size*60+400))
@@ -342,7 +339,7 @@
 #       step "$ACTION_ROOT/sw/snap_search -m0 -pA       -i${size}.uni -E${size}  -t$to -v"
       done
     fi # hls_search
-
+ #
     if [[ "$t0l" == "10141004" || "${env_action}" == "hls_bfs"* ]];then echo -e "$del\ntesting BFS"
       step "$ACTION_ROOT/sw/snap_bfs -h"
       step "$ACTION_ROOT/sw/snap_bfs -r50   -t30000 -v -o bfshw.out"
@@ -351,7 +348,7 @@
       unset SNAP_CONFIG
       if $ACTION_ROOT/sw/bfs_diff bfshw.out bfssw.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm -f bfs*.out;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
     fi # bfs
-
+ #
     if [[ "$t0l" == "10141005" && "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect hash"
       step "$ACTION_ROOT/sw/snap_intersect -h"
       step "$ACTION_ROOT/sw/snap_intersect    -m1 -v -t1200"
@@ -363,7 +360,7 @@
         step "$ACTION_ROOT/sw/snap_intersect -m1 -s -i table1.txt -j table2.txt -v -t2000"
       done
     fi # intersect hash
-
+ #
     if [[ "$t0l" == "10141006" && "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect sort"
       step "$ACTION_ROOT/sw/snap_intersect -h"
       step "$ACTION_ROOT/sw/snap_intersect    -m2 -v -t1200"
@@ -375,7 +372,7 @@
         step "$ACTION_ROOT/sw/snap_intersect -m2 -s -i table1.txt -j table2.txt -v -t2000"
       done
     fi # intersect sort
-
+ #
     if [[ "$t0l" == "10141007" && "${env_action}" == "hls_nvme_memcopy"* && "$nvme" == "1" ]];then echo -e "$del\ntesting snap_nvme_memcopy"
       step "$ACTION_ROOT/sw/snap_nvme_memcopy -h"
 #     step "$SNAP_ROOT/software/tools/snap_nvme_init  -v"
@@ -403,7 +400,7 @@
         fi
       done
     fi # hls_nvme_memcopy
-
+ #
     if [[ "$t0l" == "00000108" || "${env_action}" == "hls_blowfish" ]];then echo -e "$del\ntesting blowfish"
       for blocks in 1 16 32 128 1024 4096 ; do  # blocks of 64B
         dd if=/dev/urandom of=in.bin  count=${blocks} bs=64 2>/dev/null
@@ -413,6 +410,6 @@
         if diff in.in decr.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
       done
     fi # blowfish
-
+ #
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"  # end of loop
   done; l=""; ts3=$(date +%s); totaltime=`expr $ts3 - $ts0`; echo "loops=$loops tests=$n total_time=$totaltime" # end of test
