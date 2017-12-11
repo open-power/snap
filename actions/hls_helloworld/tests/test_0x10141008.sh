@@ -108,8 +108,11 @@ function test_helloworld {
 }
 
 rm -f snap_helloworld.log
+touch snap_helloworld.log
 
-
+if [ "$duration" = "NORMAL" ]; then
+  test_helloworld 
+  fi
 
 rm -f *.bin *.bin *.out
 echo "Test OK"

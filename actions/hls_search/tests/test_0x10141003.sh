@@ -78,37 +78,17 @@ fi
 function test_search {
     local size=$1
 
-    cmd="echo \"Hello world. This is my first CAPI SNAP experience. It's real fun!\n\" > tin"
-    echo "cmd: ${cmd}"
-    cmd="echo \"HELLO WORLD. THIS IS MY FIRST CAPI SNAP EXPERIENCE. IT'S REAL FUN!\n\" > tCAP"
-    echo "cmd: ${cmd}"
-    echo -n "Doing snap_search "
-    cmd="snap_search -C${snap_card} -X	\
-		-i tin	\
-		-o tout >>	\
-		snap_search.log 2>&1"
-    eval ${cmd}
-    if [ $? -ne 0 ]; then
-	cat snap_search.log
-	echo "cmd: ${cmd}"
-	echo "failed"
+# TEST TO BE WRITTEN HERE !!
+	echo "No test written yet => failed"
 	exit 1
-    fi
-    echo "ok"
 
-    echo -n "Check results ... "
-    diff $tout tCAP 2>&1 > /dev/null
-    if [ $? -ne 0 ]; then
-	echo "failed"
-	echo "  Out and expected files are different!"
-	exit 1
-    fi
-    echo "ok"
 
 }
 
 rm -f snap_search.log
-
+if [ "$duration" = "NORMAL" ]; then
+  test_search 
+  fi
 
 
 rm -f *.bin *.bin *.out
