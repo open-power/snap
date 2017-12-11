@@ -78,7 +78,7 @@ fi
 function test_sponge {
     local size=$1
     
-    echo -n "Doing snap_sponge "
+    echo -n "Doing sponge SPEED "
     cmd="snap_checksum -C${snap_card} -vv -t2500 -mSPONGE \
                 -N -cSPEED -n1 -f65536 >>	\
 		snap_sponge.log 2>&1"
@@ -97,7 +97,7 @@ function test_sponge {
 function test_sha3_shake {
   local size=$1
   
-  echo -n "Doing snap_sponge "
+  echo -n "Doing sponge SHA3_SHAKE "
   cmd="snap_checksum -mSPONGE -N -t800 -cSHA3_SHAKE >>       \
   snap_sponge.log 2>&1"
   eval ${cmd}
