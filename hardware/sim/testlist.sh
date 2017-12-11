@@ -154,9 +154,9 @@
       step "snap_example -a1 -s2 -e8 -i1 -t500"
       if [[ "$ver" == "000800" && "$dist" > "40" || "$vers" > "000800" ]];then echo "including interrupts starting with version00.08.00 dist41"
         step "snap_example -I -a1 -s1 -e2 -i1 -t100 -vv"
-        step "snap_example -I -a2 -S1 -B0 -A256 -t400"
+        step "snap_example -I -a2 -S1 -B0 -A256 -t600"
       fi
-      for num4k in 0 1 $rnd20; do to=$((num4k*60+200))
+      for num4k in 0 1 $rnd20; do to=$((num4k*400+400))
       for num64 in 0 1 2 $rnd32; do
       for align in 4096 64; do  # posix memalign only allows power of 2
         if [[ $((num64%2)) == 1      && $cardtype == "10" ]];then echo "skip num64=$num64 for N250SP";continue;fi        # odd 64B xfer not allowed on N250SP
@@ -170,7 +170,7 @@
       done
       step "snap_example -a2 -B${rnd20} -t200"
       if [[ "$DDR3_USED" == "TRUE" || "$DDR4_USED" == "TRUE" || "$BRAM_USED" == "TRUE" || "$SDRAM_USED" == "TRUE" ]]; then echo -e "$del\ntesting DDR"
-        for num4k in 0 1 $rnd20; do to=$((num4k*180+180))
+        for num4k in 0 1 $rnd20; do to=$((num4k*400+400))
         for num64 in 0 1 $rnd32; do                # 1..64
         for align in 4096 64; do                   # must be mult of 64
           if [[ $((num64%2)) == 1      && $cardtype == "10" ]];then echo "skip num64=$num64 for N250SP";continue;fi        # odd 64B xfer not allowed on N250SP
