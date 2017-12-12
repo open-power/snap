@@ -484,7 +484,7 @@ clean:
 			echo -e "                        Error: [make "$@"] failed for action/application in $(ACTION_ROOT)"; exit -1; \
 		fi                                          \
 	fi
-	if [ -d $(PSLSE_ROOT) ]; then					\
+	if [ -e $(PSLSE_ROOT) ]; then					\
 		for d in afu_driver/src pslse libcxl debug ; do		\
 			$(MAKE) -C $(PSLSE_ROOT)/$$d $@ ;		\
 		done							\
