@@ -73,47 +73,55 @@ if [ -z "$SNAP_CONFIG" ]; then
 	echo
 fi
 
-#### HELLOWORLD ##########################################################
+#### SPONGE ##########################################################
 
-function test_helloworld {
+function test_sponge {
     local size=$1
-
-    cmd="echo \"Hello world. This is my first CAPI SNAP experience. It's real fun!\n\" > tin"
-    echo "cmd: ${cmd}"
-    cmd="echo \"HELLO WORLD. THIS IS MY FIRST CAPI SNAP EXPERIENCE. IT'S REAL FUN!\n\" > tCAP"
-    echo "cmd: ${cmd}"
-    echo -n "Doing snap_helloworld "
-    cmd="snap_helloworld -C${snap_card} -X	\
-		-i tin	\
-		-o tout >>	\
-		snap_helloworld.log 2>&1"
+    
+    echo -n "Doing sponge SPEED "
+    cmd="snap_checksum -C${snap_card} -vv -t2500 -mSPONGE \
+                -N -cSPEED -n1 -f65536 >>	\
+		snap_sponge.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then
-	cat snap_helloworld.log
+	cat snap_sponge.log
 	echo "cmd: ${cmd}"
 	echo "failed"
 	exit 1
     fi
     echo "ok"
-
-    echo -n "Check results ... "
-    diff $tout tCAP 2>&1 > /dev/null
-    if [ $? -ne 0 ]; then
-	echo "failed"
-	echo "  Out and expected files are different!"
-	exit 1
-    fi
-    echo "ok"
-
 }
 
-rm -f snap_helloworld.log
-touch snap_helloworld.log
+#### SPONGE ##########################################################
+
+function test_sha3_shake {
+  local size=$1
+  
+  echo -n "Doing sponge SHA3_SHAKE "
+  cmd="snap_checksum -mSPONGE -N -t800 -cSHA3_SHAKE >>       \
+  snap_sponge.log 2>&1"
+  eval ${cmd}
+  if [ $? -ne 0 ]; then
+    cat snap_sponge.log
+    echo "cmd: ${cmd}"
+    echo "failed"
+    exit 1
+    fi
+    echo "ok"
+  }
+
+
+rm -f snap_sponge.log
+touch snap_sponge.log
 
 if [ "$duration" = "NORMAL" ]; then
-  test_helloworld 
-  fi
+  test_sponge 
+fi
 
+if [ "$duration" = "NORMAL" ]; then
+  test_sha3_shake 
+  fi
+  
 rm -f *.bin *.bin *.out
 echo "Test OK"
 exit 0

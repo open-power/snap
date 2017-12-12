@@ -73,46 +73,32 @@ if [ -z "$SNAP_CONFIG" ]; then
 	echo
 fi
 
-#### HELLOWORLD ##########################################################
+#### SEARCH ##########################################################
 
-function test_helloworld {
+function test_search {
     local size=$1
 
-    cmd="echo \"Hello world. This is my first CAPI SNAP experience. It's real fun!\n\" > tin"
-    echo "cmd: ${cmd}"
-    cmd="echo \"HELLO WORLD. THIS IS MY FIRST CAPI SNAP EXPERIENCE. IT'S REAL FUN!\n\" > tCAP"
-    echo "cmd: ${cmd}"
-    echo -n "Doing snap_helloworld "
-    cmd="snap_helloworld -C${snap_card} -X	\
-		-i tin	\
-		-o tout >>	\
-		snap_helloworld.log 2>&1"
+    echo -n "Doing search "
+    #cmd="snap_search -C${snap_card} -i ../sw/snap_search.txt -p include -t 120  >>       \
+    cmd="snap_search -h >> 
+    snap_search.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then
-	cat snap_helloworld.log
-	echo "cmd: ${cmd}"
-	echo "failed"
-	exit 1
+      cat snap_search.log
+      echo "cmd: ${cmd}"
+      echo "failed"
+      exit 1
     fi
     echo "ok"
 
-    echo -n "Check results ... "
-    diff $tout tCAP 2>&1 > /dev/null
-    if [ $? -ne 0 ]; then
-	echo "failed"
-	echo "  Out and expected files are different!"
-	exit 1
-    fi
-    echo "ok"
 
 }
 
-rm -f snap_helloworld.log
-touch snap_helloworld.log
-
+rm -f snap_search.log
 if [ "$duration" = "NORMAL" ]; then
-  test_helloworld 
+  test_search 
   fi
+
 
 rm -f *.bin *.bin *.out
 echo "Test OK"

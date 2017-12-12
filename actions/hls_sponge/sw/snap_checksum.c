@@ -60,14 +60,20 @@ static void usage(const char *prog)
 	       "  -N, --irq                 Enable Interrupts\n"
 	       "\n"
 	       "Example:\n"
-	       "//echo Generation of 65536*2/65536 = 2 callsn"
+	       "To run speed_test with generation of 65536*n/f = number of SHA3 calls :\n"
+	       "\n"
+	       "Generation of 65536*1/65536 = 1 call :\n"
 	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -N -cSPEED -n1 -f65536\n"
+	       "\n"
+	       "Generation of 65536*128/65536 = 128 calls :\n"
 	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -N -cSPEED -n128 -f65536\n"
+	       "\n"	       
 	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -N -cSPEED -n4096 -f65536\n"
-	       "//echo Generation of 65536*1/4 = 16384 calls ie 1 call every 4 calls until 65536...\n"
+	       "\n"
+	       "Generation of 65536*1/4 = 16384 calls ie 1 call every 4 calls until 65536...\n"
 	       "SNAP_CONFIG=FPGA ./snap_checksum -C1 -vv -t2500 -mSPONGE -N -cSPEED -n1 -f4\n"
 	       "\n"
-	       "//echo to run tests SHA3 or/and SHAKE\n"
+	       "to run tests SHA3 or/and SHAKE :\n"
 	       "SNAP_CONFIG=FPGA ./snap_checksum -mSPONGE -N -t800 -cSHA3\n"
 	       "SNAP_CONFIG=FPGA ./snap_checksum -mSPONGE -N -t800 -cSHAKE\n"
 	       "SNAP_CONFIG=FPGA ./snap_checksum -mSPONGE -N -t800 -cSHA3_SHAKE\n"
@@ -217,6 +223,9 @@ static int do_checksum(int card_no, unsigned long timeout,
 	if (card == NULL) {
 		fprintf(stderr, "err: failed to open card %u: %s\n",
 			card_no, strerror(errno));
+                fprintf(stderr, "Default mode is FPGA mode.\n");
+                fprintf(stderr, "Did you want to run CPU mode ? => add SNAP_CONFIG=CPU before your command.\n");
+                fprintf(stderr, "Otherwise make sure you ran snap_find_card and snap_maint for your selected card.\n");
 		goto out_error;
 	}
 
