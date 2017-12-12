@@ -489,5 +489,4 @@ clean:
 			$(MAKE) -C $(PSLSE_ROOT)/$$d $@ ;		\
 		done							\
 	fi
-	$(MAKE) -C $(PSLSE_ROOT)/libcxl clean
 	@echo -e "[CLEAN ENVIRONMENT...] done  `date +"%T %a %b %d %Y"`"
