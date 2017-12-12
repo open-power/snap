@@ -237,7 +237,7 @@ ARCHITECTURE action_nvme_example OF action_nvme_example IS
     END IF;
   END INCR;
 
-  TYPE FSM_APP_t    IS (IDLE,  WAIT_FOR_MEMCOPY_DONE);
+  TYPE FSM_APP_t    IS (IDLE, WAIT_FOR_MEMCOPY_DONE, ILLEGAL_OPERATION);
   TYPE FSM_DMA_WR_t IS (IDLE, DMA_WR_REQ);
   TYPE FSM_DMA_RD_t IS (IDLE, DMA_RD_REQ, DMA_RD_REQ_2);
   TYPE DMA_WR_ADDR_BUFFER_t IS ARRAY (0 TO WR_BUFFER_SIZE -1) OF STD_LOGIC_VECTOR(63 DOWNTO 0);
@@ -526,11 +526,11 @@ BEGIN
 
                  WHEN x"4" =>
                    -- memcopy NVMe to host
-                   fsm_app_q  <= WAIT_FOR_MEMCOPY_DONE;
-                   mmio_rd_enqueue      <= true;
+                   fsm_app_q        <= WAIT_FOR_MEMCOPY_DONE;
+                   mmio_rd_enqueue  <= true;
 
                  WHEN OTHERS =>
-                   app_done   <= '1';
+                   fsm_app_q  <= ILLEGAL_OPERATION;
               END CASE;
             END IF ;
 
@@ -539,6 +539,10 @@ BEGIN
               fsm_app_q  <= IDLE;
               app_done   <= '1';
             END IF;
+
+          WHEN ILLEGAL_OPERATION =>
+            fsm_app_q <= IDLE;
+            app_done  <= '1';
 
           WHEN OTHERS => NULL;
         END CASE;
@@ -574,12 +578,12 @@ BEGIN
               card_mem_awvalid  <= '1';
               host_mem_arvalid  <= '1';
               fsm_dma_rd        <= DMA_RD_REQ;
+              wr_lba_size       <= reg_0x44(13);  -- put 8k bit in size flag
+              wr_lba_addr       <= reg_0x40 & reg_0x3c;
             END IF;
             axi_host_mem_araddr   <=  reg_0x38 & reg_0x34;
             host_mem_addr_8k      <= (reg_0x38 & reg_0x34) +  x"1000";
             axi_card_mem0_awaddr  <= (OTHERS => '0');
-            wr_lba_size           <= reg_0x44(13);  -- put 8k bit in size flag
-            wr_lba_addr           <= reg_0x40 & reg_0x3c;
 
           WHEN DMA_RD_REQ =>
             IF axi_card_mem0_bvalid = '1' THEN
@@ -622,7 +626,7 @@ BEGIN
     VARIABLE lba_count_dec   : STD_LOGIC_VECTOR(16 DOWNTO 0);
     VARIABLE int_ptr         : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1;
     VARIABLE dma_ptr         : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1;
-    
+
   BEGIN
     IF (rising_edge (action_clk)) THEN
       nvme_cmd_valid      <= '0';
@@ -699,9 +703,9 @@ BEGIN
             END IF;
             transfer_done   <= '1';
           else
-             dma_wr_cmd_buffer.size_vector(dma_ptr) <= dma_wr_cmd_buffer.size_vector(dma_ptr) - 1; 
+             dma_wr_cmd_buffer.size_vector(dma_ptr) <= dma_wr_cmd_buffer.size_vector(dma_ptr) - 1;
           END IF;
-          
+
         END IF;
 
         -- catch the NVMe write pulse
@@ -795,7 +799,7 @@ BEGIN
             host_mem_awaddr      <= dma_wr_cmd_buffer.dest_addr_buf(process_index);
             card_mem_araddr <= x"0000_0000" + (x"20000" * STD_LOGIC_VECTOR(to_unsigned(process_index,8)));
             -- initiate SDRAM to host memory data transfer
-            
+
             IF or_reduce(dma_wr_cmd_buffer.ready) = '1'  THEN
               dma_wr_count       <= (dma_wr_cmd_buffer.size_VECTOR(process_index)) - '1';
               host_mem_awvalid   <= '1';
@@ -820,7 +824,7 @@ BEGIN
                 -- clear the ready bit
                 dma_wr_cmd_buffer.ready(process_ptr) <= '0';
                 -- put in action id in buffer
-                
+
                 IF done_ptr = 0 THEN
                   done_ptr <= 1;
                 ELSE
