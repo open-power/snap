@@ -167,7 +167,9 @@ ARCHITECTURE snap_core OF snap_core IS
   SIGNAL ah_c                : AH_C_T;
   SIGNAL ah_j                : AH_J_T;
   SIGNAL ah_mm               : AH_MM_T;
+  SIGNAL cd_c                : CD_C_T;
   SIGNAL cmm_e               : CMM_E_T;
+  SIGNAL dc_c                : DC_C_T;
   SIGNAL dmm_e               : DMM_E_T;
   SIGNAL ha_b                : HA_B_T;
   SIGNAL ha_c                : HA_C_T;
@@ -386,6 +388,10 @@ BEGIN
       dh_d_o                 => dh_d,
 #endif
       --
+      -- CTRL Manager Interface
+      cd_c_i                 => cd_c,
+      dc_c_o                 => dc_c,
+      --
       -- AXI SLAVE Interface
       sd_c_i                 => sd_c,
       ds_c_o                 => ds_c,
@@ -416,6 +422,10 @@ BEGIN
       --
       -- Global AFU Signals
       afu_reset_o            => afu_reset,
+      --
+      -- DMA IOs
+      dc_c_i                 => dc_c,
+      cd_c_o                 => cd_c,
       --
       -- MMIO IOs
       mmc_c_i                => mmc_c,

@@ -41,6 +41,11 @@ ENTITY ctrl_mgr IS
     afu_reset_o     : OUT std_logic;
 
     --
+    -- DMA IOs
+    dc_c_i          : IN  DC_C_T;
+    cd_c_o          : OUT CD_C_T;
+
+    --
     -- MMIO IOs
     mmc_c_i         : IN  MMC_C_T;
     mmc_e_i         : IN  MMC_E_T;

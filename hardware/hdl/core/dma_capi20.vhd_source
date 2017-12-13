@@ -75,7 +75,11 @@ ENTITY dma IS
     sd_c_i                 : IN  SD_C_T;
     ds_c_o                 : OUT DS_C_T;
     sd_d_i                 : IN  SD_D_T;
-    ds_d_o                 : OUT DS_D_T
+    ds_d_o                 : OUT DS_D_T;
+    --
+    -- CTRL Manager Interface
+    cd_c_i                 : IN  CD_C_T;
+    dc_c_o                 : OUT DC_C_T
     --
     -- MMIO Interface
 --    mmd_a_i                : IN  MMD_A_T;
