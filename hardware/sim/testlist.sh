@@ -27,6 +27,7 @@
   rnd16k=$((1+RANDOM%16384))
   rnd32k=$((RANDOM))
 # export SNAP_TRACE=0xFF
+# export SNAP_TRACE=0xF2 # for Sven
   stimfile=$(basename "$0"); logfile="${stimfile%.*}.log"; echo "executing $stimfile, logging $logfile maxloop=$loops";
   ts0=$(date +%s)                                       # begin of test
   function step {
@@ -142,10 +143,7 @@
 #   t="snap_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # MMIO   ErrInj"
 #   t="snap_peek 0xE800      ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # DMA    ErrInj"
  #
-    if [[ "$t0l" == "10140000" ||
-          "$t0l" == "10140001" ||
-          "${env_action}" == "hdl_example" ||
-          "${env_action}" == "hdl_nvme_example" ]];then echo -e "$del\ntesting hdl_example"
+    if [[ "$t0l" == "10140000" || "${env_action}" == "hdl_example" ]];then echo -e "$del\ntesting hdl_example"
     if [[ "$nvme" == "1" ]];then echo -e "\nskipped due to NVMe"
     else
 #     step "snap_example -h"
@@ -205,8 +203,7 @@
     fi # NVMe
     fi # hdl_example
  #
-    if [[ "${env_action}" == "hdl_example" && "$nvme" == "1" ]] ||
-       [[ "${env_action}" == "hdl_nvme_example" ]];then echo -e "$del\ntesting nvme"
+    if [[ "${env_action}" == "hdl_example" && "$nvme" == "1" ]];then echo -e "$del\ntesting nvme"
 #     # optional: wait for SSD0 link to be up
 #     t="snap_poke -w32 0x30000 0x10000144"; r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # check SSD0 link status"
 #     t="snap_peek 0x80";                    r=$($t|grep ']'|awk '{print $2}'); free1=${r:8:8}
@@ -253,13 +250,44 @@
       step "snap_example_nvme -d0 -b${rnd20}         -t100 -v "
     fi # nvme
  #
+    if [[ "$t0l" == "10140001" || "${env_action}" == "hdl_nvme_example" ]];then echo -e "$del\ntesting hdl_nvme_example"
+      step "snap_cblk -h"                                            # write max 2blk, read max 32blk a 512B
+      options="-n1 -t1"                                              # 512B blocks, one thread
+      export CBLK_BUSYTIMEOUT=50
+      export CBLK_REQTIMEOUT=60
+      for blk in 1 2;do p8=$((blk*8)); p4k=$((blk*4096));            # no of 512B blocks and pagesize in 4kB blocks
+        echo "generate data for $blk blocks, $p8 pages, $p4k bytes"
+        dd if=/dev/urandom of=rnd.in count=${p8} bs=512 2>/dev/null  # random data any char, no echo due to unprintable char
+        head -c $p4k </dev/zero|tr '\0' 'x' >asc.in;head asc.in;echo # same char mult times
+        step "snap_nvme_init    -d0 -v"
+#       step "snap_cblk $options -b${blk} --write asc.in         -v"
+        step "snap_cblk $options -b${blk} --format --pattern INC -v"
+#       step "snap_cblk $options -b${blk} --format --pattern ${blk}"
+#       step "snap_cblk $options -b${blk} --read ${p8}.out"
+#       echo "Please manually inspect if pattern is really ${blk}"
+#       diff asc.in ${p8}.out
+      done
+
+      step "snap_cblk $options -b2 --format --pattern INC"
+      step "snap_cblk $options -b1 --read cblk_read1.bin"
+      step "snap_cblk $options -b2 --read cblk_read2.bin"
+      diff cblk_read1.bin cblk_read2.bin
+
+      for blk in 1 2 4 8 16 32;do byte=$((blk*512))
+        step "snap_cblk $options -b2      --write cbld_read2.bin"
+        step "snap_cblk $options -b${blk} --write cbld_read3.bin"
+        step "snap_cblk $options -b32     --read cclk_read.bin"
+        diff cblk_read2.bin cblk_read3.bin
+      done
+    fi # hdl_nvme_example
+ #
     if [[ "$t0l" == "10141000" || "${env_action}" == "hls_memcopy"* ]];then echo -e "$del\ntesting snap_memcopy"
       step "snap_memcopy -h"
       for size in 1 64 80 85 240 $rnd1k $rnd1k4k; do to=$((size*50+10))   # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
         #### select 1 type of data generation
-        # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                         # same char mult times
-        # cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w ${size}|head -n 1 >${size}.in;head ${size}.in     # random data alphanumeric, includes EOF
-          dd if=/dev/urandom bs=${size} count=1 >${size}.in                                             # random data any char, no echo due to unprintable char
+        # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                       # same char mult times
+        # cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w ${size}|head -n 1 >${size}.in;head ${size}.in   # random data alphanumeric, includes EOF
+          dd if=/dev/urandom bs=${size} count=1 >${size}.in                                           # random data any char, no echo due to unprintable char
         #### select 1 checking method
         if [[ $((size%64)) == 0 ]];then echo "size is aligned"
           step "snap_memcopy -i ${size}.in -o ${size}.out -v -X -t$to"
