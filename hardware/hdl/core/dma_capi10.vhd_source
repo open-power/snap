@@ -281,321 +281,310 @@ BEGIN
       VARIABLE rsp_rtag_next_v  : integer RANGE 0 TO 31;
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
+        --
+        -- defaults
+        --
+        com_rtag_v            := to_integer(unsigned(com_rtag_q     (4 DOWNTO 0)));
+        com_rtag_next_v       := to_integer(unsigned(com_rtag_next_q(4 DOWNTO 0)));
+        rsp_rtag_v            := to_integer(unsigned(rsp_rtag_q     (4 DOWNTO 0)));
+        rsp_rtag_next_v       := to_integer(unsigned(rsp_rtag_next_q(4 DOWNTO 0)));
+
+        ah_rc_q               <= ( '0',             -- valid
+                                  (OTHERS => '0'),  -- tag
+                                   '1',             -- tag parity
+                                   INVALID,         -- command
+                                   '1',             -- command parity
+                                  (OTHERS => '0'),  -- abt
+                                  (OTHERS => '0'),  -- address
+                                   '1');            -- address parity
+        com_rtag_q            <= com_rtag_q;
+        com_rtag_next_q       <= com_rtag_next_q;
+        com_rtag_p_q          <= com_rtag_p_q;
+        com_rtag_valid_q      <= FALSE;
+        context_handle_q      <= context_handle_q;
+        read_rsp_err_valid_q  <= read_rsp_err_valid_q;
+        read_rsp_err_first_q  <= read_rsp_err_first_q;
+        read_rsp_err_type_q   <= read_rsp_err_type_q;
+        read_rsp_err_addr_q   <= read_rsp_err_addr_q;
+        read_rsp_err_addr_p_q <= read_rsp_err_addr_p_q;
+        read_ctrl_fsm_q       <= read_ctrl_fsm_q;
+        read_ctrl_rsp_rtag_q  <= read_ctrl_q(rsp_rtag_v);
+        read_fsm_req_q        <= read_fsm_req_q;
+        rsp_rtag_q            <= rsp_rtag_q;
+        rsp_rtag_next_q       <= rsp_rtag_next_q;
+        rsp_rtag_p_q          <= rsp_rtag_p_q;
+        rsp_rtag_valid_q      <= FALSE;
+
+        dmm_e_q.read_ctrl_fsm_err <= '0';
+
+        --
+        -- F S M
+        --
+        CASE read_ctrl_fsm_q IS
+          --
+          -- STATE IDLE
+          --
+          WHEN ST_IDLE =>
+            --
+            -- FSM starts if one CL in use
+            --
+            --
+            -- check all CLs
+            clt_in_use_v := FALSE;
+
+            FOR i IN 0 TO 31 LOOP
+              IF read_ctrl_q(i).clt /= CL_NOT_USED THEN
+                clt_in_use_v := TRUE;
+              END IF;
+            END LOOP;  -- i
+
+            IF clt_in_use_v = TRUE THEN
+              read_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
+            END IF;
+
+          --
+          -- STATE RESTART
+          --
+          WHEN ST_RESTART =>
+            com_rtag_q       <= rsp_rtag_q;
+            com_rtag_next_q  <= rsp_rtag_next_q;
+            com_rtag_p_q     <= rsp_rtag_p_q;
+
+            --
+            -- check all commands done
+            com_active_v    := FALSE;
+
+            FOR i IN 0 TO 31 LOOP
+              IF read_ctrl_q(i).com = ACTIVE THEN
+                com_active_v := TRUE;
+              END IF;
+            END LOOP;  -- i
+
+            IF (com_active_v = FALSE) THEN
+              IF (read_fsm_req_q = COMMAND) THEN
+                IF (ah_c_rgate_q = OPENED) THEN
+                  read_ctrl_fsm_q <= ST_COM_READ_CL_NA;
+                END IF;
+              ELSE
+                read_fsm_req_q  <= RESTART;
+
+                IF restart_active_q = TRUE THEN
+                  read_fsm_req_q <= COMMAND;
+                END IF;
+              END IF;
+            END IF;
+
+          --
+          -- STATE READ RESPONSE
+          --
+          WHEN ST_READ_RSP =>
+            --
+            -- stay in this state if the next response is valid
+            --
+            IF read_ctrl_q(rsp_rtag_next_v).rsp /= ILLEGAL_RSP  THEN
+              read_ctrl_fsm_q <= ST_READ_RSP;
+            ELSE
+              read_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
+            END IF;
+
+            --
+            -- load to the next read_ctrl_q slice
+            --
+            read_ctrl_rsp_rtag_q <= read_ctrl_q(rsp_rtag_next_v);
+
+            --
+            -- process current response
+            --
+            IF read_ctrl_rsp_rtag_q.rsp = DONE THEN
+              rsp_rtag_valid_q    <= TRUE;
+              rsp_rtag_q          <= rsp_rtag_q      + 1;
+              rsp_rtag_next_q     <= rsp_rtag_next_q + 1;
+              rsp_rtag_p_q        <= AC_PPARITH(1, rsp_rtag_q, rsp_rtag_p_q,
+                                                     "000001"  , '0');
+
+            ELSIF (read_ctrl_rsp_rtag_q.rsp = AERROR) OR
+                  (read_ctrl_rsp_rtag_q.rsp = DERROR) OR
+                  (read_ctrl_rsp_rtag_q.rsp = FAILED) OR
+                  (read_ctrl_rsp_rtag_q.rsp = CONTEXT) THEN
+              read_ctrl_fsm_q      <= ST_RSP_ERROR;
+
+            ELSE
+              read_ctrl_fsm_q <= ST_RESTART;
+            END IF;
+
+          --------------------------------------------------------------------
+          -- WAIT STATES
+          --------------------------------------------------------------------
+          --
+          -- STATE WAIT: FOR ctrl register update
+          --
+          WHEN ST_WAIT_4_CTRL_UPDTAE =>
+              read_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
+
+          --
+          --
+          -- STATE WAIT: FOR RESPONSE OR BUFFER
+          --
+          WHEN ST_WAIT_4_RSP_OR_BUF =>
+            --
+            -- default
+            read_fsm_req_q <= NONE;
+
+            --
+            -- new response available
+            IF (read_ctrl_q(rsp_rtag_v).rsp /= ILLEGAL_RSP) THEN
+              read_ctrl_fsm_q <= ST_READ_RSP;
+
+            -- new buffer available
+            ELSIF (com_rtag_q /= clt_rtag_q) THEN
+              read_fsm_req_q <= COMMAND;
+
+              IF (ah_c_rgate_q   = OPENED ) AND
+                 (read_fsm_req_q = COMMAND) THEN
+                read_ctrl_fsm_q <= ST_COM_READ_CL_NA;
+              END IF;
+
+            -- WRITE FSM or AH_C_FSM detects a response error
+            ELSIF (write_rsp_err_valid_q = TRUE) OR
+                  (ah_c_rsp_err_valid_q  = TRUE) THEN
+              read_ctrl_fsm_q <= ST_RSP_ERROR;
+            END IF;
+
+            --
+            -- check all CL transferred
+            clt_in_use_v := FALSE;
+
+            FOR i IN 0 TO 31 LOOP
+              IF read_ctrl_q(i).clt /= CL_NOT_USED THEN
+                clt_in_use_v := TRUE;
+              END IF;
+            END LOOP;  -- i
+
+            IF clt_in_use_v = FALSE THEN
+              read_fsm_req_q <= NONE;
+              read_ctrl_fsm_q <= ST_IDLE;
+            END IF;
+
+          --------------------------------------------------------------------
+          -- COMMAND STATES
+          --------------------------------------------------------------------
+          --
+          -- STATE COMMAND: TOUCH_I (CURRENT CL)
+          --
+          WHEN ST_COM_TOUCH_I =>
+
+            read_ctrl_fsm_q   <= ST_WAIT_4_RSP_OR_BUF;
+            read_fsm_req_q    <= NONE;
+
+            ah_rc_q.valid    <= '1';
+            ah_rc_q.com      <= TOUCH_I;
+            ah_rc_q.compar   <= parity_gen_odd(ENCODE_CMD_CODES(TOUCH_I));
+            ah_rc_q.abt      <= "011";
+
+          --
+          -- STATE COMMAND: READ_CL_NA
+          --
+          WHEN ST_COM_READ_CL_NA =>
+            IF (ah_c_rgate_q     = OPENED    ) AND
+               (com_rtag_next_q /= clt_rtag_q) THEN
+              read_ctrl_fsm_q <= ST_COM_READ_CL_NA;
+            ELSE
+              read_ctrl_fsm_q <= ST_WAIT_4_CTRL_UPDTAE;
+              read_fsm_req_q  <= NONE;
+            END IF;
+
+            ah_rc_q.ea          <= read_ctrl_q(com_rtag_v).cla;
+            ah_rc_q.eapar       <= parity_gen_odd(read_ctrl_q(com_rtag_v).cla(63 DOWNTO 7));
+
+            com_rtag_valid_q   <= TRUE;
+            com_rtag_q         <= com_rtag_q      + 1;
+            com_rtag_next_q    <= com_rtag_next_q + 1;
+            com_rtag_p_q       <= AC_PPARITH(1, com_rtag_q, com_rtag_p_q,
+                                                "000001"  , '0');
+
+            ah_rc_q.valid      <= '1';
+            ah_rc_q.tag        <= "000" & com_rtag_q(4 DOWNTO 0);
+            ah_rc_q.tagpar     <= com_rtag_q(5) XOR com_rtag_p_q;
+            ah_rc_q.com        <= READ_CL_NA;
+            ah_rc_q.compar     <= parity_gen_odd(ENCODE_CMD_CODES(READ_CL_NA));
+            ah_rc_q.abt        <= "010";
+
+            -- HW357397: Repeating each command after a restart, Independent of the response
+            --           before the restart. Also commands that have seen a "DONE" will be repeated.
+            --           Otherwise heavy throttling on AH_C_FSM causes an error/hang.
+            --           => rsp_rtag_q overruns com_rtag_q!
+            --
+            --IF read_ctrl_q(com_rtag_v).rsp = DONE THEN
+            --  com_rtag_valid_q  <= FALSE;
+            --  ah_rc_q.valid      <= '0';
+            --END IF;
+
+          --------------------------------------------------------------------
+          -- ERROR STATES
+          --------------------------------------------------------------------
+          --
+          -- STATE RESPONSE ERROR
+          --
+          WHEN ST_RSP_ERROR =>
+
+            --
+            -- collect all information
+            read_rsp_err_type_q  <= read_ctrl_rsp_rtag_q.rsp;
+            read_rsp_err_addr_q   <= (OTHERS => '0'); -- raddr_q(63 DOWNTO 7) & "0000000";
+            read_rsp_err_addr_p_q <= '0';             -- raddr_p_q;
+
+            --
+            -- how is first check
+            IF (write_ctrl_fsm_q /= ST_RSP_ERROR) OR
+               (ah_c_fsm_q       /= ST_RSP_ERROR) THEN
+              read_rsp_err_first_q <= TRUE;
+            END IF;
+
+            --
+            -- check all commands done
+            com_active_v    := FALSE;
+
+            FOR i IN 0 TO 31 LOOP
+              IF read_ctrl_q(i).com = ACTIVE THEN
+                com_active_v := TRUE;
+              END IF;
+            END LOOP;  -- i
+
+            IF com_active_v = FALSE THEN
+              read_rsp_err_valid_q <= TRUE;
+            END IF;
+
+
+          --
+          -- STATE FSM ERROR
+          --
+          WHEN ST_FSM_ERROR =>
+            dmm_e_q.read_ctrl_fsm_err <= '1';
+
+        END CASE;
+
+        --------------------------------------------------------------------
+        -- Reset Logic
+        --------------------------------------------------------------------
+        --
+        -- 
+        --
         IF afu_reset = '1' THEN
           --
           -- initial values
           --
-          ah_rc_q               <= ( '0',             -- valid
-                                    (OTHERS => '0'),  -- tag
-                                     '1',             -- tag parity
-                                     INVALID,         -- command
-                                     '1',             -- command parity
-                                  (OTHERS => '0'),  -- abt
-                                  (OTHERS => '0'),  -- address
-                                   '1');            -- address parity
           com_rtag_q            <= (OTHERS => '0');
           com_rtag_next_q       <= "000001";
           com_rtag_p_q          <= '1';
-          com_rtag_valid_q      <= FALSE;
           context_handle_q      <= (OTHERS => '0');
           read_rsp_err_first_q  <= FALSE;
           read_rsp_err_valid_q  <= FALSE;
           read_rsp_err_type_q   <= ILLEGAL_RSP;
-          read_rsp_err_addr_q   <= (OTHERS => '0');
-          read_rsp_err_addr_p_q <= '1';
           read_ctrl_fsm_q       <= ST_IDLE;
-          read_ctrl_rsp_rtag_q  <= (INACTIVE, ILLEGAL_RSP, EMPTY, CL_NOT_USED, (OTHERS => '0'));
           read_fsm_req_q        <= NONE;
           rsp_rtag_q            <= (OTHERS => '0');
           rsp_rtag_next_q       <= "000001";
           rsp_rtag_p_q          <= '1';
-          rsp_rtag_valid_q      <= FALSE;
-
-          dmm_e_q.read_ctrl_fsm_err <= '0';
-
-        ELSE
-          --
-          -- defaults
-          --
-          com_rtag_v            := to_integer(unsigned(com_rtag_q     (4 DOWNTO 0)));
-          com_rtag_next_v       := to_integer(unsigned(com_rtag_next_q(4 DOWNTO 0)));
-          rsp_rtag_v            := to_integer(unsigned(rsp_rtag_q     (4 DOWNTO 0)));
-          rsp_rtag_next_v       := to_integer(unsigned(rsp_rtag_next_q(4 DOWNTO 0)));
-
-          ah_rc_q               <= ( '0',             -- valid
-                                    (OTHERS => '0'),  -- tag
-                                     '1',             -- tag parity
-                                     INVALID,         -- command
-                                     '1',             -- command parity
-                                    (OTHERS => '0'),  -- abt
-                                    (OTHERS => '0'),  -- address
-                                     '1');            -- address parity
-          com_rtag_q            <= com_rtag_q;
-          com_rtag_next_q       <= com_rtag_next_q;
-          com_rtag_p_q          <= com_rtag_p_q;
-          com_rtag_valid_q      <= FALSE;
-          context_handle_q      <= context_handle_q;
-          read_rsp_err_valid_q  <= read_rsp_err_valid_q;
-          read_rsp_err_first_q  <= read_rsp_err_first_q;
-          read_rsp_err_type_q   <= read_rsp_err_type_q;
-          read_rsp_err_addr_q   <= read_rsp_err_addr_q;
-          read_rsp_err_addr_p_q <= read_rsp_err_addr_p_q;
-          read_ctrl_fsm_q       <= read_ctrl_fsm_q;
-          read_ctrl_rsp_rtag_q  <= read_ctrl_q(rsp_rtag_v);
-          read_fsm_req_q        <= read_fsm_req_q;
-          rsp_rtag_q            <= rsp_rtag_q;
-          rsp_rtag_next_q       <= rsp_rtag_next_q;
-          rsp_rtag_p_q          <= rsp_rtag_p_q;
-          rsp_rtag_valid_q      <= FALSE;
-
-          dmm_e_q.read_ctrl_fsm_err <= '0';
-
-          --
-          -- F S M
-          --
-          CASE read_ctrl_fsm_q IS
-            --
-            -- STATE IDLE
-            --
-            WHEN ST_IDLE =>
-              --
-              -- FSM starts if one CL in use
-              --
-              --
-              -- check all CLs
-              clt_in_use_v := FALSE;
-
-              FOR i IN 0 TO 31 LOOP
-                IF read_ctrl_q(i).clt /= CL_NOT_USED THEN
-                  clt_in_use_v := TRUE;
-                END IF;
-              END LOOP;  -- i
-
-              IF clt_in_use_v = TRUE THEN
-                read_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
-              END IF;
-
-            --
-            -- STATE RESTART
-            --
-            WHEN ST_RESTART =>
-              com_rtag_q       <= rsp_rtag_q;
-              com_rtag_next_q  <= rsp_rtag_next_q;
-              com_rtag_p_q     <= rsp_rtag_p_q;
-
-              --
-              -- check all commands done
-              com_active_v    := FALSE;
-
-              FOR i IN 0 TO 31 LOOP
-                IF read_ctrl_q(i).com = ACTIVE THEN
-                  com_active_v := TRUE;
-                END IF;
-              END LOOP;  -- i
-
-              IF (com_active_v = FALSE) THEN
-                IF (read_fsm_req_q = COMMAND) THEN
-                  IF (ah_c_rgate_q = OPENED) THEN
-                    read_ctrl_fsm_q <= ST_COM_READ_CL_NA;
-                  END IF;
-                ELSE
-                  read_fsm_req_q  <= RESTART;
-
-                  IF restart_active_q = TRUE THEN
-                    read_fsm_req_q <= COMMAND;
-                  END IF;
-                END IF;
-              END IF;
-
-            --
-            -- STATE READ RESPONSE
-            --
-            WHEN ST_READ_RSP =>
-              --
-              -- stay in this state if the next response is valid
-              --
-              IF read_ctrl_q(rsp_rtag_next_v).rsp /= ILLEGAL_RSP  THEN
-                read_ctrl_fsm_q <= ST_READ_RSP;
-              ELSE
-                read_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
-              END IF;
-
-              --
-              -- load to the next read_ctrl_q slice
-              --
-              read_ctrl_rsp_rtag_q <= read_ctrl_q(rsp_rtag_next_v);
-
-              --
-              -- process current response
-              --
-              IF read_ctrl_rsp_rtag_q.rsp = DONE THEN
-                rsp_rtag_valid_q    <= TRUE;
-                rsp_rtag_q          <= rsp_rtag_q      + 1;
-                rsp_rtag_next_q     <= rsp_rtag_next_q + 1;
-                rsp_rtag_p_q        <= AC_PPARITH(1, rsp_rtag_q, rsp_rtag_p_q,
-                                                       "000001"  , '0');
-
-              ELSIF (read_ctrl_rsp_rtag_q.rsp = AERROR) OR
-                    (read_ctrl_rsp_rtag_q.rsp = DERROR) OR
-                    (read_ctrl_rsp_rtag_q.rsp = FAILED) OR
-                    (read_ctrl_rsp_rtag_q.rsp = CONTEXT) THEN
-                read_ctrl_fsm_q      <= ST_RSP_ERROR;
-
-              ELSE
-                read_ctrl_fsm_q <= ST_RESTART;
-              END IF;
-
-            --------------------------------------------------------------------
-            -- WAIT STATES
-            --------------------------------------------------------------------
-            --
-            -- STATE WAIT: FOR ctrl register update
-            --
-            WHEN ST_WAIT_4_CTRL_UPDTAE =>
-                read_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
-
-            --
-            --
-            -- STATE WAIT: FOR RESPONSE OR BUFFER
-            --
-            WHEN ST_WAIT_4_RSP_OR_BUF =>
-              --
-              -- default
-              read_fsm_req_q <= NONE;
-
-              --
-              -- new response available
-              IF (read_ctrl_q(rsp_rtag_v).rsp /= ILLEGAL_RSP) THEN
-                read_ctrl_fsm_q <= ST_READ_RSP;
-
-              -- new buffer available
-              ELSIF (com_rtag_q /= clt_rtag_q) THEN
-                read_fsm_req_q <= COMMAND;
-
-                IF (ah_c_rgate_q   = OPENED ) AND
-                   (read_fsm_req_q = COMMAND) THEN
-                  read_ctrl_fsm_q <= ST_COM_READ_CL_NA;
-                END IF;
-
-              -- WRITE FSM or AH_C_FSM detects a response error
-              ELSIF (write_rsp_err_valid_q = TRUE) OR
-                    (ah_c_rsp_err_valid_q  = TRUE) THEN
-                read_ctrl_fsm_q <= ST_RSP_ERROR;
-              END IF;
-
-              --
-              -- check all CL transferred
-              clt_in_use_v := FALSE;
-
-              FOR i IN 0 TO 31 LOOP
-                IF read_ctrl_q(i).clt /= CL_NOT_USED THEN
-                  clt_in_use_v := TRUE;
-                END IF;
-              END LOOP;  -- i
-
-              IF clt_in_use_v = FALSE THEN
-                read_fsm_req_q <= NONE;
-                read_ctrl_fsm_q <= ST_IDLE;
-              END IF;
-
-            --------------------------------------------------------------------
-            -- COMMAND STATES
-            --------------------------------------------------------------------
-            --
-            -- STATE COMMAND: TOUCH_I (CURRENT CL)
-            --
-            WHEN ST_COM_TOUCH_I =>
-
-              read_ctrl_fsm_q   <= ST_WAIT_4_RSP_OR_BUF;
-              read_fsm_req_q    <= NONE;
-
-              ah_rc_q.valid    <= '1';
-              ah_rc_q.com      <= TOUCH_I;
-              ah_rc_q.compar   <= parity_gen_odd(ENCODE_CMD_CODES(TOUCH_I));
-              ah_rc_q.abt      <= "011";
-
-            --
-            -- STATE COMMAND: READ_CL_NA
-            --
-            WHEN ST_COM_READ_CL_NA =>
-              IF (ah_c_rgate_q     = OPENED    ) AND
-                 (com_rtag_next_q /= clt_rtag_q) THEN
-                read_ctrl_fsm_q <= ST_COM_READ_CL_NA;
-              ELSE
-                read_ctrl_fsm_q <= ST_WAIT_4_CTRL_UPDTAE;
-                read_fsm_req_q  <= NONE;
-              END IF;
-
-              ah_rc_q.ea          <= read_ctrl_q(com_rtag_v).cla;
-              ah_rc_q.eapar       <= parity_gen_odd(read_ctrl_q(com_rtag_v).cla(63 DOWNTO 7));
-
-              com_rtag_valid_q   <= TRUE;
-              com_rtag_q         <= com_rtag_q      + 1;
-              com_rtag_next_q    <= com_rtag_next_q + 1;
-              com_rtag_p_q       <= AC_PPARITH(1, com_rtag_q, com_rtag_p_q,
-                                                  "000001"  , '0');
-
-              ah_rc_q.valid      <= '1';
-              ah_rc_q.tag        <= "000" & com_rtag_q(4 DOWNTO 0);
-              ah_rc_q.tagpar     <= com_rtag_q(5) XOR com_rtag_p_q;
-              ah_rc_q.com        <= READ_CL_NA;
-              ah_rc_q.compar     <= parity_gen_odd(ENCODE_CMD_CODES(READ_CL_NA));
-              ah_rc_q.abt        <= "010";
-
-              -- HW357397: Repeating each command after a restart, Independent of the response
-              --           before the restart. Also commands that have seen a "DONE" will be repeated.
-              --           Otherwise heavy throttling on AH_C_FSM causes an error/hang.
-              --           => rsp_rtag_q overruns com_rtag_q!
-              --
-              --IF read_ctrl_q(com_rtag_v).rsp = DONE THEN
-              --  com_rtag_valid_q  <= FALSE;
-              --  ah_rc_q.valid      <= '0';
-              --END IF;
-
-            --------------------------------------------------------------------
-            -- ERROR STATES
-            --------------------------------------------------------------------
-            --
-            -- STATE RESPONSE ERROR
-            --
-            WHEN ST_RSP_ERROR =>
-
-              --
-              -- collect all information
-              read_rsp_err_type_q  <= read_ctrl_rsp_rtag_q.rsp;
-              read_rsp_err_addr_q   <= (OTHERS => '0'); -- raddr_q(63 DOWNTO 7) & "0000000";
-              read_rsp_err_addr_p_q <= '0';             -- raddr_p_q;
-
-              --
-              -- how is first check
-              IF (write_ctrl_fsm_q /= ST_RSP_ERROR) OR
-                 (ah_c_fsm_q       /= ST_RSP_ERROR) THEN
-                read_rsp_err_first_q <= TRUE;
-              END IF;
-
-              --
-              -- check all commands done
-              com_active_v    := FALSE;
-
-              FOR i IN 0 TO 31 LOOP
-                IF read_ctrl_q(i).com = ACTIVE THEN
-                  com_active_v := TRUE;
-                END IF;
-              END LOOP;  -- i
-
-              IF com_active_v = FALSE THEN
-                read_rsp_err_valid_q <= TRUE;
-              END IF;
-
-
-            --
-            -- STATE FSM ERROR
-            --
-            WHEN ST_FSM_ERROR =>
-              dmm_e_q.read_ctrl_fsm_err <= '1';
-
-          END CASE;
-
         END IF;
       END IF;
     END PROCESS read_ctrl_fsm;
@@ -654,198 +643,186 @@ BEGIN
       VARIABLE ha_r_tag_v      : integer RANGE 0 TO 31;
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
+        --
+        -- defaults
+        --
+        buf_rdata_e_q      <= '0';
+        clt_rtag_q         <= clt_rtag_q;
+        clt_rtag_next_q    <= clt_rtag_next_q;
+        clt_rtag_p_q       <= clt_rtag_p_q;
+        com_rtag_qq        <= to_integer(unsigned(com_rtag_q(4 DOWNTO 0)));
+        rsp_rtag_qq        <= to_integer(unsigned(rsp_rtag_q(4 DOWNTO 0)));
+
+        raddr_q            <= raddr_q;
+        raddr_id_q         <= raddr_id_q;
+        rlen_q             <= rlen_q;
+        read_ctrl_q        <= read_ctrl_q;
+        rd_req_ack_q       <= FALSE;
+        rd_ctx_q           <= rd_ctx_q;
+
+        buf_rtag_v         := to_integer(unsigned(buf_rtag_q     (4 DOWNTO 0)));
+        clt_rtag_v         := to_integer(unsigned(clt_rtag_q     (4 DOWNTO 0)));
+        clt_rtag_next_v    := to_integer(unsigned(clt_rtag_next_q(4 DOWNTO 0)));
+        ha_r_tag_v         := to_integer(unsigned(ha_r_q.tag     (4 DOWNTO 0)));
+
+        --
+        -- CLT: CACHE LINE TYPE TAG IS VALID
+        --
+        IF (read_ctrl_q(clt_rtag_v).clt  = CL_NOT_USED) AND
+           (rlen_q                      /= 0          ) THEN
+          --
+          -- update the clt in the read control register
+          --
+          -- bit "even 64 bytes of CL are valid indication"
+          IF raddr_q(6) = '0' THEN
+            read_ctrl_q(clt_rtag_v).clt(EVEN_64B_CL) <= '1';
+          ELSE
+            read_ctrl_q(clt_rtag_v).clt(EVEN_64B_CL) <= '0';
+          END IF;
+
+          --
+          -- bit "odd 64 bytes of CL are valid indication"
+          IF rlen_q     = 1 AND
+             raddr_q(6) = '0' THEN               
+            read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '0';
+          ELSE
+            read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '1';
+          END IF;
+          
+          --
+          -- bit "last CL of a AXI request indication"
+          IF rlen_q = 2 THEN
+            IF raddr_q(6) = '0' THEN
+              read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '1';
+            ELSE
+              read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '0';
+            END IF;
+          ELSIF rlen_q = 1 THEN
+            read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '1';
+          ELSE
+            read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '0';
+          END IF;
+
+          --
+          -- CL Read Address
+          read_ctrl_q(clt_rtag_v).cla   <= raddr_q(63 DOWNTO 7);
+
+          --
+          -- calculate the next read address and the read cache length
+          IF raddr_q(6) = '1' THEN
+            raddr_q <= raddr_q + VALUE_64;
+            rlen_q  <= rlen_q - 1;
+          ELSE
+            raddr_q <= raddr_q + (VALUE_128 & '0');
+
+            IF rlen_q = 1 THEN
+              rlen_q <= (OTHERS => '0');
+            ELSE
+              rlen_q <= rlen_q - 2;
+            END IF;
+          END IF;
+          
+          --
+          -- calculate the next clt rtag
+          clt_rtag_q      <= clt_rtag_q      + 1;
+          clt_rtag_next_q <= clt_rtag_next_q + 1;
+          clt_rtag_p_q    <= AC_PPARITH(1, clt_rtag_q, clt_rtag_p_q,
+                                           "000001"  , '0');
+        END IF;
+
+        --
+        -- request
+        IF (sd_c_q.rd_req  = '1') AND
+           (rlen_q         = 0  ) THEN
+          --
+          -- save the read address, id and length for later use
+          raddr_q    <=  sd_c_q.rd_addr(63 DOWNTO 6);
+          raddr_id_q <=  sd_c_q.rd_id;
+          rd_ctx_q   <=  sd_c_q.rd_ctx;
+          rlen_q     <= ('0' & sd_c_q.rd_len) + 1;
+
+          --
+          -- send back a AXI read acknowledge
+          rd_req_ack_q <= TRUE;
+         
+          --
+          -- calculate the amount of CLT
+          --IF sd_c_q.rd_len(0) = '0' THEN
+          --  -- rd_len even
+          --  -- example:
+          --  --         rd_len = 0x6 = 0x0110
+          --  --         => means 0x7 axi beats
+          --  --         => 4 CLs needed independent from the start address
+          --  rclen_q <= ('0' & sd_c_q.rd_len(5 DOWNTO 1))  +  
+          --             (                   (5 DOWNTO 1  => '0') & '1');
+          --ELSE
+          --  -- rd_len odd
+          --  -- example:
+          --  --         rd_len = 0x7 = 0x0111
+          --  --         => means 0x8 axi beats
+          --  --         => 4 or 5 CLs needed dependent from the start address
+          --  rclen_q <= ('0' &  sd_c_q.rd_len(5 DOWNTO 1))               +  
+          --             (                    (5 DOWNTO 1  => '0') & '1') +
+          --             (                    (5 DOWNTO 1  => '0') & sd_c_q.rd_addr(6));
+          --END IF;
+        END IF;
+
+        --
+        -- COM: COMMAND TAG IS VALID
+        --
+        IF com_rtag_valid_q = TRUE THEN
+          read_ctrl_q(com_rtag_qq).com <= ACTIVE;
+          read_ctrl_q(com_rtag_qq).rsp <= ILLEGAL_RSP;
+        END IF;
+
+        --
+        -- RSP: VALID RESPONSE ON THE H->A INTERFACE
+        --
+        IF (ha_r_q.valid           = '1'  ) AND
+           (ha_r_q.tag(7 DOWNTO 5) = "000") THEN
+          read_ctrl_q(ha_r_tag_v).com <= INACTIVE;
+          read_ctrl_q(ha_r_tag_v).rsp <= ha_r_q.response;
+        END IF;
+
+        --
+        -- RSP: READ_CTRL_FSM_Q HAS READ THE RESPONSE
+        --
+        IF rsp_rtag_valid_q = TRUE THEN
+          read_ctrl_q(rsp_rtag_qq).buf <= FULL;
+          read_ctrl_q(rsp_rtag_qq).rsp <= ILLEGAL_RSP;
+        END IF;
+
+        --
+        -- BUF: BUFFER TAG is valid
+        --
+        IF buf_rtag_valid_q = TRUE THEN
+          read_ctrl_q(buf_rtag_v).buf <= EMPTY;
+          read_ctrl_q(buf_rtag_v).clt <= CL_NOT_USED;
+        END IF;
+
+        --------------------------------------------------------------------
+        -- Reset Logic
+        --------------------------------------------------------------------
+        --
+        -- 
+        --
         IF afu_reset = '1' THEN
           --
           -- initial values
           --
           FOR i IN 0 TO 31 LOOP
-            read_ctrl_q(i) <= (INACTIVE, ILLEGAL_RSP, EMPTY, CL_NOT_USED, (OTHERS => '0'));
+            read_ctrl_q(i).clt <= CL_NOT_USED;
+            read_ctrl_q(i).rsp <= ILLEGAL_RSP;
+            read_ctrl_q(i).com <= INACTIVE;
+            read_ctrl_q(i).buf <= EMPTY;
           END LOOP;  -- i
 
-          buf_rdata_e_q      <= '0';
           clt_rtag_q         <= (OTHERS => '0');
           clt_rtag_next_q    <= "000001";
           clt_rtag_p_q       <= '1';
           com_rtag_qq        <= 0;
           rsp_rtag_qq        <= 0;
-
-          raddr_q            <= (OTHERS => '0');
           rlen_q             <= (OTHERS => '0');
-
-        ELSE
-          --
-          -- defaults
-          --
-          buf_rdata_e_q      <= '0';
-          clt_rtag_q         <= clt_rtag_q;
-          clt_rtag_next_q    <= clt_rtag_next_q;
-          clt_rtag_p_q       <= clt_rtag_p_q;
-          com_rtag_qq        <= to_integer(unsigned(com_rtag_q(4 DOWNTO 0)));
-          rsp_rtag_qq        <= to_integer(unsigned(rsp_rtag_q(4 DOWNTO 0)));
-
-          raddr_q            <= raddr_q;
-          raddr_id_q         <= raddr_id_q;
-          rlen_q             <= rlen_q;
-          read_ctrl_q        <= read_ctrl_q;
-          rd_req_ack_q       <= FALSE;
-          rd_ctx_q           <= rd_ctx_q;
-
-          buf_rtag_v         := to_integer(unsigned(buf_rtag_q     (4 DOWNTO 0)));
-          clt_rtag_v         := to_integer(unsigned(clt_rtag_q     (4 DOWNTO 0)));
-          clt_rtag_next_v    := to_integer(unsigned(clt_rtag_next_q(4 DOWNTO 0)));
-          ha_r_tag_v         := to_integer(unsigned(ha_r_q.tag     (4 DOWNTO 0)));
-
-          --
-          -- CLT: CACHE LINE TYPE TAG IS VALID
-          --
-          IF (read_ctrl_q(clt_rtag_v).clt  = CL_NOT_USED) AND
-             (rlen_q                      /= 0          ) THEN
-            --
-            -- update the clt in the read control register
-            --
-            -- bit "even 64 bytes of CL are valid indication"
-            IF raddr_q(6) = '0' THEN
-              read_ctrl_q(clt_rtag_v).clt(EVEN_64B_CL) <= '1';
-            ELSE
-              read_ctrl_q(clt_rtag_v).clt(EVEN_64B_CL) <= '0';
-            END IF;
-
-            --
-            -- bit "odd 64 bytes of CL are valid indication"
-            IF rlen_q     = 1 AND
-               raddr_q(6) = '0' THEN               
-              read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '0';
-            ELSE
-              read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '1';
-            END IF;
-            
-            --
-            -- bit "last CL of a AXI request indication"
-            IF rlen_q = 2 THEN
-              IF raddr_q(6) = '0' THEN
-                read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '1';
-              ELSE
-                read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '0';
-              END IF;
-            ELSIF rlen_q = 1 THEN
-              read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '1';
-            ELSE
-              read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '0';
-            END IF;
-
-            --
-            -- CL Read Address
-            read_ctrl_q(clt_rtag_v).cla   <= raddr_q(63 DOWNTO 7);
-
-            --
-            -- calculate the next read address and the read cache length
-            IF raddr_q(6) = '1' THEN
-              raddr_q <= raddr_q + VALUE_64;
-              rlen_q  <= rlen_q - 1;
-            ELSE
-              raddr_q <= raddr_q + (VALUE_128 & '0');
-
-              IF rlen_q = 1 THEN
-                rlen_q <= (OTHERS => '0');
-              ELSE
-                rlen_q <= rlen_q - 2;
-              END IF;
-            END IF;
-            
-            --
-            -- calculate the next clt rtag
-            clt_rtag_q      <= clt_rtag_q      + 1;
-            clt_rtag_next_q <= clt_rtag_next_q + 1;
-            clt_rtag_p_q    <= AC_PPARITH(1, clt_rtag_q, clt_rtag_p_q,
-                                             "000001"  , '0');
-          END IF;
-
-          --
-          -- request
-          IF (sd_c_q.rd_req  = '1') AND
-             (rlen_q         = 0  ) THEN
-            --
-            -- save the read address, id and length for later use
-            raddr_q    <=  sd_c_q.rd_addr(63 DOWNTO 6);
-            raddr_id_q <=  sd_c_q.rd_id;
-            rd_ctx_q   <=  sd_c_q.rd_ctx;
-            rlen_q     <= ('0' & sd_c_q.rd_len) + 1;
-
-            --
-            -- send back a AXI read acknowledge
-            rd_req_ack_q <= TRUE;
-           
-            --
-            -- calculate the amount of CLT
-            --IF sd_c_q.rd_len(0) = '0' THEN
-            --  -- rd_len even
-            --  -- example:
-            --  --         rd_len = 0x6 = 0x0110
-            --  --         => means 0x7 axi beats
-            --  --         => 4 CLs needed independent from the start address
-            --  rclen_q <= ('0' & sd_c_q.rd_len(5 DOWNTO 1))  +  
-            --             (                   (5 DOWNTO 1  => '0') & '1');
-            --ELSE
-            --  -- rd_len odd
-            --  -- example:
-            --  --         rd_len = 0x7 = 0x0111
-            --  --         => means 0x8 axi beats
-            --  --         => 4 or 5 CLs needed dependent from the start address
-            --  rclen_q <= ('0' &  sd_c_q.rd_len(5 DOWNTO 1))               +  
-            --             (                    (5 DOWNTO 1  => '0') & '1') +
-            --             (                    (5 DOWNTO 1  => '0') & sd_c_q.rd_addr(6));
-            --END IF;
-          END IF;
-
-          --
-          -- COM: COMMAND TAG IS VALID
-          --
-          IF com_rtag_valid_q = TRUE THEN
-            read_ctrl_q(com_rtag_qq).com <= ACTIVE;
-            read_ctrl_q(com_rtag_qq).rsp <= ILLEGAL_RSP;
-          END IF;
-
-          --
-          -- RSP: VALID RESPONSE ON THE H->A INTERFACE
-          --
-          IF (ha_r_q.valid           = '1'  ) AND
-             (ha_r_q.tag(7 DOWNTO 5) = "000") THEN
-            read_ctrl_q(ha_r_tag_v).com <= INACTIVE;
-            read_ctrl_q(ha_r_tag_v).rsp <= ha_r_q.response;
-          END IF;
-
-          --
-          -- RSP: READ_CTRL_FSM_Q HAS READ THE RESPONSE
-          --
-          IF rsp_rtag_valid_q = TRUE THEN
-            read_ctrl_q(rsp_rtag_qq).buf <= FULL;
-            read_ctrl_q(rsp_rtag_qq).rsp <= ILLEGAL_RSP;
-          END IF;
-
-          --
-          -- BUF: BUFFER TAG is valid
-          --
-          IF buf_rtag_valid_q = TRUE THEN
-            read_ctrl_q(buf_rtag_v).buf <= EMPTY;
-            read_ctrl_q(buf_rtag_v).clt <= CL_NOT_USED;
-          END IF;
-
-          --
-          -- check all CL transferred, sent read data end to
-          -- aligner
-          --buf_active_v := FALSE;
-          -- 
-          --FOR i IN 0 TO 31 LOOP
-          --  IF read_ctrl_q(i).clt /= CL_NOT_USED THEN
-          --    buf_active_v := TRUE;
-          --  END IF;
-          --END LOOP;  -- i
-          -- 
-          --IF (buf_active_v     = FALSE  ) AND
-          --   (read_ctrl_fsm_q /= ST_IDLE) THEN
-          --  buf_rdata_e_q   <= '1';
-          --END IF;
-
         END IF;
       END IF;
     END PROCESS read_ctrl_reg;
@@ -875,423 +852,412 @@ BEGIN
       VARIABLE rsp_wtag_next_v  : integer RANGE 0 TO 31;
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
+        --
+        -- defaults
+        --
+        com_wtag_v            := to_integer(unsigned(com_wtag_q     (4 DOWNTO 0)));
+        com_wtag_next_v       := to_integer(unsigned(com_wtag_next_q(4 DOWNTO 0)));
+        rsp_wtag_v            := to_integer(unsigned(rsp_wtag_q     (4 DOWNTO 0)));
+        rsp_wtag_next_v       := to_integer(unsigned(rsp_wtag_next_q(4 DOWNTO 0)));
+
+        ah_wc_q                <= ( '0',             -- valid
+                                   (OTHERS => '0'),  -- tag
+                                    '1',             -- tag parity
+                                    INVALID,         -- command
+                                    '1',             -- command parity
+                                   (OTHERS => '0'),  -- abt
+                                   (OTHERS => '0'),  -- address
+                                    '1');            -- address parity
+        com_wtag_valid_q       <= FALSE;
+        rsp_wtag_valid_q       <= FALSE;
+        write_ctrl_fsm_q       <= write_ctrl_fsm_q;
+        write_ctrl_rsp_wtag_q  <= write_ctrl_q(rsp_wtag_v);
+        write_fsm_req_q        <= write_fsm_req_q;
+        write_rsp_err_addr_p_q <= write_rsp_err_addr_p_q;
+        write_rsp_err_addr_q   <= write_rsp_err_addr_q;
+        write_rsp_err_first_q  <= write_rsp_err_first_q;
+        write_rsp_err_type_q   <= write_rsp_err_type_q;
+        write_rsp_err_valid_q  <= write_rsp_err_valid_q;
+
+        dmm_e_q.write_ctrl_fsm_err <= '0';
+
+        com_wtag_q             <= com_wtag_q;
+        com_wtag_next_q        <= com_wtag_next_q;
+        com_wtag_p_q           <= com_wtag_p_q;
+        rsp_wtag_q             <= rsp_wtag_q;
+        rsp_wtag_next_q        <= rsp_wtag_next_q;
+        rsp_wtag_p_q           <= rsp_wtag_p_q;
+
+        --
+        -- F S M
+        --
+        CASE write_ctrl_fsm_q IS
+          --
+          -- STATE IDLE
+          --
+          WHEN ST_IDLE =>
+            --
+            -- FSM starts if one CL in use
+            --
+            --
+            -- check all CLs
+            clt_in_use_v := FALSE;
+
+            FOR i IN 0 TO 31 LOOP
+              IF write_ctrl_q(i).clt /= CL_NOT_USED THEN
+                clt_in_use_v := TRUE;
+              END IF;
+            END LOOP;  -- i
+
+            IF clt_in_use_v = TRUE THEN
+              write_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
+            END IF;
+
+          --
+          -- STATE RESTART
+          --
+          WHEN ST_RESTART =>
+            com_wtag_q       <= rsp_wtag_q;
+            com_wtag_next_q  <= rsp_wtag_next_q;
+            com_wtag_p_q     <= rsp_wtag_p_q;
+
+            --
+            -- check all commands done
+            com_active_v    := FALSE;
+
+            FOR i IN 0 TO 31 LOOP
+              IF write_ctrl_q(i).com = ACTIVE THEN
+                com_active_v := TRUE;
+              END IF;
+            END LOOP;  -- i
+
+            IF com_active_v = FALSE THEN
+              IF (write_fsm_req_q = COMMAND) THEN
+                IF (ah_c_wgate_q = OPENED) THEN
+                  IF (write_ctrl_q(com_wtag_v).clt(EVEN_64B_CL) = '1') AND
+                     (write_ctrl_q(com_wtag_v).clt(ODD_64B_CL)  = '1') THEN
+                    write_ctrl_fsm_q <= ST_COM_WRITE_NA;
+                  ELSE
+                    write_ctrl_fsm_q <= ST_COM_READ_CL_LCK;
+                  END IF;
+                END IF;
+              ELSE
+                write_fsm_req_q  <= RESTART;
+
+                IF restart_active_q = TRUE THEN
+                  write_fsm_req_q <= COMMAND;
+                END IF;
+              END IF;
+            END IF;
+
+
+          --
+          -- STATE READ RESPONSE
+          --
+          WHEN ST_READ_RSP =>
+            --
+            -- stay in this state if the next response is valid
+            --
+            IF write_ctrl_q(rsp_wtag_next_v).rsp /= ILLEGAL_RSP  THEN
+              write_ctrl_fsm_q <= ST_READ_RSP;
+            ELSE
+              write_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
+            END IF;
+
+            --
+            -- load to the next write_ctrl_q slice
+            --
+            write_ctrl_rsp_wtag_q <= write_ctrl_q(rsp_wtag_next_v);
+
+            --
+            -- process current response
+            --
+            IF write_ctrl_rsp_wtag_q.rsp = DONE THEN
+              IF (write_ctrl_rsp_wtag_q.clt(EVEN_64B_CL) = '1') AND
+                 (write_ctrl_rsp_wtag_q.clt(ODD_64B_CL)  = '1') THEN
+                rsp_wtag_valid_q <= TRUE;
+                rsp_wtag_q       <= rsp_wtag_q      + 1;
+                rsp_wtag_next_q  <= rsp_wtag_next_q + 1;
+                rsp_wtag_p_q     <= AC_PPARITH(1, rsp_wtag_q, rsp_wtag_p_q,
+                                                  "000001"  , '0');
+              ELSE
+                write_ctrl_fsm_q <= ST_COM_READ_CL_LCK;
+              END IF;
+
+            ELSIF (write_ctrl_rsp_wtag_q.rsp = AERROR) OR
+                  (write_ctrl_rsp_wtag_q.rsp = DERROR) OR
+                  (write_ctrl_rsp_wtag_q.rsp = FAILED) OR
+                  (write_ctrl_rsp_wtag_q.rsp = CONTEXT) THEN
+              write_ctrl_fsm_q   <= ST_RSP_ERROR;
+
+            ELSE
+              write_ctrl_fsm_q <= ST_RESTART;
+            END IF;
+
+          --------------------------------------------------------------------
+          -- WAIT STATES
+          --------------------------------------------------------------------
+          --
+          -- STATE WAIT: READ CACHE LINE LOCK
+          --
+          WHEN ST_WAIT_4_READ_CL_LCK =>
+            IF (ha_r_q.valid           = '1'  ) AND
+               (ha_r_q.tag(7 DOWNTO 0) = x"20") THEN
+              IF (ha_r_q.response      = DONE) THEN
+                write_ctrl_fsm_q <= ST_COM_WRITE_UNLOCK;
+              ELSE
+                write_ctrl_fsm_q <= ST_RESTART;
+              END IF;
+            END IF;
+
+          --
+          --
+          -- STATE WAIT: FOR crtl register update
+          --
+          WHEN ST_WAIT_4_CTRL_UPDTAE =>
+              write_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
+
+          --
+          -- STATE WAIT: WRITE UNLOCK
+          --
+          WHEN ST_WAIT_4_WRITE_UNLOCK =>
+            IF (ha_r_q.valid           = '1'  ) AND
+               (ha_r_q.tag(7 DOWNTO 5) = "101") THEN
+              IF (ha_r_q.response      = DONE) THEN
+                write_ctrl_fsm_q  <= ST_WAIT_4_RSP_OR_BUF;
+                rsp_wtag_valid_q  <= TRUE;
+                rsp_wtag_q        <= rsp_wtag_q      + 1;
+                rsp_wtag_next_q   <= rsp_wtag_next_q + 1;
+                rsp_wtag_p_q      <= AC_PPARITH(1, rsp_wtag_q, rsp_wtag_p_q,
+                                                   "000001"  , '0');
+                com_wtag_q        <= com_wtag_q      + 1;
+                com_wtag_next_q   <= com_wtag_next_q + 1;
+                com_wtag_p_q      <= AC_PPARITH(1, com_wtag_q, com_wtag_p_q,
+                                                   "000001"  , '0');
+              ELSE
+                write_ctrl_fsm_q <= ST_RESTART;
+              END IF;
+            END IF;
+
+          --
+          -- STATE WAIT: FOR RESPONSE OR BUFFER
+          --
+          WHEN ST_WAIT_4_RSP_OR_BUF =>
+            --
+            -- default
+            write_fsm_req_q <= NONE;
+
+            --
+            -- new response available
+            IF (write_ctrl_q(rsp_wtag_v).rsp /= ILLEGAL_RSP) THEN
+              write_ctrl_fsm_q      <= ST_READ_RSP;
+
+            --
+            -- new buffer available
+            --
+            ELSIF (write_ctrl_q(com_wtag_v).buf = FULL      ) AND   
+                  (com_wtag_q                  /= buf_wtag_q) THEN
+              
+              write_fsm_req_q  <= COMMAND;
+
+              --
+              -- trigger a full CL transfer
+              IF (ah_c_wgate_q    = OPENED ) AND
+                 (write_fsm_req_q = COMMAND) THEN
+                --
+                -- check if the "full buffer" is  a COMPLETE_DATA or PARTIAL_DATA
+                --
+                IF (write_ctrl_q(com_wtag_v).clt(EVEN_64B_CL) = '1') AND
+                   (write_ctrl_q(com_wtag_v).clt(ODD_64B_CL)  = '1') THEN
+                  write_ctrl_fsm_q <= ST_COM_WRITE_NA;
+
+                ELSE
+                  --
+                  -- check that all responses are processed
+                  IF rsp_wtag_q = com_wtag_q THEN
+                    write_fsm_req_q  <= COMMAND;
+                    write_ctrl_fsm_q <= ST_COM_READ_CL_LCK;
+                  END IF;
+                END IF;
+              END IF;
+
+            -- READ FSM AH_C_FSM detects a response error
+            ELSIF (read_rsp_err_valid_q = TRUE) OR
+                  (ah_c_rsp_err_valid_q = TRUE) THEN
+              write_ctrl_fsm_q <= ST_RSP_ERROR;
+            END IF;
+
+            --
+            -- all CL transferred
+            clt_in_use_v := FALSE;
+
+            FOR i IN 0 TO 31 LOOP
+              IF write_ctrl_q(i).clt /= CL_NOT_USED THEN
+                clt_in_use_v := TRUE;
+              END IF;
+            END LOOP;  -- i
+
+            IF clt_in_use_v = FALSE THEN
+              write_fsm_req_q   <= NONE;
+              write_ctrl_fsm_q  <= ST_IDLE;
+            END IF;
+
+          --------------------------------------------------------------------
+          -- COMMAND STATES
+          --------------------------------------------------------------------
+          --
+          -- STATE COMMAND: TOUCH
+          --
+          WHEN ST_COM_TOUCH =>
+
+            write_ctrl_fsm_q  <= ST_WAIT_4_RSP_OR_BUF;
+            write_fsm_req_q   <= NONE;
+
+            ah_wc_q.valid    <= '1';
+            ah_wc_q.abt      <= "011";
+
+          --
+          -- STATE COMMAND: READ_CL_LCK
+          --
+          WHEN ST_COM_READ_CL_LCK =>
+            IF (ah_c_wgate_q = OPENED) THEN
+              write_ctrl_fsm_q <= ST_WAIT_4_READ_CL_LCK;
+              write_fsm_req_q  <= NONE;
+
+              ah_wc_q.valid  <= '1';
+              ah_wc_q.tag    <= x"20";
+              ah_wc_q.tagpar <= '0';
+              ah_wc_q.com    <= READ_CL_LCK;
+              ah_wc_q.compar <= parity_gen_odd(ENCODE_CMD_CODES(READ_CL_LCK));
+              ah_wc_q.abt    <= "010";
+              ah_wc_q.ea     <= write_ctrl_q(com_wtag_v).cla;
+              ah_wc_q.eapar  <= parity_gen_odd(write_ctrl_q(com_wtag_v).cla(63 DOWNTO 7));
+
+            END IF;
+
+          --
+          -- STATE COMMAND: WRITE_UNLOCK
+          --
+          WHEN ST_COM_WRITE_UNLOCK =>
+
+            write_fsm_req_q <= COMMAND;
+
+            IF (ah_c_wgate_q = OPENED) THEN
+              write_ctrl_fsm_q <= ST_WAIT_4_WRITE_UNLOCK;
+              write_fsm_req_q  <= NONE;
+
+              ah_wc_q.valid  <= '1';
+              ah_wc_q.tag    <= "101" & rsp_wtag_q(4 DOWNTO 0);
+              ah_wc_q.tagpar <= rsp_wtag_q(5) XOR rsp_wtag_p_q;
+              ah_wc_q.com    <= WRITE_UNLOCK;
+              ah_wc_q.compar <= parity_gen_odd(ENCODE_CMD_CODES(WRITE_UNLOCK));
+              ah_wc_q.abt    <= "010";
+              ah_wc_q.ea     <= write_ctrl_q(com_wtag_v).cla;
+              ah_wc_q.eapar  <= parity_gen_odd(write_ctrl_q(com_wtag_v).cla(63 DOWNTO 7));
+            END IF;
+
+          --
+          -- STATE COMMAND: WRITE_NA
+          --
+          WHEN ST_COM_WRITE_NA =>
+            IF (ah_c_wgate_q                                    = OPENED    ) AND
+               (write_ctrl_q(com_wtag_next_v).clt(EVEN_64B_CL)  = '1'       ) AND
+               (write_ctrl_q(com_wtag_next_v).clt(ODD_64B_CL)   = '1'       ) AND
+               (com_wtag_next_q                                /= buf_wtag_q) THEN
+              write_ctrl_fsm_q <= ST_COM_WRITE_NA;
+            ELSE
+              write_ctrl_fsm_q <= ST_WAIT_4_CTRL_UPDTAE;
+              write_fsm_req_q  <= NONE;
+            END IF;
+
+            com_wtag_valid_q  <= TRUE;
+            com_wtag_q        <= com_wtag_q      + 1;
+            com_wtag_next_q   <= com_wtag_next_q + 1;
+            com_wtag_p_q      <= AC_PPARITH(1, com_wtag_q, com_wtag_p_q,
+                                               "000001"  , '0');
+
+            ah_wc_q.valid     <= '1';
+            ah_wc_q.tag       <= "100" & com_wtag_q(4 DOWNTO 0);
+            ah_wc_q.tagpar    <= NOT (com_wtag_q(5) XOR com_wtag_p_q);
+            ah_wc_q.com       <= WRITE_NA;
+            ah_wc_q.compar    <= parity_gen_odd(ENCODE_CMD_CODES(WRITE_NA));
+            ah_wc_q.abt       <= "010";
+            ah_wc_q.ea        <= write_ctrl_q(com_wtag_v).cla;
+            ah_wc_q.eapar     <= parity_gen_odd(write_ctrl_q(com_wtag_v).cla(63 DOWNTO 7));
+
+            -- HW357397: Repeating each command after a restart, Independent of the response
+            --           before the restart. Also commands that have seen a "DONE" will be repeated.
+            --           Otherwise heavy throttling on AH_C_FSM causes an error/hang.
+            --           => rsp_wtag_q overruns com_wtag_q!
+            --
+            --IF write_ctrl_q(com_wtag_v).rsp = DONE THEN
+            --  com_wtag_valid_q  <= FALSE;
+            --  ah_wc_q.valid     <= '0';
+            --END IF;
+
+          --------------------------------------------------------------------
+          -- ERROR STATES
+          --------------------------------------------------------------------
+          --
+          -- STATE RESPONSE ERROR
+          --
+          WHEN ST_RSP_ERROR =>
+            --
+            -- collect all information
+            write_rsp_err_type_q   <= write_ctrl_rsp_wtag_q.rsp;
+            write_rsp_err_addr_q   <= (OTHERS => '0'); -- waddr_q & "0000000";
+            write_rsp_err_addr_p_q <= '0';             -- waddr_p_q;
+
+            --
+            -- how is first check
+            IF (read_ctrl_fsm_q /= ST_RSP_ERROR) OR
+               (ah_c_fsm_q      /= ST_RSP_ERROR) THEN
+              write_rsp_err_first_q <= TRUE;
+            END IF;
+
+            --
+            -- check all commands done
+            com_active_v    := FALSE;
+
+            FOR i IN 0 TO 31 LOOP
+              IF write_ctrl_q(i).com = ACTIVE THEN
+                com_active_v := TRUE;
+              END IF;
+            END LOOP;  -- i
+
+            IF com_active_v = FALSE THEN
+              write_rsp_err_valid_q <= TRUE;
+            END IF;
+
+          --
+          -- STATE FSM ERROR
+          --
+          WHEN ST_FSM_ERROR =>
+            dmm_e_q.write_ctrl_fsm_err <= '1';
+
+        END CASE;
+
+        --------------------------------------------------------------------
+        -- Reset Logic
+        --------------------------------------------------------------------
+        --
+        -- 
+        --
         IF afu_reset = '1' THEN
           --
           -- initial values
           --
-          ah_wc_q                <= ( '0',             -- valid
-                                     (OTHERS => '0'),  -- tag
-                                      '1',             -- tag parity
-                                      INVALID,         -- command
-                                      '1',             -- command parity
-                                     (OTHERS => '0'),  -- abt
-                                     (OTHERS => '0'),  -- address
-                                      '1');            -- address parity
           com_wtag_next_q        <= "000001";
           com_wtag_p_q           <= '1';
           com_wtag_q             <= (OTHERS => '0');
-          com_wtag_valid_q       <= FALSE;
           rsp_wtag_next_q        <= "000001";
           rsp_wtag_p_q           <= '1';
           rsp_wtag_q             <= (OTHERS => '0');
-          rsp_wtag_valid_q       <= FALSE;
           write_ctrl_fsm_q       <= ST_IDLE;
-          write_ctrl_rsp_wtag_q  <= (INACTIVE, ILLEGAL_RSP, EMPTY, CL_NOT_USED, (OTHERS => '0'));
           write_fsm_req_q        <= NONE;
-          write_rsp_err_addr_p_q <= '1';
-          write_rsp_err_addr_q   <= (OTHERS => '0');
           write_rsp_err_first_q  <= FALSE;
           write_rsp_err_type_q   <= ILLEGAL_RSP;
           write_rsp_err_valid_q  <= FALSE;
-
-          dmm_e_q.write_ctrl_fsm_err <= '0';
-
-        ELSE
-          --
-          -- defaults
-          --
-          com_wtag_v            := to_integer(unsigned(com_wtag_q     (4 DOWNTO 0)));
-          com_wtag_next_v       := to_integer(unsigned(com_wtag_next_q(4 DOWNTO 0)));
-          rsp_wtag_v            := to_integer(unsigned(rsp_wtag_q     (4 DOWNTO 0)));
-          rsp_wtag_next_v       := to_integer(unsigned(rsp_wtag_next_q(4 DOWNTO 0)));
-
-          ah_wc_q                <= ( '0',             -- valid
-                                     (OTHERS => '0'),  -- tag
-                                      '1',             -- tag parity
-                                      INVALID,         -- command
-                                      '1',             -- command parity
-                                     (OTHERS => '0'),  -- abt
-                                     (OTHERS => '0'),  -- address
-                                      '1');            -- address parity
-          com_wtag_valid_q       <= FALSE;
-          rsp_wtag_valid_q       <= FALSE;
-          write_ctrl_fsm_q       <= write_ctrl_fsm_q;
-          write_ctrl_rsp_wtag_q  <= write_ctrl_q(rsp_wtag_v);
-          write_fsm_req_q        <= write_fsm_req_q;
-          write_rsp_err_addr_p_q <= write_rsp_err_addr_p_q;
-          write_rsp_err_addr_q   <= write_rsp_err_addr_q;
-          write_rsp_err_first_q  <= write_rsp_err_first_q;
-          write_rsp_err_type_q   <= write_rsp_err_type_q;
-          write_rsp_err_valid_q  <= write_rsp_err_valid_q;
-
-          dmm_e_q.write_ctrl_fsm_err <= '0';
-
-          com_wtag_q             <= com_wtag_q;
-          com_wtag_next_q        <= com_wtag_next_q;
-          com_wtag_p_q           <= com_wtag_p_q;
-          rsp_wtag_q             <= rsp_wtag_q;
-          rsp_wtag_next_q        <= rsp_wtag_next_q;
-          rsp_wtag_p_q           <= rsp_wtag_p_q;
-
-          --
-          -- F S M
-          --
-          CASE write_ctrl_fsm_q IS
-            --
-            -- STATE IDLE
-            --
-            WHEN ST_IDLE =>
-              --
-              -- FSM starts if one CL in use
-              --
-              --
-              -- check all CLs
-              clt_in_use_v := FALSE;
-
-              FOR i IN 0 TO 31 LOOP
-                IF write_ctrl_q(i).clt /= CL_NOT_USED THEN
-                  clt_in_use_v := TRUE;
-                END IF;
-              END LOOP;  -- i
-
-              IF clt_in_use_v = TRUE THEN
-                write_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
-              END IF;
-
-            --
-            -- STATE RESTART
-            --
-            WHEN ST_RESTART =>
-              com_wtag_q       <= rsp_wtag_q;
-              com_wtag_next_q  <= rsp_wtag_next_q;
-              com_wtag_p_q     <= rsp_wtag_p_q;
-
-              --
-              -- check all commands done
-              com_active_v    := FALSE;
-
-              FOR i IN 0 TO 31 LOOP
-                IF write_ctrl_q(i).com = ACTIVE THEN
-                  com_active_v := TRUE;
-                END IF;
-              END LOOP;  -- i
-
-              IF com_active_v = FALSE THEN
-                IF (write_fsm_req_q = COMMAND) THEN
-                  IF (ah_c_wgate_q = OPENED) THEN
-                    IF (write_ctrl_q(com_wtag_v).clt(EVEN_64B_CL) = '1') AND
-                       (write_ctrl_q(com_wtag_v).clt(ODD_64B_CL)  = '1') THEN
-                      write_ctrl_fsm_q <= ST_COM_WRITE_NA;
-                    ELSE
-                      write_ctrl_fsm_q <= ST_COM_READ_CL_LCK;
-                    END IF;
-                  END IF;
-                ELSE
-                  write_fsm_req_q  <= RESTART;
-
-                  IF restart_active_q = TRUE THEN
-                    write_fsm_req_q <= COMMAND;
-                  END IF;
-                END IF;
-              END IF;
-
-
-            --
-            -- STATE READ RESPONSE
-            --
-            WHEN ST_READ_RSP =>
-              --
-              -- stay in this state if the next response is valid
-              --
-              IF write_ctrl_q(rsp_wtag_next_v).rsp /= ILLEGAL_RSP  THEN
-                write_ctrl_fsm_q <= ST_READ_RSP;
-              ELSE
-                write_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
-              END IF;
-
-              --
-              -- load to the next write_ctrl_q slice
-              --
-              write_ctrl_rsp_wtag_q <= write_ctrl_q(rsp_wtag_next_v);
-
-              --
-              -- process current response
-              --
-              IF write_ctrl_rsp_wtag_q.rsp = DONE THEN
-                IF (write_ctrl_rsp_wtag_q.clt(EVEN_64B_CL) = '1') AND
-                   (write_ctrl_rsp_wtag_q.clt(ODD_64B_CL)  = '1') THEN
-                  rsp_wtag_valid_q <= TRUE;
-                  rsp_wtag_q       <= rsp_wtag_q      + 1;
-                  rsp_wtag_next_q  <= rsp_wtag_next_q + 1;
-                  rsp_wtag_p_q     <= AC_PPARITH(1, rsp_wtag_q, rsp_wtag_p_q,
-                                                    "000001"  , '0');
-                ELSE
-                  write_ctrl_fsm_q <= ST_COM_READ_CL_LCK;
-                END IF;
-
-              ELSIF (write_ctrl_rsp_wtag_q.rsp = AERROR) OR
-                    (write_ctrl_rsp_wtag_q.rsp = DERROR) OR
-                    (write_ctrl_rsp_wtag_q.rsp = FAILED) OR
-                    (write_ctrl_rsp_wtag_q.rsp = CONTEXT) THEN
-                write_ctrl_fsm_q   <= ST_RSP_ERROR;
-
-              ELSE
-                write_ctrl_fsm_q <= ST_RESTART;
-              END IF;
-
-            --------------------------------------------------------------------
-            -- WAIT STATES
-            --------------------------------------------------------------------
-            --
-            -- STATE WAIT: READ CACHE LINE LOCK
-            --
-            WHEN ST_WAIT_4_READ_CL_LCK =>
-              IF (ha_r_q.valid           = '1'  ) AND
-                 (ha_r_q.tag(7 DOWNTO 0) = x"20") THEN
-                IF (ha_r_q.response      = DONE) THEN
-                  write_ctrl_fsm_q <= ST_COM_WRITE_UNLOCK;
-                ELSE
-                  write_ctrl_fsm_q <= ST_RESTART;
-                END IF;
-              END IF;
-
-            --
-            --
-            -- STATE WAIT: FOR crtl register update
-            --
-            WHEN ST_WAIT_4_CTRL_UPDTAE =>
-                write_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
-
-            --
-            -- STATE WAIT: WRITE UNLOCK
-            --
-            WHEN ST_WAIT_4_WRITE_UNLOCK =>
-              IF (ha_r_q.valid           = '1'  ) AND
-                 (ha_r_q.tag(7 DOWNTO 5) = "101") THEN
-                IF (ha_r_q.response      = DONE) THEN
-                  write_ctrl_fsm_q  <= ST_WAIT_4_RSP_OR_BUF;
-                  rsp_wtag_valid_q  <= TRUE;
-                  rsp_wtag_q        <= rsp_wtag_q      + 1;
-                  rsp_wtag_next_q   <= rsp_wtag_next_q + 1;
-                  rsp_wtag_p_q      <= AC_PPARITH(1, rsp_wtag_q, rsp_wtag_p_q,
-                                                     "000001"  , '0');
-                  com_wtag_q        <= com_wtag_q      + 1;
-                  com_wtag_next_q   <= com_wtag_next_q + 1;
-                  com_wtag_p_q      <= AC_PPARITH(1, com_wtag_q, com_wtag_p_q,
-                                                     "000001"  , '0');
-                ELSE
-                  write_ctrl_fsm_q <= ST_RESTART;
-                END IF;
-              END IF;
-
-            --
-            -- STATE WAIT: FOR RESPONSE OR BUFFER
-            --
-            WHEN ST_WAIT_4_RSP_OR_BUF =>
-              --
-              -- default
-              write_fsm_req_q <= NONE;
-
-              --
-              -- new response available
-              IF (write_ctrl_q(rsp_wtag_v).rsp /= ILLEGAL_RSP) THEN
-                write_ctrl_fsm_q      <= ST_READ_RSP;
-
-              --
-              -- new buffer available
-              --
-              ELSIF (write_ctrl_q(com_wtag_v).buf = FULL      ) AND   
-                    (com_wtag_q                  /= buf_wtag_q) THEN
-                
-                write_fsm_req_q  <= COMMAND;
-
-                --
-                -- trigger a full CL transfer
-                IF (ah_c_wgate_q    = OPENED ) AND
-                   (write_fsm_req_q = COMMAND) THEN
-                  --
-                  -- check if the "full buffer" is  a COMPLETE_DATA or PARTIAL_DATA
-                  --
-                  IF (write_ctrl_q(com_wtag_v).clt(EVEN_64B_CL) = '1') AND
-                     (write_ctrl_q(com_wtag_v).clt(ODD_64B_CL)  = '1') THEN
-                    write_ctrl_fsm_q <= ST_COM_WRITE_NA;
-
-                  ELSE
-                    --
-                    -- check that all responses are processed
-                    IF rsp_wtag_q = com_wtag_q THEN
-                      write_fsm_req_q  <= COMMAND;
-                      write_ctrl_fsm_q <= ST_COM_READ_CL_LCK;
-                    END IF;
-                  END IF;
-                END IF;
-
-              -- READ FSM AH_C_FSM detects a response error
-              ELSIF (read_rsp_err_valid_q = TRUE) OR
-                    (ah_c_rsp_err_valid_q = TRUE) THEN
-                write_ctrl_fsm_q <= ST_RSP_ERROR;
-              END IF;
-
-              --
-              -- all CL transferred
-              clt_in_use_v := FALSE;
-
-              FOR i IN 0 TO 31 LOOP
-                IF write_ctrl_q(i).clt /= CL_NOT_USED THEN
-                  clt_in_use_v := TRUE;
-                END IF;
-              END LOOP;  -- i
-
-              IF clt_in_use_v = FALSE THEN
-                write_fsm_req_q   <= NONE;
-                write_ctrl_fsm_q  <= ST_IDLE;
-              END IF;
-
-            --------------------------------------------------------------------
-            -- COMMAND STATES
-            --------------------------------------------------------------------
-            --
-            -- STATE COMMAND: TOUCH
-            --
-            WHEN ST_COM_TOUCH =>
-
-              write_ctrl_fsm_q  <= ST_WAIT_4_RSP_OR_BUF;
-              write_fsm_req_q   <= NONE;
-
-              ah_wc_q.valid    <= '1';
-              ah_wc_q.abt      <= "011";
-
-            --
-            -- STATE COMMAND: READ_CL_LCK
-            --
-            WHEN ST_COM_READ_CL_LCK =>
-              IF (ah_c_wgate_q = OPENED) THEN
-                write_ctrl_fsm_q <= ST_WAIT_4_READ_CL_LCK;
-                write_fsm_req_q  <= NONE;
-
-                ah_wc_q.valid  <= '1';
-                ah_wc_q.tag    <= x"20";
-                ah_wc_q.tagpar <= '0';
-                ah_wc_q.com    <= READ_CL_LCK;
-                ah_wc_q.compar <= parity_gen_odd(ENCODE_CMD_CODES(READ_CL_LCK));
-                ah_wc_q.abt    <= "010";
-                ah_wc_q.ea     <= write_ctrl_q(com_wtag_v).cla;
-                ah_wc_q.eapar  <= parity_gen_odd(write_ctrl_q(com_wtag_v).cla(63 DOWNTO 7));
-
-              END IF;
-
-            --
-            -- STATE COMMAND: WRITE_UNLOCK
-            --
-            WHEN ST_COM_WRITE_UNLOCK =>
-
-              write_fsm_req_q <= COMMAND;
-
-              IF (ah_c_wgate_q = OPENED) THEN
-                write_ctrl_fsm_q <= ST_WAIT_4_WRITE_UNLOCK;
-                write_fsm_req_q  <= NONE;
-
-                ah_wc_q.valid  <= '1';
-                ah_wc_q.tag    <= "101" & rsp_wtag_q(4 DOWNTO 0);
-                ah_wc_q.tagpar <= rsp_wtag_q(5) XOR rsp_wtag_p_q;
-                ah_wc_q.com    <= WRITE_UNLOCK;
-                ah_wc_q.compar <= parity_gen_odd(ENCODE_CMD_CODES(WRITE_UNLOCK));
-                ah_wc_q.abt    <= "010";
-                ah_wc_q.ea     <= write_ctrl_q(com_wtag_v).cla;
-                ah_wc_q.eapar  <= parity_gen_odd(write_ctrl_q(com_wtag_v).cla(63 DOWNTO 7));
-              END IF;
-
-            --
-            -- STATE COMMAND: WRITE_NA
-            --
-            WHEN ST_COM_WRITE_NA =>
-              IF (ah_c_wgate_q                                    = OPENED    ) AND
-                 (write_ctrl_q(com_wtag_next_v).clt(EVEN_64B_CL)  = '1'       ) AND
-                 (write_ctrl_q(com_wtag_next_v).clt(ODD_64B_CL)   = '1'       ) AND
-                 (com_wtag_next_q                                /= buf_wtag_q) THEN
-                write_ctrl_fsm_q <= ST_COM_WRITE_NA;
-              ELSE
-                write_ctrl_fsm_q <= ST_WAIT_4_CTRL_UPDTAE;
-                write_fsm_req_q  <= NONE;
-              END IF;
-
-              com_wtag_valid_q  <= TRUE;
-              com_wtag_q        <= com_wtag_q      + 1;
-              com_wtag_next_q   <= com_wtag_next_q + 1;
-              com_wtag_p_q      <= AC_PPARITH(1, com_wtag_q, com_wtag_p_q,
-                                                 "000001"  , '0');
-
-              ah_wc_q.valid     <= '1';
-              ah_wc_q.tag       <= "100" & com_wtag_q(4 DOWNTO 0);
-              ah_wc_q.tagpar    <= NOT (com_wtag_q(5) XOR com_wtag_p_q);
-              ah_wc_q.com       <= WRITE_NA;
-              ah_wc_q.compar    <= parity_gen_odd(ENCODE_CMD_CODES(WRITE_NA));
-              ah_wc_q.abt       <= "010";
-              ah_wc_q.ea        <= write_ctrl_q(com_wtag_v).cla;
-              ah_wc_q.eapar     <= parity_gen_odd(write_ctrl_q(com_wtag_v).cla(63 DOWNTO 7));
-
-              -- HW357397: Repeating each command after a restart, Independent of the response
-              --           before the restart. Also commands that have seen a "DONE" will be repeated.
-              --           Otherwise heavy throttling on AH_C_FSM causes an error/hang.
-              --           => rsp_wtag_q overruns com_wtag_q!
-              --
-              --IF write_ctrl_q(com_wtag_v).rsp = DONE THEN
-              --  com_wtag_valid_q  <= FALSE;
-              --  ah_wc_q.valid     <= '0';
-              --END IF;
-
-            --------------------------------------------------------------------
-            -- ERROR STATES
-            --------------------------------------------------------------------
-            --
-            -- STATE RESPONSE ERROR
-            --
-            WHEN ST_RSP_ERROR =>
-              --
-              -- collect all information
-              write_rsp_err_type_q   <= write_ctrl_rsp_wtag_q.rsp;
-              write_rsp_err_addr_q   <= (OTHERS => '0'); -- waddr_q & "0000000";
-              write_rsp_err_addr_p_q <= '0';             -- waddr_p_q;
-
-              --
-              -- how is first check
-              IF (read_ctrl_fsm_q /= ST_RSP_ERROR) OR
-                 (ah_c_fsm_q      /= ST_RSP_ERROR) THEN
-                write_rsp_err_first_q <= TRUE;
-              END IF;
-
-              --
-              -- check all commands done
-              com_active_v    := FALSE;
-
-              FOR i IN 0 TO 31 LOOP
-                IF write_ctrl_q(i).com = ACTIVE THEN
-                  com_active_v := TRUE;
-                END IF;
-              END LOOP;  -- i
-
-              IF com_active_v = FALSE THEN
-                write_rsp_err_valid_q <= TRUE;
-              END IF;
-
-            --
-            -- STATE FSM ERROR
-            --
-            WHEN ST_FSM_ERROR =>
-              dmm_e_q.write_ctrl_fsm_err <= '1';
-
-          END CASE;
-
         END IF;
       END IF;
     END PROCESS write_ctrl_fsm;
@@ -1353,12 +1319,235 @@ BEGIN
       VARIABLE cl_calc_v       : std_logic_vector(5 DOWNTO 0);
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
+        --
+        -- defaults
+        --
+        buf_wfull_cnt_q       <= buf_wfull_cnt_q;
+        buf_walmost_full_q    <= buf_walmost_full_q;
+        buf_walmost_full_qq   <= buf_walmost_full_q;
+        buf_walmost_full_qqq  <= buf_walmost_full_qq;
+        clt_wtag_q            <= clt_wtag_q;
+        clt_wtag_next_q       <= clt_wtag_next_q;
+        clt_wtag_p_q          <= clt_wtag_p_q;
+        com_wtag_qq           <= to_integer(unsigned(com_wtag_q(4 DOWNTO 0)));
+        rsp_wtag_qq           <= to_integer(unsigned(rsp_wtag_q(4 DOWNTO 0)));
+
+        waddr_q               <= waddr_q;
+        waddr_id_q            <= waddr_id_q;
+        wr_id_valid_q         <= '0';
+        write_ctrl_q          <= write_ctrl_q;
+        wlen_q                <= wlen_q;
+        wr_req_ack_q          <= FALSE;
+        wr_ctx_q              <= wr_ctx_q;
+        
+        buf_wtag_v            := to_integer(unsigned(buf_wtag_q     (4 DOWNTO 0)));
+        clt_wtag_v            := to_integer(unsigned(clt_wtag_q     (4 DOWNTO 0)));
+        clt_wtag_next_v       := to_integer(unsigned(clt_wtag_next_q(4 DOWNTO 0)));
+        ha_r_tag_v            := to_integer(unsigned(ha_r_q.tag     (4 DOWNTO 0)));
+
+        --
+        -- CLT: CACHE LINE TYPE TAG IS VALID
+        --
+        IF (write_ctrl_q(clt_wtag_v).clt  = CL_NOT_USED) AND
+           (wlen_q                       /= 0          ) THEN
+          --
+          -- update the clt in the write control register
+          --
+          -- bit "even 64 bytes of CL are valid indication"
+          IF waddr_q(6) = '0' THEN
+            write_ctrl_q(clt_wtag_v).clt(EVEN_64B_CL) <= '1';
+          ELSE
+            write_ctrl_q(clt_wtag_v).clt(EVEN_64B_CL) <= '0';
+          END IF;
+
+          --
+          -- bit "odd 64 bytes of CL are valid indication"
+          IF wlen_q     = 1 AND
+             waddr_q(6) = '0' THEN               
+            write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '0';
+          ELSE
+            write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '1';
+          END IF;
+          
+          --
+          -- bit "last CL of a AXI request indication"
+          IF wlen_q = 2 THEN
+            IF waddr_q(6) = '0' THEN
+              write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '1';
+            ELSE
+              write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '0';
+            END IF;
+          ELSIF wlen_q = 1 THEN
+            write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '1';
+          ELSE
+            write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '0';
+          END IF;
+          
+          --
+          -- CL Write Address
+          write_ctrl_q(clt_wtag_v).cla   <= waddr_q(63 DOWNTO 7);
+
+          --
+          -- calculate the next read address and the read cache length
+          IF waddr_q(6) = '1' THEN
+            waddr_q <= waddr_q + VALUE_64;
+            wlen_q  <= wlen_q - 1;
+          ELSE
+            waddr_q <= waddr_q + (VALUE_128 & '0');
+
+            IF wlen_q = 1 THEN
+              wlen_q <= (OTHERS => '0');
+            ELSE
+              wlen_q <= wlen_q - 2;
+            END IF;
+          END IF;
+
+          --
+          -- calculate the next clt wtag
+          clt_wtag_q      <= clt_wtag_q      + 1;
+          clt_wtag_next_q <= clt_wtag_next_q + 1;
+          clt_wtag_p_q    <= AC_PPARITH(1, clt_wtag_q, clt_wtag_p_q,
+                                           "000001"  , '0');
+        END IF;
+
+        --
+        -- request
+        IF (sd_c_q.wr_req = '1') AND
+           (wlen_q        = 0  ) THEN
+
+          --
+          -- save the write address for later use
+          waddr_q    <= sd_c_q.wr_addr(63 DOWNTO 6);
+          waddr_id_q <= sd_c_q.wr_id;
+          wr_ctx_q   <= sd_c_q.wr_ctx;
+          wlen_q     <= ('0' & sd_c_q.wr_len) + 1;
+         
+
+           --
+          -- send back a AXI read acknowledge
+          wr_req_ack_q <= TRUE;
+
+          --
+          -- calculate the amount of CLT
+          --IF sd_c_q.wr_len(0) = '0' THEN
+          --  -- wr_len even
+          --  -- example:
+          --  --         wr_len = 0x6 = 0x0110
+          --  --         => means 0x7 axi beats
+          --  --         => 4 CLs needed independent from the start address
+          --  wclen_q <= ('0' & sd_c_q.wr_len(5 DOWNTO 1))  +  
+          --             (                   (5 DOWNTO 1  => '0') & '1');
+          --ELSE
+          --  -- wr_len odd
+          --  -- example:
+          --  --         wr_len = 0x7 = 0x0111
+          --  --         => means 0x8 axi beats
+          --  --         => 4 or 5 CLs needed dependent from the start address
+          --  wclen_q <= ('0' &  sd_c_q.wr_len(5 DOWNTO 1))               +  
+          --             (                    (5 DOWNTO 1  => '0') & '1') +
+          --             (                    (5 DOWNTO 1  => '0') & sd_c_q.wr_addr(6));
+          --END IF;
+        END IF;
+
+        --
+        -- BUF: BUFFER TAG is valid
+        --
+        IF (buf_wtag_valid_q = TRUE) THEN
+          write_ctrl_q(buf_wtag_v).buf <= FULL;
+
+          IF (buf_wtag_cl_partial_q                          = TRUE) AND
+             (write_ctrl_q(buf_wtag_v).clt(EVEN_64B_CL) = '1' ) AND
+             (write_ctrl_q(buf_wtag_v).clt(ODD_64B_CL)  = '1' ) THEN
+            
+            write_ctrl_q(buf_wtag_v).clt(EVEN_64B_CL) <= '0';
+          END IF;
+   
+          
+          IF rsp_wtag_valid_q = FALSE THEN
+            buf_wfull_cnt_q <= buf_wfull_cnt_q + 1;
+          END IF;
+        END IF;
+
+        --
+        -- COM: WRITE COMMAND TAG IS VALID
+        --
+        IF com_wtag_valid_q = TRUE THEN
+          write_ctrl_q(com_wtag_qq).com <= ACTIVE;
+          write_ctrl_q(com_wtag_qq).rsp <= ILLEGAL_RSP;
+        END IF;
+
+        --
+        -- RSP: VALID RESPONSE ON THE H->A INTERFACE
+        --
+        IF (ha_r_q.valid = '1') THEN
+          --
+          -- write tag is valid
+          IF (ha_r_q.tag(7 DOWNTO 5) = "100") THEN
+            write_ctrl_q(ha_r_tag_v).com <= INACTIVE;
+            write_ctrl_q(ha_r_tag_v).rsp <= ha_r_q.response;
+          END IF;
+        END IF;
+
+        --
+        -- RSP: WRITE_CTRL_FSM_Q HAS READ THE RESPONSE
+        --
+        IF rsp_wtag_valid_q = TRUE THEN
+          --
+          -- send back wr_id_valid if the last CL of a request was
+          -- transfered
+          IF write_ctrl_q(rsp_wtag_qq).clt(LAST_CL) = '1' THEN 
+            wr_id_valid_q <= '1';
+          END IF;
+
+          write_ctrl_q(rsp_wtag_qq).rsp <= ILLEGAL_RSP;
+          write_ctrl_q(rsp_wtag_qq).buf <= EMPTY;
+          write_ctrl_q(rsp_wtag_qq).clt <= CL_NOT_USED;
+
+          IF buf_wtag_valid_q = FALSE THEN
+            buf_wfull_cnt_q <= buf_wfull_cnt_q -1;
+          END IF;
+        END IF;
+
+        --
+        -- DMA WRITE BUFFER OVERRUN CHECKER
+        --
+        buf_full_v  := TRUE;
+
+        FOR i IN 0 TO 31 LOOP
+          IF write_ctrl_q(i).buf = EMPTY THEN
+            buf_full_v := FALSE;
+          END IF;
+        END LOOP;  -- i
+
+        IF ( buf_full_v = TRUE )AND
+           ((or_reduce(sd_d_i.wr_strobe) = '1')) THEN
+          assert false report "DMA: Write Buffer overrun" severity error;
+        END IF;
+
+        --
+        -- DMA ALMOST FULL INDICATION
+        --
+        IF buf_wfull_cnt_q >= 25 THEN
+          buf_walmost_full_q <= '1';
+        ELSE
+          buf_walmost_full_q <= '0';
+        END IF;
+
+        --------------------------------------------------------------------
+        -- Reset Logic
+        --------------------------------------------------------------------
+        --
+        -- 
+        --
         IF afu_reset = '1' THEN
           --
           -- initial values
           --
           FOR i IN 0 TO 31 LOOP
-            write_ctrl_q(i)     <= (INACTIVE, ILLEGAL_RSP, EMPTY, CL_NOT_USED, (OTHERS => '0'));
+            write_ctrl_q(i).clt <= CL_NOT_USED;
+            write_ctrl_q(i).rsp <= ILLEGAL_RSP;
+            write_ctrl_q(i).com <= INACTIVE;
+            write_ctrl_q(i).buf <= EMPTY;
           END LOOP;  -- i
 
           buf_wfull_cnt_q       <= 0;
@@ -1371,223 +1560,7 @@ BEGIN
           com_wtag_qq           <= 0;
           rsp_wtag_qq           <= 0;
 
-          waddr_q               <= (OTHERS => '0');
           wlen_q                <= (OTHERS => '0');
-
-        ELSE
-          --
-          -- defaults
-          --
-          buf_wfull_cnt_q       <= buf_wfull_cnt_q;
-          buf_walmost_full_q    <= buf_walmost_full_q;
-          buf_walmost_full_qq   <= buf_walmost_full_q;
-          buf_walmost_full_qqq  <= buf_walmost_full_qq;
-          clt_wtag_q            <= clt_wtag_q;
-          clt_wtag_next_q       <= clt_wtag_next_q;
-          clt_wtag_p_q          <= clt_wtag_p_q;
-          com_wtag_qq           <= to_integer(unsigned(com_wtag_q(4 DOWNTO 0)));
-          rsp_wtag_qq           <= to_integer(unsigned(rsp_wtag_q(4 DOWNTO 0)));
-
-          waddr_q               <= waddr_q;
-          waddr_id_q            <= waddr_id_q;
-          wr_id_valid_q         <= '0';
-          write_ctrl_q          <= write_ctrl_q;
-          wlen_q                <= wlen_q;
-          wr_req_ack_q          <= FALSE;
-          wr_ctx_q              <= wr_ctx_q;
-          
-          buf_wtag_v            := to_integer(unsigned(buf_wtag_q     (4 DOWNTO 0)));
-          clt_wtag_v            := to_integer(unsigned(clt_wtag_q     (4 DOWNTO 0)));
-          clt_wtag_next_v       := to_integer(unsigned(clt_wtag_next_q(4 DOWNTO 0)));
-          ha_r_tag_v            := to_integer(unsigned(ha_r_q.tag     (4 DOWNTO 0)));
-
-          --
-          -- CLT: CACHE LINE TYPE TAG IS VALID
-          --
-          IF (write_ctrl_q(clt_wtag_v).clt  = CL_NOT_USED) AND
-             (wlen_q                       /= 0          ) THEN
-            --
-            -- update the clt in the write control register
-            --
-            -- bit "even 64 bytes of CL are valid indication"
-            IF waddr_q(6) = '0' THEN
-              write_ctrl_q(clt_wtag_v).clt(EVEN_64B_CL) <= '1';
-            ELSE
-              write_ctrl_q(clt_wtag_v).clt(EVEN_64B_CL) <= '0';
-            END IF;
-
-            --
-            -- bit "odd 64 bytes of CL are valid indication"
-            IF wlen_q     = 1 AND
-               waddr_q(6) = '0' THEN               
-              write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '0';
-            ELSE
-              write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '1';
-            END IF;
-            
-            --
-            -- bit "last CL of a AXI request indication"
-            IF wlen_q = 2 THEN
-              IF waddr_q(6) = '0' THEN
-                write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '1';
-              ELSE
-                write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '0';
-              END IF;
-            ELSIF wlen_q = 1 THEN
-              write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '1';
-            ELSE
-              write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '0';
-            END IF;
-            
-            --
-            -- CL Write Address
-            write_ctrl_q(clt_wtag_v).cla   <= waddr_q(63 DOWNTO 7);
-
-            --
-            -- calculate the next read address and the read cache length
-            IF waddr_q(6) = '1' THEN
-              waddr_q <= waddr_q + VALUE_64;
-              wlen_q  <= wlen_q - 1;
-            ELSE
-              waddr_q <= waddr_q + (VALUE_128 & '0');
-
-              IF wlen_q = 1 THEN
-                wlen_q <= (OTHERS => '0');
-              ELSE
-                wlen_q <= wlen_q - 2;
-              END IF;
-            END IF;
-
-            --
-            -- calculate the next clt wtag
-            clt_wtag_q      <= clt_wtag_q      + 1;
-            clt_wtag_next_q <= clt_wtag_next_q + 1;
-            clt_wtag_p_q    <= AC_PPARITH(1, clt_wtag_q, clt_wtag_p_q,
-                                             "000001"  , '0');
-          END IF;
-
-          --
-          -- request
-          IF (sd_c_q.wr_req = '1') AND
-             (wlen_q        = 0  ) THEN
-
-            --
-            -- save the write address for later use
-            waddr_q    <= sd_c_q.wr_addr(63 DOWNTO 6);
-            waddr_id_q <= sd_c_q.wr_id;
-            wr_ctx_q   <= sd_c_q.wr_ctx;
-            wlen_q     <= ('0' & sd_c_q.wr_len) + 1;
-           
-
-             --
-            -- send back a AXI read acknowledge
-            wr_req_ack_q <= TRUE;
-
-            --
-            -- calculate the amount of CLT
-            --IF sd_c_q.wr_len(0) = '0' THEN
-            --  -- wr_len even
-            --  -- example:
-            --  --         wr_len = 0x6 = 0x0110
-            --  --         => means 0x7 axi beats
-            --  --         => 4 CLs needed independent from the start address
-            --  wclen_q <= ('0' & sd_c_q.wr_len(5 DOWNTO 1))  +  
-            --             (                   (5 DOWNTO 1  => '0') & '1');
-            --ELSE
-            --  -- wr_len odd
-            --  -- example:
-            --  --         wr_len = 0x7 = 0x0111
-            --  --         => means 0x8 axi beats
-            --  --         => 4 or 5 CLs needed dependent from the start address
-            --  wclen_q <= ('0' &  sd_c_q.wr_len(5 DOWNTO 1))               +  
-            --             (                    (5 DOWNTO 1  => '0') & '1') +
-            --             (                    (5 DOWNTO 1  => '0') & sd_c_q.wr_addr(6));
-            --END IF;
-          END IF;
-
-          --
-          -- BUF: BUFFER TAG is valid
-          --
-          IF (buf_wtag_valid_q = TRUE) THEN
-            write_ctrl_q(buf_wtag_v).buf <= FULL;
-
-            IF (buf_wtag_cl_partial_q                          = TRUE) AND
-               (write_ctrl_q(buf_wtag_v).clt(EVEN_64B_CL) = '1' ) AND
-               (write_ctrl_q(buf_wtag_v).clt(ODD_64B_CL)  = '1' ) THEN
-              
-              write_ctrl_q(buf_wtag_v).clt(EVEN_64B_CL) <= '0';
-            END IF;
-   
-            
-            IF rsp_wtag_valid_q = FALSE THEN
-              buf_wfull_cnt_q <= buf_wfull_cnt_q + 1;
-            END IF;
-          END IF;
-
-          --
-          -- COM: WRITE COMMAND TAG IS VALID
-          --
-          IF com_wtag_valid_q = TRUE THEN
-            write_ctrl_q(com_wtag_qq).com <= ACTIVE;
-            write_ctrl_q(com_wtag_qq).rsp <= ILLEGAL_RSP;
-          END IF;
-
-          --
-          -- RSP: VALID RESPONSE ON THE H->A INTERFACE
-          --
-          IF (ha_r_q.valid = '1') THEN
-            --
-            -- write tag is valid
-            IF (ha_r_q.tag(7 DOWNTO 5) = "100") THEN
-              write_ctrl_q(ha_r_tag_v).com <= INACTIVE;
-              write_ctrl_q(ha_r_tag_v).rsp <= ha_r_q.response;
-            END IF;
-          END IF;
-
-          --
-          -- RSP: WRITE_CTRL_FSM_Q HAS READ THE RESPONSE
-          --
-          IF rsp_wtag_valid_q = TRUE THEN
-            --
-            -- send back wr_id_valid if the last CL of a request was
-            -- transfered
-            IF write_ctrl_q(rsp_wtag_qq).clt(LAST_CL) = '1' THEN 
-              wr_id_valid_q <= '1';
-            END IF;
-
-            write_ctrl_q(rsp_wtag_qq).rsp <= ILLEGAL_RSP;
-            write_ctrl_q(rsp_wtag_qq).buf <= EMPTY;
-            write_ctrl_q(rsp_wtag_qq).clt <= CL_NOT_USED;
-
-            IF buf_wtag_valid_q = FALSE THEN
-              buf_wfull_cnt_q <= buf_wfull_cnt_q -1;
-            END IF;
-          END IF;
-
-          --
-          -- DMA WRITE BUFFER OVERRUN CHECKER
-          --
-          buf_full_v  := TRUE;
-
-          FOR i IN 0 TO 31 LOOP
-            IF write_ctrl_q(i).buf = EMPTY THEN
-              buf_full_v := FALSE;
-            END IF;
-          END LOOP;  -- i
-
-          IF ( buf_full_v = TRUE )AND
-             ((or_reduce(sd_d_i.wr_strobe) = '1')) THEN
-            assert false report "DMA: Write Buffer overrun" severity error;
-          END IF;
-
-          --
-          -- DMA ALMOST FULL INDICATION
-          --
-          IF buf_wfull_cnt_q >= 25 THEN
-            buf_walmost_full_q <= '1';
-          ELSE
-            buf_walmost_full_q <= '0';
-          END IF;
         END IF;
       END IF;
     END PROCESS write_ctrl_reg;
@@ -1614,24 +1587,273 @@ BEGIN
 
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
+        --
+        -- defaults
+        --
+        ah_c_q                <= ( '0',                    -- valid
+                                  (OTHERS => '0'),         -- tag
+                                   '1',                    -- tagpar
+                                   INVALID,                -- com
+                                   '1',                    -- compar
+                                  (OTHERS => '0'),         -- abt
+                                  (OTHERS => '0'),         -- ea
+                                   '1',                    -- eapar
+                                  (OTHERS => '0'),         -- ch
+                                  (OTHERS => '0'));        -- size
 
+        ah_c_fsm_q            <= ah_c_fsm_q;
+        ah_c_max_q            <= ha_c_q.room - x"04";
+        ah_c_max_reached_q    <= ah_c_max_reached_q;
+        ah_c_rgate_q          <= ah_c_rgate_q;
+        ah_c_rsp_err_addr_p_q <= ah_c_rsp_err_addr_p_q;
+        ah_c_rsp_err_addr_q   <= ah_c_rsp_err_addr_q;
+        ah_c_rsp_err_first_q  <= ah_c_rsp_err_first_q;
+        ah_c_rsp_err_type_q   <= ah_c_rsp_err_type_q;
+        ah_c_rsp_err_valid_q  <= ah_c_rsp_err_valid_q;
+        ah_c_wgate_q          <= ah_c_wgate_q;
+        dmm_e_q.ah_c_fsm_err  <= '0';
+        intreq_active_q       <= intreq_active_q;
+        int_src_q             <= int_src_q;
+        int_ctx_q             <= int_ctx_q;
+        int_req_ack_q         <= '0';
+        mmd_a_q               <= ('0','0','0'); -- mmd_a_i;
+        restart_active_q      <= restart_active_q;
+
+        -- intreq is active
+        IF (sd_c_i.int_req = '1') THEN
+          intreq_active_q <= TRUE;
+          int_src_q       <= sd_c_i.int_src;
+          int_ctx_q       <= sd_c_i.int_ctx;
+        END IF;
+
+        ------------------------------------------------------------------------
+        -- AH Command Count Logic
+        ------------------------------------------------------------------------
+        IF (ah_c_q.valid = '1') AND
+           (ha_r_q.valid = '0') THEN
+          ah_c_counter_v := ah_c_counter_q + 1;
+        ELSIF (ah_c_q.valid = '0') AND
+              (ha_r_q.valid = '1') THEN
+          ah_c_counter_v := ah_c_counter_q - 1;
+        ELSE
+          ah_c_counter_v := ah_c_counter_q;
+        END IF;
+
+        ah_c_counter_q <= ah_c_counter_v;
+
+        --
+        -- Note: It takes 4 cycles to stop the full command
+        --       pipe
+        --
+        IF ah_c_counter_v  < to_integer(unsigned(ah_c_max_q))  THEN
+          ah_c_max_reached_q <= FALSE;
+        ELSE
+          ah_c_max_reached_q <= TRUE;
+        END IF;
+
+        ------------------------------------------------------------------------
+        -- F S M
+        ------------------------------------------------------------------------
+        CASE ah_c_fsm_q IS
+          --
+          -- STATE IDLE
+          --
+          WHEN ST_IDLE =>
+            ah_c_rgate_q <= CLOSED;
+            ah_c_wgate_q <= CLOSED;
+
+            --
+            -- max commands reached, stay in IDLE
+            IF (ah_c_max_reached_q = TRUE) THEN
+              ah_c_fsm_q   <= ST_IDLE;
+              ah_c_rgate_q <= CLOSED;
+              ah_c_wgate_q <= CLOSED;
+
+            --
+            -- RESTART
+            ELSIF (read_fsm_req_q  = RESTART) OR
+                  (write_fsm_req_q = RESTART) THEN
+              ah_c_fsm_q       <= ST_COM_RESTART;
+              restart_active_q <= TRUE;
+
+            --
+            -- open read gate
+            ELSIF (read_fsm_req_q       = COMMAND) AND
+                  (mmd_a_q.thr_read_fsm = '0'    ) THEN
+              ah_c_fsm_q   <= ST_READ_FSM_ACTIVE;
+              ah_c_rgate_q <= OPENED;
+
+            --
+            -- open write gate
+            ELSIF (write_fsm_req_q       = COMMAND) AND
+                  (mmd_a_q.thr_write_fsm = '0'    ) THEN
+              ah_c_fsm_q   <= ST_WRITE_FSM_ACTIVE;
+              ah_c_wgate_q <= OPENED;
+
+            --
+            -- interrupt
+            ELSIF (intreq_active_q  = TRUE   ) AND
+                  (write_ctrl_fsm_q = ST_IDLE) THEN
+              ah_c_fsm_q <= ST_COM_INT_REQ;
+            END IF;
+
+          --
+          -- STATE READ FSM ACTIVE
+          --
+          WHEN ST_READ_FSM_ACTIVE =>
+            ah_c_q.valid                       <= ah_rc_q.valid;
+            ah_c_q.tag                         <= ah_rc_q.tag;
+            ah_c_q.tagpar                      <= ah_rc_q.tagpar XOR mmd_i_q.inject_ah_c_tagpar_error;
+            ah_c_q.com                         <= ah_rc_q.com;
+            ah_c_q.compar                      <= ah_rc_q.compar XOR mmd_i_q.inject_ah_c_compar_error;
+            ah_c_q.abt                         <= ah_rc_q.abt;
+            ah_c_q.ea                          <= ah_rc_q.ea & "0000000";
+            ah_c_q.eapar                       <= ah_rc_q.eapar XOR mmd_i_q.inject_ah_c_eapar_error;
+            ah_c_q.ch(CONTEXT_BITS-1 DOWNTO 0) <= rd_ctx_q;
+            ah_c_q.size                        <= x"080";
+
+            --
+            --  max commands reached, closing the gate, but allow
+            --  to transfer the command that is on the fly
+            --
+            IF (ah_c_max_reached_q  = TRUE) OR
+               (mmd_a_q.thr_cmd_fsm = '1' ) THEN
+              ah_c_rgate_q <= CLOSED;
+            ELSE
+              ah_c_rgate_q <= OPENED;
+            END IF;
+
+            --
+            -- read_fsm no longer needs the command bus
+            --
+            IF read_fsm_req_q /= COMMAND THEN
+              ah_c_fsm_q   <= ST_IDLE;
+              ah_c_rgate_q <= CLOSED;
+            END IF;
+
+          --
+          -- STATE WRITE FSM ACTIVE
+          --
+          WHEN ST_WRITE_FSM_ACTIVE =>
+            ah_c_q.valid                       <= ah_wc_q.valid;
+            ah_c_q.tag                         <= ah_wc_q.tag;
+            ah_c_q.tagpar                      <= ah_wc_q.tagpar XOR mmd_i_q.inject_ah_c_tagpar_error;
+            ah_c_q.com                         <= ah_wc_q.com;
+            ah_c_q.compar                      <= ah_wc_q.compar XOR mmd_i_q.inject_ah_c_compar_error;
+            ah_c_q.abt                         <= ah_wc_q.abt;
+            ah_c_q.ea                          <= ah_wc_q.ea & "0000000";
+            ah_c_q.eapar                       <= ah_wc_q.eapar XOR mmd_i_q.inject_ah_c_eapar_error;
+            ah_c_q.ch(CONTEXT_BITS-1 DOWNTO 0) <= wr_ctx_q;
+            ah_c_q.size                        <= x"080";
+
+            --
+            --  max commands reached, closing the gate, but allow
+            --  to transfer the command that is on the fly
+            --
+            IF (ah_c_max_reached_q  = TRUE) OR
+               (mmd_a_q.thr_cmd_fsm = '1' ) THEN
+              ah_c_wgate_q <= CLOSED;
+            ELSE
+              ah_c_wgate_q <= OPENED;
+            END IF;
+
+            --
+            -- write_fsm no longer needs the command bus
+            --
+            IF write_fsm_req_q /= COMMAND THEN
+              ah_c_fsm_q   <= ST_IDLE;
+              ah_c_wgate_q <= CLOSED;
+            END IF;
+
+          --
+          -- STATE COMMAND: RESTART
+          --
+          WHEN ST_COM_RESTART =>
+            ah_c_fsm_q       <= ST_WAIT_4_RSP;
+
+            ah_c_q.valid    <= '1';
+            ah_c_q.tag      <= x"F0";
+            ah_c_q.tagpar   <= '1' XOR mmd_i_q.inject_ah_c_tagpar_error;
+            ah_c_q.com      <= RESTART;
+            ah_c_q.compar   <= parity_gen_odd(ENCODE_CMD_CODES(RESTART)) XOR mmd_i_q.inject_ah_c_compar_error;
+
+          --
+          -- STATE COMMAND: INTERRUPT REQUEST
+          --
+          WHEN ST_COM_INT_REQ =>
+            ah_c_fsm_q                         <= ST_WAIT_4_RSP;
+            ah_c_q.valid                       <= '1';
+            ah_c_q.tag                         <= x"F1";
+            ah_c_q.tagpar                      <= '0' XOR mmd_i_q.inject_ah_c_tagpar_error;
+            ah_c_q.com                         <= INTREQ;
+            ah_c_q.compar                      <= parity_gen_odd(ENCODE_CMD_CODES(INTREQ)) XOR mmd_i_q.inject_ah_c_compar_error;
+            ah_c_q.ea                          <= x"0000_0000_0000_000" & '0' & int_src_q;
+            ah_c_q.eapar                       <= parity_gen_odd(int_src_q) XOR mmd_i_q.inject_ah_c_eapar_error;
+            ah_c_q.ch(CONTEXT_BITS-1 DOWNTO 0) <= int_ctx_q;
+
+          --
+          -- STATE WAIT: FOR RESPONSE
+          --
+          WHEN ST_WAIT_4_RSP =>
+            IF (ha_r_q.valid           = '1' ) AND
+               (ha_r_q.tag(7 DOWNTO 4) = x"F") THEN
+              IF (ha_r_q.response = DONE) THEN
+                ah_c_fsm_q       <= ST_IDLE;
+
+                IF (ha_r_q.tag(3 DOWNTO 0) = x"0") THEN
+                  -- deactivate RESTART
+                  restart_active_q <= FALSE;
+
+                ELSIF (ha_r_q.tag(3 DOWNTO 0) = x"1") THEN
+                  -- deactivate INTREQ
+                  intreq_active_q <= FALSE;
+                  int_req_ack_q   <= '1';
+                END IF;
+              ELSE
+                ah_c_fsm_q <= ST_RSP_ERROR;
+                restart_active_q <= FALSE;
+                intreq_active_q  <= FALSE;
+                --
+                -- collect all information
+                ah_c_rsp_err_type_q   <= ha_r_q.response;
+                ah_c_rsp_err_addr_q   <= ha_r_q.tag(7 DOWNTO 0) & x"00000000000000";
+                ah_c_rsp_err_addr_p_q <= ha_r_q.tagpar;
+
+              END IF;
+            END IF;
+
+          --
+          -- STATE RSP ERROR
+          --
+          WHEN ST_RSP_ERROR =>
+            --
+            -- how is first check
+            IF (read_ctrl_fsm_q  /= ST_RSP_ERROR) OR
+               (write_ctrl_fsm_q /= ST_RSP_ERROR) THEN
+              ah_c_rsp_err_first_q <= TRUE;
+            END IF;
+
+            ah_c_rsp_err_valid_q <= TRUE;
+
+          --
+          -- STATE FSM ERROR
+          --
+          WHEN ST_FSM_ERROR =>
+            dmm_e_q.ah_c_fsm_err <= '1';
+
+        END CASE;
+
+        --------------------------------------------------------------------
+        -- Reset Logic
+        --------------------------------------------------------------------
+        --
+        -- 
+        --
         IF afu_reset = '1' THEN
           --
           -- initial values
           --
-          ah_c_q                <= ( '0',                    -- valid
-                                    (OTHERS => '0'),         -- tag
-                                     '1',                    -- tagpar
-                                     INVALID,                -- com
-                                     '1',                    -- compar
-                                    (OTHERS => '0'),         -- abt
-                                    (OTHERS => '0'),         -- ea
-                                     '1',                    -- eapar
-                                    (OTHERS => '0'),         -- ch
-                                    (OTHERS => '0'));        -- size
-
           ah_c_fsm_q            <= ST_IDLE;
-          ah_c_max_q            <= (OTHERS => '0');
           ah_c_max_reached_q    <= FALSE;
           ah_c_rgate_q          <= CLOSED;
           ah_c_rsp_err_addr_p_q <= '1';
@@ -1640,262 +1862,11 @@ BEGIN
           ah_c_rsp_err_type_q   <= ILLEGAL_RSP;
           ah_c_rsp_err_valid_q  <= FALSE;
           ah_c_wgate_q          <= CLOSED;
-          dmm_e_q.ah_c_fsm_err  <= '0';
           intreq_active_q       <= FALSE;
           int_src_q             <= (OTHERS => '0');
           int_ctx_q             <= (OTHERS => '0');
           int_req_ack_q         <= '0';
-          mmd_a_q               <= ('0', '0', '0');
           restart_active_q      <= FALSE;
-
-        ELSE
-          --
-          -- defaults
-          --
-          ah_c_q                <= ('0', (OTHERS => '0'), '1', INVALID, '1', (OTHERS => '0'),
-                                   (OTHERS => '0'), '1', (OTHERS => '0'), (OTHERS => '0'));
-          ah_c_fsm_q            <= ah_c_fsm_q;
-          ah_c_max_q            <= ha_c_q.room - x"04";
-          ah_c_max_reached_q    <= ah_c_max_reached_q;
-          ah_c_rgate_q          <= ah_c_rgate_q;
-          ah_c_rsp_err_addr_p_q <= ah_c_rsp_err_addr_p_q;
-          ah_c_rsp_err_addr_q   <= ah_c_rsp_err_addr_q;
-          ah_c_rsp_err_first_q  <= ah_c_rsp_err_first_q;
-          ah_c_rsp_err_type_q   <= ah_c_rsp_err_type_q;
-          ah_c_rsp_err_valid_q  <= ah_c_rsp_err_valid_q;
-          ah_c_wgate_q          <= ah_c_wgate_q;
-          dmm_e_q.ah_c_fsm_err  <= '0';
-          intreq_active_q       <= intreq_active_q;
-          int_src_q             <= int_src_q;
-          int_ctx_q             <= int_ctx_q;
-          int_req_ack_q         <= '0';
-          mmd_a_q               <= ('0','0','0'); -- mmd_a_i;
-          restart_active_q      <= restart_active_q;
-
-          -- intreq is active
-          IF (sd_c_i.int_req = '1') THEN
-            intreq_active_q <= TRUE;
-            int_src_q       <= sd_c_i.int_src;
-            int_ctx_q       <= sd_c_i.int_ctx;
-          END IF;
-
-          ------------------------------------------------------------------------
-          -- AH Command Count Logic
-          ------------------------------------------------------------------------
-          IF (ah_c_q.valid = '1') AND
-             (ha_r_q.valid = '0') THEN
-            ah_c_counter_v := ah_c_counter_q + 1;
-          ELSIF (ah_c_q.valid = '0') AND
-                (ha_r_q.valid = '1') THEN
-            ah_c_counter_v := ah_c_counter_q - 1;
-          ELSE
-            ah_c_counter_v := ah_c_counter_q;
-          END IF;
-
-          ah_c_counter_q <= ah_c_counter_v;
-
-          --
-          -- Note: It takes 4 cycles to stop the full command
-          --       pipe
-          --
-          IF ah_c_counter_v  < to_integer(unsigned(ah_c_max_q))  THEN
-            ah_c_max_reached_q <= FALSE;
-          ELSE
-            ah_c_max_reached_q <= TRUE;
-          END IF;
-
-          ------------------------------------------------------------------------
-          -- F S M
-          ------------------------------------------------------------------------
-          CASE ah_c_fsm_q IS
-            --
-            -- STATE IDLE
-            --
-            WHEN ST_IDLE =>
-              ah_c_rgate_q <= CLOSED;
-              ah_c_wgate_q <= CLOSED;
-
-              --
-              -- max commands reached, stay in IDLE
-              IF (ah_c_max_reached_q = TRUE) THEN
-                ah_c_fsm_q   <= ST_IDLE;
-                ah_c_rgate_q <= CLOSED;
-                ah_c_wgate_q <= CLOSED;
-
-              --
-              -- RESTART
-              ELSIF (read_fsm_req_q  = RESTART) OR
-                    (write_fsm_req_q = RESTART) THEN
-                ah_c_fsm_q       <= ST_COM_RESTART;
-                restart_active_q <= TRUE;
-
-              --
-              -- open read gate
-              ELSIF (read_fsm_req_q       = COMMAND) AND
-                    (mmd_a_q.thr_read_fsm = '0'    ) THEN
-                ah_c_fsm_q   <= ST_READ_FSM_ACTIVE;
-                ah_c_rgate_q <= OPENED;
-
-              --
-              -- open write gate
-              ELSIF (write_fsm_req_q       = COMMAND) AND
-                    (mmd_a_q.thr_write_fsm = '0'    ) THEN
-                ah_c_fsm_q   <= ST_WRITE_FSM_ACTIVE;
-                ah_c_wgate_q <= OPENED;
-
-              --
-              -- interrupt
-              ELSIF (intreq_active_q  = TRUE   ) AND
-                    (write_ctrl_fsm_q = ST_IDLE) THEN
-                ah_c_fsm_q <= ST_COM_INT_REQ;
-              END IF;
-
-            --
-            -- STATE READ FSM ACTIVE
-            --
-            WHEN ST_READ_FSM_ACTIVE =>
-              ah_c_q.valid                       <= ah_rc_q.valid;
-              ah_c_q.tag                         <= ah_rc_q.tag;
-              ah_c_q.tagpar                      <= ah_rc_q.tagpar XOR mmd_i_q.inject_ah_c_tagpar_error;
-              ah_c_q.com                         <= ah_rc_q.com;
-              ah_c_q.compar                      <= ah_rc_q.compar XOR mmd_i_q.inject_ah_c_compar_error;
-              ah_c_q.abt                         <= ah_rc_q.abt;
-              ah_c_q.ea                          <= ah_rc_q.ea & "0000000";
-              ah_c_q.eapar                       <= ah_rc_q.eapar XOR mmd_i_q.inject_ah_c_eapar_error;
-              ah_c_q.ch(CONTEXT_BITS-1 DOWNTO 0) <= rd_ctx_q;
-              ah_c_q.size                        <= x"080";
-
-              --
-              --  max commands reached, closing the gate, but allow
-              --  to transfer the command that is on the fly
-              --
-              IF (ah_c_max_reached_q  = TRUE) OR
-                 (mmd_a_q.thr_cmd_fsm = '1' ) THEN
-                ah_c_rgate_q <= CLOSED;
-              ELSE
-                ah_c_rgate_q <= OPENED;
-              END IF;
-
-              --
-              -- read_fsm no longer needs the command bus
-              --
-              IF read_fsm_req_q /= COMMAND THEN
-                ah_c_fsm_q   <= ST_IDLE;
-                ah_c_rgate_q <= CLOSED;
-              END IF;
-
-            --
-            -- STATE WRITE FSM ACTIVE
-            --
-            WHEN ST_WRITE_FSM_ACTIVE =>
-              ah_c_q.valid                       <= ah_wc_q.valid;
-              ah_c_q.tag                         <= ah_wc_q.tag;
-              ah_c_q.tagpar                      <= ah_wc_q.tagpar XOR mmd_i_q.inject_ah_c_tagpar_error;
-              ah_c_q.com                         <= ah_wc_q.com;
-              ah_c_q.compar                      <= ah_wc_q.compar XOR mmd_i_q.inject_ah_c_compar_error;
-              ah_c_q.abt                         <= ah_wc_q.abt;
-              ah_c_q.ea                          <= ah_wc_q.ea & "0000000";
-              ah_c_q.eapar                       <= ah_wc_q.eapar XOR mmd_i_q.inject_ah_c_eapar_error;
-              ah_c_q.ch(CONTEXT_BITS-1 DOWNTO 0) <= wr_ctx_q;
-              ah_c_q.size                        <= x"080";
-
-              --
-              --  max commands reached, closing the gate, but allow
-              --  to transfer the command that is on the fly
-              --
-              IF (ah_c_max_reached_q  = TRUE) OR
-                 (mmd_a_q.thr_cmd_fsm = '1' ) THEN
-                ah_c_wgate_q <= CLOSED;
-              ELSE
-                ah_c_wgate_q <= OPENED;
-              END IF;
-
-              --
-              -- write_fsm no longer needs the command bus
-              --
-              IF write_fsm_req_q /= COMMAND THEN
-                ah_c_fsm_q   <= ST_IDLE;
-                ah_c_wgate_q <= CLOSED;
-              END IF;
-
-            --
-            -- STATE COMMAND: RESTART
-            --
-            WHEN ST_COM_RESTART =>
-              ah_c_fsm_q       <= ST_WAIT_4_RSP;
-
-              ah_c_q.valid    <= '1';
-              ah_c_q.tag      <= x"F0";
-              ah_c_q.tagpar   <= '1' XOR mmd_i_q.inject_ah_c_tagpar_error;
-              ah_c_q.com      <= RESTART;
-              ah_c_q.compar   <= parity_gen_odd(ENCODE_CMD_CODES(RESTART)) XOR mmd_i_q.inject_ah_c_compar_error;
-
-            --
-            -- STATE COMMAND: INTERRUPT REQUEST
-            --
-            WHEN ST_COM_INT_REQ =>
-              ah_c_fsm_q                         <= ST_WAIT_4_RSP;
-              ah_c_q.valid                       <= '1';
-              ah_c_q.tag                         <= x"F1";
-              ah_c_q.tagpar                      <= '0' XOR mmd_i_q.inject_ah_c_tagpar_error;
-              ah_c_q.com                         <= INTREQ;
-              ah_c_q.compar                      <= parity_gen_odd(ENCODE_CMD_CODES(INTREQ)) XOR mmd_i_q.inject_ah_c_compar_error;
-              ah_c_q.ea                          <= x"0000_0000_0000_000" & '0' & int_src_q;
-              ah_c_q.eapar                       <= parity_gen_odd(int_src_q) XOR mmd_i_q.inject_ah_c_eapar_error;
-              ah_c_q.ch(CONTEXT_BITS-1 DOWNTO 0) <= int_ctx_q;
-
-            --
-            -- STATE WAIT: FOR RESPONSE
-            --
-            WHEN ST_WAIT_4_RSP =>
-              IF (ha_r_q.valid           = '1' ) AND
-                 (ha_r_q.tag(7 DOWNTO 4) = x"F") THEN
-                IF (ha_r_q.response = DONE) THEN
-                  ah_c_fsm_q       <= ST_IDLE;
-
-                  IF (ha_r_q.tag(3 DOWNTO 0) = x"0") THEN
-                    -- deactivate RESTART
-                    restart_active_q <= FALSE;
-
-                  ELSIF (ha_r_q.tag(3 DOWNTO 0) = x"1") THEN
-                    -- deactivate INTREQ
-                    intreq_active_q <= FALSE;
-                    int_req_ack_q   <= '1';
-                  END IF;
-                ELSE
-                  ah_c_fsm_q <= ST_RSP_ERROR;
-                  restart_active_q <= FALSE;
-                  intreq_active_q  <= FALSE;
-                  --
-                  -- collect all information
-                  ah_c_rsp_err_type_q   <= ha_r_q.response;
-                  ah_c_rsp_err_addr_q   <= ha_r_q.tag(7 DOWNTO 0) & x"00000000000000";
-                  ah_c_rsp_err_addr_p_q <= ha_r_q.tagpar;
-
-                END IF;
-              END IF;
-
-            --
-            -- STATE RSP ERROR
-            --
-            WHEN ST_RSP_ERROR =>
-              --
-              -- how is first check
-              IF (read_ctrl_fsm_q  /= ST_RSP_ERROR) OR
-                 (write_ctrl_fsm_q /= ST_RSP_ERROR) THEN
-                ah_c_rsp_err_first_q <= TRUE;
-              END IF;
-
-              ah_c_rsp_err_valid_q <= TRUE;
-
-            --
-            -- STATE FSM ERROR
-            --
-            WHEN ST_FSM_ERROR =>
-              dmm_e_q.ah_c_fsm_err <= '1';
-
-          END CASE;
-
         END IF;
       END IF;
     END PROCESS ah_c_ctl;
@@ -2306,43 +2277,28 @@ BEGIN
   ------------------------------------------------------------------------------
     --
     registers : PROCESS (ha_pclock)
-      VARIABLE buf_empty_v  : boolean;
-      VARIABLE com_active_v : boolean;
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
-        IF afu_reset = '1' THEN
-          ha_c_q.room          <= (OTHERS => '0');
-          ha_r_q               <= ('0', (OTHERS => '0'), '0', ILLEGAL_RSP,
-                                   (OTHERS => '0'), (OTHERS => '0'),(OTHERS => '0'));
-          sd_c_q               <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
-                                   '0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
-                                   '0', (OTHERS => '0'), (OTHERS => '0'));
-          mmd_i_q              <= (OTHERS => ('0'));
+        --
+        -- defaults
+        --
+        ha_c_q        <= ha_c_i;
+        ha_r_q        <= ha_r_i;
 
-        ELSE
-          --
-          -- defaults
-          --
-          ha_c_q        <= ha_c_i;
-          ha_r_q        <= ha_r_i;
+        mmd_i_q       <= (OTHERS => '0'); --mmd_i_i;
+        sd_c_q        <= sd_c_i;
+        sd_c_q.rd_req <= '0';
+        sd_c_q.wr_req <= '0';
 
-          mmd_i_q       <= (OTHERS => '0'); --mmd_i_i;
-          sd_c_q        <= sd_c_i;
-          sd_c_q.rd_req <= '0';
-          sd_c_q.wr_req <= '0';
+        --
+        -- 
+        IF rd_req_ack_q = FALSE THEN
+          sd_c_q.rd_req <= sd_c_i.rd_req;
+        END IF;
 
-          --
-          -- 
-          IF rd_req_ack_q = FALSE THEN
-            sd_c_q.rd_req <= sd_c_i.rd_req;
-          END IF;
-
-          IF wr_req_ack_q = FALSE THEN
-            sd_c_q.wr_req <= sd_c_i.wr_req;
-          END IF;
-
+        IF wr_req_ack_q = FALSE THEN
+          sd_c_q.wr_req <= sd_c_i.wr_req;
         END IF;
       END IF;
     END PROCESS registers;
-
 END ARCHITECTURE;
