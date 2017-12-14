@@ -170,6 +170,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL buf_walmost_full_q          : std_logic;
   SIGNAL buf_walmost_full_qq         : std_logic;
   SIGNAL buf_walmost_full_qqq        : std_logic;
+  SIGNAL hold_terminate_req_q        : std_logic;
   SIGNAL buf_wfull_cnt_q             : integer RANGE 0 TO 32;
   SIGNAL buf_wtag_cl_partial_q       : boolean;
   SIGNAL buf_wtag_p_q                : std_logic;
@@ -742,8 +743,9 @@ BEGIN
 
           --
           -- request
-          IF (sd_c_q.rd_req  = '1') AND
-             (rlen_q         = 0  ) THEN
+          IF (sd_c_q.rd_req        = '1') AND
+             (hold_terminate_req_q = '0') AND 
+             (rlen_q               = 0  ) THEN
             --
             -- save the read address, id and length for later use
             raddr_q    <=  sd_c_q.rd_addr(63 DOWNTO 6);
@@ -1314,8 +1316,9 @@ BEGIN
 
        --
        -- request
-       IF (sd_c_q.wr_req = '1') AND
-          (wlen_q        = 0  ) THEN
+       IF (sd_c_q.wr_req        = '1') AND
+          (hold_terminate_req_q = '0') AND 
+          (wlen_q               = 0  ) THEN
 
          --
          -- save the write address for later use
@@ -2330,6 +2333,35 @@ BEGIN
       END IF;
     END PROCESS write_ctrl_check;
 
+  ----------------------------------------------------------------------------
+  ----------------------------------------------------------------------------
+  -- LLCMD TERMINATE LOGIC
+  ----------------------------------------------------------------------------
+  ----------------------------------------------------------------------------
+    --
+    -- 
+    --
+    llcmd_terminate : PROCESS (ha_pclock)
+    BEGIN
+      IF (rising_edge(ha_pclock)) THEN
+        --
+        -- defaults
+        --
+        hold_terminate_req_q <=  hold_terminate_req_q OR cd_c_i.req_terminate;
+        dc_c_o.terminate_ack <= '0';
+        IF (hold_terminate_req_q = '1'    ) AND
+           (read_ctrl_fsm_q      = ST_IDLE) AND 
+           (write_ctrl_fsm_q     = ST_IDLE) THEN
+          dc_c_o.terminate_ack <= '1';
+        END IF;
+        --
+        -- Reset Logic
+        -- 
+        IF afu_reset = '1' THEN
+          hold_terminate_req_q <= '0';
+        END IF;
+      END IF;
+    END PROCESS llcmd_terminate;
 
 
 --------------------------------------------------------------------------------
