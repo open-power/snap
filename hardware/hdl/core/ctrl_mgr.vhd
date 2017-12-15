@@ -23,6 +23,8 @@ USE ieee.std_logic_1164.all;
 USE ieee.std_logic_misc.all;
 USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
+
+USE work.psl_accel_types.ALL;
 USE work.snap_core_types.ALL;
 
 ENTITY ctrl_mgr IS
@@ -82,6 +84,8 @@ ARCHITECTURE ctrl_mgr OF ctrl_mgr IS
 
   SIGNAL llcmd_req_q              : std_logic;
   SIGNAL llcmd_ack_q              : std_logic;
+  SIGNAL terminate_req_q          : std_logic;
+  SIGNAL terminate_context_id_q   : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
 
   -- Ctrl Mgr Error record:
   SIGNAL cmm_e_q                  : CMM_E_T := (OTHERS => '0');
@@ -137,97 +141,104 @@ BEGIN
   ctrl_fsm : PROCESS (ha_pclock)
   BEGIN
     IF (rising_edge(ha_pclock)) THEN
-      IF afu_reset_q = '1' THEN
-        ah_j_q                       <= ('0', '0', '0', (OTHERS => '0'), '0');
-        llcmd_req_q                  <= '0';
-        llcmd_ack_q                  <= '0';
+      ah_j_q                   <= (ah_j_q.running, '0', llcmd_ack_q, ah_j_q.error, '0');
 
-        cmm_e_q.ctrl_fsm_err     <= '0';
+      llcmd_req_q              <= '0';
+      terminate_req_q          <= '0';
+      llcmd_ack_q              <= dc_c_i.terminate_ack;
+
+      cmm_e_q.ctrl_fsm_err     <= '0';
+
+      --
+      -- Handle START Command
+      --
+      IF (ha_j_q.valid = '1') AND (ha_j_q.com = START) THEN
+        ah_j_q.running <= '1';
+      END IF;
+
+      --
+      -- Handle LLCMD
+      --
+      IF (ha_j_q.valid = '1') AND (ha_j_q.com = LLCMD) THEN
+        llcmd_req_q <= '1';
+
+        IF ha_j_llcmd_code_q = LLCMD_CODES(ADD_ELEMENT) THEN
+          llcmd_ack_q <= '1';
+        ELSIF ha_j_llcmd_code_q = LLCMD_CODES(REMOVE_ELEMENT) THEN
+          llcmd_ack_q <= '1';
+        ELSIF  ha_j_llcmd_code_q = LLCMD_CODES(TERMINATE_ELEMENT) OR ha_j_llcmd_code_q = LLCMD_CODES(REMOVE_ELEMENT) THEN
+          terminate_req_q        <= '1';
+          terminate_context_id_q <= ha_j_q.ea(LLCMD_PE_HANDLE_R+CONTEXT_BITS-1 DOWNTO LLCMD_PE_HANDLE_R);
+        ELSE
+          llcmd_ack_q <= '1';
+        END IF;
+      END IF;
+
+      --
+      -- F S M
+      --
+      CASE ctrl_fsm_q IS
+        --
+        -- STATE: SEND JOB DONE                -- TODO: currently not reachable
+        --
+        WHEN ST_SEND_JDONE =>
+          --
+          -- make sure 'job running' is set to '0' prior to 'job done' set to '1'
+          IF ah_j_q.running = '1' THEN
+            ah_j_q.running <= '0';
+          ELSE
+            ah_j_q.running <= '0';              -- swallow concurrent 'START'
+            ah_j_q.done    <= '1';
+            ctrl_fsm_q     <= ST_IDLE;
+          END IF;
+
+        --
+        -- STATE: SEND RESET DONE
+        --
+        WHEN ST_SEND_RDONE =>
+          IF mmc_c_i.reset_done = '1' THEN
+            ah_j_q.done <= '1';
+            ctrl_fsm_q  <= ST_IDLE;
+          END IF;
+
+        --
+        -- STATE: IDLE
+        --
+        WHEN ST_IDLE =>
+          ctrl_fsm_q <= ST_IDLE;
+
+        --
+        -- STATE: ERROR (incoming FIR)
+        --
+        WHEN ST_ERROR =>
+          NULL;
+
+        --
+        -- STATE: FSM ERROR
+        --
+        WHEN ST_FSM_ERROR =>
+          cmm_e_q.ctrl_fsm_err <= '1';
+
+      END CASE;
+
+      --
+      -- Handle FIR
+      --
+      IF (or_reduce(mmc_e_i.error) = '1') AND (ah_j_q.running = '1') THEN
+        ah_j_q.error   <= mmc_e_i.error;
+        ah_j_q.running <= '0';
+        ah_j_q.done    <= '1';
+        ctrl_fsm_q <= ST_ERROR;
+      END IF;
+
+      IF afu_reset_q = '1' THEN
+        ah_j_q.running               <= '0';
+        ah_j_q.error                 <= (OTHERS => '0');
+        terminate_context_id_q       <= (OTHERS => '0');
 
         --
         -- send DONE after reset
         ctrl_fsm_q <= ST_SEND_RDONE;
-      ELSE
-        ah_j_q                   <= (ah_j_q.running, '0', llcmd_ack_q, ah_j_q.error, '0');
-
-        llcmd_req_q              <= '0';
-        llcmd_ack_q              <= '0';
-
-        cmm_e_q.ctrl_fsm_err <= '0';
-
-        --
-        -- Handle START Command
-        --
-        IF (ha_j_q.valid = '1') AND (ha_j_q.com = START) THEN
-          ah_j_q.running <= '1';
-        END IF;
-
-        --
-        -- Handle LLCMD
-        --
-        IF (ha_j_q.valid = '1') AND (ha_j_q.com = LLCMD) THEN
-          llcmd_req_q <= '1';
-          llcmd_ack_q <= '1';
-
-        END IF;
-
-        --
-        -- F S M
-        --
-        CASE ctrl_fsm_q IS
-          --
-          -- STATE: SEND JOB DONE                -- TODO: currently not reachable
-          --
-          WHEN ST_SEND_JDONE =>
-            --
-            -- make sure 'job running' is set to '0' prior to 'job done' set to '1'
-            IF ah_j_q.running = '1' THEN
-              ah_j_q.running <= '0';
-            ELSE
-              ah_j_q.running <= '0';              -- swallow concurrent 'START'
-              ah_j_q.done    <= '1';
-              ctrl_fsm_q     <= ST_IDLE;
-            END IF;
-
-          --
-          -- STATE: SEND RESET DONE
-          --
-          WHEN ST_SEND_RDONE =>
-            IF mmc_c_i.reset_done = '1' THEN
-              ah_j_q.done <= '1';
-              ctrl_fsm_q  <= ST_IDLE;
-            END IF;
-
-          --
-          -- STATE: IDLE
-          --
-          WHEN ST_IDLE =>
-            ctrl_fsm_q <= ST_IDLE;
-
-          --
-          -- STATE: ERROR (incoming FIR)
-          --
-          WHEN ST_ERROR =>
-            NULL;
-
-          --
-          -- STATE: FSM ERROR
-          --
-          WHEN ST_FSM_ERROR =>
-            cmm_e_q.ctrl_fsm_err <= '1';
-
-        END CASE;
-
-        --
-        -- Handle FIR
-        --
-        IF (or_reduce(mmc_e_i.error) = '1') AND (ah_j_q.running = '1') THEN
-          ah_j_q.error   <= mmc_e_i.error;
-          ah_j_q.running <= '0';
-          ah_j_q.done    <= '1';
-          ctrl_fsm_q <= ST_ERROR;
-        END IF;
-
       END IF;  -- afu_reset_q
 
     END IF;  -- rising_edge(ha_pclock)
@@ -244,19 +255,14 @@ BEGIN
   handle_errors : PROCESS (ha_pclock)
   BEGIN  -- PROCESS
     IF rising_edge(ha_pclock) THEN
-      IF afu_reset_q = '1' THEN
-        cmm_e_q.com_parity_err <= '0';
-        cmm_e_q.ea_parity_err  <= '0';
-      ELSE
-        cmm_e_q.com_parity_err <= '0';
-        cmm_e_q.ea_parity_err  <= '0';
-        IF (ha_j_q.valid = '1') THEN
-          IF COM_CODES_PARITY(ha_j_q.com) /= ha_j_q.compar THEN
-            cmm_e_q.com_parity_err <= '1';
-          END IF;
-          IF parity_gen_odd(ha_j_q.ea) /= ha_j_q.eapar THEN
-            cmm_e_q.ea_parity_err <= '1';
-          END IF;
+      cmm_e_q.com_parity_err <= '0';
+      cmm_e_q.ea_parity_err  <= '0';
+      IF (ha_j_q.valid = '1') THEN
+        IF COM_CODES_PARITY(ha_j_q.com) /= ha_j_q.compar THEN
+          cmm_e_q.com_parity_err <= '1';
+        END IF;
+        IF parity_gen_odd(ha_j_q.ea) /= ha_j_q.eapar THEN
+          cmm_e_q.ea_parity_err <= '1';
         END IF;
       END IF;
     END IF;
@@ -305,6 +311,8 @@ BEGIN
 --  app_reset_o     <= app_reset_v;
 --  dma_reset_o     <= dma_reset_q;
 
+  -- CD_C
+  cd_c_o.req_terminate <= terminate_req_q;
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
