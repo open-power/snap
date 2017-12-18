@@ -138,7 +138,7 @@ architecture action_axi_slave of action_axi_slave is
 	-- ADDR_LSB = 2 for 32 bits (n downto 2)
 	-- ADDR_LSB = 3 for 64 bits (n downto 3)
 	constant ADDR_LSB          : integer := (C_S_AXI_DATA_WIDTH/32)+ 1;
-	constant OPT_MEM_ADDR_BITS : integer := 4;
+	constant OPT_MEM_ADDR_BITS : integer := 5;
 	------------------------------------------------
 	---- Signals for user logic register space example
 	--------------------------------------------------
@@ -254,7 +254,7 @@ begin
 	slv_reg_wren <= axi_wready and S_AXI_WVALID and axi_awready and S_AXI_AWVALID ;
 
 	process (S_AXI_ACLK)
-	variable loc_addr :std_logic_vector(OPT_MEM_ADDR_BITS downto 0); 
+	variable loc_addr :std_logic_vector(OPT_MEM_ADDR_BITS-1 downto 0); 
 	begin
 	  if rising_edge(S_AXI_ACLK) then 
 	    if S_AXI_ARESETN = '0' then
@@ -272,7 +272,7 @@ begin
 	      slv_reg18 <= (others => '0');
 	      slv_reg19 <= (others => '0');
 	    else
-	      loc_addr := axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);
+	      loc_addr := axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS-1 downto ADDR_LSB);
 	      if (slv_reg_wren = '1') then
 	        case loc_addr is
 	          when b"00000" =>
@@ -485,10 +485,10 @@ begin
 	slv_reg_rden <= axi_arready and S_AXI_ARVALID and (not axi_rvalid) ;
 
 	process (slv_reg0_new, slv_reg1, slv_reg2, slv_reg3, reg_0x10_i, reg_0x14_i, slv_reg8, slv_reg12, slv_reg13, slv_reg14, slv_reg15, slv_reg16, slv_reg17, slv_reg18, slv_reg19, axi_araddr)
-	variable loc_addr :std_logic_vector(OPT_MEM_ADDR_BITS downto 0);
+	variable loc_addr :std_logic_vector(OPT_MEM_ADDR_BITS-1 downto 0);
 	begin
 	    -- Address decoding for reading registers
-	    loc_addr := axi_araddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);
+	    loc_addr := axi_araddr(ADDR_LSB + OPT_MEM_ADDR_BITS-1 downto ADDR_LSB);
 	    case loc_addr is
 	      when b"00000" =>
 	        reg_data_out <= slv_reg0_new;  -- 0x00
@@ -559,7 +559,7 @@ begin
         process( S_AXI_ACLK ) is
           variable app_done_i_q    : std_logic;
           
-          variable loc_addr        :std_logic_vector(OPT_MEM_ADDR_BITS downto 0); 
+          variable loc_addr        :std_logic_vector(OPT_MEM_ADDR_BITS-1 downto 0); 
 	begin
 	  if (rising_edge (S_AXI_ACLK)) then
 	    if ( S_AXI_ARESETN = '0' ) then
@@ -572,9 +572,9 @@ begin
               idle_q          <= app_idle_i;
               slv_reg0_bit0_q <= slv_reg0(0);
               app_done_i_q    := app_done_i;
-              loc_addr        := axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);
+              loc_addr        := axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS-1 downto ADDR_LSB);
               -- clear ap_done bit when register is read
-              if slv_reg_rden = '1'and loc_addr = "0000"  then
+              if slv_reg_rden = '1'and loc_addr = "00000"  then
                 app_done_q     <= '0';
               end if;  
 	      if (app_done_i_q = '0' and app_done_i = '1') then
