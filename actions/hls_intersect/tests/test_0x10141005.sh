@@ -55,7 +55,7 @@ while getopts ":C:t:d:h" opt; do
     esac
 done
 
-export PATH=$PATH:${SNAP_ROOT}/software/tools:${ACTION_ROOT}/sw
+export PATH=$PATH:${SNAP_ROOT}/software/tools:${ACTION_ROOT}/sw:${ACTION_ROOT}/tests
 echo "Path ist set to: $PATH"
 
 snap_peek --help > /dev/null || exit 1;
