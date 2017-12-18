@@ -507,48 +507,48 @@ BEGIN
   PROCESS(action_clk ) IS
   BEGIN
     IF (rising_edge (action_clk)) THEN
-          mmio_rd_enqueue       <= false;
-          mmio_wr_enqueue       <= false;
+      mmio_rd_enqueue  <= false;
+      mmio_wr_enqueue  <= false;
+
+      app_done         <= '0';
+      app_idle         <= '0';
+      app_ready        <= '1';
+      CASE fsm_app_q IS
+        WHEN IDLE  =>
+          app_idle <= '1';
+          IF app_start = '1' THEN
+            CASE reg_0x30(3 DOWNTO 0) IS
+               WHEN x"3" =>
+                 -- memcopy host to NVMe
+                 fsm_app_q        <= WAIT_FOR_MEMCOPY_DONE;
+                 mmio_wr_enqueue  <= true;
+
+               WHEN x"4" =>
+                 -- memcopy NVMe to host
+                 fsm_app_q        <= WAIT_FOR_MEMCOPY_DONE;
+                 mmio_rd_enqueue  <= true;
+
+               WHEN OTHERS =>
+                 fsm_app_q  <= ILLEGAL_OPERATION;
+            END CASE;
+          END IF ;
+
+        WHEN WAIT_FOR_MEMCOPY_DONE =>
+          IF app_start = '0' THEN
+            fsm_app_q  <= IDLE;
+            app_done   <= '1';
+          END IF;
+
+        WHEN ILLEGAL_OPERATION =>
+          fsm_app_q <= IDLE;
+          app_done  <= '1';
+
+        WHEN OTHERS => NULL;
+      END CASE;
       IF ( action_rst_n = '0' ) THEN
         fsm_app_q         <= IDLE;
         app_ready         <= '0';
         app_idle          <= '0';
-      ELSE
-        app_done          <= '0';
-        app_idle          <= '0';
-        app_ready         <= '1';
-        CASE fsm_app_q IS
-          WHEN IDLE  =>
-            app_idle <= '1';
-            IF app_start = '1' THEN
-              CASE reg_0x30(3 DOWNTO 0) IS
-                 WHEN x"3" =>
-                   -- memcopy host to NVMe
-                   fsm_app_q        <= WAIT_FOR_MEMCOPY_DONE;
-                   mmio_wr_enqueue  <= true;
-
-                 WHEN x"4" =>
-                   -- memcopy NVMe to host
-                   fsm_app_q        <= WAIT_FOR_MEMCOPY_DONE;
-                   mmio_rd_enqueue  <= true;
-
-                 WHEN OTHERS =>
-                   fsm_app_q  <= ILLEGAL_OPERATION;
-              END CASE;
-            END IF ;
-
-          WHEN WAIT_FOR_MEMCOPY_DONE =>
-            IF app_start = '0' THEN
-              fsm_app_q  <= IDLE;
-              app_done   <= '1';
-            END IF;
-
-          WHEN ILLEGAL_OPERATION =>
-            fsm_app_q <= IDLE;
-            app_done  <= '1';
-
-          WHEN OTHERS => NULL;
-        END CASE;
       END IF;
     END IF;
   END PROCESS;
@@ -570,50 +570,50 @@ BEGIN
         card_mem_awvalid <= '0';
       END IF;
 
+      CASE fsm_dma_rd IS
+        WHEN IDLE =>
+          IF mmio_wr_enqueue THEN
+            card_mem_awvalid  <= '1';
+            host_mem_arvalid  <= '1';
+            fsm_dma_rd        <= DMA_RD_REQ;
+            wr_lba_size       <= reg_0x44(13);  -- put 8k bit in size flag
+            wr_lba_addr       <= reg_0x40 & reg_0x3c;
+          END IF;
+          axi_host_mem_araddr   <=  reg_0x38 & reg_0x34;
+          host_mem_addr_8k      <= (reg_0x38 & reg_0x34) +  x"1000";
+          axi_card_mem0_awaddr  <= (OTHERS => '0');
+
+        WHEN DMA_RD_REQ =>
+          IF axi_card_mem0_bvalid = '1' THEN
+            IF  wr_lba_size = '0' THEN
+              -- IF the data is written into SDRAM,
+              -- we can initiate the NVMe write transfer
+              nvme_wr_enqueue  <= true;
+              fsm_dma_rd       <= IDLE;
+            ELSE
+              -- 2nd 4 k request
+              card_mem_awvalid     <= '1';
+              host_mem_arvalid     <= '1';
+              axi_host_mem_araddr  <= host_mem_addr_8k;
+              axi_card_mem0_awaddr <= x"0000_1000";
+              fsm_dma_rd           <= DMA_RD_REQ_2;
+            END IF;
+          END IF;
+
+        WHEN DMA_RD_REQ_2 =>
+          IF axi_card_mem0_bvalid = '1' THEN
+            -- initiate the NVMe data transfer
+            nvme_wr_enqueue  <= true;
+            fsm_dma_rd       <= IDLE;
+          END IF;
+
+        WHEN OTHERS => null;
+      END CASE;
+
       IF action_rst_n = '0' THEN
         card_mem_awvalid <= '0';
         host_mem_arvalid <= '0';
         fsm_dma_rd       <= IDLE;
-      ELSE
-        CASE fsm_dma_rd IS
-          WHEN IDLE =>
-            IF mmio_wr_enqueue THEN
-              card_mem_awvalid  <= '1';
-              host_mem_arvalid  <= '1';
-              fsm_dma_rd        <= DMA_RD_REQ;
-              wr_lba_size       <= reg_0x44(13);  -- put 8k bit in size flag
-              wr_lba_addr       <= reg_0x40 & reg_0x3c;
-            END IF;
-            axi_host_mem_araddr   <=  reg_0x38 & reg_0x34;
-            host_mem_addr_8k      <= (reg_0x38 & reg_0x34) +  x"1000";
-            axi_card_mem0_awaddr  <= (OTHERS => '0');
-
-          WHEN DMA_RD_REQ =>
-            IF axi_card_mem0_bvalid = '1' THEN
-              IF  wr_lba_size = '0' THEN
-                -- IF the data is written into SDRAM,
-                -- we can initiate the NVMe write transfer
-                nvme_wr_enqueue  <= true;
-                fsm_dma_rd       <= IDLE;
-              ELSE
-                -- 2nd 4 k request
-                card_mem_awvalid     <= '1';
-                host_mem_arvalid     <= '1';
-                axi_host_mem_araddr  <= host_mem_addr_8k;
-                axi_card_mem0_awaddr <= x"0000_1000";
-                fsm_dma_rd           <= DMA_RD_REQ_2;
-              END IF;
-            END IF;
-
-          WHEN DMA_RD_REQ_2 =>
-            IF axi_card_mem0_bvalid = '1' THEN
-              -- initiate the NVMe data transfer
-              nvme_wr_enqueue  <= true;
-              fsm_dma_rd       <= IDLE;
-            END IF;
-
-          WHEN OTHERS => null;
-        END CASE;
       END IF;                        -- end reset
     END IF;                          -- end clk
   END PROCESS;
@@ -864,18 +864,17 @@ BEGIN
   host_to_sdram: PROCESS(action_clk, card_mem_wvalid, axi_card_mem0_wready ) is
   BEGIN
     IF (rising_edge (action_clk)) THEN
+      IF axi_card_mem0_wready = '1' OR card_mem_wvalid = '0' THEN
+        card_mem_wvalid      <= axi_host_mem_rvalid;
+        axi_card_mem0_wdata  <= axi_host_mem_rdata;
+        axi_card_mem0_wlast  <= axi_host_mem_rlast;
+      END IF;
       IF action_rst_n = '0' THEN
         card_mem_wvalid      <= '0';
-      ELSE
-        IF axi_card_mem0_wready = '1' OR card_mem_wvalid = '0' THEN
-          card_mem_wvalid      <= axi_host_mem_rvalid ;
-          axi_card_mem0_wdata  <= axi_host_mem_rdata;
-          axi_card_mem0_wlast  <= axi_host_mem_rlast;
-        END IF;
       END IF;
     END IF;
     axi_host_mem_rready    <= '0';
-    IF card_mem_wvalid = '0'OR axi_card_mem0_wready = '1'  THEN
+    IF card_mem_wvalid = '0' OR axi_card_mem0_wready = '1' THEN
       axi_host_mem_rready  <= '1';
     END IF;
   END PROCESS;
@@ -893,15 +892,14 @@ BEGIN
   sdram_to_host: PROCESS(action_clk, host_mem_wvalid, axi_host_mem_wready ) IS
   BEGIN
     IF (rising_edge (action_clk)) THEN
+      IF axi_host_mem_wready = '1' OR host_mem_wvalid = '0' THEN
+        host_mem_wvalid      <= axi_card_mem0_rvalid ;
+        axi_host_mem_wdata   <= axi_card_mem0_rdata;
+        axi_host_mem_wlast   <= axi_card_mem0_rlast;
+        axi_card_mem0_rready <= '1';
+      END IF;
       IF (action_rst_n = '0') THEN
         host_mem_wvalid      <= '0';
-      ELSE
-        IF axi_host_mem_wready = '1' OR host_mem_wvalid = '0' THEN
-          host_mem_wvalid      <= axi_card_mem0_rvalid ;
-          axi_host_mem_wdata   <= axi_card_mem0_rdata;
-          axi_host_mem_wlast   <= axi_card_mem0_rlast;
-          axi_card_mem0_rready <= '1';
-        END IF;
       END IF;
     END IF;
     axi_card_mem0_rready  <= '0';
