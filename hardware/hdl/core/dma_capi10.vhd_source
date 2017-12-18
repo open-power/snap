@@ -162,6 +162,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL buf_walmost_full_qq         : std_logic;
   SIGNAL buf_walmost_full_qqq        : std_logic;
   SIGNAL hold_terminate_req_q        : std_logic;
+  SIGNAL sent_terminate_ack_q        : std_logic;
   SIGNAL buf_wfull_cnt_q             : integer RANGE 0 TO 32;
   SIGNAL buf_wtag_cl_partial_q       : boolean;
   SIGNAL buf_wtag_p_q                : std_logic;
@@ -2256,14 +2257,15 @@ BEGIN
         --
         -- defaults
         --
-        hold_terminate_req_q <=  hold_terminate_req_q OR cd_c_i.req_terminate;
+        hold_terminate_req_q <= hold_terminate_req_q OR cd_c_i.req_terminate;
+        sent_terminate_ack_q <= sent_terminate_ack_q AND NOT cd_c_i.req_terminate;
         dc_c_o.terminate_ack <= '0';
-
-        
         IF (hold_terminate_req_q = '1'    ) AND
+           (sent_terminate_ack_q = '0'    ) AND 
            (read_ctrl_fsm_q      = ST_IDLE) AND 
            (write_ctrl_fsm_q     = ST_IDLE) THEN
           dc_c_o.terminate_ack <= '1';
+          sent_terminate_ack_q <= '1';
         END IF;
 
         --
@@ -2271,6 +2273,7 @@ BEGIN
         -- 
         IF afu_reset = '1' THEN
           hold_terminate_req_q <= '0';
+          sent_terminate_ack_q <= '0';
         END IF;
       END IF;
     END PROCESS llcmd_terminate;
