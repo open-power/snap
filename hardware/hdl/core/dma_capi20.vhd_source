@@ -172,6 +172,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL buf_wtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL buf_wtag_valid_q            : boolean;
   SIGNAL clt_rtag_next_q             : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL dma_req_wtag_q              : std_logic_vector(  5 DOWNTO  0);
   SIGNAL dma_rtag_next_q             : std_logic_vector(  5 DOWNTO  0);
   SIGNAL dma_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL dma_wtag_next_q             : std_logic_vector(  5 DOWNTO  0);
@@ -1209,6 +1210,7 @@ BEGIN
       VARIABLE buf_full_v      : boolean;
       VARIABLE clt_wtag_v      : integer RANGE 0 TO 31;
       VARIABLE clt_wtag_next_v : integer RANGE 0 TO 31;
+      VARIABLE dma_req_wtag_v  : integer RANGE 0 TO 31;
       VARIABLE ha_r_tag_v      : integer RANGE 0 TO 31;
       VARIABLE cl_calc_v       : std_logic_vector(5 DOWNTO 0);
     BEGIN
@@ -1224,6 +1226,7 @@ BEGIN
        clt_wtag_next_q       <= clt_wtag_next_q;
        clt_wtag_p_q          <= clt_wtag_p_q;
        com_wtag_qq           <= to_integer(unsigned(com_wtag_q(4 DOWNTO 0)));
+       dma_req_wtag_q        <= dma_req_wtag_q;
        rsp_wtag_qq           <= to_integer(unsigned(rsp_wtag_q(4 DOWNTO 0)));
 
        waddr_q               <= waddr_q;
@@ -1237,6 +1240,7 @@ BEGIN
        buf_wtag_v            := to_integer(unsigned(buf_wtag_q     (4 DOWNTO 0)));
        clt_wtag_v            := to_integer(unsigned(clt_wtag_q     (4 DOWNTO 0)));
        clt_wtag_next_v       := to_integer(unsigned(clt_wtag_next_q(4 DOWNTO 0)));
+       dma_req_wtag_v        := to_integer(unsigned(dma_req_wtag_q (4 DOWNTO 0)));
        ha_r_tag_v            := to_integer(unsigned(ha_r_q.tag     (4 DOWNTO 0)));
 
        --
@@ -1334,14 +1338,6 @@ BEGIN
            
            write_ctrl_q(buf_wtag_v).clt(EVEN_64B_CL) <= '0';
          END IF;
-   
-
-         IF (hd_s_i.utag_valid       = '1'    ) AND 
-            (hd_s_i.utag(9 DOWNTO 5) = "00100") THEN
-           buf_wfull_cnt_q <= buf_wfull_cnt_q;
-         ELSE
-           buf_wfull_cnt_q <= buf_wfull_cnt_q + 1;
-         END IF;
        END IF;
 
        --
@@ -1369,13 +1365,6 @@ BEGIN
        -- RSP: WRITE_CTRL_FSM_Q HAS READ THE RESPONSE
        --
        IF rsp_wtag_valid_q = TRUE THEN
-         --
-         -- send back wr_id_valid if the last CL of a request was
-         -- transfered
-         IF write_ctrl_q(rsp_wtag_qq).clt(LAST_CL) = '1' THEN 
-           wr_id_valid_q <= '1';
-         END IF;
-
          write_ctrl_q(rsp_wtag_qq).dma <= XLAT_DONE;
          write_ctrl_q(rsp_wtag_qq).rsp <= ILLEGAL_RSP;
        END IF;
@@ -1385,15 +1374,27 @@ BEGIN
        --
        IF (hd_s_i.utag_valid       = '1'    ) AND 
           (hd_s_i.utag(9 DOWNTO 5) = "00100") THEN
-         write_ctrl_q(to_integer(unsigned(hd_s_i.utag(4 DOWNTO 0)))).dma <= EMPTY;
-         write_ctrl_q(to_integer(unsigned(hd_s_i.utag(4 DOWNTO 0)))).buf <= EMPTY;
-         write_ctrl_q(to_integer(unsigned(hd_s_i.utag(4 DOWNTO 0)))).clt <= CL_NOT_USED;
-
-         IF buf_wtag_valid_q = FALSE THEN
-           buf_wfull_cnt_q <= buf_wfull_cnt_q -1;
-         END IF;
+         write_ctrl_q(to_integer(unsigned(hd_s_i.utag(4 DOWNTO 0)))).dma <= REQ_DONE;
        END IF;
 
+       --
+       --
+       --
+       IF  write_ctrl_q(dma_req_wtag_v).dma = REQ_DONE  THEN
+         dma_req_wtag_q <= dma_req_wtag_q + 1;
+           
+         write_ctrl_q(dma_req_wtag_v).dma <= EMPTY;
+         write_ctrl_q(dma_req_wtag_v).buf <= EMPTY;
+         write_ctrl_q(dma_req_wtag_v).clt <= CL_NOT_USED;
+
+         --
+         -- send back wr_id_valid if the last CL of a request was
+         -- transfered
+         IF write_ctrl_q(dma_req_wtag_v).clt(LAST_CL) = '1' THEN 
+           wr_id_valid_q <= '1';
+         END IF;
+
+       END IF;
        --
        -- DMA WRITE BUFFER OVERRUN CHECKER
        --
@@ -1413,6 +1414,20 @@ BEGIN
        --
        -- DMA ALMOST FULL INDICATION
        --
+       IF (buf_wtag_valid_q = TRUE) THEN
+         IF  write_ctrl_q(dma_req_wtag_v).dma = REQ_DONE  THEN
+           buf_wfull_cnt_q <= buf_wfull_cnt_q;
+         ELSE
+           buf_wfull_cnt_q <= buf_wfull_cnt_q + 1;
+         END IF;
+       ELSE
+         IF  write_ctrl_q(dma_req_wtag_v).dma = REQ_DONE  THEN
+           buf_wfull_cnt_q <= buf_wfull_cnt_q - 1 ;
+         ELSE
+           buf_wfull_cnt_q <= buf_wfull_cnt_q;
+         END IF;
+       END IF;
+       
        IF buf_wfull_cnt_q >= 25 THEN
          buf_walmost_full_q <= '1';
        ELSE
@@ -1445,6 +1460,7 @@ BEGIN
           clt_wtag_next_q       <= "000001";
           clt_wtag_p_q          <= '1';
           com_wtag_qq           <= 0;
+          dma_req_wtag_q        <= (OTHERS => '0');
           rsp_wtag_qq           <= 0;
 
           wlen_q                <= (OTHERS => '0');
@@ -1498,17 +1514,19 @@ BEGIN
           -- STATE IDLE
           --
           WHEN ST_IDLE =>
-            IF (read_ctrl_q(dma_rtag_v).dma = XLAT_DONE) AND
-               (dma_rreq_cnt_q              < 7        )THEN
+            IF (read_ctrl_q(dma_rtag_v).dma  = XLAT_DONE ) AND
+                (rsp_rtag_q                 /= dma_rtag_q) AND 
+               (dma_rreq_cnt_q               < 7         )THEN
               dma_fsm_q <= ST_DMA_READ_REQ;
-            ELSIF  (write_ctrl_q(dma_wtag_v).dma = XLAT_DONE) AND
-                   (dma_wreq_cnt_q               < 7        )THEN
+            ELSIF  (write_ctrl_q(dma_wtag_v).dma  = XLAT_DONE ) AND
+                   (rsp_wtag_q                   /= dma_wtag_q) AND 
+                   (dma_wreq_cnt_q                < 7         )THEN
               dma_fsm_q    <= ST_UPDATE_WRITE_BUF_READ_ADD;
               wram_raddr_q <= wram_raddr_q + 2;
             END IF;
         
           --
-          -- STATE IDLE
+          -- STATE UPDATE_WRITE_BUF_READ_ADD  
           --
           WHEN ST_UPDATE_WRITE_BUF_READ_ADD =>
               wram_raddr_q <= wram_raddr_q + 2;
@@ -1522,56 +1540,51 @@ BEGIN
           -- STATE COMMAND: DMA READ REQUEST
           --
           WHEN ST_DMA_READ_REQ =>
-            IF dma_rreq_cnt_q < 7 THEN
-              IF read_ctrl_q(dma_rtag_next_v).dma = XLAT_DONE  THEN
-                dma_fsm_q <= ST_DMA_READ_REQ;
-              ELSE
-                dma_fsm_q <= ST_IDLE;
-              END IF;
-
-              --
-              -- send out the DMA request
-              --
-              dma_rtag_q      <= dma_rtag_q      + 1;
-              dma_rtag_next_q <= dma_rtag_next_q + 1;
-
-              dh_d_q.valid    <= '1';
-              dh_d_q.req_utag <= "00000" & dma_rtag_q(4 DOWNTO 0);
-              dh_d_q.req_itag <= read_ctrl_q(dma_rtag_v).itag;
-              dh_d_q.req_type <= "000";
-              dh_d_q.size     <= std_logic_vector(to_unsigned(128, 10));
+            IF (read_ctrl_q(dma_rtag_next_v).dma  = XLAT_DONE      ) AND 
+                (rsp_rtag_q                      /= dma_rtag_next_q) AND 
+               (dma_rreq_cnt_q                   < 7               ) THEN
+              dma_fsm_q <= ST_DMA_READ_REQ;
             ELSE
               dma_fsm_q <= ST_IDLE;
             END IF;
+
+            --
+            -- send out the DMA request
+            --
+            dma_rtag_q      <= dma_rtag_q      + 1;
+            dma_rtag_next_q <= dma_rtag_next_q + 1;
+
+            dh_d_q.valid    <= '1';
+            dh_d_q.req_utag <= "00000" & dma_rtag_q(4 DOWNTO 0);
+            dh_d_q.req_itag <= read_ctrl_q(dma_rtag_v).itag;
+            dh_d_q.req_type <= "000";
+            dh_d_q.size     <= std_logic_vector(to_unsigned(128, 10));
             
           --
           -- STATE COMMAND: DMA WRITE REQUEST
           --
           WHEN ST_DMA_WRITE_REQ =>
-            IF dma_wreq_cnt_q < 7 THEN
-              IF write_ctrl_q(dma_wtag_next_v).dma = XLAT_DONE  THEN
-                dma_fsm_q <= ST_DMA_WRITE_REQ;
-              ELSE
-                dma_fsm_q <= ST_IDLE;
-              END IF;
-
-              --
-              -- send out the DMA request
-              --
-              dma_wtag_q      <= dma_wtag_q      + 1;
-              dma_wtag_next_q <= dma_wtag_next_q + 1;
-              wram_raddr_q    <= wram_raddr_q    + 2;
-
-              dh_d_q.valid    <= '1';
-              dh_d_q.req_utag <= "00100" & dma_wtag_q(4 DOWNTO 0);
-              dh_d_q.req_itag <= write_ctrl_q(dma_wtag_v).itag;
-              dh_d_q.req_type <= "001";
-              dh_d_q.size     <= std_logic_vector(to_unsigned(128, 10));
-
+            IF (write_ctrl_q(dma_wtag_next_v).dma  = XLAT_DONE      ) AND 
+               (rsp_wtag_q                        /= dma_wtag_next_q) AND 
+               (dma_wreq_cnt_q                     < 7              ) THEN
+              dma_fsm_q <= ST_DMA_WRITE_REQ;
             ELSE
               dma_fsm_q <= ST_IDLE;
             END IF;
-            
+
+            --
+            -- send out the DMA request
+            --
+            dma_wtag_q      <= dma_wtag_q      + 1;
+            dma_wtag_next_q <= dma_wtag_next_q + 1;
+            wram_raddr_q    <= wram_raddr_q    + 2;
+
+            dh_d_q.valid    <= '1';
+            dh_d_q.req_utag <= "00100" & dma_wtag_q(4 DOWNTO 0);
+            dh_d_q.req_itag <= write_ctrl_q(dma_wtag_v).itag;
+            dh_d_q.req_type <= "001";
+            dh_d_q.size     <= std_logic_vector(to_unsigned(128, 10));
+
           --
           -- STATE FSM ERROR
           --
