@@ -322,10 +322,11 @@ BEGIN
 --  dma_reset_o     <= dma_reset_q;
 
   -- CD_C
-  cd_c_o.req_terminate <= terminate_req_q;
+  cd_c_o.terminate_request <= terminate_req_q;
+  cd_c_o.terminate_release <= terminate_ack_dma_q AND terminate_ack_mmio_q;
 
   -- CMM_C
-  cmm_c_o.req_terminate <= terminate_req_q;
+  cmm_c_o.terminate_request <= terminate_req_q;
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------

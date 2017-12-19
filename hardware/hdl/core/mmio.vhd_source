@@ -1190,7 +1190,7 @@ BEGIN
     --
     -- Reset to action
     --
-    app_reset <= cmm_c_i.req_terminate OR app_reset_q;
+    app_reset <= cmm_c_i.terminate_request OR app_reset_q;
 
 #ifdef CONFIG_ENABLE_NVME
     --
@@ -1482,7 +1482,7 @@ BEGIN
       ELSE
         app_reset_count_q <= app_reset_count_q - 1;
       END IF;
-      IF cmm_c_i.req_terminate = '1' THEN
+      IF cmm_c_i.terminate_request = '1' THEN
         app_reset_count_q <= 10;
         app_reset_q <= '1';
       END IF;
