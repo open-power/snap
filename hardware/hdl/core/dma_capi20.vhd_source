@@ -1338,14 +1338,6 @@ BEGIN
            
            write_ctrl_q(buf_wtag_v).clt(EVEN_64B_CL) <= '0';
          END IF;
-   
-
-         IF (hd_s_i.utag_valid       = '1'    ) AND 
-            (hd_s_i.utag(9 DOWNTO 5) = "00100") THEN
-           buf_wfull_cnt_q <= buf_wfull_cnt_q;
-         ELSE
-           buf_wfull_cnt_q <= buf_wfull_cnt_q + 1;
-         END IF;
        END IF;
 
        --
@@ -1395,11 +1387,6 @@ BEGIN
          write_ctrl_q(dma_req_wtag_v).buf <= EMPTY;
          write_ctrl_q(dma_req_wtag_v).clt <= CL_NOT_USED;
 
-
-         IF buf_wtag_valid_q = FALSE THEN
-           buf_wfull_cnt_q <= buf_wfull_cnt_q - 1;
-         END IF;
-
          --
          -- send back wr_id_valid if the last CL of a request was
          -- transfered
@@ -1427,6 +1414,20 @@ BEGIN
        --
        -- DMA ALMOST FULL INDICATION
        --
+       IF (buf_wtag_valid_q = TRUE) THEN
+         IF  write_ctrl_q(dma_req_wtag_v).dma = REQ_DONE  THEN
+           buf_wfull_cnt_q <= buf_wfull_cnt_q;
+         ELSE
+           buf_wfull_cnt_q <= buf_wfull_cnt_q + 1;
+         END IF;
+       ELSE
+         IF  write_ctrl_q(dma_req_wtag_v).dma = REQ_DONE  THEN
+           buf_wfull_cnt_q <= buf_wfull_cnt_q - 1 ;
+         ELSE
+           buf_wfull_cnt_q <= buf_wfull_cnt_q;
+         END IF;
+       END IF;
+       
        IF buf_wfull_cnt_q >= 25 THEN
          buf_walmost_full_q <= '1';
        ELSE
@@ -1513,17 +1514,19 @@ BEGIN
           -- STATE IDLE
           --
           WHEN ST_IDLE =>
-            IF (read_ctrl_q(dma_rtag_v).dma = XLAT_DONE) AND
-               (dma_rreq_cnt_q              < 7        )THEN
+            IF (read_ctrl_q(dma_rtag_v).dma  = XLAT_DONE ) AND
+                (rsp_rtag_q                 /= dma_rtag_q) AND 
+               (dma_rreq_cnt_q               < 7         )THEN
               dma_fsm_q <= ST_DMA_READ_REQ;
-            ELSIF  (write_ctrl_q(dma_wtag_v).dma = XLAT_DONE) AND
-                   (dma_wreq_cnt_q               < 7        )THEN
+            ELSIF  (write_ctrl_q(dma_wtag_v).dma  = XLAT_DONE ) AND
+                   (rsp_wtag_q                   /= dma_wtag_q) AND 
+                   (dma_wreq_cnt_q                < 7         )THEN
               dma_fsm_q    <= ST_UPDATE_WRITE_BUF_READ_ADD;
               wram_raddr_q <= wram_raddr_q + 2;
             END IF;
         
           --
-          -- STATE IDLE
+          -- STATE UPDATE_WRITE_BUF_READ_ADD  
           --
           WHEN ST_UPDATE_WRITE_BUF_READ_ADD =>
               wram_raddr_q <= wram_raddr_q + 2;
@@ -1537,8 +1540,9 @@ BEGIN
           -- STATE COMMAND: DMA READ REQUEST
           --
           WHEN ST_DMA_READ_REQ =>
-            IF (read_ctrl_q(dma_rtag_next_v).dma = XLAT_DONE) AND 
-               (dma_rreq_cnt_q                   < 7        ) THEN
+            IF (read_ctrl_q(dma_rtag_next_v).dma  = XLAT_DONE      ) AND 
+                (rsp_rtag_q                      /= dma_rtag_next_q) AND 
+               (dma_rreq_cnt_q                   < 7               ) THEN
               dma_fsm_q <= ST_DMA_READ_REQ;
             ELSE
               dma_fsm_q <= ST_IDLE;
@@ -1560,8 +1564,9 @@ BEGIN
           -- STATE COMMAND: DMA WRITE REQUEST
           --
           WHEN ST_DMA_WRITE_REQ =>
-            IF (write_ctrl_q(dma_wtag_next_v).dma = XLAT_DONE) AND 
-               (dma_wreq_cnt_q                    < 7        ) THEN
+            IF (write_ctrl_q(dma_wtag_next_v).dma  = XLAT_DONE      ) AND 
+               (rsp_wtag_q                        /= dma_wtag_next_q) AND 
+               (dma_wreq_cnt_q                     < 7              ) THEN
               dma_fsm_q <= ST_DMA_WRITE_REQ;
             ELSE
               dma_fsm_q <= ST_IDLE;
