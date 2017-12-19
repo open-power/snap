@@ -933,7 +933,8 @@ PACKAGE snap_core_types IS
     -- cd_c
     --
     TYPE CD_C_T IS RECORD
-      req_terminate        : std_logic;
+      terminate_request    : std_logic;
+      terminate_release    : std_logic;
       terminate_context_id : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
     END RECORD CD_C_T;
 
@@ -941,7 +942,7 @@ PACKAGE snap_core_types IS
     -- cmm_c
     --
     TYPE CMM_C_T IS RECORD
-      req_terminate        : std_logic;
+      terminate_request    : std_logic;
       terminate_context_id : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
     END RECORD CMM_C_T;
 
