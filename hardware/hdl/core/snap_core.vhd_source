@@ -44,8 +44,8 @@ ENTITY snap_core IS
     ah_cch          : OUT std_logic_vector(0 TO 15);                  -- Command context handle
     ah_csize        : OUT std_logic_vector(0 TO 11);                  -- Command size
     ha_croom        : IN  std_logic_vector(0 TO 7);                   -- Command room
-    --                                                                 
-    -- Buffer interface                                                
+    --
+    -- Buffer interface
     ha_brvalid      : IN  std_logic;                                  -- Buffer Read valid
     ha_brtag        : IN  std_logic_vector(0 TO 7);                   -- Buffer Read tag
     ha_brtagpar     : IN  std_logic;                                  -- Buffer Read tag parity
@@ -74,8 +74,8 @@ ENTITY snap_core IS
     ha_response_ext : IN  std_logic_vector(0 to 7);                   -- Response Ext
     ha_rpagesize    : IN  std_logic_vector(0 to 3);                   -- Command translated Page size.  Provided by PSL to allow
 #endif
-    --                                                                 
-    -- MMIO interface                                                  
+    --
+    -- MMIO interface
     ha_mmval        : IN  std_logic;                                  -- A valid MMIO is present
     ha_mmcfg        : IN  std_logic;                                  -- MMIO is AFU descriptor space access
     ha_mmrnw        : IN  std_logic;                                  -- 1 = read  0 = write
@@ -87,8 +87,8 @@ ENTITY snap_core IS
     ah_mmack        : OUT std_logic;                                  -- Write is complete or Read is valid
     ah_mmdata       : OUT std_logic_vector(0 TO 63);                  -- Read data
     ah_mmdatapar    : OUT std_logic;                                  -- Read data parity
-    --                                                                 
-    -- Control interface                                               
+    --
+    -- Control interface
     ha_jval         : IN  std_logic;                                  -- Job valid
     ha_jcom         : IN  std_logic_vector(0 TO 7);                   -- Job command
     ha_jcompar      : IN  std_logic;                                  -- Job command parity
@@ -103,7 +103,7 @@ ENTITY snap_core IS
     ah_paren        : OUT std_logic;                                  -- Parity enable
     ha_pclock       : IN  std_logic;                                  -- clock
 #ifdef CONFIG_CAPI20
-    -- DMA port 0 Req                         
+    -- DMA port 0 Req
     d0h_dvalid          : OUT   std_logic;
     d0h_req_utag        : OUT   std_logic_vector(0 to 9);
     d0h_req_itag        : OUT   std_logic_vector(0 to 8);
@@ -112,11 +112,11 @@ ENTITY snap_core IS
     d0h_datomic_le      : OUT   std_logic;
     d0h_dsize           : OUT   std_logic_vector(0 to 9);
     d0h_ddata           : OUT   std_logic_vector(0 to 1023);
-    -- DMA port 0 Sent           
+    -- DMA port 0 Sent
     hd0_sent_utag_valid : IN    std_logic;
     hd0_sent_utag       : IN    std_logic_vector(0 to 9);
     hd0_sent_utag_sts   : IN    std_logic_vector(0 to 2);
-    -- DMA port 0 Completion interface        
+    -- DMA port 0 Completion interface
     hd0_cpl_valid       : IN    std_logic;
     hd0_cpl_utag        : IN    std_logic_vector(0 to 9);
     hd0_cpl_type        : IN    std_logic_vector(0 to 2);
@@ -163,11 +163,13 @@ ARCHITECTURE snap_core OF snap_core IS
   --
   -- SIGNAL
   SIGNAL afu_reset           : std_logic;
+  SIGNAL app_reset           : std_logic;
   SIGNAL ah_b                : AH_B_T;
   SIGNAL ah_c                : AH_C_T;
   SIGNAL ah_j                : AH_J_T;
   SIGNAL ah_mm               : AH_MM_T;
   SIGNAL cd_c                : CD_C_T;
+  SIGNAL cmm_c               : CMM_C_T;
   SIGNAL cmm_e               : CMM_E_T;
   SIGNAL dc_c                : DC_C_T;
   SIGNAL dmm_e               : DMM_E_T;
@@ -265,10 +267,10 @@ BEGIN
     ah_brlat(0 TO 3)                      <= vhdl2v_connector(ah_b.rlat(3 DOWNTO 0));
     ah_brdata(0 TO (512*CAPI_VER)-1)      <= vhdl2v_connector(ah_b.rdata((512*CAPI_VER)-1 DOWNTO 0));
     ah_brpar( 0 TO (  8*CAPI_VER)-1)      <= vhdl2v_connector(ah_b.rpar( (  8*CAPI_VER)-1 DOWNTO 0));
-#else 
+#else
     ah_brlat(0 TO 3)                      <= "0000";
 #endif
-    
+
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   -- Response Interface
@@ -349,9 +351,9 @@ BEGIN
     d0h_datomic_le          <=                 dh_d.atomic_le;
     d0h_dsize               <=vhdl2v_connector(dh_d.size(9    DOWNTO 0));
     d0h_ddata               <=vhdl2v_connector(dh_d.data(1023 DOWNTO 0));
-#endif    
+#endif
 
-    
+
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- ******************************************************
@@ -430,6 +432,7 @@ BEGIN
       -- MMIO IOs
       mmc_c_i                => mmc_c,
       mmc_e_i                => mmc_e,
+      cmm_c_o                => cmm_c,
       cmm_e_o                => cmm_e
     );
 
@@ -479,6 +482,7 @@ BEGIN
       -- pervasive
       ha_pclock              => ha_pclock,
       afu_reset              => afu_reset,
+      app_reset              => app_reset,
 
 #ifdef CONFIG_ENABLE_NVME
       nvme_reset_ctl         => nvme_reset_ctl,
@@ -493,6 +497,7 @@ BEGIN
       ah_mm_o                => ah_mm,
       --
       -- CTRL MGR Interface
+      cmm_c_i                => cmm_c,
       cmm_e_i                => cmm_e,
       mmc_c_o                => mmc_c,
       mmc_e_o                => mmc_e,
@@ -566,5 +571,5 @@ BEGIN
       ks_d_i                       => ks_d_i
      );
 
-    action_reset <= afu_reset;
+    action_reset <= afu_reset OR app_reset;
 END ARCHITECTURE;
