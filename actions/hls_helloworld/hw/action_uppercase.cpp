@@ -26,34 +26,6 @@
 #include "ap_int.h"
 #include "action_uppercase.H"
 
-// Cast a word from input port (512b) to a char* word (64B)
-static void mbus_to_word(snap_membus_t mem, word_t text)
-{
-        snap_membus_t tmp = mem;
-
-        loop_mbus_to_word:
-        for (unsigned char k = 0; k < sizeof(word_t); k++) {
-//#pragma HLS UNROLL
-                text[k] = tmp(7, 0);
-                tmp = tmp >> 8;
-        }
-}
-
-// Cast a char* word (64B) to a word to output port (512b)
-static snap_membus_t word_to_mbus(word_t text)
-{
-	snap_membus_t mem = 0;
-
- loop_word_to_mbus:
-	for (char k = sizeof(word_t)-1; k >= 0; k--) {
-//#pragma HLS UNROLL
-		mem = mem << 8;
-		mem(7, 0) = text[k];
-	}
-	return mem;
-}
-
-
 //----------------------------------------------------------------------
 //--- MAIN PROGRAM -----------------------------------------------------
 //----------------------------------------------------------------------
@@ -75,17 +47,12 @@ static int process_action(snap_membus_t *din_gmem,
 //#pragma HLS PIPELINE
 		word_t text;
 		unsigned char i;
-		snap_membus_t buffer_in = 0, buffer_out = 0;
 
 		/* Limit the number of bytes to process to a 64B word */
-		bytes_to_transfer = MIN(size, (uint32_t)sizeof(buffer_in));
-
-		// Temporary workaround due to Xilinx memcpy issue - fixed in HLS 2017.4 */
-		//memcpy(&buffer_in, din_gmem + i_idx, sizeof(buffer_in));
-		buffer_in = (din_gmem + i_idx)[0];
-
-		/* cast 64B word buffer to a char[64] text */
-		mbus_to_word(buffer_in, text);
+		bytes_to_transfer = MIN(size, BPERDW);
+        
+        /* Read in one word_t */
+        memcpy((char*) text, din_gmem + i_idx, BPERDW);
 
 		/* Convert lower cases to upper cases byte per byte */
 	uppercase_conversion:
@@ -95,12 +62,8 @@ static int process_action(snap_membus_t *din_gmem,
 				text[i] = text[i] - ('a' - 'A');
 		}
 
-		/* cast char[64] text to a 64B word buffer */
-		buffer_out = word_to_mbus(text);
-
-		// Temporary workaround due to Xilinx memcpy issue - fixed in HLS 2017.4 */
-		//memcpy(dout_gmem + o_idx, &buffer_out, sizeof(buffer_out));
-		(dout_gmem + o_idx)[0] = buffer_out;
+        /* Write out one word_t */
+        memcpy(dout_gmem + o_idx, (char*) text, BPERDW);
 
 		size -= bytes_to_transfer;
 		i_idx++;
