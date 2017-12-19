@@ -831,6 +831,7 @@ PACKAGE snap_core_types IS
 --  ds_d : dma         -> AXI slave   : Data Interface
 --
 --  cd_c : ctrl_mgr    -> dma         : Control Interface
+--  cmm_c: ctrl_mgr    -> mmio        : Control Interface
 --  cmm_e: ctrl_mgr    -> mmio        : Error Interface
 --
 --  jmm_c: job_manager -> mmio        : Control Interface
@@ -867,7 +868,7 @@ PACKAGE snap_core_types IS
     -- dc_c
     --
     TYPE DC_C_T IS RECORD
-      terminate_ack     : std_logic;
+      terminate_ack : std_logic;
     END RECORD DC_C_T;
 
     --
@@ -932,9 +933,17 @@ PACKAGE snap_core_types IS
     -- cd_c
     --
     TYPE CD_C_T IS RECORD
-      req_terminate    : std_logic;
+      req_terminate        : std_logic;
       terminate_context_id : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
     END RECORD CD_C_T;
+
+    --
+    -- cmm_c
+    --
+    TYPE CMM_C_T IS RECORD
+      req_terminate        : std_logic;
+      terminate_context_id : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    END RECORD CMM_C_T;
 
   --
     -- cmm_e
@@ -999,7 +1008,8 @@ PACKAGE snap_core_types IS
     -- mmc_c
     --
     TYPE MMC_C_T IS RECORD
-      reset_done : std_logic;
+      reset_done    : std_logic;
+      terminate_ack : std_logic;
     END RECORD MMC_C_T;
 
     --

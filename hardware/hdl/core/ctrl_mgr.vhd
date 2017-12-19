@@ -51,6 +51,7 @@ ENTITY ctrl_mgr IS
     -- MMIO IOs
     mmc_c_i         : IN  MMC_C_T;
     mmc_e_i         : IN  MMC_E_T;
+    cmm_c_o         : OUT CMM_C_T;
     cmm_e_o         : OUT CMM_E_T
   );
 END ctrl_mgr;
@@ -86,6 +87,8 @@ ARCHITECTURE ctrl_mgr OF ctrl_mgr IS
   SIGNAL llcmd_ack_q              : std_logic;
   SIGNAL terminate_req_q          : std_logic;
   SIGNAL terminate_context_id_q   : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL terminate_ack_dma_q      : std_logic;
+  SIGNAL terminate_ack_mmio_q     : std_logic;
 
   -- Ctrl Mgr Error record:
   SIGNAL cmm_e_q                  : CMM_E_T := (OTHERS => '0');
@@ -141,11 +144,15 @@ BEGIN
   ctrl_fsm : PROCESS (ha_pclock)
   BEGIN
     IF (rising_edge(ha_pclock)) THEN
-      ah_j_q                   <= (ah_j_q.running, '0', llcmd_ack_q, ah_j_q.error, '0');
+      ah_j_q                   <= (ah_j_q.running, '0',
+                                   llcmd_ack_q,
+                                   ah_j_q.error, '0');
 
       llcmd_req_q              <= '0';
       terminate_req_q          <= '0';
-      llcmd_ack_q              <= dc_c_i.terminate_ack;
+      terminate_ack_dma_q      <= (terminate_ack_dma_q OR dc_c_i.terminate_ack) AND NOT (terminate_ack_dma_q AND terminate_ack_mmio_q);
+      terminate_ack_mmio_q     <= (terminate_ack_mmio_q OR mmc_c_i.terminate_ack) AND NOT (terminate_ack_dma_q AND terminate_ack_mmio_q);
+      llcmd_ack_q              <= terminate_ack_dma_q AND terminate_ack_mmio_q;
 
       cmm_e_q.ctrl_fsm_err     <= '0';
 
@@ -234,7 +241,10 @@ BEGIN
       IF afu_reset_q = '1' THEN
         ah_j_q.running               <= '0';
         ah_j_q.error                 <= (OTHERS => '0');
+        llcmd_ack_q                  <= '0';
         terminate_context_id_q       <= (OTHERS => '0');
+        terminate_ack_dma_q          <= '0';
+        terminate_ack_mmio_q         <= '0';
 
         --
         -- send DONE after reset
@@ -313,6 +323,9 @@ BEGIN
 
   -- CD_C
   cd_c_o.req_terminate <= terminate_req_q;
+
+  -- CMM_C
+  cmm_c_o.req_terminate <= terminate_req_q;
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------

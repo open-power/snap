@@ -33,6 +33,7 @@ ENTITY mmio IS
     -- pervasive
     ha_pclock              : IN  std_logic;
     afu_reset              : IN  std_logic;
+    app_reset              : OUT std_logic;
 #ifdef CONFIG_ENABLE_NVME
     nvme_reset_ctl         : OUT std_logic_vector(SNAP_NVME_RST_L  DOWNTO SNAP_NVME_RST_R);   -- keeping NVMe drives in reset by driving 0s
 #endif
@@ -43,6 +44,7 @@ ENTITY mmio IS
     ah_mm_o                : OUT AH_MM_T;
     --
     -- CTRL MGR Interface
+    cmm_c_i                : IN  CMM_C_T;
     cmm_e_i                : IN  CMM_E_T;
     mmc_c_o                : OUT MMC_C_T;
     mmc_e_o                : OUT MMC_E_T;
@@ -194,6 +196,9 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL context_stop_ack_q0           : std_logic;
   SIGNAL context_stop_ack_q            : std_logic;
 
+  SIGNAL app_reset_count_q             : integer RANGE 0 TO 10;
+  SIGNAL app_reset_q                   : std_logic;
+  SIGNAL app_reset_qq                  : std_logic;
 BEGIN
 
   ------------------------------------------------------------------------------
@@ -1148,7 +1153,8 @@ BEGIN
     --
     -- MMC
     --
-    mmc_c_o.reset_done <= NOT regs_reset_q;
+    mmc_c_o.reset_done    <= NOT regs_reset_q;
+    mmc_c_o.terminate_ack <= app_reset_qq AND NOT app_reset_q;
 
     --
     -- MMX
@@ -1180,6 +1186,11 @@ BEGIN
     mmj_d_o.assign_int_enable  <= context_config_hw_dout(CTX_CFG_ASGNINT_ENA_INT);
     mmj_d_o.cpl_int_enable     <= context_config_hw_dout(CTX_CFG_CPLINT_ENA_INT);
     mmj_d_o.job_queue_mode     <= NOT context_config_hw_dout(CTX_CFG_DIRECT_MODE_INT);
+
+    --
+    -- Reset to action
+    --
+    app_reset <= cmm_c_i.req_terminate OR app_reset_q;
 
 #ifdef CONFIG_ENABLE_NVME
     --
@@ -1454,5 +1465,33 @@ BEGIN
       END IF;                                     -- afu_reset = '1'
     END IF;                                       -- rising_edge(ha_pclock)
   END PROCESS axi_master_interface;
+
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  --  Action Reset Generation
+  ------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  --
+  action_reset : PROCESS (ha_pclock)
+  BEGIN
+    IF (rising_edge(ha_pclock)) THEN
+      app_reset_q  <= app_reset_q;
+      app_reset_qq <= app_reset_q;
+      IF app_reset_count_q = 0 THEN
+        app_reset_q <= '0';
+      ELSE
+        app_reset_count_q <= app_reset_count_q - 1;
+      END IF;
+      IF cmm_c_i.req_terminate = '1' THEN
+        app_reset_count_q <= 10;
+        app_reset_q <= '1';
+      END IF;
+      IF afu_reset = '1' THEN
+        app_reset_count_q <= 0;
+        app_reset_q       <= '0';
+        app_reset_qq      <= '0';
+      END IF;
+    END IF;
+  END PROCESS action_reset;
 
 END ARCHITECTURE;
