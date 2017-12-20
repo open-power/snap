@@ -78,15 +78,14 @@ fi
 function test_helloworld {
     local size=$1
 
-    cmd="echo \"Hello world. This is my first CAPI SNAP experience. It's real fun!\n\" > tin"
+    cmd="echo \"Hello world. This is my first CAPI SNAP experience. It's real fun.\" > tin"
     echo "cmd: ${cmd}"
-    cmd="echo \"HELLO WORLD. THIS IS MY FIRST CAPI SNAP EXPERIENCE. IT'S REAL FUN!\n\" > tCAP"
+    eval ${cmd}
+    cmd="echo \"HELLO WORLD. THIS IS MY FIRST CAPI SNAP EXPERIENCE. IT'S REAL FUN.\" > tCAP"
     echo "cmd: ${cmd}"
+    eval ${cmd}
     echo -n "Doing snap_helloworld "
-    cmd="snap_helloworld -C${snap_card} -X	\
-		-i tin	\
-		-o tout >>	\
-		snap_helloworld.log 2>&1"
+    cmd="snap_helloworld -C${snap_card} -i tin -o tout >> snap_helloworld.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then
 	cat snap_helloworld.log
@@ -97,7 +96,7 @@ function test_helloworld {
     echo "ok"
 
     echo -n "Check results ... "
-    diff $tout tCAP 2>&1 > /dev/null
+    diff tout tCAP 2>&1 > /dev/null
     if [ $? -ne 0 ]; then
 	echo "failed"
 	echo "  Out and expected files are different!"
