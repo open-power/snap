@@ -660,13 +660,17 @@ int snap_detach_action(struct snap_action *action)
 int snap_mmio_write32(struct snap_card *_card,
 		      uint64_t offset, uint32_t data)
 {
-	return df->mmio_write32(_card, offset, data);
+	int rc;
+	rc = df->mmio_write32(_card, offset, data);
+	return rc;
 }
 
 int snap_mmio_read32(struct snap_card *_card,
 		     uint64_t offset, uint32_t *data)
 {
-	return df->mmio_read32(_card, offset, data);
+	int rc;
+	rc = df->mmio_read32(_card, offset, data);
+	return rc;
 }
 
 /*
@@ -675,35 +679,45 @@ int snap_mmio_read32(struct snap_card *_card,
 int snap_action_write32(struct snap_action *action,
 		      uint64_t offset, uint32_t data)
 {
+	int rc;
 	struct snap_card *card = (struct snap_card *)action;
 
 	if (card->action_base == 0) /* must be attached to make this work */
 		return SNAP_EATTACH;
 
-	return df->mmio_write32(card, card->action_base + offset, data);
+	rc = df->mmio_write32(card, card->action_base + offset, data);
+	return rc;
 }
 
 int snap_action_read32(struct snap_action *action,
 		     uint64_t offset, uint32_t *data)
 {
+	int rc;
 	struct snap_card *card = (struct snap_card *)action;
 
 	if (card->action_base == 0) /* must be attached to make this work */
 		return SNAP_EATTACH;
 
-	return df->mmio_read32(card, card->action_base + offset, data);
+	rc = df->mmio_read32(card, card->action_base + offset, data);
+	return rc;
 }
 
 int snap_mmio_write64(struct snap_card *_card,
 			uint64_t offset, uint64_t data)
 {
-	return df->mmio_write64(_card, offset, data);
+	int rc;
+
+	rc = df->mmio_write64(_card, offset, data);
+	return rc;
 }
 
 int snap_mmio_read64(struct snap_card *_card,
 		       uint64_t offset, uint64_t *data)
 {
-	return df->mmio_read64(_card, offset, data);
+	int rc;
+
+	rc = df->mmio_read64(_card, offset, data);
+	return rc;
 }
 
 

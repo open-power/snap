@@ -754,15 +754,24 @@ static inline void dev_set_status(struct cblk_dev *c,
 	c->status = status;
 }
 
-/* Action or Kernel Write and Read are 32 bit MMIO */
+/*
+ * Action Write and Read are 32 bit MMIO
+ *
+ * Note:
+ *   Adding pthread_setcancelstate() since the simulation version of
+ *   libcxl is not really thead safe and keeps locks when interrupted
+ *   with pthread_cancel(). That can lead to deadlocks. Marking the
+ *   critical section as non-cancelable prevents this.
+ */
 static int __cblk_write(struct cblk_dev *c, uint32_t addr, uint32_t data)
 {
-	int rc;
+	int rc, oldstate;
 
+	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
 	rc = snap_mmio_write32(c->card, (uint64_t)addr, data);
 	if (0 != rc)
 		fprintf(stderr, "err: Write MMIO 32 Err %d\n", rc);
-
+	pthread_setcancelstate(oldstate, NULL);
 	return rc;
 }
 
@@ -770,7 +779,9 @@ static int __cblk_write(struct cblk_dev *c, uint32_t addr, uint32_t data)
 /* Action or Kernel Write and Read are 32 bit MMIO */
 static int __cblk_read(struct cblk_dev *c, uint32_t addr, uint32_t *data)
 {
-	int rc;
+	int rc, oldstate;
+
+	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
 
 #ifdef CONFIG_MMIO32_NOHWSYNC
 	rc = snap_mmio_read32_nohwsync(c->card, (uint64_t)addr, data);
@@ -780,6 +791,7 @@ static int __cblk_read(struct cblk_dev *c, uint32_t addr, uint32_t *data)
 	if (0 != rc)
 		fprintf(stderr, "err: Read MMIO 32 Err %d\n", rc);
 
+	pthread_setcancelstate(oldstate, NULL);
 	return rc;
 }
 
