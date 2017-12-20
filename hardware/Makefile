@@ -376,10 +376,10 @@ pslse: prepare_logs
 	@echo -e "[COMPILE PSLSE ......] start `date +"%T %a %b %d %Y"`"
 	version=`git describe --tags`; \
 	branch=`git branch`; \
-	if [ $(FPGACARD) == "ADKU3" ] && [ $(version) != "v3.1" ];then echo "WARNING: PSLSE version=$(version) should be v3.1";fi; \
-	if [ $(FPGACARD) == "N250S" ] && [ $(version) != "v3.1" ];then echo "WARNING: PSLSE version=$(version) should be v3.1";fi; \
-	if [ $(FPGACARD) == "S121B" ] && [ $(version) != "v3.1" ];then echo "WARNING: PSLSE version=$(version) should be v3.1";fi; \
-	if [ $(FPGACARD) == "N250SP" ] && [ $(branch) != "* capi2" ];then echo "WARNING: PSLSE branch=$(branch) should be capi2";fi
+	if [ "$(FPGACARD)" == "ADKU3" ] && [ "$(version)" != "v3.1" ];then echo "WARNING: PSLSE version=$(version) should be v3.1";fi; \
+	if [ "$(FPGACARD)" == "N250S" ] && [ "$(version)" != "v3.1" ];then echo "WARNING: PSLSE version=$(version) should be v3.1";fi; \
+	if [ "$(FPGACARD)" == "S121B" ] && [ "$(version)" != "v3.1" ];then echo "WARNING: PSLSE version=$(version) should be v3.1";fi; \
+	if [ "$(FPGACARD)" == "N250SP" ] && [ "$(branch)" != "\* capi2" ];then echo "WARNING: PSLSE branch=$(branch) should be capi2";fi
 	@$(MAKE) -C $(PSLSE_ROOT)/afu_driver/src > $(LOGS_DIR)/compile_pslse.log 2>&1; \
 	if [ $$? -ne 0 ]; then \
 		echo -e "                        Error: please look into $(LOGS_DIR)/compile_pslse.log"; exit -1; \
