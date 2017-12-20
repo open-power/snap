@@ -27,12 +27,17 @@ The SNAP framework's simulation depends on the PSL simulation environment (PSLSE
 
 You may clone `PSLSE` from github [https://github.com/ibm-capi/pslse](https://github.com/ibm-capi/pslse).
 
+:warning: Currently (as of Dec 2017) the following PSLSE GIT branches are necessary:
+* v3.1    (an older but stable master version) for POWER8 cards (ADKU3, N250S, S121B)
+* capi2   (a seperate side branch with more features) for POWER9 cards (N250S+)
+
+The plan is to merge both functionalities to master in 1Q2018
+
 In order to enable SNAP's build and simulation process to make use of `PSLSE` the variable `PSLSE_ROOT` (defined in `${SNAP_ROOT}/snap_env.sh`) needs to point to the directory containing the github pslse clone.
 ```
  export PSLSE_ROOT=                                  # path for the PSL simulation environment
  export PSL_DCP=                                     # path to the PSL checkpoint fitting your target card
 ```
-
 ## Cadence irun
 * model resides in              $SNAP_ROOT/hardware/sim/ies/ies
 * output generated in           $SNAP_ROOT/hardware/sim/ies/<yyyymmdd_hhmmss>
