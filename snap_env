@@ -174,9 +174,14 @@ while [ -z "$SETUP_DONE" ]; do
   else
     SNAP_ROOT=$snapdir
     eval ACTION_ROOT=$AR
-    if [ ! -d "$ACTION_ROOT" ] && ( ( [ -z `echo "x$ACTION_ROOT" | grep -i /HLS` ] && [ "${HLS_SUPPORT^^}" != "TRUE" ] ) || [ `basename "x$ACTION_ROOT"` != "vhdl" ] ); then
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Please make sure that ACTION_ROOT points to an existing directory."
-    fi
+    # Note: CLOUD_USER_FLOW is defined via snap_config
+    if [ "$CLOUD_USER_FLOW" == "TRUE" ]; then
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Cloud user flow is skipping ACTION_ROOT check"
+    else
+      if [ ! -d "$ACTION_ROOT" ] && ( ( [ -z `echo "x$ACTION_ROOT" | grep -i /HLS` ] && [ "${HLS_SUPPORT^^}" != "TRUE" ] ) || [ `basename "x$ACTION_ROOT"` != "vhdl" ] ); then
+        SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Please make sure that ACTION_ROOT points to an existing directory."
+      fi
+    fi  
   fi
 
 
