@@ -118,7 +118,7 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 
 ifeq ($(PLATFORM),x86_64)
 
-.PHONY: all snap_config check_snap_settings check_psl_dcp check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config image cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
+.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config image cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
 
 all: model image
 
@@ -171,22 +171,6 @@ check_snap_settings:
 	fi
 	@echo "                        =============================="
 
-check_psl_dcp:
-ifeq ($(CLOUD_USER_FLOW),TRUE)
-	echo "check_psl_dcp disabled for cloud user flow"
-else
-	@if [ -e "$(PSL_DCP)" ]; then \
-		export PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl $(PSL_DCP)); \
-		if [ "$$PSL_DCP_TYPE" != "$(FPGACARD)" ]; then \
-			echo "Error: PSL_DCP=$(PSL_DCP) is not pointing to a design checkpoint of card type FPGACARD=$(FPGACARD)"; \
-			exit -1; \
-		fi \
-	else \
-		echo "Error: PSL_DCP=$(PSL_DCP) is not pointing to a file"; \
-		exit -1; \
-	fi
-endif
-
 check_nvme:
 	@if [ $(SIMULATOR) != "nosim" ] && [ $(NVME_USED) = "TRUE" ]; then \
 		if [ $(SIMULATOR) != "irun" ]; then  \
@@ -210,7 +194,7 @@ check_simulator:
 prepare_logs:
 	@mkdir -p $(LOGS_DIR);
 
-prepare_project: check_snap_settings check_psl_dcp prepare_logs
+prepare_project: check_snap_settings prepare_logs
 	@echo -e "[PREPARE PROJECT.....] start `date +"%T %a %b %d %Y"`";
 	@mkdir -p $(BUILD_DIR);
 	@mkdir -p $(BUILD_DIR)/Reports;

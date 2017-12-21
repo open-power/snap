@@ -99,7 +99,11 @@ while [ -z "$SETUP_DONE" ]; do
       # checking card type for PSL design checkpoint
       PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $PSL_DCP`
       if [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
-        SETUP_WARNING="$SETUP_WARNING\n### WARNING ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD"
+        if [[ "$PSL_DCP_TYPE" == *"OUTDATED"* ]]; then
+          SETUP_WARNING="$SETUP_WARNING\n### WARNING ### PSL_DCP for $FPGACARD is pointing to an outdated design checkpoint"
+        else 
+          SETUP_WARNING="$SETUP_WARNING\n### WARNING ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD"
+        fi
       fi
     elif [ -z "$PSL_DCP" ]; then
       SETUP_EMPTY="$SETUP_EMPTY\n  PSL_DCP"
