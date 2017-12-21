@@ -224,51 +224,45 @@ END action_nvme_example;
 
 ARCHITECTURE action_nvme_example OF action_nvme_example IS
 
-  CONSTANT WR_BUFFER_SIZE : INTEGER := 16;
+  CONSTANT REQ_BUFFER_SIZE : INTEGER := 16;
+  CONSTANT MAX_SLOT        : INTEGER := 15;
 
-  PROCEDURE INCR (
-    SIGNAL count : INOUT INTEGER RANGE 0 TO WR_BUFFER_SIZE -1
-  ) IS
-  BEGIN
-    IF count = WR_BUFFER_SIZE -1  THEN
-      count <= 0;
-    ELSE
-      count <= count + 1;
-    END IF;
-  END INCR;
-
-  TYPE FSM_APP_t    IS (IDLE,  WAIT_FOR_MEMCOPY_DONE);
+  TYPE FSM_APP_t    IS (IDLE, WAIT_FOR_MEMCOPY_DONE, ILLEGAL_OPERATION);
   TYPE FSM_DMA_WR_t IS (IDLE, DMA_WR_REQ);
   TYPE FSM_DMA_RD_t IS (IDLE, DMA_RD_REQ, DMA_RD_REQ_2);
-  TYPE DMA_WR_ADDR_BUFFER_t IS ARRAY (0 TO WR_BUFFER_SIZE -1) OF STD_LOGIC_VECTOR(63 DOWNTO 0);
-  TYPE LBA_RD_ADDR_BUFFER_t IS ARRAY (0 TO WR_BUFFER_SIZE -1) OF STD_LOGIC_VECTOR(63 DOWNTO 0);
-  TYPE BLOCK_RD_COUNT_t     IS ARRAY (0 TO WR_BUFFER_SIZE -1) OF STD_LOGIC_VECTOR(13 DOWNTO 0);
-  TYPE ID_BUFFER_t          IS ARRAY (0 TO WR_BUFFER_SIZE -1) OF STD_LOGIC_VECTOR( 4 DOWNTO 0);
-  TYPE ID_BUFFER2_t         IS ARRAY (0 TO 1)                 OF STD_LOGIC_VECTOR( 3 DOWNTO 0);
 
-  TYPE  ID_COMPLETION_FIFO_t IS RECORD
-    id_buf     :  ID_BUFFER_t;
-    id_wr_ptr  :  INTEGER RANGE 0 TO WR_BUFFER_SIZE -1;
-    id_rd_ptr  :  INTEGER RANGE 0 TO WR_BUFFER_SIZE -1;
-  END RECORD ID_COMPLETION_FIFO_t;
+  SUBTYPE REQ_BUFFER_RANGE_t  IS INTEGER RANGE 0 TO REQ_BUFFER_SIZE - 1;
+  SUBTYPE SLOT_RANGE_t        IS INTEGER RANGE 0 TO 15;
 
-  TYPE  DMA_WR_CMD_BUFFER_t IS RECORD
-    wr_ptr          : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1 ;
-    process_ptr     : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1 ;
-    done_ptr        : INTEGER RANGE 0 TO 1;
-    done_ptr_active : INTEGER RANGE 0 TO 1;
-    done_count      : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1 ;
-    id_buf          : ID_BUFFER2_t;
-    dest_addr_buf   : DMA_WR_ADDR_BUFFER_t;
-    src_lba_buf     : LBA_RD_ADDR_BUFFER_t;
-    size_vector     : BLOCK_RD_COUNT_t;
-    ready           : STD_LOGIC_VECTOR(WR_BUFFER_SIZE -1  DOWNTO 0);
-  END RECORD DMA_WR_CMD_BUFFER_t ;
+  TYPE ADDR_BUFFER_t  IS ARRAY (0 TO REQ_BUFFER_SIZE - 1) OF STD_LOGIC_VECTOR(63 DOWNTO 0);
+  TYPE SIZE_BUFFER_t  IS ARRAY (0 TO REQ_BUFFER_SIZE - 1) OF STD_LOGIC_VECTOR(13 DOWNTO 0);
+  TYPE SLOT_BUFFER_t  IS ARRAY (0 TO REQ_BUFFER_SIZE - 1) OF STD_LOGIC_VECTOR( 3 DOWNTO 0);
+  TYPE DONE_BUFFER_t  IS ARRAY (0 TO REQ_BUFFER_SIZE - 1) OF REQ_BUFFER_RANGE_t;
+  TYPE ID_BUFFER_t    IS ARRAY (0 TO MAX_SLOT) OF REQ_BUFFER_RANGE_t;
+
+  TYPE  COMPLETION_FIFO_t IS RECORD
+    wr_ptr       : REQ_BUFFER_RANGE_t;
+    rd_ptr       : REQ_BUFFER_RANGE_t;
+    dma_done     : DONE_BUFFER_t;
+    dma_done_ptr : REQ_BUFFER_RANGE_t;
+  END RECORD COMPLETION_FIFO_t;
+
+  TYPE  REQ_BUFFER_t IS RECORD
+    slot            : SLOT_BUFFER_t;
+    wr_ptr          : REQ_BUFFER_RANGE_t;
+    rd_ptr          : REQ_BUFFER_RANGE_t;
+    id_buf          : ID_BUFFER_t;
+    dest_addr       : ADDR_BUFFER_t;
+    src_addr        : ADDR_BUFFER_t;
+    size            : SIZE_BUFFER_t;
+    process_ptr     : REQ_BUFFER_RANGE_t;
+    nvme_done       : STD_LOGIC_VECTOR(REQ_BUFFER_SIZE -1  DOWNTO 0);
+  END RECORD REQ_BUFFER_t ;
 
   SIGNAL fsm_app_q              : fsm_app_t;
   SIGNAL fsm_dma_wr             : FSM_DMA_WR_t;
   SIGNAL fsm_dma_rd             : FSM_DMA_RD_t;
-  SIGNAL dma_wr_cmd_buffer      : DMA_WR_CMD_BUFFER_t;
+  SIGNAL req_buffer             : REQ_BUFFER_t;
 
   SIGNAL reg_0x20               : STD_LOGIC_VECTOR(31 DOWNTO 0);
   SIGNAL reg_0x30               : STD_LOGIC_VECTOR(31 DOWNTO 0);
@@ -298,15 +292,13 @@ ARCHITECTURE action_nvme_example OF action_nvme_example IS
   SIGNAL nvme_rd_complete       : STD_LOGIC_VECTOR(1 DOWNTO 0);
   SIGNAL mmio_rd_enqueue        : BOOLEAN;
   SIGNAL mmio_wr_enqueue        : BOOLEAN;
-  SIGNAL mmio_rd_enqueue_req    : BOOLEAN;
   SIGNAL host_mem_awvalid       : STD_LOGIC;
   SIGNAL host_mem_arvalid       : STD_LOGIC;
   SIGNAL host_mem_awaddr        : STD_LOGIC_VECTOR(63 DOWNTO 0);
   SIGNAL card_mem_arvalid       : STD_LOGIC;
   SIGNAL card_mem_awvalid       : STD_LOGIC;
   SIGNAL card_mem_araddr        : STD_LOGIC_VECTOR(31 DOWNTO 0);
-  SIGNAL transfer_done          : STD_LOGIC;
-  SIGNAL id_completion_fifo     : ID_COMPLETION_FIFO_T;
+  SIGNAL completion_fifo        : COMPLETION_FIFO_T;
   SIGNAL wr_lba_size            : STD_LOGIC;
   SIGNAL wr_lba_addr            : STD_LOGIC_VECTOR(63 DOWNTO 0);
   SIGNAL host_mem_addr_8k       : STD_LOGIC_VECTOR(63 DOWNTO 0);
@@ -318,6 +310,17 @@ ARCHITECTURE action_nvme_example OF action_nvme_example IS
   SIGNAL dma_wr_count           : STD_LOGIC_VECTOR(13 DOWNTO 0);
   SIGNAL reg_0x4c               : STD_LOGIC_VECTOR(4 DOWNTO 0);
   SIGNAL reg_0x4c_rd_strobe     : STD_LOGIC;
+
+  PROCEDURE INCR (
+    SIGNAL count : INOUT REQ_BUFFER_RANGE_t
+  ) IS
+  BEGIN
+    IF count = (REQ_BUFFER_SIZE - 1) THEN
+      count <= 0;
+    ELSE
+      count <= count + 1;
+    END IF;
+  END INCR;
 
   FUNCTION clogb2 (bit_depth : INTEGER) RETURN INTEGER IS
     VARIABLE depth  : INTEGER := bit_depth;
@@ -504,44 +507,48 @@ BEGIN
   PROCESS(action_clk ) IS
   BEGIN
     IF (rising_edge (action_clk)) THEN
-          mmio_rd_enqueue       <= false;
-          mmio_wr_enqueue       <= false;
+      mmio_rd_enqueue  <= false;
+      mmio_wr_enqueue  <= false;
+
+      app_done         <= '0';
+      app_idle         <= '0';
+      app_ready        <= '1';
+      CASE fsm_app_q IS
+        WHEN IDLE  =>
+          app_idle <= '1';
+          IF app_start = '1' THEN
+            CASE reg_0x30(3 DOWNTO 0) IS
+               WHEN x"3" =>
+                 -- memcopy host to NVMe
+                 fsm_app_q        <= WAIT_FOR_MEMCOPY_DONE;
+                 mmio_wr_enqueue  <= true;
+
+               WHEN x"4" =>
+                 -- memcopy NVMe to host
+                 fsm_app_q        <= WAIT_FOR_MEMCOPY_DONE;
+                 mmio_rd_enqueue  <= true;
+
+               WHEN OTHERS =>
+                 fsm_app_q  <= ILLEGAL_OPERATION;
+            END CASE;
+          END IF ;
+
+        WHEN WAIT_FOR_MEMCOPY_DONE =>
+          IF app_start = '0' THEN
+            fsm_app_q  <= IDLE;
+            app_done   <= '1';
+          END IF;
+
+        WHEN ILLEGAL_OPERATION =>
+          fsm_app_q <= IDLE;
+          app_done  <= '1';
+
+        WHEN OTHERS => NULL;
+      END CASE;
       IF ( action_rst_n = '0' ) THEN
         fsm_app_q         <= IDLE;
         app_ready         <= '0';
         app_idle          <= '0';
-      ELSE
-        app_done          <= '0';
-        app_idle          <= '0';
-        app_ready         <= '1';
-        CASE fsm_app_q IS
-          WHEN IDLE  =>
-            app_idle <= '1';
-            IF app_start = '1' THEN
-              CASE reg_0x30(3 DOWNTO 0) IS
-                 WHEN x"3" =>
-                   -- memcopy host to NVMe
-                   fsm_app_q        <= WAIT_FOR_MEMCOPY_DONE;
-                   mmio_wr_enqueue  <= true;
-
-                 WHEN x"4" =>
-                   -- memcopy NVMe to host
-                   fsm_app_q  <= WAIT_FOR_MEMCOPY_DONE;
-                   mmio_rd_enqueue      <= true;
-
-                 WHEN OTHERS =>
-                   app_done   <= '1';
-              END CASE;
-            END IF ;
-
-          WHEN WAIT_FOR_MEMCOPY_DONE =>
-            IF app_start = '0' THEN
-              fsm_app_q  <= IDLE;
-              app_done   <= '1';
-            END IF;
-
-          WHEN OTHERS => NULL;
-        END CASE;
       END IF;
     END IF;
   END PROCESS;
@@ -563,50 +570,50 @@ BEGIN
         card_mem_awvalid <= '0';
       END IF;
 
+      CASE fsm_dma_rd IS
+        WHEN IDLE =>
+          IF mmio_wr_enqueue THEN
+            card_mem_awvalid  <= '1';
+            host_mem_arvalid  <= '1';
+            fsm_dma_rd        <= DMA_RD_REQ;
+            wr_lba_size       <= reg_0x44(13);  -- put 8k bit in size flag
+            wr_lba_addr       <= reg_0x40 & reg_0x3c;
+          END IF;
+          axi_host_mem_araddr   <=  reg_0x38 & reg_0x34;
+          host_mem_addr_8k      <= (reg_0x38 & reg_0x34) +  x"1000";
+          axi_card_mem0_awaddr  <= (OTHERS => '0');
+
+        WHEN DMA_RD_REQ =>
+          IF axi_card_mem0_bvalid = '1' THEN
+            IF  wr_lba_size = '0' THEN
+              -- IF the data is written into SDRAM,
+              -- we can initiate the NVMe write transfer
+              nvme_wr_enqueue  <= true;
+              fsm_dma_rd       <= IDLE;
+            ELSE
+              -- 2nd 4 k request
+              card_mem_awvalid     <= '1';
+              host_mem_arvalid     <= '1';
+              axi_host_mem_araddr  <= host_mem_addr_8k;
+              axi_card_mem0_awaddr <= x"0000_1000";
+              fsm_dma_rd           <= DMA_RD_REQ_2;
+            END IF;
+          END IF;
+
+        WHEN DMA_RD_REQ_2 =>
+          IF axi_card_mem0_bvalid = '1' THEN
+            -- initiate the NVMe data transfer
+            nvme_wr_enqueue  <= true;
+            fsm_dma_rd       <= IDLE;
+          END IF;
+
+        WHEN OTHERS => null;
+      END CASE;
+
       IF action_rst_n = '0' THEN
         card_mem_awvalid <= '0';
         host_mem_arvalid <= '0';
         fsm_dma_rd       <= IDLE;
-      ELSE
-        CASE fsm_dma_rd IS
-          WHEN IDLE =>
-            IF mmio_wr_enqueue THEN
-              card_mem_awvalid  <= '1';
-              host_mem_arvalid  <= '1';
-              fsm_dma_rd        <= DMA_RD_REQ;
-            END IF;
-            axi_host_mem_araddr   <=  reg_0x38 & reg_0x34;
-            host_mem_addr_8k      <= (reg_0x38 & reg_0x34) +  x"1000";
-            axi_card_mem0_awaddr  <= (OTHERS => '0');
-            wr_lba_size           <= reg_0x44(13);  -- put 8k bit in size flag
-            wr_lba_addr           <= reg_0x40 & reg_0x3c;
-
-          WHEN DMA_RD_REQ =>
-            IF axi_card_mem0_bvalid = '1' THEN
-              IF  wr_lba_size = '0' THEN
-                -- IF the data is written into SDRAM,
-                -- we can initiate the NVMe write transfer
-                nvme_wr_enqueue  <= true;
-                fsm_dma_rd       <= IDLE;
-              ELSE
-                -- 2nd 4 k request
-                card_mem_awvalid     <= '1';
-                host_mem_arvalid     <= '1';
-                axi_host_mem_araddr  <= host_mem_addr_8k;
-                axi_card_mem0_awaddr <= x"0000_1000";
-                fsm_dma_rd           <= DMA_RD_REQ_2;
-              END IF;
-            END IF;
-
-          WHEN DMA_RD_REQ_2 =>
-            IF axi_card_mem0_bvalid = '1' THEN
-              -- initiate the NVMe data transfer
-              nvme_wr_enqueue  <= true;
-              fsm_dma_rd       <= IDLE;
-            END IF;
-
-          WHEN OTHERS => null;
-        END CASE;
       END IF;                        -- end reset
     END IF;                          -- end clk
   END PROCESS;
@@ -614,135 +621,116 @@ BEGIN
 
   -- handle NVMe requests
   PROCESS(action_clk ) is
-    ALIAS    wr_ptr          : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1 IS dma_wr_cmd_buffer.wr_ptr;
-    ALIAS    done_ptr_active : INTEGER RANGE 0 TO 1 IS dma_wr_cmd_buffer.done_ptr_active;
-    ALIAS    rd_ptr          : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1 IS id_completion_fifo.id_rd_ptr;
-    VARIABLE temp5           : STD_LOGIC_VECTOR( 4 DOWNTO 0);
-    VARIABLE lba_count       : STD_LOGIC_VECTOR(16 DOWNTO 0);
+    ALIAS    req_wptr        : REQ_BUFFER_RANGE_t IS req_buffer.wr_ptr;
+    ALIAS    req_rptr        : REQ_BUFFER_RANGE_t IS req_buffer.rd_ptr;
+    ALIAS    dma_done        : DONE_BUFFER_t      IS completion_fifo.dma_done;
+    ALIAS    cpl_wptr        : REQ_BUFFER_RANGE_t IS completion_fifo.wr_ptr;
+    ALIAS    cpl_rptr        : REQ_BUFFER_RANGE_t IS completion_fifo.rd_ptr;
     VARIABLE lba_count_dec   : STD_LOGIC_VECTOR(16 DOWNTO 0);
-    VARIABLE int_ptr         : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1;
-    VARIABLE dma_ptr         : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1;
-    
+    VARIABLE slot_id         : SLOT_RANGE_t;
+    VARIABLE size            : STD_LOGIC_VECTOR(13 DOWNTO 0);
+
   BEGIN
     IF (rising_edge (action_clk)) THEN
       nvme_cmd_valid      <= '0';
-      transfer_done       <= '0';
-      IF action_rst_n = '0' THEN
-        done_ptr_active              <= 0;
-        wr_ptr                       <= 4;
-        id_completion_fifo.id_wr_ptr <= 0;
-        mmio_rd_enqueue_req          <= false;
-        id_completion_fifo.id_rd_ptr <= 0;
-        nvme_wr_done_into_fifo       <= false;
-        FOR i IN 0 TO 15 LOOP
-          id_completion_fifo.id_buf(i)<= (OTHERS => '0');
-        END LOOP;  -- i
-      ELSE
-        -- get the id
-        int_ptr := to_integer(unsigned (reg_0x30(11 DOWNTO 8)));
-        IF mmio_rd_enqueue THEN
-          mmio_rd_enqueue_req                      <= true;
-          dma_wr_cmd_buffer.src_lba_buf(int_ptr)   <= reg_0x38 & reg_0x34;
-          dma_wr_cmd_buffer.dest_addr_buf(int_ptr) <= reg_0x40 & reg_0x3c;
-          -- save size as number of 4k blocks to transfer
-          dma_wr_cmd_buffer.size_vector(int_ptr)   <= reg_0x44(13 + 12 downto 12);
-          wr_ptr                                   <= int_ptr;
-        END IF;
 
-        IF nvme_wr_enqueue THEN
-          nvme_wr_enqueue_req   <= true;
-        END IF;
+      -- get the id
+      IF mmio_rd_enqueue THEN
+        slot_id := to_integer(unsigned(reg_0x30(11 DOWNTO 8)));
+        req_buffer.slot(req_wptr)       <= reg_0x30(11 DOWNTO 8);
+        req_buffer.src_addr(req_wptr)   <= reg_0x38 & reg_0x34;
+        req_buffer.dest_addr(req_wptr)  <= reg_0x40 & reg_0x3c;
+        -- save size as number of 4k blocks to transfer
+        req_buffer.size(req_wptr)       <= reg_0x44(13 + 12 downto 12);
+        req_buffer.id_buf(slot_id)      <= req_wptr;
+        INCR(req_wptr);
+      END IF;
 
-        IF nvme_busy = '0' THEN
-          -- handle nvme rd requests triggered by mmio
-          IF mmio_rd_enqueue_req THEN
-            mmio_rd_enqueue_req   <= false;
-            nvme_cmd_valid        <= '1';
-            nvme_cmd              <= STD_LOGIC_VECTOR(to_unsigned(wr_ptr,4)) &  x"10";
-            nvme_mem_addr         <= x"0000_0002_0000_0000" + (x"20000" * STD_LOGIC_VECTOR(to_unsigned (wr_ptr,10)));
-            nvme_lba_addr         <= dma_wr_cmd_buffer.src_lba_buf(wr_ptr);
-            lba_count             := dma_wr_cmd_buffer.size_vector(wr_ptr) & "000";
-            lba_count_dec         := lba_count - 1;
-            nvme_lba_count        <= x"0000" & lba_count_dec(15 downto 0);
-            INCR(wr_ptr);
-          -- handle NVMe write triggered by completion of DMA read
-          ELSIF nvme_wr_enqueue_req THEN
-            nvme_wr_enqueue_req <= false;
-            nvme_cmd_valid      <= '1';
-            nvme_cmd            <= x"011";
-            nvme_mem_addr       <= x"0000_0002_0000_0000";
-            nvme_lba_addr       <= wr_lba_addr;
-            IF wr_lba_size = '0' THEN
-               nvme_lba_count <= x"0000_0007";
-            ELSE
-               nvme_lba_count <= x"0000_000f";
-            END IF;
-          END IF;
-        END IF;
-        -- get the id of the dma in progess
-        dma_ptr := to_integer(unsigned (dma_wr_cmd_buffer.id_buf(done_ptr_active)));
-        IF axi_host_mem_bvalid = '1' THEN
-          -- when dma to host has finished
-          IF dma_wr_cmd_buffer.size_vector(dma_ptr) = "00" & x"0001" THEN
-            -- we are done with this id
-            -- put the id in the completion queue
-            id_completion_fifo.id_buf(id_completion_fifo.id_wr_ptr)<= '1' & dma_wr_cmd_buffer.id_buf(done_ptr_active);
-            -- currently not used
-            INCR(dma_wr_cmd_buffer.done_count);
-            -- point to the next entry in the queue
-            INCR(id_completion_fifo.id_wr_ptr);
-            -- the done_ptr_active follows the done_ptr
-            IF done_ptr_active = 0 THEN
-              done_ptr_active <= 1;
-            ELSE
-              done_ptr_active <= 0;
-            END IF;
-            transfer_done   <= '1';
-          else
-             dma_wr_cmd_buffer.size_vector(dma_ptr) <= dma_wr_cmd_buffer.size_vector(dma_ptr) - 1; 
-          END IF;
-          
-        END IF;
+      IF nvme_wr_enqueue THEN
+        nvme_wr_enqueue_req   <= true;
+      END IF;
 
-        -- catch the NVMe write pulse
-        IF nvme_wr_done THEN
-          nvme_wr_done_into_fifo <= true;
-        END IF;
-
-        --if we get a mmio read on the completion fifo
-        -- return a pending write completion or
-        -- return oldest entry of the NVMe read completion queue
-        -- clear the entry and increment read pointer
-        IF reg_0x4c_rd_strobe = '1' THEN
-          IF nvme_wr_done_into_fifo THEN
-            nvme_wr_done_into_fifo <= false;
+      IF (nvme_busy OR nvme_cmd_valid) = '0' THEN
+        -- handle nvme rd requests triggered by mmio
+        IF req_wptr /= req_rptr THEN
+          nvme_cmd_valid      <= '1';
+          nvme_cmd            <= req_buffer.slot(req_rptr) &  x"10";
+          nvme_mem_addr       <= x"0000_0002_00" & "000" & req_buffer.slot(req_rptr) & "0" & x"0000";
+          nvme_lba_addr       <= req_buffer.src_addr(req_rptr);
+          lba_count_dec       := (req_buffer.size(req_rptr) & "000") - 1;
+          nvme_lba_count      <= x"0000" & lba_count_dec(15 downto 0);
+          INCR(req_rptr);
+        -- handle NVMe write triggered by completion of DMA read
+        ELSIF nvme_wr_enqueue_req THEN
+          nvme_wr_enqueue_req <= false;
+          nvme_cmd_valid      <= '1';
+          nvme_cmd            <= x"011";
+          nvme_mem_addr       <= x"0000_0002_0000_0000";
+          nvme_lba_addr       <= wr_lba_addr;
+          IF wr_lba_size = '0' THEN
+             nvme_lba_count <= x"0000_0007";
           ELSE
-            temp5 := id_completion_fifo.id_buf(rd_ptr);
-            IF temp5(4) = '1' THEN
-              INCR(rd_ptr);
-              id_completion_fifo.id_buf(rd_ptr) <= (OTHERS => '0');
-            END IF;
+             nvme_lba_count <= x"0000_000f";
           END IF;
         END IF;
+      END IF;
 
-       END IF;                         -- end reset
+      size := req_buffer.size(dma_done(cpl_wptr));
+      IF axi_host_mem_bvalid = '1' THEN
+        -- when dma to host has finished
+        IF size = "00" & x"0001" THEN
+          -- we are done with this id
+          -- point to the next entry in the queue
+          INCR(cpl_wptr);
+        END IF;
+        req_buffer.size(dma_done(cpl_wptr)) <= size - 1;
+      END IF;
+
+      -- catch the NVMe write pulse
+      IF nvme_wr_done THEN
+        nvme_wr_done_into_fifo <= true;
+      END IF;
+
+      --if we get a mmio read on the completion fifo
+      -- return a pending write completion or
+      -- return oldest entry of the NVMe read completion queue
+      -- and increment read pointer
+      IF reg_0x4c_rd_strobe = '1' THEN
+        IF nvme_wr_done_into_fifo THEN
+          nvme_wr_done_into_fifo <= false;
+        ELSIF cpl_rptr /= cpl_wptr THEN
+          INCR(cpl_rptr);
+        END IF;
+      END IF;
+
+      IF action_rst_n = '0' THEN
+        req_wptr                     <= 0;
+        req_rptr                     <= 0;
+        cpl_wptr                     <= 0;
+        cpl_rptr                     <= 0;
+        nvme_wr_enqueue_req          <= false;
+        nvme_wr_done_into_fifo       <= false;
+      END IF;                         -- end reset
     END IF;                           -- end clk
   END PROCESS;
 
 
   -- mmio readback data of the completion queue
   read_data:
-  PROCESS(nvme_wr_done_into_fifo, id_completion_fifo.id_rd_ptr, id_completion_fifo.id_buf )
-    ALIAS    rd_ptr : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1 IS id_completion_fifo.id_rd_ptr;
-    VARIABLE temp5  : STD_LOGIC_VECTOR(4 DOWNTO 0);
+  PROCESS(nvme_wr_done_into_fifo, completion_fifo.wr_ptr, completion_fifo.rd_ptr )
+    ALIAS  cpl_rptr     : REQ_BUFFER_RANGE_t IS completion_fifo.rd_ptr;
+    ALIAS  cpl_wptr     : REQ_BUFFER_RANGE_t IS completion_fifo.wr_ptr;
+    ALIAS  dma_done     : DONE_BUFFER_t      IS completion_fifo.dma_done;
+    ALIAS  slot         : SLOT_BUFFER_t      IS req_buffer.slot;
   BEGIN
   -- IF a NVMe write has completed, put it always in front of the
   -- completion fifo
     IF nvme_wr_done_into_fifo THEN
-      reg_0x4c(4 DOWNTO 0)<= "10000";
+      reg_0x4c(4 DOWNTO 0) <= "10000";
+    ELSIF cpl_rptr /= cpl_wptr THEN
+      reg_0x4c(4 DOWNTO 0) <= "1" & slot(dma_done(cpl_rptr));
     ELSE
-      temp5                := id_completion_fifo.id_buf(rd_ptr);
-      reg_0x4c(4 DOWNTO 0) <= temp5;
+      reg_0x4c(4 DOWNTO 0) <= (OTHERS => '0');
     END IF;
   END PROCESS read_data;
 
@@ -754,10 +742,11 @@ BEGIN
   axi_card_mem0_araddr   <= card_mem_araddr;
 
   PROCESS(action_clk ) IS
-    VARIABLE ready_index    : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1 ;
-    VARIABLE process_index  : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1 ;
-    ALIAS    done_ptr       : INTEGER RANGE 0 TO                 1 IS dma_wr_cmd_buffer.done_ptr;
-    ALIAS    process_ptr    : INTEGER RANGE 0 TO WR_BUFFER_SIZE -1 IS dma_wr_cmd_buffer.process_ptr;
+    VARIABLE nvme_done_index : REQ_BUFFER_RANGE_t;
+    VARIABLE process_index   : REQ_BUFFER_RANGE_t;
+    ALIAS    process_ptr     : REQ_BUFFER_RANGE_t  IS req_buffer.process_ptr;
+    ALIAS    dma_done        : DONE_BUFFER_t       IS completion_fifo.dma_done;
+    ALIAS    dma_done_ptr    : REQ_BUFFER_RANGE_t  IS completion_fifo.dma_done_ptr;
   BEGIN
 
     IF (rising_edge (action_clk)) THEN
@@ -770,85 +759,75 @@ BEGIN
          card_mem_arvalid <= '0';
       END IF;
 
-      IF action_rst_n = '0' THEN
-        process_ptr       <= 0;
-        done_ptr          <= 0;
-        host_mem_awvalid  <= '0';
-        card_mem_arvalid  <= '0';
-        dma_wr_cmd_buffer.ready <= (OTHERS => '0');
-        fsm_dma_wr        <= IDLE;
-      ELSE
+      CASE fsm_dma_wr is
 
-        CASE fsm_dma_wr is
+        WHEN IDLE =>
+          -- search for a buffer which is ready to be transferred
+          -- currenct search process is not fair
+          FOR i IN 0 TO REQ_BUFFER_SIZE - 1 LOOP
+            IF req_buffer.nvme_done(i) = '1' THEN
+              process_index := i;
+            END IF;
+          END LOOP;  -- i
+          -- determine host and card memory address on buffer postion
+          host_mem_awaddr <= req_buffer.dest_addr(process_index);
+          card_mem_araddr <= x"00" & "000" & req_buffer.slot(process_index) & "0" & x"0000";
+          -- initiate SDRAM to host memory data transfer
 
-          WHEN IDLE =>
-            -- search for a buffer which is ready to be transferred
-            -- currenct search process is not fair
-            FOR i IN 0 TO WR_BUFFER_SIZE - 1 LOOP
-              IF dma_wr_cmd_buffer.ready(i) = '1' THEN
-                process_index := i;
-              END IF;
-            END LOOP;  -- i
+          IF or_reduce(req_buffer.nvme_done) = '1'  THEN
             -- save found position
-            process_ptr <= process_index;
-            -- determine host and card memory address on buffer postion
-            host_mem_awaddr      <= dma_wr_cmd_buffer.dest_addr_buf(process_index);
-            card_mem_araddr <= x"0000_0000" + (x"20000" * STD_LOGIC_VECTOR(to_unsigned(process_index,8)));
-            -- initiate SDRAM to host memory data transfer
-            
-            IF or_reduce(dma_wr_cmd_buffer.ready) = '1'  THEN
-              dma_wr_count       <= (dma_wr_cmd_buffer.size_VECTOR(process_index)) - '1';
-              host_mem_awvalid   <= '1';
-              card_mem_arvalid   <= '1';
-              fsm_dma_wr         <= DMA_WR_REQ;
-            END IF;
-
-          WHEN DMA_WR_REQ =>
-
-            IF  host_mem_awvalid   = '0' and card_mem_arvalid = '0' THEN
-              dma_wr_cmd_buffer.id_buf(done_ptr)   <= STD_LOGIC_VECTOR(to_unsigned(process_ptr,4));
-              IF or_reduce(dma_wr_count) = '1' THEN
---              IF or_reduce(dma_wr_cmd_buffer.size_VECTOR(process_ptr)) = '1' THEN
-                -- If we have further 4k blocks to transfer
-                dma_wr_count          <= dma_wr_count - '1';
-                host_mem_awaddr       <= host_mem_awaddr + x"1000";
-                card_mem_araddr       <= card_mem_araddr + x"1000";
-                host_mem_awvalid      <= '1';
-                card_mem_arvalid      <= '1';
-                fsm_dma_wr            <= DMA_WR_REQ;
-              ELSE
-                -- clear the ready bit
-                dma_wr_cmd_buffer.ready(process_ptr) <= '0';
-                -- put in action id in buffer
-                
-                IF done_ptr = 0 THEN
-                  done_ptr <= 1;
-                ELSE
-                  done_ptr <= 0;
-                END IF;
-                read_complete_int     <= true;
-                fsm_dma_wr            <= IDLE;
-              END IF;
-            END IF;
-
-          WHEN OTHERS => null;
-
-        END CASE;
-
-        -- handle completion of a NVMe request
-
-        nvme_wr_done <= false;
-        ready_index := to_integer(unsigned(nvme_complete(7 DOWNTO 4)));
-        IF nvme_complete(1 DOWNTO 0) /= "00" THEN
-          -- IF index = 0, a NVMe write has completed
-          IF ready_index = 0 THEN
-            nvme_wr_done <= true;
-          ELSE
-            -- NVMe read has completed
-            -- say that the data is ready to be sent to the host
-            dma_wr_cmd_buffer.ready(ready_index) <= '1';
+            process_ptr             <= process_index;
+            dma_done(dma_done_ptr)  <= process_index;
+            dma_wr_count            <= (req_buffer.size(process_index)) - '1';
+            host_mem_awvalid        <= '1';
+            card_mem_arvalid        <= '1';
+            fsm_dma_wr              <= DMA_WR_REQ;
+            INCR(dma_done_ptr);
           END IF;
+
+        WHEN DMA_WR_REQ =>
+
+          IF  host_mem_awvalid   = '0' and card_mem_arvalid = '0' THEN
+            IF or_reduce(dma_wr_count) = '1' THEN
+              dma_wr_count          <= dma_wr_count - '1';
+              host_mem_awaddr       <= host_mem_awaddr + x"1000";
+              card_mem_araddr       <= card_mem_araddr + x"1000";
+              host_mem_awvalid      <= '1';
+              card_mem_arvalid      <= '1';
+              fsm_dma_wr            <= DMA_WR_REQ;
+            ELSE
+              -- clear the nvme_done bit
+              req_buffer.nvme_done(process_ptr) <= '0';
+              read_complete_int                 <= true;
+              fsm_dma_wr                        <= IDLE;
+            END IF;
+          END IF;
+
+        WHEN OTHERS => null;
+
+      END CASE;
+
+      -- handle completion of a NVMe request
+
+      nvme_wr_done <= false;
+      nvme_done_index := to_integer(unsigned(nvme_complete(7 DOWNTO 4)));
+      IF nvme_complete(1 DOWNTO 0) /= "00" THEN
+        -- IF index = 0, a NVMe write has completed
+        IF nvme_done_index = 0 THEN
+          nvme_wr_done <= true;
+        ELSE
+          -- NVMe read has been completed
+          -- say that the data is ready to be sent to the host
+          req_buffer.nvme_done(req_buffer.id_buf(nvme_done_index)) <= '1';
         END IF;
+      END IF;
+
+      IF action_rst_n = '0' THEN
+        host_mem_awvalid      <= '0';
+        card_mem_arvalid      <= '0';
+        req_buffer.nvme_done  <= (OTHERS => '0');
+        dma_done_ptr          <= 0;
+        fsm_dma_wr            <= IDLE;
       END IF;                         -- end reset
     END IF;                           -- end clk
   END PROCESS;
@@ -885,18 +864,17 @@ BEGIN
   host_to_sdram: PROCESS(action_clk, card_mem_wvalid, axi_card_mem0_wready ) is
   BEGIN
     IF (rising_edge (action_clk)) THEN
+      IF axi_card_mem0_wready = '1' OR card_mem_wvalid = '0' THEN
+        card_mem_wvalid      <= axi_host_mem_rvalid;
+        axi_card_mem0_wdata  <= axi_host_mem_rdata;
+        axi_card_mem0_wlast  <= axi_host_mem_rlast;
+      END IF;
       IF action_rst_n = '0' THEN
         card_mem_wvalid      <= '0';
-      ELSE
-        IF axi_card_mem0_wready = '1' OR card_mem_wvalid = '0' THEN
-          card_mem_wvalid      <= axi_host_mem_rvalid ;
-          axi_card_mem0_wdata  <= axi_host_mem_rdata;
-          axi_card_mem0_wlast  <= axi_host_mem_rlast;
-        END IF;
       END IF;
     END IF;
     axi_host_mem_rready    <= '0';
-    IF card_mem_wvalid = '0'OR axi_card_mem0_wready = '1'  THEN
+    IF card_mem_wvalid = '0' OR axi_card_mem0_wready = '1' THEN
       axi_host_mem_rready  <= '1';
     END IF;
   END PROCESS;
@@ -914,15 +892,14 @@ BEGIN
   sdram_to_host: PROCESS(action_clk, host_mem_wvalid, axi_host_mem_wready ) IS
   BEGIN
     IF (rising_edge (action_clk)) THEN
+      IF axi_host_mem_wready = '1' OR host_mem_wvalid = '0' THEN
+        host_mem_wvalid      <= axi_card_mem0_rvalid ;
+        axi_host_mem_wdata   <= axi_card_mem0_rdata;
+        axi_host_mem_wlast   <= axi_card_mem0_rlast;
+        axi_card_mem0_rready <= '1';
+      END IF;
       IF (action_rst_n = '0') THEN
         host_mem_wvalid      <= '0';
-      ELSE
-        IF axi_host_mem_wready = '1' OR host_mem_wvalid = '0' THEN
-          host_mem_wvalid      <= axi_card_mem0_rvalid ;
-          axi_host_mem_wdata   <= axi_card_mem0_rdata;
-          axi_host_mem_wlast   <= axi_card_mem0_rlast;
-          axi_card_mem0_rready <= '1';
-        END IF;
       END IF;
     END IF;
     axi_card_mem0_rready  <= '0';
