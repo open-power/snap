@@ -88,8 +88,9 @@
       t0s=${r:7:1};t0l=${r:8:8};
       case $t0l in
         "10140000") a0="hdl_example"
-                    if (( dram > 0 ));then echo -e "write FPGA memory to prevent reading unwritten adr 0"
-                      step "snap_example_set -F -b0x0 -s0x100 -p0x5 -t50"
+                    if (( dram > 1 ));then  # assume BRAM, if DRAM=1MB
+                      echo -e "write FPGA memory to prevent reading unwritten adr 0"
+                      step "$ACTION_ROOT/sw/snap_example_set -F -b0x0 -s0x100 -p0x5 -t50"
                     fi;;
         "10140001") a0="hdl_nvme_example";;
         "10141000") a0="hls_memcopy";;
@@ -166,7 +167,6 @@
       done
       done
       done
-      step "snap_example -a2 -B${rnd20} -t200"
       if [[ "$DDR3_USED" == "TRUE" || "$DDR4_USED" == "TRUE" || "$BRAM_USED" == "TRUE" || "$SDRAM_USED" == "TRUE" ]]; then echo -e "$del\ntesting DDR"
         for num4k in 0 1 $rnd20; do to=$((num4k*400+400))
         for num64 in 0 1 $rnd32; do                # 1..64
@@ -252,18 +252,19 @@
  #
     if [[ "$t0l" == "10140001" || "${env_action}" == "hdl_nvme_example" ]];then echo -e "$del\ntesting hdl_nvme_example"
       step "snap_cblk -h"                                            # write max 2blk, read max 32blk a 512B
-      options="-n1 -t1"                                              # 512B blocks, one thread
-      export CBLK_BUSYTIMEOUT=50
-      export CBLK_REQTIMEOUT=60
+      options="-n4 -t1"                                              # 512B blocks, one thread
+      export CBLK_BUSYTIMEOUT=350
+      export CBLK_REQTIMEOUT=360
+#     export SNAP_TRACE=0xFFF
       for blk in 1 2;do p8=$((blk*8)); p4k=$((blk*4096));            # no of 512B blocks and pagesize in 4kB blocks
         echo "generate data for $blk blocks, $p8 pages, $p4k bytes"
         dd if=/dev/urandom of=rnd.in count=${p8} bs=512 2>/dev/null  # random data any char, no echo due to unprintable char
         head -c $p4k </dev/zero|tr '\0' 'x' >asc.in;head asc.in;echo # same char mult times
-        step "snap_nvme_init    -d0 -v"
-#       step "snap_cblk $options -b${blk} --write asc.in         -v"
-        step "snap_cblk $options -b${blk} --format --pattern INC -v"
-#       step "snap_cblk $options -b${blk} --format --pattern ${blk}"
-#       step "snap_cblk $options -b${blk} --read ${p8}.out"
+        step "snap_nvme_init -d0 -v"
+        step "snap_cblk $options -b${blk} --read ${p8}.out       -v"
+        step "snap_cblk $options -b${blk} --write asc.in         -v"
+        step "snap_cblk $options -b${blk} --format --pattern INC"
+        step "snap_cblk $options -b${blk} --format --pattern ${blk}"
 #       echo "Please manually inspect if pattern is really ${blk}"
 #       diff asc.in ${p8}.out
       done
