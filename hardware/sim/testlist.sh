@@ -167,7 +167,6 @@
       done
       done
       done
-      step "snap_example -a2 -B${rnd20} -t200"
       if [[ "$DDR3_USED" == "TRUE" || "$DDR4_USED" == "TRUE" || "$BRAM_USED" == "TRUE" || "$SDRAM_USED" == "TRUE" ]]; then echo -e "$del\ntesting DDR"
         for num4k in 0 1 $rnd20; do to=$((num4k*400+400))
         for num64 in 0 1 $rnd32; do                # 1..64
