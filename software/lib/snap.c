@@ -460,7 +460,7 @@ static struct snap_action *hw_attach_action(struct snap_card *card,
 	if (card->master) {
 		snap_trace("%s Exit Error Master is not allowed to use "
 			   "Action\n",  __func__);
-		errno = -ENODEV;
+		errno = ENODEV;
 		return NULL;
 	}
 
@@ -476,7 +476,7 @@ static struct snap_action *hw_attach_action(struct snap_card *card,
 		if (0x100 != (data & 0x100)) {
 			snap_trace("%s Error AFU SLAVE need's setup\n",
 				   __func__);
-			errno = -ENODEV;
+			errno = ENODEV;
 			return NULL;
 		}
 		maid = (int)(data & 0xf) + 1;	/* Max Actions */
@@ -494,7 +494,7 @@ static struct snap_action *hw_attach_action(struct snap_card *card,
 		if (INVALID_SAT == sat) {
 			snap_trace("%s Exit Error Can not find Action\n",
 				   __func__);
-			errno = -ENODEV;
+			errno = ENODEV;
 			return NULL;
 		}
 
