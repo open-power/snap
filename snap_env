@@ -38,6 +38,10 @@ while [[ $# -gt 0 ]]; do
       snap_env_info=y
       shift
       ;;
+    "ignore_action_root")
+      ignore_action_root=y
+      shift
+      ;;
     *)
       config_script=$1
       shift
@@ -88,7 +92,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   ####### checking path to PSL design checkpoint
   # Note: CLOUD_USER_FLOW is defined via snap_config
-  if [ "$CLOUD_USER_FLOW" == "TRUE" ]; then
+  if [ "$CLOUD_USER_FLOW" = "TRUE" ]; then
     SETUP_INFO="$SETUP_INFO\n### INFO ### Cloud user flow is skipping PSL_DCP check"
   else
     echo "=====Checking path to PSL design checkpoint============"
@@ -169,15 +173,14 @@ while [ -z "$SETUP_DONE" ]; do
     echo "export ACTION_ROOT=$AR" >> $snap_env_sh
   fi
 
-  # Note: CLOUD_USER_FLOW is defined via snap_config
-  if [ "$CLOUD_USER_FLOW" == "TRUE" ] && [ "$MAKE_TARGET" == "cloud_merge" ]; then
-    SETUP_INFO="$SETUP_INFO\n### INFO ### Cloud user flow is skipping ACTION_ROOT check"
-  elif [ -z "$AR" ]; then
+  if [ -z "$AR" ]; then
     SETUP_EMPTY="$SETUP_EMPTY\n  ACTION_ROOT"
   else
     SNAP_ROOT=$snapdir
     eval ACTION_ROOT=$AR
-    if [ ! -d "$ACTION_ROOT" ] && ( ( [ -z `echo "x$ACTION_ROOT" | grep -i /HLS` ] && [ "${HLS_SUPPORT^^}" != "TRUE" ] ) || [ `basename "x$ACTION_ROOT"` != "vhdl" ] ); then
+    if [ "$ignore_action_root" = "y" ]; then
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Skipping ACTION_ROOT check"
+    elif [ ! -d "$ACTION_ROOT" ] && ( ( [ -z `echo "x$ACTION_ROOT" | grep -i /HLS` ] && [ "${HLS_SUPPORT^^}" != "TRUE" ] ) || [ `basename "x$ACTION_ROOT"` != "vhdl" ] ); then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Please make sure that ACTION_ROOT points to an existing directory."
     fi  
   fi
@@ -219,7 +222,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   ####### Cadence simulation setup:
   # Note: SIMULATOR is defined via snap_config
-  if [ "$SIMULATOR" == "irun" ]; then
+  if [ "$SIMULATOR" = "irun" ]; then
     echo "=====Cadence simulation setup=========================="
 
     if [ -z `which irun 2> /dev/null` ]; then
