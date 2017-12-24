@@ -61,7 +61,9 @@ done
 
 export PATH=$PATH:${SNAP_ROOT}/software/tools:${ACTION_ROOT}/sw
 
-snap_maint -C ${snap_card} -v || exit 1;
+if [ -z "$SNAP_CONFIG" ]; then
+	snap_maint -C ${snap_card} -v || exit 1;
+fi
 
 #### SPONGE ##########################################################
 function test_sponge {
@@ -95,11 +97,11 @@ function test_sha3_shake {
 
 
 if [ "$duration" = "NORMAL" ]; then
-  test_sponge  
+  test_sponge
 fi
 
 if [ "$duration" = "NORMAL" ]; then
-  test_sha3_shake 
+  test_sha3_shake
 fi
   
 echo "Test OK"
