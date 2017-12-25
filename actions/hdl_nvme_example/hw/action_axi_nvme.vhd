@@ -202,42 +202,42 @@ BEGIN
   axi_w: PROCESS(M_AXI_ACLK)
   BEGIN
     IF (rising_edge (M_AXI_ACLK)) THEN
+      -- wait for valid command
+      IF nvme_cmd_valid_i = '1' THEN
+        -- send command to NVMe host
+        axi_awvalid    <= '1';
+        wr_count       <= x"5";
+        axi_wvalid     <= '1';
+        nvme_busy_o    <= '1';
+      END IF;
+      IF axi_awvalid = '1' AND M_AXI_AWREADY = '1' THEN
+        axi_awvalid       <= '0';
+        axi_bready        <= '1';
+      END IF;
+
+      start_polling <= '0';
+      -- wait until command has been send to NVMe host
+      -- and then start polling for completion
+      IF M_AXI_BVALID = '1' AND axi_bready = '1' THEN
+        axi_bready  <= '0';
+        nvme_busy_o <= '0';
+        IF wr_count = x"f" THEN
+           start_polling <= '1';
+        END IF;
+      END IF;
+
+      IF axi_wvalid = '1' AND M_AXI_WREADY = '1' THEN
+        wr_count <= wr_count - '1';
+        IF wr_count = x"0" THEN
+          axi_wvalid        <= '0';
+        END IF;
+      END IF;
+
       IF M_AXI_ARESETN = '0'  THEN
         axi_awvalid       <= '0';
         axi_bready        <= '0';
         axi_wvalid        <= '0';
         nvme_busy_o       <= '0';
-      ELSE
-        -- wait for valid command
-        IF nvme_cmd_valid_i = '1' THEN
-          -- send command to NVMe host
-          axi_awvalid    <= '1';
-          wr_count       <= x"5";
-          axi_wvalid     <= '1';
-          nvme_busy_o    <= '1';
-        END IF;
-        IF axi_awvalid = '1' AND M_AXI_AWREADY = '1' THEN
-          axi_awvalid       <= '0';
-          axi_bready        <= '1';
-        END IF;
-
-        start_polling <= '0';
-        -- wait until command has been send to NVMe host
-        -- and then start polling for completion
-        IF M_AXI_BVALID = '1' AND axi_bready = '1' THEN
-          axi_bready  <= '0';
-          nvme_busy_o <= '0';
-          IF wr_count = x"f" THEN
-             start_polling <= '1';
-          END IF;
-        END IF;
-
-        IF axi_wvalid = '1' AND M_AXI_WREADY = '1' THEN
-          wr_count <= wr_count - '1';
-          IF wr_count = x"0" THEN
-            axi_wvalid        <= '0';
-          END IF;
-        END IF;
       END IF;
     END IF;
   END PROCESS;
@@ -255,37 +255,37 @@ BEGIN
       continue_polling            <= '0';
       nvme_complete_o(1 DOWNTO 0) <= "00";
 
+      IF polling_started = '0' AND start_polling = '1' THEN
+        continue_polling <= '1';
+        polling_started  := '1';
+      END IF;
+      IF continue_polling = '1'  THEN
+        axi_arvalid  <= '1';
+      END IF;
+      IF axi_arvalid  = '1' AND M_AXI_ARREADY = '1' THEN
+        axi_arvalid  <= '0';
+        axi_rready   <= '1';
+      END IF;
+      index <= axi_araddr(6 DOWNTO 0) - x"4";
+      IF M_AXI_RVALID = '1' AND axi_rready = '1' THEN
+        continue_polling     <= '1';
+        IF axi_araddr(6 DOWNTO 0) = "0000000" THEN
+          FOR i IN 16 TO 31 LOOP
+            IF  M_AXI_RDATA(i) = '1' THEN
+               axi_araddr(7 DOWNTO 0) <= x"00" + STD_LOGIC_VECTOR(to_unsigned(i-15,5))* "100";
+            END IF;
+          END LOOP;  -- i
+        ELSE
+          nvme_complete_o        <= index(5 DOWNTO 2) & "00" & M_AXI_RDATA(1 DOWNTO 0);
+          axi_araddr(6 DOWNTO 0) <= "0000000";
+        END IF;
+      END IF;
+
       IF (M_AXI_ARESETN = '0' ) THEN
         axi_arvalid      <= '0';
         axi_rready       <= '0';
         axi_araddr       <= x"0000_0000";
         polling_started  := '0';
-      ELSE
-        IF polling_started = '0' AND start_polling = '1' THEN
-          continue_polling <= '1';
-          polling_started  := '1';
-        END IF;
-        IF continue_polling = '1'  THEN
-          axi_arvalid  <= '1';
-        END IF;
-        IF axi_arvalid  = '1' AND M_AXI_ARREADY = '1' THEN
-          axi_arvalid  <= '0';
-          axi_rready   <= '1';
-        END IF;
-        index <= axi_araddr(6 DOWNTO 0) - x"4";
-        IF M_AXI_RVALID = '1' AND axi_rready = '1' THEN
-          continue_polling     <= '1';
-          IF axi_araddr(6 DOWNTO 0) = "0000000" THEN
-            FOR i IN 16 TO 31 LOOP
-              IF  M_AXI_RDATA(i) = '1' THEN
-                 axi_araddr(7 DOWNTO 0) <= x"00" + STD_LOGIC_VECTOR(to_unsigned(i-15,5))* "100";
-              END IF;
-            END LOOP;  -- i
-          ELSE
-            nvme_complete_o        <= index(5 DOWNTO 2) & "00" & M_AXI_RDATA(1 DOWNTO 0);
-            axi_araddr(6 DOWNTO 0) <= "0000000";
-          END IF;
-        END IF;
       END IF;
     END IF;
   END PROCESS;
