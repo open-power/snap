@@ -825,8 +825,6 @@ static void req_start(struct cblk_req *req, struct cblk_dev *c)
 		(long long)req->size, req->lba, req->tries);
 
 	pthread_mutex_lock(&c->dev_lock);
-	gettimeofday(&req->stime, NULL);
-	gettimeofday(&req->h_stime, NULL);
 
 	__cblk_write(c, ACTION_CONFIG,    req->action);
 	__cblk_write(c, ACTION_DEST_LOW,  (uint32_t)(req->dst & 0xffffffff));
@@ -837,6 +835,8 @@ static void req_start(struct cblk_req *req, struct cblk_dev *c)
 
 	/* Wait for Action to go back to Idle */
 	snap_action_start(c->act);
+	gettimeofday(&req->stime, NULL);
+	gettimeofday(&req->h_stime, NULL);
 
 	/*
 	 * Update statistics under device lock.
