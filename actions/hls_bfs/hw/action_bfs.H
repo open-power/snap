@@ -28,9 +28,9 @@
 typedef ap_uint<VEX_WIDTH> Q_t;
 //---------------------------------------------------------------------
 typedef struct {
-	CONTROL Control;	/*  16 bytes */
-	bfs_job_t Data;	/* 108 bytes */
-	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(bfs_job_t)];
+    CONTROL Control;	/*  16 bytes */
+    bfs_job_t Data;	/* 108 bytes */
+    uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(bfs_job_t)];
 } action_reg;
 
 typedef struct
@@ -38,6 +38,15 @@ typedef struct
     snapu64_t edgelink;
     snapu64_t data_ptr;
 } VexNode_hls;
+typedef struct
+{
+    //Note: the order matters. FPGA HW picks up the interested field from this data structure.
+    snapu64_t           next_ptr;
+    uint32_t            adjvex; //store the index of corresponding vex
+    uint32_t            is_tail; //Not used.
+    snapu64_t           data_ptr;
+    uint64_t            reserved[5];
+} EdgeNode_hls;
 
 
 #endif  /* __ACTION_HLS_BFS_H__ */
