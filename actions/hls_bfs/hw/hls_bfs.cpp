@@ -46,34 +46,45 @@
 #include <hls_stream.h>
 #include "action_bfs.H"
 
-// Level 14: refine some coding style about data type casting.
+// Level 14: refine some coding on data type casting. Avoid using bit range.
 #define HW_RELEASE_LEVEL       0x00000014
 
 void write_out_buf (snap_membus_t  * tgt_mem, snapu64_t address, snapu32_t buf_out[32])
 {
+//#pragma HLS ARRAY_PARTITION variable=buf_out complete dim=0
     snap_membus_t lines[2];
-    short i=0;
-
     //explicit data type casting
-    //HLS only supports data type casting with build-in C data types
-    //But arbitrary bit range ap_uint<W> is not well supported.
-    for (i = 0; i < 16; i++) 
-        lines[0](31 + i*32, i*32) = buf_out[i];
-    for (i = 0; i < 16; i++) 
-        lines[1](31 + i*32, i*32) = buf_out[16+i];
+    lines[0] = * (snap_membus_t*)buf_out;
+    lines[1] = * (snap_membus_t*)(buf_out + 16);
+
+//   short i=0;
+//   for (i = 0; i < 16; i++) 
+//       lines[0](31 + i*32, i*32) = buf_out[i];
+//   for (i = 0; i < 16; i++) 
+//       lines[1](31 + i*32, i*32) = buf_out[16+i];
 
     memcpy(tgt_mem + (address >> ADDR_RIGHT_SHIFT),
            lines,
            BPERCL);
     
 }
+static snapu32_t read_bulk ( snap_membus_t *src_mem,
+        snapu64_t      byte_address,
+        snapu32_t      byte_to_transfer,
+        snap_membus_t *buffer)
+{
 
+    snapu32_t xfer_size;
+    xfer_size = MIN(byte_to_transfer, (snapu32_t) MAX_NB_OF_BYTES_READ);
+    memcpy(buffer, (snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)), xfer_size);
+    return xfer_size;
+}
 void fill_vnode_array(snapu32_t vex_num, VexNode_hls * vex_array, snapu64_t  address, snap_membus_t * src_mem )
 {
     if(vex_num <=0)
         return;
 
-    snapu64_t 		address_xfer_offset = 0;
+    snapu64_t 	    address_xfer_offset = 0;
     snap_membus_t   block_buf[MAX_NB_OF_BYTES_READ/BPERDW];
     snapu32_t left_bytes = vex_num * sizeof (VexNode_hls);
     snapu32_t xfer_bytes;
@@ -81,11 +92,7 @@ void fill_vnode_array(snapu32_t vex_num, VexNode_hls * vex_array, snapu64_t  add
 
     while (left_bytes > 0)
     {
-        xfer_bytes = MIN(left_bytes, (snapu32_t) MAX_NB_OF_BYTES_READ);
-        memcpy(block_buf,
-               src_mem + ((address + address_xfer_offset) >> ADDR_RIGHT_SHIFT),
-               xfer_bytes);
-
+        xfer_bytes = read_bulk(src_mem, address + address_xfer_offset, left_bytes, block_buf);
         ap_uint<VEX_WIDTH> iii, jjj;
 
         for(iii = 0; iii < xfer_bytes/sizeof(VexNode_hls); iii++)
@@ -185,10 +192,8 @@ static int process_action(snap_membus_t *din_gmem,
                 fetch_address = edgelink_ptr;
 
                 //Read next edge
-                memcpy(&edge_node,
-                       din_gmem + (fetch_address >> ADDR_RIGHT_SHIFT),
-                       BPERDW);
-
+                edge_node = (din_gmem + (fetch_address >> ADDR_RIGHT_SHIFT))[0];
+                
                 //EdgeNode_hls = BPERDW bytes. It allows a type casting.
                 enp = (EdgeNode_hls *) (&edge_node);
                 edgelink_ptr = enp->next_ptr;
