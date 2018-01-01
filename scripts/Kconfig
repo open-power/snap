@@ -91,6 +91,9 @@ choice
                 Please remember to set the environment variable "ACTION_ROOT"
                 in snap_env.sh to the directory of the action source code.
 
+        config HDL_STRINGMATCH
+            bool "HDL STRING MATCH - regular expression acceleration"
+
         config HDL_EXAMPLE
             bool "HDL Example"
 
