@@ -148,7 +148,7 @@ check_snap_settings:
 		echo "                        Please make sure that the snap environment is prepared by calling 'make snap_config'"; \
 		exit -1; \
 	fi
-	@source $(SNAP_ROOT)/snap_env;
+	@source $(SNAP_ROOT)/snap_env $(ignore_action_root);
 	@echo "                        =============================="
 	@echo "                        hardware/Makefile called with:"
 	@echo "                        ACTION_ROOT     = $(ACTION_ROOT)"
@@ -264,9 +264,12 @@ patch_NVMe:
 
 action_hw: prepare_logs
 	@echo -e "[CONFIG ACTION HW....] start `date +"%T %a %b %d %Y"`";
-	echo "Calling make -C $(ACTION_ROOT) hw"
+	@if [ ! -d "$(ACTION_ROOT)" ]; then \
+		echo "                        Error: Path to ACTION_ROOT is not defined properly"; exit -1; \
+	fi
+	@echo "Calling make -C $(ACTION_ROOT) hw"
 	@$(MAKE) -C $(ACTION_ROOT) hw > $(LOGS_DIR)/action_make.log;
-	if [ $$? -ne 0 ]; then \
+	@if [ $$? -ne 0 ]; then \
 		echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
 	fi
 	@if [ $(USE_PRFLOW) = "TRUE" ]; then \
@@ -351,7 +354,8 @@ cloud_action: allow_cloud_action .hw_project_done
 	@cd $(BUILD_DIR) && env CLOUD_RUN=ACTION vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/cloud_action.log -journal $(LOGS_DIR)/cloud_action.jou
 	@echo -e "[CLOUD ACTION SYNTH..] done  `date +"%T %a %b %d %Y"`"
 
-cloud_merge: allow_cloud_merge $(SNAP_BASE_DCP) $(SNAP_ACTION_DCP) prepare_project
+cloud_merge: allow_cloud_merge $(SNAP_BASE_DCP) $(SNAP_ACTION_DCP)
+	@ignore_action_root=ignore_action_root $(MAKE) prepare_project
 	@echo -e "[CLOUD MERGE ........] start `date +"%T %a %b %d %Y"`"
 	@echo -e "                        using `vivado -version |grep Vivado`"
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_cloud_merge.tcl -notrace -log $(LOGS_DIR)/cloud_merge.log -journal $(LOGS_DIR)/cloud_merge.jou
