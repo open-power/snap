@@ -863,12 +863,14 @@ BEGIN
             -- determine host and card memory address on buffer postion
             slot_id     := dma_wr_req_fifo.slot(dma_wr_tail); 
             dma_wr_slot := std_logic_vector(to_unsigned(slot_id,4));
-            host_mem_awaddr   <= req_buffer.dest_addr(slot_id);
-            card_mem_araddr   <= x"00" & "000" & dma_wr_slot & "0" & x"0000";
-            dma_wr_count      <= req_buffer.size(slot_id) - '1';
-            host_mem_awvalid  <= '1';
-            card_mem_arvalid  <= '1';
-            fsm_dma_wr        <= DMA_WR_REQ;
+            host_mem_awaddr                    <= req_buffer.dest_addr(slot_id);
+            card_mem_araddr                    <= x"00" & "000" & dma_wr_slot & "0" & x"0000";
+            dma_wr_count                       <= req_buffer.size(slot_id) - '1';
+            host_mem_awvalid                   <= '1';
+            card_mem_arvalid                   <= '1';
+            dma_wr_cpl_fifo.slot(dma_cpl_head) <= dma_wr_req_fifo.slot(dma_wr_tail);
+            fsm_dma_wr                         <= DMA_WR_REQ;
+            INCR(dma_cpl_head);
           END IF;
 
         WHEN DMA_WR_REQ =>
@@ -882,10 +884,8 @@ BEGIN
               card_mem_arvalid  <= '1';
               fsm_dma_wr        <= DMA_WR_REQ;
             ELSE
-              dma_wr_cpl_fifo.slot(dma_cpl_head) <= dma_wr_req_fifo.slot(dma_wr_tail);
               fsm_dma_wr                         <= IDLE;
               INCR(dma_wr_tail);
-              INCR(dma_cpl_head);
             END IF;
           END IF;
 
@@ -908,7 +908,7 @@ BEGIN
 
 
   -- READ requests:
-  -- Wait for DMA write request completion
+  -- Process DMA write request completion
   dma_wr_cpl:
   PROCESS(action_clk) is
     ALIAS    dma_cpl_tail : REQ_BUFFER_RANGE_t IS dma_wr_cpl_fifo.tail;
