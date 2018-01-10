@@ -20,6 +20,7 @@
 ############################################################################
 #
 snapdir=$(dirname $(readlink -f "$BASH_SOURCE")) # path containing this script
+PATH=$snapdir:$PATH
 
 snap_env_sh=$snapdir/snap_env.sh
 
@@ -30,7 +31,8 @@ unset ILA_SETUP_FILE
 unset DCP_ROOT
 
 while [[ $# -gt 0 ]]; do
-  opt=$1
+  unset snap_env_info
+  unset config_script
   case "$1" in
     "config")
       snap_env_info=y

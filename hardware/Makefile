@@ -240,7 +240,7 @@ $(SNAP_SIM_NVME)/endp_4_pipe32.v:
 	  fi; \
 	fi
 
- snap_core_config:
+snap_core_config:
 	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh  $(SNAP_HDL_CORE)/snap_core_types.vhd 
 
 %.vhd: %.vhd_source
