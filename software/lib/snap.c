@@ -30,8 +30,8 @@
 #include <snap_tools.h>
 #include <snap_internal.h>
 #include <snap_queue.h>
-#include <snap_s_regs.h>	/* Include SNAP Slave Regs */
-#include <snap_hls_if.h>	/* Include SNAP -> HLS */
+#include <snap_s_regs.h>    /* Include SNAP Slave Regs */
+#include <snap_hls_if.h>    /* Include SNAP -> HLS */
 
 
 /* Trace hardware implementation */
@@ -71,24 +71,24 @@ int pp_trace_enabled(void)
 
 #define simulation_enabled()  (snap_config & 0x01)
 
-#define snap_trace(fmt, ...) do {					\
-		if (snap_trace_enabled())				\
-			fprintf(stderr, "D " fmt, ## __VA_ARGS__);	\
+#define snap_trace(fmt, ...) do { \
+		if (snap_trace_enabled()) \
+			fprintf(stderr, "D " fmt, ## __VA_ARGS__); \
 	} while (0)
 
-#define reg_trace(fmt, ...) do {					\
-		if (reg_trace_enabled())				\
-			fprintf(stderr, "R " fmt, ## __VA_ARGS__);	\
+#define reg_trace(fmt, ...) do { \
+		if (reg_trace_enabled()) \
+			fprintf(stderr, "R " fmt, ## __VA_ARGS__); \
 	} while (0)
 
-#define sim_trace(fmt, ...) do {					\
-		if (sim_trace_enabled())				\
-			fprintf(stderr, "S " fmt, ## __VA_ARGS__);	\
+#define sim_trace(fmt, ...) do { \
+		if (sim_trace_enabled()) \
+			fprintf(stderr, "S " fmt, ## __VA_ARGS__); \
 	} while (0)
 
-#define poll_trace(fmt, ...) do {					\
-		if (poll_trace_enabled())				\
-			fprintf(stderr, "P " fmt, ## __VA_ARGS__);	\
+#define poll_trace(fmt, ...) do { \
+		if (poll_trace_enabled()) \
+			fprintf(stderr, "P " fmt, ## __VA_ARGS__); \
 	} while (0)
 
 #define	INVALID_SAT 0x0ffffffff
@@ -184,18 +184,17 @@ static void *hw_snap_card_alloc_dev(const char *path,
 			goto __snap_alloc_err;
 		}
 		dn->device_id = (uint16_t)id;
-        }
+	}
 
 	rc = cxl_errinfo_size(afu_h, &dn->errinfo_size);
 	if (0 == rc) {
 		dn->errinfo = malloc(dn->errinfo_size);
-                if (NULL == dn->errinfo) {
-			perror("malloc");
-			goto __snap_alloc_err;
-                }
-        } else
+			if (NULL == dn->errinfo) {
+				perror("malloc");
+				goto __snap_alloc_err;
+			}
+	} else
 		snap_trace("  %s: WARN Can not detect Err buffer\n", __func__);
-
 
 	snap_trace("  %s: errinfo_size: %d VendorID: %x DeviceID: %x\n", __func__,
 		(int)dn->errinfo_size, (int)vendor_id, (int)device_id);
@@ -869,8 +868,8 @@ int snap_action_sync_execute_job(struct snap_action *action,
 	}
 
 	/* job.short_action = 0x00; */	/* Set later */
-	job.flags = 0x01;		/* FIXME Set Flag to Execute */
-	job.seq = 0x0000;		/* Set later */
+	job.flags = 0x01; /* FIXME Set Flag to Execute */
+	job.seq = 0x0000; /* Set later */
 	job.retc = 0x00000000;
 	job.priv_data = 0xdeadbeefc0febabeull;
 
@@ -893,7 +892,7 @@ int snap_action_sync_execute_job(struct snap_action *action,
 		cjob->win_size, cjob->wout_size, mmio_in, mmio_out);
 
 	job.short_action = card->sat;/* Set correct Value after attach */
-	job.seq = card->seq++;	  /* Set correct Value after attach */
+	job.seq = card->seq++; /* Set correct Value after attach */
 
 	snap_trace("%s: PASS PARAMETERS to Short Action %d Seq: %x\n",
 		   __func__, job.short_action, job.seq);
@@ -1229,8 +1228,8 @@ static int sw_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long
 /* Software version of the lowlevel functions */
 static struct snap_funcs software_funcs = {
 	.card_alloc_dev = sw_card_alloc_dev,
-	.attach_action = sw_attach_action,	/* attach Action */
-	.detach_action = sw_detach_action,	/* detach Action */
+	.attach_action = sw_attach_action, /* attach Action */
+	.detach_action = sw_detach_action, /* detach Action */
 	.mmio_write32 = sw_mmio_write32,
 	.mmio_read32 = sw_mmio_read32,
 	.mmio_write64 = sw_mmio_write64,
@@ -1256,17 +1255,17 @@ static void _init(void)
 
 	config_env = getenv("SNAP_CONFIG");
 	if (config_env != NULL) {
-                if ( (strcmp(config_env, "FPGA") == 0) ||
-                     (strcmp(config_env, "fpga") == 0) )
-                        snap_config = 0x0;
-                else if ( (strcmp(config_env, "CPU") == 0) ||
-                          (strcmp(config_env, "cpu") == 0) )
-                        snap_config = 0x1;
-                else {
-		        snap_config = strtol(config_env, (char **)NULL, 0);
-                }
-        }
+		if ( (strcmp(config_env, "FPGA") == 0) ||
+			(strcmp(config_env, "fpga") == 0) )
+			snap_config = 0x0;
+		else if ( (strcmp(config_env, "CPU") == 0) ||
+			(strcmp(config_env, "cpu") == 0) )
+			snap_config = 0x1;
+		else {
+			snap_config = strtol(config_env, (char **)NULL, 0);
+		}
+	}
 
-	if (simulation_enabled())
-		df = &software_funcs;
+	if (if simulation_enabled())
+		df = &software_funcs; /* Map Software Functions */
 }
