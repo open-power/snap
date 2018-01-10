@@ -61,14 +61,21 @@ done
 
 export PATH=$PATH:${SNAP_ROOT}/software/tools:${ACTION_ROOT}/sw
 
+# Set default value for SNAP_CONFIG to FPGA if not set
 if [ -z "$SNAP_CONFIG" ]; then
+	SNAP_CONFIG=FPGA
+fi
+
+echo "SNAP_CONFIG = ${SNAP_CONFIG} Mode"
+if [ ${SNAP_CONFIG} == "FPGA" ]; then
+	# Can only do this when in hardware mode
 	snap_maint -C ${snap_card} -v || exit 1;
 fi
 
 #### SPONGE ##########################################################
 function test_sponge {
 	local size=$1
-    
+
 	echo -n "Doing sponge SPEED "
 	cmd="snap_checksum -C ${snap_card} -vv -t2500 -mSPONGE \
 		-N -cSPEED -n1 -f65536"
@@ -83,7 +90,7 @@ function test_sponge {
 
 function test_sha3_shake {
 	local size=$1
-  
+
 	echo -n "Doing sponge SHA3_SHAKE "
 	cmd="snap_checksum -C ${snap_card} -mSPONGE -N -t800 -cSHA3_SHAKE"
 	eval ${cmd}
@@ -97,12 +104,11 @@ function test_sha3_shake {
 
 
 if [ "$duration" = "NORMAL" ]; then
-  test_sponge
+	test_sponge
 fi
 
 if [ "$duration" = "NORMAL" ]; then
-  test_sha3_shake
+	test_sha3_shake
 fi
-  
 echo "Test OK"
 exit 0
