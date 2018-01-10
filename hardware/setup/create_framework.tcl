@@ -25,11 +25,6 @@ set hdl_dir     $root_dir/hdl
 set sim_dir     $root_dir/sim
 set fpga_part   $::env(FPGACHIP)
 set fpga_card   $::env(FPGACARD)
-if { $fpga_card == "N250SP" } {
-  set psl_dir     $::env(PSL_DCP)
-} else {
-  set psl_dcp     [file tail $::env(PSL_DCP)]
-}
 set action_dir  $::env(ACTION_ROOT)/hw
 set nvme_used   $::env(NVME_USED)
 set bram_used   $::env(BRAM_USED)
@@ -62,7 +57,11 @@ if { [info exists ::env(CLOUD_USER_FLOW)] == 1 } {
 }
 
 if { $cloud_user_flow == "FALSE" } {
-  set psl_dcp     [file tail $::env(PSL_DCP)]
+  if { $fpga_card == "N250SP" } {
+    set psl_dir     $::env(PSL_DCP)
+  } else {
+    set psl_dcp     [file tail $::env(PSL_DCP)]
+  }  
 }
 
 if { ($use_prflow == "TRUE") && ($hls_support == "TRUE") } {
