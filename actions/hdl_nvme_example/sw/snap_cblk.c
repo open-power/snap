@@ -728,6 +728,14 @@ int main(int argc, char *argv[])
 
 		if (use_mmap)
 			file_unmap(fd, &buf, num_lba * lba_size);
+		else {
+			rc = file_write(fname, buf, num_lba * lba_size);
+			if (rc <= 0) {
+				fprintf(stderr, "err: Could not write %s, rc=%d\n",
+					fname, rc);
+				goto err_out;
+			}
+		}
 
 		mib_sec = (diff_usec == 0) ? 0.0 :
 			(double)(num_lba * lba_size) / diff_usec;
