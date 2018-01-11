@@ -1266,6 +1266,6 @@ static void _init(void)
 		}
 	}
 
-	if (if simulation_enabled())
+	if (simulation_enabled())
 		df = &software_funcs; /* Map Software Functions */
 }
