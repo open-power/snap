@@ -310,7 +310,7 @@ hw_project: hw_project_start action_hw
 config: hw_project
 
 # checking card type for PSL design checkpoint
-check_psl_dcp:
+check_psl_dcp: .hw_project_done 
 	if [ "$(USE_PRFLOW)" != "TRUE" ]; then \
 		if [ "$(PSL_DCP_TYPE)" != "$(FPGACARD)" ]; then \
 			if [ "$(PSL_DCP_TYPE)" == *"OUTDATED"* ]; then \
