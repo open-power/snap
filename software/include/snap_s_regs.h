@@ -41,6 +41,7 @@ extern "C" {
 #define	SNAP_S_CCR	(SNAP_SLAVE_BASE + SNAP_CCR)
 #define	SNAP_S_CSR	(SNAP_SLAVE_BASE + SNAP_CSR)
 #define	SNAP_S_JCR	(SNAP_SLAVE_BASE + SNAP_JCR)
+
 #ifdef __cplusplus
 }
 #endif
