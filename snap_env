@@ -29,10 +29,10 @@ unset ACTION_ROOT
 unset PSLSE_ROOT
 unset ILA_SETUP_FILE
 unset DCP_ROOT
+unset config_script
+unset snap_env_info
 
 while [[ $# -gt 0 ]]; do
-  unset snap_env_info
-  unset config_script
   case "$1" in
     "config")
       snap_env_info=y
@@ -103,18 +103,16 @@ while [ -z "$SETUP_DONE" ]; do
     fi
     if [ -e "$PSL_DCP" ]; then
       # checking card type for PSL design checkpoint
-      PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $PSL_DCP`
+      PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $FPGACARD $PSL_DCP`
       if [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
         if [[ "$PSL_DCP_TYPE" == *"OUTDATED"* ]]; then
-          SETUP_WARNING="$SETUP_WARNING\n### WARNING ### PSL_DCP for $FPGACARD is pointing to an outdated design checkpoint"
+          SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP for $FPGACARD is pointing to an outdated design checkpoint, image build will not allowed."
         else 
-          SETUP_WARNING="$SETUP_WARNING\n### WARNING ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD"
+          SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD, image build will not allowed."
         fi
       fi
-    elif [ -z "$PSL_DCP" ]; then
-      SETUP_EMPTY="$SETUP_EMPTY\n  PSL_DCP"
     else
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### The environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
+      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
     fi
   fi
 

@@ -110,6 +110,7 @@ SNAP_TMP_FILES =  $(SNAP_HARDWARE_ROOT)/sim/README.txt \
 
 SNAP_ACTION_DCP=$(DCP_ROOT)/user_action_synth.dcp
 SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
+PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl $(FPGACARD) $(PSL_DCP))
 
 #
 # FIXME Targets in this Makefile are to be build in the correct order.
@@ -119,7 +120,7 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 
 ifeq ($(PLATFORM),x86_64)
 
-.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config image cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
+.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project config add_psl_dcp check_psl_dcp image cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
 
 all: model image
 
@@ -204,9 +205,6 @@ prepare_project: check_snap_settings prepare_logs
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl          $(BUILD_DIR)/snap_build.tcl;
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_build.tcl    $(BUILD_DIR)/snap_cloud_build.tcl;
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_merge.tcl    $(BUILD_DIR)/snap_cloud_merge.tcl;
-	@if [ -e "$(PSL_DCP)" ]; then \
-		cp -p $(PSL_DCP)                                             $(BUILD_DIR)/Checkpoints/; \
-	fi
 	@ln -f -s $(SNAP_HDL_CORE)/psl_fpga_$(FPGA_CARD).vhd_source   $(SNAP_HDL_CORE)/psl_fpga.vhd_source;
 	@ln -f -s $(SNAP_HDL_CORE)/psl_accel_$(FPGA_CARD).vhd_source  $(SNAP_HDL_CORE)/psl_accel.vhd_source;
 	@ln -f -s $(SNAP_SIM_CORE)/top_$(CAPI_VER).sv_source          $(SNAP_SIM_CORE)/top.sv_source;
@@ -285,7 +283,7 @@ action_hw: prepare_logs
 	@touch .create_ip_done
 
 .create_nvme_done:
-	@cd $(SNAP_HARDWARE_ROOT)/setup  &&  vivado -quiet -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou
+	@cd $(SNAP_HARDWARE_ROOT)/setup  &&  vivado -quiet -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou 
 	@touch .create_nvme_done
 
 create_project: snap_preprocess
@@ -293,7 +291,7 @@ create_project: snap_preprocess
 	@echo -e "                        using `vivado -version |grep Vivado`"
 	@$(MAKE) -s .create_ip_done
 	@if [ $(NVME_USED) = "TRUE" ]; then $(MAKE) -s .create_nvme_done; fi
-	@cd $(SNAP_HARDWARE_ROOT)/setup  &&  vivado  -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
+	@cd $(SNAP_HARDWARE_ROOT)/setup  &&  vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
 	@$(MAKE) -s patch_NVMe
 	@echo -e "[CREATE PROJECT......] done  `date +"%T %a %b %d %Y"`"
 
@@ -311,7 +309,21 @@ hw_project: hw_project_start action_hw
 # Adding target 'config' for backward compatibility
 config: hw_project
 
-image: .hw_project_done
+# checking card type for PSL design checkpoint
+check_psl_dcp:
+	if [ "$(USE_PRFLOW)" != "TRUE" ]; then \
+		if [ "$(PSL_DCP_TYPE)" != "$(FPGACARD)" ]; then \
+			if [ "$(PSL_DCP_TYPE)" == *"OUTDATED"* ]; then \
+				echo "### ERROR ### PSL_DCP for $(FPGACARD) is pointing to an outdated design checkpoint."; exit -1; \
+			elif [ "$(PSL_DCP_TYPE)" == "" ]; then \
+				echo "### ERROR ###  PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."; exit -1; \
+			else  \
+				echo "### ERROR ### PSL_DCP is pointing to a checkpoint for a $(PSL_DCP_TYPE) card while FPGACARD is set to $(FPGACARD)."; exit -1; \
+			fi; \
+		fi; \
+	fi
+
+image: check_psl_dcp
 	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
 ifeq ($(USE_PRFLOW),TRUE)
 	snap-cloud-build ${SNAP_ROOT}/snap_env.sh

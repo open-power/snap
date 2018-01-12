@@ -56,12 +56,14 @@ if { [info exists ::env(CLOUD_USER_FLOW)] == 1 } {
   set cloud_user_flow "FALSE"
 }
 
-if { $cloud_user_flow == "FALSE" } {
-  if { $fpga_card == "N250SP" } {
-    set psl_dir     $::env(PSL_DCP)
+if { [info exists ::env(PSL_DCP)] == 1 } {
+  if { $cloud_user_flow == "TRUE" } {
+    set psl_dcp "FALSE"
   } else {
-    set psl_dcp     [file tail $::env(PSL_DCP)]
-  }  
+    set psl_dcp $::env(PSL_DCP)
+  }
+} else {
+  set psl_dcp "FALSE"
 }
 
 if { ($use_prflow == "TRUE") && ($hls_support == "TRUE") } {
@@ -287,16 +289,11 @@ if { $nvme_used == TRUE } {
 }
 
 # Add PSL
-if { $cloud_user_flow == "FALSE" } {
-  if { $fpga_card == "N250SP" } {
-    puts "                        adding PSL source files"
-    add_files -scan_for_includes $psl_dir >> $log_file
-   
-  } else {
+if { $psl_dcp != "FALSE" } {
   puts "                        importing PSL design checkpoint"
-  read_checkpoint -cell b $root_dir/build/Checkpoints/$psl_dcp -strict >> $log_file
-  }
+  read_checkpoint -cell b $psl_dcp -strict >> $log_file
 }
+
 
 if { $use_prflow == "TRUE" } {
   # Create PR Configuration
