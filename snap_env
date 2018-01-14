@@ -106,9 +106,9 @@ while [ -z "$SETUP_DONE" ]; do
       PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $FPGACARD $PSL_DCP`
       if [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
         if [[ "$PSL_DCP_TYPE" == *"OUTDATED"* ]]; then
-          SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP for $FPGACARD is pointing to an outdated design checkpoint, image build will not allowed."
+          SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP for $FPGACARD is pointing to an outdated design checkpoint, image build will not be allowed."
         else 
-          SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD, image build will not allowed."
+          SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD, image build will not be allowed."
         fi
       fi
     else
