@@ -29,10 +29,10 @@ unset ACTION_ROOT
 unset PSLSE_ROOT
 unset ILA_SETUP_FILE
 unset DCP_ROOT
+unset config_script
+unset snap_env_info
 
 while [[ $# -gt 0 ]]; do
-  unset snap_env_info
-  unset config_script
   case "$1" in
     "config")
       snap_env_info=y
@@ -92,7 +92,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   ####### checking path to PSL design checkpoint
   # Note: CLOUD_USER_FLOW is defined via snap_config
-  if [ "$CLOUD_USER_FLOW" = "TRUE" ]; then
+  if [ "$CLOUD_USER_FLOW" == "TRUE" ]; then
     SETUP_INFO="$SETUP_INFO\n### INFO ### Cloud user flow is skipping PSL_DCP check"
   else
     echo "=====Checking path to PSL design checkpoint============"
@@ -103,18 +103,16 @@ while [ -z "$SETUP_DONE" ]; do
     fi
     if [ -e "$PSL_DCP" ]; then
       # checking card type for PSL design checkpoint
-      PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $PSL_DCP`
+      PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $FPGACARD $PSL_DCP`
       if [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
         if [[ "$PSL_DCP_TYPE" == *"OUTDATED"* ]]; then
-          SETUP_WARNING="$SETUP_WARNING\n### WARNING ### PSL_DCP for $FPGACARD is pointing to an outdated design checkpoint"
-        else 
-          SETUP_WARNING="$SETUP_WARNING\n### WARNING ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD"
+          SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP for $FPGACARD is pointing to an outdated design checkpoint, image build will not be allowed."
+        else
+          SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD, image build will not be allowed."
         fi
       fi
-    elif [ -z "$PSL_DCP" ]; then
-      SETUP_EMPTY="$SETUP_EMPTY\n  PSL_DCP"
     else
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### The environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
+      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
     fi
   fi
 
@@ -178,17 +176,17 @@ while [ -z "$SETUP_DONE" ]; do
   else
     SNAP_ROOT=$snapdir
     eval ACTION_ROOT=$AR
-    if [ "$ignore_action_root" = "y" ]; then
+    if [ "$ignore_action_root" == "y" ]; then
       SETUP_INFO="$SETUP_INFO\n### INFO ### Skipping ACTION_ROOT check"
     elif [ ! -d "$ACTION_ROOT" ] && ( ( [ -z `echo "x$ACTION_ROOT" | grep -i /HLS` ] && [ "${HLS_SUPPORT^^}" != "TRUE" ] ) || [ `basename "x$ACTION_ROOT"` != "vhdl" ] ); then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Please make sure that ACTION_ROOT points to an existing directory."
-    fi  
+    fi
   fi
 
 
   ####### settings for ILA Debug
   # Note: ILA_DEBUG is defined via snap_config
-  if [ "$ILA_DEBUG" = "TRUE" ]; then
+  if [ "$ILA_DEBUG" == "TRUE" ]; then
     echo "=====ILA Debug setup==================================="
     echo "ILA_SETUP_FILE          is set to: \"$ILA_SETUP_FILE\""
     RESP=`grep ILA_SETUP_FILE $snap_env_sh`
@@ -207,7 +205,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   ####### settings for Partial Reconfiguration flow
   # Note: USE_PRFLOW is defined via snap_config
-  if [ "$USE_PRFLOW" = "TRUE" ]; then
+  if [ "$USE_PRFLOW" == "TRUE" ]; then
     echo "=====PR flow setup====================================="
     RESP=`grep DCP_ROOT $snap_env_sh`
     if [ -z "$RESP" ]; then
@@ -222,7 +220,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   ####### Cadence simulation setup:
   # Note: SIMULATOR is defined via snap_config
-  if [ "$SIMULATOR" = "irun" ]; then
+  if [ "$SIMULATOR" == "irun" ]; then
     echo "=====Cadence simulation setup=========================="
 
     if [ -z `which irun 2> /dev/null` ]; then
@@ -254,7 +252,7 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
   # Note: NVME_USED is defined via snap_config
-  if [[ "$NVME_USED" = "TRUE" ]]; then
+  if [[ "$NVME_USED" == "TRUE" ]]; then
     echo "=====Denali setup======================================"
     if [ -z "$DENALI" ]; then
       SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of NVME_USED=$NVME_USED but DENALI not set!"
@@ -278,7 +276,7 @@ while [ -z "$SETUP_DONE" ]; do
     echo -e "All of the variables above have to be filled with the correct values."
   fi
 
-  if [ "$snap_env_info" = "y" ] && [ -n "$SETUP_INFO" ]; then
+  if [ "$snap_env_info" == "y" ] && [ -n "$SETUP_INFO" ]; then
     echo -e "$SETUP_INFO"
   fi
 
@@ -293,7 +291,7 @@ while [ -z "$SETUP_DONE" ]; do
 done
 
 if [ -z "$snap_env_info" ]; then
-  if [ "$0" = "bash" ]; then
+  if [ "$0" == "bash" ]; then
     # return value in case that this file was sourced
     return $RC
   else

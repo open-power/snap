@@ -110,6 +110,7 @@ SNAP_TMP_FILES =  $(SNAP_HARDWARE_ROOT)/sim/README.txt \
 
 SNAP_ACTION_DCP=$(DCP_ROOT)/user_action_synth.dcp
 SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
+PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl $(FPGACARD) $(PSL_DCP))
 
 #
 # FIXME Targets in this Makefile are to be build in the correct order.
@@ -119,7 +120,7 @@ SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
 
 ifeq ($(PLATFORM),x86_64)
 
-.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config image cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
+.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config add_psl_dcp check_psl_dcp image cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
 
 all: model image
 
@@ -161,20 +162,20 @@ check_snap_settings:
 	@echo "                        SDRAM_USED      = $(SDRAM_USED)"
 	@echo "                        NVME_USED       = $(NVME_USED)"
 	@echo "                        ILA_DEBUG       = $(ILA_DEBUG)"
-	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` = "TRUE" ]; then \
+	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` == "TRUE" ]; then \
 		echo "                        ILA_SETUP_FILE  = $(ILA_SETUP_FILE)"; \
 	fi
 	@echo "                        SIMULATOR       = $(SIMULATOR)"
 	@echo "                        USE_PRFLOW      = $(USE_PRFLOW)"
-	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` = "TRUE" ]; then \
+	@if [ `echo "$(USE_PRFLOW)" | tr a-z A-Z` == "TRUE" ]; then \
 		echo "                        CLOUD_USER_FLOW = $(CLOUD_USER_FLOW)"; \
 		echo "                        DCP_ROOT        = $(DCP_ROOT)"; \
 	fi
 	@echo "                        =============================="
 
 check_nvme:
-	@if [ $(SIMULATOR) != "nosim" ] && [ $(NVME_USED) = "TRUE" ]; then \
-		if [ $(SIMULATOR) != "irun" ]; then  \
+	@if [ "$(SIMULATOR)" != "nosim" ] && [ "$(NVME_USED)" == "TRUE" ]; then \
+		if [ "$(SIMULATOR)" != "irun" ]; then  \
 			echo "                        NVMe simulation is not supported for SIMULATOR $(SIMULATOR)"; \
 			exit -1; \
 		fi; \
@@ -187,7 +188,7 @@ check_nvme:
 	fi
 
 check_simulator:
-	@if [ $(SIMULATOR) != "irun" ] && [ $(SIMULATOR) != "xsim" ] && [ $(SIMULATOR) != "nosim" ]; then \
+	@if [ "$(SIMULATOR)" != "irun" ] && [ "$(SIMULATOR)" != "xsim" ] && [ "$(SIMULATOR)" != "nosim" ]; then \
 		echo "                        unknown simulator=$SIMULATOR"; \
 		exit -1; \
 	fi
@@ -204,9 +205,6 @@ prepare_project: check_snap_settings prepare_logs
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_build.tcl          $(BUILD_DIR)/snap_build.tcl;
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_build.tcl    $(BUILD_DIR)/snap_cloud_build.tcl;
 	@ln -f -s $(SNAP_HARDWARE_ROOT)/setup/snap_cloud_merge.tcl    $(BUILD_DIR)/snap_cloud_merge.tcl;
-	@if [ -e "$(PSL_DCP)" ]; then \
-		cp -p $(PSL_DCP)                                             $(BUILD_DIR)/Checkpoints/; \
-	fi
 	@ln -f -s $(SNAP_HDL_CORE)/psl_fpga_$(FPGA_CARD).vhd_source   $(SNAP_HDL_CORE)/psl_fpga.vhd_source;
 	@ln -f -s $(SNAP_HDL_CORE)/psl_accel_$(FPGA_CARD).vhd_source  $(SNAP_HDL_CORE)/psl_accel.vhd_source;
 	@ln -f -s $(SNAP_SIM_CORE)/top_$(CAPI_VER).sv_source          $(SNAP_SIM_CORE)/top.sv_source;
@@ -233,7 +231,7 @@ $(SNAP_PP_FILES_VHD):
 	@$(RM) $@_tmp
 
 $(SNAP_SIM_NVME)/endp_4_pipe32.v:
-	@if [ $(SIMULATOR) != "nosim" ] && [ $(NVME_USED) = "TRUE" ]; then \
+	@if [ "$(SIMULATOR)" != "nosim" ] && [ "$(NVME_USED)" == "TRUE" ]; then \
 	  echo -e "                        generating $(notdir $@)"; \
 	  $(DENALI)/bin/pureview -batch -generate all . -genoutput  $(SNAP_SIM_NVME)/endp_4_pipe32.v $(SNAP_SIM_NVME)/endp_4_pipe32.soma > $(LOGS_DIR)/pureview.log 2>&1; \
 	  if [ $$? -ne 0 ]; then \
@@ -242,7 +240,7 @@ $(SNAP_SIM_NVME)/endp_4_pipe32.v:
 	fi
 
 snap_core_config:
-	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh  $(SNAP_HDL_CORE)/snap_core_types.vhd 
+	@$(SNAP_HARDWARE_ROOT)/setup/snap_config.sh  $(SNAP_HDL_CORE)/snap_core_types.vhd
 
 %.vhd: %.vhd_source
 
@@ -257,7 +255,7 @@ patch_version:
 	$(SNAP_HARDWARE_ROOT)/setup/patch_version.sh $(SNAP_HDL_CORE) snap_core_types.vhd
 
 patch_NVMe:
-	@if [ -e "$(SNAP_HARDWARE_ROOT)/setup/patch_NVMe.sh" ] && [ $(NVME_USED) = "TRUE" ]; then \
+	@if [ -e "$(SNAP_HARDWARE_ROOT)/setup/patch_NVMe.sh" ] && [ "$(NVME_USED)" == "TRUE" ]; then \
 		echo -e "                        patching NVMe PCIe Root Complex sim files"; \
 		cd $(SNAP_HARDWARE_ROOT)/setup && ./patch_NVMe.sh && cd .. ; \
 	fi
@@ -272,7 +270,7 @@ action_hw: prepare_logs
 	@if [ $$? -ne 0 ]; then \
 		echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
 	fi
-	@if [ $(USE_PRFLOW) = "TRUE" ]; then \
+	@if [ "$(USE_PRFLOW)" == "TRUE" ]; then \
 		$(MAKE) -kC $(ACTION_ROOT)/hw vhdl >> $(LOGS_DIR)/action_make.log; \
 		if [ $$? -ne 0 ]; then \
 			echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
@@ -292,8 +290,8 @@ create_project: snap_preprocess
 	@echo -e "[CREATE PROJECT......] start `date +"%T %a %b %d %Y"`";
 	@echo -e "                        using `vivado -version |grep Vivado`"
 	@$(MAKE) -s .create_ip_done
-	@if [ $(NVME_USED) = "TRUE" ]; then $(MAKE) -s .create_nvme_done; fi
-	@cd $(SNAP_HARDWARE_ROOT)/setup  &&  vivado  -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
+	@if [ "$(NVME_USED)" == "TRUE" ]; then $(MAKE) -s .create_nvme_done; fi
+	@cd $(SNAP_HARDWARE_ROOT)/setup  &&  vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
 	@$(MAKE) -s patch_NVMe
 	@echo -e "[CREATE PROJECT......] done  `date +"%T %a %b %d %Y"`"
 
@@ -311,7 +309,21 @@ hw_project: hw_project_start action_hw
 # Adding target 'config' for backward compatibility
 config: hw_project
 
-image: .hw_project_done
+# checking card type for PSL design checkpoint
+check_psl_dcp: .hw_project_done
+	if [ "$(USE_PRFLOW)" != "TRUE" ]; then \
+		if [ "$(PSL_DCP_TYPE)" != "$(FPGACARD)" ]; then \
+			if [[ "$(PSL_DCP_TYPE)" == *"OUTDATED"* ]]; then \
+				echo "### ERROR ### PSL_DCP for $(FPGACARD) is pointing to an outdated design checkpoint."; exit -1; \
+			elif [ "$(PSL_DCP_TYPE)" == "" ]; then \
+				echo "### ERROR ###  PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."; exit -1; \
+			else  \
+				echo "### ERROR ### PSL_DCP is pointing to a checkpoint for a $(PSL_DCP_TYPE) card while FPGACARD is set to $(FPGACARD)."; exit -1; \
+			fi; \
+		fi; \
+	fi
+
+image: check_psl_dcp
 	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
 ifeq ($(USE_PRFLOW),TRUE)
 	snap-cloud-build ${SNAP_ROOT}/snap_env.sh
