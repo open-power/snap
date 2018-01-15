@@ -85,7 +85,8 @@ ARCHITECTURE ctrl_mgr OF ctrl_mgr IS
 
   SIGNAL llcmd_req_q              : std_logic;
   SIGNAL llcmd_ack_q              : std_logic;
-  SIGNAL terminate_req_q          : std_logic;
+  SIGNAL terminate_req_dma_q      : std_logic;
+  SIGNAL terminate_req_mmio_q     : std_logic;
   SIGNAL terminate_context_id_q   : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
   SIGNAL terminate_ack_dma_q      : std_logic;
   SIGNAL terminate_ack_mmio_q     : std_logic;
@@ -149,7 +150,8 @@ BEGIN
                                    ah_j_q.error, '0');
 
       llcmd_req_q              <= '0';
-      terminate_req_q          <= '0';
+      terminate_req_dma_q      <= '0';
+      terminate_req_mmio_q     <= '0';
       terminate_ack_dma_q      <= (terminate_ack_dma_q OR dc_c_i.terminate_ack) AND NOT (terminate_ack_dma_q AND terminate_ack_mmio_q);
       terminate_ack_mmio_q     <= (terminate_ack_mmio_q OR mmc_c_i.terminate_ack) AND NOT (terminate_ack_dma_q AND terminate_ack_mmio_q);
       llcmd_ack_q              <= terminate_ack_dma_q AND terminate_ack_mmio_q;
@@ -174,7 +176,8 @@ BEGIN
         ELSIF ha_j_llcmd_code_q = LLCMD_CODES(REMOVE_ELEMENT) THEN
           llcmd_ack_q <= '1';
         ELSIF  ha_j_llcmd_code_q = LLCMD_CODES(TERMINATE_ELEMENT) OR ha_j_llcmd_code_q = LLCMD_CODES(REMOVE_ELEMENT) THEN
-          terminate_req_q        <= '1';
+          terminate_req_dma_q    <= '1';
+          terminate_req_mmio_q   <= '1';
           terminate_context_id_q <= ha_j_q.ea(LLCMD_PE_HANDLE_R+CONTEXT_BITS-1 DOWNTO LLCMD_PE_HANDLE_R);
         ELSE
           llcmd_ack_q <= '1';
@@ -322,11 +325,11 @@ BEGIN
 --  dma_reset_o     <= dma_reset_q;
 
   -- CD_C
-  cd_c_o.terminate_request <= terminate_req_q;
+  cd_c_o.terminate_request <= terminate_req_dma_q;
   cd_c_o.terminate_release <= terminate_ack_dma_q AND terminate_ack_mmio_q;
 
   -- CMM_C
-  cmm_c_o.terminate_request <= terminate_req_q;
+  cmm_c_o.terminate_request <= terminate_req_mmio_q;
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
