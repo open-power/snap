@@ -4,7 +4,7 @@ Intersection has two methods and are implemented in two Actions.
 One is in hw_h (hash, -m1) and one is in hw_s (sort, -m2).
 You must configure it first (otherwise the default one is 'hash').
 
-After `make snap_config`, do this perticular step. (In case $ACTION_ROOT is not set, try to source snap_path.sh)
+After `make snap_config`, do this particular step to select the method. (In case $ACTION_ROOT is not set, try to source snap_path.sh)
 
 ```
 make clean
