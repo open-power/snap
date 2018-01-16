@@ -46,7 +46,7 @@
 #define CONFIG_COMPLETION_THREADS	1 /* 1 works best */
 #define CONFIG_MAX_RETRIES		5 /* 5 is good, 0: no retries */
 #define CONFIG_BUSY_TIMEOUT_SEC		5
-#define CONFIG_REQ_TIMEOUT_SEC		5
+#define CONFIG_REQ_TIMEOUT_SEC		2
 #define CONFIG_REQ_DURATION_USEC	100000 /* usec */
 
 static int cblk_maxretries = CONFIG_MAX_RETRIES;
@@ -163,7 +163,7 @@ static inline unsigned long atomic_inc(atomic_t *a)
 #define SNAP_N250S_NVME_SIZE (800ull * 1024 * 1024 * 1024) /* FIXME n TiB */
 #define __CBLK_BLOCK_SIZE 4096
 
-#define CBLK_IDX_MAX		16
+#define CBLK_IDX_MAX		15	/* FIXME Should be 16 */
 #define CBLK_NBLOCKS_MAX	32	/* 128 KiB / 4KiB */
 #define CBLK_NBLOCKS_WRITE_MAX	2	/* writing is just 1 or 2 blocks */
 
@@ -941,6 +941,7 @@ static struct cblk_req *get_req(struct cblk_dev *c,
 			if (errno == ETIMEDOUT) {
 				fprintf(stderr, "[%s] warn: %s\n",
 					__func__, strerror(errno));
+				//goto retry;
 				return NULL;
 			}
 			fprintf(stderr, "[%s] warn: sem_timedwait returned rc=%d %s\n",
@@ -1004,8 +1005,6 @@ static void put_req(struct cblk_dev *c, struct cblk_req *req)
 		if ((c->min_write_usecs == 0) || (usecs < c->min_write_usecs))
 			c->min_write_usecs = usecs;
 		c->avg_write_usecs += usecs;
-
-		sem_post(&c->busy_sem);
 	} else {
 		if (usecs > c->max_read_usecs)
 			c->max_read_usecs = usecs;
@@ -1019,13 +1018,15 @@ static void put_req(struct cblk_dev *c, struct cblk_req *req)
 				req->pblock[i] = NULL;
 			}
 		}
-		sem_post(&c->busy_sem);
 	}
 
 	if (req->status != CBLK_ERROR)
 		cblk_set_status(req, CBLK_IDLE);
 
 	dec_work_in_flight(c);
+	sem_post(&c->busy_sem);
+
+	/* FIXME Should we do the sem_post(&c->busy_sem); here? */
 	pthread_mutex_unlock(&c->dev_lock);
 }
 
