@@ -17,34 +17,13 @@
  * limitations under the License.
  */
 #include <snap_types.h>
+#include "action_intersect_common.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// Two hardware implementations and use two Action IDs
-// H for Hash method
-// S for Sort method
-#define INTERSECT_H_ACTION_TYPE 0x10141005
-#define INTERSECT_S_ACTION_TYPE 0x10141006
 
-#define NUM_TABLES  2
-#define MAX_TABLE_SIZE (uint64_t)(1<<30)
-
-#define HT_ENTRY_NUM_EXP 24
-#define HT_ENTRY_NUM (1<<HT_ENTRY_NUM_EXP)
-
-#define DIRECT_METHOD 0
-#define HASH_METHOD 1
-#define SORT_METHOD 2
-
-typedef struct intersect_job {
-	struct snap_addr src_tables_host[NUM_TABLES];	 /* input tables */
-	struct snap_addr src_tables_ddr[NUM_TABLES];	 /* input tables */
-	struct snap_addr result_table;             /* output table */
-    uint32_t step;
-    uint32_t method;
-} intersect_job_t;
 
 typedef char value_t[64];
 typedef unsigned int ptr_t;
