@@ -26,23 +26,61 @@
 /* Header file for SNAP Framework STRING_MATCH code */
 #define ACTION_TYPE_STRING_MATCH     0x00000001	/* Action Type */
 
-#define ACTION_CONFIG           0x30
-#define ACTION_CONFIG_COUNT     1       /* Count Mode */
-#define ACTION_CONFIG_COPY_HH   2       /* Memcopy Host to Host */
-#define ACTION_CONFIG_COPY_HD   3       /* Memcopy Host to DDR */
-#define ACTION_CONFIG_COPY_DH   4       /* Memcopy DDR to Host */
-#define ACTION_CONFIG_COPY_DD   5       /* Memcopy DDR to DDR */
-#define ACTION_CONFIG_COPY_HDH  6       /* Memcopy Host to DDR to Host */
-#define ACTION_CONFIG_MEMSET_H  8       /* Memset Host Memory */
-#define ACTION_CONFIG_MEMSET_F  9       /* Memset FPGA Memory */
-#define ACTION_CONFIG_COPY_DN   0x0a    /* Copy DDR to NVME drive 0 */
-#define ACTION_CONFIG_COPY_ND   0x0b    /* Copy NVME drive 0 to DDR */
-#define NVME_DRIVE1		0x10	/* Select Drive 1 for 0a and 0b */
+#define ACTION_STATUS_L                0x30
+#define ACTION_STATUS_H                0x30
+#define ACTION_STATUS_MEMCPY_DONE      0       
+#define ACTION_STATUS_PKT_DATA_USED_UP 1       
+#define ACTION_STATUS_STAT_DATA_COMP   2       
+#define ACTION_STATUS_STAT_FLUSH_DONE  3       
+#define ACTION_STATUS_STAT_USED_UP     4       
+#define ACTION_STATUS_ERROR_AXI_START  8       
+#define ACTION_STATUS_ERROR_AXI_END    23       
+#define ACTION_STATUS_TOTAL_NUM_START  32
+#define ACTION_STATUS_TOTAL_NUM_END    63
 
-#define ACTION_SRC_LOW          0x34	/* LBA for 0A, 1A, 0B and 1B */
-#define ACTION_SRC_HIGH         0x38
-#define ACTION_DEST_LOW         0x3c	/* LBA for 0A, 1A, 0B and 1B */
-#define ACTION_DEST_HIGH        0x40
-#define ACTION_CNT              0x44    /* Count Register or # of 512 Byte Blocks for NVME */
+#define ACTION_CONTROL_L               0x38
+#define ACTION_CONTROL_H               0x3C
+#define ACTION_CONTROL_PATT_START      0       
+#define ACTION_CONTROL_PKT_PATT_EN     1
+#define ACTION_CONTROL_STAT_EN         2       
+#define ACTION_CONTROL_FLUSH           3       
+
+#define ACTION_PKT_INIT_ADDR_L         0x40
+#define ACTION_PKT_INIT_ADDR_H         0x44
+#define ACTION_PATT_INIT_ADDR_L        0x48
+#define ACTION_PATT_INIT_ADDR_H        0x4C
+#define ACTION_PATT_CARD_DDR_ADDR_L    0x50
+#define ACTION_PATT_CARD_DDR_ADDR_H    0x54
+#define ACTION_STAT_INIT_ADDR_L        0x58
+#define ACTION_STAT_INIT_ADDR_H        0x5C
+#define ACTION_PKT_TOTAL_NUM_L         0x60
+#define ACTION_PKT_TOTAL_NUM_H         0x64
+#define ACTION_PATT_TOTAL_NUM_L        0x68
+#define ACTION_PATT_TOTAL_NUM_H        0x6C
+#define ACTION_STAT_TOTAL_SIZE_L       0x70
+#define ACTION_STAT_TOTAL_SIZE_H       0x74
+
+#define INPUT_PACKET_STAT_WIDTH         48
+#define INPUT_BATCH_WIDTH               1024
+#define INPUT_BATCH_PER_PACKET          16
+#define PATTERN_STAT_WIDTH              104
+#define INPUT_PACKET_WIDTH              512
+#define OUTPUT_STAT_WIDTH               80
+#define PATTERN_NUM_NFA_STATES          8
+#define PATTERN_NUM_NFA_TOKEN           8
+#define NUM_STRING_MATCH_PIPELINE       512
+
+#define MAX_STATE_NUM                   16
+#define MAX_TOKEN_NUM                   16
+#define MAX_CHAR_NUM                    32
+#define MAX_CHAR_PER_TOKEN              16
+#define PATTERN_ID_WIDTH                32
+
+// The width of pattern is calculated per the following equation
+#define PATTERN_WIDTH_BITS (PATTERN_ID_WIDTH+MAX_CHAR_NUM*16+MAX_STATE_NUM*8+8+8+MAX_STATE_NUM+MAX_STATE_NUM*MAX_CHAR_NUM+MAX_STATE_NUM*MAX_STATE_NUM+MAX_STATE_NUM*MAX_STATE_NUM+MAX_STATE_NUM)
+
+#define PATTERN_WIDTH_BYTES (PATTERN_WIDTH_BITS/8)
+
+
 
 #endif	/* __SNAP_FW_EXA__ */

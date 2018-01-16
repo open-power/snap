@@ -25,8 +25,8 @@ module action_wrapper #(
     parameter C_M_AXI_CARD_MEM0_ID_WIDTH     = 2,
     parameter C_M_AXI_CARD_MEM0_ADDR_WIDTH   = 64,
     parameter C_M_AXI_CARD_MEM0_DATA_WIDTH   = 512,
-    parameter C_M_AXI_CARD_MEM0_AWUSER_WIDTH = 1,
-    parameter C_M_AXI_CARD_MEM0_ARUSER_WIDTH = 1,
+    parameter C_M_AXI_CARD_MEM0_AWUSER_WIDTH = 8,
+    parameter C_M_AXI_CARD_MEM0_ARUSER_WIDTH = 8,
     parameter C_M_AXI_CARD_MEM0_WUSER_WIDTH  = 1,
     parameter C_M_AXI_CARD_MEM0_RUSER_WIDTH  = 1,
     parameter C_M_AXI_CARD_MEM0_BUSER_WIDTH  = 1,
@@ -39,8 +39,8 @@ module action_wrapper #(
     parameter C_M_AXI_HOST_MEM_ID_WIDTH      = 2,
     parameter C_M_AXI_HOST_MEM_ADDR_WIDTH    = 64,
     parameter C_M_AXI_HOST_MEM_DATA_WIDTH    = 512,
-    parameter C_M_AXI_HOST_MEM_AWUSER_WIDTH  = 1,
-    parameter C_M_AXI_HOST_MEM_ARUSER_WIDTH  = 1,
+    parameter C_M_AXI_HOST_MEM_AWUSER_WIDTH  = 8,
+    parameter C_M_AXI_HOST_MEM_ARUSER_WIDTH  = 8,
     parameter C_M_AXI_HOST_MEM_WUSER_WIDTH   = 1,
     parameter C_M_AXI_HOST_MEM_RUSER_WIDTH   = 1,
     parameter C_M_AXI_HOST_MEM_BUSER_WIDTH   = 1,
@@ -169,6 +169,10 @@ module action_wrapper #(
     output m_axi_host_mem_wvalid
 );
 
+    // Make wuser stick to 0
+    assign m_axi_card_mem0_wuser = 0;
+    assign m_axi_host_mem_wuser = 0;
+
     action_string_match action_string_match_0 (
         .clk                   (ap_clk),
         .rst_n                 (ap_rst_n), 
@@ -296,7 +300,9 @@ module action_wrapper #(
         .s_axi_snap_rdata      (s_axi_ctrl_reg_rdata),
         .s_axi_snap_rresp      (s_axi_ctrl_reg_rresp),
         .s_axi_snap_rready     (s_axi_ctrl_reg_rready),
-        .s_axi_snap_rvalid     (s_axi_ctrl_reg_rvalid)
+        .s_axi_snap_rvalid     (s_axi_ctrl_reg_rvalid),
+        .i_action_type         (32'h00000001),
+        .i_action_version      (32'h00000001)
     );
     
 endmodule

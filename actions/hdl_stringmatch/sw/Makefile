@@ -38,7 +38,24 @@ $(error Please make sure that $$SNAP_ROOT is set up correctly.)
 endif
 endif
 
-projs += string_match string_match_ddr string_match_set
+CXX=g++
+
+all: all_build
+
+fregex.o: utils/fregex.cpp
+	$(CXX) -c $(CPPFLAGS) $($(@:.o=)_CPPFLAGS) -DNODEBUG $< -o $@
+
+regex_config.o: utils/regex_config.cpp
+	$(CXX) -c $(CPPFLAGS) $($(@:.o=)_CPPFLAGS) $< -o $@
+
+string_match_objs += fregex.o regex_config.o
+string_match: $(string_match_objs)
+
+projs += string_match
+
+string_match: fregex.o regex_config.o string_match.o
+	$(CXX) $(LDFLAGS) $($(@)_LDFLAGS) $@.o $($(@)_objs) $($(@)_libs) $(LDLIBS) -o $@
+
 
 # If you have the host code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/software.mk
