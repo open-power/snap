@@ -188,6 +188,7 @@ ARCHITECTURE snap_core OF snap_core IS
   SIGNAL js_c                : JS_C_T;
   SIGNAL jx_c                : JX_C_T;
   SIGNAL mmc_c               : MMC_C_T;
+  SIGNAL mmc_d               : MMC_D_T;
   SIGNAL mmc_e               : MMC_E_T;
   SIGNAL mmd_a               : MMD_A_T;
   SIGNAL mmd_i               : MMD_I_T;
@@ -431,6 +432,7 @@ BEGIN
       --
       -- MMIO IOs
       mmc_c_i                => mmc_c,
+      mmc_d_i                => mmc_d,
       mmc_e_i                => mmc_e,
       cmm_c_o                => cmm_c,
       cmm_e_o                => cmm_e
@@ -500,6 +502,7 @@ BEGIN
       cmm_c_i                => cmm_c,
       cmm_e_i                => cmm_e,
       mmc_c_o                => mmc_c,
+      mmc_d_o                => mmc_d,
       mmc_e_o                => mmc_e,
       --
       -- JOB MGR Interface
