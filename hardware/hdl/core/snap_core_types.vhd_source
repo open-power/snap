@@ -840,6 +840,7 @@ PACKAGE snap_core_types IS
 --  jx_c : job_manager -> AXI master  : Control Interface
 --
 --  mmc_c: mmio        -> ctrl_mgr    : Control Interface
+--  mmc_d: mmio        -> ctrl_mgr    : Data Interface
 --  mmc_e: mmio        -> ctrl_mgr    : Error Interface
 --  mmd_a: mmio        -> dma         : Aggravater Interface
 --  mmd_i: mmio        -> dma         : Error Inject
@@ -935,7 +936,7 @@ PACKAGE snap_core_types IS
     TYPE CD_C_T IS RECORD
       terminate_request    : std_logic;
       terminate_release    : std_logic;
-      terminate_context_id : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+      terminate_context_id : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
     END RECORD CD_C_T;
 
     --
@@ -943,7 +944,7 @@ PACKAGE snap_core_types IS
     --
     TYPE CMM_C_T IS RECORD
       terminate_request    : std_logic;
-      terminate_context_id : std_ulogic_vector(CONTEXT_BITS-1 DOWNTO 0);
+      terminate_context_id : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
     END RECORD CMM_C_T;
 
   --
@@ -1012,6 +1013,13 @@ PACKAGE snap_core_types IS
       reset_done    : std_logic;
       terminate_ack : std_logic;
     END RECORD MMC_C_T;
+
+    --
+    -- mmc_d
+    --
+    TYPE MMC_D_T IS RECORD
+      attached_contexts : std_logic_vector(NUM_OF_CONTEXTS-1 DOWNTO 0);
+    END RECORD MMC_D_T;
 
     --
     -- mmc_e

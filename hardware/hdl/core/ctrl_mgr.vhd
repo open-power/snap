@@ -50,6 +50,7 @@ ENTITY ctrl_mgr IS
     --
     -- MMIO IOs
     mmc_c_i         : IN  MMC_C_T;
+    mmc_d_i         : IN  MMC_D_T;
     mmc_e_i         : IN  MMC_E_T;
     cmm_c_o         : OUT CMM_C_T;
     cmm_e_o         : OUT CMM_E_T
@@ -74,6 +75,7 @@ ARCHITECTURE ctrl_mgr OF ctrl_mgr IS
   SIGNAL ctrl_fsm_q               : CTRL_FSM_T := ST_IDLE;
   SIGNAL ha_j_q                   : HA_J_T;
   SIGNAL ha_j_llcmd_code_q        : std_logic_vector(LLCMD_CMD_L DOWNTO LLCMD_CMD_R);
+  SIGNAL ha_j_context_id_q        : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);  
   SIGNAL ah_j_q                   : AH_J_T := ('0', '0', '0', (OTHERS => '0'), '0');
   SIGNAL afu_reset_q              : std_logic := '1';
 --  SIGNAL dma_reset_m              : std_logic := '1';
@@ -171,14 +173,10 @@ BEGIN
       IF (ha_j_q.valid = '1') AND (ha_j_q.com = LLCMD) THEN
         llcmd_req_q <= '1';
 
-        IF ha_j_llcmd_code_q = LLCMD_CODES(ADD_ELEMENT) THEN
-          llcmd_ack_q <= '1';
-        ELSIF ha_j_llcmd_code_q = LLCMD_CODES(REMOVE_ELEMENT) THEN
-          llcmd_ack_q <= '1';
-        ELSIF  ha_j_llcmd_code_q = LLCMD_CODES(TERMINATE_ELEMENT) OR ha_j_llcmd_code_q = LLCMD_CODES(REMOVE_ELEMENT) THEN
+        IF  ha_j_llcmd_code_q = LLCMD_CODES(TERMINATE_ELEMENT) AND mmc_d_i.attached_contexts(to_integer(unsigned(ha_j_context_id_q))) = '1' THEN
           terminate_req_dma_q    <= '1';
           terminate_req_mmio_q   <= '1';
-          terminate_context_id_q <= ha_j_q.ea(LLCMD_PE_HANDLE_R+CONTEXT_BITS-1 DOWNTO LLCMD_PE_HANDLE_R);
+          terminate_context_id_q <= ha_j_context_id_q;
         ELSE
           llcmd_ack_q <= '1';
         END IF;
@@ -282,8 +280,6 @@ BEGIN
   END PROCESS handle_errors;
 
 
-
-
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- ******************************************************
@@ -325,11 +321,13 @@ BEGIN
 --  dma_reset_o     <= dma_reset_q;
 
   -- CD_C
-  cd_c_o.terminate_request <= terminate_req_dma_q;
-  cd_c_o.terminate_release <= terminate_ack_dma_q AND terminate_ack_mmio_q;
+  cd_c_o.terminate_request    <= terminate_req_dma_q;
+  cd_c_o.terminate_release    <= terminate_ack_dma_q AND terminate_ack_mmio_q;
+  cd_c_o.terminate_context_id <= terminate_context_id_q;
 
   -- CMM_C
-  cmm_c_o.terminate_request <= terminate_req_mmio_q;
+  cmm_c_o.terminate_request    <= terminate_req_mmio_q;
+  cmm_c_o.terminate_context_id <= terminate_context_id_q;
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -343,6 +341,7 @@ BEGIN
       -- AFU Control Interface from host
       ha_j_q                   <= ha_j_i;
       ha_j_llcmd_code_q        <= ha_j_i.ea(LLCMD_CMD_L DOWNTO LLCMD_CMD_R);
+      ha_j_context_id_q        <= ha_j_i.ea(LLCMD_PE_HANDLE_R+CONTEXT_BITS-1 DOWNTO LLCMD_PE_HANDLE_R);
     END IF;
   END PROCESS interfaces;
 
