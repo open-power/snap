@@ -67,6 +67,8 @@ SNAP uses the generic tools to update CAPI card FPGA bitstreams from
 For simulation, SNAP relies on the `xterm` program and on the PSL Simulation Environment (PSLSE) which is available on github:
 * https://github.com/ibm-capi/pslse
 
+for different cards check the release tag at [Simulation README](hardware/sim/README.md#pslse-setup)
+
 Simulating the NVMe host controller including flash storage devices requires licenses for the Cadence Incisive Simulator (IES) and DENALI Verification IP (PCIe and NVMe). Building images is possible without this.
 For more info see the [Simulation README](hardware/sim/README.md).
 
