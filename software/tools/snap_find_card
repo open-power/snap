@@ -79,7 +79,8 @@ function detect_snap_cards() {
 				else 
                                 echo -e "An acceleration card has been detected in card position ${card} "
 				fi
-				echo -e " PSL Revision is                                                : ${psl_revision}"
+				psl_revision_hex=`printf '%x\n' ${psl_revision}`
+				echo " PSL Revision is                                                : ${psl_revision_hex}"
                                 echo -e " Device ID    is                                                : ${check_dev}"
                                 echo -e " Sub device   is                                                : ${check_sub}"
 				echo -e " Image loaded is                                                : ${image_loaded}"
