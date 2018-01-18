@@ -214,9 +214,17 @@ extern "C" {
 
 /* Context Status Register (CSR) */
 #define	SNAP_CSR	0x1008
+#define SNAP_CSR_SAT    0x80           /* RO: Short Action Type for this context is assigned */
+#define SNAP_CSR_ATT    0x40           /* RO: This context is attached to an action */
+#define SNAP_CSR_EXEC   0x01           /* RO: Currently executing job */
+#define SNAP_CSR_ACT    0x00           /* RO: Context Active */
+#define SNAP_CSR_ATTACHED (SNAP_CSR_SAT | SNAP_CSR_ATT)
 
 /* Job Command Register (JCR) */
 #define	SNAP_JCR	0x1010
+#define	SNAP_JCR_ABORT  0x0004         /* Reset Action, than Detach action from context */
+#define	SNAP_JCR_STOP   0x0002         /* Detach action from context */
+#define	SNAP_JCR_START  0x0001         /* Attach action to context */
 
 #define	SNAP_AAT	0x1018
 #define	SNAP_JREQ_QR	0x1020

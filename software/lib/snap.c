@@ -529,9 +529,9 @@ static struct snap_action *hw_attach_action(struct snap_card *card,
 		t0 = tget_ms();
 		dt = 0;
 		rc = EBUSY;
-		while (dt < (timeout_sec*1000)) {
+		while (dt < (timeout_sec * 1000)) {
 			hw_snap_mmio_read64(card, SNAP_S_CSR, &data);
-			if (0xC0 == (data & 0xC0)) {
+			if (SNAP_CSR_ATTACHED == (data & SNAP_CSR_ATTACHED)) {
 				rc = 0;
 				break;
 			}
@@ -552,25 +552,50 @@ static struct snap_action *hw_attach_action(struct snap_card *card,
 static int hw_detach_action(struct snap_action *action)
 {
 	int rc = 0;
-	uint64_t data;
-	struct snap_card *card = (struct snap_card *)action;
+	uint64_t data = 0;
+	uint32_t action_control = 0;
+	struct snap_card *card;
+	unsigned long t0;
+	unsigned int dt = 0;
 
 	if (action == NULL) {
+		snap_trace("%s Error NULL Action\n", __func__);
 		errno = EINVAL;
 		return -1;
 	}
+	card = (struct snap_card *)action;
+	snap_trace("%s Enter Action: 0x%x "
+		   "Base: %x timeout: %d sec Seq: 0x%x\n",
+		   __func__, card->action_type, card->action_base,
+		   card->attach_timeout_sec, card->seq);
 
 	card->start_attach = true;              /* Set Flag to Attach next Time again */
-	hw_snap_mmio_write64(card, SNAP_S_JCR, 2); /* Stop:  Detach action */
-	hw_snap_mmio_read64(card, SNAP_S_CSR, &data); /* Action Must be gone */
-	if (0 != (data & 0x40)) {               /* Check if Context is still
-						   attached to action */
-		snap_trace("%s Error: CSR 0x%llx\n",
-			   __func__, (long long)data);
-		rc = SNAP_EDETACH; /* FIXME Use libsnap return codes */
+
+	/* Read Action Control and check Action Status */
+	hw_snap_mmio_read32(card, ACTION_CONTROL, &action_control);
+	if (ACTION_CONTROL_IDLE & action_control)
+		data = SNAP_JCR_STOP;           /* Action is IDLE, send Stop */
+	else    data = SNAP_JCR_ABORT;          /* Action is not IDLE, send Abort */
+	hw_snap_mmio_write64(card, SNAP_S_JCR, data);
+
+	/* Wait until Action gets detached. */
+	rc = SNAP_EDETACH;
+	t0 = tget_ms();
+	while (dt < (card->attach_timeout_sec * 1000)) {
+		/* Check if Action is detached */
+		hw_snap_mmio_read64(card, SNAP_S_CSR, &data);
+		if (0 == (data & SNAP_CSR_ATT)) {
+			rc = 0;             /* Ok */
+			break;              /* Detached */
+		}
+		/* Action detach can take a while for ABORT */
+		usleep(1000);
+		dt = (unsigned int)(tget_ms() - t0);
 	}
 
-	card->action_base = 0;                  /* FIXME use action_*32 instead */
+	card->action_base = 0;              /* FIXME use action_*32 instead */
+	snap_trace("%s Exit: rc: %d CSR 0x%llx after: %d msec\n",
+		   __func__, rc, (long long)data, dt);
 	return rc;
 }
 
