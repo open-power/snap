@@ -64,7 +64,7 @@ In order to use the menu-driven user interface for kconfig the `ncurses` library
 SNAP uses the generic tools to update CAPI card FPGA bitstreams from
 * https://github.com/ibm-capi/capi-utils
 
-For simulation, SNAP relies on the `xterm` program and on the PSL Simulation Environment (PSLSE) which is available on github:
+For simulation, SNAP relies on the `xterm` program and on the PSL Simulation Environment (PSLSE) which is available on github (for more info see [PSLSE Setup](hardware/sim/README.md#pslse-setup)):
 * https://github.com/ibm-capi/pslse
 
 Simulating the NVMe host controller including flash storage devices requires licenses for the Cadence Incisive Simulator (IES) and DENALI Verification IP (PCIe and NVMe). Building images is possible without this.

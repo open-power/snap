@@ -27,18 +27,23 @@
 bold=$(tput bold)
 normal=$(tput sgr0)
 
-version=1.0
+# modified jan 16th 2018 to have -v option providing extra information
+version=1.1
 accel=UNKNOWN
+VERBOSE=0
 
 # Print usage message helper function
 function usage() {
 	echo "Usage: $PROGRAM"
+        echo "    [-v] Prints extra information (to be put as first param)"
 	echo "    [-A] <accelerator> use either GZIP, ADKU3, N250S, S121B or ALL"
 	echo "    [-C] <0..3> Print accelerator name for this Card"
+	echo "    [-V] provides version"
 	echo "  prints out a list of cards found for the accelerator."
 	echo "  The numbers reflect /dev/cxl/afu<n>.0."
 	echo "  Print a list of all cards found if -A ALL."
-	echo "  Print Accelerator Name if -C (0..3) is used."
+        echo "  Print a list of all cards found from a specific provider (-A N250S or ADKU3 or NSA121B or GZIP)"
+	echo "  Print card name if -C (0..3) is used."
 }
 
 #
@@ -61,12 +66,28 @@ function detect_snap_cards() {
 
 		psl_revision=`cat /sys/class/cxl/card${card}/psl_revision`
 		device=`cat /sys/class/cxl/card${card}/afu${card}.0/cr0/device`
+		image_loaded=`cat /sys/class/cxl/card${card}/image_loaded`
+		load_image_on_perst=`cat /sys/class/cxl/card${card}/load_image_on_perst`
 		if [ $device != $check_dev ]; then
 			continue
 		fi
 		sub=`cat /sys/class/cxl/card$card/device/subsystem_device`
 		if [ $sub = $check_sub ]; then
-			echo -n "${card} "
+			if [ $VERBOSE -eq 1 ] ; then
+				if [ $accel != ALL ] ; then
+				echo -e "A $accel card has been detected in card position ${card} "
+				else 
+                                echo -e "An acceleration card has been detected in card position ${card} "
+				fi
+				psl_revision_hex=`printf '0x%x\n' ${psl_revision}`
+				echo " PSL Revision is                                                : ${psl_revision_hex}"
+                                echo -e " Device ID    is                                                : ${check_dev}"
+                                echo -e " Sub device   is                                                : ${check_sub}"
+				echo -e " Image loaded is                                                : ${image_loaded}"
+				echo -e " Next image to be loaded at next reset (load_image_on_perst) is : ${load_image_on_perst}"
+			else
+				echo -n "${card} "
+			fi
 			rc=$((rc +1))
 		fi
 	done
@@ -106,6 +127,7 @@ function detect_card_name()
 	local dev=$2
 	local sub=$3
 	local name=$4
+	
 
 	if [ -d /sys/class/cxl/card${card} ]; then
 		psl_revision=`cat /sys/class/cxl/card${card}/psl_revision`
@@ -120,7 +142,11 @@ function detect_card_name()
 			if [ $this_dev = $dev ]; then
 				this_sub=`cat /sys/class/cxl/card$card/device/subsystem_device`
 				if [ $this_sub = $sub ]; then
+				        if [ $VERBOSE -eq 1 ] ; then
+						echo -e "Card $card is detected as $name card"
+					else
 					echo -n $name
+					fi
 					return 1
 				fi
 			fi
@@ -133,8 +159,11 @@ function detect_card_name()
 # Parse any options given on the command line
 
 PROGRAM=$0
-while getopts ":A:C:Vvh" opt; do
+while getopts ":vA:C:Vh" opt; do
 	case ${opt} in
+	v)
+		VERBOSE=1
+		;;
 	A)
 		accel=${OPTARG};
 		;;
