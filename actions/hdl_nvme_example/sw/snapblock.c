@@ -163,7 +163,7 @@ static inline unsigned long atomic_inc(atomic_t *a)
 #define SNAP_N250S_NVME_SIZE (800ull * 1024 * 1024 * 1024) /* FIXME n TiB */
 #define __CBLK_BLOCK_SIZE 4096
 
-#define CBLK_IDX_MAX		15	/* FIXME Should be 16 */
+#define CBLK_IDX_MAX		16	/* FIXME Should be 16 */
 #define CBLK_NBLOCKS_MAX	32	/* 128 KiB / 4KiB */
 #define CBLK_NBLOCKS_WRITE_MAX	2	/* writing is just 1 or 2 blocks */
 
