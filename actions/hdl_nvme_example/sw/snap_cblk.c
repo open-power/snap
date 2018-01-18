@@ -302,11 +302,12 @@ static void rqueue_free(struct rqueue *rq)
 }
 
 typedef void * (* worker_thread_t)(void *data);
-
+typedef int (* cblk_read_write_f)(chunk_id_t id, void *buf, off_t lba,
+		size_t nblocks, int flags);
 /**
  * Get block from the queue, trigger read and collect results.
  */
-static void *read_thread(void *data)
+static void *__read_write_thread(void *data, cblk_read_write_f func)
 {
 	int rc;
 	void *buf;
@@ -341,7 +342,9 @@ static void *read_thread(void *data)
 		block_trace("[%s] reading lba %lu ...\n", __func__, lba);
 
 		gettimeofday(&stime, NULL);
-		rc = cblk_read(cid, buf, lba, nblocks, 0);
+
+		rc = func(cid, buf, lba, nblocks, 0);
+
 		gettimeofday(&etime, NULL);
 		diff_usec = timediff_usec(&etime, &stime);
 
@@ -370,6 +373,16 @@ err_out:
 	err_detected = 1;		/* inform others to stop */
 	d->thread_rc = -2;
 	pthread_exit(&d->thread_rc);
+}
+
+static void *read_thread(void *data)
+{
+	return __read_write_thread(data, cblk_read);
+}
+
+static void *write_thread(void *data)
+{
+	return __read_write_thread(data, cblk_write);
 }
 
 /**
@@ -689,7 +702,6 @@ int main(int argc, char *argv[])
 			goto err_out;
 		}
 
-
 		if (use_mmap) {
 			fd = file_map(fname, &buf, num_lba * lba_size);
 			if (fd < 0) {
@@ -882,14 +894,16 @@ int main(int argc, char *argv[])
 			goto err_out;
 		}
 
+		rqueue_init(&rq, buf, start_lba, lba_size, num_lba, lba_blocks);
 		gettimeofday(&stime, NULL);
-		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
-			block_trace("  writing lba %d max: %d ...\n", lba, start_lba + num_lba - 1);
-			rc = cblk_write(cid, buf + ((lba - start_lba) * lba_size),
-					lba, lba_blocks, 0);
-			if (rc != (int)lba_blocks)
-				goto err_out;
+
+		rc = run_threads(thread_data, threads, &write_thread, &rq);
+		if (rc != 0) {
+			fprintf(stderr, "err: run_threads unhappy rc=%d! %s\n", rc,
+				strerror(errno));
+			goto err_out;
 		}
+
 		gettimeofday(&etime, NULL);
 
 		diff_usec = timediff_usec(&etime, &stime);
@@ -932,20 +946,16 @@ int main(int argc, char *argv[])
 			__hexdump(stderr, buf, num_lba * lba_size);
 		}
 
+		rqueue_init(&rq, buf, start_lba, lba_size, num_lba, lba_blocks);
 		gettimeofday(&stime, NULL);
-		for (lba = start_lba; lba < (start_lba + num_lba); lba += lba_blocks) {
-			block_trace("  formatting lba %d ...\n", lba);
 
-			if (verbose_flag == 1) {
-				__hexdump(stderr, buf + ((lba - start_lba) * lba_size),
-					lba_size * lba_blocks);
-			}
-
-			rc = cblk_write(cid, buf + ((lba - start_lba) * lba_size),
-					lba, lba_blocks, 0);
-			if (rc != (int)lba_blocks)
-				goto err_out;
+		rc = run_threads(thread_data, threads, &write_thread, &rq);
+		if (rc != 0) {
+			fprintf(stderr, "err: run_threads unhappy rc=%d! %s\n", rc,
+				strerror(errno));
+			goto err_out;
 		}
+
 		gettimeofday(&etime, NULL);
 
 		diff_usec = timediff_usec(&etime, &stime);

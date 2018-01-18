@@ -20,6 +20,9 @@
 
 #include <libsnap.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /**
  * CAPI Streaming Framework - Job Queue specific definitions
  */
@@ -76,5 +79,9 @@ struct snap_queue_workitem {
 		uint8_t data[112];	/* RAW Data Space to fill to 128 Bytes */
 	} user;
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*__SNAP_QUEUE_H__ */

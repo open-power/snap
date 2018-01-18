@@ -11,7 +11,8 @@ IBM | 10.14.10.01 | 10.14.10.01 | HLS Sponge
 IBM | 10.14.10.02 | 10.14.10.02 | HLS HashJoin
 IBM | 10.14.10.03 | 10.14.10.03 | HLS Text Search
 IBM | 10.14.10.04 | 10.14.10.04 | HLS BFS (Breadth First Search)
-IBM | 10.14.10.05 | 10.14.10.06 | HLS Intersection (Two methods)
+IBM | 10.14.10.05 | 10.14.10.05 | HLS Intersection (By Hashing)
+IBM | 10.14.10.06 | 10.14.10.06 | HLS Intersection (By Sorting)
 IBM | 10.14.10.07 | 10.14.10.07 | HLS NVMe memcopy
 IBM | 10.14.10.08 | 10.14.10.08 | HLS Hello World
 IBM | 10.14.10.09 | 10.14.FF.FF | Reserved for IBM Actions

@@ -29,7 +29,7 @@ You may clone `PSLSE` from github [https://github.com/ibm-capi/pslse](https://gi
 
 :warning: Currently (as of Dec 2017) the following PSLSE GIT branches are necessary:
 * v3.1    (an older but stable master version) for POWER8 cards (ADKU3, N250S, S121B)
-* capi2   (a seperate side branch with more features) for POWER9 cards (N250S+)
+* capi2   (a separate side branch with more features) for POWER9 cards (N250S+)
 
 The plan is to merge both functionalities to master in 1Q2018
 
