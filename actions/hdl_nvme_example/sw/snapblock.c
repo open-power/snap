@@ -44,7 +44,7 @@
 #define CBLK_NBLOCKS			2 /* tuneup for the prefetch strategy */
 
 #define CONFIG_COMPLETION_THREADS	1 /* 1 works best */
-#define CONFIG_MAX_RETRIES		5 /* 5 is good, 0: no retries */
+#define CONFIG_MAX_RETRIES		0 /* 5 is good, 0: no retries */
 #define CONFIG_BUSY_TIMEOUT_SEC		5
 #define CONFIG_REQ_TIMEOUT_SEC		2
 #define CONFIG_REQ_DURATION_USEC	100000 /* usec */
