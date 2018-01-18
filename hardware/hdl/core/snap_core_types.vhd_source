@@ -1058,6 +1058,7 @@ PACKAGE snap_core_types IS
       exploration_done          : std_logic;
       max_sat                   : integer RANGE 0 TO NUM_OF_ACTION_TYPES-1;
       last_seqno                : std_logic;
+      action_reset              : std_logic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
       action_ack                : std_logic;
     END RECORD;
 

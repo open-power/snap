@@ -439,9 +439,11 @@ BEGIN
             ctx_completed_fifo_busy_q     <= '1';
           END IF;
           IF (ctx_completed_fifo_busy_q AND NOT (ctx_completed_fifo_re(sat_id) OR action_completed_v)) = '1' THEN
-            action_completed_fifo_we(sat_id)  <= '1';
-            action_completed_fifo_din(sat_id) <= ctx_completed_fifo_dout(sat_id);
-            ctx_completed_fifo_busy_q         <= '0';
+            IF mmj_c_i.action_reset(to_integer(unsigned(ctx_completed_fifo_dout(sat_id)))) = '0' THEN
+              action_completed_fifo_we(sat_id)  <= '1';
+              action_completed_fifo_din(sat_id) <= ctx_completed_fifo_dout(sat_id);
+              ctx_completed_fifo_busy_q         <= '0';
+            END IF;
           END IF;
 
           complete_ctx_q                     <= complete_ctx_q;
