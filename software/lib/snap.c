@@ -512,6 +512,7 @@ static struct snap_action *hw_attach_action(struct snap_card *card,
 		/* Short Action Type and Direct Access */
 		hw_snap_mmio_write64(card, SNAP_S_CCR, data);
 		card->start_attach = true;
+		card->attach_timeout_sec = timeout_sec; /* Save timeout */ 
 	}
 
 	if (card->start_attach) {
