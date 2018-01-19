@@ -275,9 +275,8 @@
       diff cblk_read1.bin cblk_read2.bin
 
       for blk in 1 2 4 8 16 32;do byte=$((blk*512))
-        step "snap_cblk $options -b2      --write cbld_read2.bin"
-        step "snap_cblk $options -b${blk} --write cbld_read3.bin"
-        step "snap_cblk $options -b32     --read cclk_read.bin"
+        step "snap_cblk $options -b2      --write cblk_read2.bin"
+        step "snap_cblk $options -b${blk} --read  cblk_read3.bin"
         diff cblk_read2.bin cblk_read3.bin
       done
     fi # hdl_nvme_example
