@@ -45,8 +45,8 @@
 
 #define CONFIG_COMPLETION_THREADS	1 /* 1 works best */
 #define CONFIG_MAX_RETRIES		0 /* 5 is good, 0: no retries */
-#define CONFIG_BUSY_TIMEOUT_SEC		5
-#define CONFIG_REQ_TIMEOUT_SEC		2
+#define CONFIG_BUSY_TIMEOUT_SEC		10
+#define CONFIG_REQ_TIMEOUT_SEC		5
 #define CONFIG_REQ_DURATION_USEC	100000 /* usec */
 
 static int cblk_maxretries = CONFIG_MAX_RETRIES;
@@ -112,14 +112,14 @@ static inline long int timediff_sec(struct timeval *a, struct timeval *b)
 
 	timersub(a, b , &res);
 
-	/* fprintf(stderr, "err: Strange time diff "
-	 * 	"a.tv_sec=%ld a.tv_usec=%ld "
-	 * 	"b.tv_sec=%ld b.tv_usec=%ld "
-	 * 	"r.tv_sec=%ld r.tv_usec=%ld\n",
-	 *		(long int)a->tv_sec, (long int)a->tv_usec,
-	 *	(long int)b->tv_sec, (long int)b->tv_usec,
-	 *	(long int)res.tv_sec, (long int)res.tv_usec);
-	 */
+	if (res.tv_sec > 100)
+		fprintf(stderr, "err: Strange time diff "
+			"a.tv_sec=%ld a.tv_usec=%ld "
+			"b.tv_sec=%ld b.tv_usec=%ld "
+			"r.tv_sec=%ld r.tv_usec=%ld\n",
+			(long int)a->tv_sec, (long int)a->tv_usec,
+			(long int)b->tv_sec, (long int)b->tv_usec,
+			(long int)res.tv_sec, (long int)res.tv_usec);
 
 	return res.tv_sec;
 }
