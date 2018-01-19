@@ -1747,7 +1747,7 @@ int cblk_read(chunk_id_t id __attribute__((unused)),
 
 	if (cblk_caching) {
 		/* Trying to get data from CACHE if we got all blocks ... */
-		rc = __cache_try_read(c, lba, buf, nblocks ,CONFIG_REQ_DURATION_USEC);
+		rc = __cache_try_read(c, lba, buf, nblocks, CONFIG_REQ_DURATION_USEC);
 
 		/* ... we don't need to ask the NVMe hardware */
 		if (rc == (int)nblocks) {
