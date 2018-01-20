@@ -495,10 +495,20 @@ static void action_sm (struct snap_card* h,
         VERBOSE0("Polling Status reg with 0X%X\n", reg_data);
     } while (1);
 
-    // Stop working
+    // Stop flushing 
     action_write (h, ACTION_CONTROL_L, 0x00000000);
     action_write (h, ACTION_CONTROL_H, 0x00000000);
     VERBOSE0 (" Write ACTION_CONTROL for stop working! \n");
+
+    // Wait for transaction to be done.
+    usleep(100000);
+
+    int count = 0;
+    do {
+        VERBOSE0 (" Draining %i! \n", count);
+        reg_data = action_read(h, ACTION_STATUS_L);
+        count++;
+    } while (count < 50);
 
     return;
 }
@@ -813,7 +823,6 @@ int main (int argc, char* argv[])
     VERBOSE1 ("Finish sm_scan.\n");
 
     // Sleep for 10us before read out the reasult
-    usleep(10);
     if (verbose_level > 1) {
         __hexdump (stdout, stat_dest_base, 320);
     }
