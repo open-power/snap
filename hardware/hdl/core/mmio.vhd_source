@@ -33,7 +33,7 @@ ENTITY mmio IS
     -- pervasive
     ha_pclock              : IN  std_logic;
     afu_reset              : IN  std_logic;
-    app_reset              : OUT std_logic;
+    action_reset           : OUT std_logic;
 #ifdef CONFIG_ENABLE_NVME
     nvme_reset_ctl         : OUT std_logic_vector(SNAP_NVME_RST_L  DOWNTO SNAP_NVME_RST_R);   -- keeping NVMe drives in reset by driving 0s
 #endif
@@ -57,8 +57,10 @@ ENTITY mmio IS
     mmj_d_o                : OUT MMJ_D_T;
     --
     -- DMA Interface
+    dmm_c_i                : IN  DMM_C_T;
     dmm_e_i                : IN  DMM_E_T;
     mmd_a_o                : OUT MMD_A_T;
+    mmd_c_o                : OUT MMD_C_T;
     mmd_i_o                : OUT MMD_I_T;
     --
     -- AXI MASTER Interface
@@ -194,15 +196,17 @@ ARCHITECTURE mmio OF mmio IS
   SIGNAL context_command_mmio_dout     : std_logic_vector(CTX_CMD_SIZE_INT-1 DOWNTO 0);
 
   SIGNAL context_fifo_we_q             : std_logic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
-  SIGNAL context_abort_q               : std_logic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
+  SIGNAL context_abort_req_q           : std_logic;
+  SIGNAL context_abort_action_id_q     : std_logic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
+  SIGNAL context_abort_context_id_q    : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
   SIGNAL context_stop_q                : std_logic_vector(NUM_OF_ACTION_TYPES-1 DOWNTO 0);
   SIGNAL context_detach_ack_q0         : std_logic;
   SIGNAL context_detach_ack_q          : std_logic;
 
-  SIGNAL app_reset_count_q             : integer RANGE 0 TO 10;
-  SIGNAL app_reset_q                   : std_logic;
-  SIGNAL app_reset_qq                  : std_logic;
-  SIGNAL action_reset_q                : std_logic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
+  SIGNAL action_reset_count_q          : integer RANGE 0 TO 10;
+  SIGNAL action_reset_q                : std_logic;
+  SIGNAL action_reset_qq               : std_logic;
+  SIGNAL action_reset_vector_q         : std_logic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
 
 BEGIN
   ------------------------------------------------------------------------------
@@ -738,7 +742,9 @@ BEGIN
       context_status_conflict_q        <= '0';
 
       context_fifo_we_q                <= (OTHERS => '0');
-      context_abort_q                  <= (OTHERS => '0');
+      context_abort_req_q              <= '0';
+      context_abort_action_id_q        <= (OTHERS => '0');
+      context_abort_context_id_q       <= context_abort_context_id_q;
       context_stop_q                   <= (OTHERS => '0');
 
       IF (context_status_mmio_addr = jmm_d_i.context_id) AND (jmm_c_i.status_we = '1') THEN
@@ -936,9 +942,11 @@ BEGIN
 
                     WHEN CTX_ABORT =>
                       IF context_status_mmio_dout(CTX_STAT_ACTION_VALID_INT) = '1' THEN
+                        context_abort_req_q        <= '1';
+                        context_abort_context_id_q <= context_status_mmio_addr;
+                        context_abort_action_id_q(to_integer(unsigned(context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R)))) <= '1';
                         context_stop_q(to_integer(unsigned(context_config_mmio_dout(CTX_CFG_SAT_INT_L DOWNTO CTX_CFG_SAT_INT_R)))) <= '1';
-                        context_abort_q(to_integer(unsigned(context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R)))) <= '1';
-                        context_detach_ack_q0 <= '1';
+                        context_detach_ack_q0  <= '1';
                       END IF;
 
                     WHEN OTHERS =>
@@ -1002,6 +1010,7 @@ BEGIN
         context_status_mmio_we           <= '1';
         context_command_mmio_we          <= '1';
 
+        context_abort_context_id_q       <= (OTHERS => '0');
         context_detach_ack_q0            <= '0';
         context_detach_ack_q             <= '0';
       END IF;                                     -- afu_reset = '1'
@@ -1140,8 +1149,14 @@ BEGIN
     -- MMC
     --
     mmc_c_o.reset_done        <= NOT regs_reset_q;
-    mmc_c_o.terminate_ack     <= app_reset_qq AND NOT app_reset_q;
+    mmc_c_o.action_reset_done <= action_reset_qq AND NOT action_reset_q;
     mmc_d_o.attached_contexts <= attached_contexts_q;
+
+    --
+    -- MMD
+    --
+    mmd_c_o.quiesce_request    <= context_abort_req_q;
+    mmd_c_o.quiesce_context_id <= context_abort_context_id_q;
 
     --
     -- MMX
@@ -1151,34 +1166,34 @@ BEGIN
     --
     -- MMJ
     --
-    mmj_c_o.ctx_fifo_we        <= context_fifo_we_q;
-    mmj_c_o.ctx_stop           <= context_stop_q;
+    mmj_c_o.ctx_fifo_we         <= context_fifo_we_q;
+    mmj_c_o.ctx_stop            <= context_stop_q;
 
-    mmj_c_o.exploration_done   <= exploration_done_q;
-    mmj_c_o.max_sat            <= to_integer(unsigned(snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_SAT_L DOWNTO SNAP_STAT_MAX_SAT_R)));
-    mmj_c_o.last_seqno         <= '1' WHEN context_seqno_hw_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R) = context_seqno_hw_dout(CTX_SEQNO_LAST_INT_L DOWNTO CTX_SEQNO_LAST_INT_R)
+    mmj_c_o.exploration_done    <= exploration_done_q;
+    mmj_c_o.max_sat             <= to_integer(unsigned(snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_SAT_L DOWNTO SNAP_STAT_MAX_SAT_R)));
+    mmj_c_o.last_seqno          <= '1' WHEN context_seqno_hw_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R) = context_seqno_hw_dout(CTX_SEQNO_LAST_INT_L DOWNTO CTX_SEQNO_LAST_INT_R)
                                       ELSE '0';
 
-    mmj_c_o.action_reset       <= action_reset_q;
-    mmj_c_o.action_ack         <= xmm_d_i.ack AND NOT xmm_mmio_ack_q;
+    mmj_c_o.action_reset_vector <= action_reset_vector_q;
+    mmj_c_o.action_ack          <= xmm_d_i.ack AND NOT xmm_mmio_ack_q;
 
-    mmj_d_o.context_id         <= context_status_mmio_addr;
-    mmj_d_o.action_id          <= context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R);
+    mmj_d_o.context_id          <= context_status_mmio_addr;
+    mmj_d_o.action_id           <= context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R);
 
     action_type_list_gen : FOR action_id IN 0 TO NUM_OF_ACTIONS-1 GENERATE
-      mmj_d_o.sat(action_id)   <= action_type_regs_q(action_id)(ATR_SAT_L DOWNTO ATR_SAT_R);
+      mmj_d_o.sat(action_id)    <= action_type_regs_q(action_id)(ATR_SAT_L DOWNTO ATR_SAT_R);
     END GENERATE;
 
-    mmj_d_o.current_seqno      <= context_seqno_hw_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R);
-    mmj_d_o.current_jqidx      <= context_seqno_hw_dout(CTX_SEQNO_JQIDX_INT_L DOWNTO CTX_SEQNO_JQIDX_INT_R);
-    mmj_d_o.assign_int_enable  <= context_config_hw_dout(CTX_CFG_ASGNINT_ENA_INT);
-    mmj_d_o.cpl_int_enable     <= context_config_hw_dout(CTX_CFG_CPLINT_ENA_INT);
-    mmj_d_o.job_queue_mode     <= NOT context_config_hw_dout(CTX_CFG_DIRECT_MODE_INT);
+    mmj_d_o.current_seqno       <= context_seqno_hw_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R);
+    mmj_d_o.current_jqidx       <= context_seqno_hw_dout(CTX_SEQNO_JQIDX_INT_L DOWNTO CTX_SEQNO_JQIDX_INT_R);
+    mmj_d_o.assign_int_enable   <= context_config_hw_dout(CTX_CFG_ASGNINT_ENA_INT);
+    mmj_d_o.cpl_int_enable      <= context_config_hw_dout(CTX_CFG_CPLINT_ENA_INT);
+    mmj_d_o.job_queue_mode      <= NOT context_config_hw_dout(CTX_CFG_DIRECT_MODE_INT);
 
     --
     -- Reset to action
     --
-    app_reset <= cmm_c_i.terminate_request OR app_reset_q;
+    action_reset <= action_reset_q;
 
 #ifdef CONFIG_ENABLE_NVME
     --
@@ -1451,30 +1466,35 @@ BEGIN
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
   --
-  action_reset : PROCESS (ha_pclock)
+  gen_action_reset : PROCESS (ha_pclock)
   BEGIN
     IF (rising_edge(ha_pclock)) THEN
-      app_reset_q    <= app_reset_q;
-      app_reset_qq   <= app_reset_q;
-      action_reset_q <= action_reset_q;
-      IF app_reset_count_q = 0 THEN
-        app_reset_q    <= '0';
-        action_reset_q <= (OTHERS => '0');
+      action_reset_q        <= action_reset_q;
+      action_reset_qq       <= action_reset_q;
+      -- TODO: individual action handling:
+      action_reset_vector_q <= action_reset_vector_q OR context_abort_action_id_q;
+      IF cmm_c_i.terminate_request = '1' THEN
+        action_reset_vector_q <= (OTHERS => '1');
+      END IF;
+
+      IF action_reset_count_q = 0 THEN
+        action_reset_q        <= '0';
+        action_reset_vector_q <= (OTHERS => '0');
       ELSE
-        app_reset_count_q <= app_reset_count_q - 1;
+        action_reset_count_q <= action_reset_count_q - 1;
       END IF;
-      IF (cmm_c_i.terminate_request OR or_reduce(context_abort_q)) = '1' THEN  -- TODO: individual action handling
-        app_reset_count_q <= 10;
-        app_reset_q       <= '1';
-        action_reset_q    <= context_abort_q;
+      IF dmm_c_i.action_reset_req = '1' THEN  -- TODO: individual action handling
+        action_reset_count_q <= 10;
+        action_reset_q       <= '1';
       END IF;
+
       IF afu_reset = '1' THEN
-        app_reset_count_q <= 0;
-        app_reset_q       <= '0';
-        app_reset_qq      <= '0';
-        action_reset_q    <= (OTHERS => '0');
+        action_reset_count_q  <= 0;
+        action_reset_q        <= '0';
+        action_reset_qq       <= '0';
+        action_reset_vector_q <= (OTHERS => '0');
       END IF;
     END IF;
-  END PROCESS action_reset;
+  END PROCESS gen_action_reset;
 
 END ARCHITECTURE;

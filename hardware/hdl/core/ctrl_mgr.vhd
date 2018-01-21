@@ -44,7 +44,6 @@ ENTITY ctrl_mgr IS
 
     --
     -- DMA IOs
-    dc_c_i          : IN  DC_C_T;
     cd_c_o          : OUT CD_C_T;
 
     --
@@ -75,7 +74,7 @@ ARCHITECTURE ctrl_mgr OF ctrl_mgr IS
   SIGNAL ctrl_fsm_q               : CTRL_FSM_T := ST_IDLE;
   SIGNAL ha_j_q                   : HA_J_T;
   SIGNAL ha_j_llcmd_code_q        : std_logic_vector(LLCMD_CMD_L DOWNTO LLCMD_CMD_R);
-  SIGNAL ha_j_context_id_q        : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);  
+  SIGNAL ha_j_context_id_q        : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
   SIGNAL ah_j_q                   : AH_J_T := ('0', '0', '0', (OTHERS => '0'), '0');
   SIGNAL afu_reset_q              : std_logic := '1';
 --  SIGNAL dma_reset_m              : std_logic := '1';
@@ -87,11 +86,9 @@ ARCHITECTURE ctrl_mgr OF ctrl_mgr IS
 
   SIGNAL llcmd_req_q              : std_logic;
   SIGNAL llcmd_ack_q              : std_logic;
-  SIGNAL terminate_req_dma_q      : std_logic;
-  SIGNAL terminate_req_mmio_q     : std_logic;
+  SIGNAL terminate_req_q          : std_logic;
+  SIGNAL terminate_ongoing_q      : std_logic;
   SIGNAL terminate_context_id_q   : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
-  SIGNAL terminate_ack_dma_q      : std_logic;
-  SIGNAL terminate_ack_mmio_q     : std_logic;
 
   -- Ctrl Mgr Error record:
   SIGNAL cmm_e_q                  : CMM_E_T := (OTHERS => '0');
@@ -152,11 +149,9 @@ BEGIN
                                    ah_j_q.error, '0');
 
       llcmd_req_q              <= '0';
-      terminate_req_dma_q      <= '0';
-      terminate_req_mmio_q     <= '0';
-      terminate_ack_dma_q      <= (terminate_ack_dma_q OR dc_c_i.terminate_ack) AND NOT (terminate_ack_dma_q AND terminate_ack_mmio_q);
-      terminate_ack_mmio_q     <= (terminate_ack_mmio_q OR mmc_c_i.terminate_ack) AND NOT (terminate_ack_dma_q AND terminate_ack_mmio_q);
-      llcmd_ack_q              <= terminate_ack_dma_q AND terminate_ack_mmio_q;
+      terminate_req_q          <= '0';
+      terminate_ongoing_q      <= terminate_ongoing_q AND NOT mmc_c_i.action_reset_done;
+      llcmd_ack_q              <= mmc_c_i.action_reset_done AND terminate_ongoing_q;
 
       cmm_e_q.ctrl_fsm_err     <= '0';
 
@@ -174,8 +169,8 @@ BEGIN
         llcmd_req_q <= '1';
 
         IF  ha_j_llcmd_code_q = LLCMD_CODES(TERMINATE_ELEMENT) AND mmc_d_i.attached_contexts(to_integer(unsigned(ha_j_context_id_q))) = '1' THEN
-          terminate_req_dma_q    <= '1';
-          terminate_req_mmio_q   <= '1';
+          terminate_req_q        <= '1';
+          terminate_ongoing_q    <= '1';
           terminate_context_id_q <= ha_j_context_id_q;
         ELSE
           llcmd_ack_q <= '1';
@@ -240,13 +235,11 @@ BEGIN
       END IF;
 
       IF afu_reset_q = '1' THEN
-        ah_j_q.running               <= '0';
-        ah_j_q.error                 <= (OTHERS => '0');
-        llcmd_ack_q                  <= '0';
-        terminate_context_id_q       <= (OTHERS => '0');
-        terminate_ack_dma_q          <= '0';
-        terminate_ack_mmio_q         <= '0';
-
+        ah_j_q.running         <= '0';
+        ah_j_q.error           <= (OTHERS => '0');
+        llcmd_ack_q            <= '0';
+        terminate_ongoing_q    <= '0';
+        terminate_context_id_q <= (OTHERS => '0');
         --
         -- send DONE after reset
         ctrl_fsm_q <= ST_SEND_RDONE;
@@ -321,12 +314,12 @@ BEGIN
 --  dma_reset_o     <= dma_reset_q;
 
   -- CD_C
-  cd_c_o.terminate_request    <= terminate_req_dma_q;
-  cd_c_o.terminate_release    <= terminate_ack_dma_q AND terminate_ack_mmio_q;
-  cd_c_o.terminate_context_id <= terminate_context_id_q;
+  cd_c_o.quiesce_request    <= terminate_req_q;
+  cd_c_o.quiesce_release    <= mmc_c_i.action_reset_done;
+  cd_c_o.quiesce_context_id <= terminate_context_id_q;
 
   -- CMM_C
-  cmm_c_o.terminate_request    <= terminate_req_mmio_q;
+  cmm_c_o.terminate_request    <= terminate_req_q;
   cmm_c_o.terminate_context_id <= terminate_context_id_q;
 
   ------------------------------------------------------------------------------
