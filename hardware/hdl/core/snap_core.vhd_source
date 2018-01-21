@@ -163,7 +163,7 @@ ARCHITECTURE snap_core OF snap_core IS
   --
   -- SIGNAL
   SIGNAL afu_reset           : std_logic;
-  SIGNAL app_reset           : std_logic;
+  SIGNAL mmio_action_reset   : std_logic;
   SIGNAL ah_b                : AH_B_T;
   SIGNAL ah_c                : AH_C_T;
   SIGNAL ah_j                : AH_J_T;
@@ -171,7 +171,7 @@ ARCHITECTURE snap_core OF snap_core IS
   SIGNAL cd_c                : CD_C_T;
   SIGNAL cmm_c               : CMM_C_T;
   SIGNAL cmm_e               : CMM_E_T;
-  SIGNAL dc_c                : DC_C_T;
+  SIGNAL dmm_c               : DMM_C_T;
   SIGNAL dmm_e               : DMM_E_T;
   SIGNAL ha_b                : HA_B_T;
   SIGNAL ha_c                : HA_C_T;
@@ -191,6 +191,7 @@ ARCHITECTURE snap_core OF snap_core IS
   SIGNAL mmc_d               : MMC_D_T;
   SIGNAL mmc_e               : MMC_E_T;
   SIGNAL mmd_a               : MMD_A_T;
+  SIGNAL mmd_c               : MMD_C_T;
   SIGNAL mmd_i               : MMD_I_T;
   SIGNAL mmj_c               : MMJ_C_T;
   SIGNAL mmj_d               : MMJ_D_T;
@@ -391,9 +392,15 @@ BEGIN
       dh_d_o                 => dh_d,
 #endif
       --
+      -- MMIO Interface
+      mmd_a_i                => mmd_a,
+      mmd_c_i                => mmd_c,
+      mmd_i_i                => mmd_i,
+      dmm_c_o                => dmm_c,
+      dmm_e_o                => dmm_e,
+      --
       -- CTRL Manager Interface
       cd_c_i                 => cd_c,
-      dc_c_o                 => dc_c,
       --
       -- AXI SLAVE Interface
       sd_c_i                 => sd_c,
@@ -427,7 +434,6 @@ BEGIN
       afu_reset_o            => afu_reset,
       --
       -- DMA IOs
-      dc_c_i                 => dc_c,
       cd_c_o                 => cd_c,
       --
       -- MMIO IOs
@@ -484,7 +490,7 @@ BEGIN
       -- pervasive
       ha_pclock              => ha_pclock,
       afu_reset              => afu_reset,
-      app_reset              => app_reset,
+      action_reset           => mmio_action_reset,
 
 #ifdef CONFIG_ENABLE_NVME
       nvme_reset_ctl         => nvme_reset_ctl,
@@ -512,8 +518,10 @@ BEGIN
       mmj_d_o                => mmj_d,
       --
       -- DMA Interface
+      dmm_c_i                => dmm_c,
       dmm_e_i                => dmm_e,
       mmd_a_o                => mmd_a,
+      mmd_c_o                => mmd_c,
       mmd_i_o                => mmd_i,
       --
       -- AXI MASTER Interface
@@ -574,5 +582,5 @@ BEGIN
       ks_d_i                       => ks_d_i
      );
 
-    action_reset <= afu_reset OR app_reset;
+    action_reset <= afu_reset OR mmio_action_reset;
 END ARCHITECTURE;

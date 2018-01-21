@@ -825,14 +825,14 @@ PACKAGE snap_core_types IS
 -- ***** AFU INTERNAL INTERFACE TYPES               *****
 -- ******************************************************
 --
---  dc_c : dma         -> ctrl_mgr    : Control Interface
---  dmm_e: dma         -> mmio        : Error Interface
---  ds_c : dma         -> AXI slave   : Control Interface
---  ds_d : dma         -> AXI slave   : Data Interface
---
 --  cd_c : ctrl_mgr    -> dma         : Control Interface
 --  cmm_c: ctrl_mgr    -> mmio        : Control Interface
 --  cmm_e: ctrl_mgr    -> mmio        : Error Interface
+--
+--  dmm_c: dma         -> mmio        : Control Interface
+--  dmm_e: dma         -> mmio        : Error Interface
+--  ds_c : dma         -> AXI slave   : Control Interface
+--  ds_d : dma         -> AXI slave   : Data Interface
 --
 --  jmm_c: job_manager -> mmio        : Control Interface
 --  jmm_d: job_manager -> mmio        : Data Interface
@@ -843,6 +843,7 @@ PACKAGE snap_core_types IS
 --  mmc_d: mmio        -> ctrl_mgr    : Data Interface
 --  mmc_e: mmio        -> ctrl_mgr    : Error Interface
 --  mmd_a: mmio        -> dma         : Aggravater Interface
+--  mmd_c: mmio        -> dma         : Control Interface
 --  mmd_i: mmio        -> dma         : Error Inject
 --  mmj_c: mmio        -> job_manager : Control Interface
 --  mmj_d: mmio        -> job_manager : Data Interface
@@ -860,17 +861,50 @@ PACKAGE snap_core_types IS
 --
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+  ---------------------------------------------------------------------------
+  ----------------------------------------------------------------------------
+  --  CTRL Manager Interface
+  ----------------------------------------------------------------------------
+  ----------------------------------------------------------------------------
+    --
+    -- cd_c
+    --
+    TYPE CD_C_T IS RECORD
+      quiesce_request    : std_logic;
+      quiesce_release    : std_logic;
+      quiesce_context_id : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    END RECORD CD_C_T;
+
+    --
+    -- cmm_c
+    --
+    TYPE CMM_C_T IS RECORD
+      terminate_request    : std_logic;
+      terminate_context_id : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    END RECORD;
+
+    --
+    -- cmm_e
+    --
+    TYPE CMM_E_T IS RECORD
+      ctrl_fsm_err     : std_logic;
+      com_parity_err   : std_logic;
+      ea_parity_err    : std_logic;
+    END RECORD;
+
+
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
   --  DMA Interface
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
     --
-    -- dc_c
+    -- dmm_c
     --
-    TYPE DC_C_T IS RECORD
-      terminate_ack : std_logic;
-    END RECORD DC_C_T;
+    TYPE DMM_C_T IS RECORD
+      action_reset_req        : std_logic;
+      action_reset_context_id : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    END RECORD DMM_C_T;
 
     --
     -- dmm_e
@@ -927,38 +961,6 @@ PACKAGE snap_core_types IS
 
   ---------------------------------------------------------------------------
   ----------------------------------------------------------------------------
-  --  CTRL Manager Interface
-  ----------------------------------------------------------------------------
-  ----------------------------------------------------------------------------
-    --
-    -- cd_c
-    --
-    TYPE CD_C_T IS RECORD
-      terminate_request    : std_logic;
-      terminate_release    : std_logic;
-      terminate_context_id : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
-    END RECORD CD_C_T;
-
-    --
-    -- cmm_c
-    --
-    TYPE CMM_C_T IS RECORD
-      terminate_request    : std_logic;
-      terminate_context_id : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
-    END RECORD CMM_C_T;
-
-  --
-    -- cmm_e
-    --
-    TYPE CMM_E_T IS RECORD
-      ctrl_fsm_err     : std_logic;
-      com_parity_err   : std_logic;
-      ea_parity_err    : std_logic;
-    END RECORD;
-
-
-  ---------------------------------------------------------------------------
-  ----------------------------------------------------------------------------
   --  Job Manager Interface
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
@@ -1010,8 +1012,8 @@ PACKAGE snap_core_types IS
     -- mmc_c
     --
     TYPE MMC_C_T IS RECORD
-      reset_done    : std_logic;
-      terminate_ack : std_logic;
+      reset_done        : std_logic;
+      action_reset_done : std_logic;
     END RECORD MMC_C_T;
 
     --
@@ -1029,13 +1031,21 @@ PACKAGE snap_core_types IS
     END RECORD MMC_E_T;
 
     --
-    --
     -- mmd_a
+    --
     TYPE MMD_A_T IS RECORD
       thr_read_fsm        : std_logic;
       thr_write_fsm       : std_logic;
       thr_cmd_fsm         : std_logic;
     END RECORD MMD_A_T;
+
+    --
+    -- mmd_c
+    --
+    TYPE MMD_C_T IS RECORD
+      quiesce_request    : std_logic;
+      quiesce_context_id : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    END RECORD MMD_C_T;
 
     --
     -- mmd_i
@@ -1058,7 +1068,7 @@ PACKAGE snap_core_types IS
       exploration_done          : std_logic;
       max_sat                   : integer RANGE 0 TO NUM_OF_ACTION_TYPES-1;
       last_seqno                : std_logic;
-      action_reset              : std_logic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
+      action_reset_vector       : std_logic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
       action_ack                : std_logic;
     END RECORD;
 
