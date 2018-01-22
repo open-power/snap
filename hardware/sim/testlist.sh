@@ -278,6 +278,7 @@
         step "snap_cblk $options -b2      --write cblk_read2.bin"
         step "snap_cblk $options -b${blk} --read  cblk_read3.bin"
         diff cblk_read2.bin cblk_read3.bin
+        rm cblk_read3.bin
       done
     fi # hdl_nvme_example
  #
