@@ -968,7 +968,6 @@ static struct cblk_req *get_req(struct cblk_dev *c,
 					__func__, slot, lba);
 
 				gettimeofday(&req->stime, NULL);
-
 				req->use_wait_sem = use_wait_sem;
 				req->lba = lba;
 				req->nblocks = nblocks;
@@ -1097,12 +1096,20 @@ static int completion_status(struct cblk_dev *c, int timeout __attribute__((unus
 	return slot;
 }
 
-static int check_req_timeouts(struct cblk_dev *c, struct timeval *etime,
-			long int timeout_sec)
+/*
+ * We are checking status in struct cblk_req and we saw req->stime to
+ * be all 0s during testing. Therefore we try to aquire the c->dev_lock
+ * to avoid any possible inconsistencies here.
+ */
+static int check_req_timeouts(struct cblk_dev *c, long int timeout_sec)
 {
 	unsigned int i;
 	long int diff_sec = 0;
 	int err = 0;
+	struct timeval etime;
+
+	gettimeofday(&etime, NULL);
+	pthread_mutex_lock(&c->dev_lock);
 
 	for (i = 0; i < ARRAY_SIZE(c->req); i++) {
 		struct cblk_req *req = &c->req[i];
@@ -1110,7 +1117,7 @@ static int check_req_timeouts(struct cblk_dev *c, struct timeval *etime,
 		if ((req->status != CBLK_READING) && (req->status != CBLK_WRITING))
 			continue;
 
-		diff_sec = timediff_sec(etime, &req->stime);
+		diff_sec = timediff_sec(&etime, &req->stime);
 		if (diff_sec > timeout_sec) {
 			err++;
 			
@@ -1137,10 +1144,16 @@ static int check_req_timeouts(struct cblk_dev *c, struct timeval *etime,
 			} else {
 				/* FIXME Helps but is not optimal ... */
 				req->err_total++;
+
+				/* req_start() will use the lock too */
+				pthread_mutex_unlock(&c->dev_lock);
 				req_start(req, c);
+				pthread_mutex_lock(&c->dev_lock);
 			}
 		}
 	}
+	pthread_mutex_unlock(&c->dev_lock);
+
 	return err;
 }
 
@@ -1286,7 +1299,6 @@ static void *completion_thread(void *arg)
 {
 	static unsigned long no_result_counter = 0;
 	struct cblk_dev *c = (struct cblk_dev *)arg;
-	struct timeval etime;
 
 	block_trace("[%s] arg=%p enter\n", __func__, arg);
 	pthread_cleanup_push(completion_thread_cleanup, c);
@@ -1336,8 +1348,7 @@ static void *completion_thread(void *arg)
 			}
 		} else no_result_counter++;
 
-		gettimeofday(&etime, NULL);
-		check_req_timeouts(c, &etime, cblk_reqtimeout); /* sec */
+		check_req_timeouts(c, cblk_reqtimeout); /* sec */
 		pthread_testcancel();	/* go home if requested */
 	}
 
