@@ -99,7 +99,7 @@ while [ -z "$SETUP_DONE" ]; do
     echo "PSL_DCP                 is set to: \"$PSL_DCP\""
     RESP=`grep PSL_DCP $snap_env_sh`
     if [ -z "$RESP" ]; then
-      echo "export PSL_DCP=" >> $snap_env_sh
+      echo "#export PSL_DCP=" >> $snap_env_sh
     fi
     if [ -e "$PSL_DCP" ]; then
       # checking card type for PSL design checkpoint
