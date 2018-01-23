@@ -942,6 +942,11 @@ BEGIN
 
                     WHEN CTX_ABORT =>
                       IF context_status_mmio_dout(CTX_STAT_ACTION_VALID_INT) = '1' THEN
+                        -- Sequence for abort:
+                        -- 1. Tell DMA to quiesce and tell job_manager to detach action from context
+                        -- 2. When DMA is quiesced it tells MMIO to reset action
+                        -- 3. When action reset is done: Tell job_manager to complete action detach
+                        -- 4. Send ACK for initiating ABORT request after completion of action detach
                         context_abort_req_q        <= '1';
                         context_abort_context_id_q <= context_status_mmio_addr;
                         context_abort_action_id_q(to_integer(unsigned(context_status_mmio_dout(CTX_STAT_ACTION_ID_INT_L DOWNTO CTX_STAT_ACTION_ID_INT_R)))) <= '1';
@@ -1478,8 +1483,10 @@ BEGIN
       END IF;
 
       IF action_reset_count_q = 0 THEN
+        IF action_reset_q = '1'  THEN
+          action_reset_vector_q <= (OTHERS => '0');
+        END IF;
         action_reset_q        <= '0';
-        action_reset_vector_q <= (OTHERS => '0');
       ELSE
         action_reset_count_q <= action_reset_count_q - 1;
       END IF;

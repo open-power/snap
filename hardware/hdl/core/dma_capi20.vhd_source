@@ -2362,8 +2362,8 @@ BEGIN
 
         IF (quiesce_q               = '1'    ) AND
            (sent_action_reset_req_q = '0'   ) AND
-           (read_ctrl_fsm_q         = ST_IDLE) AND
-           (write_ctrl_fsm_q        = ST_IDLE) THEN
+           ((read_ctrl_fsm_q = ST_IDLE) OR (read_ctrl_fsm_q = ST_RSP_ERROR)) AND
+           ((write_ctrl_fsm_q = ST_IDLE) OR (write_ctrl_fsm_q = ST_RSP_ERROR)) THEN
           action_reset_req_q      <= '1';
           sent_action_reset_req_q <= '1';
         END IF;
