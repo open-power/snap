@@ -252,7 +252,7 @@
  #
     if [[ "$t0l" == "10140001" || "${env_action}" == "hdl_nvme_example" ]];then echo -e "$del\ntesting hdl_nvme_example"
       step "snap_cblk -h"                                            # write max 2blk, read max 32blk a 512B
-      options="-n4 -t1"                                              # 512B blocks, one thread
+      options="-n32 -t1"                                              # 512B blocks, one thread
       export CBLK_BUSYTIMEOUT=350
       export CBLK_REQTIMEOUT=360
 #     export SNAP_TRACE=0xFFF
@@ -343,7 +343,7 @@
  #
     if [[ "$t0l" == "10141003" || "${env_action}" == "hls_search"* ]];then echo -e "$del\ntesting snap_search"
       step "snap_search -h"
-      for size in 1 2 30 257 1024 $rnd1k4k; do to=$((size*60+400))
+      for size in 1 2 30 257 1024 $rnd1k4k; do to=$((size*160+600))
         char=$(cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w 1|head -n 1)                               # one random ASCII  char to search for
         head -c $size </dev/zero|tr '\0' 'A' >${size}.uni                                             # same char mult times
         cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w ${size}|head -n 1 >${size}.rnd;head ${size}.rnd   # random data alphanumeric, includes EOF
