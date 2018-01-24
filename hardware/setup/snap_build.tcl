@@ -99,6 +99,13 @@ if { [catch "$command > $logfile" errMsg] } {
   report_utilization -file  ./Reports/${step}_utilization.rpt -quiet
 }
 
+##
+## Vivado 2017.4 has problems to place the SNAP core logic, if they can place inside the PSL
+set vivadoVer [version -short]
+if { $vivadoVer == "2017.4" } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Prevent placing inside " $widthCol3 "PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
+}
 
 ##
 ## placing design
