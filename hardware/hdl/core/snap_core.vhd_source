@@ -568,7 +568,7 @@ BEGIN
       --
       -- pervasive
       ha_pclock                    => ha_pclock,
-      afu_reset                    => afu_reset,
+      afu_reset                    => action_reset,
       --
       sd_c_o                       => sd_c,
       sd_d_o                       => sd_d,
