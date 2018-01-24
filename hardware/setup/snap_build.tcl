@@ -25,6 +25,7 @@ set nvme_used     $::env(NVME_USED)
 set bram_used     $::env(BRAM_USED)
 set factory_image [string toupper $::env(FACTORY_IMAGE)]
 set ila_debug     [string toupper $::env(ILA_DEBUG)]
+set vivadoVer     [version -short]
 
 #timing_lablimit
 if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
@@ -99,12 +100,27 @@ if { [catch "$command > $logfile" errMsg] } {
   report_utilization -file  ./Reports/${step}_utilization.rpt -quiet
 }
 
+##
+## Vivado 2017.4 has problems to place the SNAP core logic, if they can place inside the PSL
+if { $vivadoVer == "2017.4" } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "reload opt_desing DCP" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  close_project                              >> $log_file
+  open_checkpoint ./Checkpoints/${step}.dcp  >> $log_file
+
+
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Prevent placing inside" $widthCol3 "PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
+}
 
 ##
 ## placing design
 set step      place_design
 set logfile   $log_dir/${step}.log
-set directive [get_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+if { $vivadoVer == "2017.4" } {
+  set directive Default
+} else {
+  set directive [get_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+}
 set command   "place_design -directive $directive"
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start place_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
@@ -125,7 +141,11 @@ if { [catch "$command > $logfile" errMsg] } {
 ## physical optimizing design
 set step      phys_opt_design
 set logfile   $log_dir/${step}.log
-set directive [get_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+if { $vivadoVer == "2017.4" } {
+  set directive Default
+} else {
+  set directive [get_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+}
 set command   "phys_opt_design  -directive $directive"
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start phys_opt_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
@@ -146,7 +166,11 @@ if { [catch "$command > $logfile" errMsg] } {
 ## routing design
 set step      route_design
 set logfile   $log_dir/${step}.log
-set directive [get_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+if { $vivadoVer == "2017.4" } {
+  set directive Default
+} else {
+  set directive [get_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+}
 set command   "route_design -directive $directive"
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start route_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
@@ -167,7 +191,11 @@ if { [catch "$command > $logfile" errMsg] } {
 ## physical optimizing routed design
 set step      opt_routed_design
 set logfile   $log_dir/${step}.log
-set directive [get_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+if { $vivadoVer == "2017.4" } {
+  set directive Default
+} else {
+  set directive [get_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+}
 set command   "phys_opt_design  -directive $directive"
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start opt_routed_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
