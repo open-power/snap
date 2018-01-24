@@ -164,6 +164,7 @@ ARCHITECTURE snap_core OF snap_core IS
   -- SIGNAL
   SIGNAL afu_reset           : std_logic;
   SIGNAL mmio_action_reset   : std_logic;
+  SIGNAL axi_dma_shim_reset  : std_logic;
   SIGNAL ah_b                : AH_B_T;
   SIGNAL ah_c                : AH_C_T;
   SIGNAL ah_j                : AH_J_T;
@@ -568,7 +569,7 @@ BEGIN
       --
       -- pervasive
       ha_pclock                    => ha_pclock,
-      afu_reset                    => action_reset,
+      afu_reset                    => axi_dma_shim_reset,
       --
       sd_c_o                       => sd_c,
       sd_d_o                       => sd_d,
@@ -581,6 +582,7 @@ BEGIN
       sk_d_o                       => sk_d_o,  -- axi slave full interface
       ks_d_i                       => ks_d_i
      );
+    axi_dma_shim_reset <= afu_reset OR mmio_action_reset;
 
     action_reset <= afu_reset OR mmio_action_reset;
 END ARCHITECTURE;
