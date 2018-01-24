@@ -117,7 +117,7 @@ if { $vivadoVer == "2017.4" } {
 set step      place_design
 set logfile   $log_dir/${step}.log
 if { $vivadoVer == "2017.4" } {
-  set directive Explore
+  set directive Default
 } else {
   set directive [get_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 }
@@ -142,7 +142,7 @@ if { [catch "$command > $logfile" errMsg] } {
 set step      phys_opt_design
 set logfile   $log_dir/${step}.log
 if { $vivadoVer == "2017.4" } {
-  set directive Explore
+  set directive Default
 } else {
   set directive [get_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 }
@@ -167,7 +167,7 @@ if { [catch "$command > $logfile" errMsg] } {
 set step      route_design
 set logfile   $log_dir/${step}.log
 if { $vivadoVer == "2017.4" } {
-  set directive Explore
+  set directive Default
 } else {
   set directive [get_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 }
@@ -192,7 +192,7 @@ if { [catch "$command > $logfile" errMsg] } {
 set step      opt_routed_design
 set logfile   $log_dir/${step}.log
 if { $vivadoVer == "2017.4" } {
-  set directive Explore
+  set directive Default
 } else {
   set directive [get_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 }
