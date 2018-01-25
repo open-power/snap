@@ -73,8 +73,10 @@ if { [catch "$command > $logfile" errMsg] } {
 
 ##
 ## locking PSL
-puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-lock_design -level routing b > $log_dir/lock_design.log
+if { $vivadoVer != "2017.4" } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  lock_design -level routing b > $log_dir/lock_design.log
+}
 
 read_xdc ../setup/snap_impl.xdc >> $logfile
 
