@@ -19,12 +19,13 @@
   n=0                                                   # count amount of tests executed (exception for subsecond calls)
   max_rc=0                                              # track the maximum RC to return at the end
   loops=1;
-  rnd10=$((1+RANDOM%10))
-  rnd20=$((1+RANDOM%20))
-  rnd32=$((1+RANDOM%32))
-  rnd1k=$((1+RANDOM%1024))
+  rnd10=$((2+RANDOM%9))
+  rndodd20=$((10+2*RANDOM%5))
+  rnd20=$((2+RANDOM%19))
+  rnd32=$((2+RANDOM%31))
+  rnd1k=$((2+RANDOM%1023))
   rnd1k4k=$((1024+RANDOM%3072))
-  rnd16k=$((1+RANDOM%16384))
+  rnd16k=$((2+RANDOM%16383))
   rnd32k=$((RANDOM))
 # export SNAP_TRACE=0xFF
 # export SNAP_TRACE=0xF2 # for Sven
@@ -252,9 +253,9 @@
  #
     if [[ "$t0l" == "10140001" || "${env_action}" == "hdl_nvme_example" ]];then echo -e "$del\ntesting hdl_nvme_example"
       step "snap_cblk -h"                                            # write max 2blk, read max 32blk a 512B
-      options="-n32 -t1"                                              # 512B blocks, one thread
-      export CBLK_BUSYTIMEOUT=350
-      export CBLK_REQTIMEOUT=360
+      options="-n"${rndodd20}" -t1"                                  # 512B blocks, one thread
+      export CBLK_BUSYTIMEOUT=1500 # used for threads waiting for free slot
+      export CBLK_REQTIMEOUT=1000 # should be smaller than busytimeout
 #     export SNAP_TRACE=0xFFF
       for blk in 1 2;do p8=$((blk*8)); p4k=$((blk*4096));            # no of 512B blocks and pagesize in 4kB blocks
         echo "generate data for $blk blocks, $p8 pages, $p4k bytes"
@@ -274,7 +275,7 @@
       step "snap_cblk $options -b2 --read cblk_read2.bin"
       diff cblk_read1.bin cblk_read2.bin
 
-      for blk in 1 2 4 8 16 32;do byte=$((blk*512))
+      for blk in 1 ${rndodd20};do byte=$((blk*512))
         step "snap_cblk $options -b2      --write cblk_read2.bin"
         step "snap_cblk $options -b${blk} --read  cblk_read3.bin"
         diff cblk_read2.bin cblk_read3.bin
