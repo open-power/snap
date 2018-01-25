@@ -38,7 +38,7 @@ create_project managed_ip_project $ip_dir/managed_ip_project -part $fpga_part -i
 
 # Project IP Settings
 # General
-set_property target_language VERILOG [current_project]
+set_property target_language VHDL [current_project]
 set_property target_simulator IES [current_project]
 
 #create DMA Input RAM
