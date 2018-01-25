@@ -77,7 +77,7 @@ create_project framework $root_dir/viv_project -part $fpga_part -force >> $log_f
 # Project Settings
 # General
 puts "                        setting up project settings"
-set_property target_language VERILOG [current_project]
+set_property target_language VHDL [current_project]
 set_property default_lib work [current_project]
 # Simulation
 if { ( $simulator == "ncsim" ) || ( $simulator == "irun" ) } {
