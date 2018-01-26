@@ -340,17 +340,17 @@ if { $fpga_card == "ADKU3" } {
     set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_ddr3_b0pins.xdc]
   } else {
   # NORAM
-    add_files -fileset constr_1 -norecurse $root_dir/setup/adku3/snap_pblock_noram.xdc
-    set_property used_in_synthesis false [get_files $root_dir/setup/adku3/snap_pblock_noram.xdc
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_pblock_noram.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_pblock_noram.xdc]
     # Fixes for Vivado 2017.4
     # PSL pblock not imported from lock_design. Create new pblock and reapply PSL constraints 
-    if { $vivadoVer != "2017.4" } {
-      add_files -fileset constr_1 -norecurse $root_dir/setup/adku3/psl_pblock.xdc
-      set_property used_in_synthesis false [get_files $root_dir/setup/adku3/psl_pblock.xdc
-      add_files -fileset constr_1 -norecurse $root_dir/setup/adku3/pinout.xdc
-      set_property used_in_synthesis false [get_files $root_dir/setup/adku3/pinout.xdc
-      add_files -fileset constr_1 -norecurse $root_dir/setup/adku3/psl_constr.xdc
-      set_property used_in_synthesis false [get_files $root_dir/setup/adku3/psl_constr.xdc
+    if { $vivadoVer == "2017.4" } {
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/psl_pblock.xdc
+      set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/psl_pblock.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/pinout.xdc
+      set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/pinout.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/psl_constr.xdc
+      set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/psl_constr.xdc]
     }
   }
 } elseif {$fpga_card == "S121B" } {
