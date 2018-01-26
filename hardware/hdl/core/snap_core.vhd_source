@@ -121,7 +121,7 @@ ENTITY snap_core IS
     hd0_cpl_utag        : IN    std_logic_vector(0 to 9);
     hd0_cpl_type        : IN    std_logic_vector(0 to 2);
     hd0_cpl_size        : IN    std_logic_vector(0 to 9);
-    hd0_cpl_laddr       : IN    std_logic_vector(0 to 9);
+    hd0_cpl_laddr       : IN    std_logic_vector(0 to 6);
     hd0_cpl_byte_count  : IN    std_logic_vector(0 to 9);
     hd0_cpl_data        : IN    std_logic_vector(0 to 1023);
 #endif
@@ -343,7 +343,7 @@ BEGIN
     hd_c.utag               <= v2vhdl_connector(hd0_cpl_utag(0 to 9));
     hd_c.ctype              <= v2vhdl_connector(hd0_cpl_type(0 to 2));
     hd_c.size               <= v2vhdl_connector(hd0_cpl_size(0 to 9));
-    hd_c.laddr              <= v2vhdl_connector(hd0_cpl_laddr(0 to 9));
+    hd_c.laddr              <= v2vhdl_connector(hd0_cpl_laddr(0 to 6));
     hd_c.byte_count         <= v2vhdl_connector(hd0_cpl_byte_count(0 to 9));
     hd_c.data               <= v2vhdl_connector(hd0_cpl_data(0 to 1023));
 
