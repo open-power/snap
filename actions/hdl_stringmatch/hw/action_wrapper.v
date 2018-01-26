@@ -22,11 +22,11 @@
 
 module action_wrapper #(
     // Parameters of Axi Master Bus Interface AXI_CARD_MEM0 ; to DDR memory
-    parameter C_M_AXI_CARD_MEM0_ID_WIDTH     = 2,
-    parameter C_M_AXI_CARD_MEM0_ADDR_WIDTH   = 64,
+    parameter C_M_AXI_CARD_MEM0_ID_WIDTH     = 4,
+    parameter C_M_AXI_CARD_MEM0_ADDR_WIDTH   = 33,
     parameter C_M_AXI_CARD_MEM0_DATA_WIDTH   = 512,
-    parameter C_M_AXI_CARD_MEM0_AWUSER_WIDTH = 8,
-    parameter C_M_AXI_CARD_MEM0_ARUSER_WIDTH = 8,
+    parameter C_M_AXI_CARD_MEM0_AWUSER_WIDTH = 1,
+    parameter C_M_AXI_CARD_MEM0_ARUSER_WIDTH = 1,
     parameter C_M_AXI_CARD_MEM0_WUSER_WIDTH  = 1,
     parameter C_M_AXI_CARD_MEM0_RUSER_WIDTH  = 1,
     parameter C_M_AXI_CARD_MEM0_BUSER_WIDTH  = 1,
@@ -36,7 +36,7 @@ module action_wrapper #(
     parameter C_S_AXI_CTRL_REG_ADDR_WIDTH    = 32,
 
     // Parameters of Axi Master Bus Interface AXI_HOST_MEM ; to Host memory
-    parameter C_M_AXI_HOST_MEM_ID_WIDTH      = 2,
+    parameter C_M_AXI_HOST_MEM_ID_WIDTH      = 1,
     parameter C_M_AXI_HOST_MEM_ADDR_WIDTH    = 64,
     parameter C_M_AXI_HOST_MEM_DATA_WIDTH    = 512,
     parameter C_M_AXI_HOST_MEM_AWUSER_WIDTH  = 8,
@@ -44,9 +44,20 @@ module action_wrapper #(
     parameter C_M_AXI_HOST_MEM_WUSER_WIDTH   = 1,
     parameter C_M_AXI_HOST_MEM_RUSER_WIDTH   = 1,
     parameter C_M_AXI_HOST_MEM_BUSER_WIDTH   = 1,
-    parameter INT_BITS                     = 3,
-    parameter CONTEXT_BITS                 = 8
+    parameter INT_BITS                       = 3,
+    parameter CONTEXT_BITS                   = 8,
 
+    parameter NUM_OF_PU                      = 8,
+    parameter CONFIG_CNT_WIDTH               = 3, // CONFIG_CNT_WIDTH = log2NUM_OF_PU;
+    parameter MAX_OR_NUM                     = 8,
+    parameter MAX_TOKEN_NUM                  = 8,
+    parameter MAX_STATE_NUM                  = 8,
+    parameter MAX_TOKEN_LEN                  = 8,
+    parameter MAX_CHAR_NUM                   = 8,
+    parameter TOKEN_LEN_WIDTH                = 4, // TOKEN_LEN_WIDTH = log2MAX_TOKEN_LEN + 1
+    parameter NUM_STRING_MATCH_PIPELINE      = 8,
+    parameter NUM_PIPELINE_IN_A_GROUP        = 1,
+    parameter NUM_OF_PIPELINE_GROUP          = 8
 )
 (
     input  ap_clk                    ,
@@ -173,7 +184,43 @@ module action_wrapper #(
     assign m_axi_card_mem0_wuser = 0;
     assign m_axi_host_mem_wuser = 0;
 
-    action_string_match action_string_match_0 (
+    action_string_match #(
+           // Parameters of Axi Master Bus Interface AXI_CARD_MEM0 ; to DDR memory
+           .C_M_AXI_CARD_MEM0_ID_WIDTH    (C_M_AXI_CARD_MEM0_ID_WIDTH    ),
+           .C_M_AXI_CARD_MEM0_ADDR_WIDTH  (C_M_AXI_CARD_MEM0_ADDR_WIDTH  ),
+           .C_M_AXI_CARD_MEM0_DATA_WIDTH  (C_M_AXI_CARD_MEM0_DATA_WIDTH  ),
+           .C_M_AXI_CARD_MEM0_AWUSER_WIDTH(C_M_AXI_CARD_MEM0_AWUSER_WIDTH),
+           .C_M_AXI_CARD_MEM0_ARUSER_WIDTH(C_M_AXI_CARD_MEM0_ARUSER_WIDTH),
+           .C_M_AXI_CARD_MEM0_WUSER_WIDTH (C_M_AXI_CARD_MEM0_WUSER_WIDTH ),
+           .C_M_AXI_CARD_MEM0_RUSER_WIDTH (C_M_AXI_CARD_MEM0_RUSER_WIDTH ),
+           .C_M_AXI_CARD_MEM0_BUSER_WIDTH (C_M_AXI_CARD_MEM0_BUSER_WIDTH ),
+
+           // Parameters of Axi Slave Bus Interface AXI_CTRL_REG
+           .C_S_AXI_CTRL_REG_DATA_WIDTH   (C_S_AXI_CTRL_REG_DATA_WIDTH   ),
+           .C_S_AXI_CTRL_REG_ADDR_WIDTH   (C_S_AXI_CTRL_REG_ADDR_WIDTH   ),
+
+           // Parameters of Axi Master Bus Interface AXI_HOST_MEM ; to Host memory
+           .C_M_AXI_HOST_MEM_ID_WIDTH     (C_M_AXI_HOST_MEM_ID_WIDTH     ),
+           .C_M_AXI_HOST_MEM_ADDR_WIDTH   (C_M_AXI_HOST_MEM_ADDR_WIDTH   ),
+           .C_M_AXI_HOST_MEM_DATA_WIDTH   (C_M_AXI_HOST_MEM_DATA_WIDTH   ),
+           .C_M_AXI_HOST_MEM_AWUSER_WIDTH (C_M_AXI_HOST_MEM_AWUSER_WIDTH ),
+           .C_M_AXI_HOST_MEM_ARUSER_WIDTH (C_M_AXI_HOST_MEM_ARUSER_WIDTH ),
+           .C_M_AXI_HOST_MEM_WUSER_WIDTH  (C_M_AXI_HOST_MEM_WUSER_WIDTH  ),
+           .C_M_AXI_HOST_MEM_RUSER_WIDTH  (C_M_AXI_HOST_MEM_RUSER_WIDTH  ),
+           .C_M_AXI_HOST_MEM_BUSER_WIDTH  (C_M_AXI_HOST_MEM_BUSER_WIDTH  ),
+
+           .NUM_OF_PU(NUM_OF_PU),
+           .CONFIG_CNT_WIDTH (CONFIG_CNT_WIDTH ), // CONFIG_CNT_WIDTH = log2NUM_OF_PU;
+           .MAX_OR_NUM(MAX_OR_NUM),
+           .MAX_TOKEN_NUM(MAX_TOKEN_NUM),
+           .MAX_STATE_NUM(MAX_STATE_NUM),
+           .MAX_TOKEN_LEN(MAX_TOKEN_LEN),
+           .MAX_CHAR_NUM(MAX_CHAR_NUM),
+           .TOKEN_LEN_WIDTH(TOKEN_LEN_WIDTH), // TOKEN_LEN_WIDTH = log2MAX_TOKEN_LEN + 1
+           .NUM_STRING_MATCH_PIPELINE(NUM_STRING_MATCH_PIPELINE),
+           .NUM_PIPELINE_IN_A_GROUP(NUM_PIPELINE_IN_A_GROUP),
+           .NUM_OF_PIPELINE_GROUP(NUM_OF_PIPELINE_GROUP)
+    ) action_string_match_0 (
         .clk                   (ap_clk),
         .rst_n                 (ap_rst_n), 
                                                                 
