@@ -24,6 +24,7 @@ set nvme_used             $::env(NVME_USED)
 set bram_used             $::env(BRAM_USED)
 set cloud_run             $::env(CLOUD_RUN)
 set remove_tmp_files      "FALSE"
+set vivadoVer     [version -short]
 
 #checkpoint_dir
 if { [info exists ::env(DCP_ROOT)] == 1 } {
@@ -76,8 +77,15 @@ if { $cloud_run == "BASE" } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   open_run     synth_1 -name synth_1 >> $log_file
   lock_design  -level routing b      >> $log_file
- 
+
   read_xdc ../setup/snap_impl.xdc >> $log_file
+  # Reload PSL constraints for Vivado 2017.4
+  if { $vivadoVer == "2017.4" } {
+    read_xdc ../setup/ADKU3/pinout.xdc
+    read_xdc ../setup/ADKU3/psl_constr.xdc
+    update_timing -full
+  }
+
 
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start implementation" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   reset_run    impl_1 >> $log_file

@@ -19,4 +19,4 @@
 create_pblock pblock_b
 resize_pblock pblock_b -add CLOCKREGION_X4Y0:CLOCKREGION_X5Y3
 add_cells_to_pblock pblock_b [ get_cells [ list b ] ] -keep_locs
-
+set_property CONTAIN_ROUTING 1 [get_pblocks pblock_b]
