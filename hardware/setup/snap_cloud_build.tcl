@@ -59,6 +59,10 @@ puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "open framework pro
 open_project ../viv_project/framework.xpr >> $log_file
  
 if { $cloud_run == "BASE" } {
+  # Vivado 2017.4 needs to reimport PSL DCP
+  if { ([info exists ::env(PSL_DCP)] == 1) && ($vivadoVer == "2017.4") } {
+    set psl_dcp $::env(PSL_DCP)
+  }
 
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   reset_run    user_action_synth_1 >> $log_file
@@ -74,18 +78,26 @@ if { $cloud_run == "BASE" } {
   file copy -force ../viv_project/framework.runs/synth_1/psl_fpga.dcp                       $dcp_dir/framework_synth.dcp
   file copy -force ../viv_project/framework.runs/synth_1/psl_fpga_utilization_synth.rpt     ./Reports/framework_utilization_synth.rpt
 
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-  open_run     synth_1 -name synth_1 >> $log_file
-  lock_design  -level routing b      >> $log_file
 
-  read_xdc ../setup/snap_impl.xdc >> $log_file
-  # Reload PSL constraints for Vivado 2017.4
-  if { $vivadoVer == "2017.4" } {
-    read_xdc ../setup/ADKU3/pinout.xdc
-    read_xdc ../setup/ADKU3/psl_constr.xdc
-    update_timing -full
+  if { $vivadoVer != "2017.4" } {
+    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+    open_run     synth_1 -name synth_1 >> $log_file
+    lock_design  -level routing b      >> $log_file
+  } else {
+    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "import PSL DCP" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+    remove_files [get_files *.dcp] >> $log_file
+    read_checkpoint -cell b $psl_dcp  >> $log_file
   }
 
+  read_xdc ../setup/snap_impl.xdc >> $log_file
+  # TODO not in use. Remove????
+  # Reload PSL constraints for Vivado 2017.4
+  # if { $vivadoVer == "2017.4" } {
+  #   read_xdc ../setup/ADKU3/pinout.xdc
+  #   read_xdc ../setup/ADKU3/psl_constr.xdc
+  #   update_timing -full
+  # }
+  ## TODO end
 
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start implementation" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   reset_run    impl_1 >> $log_file
