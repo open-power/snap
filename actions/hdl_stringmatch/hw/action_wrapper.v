@@ -47,13 +47,19 @@ module action_wrapper #(
     parameter INT_BITS                       = 3,
     parameter CONTEXT_BITS                   = 8,
 
+    parameter INPUT_PACKET_STAT_WIDTH        = 48,
+    parameter INPUT_BATCH_WIDTH              = 512,
+    parameter INPUT_BATCH_PER_PACKET         = 1,
     parameter NUM_OF_PU                      = 8,
     parameter CONFIG_CNT_WIDTH               = 3, // CONFIG_CNT_WIDTH = log2NUM_OF_PU;
+    parameter OUTPUT_STAT_WIDTH              = 80,
+    parameter PATTERN_WIDTH                  = 1744,
+    parameter PATTERN_ID_WIDTH               = 32,
     parameter MAX_OR_NUM                     = 8,
-    parameter MAX_TOKEN_NUM                  = 8,
-    parameter MAX_STATE_NUM                  = 8,
-    parameter MAX_TOKEN_LEN                  = 8,
-    parameter MAX_CHAR_NUM                   = 8,
+    parameter MAX_TOKEN_NUM                  = 8,//16,
+    parameter MAX_STATE_NUM                  = 8,//16,
+    parameter MAX_TOKEN_LEN                  = 8,//16,
+    parameter MAX_CHAR_NUM                   = 8,//32,
     parameter TOKEN_LEN_WIDTH                = 4, // TOKEN_LEN_WIDTH = log2MAX_TOKEN_LEN + 1
     parameter NUM_STRING_MATCH_PIPELINE      = 8,
     parameter NUM_PIPELINE_IN_A_GROUP        = 1,
@@ -209,17 +215,23 @@ module action_wrapper #(
            .C_M_AXI_HOST_MEM_RUSER_WIDTH  (C_M_AXI_HOST_MEM_RUSER_WIDTH  ),
            .C_M_AXI_HOST_MEM_BUSER_WIDTH  (C_M_AXI_HOST_MEM_BUSER_WIDTH  ),
 
-           .NUM_OF_PU(NUM_OF_PU),
-           .CONFIG_CNT_WIDTH (CONFIG_CNT_WIDTH ), // CONFIG_CNT_WIDTH = log2NUM_OF_PU;
-           .MAX_OR_NUM(MAX_OR_NUM),
-           .MAX_TOKEN_NUM(MAX_TOKEN_NUM),
-           .MAX_STATE_NUM(MAX_STATE_NUM),
-           .MAX_TOKEN_LEN(MAX_TOKEN_LEN),
-           .MAX_CHAR_NUM(MAX_CHAR_NUM),
-           .TOKEN_LEN_WIDTH(TOKEN_LEN_WIDTH), // TOKEN_LEN_WIDTH = log2MAX_TOKEN_LEN + 1
-           .NUM_STRING_MATCH_PIPELINE(NUM_STRING_MATCH_PIPELINE),
-           .NUM_PIPELINE_IN_A_GROUP(NUM_PIPELINE_IN_A_GROUP),
-           .NUM_OF_PIPELINE_GROUP(NUM_OF_PIPELINE_GROUP)
+           .INPUT_PACKET_STAT_WIDTH       (INPUT_PACKET_STAT_WIDTH       ),
+           .INPUT_BATCH_WIDTH             (INPUT_BATCH_WIDTH             ),
+           .INPUT_BATCH_PER_PACKET        (INPUT_BATCH_PER_PACKET        ),
+           .NUM_OF_PU                     (NUM_OF_PU                     ),
+           .CONFIG_CNT_WIDTH              (CONFIG_CNT_WIDTH              ), // CONFIG_CNT_WIDTH = log2NUM_OF_PU;
+           .OUTPUT_STAT_WIDTH             (OUTPUT_STAT_WIDTH             ),
+           .PATTERN_WIDTH                 (PATTERN_WIDTH                 ),
+           .PATTERN_ID_WIDTH              (PATTERN_ID_WIDTH              ),
+           .MAX_OR_NUM                    (MAX_OR_NUM                    ),
+           .MAX_TOKEN_NUM                 (MAX_TOKEN_NUM                 ),
+           .MAX_STATE_NUM                 (MAX_STATE_NUM                 ),
+           .MAX_TOKEN_LEN                 (MAX_TOKEN_LEN                 ),
+           .MAX_CHAR_NUM                  (MAX_CHAR_NUM                  ),
+           .TOKEN_LEN_WIDTH               (TOKEN_LEN_WIDTH               ), // TOKEN_LEN_WIDTH = log2MAX_TOKEN_LEN + 1
+           .NUM_STRING_MATCH_PIPELINE     (NUM_STRING_MATCH_PIPELINE     ),
+           .NUM_PIPELINE_IN_A_GROUP       (NUM_PIPELINE_IN_A_GROUP       ),
+           .NUM_OF_PIPELINE_GROUP         (NUM_OF_PIPELINE_GROUP         )
     ) action_string_match_0 (
         .clk                   (ap_clk),
         .rst_n                 (ap_rst_n), 

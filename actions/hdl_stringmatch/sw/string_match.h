@@ -70,10 +70,10 @@
 #define PATTERN_NUM_NFA_TOKEN           8
 #define NUM_STRING_MATCH_PIPELINE       512
 
-#define MAX_STATE_NUM                   16
-#define MAX_TOKEN_NUM                   16
-#define MAX_CHAR_NUM                    32
-#define MAX_CHAR_PER_TOKEN              16
+#define MAX_STATE_NUM                   8//16
+#define MAX_TOKEN_NUM                   8//16
+#define MAX_CHAR_NUM                    8//32
+#define MAX_CHAR_PER_TOKEN              8//16
 #define PATTERN_ID_WIDTH                32
 
 // The width of pattern is calculated per the following equation
