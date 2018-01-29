@@ -35,6 +35,12 @@ set log_dir     $::env(LOGS_DIR)
 set log_file    $log_dir/create_framework.log
 set vivadoVer     [version -short]
 
+if { [info exists ::env(PSL4N250SP_ROOT)] == 1 } {
+  set psl4n250sp_dir $::env(PSL4N250SP_ROOT)
+} else {
+  set psl4n250sp_dir "not defined"
+}
+
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support [string toupper $::env(HLS_SUPPORT)]
 } elseif { [string first "/HLS" [string toupper $action_dir]] != -1 } {
@@ -95,10 +101,16 @@ set_property STEPS.WRITE_BITSTREAM.TCL.PRE  $root_dir/setup/snap_bitstream_pre.t
 set_property STEPS.WRITE_BITSTREAM.TCL.POST $root_dir/setup/snap_bitstream_post.tcl [get_runs impl_1]
 
 # Add Files
-# PSL Files
 puts "                        importing design files"
 # HDL Files
 add_files -scan_for_includes $hdl_dir/core/  >> $log_file
+if { $fpga_card == "N250SP" } {
+  puts "                        importing psl4n250sp source files"
+  add_files -scan_for_includes $psl4n250sp_dir/src/  >> $log_file
+  add_files -scan_for_includes $psl4n250sp_dir/FlashGTPlus/hdk/src/  >> $log_file
+  remove_files  $psl4n250sp_dir/FlashGTPlus/hdk/src/psl_accel.vhdl
+  remove_files  $psl4n250sp_dir/FlashGTPlus/hdk/src/psl_fpga.vhdl
+}
 
 set_property used_in_simulation false [get_files $hdl_dir/core/psl_fpga.vhd]
 set_property top psl_fpga [current_fileset]
@@ -244,7 +256,20 @@ if { $nvme_used == TRUE } {
 }
 
 # Add PSL
-if { $psl_dcp != "FALSE" } {
+if { $fpga_card == "N250SP" } {
+  add_files -norecurse                          $ip_dir/pcie4_uscale_plus_0/pcie4_uscale_plus_0.xci
+  export_ip_user_files -of_objects  [get_files  $ip_dir/pcie4_uscale_plus_0/pcie4_uscale_plus_0.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
+  add_files -norecurse                          $ip_dir/psl4n250sp_clk_wiz/psl4n250sp_clk_wiz.xci
+  export_ip_user_files -of_objects  [get_files  $ip_dir/psl4n250sp_clk_wiz/psl4n250sp_clk_wiz.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
+  add_files -norecurse                          $ip_dir/PSL9_WRAP_0/PSL9_WRAP_0.xci
+  export_ip_user_files -of_objects  [get_files  $ip_dir/PSL9_WRAP_0/PSL9_WRAP_0.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
+  #add_files -norecurse                          $psl4n250sp_dir/setup/ip/pcie4_uscale_plus_0.xci
+  #export_ip_user_files -of_objects  [get_files  $psl4n250sp_dir/setup/ip/pcie4_uscale_plus_0.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
+  #add_files -norecurse                          $psl4n250sp_dir/setup/ip/psl4n250sp_clk_wiz/psl4n250sp_clk_wiz.xci
+  #export_ip_user_files -of_objects  [get_files  $psl4n250sp_dir/setup/ip/psl4n250sp_clk_wiz/psl4n250sp_clk_wiz.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
+  #add_files -norecurse                          $psl4n250sp_dir/setup/ip/PSL9_WRAP_0/PSL9_WRAP_0.xci
+  #export_ip_user_files -of_objects  [get_files  $psl4n250sp_dir/setup/ip/PSL9_WRAP_0/PSL9_WRAP_0.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
+} elseif { $psl_dcp != "FALSE" } {
   puts "                        importing PSL design checkpoint"
   read_checkpoint -cell b $psl_dcp -strict >> $log_file
 }
@@ -256,9 +281,18 @@ add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_link.xdc
 set_property used_in_synthesis false [get_files  $root_dir/setup/snap_link.xdc]
 update_compile_order -fileset sources_1 >> $log_file
 
+# PSL4N250SP XDC
+if { $fpga_card == "N250SP" } {
+  puts "                            importing psl4n250sp XDCs"
+  #add_files -fileset constrs_1 -norecurse $psl4n250sp_dir/setup/xdc/psl4n250sp_config.xdc
+  add_files -fileset constrs_1 -norecurse $psl4n250sp_dir/setup/xdc/psl4n250sp_timing.xdc
+  add_files -fileset constrs_1 -norecurse $psl4n250sp_dir/setup/xdc/psl4n250sp_io.xdc
+  add_files -fileset constrs_1 -norecurse $psl4n250sp_dir/setup/xdc/psl4n250sp_floorplan.xdc
+}
+
 # DDR XDCs
 if { $fpga_card == "ADKU3" } {
- 
+
   if { $bram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_refclk200.xdc
   } elseif { $sdram_used == "TRUE" } {
@@ -267,7 +301,7 @@ if { $fpga_card == "ADKU3" } {
     set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_ddr3_b0pblock.xdc]
     add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_ddr3_b0pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_ddr3_b0pins.xdc]
-  }  
+  }
 } elseif {$fpga_card == "S121B" } {
   if { $bram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/S121B/snap_refclk100.xdc
