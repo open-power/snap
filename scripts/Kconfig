@@ -61,7 +61,7 @@ config FPGACHIP
         string
         default "xcku060-ffva1156-2-e" if N250S || ADKU3
         default "xcku115-flva1517-2-e" if S121B
-        default "xcku15p-ffva1156-2-e" if N250SP
+        default "xcku15p-ffva1156-2-i" if N250SP
 
 config NUM_OF_ACTIONS
         int
