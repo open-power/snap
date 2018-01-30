@@ -48,12 +48,18 @@ fregex.o: utils/fregex.cpp
 regex_config.o: utils/regex_config.cpp
 	$(CXX) -c $(CPPFLAGS) $($(@:.o=)_CPPFLAGS) $< -o $@
 
-string_match_objs += fregex.o regex_config.o
+regex_ref.o: regex_ref.cpp
+	$(CXX) -c $(CPPFLAGS) $($(@:.o=)_CPPFLAGS) $< -o $@
+
+re_match.o: utils/re_match.c
+	$(CXX) -c $(CPPFLAGS) $($(@:.o=)_CPPFLAGS) $< -o $@
+	
+string_match_objs += fregex.o regex_config.o regex_ref.o re_match.o
 string_match: $(string_match_objs)
 
 projs += string_match
 
-string_match: fregex.o regex_config.o string_match.o
+string_match: fregex.o regex_config.o string_match.o regex_ref.o re_match.o
 	$(CXX) $(LDFLAGS) $($(@)_LDFLAGS) $@.o $($(@)_objs) $($(@)_libs) $(LDLIBS) -o $@
 
 

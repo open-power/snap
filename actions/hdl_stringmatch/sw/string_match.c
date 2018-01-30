@@ -32,6 +32,7 @@
 
 #include "string_match.h"
 #include "utils/fregex.h"
+#include "regex_ref.h"
 
 /*  defaults */
 #define STEP_DELAY      200
@@ -359,6 +360,7 @@ static void action_sm (struct snap_card* h,
                        void* patt_src_base,
                        void* pkt_src_base,
                        void* stat_dest_base,
+                       size_t* num_matched_pkt,
                        size_t patt_size,
                        size_t pkt_size,
                        size_t stat_size)
@@ -489,6 +491,9 @@ static void action_sm (struct snap_card* h,
         // Status[3]
         if ((reg_data & 0x00000008) == 8) {
             VERBOSE0 ("Stat flush done!\n");
+            reg_data = action_read(h, ACTION_STATUS_H);
+            VERBOSE0 ("Number of matches packets: %d\n", reg_data);
+            *num_matched_pkt = reg_data;
             break;
         }
 
@@ -518,6 +523,7 @@ static int sm_scan (struct snap_card* dnc,
                     void* patt_src_base,
                     void* pkt_src_base,
                     void* stat_dest_base,
+                    size_t* num_matched_pkt,
                     size_t patt_size,
                     size_t pkt_size,
                     size_t stat_size)
@@ -531,7 +537,8 @@ static int sm_scan (struct snap_card* dnc,
 
     rc = 0;
 
-    action_sm (dnc, patt_src_base, pkt_src_base, stat_dest_base, patt_size, pkt_size, stat_size);
+    action_sm (dnc, patt_src_base, pkt_src_base, stat_dest_base, num_matched_pkt,
+            patt_size, pkt_size, stat_size);
     VERBOSE0 ("Wait for idle\n");
     rc = action_wait_idle (dnc, timeout, &td);
     VERBOSE0 ("Card in idle\n");
@@ -610,6 +617,8 @@ static void* sm_compile_file (const char* file_path, size_t* size)
         VERBOSE2 ("Pattern line read with length %zu :\n", read);
         VERBOSE2 ("%s\n", line);
         patt_src = fill_one_pattern (line, patt_src);
+        // regex ref model
+        regex_ref_push_pattern(line);
         VERBOSE0 ("Pattern Source Address 0X%016lX\n", (uint64_t)patt_src);
     }
 
@@ -661,6 +670,8 @@ static void* sm_scan_file (const char* file_path, size_t* size)
         VERBOSE2 ("PACKET line read with length %zu :\n", read);
         VERBOSE2 ("%s\n", line);
         pkt_src = fill_one_packet (line, read, pkt_src);
+        // regex ref model
+        regex_ref_push_packet(line, PACKET_ID);
         VERBOSE0 ("PACKET Source Address 0X%016lX\n", (uint64_t)pkt_src);
     }
 
@@ -683,6 +694,56 @@ static void* sm_scan_file (const char* file_path, size_t* size)
     return pkt_src_base;
 }
 
+static int compare_results(size_t num_matched_pkt, void* stat_dest_base)
+{
+    int i = 0, j = 0;
+    uint16_t offset = 0;
+    uint32_t pkt_id = 0;
+    uint32_t patt_id = 0;
+    int rc = 0;
+    if ((int)num_matched_pkt != regex_ref_get_num_matched_pkt()) {
+        VERBOSE0("ERROR! Num matched packets mismatch\n");
+        VERBOSE0("EXPECTED: %d\n", regex_ref_get_num_matched_pkt());
+        VERBOSE0("ACTUAL: %d\n", (int)num_matched_pkt);
+    }
+
+    VERBOSE0("---- Results (A: actual, E: expected) ----\n");
+    VERBOSE0("PKT(A)   \tPATT(A) \tOFFSET(A) \tPKT(E)   \tPATT(E) \tOFFSET(E)\n");
+    for (i = 0; i < (int)num_matched_pkt; i++) {
+        for (j = 0; j < 4; j++) {
+            patt_id |= (((uint8_t*)stat_dest_base)[i*10+j] << j*8);
+        }
+
+        for (j = 4; j < 8; j++) {
+            pkt_id |= (((uint8_t*)stat_dest_base)[i*10+j] << (j%4)*8);
+        }
+
+        for (j = 8; j < 10; j++) {
+            offset |= (((uint8_t*)stat_dest_base)[i*10+j] << (j%2)*8);
+        }
+
+        sm_stat ref_stat = regex_ref_get_result(pkt_id);
+
+        VERBOSE0("%9d\t%8d\t%9d\t%9d\t%8d\t%9d", pkt_id, patt_id, offset,
+                ref_stat.packet_id, ref_stat.pattern_id, ref_stat.offset);
+
+        if ((ref_stat.packet_id != pkt_id) ||
+                (ref_stat.pattern_id != patt_id) ||
+                (ref_stat.offset != offset)) {
+            VERBOSE0(" MISMATCH!\n");
+            rc = 1;
+        } else {
+            VERBOSE0("\n");
+        }
+
+        patt_id = 0;
+        pkt_id = 0;
+        offset = 0;
+    }
+
+    return rc;
+}
+
 int main (int argc, char* argv[])
 {
     char device[64];
@@ -698,6 +759,7 @@ int main (int argc, char* argv[])
     void* patt_src_base = NULL;
     void* pkt_src_base = NULL;
     void* stat_dest_base = NULL;
+    size_t num_matched_pkt = 0;
     size_t pkt_size = 0;
     size_t patt_size = 0;
 
@@ -816,15 +878,21 @@ int main (int argc, char* argv[])
                   patt_src_base,
                   pkt_src_base,
                   stat_dest_base,
+                  &num_matched_pkt,
                   patt_size,
                   pkt_size,
                   1024 * (64 + 128));
 
-    VERBOSE1 ("Finish sm_scan.\n");
+    VERBOSE1 ("Finish sm_scan with %d matched packets.\n", (int)num_matched_pkt);
 
     // Sleep for 10us before read out the reasult
     if (verbose_level > 1) {
         __hexdump (stdout, stat_dest_base, 320);
+    }
+
+    rc = compare_results(num_matched_pkt, stat_dest_base);
+    if (rc) {
+        VERBOSE0 ("Miscompare detected between hardware and software ref model.\n");
     }
 
     snap_detach_action (act);

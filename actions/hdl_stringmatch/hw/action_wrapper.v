@@ -53,7 +53,7 @@ module action_wrapper #(
     parameter NUM_OF_PU                      = 8,
     parameter CONFIG_CNT_WIDTH               = 3, // CONFIG_CNT_WIDTH = log2NUM_OF_PU;
     parameter OUTPUT_STAT_WIDTH              = 80,
-    parameter PATTERN_WIDTH                  = 1744,
+    //parameter PATTERN_WIDTH                  = 448, 
     parameter PATTERN_ID_WIDTH               = 32,
     parameter MAX_OR_NUM                     = 8,
     parameter MAX_TOKEN_NUM                  = 8,//16,
@@ -221,7 +221,7 @@ module action_wrapper #(
            .NUM_OF_PU                     (NUM_OF_PU                     ),
            .CONFIG_CNT_WIDTH              (CONFIG_CNT_WIDTH              ), // CONFIG_CNT_WIDTH = log2NUM_OF_PU;
            .OUTPUT_STAT_WIDTH             (OUTPUT_STAT_WIDTH             ),
-           .PATTERN_WIDTH                 (PATTERN_WIDTH                 ),
+           //.PATTERN_WIDTH                 (PATTERN_WIDTH                 ),
            .PATTERN_ID_WIDTH              (PATTERN_ID_WIDTH              ),
            .MAX_OR_NUM                    (MAX_OR_NUM                    ),
            .MAX_TOKEN_NUM                 (MAX_TOKEN_NUM                 ),
