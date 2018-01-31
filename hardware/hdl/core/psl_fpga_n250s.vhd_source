@@ -561,8 +561,8 @@ BEGIN
       refclk_nvme_ch1_n                 => pcie_clk2_n,
       --
       -- NVMe reset control
-      nvme_reset_ctl(4)                 => nvme_reset_ctl,
-      nvme_reset_ctl(3 DOWNTO 0)        => nvme_perst_ctl,
+      nvme_reset_ctl                    => nvme_reset_ctl,
+      nvme_perst_ctl(3 DOWNTO 0)        => nvme_perst_ctl,
       --
       -- NVME <-> PCIE Interface
       pcie_rc0_rxn(3 DOWNTO 0)          => pcie_rc0_rxn(3 DOWNTO 0),

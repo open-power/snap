@@ -326,8 +326,9 @@ PACKAGE snap_core_types IS
   CONSTANT SNAP_LOCK_INT              : integer :=  0;     -- SNAP_LOCK_REG
   CONSTANT SNAP_CTX_MASTER_BIT        : integer := 63;     -- SNAP_CTX_ID_REG
   CONSTANT SNAP_CTX_ID_R              : integer :=  0;     -- SNAP_CTX_ID_REG
-  CONSTANT SNAP_NVME_RST_L            : integer :=  4;     -- SNAP_RESET_REG
-  CONSTANT SNAP_NVME_RST_R            : integer :=  0;     -- SNAP_RESET_REG
+  CONSTANT SNAP_NVME_RESET            : integer :=  4;     -- SNAP_RESET_REG
+  CONSTANT SNAP_NVME_PERST_L          : integer :=  3;     -- SNAP_RESET_REG
+  CONSTANT SNAP_NVME_PERST_R          : integer :=  0;     -- SNAP_RESET_REG
   CONSTANT SNAP_CAP_SDRAM_SIZE_L      : integer := 31;     -- SNAP_CAPABILITY_REG
   CONSTANT SNAP_CAP_SDRAM_SIZE_R      : integer := 16;     -- SNAP_CAPABILITY_REG
   CONSTANT SNAP_CAP_NVME_ENABLED      : integer :=  8;     -- SNAP_CAPABILITY_REG
