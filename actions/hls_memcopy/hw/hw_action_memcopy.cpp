@@ -141,11 +141,11 @@ static void process_action(snap_membus_t *din_gmem,
 				(snapu32_t)MAX_NB_OF_BYTES_READ);
 
 		rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem,
-						  act_reg->Data.in.type,
+			act_reg->Data.in.type,
 			InputAddress + address_xfer_offset, buf_gmem, xfer_size);
 
 		rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem,
-						 act_reg->Data.out.type,
+			act_reg->Data.out.type,
 			OutputAddress + address_xfer_offset, buf_gmem, xfer_size);
 		action_xfer_size -= xfer_size;
 		address_xfer_offset += (snapu64_t)(xfer_size >> ADDR_RIGHT_SHIFT);
@@ -208,21 +208,6 @@ void hls_action(snap_membus_t *din_gmem,
 //-----------------------------------------------------------------------------
 
 #ifdef NO_SYNTH
-
-typedef char word_t[BPERDW];
-// Cast a char* word (64B) to a word for output port (512b)
-static snap_membus_t word_to_mbus(word_t text)
-{
-        snap_membus_t mem = 0;
-
- loop_word_to_mbus:
-        for (char k = sizeof(word_t)-1; k >= 0; k--) {
-#pragma HLS PIPELINE
-                mem = mem << 8;
-                mem(7, 0) = text[k];
-        }
-        return mem;
-}
 
 int main(void)
 {
