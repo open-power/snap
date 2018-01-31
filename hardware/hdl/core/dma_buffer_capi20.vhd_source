@@ -38,7 +38,7 @@ ENTITY dma_buffer IS
     -- PSL IOs
     hd_c_i                   : IN  HD_C_T;
     --
-    -- DMA WRITE IOs  
+    -- DMA WRITE IOs
     write_ctrl_i             : IN  ARR_DMA_CTL_T;
     sd_d_i                   : IN  SD_D_T;
     buf_walmost_full_i       : IN  std_logic;
@@ -117,16 +117,17 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL rram_rdata_end_q                 : std_logic;
   SIGNAL rram_rdata_end_qq                : std_logic;
   SIGNAL rram_rdata_end_qqq               : std_logic;
-  SIGNAL rram_rdata_p_q                   : std_logic_vector( 7 DOWNTO 0);
-  SIGNAL rram_rdata_q                     : std_logic_vector(511 DOWNTO 0);
-  SIGNAL rram_waddr                       : std_logic_vector(  5 DOWNTO 0);
-  SIGNAL rram_wdata_p_q                   : std_logic_vector((  8*CAPI_VER)-1 DOWNTO 0);
+  SIGNAL rram_rdata_p_q                   : std_logic_vector(   7 DOWNTO 0);
+  SIGNAL rram_rdata_q                     : std_logic_vector( 511 DOWNTO 0);
+  SIGNAL rram_waddr                       : std_logic_vector(   5 DOWNTO 0);
+  SIGNAL rram_wdata                       : std_logic_vector(1039 DOWNTO 0);
   SIGNAL rram_wen                         : std_logic;
   SIGNAL wback_data_q                     : std_logic_vector((512*CAPI_VER)-1 DOWNTO 0);
-  SIGNAL wram_waddr                       : std_logic_vector(  5 DOWNTO 0);
+  SIGNAL wram_waddr                       : std_logic_vector(               5 DOWNTO 0);
   SIGNAL wram_rdata                       : std_logic_vector((576*CAPI_VER)-1 DOWNTO 0);
   SIGNAL wram_rdata_p_q                   : std_logic_vector((  8*CAPI_VER)-1 DOWNTO 0);
   SIGNAL wram_rdata_q                     : std_logic_vector((512*CAPI_VER)-1 DOWNTO 0);
+  SIGNAL wram_rdata_reordered             : std_logic_vector((576*CAPI_VER)-1 DOWNTO 0);
   SIGNAL wram_waddr_d, wram_waddr_q       : std_logic_vector(  6 DOWNTO 0);
   SIGNAL wram_waddr_p_d, wram_waddr_p_q   : std_logic;
   SIGNAL wram_wdata                       : std_logic_vector(575 DOWNTO 0);
@@ -135,7 +136,7 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL buf_wtag_cl_partial_q            : boolean;
   SIGNAL wdata_parity_err_q               : std_logic_vector(  7 DOWNTO 0) := (OTHERS => '0');
   SIGNAL wdata_parity_fir_q               : std_logic := '0';
-  
+
   COMPONENT ram_1040x32_2p
     PORT(
       clka  : IN  STD_LOGIC;
@@ -194,10 +195,7 @@ BEGIN
       clka                   => ha_pclock,
       wea(0)                 => rram_wen,
       addra                  => rram_waddr,
-      dina( 511 DOWNTO    0) => hd_c_q.data(1023 DOWNTO 512),
-      dina( 519 DOWNTO  512) => (OTHERS => '0'),
-      dina(1031 DOWNTO  520) => hd_c_q.data( 511 DOWNTO   0),
-      dina(1039 DOWNTO 1032) => (OTHERS => '0'),
+      dina                   => rram_wdata,
       douta                  => open,
       clkb                   => ha_pclock,
       enb                    => '1',
@@ -206,6 +204,10 @@ BEGIN
       dinb                   => (OTHERS => '0'),
       doutb                  => rram_rdata
     );
+    rram_wdata( 511 DOWNTO    0) <= hd_c_q.data(1023 DOWNTO 512);
+    rram_wdata( 519 DOWNTO  512) <= (OTHERS => '0');
+    rram_wdata(1031 DOWNTO  520) <= hd_c_q.data( 511 DOWNTO   0);
+    rram_wdata(1039 DOWNTO 1032) <= (OTHERS => '0');
 
     ----------------------------------------------------------------------------
     -- RAM control none clock
@@ -215,12 +217,12 @@ BEGIN
     buf_rtag      <= to_integer(unsigned(rram_raddr_q(5 DOWNTO 1)));
 
     rram_ren      <= '1' WHEN ( buf_rrdreq_i    = '1' AND (read_ctrl_i(buf_rtag).buf   = FULL))  ELSE '0';
-    rram_rdata_v  <= '1' WHEN ((rram_raddr_q(0) = '0' AND (read_ctrl_i(buf_rtag).clt(EVEN_64B_CL) = '1')) OR 
+    rram_rdata_v  <= '1' WHEN ((rram_raddr_q(0) = '0' AND (read_ctrl_i(buf_rtag).clt(EVEN_64B_CL) = '1')) OR
                                (rram_raddr_q(0) = '1' AND (read_ctrl_i(buf_rtag).clt(ODD_64B_CL)  = '1'))) ELSE '0';
-    rram_rdata_e  <= '1' WHEN ((rram_raddr_q(0) = '0' AND (read_ctrl_i(buf_rtag).clt(ODD_64B_CL) = '0')) OR 
+    rram_rdata_e  <= '1' WHEN ((rram_raddr_q(0) = '0' AND (read_ctrl_i(buf_rtag).clt(ODD_64B_CL) = '0')) OR
                                (rram_raddr_q(0) = '1' AND (read_ctrl_i(buf_rtag).clt(ODD_64B_CL) = '1'))) AND read_ctrl_i(buf_rtag).clt(LAST_CL) = '1' ELSE '0';
 
-                                                                                                         
+
     rram_waddr <=  hd_c_q.utag(4 DOWNTO 0) & '0' ;
     rram_raddr <= rram_raddr_q(5 DOWNTO 0);
 
@@ -314,9 +316,10 @@ BEGIN
       web(0)                 => '0',
       addrb                  => wram_raddr_i,
       dinb                   => (OTHERS => '0'),
-      doutb( 575 DOWNTO   0) => wram_rdata(1151 DOWNTO 576),
-      doutb(1151 DOWNTO 576) => wram_rdata( 575 DOWNTO   0)
+      doutb                  => wram_rdata_reordered
     );
+    wram_rdata_reordered( 575 DOWNTO   0) <= wram_rdata(1151 DOWNTO 576);
+    wram_rdata_reordered(1151 DOWNTO 576) <= wram_rdata( 575 DOWNTO   0);
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -337,9 +340,9 @@ BEGIN
     buf_wtag                   <= to_integer(unsigned(wram_waddr_q(5 DOWNTO 1)));
     buf_wdata_extra_v          <= '1' WHEN (wram_waddr_q(0) = '0' AND write_ctrl_i(buf_wtag).clt(EVEN_64B_CL) = '0'
                                                                   AND write_ctrl_i(buf_wtag).clt(ODD_64B_CL)  = '1') OR
-                                           (wram_waddr_q(0) = '1' AND write_ctrl_i(buf_wtag).clt(EVEN_64B_CL) = '1' 
+                                           (wram_waddr_q(0) = '1' AND write_ctrl_i(buf_wtag).clt(EVEN_64B_CL) = '1'
                                                                   AND write_ctrl_i(buf_wtag).clt(ODD_64B_CL)  = '0') ELSE '0';
- 
+
     ----------------------------------------------------------------------------
     -- clk process
     ----------------------------------------------------------------------------
@@ -406,7 +409,7 @@ BEGIN
         FOR w IN 0 TO CAPI_VER-1 LOOP
           wram_rdata_v   ((512*w+512)-1 DOWNTO 512*w) := wram_rdata((576*w+512)-1 DOWNTO 576*w);
           wram_rdata_be_v(( 64*w+ 64)-1 DOWNTO  64*w) := wram_rdata((576*w+576)-1 DOWNTO 576*w+512);
-   
+
           --
           -- wram read and modified data
           FOR i IN (64*(w+1))-1 DOWNTO 0 LOOP
@@ -429,11 +432,11 @@ BEGIN
         --
         --
         wram_rdata_q   <= wram_rmdata_v;
-        wram_rdata_p_q <= wram_rmdata_p_v;            
+        wram_rdata_p_q <= wram_rmdata_p_v;
 
         --
         -- Reset Logic
-        -- 
+        --
         IF afu_reset = '1' THEN
           --
           -- initial values
