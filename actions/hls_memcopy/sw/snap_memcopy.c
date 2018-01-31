@@ -79,7 +79,7 @@ static void usage(const char *prog)
 	       "\n"
 	       "Example on a real card :\n"
 	       "------------------------\n"
-	       "export ACTION_ROOT=/home/snap/actions/hls_memcopy\n"
+	       "cd /home/snap; && export ACTION_ROOT=/home/snap/actions/hls_memcopy\n"
 	       "source snap_path.sh\n"
 	       "snap_maint -vv\n"
 	       "echo create a 512MB file with random data ...wait...\n"
@@ -87,13 +87,18 @@ static void usage(const char *prog)
 	       "\n"
 	       "echo READ 512MB from Host - one direction\n"
 	       "snap_memcopy -C0 -i t1\n"
-	       "echo WRITE 512MB to Host - one direction\n"
+	       "echo WRITE 512MB to Host - one direction - (t1!=t2 since buffer is 256KB)\n"
 	       "snap_memcopy -C0 -o t2 -s0x20000000\n"
 	       "\n"
 	       "echo READ 512MB from DDR - one direction\n"
 	       "snap_memcopy -C0 -s0x20000000 -ACARD_DRAM -a0x0\n"
 	       "echo WRITE 512MB to DDR - one direction\n"
 	       "snap_memcopy -C0 -s0x20000000 -DCARD_DRAM -d0x0\n"
+	       "\n"
+	       "echo MOVE 512MB from Host to DDR back to Host and compare\n"
+	       "snap_memcopy -C0 -i t1 -DCARD_DRAM -d 0x0\n"
+	       "snap_memcopy -C0 -o t2 -s0x20000000 -ACARD_DRAM -a 0x0\n"
+	       "diff t1 t2\n"
 	       "\n"
 	       "Example for a simulation\n"
 	       "------------------------\n"
@@ -408,7 +413,7 @@ int main(int argc, char *argv[])
 
 	fprintf(stdout, "memcopy of %lld bytes took %lld usec @ %.3f MiB/sec\n",
 		(long long)size, (long long)diff_usec, mib_sec);
-        fprintf(stdout, "This time represents the register transfer time + memcopy action time");       
+        fprintf(stdout, "This time represents the register transfer time + memcopy action time\n");       
 
 	snap_detach_action(action);
 	snap_card_free(card);
