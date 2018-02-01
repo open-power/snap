@@ -35,7 +35,8 @@ ENTITY mmio IS
     afu_reset              : IN  std_logic;
     action_reset           : OUT std_logic;
 #ifdef CONFIG_ENABLE_NVME
-    nvme_reset_ctl         : OUT std_logic_vector(SNAP_NVME_RST_L  DOWNTO SNAP_NVME_RST_R);   -- keeping NVMe drives in reset by driving 0s
+    nvme_reset_ctl         : OUT STD_LOGIC;
+    nvme_perst_ctl         : OUT std_logic_vector(SNAP_NVME_PERST_L  DOWNTO SNAP_NVME_PERST_R);   -- keeping NVMe drives in reset by driving 0s
 #endif
     ah_paren_mm_o          : OUT std_logic;
     --
@@ -1203,8 +1204,9 @@ BEGIN
 #ifdef CONFIG_ENABLE_NVME
     --
     -- PERST gates for NVMe drives
-    --
-    nvme_reset_ctl <= snap_regs_q(SNAP_RESET_REG)(SNAP_NVME_RST_L DOWNTO SNAP_NVME_RST_R);
+    --    
+    nvme_reset_ctl <= snap_regs_q(SNAP_RESET_REG)(SNAP_NVME_RESET);
+    nvme_perst_ctl <= snap_regs_q(SNAP_RESET_REG)(SNAP_NVME_PERST_L DOWNTO SNAP_NVME_PERST_R);
 #endif
 
   ------------------------------------------------------------------------------
