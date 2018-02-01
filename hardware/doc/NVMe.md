@@ -6,8 +6,8 @@ Once initalization is done,  SNAP actions must use the NVMe action interface (AX
 ## NVMe Host Action Registers (write only)
 ```
 offset (write only registers)
-  0x0 :  onboard memory address/SDRAM (low  32 bits)
-  0x4 :  onboard memory address/SDRAM (high 32 bits) 
+  0x0 :  onboard memory address (SDRAM) (low  32 bits)
+  0x4 :  onboard memory address (SDRAM) (high 32 bits) 
   0x8 :  NVMe drive LB address  (low  32 bits)
   0xc :  NVMe drive LB address  (high 32 bits)
   0x10:  number of blocks to transfer (zero based value; a 0 means 1 block (512 bytes)) 
