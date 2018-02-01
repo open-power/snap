@@ -81,7 +81,7 @@ void hls_action(snap_membus_t *din_gmem,
 	action_reg *act_reg,
 	action_RO_config_reg *Action_Config)
 {
-    // Host Memory AXI Interface - CANNOT BE COMMENTED - NO CHANGE BELOW
+    // Host Memory AXI Interface - CANNOT BE REMOVED - NO CHANGE BELOW
 #pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512 \
   max_read_burst_length=64  max_write_burst_length=64
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg offset=0x030
@@ -90,7 +90,7 @@ void hls_action(snap_membus_t *din_gmem,
   max_read_burst_length=64  max_write_burst_length=64
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg offset=0x040
 
-/*  // DDR memory Interface - CAN BE COMMENTED IF UNSED
+/*  // DDR memory Interface - CAN BE COMMENTED IF UNUSED
  * #pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512 \
  *   max_read_burst_length=64  max_write_burst_length=64
  * #pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg offset=0x050
@@ -121,7 +121,7 @@ void hls_action(snap_membus_t *din_gmem,
 }
 
 //-----------------------------------------------------------------------------
-//--- TESTBENCH BELOW IS SED ONLY TO DEBUG THE HARDWARE ACTION WITH HLS TOOL --
+//-- TESTBENCH BELOW IS USED ONLY TO DEBUG THE HARDWARE ACTION WITH HLS TOOL --
 //-----------------------------------------------------------------------------
 
 #ifdef NO_SYNTH

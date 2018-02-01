@@ -71,36 +71,48 @@ static void usage(const char *prog)
 	       "    this allows to ease control of input and output data\n"
 	       "\n"
 	       "Useful parameters(to be placed before the command)  :\n"
-	       "-------------------\n"
+	       "-----------------------------------------------------\n"
 	       "SNAP_TRACE  = 0x0 no debug trace  (default mode)\n"
 	       "SNAP_TRACE  = 0xF full debug trace\n"
 	       "SNAP_CONFIG = FPGA (or 0x0) hardware execution   (default mode)\n"
 	       "SNAP_CONFIG = CPU  (or 0x1) software execution\n"
 	       "\n"
-	       "Examples :\n"
-	       "----------\n"
+	       "Example on a real card :\n"
+	       "------------------------\n"
+	       "cd /home/snap; && export ACTION_ROOT=/home/snap/actions/hls_memcopy\n"
+	       "source snap_path.sh\n"
+	       "snap_maint -vv\n"
 	       "echo create a 512MB file with random data ...wait...\n"
 	       "dd if=/dev/urandom of=t1 bs=1M count=512\n"
-	       
+	       "\n"
 	       "echo READ 512MB from Host - one direction\n"
 	       "snap_memcopy -C0 -i t1\n"
-	       
-	       "echo WRITE 512MB to Host - one direction\n"
+	       "echo WRITE 512MB to Host - one direction - (t1!=t2 since buffer is 256KB)\n"
 	       "snap_memcopy -C0 -o t2 -s0x20000000\n"
-	       
+	       "\n"
 	       "echo READ 512MB from DDR - one direction\n"
 	       "snap_memcopy -C0 -s0x20000000 -ACARD_DRAM -a0x0\n"
-	       
 	       "echo WRITE 512MB to DDR - one direction\n"
 	       "snap_memcopy -C0 -s0x20000000 -DCARD_DRAM -d0x0\n"
-	       
-	       "echo READ file t1 from host memory THEN write it at @0x0 in card\n"
-	       "SNAP_CONFIG=0x0 snap_memcopy -i t1 -D CARD_DRAM -d 0x0\n"
-	       
+	       "\n"
+	       "echo MOVE 512MB from Host to DDR back to Host and compare\n"
+	       "snap_memcopy -C0 -i t1 -DCARD_DRAM -d 0x0\n"
+	       "snap_memcopy -C0 -o t2 -s0x20000000 -ACARD_DRAM -a 0x0\n"
+	       "diff t1 t2\n"
+	       "\n"
+	       "Example for a simulation\n"
+	       "------------------------\n"
+	       "snap_maint -vv\n"
+	       "echo create a 4KB file with random data \n"
+	       "rm t2; dd if=/dev/urandom of=t1 bs=1K count=4\n"
+	       "echo READ file t1 from host memory THEN write it at @0x0 in card DDR\n"
+	       "snap_memcopy -i t1 -D CARD_DRAM -d 0x0\n"
 	       "echo READ 4KB from card DDR at @0x0 THEN write them to Host and file t2\n"
-	       "SNAP_CONFIG=0x0 snap_memcopy -o t2 -A CARD_DRAM -a 0x0 -s0x1000\n"
+	       "snap_memcopy -o t2 -A CARD_DRAM -a 0x0 -s0x1000\n"
+	       "diff t1 t2\n"
+	       "\n"
 	       "echo same test using polling instead of IRQ waiting for the result\n"
-	       "SNAP_CONFIG=0x0 snap_memcopy -o t2 -A CARD_DRAM -a 0x0 -s0x1000 -N\n"
+	       "snap_memcopy -o t2 -A CARD_DRAM -a 0x0 -s0x1000 -N\n"
 	       "\n",
 	       prog);
 }
@@ -401,7 +413,7 @@ int main(int argc, char *argv[])
 
 	fprintf(stdout, "memcopy of %lld bytes took %lld usec @ %.3f MiB/sec\n",
 		(long long)size, (long long)diff_usec, mib_sec);
-        fprintf(stdout, "This represents the register transfer time + memcopy action time");       
+        fprintf(stdout, "This time represents the register transfer time + memcopy action time\n");       
 
 	snap_detach_action(action);
 	snap_card_free(card);

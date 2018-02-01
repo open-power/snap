@@ -238,15 +238,34 @@ case ${accel} in
 		;;
 	"ALL")
 		# detect all cards
+                if [ $VERBOSE -eq 1 ] ; then
+                     echo "------------------------------------------------------------------------"
+                     echo "Gzip Cards:"
+                fi
 		detect_gzip_cards
-		RC=$((RC + $?))
+                RC=$((RC + $?))
+                if [ $VERBOSE -eq 1 ] ; then
+                     echo "------------------------------------------------------------------------"
+                     echo "ADKU3 card:"
+                fi
 		detect_snap_cards "0x0632" "0x0605"
 		RC=$((RC + $?))
+                if [ $VERBOSE -eq 1 ] ; then
+                     echo "------------------------------------------------------------------------"
+                     echo "S121B card:"
+                fi
 		detect_snap_cards "0x0632" "0x0607"
 		RC=$((RC + $?))
+                if [ $VERBOSE -eq 1 ] ; then
+                     echo "------------------------------------------------------------------------"
+                     echo "N250S card:"
+                fi
 		detect_snap_cards "0x0632" "0x060a"
 		RC=$((RC + $?))
-		;;
+                if [ $VERBOSE -eq 1 ] ; then
+                     echo "------------------------------------------------------------------------"
+                fi
+ 		;;
 	*)
 		usage
 		exit 0
