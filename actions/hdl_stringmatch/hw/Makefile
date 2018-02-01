@@ -1,5 +1,5 @@
 #
-# Copyright 2016, International Business Machines
+# Copyright 2017, International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-database -open   capiWave -incsize 100M -incfiles 2
-probe    -create -memories -all -depth 2
-probe    -create -all -depth 10       ;# depth3 is 6x smaller than depth7
+
+#vhd_srcs=$(wildcard *.vhd_source)
+#vhd_files=$(vhd_srcs:.vhd_source=.vhd)
+
+.PHONY: all config clean vhdl
+
+all: config
+
+config:
+	./action_config.sh
+
+clean:
+	@$(RM) $(vhd_files)
+
+vhdl:
+
+#
+# FIXME Consider moving the functionality from action_config.sh into
+#      this Makefile. This also allows to define a proper clean rule
+#      such that the directory gets properly cleaned up and git status
+#      shows not the generated files.
+#

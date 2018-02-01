@@ -33,6 +33,7 @@ set ila_debug   [string toupper $::env(ILA_DEBUG)]
 set simulator   $::env(SIMULATOR)
 set log_dir     $::env(LOGS_DIR)
 set log_file    $log_dir/create_framework.log
+set action_tcl  [exec find $::env(ACTION_ROOT) -name tcl]
 
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support [string toupper $::env(HLS_SUPPORT)]
@@ -372,6 +373,18 @@ if { $fpga_card == "ADKU3" } {
 }
 if { $ila_debug == "TRUE" } {
   add_files -fileset constrs_1 -norecurse  $::env(ILA_SETUP_FILE)
+}
+
+# User tcl
+if { [file exists $action_tcl] == 1 } {
+  set tcl_exists [exec find $action_tcl -name *.tcl]
+  if { $tcl_exists != "" } {
+    foreach tcl_file [glob -nocomplain -dir $action_tcl *.tcl] {
+      set tcl_file_name [exec basename $tcl_file]
+      puts "                        sourcing user tcl: $tcl_file_name"
+      source $tcl_file >> $log_file
+    }
+  }
 }
 
 puts "\[CREATE_FRAMEWORK....\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
