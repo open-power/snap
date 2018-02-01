@@ -148,6 +148,11 @@ through an AXI master interface. In the SNAP configuration step the existence of
 # NVMe support
 For FPGA cards with NVMe flash attached, the SNAP framework supports the integration of up to two Flash drives. Via the SNAP configuration option 'Enable NVMe' the instantiation of the NVMe host controller together with the corresponding PCIe root complexes and the required AXI interfaces can be configured.
 
+Some HDL and HLS based examples are available. In all cases the NVME driver used requires the data to transit through the card SDRAM Please see the [NVMe main documentation page](../hardware/doc/NVMe.md) .
+- Automated hardware check (read write of arbitrary data) can be performed using action [snap/actions/hdl_example](../actions/hdl_example)
+- file transfers using fixed 4k blocks read writes can be performed with [snap/actions/hdl_nvme_example](../actions/hdl_nvme_example)
+- generic memcopy can be performed using [snap/actions/hls_nvme_memcopy](../actions/hls_nvme_memcopy)
+
 # Hardware debug with ILA cores
 In order to create an image that allows debugging the design using the
 Vivado Integrated Logic Analyzer (ILA) you may prepare a `.xdc` file for
