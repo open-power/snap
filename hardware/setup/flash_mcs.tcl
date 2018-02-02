@@ -1,16 +1,11 @@
 #!/bin/sh
 # shell wrapper for tcl - the next line is treated as comment by Vivado or Vivado_lab \
-exec vivado -nolog -nojournal -mode batch -source "$0" -tclargs "$@"
-
-# For initial programming, flash the file n250s.mcs to the current open JTAG target in vivado_lab
-# Example: vivado_lab -nolog -nojournal  -mode batch -source flash_mcs.tcl -tclargs n250s.mcs
-# Default to Nallatech 250S 
+if command -v vivado_lab > /dev/null ; then exec vivado_lab -nolog -nojournal -mode batch -source "$0" -tclargs "$@"; else exec vivado -nolog -nojournal -mode batch -source "$0" -tclargs "$@"; fi
 
 if { [info exists ::env(FPGACARD)] == 1 } {
     set fpgacard [string toupper $::env(FPGACARD)]
 } else {
   set fpgacard "UNKNOWN"
-  #  puts "Warning: Environment FPGACARD is not set. Default to N250S"
 }
 
 proc flash_help {} {
@@ -19,6 +14,9 @@ proc flash_help {} {
   puts "    vivado -nolog -nojournal -mode batch -source flash_mcs.tcl -tclargs <yourmcsfile.mcs> <JTAG hardware target>"
   puts "Note: vivado_lab can be used instead of vivado"
   puts "The JTAG hardware target number is optional if only one hardware target is connected"
+  puts "  Omitting this option with multiple hardware targets will list all available targets"
+  puts "Set the environment FPGACARD to the card type: N250S, ADKU3, S121B or N250SP"
+  puts "  e.g. $ export FPGACARD=ADKU3"
 } 
 
 if { $argc != 1 && $argc != 2 } {
@@ -27,18 +25,24 @@ if { $argc != 1 && $argc != 2 } {
 }
 
 set mcsfile     [lindex $argv 0]
+set rs_pins	{25:24}
 switch $fpgacard {
   N250S { set flashdevice mt28gu512aax1e-bpi-x16
-        set fpgapartnum xcku060
-      }
+          set fpgapartnum xcku060
+        }
   ADKU3 { set flashdevice mt28gu01gaax1e-bpi-x16
-        set fpgapartnum xcku060
-      }
+          set fpgapartnum xcku060
+        }
   S121B { set flashdevice mt28gu01gaax1e-bpi-x16
-        set fpgapartnum xcku115
-      }
+          set fpgapartnum xcku115
+          #FIXME? set rs_pins	{26:25}
+        }
+  N250SP { set flashdevice mt28ew01ga-bpi-x16
+          set fpgapartnum xcku15p
+          set rs_pins	{26:25}
+        }
   default {
-    puts "Error: Environment FPGACARD must be set to N250S or ADKU3 or S121B"
+    puts "Error: Environment FPGACARD must be set to N250S, ADKU3, S121B or N250SP"
     exit 96
   }
 }
@@ -72,7 +76,8 @@ if { [get_property PART $fpgadevice] != $fpgapartnum } {
 set fpga_cfgmem [get_property PROGRAM.HW_CFGMEM $fpgadevice]
 set_property PROGRAM.ADDRESS_RANGE {use_file} $fpga_cfgmem
 set_property PROGRAM.FILES [list $mcsfile] $fpga_cfgmem
-set_property PROGRAM.BPI_RS_PINS {25:24} $fpga_cfgmem
+set_property PROGRAM.BPI_RS_PINS $rs_pins $fpga_cfgmem
+# puts [get_property PROGRAM.BPI_RS_PINS $fpga_cfgmem]
 set_property PROGRAM.UNUSED_PIN_TERMINATION {pull-none} $fpga_cfgmem
 set_property PROGRAM.BLANK_CHECK 0 $fpga_cfgmem
 set_property PROGRAM.ERASE 1 $fpga_cfgmem
