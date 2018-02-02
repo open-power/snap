@@ -59,7 +59,7 @@ static chunk_id_t cid = (chunk_id_t)-1; /* global to close device via sig_INT */
 static void usage(const char *prog)
 {
 	printf("Usage: %s [-h] [-v,--verbose]\n"
-	       "  -C,--card <cardno> can be (0...3)\n"
+	       "  -C, --card <cardno> can be (0...3)\n"
 	       "  -V, --version             print version.\n"
 	       "  -X, --cpu <id>            only run on this CPU.\n"
 	       "  -f, --format              write entire device with pattern.\n"
