@@ -340,9 +340,11 @@ exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get
 # Save block design and close the project
 save_bd_design >> $log_file
 
-# Generate the Output products of the NVME block design. It is important that this are Verilog files
+# Generate the Output products of the NVME block design. 
+# It is important that this are Verilog files and set the synth_checkpoint_mode to None (Global synthesis) before generating targets 
 puts "                        generating NVMe output products"
-generate_target all [get_files  $root_dir/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
+set_property synth_checkpoint_mode None [get_files  $root_dir/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file 
+generate_target all                     [get_files  $root_dir/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
 puts "\[CREATE_NVMe.........\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
  
 #Close the project
