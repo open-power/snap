@@ -20,7 +20,7 @@ choice
                   storage. Uses Xilinx FPGA XCKU060.
 
        config N250SP
-                bool "Nallatech 250S+ with 4GB DDR4 SDRAM, NVMe and Xilinx KU15P FPGA"
+                bool "Experimental for CAPI2.0: Nallatech 250S+ with 4GB DDR4 SDRAM, NVMe and Xilinx KU15P FPGA"
                 select CAPI20
                 help
                   Nallatech 250S+ card originally used for CAPI Flash using NVMe
