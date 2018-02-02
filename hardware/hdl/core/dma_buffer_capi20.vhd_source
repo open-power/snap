@@ -318,8 +318,8 @@ BEGIN
       dinb                   => (OTHERS => '0'),
       doutb                  => wram_rdata_reordered
     );
-    wram_rdata_reordered( 575 DOWNTO   0) <= wram_rdata(1151 DOWNTO 576);
-    wram_rdata_reordered(1151 DOWNTO 576) <= wram_rdata( 575 DOWNTO   0);
+    wram_rdata(1151 DOWNTO 576) <= wram_rdata_reordered( 575 DOWNTO   0) ;
+    wram_rdata( 575 DOWNTO   0) <= wram_rdata_reordered(1151 DOWNTO 576) ;
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
