@@ -41,9 +41,9 @@ PACKAGE dma_types IS
   -- CONSTANT
   CONSTANT CL_NOT_USED       : std_logic_vector( 2 DOWNTO 0) := "000";
   CONSTANT CL_COMPLETE_DATA  : std_logic_vector( 2 DOWNTO 0) := "011";
-  CONSTANT EVEN_64B_CL       : integer                      :=  0;     -- 
-  CONSTANT ODD_64B_CL        : integer                      :=  1;     -- 
-  CONSTANT LAST_CL           : integer                      :=  2;     -- 
+  CONSTANT EVEN_64B_CL       : integer                      :=  0;     --
+  CONSTANT ODD_64B_CL        : integer                      :=  1;     --
+  CONSTANT LAST_CL           : integer                      :=  2;     --
 
   --
   -- TYPES
@@ -62,5 +62,5 @@ PACKAGE dma_types IS
     cla        : std_logic_vector(63 DOWNTO 6);  -- cache line address
     itag       : std_logic_vector( 8 DOWNTO 0);  -- PSL DMA itag
   END RECORD DMA_CTL_T;
-  TYPE ARR_DMA_CTL_T IS ARRAY (0 TO 31) OF DMA_CTL_T;    
+  TYPE ARR_DMA_CTL_T IS ARRAY (0 TO 31) OF DMA_CTL_T;
 END dma_types;
