@@ -532,7 +532,7 @@ int main(int argc, char *argv[])
 	size_t lba_size = 4 * 1024;
 	size_t lba_blocks = 1;
 	unsigned int lba;
-	unsigned int num_lba = 0;
+	unsigned long num_lba = 0;
 	unsigned int start_lba = 0;
 	struct timeval etime, stime;
 	long long diff_usec = 0;
@@ -699,7 +699,7 @@ int main(int argc, char *argv[])
 		int fd = -1;
 
 		if ((num_lba == 0) || (num_lba > lun_size)) {
-			fprintf(stderr, "warn: -n <num_lba> is %u but "
+			fprintf(stderr, "warn: -n <num_lba> is %lu but "
 				"should be >= %zu and <= %zu\n",
 				num_lba, lba_blocks, lun_size);
 			goto err_out;
@@ -712,13 +712,13 @@ int main(int argc, char *argv[])
 		}
 
 		if (num_lba < lba_blocks) {
-			fprintf(stderr, "err: num_lba %u smaller than lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu smaller than lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
 
 		if (num_lba % lba_blocks) {
-			fprintf(stderr, "err: num_lba %u not multiple of lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu not multiple of lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
@@ -789,7 +789,7 @@ int main(int argc, char *argv[])
 		uint8_t *_buf;
 
 		if ((num_lba == 0) || (num_lba > lun_size)) {
-			fprintf(stderr, "warn: -n <num_lba> is %u but "
+			fprintf(stderr, "warn: -n <num_lba> is %lu but "
 				"should be >= %zu and <= %zu\n",
 				num_lba, lba_blocks, lun_size);
 			goto err_out;
@@ -802,13 +802,13 @@ int main(int argc, char *argv[])
 		}
 
 		if (num_lba < lba_blocks) {
-			fprintf(stderr, "err: num_lba %u smaller than lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu smaller than lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
 
 		if (num_lba % lba_blocks) {
-			fprintf(stderr, "err: num_lba %u not multiple of lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu not multiple of lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
@@ -903,7 +903,7 @@ int main(int argc, char *argv[])
 		num_lba = len / lba_size;
 
 		if ((num_lba == 0) || (num_lba > lun_size)) {
-			fprintf(stderr, "warn: -n <num_lba> is %u but "
+			fprintf(stderr, "warn: -n <num_lba> is %lu but "
 				"should be >= %zu and <= %zu\n",
 				num_lba, lba_blocks, lun_size);
 			goto err_out;
@@ -916,13 +916,13 @@ int main(int argc, char *argv[])
 		}
 
 		if (num_lba < lba_blocks) {
-			fprintf(stderr, "err: num_lba %u smaller than lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu smaller than lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
 
 		if (num_lba % lba_blocks) {
-			fprintf(stderr, "err: num_lba %u not multiple of lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu not multiple of lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
@@ -963,20 +963,20 @@ int main(int argc, char *argv[])
 	case OP_FORMAT: {
 
 		if ((num_lba == 0) || (num_lba > lun_size)) {
-			fprintf(stderr, "warn: -n <num_lba> is %u but "
+			fprintf(stderr, "warn: -n <num_lba> is %lu but "
 				"should be >= %zu and <= %zu\n",
 				num_lba, lba_blocks, lun_size);
 			goto err_out;
 		}
 
 		if (num_lba < lba_blocks) {
-			fprintf(stderr, "err: num_lba %u smaller than lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu smaller than lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
 
 		if (num_lba % lba_blocks) {
-			fprintf(stderr, "err: num_lba %u not multiple of lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu not multiple of lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
