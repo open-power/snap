@@ -39,16 +39,25 @@ while [ -z "$SETUP_DONE" ]; do
 
 
   ####### checking card type
-  if [ "$FPGACARD" = "N250S" ]; then
-    SNAP_CFG="CONFIG_N250S=y\n""CONFIG_FPGACHIP=xcku060-ffva1156-2-e\n"
-  elif [ "$FPGACARD" = "ADKU3" ]; then
-    SNAP_CFG="CONFIG_ADKU3=y\n""CONFIG_FPGACHIP=xcku060-ffva1156-2-e\n"
-  elif [ "$FPGACARD" = "S121B" ]; then
-    SNAP_CFG="CONFIG_S121B=y\n""CONFIG_FPGACHIP=xcku115-flva1517-2-e\n"
-  else
-    echo "($0) ERROR: FPGACARD is not set correctly. Not generating config files."
-    break
-  fi
+  
+  case $FPGACARD in
+    "N250S" )
+      SNAP_CFG="CONFIG_N250S=y\n""CONFIG_FPGACHIP=xcku060-ffva1156-2-e\n"
+      ;;
+    "ADKU3" )
+      SNAP_CFG="CONFIG_ADKU3=y\n""CONFIG_FPGACHIP=xcku060-ffva1156-2-e\n"
+      ;;
+    "S121B" )
+      SNAP_CFG="CONFIG_S121B=y\n""CONFIG_FPGACHIP=xcku115-flva1517-2-e\n"
+      ;;
+    "N250SP" )
+      SNAP_CFG="CONFIG_N250SP=y\n""CONFIG_FPGACHIP=xcku15p-ffva1156-2-e\n"
+      ;;
+    * )
+      echo "($0) ERROR: FPGACARD is not set correctly. Not generating config files."
+      break
+      ;;
+  esac
   SNAP_CFG="$SNAP_CFG""CONFIG_FPGACARD=$FPGACARD\n"
 
 

@@ -71,17 +71,27 @@ Then you can use the capi-utils as described above to permanently program a user
 * Use [hardware/setup/build_mcs.tcl](../setup/build_mcs.tcl) to build the MCS file from the bit file
   ### Example:
   ```bash
-  export FACTORY_IMAGE=TRUE
-  rm $SNAP_ROOT/hardware/hdl/core/psl_fpga.vhd
-  make config image
-  export FACTORY_IMAGE=FALSE
-  rm $SNAP_ROOT/hardware/hdl/core/psl_fpga.vhd
-  make config image
-  factory_bitstream=`ls -t  build/Images/fw_*[0-9]_FACTORY.bit | head -n1`
-  echo $factory_bitstream 
-  user_bitstream=`ls -t  build/Images/fw_*[0-9].bit | head -n1`
-  echo $user_bitstream 
-  setup/build_mcs.tcl $factory_bitstream $user_bitstream "build/Images/${FPGACARD}_flash.mcs"
+  echo "ENABLE_FACTORY=y" >> .snap_config
+  make -s oldconfig
+  make image
+
+  # Save the image from the following "make clean"
+  mv ./hardware/build/Images/*.bi? .
+
+  # Build the USER bitstream. Don't make clean, as it would delete the FACTORY image built before
+  echo "ENABLE_FACTORY=n" >> .snap_config
+  make -s oldconfig
+  make image
+
+  # Restore the user image
+  mv ./*.bi? ./hardware/build/Images/
+  # Compile the MCS file from FACTORY and USER bitstreams
+  factory_bitstream=`ls -t ./hardware/build/Images/fw_*[0-9]_FACTORY.bit | head -n1`
+  echo "Factory bitstream=$factory_bitstream"
+  user_bitstream=`ls -t ./hardware/build/Images/fw_*[0-9].bit | head -n1`
+  echo "User bitstream=$user_bitstream"
+  source .snap_config.sh
+  ./hardware/setup/build_mcs.tcl $factory_bitstream $user_bitstream ${factory_bitstream%.bit}.mcs
   ```
 * Program the flash using [hardware/setup/flash_mcs.tcl](../setup/flash_mcs.tcl)  
   Programming the flash will take several minutes, please be patient.
