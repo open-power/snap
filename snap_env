@@ -90,6 +90,13 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
 
+  ####### checking FPGA card setup
+  # Note: Card N250SP is currently in preparation phase
+  if [ "$FPGACARD" == "N250SP" ]; then
+    SETUP_INFO="$SETUP_INFO\n### INFO ### Support for the selected CAPI2.0 FPGA card N250SP is currently in preparation phase."
+  fi
+
+
   ####### checking path to PSL design checkpoint
   # Note: CLOUD_USER_FLOW is defined via snap_config
   if [ "$CLOUD_USER_FLOW" == "TRUE" ]; then
