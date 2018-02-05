@@ -38,9 +38,13 @@ $(error Please make sure that $$SNAP_ROOT is set up correctly.)
 endif
 endif
 
+CPPFLAGS+= -g
 CXX=g++
 
-all: all_build
+all: config all_build
+
+config:
+	./action_config.sh
 
 fregex.o: utils/fregex.cpp
 	$(CXX) -c $(CPPFLAGS) $($(@:.o=)_CPPFLAGS) -DNODEBUG $< -o $@

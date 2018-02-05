@@ -157,7 +157,7 @@ static void* fill_one_packet (const char* in_pkt, int size, void* in_pkt_addr)
     // The TAG ID
     pkt_id = PACKET_ID;
 
-    VERBOSE0 ("PKT[%d] %s len %d\n", pkt_id, in_pkt, pkt_len);
+    VERBOSE1 ("PKT[%d] %s len %d\n", pkt_id, in_pkt, pkt_len);
 
     // The frame header
     for (int i = 0; i < 4; i++) {
@@ -226,7 +226,7 @@ static void* fill_one_pattern (const char* in_patt, void* in_patt_addr)
     PATTERN_ID ++;
     pattern_id = PATTERN_ID;
 
-    VERBOSE0 ("PATT[%d] %s\n", pattern_id, in_patt);
+    VERBOSE1 ("PATT[%d] %s\n", pattern_id, in_patt);
 
     fregex_get_config (in_patt,
                        MAX_TOKEN_NUM,
@@ -237,8 +237,8 @@ static void* fill_one_pattern (const char* in_patt, void* in_patt_addr)
                        &config_len,
                        0);
 
-    VERBOSE0 ("Config length (bits)  %d\n", config_len * 8);
-    VERBOSE0 ("Config length (bytes) %d\n", config_len);
+    VERBOSE1 ("Config length (bits)  %d\n", config_len * 8);
+    VERBOSE1 ("Config length (bytes) %d\n", config_len);
 
     for (int i = 0; i < 4; i++) {
         patt_base_addr[bytes_used] = 0x5A;
@@ -378,46 +378,46 @@ static void action_sm (struct snap_card* h,
                   (uint32_t) (((uint64_t) patt_src_base) & 0xffffffff));
     action_write (h, ACTION_PATT_INIT_ADDR_H,
                   (uint32_t) ((((uint64_t) patt_src_base) >> 32) & 0xffffffff));
-    VERBOSE0 (" Write ACTION_PATT_INIT_ADDR done! \n");
+    VERBOSE1 (" Write ACTION_PATT_INIT_ADDR done! \n");
 
     action_write (h, ACTION_PKT_INIT_ADDR_L,
                   (uint32_t) (((uint64_t) pkt_src_base) & 0xffffffff));
     action_write (h, ACTION_PKT_INIT_ADDR_H,
                   (uint32_t) ((((uint64_t) pkt_src_base) >> 32) & 0xffffffff));
-    VERBOSE0 (" Write ACTION_PKT_INIT_ADDR done! \n");
+    VERBOSE1 (" Write ACTION_PKT_INIT_ADDR done! \n");
 
     action_write (h, ACTION_PATT_CARD_DDR_ADDR_L, 0);
     action_write (h, ACTION_PATT_CARD_DDR_ADDR_H, 0);
-    VERBOSE0 (" Write ACTION_PATT_CARD_DDR_ADDR done! \n");
+    VERBOSE1 (" Write ACTION_PATT_CARD_DDR_ADDR done! \n");
 
     action_write (h, ACTION_STAT_INIT_ADDR_L,
                   (uint32_t) (((uint64_t) stat_dest_base) & 0xffffffff));
     action_write (h, ACTION_STAT_INIT_ADDR_H,
                   (uint32_t) ((((uint64_t) stat_dest_base) >> 32) & 0xffffffff));
-    VERBOSE0 (" Write ACTION_STAT_INIT_ADDR done! \n");
+    VERBOSE1 (" Write ACTION_STAT_INIT_ADDR done! \n");
 
     action_write (h, ACTION_PATT_TOTAL_NUM_L,
                   (uint32_t) (((uint64_t) patt_size) & 0xffffffff));
     action_write (h, ACTION_PATT_TOTAL_NUM_H,
                   (uint32_t) ((((uint64_t) patt_size) >> 32) & 0xffffffff));
-    VERBOSE0 (" Write ACTION_PATT_TOTAL_NUM done! \n");
+    VERBOSE1 (" Write ACTION_PATT_TOTAL_NUM done! \n");
 
     action_write (h, ACTION_PKT_TOTAL_NUM_L,
                   (uint32_t) (((uint64_t) pkt_size) & 0xffffffff));
     action_write (h, ACTION_PKT_TOTAL_NUM_H,
                   (uint32_t) ((((uint64_t) pkt_size) >> 32) & 0xffffffff));
-    VERBOSE0 (" Write ACTION_PKT_TOTAL_NUM done! \n");
+    VERBOSE1 (" Write ACTION_PKT_TOTAL_NUM done! \n");
 
     action_write (h, ACTION_STAT_TOTAL_SIZE_L,
                   (uint32_t) (((uint64_t) stat_size) & 0xffffffff));
     action_write (h, ACTION_STAT_TOTAL_SIZE_H,
                   (uint32_t) ((((uint64_t) stat_size) >> 32) & 0xffffffff));
-    VERBOSE0 (" Write ACTION_STAT_TOTAL_SIZE done! \n");
+    VERBOSE1 (" Write ACTION_STAT_TOTAL_SIZE done! \n");
 
     // Start copying the pattern from host memory to card
     action_write (h, ACTION_CONTROL_L, 0x00000001);
     action_write (h, ACTION_CONTROL_H, 0x00000000);
-    VERBOSE0 (" Write ACTION_CONTROL for pattern copying! \n");
+    VERBOSE1 (" Write ACTION_CONTROL for pattern copying! \n");
 
     do {
         reg_data = action_read(h, ACTION_STATUS_L);
@@ -430,17 +430,17 @@ static void action_sm (struct snap_card* h,
 
         // Status[0]
         if ((reg_data & 0x00000001) == 1) {
-            VERBOSE0 ("Pattern copy done!\n");
+            VERBOSE1 ("Pattern copy done!\n");
             break;
         }
 
-        VERBOSE0("Polling Status reg with 0X%X\n", reg_data);
+        VERBOSE3("Polling Status reg with 0X%X\n", reg_data);
     } while (1);
 
     // Start working control[2:1] = 11
     action_write (h, ACTION_CONTROL_L, 0x00000006);
     action_write (h, ACTION_CONTROL_H, 0x00000000);
-    VERBOSE0 (" Write ACTION_CONTROL for working! \n");
+    VERBOSE1 (" Write ACTION_CONTROL for working! \n");
 
     do {
         reg_data = action_read(h, ACTION_STATUS_L);
@@ -458,26 +458,26 @@ static void action_sm (struct snap_card* h,
         }
 
         if ((reg_data & 0x00000006) == 6) {
-            VERBOSE0 ("Work done!\n");
+            VERBOSE1 ("Work done!\n");
 
             reg_data = action_read(h, ACTION_STATUS_H);
-            VERBOSE0 ("%d bytes of valid stat data transfered!\n", reg_data);
+            VERBOSE1 ("%d bytes of valid stat data transfered!\n", reg_data);
 
             break;
         }
 
-        VERBOSE0("Polling Status reg with 0X%X\n", reg_data);
+        VERBOSE3("Polling Status reg with 0X%X\n", reg_data);
     } while (1);
 
     // Stop working
     action_write (h, ACTION_CONTROL_L, 0x00000000);
     action_write (h, ACTION_CONTROL_H, 0x00000000);
-    VERBOSE0 (" Write ACTION_CONTROL for stop working! \n");
+    VERBOSE1 (" Write ACTION_CONTROL for stop working! \n");
 
     // Flush rest data 
     action_write (h, ACTION_CONTROL_L, 0x00000008);
     action_write (h, ACTION_CONTROL_H, 0x00000000);
-    VERBOSE0 (" Write ACTION_CONTROL for stat flushing! \n");
+    VERBOSE1 (" Write ACTION_CONTROL for stat flushing! \n");
 
     do {
         reg_data = action_read(h, ACTION_STATUS_L);
@@ -490,27 +490,27 @@ static void action_sm (struct snap_card* h,
 
         // Status[3]
         if ((reg_data & 0x00000008) == 8) {
-            VERBOSE0 ("Stat flush done!\n");
+            VERBOSE1 ("Stat flush done!\n");
             reg_data = action_read(h, ACTION_STATUS_H);
-            VERBOSE0 ("Number of matches packets: %d\n", reg_data);
+            VERBOSE1 ("Number of matched packets: %d\n", reg_data);
             *num_matched_pkt = reg_data;
             break;
         }
 
-        VERBOSE0("Polling Status reg with 0X%X\n", reg_data);
+        VERBOSE3("Polling Status reg with 0X%X\n", reg_data);
     } while (1);
 
     // Stop flushing 
     action_write (h, ACTION_CONTROL_L, 0x00000000);
     action_write (h, ACTION_CONTROL_H, 0x00000000);
-    VERBOSE0 (" Write ACTION_CONTROL for stop working! \n");
+    VERBOSE1 (" Write ACTION_CONTROL for stop working! \n");
 
     // Wait for transaction to be done.
     usleep(100000);
 
     int count = 0;
     do {
-        VERBOSE0 (" Draining %i! \n", count);
+        VERBOSE3 (" Draining %i! \n", count);
         reg_data = action_read(h, ACTION_STATUS_L);
         count++;
     } while (count < 50);
@@ -531,17 +531,13 @@ static int sm_scan (struct snap_card* dnc,
     int rc;
     uint64_t td;
 
-    //VERBOSE0 ("PATTERN BUFFER BASE -- 0X%016lX -- SIZE -- 0%d\n", (uint64_t)patt_src_base, patt_size);
-    //VERBOSE0 ("PACKET BUFFER BASE  -- 0X%016lX -- SIZE -- 0%d\n", (uint64_t)pkt_src_base, pkt_size);
-    //VERBOSE0 ("STAT BUFFER BASE    -- 0X%016lX -- SIZE (max) -- 0%d\n", (uint64_t)stat_dest_base, stat_size);
-
     rc = 0;
 
     action_sm (dnc, patt_src_base, pkt_src_base, stat_dest_base, num_matched_pkt,
             patt_size, pkt_size, stat_size);
-    VERBOSE0 ("Wait for idle\n");
+    VERBOSE1 ("Wait for idle\n");
     rc = action_wait_idle (dnc, timeout, &td);
-    VERBOSE0 ("Card in idle\n");
+    VERBOSE1 ("Card in idle\n");
 
     if (0 != rc) {
         return rc;
@@ -602,7 +598,7 @@ static void* sm_compile_file (const char* file_path, size_t* size)
     void* patt_src_base = alloc_mem (64, max_alloc_size);
     void* patt_src = patt_src_base;
 
-    VERBOSE0 ("PATTERN Source Address Start at 0X%016lX\n", (uint64_t)patt_src);
+    VERBOSE1 ("PATTERN Source Address Start at 0X%016lX\n", (uint64_t)patt_src);
 
     fp = fopen (file_path, "r");
 
@@ -614,17 +610,17 @@ static void* sm_compile_file (const char* file_path, size_t* size)
     while ((read = getline (&line, &len, fp)) != -1) {
         remove_newline(line);
         read--;
-        VERBOSE2 ("Pattern line read with length %zu :\n", read);
-        VERBOSE2 ("%s\n", line);
+        VERBOSE3 ("Pattern line read with length %zu :\n", read);
+        VERBOSE3 ("%s\n", line);
         patt_src = fill_one_pattern (line, patt_src);
         // regex ref model
         regex_ref_push_pattern(line);
-        VERBOSE0 ("Pattern Source Address 0X%016lX\n", (uint64_t)patt_src);
+        VERBOSE3 ("Pattern Source Address 0X%016lX\n", (uint64_t)patt_src);
     }
 
-    VERBOSE0 ("Total size of pattern buffer used: %ld\n", (uint64_t) (patt_src - patt_src_base));
+    VERBOSE1 ("Total size of pattern buffer used: %ld\n", (uint64_t) (patt_src - patt_src_base));
 
-    VERBOSE0 ("---------- Pattern Buffer: %p\n", patt_src_base);
+    VERBOSE1 ("---------- Pattern Buffer: %p\n", patt_src_base);
 
     if (verbose_level > 1) {
         __hexdump (stdout, patt_src_base, (patt_src - patt_src_base));
@@ -655,7 +651,7 @@ static void* sm_scan_file (const char* file_path, size_t* size)
     void* pkt_src_base = alloc_mem (64, max_alloc_size);
     void* pkt_src = pkt_src_base;
 
-    VERBOSE0 ("PACKET Source Address Start at 0X%016lX\n", (uint64_t)pkt_src);
+    VERBOSE1 ("PACKET Source Address Start at 0X%016lX\n", (uint64_t)pkt_src);
 
     fp = fopen (file_path, "r");
 
@@ -667,17 +663,17 @@ static void* sm_scan_file (const char* file_path, size_t* size)
     while ((read = getline (&line, &len, fp)) != -1) {
         remove_newline(line);
         read--;
-        VERBOSE2 ("PACKET line read with length %zu :\n", read);
-        VERBOSE2 ("%s\n", line);
+        VERBOSE3 ("PACKET line read with length %zu :\n", read);
+        VERBOSE3 ("%s\n", line);
         pkt_src = fill_one_packet (line, read, pkt_src);
         // regex ref model
         regex_ref_push_packet(line, PACKET_ID);
-        VERBOSE0 ("PACKET Source Address 0X%016lX\n", (uint64_t)pkt_src);
+        VERBOSE3 ("PACKET Source Address 0X%016lX\n", (uint64_t)pkt_src);
     }
 
-    VERBOSE0 ("Total size of packet buffer used: %ld\n", (uint64_t) (pkt_src - pkt_src_base));
+    VERBOSE1 ("Total size of packet buffer used: %ld\n", (uint64_t) (pkt_src - pkt_src_base));
 
-    VERBOSE0 ("---------- Packet Buffer: %p\n", pkt_src_base);
+    VERBOSE1 ("---------- Packet Buffer: %p\n", pkt_src_base);
 
     if (verbose_level > 1) {
         __hexdump (stdout, pkt_src_base, (pkt_src - pkt_src_base));
@@ -707,8 +703,8 @@ static int compare_results(size_t num_matched_pkt, void* stat_dest_base)
         VERBOSE0("ACTUAL: %d\n", (int)num_matched_pkt);
     }
 
-    VERBOSE0("---- Results (A: actual, E: expected) ----\n");
-    VERBOSE0("PKT(A)   \tPATT(A) \tOFFSET(A) \tPKT(E)   \tPATT(E) \tOFFSET(E)\n");
+    VERBOSE1("---- Results (A: actual, E: expected) ----\n");
+    VERBOSE1("PKT(A)   \tPATT(A) \tOFFSET(A) \tPKT(E)   \tPATT(E) \tOFFSET(E)\n");
     for (i = 0; i < (int)num_matched_pkt; i++) {
         for (j = 0; j < 4; j++) {
             patt_id |= (((uint8_t*)stat_dest_base)[i*10+j] << j*8);
@@ -724,16 +720,16 @@ static int compare_results(size_t num_matched_pkt, void* stat_dest_base)
 
         sm_stat ref_stat = regex_ref_get_result(pkt_id);
 
-        VERBOSE0("%9d\t%8d\t%9d\t%9d\t%8d\t%9d", pkt_id, patt_id, offset,
+        VERBOSE1("%9d\t%8d\t%9d\t%9d\t%8d\t%9d", pkt_id, patt_id, offset,
                 ref_stat.packet_id, ref_stat.pattern_id, ref_stat.offset);
 
         if ((ref_stat.packet_id != pkt_id) ||
                 (ref_stat.pattern_id != patt_id) ||
                 (ref_stat.offset != offset)) {
-            VERBOSE0(" MISMATCH!\n");
+            VERBOSE1(" MISMATCH!\n");
             rc = 1;
         } else {
-            VERBOSE0("\n");
+            VERBOSE1("\n");
         }
 
         patt_id = 0;
@@ -869,9 +865,11 @@ int main (int argc, char* argv[])
 
     VERBOSE0 ("Finish get action.\n");
 
-    // Alloc state output buffer
-    stat_dest_base = alloc_mem (64, 1024 * 32);
-    memset (stat_dest_base, 0, 1024 * 32);
+    // Alloc state output buffer, at least 4KB
+    int stat_size = ((OUTPUT_STAT_WIDTH / 8) * regex_ref_get_num_matched_pkt()) > 4096
+        ? ((OUTPUT_STAT_WIDTH / 8) * regex_ref_get_num_matched_pkt()) : 4096;
+    stat_dest_base = alloc_mem (64, stat_size);
+    memset (stat_dest_base, 0, stat_size);
 
     VERBOSE0 ("Start sm_scan.\n");
     rc = sm_scan (dn, timeout,
@@ -881,13 +879,13 @@ int main (int argc, char* argv[])
                   &num_matched_pkt,
                   patt_size,
                   pkt_size,
-                  1024 * (64 + 128));
+                  stat_size);
 
     VERBOSE1 ("Finish sm_scan with %d matched packets.\n", (int)num_matched_pkt);
 
     // Sleep for 10us before read out the reasult
     if (verbose_level > 1) {
-        __hexdump (stdout, stat_dest_base, 320);
+        __hexdump (stdout, stat_dest_base, (OUTPUT_STAT_WIDTH / 8) * regex_ref_get_num_matched_pkt());
     }
 
     rc = compare_results(num_matched_pkt, stat_dest_base);

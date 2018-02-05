@@ -130,5 +130,5 @@ sm_stat regex_ref_get_result(uint32_t in_pkt_id)
 
 int regex_ref_get_num_matched_pkt()
 {
-    regex_ref.get_num_matched_pkt();
+    return regex_ref.get_num_matched_pkt();
 }
