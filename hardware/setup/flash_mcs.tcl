@@ -9,8 +9,8 @@ exec vivado -nolog -nojournal -mode batch -source "$0" -tclargs "$@"
 if { [info exists ::env(FPGACARD)] == 1 } {
     set fpgacard [string toupper $::env(FPGACARD)]
 } else {
-  set fpgacard "N250S"
-  puts "Warning: Environment FPGACARD is not set. Default to N250S"
+  set fpgacard "UNKNOWN"
+  #  puts "Warning: Environment FPGACARD is not set. Default to N250S"
 }
 
 proc flash_help {} {

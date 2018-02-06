@@ -409,106 +409,106 @@ Component psl4snap
 
 -- AFU interface (psl_accel)
     -- Command interface
-    a0h_cvalid          : in  std_ulogic                  ; -- Command valid
-    a0h_ctag            : in  std_ulogic_vector(0 to 7)   ; -- Command tag
-    a0h_ctagpar         : in  std_ulogic                  ; -- Command tag parity
-    a0h_com             : in  std_ulogic_vector(0 to 12)  ; -- Command code
-    a0h_compar          : in  std_ulogic                  ; -- Command code parity
-    a0h_cabt            : in  std_ulogic_vector(0 to 2)   ; -- Command ABT
-    a0h_cea             : in  std_ulogic_vector(0 to 63)  ; -- Command address
-    a0h_ceapar          : in  std_ulogic                  ; -- Command address parity
-    a0h_cch             : in  std_ulogic_vector(0 to 15)  ; -- Command context handle
-    a0h_csize           : in  std_ulogic_vector(0 to 11)  ; -- Command size
-    a0h_cpagesize       : in  std_ulogic_vector(0 to 3)   ; -- ** New tie to 0000
-    ha0_croom           : out std_ulogic_vector(0 to 7)   ; -- Command room
+    a0h_cvalid          : in  std_logic                  ; -- Command valid
+    a0h_ctag            : in  std_logic_vector(0 to 7)   ; -- Command tag
+    a0h_ctagpar         : in  std_logic                  ; -- Command tag parity
+    a0h_com             : in  std_logic_vector(0 to 12)  ; -- Command code
+    a0h_compar          : in  std_logic                  ; -- Command code parity
+    a0h_cabt            : in  std_logic_vector(0 to 2)   ; -- Command ABT
+    a0h_cea             : in  std_logic_vector(0 to 63)  ; -- Command address
+    a0h_ceapar          : in  std_logic                  ; -- Command address parity
+    a0h_cch             : in  std_logic_vector(0 to 15)  ; -- Command context handle
+    a0h_csize           : in  std_logic_vector(0 to 11)  ; -- Command size
+    a0h_cpagesize       : in  std_logic_vector(0 to 3)   ; -- ** New tie to 0000
+    ha0_croom           : out std_logic_vector(0 to 7)   ; -- Command room
     -- Buffer interface
-    ha0_brvalid         : out std_ulogic                  ; -- Buffer Read valid
-    ha0_brtag           : out std_ulogic_vector(0 to 7)   ; -- Buffer Read tag
-    ha0_brtagpar        : out std_ulogic                  ; -- Buffer Read tag parity
-    ha0_brad            : out std_ulogic_vector(0 to 5)   ; -- Buffer Read address
-    a0h_brlat           : in  std_ulogic_vector(0 to 3)   ; -- Buffer Read latency
-    a0h_brdata          : in  std_ulogic_vector(0 to 1023); -- Buffer Read data
-    a0h_brpar           : in  std_ulogic_vector(0 to 15)  ; -- Buffer Read data parity
-    ha0_bwvalid         : out std_ulogic                  ; -- Buffer Write valid
-    ha0_bwtag           : out std_ulogic_vector(0 to 7)   ; -- Buffer Write tag
-    ha0_bwtagpar        : out std_ulogic                  ; -- Buffer Write tag parity
-    ha0_bwad            : out std_ulogic_vector(0 to 5)   ; -- Buffer Write address
-    ha0_bwdata          : out std_ulogic_vector(0 to 1023); -- Buffer Write data
-    ha0_bwpar           : out std_ulogic_vector(0 to 15)  ; -- Buffer Write data parity
+    ha0_brvalid         : out std_logic                  ; -- Buffer Read valid
+    ha0_brtag           : out std_logic_vector(0 to 7)   ; -- Buffer Read tag
+    ha0_brtagpar        : out std_logic                  ; -- Buffer Read tag parity
+    ha0_brad            : out std_logic_vector(0 to 5)   ; -- Buffer Read address
+    a0h_brlat           : in  std_logic_vector(0 to 3)   ; -- Buffer Read latency
+    a0h_brdata          : in  std_logic_vector(0 to 1023); -- Buffer Read data
+    a0h_brpar           : in  std_logic_vector(0 to 15)  ; -- Buffer Read data parity
+    ha0_bwvalid         : out std_logic                  ; -- Buffer Write valid
+    ha0_bwtag           : out std_logic_vector(0 to 7)   ; -- Buffer Write tag
+    ha0_bwtagpar        : out std_logic                  ; -- Buffer Write tag parity
+    ha0_bwad            : out std_logic_vector(0 to 5)   ; -- Buffer Write address
+    ha0_bwdata          : out std_logic_vector(0 to 1023); -- Buffer Write data
+    ha0_bwpar           : out std_logic_vector(0 to 15)  ; -- Buffer Write data parity
     -- Response interface
-    ha0_rvalid          : out std_ulogic                  ; -- Response valid
-    ha0_rtag            : out std_ulogic_vector(0 to 7)   ; -- Response tag
-    ha0_rtagpar         : out std_ulogic                  ; -- Response tag parity
-    ha0_rditag          : out std_ulogic_vector(0 to 8);    -- **New DMA Translation Tag for xlat_* requests
-    ha0_rditagpar       : out std_ulogic;                   -- **New Parity bit for above
-    ha0_response        : out std_ulogic_vector(0 to 7)   ; -- Response
-    ha0_response_ext    : out std_ulogic_vector(0 to 7)   ; -- **New Response Ext
-    ha0_rpagesize       : out std_ulogic_vector(0 to 3);    -- **New Command translated Page size.  Provided by PSL to allow
-    ha0_rcachestate     : out std_ulogic_vector(0 to 1)   ; -- Response cache state
-    ha0_rcachepos       : out std_ulogic_vector(0 to 12)  ; -- Response cache pos
-    ha0_rcredits        : out std_ulogic_vector(0 to 8)   ; -- Response credits
---     ha0_reoa            : OUT std_ulogic_vector(0 to 185);  -- **New unknown width or use
+    ha0_rvalid          : out std_logic                  ; -- Response valid
+    ha0_rtag            : out std_logic_vector(0 to 7)   ; -- Response tag
+    ha0_rtagpar         : out std_logic                  ; -- Response tag parity
+    ha0_rditag          : out std_logic_vector(0 to 8);    -- **New DMA Translation Tag for xlat_* requests
+    ha0_rditagpar       : out std_logic;                   -- **New Parity bit for above
+    ha0_response        : out std_logic_vector(0 to 7)   ; -- Response
+    ha0_response_ext    : out std_logic_vector(0 to 7)   ; -- **New Response Ext
+    ha0_rpagesize       : out std_logic_vector(0 to 3);    -- **New Command translated Page size.  Provided by PSL to allow
+    ha0_rcachestate     : out std_logic_vector(0 to 1)   ; -- Response cache state
+    ha0_rcachepos       : out std_logic_vector(0 to 12)  ; -- Response cache pos
+    ha0_rcredits        : out std_logic_vector(0 to 8)   ; -- Response credits
+--     ha0_reoa            : OUT std_logic_vector(0 to 185);  -- **New unknown width or use
     -- MMIO interface
-    ha0_mmval           : out std_ulogic                  ; -- A valid MMIO is present
-    ha0_mmcfg           : out std_ulogic                  ; -- afu descriptor space access
-    ha0_mmrnw           : out std_ulogic                  ; -- 1 = read, 0 = write
-    ha0_mmdw            : out std_ulogic                  ; -- 1 = doubleword, 0 = word
-    ha0_mmad            : out std_ulogic_vector(0 to 23)  ; -- mmio address
-    ha0_mmadpar         : out std_ulogic                  ; -- mmio address parity
-    ha0_mmdata          : out std_ulogic_vector(0 to 63)  ; -- Write data
-    ha0_mmdatapar       : out std_ulogic                  ; -- mmio data parity
-    a0h_mmack           : in  std_ulogic                  ; -- Write is complete or Read is valid
-    a0h_mmdata          : in  std_ulogic_vector(0 to 63)  ; -- Read data
-    a0h_mmdatapar       : in  std_ulogic                  ; -- mmio data parity
+    ha0_mmval           : out std_logic                  ; -- A valid MMIO is present
+    ha0_mmcfg           : out std_logic                  ; -- afu descriptor space access
+    ha0_mmrnw           : out std_logic                  ; -- 1 = read, 0 = write
+    ha0_mmdw            : out std_logic                  ; -- 1 = doubleword, 0 = word
+    ha0_mmad            : out std_logic_vector(0 to 23)  ; -- mmio address
+    ha0_mmadpar         : out std_logic                  ; -- mmio address parity
+    ha0_mmdata          : out std_logic_vector(0 to 63)  ; -- Write data
+    ha0_mmdatapar       : out std_logic                  ; -- mmio data parity
+    a0h_mmack           : in  std_logic                  ; -- Write is complete or Read is valid
+    a0h_mmdata          : in  std_logic_vector(0 to 63)  ; -- Read data
+    a0h_mmdatapar       : in  std_logic                  ; -- mmio data parity
     -- Control interface
-    ha0_jval            : out std_ulogic                  ; -- Job valid
-    ha0_jcom            : out std_ulogic_vector(0 to 7)   ; -- Job command
-    ha0_jcompar         : out std_ulogic                  ; -- Job command parity
-    ha0_jea             : out std_ulogic_vector(0 to 63)  ; -- Job address
-    ha0_jeapar          : out std_ulogic                  ; -- Job address parity
---  ha0_lop             : out std_ulogic_vector(0 to 4)   ; -- LPC/Internal Cache Op code
---  ha0_loppar          : out std_ulogic                  ; -- Job address parity
---  ha0_lsize           : out std_ulogic_vector(0 to 6)   ; -- Size/Secondary Op code
---  ha0_ltag            : out std_ulogic_vector(0 to 11)  ; -- LPC Tag/Internal Cache Tag
---  ha0_ltagpar         : out std_ulogic                  ; -- LPC Tag/Internal Cache Tag parity
-    a0h_jrunning        : in  std_ulogic                  ; -- Job running
-    a0h_jdone           : in  std_ulogic                  ; -- Job done
-    a0h_jcack           : in  std_ulogic                  ; -- completion of llcmd
-    a0h_jerror          : in  std_ulogic_vector(0 to 63)  ; -- Job error
--- AM. Sept08, 2016              a0h_jyield          : in  std_ulogic                  ; -- Job yield
---  a0h_ldone           : in  std_ulogic                  ; -- LPC/Internal Cache Op done
---  a0h_ldtag           : in  std_ulogic_vector(0 to 11)  ; -- ltag is done
---  a0h_ldtagpar        : in  std_ulogic                  ; -- ldtag parity
---  a0h_lroom           : in  std_ulogic_vector(0 to 7)   ; -- LPC/Internal Cache Op AFU can handle
-    a0h_tbreq           : in  std_ulogic                  ; -- Timebase command request
-    a0h_paren           : in  std_ulogic                  ; -- parity enable
-    ha0_pclock          : out std_ulogic                  ;
+    ha0_jval            : out std_logic                  ; -- Job valid
+    ha0_jcom            : out std_logic_vector(0 to 7)   ; -- Job command
+    ha0_jcompar         : out std_logic                  ; -- Job command parity
+    ha0_jea             : out std_logic_vector(0 to 63)  ; -- Job address
+    ha0_jeapar          : out std_logic                  ; -- Job address parity
+--  ha0_lop             : out std_logic_vector(0 to 4)   ; -- LPC/Internal Cache Op code
+--  ha0_loppar          : out std_logic                  ; -- Job address parity
+--  ha0_lsize           : out std_logic_vector(0 to 6)   ; -- Size/Secondary Op code
+--  ha0_ltag            : out std_logic_vector(0 to 11)  ; -- LPC Tag/Internal Cache Tag
+--  ha0_ltagpar         : out std_logic                  ; -- LPC Tag/Internal Cache Tag parity
+    a0h_jrunning        : in  std_logic                  ; -- Job running
+    a0h_jdone           : in  std_logic                  ; -- Job done
+    a0h_jcack           : in  std_logic                  ; -- completion of llcmd
+    a0h_jerror          : in  std_logic_vector(0 to 63)  ; -- Job error
+-- AM. Sept08, 2016              a0h_jyield          : in  std_logic                  ; -- Job yield
+--  a0h_ldone           : in  std_logic                  ; -- LPC/Internal Cache Op done
+--  a0h_ldtag           : in  std_logic_vector(0 to 11)  ; -- ltag is done
+--  a0h_ldtagpar        : in  std_logic                  ; -- ldtag parity
+--  a0h_lroom           : in  std_logic_vector(0 to 7)   ; -- LPC/Internal Cache Op AFU can handle
+    a0h_tbreq           : in  std_logic                  ; -- Timebase command request
+    a0h_paren           : in  std_logic                  ; -- parity enable
+    ha0_pclock          : out std_logic                  ;
 
 -- New DMA Interface
     -- Port 0
     -- DMA port 0 Request interface
-    d0h_dvalid          : in  std_ulogic                  ; -- New PSL/AFU interface
-    d0h_req_utag        : in  std_ulogic_vector(0 to 9)   ; -- New PSL/AFU interface
-    d0h_req_itag        : in  std_ulogic_vector(0 to 8)   ; -- New PSL/AFU interface
-    d0h_dtype           : in  std_ulogic_vector(0 to 2)   ; -- New PSL/AFU interface
-    d0h_datomic_op      : in  std_ulogic_vector(0 to 5)   ; -- New PSL/AFU interface
-    d0h_datomic_le      : in  std_ulogic                  ; -- New PSL/AFU interface
-    d0h_dsize           : in  std_ulogic_vector(0 to 9)   ; -- New PSL/AFU interface
-    d0h_ddata           : in  std_ulogic_vector(0 to 1023); -- New PSL/AFU interface
---    d0h_dpar            : in  std_ulogic_vector(0 to 15)  ; -- New PSL/AFU interface
+    d0h_dvalid          : in  std_logic                  ; -- New PSL/AFU interface
+    d0h_req_utag        : in  std_logic_vector(0 to 9)   ; -- New PSL/AFU interface
+    d0h_req_itag        : in  std_logic_vector(0 to 8)   ; -- New PSL/AFU interface
+    d0h_dtype           : in  std_logic_vector(0 to 2)   ; -- New PSL/AFU interface
+    d0h_datomic_op      : in  std_logic_vector(0 to 5)   ; -- New PSL/AFU interface
+    d0h_datomic_le      : in  std_logic                  ; -- New PSL/AFU interface
+    d0h_dsize           : in  std_logic_vector(0 to 9)   ; -- New PSL/AFU interface
+    d0h_ddata           : in  std_logic_vector(0 to 1023); -- New PSL/AFU interface
+--    d0h_dpar            : in  std_logic_vector(0 to 15)  ; -- New PSL/AFU interface
     -- DMA port 0 Sent interface
-    hd0_sent_utag_valid : in  std_ulogic                  ;
-    hd0_sent_utag       : out std_ulogic_vector(0 to 9)   ;
-    hd0_sent_utag_sts   : out std_ulogic_vector(0 to 2)   ;
+    hd0_sent_utag_valid : in  std_logic                  ;
+    hd0_sent_utag       : out std_logic_vector(0 to 9)   ;
+    hd0_sent_utag_sts   : out std_logic_vector(0 to 2)   ;
     -- DMA port 0 Completion interface
-    hd0_cpl_valid       : out std_ulogic                  ;
-    hd0_cpl_utag        : out std_ulogic_vector(0 to 9)   ;
-    hd0_cpl_type        : out std_ulogic_vector(0 to 2)   ;
-    hd0_cpl_laddr       : out std_ulogic_vector(0 to 9)   ;
-    hd0_cpl_byte_count  : out std_ulogic_vector(0 to 9)   ;
-    hd0_cpl_size        : out std_ulogic_vector(0 to 9)   ;
-    hd0_cpl_data        : out std_ulogic_vector(0 to 1023)
---     hd0_cpl_dpar        : out std_ulogic_vector(0 to 15)
+    hd0_cpl_valid       : out std_logic                  ;
+    hd0_cpl_utag        : out std_logic_vector(0 to 9)   ;
+    hd0_cpl_type        : out std_logic_vector(0 to 2)   ;
+    hd0_cpl_laddr       : out std_logic_vector(0 to 9)   ;
+    hd0_cpl_byte_count  : out std_logic_vector(0 to 9)   ;
+    hd0_cpl_size        : out std_logic_vector(0 to 9)   ;
+    hd0_cpl_data        : out std_logic_vector(0 to 1023)
+--     hd0_cpl_dpar        : out std_logic_vector(0 to 15)
   );
 
 END Component psl4snap;
@@ -575,24 +575,24 @@ SIGNAL ha0_rtagpar: std_logic;  -- bool
 SIGNAL ha0_rditag: std_logic_vector(0 TO 8);  -- acctag
 SIGNAL ha0_rditagpar: std_logic;  -- bool
 SIGNAL ha0_rvalid: std_logic;  -- bool
-SIGNAL d0h_dvalid          : std_ulogic                  ; -- New PSL/AFU interface
-SIGNAL d0h_req_utag        : std_ulogic_vector(0 to 9)   ; -- New PSL/AFU interface
-SIGNAL d0h_req_itag        : std_ulogic_vector(0 to 8)   ; -- New PSL/AFU interface
-SIGNAL d0h_dtype           : std_ulogic_vector(0 to 2)   ; -- New PSL/AFU interface
-SIGNAL d0h_datomic_op      : std_ulogic_vector(0 to 5)   ; -- New PSL/AFU interface
-SIGNAL d0h_datomic_le      : std_ulogic                  ; -- New PSL/AFU interface
-SIGNAL d0h_dsize           : std_ulogic_vector(0 to 9)   ; -- New PSL/AFU interface
-SIGNAL d0h_ddata           : std_ulogic_vector(0 to 1023); -- New PSL/AFU interface
-SIGNAL hd0_sent_utag_valid : std_ulogic                  ;
-SIGNAL hd0_sent_utag       : std_ulogic_vector(0 to 9)   ;
-SIGNAL hd0_sent_utag_sts   : std_ulogic_vector(0 to 2)   ;
-SIGNAL hd0_cpl_valid       : std_ulogic                  ;
-SIGNAL hd0_cpl_utag        : std_ulogic_vector(0 to 9)   ;
-SIGNAL hd0_cpl_type        : std_ulogic_vector(0 to 2)   ;
-SIGNAL hd0_cpl_laddr       : std_ulogic_vector(0 to 9)   ;
-SIGNAL hd0_cpl_byte_count  : std_ulogic_vector(0 to 9)   ;
-SIGNAL hd0_cpl_size        : std_ulogic_vector(0 to 9)   ;
-SIGNAL hd0_cpl_data        : std_ulogic_vector(0 to 1023);
+SIGNAL d0h_dvalid          : std_logic                  ; -- New PSL/AFU interface
+SIGNAL d0h_req_utag        : std_logic_vector(0 to 9)   ; -- New PSL/AFU interface
+SIGNAL d0h_req_itag        : std_logic_vector(0 to 8)   ; -- New PSL/AFU interface
+SIGNAL d0h_dtype           : std_logic_vector(0 to 2)   ; -- New PSL/AFU interface
+SIGNAL d0h_datomic_op      : std_logic_vector(0 to 5)   ; -- New PSL/AFU interface
+SIGNAL d0h_datomic_le      : std_logic                  ; -- New PSL/AFU interface
+SIGNAL d0h_dsize           : std_logic_vector(0 to 9)   ; -- New PSL/AFU interface
+SIGNAL d0h_ddata           : std_logic_vector(0 to 1023); -- New PSL/AFU interface
+SIGNAL hd0_sent_utag_valid : std_logic                  ;
+SIGNAL hd0_sent_utag       : std_logic_vector(0 to 9)   ;
+SIGNAL hd0_sent_utag_sts   : std_logic_vector(0 to 2)   ;
+SIGNAL hd0_cpl_valid       : std_logic                  ;
+SIGNAL hd0_cpl_utag        : std_logic_vector(0 to 9)   ;
+SIGNAL hd0_cpl_type        : std_logic_vector(0 to 2)   ;
+SIGNAL hd0_cpl_laddr       : std_logic_vector(0 to 9)   ;
+SIGNAL hd0_cpl_byte_count  : std_logic_vector(0 to 9)   ;
+SIGNAL hd0_cpl_size        : std_logic_vector(0 to 9)   ;
+SIGNAL hd0_cpl_data        : std_logic_vector(0 to 1023);
 
 SIGNAL gold_factory: std_logic;
 SIGNAL pci_user_reset: std_logic;
@@ -783,26 +783,26 @@ BEGIN
       ah_paren                          => a0h_paren,
       ha_pclock                         => ha0_pclock,
       -- DMA port 0 Req
-      d0h_dvalid                        => d0h_dvalid
-      d0h_req_utag                      => d0h_req_utag
-      d0h_req_itag                      => d0h_req_itag
-      d0h_dtype                         => d0h_dtype
-      d0h_datomic_op                    => d0h_datomic_op
-      d0h_datomic_le                    => d0h_datomic_le
-      d0h_dsize                         => d0h_dsize
-      d0h_ddata                         => d0h_ddata
+      d0h_dvalid                        => d0h_dvalid,
+      d0h_req_utag                      => d0h_req_utag,
+      d0h_req_itag                      => d0h_req_itag,
+      d0h_dtype                         => d0h_dtype,
+      d0h_datomic_op                    => d0h_datomic_op,
+      d0h_datomic_le                    => d0h_datomic_le,
+      d0h_dsize                         => d0h_dsize,
+      d0h_ddata                         => d0h_ddata,
       -- DMA port 0 Sent
-      hd0_sent_utag_valid               => hd0_sent_utag_valid
-      hd0_sent_utag                     => hd0_sent_utag
-      hd0_sent_utag_sts                 => hd0_sent_utag_sts
+      hd0_sent_utag_valid               => hd0_sent_utag_valid,
+      hd0_sent_utag                     => hd0_sent_utag,
+      hd0_sent_utag_sts                 => hd0_sent_utag_sts,
       -- DMA port 0 Completion interface
-      hd0_cpl_valid                     => hd0_cpl_valid
-      hd0_cpl_utag                      => hd0_cpl_utag
-      hd0_cpl_type                      => hd0_cpl_type
-      hd0_cpl_size                      => hd0_cpl_size
-      hd0_cpl_laddr                     => hd0_cpl_laddr
-      hd0_cpl_byte_count                => hd0_cpl_byte_count
-      hd0_cpl_data                      => hd0_cpl_data
+      hd0_cpl_valid                     => hd0_cpl_valid,
+      hd0_cpl_utag                      => hd0_cpl_utag,
+      hd0_cpl_type                      => hd0_cpl_type,
+      hd0_cpl_size                      => hd0_cpl_size,
+      hd0_cpl_laddr                     => hd0_cpl_laddr,
+      hd0_cpl_byte_count                => hd0_cpl_byte_count,
+      hd0_cpl_data                      => hd0_cpl_data,
 
       -- DMA port 1 Request
       d1h_dvalid                        => open,
@@ -815,16 +815,16 @@ BEGIN
       d1h_ddata                         => open,
       -- DMA port 1 Sent
       hd1_sent_utag_valid               => '0',
-      hd1_sent_utag                     => efes1024(9 downto 0),
-      hd1_sent_utag_sts                 => efes1024(2 downto 0),
-      -- DMA port 1 Completion
+      hd1_sent_utag                     => (OTHERS => '0'), --efes1024(9 downto 0),
+      hd1_sent_utag_sts                 => (OTHERS => '0'), --efes1024(2 downto 0),
+      -- DMA port 1 Completion              
       hd1_cpl_valid                     => '0',
-      hd1_cpl_utag                      => efes1024(9 downto 0),
-      hd1_cpl_type                      => efes1024(2 downto 0),
-      hd1_cpl_size                      => efes1024(9 downto 0),
-      hd1_cpl_laddr                     => efes1024(9 downto 0),
-      hd1_cpl_byte_count                => efes1024(9 downto 0),
-      hd1_cpl_data                      => efes1024(1023 downto 0)
+      hd1_cpl_utag                      => (others => '0'), --efes1024(9 downto 0),
+      hd1_cpl_type                      => (others => '0'), --efes1024(2 downto 0),
+      hd1_cpl_size                      => (others => '0'), --efes1024(9 downto 0),
+      hd1_cpl_laddr                     => (others => '0'), --efes1024(9 downto 0),
+      hd1_cpl_byte_count                => (others => '0'), --efes1024(9 downto 0),
+      hd1_cpl_data                      => (others => '0')  --efes1024(1023 downto 0)
     );
 
 #ifdef CONFIG_ENABLE_FACTORY
@@ -923,7 +923,7 @@ BEGIN
 
       ha0_brvalid         => ha0_brvalid,
       ha0_brtag           => ha0_brtag,
-      ha0_brtagpar        => ha0_brtagpa,r
+      ha0_brtagpar        => ha0_brtagpar,
       ha0_brad            => ha0_brad,
       a0h_brlat           => a0h_brlat,
       a0h_brdata          => a0h_brdata,

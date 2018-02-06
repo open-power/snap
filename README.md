@@ -30,6 +30,11 @@ file within that directory.
 
 Please see [Bitstream_flashing.md](hardware/doc/Bitstream_flashing.md) for instructions on how to update the FPGA bitstream.
 
+## More information, education material
+* CAPI and SNAP on IBM developerworks: https://developer.ibm.com/linuxonpower/capi/  
+* [Education Videos](https://developer.ibm.com/linuxonpower/capi/education/)
+* [IBM CAPI Developer's Community Forum](https://www.ibm.com/developerworks/community/groups/service/html/communitystart?communityUuid=a661532e-1ec6-442f-b753-4ebb2c8f861b)
+
 # Dependencies
 
 This code uses libcxl to access the CAPI hardware. Install it with the package manager of your Linux distribution, e.g. 
@@ -59,7 +64,7 @@ In order to use the menu-driven user interface for kconfig the `ncurses` library
 SNAP uses the generic tools to update CAPI card FPGA bitstreams from
 * https://github.com/ibm-capi/capi-utils
 
-For simulation, SNAP relies on the `xterm` program and on the PSL Simulation Environment (PSLSE) which is available on github:
+For simulation, SNAP relies on the `xterm` program and on the PSL Simulation Environment (PSLSE) which is available on github (for more info see [PSLSE Setup](hardware/sim/README.md#pslse-setup)):
 * https://github.com/ibm-capi/pslse
 
 Simulating the NVMe host controller including flash storage devices requires licenses for the Cadence Incisive Simulator (IES) and DENALI Verification IP (PCIe and NVMe). Building images is possible without this.

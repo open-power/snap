@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: KERNELVERSION
-# Fri Sep 15 11:27:12 2017
+# Fri Sep 15 12:14:18 2017
 #
 # N250S is not set
 N250SP=y
@@ -28,11 +28,13 @@ HLS_SUPPORT="FALSE"
 # FORCE_SDRAM_OR_BRAM is not set
 # ENABLE_BRAM is not set
 BRAM_USED="FALSE"
-# ENABLE_SDRAM is not set
-SDRAM_USED="FALSE"
+ENABLE_SDRAM=y
+SDRAM_USED="TRUE"
 DDR3_USED="FALSE"
-DDR4_USED="FALSE"
-DDRI_USED="FALSE"
+ENABLE_DDR4=y
+DDR4_USED="TRUE"
+ENABLE_DDRI=y
+DDRI_USED="TRUE"
 # FORCE_NVME is not set
 # ENABLE_NVME is not set
 NVME_USED="FALSE"

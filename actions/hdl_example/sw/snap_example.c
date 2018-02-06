@@ -162,9 +162,9 @@ static uint32_t msec_2_ticks(int msec)
  */
 static int action_wait_idle(struct snap_card* h, int timeout, uint64_t *elapsed)
 {
-	int rc = ETIME;
-	uint64_t t_start;	/* time in usec */
-	uint64_t td = 0;	/* Diff time in usec */
+	int rc = 0;
+	uint64_t t_start;   /* time in usec */
+	uint64_t td = 0;    /* Diff time in usec */
 
 	/* FIXME Use struct snap_action and not struct snap_card */
 	snap_action_start((void*)h);
@@ -172,9 +172,11 @@ static int action_wait_idle(struct snap_card* h, int timeout, uint64_t *elapsed)
 	/* Wait for Action to go back to Idle */
 	t_start = get_usec();
 	rc = snap_action_completed((void*)h, NULL, timeout);
+	if (rc) rc = 0;   /* Good */
+	else rc = ETIME;  /* Timeout */
+	if (0 != rc)
+		VERBOSE0("%s Timeout Error\n", __func__);
 	td = get_usec() - t_start;
-	if (rc) rc = 0;	/* Good */
-	else VERBOSE0("Error. Timeout while Waiting for Idle\n");
 	*elapsed = td;
 	return rc;
 }
@@ -189,7 +191,7 @@ static void action_count(struct snap_card* h, int delay_ms)
 }
 
 static void action_memcpy(struct snap_card* h,
-		int action,	/* Action can be 2,3,4,5,6  see ACTION_CONFIG_COPY_ */
+		int action,  /* Action can be 2,3,4,5,6  see ACTION_CONFIG_COPY_ */
 		void *dest,
 		const void *src,
 		size_t n)
@@ -219,7 +221,35 @@ static void action_memcpy(struct snap_card* h,
 	return;
 }
 
+static int do_action(struct snap_card *h,
+			snap_action_flag_t flags,
+			int action,
+			int timeout,
+			void *dest,
+			void *src,
+			unsigned long memsize)
+
+{
+	int rc;
+	struct snap_action *act = NULL;
+	uint64_t td;
+
+	act = snap_attach_action(h, ACTION_TYPE_EXAMPLE,
+				  flags, 5 * timeout);
+	if (NULL == act) {
+		VERBOSE0("Error: Can not attach Action: %x\n", ACTION_TYPE_EXAMPLE);
+		VERBOSE0("       Try to run snap_main tool\n");
+		return 1;
+	}
+	action_memcpy(h, action, dest, src, memsize);
+	rc = action_wait_idle(h, timeout, &td);
+	print_time(td, memsize);
+	snap_detach_action(act);
+	return rc;
+}
+
 static int memcpy_test(struct snap_card* dnc,
+			snap_action_flag_t attach_flags,
 			int action,
 			int blocks_4k,  /* Number of DEFAULT_MEMCPY_BLOCK */
 			int blocks_64,  /* Number of 64 Bytes Blocks */
@@ -236,7 +266,6 @@ static int memcpy_test(struct snap_card* dnc,
 	int blocks;
 	unsigned long memsize;
 	unsigned long ddr_mem_size;
-	uint64_t td;
 
 	rc = 0;
 	/* align can be 64 .. 4096 */
@@ -303,21 +332,19 @@ static int memcpy_test(struct snap_card* dnc,
 		}
 		dest = f_dest + align;
 		VERBOSE1("  To Host:   %p (%p) timeout: %d sec\n", dest, f_dest, timeout);
-
-		action_memcpy(dnc, action, dest, src, memsize);
-		rc = action_wait_idle(dnc, timeout, &td);
-		print_time(td, memsize);
-		if (0 != rc) break;
-		VERBOSE1("  Compare: %p <-> %p\n", src, dest);
-		rc = memcmp(src, dest, memsize);
-		if ((verbose_level > 1) || rc) {
-			VERBOSE0("---------- src Buffer: %p\n", src);
-			__hexdump(stdout, src, memsize);
-			VERBOSE0("---------- dest Buffer: %p\n", dest);
-			__hexdump(stdout, dest, memsize);
+		rc = do_action(dnc, attach_flags, action, timeout, dest, src, memsize);
+		if (0 == rc) {
+			VERBOSE1("  Compare: %p <-> %p\n", src, dest);
+			rc = memcmp(src, dest, memsize);
+			if ((verbose_level > 1) || rc) {
+				VERBOSE0("---------- src Buffer: %p\n", src);
+				__hexdump(stdout, src, memsize);
+				VERBOSE0("---------- dest Buffer: %p\n", dest);
+				__hexdump(stdout, dest, memsize);
+			}
+			if (rc)
+				VERBOSE0("Error Memcmp failed rc: %d\n", rc);
 		}
-		if (rc)
-			VERBOSE0("Error Memcmp failed rc: %d\n", rc);
 		free_mem(f_src);
 		free_mem(f_dest);
 		break;
@@ -333,10 +360,7 @@ static int memcpy_test(struct snap_card* dnc,
 		/* Set Dest to DDR Ram Address */
 		dest = (void*)card_ram_base;
 		VERBOSE1("  To DDR: %p timeout: %d sec\n", dest, timeout);
-
-		action_memcpy(dnc, action, dest, src, memsize);
-		rc = action_wait_idle(dnc, timeout, &td);
-		print_time(td, memsize);
+		rc = do_action(dnc, attach_flags, action, timeout, dest, src, memsize);
 		free_mem(f_src);
 		break;
 	case ACTION_CONFIG_COPY_DH:
@@ -350,10 +374,7 @@ static int memcpy_test(struct snap_card* dnc,
 			return 1;
 		dest = f_dest + align;
 		VERBOSE1("  To Host: %p timeout: %d sec\n", dest, timeout);
-
-		action_memcpy(dnc, action, dest, src, memsize);
-		rc = action_wait_idle(dnc, timeout, &td);
-		print_time(td, memsize);
+		rc = do_action(dnc, attach_flags, action, timeout, dest, src, memsize);
 		if (verbose_level > 1) {
 			VERBOSE0("---------- dest Buffer: %p\n", dest);
 			__hexdump(stdout, dest, memsize);
@@ -371,71 +392,61 @@ static int memcpy_test(struct snap_card* dnc,
 			break;
 		}
 		VERBOSE1("  To DDR: %p timeout: %d sec\n", dest, timeout);
-
-		action_memcpy(dnc, action, dest, src, memsize);
-		rc = action_wait_idle(dnc, timeout, &td);
-		print_time(td, memsize);
+		rc = do_action(dnc, attach_flags, action, timeout, dest, src, memsize);
 		break;
 	case ACTION_CONFIG_COPY_HDH:	/* Host -> DDR -> Host */
-		/* Allocate Host Src Buffer */
+		/* Allocate Host Source Buffer */
 		f_src = alloc_mem(align, memsize);
 		if (NULL == f_src)
 			return 1;
 		src = f_src + align;
-		VERBOSE1("  From Host:  %p Size: 0x%llx (%d * 4K + %d * 64 Byte) Align: %d\n",
-			src, (long long)memsize, blocks_4k, blocks_64, align);
-		memset2(src, card_ram_base, memsize);
-		ddr3 = (void*)card_ram_base;
-		VERBOSE1("  To DDR: %p timeout: %d sec\n", ddr3, timeout);
-		action_memcpy(dnc, ACTION_CONFIG_COPY_HD,
-			ddr3, src, memsize);
-		rc = action_wait_idle(dnc, timeout, &td);
-		print_time(td, memsize);
-		if (0 != rc) break;
-
-		/* Allocate Host Dest Buffer */
+		/* Allocate Host Destination Buffer */
 		f_dest = alloc_mem(align, memsize);
 		if (NULL == f_dest) {
 			free_mem(f_src);
 			return 1;
 		}
 		dest = f_dest + align;
+
+		/* 1st Copy from Host to Card Ram */
+		VERBOSE1("  From Host:  %p Size: 0x%llx (%d * 4K + %d * 64 Byte) Align: %d\n",
+			src, (long long)memsize, blocks_4k, blocks_64, align);
+		memset2(src, card_ram_base, memsize);
+		ddr3 = (void*)card_ram_base;
+		VERBOSE1("  To DDR: %p timeout: %d sec\n", ddr3, timeout);
+		rc = do_action(dnc, attach_flags, ACTION_CONFIG_COPY_HD, timeout,
+			ddr3,  /* Card Destination Addr. */
+			src,   /* Host Source Addr. */
+			memsize);
+		if (rc) {
+			free_mem(f_src);
+			free_mem(f_dest);
+			return 1;
+		}
+
 		VERBOSE1("  From DDR Src: %p\n", ddr3);
 		VERBOSE1("  To Host: %p timeout: %d sec\n", dest, timeout);
-		action_memcpy(dnc, ACTION_CONFIG_COPY_DH,
-			dest, ddr3, memsize);
-		rc = action_wait_idle(dnc, timeout, &td);
-		print_time(td, memsize);
-		if (0 != rc) break;
-		VERBOSE1("  Compare: %p <-> %p\n", src, dest);
-		rc = memcmp(src, dest, memsize);
-		if ((verbose_level > 1) || rc) {
-			VERBOSE0("---------- src Buffer: %p\n", src);
-			__hexdump(stdout, src, memsize);
-			VERBOSE0("---------- dest Buffer: %p\n", dest);
-			__hexdump(stdout, dest, memsize);
+		rc = do_action(dnc, attach_flags, ACTION_CONFIG_COPY_DH, timeout,
+			dest,   /* Host Destination Address */
+			ddr3,   /* Card Source Address */
+			memsize);
+		if (0 == rc) {
+			VERBOSE1("  Compare: %p <-> %p\n", src, dest);
+			rc = memcmp(src, dest, memsize);
+			if ((verbose_level > 1) || rc) {
+				VERBOSE0("---------- src Buffer: %p\n", src);
+				//__hexdump(stdout, src, memsize);
+				VERBOSE0("---------- dest Buffer: %p\n", dest);
+				//__hexdump(stdout, dest, memsize);
+			}
+			if (rc)
+				VERBOSE0("Error Memcmp failed rc: %d\n", rc);
 		}
-		if (rc)
-			VERBOSE0("Error Memcmp failed rc: %d\n", rc);
 		free_mem(f_src);
 		free_mem(f_dest);
 		break;
 	}
 	return rc;
-}
-
-static struct snap_action *get_action(struct snap_card *handle,
-				      snap_action_flag_t flags, int timeout)
-{
-	struct snap_action *act;
-
-	act = snap_attach_action(handle, ACTION_TYPE_EXAMPLE,
-				  flags, timeout);
-	if (NULL == act) {
-		VERBOSE0("Error: Can not attach Action: %x\n", ACTION_TYPE_EXAMPLE);
-		VERBOSE0("       Try to run snap_main tool\n");
-	}
-	return act;
 }
 
 static void usage(const char *prog)
@@ -621,10 +632,12 @@ int main(int argc, char *argv[])
 	case 1:
 		for(delay = start_delay; delay <= end_delay;
 		    delay += step_delay) {
-			act = get_action(dn, attach_flags,
-					 5*timeout + delay/1000);
-			if (NULL == act)
+			act = snap_attach_action(dn, ACTION_TYPE_EXAMPLE,
+				  attach_flags, 5 * timeout + delay/1000);
+			if (NULL == act) {
+				VERBOSE0("Error: Can not attach.....\n");
 				goto __exit1;
+			}
 
 			action_count(dn, delay);
 			rc = action_wait_idle(dn, timeout + delay/1000, &td);
@@ -641,14 +654,9 @@ int main(int argc, char *argv[])
 	case 5:
 	case 6:
 		for (i = 0; i < memcpy_iter; i++) {
-			act = get_action(dn, attach_flags, 5*timeout);
-			if (NULL == act)
-				goto __exit1;
-			rc = memcpy_test(dn, action, num_4k, num_64,
+			rc = memcpy_test(dn, attach_flags, action, num_4k, num_64,
 				memcpy_align, card_ram_base,
 				timeout);
-
-			snap_detach_action(act);
 		}
 		break;
 	default:

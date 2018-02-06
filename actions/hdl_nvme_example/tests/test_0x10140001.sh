@@ -47,7 +47,7 @@ function usage() {
 	echo "    [-H <threads>]    hardware threads per CPU to be used (see ppc64_cpu)"
 	echo "    [-p <prefetch>]   0/1 disable/enable prefetching"
 	echo "    [-R <seed>]       random seed, if not 0, random read odering"
-	echo "    [-T <testcase>]   testcase e.g. NONE, CBLK, READ_BENCHMARK, PERF, ..."
+	echo "    [-T <testcase>]   testcase e.g. NONE, CBLK, READ_BENCHMARK, PERF, READ_WRITE ..."
 	echo
 	echo "  Perform SNAP card initialization and action_type "
 	echo "  detection. Initialize NVMe disk 0 and 1 if existent."
@@ -157,6 +157,26 @@ function nvme_read_benchmark () {
 				snap_cblk -C0 ${options} -b${nblocks} \
 					-R${random_seed} -s0 -t${t} \
 					--read /dev/null );
+				if [ $? -ne 0 ]; then
+					printf "${bold}ERROR:${normal} bad exit code!\n" >&2
+					exit 1
+				fi
+				echo
+			done
+		done
+	done
+}
+
+function cblk_read_write () {
+	echo "SNAP NVME READ WRITE"
+	for s in UP DOWN UPDOWN ; do
+		for p in 0 1 4 8 ; do
+			for t in 1 2 4 8 10 14 16 32 ; do
+				echo "PREFETCH: $p ; THREADS: $t ; NBLOCKS=${nblocks} ; STRATEGY=${s}" ;
+				(time CBLK_PREFETCH=$p CBLK_STRATEGY=${s} \
+				snap_cblk -C0 ${options} -b${nblocks} \
+					-R${random_seed} -s0 -t${t} \
+					--rw /dev/null );
 				if [ $? -ne 0 ]; then
 					printf "${bold}ERROR:${normal} bad exit code!\n" >&2
 					exit 1
@@ -279,6 +299,10 @@ fi
 
 if [ "${TEST}" == "CBLK" ]; then
 	cblk_test
+fi
+
+if [ "${TEST}" == "READ_WRITE" ]; then
+	cblk_read_write
 fi
 
 exit 0

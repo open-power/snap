@@ -241,6 +241,9 @@ CONFIG.coreclk_freq {500} \
 CONFIG.plltype {QPLL1} \
 ] $axi_pcie3_0 >> $log_file
 
+# Vivado2017.4 can not create an an example project if the design was not saved before
+save_bd_design >> $log_file
+
 #AXI_PCIE3 create axi_pcie3 example design
 puts "                        generating AXI PCIe Root Complex example design"
 open_example_project -in_process -verbose -force -dir $root_dir/ip/nvme [get_ips nvme_top_axi_pcie3_0_0] >> $log_file  

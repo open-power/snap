@@ -25,11 +25,6 @@ set hdl_dir     $root_dir/hdl
 set sim_dir     $root_dir/sim
 set fpga_part   $::env(FPGACHIP)
 set fpga_card   $::env(FPGACARD)
-if { $fpga_card == "N250SP" } {
-  set psl_dir     $::env(PSL_DCP)
-} else {
-  set psl_dcp     [file tail $::env(PSL_DCP)]
-}
 set action_dir  $::env(ACTION_ROOT)/hw
 set nvme_used   $::env(NVME_USED)
 set bram_used   $::env(BRAM_USED)
@@ -38,7 +33,15 @@ set ila_debug   [string toupper $::env(ILA_DEBUG)]
 set simulator   $::env(SIMULATOR)
 set log_dir     $::env(LOGS_DIR)
 set log_file    $log_dir/create_framework.log
-set action_tcl  [exec find $::env(ACTION_ROOT) -name tcl]
+
+### If the design is a HDL (RTL) design and has many other user defined tcl files,
+# Please set "USER_DEFINED_DESIGN=TRUE" and provide USER_DEFINED_TCLPATH
+# create_framework.tcl will source "design.tcl" and "post.tcl" under this PATH.
+set user_defined_design $::env(USER_DEFINED_DESIGN)
+if { $user_defined_design == "TRUE"} {
+  puts "                        INFO: User Defined Design"
+  set USER_DEFINED_TCLPATH $::env(USER_DEFINED_TCLPATH)
+}
 
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support [string toupper $::env(HLS_SUPPORT)]
@@ -62,8 +65,14 @@ if { [info exists ::env(CLOUD_USER_FLOW)] == 1 } {
   set cloud_user_flow "FALSE"
 }
 
-if { $cloud_user_flow == "FALSE" } {
-  set psl_dcp     [file tail $::env(PSL_DCP)]
+if { [info exists ::env(PSL_DCP)] == 1 } {
+  if { $cloud_user_flow == "TRUE" } {
+    set psl_dcp "FALSE"
+  } else {
+    set psl_dcp $::env(PSL_DCP)
+  }
+} else {
+  set psl_dcp "FALSE"
 }
 
 if { ($use_prflow == "TRUE") && ($hls_support == "TRUE") } {
@@ -150,7 +159,17 @@ if { $use_prflow == "TRUE" } {
   if { $hls_support == "TRUE" } {
     add_files -scan_for_includes $hdl_dir/hls/ >> $log_file
   }
-  add_files -scan_for_includes $action_dir/ >> $log_file
+
+  if { $user_defined_design == "TRUE" } {
+    # Too many user files may degrade the Vivado Performance. 
+    # Using brute-force "add_files" to search the entire design directory and analyze the
+    # hierarchy costs a long time. 
+    # Sourcing "design.tcl" provides a explicit way to import design files.
+    source $USER_DEFINED_TCLPATH/design.tcl >> $log_file
+  } else {
+    #original method
+    add_files -scan_for_includes $action_dir/ >> $log_file
+  }
 }
 
 # Sim Files
@@ -289,16 +308,11 @@ if { $nvme_used == TRUE } {
 }
 
 # Add PSL
-if { $cloud_user_flow == "FALSE" } {
-  if { $fpga_card == "N250SP" } {
-    puts "                        adding PSL source files"
-    add_files -scan_for_includes $psl_dir >> $log_file
-   
-  } else {
+if { $psl_dcp != "FALSE" } {
   puts "                        importing PSL design checkpoint"
-  read_checkpoint -cell b $root_dir/build/Checkpoints/$psl_dcp -strict >> $log_file
-  }
+  read_checkpoint -cell b $psl_dcp -strict >> $log_file
 }
+
 
 if { $use_prflow == "TRUE" } {
   # Create PR Configuration
@@ -379,15 +393,12 @@ if { $ila_debug == "TRUE" } {
   add_files -fileset constrs_1 -norecurse  $::env(ILA_SETUP_FILE)
 }
 
-# User tcl
-if { [file exists $action_tcl] == 1 } {
-  set tcl_exists [exec find $action_tcl -name *.tcl]
-  if { $tcl_exists != "" } {
-    foreach tcl_file [glob -nocomplain -dir $action_tcl *.tcl] {
-      set tcl_file_name [exec basename $tcl_file]
-      puts "                        sourcing user tcl: $tcl_file_name"
-      source $tcl_file >> $log_file
-    }
+# This is optional. 
+# If User provides *post* tcl file in USER_DEFINED_TCLPATH, 
+if { $user_defined_design == "TRUE" } {
+  foreach tcl_file [glob -nocomplain -dir $USER_DEFINED_TCLPATH *post*.tcl] {
+    puts "                        sourcing user tcl: $tcl_file"
+    source $tcl_file >> $log_file
   }
 }
 
