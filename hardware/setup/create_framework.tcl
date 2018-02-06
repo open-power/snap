@@ -34,6 +34,15 @@ set simulator   $::env(SIMULATOR)
 set log_dir     $::env(LOGS_DIR)
 set log_file    $log_dir/create_framework.log
 
+### If the design is a HDL (RTL) design and has many other user defined tcl files,
+# Please set "USER_DEFINED_DESIGN=TRUE" and provide USER_DEFINED_TCLPATH
+# create_framework.tcl will source "design.tcl" and "post.tcl" under this PATH.
+set user_defined_design $::env(USER_DEFINED_DESIGN)
+if { $user_defined_design == "TRUE"} {
+  puts "                        INFO: User Defined Design"
+  set USER_DEFINED_TCLPATH $::env(USER_DEFINED_TCLPATH)
+}
+
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support [string toupper $::env(HLS_SUPPORT)]
 } elseif { [string first "/HLS" [string toupper $action_dir]] != -1 } {
@@ -150,7 +159,17 @@ if { $use_prflow == "TRUE" } {
   if { $hls_support == "TRUE" } {
     add_files -scan_for_includes $hdl_dir/hls/ >> $log_file
   }
-  add_files -scan_for_includes $action_dir/ >> $log_file
+
+  if { $user_defined_design == "TRUE" } {
+    # Too many user files may degrade the Vivado Performance. 
+    # Using brute-force "add_files" to search the entire design directory and analyze the
+    # hierarchy costs a long time. 
+    # Sourcing "design.tcl" provides a explicit way to import design files.
+    source $USER_DEFINED_TCLPATH/design.tcl >> $log_file
+  } else {
+    #original method
+    add_files -scan_for_includes $action_dir/ >> $log_file
+  }
 }
 
 # Sim Files
@@ -369,6 +388,15 @@ if { $fpga_card == "ADKU3" } {
 }
 if { $ila_debug == "TRUE" } {
   add_files -fileset constrs_1 -norecurse  $::env(ILA_SETUP_FILE)
+}
+
+# This is optional. 
+# If User provides *post* tcl file in USER_DEFINED_TCLPATH, 
+if { $user_defined_design == "TRUE" } {
+  foreach tcl_file [glob -nocomplain -dir $USER_DEFINED_TCLPATH *post*.tcl] {
+    puts "                        sourcing user tcl: $tcl_file"
+    source $tcl_file >> $log_file
+  }
 }
 
 puts "\[CREATE_FRAMEWORK....\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
