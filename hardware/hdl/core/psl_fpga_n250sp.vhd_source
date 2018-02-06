@@ -312,7 +312,8 @@ Component psl_accel
     refclk_nvme_ch1_n                   : IN    STD_LOGIC;
     --
     -- NVMe reset control
-    nvme_reset_ctl                      : OUT   STD_LOGIC_VECTOR(SNAP_NVME_RST_L  DOWNTO SNAP_NVME_RST_R);  -- keeping NVMe drives in reset by driving 0s
+    nvme_reset_ctl                      : OUT   STD_LOGIC;
+    nvme_perst_ctl                      : OUT   STD_LOGIC_VECTOR(SNAP_NVME_PERST_L  DOWNTO SNAP_NVME_PERST_R);  -- keeping NVMe drives in reset by driving 0s
     --
     -- NVME <-> PCIE Interface
     pcie_rc0_rxn                        : IN    STD_LOGIC_VECTOR(3 downto 0);
@@ -692,8 +693,8 @@ BEGIN
       refclk_nvme_ch1_n                 => pcie_clk2_n,
       --
       -- NVMe reset control
-      nvme_reset_ctl(4)                 => nvme_reset_ctl,
-      nvme_reset_ctl(3 DOWNTO 0)        => nvme_perst_ctl,
+      nvme_reset_ctl                    => nvme_reset_ctl,
+      nvme_perst_ctl                    => nvme_perst_ctl,
       --
       -- NVME <-> PCIE Interface
       pcie_rc0_rxn(3 DOWNTO 0)          => pcie_rc0_rxn(3 DOWNTO 0),

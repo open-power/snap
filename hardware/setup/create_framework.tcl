@@ -78,7 +78,7 @@ create_project framework $root_dir/viv_project -part $fpga_part -force >> $log_f
 # Project Settings
 # General
 puts "                        setting up project settings"
-set_property target_language VERILOG [current_project]
+set_property target_language VHDL [current_project]
 set_property default_lib work [current_project]
 # Simulation
 if { ( $simulator == "ncsim" ) || ( $simulator == "irun" ) } {
@@ -272,9 +272,6 @@ if { $nvme_used == TRUE } {
   add_files -norecurse                          $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd  >> $log_file
   export_ip_user_files -of_objects  [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
   update_compile_order -fileset sources_1
-  puts "                        generating NVMe output products"
-  set_property synth_checkpoint_mode None [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
-  generate_target all                     [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
 
   if { $simulator != "nosim" } {
     puts "                        adding Denali simulation files"

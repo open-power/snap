@@ -1,3 +1,1 @@
-# README.md Example
-
-Please put some more information here.
+All information are in the hls_memcopy/doc directory

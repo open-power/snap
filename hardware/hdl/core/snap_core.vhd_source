@@ -131,7 +131,8 @@ ENTITY snap_core IS
     action_reset   : OUT std_logic;
 
 #ifdef CONFIG_ENABLE_NVME
-    nvme_reset_ctl : OUT std_logic_vector(SNAP_NVME_RST_L  DOWNTO SNAP_NVME_RST_R);   -- keeping NVMe drives in reset by driving 0s
+    nvme_reset_ctl : OUT STD_LOGIC;
+    nvme_perst_ctl : OUT std_logic_vector(SNAP_NVME_PERST_L  DOWNTO SNAP_NVME_PERST_R);   -- keeping NVMe drives in reset by driving 0s
 #endif
     --
     -- Kernel AXI Master Interface
@@ -495,6 +496,7 @@ BEGIN
 
 #ifdef CONFIG_ENABLE_NVME
       nvme_reset_ctl         => nvme_reset_ctl,
+      nvme_perst_ctl         => nvme_perst_ctl,
 #endif
 
       --

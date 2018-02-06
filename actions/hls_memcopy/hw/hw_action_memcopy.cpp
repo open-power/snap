@@ -18,14 +18,8 @@
 
 #include <string.h>
 #include "ap_int.h"
-#include "action_memcopy.H"
+#include "hw_action_memcopy.H"
 
-/* ----------------------------------------------------------------------------
- * Known Limitations => Issue #39 & #45
- * => Transfers must be 64 byte aligned and a size of multiples of 64 bytes
- * Issue#320 - memcopy doesn't handle 4Kbytes xfer => use patch
- * ----------------------------------------------------------------------------
- */
 
 // WRITE DATA TO MEMORY
 short write_burst_of_data_to_mem(snap_membus_t *dout_gmem,
@@ -36,32 +30,16 @@ short write_burst_of_data_to_mem(snap_membus_t *dout_gmem,
 				 snapu64_t size_in_bytes_to_transfer)
 {
 	short rc;
-	// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
-	int size_in_words;
-	if(size_in_bytes_to_transfer %BPERDW == 0)
-		size_in_words = size_in_bytes_to_transfer/BPERDW;
-	else
-		size_in_words = (size_in_bytes_to_transfer/BPERDW) + 1;
 
 	switch (memory_type) {
 	case SNAP_ADDRTYPE_HOST_DRAM:
-		// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
-		//memcpy((snap_membus_t  *) (dout_gmem + output_address),
-		//       buffer, size_in_bytes_to_transfer);
-		wb_dout_loop: for (int k=0; k<size_in_words; k++)
-#pragma HLS PIPELINE
-                    (dout_gmem + output_address)[k] = buffer[k];
-
+		memcpy((snap_membus_t  *) (dout_gmem + output_address),
+		       buffer, size_in_bytes_to_transfer);
        		rc =  0;
 		break;
 	case SNAP_ADDRTYPE_CARD_DRAM:
-		// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
-		//memcpy((snap_membus_t  *) (d_ddrmem + output_address),
-		//       buffer, size_in_bytes_to_transfer);
-		wb_ddr_loop: for (int k=0; k<size_in_words; k++)
-#pragma HLS PIPELINE
-                    (d_ddrmem + output_address)[k] = buffer[k];
-
+		memcpy((snap_membus_t  *) (d_ddrmem + output_address),
+		       buffer, size_in_bytes_to_transfer);
        		rc =  0;
 		break;
 	case SNAP_ADDRTYPE_UNUSED: /* no copy but with rc =0 */
@@ -85,33 +63,16 @@ short read_burst_of_data_from_mem(snap_membus_t *din_gmem,
 	short rc;
         int i;
 
-	// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
-	int size_in_words;
-	if(size_in_bytes_to_transfer %BPERDW == 0)
-		size_in_words = size_in_bytes_to_transfer/BPERDW;
-	else
-		size_in_words = (size_in_bytes_to_transfer/BPERDW) + 1;
-
 	switch (memory_type) {
 
 	case SNAP_ADDRTYPE_HOST_DRAM:
-		// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
-		//memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
-		//       size_in_bytes_to_transfer);
-		rb_din_loop: for (int k=0; k<size_in_words; k++)
-#pragma HLS PIPELINE
-                    buffer[k] = (din_gmem + input_address)[k];
-
+		memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
+		       size_in_bytes_to_transfer);
        		rc =  0;
 		break;
 	case SNAP_ADDRTYPE_CARD_DRAM:
-		// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
-		//memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address),
-		//       size_in_bytes_to_transfer);
-		rb_ddr_loop: for (int k=0; k<size_in_words; k++)
-#pragma HLS PIPELINE
-                    buffer[k] = (d_ddrmem + input_address)[k];
-
+		memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address),
+		       size_in_bytes_to_transfer);
        		rc =  0;
 		break;
 	case SNAP_ADDRTYPE_UNUSED: /* no copy but with rc =0 */
@@ -180,11 +141,11 @@ static void process_action(snap_membus_t *din_gmem,
 				(snapu32_t)MAX_NB_OF_BYTES_READ);
 
 		rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem,
-						  act_reg->Data.in.type,
+			act_reg->Data.in.type,
 			InputAddress + address_xfer_offset, buf_gmem, xfer_size);
 
 		rc |= write_burst_of_data_to_mem(dout_gmem, d_ddrmem,
-						 act_reg->Data.out.type,
+			act_reg->Data.out.type,
 			OutputAddress + address_xfer_offset, buf_gmem, xfer_size);
 		action_xfer_size -= xfer_size;
 		address_xfer_offset += (snapu64_t)(xfer_size >> ADDR_RIGHT_SHIFT);
@@ -205,7 +166,7 @@ void hls_action(snap_membus_t *din_gmem,
 		action_RO_config_reg *Action_Config)
 {
 	// Host Memory AXI Interface
-#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512 \
+#pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512  \
   max_read_burst_length=64  max_write_burst_length=64 
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg offset=0x030
 
@@ -247,21 +208,6 @@ void hls_action(snap_membus_t *din_gmem,
 //-----------------------------------------------------------------------------
 
 #ifdef NO_SYNTH
-
-typedef char word_t[BPERDW];
-// Cast a char* word (64B) to a word for output port (512b)
-static snap_membus_t word_to_mbus(word_t text)
-{
-        snap_membus_t mem = 0;
-
- loop_word_to_mbus:
-        for (char k = sizeof(word_t)-1; k >= 0; k--) {
-#pragma HLS PIPELINE
-                mem = mem << 8;
-                mem(7, 0) = text[k];
-        }
-        return mem;
-}
 
 int main(void)
 {

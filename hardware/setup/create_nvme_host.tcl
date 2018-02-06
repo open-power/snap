@@ -24,9 +24,11 @@ set log_file   $log_dir/create_nvme_host.log
 set prj_name nvme
 set bd_name  nvme_top
 
-puts "\[CREATE_NVMe.........\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 # Create NVME project
+puts "\[CREATE_NVMe.........\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 create_project   $prj_name $root_dir/ip/nvme -part $fpga_part -force >> $log_file
+set_property target_language VERILOG [current_project]
+#Create block design
 create_bd_design $bd_name  >> $log_file
 
 # Create NVME_HOST IP
@@ -335,10 +337,16 @@ create_bd_addr_seg -range 0x00001000 -offset 0x00000000 [get_bd_addr_spaces ACT_
 exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs axi_pcie3_0/S_AXI_CTL/CTL0] >> $log_file
 exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs axi_pcie3_1/S_AXI_CTL/CTL0] >> $log_file
 
-#### Save block design and close the project
+# Save block design and close the project
 save_bd_design >> $log_file
 
+# Generate the Output products of the NVME block design. 
+# It is important that this are Verilog files and set the synth_checkpoint_mode to None (Global synthesis) before generating targets 
+puts "                        generating NVMe output products"
+set_property synth_checkpoint_mode None [get_files  $root_dir/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file 
+generate_target all                     [get_files  $root_dir/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
 puts "\[CREATE_NVMe.........\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
  
+#Close the project
 close_project >> $log_file
 

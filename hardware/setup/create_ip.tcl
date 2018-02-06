@@ -38,7 +38,7 @@ create_project managed_ip_project $ip_dir/managed_ip_project -part $fpga_part -i
 
 # Project IP Settings
 # General
-set_property target_language VERILOG [current_project]
+set_property target_language VHDL [current_project]
 set_property target_simulator IES [current_project]
 
 #create DMA Input RAM
@@ -264,7 +264,7 @@ if { $create_interconect == "TRUE" } {
   create_ip -name axi_interconnect -vendor xilinx.com -library ip -version 1.7 -module_name axi_interconnect -dir $ip_dir  >> $log_file
   set_property -dict [list                                  \
                       CONFIG.NUM_SLAVE_PORTS {2} 	    \
-                      CONFIG.THREAD_ID_WIDTH {1} 	    \
+                      CONFIG.THREAD_ID_WIDTH {0} 	    \
                       CONFIG.INTERCONNECT_DATA_WIDTH {512}  \
                       CONFIG.S00_AXI_DATA_WIDTH {512}       \
                       CONFIG.S01_AXI_DATA_WIDTH {128}       \
