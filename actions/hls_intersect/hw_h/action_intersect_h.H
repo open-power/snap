@@ -18,7 +18,7 @@
  */
 
 #include "hls_snap.H"
-#include "action_intersect.h"
+#include "action_intersect_common.h"
 
 //////////////////////////////////////
 // General

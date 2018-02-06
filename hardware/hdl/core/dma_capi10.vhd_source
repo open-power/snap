@@ -53,7 +53,7 @@ USE work.psl_accel_types.ALL;
 USE work.snap_core_types.all;
 USE work.dma_types.all;
 
-      
+
 ENTITY dma IS
   PORT (
     --
@@ -68,16 +68,21 @@ ENTITY dma IS
     ah_c_o                 : OUT AH_C_T;
     ah_b_o                 : OUT AH_B_T;
     --
+    -- CTRL Manager Interface
+    cd_c_i                 : IN  CD_C_T;
+    --
+    -- MMIO Interface
+    mmd_a_i                : IN  MMD_A_T;
+    mmd_c_i                : IN  MMD_C_T;
+    mmd_i_i                : IN  MMD_I_T;
+    dmm_c_o                : OUT DMM_C_T;
+    dmm_e_o                : OUT DMM_E_T;
+    --
     -- AXI SLAVE Interface
     sd_c_i                 : IN  SD_C_T;
     ds_c_o                 : OUT DS_C_T;
     sd_d_i                 : IN  SD_D_T;
     ds_d_o                 : OUT DS_D_T
-    --
-    -- MMIO Interface
---    mmd_a_i                : IN  MMD_A_T;
---    mmd_i_i                : IN  MMD_I_T;
---    dmm_e_o                : OUT DMM_E_T
   );
 END dma;
 
@@ -157,6 +162,10 @@ ARCHITECTURE dma OF dma IS
   SIGNAL buf_walmost_full_q          : std_logic;
   SIGNAL buf_walmost_full_qq         : std_logic;
   SIGNAL buf_walmost_full_qqq        : std_logic;
+  SIGNAL action_reset_req_q          : std_logic;
+  SIGNAL sent_action_reset_req_q     : std_logic;
+  SIGNAL action_reset_context_id_q   : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+  SIGNAL quiesce_q                   : std_logic;
   SIGNAL buf_wfull_cnt_q             : integer RANGE 0 TO 32;
   SIGNAL buf_wtag_cl_partial_q       : boolean;
   SIGNAL buf_wtag_p_q                : std_logic;
@@ -567,7 +576,7 @@ BEGIN
         -- Reset Logic
         --------------------------------------------------------------------
         --
-        -- 
+        --
         --
         IF afu_reset = '1' THEN
           --
@@ -683,12 +692,12 @@ BEGIN
           --
           -- bit "odd 64 bytes of CL are valid indication"
           IF rlen_q     = 1 AND
-             raddr_q(6) = '0' THEN               
+             raddr_q(6) = '0' THEN
             read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '0';
           ELSE
             read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '1';
           END IF;
-          
+
           --
           -- bit "last CL of a AXI request indication"
           IF rlen_q = 2 THEN
@@ -721,7 +730,7 @@ BEGIN
               rlen_q <= rlen_q - 2;
             END IF;
           END IF;
-          
+
           --
           -- calculate the next clt rtag
           clt_rtag_q      <= clt_rtag_q      + 1;
@@ -732,8 +741,9 @@ BEGIN
 
         --
         -- request
-        IF (sd_c_q.rd_req  = '1') AND
-           (rlen_q         = 0  ) THEN
+        IF (sd_c_q.rd_req = '1') AND
+           (quiesce_q     = '0') AND
+           (rlen_q        = 0  ) THEN
           --
           -- save the read address, id and length for later use
           raddr_q    <=  sd_c_q.rd_addr(63 DOWNTO 6);
@@ -744,7 +754,7 @@ BEGIN
           --
           -- send back a AXI read acknowledge
           rd_req_ack_q <= TRUE;
-         
+
           --
           -- calculate the amount of CLT
           --IF sd_c_q.rd_len(0) = '0' THEN
@@ -753,7 +763,7 @@ BEGIN
           --  --         rd_len = 0x6 = 0x0110
           --  --         => means 0x7 axi beats
           --  --         => 4 CLs needed independent from the start address
-          --  rclen_q <= ('0' & sd_c_q.rd_len(5 DOWNTO 1))  +  
+          --  rclen_q <= ('0' & sd_c_q.rd_len(5 DOWNTO 1))  +
           --             (                   (5 DOWNTO 1  => '0') & '1');
           --ELSE
           --  -- rd_len odd
@@ -761,7 +771,7 @@ BEGIN
           --  --         rd_len = 0x7 = 0x0111
           --  --         => means 0x8 axi beats
           --  --         => 4 or 5 CLs needed dependent from the start address
-          --  rclen_q <= ('0' &  sd_c_q.rd_len(5 DOWNTO 1))               +  
+          --  rclen_q <= ('0' &  sd_c_q.rd_len(5 DOWNTO 1))               +
           --             (                    (5 DOWNTO 1  => '0') & '1') +
           --             (                    (5 DOWNTO 1  => '0') & sd_c_q.rd_addr(6));
           --END IF;
@@ -804,7 +814,7 @@ BEGIN
         -- Reset Logic
         --------------------------------------------------------------------
         --
-        -- 
+        --
         --
         IF afu_reset = '1' THEN
           --
@@ -1055,9 +1065,9 @@ BEGIN
             --
             -- new buffer available
             --
-            ELSIF (write_ctrl_q(com_wtag_v).buf = FULL      ) AND   
+            ELSIF (write_ctrl_q(com_wtag_v).buf = FULL      ) AND
                   (com_wtag_q                  /= buf_wtag_q) THEN
-              
+
               write_fsm_req_q  <= COMMAND;
 
               --
@@ -1241,7 +1251,7 @@ BEGIN
         -- Reset Logic
         --------------------------------------------------------------------
         --
-        -- 
+        --
         --
         IF afu_reset = '1' THEN
           --
@@ -1339,7 +1349,7 @@ BEGIN
         wlen_q                <= wlen_q;
         wr_req_ack_q          <= FALSE;
         wr_ctx_q              <= wr_ctx_q;
-        
+
         buf_wtag_v            := to_integer(unsigned(buf_wtag_q     (4 DOWNTO 0)));
         clt_wtag_v            := to_integer(unsigned(clt_wtag_q     (4 DOWNTO 0)));
         clt_wtag_next_v       := to_integer(unsigned(clt_wtag_next_q(4 DOWNTO 0)));
@@ -1363,12 +1373,12 @@ BEGIN
           --
           -- bit "odd 64 bytes of CL are valid indication"
           IF wlen_q     = 1 AND
-             waddr_q(6) = '0' THEN               
+             waddr_q(6) = '0' THEN
             write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '0';
           ELSE
             write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '1';
           END IF;
-          
+
           --
           -- bit "last CL of a AXI request indication"
           IF wlen_q = 2 THEN
@@ -1382,7 +1392,7 @@ BEGIN
           ELSE
             write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '0';
           END IF;
-          
+
           --
           -- CL Write Address
           write_ctrl_q(clt_wtag_v).cla   <= waddr_q(63 DOWNTO 7);
@@ -1413,6 +1423,7 @@ BEGIN
         --
         -- request
         IF (sd_c_q.wr_req = '1') AND
+           (quiesce_q     = '0') AND
            (wlen_q        = 0  ) THEN
 
           --
@@ -1421,7 +1432,7 @@ BEGIN
           waddr_id_q <= sd_c_q.wr_id;
           wr_ctx_q   <= sd_c_q.wr_ctx;
           wlen_q     <= ('0' & sd_c_q.wr_len) + 1;
-         
+
 
            --
           -- send back a AXI read acknowledge
@@ -1435,7 +1446,7 @@ BEGIN
           --  --         wr_len = 0x6 = 0x0110
           --  --         => means 0x7 axi beats
           --  --         => 4 CLs needed independent from the start address
-          --  wclen_q <= ('0' & sd_c_q.wr_len(5 DOWNTO 1))  +  
+          --  wclen_q <= ('0' & sd_c_q.wr_len(5 DOWNTO 1))  +
           --             (                   (5 DOWNTO 1  => '0') & '1');
           --ELSE
           --  -- wr_len odd
@@ -1443,7 +1454,7 @@ BEGIN
           --  --         wr_len = 0x7 = 0x0111
           --  --         => means 0x8 axi beats
           --  --         => 4 or 5 CLs needed dependent from the start address
-          --  wclen_q <= ('0' &  sd_c_q.wr_len(5 DOWNTO 1))               +  
+          --  wclen_q <= ('0' &  sd_c_q.wr_len(5 DOWNTO 1))               +
           --             (                    (5 DOWNTO 1  => '0') & '1') +
           --             (                    (5 DOWNTO 1  => '0') & sd_c_q.wr_addr(6));
           --END IF;
@@ -1458,11 +1469,11 @@ BEGIN
           IF (buf_wtag_cl_partial_q                          = TRUE) AND
              (write_ctrl_q(buf_wtag_v).clt(EVEN_64B_CL) = '1' ) AND
              (write_ctrl_q(buf_wtag_v).clt(ODD_64B_CL)  = '1' ) THEN
-            
+
             write_ctrl_q(buf_wtag_v).clt(EVEN_64B_CL) <= '0';
           END IF;
-   
-          
+
+
           IF rsp_wtag_valid_q = FALSE THEN
             buf_wfull_cnt_q <= buf_wfull_cnt_q + 1;
           END IF;
@@ -1495,7 +1506,7 @@ BEGIN
           --
           -- send back wr_id_valid if the last CL of a request was
           -- transfered
-          IF write_ctrl_q(rsp_wtag_qq).clt(LAST_CL) = '1' THEN 
+          IF write_ctrl_q(rsp_wtag_qq).clt(LAST_CL) = '1' THEN
             wr_id_valid_q <= '1';
           END IF;
 
@@ -1537,7 +1548,7 @@ BEGIN
         -- Reset Logic
         --------------------------------------------------------------------
         --
-        -- 
+        --
         --
         IF afu_reset = '1' THEN
           --
@@ -1847,7 +1858,7 @@ BEGIN
         -- Reset Logic
         --------------------------------------------------------------------
         --
-        -- 
+        --
         --
         IF afu_reset = '1' THEN
           --
@@ -1941,7 +1952,7 @@ BEGIN
     ----------------------------------------------------------------------------
     --
     rfifo_wdata <= buf_rdata_end & buf_rdata;
-    
+
     dma_read_fifo : fifo_513x512
     PORT MAP (
       clk          => ha_pclock,
@@ -2041,7 +2052,7 @@ BEGIN
   ----------------------------------------------------------------------------
   -- AXI SLAVE INPUT Checker
   --
-  -- Placeolder 
+  -- Placeolder
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
     s_p_check : PROCESS (ha_pclock)
@@ -2235,6 +2246,44 @@ BEGIN
     END PROCESS write_ctrl_check;
 
 
+  ----------------------------------------------------------------------------
+  ----------------------------------------------------------------------------
+  -- QUIESCE LOGIC
+  ----------------------------------------------------------------------------
+  ----------------------------------------------------------------------------
+    --
+    --
+    --
+    quiesce : PROCESS (ha_pclock)
+    BEGIN
+      IF (rising_edge(ha_pclock)) THEN
+        action_reset_req_q        <= '0';
+        sent_action_reset_req_q   <= sent_action_reset_req_q AND NOT cd_c_i.quiesce_release;
+        action_reset_context_id_q <= action_reset_context_id_q;
+        IF cd_c_i.quiesce_request = '1' THEN
+          action_reset_context_id_q <= cd_c_i.quiesce_context_id;
+        ELSIF mmd_c_i.quiesce_request = '1' THEN
+          action_reset_context_id_q <= mmd_c_i.quiesce_context_id;
+        END IF;
+        quiesce_q                 <= (quiesce_q AND NOT cd_c_i.quiesce_release) OR
+                                     cd_c_i.quiesce_request OR mmd_c_i.quiesce_request;
+
+        IF (quiesce_q               = '1'    ) AND
+           (sent_action_reset_req_q = '0'   ) AND
+           ((read_ctrl_fsm_q = ST_IDLE) OR (read_ctrl_fsm_q = ST_RSP_ERROR)) AND
+           ((write_ctrl_fsm_q = ST_IDLE) OR (write_ctrl_fsm_q = ST_RSP_ERROR)) THEN
+          action_reset_req_q      <= '1';
+          sent_action_reset_req_q <= '1';
+        END IF;
+
+        IF afu_reset = '1' THEN
+          quiesce_q                 <= '0';
+          sent_action_reset_req_q   <= '0';
+          action_reset_context_id_q <= (OTHERS => '0');
+        END IF;
+      END IF;
+    END PROCESS quiesce;
+
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -2269,6 +2318,11 @@ BEGIN
     ds_c_o.wr_id       <= waddr_id_q;             -- Multi Action support: should be part of write_ctrl_q
     ds_c_o.int_req_ack <= int_req_ack_q;
 
+    --
+    -- MMIO CONNECTION
+    dmm_c_o.action_reset_req        <= action_reset_req_q;
+    dmm_c_o.action_reset_context_id <= action_reset_context_id_q;
+
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -2291,7 +2345,7 @@ BEGIN
         sd_c_q.wr_req <= '0';
 
         --
-        -- 
+        --
         IF rd_req_ack_q = FALSE THEN
           sd_c_q.rd_req <= sd_c_i.rd_req;
         END IF;

@@ -26,8 +26,8 @@ extern "C" {
 #define ACTION_CONTROL		0x00		/* Control signals */
 #define ACTION_CONTROL_START	0x00000001	/* ap_start (Clear on Handshake) */
 #define ACTION_CONTROL_DONE	0x00000002	/* ap_done (Clear on Read) */
-#define ACTION_CONTROL_IDLE	0x00000004	/* ap_idle (read) */
-#define ACTION_CONTROL_RUN	0x00000008	/* ap_ready (Read) */
+#define ACTION_CONTROL_IDLE	0x00000004	/* ap_idle (Read Only) */
+#define ACTION_CONTROL_RUN	0x00000008	/* ap_ready (Read Only) */
 
 #define ACTION_IRQ_CONTROL	0x04		/* Global Interrupt Enable Register */
 #define ACTION_IRQ_CONTROL_ON	0x00000001	/* Global Interrupt Enable (Read/Write) */

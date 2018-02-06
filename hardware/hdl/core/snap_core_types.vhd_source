@@ -52,9 +52,9 @@ PACKAGE snap_core_types IS
 #endif
 
 #ifdef CONFIG_CAPI10
-  CONSTANT CAPI_VER                        : integer RANGE 1 TO 2 := 1;      -- 
+  CONSTANT CAPI_VER                        : integer RANGE 1 TO 2 := 1;      --
 #else
-  CONSTANT CAPI_VER                        : integer RANGE 1 TO 2 := 2;      -- 
+  CONSTANT CAPI_VER                        : integer RANGE 1 TO 2 := 2;      --
 #endif
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -113,7 +113,7 @@ PACKAGE snap_core_types IS
                        EVICT_I,
 #ifdef CONFIG_CAPI10
                        READ_CL_LCK, READ_CL_RES,
-                       WRITE_C, WRITE_UNLOCK, 
+                       WRITE_C, WRITE_UNLOCK,
                        LOCK, UNLOCK,
                        FLUSH,
 #else
@@ -125,7 +125,7 @@ PACKAGE snap_core_types IS
                        XLAT_RD_TOUCH, XLAT_WR_TOUCH ,
 #endif
                        INTREQ, RESTART,INVALID);
-  
+
   TYPE ENCODING_CMD_CODES_ARRAY IS ARRAY(CMD_CODES_T) OF std_logic_vector(0 TO 12);
   CONSTANT ENCODE_CMD_CODES : ENCODING_CMD_CODES_ARRAY :=
     (READ_CL_NA    => '0' & x"A00",
@@ -181,7 +181,7 @@ PACKAGE snap_core_types IS
                        NLOCK, NRES,
 #else
                        COMP_EQ, COMP_NEQ, COMP_INV,
-#endif                       
+#endif
                        ILLEGAL_RSP);
   TYPE CODING_RSP_ENCODES_ARRAY IS ARRAY (0 TO 255) OF RSP_CODES_T;
   CONSTANT ENCODE_RSP_CODES : CODING_RSP_ENCODES_ARRAY :=
@@ -200,7 +200,7 @@ PACKAGE snap_core_types IS
          12 => COMP_EQ,
          13 => COMP_NEQ,
          14 => COMP_INV,
-#endif          
+#endif
      OTHERS => ILLEGAL_RSP);
 
   --
@@ -333,7 +333,7 @@ PACKAGE snap_core_types IS
   CONSTANT SNAP_CAP_NVME_ENABLED      : integer :=  8;     -- SNAP_CAPABILITY_REG
   CONSTANT SNAP_CAP_CARD_TYPE_L       : integer :=  7;     -- SNAP_CAPABILITY_REG
   CONSTANT SNAP_CAP_CARD_TYPE_R       : integer :=  0;     -- SNAP_CAPABILITY_REG
-  
+
   CONSTANT SNAP_DBG_AH_PAREN          : integer :=  0;     -- SNAP_DEBUG_REG
 
   CONSTANT CTX_CFG_SIZE_INT           : integer := 39;     -- CONTEXT_CONFIG_REG
@@ -777,7 +777,7 @@ PACKAGE snap_core_types IS
   --  CAPI 2.0 DMA Interface
   --
   --  hd_s (from PSL) sent interface
-  --  hd_c (from PSL) completion interface  
+  --  hd_c (from PSL) completion interface
   --  dh_d (to   PSL) request interface
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
@@ -791,7 +791,7 @@ PACKAGE snap_core_types IS
     END RECORD HD_S_T;
 
     --
-    -- hd_c (from PSL) completion interface  
+    -- hd_c (from PSL) completion interface
     --
     TYPE HD_C_T IS RECORD
       valid                    : std_logic                  ;
@@ -812,7 +812,7 @@ PACKAGE snap_core_types IS
       req_itag                    : std_logic_vector(8 DOWNTO 0)   ;
       req_type                    : std_logic_vector(2 DOWNTO 0)   ;
       atomic_op                   : std_logic_vector(5 DOWNTO 0)   ;
-      atomic_le                   : std_logic                ; 
+      atomic_le                   : std_logic                ;
       size                        : std_logic_vector(9 DOWNTO 0)   ;
       data                        : std_logic_vector(1023 DOWNTO 0);
     END RECORD DH_D_T;
@@ -825,15 +825,14 @@ PACKAGE snap_core_types IS
 -- ***** AFU INTERNAL INTERFACE TYPES               *****
 -- ******************************************************
 --
---  dj_c : dma         -> job_mgr     : Command Interface
---  dj_d : dma         -> job_mgr     : Data Interface
---  db_c : dma         -> data_bridge : Command Interface
---  db_d : dma         -> data_bridge : Data Interface
+--  cd_c : ctrl_mgr    -> dma         : Control Interface
+--  cmm_c: ctrl_mgr    -> mmio        : Control Interface
+--  cmm_e: ctrl_mgr    -> mmio        : Error Interface
+--
+--  dmm_c: dma         -> mmio        : Control Interface
 --  dmm_e: dma         -> mmio        : Error Interface
 --  ds_c : dma         -> AXI slave   : Control Interface
 --  ds_d : dma         -> AXI slave   : Data Interface
---
---  cmm_e: ctrl_mgr    -> mmio        : Error Interface
 --
 --  jmm_c: job_manager -> mmio        : Control Interface
 --  jmm_d: job_manager -> mmio        : Data Interface
@@ -841,8 +840,10 @@ PACKAGE snap_core_types IS
 --  jx_c : job_manager -> AXI master  : Control Interface
 --
 --  mmc_c: mmio        -> ctrl_mgr    : Control Interface
+--  mmc_d: mmio        -> ctrl_mgr    : Data Interface
 --  mmc_e: mmio        -> ctrl_mgr    : Error Interface
 --  mmd_a: mmio        -> dma         : Aggravater Interface
+--  mmd_c: mmio        -> dma         : Control Interface
 --  mmd_i: mmio        -> dma         : Error Inject
 --  mmj_c: mmio        -> job_manager : Control Interface
 --  mmj_d: mmio        -> job_manager : Data Interface
@@ -854,38 +855,56 @@ PACKAGE snap_core_types IS
 --  sd_d : AXI slave   -> dma         : Data Interface
 --  sj_c : AXI slave   -> job_manager : Control Interface
 --
---  xmm_d: AXI master  -> mmio        : Data Interface
 --  xj_c : AXI master  -> job_mgr     : Control Interface
+--  xmm_d: AXI master  -> mmio        : Data Interface
 --  xn_d : AXI master  -> NVMe        : Data Interface
 --
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
+  ---------------------------------------------------------------------------
+  ----------------------------------------------------------------------------
+  --  CTRL Manager Interface
+  ----------------------------------------------------------------------------
+  ----------------------------------------------------------------------------
+    --
+    -- cd_c
+    --
+    TYPE CD_C_T IS RECORD
+      quiesce_request    : std_logic;
+      quiesce_release    : std_logic;
+      quiesce_context_id : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    END RECORD CD_C_T;
+
+    --
+    -- cmm_c
+    --
+    TYPE CMM_C_T IS RECORD
+      terminate_request    : std_logic;
+      terminate_context_id : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    END RECORD;
+
+    --
+    -- cmm_e
+    --
+    TYPE CMM_E_T IS RECORD
+      ctrl_fsm_err     : std_logic;
+      com_parity_err   : std_logic;
+      ea_parity_err    : std_logic;
+    END RECORD;
+
+
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
   --  DMA Interface
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
     --
-    -- ds_c
+    -- dmm_c
     --
-    TYPE DS_C_T IS RECORD
-      wr_req_ack        : std_logic;
-      rd_req_ack        : std_logic;
-      wr_id_valid       : std_logic;
-      wr_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
-      int_req_ack       : std_logic;
-    END RECORD DS_C_T;
-
-    --
-    -- ds_d
-    --
-    TYPE DS_D_T IS RECORD
-      rd_data_strobe    : std_logic;                                           -- valid
-      rd_last           : std_logic;
-      rd_data           : std_logic_vector(C_S_AXI_DATA_WIDTH - 1 DOWNTO 0);   -- data
-      rd_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
-      wr_data_ready     : std_logic;
-    END RECORD DS_D_T;
+    TYPE DMM_C_T IS RECORD
+      action_reset_req        : std_logic;
+      action_reset_context_id : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    END RECORD DMM_C_T;
 
     --
     -- dmm_e
@@ -917,20 +936,27 @@ PACKAGE snap_core_types IS
       waddr_err           : std_logic;
     END RECORD DMM_E_T;
 
+    --
+    -- ds_c
+    --
+    TYPE DS_C_T IS RECORD
+      wr_req_ack        : std_logic;
+      rd_req_ack        : std_logic;
+      wr_id_valid       : std_logic;
+      wr_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
+      int_req_ack       : std_logic;
+    END RECORD DS_C_T;
 
-  ---------------------------------------------------------------------------
-  ----------------------------------------------------------------------------
-  --  CTRL Interface
-  ----------------------------------------------------------------------------
-  ----------------------------------------------------------------------------
     --
-    -- cmm_e
+    -- ds_d
     --
-    TYPE CMM_E_T IS RECORD
-      ctrl_fsm_err     : std_logic;
-      com_parity_err   : std_logic;
-      ea_parity_err    : std_logic;
-    END RECORD;
+    TYPE DS_D_T IS RECORD
+      rd_data_strobe    : std_logic;                                           -- valid
+      rd_last           : std_logic;
+      rd_data           : std_logic_vector(C_S_AXI_DATA_WIDTH - 1 DOWNTO 0);   -- data
+      rd_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
+      wr_data_ready     : std_logic;
+    END RECORD DS_D_T;
 
 
   ---------------------------------------------------------------------------
@@ -986,8 +1012,16 @@ PACKAGE snap_core_types IS
     -- mmc_c
     --
     TYPE MMC_C_T IS RECORD
-      reset_done : std_logic;
+      reset_done        : std_logic;
+      action_reset_done : std_logic;
     END RECORD MMC_C_T;
+
+    --
+    -- mmc_d
+    --
+    TYPE MMC_D_T IS RECORD
+      attached_contexts : std_logic_vector(NUM_OF_CONTEXTS-1 DOWNTO 0);
+    END RECORD MMC_D_T;
 
     --
     -- mmc_e
@@ -997,13 +1031,21 @@ PACKAGE snap_core_types IS
     END RECORD MMC_E_T;
 
     --
-    --
     -- mmd_a
+    --
     TYPE MMD_A_T IS RECORD
       thr_read_fsm        : std_logic;
       thr_write_fsm       : std_logic;
       thr_cmd_fsm         : std_logic;
     END RECORD MMD_A_T;
+
+    --
+    -- mmd_c
+    --
+    TYPE MMD_C_T IS RECORD
+      quiesce_request    : std_logic;
+      quiesce_context_id : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
+    END RECORD MMD_C_T;
 
     --
     -- mmd_i
@@ -1026,6 +1068,7 @@ PACKAGE snap_core_types IS
       exploration_done          : std_logic;
       max_sat                   : integer RANGE 0 TO NUM_OF_ACTION_TYPES-1;
       last_seqno                : std_logic;
+      action_reset_vector       : std_logic_vector(NUM_OF_ACTIONS-1 DOWNTO 0);
       action_ack                : std_logic;
     END RECORD;
 
@@ -1102,6 +1145,14 @@ PACKAGE snap_core_types IS
   ----------------------------------------------------------------------------
   ----------------------------------------------------------------------------
     --
+    -- xj_c
+    --
+    TYPE XJ_C_T IS RECORD
+      valid               : std_logic;
+      action              : std_logic_vector(ACTION_BITS-1 DOWNTO 0);
+    END RECORD XJ_C_T;
+
+    --
     -- xmm_d
     --
     TYPE XMM_D_T IS RECORD
@@ -1109,14 +1160,6 @@ PACKAGE snap_core_types IS
       ack                 : std_logic;
       error               : std_logic_vector( 1 DOWNTO 0);
     END RECORD XMM_D_T;
-
-    --
-    -- xj_c
-    --
-    TYPE XJ_C_T IS RECORD
-      valid               : std_logic;
-      action              : std_logic_vector(ACTION_BITS-1 DOWNTO 0);
-    END RECORD XJ_C_T;
 
     --
     -- nx_d

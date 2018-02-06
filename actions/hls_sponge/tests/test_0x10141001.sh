@@ -61,67 +61,54 @@ done
 
 export PATH=$PATH:${SNAP_ROOT}/software/tools:${ACTION_ROOT}/sw
 
-#### VERSION ##########################################################
-
-# [ -z "$STATE" ] && echo "Need to set STATE" && exit 1;
-
+# Set default value for SNAP_CONFIG to FPGA if not set
 if [ -z "$SNAP_CONFIG" ]; then
-	echo "Get CARD VERSION"
+	SNAP_CONFIG=FPGA
+fi
+
+echo "SNAP_CONFIG = ${SNAP_CONFIG} Mode"
+if [ ${SNAP_CONFIG} == "FPGA" ]; then
+	# Can only do this when in hardware mode
 	snap_maint -C ${snap_card} -v || exit 1;
-	snap_peek -C ${snap_card} 0x0 || exit 1;
-	snap_peek -C ${snap_card} 0x8 || exit 1;
-	echo
 fi
 
 #### SPONGE ##########################################################
-
 function test_sponge {
-    local size=$1
-    
-    echo -n "Doing sponge SPEED "
-    cmd="snap_checksum -C${snap_card} -vv -t2500 -mSPONGE \
-                -N -cSPEED -n1 -f65536 >>	\
-		snap_sponge.log 2>&1"
-    eval ${cmd}
-    if [ $? -ne 0 ]; then
-	cat snap_sponge.log
-	echo "cmd: ${cmd}"
-	echo "failed"
-	exit 1
-    fi
-    echo "ok"
+	local size=$1
+
+	echo -n "Doing sponge SPEED "
+	cmd="snap_checksum -C ${snap_card} -vv -t2500 -mSPONGE \
+		-N -cSPEED -n1 -f65536"
+	eval ${cmd}
+	if [ $? -ne 0 ]; then
+		echo "cmd: ${cmd}"
+		echo "failed"
+		exit 1
+	fi
+	echo "ok"
 }
 
-#### SPONGE ##########################################################
-
 function test_sha3_shake {
-  local size=$1
-  
-  echo -n "Doing sponge SHA3_SHAKE "
-  cmd="snap_checksum -mSPONGE -N -t800 -cSHA3_SHAKE >>       \
-  snap_sponge.log 2>&1"
-  eval ${cmd}
-  if [ $? -ne 0 ]; then
-    cat snap_sponge.log
-    echo "cmd: ${cmd}"
-    echo "failed"
-    exit 1
-    fi
-    echo "ok"
-  }
+	local size=$1
 
+	echo -n "Doing sponge SHA3_SHAKE "
+	cmd="snap_checksum -C ${snap_card} -mSPONGE -N -t800 -cSHA3_SHAKE"
+	eval ${cmd}
+	if [ $? -ne 0 ]; then
+		echo "cmd: ${cmd}"
+		echo "failed"
+		exit 1
+	fi
+	echo "ok"
+}
 
-rm -f snap_sponge.log
-touch snap_sponge.log
 
 if [ "$duration" = "NORMAL" ]; then
-  test_sponge 
+	test_sponge
 fi
 
 if [ "$duration" = "NORMAL" ]; then
-  test_sha3_shake 
-  fi
-  
-rm -f *.bin *.bin *.out
+	test_sha3_shake
+fi
 echo "Test OK"
 exit 0

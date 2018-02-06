@@ -24,7 +24,9 @@
 #include "hls_snap.H"
 #include <action_changecase.h> /* HelloWorld Job definition */
 
-#define RELEASE_LEVEL		0x00000021
+//--------------------------------------------------------------------
+// 22: simplify the data casting style
+#define RELEASE_LEVEL		0x00000022
 
 typedef char word_t[BPERDW];
 //---------------------------------------------------------------------

@@ -57,7 +57,7 @@ static void usage(const char *prog)
 	       "  -m, --mode <CRC32|ADLER32|SPONGE> mode flags.\n"
 	       "  -T, --test                execute a test if available.\n"
 	       "  -t, --timeout             Timeout in sec (default 3600 sec).\n"
-	       "  -N, --irq                 Enable Interrupts\n"
+	       "  -N, --irq                 Disable Interrupts\n"
 	       "\n"
 	       "Example:\n"
 	       "To run speed_test with generation of 65536*n/f = number of SHA3 calls :\n"
@@ -231,8 +231,8 @@ static int do_checksum(int card_no, unsigned long timeout,
 
 	action = snap_attach_action(card, CHECKSUM_ACTION_TYPE, action_irq, 60);
 	if (action == NULL) {
-		fprintf(stderr, "err: failed to attach action %u: %s\n",
-			card_no, strerror(errno));
+		fprintf(stderr, "err (%d): Card: %d failed to attach action 0x%x: %s\n",
+			errno, card_no, CHECKSUM_ACTION_TYPE, strerror(errno));
 		goto out_error1;
 	}
 

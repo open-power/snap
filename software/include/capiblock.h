@@ -38,6 +38,10 @@
  */
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define NULL_CHUNK_ID  -1
 #define NULL_CHUNK_CG_ID NULL_CHUNK_ID
 
@@ -410,5 +414,9 @@ int cblk_cg_clone_after_fork(chunk_cg_id_t cgid,
                              int           flags);
 int cblk_cg_get_num_chunks(chunk_cg_id_t cgid,
                            int           flags);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _H_CFLASH_BLOCK */

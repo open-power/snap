@@ -97,10 +97,18 @@ $(hardware_subdirs): $(snap_env_sh)
 hardware: $(hardware_subdirs)
 
 # Model build and config
-hw_project model sim image cloud_base cloud_action cloud_merge: $(snap_env_sh)
+hw_project model sim image cloud_base cloud_action: $(snap_env_sh)
 	@for dir in $(hardware_subdirs); do                \
 	    if [ -d $$dir ]; then                          \
 	        $(MAKE) -s -C $$dir $@ || exit 1;          \
+	    fi                                             \
+	done
+
+cloud_merge:
+	@ignore_action_root=ignore_action_root $(MAKE) $(snap_env_sh)
+	@for dir in $(hardware_subdirs); do                \
+	    if [ -d $$dir ]; then                          \
+	        ignore_action_root=ignore_action_root $(MAKE) -s -C $$dir $@ || exit 1;          \
 	    fi                                             \
 	done
 
@@ -134,7 +142,7 @@ $(snap_config_sh):
 
 # Prepare SNAP Environment
 $(snap_env_sh) snap_env: $(snap_config_sh)
-	@$(SNAP_ROOT)/snap_env $(snap_env_parm) $(snap_config_sh)
+	@$(SNAP_ROOT)/snap_env $(snap_env_parm) $(ignore_action_root) $(snap_config_sh)
 
 %.defconfig:
 	@if [ ! -f defconfig/$@ ]; then			        \

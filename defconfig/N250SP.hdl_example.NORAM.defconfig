@@ -7,6 +7,7 @@
 N250SP=y
 # ADKU3 is not set
 FPGACARD="N250SP"
+# S121B is not set
 FPGACHIP="xcku15p-ffva1156-2-e"
 NUM_OF_ACTIONS=1
 # HLS_ACTION is not set
