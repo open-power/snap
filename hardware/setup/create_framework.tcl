@@ -330,8 +330,8 @@ if { $fpga_card == "ADKU3" } {
     if { $use_prflow == "TRUE" } {
       add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/action_pblock.xdc
       set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/action_pblock.xdc]
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_pblock.xdc
-      set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/snap_pblock.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_pblock_sdram.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/snap_pblock_sdram.xdc]
     }
     add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_refclk200.xdc
     add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_ddr3_b0pblock.xdc

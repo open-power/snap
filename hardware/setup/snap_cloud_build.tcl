@@ -90,14 +90,6 @@ if { $cloud_run == "BASE" } {
   }
 
   read_xdc ../setup/snap_impl.xdc >> $log_file
-  # TODO not in use. Remove????
-  # Reload PSL constraints for Vivado 2017.4
-  # if { $vivadoVer == "2017.4" } {
-  #   read_xdc ../setup/ADKU3/pinout.xdc
-  #   read_xdc ../setup/ADKU3/psl_constr.xdc
-  #   update_timing -full
-  # }
-  ## TODO end
 
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start implementation" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   reset_run    impl_1 >> $log_file
@@ -106,6 +98,7 @@ if { $cloud_run == "BASE" } {
 
 
   puts [format "%-*s %-*s %-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3 + 1] "collecting reports and checkpoints" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+
   file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_opt.dcp                         $dcp_dir/framework_opt.dcp    
   file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_physopt.dcp                     $dcp_dir/framework_physopt.dcp
   file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_placed.dcp                      $dcp_dir/framework_placed.dcp 
@@ -119,6 +112,8 @@ if { $cloud_run == "BASE" } {
 
   ##  
   ## generating reports
+  # Open run to generate reports
+  open_run impl_1 >> $log_file
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating reports" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   report_utilization    -quiet -file  ./Reports/utilization_route_design.rpt
   report_route_status   -quiet -file  ./Reports/route_status.rpt
