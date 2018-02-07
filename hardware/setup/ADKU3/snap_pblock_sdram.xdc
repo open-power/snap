@@ -16,21 +16,12 @@
 #
 #-----------------------------------------------------------
 
-# create_pblock pblock_sdram
-# resize_pblock pblock_sdram -add CLOCKREGION_X4Y4:CLOCKREGION_X5Y4
-# resize_pblock pblock_sdram -add CLOCKREGION_X3Y2:CLOCKREGION_X3Y4 -locs keep_all
-# resize_pblock pblock_sdram -add { BITSLICE_RX_TX_X2Y104:BITSLICE_RX_TX_X2Y207 PLLE3_ADV_X2Y4:PLLE3_ADV_X2Y7 } -locs keep_all
-# add_cells_to_pblock pblock_sdram [ get_cells [ list a0/ddr3sdram_bank0 ] ] -clear_locs
-
 create_pblock pblock_core
 resize_pblock pblock_core -add CLOCKREGION_X3Y0:CLOCKREGION_X3Y0
-resize_pblock pblock_core -add CLOCKREGION_X3Y2:CLOCKREGION_X3Y2 -locs keep_all
+resize_pblock pblock_core -add CLOCKREGION_X3Y2:CLOCKREGION_X3Y4 -locs keep_all
 resize_pblock pblock_core -add {SLICE_X81Y60:SLICE_X95Y119 DSP48E2_X15Y24:DSP48E2_X16Y47 RAMB18_X10Y24:RAMB18_X11Y47 RAMB36_X10Y12:RAMB36_X11Y23} -locs keep_all
 add_cells_to_pblock pblock_core [ get_cells [ list a0/snap_core_i ] ] -clear_locs
 
 create_pblock pblock_axi
 resize_pblock pblock_axi -add {SLICE_X71Y61:SLICE_X80Y119 DSP48E2_X14Y26:DSP48E2_X14Y47 RAMB18_X9Y26:RAMB18_X9Y47 RAMB36_X9Y13:RAMB36_X9Y23}
-add_cells_to_pblock pblock_axi [ get_cells [ list  a0/axi_clock_converter_i ] ] -clear_locs
-
-
-
+add_cells_to_pblock pblock_axi [ get_cells [ list a0/axi_clock_converter_i ] ] -clear_loc

@@ -24,6 +24,7 @@ set nvme_used             $::env(NVME_USED)
 set bram_used             $::env(BRAM_USED)
 set cloud_run             $::env(CLOUD_RUN)
 set remove_tmp_files      "FALSE"
+set vivadoVer     [version -short]
 
 #checkpoint_dir
 if { [info exists ::env(DCP_ROOT)] == 1 } {
@@ -58,6 +59,10 @@ puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "open framework pro
 open_project ../viv_project/framework.xpr >> $log_file
  
 if { $cloud_run == "BASE" } {
+  # Vivado 2017.4 needs to reimport PSL DCP
+  if { ([info exists ::env(PSL_DCP)] == 1) && ($vivadoVer == "2017.4") } {
+    set psl_dcp $::env(PSL_DCP)
+  }
 
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   reset_run    user_action_synth_1 >> $log_file
@@ -73,10 +78,17 @@ if { $cloud_run == "BASE" } {
   file copy -force ../viv_project/framework.runs/synth_1/psl_fpga.dcp                       $dcp_dir/framework_synth.dcp
   file copy -force ../viv_project/framework.runs/synth_1/psl_fpga_utilization_synth.rpt     ./Reports/framework_utilization_synth.rpt
 
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-  open_run     synth_1 -name synth_1 >> $log_file
-  lock_design  -level routing b      >> $log_file
- 
+
+  if { $vivadoVer != "2017.4" } {
+    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+    open_run     synth_1 -name synth_1 >> $log_file
+    lock_design  -level routing b      >> $log_file
+  } else {
+    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "import PSL DCP" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+    remove_files [get_files *.dcp] >> $log_file
+    read_checkpoint -cell b $psl_dcp  >> $log_file
+  }
+
   read_xdc ../setup/snap_impl.xdc >> $log_file
 
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start implementation" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
@@ -86,6 +98,7 @@ if { $cloud_run == "BASE" } {
 
 
   puts [format "%-*s %-*s %-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3 + 1] "collecting reports and checkpoints" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+
   file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_opt.dcp                         $dcp_dir/framework_opt.dcp    
   file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_physopt.dcp                     $dcp_dir/framework_physopt.dcp
   file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_placed.dcp                      $dcp_dir/framework_placed.dcp 
@@ -99,6 +112,8 @@ if { $cloud_run == "BASE" } {
 
   ##  
   ## generating reports
+  # Open run to generate reports
+  open_run impl_1 >> $log_file
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating reports" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   report_utilization    -quiet -file  ./Reports/utilization_route_design.rpt
   report_route_status   -quiet -file  ./Reports/route_status.rpt
