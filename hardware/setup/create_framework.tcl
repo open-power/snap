@@ -45,17 +45,20 @@ if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support "not defined"
 }
 
-if { [info exists ::env(USE_PRFLOW)] == 1 } {
-  set use_prflow [string toupper $::env(USE_PRFLOW)]
-} else {
-  set use_prflow "FALSE"
-}
-
-if { [info exists ::env(CLOUD_USER_FLOW)] == 1 } {
-  set cloud_user_flow [string toupper $::env(CLOUD_USER_FLOW)]
-} else {
-  set cloud_user_flow "FALSE"
-}
+## move all PR specific settings to snap_cloud_build
+#if { [info exists ::env(USE_PRFLOW)] == 1 } {
+#  set use_prflow [string toupper $::env(USE_PRFLOW)]
+#} else {
+#  set use_prflow "FALSE"
+#}
+# 
+#if { [info exists ::env(CLOUD_USER_FLOW)] == 1 } {
+#  set cloud_user_flow [string toupper $::env(CLOUD_USER_FLOW)]
+#} else {
+#  set cloud_user_flow "FALSE"
+#}
+set use_prflow "FALSE"
+set cloud_user_flow "FALSE"
 
 if { [info exists ::env(PSL_DCP)] == 1 } {
   if { $cloud_user_flow == "TRUE" } {

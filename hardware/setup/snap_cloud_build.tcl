@@ -16,15 +16,16 @@
 #
 #-----------------------------------------------------------
 
-set log_dir               $::env(LOGS_DIR)
-set log_file              $log_dir/snap_cloud_build.log
-set fpgacard              $::env(FPGACARD)
-set sdram_used            $::env(SDRAM_USED)
-set nvme_used             $::env(NVME_USED)
-set bram_used             $::env(BRAM_USED)
-set cloud_run             $::env(CLOUD_RUN)
-set remove_tmp_files      "FALSE"
-set vivadoVer     [version -short]
+set root_dir          $::env(SNAP_HARDWARE_ROOT)
+set log_dir           $::env(LOGS_DIR)
+set log_file          $log_dir/snap_cloud_build.log
+set fpga_card         $::env(FPGACARD)
+set sdram_used        $::env(SDRAM_USED)
+set nvme_used         $::env(NVME_USED)
+set bram_used         $::env(BRAM_USED)
+set cloud_run         $::env(CLOUD_RUN)
+set remove_tmp_files  "FALSE"
+set vivadoVer         [version -short]
 
 #checkpoint_dir
 if { [info exists ::env(DCP_ROOT)] == 1 } {
@@ -57,7 +58,80 @@ set widthCol4 22
 ## open snap project
 puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "open framework project" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 open_project ../viv_project/framework.xpr >> $log_file
+
+##
+## switch and setup SNAP project for PR Flow
+if { ([get_property pr_flow [current_project]] != 1) } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "enable PR flow" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  # Enable PR Flow
+  set_property PR_FLOW 1 [current_project]  >> $log_file
+
+  # Create PR Region for SNAP Action
+  create_partition_def   -name snap_action -module action_wrapper                                                         >> $log_file
+  create_reconfig_module -name user_action -partition_def [get_partition_defs snap_action ]  -define_from action_wrapper  >> $log_file
+  update_compile_order   -fileset user_action
+
+  # Create PR Configuration
+  create_pr_configuration -name config_1 -partitions [list a0/action_w:user_action] >> $log_file
+
+  # PR Synthesis
+  set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT              400     [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.FSM_EXTRACTION            one_hot [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.RESOURCE_SHARING          off     [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.SHREG_MIN_SIZE            5       [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS true    [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.NO_LC                     true    [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY         none    [get_runs user_action_synth_1]
+
+  # PR Implementation
+  set_property PR_CONFIGURATION config_1 [get_runs impl_1]
+
+  # ADD constrains files for PR flow
+  if { $fpga_card == "ADKU3" } {
+    if { $sdram_used == "TRUE" } {
+      ########
+      # TODO Update PR flow for Vivado 2017.4
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/action_pblock.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/action_pblock.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_pblock_sdram.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/snap_pblock_sdram.xdc]
+    } elseif  { $bram_used == "FALSE" } {
+      # NORAM
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/action_pblock.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/action_pblock.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_pblock_noram.xdc
+      set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_pblock_noram.xdc]
+      # Fixes for Vivado 2017.4
+      # PSL pblock not imported from lock_design. Create new pblock and reapply PSL constraints 
+      ##!!! not yet available in git!!!!
+      #if { $vivadoVer == "2017.4" } {
+      #  add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/psl_pblock.xdc
+      #  set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/psl_pblock.xdc]
+      #  add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/pinout.xdc
+      #  set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/pinout.xdc]
+      #  add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/psl_constr.xdc
+      #  set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/psl_constr.xdc]
+      #}
+    }  
+  } elseif { $fpga_card == "N250S" } {
+    if { $sdram_used == "TRUE" } {
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/snap_ddr4_pblock.xdc
+      set_property used_in_synthesis false [get_files $root_dir/setup/N250S/snap_ddr4_pblock.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/action_pblock.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/action_pblock.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/snap_pblock.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/snap_pblock.xdc]
+    }
+
+    if { $nvme_used == "TRUE" } {
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/nvme_pblock.xdc
+      set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/nvme_pblock.xdc]
+    }
+  }
+}
  
+## 
+## BASE run
 if { $cloud_run == "BASE" } {
   # Vivado 2017.4 needs to reimport PSL DCP
   if { ([info exists ::env(PSL_DCP)] == 1) && ($vivadoVer == "2017.4") } {
@@ -136,6 +210,8 @@ if { $cloud_run == "BASE" } {
       set remove_tmp_files "TRUE"
   }
 
+## 
+## IMAGE run
 } elseif { $cloud_run == "IMAGE" } {
 
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "create SNAP cloud_run" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format{%T %a %b %d %Y}]"]
@@ -190,6 +266,8 @@ if { $cloud_run == "BASE" } {
 
   }
 
+## 
+## ACTION run
 } elseif { $cloud_run == "ACTION" } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   reset_run    user_action_synth_1 >> $log_file
