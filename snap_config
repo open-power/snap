@@ -51,7 +51,7 @@ while [ -z "$SETUP_DONE" ]; do
       SNAP_CFG="CONFIG_S121B=y\n""CONFIG_FPGACHIP=xcku115-flva1517-2-e\n"
       ;;
     "N250SP" )
-      SNAP_CFG="CONFIG_N250SP=y\n""CONFIG_FPGACHIP=xcku15p-ffva1156-2-e\n"
+      SNAP_CFG="CONFIG_N250SP=y\n""CONFIG_FPGACHIP=xcku15p-ffva1156-2-i\n"
       ;;
     * )
       echo "($0) ERROR: FPGACARD is not set correctly. Not generating config files."
