@@ -101,17 +101,6 @@ if { ([get_property pr_flow [current_project]] != 1) } {
       set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/action_pblock.xdc]
       add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_pblock_noram.xdc
       set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_pblock_noram.xdc]
-      # Fixes for Vivado 2017.4
-      # PSL pblock not imported from lock_design. Create new pblock and reapply PSL constraints 
-      ##!!! not yet available in git!!!!
-      #if { $vivadoVer == "2017.4" } {
-      #  add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/psl_pblock.xdc
-      #  set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/psl_pblock.xdc]
-      #  add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/pinout.xdc
-      #  set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/pinout.xdc]
-      #  add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/psl_constr.xdc
-      #  set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/psl_constr.xdc]
-      #}
     }  
   } elseif { $fpga_card == "N250S" } {
     if { $sdram_used == "TRUE" } {
