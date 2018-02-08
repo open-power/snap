@@ -285,10 +285,6 @@ if { $fpga_card == "ADKU3" } {
     set_property used_in_synthesis false [get_files $root_dir/setup/N250S/snap_ddr4pins.xdc]
   }
   if { $nvme_used == "TRUE" } {
-    if { $use_prflow == "TRUE" } {
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/nvme_pblock.xdc
-      set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/nvme_pblock.xdc]
-    }
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_refclk100.xdc
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_nvme.xdc
   }
