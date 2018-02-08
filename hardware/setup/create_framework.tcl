@@ -45,33 +45,10 @@ if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support "not defined"
 }
 
-## move all PR specific settings to snap_cloud_build
-#if { [info exists ::env(USE_PRFLOW)] == 1 } {
-#  set use_prflow [string toupper $::env(USE_PRFLOW)]
-#} else {
-#  set use_prflow "FALSE"
-#}
-# 
-#if { [info exists ::env(CLOUD_USER_FLOW)] == 1 } {
-#  set cloud_user_flow [string toupper $::env(CLOUD_USER_FLOW)]
-#} else {
-#  set cloud_user_flow "FALSE"
-#}
-set use_prflow "FALSE"
-set cloud_user_flow "FALSE"
-
 if { [info exists ::env(PSL_DCP)] == 1 } {
-  if { $cloud_user_flow == "TRUE" } {
-    set psl_dcp "FALSE"
-  } else {
-    set psl_dcp $::env(PSL_DCP)
-  }
+  set psl_dcp $::env(PSL_DCP)
 } else {
   set psl_dcp "FALSE"
-}
-
-if { ($use_prflow == "TRUE") && ($hls_support == "TRUE") } {
-  set action_dir $::env(ACTION_ROOT)/hw/vhdl
 }
 
 # Create a new Vivado Project
@@ -117,15 +94,6 @@ set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs i
 set_property STEPS.WRITE_BITSTREAM.TCL.PRE  $root_dir/setup/snap_bitstream_pre.tcl  [get_runs impl_1]
 set_property STEPS.WRITE_BITSTREAM.TCL.POST $root_dir/setup/snap_bitstream_post.tcl [get_runs impl_1]
 
-if { $use_prflow == "TRUE" } {
-  # Enable PR Flow
-  set_property PR_FLOW 1 [current_project]  >> $log_file
-
-  # Create PR Region for SNAP Action
-  create_partition_def -name snap_action -module action_wrapper
-  create_reconfig_module -name user_action -partition_def [get_partition_defs snap_action] -top action_wrapper
-}
-
 # Add Files
 # PSL Files
 puts "                        importing design files"
@@ -136,26 +104,12 @@ set_property used_in_simulation false [get_files $hdl_dir/core/psl_fpga.vhd]
 set_property top psl_fpga [current_fileset]
 
 # Action Files
-if { $use_prflow == "TRUE" } {
-  # Files for PR module
-  add_files -scan_for_includes $hdl_dir/core/psl_accel_types.vhd -of_objects [get_reconfig_modules user_action] >> $log_file
-  add_files -scan_for_includes $hdl_dir/core/action_types.vhd -of_objects [get_reconfig_modules user_action] >> $log_file
-  if { $hls_support == "TRUE" } {
-    add_files -scan_for_includes $hdl_dir/hls/ -of_objects [get_reconfig_modules user_action] >> $log_file
-  }
-  add_files -scan_for_includes $action_dir/ -of_objects [get_reconfig_modules user_action] >> $log_file
-  if { $simulator != "nosim" } {
-    if { $hls_support == "TRUE" } {
-      add_files -fileset sim_1 -norecurse -scan_for_includes $hdl_dir/hls/ >> $log_file
-    }
-    add_files -fileset sim_1 -norecurse -scan_for_includes $action_dir/ >> $log_file
-  }
-} else {
-  if { $hls_support == "TRUE" } {
-    add_files -scan_for_includes $hdl_dir/hls/ >> $log_file
-  }
-  add_files -scan_for_includes $action_dir/ >> $log_file
+if { $hls_support == "TRUE" } {
+  add_files -scan_for_includes $hdl_dir/hls/ >> $log_file
 }
+
+add_files -scan_for_includes $action_dir/ >> $log_file
+
 
 # Sim Files
 if { $simulator != "nosim" } {
@@ -295,23 +249,6 @@ if { $psl_dcp != "FALSE" } {
   read_checkpoint -cell b $psl_dcp -strict >> $log_file
 }
 
-
-if { $use_prflow == "TRUE" } {
-  # Create PR Configuration
-  create_pr_configuration -name config_1 -partitions [list a0/action_w:user_action]
-  # PR Synthesis
-  set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT              400     [get_runs user_action_synth_1]
-  set_property STEPS.SYNTH_DESIGN.ARGS.FSM_EXTRACTION            one_hot [get_runs user_action_synth_1]
-  set_property STEPS.SYNTH_DESIGN.ARGS.RESOURCE_SHARING          off     [get_runs user_action_synth_1]
-  set_property STEPS.SYNTH_DESIGN.ARGS.SHREG_MIN_SIZE            5       [get_runs user_action_synth_1]
-  set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS true    [get_runs user_action_synth_1]
-  set_property STEPS.SYNTH_DESIGN.ARGS.NO_LC                     true    [get_runs user_action_synth_1]
-  set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY         none    [get_runs user_action_synth_1]
-
-  # PR Implementation
-  set_property PR_CONFIGURATION config_1 [get_runs impl_1]
-}
-
 # XDC
 # SNAP CORE XDC
 puts "                        importing XDCs"
@@ -325,40 +262,13 @@ if { $fpga_card == "ADKU3" } {
   if { $bram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_refclk200.xdc
   } elseif { $sdram_used == "TRUE" } {
-    ########
-    # TODO Update PR flow for Vivado 2017.4
-    if { $use_prflow == "TRUE" } {
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/action_pblock.xdc
-      set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/action_pblock.xdc]
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_pblock_sdram.xdc
-      set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/snap_pblock_sdram.xdc]
-    }
     add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_refclk200.xdc
     add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_ddr3_b0pblock.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_ddr3_b0pblock.xdc]
     add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_ddr3_b0pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_ddr3_b0pins.xdc]
-  } else {
-  # NORAM
-    if { $use_prflow == "TRUE" } {
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/action_pblock.xdc
-      set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/action_pblock.xdc]
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_pblock_noram.xdc
-      set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_pblock_noram.xdc]
-      # Fixes for Vivado 2017.4
-      # PSL pblock not imported from lock_design. Create new pblock and reapply PSL constraints 
-      if { $vivadoVer == "2017.4" } {
-        add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/psl_pblock.xdc
-        set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/psl_pblock.xdc]
-        add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/pinout.xdc
-        set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/pinout.xdc]
-        add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/psl_constr.xdc
-        set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/psl_constr.xdc]
-      }
-    }  
-  }
+  }  
 } elseif {$fpga_card == "S121B" } {
-#doesn't support prflow now
   if { $bram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/S121B/snap_refclk100.xdc
   } elseif { $sdram_used == "TRUE" } {
@@ -370,19 +280,10 @@ if { $fpga_card == "ADKU3" } {
   if { $bram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_refclk266.xdc
   } elseif { $sdram_used == "TRUE" } {
-    if { $use_prflow == "TRUE" } {
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/snap_ddr4_pblock.xdc
-      set_property used_in_synthesis false [get_files $root_dir/setup/N250S/snap_ddr4_pblock.xdc]
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/action_pblock.xdc
-      set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/action_pblock.xdc]
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/snap_pblock.xdc
-      set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/snap_pblock.xdc]
-    }
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_refclk266.xdc
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_ddr4pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/N250S/snap_ddr4pins.xdc]
   }
-
   if { $nvme_used == "TRUE" } {
     if { $use_prflow == "TRUE" } {
       add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/nvme_pblock.xdc
@@ -392,6 +293,7 @@ if { $fpga_card == "ADKU3" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_nvme.xdc
   }
 }
+
 if { $ila_debug == "TRUE" } {
   add_files -fileset constrs_1 -norecurse  $::env(ILA_SETUP_FILE)
 }
