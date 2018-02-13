@@ -69,7 +69,7 @@ int pp_trace_enabled(void)
 	return snap_trace & 0x0100;
 }
 
-#define simulation_enabled()  (snap_config & 0x01)
+#define software_action_enabled()  (snap_config & 0x01)
 
 #define snap_trace(fmt, ...) do { \
 		if (snap_trace_enabled()) \
@@ -666,7 +666,7 @@ struct snap_action *snap_attach_action(struct snap_card *card,
 				       snap_action_flag_t action_flags,
 				       int timeout_ms)
 {
-	if (simulation_enabled())
+	if (software_action_enabled())
 		snap_map_funcs(card, action_type);
 
 	return df->attach_action(card, action_type, action_flags, timeout_ms);
@@ -1292,6 +1292,6 @@ static void _init(void)
 		}
 	}
 
-	if (simulation_enabled())
+	if (software_action_enabled())
 		df = &software_funcs; /* Map Software Functions */
 }
