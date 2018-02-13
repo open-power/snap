@@ -326,6 +326,11 @@ config ENABLE_PRFLOW
         help 
           Used for Cloud environment using specific PSL images
 
+config USE_PRFLOW
+        string
+        default "TRUE" if ENABLE_PRFLOW
+        default "FALSE" if ! ENABLE_PRFLOW
+
 config ENABLE_ILA
         bool "Enable ILA Debug (Definition of $ILA_SETUP_FILE required)"
         depends on ! ENABLE_PRFLOW
@@ -352,11 +357,6 @@ config FACTORY_IMAGE
         string
         default "TRUE"  if ENABLE_FACTORY
         default "FALSE" if ! ENABLE_FACTORY
-
-config USE_PRFLOW
-        string
-        default "TRUE" if ENABLE_PRFLOW
-        default "FALSE" if ! ENABLE_PRFLOW
 
 config ENABLE_CLOUD_USER_FLOW
         bool "Cloud user flow"
