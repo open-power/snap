@@ -9,8 +9,9 @@ choice
         bool "Card Type"
         default N250S
         help
+          Card Type
           There are multiple card the framework supports. Please select
-          one of them.
+          one of them. Pay attention to CAPI level (eg CAPI10 or CAPI20)
 
         config N250S
                 bool "Nallatech 250S with 4GB DDR4 SDRAM, NVMe and Xilinx KU60 FPGA"
@@ -38,6 +39,7 @@ choice
                 select CAPI10
                 help
                   Semptian NSA121B has ethernet and 8GB DDR4 SDRAM. Uses Xilinx FPGA XCKU115.
+
 endchoice
 
 config FPGACARD
@@ -73,6 +75,12 @@ config NUM_OF_ACTIONS
 
 choice
         bool "Action Type"
+        help
+          Action Type
+          Select an Action type example:
+          - HDL for VHDL or Verilog coded examples
+          - HLS for C coded examples compiled with HLS
+
         default HDL_EXAMPLE
 
         config HLS_ACTION
@@ -102,12 +110,26 @@ choice
 
         config HLS_MEMCOPY
             bool "HLS Memcopy"
+            help
+               This is a basic example to start accessing data:
+               - Read data from the server memory or from the card DDR
+               - Write data to the server memory or to the card DDR
+               - A temporary buffer is used in the FPGA (configurable size)
+               All combination can be done. 
+               This example is written in C and compiled with HLS
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
             select DISABLE_NVME
 
         config HLS_SPONGE
             bool "HLS Sponge"
+            help
+               This is an example of a C code ported and optimized:
+               It is a benchmark to measure the SHA3 key generation performance
+               - Data are generated in the algorithm - No data move
+               - 3 functions : SPEED, SHA3, SHAKE (and SHA3_SHAKE)
+               - only the SPEED test was optimized
+               This example is written in C and compiled with HLS
             select ENABLE_HLS_SUPPORT
             select DISABLE_SDRAM_AND_BRAM
             select DISABLE_NVME
@@ -120,6 +142,14 @@ choice
 
         config HLS_SEARCH
             bool "HLS Search"
+            help
+               This example shows different ways to work with data:
+               - Read a pattern and text from the server memory
+               - search the pattern within the text 
+                    (2 methods used : text bufferized - stream flow)
+               - send back the number of occurrences
+               No optmization was done on this example
+               This example is written in C and compiled with HLS
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
             select DISABLE_NVME
@@ -145,6 +175,12 @@ choice
 
         config HLS_HELLOWORLD
             bool "HLS HelloWorld"
+            help
+               This is the simplest example to start with:
+               - Reading text from the server memory
+               - Processing changing case of the text 
+               - Writing back the text to the server memory
+               This example is written in C and compiled with HLS
             select ENABLE_HLS_SUPPORT
             select DISABLE_SDRAM_AND_BRAM
             select DISABLE_NVME
@@ -262,10 +298,14 @@ choice
 
         config SIM_XSIM
             bool "xsim"
+            help
+               Default Xilinx simulator
             depends on ! ENABLE_NVME
 
         config SIM_IRUN
             bool "irun"
+            help
+               Cadence simulator (requires a specific license)
             depends on ! ENABLE_PRFLOW
 
         config NO_SIM
@@ -281,10 +321,21 @@ config SIMULATOR
 
 comment "================= Advanced Options: ================="
 
+config ENABLE_PRFLOW
+        bool "Cloud build (enabling Partial Reconfiguration)"
+        help 
+          Used for Cloud environment using specific PSL images
+
+config USE_PRFLOW
+        string
+        default "TRUE" if ENABLE_PRFLOW
+        default "FALSE" if ! ENABLE_PRFLOW
+
 config ENABLE_ILA
         bool "Enable ILA Debug (Definition of $ILA_SETUP_FILE required)"
         depends on ! ENABLE_PRFLOW
         help
+          Used for debugging the design by inserting probes into the FPGA
           Enable the usage of Vivado's integrated logic analyzer.
           Please make sure that $ILA_SETUP_FILE points to the .xdc file
           defining the debug cores.
@@ -296,20 +347,16 @@ config ILA_DEBUG
 
 config ENABLE_FACTORY
         bool "Create Factory Image"
+        help 
+          Used to generate a specific image to be located into the factory area
+          Default image is in the user area. 
+          This specific factory area is used to recover from a bad user image
         depends on ! ENABLE_PRFLOW
 
 config FACTORY_IMAGE
         string
         default "TRUE"  if ENABLE_FACTORY
         default "FALSE" if ! ENABLE_FACTORY
-
-config ENABLE_PRFLOW
-        bool "Cloud build (enabling Partial Reconfiguration)"
-
-config USE_PRFLOW
-        string
-        default "TRUE" if ENABLE_PRFLOW
-        default "FALSE" if ! ENABLE_PRFLOW
 
 config ENABLE_CLOUD_USER_FLOW
         bool "Cloud user flow"
@@ -323,6 +370,8 @@ config CLOUD_USER_FLOW
 
 config ENABLE_CLOUD_BUILD_BITFILE
         bool "Build bitstream file"
+        help
+          Enables the generation of the image for the FPGA
         default y
         depends on ENABLE_PRFLOW
 
