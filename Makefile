@@ -25,6 +25,8 @@ hardware_subdirs += $(SNAP_ROOT)/hardware
 action_subdirs += $(SNAP_ROOT)/actions
 
 snap_config = .snap_config
+snap_config_bak = .snap_config_test.bak
+snap_config_new = .snap_config_test.new
 snap_config_sh = .snap_config.sh
 snap_config_cflags = .snap_config.cflags
 snap_env_sh = snap_env.sh
@@ -124,12 +126,17 @@ endif
 # SNAP Config
 config menuconfig xconfig gconfig oldconfig:
 	@echo "$@: Setting up SNAP configuration"
+	@touch $(snap_config) && sed '/^#/ d' <$(snap_config) >$(snap_config_bak)
 	@for dir in $(config_subdirs); do          \
 	    if [ -d $$dir ]; then                  \
 	        $(MAKE) -s -C $$dir $@ || exit 1;  \
 	    fi                                     \
 	done
-	@$(MAKE) -C hardware clean
+	@sed '/^#/ d' <$(snap_config) >$(snap_config_new)
+	@if [ -n "`diff -q $(snap_config_bak) $(snap_config_new)`" ]; then \
+	    $(MAKE) -C hardware clean;                                     \
+	fi
+	@$(RM) $(snap_config_bak) $(snap_config_new)
 
 snap_config:
 	@$(MAKE) -s menuconfig || exit 1
