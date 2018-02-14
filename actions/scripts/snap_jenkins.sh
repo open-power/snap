@@ -151,7 +151,7 @@ function test_hard()
 	try_to_flash=0
 	while [ 1 ]; do
 		wait_flag=0
-		# sudo ./capi-flash-script.sh -f -C $card -f $IMAGE
+		sudo ./capi-flash-script.sh -f -C $card -f $IMAGE
 		RC=$?
 		if [ $RC -eq 0 ]; then
 			break
