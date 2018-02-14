@@ -19,7 +19,7 @@
 set root_dir          $::env(SNAP_HARDWARE_ROOT)
 set log_dir           $::env(LOGS_DIR)
 set log_file          $log_dir/snap_cloud_build.log
-set fpga_card         $::env(FPGACARD)
+set fpgacard         $::env(FPGACARD)
 set sdram_used        $::env(SDRAM_USED)
 set nvme_used         $::env(NVME_USED)
 set bram_used         $::env(BRAM_USED)
@@ -87,7 +87,7 @@ if { ([get_property pr_flow [current_project]] != 1) } {
   set_property PR_CONFIGURATION config_1 [get_runs impl_1]
 
   # ADD constrains files for PR flow
-  if { $fpga_card == "ADKU3" } {
+  if { $fpgacard == "ADKU3" } {
     if { $sdram_used == "TRUE" } {
       add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/action_pblock.xdc
       set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/action_pblock.xdc]
@@ -100,7 +100,7 @@ if { ([get_property pr_flow [current_project]] != 1) } {
       add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_pblock_noram.xdc
       set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_pblock_noram.xdc]
     }  
-  } elseif { $fpga_card == "N250S" } {
+  } elseif { $fpgacard == "N250S" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/action_pblock.xdc
     set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/action_pblock.xdc]    
     add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/snap_pblock.xdc
