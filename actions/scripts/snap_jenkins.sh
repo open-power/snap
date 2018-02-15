@@ -140,7 +140,7 @@ function test_hard()
 	local card=$2
 	local IMAGE=$3
 
-	echo "UPDATING Start at: `date`"
+	echo "`date` UPDATING Start"
 	echo "         Accel: $accel[$card] Image: $IMAGE"
 	pushd ../capi-utils > /dev/null
 	if [ $? -ne 0 ]; then
@@ -162,15 +162,15 @@ function test_hard()
 			# Flashing takes about 90 to 100 sec
 			try_to_flash=$((try_to_flash+1))
 			if [ $try_to_flash -gt 20 ]; then
-				echo "ERRR: Timeout While Waiting to Flash Accel: $accel[$card] at: `date`"
+				echo "`date` ERROR: Timeout While Waiting to Flash Accel: $accel[$card]"
 				popd > /dev/null
 				return $RC
 			fi
-			echo "         ($try_to_flash of 20) Wait: Other capi-flash-script.sh in progress at: `date`"
+			echo "`date`         ($try_to_flash of 20) Wait: Other capi-flash-script.sh in progress"
 			wait_flag=1
 			sleep 10
 		else
-			echo "Error: I was not able to Flash Image: $IMAGE on Accel: $accel[$card] at: `date`"
+			echo "`date` ERROR: I was not able to Flash Image: $IMAGE on Accel: $accel[$card]"
 			popd > /dev/null
 			mv $IMAGE $IMAGE.fault_flash
 			return $RC
@@ -178,11 +178,11 @@ function test_hard()
 	done
 
 	popd > /dev/null
-	echo "UPDATING Accel: $accel[$card] done at: `date`"
+	echo "`date` UPDATING done for $accel[$card]"
 	if [ $wait_flag -eq 1 ]; then
 		echo "Delay some time because of pending Flash"
 		sleep 15          # Allow other test to Flash
-		echo "Testing Accel: $accel[$card] Starts at: `date`"
+		echo "`date` Testing Accel: $accel[$card]"
 	fi
 	./software/tools/snap_peek -C $card 0x0 -d2
 	RC=$?
@@ -246,7 +246,7 @@ accel="ALL"
 CARD="-1"   # Select all Cards in System
 
 echo "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< JENKINS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-echo "  Test Starts On: `hostname` at: `date`"
+echo "`date` Test Starts On `hostname`"
 
 while getopts "D:A:F:C:h" opt; do
 	case $opt in
@@ -348,7 +348,7 @@ if [[ $accel != "ALL" ]]; then
 			echo "       File: $BINFILE not found"
 			exit 1
 		fi
-		echo "Image Test on Accel: $accel was executed $test_done time(s) at: `date`"
+		echo "`date` Image Test on Accel: $accel was executed $test_done time(s)"
 		exit 0
 	fi
 	# Parm (-A Nallatech 250S or AlphaData KU3 or Semptian NSA121B) was set, but no file (-F) to test
@@ -433,5 +433,5 @@ if [ $test_done -eq 0 ]; then
 	echo "Error: Software Test did not detect any card for test"
 	exit 1
 fi
-echo "Software Test was executed $test_done times at: `date`"
+echo "`date` Software Test was executed $test_done times"
 exit 0
