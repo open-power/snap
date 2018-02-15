@@ -184,7 +184,6 @@ function test_hard()
 		sleep 15          # Allow other test to Flash
 		echo "Testing Accel: $accel[$card] Starts at: `date`"
 	fi
-	exit 1
 	./software/tools/snap_peek -C $card 0x0 -d2
 	RC=$?
 	if [ $RC -ne 0 ]; then
