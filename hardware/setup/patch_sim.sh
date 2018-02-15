@@ -15,6 +15,8 @@
 # limitations under the License.
 #
 ###############################################################################
+set -e
+
 NAME=`basename $2`
 if [ "$NAME" == "top.sh" ]; then
   echo "                     patch $NAME for $SIMULATOR"
