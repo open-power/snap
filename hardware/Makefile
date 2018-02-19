@@ -283,7 +283,10 @@ action_hw: prepare_logs
 	@touch .create_ip_done
 
 .create_nvme_done:
+	@echo -e "[CREATE NVME.........] start `date +"%T %a %b %d %Y"`";
 	@cd $(SNAP_HARDWARE_ROOT)/setup  &&  vivado -quiet -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou
+	@$(MAKE) -s patch_NVMe
+	@echo -e "[CREATE NVME.........] done  `date +"%T %a %b %d %Y"`";
 	@touch .create_nvme_done
 
 create_project: snap_preprocess
@@ -292,7 +295,6 @@ create_project: snap_preprocess
 	@$(MAKE) -s .create_ip_done
 	@if [ "$(NVME_USED)" == "TRUE" ]; then $(MAKE) -s .create_nvme_done; fi
 	@cd $(SNAP_HARDWARE_ROOT)/setup  &&  vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
-	@$(MAKE) -s patch_NVMe
 	@echo -e "[CREATE PROJECT......] done  `date +"%T %a %b %d %Y"`"
 
 hw_project_start:
@@ -425,6 +427,7 @@ $(SNAP_SIMULATORS): check_nvme .hw_project_done app
 	vivado -quiet -mode batch -source setup/export_$@.tcl -notrace -log $(LOGS_DIR)/compile_$@.log
 	$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1
 	cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so;
+	@echo -e "                        build a $@ model"; 
 	@cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@); \
 	./top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1; \
 	if [ $$? -ne 0 ]; then \
