@@ -249,7 +249,7 @@ config DDR3_USED
 config ENABLE_DDR4
         bool
         default y
-        depends on (ENABLE_SDRAM && (N250S || S121B))
+        depends on (ENABLE_SDRAM && (N250S || S121B || N250SP))
 
 config DDR4_USED
         string

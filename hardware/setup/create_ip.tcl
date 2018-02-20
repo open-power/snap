@@ -223,7 +223,7 @@ if { $fpga_card == "ADKU3" } {
     set create_clock_conv  TRUE
     set create_ddr4_s121b    TRUE
   }
-} elseif { $fpga_card == "N250S" } { 
+} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } { 
   if { $bram_used == "TRUE" } {
     if { $nvme_used == "TRUE" } {
       set create_interconect  TRUE
@@ -349,7 +349,7 @@ if { $create_ddr3 == "TRUE" } {
   open_example_project -in_process -force -dir $ip_dir [get_ips  ddr3sdram] >> $log_file  
 }
 
-#DDR4 create ddr4sdramm with ECC (N250S)
+#DDR4 create ddr4sdramm with ECC (N250S or N250SP)
 if { $create_ddr4 == "TRUE" } {
   puts "                        generating IP ddr4sdram"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file

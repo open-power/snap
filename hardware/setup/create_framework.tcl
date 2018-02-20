@@ -124,7 +124,7 @@ if { $simulator != "nosim" } {
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr3_dimm.sv]
   }
   # DDR4 Sim Files
-  if { ($fpga_card == "N250S") && ($sdram_used == "TRUE") } {
+  if { (($fpga_card == "N250S") || ($fpga_card == "N250SP")) && ($sdram_used == "TRUE") } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm.sv  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm.sv]
@@ -187,7 +187,7 @@ if { $fpga_card == "ADKU3" } {
     add_files -norecurse $ip_dir/ddr4sdram/ddr4sdram.xci >> $log_file
     export_ip_user_files -of_objects  [get_files "$ip_dir/ddr4sdram/ddr4sdram.xci"] -force >> $log_file
   }
-} elseif { $fpga_card == "N250S" } {
+} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
   if { $bram_used == "TRUE" } {
     if { $nvme_used == "TRUE" } {
       add_files -norecurse $ip_dir/axi_interconnect/axi_interconnect.xci >> $log_file
@@ -276,7 +276,7 @@ if { $fpga_card == "ADKU3" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/S121B/snap_ddr4_c2pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/S121B/snap_ddr4_c2pins.xdc]
   }
-} elseif { $fpga_card == "N250S" } {
+} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
   if { $bram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_refclk266.xdc
   } elseif { $sdram_used == "TRUE" } {
