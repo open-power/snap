@@ -35,6 +35,7 @@ else
   case $PSL_MD5 in
     '5bf24f90f52e6959e8e6082245a2ac3c')    export PSL_DCP_TYPE="N250S";;
     '3a2d162828aed3cb271d1151be9bfdde')    export PSL_DCP_TYPE="N250S";; # with reset fix 20171220
+    'd7196d64990594f6c267aa8192a41573')    export PSL_DCP_TYPE="N250S";; # with reset fix 20180212 + vivado 2017.4
     '1b1526c0d3cb61815c886f83d3b4f202')    export PSL_DCP_TYPE="ADKU3";;    
     'f920e532c7dfea8aa7c0f90db5b54bff')    export PSL_DCP_TYPE="ADKU3";; # with reset fix 20171220
     '51b64ad40a3dc54ec855d7d7dfef0896')    export PSL_DCP_TYPE="ADKU3";; # rblack_PSLrev6_v174_20170122_vsec400
