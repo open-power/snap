@@ -364,7 +364,6 @@ int main(int argc, char *argv[])
 				   ht stores the values */
 		t2_entries -= t2_tocopy;
 	}
-	snap_detach_action((void*)action);
 	gettimeofday(&etime, NULL);
 
 	fprintf(stderr, "ReturnCode: %x\n"
