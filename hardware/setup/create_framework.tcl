@@ -110,6 +110,8 @@ if { $fpga_card == "N250SP" } {
   add_files -scan_for_includes $psl4n250sp_dir/FlashGTPlus/hdk/src/  >> $log_file
   remove_files  $psl4n250sp_dir/FlashGTPlus/hdk/src/psl_accel.vhdl
   remove_files  $psl4n250sp_dir/FlashGTPlus/hdk/src/psl_fpga.vhdl
+  set_property used_in_simulation false [get_files $psl4n250sp_dir/src/*]
+  set_property used_in_simulation false [get_files $psl4n250sp_dir/FlashGTPlus/hdk/src/*]
 }
 
 set_property used_in_simulation false [get_files $hdl_dir/core/psl_fpga.vhd]
@@ -257,18 +259,16 @@ if { $nvme_used == TRUE } {
 
 # Add PSL
 if { $fpga_card == "N250SP" } {
+  set_property "ip_repo_paths" "[file normalize "$psl4n250sp_dir/FlashGTPlus/psl/ip_repo"]" [current_project]
+  update_ip_catalog >> $log_file
   add_files -norecurse                          $ip_dir/pcie4_uscale_plus_0/pcie4_uscale_plus_0.xci
   export_ip_user_files -of_objects  [get_files  $ip_dir/pcie4_uscale_plus_0/pcie4_uscale_plus_0.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
   add_files -norecurse                          $ip_dir/psl4n250sp_clk_wiz/psl4n250sp_clk_wiz.xci
   export_ip_user_files -of_objects  [get_files  $ip_dir/psl4n250sp_clk_wiz/psl4n250sp_clk_wiz.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
+  add_files -norecurse                          $ip_dir/sem_ultra_0/sem_ultra_0.xci
+  export_ip_user_files -of_objects  [get_files  $ip_dir/sem_ultra_0/sem_ultra_0.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
   add_files -norecurse                          $ip_dir/PSL9_WRAP_0/PSL9_WRAP_0.xci
   export_ip_user_files -of_objects  [get_files  $ip_dir/PSL9_WRAP_0/PSL9_WRAP_0.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
-  #add_files -norecurse                          $psl4n250sp_dir/setup/ip/pcie4_uscale_plus_0.xci
-  #export_ip_user_files -of_objects  [get_files  $psl4n250sp_dir/setup/ip/pcie4_uscale_plus_0.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
-  #add_files -norecurse                          $psl4n250sp_dir/setup/ip/psl4n250sp_clk_wiz/psl4n250sp_clk_wiz.xci
-  #export_ip_user_files -of_objects  [get_files  $psl4n250sp_dir/setup/ip/psl4n250sp_clk_wiz/psl4n250sp_clk_wiz.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
-  #add_files -norecurse                          $psl4n250sp_dir/setup/ip/PSL9_WRAP_0/PSL9_WRAP_0.xci
-  #export_ip_user_files -of_objects  [get_files  $psl4n250sp_dir/setup/ip/PSL9_WRAP_0/PSL9_WRAP_0.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
 } elseif { $psl_dcp != "FALSE" } {
   puts "                        importing PSL design checkpoint"
   read_checkpoint -cell b $psl_dcp -strict >> $log_file
