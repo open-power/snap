@@ -127,6 +127,15 @@ while [ -z "$SETUP_DONE" ]; do
   ####### checking path to PSLSE (only if simulation is enabled)
   # Note: SIMULATOR is defined via snap_config
   if [ $SIMULATOR != "nosim" ]; then
+    echo "=====Simulation setup: Setting up PSLSE version=========="
+    if [ "$FPGACARD" == "N250SP" ]; then
+      PSLVER="9"
+    else
+      PSLVER="8"
+    fi
+    echo "Setting PSLVER                 to: \"$PSLVER\""
+    sed -i '/export[ ^]*PSLVER[ ^]*=/ d' $snap_env_sh
+    echo "export PSLVER=$PSLVER" >> $snap_env_sh
     echo "=====Simulation setup: Checking path to PSLSE=========="
     echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
     RESP=`grep PSLSE_ROOT $snap_env_sh`
