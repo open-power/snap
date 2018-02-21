@@ -40,7 +40,7 @@ if { [info exists ::env(PSL4N250SP_ROOT)] == 1 } {
 ## Create a new Vivado IP Project
 puts "\[CREATE_IPs..........\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 exec rm -rf $ip_dir
-create_project managed_ip_project $ip_dir/managed_ip_project -part $fpga_part -ip  >> $log_file
+create_project managed_ip_project $ip_dir/managed_ip_project -part $fpga_part -ip >> $log_file
 
 # Project IP Settings
 # General
@@ -51,20 +51,13 @@ set_property target_simulator IES [current_project]
 if { $fpga_card == "N250SP" } {
   puts "                        generating PSL for SNAP IP"
 
-  # Create 'sources_1' fileset (if not found)
-  if {[string equal [get_filesets -quiet sources_1] ""]} {
-    create_fileset -srcset sources_1 >> $log_file
-  }
-
   # Set IP repository paths
-  set obj [get_filesets sources_1]
-  set_property "ip_repo_paths" "[file normalize "$psl4n250sp_dir/FlashGTPlus/psl"]" $obj
-
+  set_property "ip_repo_paths" "[file normalize "$psl4n250sp_dir/FlashGTPlus/psl/ip_repo"]" [current_project] >> $log_file
   # Rebuild user ip_repo's index before adding any source files
   update_ip_catalog -rebuild >> $log_file
 
-  #source $psl4n250sp_dir/setup/create_ip.tcl >> $log_file
-  create_ip -name pcie4_uscale_plus -vendor xilinx.com -library ip -version 1.* -module_name pcie4_uscale_plus_0 -dir $ip_dir
+  #create_ip -name pcie4_uscale_plus -vendor xilinx.com -library ip -version 1.* -module_name pcie4_uscale_plus_0 -dir $ip_dir >> $log_file
+  create_ip -name pcie4_uscale_plus -vendor xilinx.com -library ip -module_name pcie4_uscale_plus_0 -dir $ip_dir >> $log_file
   set_property -dict [list                                               \
                       CONFIG.enable_gen4 {true}                          \
                       CONFIG.gen4_eieos_0s7 {true}                       \
@@ -78,6 +71,7 @@ if { $fpga_card == "N250SP" } {
                       CONFIG.PF0_REVISION_ID {02}                        \
                       CONFIG.PF0_SUBSYSTEM_ID {04dd}                     \
                       CONFIG.PF0_SUBSYSTEM_VENDOR_ID {1014}              \
+                      CONFIG.ins_loss_profile {Add-in_Card}              \
                       CONFIG.pf0_bar0_64bit {true}                       \
                       CONFIG.pf0_bar0_prefetchable {true}                \
                       CONFIG.pf0_bar0_scale {Megabytes}                  \
@@ -135,9 +129,15 @@ if { $fpga_card == "N250SP" } {
                       CONFIG.coreclk_freq {500}                          \
                       CONFIG.plltype {QPLL0}                             \
                       CONFIG.axisten_freq {250}                          \
-                     ] [get_ips pcie4_uscale_plus_0]
+                     ] [get_ips pcie4_uscale_plus_0] >> $log_file
+  set_property generate_synth_checkpoint false [get_files pcie4_uscale_plus_0.xci]
+  generate_target {instantiation_template}     [get_files pcie4_uscale_plus_0.xci] >> $log_file
+  generate_target all                          [get_files pcie4_uscale_plus_0.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files pcie4_uscale_plus_0.xci] -no_script -force >> $log_file
+  export_simulation    -of_objects             [get_files pcie4_uscale_plus_0.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
-  create_ip -name clk_wiz -vendor xilinx.com -library ip -version 5.* -module_name psl4n250sp_clk_wiz -dir  $ip_dir
+  #create_ip -name clk_wiz -vendor xilinx.com -library ip -version 5.* -module_name psl4n250sp_clk_wiz -dir $ip_dir
+  create_ip -name clk_wiz -vendor xilinx.com -library ip -module_name psl4n250sp_clk_wiz -dir $ip_dir >> $log_file
   set_property -dict [list                                    \
                       CONFIG.CLKIN1_JITTER_PS {40.0}          \
                       CONFIG.CLKOUT1_DRIVES {BUFG}            \
@@ -165,15 +165,32 @@ if { $fpga_card == "N250SP" } {
                       CONFIG.NUM_OUT_CLKS {2}                 \
                       CONFIG.NUM_OUT_CLKS {3}                 \
                       CONFIG.PRIM_IN_FREQ {250}               \
-                     ] [get_ips psl4n250sp_clk_wiz]
+                     ] [get_ips psl4n250sp_clk_wiz] >> $log_file
+  set_property generate_synth_checkpoint false [get_files psl4n250sp_clk_wiz.xci]
+  generate_target {instantiation_template}     [get_files psl4n250sp_clk_wiz.xci] >> $log_file
+  generate_target all                          [get_files psl4n250sp_clk_wiz.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files psl4n250sp_clk_wiz.xci] -no_script -force >> $log_file
+  export_simulation    -of_objects             [get_files psl4n250sp_clk_wiz.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
-  create_ip -name PSL9_WRAP -vendor ibm.com -library CAPI -version 1.* -module_name PSL9_WRAP_0 -dir $ip_dir
+  #create_ip -name sem_ultra -vendor xilinx.com -library ip -version 3.* -module_name sem_ultra_0 -dir $ip_dir
+  create_ip -name sem_ultra -vendor xilinx.com -library ip -module_name sem_ultra_0 -dir $ip_dir >> $log_file
+  set_property -dict [list                        \
+                      CONFIG.MODE {detect_only}	  \
+                      CONFIG.CLOCK_PERIOD {10000} \
+                     ] [get_ips sem_ultra_0] >> $log_file
+  set_property generate_synth_checkpoint false [get_files sem_ultra_0.xci]
+  generate_target {instantiation_template}     [get_files sem_ultra_0.xci] >> $log_file
+  generate_target all                          [get_files sem_ultra_0.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files sem_ultra_0.xci] -no_script -force >> $log_file
+  export_simulation    -of_objects             [get_files sem_ultra_0.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
-  generate_target all [get_files pcie4_uscale_plus_0.xci]
-  generate_target all [get_files psl4n250sp_clk_wiz.xci]
-  generate_target all [get_files PSL9_WRAP_0.xci]
+  create_ip -name PSL9_WRAP -vendor ibm.com -library CAPI -version 1.* -module_name PSL9_WRAP_0 -dir $ip_dir >> $log_file
+  set_property generate_synth_checkpoint false [get_files PSL9_WRAP_0.xci]
+  generate_target {instantiation_template}     [get_files PSL9_WRAP_0.xci] >> $log_file
+  generate_target all                          [get_files PSL9_WRAP_0.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files PSL9_WRAP_0.xci] -no_script -force >> $log_file
 
-  set status [catch {exec $psl4n250sp_dir/setup/patch_pcie.sh} ]
+  set status [catch {exec $psl4n250sp_dir/setup/patch_pcie.sh patch pcie4_uscale_plus_snap.patch ip_dir $ip_dir} ]
   if { $status != 0 } {
     puts "WARNING: $psl4n250sp_dir/setup/patch_pcie.sh returned status $status and error code $::errorCode"
   }
