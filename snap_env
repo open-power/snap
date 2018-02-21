@@ -187,7 +187,7 @@ while [ -z "$SETUP_DONE" ]; do
     echo "export ACTION_ROOT=$AR" >> $snap_env_sh
   fi
 
-  if [ -z "$AR" ]; then
+  if [ -z "$AR" ] && [ "$ignore_action_root" != "y" ]; then
     SETUP_EMPTY="$SETUP_EMPTY\n  ACTION_ROOT"
   else
     SNAP_ROOT=$snapdir
