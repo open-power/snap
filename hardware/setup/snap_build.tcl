@@ -110,8 +110,10 @@ if { $vivadoVer == "2017.4" } {
   open_checkpoint ./Checkpoints/${step}.dcp  >> $log_file
 
 
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Prevent placing inside" $widthCol3 "PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-  set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
+  if { $fpgacard != "N250SP" } {
+    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "Prevent placing inside" $widthCol3 "PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+    set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
+  }
 }
 
 ##
