@@ -25,7 +25,6 @@ set prj_name nvme
 set bd_name  nvme_top
 
 # Create NVME project
-puts "\[CREATE_NVMe.........\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 create_project   $prj_name $root_dir/ip/nvme -part $fpga_part -force >> $log_file
 set_property target_language VERILOG [current_project]
 #Create block design
@@ -345,7 +344,6 @@ save_bd_design >> $log_file
 puts "                        generating NVMe output products"
 set_property synth_checkpoint_mode None [get_files  $root_dir/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file 
 generate_target all                     [get_files  $root_dir/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
-puts "\[CREATE_NVMe.........\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
  
 #Close the project
 close_project >> $log_file

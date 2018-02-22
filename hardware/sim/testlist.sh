@@ -90,8 +90,9 @@
       case $t0l in
         "10140000") a0="hdl_example"
                     if (( dram > 1 ));then  # assume BRAM, if DRAM=1MB
-                      echo -e "write FPGA memory to prevent reading unwritten adr 0"
-                      step "$ACTION_ROOT/sw/snap_example_set -F -b0x0 -s0x100 -p0x5 -t50"
+                      echo -e "write FPGA memory to prevent reading unwritten adr 0"        # see Xilinx AR65732
+                      step "snap_example_set -h"
+                      step "snap_example_set -F -b0x0 -s0x100 -p0x5 -t150"
                     fi;;
         "10140001") a0="hdl_nvme_example";;
         "10141000") a0="hls_memcopy";;
@@ -103,6 +104,7 @@
         "10141006") a0="hls_intersect_s";;
         "00000108") a0="hls_blowfish";;
         "10141007") a0="hls_nvme_memcopy";;
+        "10141008") a0="hls_helloworld";;
         *) echo "unknown action0 type=$t0l, exiting";exit 1;;
       esac; echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="snap_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
@@ -125,6 +127,7 @@
         "10141006") a1="hls_intersect_s";;
         "00000108") a1="hls_blowfish";;
         "10141007") a1="hls_nvme_memcopy";;
+        "10141008") a1="hls_helloworld";;
         *) echo "unknown action1 type=$t1l, exiting";exit 1;;
       esac; echo "action0 type1s=$t1s type1l=$t1l $a1"
       t="snap_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
@@ -370,8 +373,8 @@
  #
     if [[ "$t0l" == "10141005" && "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect hash"
       step "snap_intersect -h"
-      step "snap_intersect    -m1 -v -t1200"
-      step "snap_intersect -I -m1 -v -t1200"
+      step "snap_intersect    -m1 -v -t2000"
+      step "snap_intersect -I -m1 -v -t2000"
       for table_num in 1 5 10; do
         let max=2*$table_num; rm -f table1.txt table2.txt
         $ACTION_ROOT/tests/gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
@@ -382,8 +385,8 @@
  #
     if [[ "$t0l" == "10141006" && "${env_action}" == "hls_intersect"* ]];then echo -e "$del\ntesting intersect sort"
       step "snap_intersect -h"
-      step "snap_intersect    -m2 -v -t1200"
-      step "snap_intersect -I -m2 -v -t1200"
+      step "snap_intersect    -m2 -v -t2000"
+      step "snap_intersect -I -m2 -v -t2000"
       for table_num in 1 5 10; do
         let max=2*$table_num; rm -f table1.txt table2.txt
         $ACTION_ROOT/tests/gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
@@ -418,6 +421,14 @@
         fi
       done
     fi # hls_nvme_memcopy
+ #
+    if [[ "$t0l" == "10141008" || "${env_action}" == "hls_helloworld"* ]];then echo -e "$del\ntesting helloworld"
+      step "snap_helloworld -h"
+      echo "Hello world. This is my first CAPI SNAP experience. It's real fun." >tin
+      cat tin |tr '[:lower:]' '[:upper:]' >tCAP
+      step "snap_helloworld -i tin -o tout"
+      if diff tout tCAP >/dev/null;then echo -e "file_diff ok$del";else echo -e "file_diff is wrong$del";cat t*;exit 1;fi
+    fi # hls_helloworld
  #
     if [[ "$t0l" == "00000108" || "${env_action}" == "hls_blowfish" ]];then echo -e "$del\ntesting blowfish"
       for blocks in 1 16 32 128 1024 4096 ; do  # blocks of 64B
