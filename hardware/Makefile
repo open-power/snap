@@ -110,7 +110,7 @@ SNAP_TMP_FILES =  $(SNAP_HARDWARE_ROOT)/sim/README.txt \
 
 SNAP_ACTION_DCP=$(DCP_ROOT)/user_action_synth.dcp
 SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
-PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl $(FPGACARD) $(PSL_DCP))
+PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl "$(FPGACARD)" "$(PSL_DCP)")
 
 #
 # FIXME Targets in this Makefile are to be build in the correct order.
@@ -431,7 +431,7 @@ $(SNAP_SIMULATORS): check_nvme .hw_project_done app
 	vivado -quiet -mode batch -source setup/export_$@.tcl -notrace -log $(LOGS_DIR)/compile_$@.log
 	$(SNAP_HARDWARE_ROOT)/setup/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1
 	cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so;
-	@echo -e "                        build a $@ model"; 
+	@echo -e "                        build a $@ model";
 	@cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@); \
 	./top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1; \
 	if [ $$? -ne 0 ]; then \
