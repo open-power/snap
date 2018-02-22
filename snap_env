@@ -94,12 +94,19 @@ while [ -z "$SETUP_DONE" ]; do
   # Note: Card N250SP is currently in preparation phase
   if [ "$FPGACARD" == "N250SP" ]; then
     SETUP_INFO="$SETUP_INFO\n### INFO ### Support for the selected CAPI2.0 FPGA card N250SP is currently in preparation phase."
-  fi
-
-
+    echo "=====Checking path to PSL for N250SP============"
+    echo "PSL4N250SP_ROOT         is set to: \"$PSL4N250SP_ROOT\""
+    RESP=`grep PSL4N250SP_ROOT $snap_env_sh`
+    if [ -z "$RESP" ]; then
+      echo "#export PSL4N250SP_ROOT=" >> $snap_env_sh
+    fi
+    if [ -z "$PSL4N250SP_ROOT" ]; then
+      SETUP_EMPTY="$SETUP_EMPTY\n  PSL4N250S_ROOT"
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### The environment variable PSL4N250SP_ROOT must point to the directory containing the PSL IP together with N250SP card support."
+    fi
   ####### checking path to PSL design checkpoint
   # Note: CLOUD_USER_FLOW is defined via snap_config
-  if [ "$CLOUD_USER_FLOW" == "TRUE" ]; then
+  elif [ "$CLOUD_USER_FLOW" == "TRUE" ]; then
     SETUP_INFO="$SETUP_INFO\n### INFO ### Cloud user flow is skipping PSL_DCP check"
   else
     echo "=====Checking path to PSL design checkpoint============"
