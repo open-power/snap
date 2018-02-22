@@ -15,8 +15,6 @@
 # limitations under the License.
 #
 #-----------------------------------------------------------
-create_pblock pblock_snap
-resize_pblock pblock_snap -add CLOCKREGION_X3Y0:CLOCKREGION_X3Y4
 resize_pblock pblock_snap -add {BITSLICE_RX_TX_X1Y0:BITSLICE_RX_TX_X1Y155} -locs keep_all
 resize_pblock pblock_snap -add {BITSLICE_CONTROL_X1Y0:BITSLICE_CONTROL_X1Y23} -locs keep_all
 resize_pblock pblock_snap -add {PLLE3_ADV_X1Y0:PLLE3_ADV_X1Y5} -locs keep_all
