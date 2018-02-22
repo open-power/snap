@@ -153,7 +153,11 @@ check_snap_settings:
 	@echo "                        =============================="
 	@echo "                        hardware/Makefile called with:"
 	@echo "                        ACTION_ROOT     = $(ACTION_ROOT)"
-	@echo "                        PSL_DCP         = $(PSL_DCP)"
+	@if [ "$(FPGACARD)" == "N250SP" ]; then \
+		echo "                        PSL4N250SP_ROOT = $(PSL4N250SP_ROOT)"; \
+	else \
+		echo "                        PSL_DCP         = $(PSL_DCP)"; \
+	fi
 	@echo "                        FPGACARD        = $(FPGACARD)"
 	@echo "                        FPGACHIP        = $(FPGACHIP)"
 	@echo "                        NUM_OF_ACTIONS  = $(NUM_OF_ACTIONS)"
