@@ -140,20 +140,50 @@ function test_hard()
 	local card=$2
 	local IMAGE=$3
 
-	echo "UPDATING Accel: $accel[$card] with Image: $IMAGE"
+	echo "`date` UPDATING Start"
+	echo "         Accel: $accel[$card] Image: $IMAGE"
 	pushd ../capi-utils > /dev/null
 	if [ $? -ne 0 ]; then
 		echo "Error: Can not start capi-flash-script.sh"
 		exit 1
 	fi
-	sudo ./capi-flash-script.sh -f -C $card -f $IMAGE
-	RC=$?
-	if [ $RC -ne 0 ]; then
-		mv $IMAGE $IMAGE.fault_flash
-		return $RC
-	fi
+
+	try_to_flash=0
+	while [ 1 ]; do
+		wait_flag=0
+		sudo ./capi-flash-script.sh -f -C $card -f $IMAGE
+		RC=$?
+		if [ $RC -eq 0 ]; then
+			break
+		fi
+		if [ $RC -eq 99 ]; then
+			# I do get Busy from capi_flash tool if the flash lock is in use
+			# Wait again or exit for Flashing
+			# Flashing takes about 90 to 100 sec
+			try_to_flash=$((try_to_flash+1))
+			if [ $try_to_flash -gt 20 ]; then
+				echo "`date` ERROR: Timeout While Waiting to Flash Accel: $accel[$card]"
+				popd > /dev/null
+				return $RC
+			fi
+			echo "`date`         ($try_to_flash of 20) Wait: Other capi-flash-script.sh in progress"
+			wait_flag=1
+			sleep 10
+		else
+			echo "`date` ERROR: I was not able to Flash Image: $IMAGE on Accel: $accel[$card]"
+			popd > /dev/null
+			mv $IMAGE $IMAGE.fault_flash
+			return $RC
+		fi
+	done
+
 	popd > /dev/null
-	echo "CHECKING Accel: $accel[$card] after update ..."
+	echo "`date` UPDATING done for $accel[$card]"
+	if [ $wait_flag -eq 1 ]; then
+		echo "Delay some time because of pending Flash"
+		sleep 15          # Allow other test to Flash
+		echo "`date` Testing Accel: $accel[$card]"
+	fi
 	./software/tools/snap_peek -C $card 0x0 -d2
 	RC=$?
 	if [ $RC -ne 0 ]; then
@@ -187,6 +217,8 @@ function usage() {
 	echo "        <ALL>    : Select ALL Cards"
 	echo "    [-F <Image>  : Set Image file for Accelerator -A"
 	echo "                   -A ALL is not valid if -F is used"
+	echo "    [-C <0,1,2,3]: Select Card 0,1,2 or 3"
+	echo "        Selct the Card# for test. The..."
 	echo "    [-h] Print this help"
 	echo "    Option -D must be set"
 	echo "    following combinations can happen"
@@ -211,10 +243,12 @@ function usage() {
 PROGRAM=$0
 BINFILE=""
 accel="ALL"
+CARD="-1"   # Select all Cards in System
 
-echo "---- `date`---- Executing: $PROGRAM $*"
+echo "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< JENKINS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+echo "`date` Test Starts On `hostname`"
 
-while getopts "D:A:F:h" opt; do
+while getopts "D:A:F:C:h" opt; do
 	case $opt in
 	D)
 		TARGET_DIR=$OPTARG;
@@ -226,12 +260,16 @@ while getopts "D:A:F:h" opt; do
 		   [[ $accel != "ADKU3"  ]] &&
 		   [[ $accel != "S121B"  ]] &&
 		   [[ $accel != "ALL"    ]]; then
-			echo "Error: -A $OPTARG is not valid !" >&2
+			echo "Error:  Option -A $OPTARG is not valid !" >&2
+			echo "Expect: [N250S N250SP ADKU3 S121B or ALL]" >&2
 			exit 1
 		fi
 		;;
 	F)
 		BINFILE=$OPTARG;
+		;;
+	C)
+		CARD=$OPTARG;
 		;;
 	h)
 		usage;
@@ -244,13 +282,15 @@ while getopts "D:A:F:h" opt; do
 done
 
 MY_DIR=`basename $PWD`
+echo "Testing in  : $MY_DIR"
 echo "Using Accel : $accel"
+echo "Using Card# : $CARD"
 echo "Using Image : $BINFILE"
 
 if [[ $TARGET_DIR != $MY_DIR ]] ; then
 	echo "Target Dir:  $TARGET_DIR"
 	echo "Current Dir: $MY_DIR"
-	echo "Error: Dir Mismatch, please fix"
+	echo "Error: Target and Current Dir must match. Please fix with -D Option"
 	exit 1;
 fi
 echo "Source PATH and LD_LIBRARY_PATH"
@@ -265,51 +305,88 @@ echo "Source PATH and LD_LIBRARY_PATH"
 test_done=0
 if [[ $accel != "ALL" ]]; then
 	if [[ $BINFILE != "" ]]; then
-		echo "Flash and test Accel: $accel using: $BINFILE"
+		echo "Flash and test Accel: $accel Card: $CARD using: $BINFILE"
 		for IMAGE in `ls -tr $BINFILE 2>/dev/null`; do
 			if [ ! -f $IMAGE ]; then
 				echo "Error: Can not locate: $BINFILE"
 				exit 1
 			fi
-			echo "---> Test Image# $test_done File: $IMAGE on $accel"
-			MY_CARDS=`./software/tools/snap_find_card -A $accel`
-			if [ $? -eq 0 ]; then
-				echo "Error: Can not find $accel Card in `hostname` !"
-				exit 1;
-			fi
-			for card in $MY_CARDS ; do
-				test_hard $accel $card $BINFILE
-				if [ $? -ne 0 ]; then
+			echo "---> Test Image# $test_done File: $IMAGE on $accel Card: $CARD"
+			if [ $CARD -eq "-1" ]; then
+				# Get all Cards in this System for Accel type i have to test
+				MY_CARDS=`./software/tools/snap_find_card -A $accel`
+				if [ $? -eq 0 ]; then
+					echo "Error: Can not find $accel Card in `hostname` !"
+					exit 1;
+				fi
+				for card in $MY_CARDS ; do
+					test_hard $accel $card $BINFILE
+					if [ $? -ne 0 ]; then
+						exit 1
+					fi
+					test_done=$((test_done +1))
+				done
+			else
+				# -C Option was set.
+				# Make sure i did get the correct values for -A and -C
+				accel_to_use=`./software/tools/snap_find_card -C $CARD`
+				if [ "$accel_to_use" == "$accel" ]; then
+					test_hard $accel $CARD $BINFILE
+					if [ $? -ne 0 ]; then
+						exit 1
+					fi
+					test_done=$((test_done +1))
+				else
+					echo "Error: CAPI Card: $CARD is not Accel Type: $accel"
+					echo "       CAPI Card: $CARD Accel Type is : $accel_to_use"
 					exit 1
 				fi
-				test_done=$((test_done +1))
-			done
+			fi
 		done
 		if [ $test_done -eq 0 ]; then
 			echo "Error: Test of Image: $IMAGE failed !"
 			echo "       File: $BINFILE not found"
 			exit 1
 		fi
-		echo "Image Test on Accel: $accel was executed $test_done time(s)"
+		echo "`date` Image Test on Accel: $accel was executed $test_done time(s)"
 		exit 0
 	fi
 	# Parm (-A Nallatech 250S or AlphaData KU3 or Semptian NSA121B) was set, but no file (-F) to test
 	# Run Software Test on one Type of Card
-	echo "Test Software on: $accel"
-	MY_CARDS=`./software/tools/snap_find_card -A $accel`
-	if [ $? -eq 0 ]; then
-		echo "Error: Can not find Accel: $accel"
-		exit 1;
-	fi
-	# MY_CARDS is a list of cards from type accel e.g: 0 1
-	echo "Testing on  $accel[$MY_CARDS]"
-	for card in $MY_CARDS ; do
-		test_soft $accel $card
-		if [ $? -ne 0 ]; then
+	echo "Test Software on: $accel Card: $CARD"
+	if [ $CARD -eq "-1" ]; then
+		# I will use all Cards if Card is set to -1
+		MY_CARDS=`./software/tools/snap_find_card -A $accel`
+		if [ $? -eq 0 ]; then
+			echo "Error: Can not find Accel: $accel"
+			exit 1;
+		fi
+		# MY_CARDS is a list of cards from type accel e.g: 0 1
+		echo "Testing on  $accel[$MY_CARDS]"
+		for card in $MY_CARDS ; do
+			test_soft $accel $card
+			if [ $? -ne 0 ]; then
+				exit 1
+			fi
+			test_done=$((test_done + 1))
+		done
+	else
+		# -C Option was set:
+		# Make sure i did get the correct values for Card and Accel (-C and -A)
+		accel_to_use=`./software/tools/snap_find_card -C $CARD`
+		if [ "$accel_to_use" == "$accel" ]; then
+			test_soft $accel $CARD
+			if [ $? -ne 0 ]; then
+				exit 1
+			fi
+			test_done=$((test_done +1))
+		else
+			echo "Error: CAPI Card: $CARD is not Accel Type: $accel"
+			echo "       CAPI Card: $CARD Accel Type is : $accel_to_use"
 			exit 1
 		fi
-		test_done=$((test_done + 1))
-	done
+	fi
+
 	if [ $test_done -eq 0 ]; then
 		echo "Error: Software Test on Accel: $accel[$card] failed"
 		exit 1
@@ -356,5 +433,5 @@ if [ $test_done -eq 0 ]; then
 	echo "Error: Software Test did not detect any card for test"
 	exit 1
 fi
-echo "Software Test was executed $test_done times"
+echo "`date` Software Test was executed $test_done times"
 exit 0

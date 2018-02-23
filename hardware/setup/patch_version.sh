@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 ###############################################################################
+set -e
 NAME=`basename $2`
 
 SNAP_BUILD_DATE=`date "+%Y_%m%d_%H%M"`

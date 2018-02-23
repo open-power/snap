@@ -19,7 +19,7 @@
 set root_dir          $::env(SNAP_HARDWARE_ROOT)
 set log_dir           $::env(LOGS_DIR)
 set log_file          $log_dir/snap_cloud_build.log
-set fpga_card         $::env(FPGACARD)
+set fpgacard         $::env(FPGACARD)
 set sdram_used        $::env(SDRAM_USED)
 set nvme_used         $::env(NVME_USED)
 set bram_used         $::env(BRAM_USED)
@@ -87,10 +87,8 @@ if { ([get_property pr_flow [current_project]] != 1) } {
   set_property PR_CONFIGURATION config_1 [get_runs impl_1]
 
   # ADD constrains files for PR flow
-  if { $fpga_card == "ADKU3" } {
+  if { $fpgacard == "ADKU3" } {
     if { $sdram_used == "TRUE" } {
-      ########
-      # TODO Update PR flow for Vivado 2017.4
       add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/action_pblock.xdc
       set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/action_pblock.xdc]
       add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_pblock_sdram.xdc
@@ -102,14 +100,14 @@ if { ([get_property pr_flow [current_project]] != 1) } {
       add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_pblock_noram.xdc
       set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_pblock_noram.xdc]
     }  
-  } elseif { $fpga_card == "N250S" } {
+  } elseif { $fpgacard == "N250S" } {
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/action_pblock.xdc
+    set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/action_pblock.xdc]    
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/snap_pblock.xdc
+    set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/snap_pblock.xdc]
     if { $sdram_used == "TRUE" } {
       add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/snap_ddr4_pblock.xdc
       set_property used_in_synthesis false [get_files $root_dir/setup/N250S/snap_ddr4_pblock.xdc]
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/action_pblock.xdc
-      set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/action_pblock.xdc]
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/snap_pblock.xdc
-      set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/snap_pblock.xdc]
     }
 
     if { $nvme_used == "TRUE" } {
@@ -122,6 +120,7 @@ if { ([get_property pr_flow [current_project]] != 1) } {
 ## 
 ## BASE run
 if { $cloud_run == "BASE" } {
+
   # Vivado 2017.4 needs to reimport PSL DCP
   if { ([info exists ::env(PSL_DCP)] == 1) && ($vivadoVer == "2017.4") } {
     set psl_dcp $::env(PSL_DCP)
@@ -199,32 +198,9 @@ if { $cloud_run == "BASE" } {
       set remove_tmp_files "TRUE"
   }
 
-## 
-## IMAGE run
-} elseif { $cloud_run == "IMAGE" } {
-
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "create SNAP cloud_run" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format{%T %a %b %d %Y}]"]
-  # Create PR run
-  create_reconfig_module -name cloud_build -partition_def [get_partition_defs snap_action ] -gate_level -top action_wrapper >> $log_file
-  add_files -norecurse $dcp_dir/user_action_synth.dcp -of_objects [get_reconfig_modules cloud_build] >> $log_file
-  create_pr_configuration -name cloud_config -partitions [list a0/action_w:cloud_build ] >> $log_file
-  create_run cloud_run -parent_run impl_1 -flow {Vivado Implementation 2016} -pr_config cloud_config >> $log_file
-
-  set_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE        Explore [get_runs cloud_run]
-  set_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE      Explore [get_runs cloud_run]
-  set_property STEPS.PHYS_OPT_DESIGN.IS_ENABLED       true    [get_runs cloud_run]
-  set_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE   Explore [get_runs cloud_run]
-  set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE      Explore [get_runs cloud_run]  
-
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start implementation" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-
-  reset_run    cloud_run >> $log_file
-  launch_runs  cloud_run >> $log_file
-  wait_on_run  cloud_run >> $log_file
-
   if { $cloud_build_bitfile == "TRUE" } {
-    ##
-    ## generating bitstream name
+  ##
+  ## generating bitstream name
     set IMAGE_NAME [exec cat ../.bitstream_name.txt]
     append IMAGE_NAME [expr {$nvme_used == "TRUE" ? "_NVME" : ""}]
     if { $bram_used == "TRUE" } {
@@ -235,8 +211,6 @@ if { $cloud_run == "BASE" } {
       set RAM_TYPE noSDRAM
     }
     append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_TNS]
-
-    open_run     cloud_run -name cloud_run >> $log_file
 
     ##
     ### writing bitstream
@@ -252,9 +226,7 @@ if { $cloud_run == "BASE" } {
     } else {
       write_cfgmem -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME -size 128 -interface BPIx16 -force >> $logfile
     }
-
   }
-
 ## 
 ## ACTION run
 } elseif { $cloud_run == "ACTION" } {
