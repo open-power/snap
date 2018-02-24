@@ -198,14 +198,16 @@ export_simulation -of_objects [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] -dir
 #choose type of RAM that will be connected to the DDR AXI Interface
 # BRAM_USED=TRUE  500KB BRAM
 # SDRAM_USED=TRUE   8GB AlphaData KU3  DDR3 RAM
-# SDRAM_USED=TRUE   4GB Nallatech 250S DDR4 RAM
+# SDRAM_USED=TRUE   4GB Nallatech 250S/250SP DDR4 RAM
 # SDRAM_USED=TRUE   8GB Semptian NSA121B DDR4 RAM
+# SDRAM_USED=TRUE   8GB AlphaData 8K5 DDR4 RAM
 set create_clock_conv  FALSE
 set create_interconect FALSE
 set create_bram        FALSE
 set create_ddr3        FALSE
 set create_ddr4        FALSE
 set create_ddr4_s121b  FALSE
+set create_ddr4_ad8k5  FALSE
 
 if { $fpga_card == "ADKU3" } {
   if { $bram_used == "TRUE" } {
@@ -222,6 +224,14 @@ if { $fpga_card == "ADKU3" } {
   } elseif { $sdram_used == "TRUE" } {
     set create_clock_conv  TRUE
     set create_ddr4_s121b    TRUE
+  }
+} elseif { $fpga_card == "AD8K5" } {
+  if { $bram_used == "TRUE" } {
+    set create_clock_conv  TRUE
+    set create_bram        TRUE
+  } elseif { $sdram_used == "TRUE" } {
+    set create_clock_conv  TRUE
+    set create_ddr4_ad8k5    TRUE
   }
 } elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } { 
   if { $bram_used == "TRUE" } {
@@ -246,7 +256,7 @@ if { $create_clock_conv == "TRUE" } {
   puts "                        generating IP axi_clock_converter"
   create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir  >> $log_file
 
-  if { ($sdram_used == "TRUE") && ( $fpga_card == "ADKU3" || $fpga_card == "S121B") } {
+  if { ($sdram_used == "TRUE") && ( $fpga_card == "ADKU3" || $fpga_card == "S121B" || $fpga_card == "AD8K5" ) } {
     set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]
   } else {
     set_property -dict [list CONFIG.ADDR_WIDTH {32} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]
@@ -401,6 +411,37 @@ if { $create_ddr4_s121b == "TRUE" } {
                       CONFIG.C0.DDR4_AxiIDWidth {4} 					     \
                       CONFIG.C0.BANK_GROUP_WIDTH {2}					     \
                      ] [get_ips ddr4sdram] >> $log_file
+  set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
+  generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
+  generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -no_script -force  >> $log_file
+  export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+
+  #DDR4 create ddr4sdramm example design
+  puts "	                        generating ddr4sdram example design"
+  open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
+}
+#DDR4 create ddr4sdramm with ECC (AD8K5)
+if { $create_ddr4_ad8k5 == "TRUE" } {
+  puts "	                        generating IP ddr4sdram"
+  create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
+#  MT40A1G8PM-083E?
+#  set_property -dict [list                                                                   \
+#                      CONFIG.C0.DDR4_MemoryPart {MT40A1G8PM-075E} 			     \
+#                      CONFIG.C0.DDR4_TimePeriod {833} 				             \
+#                      CONFIG.C0.DDR4_InputClockPeriod {2499} 				     \
+#                      CONFIG.C0.DDR4_CasLatency {17} 					     \
+#                      CONFIG.C0.DDR4_CasWriteLatency {12} 				     \
+#                      CONFIG.C0.DDR4_DataWidth {72} 					     \
+#                      CONFIG.C0.DDR4_AxiSelection {true} 				     \
+#                      CONFIG.Simulation_Mode {Unisim} 				             \
+#                      CONFIG.C0.DDR4_DataMask {NO_DM_NO_DBI} 				     \
+#                      CONFIG.C0.DDR4_Ecc {true} 					     \
+#                      CONFIG.C0.DDR4_AxiDataWidth {512} 				     \
+#                      CONFIG.C0.DDR4_AxiAddressWidth {33} 				     \
+#                      CONFIG.C0.DDR4_AxiIDWidth {4} 					     \
+#                      CONFIG.C0.BANK_GROUP_WIDTH {2}					     \
+#                     ] [get_ips ddr4sdram] >> $log_file
   set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
   generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
   generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file

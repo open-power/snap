@@ -55,6 +55,14 @@ ifeq "$(FPGACARD)" "S121B"
 	       FPGA_CARD=s121b
 	       CAPI_VER=capi10
 endif
+ifeq "$(FPGACARD)" "AD8K5"
+	export DDR3_USED=FALSE
+	export DDR4_USED=$(SDRAM_USED)
+	export DDRI_USED=$(SDRAM_USED)
+	export NVME_USED=FALSE
+	       FPGA_CARD=ad8k5
+	       CAPI_VER=capi10
+endif
 
 ifeq "$(FPGACARD)" "N250S"
 	export DDR3_USED=FALSE

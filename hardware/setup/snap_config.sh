@@ -31,12 +31,18 @@ elif [ "$FPGACARD" == "N250S" ]; then
   if [ "${SDRAM_USED^^}" == "TRUE" ]; then
     SDRAM_SIZE="x\"1000\""
   fi
-else
+elif [ "$FPGACARD" == "S121B" ]; then
   CARD_TYPE="x\"02\""
   if [ "${SDRAM_USED^^}" == "TRUE" ]; then
     SDRAM_SIZE="x\"2000\""
   fi
+else
+  CARD_TYPE="x\"03\""
+  if [ "${SDRAM_USED^^}" == "TRUE" ]; then
+    SDRAM_SIZE="x\"2000\""
+  fi
 fi
+
 if [ "$FPGACARD" == "N250SP" ]; then
   CARD_TYPE="x\"10\""
 fi
