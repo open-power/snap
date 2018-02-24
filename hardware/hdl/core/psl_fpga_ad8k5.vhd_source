@@ -37,7 +37,7 @@ ENTITY psl_fpga IS
     -- SNAP is only using the the second DIMM C2 (C1 DIMM not used.)                      
     c2_sys_clk_p              : IN    STD_LOGIC;                               
     c2_sys_clk_n              : IN    STD_LOGIC;                               
-    c2_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);           
+    c2_ddr4_adr               : OUT   STD_LOGIC_VECTOR(17 DOWNTO 0); -- AD8K5 supports at most 16GB per port        
     c2_ddr4_ba                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);            
     c2_ddr4_cke               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
     c2_ddr4_cs_n              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
@@ -193,7 +193,7 @@ Component psl_accel
        -- DDR4 SDRAM Interface                                                     
        c2_sys_clk_p              : IN    STD_LOGIC;                                
        c2_sys_clk_n              : IN    STD_LOGIC;                                
-       c2_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);            
+       c2_ddr4_adr               : OUT   STD_LOGIC_VECTOR(17 DOWNTO 0); -- AD8K5 supports at most 16GB per port            
        c2_ddr4_ba                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);             
        c2_ddr4_cke               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);             
        c2_ddr4_cs_n              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);             
@@ -455,7 +455,7 @@ begin
 #ifdef CONFIG_ENABLE_DDR4
          c2_sys_clk_p            => c2_sys_clk_p    ,	  
          c2_sys_clk_n            => c2_sys_clk_n    ,	  
-         c2_ddr4_adr             => c2_ddr4_adr     ,	  
+         c2_ddr4_adr             => c2_ddr4_adr(16 downto 0)     ,	  
          c2_ddr4_ba              => c2_ddr4_ba      ,     
          c2_ddr4_cke             => c2_ddr4_cke     ,	  
          c2_ddr4_cs_n            => c2_ddr4_cs_n    ,	  
@@ -480,6 +480,9 @@ begin
     gold_factory <= '1'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
 #endif
 
+#ifdef CONFIG_ENABLE_DDR4
+    c2_ddr4_adr(17) <= '0'; -- Currently support 8GB-per-port. This bit is reserved for 16GB-per-port version.
+#endif
     b: base_img
      PORT MAP (
          pci_pi_nperst0 => pci_pi_nperst0,
