@@ -532,23 +532,6 @@ ARCHITECTURE psl_accel OF psl_accel IS
       c0_ddr4_ui_clk                    : OUT   STD_LOGIC;
       c0_ddr4_ui_clk_sync_rst           : OUT   STD_LOGIC;
       c0_ddr4_aresetn                   : IN    STD_LOGIC;
-      c0_ddr4_s_axi_ctrl_awvalid        : IN    STD_LOGIC;
-      c0_ddr4_s_axi_ctrl_awready        : OUT   STD_LOGIC;
-      c0_ddr4_s_axi_ctrl_awaddr         : IN    STD_LOGIC_VECTOR(C_AXI_CTRL_REG_ADDR_WIDTH-1 DOWNTO 0);
-      c0_ddr4_s_axi_ctrl_wvalid         : IN    STD_LOGIC;
-      c0_ddr4_s_axi_ctrl_wready         : OUT   STD_LOGIC;
-      c0_ddr4_s_axi_ctrl_wdata          : IN    STD_LOGIC_VECTOR(C_AXI_CTRL_REG_DATA_WIDTH-1 DOWNTO 0);
-      c0_ddr4_s_axi_ctrl_bvalid         : OUT   STD_LOGIC;
-      c0_ddr4_s_axi_ctrl_bready         : IN    STD_LOGIC;
-      c0_ddr4_s_axi_ctrl_bresp          : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-      c0_ddr4_s_axi_ctrl_arvalid        : IN    STD_LOGIC;
-      c0_ddr4_s_axi_ctrl_arready        : OUT   STD_LOGIC;
-      c0_ddr4_s_axi_ctrl_araddr         : IN    STD_LOGIC_VECTOR(C_AXI_CTRL_REG_ADDR_WIDTH-1 DOWNTO 0);
-      c0_ddr4_s_axi_ctrl_rvalid         : OUT   STD_LOGIC;
-      c0_ddr4_s_axi_ctrl_rready         : IN    STD_LOGIC;
-      c0_ddr4_s_axi_ctrl_rdata          : OUT   STD_LOGIC_VECTOR(C_AXI_CTRL_REG_DATA_WIDTH-1 DOWNTO 0);
-      c0_ddr4_s_axi_ctrl_rresp          : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-      c0_ddr4_interrupt                 : OUT   STD_LOGIC;
       c0_ddr4_s_axi_awid                : IN    STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
       c0_ddr4_s_axi_awaddr              : IN    STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0);
       c0_ddr4_s_axi_awlen               : IN    STD_LOGIC_VECTOR(7 DOWNTO 0);
@@ -701,23 +684,6 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL sdram_init_calib_complete      : STD_LOGIC;
   SIGNAL sdram_ui_clk                   : STD_LOGIC;
   SIGNAL sdram_ui_clk_sync_rst          : STD_LOGIC;
-  SIGNAL sdram_axi_ctrl_awvalid         : STD_LOGIC;
-  SIGNAL sdram_axi_ctrl_awready         : STD_LOGIC;
-  SIGNAL sdram_axi_ctrl_awaddr          : STD_LOGIC_VECTOR(31 DOWNTO 0);
-  SIGNAL sdram_axi_ctrl_wvalid          : STD_LOGIC;
-  SIGNAL sdram_axi_ctrl_wready          : STD_LOGIC;
-  SIGNAL sdram_axi_ctrl_wdata           : STD_LOGIC_VECTOR(31 DOWNTO 0);
-  SIGNAL sdram_axi_ctrl_bvalid          : STD_LOGIC;
-  SIGNAL sdram_axi_ctrl_bready          : STD_LOGIC;
-  SIGNAL sdram_axi_ctrl_bresp           : STD_LOGIC_VECTOR(1 DOWNTO 0);
-  SIGNAL sdram_axi_ctrl_arvalid         : STD_LOGIC;
-  SIGNAL sdram_axi_ctrl_arready         : STD_LOGIC;
-  SIGNAL sdram_axi_ctrl_araddr          : STD_LOGIC_VECTOR(31 DOWNTO 0);
-  SIGNAL sdram_axi_ctrl_rvalid          : STD_LOGIC;
-  SIGNAL sdram_axi_ctrl_rready          : STD_LOGIC;
-  SIGNAL sdram_axi_ctrl_rdata           : STD_LOGIC_VECTOR(31 DOWNTO 0);
-  SIGNAL sdram_axi_ctrl_rresp           : STD_LOGIC_VECTOR(1 DOWNTO 0);
-  SIGNAL sdram_interrupt                : STD_LOGIC;
   SIGNAL refclk_sdram_ibuf              : STD_LOGIC;
   SIGNAL refclk_sdram_bufg              : STD_LOGIC;
 #endif
@@ -989,20 +955,6 @@ BEGIN
     );
 
 
-#ifdef CONFIG_ENABLE_DDRI
-  --
-  -- SDRAM
-  --
-  sdram_axi_ctrl_awvalid   <= '0';
-  sdram_axi_ctrl_awaddr    <= (OTHERS => '0');
-  sdram_axi_ctrl_wvalid    <= '0';
-  sdram_axi_ctrl_wdata     <= (OTHERS => '0');
-  sdram_axi_ctrl_bready    <= '0';
-  sdram_axi_ctrl_arvalid   <= '0';
-  sdram_axi_ctrl_araddr    <= (OTHERS => '0');
-  sdram_axi_ctrl_rready    <= '0';
-#endif
-
 #if defined(CONFIG_ENABLE_DDRI) && !defined(CONFIG_ENABLE_BRAM)
   sdram_axi_clk   <= sdram_ui_clk;
   sdram_axi_rst_n <= NOT sdram_ui_clk_sync_rst;
@@ -1206,23 +1158,6 @@ BEGIN
       c0_ddr4_ui_clk             => sdram_ui_clk,
       c0_ddr4_ui_clk_sync_rst    => sdram_ui_clk_sync_rst,
       c0_ddr4_aresetn            => sdram_reset_n_q,
-      c0_ddr4_s_axi_ctrl_awvalid => sdram_axi_ctrl_awvalid,
-      c0_ddr4_s_axi_ctrl_awready => sdram_axi_ctrl_awready,
-      c0_ddr4_s_axi_ctrl_awaddr  => sdram_axi_ctrl_awaddr,
-      c0_ddr4_s_axi_ctrl_wvalid  => sdram_axi_ctrl_wvalid,
-      c0_ddr4_s_axi_ctrl_wready  => sdram_axi_ctrl_wready,
-      c0_ddr4_s_axi_ctrl_wdata   => sdram_axi_ctrl_wdata,
-      c0_ddr4_s_axi_ctrl_bvalid  => sdram_axi_ctrl_bvalid,
-      c0_ddr4_s_axi_ctrl_bready  => sdram_axi_ctrl_bready,
-      c0_ddr4_s_axi_ctrl_bresp   => sdram_axi_ctrl_bresp,
-      c0_ddr4_s_axi_ctrl_arvalid => sdram_axi_ctrl_arvalid,
-      c0_ddr4_s_axi_ctrl_arready => sdram_axi_ctrl_arready,
-      c0_ddr4_s_axi_ctrl_araddr  => sdram_axi_ctrl_araddr,
-      c0_ddr4_s_axi_ctrl_rvalid  => sdram_axi_ctrl_rvalid,
-      c0_ddr4_s_axi_ctrl_rready  => sdram_axi_ctrl_rready,
-      c0_ddr4_s_axi_ctrl_rdata   => sdram_axi_ctrl_rdata,
-      c0_ddr4_s_axi_ctrl_rresp   => sdram_axi_ctrl_rresp,
-      c0_ddr4_interrupt          => sdram_interrupt,
       c0_ddr4_s_axi_awid         => sdram_axi_awid,
       c0_ddr4_s_axi_awaddr       => sdram_axi_awaddr,
       c0_ddr4_s_axi_awlen        => sdram_axi_awlen,
