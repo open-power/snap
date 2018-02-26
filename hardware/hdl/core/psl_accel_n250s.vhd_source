@@ -647,7 +647,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       S01_AXI_RREADY          : IN  STD_LOGIC;
       M00_AXI_ARESET_OUT_N    : OUT STD_LOGIC;
       M00_AXI_ACLK            : IN  STD_LOGIC;
-      M00_AXI_AWID            : OUT STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH-1   DOWNTO 0);
+      M00_AXI_AWID            : OUT STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH   DOWNTO 0);
       M00_AXI_AWADDR          : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
       M00_AXI_AWLEN           : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
       M00_AXI_AWSIZE          : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -663,11 +663,11 @@ ARCHITECTURE psl_accel OF psl_accel IS
       M00_AXI_WLAST           : OUT STD_LOGIC;
       M00_AXI_WVALID          : OUT STD_LOGIC;
       M00_AXI_WREADY          : IN  STD_LOGIC;
-      M00_AXI_BID             : IN  STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
+      M00_AXI_BID             : IN  STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH DOWNTO 0);
       M00_AXI_BRESP           : IN  STD_LOGIC_VECTOR(1 DOWNTO 0);
       M00_AXI_BVALID          : IN  STD_LOGIC;
       M00_AXI_BREADY          : OUT STD_LOGIC;
-      M00_AXI_ARID            : OUT STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
+      M00_AXI_ARID            : OUT STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH DOWNTO 0);
       M00_AXI_ARADDR          : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
       M00_AXI_ARLEN           : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
       M00_AXI_ARSIZE          : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -678,7 +678,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       M00_AXI_ARQOS           : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
       M00_AXI_ARVALID         : OUT STD_LOGIC;
       M00_AXI_ARREADY         : IN  STD_LOGIC;
-      M00_AXI_RID             : IN  STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
+      M00_AXI_RID             : IN  STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH DOWNTO 0);
       M00_AXI_RDATA           : IN  STD_LOGIC_VECTOR(511 DOWNTO 0);
       M00_AXI_RRESP           : IN  STD_LOGIC_VECTOR(1 DOWNTO 0);
       M00_AXI_RLAST           : IN  STD_LOGIC;
@@ -1207,6 +1207,11 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL sys_clk_nvme_ch0_gt            : STD_LOGIC;
   SIGNAL sys_clk_nvme_ch1               : STD_LOGIC;
   SIGNAL sys_clk_nvme_ch1_gt            : STD_LOGIC;
+  -- TMP NVME
+  SIGNAL tmp_sdram_axi_arid             : STD_LOGIC_VECTOR (C_AXI_CARD_MEM0_ID_WIDTH downto 0);
+  SIGNAL tmp_sdram_axi_awid             : STD_LOGIC_VECTOR (C_AXI_CARD_MEM0_ID_WIDTH downto 0);
+  SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (C_AXI_CARD_MEM0_ID_WIDTH downto 0);
+  SIGNAL tmp_sdram_axi_rid              : STD_LOGIC_VECTOR (C_AXI_CARD_MEM0_ID_WIDTH downto 0);
 #endif
 
 BEGIN
@@ -1650,6 +1655,11 @@ BEGIN
   nvm_axi_card_mem0_bid  (2 downto 0) <= "000";
   nvm_axi_card_mem0_rid  (2 downto 0) <= "000";
 
+  sdram_axi_arid    <= tmp_sdram_axi_arid(3 DOWNTO 0);
+  sdram_axi_awid    <= tmp_sdram_axi_awid(3 DOWNTO 0);                    
+  tmp_sdram_axi_bid <= '0' & sdram_axi_bid(3 DOWNTO 0);
+  tmp_sdram_axi_rid <= '0' & sdram_axi_rid(3 DOWNTO 0);
+  
   axi_interconnect_i : axi_interconnect
     PORT MAP (
       INTERCONNECT_ACLK       => ha_pclock,
@@ -1744,7 +1754,7 @@ BEGIN
       m00_axi_araddr          => sdram_axi_araddr,
       m00_axi_arburst         => sdram_axi_arburst,
       m00_axi_arcache         => sdram_axi_arcache,
-      m00_axi_arid            => sdram_axi_arid,
+      m00_axi_arid            => tmp_sdram_axi_arid,
       m00_axi_arlen           => sdram_axi_arlen,
       m00_axi_arlock          => open, -- sdram_axi_arlock,
       m00_axi_arprot          => sdram_axi_arprot,
@@ -1755,7 +1765,7 @@ BEGIN
       m00_axi_awaddr          => sdram_axi_awaddr,
       m00_axi_awburst         => sdram_axi_awburst,
       m00_axi_awcache         => sdram_axi_awcache,
-      m00_axi_awid            => sdram_axi_awid,
+      m00_axi_awid            => tmp_sdram_axi_awid,
       m00_axi_awlen           => sdram_axi_awlen,
 --      m00_axi_awlock        => sdram_axi_awlock,
       m00_axi_awprot          => sdram_axi_awprot,
@@ -1763,12 +1773,12 @@ BEGIN
       m00_axi_awready         => sdram_axi_awready,
       m00_axi_awsize          => sdram_axi_awsize,
       m00_axi_awvalid         => sdram_axi_awvalid,
-      m00_axi_bid             => sdram_axi_bid,
+      m00_axi_bid             => tmp_sdram_axi_bid,
       m00_axi_bready          => sdram_axi_bready,
       m00_axi_bresp           => sdram_axi_bresp,
       m00_axi_bvalid          => sdram_axi_bvalid,
       m00_axi_rdata           => sdram_axi_rdata,
-      m00_axi_rid             => sdram_axi_rid,
+      m00_axi_rid             => tmp_sdram_axi_rid,
       m00_axi_rlast           => sdram_axi_rlast,
       m00_axi_rready          => sdram_axi_rready,
       m00_axi_rresp           => sdram_axi_rresp,
