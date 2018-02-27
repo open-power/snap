@@ -63,9 +63,9 @@ ENTITY psl_fpga IS
     b_flash_dq: inout std_logic_vector(0 to 11);
 
     -- PTMON PMBUS
-    b_basei2c_scl: inout std_logic;                                       -- clock
-    b_basei2c_sda: inout std_logic;                                       -- data
-    i_cable_present_l: in std_logic;                                      -- detect external cable low active
+       --b_basei2c_scl: inout std_logic;                                       -- clock
+       --b_basei2c_sda: inout std_logic;                                       -- data
+       --i_cable_present_l: in std_logic;                                      -- detect external cable low active
 
     -- pci interface
     pci_pi_nperst0: in std_logic;                                         -- Active low reset from the PCIe reset pin of the device
@@ -193,7 +193,7 @@ Component psl_accel
        -- DDR4 SDRAM Interface                                                     
        c2_sys_clk_p              : IN    STD_LOGIC;                                
        c2_sys_clk_n              : IN    STD_LOGIC;                                
-       c2_ddr4_adr               : OUT   STD_LOGIC_VECTOR(17 DOWNTO 0); -- AD8K5 supports at most 16GB per port            
+       c2_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0); -- AD8K5 supports at most 16GB per port            
        c2_ddr4_ba                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);             
        c2_ddr4_cke               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);             
        c2_ddr4_cs_n              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);             
@@ -224,9 +224,9 @@ Component base_img
        b_flash_dq: inout std_logic_vector(0 to 11);
 
        -- PTMON PMBUS
-       b_basei2c_scl: inout std_logic;                                       -- clock
-       b_basei2c_sda: inout std_logic;                                       -- data
-       i_cable_present_l: in std_logic;                                      -- detect external cable low active
+       --b_basei2c_scl: inout std_logic;                                       -- clock
+       --b_basei2c_sda: inout std_logic;                                       -- data
+       --i_cable_present_l: in std_logic;                                      -- detect external cable low active
 
        -- pci interface
        pci_pi_nperst0: in std_logic;                                         -- Active low reset from the PCIe reset pin of the device
@@ -530,9 +530,9 @@ begin
          b_flash_dq => b_flash_dq,
 
          --PTMON PMBUS
-         b_basei2c_scl => b_basei2c_scl,
-         b_basei2c_sda => b_basei2c_sda,
-         i_cable_present_l => i_cable_present_l,
+         --b_basei2c_scl => b_basei2c_scl,
+         --b_basei2c_sda => b_basei2c_sda,
+         --i_cable_present_l => i_cable_present_l,
 
          a0h_cvalid => a0h_cvalid,
          a0h_ctag => a0h_ctag,
