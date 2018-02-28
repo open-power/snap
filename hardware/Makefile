@@ -269,12 +269,13 @@ action_hw: prepare_logs
 	@if [ ! -d "$(ACTION_ROOT)" ]; then \
 		echo "                        Error: Path to ACTION_ROOT is not defined properly"; exit -1; \
 	fi
-	@echo "Calling make -C $(ACTION_ROOT) hw"
-	@$(MAKE) -C $(ACTION_ROOT) hw > $(LOGS_DIR)/action_make.log;
+	@echo "Calling make -C $(ACTION_ROOT) hw" > $(LOGS_DIR)/action_make.log
+	@$(MAKE) -C $(ACTION_ROOT) hw >> $(LOGS_DIR)/action_make.log;
 	@if [ $$? -ne 0 ]; then \
 		echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
 	fi
 	@if [ "$(USE_PRFLOW)" == "TRUE" ]; then \
+	        echo "Calling make -C $(ACTION_ROOT)/hw vhdl" >> $(LOGS_DIR)/action_make.log; \
 		$(MAKE) -kC $(ACTION_ROOT)/hw vhdl >> $(LOGS_DIR)/action_make.log; \
 		if [ $$? -ne 0 ]; then \
 			echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
