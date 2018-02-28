@@ -24,13 +24,15 @@ set_property CONFIG_MODE {BPI16} [current_design]
 set_property BITSTREAM.CONFIG.BPI_1ST_READ_CYCLE 4 [current_design]
 set_property BITSTREAM.CONFIG.BPI_PAGE_SIZE 8 [current_design]
 
-#FIXME? xapp1246/xapp1296: These settings are not needed for SNAP
-#FIXME? set_property BITSTREAM.CONFIG.CONFIGFALLBACK ENABLE [current_design]		# default enable
-#FIXME? set_property BITSTREAM.CONFIG.NEXT_CONFIG_ADDR 0X01000000 [current_design]	# default is 0x0
-#FIXME? set_property BITSTREAM.CONFIG.REVISIONSELECT_TRISTATE ENABLE [current_design] 	# default enable
-#FIXME? set_property BITSTREAM.CONFIG.REVISIONSELECT 01 [current_design] 		# default is 00
+
+#FIXME? xapp1246/xapp1296: These settings may not be needed for SNAP
+set_property BITSTREAM.CONFIG.CONFIGFALLBACK ENABLE [current_design]		# default enable
+set_property BITSTREAM.CONFIG.TIMER_CFG 0XC0080000 [current_design]
 
 # The factory bitstream has the above properties with one addition:
 if { $factory_image == "TRUE" } {
-  set_property BITSTREAM.CONFIG.TIMER_CFG 0XFFFFFFFF [current_design]
+  #FIXME? xapp1246/xapp1296: These settings are not needed for SNAP
+  set_property BITSTREAM.CONFIG.NEXT_CONFIG_ADDR 0X01000000 [current_design]	# default is 0x0
+  set_property BITSTREAM.CONFIG.REVISIONSELECT_TRISTATE ENABLE [current_design] # default enable
+  set_property BITSTREAM.CONFIG.REVISIONSELECT 01 [current_design] 		# default is 00
 }
