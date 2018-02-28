@@ -35,12 +35,18 @@ switch $fpgacard {
         }
   S121B { set flashdevice mt28gu01gaax1e-bpi-x16
           set fpgapartnum xcku115
-          #FIXME? set rs_pins	{26:25}
+          set rs_pins	{26:25}
         }
   AD8K5 { set flashdevice mt28gu01gaax1e-bpi-x16
 	  set fpgapartnum xcku115
+          # CHECK User manual specifies rs_pins 25:24 
+          # despite the larger FPGA and user_addr 0x02000000
         }
-  N250SP { set flashdevice mt28ew01ga-bpi-x16
+  N250SP {
+          # old N250S+ config flash - serial 7105xxx
+          #   set flashdevice mt28gu01gaax1e-bpi-x16
+          # new N250S+ config flash - serial 7109xxx  
+          set flashdevice mt28ew01ga-bpi-x16
           set fpgapartnum xcku15p
           set rs_pins	{26:25}
         }
@@ -68,6 +74,8 @@ if { $argc == 2 } {
 }
 puts "Connecting to hardware target $hwtarget: [lindex [get_hw_targets] $hwtarget] "
 open_hw_target [lindex [get_hw_targets] $hwtarget]
+current_hw_device [lindex [get_hw_devices] 0]
+refresh_hw_device -update_hw_probes false [lindex [get_hw_devices] 0]
 
 # Hardware configuration
 create_hw_cfgmem -hw_device [lindex [get_hw_devices] 0] -mem_dev [lindex [get_cfgmem_parts $flashdevice] 0]
@@ -88,7 +96,9 @@ set_property PROGRAM.CFG_PROGRAM 1 $fpga_cfgmem
 set_property PROGRAM.VERIFY 1 $fpga_cfgmem
 set_property PROGRAM.CHECKSUM 0 $fpga_cfgmem
 startgroup
-if {![string equal [get_property PROGRAM.HW_CFGMEM_TYPE $fpgadevice ] [get_property MEM_TYPE [get_property CFGMEM_PART $fpga_cfgmem]]] } { create_hw_bitstream -hw_device $fpgadevice [get_property PROGRAM.HW_CFGMEM_BITFILE $fpgadevice ]; program_hw_devices $fpgadevice ; };
+if {![string equal [get_property PROGRAM.HW_CFGMEM_TYPE $fpgadevice ] [get_property MEM_TYPE [get_property CFGMEM_PART $fpga_cfgmem]]] } { 
+  create_hw_bitstream -hw_device $fpgadevice [get_property PROGRAM.HW_CFGMEM_BITFILE $fpgadevice ]
+  program_hw_devices $fpgadevice
+}
 program_hw_cfgmem -hw_cfgmem $fpga_cfgmem
-
 
