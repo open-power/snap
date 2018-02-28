@@ -21,6 +21,6 @@ branch=`git branch`
 echo "checking PSLSE_ROOT=${PSLSE_ROOT} card=$FPGACARD version=$version branch=$branch"
 case $FPGACARD in
   "N250SP") if [ $branch != "\* capi2" ];then echo "WARNING: PSLSE branch=$branch should be capi2";fi;;
-  *)        if [ $version != "v3.1"    ];then echo "WARNING: PSLSE version=$(version) should be v3.1";fi;;
+  *)        if [ $version != "v3.1"    ];then echo "WARNING: PSLSE version=$version should be v3.1";fi;;
 esac
 cd -

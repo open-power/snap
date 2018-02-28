@@ -46,7 +46,7 @@ Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For th
 * https://www.ibm.com/systems/power/openpower  
 Download the required files under "PSL Checkpoint Files for the CAPI SNAP Design Kit".
 
-SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulation model and image build, SNAP requires the Xilinx Vivado 2016.4 tool suite.
+SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulation model and image build, SNAP requires the Xilinx Vivado 2017.4 tool suite.
 * https://www.xilinx.com/products/design-tools/hardware-zone.html
 
 As of now, three FPGA cards can be used with SNAP:
