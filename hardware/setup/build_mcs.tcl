@@ -21,12 +21,13 @@ switch $fpgacard {
 	   set user_addr 0x01000000
 	 }
   S121B -
+  AD8K5 -
   N250SP { set flashsize 128
 	   set factory_addr 0x0
 	   set user_addr 0x02000000
  	 }
   default {
-    puts "Error: Environment FPGACARD must be set to N250S, ADKU3, S121B or N250SP"
+    puts "Error: Environment FPGACARD must be set to N250S, ADKU3, AD8K5, S121B or N250SP"
     exit 91
   }
 }
