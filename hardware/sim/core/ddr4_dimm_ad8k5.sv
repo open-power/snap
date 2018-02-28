@@ -20,7 +20,7 @@
 
 `timescale 1ps/1ps
 `define DDR4_8G_X8 
-`define DDR4_833_Timing     //TODO Please check
+`define DDR4_833_Timing
 //`define MODEL_DEBUG_MEMORY
 //`define MODEL_DEBUG_CMDS
 `define SILENT              // Added define SILENT to avoid timeset setting display messages in transcript
