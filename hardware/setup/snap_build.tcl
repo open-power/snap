@@ -277,6 +277,11 @@ source $root_dir/setup/snap_bitstream_pre.tcl
 
 if { $factory_image == "TRUE" } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: factory image" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  if { $fpgacard == "ADKU3" } { 
+    # Change psl_fpga factory bit
+    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "changing factory bit" $widthCol3 "type: factory image" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+    set_property INIT 1'b0 [get_cells user_image_q_reg]
+  }
 } else {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 }

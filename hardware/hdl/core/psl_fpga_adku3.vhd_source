@@ -393,6 +393,9 @@ Signal ha0_rvalid: std_logic;  -- bool
 Signal gold_factory: std_logic;
 Signal pci_user_reset: std_logic;
 Signal pci_clock_125MHz: std_logic;
+SIGNAL user_image_q: std_logic := '1'; 
+ATTRIBUTE dont_touch: string;
+ATTRIBUTE dont_touch of user_image_q: SIGNAL IS "true";
 
 begin
 
@@ -482,11 +485,14 @@ begin
          pci_clock_125MHz     => pci_clock_125MHz
     );
 
-#ifdef CONFIG_ENABLE_FACTORY
-    gold_factory <= '0'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
-#else
-    gold_factory <= '1'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
-#endif
+    PROCESS (ha0_pclock)
+    BEGIN
+      IF(RISING_EDGE(ha0_pclock)) THEN
+        user_image_q <= user_image_q;
+      END IF;
+    END PROCESS;
+
+    gold_factory <= user_image_q; 
      
     b: base_img
      PORT MAP (
