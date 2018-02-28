@@ -26,8 +26,8 @@ set nvme_used    $::env(NVME_USED)
 puts "                        export simulation for version=$vivadoVer"
 
 if { ($nvme_used == "TRUE") && ($vivadoVer == "2017.4") } {
-  puts "                        ### INFO ### For NVME simulation you have to patch your"
-  puts "                        Vivado instalation. Please follow the instructions in AR70597."
+  puts "                        ### INFO ### For NVME simulation you have to patch your Vivado"
+  puts "                        instalation. Please follow the instructions in Xilinx AR#70597."
 }
 
 open_project $root_dir/viv_project/framework.xpr  >> $log_file
