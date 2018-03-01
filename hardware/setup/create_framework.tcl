@@ -284,11 +284,11 @@ if { $fpga_card == "ADKU3" } {
   }
 } elseif {$fpga_card == "AD8K5" } {
   if { $bram_used == "TRUE" } {
-    add_files -fileset constrs_1 -norecurse $root_dir/setup/AD8K5/snap_refclk.xdc
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/AD8K5/refclk200.xdc
   } elseif { $sdram_used == "TRUE" } {
-    add_files -fileset constrs_1 -norecurse $root_dir/setup/AD8K5/snap_refclk.xdc
-    add_files -fileset constrs_1 -norecurse $root_dir/setup/AD8K5/snap_ddr4_c2pins.xdc
-    set_property used_in_synthesis false [get_files $root_dir/setup/AD8K5/snap_ddr4_c2pins.xdc]
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/AD8K5/refclk200.xdc
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/AD8K5/snap_ddr4_b0pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/AD8K5/snap_ddr4_b0pins.xdc]
   }
 } elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
   if { $bram_used == "TRUE" } {
