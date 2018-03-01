@@ -393,7 +393,7 @@ Signal ha0_rvalid: std_logic;  -- bool
 Signal gold_factory: std_logic;
 Signal pci_user_reset: std_logic;
 Signal pci_clock_125MHz: std_logic;
-SIGNAL user_image_q: std_logic := '1'; 
+SIGNAL user_image_q: std_logic := '1';
 ATTRIBUTE dont_touch: string;
 ATTRIBUTE dont_touch of user_image_q: SIGNAL IS "true";
 
@@ -492,7 +492,7 @@ begin
       END IF;
     END PROCESS;
 
-    gold_factory <= user_image_q; 
+    gold_factory <= user_image_q;
      
     b: base_img
      PORT MAP (

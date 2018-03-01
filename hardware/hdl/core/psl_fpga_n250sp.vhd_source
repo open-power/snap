@@ -581,9 +581,13 @@ SIGNAL hd0_cpl_byte_count  : std_logic_vector(0 to 9)   ;
 SIGNAL hd0_cpl_size        : std_logic_vector(0 to 9)   ;
 SIGNAL hd0_cpl_data        : std_logic_vector(0 to 1023);
 
+SIGNAL user_image_q        : std_logic := '1';
+ATTRIBUTE dont_touch       : string;
+ATTRIBUTE dont_touch of user_image_q: SIGNAL IS "true";
 SIGNAL gold_factory        : std_logic;
 SIGNAL pci_user_reset      : std_logic;
 SIGNAL pci_clock_125MHz    : std_logic;
+
 #ifdef CONFIG_ENABLE_NVME
 -- NVME Reset Logic
 SIGNAL nvme_reset_cnt_q    : std_logic_vector(15 DOWNTO 0) := (OTHERS => '1');
@@ -813,12 +817,28 @@ BEGIN
       hd1_cpl_data                      => (others => '0')  --efes1024(1023 downto 0)
     );
 
+<<<<<<< HEAD
 
 #ifdef CONFIG_ENABLE_FACTORY
     gold_factory <= '0'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
 #else
     gold_factory <= '1'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
 #endif
+=======
+    PROCESS (ha0_pclock)
+    BEGIN
+      IF(RISING_EDGE(ha0_pclock)) THEN
+        user_image_q <= user_image_q;
+      END IF;
+    END PROCESS;
+
+    gold_factory <= user_image_q;
+
+    -- led controls
+--    led_red <= "11";
+--    led_green <= "11";
+--    led_blue <= "11";
+>>>>>>> Added factory bit register to other targets. Built w/ N250S
 
   psl: psl4n250sp
     PORT MAP (
