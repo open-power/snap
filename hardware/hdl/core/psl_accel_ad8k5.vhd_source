@@ -28,11 +28,6 @@
   USE work.snap_core_types.ALL;
   USE work.action_types.ALL;
 
-#ifdef CONFIG_ENABLE_DDRI
-  LIBRARY unisim;
-  USE unisim.vcomponents.all;
-#endif
-
 ENTITY psl_accel IS
   GENERIC (
     BRAM_USED  : BOOLEAN := FALSE;
@@ -134,28 +129,27 @@ ENTITY psl_accel IS
 
 #ifdef CONFIG_ENABLE_DDR4
     -- DDR4 SDRAM Interface
-    c2_sys_clk_p              : IN    STD_LOGIC;
-    c2_sys_clk_n              : IN    STD_LOGIC;
-    c2_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);
-    c2_ddr4_ba                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-    c2_ddr4_cke               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c2_ddr4_cs_n              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c2_ddr4_dm_dbi_n          : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c2_ddr4_dq                : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
-    c2_ddr4_dqs_c             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c2_ddr4_dqs_t             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c2_ddr4_odt               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c2_ddr4_bg                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-    c2_ddr4_reset_n           : OUT   STD_LOGIC;
-    c2_ddr4_act_n             : OUT   STD_LOGIC;
-    c2_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c2_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c0_sys_clk_p              : IN    STD_LOGIC;
+    c0_sys_clk_n              : IN    STD_LOGIC;
+    c0_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);
+    c0_ddr4_ba                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+    c0_ddr4_cke               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c0_ddr4_cs_n              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c0_ddr4_dm_dbi_n          : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+    c0_ddr4_dq                : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
+    c0_ddr4_dqs_c             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+    c0_ddr4_dqs_t             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+    c0_ddr4_odt               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c0_ddr4_bg                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+    c0_ddr4_reset_n           : OUT   STD_LOGIC;
+    c0_ddr4_act_n             : OUT   STD_LOGIC;
+    c0_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c0_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 #endif
 #ifdef CONFIG_ENABLE_DDRI
     --
     -- Clock inputs for SDRAM
-    refclk_sdram_p                      : IN    STD_LOGIC;
-    refclk_sdram_n                      : IN    STD_LOGIC;
+    refclk_sdram                        : IN    STD_LOGIC;
 #endif
 
     -- Parity Enable output and 250MHz Clock input
@@ -718,8 +712,6 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL sdram_axi_ctrl_rdata           : STD_LOGIC_VECTOR(31 DOWNTO 0);
   SIGNAL sdram_axi_ctrl_rresp           : STD_LOGIC_VECTOR(1 DOWNTO 0);
   SIGNAL sdram_interrupt                : STD_LOGIC;
-  SIGNAL refclk_sdram_ibuf              : STD_LOGIC;
-  SIGNAL refclk_sdram_bufg              : STD_LOGIC;
 #endif
 
 #ifdef CONFIG_ENABLE_DDR4
@@ -744,9 +736,9 @@ BEGIN
   --
   -- SDRAM Reset Logic
   --
-  sdram_reset : PROCESS (refclk_sdram_bufg)
+  sdram_reset : PROCESS (refclk_sdram)
   BEGIN  -- PROCESS
-    IF (rising_edge(refclk_sdram_bufg)) THEN
+    IF (rising_edge(refclk_sdram)) THEN
       IF ((action_reset   = '1') OR
           (action_reset_q = '1') or
           (action_reset_qq= '1')) THEN
@@ -759,22 +751,6 @@ BEGIN
       sdram_reset_n_q <= NOT sdram_reset_m;
     END IF;
   END PROCESS sdram_reset;
-
-  --
-  -- SDRAM Ref Clock Logic
-  --
-  ibuf_refclk_sdram : IBUFGDS
-  port map(
-    I  => refclk_sdram_p,
-    IB => refclk_sdram_n,
-    O  => refclk_sdram_ibuf
-  );
-
-  bufg_sdrma : BUFG
-  port map(
-    I => refclk_sdram_ibuf,
-    O => refclk_sdram_bufg
-  );
 #endif
 
 
@@ -1007,7 +983,7 @@ BEGIN
   sdram_axi_rst_n <= NOT sdram_ui_clk_sync_rst;
 #endif
 #ifdef CONFIG_ENABLE_BRAM
-  sdram_axi_clk   <= refclk_sdram_bufg;
+  sdram_axi_clk   <= refclk_sdram;
   sdram_axi_rst_n <= sdram_reset_n_q;
 #endif
 
@@ -1186,22 +1162,22 @@ BEGIN
       c0_init_calib_complete     => sdram_init_calib_complete,
       dbg_clk                    => ddr4_dbg_clk,
       dbg_bus                    => ddr4_dbg_bus,
-      c0_sys_clk_p               => c2_sys_clk_p,
-      c0_sys_clk_n               => c2_sys_clk_n,
-      c0_ddr4_adr                => c2_ddr4_adr,
-      c0_ddr4_ba                 => c2_ddr4_ba,
-      c0_ddr4_cke                => c2_ddr4_cke,
-      c0_ddr4_cs_n               => c2_ddr4_cs_n,
-      c0_ddr4_dm_dbi_n           => c2_ddr4_dm_dbi_n,
-      c0_ddr4_dq                 => c2_ddr4_dq,
-      c0_ddr4_dqs_c              => c2_ddr4_dqs_c,
-      c0_ddr4_dqs_t              => c2_ddr4_dqs_t,
-      c0_ddr4_odt                => c2_ddr4_odt,
-      c0_ddr4_bg                 => c2_ddr4_bg,
-      c0_ddr4_reset_n            => c2_ddr4_reset_n,
-      c0_ddr4_act_n              => c2_ddr4_act_n,
-      c0_ddr4_ck_c               => c2_ddr4_ck_c,
-      c0_ddr4_ck_t               => c2_ddr4_ck_t,
+      c0_sys_clk_p               => c0_sys_clk_p,
+      c0_sys_clk_n               => c0_sys_clk_n,
+      c0_ddr4_adr                => c0_ddr4_adr,
+      c0_ddr4_ba                 => c0_ddr4_ba,
+      c0_ddr4_cke                => c0_ddr4_cke,
+      c0_ddr4_cs_n               => c0_ddr4_cs_n,
+      c0_ddr4_dm_dbi_n           => c0_ddr4_dm_dbi_n,
+      c0_ddr4_dq                 => c0_ddr4_dq,
+      c0_ddr4_dqs_c              => c0_ddr4_dqs_c,
+      c0_ddr4_dqs_t              => c0_ddr4_dqs_t,
+      c0_ddr4_odt                => c0_ddr4_odt,
+      c0_ddr4_bg                 => c0_ddr4_bg,
+      c0_ddr4_reset_n            => c0_ddr4_reset_n,
+      c0_ddr4_act_n              => c0_ddr4_act_n,
+      c0_ddr4_ck_c               => c0_ddr4_ck_c,
+      c0_ddr4_ck_t               => c0_ddr4_ck_t,
       c0_ddr4_ui_clk             => sdram_ui_clk,
       c0_ddr4_ui_clk_sync_rst    => sdram_ui_clk_sync_rst,
       c0_ddr4_aresetn            => sdram_reset_n_q,
