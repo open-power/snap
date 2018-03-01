@@ -182,7 +182,7 @@ static void snap_version(void *handle)
 		VERBOSE1("enabled");
 	else    VERBOSE1("disabled");
         snap_card_ioctl(handle, GET_SDRAM_SIZE, (unsigned long)&ioctl_data);
-        VERBOSE1(", %d MB SRAM available.\n", (int)ioctl_data);
+        VERBOSE1(", %d MB DRAM available.\n", (int)ioctl_data);
 
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_IVR);
 	VERBOSE1("SNAP FPGA Release: v%d.%d.%d Distance: %d GIT: 0x%8.8x\n",
