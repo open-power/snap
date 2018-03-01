@@ -27,7 +27,7 @@ else
     exit
 fi
 
-if [ "$FPGACARD" == "N250SP" ]; then
+if [ "$FPGACARD" == "AD8K5" ]; then
   export PSL_DCP_TYPE=$FPGACARD
 else
   PSL_MD5=`md5sum $PSL_DCP | cut -d " " -f 1`
