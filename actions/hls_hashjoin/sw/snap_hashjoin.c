@@ -198,11 +198,42 @@ static void usage(const char *prog)
 	       "  -s, --seed <seed>        Random seed to enable recreation.\n"
 	       "  -N, --no irq             Disable Interrupts (polling)\n"
 	       "\n"
-	       "Example:\n"
-	       "echo Random generation of 2 tables with default table size (T1 = 25 entries / T2 = 23 entries)\n"
-	       "SNAP_CONFIG=CPU ./snap_hashjoin -C1 -vv -t2500\n"
-	       "echo Random generation of 2 tables with 30 entries for T1 and 60 for T2 => action will call 2 times the action\n"
-	       "SNAP_CONFIG=CPU ./snap_hashjoin -C1 -vv -t2500 -Q 30 -T 60\n"
+	       "NOTES : \n"
+	       " - Q is the Table 1 containing name and age\n"
+	       " - T is the Table 2 containing name and animals\n"
+	       " - The result will be stored in Table 3 containing name, animal and age \n"
+	       " The table 2 is limited to 32 on purpose and results will be given at each action call\n"
+	       "\n"
+               "Useful parameters :\n"
+               "-------------------\n"
+               "SNAP_TRACE=0x0  no debug trace  (default mode)\n"
+               "SNAP_TRACE=0xF  full debug trace\n"
+               "SNAP_CONFIG=FPGA hardware execution   (default mode)\n"
+               "SNAP_CONFIG=CPU  software execution\n"
+               "\n"
+               "Example on a real card\n"
+               "----------------------\n"
+	       "cd $SNAP_ROOT && export ACTION_ROOT=$SNAP_ROOT/actions/hls_hashjoin\n"
+	       "source snap_path.sh\n"
+	       "snap_maint -vv\n"
+	       "\n"
+	       "echo Random generation of 2 tables with default table size:"
+	       " Table1 = Q = 25 entries / Table2 = T = 23 entries\n"
+	       "snap_hashjoin -vv -C0\n"
+	       "echo Random generation of 2 tables with 30 entries for Table1/Q and 60 for Table2/T"
+	       "=> this will induce 2 calls of the action since Table2 is limited to 32 on purpose\n"
+	       "snap_hashjoin -vv -Q 30 -T 60 -C0\n"
+	       "\n"
+               "Example for a simulation\n"
+               "------------------------\n"
+	       "snap_maint -vv\n"
+	       "\n"
+	       "echo Random generation of 2 tables with default table size:"
+	       " Table1 = Q = 25 entries / Table2 = T = 23 entries\n"
+	       "snap_hashjoin -vv -t2500 -C0\n"
+	       "echo Random generation of 2 tables with 30 entries for Table1/Q and 60 for Table2/T"
+	       "=> this will induce 2 calls of the action since Table2 is limited to 32 on purpose\n"
+	       "snap_hashjoin -vv -t2500 -Q 30 -T 60 -C0\n"
 	       "\n",
 	       prog);
 }
@@ -357,8 +388,10 @@ int main(int argc, char *argv[])
 			goto out_error2;
 		}
 
-		if (verbose_flag)
+		if (verbose_flag) {
+			pr_info("Table 3 is the resulting table:\n");
 			table3_dump(t3, jout.t3_produced);
+		}
 
 		t1_entries = 0; /* no need to process this twice,
 				   ht stores the values */
@@ -366,9 +399,15 @@ int main(int argc, char *argv[])
 	}
 	gettimeofday(&etime, NULL);
 
-	fprintf(stderr, "ReturnCode: %x\n"
-		"HashJoin took %lld usec\n", cjob.retc,
+	(cjob.retc == SNAP_RETC_SUCCESS) ? fprintf(stdout, "SUCCESS\n") : fprintf(stdout, "FAILED\n");
+        if (cjob.retc != SNAP_RETC_SUCCESS) {
+                fprintf(stderr, "err: Unexpected RETC=%x!\n", cjob.retc);
+                goto out_error2;
+        }
+
+	fprintf(stderr, "HashJoin took %lld usec\n", 
 		(long long)timediff_usec(&etime, &stime));
+       fprintf(stdout, "This time represents the register transfer time + hashjoin action time\n");
 
 	snap_detach_action(action);
 	snap_card_free(card);
