@@ -22,14 +22,10 @@
 #include <iostream>
 #include <hls_minibuf.H>
 
-#include "action_hashjoin.H"
+#include "hw_action_hashjoin.H"
 
 using namespace std;
 
-// ----------------------------------------------------------------------------
-// Known Limitations => Issue #39 & #45
-//      => Transfers must be 64 byte aligned and a size of multiples of 64 bytes
-// ----------------------------------------------------------------------------
 static void write_HJ_regs(action_reg *reg,
 			  snapu32_t retc,
 			  snapu64_t field1,
