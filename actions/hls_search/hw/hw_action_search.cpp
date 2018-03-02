@@ -137,17 +137,40 @@ static short read_burst_of_data_from_mem(snap_membus_t *din_gmem,
 {
 	short rc = -1;
 
+
+	// Prepare patch to the issue#652 - memcopy doesn't handle small packets 
+        int size_in_words;
+        if(size_in_bytes_to_transfer %BPERDW == 0)
+        	size_in_words = size_in_bytes_to_transfer/BPERDW;
+        else
+        	size_in_words = (size_in_bytes_to_transfer/BPERDW) + 1;
+	// end of patch
+
 	switch (memory_type) {
 	case SNAP_ADDRTYPE_HOST_DRAM:
-        	memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
-		       size_in_bytes_to_transfer);
+		
+		// Patch to the issue#652 - memcopy doesn't handle small packets 
+        	//memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
+		//       size_in_bytes_to_transfer);
+		
+		// Do not insert anything more in this loop to not break the burst
+		rb_din_loop: for (int k=0; k<size_in_words; k++)
+		#pragma HLS PIPELINE
+			 buffer[k] = (din_gmem + input_address)[k];
+		// End of patch
 
        		rc =  0;
 		break;
 	case SNAP_ADDRTYPE_CARD_DRAM:
-        	memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address), 
-		       size_in_bytes_to_transfer);
 
+		// Patch to the issue#652 - memcopy doesn't handle small packets 
+        	//memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address), 
+		//       size_in_bytes_to_transfer);
+
+		// Do not insert anything more in this loop to not break the burst
+		rb_ddr_loop: for (int k=0; k<size_in_words; k++)
+		#pragma HLS PIPELINE
+                    buffer[k] = (d_ddrmem + input_address)[k];
        		rc =  0;
 		break;
 	}
