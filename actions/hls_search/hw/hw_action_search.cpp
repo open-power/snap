@@ -18,16 +18,10 @@
 #include <string.h>
 #include <stdio.h>
 #include "ap_int.h"
-#include "action_search.H"
+#include "hw_action_search.H"
 
 unsigned int global_count;
 
-/* ----------------------------------------------------------------------------
- * Known Limitations => Issue #39 & #45
- * => Transfers must be 64 byte aligned and a size of multiples of 64 bytes
- * Issue#320 - memcopy doesn't handle 4Kbytes xfer => use patch
- * ----------------------------------------------------------------------------
- */
 static snapu32_t read_bulk(snap_membus_t *src_mem,
 			   snapu64_t      byte_address,
 			   snapu32_t      byte_to_transfer,
@@ -36,20 +30,23 @@ static snapu32_t read_bulk(snap_membus_t *src_mem,
 	snapu32_t xfer_size;
 
 	xfer_size = MIN(byte_to_transfer, (snapu32_t) MAX_NB_OF_BYTES_READ);
-        
-        // Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
+
+	// Patch to the issue#652 - memcopy doesn't handle small packets 
         int xfer_size_in_words;
         if(xfer_size %BPERDW == 0)
         	xfer_size_in_words = xfer_size/BPERDW;
         else
-        	xfer_size_in_words = (xfer_size/BPERDW) + 1;
+		xfer_size_in_words = (xfer_size/BPERDW) + 1;
 
 	//memcpy(buffer, 
 	//       (snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
 	//       xfer_size);
+       
+	// Do not insert anything more in this loop to not break the burst
 	rb_loop: for (int k=0; k< xfer_size_in_words; k++)
-#pragma HLS PIPELINE
-            buffer[k] = (src_mem + (byte_address >> ADDR_RIGHT_SHIFT))[k];
+	#pragma HLS PIPELINE
+		buffer[k] = (src_mem + (byte_address >> ADDR_RIGHT_SHIFT))[k];
+	// End of patch
 
 	return xfer_size;
 }
@@ -61,8 +58,9 @@ static snapu32_t write_bulk(snap_membus_t *tgt_mem,
 {
 	snapu32_t xfer_size;
 
-	// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
-	xfer_size = MIN(byte_to_transfer, (snapu32_t)  MAX_NB_OF_BYTES_READ);
+	xfer_size = MIN(byte_to_transfer, (snapu32_t) MAX_NB_OF_BYTES_READ);
+
+	// Patch to the issue#652 - memcopy doesn't handle small packets 
         int xfer_size_in_words;
         if(xfer_size %BPERDW == 0)
         	xfer_size_in_words = xfer_size/BPERDW;
@@ -71,9 +69,12 @@ static snapu32_t write_bulk(snap_membus_t *tgt_mem,
 
 	//memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
 	//       buffer, xfer_size);
+
+	// Do not insert anything more in this loop to not break the burst
 	wb_loop: for (int k=0; k<xfer_size_in_words; k++)
-#pragma HLS PIPELINE
-              (tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT))[k] = buffer[k];
+	#pragma HLS PIPELINE
+		(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT))[k] = buffer[k];
+	// End of patch
 
 	return xfer_size;
 }
@@ -135,31 +136,17 @@ static short read_burst_of_data_from_mem(snap_membus_t *din_gmem,
 					 snapu64_t size_in_bytes_to_transfer)
 {
 	short rc = -1;
-	// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
-        int size_in_words;
-        if(size_in_bytes_to_transfer %BPERDW == 0)
-        	size_in_words = size_in_bytes_to_transfer/BPERDW;
-        else
-        	size_in_words = (size_in_bytes_to_transfer/BPERDW) + 1;
 
 	switch (memory_type) {
 	case SNAP_ADDRTYPE_HOST_DRAM:
-		// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
-        	//memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
-		//       size_in_bytes_to_transfer);
-		rb_din_loop: for (int k=0; k<size_in_words; k++)
-#pragma HLS PIPELINE
-                    buffer[k] = (din_gmem + input_address)[k];
+        	memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
+		       size_in_bytes_to_transfer);
 
        		rc =  0;
 		break;
 	case SNAP_ADDRTYPE_CARD_DRAM:
-		// Patch to Issue#320 - memcopy doesn't handle 4Kbytes xfer
-        	//memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address), 
-		//       size_in_bytes_to_transfer);
-		rb_ddr_loop: for (int k=0; k<size_in_words; k++)
-#pragma HLS PIPELINE
-                    buffer[k] = (d_ddrmem + input_address)[k];
+        	memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address), 
+		       size_in_bytes_to_transfer);
 
        		rc =  0;
 		break;
@@ -439,6 +426,7 @@ void preprocess_KMP_table(char Pattern[PATTERN_SIZE], int PatternSize,
    j = -1;
    KMP_table[0] = -1;
    while (i < PatternSize) {
+#pragma HLS PIPELINE
       while (j > -1 && Pattern[i] != Pattern[j])
          j = KMP_table[j];
       i++;
@@ -464,21 +452,21 @@ int KMP_search(char Pattern[PATTERN_SIZE], int PatternSize,
    count = 0;
    //while (j < TextSize) {
    while (j < MAX_NB_OF_BYTES_READ) {
-#pragma HLS UNROLL factor=32
-	   if (j < TextSize) {
-		  while (i > -1 && Pattern[i] != Text[j])
-			 i = KMP_table[i];
-		  i++;
-		  j++;
-		  if (i >= PatternSize)
-		  {
-			 i = KMP_table[i];
-			 printf("Found pattern at index %d\n", j-i-PatternSize);
-			 count++;
-		  }
-	   }
-	   else
-		    break;
+//#pragma HLS UNROLL factor=32
+       if (j < TextSize) {
+	  while (i > -1 && Pattern[i] != Text[j])
+		 i = KMP_table[i];
+	  i++;
+	  j++;
+	  if (i >= PatternSize)
+	  {
+		 i = KMP_table[i];
+		 printf("Found pattern at index %d\n", j-i-PatternSize);
+		 count++;
+	  }
+        }
+	else
+		break;
    }
    return count;
 }
@@ -495,19 +483,21 @@ int Naive_search(char Pattern[PATTERN_SIZE], int PatternSize,
    int i, j;
    int count=0;
 
+
    //for (j = 0; j <= TextSize - PatternSize; ++j)
    for (j = 0; j < MAX_NB_OF_BYTES_READ; ++j)
    {
-#pragma HLS UNROLL factor=32
-	   if (j <= TextSize - PatternSize)
-	   {
-		  for (i = 0; i < PatternSize && Pattern[i] == Text[i + j]; ++i);
-		  if (i >= PatternSize)
-		  {
-			   count++;
-			   printf("Pattern found at index %d \n", j);
-		  }
-	   }
+//#pragma HLS UNROLL factor=32
+      if (j <= TextSize - PatternSize) 
+      {
+          for (i = 0; i < PatternSize && Pattern[i] == Text[i + j]; ++i)
+	      ;
+          if (i >= PatternSize)
+          {
+              count++;
+              printf("Pattern found at index %d \n", j);
+          }
+      }
    }
    return count;
 }
@@ -591,6 +581,7 @@ static snapu32_t process_action(snap_membus_t *din_gmem,
           Action_Register->Data.src_pattern.type,
           Action_Register->Data.src_pattern.addr >> ADDR_RIGHT_SHIFT,
           PatternBuffer);
+  // FIXME Remove this stupid cast which is just a waste of time
   mbus_to_word(PatternBuffer[0], Pattern); // convert buffer to char
 
 
@@ -620,6 +611,7 @@ static snapu32_t process_action(snap_membus_t *din_gmem,
 		rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, InputType,
 				(InputAddress >> ADDR_RIGHT_SHIFT) + rd_address_text_offset,
 				TextBuffer, search_size);
+  		// FIXME Remove this stupid cast which is just a waste of time
 		x_mbus_to_word(TextBuffer, Text); /* convert buffer to char*/
 
 		/* ********************
