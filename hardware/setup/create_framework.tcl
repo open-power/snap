@@ -277,9 +277,9 @@ if { $fpga_card == "N250SP" } {
 # XDC
 # SNAP CORE XDC
 puts "                        importing XDCs"
-add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_link.xdc
-set_property used_in_synthesis false [get_files  $root_dir/setup/snap_link.xdc]
-update_compile_order -fileset sources_1 >> $log_file
+#add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_link.xdc
+#set_property used_in_synthesis false [get_files  $root_dir/setup/snap_link.xdc]
+#update_compile_order -fileset sources_1 >> $log_file
 
 # PSL4N250SP XDC
 if { $fpga_card == "N250SP" } {

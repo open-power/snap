@@ -184,11 +184,11 @@ Component psl_accel
        ha_jeapar: in std_logic;
        ha_jcompar: in std_logic;
 
-#ifdef CONFIG_ENABLE_DDRI
-       -- Clock inputs for SDRAM
-       refclk_sdram_p                     : IN    STD_LOGIC;
-       refclk_sdram_n                     : IN    STD_LOGIC;
-#endif
+-- clk #ifdef CONFIG_ENABLE_DDRI
+-- clk        -- Clock inputs for SDRAM
+-- clk        refclk_sdram_p                     : IN    STD_LOGIC;
+-- clk        refclk_sdram_n                     : IN    STD_LOGIC;
+-- clk #endif
 #ifdef CONFIG_ENABLE_DDR3
        -- DDR3 SDRAM Interface
        c0_sys_clk_p                       : IN    STD_LOGIC;
@@ -211,7 +211,10 @@ Component psl_accel
 #endif
        -- Parity Check enable and Host Clock input
        ah_paren: out std_logic;
-       ha_pclock: in std_logic);
+       ha_pclock: in std_logic;
+       pci_user_reset: in std_logic; --PCI hip user_reset signal if needed
+       pci_clock_125MHz: in std_logic --125MHz clock if needed
+       );
 End Component psl_accel;
 
 Component base_img
@@ -449,10 +452,13 @@ begin
          ah_jyield            => a0h_jyield,
          ha_jeapar            => ha0_jeapar,
          ha_jcompar           => ha0_jcompar,
-#ifdef CONFIG_ENABLE_DDRI
-         refclk_sdram_n       => refclk200_n,
-         refclk_sdram_p       => refclk200_p,
-#endif
+         pci_user_reset       => pci_user_reset,
+         pci_clock_125MHz     => pci_clock_125MHz,
+
+-- clk #ifdef CONFIG_ENABLE_DDRI
+-- clk          refclk_sdram_n       => refclk200_n,
+-- clk          refclk_sdram_p       => refclk200_p,
+-- clk #endif
 #ifdef CONFIG_ENABLE_DDR3
          c0_sys_clk_p         => c0_sys_clk_p,
          c0_sys_clk_n         => c0_sys_clk_n,
