@@ -104,7 +104,7 @@ set_property STEPS.WRITE_BITSTREAM.TCL.POST $root_dir/setup/snap_bitstream_post.
 puts "                        importing design files"
 # HDL Files
 add_files -scan_for_includes $hdl_dir/core/  >> $log_file
-if { $fpga_card == "N250SP" } {
+if { ($fpga_card == "N250SP") && ($psl4n250sp_dir != "not defined") } {
   puts "                        importing psl4n250sp source files"
   add_files -scan_for_includes $psl4n250sp_dir/src/  >> $log_file
   add_files -scan_for_includes $psl4n250sp_dir/FlashGTPlus/hdk/src/  >> $log_file
@@ -258,7 +258,7 @@ if { $nvme_used == TRUE } {
 }
 
 # Add PSL
-if { $fpga_card == "N250SP" } {
+if { ($fpga_card == "N250SP") && ($psl4n250sp_dir != "not defined") } {
   set_property "ip_repo_paths" "[file normalize "$psl4n250sp_dir/FlashGTPlus/psl/ip_repo"]" [current_project]
   update_ip_catalog >> $log_file
   add_files -norecurse                          $ip_dir/pcie4_uscale_plus_0/pcie4_uscale_plus_0.xci
@@ -282,7 +282,7 @@ puts "                        importing XDCs"
 ## clk update_compile_order -fileset sources_1 >> $log_file
 
 # PSL4N250SP XDC
-if { $fpga_card == "N250SP" } {
+if { ($fpga_card == "N250SP") && ($psl4n250sp_dir != "not defined") } {
   puts "                            importing psl4n250sp XDCs"
   #add_files -fileset constrs_1 -norecurse $psl4n250sp_dir/setup/xdc/psl4n250sp_config.xdc
   add_files -fileset constrs_1 -norecurse $psl4n250sp_dir/setup/xdc/psl4n250sp_timing.xdc
