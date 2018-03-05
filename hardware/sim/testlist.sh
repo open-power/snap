@@ -187,7 +187,8 @@
         #### check DDR3 memory in AlphaData KU3, stay under 512k for BRAM
         step "snap_example_ddr -h"
         for iter in 1 $rnd10; do                   # number of blocks
-        for bsize in 64 $(($rnd10*64)); do         # block size mult of 64
+       #for bsize in 64 $(($rnd10*64)); do         # block size mult of 64 for P8
+        for bsize in 64 $(($rnd10*128)); do        # block size mult of 128 for P9
         for strt in 1024 $rnd1k4k; do              # start adr
           if [[ "iter" > "1" && ("$bsize" == "64" || "$strt" == "1024") ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
           let end=${strt}+${iter}*${bsize}; to=$((iter*iter*bsize/4+300))                       # rough timeout dependent on filesize
@@ -427,6 +428,7 @@
       echo "Hello world. This is my first CAPI SNAP experience. It's real fun." >tin
       cat tin |tr '[:lower:]' '[:upper:]' >tCAP
       step "snap_helloworld -i tin -o tout"
+      cat tin tout tCAP
       if diff tout tCAP >/dev/null;then echo -e "file_diff ok$del";else echo -e "file_diff is wrong$del";cat t*;exit 1;fi
     fi # hls_helloworld
  #
