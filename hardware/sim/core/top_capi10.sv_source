@@ -786,8 +786,8 @@ module top (
 #endif
 #ifdef CONFIG_ENABLE_DDRI
   // SDRAM Reference Clock generation
-  reg       refclk_sdram_p;
-  initial   refclk_sdram_p <= 0;
+// clk  reg       refclk_sdram_p;
+// clk  initial   refclk_sdram_p <= 0;
 
   // SDRAM System Clock generation
   reg       sys_clk_p;
@@ -805,10 +805,10 @@ module top (
   end
 #endif
 #if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_N250S)
-  // 266MHz N250S reference clock
-  always begin
-     refclk_sdram_p = !refclk_sdram_p; #(3.752ns / 2.0);    // a line can not start with "#", because SNAP is unsing the C preprocessor
-  end
+// clk  // 266MHz N250S reference clock
+// clk  always begin
+// clk     refclk_sdram_p = !refclk_sdram_p; #(3.752ns / 2.0);    // a line can not start with "#", because SNAP is unsing the C preprocessor
+// clk  end
 
   // 266MHz DDR4 system clock
   always begin
@@ -816,10 +816,10 @@ module top (
   end
 #endif
 #if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_S121B)
-  // 100MHz S121B reference clock          
-  always begin                             
-     refclk_sdram_p = !refclk_sdram_p; #(10ns / 2.0);       // a line can not start with "#", because SNAP is unsing the C preprocessor
-  end                                      
+// clk  // 100MHz S121B reference clock          
+// clk  always begin                             
+// clk     refclk_sdram_p = !refclk_sdram_p; #(10ns / 2.0);       // a line can not start with "#", because SNAP is unsing the C preprocessor
+// clk  end                                      
 
   // 100MHz S121B system clock  
   always begin                  
