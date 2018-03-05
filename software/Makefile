@@ -30,6 +30,7 @@ PLATFORM ?= $(shell uname -i)
 
 ifeq ($(PLATFORM),x86_64)
 BUILD_SIMCODE=1
+-include ../snap_env.sh
 
 ifndef PSLSE_ROOT
 # Environment variable PSLSE_ROOT defined by hardware setup scripts.
