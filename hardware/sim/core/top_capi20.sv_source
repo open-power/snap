@@ -1076,14 +1076,14 @@ module top (
   wire  [ 3:0] pcie_rc1_txp;
 #endif
 #ifdef CONFIG_ENABLE_DDRI
-  // SDRAM Reference Clock generation
-  reg       refclk_sdram_p;
-  initial   refclk_sdram_p <= 0;
-
-  // 266MHz N250SP reference clock
-  always begin
-     refclk_sdram_p = !refclk_sdram_p; #(3.752ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
-  end
+// clk  // SDRAM Reference Clock generation
+// clk  reg       refclk_sdram_p;
+// clk  initial   refclk_sdram_p <= 0;
+// clk 
+// clk  // 266MHz N250SP reference clock
+// clk  always begin
+// clk     refclk_sdram_p = !refclk_sdram_p; #(3.752ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
+// clk  end
 
   // SDRAM System Clock generation
   reg       sys_clk_p;
@@ -1173,10 +1173,10 @@ module top (
 //    .ah_jyield(ah_jyield),    - mcp004 does not seem to have this port
     .ah_tbreq(ah_tbreq),
     .ah_paren(ah_paren),
-#ifdef CONFIG_ENABLE_DDRI
-    .refclk_sdram_p         (refclk_sdram_p),
-    .refclk_sdram_n         (~refclk_sdram_p),
-#endif
+// clk #ifdef CONFIG_ENABLE_DDRI
+// clk     .refclk_sdram_p         (refclk_sdram_p),
+// clk     .refclk_sdram_n         (~refclk_sdram_p),
+// clk #endif
 #ifdef CONFIG_ENABLE_DDR3
     // DDR3
     .c0_sys_clk_p           (sys_clk_p),
@@ -1233,6 +1233,8 @@ module top (
     .pcie_rc1_txp(pcie_rc1_txp),
 #endif
     .ha_pclock(ha_pclock),
+    .pci_user_reset(~sys_reset_n_q),
+    .pci_clock_125MHz(pci_clock_125MHz)
     // DMA 0 Req interface
     .d0h_dvalid(d0h_dvalid),
     .d0h_req_utag(d0h_req_utag),
