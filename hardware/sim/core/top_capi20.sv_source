@@ -1234,7 +1234,7 @@ module top (
 #endif
     .ha_pclock(ha_pclock),
     .pci_user_reset(~sys_reset_n_q),
-    .pci_clock_125MHz(pci_clock_125MHz)
+    .pci_clock_125MHz(pci_clock_125MHz),
     // DMA 0 Req interface
     .d0h_dvalid(d0h_dvalid),
     .d0h_req_utag(d0h_req_utag),
