@@ -94,7 +94,7 @@ If you want to run automated from a test list, you can call the simulation scrip
 * start PSLSE and wait for it to connect to this socket and open a second IP socket
 * start an application (or list of applications or xwindow, where you can start any app)
 
-    `run_sim -app <application>` to run just this one app
+    `run_sim -app <application>` to run just this one app  
     `run_sim -list <list.sh>` to run a list of testcases, before ending.
 
 When the app or list or xwindow finishes, this is the signal for PSLSE and the simulator to also end and close all logfiles.
