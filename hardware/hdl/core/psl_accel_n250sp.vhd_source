@@ -35,7 +35,7 @@
 
 ENTITY psl_accel IS
   GENERIC (
-    BRAM_USED  : BOOLEAN := FALSE; 
+    BRAM_USED  : BOOLEAN := FALSE;
 
     -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory
     C_AXI_CARD_MEM0_ID_WIDTH            : integer   := C_DDR_AXI_ID_WIDTH;
@@ -69,7 +69,7 @@ ENTITY psl_accel IS
     C_AXI_HOST_MEM_ARUSER_WIDTH         : integer   := CONTEXT_BITS;
     C_AXI_HOST_MEM_WUSER_WIDTH          : integer   := C_HOST_AXI_WUSER_WIDTH;
     C_AXI_HOST_MEM_RUSER_WIDTH          : integer   := C_HOST_AXI_RUSER_WIDTH;
-    C_AXI_HOST_MEM_BUSER_WIDTH          : integer   := C_HOST_AXI_BUSER_WIDTH 
+    C_AXI_HOST_MEM_BUSER_WIDTH          : integer   := C_HOST_AXI_BUSER_WIDTH
   );
   PORT(
        -- Command interface
@@ -85,7 +85,7 @@ ENTITY psl_accel IS
        ah_csize                         : OUT   std_logic_vector(0 to 11)  ; -- Command size
        ah_cpagesize                     : OUT   std_logic_vector(0 to 3)   := (others => '0'); -- ** New tie to 0000
        ha_croom                         : IN    std_logic_vector(0 to 7)   ; -- Command room
-       -- Buffer interface                       
+       -- Buffer interface
        ha_brvalid                       : IN    std_logic                  ; -- Buffer Read valid
        ha_brtag                         : IN    std_logic_vector(0 to 7)   ; -- Buffer Read tag
        ha_brtagpar                      : IN    std_logic                  ; -- Buffer Read tag parity
@@ -99,7 +99,7 @@ ENTITY psl_accel IS
        ha_bwad                          : IN    std_logic_vector(0 to 5)   ; -- Buffer Write address
        ha_bwdata                        : IN    std_logic_vector(0 to 1023); -- Buffer Write data
        ha_bwpar                         : IN    std_logic_vector(0 to 15)  ; -- Buffer Write data parity
-       -- Response interface                     
+       -- Response interface
        ha_rvalid                        : IN    std_logic                  ; -- Response valid
        ha_rtag                          : IN    std_logic_vector(0 to 7)   ; -- Response tag
        ha_rtagpar                       : IN    std_logic                  ; -- Response tag parity
@@ -112,7 +112,7 @@ ENTITY psl_accel IS
        ha_rcachepos                     : IN    std_logic_vector(0 to 12)  ; -- Response cache pos
        ha_rcredits                      : IN    std_logic_vector(0 to 8)   ; -- Response credits
     -- ha_reoa                          : IN    std_logic_vector(0 to 185);  -- **New unknown width or use
-       -- MMIO interface                         
+       -- MMIO interface
        ha_mmval                         : IN    std_logic                  ; -- A valid MMIO is present
        ha_mmcfg                         : IN    std_logic                  ; -- afu descriptor space access
        ha_mmrnw                         : IN    std_logic                  ; -- 1 = read, 0 = write
@@ -124,7 +124,7 @@ ENTITY psl_accel IS
        ah_mmack                         : OUT   std_logic                  ; -- Write is complete or Read is valid
        ah_mmdata                        : OUT   std_logic_vector(0 to 63)  ; -- Read data
        ah_mmdatapar                     : OUT   std_logic                  ; -- mmio data parity
-       -- Control interface                      
+       -- Control interface
        ha_jval                          : IN    std_logic                  ; -- Job valid
        ha_jcom                          : IN    std_logic_vector(0 to 7)   ; -- Job command
        ha_jcompar                       : IN    std_logic                  ; -- Job command parity
@@ -135,8 +135,8 @@ ENTITY psl_accel IS
        ah_jcack                         : OUT   std_logic                  ; -- completion of llcmd
        ah_jerror                        : OUT   std_logic_vector(0 to 63)  ; -- Job error
        ah_jyield                        : OUT std_logic                    ; -- Job yield
-                                                 
-       -- DMA port 0 Req                         
+
+       -- DMA port 0 Req
        d0h_dvalid                       : OUT   std_logic                  ;
        d0h_req_utag                     : OUT   std_logic_vector(0 to 9)   ;
        d0h_req_itag                     : OUT   std_logic_vector(0 to 8)   ;
@@ -145,20 +145,20 @@ ENTITY psl_accel IS
        d0h_datomic_le                   : OUT   std_logic                  ;
        d0h_dsize                        : OUT   std_logic_vector(0 to 9)   ;
        d0h_ddata                        : OUT   std_logic_vector(0 to 1023);
-       -- DMA port 0 Sent                        
+       -- DMA port 0 Sent
        hd0_sent_utag_valid              : IN    std_logic                  ;
        hd0_sent_utag                    : IN    std_logic_vector(0 to 9)   ;
        hd0_sent_utag_sts                : IN    std_logic_vector(0 to 2)   ;
-       -- DMA port 0 Completion interface        
+       -- DMA port 0 Completion interface
        hd0_cpl_valid                    : IN    std_logic                  ;
        hd0_cpl_utag                     : IN    std_logic_vector(0 to 9)   ;
        hd0_cpl_type                     : IN    std_logic_vector(0 to 2)   ;
        hd0_cpl_size                     : IN    std_logic_vector(0 to 9)   ;
-       hd0_cpl_laddr                    : IN    std_logic_vector(0 to 9)   ;
+       hd0_cpl_laddr                    : IN    std_logic_vector(0 to 6)   ;
        hd0_cpl_byte_count               : IN    std_logic_vector(0 to 9)   ;
        hd0_cpl_data                     : IN    std_logic_vector(0 to 1023);
-                                                 
-       -- DMA port 1 Request                     
+
+       -- DMA port 1 Request
        d1h_dvalid                       : OUT   std_logic                  ;
        d1h_req_utag                     : OUT   std_logic_vector(0 to 9)   ;
        d1h_req_itag                     : OUT   std_logic_vector(0 to 8)   ;
@@ -167,16 +167,16 @@ ENTITY psl_accel IS
        d1h_datomic_le                   : OUT   std_logic                  ;
        d1h_dsize                        : OUT   std_logic_vector(0 to 9)   ;
        d1h_ddata                        : OUT   std_logic_vector(0 to 1023);
-       -- DMA port 1 Sent                        
+       -- DMA port 1 Sent
        hd1_sent_utag_valid              : IN    std_logic                  ;
        hd1_sent_utag                    : IN    std_logic_vector(0 to 9)   ;
        hd1_sent_utag_sts                : IN    std_logic_vector(0 to 2)   ;
-       -- DMA port 1 Completion                  
+       -- DMA port 1 Completion
        hd1_cpl_valid                    : IN    std_logic                  ;
        hd1_cpl_utag                     : IN    std_logic_vector(0 to 9)   ;
        hd1_cpl_type                     : IN    std_logic_vector(0 to 2)   ;
        hd1_cpl_size                     : IN    std_logic_vector(0 to 9)   ;
-       hd1_cpl_laddr                    : IN    std_logic_vector(0 to 9)   ;
+       hd1_cpl_laddr                    : IN    std_logic_vector(0 to 6)   ;
        hd1_cpl_byte_count               : IN    std_logic_vector(0 to 9)   ;
        hd1_cpl_data                     : IN    std_logic_vector(0 to 1023);
 #ifdef CONFIG_ENABLE_DDR4
@@ -200,12 +200,12 @@ ENTITY psl_accel IS
        c0_ddr4_ck_t                     : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 -- TODO:    c0_ddr4_ten                         : OUT   STD_LOGIC;
 #endif
-#ifdef CONFIG_ENABLE_DDRI
-    --
-    -- Clock inputs for SDRAM
-    refclk_sdram_p                      : IN    STD_LOGIC;
-    refclk_sdram_n                      : IN    STD_LOGIC;
-#endif
+-- clk #ifdef CONFIG_ENABLE_DDRI
+-- clk     --
+-- clk     -- Clock inputs for SDRAM
+-- clk     refclk_sdram_p                      : IN    STD_LOGIC;
+-- clk     refclk_sdram_n                      : IN    STD_LOGIC;
+-- clk #endif
 #ifdef CONFIG_ENABLE_NVME
     --
     -- NVME Interface
@@ -237,7 +237,9 @@ ENTITY psl_accel IS
     -- Parity Enable output and 250MHz Clock input
     ah_tbreq                            : OUT std_logic ;                       -- Timebase command request
     ah_paren                            : OUT   STD_LOGIC;
-    ha_pclock                           : IN    STD_LOGIC
+    ha_pclock                           : IN    STD_LOGIC;
+    pci_user_reset                      : IN    std_logic;  --PCI hip user_reset signal if needed
+    pci_clock_125MHz                    : IN    std_logic   --125MHz clock if needed
   );
 END psl_accel;
 
@@ -262,7 +264,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       ha_brvalid              : IN  STD_LOGIC;
       ha_brtag                : IN  STD_LOGIC_VECTOR(0 TO 7);
       ha_brad                 : IN  STD_LOGIC_VECTOR(0 TO 5);
-      ah_brlat                : OUT STD_LOGIC_VECTOR(0 TO 3); 
+      ah_brlat                : OUT STD_LOGIC_VECTOR(0 TO 3);
       ah_brdata               : OUT STD_LOGIC_VECTOR(0 TO 1023);
       ah_brpar                : OUT STD_LOGIC_VECTOR(0 TO 15);
       ha_bwvalid              : IN  STD_LOGIC;
@@ -275,7 +277,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       ha_rvalid               : IN  STD_LOGIC;
       ha_rtag                 : IN  STD_LOGIC_VECTOR(0 TO 7);
       ha_rditag               : IN  STD_LOGIC_VECTOR(0 TO 8);
-      ha_rditagpar            : IN  STD_LOGIC;               
+      ha_rditagpar            : IN  STD_LOGIC;
       ha_response             : IN  STD_LOGIC_VECTOR(0 TO 7);
       ha_response_ext         : IN  STD_LOGIC_VECTOR(0 TO 7);
       ha_rpagesize            : IN  STD_LOGIC_VECTOR(0 TO 3);
@@ -322,7 +324,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       hd0_cpl_utag            : IN  std_logic_vector(0 to 9)   ;
       hd0_cpl_type            : IN  std_logic_vector(0 to 2)   ;
       hd0_cpl_size            : IN  std_logic_vector(0 to 9)   ;
-      hd0_cpl_laddr           : IN  std_logic_vector(0 to 9)   ;
+      hd0_cpl_laddr           : IN  std_logic_vector(0 to 6)   ;
       hd0_cpl_byte_count      : IN  std_logic_vector(0 to 9)   ;
       hd0_cpl_data            : IN  std_logic_vector(0 to 1023);
       --
@@ -707,7 +709,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       S01_AXI_RREADY          : IN  STD_LOGIC;
       M00_AXI_ARESET_OUT_N    : OUT STD_LOGIC;
       M00_AXI_ACLK            : IN  STD_LOGIC;
-      M00_AXI_AWID            : OUT STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
+      M00_AXI_AWID            : OUT STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH   DOWNTO 0);
       M00_AXI_AWADDR          : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
       M00_AXI_AWLEN           : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
       M00_AXI_AWSIZE          : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -723,11 +725,11 @@ ARCHITECTURE psl_accel OF psl_accel IS
       M00_AXI_WLAST           : OUT STD_LOGIC;
       M00_AXI_WVALID          : OUT STD_LOGIC;
       M00_AXI_WREADY          : IN  STD_LOGIC;
-      M00_AXI_BID             : IN  STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
+      M00_AXI_BID             : IN  STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH DOWNTO 0);
       M00_AXI_BRESP           : IN  STD_LOGIC_VECTOR(1 DOWNTO 0);
       M00_AXI_BVALID          : IN  STD_LOGIC;
       M00_AXI_BREADY          : OUT STD_LOGIC;
-      M00_AXI_ARID            : OUT STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
+      M00_AXI_ARID            : OUT STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH DOWNTO 0);
       M00_AXI_ARADDR          : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
       M00_AXI_ARLEN           : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
       M00_AXI_ARSIZE          : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -738,7 +740,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       M00_AXI_ARQOS           : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
       M00_AXI_ARVALID         : OUT STD_LOGIC;
       M00_AXI_ARREADY         : IN  STD_LOGIC;
-      M00_AXI_RID             : IN  STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
+      M00_AXI_RID             : IN  STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH DOWNTO 0);
       M00_AXI_RDATA           : IN  STD_LOGIC_VECTOR(511 DOWNTO 0);
       M00_AXI_RRESP           : IN  STD_LOGIC_VECTOR(1 DOWNTO 0);
       M00_AXI_RLAST           : IN  STD_LOGIC;
@@ -1017,8 +1019,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
   --
   SIGNAL action_reset                   : STD_LOGIC;
   SIGNAL action_reset_n_q               : STD_LOGIC;
-  SIGNAL action_reset_q                 : STD_LOGIC;
-  SIGNAL action_reset_qq                : STD_LOGIC;
+  SIGNAL pci_user_reset_q               : STD_LOGIC;
+  SIGNAL pci_user_reset_qq              : STD_LOGIC;
   SIGNAL xk_d                           : XK_D_T;
   SIGNAL kx_d                           : KX_D_T;
   SIGNAL sk_d                           : SK_D_T;
@@ -1139,8 +1141,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL sdram_axi_ctrl_rdata           : STD_LOGIC_VECTOR(31 DOWNTO 0);
   SIGNAL sdram_axi_ctrl_rresp           : STD_LOGIC_VECTOR(1 DOWNTO 0);
   SIGNAL sdram_interrupt                : STD_LOGIC;
-  SIGNAL refclk_sdram_ibuf              : STD_LOGIC;
-  SIGNAL refclk_sdram_bufg              : STD_LOGIC;
+-- clk   SIGNAL refclk_sdram_ibuf              : STD_LOGIC;
+-- clk   SIGNAL refclk_sdram_bufg              : STD_LOGIC;
 #endif
 
 #ifdef CONFIG_ENABLE_DDR4
@@ -1267,56 +1269,60 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL sys_clk_nvme_ch0_gt            : STD_LOGIC;
   SIGNAL sys_clk_nvme_ch1               : STD_LOGIC;
   SIGNAL sys_clk_nvme_ch1_gt            : STD_LOGIC;
+  -- TMP NVME
+  SIGNAL tmp_sdram_axi_arid             : STD_LOGIC_VECTOR (C_AXI_CARD_MEM0_ID_WIDTH downto 0);
+  SIGNAL tmp_sdram_axi_awid             : STD_LOGIC_VECTOR (C_AXI_CARD_MEM0_ID_WIDTH downto 0);
+  SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (C_AXI_CARD_MEM0_ID_WIDTH downto 0);
+  SIGNAL tmp_sdram_axi_rid              : STD_LOGIC_VECTOR (C_AXI_CARD_MEM0_ID_WIDTH downto 0);
 #endif
 
 BEGIN
   --
-  -- Action Reset Logic
+  -- Reset Delay Logic
   --
-  action_reset_reg : PROCESS (ha_pclock)
+  reset_reg : PROCESS (ha_pclock)
   BEGIN
     IF (rising_edge(ha_pclock)) THEN
-      action_reset_q   <=     action_reset;
-      action_reset_qq  <=     action_reset_q;
-      action_reset_n_q <= NOT action_reset;
+      action_reset_n_q   <= NOT action_reset;
+      pci_user_reset_q   <= pci_user_reset;
+      pci_user_reset_qq  <= pci_user_reset_q;      
     END IF;
-  END PROCESS action_reset_reg;
+  END PROCESS reset_reg;
 
 #ifdef CONFIG_ENABLE_DDRI
   --
   -- SDRAM Reset Logic
   --
-  sdram_reset : PROCESS (refclk_sdram_bufg)
+  sdram_reset_reg : PROCESS (pci_clock_125MHz)
   BEGIN  -- PROCESS
-    IF (rising_edge(refclk_sdram_bufg)) THEN
-      IF ((action_reset   = '1') OR
-          (action_reset_q = '1') or
-          (action_reset_qq= '1')) THEN
+    IF (rising_edge(pci_clock_125MHz)) THEN
+      IF ((pci_user_reset    = '1') OR
+          (pci_user_reset_q  = '1') or
+          (pci_user_reset_qq = '1')) THEN
         sdram_reset_m <= '1';
       ELSE
         sdram_reset_m <= '0';
       END IF;
 
       sdram_reset_q   <=     sdram_reset_m;
-      sdram_reset_n_q <= NOT sdram_reset_m;
     END IF;
-  END PROCESS sdram_reset;
+  END PROCESS sdram_reset_reg;
 
-  --
-  -- SDRAM Ref Clock Logic
-  --
-  ibuf_refclk_sdram : IBUFGDS
-  port map(
-    I  => refclk_sdram_p,
-    IB => refclk_sdram_n,
-    O  => refclk_sdram_ibuf
-  );
-
-  bufg_sdrma : BUFG
-  port map(
-    I => refclk_sdram_ibuf,
-    O => refclk_sdram_bufg
-  );
+-- clk  --
+-- clk  -- SDRAM Ref Clock Logic
+-- clk  --
+-- clk  ibuf_refclk_sdram : IBUFGDS
+-- clk  port map(
+-- clk    I  => refclk_sdram_p,
+-- clk    IB => refclk_sdram_n,
+-- clk    O  => refclk_sdram_ibuf
+-- clk  );
+-- clk 
+-- clk  bufg_sdrma : BUFG
+-- clk  port map(
+-- clk    I => refclk_sdram_ibuf,
+-- clk    O => refclk_sdram_bufg
+-- clk  );
 #endif
 
   snap_core_i: snap_core
@@ -1342,13 +1348,13 @@ BEGIN
       ha_brtag       => ha_brtag,
       ha_brad        => ha_brad,
       ah_brlat       => ah_brlat,
-      ah_brdata      => ah_brdata,  
-      ah_brpar       => ah_brpar,     
+      ah_brdata      => ah_brdata,
+      ah_brpar       => ah_brpar,
       ha_bwvalid     => ha_bwvalid,
       ha_bwtag       => ha_bwtag,
       ha_bwad        => ha_bwad,
-      ha_bwdata      => ha_bwdata,  
-      ha_bwpar       => ha_bwpar,     
+      ha_bwdata      => ha_bwdata,
+      ha_bwpar       => ha_bwpar,
       ha_brtagpar    => ha_brtagpar,
       ha_bwtagpar    => ha_bwtagpar,
       --
@@ -1393,24 +1399,24 @@ BEGIN
       ah_paren       => ah_paren,
       ha_pclock      => ha_pclock,
       -- DMA interface
-      d0h_dvalid          => d0h_dvalid,         
-      d0h_req_utag        => d0h_req_utag,       
-      d0h_req_itag        => d0h_req_itag,       
-      d0h_dtype           => d0h_dtype,          
-      d0h_datomic_op      => d0h_datomic_op,     
-      d0h_datomic_le      => d0h_datomic_le,     
-      d0h_dsize           => d0h_dsize,          
-      d0h_ddata           => d0h_ddata,          
+      d0h_dvalid          => d0h_dvalid,
+      d0h_req_utag        => d0h_req_utag,
+      d0h_req_itag        => d0h_req_itag,
+      d0h_dtype           => d0h_dtype,
+      d0h_datomic_op      => d0h_datomic_op,
+      d0h_datomic_le      => d0h_datomic_le,
+      d0h_dsize           => d0h_dsize,
+      d0h_ddata           => d0h_ddata,
       hd0_sent_utag_valid => hd0_sent_utag_valid,
-      hd0_sent_utag       => hd0_sent_utag,      
-      hd0_sent_utag_sts   => hd0_sent_utag_sts,  
-      hd0_cpl_valid       => hd0_cpl_valid,      
-      hd0_cpl_utag        => hd0_cpl_utag,      
-      hd0_cpl_type        => hd0_cpl_type,       
-      hd0_cpl_size        => hd0_cpl_size,       
-      hd0_cpl_laddr       => hd0_cpl_laddr,      
-      hd0_cpl_byte_count  => hd0_cpl_byte_count, 
-      hd0_cpl_data        => hd0_cpl_data,       
+      hd0_sent_utag       => hd0_sent_utag,
+      hd0_sent_utag_sts   => hd0_sent_utag_sts,
+      hd0_cpl_valid       => hd0_cpl_valid,
+      hd0_cpl_utag        => hd0_cpl_utag,
+      hd0_cpl_type        => hd0_cpl_type,
+      hd0_cpl_size        => hd0_cpl_size,
+      hd0_cpl_laddr       => hd0_cpl_laddr,
+      hd0_cpl_byte_count  => hd0_cpl_byte_count,
+      hd0_cpl_data        => hd0_cpl_data,
       --
       -- ACTION Interface
       --
@@ -1624,12 +1630,12 @@ BEGIN
 #endif
 
 #if defined(CONFIG_ENABLE_DDRI) && !defined(CONFIG_ENABLE_BRAM)
-  sdram_axi_clk   <= sdram_ui_clk;
+  sdram_axi_clk   <=     sdram_ui_clk;
   sdram_axi_rst_n <= NOT sdram_ui_clk_sync_rst;
 #endif
 #ifdef CONFIG_ENABLE_BRAM
-  sdram_axi_clk   <= refclk_sdram_bufg;
-  sdram_axi_rst_n <= sdram_reset_n_q;
+  sdram_axi_clk   <=     pci_clock_125MHz;
+  sdram_axi_rst_n <= NOT sdram_reset_q;
 #endif
 
 
@@ -1733,6 +1739,10 @@ BEGIN
   nvm_axi_card_mem0_bid  (2 downto 0) <= "000";
   nvm_axi_card_mem0_rid  (2 downto 0) <= "000";
 
+  sdram_axi_arid    <= tmp_sdram_axi_arid(3 DOWNTO 0);
+  sdram_axi_awid    <= tmp_sdram_axi_awid(3 DOWNTO 0);                    
+  tmp_sdram_axi_bid <= '0' & sdram_axi_bid(3 DOWNTO 0);
+  tmp_sdram_axi_rid <= '0' & sdram_axi_rid(3 DOWNTO 0);
   axi_interconnect_i : axi_interconnect
     PORT MAP (
       INTERCONNECT_ACLK       => ha_pclock,
@@ -1827,7 +1837,7 @@ BEGIN
       m00_axi_araddr          => sdram_axi_araddr,
       m00_axi_arburst         => sdram_axi_arburst,
       m00_axi_arcache         => sdram_axi_arcache,
-      m00_axi_arid            => sdram_axi_arid,
+      m00_axi_arid            => tmp_sdram_axi_arid,
       m00_axi_arlen           => sdram_axi_arlen,
       m00_axi_arlock          => open, -- sdram_axi_arlock,
       m00_axi_arprot          => sdram_axi_arprot,
@@ -1838,7 +1848,7 @@ BEGIN
       m00_axi_awaddr          => sdram_axi_awaddr,
       m00_axi_awburst         => sdram_axi_awburst,
       m00_axi_awcache         => sdram_axi_awcache,
-      m00_axi_awid            => sdram_axi_awid,
+      m00_axi_awid            => tmp_sdram_axi_awid,
       m00_axi_awlen           => sdram_axi_awlen,
 --      m00_axi_awlock        => sdram_axi_awlock,
       m00_axi_awprot          => sdram_axi_awprot,
@@ -1846,12 +1856,12 @@ BEGIN
       m00_axi_awready         => sdram_axi_awready,
       m00_axi_awsize          => sdram_axi_awsize,
       m00_axi_awvalid         => sdram_axi_awvalid,
-      m00_axi_bid             => sdram_axi_bid,
+      m00_axi_bid             => tmp_sdram_axi_bid,
       m00_axi_bready          => sdram_axi_bready,
       m00_axi_bresp           => sdram_axi_bresp,
       m00_axi_bvalid          => sdram_axi_bvalid,
       m00_axi_rdata           => sdram_axi_rdata,
-      m00_axi_rid             => sdram_axi_rid,
+      m00_axi_rid             => tmp_sdram_axi_rid,
       m00_axi_rlast           => sdram_axi_rlast,
       m00_axi_rready          => sdram_axi_rready,
       m00_axi_rresp           => sdram_axi_rresp,
@@ -1964,7 +1974,7 @@ BEGIN
       c0_ddr4_ck_t               => c0_ddr4_ck_t,
       c0_ddr4_ui_clk             => sdram_ui_clk,
       c0_ddr4_ui_clk_sync_rst    => sdram_ui_clk_sync_rst,
-      c0_ddr4_aresetn            => sdram_reset_n_q,
+      c0_ddr4_aresetn            => sdram_axi_rst_n,
       c0_ddr4_s_axi_ctrl_awvalid => sdram_axi_ctrl_awvalid,
       c0_ddr4_s_axi_ctrl_awready => sdram_axi_ctrl_awready,
       c0_ddr4_s_axi_ctrl_awaddr  => sdram_axi_ctrl_awaddr,

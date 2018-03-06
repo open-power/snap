@@ -1,6 +1,5 @@
-#!/bin/bash
 #
-# Copyright 2017 International Business Machines
+# Copyright 2017, International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-###############################################################################
-cd ${PSLSE_ROOT}
-version=`git describe --tags`
-branch=`git branch`
-echo "checking PSLSE_ROOT=${PSLSE_ROOT} card=$FPGACARD version=$version branch=$branch"
-case $FPGACARD in
-  "N250SP") if [ $branch != "\* capi2" ];then echo "WARNING: PSLSE branch=$branch should be capi2";fi;;
-  *)        if [ $version != "v3.1"    ];then echo "WARNING: PSLSE version=$version should be v3.1";fi;;
-esac
-cd -
+
+vhd_srcs=$(wildcard *.vhd_source)
+vhd_files=$(vhd_srcs:.vhd_source=.vhd)
+
+.PHONY: all config clean vhdl
+
+all: config
+
+config:
+
+clean:
+	@$(RM) $(vhd_files)
+
+vhdl:
+
+#
+# FIXME Consider moving the functionality from action_config.sh into
+#      this Makefile. This also allows to define a proper clean rule
+#      such that the directory gets properly cleaned up and git status
+#      shows not the generated files.
+#

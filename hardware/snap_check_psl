@@ -41,6 +41,7 @@ else
     '51b64ad40a3dc54ec855d7d7dfef0896')    export PSL_DCP_TYPE="ADKU3";; # rblack_PSLrev6_v174_20170122_vsec400
     '3fa538efab1bc3e3fabe06477445d314')    export PSL_DCP_TYPE="S121B";; 
     '8602200acb12d2de68c2a8a95735571a')    export PSL_DCP_TYPE="S121B";;
+    '400d13185ce03f38776d672690618b2e')    export PSL_DCP_TYPE="S121B";; # psl233_viv17.4_vsec400h_Feb23
     'd051aa72ce08b60fd587a74a5146bf88')    export PSL_DCP_TYPE="N250S OUTDATED";;    
     *)                                     export PSL_DCP_TYPE="UNKNOWN";;
   esac
