@@ -24,17 +24,17 @@ logfile                      --log simulate.log
 ```
 ## PSLSE setup
 During Simulation only the SNAP framework + action is part of the simulation model,
-and the PSL functionality is replaced by the PSL simulation environment (PSLSE), a behavior simulator running on the X86 host.
+and the PSL functionality is replaced by the PSL simulation environment (PSLSE), a behavioral simulator running on the X86 host.
 
 You may clone `PSLSE` from github [https://github.com/ibm-capi/pslse](https://github.com/ibm-capi/pslse).
 Starting with March 1st 2018, the 'master' branch in PSLSE supports both PSL functions for POWER8 or POWER9,
-but you have to specify, what you want. This is specified with the environment variable PSLVER=8 or PSLVER=9
+but you have to specify which version you need with the environment variable PSLVER=8 or PSLVER=9.
 
 The simulation runtime script 'run_sim' will
 ```
 * start the hardware simulator and load the SNAP framework+action simulation model
-* start the PSLSE behavior simulator and connect it to the hardware simulator
-* start any Software application and connect it to PSLSE to run testcases against the hardware model
+* start the PSLSE behavioral simulator and connect it to the hardware simulator
+* start any software application and connect it to PSLSE to run testcases against the hardware model
 ```
 
 In order to enable SNAP's build and simulation process to make use of `PSLSE`,
@@ -103,7 +103,8 @@ If you start an app in the xterm and cntl-C it without exiting from the xterm, t
 
 ## card and action settings
 Currently supported are AlphaData KU3, Nallatech 250S and 250S+, Semptian NSA121B
-Regression tests are in place for following cards
+
+Regression tests are in place for the following cards:
 ```
 card         ADKU3      N250S      N250SP     S121B          # set with
 system       POWER8     POWER8     POWER9     POWER8         #
@@ -111,7 +112,7 @@ memory_avail DDR3/BRAM  DDR4/BRAM  DDR4/BRAM  DDR4/BRAM      # SDRAM_USED, BRAM_
 NVMe         no         yes        no         no             # NVME_USED=TRUE
 cloud access yes        partial    no         no             # not avail yet for NVMe
 ```
-Card+Framework be mixed with following actions (one action only)
+Depending on the used memory, the card and framework can be combined with the following actions (one action only):
 ```
 memory_used  DDR               BRAM             none
 action       hdl_example       hdl_example      hdl_example
