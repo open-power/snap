@@ -24,7 +24,7 @@ if [ $# -gt 1 ]; then
   PSL_DCP=$2
 
   if [ "$FPGACARD" == "N250SP" ] ||
-     [ "$FPGACARD" == "AD8K5"  ] then
+     [ "$FPGACARD" == "AD8K5"  ]; then
     export PSL_DCP_TYPE=$FPGACARD
   else
     if [ -n "$PSL_DCP" ]; then
