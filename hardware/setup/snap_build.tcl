@@ -78,7 +78,12 @@ if { $vivadoVer != "2017.4" } {
   lock_design -level routing b > $log_dir/lock_design.log
 }
 
-read_xdc ../setup/snap_impl.xdc >> $logfile
+##
+## ToDo: necessary for other cards?
+if { $fpgacard != "AD8K5" } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "reread snap_impl.xdc" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  read_xdc ../setup/snap_impl.xdc >> $logfile
+}
 
 
 ##

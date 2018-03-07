@@ -172,6 +172,7 @@ static void snap_version(void *handle)
                 case 0: VERBOSE1("ADKU3"); break;
                 case 1: VERBOSE1("N250S"); break;
                 case 2: VERBOSE1("S121B"); break;
+                case 3: VERBOSE1("AD8K5"); break;
                 case 16: VERBOSE1("N250SP"); break;
                 default: VERBOSE1("Unknown"); break;
         }
@@ -390,6 +391,7 @@ static void snap_show_cap(void *handle, int mode)
 			case 0: VERBOSE0("ADKU3"); break;
 			case 1: VERBOSE0("N250S"); break;
 			case 2: VERBOSE0("S121B"); break;
+			case 3: VERBOSE0("AD8K5"); break;
 			case 16: VERBOSE0("N250SP"); break;
 		}
 	}

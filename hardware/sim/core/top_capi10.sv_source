@@ -322,7 +322,6 @@ module top (
   // 125MHz AFU clock
   reg     pci_clock_125MHz;
   initial pci_clock_125MHz <= 0;
-
   always begin
      pci_clock_125MHz = !pci_clock_125MHz; #(8.0ns / 2.0);  // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
@@ -739,7 +738,7 @@ module top (
   wire  [ 8:0] c0_ddr3_dqs_p;
   wire  [ 8:0] c0_ddr3_dqs_n;
 #endif
-#if defined(CONFIG_ENABLE_DDR4) && !defined(CONFIG_S121B)
+#if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_N250S)
   // DDR4 Signals
   wire          c0_ddr4_act_n;
   wire  [16:0]  c0_ddr4_adr;
@@ -772,6 +771,23 @@ module top (
   wire  [71:0]  c2_ddr4_dq;       
   wire  [8:0]   c2_ddr4_dqs_c;    
   wire  [8:0]   c2_ddr4_dqs_t;    
+#endif
+#if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_AD8K5)
+  // DDR4 Signals                 
+  wire          c0_ddr4_act_n;    
+  wire  [16:0]  c0_ddr4_adr;      
+  wire  [1:0]   c0_ddr4_ba;       
+  wire  [1:0]   c0_ddr4_bg;       
+  wire  [0:0]   c0_ddr4_cke;      
+  wire  [0:0]   c0_ddr4_odt;      
+  wire  [0:0]   c0_ddr4_cs_n;     
+  wire  [0:0]   c0_ddr4_ck_t;     
+  wire  [0:0]   c0_ddr4_ck_c;     
+  wire          c0_ddr4_reset_n;  
+  wire  [8:0]   c0_ddr4_dm_dbi_n; 
+  wire  [71:0]  c0_ddr4_dq;       
+  wire  [8:0]   c0_ddr4_dqs_c;    
+  wire  [8:0]   c0_ddr4_dqs_t;    
 #endif
 #ifdef CONFIG_ENABLE_NVME
   // NVME Signals
@@ -826,6 +842,13 @@ module top (
      sys_clk_p = !sys_clk_p; #(10ns / 2.0);                 // a line can not start with "#", because SNAP is unsing the C preprocessor    
   end                           
 #endif
+#if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_AD8K5)
+  // 300MHz AD8K5 system clock  
+  always begin                  
+     sys_clk_p = !sys_clk_p; #(3.332ns / 2.0);              // a line can not start with "#", because SNAP is unsing the C preprocessor    
+  end                           
+#endif
+
 #ifdef CONFIG_ENABLE_NVME
   // NVME Reference Clock generation
   reg refclk_nvme_p;
@@ -963,6 +986,26 @@ module top (
     .c2_ddr4_dqs_c          (c2_ddr4_dqs_c),    
     .c2_ddr4_dqs_t          (c2_ddr4_dqs_t),    
 #endif 
+#if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_AD8K5)
+    // DDR4                                     
+    .c0_sys_clk_p           (sys_clk_p),        
+    .c0_sys_clk_n           (~sys_clk_p),       
+    .c0_ddr4_act_n          (c0_ddr4_act_n),    
+    .c0_ddr4_adr            (c0_ddr4_adr),      
+    .c0_ddr4_ba             (c0_ddr4_ba),       
+    .c0_ddr4_bg             (c0_ddr4_bg),       
+    .c0_ddr4_cke            (c0_ddr4_cke),      
+    .c0_ddr4_odt            (c0_ddr4_odt),      
+    .c0_ddr4_cs_n           (c0_ddr4_cs_n),     
+    .c0_ddr4_ck_t           (c0_ddr4_ck_t),     
+    .c0_ddr4_ck_c           (c0_ddr4_ck_c),     
+    .c0_ddr4_reset_n        (c0_ddr4_reset_n),  
+    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n), 
+    .c0_ddr4_dq             (c0_ddr4_dq),       
+    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),    
+    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t),    
+#endif 
+
 #ifdef CONFIG_ENABLE_NVME
     // NVME
     .nvme_reset_n           (sys_reset_n_q),
@@ -1047,6 +1090,26 @@ module top (
     .c0_ddr4_dqs_t          (c2_ddr4_dqs_t)     
     );                                          
 #endif
+#if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_AD8K5)
+  ddr4_dimm_ad8k5 ddr4_dimm_ad8k5 (             
+    .sys_reset              (~sys_reset_n_q),   
+    .c0_ddr4_act_n          (c0_ddr4_act_n),    
+    .c0_ddr4_adr            (c0_ddr4_adr),      
+    .c0_ddr4_ba             (c0_ddr4_ba),       
+    .c0_ddr4_bg             (c0_ddr4_bg),       
+    .c0_ddr4_cke            (c0_ddr4_cke),      
+    .c0_ddr4_odt            (c0_ddr4_odt),      
+    .c0_ddr4_cs_n           (c0_ddr4_cs_n),     
+    .c0_ddr4_ck_t           (c0_ddr4_ck_t),     
+    .c0_ddr4_ck_c           (c0_ddr4_ck_c),     
+    .c0_ddr4_reset_n        (c0_ddr4_reset_n),  
+    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n), 
+    .c0_ddr4_dq             (c0_ddr4_dq),       
+    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),    
+    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)     
+    );                                          
+#endif
+  
 #ifdef CONFIG_ENABLE_NVME
   ////////////////////////////////////////////////////////////
   // NVMe model                                             //

@@ -36,13 +36,13 @@ VERBOSE=0
 function usage() {
 	echo "Usage: $PROGRAM"
         echo "    [-v] Prints extra information (to be put as first param)"
-	echo "    [-A] <accelerator> use either GZIP, ADKU3, N250S, S121B or ALL"
+	echo "    [-A] <accelerator> use either GZIP, ADKU3, N250S, S121B, AD8K5 or ALL"
 	echo "    [-C] <0..3> Print accelerator name for this Card"
 	echo "    [-V] provides version"
 	echo "  prints out a list of cards found for the accelerator."
 	echo "  The numbers reflect /dev/cxl/afu<n>.0."
 	echo "  Print a list of all cards found if -A ALL."
-        echo "  Print a list of all cards found from a specific provider (-A N250S or ADKU3 or NSA121B or GZIP)"
+        echo "  Print a list of all cards found from a specific provider (-A N250S or ADKU3 or NSA121B or AD8K5 or GZIP)"
 	echo "  Print card name if -C (0..3) is used."
 }
 
@@ -186,6 +186,10 @@ while getopts ":vA:C:Vh" opt; do
 		if [ $? == 1 ]; then
 			exit 1
 		fi
+		detect_card_name $card  "0x0632" "0x0608" "AD8K5"
+		if [ $? == 1 ]; then
+			exit 1
+		fi
 		detect_card_name $card  "0x0602" "" "GZIP"
 		if [ $? == 1 ]; then
 			exit 1
@@ -231,6 +235,10 @@ case ${accel} in
 		detect_snap_cards "0x0632" "0x0607"
 		RC=$?
 		;;		
+	# AD8K5 Card from AlphaData
+	"AD8K5")
+		detect_snap_cards "0x0632" "0x0608"
+		RC=$?
 	# 250s Card from Nallatech
 	"N250S")
 		detect_snap_cards "0x0632" "0x060a"
@@ -255,6 +263,12 @@ case ${accel} in
                      echo "S121B card:"
                 fi
 		detect_snap_cards "0x0632" "0x0607"
+		RC=$((RC + $?))
+                if [ $VERBOSE -eq 1 ] ; then
+                     echo "------------------------------------------------------------------------"
+                     echo "AD8K5 card:"
+                fi
+		detect_snap_cards "0x0632" "0x0608"
 		RC=$((RC + $?))
                 if [ $VERBOSE -eq 1 ] ; then
                      echo "------------------------------------------------------------------------"
