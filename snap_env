@@ -101,8 +101,7 @@ while [ -z "$SETUP_DONE" ]; do
       echo "#export PSL4N250SP_ROOT=" >> $snap_env_sh
     fi
     if [ -z "$PSL4N250SP_ROOT" ]; then
-      SETUP_EMPTY="$SETUP_EMPTY\n  PSL4N250S_ROOT"
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### The environment variable PSL4N250SP_ROOT must point to the directory containing the PSL IP together with N250SP card support."
+      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable PSL4N250SP_ROOT must point to the directory containing the PSL IP together with N250SP card support."
     fi
   ####### checking path to PSL design checkpoint
   # Note: CLOUD_USER_FLOW is defined via snap_config

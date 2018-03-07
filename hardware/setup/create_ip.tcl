@@ -48,7 +48,7 @@ set_property target_language VHDL [current_project]
 set_property target_simulator IES [current_project]
 
 #create PSL/HDK IP for N250SP
-if { $fpga_card == "N250SP" } {
+if { ($fpga_card == "N250SP") && ($psl4n250sp_dir != "not defined") } {
   puts "                        generating PSL for SNAP IP"
 
   # Set IP repository paths

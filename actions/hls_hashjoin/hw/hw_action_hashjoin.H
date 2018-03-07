@@ -1,5 +1,5 @@
-#ifndef __ACTION_HASHJOIN_HLS_H__
-#define __ACTION_HASHJOIN_HLS_H__
+#ifndef __HW_ACTION_HASHJOIN_H__
+#define __HW_ACTION_HASHJOIN_H__
 
 /*
  * Copyright 2017, International Business Machines
@@ -25,7 +25,7 @@
 #include <hls_snap.H>
 #include <action_hashjoin.h>
 
-#define RELEASE_LEVEL        0x00000021
+#define RELEASE_LEVEL        0x00000022
 
 /* Define memory buffers to keep the data we read from CARD or HOST DRAM */
 #define TABLE1_BYTES         (sizeof(table1_t) * TABLE1_SIZE)
@@ -63,4 +63,4 @@ void table3_dump(table3_t *table3, unsigned int table3_idx);
 
 #define CONFIG_HOSTSTYLE_ALGO
 
-#endif  /* __ACTION_HASHJOIN_HLS_H__ */
+#endif  /* __HW_ACTION_HASHJOIN_H__ */
