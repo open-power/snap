@@ -93,6 +93,8 @@ export NVME_USED ?= FALSE
 export USE_PRFLOW ?= FALSE
 export DCP_ROOT ?= $(SNAP_ROOT)/dcp
 
+export IGNORE_CHECK_PSL ?= $(USE_PRFLOW)
+
 ## variables just for this Makefile
 BUILD_DIR=$(SNAP_HARDWARE_ROOT)/build
 SNAP_HDL_CORE=$(SNAP_HARDWARE_ROOT)/hdl/core
@@ -326,7 +328,7 @@ config: hw_project
 
 # checking card type for PSL design checkpoint
 check_psl:
-	if [ "$(USE_PRFLOW)" != "TRUE" ]; then \
+	if [ "$(IGNORE_CHECK_PSL)" != "TRUE" ] ; then \
 		if [ "$(FPGACARD)" == "N250SP" ]; then \
 			if [ -z "$(PSL4N250SP_ROOT)" ]; then \
 				echo "### ERROR ###  Environment variable PSL4N250SP_ROOT is undefined. It has to point to the PSL IP sources."; exit -1; \
