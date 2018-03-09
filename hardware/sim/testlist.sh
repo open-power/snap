@@ -19,7 +19,7 @@
   n=0                                                   # count amount of tests executed (exception for subsecond calls)
   max_rc=0                                              # track the maximum RC to return at the end
   loops=1;
-  rnd10=    $(((RANDOM%9+2))
+  rnd10=    $(((RANDOM%9)+2))
   rndeven20=$(((RANDOM%5)*2+10))
   rnd20=    $(((RANDOM%19)+2))
   rnd32=    $(((RANDOM%31)+2))
