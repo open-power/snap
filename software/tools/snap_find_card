@@ -239,6 +239,7 @@ case ${accel} in
 	"AD8K5")
 		detect_snap_cards "0x0632" "0x0608"
 		RC=$?
+		;;		
 	# 250s Card from Nallatech
 	"N250S")
 		detect_snap_cards "0x0632" "0x060a"
