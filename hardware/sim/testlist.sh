@@ -19,14 +19,15 @@
   n=0                                                   # count amount of tests executed (exception for subsecond calls)
   max_rc=0                                              # track the maximum RC to return at the end
   loops=1;
-  rnd10=    $(((RANDOM%9)+2))
+  rnd10=$(((RANDOM%9)+2))
   rndeven20=$(((RANDOM%5)*2+10))
-  rnd20=    $(((RANDOM%19)+2))
-  rnd32=    $(((RANDOM%31)+2))
-  rnd1k=    $(((RANDOM%1023)+2))
-  rnd1k4k=  $(((RANDOM%3072)+1024))
-  rnd16k=   $(((RANDOM%16383)+2))
-  rnd32k=   $((RANDOM))
+  rnd20=$(((RANDOM%19)+2))
+  rnd32=$(((RANDOM%31)+2))
+  rnd1k=$(((RANDOM%1023)+2))
+  rnd1k4k=$(((RANDOM%3072)+1024))
+  rnd16k=$(((RANDOM%16383)+2))
+  rnd32k=$((RANDOM))
+  echo "random=$rnd10 $rndeven20 $rnd20 $rnd32 $rnd1k $rnd1k4k $rnd16k $rnd32k"
 # export SNAP_TRACE=0xFF
 # export SNAP_TRACE=0xF2 # for Sven
   stimfile=$(basename "$0"); logfile="${stimfile%.*}.log"; echo "executing $stimfile, logging $logfile maxloop=$loops";
