@@ -19,14 +19,14 @@
   n=0                                                   # count amount of tests executed (exception for subsecond calls)
   max_rc=0                                              # track the maximum RC to return at the end
   loops=1;
-  rnd10=$((2+RANDOM%9))
-  rndodd20=$((10+2*RANDOM%5))
-  rnd20=$((2+RANDOM%19))
-  rnd32=$((2+RANDOM%31))
-  rnd1k=$((2+RANDOM%1023))
-  rnd1k4k=$((1024+RANDOM%3072))
-  rnd16k=$((2+RANDOM%16383))
-  rnd32k=$((RANDOM))
+  rnd10=    $(((RANDOM%9+2))
+  rndeven20=$(((RANDOM%5)*2+10))
+  rnd20=    $(((RANDOM%19)+2))
+  rnd32=    $(((RANDOM%31)+2))
+  rnd1k=    $(((RANDOM%1023)+2))
+  rnd1k4k=  $(((RANDOM%3072)+1024))
+  rnd16k=   $(((RANDOM%16383)+2))
+  rnd32k=   $((RANDOM))
 # export SNAP_TRACE=0xFF
 # export SNAP_TRACE=0xF2 # for Sven
   stimfile=$(basename "$0"); logfile="${stimfile%.*}.log"; echo "executing $stimfile, logging $logfile maxloop=$loops";
@@ -162,24 +162,28 @@
       for num4k in 0 1 $rnd20; do to=$((num4k*400+400))
       for num64 in 0 1 2 $rnd32; do
       for align in 4096 64; do  # posix memalign only allows power of 2
-        if [[ $((num64%2)) == 1      && $cardtype == "10" ]];then echo "skip num64=$num64 for N250SP";continue;fi        # odd 64B xfer not allowed on N250SP
-        if [[ $(((align/64)%2)) == 1 && $cardtype == "10" ]];then echo "skip align=$align for N250SP";continue;fi        # 64B aligns not allowed on N250SP
-        if [[ "$num4k" == "0" && "$num64" == "0" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
-        if [[ "$num4k" > "1"  && "$num64" < "2"  ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
-        if [[ "$num4k" > "1"  && "$align" > "64" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+        if [[ $((num64%2)) == 1      && $cardtype == "10" ]];then echo "skip num4k=$num4k num64=$num64 align=$align for N250SP";continue;fi # odd 64B xfer not allowed on N250SP
+        if [[ $(((align/64)%2)) == 1 && $cardtype == "10" ]];then echo "skip num4k=$num4k num64=$num64 align=$align for N250SP";continue;fi # 64B aligns not allowed on N250SP
+        if [[ "$num4k" == "0" && "$num64" == "0"          ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
+        if [[ "$num4k" > "1"  && "$num64" < "2"           ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+        if [[ "$num4k" > "1"  && "$align" > "64"          ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
         step "snap_example -a2 -S${num4k} -B${num64} -A${align} -t$to"
       done
       done
       done
       if [[ "$DDR3_USED" == "TRUE" || "$DDR4_USED" == "TRUE" || "$BRAM_USED" == "TRUE" || "$SDRAM_USED" == "TRUE" ]]; then echo -e "$del\ntesting DDR"
+        echo "debug issues 665 on N250SP and others"
+        if [[ $cardtype == "10" ]];then for i in {1..5};do echo "loop $i";snap_example -a6 -S8 -B2 -A128 -t200 -v||break;done
+        else                            for i in {1..5};do echo "loop $i";snap_example -a6 -S8 -B2 -A64 -t200 -v||break;done
+        fi
         for num4k in 0 1 $rnd20; do to=$((num4k*400+400))
         for num64 in 0 1 $rnd32; do                # 1..64
-        for align in 4096 64; do                   # must be mult of 64
-          if [[ $((num64%2)) == 1      && $cardtype == "10" ]];then echo "skip num64=$num64 for N250SP";continue;fi        # odd 64B xfer not allowed on N250SP
-          if [[ $(((align/64)%2)) == 1 && $cardtype == "10" ]];then echo "skip align=$align for N250SP";continue;fi        # 64B aligns not allowed on N250SP
-          if [[ "$num4k" == "0" && "$num64" == "0" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
-          if [[ "$num4k" > "1"  && "$num64" < "2"  ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
-          if [[ "$num4k" > "1"  && "$align" > "64" ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+        for align in 4096 128 64; do               # must be mult of 64 for P8, mult of 128 for P9
+          if [[ $((num64%2)) == 1  && $cardtype == "10"   ]];then echo "skip num4k=$num4k num64=$num64 align=$align for N250SP";continue;fi # odd 64B xfer not allowed on N250SP
+          if [[ $((align%128)) > 0 && $cardtype == "10"   ]];then echo "skip num4k=$num4k num64=$num64 align=$align for N250SP";continue;fi # only 128B aligns allowed on N250SP
+          if [[ "$num4k" == "0" && "$num64" == "0"        ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
+          if [[ "$num4k" > "1"  && "$num64" < "2"         ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+          if [[ "$num4k" > "1"  && "$align" > "64"        ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
           step "snap_example -a6 -S${num4k} -B${num64} -A${align} -t$to"
         done
         done
@@ -187,9 +191,10 @@
         #### check DDR3 memory in AlphaData KU3, stay under 512k for BRAM
         step "snap_example_ddr -h"
         for iter in 1 $rnd10; do                   # number of blocks
-        for bsize in 64 $(($rnd10*64)); do         # block size mult of 64
+        for bsize in 64 128 $(($rnd10*64)); do     # block size mult of 64 for P8, mult of 128 for P9
         for strt in 1024 $rnd1k4k; do              # start adr
           if [[ "iter" > "1" && ("$bsize" == "64" || "$strt" == "1024") ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+          if [[ $((bsize%128)) > 0 && $cardtype == "10"   ]];then echo "skip bsize=$bsize for N250SP";continue;fi # only mult of 128B xfers allowed on N250SP
           let end=${strt}+${iter}*${bsize}; to=$((iter*iter*bsize/4+300))                       # rough timeout dependent on filesize
           step "snap_example_ddr -i${iter} -b${bsize} -s${strt} -e${end} -t$to"
         done
@@ -198,9 +203,10 @@
         #### use memset in host or in fpga memory, stay under 512k for BRAM
         step "snap_example_set -h"
         for beg in 0 11 63; do                                    # start adr
-        for size in 7 4097; do to=$((size/20+300))                                              # block size to copy, rough timeout dependent on filesize
-          step "snap_example_set -H -b${beg} -s${size} -p${size} -t$to"
-          step "snap_example_set -F -b${beg} -s${size} -p${size} -t$to"
+        for bsize in 7 128 4096 4097; do to=$((bsize/20+300))     # block size to copy, rough timeout dependent on filesize
+          if [[ $((bsize%128)) > 0 && $cardtype == "10" ]];then echo "skip bsize=$bsize for N250SP";continue;fi # only mult of 128B xfers allowed on N250SP
+          step "snap_example_set -H -b${beg} -s${bsize} -p${bsize} -t$to"
+          step "snap_example_set -F -b${beg} -s${bsize} -p${bsize} -t$to"
         done
         done
       fi
@@ -256,7 +262,7 @@
  #
     if [[ "$t0l" == "10140001" || "${env_action}" == "hdl_nvme_example" ]];then echo -e "$del\ntesting hdl_nvme_example"
       step "snap_cblk -h"                                            # write max 2blk, read max 32blk a 512B
-      options="-n"${rndodd20}" -t1"                                  # 512B blocks, one thread
+      options="-n"${rndeven20}" -t1"                                  # 512B blocks, one thread
       export CBLK_BUSYTIMEOUT=1500 # used for threads waiting for free slot
       export CBLK_REQTIMEOUT=1000 # should be smaller than busytimeout
 #     export SNAP_TRACE=0xFFF
@@ -278,7 +284,7 @@
       step "snap_cblk $options -b2 --read cblk_read2.bin"
       diff cblk_read1.bin cblk_read2.bin
 
-      for blk in 1 ${rndodd20};do byte=$((blk*512))
+      for blk in 1 ${rndeven20};do byte=$((blk*512))
         step "snap_cblk $options -b2      --write cblk_read2.bin"
         step "snap_cblk $options -b${blk} --read  cblk_read3.bin"
         diff cblk_read2.bin cblk_read3.bin
@@ -288,7 +294,8 @@
  #
     if [[ "$t0l" == "10141000" || "${env_action}" == "hls_memcopy"* ]];then echo -e "$del\ntesting snap_memcopy"
       step "snap_memcopy -h"
-      for size in 1 64 80 85 240 $rnd1k $rnd1k4k; do to=$((size*50+10))   # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
+      for size in 1 64 80 85 128 240 $rnd1k $rnd1k4k; do to=$((size*50+10))   # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
+        if [[ $((size%128)) > 0 && $cardtype == "10"   ]];then echo "skip size=$size for N250SP";continue;fi # only mult of 128B xfers allowed on N250SP
         #### select 1 type of data generation
         # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                       # same char mult times
         # cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w ${size}|head -n 1 >${size}.in;head ${size}.in   # random data alphanumeric, includes EOF
@@ -376,8 +383,10 @@
       step "snap_intersect    -m1 -v -t2000"
       step "snap_intersect -I -m1 -v -t2000"
       for table_num in 1 5 10; do
+        if [[ $((table_num%2)) > 0 && $cardtype == "10"   ]];then echo "skip table_num=$table_num for N250SP";continue;fi # only mult of 128B xfers allowed on N250SP
         let max=2*$table_num; rm -f table1.txt table2.txt
         $ACTION_ROOT/tests/gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
+        ls -al table*
         step "snap_intersect -m1    -i table1.txt -j table2.txt -v -t2000"
         step "snap_intersect -m1 -s -i table1.txt -j table2.txt -v -t2000"
       done
@@ -388,8 +397,10 @@
       step "snap_intersect    -m2 -v -t2000"
       step "snap_intersect -I -m2 -v -t2000"
       for table_num in 1 5 10; do
+        if [[ $((table_num%2)) > 0 && $cardtype == "10"   ]];then echo "skip table_num=$table_num for N250SP";continue;fi # only mult of 128B xfers allowed on N250SP
         let max=2*$table_num; rm -f table1.txt table2.txt
         $ACTION_ROOT/tests/gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
+        ls -al table*
         step "snap_intersect -m2    -i table1.txt -j table2.txt -v -t2000"
         step "snap_intersect -m2 -s -i table1.txt -j table2.txt -v -t2000"
       done
@@ -427,6 +438,7 @@
       echo "Hello world. This is my first CAPI SNAP experience. It's real fun." >tin
       cat tin |tr '[:lower:]' '[:upper:]' >tCAP
       step "snap_helloworld -i tin -o tout"
+      cat tin tout tCAP
       if diff tout tCAP >/dev/null;then echo -e "file_diff ok$del";else echo -e "file_diff is wrong$del";cat t*;exit 1;fi
     fi # hls_helloworld
  #
