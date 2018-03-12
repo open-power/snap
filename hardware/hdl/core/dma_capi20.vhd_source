@@ -113,7 +113,7 @@ ARCHITECTURE dma OF dma IS
                             ST_COM_XLAT_WR_P0
                            );
   TYPE DMA_FSM_T IS (ST_FSM_ERROR, ST_IDLE,
-                     ST_UPDATE_WRITE_BUF_READ_ADD,
+                     ST_START_DMA_WRITE_REQ, ST_STOP_DMA_WRITE_REQ,
                      ST_DMA_READ_REQ, ST_DMA_WRITE_REQ
                     );
   TYPE AH_C_FSM_T IS (ST_FSM_ERROR, ST_RSP_ERROR, ST_IDLE,
@@ -1534,17 +1534,23 @@ BEGIN
             ELSIF  (write_ctrl_q(dma_wtag_v).dma  = XLAT_DONE ) AND
                    (rsp_wtag_q                   /= dma_wtag_q) AND
                    (dma_wreq_cnt_q                < 7         )THEN
-              dma_fsm_q    <= ST_UPDATE_WRITE_BUF_READ_ADD;
-              wram_raddr_q <= (dma_wtag_q(4 DOWNTO 0) & '0') + 2;
+              wram_raddr_q <= wram_raddr_q + 2;
+              dma_fsm_q    <= ST_START_DMA_WRITE_REQ;
             END IF;
 
           --
-          -- STATE UPDATE_WRITE_BUF_READ_ADD
+          -- STATE START_DMA_WRITE_REQ
           --
-          WHEN ST_UPDATE_WRITE_BUF_READ_ADD =>
-              wram_raddr_q <= wram_raddr_q + 2;
-              dma_fsm_q    <= ST_DMA_WRITE_REQ;
+          WHEN ST_START_DMA_WRITE_REQ =>
+            wram_raddr_q <= wram_raddr_q + 2;
+            dma_fsm_q    <= ST_DMA_WRITE_REQ;
 
+          --
+          -- STATE STOP_DMA_WRITE_REQ
+          --
+          WHEN ST_STOP_DMA_WRITE_REQ =>
+            wram_raddr_q  <= dma_wtag_q(4 DOWNTO 0) & '0';
+            dma_fsm_q     <= ST_IDLE;
 
           --------------------------------------------------------------------
           -- COMMAND STATES
@@ -1582,7 +1588,7 @@ BEGIN
                (dma_wreq_cnt_q                     < 7              ) THEN
               dma_fsm_q <= ST_DMA_WRITE_REQ;
             ELSE
-              dma_fsm_q <= ST_IDLE;
+              dma_fsm_q <= ST_STOP_DMA_WRITE_REQ;
             END IF;
 
             --
