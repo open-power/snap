@@ -174,8 +174,8 @@
       done
       if [[ "$DDR3_USED" == "TRUE" || "$DDR4_USED" == "TRUE" || "$BRAM_USED" == "TRUE" || "$SDRAM_USED" == "TRUE" ]]; then echo -e "$del\ntesting DDR"
         echo "debug issues 665 on N250SP and others"
-        if [[ $cardtype == "10" ]];then for i in {1..5};do echo "loop $i";snap_example -a6 -S8 -B2 -A128 -t200 -v||break;done
-        else                            for i in {1..5};do echo "loop $i";snap_example -a6 -S8 -B2 -A64 -t200 -v||break;done
+        if [[ $cardtype == "10" ]];then for i in {1..5};do echo "loop=$i";snap_example -a6 -S8 -B2 -A128 -t400 -v||break;done
+        else                            for i in {1..5};do echo "loop=$i";snap_example -a6 -S8 -B2 -A64  -t400 -v||break;done
         fi
         for num4k in 0 1 $rnd20; do to=$((num4k*400+400))
         for num64 in 0 1 $rnd32; do                # 1..64
