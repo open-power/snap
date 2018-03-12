@@ -38,22 +38,22 @@ ENTITY psl_fpga IS
     -- DDR4 SDRAM Interface                                                    
     -- Alphadata 8K5 card also has two DDR4 SO-DIMMs                             
     -- SNAP is only using C0 DIMM
-    c1_sys_clk_p              : IN    STD_LOGIC;                               
-    c1_sys_clk_n              : IN    STD_LOGIC;                               
-    c1_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);
-    c1_ddr4_ba                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);            
-    c1_ddr4_cke               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
-    c1_ddr4_cs_n              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
-    c1_ddr4_dm_dbi_n          : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);            
-    c1_ddr4_dq                : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);           
-    c1_ddr4_dqs_c             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);            
-    c1_ddr4_dqs_t             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);            
-    c1_ddr4_odt               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
-    c1_ddr4_bg                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);            
-    c1_ddr4_reset_n           : OUT   STD_LOGIC;                               
-    c1_ddr4_act_n             : OUT   STD_LOGIC;                               
-    c1_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
-    c1_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
+    c0_sys_clk_p              : IN    STD_LOGIC;                               
+    c0_sys_clk_n              : IN    STD_LOGIC;                               
+    c0_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);
+    c0_ddr4_ba                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);            
+    c0_ddr4_cke               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
+    c0_ddr4_cs_n              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
+    c0_ddr4_dm_dbi_n          : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);            
+    c0_ddr4_dq                : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);           
+    c0_ddr4_dqs_c             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);            
+    c0_ddr4_dqs_t             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);            
+    c0_ddr4_odt               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
+    c0_ddr4_bg                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);            
+    c0_ddr4_reset_n           : OUT   STD_LOGIC;                               
+    c0_ddr4_act_n             : OUT   STD_LOGIC;                               
+    c0_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
+    c0_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
 #endif
 
     
@@ -474,22 +474,22 @@ begin
 -- clk          refclk_sdram         => refclk_sdram,       
 -- clk #endif
 #ifdef CONFIG_ENABLE_DDR4
-         c0_sys_clk_p            => c1_sys_clk_p    ,	  
-         c0_sys_clk_n            => c1_sys_clk_n    ,	  
-         c0_ddr4_adr             => c1_ddr4_adr     ,	  
-         c0_ddr4_ba              => c1_ddr4_ba      ,     
-         c0_ddr4_cke             => c1_ddr4_cke     ,	  
-         c0_ddr4_cs_n            => c1_ddr4_cs_n    ,	  
-         c0_ddr4_dm_dbi_n        => c1_ddr4_dm_dbi_n,	  
-         c0_ddr4_dq              => c1_ddr4_dq      ,	  
-         c0_ddr4_dqs_c           => c1_ddr4_dqs_c   ,	  
-         c0_ddr4_dqs_t           => c1_ddr4_dqs_t   ,	  
-         c0_ddr4_odt             => c1_ddr4_odt     ,	  
-         c0_ddr4_bg              => c1_ddr4_bg      ,	  
-         c0_ddr4_reset_n         => c1_ddr4_reset_n ,     
-         c0_ddr4_act_n           => c1_ddr4_act_n   ,     
-         c0_ddr4_ck_c            => c1_ddr4_ck_c    ,	  
-         c0_ddr4_ck_t            => c1_ddr4_ck_t    ,	  
+         c0_sys_clk_p            => c0_sys_clk_p    ,	  
+         c0_sys_clk_n            => c0_sys_clk_n    ,	  
+         c0_ddr4_adr             => c0_ddr4_adr     ,	  
+         c0_ddr4_ba              => c0_ddr4_ba      ,     
+         c0_ddr4_cke             => c0_ddr4_cke     ,	  
+         c0_ddr4_cs_n            => c0_ddr4_cs_n    ,	  
+         c0_ddr4_dm_dbi_n        => c0_ddr4_dm_dbi_n,	  
+         c0_ddr4_dq              => c0_ddr4_dq      ,	  
+         c0_ddr4_dqs_c           => c0_ddr4_dqs_c   ,	  
+         c0_ddr4_dqs_t           => c0_ddr4_dqs_t   ,	  
+         c0_ddr4_odt             => c0_ddr4_odt     ,	  
+         c0_ddr4_bg              => c0_ddr4_bg      ,	  
+         c0_ddr4_reset_n         => c0_ddr4_reset_n ,     
+         c0_ddr4_act_n           => c0_ddr4_act_n   ,     
+         c0_ddr4_ck_c            => c0_ddr4_ck_c    ,	  
+         c0_ddr4_ck_t            => c0_ddr4_ck_t    ,	  
 #endif
          ah_paren             => a0h_paren,
          ha_pclock            => ha0_pclock,
