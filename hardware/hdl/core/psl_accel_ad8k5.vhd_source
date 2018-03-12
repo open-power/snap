@@ -1157,7 +1157,7 @@ BEGIN
 #endif
 
 #ifdef CONFIG_ENABLE_DDR4
-	ddr4sdram_bank1 : ddr4sdram
+	ddr4sdram_bank0 : ddr4sdram
     PORT MAP (
       c0_init_calib_complete     => sdram_init_calib_complete,
       dbg_clk                    => ddr4_dbg_clk,
