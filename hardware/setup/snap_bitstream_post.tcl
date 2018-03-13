@@ -19,6 +19,5 @@
 set root_dir   $::env(SNAP_ROOT)/hardware
 
 # Max. size is 64MB for N250S and ADKU3, 128MB for S121B and N250SP. Bin file size will match the device, so -size is not relevant here.
-write_cfgmem -format bin -loadbit "up 0x0 $root_dir/viv_project/framework.runs/impl_1/psl_fpga.bit" -file $root_dir/viv_project/framework.runs/impl_1/psl_fpga -size 128 -interface  BPIx16 -force
-
+write_cfgmem -force -format bin -size 128 -interface BPIx16 -loadbit "up 0x0 $root_dir/viv_project/framework.runs/impl_1/psl_fpga.bit" $root_dir/viv_project/framework.runs/impl_1/psl_fpga
 
