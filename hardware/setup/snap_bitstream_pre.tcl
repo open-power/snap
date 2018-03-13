@@ -18,21 +18,27 @@
 
 set factory_image [string toupper $::env(FACTORY_IMAGE)]
 
-set_property BITSTREAM.GENERAL.COMPRESS {TRUE} [ current_design ]
+set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 set_property BITSTREAM.CONFIG.EXTMASTERCCLK_EN {DIV-4} [current_design]
-set_property CONFIG_MODE {BPI16} [current_design]
+set_property CONFIG_MODE BPI16 [current_design]
+set_property BITSTREAM.CONFIG.BPI_SYNC_MODE DISABLE [current_design]		# default disable
 set_property BITSTREAM.CONFIG.BPI_1ST_READ_CYCLE 4 [current_design]
 set_property BITSTREAM.CONFIG.BPI_PAGE_SIZE 8 [current_design]
 
+set_property BITSTREAM.CONFIG.UNUSEDPIN Pullnone [current_design]		# default pulldown, doesn't load at power-on!
+set_property BITSTREAM.CONFIG.OVERTEMPSHUTDOWN Enable [current_design]		# default disable
+set_property CONFIG_VOLTAGE 1.8 [current_design]
+set_property BITSTREAM.CONFIG.PERSIST NO [current_design] 			# default NO anyhow
 
-#FIXME? xapp1246/xapp1296: These settings may not be needed for SNAP
-set_property BITSTREAM.CONFIG.CONFIGFALLBACK ENABLE [current_design]		# default enable
-set_property BITSTREAM.CONFIG.TIMER_CFG 0XC0080000 [current_design]
+# xapp1246/xapp1296/ug908: These settings may not be needed for SNAP
+# set_property BITSTREAM.CONFIG.CONFIGFALLBACK ENABLE [current_design]		# default enable
+set_property BITSTREAM.CONFIG.TIMER_CFG 0XFFFFFFFF [current_design]		# no watchdog
 
-# The factory bitstream has the above properties with one addition:
+# The factory bitstream has the above properties plus:
 if { $factory_image == "TRUE" } {
-  #FIXME? xapp1246/xapp1296: These settings are not needed for SNAP
-  set_property BITSTREAM.CONFIG.NEXT_CONFIG_ADDR 0X01000000 [current_design]	# default is 0x0
+  #xapp1246/xapp1296: These settings are not needed for SNAP. 
+  #FIXME remove when testing was successful
+  # set_property BITSTREAM.CONFIG.NEXT_CONFIG_ADDR 0X01000000 [current_design]	# default is 0x0
   set_property BITSTREAM.CONFIG.REVISIONSELECT_TRISTATE ENABLE [current_design] # default enable
   set_property BITSTREAM.CONFIG.REVISIONSELECT 01 [current_design] 		# default is 00
 }
