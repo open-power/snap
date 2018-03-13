@@ -27,6 +27,7 @@ set_property BITSTREAM.CONFIG.BPI_PAGE_SIZE 8 [current_design]
 
 set_property BITSTREAM.CONFIG.UNUSEDPIN Pullnone [current_design]		# default pulldown, doesn't load at power-on!
 set_property BITSTREAM.CONFIG.OVERTEMPSHUTDOWN Enable [current_design]		# default disable
+set_property CFGBVS GND [ current_design ]
 set_property CONFIG_VOLTAGE 1.8 [current_design]
 set_property BITSTREAM.CONFIG.PERSIST NO [current_design] 			# default NO anyhow
 
