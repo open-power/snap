@@ -383,11 +383,11 @@
       step "snap_intersect -h"
       step "snap_intersect    -m1 -v -t2000"
       step "snap_intersect -I -m1 -v -t2000"
-      for table_num in 1 5 10; do
-        if [[ $((table_num%2)) > 0 && $cardtype == "10"   ]];then echo "skip table_num=$table_num for N250SP";continue;fi # only mult of 128B xfers allowed on N250SP
+      for table_num in 1 2 5 10; do
+        if [[ $((table_num%2)) == 1 && $cardtype == "10" ]];then echo "skip table_num=$table_num for N250SP";continue;fi        # odd 64B xfer not allowed on N250SP
         let max=2*$table_num; rm -f table1.txt table2.txt
         $ACTION_ROOT/tests/gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
-        ls -al table*
+        echo "table_num=$table_num";wc -c table*.txt; cat table*.txt
         step "snap_intersect -m1    -i table1.txt -j table2.txt -v -t2000"
         step "snap_intersect -m1 -s -i table1.txt -j table2.txt -v -t2000"
       done
@@ -397,11 +397,11 @@
       step "snap_intersect -h"
       step "snap_intersect    -m2 -v -t2000"
       step "snap_intersect -I -m2 -v -t2000"
-      for table_num in 1 5 10; do
-        if [[ $((table_num%2)) > 0 && $cardtype == "10"   ]];then echo "skip table_num=$table_num for N250SP";continue;fi # only mult of 128B xfers allowed on N250SP
+      for table_num in 1 2 5 10; do
+        if [[ $((table_num%2)) == 1 && $cardtype == "10" ]];then echo "skip table_num=$table_num for N250SP";continue;fi        # odd 64B xfer not allowed on N250SP
         let max=2*$table_num; rm -f table1.txt table2.txt
         $ACTION_ROOT/tests/gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
-        ls -al table*
+        echo "table_num=$table_num";wc -c table*.txt; cat table*.txt
         step "snap_intersect -m2    -i table1.txt -j table2.txt -v -t2000"
         step "snap_intersect -m2 -s -i table1.txt -j table2.txt -v -t2000"
       done
