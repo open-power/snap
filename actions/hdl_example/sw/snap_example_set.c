@@ -242,6 +242,7 @@ int main(int argc, char *argv[])
 	uint64_t start, stop;
 	snap_action_flag_t attach_flags = 0;
 	unsigned long ram_in_mb = 0;
+	unsigned long card_type = 0;
 
 	while (1) {
                 int option_index = 0;
@@ -347,15 +348,23 @@ int main(int argc, char *argv[])
 			PRINTF0("Size %ld must be less than %d\n", size, (32*MEGA_BYTE));
 			goto __exit1;
 		}
-		h_begin = (int)(begin & 0xF) + 16;
-		h_mem_size = (h_begin + size + 32);
+		/* Note: Buffer must be 128 bytes aligned on N250SP Card for CAPI 2.0 */
+		snap_card_ioctl(dn, GET_CARD_TYPE, &(unsigned long)&card_type);
+		if (N250SP_CARD == card_type) 
+			h_begin = (int)(begin & 0x7f) + 128;  /* Set begin to + 128 bytes */
+			h_mem_size = (h_begin + size + 128);  /* And reserve 128 bytes at end */
+		} else {
+			h_begin = (int)(begin & 0xF) + 16;   /* Set begin to + 16 bytes */
+			h_mem_size = (h_begin + size + 16);  /* And reserve 16 bytes at end */
+		}
 
 		/* Allocate Host Buffer */
 		if (posix_memalign((void **)&hb, 4096, h_mem_size) != 0) {
 			perror("FAILED: posix_memalign source");
 			goto __exit1;
 		}
-		PRINTF1("Allocate Host Buffer at %p Size: %d Bytes\n", hb, h_mem_size);
+		PRINTF1("Allocate Host Buffer at %p Size: %d Bytes. (DMA Offset set to: %d)\n",
+			hb, h_mem_size, h_begin);
 	}
 
 	PRINTF1("Fill %ld Bytes from %lld to %lld with Pattern: 0x%02x FPGA RAM: %d MB\n",
