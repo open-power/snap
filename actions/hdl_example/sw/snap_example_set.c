@@ -349,8 +349,8 @@ int main(int argc, char *argv[])
 			goto __exit1;
 		}
 		/* Note: Buffer must be 128 bytes aligned on N250SP Card for CAPI 2.0 */
-		snap_card_ioctl(dn, GET_CARD_TYPE, &(unsigned long)&card_type);
-		if (N250SP_CARD == card_type) 
+		snap_card_ioctl(dn, GET_CARD_TYPE, (unsigned long)&card_type);
+		if (N250SP_CARD == card_type) {
 			h_begin = (int)(begin & 0x7f) + 128;  /* Set begin to + 128 bytes */
 			h_mem_size = (h_begin + size + 128);  /* And reserve 128 bytes at end */
 		} else {
