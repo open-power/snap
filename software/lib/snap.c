@@ -613,7 +613,7 @@ static int hw_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long
 		*arg = rc_val;
 		break;
 	case GET_NVME_ENABLED:
-		if (card->cap_reg & 0x100)
+		if (card->cap_reg & SNAP_NVME_ENA)
 			rc_val = 1;
 		else rc_val = 0;
 		snap_trace("  %s NVME: %d\n", __func__, (int)rc_val);

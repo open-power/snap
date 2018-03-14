@@ -111,15 +111,23 @@ extern "C" {
  *       8  RO: NVMe enabled
  *    7..0  RO: Card type:
  *              0x10 : N250SP
+ *              0x03 : AD8K5
+ *              0x02 : S121B
  *              0x01 : N250S
  *              0x00 : ADKU3
  */
 #define SNAP_CAP        0x30
+#define SNAP_NVME_ENA   0x100
+#define N250SP_CARD     0x010     /* CAPI 2.0 */
+#define AD8K5_CARD      0x003
+#define S121B_CARD      0x002
+#define N250S_CARD      0x001
+#define ADKU3_CARD      0x000
 
 /*
  * Freerunning Timer (FRT)
  * =======================
- * Address: 0x0000080
+ * Address: 0x000008AD8K5
  * 63..0  RO: Counter counting the number of clock cycles since reset (afu open)
  *            This counter increments with the 250MHz PSL clock
  */
