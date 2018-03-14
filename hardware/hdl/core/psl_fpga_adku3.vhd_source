@@ -390,12 +390,13 @@ Signal ha0_response: std_logic_vector(0 to 7);  -- apresp
 Signal ha0_rtag: std_logic_vector(0 to 7);  -- acctag
 Signal ha0_rtagpar: std_logic;  -- bool
 Signal ha0_rvalid: std_logic;  -- bool
-Signal gold_factory: std_logic;
-Signal pci_user_reset: std_logic;
-Signal pci_clock_125MHz: std_logic;
-SIGNAL user_image_q: std_logic := '1';
-ATTRIBUTE dont_touch: string;
+
+SIGNAL user_image_q        : std_logic := '1';  --set to 1 to indicate images meant for user location. set to 0 to indicate factory image. 
+ATTRIBUTE dont_touch       : string;
 ATTRIBUTE dont_touch of user_image_q: SIGNAL IS "true";
+SIGNAL gold_factory        : std_logic;
+SIGNAL pci_user_reset      : std_logic;
+SIGNAL pci_clock_125MHz    : std_logic;
 
 begin
 
