@@ -83,7 +83,7 @@ function detect_snap_cards() {
 				echo " PSL Revision is                                                : ${psl_revision_hex}"
                                 echo -e " Device ID    is                                                : ${check_dev}"
                                 echo -e " Sub device   is                                                : ${check_sub}"
-				echo -e " Image loaded is                                                : ${image_loaded}"
+				echo -e " Image loaded is self defined as                                : ${image_loaded}"
 				echo -e " Next image to be loaded at next reset (load_image_on_perst) is : ${load_image_on_perst}"
 			else
 				echo -n "${card} "
