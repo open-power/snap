@@ -75,7 +75,13 @@ if { ([get_property pr_flow [current_project]] != 1) } {
   create_pr_configuration -name config_1 -partitions [list a0/action_w:user_action] >> $log_file
 
   # The action synthesis options should be the same as the framework synthsis options
-  copy_run -name user_action_synth_1 [get_runs synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT              [get_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT              [get_runs synth_1] ] [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.FSM_EXTRACTION            [get_property STEPS.SYNTH_DESIGN.ARGS.FSM_EXTRACTION            [get_runs synth_1] ] [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.RESOURCE_SHARING          [get_property STEPS.SYNTH_DESIGN.ARGS.RESOURCE_SHARING          [get_runs synth_1] ] [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.SHREG_MIN_SIZE            [get_property STEPS.SYNTH_DESIGN.ARGS.SHREG_MIN_SIZE            [get_runs synth_1] ] [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS [get_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS [get_runs synth_1] ] [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.NO_LC                     [get_property STEPS.SYNTH_DESIGN.ARGS.NO_LC                     [get_runs synth_1] ] [get_runs user_action_synth_1]
+  set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY         rebuilt                                                                              [get_runs user_action_synth_1]
 
   # PR Implementation
   set_property PR_CONFIGURATION config_1 [get_runs impl_1]
@@ -111,13 +117,13 @@ if { ([get_property pr_flow [current_project]] != 1) } {
     }
   }
 } else {
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "framework project already in PR flow" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  puts [format "%-*s %-*s%-*s  %-*s"  $widthCol1 "" $widthCol2 "framework project alrea" $widthCol3 "dy in PR flow" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 }
 
 ## 
 ## ACTION run
 if { ($cloud_run == "ACTION") || ($cloud_run == "BASE") } {
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3 "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   reset_run    user_action_synth_1 >> $log_file
   launch_runs  user_action_synth_1 >> $log_file
   wait_on_run  user_action_synth_1 >> $log_file
@@ -243,6 +249,7 @@ if { $cloud_run == "BASE" } {
       write_cfgmem -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME -size 128 -interface BPIx16 -force >> $logfile
     }
   }
+}
 
 ##
 ## removing unnecessary files
