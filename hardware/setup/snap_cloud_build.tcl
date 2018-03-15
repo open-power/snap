@@ -19,7 +19,7 @@
 set root_dir          $::env(SNAP_HARDWARE_ROOT)
 set log_dir           $::env(LOGS_DIR)
 set log_file          $log_dir/snap_cloud_build.log
-set fpgacard         $::env(FPGACARD)
+set fpgacard          $::env(FPGACARD)
 set sdram_used        $::env(SDRAM_USED)
 set nvme_used         $::env(NVME_USED)
 set bram_used         $::env(BRAM_USED)
@@ -74,14 +74,8 @@ if { ([get_property pr_flow [current_project]] != 1) } {
   # Create PR Configuration
   create_pr_configuration -name config_1 -partitions [list a0/action_w:user_action] >> $log_file
 
-  # PR Synthesis
-  set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT              400     [get_runs user_action_synth_1]
-  set_property STEPS.SYNTH_DESIGN.ARGS.FSM_EXTRACTION            one_hot [get_runs user_action_synth_1]
-  set_property STEPS.SYNTH_DESIGN.ARGS.RESOURCE_SHARING          off     [get_runs user_action_synth_1]
-  set_property STEPS.SYNTH_DESIGN.ARGS.SHREG_MIN_SIZE            5       [get_runs user_action_synth_1]
-  set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS true    [get_runs user_action_synth_1]
-  set_property STEPS.SYNTH_DESIGN.ARGS.NO_LC                     true    [get_runs user_action_synth_1]
-  set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY         none    [get_runs user_action_synth_1]
+  # The action synthesis options should be the same as the framework synthsis options
+  copy_run -name user_action_synth_1 [get_runs synth_1]
 
   # PR Implementation
   set_property PR_CONFIGURATION config_1 [get_runs impl_1]
@@ -101,13 +95,14 @@ if { ([get_property pr_flow [current_project]] != 1) } {
       set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_pblock_noram.xdc]
     }  
   } elseif { $fpgacard == "N250S" } {
-    add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/action_pblock.xdc
-    set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/action_pblock.xdc]    
-    add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/snap_pblock.xdc
-    set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/snap_pblock.xdc]
+    add_files -of_objects [get_reconfig_modules user_action] $root_dir/setup/N250S/pr_action_clk_ooc.xdc
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/pr_action_pblock.xdc
+    set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/pr_action_pblock.xdc]    
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/pr_snap_pblock.xdc
+    set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/pr_snap_pblock.xdc]
     if { $sdram_used == "TRUE" } {
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/snap_ddr4_pblock.xdc
-      set_property used_in_synthesis false [get_files $root_dir/setup/N250S/snap_ddr4_pblock.xdc]
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/N250S/pr_snap_ddr4_pblock.xdc
+      set_property used_in_synthesis false [get_files $root_dir/setup/N250S/pr_snap_ddr4_pblock.xdc]
     }
 
     if { $nvme_used == "TRUE" } {
@@ -115,8 +110,27 @@ if { ([get_property pr_flow [current_project]] != 1) } {
       set_property used_in_synthesis false [get_files  $root_dir/setup/N250S/nvme_pblock.xdc]
     }
   }
+} else {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "framework project already in PR flow" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 }
- 
+
+## 
+## ACTION run
+if { ($cloud_run == "ACTION") || ($cloud_run == "BASE") } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  reset_run    user_action_synth_1 >> $log_file
+  launch_runs  user_action_synth_1 >> $log_file
+  wait_on_run  user_action_synth_1 >> $log_file
+
+  if {[get_property PROGRESS [get_runs user_action_synth_1]] != "100%"} {  
+    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: action synthesis failed" $widthCol4 "" ]
+    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
+    exit 42
+  }
+  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper.dcp                       $dcp_dir/user_action_synth.dcp
+  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper_utilization_synth.rpt     ./Reports/user_action_utilization_synth.rpt
+}
+
 ## 
 ## BASE run
 if { $cloud_run == "BASE" } {
@@ -125,18 +139,16 @@ if { $cloud_run == "BASE" } {
   if { ([info exists ::env(PSL_DCP)] == 1) && ($vivadoVer == "2017.4") } {
     set psl_dcp $::env(PSL_DCP)
   }
-
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-  reset_run    user_action_synth_1 >> $log_file
-  launch_runs  user_action_synth_1 >> $log_file
-  wait_on_run  user_action_synth_1 >> $log_file
-  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper.dcp                       $dcp_dir/user_action_synth.dcp
-  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper_utilization_synth.rpt     ./Reports/user_action_utilization_synth.rpt
-  
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   reset_run    synth_1 >> $log_file
   launch_runs  synth_1 >> $log_file
   wait_on_run  synth_1 >> $log_file
+
+  if {[get_property PROGRESS [get_runs synth_1]] != "100%"} {  
+    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: synthesis failed" $widthCol4 "" ]
+    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
+    exit 42
+  }
   file copy -force ../viv_project/framework.runs/synth_1/psl_fpga.dcp                       $dcp_dir/framework_synth.dcp
   file copy -force ../viv_project/framework.runs/synth_1/psl_fpga_utilization_synth.rpt     ./Reports/framework_utilization_synth.rpt
 
@@ -158,7 +170,11 @@ if { $cloud_run == "BASE" } {
   launch_runs  impl_1 >> $log_file
   wait_on_run  impl_1 >> $log_file
 
-
+  if {[get_property PROGRESS [get_runs impl_1]] != "100%"} {  
+    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: synthesis failed" $widthCol4 "" ]
+    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
+    exit 42
+  }
   puts [format "%-*s %-*s %-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3 + 1] "collecting reports and checkpoints" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
   file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_opt.dcp                         $dcp_dir/framework_opt.dcp    
@@ -227,16 +243,6 @@ if { $cloud_run == "BASE" } {
       write_cfgmem -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME -size 128 -interface BPIx16 -force >> $logfile
     }
   }
-## 
-## ACTION run
-} elseif { $cloud_run == "ACTION" } {
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-  reset_run    user_action_synth_1 >> $log_file
-  launch_runs  user_action_synth_1 >> $log_file
-  wait_on_run  user_action_synth_1 >> $log_file
-  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper.dcp                       $dcp_dir/user_action_synth.dcp
-  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper_utilization_synth.rpt     ./Reports/user_action_utilization_synth.rpt
-}
 
 ##
 ## removing unnecessary files

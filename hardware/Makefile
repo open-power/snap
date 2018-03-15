@@ -130,7 +130,7 @@ PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl "$(FPGACARD)" "$(PSL_D
 
 ifeq ($(PLATFORM),x86_64)
 
-.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config add_psl_dcp check_psl image cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
+.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config add_psl_dcp check_psl image cloud_enable cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
 
 all: model image
 
@@ -210,7 +210,7 @@ check_simulator:
 prepare_logs:
 	@mkdir -p $(LOGS_DIR);
 
-prepare_project: check_snap_settings prepare_logs
+prepare_project: check_snap_settings prepare_logs 
 	@echo -e "[PREPARE PROJECT.....] start `date +"%T %a %b %d %Y"`";
 	@mkdir -p $(BUILD_DIR);
 	@mkdir -p $(BUILD_DIR)/Reports;
@@ -367,8 +367,14 @@ allow_%:
 		echo; echo "Error: Makefile target $* is not allowed for cloud user flow!"; exit -1; \
 	fi
 
+cloud_enable: allow_cloud_action 
+	@echo -e "[ENABLE CLOUD FLOW...] start `date +"%T %a %b %d %Y"e`"
+	@$(MAKE) -s patch_version
+	@cd $(BUILD_DIR) && env CLOUD_RUN= vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/cloud_action.log -journal $(LOGS_DIR)/cloud_action.jou
+	@echo -e "[ENABLE CLOUD FLOW...] done  `date +"%T %a %b %d %Y"`"
+
 cloud_base: allow_cloud_base .hw_project_done
-	@echo -e "[BUILD CLOUD BASE...] start `date +"%T %a %b %d %Y"`"
+	@echo -e "[BUILD CLOUD BASE....] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -s patch_version
 	@cd $(BUILD_DIR) && env CLOUD_RUN=BASE vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
 	@echo -e "[BUILD CLOUD BASE....] done  `date +"%T %a %b %d %Y"`"

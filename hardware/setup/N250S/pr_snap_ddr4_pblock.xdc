@@ -15,9 +15,11 @@
 # limitations under the License.
 #
 #-----------------------------------------------------------
-resize_pblock pblock_snap -add {BITSLICE_RX_TX_X1Y0:BITSLICE_RX_TX_X1Y155} -locs keep_all
-resize_pblock pblock_snap -add {BITSLICE_CONTROL_X1Y0:BITSLICE_CONTROL_X1Y23} -locs keep_all
-resize_pblock pblock_snap -add {PLLE3_ADV_X1Y0:PLLE3_ADV_X1Y5} -locs keep_all
-resize_pblock pblock_snap -add {MMCME3_ADV_X1Y0:MMCME3_ADV_X1Y2} -locs keep_all
-resize_pblock pblock_snap -add {HPIO_VREF_SITE_X1Y0:HPIO_VREF_SITE_X1Y5} -locs keep_all
+# remove DDRP area from the action PBLOCK
+resize_pblock pblock_action -remove  CLOCKREGION_X3Y2:CLOCKREGION_X3Y4
+resize_pblock pblock_action -add {SLICE_X99Y240:SLICE_X142Y299 DSP48E2_X18Y96:DSP48E2_X22Y119 LAGUNA_X16Y120:LAGUNA_X23Y239 RAMB18_X12Y96:RAMB18_X17Y119 RAMB36_X12Y48:RAMB36_X17Y59} -remove CLOCKREGION_X4Y4:CLOCKREGION_X5Y4 -locs keep_all
+
+#enlarge SNAP PBLOCK for DDR
+resize_pblock pblock_snap -add {SLICE_X71Y0:SLICE_X98Y299 DSP48E2_X14Y0:DSP48E2_X17Y119 LAGUNA_X12Y0:LAGUNA_X15Y239 RAMB18_X9Y0:RAMB18_X11Y119 RAMB36_X9Y0:RAMB36_X11Y59} -remove CLOCKREGION_X3Y0:CLOCKREGION_X3Y1 -locs keep_all
+resize_pblock pblock_snap -remove {SLICE_X96Y0:SLICE_X98Y119 IOB_X2Y0:IOB_X2Y103}
 add_cells_to_pblock pblock_snap [get_cells [list a0/ddr4sdram_bank]]
