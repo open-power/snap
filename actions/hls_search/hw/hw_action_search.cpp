@@ -449,7 +449,6 @@ void preprocess_KMP_table(char Pattern[PATTERN_SIZE], int PatternSize,
    j = -1;
    KMP_table[0] = -1;
    while (i < PatternSize) {
-#pragma HLS PIPELINE
       while (j > -1 && Pattern[i] != Pattern[j])
          j = KMP_table[j];
       i++;
@@ -604,7 +603,7 @@ static snapu32_t process_action(snap_membus_t *din_gmem,
           Action_Register->Data.src_pattern.type,
           Action_Register->Data.src_pattern.addr >> ADDR_RIGHT_SHIFT,
           PatternBuffer);
-  // FIXME Remove this stupid cast which is just a waste of time
+  // FIXME Find a way to remove this cast which is a waste of time
   mbus_to_word(PatternBuffer[0], Pattern); // convert buffer to char
 
 
@@ -634,7 +633,7 @@ static snapu32_t process_action(snap_membus_t *din_gmem,
 		rc |= read_burst_of_data_from_mem(din_gmem, d_ddrmem, InputType,
 				(InputAddress >> ADDR_RIGHT_SHIFT) + rd_address_text_offset,
 				TextBuffer, search_size);
-  		// FIXME Remove this stupid cast which is just a waste of time
+  		// FIXME Find a way to remove this cast which is a waste of time
 		x_mbus_to_word(TextBuffer, Text); /* convert buffer to char*/
 
 		/* ********************
@@ -799,7 +798,7 @@ int main(void)
     int c;
     int k=0, m=0;
 
-    /* snap_search123.txt can be put in hardware/action_examples/hls_search directory
+    /* snap_search123.txt can be put in snap/actions/hls_search/hw directory
      * and contain the following
 123456789_123456789_123456789
 111111111_222222222_333333333
@@ -834,7 +833,7 @@ int main(void)
     }
     else
     {
-        printf("File used to look for the pattern occurrence couldn't be opened !\n");
+        printf("ERROR: File used to look for the pattern occurrence couldn't be opened !\n");
         return 1;
     }
 
