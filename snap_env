@@ -101,13 +101,14 @@ while [ -z "$SETUP_DONE" ]; do
       echo "#export PSL4N250SP_ROOT=" >> $snap_env_sh
     fi
     if [ -z "$PSL4N250SP_ROOT" ]; then
-      SETUP_EMPTY="$SETUP_EMPTY\n  PSL4N250S_ROOT"
-      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### The environment variable PSL4N250SP_ROOT must point to the directory containing the PSL IP together with N250SP card support."
+      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable PSL4N250SP_ROOT must point to the directory containing the PSL IP together with N250SP card support."
     fi
   ####### checking path to PSL design checkpoint
   # Note: CLOUD_USER_FLOW is defined via snap_config
   elif [ "$CLOUD_USER_FLOW" == "TRUE" ]; then
-    SETUP_INFO="$SETUP_INFO\n### INFO ### Cloud user flow is skipping PSL_DCP check"
+    SETUP_INFO="$SETUP_INFO\n### INFO ### Cloud user flow is skipping PSL_DCP check."
+  elif [ "$IGNORE_CHECK_PSL" == "TRUE" ]; then
+    SETUP_INFO="$SETUP_INFO\n### INFO ### Skipping PSL_DCP check because environment variable IGNORE_CHECK_PSL is set to TRUE."
   else
     echo "=====Checking path to PSL design checkpoint============"
     echo "PSL_DCP                 is set to: \"$PSL_DCP\""
@@ -155,7 +156,8 @@ while [ -z "$SETUP_DONE" ]; do
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set properly."
       SETUP_WARNING="$SETUP_WARNING\n    For simulation please clone PSL Simulation Environment"
       SETUP_WARNING="$SETUP_WARNING\n    from https://github.com/ibm-capi/pslse"
-      SETUP_WARNING="$SETUP_WARNING\n    and let \$PSLSE_ROOT point to it"
+      SETUP_WARNING="$SETUP_WARNING\n    and let \$PSLSE_ROOT point to it."
+      SETUP_WARNING="$SETUP_WARNING\n    Please set Simulator to 'nosim' if you do not intend to run simulation."
     fi
   fi
 

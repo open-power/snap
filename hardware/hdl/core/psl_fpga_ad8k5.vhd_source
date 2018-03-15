@@ -23,37 +23,40 @@ USE ieee.std_logic_1164.all;
 USE ieee.std_logic_misc.all;
 USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
+-- clk #ifdef CONFIG_ENABLE_DDRI
+-- clk   LIBRARY unisim;
+-- clk   USE unisim.vcomponents.all;
+-- clk #endif
 
 ENTITY psl_fpga IS
   PORT(
 -- clk #ifdef CONFIG_ENABLE_DDRI
 -- clk     -- Clock inputs for SDRAM
--- clk     refclk200_p        : IN      STD_LOGIC;
--- clk     refclk200_n        : IN      STD_LOGIC;
+-- clk     refclk200          : IN      STD_LOGIC;
 -- clk #endif
-#ifdef CONFIG_ENABLE_DDR3
-    -- DDR3 SDRAM Interface
-    -- AlphaData KU3 card has two DDR3 SO-DIMMs
-    -- SNAP is only using the C0 DIMM
-    c0_sys_clk_p       : IN    STD_LOGIC;
-    c0_sys_clk_n       : IN    STD_LOGIC;
-    c0_ddr3_addr       : OUT   STD_LOGIC_VECTOR(15 DOWNTO 0);
-    c0_ddr3_ba         : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
-    c0_ddr3_ras_n      : OUT   STD_LOGIC;
-    c0_ddr3_cas_n      : OUT   STD_LOGIC;
-    c0_ddr3_reset_n    : OUT   STD_LOGIC;
-    c0_ddr3_cs_n       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-    c0_ddr3_cke        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-    c0_ddr3_ck_p       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-    c0_ddr3_ck_n       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-    c0_ddr3_we_n       : OUT   STD_LOGIC;
-    c0_ddr3_dm         : OUT   STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c0_ddr3_dq         : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
-    c0_ddr3_dqs_p      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c0_ddr3_dqs_n      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c0_ddr3_odt        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+#ifdef CONFIG_ENABLE_DDR4
+    -- DDR4 SDRAM Interface                                                    
+    -- Alphadata 8K5 card also has two DDR4 SO-DIMMs                             
+    -- SNAP is only using C0 DIMM
+    c1_sys_clk_p              : IN    STD_LOGIC;                               
+    c1_sys_clk_n              : IN    STD_LOGIC;                               
+    c1_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);
+    c1_ddr4_ba                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);            
+    c1_ddr4_cke               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
+    c1_ddr4_cs_n              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
+    c1_ddr4_dm_dbi_n          : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);            
+    c1_ddr4_dq                : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);           
+    c1_ddr4_dqs_c             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);            
+    c1_ddr4_dqs_t             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);            
+    c1_ddr4_odt               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
+    c1_ddr4_bg                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);            
+    c1_ddr4_reset_n           : OUT   STD_LOGIC;                               
+    c1_ddr4_act_n             : OUT   STD_LOGIC;                               
+    c1_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
+    c1_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);            
 #endif
 
+    
     -- flash bus
     o_flash_oen: out std_logic;
     o_flash_wen: out std_logic;
@@ -63,9 +66,9 @@ ENTITY psl_fpga IS
     b_flash_dq: inout std_logic_vector(0 to 11);
 
     -- PTMON PMBUS
-    b_basei2c_scl: inout std_logic;                                       -- clock
-    b_basei2c_sda: inout std_logic;                                       -- data
-    i_cable_present_l: in std_logic;                                      -- detect external cable low active
+       --b_basei2c_scl: inout std_logic;                                       -- clock
+       --b_basei2c_sda: inout std_logic;                                       -- data
+       --i_cable_present_l: in std_logic;                                      -- detect external cable low active
 
     -- pci interface
     pci_pi_nperst0: in std_logic;                                         -- Active low reset from the PCIe reset pin of the device
@@ -124,12 +127,12 @@ Component psl_accel
        ah_cch: out std_logic_vector(0 to 15);                               -- Context Handle
        ah_csize: out std_logic_vector(0 to 11);                             -- Number of bytes
        ha_croom: in std_logic_vector(0 to 7);                               -- Commands PSL is prepared to accept
-
+       
        -- command parity
        ah_ctagpar: out std_logic;
        ah_compar: out std_logic;
        ah_ceapar: out std_logic;
-
+       
        -- Accelerator Buffer Interfaces
        ha_brvalid: in std_logic;                                            -- A read transfer is present
        ha_brtag: in std_logic_vector(0 to 7);                               -- Accelerator generated ID for read
@@ -142,11 +145,11 @@ Component psl_accel
        ha_bwad: in std_logic_vector(0 to 5);                                -- half line index of write data
        ha_bwdata: in std_logic_vector(0 to 511);                            -- Write data
        ha_bwpar: in std_logic_vector(0 to 7);                               -- Write data parity
-
+       
        -- buffer tag parity
        ha_brtagpar: in std_logic;
        ha_bwtagpar: in std_logic;
-
+       
        -- PSL Response Interface
        ha_rvalid: in std_logic;                                             --A response is present
        ha_rtag: in std_logic_vector(0 to 7);                                --Accelerator generated request ID
@@ -155,7 +158,7 @@ Component psl_accel
        ha_rcachestate: in std_logic_vector(0 to 1);                         --Resultant Cache State
        ha_rcachepos: in std_logic_vector(0 to 12);                          --Cache location id
        ha_rtagpar: in std_logic;
-
+       
        -- MMIO Interface
        ha_mmval: in std_logic;                                              -- A valid MMIO is present
        ha_mmrnw: in std_logic;                                              -- 1 = read, 0 = write
@@ -165,12 +168,12 @@ Component psl_accel
        ha_mmcfg: in std_logic;                                              -- mmio is to afu descriptor space
        ah_mmack: out std_logic;                                             -- Write is complete or Read is valid pulse
        ah_mmdata: out std_logic_vector(0 to 63);                            -- Read data
-
+       
        -- mmio parity
        ha_mmadpar: in std_logic;
        ha_mmdatapar: in std_logic;
        ah_mmdatapar: out std_logic;
-
+       
        -- Accelerator Control Interface
        ha_jval: in std_logic;                                               -- A valid job control command is present
        ha_jcom: in std_logic_vector(0 to 7);                                -- Job control command opcode
@@ -183,31 +186,29 @@ Component psl_accel
        ah_jyield: out std_logic;                                            -- Accelerator wants to stop
        ha_jeapar: in std_logic;
        ha_jcompar: in std_logic;
-
+                                                                                   
 -- clk #ifdef CONFIG_ENABLE_DDRI
--- clk        -- Clock inputs for SDRAM
--- clk        refclk_sdram_p                     : IN    STD_LOGIC;
--- clk        refclk_sdram_n                     : IN    STD_LOGIC;
+-- clk        -- Clock inputs for SDRAM                                                   
+-- clk        refclk_sdram                       : IN    STD_LOGIC;                       
 -- clk #endif
-#ifdef CONFIG_ENABLE_DDR3
-       -- DDR3 SDRAM Interface
-       c0_sys_clk_p                       : IN    STD_LOGIC;
-       c0_sys_clk_n                       : IN    STD_LOGIC;
-       c0_ddr3_addr                       : OUT   STD_LOGIC_VECTOR(15 DOWNTO 0);
-       c0_ddr3_ba                         : OUT   STD_LOGIC_VECTOR(2 DOWNTO 0);
-       c0_ddr3_ras_n                      : OUT   STD_LOGIC;
-       c0_ddr3_cas_n                      : OUT   STD_LOGIC;
-       c0_ddr3_reset_n                    : OUT   STD_LOGIC;
-       c0_ddr3_cs_n                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-       c0_ddr3_cke                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-       c0_ddr3_ck_p                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-       c0_ddr3_ck_n                       : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-       c0_ddr3_we_n                       : OUT   STD_LOGIC;
-       c0_ddr3_dm                         : OUT   STD_LOGIC_VECTOR(8 DOWNTO 0);
-       c0_ddr3_dq                         : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
-       c0_ddr3_dqs_p                      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-       c0_ddr3_dqs_n                      : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-       c0_ddr3_odt                        : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+#ifdef CONFIG_ENABLE_DDR4                                                                                   
+       -- DDR4 SDRAM Interface                                                     
+       c0_sys_clk_p              : IN    STD_LOGIC;                                
+       c0_sys_clk_n              : IN    STD_LOGIC;                                
+       c0_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0); -- AD8K5 supports at most 16GB per port            
+       c0_ddr4_ba                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);             
+       c0_ddr4_cke               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);             
+       c0_ddr4_cs_n              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);             
+       c0_ddr4_dm_dbi_n          : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);             
+       c0_ddr4_dq                : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);            
+       c0_ddr4_dqs_c             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);             
+       c0_ddr4_dqs_t             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);             
+       c0_ddr4_odt               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);             
+       c0_ddr4_bg                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);             
+       c0_ddr4_reset_n           : OUT   STD_LOGIC;                                
+       c0_ddr4_act_n             : OUT   STD_LOGIC;                                
+       c0_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);             
+       c0_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);             
 #endif
        -- Parity Check enable and Host Clock input
        ah_paren: out std_logic;
@@ -228,9 +229,9 @@ Component base_img
        b_flash_dq: inout std_logic_vector(0 to 11);
 
        -- PTMON PMBUS
-       b_basei2c_scl: inout std_logic;                                       -- clock
-       b_basei2c_sda: inout std_logic;                                       -- data
-       i_cable_present_l: in std_logic;                                      -- detect external cable low active
+       --b_basei2c_scl: inout std_logic;                                       -- clock
+       --b_basei2c_sda: inout std_logic;                                       -- data
+       --i_cable_present_l: in std_logic;                                      -- detect external cable low active
 
        -- pci interface
        pci_pi_nperst0: in std_logic;                                         -- Active low reset from the PCIe reset pin of the device
@@ -394,7 +395,21 @@ Signal gold_factory: std_logic;
 Signal pci_user_reset: std_logic;
 Signal pci_clock_125MHz: std_logic;
 
+-- clk #ifdef CONFIG_ENABLE_DDRI
+-- clk   SIGNAL refclk_sdram              : STD_LOGIC;
+-- clk #endif
+
 begin
+-- clk #ifdef CONFIG_ENABLE_DDRI
+-- clk   --
+-- clk   -- SDRAM Ref Clock Logic
+-- clk   --
+-- clk   bufg_sdrma : BUFG
+-- clk   port map(
+-- clk     I => refclk200,
+-- clk     O => refclk_sdram
+-- clk   );
+-- clk #endif
 
      a0: psl_accel
       PORT MAP (
@@ -452,29 +467,26 @@ begin
          ah_jyield            => a0h_jyield,
          ha_jeapar            => ha0_jeapar,
          ha_jcompar           => ha0_jcompar,
-
 -- clk #ifdef CONFIG_ENABLE_DDRI
--- clk          refclk_sdram_n       => refclk200_n,
--- clk          refclk_sdram_p       => refclk200_p,
+-- clk          refclk_sdram         => refclk_sdram,       
 -- clk #endif
-#ifdef CONFIG_ENABLE_DDR3
-         c0_sys_clk_p         => c0_sys_clk_p,
-         c0_sys_clk_n         => c0_sys_clk_n,
-         c0_ddr3_addr         => c0_ddr3_addr,
-         c0_ddr3_ba           => c0_ddr3_ba,
-         c0_ddr3_ras_n        => c0_ddr3_ras_n,
-         c0_ddr3_cas_n        => c0_ddr3_cas_n,
-         c0_ddr3_reset_n      => c0_ddr3_reset_n,
-         c0_ddr3_cs_n         => c0_ddr3_cs_n,
-         c0_ddr3_cke          => c0_ddr3_cke,
-         c0_ddr3_ck_p         => c0_ddr3_ck_p,
-         c0_ddr3_ck_n         => c0_ddr3_ck_n,
-         c0_ddr3_we_n         => c0_ddr3_we_n,
-         c0_ddr3_dm           => c0_ddr3_dm,
-         c0_ddr3_dq           => c0_ddr3_dq,
-         c0_ddr3_dqs_p        => c0_ddr3_dqs_p,
-         c0_ddr3_dqs_n        => c0_ddr3_dqs_n,
-         c0_ddr3_odt          => c0_ddr3_odt,
+#ifdef CONFIG_ENABLE_DDR4
+         c0_sys_clk_p            => c1_sys_clk_p    ,	  
+         c0_sys_clk_n            => c1_sys_clk_n    ,	  
+         c0_ddr4_adr             => c1_ddr4_adr     ,	  
+         c0_ddr4_ba              => c1_ddr4_ba      ,     
+         c0_ddr4_cke             => c1_ddr4_cke     ,	  
+         c0_ddr4_cs_n            => c1_ddr4_cs_n    ,	  
+         c0_ddr4_dm_dbi_n        => c1_ddr4_dm_dbi_n,	  
+         c0_ddr4_dq              => c1_ddr4_dq      ,	  
+         c0_ddr4_dqs_c           => c1_ddr4_dqs_c   ,	  
+         c0_ddr4_dqs_t           => c1_ddr4_dqs_t   ,	  
+         c0_ddr4_odt             => c1_ddr4_odt     ,	  
+         c0_ddr4_bg              => c1_ddr4_bg      ,	  
+         c0_ddr4_reset_n         => c1_ddr4_reset_n ,     
+         c0_ddr4_act_n           => c1_ddr4_act_n   ,     
+         c0_ddr4_ck_c            => c1_ddr4_ck_c    ,	  
+         c0_ddr4_ck_t            => c1_ddr4_ck_t    ,	  
 #endif
          ah_paren             => a0h_paren,
          ha_pclock            => ha0_pclock,
@@ -487,7 +499,7 @@ begin
 #else
     gold_factory <= '1'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
 #endif
-     
+
     b: base_img
      PORT MAP (
          pci_pi_nperst0 => pci_pi_nperst0,
@@ -535,9 +547,9 @@ begin
          b_flash_dq => b_flash_dq,
 
          --PTMON PMBUS
-         b_basei2c_scl => b_basei2c_scl,
-         b_basei2c_sda => b_basei2c_sda,
-         i_cable_present_l => i_cable_present_l,
+         --b_basei2c_scl => b_basei2c_scl,
+         --b_basei2c_sda => b_basei2c_sda,
+         --i_cable_present_l => i_cable_present_l,
 
          a0h_cvalid => a0h_cvalid,
          a0h_ctag => a0h_ctag,

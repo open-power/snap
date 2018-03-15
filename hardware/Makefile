@@ -55,6 +55,14 @@ ifeq "$(FPGACARD)" "S121B"
 	       FPGA_CARD=s121b
 	       CAPI_VER=capi10
 endif
+ifeq "$(FPGACARD)" "AD8K5"
+	export DDR3_USED=FALSE
+	export DDR4_USED=$(SDRAM_USED)
+	export DDRI_USED=$(SDRAM_USED)
+	export NVME_USED=FALSE
+	       FPGA_CARD=ad8k5
+	       CAPI_VER=capi10
+endif
 
 ifeq "$(FPGACARD)" "N250S"
 	export DDR3_USED=FALSE
@@ -84,6 +92,8 @@ export NVME_USED ?= FALSE
 
 export USE_PRFLOW ?= FALSE
 export DCP_ROOT ?= $(SNAP_ROOT)/dcp
+
+export IGNORE_CHECK_PSL ?= $(USE_PRFLOW)
 
 ## variables just for this Makefile
 BUILD_DIR=$(SNAP_HARDWARE_ROOT)/build
@@ -120,7 +130,7 @@ PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl "$(FPGACARD)" "$(PSL_D
 
 ifeq ($(PLATFORM),x86_64)
 
-.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config add_psl_dcp check_psl_dcp image cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
+.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config add_psl_dcp check_psl image cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
 
 all: model image
 
@@ -317,9 +327,13 @@ hw_project: hw_project_start action_hw
 config: hw_project
 
 # checking card type for PSL design checkpoint
-check_psl_dcp: .hw_project_done
-	if [ "$(USE_PRFLOW)" != "TRUE" ]; then \
-		if [ "$(PSL_DCP_TYPE)" != "$(FPGACARD)" ]; then \
+check_psl:
+	if [ "$(IGNORE_CHECK_PSL)" != "TRUE" ] ; then \
+		if [ "$(FPGACARD)" == "N250SP" ]; then \
+			if [ -z "$(PSL4N250SP_ROOT)" ]; then \
+				echo "### ERROR ###  Environment variable PSL4N250SP_ROOT is undefined. It has to point to the PSL IP sources."; exit -1; \
+			fi; \
+		elif [ "$(PSL_DCP_TYPE)" != "$(FPGACARD)" ]; then \
 			if [[ "$(PSL_DCP_TYPE)" == *"OUTDATED"* ]]; then \
 				echo "### ERROR ### PSL_DCP for $(FPGACARD) is pointing to an outdated design checkpoint."; exit -1; \
 			elif [ "$(PSL_DCP_TYPE)" == "" ]; then \
@@ -330,7 +344,8 @@ check_psl_dcp: .hw_project_done
 		fi; \
 	fi
 
-image: check_psl_dcp
+image: check_psl
+	$(MAKE) .hw_project_done
 	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
 ifeq ($(USE_PRFLOW),TRUE)
 	snap-cloud-build ${SNAP_ROOT}/snap_env.sh

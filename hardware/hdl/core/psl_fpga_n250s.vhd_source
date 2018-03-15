@@ -31,11 +31,11 @@ USE unisim.vcomponents.all;
 
 ENTITY psl_fpga IS
   PORT(
-#ifdef CONFIG_ENABLE_DDRI
-    -- Clock inputs for SDRAM
-    refclk266_p               : IN    STD_LOGIC;
-    refclk266_n               : IN    STD_LOGIC;
-#endif
+-- clk #ifdef CONFIG_ENABLE_DDRI
+-- clk     -- Clock inputs for SDRAM
+-- clk     refclk266_p               : IN    STD_LOGIC;
+-- clk     refclk266_n               : IN    STD_LOGIC;
+-- clk #endif
 #ifdef CONFIG_ENABLE_DDR4
     -- DDR4 SDRAM Interface
     -- Nallatech 250S card has one DDR4 SO-DIMMs
@@ -151,11 +151,11 @@ ARCHITECTURE psl_fpga OF psl_fpga IS
 
 Component psl_accel
   PORT(
-#ifdef CONFIG_ENABLE_DDRI
-    -- Clock inputs for SDRAM
-    refclk_sdram_p            : IN    STD_LOGIC;
-    refclk_sdram_n            : IN    STD_LOGIC;
-#endif
+-- clk #ifdef CONFIG_ENABLE_DDRI
+-- clk     -- Clock inputs for SDRAM
+-- clk     refclk_sdram_p            : IN    STD_LOGIC;
+-- clk     refclk_sdram_n            : IN    STD_LOGIC;
+-- clk #endif
 #ifdef CONFIG_ENABLE_DDR4
     -- DDR4 SDRAM Interface
     -- Nallatech 250S card has one DDR4 SO-DIMMs
@@ -277,7 +277,10 @@ Component psl_accel
     --
     -- Misc Interface
     ah_paren: OUT std_logic;
-    ha_pclock: IN std_logic);
+    ha_pclock: IN std_logic;
+    pci_user_reset: in std_logic; --PCI hip user_reset signal if needed
+    pci_clock_125MHz: in std_logic --125MHz clock if needed
+    );
 End Component psl_accel;
 
 Component base_img
@@ -523,11 +526,11 @@ BEGIN
 
   a0: psl_accel
     PORT MAP (
-#ifdef CONFIG_ENABLE_DDRI
-      -- Clock inputs for SDRAM
-      refclk_sdram_p                    => refclk266_p,
-      refclk_sdram_n                    => refclk266_n,
-#endif
+-- clk #ifdef CONFIG_ENABLE_DDRI
+-- clk       -- Clock inputs for SDRAM
+-- clk       refclk_sdram_p                    => refclk266_p,
+-- clk       refclk_sdram_n                    => refclk266_n,
+-- clk #endif
 #ifdef CONFIG_ENABLE_DDR4
       -- DDR4 SDRAM Interface
       -- Nallatech 250S card has one DDR4 SO-DIMMs
@@ -647,7 +650,9 @@ BEGIN
       --
       -- Misc Interface
       ah_paren                          => a0h_paren,
-      ha_pclock                         => ha0_pclock
+      ha_pclock                         => ha0_pclock,
+      pci_user_reset                    => pci_user_reset,
+      pci_clock_125MHz                  => pci_clock_125MHz
     );
 
 #ifdef CONFIG_ENABLE_FACTORY

@@ -1,7 +1,7 @@
 ############################################################################
 ############################################################################
 ##
-## Copyright 2017 Alpha Data Parallel Systems Ltd.
+## Copyright 2018 Alpha Data Parallel Systems Ltd.
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -18,13 +18,10 @@
 ############################################################################
 ############################################################################
 
-create_clock -period 5.000 -name refclk200 [get_ports {refclk200_p}]
+set_property PACKAGE_PIN AM19 [get_ports {refclk200}]
+set_property IOSTANDARD LVCMOS33 [get_ports {refclk200}]
 
-set_property PACKAGE_PIN W23 [get_ports {refclk200_p}]
-set_property IOSTANDARD LVDS [get_ports {refclk200_p}]
-set_property DIFF_TERM TRUE  [get_ports {refclk200_p}]
+set_max_delay -from [get_ports {refclk200}]  100.0
+set_min_delay -from [get_ports {refclk200}] -100.0
 
-set_property PACKAGE_PIN W24 [get_ports {refclk200_n}]
-set_property IOSTANDARD LVDS [get_ports {refclk200_n}]
-set_property DIFF_TERM TRUE  [get_ports {refclk200_n}]
-
+create_clock -period 5.000 -name refclk200 [get_ports {refclk200}]
