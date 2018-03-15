@@ -14,15 +14,15 @@ build the tools with `make` and use them to update the user partition.
 ## Example: 
 
 ```bash
-sudo capi-utils/capi-flash-script.sh my_user_image.bin
+sudo capi-flash-script.sh my_user_image.bin
 ```
 Example output:
 ```
 Current date:
-Thu Jul  6 15:20:41 CEST 2017
+Thu Mar 15 14:31:50 CET 2018
 
 #       Card                           Flashed                       by                   Image
-card0    NallatechKU60 Xilinx          Wed Jul  5 12:24:21 CEST 2017 somebody             /home/somebody/another_user_image.bin
+card0    AlphaDataKU115 Xilinx         Wed Mar 14 17:23:04 CET 2018  somebody             /home/somebody/another_user_image.bin
 
 Which card do you want to flash? [0-0] 0
 
@@ -30,14 +30,21 @@ Do you want to continue to flash my_user_image.bin to card0? [y/n] y
 
 Device ID: 0477
 Vendor ID: 1014
-  VSEC Length/VSEC Rev/VSEC ID: 0x08001280
+VSEC Offset: 0x400
+VSEC Length: 0x080
+VSEC ID: 0x0
     Version 0.12
 
-Programming User Partition with my_user_image.bin
-  Program ->  for Size: 56 in blocks (32K Words or 128K Bytes)
+Addr reg: 0x450
+Size reg: 0x454
+Cntl reg: 0x458
+Data reg: 0x45C
+
+Programming User Partition (0x00000000) with my_user_image.bin
+  Program ->  for Size: 59 in blocks (64K Words or 256K Bytes)
 
 Erasing Flash
-...
+........
 ```
 # How to build the factory ("golden") bitstream image
 
@@ -48,8 +55,11 @@ The output bitstream file names will have `_FACTORY` appended.
 
 # Initial programming of a blank or bricked card
 
-There are two ways to program a card from scratch. Both ways require a Xilinx Platform Cable USB II.  
-Connect the Platform Cable with the card as described in the card's reference manual. The Alpha-Data KU3 has an on-board connector for the Platform Cable, the Nallatech 250S requires a Development & Debug Breakout Board.
+There are two ways to program a card from scratch.  
+Connect the Platform Cable with the card as described in the card's reference manual. 
+* The Alpha-Data KU3 has an on-board connector to plug the Xilinx Platform Cable USB II ribbon.
+* The Alpha-Data 8k5 has an embedded Xilinx compatible programmer, so only a micro USB cable is required. 
+* The Nallatech 250S requires an additional Development & Debug Breakout Board to interface with the Xilinx Platform Cable USB II.
 
 ## 1. Programming the flash device with a .mcs file 
 
