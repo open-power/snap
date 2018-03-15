@@ -1,6 +1,6 @@
 #-----------------------------------------------------------
 #
-# Copyright 2016, International Business Machines
+# Copyright 2017, International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
 # limitations under the License.
 #
 #-----------------------------------------------------------
-create_pblock pblock_action
-resize_pblock pblock_action -add CLOCKREGION_X0Y0:CLOCKREGION_X2Y4
-resize_pblock pblock_action -remove BITSLICE_RX_TX_X1_Y160
-resize_pblock pblock_action -remove IOB_X1Y160
-add_cells_to_pblock pblock_action [get_cells [list a0/action_w ]] -clear_locs
+
+create_pblock pblock_snap
+resize_pblock pblock_snap -add CLOCKREGION_X3Y0:CLOCKREGION_X3Y2
+add_cells_to_pblock pblock_snap [get_cells [list a0/axi_interconnect_i a0/snap_core_i]] -clear_locs
+

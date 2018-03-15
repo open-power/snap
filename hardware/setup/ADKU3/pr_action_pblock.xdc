@@ -15,8 +15,16 @@
 # limitations under the License.
 #
 #-----------------------------------------------------------
+# create a action PBLOCK 
+create_pblock pblock_action
+resize_pblock pblock_action -add    CLOCKREGION_X0Y0:CLOCKREGION_X5Y4 
 
-create_pblock pblock_core
-resize_pblock pblock_core -add CLOCKREGION_X3Y0:CLOCKREGION_X3Y4
-add_cells_to_pblock pblock_core [ get_cells [ list a0/snap_core_i ] ] -clear_locs
+# remove SNAP area from the action PBLOCK
+resize_pblock pblock_action -remove CLOCKREGION_X3Y0:CLOCKREGION_X3Y2 
 
+# remove PSL area from the action PBLOCK
+resize_pblock pblock_action -remove CLOCKREGION_X4Y0:CLOCKREGION_X5Y3 
+resize_pblock pblock_action -remove IOB_X1Y160:IOB_X1Y160
+
+# add action conntent to the action PBLOCK
+add_cells_to_pblock pblock_action [get_cells [list a0/action_w ]] -clear_locs
