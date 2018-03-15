@@ -312,6 +312,8 @@ static void usage(const char *prog)
                "source snap_path.sh\n"
                "snap_maint -vv\n"
                "\n"
+               "echo Available search methods are Naive method (m1) - KMP method (m2) - Streaming method (m0)\n"
+               "echo (Streaming method need to be specified in common header file BEFORE generating the flow)\n"
                "echo \"Hardware\" search pattern looking for the word \"include\" in search.txt\n"
                "snap_search -m1 -E88 -i ./search.txt -p include -C0\n"
                "echo \"Software\" search pattern looking for the word \"include\" in search.txt\n"
@@ -324,13 +326,14 @@ static void usage(const char *prog)
 	       "echo Create a file with a text to search in. For example:\n"
 	       "echo \"Hello SNAP world. This is my first CAPI SNAP experience. It's real fun!\" > /tmp/t1\n"
 	       "\n"
-               "echo \"Hardware\" search pattern looking for the word \"SNAP\" in t1 file -Naive method\n"
+               "echo \"Hardware\" search pattern looking for the word \"SNAP\" in t1 file -Naive method (m1)\n"
                "snap_search -t5000 -m1 -E2 -i /tmp/t1 -p SNAP\n"
-               "echo \"Hardware\" search pattern looking for the word \"SNAP\" in t1 file - KMP method\n"
+               "echo \"Hardware\" search pattern looking for the word \"SNAP\" in t1 file - KMP method (m2)\n"
                "snap_search -t5000 -m2 -E2 -i /tmp/t1 -p SNAP\n"
-               "echo \"Hardware\" search pattern looking for the word \"SNAP\" in t1 file - stream method\n"
+               "echo \"Hardware\" search pattern looking for the word \"SNAP\" in t1 file - stream method (m0)\n"
+               "echo (Streaming method need to be specified in common header file BEFORE generating the flow)\n"
                "snap_search -t5000 -m0 -E2 -i /tmp/t1 -p SNAP\n"
-               "echo \"Software\" search pattern looking for the word \"SNAP\" in t1 file - Naive method\n"
+               "echo \"Software\" search pattern looking for the word \"SNAP\" in t1 file - Naive method (m1)\n"
                "snap_search -t5000 -m1 -E2 -s -i /tmp/t1 -p SNAP\n"
                "\n",
 	       prog);
@@ -511,7 +514,6 @@ int main(int argc, char *argv[])
 
     	printf("...................................................\n");
   	printf("Start Step1 (Copy source data from Host to DDR) ...\n");
-   	printf("...................................................\n");
  	step = 1;
 
 	snap_prepare_search(&cjob, &sjob_in, &sjob_out,
@@ -531,7 +533,6 @@ int main(int argc, char *argv[])
     	{
                 printf("...................................................\n");
        		printf("Start Step2 (Copy source data from DDR to Host) ...\n");
-                printf("...................................................\n");
  	 	step = 2;
         	snap_prepare_search(&cjob, &sjob_in, &sjob_out,
 				    dbuff, dsize,
@@ -546,7 +547,6 @@ int main(int argc, char *argv[])
 
         	printf("...................................................\n");
         	printf("Start Step4 (Do Search by software) ...............\n");
-        	printf("...................................................\n");
  	 	step = 4;
 
         	sjob_out.nb_of_occurrences = run_sw_search(method, (char *)pbuff, psize,
@@ -578,7 +578,6 @@ int main(int argc, char *argv[])
                 default:
                         printf(" >>> Default: Naive method (%d) \n", method);
                 }
-                printf("...................................................\n");
 		step = 3;
 
         	run = 0;
@@ -611,7 +610,6 @@ int main(int argc, char *argv[])
            		printf("....................................................\n");
             		printf("Start Step5 (Copy pattern positions back to Host) ..\n");
             		printf("......no positions yet to transfer .............. ..\n");
-            		printf("....................................................\n");
 			step = 5;
 
             		snap_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
