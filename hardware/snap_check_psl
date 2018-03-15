@@ -41,6 +41,7 @@ if [ $# -gt 1 ]; then
       'f920e532c7dfea8aa7c0f90db5b54bff')    export PSL_DCP_TYPE="ADKU3";; # with reset fix 20171220
       '51b64ad40a3dc54ec855d7d7dfef0896')    export PSL_DCP_TYPE="ADKU3";; # rblack_PSLrev6_v174_20170122_vsec400
       'f6039e03c293ba964feecd574015643d')    export PSL_DCP_TYPE="AD8K5";; # rblack CAPI_SNAP_8K5_pslrev6_v2017_4_PSL_Checkpoint.dcp
+      '6de8dd18738e8dfd65172196de9965d6')    export PSL_DCP_TYPE="AD8K5";; # rblack CAPI_SNAP_8K5_pslrev6_v2017_4_PSL_Checkpoint2.dcp
       '3fa538efab1bc3e3fabe06477445d314')    export PSL_DCP_TYPE="S121B";;
       '8602200acb12d2de68c2a8a95735571a')    export PSL_DCP_TYPE="S121B";;
       '400d13185ce03f38776d672690618b2e')    export PSL_DCP_TYPE="S121B";; # psl233_viv17.4_vsec400h_Feb23
