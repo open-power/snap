@@ -20,11 +20,10 @@ resize_pblock pblock_action -remove    CLOCKREGION_X3Y3:CLOCKREGION_X3Y3
 
 # add NVME area to SNAP
 resize_pblock pblock_snap -add CLOCKREGION_X3Y4:CLOCKREGION_X5Y4
-resize_pblock pblock_snap -add CLOCKREGION_X3Y3:CLOCKREGION_X3Y3
-resize_pblock pblock_snap -add {SLICE_X84Y180:SLICE_X95Y299 DSP48E2_X16Y72:DSP48E2_X17Y119 LAGUNA_X14Y120:LAGUNA_X15Y239 RAMB18_X11Y72:RAMB18_X11Y119 RAMB36_X11Y36:RAMB36_X11Y59} -locs keep_all
-resize_pblock pblock_snap -add {SLICE_X128Y180:SLICE_X142Y239 RAMB18_X16Y72:RAMB18_X17Y95 RAMB36_X16Y36:RAMB36_X17Y47} -locs keep_all
-resize_pblock pblock_snap -add {SLICE_X96Y120:SLICE_X98Y239} -locs keep_all
-resize_pblock pblock_snap -add {PCIE_3_1_X0Y1:PCIE_3_1_X0Y1} -locs keep_all
-resize_pblock pblock_snap -add {GTHE3_CHANNEL_X1Y12:GTHE3_CHANNEL_X1Y15} -locs keep_all
-resize_pblock pblock_snap -add {GTHE3_COMMON_X1Y3:GTHE3_COMMON_X1Y3} -locs keep_all
+resize_pblock pblock_snap -add {SLICE_X71Y180:SLICE_X98Y239 DSP48E2_X14Y72:DSP48E2_X17Y95 RAMB18_X9Y72:RAMB18_X11Y95 RAMB36_X9Y36:RAMB36_X11Y47}
+#resize_pblock pblock_snap -add {SLICE_X48Y0:SLICE_X98Y179 DSP48E2_X9Y0:DSP48E2_X17Y71 LAGUNA_X8Y0:LAGUNA_X15Y119 RAMB18_X6Y0:RAMB18_X11Y71 RAMB36_X6Y0:RAMB36_X11Y35}
+resize_pblock pblock_snap -add {SLICE_X128Y180:SLICE_X142Y239 RAMB18_X16Y72:RAMB18_X17Y95 RAMB36_X16Y36:RAMB36_X17Y47} 
+resize_pblock pblock_snap -add {PCIE_3_1_X0Y1:PCIE_3_1_X0Y1}
+resize_pblock pblock_snap -add {GTHE3_CHANNEL_X1Y12:GTHE3_CHANNEL_X1Y15}
+resize_pblock pblock_snap -add {GTHE3_COMMON_X1Y3:GTHE3_COMMON_X1Y3}
 add_cells_to_pblock pblock_nvme [get_cells [list a0/nvme_top_i]] -clear_locs
