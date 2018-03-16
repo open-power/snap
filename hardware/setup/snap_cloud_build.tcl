@@ -86,6 +86,9 @@ if { ([get_property pr_flow [current_project]] != 1) } {
   # PR Implementation
   set_property PR_CONFIGURATION config_1 [get_runs impl_1]
 
+  # REMOVE all PBLOCKS 
+  remove_files  -quiet -fileset constrs_1 [get_files -of [get_filesets {constrs_1}] *pblock* ]
+
   # ADD constrains files for PR flow
   add_files -of_objects [get_reconfig_modules user_action] $root_dir/setup/$fpgacard/pr_action_clk_ooc.xdc
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpgacard/pr_action_pblock.xdc
