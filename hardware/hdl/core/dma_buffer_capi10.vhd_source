@@ -15,8 +15,6 @@
 -- See the License for the specific language governing permissions AND
 -- limitations under the License.
 --
--- change log:
--- 12/20/2016 R. Rieke add flip bit for rad bit to circumvent page flip
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 
@@ -629,11 +627,9 @@ BEGIN
           rram_rdata_end_q    <= '0';
           rram_rdata_end_qq   <= '0';
           rram_rdata_end_qqq  <= '0';
-          flip_rbit_valid_q   <= '0';             -- only for FPGACARD=N250S
-          flip_rbit_valid_q   <= '1';             -- only for FPGACARD=ADKU3 -- only for FPGACARD=S121B -- only for FPGACARD=AD8K5
+          flip_rbit_valid_q   <= '1';             -- disabling flip bit circumvention for read path
           flip_rbit_q         <= '0';
-          flip_wbit_valid_q   <= '0';             -- only for FPGACARD=N250S
-          flip_wbit_valid_q   <= '1';             -- only for FPGACARD=ADKU3 -- only for FPGACARD=S121B -- only for FPGACARD=AD8K5
+          flip_wbit_valid_q   <= '1';             -- disabling flip bit circumvention for write path
           flip_wbit_q         <= '0';          
         END IF;
       END IF;
