@@ -51,6 +51,11 @@ if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support "not defined"
 }
 
+# HLS generates VHDL and Verilog files, SNAP is using the VHDL files
+if { $hls_support == "TRUE" } {
+  set action_dir $::env(ACTION_ROOT)/hw/vhdl
+}
+
 if { [info exists ::env(PSL_DCP)] == 1 } {
   set psl_dcp $::env(PSL_DCP)
 } else {
@@ -87,7 +92,7 @@ set_property STEPS.SYNTH_DESIGN.ARGS.RESOURCE_SHARING          off     [get_runs
 set_property STEPS.SYNTH_DESIGN.ARGS.SHREG_MIN_SIZE            5       [get_runs synth_1]
 set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS true    [get_runs synth_1]
 set_property STEPS.SYNTH_DESIGN.ARGS.NO_LC                     true    [get_runs synth_1]
-set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY         none    [get_runs synth_1]
+set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY         rebuilt [get_runs synth_1]
 # Implementaion
 set_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 set_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
