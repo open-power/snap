@@ -357,7 +357,7 @@ config ILA_DEBUG
         default "FALSE" if ! ENABLE_ILA
 
 config ENABLE_FACTORY
-        bool "Create Factory Image"
+        bool "Also create a factory image"
         help 
           Used to generate a specific image to be located into the factory area
           Default image is in the user area. 
