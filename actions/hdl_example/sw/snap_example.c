@@ -103,7 +103,8 @@ static void *alloc_mem(int align, int size)
 	void *a;
 	int size2 = size + align;
 
-	VERBOSE2("%s Enter Align: %d Size: %d\n", __func__, align, size);
+	VERBOSE2("%s Enter Align: %d Size: %d (malloc Size: %d)\n",
+		__func__, align, size, size2);
 	if (posix_memalign((void **)&a, 4096, size2) != 0) {
 		perror("FAILED: posix_memalign()");
 		return NULL;
@@ -239,12 +240,15 @@ static int do_action(struct snap_card *h,
 	if (NULL == act) {
 		VERBOSE0("Error: Can not attach Action: %x\n", ACTION_TYPE_EXAMPLE);
 		VERBOSE0("       Try to run snap_main tool\n");
-		return 1;
+		return 0x100;
 	}
 	action_memcpy(h, action, dest, src, memsize);
 	rc = action_wait_idle(h, timeout, &td);
 	print_time(td, memsize);
-	snap_detach_action(act);
+	if (0 != snap_detach_action(act)) {
+		VERBOSE0("Error: Can not detach Action: %x\n", ACTION_TYPE_EXAMPLE);
+		rc |= 0x100;
+	}
 	return rc;
 }
 
@@ -435,9 +439,9 @@ static int memcpy_test(struct snap_card* dnc,
 			rc = memcmp(src, dest, memsize);
 			if ((verbose_level > 1) || rc) {
 				VERBOSE0("---------- src Buffer: %p\n", src);
-				//__hexdump(stdout, src, memsize);
+				__hexdump(stdout, src, memsize);
 				VERBOSE0("---------- dest Buffer: %p\n", dest);
-				//__hexdump(stdout, dest, memsize);
+				__hexdump(stdout, dest, memsize);
 			}
 			if (rc)
 				VERBOSE0("Error Memcmp failed rc: %d\n", rc);
@@ -635,18 +639,24 @@ int main(int argc, char *argv[])
 			act = snap_attach_action(dn, ACTION_TYPE_EXAMPLE,
 				  attach_flags, 5 * timeout + delay/1000);
 			if (NULL == act) {
-				VERBOSE0("Error: Can not attach.....\n");
+				VERBOSE0("Error: Can not attach Action: %x\n",
+					ACTION_TYPE_EXAMPLE);
+				rc = 0x100;
 				goto __exit1;
 			}
 
 			action_count(dn, delay);
 			rc = action_wait_idle(dn, timeout + delay/1000, &td);
 			print_time(td, 0);
-
-			snap_detach_action(act);
-			if (0 != rc) break;
+			/* Detach Action and exit if rc is set */
+			if (0 != snap_detach_action(act)) {
+				VERBOSE0("Error: Can not detach Action: %x\n",
+					ACTION_TYPE_EXAMPLE);
+				rc |= 0x100;
+			}
+			if (0 != rc)
+				goto __exit1;
 		}
-		rc = 0;
 		break;
 	case 2:
 	case 3:
@@ -657,6 +667,7 @@ int main(int argc, char *argv[])
 			rc = memcpy_test(dn, attach_flags, action, num_4k, num_64,
 				memcpy_align, card_ram_base,
 				timeout);
+			if (0 != rc) break;
 		}
 		break;
 	default:

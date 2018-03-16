@@ -319,9 +319,9 @@ Component psl_accel
     ah_tbreq                            : OUT   STD_LOGIC;                      -- Timebase command request
     ah_paren                            : OUT   STD_LOGIC;
     ha_pclock                           : IN    STD_LOGIC;
-    pci_user_reset                      : in    std_logic; --PCI hip user_reset signal if needed
-    pci_clock_125MHz                    : in    std_logic --125MHz clock if needed
-    
+    pci_user_reset                      : IN    std_logic;                      --PCI hip user_reset signal if required
+    pci_clock_125MHz                    : IN    std_logic                       --125MHz clock if required
+
   );
 End Component psl_accel;
 
@@ -493,7 +493,9 @@ Component psl4n250sp
     hd0_cpl_data        : out std_logic_vector(0 to 1023);
 --    hd0_cpl_dpar        : out std_logic_vector(0 to 15);
 
-    gold_factory        : in  std_logic
+    gold_factory        : in  std_logic;
+    pci_user_reset      : out std_logic;                   --PCI hip user_reset signal if required
+    pci_clock_125MHz    : out std_logic                    --125MHz clock if required
   );
 
 END Component psl4n250sp;
@@ -579,16 +581,16 @@ SIGNAL hd0_cpl_byte_count  : std_logic_vector(0 to 9)   ;
 SIGNAL hd0_cpl_size        : std_logic_vector(0 to 9)   ;
 SIGNAL hd0_cpl_data        : std_logic_vector(0 to 1023);
 
-SIGNAL gold_factory: std_logic;
-SIGNAL pci_user_reset: std_logic;
--- SIGNAL pci_clock_125MHz: std_logic;
+SIGNAL gold_factory        : std_logic;
+SIGNAL pci_user_reset      : std_logic;
+SIGNAL pci_clock_125MHz    : std_logic;
 #ifdef CONFIG_ENABLE_NVME
 -- NVME Reset Logic
-SIGNAL nvme_reset_cnt_q : std_logic_vector(15 DOWNTO 0) := (OTHERS => '1');
-SIGNAL nvme_reset_n_q   : std_logic := '1';
-SIGNAL nvme_reset_ctl   : std_logic;
-SIGNAL nvme_perst_ctl   : std_logic_vector(3 DOWNTO 0);
-SIGNAL m2_perst_tmp_n   : std_logic_vector(3 DOWNTO 0);
+SIGNAL nvme_reset_cnt_q    : std_logic_vector(15 DOWNTO 0) := (OTHERS => '1');
+SIGNAL nvme_reset_n_q      : std_logic := '1';
+SIGNAL nvme_reset_ctl      : std_logic;
+SIGNAL nvme_perst_ctl      : std_logic_vector(3 DOWNTO 0);
+SIGNAL m2_perst_tmp_n      : std_logic_vector(3 DOWNTO 0);
 #endif
 
 BEGIN
@@ -965,7 +967,9 @@ BEGIN
       hd0_cpl_byte_count  => hd0_cpl_byte_count,
       hd0_cpl_size        => hd0_cpl_size,
       hd0_cpl_data        => hd0_cpl_data,
-      gold_factory        => gold_factory
+      gold_factory        => gold_factory,
+      pci_user_reset      => pci_user_reset,
+      pci_clock_125MHz    => pci_clock_125MHz
     );
 
 END psl_fpga;
