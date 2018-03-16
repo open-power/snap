@@ -87,37 +87,22 @@ if { ([get_property pr_flow [current_project]] != 1) } {
   set_property PR_CONFIGURATION config_1 [get_runs impl_1]
 
   # ADD constrains files for PR flow
-#  if { $fpgacard == "ADKU3" } {
-#    if { $sdram_used == "TRUE" } {
-#      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/action_pblock.xdc
-#      set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/action_pblock.xdc]
-#      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_pblock_sdram.xdc
-#      set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/snap_pblock_sdram.xdc]
-#    } elseif  { $bram_used == "FALSE" } {
-#      # NORAM
-#      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/action_pblock.xdc
-#      set_property used_in_synthesis false [get_files  $root_dir/setup/ADKU3/action_pblock.xdc]
-#      add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_pblock_noram.xdc
-#      set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_pblock_noram.xdc]
-#    }  
-#  } elseif { $fpgacard == "N250S" } {
-    add_files -of_objects [get_reconfig_modules user_action] $root_dir/setup/$fpgacard/pr_action_clk_ooc.xdc
-    add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpgacard/pr_action_pblock.xdc
-    set_property used_in_synthesis false [get_files  $root_dir/setup/$fpgacard/pr_action_pblock.xdc]    
-    add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpgacard/pr_snap_pblock.xdc
-    set_property used_in_synthesis false [get_files  $root_dir/setup/$fpgacard/pr_snap_pblock.xdc]
-    if { $sdram_used == "TRUE" } {
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpgacard/pr_snap_sdram_pblock.xdc
-      set_property used_in_synthesis false [get_files $root_dir/setup/$fpgacard/pr_snap_sdram_pblock.xdc]
-    }
+  add_files -of_objects [get_reconfig_modules user_action] $root_dir/setup/$fpgacard/pr_action_clk_ooc.xdc
+  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpgacard/pr_action_pblock.xdc
+  set_property used_in_synthesis false [get_files  $root_dir/setup/$fpgacard/pr_action_pblock.xdc]    
+  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpgacard/pr_snap_pblock.xdc
+  set_property used_in_synthesis false [get_files  $root_dir/setup/$fpgacard/pr_snap_pblock.xdc]
+  if { $sdram_used == "TRUE" } {
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpgacard/pr_snap_sdram_pblock.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/$fpgacard/pr_snap_sdram_pblock.xdc]
+  }
 
-    if { $nvme_used == "TRUE" } {
-      add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpgacard/pr_snap_nvme_pblock.xdc
-      set_property used_in_synthesis false [get_files  $root_dir/setup/$fpgacard/pr_snap_nvme_pblock.xdc]
-    }
-#  }
+  if { $nvme_used == "TRUE" } {
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpgacard/pr_snap_nvme_pblock.xdc
+    set_property used_in_synthesis false [get_files  $root_dir/setup/$fpgacard/pr_snap_nvme_pblock.xdc]
+  }
 } else {
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "framework project alread" $widthCol3 "y in PR flow" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "framework project already in PR flow" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 }
 
 ## 
@@ -181,7 +166,7 @@ if { $cloud_run == "BASE" } {
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
     exit 42
   }
-  puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3 + 1] "collecting reports and checkpoints" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "collecting reports and checkpoints" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
   file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_opt.dcp                         $dcp_dir/framework_opt.dcp    
   file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_physopt.dcp                     $dcp_dir/framework_physopt.dcp
