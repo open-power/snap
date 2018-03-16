@@ -1,5 +1,5 @@
-#ifndef __ACTION_SEARCH_H__
-#define __ACTION_SEARCH_H__
+#ifndef __SW_ACTION_SEARCH_H__
+#define __SW_ACTION_SEARCH_H__
 
 /*
  * Copyright 2016, 2017 International Business Machines
@@ -59,4 +59,4 @@ typedef enum {
 }
 #endif
 
-#endif	/* __ACTION_SEARCH_H__ */
+#endif	/* __SW_ACTION_SEARCH_H__ */
