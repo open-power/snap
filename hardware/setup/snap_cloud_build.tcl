@@ -102,7 +102,7 @@ if { ([get_property pr_flow [current_project]] != 1) } {
     set_property used_in_synthesis false [get_files  $root_dir/setup/$fpgacard/pr_snap_nvme_pblock.xdc]
   }
 } else {
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "framework project already in PR flow" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "framework project already in PR flow" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 }
 
 ## 
@@ -153,7 +153,7 @@ if { $cloud_run == "BASE" } {
     remove_files [get_files *.dcp] >> $logfile
     read_checkpoint -cell b $psl_dcp  >> $logfile
 
-    puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+    puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
     set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
   }
 
