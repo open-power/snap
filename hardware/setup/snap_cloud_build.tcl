@@ -152,6 +152,9 @@ if { $cloud_run == "BASE" } {
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "import PSL DCP" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
     remove_files [get_files *.dcp] >> $logfile
     read_checkpoint -cell b $psl_dcp  >> $logfile
+
+    puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+    set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
   }
 
   read_xdc ../setup/snap_impl.xdc >> $logfile

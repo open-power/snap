@@ -116,7 +116,7 @@ if { $vivadoVer == "2017.4" } {
 
 
   if { $fpgacard != "N250SP" } {
-    puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "Prevent placing inside P" $widthCol3 "SL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+    puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
     set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
   }
 }

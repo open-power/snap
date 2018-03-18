@@ -67,7 +67,7 @@ set widthCol4 22
 
 ## 
 ## create temporary in memory project
-puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3 + 1] "creating in memory project" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "creating in memory project" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 create_project -in_memory -part $fpga_part >> $log_file
 
 ## 
