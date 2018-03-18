@@ -154,6 +154,7 @@ if { $cloud_run == "BASE" } {
     read_checkpoint -cell b $psl_dcp  >> $logfile
 
     puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+    open_run     synth_1 -name synth_1 >> $logfile
     set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
   }
 
