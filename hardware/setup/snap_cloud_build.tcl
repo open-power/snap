@@ -154,10 +154,10 @@ if { $cloud_run == "BASE" } {
     open_run     synth_1 -name synth_1  >> $logfile
     update_design   -cell b -black_box  >> $logfile
     read_checkpoint -cell b $psl_dcp    >> $logfile
-    lock_design  -level routing b       >> $logfile
+#    lock_design  -level routing b       >> $logfile
 
-    puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-    set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
+#    puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+#    set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
   }
 
   read_xdc ../setup/snap_impl.xdc >> $logfile

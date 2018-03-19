@@ -74,7 +74,7 @@ create_project -in_memory -part $fpga_part >> $log_file
 ## adding static region and user_action checkpoints
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "adding checkpoints" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 add_files $dcp_dir/$static_region_dcp >> $log_file
-add_file $dcp_dir/$user_action_dcp >> $log_file
+add_files $dcp_dir/$user_action_dcp   >> $log_file
 set_property SCOPED_TO_CELLS {a0/action_w} [get_files $dcp_dir/$user_action_dcp] >> $log_file
 
 ## 

@@ -398,7 +398,7 @@ cloud_merge: allow_cloud_merge $(SNAP_BASE_DCP) $(SNAP_ACTION_DCP)
 	@ignore_action_root=ignore_action_root $(MAKE) prepare_project
 	@echo -e "[CLOUD MERGE ........] start `date +"%T %a %b %d %Y"`"
 	@echo -e "                        using `vivado -version |grep Vivado`"
-	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_cloud_merge.tcl -notrace -log $(LOGS_DIR)/cloud_merge.log -journal $(LOGS_DIR)/cloud_merge.jou
+	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_cloud_merge.tcl -notrace -log $(LOGS_DIR)/snap_cloud_merge.log -journal $(LOGS_DIR)/snap_cloud_merge.jou
 	@echo -e "[CLOUD MERGE ........] done  `date +"%T %a %b %d %Y"`"
 
 pslse: prepare_logs
