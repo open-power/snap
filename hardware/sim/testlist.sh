@@ -440,7 +440,7 @@
       cat tin |tr '[:lower:]' '[:upper:]' >tCAP
       step "snap_helloworld -i tin -o tout"
       cat tin tout tCAP
-      if diff tout tCAP >/dev/null;then echo -e "file_diff ok$del";else echo -e "file_diff is wrong$del";cat t*;exit 1;fi
+      if diff tout tCAP >/dev/null;then echo -e "file_diff ok$del";else echo -e "file_diff is wrong$del";exit 1;fi
     fi # hls_helloworld
  #
     if [[ "$t0l" == "00000108" || "${env_action}" == "hls_blowfish" ]];then echo -e "$del\ntesting blowfish"
