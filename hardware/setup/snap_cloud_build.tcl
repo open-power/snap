@@ -151,9 +151,10 @@ if { $cloud_run == "BASE" } {
   } else {
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "import PSL DCP" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
  #   remove_files [get_files *.dcp] >> $logfile
-    open_run     synth_1 -name synth_1 >> $logfile
-    update_design   -cell b -black_box
-    read_checkpoint -cell b $psl_dcp  >> $logfile
+    open_run     synth_1 -name synth_1  >> $logfile
+    update_design   -cell b -black_box  >> $logfile
+    read_checkpoint -cell b $psl_dcp    >> $logfile
+    lock_design  -level routing b       >> $logfile
 
     puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
     set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
