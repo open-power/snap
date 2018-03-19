@@ -867,8 +867,7 @@ static void cblk_req_dump(struct cblk_dev *c)
 		switch (req->status) {
 		case CBLK_IDLE:
 			usecs = 0;
-			if (req->lba == 0)
-				break;
+			break;
 		case CBLK_READY:
 			usecs = timediff_usec(&req->etime, &req->stime);
 			break;
@@ -895,8 +894,7 @@ static void stat_req_dump(struct cblk_dev *c)
 		switch (req->status) {
 		case CBLK_IDLE:
 			usecs = 0;
-			if (req->lba == 0)
-				break;
+			break;
 		case CBLK_READY:
 			usecs = timediff_usec(&req->etime, &req->stime);
 			break;
