@@ -116,11 +116,11 @@ report_drc            -quiet -ruledeck bitstream_checks -name psl_fpga -file ./R
 ## 
 ## checking timing
 ## Extract timing information, change ns to ps, remove leading 0's in number to avoid treatment as octal.
-set TIMING_TNS [exec grep -A6 "Design Timing Summary" ./Reports/psl_fpga_timing_summary.rpt | tail -n 1 | tr -s " " | cut -d " " -f 2 | tr -d "." | sed {s/^\(\-*\)0*\([0-9]*\)/\1\2/}]
-puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "Timing (TNS)" $widthCol3 "$TIMING_TNS ps" $widthCol4 "" ]
-if { [expr $TIMING_TNS >= 0 ] } {
+set TIMING_WNS [exec grep -A6 "Design Timing Summary" ./Reports/psl_fpga_timing_summary.rpt | tail -n 1 | tr -s " " | cut -d " " -f 2 | tr -d "." | sed {s/^\(\-*\)0*\([1-9]*[0-9]\)/\1\2/}]
+puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "Timing (TNS)" $widthCol3 "$TIMING_WNS ps" $widthCol4 "" ]
+if { [expr $TIMING_WNS >= 0 ] } {
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "TIMING OK" $widthCol4 "" ]
-} elseif { [expr $TIMING_TNS < $timing_lablimit ] } {
+} elseif { [expr $TIMING_WNS < $timing_lablimit ] } {
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: TIMING FAILED" $widthCol4 "" ]
     exit 42
 } else {
@@ -139,7 +139,7 @@ if { $cloud_build_bitfile == "TRUE" } {
   } else {
     set RAM_TYPE noSDRAM
   }
-  append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_TNS]
+  append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_WNS]
 
   ##
   ### writing bitstream
