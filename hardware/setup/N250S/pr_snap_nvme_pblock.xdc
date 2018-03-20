@@ -25,4 +25,4 @@ resize_pblock pblock_snap -add {SLICE_X128Y180:SLICE_X142Y239 RAMB18_X16Y72:RAMB
 resize_pblock pblock_snap -add {PCIE_3_1_X0Y1:PCIE_3_1_X0Y1}
 resize_pblock pblock_snap -add {GTHE3_CHANNEL_X1Y12:GTHE3_CHANNEL_X1Y15}
 resize_pblock pblock_snap -add {GTHE3_COMMON_X1Y3:GTHE3_COMMON_X1Y3}
-add_cells_to_pblock pblock_snap [get_cells [list a0/nvme_top_i]] -clear_locs
+add_cells_to_pblock pblock_snap [get_cells [list a0/axi_interconnect_i a0/nvme_top_i]] -clear_locs
