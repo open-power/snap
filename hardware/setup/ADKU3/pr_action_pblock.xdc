@@ -20,7 +20,7 @@ create_pblock pblock_action
 resize_pblock pblock_action -add    CLOCKREGION_X0Y0:CLOCKREGION_X5Y4 
 
 # remove SNAP area from the action PBLOCK
-resize_pblock pblock_action -remove CLOCKREGION_X3Y0:CLOCKREGION_X3Y2 
+resize_pblock pblock_action -remove CLOCKREGION_X3Y1:CLOCKREGION_X3Y3 
 
 # remove PSL area from the action PBLOCK
 resize_pblock pblock_action -remove CLOCKREGION_X4Y0:CLOCKREGION_X5Y3 
