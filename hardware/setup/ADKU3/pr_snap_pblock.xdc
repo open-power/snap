@@ -17,7 +17,7 @@
 #-----------------------------------------------------------
 
 create_pblock pblock_snap
-resize_pblock pblock_snap -add {SLICE_X71Y120:SLICE_X96Y239 DSP48E2_X14Y48:DSP48E2_X17Y95 RAMB18_X9Y48:RAMB18_X11Y95 RAMB36_X9Y24:RAMB36_X11Y47}
-resize_pblock pblock_snap -add CLOCKREGION_X3Y1:CLOCKREGION_X3Y1 
+resize_pblock pblock_snap -add {SLICE_X71Y0:SLICE_X95Y149 DSP48E2_X14Y0:DSP48E2_X17Y59 LAGUNA_X12Y0:LAGUNA_X15Y119 RAMB18_X9Y0:RAMB18_X11Y59 RAMB36_X9Y0:RAMB36_X11Y29} 
+
 add_cells_to_pblock pblock_snap [get_cells [list  a0/snap_core_i]] -clear_locs
 
