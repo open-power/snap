@@ -20,7 +20,7 @@ delete_pblock pblock_ddr3sdram_bank0
 
 # remove DDR area from the action PBLOCK
 resize_pblock pblock_action -remove  CLOCKREGION_X4Y4:CLOCKREGION_X5Y4
-resize_pblock pblock_action -remove  CLOCKREGION_X3Y2:CLOCKREGION_X3Y4
+resize_pblock pblock_action -remove  CLOCKREGION_X3Y3:CLOCKREGION_X3Y4
 
 
 #enlarge SNAP PBLOCK for DDR
