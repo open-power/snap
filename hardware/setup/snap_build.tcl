@@ -263,7 +263,6 @@ if { $bram_used == "TRUE" } {
     set RAM_TYPE noSDRAM
 }
 append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_WNS]
-append IMAGE_NAME [expr {$factory_image == "TRUE" ? "_FACTORY" : ""}]
 
 
 ##
@@ -275,20 +274,37 @@ set command  "write_bitstream -force -file ./Images/$IMAGE_NAME"
 # source the common bitstream settings before creating a bit and bin file
 source $root_dir/setup/snap_bitstream_pre.tcl
 
-if { $factory_image == "TRUE" } {
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: factory image" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-    # Change psl_fpga factory bit
-    set_property INIT 1'b0 [get_cells user_image_q_reg]
-} else {
-  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-}
-
+puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: write_bitstream failed" $widthCol4 "" ]
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
   exit 42
 } else {
   write_cfgmem -force -format bin -size 128 -interface  BPIx16 -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" ./Images/$IMAGE_NAME >> $logfile
+}
+
+# Also write the factory bitstream if it was selected
+if { $factory_image == "TRUE" } {
+  puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: factory image" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  # The factory bitstream has the properties from snap_bitstream_pre.tcl plus:
+  #xapp1246/xapp1296: These settings are not needed for SNAP. 
+  #FIXME remove when testing was successful
+  # set_property BITSTREAM.CONFIG.NEXT_CONFIG_ADDR 0X01000000 [current_design]	;# default is 0x0
+  set_property BITSTREAM.CONFIG.REVISIONSELECT_TRISTATE ENABLE [current_design] ;# default enable
+  set_property BITSTREAM.CONFIG.REVISIONSELECT 01 [current_design] 		;# default is 00
+
+  # Change psl_fpga user_image register power-on state to 0 (factory image)
+  set_property INIT 1'b0 [get_cells user_image_q_reg]
+
+  append IMAGE_NAME "_FACTORY"
+  set command  "write_bitstream -force -file ./Images/$IMAGE_NAME"
+  if { [catch "$command > $logfile" errMsg] } {
+    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: write_bitstream failed" $widthCol4 "" ]
+    puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
+    exit 42
+  } else {
+    write_cfgmem -force -format bin -size 128 -interface  BPIx16 -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" ./Images/$IMAGE_NAME >> $logfile
+  }
 }
 
 
