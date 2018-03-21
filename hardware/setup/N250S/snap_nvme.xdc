@@ -20,6 +20,7 @@
 
 ## 
 set_false_path -from [get_pins nvme_reset_n_q*/C] -to [get_clocks pcie_clk?]
+set_false_path -from [get_pins nvme_reset_n_q*/C] -to [get_clocks a0/nvme_top_i/util_buf_gte_?/U0/IBUF_DS_ODIV2[0]]
 
 # ------------------------------
 # Pin Locations & I/O Standards
