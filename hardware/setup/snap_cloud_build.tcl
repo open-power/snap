@@ -87,7 +87,10 @@ if { ([get_property pr_flow [current_project]] != 1) } {
   set_property PR_CONFIGURATION config_1 [get_runs impl_1]
 
   # ADD constrains files for PR flow
+  # clock constrains
   add_files -of_objects [get_reconfig_modules user_action] $root_dir/setup/$fpgacard/pr_action_clk_ooc.xdc
+  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpgacard/pr_snap_clk_ooc.xdc
+  # pblock constrains
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpgacard/pr_action_pblock.xdc
   set_property used_in_synthesis false [get_files  $root_dir/setup/$fpgacard/pr_action_pblock.xdc]    
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpgacard/pr_snap_pblock.xdc
