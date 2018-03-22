@@ -28,22 +28,47 @@ bold=$(tput bold)
 normal=$(tput sgr0)
 
 # modified jan 16th 2018 to have -v option providing extra information
-version=1.1
+version=2.0
 accel=UNKNOWN
 VERBOSE=0
 
 # Print usage message helper function
 function usage() {
 	echo "Usage: $PROGRAM"
-        echo "    [-v] Prints extra information (to be put as first param)"
-	echo "    [-A] <accelerator> use either GZIP, ADKU3, N250S, S121B, AD8K5 or ALL"
+	echo "    [-v] Prints extra information (to be put as first param)"
+	echo "    [-A] <accelerator> use either ADKU3, N250S, S121B, AD8K5, N250SP or ALL"
 	echo "    [-C] <0..3> Print accelerator name for this Card"
 	echo "    [-V] provides version"
-	echo "  prints out a list of cards found for the accelerator."
-	echo "  The numbers reflect /dev/cxl/afu<n>.0."
-	echo "  Print a list of all cards found if -A ALL."
-        echo "  Print a list of all cards found from a specific provider (-A N250S or ADKU3 or NSA121B or AD8K5 or GZIP)"
-	echo "  Print card name if -C (0..3) is used."
+	echo "  prints out a list of CAPI Cards found in this System."
+	echo
+	echo "  Supported CAPI Cards are:"
+	echo "     [N250S ADKU3 NSA121B AD8K5 N250SP]"
+	echo "     ------------------- Example -----------------------------------------"
+	echo "     $PROGRAM -A ALL"
+	echo "        Print a list (e.g. 0 1 2 3) of all CAPI cards in this System"
+	echo "     $PROGRAM -A ADKU3"
+	echo "        Prints a list of ADKU3 CAPI Cards found"
+	echo "     $PROGRAM -C 0"
+	echo "         Prints the Type of CAPI Card 0"
+	echo "     $PROGRAM -v -A ALL"
+	echo "         Prints Verbose Informations for all CAPI Cards"
+	echo "  Exit code will return how many accelerator's are available."
+}
+
+# Add a function to delay this script if Flash Update is in progress.
+# Flash Update will reset the Capi Card and the card will disappear for
+# some time.
+function wait_no_flash() {
+	for i in `seq 1 50`; do
+		if [ ! -d /var/cxl/capi-flash-script.lock ]; then
+			break;
+		fi
+		sleep 5
+	done
+	if [ $i -gt 50 ]; then
+		echo "ERROR: Timeout after $i Flash is pending ......."
+		exit 0
+	fi
 }
 
 #
@@ -56,65 +81,40 @@ function usage() {
 function detect_snap_cards() {
 	local check_dev=$1
 	local check_sub=$2
+	local card_name=$3
 	local rc=0
-	# We have MAX 4 CAPI cards in one system
 
+	wait_no_flash
+
+	# We have MAX 4 CAPI cards in one system
 	for card in `seq 0 3` ; do
 		if [ ! -d /sys/class/cxl/card${card} ]; then
 			continue
 		fi
 
-		psl_revision=`cat /sys/class/cxl/card${card}/psl_revision`
 		device=`cat /sys/class/cxl/card${card}/afu${card}.0/cr0/device`
-		image_loaded=`cat /sys/class/cxl/card${card}/image_loaded`
-		load_image_on_perst=`cat /sys/class/cxl/card${card}/load_image_on_perst`
-		if [ $device != $check_dev ]; then
+		if [ "$device" != "$check_dev" ]; then
 			continue
 		fi
 		sub=`cat /sys/class/cxl/card$card/device/subsystem_device`
-		if [ $sub = $check_sub ]; then
+		if [ "$sub" = "$check_sub" ]; then
 			if [ $VERBOSE -eq 1 ] ; then
-				if [ $accel != ALL ] ; then
-				echo -e "A $accel card has been detected in card position ${card} "
-				else 
-                                echo -e "An acceleration card has been detected in card position ${card} "
-				fi
+				psl_revision=`cat /sys/class/cxl/card${card}/psl_revision`
+				image_loaded=`cat /sys/class/cxl/card${card}/image_loaded`
+				load_image_on_perst=`cat /sys/class/cxl/card${card}/load_image_on_perst`
+				pci=`ls -lhaF //sys/class/cxl/card${card}/device | awk -F"../../../" '{print $2}'`
+
+				echo -e "$card_name card has been detected in card position: ${card}"
 				psl_revision_hex=`printf '0x%x\n' ${psl_revision}`
 				echo " PSL Revision is                                                : ${psl_revision_hex}"
                                 echo -e " Device ID    is                                                : ${check_dev}"
                                 echo -e " Sub device   is                                                : ${check_sub}"
 				echo -e " Image loaded is self defined as                                : ${image_loaded}"
 				echo -e " Next image to be loaded at next reset (load_image_on_perst) is : ${load_image_on_perst}"
+				echo -e " Card PCI location is                                           : ${pci::-1}"
 			else
 				echo -n "${card} "
 			fi
-			rc=$((rc +1))
-		fi
-	done
-	return $rc
-}
-
-#
-# We need to take into account that there might be other CAPI cards
-# in our system. Therefore we check the psl_revision, which identifies
-# the card hardware and the device id in the configuration record cr0
-# which is the unique id the card has. The combination of both, should
-# be more or less bullet prove.
-#
-function detect_gzip_cards() {
-	local rc=0
-	# We have MAX 4 CAPI cards in one system
-	for card in `seq 0 3` ; do
-		if [ ! -d /sys/class/cxl/card${card} ]; then
-			continue
-		fi
-		psl_revision=`cat /sys/class/cxl/card${card}/psl_revision`
-		if [ $psl_revision != 1 ] ; then
-			continue
-		fi
-		device=`cat /sys/class/cxl/card${card}/afu${card}.0/cr0/device`
-		if [ $device = 0x0602 ]; then
-			echo -n "${card} "
 			rc=$((rc +1))
 		fi
 	done
@@ -127,28 +127,21 @@ function detect_card_name()
 	local dev=$2
 	local sub=$3
 	local name=$4
-	
+
+	wait_no_flash
 
 	if [ -d /sys/class/cxl/card${card} ]; then
 		psl_revision=`cat /sys/class/cxl/card${card}/psl_revision`
 		this_dev=`cat /sys/class/cxl/card${card}/afu${card}.0/cr0/device`
-		if [ $psl_revision = 1 ] ; then
-			# GZIP
-			if [ $this_dev = $dev ]; then
-				echo -n $name
-				return 0
-			fi
-		else
-			if [ $this_dev = $dev ]; then
-				this_sub=`cat /sys/class/cxl/card$card/device/subsystem_device`
-				if [ $this_sub = $sub ]; then
-				        if [ $VERBOSE -eq 1 ] ; then
-						echo -e "Card $card is detected as $name card"
-					else
+		if [ "$this_dev" = "$dev" ]; then
+			this_sub=`cat /sys/class/cxl/card$card/device/subsystem_device`
+			if [ "$this_sub" = "$sub" ]; then
+			        if [ $VERBOSE -eq 1 ] ; then
+					echo -e "Card $card is detected as $name card"
+				else
 					echo -n $name
-					fi
-					return 1
 				fi
+				return 1
 			fi
 		fi
 	fi
@@ -190,6 +183,10 @@ while getopts ":vA:C:Vh" opt; do
 		if [ $? == 1 ]; then
 			exit 1
 		fi
+		detect_card_name $card  "0x0632" "0x04dd" "N250SP"
+		if [ $? == 1 ]; then
+			exit 1
+		fi
 		detect_card_name $card  "0x0602" "" "GZIP"
 		if [ $? == 1 ]; then
 			exit 1
@@ -220,66 +217,48 @@ shift $((OPTIND-1))
 RC=0
 
 case ${accel} in
-	# GZIP Card from Nallatech
-	"GZIP")
-		detect_gzip_cards
-		RC=$?
-		;;
 	# KU3 Card from AlphaData
 	"ADKU3")
-		detect_snap_cards "0x0632" "0x0605"
+		detect_snap_cards "0x0632" "0x0605" "ADKU3"
 		RC=$?
 		;;
 	# NSA121B Card from Semptian
 	"S121B")
-		detect_snap_cards "0x0632" "0x0607"
-		RC=$?
-		;;		
-	# AD8K5 Card from AlphaData
-	"AD8K5")
-		detect_snap_cards "0x0632" "0x0608"
+		detect_snap_cards "0x0632" "0x0607" "S121B"
 		RC=$?
 		;;		
 	# 250s Card from Nallatech
 	"N250S")
-		detect_snap_cards "0x0632" "0x060a"
+		detect_snap_cards "0x0632" "0x060a" "N250S"
+		RC=$?
+		;;
+	# AD8K5 Card from AlphaData
+	"AD8K5")
+		detect_snap_cards "0x0632" "0x0608" "AD8K5"
+		RC=$?
+		;;
+	# N250SP CAPI 2.0 card from Nallatech
+	"N250SP")
+		detect_snap_cards "0x0632" "0x04dd" "N250SP"
 		RC=$?
 		;;
 	"ALL")
-		# detect all cards
-                if [ $VERBOSE -eq 1 ] ; then
-                     echo "------------------------------------------------------------------------"
-                     echo "Gzip Cards:"
-                fi
-		detect_gzip_cards
-                RC=$((RC + $?))
-                if [ $VERBOSE -eq 1 ] ; then
-                     echo "------------------------------------------------------------------------"
-                     echo "ADKU3 card:"
-                fi
-		detect_snap_cards "0x0632" "0x0605"
+		# detect all cards and add Number of Cards
+		detect_snap_cards "0x0632" "0x0605" "ADKU3"
 		RC=$((RC + $?))
-                if [ $VERBOSE -eq 1 ] ; then
-                     echo "------------------------------------------------------------------------"
-                     echo "S121B card:"
-                fi
-		detect_snap_cards "0x0632" "0x0607"
+
+		detect_snap_cards "0x0632" "0x0607" "S121B"
 		RC=$((RC + $?))
-                if [ $VERBOSE -eq 1 ] ; then
-                     echo "------------------------------------------------------------------------"
-                     echo "AD8K5 card:"
-                fi
-		detect_snap_cards "0x0632" "0x0608"
+
+		detect_snap_cards "0x0632" "0x060a" "N250S"
 		RC=$((RC + $?))
-                if [ $VERBOSE -eq 1 ] ; then
-                     echo "------------------------------------------------------------------------"
-                     echo "N250S card:"
-                fi
-		detect_snap_cards "0x0632" "0x060a"
+
+		detect_snap_cards "0x0632" "0x0608" "AD8K5"
 		RC=$((RC + $?))
-                if [ $VERBOSE -eq 1 ] ; then
-                     echo "------------------------------------------------------------------------"
-                fi
+
+		detect_snap_cards "0x0632" "0x04dd" "N250SP"
+		RC=$((RC + $?))
+
  		;;
 	*)
 		usage
