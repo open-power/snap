@@ -102,6 +102,7 @@ function detect_snap_cards() {
 				psl_revision=`cat /sys/class/cxl/card${card}/psl_revision`
 				image_loaded=`cat /sys/class/cxl/card${card}/image_loaded`
 				load_image_on_perst=`cat /sys/class/cxl/card${card}/load_image_on_perst`
+				pci=`ls -lhaF //sys/class/cxl/card${card}/device | awk -F"../../../" '{print $2}'`
 
 				echo -e "$card_name card has been detected in card position: ${card}"
 				psl_revision_hex=`printf '0x%x\n' ${psl_revision}`
@@ -110,6 +111,7 @@ function detect_snap_cards() {
                                 echo -e " Sub device   is                                                : ${check_sub}"
 				echo -e " Image loaded is                                                : ${image_loaded}"
 				echo -e " Next image to be loaded at next reset (load_image_on_perst) is : ${load_image_on_perst}"
+				echo -e " Card PCI location is                                           : ${pci::-1}"
 			else
 				echo -n "${card} "
 			fi
@@ -146,11 +148,14 @@ function detect_gzip_cards() {
 				load_image_on_perst=`cat /sys/class/cxl/card${card}/load_image_on_perst`
 				sub=`cat /sys/class/cxl/card${card}/device/subsystem_device`
 				psl_revision_hex=`printf '0x%x\n' ${psl_revision}`
+				pci=`ls -lhaF //sys/class/cxl/card${card}/device | awk -F"../../../" '{print $2}'`
+
 				echo " PSL Revision is                                                : ${psl_revision_hex}"
 				echo -e " Device ID    is                                                : ${device}"
 				echo -e " Sub device   is                                                : ${sub}"
 				echo -e " Image loaded is self defined as                                : ${image_loaded}"
 				echo -e " Next image to be loaded at next reset (load_image_on_perst) is : ${load_image_on_perst}"
+				echo -e " Card PCI location is                                           : ${pci::-1}"
 			else
 				echo -n "${card} "
 			fi
