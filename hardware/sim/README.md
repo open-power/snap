@@ -102,15 +102,15 @@ This means, that PSLSE&sim only runs, as long as the app/list/xterm is avail.
 If you start an app in the xterm and cntl-C it without exiting from the xterm, the simulation keeps running.
 
 ## card and action settings
-Currently supported are AlphaData KU3, Nallatech 250S and 250S+, Semptian NSA121B
+Currently supported are AlphaData KU3 and 8K5, Nallatech 250S and 250S+, Semptian NSA121B
 
 Regression tests are in place for the following cards:
 ```
-card         ADKU3      N250S      N250SP     S121B          # set with
-system       POWER8     POWER8     POWER9     POWER8         #
-memory_avail DDR3/BRAM  DDR4/BRAM  DDR4/BRAM  DDR4/BRAM      # SDRAM_USED, BRAM_USED
-NVMe         no         yes        no         no             # NVME_USED=TRUE
-cloud access yes        partial    no         no             # not avail yet for NVMe
+card         ADKU3      AD8K5      N250S      N250SP     S121B          # set with
+system       POWER8     POWER8     POWER8     POWER9     POWER8         #
+memory_avail DDR3/BRAM  DDR4/BRAM  DDR4/BRAM  DDR4/BRAM  DDR4/BRAM      # SDRAM_USED, BRAM_USED
+NVMe         no         no         yes        no         no             # NVME_USED=TRUE
+cloud access yes        no         partial    no         no             # not avail yet for NVMe
 ```
 Depending on the used memory, the card and framework can be combined with the following actions (one action only):
 ```
