@@ -133,23 +133,15 @@ function detect_card_name()
 	if [ -d /sys/class/cxl/card${card} ]; then
 		psl_revision=`cat /sys/class/cxl/card${card}/psl_revision`
 		this_dev=`cat /sys/class/cxl/card${card}/afu${card}.0/cr0/device`
-		if [ $psl_revision = 1 ] ; then
-			# GZIP
-			if [ $this_dev = $dev ]; then
-				echo -n $name
-				return 0
-			fi
-		else
-			if [ "$this_dev" = "$dev" ]; then
-				this_sub=`cat /sys/class/cxl/card$card/device/subsystem_device`
-				if [ $this_sub = $sub ]; then
-				        if [ $VERBOSE -eq 1 ] ; then
-						echo -e "Card $card is detected as $name card"
-					else
+		if [ "$this_dev" = "$dev" ]; then
+			this_sub=`cat /sys/class/cxl/card$card/device/subsystem_device`
+			if [ "$this_sub" = "$sub" ]; then
+			        if [ $VERBOSE -eq 1 ] ; then
+					echo -e "Card $card is detected as $name card"
+				else
 					echo -n $name
-					fi
-					return 1
 				fi
+				return 1
 			fi
 		fi
 	fi
