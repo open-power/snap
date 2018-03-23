@@ -325,7 +325,7 @@ Component psl_accel
   );
 End Component psl_accel;
 
-Component psl4n250sp
+Component psl_bsp
   PORT(
 -- pci interface
     pci_pi_nperst0        : in    std_logic;     -- Active low reset from the PCIe reset pin of the device
@@ -498,7 +498,7 @@ Component psl4n250sp
     pci_clock_125MHz    : out std_logic                    --125MHz clock if required
   );
 
-END Component psl4n250sp;
+END Component psl_bsp;
 
 SIGNAL a0h_brdata: std_logic_vector(0 TO 1023);  -- hline
 SIGNAL a0h_brlat: std_logic_vector(0 TO 3);  -- v4bit
@@ -826,7 +826,7 @@ BEGIN
 
     gold_factory <= user_image_q;
 
-  psl: psl4n250sp
+  psl: psl_bsp
     PORT MAP (
 -- pci interface
       pci_pi_nperst0      => pci_pi_nperst0,       -- Active low reset from the PCIe reset pin of the device
