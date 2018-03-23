@@ -284,7 +284,7 @@ action_hw: prepare_logs
 	@if [ $$? -ne 0 ]; then \
 		echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
 	fi
-	@if [ "$(USE_PRFLOW)" == "TRUE" ]; then \
+	@if [ "$(HLS_SUPPORT)" == "TRUE" ]; then \
 	        echo "Calling make -C $(ACTION_ROOT)/hw vhdl" >> $(LOGS_DIR)/action_make.log; \
 		$(MAKE) -kC $(ACTION_ROOT)/hw vhdl >> $(LOGS_DIR)/action_make.log; \
 		if [ $$? -ne 0 ]; then \
