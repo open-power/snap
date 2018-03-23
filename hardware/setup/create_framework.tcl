@@ -35,10 +35,16 @@ set log_dir     $::env(LOGS_DIR)
 set log_file    $log_dir/create_framework.log
 set vivadoVer     [version -short]
 
-if { [info exists ::env(PSL4N250SP_ROOT)] == 1 } {
-  set psl4n250sp_dir $::env(PSL4N250SP_ROOT)
+if { [info exists ::env(PSL_IP)] == 1 } {
+  set psl_ip_dir $::env(PSL_IP)
 } else {
-  set psl4n250sp_dir "not defined"
+  set psl_ip_dir "not defined"
+}
+
+if { [info exists ::env(HDK_ROOT)] == 1 } {
+  set hdk_dir $::env(HDK_ROOT)
+} else {
+  set hdk_dir $root_dir/hdk
 }
 
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
@@ -104,14 +110,16 @@ set_property STEPS.WRITE_BITSTREAM.TCL.POST $root_dir/setup/snap_bitstream_post.
 puts "                        importing design files"
 # HDL Files
 add_files -scan_for_includes $hdl_dir/core/  >> $log_file
-if { ($fpga_card == "N250SP") && ($psl4n250sp_dir != "not defined") } {
-  puts "                        importing psl4n250sp source files"
-  add_files -scan_for_includes $psl4n250sp_dir/src/  >> $log_file
-  add_files -scan_for_includes $psl4n250sp_dir/FlashGTPlus/hdk/src/  >> $log_file
-  remove_files  $psl4n250sp_dir/FlashGTPlus/hdk/src/psl_accel.vhdl
-  remove_files  $psl4n250sp_dir/FlashGTPlus/hdk/src/psl_fpga.vhdl
-  set_property used_in_simulation false [get_files $psl4n250sp_dir/src/*]
-  set_property used_in_simulation false [get_files $psl4n250sp_dir/FlashGTPlus/hdk/src/*]
+if { ($fpga_card == "N250SP") && ($psl_ip_dir != "not defined") } {
+  puts "                        importing psl and board support source files"
+  add_files -scan_for_includes $psl_ip_dir/ip_repo/src/  >> $log_file
+  add_files -scan_for_includes $hdk_dir/common/src  >> $log_file
+  add_files -scan_for_includes $hdk_dir/ultrascale_plus/src  >> $log_file
+  add_files -scan_for_includes $hdk_dir/boards/$fpga_card/src >> $log_file
+  set_property used_in_simulation false [get_files $psl_ip_dir/ip_repo/src/*]
+  set_property used_in_simulation false [get_files $hdk_dir/common/src/*]
+  set_property used_in_simulation false [get_files $hdk_dir/ultrascale_plus/src/*]
+  set_property used_in_simulation false [get_files $hdk_dir/boards/$fpga_card/src/*]
 }
 
 set_property used_in_simulation false [get_files $hdl_dir/core/psl_fpga.vhd]
@@ -264,13 +272,13 @@ if { $nvme_used == TRUE } {
 }
 
 # Add PSL
-if { ($fpga_card == "N250SP") && ($psl4n250sp_dir != "not defined") } {
-  set_property "ip_repo_paths" "[file normalize "$psl4n250sp_dir/FlashGTPlus/psl/ip_repo"]" [current_project]
+if { ($fpga_card == "N250SP") && ($psl_ip_dir != "not defined") } {
+  set_property "ip_repo_paths" "[file normalize "$psl_ip_dir/ip_repo"]" [current_project]
   update_ip_catalog >> $log_file
   add_files -norecurse                          $ip_dir/pcie4_uscale_plus_0/pcie4_uscale_plus_0.xci
   export_ip_user_files -of_objects  [get_files  $ip_dir/pcie4_uscale_plus_0/pcie4_uscale_plus_0.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
-  add_files -norecurse                          $ip_dir/psl4n250sp_clk_wiz/psl4n250sp_clk_wiz.xci
-  export_ip_user_files -of_objects  [get_files  $ip_dir/psl4n250sp_clk_wiz/psl4n250sp_clk_wiz.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
+  add_files -norecurse                          $ip_dir/psl_bsp_clk_wiz/psl_bsp_clk_wiz.xci
+  export_ip_user_files -of_objects  [get_files  $ip_dir/psl_bsp_clk_wiz/psl_bsp_clk_wiz.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
   add_files -norecurse                          $ip_dir/sem_ultra_0/sem_ultra_0.xci
   export_ip_user_files -of_objects  [get_files  $ip_dir/sem_ultra_0/sem_ultra_0.xci] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
   add_files -norecurse                          $ip_dir/PSL9_WRAP_0/PSL9_WRAP_0.xci
@@ -287,13 +295,13 @@ puts "                        importing XDCs"
 ## clk set_property used_in_synthesis false [get_files  $root_dir/setup/snap_link.xdc]
 ## clk update_compile_order -fileset sources_1 >> $log_file
 
-# PSL4N250SP XDC
-if { ($fpga_card == "N250SP") && ($psl4n250sp_dir != "not defined") } {
-  puts "                            importing psl4n250sp XDCs"
-  #add_files -fileset constrs_1 -norecurse $psl4n250sp_dir/setup/xdc/psl4n250sp_config.xdc
-  add_files -fileset constrs_1 -norecurse $psl4n250sp_dir/setup/xdc/psl4n250sp_timing.xdc
-  add_files -fileset constrs_1 -norecurse $psl4n250sp_dir/setup/xdc/psl4n250sp_io.xdc
-  add_files -fileset constrs_1 -norecurse $psl4n250sp_dir/setup/xdc/psl4n250sp_floorplan.xdc
+# PSL_IP XDC
+if { ($fpga_card == "N250SP") && ($psl_ip_dir != "not defined") } {
+  puts "                            importing psl_ip XDCs"
+  #add_files -fileset constrs_1 -norecurse $hdk_dir/boards/$fpga_card/xdc/psl_bsp_config.xdc
+  add_files -fileset constrs_1 -norecurse $hdk_dir/boards/$fpga_card/xdc/psl_bsp_timing.xdc
+  add_files -fileset constrs_1 -norecurse $hdk_dir/boards/$fpga_card/xdc/psl_bsp_io.xdc
+  add_files -fileset constrs_1 -norecurse $hdk_dir/boards/$fpga_card/xdc/psl_bsp_floorplan.xdc
 }
 
 # DDR XDCs
