@@ -34,6 +34,7 @@ if { [info exists ::env(DCP_ROOT)] == 1 } {
     puts "                        Error: For cloud builds the environment variable DCP_ROOT needs to point to a path for input and output design checkpoints."
     exit 42
 }
+set ::env(DCP_ROOT) $dcp_dir
 
 #timing_lablimit  
 if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
@@ -41,6 +42,7 @@ if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
 } else {
   set timing_lablimit "-250"
 }
+set ::env(TIMING_LABLIMIT) $timing_lablimit
 
 if { [info exists ::env(CLOUD_BUILD_BITFILE)] == 1 } {
   set cloud_build_bitfile [string toupper $::env(CLOUD_BUILD_BITFILE)]
@@ -53,6 +55,11 @@ set widthCol1 24
 set widthCol2 24
 set widthCol3 36
 set widthCol4 22
+set ::env(WIDTHCOL1) $widthCol1 
+set ::env(WIDTHCOL2) $widthCol2 
+set ::env(WIDTHCOL3) $widthCol3 
+set ::env(WIDTHCOL4) $widthCol4 
+
 
 ## 
 ## open snap project
@@ -129,31 +136,24 @@ if { ($cloud_run == "ACTION") || ($cloud_run == "BASE") } {
 ## BASE run
 if { $cloud_run == "BASE" } {
 
+  ## 
+  ## run synthese
+  source $root_dir/setup/snap_synth_step.tcl
    
-  ##
-  ## synthesis project
-  set step      synth_design
-  set logfile   $logs_dir/${step}.log
-  set directive [get_property STEPS.SYNTH_DESIGN.ARGS.DIRECTIVE [get_runs synth_1]]
-  set command   "synth_design -mode default -directive $directive"
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-   
-  if { [catch "$command > $logfile" errMsg] } {
-    puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: synthesis failed" $widthCol4 "" ]
-    puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
-   
-    if { ![catch {current_instance}] } {
-        write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
-    }
-    exit 42
-  } else {
-    write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
-    report_utilization -file  ./Reports/${step}_utilization.rpt -quiet
-  }
 
   ## 
   ## run implementation 
   source $root_dir/setup/snap_impl_step.tcl
+
+
+  ##
+  ## write and lock the static design
+  set step      write_lock_static_design
+  set logfile   $logs_dir/${step}.log
+  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "create static design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  update_design -cell { a0/action_w } -black_box       > $logfile
+  lock_design -level routing                          >> $logfile
+  write_checkpoint $dcp_dir/snap_static_region_bb.dcp >> $logfile
 
 
   if { $cloud_build_bitfile == "TRUE" } {

@@ -16,24 +16,21 @@
 #
 #-----------------------------------------------------------
 
-set logs_dir      $::env(LOGS_DIR)
-set logfile       $logs_dir/snap_build.log
-set fpgacard      $::env(FPGACARD)
-set ila_debug     [string toupper $::env(ILA_DEBUG)]
-set vivadoVer     [version -short]
 
-#timing_lablimit
-if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
-    set timing_lablimit [string toupper $::env(TIMING_LABLIMIT)]
-} else {
-  set timing_lablimit "-250"
-}
+set root_dir        $::env(SNAP_HARDWARE_ROOT)
+set logs_dir        $::env(LOGS_DIR)
+set rpt_dir         $root_dir/build/Reports
+set dcp_dir         $::env(DCP_ROOT)
+set timing_lablimit $::env(TIMING_LABLIMIT)
+set fpgacard        $::env(FPGACARD)
+set ila_debug       $::env(ILA_DEBUG)
+set vivadoVer       [version -short]
 
 #Define widths of each column
-set widthCol1 24
-set widthCol2 24
-set widthCol3 36
-set widthCol4 22
+set widthCol1 $::env(WIDTHCOL1)
+set widthCol2 $::env(WIDTHCOL2)
+set widthCol3 $::env(WIDTHCOL3)
+set widthCol4 $::env(WIDTHCOL4)
 
 
 ##
@@ -41,7 +38,6 @@ set widthCol4 22
 set step      opt_design
 set logfile   $logs_dir/${step}.log
 set directive [get_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
-opt_design -directive $directive
 set command   "opt_design -directive $directive"
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start opt_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
@@ -50,12 +46,12 @@ if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
 
   if { ![catch {current_instance}] } {
-      write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
+      write_checkpoint -force $dcp_dir/${step}_error.dcp    >> $logfile
   }
   exit 42
 } else {
-  write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
-  report_utilization -file  ./Reports/${step}_utilization.rpt -quiet
+  write_checkpoint   -force $dcp_dir/${step}.dcp          >> $logfile
+  report_utilization -file  $rpt_dir/${step}_utilization.rpt -quiet
 }
 
 ##
@@ -63,7 +59,7 @@ if { [catch "$command > $logfile" errMsg] } {
 if { $vivadoVer == "2017.4" } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "reload opt_desing DCP" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   close_project                              >> $logfile
-  open_checkpoint ./Checkpoints/${step}.dcp  >> $logfile
+  open_checkpoint $dcp_dir/${step}.dcp  >> $logfile
 
 
   if { $fpgacard != "N250SP" } {
@@ -89,11 +85,11 @@ if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
 
   if { ![catch {current_instance}] } {
-    write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
+    write_checkpoint -force $dcp_dir/${step}_error.dcp    >> $logfile
   }
   exit 42
 } else {
-  write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
+  write_checkpoint   -force $dcp_dir/${step}.dcp          >> $logfile
 }
 
 
@@ -114,11 +110,11 @@ if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
 
   if { ![catch {current_instance}] } {
-    write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
+    write_checkpoint -force $dcp_dir/${step}_error.dcp    >> $logfile
   }
   exit 42
 } else {
-  write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
+  write_checkpoint   -force $dcp_dir/${step}.dcp          >> $logfile
 }
 
 
@@ -139,11 +135,11 @@ if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
 
   if { ![catch {current_instance}] } {
-    write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
+    write_checkpoint -force $dcp_dir/${step}_error.dcp    >> $logfile
   }
   exit 42
 } else {
-  write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
+  write_checkpoint   -force $dcp_dir/${step}.dcp          >> $logfile
 }
 
 
@@ -164,27 +160,27 @@ if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
 
   if { ![catch {current_instance}] } {
-    write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
+    write_checkpoint -force $dcp_dir/${step}_error.dcp    >> $logfile
   }
   exit 42
 } else {
-  write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
+  write_checkpoint   -force $dcp_dir/${step}.dcp          >> $logfile
 }
 
 
 ##
 ## generating reports
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "generating reports" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-report_utilization    -quiet -file  ./Reports/utilization_route_design.rpt
-report_route_status   -quiet -file  ./Reports/route_status.rpt
-report_timing_summary -quiet -max_paths 100 -file ./Reports/timing_summary.rpt
-report_drc            -quiet -ruledeck bitstream_checks -name psl_fpga -file ./Reports/drc_bitstream_checks.rpt
+report_utilization    -quiet -file  $rpt_dir/utilization_route_design.rpt
+report_route_status   -quiet -file  $rpt_dir/route_status.rpt
+report_timing_summary -quiet -max_paths 100 -file $rpt_dir/timing_summary.rpt
+report_drc            -quiet -ruledeck bitstream_checks -name psl_fpga -file $rpt_dir/drc_bitstream_checks.rpt
 
 
 ##
 ## checking timing
 ## Extract timing information, change ns to ps, remove leading 0's in number to avoid treatment as octal.
-set TIMING_WNS [exec grep -A6 "Design Timing Summary" ./Reports/timing_summary.rpt | tail -n 1 | tr -s " " | cut -d " " -f 2 | tr -d "." | sed {s/^\(\-*\)0*\([1-9]*[0-9]\)/\1\2/}]
+set TIMING_WNS [exec grep -A6 "Design Timing Summary" $rpt_dir/timing_summary.rpt | tail -n 1 | tr -s " " | cut -d " " -f 2 | tr -d "." | sed {s/^\(\-*\)0*\([1-9]*[0-9]\)/\1\2/}]
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "Timing (WNS)" $widthCol3 "$TIMING_WNS ps" $widthCol4 "" ]
 if { [expr $TIMING_WNS >= 0 ] } {
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "TIMING OK" $widthCol4 "" ]

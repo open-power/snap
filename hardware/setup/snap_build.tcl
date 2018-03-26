@@ -18,7 +18,7 @@
 
 set root_dir      $::env(SNAP_HARDWARE_ROOT)
 set logs_dir      $::env(LOGS_DIR)
-set log_file      $logs_dir/snap_build.log
+set logfile       $logs_dir/snap_build.log
 set fpgacard      $::env(FPGACARD)
 set sdram_used    $::env(SDRAM_USED)
 set nvme_used     $::env(NVME_USED)
@@ -27,42 +27,42 @@ set factory_image [string toupper $::env(FACTORY_IMAGE)]
 set ila_debug     [string toupper $::env(ILA_DEBUG)]
 set vivadoVer     [version -short]
 
+#checkpoint_dir
+set dcp_dir $root_dir/build/Checkpoints
+set ::env(DCP_ROOT) $dcp_dir
+
+#timing_lablimit  
+if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
+  set timing_lablimit [string toupper $::env(TIMING_LABLIMIT)]
+} else {
+  set timing_lablimit "-250"
+}
+set ::env(TIMING_LABLIMIT) $timing_lablimit
+
 
 #Define widths of each column
 set widthCol1 24
 set widthCol2 24
 set widthCol3 36
 set widthCol4 22
+set ::env(WIDTHCOL1) $widthCol1 
+set ::env(WIDTHCOL2) $widthCol2 
+set ::env(WIDTHCOL3) $widthCol3 
+set ::env(WIDTHCOL4) $widthCol4 
 
 
 ##
 ## open snap project
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "open framework project" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-open_project ../viv_project/framework.xpr >> $log_file
+open_project ../viv_project/framework.xpr >> $logfile
 
 # for test!
 #set_param synth.elaboration.rodinMoreOptions {set rt::doParallel false}
 
-##
-## synthesis project
-set step      synth_design
-set logfile   $logs_dir/${step}.log
-set directive [get_property STEPS.SYNTH_DESIGN.ARGS.DIRECTIVE [get_runs synth_1]]
-set command   "synth_design -mode default -directive $directive"
-puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
-if { [catch "$command > $logfile" errMsg] } {
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: synthesis failed" $widthCol4 "" ]
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
-
-  if { ![catch {current_instance}] } {
-      write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
-  }
-  exit 42
-} else {
-  write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
-  report_utilization -file  ./Reports/${step}_utilization.rpt -quiet
-}
+## 
+## run synthese
+source $root_dir/setup/snap_synth_step.tcl
 
 
 ##
@@ -70,18 +70,20 @@ if { [catch "$command > $logfile" errMsg] } {
 if { $vivadoVer != "2017.4" } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   lock_design -level routing b > $logs_dir/lock_design.log
+
 }
 
 ##
 ## ToDo: necessary for other cards?
 if { $fpgacard != "AD8K5" } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "reread snap_impl.xdc" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-  read_xdc ../setup/snap_impl.xdc >> $logfile
+  read_xdc $root_dir/setup/snap_impl.xdc >> $logfile
 }
+
 
 ## 
 ## run implementation 
-source snap_impl_step.tcl
+source $root_dir/setup/snap_impl_step.tcl
 
 
 ##
@@ -137,12 +139,12 @@ if { $ila_debug == "TRUE" } {
 ## removing unnecessary files
 if { $remove_tmp_files == "TRUE" } {
   puts [format "%-*s %-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-  exec rm -rf ./Checkpoints/synth.dcp
-  exec rm -rf ./Checkpoints/opt_design.dcp
-  exec rm -rf ./Checkpoints/place_design.dcp
-  exec rm -rf ./Checkpoints/phys_opt_design.dcp
-  exec rm -rf ./Checkpoints/route_design.dcp
+  exec rm -rf $dcp_dir/synth.dcp
+  exec rm -rf $dcp_dir/opt_design.dcp
+  exec rm -rf $dcp_dir/place_design.dcp
+  exec rm -rf $dcp_dir/phys_opt_design.dcp
+  exec rm -rf $dcp_dir/route_design.dcp
   exec rm -rf .Xil
 }
 
-close_project >> $log_file
+close_project >> $logfile
