@@ -129,90 +129,32 @@ if { ($cloud_run == "ACTION") || ($cloud_run == "BASE") } {
 ## BASE run
 if { $cloud_run == "BASE" } {
 
-  # Vivado 2017.4 needs to reimport PSL DCP
-  if { ([info exists ::env(PSL_DCP)] == 1) && ($vivadoVer == "2017.4") } {
-    set psl_dcp $::env(PSL_DCP)
-  }
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-  reset_run    synth_1 >> $logfile
-  launch_runs  synth_1 >> $logfile
-  wait_on_run  synth_1 >> $logfile
-
-  if {[get_property PROGRESS [get_runs synth_1]] != "100%"} {  
+   
+  ##
+  ## synthesis project
+  set step      synth_design
+  set logfile   $logs_dir/${step}.log
+  set directive [get_property STEPS.SYNTH_DESIGN.ARGS.DIRECTIVE [get_runs synth_1]]
+  set command   "synth_design -mode default -directive $directive"
+  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start synthesis" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+   
+  if { [catch "$command > $logfile" errMsg] } {
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: synthesis failed" $widthCol4 "" ]
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
+   
+    if { ![catch {current_instance}] } {
+        write_checkpoint -force ./Checkpoints/${step}_error.dcp    >> $logfile
+    }
     exit 42
-  }
-  file copy -force ../viv_project/framework.runs/synth_1/psl_fpga.dcp                       $dcp_dir/framework_synth.dcp
-  file copy -force ../viv_project/framework.runs/synth_1/psl_fpga_utilization_synth.rpt     ./Reports/framework_utilization_synth.rpt
-
-
-  if { $vivadoVer != "2017.4" } {
-    puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-    open_run     synth_1 -name synth_1 >> $logfile
-    lock_design  -level routing b      >> $logfile
   } else {
-    puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "import PSL DCP" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
- #   remove_files [get_files *.dcp] >> $logfile
-    open_run     synth_1 -name synth_1  >> $logfile
-    update_design   -cell b -black_box  >> $logfile
-    read_checkpoint -cell b $psl_dcp    >> $logfile
-#    lock_design  -level routing b       >> $logfile
-
-#    puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-#    set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
+    write_checkpoint   -force ./Checkpoints/${step}.dcp          >> $logfile
+    report_utilization -file  ./Reports/${step}_utilization.rpt -quiet
   }
-
-  read_xdc ../setup/snap_impl.xdc >> $logfile
-
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start implementation" $widthCol3  "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-  reset_run    impl_1 >> $logfile
-  launch_runs  impl_1 >> $logfile
-  wait_on_run  impl_1 >> $logfile
-
-  if {[get_property PROGRESS [get_runs impl_1]] != "100%"} {  
-    puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: implementation failed" $widthCol4 "" ]
-    puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
-    exit 42
-  }
-  puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "collecting reports and checkpoints" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_opt.dcp                         $dcp_dir/framework_opt.dcp    
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_physopt.dcp                     $dcp_dir/framework_physopt.dcp
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_placed.dcp                      $dcp_dir/framework_placed.dcp 
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_routed.dcp                      $dcp_dir/framework_routed.dcp 
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_postroute_physopt.dcp           $dcp_dir/snap_and_action_postroute_physopt.dcp
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_postroute_physopt_bb.dcp        $dcp_dir/snap_static_region_bb.dcp
-  file copy -force ../viv_project/framework.runs/impl_1/a0_action_w_user_action_routed.dcp       $dcp_dir/user_action_routed.dcp
-  file copy -force ../viv_project/framework.runs/impl_1/a0_action_w_user_action_post_routed.dcp  $dcp_dir/user_action_postroute_physopt.dcp
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_route_status.rpt                ./Reports/framework_route_status.rpt
-  file copy -force ../viv_project/framework.runs/impl_1/psl_fpga_timing_summary_routed.rpt       ./Reports/framework_timing_summary_routed.rpt
-
-  ##  
-  ## generating reports
-  # Open run to generate reports
-  open_run impl_1 >> $logfile
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "generating reports" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-  report_utilization    -quiet -file  ./Reports/utilization_route_design.rpt
-  report_route_status   -quiet -file  ./Reports/route_status.rpt
-  report_timing_summary -quiet -max_paths 100 -file ./Reports/timing_summary.rpt
-  report_drc            -quiet -ruledeck bitstream_checks -name psl_fpga -file ./Reports/drc_bitstream_checks.rpt
 
   ## 
-  ## checking timing
-  ## Extract timing information, change ns to ps, remove leading 0's in number to avoid treatment as octal.
-  set TIMING_WNS [exec grep -A6 "Design Timing Summary" ./Reports/timing_summary.rpt | tail -n 1 | tr -s " " | cut -d " " -f 2 | tr -d "." | sed {s/^\(\-*\)0*\([1-9]*[0-9]\)/\1\2/}]
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "Timing (WNS)" $widthCol3 "$TIMING_WNS ps" $widthCol4 "" ]
-  if { [expr $TIMING_WNS >= 0 ] } {
-      puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "TIMING OK" $widthCol4 "" ]
-      set remove_tmp_files "TRUE"
-  } elseif { [expr $TIMING_WNS < $timing_lablimit ] } {
-      puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: TIMING FAILED" $widthCol4 "" ]
-      exit 42
-  } else {
-      puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "WARNING: TIMING FAILED, but may be OK for lab use" $widthCol4 "" ]
-      set remove_tmp_files "TRUE"
-  }
+  ## run implementation 
+  source $root_dir/setup/snap_impl_step.tcl
+
 
   if { $cloud_build_bitfile == "TRUE" } {
   ##
