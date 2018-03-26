@@ -69,13 +69,12 @@ set_property -dict [list                                                        
                     CONFIG.Memory_Type {True_Dual_Port_RAM}                      \
                     CONFIG.Assume_Synchronous_Clk {true}                         \
                     CONFIG.Write_Width_A "${RAM_WIDTH}"                          \
-                    CONFIG.Write_Width_B "${RAM_WIDTH}"                          \
+                    CONFIG.Write_Width_B {520}                                   \
                     CONFIG.Write_Depth_A "${RAM_DEPTH}"                          \
-                    CONFIG.Operating_Mode_A {NO_CHANGE}                          \
                     CONFIG.Enable_A {Always_Enabled}                             \
-                    CONFIG.Enable_B {Use_ENB_Pin}                                \
+                    CONFIG.Enable_B {Always_Enabled}                             \
                     CONFIG.Register_PortA_Output_of_Memory_Primitives {false}    \
-                    CONFIG.Read_Width_A {520}                                    \
+                    CONFIG.Read_Width_A "${RAM_WIDTH}"                           \
                     CONFIG.Read_Width_B {520}                                    \
                     CONFIG.Port_B_Clock {100}                                    \
                     CONFIG.Port_B_Write_Rate {50}                                \
