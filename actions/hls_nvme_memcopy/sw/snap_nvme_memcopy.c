@@ -61,7 +61,7 @@ static void usage(const char *prog)
 	       "\n"
 	       " WARNING : All data transfers to and from NVME_SSDs are buffered in CARD_DRAM :\n"
 	       " Check #define DRAM_ADDR_TO_SSD  0x00000000 and #define DRAM_ADDR_FROM_SSD 0x80000000\n"
-	       " in $ACTION_ROOT/hw/action_nvme_memcopy.H\n\n"
+	       " in $ACTION_ROOT/hw/hw_action_nvme_memcopy.H\n\n"
 	
 	   " Usage Examples:\n"
            " Before using NVME following command must be run :\n"

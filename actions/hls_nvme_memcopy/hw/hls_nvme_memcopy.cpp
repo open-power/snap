@@ -18,7 +18,7 @@
 
 #include <string.h>
 #include "ap_int.h"
-#include "action_nvme_memcopy.H"
+#include "hw_action_nvme_memcopy.H"
 
 /* ----------------------------------------------------------------------------
  * Known Limitations => Issue #39 & #45
