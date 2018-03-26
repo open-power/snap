@@ -38,8 +38,8 @@ endif
 
 # This is solution specific. Check if we can replace this by generics too.
 
-snap_nvme_memcopy: action_nvme_memcopy.o
-snap_nvme_memcopy_objs = action_nvme_memcopy.o
+snap_nvme_memcopy: sw_action_nvme_memcopy.o
+snap_nvme_memcopy_objs = sw_action_nvme_memcopy.o
 
 projs += snap_nvme_memcopy
 
