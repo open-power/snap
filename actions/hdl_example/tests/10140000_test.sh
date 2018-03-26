@@ -166,9 +166,12 @@ case $rev in
 "0x060A" )
 	echo "$rev -> Testing Nallatech 250S Card"
 	;;
+"0x04dd" )
+	echo "$rev -> Testing Nallatech 250SP Card"
+	;;
 *)
 	echo "Capi Card $snap_card does have subsystem_device: $rev"
-	echo "I Expect to have 0x605 or 0x60a, Check if -C $snap_card was"
+	echo "I Expect to have 0x605 0x608 0x4dd or 0x60a, Check if -C $snap_card was"
 	echo " move to other CAPI id and use other -C option !"
 	exit 1
 esac;
