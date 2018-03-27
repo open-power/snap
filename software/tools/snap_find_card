@@ -42,7 +42,7 @@ function usage() {
 	echo "  prints out a list of CAPI Cards found in this System."
 	echo
 	echo "  Supported CAPI Cards are:"
-	echo "     [N250S ADKU3 NSA121B AD8K5 N250SP]"
+	echo "     [N250S ADKU3 S121B AD8K5 N250SP]"
 	echo "     ------------------- Example -----------------------------------------"
 	echo "     $PROGRAM -A ALL"
 	echo "        Print a list (e.g. 0 1 2 3) of all CAPI cards in this System"
