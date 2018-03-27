@@ -620,9 +620,11 @@ int main(int argc, char *argv[])
 	snap_card_ioctl(dn, GET_CARD_TYPE, (unsigned long)&ioctl_data);
 	VERBOSE1("SNAP on ");
 	switch (ioctl_data) {
-		case  0: VERBOSE1("ADKU3"); break;
-		case  1: VERBOSE1("N250S"); break;
-		case 16: VERBOSE1("N250SP"); break;
+		case ADKU3_CARD:  VERBOSE1("ADKU3"); break;
+		case S121B_CARD:  VERBOSE1("S121B"); break;
+		case AD8K5_CARD:  VERBOSE1("AD8K5"); break;
+		case N250S_CARD:  VERBOSE1("N250S"); break;
+		case N250SP_CARD: VERBOSE1("N250SP"); break;
 		default: VERBOSE1("Unknown"); break;
 	}
 	snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&ioctl_data);

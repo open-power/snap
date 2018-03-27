@@ -619,7 +619,7 @@ static void usage(const char *prog)
 		"    -e, --end            Card Ram End Address (From card)\n"
 		"    -b, --buffer         Host Buffer Size (default 0x%llx)\n"
 		"    -I, --irq            Use Interrupts\n"
-		"\tTool to check DDR Memory (SDRAM) on AlphaData KU3 and Nallatech 250S Card.\n"
+		"\tTool to check DDR Memory (SDRAM) on SNAP Card.\n"
 		"\t     Note: values for -s -b -e must be 64 Bytes aligned.\n"
 		, prog,
 		(long long)DDR_MEM_BASE_ADDR,
