@@ -15,30 +15,29 @@ Please see here for more details:
 * https://members.openpowerfoundation.org/wg/ACLWG/dashboard
 * http://openpowerfoundation.org/blogs/capi-drives-business-performance/
 
-## What is CAPI, More information, Education material
+## What is CAPI, education materials and more information
 * CAPI and SNAP on IBM developerworks: https://developer.ibm.com/linuxonpower/capi/  
 * [Education Videos](https://developer.ibm.com/linuxonpower/capi/education/)
 * [IBM CAPI Developer's Community Forum](https://www.ibm.com/developerworks/community/groups/service/html/communitystart?communityUuid=a661532e-1ec6-442f-b753-4ebb2c8f861b)
 
 ## Developing Status
-Currently SNAP Framework supports CAPI1.0. The modules for CAPI2.0 and OpenCAPI are under developing. However, any user working on SNAP today can easily transfer their work to CAPI2.0 or OpenCAPI as the interface of "Software Program" and "Hardware Action" (shown in yellow area of the above figure) will keep same. 
+Currently SNAP Framework supports CAPI1.0. The modules for CAPI2.0 and OpenCAPI are under developing. However, users working on SNAP today can easily transfer their work to CAPI2.0 or OpenCAPI as the interface for "**Software Program**" and "**Hardware Action**" (shown in yellow area of the above figure) will keep same. 
 
 
 # 2. Getting started
 
 Developing an FPGA accelerated application on SNAP takes following steps: 
-* Preparation: Decide the software function to be moved to FPGA. This function, usually computation intensive, is named as "action" in the following description. Carefully read the **Dependencies** in following section. Choose an FPGA card. Install tools, download packages and set environmental variables.
+* **Preparation**: Decide the software function to be moved to FPGA. This function, usually computation intensive, is named as "action" in the following description. Carefully read the **Dependencies** in following section. Choose an FPGA card. Install tools, download packages and set environmental variables.
 
-* Step1. Split the original application into two parts: the "software main()" and "action". Determine the configurations/parameters for "action". Use libsnap APIs to reformat the "main()" function. The best way is to start from an existing example (/actions) and look at the code under "sw" directory for this step. 
+* **Step1**. Split the original application into two parts: the "software main()" and "action". Determine the parameters (function arguments) for "action". Use libsnap APIs to reformat the "main()" function. The best way is to start from an example (See in [actions](./actions) folder) and read the code under "sw" directory. 
 
-* Step2. Write "hardware action" either in Vivado HLS or Verilog/VHDL. For **HLS style**, developers code in C/C++, and take "gmem_din/gmem_dout", "ddr_mem" to operate the data in Host memory and local DDR memory, and takes "act_reg" to receive/update the parameter interface (which is the MMIO/AXI-lite interface in the above figure). For **HDL(Verilog/VHDL) style**, developers need to write their own "action_wrapper.vhd" which includes several AXI master interfaces and one AXI-lite slave interface. You will see "hls_\*" and "hdl_\*" examples. After coding work, use PSLSE (PSL simulation engine) to simulate the full process of how "main()" invoking "hardware action" on an X86 machine. When the simulation is successful, it's time to generate the FPGA bitstream. Read [hardware README.md](hardware/README.md) for more details.
+* **Step2**. Write "hardware action" either in Vivado HLS or Verilog/VHDL way. For **HLS way**, developers code in C/C++, and take "gmem_din/gmem_dout", "ddr_mem" to operate the data in Host memory and local DDR memory, and takes "act_reg" to receive/update the parameter interface (which is the MMIO/AXI-lite interface in the above figure). For **HDL(Verilog/VHDL) way**, developers need to write their own "action_wrapper.vhd" which includes several AXI master interfaces and one AXI-lite slave interface. You will see "hls_\*" and "hdl_\*" examples and please read the code under "hw" directory. After coding work, use PSLSE (PSL simulation engine) to **simulate** the full process of how "main()" invoking "hardware action" on an X86 machine. When the simulation is successful, it's time to **generate the FPGA bitstream**. Read [hardware README.md](hardware/README.md) for more details.
 
-* Step3. Flash the bitstream to a **Power or OpenPower** machine and Run your "main()" from it. This step is also called **Deployment**.
+* **Step3**. Flash the bitstream to a **Power or OpenPower** machine and Run your "main()" from it. This step is also called **Deployment**.
 Please see [Bitstream_flashing.md](hardware/doc/Bitstream_flashing.md) for instructions on how to program the FPGA bitstream.
 
 
-For a step-by-step help, please refer to the SNAP Workbooks in "doc" directory. For example, the [QuickStart] (./doc/UG_CAPI_SNAP-QuickStart_on_a_General_Environment.pdf). And some other user guides are also there.
-
+For a step-by-step help, please refer to the SNAP Workbooks in [doc](./doc) directory. For example, the [QuickStart](./doc/UG_CAPI_SNAP-QuickStart_on_a_General_Environment.pdf). Some other user guides are also there in [doc](./doc).
 
 # 3. Dependencies
 ## FPGA Card selection
