@@ -55,7 +55,7 @@ set_property PACKAGE_PIN AK33 [get_ports {c0_ddr4_ba[0]}]
 set_property PACKAGE_PIN AJ26 [get_ports {c0_ddr4_cke[0]}]
 set_property PACKAGE_PIN AP31 [get_ports {c0_ddr4_cs_n[0]}]
 
-#set_property PACKAGE_PIN AD19 [get_ports {c0_ddr4_dm_dbi_n_9}]
+#set_property PACKAGE_PIN AD19 [get_ports c0_ddr4_dm_dbi_n_9]
 set_property PACKAGE_PIN AH18 [get_ports {c0_ddr4_dm_dbi_n[8]}]
 set_property PACKAGE_PIN AL14 [get_ports {c0_ddr4_dm_dbi_n[7]}]
 set_property PACKAGE_PIN AN14 [get_ports {c0_ddr4_dm_dbi_n[6]}]
