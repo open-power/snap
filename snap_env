@@ -95,18 +95,29 @@ while [ -z "$SETUP_DONE" ]; do
   if [ "$FPGACARD" == "N250SP" ]; then
     SETUP_INFO="$SETUP_INFO\n### INFO ### Support for the selected CAPI2.0 FPGA card N250SP is currently in preparation phase."
     echo "=====Checking path to PSL for N250SP============"
-    echo "PSL4N250SP_ROOT         is set to: \"$PSL4N250SP_ROOT\""
-    RESP=`grep PSL4N250SP_ROOT $snap_env_sh`
+    echo "PSL_IP                  is set to: \"$PSL_IP\""
+    RESP=`grep PSL_IP $snap_env_sh`
     if [ -z "$RESP" ]; then
-      echo "#export PSL4N250SP_ROOT=" >> $snap_env_sh
+      echo "#export PSL_IP=" >> $snap_env_sh
     fi
-    if [ -z "$PSL4N250SP_ROOT" ]; then
-      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable PSL4N250SP_ROOT must point to the directory containing the PSL IP together with N250SP card support."
+    if [ -z "$PSL_IP" ]; then
+      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable PSL_IP must point to the directory containing the PSL IP."
+    fi
+    echo "=====Checking path to Board support for N250SP============"
+    if [ -d "$HDK_ROOT/boards/N250SP" ]; then
+      echo "HDK_ROOT                is set to: \"$HDK_ROOT\""
+    elif [ -d "$snapdir/hardware/hdk/boards/N250SP" ]; then
+      echo "Will use hdk found in $snapdir/hardware/hdk"
+    else
+      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable HDK_ROOT must point to the directory containing the HDK definitions."
+      SETUP_INFO="$SETUP_INFO\n### INFO ### or $snapdir/hardware/hdk needs to contain the HDK definitions."
     fi
   ####### checking path to PSL design checkpoint
   # Note: CLOUD_USER_FLOW is defined via snap_config
   elif [ "$CLOUD_USER_FLOW" == "TRUE" ]; then
-    SETUP_INFO="$SETUP_INFO\n### INFO ### Cloud user flow is skipping PSL_DCP check"
+    SETUP_INFO="$SETUP_INFO\n### INFO ### Cloud user flow is skipping PSL_DCP check."
+  elif [ "$IGNORE_CHECK_PSL" == "TRUE" ]; then
+    SETUP_INFO="$SETUP_INFO\n### INFO ### Skipping PSL_DCP check because environment variable IGNORE_CHECK_PSL is set to TRUE."
   else
     echo "=====Checking path to PSL design checkpoint============"
     echo "PSL_DCP                 is set to: \"$PSL_DCP\""
@@ -154,7 +165,8 @@ while [ -z "$SETUP_DONE" ]; do
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set properly."
       SETUP_WARNING="$SETUP_WARNING\n    For simulation please clone PSL Simulation Environment"
       SETUP_WARNING="$SETUP_WARNING\n    from https://github.com/ibm-capi/pslse"
-      SETUP_WARNING="$SETUP_WARNING\n    and let \$PSLSE_ROOT point to it"
+      SETUP_WARNING="$SETUP_WARNING\n    and let \$PSLSE_ROOT point to it."
+      SETUP_WARNING="$SETUP_WARNING\n    Please set Simulator to 'nosim' if you do not intend to run simulation."
     fi
   fi
 

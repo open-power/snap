@@ -25,7 +25,9 @@ extern "C" {
 #endif
 
 #define SEARCH_ACTION_TYPE	0x10141003
-#define RELEASE_LEVEL		0x00000021
+
+// Uncomment following line to include streaming method code
+//#define STREAMING_METHOD
 
 /* DDR address map */
 #define DDR_TEXT_START       (1024 * 1024)

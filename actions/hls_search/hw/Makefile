@@ -39,7 +39,7 @@ endif
 # This is solution specific. Check if we can replace this by generics too.
 SOLUTION_NAME ?= search
 SOLUTION_DIR ?= hlsSearch
-srcs += hls_search.cpp 
+srcs += hw_action_search.cpp 
 
 # If you have the action code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/hls.mk

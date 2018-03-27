@@ -38,8 +38,8 @@ endif
 
 # This is solution specific. Check if we can replace this by generics too.
 
-snap_search: action_search.o
-snap_search_objs = action_search.o
+snap_search: sw_action_search.o
+snap_search_objs = sw_action_search.o
 
 projs += snap_search
 

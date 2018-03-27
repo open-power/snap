@@ -25,6 +25,8 @@
 #include <hls_snap.H>
 #include <action_search.h>
 
+#define RELEASE_LEVEL           0x00000022
+
 #define CARD_DRAM_SIZE (1 * 1024 *1024 * 1024)
 #define MAX_NB_OF_BYTES_READ  (4 * 1024)
 #define MAX_NB_OF_WORDS_READ MAX_NB_OF_BYTES_READ/BPERDW
@@ -40,7 +42,7 @@ typedef snapu64_t address_t;
 //---------------------------------------------------------------------
 typedef struct {
         CONTROL Control;       /*  16 bytes */
-        search_job_t Data;     /* 108 Bytes */
+        search_job_t Data;     /* up to 108 Bytes */
 	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(search_job_t)];
 } action_reg;
 

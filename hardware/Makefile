@@ -93,6 +93,8 @@ export NVME_USED ?= FALSE
 export USE_PRFLOW ?= FALSE
 export DCP_ROOT ?= $(SNAP_ROOT)/dcp
 
+export IGNORE_CHECK_PSL ?= $(USE_PRFLOW)
+
 ## variables just for this Makefile
 BUILD_DIR=$(SNAP_HARDWARE_ROOT)/build
 SNAP_HDL_CORE=$(SNAP_HARDWARE_ROOT)/hdl/core
@@ -162,7 +164,7 @@ check_snap_settings:
 	@echo "                        hardware/Makefile called with:"
 	@echo "                        ACTION_ROOT     = $(ACTION_ROOT)"
 	@if [ "$(FPGACARD)" == "N250SP" ]; then \
-		echo "                        PSL4N250SP_ROOT = $(PSL4N250SP_ROOT)"; \
+		echo "                        PSL_IP          = $(PSL_IP)"; \
 	else \
 		echo "                        PSL_DCP         = $(PSL_DCP)"; \
 	fi
@@ -326,10 +328,10 @@ config: hw_project
 
 # checking card type for PSL design checkpoint
 check_psl:
-	if [ "$(USE_PRFLOW)" != "TRUE" ]; then \
+	if [ "$(IGNORE_CHECK_PSL)" != "TRUE" ] ; then \
 		if [ "$(FPGACARD)" == "N250SP" ]; then \
-			if [ -z "$(PSL4N250SP_ROOT)" ]; then \
-				echo "### ERROR ###  Environment variable PSL4N250SP_ROOT is undefined. It has to point to the PSL IP sources."; exit -1; \
+			if [ -z "$(PSL_IP)" ]; then \
+				echo "### ERROR ###  Environment variable PSL_IP is undefined. It has to point to the PSL IP sources."; exit -1; \
 			fi; \
 		elif [ "$(PSL_DCP_TYPE)" != "$(FPGACARD)" ]; then \
 			if [[ "$(PSL_DCP_TYPE)" == *"OUTDATED"* ]]; then \
