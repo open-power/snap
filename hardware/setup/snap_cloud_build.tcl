@@ -151,9 +151,9 @@ if { $cloud_run == "BASE" } {
   set step      write_lock_static_design
   set logfile   $logs_dir/${step}.log
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "create static design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-  update_design -cell { a0/action_w } -black_box       > $logfile
-  lock_design -level routing                          >> $logfile
-  write_checkpoint $dcp_dir/snap_static_region_bb.dcp >> $logfile
+  update_design -cell { a0/action_w } -black_box              > $logfile
+  lock_design -level routing                                 >> $logfile
+  write_checkpoint -force $dcp_dir/snap_static_region_bb.dcp >> $logfile
 
 
   if { $cloud_build_bitfile == "TRUE" } {
