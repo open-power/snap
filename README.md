@@ -51,7 +51,7 @@ SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulat
 
 As of now, four FPGA cards can be used with SNAP:
 * Alpha-Data ADM-PCIE-KU3 http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
-* Alpha-Data ADM-PCIE-8K5 http://www.alpha-data.com/dcp/products.php?product=adm-pcie-8k5
+* Alpha-Data ADM-PCIE-8K5 (rev2) http://www.alpha-data.com/dcp/products.php?product=adm-pcie-8k5
 * Nallatech 250S-2T with two on-card NVMe M.2 960GB drives http://www.nallatech.com/250s
 * Semptian NSA121B http://www.semptian.com/index.php?_m=mod_product&_a=view&p_id=160
 
