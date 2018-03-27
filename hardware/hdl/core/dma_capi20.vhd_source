@@ -207,6 +207,8 @@ ARCHITECTURE dma OF dma IS
   SIGNAL dmm_e_q                     : DMM_E_T := (OTHERS => '0');
   SIGNAL ha_c_q                      : HA_C_T;
   SIGNAL ha_r_q                      : HA_R_T;
+  SIGNAL hd_c_q                      : HD_C_T;
+  SIGNAL hd_s_q                      : HD_S_T;
   SIGNAL intreq_active_q             : boolean;
   SIGNAL int_src_q                   : std_logic_vector(INT_BITS-1 DOWNTO 0);
   SIGNAL int_ctx_q                   : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
@@ -791,18 +793,18 @@ BEGIN
           --
           -- DMA: DMA TAG ACCEPT the REQUEST
           --
-          IF (hd_s_i.utag_valid       = '1'    ) AND
-             (hd_s_i.utag(9 DOWNTO 5) = "00000") THEN
-            read_ctrl_q(to_integer(unsigned(hd_s_i.utag(4 DOWNTO 0)))).dma <= REQ_DONE;
+          IF (hd_s_q.utag_valid       = '1'    ) AND
+             (hd_s_q.utag(9 DOWNTO 5) = "00000") THEN
+            read_ctrl_q(to_integer(unsigned(hd_s_q.utag(4 DOWNTO 0)))).dma <= REQ_DONE;
           END IF;
 
           --
           -- BUF: Buffer is valid
           --
-          IF (hd_c_i.valid            = '1'    ) AND
-             (hd_c_i.utag(9 DOWNTO 5) = "00000") THEN
-            read_ctrl_q(to_integer(unsigned(hd_c_i.utag(4 DOWNTO 0)))).dma <= EMPTY;
-            read_ctrl_q(to_integer(unsigned(hd_c_i.utag(4 DOWNTO 0)))).buf <= FULL;
+          IF (hd_c_q.valid            = '1'    ) AND
+             (hd_c_q.utag(9 DOWNTO 5) = "00000") THEN
+            read_ctrl_q(to_integer(unsigned(hd_c_q.utag(4 DOWNTO 0)))).dma <= EMPTY;
+            read_ctrl_q(to_integer(unsigned(hd_c_q.utag(4 DOWNTO 0)))).buf <= FULL;
           END IF;
 
           --
@@ -1383,9 +1385,9 @@ BEGIN
        --
        -- BUF: DMA TAG is valid
        --
-       IF (hd_s_i.utag_valid       = '1'    ) AND
-          (hd_s_i.utag(9 DOWNTO 5) = "00100") THEN
-         write_ctrl_q(to_integer(unsigned(hd_s_i.utag(4 DOWNTO 0)))).dma <= REQ_DONE;
+       IF (hd_s_q.utag_valid       = '1'    ) AND
+          (hd_s_q.utag(9 DOWNTO 5) = "00100") THEN
+         write_ctrl_q(to_integer(unsigned(hd_s_q.utag(4 DOWNTO 0)))).dma <= REQ_DONE;
        END IF;
 
        --
@@ -1648,8 +1650,8 @@ BEGIN
         --
         -- DMA Read Request Counter
         --
-        IF (hd_s_i.utag_valid       = '1') AND
-           (hd_s_i.utag(9 DOWNTO 5) = "00000") THEN
+        IF (hd_s_q.utag_valid       = '1') AND
+           (hd_s_q.utag(9 DOWNTO 5) = "00000") THEN
           IF dma_fsm_q /= ST_DMA_READ_REQ THEN
             dma_rreq_cnt_q <= dma_rreq_cnt_q - 1;
           END IF;
@@ -1662,8 +1664,8 @@ BEGIN
         --
         -- DMA Write Request Counter
         --
-        IF (hd_s_i.utag_valid       = '1') AND
-           (hd_s_i.utag(9 DOWNTO 5) = "00100") THEN
+        IF (hd_s_q.utag_valid       = '1') AND
+           (hd_s_q.utag(9 DOWNTO 5) = "00100") THEN
           IF dma_fsm_q /= ST_DMA_WRITE_REQ THEN
             dma_wreq_cnt_q <= dma_wreq_cnt_q - 1;
           END IF;
@@ -2450,6 +2452,8 @@ BEGIN
         --
         ha_c_q        <= ha_c_i;
         ha_r_q        <= ha_r_i;
+        hd_c_q        <= hd_c_i;
+        hd_s_q        <= hd_s_i;
 
         mmd_i_q       <= (OTHERS => '0'); --mmd_i_i;
         sd_c_q        <= sd_c_i;

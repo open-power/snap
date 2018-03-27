@@ -42,7 +42,7 @@ Erasing Flash
 # How to build the factory ("golden") bitstream image
 
 Normally there is no need to update the factory bitstream, because its main purpose is to allow to program the user partition of the flash safely again. It may also be used to test if the card is still functioning correctly with a known good bitstream.
-To build a factory bitstream, mark the "Create Factory Image" option in the configurator `make snap_config` and proceed with the image build as usual.
+To build a factory bitstream in addition to the user bitstream, mark the "Also create a factory image" option in the configurator `make snap_config` and proceed with the image build as usual.
 
 The output bitstream file names will have `_FACTORY` appended.  
 
@@ -53,26 +53,14 @@ Connect the Platform Cable with the card as described in the card's reference ma
 
 ## 1. Programming the flash device with a .mcs file 
 
-* Build user bitstream *.bit file
-* Build factory bitstream *_FACTORY.bit file
-* Use [hardware/setup/build_mcs.tcl](../setup/build_mcs.tcl) to build the MCS file from the bit file
+* Build the user and factory bitstream (*.bit and *_FACTORY.bit) files as described above
+* Use [hardware/setup/build_mcs.tcl](../setup/build_mcs.tcl) to compile the MCS file from the bit files
   ### Example:
   ```bash
   echo "ENABLE_FACTORY=y" >> .snap_config
   make -s oldconfig
   make image
-
-  # Save the user image from the following implicit "make clean"
-  mv ./hardware/build/Images/*.bi? .
-
-  # Build the USER bitstream.
-  echo "ENABLE_FACTORY=n" >> .snap_config
-  make -s oldconfig
-  make image
-
-  # Restore the user image
-  mv ./*.bi? ./hardware/build/Images/
-
+  
   # Compile the MCS file from FACTORY and USER bitstreams
   factory_bitstream=`ls -t ./hardware/build/Images/fw_*[0-9]_FACTORY.bit | head -n1`
   echo "Factory bitstream=$factory_bitstream"
@@ -80,6 +68,11 @@ Connect the Platform Cable with the card as described in the card's reference ma
   echo "User bitstream=$user_bitstream"
   source .snap_config.sh
   ./hardware/setup/build_mcs.tcl $factory_bitstream $user_bitstream ${factory_bitstream%.bit}.mcs
+  
+  # Optional: restore the default setting that doesn't build the factory image
+  # Attention: this will also delete the bitstreams created before!
+  # echo "ENABLE_FACTORY=n" >> .snap_config
+  # make -s oldconfig
   ```
 * Program the flash using [hardware/setup/flash_mcs.tcl](../setup/flash_mcs.tcl)  
   Programming the flash will take several minutes, please be patient.

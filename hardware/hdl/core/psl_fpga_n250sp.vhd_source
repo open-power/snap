@@ -325,7 +325,7 @@ Component psl_accel
   );
 End Component psl_accel;
 
-Component psl4n250sp
+Component psl_bsp
   PORT(
 -- pci interface
     pci_pi_nperst0        : in    std_logic;     -- Active low reset from the PCIe reset pin of the device
@@ -498,7 +498,7 @@ Component psl4n250sp
     pci_clock_125MHz    : out std_logic                    --125MHz clock if required
   );
 
-END Component psl4n250sp;
+END Component psl_bsp;
 
 SIGNAL a0h_brdata: std_logic_vector(0 TO 1023);  -- hline
 SIGNAL a0h_brlat: std_logic_vector(0 TO 3);  -- v4bit
@@ -581,9 +581,13 @@ SIGNAL hd0_cpl_byte_count  : std_logic_vector(0 to 9)   ;
 SIGNAL hd0_cpl_size        : std_logic_vector(0 to 9)   ;
 SIGNAL hd0_cpl_data        : std_logic_vector(0 to 1023);
 
+SIGNAL user_image_q        : std_logic := '1';  --set to 1 to indicate images meant for user location. set to 0 to indicate factory image. 
+ATTRIBUTE dont_touch       : string;
+ATTRIBUTE dont_touch of user_image_q: SIGNAL IS "true";
 SIGNAL gold_factory        : std_logic;
 SIGNAL pci_user_reset      : std_logic;
 SIGNAL pci_clock_125MHz    : std_logic;
+
 #ifdef CONFIG_ENABLE_NVME
 -- NVME Reset Logic
 SIGNAL nvme_reset_cnt_q    : std_logic_vector(15 DOWNTO 0) := (OTHERS => '1');
@@ -813,14 +817,16 @@ BEGIN
       hd1_cpl_data                      => (others => '0')  --efes1024(1023 downto 0)
     );
 
+    PROCESS (ha0_pclock)
+    BEGIN
+      IF(RISING_EDGE(ha0_pclock)) THEN
+        user_image_q <= user_image_q;
+      END IF;
+    END PROCESS;
 
-#ifdef CONFIG_ENABLE_FACTORY
-    gold_factory <= '0'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
-#else
-    gold_factory <= '1'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
-#endif
+    gold_factory <= user_image_q;
 
-  psl: psl4n250sp
+  psl: psl_bsp
     PORT MAP (
 -- pci interface
       pci_pi_nperst0      => pci_pi_nperst0,       -- Active low reset from the PCIe reset pin of the device

@@ -57,9 +57,21 @@ static void usage(const char *prog)
 	       "  -m, --mode <mode>         mode flags.\n"
 	       "  -t, --timeout             Timeout in sec to wait for done. (10 sec default)\n"
 	       "  -X, --verify              verify result if possible\n"
-	       "  -I, --irq                 Enable Interrupts\n"
+	       "  -N, --no_irq                 Disable Interrupts\n"
 	       "\n"
-	       "Example:\n"
+	       " WARNING : All data transfers to and from NVME_SSDs are buffered in CARD_DRAM :\n"
+	       " Check #define DRAM_ADDR_TO_SSD  0x00000000 and #define DRAM_ADDR_FROM_SSD 0x80000000\n"
+	       " in $ACTION_ROOT/hw/hw_action_nvme_memcopy.H\n\n"
+	
+	   " Usage Examples:\n"
+           " Before using NVME following command must be run :\n"
+	   " ${SNAP_ROOT}/software/tools/snap_maint -Cn #n is card number to attach your action !\n"
+	   " ${SNAP_ROOT}/software/tools/snap_nvme_init prior to use NVME memory driver !\n"
+	   "\n"
+           "  echo create a 128kB file with random data ...wait...\n"
+           "  dd if=/dev/urandom of=in.bin bs=1k count=128\n"
+	   "  echo create a 512MB file with random data ...wait...\n"
+	   "  dd if=/dev/urandom of=in.bin bs=1M count=512\n"
            "  snap_nvme_memcopy -A HOST_DRAM -D HOST_DRAM -i in.bin -o out.bin ...\n"
            "  snap_nvme_memcopy -A HOST_DRAM -D CARD_DRAM -i in.bin -d 0xD000 ...\n"
            "  snap_nvme_memcopy -A HOST_DRAM -D NVME_SSD  -i in.bin -d 0xE000 ...\n"
@@ -72,26 +84,30 @@ static void usage(const char *prog)
            "  snap_nvme_memcopy -A NVME_SSD -D HOST_DRAM -a 0xE000 -o out.bin -s 0x200 ...\n"
            "\n"
            " 1) In Above examples, all addresses are byte address. \n"
-           "    CARD_DRAM address limit is 0x1_0000_0000. \n"
-           "    NVME_SSD  address limit is 0xDF_9035_6000 for one drive.\n"
+           "    CARD_DRAM address limit is 0x1_0000_0000  (  4294967296 Bytes =   4GB) \n"
+           "    NVME_SSD  address limit is 0xDF_9035_6000 (960197124096 Bytes = 960GB) for one drive.\n"
            "    If Source or Destination is NVME_SSD, size must be multiples of 512 (0x200)\n"
            " 2) NVME to NVME is not directly supported,\n"
            "    but can be done by calling snap_nvme_memcopy twice.\n"
-	       "\n",
+           " 3) HOST to and from NVME is actually performed using 2 hardware steps with a SDRAM buffer in the middle,\n"
+           "    !! See WARNING ABOVE !!\n"
+           "\n",
 	       prog);
 }
 
 static void snap_prepare_nvme_memcopy(struct snap_job *cjob,
-				 struct nvme_memcopy_job *mjob,
-				 void *addr_in,
-				 uint32_t size_in,
-				 uint8_t type_in,
-				 void *addr_out,
-				 uint32_t size_out,
-				 uint8_t type_out,
-                 uint64_t drive_id)
+				struct nvme_memcopy_job *mjob,
+				void *addr_in,
+				uint32_t size_in,
+				uint8_t type_in,
+				void *addr_out,
+				uint32_t size_out,
+				uint8_t type_out,
+				uint64_t drive_id)
 {
-	fprintf(stderr, "  prepare nvme_memcopy job of %ld bytes size\n", sizeof(*mjob));
+	fprintf(stderr, "  prepare nvme_memcopy job of %ld bytes size\n"
+		"  This is the register information exchanged between host and fpga\n",
+		sizeof(*mjob));
 
 	assert(sizeof(*mjob) <= SNAP_JOBSIZE);
 	memset(mjob, 0, sizeof(*mjob));
@@ -99,8 +115,7 @@ static void snap_prepare_nvme_memcopy(struct snap_job *cjob,
 	snap_addr_set(&mjob->in, addr_in, size_in, type_in,
 		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 	snap_addr_set(&mjob->out, addr_out, size_out, type_out,
-		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST |
-		      SNAP_ADDRFLAG_END);
+		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END);
     mjob->drive_id = drive_id;
 
 	snap_job_set(cjob, mjob, sizeof(*mjob), NULL, 0);
@@ -134,7 +149,9 @@ int main(int argc, char *argv[])
     uint64_t drive_id = 0;
 	int exit_code = EXIT_SUCCESS;
 	uint8_t trailing_zeros[1024] = { 0, };
-	snap_action_flag_t action_irq = 0;
+        snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
+        long long diff_usec = 0;
+        double mib_sec;
 
 	while (1) {
 		int option_index = 0;
@@ -154,13 +171,11 @@ int main(int argc, char *argv[])
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
-			{ "irq",	 no_argument,	    NULL, 'I' },
+			{ "no_irq",	 no_argument,	    NULL, 'N' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
-		ch = getopt_long(argc, argv,
-				 "A:C:i:o:a:S:D:d:n:x:s:t:XVqvhI",
-				 long_options, &option_index);
+		ch = getopt_long(argc, argv,"C:i:o:A:a:D:d:n:s:m:t:XVvhN", long_options, &option_index);
 		if (ch == -1)
 			break;
 
@@ -174,15 +189,6 @@ int main(int argc, char *argv[])
 		case 'o':
 			output = optarg;
 			break;
-		case 's':
-			size = __str_to_num(optarg);
-			break;
-		case 't':
-			timeout = strtol(optarg, (char **)NULL, 0);
-			break;
-		case 'm':
-			mode = strtol(optarg, (char **)NULL, 0);
-			break;
 			/* input data */
 		case 'A':
 			space = optarg;
@@ -193,6 +199,7 @@ int main(int argc, char *argv[])
 			else if (strcmp(space, "CARD_DRAM") == 0)
 				type_in = SNAP_ADDRTYPE_CARD_DRAM;
 			else {
+				printf("ERROR : bad Origin (-A) argument provided!\n\n");
 				usage(argv[0]);
 				exit(EXIT_FAILURE);
 			}
@@ -210,6 +217,7 @@ int main(int argc, char *argv[])
 			else if (strcmp(space, "CARD_DRAM") == 0)
 				type_out = SNAP_ADDRTYPE_CARD_DRAM;
 			else {
+				printf("ERROR : bad Destination (-D) argument provided!\n\n");
 				usage(argv[0]);
 				exit(EXIT_FAILURE);
 			}
@@ -220,6 +228,15 @@ int main(int argc, char *argv[])
 		case 'n':
 			drive_id = strtol(optarg, (char **)NULL, 0);
 			break;
+                case 's':
+                        size = __str_to_num(optarg);
+                        break;
+                case 'm':
+                        mode = strtol(optarg, (char **)NULL, 0);
+                        break;
+                case 't':
+                        timeout = strtol(optarg, (char **)NULL, 0);
+                        break;
 		case 'X':
 			verify++;
 			break;
@@ -234,14 +251,20 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
-		case 'I':
-			action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
+		case 'N':
+			action_irq = 0;
 			break;
 		default:
 			usage(argv[0]);
+			printf("bad function argument provided!\n");
 			exit(EXIT_FAILURE);
 		}
 	}
+
+        if (argc == 1) {               // to provide help when program is called without argument
+          usage(argv[0]);
+          exit(EXIT_FAILURE);
+        }
 
 	if (optind != argc) {
 		usage(argv[0]);
@@ -296,9 +319,7 @@ int main(int argc, char *argv[])
 	       input  ? input  : "unknown",
 	       output ? output : "unknown",
 	       type_in,  mem_tab[type_in],  (long long)addr_in,
-	       type_out, mem_tab[type_out], (long long)addr_out,
-           (long) drive_id,
-	       size, mode);
+	       type_out, mem_tab[type_out], (long long)addr_out, (long) drive_id, size, mode);
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
@@ -318,16 +339,23 @@ int main(int argc, char *argv[])
 			card_no, strerror(errno));
 		goto out_error1;
 	}
-
+        // The following snap_prepare_nvme_memcopy will fill the software mjob and cjob
+        // structures with the appropriate content
 	snap_prepare_nvme_memcopy(&cjob, &mjob,
 			     (void *)addr_in,  size, type_in,
 			     (void *)addr_out, size, type_out, drive_id);
 
 	__hexdump(stderr, &mjob, sizeof(mjob));
 
+        printf("      get starting time\nAction is running ....");
 	gettimeofday(&stime, NULL);
+        // The following snap_action_sync_execute_job will transfer the
+        // structures cjob and mjob contents to fpga registers and launch
+        // the specified action.
+        // => timing will thus take into account the registers transfer time added to the action duration
 	rc = snap_action_sync_execute_job(action, &cjob, timeout);
 	gettimeofday(&etime, NULL);
+        printf("      got end of exec. time\n");
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
 			strerror(errno));
@@ -370,8 +398,22 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "warn: Verification works currently "
 				"only with HOST_DRAM\n");
 	}
-	fprintf(stdout, "nvme_memcopy took %lld usec\n",
+	
+	diff_usec = timediff_usec(&etime, &stime);
+        mib_sec = (diff_usec == 0) ? 0.0 : (double)size / diff_usec;
+        
+        if (size!=0)
+        {  
+          fprintf(stdout, "memcopy of %lld bytes took %lld usec @ %.3f MiB/sec\n",
+                  (long long)size, (long long)diff_usec, mib_sec);
+          fprintf(stdout, "This represents the register transfer time + memcopy action time\n");       
+        }
+        
+        else
+        {
+          fprintf(stdout, "nvme_memcopy took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
+        }
 
 	snap_detach_action(action);
 	snap_card_free(card);

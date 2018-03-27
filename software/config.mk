@@ -83,18 +83,12 @@ endif
 #
 HAS_GIT = $(shell git describe > /dev/null 2>&1 && echo y || echo n)
 
-# Change this with care
-
-VERSION=0.1.2
-MAJOR_VERSION=$(shell echo $(VERSION) | cut -d'.' -f1)
-MINOR_VERSION=$(shell echo $(VERSION) | cut -d'.' -f2)
-PATCH_VERSION=$(shell echo $(VERSION) | cut -d'.' -f3)
-EXTRA_VERSION=$(GIT_BRANCH)
+# Set a default Version
+VERSION=0.0.9-no-git
 
 ifeq (${HAS_GIT},y)
-GIT_BRANCH=$(shell git describe --abbrev=4 --always --tags | sed -e 's/v//g')
-#GIT_BRANCH=$(shell git describe --abbrev=0 --tags | cut -c 2-7)
-VERSION:=$(VERSION)-$(GIT_BRANCH)
+	GIT_BRANCH=$(shell git describe --always --tags)
+	VERSION:=$(GIT_BRANCH)
 endif
 
 CFLAGS ?= -W -Wall -Werror -Wwrite-strings -Wextra -O2 -g \
