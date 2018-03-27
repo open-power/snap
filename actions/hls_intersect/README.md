@@ -6,7 +6,7 @@
 
 **Please don't use it as a testing example on FPGA hardware.**
 
-It stays here as a HLS coding example. It shows how to make two implementations for a single target. It also shows how to invoke the hardware action several times from C main() function. 
+It stays here as a HLS coding example to show how to make two implementations for a single target. It also shows how to invoke the hardware action several times from C main() function. 
 
 
 =====================================================
