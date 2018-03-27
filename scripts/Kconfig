@@ -171,6 +171,11 @@ choice
 
         config HLS_INTERSECT
             bool "HLS Intersect"
+	    help
+               This example often does not meet timing (> 200ps negative slack) in bitstream generation.
+               Running on FPGA hardware has passed for many times but it is NOT guaranteed.
+               It is intended as a HLS coding example to show how to make two implementations for a single target. 
+               It also shows how to invoke the hardware action several times from C main() function. 
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
             select DISABLE_NVME
