@@ -1,6 +1,6 @@
 #-----------------------------------------------------------
 #
-# Copyright 2016, International Business Machines
+# Copyright 2017,2018 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,15 +15,15 @@
 # limitations under the License.
 #
 #-----------------------------------------------------------
-# create a action PBLOCK 
+# create a action PBLOCK
 create_pblock pblock_action
-resize_pblock pblock_action -add    CLOCKREGION_X0Y0:CLOCKREGION_X5Y4 
+resize_pblock pblock_action -add    CLOCKREGION_X0Y0:CLOCKREGION_X5Y4
 
 # remove SNAP area from the action PBLOCK
 resize_pblock pblock_action -remove CLOCKREGION_X3Y0:CLOCKREGION_X3Y2
 
 # remove PSL area from the action PBLOCK
-resize_pblock pblock_action -remove CLOCKREGION_X4Y0:CLOCKREGION_X5Y3 
+resize_pblock pblock_action -remove CLOCKREGION_X4Y0:CLOCKREGION_X5Y3
 resize_pblock pblock_action -remove IOB_X1Y160:IOB_X1Y160
 
 # add action conntent to the action PBLOCK

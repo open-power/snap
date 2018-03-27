@@ -1,7 +1,7 @@
 ############################################################################
 ############################################################################
 ##
-## Copyright 2016, 2017 International Business Machines
+## Copyright 2016-2018 International Business Machines
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -210,7 +210,7 @@ check_simulator:
 prepare_logs:
 	@mkdir -p $(LOGS_DIR);
 
-prepare_project: check_snap_settings prepare_logs 
+prepare_project: check_snap_settings prepare_logs
 	@echo -e "[PREPARE PROJECT.....] start `date +"%T %a %b %d %Y"`";
 	@mkdir -p $(BUILD_DIR);
 	@mkdir -p $(BUILD_DIR)/Reports;
@@ -367,7 +367,7 @@ allow_%:
 		echo; echo "Error: Makefile target $* is not allowed for cloud user flow!"; exit -1; \
 	fi
 
-cloud_enable: allow_cloud_action 
+cloud_enable: allow_cloud_action
 	@echo -e "[ENABLE CLOUD FLOW...] start `date +"%T %a %b %d %Y"e`"
 	@$(MAKE) -s patch_version
 	@cd $(BUILD_DIR) && env CLOUD_RUN= vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/cloud_action.log -journal $(LOGS_DIR)/cloud_action.jou

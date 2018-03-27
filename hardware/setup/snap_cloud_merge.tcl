@@ -1,6 +1,6 @@
 #-----------------------------------------------------------
 #
-# Copyright 2016,2017 International Business Machines
+# Copyright 2016-2018 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ set bram_used             $::env(BRAM_USED)
 set static_region_dcp     "snap_static_region_bb.dcp"
 set user_action_dcp       "user_action_synth.dcp"
 
-#timing_lablimit  
+#timing_lablimit
 if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
   set timing_lablimit [string toupper $::env(TIMING_LABLIMIT)]
 } else {
@@ -65,47 +65,47 @@ set widthCol2 24
 set widthCol3 36
 set widthCol4 22
 
-## 
+##
 ## create temporary in memory project
 puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "creating in memory project" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 create_project -in_memory -part $fpga_part >> $log_file
 
-## 
+##
 ## adding static region and user_action checkpoints
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "adding checkpoints" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 add_files $dcp_dir/$static_region_dcp >> $log_file
 add_files $dcp_dir/$user_action_dcp   >> $log_file
 set_property SCOPED_TO_CELLS {a0/action_w} [get_files $dcp_dir/$user_action_dcp] >> $log_file
 
-## 
+##
 ## linking design
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "linking design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 link_design -mode default -reconfig_partitions {user_action} -part $fpga_part -top psl_fpga >> $log_file
 
 read_xdc ../setup/snap_impl.xdc >> $log_file
 
-## 
+##
 ## optimizing design
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "optimizing design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 opt_design -directive Explore >> $log_file
-## 
+##
 ## placing design
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "placing design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 place_design -directive Explore >> $log_file
-## 
+##
 ## routing design
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "routing design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 route_design -directive Explore >> $log_file
-## 
+##
 ## phys_opt design
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "phys_optimizing design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 phys_opt_design -directive Explore >> $log_file
-## 
+##
 ## writing checkpoint
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "writing checkpoint" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 write_checkpoint -force ./Checkpoints/psl_fpga_routed.dcp >> $log_file
 
-##  
+##
 ## generating reports
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "generating reports" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 report_utilization    -quiet -file  ./Reports/psl_fpga_utilization_route_design.rpt
@@ -113,7 +113,7 @@ report_route_status   -quiet -file  ./Reports/psl_fpga_route_status.rpt
 report_timing_summary -quiet -max_paths 100 -file ./Reports/psl_fpga_timing_summary.rpt
 report_drc            -quiet -ruledeck bitstream_checks -name psl_fpga -file ./Reports/psl_fpga_drc_bitstream_checks.rpt
 
-## 
+##
 ## checking timing
 ## Extract timing information, change ns to ps, remove leading 0's in number to avoid treatment as octal.
 set TIMING_WNS [exec grep -A6 "Design Timing Summary" ./Reports/psl_fpga_timing_summary.rpt | tail -n 1 | tr -s " " | cut -d " " -f 2 | tr -d "." | sed {s/^\(\-*\)0*\([1-9]*[0-9]\)/\1\2/}]

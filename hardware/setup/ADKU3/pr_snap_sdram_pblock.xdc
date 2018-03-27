@@ -1,6 +1,6 @@
 #-----------------------------------------------------------
 #
-# Copyright 2016, International Business Machines
+# Copyright 2017,2018 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,4 +28,3 @@ resize_pblock pblock_snap -remove  CLOCKREGION_X3Y2:CLOCKREGION_X3Y2
 resize_pblock pblock_snap -add {SLICE_X71Y120:SLICE_X96Y299 DSP48E2_X14Y48:DSP48E2_X17Y119 IOB_X2Y104:IOB_X2Y259 LAGUNA_X12Y120:LAGUNA_X15Y239 RAMB18_X9Y48:RAMB18_X11Y119 RAMB36_X9Y24:RAMB36_X11Y59}
 add_cells_to_pblock pblock_snap [get_cells [list a0/axi_clock_converter_i]] -clear_locs
 add_cells_to_pblock pblock_snap [get_cells [list a0/ddr3sdram_bank0]] -clear_locs
-

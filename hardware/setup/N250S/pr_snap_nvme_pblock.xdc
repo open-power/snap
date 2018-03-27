@@ -1,6 +1,6 @@
 #-----------------------------------------------------------
 #
-# Copyright 2017, International Business Machines
+# Copyright 2017,2018 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ resize_pblock pblock_action -remove    CLOCKREGION_X3Y3:CLOCKREGION_X3Y3
 # add NVME area to SNAP
 resize_pblock pblock_snap -add CLOCKREGION_X3Y4:CLOCKREGION_X5Y4
 resize_pblock pblock_snap -add {SLICE_X71Y180:SLICE_X98Y239 DSP48E2_X14Y72:DSP48E2_X17Y95 RAMB18_X9Y72:RAMB18_X11Y95 RAMB36_X9Y36:RAMB36_X11Y47}
-resize_pblock pblock_snap -add {SLICE_X128Y180:SLICE_X142Y239 RAMB18_X16Y72:RAMB18_X17Y95 RAMB36_X16Y36:RAMB36_X17Y47} 
+resize_pblock pblock_snap -add {SLICE_X128Y180:SLICE_X142Y239 RAMB18_X16Y72:RAMB18_X17Y95 RAMB36_X16Y36:RAMB36_X17Y47}
 resize_pblock pblock_snap -add {PCIE_3_1_X0Y1:PCIE_3_1_X0Y1}
 resize_pblock pblock_snap -add {GTHE3_CHANNEL_X1Y12:GTHE3_CHANNEL_X1Y15}
 resize_pblock pblock_snap -add {GTHE3_COMMON_X1Y3:GTHE3_COMMON_X1Y3}

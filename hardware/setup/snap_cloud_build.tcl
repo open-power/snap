@@ -1,6 +1,6 @@
 #-----------------------------------------------------------
 #
-# Copyright 2016,2017 International Business Machines
+# Copyright 2016-2018 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ if { [info exists ::env(DCP_ROOT)] == 1 } {
 }
 set ::env(DCP_ROOT) $dcp_dir
 
-#timing_lablimit  
+#timing_lablimit
 if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
   set timing_lablimit [string toupper $::env(TIMING_LABLIMIT)]
 } else {
@@ -55,13 +55,13 @@ set widthCol1 24
 set widthCol2 24
 set widthCol3 36
 set widthCol4 22
-set ::env(WIDTHCOL1) $widthCol1 
-set ::env(WIDTHCOL2) $widthCol2 
-set ::env(WIDTHCOL3) $widthCol3 
-set ::env(WIDTHCOL4) $widthCol4 
+set ::env(WIDTHCOL1) $widthCol1
+set ::env(WIDTHCOL2) $widthCol2
+set ::env(WIDTHCOL3) $widthCol3
+set ::env(WIDTHCOL4) $widthCol4
 
 
-## 
+##
 ## open snap project
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "open framework project" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 open_project ../viv_project/framework.xpr >> $logfile
@@ -99,7 +99,7 @@ if { ([get_property pr_flow [current_project]] != 1) } {
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpgacard/pr_snap_clk_ooc.xdc
   # pblock constrains
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpgacard/pr_action_pblock.xdc
-  set_property used_in_synthesis false [get_files  $root_dir/setup/$fpgacard/pr_action_pblock.xdc]    
+  set_property used_in_synthesis false [get_files  $root_dir/setup/$fpgacard/pr_action_pblock.xdc]
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpgacard/pr_snap_pblock.xdc
   set_property used_in_synthesis false [get_files  $root_dir/setup/$fpgacard/pr_snap_pblock.xdc]
   if { $sdram_used == "TRUE" } {
@@ -115,7 +115,7 @@ if { ([get_property pr_flow [current_project]] != 1) } {
   puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "framework project already in PR flow" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 }
 
-## 
+##
 ## ACTION run
 if { ($cloud_run == "ACTION") || ($cloud_run == "BASE") } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3 "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
@@ -123,7 +123,7 @@ if { ($cloud_run == "ACTION") || ($cloud_run == "BASE") } {
   launch_runs  user_action_synth_1 >> $logfile
   wait_on_run  user_action_synth_1 >> $logfile
 
-  if {[get_property PROGRESS [get_runs user_action_synth_1]] != "100%"} {  
+  if {[get_property PROGRESS [get_runs user_action_synth_1]] != "100%"} {
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: action synthesis failed" $widthCol4 "" ]
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
     exit 42
@@ -132,17 +132,17 @@ if { ($cloud_run == "ACTION") || ($cloud_run == "BASE") } {
   file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper_utilization_synth.rpt     ./Reports/user_action_utilization_synth.rpt
 }
 
-## 
+##
 ## BASE run
 if { $cloud_run == "BASE" } {
 
-  ## 
+  ##
   ## run synthese
   source $root_dir/setup/snap_synth_step.tcl
-   
 
-  ## 
-  ## run implementation 
+
+  ##
+  ## run implementation
   source $root_dir/setup/snap_impl_step.tcl
 
 

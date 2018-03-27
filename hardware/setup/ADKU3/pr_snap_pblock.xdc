@@ -1,6 +1,6 @@
 #-----------------------------------------------------------
 #
-# Copyright 2017, International Business Machines
+# Copyright 2017,2018 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 #-----------------------------------------------------------
 
 create_pblock pblock_snap
-resize_pblock pblock_snap -add CLOCKREGION_X3Y0:CLOCKREGION_X3Y2 
+resize_pblock pblock_snap -add CLOCKREGION_X3Y0:CLOCKREGION_X3Y2
 
 add_cells_to_pblock pblock_snap [get_cells [list  a0/snap_core_i]] -clear_locs
-

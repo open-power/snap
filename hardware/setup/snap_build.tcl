@@ -1,6 +1,6 @@
 #-----------------------------------------------------------
 #
-# Copyright 2016, International Business Machines
+# Copyright 2016-2018 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ set vivadoVer     [version -short]
 set dcp_dir $root_dir/build/Checkpoints
 set ::env(DCP_ROOT) $dcp_dir
 
-#timing_lablimit  
+#timing_lablimit
 if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
   set timing_lablimit [string toupper $::env(TIMING_LABLIMIT)]
 } else {
@@ -45,10 +45,10 @@ set widthCol1 24
 set widthCol2 24
 set widthCol3 36
 set widthCol4 22
-set ::env(WIDTHCOL1) $widthCol1 
-set ::env(WIDTHCOL2) $widthCol2 
-set ::env(WIDTHCOL3) $widthCol3 
-set ::env(WIDTHCOL4) $widthCol4 
+set ::env(WIDTHCOL1) $widthCol1
+set ::env(WIDTHCOL2) $widthCol2
+set ::env(WIDTHCOL3) $widthCol3
+set ::env(WIDTHCOL4) $widthCol4
 
 
 ##
@@ -60,7 +60,7 @@ open_project ../viv_project/framework.xpr >> $logfile
 #set_param synth.elaboration.rodinMoreOptions {set rt::doParallel false}
 
 
-## 
+##
 ## run synthese
 source $root_dir/setup/snap_synth_step.tcl
 
@@ -81,8 +81,8 @@ if { $fpgacard != "AD8K5" } {
 }
 
 
-## 
-## run implementation 
+##
+## run implementation
 source $root_dir/setup/snap_impl_step.tcl
 
 
@@ -122,7 +122,7 @@ if { [catch "$command > $logfile" errMsg] } {
 if { $factory_image == "TRUE" } {
   puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: factory image" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   # The factory bitstream has the properties from snap_bitstream_pre.tcl plus:
-  #xapp1246/xapp1296: These settings are not needed for SNAP. 
+  #xapp1246/xapp1296: These settings are not needed for SNAP.
   #FIXME remove when testing was successful
   # set_property BITSTREAM.CONFIG.NEXT_CONFIG_ADDR 0X01000000 [current_design]	;# default is 0x0
   set_property BITSTREAM.CONFIG.REVISIONSELECT_TRISTATE ENABLE [current_design] ;# default enable
