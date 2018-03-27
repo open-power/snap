@@ -1,5 +1,6 @@
 # SNAP Framework Hardware and Software
 
+## Overview
 The SNAP Framework enables programmers and computer engineers to quickly create FPGA-based acceleration actions that work on server host data, as well as data from storage, flash, Ethernet, or other connected resources.  SNAP, therefore, is an acronym for “**S**torage, **N**etwork, and **A**nalytics **P**rogramming”.
 The SNAP framework makes it easy to create accelerated actions utilizing the IBM Coherent Accelerator Processor Interface (CAPI).
 ![snap_concept_diagram](/doc/snap_concept_diagram.png "SNAP")
@@ -14,26 +15,30 @@ Please see here for more details:
 * https://members.openpowerfoundation.org/wg/ACLWG/dashboard
 * http://openpowerfoundation.org/blogs/capi-drives-business-performance/
 
-For detailed design information, please refer to the SNAP Workbook (available soon).
-
-# Getting started
-
-## Simulating the design and generating the bitstream
-
-The resources for generating a simulation model and an FPGA image using the SNAP framework are located in the [hardware](hardware) subdirectory of this repository. For information on how to use them please refer to the documentation in the
-
-* [README.md](hardware/README.md)
-
-file within that directory.
-
-## Flashing the bitstream
-
-Please see [Bitstream_flashing.md](hardware/doc/Bitstream_flashing.md) for instructions on how to update the FPGA bitstream.
-
-## More information, education material
+## What is CAPI, More information, Education material
 * CAPI and SNAP on IBM developerworks: https://developer.ibm.com/linuxonpower/capi/  
 * [Education Videos](https://developer.ibm.com/linuxonpower/capi/education/)
 * [IBM CAPI Developer's Community Forum](https://www.ibm.com/developerworks/community/groups/service/html/communitystart?communityUuid=a661532e-1ec6-442f-b753-4ebb2c8f861b)
+
+## Developing Status
+Currently SNAP Framework supports CAPI1.0. The modules for CAPI2.0 and OpenCAPI are under developing. However, any user working on SNAP today can easily transfer their work to CAPI2.0 or OpenCAPI as the interface of "Software Program" and "Hardware Action" (shown in yellow area of the above figure) will keep same. 
+
+
+# Getting started
+
+Developing an FPGA accelerated application on SNAP takes following steps: 
+* Preparation: Decide the the software function to be moved to FPGA. This function, usually computation intensive, is named as "action" in the following description. Carefully read the Dependencies section. Choose an FPGA card. Install tools, download packages and set environmental variables.
+
+* Step1. Split the original application to two parts: the "software main()" and "action". Determine the configurations/parameters for "action". Use libsnap APIs to reformat the "main()" function.
+
+* Step2. Write "hardware action" either in Vivado HLS or Verilog/VHDL. For *HLS style*, developer code in C/C++, and take "gmem_din/gmem_dout", "ddr_mem" to operate the data in Host memory and local DDR memory, and takes "act_reg" to receive/update the parameter interface (which is actually the MMIO/AXI-lite interface in the above figure). For *HDL(Verilog/VHDL) style*, developer needs to write their own "action_wrapper.vhd" which includes several AXI master interfaces and one AXI-lite slave interface. The best way is to start from an existing example (/actions) and obverse how they work. You will see "hls_\*" and "hdl_\*" examples. After coding work, use PSLSE (PSL simulation engine) to simulate the full process of how "main()" invoking "hardware action" on an X86 machine. When the simulation is successful, it's time to generate the FPGA bitstream. Read [hardware README.md](hardware/README.md) for more details.
+
+* Step3. Flash the bitstream to Power machine and Run your "main()" from Power machine. This step is also called "deployment".
+Please see [Bitstream_flashing.md](hardware/doc/Bitstream_flashing.md) for instructions on how to update the FPGA bitstream.
+
+
+For a step-by-step help, please refer to the SNAP Workbooks in [doc] (doc/) directory.
+
 
 # Dependencies
 
