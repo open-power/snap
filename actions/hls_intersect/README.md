@@ -1,8 +1,8 @@
 
 # Notice: 
-**This example often meets unsatisfied timing (> 200ps negtive slack) in bitstream generation. Running on FPGA hardware has passed for many times but it is NOT guaranteed.**
+**This example often does not meet timing (> 200ps negative slack) in bitstream generation. Running on FPGA hardware has passed for many times but it is NOT guaranteed.**
 
-**!!WARNING!!** 
+**:warning:WARNING** 
 
 **Please don't use it as a testing example on FPGA hardware.**
 
