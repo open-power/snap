@@ -1,7 +1,7 @@
 ############################################################################
 ############################################################################
 ##
-## Copyright 2016,2017 International Business Machines
+## Copyright 2016-2018 International Business Machines
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -55,6 +55,11 @@ if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support "TRUE"
 } else {
   set hls_support "not defined"
+}
+
+# HLS generates VHDL and Verilog files, SNAP is using the VHDL files
+if { $hls_support == "TRUE" } {
+  set action_dir $::env(ACTION_ROOT)/hw/vhdl
 }
 
 if { [info exists ::env(PSL_DCP)] == 1 } {

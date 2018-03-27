@@ -1,6 +1,6 @@
 #-----------------------------------------------------------
 #
-# Copyright 2016, International Business Machines
+# Copyright 2017,2018 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,16 @@
 # limitations under the License.
 #
 #-----------------------------------------------------------
+# create a action PBLOCK
 create_pblock pblock_action
-resize_pblock pblock_action -add CLOCKREGION_X0Y0:CLOCKREGION_X1Y4
-resize_pblock pblock_action -add {SLICE_X48Y0:SLICE_X70Y299 DSP48E2_X9Y0:DSP48E2_X13Y119 LAGUNA_X8Y0:LAGUNA_X11Y239 RAMB18_X6Y0:RAMB18_X8Y119 RAMB36_X6Y0:RAMB36_X8Y59} -locs keep_all
+resize_pblock pblock_action -add    CLOCKREGION_X0Y0:CLOCKREGION_X5Y4
+
+# remove SNAP area from the action PBLOCK
+resize_pblock pblock_action -remove CLOCKREGION_X3Y0:CLOCKREGION_X3Y2
+
+# remove PSL area from the action PBLOCK
+resize_pblock pblock_action -remove CLOCKREGION_X4Y0:CLOCKREGION_X5Y3
+resize_pblock pblock_action -remove IOB_X1Y179:IOB_X1Y179
+
+# add action conntent to the action PBLOCK
 add_cells_to_pblock pblock_action [get_cells [list a0/action_w ]] -clear_locs

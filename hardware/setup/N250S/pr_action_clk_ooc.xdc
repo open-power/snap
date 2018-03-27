@@ -1,6 +1,6 @@
 #-----------------------------------------------------------
 #
-# Copyright 2016, International Business Machines
+# Copyright 2017,2018 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,8 +15,4 @@
 # limitations under the License.
 #
 #-----------------------------------------------------------
-
-create_pblock pblock_core
-resize_pblock pblock_core -add CLOCKREGION_X3Y0:CLOCKREGION_X3Y4
-add_cells_to_pblock pblock_core [ get_cells [ list a0/snap_core_i ] ] -clear_locs
-
+create_clock -period 4.000 -name ap_clk -waveform {0.000 2.000} [get_ports -filter { NAME =~  "*clk*" && DIRECTION == "IN" }]

@@ -1,7 +1,7 @@
 ############################################################################
 ############################################################################
 ##
-## Copyright 2016, 2017 International Business Machines
+## Copyright 2016-2018 International Business Machines
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -130,7 +130,7 @@ PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl "$(FPGACARD)" "$(PSL_D
 
 ifeq ($(PLATFORM),x86_64)
 
-.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config add_psl_dcp check_psl image cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
+.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config add_psl_dcp check_psl image cloud_enable cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
 
 all: model image
 
@@ -284,7 +284,7 @@ action_hw: prepare_logs
 	@if [ $$? -ne 0 ]; then \
 		echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
 	fi
-	@if [ "$(USE_PRFLOW)" == "TRUE" ]; then \
+	@if [ "$(HLS_SUPPORT)" == "TRUE" ]; then \
 	        echo "Calling make -C $(ACTION_ROOT)/hw vhdl" >> $(LOGS_DIR)/action_make.log; \
 		$(MAKE) -kC $(ACTION_ROOT)/hw vhdl >> $(LOGS_DIR)/action_make.log; \
 		if [ $$? -ne 0 ]; then \
@@ -367,8 +367,14 @@ allow_%:
 		echo; echo "Error: Makefile target $* is not allowed for cloud user flow!"; exit -1; \
 	fi
 
+cloud_enable: allow_cloud_action
+	@echo -e "[ENABLE CLOUD FLOW...] start `date +"%T %a %b %d %Y"e`"
+	@$(MAKE) -s patch_version
+	@cd $(BUILD_DIR) && env CLOUD_RUN= vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/cloud_action.log -journal $(LOGS_DIR)/cloud_action.jou
+	@echo -e "[ENABLE CLOUD FLOW...] done  `date +"%T %a %b %d %Y"`"
+
 cloud_base: allow_cloud_base .hw_project_done
-	@echo -e "[BUILD CLOUD BASE...] start `date +"%T %a %b %d %Y"`"
+	@echo -e "[BUILD CLOUD BASE....] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -s patch_version
 	@cd $(BUILD_DIR) && env CLOUD_RUN=BASE vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
 	@echo -e "[BUILD CLOUD BASE....] done  `date +"%T %a %b %d %Y"`"
@@ -392,7 +398,7 @@ cloud_merge: allow_cloud_merge $(SNAP_BASE_DCP) $(SNAP_ACTION_DCP)
 	@ignore_action_root=ignore_action_root $(MAKE) prepare_project
 	@echo -e "[CLOUD MERGE ........] start `date +"%T %a %b %d %Y"`"
 	@echo -e "                        using `vivado -version |grep Vivado`"
-	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_cloud_merge.tcl -notrace -log $(LOGS_DIR)/cloud_merge.log -journal $(LOGS_DIR)/cloud_merge.jou
+	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source snap_cloud_merge.tcl -notrace -log $(LOGS_DIR)/snap_cloud_merge.log -journal $(LOGS_DIR)/snap_cloud_merge.jou
 	@echo -e "[CLOUD MERGE ........] done  `date +"%T %a %b %d %Y"`"
 
 pslse: prepare_logs

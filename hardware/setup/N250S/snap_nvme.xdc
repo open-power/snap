@@ -1,7 +1,7 @@
 ############################################################################
 ############################################################################
 ##
-## Copyright 2017, International Business Machines
+## Copyright 2017,2018 International Business Machines
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@
 ############################################################################
 ############################################################################
 
-## 
+##
 set_false_path -from [get_pins nvme_reset_n_q*/C] -to [get_clocks pcie_clk?]
+set_false_path -from [get_pins nvme_reset_n_q*/C] -to [get_clocks a0/nvme_top_i/util_buf_gte_?/U0/IBUF_DS_ODIV2[0]]
 
 # ------------------------------
 # Pin Locations & I/O Standards
@@ -60,6 +61,3 @@ set_property IOSTANDARD LVCMOS33 [get_ports {m2_clkreq_n[*]}]
 set_property PULLUP true         [get_ports {m2_clkreq_n[*]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {m2_pewake_n[*]}]
 set_property PULLUP true         [get_ports {m2_pewake_n[*]}]
-
-
-
