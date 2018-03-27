@@ -1,6 +1,6 @@
 # SNAP Framework Hardware and Software
 
-## Overview
+# 1. Overview
 The SNAP Framework enables programmers and computer engineers to quickly create FPGA-based acceleration actions that work on server host data, as well as data from storage, flash, Ethernet, or other connected resources.  SNAP, therefore, is an acronym for “**S**torage, **N**etwork, and **A**nalytics **P**rogramming”.
 The SNAP framework makes it easy to create accelerated actions utilizing the IBM Coherent Accelerator Processor Interface (CAPI).
 ![snap_concept_diagram](/doc/snap_concept_diagram.png "SNAP")
@@ -24,59 +24,75 @@ Please see here for more details:
 Currently SNAP Framework supports CAPI1.0. The modules for CAPI2.0 and OpenCAPI are under developing. However, any user working on SNAP today can easily transfer their work to CAPI2.0 or OpenCAPI as the interface of "Software Program" and "Hardware Action" (shown in yellow area of the above figure) will keep same. 
 
 
-# Getting started
+# 2. Getting started
 
 Developing an FPGA accelerated application on SNAP takes following steps: 
-* Preparation: Decide the the software function to be moved to FPGA. This function, usually computation intensive, is named as "action" in the following description. Carefully read the Dependencies section. Choose an FPGA card. Install tools, download packages and set environmental variables.
+* Preparation: Decide the software function to be moved to FPGA. This function, usually computation intensive, is named as "action" in the following description. Carefully read the **Dependencies** in following section. Choose an FPGA card. Install tools, download packages and set environmental variables.
 
-* Step1. Split the original application to two parts: the "software main()" and "action". Determine the configurations/parameters for "action". Use libsnap APIs to reformat the "main()" function.
+* Step1. Split the original application into two parts: the "software main()" and "action". Determine the configurations/parameters for "action". Use libsnap APIs to reformat the "main()" function. The best way is to start from an existing example (/actions) and look at the code under "sw" directory for this step. 
 
-* Step2. Write "hardware action" either in Vivado HLS or Verilog/VHDL. For *HLS style*, developer code in C/C++, and take "gmem_din/gmem_dout", "ddr_mem" to operate the data in Host memory and local DDR memory, and takes "act_reg" to receive/update the parameter interface (which is actually the MMIO/AXI-lite interface in the above figure). For *HDL(Verilog/VHDL) style*, developer needs to write their own "action_wrapper.vhd" which includes several AXI master interfaces and one AXI-lite slave interface. The best way is to start from an existing example (/actions) and obverse how they work. You will see "hls_\*" and "hdl_\*" examples. After coding work, use PSLSE (PSL simulation engine) to simulate the full process of how "main()" invoking "hardware action" on an X86 machine. When the simulation is successful, it's time to generate the FPGA bitstream. Read [hardware README.md](hardware/README.md) for more details.
+* Step2. Write "hardware action" either in Vivado HLS or Verilog/VHDL. For **HLS style**, developers code in C/C++, and take "gmem_din/gmem_dout", "ddr_mem" to operate the data in Host memory and local DDR memory, and takes "act_reg" to receive/update the parameter interface (which is the MMIO/AXI-lite interface in the above figure). For **HDL(Verilog/VHDL) style**, developers need to write their own "action_wrapper.vhd" which includes several AXI master interfaces and one AXI-lite slave interface. You will see "hls_\*" and "hdl_\*" examples. After coding work, use PSLSE (PSL simulation engine) to simulate the full process of how "main()" invoking "hardware action" on an X86 machine. When the simulation is successful, it's time to generate the FPGA bitstream. Read [hardware README.md](hardware/README.md) for more details.
 
-* Step3. Flash the bitstream to Power machine and Run your "main()" from Power machine. This step is also called "deployment".
-Please see [Bitstream_flashing.md](hardware/doc/Bitstream_flashing.md) for instructions on how to update the FPGA bitstream.
-
-
-For a step-by-step help, please refer to the SNAP Workbooks in [doc] (doc/) directory.
+* Step3. Flash the bitstream to a **Power or OpenPower** machine and Run your "main()" from it. This step is also called **Deployment**.
+Please see [Bitstream_flashing.md](hardware/doc/Bitstream_flashing.md) for instructions on how to program the FPGA bitstream.
 
 
-# Dependencies
+For a step-by-step help, please refer to the SNAP Workbooks in "doc" directory. For example, the [QuickStart] (./doc/UG_CAPI_SNAP-QuickStart_on_a_General_Environment.pdf). And some other user guides are also there.
+
+
+# 3. Dependencies
+## FPGA Card selection
+As of now, three FPGA cards can be used with SNAP:
+* Alpha-Data ADM-PCIE-KU3 http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
+* Nallatech 250S-2T with two on-card NVMe M.2 960GB drives http://www.nallatech.com/250s
+* Semptian NSA121B http://www.semptian.com/index.php?_m=mod_product&_a=view&p_id=160
+
+## Development (Step1 & Step2)
+Development is usually done on a X86 machine with following tools and packages installed. This machine should be able to access WWW network.
+
+* Xilinx Vivado
+
+SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulation model and image build, SNAP requires the Xilinx Vivado 2017.4 tool suite.
+
+https://www.xilinx.com/products/design-tools/hardware-zone.html
+
+* PSL (CAPI module on FPGA)
+
+Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For the latest PSL checkpoint download, visit the CAPI section of the IBM Portal for OpenPOWER at https://www.ibm.com/systems/power/openpower  
+Download the required files under "PSL Checkpoint Files for the CAPI SNAP Design Kit" according to the selected FPGA card.
+
+* Build process
+
+Building the code and running the make environment requires the usual development tools `gcc, make, sed, awk`. If not installed already, the installer package `build-essential` will set up the most important tools.
+
+Configuring the SNAP framework via `make snap_config` will call a standalone tool that is based on kernel kconfig. This tool gets automatically cloned from https://github.com/guillon/kconfig
+
+In order to use the menu-driven user interface for kconfig the `ncurses` library must be installed.
+
+* Run Simulation
+
+For simulation, SNAP relies on the `xterm` program and on the PSL Simulation Environment (PSLSE) which is available on github (for more info see [PSLSE Setup](hardware/sim/README.md#pslse-setup)): 
+
+https://github.com/ibm-capi/pslse
+
+Simulating the NVMe host controller including flash storage devices requires licenses for the Cadence Incisive Simulator (IES) and DENALI Verification IP (PCIe and NVMe). Building images is possible without this.
+For more info see the [Simulation README](hardware/sim/README.md).
+
+## Deployment (Step3)
+Deployment is on a Power or OpenPower server. 
 
 This code uses libcxl to access the CAPI hardware. Install it with the package manager of your Linux distribution, e.g. 
 `sudo apt-get install libcxl-dev` for Ubuntu.  
 For more information, please see
 * https://github.com/ibm-capi/libcxl
 
-Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For the latest PSL checkpoint download, visit the CAPI section of the IBM Portal for OpenPOWER at
-* https://www.ibm.com/systems/power/openpower  
-Download the required files under "PSL Checkpoint Files for the CAPI SNAP Design Kit".
-
-SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulation model and image build, SNAP requires the Xilinx Vivado 2017.4 tool suite.
-* https://www.xilinx.com/products/design-tools/hardware-zone.html
-
-As of now, three FPGA cards can be used with SNAP:
-* Alpha-Data ADM-PCIE-KU3 http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
-* Nallatech 250S-2T with two on-card NVMe M.2 960GB drives http://www.nallatech.com/250s
-* Semptian NSA121B http://www.semptian.com/index.php?_m=mod_product&_a=view&p_id=160
-
-Building the code and running the make environment requires the usual development tools `gcc, make, sed, awk`. If not installed already, the installer package `build-essential` will set up the most important tools.
-
-Configuring the SNAP framework via `make snap_config` will call a standalone tool that is based on kernel kconfig. This tool gets automatically cloned from
-* https://github.com/guillon/kconfig
-
-In order to use the menu-driven user interface for kconfig the `ncurses` library must be installed.
-
 SNAP uses the generic tools to update CAPI card FPGA bitstreams from
 * https://github.com/ibm-capi/capi-utils
 
-For simulation, SNAP relies on the `xterm` program and on the PSL Simulation Environment (PSLSE) which is available on github (for more info see [PSLSE Setup](hardware/sim/README.md#pslse-setup)):
-* https://github.com/ibm-capi/pslse
 
-Simulating the NVMe host controller including flash storage devices requires licenses for the Cadence Incisive Simulator (IES) and DENALI Verification IP (PCIe and NVMe). Building images is possible without this.
-For more info see the [Simulation README](hardware/sim/README.md).
+# 4. Contributing
 
-# Contributing
-
+This is an open-source project, contribution and collaboration are warmly welcomed. 
 Before contributing to this project, please read and agree to the rules in
 * [CONTRIBUTING.md](CONTRIBUTING.md)
 
