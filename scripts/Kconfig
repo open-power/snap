@@ -39,7 +39,8 @@ choice
                 select CAPI10
                 select DISABLE_NVME
                 help
-                  AlphaData 8K5 has ethernet and 8GB DDR4 SDRAM. Uses Xilinx FPGA XCKU115.
+                  AlphaData 8K5 (rev2 + newer) has ethernet and 8GB DDR4 SDRAM (2400). 
+                  Uses Xilinx FPGA XCKU115.
 
 	config S121B
                 bool "Semptian NSA121B Card with Ethernet, 8GB DDR4 SDRAM and Xilinx KU115 FPGA"
