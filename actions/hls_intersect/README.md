@@ -1,3 +1,16 @@
+
+# Notice: 
+**This example often meets unsatisfied timing (> 200ps negtive slack) in bitstream generation. Running on FPGA hardware has passed for many times but it is NOT guaranteed.**
+
+**!!WARNING!!** 
+
+**Please don't use it as a testing example on FPGA hardware.**
+
+It stays here as a HLS coding example. It shows how to make two implementations for a single target. It also shows how to invoke the hardware action several times from C main() function. 
+
+
+=====================================================
+
 # How to build
 
 Intersection has two methods and are implemented in two Actions. 
