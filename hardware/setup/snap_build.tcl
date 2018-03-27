@@ -67,7 +67,7 @@ source $root_dir/setup/snap_synth_step.tcl
 
 ##
 ## locking PSL
-if { $vivadoVer != "2017.4" } {
+if { $vivadoVer < "2017.4" } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start locking PSL" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   lock_design -level routing b > $logs_dir/lock_design.log
 

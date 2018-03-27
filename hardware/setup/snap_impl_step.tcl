@@ -56,7 +56,7 @@ if { [catch "$command > $logfile" errMsg] } {
 
 ##
 ## Vivado 2017.4 has problems to place the SNAP core logic, if they can place inside the PSL
-if { $vivadoVer == "2017.4" } {
+if { $vivadoVer >= "2017.4" } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "reload opt_desing DCP" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   close_project                              >> $logfile
   open_checkpoint $dcp_dir/${step}.dcp  >> $logfile
@@ -72,7 +72,7 @@ if { $vivadoVer == "2017.4" } {
 ## placing design
 set step      place_design
 set logfile   $logs_dir/${step}.log
-if { $vivadoVer == "2017.4" } {
+if { $vivadoVer >= "2017.4" } {
   set directive Explore
 } else {
   set directive [get_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
@@ -97,7 +97,7 @@ if { [catch "$command > $logfile" errMsg] } {
 ## physical optimizing design
 set step      phys_opt_design
 set logfile   $logs_dir/${step}.log
-if { $vivadoVer == "2017.4" } {
+if { $vivadoVer >= "2017.4" } {
   set directive Explore
 } else {
   set directive [get_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
@@ -122,7 +122,7 @@ if { [catch "$command > $logfile" errMsg] } {
 ## routing design
 set step      route_design
 set logfile   $logs_dir/${step}.log
-if { $vivadoVer == "2017.4" } {
+if { $vivadoVer >= "2017.4" } {
   set directive Explore
 } else {
   set directive [get_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
@@ -147,7 +147,7 @@ if { [catch "$command > $logfile" errMsg] } {
 ## physical optimizing routed design
 set step      opt_routed_design
 set logfile   $logs_dir/${step}.log
-if { $vivadoVer == "2017.4" } {
+if { $vivadoVer >= "2017.4" } {
   set directive Explore
 } else {
   set directive [get_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
