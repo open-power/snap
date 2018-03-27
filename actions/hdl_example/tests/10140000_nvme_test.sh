@@ -95,6 +95,9 @@ case $rev in
 	echo "$rev -> Skip $PROGRAM on AlphaData KU3 Card"
 	exit 0
 	;;
+"0x0607" )
+        echo "$rev -> Testing Semptian NSA121B Card"
+        ;;
 "0x0608" )
 	echo "$rev -> Skip $PROGRAM on AlphaData 8K5 Card"
 	exit 0
@@ -102,13 +105,13 @@ case $rev in
 "0x060A" )
 	echo "$rev -> Testing Nallatech 250S Card"
 	;;
-"0x04dd" )
+"0x04DD" )
 	echo "$rev -> SKIP Testing Nallatech 250SP Card"
 	exit 0    # FIXME: Can be removed after 250SP does have NVME support
 	;;
 *)
 	echo "Capi Card $snap_card does have subsystem_device: $rev"
-	echo "I Expect to have 0x605 0x608 0x4dd or 0x60a, Check if -C $snap_card was"
+	echo "I Expect to have 0x605 0x607 0x608 0x4DD or 0x60A, Check if -C $snap_card was"
 	echo " move to other CAPI id and use other -C option !"
 	exit 1
 esac;
