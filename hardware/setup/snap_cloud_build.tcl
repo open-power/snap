@@ -154,10 +154,10 @@ if { $cloud_run == "BASE" } {
 
 
   if { $cloud_build_bitfile == "TRUE" } {
-  ##
-  ## writing bitstream
-  source $root_dir/setup/snap_bitstream_step.tcl
-
+    ##
+    ## writing bitstream
+    source $root_dir/setup/snap_bitstream_step.tcl
+  }  
 }
 
 ##

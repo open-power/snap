@@ -16,6 +16,7 @@
 #
 #-----------------------------------------------------------
 
+set root_dir              $::env(SNAP_HARDWARE_ROOT)
 set log_dir               $::env(LOGS_DIR)
 set logfile               $log_dir/snap_cloud_merge.log
 set fpga_part             $::env(FPGACHIP)
