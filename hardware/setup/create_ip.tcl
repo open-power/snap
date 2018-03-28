@@ -211,13 +211,13 @@ export_simulation -of_objects [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] -dir
 # SDRAM_USED=TRUE   4GB Nallatech 250S/250SP DDR4 RAM
 # SDRAM_USED=TRUE   8GB Semptian NSA121B DDR4 RAM
 # SDRAM_USED=TRUE   8GB AlphaData 8K5 DDR4 RAM
-set create_clock_conv  FALSE
-set create_interconect FALSE
-set create_bram        FALSE
-set create_ddr3        FALSE
-set create_ddr4        FALSE
-set create_ddr4_s121b  FALSE
-set create_ddr4_ad8k5  FALSE
+set create_clock_conv   FALSE
+set create_interconnect FALSE
+set create_bram         FALSE
+set create_ddr3         FALSE
+set create_ddr4         FALSE
+set create_ddr4_s121b   FALSE
+set create_ddr4_ad8k5   FALSE
 
 if { $fpga_card == "ADKU3" } {
   if { $bram_used == "TRUE" } {
@@ -246,14 +246,14 @@ if { $fpga_card == "ADKU3" } {
 } elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } { 
   if { $bram_used == "TRUE" } {
     if { $nvme_used == "TRUE" } {
-      set create_interconect  TRUE
+      set create_interconnect  TRUE
     } else {
       set create_clock_conv   TRUE
     }
     set create_bram        TRUE
   } elseif { $sdram_used == "TRUE" } {
     if { $nvme_used == "TRUE" } {
-      set create_interconect  TRUE
+      set create_interconnect  TRUE
     } else {
       set create_clock_conv   TRUE
     }
@@ -278,9 +278,9 @@ if { $create_clock_conv == "TRUE" } {
   export_simulation    -of_objects             [get_files $ip_dir/axi_clock_converter/axi_clock_converter.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 }
 
-#create axi interconect
-if { $create_interconect == "TRUE" } {
-  puts "                        generating IP axi_interconect"
+#create axi interconnect
+if { $create_interconnect == "TRUE" } {
+  puts "                        generating IP axi_interconnect"
   create_ip -name axi_interconnect -vendor xilinx.com -library ip -version 1.7 -module_name axi_interconnect -dir $ip_dir  >> $log_file
   set_property -dict [list                                  \
                       CONFIG.NUM_SLAVE_PORTS {2}            \
