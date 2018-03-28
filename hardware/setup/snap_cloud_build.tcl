@@ -27,22 +27,18 @@ set cloud_run         $::env(CLOUD_RUN)
 set remove_tmp_files  "FALSE"
 set vivadoVer         [version -short]
 
-#checkpoint_dir
+#Checkpoint directory
 if { [info exists ::env(DCP_ROOT)] == 1 } {
     set dcp_dir $::env(DCP_ROOT)
 } else {
     puts "                        Error: For cloud builds the environment variable DCP_ROOT needs to point to a path for input and output design checkpoints."
     exit 42
 }
-set ::env(DCP_ROOT) $dcp_dir
+set ::env(DCP_DIR) $dcp_dir
 
-#timing_lablimit
-if { [info exists ::env(TIMING_LABLIMIT)] == 1 } {
-  set timing_lablimit [string toupper $::env(TIMING_LABLIMIT)]
-} else {
-  set timing_lablimit "-250"
-}
-set ::env(TIMING_LABLIMIT) $timing_lablimit
+#Report directory
+set rpt_dir        $root_dir/build/Reports
+set ::env(RPT_DIR) $rpt_dir
 
 if { [info exists ::env(CLOUD_BUILD_BITFILE)] == 1 } {
   set cloud_build_bitfile [string toupper $::env(CLOUD_BUILD_BITFILE)]
@@ -64,7 +60,7 @@ set ::env(WIDTHCOL4) $widthCol4
 ##
 ## open snap project
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "open framework project" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-open_project ../viv_project/framework.xpr >> $logfile
+open_project $root_dir/viv_project/framework.xpr >> $logfile
 
 ##
 ## switch and setup SNAP project for PR Flow
@@ -128,8 +124,8 @@ if { ($cloud_run == "ACTION") || ($cloud_run == "BASE") } {
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
     exit 42
   }
-  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper.dcp                       $dcp_dir/user_action_synth.dcp
-  file copy -force ../viv_project/framework.runs/user_action_synth_1/action_wrapper_utilization_synth.rpt     ./Reports/user_action_utilization_synth.rpt
+  file copy -force $root_dir/viv_project/framework.runs/user_action_synth_1/action_wrapper.dcp                       $dcp_dir/user_action_synth.dcp
+  file copy -force $root_dir/viv_project/framework.runs/user_action_synth_1/action_wrapper_utilization_synth.rpt     $rpt_dir/user_action_utilization_synth.rpt
 }
 
 ##
@@ -142,7 +138,8 @@ if { $cloud_run == "BASE" } {
 
 
   ##
-  ## run implementation
+  ## run implementation in the cloud base flow
+  set ::env(IMPL_FLOW) CLOUD_BASE
   source $root_dir/setup/snap_impl_step.tcl
 
 
@@ -158,45 +155,21 @@ if { $cloud_run == "BASE" } {
 
   if { $cloud_build_bitfile == "TRUE" } {
   ##
-  ## generating bitstream name
-    set IMAGE_NAME [exec cat ../.bitstream_name.txt]
-    append IMAGE_NAME [expr {$nvme_used == "TRUE" ? "_NVME" : ""}]
-    if { $bram_used == "TRUE" } {
-      set RAM_TYPE BRAM
-    } elseif { $sdram_used == "TRUE" } {
-      set RAM_TYPE SDRAM
-    } else {
-      set RAM_TYPE noSDRAM
-    }
-    append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $TIMING_WNS]
+  ## writing bitstream
+  source $root_dir/setup/snap_bitstream_step.tcl
 
-    ##
-    ### writing bitstream
-    set step write_bitstream
-    set logfile $logs_dir/${step}.log
-    set command "write_bitstream -force -file ./Images/$IMAGE_NAME"
-    puts [format "%-*s%-*s%-*s%-*s" $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-
-    if { [catch "$command > $logfile" errMsg] } {
-      puts [format "%-*s%-*s%-*s%-*s" $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: write_bitstream failed" $widthCol4 "" ]
-      puts [format "%-*s%-*s%-*s%-*s" $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
-      exit 42
-    } else {
-      write_cfgmem -format bin -loadbit "up 0x0 ./Images/$IMAGE_NAME.bit" -file ./Images/$IMAGE_NAME -size 128 -interface BPIx16 -force >> $logfile
-    }
-  }
 }
 
 ##
 ## removing unnecessary files
 if { $remove_tmp_files == "TRUE" } {
   puts [format "%-*s%-*s%-*s%-*s" $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-  exec rm -rf $dcp_dir/framework_synth.dcp
-  exec rm -rf $dcp_dir/framework_opt.dcp
-  exec rm -rf $dcp_dir/framework_physopt.dcp
-  exec rm -rf $dcp_dir/framework_placed.dcp
-  exec rm -rf $dcp_dir/framework_routed.dcp
-  exec rm -rf $dcp_dir/user_action_routed.dcp
+  exec rm -rf $dcp_dir/synth_desing.dcp
+  exec rm -rf $dcp_dir/opt_design.dcp
+  exec rm -rf $dcp_dir/place_design.dcp
+  exec rm -rf $dcp_dir/phys_opt_design.dcp
+  exec rm -rf $dcp_dir/route_design_routed.dcp
+  exec rm -rf $dcp_dir/opt_routed_design.dcp
 }
 
 close_project  >> $logfile
