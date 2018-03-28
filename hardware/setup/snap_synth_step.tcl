@@ -18,8 +18,8 @@
 
 set root_dir      $::env(SNAP_HARDWARE_ROOT)
 set logs_dir      $::env(LOGS_DIR)
-set rpt_dir       $root_dir/hardware/build/Reports
-set dcp_dir       $::env(DCP_ROOT)
+set dcp_dir       $::env(DCP_DIR)
+set rpt_dir       $::env(RPT_DIR)
 
 #Define widths of each column
 set widthCol1 $::env(WIDTHCOL1)
