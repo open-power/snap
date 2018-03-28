@@ -25,12 +25,17 @@ PATH=$snapdir:$PATH
 snap_env_sh=$snapdir/snap_env.sh
 
 unset PSL_DCP
+unset PSL_IP
+unset HDK_ROOT
 unset ACTION_ROOT
 unset PSLSE_ROOT
+unset TIMING_LABLIMIT
 unset ILA_SETUP_FILE
 unset DCP_ROOT
 unset config_script
 unset snap_env_info
+
+TIMING_LABLIMIT_DEFAULT="-200"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -250,6 +255,18 @@ while [ -z "$SETUP_DONE" ]; do
       SETUP_EMPTY="$SETUP_EMPTY\n  DCP_ROOT"
     fi
   fi
+
+
+  ####### checking TIMNG LIMITS setup
+  if [ -z "$TIMING_LABLIMIT" ]; then
+    $TIMING_LABLIMIT="$TIMING_LABLIMIT_DEFAULT"
+    sed -i '/export[ ^]*TIMING_LABLIMIT[ ^]*=/ d' $snap_env_sh
+    echo "export TIMING_LABLIMIT=\"$TIMING_LABLIMIT_DEFAULT\"" >> $snap_env_sh
+    SETUP_INFO="$SETUP_INFO\n### INFO ### Timing limit for FPGA image build got set to default value $TIMING_LABLIMIT_DEFAULT"
+  fi
+    SETUP_INFO="$SETUP_INFO\n### INFO ### Support for the selected CAPI2.0 FPGA card N250SP is currently in preparation phase."
+  echo "=====Timing limit for FPGA image build in ps============"
+  echo "TIMING_LABLIMIT         is set to: \"$TIMING_LABLIMIT\""
 
 
   ####### Cadence simulation setup:
