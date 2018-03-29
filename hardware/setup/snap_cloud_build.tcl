@@ -40,6 +40,10 @@ set ::env(DCP_DIR) $dcp_dir
 set rpt_dir        $root_dir/build/Reports
 set ::env(RPT_DIR) $rpt_dir
 
+#Images directory
+set img_dir $root_dir/build/Images
+set ::env(IMG_DIR) $img_dir
+
 if { [info exists ::env(CLOUD_BUILD_BITFILE)] == 1 } {
   set cloud_build_bitfile [string toupper $::env(CLOUD_BUILD_BITFILE)]
 } else {
@@ -114,11 +118,10 @@ if { ([get_property pr_flow [current_project]] != 1) } {
 ##
 ## ACTION run
 if { ($cloud_run == "ACTION") || ($cloud_run == "BASE") } {
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3 "" $widthCol4  "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   reset_run    user_action_synth_1 >> $logfile
   launch_runs  user_action_synth_1 >> $logfile
   wait_on_run  user_action_synth_1 >> $logfile
-
+ 
   if {[get_property PROGRESS [get_runs user_action_synth_1]] != "100%"} {
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: action synthesis failed" $widthCol4 "" ]
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
