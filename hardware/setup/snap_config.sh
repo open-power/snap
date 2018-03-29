@@ -20,6 +20,8 @@
 ############################################################################
 set -e
 
+DMA_XFER_SIZE="x\"0\""
+DMA_ALIGNMENT="x\"6\""
 SDRAM_SIZE="x\"0000\""
 if [ "$FPGACARD" == "ADKU3" ]; then
   CARD_TYPE="x\"00\""
@@ -44,6 +46,8 @@ else
 fi
 
 if [ "$FPGACARD" == "N250SP" ]; then
+  DMA_XFER_SIZE="x\"7\""
+  DMA_ALIGNMENT="x\"7\""
   CARD_TYPE="x\"10\""
 fi
 if [ "${BRAM_USED^^}" == "TRUE" ]; then
@@ -55,5 +59,7 @@ NAME=`basename $1`
 echo -e "                        configuring $NAME"
 
 sed -i 's/CONSTANT[ ^I]*NUM_OF_ACTIONS[ ^I]*:[ ^I]*integer.*;/CONSTANT NUM_OF_ACTIONS                  : integer RANGE 0 TO 16         := '$NUM_OF_ACTIONS';             /' $1
-sed -i 's/CONSTANT[ ^I]*SDRAM_SIZE[ ^I]*:[ ^I]std_logic_vector(15 DOWNTO 0).*;/CONSTANT SDRAM_SIZE                      : std_logic_vector(15 DOWNTO 0) := '$SDRAM_SIZE';               /' $1
-sed -i 's/CONSTANT[ ^I]*CARD_TYPE[ ^I]*:[ ^I]std_logic_vector(7 DOWNTO 0).*;/CONSTANT CARD_TYPE                       : std_logic_vector(7 DOWNTO 0)  := '$CARD_TYPE';                /' $1
+sed -i 's/CONSTANT[ ^I]*DMA_XFER_SIZE[ ^I]*:[ ^I]std_logic_vector(3 DOWNTO 0).*;/CONSTANT DMA_XFER_SIZE                   : std_logic_vector(3 DOWNTO 0)  := '$DMA_XFER_SIZE';          /' $1
+sed -i 's/CONSTANT[ ^I]*DMA_ALIGNMENT[ ^I]*:[ ^I]std_logic_vector(3 DOWNTO 0).*;/CONSTANT DMA_ALIGNMENT                   : std_logic_vector(3 DOWNTO 0)  := '$DMA_ALIGNMENT';          /' $1
+sed -i 's/CONSTANT[ ^I]*SDRAM_SIZE[ ^I]*:[ ^I]std_logic_vector(15 DOWNTO 0).*;/CONSTANT SDRAM_SIZE                      : std_logic_vector(15 DOWNTO 0) := '$SDRAM_SIZE';       /' $1
+sed -i 's/CONSTANT[ ^I]*CARD_TYPE[ ^I]*:[ ^I]std_logic_vector(7 DOWNTO 0).*;/CONSTANT CARD_TYPE                       : std_logic_vector(7 DOWNTO 0)  := '$CARD_TYPE';         /' $1
