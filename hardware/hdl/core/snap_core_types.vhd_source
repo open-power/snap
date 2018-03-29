@@ -41,6 +41,8 @@ PACKAGE snap_core_types IS
   CONSTANT IMP_VERSION_DAT                 : std_logic_vector(63 DOWNTO 0);  -- Implementation version
   CONSTANT BUILD_DATE_DAT                  : std_logic_vector(63 DOWNTO 0);  -- Build date
   CONSTANT NUM_OF_ACTIONS                  : integer RANGE 0 TO 16;          -- Number of implemented actions
+  CONSTANT DMA_XFER_SIZE                   : std_logic_vector(3 DOWNTO 0);   -- Minimum Size for DMA transfers to/from Host. Value s => minimum size is 2^s bytes.
+  CONSTANT DMA_ALIGNMENT                   : std_logic_vector(3 DOWNTO 0);   -- Data alignment for transfers to/from Host. Value a => 2^a bytes alignment
   CONSTANT SDRAM_SIZE                      : std_logic_vector(15 DOWNTO 0);  -- Size of attached on-card SDRAM in MB
   CONSTANT CARD_TYPE                       : std_logic_vector(7 DOWNTO 0);   -- Card type - currently specified:
                                                                              --             0x00 AlphaData KU3
@@ -331,6 +333,10 @@ PACKAGE snap_core_types IS
   CONSTANT SNAP_NVME_RESET            : integer :=  4;     -- SNAP_RESET_REG
   CONSTANT SNAP_NVME_PERST_L          : integer :=  3;     -- SNAP_RESET_REG
   CONSTANT SNAP_NVME_PERST_R          : integer :=  0;     -- SNAP_RESET_REG
+  CONSTANT SNAP_CAP_DMA_XFER_SIZE_L   : integer := 39;     -- SNAP_CAPABILITY_REG
+  CONSTANT SNAP_CAP_DMA_XFER_SIZE_R   : integer := 36;     -- SNAP_CAPABILITY_REG
+  CONSTANT SNAP_CAP_DMA_ALIGNMENT_L   : integer := 35;     -- SNAP_CAPABILITY_REG
+  CONSTANT SNAP_CAP_DMA_ALIGNMENT_R   : integer := 32;     -- SNAP_CAPABILITY_REG
   CONSTANT SNAP_CAP_SDRAM_SIZE_L      : integer := 31;     -- SNAP_CAPABILITY_REG
   CONSTANT SNAP_CAP_SDRAM_SIZE_R      : integer := 16;     -- SNAP_CAPABILITY_REG
   CONSTANT SNAP_CAP_NVME_ENABLED      : integer :=  8;     -- SNAP_CAPABILITY_REG

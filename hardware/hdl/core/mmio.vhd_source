@@ -988,10 +988,12 @@ BEGIN
         snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_ACTION_ID_L DOWNTO SNAP_STAT_MAX_ACTION_ID_R) <= std_logic_vector(to_unsigned(NUM_OF_ACTIONS-1, ACTION_BITS));
         snap_regs_par_q(SNAP_STATUS_REG) <= parity_gen_odd(std_logic_vector(to_unsigned(NUM_OF_ACTIONS-1, ACTION_BITS)));
 
-        snap_regs_q(SNAP_CAPABILITY_REG)(SNAP_CAP_SDRAM_SIZE_L DOWNTO SNAP_CAP_SDRAM_SIZE_R) <= SDRAM_SIZE;
-        snap_regs_q(SNAP_CAPABILITY_REG)(SNAP_CAP_NVME_ENABLED)                              <= NVME_ENABLED;
-        snap_regs_q(SNAP_CAPABILITY_REG)(SNAP_CAP_CARD_TYPE_L DOWNTO SNAP_CAP_CARD_TYPE_R)   <= CARD_TYPE;
-        snap_regs_par_q(SNAP_CAPABILITY_REG)                                                 <= parity_gen_odd(SDRAM_SIZE & NVME_ENABLED & CARD_TYPE);
+        snap_regs_q(SNAP_CAPABILITY_REG)(SNAP_CAP_DMA_XFER_SIZE_L DOWNTO SNAP_CAP_DMA_XFER_SIZE_R) <= DMA_XFER_SIZE;
+        snap_regs_q(SNAP_CAPABILITY_REG)(SNAP_CAP_DMA_ALIGNMENT_L DOWNTO SNAP_CAP_DMA_ALIGNMENT_R) <= DMA_ALIGNMENT;
+        snap_regs_q(SNAP_CAPABILITY_REG)(SNAP_CAP_SDRAM_SIZE_L DOWNTO SNAP_CAP_SDRAM_SIZE_R)       <= SDRAM_SIZE;
+        snap_regs_q(SNAP_CAPABILITY_REG)(SNAP_CAP_NVME_ENABLED)                                    <= NVME_ENABLED;
+        snap_regs_q(SNAP_CAPABILITY_REG)(SNAP_CAP_CARD_TYPE_L DOWNTO SNAP_CAP_CARD_TYPE_R)         <= CARD_TYPE;
+        snap_regs_par_q(SNAP_CAPABILITY_REG)                                                       <= parity_gen_odd(DMA_XFER_SIZE & DMA_ALIGNMENT & SDRAM_SIZE & NVME_ENABLED & CARD_TYPE);
 
         snap_lock_write_val_q            <= '0';
 
