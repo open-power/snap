@@ -48,6 +48,10 @@ set ::env(DCP_DIR) $dcp_dir
 set rpt_dir        $root_dir/build/Reports
 set ::env(RPT_DIR) $rpt_dir
 
+#Images directory
+set img_dir $root_dir/build/Images
+set ::env(IMG_DIR) $img_dir
+
 if { [info exists ::env(CLOUD_BUILD_BITFILE)] == 1 } {
   set cloud_build_bitfile [string toupper $::env(CLOUD_BUILD_BITFILE)]
 } else {

@@ -77,16 +77,15 @@ if { [catch "$command > $logfile" errMsg] } {
   exit 42
 } else {
   write_checkpoint   -force $dcp_dir/${step}.dcp          >> $logfile
-  report_utilization -file  ${rpt_dir_prefix}_${step}_utilization.rpt -quiet
+  report_utilization -file  ${rpt_dir}_${step}_utilization.rpt -quiet
 }
 
 ##
 ## Vivado 2017.4 has problems to place the SNAP core logic, if they can place inside the PSL
-if { $vivadoVer >= "2017.4" } {
+if { ($vivadoVer >= "2017.4") && ($cloud_flow == "FALSE") } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "reload opt_design DCP" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   close_project                         >> $logfile
   open_checkpoint $dcp_dir/${step}.dcp  >> $logfile
-
 
   if { $fpgacard != "N250SP" } {
     puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
