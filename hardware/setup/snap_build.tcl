@@ -33,7 +33,7 @@ set ::env(DCP_DIR) $dcp_dir
 set rpt_dir        $root_dir/build/Reports
 set ::env(RPT_DIR) $rpt_dir
 
-#Images directory
+#Image directory
 set img_dir $root_dir/build/Images
 set ::env(IMG_DIR) $img_dir
 
@@ -101,6 +101,7 @@ if { $ila_debug == "TRUE" } {
 
 ##
 ## removing unnecessary files
+set remove_tmp_files  $::env(REMOVE_TMP_FILES)
 if { $remove_tmp_files == "TRUE" } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   exec rm -rf $dcp_dir/synth.dcp
@@ -109,6 +110,7 @@ if { $remove_tmp_files == "TRUE" } {
   exec rm -rf $dcp_dir/phys_opt_design.dcp
   exec rm -rf $dcp_dir/route_design.dcp
   exec rm -rf .Xil
+  exec rm -rf .cache
 }
 
 close_project >> $logfile
