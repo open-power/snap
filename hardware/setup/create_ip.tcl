@@ -49,7 +49,7 @@ set_property target_simulator IES [current_project]
 
 #create PSL/HDK IP for N250SP
 if { ($fpga_card == "N250SP") && ($psl_ip_dir != "not defined") } {
-  source $fpga_card/create_ip.tcl
+  source $root_dir/setup/$fpga_card/create_ip.tcl
 }
 
 #create DMA Input RAM
