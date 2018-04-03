@@ -2,7 +2,7 @@
 
 The SNAP NVMe blocklayer provides a shared library which is compatible to the IBM CapiFLASH block API (https://github.com/open-power/capiflash). The SNAP version does not implement the entire API, but instead just the bare minimum: cblk_open, cblk_close, cblk_read, cblk_write and cblk_get_lun_size. Currently just one of the NVMe devices is supported.
 
-We created this library to explore potential performance improvements by doing transparent LBA prefetching. To get this working a small cache layer was added and, at this point in time, three pre-fetching strategies were added: UP, DOWN, UPDOWN. Also it is possible to set the number of LBAs per pre-fetch request and a threshold used to supress pre-fetching if the traffic on the NVMe device should be too high, such that pre-fetching would have negetive influence on the achievable performance of the solution.
+We created this library to explore potential performance improvements by doing transparent LBA prefetching. To get this working a small cache layer was added and, at this point in time, three pre-fetching strategies were added: UP, DOWN, UPDOWN. Also it is possible to set the number of LBAs per pre-fetch request and a threshold used to suppress pre-fetching if the traffic on the NVMe device should be too high, such that pre-fetching would have negative influence on the achievable performance of the solution.
 
 # NVMe Hardware Action
 
