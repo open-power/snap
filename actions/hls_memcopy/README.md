@@ -7,4 +7,4 @@
   * Block RAM memory (memory inside the FPGA itself)
 * Example routine details the copy mecanism.
 
-Detailed information can be found in the actions/hls_memcopy/doc directory
+Detailed information can be found in the [actions/hls_memcopy/doc](./doc) directory

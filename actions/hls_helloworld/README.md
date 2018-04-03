@@ -7,4 +7,4 @@
   * code can then run in hardware when FPGA is programmed (will transform all char in upper case in hardware)
 * Example routine uses the copy mecanism to get/put the file from/to system host memory to/from DDR FPGA attached memory
 
-Detailed information can be found in the actions/hls_helloworld/doc directory
+Detailed information can be found in the [actions/hls_helloworld/doc](./doc) directory
