@@ -210,9 +210,9 @@ static void usage(const char *prog)
 		"    -C, --card <cardno>  use this card for operation\n"
 		"    -V, --version\n"
 		"    -q, --quiet          quiece output\n"
-		"    -t, --timeout        timeout in sec (default=1 sec)\n"
+		"    -t, --timeout        timeout in sec (default 1 sec)\n"
 		"    -i, --iter           Number of Iterations (default 1)\n"
-		"    -H, --host           Set Host Memory (defualt)\n"
+		"    -H, --host           Set Host Memory (default)\n"
 		"    -F, --fpga           Set FPGA Memory\n"
 		"    -s, --size           Size to fill (default %d)\n"
 		"    -b, --begin          Byte offset to begin set (default 0)\n"
@@ -243,6 +243,7 @@ int main(int argc, char *argv[])
 	snap_action_flag_t attach_flags = 0;
 	unsigned long ram_in_mb = 0;
 	unsigned long card_type = 0;
+	int min_size = 0;
 
 	while (1) {
                 int option_index = 0;
@@ -295,7 +296,7 @@ int main(int argc, char *argv[])
 		case 's':	/* size */
 			size = strtol(optarg, (char **)NULL, 0);
 			if ((errno == ERANGE && (size == LONG_MAX || size == LONG_MIN))
-                   || (errno != 0 && size == 0)) {
+                            || (errno != 0 && size == 0)) {
 				PRINTF0("Error errno %d\n", errno);
 				exit(1);
 			}
@@ -338,7 +339,7 @@ int main(int argc, char *argv[])
 	/* Check if SDRAM on Card */
         snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&ram_in_mb);
 	if (0 == ram_in_mb) {
-		PRINTF0("No SNAP SDRAM in Card: %s\n", device);
+		PRINTF0("No SNAP SDRAM on SNAP Card: %d\n", card_no);
 		rc = ENODEV;      /* Exit BAD */
 		goto __exit1;
 	}
@@ -350,13 +351,29 @@ int main(int argc, char *argv[])
 		}
 		/* Note: Buffer must be 128 bytes aligned on N250SP Card for CAPI 2.0 */
 		snap_card_ioctl(dn, GET_CARD_TYPE, (unsigned long)&card_type);
-		if (N250SP_CARD == card_type) {
-			h_begin = (int)(begin & 0x7f) + 128;  /* Set begin to + 128 bytes */
-			h_mem_size = (h_begin + size + 128);  /* And reserve 128 bytes at end */
-		} else {
-			h_begin = (int)(begin & 0xF) + 16;   /* Set begin to + 16 bytes */
-			h_mem_size = (h_begin + size + 16);  /* And reserve 16 bytes at end */
+		if (N250SP_CARD == card_type)
+			min_size = 128;
+		else    min_size = 1;
+		/* Check begin */
+		if (0 != (begin & (min_size -1))) {
+			PRINTF0("ERROR: Invalid Input Parameter for --begin or -b\n");
+			PRINTF0("       Your Card (ID =%d) supports only %d Steps for --size or -s\n",
+				(int)card_type, min_size);
+			goto __exit1;
 		}
+		/* Check size */
+		if (0 != (size & (min_size -1))) {
+			PRINTF0("ERROR: Invalid Input Parameter for --size or -s\n");
+			PRINTF0("       Your Card (ID =%d) supports only %d Steps for --size or -s\n",
+				(int)card_type, min_size);
+			goto __exit1;
+		}
+		/* Adjust begin, leave 128 bytes free space at the begining */
+		h_begin = 128 + begin;
+		/* Add size and reserve 128 bytes at end */
+		h_mem_size = h_begin + size + 128;
+		/* Round Buffer up to full 128 Bytes */
+		h_mem_size += 128 - (size+begin) % 128;
 
 		/* Allocate Host Buffer */
 		if (posix_memalign((void **)&hb, 4096, h_mem_size) != 0) {
@@ -367,9 +384,14 @@ int main(int argc, char *argv[])
 			hb, h_mem_size, h_begin);
 	}
 
-	PRINTF1("Fill %ld Bytes from %lld to %lld with Pattern: 0x%02x FPGA RAM: %d MB\n",
-		size, (long long)begin, (long long)begin+size-1,
-		pattern, (int)ram_in_mb);
+	if (ACTION_CONFIG_MEMSET_H == func)
+		PRINTF1("Fill %ld Bytes in Host from %lld to %lld with Pattern: 0x%02x\n",
+			size, (long long)begin, (long long)begin+size-1,
+			pattern);
+	else
+		PRINTF1("Fill %ld Bytes in FPGA from %lld to %lld with Pattern: 0x%02x FPGA RAM: %d MB\n",
+			size, (long long)begin, (long long)begin+size-1,
+			pattern, (int)ram_in_mb);
 
 	for (i = 0; i < iter; i++) {
 		struct snap_action *act;

@@ -222,6 +222,18 @@ static void action_memcpy(struct snap_card* h,
 	return;
 }
 
+static int memcmp2(uint8_t *src, uint8_t *dest, int len)
+{
+	int i;
+
+	for (i = 0; i < len; i++) {
+		if (*src != *dest)
+			return i;
+		src++; dest++;
+	}
+	return 0;
+}
+
 static int do_action(struct snap_card *h,
 			snap_action_flag_t flags,
 			int action,
@@ -272,21 +284,6 @@ static int memcpy_test(struct snap_card* dnc,
 	unsigned long ddr_mem_size;
 
 	rc = 0;
-	/* align can be 64 .. 4096 */
-	if (align < 64) {
-		VERBOSE0("align: %d must be 64 or higher\n", align);
-		return 1;
-	}
-	if ((align & 0x3f) != 0) {
-		VERBOSE0("align: %d must be a multible of 64\n", align);
-		return 1;
-	}
-	if (align > DEFAULT_MEMCPY_BLOCK) {
-		VERBOSE0("align: %d is to much for me. Max: %d\n",
-			align, DEFAULT_MEMCPY_BLOCK);
-		return 1;
-	}
-
 	/* Number of 64 Bytes Blocks */
 	blocks = (blocks_4k * 64) + blocks_64;
 	/* Number of bytes */
@@ -339,7 +336,7 @@ static int memcpy_test(struct snap_card* dnc,
 		rc = do_action(dnc, attach_flags, action, timeout, dest, src, memsize);
 		if (0 == rc) {
 			VERBOSE1("  Compare: %p <-> %p\n", src, dest);
-			rc = memcmp(src, dest, memsize);
+			rc = memcmp2(src, dest, memsize);
 			if ((verbose_level > 1) || rc) {
 				VERBOSE0("---------- src Buffer: %p\n", src);
 				__hexdump(stdout, src, memsize);
@@ -347,7 +344,7 @@ static int memcpy_test(struct snap_card* dnc,
 				__hexdump(stdout, dest, memsize);
 			}
 			if (rc)
-				VERBOSE0("Error Memcmp failed rc: %d\n", rc);
+				VERBOSE0("Error Memcmp failed at 0x%x\n", rc);
 		}
 		free_mem(f_src);
 		free_mem(f_dest);
@@ -578,6 +575,16 @@ int main(int argc, char *argv[])
 			break;
 		case 'A':	/* align */
 			memcpy_align = strtol(optarg, (char **)NULL, 0);
+			if (0 != (memcpy_align & 0x3f)) {
+				VERBOSE0("ERROR: align %d must be a multible of 64\n",
+					memcpy_align);
+				exit(1);
+			}
+			if (memcpy_align > DEFAULT_MEMCPY_BLOCK) {
+				VERBOSE0("ERROR: align %d is to high. Max: %d\n",
+					memcpy_align, DEFAULT_MEMCPY_BLOCK);
+				exit(1);
+			}
 			break;
 		case 'D':	/* dest */
 			card_ram_base = strtol(optarg, (char **)NULL, 0);
@@ -624,7 +631,22 @@ int main(int argc, char *argv[])
 		case S121B_CARD:  VERBOSE1("S121B"); break;
 		case AD8K5_CARD:  VERBOSE1("AD8K5"); break;
 		case N250S_CARD:  VERBOSE1("N250S"); break;
-		case N250SP_CARD: VERBOSE1("N250SP"); break;
+		case N250SP_CARD:
+			/* N250SP can only handle 128 Byte Alignment and N*128 Bytes Size */
+			VERBOSE1("N250SP");
+			if (0 != (memcpy_align & 0x7F)) {
+				VERBOSE0("\nERROR: Can only handle 128 Byte alignment.\n");
+				VERBOSE0("       Adjust --align or -A to 128 or more\n");
+				rc = 100;
+				goto __exit1;
+			}
+			if (num_64 & 1) {
+				VERBOSE0("\nERROR: Can only handle even 64 Byte Blocks.\n");
+				VERBOSE0("       Adjust --size64 or -B\n");
+				rc = 100;
+				goto __exit1;
+			}
+			break;
 		default: VERBOSE1("Unknown"); break;
 	}
 	snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&ioctl_data);
