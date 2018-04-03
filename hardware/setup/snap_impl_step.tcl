@@ -18,7 +18,6 @@
 ############################################################################
 ############################################################################
 
-set root_dir        $::env(SNAP_HARDWARE_ROOT)
 set logs_dir        $::env(LOGS_DIR)
 set rpt_dir         $::env(RPT_DIR)
 set dcp_dir         $::env(DCP_DIR)
@@ -213,9 +212,10 @@ set TIMING_WNS [exec grep -A6 "Design Timing Summary" ${rpt_dir_prefix}timing_su
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "Timing (WNS)" $widthCol3 "$TIMING_WNS ps" $widthCol4 "" ]
 if { [expr $TIMING_WNS >= 0 ] } {
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "TIMING OK" $widthCol4 "" ]
-    set remove_tmp_files TRUE
+    set ::env(REMOVE_TMP_FILES) TRUE
 } elseif { [expr $TIMING_WNS < $timing_lablimit ] && ( $ila_debug != "TRUE" ) } {
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: TIMING FAILED" $widthCol4 "" ]
+    set ::env(REMOVE_TMP_FILES) FALSE
     exit 42
 } else {
     if { $ila_debug == "TRUE" } {
@@ -223,7 +223,7 @@ if { [expr $TIMING_WNS >= 0 ] } {
     } else {
         puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "WARNING: TIMING FAILED, but may be OK for lab use" $widthCol4 "" ]
     }
-    set remove_tmp_files TRUE
+    set ::env(REMOVE_TMP_FILES) TRUE
 }
 
 ##

@@ -1,20 +1,22 @@
-#-----------------------------------------------------------
-#
-# Copyright 2016-2018 International Business Machines
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-#-----------------------------------------------------------
+############################################################################
+############################################################################
+##
+## Copyright 2016-2018 International Business Machines
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##     http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions AND
+## limitations under the License.
+##
+############################################################################
+############################################################################
 
 set root_dir              $::env(SNAP_HARDWARE_ROOT)
 set log_dir               $::env(LOGS_DIR)
@@ -48,7 +50,7 @@ set ::env(DCP_DIR) $dcp_dir
 set rpt_dir        $root_dir/build/Reports
 set ::env(RPT_DIR) $rpt_dir
 
-#Images directory
+#Image directory
 set img_dir $root_dir/build/Images
 set ::env(IMG_DIR) $img_dir
 
@@ -92,16 +94,6 @@ read_xdc $root_dir/setup/snap_impl.xdc >> $logfile
 ## run implementation in the cloud merge flow
 set ::env(IMPL_FLOW) CLOUD_MERGE
 source $root_dir/setup/snap_impl_step.tcl
-
-
-##
-## writing bitstream
-source $root_dir/setup/snap_bitstream_step.tcl
-
-##?##
-##?## writing checkpoint
-##?puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "writing checkpoint" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-##?write_checkpoint -force ./Checkpoints/psl_fpga_routed.dcp >> $logfile
 
 if { $cloud_build_bitfile == "TRUE" } {
   ##
