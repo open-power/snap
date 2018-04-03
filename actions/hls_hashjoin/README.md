@@ -4,4 +4,4 @@
 * C code is working on 2 tables and creates a new third one based on their content
   * all memory allocations is managed by the application
 
-Detailed information can be found in the actions/hls_hashjoin/doc directory
+Detailed information can be found in the [actions/hls_hashjoin/doc](./doc) directory
