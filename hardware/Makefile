@@ -98,10 +98,11 @@ export IGNORE_CHECK_PSL ?= $(USE_PRFLOW)
 ## variables just for this Makefile
 SETUP_DIR=$(SNAP_HARDWARE_ROOT)/setup
 BUILD_DIR=$(SNAP_HARDWARE_ROOT)/build
+SIM_DIR=$(SNAP_HARDWARE_ROOT)/sim
 SNAP_HDL_CORE=$(SNAP_HARDWARE_ROOT)/hdl/core
 SNAP_HDL_HLS=$(SNAP_HARDWARE_ROOT)/hdl/hls
-SNAP_SIM_CORE=$(SNAP_HARDWARE_ROOT)/sim/core
-SNAP_SIM_NVME=$(SNAP_HARDWARE_ROOT)/sim/nvme
+SNAP_SIM_CORE=$(SIM_DIR)/core
+SNAP_SIM_NVME=$(SIM_DIR)/nvme
 
 SNAP_SIMULATORS += irun xsim
 SNAP_MODELS += .model_irun .model_xsim
@@ -116,7 +117,7 @@ SNAP_PP_FILES_VHD=$(SNAP_HDL_CORE)/psl_fpga.vhd        \
                   $(SNAP_HDL_HLS)/action_wrapper.vhd   \
                   $(SNAP_HDL_CORE)/snap_core_types.vhd
 
-SNAP_TMP_FILES =  $(SNAP_HARDWARE_ROOT)/sim/README.txt
+SNAP_TMP_FILES =  $(SIM_DIR)/README.txt
 
 SNAP_ACTION_DCP=$(DCP_ROOT)/user_action_synth.dcp
 SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
@@ -291,12 +292,12 @@ action_hw: prepare_logs
 	@echo -e "[CONFIG ACTION HW....] done  `date +"%T %a %b %d %Y"`";
 
 .create_ip_done:
-	@cd $(SETUP_DIR)  &&  vivado -quiet -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -journal $(LOGS_DIR)/create_ip.jou
+	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -journal $(LOGS_DIR)/create_ip.jou
 	@touch .create_ip_done
 
 .create_nvme_done:
 	@echo -e "[CREATE NVME.........] start `date +"%T %a %b %d %Y"`";
-	@cd $(SETUP_DIR)  &&  vivado -quiet -mode batch -source create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou
+	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou
 	@$(MAKE) -s patch_NVMe
 	@echo -e "[CREATE NVME.........] done  `date +"%T %a %b %d %Y"`";
 	@touch .create_nvme_done
@@ -306,7 +307,7 @@ create_project: snap_preprocess
 	@echo -e "                        using `vivado -version |grep Vivado`"
 	@$(MAKE) -s .create_ip_done
 	@if [ "$(NVME_USED)" == "TRUE" ]; then $(MAKE) -s .create_nvme_done; fi
-	@cd $(SETUP_DIR)  &&  vivado -quiet -mode batch -source create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
+	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
 	@echo -e "[CREATE PROJECT......] done  `date +"%T %a %b %d %Y"`"
 
 hw_project_start:
@@ -352,7 +353,7 @@ else
 	@echo "The process may be terminated by pressing <CTRL>-C at any time.";
 	@echo "After termination it can be restarted later."; echo
 	@$(MAKE) -s patch_version
-	@cd $(SETUP_DIR) && vivado -quiet -mode batch -source snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log -journal $(LOGS_DIR)/snap_build.jou
+	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source $(SETUP_DIR)/snap_build.tcl -notrace -log $(LOGS_DIR)/snap_build.log -journal $(LOGS_DIR)/snap_build.jou
 	@$(RM) -r .bitstream_name.txt
 endif
 	@echo -e "[BUILD IMAGE.........] done  `date +"%T %a %b %d %Y"`"
@@ -367,13 +368,13 @@ allow_%:
 cloud_enable: allow_cloud_action
 	@echo -e "[ENABLE CLOUD FLOW...] start `date +"%T %a %b %d %Y"e`"
 	@$(MAKE) -s patch_version
-	@cd $(SETUP_DIR) && env CLOUD_RUN= vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/cloud_action.log -journal $(LOGS_DIR)/cloud_action.jou
+	@cd $(BUILD_DIR) && env CLOUD_RUN= vivado -quiet -mode batch -source $(SETUP_DIR)/snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/cloud_action.log -journal $(LOGS_DIR)/cloud_action.jou
 	@echo -e "[ENABLE CLOUD FLOW...] done  `date +"%T %a %b %d %Y"`"
 
 cloud_base: allow_cloud_base .hw_project_done
 	@echo -e "[BUILD CLOUD BASE....] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -s patch_version
-	@cd $(SETUP_DIR) && env CLOUD_RUN=BASE vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
+	@cd $(BUILD_DIR) && env CLOUD_RUN=BASE vivado -quiet -mode batch -source $(SETUP_DIR)/snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/snap_cloud_build.log -journal $(LOGS_DIR)/snap_cloud_build.jou
 	@echo -e "[BUILD CLOUD BASE....] done  `date +"%T %a %b %d %Y"`"
 
 $(SNAP_ACTION_DCP):
@@ -388,14 +389,14 @@ cloud_action: allow_cloud_action .hw_project_done
 	@echo -e "[CLOUD ACTION SYNTH..] start `date +"%T %a %b %d %Y"e`"
 	@$(MAKE) -s patch_version
 	@echo -e "                        using `vivado -version |grep Vivado`"
-	@cd $(SETUP_DIR) && env CLOUD_RUN=ACTION vivado -quiet -mode batch -source snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/cloud_action.log -journal $(LOGS_DIR)/cloud_action.jou
+	@cd $(BUILD_DIR) && env CLOUD_RUN=ACTION vivado -quiet -mode batch -source $(SETUP_DIR)/snap_cloud_build.tcl -notrace -log $(LOGS_DIR)/cloud_action.log -journal $(LOGS_DIR)/cloud_action.jou
 	@echo -e "[CLOUD ACTION SYNTH..] done  `date +"%T %a %b %d %Y"`"
 
 cloud_merge: allow_cloud_merge $(SNAP_BASE_DCP) $(SNAP_ACTION_DCP)
 	@ignore_action_root=ignore_action_root $(MAKE) prepare_project
 	@echo -e "[CLOUD MERGE ........] start `date +"%T %a %b %d %Y"`"
 	@echo -e "                        using `vivado -version |grep Vivado`"
-	@cd $(SETUP_DIR) && vivado -quiet -mode batch -source snap_cloud_merge.tcl -notrace -log $(LOGS_DIR)/snap_cloud_merge.log -journal $(LOGS_DIR)/snap_cloud_merge.jou
+	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source $(SETUP_DIR)/snap_cloud_merge.tcl -notrace -log $(LOGS_DIR)/snap_cloud_merge.log -journal $(LOGS_DIR)/snap_cloud_merge.jou
 	@echo -e "[CLOUD MERGE ........] done  `date +"%T %a %b %d %Y"`"
 
 pslse: prepare_logs
@@ -447,15 +448,15 @@ $(SNAP_SIMULATORS): check_nvme .hw_project_done app
 	fi
 	@echo -e "[BUILD $@ MODEL....] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -s patch_version
-	vivado -quiet -mode batch -source $(SETUP_DIR)/export_$@.tcl -notrace -log $(LOGS_DIR)/compile_$@.log -journal $(LOGS_DIR)/compile_$@.jou
-	$(SETUP_DIR)/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1
-	cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so;
+	@cd $(SIM_DIR) && vivado -quiet -mode batch -source $(SETUP_DIR)/export_$@.tcl -notrace -log $(LOGS_DIR)/compile_$@.log -journal $(LOGS_DIR)/compile_$@.jou
+	@$(SETUP_DIR)/patch_sim.sh $(SIM_DIR)/$(subst irun,ies,$@) top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1
+	@cd $(SIM_DIR)/$(subst irun,ies,$@) && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so;
 	@echo -e "                        build a $@ model";
-	@cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@); \
-	./top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1; \
-	if [ $$? -ne 0 ]; then \
-		echo -e "                        Error: please look into $(LOGS_DIR)/compile_$@.log"; exit -1; \
-	fi
+	@cd $(SIM_DIR)/$(subst irun,ies,$@); \
+		./top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1; \
+		if [ $$? -ne 0 ]; then \
+			echo -e "                        Error: please look into $(LOGS_DIR)/compile_$@.log"; exit -1; \
+		fi
 	@touch .model_$@
 	@echo -e "[BUILD $@ MODEL....] done  `date +"%T %a %b %d %Y"`"
 
