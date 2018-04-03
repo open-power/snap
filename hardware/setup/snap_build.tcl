@@ -37,6 +37,10 @@ set ::env(RPT_DIR) $rpt_dir
 set img_dir $root_dir/build/Images
 set ::env(IMG_DIR) $img_dir
 
+#Remove temp files
+set remove_tmp_files TRUE
+set ::env(REMOVE_TMP_FILES) $remove_tmp_files
+
 #Define widths of each column
 set widthCol1 24
 set widthCol2 24
