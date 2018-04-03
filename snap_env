@@ -264,7 +264,6 @@ while [ -z "$SETUP_DONE" ]; do
     echo "export TIMING_LABLIMIT=\"$TIMING_LABLIMIT_DEFAULT\"" >> $snap_env_sh
     SETUP_INFO="$SETUP_INFO\n### INFO ### Timing limit for FPGA image build got set to default value $TIMING_LABLIMIT_DEFAULT"
   fi
-    SETUP_INFO="$SETUP_INFO\n### INFO ### Support for the selected CAPI2.0 FPGA card N250SP is currently in preparation phase."
   echo "=====Timing limit for FPGA image build in ps============"
   echo "TIMING_LABLIMIT         is set to: \"$TIMING_LABLIMIT\""
 
