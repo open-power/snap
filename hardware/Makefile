@@ -116,8 +116,7 @@ SNAP_PP_FILES_VHD=$(SNAP_HDL_CORE)/psl_fpga.vhd        \
                   $(SNAP_HDL_HLS)/action_wrapper.vhd   \
                   $(SNAP_HDL_CORE)/snap_core_types.vhd
 
-SNAP_TMP_FILES =  $(SNAP_HARDWARE_ROOT)/sim/README.txt \
-		  $(SNAP_HARDWARE_ROOT)/vivado.jou
+SNAP_TMP_FILES =  $(SNAP_HARDWARE_ROOT)/sim/README.txt
 
 SNAP_ACTION_DCP=$(DCP_ROOT)/user_action_synth.dcp
 SNAP_BASE_DCP=$(DCP_ROOT)/snap_static_region_bb.dcp
@@ -292,7 +291,7 @@ action_hw: prepare_logs
 	@echo -e "[CONFIG ACTION HW....] done  `date +"%T %a %b %d %Y"`";
 
 .create_ip_done:
-	@cd $(SETUP_DIR)  &&  vivado -quiet -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -nojournal
+	@cd $(SETUP_DIR)  &&  vivado -quiet -mode batch -source create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -journal $(LOGS_DIR)/create_ip.jou
 	@touch .create_ip_done
 
 .create_nvme_done:
@@ -448,7 +447,7 @@ $(SNAP_SIMULATORS): check_nvme .hw_project_done app
 	fi
 	@echo -e "[BUILD $@ MODEL....] start `date +"%T %a %b %d %Y"`"
 	@$(MAKE) -s patch_version
-	vivado -quiet -mode batch -source $(SETUP_DIR)/export_$@.tcl -notrace -log $(LOGS_DIR)/compile_$@.log
+	vivado -quiet -mode batch -source $(SETUP_DIR)/export_$@.tcl -notrace -log $(LOGS_DIR)/compile_$@.log -journal $(LOGS_DIR)/compile_$@.jou
 	$(SETUP_DIR)/patch_sim.sh $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1
 	cd $(SNAP_HARDWARE_ROOT)/sim/$(subst irun,ies,$@) && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so;
 	@echo -e "                        build a $@ model";
