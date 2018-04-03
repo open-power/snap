@@ -38,8 +38,7 @@ set img_dir $root_dir/build/Images
 set ::env(IMG_DIR) $img_dir
 
 #Remove temp files
-set remove_tmp_files TRUE
-set ::env(REMOVE_TMP_FILES) $remove_tmp_files
+set ::env(REMOVE_TMP_FILES) TRUE
 
 #Define widths of each column
 set widthCol1 24
@@ -104,17 +103,14 @@ if { $ila_debug == "TRUE" } {
 
 
 ##
-## removing unnecessary files
-set remove_tmp_files  $::env(REMOVE_TMP_FILES)
-if { $remove_tmp_files == "TRUE" } {
+## removing temporary checkpoint files
+if { $::env(REMOVE_TMP_FILES) == "TRUE" } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   exec rm -rf $dcp_dir/synth.dcp
   exec rm -rf $dcp_dir/opt_design.dcp
   exec rm -rf $dcp_dir/place_design.dcp
   exec rm -rf $dcp_dir/phys_opt_design.dcp
   exec rm -rf $dcp_dir/route_design.dcp
-  exec rm -rf .Xil
-  exec rm -rf .cache
 }
 
 close_project >> $logfile

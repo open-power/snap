@@ -69,7 +69,7 @@ puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start opt_design" $wi
 if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: opt_design failed" $widthCol4 "" ]
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
- 
+
   if { ![catch {current_instance}] } {
       write_checkpoint -force $dcp_dir/${step}_error.dcp    >> $logfile
   }
@@ -227,5 +227,5 @@ if { [expr $TIMING_WNS >= 0 ] } {
 }
 
 ##
-## set TIMING_WNS for bitstream generation 
+## set TIMING_WNS for bitstream generation
 set ::env(TIMING_WNS) $TIMING_WNS
