@@ -24,19 +24,29 @@ snap_card=0
 iteration=1
 FUNC="./actions/hdl_example/sw/snap_example"
 
-function test () # $1 = card, $2 = 4k or 64, $3 = action
+function test () # $1 = card, $2 = action, $3 = 4k or 64, $4 = min_align, $5 = dma_size
 {
 	local card=$1
-	local size=$2
-	local action=$3
+	local action=$2
+	local size=$3
+	local min_align=$4
+	local dma_size=$5
+	local block_step=$(($dma_size/64))
+	local tests=0
 
-	for a in 4096 2048 1024 512 256 128 64 ; do
-		echo "Testing Action $action Align $a for (1...64) $2 Byte"
-		for ln in ` seq 1 64 `; do
+	for align in 4096 2048 1024 512 256 128 64 ; do
+		tests=0
+		echo -n "Testing Action $action Align $align for (1...128) $size Byte "
+		if [ $align -lt $min_align ]; then
+			echo "-> Can not Execute"
+			continue
+		fi
+		for (( ln=1; ln<=128; ln+=1 )); do
 			if [ $size == 64 ] ; then
-				cmd="${FUNC} -a $action -A $a -C ${card} -S 0 -B $ln"
+				b64=$(($ln*block_step))
+				cmd="${FUNC} -a $action -A $align -C ${card} -S 0 -B $b64"
 			else
-				cmd="${FUNC} -a $action -A $a -C ${card} -S $ln -B 0"
+				cmd="${FUNC} -a $action -A $align -C ${card} -S $ln -B 0"
 			fi
 			eval ${cmd}
 			if [ $? -ne 0 ]; then
@@ -44,78 +54,110 @@ function test () # $1 = card, $2 = 4k or 64, $3 = action
         			echo "failed"
         			exit 1
 			fi
+			tests=$(($tests+1))
 		done
+		echo " $tests Test done"
 	done
 }
 
-function test_sb () # $1 = card, $2=action
+function test_sb () # $1 = card, $2=action, $3 = min_align, $4 = dma_size
 {
 	local card=$1
 	local action=$2
+	local min_align=$3
+	local dma_size=$4
+	local block_step=$(($dma_size/64))
+	local tests=0
 
-	for a in 4096 2048 1024 512 256 128 64 ; do		# Align
-		echo -n "Testing Action $action Align $a  4K=(1..16) 64B=(1..16)"
-		for  s in ` seq 1 16 `; do		# 4 K Blocks
+	for align in 4096 2048 1024 512 256 128 64 ; do		# Align
+		tests=0
+		echo -n "Testing Action $action Align $align  4K=(1..16) 64B=($block_step..$((128*$block_step))) "
+		if [ $align -lt $min_align ]; then
+			echo " -> Can not Execute"
+			continue
+		fi
+		for s in ` seq 1 16 `; do		# 4 K Blocks
 			echo -n "."
-			for b in ` seq 1 16 `; do	# 64 Byte Blocks
-				cmd="${FUNC} -a $action -A $a -C ${card} -S $s -B $b"
+			for (( b=$block_step; b<=128*$block_step; b+=$block_step )); do
+				cmd="${FUNC} -a $action -A $align -C ${card} -S $s -B $b"
 				eval ${cmd}
 				if [ $? -ne 0 ]; then
         				echo "cmd: ${cmd}"
         				echo "failed"
         				exit 1
 				fi
+				tests=$(($tests+1))
 			done
 		done
-		echo " done"
+		echo " $tests Tests done"
 	done
 }
 
-function test_bs () # $1 = card, $2 = action
+function test_bs () # $1 = card, $2 = action, $3 = min_align, $4 = dma_size
 {
 	local card=$1
 	local action=$2
+	local min_align=$3
+	local dma_size=$4
+	local block_step=$(($dma_size/64))
+	local tests=0
 
-	for a in 4096 2048 1024 512 256 128 64 ; do		# Align
-		echo -n "Testing Action $action Align $a  64B=(1..16) 4K=(1..16)"
-		for b in ` seq 1 16 `; do		# 64 Bytes Blocks
+	for align in 4096 2048 1024 512 256 128 64 ; do		# Align
+		tests=0
+		echo -n "Testing Action $action Align $align  64B=($block_step..$((128*$block_step))) 4K=(1..16) "
+		if [ $align -lt $min_align ]; then
+			echo -e "-> Can not Execute"
+			continue
+		fi
+		for (( b=$block_step; b<=64*$block_step; b+=$block_step )); do
 			echo -n "."
-			for  s in ` seq 1 16 `; do	# 4K Blocks
-				cmd="${FUNC} -a $action -A $a -C ${card} -S $s -B $b"
+			for s in ` seq 1 16 `; do	# 4K Blocks
+				cmd="${FUNC} -a $action -A $align -C ${card} -S $s -B $b"
 				eval ${cmd}
 				if [ $? -ne 0 ]; then
         				echo "cmd: ${cmd}"
         				echo "failed"
         				exit 1
 				fi
+				tests=$(($tests+1))
 			done
 		done
-		echo " done"
+		echo " $tests Tests done"
 	done
 }
 
-function test_rnd () # $1 = card, $2 = action
+function test_rnd () # $1 = card, $2 = action, $3 = min_align, $4 = dma_size
 {
 	local card=$1
 	local action=$2
+	local min_align=$3
+	local dma_size=$4
+	local block_step=$(($dma_size/64))
+	local tests=0
 
-	for a in 4096 1024 2048 512 256 128 64 ; do
-		echo -n "Testing Action $action Align $a 1000 x 64B=RND 4K=RND"
+	for align in 4096 1024 2048 512 256 128 64 ; do
+		tests=0
+		echo -n "Testing Action $action Align $align 1000 x 64B=random 4K=random "
+		if [ $align -lt $min_align ]; then
+			echo -e "-> Can not Execute"
+			continue
+		fi
 		for n in ` seq 1 1000 `; do
 			local size=$(( $RANDOM % 64 ))
-			local block=$(( $RANDOM % 64 ))
+			local block=$(( $RANDOM*$block_step % 64 ))
 			if [ $size = 0 ] && [ $block = 0 ] ; then
-				continue	# ignore 0 0 combinations
+				block=$block_step	
 			fi
-			cmd="${FUNC} -a $action -A $a -C ${card} -S $size -B $block"
+			cmd="${FUNC} -a $action -A $align -C ${card} -S $size -B $block"
 			eval ${cmd}
 			if [ $? -ne 0 ]; then
 				echo "cmd: ${cmd}"
 				echo "failed"
 				exit 1
 			fi
+			tests=$(($tests+1))
 		done
-		echo " done"
+		echo " $tests Tests done"
 	done
 }
 
@@ -154,37 +196,44 @@ while getopts "C:t:i:h" opt; do
 	esac
 done
 
-rev=$(cat /sys/class/cxl/card$snap_card/device/subsystem_device | xargs printf "0x%.4X")
-
-case $rev in
-"0x0608" )
-        echo "$rev -> Testing AlphaData 8K5 Card"
-        ;;
-"0x0607" )
-        echo "$rev -> Testing Semptian NSA121B Card"
-        ;;
-"0x0605" )
-	echo "$rev -> Testing AlphaData KU3 Card"
-	;;
-"0x060A" )
-	echo "$rev -> Testing Nallatech 250S Card"
-	;;
-"0x04DD" )
-	echo "$rev -> Testing Nallatech 250SP Card"
-	;;
-*)
-	echo "Capi Card $snap_card does have subsystem_device: $rev"
-	echo "I Expect to have 0x605 0x607 0x608 0x4DD or 0x60A, Check if -C $snap_card was"
-	echo " move to other CAPI id and use other -C option !"
+# Get Card Name
+echo -n "Detect Card[$snap_card] .... "
+CARD=`./software/tools/snap_maint -C $snap_card -m 4`
+if [ -z $CARD ]; then
+	echo "ERROR: Invalid Card."
 	exit 1
+fi
+
+#Set Defaults for all Cards
+MIN_ALIGN=64
+MIN_BLOCK=64
+
+case $CARD in
+"AD8K5" )
+        echo "-> AlphaData $CARD Card"
+        ;;
+"S121B" )
+        echo "-> Semptian $CARD Card"
+        ;;
+"ADKU3" )
+	echo "-> AlphaData $CARD Card"
+	;;
+"N250S" )
+	echo "-> Nallatech $CARD Card"
+	;;
+"N250SP" )
+	MIN_ALIGN=128
+	MIN_BLOCK=128
+	echo "-> Nallatech $CARD Card"
+	;;
 esac;
 
 for ((iter=1;iter <= iteration;iter++))
 {
-	echo "Iteration $iter of $iteration"
+	echo "Iteration $iter of $iteration on $CARD[$snap_card]"
 	echo "Testing Action 1 from 200 msec to 1 sec in 200 msec steps"
 	cmd="${FUNC} -a 1 -C${snap_card} -e 1000 -t 2"
-	eval ${cmd}
+	#eval ${cmd}
 	if [ $? -ne 0 ]; then
        		echo "cmd: ${cmd}"
        		echo "failed"
@@ -192,27 +241,28 @@ for ((iter=1;iter <= iteration;iter++))
 	fi
 	echo "Testing Action 1 from 200 msec to 1 sec in 200 msec steps with Interrupts"
 	cmd="${FUNC} -a 1 -C${snap_card} -e 1000 -t 2 -I"
-	eval ${cmd}
+	#eval ${cmd}
 	if [ $? -ne 0 ]; then
 		echo "cmd: ${cmd}"
 		echo "failed"
 		exit 1
 	fi
 
-	test "${snap_card}" "4k" "2"
-	test "${snap_card}" "64" "2"
-	test_sb "${snap_card}" "2" "2"
-	test_bs "${snap_card}" "2"
-	test_rnd "$snap_card" "2"
+	test    $snap_card 2 4k $MIN_ALIGN $MIN_BLOCK
+	test    $snap_card 2 64 $MIN_ALIGN $MIN_BLOCK
+	test_sb $snap_card 2    $MIN_ALIGN $MIN_BLOCK
+exit 1
+	test_bs $snap_card 2    $MIN_ALIGN $MIN_BLOCK
+	test_rnd $snap_card 2   $MIN_ALIGN $MIN_BLOCK
 
 	# Check SDRAM
 	RAM=`./software/tools/snap_maint -C $snap_card -m 3`
 	if [ ! -z $RAM ]; then
-		test "$snap_card" "4k" "6"
-		test "$snap_card" "64" "6"
-		test_sb "${snap_card}" "6"
-		test_bs "${snap_card}" "6"
-		test_rnd "$snap_card" "6"
+		test     $snap_card 6 4k $MIN_ALIGN $MIN_BLOCK
+		test     $snap_card 6 64 $MIN_ALIGN $MIN_BLOCK
+		test_sb  $snap_card 6    $MIN_ALIGN $MIN_BLOCK
+		test_bs  $snap_card 6    $MIN_ALIGN $MIN_BLOCK
+		test_rnd $snap_card 6    $MIN_ALIGN $MIN_BLOCK
 	else
 		echo "No SDRAM, skipping this test"
 	fi

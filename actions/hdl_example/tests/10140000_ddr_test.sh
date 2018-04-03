@@ -84,29 +84,36 @@ while getopts "C:t:i:h" opt; do
 	esac
 done
 
-rev=$(cat /sys/class/cxl/card$snap_card/device/subsystem_device | xargs printf "0x%.4X")
+# Get Card Name
+echo -n "Detect Card[$snap_card] .... "
+CARD=`./software/tools/snap_maint -C $snap_card -m 4`
+if [ -z $CARD ]; then
+	echo "ERROR: Invalid Card."
+	exit 1
+fi
 
-case $rev in
-"0x0605" )
-        echo "$rev -> Testing AlphaData KU3 Card"
-        ;;
-"0x0607" )
-        echo "$rev -> Testing Semptian NSA121B Card"
-        ;;
-"0x0608" )
-        echo "$rev -> Testing AlphaData 8K5 Card"
-        ;;
-"0x060A" )
-        echo "$rev -> Testing Nallatech 250S Card"
-        ;;
-"0x04DD" )
-        echo "$rev -> Testing Nallatech 250SP Card"
-        ;;
-*)
-        echo "Capi Card $snap_card does have subsystem_device: $rev"
-        echo "I Expect to have 0x605 0x607 0x608, 0x04DD or 0x60A, Check if -C $snap_card was"
-        echo " move to other CAPI id and use other -C option !"
-        exit 1
+#Set Defaults for all Cards
+MIN_ALIGN=64
+MIN_BLOCK=64
+
+case $CARD in
+"AD8K5" )
+	echo "-> AlphaData $CARD Card"
+	;;
+"S121B" )
+	echo "-> Semptian $CARD Card"
+	;;
+"ADKU3" )
+	echo "-> AlphaData $CARD Card"
+	;;
+"N250S" )
+	echo "-> Nallatech $CARD Card"
+	;;
+"N250SP" )
+	MIN_ALIGN=128
+	MIN_BLOCK=128
+	echo "-> Nallatech $CARD Card"
+	;;
 esac;
 
 # Get RAM in MB from Card
@@ -120,7 +127,7 @@ KB=$((1024))
 MB=$((1024*1024))
 GB=$((1024*1024*1024))
 BLOCKSIZE=$((1*MB))
-echo "Testing $RAM MB SRAM on Card $snap_card"
+echo "Testing $RAM MB SRAM on $CARD[$snap_card]"
 
 for ((iter=1;iter <= iteration;iter++))
 {

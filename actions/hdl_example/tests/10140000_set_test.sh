@@ -22,39 +22,42 @@
 verbose=0
 snap_card=0
 iteration=1
-FUNC="./actions/hdl_example/sw/snap_example_set"
 
-function test_memset ()	# $1 = card
+function test_memset ()	# $1 = card, $2 = min_align, $3 = min_block_size, $4=IRQ
 {
 	local card=$1
+	local align=$2
+	local mblk=$3
+	local use_irq=$4
 
-	for  begin in ` seq 0 64 `; do
+	if [ -z $use_irq ]; then
+		FUNC="./actions/hdl_example/sw/snap_example_set -C ${card}"
+	else
+		FUNC="./actions/hdl_example/sw/snap_example_set -C ${card} -I"
+	fi
+	n=0
+	for ((begin=0; begin<=64*$align; begin+=$align )); do
 		echo -n "."
-		cmd="${FUNC} -C ${card} -F -s 4096 -b 0 -p 0xff"
-		eval ${cmd}
-		if [ $? -ne 0 ]; then
-			echo "cmd: ${cmd}"
-			echo "failed"
-			exit 1
-		fi
-		for  size in ` seq 1 256 `; do
-			cmd="${FUNC} -C ${card} -H -s $size -b $begin -p $size"
+		for ((size=$mblk; size<=256*$mblk; size+=$mblk )); do
+			cmd="${FUNC} -H -s $size -b $begin -p $size"
 			eval ${cmd}
 			if [ $? -ne 0 ]; then
 				echo "cmd: ${cmd}"
 				echo "failed"
 				exit 1
 			fi
-			cmd="${FUNC} -C ${card} -F -s $size -b $begin -p $size -I"
+			n=$(($n+1))
+			cmd="${FUNC} -F -s $size -b $begin -p $size"
 			eval ${cmd}
 			if [ $? -ne 0 ]; then
 				echo "cmd: ${cmd}"
 				echo "failed"
 				exit 1
 			fi
+			n=$(($n+1))
 		done
 	done
-	echo "done"
+	echo "$n Tests done"
 }
 
 function usage() {
@@ -92,40 +95,52 @@ while getopts "C:t:i:h" opt; do
 	esac
 done
 
-rev=$(cat /sys/class/cxl/card$snap_card/device/subsystem_device | xargs printf "0x%.4X")
-
-case $rev in
-"0x0605" )
-        echo "$rev -> Testing AlphaData KU3 Card"
-        ;;
-"0x0608" )
-        echo "$rev -> Testing AlphaData 8K5 Card"
-        ;;
-"0x060A" )
-        echo "$rev -> Testing Nallatech 250S Card"
-        ;;
-"0x04dd" )
-        echo "$rev -> Testing Nallatech 250SP Card"
-        ;;
-*)
-        echo "Capi Card $snap_card does have subsystem_device: $rev"
-        echo "I Expect to have 0x605 0x608 0x4dd or 0x60a, Check if -C $snap_card was"
-        echo " move to other CAPI id and use other -C option !"
+# Get Card Name
+echo -n "Detect Card[$snap_card] .... "
+CARD=`./software/tools/snap_maint -C $snap_card -m 4`
+if [ -z $CARD ]; then
+        echo "ERROR: Invalid Card."
         exit 1
+fi
+
+#Set Defaults for all Cards
+MIN_ALIGN=1
+MIN_BLOCK=1
+
+case $CARD in
+"AD8K5" )
+        echo "-> AlphaData $CARD Card"
+        ;;
+"S121B" )
+        echo "-> Semptian $CARD Card"
+        ;;
+"ADKU3" )
+        echo "-> AlphaData $CARD Card"
+        ;;
+"N250S" )
+        echo "-> Nallatech $CARD Card"
+        ;;
+"N250SP" )
+	MIN_ALIGN=128
+	MIN_BLOCK=128
+        echo "-> Nallatech $CARD Card"
+        ;;
 esac;
 
+# Get Ram Size
 RAM=`./software/tools/snap_maint -C $snap_card -m 3`
 if [ -z $RAM ]; then
         echo "Skip Test: No SRAM on Card $snap_card"
         exit 0
 fi
 
-echo "Testing Memory Set Function Card $snap_card SDRAM Size = $RAM MB"
+echo "Testing Memory Set Function $CARD[$snap_card] SDRAM Size = $RAM MB"
 
 for ((iter=1;iter <= iteration;iter++))
 {
-	echo -n "Testing: "
-	echo -n "$iter of $iteration"
-	test_memset "${snap_card}"
+	echo -n "No IRQ Testing ($iter of $iteration) on: $CARD[$snap_card] "
+	test_memset $snap_card $MIN_ALIGN $MIN_BLOCK
+	echo -n "   IRQ Testing ($iter of $iteration) on: $CARD[$snap_card] "
+	test_memset $snap_card $MIN_ALIGN $MIN_BLOCK IRQ
 }
 exit 0
