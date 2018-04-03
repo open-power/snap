@@ -26,7 +26,6 @@ set sdram_used        $::env(SDRAM_USED)
 set nvme_used         $::env(NVME_USED)
 set bram_used         $::env(BRAM_USED)
 set cloud_run         $::env(CLOUD_RUN)
-set remove_tmp_files  "FALSE"
 set vivadoVer         [version -short]
 
 #Checkpoint directory
@@ -47,8 +46,7 @@ set img_dir $root_dir/build/Images
 set ::env(IMG_DIR) $img_dir
 
 #Remove temp files
-set remove_tmp_files TRUE
-set ::env(REMOVE_TMP_FILES) $remove_tmp_files
+set ::env(REMOVE_TMP_FILES) TRUE
 
 if { [info exists ::env(CLOUD_BUILD_BITFILE)] == 1 } {
   set cloud_build_bitfile [string toupper $::env(CLOUD_BUILD_BITFILE)]
@@ -127,7 +125,7 @@ if { ($cloud_run == "ACTION") || ($cloud_run == "BASE") } {
   reset_run    user_action_synth_1 >> $logfile
   launch_runs  user_action_synth_1 >> $logfile
   wait_on_run  user_action_synth_1 >> $logfile
- 
+
   if {[get_property PROGRESS [get_runs user_action_synth_1]] != "100%"} {
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: action synthesis failed" $widthCol4 "" ]
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
@@ -166,13 +164,12 @@ if { $cloud_run == "BASE" } {
     ##
     ## writing bitstream
     source $root_dir/setup/snap_bitstream_step.tcl
-  }  
+  }
 }
 
 ##
-## removing unnecessary files
-set remove_tmp_files  $::env(REMOVE_TMP_FILES)
-if { $remove_tmp_files == "TRUE" } {
+## removing temporary checkpoint files
+if { $::env(REMOVE_TMP_FILES) == "TRUE" } {
   puts [format "%-*s%-*s%-*s%-*s" $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   exec rm -rf $dcp_dir/synth_design.dcp
   exec rm -rf $dcp_dir/opt_design.dcp
@@ -180,8 +177,6 @@ if { $remove_tmp_files == "TRUE" } {
   exec rm -rf $dcp_dir/phys_opt_design.dcp
   exec rm -rf $dcp_dir/route_design_routed.dcp
   exec rm -rf $dcp_dir/opt_routed_design.dcp
-  exec rm -rf .Xil
-  exec rm -rf .cache
 }
 
 close_project  >> $logfile
