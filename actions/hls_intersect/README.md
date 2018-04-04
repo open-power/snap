@@ -38,7 +38,7 @@ make image
 # How to run
 
 - Step1: Copy Tables from Host memory to FPGA Card memory
-- Step2: Copy Tables from FPGA Card memory to Host memorys
+- Step2: Copy Tables from FPGA Card memory to Host memory
 - Step3: FPGA does table intersection (result is in FPGA Card memory)
 - Step4: CPU  does table intersection
 - Step5: Copy Result from FPGA Card memory to Host memory
