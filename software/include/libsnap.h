@@ -414,6 +414,8 @@ int snap_action_free_irq(struct snap_action *action, int irq);
 #define GET_CARD_TYPE       1   /* Returns Card type */
 #define GET_NVME_ENABLED    2   /* Returns 1 if NVME is enabled */
 #define GET_SDRAM_SIZE      3   /* Get Size in MB of Card  sdram */
+#define GET_DMA_ALIGN       4   /* Get DMA alignement */
+#define GET_DMA_MIN_SIZE    5   /* Get DMA Minimum Size  */
 #define SET_SDRAM_SIZE      103 /* Set SD Ram size in MB */
 
 int snap_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long parm);
