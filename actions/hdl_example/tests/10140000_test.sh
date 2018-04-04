@@ -196,6 +196,15 @@ while getopts "C:t:i:h" opt; do
 	esac
 done
 
+# Configure my Snap Card
+echo "Configure Card[$snap_card] ...."
+cmd=`./software/tools/snap_maint -C $snap_card`
+eval ${cmd}
+if [ $? -ne 0 ]; then
+	echo "cmd: ${cmd}"
+	echo "failed"
+	exit 1
+fi
 # Get Card Name
 echo -n "Detect Card[$snap_card] .... "
 CARD=`./software/tools/snap_maint -C $snap_card -m 4`
@@ -233,7 +242,7 @@ for ((iter=1;iter <= iteration;iter++))
 	echo "Iteration $iter of $iteration on $CARD[$snap_card]"
 	echo "Testing Action 1 from 200 msec to 1 sec in 200 msec steps"
 	cmd="${FUNC} -a 1 -C${snap_card} -e 1000 -t 2"
-	#eval ${cmd}
+	eval ${cmd}
 	if [ $? -ne 0 ]; then
        		echo "cmd: ${cmd}"
        		echo "failed"
@@ -241,17 +250,15 @@ for ((iter=1;iter <= iteration;iter++))
 	fi
 	echo "Testing Action 1 from 200 msec to 1 sec in 200 msec steps with Interrupts"
 	cmd="${FUNC} -a 1 -C${snap_card} -e 1000 -t 2 -I"
-	#eval ${cmd}
+	eval ${cmd}
 	if [ $? -ne 0 ]; then
 		echo "cmd: ${cmd}"
 		echo "failed"
 		exit 1
 	fi
-
 	test    $snap_card 2 4k $MIN_ALIGN $MIN_BLOCK
 	test    $snap_card 2 64 $MIN_ALIGN $MIN_BLOCK
 	test_sb $snap_card 2    $MIN_ALIGN $MIN_BLOCK
-exit 1
 	test_bs $snap_card 2    $MIN_ALIGN $MIN_BLOCK
 	test_rnd $snap_card 2   $MIN_ALIGN $MIN_BLOCK
 
@@ -267,4 +274,5 @@ exit 1
 		echo "No SDRAM, skipping this test"
 	fi
 }
+echo "---------->>>> Exit Good <<<<<<--------------"
 exit 0
