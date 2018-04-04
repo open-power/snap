@@ -31,11 +31,6 @@ USE unisim.vcomponents.all;
 
 ENTITY psl_fpga IS
   PORT(
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk     -- Clock inputs for SDRAM
--- clk     refclk266_p               : IN    STD_LOGIC;
--- clk     refclk266_n               : IN    STD_LOGIC;
--- clk #endif
 #ifdef CONFIG_ENABLE_DDR4
     -- DDR4 SDRAM Interface
     -- Nallatech 250S card has one DDR4 SO-DIMMs
@@ -281,12 +276,6 @@ Component psl_accel
     c0_ddr4_ck_t                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 -- TODO:    c0_ddr4_ten                         : OUT   STD_LOGIC;
 #endif
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk     --
--- clk     -- Clock inputs for SDRAM
--- clk     refclk_sdram_p                      : IN    STD_LOGIC;
--- clk     refclk_sdram_n                      : IN    STD_LOGIC;
--- clk #endif
 #ifdef CONFIG_ENABLE_NVME
     --
     -- NVME Interface
@@ -641,11 +630,6 @@ BEGIN
 
   a0: psl_accel
     PORT MAP (
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk       -- Clock inputs for SDRAM
--- clk       refclk_sdram_p                    => refclk266_p,
--- clk       refclk_sdram_n                    => refclk266_n,
--- clk #endif
 #ifdef CONFIG_ENABLE_DDR4
       -- DDR4 SDRAM Interface
       -- Nallatech 250S card has one DDR4 SO-DIMMs

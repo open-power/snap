@@ -163,12 +163,6 @@ ENTITY psl_accel IS
     c0_ddr4_ck_t                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 -- TODO:    c0_ddr4_ten                         : OUT   STD_LOGIC;
 #endif
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk     --
--- clk     -- Clock inputs for SDRAM
--- clk     refclk_sdram_p                      : IN    STD_LOGIC;
--- clk     refclk_sdram_n                      : IN    STD_LOGIC;
--- clk #endif
 #ifdef CONFIG_ENABLE_NVME
     --
     -- NVME Interface
@@ -1080,8 +1074,6 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL sdram_axi_ctrl_rdata           : STD_LOGIC_VECTOR(31 DOWNTO 0);
   SIGNAL sdram_axi_ctrl_rresp           : STD_LOGIC_VECTOR(1 DOWNTO 0);
   SIGNAL sdram_interrupt                : STD_LOGIC;
--- clk  SIGNAL refclk_sdram_ibuf              : STD_LOGIC;
--- clk  SIGNAL refclk_sdram_bufg              : STD_LOGIC;
 #endif
 
 #ifdef CONFIG_ENABLE_DDR4
@@ -1246,22 +1238,6 @@ BEGIN
       sdram_reset_q   <=     sdram_reset_m;
     END IF;
   END PROCESS sdram_reset_reg;
-
--- clk   --
--- clk   -- SDRAM Ref Clock Logic
--- clk   --
--- clk   ibuf_refclk_sdram : IBUFGDS
--- clk   port map(
--- clk     I  => refclk_sdram_p,
--- clk     IB => refclk_sdram_n,
--- clk     O  => refclk_sdram_ibuf
--- clk   );
--- clk  
--- clk   bufg_sdrma : BUFG
--- clk   port map(
--- clk     I => refclk_sdram_ibuf,
--- clk     O => refclk_sdram_bufg
--- clk   );
 #endif
 
   snap_core_i: snap_core

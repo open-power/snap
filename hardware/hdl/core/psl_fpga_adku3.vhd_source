@@ -26,11 +26,6 @@ USE ieee.numeric_std.all;
 
 ENTITY psl_fpga IS
   PORT(
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk     -- Clock inputs for SDRAM
--- clk     refclk200_p        : IN      STD_LOGIC;
--- clk     refclk200_n        : IN      STD_LOGIC;
--- clk #endif
 #ifdef CONFIG_ENABLE_DDR3
     -- DDR3 SDRAM Interface
     -- AlphaData KU3 card has two DDR3 SO-DIMMs
@@ -184,11 +179,6 @@ Component psl_accel
        ha_jeapar: in std_logic;
        ha_jcompar: in std_logic;
 
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk        -- Clock inputs for SDRAM
--- clk        refclk_sdram_p                     : IN    STD_LOGIC;
--- clk        refclk_sdram_n                     : IN    STD_LOGIC;
--- clk #endif
 #ifdef CONFIG_ENABLE_DDR3
        -- DDR3 SDRAM Interface
        c0_sys_clk_p                       : IN    STD_LOGIC;
@@ -457,10 +447,6 @@ begin
          ha_jeapar            => ha0_jeapar,
          ha_jcompar           => ha0_jcompar,
 
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk          refclk_sdram_n       => refclk200_n,
--- clk          refclk_sdram_p       => refclk200_p,
--- clk #endif
 #ifdef CONFIG_ENABLE_DDR3
          c0_sys_clk_p         => c0_sys_clk_p,
          c0_sys_clk_n         => c0_sys_clk_n,

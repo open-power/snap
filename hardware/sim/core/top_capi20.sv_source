@@ -1082,15 +1082,6 @@ module top (
   wire  [ 3:0] pcie_rc1_txp;
 #endif
 #ifdef CONFIG_ENABLE_DDRI
-// clk  // SDRAM Reference Clock generation
-// clk  reg       refclk_sdram_p;
-// clk  initial   refclk_sdram_p <= 0;
-// clk 
-// clk  // 266MHz N250SP reference clock
-// clk  always begin
-// clk     refclk_sdram_p = !refclk_sdram_p; #(3.752ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
-// clk  end
-
   // SDRAM System Clock generation
   reg       sys_clk_p;
   initial   sys_clk_p <= 0;
@@ -1179,10 +1170,6 @@ module top (
 //    .ah_jyield(ah_jyield),    - mcp004 does not seem to have this port
     .ah_tbreq(ah_tbreq),
     .ah_paren(ah_paren),
-// clk #ifdef CONFIG_ENABLE_DDRI
-// clk     .refclk_sdram_p         (refclk_sdram_p),
-// clk     .refclk_sdram_n         (~refclk_sdram_p),
-// clk #endif
 #ifdef CONFIG_ENABLE_DDR3
     // DDR3
     .c0_sys_clk_p           (sys_clk_p),
