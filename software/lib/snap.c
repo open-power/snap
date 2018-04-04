@@ -1,5 +1,5 @@
 /**
- * Copyright 2016, 2017 International Business Machines
+ * Copyright 2016, 2018 International Business Machines
  * Copyright 2016 Rackspace Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -606,17 +606,21 @@ static int hw_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long
 	unsigned long rc_val = 0;
 	unsigned long *arg = (unsigned long *)parm;
 
+	if (NULL == arg) {
+		snap_trace("  %s Error Missing parm\n", __func__);
+		return -1;
+	}	
 	switch (cmd) {
 	case GET_CARD_TYPE:
 		rc_val = (unsigned long)(card->cap_reg & 0xff);
-		snap_trace("  %s CARD_TYPE: %d\n", __func__, (int)rc_val);
+		snap_trace("  %s GET CARD_TYPE: %d\n", __func__, (int)rc_val);
 		*arg = rc_val;
 		break;
 	case GET_NVME_ENABLED:
 		if (card->cap_reg & SNAP_NVME_ENA)
 			rc_val = 1;
 		else rc_val = 0;
-		snap_trace("  %s NVME: %d\n", __func__, (int)rc_val);
+		snap_trace("  %s GET NVME: %d\n", __func__, (int)rc_val);
 		*arg = rc_val;
 		break;
 	case GET_SDRAM_SIZE:
@@ -625,12 +629,28 @@ static int hw_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long
 		snap_trace("  %s Get MEM: %d MB\n", __func__, (int)rc_val);
 		*arg = rc_val;
 		break;
+	case GET_DMA_ALIGN:
+		/* Data alignment for DMA transfers to/from Host */
+		/* Value a means that transfers need to be 2^a B aligned */
+		rc_val = (unsigned long)(card->cap_reg >> 32)&0xf;   /* Get Bits 32 .. 35 */
+		rc_val = 1 << rc_val;
+		snap_trace("  %s Get DMA align: %d Bytes\n", __func__, (int)rc_val);
+		*arg = rc_val;
+		break;
+	case GET_DMA_MIN_SIZE:
+		/* Minimum size for DMA transfers to/from Host */
+		/* Value t means that minimum transfer size is 2^t B */ 
+		rc_val = (unsigned long)(card->cap_reg >> 36)&0xf;   /* Get Bits 36 .. 39 */
+		rc_val = 1 << rc_val;
+		snap_trace("  %s Get DMA Min Size: %d Bytes\n", __func__, (int)rc_val);
+		*arg = rc_val;
+		break;
 	case SET_SDRAM_SIZE:
 		card->cap_reg = (card->cap_reg & 0xffff) | (parm << 16);
 		snap_trace("  %s Set MEM: %d MB\n", __func__, (int)parm);
 		break;
 	default:
-		snap_trace("  %s Error\n", __func__);
+		snap_trace("  %s Invalid CMD %d Error\n", __func__, cmd);
 		*arg = 0;
 		rc = -1;
 		break;
@@ -1231,7 +1251,11 @@ static int sw_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long
 	int rc = 0;
 	unsigned long *arg = (unsigned long *)parm;
 
-	snap_trace("  %s Handle: %p CMD: %d\n", __func__, card, cmd);
+	snap_trace("  %s Enter Handle: %p CMD: %d\n", __func__, card, cmd);
+	if (NULL == arg) {
+		snap_trace("  %s EXIT Handle: %p CMD: %d no Parm\n", __func__, card, cmd);
+		return -1;
+	}
 	switch (cmd) {
 	case GET_CARD_TYPE:
 		*arg = 255;    /* Some Unknown */
@@ -1242,10 +1266,17 @@ static int sw_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long
 	case GET_SDRAM_SIZE:
 		*arg = 0;      /* No Card Ram in SW Mode */
 		break;
+	case GET_DMA_ALIGN:
+		*arg = 1 << 6; /* 64 Bytes Aligned */
+		break;
+	case GET_DMA_MIN_SIZE:
+		*arg = 1 << 0; /* 1 Byte Size */
+		break;
 	case SET_SDRAM_SIZE:
 		card->cap_reg = (card->cap_reg & 0xffff) | (parm << 16);
 		break;
 	default:
+		snap_trace("  %s EXIT Handle: %p Invalid CMD: %d\n", __func__, card, cmd);
 		rc = -1;
 		break;
 	}
