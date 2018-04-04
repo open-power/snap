@@ -32,11 +32,13 @@
 #define MAX_SSD_BLOCK_XFER    128 
 //The NVMe subsystem can handle up to 218 read or write requests per drive.
 
-#define CARD_DRAM_SIZE        (1 * 1024 *1024 * 1024)
+// maximum transfer size to and from SDRAM (DDR on FPAGA board is 8GB)
+#define CARD_DRAM_SIZE        (4 * 1024 *1024 * 1024) // allowing 8GB split in the 2 buffers for paths to and from SSD
 #define MAX_NB_OF_WORDS_READ    (MAX_NB_OF_BYTES_READ/BPERDW)
 
 #define DRAM_ADDR_TO_SSD   0x00000000
-#define DRAM_ADDR_FROM_SSD 0x80000000
+//#define DRAM_ADDR_FROM_SSD 0x80000000
+#define DRAM_ADDR_FROM_SSD 0x00000000  // test to share to and from buffer this means only one sens at a time !
 //---------------------------------------------------------------------
 typedef struct {
     CONTROL Control;    /*  16 bytes */
