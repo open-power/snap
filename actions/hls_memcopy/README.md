@@ -5,6 +5,6 @@
   * HOST memory (for example a file)
   * DDR FPGA attached on board memory
   * Block RAM memory (memory inside the FPGA itself)
-* Example routine details the copy mecanism.
+* Example routine details the copy mechanism.
 
 Detailed information can be found in the [actions/hls_memcopy/doc](./doc) directory

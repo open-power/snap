@@ -5,7 +5,7 @@
   * HOST memory (for example a file)
   * DDR FPGA attached on board memory
   * NVMe attached SSDs
-* Example routine details the copy mecanism.
+* Example routine details the copy mechanism.
 
 * Note :
   * the example is based on a hardware driver that allows copying from/to DDR to NVMe attached SDDs.
