@@ -23,17 +23,9 @@ USE ieee.std_logic_1164.all;
 USE ieee.std_logic_misc.all;
 USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk   LIBRARY unisim;
--- clk   USE unisim.vcomponents.all;
--- clk #endif
 
 ENTITY psl_fpga IS
   PORT(
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk     -- Clock inputs for SDRAM
--- clk     refclk200          : IN      STD_LOGIC;
--- clk #endif
 #ifdef CONFIG_ENABLE_DDR4
     -- DDR4 SDRAM Interface                                                    
     -- Alphadata 8K5 card also has two DDR4 SO-DIMMs                             
@@ -187,10 +179,6 @@ Component psl_accel
        ha_jeapar: in std_logic;
        ha_jcompar: in std_logic;
                                                                                    
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk        -- Clock inputs for SDRAM                                                   
--- clk        refclk_sdram                       : IN    STD_LOGIC;                       
--- clk #endif
 #ifdef CONFIG_ENABLE_DDR4                                                                                   
        -- DDR4 SDRAM Interface                                                     
        c0_sys_clk_p              : IN    STD_LOGIC;                                
@@ -398,22 +386,8 @@ ATTRIBUTE dont_touch of user_image_q: SIGNAL IS "true";
 SIGNAL gold_factory        : std_logic;
 SIGNAL pci_user_reset      : std_logic;
 SIGNAL pci_clock_125MHz    : std_logic;
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk   SIGNAL refclk_sdram              : STD_LOGIC;
--- clk #endif
 
 begin
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk   --
--- clk   -- SDRAM Ref Clock Logic
--- clk   --
--- clk   bufg_sdrma : BUFG
--- clk   port map(
--- clk     I => refclk200,
--- clk     O => refclk_sdram
--- clk   );
--- clk #endif
-
      a0: psl_accel
       PORT MAP (
          ah_cvalid            => a0h_cvalid,
@@ -470,9 +444,6 @@ begin
          ah_jyield            => a0h_jyield,
          ha_jeapar            => ha0_jeapar,
          ha_jcompar           => ha0_jcompar,
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk          refclk_sdram         => refclk_sdram,       
--- clk #endif
 #ifdef CONFIG_ENABLE_DDR4
          c0_sys_clk_p            => c0_sys_clk_p    ,	  
          c0_sys_clk_n            => c0_sys_clk_n    ,	  

@@ -296,9 +296,6 @@ if { ($fpga_card == "N250SP") && ($psl_ip_dir != "not defined") } {
 # XDC
 # SNAP CORE XDC
 puts "                        importing XDCs"
-## clk add_files -fileset constrs_1 -norecurse $root_dir/setup/snap_link.xdc
-## clk set_property used_in_synthesis false [get_files  $root_dir/setup/snap_link.xdc]
-## clk update_compile_order -fileset sources_1 >> $log_file
 
 # PSL_IP XDC
 if { ($fpga_card == "N250SP") && ($psl_ip_dir != "not defined") } {
@@ -311,39 +308,26 @@ if { ($fpga_card == "N250SP") && ($psl_ip_dir != "not defined") } {
 
 # DDR XDCs
 if { $fpga_card == "ADKU3" } {
-
-  if { $bram_used == "TRUE" } {
-## clk    add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_refclk200.xdc
-  } elseif { $sdram_used == "TRUE" } {
-## clk    add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_refclk200.xdc
+  if { $sdram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_ddr3_b0pblock.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_ddr3_b0pblock.xdc]
     add_files -fileset constrs_1 -norecurse $root_dir/setup/ADKU3/snap_ddr3_b0pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/ADKU3/snap_ddr3_b0pins.xdc]
   }
 } elseif {$fpga_card == "S121B" } {
-  if { $bram_used == "TRUE" } {
-## clk    add_files -fileset constrs_1 -norecurse $root_dir/setup/S121B/snap_refclk100.xdc
-  } elseif { $sdram_used == "TRUE" } {
-## clk    add_files -fileset constrs_1 -norecurse $root_dir/setup/S121B/snap_refclk100.xdc
+  if { $sdram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/S121B/snap_ddr4_c2pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/S121B/snap_ddr4_c2pins.xdc]
   }
 } elseif {$fpga_card == "AD8K5" } {
-  if { $bram_used == "TRUE" } {
-## clk    add_files -fileset constrs_1 -norecurse $root_dir/setup/AD8K5/snap_refclk200.xdc
-  } elseif { $sdram_used == "TRUE" } {
-## clk    add_files -fileset constrs_1 -norecurse $root_dir/setup/AD8K5/snap_refclk200.xdc
+  if { $sdram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/AD8K5/snap_ddr4_b0pblock.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/AD8K5/snap_ddr4_b0pblock.xdc]
     add_files -fileset constrs_1 -norecurse $root_dir/setup/AD8K5/snap_ddr4_b0pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/AD8K5/snap_ddr4_b0pins.xdc]
   }
 } elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
-  if { $bram_used == "TRUE" } {
-## clk    add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_refclk266.xdc
-  } elseif { $sdram_used == "TRUE" } {
-## clk    add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_refclk266.xdc
+  if { $sdram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]
   }
