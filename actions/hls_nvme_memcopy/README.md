@@ -3,14 +3,15 @@
 * Provides a simple base allowing to discover SNAP while using NVMe attached SSDs when available
 * C code allows copying to/from :
   * HOST memory (for example a file)
-  * DDR FPGA attached on board memory
+  * DDR SDRAM memory on the FPGA board
   * NVMe attached SSDs
-* Example routine details the copy mechanism.
+* The example code details the copy mechanism.
 
 * Note :
-  * the example is based on a hardware driver that allows copying from/to DDR to NVMe attached SDDs.
-  * copying from/to host must transit through the DDR of the FPGA board before using SSDs
-  * an initialisation is required with snap_nvme_init before any use of the SSD's.
-  * the chosen card should contain SSD !
+  * the example is based on a hardware design that allows for copying from DDR SDRAM to an NVMe-attached SSDs and vice versa.
+  * when copying from/to the host, data must transit through the DDR of the FPGA board on the way to/from the SSDs
+  * the SSD drives must be initialized with `snap_nvme_init` before the nvme_memcopy software can be used.
+  * the chosen FPGA card must have an SSD connected!
 
-Detailed information can be found in the [actions/hls_nvme_memcopy/doc](./doc) directory
+:star: Please check the [actions/hls_nvme_memcopy/doc](./doc/) directory for detailed information
+

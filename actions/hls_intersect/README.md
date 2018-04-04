@@ -1,4 +1,3 @@
-
 # Notice: 
 **This example often does not meet timing (> 200ps negative slack) in bitstream generation. Running on FPGA hardware has passed for many times but it is NOT guaranteed.**
 
@@ -39,7 +38,7 @@ make image
 # How to run
 
 - Step1: Copy Tables from Host memory to FPGA Card memory
-- Step2: Copy Tables from FPGA Card memory to Host memory
+- Step2: Copy Tables from FPGA Card memory to Host memorys
 - Step3: FPGA does table intersection (result is in FPGA Card memory)
 - Step4: CPU  does table intersection
 - Step5: Copy Result from FPGA Card memory to Host memory
@@ -70,6 +69,8 @@ Compare time "Step3+Step5"  .vs.  "Step2+Step4"
 	SNAP_CONFIG=1 ./snap_intersect -m2 -s  (software sort method)
 	"-s" is needed. 
 
-## Other arguments please look in `./snap_intersect -h`
 
-## Check for more detail in the [actions/hls_intersect/doc](./doc/) directory
+:star: For other arguments please see the software help output `./snap_intersect -h`
+
+:star: Please check the [actions/hls_intersect/doc](./doc/) directory for detailed information
+

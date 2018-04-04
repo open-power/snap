@@ -3,14 +3,14 @@
 The hdl_example is a multi function example. The hardware is written in VHDL, the software in C. 
 
 ## Hardware
-The hardware part has implemented the following core functions:
+The hardware part implements the following core functions:
  * A counter function
- * A function that copied data from and to the Host Memory
- * A function that copied data from and to the DDR Memory (FPGA Card)
- * A function that copied data from and to the NVMe
+ * A function that copies data from and to the Host Memory
+ * A function that copies data from and to the DDR Memory (on the FPGA Card)
+ * A function that copies data from and to the NVMe
  * A set memory and check memory function
  
-Dependent on the SNAP configuration the necessary interfaces will be added or removed to the action. 
+Dependent on the SNAP configuration the necessary interfaces will be added to or removed from the action. 
 
 ## Software
 * snap_example
@@ -29,6 +29,6 @@ Dependent on the SNAP configuration the necessary interfaces will be added or re
 * snap_example_nvme
   * Tool to check NVMe
 
-* snap_example_nvme
-  * Tool to check NVMe
+* snap_example_qnvme
+  * Tool to check NVMe, using the NVMe host controller's queue to enqueue multiple requests.
 

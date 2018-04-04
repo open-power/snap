@@ -5,4 +5,5 @@
   * a text placed in SDRAM (in the FPGA board located memory) and searches a host memory located pattern
   * data in array or in a stream flow for comparison
 
-Detailed information can be found in the [actions/hls_search/doc](./doc) directory
+:star: Please check the [actions/hls_search/doc](./doc/) directory for detailed information
+

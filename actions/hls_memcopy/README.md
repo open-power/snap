@@ -3,8 +3,9 @@
 * Provides a simple base allowing to discover SNAP
 * C code allows copying to/from :
   * HOST memory (for example a file)
-  * DDR FPGA attached on board memory
+  * DDR SDRAM memory on the FPGA board
   * Block RAM memory (memory inside the FPGA itself)
-* Example routine details the copy mechanism.
+* The example code details the copy mechanism.
 
-Detailed information can be found in the [actions/hls_memcopy/doc](./doc) directory
+:star: Please check the [actions/hls_memcopy/doc](./doc/) directory for detailed information
+
