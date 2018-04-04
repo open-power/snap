@@ -72,3 +72,4 @@ Compare time "Step3+Step5"  .vs.  "Step2+Step4"
 
 ## Other arguments please look in `./snap_intersect -h`
 
+## Check for more detail in the [actions/hls_intersect/doc](./doc/) directory
