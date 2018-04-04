@@ -6,10 +6,11 @@
   * DDR FPGA attached on board memory
   * NVMe attached SSDs
 * Example routine details the copy mecanism.
-Note :
-* the example is based on a hardware driver that allows copying from/to DDR to NVMe attached SDDs.
-* copying from/to host must transit through the DDR of the FPGA board before using SSDs
-* an initialisation is required with snap_nvme_init before any use of the SSD's.
-* the chosen card should contain SSD !
+
+* Note :
+  * the example is based on a hardware driver that allows copying from/to DDR to NVMe attached SDDs.
+  * copying from/to host must transit through the DDR of the FPGA board before using SSDs
+  * an initialisation is required with snap_nvme_init before any use of the SSD's.
+  * the chosen card should contain SSD !
 
 Detailed information can be found in the [actions/hls_nvme_memcopy/doc](./doc) directory
