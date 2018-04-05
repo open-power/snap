@@ -29,9 +29,9 @@ Currently SNAP Framework supports CAPI1.0. The modules for CAPI2.0 and OpenCAPI 
 Developing an FPGA accelerated application on SNAP takes following steps: 
 * **Preparation**: Decide the software function to be moved to FPGA. This function, usually computation intensive, is named as "action" in the following description.
 
-* **Step1**. Split the original application into two parts: the "software main()" and "action". Determine the parameters (or function arguments) for "action". Use libsnap APIs to reformat the "main()" function. The best way is to start from an example (See in [actions](./actions) folder) and read the code under "sw" directory. 
+* **Step1**. Split the original application into two parts: the "software main()" and "action". Determine the parameters (or function arguments) for "action". Use libsnap APIs to reformat the "main()" function. The best way is to start from an example (See in [actions](./actions)) and read the code under "sw" directory. 
 
-* **Step2**. Write "hardware action" either in Vivado HLS or Verilog/VHDL way. For **HLS way**, developers code in C/C++, write the algorithms within an function wrapper "hls_action()" including "act_reg", "din_gmem", "dout_gmem", "d_ddrmem" as arguments. For **HDL(Verilog/VHDL) way**, developers need to write their own "action_wrapper.vhd" which includes several AXI master interfaces and one AXI-lite slave interface. You will see "hls_\*" and "hdl_\*" examples and please read the code under "hw" directory. After coding work, use PSLSE (PSL simulation engine) to **simulate** the full process of how "main()" invoking "hardware action". This step is crutial to verify the correctness. Simulation is usually slow so please use small data set in the beginning. to When the simulation is successful, it's time to **generate the FPGA bitstream**. Read [hardware README.md](hardware/README.md) for more details. Till now, the development work is done on an X86 machine and it doesn't need FPGA hardware.
+* **Step2**. Write "hardware action" either in Vivado HLS or Verilog/VHDL way. For **HLS way**, developers code in C/C++, write the algorithms within an function wrapper "hls_action()" including "act_reg", "din_gmem", "dout_gmem", "d_ddrmem" as arguments. For **HDL(Verilog/VHDL) way**, developers need to write their own "action_wrapper.vhd" which includes several AXI master interfaces and one AXI-lite slave interface. Refer to "hw" directory in "hls_\*" or "hdl_\*" action examples. After coding work, use PSLSE (PSL simulation engine) to **simulate** the full process of how "main()" invoking "hardware action". This step is crutial to verify the correctness. When the simulation is successful, it's time to **generate the FPGA bitstream**. Read [hardware README.md](hardware/README.md) for more details. Till now, the development work is done on an X86 machine and it doesn't need FPGA hardware.
 
 * **Step3**. Flash the bitstream to a real FPGA card plugged in a **Power or OpenPower** machine and run your "main()" from it. This step is also called **Deployment**.
 Please see [Bitstream_flashing.md](hardware/doc/Bitstream_flashing.md) for instructions on how to program the FPGA bitstream.
@@ -43,7 +43,7 @@ Please go to [actions](./actions) and there are several examples to help you sta
 
 # 3. Dependencies
 ## FPGA Card selection
-As of now, three FPGA cards can be used with SNAP:
+As of now, four FPGA cards can be used with SNAP:
 * Alpha-Data ADM-PCIE-KU3 http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
 * Alpha-Data ADM-PCIE-8K5 (rev2) http://www.alpha-data.com/dcp/products.php?product=adm-pcie-8k5
 * Nallatech 250S-2T with two on-card NVMe M.2 960GB drives http://www.nallatech.com/250s
