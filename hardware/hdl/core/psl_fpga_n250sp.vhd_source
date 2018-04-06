@@ -116,11 +116,6 @@ ENTITY psl_fpga IS
     pci0_o_txp_out7       : out   std_logic;
     pci0_o_txn_out7       : out   std_logic;
 
-    --#define   crc_error_inout
-
-    PCIE_PERST_LS   : in std_logic;
---    EMCCLK          : in std_logic;
-
 -- Flash Interface
     o_flash_oen           : out   std_logic;
     o_flash_wen           : out   std_logic;
@@ -354,10 +349,6 @@ Component psl_bsp
     pci0_o_txn_out6       : out   std_logic;
     pci0_o_txp_out7       : out   std_logic;
     pci0_o_txn_out7       : out   std_logic;
-
-
-    PCIE_PERST_LS   : in std_logic;
---    EMCCLK          : in std_logic;
 
 -- Flash Interface
     o_flash_oen           : out   std_logic;
@@ -850,9 +841,6 @@ BEGIN
       pci0_o_txn_out6     => pci0_o_txn_out6,
       pci0_o_txp_out7     => pci0_o_txp_out7,
       pci0_o_txn_out7     => pci0_o_txn_out7,
-
-      PCIE_PERST_LS       => PCIE_PERST_LS,
---      EMCCLK              => EMCCLK,
 
 -- Flash Interface
       o_flash_oen         => o_flash_oen,
