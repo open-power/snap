@@ -25,5 +25,6 @@ resize_pblock pblock_action -remove  CLOCKREGION_X3Y3:CLOCKREGION_X3Y4
 
 #enlarge SNAP PBLOCK for DDR
 resize_pblock pblock_snap -add CLOCKREGION_X3Y3:CLOCKREGION_X3Y4
+resize_pblock pblock_snap -add CLOCKREGION_X4Y4:CLOCKREGION_X4Y4
 add_cells_to_pblock pblock_snap [get_cells [list a0/axi_clock_converter_i]] -clear_locs
 add_cells_to_pblock pblock_snap [get_cells [list a0/ddr3sdram_bank0]] -clear_locs
