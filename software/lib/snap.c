@@ -118,7 +118,37 @@ struct snap_card {
 	unsigned int attach_timeout_sec;
 	unsigned int queue_length;      /* unused */
 	uint64_t cap_reg;               /* Capability Register */
+	const char *name;               /* Card name */
 };
+
+/* Translate Card ID to Name */
+struct card_2_name {
+	const int card_id;
+	const char card_name[16];
+};
+/* Limit Card names to max of 15 Bytes */
+struct card_2_name snap_card_2_name_tab[] = {
+	{.card_id = ADKU3_CARD,  .card_name = "ADKU3"},
+	{.card_id = N250S_CARD,  .card_name = "N250S"},
+	{.card_id = S121B_CARD,  .card_name = "S121B"},
+	{.card_id = AD8K5_CARD,  .card_name = "AD8K5"},
+	{.card_id = N250SP_CARD, .card_name = "N250SP"},
+	{.card_id = -1,          .card_name = "INVALID"}
+};
+
+/* Search snap_card_2_name_tab to for card name */
+static const char* snap_card_id_2_name(int card_id)
+{
+	int i = 0;
+
+	while(-1 != snap_card_2_name_tab[i].card_id) {
+		if (card_id == snap_card_2_name_tab[i].card_id)
+			break;
+		i++;
+	}
+	/* Return card name */
+	return snap_card_2_name_tab[i].card_name;
+}
 
 /* To be used for software simulation, use funcs provided by action */
 static int snap_map_funcs(struct snap_card *card,
@@ -225,10 +255,12 @@ static void *hw_snap_card_alloc_dev(const char *path,
 	/* Read and save Capability reg */
 	cxl_mmio_read64(afu_h, SNAP_S_CAP, &reg);
 	dn->cap_reg = reg;
+	/* Get SNAP Card Name */
+	dn->name = snap_card_id_2_name((int)(reg&0xff));
 
 	dn->afu_h = afu_h;
-	snap_trace("%s Exit %p OK Context: %d Master: %d\n", __func__,
-		dn, dn->cir, dn->master);
+	snap_trace("%s Exit %p OK Context: %d Master: %d Card: %s\n", __func__,
+		dn, dn->cir, dn->master, dn->name);
 	return (struct snap_card *)dn;
 
  __snap_alloc_err:
@@ -645,6 +677,10 @@ static int hw_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long
 		snap_trace("  %s Get DMA Min Size: %d Bytes\n", __func__, (int)rc_val);
 		*arg = rc_val;
 		break;
+	case GET_CARD_NAME:
+		snap_trace("  %s Get Card name: %s\n", __func__, card->name);
+		strcpy((char*)parm, card->name);
+		break;
 	case SET_SDRAM_SIZE:
 		card->cap_reg = (card->cap_reg & 0xffff) | (parm << 16);
 		snap_trace("  %s Set MEM: %d MB\n", __func__, (int)parm);
@@ -656,7 +692,6 @@ static int hw_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long
 		break;
 	}
 	return rc;
-
 }
 
 /* Hardware version of the lowlevel functions */
@@ -1100,6 +1135,7 @@ static void *sw_card_alloc_dev(const char *path __unused,
 	dn->priv = NULL;
 	dn->vendor_id = vendor_id;
 	dn->device_id = device_id;
+	dn->name = snap_card_id_2_name(vendor_id); /* Makes invalid name */ 
 	return (struct snap_card *)dn;
 
  __snap_alloc_err:
@@ -1271,6 +1307,9 @@ static int sw_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long
 		break;
 	case GET_DMA_MIN_SIZE:
 		*arg = 1 << 0; /* 1 Byte Size */
+		break;
+	case GET_CARD_NAME:
+		strcpy((char*)parm, card->name);
 		break;
 	case SET_SDRAM_SIZE:
 		card->cap_reg = (card->cap_reg & 0xffff) | (parm << 16);
