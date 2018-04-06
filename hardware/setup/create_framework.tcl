@@ -287,10 +287,10 @@ if { ($fpga_card == "N250SP") && ($psl_ip_dir != "not defined") } {
   add_files -norecurse                             $ip_dir/sem_ultra_0/sem_ultra_0.xci  -force >> $log_file
   export_ip_user_files -of_objects      [get_files $ip_dir/sem_ultra_0/sem_ultra_0.xci] -force >> $log_file
   set_property used_in_simulation false [get_files $ip_dir/sem_ultra_0/sem_ultra_0.xci]  >> $log_file
-  # add clk_wiz
-  add_files -norecurse                             $ip_dir/psl_bsp_clk_wiz/psl_bsp_clk_wiz.xci  -force >> $log_file
-  export_ip_user_files -of_objects      [get_files $ip_dir/psl_bsp_clk_wiz/psl_bsp_clk_wiz.xci] -force >> $log_file
-  set_property used_in_simulation false [get_files $ip_dir/psl_bsp_clk_wiz/psl_bsp_clk_wiz.xci] >> $log_file
+  # add uscale_plus_clk_wiz
+  add_files -norecurse                             $ip_dir/uscale_plus_clk_wiz/uscale_plus_clk_wiz.xci  -force >> $log_file
+  export_ip_user_files -of_objects      [get_files $ip_dir/uscale_plus_clk_wiz/uscale_plus_clk_wiz.xci] -force >> $log_file
+  set_property used_in_simulation false [get_files $ip_dir/uscale_plus_clk_wiz/uscale_plus_clk_wiz.xci] >> $log_file
   # add P9 PSL IP
   add_files -norecurse                             $ip_dir/PSL9_WRAP_0/PSL9_WRAP_0.xci  -force >> $log_file
   export_ip_user_files -of_objects      [get_files $ip_dir/PSL9_WRAP_0/PSL9_WRAP_0.xci] -force >> $log_file

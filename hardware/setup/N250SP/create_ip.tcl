@@ -120,8 +120,8 @@ generate_target all                          [get_files pcie4_uscale_plus_0.xci]
 export_ip_user_files -of_objects             [get_files pcie4_uscale_plus_0.xci] -no_script -force >> $log_file
 export_simulation    -of_objects             [get_files pcie4_uscale_plus_0.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
-#create_ip -name clk_wiz -vendor xilinx.com -library ip -version 5.* -module_name psl_bsp_clk_wiz -dir $ip_dir
-create_ip -name clk_wiz -vendor xilinx.com -library ip -module_name psl_bsp_clk_wiz -dir $ip_dir >> $log_file
+#create_ip -name clk_wiz -vendor xilinx.com -library ip -version 5.* -module_name uscale_plus_clk_wiz -dir $ip_dir
+create_ip -name clk_wiz -vendor xilinx.com -library ip -module_name uscale_plus_clk_wiz -dir $ip_dir >> $log_file
 set_property -dict [list                                    \
                     CONFIG.CLKIN1_JITTER_PS {40.0}          \
                     CONFIG.CLKOUT1_DRIVES {BUFG}            \
@@ -149,12 +149,12 @@ set_property -dict [list                                    \
                     CONFIG.NUM_OUT_CLKS {2}                 \
                     CONFIG.NUM_OUT_CLKS {3}                 \
                     CONFIG.PRIM_IN_FREQ {250}               \
-                   ] [get_ips psl_bsp_clk_wiz] >> $log_file
-set_property generate_synth_checkpoint false [get_files psl_bsp_clk_wiz.xci]
-generate_target {instantiation_template}     [get_files psl_bsp_clk_wiz.xci] >> $log_file
-generate_target all                          [get_files psl_bsp_clk_wiz.xci] >> $log_file
-export_ip_user_files -of_objects             [get_files psl_bsp_clk_wiz.xci] -no_script -force >> $log_file
-export_simulation    -of_objects             [get_files psl_bsp_clk_wiz.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+                   ] [get_ips uscale_plus_clk_wiz] >> $log_file
+set_property generate_synth_checkpoint false [get_files uscale_plus_clk_wiz.xci]
+generate_target {instantiation_template}     [get_files uscale_plus_clk_wiz.xci] >> $log_file
+generate_target all                          [get_files uscale_plus_clk_wiz.xci] >> $log_file
+export_ip_user_files -of_objects             [get_files uscale_plus_clk_wiz.xci] -no_script -force >> $log_file
+export_simulation    -of_objects             [get_files uscale_plus_clk_wiz.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create_ip -name sem_ultra -vendor xilinx.com -library ip -version 3.* -module_name sem_ultra_0 -dir $ip_dir
 create_ip -name sem_ultra -vendor xilinx.com -library ip -module_name sem_ultra_0 -dir $ip_dir >> $log_file
