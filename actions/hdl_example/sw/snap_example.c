@@ -222,13 +222,17 @@ static void action_memcpy(struct snap_card* h,
 	return;
 }
 
+/* 
+ * Return 0 if buffer is equal, 
+ * Return index+1 if not equal
+ */
 static int memcmp2(uint8_t *src, uint8_t *dest, int len)
 {
 	int i;
 
 	for (i = 0; i < len; i++) {
 		if (*src != *dest)
-			return i;
+			return i+1;
 		src++; dest++;
 	}
 	return 0;
@@ -344,7 +348,7 @@ static int memcpy_test(struct snap_card* dnc,
 				__hexdump(stdout, dest, memsize);
 			}
 			if (rc)
-				VERBOSE0("Error Memcmp failed at 0x%x\n", rc);
+				VERBOSE0("Error Memcmp failed at 0x%x\n", rc-1);
 		}
 		free_mem(f_src);
 		free_mem(f_dest);
@@ -576,7 +580,7 @@ int main(int argc, char *argv[])
 		case 'A':	/* align */
 			memcpy_align = strtol(optarg, (char **)NULL, 0);
 			if (0 != (memcpy_align & 0x3f)) {
-				VERBOSE0("ERROR: align %d must be a multible of 64\n",
+				VERBOSE0("ERROR: align %d must be a multiple of 64\n",
 					memcpy_align);
 				exit(1);
 			}
