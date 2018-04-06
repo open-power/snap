@@ -621,6 +621,7 @@ static int hw_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long
 		break;
 	case GET_SDRAM_SIZE:
 		rc_val = (unsigned long)(card->cap_reg >> 16);   /* in MB */
+		rc_val = rc_val & 0xffff;    /* Mask bits 16 ... 31 */
 		snap_trace("  %s Get MEM: %d MB\n", __func__, (int)rc_val);
 		*arg = rc_val;
 		break;
