@@ -122,6 +122,9 @@ if { ([get_property pr_flow [current_project]] != 1) } {
 ##
 ## ACTION run
 if { ($cloud_run == "ACTION") || ($cloud_run == "BASE") } {
+  
+  set directive [get_property STEPS.SYNTH_DESIGN.ARGS.DIRECTIVE [get_runs user_action_synth_1]]
+  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start action synthesis" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   reset_run    user_action_synth_1 >> $logfile
   launch_runs  user_action_synth_1 >> $logfile
   wait_on_run  user_action_synth_1 >> $logfile
