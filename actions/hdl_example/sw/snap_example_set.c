@@ -94,12 +94,12 @@ static int check_buffer(uint8_t *hb,	/* Host Buffer */
 		uint8_t pattern)	/* Patthern to check */
 {
 	int i;
-	int rc, bad;
+	int bad;
 	uint8_t data;
 
 	PRINTF2("\nCheck %d bytes in Buffer Start at: %d for Pattern: 0x%02x",
 		size, begin, pattern);
-	rc = bad = 0;
+	bad = 0;
 	/* Check bytes from 0 to begin. This Bytes must stay untouched */
 	for (i = 0; i < begin; i++) {
 		data = *hb;	/* Get data */
@@ -109,11 +109,14 @@ static int check_buffer(uint8_t *hb,	/* Host Buffer */
 				DEFAULT_MEM,	/* What i expect */
 				data);		/* What i got */
 			bad++;
-			if (bad > 10) rc = 1;	/* Exit */
+			if (bad > 10)
+				break;          /* Exit */
 		}
-		if (rc) return 1;
 		hb++;
 	}
+	if (bad)
+		return bad;
+
 	/* Check bytes from begin to begin+size. This Bytes are modified */
 	for (i = begin; i < begin+size; i++) {
 		data = *hb;	/* Get data */
@@ -123,11 +126,14 @@ static int check_buffer(uint8_t *hb,	/* Host Buffer */
 				pattern,	/* What i expect */
 				data);		/* What i got */
 			bad++;
-			if (bad > 9) rc = 1;	/* Exit */
+			if (bad > 10)
+				break;          /* Exit */
 		}
-		if (rc) return 2;
 		hb++;
 	}
+	if (bad)
+		return bad;
+
 	/* Check begin+size to end. This Bytes must stay untouched */
 	for (i = begin+size; i < h_size; i++) {
 		data = *hb;	/* Get data */
@@ -137,12 +143,12 @@ static int check_buffer(uint8_t *hb,	/* Host Buffer */
 				DEFAULT_MEM,	/* What i expect */
 				data);		/* What i got */
 			bad++;
-			if (bad > 9) rc = 1;	/* Exit */
+			if (bad > 10)
+				break;          /* Exit */
 		}
-		if (rc) return 2;
 		hb++;
 	}
-	return 0;
+	return bad;
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
