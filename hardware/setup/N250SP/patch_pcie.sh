@@ -20,21 +20,14 @@
 ############################################################################
 
 SCRIPT=$(readlink -f "$0")
-DIR=$(dirname $SCRIPT)
-IPDIR="ip"
-PATCH="pcie4_uscale_plus_snap.patch"
-cd $DIR
+DIR=$(dirname $(dirname $(dirname $SCRIPT)))
+SOURCE=$DIR/ip/pcie4_uscale_plus_0/synth/pcie4_uscale_plus_0.v
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    "ip_dir")
+    "file")
       shift
-      IPDIR=$1
-      shift
-      ;;
-    "patch")
-      shift
-      PATCH=$1
+      SOURCE=$1
       shift
       ;;
     *)
@@ -44,6 +37,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-cp $PATCH $IPDIR/pcie4_uscale_plus_0/synth/
-cd $IPDIR/pcie4_uscale_plus_0/synth/
-patch -N < $PATCH
+sed -i 's/PF0_DEVICE_ID=0x0628/PF0_DEVICE_ID=0x0477,PF0_PCIE_CAP_NEXTPTR=0xb0/' $SOURCE
+sed -i 's/H0628/H0477/' $SOURCE
+sed -i 's/PF0_SECONDARY_PCIE_CAP_NEXTPTR=0x480/PF0_SECONDARY_PCIE_CAP_NEXTPTR=0x400/' $SOURCE
+sed -i "s/PF0_SECONDARY_PCIE_CAP_NEXTPTR('H480)/PF0_SECONDARY_PCIE_CAP_NEXTPTR('H400)/" $SOURCE
+sed -i "/PF0_DEVICE_ID(/ a\
+\    .PF0_PCIE_CAP_NEXTPTR('HB0)," $SOURCE

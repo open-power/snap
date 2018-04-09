@@ -174,7 +174,7 @@ generate_target {instantiation_template}     [get_files PSL9_WRAP_0.xci] >> $log
 generate_target all                          [get_files PSL9_WRAP_0.xci] >> $log_file
 export_ip_user_files -of_objects             [get_files PSL9_WRAP_0.xci] -no_script -force >> $log_file
 
-set status [catch {exec $root_dir/setup/$fpga_card/patch_pcie.sh patch $root_dir/setup/$fpga_card/pcie4_uscale_plus_snap.patch ip_dir $ip_dir} ]
+set status [catch {exec $root_dir/setup/$fpga_card/patch_pcie.sh file $ip_dir/pcie4_uscale_plus_0/synth/pcie4_uscale_plus_0.v} ]
 if { $status != 0 } {
   puts "WARNING: $root_dir/setup/$fpga_card/patch_pcie.sh returned status $status and error code $::errorCode"
 }
