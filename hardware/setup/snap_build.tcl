@@ -76,7 +76,7 @@ if { $vivadoVer < "2017.4" } {
 ##
 ## ToDo: necessary for other cards?
 if { $fpgacard != "AD8K5" } {
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "reread snap_impl.xdc" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "reread snap_impl.xdc" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   read_xdc $root_dir/setup/snap_impl.xdc >> $logfile
 }
 
