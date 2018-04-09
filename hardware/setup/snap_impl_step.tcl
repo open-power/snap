@@ -86,10 +86,6 @@ if { ($vivadoVer >= "2017.4") && ($cloud_flow == "FALSE") } {
   close_project                         >> $logfile
   open_checkpoint $dcp_dir/${step}.dcp  >> $logfile
 
-  if { $fpgacard != "N250SP" } {
-    puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-    set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
-  }
 }
 
 ##
@@ -104,6 +100,13 @@ if { $cloud_flow == "TRUE" } {
 set logfile   $logs_dir/${step}.log
 set command   "place_design -directive $directive"
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start place_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+
+## 
+## prevent placing inside PSL
+if { $fpgacard != "N250SP" } {
+  puts [format "%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+  set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
+}
 
 if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: place_design failed" $widthCol4 "" ]
