@@ -16,7 +16,7 @@
 #
 #-----------------------------------------------------------
 create_pblock pblock_snap
-resize_pblock pblock_snap -add CLOCKREGION_X3Y0:CLOCKREGION_X3Y2
+resize_pblock pblock_snap -add CLOCKREGION_X3Y0:CLOCKREGION_X5Y2
 resize_pblock pblock_snap -add CLOCKREGION_X4Y3:CLOCKREGION_X5Y3
 
 set_property parent pblock_snap [get_pblocks b_baseimg]
