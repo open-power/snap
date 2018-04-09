@@ -685,25 +685,26 @@ BEGIN
           --
           -- CLT: CACHE LINE TYPE TAG IS VALID
           --
+          -- Note: The alignment on the CAPI 2.0 DMA Data interface is
+          --       first byte first.
           IF (read_ctrl_q(clt_rtag_v).clt  = CL_NOT_USED) AND
              (rlen_q                      /= 0          ) THEN
             --
             -- update the clt in the read control register
             --
             -- bit "even 64 bytes of CL are valid indication"
-            IF raddr_q(6) = '0' THEN
-              read_ctrl_q(clt_rtag_v).clt(EVEN_64B_CL) <= '1';
-            ELSE
-              read_ctrl_q(clt_rtag_v).clt(EVEN_64B_CL) <= '0';
-            END IF;
+            read_ctrl_q(clt_rtag_v).clt(EVEN_64B_CL) <= '1';
 
             --
             -- bit "odd 64 bytes of CL are valid indication"
-            IF rlen_q     = 1 AND
-               raddr_q(6) = '0' THEN
+            IF raddr_q(6) = '1' THEN
               read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '0';
             ELSE
-              read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '1';
+              IF rlen_q  = 1 THEN
+                read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '0';
+              ELSE
+                read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '1';
+              END IF;
             END IF;
 
             --
@@ -1258,25 +1259,26 @@ BEGIN
        --
        -- CLT: CACHE LINE TYPE TAG IS VALID
        --
+       -- Note: The alignment on the CAPI 2.0 DMA Data interface is
+       --       first byte first.
        IF (write_ctrl_q(clt_wtag_v).clt  = CL_NOT_USED) AND
           (wlen_q                       /= 0          ) THEN
          --
          -- update the clt in the write control register
          --
          -- bit "even 64 bytes of CL are valid indication"
-         IF waddr_q(6) = '0' THEN
-           write_ctrl_q(clt_wtag_v).clt(EVEN_64B_CL) <= '1';
-         ELSE
-           write_ctrl_q(clt_wtag_v).clt(EVEN_64B_CL) <= '0';
-         END IF;
+         write_ctrl_q(clt_wtag_v).clt(EVEN_64B_CL) <= '1';
 
          --
          -- bit "odd 64 bytes of CL are valid indication"
-         IF wlen_q     = 1 AND
-            waddr_q(6) = '0' THEN
+         IF waddr_q(6) = '1' THEN
            write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '0';
          ELSE
-           write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '1';
+           IF wlen_q = 1 THEN
+             write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '0';
+           ELSE
+             write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '1';
+           END IF;
          END IF;
 
          --
@@ -1604,7 +1606,13 @@ BEGIN
             dh_d_q.req_utag <= "00100" & dma_wtag_q(4 DOWNTO 0);
             dh_d_q.req_itag <= write_ctrl_q(dma_wtag_v).itag;
             dh_d_q.req_type <= "001";
-            dh_d_q.size     <= std_logic_vector(to_unsigned(128, 10));
+
+            IF (write_ctrl_q(dma_wtag_v).clt(EVEN_64B_CL) = '0') OR
+               (write_ctrl_q(dma_wtag_v).clt(ODD_64B_CL ) = '0') THEN
+              dh_d_q.size     <= std_logic_vector(to_unsigned(64, 10));
+            ELSE
+              dh_d_q.size     <= std_logic_vector(to_unsigned(128, 10));
+            END IF;
 
           --
           -- STATE FSM ERROR
