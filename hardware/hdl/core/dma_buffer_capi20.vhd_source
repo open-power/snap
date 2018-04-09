@@ -85,7 +85,6 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL buf_rtag                         : integer RANGE 0 TO 31;
   SIGNAL buf_wtag                         : integer RANGE 0 TO 31;
   SIGNAL buf_rtag_q                       : std_logic_vector(  5 DOWNTO 0);
-  SIGNAL buf_wdata_extra_v                : std_logic;
   SIGNAL buf_rtag_qq                      : std_logic_vector(  5 DOWNTO 0);
   SIGNAL buf_rtag_qqq                     : std_logic_vector(  5 DOWNTO 0);
   SIGNAL buf_rtag_p_q                     : std_logic;
@@ -129,6 +128,7 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL wram_rdata_reordered             : std_logic_vector((576*CAPI_VER)-1 DOWNTO 0);
   SIGNAL wram_waddr_d, wram_waddr_q       : std_logic_vector(  6 DOWNTO 0);
   SIGNAL wram_waddr_p_d, wram_waddr_p_q   : std_logic;
+  SIGNAL wram_waddr_inc                   : std_logic_vector(  6 DOWNTO 0);
   SIGNAL wram_wdata                       : std_logic_vector(575 DOWNTO 0);
   SIGNAL wram_wen                         : std_logic;
   SIGNAL even_wdata_complete_q            : boolean;
@@ -326,19 +326,20 @@ BEGIN
     ----------------------------------------------------------------------------
     -- none clk process
     ----------------------------------------------------------------------------
-    wram_waddr_d               <=               wram_waddr_q       +          "0000001"       when wram_wen = '1' else wram_waddr_q;
-    wram_waddr_p_d             <= AC_PPARITH(1, wram_waddr_q, wram_waddr_p_q, "0000001", '0') when wram_wen = '1' else wram_waddr_p_q;
+    wram_waddr_d               <=               wram_waddr_q       +          wram_waddr_inc       when wram_wen = '1' else wram_waddr_q;
+    wram_waddr_p_d             <= AC_PPARITH(1, wram_waddr_q, wram_waddr_p_q, wram_waddr_inc, '0') when wram_wen = '1' else wram_waddr_p_q;
     wram_waddr                 <= wram_waddr_q(5 DOWNTO 0);
     wram_wdata(             0) <= sd_d_i.wr_data(0) XOR inject_dma_write_error_i;
     wram_wdata(511 DOWNTO   1) <= sd_d_i.wr_data(511 DOWNTO 1);
-    wram_wdata(575 DOWNTO 512) <= sd_d_i.wr_strobe WHEN buf_wdata_extra_v = '0' ELSE (OTHERS => '0');
-    wram_wen                   <= (or_reduce(sd_d_i.wr_strobe) AND NOT buf_walmost_full_i) OR buf_wdata_extra_v;
+    wram_wdata(575 DOWNTO 512) <= sd_d_i.wr_strobe;
+    wram_wen                   <= (or_reduce(sd_d_i.wr_strobe) AND NOT buf_walmost_full_i);
 
     buf_wtag                   <= to_integer(unsigned(wram_waddr_q(5 DOWNTO 1)));
-    buf_wdata_extra_v          <= '1' WHEN (wram_waddr_q(0) = '0' AND write_ctrl_i(buf_wtag).clt(EVEN_64B_CL) = '0'
-                                                                  AND write_ctrl_i(buf_wtag).clt(ODD_64B_CL)  = '1') OR
-                                           (wram_waddr_q(0) = '1' AND write_ctrl_i(buf_wtag).clt(EVEN_64B_CL) = '1'
-                                                                  AND write_ctrl_i(buf_wtag).clt(ODD_64B_CL)  = '0') ELSE '0';
+    --
+    -- write address increment value
+    wram_waddr_inc  <= "0000010" WHEN ((write_ctrl_i(buf_wtag).clt(EVEN_64B_CL) = '1') AND
+                                       (write_ctrl_i(buf_wtag).clt(ODD_64B_CL)  = '0')) ELSE "0000001";
+
 
     ----------------------------------------------------------------------------
     -- clk process
@@ -370,24 +371,20 @@ BEGIN
           -- check that the first 64 bytes of a CL are written into the buffer
           --
           IF (wram_waddr_q(0) = '0') THEN
-            IF (and_reduce(sd_d_i.wr_strobe) = '1') THEN
-              even_wdata_complete_q <= TRUE;
-            ELSE
-              even_wdata_complete_q <= FALSE;
-            END IF;
+            even_wdata_complete_q <= TRUE;
+          ELSE
+            even_wdata_complete_q <= FALSE;
           END IF;
 
           --
           -- check that the second 64 bytes of a CL are written into the buffer
           --
           IF (wram_waddr_q(0) = '1') THEN
-            IF (and_reduce(sd_d_i.wr_strobe) = '1') THEN
-              odd_wdata_complete_v := TRUE;
-            ELSE
-              odd_wdata_complete_v := FALSE;
-            END IF;
+            odd_wdata_complete_v := TRUE;
+          ELSE
+            odd_wdata_complete_v := FALSE;
           END IF;
-        end if;
+        END IF;
 
         --
         -- check that the full CL is written into the buffer
