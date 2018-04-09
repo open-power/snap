@@ -89,7 +89,8 @@ static void print_time(uint64_t elapsed)
  */
 static int check_buffer(uint8_t *hb,	/* Host Buffer */
 		int begin,		/* Offset in Buffer */
-		int size,
+		int size,               /* Size of modified bytes */
+		int h_size,             /* Size of complete buffer */
 		uint8_t pattern)	/* Patthern to check */
 {
 	int i;
@@ -99,10 +100,11 @@ static int check_buffer(uint8_t *hb,	/* Host Buffer */
 	PRINTF2("\nCheck %d bytes in Buffer Start at: %d for Pattern: 0x%02x",
 		size, begin, pattern);
 	rc = bad = 0;
+	/* Check bytes from 0 to begin. This Bytes must stay untouched */
 	for (i = 0; i < begin; i++) {
 		data = *hb;	/* Get data */
 		if (data != DEFAULT_MEM) {
-			PRINTF0("\nError1@: %d Expect: 0x%02x Read: 0x%02x",
+			PRINTF0("\nError1@: 0x%x Expect: 0x%02x Read: 0x%02x",
 				i,		/* Address */
 				DEFAULT_MEM,	/* What i expect */
 				data);		/* What i got */
@@ -112,12 +114,27 @@ static int check_buffer(uint8_t *hb,	/* Host Buffer */
 		if (rc) return 1;
 		hb++;
 	}
-	for (i = 0; i < size; i++) {
+	/* Check bytes from begin to begin+size. This Bytes are modified */
+	for (i = begin; i < begin+size; i++) {
 		data = *hb;	/* Get data */
 		if (data != pattern) {
-			PRINTF0("\nError@: %d Expect: 0x%02x Read: 0x%02x",
+			PRINTF0("\nError@: 0x%x Expect: 0x%02x Read: 0x%02x",
 				i,		/* Address */
 				pattern,	/* What i expect */
+				data);		/* What i got */
+			bad++;
+			if (bad > 9) rc = 1;	/* Exit */
+		}
+		if (rc) return 2;
+		hb++;
+	}
+	/* Check begin+size to end. This Bytes must stay untouched */
+	for (i = begin+size; i < h_size; i++) {
+		data = *hb;	/* Get data */
+		if (data != DEFAULT_MEM) {
+			PRINTF0("\nError@: 0x%x Expect: 0x%02x Read: 0x%02x",
+				i,		/* Address */
+				DEFAULT_MEM,	/* What i expect */
 				data);		/* What i got */
 			bad++;
 			if (bad > 9) rc = 1;	/* Exit */
@@ -182,6 +199,8 @@ static void action_start(struct snap_card* h,
 		return;
 		break;
 	}
+	PRINTF2(" Start Address: %llx\n", (long long)src);
+	PRINTF2(" End   Address: %llx\n", (long long)dest);
 	PRINTF2(" Set: %lld Bytes with Pattern: 0x%02x ",
 		(long long)(dest-src), pattern);
 	action_write(h, ACTION_CONFIG,  action);
@@ -418,9 +437,15 @@ int main(int argc, char *argv[])
 			start = (uint64_t)hb + h_begin;	/* Host Start Address */
 			stop = start + size - 1;	/* Host End Address */
 			action_start(dn, func | (pattern << 8), stop, start);
-			if (0 != action_wait_idle(dn, timeout))
+			rc = action_wait_idle(dn, timeout);
+			if (verbose_level > 2) {
+				PRINTF0("\n Host buffer@ %p Size: 0x%llx Set Begin/Size: 0x%llx / 0x%llx\n",
+					hb, (long long)h_mem_size, (long long)begin, (long long)size); 
+				__hexdump(stdout, hb, h_mem_size);
+			}
+			if (0 != rc)
 				goto __exit1;
-			if (0 != check_buffer(hb, h_begin, size, pattern))
+			if (0 != check_buffer(hb, h_begin, size, h_mem_size, pattern))
 				goto __exit1;
 		}
 		snap_detach_action(act);
