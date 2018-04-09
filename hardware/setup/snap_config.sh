@@ -46,8 +46,7 @@ else
 fi
 
 if [ "$FPGACARD" == "N250SP" ]; then
-  DMA_XFER_SIZE="x\"7\""
-  DMA_ALIGNMENT="x\"7\""
+  DMA_XFER_SIZE="x\"6\""
   CARD_TYPE="x\"10\""
 fi
 if [ "${BRAM_USED^^}" == "TRUE" ]; then
