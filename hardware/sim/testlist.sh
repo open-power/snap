@@ -222,7 +222,7 @@
 #       for beg in 0 11 63;do                            # start adr
 #       for bsize in 7 128 4096 4097;do                  # block size to copy, rough timeout dependent on filesize
         for j in 5 2 1;do beg=$((j*$dma))                # adopt to capability reg DMA alignment
-        for i in 0 1 2 $rnd32;do bsize=$((i*$xfer))      # adopt to capability reg xfer size
+        for i in 1 2 $rnd32;do bsize=$((i*$xfer))        # adopt to capability reg xfer size
           to=$((bsize/20+300))
           if [[ $((bsize%128)) > 0 && $cardtype == "10" ]];then echo "skip bsize=$bsize for N250SP";continue;fi # only mult of 128B xfers allowed on N250SP
           step "snap_example_set -H -b${beg} -s${bsize} -p${bsize} -t$to"
