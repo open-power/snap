@@ -18,8 +18,8 @@
 resize_pblock pblock_action -remove    CLOCKREGION_X3Y4:CLOCKREGION_X5Y4
 resize_pblock pblock_action -remove    CLOCKREGION_X3Y3:CLOCKREGION_X3Y3
 
-resize_pblock pblock_snap -add CLOCKREGION_X3Y3:CLOCKREGION_X5Y3
-
+resize_pblock pblock_snap -add CLOCKREGION_X3Y3:CLOCKREGION_X5Y4
+resize_pblock pblock_snap -add CLOCKREGION_X4Y0:CLOCKREGION_X5Y2
 set_property parent pblock_snap [get_pblocks b_baseimg]
 
 # add NVME area to SNAP
