@@ -129,10 +129,20 @@ while [ -z "$SETUP_DONE" ]; do
       break
     fi
     SNAP_CFG="$SNAP_CFG""CONFIG_ENABLE_NVME=y\n"
+
+    if [ -d "$DENALI" ]; then
+      DENALI_USED="TRUE"
+      SNAP_CFG="$SNAP_CFG""CONFIG_ENABLE_DENALI=y\n"
+    else 
+      DENALI_USED="FALSE"
+      SNAP_CFG="$SNAP_CFG""CONFIG_ENABLE_DENALI=n\n"
+    fi
   else
     NVME_USED="FALSE"
+    DENALI_USED="FALSE"
   fi
   SNAP_CFG="$SNAP_CFG""CONFIG_NVME_USED=$NVME_USED\n"
+  SNAP_CFG="$SNAP_CFG""CONFIG_DENALI_USED=$DENALI_USED\n"
 
 
   ####### checking ILA DEBUG
