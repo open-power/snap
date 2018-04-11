@@ -95,17 +95,18 @@ while getopts "C:t:i:h" opt; do
 	esac
 done
 
-# Get Card Name
+# Get Card Name cut blank at the end
 echo -n "Detect Card[$snap_card] .... "
-CARD=`./software/tools/snap_maint -C $snap_card -m 4`
+CARD=`./software/tools/snap_maint -C $snap_card -m 4 | tr -d '[:space:]'`
 if [ -z $CARD ]; then
         echo "ERROR: Invalid Card."
         exit 1
 fi
 
-#Set Defaults for all Cards
-MIN_ALIGN=1
-MIN_BLOCK=1
+# Get Values from Card Card using mode 5 and mode 6 cut blank at the end
+MIN_ALIGN=`./software/tools/snap_maint -C $snap_card -m 5 | tr -d '[:space:]'`
+MIN_BLOCK=`./software/tools/snap_maint -C $snap_card -m 6 | tr -d '[:space:]'`
+echo -n " (Align: $MIN_ALIGN Min Block: $MIN_BLOCK) "
 
 case $CARD in
 "AD8K5" )
@@ -121,14 +122,16 @@ case $CARD in
         echo "-> Nallatech $CARD Card"
         ;;
 "N250SP" )
-	MIN_ALIGN=128
-	MIN_BLOCK=128
         echo "-> Nallatech $CARD Card"
         ;;
+* )
+	echo "-> $CARD is invalid"
+	exit 1
+	;;
 esac;
 
-# Get Ram Size
-RAM=`./software/tools/snap_maint -C $snap_card -m 3`
+# Get Ram Size cut blank at the end
+RAM=`./software/tools/snap_maint -C $snap_card -m 3  | tr -d '[:space:]'`
 if [ -z $RAM ]; then
         echo "Skip Test: No SRAM on Card $snap_card"
         exit 0
@@ -143,4 +146,5 @@ for ((iter=1;iter <= iteration;iter++))
 	echo -n "   IRQ Testing ($iter of $iteration) on: $CARD[$snap_card] "
 	test_memset $snap_card $MIN_ALIGN $MIN_BLOCK IRQ
 }
+echo "---------->>>> Exit Good <<<<<<--------------"
 exit 0
