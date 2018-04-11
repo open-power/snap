@@ -514,6 +514,9 @@ int main(int argc, char *argv[])
 	uint64_t td;
 	struct snap_action *act = NULL;
 	unsigned long ioctl_data;
+	unsigned long dma_align;
+	unsigned long dma_min_size;
+	char card_name[16];   /* Space for Card name */
 
 	while (1) {
                 int option_index = 0;
@@ -579,13 +582,8 @@ int main(int argc, char *argv[])
 			break;
 		case 'A':	/* align */
 			memcpy_align = strtol(optarg, (char **)NULL, 0);
-			if (0 != (memcpy_align & 0x3f)) {
-				VERBOSE0("ERROR: align %d must be a multiple of 64\n",
-					memcpy_align);
-				exit(1);
-			}
 			if (memcpy_align > DEFAULT_MEMCPY_BLOCK) {
-				VERBOSE0("ERROR: align %d is to high. Max: %d\n",
+				VERBOSE0("ERROR: Align (-A %d) is to high. Max: %d Bytes\n",
 					memcpy_align, DEFAULT_MEMCPY_BLOCK);
 				exit(1);
 			}
@@ -618,44 +616,42 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	VERBOSE2("Open Card: %d\n", card_no);
 	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
+	VERBOSE2("Open Card: %d device: %s\n", card_no, device);
 	dn = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM, SNAP_DEVICE_ID_SNAP);
 	if (NULL == dn) {
+		VERBOSE0("ERROR: Can not Open (%s)\n", device);
 		errno = ENODEV;
-		VERBOSE0("ERROR: snap_card_alloc_dev(%s)\n", device);
+		perror("ERROR");
 		return -1;
 	}
 
-	/* Read Card Capabilities */
-	snap_card_ioctl(dn, GET_CARD_TYPE, (unsigned long)&ioctl_data);
-	VERBOSE1("SNAP on ");
-	switch (ioctl_data) {
-		case ADKU3_CARD:  VERBOSE1("ADKU3"); break;
-		case S121B_CARD:  VERBOSE1("S121B"); break;
-		case AD8K5_CARD:  VERBOSE1("AD8K5"); break;
-		case N250S_CARD:  VERBOSE1("N250S"); break;
-		case N250SP_CARD:
-			/* N250SP can only handle 128 Byte Alignment and N*128 Bytes Size */
-			VERBOSE1("N250SP");
-			if (0 != (memcpy_align & 0x7F)) {
-				VERBOSE0("\nERROR: Can only handle 128 Byte alignment.\n");
-				VERBOSE0("       Adjust --align or -A to 128 or more\n");
-				rc = 100;
-				goto __exit1;
-			}
-			if (num_64 & 1) {
-				VERBOSE0("\nERROR: Can only handle even 64 Byte Blocks.\n");
-				VERBOSE0("       Adjust --size64 or -B\n");
-				rc = 100;
-				goto __exit1;
-			}
-			break;
-		default: VERBOSE1("Unknown"); break;
-	}
-	snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&ioctl_data);
-	VERBOSE1(" Card, %d MB of Card Ram avilable.\n", (int)ioctl_data);
+	/* Read Card Name */
+	snap_card_ioctl(dn, GET_CARD_NAME, (unsigned long)&card_name);
+	VERBOSE1("SNAP on %s", card_name);
 
+	snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&ioctl_data);
+	VERBOSE1(" Card, %d MB of Card Ram avilable. ", (int)ioctl_data);
+
+	snap_card_ioctl(dn, GET_DMA_ALIGN, (unsigned long)&dma_align);
+	VERBOSE1(" (Align: %d ", (int)dma_align);
+
+	snap_card_ioctl(dn, GET_DMA_MIN_SIZE, (unsigned long)&dma_min_size);
+	VERBOSE1(" Min DMA: %d Bytes)\n", (int)dma_min_size);
+
+	/* Check Align and DMA Min Size */
+	if (memcpy_align & (int)(dma_align-1)) {
+		VERBOSE0("ERROR: Option -A %d must be a multiple of %d Bytes for %s Cards.\n",
+			memcpy_align, (int)dma_align, card_name);
+		rc = 0x100;
+		goto __exit1;
+	}
+	if (num_64*64 & (int)(dma_min_size-1)) {
+		VERBOSE0("ERROR: Option -B %d must be a multiple of %d Bytes for %s Cards.\n",
+			num_64, (int)dma_min_size, card_name);
+		rc = 0x100;
+		goto __exit1;
+	}
 	snap_mmio_read64(dn, SNAP_S_CIR, &cir);
 	VERBOSE1("Start of Action: %d Card Handle: %p Context: %d\n", action, dn,
 		(int)(cir & 0x1ff));

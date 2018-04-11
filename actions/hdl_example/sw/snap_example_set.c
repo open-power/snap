@@ -101,6 +101,7 @@ static int check_buffer(uint8_t *hb,	/* Host Buffer */
 		size, begin, pattern);
 	bad = 0;
 	/* Check bytes from 0 to begin. This Bytes must stay untouched */
+	PRINTF2("\nCheck from 0 to %d for %x", begin, DEFAULT_MEM);
 	for (i = 0; i < begin; i++) {
 		data = *hb;	/* Get data */
 		if (data != DEFAULT_MEM) {
@@ -118,6 +119,7 @@ static int check_buffer(uint8_t *hb,	/* Host Buffer */
 		return bad;
 
 	/* Check bytes from begin to begin+size. This Bytes are modified */
+	PRINTF2("\nCheck from %d to %d for %x", begin , begin+size, pattern);
 	for (i = begin; i < begin+size; i++) {
 		data = *hb;	/* Get data */
 		if (data != pattern) {
@@ -135,6 +137,7 @@ static int check_buffer(uint8_t *hb,	/* Host Buffer */
 		return bad;
 
 	/* Check begin+size to end. This Bytes must stay untouched */
+	PRINTF2("\nCheck from %d to %d for %x", begin+size, h_size, DEFAULT_MEM);
 	for (i = begin+size; i < h_size; i++) {
 		data = *hb;	/* Get data */
 		if (data != DEFAULT_MEM) {
@@ -267,8 +270,10 @@ int main(int argc, char *argv[])
 	uint64_t start, stop;
 	snap_action_flag_t attach_flags = 0;
 	unsigned long ram_in_mb = 0;
-	unsigned long card_type = 0;
-	int min_size = 0;
+	unsigned long min_size = 0;
+	char card_name[16];   /* Buffer for Card name */
+	unsigned long dma_align;
+	int missing_bytes;
 
 	while (1) {
                 int option_index = 0;
@@ -361,44 +366,56 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	/* Get SNAP card name */
+	snap_card_ioctl(dn, GET_CARD_NAME, (unsigned long)&card_name);
+	/* Get SNAP DMA alignment */
+	snap_card_ioctl(dn, GET_DMA_ALIGN, (unsigned long)&dma_align);
+	/* Get SNAP DMA minimum Size */
+	snap_card_ioctl(dn, GET_DMA_MIN_SIZE, (unsigned long)&min_size);
+
 	/* Check if SDRAM on Card */
-        snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&ram_in_mb);
+	snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&ram_in_mb);
 	if (0 == ram_in_mb) {
-		PRINTF0("No SNAP SDRAM on SNAP Card: %d\n", card_no);
+		PRINTF0("No SNAP SDRAM on %s SNAP Card: %d\n", card_name, card_no);
 		rc = ENODEV;      /* Exit BAD */
 		goto __exit1;
 	}
+	PRINTF1("SNAP on %s Card DMA Align: %d Size: %d\n", 
+		card_name, (int)dma_align, (int)min_size); 
 
 	if (ACTION_CONFIG_MEMSET_H == func) {
 		if (size > (32 * MEGA_BYTE)) {
 			PRINTF0("Size %ld must be less than %d\n", size, (32*MEGA_BYTE));
 			goto __exit1;
 		}
-		/* Note: Buffer must be 128 bytes aligned on N250SP Card for CAPI 2.0 */
-		snap_card_ioctl(dn, GET_CARD_TYPE, (unsigned long)&card_type);
-		if (N250SP_CARD == card_type)
-			min_size = 128;
-		else    min_size = 1;
 		/* Check begin */
-		if (0 != (begin & (min_size -1))) {
-			PRINTF0("ERROR: Invalid Input Parameter for --begin or -b\n");
-			PRINTF0("       Your Card (ID =%d) supports only %d Steps for --size or -s\n",
-				(int)card_type, min_size);
+		if (begin & (int)(min_size -1)) {
+			PRINTF0("ERROR: Option -b %d must be a multiple of %d Bytes for %s Cards\n",
+				(int)begin, (int)min_size, card_name);
 			goto __exit1;
 		}
 		/* Check size */
-		if (0 != (size & (min_size -1))) {
-			PRINTF0("ERROR: Invalid Input Parameter for --size or -s\n");
-			PRINTF0("       Your Card (ID =%d) supports only %d Steps for --size or -s\n",
-				(int)card_type, min_size);
+		if (size & (int)(min_size -1)) {
+			PRINTF0("ERROR: Option -s %d must be a multiple of %d Bytes for %s Cards.\n",
+				(int)size, (int)min_size, card_name);
 			goto __exit1;
 		}
-		/* Adjust begin, leave 128 bytes free space at the begining */
-		h_begin = 128 + begin;
-		/* Add size and reserve 128 bytes at end */
-		h_mem_size = h_begin + size + 128;
-		/* Round Buffer up to full 128 Bytes */
-		h_mem_size += 128 - (size+begin) % 128;
+
+		/* Allocate Host buffer
+		+-----------+---...----+---....---+---......---+-----------+
+		| Align DMA |   Begin  | Size     | Rest Bytes | Align DMA |
+		|  Unused   |   Unused | Modified | to fill    |  Unused   |
+		|   Bytes   |   Bytes  | Bytes    | Min Size   |   Bytes   |
+		+-----------+---...----+---....---+---......---+-----------+
+		*/
+		/* Adjust begin, leave dma_align bytes free space at the begining */
+		h_begin = dma_align + begin;
+		/* Calculate the rest to fill to min_dma */
+		missing_bytes = min_size - (size+begin)%min_size;
+		/* Add size and reserve dma_align bytes at end */
+		h_mem_size = h_begin + size + missing_bytes;
+		/* Round Buffer up to full dma_align Bytes */
+		h_mem_size += dma_align;
 
 		/* Allocate Host Buffer */
 		if (posix_memalign((void **)&hb, 4096, h_mem_size) != 0) {
