@@ -274,7 +274,8 @@ if { $nvme_used == TRUE } {
   } else {
     puts "                        adding NVMe Verilog simulation files"
     set_property used_in_simulation false [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd]
-    add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme/nvme_top_i.sv
+    add_files -fileset sim_1 -norecurse $sim_dir/nvme/nvme_top_i.sv
+    add_files -fileset sim_1 -norecurse $hdl_dir/nvme/nvme_defines.sv
   }
   update_compile_order -fileset sim_1
 } else {
