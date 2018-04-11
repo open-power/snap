@@ -84,6 +84,8 @@ static struct mdev_ctx	master_ctx;
 #define MODE_SHOW_NVME    0x0002
 #define MODE_SHOW_CARD    0x0004
 #define MODE_SHOW_SDRAM   0x0008
+#define MODE_SHOW_DMA_ALIGN 0x00010
+#define MODE_SHOW_DMA_MIN   0x00020
 
 /*
  * Open AFU Master Device
@@ -97,6 +99,9 @@ static void *snap_open(struct mdev_ctx *mctx)
 	VERBOSE3("[%s] Enter: %s\n", __func__, device);
 	handle = snap_card_alloc_dev(device, 0xffff, 0xffff);
 	VERBOSE3("[%s] Exit %p\n", __func__, handle);
+	if (NULL == handle)
+		VERBOSE0("Error: Can not open CAPI-SNAP Device: %s\n",
+			device);
 	return handle;
 }
 
@@ -165,24 +170,30 @@ static void snap_version(void *handle)
 	unsigned long ioctl_data;
 
 	VERBOSE2("[%s] Enter\n", __func__);
+
 	/* Read Card Capabilities */
-        snap_card_ioctl(handle, GET_CARD_TYPE, (unsigned long)&ioctl_data);
-        VERBOSE1("SNAP on ");
-        switch (ioctl_data) {
-                case ADKU3_CARD: VERBOSE1("ADKU3"); break;
-                case N250S_CARD: VERBOSE1("N250S"); break;
-                case S121B_CARD: VERBOSE1("S121B"); break;
-                case AD8K5_CARD: VERBOSE1("AD8K5"); break;
-                case N250SP_CARD: VERBOSE1("N250SP"); break;
-                default: VERBOSE1("Unknown"); break;
-        }
-        VERBOSE1(" Card, NVME ");
-        snap_card_ioctl(handle, GET_NVME_ENABLED, (unsigned long)&ioctl_data);
+	snap_card_ioctl(handle, GET_CARD_TYPE, (unsigned long)&ioctl_data);
+	VERBOSE1("SNAP Card Id: %d ", (int)ioctl_data);
+
+	/* Get Card name */
+	char buffer[16];
+	snap_card_ioctl(handle, GET_CARD_NAME, (unsigned long)&buffer);
+	VERBOSE1("Name: %s. ", buffer);
+
+	VERBOSE1("NVME ");
+	snap_card_ioctl(handle, GET_NVME_ENABLED, (unsigned long)&ioctl_data);
 	if (1 == ioctl_data)
 		VERBOSE1("enabled");
 	else    VERBOSE1("disabled");
-        snap_card_ioctl(handle, GET_SDRAM_SIZE, (unsigned long)&ioctl_data);
-        VERBOSE1(", %d MB DRAM available.\n", (int)ioctl_data);
+
+	snap_card_ioctl(handle, GET_SDRAM_SIZE, (unsigned long)&ioctl_data);
+	VERBOSE1(", %d MB DRAM available. ", (int)ioctl_data);
+
+	snap_card_ioctl(handle, GET_DMA_ALIGN, (unsigned long)&ioctl_data);
+	VERBOSE1("(Align: %d ", (int)ioctl_data);
+
+	snap_card_ioctl(handle, GET_DMA_MIN_SIZE, (unsigned long)&ioctl_data);
+	VERBOSE1("Min_DMA: %d)\n", (int)ioctl_data);
 
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_IVR);
 	VERBOSE1("SNAP FPGA Release: v%d.%d.%d Distance: %d GIT: 0x%8.8x\n",
@@ -314,8 +325,8 @@ static int snap_m_init(void *handle, int mode)
 	if (0x100 == (ssr &  0x100)) {  /* Check for Exploration Done */
 		VERBOSE1("SNAP FPGA Exploration already done (MSAT: %d MAID: %d)\n\n",
 			msat, mact);
-		VERBOSE1("   Short |  Action Type |   Level   |\n");
-		VERBOSE1("   ------+--------------+-----------+-----------\n");
+		VERBOSE1("   Short |  Action Type |   Level   | Action Name\n");
+		VERBOSE1("   ------+--------------+-----------+------------\n");
 		addr = SNAP_M_ATRI;
 		/* Set Address to read Version */
 		v_addr = SNAP_M_ACT_OFFSET + SNAP_ACTION_VERS_REG;
@@ -371,6 +382,7 @@ _snap_m_init_exit:
 	return rc;
 }
 
+/* Leave a spave at each end in the print line so that i can use -m1 -m2 ... */
 static void snap_show_cap(void *handle, int mode)
 {
 	unsigned long val;
@@ -378,22 +390,25 @@ static void snap_show_cap(void *handle, int mode)
 	if (MODE_SHOW_NVME == (MODE_SHOW_NVME & mode)) {
 		snap_card_ioctl(handle, GET_NVME_ENABLED, (unsigned long)&val);
 		if (1 == val)
-			VERBOSE0("NVME");
+			VERBOSE0("NVME ");
 	}
 	if (MODE_SHOW_SDRAM == (MODE_SHOW_SDRAM & mode)) {
 		snap_card_ioctl(handle, GET_SDRAM_SIZE, (unsigned long)&val);
 		if (0 != val)
-			VERBOSE0("%d", (int)val);
+			VERBOSE0("%d ", (int)val);
 	}
 	if (MODE_SHOW_CARD == (MODE_SHOW_CARD & mode)) {
-		snap_card_ioctl(handle, GET_CARD_TYPE, (unsigned long)&val);
-		switch (val) {
-			case 0: VERBOSE0("ADKU3"); break;
-			case 1: VERBOSE0("N250S"); break;
-			case 2: VERBOSE0("S121B"); break;
-			case 3: VERBOSE0("AD8K5"); break;
-			case 16: VERBOSE0("N250SP"); break;
-		}
+		char buffer[16];
+		snap_card_ioctl(handle, GET_CARD_NAME, (unsigned long)&buffer);
+		VERBOSE0("%s ", buffer);
+	}
+	if (MODE_SHOW_DMA_ALIGN == (MODE_SHOW_DMA_ALIGN & mode)) {
+		snap_card_ioctl(handle, GET_DMA_ALIGN, (unsigned long)&val);
+		VERBOSE0("%d ", (int)val);
+	}
+	if (MODE_SHOW_DMA_MIN == (MODE_SHOW_DMA_MIN & mode)) {
+		snap_card_ioctl(handle, GET_DMA_MIN_SIZE, (unsigned long)&val);
+		VERBOSE0("%d ", (int)val);
 	}
 }
 
@@ -436,6 +451,8 @@ static void help(char *prog)
 	       "\t	2 = Show NVME if enabled\n"
 	       "\t	3 = Show SDRAM Size in MB\n"
 	       "\t	4 = Show Card\n"
+	       "\t	5 = Show DMA Alignment\n"
+	       "\t	6 = Show DMA Minimum Transfer Size\n"
 	       "\t-f, --log-file <file> Log File name when running in -d "
 	       "(daemon)\n"
 	       "\n"
@@ -533,9 +550,11 @@ int main(int argc, char *argv[])
 			case 2: mctx->mode |= MODE_SHOW_NVME; break;
 			case 3: mctx->mode |= MODE_SHOW_SDRAM; break;
 			case 4: mctx->mode |= MODE_SHOW_CARD; break;
+			case 5: mctx->mode |= MODE_SHOW_DMA_ALIGN; break;
+			case 6: mctx->mode |= MODE_SHOW_DMA_MIN; break;
 			default:
 				fprintf(stderr, "Please provide correct "
-					"Mode Option (1..4)\n");
+					"Mode Option (1..6)\n");
 				exit(EXIT_FAILURE);
 			}
 			break;
@@ -548,7 +567,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if ((mctx->card < 0) || (mctx->card >= 4)) {
+	if ((mctx->card < 0) || (mctx->card > 3)) {
 		fprintf(stderr, "Err: %d for option -C is invalid, please provide "
 			"0..%d!\n", mctx->card, 3);
 		exit(EXIT_FAILURE);
