@@ -73,22 +73,29 @@ set ::env(WIDTHCOL4) $widthCol4
 
 ##
 ## create temporary in memory project
-puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "creating in memory project" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-create_project -in_memory -part $fpga_part >> $logfile
+#puts [format "%-*s%-*s%-*s"  $widthCol1 "" [expr $widthCol2 + $widthCol3] "creating in memory project" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+#create_project -in_memory -part $fpga_part >> $logfile
 
 ##
 ## adding static region and user_action checkpoints
-puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "adding checkpoints" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-add_files $dcp_dir/$static_region_dcp >> $logfile
-add_files $dcp_dir/$user_action_dcp   >> $logfile
-set_property SCOPED_TO_CELLS {a0/action_w} [get_files $dcp_dir/$user_action_dcp] >> $logfile
+## old way
+#puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "adding checkpoints" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+#add_files $dcp_dir/$static_region_dcp >> $logfile
+#add_files $dcp_dir/$user_action_dcp   >> $logfile
+#set_property SCOPED_TO_CELLS {a0/action_w} [get_files $dcp_dir/$user_action_dcp] >> $logfile
 
 ##
 ## linking design
-puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "linking design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-link_design -mode default -reconfig_partitions {user_action} -part $fpga_part -top psl_fpga >> $logfile
+#puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "linking design" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+#link_design -mode default -reconfig_partitions {user_action} -part $fpga_part -top psl_fpga >> $logfile
 
-read_xdc $root_dir/setup/snap_impl.xdc >> $logfile
+#read_xdc $root_dir/setup/snap_impl.xdc >> $logfile
+## new way
+puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "open Static Checkpoint" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+open_checkpoint  $dcp_dir/$static_region_dcp  >> $logfile
+
+puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "adding Action Checkpoint" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
+read_checkpoint  -cell [get_cells a0/action_w] $dcp_dir/$user_action_dcp >> $logfile
 
 ##
 ## run implementation in the cloud merge flow
