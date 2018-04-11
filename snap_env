@@ -34,6 +34,7 @@ unset ILA_SETUP_FILE
 unset DCP_ROOT
 unset config_script
 unset snap_env_info
+unset 
 
 TIMING_LABLIMIT_DEFAULT="-200"
 
@@ -306,8 +307,10 @@ while [ -z "$SETUP_DONE" ]; do
     echo "=====Denali setup======================================"
     if [ -z "$DENALI" ]; then
       SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of NVME_USED=$NVME_USED but DENALI not set!"
+      export DENALI_USED=FALSE
     else
       echo "DENALI                  is set to: \"$DENALI\""
+      export DENALI_USED=TRUE
     fi
   fi
 

@@ -243,7 +243,7 @@ $(SNAP_PP_FILES_VHD):
 	@$(RM) $@_tmp
 
 $(SNAP_SIM_NVME)/endp_4_pipe32.v:
-	@if [ "$(SIMULATOR)" != "nosim" ] && [ "$(NVME_USED)" == "TRUE" ]; then \
+	@if [ "$(DENALI_USED)" == "TRUE" ]; then \
 	  echo -e "                        generating $(notdir $@)"; \
 	  $(DENALI)/bin/pureview -batch -generate all . -genoutput  $(SNAP_SIM_NVME)/endp_4_pipe32.v $(SNAP_SIM_NVME)/endp_4_pipe32.soma > $(LOGS_DIR)/pureview.log 2>&1; \
 	  if [ $$? -ne 0 ]; then \
@@ -441,7 +441,7 @@ nosim:
 	@echo -e "                        Info: Not building a simulation model, since SIMULATOR is set to \"nosim\"";
 	@echo -e "[BUILD $@ MODEL....] done  `date +"%T %a %b %d %Y"`"
 
-$(SNAP_SIMULATORS): check_nvme .hw_project_done app
+$(SNAP_SIMULATORS): .hw_project_done app
 	@if [ "$(SIMULATOR)" != "$@" ]; then \
 		echo; echo "Error: Makefile target $@ called with SIMULATOR set to \"$(SIMULATOR)\""; \
 		exit -1; \
