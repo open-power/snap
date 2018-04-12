@@ -19,6 +19,8 @@
   n=0                                                   # count amount of tests executed (exception for subsecond calls)
   max_rc=0                                              # track the maximum RC to return at the end
   loops=1;
+  rnd4=$(( (RANDOM%3)+2 ))
+  rnd5=$(( (RANDOM%4)+2 ))
   rnd10=$(( (RANDOM%9)+2 ))
   rndeven20=$(( (RANDOM%5)*2+10 ))
   rnd20=$(( (RANDOM%19)+2 ))
@@ -27,7 +29,7 @@
   rnd1k4k=$(( (RANDOM%3072)+1024 ))
   rnd16k=$(( (RANDOM%16383)+2 ))
   rnd32k=$(( RANDOM ))
-  echo "random=$rnd10 $rndeven20 $rnd20 $rnd32 $rnd1k $rnd1k4k $rnd16k $rnd32k"
+  echo "random=$rnd4 $rnd5 $rnd10 $rndeven20 $rnd20 $rnd32 $rnd1k $rnd1k4k $rnd16k $rnd32k"
 # export SNAP_TRACE=0xFF
 # export SNAP_TRACE=0xF2 # for Sven
   stimfile=$(basename "$0");
@@ -173,8 +175,6 @@
       for j in 5 2 1;do align=$((j*$dma))                # adopt to capability reg DMA alignment
 #     for num64 in 0 1 2 $rnd32;do
 #     for align in 4096 64;do  # posix memalign only allows power of 2
-        if [[ $((num64%2)) == 1      && $cardtype == "10" ]];then echo "skip num4k=$num4k num64=$num64 align=$align for N250SP";continue;fi # odd 64B xfer not allowed on N250SP
-        if [[ $(((align/64)%2)) == 1 && $cardtype == "10" ]];then echo "skip num4k=$num4k num64=$num64 align=$align for N250SP";continue;fi # 64B aligns not allowed on N250SP
         if [[ "$num4k" == "0" && "$num64" == "0"          ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
         if [[ "$num4k" > "1"  && "$num64" < "2"           ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
         if [[ "$num4k" > "1"  && "$align" > "64"          ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
@@ -194,8 +194,6 @@
 #       for num64 in 0 1 $rnd32;do                       # 1..64
 #       for align in 4096 128 64;do                      # must be mult of 64 for P8, mult of 128 for P9
           to=$((num4k*400+400))
-          if [[ $((num64%2)) == 1  && $cardtype == "10"   ]];then echo "skip num4k=$num4k num64=$num64 align=$align for N250SP";continue;fi # odd 64B xfer not allowed on N250SP
-          if [[ $((align%128)) > 0 && $cardtype == "10"   ]];then echo "skip num4k=$num4k num64=$num64 align=$align for N250SP";continue;fi # only 128B aligns allowed on N250SP
           if [[ "$num4k" == "0" && "$num64" == "0"        ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
           if [[ "$num4k" > "1"  && "$num64" < "2"         ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
           if [[ "$num4k" > "1"  && "$align" > "64"        ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
@@ -205,13 +203,10 @@
         done
         #### check DDR3 memory in AlphaData KU3, stay under 512k for BRAM
         step "snap_example_ddr -h"
-        for iter in 1 $rnd10;do                          # number of blocks
-#       for bsize in 64 128 $(($rnd10*64));do            # block size mult of 64 for P8, mult of 128 for P9
-#       for strt in 1024 $rnd1k4k;do                     # start adr
-        for i in 1 2 $rnd32;do bsize=$((i*$xfer))        # adopt to capability reg xfer size
-        for j in 5 2 1;do strt=$((j*$dma))               # adopt to capability reg DMA alignment
-          if [[ "iter" > "1" && ("$bsize" == "64" || "$strt" == "1024") ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
-          if [[ $((bsize%128)) > 0 && $cardtype == "10"   ]];then echo "skip bsize=$bsize for N250SP";continue;fi # only mult of 128B xfers allowed on N250SP
+        for iter in 1 $rnd4;do                           # number of blocks
+        for i in 1 $rnd32;do bsize=$((i*$xfer))          # adopt to capability reg xfer size
+        for j in 1 $rnd5;do strt=$((j*$dma))             # adopt to capability reg DMA alignment
+#         if [[ "iter" > "1" && ("$bsize" == "64" || "$strt" == "1024") ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
           let end=${strt}+${iter}*${bsize}; to=$((iter*iter*bsize/4+300))      # rough timeout dependent on filesize
           step "snap_example_ddr -i${iter} -b${bsize} -s${strt} -e${end} -t$to"
         done
@@ -224,7 +219,6 @@
         for j in 5 2 1;do beg=$((j*$dma))                # adopt to capability reg DMA alignment
         for i in 1 2 $rnd32;do bsize=$((i*$xfer))        # adopt to capability reg xfer size
           to=$((bsize/20+300))
-          if [[ $((bsize%128)) > 0 && $cardtype == "10" ]];then echo "skip bsize=$bsize for N250SP";continue;fi # only mult of 128B xfers allowed on N250SP
           step "snap_example_set -H -b${beg} -s${bsize} -p${bsize} -t$to"
           step "snap_example_set -F -b${beg} -s${bsize} -p${bsize} -t$to"
         done
@@ -314,7 +308,6 @@
       step "snap_memcopy -h"
 #     for size in 1 64 80 85 128 240 $rnd1k $rnd1k4k;do to=$((size*50+10))   # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
       for i in 1 2 3 $rnd10 $rnd32;do size=$((i*$xfer));to=$((size*50+10))   # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
-        if [[ $((size%128)) > 0 && $cardtype == "10"   ]];then echo "skip size=$size for N250SP";continue;fi # only mult of 128B xfers allowed on N250SP
         #### select 1 type of data generation
         # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                       # same char mult times
         # cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w ${size}|head -n 1 >${size}.in;head ${size}.in   # random data alphanumeric, includes EOF
@@ -401,11 +394,10 @@
       step "snap_intersect -h"
       step "snap_intersect    -m1 -v -t2000"
       step "snap_intersect -I -m1 -v -t2000"
-      for table_num in 1 2 5 10;do
-        if [[ $((table_num%2)) == 1 && $cardtype == "10" ]];then echo "skip table_num=$table_num for N250SP";continue;fi        # odd 64B xfer not allowed on N250SP
-        let max=2*$table_num; rm -f table1.txt table2.txt
-        $ACTION_ROOT/tests/gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
-        echo "table_num=$table_num";wc -c table*.txt; cat table*.txt
+      for i in 1 2 $rnd10;do num64=$(((i*$xfer)%64))   # adopt to capability reg xfer size
+        let max=2*$num64; rm -f table1.txt table2.txt
+        $ACTION_ROOT/tests/gen_input_table.pl $num64 0 $max $num64 0 $max >snap_intersect_h.log;gen_rc=$?
+        echo "num64=$num64";wc -c table*.txt; cat table*.txt
         step "snap_intersect -m1    -i table1.txt -j table2.txt -v -t2000"
         step "snap_intersect -m1 -s -i table1.txt -j table2.txt -v -t2000"
       done
@@ -415,11 +407,10 @@
       step "snap_intersect -h"
       step "snap_intersect    -m2 -v -t2000"
       step "snap_intersect -I -m2 -v -t2000"
-      for table_num in 1 2 5 10;do
-        if [[ $((table_num%2)) == 1 && $cardtype == "10" ]];then echo "skip table_num=$table_num for N250SP";continue;fi        # odd 64B xfer not allowed on N250SP
-        let max=2*$table_num; rm -f table1.txt table2.txt
-        $ACTION_ROOT/tests/gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
-        echo "table_num=$table_num";wc -c table*.txt; cat table*.txt
+      for i in 1 2 $rnd10;do num64=$(((i*$xfer)%64))   # adopt to capability reg xfer size
+        let max=2*$num64; rm -f table1.txt table2.txt
+        $ACTION_ROOT/tests/gen_input_table.pl $num64 0 $max $num64 0 $max >snap_intersect_h.log;gen_rc=$?
+        echo "num64=$num64";wc -c table*.txt; cat table*.txt
         step "snap_intersect -m2    -i table1.txt -j table2.txt -v -t2000"
         step "snap_intersect -m2 -s -i table1.txt -j table2.txt -v -t2000"
       done
