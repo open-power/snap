@@ -28,7 +28,10 @@ extern "C" {
 typedef struct nvme_memcopy_job {
 	struct snap_addr in;	/* input data */
 	struct snap_addr out;   /* offset table */
-    uint64_t drive_id;
+    	uint64_t drive_id;
+	uint64_t sdram_buffer_to_ssd_offset;   // default to 0x00000000
+        uint64_t sdram_buffer_from_ssd_offset; // default to 0x80000000 for 8GB sized SDRAM
+        uint64_t maxbuffer_size;  // this defines the maximum size for a transfer
 } nvme_memcopy_job_t;
 
 #ifdef __cplusplus
