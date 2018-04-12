@@ -14,23 +14,27 @@
  # See the License for the specific language governing permissions and
  # limitations under the License.
  #
-  del="\n#######################################"       # delimiter
+  del="\n#######################################"       #  delimiter
   set -e                                                # exit on error
   n=0                                                   # count amount of tests executed (exception for subsecond calls)
   max_rc=0                                              # track the maximum RC to return at the end
   loops=1;
-  rnd10=$(((RANDOM%9)+2))
-  rndeven20=$(((RANDOM%5)*2+10))
-  rnd20=$(((RANDOM%19)+2))
-  rnd32=$(((RANDOM%31)+2))
-  rnd1k=$(((RANDOM%1023)+2))
-  rnd1k4k=$(((RANDOM%3072)+1024))
-  rnd16k=$(((RANDOM%16383)+2))
-  rnd32k=$((RANDOM))
-  echo "random=$rnd10 $rndeven20 $rnd20 $rnd32 $rnd1k $rnd1k4k $rnd16k $rnd32k"
+  rnd4=$(( (RANDOM%3)+2 ))
+  rnd5=$(( (RANDOM%4)+2 ))
+  rnd10=$(( (RANDOM%9)+2 ))
+  rndeven20=$(( (RANDOM%5)*2+10 ))
+  rnd20=$(( (RANDOM%19)+2 ))
+  rnd32=$(( (RANDOM%31)+2 ))
+  rnd1k=$(( (RANDOM%1023)+2 ))
+  rnd1k4k=$(( (RANDOM%3072)+1024 ))
+  rnd16k=$(( (RANDOM%16383)+2 ))
+  rnd32k=$(( RANDOM ))
+  echo "random=$rnd4 $rnd5 $rnd10 $rndeven20 $rnd20 $rnd32 $rnd1k $rnd1k4k $rnd16k $rnd32k"
 # export SNAP_TRACE=0xFF
 # export SNAP_TRACE=0xF2 # for Sven
-  stimfile=$(basename "$0"); logfile="${stimfile%.*}.log"; echo "executing $stimfile, logging $logfile maxloop=$loops";
+  stimfile=$(basename "$0");
+  logfile="${stimfile%.*}.log";
+  echo "executing $stimfile, logging $logfile maxloop=$loops";
   ts0=$(date +%s)                                       # begin of test
   function step {
 #   echo "execute step function arg1=$1 arg2=$2 argn=$* argn=$@"
@@ -48,6 +52,7 @@
     return $step_rc
   }
   for((loop=1;loop<=loops;loop++));do
+    echo "starting loop $loop"
     ts1=$(date +%s);                                    # begin of loop
 #   step "snap_peek -h"
     t="snap_peek 0x0         ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # release maj.int.min.dist.4Bsha"
@@ -56,10 +61,15 @@
     t="snap_peek 0x10        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # cmdreg 0x10=exploration done"
     done=${r:14:1};echo "exploration done=$done";
     t="snap_peek 0x18        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
-    done=${r:13:1};numact=${r:14:1};(( numact += 1 ));echo "exploration done=$done num_actions=$numact"
+    done=${r:13:1};numact=${r:14:1};((numact+=1));echo "exploration done=$done num_actions=$numact"
 #   t="snap_peek 0x20        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # Lockreg 0x1=locked"
-    t="snap_peek 0x30        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # capabilityreg bit31-16=DRAM size bit8=NVMe bit7..0=card type"
-    dram=$(( 16#${r:8:4} )); nvme=${r:13:1}; cardtype=${r:14:2}; echo "cardtype=$cardtype NVMe=$nvme ${NVME_USED} DRAM=$dram MB"
+    t="snap_peek 0x30        ";     r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # capabilityreg 39..36=xfer_size 35..32=DMA_align 31..16=DRAM_size 8=NVMe 7..0=card type"
+    xfer=$(( 2**${r:6:1} ))
+    dma=$((  2**${r:7:1} ))
+    dram=$(( 16#${r:8:4} ))
+    nvme=${r:13:1}
+    cardtype=${r:14:2}
+    echo "cardtype=$cardtype NVMe=$nvme ${NVME_USED} DRAM=$dram MB xfer=$xfer DMA_align=$dma"
     if [[ "$done" == "0" ]];then echo "exploration not done yet"
       env_action=$(echo $ACTION_ROOT|sed -e "s/actions\// /g"|awk '{print $2}');echo "ENV_action=${env_action}"
 #     if [[ "${env_action}" == *"hdl_example"* ]];then echo -e "$del\ntesting hdl_example in master mode"
@@ -79,7 +89,7 @@
 #     step "snap_maint -m2 -c1 -vvv"
       step "snap_maint -m1 -m2 -m3 -m4"
       t="snap_peek 0x18        ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
-      done=${r:13:1};numact=${r:14:1};(( numact += 1 ));echo "exploration done=$done num_actions=$numact"
+      done=${r:13:1};numact=${r:14:1};((numact+=1));echo "exploration done=$done num_actions=$numact"
       if [[ "$done" == "0" ]];then echo "exploration still not shown as done, subsequent runs may fail !!!!";
         step "snap_maint -m1 -c1 -vvv"
         t="snap_peek 0x18        "; r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # statusreg 0x100=exploration done 1action, 0x111=2action"
@@ -160,11 +170,11 @@
         step "snap_example -I -a1 -s1 -e2 -i1 -t100 -vv"
         step "snap_example -I -a2 -S1 -B0 -A256 -t600"
       fi
-      for num4k in 0 1 $rnd20; do to=$((num4k*400+400))
-      for num64 in 0 1 2 $rnd32; do
-      for align in 4096 64; do  # posix memalign only allows power of 2
-        if [[ $((num64%2)) == 1      && $cardtype == "10" ]];then echo "skip num4k=$num4k num64=$num64 align=$align for N250SP";continue;fi # odd 64B xfer not allowed on N250SP
-        if [[ $(((align/64)%2)) == 1 && $cardtype == "10" ]];then echo "skip num4k=$num4k num64=$num64 align=$align for N250SP";continue;fi # 64B aligns not allowed on N250SP
+      for num4k in 0 1 $rnd20;do to=$((num4k*400+400))   # 4k blks should be possible by every card
+      for i in 0 1 2 $rnd32;do num64=$(((i*$xfer)%64))   # adopt to capability reg xfer size
+      for j in 5 2 1;do align=$((j*$dma))                # adopt to capability reg DMA alignment
+#     for num64 in 0 1 2 $rnd32;do
+#     for align in 4096 64;do  # posix memalign only allows power of 2
         if [[ "$num4k" == "0" && "$num64" == "0"          ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
         if [[ "$num4k" > "1"  && "$num64" < "2"           ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
         if [[ "$num4k" > "1"  && "$align" > "64"          ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
@@ -177,11 +187,13 @@
         if [[ $cardtype == "10" ]];then for i in {1..5};do echo "loop=$i";snap_example -a6 -S8 -B2 -A128 -t400 -v||break;done
         else                            for i in {1..5};do echo "loop=$i";snap_example -a6 -S8 -B2 -A64  -t400 -v||break;done
         fi
-        for num4k in 0 1 $rnd20; do to=$((num4k*400+400))
-        for num64 in 0 1 $rnd32; do                # 1..64
-        for align in 4096 128 64; do               # must be mult of 64 for P8, mult of 128 for P9
-          if [[ $((num64%2)) == 1  && $cardtype == "10"   ]];then echo "skip num4k=$num4k num64=$num64 align=$align for N250SP";continue;fi # odd 64B xfer not allowed on N250SP
-          if [[ $((align%128)) > 0 && $cardtype == "10"   ]];then echo "skip num4k=$num4k num64=$num64 align=$align for N250SP";continue;fi # only 128B aligns allowed on N250SP
+        for num4k in 0 1 $rnd20;do to=$((num4k*400+400)) # 4k blks should be possible by every card
+        for i in 0 1 2 $rnd32;do num64=$(((i*$xfer)%64)) # adopt to capability reg xfer size
+        for j in 5 2 1;do align=$((j*$dma))              # adopt to capability reg DMA alignment
+#       for num4k in 0 1 $rnd20;do
+#       for num64 in 0 1 $rnd32;do                       # 1..64
+#       for align in 4096 128 64;do                      # must be mult of 64 for P8, mult of 128 for P9
+          to=$((num4k*400+400))
           if [[ "$num4k" == "0" && "$num64" == "0"        ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
           if [[ "$num4k" > "1"  && "$num64" < "2"         ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
           if [[ "$num4k" > "1"  && "$align" > "64"        ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
@@ -191,21 +203,22 @@
         done
         #### check DDR3 memory in AlphaData KU3, stay under 512k for BRAM
         step "snap_example_ddr -h"
-        for iter in 1 $rnd10; do                   # number of blocks
-        for bsize in 64 128 $(($rnd10*64)); do     # block size mult of 64 for P8, mult of 128 for P9
-        for strt in 1024 $rnd1k4k; do              # start adr
-          if [[ "iter" > "1" && ("$bsize" == "64" || "$strt" == "1024") ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
-          if [[ $((bsize%128)) > 0 && $cardtype == "10"   ]];then echo "skip bsize=$bsize for N250SP";continue;fi # only mult of 128B xfers allowed on N250SP
-          let end=${strt}+${iter}*${bsize}; to=$((iter*iter*bsize/4+300))                       # rough timeout dependent on filesize
+        for iter in 1 $rnd4;do                           # number of blocks
+        for i in 1 $rnd32;do bsize=$((i*$xfer))          # adopt to capability reg xfer size
+        for j in 1 $rnd5;do strt=$((j*$dma))             # adopt to capability reg DMA alignment
+#         if [[ "iter" > "1" && ("$bsize" == "64" || "$strt" == "1024") ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+          let end=${strt}+${iter}*${bsize}; to=$((iter*iter*bsize/4+300))      # rough timeout dependent on filesize
           step "snap_example_ddr -i${iter} -b${bsize} -s${strt} -e${end} -t$to"
         done
         done
         done
         #### use memset in host or in fpga memory, stay under 512k for BRAM
         step "snap_example_set -h"
-        for beg in 0 11 63; do                                    # start adr
-        for bsize in 7 128 4096 4097; do to=$((bsize/20+300))     # block size to copy, rough timeout dependent on filesize
-          if [[ $((bsize%128)) > 0 && $cardtype == "10" ]];then echo "skip bsize=$bsize for N250SP";continue;fi # only mult of 128B xfers allowed on N250SP
+#       for beg in 0 11 63;do                            # start adr
+#       for bsize in 7 128 4096 4097;do                  # block size to copy, rough timeout dependent on filesize
+        for j in 5 2 1;do beg=$((j*$dma))                # adopt to capability reg DMA alignment
+        for i in 1 2 $rnd32;do bsize=$((i*$xfer))        # adopt to capability reg xfer size
+          to=$((bsize/20+300))
           step "snap_example_set -H -b${beg} -s${bsize} -p${bsize} -t$to"
           step "snap_example_set -F -b${beg} -s${bsize} -p${bsize} -t$to"
         done
@@ -218,7 +231,7 @@
 #     # optional: wait for SSD0 link to be up
 #     t="snap_poke -w32 0x30000 0x10000144"; r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # check SSD0 link status"
 #     t="snap_peek 0x80";                    r=$($t|grep ']'|awk '{print $2}'); free1=${r:8:8}
-#     for i in {1..99}; do
+#     for i in {1..99};do
 #       t="snap_peek -w32 0x30004";          r=$($t|grep ']'|awk '{print $2}'); up=${r:5:1}
 #       t="snap_peek 0x80";                  r=$($t|grep ']'|awk '{print $2}'); free2=${r:8:8}
 #       if (( "$up" < "8" )); then printf '.'; else break; fi
@@ -226,7 +239,7 @@
 #     # optional: wait for SSD1 link to be up
 #     t="snap_poke -w32 0x30000 0x20000144"; r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # check SSD1 link status"
 #     t="snap_peek 0x80";                    r=$($t|grep ']'|awk '{print $2}'); free1=${r:8:8}
-#     for i in {1..99}; do
+#     for i in {1..99};do
 #       t="snap_peek -w32 0x30004";          r=$($t|grep ']'|awk '{print $2}'); up=${r:5:1}
 #       t="snap_peek 0x80";                  r=$($t|grep ']'|awk '{print $2}'); free2=${r:8:8}
 #       if (( "$up" < "8" )); then printf '.'; else break; fi
@@ -263,11 +276,11 @@
  #
     if [[ "$t0l" == "10140001" || "${env_action}" == "hdl_nvme_example" ]];then echo -e "$del\ntesting hdl_nvme_example"
       step "snap_cblk -h"                                            # write max 2blk, read max 32blk a 512B
-      options="-n"${rndeven20}" -t1"                                  # 512B blocks, one thread
+      options="-n"${rndeven20}" -t1"                                 # 512B blocks, one thread
       export CBLK_BUSYTIMEOUT=1500 # used for threads waiting for free slot
       export CBLK_REQTIMEOUT=1000 # should be smaller than busytimeout
 #     export SNAP_TRACE=0xFFF
-      for blk in 1 2;do p8=$((blk*8)); p4k=$((blk*4096));            # no of 512B blocks and pagesize in 4kB blocks
+      for blk in 1 2;do p8=$((blk*8)); p4k=$((blk*4096)); # no of 512B blocks and pagesize in 4kB blocks
         echo "generate data for $blk blocks, $p8 pages, $p4k bytes"
         dd if=/dev/urandom of=rnd.in count=${p8} bs=512 2>/dev/null  # random data any char, no echo due to unprintable char
         head -c $p4k </dev/zero|tr '\0' 'x' >asc.in;head asc.in;echo # same char mult times
@@ -279,12 +292,10 @@
 #       echo "Please manually inspect if pattern is really ${blk}"
 #       diff asc.in ${p8}.out
       done
-
       step "snap_cblk $options -b2 --format --pattern INC"
       step "snap_cblk $options -b1 --read cblk_read1.bin"
       step "snap_cblk $options -b2 --read cblk_read2.bin"
       diff cblk_read1.bin cblk_read2.bin
-
       for blk in 1 ${rndeven20};do byte=$((blk*512))
         step "snap_cblk $options -b2      --write cblk_read2.bin"
         step "snap_cblk $options -b${blk} --read  cblk_read3.bin"
@@ -295,8 +306,8 @@
  #
     if [[ "$t0l" == "10141000" || "${env_action}" == "hls_memcopy"* ]];then echo -e "$del\ntesting snap_memcopy"
       step "snap_memcopy -h"
-      for size in 1 64 80 85 128 240 $rnd1k $rnd1k4k; do to=$((size*50+10))   # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
-        if [[ $((size%128)) > 0 && $cardtype == "10"   ]];then echo "skip size=$size for N250SP";continue;fi # only mult of 128B xfers allowed on N250SP
+#     for size in 1 64 80 85 128 240 $rnd1k $rnd1k4k;do to=$((size*50+10))   # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
+      for i in 1 2 3 $rnd10 $rnd32;do size=$((i*$xfer));to=$((size*50+10))   # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
         #### select 1 type of data generation
         # head -c $size </dev/zero|tr '\0' 'x' >${size}.in;head ${size}.in;echo                       # same char mult times
         # cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w ${size}|head -n 1 >${size}.in;head ${size}.in   # random data alphanumeric, includes EOF
@@ -345,17 +356,17 @@
     if [[ "$t0l" == "10141002" || "${env_action}" == "hls_hashjoin"* ]];then echo -e "$del\ntesting snap_hashjoin"
       step "snap_hashjoin -h"
       step "snap_hashjoin           -t600 -vvv"
-      for vart in 1 15 $rnd20; do to=$((vart*3+500))
+      for vart in 1 15 $rnd20;do to=$((vart*3+500))
         step "snap_hashjoin -T$vart -t$to -vvv"
       done
-      for varq in 1 5 $rnd32; do to=$((varq*3+500))
+      for varq in 1 5 $rnd32;do to=$((varq*3+500))
         step "snap_hashjoin -Q$varq -t$to -vvv"
       done
     fi # hls_hashjoin
  #
     if [[ "$t0l" == "10141003" || "${env_action}" == "hls_search"* ]];then echo -e "$del\ntesting snap_search"
       step "snap_search -h"
-      for size in 1 2 30 257 1024 $rnd1k4k; do to=$((size*160+600))
+      for size in 1 2 30 257 1024 $rnd1k4k;do to=$((size*160+600))
         char=$(cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w 1|head -n 1)                               # one random ASCII  char to search for
         head -c $size </dev/zero|tr '\0' 'A' >${size}.uni                                             # same char mult times
         cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w ${size}|head -n 1 >${size}.rnd;head ${size}.rnd   # random data alphanumeric, includes EOF
@@ -383,11 +394,10 @@
       step "snap_intersect -h"
       step "snap_intersect    -m1 -v -t2000"
       step "snap_intersect -I -m1 -v -t2000"
-      for table_num in 1 2 5 10; do
-        if [[ $((table_num%2)) == 1 && $cardtype == "10" ]];then echo "skip table_num=$table_num for N250SP";continue;fi        # odd 64B xfer not allowed on N250SP
-        let max=2*$table_num; rm -f table1.txt table2.txt
-        $ACTION_ROOT/tests/gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
-        echo "table_num=$table_num";wc -c table*.txt; cat table*.txt
+      for i in 1 2 $rnd10;do num64=$(((i*$xfer)%64))   # adopt to capability reg xfer size
+        let max=2*$num64; rm -f table1.txt table2.txt
+        $ACTION_ROOT/tests/gen_input_table.pl $num64 0 $max $num64 0 $max >snap_intersect_h.log;gen_rc=$?
+        echo "num64=$num64";wc -c table*.txt; cat table*.txt
         step "snap_intersect -m1    -i table1.txt -j table2.txt -v -t2000"
         step "snap_intersect -m1 -s -i table1.txt -j table2.txt -v -t2000"
       done
@@ -397,11 +407,10 @@
       step "snap_intersect -h"
       step "snap_intersect    -m2 -v -t2000"
       step "snap_intersect -I -m2 -v -t2000"
-      for table_num in 1 2 5 10; do
-        if [[ $((table_num%2)) == 1 && $cardtype == "10" ]];then echo "skip table_num=$table_num for N250SP";continue;fi        # odd 64B xfer not allowed on N250SP
-        let max=2*$table_num; rm -f table1.txt table2.txt
-        $ACTION_ROOT/tests/gen_input_table.pl $table_num 0 $max $table_num 0 $max >snap_intersect_h.log;gen_rc=$?
-        echo "table_num=$table_num";wc -c table*.txt; cat table*.txt
+      for i in 1 2 $rnd10;do num64=$(((i*$xfer)%64))   # adopt to capability reg xfer size
+        let max=2*$num64; rm -f table1.txt table2.txt
+        $ACTION_ROOT/tests/gen_input_table.pl $num64 0 $max $num64 0 $max >snap_intersect_h.log;gen_rc=$?
+        echo "num64=$num64";wc -c table*.txt; cat table*.txt
         step "snap_intersect -m2    -i table1.txt -j table2.txt -v -t2000"
         step "snap_intersect -m2 -s -i table1.txt -j table2.txt -v -t2000"
       done
@@ -410,7 +419,7 @@
     if [[ "$t0l" == "10141007" && "${env_action}" == "hls_nvme_memcopy"* && "$nvme" == "1" ]];then echo -e "$del\ntesting snap_nvme_memcopy"
       step "snap_nvme_memcopy -h"
       step "snap_nvme_init  -v"
-      for size in 512 2048 ; do to=$((size*50+10))
+      for size in 512 2048 ;do to=$((size*50+10))
         dd if=/dev/urandom bs=${size} count=1 >${size}.in
         if [[ $((size%64)) == 0 ]];then    # size is aligned
           step "snap_nvme_memcopy -A HOST_DRAM -D HOST_DRAM     -i ${size}.in -o ${size}a.out            -v -t$to"
@@ -425,7 +434,7 @@
           step "snap_nvme_memcopy -A CARD_DRAM -D HOST_DRAM     -a 0x44440000 -o ${size}d.out -s ${size} -v -t$to"
           step "snap_nvme_memcopy -A CARD_DRAM -D HOST_DRAM     -a 0x66660000 -o ${size}e.out -s ${size} -v -t$to"
           step "snap_nvme_memcopy -A NVME_SSD  -D HOST_DRAM     -a 0x33330000 -o ${size}f.out -s ${size} -v -t$to"
-          for suf in a b c d e f; do
+          for suf in a b c d e f;do
             outfile="${size}${suf}.out"
             if diff ${size}.in $outfile >/dev/null;then echo -e "RC=$rc file_diff $suf ok$del";else echo -e "$t RC=$rc file_diff $suf is wrong$del";exit 1;fi
           done
@@ -444,7 +453,7 @@
     fi # hls_helloworld
  #
     if [[ "$t0l" == "00000108" || "${env_action}" == "hls_blowfish" ]];then echo -e "$del\ntesting blowfish"
-      for blocks in 1 16 32 128 1024 4096 ; do  # blocks of 64B
+      for blocks in 1 16 32 128 1024 4096 ;do  # blocks of 64B
         dd if=/dev/urandom of=in.bin  count=${blocks} bs=64 2>/dev/null
         dd if=/dev/urandom of=key.bin count=1         bs=16 2>/dev/null
         step "snap_blowfish -t${timeout} -k key.bin    -i in.bin  -o enc.bin"
