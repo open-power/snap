@@ -184,4 +184,5 @@ for ((iter=1;iter <= iteration;iter++))
 		test_ddr "${snap_card}" "${start}" "${end}" "${BLOCKSIZE}"
 	fi
 }
+echo "---------->>>> Exit Good <<<<<<--------------"
 exit 0
