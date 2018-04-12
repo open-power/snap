@@ -153,18 +153,6 @@ if { $simulator != "nosim" } {
 # Add IPs
 # SNAP CORE IPs
 puts "                        importing IPs"
-if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) } {
-  set DMA_IB_RAM 1040x32
-  set DMA_OB_RAM 1152x32
-} else {
-  set DMA_IB_RAM 520x64
-  set DMA_OB_RAM 576x64
-}
-
-add_files -norecurse $ip_dir/ram_${DMA_IB_RAM}_2p/ram_${DMA_IB_RAM}_2p.xci >> $log_file
-export_ip_user_files -of_objects  [get_files "$ip_dir/ram_${DMA_IB_RAM}_2p/ram_${DMA_IB_RAM}_2p.xci"] -force >> $log_file
-add_files -norecurse $ip_dir/ram_${DMA_OB_RAM}_2p/ram_${DMA_OB_RAM}_2p.xci >> $log_file
-export_ip_user_files -of_objects  [get_files "$ip_dir/ram_${DMA_OB_RAM}_2p/ram_${DMA_OB_RAM}_2p.xci"] -force >> $log_file
 add_files -norecurse  $ip_dir/fifo_4x512/fifo_4x512.xci >> $log_file
 export_ip_user_files -of_objects  [get_files  "$ip_dir/fifo_4x512/fifo_4x512.xci"] -force >> $log_file
 add_files -norecurse  $ip_dir/fifo_8x512/fifo_8x512.xci >> $log_file

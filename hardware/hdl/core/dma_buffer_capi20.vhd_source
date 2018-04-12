@@ -41,7 +41,7 @@ ENTITY dma_buffer IS
     write_ctrl_i             : IN  ARR_DMA_CTL_T;
     sd_d_i                   : IN  SD_D_T;
     buf_walmost_full_i       : IN  std_logic;
-    wram_raddr_i             : IN  std_logic_vector(5 DOWNTO 0);
+    wram_raddr_i             : IN  std_logic_vector(4 DOWNTO 0);
     buf_wtag_o               : OUT std_logic_vector(5 DOWNTO 0);
     buf_wtag_p_o             : OUT std_logic;
     buf_wtag_cl_partial_o    : OUT boolean;
@@ -106,7 +106,7 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL rram_raddr                       : std_logic_vector(  5 DOWNTO 0);
   SIGNAL rram_raddr_d, rram_raddr_q       : std_logic_vector(  6 DOWNTO 0);
   SIGNAL rram_raddr_p_d, rram_raddr_p_q   : std_logic;
-  SIGNAL rram_rdata                       : std_logic_vector(519 DOWNTO 0);
+  SIGNAL rram_rdata                       : std_logic_vector(511 DOWNTO 0);
   SIGNAL rram_rdata_vld_d                 : std_logic;
   SIGNAL rram_rdata_vld_q                 : std_logic;
   SIGNAL rram_rdata_vld_qq                : std_logic;
@@ -136,37 +136,6 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL wdata_parity_err_q               : std_logic_vector(  7 DOWNTO 0) := (OTHERS => '0');
   SIGNAL wdata_parity_fir_q               : std_logic := '0';
 
-  COMPONENT ram_1040x32_2p
-    PORT(
-      clka  : IN  STD_LOGIC;
-      wea   : IN  STD_LOGIC_VECTOR(   0 DOWNTO 0);
-      addra : IN  STD_LOGIC_VECTOR(   4 DOWNTO 0);
-      dina  : IN  STD_LOGIC_VECTOR(1039 DOWNTO 0);
-      douta : OUT STD_LOGIC_VECTOR(1039 DOWNTO 0);
-      clkb  : IN  STD_LOGIC;
-      web   : IN  STD_LOGIC_VECTOR(   0 DOWNTO 0);
-      addrb : IN  STD_LOGIC_VECTOR(   5 DOWNTO 0);
-      dinb  : IN  STD_LOGIC_VECTOR( 519 DOWNTO 0);
-      doutb : OUT STD_LOGIC_VECTOR( 519 DOWNTO 0)
-    );
-  END COMPONENT ram_1040x32_2p;
-
-  COMPONENT ram_1152x32_2p
-    PORT(
-      clka  : IN  STD_LOGIC;
-      wea   : IN  STD_LOGIC_VECTOR(   0 DOWNTO 0);
-      addra : IN  STD_LOGIC_VECTOR(   5 DOWNTO 0);
-      dina  : IN  STD_LOGIC_VECTOR( 575 DOWNTO 0);
-      douta : OUT STD_LOGIC_VECTOR(1151 DOWNTO 0);
-      clkb  : IN  STD_LOGIC;
-      enb   : IN  STD_LOGIC;
-      web   : IN  STD_LOGIC_VECTOR(   0 DOWNTO 0);
-      addrb : IN  STD_LOGIC_VECTOR(   5 DOWNTO 0);
-      dinb  : IN  STD_LOGIC_VECTOR( 575 DOWNTO 0);
-      doutb : OUT STD_LOGIC_VECTOR(1151 DOWNTO 0)
-    );
-  END COMPONENT ram_1152x32_2p;
-
 BEGIN
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -183,28 +152,20 @@ BEGIN
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------
     ----------------------------------------------------------------------------
-    -- RAM: ram_1040x32_2p for P9 CAPI2.0
+    -- RAM: ram_1024x32_2p for P9 CAPI2.0
     ----------------------------------------------------------------------------
     --
-    dma_read_ram: ram_1040x32_2p
+    dma_read_ram: ENTITY work.ram_1024x32_2p
     PORT MAP (
       --
       -- pervasive
-      clka                   => ha_pclock,
-      wea(0)                 => rram_wen,
+      clk                    => ha_pclock,
+      wea                    => rram_wen,
       addra                  => rram_waddr,
-      dina                   => rram_wdata,
-      douta                  => open,
-      clkb                   => ha_pclock,
-      web(0)                 => '0',
+      dina                   => hd_c_q.data,
       addrb                  => rram_raddr,
-      dinb                   => (OTHERS => '0'),
       doutb                  => rram_rdata
     );
-    rram_wdata( 511 DOWNTO    0) <= hd_c_q.data(1023 DOWNTO 512);
-    rram_wdata( 519 DOWNTO  512) <= (OTHERS => '0');
-    rram_wdata(1031 DOWNTO  520) <= hd_c_q.data( 511 DOWNTO   0);
-    rram_wdata(1039 DOWNTO 1032) <= (OTHERS => '0');
 
     ----------------------------------------------------------------------------
     -- RAM control none clock
@@ -248,7 +209,7 @@ BEGIN
         buf_rtag_valid_qq  <= buf_rtag_valid_q;
         buf_rtag_valid_qqq <= buf_rtag_valid_qq;
         rram_rdata_q       <= rram_rdata(511 DOWNTO   0);
-        rram_rdata_p_q     <= rram_rdata(519 DOWNTO 512);
+        rram_rdata_p_q     <= (OTHERS => '0');
 
         IF (rram_raddr_d(1) /= rram_raddr_q(1))  THEN
           buf_rtag_valid_q <= TRUE;
@@ -299,24 +260,17 @@ BEGIN
     -- RAM: ram_1152x32_2p for P9 CAPI2.0
     ----------------------------------------------------------------------------
     --
-    dma_write_ram: ram_1152x32_2p
+    dma_write_ram: ENTITY work.ram_1152x32_2p
     PORT MAP (
       --
       -- pervasive
-      clka                   => ha_pclock,
-      wea(0)                 => wram_wen,
+      clk                    => ha_pclock,
+      wea                    => wram_wen,
       addra                  => wram_waddr,
       dina                   => wram_wdata,
-      douta                  => open,
-      enb                    => '1',
-      clkb                   => ha_pclock,
-      web(0)                 => '0',
       addrb                  => wram_raddr_i,
-      dinb                   => (OTHERS => '0'),
-      doutb                  => wram_rdata_reordered
+      doutb                  => wram_rdata
     );
-    wram_rdata(1151 DOWNTO 576) <= wram_rdata_reordered( 575 DOWNTO   0) ;
-    wram_rdata( 575 DOWNTO   0) <= wram_rdata_reordered(1151 DOWNTO 576) ;
 
   ------------------------------------------------------------------------------
   ------------------------------------------------------------------------------

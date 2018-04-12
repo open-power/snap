@@ -255,7 +255,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL waddr_id_q                  : std_logic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
   SIGNAL waddr_q                     : std_logic_vector( 63 DOWNTO  6);
   SIGNAL wlen_q                      : std_logic_vector(  8 DOWNTO  0);
-  SIGNAL wram_raddr_q                : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL wram_raddr_q                : std_logic_vector(  4 DOWNTO  0);
   SIGNAL wr_id_valid_q               : std_logic;
   SIGNAL write_ctrl_fsm_q            : WRITE_CTRL_FSM_T;
   SIGNAL write_ctrl_q                : ARR_DMA_CTL_T;
@@ -1521,7 +1521,7 @@ BEGIN
         dh_d_q            <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
                               '0', (OTHERS => '0'), (OTHERS => '0'));
 
-        wram_raddr_q      <= dma_wtag_q(4 DOWNTO 0) & '0';
+        wram_raddr_q      <= dma_wtag_q(4 DOWNTO 0);
 
         --
         -- F S M
@@ -1538,7 +1538,7 @@ BEGIN
             ELSIF  (write_ctrl_q(dma_wtag_v).dma  = XLAT_DONE ) AND
                    (rsp_wtag_q                   /= dma_wtag_q) AND
                    (dma_wreq_cnt_q                < 7         )THEN
-              wram_raddr_q <= wram_raddr_q + 2;
+              wram_raddr_q <= wram_raddr_q + 1;
               dma_fsm_q    <= ST_START_DMA_WRITE_REQ;
             END IF;
 
@@ -1546,14 +1546,14 @@ BEGIN
           -- STATE START_DMA_WRITE_REQ
           --
           WHEN ST_START_DMA_WRITE_REQ =>
-            wram_raddr_q <= wram_raddr_q + 2;
+            wram_raddr_q <= wram_raddr_q + 1;
             dma_fsm_q    <= ST_DMA_WRITE_REQ;
 
           --
           -- STATE STOP_DMA_WRITE_REQ
           --
           WHEN ST_STOP_DMA_WRITE_REQ =>
-            wram_raddr_q  <= dma_wtag_q(4 DOWNTO 0) & '0';
+            wram_raddr_q  <= dma_wtag_q(4 DOWNTO 0);
             dma_fsm_q     <= ST_IDLE;
 
           --------------------------------------------------------------------
@@ -1600,7 +1600,7 @@ BEGIN
             --
             dma_wtag_q      <= dma_wtag_q      + 1;
             dma_wtag_next_q <= dma_wtag_next_q + 1;
-            wram_raddr_q    <= wram_raddr_q    + 2;
+            wram_raddr_q    <= wram_raddr_q    + 1;
 
             dh_d_q.valid    <= '1';
             dh_d_q.req_utag <= "00100" & dma_wtag_q(4 DOWNTO 0);
