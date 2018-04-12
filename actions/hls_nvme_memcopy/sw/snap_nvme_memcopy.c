@@ -169,6 +169,7 @@ int main(int argc, char *argv[])
 			{ "dst-addr",	 required_argument, NULL, 'd' },
 			{ "drv-id",	 required_argument, NULL, 'n' },
 			{ "size",	 required_argument, NULL, 's' },
+                        { "maxbuffsize", required_argument, NULL, 'S' },
 			{ "mode",	 required_argument, NULL, 'm' },
 			{ "timeout",	 required_argument, NULL, 't' },
 			{ "verify",	 no_argument,	    NULL, 'X' },
@@ -179,7 +180,7 @@ int main(int argc, char *argv[])
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
-		ch = getopt_long(argc, argv,"C:i:o:A:a:D:d:n:s:m:t:XVvhN", long_options, &option_index);
+		ch = getopt_long(argc, argv,"C:i:o:A:a:D:d:n:s:S:m:t:XVvhN", long_options, &option_index);
 		if (ch == -1)
 			break;
 
