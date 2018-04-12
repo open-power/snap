@@ -188,20 +188,6 @@ check_snap_settings:
 	fi
 	@echo "                        =============================="
 
-check_nvme:
-	@if [ "$(SIMULATOR)" != "nosim" ] && [ "$(NVME_USED)" == "TRUE" ]; then \
-		if [ "$(SIMULATOR)" != "irun" ]; then  \
-			echo "                        NVMe simulation is not supported for SIMULATOR $(SIMULATOR)"; \
-			exit -1; \
-		fi; \
-		if [ !  -d "$(DENALI)" ]; then \
-			echo "                        Missing or invalid environment variable for NVMe simulation."; \
-			echo "                        Please check the setting of:"; \
-			echo "                        DENALI:   $(DENALI)"; \
-			exit -1; \
-		fi \
-	fi
-
 check_simulator:
 	@if [ "$(SIMULATOR)" != "irun" ] && [ "$(SIMULATOR)" != "xsim" ] && [ "$(SIMULATOR)" != "nosim" ]; then \
 		echo "                        unknown simulator=$SIMULATOR"; \

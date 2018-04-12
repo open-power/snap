@@ -302,19 +302,6 @@ while [ -z "$SETUP_DONE" ]; do
     fi
   fi
 
-  # Note: NVME_USED is defined via snap_config
-  if [[ "$NVME_USED" == "TRUE" ]]; then
-    echo "=====Denali setup======================================"
-    if [ -z "$DENALI" ]; then
-      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of NVME_USED=$NVME_USED but DENALI not set!"
-      export DENALI_USED=FALSE
-    else
-      echo "DENALI                  is set to: \"$DENALI\""
-      export DENALI_USED=TRUE
-    fi
-  fi
-
-
   ####### Print warning messages and create $snap_env_sh
   echo -e "======================================================="
   echo -e "\n=====Content of $(basename $snap_env_sh)============================"

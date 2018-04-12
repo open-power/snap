@@ -1087,20 +1087,20 @@ module top (
     );                                          
 #endif
   
-//#ifdef CONFIG_ENABLE_NVME
-//  ////////////////////////////////////////////////////////////
-//  // NVMe model                                             //
-//  ////////////////////////////////////////////////////////////
-//  nvme_model nvme_model (
-//    .sys_reset_n(sys_reset_n_q),
-//    .pcie_rc0_rxn(pcie_rc0_rxn),
-//    .pcie_rc0_rxp(pcie_rc0_rxp),
-//    .pcie_rc0_txn(pcie_rc0_txn),
-//    .pcie_rc0_txp(pcie_rc0_txp),
-//    .pcie_rc1_rxn(pcie_rc1_rxn),
-//    .pcie_rc1_rxp(pcie_rc1_rxp),
-//    .pcie_rc1_txn(pcie_rc1_txn),
-//    .pcie_rc1_txp(pcie_rc1_txp)
-//    );
-//#endif
+#ifdef CONFIG_ENABLE_DEBALI
+  ////////////////////////////////////////////////////////////
+  // NVMe model                                             //
+  ////////////////////////////////////////////////////////////
+  nvme_model nvme_model (
+    .sys_reset_n(sys_reset_n_q),
+    .pcie_rc0_rxn(pcie_rc0_rxn),
+    .pcie_rc0_rxp(pcie_rc0_rxp),
+    .pcie_rc0_txn(pcie_rc0_txn),
+    .pcie_rc0_txp(pcie_rc0_txp),
+    .pcie_rc1_rxn(pcie_rc1_rxn),
+    .pcie_rc1_rxp(pcie_rc1_rxp),
+    .pcie_rc1_txn(pcie_rc1_txn),
+    .pcie_rc1_txp(pcie_rc1_txp)
+    );
+#endif
 endmodule
