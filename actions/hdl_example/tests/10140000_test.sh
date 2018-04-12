@@ -34,6 +34,9 @@ function test () # $1 = card, $2 = action, $3 = 4k or 64, $4 = min_align, $5 = d
 	local block_step=$(($dma_size/64))
 	local tests=0
 
+	if [ $block_step -eq "0" ]; then
+		block_step=1
+	fi
 	for align in 4096 2048 1024 512 256 128 64 ; do
 		tests=0
 		echo -n "Testing Action $action Align $align for (1...128) $size Byte "
@@ -69,6 +72,10 @@ function test_sb () # $1 = card, $2=action, $3 = min_align, $4 = dma_size
 	local block_step=$(($dma_size/64))
 	local tests=0
 
+	if [ $block_step -eq "0" ]; then
+		block_step=1
+	fi
+
 	for align in 4096 2048 1024 512 256 128 64 ; do		# Align
 		tests=0
 		echo -n "Testing Action $action Align $align  4K=(1..16) 64B=($block_step..$((128*$block_step))) "
@@ -102,6 +109,9 @@ function test_bs () # $1 = card, $2 = action, $3 = min_align, $4 = dma_size
 	local block_step=$(($dma_size/64))
 	local tests=0
 
+	if [ $block_step -eq "0" ]; then
+		block_step=1
+	fi
 	for align in 4096 2048 1024 512 256 128 64 ; do		# Align
 		tests=0
 		echo -n "Testing Action $action Align $align  64B=($block_step..$((128*$block_step))) 4K=(1..16) "
@@ -135,6 +145,9 @@ function test_rnd () # $1 = card, $2 = action, $3 = min_align, $4 = dma_size
 	local block_step=$(($dma_size/64))
 	local tests=0
 
+	if [ $block_step -eq "0" ]; then
+		block_step=1
+	fi
 	for align in 4096 1024 2048 512 256 128 64 ; do
 		tests=0
 		echo -n "Testing Action $action Align $align 1000 x 64B=random 4K=random "
