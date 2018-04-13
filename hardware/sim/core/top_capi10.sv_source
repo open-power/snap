@@ -1087,7 +1087,7 @@ module top (
     );                                          
 #endif
   
-#ifdef CONFIG_ENABLE_DEBALI
+#ifdef CONFIG_ENABLE_DENALI
   ////////////////////////////////////////////////////////////
   // NVMe model                                             //
   ////////////////////////////////////////////////////////////
