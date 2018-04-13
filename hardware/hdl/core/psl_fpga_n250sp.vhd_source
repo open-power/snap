@@ -31,11 +31,6 @@ USE unisim.vcomponents.all;
 
 ENTITY psl_fpga IS
   PORT(
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk     -- Clock inputs for SDRAM
--- clk     refclk266_p               : IN    STD_LOGIC;
--- clk     refclk266_n               : IN    STD_LOGIC;
--- clk #endif
 #ifdef CONFIG_ENABLE_DDR4
     -- DDR4 SDRAM Interface
     -- Nallatech 250S card has one DDR4 SO-DIMMs
@@ -120,11 +115,6 @@ ENTITY psl_fpga IS
     pci0_o_txn_out6       : out   std_logic;
     pci0_o_txp_out7       : out   std_logic;
     pci0_o_txn_out7       : out   std_logic;
-
-    --#define   crc_error_inout
-
-    PCIE_PERST_LS   : in std_logic;
---    EMCCLK          : in std_logic;
 
 -- Flash Interface
     o_flash_oen           : out   std_logic;
@@ -281,12 +271,6 @@ Component psl_accel
     c0_ddr4_ck_t                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 -- TODO:    c0_ddr4_ten                         : OUT   STD_LOGIC;
 #endif
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk     --
--- clk     -- Clock inputs for SDRAM
--- clk     refclk_sdram_p                      : IN    STD_LOGIC;
--- clk     refclk_sdram_n                      : IN    STD_LOGIC;
--- clk #endif
 #ifdef CONFIG_ENABLE_NVME
     --
     -- NVME Interface
@@ -325,7 +309,7 @@ Component psl_accel
   );
 End Component psl_accel;
 
-Component psl4n250sp
+Component psl_bsp
   PORT(
 -- pci interface
     pci_pi_nperst0        : in    std_logic;     -- Active low reset from the PCIe reset pin of the device
@@ -365,10 +349,6 @@ Component psl4n250sp
     pci0_o_txn_out6       : out   std_logic;
     pci0_o_txp_out7       : out   std_logic;
     pci0_o_txn_out7       : out   std_logic;
-
-
-    PCIE_PERST_LS   : in std_logic;
---    EMCCLK          : in std_logic;
 
 -- Flash Interface
     o_flash_oen           : out   std_logic;
@@ -498,7 +478,7 @@ Component psl4n250sp
     pci_clock_125MHz    : out std_logic                    --125MHz clock if required
   );
 
-END Component psl4n250sp;
+END Component psl_bsp;
 
 SIGNAL a0h_brdata: std_logic_vector(0 TO 1023);  -- hline
 SIGNAL a0h_brlat: std_logic_vector(0 TO 3);  -- v4bit
@@ -641,11 +621,6 @@ BEGIN
 
   a0: psl_accel
     PORT MAP (
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk       -- Clock inputs for SDRAM
--- clk       refclk_sdram_p                    => refclk266_p,
--- clk       refclk_sdram_n                    => refclk266_n,
--- clk #endif
 #ifdef CONFIG_ENABLE_DDR4
       -- DDR4 SDRAM Interface
       -- Nallatech 250S card has one DDR4 SO-DIMMs
@@ -826,7 +801,7 @@ BEGIN
 
     gold_factory <= user_image_q;
 
-  psl: psl4n250sp
+  psl: psl_bsp
     PORT MAP (
 -- pci interface
       pci_pi_nperst0      => pci_pi_nperst0,       -- Active low reset from the PCIe reset pin of the device
@@ -866,9 +841,6 @@ BEGIN
       pci0_o_txn_out6     => pci0_o_txn_out6,
       pci0_o_txp_out7     => pci0_o_txp_out7,
       pci0_o_txn_out7     => pci0_o_txn_out7,
-
-      PCIE_PERST_LS       => PCIE_PERST_LS,
---      EMCCLK              => EMCCLK,
 
 -- Flash Interface
       o_flash_oen         => o_flash_oen,

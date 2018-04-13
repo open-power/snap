@@ -1,6 +1,6 @@
 ### SNAP Action Examples
 
-This subdirectory contains a number of SNAP action examples. Each example consists of an application running on the host and an associated action being exectuted on the FPGA. There are one HDL based example and multiple HLS written examples.  
+This subdirectory contains a number of SNAP action examples. Each example consists of an application running on the host and an associated action being executed on the FPGA. There are two HDL based examples and multiple HLS written examples.  
 Note that the HLS examples should reside in directories prefixed with `hls_*`. This will automatically trigger the HLS to HDL synthesis step during the SNAP hardware build process.
 
 #### Subdirectory structure

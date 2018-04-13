@@ -1,3 +1,15 @@
+# Notice: 
+**This example often does not meet timing (> 200ps negative slack) in bitstream generation. Running on FPGA hardware has passed for many times but it is NOT guaranteed.**
+
+**:warning:WARNING** 
+
+**Please don't use it as a testing example on FPGA hardware.**
+
+It stays here as a HLS coding example to show how to make two implementations for a single target. It also shows how to invoke the hardware action several times from C main() function. 
+
+
+=====================================================
+
 # How to build
 
 Intersection has two methods and are implemented in two Actions. 
@@ -57,5 +69,8 @@ Compare time "Step3+Step5"  .vs.  "Step2+Step4"
 	SNAP_CONFIG=1 ./snap_intersect -m2 -s  (software sort method)
 	"-s" is needed. 
 
-## Other arguments please look in `./snap_intersect -h`
+
+:star: For other arguments please see the software help output `./snap_intersect -h`
+
+:star: Please check the [actions/hls_intersect/doc](./doc/) directory for detailed information
 

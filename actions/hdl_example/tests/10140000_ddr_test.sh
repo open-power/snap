@@ -84,26 +84,45 @@ while getopts "C:t:i:h" opt; do
 	esac
 done
 
-rev=$(cat /sys/class/cxl/card$snap_card/device/subsystem_device | xargs printf "0x%.4X")
+# Get Card Name
+echo -n "Detect Card[$snap_card] .... "
+CARD=`./software/tools/snap_maint -C $snap_card -m 4 | tr -d '[:space:]'`
+if [ -z $CARD ]; then
+	echo "ERROR: Invalid Card."
+	exit 1
+fi
 
-case $rev in
-"0x0605" )
-        echo "$rev -> Testing AlphaData KU3 Card"
-        ;;
-"0x060A" )
-        echo "$rev -> Testing Nallatech 250S Card"
-        ;;
-*)
-        echo "Capi Card $snap_card does have subsystem_device: $rev"
-        echo "I Expect to have 0x605 or 0x60a, Check if -C $snap_card was"
-        echo " move to other CAPI id and use other -C option !"
-        exit 1
+# Get Values from Card Card using mode 5 and mode 6 cut blank at the end
+MIN_ALIGN=`./software/tools/snap_maint -C $snap_card -m 5 | tr -d '[:space:]'`
+MIN_BLOCK=`./software/tools/snap_maint -C $snap_card -m 6 | tr -d '[:space:]'`
+echo -n " (Align: $MIN_ALIGN Min Block: $MIN_BLOCK) "
+
+case $CARD in
+"AD8K5" )
+	echo "-> AlphaData $CARD Card"
+	;;
+"S121B" )
+	echo "-> Semptian $CARD Card"
+	;;
+"ADKU3" )
+	echo "-> AlphaData $CARD Card"
+	;;
+"N250S" )
+	echo "-> Nallatech $CARD Card"
+	;;
+"N250SP" )
+	echo "-> Nallatech $CARD Card"
+	;;
+* )
+	echo "-> $CARD is Inavlid"
+	exit 1
+	;;
 esac;
 
 # Get RAM in MB from Card
-RAM=`./software/tools/snap_maint -C $snap_card -m 3`
+RAM=`./software/tools/snap_maint -C $snap_card -m 3 | tr -d '[:space:]'`
 if [ -z $RAM ]; then
-	echo "Skip Test: No SRAM on Card $snap_card"
+	echo "Skip Test: No SRAM on $CARD[$snap_card]"
 	exit 0
 fi
 
@@ -111,7 +130,7 @@ KB=$((1024))
 MB=$((1024*1024))
 GB=$((1024*1024*1024))
 BLOCKSIZE=$((1*MB))
-echo "Testing $RAM MB SRAM on Card $snap_card"
+echo "Testing $RAM MB SRAM on $CARD[$snap_card]"
 
 for ((iter=1;iter <= iteration;iter++))
 {
@@ -165,4 +184,5 @@ for ((iter=1;iter <= iteration;iter++))
 		test_ddr "${snap_card}" "${start}" "${end}" "${BLOCKSIZE}"
 	fi
 }
+echo "---------->>>> Exit Good <<<<<<--------------"
 exit 0

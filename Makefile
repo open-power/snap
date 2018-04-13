@@ -1,5 +1,5 @@
 #
-# Copyright 2016, 2017 International Business Machines
+# Copyright 2016-2018 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ snap_env_sh = snap_env.sh
 clean_subdirs += $(config_subdirs) $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
 
 # Only build if the subdirectory is really existent
-.PHONY: help $(software_subdirs) software $(action_subdirs) apps actions $(hardware_subdirs) hardware test install uninstall snap_env hw_project model sim image cloud_base cloud_action cloud_merge snap_config config menuconfig xconfig gconfig oldconfig clean clean_config clean_env gitclean
+.PHONY: help $(software_subdirs) software $(action_subdirs) apps actions $(hardware_subdirs) hardware test install uninstall snap_env hw_project model sim image cloud_enable cloud_base cloud_action cloud_merge snap_config config menuconfig xconfig gconfig oldconfig clean clean_config clean_env gitclean
 
 help:
 	@echo "Main targets for the SNAP Framework make process:";
@@ -99,7 +99,7 @@ $(hardware_subdirs): $(snap_env_sh)
 hardware: $(hardware_subdirs)
 
 # Model build and config
-hw_project model sim image cloud_base cloud_action: $(snap_env_sh)
+hw_project model sim image cloud_enable cloud_base cloud_action: $(snap_env_sh)
 	@for dir in $(hardware_subdirs); do                \
 	    if [ -d $$dir ]; then                          \
 	        $(MAKE) -s -C $$dir $@ || exit 1;          \

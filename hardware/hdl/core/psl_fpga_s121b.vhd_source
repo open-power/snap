@@ -26,11 +26,6 @@ USE ieee.numeric_std.all;
 
 ENTITY psl_fpga IS
   PORT(
--- clk #ifdef CONFIG_ENABLE_DDRI	
--- clk     -- Clock inputs for SDRAM                                                  
--- clk     fpga_sysclk100m_p        : in      std_logic;                              
--- clk     fpga_sysclk100m_n        : in      std_logic;                              
--- clk #endif
 #ifdef CONFIG_ENABLE_DDR4
     -- DDR4 SDRAM Interface                                                    
     -- Semptian NSA121B card has two DDR4 SO-DIMMs                             
@@ -184,11 +179,6 @@ Component psl_accel
        ha_jeapar: in std_logic;
        ha_jcompar: in std_logic;
                                                                                    
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk        -- Clock inputs for SDRAM                                                   
--- clk        refclk_sdram_p                     : IN    STD_LOGIC;                       
--- clk        refclk_sdram_n                     : IN    STD_LOGIC;                       
--- clk #endif
 #ifdef CONFIG_ENABLE_DDR4                                                                                   
        -- DDR4 SDRAM Interface                                                     
        c2_sys_clk_p              : IN    STD_LOGIC;                                
@@ -455,10 +445,6 @@ begin
          ah_jyield            => a0h_jyield,
          ha_jeapar            => ha0_jeapar,
          ha_jcompar           => ha0_jcompar,
--- clk #ifdef CONFIG_ENABLE_DDRI
--- clk          refclk_sdram_n       => fpga_sysclk100m_n,       
--- clk          refclk_sdram_p       => fpga_sysclk100m_p,		 
--- clk #endif
 #ifdef CONFIG_ENABLE_DDR4
          c2_sys_clk_p            => c2_sys_clk_p    ,	  
          c2_sys_clk_n            => c2_sys_clk_n    ,	  
