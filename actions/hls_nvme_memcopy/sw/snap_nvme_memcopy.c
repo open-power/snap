@@ -46,19 +46,21 @@ static void usage(const char *prog)
 {
 	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
 	       "  -C, --card <cardno> can be (0...3)\n"
-	       "  -i, --input  <file.bin>   input file  (HOST).\n"
-	       "  -o, --output <file.bin>   output file (HOST).\n"
+	       "  -i, --input  <file.bin>     input file  (HOST).\n"
+	       "  -o, --output <file.bin>     output file (HOST).\n"
 	       "  -A, --type-in  <NVME_SSD, HOST_DRAM, CARD_DRAM>.\n"
-	       "  -a, --addr-in  <addr>     byte address in CARD_DRAM or NVME_SSD.\n"
+	       "  -a, --addr-in  <addr>       byte address in CARD_DRAM or NVME_SSD.\n"
 	       "  -D, --type-out <NVME_SSD, HOST_DRAM, CARD_DRAM>.\n"
-	       "  -d, --addr-out <addr>     byte address in CARD_DRAM or NVME_SSD.\n"
-	       "  -n, --drv-id   <0/1>      drive_id if NVME_SSD is used (default: 0)\n"
-	       "  -s, --size <size>         size of data (in bytes).\n"
-               "  -S, --maxsize <maxsize>   Maximum size of SDRAM buffer (default=0x40000000 ie 2GB)\n"
-	       "  -m, --mode <mode>         mode flags.\n"
-	       "  -t, --timeout             Timeout in sec to wait for done. (10 sec default)\n"
-	       "  -X, --verify              verify result if possible\n"
-	       "  -N, --no_irq                 Disable Interrupts\n"
+	       "  -d, --addr-out <addr>       byte address in CARD_DRAM or NVME_SSD.\n"
+	       "  -n, --drv-id   <0/1>        drive_id if NVME_SSD is used (default: 0)\n"
+	       "  -s, --size <size>           size of data (in bytes).\n"
+               "  -S, --maxsize <maxsize>     Maximum size of SDRAM buffer     (default=0x80000000 ie 2GB)\n"
+               "  -F, --buff_fwd_add <offset> Address of SDRAM buffer (to   SSD) (default=0x00000000)\n"
+               "  -R, --buff_rev_add <offset> Address of SDRAM buffer (from SSD)(default=0x80000000 ie 2GB)\n"
+	       "  -m, --mode <mode>           mode flags.\n"
+	       "  -t, --timeout               Timeout in sec to wait for done. (10 sec default)\n"
+	       "  -X, --verify                verify result if possible\n"
+	       "  -N, --no_irq                Disable Interrupts\n"
 	       "\n"
 	       " WARNING : All data transfers to and from NVME_SSDs are buffered in CARD_DRAM :\n"
 	       " Check #define DRAM_ADDR_TO_SSD  0x00000000 and #define DRAM_ADDR_FROM_SSD 0x80000000\n"
@@ -105,7 +107,7 @@ static void snap_prepare_nvme_memcopy(struct snap_job *cjob,
 				uint32_t size_out,
 				uint8_t type_out,
 				uint64_t drive_id,
-                                uint64_t maxbuffsize)
+                                uint32_t maxbuffsize)
 {
 	fprintf(stderr, "  prepare nvme_memcopy job of %ld bytes size\n"
 		"  This is the register information exchanged between host and fpga\n",
@@ -143,14 +145,17 @@ int main(int argc, char *argv[])
 	const char *space = "CARD_RAM";
 	struct timeval etime, stime;
 	ssize_t size = 1024 * 1024;
-        uint64_t maxbuffsize = 0x40000000; // 2GB default
+	// the following are default values for a 4GB DDR4 memory
+        uint64_t maxbuffsize  = 0x80000000; // 2GB (half of the memory for each path)
+        uint64_t buff_fwd_add = 0x00000000; // 0   (lower part of memory)
+        uint64_t buff_rev_add = 0x80000000; // 2GB (upper part of memory)
 	uint8_t *ibuff = NULL, *obuff = NULL;
 	uint8_t type_in = SNAP_ADDRTYPE_HOST_DRAM;
 	uint64_t addr_in = 0x0ull;
 	uint8_t type_out = SNAP_ADDRTYPE_HOST_DRAM;
 	uint64_t addr_out = 0x0ull;
 	int verify = 0;
-    uint64_t drive_id = 0;
+        uint64_t drive_id = 0;
 	int exit_code = EXIT_SUCCESS;
 	uint8_t trailing_zeros[1024] = { 0, };
         snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
@@ -170,6 +175,8 @@ int main(int argc, char *argv[])
 			{ "drv-id",	 required_argument, NULL, 'n' },
 			{ "size",	 required_argument, NULL, 's' },
                         { "maxbuffsize", required_argument, NULL, 'S' },
+                        { "buff_fwd_add",required_argument, NULL, 'F' },
+                        { "buff_rev_add",required_argument, NULL, 'R' },
 			{ "mode",	 required_argument, NULL, 'm' },
 			{ "timeout",	 required_argument, NULL, 't' },
 			{ "verify",	 no_argument,	    NULL, 'X' },
@@ -180,7 +187,7 @@ int main(int argc, char *argv[])
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
-		ch = getopt_long(argc, argv,"C:i:o:A:a:D:d:n:s:S:m:t:XVvhN", long_options, &option_index);
+		ch = getopt_long(argc, argv,"C:i:o:A:a:D:d:n:s:S:F:R:m:t:XVvhN", long_options, &option_index);
 		if (ch == -1)
 			break;
 
@@ -239,6 +246,12 @@ int main(int argc, char *argv[])
                 case 'S':
                         maxbuffsize = __str_to_num(optarg);
                         break;
+		case 'F':
+                        buff_fwd_add = __str_to_num(optarg);
+                        break;
+		case 'R':
+                        buff_rev_add = __str_to_num(optarg);
+                        break;
                 case 'm':
                         mode = strtol(optarg, (char **)NULL, 0);
                         break;
@@ -280,11 +293,14 @@ int main(int argc, char *argv[])
 	}
 
 	/* if input file is defined, use that as input */
-	if (input != NULL) {
+		if (input != NULL) {
 		size = __file_size(input);
 		if (size < 0)
+		  {
+		    //fprintf(stdout, "type size: %d, type maxbuffsize: %d_n", size, maxbuffsize);
+		   // fprintf(stdout, "input data %d bytes from %s. Max buffer size is %d\n",(int)size, input, (int)maxbuffsize);
 			goto out_error;
-
+		  }
 		/* source buffer */
 		ibuff = snap_malloc(size);
 		if (ibuff == NULL)
@@ -314,20 +330,30 @@ int main(int argc, char *argv[])
 		addr_out = (unsigned long)obuff;
 	}
 
+	/* check if buffer size is not exceeded */
+	if ((uint64_t)size  > maxbuffsize)
+	{
+		fprintf(stdout, "requested size %d exceeds buffer size %d\n",(int)size, (int)maxbuffsize);
+		goto out_error;
+	}
+	
 	printf("PARAMETERS:\n"
-	       "  input:       %s\n"
-	       "  output:      %s\n"
-	       "  type_in:     %x %s\n"
-	       "  addr_in:     %016llx\n"
-	       "  type_out:    %x %s\n"
-	       "  addr_out:    %016llx\n"
-           "  drive_id:    %ld\n"
-	       "  size_in/out: %08lx\n"
-	       "  mode:        %08x\n",
+	       "  input:        %s\n"
+	       "  output:       %s\n"
+	       "  type_in:      %x %s\n"
+	       "  addr_in:      %016llx\n"
+	       "  type_out:     %x %s\n"
+	       "  addr_out:     %016llx\n"
+               "  drive_id:     %ld\n"
+	       "  size_in/out:  %08lx\n"
+	       "  MaxBuffersize:%08lx\n"
+	       "  FwdBufferAdd: %08lx\n"
+	       "  RevBufferAdd: %08lx\n"
+	       "  mode:         %08x\n",
 	       input  ? input  : "unknown",
 	       output ? output : "unknown",
 	       type_in,  mem_tab[type_in],  (long long)addr_in,
-	       type_out, mem_tab[type_out], (long long)addr_out, (long) drive_id, size, mode);
+	       type_out, mem_tab[type_out], (long long)addr_out, (long) drive_id, size, maxbuffsize, buff_fwd_add, buff_rev_add, mode);
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
