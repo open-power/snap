@@ -44,14 +44,16 @@ if { $impl_flow == "CLOUD_BASE" } {
 } else {
   set merge_flow FALSE
   set rpt_dir_prefix $rpt_dir/
-
-  ##
-  ## save framework directives for later use
-  set place_directive     [get_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
-  set phys_opt_directive  [get_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
-  set route_directive     [get_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
-  set opt_route_directive [get_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 }
+
+
+##
+## save framework directives for later use
+set place_directive     [get_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+set phys_opt_directive  [get_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+set route_directive     [get_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+set opt_route_directive [get_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
+
 
 ##
 ## optimizing design
