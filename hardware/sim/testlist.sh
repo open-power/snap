@@ -204,7 +204,7 @@
         #### check DDR3 memory in AlphaData KU3, stay under 512k for BRAM
         step "snap_example_ddr -h"
         for iter in 1 $rnd4;do                           # number of blocks
-        for i in 1 $rnd32;do bsize=$((i*$xfer))          # adopt to capability reg xfer size
+        for i in 1 $rnd32;do bsize=$((xfer>64?xfer*i:64*i))  # adopt to capability reg xfer size, hdl_example action only works n*64B xfers, even if SNAP can do less
         for j in 1 $rnd5;do strt=$((j*$dma))             # adopt to capability reg DMA alignment
 #         if [[ "iter" > "1" && ("$bsize" == "64" || "$strt" == "1024") ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
           let end=${strt}+${iter}*${bsize}; to=$((iter*iter*bsize/4+300))      # rough timeout dependent on filesize
