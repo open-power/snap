@@ -34,15 +34,15 @@ set widthCol3 $::env(WIDTHCOL3)
 set widthCol4 $::env(WIDTHCOL4)
 
 if { $impl_flow == "CLOUD_BASE" } {
-  set cloud_flow TRUE
+  set merge_flow FALSE
   set prefix base_
   set rpt_dir_prefix $rpt_dir/${prefix}
 } elseif { $impl_flow == "CLOUD_MERGE" } {
-  set cloud_flow TRUE
+  set merge_flow TRUE
   set prefix merge_
   set rpt_dir_prefix $rpt_dir/${prefix}
 } else {
-  set cloud_flow FALSE
+  set merge_flow FALSE
   set rpt_dir_prefix $rpt_dir/
 
   ##
@@ -55,7 +55,7 @@ if { $impl_flow == "CLOUD_BASE" } {
 
 ##
 ## optimizing design
-if { $cloud_flow == "TRUE" } {
+if { $merge_flow == "TRUE" } {
   set step      ${prefix}opt_design
   set directive Explore
 } else {
@@ -81,7 +81,7 @@ if { [catch "$command > $logfile" errMsg] } {
 
 ##
 ## Vivado 2017.4 has problems to place the SNAP core logic, if they can place inside the PSL
-if { ($vivadoVer >= "2017.4") && ($cloud_flow == "FALSE") } {
+if { ($vivadoVer >= "2017.4") && ($merge_flow == "FALSE") } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "reload opt_design DCP" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   close_project                         >> $logfile
   open_checkpoint $dcp_dir/${step}.dcp  >> $logfile
@@ -90,7 +90,7 @@ if { ($vivadoVer >= "2017.4") && ($cloud_flow == "FALSE") } {
 
 ##
 ## placing design
-if { $cloud_flow == "TRUE" } {
+if { $merge_flow == "TRUE" } {
   set step      ${prefix}place_design
   set directive Explore
 } else {
@@ -123,7 +123,7 @@ if { [catch "$command > $logfile" errMsg] } {
 
 ##
 ## physical optimizing design
-if { $cloud_flow == "TRUE" } {
+if { $merge_flow == "TRUE" } {
   set step      ${prefix}phys_opt_design
   set directive Explore
 } else {
@@ -149,7 +149,7 @@ if { [catch "$command > $logfile" errMsg] } {
 
 ##
 ## routing design
-if { $cloud_flow == "TRUE" } {
+if { $merge_flow == "TRUE" } {
   set step      ${prefix}route_design
   set directive Explore
 } else {
@@ -175,7 +175,7 @@ if { [catch "$command > $logfile" errMsg] } {
 
 ##
 ## physical optimizing routed design
-if { $cloud_flow == "TRUE" } {
+if { $merge_flow == "TRUE" } {
   set step      ${prefix}opt_routed_design
   set directive Explore
 } else {
