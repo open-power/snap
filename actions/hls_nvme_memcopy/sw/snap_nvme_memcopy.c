@@ -54,9 +54,9 @@ static void usage(const char *prog)
 	       "  -d, --addr-out <addr>       byte address in CARD_DRAM or NVME_SSD.\n"
 	       "  -n, --drv-id   <0/1>        drive_id if NVME_SSD is used (default: 0)\n"
 	       "  -s, --size <size>           size of data (in bytes).\n"
-               "  -S, --maxsize <maxsize>     Maximum size of SDRAM buffer     (default=0x80000000 ie 2GB)\n"
+               "  -S, --maxsize <maxsize>     Maximum size of SDRAM buffer       (default=0x80000000 ie 2GB)\n"
                "  -F, --buff_fwd_add <offset> Address of SDRAM buffer (to   SSD) (default=0x00000000)\n"
-               "  -R, --buff_rev_add <offset> Address of SDRAM buffer (from SSD)(default=0x80000000 ie 2GB)\n"
+               "  -R, --buff_rev_add <offset> Address of SDRAM buffer (from SSD) (default=0x80000000 ie 2GB)\n"
 	       "  -m, --mode <mode>           mode flags.\n"
 	       "  -t, --timeout               Timeout in sec to wait for done. (10 sec default)\n"
 	       "  -X, --verify                verify result if possible\n"
@@ -107,7 +107,9 @@ static void snap_prepare_nvme_memcopy(struct snap_job *cjob,
 				uint32_t size_out,
 				uint8_t type_out,
 				uint64_t drive_id,
-                                uint32_t maxbuffsize)
+                                uint64_t maxbuffsize,
+				uint64_t buff_fwd_add,
+				uint64_t buff_rev_add )
 {
 	fprintf(stderr, "  prepare nvme_memcopy job of %ld bytes size\n"
 		"  This is the register information exchanged between host and fpga\n",
@@ -120,8 +122,10 @@ static void snap_prepare_nvme_memcopy(struct snap_job *cjob,
 		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
 	snap_addr_set(&mjob->out, addr_out, size_out, type_out,
 		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST | SNAP_ADDRFLAG_END);
-    mjob->drive_id = drive_id;
-    mjob->maxbuffer_size = maxbuffsize;
+    mjob->drive_id              = drive_id;
+    mjob->maxbuffer_size        = maxbuffsize;
+    mjob->sdram_buff_fwd_offset = buff_fwd_add;
+    mjob->sdram_buff_rev_offset = buff_rev_add;
 
 	snap_job_set(cjob, mjob, sizeof(*mjob), NULL, 0);
 }
@@ -292,7 +296,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	/* if input file is defined, use that as input */
+	/* if input file is defined, use that as input and check it's size is compatible with buffer size */
 		if (input != NULL) {
 		size = __file_size(input);
 		if (size < 0)
@@ -377,7 +381,7 @@ int main(int argc, char *argv[])
         // structures with the appropriate content
 	snap_prepare_nvme_memcopy(&cjob, &mjob,
 			     (void *)addr_in,  size, type_in,
-			     (void *)addr_out, size, type_out, drive_id, maxbuffsize);
+			     (void *)addr_out, size, type_out, drive_id, maxbuffsize, buff_fwd_add, buff_rev_add);
 
 	__hexdump(stderr, &mjob, sizeof(mjob));
 
