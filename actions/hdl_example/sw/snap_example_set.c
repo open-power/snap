@@ -39,7 +39,7 @@
 #define	KILO_BYTE		(1024)
 #define	MEGA_BYTE		(1024*1024)
 
-#define DEFAULT_MEM	0xff
+#define DEFAULT_MEM             0xE5
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
