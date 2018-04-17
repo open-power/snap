@@ -259,7 +259,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   ####### checking TIMNG LIMITS setup
   if [ -z "$TIMING_LABLIMIT" ]; then
-    $TIMING_LABLIMIT="$TIMING_LABLIMIT_DEFAULT"
+    TIMING_LABLIMIT="$TIMING_LABLIMIT_DEFAULT"
     sed -i '/export[ ^]*TIMING_LABLIMIT[ ^]*=/ d' $snap_env_sh
     echo "export TIMING_LABLIMIT=\"$TIMING_LABLIMIT_DEFAULT\"" >> $snap_env_sh
     SETUP_INFO="$SETUP_INFO\n### INFO ### Timing limit for FPGA image build got set to default value $TIMING_LABLIMIT_DEFAULT"
