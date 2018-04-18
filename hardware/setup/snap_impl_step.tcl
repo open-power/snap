@@ -34,22 +34,15 @@ set widthCol3 $::env(WIDTHCOL3)
 set widthCol4 $::env(WIDTHCOL4)
 
 if { $impl_flow == "CLOUD_BASE" } {
-  set merge_flow FALSE
+  set cloud_flow TRUE
   set prefix base_
   set rpt_dir_prefix $rpt_dir/${prefix}
-
-  ##
-  ## save framework directives for later use
-  set place_directive     [get_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
-  set phys_opt_directive  [get_property STEPS.PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
-  set route_directive     [get_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
-  set opt_route_directive [get_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 } elseif { $impl_flow == "CLOUD_MERGE" } {
-  set merge_flow TRUE
+  set cloud_flow TRUE
   set prefix merge_
   set rpt_dir_prefix $rpt_dir/${prefix}
 } else {
-  set merge_flow FALSE
+  set cloud_flow FALSE
   set rpt_dir_prefix $rpt_dir/
 
   ##
@@ -64,7 +57,7 @@ if { $impl_flow == "CLOUD_BASE" } {
 
 ##
 ## optimizing design
-if { $merge_flow == "TRUE" } {
+if { $cloud_flow == "TRUE" } {
   set step      ${prefix}opt_design
   set directive Explore
 } else {
@@ -90,7 +83,7 @@ if { [catch "$command > $logfile" errMsg] } {
 
 ##
 ## Vivado 2017.4 has problems to place the SNAP core logic, if they can place inside the PSL
-if { ($vivadoVer >= "2017.4") && ($merge_flow == "FALSE") } {
+if { ($vivadoVer >= "2017.4") && ($cloud_flow == "FALSE") } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "reload opt_design DCP" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   close_project                         >> $logfile
   open_checkpoint $dcp_dir/${step}.dcp  >> $logfile
@@ -99,7 +92,7 @@ if { ($vivadoVer >= "2017.4") && ($merge_flow == "FALSE") } {
 
 ##
 ## placing design
-if { $merge_flow == "TRUE" } {
+if { $cloud_flow == "TRUE" } {
   set step      ${prefix}place_design
   set directive Explore
 } else {
@@ -132,7 +125,7 @@ if { [catch "$command > $logfile" errMsg] } {
 
 ##
 ## physical optimizing design
-if { $merge_flow == "TRUE" } {
+if { $cloud_flow == "TRUE" } {
   set step      ${prefix}phys_opt_design
   set directive Explore
 } else {
@@ -158,7 +151,7 @@ if { [catch "$command > $logfile" errMsg] } {
 
 ##
 ## routing design
-if { $merge_flow == "TRUE" } {
+if { $cloud_flow == "TRUE" } {
   set step      ${prefix}route_design
   set directive Explore
 } else {
@@ -184,7 +177,7 @@ if { [catch "$command > $logfile" errMsg] } {
 
 ##
 ## physical optimizing routed design
-if { $merge_flow == "TRUE" } {
+if { $cloud_flow == "TRUE" } {
   set step      ${prefix}opt_routed_design
   set directive Explore
 } else {
@@ -235,7 +228,7 @@ if { [expr $TIMING_WNS >= 0 ] } {
     } else {
         puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "WARNING: TIMING FAILED, but may be OK for lab use" $widthCol4 "" ]
     }
-    set ::env(REMOVE_TMP_FILES) TRUE
+    set ::env(REMOVE_TMP_FILES) FALSE
 }
 
 ##

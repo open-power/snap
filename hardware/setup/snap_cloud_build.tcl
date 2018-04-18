@@ -174,12 +174,12 @@ if { $cloud_run == "BASE" } {
 ## removing temporary checkpoint files
 if { $::env(REMOVE_TMP_FILES) == "TRUE" } {
   puts [format "%-*s%-*s%-*s%-*s" $widthCol1 "" $widthCol2 "removing temp files" $widthCol3 "" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
-  exec rm -rf $dcp_dir/synth_design.dcp
-  exec rm -rf $dcp_dir/opt_design.dcp
-  exec rm -rf $dcp_dir/place_design.dcp
-  exec rm -rf $dcp_dir/phys_opt_design.dcp
-  exec rm -rf $dcp_dir/route_design_routed.dcp
-  exec rm -rf $dcp_dir/opt_routed_design.dcp
+  exec rm -rf $dcp_dir/base_synth_design.dcp
+  exec rm -rf $dcp_dir/base_opt_design.dcp
+  exec rm -rf $dcp_dir/base_place_design.dcp
+  exec rm -rf $dcp_dir/base_phys_opt_design.dcp
+  exec rm -rf $dcp_dir/base_route_design_routed.dcp
+  exec rm -rf $dcp_dir/base_opt_routed_design.dcp
 }
 
 close_project  >> $logfile
