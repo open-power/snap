@@ -148,7 +148,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   ####### checking path to PSLSE (only if simulation is enabled)
   # Note: SIMULATOR is defined via snap_config
-  if [ $SIMULATOR != "nosim" ]; then
+  if [ "$SIMULATOR" != "nosim" ]; then
     echo "=====Simulation setup: Setting up PSLSE version=========="
     if [ "$FPGACARD" == "N250SP" ]; then
       PSLVER="9"
