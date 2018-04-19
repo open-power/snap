@@ -1180,7 +1180,7 @@ BEGIN
     mmj_c_o.exploration_done    <= exploration_done_q;
     mmj_c_o.max_sat             <= to_integer(unsigned(snap_regs_q(SNAP_STATUS_REG)(SNAP_STAT_MAX_SAT_L DOWNTO SNAP_STAT_MAX_SAT_R)));
     mmj_c_o.last_seqno          <= '1' WHEN context_seqno_hw_dout(CTX_SEQNO_CURRENT_INT_L DOWNTO CTX_SEQNO_CURRENT_INT_R) = context_seqno_hw_dout(CTX_SEQNO_LAST_INT_L DOWNTO CTX_SEQNO_LAST_INT_R)
-                                      ELSE '0';
+                                      ELSE context_config_hw_dout(CTX_CFG_DIRECT_MODE_INT);
 
     mmj_c_o.action_reset_vector <= action_reset_vector_q;
     mmj_c_o.action_ack          <= xmm_d_i.ack AND NOT xmm_mmio_ack_q;
