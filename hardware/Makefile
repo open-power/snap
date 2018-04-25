@@ -190,7 +190,7 @@ check_snap_settings:
 
 check_nvme:
 	@if [ "$(SIMULATOR)" != "nosim" ] && [ "$(NVME_USED)" == "TRUE" ]; then \
-		if [ "$(SIMULATOR)" != "irun" ]; then  \
+		if [ "$(SIMULATOR)" != "irun" ] && [ "$(SIMULATOR)" != "xcelium" ]; then  \
 			echo "                        NVMe simulation is not supported for SIMULATOR $(SIMULATOR)"; \
 			exit -1; \
 		fi; \
