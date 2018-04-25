@@ -39,7 +39,7 @@ while [ -z "$SETUP_DONE" ]; do
 
 
   ####### checking card type
-  
+
   case $FPGACARD in
     "N250S" )
       SNAP_CFG="CONFIG_N250S=y\n""CONFIG_FPGACHIP=xcku060-ffva1156-2-e\n"
@@ -159,14 +159,14 @@ while [ -z "$SETUP_DONE" ]; do
   if [ -z "$SIMULATOR" ]; then
     SIMULATOR="xsim"
   fi
-  if [ "$SIMULATOR" = "xsim" ]; then
-    SNAP_CFG="$SNAP_CFG""CONFIG_SIM_XSIM=y\n"
-  elif [ "$SIMULATOR" =  "irun" ]; then
-    SNAP_CFG="$SNAP_CFG""CONFIG_SIM_XSIM=y\n"
-  else
-    echo "($0) ERROR: SIMULATOR $SIMULATOR is not supported by SNAP. Not generating config files."
-    break
-  fi
+  case $SIMULATOR in
+    xsim )            SNAP_CFG="$SNAP_CFG""CONFIG_SIM_XSIM=y\n";;
+    irun )            SNAP_CFG="$SNAP_CFG""CONFIG_SIM_IRUN=y\n";;
+    xcelium )         SNAP_CFG="$SNAP_CFG""CONFIG_SIM_XCELIUM=y\n";;
+    modelsim|questa ) SNAP_CFG="$SNAP_CFG""CONFIG_SIM_QUESTA=y\n";;
+    * )               echo "($0) ERROR: SIMULATOR $SIMULATOR is not supported by SNAP. Not generating config files."
+                      break;;
+  esac
   SNAP_CFG="$SNAP_CFG""CONFIG_SIMULATOR=$SIMULATOR\n"
 
 

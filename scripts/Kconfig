@@ -322,8 +322,26 @@ choice
         config SIM_IRUN
             bool "irun"
             help
-               Cadence simulator (requires a specific license)
+               Cadence irun simulator (requires a specific license)
             depends on ! ENABLE_PRFLOW
+
+        config SIM_XCELIUM
+            bool "xcelium"
+            help
+               Cadence xcelium simulator (requires a specific license)
+            depends on ! ENABLE_PRFLOW
+
+        config SIM_MODELSIM
+            bool "modelsim"
+            help
+               Mentor Modelsim AE/SE/DE simulator (requires a specific license)
+            depends on ! (ENABLE_PRFLOW || ENABLE_NVME)
+
+        config SIM_QUESTA
+            bool "questa"
+            help
+               Mentor Questa simulator (requires a specific license)
+            depends on ! (ENABLE_PRFLOW || ENABLE_NVME)
 
         config NO_SIM
             bool "nosim"
@@ -332,9 +350,12 @@ endchoice
 
 config SIMULATOR
         string
-        default "xsim"  if SIM_XSIM
-        default "irun"  if SIM_IRUN
-        default "nosim" if NO_SIM
+        default "xsim"     if SIM_XSIM
+        default "irun"     if SIM_IRUN
+        default "xcelium"  if SIM_XCELIUM
+        default "modelsim" if SIM_MODELSIM
+        default "questa"   if SIM_QUESTA
+        default "nosim"    if NO_SIM
 
 comment "================= Advanced Options: ================="
 

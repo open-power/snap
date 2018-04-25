@@ -203,7 +203,7 @@ check_nvme:
 	fi
 
 check_simulator:
-	@if [ "$(SIMULATOR)" != "irun" ] && [ "$(SIMULATOR)" != "xsim" ] && [ "$(SIMULATOR)" != "nosim" ]; then \
+	@if [ "$(SIMULATOR)" != "irun" ] && [ "$(SIMULATOR)" != "xsim" ] && [ "$(SIMULATOR)" != "questa" ] && [ "$(SIMULATOR)" != "xcelium" ] && [ "$(SIMULATOR)" != "modelsim" ] && [ "$(SIMULATOR)" != "nosim" ]; then \
 		echo "                        unknown simulator=$SIMULATOR"; \
 		exit -1; \
 	fi
@@ -502,7 +502,7 @@ clean:
 	@echo -e "                        IPs";
 	@$(RM) -r ip
 	@echo -e "                        sim files";
-	@$(RM) -r sim/ies sim/xsim hdl/nvme/component.xml hdl/nvme/xgui
+	@$(RM) -r sim/ies sim/xsim sim/modelsim sim/questa sim/xcelium hdl/nvme/component.xml hdl/nvme/xgui
 	@echo -e "                        log files";
 	@$(RM) -r logs
 	@echo -e "                        action / application";
