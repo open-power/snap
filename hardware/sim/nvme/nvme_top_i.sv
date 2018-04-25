@@ -144,6 +144,8 @@ module nvme_top (
     input  wire refclk_nvme_ch1_n,
     input  wire refclk_nvme_ch1_p
     );
+
+`define CONFIG_DDR_READWRITE_TEST   0 /* Enable test for DDR, write some data, read it back and compare */
     
     /* Local hardware instances go here */
     reg ACT_arready;
@@ -157,7 +159,6 @@ module nvme_top (
     reg [1:0] ACT_bresp;
     reg [0:0] ACT_rvalid;
     reg [1:0] ACT_rresp;
-    
 
     /* DDR AXI Bus control signals */
     reg DDR_aclk;
@@ -181,8 +182,8 @@ module nvme_top (
     reg [0:0] DDR_bready;
     reg [0:0] DDR_arburst;
     
-    /* SNAP NVME AXI Bus */
-    reg NVME_aclk;
+    /* SNAP NVME AXI Bus: Needs to be moved to the testbench */
+    /* reg NVME_aclk;
     reg NVME_aresetn;
     reg [31:0] NVME_awaddr;
     reg [0:0] NVME_arvalid;
@@ -192,8 +193,20 @@ module nvme_top (
     reg [0:0] NVME_wvalid;
     reg [31:0] NVME_araddr;
     reg [0:0] NVME_rready;
-    reg [0:0] NVME_bready;
+    reg [0:0] NVME_bready; */
 
+    /* NVRAM AXI Interface: Needs to be moved to the testbench */
+    /* assign NVME_S_ACLK = NVME_aclk;
+    assign NVME_S_ARESETN = NVME_aresetn;
+    assign NVME_S_AXI_awaddr = NVME_awaddr;
+    assign NVME_S_AXI_arvalid = NVME_arvalid;
+    assign NVME_S_AXI_wdata = NVME_wdata;
+    assign NVME_S_AXI_wstrb = NVME_wstrb;
+    assign NVME_S_AXI_wvalid = NVME_wvalid;
+    assign NVME_S_AXI_araddr = NVME_araddr;
+    assign NVME_S_AXI_rready = NVME_rready;
+    assign NVME_S_AXI_bready = NVME_bready; */
+    
     /* SNAP Action AXI Interface */  
     assign ACT_NVME_AXI_arready = ACT_arready;
     assign ACT_NVME_AXI_rdata = ACT_rdata;
@@ -226,18 +239,6 @@ module nvme_top (
     assign DDR_M_AXI_bready = DDR_bready;
     assign DDR_M_AXI_arburst = DDR_arburst;
 
-    /* NVRAM AXI Interface */
-    assign NVME_S_ACLK = NVME_aclk;
-    assign NVME_S_ARESETN = NVME_aresetn;
-    assign NVME_S_AXI_awaddr = NVME_awaddr;
-    assign NVME_S_AXI_arvalid = NVME_arvalid;
-    assign NVME_S_AXI_wdata = NVME_wdata;
-    assign NVME_S_AXI_wstrb = NVME_wstrb;
-    assign NVME_S_AXI_wvalid = NVME_wvalid;
-    assign NVME_S_AXI_araddr = NVME_araddr;
-    assign NVME_S_AXI_rready = NVME_rready;
-    assign NVME_S_AXI_bready = NVME_bready;
-    
     /* SNAP NVME AXI Interface: FIXME Figure out for what this is really used */  
     localparam ACTION_W_BITS = $clog2(`ACTION_W_NUM_REGS);
     localparam ACTION_R_BITS = $clog2(`ACTION_R_NUM_REGS);
@@ -246,38 +247,36 @@ module nvme_top (
     logic [31:0] action_w_regs[`ACTION_W_NUM_REGS];
     logic [31:0] action_r_regs[`ACTION_R_NUM_REGS];
     logic [SQ_INDEX_BITS-1:0] sq_index;
+    logic [ACTION_R_BITS-1:0] action_r_index;
+    assign action_r_index = ACT_araddr[ACTION_R_BITS-1:0]; /* cut out the relevant bits */
+    logic [ACTION_W_BITS-1:0] action_w_index;
 
     localparam ACTION_ID_MAX = 16;
     localparam ACTION_ID_BITS = $clog2(ACTION_ID_MAX);
 
-    enum {
-        NVME_IDLE = 1,  /* 1 */
-        NVME_WRITING,   /* 2 */
-        NVME_READING,   /* 3 */
-        NVME_COMPLETED  /* 4 */
-    } activity_state;
+    /* NVME Device STATEMACHINE */
+    enum { NVME_IDLE, NVME_WRITING, NVME_READING, NVME_COMPLETED } activity_state;
 
     initial begin
         axi_ddr_reset();
-        // axi_ddr_test();
+        
+        if (`CONFIG_DDR_READWRITE_TEST) begin
+            axi_ddr_test();
+        end
     end
- 
-    /* Reset ACTION Register AXI bus */
+
+    /* READ STATEMACHINE */
+    /* ACTION Register READ */ 
+    enum { READ_IDLE, READ_DECODE, READ_BUFFER, READ_ACTION_REGS } read_state;
+    logic [`HOST_ADDR_BITS-1:0] host_raddr;
+   
     always @(posedge ACT_NVME_ACLK, negedge ACT_NVME_ARESETN)
     begin
         if (!ACT_NVME_ARESETN) begin
-            ACT_awready <= 1; /* Ready to accept next write address */
-            ACT_bvalid <= 0;  /* write not finished */
-            ACT_bresp <= 2'hX;
-
-            for (int i=0; i<`ACTION_W_NUM_REGS; i++) begin
-                action_w_regs[i] <= 'd0;
-            end
-
             ACT_arready <= 1; /* Ready to accept next read address */
-            ACT_rdata <= 32'h11223344; /* fake data to see if read might work ok */
-            ACT_rresp <= 2'hX;
-
+            ACT_araddr <= 'hx;
+            ACT_rdata <= 'hx; /* data to see if read might work ok */
+            ACT_rresp <= 2'hx;
             for (int i = 0; i < `ACTION_R_SQ_LEVEL; i++) begin
                 action_r_regs[i][31:16] <= NVME_IDLE;
                 action_r_regs[i][15:0] <= 16'h0;
@@ -285,87 +284,184 @@ module nvme_top (
             for (int i = `ACTION_R_SQ_LEVEL; i < `ACTION_R_NUM_REGS; i++) begin
                 action_r_regs[i] <= 32'haabbcc00 + i;
             end
-        end
-    end
-
-    /* ACTION Register Read */
-    /* Capture read address */    
-    always @(posedge ACT_NVME_AXI_arvalid)
-    begin : CAPTURE_ACT_ARADDR
-        ACT_araddr <= ACT_NVME_AXI_araddr;
-        // FIXME Add code here to return the requested register content.
-        ACT_rdata <= action_r_regs[ACT_NVME_AXI_araddr[ACTION_R_BITS-1:0]];
-        ACT_rvalid <= 1;
-        ACT_rresp <= 2'h0;
-        
-        if ((ACT_NVME_AXI_araddr >= `ACTION_R_TRACK_0) &&
-            (ACT_NVME_AXI_araddr <= `ACTION_R_TRACK_15)) begin
-            if (action_r_regs[ACT_NVME_AXI_araddr[ACTION_R_BITS-1:0]][31:16] == NVME_COMPLETED) begin
-                action_r_regs[ACT_NVME_AXI_araddr[ACTION_R_BITS-1:0]][0] <= 0; /* Clear ACTION_TRACK_n */
-                action_r_regs[ACT_NVME_AXI_araddr[ACTION_R_BITS-1:0]][31:16] <= NVME_IDLE;
+            read_state <= READ_IDLE;
+       end else begin
+            case (read_state)
+            READ_IDLE: begin /* Capture read address */    
+                if (ACT_NVME_AXI_arvalid == 1) begin
+                    ACT_araddr <= ACT_NVME_AXI_araddr;
+                    read_state <= READ_DECODE;
+                end
+                ACT_arready <= 1; /* Ready to accept next read address */
+                ACT_rvalid <= 0; /* No data available yet */
             end
+            READ_DECODE: begin
+                ACT_rdata <= action_r_regs[action_r_index];
+                if ((ACT_NVME_AXI_araddr >= `ACTION_R_TRACK_0) &&
+                    (ACT_NVME_AXI_araddr <= `ACTION_R_TRACK_15)) begin
+                    if (activity_state == NVME_COMPLETED) begin
+                        action_r_regs[action_r_index][0] <= 0; /* Clear ACTION_TRACK_n */
+                        activity_state <= NVME_IDLE;
+                    end
+                end
+                read_state <= READ_BUFFER;
+            end
+            READ_BUFFER: begin
+                if (ACT_rvalid && ACT_NVME_AXI_rready) begin
+                    ACT_rvalid <= 1'b0;
+                    read_state <= READ_IDLE;
+                end else begin
+                    ACT_rvalid <= 1'b1;
+                    ACT_rresp <= 2'h0;
+                end
+            end
+            endcase
         end
     end
 
-    /* ACTION Register Write */
-    /* Capture write address */    
-    always @(posedge ACT_NVME_AXI_awvalid)
-    begin : CAPTURE_ACT_AWADDR
-        ACT_awaddr <= ACT_NVME_AXI_awaddr; // Save away the desired address
-        ACT_awready <= 0; // Wait for data now, no addresses anymore        
-        ACT_wready <= 1;  // Now we captured the address and can receive the data
-        ACT_bvalid <= 0;
-        ACT_bresp <= 2'hX;
-    end
+    /* WRITE STATEMACHINE */
+    /* ACTION Register WRITE */
+    enum { WRITE_IDLE, WRITE_DECODE, WRITE_BUFFER, WRITE_BURST } write_state;
+    logic [`HOST_ADDR_BITS-1:0] host_waddr;
+    logic [31:0] host_wdata;
+    
+    always @(posedge ACT_NVME_ACLK, negedge ACT_NVME_ARESETN)
+    begin
+        if (!ACT_NVME_ARESETN) begin
+            ACT_awready <= 1'b0; /* Ready to accept next write address */
+            ACT_bvalid <= 1'b0;  /* write not finished */
+            ACT_bresp <= 2'hx;
+            ACT_awaddr <= 'hx;
+            ACT_wdata <= 'hx;
+            ACT_wready <= 1'b0; /* must be 0 to indicate that we are not ready for data yet, must not let be undefined */
+            for (int i=0; i<`ACTION_W_NUM_REGS; i++) begin
+                action_w_regs[i] <= 'd0;
+            end
+            write_state <= WRITE_IDLE;
+        end else begin
+            case (write_state)
+            WRITE_IDLE: begin /* Capture write address */
+                ACT_awready <= 1'b1;
+                ACT_wready <= 1'b0; 
+                if (ACT_NVME_AXI_awvalid == 1 && ACT_NVME_AXI_awready == 1) begin
+                    ACT_awaddr <= ACT_NVME_AXI_awaddr; // Save away the desired address
+                    ACT_awready <= 1'b0; // Wait for data now, no addresses anymore        
+                    ACT_wready <= 1'b1;  // Now we captured the address and can receive the data
+                    action_w_index = 0;
+                    write_state <= WRITE_DECODE;
+                end
+            end
+            WRITE_DECODE: begin /* Capture write data */
+                if (ACT_NVME_AXI_wvalid == 1 && ACT_wready == 1) begin
+                    ACT_wdata <= ACT_NVME_AXI_wdata; // Save away the data for the address AXI_awaddr
+                    action_w_regs[ACT_awaddr[ACTION_W_BITS-1:0]] <= ACT_NVME_AXI_wdata;
+                    //ACT_wready <= 1'b0;
+                    
+                    if (ACT_NVME_AXI_awburst == 2'b01) begin
+                        ACT_awaddr <= ACT_awaddr + 1;
+                        write_state <= WRITE_BURST;
+                    end else begin
+                        write_state <= WRITE_BUFFER;
+                    end
+                end
+            end                    
+            WRITE_BUFFER: begin /* Check if command register was written and try to trigger actity based on that */
+                if (ACT_awaddr == `ACTION_W_COMMAND) begin
+                    logic [63:0] ddr_addr;
+                    logic [63:0] lba_addr;
+                    logic [31:0] lba_num;
+                    logic [31:0] axi_addr;
+                    logic [`CMD_TYPE_BITS-1:0] cmd_type;
+                    logic [`CMD_ACTION_ID_BITS-1:0] cmd_action_id;
+            
+                    cmd_type = action_w_regs[`ACTION_W_COMMAND][`CMD_TYPE +: `CMD_TYPE_BITS];
+                    cmd_action_id = action_w_regs[`ACTION_W_COMMAND][`CMD_ACTION_ID +: `CMD_ACTION_ID_BITS];;
+                    ddr_addr = { action_w_regs[`ACTION_W_DPTR_HIGH], action_w_regs[`ACTION_W_DPTR_LOW] };
+                    lba_addr = { action_w_regs[`ACTION_W_LBA_HIGH], action_w_regs[`ACTION_W_LBA_LOW] };
+                    lba_num = action_w_regs[`ACTION_W_LBA_NUM];
+                    
+                    $display("nvme_operation: ddr=%h lba=%h num=%h cmd_type=%h cmd_action_id=%h",
+                            ddr_addr, lba_addr, lba_num, cmd_type, cmd_action_id);
+                           
+                    if (cmd_type == `CMD_READ) begin
+                        fork
+                            nvme_cmd_read(ddr_addr, lba_addr, lba_num, cmd_action_id);
+                        join_none
+                    end        
+                    if (cmd_type == `CMD_WRITE) begin
+                        fork
+                            nvme_cmd_write(ddr_addr, lba_addr, lba_num, cmd_action_id);
+                        join_none
+                    end
+                end
+                ACT_bresp <= 2'h0;
+                ACT_bvalid <= 1'b1; /* Write transfer completed */
 
-    /* Capture write data into internal buffer */
-    always @(posedge ACT_NVME_AXI_wvalid)
-    begin : CAPTURE_ACT_AWDATA
+                if (ACT_bvalid && ACT_NVME_AXI_bready) begin
+                    ACT_bvalid <= 1'b0; /* Accept next write request */
+                    write_state <= WRITE_IDLE;
+                end
+            end
+            WRITE_BURST: begin
+                ACT_wready <= 1'b1;
+                
+                if ((ACT_NVME_AXI_wvalid == 1'b1) && (ACT_wready == 1'b1) && (ACT_bvalid == 1'b0)) begin
+                        /* store register content */
+                        action_w_regs[ACT_awaddr[ACTION_W_BITS-1:0]] <= ACT_NVME_AXI_wdata;
+                        ACT_wdata <= ACT_NVME_AXI_wdata; /* Take write data every clock */
+                        
+                        if (ACT_awaddr[ACTION_W_BITS-1:0]==`ACTION_W_COMMAND) begin
+                            nvme_operation();
+                        end
+
+                        ACT_awaddr <= ACT_awaddr + 1;
+                        action_w_index <= action_w_index + 1;
+                end
+                /* We need to ack the last transfer with bvalid = 1 if wlast was set to 1,
+                   when the partner has set bready, we can start all over again */
+                if (ACT_NVME_AXI_wvalid == 1'b1 && ACT_wready == 1'b1 && ACT_NVME_AXI_wlast == 1'b1) begin
+                    ACT_bresp <= 2'b00;
+                    ACT_bvalid <= 1'b1;
+                end
+                if (ACT_bvalid && ACT_NVME_AXI_bready) begin
+                    ACT_bvalid <= 1'b0;
+                    write_state <= WRITE_IDLE;
+                end
+            end
+            endcase
+        end
+    end
+ 
+    task nvme_operation();
         logic [63:0] ddr_addr;
         logic [63:0] lba_addr;
         logic [31:0] lba_num;
         logic [31:0] axi_addr;
         logic [`CMD_TYPE_BITS-1:0] cmd_type;
         logic [`CMD_ACTION_ID_BITS-1:0] cmd_action_id;
+    
+        #1; /* Ensure that all required registers are latched */
+        cmd_type = action_w_regs[`ACTION_W_COMMAND][`CMD_TYPE +: `CMD_TYPE_BITS];
+        cmd_action_id = action_w_regs[`ACTION_W_COMMAND][`CMD_ACTION_ID +: `CMD_ACTION_ID_BITS];;
+        ddr_addr = { action_w_regs[`ACTION_W_DPTR_HIGH], action_w_regs[`ACTION_W_DPTR_LOW] };
+        lba_addr = { action_w_regs[`ACTION_W_LBA_HIGH], action_w_regs[`ACTION_W_LBA_LOW] };
+        lba_num = action_w_regs[`ACTION_W_LBA_NUM];
         
-        ACT_wdata = ACT_NVME_AXI_wdata; // Save away the data for the address AXI_awaddr
-        action_w_regs[ACT_awaddr[ACTION_W_BITS-1:0]] = ACT_NVME_AXI_wdata;
-        #1;
-        
-        // Check if command register was written and try to trigger actity based on that
-        if (ACT_awaddr == `ACTION_W_COMMAND) begin 
-            cmd_type = action_w_regs[`ACTION_W_COMMAND][`CMD_TYPE +: `CMD_TYPE_BITS];
-            cmd_action_id = action_w_regs[`ACTION_W_COMMAND][`CMD_ACTION_ID +: `CMD_ACTION_ID_BITS];;
-            ddr_addr = { action_w_regs[`ACTION_W_DPTR_HIGH], action_w_regs[`ACTION_W_DPTR_LOW] };
-            lba_addr = { action_w_regs[`ACTION_W_LBA_HIGH], action_w_regs[`ACTION_W_LBA_LOW] };
-            lba_num = action_w_regs[`ACTION_W_LBA_NUM];
-
-            
-            $display("nvme_operation: ddr=%h lba=%h num=%h cmd_type=%h cmd_action_id=%h",
-                    ddr_addr, lba_addr, lba_num, cmd_type, cmd_action_id);
-                   
-            if (cmd_type == `CMD_READ) begin
-                fork
-                    nvme_cmd_read(ddr_addr, lba_addr, lba_num, cmd_action_id);
-                join_none
-            end        
-            if (cmd_type == `CMD_WRITE) begin
-                fork
-                    nvme_cmd_write(ddr_addr, lba_addr, lba_num, cmd_action_id);
-                join_none
-            end
+        $display("nvme_operation: ddr=%h lba=%h num=%h cmd_type=%h cmd_action_id=%h",
+                ddr_addr, lba_addr, lba_num, cmd_type, cmd_action_id);
+                
+        if (cmd_type == `CMD_READ) begin
+            fork
+                nvme_cmd_read(ddr_addr, lba_addr, lba_num, cmd_action_id);
+            join_none
+        end        
+        if (cmd_type == `CMD_WRITE) begin
+            fork
+                nvme_cmd_write(ddr_addr, lba_addr, lba_num, cmd_action_id);
+            join_none
         end
-
-        ACT_wready = 0; // Now we captured the data, stop listening
-        // FIXME Add code here to collect the required interface registers.
-        //       ACT_awaddr to identify the register which should be written to.
-        //       Wait for command register to be written and react appropriately.
-        ACT_bvalid = 1;    // Write transfer completed, we captured the data
-        ACT_bresp = 2'h0;
-        ACT_awready = 1;   // Wait for new address now, no data
-        #1;  
-    end
-
+    endtask
+ 
     task nvme_cmd_read(input logic [63:0] ddr_addr,
                        input logic [63:0] lba_addr,
                        input logic [31:0] lba_num,
@@ -373,7 +469,7 @@ module nvme_top (
         logic [31:0] axi_addr;
         logic [127:0] axi_data;
 
-        action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:16] = NVME_READING;
+        activity_state = NVME_READING;
         if (action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] == 1) begin
             action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][1] = 1; /* error, results not read */
         end
@@ -389,7 +485,7 @@ module nvme_top (
         end
         
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 1; /* Mark ACTION_TRACK_n ready */
-        action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:16] =  NVME_COMPLETED;
+        activity_state = NVME_COMPLETED;
         #1;
 
     endtask
@@ -401,7 +497,7 @@ module nvme_top (
         logic [31:0] axi_addr;
         logic [127:0] axi_data;
 
-        action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:16] = NVME_WRITING;
+        activity_state = NVME_WRITING; 
         if (action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] == 1) begin
             action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][1] = 1; /* error, results not read */
         end
@@ -416,7 +512,7 @@ module nvme_top (
         end
         
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 1; /* Mark ACTION_TRACK_n ready */
-        action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:16] = NVME_COMPLETED;
+        activity_state = NVME_COMPLETED;
         #1;
     endtask
 
@@ -426,7 +522,10 @@ module nvme_top (
         #1 DDR_aclk = 1;
     end
 
+    enum { DDR_IDLE, DDR_RESET, DDR_WRITING, DDR_READING, DDR_ERROR } ddr_state;
+   
     task axi_ddr_reset();
+        ddr_state = DDR_RESET;
         DDR_aclk = 0;
         DDR_aresetn = 0;
         DDR_awid = 0;
@@ -446,6 +545,7 @@ module nvme_top (
         DDR_rready = 0;         // master is ready to receive data
         DDR_rready = 0;
         #5 DDR_aresetn = 1;
+        ddr_state = DDR_IDLE;
         #1;
     endtask
 
@@ -454,11 +554,9 @@ module nvme_top (
         logic [31:0] axi_addr;
         logic [127:0] axi_data;
         logic [127:0] cmp_data;
-        logic axi_good;
             
         // AXI Memory Transfers
-        axi_good = 1;
-        axi_ddr_reset();
+        /* axi_ddr_reset(); */
 
         for (axi_addr = 0; axi_addr < 4 * 1024; axi_addr += 16) begin
             axi_data = 128'h0011223344556677_8899aa00000000 + axi_addr;
@@ -466,69 +564,83 @@ module nvme_top (
             axi_ddr_write(axi_addr, axi_data);
         end
 
+        /* Read back the data and check for correctness. Result is visible in
+           ddr_state. */
         for (axi_addr = 0; axi_addr < 4 * 1024; axi_addr += 16) begin
             cmp_data = 128'h0011223344556677_8899aa00000000 + axi_addr;
             axi_ddr_read(axi_addr, axi_data);
             if (axi_data != cmp_data) begin
-                axi_good = 0;
+                ddr_state = DDR_ERROR;
             end
 
-            $display("read: axi_addr=%h cmp_data=%h axi_data=%h axi_good=%d",
-                    axi_addr, cmp_data, axi_data, axi_good);
+            $display("read: axi_addr=%h cmp_data=%h axi_data=%h",
+                    axi_addr, cmp_data, axi_data);
         end
     endtask
 
     task axi_ddr_write(input logic [31:0] addr, input logic [127:0] data);
+        ddr_state = DDR_WRITING;
 
-      while (DDR_M_AXI_awready == 0) begin // awready must be 1 to indicate device is ready for address
-          #1;
-      end
+        while (DDR_M_AXI_awready == 0) begin // awready must be 1 to indicate device is ready for address
+            #1;
+        end
 
-      DDR_awlen = 8'h0;
-      DDR_awsize = 3'b001;
-      DDR_awburst = 2'b00;
-      DDR_awaddr = addr;
-      DDR_awvalid = 1;          // write address is valid now
-    
-      while (DDR_M_AXI_wready == 0) begin // wready needs to be 1 for device to be ready for data 
-          #1;
-      end
-    
-      DDR_wdata = data;
-      DDR_wstrb = 16'hffff;
-      DDR_wvalid = 1;           // write data is valid now
-      DDR_awvalid = 0;          // address not important anymore
-      #1;                       // FIXME This clock cycle seems to be important such that we do 
+        DDR_awlen = 8'h0;
+        DDR_awsize = 3'b001;
+        DDR_awburst = 2'b00;
+        DDR_awaddr = addr;
+        DDR_awvalid = 1;          // write address is valid now
+        
+        while (DDR_M_AXI_wready == 0) begin // wready needs to be 1 for device to be ready for data 
+            #1;
+        end
+        
+        DDR_wdata = data;
+        DDR_wstrb = 16'hffff;
+        DDR_wvalid = 1;           // write data is valid now
+        DDR_awvalid = 0;          // address not important anymore
+        
+        /* BREADY Master Response ready. This signal indicates that the master can accept a write response. */
+        DDR_bready = 1;         // master can accept write response, see below -> interaction with bvalid
+        #1;                       // FIXME This clock cycle seems to be important such that we do 
                                 //       not continue without having written the data.
-      while (DDR_M_AXI_bready == 0) begin
-          #1;
-      end
-      
-      DDR_wvalid = 0;
-  endtask
+        while (DDR_M_AXI_bvalid == 0) begin /* FIXME bvalid instead of bready?? */
+            #1;
+        end
+        
+        DDR_wvalid = 0;
+        #1;
+        
+        ddr_state = DDR_IDLE;
+    endtask
 
-  task axi_ddr_read(input logic [31:0] addr, output logic [127:0] _data);
-      DDR_rready = 0;           // master is not ready anymore
-
-      while (DDR_M_AXI_arready == 0) begin // arready must be 1 to indicate device is ready for address
-          #1;
-      end
- 
-      DDR_arlen = 8'h0;
-      DDR_arsize = 3'b001;
-      DDR_araddr = addr;
-      DDR_arvalid = 1;          // address is valid and should be processed by AXI slave
-      DDR_rready = 1;           // master is ready to receive data
-      #1;                       // FIXME Figure out why this cycle is needed, or how to solve differently
-
-      // rvalid needs to be 1 for device to be ready for data
-      while (DDR_M_AXI_rvalid == 0) begin 
-          #1;
-      end
-    
-      _data = DDR_M_AXI_rdata;  // now sample the data
-      DDR_arvalid = 0;          // address not important anymore
-      #1;                       // this clock cycle ensures that rdata really ends up in _data and not one cycle later
-  endtask
+    task axi_ddr_read(input logic [31:0] addr, output logic [127:0] _data);
+        ddr_state = DDR_READING;
+        
+        DDR_rready = 0;           // master is not ready anymore
+        
+        while (DDR_M_AXI_arready == 0) begin // arready must be 1 to indicate device is ready for address
+            #1;
+        end
+        
+        DDR_arlen = 8'h0;
+        DDR_arsize = 3'b001;
+        DDR_araddr = addr;
+        DDR_arvalid = 1;          // address is valid and should be processed by AXI slave
+        DDR_rready = 1;           // master is ready to receive data
+        #1;                       // FIXME Figure out why this cycle is needed, or how to solve differently
+        
+        // rvalid needs to be 1 for device to be ready for data
+        while (DDR_M_AXI_rvalid == 0) begin 
+            #1;
+        end
+        
+        _data = DDR_M_AXI_rdata;  // now sample the data
+        DDR_arvalid = 0;          // address not important anymore
+        //DDR_rready = 0;           // master is ready to receive data
+        #1;                       // this clock cycle ensures that rdata really ends up in _data and not one cycle later
+        
+        ddr_state = DDR_IDLE;
+    endtask
 
 endmodule
