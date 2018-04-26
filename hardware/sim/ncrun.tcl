@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
- version 					;# show ncsim version
+ version 					;# show irun version
  assertion -off -all 				;# Disable all assertion fails prior to reset done.
  input ncaet.tcl				;# enabled through run_sim
  set  intovf_severity_level {warning};

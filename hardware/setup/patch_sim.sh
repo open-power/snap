@@ -49,9 +49,6 @@ if [ "$NAME" == "top.sh" ]; then
                 perl -i.ori -pe 'BEGIN{undef $/;} s/(^-makelib.*\n.*glbl.v.*\n.*endlib)//mg' ${SNAP_HARDWARE_ROOT}/sim/xcelium/run.f; # remove glbl.v from compile list
               fi
               ;;
-    "ncsim")  sed -i "s/  simulate/# simulate/g"                   $1/$2 # run ncsim up to elaboration, skip execution
-              sed -i "s/opts_ver=/set -e\nopts_ver=/g"             $1/$2 # use set -e to stop compilation on first error
-              ;;
     "questa"|"modelsim")
               sed -i "s/  simulate/# simulate/g"                   $1/$2 # run up to elaboration, skip execution
               ;;

@@ -24,12 +24,6 @@ set log_file     $log_dir/compile_$::env(SIMULATOR).log
 set nvme_used    $::env(NVME_USED)
 
 puts "                        export simulation for version=$vivadoVer"
-
-if { ($nvme_used == "TRUE") && ($vivadoVer >= "2017.4") } {
-  puts "                        ### INFO ### For NVME simulation you have to patch your Vivado"
-  puts "                        installation. Please follow the instructions in Xilinx AR# 70597."
-}
-
 open_project $root_dir/viv_project/framework.xpr  >> $log_file
 export_simulation -force -directory "$root_dir/sim" -simulator xcelium -lib_map_path "$ies_libs" -ip_user_files_dir "$root_dir/viv_project/framework.ip_user_files" -ipstatic_source_dir "$root_dir/viv_project/framework.ip_user_files/ipstatic" -use_ip_compiled_libs >> $log_file
 close_project  >> $log_file

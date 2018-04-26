@@ -78,7 +78,7 @@ puts "                        setting up project settings"
 set_property target_language VHDL [current_project]
 set_property default_lib work [current_project]
 # Simulation
-if { ( $simulator == "ncsim" ) || ( $simulator == "irun" ) } {
+if { ( $simulator == "irun" ) } {
   set_property target_simulator IES [current_project]
   set_property compxlib.ies_compiled_library_dir $::env(IES_LIBS) [current_project]
   set_property -name {ies.elaborate.ncelab.more_options} -value {-access +rwc} -objects [current_fileset -simset]
