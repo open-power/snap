@@ -1,6 +1,8 @@
 # Simulation
-SNAP supports *Xilinx xsim* and *Cadence irun* tools for simulation.
-The environment variable `SIMULATOR` (see make snap_config) selects the simulator and can be set to `xsim` or to `irun`.
+SNAP supports *Xilinx xsim* and *Cadence irun or xcelium* tools for simulation.
+Other simulators like Mentor Modelsim or questa are supported by the respective Xilinx Vivado version and can be used as well, 
+but due to lack of licenses this support is not tested and is built into the SNAP framework as "experimental use" without warranty.
+The environment variable `SIMULATOR` (see make snap_config) selects the simulator.
 
 ## Building a model
 see [Image and model build](../#image-and-model-build) for further instructions
@@ -42,7 +44,7 @@ the variable `PSLSE_ROOT` (defined in `${SNAP_ROOT}/snap_env.sh`) needs to point
 ```
  export PSLSE_ROOT=             # path for the PSL simulation environment
  export PSLVER=                 # PSLSE functionality for POWER8 or POWER9
- export PSL_DCP=                # path to the PSL checkpoint fitting your target card
+ export PSL_DCP=                # path to the PSL checkpoint fitting your target card. For Simulation this is not needed and usually commented out
 ```
 
 ## Cadence irun
