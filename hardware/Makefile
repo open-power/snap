@@ -104,7 +104,7 @@ SNAP_HDL_HLS=$(SNAP_HARDWARE_ROOT)/hdl/hls
 SNAP_SIM_CORE=$(SIM_DIR)/core
 SNAP_SIM_NVME=$(SIM_DIR)/nvme
 
-SNAP_SIMULATORS += irun xsim
+SNAP_SIMULATORS += irun xsim questa modelsim xcelium
 SNAP_MODELS += .model_irun .model_xsim
 
 SNAP_PP_FILES_VHD=$(SNAP_HDL_CORE)/psl_fpga.vhd        \
@@ -190,7 +190,7 @@ check_snap_settings:
 
 check_nvme:
 	@if [ "$(SIMULATOR)" != "nosim" ] && [ "$(NVME_USED)" == "TRUE" ]; then \
-		if [ "$(SIMULATOR)" != "irun" ]; then  \
+		if [ "$(SIMULATOR)" != "irun" ] && [ "$(SIMULATOR)" != "xcelium" ]; then  \
 			echo "                        NVMe simulation is not supported for SIMULATOR $(SIMULATOR)"; \
 			exit -1; \
 		fi; \
@@ -203,7 +203,7 @@ check_nvme:
 	fi
 
 check_simulator:
-	@if [ "$(SIMULATOR)" != "irun" ] && [ "$(SIMULATOR)" != "xsim" ] && [ "$(SIMULATOR)" != "nosim" ]; then \
+	@if [ "$(SIMULATOR)" != "irun" ] && [ "$(SIMULATOR)" != "xsim" ] && [ "$(SIMULATOR)" != "questa" ] && [ "$(SIMULATOR)" != "xcelium" ] && [ "$(SIMULATOR)" != "modelsim" ] && [ "$(SIMULATOR)" != "nosim" ]; then \
 		echo "                        unknown simulator=$SIMULATOR"; \
 		exit -1; \
 	fi
@@ -502,7 +502,7 @@ clean:
 	@echo -e "                        IPs";
 	@$(RM) -r ip
 	@echo -e "                        sim files";
-	@$(RM) -r sim/ies sim/xsim hdl/nvme/component.xml hdl/nvme/xgui
+	@$(RM) -r sim/ies sim/xsim sim/modelsim sim/questa sim/xcelium hdl/nvme/component.xml hdl/nvme/xgui
 	@echo -e "                        log files";
 	@$(RM) -r logs
 	@echo -e "                        action / application";
