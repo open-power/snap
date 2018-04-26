@@ -225,7 +225,7 @@ Component psl_accel
     hd0_cpl_utag                     : IN    STD_LOGIC_VECTOR(0 to 9)   ;
     hd0_cpl_type                     : IN    STD_LOGIC_VECTOR(0 to 2)   ;
     hd0_cpl_size                     : IN    STD_LOGIC_VECTOR(0 to 9)   ;
-    hd0_cpl_laddr                    : IN    STD_LOGIC_VECTOR(0 to 6)   ;
+    hd0_cpl_laddr                    : IN    STD_LOGIC_VECTOR(0 to 9)   ;
     hd0_cpl_byte_count               : IN    STD_LOGIC_VECTOR(0 to 9)   ;
     hd0_cpl_data                     : IN    STD_LOGIC_VECTOR(0 to 1023);
 
@@ -247,7 +247,7 @@ Component psl_accel
     hd1_cpl_utag                     : IN    STD_LOGIC_VECTOR(0 to 9)   ;
     hd1_cpl_type                     : IN    STD_LOGIC_VECTOR(0 to 2)   ;
     hd1_cpl_size                     : IN    STD_LOGIC_VECTOR(0 to 9)   ;
-    hd1_cpl_laddr                    : IN    STD_LOGIC_VECTOR(0 to 6)   ;
+    hd1_cpl_laddr                    : IN    STD_LOGIC_VECTOR(0 to 9)   ;
     hd1_cpl_byte_count               : IN    STD_LOGIC_VECTOR(0 to 9)   ;
     hd1_cpl_data                     : IN    STD_LOGIC_VECTOR(0 to 1023);
 #ifdef CONFIG_ENABLE_DDR4
@@ -467,7 +467,7 @@ Component capi_bsp_wrap
     hd0_cpl_valid       : out std_logic                  ;
     hd0_cpl_utag        : out std_logic_vector(0 to 9)   ;
     hd0_cpl_type        : out std_logic_vector(0 to 2)   ;
-    hd0_cpl_laddr       : out std_logic_vector(0 to 6)   ;
+    hd0_cpl_laddr       : out std_logic_vector(0 to 9)   ;
     hd0_cpl_byte_count  : out std_logic_vector(0 to 9)   ;
     hd0_cpl_size        : out std_logic_vector(0 to 9)   ;
     hd0_cpl_data        : out std_logic_vector(0 to 1023);
@@ -556,7 +556,7 @@ SIGNAL hd0_sent_utag_sts   : std_logic_vector(0 to 2)   ;
 SIGNAL hd0_cpl_valid       : std_logic                  ;
 SIGNAL hd0_cpl_utag        : std_logic_vector(0 to 9)   ;
 SIGNAL hd0_cpl_type        : std_logic_vector(0 to 2)   ;
-SIGNAL hd0_cpl_laddr       : std_logic_vector(0 to 6)   ;
+SIGNAL hd0_cpl_laddr       : std_logic_vector(0 to 9)   ;
 SIGNAL hd0_cpl_byte_count  : std_logic_vector(0 to 9)   ;
 SIGNAL hd0_cpl_size        : std_logic_vector(0 to 9)   ;
 SIGNAL hd0_cpl_data        : std_logic_vector(0 to 1023);

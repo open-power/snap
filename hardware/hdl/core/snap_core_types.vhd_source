@@ -807,7 +807,7 @@ PACKAGE snap_core_types IS
       utag                     : std_logic_vector(9 DOWNTO 0)   ;
       ctype                    : std_logic_vector(2 DOWNTO 0)   ;
       size                     : std_logic_vector(9 DOWNTO 0)   ;
-      laddr                    : std_logic_vector(6 DOWNTO 0)   ;
+      laddr                    : std_logic_vector(9 DOWNTO 0)   ;
       byte_count               : std_logic_vector(9 DOWNTO 0)   ;
       data                     : std_logic_vector(1023 DOWNTO 0);
     END RECORD HD_C_T;

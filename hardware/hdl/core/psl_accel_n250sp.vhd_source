@@ -154,7 +154,7 @@ ENTITY psl_accel IS
        hd0_cpl_utag                     : IN    std_logic_vector(0 to 9)   ;
        hd0_cpl_type                     : IN    std_logic_vector(0 to 2)   ;
        hd0_cpl_size                     : IN    std_logic_vector(0 to 9)   ;
-       hd0_cpl_laddr                    : IN    std_logic_vector(0 to 6)   ;
+       hd0_cpl_laddr                    : IN    std_logic_vector(0 to 9)   ;
        hd0_cpl_byte_count               : IN    std_logic_vector(0 to 9)   ;
        hd0_cpl_data                     : IN    std_logic_vector(0 to 1023);
 
@@ -176,7 +176,7 @@ ENTITY psl_accel IS
        hd1_cpl_utag                     : IN    std_logic_vector(0 to 9)   ;
        hd1_cpl_type                     : IN    std_logic_vector(0 to 2)   ;
        hd1_cpl_size                     : IN    std_logic_vector(0 to 9)   ;
-       hd1_cpl_laddr                    : IN    std_logic_vector(0 to 6)   ;
+       hd1_cpl_laddr                    : IN    std_logic_vector(0 to 9)   ;
        hd1_cpl_byte_count               : IN    std_logic_vector(0 to 9)   ;
        hd1_cpl_data                     : IN    std_logic_vector(0 to 1023);
 #ifdef CONFIG_ENABLE_DDR4
@@ -318,7 +318,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       hd0_cpl_utag            : IN  std_logic_vector(0 to 9)   ;
       hd0_cpl_type            : IN  std_logic_vector(0 to 2)   ;
       hd0_cpl_size            : IN  std_logic_vector(0 to 9)   ;
-      hd0_cpl_laddr           : IN  std_logic_vector(0 to 6)   ;
+      hd0_cpl_laddr           : IN  std_logic_vector(0 to 9)   ;
       hd0_cpl_byte_count      : IN  std_logic_vector(0 to 9)   ;
       hd0_cpl_data            : IN  std_logic_vector(0 to 1023);
       --

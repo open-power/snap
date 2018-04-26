@@ -102,7 +102,7 @@ module top (
              inout  [0:9]    hd0_cpl_utag_top,
              inout  [0:2]    hd0_cpl_type_top,
              inout  [0:9]    hd0_cpl_size_top,
-             inout  [0:6]    hd0_cpl_laddr_top,
+             inout  [0:9]    hd0_cpl_laddr_top,
              inout  [0:9]    hd0_cpl_byte_count_top,
              inout  [0:1023] hd0_cpl_data_top,
              input           d1h_dvalid_top,
@@ -120,7 +120,7 @@ module top (
              inout  [0:9]    hd1_cpl_utag_top,
              inout  [0:2]    hd1_cpl_type_top,
              inout  [0:9]    hd1_cpl_size_top,
-             inout  [0:6]    hd1_cpl_laddr_top,
+             inout  [0:9]    hd1_cpl_laddr_top,
              inout  [0:9]    hd1_cpl_byte_count_top,
              inout  [0:1023] hd1_cpl_data_top
              );
@@ -168,7 +168,7 @@ module top (
   reg    [0:9]    hd0_cpl_utag_top;
   reg    [0:2]    hd0_cpl_type_top;
   reg    [0:9]    hd0_cpl_size_top;
-  reg    [0:6]    hd0_cpl_laddr_top;
+  reg    [0:9]    hd0_cpl_laddr_top;
   reg    [0:9]    hd0_cpl_byte_count_top;
   reg    [0:1023] hd0_cpl_data_top;
   reg             hd1_sent_utag_valid_top;
@@ -178,7 +178,7 @@ module top (
   reg    [0:9]    hd1_cpl_utag_top;
   reg    [0:2]    hd1_cpl_type_top;
   reg    [0:9]    hd1_cpl_size_top;
-  reg    [0:6]    hd1_cpl_laddr_top;
+  reg    [0:9]    hd1_cpl_laddr_top;
   reg    [0:9]    hd1_cpl_byte_count_top;
   reg    [0:1023] hd1_cpl_data_top;
 
@@ -319,7 +319,7 @@ module top (
   reg    [0:9]    hd0_cpl_utag;
   reg    [0:2]    hd0_cpl_type;
   reg    [0:9]    hd0_cpl_size;
-  reg    [0:6]    hd0_cpl_laddr;
+  reg    [0:9]    hd0_cpl_laddr;
   reg    [0:9]    hd0_cpl_byte_count;
   reg    [0:1023] hd0_cpl_data;
   reg             hd1_sent_utag_valid;
@@ -329,7 +329,7 @@ module top (
   reg    [0:9]    hd1_cpl_utag;
   reg    [0:2]    hd1_cpl_type;
   reg    [0:9]    hd1_cpl_size;
-  reg    [0:6]    hd1_cpl_laddr;
+  reg    [0:9]    hd1_cpl_laddr;
   reg    [0:9]    hd1_cpl_byte_count;
   reg    [0:1023] hd1_cpl_data;
 //  reg    [0:15]   hd0_cpl_dpar;

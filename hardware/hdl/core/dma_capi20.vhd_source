@@ -96,6 +96,7 @@ ARCHITECTURE dma OF dma IS
   CONSTANT VALUE_64   : std_logic_vector(63 DOWNTO 6) := x"0000_0000_0000_00" & "01";
   CONSTANT VALUE_128  : std_logic_vector(63 DOWNTO 7) := x"0000_0000_0000_00" & '1';
   CONSTANT VALUE_128_P: std_logic                     := '0';
+  CONSTANT VALUE_512  : std_logic_vector(63 DOWNTO 9) := x"0000_0000_0000_0" & "001";
 
   --
   -- TYPE
@@ -180,14 +181,14 @@ ARCHITECTURE dma OF dma IS
   SIGNAL buf_wtag_p_q                : std_logic;
   SIGNAL buf_wtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL buf_wtag_valid_q            : boolean;
-  SIGNAL clt_rtag_next_q             : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL utc_rtag_next_q             : std_logic_vector(  5 DOWNTO  0);
   SIGNAL dma_req_wtag_q              : std_logic_vector(  5 DOWNTO  0);
   SIGNAL dma_rtag_next_q             : std_logic_vector(  5 DOWNTO  0);
   SIGNAL dma_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL dma_wtag_next_q             : std_logic_vector(  5 DOWNTO  0);
   SIGNAL dma_wtag_q                  : std_logic_vector(  5 DOWNTO  0);
-  SIGNAL clt_rtag_p_q                : std_logic;
-  SIGNAL clt_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL utc_rtag_p_q                : std_logic;
+  SIGNAL utc_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL clt_wtag_next_q             : std_logic_vector(  5 DOWNTO  0);
   SIGNAL clt_wtag_p_q                : std_logic;
   SIGNAL clt_wtag_q                  : std_logic_vector(  5 DOWNTO  0);
@@ -219,9 +220,9 @@ ARCHITECTURE dma OF dma IS
   SIGNAL raddr_q                     : std_logic_vector( 63 DOWNTO  6);
   SIGNAL rlen_q                      : std_logic_vector(  8 DOWNTO  0);
   SIGNAL read_ctrl_fsm_q             : READ_CTRL_FSM_T;
-  SIGNAL read_ctrl_q                 : ARR_DMA_CTL_T;
+  SIGNAL read_ctrl_q                 : ARR_DMA_R_CTL_T;
   SIGNAL read_ctrl_q_err_q           : std_logic_vector( 31 DOWNTO  0);
-  SIGNAL read_ctrl_rsp_rtag_q        : DMA_CTL_T;
+  SIGNAL read_ctrl_rsp_rtag_q        : DMA_R_CTL_T;
   SIGNAL read_fsm_req_q              : FSM_REQ_T;
   SIGNAL read_rsp_err_addr_p_q       : std_logic;
   SIGNAL read_rsp_err_addr_q         : std_logic_vector(63 DOWNTO 0);
@@ -258,9 +259,9 @@ ARCHITECTURE dma OF dma IS
   SIGNAL wram_raddr_q                : std_logic_vector(  4 DOWNTO  0);
   SIGNAL wr_id_valid_q               : std_logic;
   SIGNAL write_ctrl_fsm_q            : WRITE_CTRL_FSM_T;
-  SIGNAL write_ctrl_q                : ARR_DMA_CTL_T;
+  SIGNAL write_ctrl_q                : ARR_DMA_W_CTL_T;
   SIGNAL write_ctrl_q_err_q          : std_logic_vector( 31 DOWNTO  0);
-  SIGNAL write_ctrl_rsp_wtag_q       : DMA_CTL_T;
+  SIGNAL write_ctrl_rsp_wtag_q       : DMA_W_CTL_T;
   SIGNAL write_fsm_req_q             : FSM_REQ_T;
   SIGNAL write_rsp_err_addr_p_q      : std_logic;
   SIGNAL write_rsp_err_addr_q        : std_logic_vector(63 DOWNTO 0);
@@ -303,7 +304,7 @@ BEGIN
     --
     read_ctrl_fsm : PROCESS (ha_pclock)
       VARIABLE com_active_v     : boolean;
-      VARIABLE clt_in_use_v     : boolean;
+      VARIABLE utc_in_use_v     : boolean;
       VARIABLE com_rtag_v       : integer RANGE 0 TO 31;
       VARIABLE com_rtag_next_v  : integer RANGE 0 TO 31;
       VARIABLE rsp_rtag_v       : integer RANGE 0 TO 31;
@@ -358,16 +359,16 @@ BEGIN
             -- FSM starts if one CL in use
             --
             --
-            -- check all CLs
-            clt_in_use_v := FALSE;
+            -- check all UTAGs
+            utc_in_use_v := FALSE;
 
             FOR i IN 0 TO 31 LOOP
-              IF read_ctrl_q(i).clt /= CL_NOT_USED THEN
-                clt_in_use_v := TRUE;
+              IF read_ctrl_q(i).utt /= UTC_NOT_USED THEN
+                utc_in_use_v := TRUE;
               END IF;
             END LOOP;  -- i
 
-            IF clt_in_use_v = TRUE THEN
+            IF utc_in_use_v = TRUE THEN
               read_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
             END IF;
 
@@ -465,7 +466,7 @@ BEGIN
               read_ctrl_fsm_q <= ST_READ_RSP;
 
             -- new buffer available
-            ELSIF (com_rtag_q /= clt_rtag_q) THEN
+            ELSIF (com_rtag_q /= utc_rtag_q) THEN
               read_fsm_req_q <= COMMAND;
 
               IF (ah_c_rgate_q   = OPENED ) AND
@@ -481,15 +482,15 @@ BEGIN
 
             --
             -- check all CL transferred
-            clt_in_use_v := FALSE;
+            utc_in_use_v := FALSE;
 
             FOR i IN 0 TO 31 LOOP
-              IF read_ctrl_q(i).clt /= CL_NOT_USED THEN
-                clt_in_use_v := TRUE;
+              IF read_ctrl_q(i).utt /= UTC_NOT_USED THEN
+                utc_in_use_v := TRUE;
               END IF;
             END LOOP;  -- i
 
-            IF clt_in_use_v = FALSE THEN
+            IF utc_in_use_v = FALSE THEN
               read_fsm_req_q <= NONE;
               read_ctrl_fsm_q <= ST_IDLE;
             END IF;
@@ -502,7 +503,7 @@ BEGIN
           --
           WHEN ST_COM_XLAT_RD_P0 =>
             IF (ah_c_rgate_q     = OPENED    ) AND
-               (com_rtag_next_q /= clt_rtag_q) THEN
+               (com_rtag_next_q /= utc_rtag_q) THEN
               read_ctrl_fsm_q <= ST_COM_XLAT_RD_P0;
             ELSE
               read_ctrl_fsm_q <= ST_WAIT_4_CTRL_UPDTAE;
@@ -521,8 +522,8 @@ BEGIN
             ah_rc_q.compar     <= parity_gen_odd(ENCODE_CMD_CODES(XLAT_RD_P0));
             ah_rc_q.abt        <= "010";
 
-            ah_rc_q.ea          <= read_ctrl_q(com_rtag_v).cla;
-            ah_rc_q.eapar       <= parity_gen_odd(read_ctrl_q(com_rtag_v).cla(63 DOWNTO 6));
+            ah_rc_q.ea          <= read_ctrl_q(com_rtag_v).uta(63 DOWNTO 6);
+            ah_rc_q.eapar       <= parity_gen_odd(read_ctrl_q(com_rtag_v).uta(63 DOWNTO 6));
 
           --------------------------------------------------------------------
           -- ERROR STATES
@@ -602,13 +603,13 @@ BEGIN
   --              rsp   4    -- response codes
   --              dma   2    -- psl dma control
   --              buf   2    -- dma buffer status
-  --              clt   3    -- cache line type
-  --              cla   58   -- cache line address
+  --              utt   3    -- cache line type
+  --              uta   58   -- cache line address
   --
   -- Indication:
-  --                               |    COM   |     RSP     |  BUF  | DMA       |  CLT
+  --                               |    COM   |     RSP     |  BUF  | DMA       |  UTT
   --  ========================================================================================
-  --  1)tag is free and the        | INACTIVE | ILLEGAL_RSP | EMPTY | EMPTY     |  CL_NOT_USED
+  --  1)tag is free and the        | INACTIVE | ILLEGAL_RSP | EMPTY | EMPTY     |  UTC_NOT_USED
   --    buffer is empty            |          |             |       |           |
   --                               |          |             |       |           |
   --  2)reserve buffer space       | INACTIVE | ILLEGAL_RSP | EMPTY | EMPTY     |  COMPLETE
@@ -631,8 +632,8 @@ BEGIN
   -- Flow Control:
   --    steps                  | read_ctrl_q          |  H<->A Interface
   --  ==========================================================================
-  --    1) rlen > 1 CL AND     | clt=COMPLETE         |
-  --       clt  = CL_NOT_USED  |                      |
+  --    1) rlen > 1 CL AND     | utt=COMPLETE         |
+  --       utt  = UTC_NOT_USE  |                      |
   --                           |                      |
   --    2)                     | com=ACTIVE           |  READ XLAT COMMAND VALID
   --                           | rsp=ILLEGAL_RSP      |
@@ -643,9 +644,9 @@ BEGIN
   --    4) rsp = DONE          | dma=XLAT_DONE        | sent DMA read request
   --                           | rsp=ILLEGAL_RSP      | to the PSL
   --                           |                      |
-  --    5) hd_s.valid = '1'    | dma=REQ_DONE         | PSL accept the request
+  --    5) hd_s.valid = '1'    | dma=EMPTY            | PSL accept the request
   --                           |                      |
-  --    6) hd_c.valid = '1'    | dma=FULL             | DATA are available
+  --    6) hd_c.valid = '1'    | buf=FULL             | DATA are available
   --                           |                      |
   --    7) 1 CL reads out of   | buf=EMPTY            |
   --       the dma_buffer      |                      |
@@ -654,8 +655,8 @@ BEGIN
     --
     read_ctrl_reg : PROCESS (ha_pclock)
       VARIABLE buf_rtag_v      : integer RANGE 0 TO 31;
-      VARIABLE clt_rtag_v      : integer RANGE 0 TO 31;
-      VARIABLE clt_rtag_next_v : integer RANGE 0 TO 31;
+      VARIABLE utc_rtag_v      : integer RANGE 0 TO 31;
+      VARIABLE utc_rtag_next_v : integer RANGE 0 TO 31;
       VARIABLE cl_calc_v       : std_logic_vector(5 DOWNTO 0);
       VARIABLE ha_r_tag_v      : integer RANGE 0 TO 31;
     BEGIN
@@ -664,9 +665,9 @@ BEGIN
           -- defaults
           --
           buf_rdata_e_q      <= '0';
-          clt_rtag_q         <= clt_rtag_q;
-          clt_rtag_next_q    <= clt_rtag_next_q;
-          clt_rtag_p_q       <= clt_rtag_p_q;
+          utc_rtag_q         <= utc_rtag_q;
+          utc_rtag_next_q    <= utc_rtag_next_q;
+          utc_rtag_p_q       <= utc_rtag_p_q;
           com_rtag_qq        <= to_integer(unsigned(com_rtag_q(4 DOWNTO 0)));
           rsp_rtag_qq        <= to_integer(unsigned(rsp_rtag_q(4 DOWNTO 0)));
 
@@ -678,73 +679,60 @@ BEGIN
           rd_ctx_q           <= rd_ctx_q;
 
           buf_rtag_v         := to_integer(unsigned(buf_rtag_q     (4 DOWNTO 0)));
-          clt_rtag_v         := to_integer(unsigned(clt_rtag_q     (4 DOWNTO 0)));
-          clt_rtag_next_v    := to_integer(unsigned(clt_rtag_next_q(4 DOWNTO 0)));
+          utc_rtag_v         := to_integer(unsigned(utc_rtag_q     (4 DOWNTO 0)));
+          utc_rtag_next_v    := to_integer(unsigned(utc_rtag_next_q(4 DOWNTO 0)));
           ha_r_tag_v         := to_integer(unsigned(ha_r_q.tag     (4 DOWNTO 0)));
 
           --
-          -- CLT: CACHE LINE TYPE TAG IS VALID
+          -- UTT: CACHE LINE TYPE TAG IS VALID and
+          -- UTS: CACHE LINE SIZE
           --
           -- Note: The alignment on the CAPI 2.0 DMA Data interface is
           --       first byte first.
-          IF (read_ctrl_q(clt_rtag_v).clt  = CL_NOT_USED) AND
-             (rlen_q                      /= 0          ) THEN
+          IF (read_ctrl_q(utc_rtag_v).utt  = UTC_NOT_USED) AND
+             (rlen_q                      /= 0           ) THEN
             --
-            -- update the clt in the read control register
+            -- update the utt in the read control register
             --
-            -- bit "even 64 bytes of CL are valid indication"
-            read_ctrl_q(clt_rtag_v).clt(EVEN_64B_CL) <= '1';
-
-            --
-            -- bit "odd 64 bytes of CL are valid indication"
-            IF raddr_q(6) = '1' THEN
-              read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '0';
-            ELSE
-              IF rlen_q  = 1 THEN
-                read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '0';
+            IF raddr_q(8 DOWNTO 6) /= "000" THEN
+              IF (('0' & rlen_q(3 DOWNTO 0)) + ("00" & raddr_q(8 DOWNTO 6))) > "01000"  THEN
+                rlen_q                      <= rlen_q - ("1000" - ('0' & raddr_q(8 DOWNTO 6)));
+                read_ctrl_q(utc_rtag_v).uts <=  ("1000" - ('0' & raddr_q(8 DOWNTO 6)));
+                read_ctrl_q(utc_rtag_v).utt <= UTC_FIRST;
               ELSE
-                read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '1';
-              END IF;
+                rlen_q                      <= (OTHERS => '0');
+                read_ctrl_q(utc_rtag_v).uts <=  '0' & rlen_q(2 DOWNTO 0);
+                read_ctrl_q(utc_rtag_v).utt <= UTC_LAST;
             END IF;
-
-            --
-            -- bit "last CL of a AXI request indication"
-            IF rlen_q = 2 THEN
-              IF raddr_q(6) = '0' THEN
-                read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '1';
-              ELSE
-                read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '0';
-              END IF;
-            ELSIF rlen_q = 1 THEN
-              read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '1';
             ELSE
-              read_ctrl_q(clt_rtag_v).clt(LAST_CL) <= '0';
+              IF rlen_q > 8 THEN
+                read_ctrl_q(utc_rtag_v).uts <= "1000";
+                read_ctrl_q(utc_rtag_v).utt <= UTC_COMPLETE;
+                rlen_q <= rlen_q - 8;
+              ELSIF rlen_q = 8 THEN
+                read_ctrl_q(utc_rtag_v).uts <= "1000";
+                read_ctrl_q(utc_rtag_v).utt <= UTC_LAST;
+                rlen_q <= rlen_q - 8;
+              ELSE
+                read_ctrl_q(utc_rtag_v).uts <=  '0' & rlen_q(2 DOWNTO 0);
+                read_ctrl_q(utc_rtag_v).utt <= UTC_LAST;
+                rlen_q <= (OTHERS => '0');
+              END IF;
             END IF;
 
             --
             -- CL Read Address
-            read_ctrl_q(clt_rtag_v).cla   <= raddr_q(63 DOWNTO 6);
+            read_ctrl_q(utc_rtag_v).uta   <= raddr_q(63 DOWNTO 6);
 
             --
             -- calculate the next read address and the read cache length
-            IF raddr_q(6) = '1' THEN
-              raddr_q <= raddr_q + VALUE_64;
-              rlen_q  <= rlen_q - 1;
-            ELSE
-              raddr_q <= raddr_q + (VALUE_128 & '0');
-
-              IF rlen_q = 1 THEN
-                rlen_q <= (OTHERS => '0');
-              ELSE
-                rlen_q <= rlen_q - 2;
-              END IF;
-            END IF;
-
+            raddr_q(63 DOWNTO 9) <= raddr_q(63 DOWNTO 9)  + VALUE_512;
+            raddr_q( 8 DOWNTO 6) <= (OTHERS => '0');
             --
-            -- calculate the next clt rtag
-            clt_rtag_q      <= clt_rtag_q      + 1;
-            clt_rtag_next_q <= clt_rtag_next_q + 1;
-            clt_rtag_p_q    <= AC_PPARITH(1, clt_rtag_q, clt_rtag_p_q,
+            -- calculate the next utt rtag
+            utc_rtag_q      <= utc_rtag_q      + 1;
+            utc_rtag_next_q <= utc_rtag_next_q + 1;
+            utc_rtag_p_q    <= AC_PPARITH(1, utc_rtag_q, utc_rtag_p_q,
                                              "000001"  , '0');
           END IF;
 
@@ -796,24 +784,24 @@ BEGIN
           --
           IF (hd_s_q.utag_valid       = '1'    ) AND
              (hd_s_q.utag(9 DOWNTO 5) = "00000") THEN
-            read_ctrl_q(to_integer(unsigned(hd_s_q.utag(4 DOWNTO 0)))).dma <= REQ_DONE;
+            read_ctrl_q(to_integer(unsigned(hd_s_q.utag(4 DOWNTO 0)))).dma <= EMPTY;
           END IF;
 
           --
           -- BUF: Buffer is valid
           --
           IF (hd_c_q.valid            = '1'    ) AND
-             (hd_c_q.utag(9 DOWNTO 5) = "00000") THEN
-            read_ctrl_q(to_integer(unsigned(hd_c_q.utag(4 DOWNTO 0)))).dma <= EMPTY;
-            read_ctrl_q(to_integer(unsigned(hd_c_q.utag(4 DOWNTO 0)))).buf <= FULL;
+             (hd_c_q.ctype            = "000"  ) AND 
+             (hd_c_q.utag(9 DOWNTO 5) = "00000") THEN 
+            read_ctrl_q(to_integer(unsigned(hd_c_q.utag(4 DOWNTO 0)))).buf <= read_ctrl_q(to_integer(unsigned(hd_c_q.utag(4 DOWNTO 0)))).buf + hd_c_q.size(9 DOWNTO 6);
           END IF;
 
           --
           -- BUF: BUFFER TAG is valid
           --
           IF buf_rtag_valid_q = TRUE THEN
-            read_ctrl_q(buf_rtag_v).buf <= EMPTY;
-            read_ctrl_q(buf_rtag_v).clt <= CL_NOT_USED;
+            read_ctrl_q(buf_rtag_v).buf <= (OTHERS => '0');
+            read_ctrl_q(buf_rtag_v).utt <= UTC_NOT_USED;
           END IF;
 
         --------------------------------------------------------------------
@@ -827,16 +815,16 @@ BEGIN
           -- initial values
           --
           FOR i IN 0 TO 31 LOOP
-            read_ctrl_q(i).clt <= CL_NOT_USED;
+            read_ctrl_q(i).utt <= UTC_NOT_USED;
             read_ctrl_q(i).rsp <= ILLEGAL_RSP;
             read_ctrl_q(i).com <= INACTIVE;
-            read_ctrl_q(i).buf <= EMPTY;
+            read_ctrl_q(i).buf <= (OTHERS => '0');
             read_ctrl_q(i).dma <= EMPTY;
           END LOOP;  -- i
 
-          clt_rtag_q         <= (OTHERS => '0');
-          clt_rtag_next_q    <= "000001";
-          clt_rtag_p_q       <= '1';
+          utc_rtag_q         <= (OTHERS => '0');
+          utc_rtag_next_q    <= "000001";
+          utc_rtag_p_q       <= '1';
           com_rtag_qq        <= 0;
           rsp_rtag_qq        <= 0;
 
@@ -1581,7 +1569,7 @@ BEGIN
             dh_d_q.req_utag <= "00000" & dma_rtag_q(4 DOWNTO 0);
             dh_d_q.req_itag <= read_ctrl_q(dma_rtag_v).itag;
             dh_d_q.req_type <= "000";
-            dh_d_q.size     <= std_logic_vector(to_unsigned(128, 10));
+            dh_d_q.size     <= read_ctrl_q(dma_rtag_v).uts & "000000";
 
           --
           -- STATE COMMAND: DMA WRITE REQUEST
@@ -1837,7 +1825,6 @@ BEGIN
             ah_c_q.ea                          <= ah_rc_q.ea & "000000";
             ah_c_q.eapar                       <= ah_rc_q.eapar XOR mmd_i_q.inject_ah_c_eapar_error;
             ah_c_q.ch(CONTEXT_BITS-1 DOWNTO 0) <= rd_ctx_q;
-            ah_c_q.size                        <= x"080";
 
             --
             --  max commands reached, closing the gate, but allow
@@ -1871,7 +1858,6 @@ BEGIN
             ah_c_q.ea                          <= ah_wc_q.ea & "000000";
             ah_c_q.eapar                       <= ah_wc_q.eapar XOR mmd_i_q.inject_ah_c_eapar_error;
             ah_c_q.ch(CONTEXT_BITS-1 DOWNTO 0) <= wr_ctx_q;
-            ah_c_q.size                        <= x"080";
 
             --
             --  max commands reached, closing the gate, but allow
@@ -2223,12 +2209,12 @@ BEGIN
           END IF;
 
           --
-          -- clt_rtag parity failure
-          IF parity_gen_odd(clt_rtag_q) /= clt_rtag_p_q THEN
+          -- utc_rtag parity failure
+          IF parity_gen_odd(utc_rtag_q) /= utc_rtag_p_q THEN
             dmm_e_q.clt_rtag_err <= '1';
           END IF;
 
-          IF parity_gen_odd(clt_rtag_next_q - "00001") /= clt_rtag_p_q THEN
+          IF parity_gen_odd(utc_rtag_next_q - "00001") /= utc_rtag_p_q THEN
             dmm_e_q.clt_rtag_err <= '1';
           END IF;
 

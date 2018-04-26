@@ -141,7 +141,7 @@ END ARCHITECTURE;
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 -- ******************************************************
--- *****  DUAL PORT 1024x32, 1024 Input 512 Output  *****
+-- *****  DUAL PORT 1024x128, 1024 Input 512 Output  *****
 -- ******************************************************
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -151,21 +151,21 @@ USE ieee.std_logic_misc.all;
 USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
 
-ENTITY ram_1024x32_2p IS
+ENTITY ram_1024x128_2p IS
   PORT (
     clk        : IN  std_logic;
 
     wea       : IN  std_logic;
-    addra     : IN  std_logic_vector(     4 DOWNTO 0);
+    addra     : IN  std_logic_vector(     6 DOWNTO 0);
     dina      : IN  std_logic_vector(1024-1 DOWNTO 0);
 
-    addrb     : IN  std_logic_vector(    5 DOWNTO 0);
+    addrb     : IN  std_logic_vector(    7 DOWNTO 0);
     doutb     : OUT std_logic_vector(512-1 DOWNTO 0)
   );
-END ram_1024x32_2p;
+END ram_1024x128_2p;
 
-ARCHITECTURE ram_1024x32_2p OF ram_1024x32_2p IS
-  TYPE ram_t IS ARRAY (32-1 DOWNTO 0) OF std_logic_vector(1024-1 DOWNTO 0);
+ARCHITECTURE ram_1024x128_2p OF ram_1024x128_2p IS
+  TYPE ram_t IS ARRAY (128-1 DOWNTO 0) OF std_logic_vector(1024-1 DOWNTO 0);
 
   SHARED VARIABLE ram_v    : ram_t;
   SIGNAL          dout_int : std_logic_vector(1024-1 DOWNTO 0);
@@ -189,7 +189,7 @@ BEGIN
   port_b: PROCESS (clk)
   BEGIN
     IF (rising_edge(clk)) THEN
-      dout_int <= ram_v(to_integer(unsigned(addrb(5 DOWNTO 1))));
+      dout_int <= ram_v(to_integer(unsigned(addrb(7 DOWNTO 1))));
 
       IF addrb(0) = '1' THEN
         doutb <= dout_int(1023 DOWNTO 512);
