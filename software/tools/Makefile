@@ -26,6 +26,7 @@ endif
 
 LDLIBS += -lsnap -lcxl -lpthread
 LDFLAGS += -Wl,-rpath,$(SNAP_ROOT)/software/lib
+#LDFLAGS += -Wl,--verbose
 libs += $(SNAP_ROOT)/software/lib/libsnap.so
 
 ifdef BUILD_SIMCODE

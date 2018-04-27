@@ -97,7 +97,7 @@ static void *snap_open(struct mdev_ctx *mctx)
 
 	sprintf(device, "/dev/cxl/afu%d.0m", mctx->card);
 	VERBOSE3("[%s] Enter: %s\n", __func__, device);
-	handle = snap_card_alloc_dev(device, 0xffff, 0xffff);
+	handle = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM, SNAP_DEVICE_ID_SNAP);
 	VERBOSE3("[%s] Exit %p\n", __func__, handle);
 	if (NULL == handle)
 		VERBOSE0("Error: Can not open CAPI-SNAP Device: %s\n",

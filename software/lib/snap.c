@@ -33,7 +33,6 @@
 #include <snap_s_regs.h>    /* Include SNAP Slave Regs */
 #include <snap_hls_if.h>    /* Include SNAP -> HLS */
 
-
 /* Trace hardware implementation */
 static unsigned int snap_trace = 0x0;
 static unsigned int snap_config = 0x0;
@@ -119,6 +118,9 @@ struct snap_card {
 	unsigned int queue_length;      /* unused */
 	uint64_t cap_reg;               /* Capability Register */
 	const char *name;               /* Card name */
+	int card_id;                    /* ADKU3_CARD,.... N250SP_CARD,... */
+	struct cxl_ioctl_start_work *cxl_work; /* Work Element */	
+	int mmio_map_done;              /* Flag set to 1 if mmio_map is done */
 };
 
 /* Translate Card ID to Name */
@@ -143,11 +145,10 @@ static const char* snap_card_id_2_name(int card_id)
 
 	while(-1 != snap_card_2_name_tab[i].card_id) {
 		if (card_id == snap_card_2_name_tab[i].card_id)
-			break;
+			return snap_card_2_name_tab[i].card_name;
 		i++;
 	}
-	/* Return card name */
-	return snap_card_2_name_tab[i].card_name;
+	return NULL;
 }
 
 /* To be used for software simulation, use funcs provided by action */
@@ -166,16 +167,54 @@ static unsigned long tget_ms(void)
 	return tms;
 }
 
+/*	Get Time in usec */
+static unsigned long tget_us(void)
+{
+        struct timeval t;
+
+        gettimeofday(&t, NULL);
+        return t.tv_sec * 1000000 + t.tv_usec;
+}
+
+static void hw_snap_card_free(struct snap_card *card)
+{
+	snap_trace("  %s Enter %p\n", __func__, card);
+	if (card) {
+		if (card->cxl_work) {
+			/* For CAPI 2.0, Set CXL_START_WORK_TID */
+			cxl_work_disable_wait(card->cxl_work);
+			cxl_work_free(card->cxl_work);
+			card->cxl_work = NULL;
+		}
+		if (card->mmio_map_done) {
+			cxl_mmio_unmap(card->afu_h);
+			card->mmio_map_done = 0;
+		}
+		if (card->errinfo) {
+			__free(card->errinfo);
+			card->errinfo = NULL;
+		}
+		if (card->afu_h) {
+			cxl_afu_free(card->afu_h);
+			card->afu_h = NULL;
+		}
+		__free(card);
+	}
+	snap_trace("  %s Exit\n", __func__);
+}
+
 static void *hw_snap_card_alloc_dev(const char *path,
 				    uint16_t vendor_id,
 				    uint16_t device_id)
 {
 	struct snap_card *dn;
-	struct cxl_afu_h *afu_h = NULL;
 	uint64_t reg;
 	int rc;
 	long id = 0;
+	uint64_t my_wed = 199;   /* Dummy number */
 
+	snap_trace("  %s: Enter Device: %s Vendor: 0x%x Device: 0x%x\n",
+		__func__, path, vendor_id, device_id);
 	dn = calloc(1, sizeof(*dn));
 	if (NULL == dn)
 		goto __snap_alloc_err;
@@ -186,17 +225,17 @@ static void *hw_snap_card_alloc_dev(const char *path,
 	dn->errinfo_size = 0;
 	dn->errinfo = NULL;
 
-	snap_trace("%s Enter %s\n", __func__, path);
-	afu_h = cxl_afu_open_dev((char*)path);
-	if (NULL == afu_h)
+	dn->afu_h = cxl_afu_open_dev((char*)path);
+	if (NULL == dn->afu_h) {
 		goto __snap_alloc_err;
+	}
 
 	dn->sat = INVALID_SAT;	/* Invalid Short Action Type stands for not attached */
 	dn->action_type = 0xffffffff;
 	dn->vendor_id = vendor_id;
 	/* Read and check Vendor id if it was given by caller */
 	if (0xffff != vendor_id) {
-		rc = cxl_get_cr_vendor(afu_h, 0, &id);
+		rc = cxl_get_cr_vendor(dn->afu_h, 0, &id);
 		if ((0 != rc) || ((uint16_t)id != vendor_id)) {
 			snap_trace("  %s: ERR Vendor 0x%x Invalid Expect 0x%x\n",
 				__func__, (int)id, (int)vendor_id);
@@ -207,7 +246,7 @@ static void *hw_snap_card_alloc_dev(const char *path,
 	dn->device_id = device_id;
 	/* Read and check Device id if it was given by caller */
 	if (0xffff != device_id) {
-		rc = cxl_get_cr_device(afu_h, 0, &id);
+		rc = cxl_get_cr_device(dn->afu_h, 0, &id);
 		if ((0 != rc) || ((uint16_t)id != device_id)) {
 			snap_trace("  %s: ERR Device 0x%x Invalid Expect 0x%x\n",
 				__func__, (int)id, (int)device_id);
@@ -216,7 +255,7 @@ static void *hw_snap_card_alloc_dev(const char *path,
 		dn->device_id = (uint16_t)id;
 	}
 
-	rc = cxl_errinfo_size(afu_h, &dn->errinfo_size);
+	rc = cxl_errinfo_size(dn->afu_h, &dn->errinfo_size);
 	if (0 == rc) {
 		dn->errinfo = malloc(dn->errinfo_size);
 			if (NULL == dn->errinfo) {
@@ -226,50 +265,68 @@ static void *hw_snap_card_alloc_dev(const char *path,
 	} else
 		snap_trace("  %s: WARN Can not detect Err buffer\n", __func__);
 
-	snap_trace("  %s: errinfo_size: %d VendorID: %x DeviceID: %x\n", __func__,
-		(int)dn->errinfo_size, (int)vendor_id, (int)device_id);
-	dn->afu_fd = cxl_afu_fd(afu_h);
-	rc = cxl_afu_attach(afu_h, 0);
-	if (0 != rc)
+	dn->afu_fd = cxl_afu_fd(dn->afu_h);
+	snap_trace("  %s: errinfo_size: %d VendorID: %x DeviceID: %x fd: %d\n", __func__,
+		(int)dn->errinfo_size, (int)vendor_id, (int)device_id, dn->afu_fd);
+
+	dn->cxl_work = cxl_work_alloc();
+	if (NULL == dn->cxl_work)
+		goto __snap_alloc_err;
+	if (cxl_work_set_wed(dn->cxl_work, my_wed))
 		goto __snap_alloc_err;
 
-	if (cxl_mmio_map(afu_h, CXL_MMIO_BIG_ENDIAN) == -1) {
-		snap_trace("  %s: Error Can not mmap\n", __func__);
+	/* For CAPI 2.0, Set CXL_START_WORK_TID */
+	cxl_work_enable_wait(dn->cxl_work);
+	cxl_work_set_amr(dn->cxl_work, 0xe);
+
+	/* Attach with work Descriptor */
+	rc = cxl_afu_attach_work(dn->afu_h, dn->cxl_work);
+	if (0 != rc) {
+		snap_trace("  %s Can not attach work AFU: %p Work: %p\n", __func__, dn->afu_h, dn->cxl_work);
 		goto __snap_alloc_err;
 	}
 
+	/* Map MMIO to read Card Regs */
+	if (cxl_mmio_map(dn->afu_h, CXL_MMIO_BIG_ENDIAN) == -1) {
+		snap_trace("  %s: Error Can not map AFU Regs\n", __func__);
+		goto __snap_alloc_err;
+	}
+	dn->mmio_map_done = 1;
+
 #if !defined(_SIM_)
-	rc = cxl_mmio_ptr(afu_h, &dn->mmio_ptr);
+	rc = cxl_mmio_ptr(dn->afu_h, &dn->mmio_ptr);
 	if (rc != 0)
 		fprintf(stderr, "[%s] cannot get mmio_ptr rc=%d %s\n",
 			__func__, rc, strerror(errno));
 #endif
 
 	dn->action_base = 0;
-	cxl_mmio_read64(afu_h, SNAP_S_CIR, &reg);
+	cxl_mmio_read64(dn->afu_h, SNAP_S_CIR, &reg);
 	if (0x8000000000000000 & reg)
 		dn->master = true;
 	else	dn->master = false;
 	dn->cir = (int)(reg & 0xffff);
 
 	/* Read and save Capability reg */
-	cxl_mmio_read64(afu_h, SNAP_S_CAP, &reg);
+	cxl_mmio_read64(dn->afu_h, SNAP_S_CAP, &reg);
 	dn->cap_reg = reg;
-	/* Get SNAP Card Name */
-	dn->name = snap_card_id_2_name((int)(reg&0xff));
+	dn->card_id = (int)(reg & 0xff);
 
-	dn->afu_h = afu_h;
-	snap_trace("%s Exit %p OK Context: %d Master: %d Card: %s\n", __func__,
-		dn, dn->cir, dn->master, dn->name);
+	/* Get SNAP Card Name */
+	dn->name = snap_card_id_2_name(dn->card_id);
+	if (NULL == dn->name) {
+		snap_trace("  %s Error\n", __func__);
+		goto __snap_alloc_err;
+	}
+	uint64_t amr = 0;
+
+	cxl_work_get_amr(dn->cxl_work, &amr);
+	printf("%s Exit %p OK Context: %d Master: %d Card ID: %d Name: %s AMR: 0x%llx\n",
+		 __func__, dn, dn->cir, dn->master, dn->card_id, dn->name, (long long)amr);
 	return (struct snap_card *)dn;
 
  __snap_alloc_err:
-	if (dn->errinfo)
-		free(dn->errinfo);
-	if (afu_h)
-		cxl_afu_free(afu_h);
-	if (dn)
-		free(dn);
+	hw_snap_card_free(dn);
 	snap_trace("%s Exit Err\n", __func__);
 	return NULL;
 }
@@ -368,22 +425,6 @@ static int hw_snap_mmio_read64(struct snap_card *card,
 		  (long long)offset, (long long)*data, rc);
 
 	return rc;
-}
-
-static void hw_snap_card_free(struct snap_card *card)
-{
-	if (!card)
-		return;
-
-	if (card->errinfo) {
-		__free(card->errinfo);
-		card->errinfo = NULL;
-	}
-	if (card->afu_h) {
-		cxl_afu_free(card->afu_h);
-		card->afu_h = NULL;
-	}
-	__free(card);
 }
 
 static int hw_wait_irq(struct snap_card *card, int timeout_sec, int expect_irq)
@@ -804,7 +845,8 @@ int snap_mmio_read64(struct snap_card *_card,
 
 void snap_card_free(struct snap_card *_card)
 {
-	df->card_free(_card);
+	if (_card)	
+		df->card_free(_card);
 }
 
 int snap_card_ioctl(struct snap_card *_card, unsigned int cmd, unsigned long arg)
@@ -888,25 +930,54 @@ int snap_action_completed(struct snap_action *action, int *rc, int timeout)
 	struct snap_card *card = (struct snap_card *)action;
 	unsigned long t0;
 	int dt, timeout_ms;
+	//volatile uint64_t waiting=0; NOT USED for now, Missing support from DMA
+	int wait_us = 0, loops = 0;
+	unsigned long tus;
 
+	snap_trace("%s Enter Action %p Timeout: %d\n", __func__, action, timeout);
+	t0 = tget_ms();
+	dt = 0;
+	/* Busy poll timeout sec */
+	timeout_ms = timeout * 1000;
 	if (SNAP_ACTION_DONE_IRQ & card->flags) {
-		hw_wait_irq(card, timeout, SNAP_ACTION_IRQ_NUM);
+		if (N250SP_CARD & card->card_id) {    /* CAPI 2.0 ?? */
+			while (dt < timeout_ms) {
+				tus = tget_us();
+				// NOTE: wait can be removed by cxl_afu_host_thread_wait() 
+				asm volatile ("wait");
+				//cxl_afu_host_thread_wait(card->afu_h, &waiting);
+				wait_us += (int)(tget_us() - tus);   // Accumulate time in wait
+				// Note: MMIO Polling can be removed after getting DMA support
+				_rc = snap_mmio_read32(card, ACTION_CONTROL, &action_data);
+				if ((action_data & ACTION_CONTROL_IDLE) == ACTION_CONTROL_IDLE)
+					break;
+				dt = (int)(tget_ms() - t0);
+				loops++;
+			}
+		} else {
+			tus = tget_us();
+			hw_wait_irq(card, timeout, SNAP_ACTION_IRQ_NUM);
+			wait_us += (int)(tget_us() - tus);
+		}
 		snap_mmio_write32(card, ACTION_IRQ_STATUS, ACTION_IRQ_STATUS_DONE);
 		snap_mmio_write32(card, ACTION_IRQ_APP, 0);
 		snap_mmio_write32(card, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_OFF);
 		_rc = snap_mmio_read32(card, ACTION_CONTROL, &action_data);
 	} else {
-		/* Busy poll timout sec */
-		t0 = tget_ms();
-		dt = 0;
-		timeout_ms = timeout * 1000;
+		tus = tget_us();
 		while (dt < timeout_ms) {
 			_rc = snap_mmio_read32(card, ACTION_CONTROL, &action_data);
 			if ((action_data & ACTION_CONTROL_IDLE) == ACTION_CONTROL_IDLE)
 				break;
 			dt = (int)(tget_ms() - t0);
+			loops++;
 		}
+		wait_us += (int)(tget_us() - tus);
 	}
+	uint16_t tid = 0;
+	cxl_work_get_tid(card->cxl_work, &tid);
+	printf("   %s Waiting: %d usec loops: %d Work TID: %d\n",
+		__func__,  wait_us, loops, tid);
 	if (rc)
 		*rc = _rc;
 

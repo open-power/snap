@@ -98,6 +98,7 @@ CFLAGS += -DGIT_VERSION=\"$(VERSION)\" \
 	-I. -I../include -D_GNU_SOURCE=1
 
 # Optimizations
+CFLAGS += -I/usr/local/include
 CFLAGS += -funroll-all-loops
 
 # General settings: Include and library search path
