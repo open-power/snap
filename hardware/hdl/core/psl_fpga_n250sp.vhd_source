@@ -309,7 +309,7 @@ Component psl_accel
   );
 End Component psl_accel;
 
-Component psl_bsp
+Component capi_bsp_wrap
   PORT(
 -- pci interface
     pci_pi_nperst0        : in    std_logic;     -- Active low reset from the PCIe reset pin of the device
@@ -478,7 +478,7 @@ Component psl_bsp
     pci_clock_125MHz    : out std_logic                    --125MHz clock if required
   );
 
-END Component psl_bsp;
+END Component capi_bsp_wrap;
 
 SIGNAL a0h_brdata: std_logic_vector(0 TO 1023);  -- hline
 SIGNAL a0h_brlat: std_logic_vector(0 TO 3);  -- v4bit
@@ -801,7 +801,7 @@ BEGIN
 
     gold_factory <= user_image_q;
 
-  psl: psl_bsp
+  c0: capi_bsp_wrap
     PORT MAP (
 -- pci interface
       pci_pi_nperst0      => pci_pi_nperst0,       -- Active low reset from the PCIe reset pin of the device

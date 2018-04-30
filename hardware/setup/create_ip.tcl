@@ -47,11 +47,6 @@ create_project managed_ip_project $ip_dir/managed_ip_project -part $fpga_part -i
 set_property target_language VHDL [current_project]
 set_property target_simulator IES [current_project]
 
-#create PSL/HDK IP for N250SP
-if { ($fpga_card == "N250SP") && ($psl_ip_dir != "not defined") } {
-  source $root_dir/setup/$fpga_card/create_ip.tcl
-}
-
 #create DMA Input RAM
 if { $fpga_card == "N250SP" } {
   set RAM_WIDTH 1040
@@ -243,7 +238,7 @@ if { $fpga_card == "ADKU3" } {
     set create_clock_conv  TRUE
     set create_ddr4_ad8k5    TRUE
   }
-} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } { 
+} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
   if { $bram_used == "TRUE" } {
     if { $nvme_used == "TRUE" } {
       set create_interconnect  TRUE
@@ -476,9 +471,9 @@ if { [file exists $action_vhdl] == 1 } {
     puts "                        generating user IP $usr_ip_name"
     set usr_ip_xci [glob -dir $usr_ip *.xci]
     #generate_target {instantiation_template} [get_files $z] >> $log_file
-    generate_target all                      [get_files $usr_ip_xci] >> $log_file
+    generate_target all              [get_files $usr_ip_xci] >> $log_file
     export_ip_user_files -of_objects [get_files $usr_ip_xci] -no_script -force  >> $log_file
-    export_simulation -of_objects [get_files $usr_ip_xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+    export_simulation -of_objects    [get_files $usr_ip_xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
   }
 }
 

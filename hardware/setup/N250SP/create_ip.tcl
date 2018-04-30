@@ -168,12 +168,6 @@ generate_target all                          [get_files sem_ultra_0.xci] >> $log
 export_ip_user_files -of_objects             [get_files sem_ultra_0.xci] -no_script -force >> $log_file
 export_simulation    -of_objects             [get_files sem_ultra_0.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
-create_ip -name PSL9_WRAP -vendor ibm.com -library CAPI -version 1.* -module_name PSL9_WRAP_0 -dir $ip_dir >> $log_file
-set_property generate_synth_checkpoint false [get_files PSL9_WRAP_0.xci]
-generate_target {instantiation_template}     [get_files PSL9_WRAP_0.xci] >> $log_file
-generate_target all                          [get_files PSL9_WRAP_0.xci] >> $log_file
-export_ip_user_files -of_objects             [get_files PSL9_WRAP_0.xci] -no_script -force >> $log_file
-
 set status [catch {exec $root_dir/setup/$fpga_card/patch_pcie.sh file $ip_dir/pcie4_uscale_plus_0/synth/pcie4_uscale_plus_0.v} ]
 if { $status != 0 } {
   puts "WARNING: $root_dir/setup/$fpga_card/patch_pcie.sh returned status $status and error code $::errorCode"
