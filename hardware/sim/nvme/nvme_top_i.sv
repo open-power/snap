@@ -168,7 +168,7 @@ module nvme_top (
     reg [7:0] DDR_awlen;
     reg [2:0] DDR_awsize;
     reg [1:0] DDR_awburst;
-    reg [31:0] DDR_awaddr;
+    reg [33:0] DDR_awaddr;
     reg [0:0] DDR_arvalid;
     reg [0:0] DDR_awvalid;
     reg [127:0] DDR_wdata;
@@ -177,7 +177,7 @@ module nvme_top (
     reg [3:0] DDR_awid;
     reg [7:0] DDR_arlen;
     reg [2:0] DDR_arsize;
-    reg [31:0] DDR_araddr;
+    reg [33:0] DDR_araddr;
     reg [0:0] DDR_rready;
     reg [0:0] DDR_wlast;
     reg [0:0] DDR_bready;
@@ -279,7 +279,7 @@ module nvme_top (
 
     /* ACTION REGISTER READ STATEMACHINE */
     enum { READ_IDLE, READ_DECODE, READ_BUFFER, READ_ACTION_REGS } read_state;
-    logic [`HOST_ADDR_BITS-1:0] host_raddr;
+    /* logic [`HOST_ADDR_BITS-1:0] host_raddr; */
    
     always @(posedge ACT_NVME_ACLK, negedge ACT_NVME_ARESETN)
     begin
@@ -341,7 +341,7 @@ module nvme_top (
 
     /* ACTION REGISTER WRITE STATEMACHINE */
     enum { WRITE_IDLE, WRITE_DECODE, WRITE_BUFFER, WRITE_BURST } write_state;
-    logic [`HOST_ADDR_BITS-1:0] host_waddr;
+    /* logic [`HOST_ADDR_BITS-1:0] host_waddr; */
     logic [31:0] host_wdata;
     
     always @(posedge ACT_NVME_ACLK, negedge ACT_NVME_ARESETN)
@@ -387,32 +387,7 @@ module nvme_top (
             /* AXI Single Read */                    
             WRITE_BUFFER: begin /* Check if command register was written and try to trigger actity based on that */
                 if (ACT_awaddr == `ACTION_W_COMMAND) begin
-                    logic [63:0] ddr_addr;
-                    logic [63:0] lba_addr;
-                    logic [31:0] lba_num;
-                    logic [31:0] axi_addr;
-                    logic [`CMD_TYPE_BITS-1:0] cmd_type;
-                    logic [`CMD_ACTION_ID_BITS-1:0] cmd_action_id;
-            
-                    cmd_type = action_w_regs[`ACTION_W_COMMAND][`CMD_TYPE +: `CMD_TYPE_BITS];
-                    cmd_action_id = action_w_regs[`ACTION_W_COMMAND][`CMD_ACTION_ID +: `CMD_ACTION_ID_BITS];;
-                    ddr_addr = { action_w_regs[`ACTION_W_DPTR_HIGH], action_w_regs[`ACTION_W_DPTR_LOW] };
-                    lba_addr = { action_w_regs[`ACTION_W_LBA_HIGH], action_w_regs[`ACTION_W_LBA_LOW] };
-                    lba_num = action_w_regs[`ACTION_W_LBA_NUM];
-                    
-                    $display("nvme_operation: ddr=%h lba=%h num=%h cmd_type=%h cmd_action_id=%h",
-                            ddr_addr, lba_addr, lba_num, cmd_type, cmd_action_id);
-                           
-                    if (cmd_type == `CMD_READ) begin
-                        fork
-                            nvme_cmd_read(ddr_addr, lba_addr, lba_num, cmd_action_id);
-                        join_none
-                    end        
-                    if (cmd_type == `CMD_WRITE) begin
-                        fork
-                            nvme_cmd_write(ddr_addr, lba_addr, lba_num, cmd_action_id);
-                        join_none
-                    end
+                    nvme_operation();
                 end
                 ACT_bresp <= 2'h0;
                 ACT_bvalid <= 1'b1; /* Write transfer completed */
@@ -457,16 +432,16 @@ module nvme_top (
         logic [63:0] ddr_addr;
         logic [63:0] lba_addr;
         logic [31:0] lba_num;
-        logic [31:0] axi_addr;
+        logic [63:0] axi_addr;
         logic [`CMD_TYPE_BITS-1:0] cmd_type;
         logic [`CMD_ACTION_ID_BITS-1:0] cmd_action_id;
     
         //#1; /* Ensure that all required registers are latched */
         cmd_type = action_w_regs[`ACTION_W_COMMAND][`CMD_TYPE +: `CMD_TYPE_BITS];
-        cmd_action_id = action_w_regs[`ACTION_W_COMMAND][`CMD_ACTION_ID +: `CMD_ACTION_ID_BITS];;
+        cmd_action_id = action_w_regs[`ACTION_W_COMMAND][`CMD_ACTION_ID +: `CMD_ACTION_ID_BITS];
         ddr_addr = { action_w_regs[`ACTION_W_DPTR_HIGH], action_w_regs[`ACTION_W_DPTR_LOW] };
         lba_addr = { action_w_regs[`ACTION_W_LBA_HIGH], action_w_regs[`ACTION_W_LBA_LOW] };
-        lba_num = action_w_regs[`ACTION_W_LBA_NUM];
+        lba_num = action_w_regs[`ACTION_W_LBA_NUM] + 1;
         
         $display("nvme_operation: ddr=%h lba=%h num=%h cmd_type=%h cmd_action_id=%h",
                 ddr_addr, lba_addr, lba_num, cmd_type, cmd_action_id);
@@ -487,7 +462,7 @@ module nvme_top (
                        input logic [63:0] lba_addr,
                        input logic [31:0] lba_num,
                        input logic [`CMD_ACTION_ID_BITS-1:0] cmd_action_id);
-        logic [31:0] axi_addr;
+        logic [63:0] axi_addr;
         logic [127:0] axi_data;
 
         activity_state = NVME_READING;
@@ -513,10 +488,10 @@ module nvme_top (
     endtask
     
     task nvme_cmd_write(input logic [63:0] ddr_addr,
-                           input logic [63:0] lba_addr,
-                           input logic [31:0] lba_num,
-                           input logic [`CMD_ACTION_ID_BITS-1:0] cmd_action_id);
-        logic [31:0] axi_addr;
+                        input logic [63:0] lba_addr,
+                        input logic [31:0] lba_num,
+                        input logic [`CMD_ACTION_ID_BITS-1:0] cmd_action_id);
+        logic [63:0] axi_addr;
         logic [127:0] axi_data;
 
         activity_state = NVME_WRITING; 
@@ -585,7 +560,7 @@ module nvme_top (
 
     // Test AXI DDR access
     task axi_ddr_test();
-        logic [31:0] axi_addr;
+        logic [33:0] axi_addr;
         logic [127:0] axi_data;
         logic [127:0] cmp_data;
             
@@ -613,10 +588,10 @@ module nvme_top (
     endtask
 
     /* task or function, what is more appropriate? How to wait best for completion? */
-    logic [31:0] ddr_write_addr;    /* FIXME need one per slot */
+    logic [33:0] ddr_write_addr;    /* FIXME need one per slot */
     logic [127:0] ddr_write_data;   /* FIXME need one per slot */
 
-    task axi_ddr_write(input logic [31:0] addr, input logic [127:0] data);
+    task axi_ddr_write(input logic [33:0] addr, input logic [127:0] data);
         while (ddr_write_state != DDR_WIDLE) begin
             #1;
         end
@@ -666,10 +641,10 @@ module nvme_top (
     end
     
     /* task or function, what is more appropriate? How to wait best for completion? */
-    logic [31:0] ddr_read_addr;    /* FIXME need one per slot */
+    logic [33:0] ddr_read_addr;    /* FIXME need one per slot */
     logic [127:0] ddr_read_data;   /* FIXME need one per slot */
 
-    task axi_ddr_read(input logic [31:0] addr, output logic [127:0] data);
+    task axi_ddr_read(input logic [33:0] addr, output logic [127:0] data);
         while (ddr_read_state != DDR_RIDLE) begin
             #1;
         end
@@ -712,7 +687,7 @@ module nvme_top (
     end
    
     /* Working version but seems not to be optimal */
-    task axi_ddr_write_working(input logic [31:0] addr, input logic [127:0] data);
+    task axi_ddr_write_working(input logic [33:0] addr, input logic [127:0] data);
         ddr_write_state = DDR_WADDR;
         DDR_bready = 1'b0;
         //DDR_wvalid = 1'b0;
@@ -753,7 +728,7 @@ module nvme_top (
     endtask
 
     /* Working version, but not optimal for real-world usage. */
-    task axi_ddr_read_working(input logic [31:0] addr, output logic [127:0] _data);
+    task axi_ddr_read_working(input logic [33:0] addr, output logic [127:0] _data);
         ddr_read_state = DDR_RADDR;
         
         DDR_rready = 0;           // master is not ready anymore
