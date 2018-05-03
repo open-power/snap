@@ -531,6 +531,7 @@ module nvme_top (
         DDR_awid = 0;
         DDR_awlen = 0;
         DDR_awsize = 0;
+        DDR_wstrb = 0;
         DDR_awburst = 0;
         DDR_awvalid = 0;
         DDR_wstrb = 0;
@@ -607,31 +608,36 @@ module nvme_top (
     always @(posedge DDR_aclk) begin
         case (ddr_write_state)
         DDR_WADDR: begin
-            DDR_awlen <= 8'h0;
-            DDR_awsize <= 3'b001;
-            DDR_awburst <= 2'b00;
+            DDR_awburst <= 2'b01; /* 00 FIXED, 01 INCR burst mode */
+            DDR_awlen <= 8'h0; /* 1 only */
+            DDR_awcache <= 4'b0010; /* allow merging */
+            DDR_awprot <= 4'b0000; /* no protection bits */
+            DDR_awsize <= 3'b100; /* 16 bytes */
+            DDR_wstrb <= 16'hffff; /* all bytes enabled */
             DDR_bready <= 1'b0;
             DDR_wvalid <= 1'b0;
             DDR_awaddr <= ddr_write_addr;
             DDR_awvalid <= 1'b1; /* put address on bus */
             
             if (DDR_M_AXI_awready && DDR_awvalid) begin
-                DDR_awvalid <= 1'b0;
                 DDR_wdata <= ddr_write_data;
                 DDR_wvalid <= 1'b1; /* put data on bus */
+                DDR_awvalid <= 1'b0;
                 ddr_write_state <= DDR_WDATA;
             end
         end
         DDR_WDATA: begin
             if (DDR_wvalid && DDR_M_AXI_wready) begin
-                DDR_wvalid <= 1'b0;
+                DDR_wlast <= 1'b1;
                 DDR_bready <= 1'b1;
+                DDR_wvalid <= 1'b0;
                 ddr_write_state <= DDR_WACK;
             end
         end
         DDR_WACK: begin
             if (DDR_bready && DDR_M_AXI_bvalid) begin
                 DDR_bready <= 1'b0;
+                DDR_wlast <= 1'b0;
                 ddr_write_state <= DDR_WIDLE;
             end
         end
@@ -661,10 +667,9 @@ module nvme_top (
     always @(posedge DDR_aclk) begin
         case (ddr_read_state)
         DDR_RADDR: begin
-            DDR_arlen <= 8'h0;
-            DDR_arsize <= 3'b001;
-            DDR_arburst <= 2'b00;
-            DDR_arvalid <= 1'b0;
+            DDR_arburst <= 2'b00; /* no burst */
+            DDR_arlen <= 8'h0; /* one only */
+            DDR_arsize <= 3'b100; /* 16 bytes */
             DDR_araddr <= ddr_read_addr;
             DDR_arvalid <= 1'b1; /* put read address on bus */
             
@@ -697,9 +702,9 @@ module nvme_top (
             #1;
         end
 
-        DDR_awlen = 8'h0;
-        DDR_awsize = 3'b001;
-        DDR_awburst = 2'b00;
+        DDR_awburst = 2'b00; /* no burst */
+        DDR_awlen = 8'h0; /* 1 shot */
+        DDR_awsize = 3'b100; /* 16 bytes */
         DDR_awaddr = addr;
         DDR_awvalid = 1'b1;        // write address is valid now
         /* BREADY Master Response ready. This signal indicates that the master can accept a write response. */
