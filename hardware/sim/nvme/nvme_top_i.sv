@@ -303,8 +303,9 @@ module nvme_top (
             ACT_rresp <= 2'hx;
             ACT_rlast <= 1'b0;
             ACT_rvalid <= 1'b0;
-            for (int i = 0; i < `ACTION_R_SQ_LEVEL; i++) begin
-                action_r_regs[i][31:16] <= NVME_IDLE;
+            action_r_regs[`ACTION_R_STATUS] = 32'h0000fff0;
+            for (int i = `ACTION_R_TRACK_0; i < `ACTION_R_SQ_LEVEL; i++) begin
+                action_r_regs[i][31:16] <= 16'h0000;
                 action_r_regs[i][15:8] <= i;
                 action_r_regs[i][7:0] <= 8'h0;
             end
@@ -484,6 +485,7 @@ module nvme_top (
         end
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b00; /* Mark ACTION_TRACK_n debug */
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 0; /* Mark ACTION_TRACK_n busy */
+        action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 0; /* BUSY */
         #1;
 
         // read stuff: 128bit DDR access => 16 bytes
@@ -495,6 +497,7 @@ module nvme_top (
         end
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b10; /* Mark ACTION_TRACK_n debug */
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 1; /* Mark ACTION_TRACK_n ready */
+        action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 1; /* COMPLETED */
         activity_state = NVME_COMPLETED;
         #1;
 
@@ -513,6 +516,7 @@ module nvme_top (
         end
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b00; /* Mark ACTION_TRACK_n debug */
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 0; /* Mark ACTION_TRACK_n busy */
+        action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 0; /* BUSY */
         #1;
 
         // write stuff: 128bit DDR access => 16 bytes
@@ -523,6 +527,7 @@ module nvme_top (
         end
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b01; /* Mark ACTION_TRACK_n debug */
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 1; /* Mark ACTION_TRACK_n ready */
+        action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 1; /* COMPLETED */
         activity_state = NVME_COMPLETED;
         #1;
     endtask
