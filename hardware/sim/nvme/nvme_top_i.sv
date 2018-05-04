@@ -179,14 +179,18 @@ module nvme_top (
     reg [2:0] DDR_arsize;
     reg [33:0] DDR_araddr;
     reg [0:0] DDR_rready;
+    reg [0:0] DDR_arlock;
     reg [0:0] DDR_wlast;
     reg [0:0] DDR_bready;
     reg [0:0] DDR_arburst;
     reg [0:0] DDR_awlock;
     reg [2:0] DDR_awprot;
     reg [3:0] DDR_awqos;
+    reg [3:0] DDR_arqos;
     reg [3:0] DDR_awcache;
     reg [15:0] DDR_wuser;
+    reg [3:0] DDR_awregion;
+    reg [3:0] DDR_arregion;
     
     /* SNAP NVME AXI Bus: Needs to be moved to the testbench */
     /* reg NVME_aclk;
@@ -246,10 +250,14 @@ module nvme_top (
     assign DDR_M_AXI_bready = DDR_bready;
     assign DDR_M_AXI_arburst = DDR_arburst;
     assign DDR_M_AXI_awlock = DDR_awlock;
+    assign DDR_M_AXI_arlock = DDR_arlock;
     assign DDR_M_AXI_awprot = DDR_awprot;
     assign DDR_M_AXI_awqos = DDR_awqos;
+    assign DDR_M_AXI_arqos = DDR_arqos;
     assign DDR_M_AXI_awcache = DDR_awcache;
     assign DDR_M_AXI_wuser = DDR_wuser;
+    assign DDR_M_AXI_awregion = DDR_awregion;
+    assign DDR_M_AXI_arregion = DDR_arregion;
  
     /* SNAP NVME AXI Interface: FIXME Figure out for what this is really used */  
     localparam ACTION_W_BITS = $clog2(`ACTION_W_NUM_REGS);
@@ -543,15 +551,19 @@ module nvme_top (
         DDR_awqos = 0;
         DDR_awcache = 0;
         DDR_wuser = 0;
+        DDR_awregion = 0;
 
         ddr_read_state = DDR_RRESET;
         DDR_arid = 0;
+        DDR_arlock = 0;
         DDR_arlen = 0;
         DDR_arsize = 0;
         DDR_arburst = 0;
         DDR_arvalid = 0;
         DDR_rready = 0;         // master is ready to receive data
         DDR_rready = 0;
+        DDR_arqos = 0;
+        DDR_arregion = 0;
         #5;
         DDR_aresetn = 1;
         ddr_write_state = DDR_WIDLE;
