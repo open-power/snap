@@ -278,7 +278,12 @@ module nvme_top (
     enum { NVME_IDLE, NVME_WRITING, NVME_READING, NVME_COMPLETED } activity_state;
 
     initial begin
+        // Complete reset driving ddr_aresetn
         axi_ddr_reset();
+        
+        // Small reset, just set our output to defined values
+        //axi_ddr_wreset();
+        //axi_ddr_rreset();
         
         if (`CONFIG_DDR_READWRITE_TEST) begin
             axi_ddr_test();
@@ -534,40 +539,10 @@ module nvme_top (
     task axi_ddr_reset();
         DDR_aclk = 0;
         DDR_aresetn = 0;
-
         ddr_write_state = DDR_WRESET;
-        DDR_awid = 0;
-        DDR_awlen = 0;
-        DDR_awsize = 0;
-        DDR_wstrb = 0;
-        DDR_awburst = 0;
-        DDR_awvalid = 0;
-        DDR_wstrb = 0;
-        DDR_wlast = 0;
-        DDR_wvalid = 0;
-        DDR_bready = 0;         // 1: Master is ready
-        DDR_awlock = 0;
-        DDR_awprot = 0;
-        DDR_awqos = 0;
-        DDR_awcache = 0;
-        DDR_wuser = 0;
-        DDR_awregion = 0;
-
         ddr_read_state = DDR_RRESET;
-        DDR_arid = 0;
-        DDR_arlock = 0;
-        DDR_arlen = 0;
-        DDR_arsize = 0;
-        DDR_arburst = 0;
-        DDR_arvalid = 0;
-        DDR_rready = 0;         // master is ready to receive data
-        DDR_rready = 0;
-        DDR_arqos = 0;
-        DDR_arregion = 0;
         #5;
         DDR_aresetn = 1;
-        ddr_write_state = DDR_WIDLE;
-        ddr_read_state = DDR_RIDLE;
         #1;
     endtask
 
@@ -616,46 +591,71 @@ module nvme_top (
         end
     endtask
 
+    function axi_ddr_wreset();
+        DDR_awid <= 0;
+        DDR_awlen <= 0;
+        DDR_awsize <= 0;
+        DDR_wstrb <= 0;
+        DDR_awburst <= 0;
+        DDR_awvalid <= 0;
+        DDR_wstrb <= 0;
+        DDR_wlast <= 0;
+        DDR_wvalid <= 0;
+        DDR_bready <= 0;         // 1: Master is ready
+        DDR_awlock <= 0;
+        DDR_awprot <= 0;
+        DDR_awqos <= 0;
+        DDR_awcache <= 0;
+        DDR_wuser <= 0;
+        DDR_awregion <= 0;   
+        ddr_write_state <= DDR_WIDLE;
+    endfunction
+
     /* DDR WRITE Statemachine */
-    always @(posedge DDR_aclk) begin
-        case (ddr_write_state)
-        DDR_WADDR: begin
-            DDR_awburst <= 2'b01; /* 00 FIXED, 01 INCR burst mode */
-            DDR_awlen <= 8'h0; /* 1 only */
-            DDR_awcache <= 4'b0010; /* allow merging */
-            DDR_awprot <= 4'b0000; /* no protection bits */
-            DDR_awsize <= 3'b100; /* 16 bytes */
-            DDR_wstrb <= 16'hffff; /* all bytes enabled */
-            DDR_bready <= 1'b0;
-            DDR_wvalid <= 1'b0;
-            DDR_awaddr <= ddr_write_addr;
-            DDR_awvalid <= 1'b1; /* put address on bus */
-            
-            if (DDR_M_AXI_awready && DDR_awvalid) begin
-                DDR_wdata <= ddr_write_data;
-                DDR_wvalid <= 1'b1; /* put data on bus */
-                DDR_awvalid <= 1'b0;
-                ddr_write_state <= DDR_WDATA;
-            end
-        end
-        DDR_WDATA: begin
-            if (DDR_wvalid && DDR_M_AXI_wready) begin
-                DDR_wlast <= 1'b1;
-                DDR_bready <= 1'b1;
-                DDR_wvalid <= 1'b0;
-                ddr_write_state <= DDR_WACK;
-            end
-        end
-        DDR_WACK: begin
-            if (DDR_bready && DDR_M_AXI_bvalid) begin
+    always @(posedge DDR_aclk, negedge ddr_aresetn) begin
+        if (!ddr_aresetn) begin
+            axi_ddr_wreset();
+                 
+        end else begin
+            case (ddr_write_state)
+            DDR_WADDR: begin
+                DDR_awburst <= 2'b01; /* 00 FIXED, 01 INCR burst mode */
+                DDR_awlen <= 8'h0; /* 1 only */
+                DDR_awcache <= 4'b0010; /* allow merging */
+                DDR_awprot <= 4'b0000; /* no protection bits */
+                DDR_awsize <= 3'b100; /* 16 bytes */
+                DDR_wstrb <= 16'hffff; /* all bytes enabled */
                 DDR_bready <= 1'b0;
-                DDR_wlast <= 1'b0;
-                ddr_write_state <= DDR_WIDLE;
+                DDR_wvalid <= 1'b0;
+                DDR_awaddr <= ddr_write_addr;
+                DDR_awvalid <= 1'b1; /* put address on bus */
+                
+                if (DDR_M_AXI_awready && DDR_awvalid) begin
+                    DDR_wdata <= ddr_write_data;
+                    DDR_wvalid <= 1'b1; /* put data on bus */
+                    DDR_wlast <= 1'b1; /* we do here 1 shot bursts, if not we need to set this only on the last one */
+                    DDR_awvalid <= 1'b0;
+                    ddr_write_state <= DDR_WDATA;
+                end
             end
+            DDR_WDATA: begin
+                if (DDR_wvalid && DDR_M_AXI_wready) begin
+                    DDR_bready <= 1'b1;
+                    ddr_write_state <= DDR_WACK;
+                end
+            end
+            DDR_WACK: begin
+                if (DDR_bready && DDR_M_AXI_bvalid) begin
+                    DDR_wvalid <= 1'b0;
+                    DDR_bready <= 1'b0;
+                    DDR_wlast <= 1'b0;
+                    ddr_write_state <= DDR_WIDLE;
+                end
+            end
+            default begin
+            end
+            endcase
         end
-        default begin
-        end
-        endcase
     end
     
     /* task or function, what is more appropriate? How to wait best for completion? */
@@ -675,32 +675,51 @@ module nvme_top (
         data = ddr_read_data;
     endtask
    
+    function axi_ddr_rreset();
+        DDR_arid <= 0;
+        DDR_arlock <= 0;
+        DDR_arlen <= 0;
+        DDR_arsize <= 0;
+        DDR_arburst <= 0;
+        DDR_arvalid <= 0;
+        DDR_rready <= 0;         // master is ready to receive data
+        DDR_rready <= 0;
+        DDR_arqos <= 0;
+        DDR_arregion <= 0;
+        ddr_read_state <= DDR_RIDLE;
+    endfunction
+   
     /* DDR READ Statemachine */
-    always @(posedge DDR_aclk) begin
-        case (ddr_read_state)
-        DDR_RADDR: begin
-            DDR_arburst <= 2'b00; /* no burst */
-            DDR_arlen <= 8'h0; /* one only */
-            DDR_arsize <= 3'b100; /* 16 bytes */
-            DDR_araddr <= ddr_read_addr;
-            DDR_arvalid <= 1'b1; /* put read address on bus */
+    always @(posedge DDR_aclk, negedge ddr_aresetn) begin
+        if (!ddr_aresetn) begin
+            axi_ddr_rreset();
             
-            if (DDR_M_AXI_arready && DDR_arvalid) begin
-                DDR_arvalid <= 1'b0; /* no address required anymore */
-                DDR_rready <= 1'b1; /* ready to receive data */
-                ddr_read_state <= DDR_RDATA;
+        end else begin
+            case (ddr_read_state)
+            DDR_RADDR: begin
+                DDR_arburst <= 2'b00; /* no burst */
+                DDR_arlen <= 8'h0; /* one only */
+                DDR_arsize <= 3'b100; /* 16 bytes */
+                DDR_araddr <= ddr_read_addr;
+                DDR_arvalid <= 1'b1; /* put read address on bus */
+                
+                if (DDR_M_AXI_arready && DDR_arvalid) begin
+                    DDR_arvalid <= 1'b0; /* no address required anymore */
+                    DDR_rready <= 1'b1; /* ready to receive data */
+                    ddr_read_state <= DDR_RDATA;
+                end
             end
-        end
-        DDR_RDATA: begin
-            if (DDR_M_AXI_rvalid && DDR_rready) begin
-                ddr_read_data <= DDR_M_AXI_rdata; /* get the data */
-                DDR_rready <= 1'b0; /* have the data now */
-                ddr_read_state <= DDR_RIDLE;
+            DDR_RDATA: begin
+                if (DDR_M_AXI_rvalid && DDR_rready) begin
+                    ddr_read_data <= DDR_M_AXI_rdata; /* get the data */
+                    DDR_rready <= 1'b0; /* have the data now */
+                    ddr_read_state <= DDR_RIDLE;
+                end
             end
+            default begin
+            end
+            endcase
         end
-        default begin
-        end
-        endcase
     end
    
     /* Working version but seems not to be optimal */
