@@ -270,6 +270,24 @@ module nvme_top (
     assign action_r_index = ACT_araddr[ACTION_R_BITS + 1: 2]; /* cut out the relevant bits */
     logic [ACTION_W_BITS - 1: 0] action_w_index;
 
+    /* Tie status information to TRACK_n register bits */
+    assign action_r_regs[`ACTION_R_STATUS][16] = action_r_regs[`ACTION_R_TRACK_0][0];
+    assign action_r_regs[`ACTION_R_STATUS][17] = action_r_regs[`ACTION_R_TRACK_0 + 1][0];
+    assign action_r_regs[`ACTION_R_STATUS][18] = action_r_regs[`ACTION_R_TRACK_0 + 2][0];
+    assign action_r_regs[`ACTION_R_STATUS][19] = action_r_regs[`ACTION_R_TRACK_0 + 3][0];
+    assign action_r_regs[`ACTION_R_STATUS][20] = action_r_regs[`ACTION_R_TRACK_0 + 4][0];
+    assign action_r_regs[`ACTION_R_STATUS][21] = action_r_regs[`ACTION_R_TRACK_0 + 5][0];
+    assign action_r_regs[`ACTION_R_STATUS][22] = action_r_regs[`ACTION_R_TRACK_0 + 6][0];
+    assign action_r_regs[`ACTION_R_STATUS][23] = action_r_regs[`ACTION_R_TRACK_0 + 7][0];
+    assign action_r_regs[`ACTION_R_STATUS][24] = action_r_regs[`ACTION_R_TRACK_0 + 8][0];
+    assign action_r_regs[`ACTION_R_STATUS][25] = action_r_regs[`ACTION_R_TRACK_0 + 9][0];
+    assign action_r_regs[`ACTION_R_STATUS][26] = action_r_regs[`ACTION_R_TRACK_0 + 10][0];
+    assign action_r_regs[`ACTION_R_STATUS][27] = action_r_regs[`ACTION_R_TRACK_0 + 11][0];
+    assign action_r_regs[`ACTION_R_STATUS][28] = action_r_regs[`ACTION_R_TRACK_0 + 12][0];
+    assign action_r_regs[`ACTION_R_STATUS][29] = action_r_regs[`ACTION_R_TRACK_0 + 13][0];
+    assign action_r_regs[`ACTION_R_STATUS][30] = action_r_regs[`ACTION_R_TRACK_0 + 14][0];
+    assign action_r_regs[`ACTION_R_STATUS][31] = action_r_regs[`ACTION_R_TRACK_15][0];
+
     localparam ACTION_ID_MAX = 16;
     localparam ACTION_ID_BITS = $clog2(ACTION_ID_MAX);
 
@@ -482,7 +500,7 @@ module nvme_top (
         end
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b00; /* Mark ACTION_TRACK_n debug */
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 0; /* Mark ACTION_TRACK_n busy */
-        action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 0; /* BUSY */
+        /* action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 0; *//* BUSY */
         #1;
 
         // read stuff: 128bit DDR access => 16 bytes
@@ -494,7 +512,7 @@ module nvme_top (
         end
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b10; /* Mark ACTION_TRACK_n debug */
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 1; /* Mark ACTION_TRACK_n ready */
-        action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 1; /* COMPLETED */
+        /* action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 1; *//* COMPLETED */
         activity_state = NVME_COMPLETED;
         #1;
 
@@ -513,7 +531,7 @@ module nvme_top (
         end
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b00; /* Mark ACTION_TRACK_n debug */
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 0; /* Mark ACTION_TRACK_n busy */
-        action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 0; /* BUSY */
+        /* action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 0; *//* BUSY */
         #1;
 
         // write stuff: 128bit DDR access => 16 bytes
@@ -524,7 +542,7 @@ module nvme_top (
         end
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b01; /* Mark ACTION_TRACK_n debug */
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 1; /* Mark ACTION_TRACK_n ready */
-        action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 1; /* COMPLETED */
+        /* action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 1; *//* COMPLETED */
         activity_state = NVME_COMPLETED;
         #1;
     endtask
