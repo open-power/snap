@@ -266,10 +266,9 @@ module nvme_top (
 
     logic [31:0] action_w_regs[`ACTION_W_NUM_REGS];
     logic [31:0] action_r_regs[`ACTION_R_NUM_REGS];
-    logic [SQ_INDEX_BITS-1:0] sq_index;
-    logic [ACTION_R_BITS-1:0] action_r_index;
-    assign action_r_index = ACT_araddr[ACTION_R_BITS-1:0]; /* cut out the relevant bits */
-    logic [ACTION_W_BITS-1:0] action_w_index;
+    logic [ACTION_R_BITS - 1: 0] action_r_index;
+    assign action_r_index = ACT_araddr[ACTION_R_BITS + 1: 2]; /* cut out the relevant bits */
+    logic [ACTION_W_BITS - 1: 0] action_w_index;
 
     localparam ACTION_ID_MAX = 16;
     localparam ACTION_ID_BITS = $clog2(ACTION_ID_MAX);
@@ -292,7 +291,6 @@ module nvme_top (
 
     /* ACTION REGISTER READ STATEMACHINE */
     enum { READ_IDLE, READ_DECODE, READ_BUFFER, READ_ACTION_REGS } read_state;
-    /* logic [`HOST_ADDR_BITS-1:0] host_raddr; */
    
     always @(posedge ACT_NVME_ACLK, negedge ACT_NVME_ARESETN)
     begin
@@ -334,14 +332,14 @@ module nvme_top (
                 if ((ACT_NVME_AXI_araddr >= `ACTION_R_TRACK_0) &&
                     (ACT_NVME_AXI_araddr <= `ACTION_R_TRACK_15) &&
                     (activity_state == NVME_COMPLETED)) begin
-                    action_r_regs[action_r_index][31:30] = 2'b11; /* Mark ACTION_TRACK_n debug */
+                    action_r_regs[action_r_index][31:30] <= 2'b11; /* Mark ACTION_TRACK_n debug */
                     action_r_regs[action_r_index][0] <= 0; /* Clear ACTION_TRACK_n[0] */
                 end
                 read_state <= READ_BUFFER;
             end
             READ_BUFFER: begin
                 if (ACT_rvalid && ACT_NVME_AXI_rready) begin
-                    ACT_rdata <= 32'hX; /* Mark invalid for debugging */
+                    //ACT_rdata <= 32'hX; /* Mark invalid for debugging */
                     ACT_rvalid <= 1'b0;
                     ACT_rlast <= 1'b0;
                     read_state <= READ_IDLE;
@@ -355,8 +353,6 @@ module nvme_top (
 
     /* ACTION REGISTER WRITE STATEMACHINE */
     enum { WRITE_IDLE, WRITE_DECODE, WRITE_BUFFER, WRITE_BURST } write_state;
-    /* logic [`HOST_ADDR_BITS-1:0] host_waddr; */
-    logic [31:0] host_wdata;
     
     always @(posedge ACT_NVME_ACLK, negedge ACT_NVME_ARESETN)
     begin
@@ -367,7 +363,7 @@ module nvme_top (
             ACT_awaddr <= 'hx;
             ACT_wdata <= 'hx;
             ACT_wready <= 1'b0; /* must be 0 to indicate that we are not ready for data yet, must not let be undefined */
-            for (int i=0; i<`ACTION_W_NUM_REGS; i++) begin
+            for (int i = 0; i < `ACTION_W_NUM_REGS; i++) begin
                 action_w_regs[i] <= 'd0;
             end
             write_state <= WRITE_IDLE;
@@ -386,12 +382,13 @@ module nvme_top (
             end
             WRITE_DECODE: begin /* Capture write data */
                 if (ACT_NVME_AXI_wvalid == 1 && ACT_wready == 1) begin
-                    ACT_wdata <= ACT_NVME_AXI_wdata; // Save away the data for the address AXI_awaddr
-                    action_w_regs[ACT_awaddr[ACTION_W_BITS-1:0]] <= ACT_NVME_AXI_wdata;
-                    //ACT_wready <= 1'b0;
+                    /* Save away the data for the address AXI_awaddr */
+                    /* Addresses are 0x0, 0x4, 0x8, 0xC, ... */
+                    ACT_wdata <= ACT_NVME_AXI_wdata;
+                    action_w_regs[ACT_awaddr[ACTION_W_BITS + 1: 2]] <= ACT_NVME_AXI_wdata;
                     
                     if (ACT_NVME_AXI_awburst == 2'b01) begin
-                        ACT_awaddr <= ACT_awaddr + 1;
+                        ACT_awaddr <= ACT_awaddr + 4;
                         write_state <= WRITE_BURST;
                     end else begin
                         write_state <= WRITE_BUFFER;
@@ -400,7 +397,7 @@ module nvme_top (
             end
             /* AXI Single Read */                    
             WRITE_BUFFER: begin /* Check if command register was written and try to trigger actity based on that */
-                if (ACT_awaddr == `ACTION_W_COMMAND) begin
+                if (ACT_awaddr[ACTION_W_BITS + 1: 2] == `ACTION_W_COMMAND) begin
                     nvme_operation();
                 end
                 ACT_bresp <= 2'h0;
@@ -417,14 +414,14 @@ module nvme_top (
                 
                 if ((ACT_NVME_AXI_wvalid == 1'b1) && (ACT_wready == 1'b1) && (ACT_bvalid == 1'b0)) begin
                         /* store register content */
-                        action_w_regs[ACT_awaddr[ACTION_W_BITS-1:0]] <= ACT_NVME_AXI_wdata;
+                        action_w_regs[ACT_awaddr[ACTION_W_BITS + 1: 2]] <= ACT_NVME_AXI_wdata;
                         ACT_wdata <= ACT_NVME_AXI_wdata; /* Take write data every clock */
                         
-                        if (ACT_awaddr[ACTION_W_BITS-1:0] == `ACTION_W_COMMAND) begin
+                        if (ACT_awaddr[ACTION_W_BITS + 1: 2] == `ACTION_W_COMMAND) begin
                             nvme_operation();
                         end
 
-                        ACT_awaddr <= ACT_awaddr + 1;
+                        ACT_awaddr <= ACT_awaddr + 4;
                         action_w_index <= action_w_index + 1;
                 end
                 /* We need to ack the last transfer with bvalid = 1 if wlast was set to 1,
