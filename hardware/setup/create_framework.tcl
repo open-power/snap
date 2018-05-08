@@ -35,22 +35,10 @@ set log_dir     $::env(LOGS_DIR)
 set log_file    $log_dir/create_framework.log
 set vivadoVer     [version -short]
 
-if { [info exists ::env(PSL_IP)] == 1 } {
-  set psl_ip_dir $::env(PSL_IP)
-} else {
-  set psl_ip_dir "not defined"
-}
-
 if { [info exists ::env(CAPI_BSP)] == 1 } {
   set capi_bsp_dir $::env(CAPI_BSP)
 } else {
   set capi_bsp_dir "not defined"
-}
-
-if { [info exists ::env(HDK_ROOT)] == 1 } {
-  set hdk_dir $::env(HDK_ROOT)
-} else {
-  set hdk_dir $root_dir/hdk
 }
 
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
@@ -271,13 +259,13 @@ if { $nvme_used == TRUE } {
   remove_files $action_dir/action_axi_nvme.vhd -quiet
 }
 
-# Add PSL with board support
-if { ($fpga_card == "N250SP") && ($psl_ip_dir != "not defined") && ($capi_bsp_dir != "not defined") } {
+# Add CAPI board support
+if { ($fpga_card == "N250SP") && ($capi_bsp_dir != "not defined") } {
   puts "                        importing CAPI BSP"
-  set_property "ip_repo_paths" "[file normalize $capi_bsp_dir] [file normalize $psl_ip_dir]" [current_project] >> $log_file
+  set_property ip_repo_paths "[file normalize $capi_bsp_dir]" [current_project] >> $log_file
   update_ip_catalog >> $log_file
 
-  add_files -norecurse                  $capi_bsp_dir/ip/capi_bsp_wrap.xcix -force >> $log_file
+  add_files -norecurse                  $capi_bsp_dir/capi_bsp_wrap.xcix -force >> $log_file
   export_ip_user_files -of_objects      [get_files capi_bsp_wrap.xci] -force >> $log_file
   set_property used_in_simulation false [get_files capi_bsp_wrap.xci] >> $log_file
 } elseif { $psl_dcp != "FALSE" } {
@@ -293,7 +281,7 @@ puts "                        importing XDCs"
 if { ($fpga_card == "N250SP") && ($capi_bsp_dir != "not defined") } {
   puts "                      importing N250SP Board support XDCs"
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
-  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_floorplan.xdc
+#  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
 }
 
 # DDR XDCs

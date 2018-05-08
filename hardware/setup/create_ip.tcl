@@ -31,12 +31,6 @@ set nvme_used    $::env(NVME_USED)
 set log_dir      $::env(LOGS_DIR)
 set log_file     $log_dir/create_ip.log
 
-if { [info exists ::env(PSL_IP)] == 1 } {
-  set psl_ip_dir $::env(PSL_IP)
-} else {
-  set psl_ip_dir "not defined"
-}
-
 ## Create a new Vivado IP Project
 puts "\[CREATE_IPs..........\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 exec rm -rf $ip_dir
