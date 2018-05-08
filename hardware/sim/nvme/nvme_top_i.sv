@@ -185,37 +185,14 @@ module nvme_top (
     reg [0:0] DDR_arburst;
     reg [0:0] DDR_awlock;
     reg [2:0] DDR_awprot;
+    reg [2:0] DDR_arprot;
     reg [3:0] DDR_awqos;
     reg [3:0] DDR_arqos;
     reg [3:0] DDR_awcache;
+    reg [3:0] DDR_arcache;
     reg [15:0] DDR_wuser;
     reg [3:0] DDR_awregion;
     reg [3:0] DDR_arregion;
-    
-    /* SNAP NVME AXI Bus: Needs to be moved to the testbench */
-    /* reg NVME_aclk;
-    reg NVME_aresetn;
-    reg [31:0] NVME_awaddr;
-    reg [0:0] NVME_arvalid;
-    reg [0:0] NVME_awvalid;
-    reg [31:0] NVME_wdata;
-    reg [3:0] NVME_wstrb;    
-    reg [0:0] NVME_wvalid;
-    reg [31:0] NVME_araddr;
-    reg [0:0] NVME_rready;
-    reg [0:0] NVME_bready; */
-
-    /* NVRAM AXI Interface: Needs to be moved to the testbench */
-    /* assign NVME_S_ACLK = NVME_aclk;
-    assign NVME_S_ARESETN = NVME_aresetn;
-    assign NVME_S_AXI_awaddr = NVME_awaddr;
-    assign NVME_S_AXI_arvalid = NVME_arvalid;
-    assign NVME_S_AXI_wdata = NVME_wdata;
-    assign NVME_S_AXI_wstrb = NVME_wstrb;
-    assign NVME_S_AXI_wvalid = NVME_wvalid;
-    assign NVME_S_AXI_araddr = NVME_araddr;
-    assign NVME_S_AXI_rready = NVME_rready;
-    assign NVME_S_AXI_bready = NVME_bready; */
     
     /* SNAP Action AXI Interface */  
     assign ACT_NVME_AXI_arready = ACT_arready;
@@ -252,9 +229,11 @@ module nvme_top (
     assign DDR_M_AXI_awlock = DDR_awlock;
     assign DDR_M_AXI_arlock = DDR_arlock;
     assign DDR_M_AXI_awprot = DDR_awprot;
+    assign DDR_M_AXI_arprot = DDR_arprot;
     assign DDR_M_AXI_awqos = DDR_awqos;
     assign DDR_M_AXI_arqos = DDR_arqos;
     assign DDR_M_AXI_awcache = DDR_awcache;
+    assign DDR_M_AXI_arcache = DDR_arcache;
     assign DDR_M_AXI_wuser = DDR_wuser;
     assign DDR_M_AXI_awregion = DDR_awregion;
     assign DDR_M_AXI_arregion = DDR_arregion;
@@ -293,6 +272,9 @@ module nvme_top (
 
     /* NVME Device STATEMACHINE */
     enum { NVME_IDLE, NVME_WRITING, NVME_READING, NVME_COMPLETED } activity_state;
+
+    /* Verification helper */
+    enum { VERIFY_OK, VERIFY_ERROR } verify_state;
 
     initial begin
         // Complete reset driving ddr_aresetn
@@ -413,11 +395,14 @@ module nvme_top (
                     end
                 end
             end
-            /* AXI Single Read */                    
+            /* AXI Single Write */                    
             WRITE_BUFFER: begin /* Check if command register was written and try to trigger actity based on that */
-                if (ACT_awaddr[ACTION_W_BITS + 1: 2] == `ACTION_W_COMMAND) begin
-                    nvme_operation();
+                if ((ACT_NVME_AXI_wvalid == 1'b1) && (ACT_wready == 1'b1) && (ACT_bvalid == 1'b0)) begin
+                    if (ACT_awaddr[ACTION_W_BITS + 1: 2] == `ACTION_W_COMMAND) begin
+                        void' (nvme_operation());
+                    end
                 end
+
                 ACT_bresp <= 2'h0;
                 ACT_bvalid <= 1'b1; /* Write transfer completed */
 
@@ -436,7 +421,7 @@ module nvme_top (
                         ACT_wdata <= ACT_NVME_AXI_wdata; /* Take write data every clock */
                         
                         if (ACT_awaddr[ACTION_W_BITS + 1: 2] == `ACTION_W_COMMAND) begin
-                            nvme_operation();
+                            void '(nvme_operation());
                         end
 
                         ACT_awaddr <= ACT_awaddr + 4;
@@ -491,28 +476,31 @@ module nvme_top (
                        input logic [63:0] lba_addr,
                        input logic [31:0] lba_num,
                        input logic [`CMD_ACTION_ID_BITS-1:0] cmd_action_id);
+
         logic [63:0] axi_addr;
         logic [127:0] axi_data;
-
+        logic success;
+      
         activity_state = NVME_READING;
         if (action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] == 1) begin
             action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][1] = 1; /* error, results not read */
         end
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b00; /* Mark ACTION_TRACK_n debug */
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 0; /* Mark ACTION_TRACK_n busy */
-        /* action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 0; *//* BUSY */
+        verify_state = VERIFY_OK;
         #1;
 
         // read stuff: 128bit DDR access => 16 bytes
         $display("nvme_read: ddr=%h lba=%h num=%h", ddr_addr, lba_addr, lba_num);                
         for (axi_addr = ddr_addr; axi_addr < ddr_addr + lba_num * 512; axi_addr += 16) begin
             axi_data = 128'haabbccdd_11223344_55667788_00000000 + axi_addr;
-            $display("  write: axi_addr=%h axi_data=%h", axi_addr, axi_data);
-            axi_ddr_write(axi_addr, axi_data);
+
+            axi_ddr_write_and_verify(axi_addr, axi_data, success);
+            $display("  write/verify: axi_addr=%h axi_data=%h success=%h", axi_addr, axi_data, success);
         end
+
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b10; /* Mark ACTION_TRACK_n debug */
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 1; /* Mark ACTION_TRACK_n ready */
-        /* action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 1; *//* COMPLETED */
         activity_state = NVME_COMPLETED;
         #1;
 
@@ -531,7 +519,7 @@ module nvme_top (
         end
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b00; /* Mark ACTION_TRACK_n debug */
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 0; /* Mark ACTION_TRACK_n busy */
-        /* action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 0; *//* BUSY */
+        verify_state = VERIFY_OK; /* No real verification done here, but set to OK such that it looks nice */
         #1;
 
         // write stuff: 128bit DDR access => 16 bytes
@@ -542,7 +530,6 @@ module nvme_top (
         end
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b01; /* Mark ACTION_TRACK_n debug */
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 1; /* Mark ACTION_TRACK_n ready */
-        /* action_r_regs[`ACTION_R_STATUS][cmd_action_id + 16] = 1; *//* COMPLETED */
         activity_state = NVME_COMPLETED;
         #1;
     endtask
@@ -599,6 +586,10 @@ module nvme_top (
     logic [33:0] ddr_write_addr;    /* FIXME need one per slot */
     logic [127:0] ddr_write_data;   /* FIXME need one per slot */
 
+    /* task or function, what is more appropriate? How to wait best for completion? */
+    logic [33:0] ddr_read_addr;    /* FIXME need one per slot */
+    logic [127:0] ddr_read_data;   /* FIXME need one per slot */
+
     task axi_ddr_write(input logic [33:0] addr, input logic [127:0] data);
         while (ddr_write_state != DDR_WIDLE) begin
             #1;
@@ -606,9 +597,48 @@ module nvme_top (
         ddr_write_addr = addr;
         ddr_write_data = data;
         ddr_write_state = DDR_WADDR;
+        #1;
+
         while (ddr_write_state != DDR_WIDLE) begin
             #1;
         end
+    endtask
+
+    task axi_ddr_write_and_verify(input logic [33:0] addr, input logic [127:0] data, output logic success);
+        logic [127:0] _data;
+        
+        verify_state = VERIFY_OK;
+        
+        /* write data */
+        while (ddr_write_state != DDR_WIDLE) begin
+            #1;
+        end
+        ddr_write_addr = addr;
+        ddr_write_data = data;
+        ddr_write_state = DDR_WADDR;
+        #1;
+
+        while (ddr_write_state != DDR_WIDLE) begin
+            #1;
+        end
+        
+        /* read back data */
+        while (ddr_read_state != DDR_RIDLE) begin
+            #1;
+        end
+        ddr_read_addr = addr;
+        ddr_read_state = DDR_RADDR;
+        
+        while (ddr_read_state != DDR_RIDLE) begin
+            #1;
+        end
+        _data = ddr_read_data;
+        #1;
+        success = (data == _data);
+        if (!success) begin
+            verify_state = VERIFY_ERROR;
+        end
+        #1;
     endtask
 
     function axi_ddr_wreset();
@@ -634,7 +664,7 @@ module nvme_top (
     /* DDR WRITE Statemachine */
     always @(posedge DDR_aclk, negedge ddr_aresetn) begin
         if (!ddr_aresetn) begin
-            axi_ddr_wreset();
+            void' (axi_ddr_wreset());
                  
         end else begin
             case (ddr_write_state)
@@ -676,23 +706,21 @@ module nvme_top (
             end
             endcase
         end
-    end
-    
-    /* task or function, what is more appropriate? How to wait best for completion? */
-    logic [33:0] ddr_read_addr;    /* FIXME need one per slot */
-    logic [127:0] ddr_read_data;   /* FIXME need one per slot */
-
-    task axi_ddr_read(input logic [33:0] addr, output logic [127:0] data);
+     end
+ 
+     task axi_ddr_read(input logic [33:0] addr, output logic [127:0] data);
         while (ddr_read_state != DDR_RIDLE) begin
             #1;
         end
         ddr_read_addr = addr;
-        ddr_read_data = 32'hx;
         ddr_read_state = DDR_RADDR;
+        #1;
+
         while (ddr_read_state != DDR_RIDLE) begin
             #1;
         end
         data = ddr_read_data;
+        #1;
     endtask
    
     function axi_ddr_rreset();
@@ -701,6 +729,7 @@ module nvme_top (
         DDR_arlen <= 0;
         DDR_arsize <= 0;
         DDR_arburst <= 0;
+        DDR_arcache <= 0;
         DDR_arvalid <= 0;
         DDR_rready <= 0;         // master is ready to receive data
         DDR_rready <= 0;
@@ -712,13 +741,15 @@ module nvme_top (
     /* DDR READ Statemachine */
     always @(posedge DDR_aclk, negedge ddr_aresetn) begin
         if (!ddr_aresetn) begin
-            axi_ddr_rreset();
+            void' (axi_ddr_rreset());
             
         end else begin
             case (ddr_read_state)
             DDR_RADDR: begin
-                DDR_arburst <= 2'b00; /* no burst */
-                DDR_arlen <= 8'h0; /* one only */
+                DDR_arburst <= 2'b01; /* 00 FIXED, 01 INCR burst mode */
+                DDR_arlen <= 8'h0; /* 1 only */
+                DDR_arcache <= 4'b0000; /* do not allow merging */
+                DDR_arprot <= 4'b0000; /* no protection bits */
                 DDR_arsize <= 3'b100; /* 16 bytes */
                 DDR_araddr <= ddr_read_addr;
                 DDR_arvalid <= 1'b1; /* put read address on bus */
@@ -789,6 +820,7 @@ module nvme_top (
         
         DDR_rready = 0;           // master is not ready anymore
         
+        // FIXME We need to set arvalid regardless of arready, but we need to have arready 1 to release arvalid again
         while (DDR_M_AXI_arready == 0) begin // arready must be 1 to indicate device is ready for address
             #1;
         end
