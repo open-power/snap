@@ -396,8 +396,8 @@
       step "snap_intersect -I -m1 -v -t2000"
       for i in 1 2 $rnd10;do num64=$(((i*$xfer)%64))   # adopt to capability reg xfer size
         let max=2*$num64; rm -f table1.txt table2.txt
-        $ACTION_ROOT/tests/gen_input_table.pl $num64 0 $max $num64 0 $max >snap_intersect_h.log;gen_rc=$?
-        echo "num64=$num64";wc -c table*.txt; cat table*.txt
+        gen_rc=0;$ACTION_ROOT/tests/gen_input_table.pl $num64 0 $max $num64 0 $max >snap_intersect_h.log||gen_rc=$?
+        echo "num64=$num64 RC=$gen_rc";wc -c table*.txt; cat table*.txt
         step "snap_intersect -m1    -i table1.txt -j table2.txt -v -t2000"
         step "snap_intersect -m1 -s -i table1.txt -j table2.txt -v -t2000"
       done
@@ -409,8 +409,8 @@
       step "snap_intersect -I -m2 -v -t2000"
       for i in 1 2 $rnd10;do num64=$(((i*$xfer)%64))   # adopt to capability reg xfer size
         let max=2*$num64; rm -f table1.txt table2.txt
-        $ACTION_ROOT/tests/gen_input_table.pl $num64 0 $max $num64 0 $max >snap_intersect_h.log;gen_rc=$?
-        echo "num64=$num64";wc -c table*.txt; cat table*.txt
+        gen_rc=0;$ACTION_ROOT/tests/gen_input_table.pl $num64 0 $max $num64 0 $max >snap_intersect_s.log||gen_rc=$?
+        echo "num64=$num64 RC=$gen_rc";wc -c table*.txt; cat table*.txt
         step "snap_intersect -m2    -i table1.txt -j table2.txt -v -t2000"
         step "snap_intersect -m2 -s -i table1.txt -j table2.txt -v -t2000"
       done
