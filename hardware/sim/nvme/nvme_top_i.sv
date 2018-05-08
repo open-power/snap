@@ -748,7 +748,7 @@ module nvme_top (
             DDR_RADDR: begin
                 DDR_arburst <= 2'b01; /* 00 FIXED, 01 INCR burst mode */
                 DDR_arlen <= 8'h0; /* 1 only */
-                DDR_arcache <= 4'b0000; /* do not allow merging */
+                DDR_arcache <= 4'b0010; /* allow merging */
                 DDR_arprot <= 4'b0000; /* no protection bits */
                 DDR_arsize <= 3'b100; /* 16 bytes */
                 DDR_araddr <= ddr_read_addr;
