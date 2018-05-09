@@ -245,10 +245,13 @@ module nvme_top (
 
     logic [31:0] action_w_regs[`ACTION_W_NUM_REGS];
     logic [31:0] action_r_regs[`ACTION_R_NUM_REGS];
+    
     logic [ACTION_R_BITS - 1: 0] action_r_index;
-    assign action_r_index = ACT_araddr[ACTION_R_BITS + 1: 2]; /* cut out the relevant bits */
+    assign action_r_index = ACT_araddr[ACTION_R_BITS + 1: 2];
+    
     logic [ACTION_W_BITS - 1: 0] action_w_index;
-
+    assign action_w_index = ACT_awaddr[ACTION_W_BITS + 1: 2];
+    
     /* Tie status information to TRACK_n register bits */
     assign action_r_regs[`ACTION_R_STATUS][16] = action_r_regs[`ACTION_R_TRACK_0][0];
     assign action_r_regs[`ACTION_R_STATUS][17] = action_r_regs[`ACTION_R_TRACK_0 + 1][0];
@@ -353,6 +356,7 @@ module nvme_top (
 
     /* ACTION REGISTER WRITE STATEMACHINE */
     enum { WRITE_IDLE, WRITE_DECODE, WRITE_BUFFER, WRITE_BURST } write_state;
+    logic start_nvme_operation;
     
     always @(posedge ACT_NVME_ACLK, negedge ACT_NVME_ARESETN)
     begin
@@ -367,16 +371,19 @@ module nvme_top (
                 action_w_regs[i] <= 'd0;
             end
             write_state <= WRITE_IDLE;
+
         end else begin
             case (write_state)
             WRITE_IDLE: begin /* Capture write address */
                 ACT_awready <= 1'b1;
                 ACT_wready <= 1'b0;
+                start_nvme_operation <= 0;
+
                 if (ACT_NVME_AXI_awvalid == 1 && ACT_NVME_AXI_awready == 1) begin
                     ACT_awaddr <= ACT_NVME_AXI_awaddr; // Save away the desired address
                     ACT_awready <= 1'b0; // Wait for data now, no addresses anymore        
                     ACT_wready <= 1'b1;  // Now we captured the address and can receive the data
-                    action_w_index = 0;
+                    //action_w_index = 0;
                     write_state <= WRITE_DECODE;
                 end
             end
@@ -416,16 +423,13 @@ module nvme_top (
                 ACT_wready <= 1'b1;
                 
                 if ((ACT_NVME_AXI_wvalid == 1'b1) && (ACT_wready == 1'b1) && (ACT_bvalid == 1'b0)) begin
+                        if (ACT_awaddr[ACTION_W_BITS + 1: 2] == `ACTION_W_COMMAND) begin
+                            start_nvme_operation <= 1;
+                        end
                         /* store register content */
                         action_w_regs[ACT_awaddr[ACTION_W_BITS + 1: 2]] <= ACT_NVME_AXI_wdata;
                         ACT_wdata <= ACT_NVME_AXI_wdata; /* Take write data every clock */
-                        
-                        if (ACT_awaddr[ACTION_W_BITS + 1: 2] == `ACTION_W_COMMAND) begin
-                            void '(nvme_operation());
-                        end
-
                         ACT_awaddr <= ACT_awaddr + 4;
-                        action_w_index <= action_w_index + 1;
                 end
                 /* We need to ack the last transfer with bvalid = 1 if wlast was set to 1,
                    when the partner has set bready, we can start all over again */
@@ -434,6 +438,10 @@ module nvme_top (
                     ACT_bvalid <= 1'b1;
                 end
                 if (ACT_bvalid && ACT_NVME_AXI_bready) begin
+                    if (start_nvme_operation) begin
+                        void '(nvme_operation());
+                        start_nvme_operation <= 0;
+                    end
                     ACT_bvalid <= 1'b0;
                     write_state <= WRITE_IDLE;
                 end
@@ -451,12 +459,12 @@ module nvme_top (
         logic [`CMD_ACTION_ID_BITS-1:0] cmd_action_id;
     
         //#1; /* Ensure that all required registers are latched */
-        cmd_type = action_w_regs[`ACTION_W_COMMAND][`CMD_TYPE +: `CMD_TYPE_BITS];
-        cmd_action_id = action_w_regs[`ACTION_W_COMMAND][`CMD_ACTION_ID +: `CMD_ACTION_ID_BITS];
-        ddr_addr = { action_w_regs[`ACTION_W_DPTR_HIGH], action_w_regs[`ACTION_W_DPTR_LOW] };
-        lba_addr = { action_w_regs[`ACTION_W_LBA_HIGH], action_w_regs[`ACTION_W_LBA_LOW] };
-        lba_num = action_w_regs[`ACTION_W_LBA_NUM] + 1;
-        
+        assign cmd_type = action_w_regs[`ACTION_W_COMMAND][`CMD_TYPE_BITS-1:0];
+        assign cmd_action_id = action_w_regs[`ACTION_W_COMMAND][11:8];
+        assign ddr_addr = { action_w_regs[`ACTION_W_DPTR_HIGH], action_w_regs[`ACTION_W_DPTR_LOW] };
+        assign lba_addr = { action_w_regs[`ACTION_W_LBA_HIGH], action_w_regs[`ACTION_W_LBA_LOW] };
+        assign lba_num = action_w_regs[`ACTION_W_LBA_NUM] + 1;
+
         $display("nvme_operation: ddr=%h lba=%h num=%h cmd_type=%h cmd_action_id=%h",
                 ddr_addr, lba_addr, lba_num, cmd_type, cmd_action_id);
                 
