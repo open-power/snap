@@ -44,7 +44,7 @@
     ${call_args}; step_rc=$?                            # execute step
     ts6=$(date +%s%N);                                  # begin of step
     free2=$(snap_peek 0x80|grep ']'|awk '{print $2}')   # cycle timestamp from freerunning counter
-    deltasim=$(( ($ts6-$ts5)/1000000 ));    s=$((deltasim/1000)); ms=$((deltasim%1000))
+    deltasim=$(( (ts6-ts5)/1000000 ));    s=$((deltasim/1000)); ms=$((deltasim%1000))
     deltans=$(( (16#$free2-16#$free1)*4 )); us=$((deltans/1000)); ns=$((deltans%1000))
     ts4=$(date||awk '{print $4}')                       # end of step
     if [[ "$step_rc" > "$max_rc" ]];then max_rc=$step_rc;fi
@@ -171,8 +171,8 @@
         step "snap_example -I -a2 -S1 -B0 -A256 -t600"
       fi
       for num4k in 0 1 $rnd20;do to=$((num4k*400+400))   # 4k blks should be possible by every card
-      for i in 0 1 2 $rnd32;do num64=$(((i*$xfer)%64))   # adopt to capability reg xfer size
-      for j in 5 2 1;do align=$((j*$dma))                # adopt to capability reg DMA alignment
+      for i in 0 1 2 $rnd32;do num64=$(((i*xfer)/64))   # adopt to capability reg xfer size
+      for j in 5 2 1;do align=$((j*dma))                # adopt to capability reg DMA alignment
 #     for num64 in 0 1 2 $rnd32;do
 #     for align in 4096 64;do  # posix memalign only allows power of 2
         if [[ "$num4k" == "0" && "$num64" == "0"          ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
@@ -188,8 +188,8 @@
         else                            for i in {1..5};do echo "loop=$i";snap_example -a6 -S8 -B2 -A64  -t400 -v||break;done
         fi
         for num4k in 0 1 $rnd20;do to=$((num4k*400+400)) # 4k blks should be possible by every card
-        for i in 0 1 2 $rnd32;do num64=$(((i*$xfer)%64)) # adopt to capability reg xfer size
-        for j in 5 2 1;do align=$((j*$dma))              # adopt to capability reg DMA alignment
+        for i in 0 1 2 $rnd32;do num64=$(((i*xfer)/64)) # adopt to capability reg xfer size
+        for j in 5 2 1;do align=$((j*dma))              # adopt to capability reg DMA alignment
 #       for num4k in 0 1 $rnd20;do
 #       for num64 in 0 1 $rnd32;do                       # 1..64
 #       for align in 4096 128 64;do                      # must be mult of 64 for P8, mult of 128 for P9
@@ -205,9 +205,9 @@
         step "snap_example_ddr -h"
         for iter in 1 $rnd4;do                           # number of blocks
         for i in 1 $rnd32;do bsize=$((xfer>64?xfer*i:64*i))  # adopt to capability reg xfer size, hdl_example action only works n*64B xfers, even if SNAP can do less
-        for j in 1 $rnd5;do strt=$((j*$dma))             # adopt to capability reg DMA alignment
+        for j in 1 $rnd5;do strt=$((j*dma))             # adopt to capability reg DMA alignment
 #         if [[ "iter" > "1" && ("$bsize" == "64" || "$strt" == "1024") ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
-          let end=${strt}+${iter}*${bsize}; to=$((iter*iter*bsize/4+300))      # rough timeout dependent on filesize
+          end=$((strt+iter*bsize)); to=$((iter*iter*bsize/4+300))      # rough timeout dependent on filesize
           step "snap_example_ddr -i${iter} -b${bsize} -s${strt} -e${end} -t$to"
         done
         done
@@ -216,8 +216,8 @@
         step "snap_example_set -h"
 #       for beg in 0 11 63;do                            # start adr
 #       for bsize in 7 128 4096 4097;do                  # block size to copy, rough timeout dependent on filesize
-        for j in 5 2 1;do beg=$((j*$dma))                # adopt to capability reg DMA alignment
-        for i in 1 2 $rnd32;do bsize=$((i*$xfer))        # adopt to capability reg xfer size
+        for j in 5 2 1;do beg=$((j*dma))                # adopt to capability reg DMA alignment
+        for i in 1 2 $rnd32;do bsize=$((i*xfer))        # adopt to capability reg xfer size
           to=$((bsize/20+300))
           step "snap_example_set -H -b${beg} -s${bsize} -p${bsize} -t$to"
           step "snap_example_set -F -b${beg} -s${bsize} -p${bsize} -t$to"
@@ -394,10 +394,10 @@
       step "snap_intersect -h"
       step "snap_intersect    -m1 -v -t2000"
       step "snap_intersect -I -m1 -v -t2000"
-      for i in 1 2 $rnd10;do num64=$(((i*$xfer)%64))   # adopt to capability reg xfer size
-        let max=2*$num64; rm -f table1.txt table2.txt
-        $ACTION_ROOT/tests/gen_input_table.pl $num64 0 $max $num64 0 $max >snap_intersect_h.log;gen_rc=$?
-        echo "num64=$num64";wc -c table*.txt; cat table*.txt
+      for i in 1 2 $rnd10;do
+        num64=$(((i*xfer)/64)); max=$((2*num64)); rm -f table1.txt table2.txt
+        gen_rc=0; $ACTION_ROOT/tests/gen_input_table.pl $num64 0 $max $num64 0 $max >snap_intersect_h.log||gen_rc=$?
+        echo "gen_table num64=$num64 max=$max RC=$gen_rc";wc -c table*.txt; cat table*.txt
         step "snap_intersect -m1    -i table1.txt -j table2.txt -v -t2000"
         step "snap_intersect -m1 -s -i table1.txt -j table2.txt -v -t2000"
       done
@@ -407,10 +407,10 @@
       step "snap_intersect -h"
       step "snap_intersect    -m2 -v -t2000"
       step "snap_intersect -I -m2 -v -t2000"
-      for i in 1 2 $rnd10;do num64=$(((i*$xfer)%64))   # adopt to capability reg xfer size
-        let max=2*$num64; rm -f table1.txt table2.txt
-        $ACTION_ROOT/tests/gen_input_table.pl $num64 0 $max $num64 0 $max >snap_intersect_h.log;gen_rc=$?
-        echo "num64=$num64";wc -c table*.txt; cat table*.txt
+      for i in 1 2 $rnd10;do
+        num64=$(((i*xfer)/64)); max=$((2*num64)); rm -f table1.txt table2.txt
+        gen_rc=0;$ACTION_ROOT/tests/gen_input_table.pl $num64 0 $max $num64 0 $max >snap_intersect_s.log||gen_rc=$?
+        echo "gen_table num64=$num64 max=$max RC=$gen_rc";wc -c table*.txt; cat table*.txt
         step "snap_intersect -m2    -i table1.txt -j table2.txt -v -t2000"
         step "snap_intersect -m2 -s -i table1.txt -j table2.txt -v -t2000"
       done
