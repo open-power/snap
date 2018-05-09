@@ -42,7 +42,7 @@ set_property target_language VHDL [current_project]
 set_property target_simulator IES [current_project]
 
 #create DMA Input RAM
-if { $fpga_card == "N250SP" } {
+if { ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP") } {
   set RAM_WIDTH 1040
   set RAM_DEPTH 32
   set MEMORY_TYPE True_Dual_Port_RAM
@@ -76,7 +76,7 @@ export_ip_user_files -of_objects             [get_files $ip_dir/ram_${RAM_WIDTH}
 export_simulation -of_objects [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create DMA Output RAM
-if { $fpga_card == "N250SP" } {
+if { ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP") } {
   set RAM_WIDTH 1152
   set RAM_DEPTH 32
   set MEMORY_TYPE True_Dual_Port_RAM
@@ -232,6 +232,14 @@ if { $fpga_card == "ADKU3" } {
     set create_clock_conv  TRUE
     set create_ddr4_ad8k5    TRUE
   }
+} elseif { $fpga_card == "RCXVUP" } {
+  if { $bram_used == "TRUE" } {
+    set create_clock_conv   TRUE
+    set create_bram        TRUE
+  } elseif { $sdram_used == "TRUE" } {
+    set create_clock_conv   TRUE
+    set create_ddr4        TRUE
+  }
 } elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
   if { $bram_used == "TRUE" } {
     if { $nvme_used == "TRUE" } {
@@ -358,7 +366,7 @@ if { $create_ddr3 == "TRUE" } {
   open_example_project -in_process -force -dir $ip_dir [get_ips  ddr3sdram] >> $log_file
 }
 
-#DDR4 create ddr4sdramm with ECC (N250S or N250SP)
+#DDR4 create ddr4sdramm with ECC (N250S or N250SP or RCXVUP)
 if { $create_ddr4 == "TRUE" } {
   puts "                        generating IP ddr4sdram"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file

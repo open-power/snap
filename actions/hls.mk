@@ -18,7 +18,9 @@
 #   xcku060-ffva1156-2-e
 #   xc7vx690tffg1157-2
 #   xcku115-flva1517-2-e
-FPGACHIP    ?= xcku060-ffva1156-2-e
+#   xcvu9p-flgb2104-2l-e-es1
+#FPGACHIP    ?= xcku060-ffva1156-2-e
+FPGACHIP    ?= xcvu9p-flgb2104-2l-e-es1
 PART_NUMBER ?= $(FPGACHIP)
 
 # The wrapper name must match a function in the HLS sources which is

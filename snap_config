@@ -53,6 +53,9 @@ while [ -z "$SETUP_DONE" ]; do
     "AD8K5" )
       SNAP_CFG="CONFIG_AD8K5=y\n""CONFIG_FPGACHIP=xcku115-flva1517-2-e\n"
       ;;
+    "RCXVUP" )
+      SNAP_CFG="CONFIG_RCXVUP=y\n""CONFIG_FPGACHIP=xcvu9p-flgb2104-2l-e-es1\n"
+      ;;
     "N250SP" )
       SNAP_CFG="CONFIG_N250SP=y\n""CONFIG_FPGACHIP=xcku15p-ffva1156-2-i\n"
       ;;
