@@ -112,7 +112,8 @@ static inline long int timediff_sec(struct timeval *a, struct timeval *b)
 
 	timersub(a, b , &res);
 
-	if (res.tv_sec > 100)
+	/* FIXME In simulation this warning is annoying ... */
+	if (res.tv_sec > 1000)
 		fprintf(stderr, "err: Strange time diff "
 			"a.tv_sec=%ld a.tv_usec=%ld "
 			"b.tv_sec=%ld b.tv_usec=%ld "
