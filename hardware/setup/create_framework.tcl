@@ -35,16 +35,10 @@ set log_dir     $::env(LOGS_DIR)
 set log_file    $log_dir/create_framework.log
 set vivadoVer     [version -short]
 
-if { [info exists ::env(PSL_IP)] == 1 } {
-  set psl_ip_dir $::env(PSL_IP)
+if { [info exists ::env(CAPI_BSP)] == 1 } {
+  set capi_bsp_dir $::env(CAPI_BSP)
 } else {
-  set psl_ip_dir "not defined"
-}
-
-if { [info exists ::env(HDK_ROOT)] == 1 } {
-  set hdk_dir $::env(HDK_ROOT)
-} else {
-  set hdk_dir $root_dir/hdk
+  set capi_bsp_dir "not defined"
 }
 
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
@@ -113,17 +107,8 @@ set_property STEPS.WRITE_BITSTREAM.TCL.POST $root_dir/setup/snap_bitstream_post.
 
 # Add Files
 puts "                        importing design files"
-# HDL Files
+# SNAP core Files
 add_files -scan_for_includes $hdl_dir/core/  >> $log_file
-if { ($fpga_card == "N250SP") && ($psl_ip_dir != "not defined") } {
-  puts "                        importing psl and board support source files"
-  add_files -scan_for_includes $hdk_dir/common/src >> $log_file
-  add_files -scan_for_includes $hdk_dir/ultrascale_plus/src >> $log_file
-  add_files -scan_for_includes $hdk_dir/boards/$fpga_card/src >> $log_file
-  set_property used_in_simulation false [get_files $hdk_dir/common/src/*]
-  set_property used_in_simulation false [get_files $hdk_dir/ultrascale_plus/src/*]
-  set_property used_in_simulation false [get_files $hdk_dir/boards/$fpga_card/src/*]
-}
 
 set_property used_in_simulation false [get_files $hdl_dir/core/psl_fpga.vhd]
 set_property top psl_fpga [current_fileset]
@@ -274,27 +259,15 @@ if { $nvme_used == TRUE } {
   remove_files $action_dir/action_axi_nvme.vhd -quiet
 }
 
-# Add PSL with board support
-if { ($fpga_card == "N250SP") && ($psl_ip_dir != "not defined") } {
-  puts "                        importing PSL IPs"
-  set_property "ip_repo_paths" "[file normalize "$psl_ip_dir/ip_repo"]" [current_project]
+# Add CAPI board support
+if { ($fpga_card == "N250SP") && ($capi_bsp_dir != "not defined") } {
+  puts "                        importing CAPI BSP"
+  set_property ip_repo_paths "[file normalize $capi_bsp_dir]" [current_project] >> $log_file
   update_ip_catalog >> $log_file
-  # add pcie4_uscale_plus
-  add_files -norecurse                             $ip_dir/pcie4_uscale_plus_0/pcie4_uscale_plus_0.xci  -force >> $log_file
-  export_ip_user_files -of_objects      [get_files $ip_dir/pcie4_uscale_plus_0/pcie4_uscale_plus_0.xci] -force >> $log_file
-  set_property used_in_simulation false [get_files $ip_dir/pcie4_uscale_plus_0/pcie4_uscale_plus_0.xci] >> $log_file
-  # add sem_ultra
-  add_files -norecurse                             $ip_dir/sem_ultra_0/sem_ultra_0.xci  -force >> $log_file
-  export_ip_user_files -of_objects      [get_files $ip_dir/sem_ultra_0/sem_ultra_0.xci] -force >> $log_file
-  set_property used_in_simulation false [get_files $ip_dir/sem_ultra_0/sem_ultra_0.xci]  >> $log_file
-  # add uscale_plus_clk_wiz
-  add_files -norecurse                             $ip_dir/uscale_plus_clk_wiz/uscale_plus_clk_wiz.xci  -force >> $log_file
-  export_ip_user_files -of_objects      [get_files $ip_dir/uscale_plus_clk_wiz/uscale_plus_clk_wiz.xci] -force >> $log_file
-  set_property used_in_simulation false [get_files $ip_dir/uscale_plus_clk_wiz/uscale_plus_clk_wiz.xci] >> $log_file
-  # add P9 PSL IP
-  add_files -norecurse                             $ip_dir/PSL9_WRAP_0/PSL9_WRAP_0.xci  -force >> $log_file
-  export_ip_user_files -of_objects      [get_files $ip_dir/PSL9_WRAP_0/PSL9_WRAP_0.xci] -force >> $log_file
-  set_property used_in_simulation false [get_files $ip_dir/PSL9_WRAP_0/PSL9_WRAP_0.xci] >> $log_file
+
+  add_files -norecurse                  $capi_bsp_dir/capi_bsp_wrap.xcix -force >> $log_file
+  export_ip_user_files -of_objects      [get_files capi_bsp_wrap.xci] -force >> $log_file
+  set_property used_in_simulation false [get_files capi_bsp_wrap.xci] >> $log_file
 } elseif { $psl_dcp != "FALSE" } {
   puts "                        importing PSL design checkpoint"
   read_checkpoint -cell b $psl_dcp -strict >> $log_file
@@ -304,13 +277,11 @@ if { ($fpga_card == "N250SP") && ($psl_ip_dir != "not defined") } {
 # SNAP CORE XDC
 puts "                        importing XDCs"
 
-# PSL_IP XDC
-if { ($fpga_card == "N250SP") && ($psl_ip_dir != "not defined") } {
-  puts "                      importing BSP XDCs"
-  #add_files -fileset constrs_1 -norecurse $hdk_dir/boards/$fpga_card/xdc/psl_bsp_config.xdc
-  add_files -fileset constrs_1 -norecurse $hdk_dir/boards/$fpga_card/xdc/psl_bsp_timing.xdc
-  add_files -fileset constrs_1 -norecurse $hdk_dir/boards/$fpga_card/xdc/psl_bsp_io.xdc
-  add_files -fileset constrs_1 -norecurse $hdk_dir/boards/$fpga_card/xdc/psl_bsp_floorplan.xdc
+# Board Support XDC
+if { ($fpga_card == "N250SP") && ($capi_bsp_dir != "not defined") } {
+  puts "                      importing N250SP Board support XDCs"
+  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
+#  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
 }
 
 # DDR XDCs

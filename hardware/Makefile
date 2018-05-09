@@ -165,7 +165,7 @@ check_snap_settings:
 	@echo "                        hardware/Makefile called with:"
 	@echo "                        ACTION_ROOT     = $(ACTION_ROOT)"
 	@if [ "$(FPGACARD)" == "N250SP" ]; then \
-		echo "                        PSL_IP          = $(PSL_IP)"; \
+		echo "                        CAPI_BSP        = $(CAPI_BSP)"; \
 	else \
 		echo "                        PSL_DCP         = $(PSL_DCP)"; \
 	fi
@@ -328,8 +328,10 @@ config: hw_project
 check_psl:
 	if [ "$(IGNORE_CHECK_PSL)" != "TRUE" ] ; then \
 		if [ "$(FPGACARD)" == "N250SP" ]; then \
-			if [ -z "$(PSL_IP)" ]; then \
-				echo "### ERROR ###  Environment variable PSL_IP is undefined. It has to point to the PSL IP sources."; exit -1; \
+			if [ -z "$(CAPI_BSP)" ]; then \
+				echo "### ERROR ###  Environment variable CAPI_BSP is undefined." \
+				echo "               It has to point to the directory containing the CAPI board support IP container."; \
+				exit -1; \
 			fi; \
 		elif [ "$(PSL_DCP_TYPE)" != "$(FPGACARD)" ]; then \
 			if [[ "$(PSL_DCP_TYPE)" == *"OUTDATED"* ]]; then \

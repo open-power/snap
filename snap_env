@@ -25,8 +25,7 @@ PATH=$snapdir:$PATH
 snap_env_sh=$snapdir/snap_env.sh
 
 unset PSL_DCP
-unset PSL_IP
-unset HDK_ROOT
+unset CAPI_BSP
 unset ACTION_ROOT
 unset PSLSE_ROOT
 unset TIMING_LABLIMIT
@@ -100,22 +99,13 @@ while [ -z "$SETUP_DONE" ]; do
   if [ "$FPGACARD" == "N250SP" ]; then
     SETUP_INFO="$SETUP_INFO\n### INFO ### Support for the selected CAPI2.0 FPGA card N250SP is currently in preparation phase."
     echo "=====Checking path to PSL for N250SP============"
-    echo "PSL_IP                  is set to: \"$PSL_IP\""
-    RESP=`grep PSL_IP $snap_env_sh`
+    echo "CAPI_BSP                is set to: \"$CAPI_BSP\""
+    RESP=`grep CAPI_BSP $snap_env_sh`
     if [ -z "$RESP" ]; then
-      echo "#export PSL_IP=" >> $snap_env_sh
+      echo "#export CAPI_BSP=" >> $snap_env_sh
     fi
-    if [ -z "$PSL_IP" ]; then
-      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable PSL_IP must point to the directory containing the PSL IP."
-    fi
-    echo "=====Checking path to Board support for N250SP============"
-    if [ -d "$HDK_ROOT/boards/N250SP" ]; then
-      echo "HDK_ROOT                is set to: \"$HDK_ROOT\""
-    elif [ -d "$snapdir/hardware/hdk/boards/N250SP" ]; then
-      echo "Will use hdk found in $snapdir/hardware/hdk"
-    else
-      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable HDK_ROOT must point to the directory containing the HDK definitions."
-      SETUP_INFO="$SETUP_INFO\n### INFO ### or $snapdir/hardware/hdk needs to contain the HDK definitions."
+    if [ -z "$CAPI_BSP" ]; then
+      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable CAPI_BSP must point to the directory containing the CAPI board support IP."
     fi
   ####### checking path to PSL design checkpoint
   # Note: CLOUD_USER_FLOW is defined via snap_config

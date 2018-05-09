@@ -1,4 +1,3 @@
-#!/bin/sh
 ############################################################################
 ############################################################################
 ##
@@ -19,27 +18,7 @@
 ############################################################################
 ############################################################################
 
-SCRIPT=$(readlink -f "$0")
-DIR=$(dirname $(dirname $(dirname $SCRIPT)))
-SOURCE=$DIR/ip/pcie4_uscale_plus_0/synth/pcie4_uscale_plus_0.v
-
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    "file")
-      shift
-      SOURCE=$1
-      shift
-      ;;
-    *)
-      echo "$0: unknown option <$1>"
-      shift
-      ;;
-  esac
-done
-
-sed -i 's/PF0_DEVICE_ID=0x0628/PF0_DEVICE_ID=0x0477,PF0_PCIE_CAP_NEXTPTR=0xb0/' $SOURCE
-sed -i 's/H0628/H0477/' $SOURCE
-sed -i 's/PF0_SECONDARY_PCIE_CAP_NEXTPTR=0x480/PF0_SECONDARY_PCIE_CAP_NEXTPTR=0x400/' $SOURCE
-sed -i "s/PF0_SECONDARY_PCIE_CAP_NEXTPTR('H480)/PF0_SECONDARY_PCIE_CAP_NEXTPTR('H400)/" $SOURCE
-sed -i "/PF0_DEVICE_ID(/ a\
-\    .PF0_PCIE_CAP_NEXTPTR('HB0)," $SOURCE
+##create_pblock capi_bsp
+##add_cells_to_pblock [get_pblocks capi_bsp] [get_cells -quiet [list c0/U0/p]]
+###resize_pblock psl -add {SLICE_X0Y0:SLICE_X104Y260 DSP48E2_X0Y0:DSP48E2_X7Y103 RAMB18_X0Y0:RAMB18_X7Y103 RAMB36_X0Y0:RAMB36_X7Y51 URAM288_X0Y0:URAM288_X0Y19}
+##resize_pblock  [get_pblocks capi_bsp] -add {CLOCKREGION_X0Y0:CLOCKREGION_X3Y3}
