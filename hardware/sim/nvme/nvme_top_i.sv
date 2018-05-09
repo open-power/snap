@@ -486,8 +486,10 @@ module nvme_top (
                        input logic [`CMD_ACTION_ID_BITS-1:0] cmd_action_id);
 
         logic [63:0] axi_addr;
-        logic [127:0] axi_data;
+        logic [15:0] i;
+        logic [127:0] axi_data[512/16]; /* size of one LBA */
         logic success;
+        int fd;
       
         activity_state = NVME_READING;
         if (action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] == 1) begin
@@ -499,12 +501,27 @@ module nvme_top (
         #1;
 
         // read stuff: 128bit DDR access => 16 bytes
-        $display("nvme_read: ddr=%h lba=%h num=%h", ddr_addr, lba_addr, lba_num);                
+        $display("nvme_read: ddr=%h lba=%h num=%h", ddr_addr, lba_addr, lba_num);
+        i = 0;                
         for (axi_addr = ddr_addr; axi_addr < ddr_addr + lba_num * 512; axi_addr += 16) begin
-            axi_data = 128'haabbccdd_11223344_55667788_00000000 + axi_addr;
-
-            axi_ddr_write_and_verify(axi_addr, axi_data, success);
-            $display("  write/verify: axi_addr=%h axi_data=%h success=%h", axi_addr, axi_data, success);
+            /* Read a block once buffer is empty */
+            if (i == 0) begin
+                static string fname;
+                $sformat(fname, "SNAP_LBA_%h.bin", lba_addr);
+                fd = $fopen(fname, "r");
+                $fclose(fd); 
+                $readmemh(fname, axi_data);
+                lba_addr += 1;
+            end
+            /* Just in case the read was not successful, use fake data to initialize the buffer */
+            if (!fd) begin
+                axi_data[i] = 128'haabbccdd_11223344_55667788_00000000 + axi_addr;
+            end
+            /* axi_ddr_write_and_verify(axi_addr, axi_data[i], success); */
+            
+            axi_ddr_write(axi_addr, axi_data[i]);
+            $display("  write/verify: axi_addr=%h axi_data=%h success=%h", axi_addr, axi_data[i], success);
+            i = (i + 1) % (512/16);
         end
 
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b10; /* Mark ACTION_TRACK_n debug */
@@ -519,8 +536,9 @@ module nvme_top (
                         input logic [31:0] lba_num,
                         input logic [`CMD_ACTION_ID_BITS-1:0] cmd_action_id);
         logic [63:0] axi_addr;
-        logic [127:0] axi_data;
-
+        logic [15:0] i;
+        logic [127:0] axi_data[512/16]; /* size of one LBA */
+        
         activity_state = NVME_WRITING; 
         if (action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] == 1) begin
             action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][1] = 1; /* error, results not read */
@@ -531,10 +549,20 @@ module nvme_top (
         #1;
 
         // write stuff: 128bit DDR access => 16 bytes
+        i = 0;
         $display("nvme_write: ddr=%h lba=%h num=%h", ddr_addr, lba_addr, lba_num);
         for (axi_addr = ddr_addr; axi_addr < ddr_addr + lba_num * 512; axi_addr += 16) begin
-            axi_ddr_read(axi_addr, axi_data);
-            $display("  read: axi_addr=%h axi_data=%h", axi_addr, axi_data);
+            axi_ddr_read(axi_addr, axi_data[i]);
+            $display("  read: axi_addr=%h axi_data=%h", axi_addr, axi_data[i]);
+            i = (i + 1) % (512/16);
+
+            /* Write a block once buffer is full */
+            if (i == 0) begin
+                static string fname;
+                $sformat(fname, "SNAP_LBA_%h.bin", lba_addr); 
+                $writememh(fname, axi_data);
+                lba_addr += 1;
+            end
         end
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b01; /* Mark ACTION_TRACK_n debug */
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 1; /* Mark ACTION_TRACK_n ready */
