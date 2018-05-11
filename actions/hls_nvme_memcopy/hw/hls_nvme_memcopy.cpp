@@ -248,7 +248,7 @@ static void process_action(snap_membus_t *din_gmem,
 
 
     //======================================================================
-    // Illegle conditions checking.
+    // Illegal conditions checking.
     if (action_xfer_size == 0) {
         act_reg->Control.Retc = SNAP_RETC_FAILURE;
         return;
