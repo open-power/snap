@@ -63,8 +63,10 @@ static void usage(const char *prog)
 	       "  -N, --no_irq                Disable Interrupts\n"
 	       "\n"
 	       " WARNING : All data transfers to and from NVME_SSDs are buffered in CARD_DRAM :\n"
-	       " Check #define DRAM_ADDR_TO_SSD  0x00000000 and #define DRAM_ADDR_FROM_SSD 0x80000000\n"
-	       " in $ACTION_ROOT/hw/hw_action_nvme_memcopy.H\n\n"
+	       " By default forward buffer (to SSD) is at address 0x0 of DDR, while return buffer is at address 0x80000000 (2GB)\n"
+               " Buffer default size is also 0x80000000 (2GB) so all the DDR is used as buffer"
+               " Use -S,F,R to change these settings.\n"
+	       
 	
 	   " Usage Examples:\n"
            " Before using NVME following command must be run :\n"
@@ -150,7 +152,8 @@ int main(int argc, char *argv[])
 	struct timeval etime, stime;
 	ssize_t size = 1024 * 1024;
 	// the following are default values for a 4GB DDR4 memory
-        uint64_t maxbuffsize  = 0x80000000; // 2GB (half of the memory for each path)
+	ssize_t maxbuffsize  = 0x80000000; // 2GB (half of the memory for each path)
+        //uint64_t maxbuffsize  = 0x80000000; // 2GB (half of the memory for each path)
         uint64_t buff_fwd_add = 0x00000000; // 0   (lower part of memory)
         uint64_t buff_rev_add = 0x80000000; // 2GB (upper part of memory)
 	uint8_t *ibuff = NULL, *obuff = NULL;
@@ -335,7 +338,8 @@ int main(int argc, char *argv[])
 	}
 
 	/* check if buffer size is not exceeded */
-	if ((uint64_t)size  > maxbuffsize)
+	//if ((uint64_t)size  > maxbuffsize)
+	if (size  > maxbuffsize)
 	{
 		fprintf(stdout, "requested size %d exceeds buffer size %d\n",(int)size, (int)maxbuffsize);
 		goto out_error;
