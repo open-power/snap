@@ -520,7 +520,7 @@ module nvme_top (
             /* axi_ddr_write_and_verify(axi_addr, axi_data[i], success); */
             
             axi_ddr_write(axi_addr, axi_data[i]);
-            $display("  write/verify: axi_addr=%h axi_data=%h success=%h", axi_addr, axi_data[i], success);
+            $display("  write: axi_addr=%h axi_data=%h success=%h", axi_addr, axi_data[i], success);
             i = (i + 1) % (512/16);
         end
 
@@ -554,6 +554,9 @@ module nvme_top (
         for (axi_addr = ddr_addr; axi_addr < ddr_addr + lba_num * 512; axi_addr += 16) begin
             axi_ddr_read(axi_addr, axi_data[i]);
             $display("  read: axi_addr=%h axi_data=%h", axi_addr, axi_data[i]);
+            if (axi_data[i] == 128'hxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx) begin
+                axi_data[i] = 128'h00112233445566778899aabbccddeeff;
+            end
             i = (i + 1) % (512/16);
 
             /* Write a block once buffer is full */
@@ -715,10 +718,10 @@ module nvme_top (
                 DDR_wvalid <= 1'b0;
                 DDR_awaddr <= ddr_write_addr;
                 DDR_awvalid <= 1'b1; /* put address on bus */
-                
-                if (DDR_M_AXI_awready && DDR_awvalid) begin
-                    DDR_wdata <= ddr_write_data;
-                    DDR_wvalid <= 1'b1; /* put data on bus */
+
+                if (DDR_M_AXI_awready && DDR_awvalid) begin /* address is on bus and slave saw it */
+                    DDR_wdata <= ddr_write_data; /* put data on bus */
+                    DDR_wvalid <= 1'b1; /* and mark it valid */
                     DDR_wlast <= 1'b1; /* we do here 1 shot bursts, if not we need to set this only on the last one */
                     DDR_awvalid <= 1'b0;
                     ddr_write_state <= DDR_WDATA;
@@ -726,15 +729,15 @@ module nvme_top (
             end
             DDR_WDATA: begin
                 if (DDR_wvalid && DDR_M_AXI_wready) begin
-                    DDR_bready <= 1'b1;
+                    DDR_wvalid <= 1'b0;
+                    DDR_wlast <= 1'b0;
                     ddr_write_state <= DDR_WACK;
                 end
             end
             DDR_WACK: begin
+                DDR_bready <= 1'b1;
                 if (DDR_bready && DDR_M_AXI_bvalid) begin
-                    DDR_wvalid <= 1'b0;
                     DDR_bready <= 1'b0;
-                    DDR_wlast <= 1'b0;
                     ddr_write_state <= DDR_WIDLE;
                 end
             end
