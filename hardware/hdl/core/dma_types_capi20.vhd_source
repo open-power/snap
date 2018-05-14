@@ -54,27 +54,27 @@ PACKAGE dma_types IS
 
   --
   --
-  TYPE DMA_R_CTL_T IS RECORD
+  TYPE UTAG_CTL_T IS RECORD
     com        : COM_INDICATION_T;               -- command indication
     rsp        : RSP_CODES_T;                    -- response indication
     buf        : std_logic_vector(3 DOWNTO 0);
     dma        : DMA_INDICATION_T;               -- PSL DMA indication
-    uts        : std_logic_vector(3 DOWNTO 0);   -- utag  
-    utt        : UTAG_INDICATION_T;              -- utag  
+    uts        : std_logic_vector(3 DOWNTO 0);   -- utag size
+    utt        : UTAG_INDICATION_T;              -- utag type 
     uta        : std_logic_vector(63 DOWNTO 6);  -- utag address
     itag       : std_logic_vector( 8 DOWNTO 0);  -- PSL DMA itag
-  END RECORD DMA_R_CTL_T;
-  TYPE ARR_DMA_R_CTL_T IS ARRAY (0 TO 31) OF DMA_R_CTL_T;
+  END RECORD UTAG_CTL_T;
+  TYPE ARR_UTAG_CTL_T IS ARRAY (0 TO 31) OF UTAG_CTL_T;
 
-  TYPE DMA_W_CTL_T IS RECORD
-    com        : COM_INDICATION_T;               -- command indication
-    rsp        : RSP_CODES_T;                    -- response indication
-    buf        : BUF_INDICATION_T;               -- buffer indication
-    dma        : DMA_INDICATION_T;               -- PSL DMA indication
-    clt        : std_logic_vector( 2 DOWNTO 0);  -- cache line type indication
-    cla        : std_logic_vector(63 DOWNTO 6);  -- cache line address
-    itag       : std_logic_vector( 8 DOWNTO 0);  -- PSL DMA itag
-  END RECORD DMA_W_CTL_T;
-  TYPE ARR_DMA_W_CTL_T IS ARRAY (0 TO 31) OF DMA_W_CTL_T;
+--  TYPE DMA_W_CTL_T IS RECORD
+--    com        : COM_INDICATION_T;               -- command indication
+--    rsp        : RSP_CODES_T;                    -- response indication
+--    buf        :  std_logic_vector(3 DOWNTO 0);
+--    dma        : DMA_INDICATION_T;               -- PSL DMA indication
+--    utt        : UTAG_INDICATION_T;              -- utag type 
+--    cla        : std_logic_vector(63 DOWNTO 6);  -- cache line address
+--    itag       : std_logic_vector( 8 DOWNTO 0);  -- PSL DMA itag
+--  END RECORD DMA_W_CTL_T;
+--  TYPE ARR_DMA_W_CTL_T IS ARRAY (0 TO 31) OF DMA_W_CTL_T;
 
 END dma_types;

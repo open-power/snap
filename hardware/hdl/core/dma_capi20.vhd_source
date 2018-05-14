@@ -114,7 +114,6 @@ ARCHITECTURE dma OF dma IS
                             ST_COM_XLAT_WR_P0
                            );
   TYPE DMA_FSM_T IS (ST_FSM_ERROR, ST_IDLE,
-                     ST_START_DMA_WRITE_REQ, ST_STOP_DMA_WRITE_REQ,
                      ST_DMA_READ_REQ, ST_DMA_WRITE_REQ
                     );
   TYPE AH_C_FSM_T IS (ST_FSM_ERROR, ST_RSP_ERROR, ST_IDLE,
@@ -165,9 +164,11 @@ ARCHITECTURE dma OF dma IS
   SIGNAL buf_rdata_vld               : std_logic;
   SIGNAL buf_rdata_end               : std_logic;
   SIGNAL buf_rrdreq                  : std_logic;
+  SIGNAL buf_wrdreq_q                : boolean;
   SIGNAL buf_rtag_p_q                : std_logic;
   SIGNAL buf_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL buf_rtag_valid_q            : boolean;
+  SIGNAL buf_wwen_q                  : boolean;
   SIGNAL buf_wactive_q               : boolean;
   SIGNAL buf_walmost_full_q          : std_logic;
   SIGNAL buf_walmost_full_qq         : std_logic;
@@ -176,8 +177,6 @@ ARCHITECTURE dma OF dma IS
   SIGNAL sent_action_reset_req_q     : std_logic;
   SIGNAL action_reset_context_id_q   : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
   SIGNAL quiesce_q                   : std_logic;
-  SIGNAL buf_wfull_cnt_q             : integer RANGE 0 TO 32;
-  SIGNAL buf_wtag_cl_partial_q       : boolean;
   SIGNAL buf_wtag_p_q                : std_logic;
   SIGNAL buf_wtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL buf_wtag_valid_q            : boolean;
@@ -189,9 +188,9 @@ ARCHITECTURE dma OF dma IS
   SIGNAL dma_wtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL utc_rtag_p_q                : std_logic;
   SIGNAL utc_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
-  SIGNAL clt_wtag_next_q             : std_logic_vector(  5 DOWNTO  0);
-  SIGNAL clt_wtag_p_q                : std_logic;
-  SIGNAL clt_wtag_q                  : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL utc_wtag_next_q             : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL utc_wtag_p_q                : std_logic;
+  SIGNAL utc_wtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL com_rtag_next_q             : std_logic_vector(  5 DOWNTO  0);
   SIGNAL com_rtag_p_q                : std_logic;
   SIGNAL com_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
@@ -210,6 +209,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL ha_r_q                      : HA_R_T;
   SIGNAL hd_c_q                      : HD_C_T;
   SIGNAL hd_s_q                      : HD_S_T;
+  SIGNAL hd_c_size_q                 : std_logic_vector(9 DOWNTO 0);
   SIGNAL intreq_active_q             : boolean;
   SIGNAL int_src_q                   : std_logic_vector(INT_BITS-1 DOWNTO 0);
   SIGNAL int_ctx_q                   : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
@@ -220,9 +220,9 @@ ARCHITECTURE dma OF dma IS
   SIGNAL raddr_q                     : std_logic_vector( 63 DOWNTO  6);
   SIGNAL rlen_q                      : std_logic_vector(  8 DOWNTO  0);
   SIGNAL read_ctrl_fsm_q             : READ_CTRL_FSM_T;
-  SIGNAL read_ctrl_q                 : ARR_DMA_R_CTL_T;
+  SIGNAL read_ctrl_q                 : ARR_UTAG_CTL_T;
   SIGNAL read_ctrl_q_err_q           : std_logic_vector( 31 DOWNTO  0);
-  SIGNAL read_ctrl_rsp_rtag_q        : DMA_R_CTL_T;
+  SIGNAL read_ctrl_rsp_rtag_q        : UTAG_CTL_T;
   SIGNAL read_fsm_req_q              : FSM_REQ_T;
   SIGNAL read_rsp_err_addr_p_q       : std_logic;
   SIGNAL read_rsp_err_addr_q         : std_logic_vector(63 DOWNTO 0);
@@ -239,6 +239,9 @@ ARCHITECTURE dma OF dma IS
   SIGNAL rfifo_rdata                 : std_logic_vector(512 DOWNTO 0);
   SIGNAL rfifo_wdata                 : std_logic_vector(512 DOWNTO 0);
   SIGNAL buf_wdata                   : std_logic_vector(1023 DOWNTO 0);
+  SIGNAL buf_wdata_vld               : std_logic;
+  SIGNAL buf_wdata_end               : std_logic;
+  SIGNAL buf_wdata_type              : std_logic_vector(2 DOWNTO 0);
   SIGNAL rfifo_wr_rst_busy           : std_logic;
   SIGNAL rsp_rtag_next_q             : std_logic_vector(  5 DOWNTO  0);
   SIGNAL rsp_rtag_p_q                : std_logic;
@@ -256,12 +259,11 @@ ARCHITECTURE dma OF dma IS
   SIGNAL waddr_id_q                  : std_logic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
   SIGNAL waddr_q                     : std_logic_vector( 63 DOWNTO  6);
   SIGNAL wlen_q                      : std_logic_vector(  8 DOWNTO  0);
-  SIGNAL wram_raddr_q                : std_logic_vector(  4 DOWNTO  0);
   SIGNAL wr_id_valid_q               : std_logic;
   SIGNAL write_ctrl_fsm_q            : WRITE_CTRL_FSM_T;
-  SIGNAL write_ctrl_q                : ARR_DMA_W_CTL_T;
+  SIGNAL write_ctrl_q                : ARR_UTAG_CTL_T;
   SIGNAL write_ctrl_q_err_q          : std_logic_vector( 31 DOWNTO  0);
-  SIGNAL write_ctrl_rsp_wtag_q       : DMA_W_CTL_T;
+  SIGNAL write_ctrl_rsp_wtag_q       : UTAG_CTL_T;
   SIGNAL write_fsm_req_q             : FSM_REQ_T;
   SIGNAL write_rsp_err_addr_p_q      : std_logic;
   SIGNAL write_rsp_err_addr_q        : std_logic_vector(63 DOWNTO 0);
@@ -603,8 +605,8 @@ BEGIN
   --              rsp   4    -- response codes
   --              dma   2    -- psl dma control
   --              buf   2    -- dma buffer status
-  --              utt   3    -- cache line type
-  --              uta   58   -- cache line address
+  --              utt   3    -- utag type
+  --              uta   58   -- utag address
   --
   -- Indication:
   --                               |    COM   |     RSP     |  BUF  | DMA       |  UTT
@@ -659,150 +661,170 @@ BEGIN
       VARIABLE utc_rtag_next_v : integer RANGE 0 TO 31;
       VARIABLE cl_calc_v       : std_logic_vector(5 DOWNTO 0);
       VARIABLE ha_r_tag_v      : integer RANGE 0 TO 31;
+      VARIABLE hd_c_utag_v     : integer RANGE 0 TO 31;
+      VARIABLE hd_s_utag_v     : integer RANGE 0 TO 31;
+      VARIABLE hd_c_size_v     : std_logic_vector(9 DOWNTO 0);
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
-          --
-          -- defaults
-          --
-          buf_rdata_e_q      <= '0';
-          utc_rtag_q         <= utc_rtag_q;
-          utc_rtag_next_q    <= utc_rtag_next_q;
-          utc_rtag_p_q       <= utc_rtag_p_q;
-          com_rtag_qq        <= to_integer(unsigned(com_rtag_q(4 DOWNTO 0)));
-          rsp_rtag_qq        <= to_integer(unsigned(rsp_rtag_q(4 DOWNTO 0)));
+        --
+        -- defaults
+        --
+        buf_rdata_e_q      <= '0';
+        utc_rtag_q         <= utc_rtag_q;
+        utc_rtag_next_q    <= utc_rtag_next_q;
+        utc_rtag_p_q       <= utc_rtag_p_q;
+        com_rtag_qq        <= to_integer(unsigned(com_rtag_q(4 DOWNTO 0)));
+        rsp_rtag_qq        <= to_integer(unsigned(rsp_rtag_q(4 DOWNTO 0)));
 
-          raddr_q            <= raddr_q;
-          raddr_id_q         <= raddr_id_q;
-          rlen_q             <= rlen_q;
-          read_ctrl_q        <= read_ctrl_q;
-          rd_req_ack_q       <= FALSE;
-          rd_ctx_q           <= rd_ctx_q;
+        raddr_q            <= raddr_q;
+        raddr_id_q         <= raddr_id_q;
+        rlen_q             <= rlen_q;
+        read_ctrl_q        <= read_ctrl_q;
+        rd_req_ack_q       <= FALSE;
+        rd_ctx_q           <= rd_ctx_q;
 
-          buf_rtag_v         := to_integer(unsigned(buf_rtag_q     (4 DOWNTO 0)));
-          utc_rtag_v         := to_integer(unsigned(utc_rtag_q     (4 DOWNTO 0)));
-          utc_rtag_next_v    := to_integer(unsigned(utc_rtag_next_q(4 DOWNTO 0)));
-          ha_r_tag_v         := to_integer(unsigned(ha_r_q.tag     (4 DOWNTO 0)));
+        buf_rtag_v         := to_integer(unsigned(buf_rtag_q     (4 DOWNTO 0)));
+        utc_rtag_v         := to_integer(unsigned(utc_rtag_q     (4 DOWNTO 0)));
+        utc_rtag_next_v    := to_integer(unsigned(utc_rtag_next_q(4 DOWNTO 0)));
+        ha_r_tag_v         := to_integer(unsigned(ha_r_q.tag     (4 DOWNTO 0)));
+        hd_s_utag_v        := to_integer(unsigned(hd_s_q.utag    (4 DOWNTO 0)));
+        hd_c_utag_v        := to_integer(unsigned(hd_c_q.utag    (4 DOWNTO 0)));
 
+        --
+        -- UTT: CACHE LINE TYPE TAG IS VALID and
+        -- UTS: CACHE LINE SIZE
+        --
+        -- Note: The alignment on the CAPI 2.0 DMA Data interface is
+        --       first byte first.
+        IF (read_ctrl_q(utc_rtag_v).utt  = UTC_NOT_USED) AND
+           (rlen_q                      /= 0           ) THEN
           --
-          -- UTT: CACHE LINE TYPE TAG IS VALID and
-          -- UTS: CACHE LINE SIZE
+          -- update the utt in the read control register
           --
-          -- Note: The alignment on the CAPI 2.0 DMA Data interface is
-          --       first byte first.
-          IF (read_ctrl_q(utc_rtag_v).utt  = UTC_NOT_USED) AND
-             (rlen_q                      /= 0           ) THEN
-            --
-            -- update the utt in the read control register
-            --
-            IF raddr_q(8 DOWNTO 6) /= "000" THEN
-              IF (('0' & rlen_q(3 DOWNTO 0)) + ("00" & raddr_q(8 DOWNTO 6))) > "01000"  THEN
-                rlen_q                      <= rlen_q - ("1000" - ('0' & raddr_q(8 DOWNTO 6)));
-                read_ctrl_q(utc_rtag_v).uts <=  ("1000" - ('0' & raddr_q(8 DOWNTO 6)));
-                read_ctrl_q(utc_rtag_v).utt <= UTC_FIRST;
-              ELSE
-                rlen_q                      <= (OTHERS => '0');
-                read_ctrl_q(utc_rtag_v).uts <=  '0' & rlen_q(2 DOWNTO 0);
-                read_ctrl_q(utc_rtag_v).utt <= UTC_LAST;
-            END IF;
+          IF raddr_q(8 DOWNTO 6) /= "000" THEN
+            IF (('0' & rlen_q(3 DOWNTO 0)) + ("00" & raddr_q(8 DOWNTO 6))) > "01000"  THEN
+              rlen_q                      <= rlen_q - ("1000" - ('0' & raddr_q(8 DOWNTO 6)));
+              read_ctrl_q(utc_rtag_v).uts <=  ("1000" - ('0' & raddr_q(8 DOWNTO 6)));
+              read_ctrl_q(utc_rtag_v).utt <= UTC_FIRST;
             ELSE
-              IF rlen_q > 8 THEN
-                read_ctrl_q(utc_rtag_v).uts <= "1000";
-                read_ctrl_q(utc_rtag_v).utt <= UTC_COMPLETE;
-                rlen_q <= rlen_q - 8;
-              ELSIF rlen_q = 8 THEN
-                read_ctrl_q(utc_rtag_v).uts <= "1000";
-                read_ctrl_q(utc_rtag_v).utt <= UTC_LAST;
-                rlen_q <= rlen_q - 8;
-              ELSE
-                read_ctrl_q(utc_rtag_v).uts <=  '0' & rlen_q(2 DOWNTO 0);
-                read_ctrl_q(utc_rtag_v).utt <= UTC_LAST;
-                rlen_q <= (OTHERS => '0');
-              END IF;
+              rlen_q                      <= (OTHERS => '0');
+              read_ctrl_q(utc_rtag_v).uts <=  '0' & rlen_q(2 DOWNTO 0);
+              read_ctrl_q(utc_rtag_v).utt <= UTC_LAST;
             END IF;
-
-            --
-            -- CL Read Address
-            read_ctrl_q(utc_rtag_v).uta   <= raddr_q(63 DOWNTO 6);
-
-            --
-            -- calculate the next read address and the read cache length
-            raddr_q(63 DOWNTO 9) <= raddr_q(63 DOWNTO 9)  + VALUE_512;
-            raddr_q( 8 DOWNTO 6) <= (OTHERS => '0');
-            --
-            -- calculate the next utt rtag
-            utc_rtag_q      <= utc_rtag_q      + 1;
-            utc_rtag_next_q <= utc_rtag_next_q + 1;
-            utc_rtag_p_q    <= AC_PPARITH(1, utc_rtag_q, utc_rtag_p_q,
-                                             "000001"  , '0');
+          ELSE
+            IF rlen_q > 8 THEN
+              read_ctrl_q(utc_rtag_v).uts <= "1000";
+              read_ctrl_q(utc_rtag_v).utt <= UTC_COMPLETE;
+              rlen_q <= rlen_q - 8;
+            ELSIF rlen_q = 8 THEN
+              read_ctrl_q(utc_rtag_v).uts <= "1000";
+              read_ctrl_q(utc_rtag_v).utt <= UTC_LAST;
+              rlen_q <= rlen_q - 8;
+            ELSE
+              read_ctrl_q(utc_rtag_v).uts <=  '0' & rlen_q(2 DOWNTO 0);
+              read_ctrl_q(utc_rtag_v).utt <= UTC_LAST;
+              rlen_q <= (OTHERS => '0');
+            END IF;
           END IF;
 
           --
-          -- request
-          IF (sd_c_q.rd_req = '1') AND
-             (quiesce_q     = '0') AND
-             (rlen_q        = 0  ) THEN
-            --
-            -- save the read address, id and length for later use
-            raddr_q    <=  sd_c_q.rd_addr(63 DOWNTO 6);
-            raddr_id_q <=  sd_c_q.rd_id;
-            rd_ctx_q   <=  sd_c_q.rd_ctx;
-            rlen_q     <= ('0' & sd_c_q.rd_len) + 1;
-
-            --
-            -- send back a AXI read acknowledge
-            rd_req_ack_q <= TRUE;
-          END IF;
+          -- CL Read Address
+          read_ctrl_q(utc_rtag_v).uta   <= raddr_q(63 DOWNTO 6);
 
           --
-          -- COM: COMMAND TAG IS VALID
-          --
-          IF com_rtag_valid_q = TRUE THEN
-            read_ctrl_q(com_rtag_qq).com <= ACTIVE;
-            read_ctrl_q(com_rtag_qq).rsp <= ILLEGAL_RSP;
-          END IF;
+          -- calculate the next read address
+          raddr_q(63 DOWNTO 9) <= raddr_q(63 DOWNTO 9)  + VALUE_512;
+          raddr_q( 8 DOWNTO 6) <= (OTHERS => '0');
 
           --
-          -- RSP: VALID RESPONSE ON THE H->A INTERFACE
+          -- calculate the next utc rtag
+          utc_rtag_q      <= utc_rtag_q      + 1;
+          utc_rtag_next_q <= utc_rtag_next_q + 1;
+          utc_rtag_p_q    <= AC_PPARITH(1, utc_rtag_q, utc_rtag_p_q,
+                                           "000001"  , '0');
+        END IF;
+
+        --
+        -- request
+        IF (sd_c_q.rd_req = '1') AND
+           (quiesce_q     = '0') AND
+           (rlen_q        = 0  ) THEN
           --
-          IF (ha_r_q.valid           = '1'  ) AND
-             (ha_r_q.tag(7 DOWNTO 5) = "000") THEN
-            read_ctrl_q(ha_r_tag_v).com  <= INACTIVE;
-            read_ctrl_q(ha_r_tag_v).rsp  <= ha_r_q.response;
-            read_ctrl_q(ha_r_tag_v).itag <= ha_r_q.ditag;
-          END IF;
+          -- save the read address, id and length for later use
+          raddr_q    <=  sd_c_q.rd_addr(63 DOWNTO 6);
+          raddr_id_q <=  sd_c_q.rd_id;
+          rd_ctx_q   <=  sd_c_q.rd_ctx;
+          rlen_q     <= ('0' & sd_c_q.rd_len) + 1;
 
           --
-          -- RSP: READ_CTRL_FSM_Q HAS READ THE RESPONSE
-          --
-          IF rsp_rtag_valid_q = TRUE THEN
-            read_ctrl_q(rsp_rtag_qq).dma <= XLAT_DONE;
-            read_ctrl_q(rsp_rtag_qq).rsp <= ILLEGAL_RSP;
+          -- send back a AXI read acknowledge
+          rd_req_ack_q <= TRUE;
+        END IF;
+
+        --
+        -- COM: COMMAND TAG IS VALID
+        --
+        IF com_rtag_valid_q = TRUE THEN
+          read_ctrl_q(com_rtag_qq).com <= ACTIVE;
+          read_ctrl_q(com_rtag_qq).rsp <= ILLEGAL_RSP;
+        END IF;
+
+        --
+        -- RSP: VALID RESPONSE ON THE H->A INTERFACE
+        --
+        IF (ha_r_q.valid           = '1'  ) AND
+           (ha_r_q.tag(7 DOWNTO 5) = "000") THEN
+          read_ctrl_q(ha_r_tag_v).com  <= INACTIVE;
+          read_ctrl_q(ha_r_tag_v).rsp  <= ha_r_q.response;
+          read_ctrl_q(ha_r_tag_v).itag <= ha_r_q.ditag;
+        END IF;
+
+        --
+        -- RSP: READ_CTRL_FSM_Q HAS READ THE RESPONSE
+        --
+        IF rsp_rtag_valid_q = TRUE THEN
+          read_ctrl_q(rsp_rtag_qq).dma <= XLAT_DONE;
+          read_ctrl_q(rsp_rtag_qq).rsp <= ILLEGAL_RSP;
+        END IF;
+
+        --
+        -- DMA: DMA TAG ACCEPT the REQUEST
+        --
+        IF (hd_s_q.utag_valid       = '1'    ) AND
+           (hd_s_q.utag(9 DOWNTO 5) = "00000") THEN
+          read_ctrl_q(hd_s_utag_v).dma <= EMPTY;
+        END IF;
+
+        --
+        -- BUF: Buffer is valid
+        --
+        -- Note: It is no longer necessary too compare the utag to identify
+        --       read completions, because only read completions have
+        --       ctype 0 or 1 
+        IF (hd_c_q.valid = '1') THEN 
+          hd_c_size_q <= hd_c_q.size - ("0" & x"80");
+
+          IF (hd_c_q.ctype = "000")  THEN
+             IF (hd_c_q.size >= ("00" & x"80")) THEN 
+               hd_c_size_v := ("00" & x"80");
+             ELSE
+               hd_c_size_v := hd_c_q.size;
+             END IF;
+          
+          ELSIF (hd_c_q.ctype = "001") THEN
+            hd_c_size_v := hd_c_size_q;
           END IF;
 
-          --
-          -- DMA: DMA TAG ACCEPT the REQUEST
-          --
-          IF (hd_s_q.utag_valid       = '1'    ) AND
-             (hd_s_q.utag(9 DOWNTO 5) = "00000") THEN
-            read_ctrl_q(to_integer(unsigned(hd_s_q.utag(4 DOWNTO 0)))).dma <= EMPTY;
-          END IF;
+          read_ctrl_q(hd_c_utag_v).buf <= read_ctrl_q(hd_c_utag_v).buf + ("00" & hd_c_size_v(7 DOWNTO 6));
+        END IF;
 
-          --
-          -- BUF: Buffer is valid
-          --
-          IF (hd_c_q.valid            = '1'    ) AND
-             (hd_c_q.ctype            = "000"  ) AND 
-             (hd_c_q.utag(9 DOWNTO 5) = "00000") THEN 
-            read_ctrl_q(to_integer(unsigned(hd_c_q.utag(4 DOWNTO 0)))).buf <= read_ctrl_q(to_integer(unsigned(hd_c_q.utag(4 DOWNTO 0)))).buf + hd_c_q.size(9 DOWNTO 6);
-          END IF;
-
-          --
-          -- BUF: BUFFER TAG is valid
-          --
-          IF buf_rtag_valid_q = TRUE THEN
-            read_ctrl_q(buf_rtag_v).buf <= (OTHERS => '0');
-            read_ctrl_q(buf_rtag_v).utt <= UTC_NOT_USED;
-          END IF;
+        --
+        -- BUF: BUFFER TAG is valid
+        --
+        IF buf_rtag_valid_q = TRUE THEN
+          read_ctrl_q(buf_rtag_v).buf <= (OTHERS => '0');
+          read_ctrl_q(buf_rtag_v).utt <= UTC_NOT_USED;
+        END IF;
 
         --------------------------------------------------------------------
         -- Reset Logic
@@ -850,7 +872,7 @@ BEGIN
   ------------------------------------------------------------------------------
     --
     write_ctrl_fsm : PROCESS (ha_pclock)
-      VARIABLE clt_in_use_v     : boolean;
+      VARIABLE utc_in_use_v     : boolean;
       VARIABLE com_active_v     : boolean;
       VARIABLE com_wtag_v       : integer RANGE 0 TO 31;
       VARIABLE com_wtag_next_v  : integer RANGE 0 TO 31;
@@ -907,15 +929,15 @@ BEGIN
             --
             --
             -- check all CLs
-            clt_in_use_v := FALSE;
+            utc_in_use_v := FALSE;
 
             FOR i IN 0 TO 31 LOOP
-              IF write_ctrl_q(i).clt /= CL_NOT_USED THEN
-                clt_in_use_v := TRUE;
+              IF write_ctrl_q(i).utt /= UTC_NOT_USED THEN
+                utc_in_use_v := TRUE;
               END IF;
             END LOOP;  -- i
 
-            IF clt_in_use_v = TRUE THEN
+            IF utc_in_use_v = TRUE THEN
               write_ctrl_fsm_q <= ST_WAIT_4_RSP_OR_BUF;
             END IF;
 
@@ -1014,7 +1036,7 @@ BEGIN
             --
             -- new buffer available
             --
-            ELSIF (write_ctrl_q(com_wtag_v).buf = FULL      ) AND
+            ELSIF (write_ctrl_q(com_wtag_v).buf = write_ctrl_q(com_wtag_v).uts) AND
                   (com_wtag_q                  /= buf_wtag_q) THEN
 
               write_fsm_req_q  <= COMMAND;
@@ -1034,15 +1056,15 @@ BEGIN
 
             --
             -- all CL transferred
-            clt_in_use_v := FALSE;
+            utc_in_use_v := FALSE;
 
             FOR i IN 0 TO 31 LOOP
-              IF write_ctrl_q(i).clt /= CL_NOT_USED THEN
-                clt_in_use_v := TRUE;
+              IF write_ctrl_q(i).utt /= UTC_NOT_USED THEN
+                utc_in_use_v := TRUE;
               END IF;
             END LOOP;  -- i
 
-            IF clt_in_use_v = FALSE THEN
+            IF utc_in_use_v = FALSE THEN
               write_fsm_req_q   <= NONE;
               write_ctrl_fsm_q  <= ST_IDLE;
             END IF;
@@ -1075,8 +1097,8 @@ BEGIN
             ah_wc_q.compar    <= parity_gen_odd(ENCODE_CMD_CODES(XLAT_WR_P0));
             ah_wc_q.abt       <= "010";
 
-            ah_wc_q.ea        <= write_ctrl_q(com_wtag_v).cla;
-            ah_wc_q.eapar     <= parity_gen_odd(write_ctrl_q(com_wtag_v).cla(63 DOWNTO 6));
+            ah_wc_q.ea        <= write_ctrl_q(com_wtag_v).uta;
+            ah_wc_q.eapar     <= parity_gen_odd(write_ctrl_q(com_wtag_v).uta(63 DOWNTO 6));
 
           --------------------------------------------------------------------
           -- ERROR STATES
@@ -1156,13 +1178,13 @@ BEGIN
   --              rsp   4    -- response codes
   --              buf   2    -- buffer valid bit
   --              dma   2    -- psl dma control
-  --              clt   3    -- cache line type
-  --              cla   58   -- cache line address
+  --              utt   3    -- utag type
+  --              uta   58   -- utag address
   --
   -- Indication:
-  --                               |    COM   |     RSP     |  BUF  | DMA       | CLT
+  --                               |    COM   |     RSP     |  BUF  | DMA       | UTT
   --  =====================================================================================
-  --  1)tag and buffer are free    | INACTIVE | ILLEGAL_RSP | EMPTY | EMPTY     | CL_NOT_USED
+  --  1)tag and buffer are free    | INACTIVE | ILLEGAL_RSP | EMPTY | EMPTY     | UTC_NOT_USED
   --    ready to fill up           |          |             |       |           |
   --                               |          |             |       |           |
   --  2)reserve buffer space       | INACTIVE | ILLEGAL_RSP | EMPTY | EMPTY     | COMPLETE
@@ -1172,20 +1194,20 @@ BEGIN
   --                               |          |             |       |           |
   --  4)request a xlat for this CL | ACTIVE   | ILLEGAL_RSP | FULL  | EMPTY     | COMPLETE
   --                               |          |             |       |           |
-  --  5)received xlat response     | INACTIVE | HA_RSP_CODE | FULL  | EMPTY     |  COMPLETE
+  --  5)received xlat response     | INACTIVE | HA_RSP_CODE | FULL  | EMPTY     | COMPLETE
   --    from HA                    |          |             |       |           |
   --                               |          |             |       |           |
-  --  6)response DONE and the ITAG | INACTIVE | ILLEGAL_RSP | FULL  | XLAT_DONE |  COMPLETE
+  --  6)response DONE and the ITAG | INACTIVE | ILLEGAL_RSP | FULL  | XLAT_DONE | COMPLETE
   --    is available, write data   |          |             |       |           |
   --                               |          |             |       |           |
-  --  7)DMA accept the write Data  | INACTIVE | ILLEGAL_RSP | EMPTY | EMPTY     | CL_NOT_USED
+  --  7)DMA accept the write Data  | INACTIVE | ILLEGAL_RSP | EMPTY | EMPTY     | UTC_NOT_USED
   --
   --
   -- Flow Control:
   --    steps                  | write_ctrl_q         |  H<->A Interface
   --  ==========================================================================
-  --    1) wclen > 1 CL AND    | clt=COMPLETE         |
-  --       clt  = CL_NOT_USED  |                      |
+  --    1) wclen > 1 CL AND    | utt=COMPLETE         |
+  --       utt  = UTC_NOT_USED |                      |
   --                           |                      |
   --    2) 128 bytes written   | buf=FULL             |
   --       into DMAW           |                      |
@@ -1209,233 +1231,200 @@ BEGIN
     write_ctrl_reg : PROCESS (ha_pclock)
       VARIABLE buf_wtag_v      : integer RANGE 0 TO 31;
       VARIABLE buf_full_v      : boolean;
-      VARIABLE clt_wtag_v      : integer RANGE 0 TO 31;
-      VARIABLE clt_wtag_next_v : integer RANGE 0 TO 31;
+      VARIABLE utc_wtag_v      : integer RANGE 0 TO 31;
+      VARIABLE utc_wtag_next_v : integer RANGE 0 TO 31;
       VARIABLE dma_req_wtag_v  : integer RANGE 0 TO 31;
       VARIABLE ha_r_tag_v      : integer RANGE 0 TO 31;
       VARIABLE cl_calc_v       : std_logic_vector(5 DOWNTO 0);
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
-       --
-       -- defaults
-       --
-       buf_wfull_cnt_q       <= buf_wfull_cnt_q;
-       buf_walmost_full_q    <= buf_walmost_full_q;
-       buf_walmost_full_qq   <= buf_walmost_full_q;
-       buf_walmost_full_qqq  <= buf_walmost_full_qq;
-       clt_wtag_q            <= clt_wtag_q;
-       clt_wtag_next_q       <= clt_wtag_next_q;
-       clt_wtag_p_q          <= clt_wtag_p_q;
-       com_wtag_qq           <= to_integer(unsigned(com_wtag_q(4 DOWNTO 0)));
-       dma_req_wtag_q        <= dma_req_wtag_q;
-       rsp_wtag_qq           <= to_integer(unsigned(rsp_wtag_q(4 DOWNTO 0)));
-
-       waddr_q               <= waddr_q;
-       waddr_id_q            <= waddr_id_q;
-       wr_id_valid_q         <= '0';
-       write_ctrl_q          <= write_ctrl_q;
-       wlen_q                <= wlen_q;
-       wr_req_ack_q          <= FALSE;
-       wr_ctx_q              <= wr_ctx_q;
-
-       buf_wtag_v            := to_integer(unsigned(buf_wtag_q     (4 DOWNTO 0)));
-       clt_wtag_v            := to_integer(unsigned(clt_wtag_q     (4 DOWNTO 0)));
-       clt_wtag_next_v       := to_integer(unsigned(clt_wtag_next_q(4 DOWNTO 0)));
-       dma_req_wtag_v        := to_integer(unsigned(dma_req_wtag_q (4 DOWNTO 0)));
-       ha_r_tag_v            := to_integer(unsigned(ha_r_q.tag     (4 DOWNTO 0)));
-
-       --
-       -- CLT: CACHE LINE TYPE TAG IS VALID
-       --
-       -- Note: The alignment on the CAPI 2.0 DMA Data interface is
-       --       first byte first.
-       IF (write_ctrl_q(clt_wtag_v).clt  = CL_NOT_USED) AND
-          (wlen_q                       /= 0          ) THEN
-         --
-         -- update the clt in the write control register
-         --
-         -- bit "even 64 bytes of CL are valid indication"
-         write_ctrl_q(clt_wtag_v).clt(EVEN_64B_CL) <= '1';
-
-         --
-         -- bit "odd 64 bytes of CL are valid indication"
-         IF waddr_q(6) = '1' THEN
-           write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '0';
-         ELSE
-           IF wlen_q = 1 THEN
-             write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '0';
-           ELSE
-             write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '1';
-           END IF;
-         END IF;
-
-         --
-         -- bit "last CL of a AXI request indication"
-         IF wlen_q = 2 THEN
-           IF waddr_q(6) = '0' THEN
-             write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '1';
-           ELSE
-             write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '0';
-           END IF;
-         ELSIF wlen_q = 1 THEN
-           write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '1';
-         ELSE
-           write_ctrl_q(clt_wtag_v).clt(LAST_CL) <= '0';
-         END IF;
-
-         --
-         -- CL Write Address
-         write_ctrl_q(clt_wtag_v).cla   <= waddr_q(63 DOWNTO 6);
-
-         --
-         -- calculate the next read address and the read cache length
-         IF waddr_q(6) = '1' THEN
-           waddr_q <= waddr_q + VALUE_64;
-           wlen_q  <= wlen_q - 1;
-         ELSE
-           waddr_q <= waddr_q + (VALUE_128 & '0');
-
-           IF wlen_q = 1 THEN
-             wlen_q <= (OTHERS => '0');
-           ELSE
-             wlen_q <= wlen_q - 2;
-           END IF;
-         END IF;
-
-         --
-         -- calculate the next clt wtag
-         clt_wtag_q      <= clt_wtag_q      + 1;
-         clt_wtag_next_q <= clt_wtag_next_q + 1;
-         clt_wtag_p_q    <= AC_PPARITH(1, clt_wtag_q, clt_wtag_p_q,
-                                          "000001"  , '0');
-       END IF;
-
-       --
-       -- request
-       IF (sd_c_q.wr_req = '1') AND
-          (quiesce_q     = '0') AND
-          (wlen_q        = 0  ) THEN
-
-         --
-         -- save the write address for later use
-         waddr_q    <= sd_c_q.wr_addr(63 DOWNTO 6);
-         waddr_id_q <= sd_c_q.wr_id;
-         wr_ctx_q   <= sd_c_q.wr_ctx;
-         wlen_q     <= ('0' & sd_c_q.wr_len) + 1;
-
-
+        --
+        -- defaults
+        --
+        buf_walmost_full_q    <= '0';
+        buf_walmost_full_qq   <= buf_walmost_full_q;
+        buf_walmost_full_qqq  <= buf_walmost_full_qq;
+        utc_wtag_q            <= utc_wtag_q;
+        utc_wtag_next_q       <= utc_wtag_next_q;
+        utc_wtag_p_q          <= utc_wtag_p_q;
+        com_wtag_qq           <= to_integer(unsigned(com_wtag_q(4 DOWNTO 0)));
+        dma_req_wtag_q        <= dma_req_wtag_q;
+        rsp_wtag_qq           <= to_integer(unsigned(rsp_wtag_q(4 DOWNTO 0)));
+         
+        waddr_q               <= waddr_q;
+        waddr_id_q            <= waddr_id_q;
+        wr_id_valid_q         <= '0';
+        write_ctrl_q          <= write_ctrl_q;
+        wlen_q                <= wlen_q;
+        wr_req_ack_q          <= FALSE;
+        wr_ctx_q              <= wr_ctx_q;
+         
+        buf_wtag_v            := to_integer(unsigned(buf_wtag_q     (4 DOWNTO 0)));
+        utc_wtag_v            := to_integer(unsigned(utc_wtag_q     (4 DOWNTO 0)));
+        utc_wtag_next_v       := to_integer(unsigned(utc_wtag_next_q(4 DOWNTO 0)));
+        dma_req_wtag_v        := to_integer(unsigned(dma_req_wtag_q (4 DOWNTO 0)));
+        ha_r_tag_v            := to_integer(unsigned(ha_r_q.tag     (4 DOWNTO 0)));
+         
+        --
+        -- UTT: CACHE LINE TYPE TAG IS VALID and
+        -- UTS: CACHE LINE SIZE
+        --
+        -- Note: The alignment on the CAPI 2.0 DMA Data interface is
+        --       first byte first.
+        IF (write_ctrl_q(utc_wtag_v).utt  = UTC_NOT_USED) AND
+           (wlen_q                       /= 0          ) THEN
+         
           --
-         -- send back a AXI read acknowledge
-         wr_req_ack_q <= TRUE;
-       END IF;
+          -- update the utt in the write control register
+          --
+          IF waddr_q(8 DOWNTO 6) /= "000" THEN
+            IF (('0' & wlen_q(3 DOWNTO 0)) + ("00" & waddr_q(8 DOWNTO 6))) > "01000"  THEN
+              wlen_q                      <= wlen_q - ("1000" - ('0' & waddr_q(8 DOWNTO 6)));
+              write_ctrl_q(utc_wtag_v).uts <=  ("1000" - ('0' & waddr_q(8 DOWNTO 6)));
+              write_ctrl_q(utc_wtag_v).utt <= UTC_FIRST;
+            ELSE
+              wlen_q                      <= (OTHERS => '0');
+              write_ctrl_q(utc_wtag_v).uts <=  '0' & wlen_q(2 DOWNTO 0);
+              write_ctrl_q(utc_wtag_v).utt <= UTC_LAST;
+            END IF;
+          ELSE
+            IF wlen_q > 8 THEN
+              write_ctrl_q(utc_wtag_v).uts <= "1000";
+              write_ctrl_q(utc_wtag_v).utt <= UTC_COMPLETE;
+              wlen_q <= wlen_q - 8;
+            ELSIF wlen_q = 8 THEN
+              write_ctrl_q(utc_wtag_v).uts <= "1000";
+              write_ctrl_q(utc_wtag_v).utt <= UTC_LAST;
+              wlen_q <= wlen_q - 8;
+            ELSE
+              write_ctrl_q(utc_wtag_v).uts <=  '0' & wlen_q(2 DOWNTO 0);
+              write_ctrl_q(utc_wtag_v).utt <= UTC_LAST;
+              wlen_q <= (OTHERS => '0');
+            END IF;
+          END IF;
+         
+          --
+          -- CL Write Address
+          write_ctrl_q(utc_wtag_v).uta   <= waddr_q(63 DOWNTO 6);
+         
+          --
+          -- calculate the next write address
+          waddr_q(63 DOWNTO 9) <= waddr_q(63 DOWNTO 9)  + VALUE_512;
+          waddr_q( 8 DOWNTO 6) <= (OTHERS => '0');
+         
+          -- calculate the next utc wtag
+          utc_wtag_q      <= utc_wtag_q      + 1;
+          utc_wtag_next_q <= utc_wtag_next_q + 1;
+          utc_wtag_p_q    <= AC_PPARITH(1, utc_wtag_q, utc_wtag_p_q,
+                                           "000001"  , '0');
+        END IF;
+         
+        --
+        -- request
+        IF (sd_c_q.wr_req = '1') AND
+           (quiesce_q     = '0') AND
+           (wlen_q        = 0  ) THEN
+         
+          --
+          -- save the write address for later use
+          waddr_q    <= sd_c_q.wr_addr(63 DOWNTO 6);
+          waddr_id_q <= sd_c_q.wr_id;
+          wr_ctx_q   <= sd_c_q.wr_ctx;
+          wlen_q     <= ('0' & sd_c_q.wr_len) + 1;
+         
+         
+           --
+          -- send back a AXI write acknowledge
+          wr_req_ack_q <= TRUE;
+        END IF;
+         
+        --
+        -- BUF: BUFFER TAG is valid
+        --
+        IF (buf_wwen_q = TRUE) THEN
+          write_ctrl_q(buf_wtag_v).buf <=  write_ctrl_q(buf_wtag_v).buf + 1;
+        END IF;
+         
+        --
+        -- COM: WRITE COMMAND TAG IS VALID
+        --
+        IF com_wtag_valid_q = TRUE THEN
+          write_ctrl_q(com_wtag_qq).com <= ACTIVE;
+          write_ctrl_q(com_wtag_qq).rsp <= ILLEGAL_RSP;
+        END IF;
+         
+        --
+        -- RSP: VALID RESPONSE ON THE H->A INTERFACE
+        --
+        IF (ha_r_q.valid = '1') THEN
+          --
+          -- write tag is valid
+          IF (ha_r_q.tag(7 DOWNTO 5) = "100") THEN
+            write_ctrl_q(ha_r_tag_v).com  <= INACTIVE;
+            write_ctrl_q(ha_r_tag_v).rsp  <= ha_r_q.response;
+            write_ctrl_q(ha_r_tag_v).itag <= ha_r_q.ditag;
+          END IF;
+        END IF;
+         
+        --
+        -- RSP: WRITE_CTRL_FSM_Q HAS READ THE RESPONSE
+        --
+        IF rsp_wtag_valid_q = TRUE THEN
+          write_ctrl_q(rsp_wtag_qq).dma <= XLAT_DONE;
+          write_ctrl_q(rsp_wtag_qq).rsp <= ILLEGAL_RSP;
+        END IF;
+         
+        --
+        -- BUF: DMA TAG is valid
+        --
+        IF (hd_s_q.utag_valid       = '1'    ) AND
+           (hd_s_q.utag(9 DOWNTO 5) = "00100") THEN
+          write_ctrl_q(to_integer(unsigned(hd_s_q.utag(4 DOWNTO 0)))).dma <= REQ_DONE;
+        END IF;
+         
+        --
+        --
+        --
+        IF  write_ctrl_q(dma_req_wtag_v).dma = REQ_DONE  THEN
+          dma_req_wtag_q <= dma_req_wtag_q + 1;
+         
+          write_ctrl_q(dma_req_wtag_v).dma <= EMPTY;
+          write_ctrl_q(dma_req_wtag_v).buf <= (OTHERS => '0');
+          write_ctrl_q(dma_req_wtag_v).utt <= UTC_NOT_USED;
+         
+          --
+          -- send back wr_id_valid if the last CL of a request was
+          -- transfered
+          IF write_ctrl_q(dma_req_wtag_v).utt = UTC_LAST THEN
+            wr_id_valid_q <= '1';
+          END IF;
+         
+        END IF;
+        --
+        -- DMA WRITE BUFFER OVERRUN CHECKER
+        --
+        buf_full_v  := TRUE;
+         
+        FOR i IN 0 TO 31 LOOP
+          IF write_ctrl_q(i).buf = "0000" THEN
+            buf_full_v := FALSE;
+          END IF;
+        END LOOP;  -- i
+         
+        IF ( buf_full_v = TRUE )AND
+           ((or_reduce(sd_d_i.wr_strobe) = '1')) THEN
+          assert false report "DMA: Write Buffer overrun" severity error;
+        END IF;
+         
+        --
+        -- DMA ALMOST FULL INDICATION
+        --
+        IF (buf_wtag_q(5) /= utc_wtag_q(5)) THEN
+          IF (('0' & buf_wtag_q(4 DOWNTO 0) + 1) = ('0' & utc_wtag_q(4 DOWNTO 0))) THEN
+            buf_walmost_full_q <= '1';          
+          END IF;
+        END IF;
 
-       --
-       -- BUF: BUFFER TAG is valid
-       --
-       IF (buf_wtag_valid_q = TRUE) THEN
-         write_ctrl_q(buf_wtag_v).buf <= FULL;
-
-         IF (buf_wtag_cl_partial_q                          = TRUE) AND
-            (write_ctrl_q(buf_wtag_v).clt(EVEN_64B_CL) = '1' ) AND
-            (write_ctrl_q(buf_wtag_v).clt(ODD_64B_CL)  = '1' ) THEN
-
-           write_ctrl_q(buf_wtag_v).clt(EVEN_64B_CL) <= '0';
-         END IF;
-       END IF;
-
-       --
-       -- COM: WRITE COMMAND TAG IS VALID
-       --
-       IF com_wtag_valid_q = TRUE THEN
-         write_ctrl_q(com_wtag_qq).com <= ACTIVE;
-         write_ctrl_q(com_wtag_qq).rsp <= ILLEGAL_RSP;
-       END IF;
-
-       --
-       -- RSP: VALID RESPONSE ON THE H->A INTERFACE
-       --
-       IF (ha_r_q.valid = '1') THEN
-         --
-         -- write tag is valid
-         IF (ha_r_q.tag(7 DOWNTO 5) = "100") THEN
-           write_ctrl_q(ha_r_tag_v).com  <= INACTIVE;
-           write_ctrl_q(ha_r_tag_v).rsp  <= ha_r_q.response;
-           write_ctrl_q(ha_r_tag_v).itag <= ha_r_q.ditag;
-         END IF;
-       END IF;
-
-       --
-       -- RSP: WRITE_CTRL_FSM_Q HAS READ THE RESPONSE
-       --
-       IF rsp_wtag_valid_q = TRUE THEN
-         write_ctrl_q(rsp_wtag_qq).dma <= XLAT_DONE;
-         write_ctrl_q(rsp_wtag_qq).rsp <= ILLEGAL_RSP;
-       END IF;
-
-       --
-       -- BUF: DMA TAG is valid
-       --
-       IF (hd_s_q.utag_valid       = '1'    ) AND
-          (hd_s_q.utag(9 DOWNTO 5) = "00100") THEN
-         write_ctrl_q(to_integer(unsigned(hd_s_q.utag(4 DOWNTO 0)))).dma <= REQ_DONE;
-       END IF;
-
-       --
-       --
-       --
-       IF  write_ctrl_q(dma_req_wtag_v).dma = REQ_DONE  THEN
-         dma_req_wtag_q <= dma_req_wtag_q + 1;
-
-         write_ctrl_q(dma_req_wtag_v).dma <= EMPTY;
-         write_ctrl_q(dma_req_wtag_v).buf <= EMPTY;
-         write_ctrl_q(dma_req_wtag_v).clt <= CL_NOT_USED;
-
-         --
-         -- send back wr_id_valid if the last CL of a request was
-         -- transfered
-         IF write_ctrl_q(dma_req_wtag_v).clt(LAST_CL) = '1' THEN
-           wr_id_valid_q <= '1';
-         END IF;
-
-       END IF;
-       --
-       -- DMA WRITE BUFFER OVERRUN CHECKER
-       --
-       buf_full_v  := TRUE;
-
-       FOR i IN 0 TO 31 LOOP
-         IF write_ctrl_q(i).buf = EMPTY THEN
-           buf_full_v := FALSE;
-         END IF;
-       END LOOP;  -- i
-
-       IF ( buf_full_v = TRUE )AND
-          ((or_reduce(sd_d_i.wr_strobe) = '1')) THEN
-         assert false report "DMA: Write Buffer overrun" severity error;
-       END IF;
-
-       --
-       -- DMA ALMOST FULL INDICATION
-       --
-       IF (buf_wtag_valid_q = TRUE) THEN
-         IF  write_ctrl_q(dma_req_wtag_v).dma = REQ_DONE  THEN
-           buf_wfull_cnt_q <= buf_wfull_cnt_q;
-         ELSE
-           buf_wfull_cnt_q <= buf_wfull_cnt_q + 1;
-         END IF;
-       ELSE
-         IF  write_ctrl_q(dma_req_wtag_v).dma = REQ_DONE  THEN
-           buf_wfull_cnt_q <= buf_wfull_cnt_q - 1 ;
-         ELSE
-           buf_wfull_cnt_q <= buf_wfull_cnt_q;
-         END IF;
-       END IF;
-
-       IF buf_wfull_cnt_q >= 25 THEN
-         buf_walmost_full_q <= '1';
-       ELSE
-         buf_walmost_full_q <= '0';
-       END IF;
 
         --------------------------------------------------------------------
         -- Reset Logic
@@ -1448,20 +1437,19 @@ BEGIN
           -- initial values
           --
           FOR i IN 0 TO 31 LOOP
-            write_ctrl_q(i).clt <= CL_NOT_USED;
+            write_ctrl_q(i).utt <= UTC_NOT_USED;
             write_ctrl_q(i).rsp <= ILLEGAL_RSP;
             write_ctrl_q(i).com <= INACTIVE;
-            write_ctrl_q(i).buf <= EMPTY;
+            write_ctrl_q(i).buf <= (OTHERS => '0');
             write_ctrl_q(i).dma <= EMPTY;
          END LOOP;  -- i
 
-          buf_wfull_cnt_q       <= 0;
           buf_walmost_full_q    <= '0';
           buf_walmost_full_qq   <= '0';
           buf_walmost_full_qqq  <= '0';
-          clt_wtag_q            <= (OTHERS => '0');
-          clt_wtag_next_q       <= "000001";
-          clt_wtag_p_q          <= '1';
+          utc_wtag_q            <= (OTHERS => '0');
+          utc_wtag_next_q       <= "000001";
+          utc_wtag_p_q          <= '1';
           com_wtag_qq           <= 0;
           dma_req_wtag_q        <= (OTHERS => '0');
           rsp_wtag_qq           <= 0;
@@ -1509,7 +1497,7 @@ BEGIN
         dh_d_q            <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
                               '0', (OTHERS => '0'), (OTHERS => '0'));
 
-        wram_raddr_q      <= dma_wtag_q(4 DOWNTO 0);
+        buf_wrdreq_q <= FALSE;
 
         --
         -- F S M
@@ -1526,23 +1514,9 @@ BEGIN
             ELSIF  (write_ctrl_q(dma_wtag_v).dma  = XLAT_DONE ) AND
                    (rsp_wtag_q                   /= dma_wtag_q) AND
                    (dma_wreq_cnt_q                < 7         )THEN
-              wram_raddr_q <= wram_raddr_q + 1;
-              dma_fsm_q    <= ST_START_DMA_WRITE_REQ;
+              dma_fsm_q    <= ST_DMA_WRITE_REQ;
+              buf_wrdreq_q <= TRUE;
             END IF;
-
-          --
-          -- STATE START_DMA_WRITE_REQ
-          --
-          WHEN ST_START_DMA_WRITE_REQ =>
-            wram_raddr_q <= wram_raddr_q + 1;
-            dma_fsm_q    <= ST_DMA_WRITE_REQ;
-
-          --
-          -- STATE STOP_DMA_WRITE_REQ
-          --
-          WHEN ST_STOP_DMA_WRITE_REQ =>
-            wram_raddr_q  <= dma_wtag_q(4 DOWNTO 0);
-            dma_fsm_q     <= ST_IDLE;
 
           --------------------------------------------------------------------
           -- COMMAND STATES
@@ -1575,31 +1549,33 @@ BEGIN
           -- STATE COMMAND: DMA WRITE REQUEST
           --
           WHEN ST_DMA_WRITE_REQ =>
-            IF (write_ctrl_q(dma_wtag_next_v).dma  = XLAT_DONE      ) AND
-               (rsp_wtag_q                        /= dma_wtag_next_q) AND
-               (dma_wreq_cnt_q                     < 7              ) THEN
-              dma_fsm_q <= ST_DMA_WRITE_REQ;
+            IF (write_ctrl_q(dma_wtag_next_v).dma  = XLAT_DONE ) AND
+               (rsp_wtag_q                        /= dma_wtag_q) AND
+               (dma_wreq_cnt_q                     < 7         ) THEN
+              buf_wrdreq_q <= TRUE;
+              dma_fsm_q    <= ST_DMA_WRITE_REQ;
             ELSE
-              dma_fsm_q <= ST_STOP_DMA_WRITE_REQ;
+              buf_wrdreq_q <= FALSE;
+
+              IF (buf_wdata_vld = '1') AND
+                 (buf_wdata_end = '1') THEN 
+                dma_fsm_q <= ST_IDLE;
+              END IF;
             END IF;
 
             --
             -- send out the DMA request
             --
-            dma_wtag_q      <= dma_wtag_q      + 1;
-            dma_wtag_next_q <= dma_wtag_next_q + 1;
-            wram_raddr_q    <= wram_raddr_q    + 1;
-
-            dh_d_q.valid    <= '1';
+            dh_d_q.valid    <= buf_wdata_vld;
             dh_d_q.req_utag <= "00100" & dma_wtag_q(4 DOWNTO 0);
             dh_d_q.req_itag <= write_ctrl_q(dma_wtag_v).itag;
-            dh_d_q.req_type <= "001";
+            dh_d_q.req_type <= buf_wdata_type;
+            dh_d_q.size     <= write_ctrl_q(dma_wtag_v).buf & "000000";
 
-            IF (write_ctrl_q(dma_wtag_v).clt(EVEN_64B_CL) = '0') OR
-               (write_ctrl_q(dma_wtag_v).clt(ODD_64B_CL ) = '0') THEN
-              dh_d_q.size     <= std_logic_vector(to_unsigned(64, 10));
-            ELSE
-              dh_d_q.size     <= std_logic_vector(to_unsigned(128, 10));
+            IF (buf_wdata_vld = '1') AND
+               (buf_wdata_end = '1') THEN 
+              dma_wtag_q      <= dma_wtag_q      + 1;
+              dma_wtag_next_q <= dma_wtag_next_q + 1;
             END IF;
 
           --
@@ -1663,11 +1639,11 @@ BEGIN
         IF (hd_s_q.utag_valid       = '1') AND
            (hd_s_q.utag(9 DOWNTO 5) = "00100") THEN
           IF dma_fsm_q /= ST_DMA_WRITE_REQ THEN
-            dma_wreq_cnt_q <= dma_wreq_cnt_q - 1;
+            dma_wreq_cnt_q <= dma_wreq_cnt_q - 0;
           END IF;
         ELSE
           IF dma_fsm_q = ST_DMA_WRITE_REQ THEN
-            dma_wreq_cnt_q <= dma_wreq_cnt_q + 1;
+            dma_wreq_cnt_q <= dma_wreq_cnt_q + 0;
           END IF;
         END IF;
 
@@ -2014,12 +1990,13 @@ BEGIN
       write_ctrl_i             => write_ctrl_q,
       sd_d_i                   => sd_d_i,
       buf_walmost_full_i       => buf_walmost_full_qqq,
-      wram_raddr_i             => wram_raddr_q,
+      buf_wrdreq_i             => buf_wrdreq_q,
       buf_wtag_o               => buf_wtag_q,
-      buf_wtag_p_o             => buf_wtag_p_q,
-      buf_wtag_cl_partial_o    => buf_wtag_cl_partial_q,
-      buf_wtag_valid_o         => buf_wtag_valid_q,
+      buf_wwen_o               => buf_wwen_q,
       buf_wdata_o              => buf_wdata,
+      buf_wdata_vld_o          => buf_wdata_vld,
+      buf_wdata_end_o          => buf_wdata_end,
+      buf_wdata_type_o         => buf_wdata_type,
       --
       -- DMA READ IOs
       read_ctrl_i              => read_ctrl_q,
@@ -2096,7 +2073,6 @@ BEGIN
   assert dmm_e_q.com_wtag_err       = '0' report "FIR: Write Command Pointer parity error" severity FIR_MSG_LEVEL;
   assert dmm_e_q.clt_wtag_err       = '0' report "FIR: Write Cache Line Type Pointer parity error" severity FIR_MSG_LEVEL;
   assert dmm_e_q.rsp_wtag_err       = '0' report "FIR: Write Response Pointer parity error" severity FIR_MSG_LEVEL;
-  assert dmm_e_q.buf_wtag_err       = '0' report "FIR: Write Buffer Pointer parity error" severity FIR_MSG_LEVEL;
   assert dmm_e_q.waddr_err          = '0' report "FIR: Write Address parity error" severity FIR_MSG_LEVEL;
 
   --
@@ -2269,7 +2245,6 @@ BEGIN
           dmm_e_q.com_wtag_err <= '0';
           dmm_e_q.clt_wtag_err <= '0';
           dmm_e_q.rsp_wtag_err <= '0';
-          dmm_e_q.buf_wtag_err <= '0';
           dmm_e_q.waddr_err        <= '0';
           dmm_e_q.write_ctrl_q_err <= '0';
           write_ctrl_q_err_q       <= (OTHERS => '0');
@@ -2281,7 +2256,6 @@ BEGIN
           dmm_e_q.com_wtag_err <= '0';
           dmm_e_q.clt_wtag_err <= '0';
           dmm_e_q.rsp_wtag_err <= '0';
-          dmm_e_q.buf_wtag_err <= '0';
           dmm_e_q.waddr_err        <= '0';
           dmm_e_q.write_ctrl_q_err <= '0';
 
@@ -2296,12 +2270,12 @@ BEGIN
           END IF;
 
           --
-          -- clt_wtag parity failure
-          IF parity_gen_odd(clt_wtag_q) /= clt_wtag_p_q THEN
+          -- utc_wtag parity failure
+          IF parity_gen_odd(utc_wtag_q) /= utc_wtag_p_q THEN
             dmm_e_q.clt_wtag_err <= '1';
           END IF;
 
-          IF parity_gen_odd(clt_wtag_next_q - "00001") /= clt_wtag_p_q THEN
+          IF parity_gen_odd(utc_wtag_next_q - "00001") /= utc_wtag_p_q THEN
             dmm_e_q.clt_wtag_err <= '1';
           END IF;
 
@@ -2315,26 +2289,26 @@ BEGIN
             dmm_e_q.rsp_wtag_err <= '1';
           END IF;
 
-          --
-          -- buf_wtag parity failure
-          IF parity_gen_odd(buf_wtag_q) /= buf_wtag_p_q THEN
-            dmm_e_q.buf_wtag_err <= '1';
-          END IF;
+--          --
+--          -- buf_wtag parity failure
+--          IF parity_gen_odd(buf_wtag_q) /= buf_wtag_p_q THEN
+--            dmm_e_q.buf_wtag_err <= '1';
+--          END IF;
 
           --
-          -- read_ctrl register checking
-          FOR i IN 0 TO 31 LOOP
-            IF ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = EMPTY) AND (write_ctrl_q(i).clt  = CL_NOT_USED)) OR
-               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = EMPTY) AND (write_ctrl_q(i).clt /= CL_NOT_USED)) OR
-               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt  = CL_NOT_USED)) OR  -- see comments IN  ST_WAIT_4_RSP_OR_BUF
-               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt /= CL_NOT_USED)) OR
-               ((write_ctrl_q(i).com =   ACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt /= CL_NOT_USED)) OR
-               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp /= ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt /= CL_NOT_USED)) THEN
-              write_ctrl_q_err_q(i) <= '0';
-            ELSE
-              write_ctrl_q_err_q(i) <= '1';
-            END IF;
-          END LOOP;  -- i
+          -- write_ctrl register checking
+--          FOR i IN 0 TO 31 LOOP
+--            IF ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = EMPTY) AND (write_ctrl_q(i).clt  = CL_NOT_USED)) OR
+--               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = EMPTY) AND (write_ctrl_q(i).clt /= CL_NOT_USED)) OR
+--               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt  = CL_NOT_USED)) OR  -- see comments IN  ST_WAIT_4_RSP_OR_BUF
+--               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt /= CL_NOT_USED)) OR
+--               ((write_ctrl_q(i).com =   ACTIVE) AND (write_ctrl_q(i).rsp  = ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt /= CL_NOT_USED)) OR
+--               ((write_ctrl_q(i).com = INACTIVE) AND (write_ctrl_q(i).rsp /= ILLEGAL_RSP) AND (write_ctrl_q(i).buf = FULL ) AND (write_ctrl_q(i).clt /= CL_NOT_USED)) THEN
+--              write_ctrl_q_err_q(i) <= '0';
+--            ELSE
+--              write_ctrl_q_err_q(i) <= '1';
+--            END IF;
+--          END LOOP;  -- i
           dmm_e_q.write_ctrl_q_err <= or_reduce(write_ctrl_q_err_q);
 
         END IF;

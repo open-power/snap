@@ -319,7 +319,7 @@ module top (
   reg    [0:9]    hd0_cpl_utag;
   reg    [0:2]    hd0_cpl_type;
   reg    [0:9]    hd0_cpl_size;
-  reg    [0:9]    hd0_cpl_laddr;
+  reg    [0:6]    hd0_cpl_laddr;
   reg    [0:9]    hd0_cpl_byte_count;
   reg    [0:1023] hd0_cpl_data;
   reg             hd1_sent_utag_valid;
@@ -329,7 +329,7 @@ module top (
   reg    [0:9]    hd1_cpl_utag;
   reg    [0:2]    hd1_cpl_type;
   reg    [0:9]    hd1_cpl_size;
-  reg    [0:9]    hd1_cpl_laddr;
+  reg    [0:6]    hd1_cpl_laddr;
   reg    [0:9]    hd1_cpl_byte_count;
   reg    [0:1023] hd1_cpl_data;
 //  reg    [0:15]   hd0_cpl_dpar;
@@ -567,7 +567,7 @@ module top (
   assign hd0_cpl_utag           = hd0_cpl_utag_top;
   assign hd0_cpl_type           = hd0_cpl_type_top;
   assign hd0_cpl_size           = hd0_cpl_size_top;
-  assign hd0_cpl_laddr          = hd0_cpl_laddr_top;
+  assign hd0_cpl_laddr          = hd0_cpl_laddr_top[3:9];
   assign hd0_cpl_byte_count     = hd0_cpl_byte_count_top;
   assign hd0_cpl_data           = hd0_cpl_data_top;
   assign hd1_sent_utag_valid    = hd1_sent_utag_valid_top;
@@ -577,7 +577,7 @@ module top (
   assign hd1_cpl_utag           = hd1_cpl_utag_top;
   assign hd1_cpl_type           = hd1_cpl_type_top;
   assign hd1_cpl_size           = hd1_cpl_size_top;
-  assign hd1_cpl_laddr          = hd1_cpl_laddr_top;
+  assign hd1_cpl_laddr          = hd1_cpl_laddr_top[0:6];
   assign hd1_cpl_byte_count     = hd1_cpl_byte_count_top;
   assign hd1_cpl_data           = hd1_cpl_data_top;
 
