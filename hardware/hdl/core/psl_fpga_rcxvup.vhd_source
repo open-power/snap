@@ -617,17 +617,17 @@ BEGIN
       pcie_clkn           => pci_pi_refclk_n0,     -- 100MHz Refclk
 
 -- Xilinx requires both pins of differential transceivers
-      pcie_rxp            => pcie_rxp ; -- Input
-      pcie_rxn            => pcie_rxn ; -- Input
-      pcie_txp            => pcie_txp ; -- Output
-      pcie_txn            => pcie_txn ; -- Output
+      pcie_rxp            => pcie_rxp , -- Input
+      pcie_rxn            => pcie_rxn , -- Input
+      pcie_txp            => pcie_txp , -- Output
+      pcie_txn            => pcie_txn , -- Output
 
-      fan_cde             => '0';       -- FIXME: pulling down to 0 
+      fan_cde             => '0',       -- FIXME: pulling down to 0 
 
 -- SPI Flash Interface
-      spi_miso_secondary  => spi_miso_secondary;
-      spi_mosi_secondary  => spi_mosi_secondary;
-      spi_cen_secondary   => spi_cen_secondary;
+      spi_miso_secondary  => spi_miso_secondary,
+      spi_mosi_secondary  => spi_mosi_secondary,
+      spi_cen_secondary   => spi_cen_secondary,
 
 -- PTMON PMBUS
 --      b_basei2c_scl       => b_basei2c_scl,
