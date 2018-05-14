@@ -341,7 +341,7 @@ check_psl:
 				echo "               It has to point to the directory containing the CAPI board support IP container."; \
 				exit -1; \
 			fi; \
-		elif [ "$(FPGACARD)" == "RCXVUP"]; then \
+		elif [ "$(FPGACARD)" == "RCXVUP" ]; then \
 			if [ -z "$(CAPI_BSP)" ]; then \
 				echo "### ERROR ###  Environment variable CAPI_BSP is undefined." \
 				echo "               It has to point to the directory containing the CAPI board support IP container."; \
