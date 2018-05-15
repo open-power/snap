@@ -270,6 +270,7 @@ module nvme_top (
     assign action_r_regs[`ACTION_R_STATUS][30] = action_r_regs[`ACTION_R_TRACK_0 + 14][0];
     assign action_r_regs[`ACTION_R_STATUS][31] = action_r_regs[`ACTION_R_TRACK_15][0];
 
+    localparam DDR_AWLEN = 4; /* AXI burst length on the DDR bus */
     localparam ACTION_ID_MAX = 16;
     localparam ACTION_ID_BITS = $clog2(ACTION_ID_MAX);
 
@@ -478,6 +479,7 @@ module nvme_top (
                 nvme_cmd_write(ddr_addr, lba_addr, lba_num, cmd_action_id);
             join_none
         end
+        return 0;
     endfunction
  
     task nvme_cmd_read(input logic [63:0] ddr_addr,
@@ -486,9 +488,8 @@ module nvme_top (
                        input logic [`CMD_ACTION_ID_BITS-1:0] cmd_action_id);
 
         logic [63:0] axi_addr;
-        logic [15:0] i;
+        logic [15:0] i, j;
         logic [127:0] axi_data[512/16]; /* size of one LBA */
-        logic success;
         int fd;
       
         activity_state = NVME_READING;
@@ -503,7 +504,7 @@ module nvme_top (
         // read stuff: 128bit DDR access => 16 bytes
         $display("nvme_read: ddr=%h lba=%h num=%h", ddr_addr, lba_addr, lba_num);
         i = 0;                
-        for (axi_addr = ddr_addr; axi_addr < ddr_addr + lba_num * 512; axi_addr += 16) begin
+        for (axi_addr = ddr_addr; axi_addr < ddr_addr + lba_num * 512; axi_addr += 16 * DDR_AWLEN) begin
             /* Read a block once buffer is empty */
             if (i == 0) begin
                 static string fname;
@@ -515,13 +516,16 @@ module nvme_top (
             end
             /* Just in case the read was not successful, use fake data to initialize the buffer */
             if (!fd) begin
-                axi_data[i] = 128'haabbccdd_11223344_55667788_00000000 + axi_addr;
+                for (j = 0; j < DDR_AWLEN; j++) begin
+                    axi_data[i + j] = 128'haabbccdd_11223344_55667788_00000000 + axi_addr + 16 * j;
+                end
             end
-            /* axi_ddr_write_and_verify(axi_addr, axi_data[i], success); */
-            
-            axi_ddr_write(axi_addr, axi_data[i]);
-            $display("  write: axi_addr=%h axi_data=%h success=%h", axi_addr, axi_data[i], success);
-            i = (i + 1) % (512/16);
+
+            /* FIXME ... well well not really generic regarding DDR_AWLEN ... HOWTO FIX THAT? */
+            axi_ddr_write(axi_addr, { axi_data[i], axi_data[i+1], axi_data[i+2],axi_data[i+3] });
+            $display("  write: axi_addr=%h axi_data=%h%h%h%h", axi_addr,
+                    axi_data[i], axi_data[i+1], axi_data[i+2], axi_data[i+3]);
+            i = (i + DDR_AWLEN) % (512/16);
         end
 
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b10; /* Mark ACTION_TRACK_n debug */
@@ -594,42 +598,47 @@ module nvme_top (
 
     // Test AXI DDR access
     task axi_ddr_test();
+        int i;
         logic [33:0] axi_addr;
-        logic [127:0] axi_data;
+        logic [127:0] axi_data[DDR_AWLEN];
         logic [127:0] cmp_data;
             
         // AXI Memory Transfers
         /* axi_ddr_reset(); */
 
-        for (axi_addr = 0; axi_addr < 4 * 1024; axi_addr += 16) begin
-            axi_data = 128'h0011223344556677_8899aa00000000 + axi_addr;
-            $display("write: axi_addr=%h axi_data=%h", axi_addr, axi_data);
+        for (axi_addr = 0; axi_addr < 4 * 1024; axi_addr += 16 * DDR_AWLEN) begin
+            for (i = 0; i < DDR_AWLEN; i++) begin
+                axi_data[i] = 128'h0011223344556677_8899aa00000000 + axi_addr + i;
+                $display("write: axi_addr=%h axi_data=%h", axi_addr + 16 * i, axi_data[i]);
+            end
             axi_ddr_write(axi_addr, axi_data);
         end
 
         /* Read back the data and check for correctness. Result is visible in
            ddr_state. */
-        for (axi_addr = 0; axi_addr < 4 * 1024; axi_addr += 16) begin
-            cmp_data = 128'h0011223344556677_8899aa00000000 + axi_addr;
-            axi_ddr_read(axi_addr, axi_data);
-            if (axi_data != cmp_data) begin
-                ddr_read_state = DDR_RERROR;
+        for (axi_addr = 0; axi_addr < 4 * 1024; axi_addr += 16 * DDR_AWLEN) begin
+            for (i = 0; i < DDR_AWLEN; i++) begin
+                cmp_data = 128'h0011223344556677_8899aa00000000 + axi_addr + i;
+                axi_ddr_read(axi_addr, axi_data[i]);
+                if (axi_data[i] != cmp_data) begin
+                    ddr_read_state = DDR_RERROR;
+                end
+                $display("read: axi_addr=%h cmp_data=%h axi_data=%h",
+                         axi_addr, cmp_data, axi_data[i]);
             end
-
-            $display("read: axi_addr=%h cmp_data=%h axi_data=%h",
-                    axi_addr, cmp_data, axi_data);
         end
     endtask
 
     /* task or function, what is more appropriate? How to wait best for completion? */
     logic [33:0] ddr_write_addr;    /* FIXME need one per slot */
-    logic [127:0] ddr_write_data;   /* FIXME need one per slot */
-
+    logic [7:0] ddr_widx; /* Index into ddr_write_data[] */
+    logic [127:0] ddr_write_data[DDR_AWLEN]; /* FIXME need one per slot */
+    
     /* task or function, what is more appropriate? How to wait best for completion? */
     logic [33:0] ddr_read_addr;    /* FIXME need one per slot */
     logic [127:0] ddr_read_data;   /* FIXME need one per slot */
 
-    task axi_ddr_write(input logic [33:0] addr, input logic [127:0] data);
+    task axi_ddr_write(input logic [33:0] addr, input logic [127:0] data[DDR_AWLEN]);
         while (ddr_write_state != DDR_WIDLE) begin
             #1;
         end
@@ -641,43 +650,6 @@ module nvme_top (
         while (ddr_write_state != DDR_WIDLE) begin
             #1;
         end
-    endtask
-
-    task axi_ddr_write_and_verify(input logic [33:0] addr, input logic [127:0] data, output logic success);
-        logic [127:0] _data;
-        
-        verify_state = VERIFY_OK;
-        
-        /* write data */
-        while (ddr_write_state != DDR_WIDLE) begin
-            #1;
-        end
-        ddr_write_addr = addr;
-        ddr_write_data = data;
-        ddr_write_state = DDR_WADDR;
-        #1;
-
-        while (ddr_write_state != DDR_WIDLE) begin
-            #1;
-        end
-        
-        /* read back data */
-        while (ddr_read_state != DDR_RIDLE) begin
-            #1;
-        end
-        ddr_read_addr = addr;
-        ddr_read_state = DDR_RADDR;
-        
-        while (ddr_read_state != DDR_RIDLE) begin
-            #1;
-        end
-        _data = ddr_read_data;
-        #1;
-        success = (data == _data);
-        if (!success) begin
-            verify_state = VERIFY_ERROR;
-        end
-        #1;
     endtask
 
     function axi_ddr_wreset();
@@ -696,21 +668,24 @@ module nvme_top (
         DDR_awqos <= 0;
         DDR_awcache <= 0;
         DDR_wuser <= 0;
-        DDR_awregion <= 0;   
+        DDR_awregion <= 0;
+        ddr_widx <= 0;   
         ddr_write_state <= DDR_WIDLE;
+        return 0;
     endfunction
 
     /* DDR WRITE Statemachine */
     always @(posedge DDR_aclk, negedge ddr_aresetn) begin
         if (!ddr_aresetn) begin
             void' (axi_ddr_wreset());
-                 
+
         end else begin
             case (ddr_write_state)
             DDR_WADDR: begin
                 DDR_awburst <= 2'b01; /* 00 FIXED, 01 INCR burst mode */
-                DDR_awlen <= 8'h0; /* 1 only */
-                DDR_awcache <= 4'b0010; /* allow merging */
+                ddr_widx <= 0;
+                DDR_awlen <= DDR_AWLEN - 1;
+                DDR_awcache <= 4'b0011; /* allow merging / bufferable */
                 DDR_awprot <= 4'b0000; /* no protection bits */
                 DDR_awsize <= 3'b100; /* 16 bytes */
                 DDR_wstrb <= 16'hffff; /* all bytes enabled */
@@ -719,24 +694,37 @@ module nvme_top (
                 DDR_awaddr <= ddr_write_addr;
                 DDR_awvalid <= 1'b1; /* put address on bus */
 
-                if (DDR_M_AXI_awready && DDR_awvalid) begin /* address is on bus and slave saw it */
-                    DDR_wdata <= ddr_write_data; /* put data on bus */
+                if (DDR_M_AXI_awready && DDR_M_AXI_awvalid) begin /* address is on bus and slave saw it */
+                    DDR_wdata <= ddr_write_data[ddr_widx]; /* put data on bus */
+                    ddr_widx <= ddr_widx + 1;
                     DDR_wvalid <= 1'b1; /* and mark it valid */
-                    DDR_wlast <= 1'b1; /* we do here 1 shot bursts, if not we need to set this only on the last one */
                     DDR_awvalid <= 1'b0;
+                    if (ddr_widx == DDR_AWLEN - 1) begin
+                        DDR_wlast <= 1'b1;
+                    end
                     ddr_write_state <= DDR_WDATA;
                 end
             end
             DDR_WDATA: begin
-                if (DDR_wvalid && DDR_M_AXI_wready) begin
+                /* not the last one, put new data on the bus */
+                if (!DDR_wlast && DDR_M_AXI_wvalid && DDR_M_AXI_wready) begin
+                    DDR_wdata <= ddr_write_data[ddr_widx]; /* put data on bus */
+                    ddr_widx <= ddr_widx + 1;
+                    DDR_wvalid <= 1'b1; /* and mark it valid */
+                    if (ddr_widx == DDR_AWLEN - 1) begin
+                        DDR_wlast <= 1'b1;
+                    end
+                end
+                /* last one, end transfer and change back to WACK */
+                if (DDR_wlast && DDR_M_AXI_wvalid && DDR_M_AXI_wready) begin
                     DDR_wvalid <= 1'b0;
                     DDR_wlast <= 1'b0;
+                    DDR_bready <= 1'b1; /* Ready to accept answer */
                     ddr_write_state <= DDR_WACK;
                 end
             end
             DDR_WACK: begin
-                DDR_bready <= 1'b1;
-                if (DDR_bready && DDR_M_AXI_bvalid) begin
+                if (DDR_M_AXI_bready && DDR_M_AXI_bvalid) begin
                     DDR_bready <= 1'b0;
                     ddr_write_state <= DDR_WIDLE;
                 end
@@ -775,6 +763,7 @@ module nvme_top (
         DDR_arqos <= 0;
         DDR_arregion <= 0;
         ddr_read_state <= DDR_RIDLE;
+        return 0;
     endfunction
    
     /* DDR READ Statemachine */
@@ -811,78 +800,5 @@ module nvme_top (
             endcase
         end
     end
-   
-    /* Working version but seems not to be optimal */
-    task axi_ddr_write_working(input logic [33:0] addr, input logic [127:0] data);
-        ddr_write_state = DDR_WADDR;
-        DDR_bready = 1'b0;
-        //DDR_wvalid = 1'b0;
-        #1;
-
-        while (DDR_M_AXI_awready == 0) begin // awready must be 1 to indicate device is ready for address
-            #1;
-        end
-
-        DDR_awburst = 2'b00; /* no burst */
-        DDR_awlen = 8'h0; /* 1 shot */
-        DDR_awsize = 3'b100; /* 16 bytes */
-        DDR_awaddr = addr;
-        DDR_awvalid = 1'b1;        // write address is valid now
-        /* BREADY Master Response ready. This signal indicates that the master can accept a write response. */
-        DDR_bready = 1'b1;         // master can accept write response, see interaction with bvalid
-        ddr_write_state = DDR_WDATA;
-        #1;
-        
-        while (DDR_M_AXI_wready == 0) begin // wready needs to be 1 for device to be ready for data 
-            #1;
-        end
-        
-        DDR_wdata = data;
-        DDR_wstrb = 16'hffff;
-        DDR_wvalid = 1;           // write data is valid now
-        DDR_awvalid = 0;          // address not needed anymore
-        ddr_write_state = DDR_WACK;
-        #1;                       // FIXME This clock cycle seems to be important such that we do 
-                                  //       not continue without having written the data.
-        while (DDR_M_AXI_bvalid == 0) begin /* FIXME bvalid instead of bready?? */
-            #1;
-        end
-        
-        DDR_wvalid = 1'b0;
-        #1;
-        ddr_write_state = DDR_WIDLE;
-    endtask
-
-    /* Working version, but not optimal for real-world usage. */
-    task axi_ddr_read_working(input logic [33:0] addr, output logic [127:0] _data);
-        ddr_read_state = DDR_RADDR;
-        
-        DDR_rready = 0;           // master is not ready anymore
-        
-        // FIXME We need to set arvalid regardless of arready, but we need to have arready 1 to release arvalid again
-        while (DDR_M_AXI_arready == 0) begin // arready must be 1 to indicate device is ready for address
-            #1;
-        end
-        
-        DDR_arlen = 8'h0;
-        DDR_arsize = 3'b001;
-        DDR_araddr = addr;
-        DDR_arvalid = 1;          // address is valid and should be processed by AXI slave
-        DDR_rready = 1;           // master is ready to receive data
-        ddr_read_state = DDR_RDATA;
-        #1;                       // FIXME Figure out why this cycle is needed, or how to solve differently
-        
-        // rvalid needs to be 1 for device to be ready for data
-        while (DDR_M_AXI_rvalid == 0) begin 
-            #1;
-        end
-        
-        _data = DDR_M_AXI_rdata;  // now sample the data
-        DDR_arvalid = 0;          // address not important anymore
-        //DDR_rready = 0;           // master is ready to receive data
-        #1;                       // this clock cycle ensures that rdata really ends up in _data and not one cycle later
-        
-        ddr_read_state = DDR_RIDLE;
-    endtask
-
+ 
 endmodule
