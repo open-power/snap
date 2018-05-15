@@ -260,15 +260,7 @@ if { $nvme_used == TRUE } {
 }
 
 # Add CAPI board support
-if { ($fpga_card == "N250SP") && ($capi_bsp_dir != "not defined") } {
-  puts "                        importing CAPI BSP"
-  set_property ip_repo_paths "[file normalize $capi_bsp_dir]" [current_project] >> $log_file
-  update_ip_catalog >> $log_file
-
-  add_files -norecurse                  $capi_bsp_dir/capi_bsp_wrap.xcix -force >> $log_file
-  export_ip_user_files -of_objects      [get_files capi_bsp_wrap.xci] -force >> $log_file
-  set_property used_in_simulation false [get_files capi_bsp_wrap.xci] >> $log_file
-} elseif { ($fpga_card == "RCXVUP") && ($capi_bsp_dir != "not defined") } {
+if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($capi_bsp_dir != "not defined") } {
   puts "                        importing CAPI BSP"
   set_property ip_repo_paths "[file normalize $capi_bsp_dir]" [current_project] >> $log_file
   update_ip_catalog >> $log_file

@@ -335,13 +335,7 @@ config: hw_project
 # checking card type for PSL design checkpoint
 check_psl:
 	if [ "$(IGNORE_CHECK_PSL)" != "TRUE" ] ; then \
-		if [ "$(FPGACARD)" == "N250SP" ]; then \
-			if [ -z "$(CAPI_BSP)" ]; then \
-				echo "### ERROR ###  Environment variable CAPI_BSP is undefined." \
-				echo "               It has to point to the directory containing the CAPI board support IP container."; \
-				exit -1; \
-			fi; \
-		elif [ "$(FPGACARD)" == "RCXVUP" ]; then \
+		if [ "$(FPGACARD)" == "N250SP" ] || [ "$(FPGACARD)" == "RCXVUP" ]; then \
 			if [ -z "$(CAPI_BSP)" ]; then \
 				echo "### ERROR ###  Environment variable CAPI_BSP is undefined." \
 				echo "               It has to point to the directory containing the CAPI board support IP container."; \
