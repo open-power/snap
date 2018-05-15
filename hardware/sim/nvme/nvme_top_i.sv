@@ -787,7 +787,7 @@ module nvme_top (
                 DDR_arburst <= 2'b01; /* 00 FIXED, 01 INCR burst mode */
                 DDR_arlen <= DDR_ARLEN - 1;
                 ddr_ridx <= 0;
-                DDR_arcache <= 4'b0010; /* allow merging */
+                DDR_arcache <= 4'b0011; /* allow merging, bufferable */
                 DDR_arprot <= 4'b0000; /* no protection bits */
                 DDR_arsize <= 3'b100; /* 16 bytes */
                 DDR_araddr <= ddr_read_addr;
@@ -804,7 +804,7 @@ module nvme_top (
                     ddr_read_data[ddr_ridx] <= DDR_M_AXI_rdata; /* get the data */
                     ddr_ridx <= ddr_ridx + 1;
                     if (DDR_M_AXI_rlast == 1'b1) begin
-                        DDR_rready <= 1'b0; /* have the data now */
+                        DDR_rready <= 1'b0; /* have all the data now */
                         ddr_read_state <= DDR_RIDLE;
                     end
                 end
