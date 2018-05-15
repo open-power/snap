@@ -308,6 +308,7 @@ config FORCE_NVME
 config ENABLE_NVME
         bool "Enable NVMe"
         depends on ! DISABLE_NVME
+        select FORCE_SDRAM_OR_BRAM
         help
           This option controls the instantiation of an NVMe host controller
           together with the AXI interfaces for MMIO control and action access.
@@ -330,7 +331,6 @@ choice
             bool "xsim"
             help
                Default Xilinx simulator
-            depends on ! ENABLE_NVME
 
         config SIM_IRUN
             bool "irun"
@@ -369,6 +369,17 @@ config SIMULATOR
         default "modelsim" if SIM_MODELSIM
         default "questa"   if SIM_QUESTA
         default "nosim"    if NO_SIM
+
+config ENABLE_DENALI
+        bool "Use Denali for NVMe simulation"
+        depends on (ENABLE_NVME && SIM_IRUN)
+        help
+          In order to use the Denali NVMe behavioral the corresponding Cadence licenses are required.
+
+config DENALI_USED
+        string
+        default "TRUE"  if ENABLE_DENALI
+        default "FALSE" if ! ENABLE_DENALI
 
 comment "================= Advanced Options: ================="
 
