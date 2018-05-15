@@ -270,7 +270,9 @@ module nvme_top (
     assign action_r_regs[`ACTION_R_STATUS][30] = action_r_regs[`ACTION_R_TRACK_0 + 14][0];
     assign action_r_regs[`ACTION_R_STATUS][31] = action_r_regs[`ACTION_R_TRACK_15][0];
 
-    localparam DDR_AWLEN = 4; /* AXI burst length on the DDR bus */
+    localparam DDR_AWLEN = 4; /* AXI write burst length on the DDR bus (substract 1 to get awlen) */
+    localparam DDR_ARLEN = 4; /* AXI read burst length on the DDR bus (substract 1 to get arlen) */
+    
     localparam ACTION_ID_MAX = 16;
     localparam ACTION_ID_BITS = $clog2(ACTION_ID_MAX);
 
@@ -540,7 +542,8 @@ module nvme_top (
                         input logic [31:0] lba_num,
                         input logic [`CMD_ACTION_ID_BITS-1:0] cmd_action_id);
         logic [63:0] axi_addr;
-        logic [15:0] i;
+        logic [15:0] i, j;
+        logic [127:0] axi_rdata[DDR_ARLEN];
         logic [127:0] axi_data[512/16]; /* size of one LBA */
         
         activity_state = NVME_WRITING; 
@@ -555,13 +558,15 @@ module nvme_top (
         // write stuff: 128bit DDR access => 16 bytes
         i = 0;
         $display("nvme_write: ddr=%h lba=%h num=%h", ddr_addr, lba_addr, lba_num);
-        for (axi_addr = ddr_addr; axi_addr < ddr_addr + lba_num * 512; axi_addr += 16) begin
-            axi_ddr_read(axi_addr, axi_data[i]);
-            $display("  read: axi_addr=%h axi_data=%h", axi_addr, axi_data[i]);
-            if (axi_data[i] == 128'hxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx) begin
-                axi_data[i] = 128'h00112233445566778899aabbccddeeff;
+        for (axi_addr = ddr_addr; axi_addr < ddr_addr + lba_num * 512; axi_addr += 16 * DDR_ARLEN) begin
+            axi_ddr_read(axi_addr, axi_rdata);
+            
+            for (j = 0; j < DDR_ARLEN; j++) begin
+                axi_data[i + j] = axi_rdata[j];
             end
-            i = (i + 1) % (512/16);
+            $display("  read: axi_addr=%h axi_data=%h%h%h%h", axi_addr,
+                    axi_data[i], axi_data[i+1], axi_data[i+2], axi_data[i+3]);
+            i = (i + DDR_ARLEN) % (512/16);
 
             /* Write a block once buffer is full */
             if (i == 0) begin
@@ -597,11 +602,13 @@ module nvme_top (
     endtask
 
     // Test AXI DDR access
+    //   NOTE Development only, did not execute that once it started working in the
+    //   larger context. Try out yourself or throw away if it is not useful.
     task axi_ddr_test();
         int i;
         logic [33:0] axi_addr;
         logic [127:0] axi_data[DDR_AWLEN];
-        logic [127:0] cmp_data;
+        logic [127:0] cmp_data[DDR_AWLEN];
             
         // AXI Memory Transfers
         /* axi_ddr_reset(); */
@@ -618,14 +625,15 @@ module nvme_top (
            ddr_state. */
         for (axi_addr = 0; axi_addr < 4 * 1024; axi_addr += 16 * DDR_AWLEN) begin
             for (i = 0; i < DDR_AWLEN; i++) begin
-                cmp_data = 128'h0011223344556677_8899aa00000000 + axi_addr + i;
-                axi_ddr_read(axi_addr, axi_data[i]);
-                if (axi_data[i] != cmp_data) begin
-                    ddr_read_state = DDR_RERROR;
-                end
-                $display("read: axi_addr=%h cmp_data=%h axi_data=%h",
-                         axi_addr, cmp_data, axi_data[i]);
+                cmp_data[i] = 128'h0011223344556677_8899aa00000000 + axi_addr + i;
             end
+            axi_ddr_read(axi_addr, axi_data);
+            if (axi_data != cmp_data) begin
+                ddr_read_state = DDR_RERROR;
+            end
+            $display("read: axi_addr=%h cmp_data=%h%h%h%h axi_data=%h%h%h%h", axi_addr,
+                    cmp_data[i], cmp_data[i+1], cmp_data[i+2], cmp_data[i+3],
+                    axi_data[i], axi_data[i+1], axi_data[i+2], axi_data[i+3]);
         end
     endtask
 
@@ -636,7 +644,8 @@ module nvme_top (
     
     /* task or function, what is more appropriate? How to wait best for completion? */
     logic [33:0] ddr_read_addr;    /* FIXME need one per slot */
-    logic [127:0] ddr_read_data;   /* FIXME need one per slot */
+    logic [7:0] ddr_ridx; /* Index into ddr_read_data[] */
+    logic [127:0] ddr_read_data[DDR_ARLEN]; /* FIXME need one per slot */
 
     task axi_ddr_write(input logic [33:0] addr, input logic [127:0] data[DDR_AWLEN]);
         while (ddr_write_state != DDR_WIDLE) begin
@@ -735,7 +744,7 @@ module nvme_top (
         end
      end
  
-     task axi_ddr_read(input logic [33:0] addr, output logic [127:0] data);
+     task axi_ddr_read(input logic [33:0] addr, output logic [127:0] data[DDR_ARLEN]);
         while (ddr_read_state != DDR_RIDLE) begin
             #1;
         end
@@ -762,6 +771,7 @@ module nvme_top (
         DDR_rready <= 0;
         DDR_arqos <= 0;
         DDR_arregion <= 0;
+        ddr_ridx <= 0;
         ddr_read_state <= DDR_RIDLE;
         return 0;
     endfunction
@@ -775,8 +785,9 @@ module nvme_top (
             case (ddr_read_state)
             DDR_RADDR: begin
                 DDR_arburst <= 2'b01; /* 00 FIXED, 01 INCR burst mode */
-                DDR_arlen <= 8'h0; /* 1 only */
-                DDR_arcache <= 4'b0010; /* allow merging */
+                DDR_arlen <= DDR_ARLEN - 1;
+                ddr_ridx <= 0;
+                DDR_arcache <= 4'b0011; /* allow merging, bufferable */
                 DDR_arprot <= 4'b0000; /* no protection bits */
                 DDR_arsize <= 3'b100; /* 16 bytes */
                 DDR_araddr <= ddr_read_addr;
@@ -790,9 +801,12 @@ module nvme_top (
             end
             DDR_RDATA: begin
                 if (DDR_M_AXI_rvalid && DDR_rready) begin
-                    ddr_read_data <= DDR_M_AXI_rdata; /* get the data */
-                    DDR_rready <= 1'b0; /* have the data now */
-                    ddr_read_state <= DDR_RIDLE;
+                    ddr_read_data[ddr_ridx] <= DDR_M_AXI_rdata; /* get the data */
+                    ddr_ridx <= ddr_ridx + 1;
+                    if (DDR_M_AXI_rlast == 1'b1) begin
+                        DDR_rready <= 1'b0; /* have all the data now */
+                        ddr_read_state <= DDR_RIDLE;
+                    end
                 end
             end
             default begin
