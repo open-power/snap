@@ -188,6 +188,20 @@ check_snap_settings:
 	fi
 	@echo "                        =============================="
 
+check_nvme:
+	@if [ "$(SIMULATOR)" != "nosim" ] && [ "$(NVME_USED)" == "TRUE" ] && [ "$(DENALI_USED)" == "TRUE" ]; then \
+		if [ "$(SIMULATOR)" != "irun" ] && [ "$(SIMULATOR)" != "xcelium" ]; then  \
+			echo "                        NVMe simulation with Denali model is not supported for SIMULATOR $(SIMULATOR)"; \
+			exit -1; \
+		fi; \
+		if [ !  -d "$(DENALI)" ]; then \
+			echo "                        Missing or invalid environment variable for NVMe simulation with Denali."; \
+			echo "                        Please check the setting of:"; \
+			echo "                        DENALI:   $(DENALI)"; \
+			exit -1; \
+		fi \
+	fi
+
 check_simulator:
 	@if [ "$(SIMULATOR)" != "irun" ] && [ "$(SIMULATOR)" != "xsim" ] && [ "$(SIMULATOR)" != "nosim" ]; then \
 		echo "                        unknown simulator=$SIMULATOR"; \
@@ -347,7 +361,7 @@ endif
 allow_%:
 	@if [ "$(USE_PRFLOW)" != "TRUE" ]; then \
 		echo; echo "Error: Makefile target $* is only allowed for PR flow!"; exit -1; \
-	elif [ "$(CLOUD_USER_FLOW)" = "TRUE" ] && [ "$*" = "cloud_base" ]; then \
+	elif [ "$(CLOUD_USER_FLOW)" == "TRUE" ] && [ "$*" == "cloud_base" ]; then \
 		echo; echo "Error: Makefile target $* is not allowed for cloud user flow!"; exit -1; \
 	fi
 
