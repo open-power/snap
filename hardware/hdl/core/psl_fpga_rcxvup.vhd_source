@@ -622,7 +622,7 @@ BEGIN
       pcie_txp            => pcie_txp , -- Output
       pcie_txn            => pcie_txn , -- Output
 
-      fan_cde             => '0',       -- FIXME: pulling down to 0 
+      fan_cde             => open,
 
 -- SPI Flash Interface
       spi_miso_secondary  => spi_miso_secondary,
