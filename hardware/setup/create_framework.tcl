@@ -244,8 +244,7 @@ if { $nvme_used == TRUE } {
 
   if { $denali_used == TRUE } {
     puts "                        adding NVMe Denali simulation files"
-    add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme/nvme_model.v
-    add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme/pcie_endp_model.v
+    add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme
     add_files -fileset sim_1 -scan_for_includes $ip_dir/nvme/axi_pcie3_0_ex/imports/xil_sig2pipe.v
 
     set denali $::env(DENALI)
@@ -254,7 +253,7 @@ if { $nvme_used == TRUE } {
   } else {
     puts "                        adding NVMe Verilog simulation files"
     set_property used_in_simulation false [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd]
-    add_files -fileset sim_1 -norecurse $sim_dir/nvme/nvme_top_i.sv
+    add_files -fileset sim_1 -norecurse $sim_dir/nvme_lite
     add_files -fileset sim_1 -norecurse $hdl_dir/nvme/nvme_defines.sv
   }
 } else {
@@ -281,7 +280,7 @@ puts "                        importing XDCs"
 
 # Board Support XDC
 if { ($fpga_card == "N250SP") && ($capi_bsp_dir != "not defined") } {
-  puts "                      importing N250SP Board support XDCs"
+  puts "                        importing N250SP Board support XDCs"
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
 #  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
 }
