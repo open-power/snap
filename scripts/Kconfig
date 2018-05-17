@@ -372,7 +372,7 @@ config SIMULATOR
 
 config ENABLE_DENALI
         bool "Use Denali for NVMe simulation"
-        depends on (ENABLE_NVME && SIM_IRUN)
+        depends on (ENABLE_NVME && (SIM_IRUN || SIM_XCELIUM))
         help
           In order to use the Denali NVMe behavioral the corresponding Cadence licenses are required.
 
