@@ -1,23 +1,18 @@
+// Copyright 2018 International Business Machines
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: IBM
-// Engineer: Frank
-// 
-// Create Date: 02/27/2018 03:14:24 PM
-// Design Name: SNAP NVME Highlevel Model
-// Module Name: nvme_top_i
-// Project Name: SNAP
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
 
 `include "nvme_defines.sv"
 
@@ -60,7 +55,7 @@ module nvme_top (
     output wire ACT_NVME_AXI_wready,
     input  wire [3:0]ACT_NVME_AXI_wstrb,
     input  wire ACT_NVME_AXI_wvalid,
-    
+
     /* SDRAM Access AXI Bus: Here we need to copy data to or from */
     output wire [33:0]DDR_M_AXI_araddr,
     output wire [1:0]DDR_M_AXI_arburst,
@@ -103,7 +98,7 @@ module nvme_top (
     output wire [15:0]DDR_M_AXI_wstrb,
     output wire [15:0]DDR_M_AXI_wuser,
     output wire [0:0]DDR_M_AXI_wvalid,
-    
+
     /* Yet another AXI Bus */
     input  wire NVME_S_ACLK,
     input  wire NVME_S_ARESETN,
@@ -126,7 +121,7 @@ module nvme_top (
     output wire [0:0]NVME_S_AXI_wready,
     input  wire [3:0]NVME_S_AXI_wstrb,
     input  wire [0:0]NVME_S_AXI_wvalid,
-    
+
     /* And some other signals to control the PCIe root complexes in the orignal design */
     output wire ddr_aclk,
     output wire ddr_aresetn,
@@ -146,7 +141,7 @@ module nvme_top (
     );
 
 `define CONFIG_DDR_READWRITE_TEST   0 /* Enable test for DDR, write some data, read it back and compare */
-    
+
     /* Local hardware instances go here */
     reg ACT_arready;
     reg [31:0] ACT_araddr;
@@ -172,7 +167,7 @@ module nvme_top (
     reg [0:0] DDR_arvalid;
     reg [0:0] DDR_awvalid;
     reg [127:0] DDR_wdata;
-    reg [15:0] DDR_wstrb;    
+    reg [15:0] DDR_wstrb;
     reg [0:0] DDR_wvalid;
     reg [3:0] DDR_awid;
     reg [7:0] DDR_arlen;
@@ -193,8 +188,8 @@ module nvme_top (
     reg [15:0] DDR_wuser;
     reg [3:0] DDR_awregion;
     reg [3:0] DDR_arregion;
-    
-    /* SNAP Action AXI Interface */  
+
+    /* SNAP Action AXI Interface */
     assign ACT_NVME_AXI_arready = ACT_arready;
     assign ACT_NVME_AXI_rdata = ACT_rdata;
     assign ACT_NVME_AXI_awready = ACT_awready;
@@ -204,7 +199,7 @@ module nvme_top (
     assign ACT_NVME_AXI_rvalid = ACT_rvalid;
     assign ACT_NVME_AXI_rresp = ACT_rresp;
     assign ACT_NVME_AXI_rlast = ACT_rlast;
-    
+
     /* Access to Card DDR AXI Interface */
     assign ddr_aclk = DDR_aclk;
     assign ddr_aresetn = DDR_aresetn;
@@ -237,21 +232,21 @@ module nvme_top (
     assign DDR_M_AXI_wuser = DDR_wuser;
     assign DDR_M_AXI_awregion = DDR_awregion;
     assign DDR_M_AXI_arregion = DDR_arregion;
- 
-    /* SNAP NVME AXI Interface: FIXME Figure out for what this is really used */  
+
+    /* SNAP NVME AXI Interface: FIXME Figure out for what this is really used */
     localparam ACTION_W_BITS = $clog2(`ACTION_W_NUM_REGS);
     localparam ACTION_R_BITS = $clog2(`ACTION_R_NUM_REGS);
     localparam SQ_INDEX_BITS = $clog2(`TOTAL_NUM_QUEUES);
 
     logic [31:0] action_w_regs[`ACTION_W_NUM_REGS];
     logic [31:0] action_r_regs[`ACTION_R_NUM_REGS];
-    
+
     logic [ACTION_R_BITS - 1: 0] action_r_index;
     assign action_r_index = ACT_araddr[ACTION_R_BITS + 1: 2];
-    
+
     logic [ACTION_W_BITS - 1: 0] action_w_index;
     assign action_w_index = ACT_awaddr[ACTION_W_BITS + 1: 2];
-    
+
     /* Tie status information to TRACK_n register bits */
     assign action_r_regs[`ACTION_R_STATUS][16] = action_r_regs[`ACTION_R_TRACK_0][0];
     assign action_r_regs[`ACTION_R_STATUS][17] = action_r_regs[`ACTION_R_TRACK_0 + 1][0];
@@ -272,7 +267,7 @@ module nvme_top (
 
     localparam DDR_AWLEN = 4; /* AXI write burst length on the DDR bus (substract 1 to get awlen) */
     localparam DDR_ARLEN = 4; /* AXI read burst length on the DDR bus (substract 1 to get arlen) */
-    
+
     localparam ACTION_ID_MAX = 16;
     localparam ACTION_ID_BITS = $clog2(ACTION_ID_MAX);
 
@@ -285,11 +280,11 @@ module nvme_top (
     initial begin
         // Complete reset driving ddr_aresetn
         axi_ddr_reset();
-        
+
         // Small reset, just set our output to defined values
         //axi_ddr_wreset();
         //axi_ddr_rreset();
-        
+
         if (`CONFIG_DDR_READWRITE_TEST) begin
             axi_ddr_test();
         end
@@ -297,7 +292,7 @@ module nvme_top (
 
     /* ACTION REGISTER READ STATEMACHINE */
     enum { READ_IDLE, READ_DECODE, READ_BUFFER, READ_ACTION_REGS } read_state;
-   
+
     always @(posedge ACT_NVME_ACLK, negedge ACT_NVME_ARESETN)
     begin
         if (!ACT_NVME_ARESETN) begin
@@ -333,7 +328,7 @@ module nvme_top (
                 ACT_rdata <= action_r_regs[action_r_index]; /* provide data */
                 ACT_rvalid <= 1'b1;  /* signal that data is valid */
                 ACT_rlast <= 1'b1;   /* last transfer for the given address, no burst read yet */
-                
+
                 /* Implement read-clear behavior */
                 if ((ACT_NVME_AXI_araddr >= `ACTION_R_TRACK_0) &&
                     (ACT_NVME_AXI_araddr <= `ACTION_R_TRACK_15) &&
@@ -360,7 +355,7 @@ module nvme_top (
     /* ACTION REGISTER WRITE STATEMACHINE */
     enum { WRITE_IDLE, WRITE_DECODE, WRITE_BUFFER, WRITE_BURST } write_state;
     logic start_nvme_operation;
-    
+
     always @(posedge ACT_NVME_ACLK, negedge ACT_NVME_ARESETN)
     begin
         if (!ACT_NVME_ARESETN) begin
@@ -384,7 +379,7 @@ module nvme_top (
 
                 if (ACT_NVME_AXI_awvalid == 1 && ACT_NVME_AXI_awready == 1) begin
                     ACT_awaddr <= ACT_NVME_AXI_awaddr; // Save away the desired address
-                    ACT_awready <= 1'b0; // Wait for data now, no addresses anymore        
+                    ACT_awready <= 1'b0; // Wait for data now, no addresses anymore
                     ACT_wready <= 1'b1;  // Now we captured the address and can receive the data
                     //action_w_index = 0;
                     write_state <= WRITE_DECODE;
@@ -396,7 +391,7 @@ module nvme_top (
                     /* Addresses are 0x0, 0x4, 0x8, 0xC, ... */
                     ACT_wdata <= ACT_NVME_AXI_wdata;
                     action_w_regs[ACT_awaddr[ACTION_W_BITS + 1: 2]] <= ACT_NVME_AXI_wdata;
-                    
+
                     if (ACT_NVME_AXI_awburst == 2'b01) begin
                         ACT_awaddr <= ACT_awaddr + 4;
                         write_state <= WRITE_BURST;
@@ -405,7 +400,7 @@ module nvme_top (
                     end
                 end
             end
-            /* AXI Single Write */                    
+            /* AXI Single Write */
             WRITE_BUFFER: begin /* Check if command register was written and try to trigger actity based on that */
                 if ((ACT_NVME_AXI_wvalid == 1'b1) && (ACT_wready == 1'b1) && (ACT_bvalid == 1'b0)) begin
                     if (ACT_awaddr[ACTION_W_BITS + 1: 2] == `ACTION_W_COMMAND) begin
@@ -424,7 +419,7 @@ module nvme_top (
             /* AXI Burst Read */
             WRITE_BURST: begin
                 ACT_wready <= 1'b1;
-                
+
                 if ((ACT_NVME_AXI_wvalid == 1'b1) && (ACT_wready == 1'b1) && (ACT_bvalid == 1'b0)) begin
                         if (ACT_awaddr[ACTION_W_BITS + 1: 2] == `ACTION_W_COMMAND) begin
                             start_nvme_operation <= 1;
@@ -452,7 +447,7 @@ module nvme_top (
             endcase
         end
     end
- 
+
     function nvme_operation();
         logic [63:0] ddr_addr;
         logic [63:0] lba_addr;
@@ -460,7 +455,7 @@ module nvme_top (
         logic [63:0] axi_addr;
         logic [`CMD_TYPE_BITS-1:0] cmd_type;
         logic [`CMD_ACTION_ID_BITS-1:0] cmd_action_id;
-    
+
         //#1; /* Ensure that all required registers are latched */
         assign cmd_type = action_w_regs[`ACTION_W_COMMAND][`CMD_TYPE_BITS-1:0];
         assign cmd_action_id = action_w_regs[`ACTION_W_COMMAND][11:8];
@@ -470,12 +465,12 @@ module nvme_top (
 
         $display("nvme_operation: ddr=%h lba=%h num=%h cmd_type=%h cmd_action_id=%h",
                 ddr_addr, lba_addr, lba_num, cmd_type, cmd_action_id);
-                
+
         if (cmd_type == `CMD_READ) begin
             fork
                 nvme_cmd_read(ddr_addr, lba_addr, lba_num, cmd_action_id);
             join_none
-        end        
+        end
         if (cmd_type == `CMD_WRITE) begin
             fork
                 nvme_cmd_write(ddr_addr, lba_addr, lba_num, cmd_action_id);
@@ -483,7 +478,7 @@ module nvme_top (
         end
         return 0;
     endfunction
- 
+
     task nvme_cmd_read(input logic [63:0] ddr_addr,
                        input logic [63:0] lba_addr,
                        input logic [31:0] lba_num,
@@ -493,7 +488,7 @@ module nvme_top (
         logic [15:0] i, j;
         logic [127:0] axi_data[512/16]; /* size of one LBA */
         int fd;
-      
+
         activity_state = NVME_READING;
         if (action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] == 1) begin
             action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][1] = 1; /* error, results not read */
@@ -505,14 +500,14 @@ module nvme_top (
 
         // read stuff: 128bit DDR access => 16 bytes
         $display("nvme_read: ddr=%h lba=%h num=%h", ddr_addr, lba_addr, lba_num);
-        i = 0;                
+        i = 0;
         for (axi_addr = ddr_addr; axi_addr < ddr_addr + lba_num * 512; axi_addr += 16 * DDR_AWLEN) begin
             /* Read a block once buffer is empty */
             if (i == 0) begin
                 static string fname;
                 $sformat(fname, "SNAP_LBA_%h.bin", lba_addr);
                 fd = $fopen(fname, "r");
-                $fclose(fd); 
+                $fclose(fd);
                 $readmemh(fname, axi_data);
                 lba_addr += 1;
             end
@@ -536,7 +531,7 @@ module nvme_top (
         #1;
 
     endtask
-    
+
     task nvme_cmd_write(input logic [63:0] ddr_addr,
                         input logic [63:0] lba_addr,
                         input logic [31:0] lba_num,
@@ -545,8 +540,8 @@ module nvme_top (
         logic [15:0] i, j;
         logic [127:0] axi_rdata[DDR_ARLEN];
         logic [127:0] axi_data[512/16]; /* size of one LBA */
-        
-        activity_state = NVME_WRITING; 
+
+        activity_state = NVME_WRITING;
         if (action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] == 1) begin
             action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][1] = 1; /* error, results not read */
         end
@@ -560,7 +555,7 @@ module nvme_top (
         $display("nvme_write: ddr=%h lba=%h num=%h", ddr_addr, lba_addr, lba_num);
         for (axi_addr = ddr_addr; axi_addr < ddr_addr + lba_num * 512; axi_addr += 16 * DDR_ARLEN) begin
             axi_ddr_read(axi_addr, axi_rdata);
-            
+
             for (j = 0; j < DDR_ARLEN; j++) begin
                 axi_data[i + j] = axi_rdata[j];
             end
@@ -571,7 +566,7 @@ module nvme_top (
             /* Write a block once buffer is full */
             if (i == 0) begin
                 static string fname;
-                $sformat(fname, "SNAP_LBA_%h.bin", lba_addr); 
+                $sformat(fname, "SNAP_LBA_%h.bin", lba_addr);
                 $writememh(fname, axi_data);
                 lba_addr += 1;
             end
@@ -590,7 +585,7 @@ module nvme_top (
 
     enum { DDR_WIDLE, DDR_WRESET, DDR_WADDR, DDR_WDATA, DDR_WACK, DDR_WERROR } ddr_write_state;
     enum { DDR_RIDLE, DDR_RRESET, DDR_RADDR, DDR_RDATA, DDR_RERROR } ddr_read_state;
-   
+
     task axi_ddr_reset();
         DDR_aclk = 0;
         DDR_aresetn = 0;
@@ -609,7 +604,7 @@ module nvme_top (
         logic [33:0] axi_addr;
         logic [127:0] axi_data[DDR_AWLEN];
         logic [127:0] cmp_data[DDR_AWLEN];
-            
+
         // AXI Memory Transfers
         /* axi_ddr_reset(); */
 
@@ -641,7 +636,7 @@ module nvme_top (
     logic [33:0] ddr_write_addr;    /* FIXME need one per slot */
     logic [7:0] ddr_widx; /* Index into ddr_write_data[] */
     logic [127:0] ddr_write_data[DDR_AWLEN]; /* FIXME need one per slot */
-    
+
     /* task or function, what is more appropriate? How to wait best for completion? */
     logic [33:0] ddr_read_addr;    /* FIXME need one per slot */
     logic [7:0] ddr_ridx; /* Index into ddr_read_data[] */
@@ -678,7 +673,7 @@ module nvme_top (
         DDR_awcache <= 0;
         DDR_wuser <= 0;
         DDR_awregion <= 0;
-        ddr_widx <= 0;   
+        ddr_widx <= 0;
         ddr_write_state <= DDR_WIDLE;
         return 0;
     endfunction
@@ -743,7 +738,7 @@ module nvme_top (
             endcase
         end
      end
- 
+
      task axi_ddr_read(input logic [33:0] addr, output logic [127:0] data[DDR_ARLEN]);
         while (ddr_read_state != DDR_RIDLE) begin
             #1;
@@ -758,7 +753,7 @@ module nvme_top (
         data = ddr_read_data;
         #1;
     endtask
-   
+
     function axi_ddr_rreset();
         DDR_arid <= 0;
         DDR_arlock <= 0;
@@ -775,12 +770,12 @@ module nvme_top (
         ddr_read_state <= DDR_RIDLE;
         return 0;
     endfunction
-   
+
     /* DDR READ Statemachine */
     always @(posedge DDR_aclk, negedge ddr_aresetn) begin
         if (!ddr_aresetn) begin
             void' (axi_ddr_rreset());
-            
+
         end else begin
             case (ddr_read_state)
             DDR_RADDR: begin
@@ -792,7 +787,7 @@ module nvme_top (
                 DDR_arsize <= 3'b100; /* 16 bytes */
                 DDR_araddr <= ddr_read_addr;
                 DDR_arvalid <= 1'b1; /* put read address on bus */
-                
+
                 if (DDR_M_AXI_arready && DDR_arvalid) begin
                     DDR_arvalid <= 1'b0; /* no address required anymore */
                     DDR_rready <= 1'b1; /* ready to receive data */
@@ -814,5 +809,5 @@ module nvme_top (
             endcase
         end
     end
- 
+
 endmodule
