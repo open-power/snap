@@ -28,9 +28,8 @@ ENTITY psl_fpga IS
   PORT(
 #ifdef CONFIG_ENABLE_DDR4
     -- DDR4 SDRAM Interface
-    -- Nallatech 250S card has one DDR4 SO-DIMMs
-    c0_sys_clk_p              : IN    STD_LOGIC;
-    c0_sys_clk_n              : IN    STD_LOGIC;
+    c0_ddr4_sys_clk_p         : IN    STD_LOGIC;
+    c0_ddr4_sys_clk_n         : IN    STD_LOGIC;
     c0_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);
     c0_ddr4_ba                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
     c0_ddr4_cke               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
@@ -49,15 +48,17 @@ ENTITY psl_fpga IS
 
     -- CAPI PSL Interface
     --
-    pci_pi_nperst0        : in    std_logic;     -- Active low reset from the PCIe reset pin of the device
-    pci_pi_refclk_p0      : in    std_logic;     -- 100MHz Refclk
-    pci_pi_refclk_n0      : in    std_logic;     -- 100MHz Refclk
+    pcie_rst_n        	  : in    std_logic;     -- Active low reset from the PCIe reset pin of the device
+    pcie_clkp	          : in    std_logic;     -- 100MHz Refclk
+    pcie_clkn             : in    std_logic;     -- 100MHz Refclk
 
 -- Xilinx requires both pins of differential transceivers
     pcie_rxp              : in  std_logic_vector(15 downto 0)   ;
     pcie_rxn              : in  std_logic_vector(15 downto 0)   ;
     pcie_txp              : out std_logic_vector(15 downto 0)   ;
     pcie_txn              : out std_logic_vector(15 downto 0)   ;
+
+--  fan_cde               : out   std_logic;
 
 -- Flash Interface
     spi_miso_secondary    : in    std_logic;
@@ -457,9 +458,8 @@ BEGIN
     PORT MAP (
 #ifdef CONFIG_ENABLE_DDR4
       -- DDR4 SDRAM Interface
-      -- Nallatech 250S card has one DDR4 SO-DIMMs
-      c0_sys_clk_p                      => c0_sys_clk_p,
-      c0_sys_clk_n                      => c0_sys_clk_n,
+      c0_sys_clk_p                      => c0_ddr4_sys_clk_p,
+      c0_sys_clk_n                      => c0_ddr4_sys_clk_n,
       c0_ddr4_adr                       => c0_ddr4_adr,
       c0_ddr4_ba                        => c0_ddr4_ba,
       c0_ddr4_cke                       => c0_ddr4_cke,
@@ -612,9 +612,9 @@ BEGIN
   c0: capi_bsp_wrap
     PORT MAP (
 -- pci interface
-      pcie_rst_n          => pci_pi_nperst0,       -- Active low reset from the PCIe reset pin of the device
-      pcie_clkp           => pci_pi_refclk_p0,     -- 100MHz Refclk
-      pcie_clkn           => pci_pi_refclk_n0,     -- 100MHz Refclk
+      pcie_rst_n          => pcie_rst_n,       -- Active low reset from the PCIe reset pin of the device
+      pcie_clkp           => pcie_clkp,     -- 100MHz Refclk
+      pcie_clkn           => pcie_clkn,     -- 100MHz Refclk
 
 -- Xilinx requires both pins of differential transceivers
       pcie_rxp            => pcie_rxp , -- Input
@@ -622,7 +622,7 @@ BEGIN
       pcie_txp            => pcie_txp , -- Output
       pcie_txn            => pcie_txn , -- Output
 
-      fan_cde             => open,
+      fan_cde             => open,        
 
 -- SPI Flash Interface
       spi_miso_secondary  => spi_miso_secondary,

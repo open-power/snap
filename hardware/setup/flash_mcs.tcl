@@ -91,7 +91,9 @@ if { [get_property PART $fpgadevice] != $fpgapartnum } {
 set fpga_cfgmem [get_property PROGRAM.HW_CFGMEM $fpgadevice]
 set_property PROGRAM.ADDRESS_RANGE {use_file} $fpga_cfgmem
 set_property PROGRAM.FILES [list $mcsfile] $fpga_cfgmem
-set_property PROGRAM.BPI_RS_PINS $rs_pins $fpga_cfgmem
+if { $fpgacard != "RCXVUP" } {
+  set_property PROGRAM.BPI_RS_PINS $rs_pins $fpga_cfgmem
+}
 # puts [get_property PROGRAM.BPI_RS_PINS $fpga_cfgmem]
 set_property PROGRAM.UNUSED_PIN_TERMINATION {pull-none} $fpga_cfgmem
 set_property PROGRAM.BLANK_CHECK 0 $fpga_cfgmem

@@ -18,14 +18,16 @@
 ############################################################################
 ############################################################################
 
-create_clock -period 10.000 -name pci_pi_refclk_p0 -waveform {0.000 5.000} [get_ports pci_pi_refclk_p0]
-set_input_jitter [get_clocks -of_objects [get_ports pci_pi_refclk_p0]] 0.200
+create_clock -name sys_clk -period 10 [get_ports pcie_clkp]
 
-set_false_path -from [get_ports *pci_pi_nperst0]
+set_property LOC [get_package_pins -of_objects [get_bels [get_sites -filter {NAME =~ *COMMON*} -of_objects [get_iobanks -of_objects [get_sites GTYE4_COMMON_X1Y6]]]/REFCLK1P]] [get_ports pcie_clkp]
+set_property LOC [get_package_pins -of_objects [get_bels [get_sites -filter {NAME =~ *COMMON*} -of_objects [get_iobanks -of_objects [get_sites GTYE4_COMMON_X1Y6]]]/REFCLK1N]] [get_ports pcie_clkn]
+
+set_false_path -from [get_ports pcie_rst_n]
 
 set_max_delay -datapath_only -from [get_clocks -of_objects [get_nets c0/U0/pcihip0_psl_clk]] -to [get_clocks -of_objects [get_nets c0/U0/psl_clk]]         4.000
 set_max_delay -datapath_only -from [get_clocks -of_objects [get_nets c0/U0/psl_clk]]         -to [get_clocks -of_objects [get_nets c0/U0/pcihip0_psl_clk]] 4.000
 
-set_max_delay -datapath_only -from [get_ports *b_flash*] 5.000
-set_max_delay -datapath_only -from [get_cells -hierarchical -filter {NAME=~ c0/U0/capi_bis/f/dff_flash_* && IS_SEQUENTIAL == 1}] -to [get_ports *b_flash*] 5.000
-set_max_delay -datapath_only -from [get_cells -hierarchical -filter {NAME=~ c0/U0/capi_bis/f/dff_flash_* && IS_SEQUENTIAL == 1}] -to [get_ports *o_flash*] 5.000
+#set_max_delay -datapath_only -from [get_ports *b_flash*] 5.000
+#set_max_delay -datapath_only -from [get_cells -hierarchical -filter {NAME=~ c0/U0/capi_bis/f/dff_flash_* && IS_SEQUENTIAL == 1}] -to [get_ports *b_flash*] 5.000
+#set_max_delay -datapath_only -from [get_cells -hierarchical -filter {NAME=~ c0/U0/capi_bis/f/dff_flash_* && IS_SEQUENTIAL == 1}] -to [get_ports *o_flash*] 5.000
