@@ -18,6 +18,7 @@
 #open_wave_database native
 #get_objects -verbose -recursive -filter { type == internal_signal } *fsm*
  add_wave -r *
+ save_wave_config all.wcfg
 ##### use VCD format
 #open_vcd {dump.vcd}
 #log_vcd *
