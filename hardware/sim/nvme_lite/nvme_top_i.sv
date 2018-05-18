@@ -57,7 +57,7 @@ module nvme_top (
     input  wire ACT_NVME_AXI_wvalid,
 
     /* SDRAM Access AXI Bus: Here we need to copy data to or from */
-    output wire [33:0]DDR_M_AXI_araddr,
+    output wire [31:0]DDR_M_AXI_araddr,
     output wire [1:0]DDR_M_AXI_arburst,
     output wire [3:0]DDR_M_AXI_arcache,
     output wire [3:0]DDR_M_AXI_arid,
@@ -69,7 +69,7 @@ module nvme_top (
     output wire [3:0]DDR_M_AXI_arregion,
     output wire [2:0]DDR_M_AXI_arsize,
     output wire [0:0]DDR_M_AXI_arvalid,
-    output wire [33:0]DDR_M_AXI_awaddr,
+    output wire [31:0]DDR_M_AXI_awaddr,
     output wire [1:0]DDR_M_AXI_awburst,
     output wire [3:0]DDR_M_AXI_awcache,
     output wire [3:0]DDR_M_AXI_awid,
@@ -208,7 +208,7 @@ module nvme_top (
     assign DDR_M_AXI_awlen = DDR_awlen;
     assign DDR_M_AXI_awsize = DDR_awsize;
     assign DDR_M_AXI_awburst = DDR_awburst;
-    assign DDR_M_AXI_awaddr = DDR_awaddr;
+    assign DDR_M_AXI_awaddr = DDR_awaddr[31:0];
     assign DDR_M_AXI_awvalid = DDR_awvalid;
     assign DDR_M_AXI_wdata = DDR_wdata;
     assign DDR_M_AXI_wstrb = DDR_wstrb;
@@ -217,7 +217,7 @@ module nvme_top (
     assign DDR_M_AXI_arvalid = DDR_arvalid;
     assign DDR_M_AXI_arlen = DDR_arlen;
     assign DDR_M_AXI_arsize = DDR_arsize;
-    assign DDR_M_AXI_araddr = DDR_araddr;
+    assign DDR_M_AXI_araddr = DDR_araddr[31:0];
     assign DDR_M_AXI_rready = DDR_rready;
     assign DDR_M_AXI_bready = DDR_bready;
     assign DDR_M_AXI_arburst = DDR_arburst;
