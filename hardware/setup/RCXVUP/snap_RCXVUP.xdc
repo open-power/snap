@@ -25,6 +25,9 @@ set_property LOC [get_package_pins -of_objects [get_bels [get_sites -filter {NAM
 
 set_false_path -from [get_ports pcie_rst_n]
 
+set_false_path -from [get_cells a0/pci_user_reset_q_reg] -to [get_cells a0/sdram_reset_m_reg]
+set_false_path -from [get_cells a0/pci_user_reset_qq_reg] -to [get_cells a0/sdram_reset_m_reg]
+
 set_max_delay -datapath_only -from [get_clocks -of_objects [get_nets c0/U0/pcihip0_psl_clk]] -to [get_clocks -of_objects [get_nets c0/U0/psl_clk]]         4.000
 set_max_delay -datapath_only -from [get_clocks -of_objects [get_nets c0/U0/psl_clk]]         -to [get_clocks -of_objects [get_nets c0/U0/pcihip0_psl_clk]] 4.000
 
