@@ -36,7 +36,7 @@ if [ $# -gt 1 ]; then
       '714ee9a2f542064ea9733639d540f562')    export PSL_DCP_TYPE="N250S";; # Version 007 built with vivado 2017.4
       '51b64ad40a3dc54ec855d7d7dfef0896')    export PSL_DCP_TYPE="ADKU3";; # rblack_PSLrev6_v174_20170122_vsec400
       '6de8dd18738e8dfd65172196de9965d6')    export PSL_DCP_TYPE="AD8K5";; # portal_20180326_r006
-      '400d13185ce03f38776d672690618b2e')    export PSL_DCP_TYPE="S121B";; # psl233_viv17.4_vsec400h_Feb23
+      'b42c543031c2878674f942e3727958d1')    export PSL_DCP_TYPE="S121B";; # wbstart_apr24
       'd051aa72ce08b60fd587a74a5146bf88')    export PSL_DCP_TYPE="N250S OUTDATED";;
       '5bf24f90f52e6959e8e6082245a2ac3c')    export PSL_DCP_TYPE="N250S OUTDATED";;
       '3a2d162828aed3cb271d1151be9bfdde')    export PSL_DCP_TYPE="N250S OUTDATED";; # with reset fix 20171220
@@ -45,6 +45,7 @@ if [ $# -gt 1 ]; then
       'f920e532c7dfea8aa7c0f90db5b54bff')    export PSL_DCP_TYPE="ADKU3 OUTDATED";; # with reset fix 20171220
       '3fa538efab1bc3e3fabe06477445d314')    export PSL_DCP_TYPE="S121B OUTDATED";;
       '8602200acb12d2de68c2a8a95735571a')    export PSL_DCP_TYPE="S121B OUTDATED";;
+      '400d13185ce03f38776d672690618b2e')    export PSL_DCP_TYPE="S121B OUTDATED";; # psl233_viv17.4_vsec400h_Feb23
       *)                                     export PSL_DCP_TYPE="UNKNOWN";;
     esac
   fi
