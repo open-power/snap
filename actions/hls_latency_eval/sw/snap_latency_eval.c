@@ -352,9 +352,12 @@ int main(int argc, char *argv[])
 
 	// ----Collect the timestamp AFTER the call of the action
 		gettimeofday(&etime, NULL);
+		// Display the data sent and received by the application
+		if(verbose_flag) {
+			fprintf(stdout,"String sent to action is: %s\n", vol_ibuff);
+			fprintf(stdout,"String processed is     : %s\n", vol_obuff);
+		}
 		// Display the time of the action call 
-		fprintf(stdout,"String sent to action is: %s\n", vol_ibuff);
-		fprintf(stdout,"String processed is     : %s\n", vol_obuff);
 		fprintf(stdout, "SNAP action processing for word with letter %c took %lld usec\n",
 			letter,
 			(long long)(timediff_usec(&etime, &stime)));
