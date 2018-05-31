@@ -187,6 +187,8 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hls_intersect'
   elif [ -n "$HLS_NVME_MEMCOPY" ]; then
     AR='${SNAP_ROOT}/actions/hls_nvme_memcopy'
+  elif [ -n "$HLS_LATENCY_EVAL" ]; then
+    AR='${SNAP_ROOT}/actions/hls_latency_eval'
   elif [ -n "$HLS_HELLOWORLD" ]; then
     AR='${SNAP_ROOT}/actions/hls_helloworld'
   fi
