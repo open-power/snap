@@ -209,16 +209,19 @@ static void process_action(snap_membus_t *din_gmem,
     
     snapu32_t xfer_blocks;
     snapu32_t nvme_xfer_blocks;
-    snapu32_t nvme_xfer_batches = 0;
+    snapu32_t nvme_xfer_batches   = 0;
     
     snapu16_t i;
-    short rc = 0;
+    short rc                      = 0;
     snapu32_t ReturnCode = SNAP_RETC_SUCCESS;
     snapu64_t InputAddress;
     snapu64_t OutputAddress;
-    snap_bool_t drive_id = 0;
-    snap_bool_t skip_mainbody = 0;
-
+    snap_bool_t drive_id          = 0;
+    snap_bool_t skip_mainbody     = 0;
+    snapu64_t Card_Dram_Size      = 0;
+    snapu64_t DRAM_ADDR_FROM_SSD  = 0x00000000;
+    snapu64_t DRAM_ADDR_TO_SSD    = 0x80000000;
+    
     snapu64_t dram_addr;
     snapu64_t memcopy_InputAddress;
     snapu64_t memcopy_OutputAddress;
@@ -228,12 +231,15 @@ static void process_action(snap_membus_t *din_gmem,
 
     // Byte address received need to be aligned with port width
     // Anyway lower ADDR_RIGHT_SHIFT address bits will be cut to 0. 
-    InputAddress = act_reg->Data.in.addr;
-    OutputAddress = act_reg->Data.out.addr;
-    drive_id = act_reg->Data.drive_id & 0x1;
+    InputAddress       = act_reg->Data.in.addr;
+    OutputAddress      = act_reg->Data.out.addr;
+    drive_id           = act_reg->Data.drive_id & 0x1;
+    Card_Dram_Size     = act_reg->Data.maxbuffer_size;
+    DRAM_ADDR_FROM_SSD = act_reg->Data.sdram_buff_fwd_offset;
+    DRAM_ADDR_TO_SSD   = act_reg->Data.sdram_buff_rev_offset;
 
-    address_xfer_offset = 0x0;
-    nvme_address_xfer_offset = 0x0;
+    address_xfer_offset        = 0x0;
+    nvme_address_xfer_offset   = 0x0;
 
 
     // testing sizes to prevent from writing out of bounds
@@ -242,7 +248,7 @@ static void process_action(snap_membus_t *din_gmem,
 
 
     //======================================================================
-    // Illegle conditions checking.
+    // Illegal conditions checking.
     if (action_xfer_size == 0) {
         act_reg->Control.Retc = SNAP_RETC_FAILURE;
         return;
@@ -251,12 +257,14 @@ static void process_action(snap_membus_t *din_gmem,
     // For the case that will use CARD_DRAM (type = NVME or CARD_DRAM)
     // Not allow copying more than CARD_DRAM_SIZE bytes.
     if (act_reg->Data.in.type != SNAP_ADDRTYPE_HOST_DRAM and
-        act_reg->Data.in.size > CARD_DRAM_SIZE) {
+     //   act_reg->Data.in.size > CARD_DRAM_SIZE) {
+        act_reg->Data.in.size >    Card_Dram_Size) {
         act_reg->Control.Retc = SNAP_RETC_FAILURE;
         return;
         }
     if (act_reg->Data.out.type != SNAP_ADDRTYPE_HOST_DRAM and
-        act_reg->Data.out.size > CARD_DRAM_SIZE) {
+ //       act_reg->Data.out.size > CARD_DRAM_SIZE) {
+        act_reg->Data.out.size > Card_Dram_Size) {
         act_reg->Control.Retc = SNAP_RETC_FAILURE;
         return;
         }
