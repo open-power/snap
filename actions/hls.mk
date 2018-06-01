@@ -18,7 +18,13 @@
 #   xcku060-ffva1156-2-e
 #   xc7vx690tffg1157-2
 #   xcku115-flva1517-2-e
-FPGACHIP    ?= xcku060-ffva1156-2-e
+#FPGACHIP    ?= xcku060-ffva1156-2-e
+CONFIG_FILE = $(SNAP_ROOT)/.snap_config
+ifneq ("$(wildcard $(CONFIG_FILE))","")
+  FPGACHIP = $(shell grep FPGACHIP $(CONFIG_FILE) | cut -d = -f 2)
+  $(info FPGACHIP is set to $(FPGACHIP).)
+endif
+
 PART_NUMBER ?= $(FPGACHIP)
 
 # The wrapper name must match a function in the HLS sources which is
