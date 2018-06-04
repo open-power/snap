@@ -15,7 +15,7 @@
  */
 
 /**
- * SNAP HelloWorld Example
+ * SNAP Latency Evaluation Example
  *
  * Demonstration how to get data into the FPGA, process it using a SNAP
  * action and move the data out of the FPGA back to host-DRAM.
@@ -172,6 +172,10 @@ int main(int argc, char *argv[])
 	char str_ref[64];
 	//int count = 0;
 	unsigned int mmio_out = 0;
+	unsigned long long int mintime = ULLONG_MAX;
+	unsigned long long int maxtime = 0x0ull;
+	unsigned long long int avgtime = 0x0ull;
+	unsigned long long int lcltime = 0x0ull;
 
 	// collecting the command line arguments
 	while (1) {
@@ -358,13 +362,19 @@ int main(int argc, char *argv[])
 			fprintf(stdout,"String processed is     : %s\n", vol_obuff);
 		}
 		// Display the time of the action call 
+		lcltime = (long long)(timediff_usec(&etime, &stime));
+		if (lcltime < mintime) mintime = lcltime;
+		if (lcltime > maxtime) maxtime = lcltime;
+		avgtime += lcltime;
 		fprintf(stdout, "SNAP action processing for word with letter %c took %lld usec\n",
-			letter,
-			(long long)(timediff_usec(&etime, &stime)));
+			letter, lcltime);
 		
 		letter ++;
 	}
 
+	// Display the min / max / avg values of the latency 
+	fprintf(stdout, "SNAP action processing stats: MIN: %lld usec - MAX: %lld usec - AVG: %lld usec\n",
+		mintime, maxtime, (avgtime/MAX_TESTS));
 	// Collect the timestamp BEFORE the last step of the action completion
 	gettimeofday(&stime, NULL);
 	// stop the action if not done and read all registers from the action
