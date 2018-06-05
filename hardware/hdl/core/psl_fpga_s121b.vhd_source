@@ -50,12 +50,15 @@ ENTITY psl_fpga IS
 
     
     -- flash bus
+#ifdef CONFIG_S121B_BPIx16
     o_flash_oen: out std_logic;
     o_flash_wen: out std_logic;
     o_flash_rstn: out std_logic;
     o_flash_a: out std_logic_vector(1 to 26);
     o_flash_advn: out std_logic;
     b_flash_dq: inout std_logic_vector(0 to 11);
+#endif
+    -- no port for S121B_SPIx4
 
     -- PTMON PMBUS
  --   b_basei2c_scl: inout std_logic;                                       -- clock
@@ -209,13 +212,14 @@ End Component psl_accel;
 Component base_img
   PORT(
        -- flash bus
+#ifdef CONFIG_S121B_BPIx16
        o_flash_oen: out std_logic;
        o_flash_wen: out std_logic;
        o_flash_rstn: out std_logic;
        o_flash_a: out std_logic_vector(1 to 26);
        o_flash_advn: out std_logic;
        b_flash_dq: inout std_logic_vector(0 to 11);
-
+#endif
        -- PTMON PMBUS
        --b_basei2c_scl: inout std_logic;                                       -- clock
        --b_basei2c_sda: inout std_logic;                                       -- data
@@ -517,13 +521,14 @@ begin
          pci0_o_txn_out7 => pci0_o_txn_out7,
 
        -- flash bus
+#ifdef CONFIG_S121B_BPIx16
          o_flash_oen => o_flash_oen,
          o_flash_wen => o_flash_wen,
          o_flash_rstn => o_flash_rstn,
          o_flash_a => o_flash_a,
          o_flash_advn => o_flash_advn,
          b_flash_dq => b_flash_dq,
-
+#endif
          --PTMON PMBUS
          --b_basei2c_scl => b_basei2c_scl,
          --b_basei2c_sda => b_basei2c_sda,
