@@ -24,6 +24,7 @@ set logfile       $logs_dir/snap_build.log
 set fpgacard      $::env(FPGACARD)
 set ila_debug     [string toupper $::env(ILA_DEBUG)]
 set vivadoVer     [version -short]
+set card_version  $::env(CARD_VERSION)
 
 #Checkpoint directory
 set dcp_dir $root_dir/build/Checkpoints
