@@ -349,16 +349,21 @@ int main(int argc, char *argv[])
 		// Set string reference with uppercase of letter
 		memset(str_ref, (letter - ('a' - 'A')), size); 
 
-		// Set vol_ibuff with a letter 
-		memset_volatile(vol_ibuff, letter, size);
-
 		// Before starting a new write, check that action didn't timeout
-		// This access is done reading an action register with MMIO
-		action_timed_out = snap_action_is_idle(action, &rc);
-		if(action_timed_out) {
+		// This access is done reading an action register with MMIO (optional)
+		// or looking if the last returned value is the '!' timeout sequence
+		if ((memcmp_volatile(vol_obuff, str_timeout, size) == 0) ||
+		    snap_action_is_idle(action, &rc) == 1) {
+			action_timed_out  = 1;
 			fprintf(stdout, "SNAP action timeout - stop sending data to action\n");
 			break;
 		}
+
+		// Set vol_ibuff with a letter 
+		memset_volatile(vol_ibuff, letter, size);
+		// Display the data sent by the application
+		if(verbose_flag)
+			fprintf(stdout,"String sent to action is: %s\n", vol_ibuff);
 
 		//Poll until vol_obuff has been processed by hardware action
 		// and contains the same string than the reference string
@@ -368,11 +373,9 @@ int main(int argc, char *argv[])
 		       (memcmp_volatile(vol_obuff, str_timeout, size) != 0)) {
 		}
 
-		// Display the data sent and received by the application
-		if(verbose_flag) {
-			fprintf(stdout,"String sent to action is: %s\n", vol_ibuff);
+		// Display the data received by the application
+		if(verbose_flag) 
 			fprintf(stdout,"String processed is     : %s\n", vol_obuff);
-		}
 		
 		// prevent sending 'z' sequence which would ask the action to stop
 		if (letter == 'y') 

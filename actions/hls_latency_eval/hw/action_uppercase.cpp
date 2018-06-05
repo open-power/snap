@@ -66,10 +66,17 @@ static int process_action(snap_membus_t *din_gmem,
 	    // Counting the number of z in the word
 	    if (text[i] == 'z') 
 		z_cnt++;
-	    // Converting all letters to uppercase letters
-	    if (text[i] >= 'a' && text[i] <= 'z') 
-		text[i] = text[i] - ('a' - 'A'); //uppercase
 
+	    if (stop_timeout) 
+		// write a specific end sequence for timeout
+		text[i] = '!';
+	    else {
+	    	if (text[i] >= 'a' && text[i] <= 'z') 
+	    		// Converting all letters to uppercase letters if no timeout
+			text[i] = text[i] - ('a' - 'A'); //uppercase
+	    	else
+			text[i] = text[i];
+	   }
 	    // end the loop / stop the action if sequence of 64 'z' letters found
 	    if (z_cnt == BPERDW)
 	       stop_sequence = 1;
@@ -80,12 +87,7 @@ static int process_action(snap_membus_t *din_gmem,
   }
 
     if (stop_timeout) // timeout
-    {
-	// write a specific end sequence for timeout
-	memset(text, '!', BPERDW);
-	memcpy(dout_gmem + o_idx, (char*) text, BPERDW);
     	act_reg->Control.Retc = SNAP_RETC_TIMEOUT;
-    }
     else
     	act_reg->Control.Retc = SNAP_RETC_SUCCESS;
 
