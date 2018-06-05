@@ -50,7 +50,6 @@ static int process_action(snap_membus_t *din_gmem,
     uint64_t read_cnt = 0;
     char i;
 
-
     while ((stop_timeout == 0) && (stop_sequence == 0)) {
 
 	z_cnt = 0;
@@ -81,7 +80,12 @@ static int process_action(snap_membus_t *din_gmem,
   }
 
     if (stop_timeout) // timeout
+    {
+	// write a specific end sequence for timeout
+	memset(text, '!', BPERDW);
+	memcpy(dout_gmem + o_idx, (char*) text, BPERDW);
     	act_reg->Control.Retc = SNAP_RETC_TIMEOUT;
+    }
     else
     	act_reg->Control.Retc = SNAP_RETC_SUCCESS;
 

@@ -83,6 +83,7 @@ static int action_main(struct snap_sim_action *action,
                 dst[i] = src[i];
         }
 
+	fprintf(stdout, ">>> Software ACTION cannot work since not in an indepedent thread <<\n");
 	// update the return code to the SNAP job manager
 	action->job.retc = SNAP_RETC_SUCCESS;
 	return 0;

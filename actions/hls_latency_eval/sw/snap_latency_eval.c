@@ -99,6 +99,9 @@ static void usage(const char *prog)
 	"echo Run the application + hardware action on FPGA\n"
 	"snap_latency_eval -v\n"
 	"\n"
+	"echo Run the application + hardware action on FPGA with 1000 iterations\n"
+	"snap_latency_eval -n 1000\n"
+	"\n"
 	"echo Run the application + hardware action on FPGA with small timeout\n"
 	"snap_latency_eval -T 2\n"
 	"\n"
@@ -159,6 +162,7 @@ int main(int argc, char *argv[])
 	struct latency_eval_job mjob_in, mjob_out;
 	unsigned long timeout = 60;
 	uint64_t MAX_reads = 1 * 0xFFFFFF;
+	int MAX_tests = 100;
 	struct timeval etime, stime;
 	ssize_t size = 64;
 	volatile uint8_t *vol_ibuff = NULL, *vol_obuff = NULL;
@@ -170,11 +174,9 @@ int main(int argc, char *argv[])
 	// default is interrupt mode enabled (vs polling)
 	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 	char str_ref[64];
+	char str_timeout[64];
 	//int count = 0;
 	unsigned int mmio_out = 0;
-	unsigned long long int mintime = ULLONG_MAX;
-	unsigned long long int maxtime = 0x0ull;
-	unsigned long long int avgtime = 0x0ull;
 	unsigned long long int lcltime = 0x0ull;
 
 	// collecting the command line arguments
@@ -184,6 +186,7 @@ int main(int argc, char *argv[])
 			{ "card",	 required_argument, NULL, 'C' },
 			{ "timeout",	 required_argument, NULL, 't' },
 			{ "action-timeout", required_argument, NULL, 'T' },
+			{ "number of iterations", required_argument, NULL, 'n' },
 			{ "no-irq",	 no_argument,	    NULL, 'N' },
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
@@ -192,7 +195,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-                                 "C:t:T:XNVvh",
+                                 "C:t:T:n:XNVvh",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -206,6 +209,9 @@ int main(int argc, char *argv[])
                         break;		
                 case 'T':
                         MAX_reads = 0xF * strtol(optarg, (char **)NULL, 0);
+                        break;		
+                case 'n':
+                        MAX_tests = strtol(optarg, (char **)NULL, 0);
                         break;		
                 case 'N':
                         action_irq = 0;
@@ -330,51 +336,72 @@ int main(int argc, char *argv[])
 	// Action converts 64 Bytes words read to UPPERCASE until he finds 64 'z'
 	char letter = 'a';
 	int i;
-	int MAX_TESTS = 26;
-	for (i = 0; i < MAX_TESTS; i++) {
+	int action_timed_out = 0;
+
+	// String filled with '!' by action in case of Action timeout
+	memset(str_timeout, '!', size); 
+
+	// ----Collect the timestamp BEFORE the call of the sequence to measure
+	gettimeofday(&stime, NULL);
+
+	for (i = 0; i < MAX_tests -1; i++) 
+	{
 		// Set string reference with uppercase of letter
 		memset(str_ref, (letter - ('a' - 'A')), size); 
-		//__hexdump(stderr, str_ref, size);
-		
-		// Before starting a new write, check that action didn't timeout
-		if(snap_action_is_idle(action, &rc)) {
-			fprintf(stdout, "SNAP action timeout - stop sending data to action\n");
-			break;
-		}
-
-	// ----Collect the timestamp BEFORE the call of the action
-		gettimeofday(&stime, NULL);
 
 		// Set vol_ibuff with a letter 
 		memset_volatile(vol_ibuff, letter, size);
 
-		//Poll until vol_obuff has been processed by hardware action
-		// and contains the same string than the reference string
-		// don't insert any system call to prevent killing latency
-		while (memcmp_volatile(vol_obuff, str_ref, size) != 0) {
+		// Before starting a new write, check that action didn't timeout
+		// This access is done reading an action register with MMIO
+		action_timed_out = snap_action_is_idle(action, &rc);
+		if(action_timed_out) {
+			fprintf(stdout, "SNAP action timeout - stop sending data to action\n");
+			break;
 		}
 
-	// ----Collect the timestamp AFTER the call of the action
-		gettimeofday(&etime, NULL);
+		//Poll until vol_obuff has been processed by hardware action
+		// and contains the same string than the reference string
+		// or the timeout string
+		// don't insert any system call to prevent killing latency
+		while ((memcmp_volatile(vol_obuff, str_ref, size) != 0) && 
+		       (memcmp_volatile(vol_obuff, str_timeout, size) != 0)) {
+		}
+
 		// Display the data sent and received by the application
 		if(verbose_flag) {
 			fprintf(stdout,"String sent to action is: %s\n", vol_ibuff);
 			fprintf(stdout,"String processed is     : %s\n", vol_obuff);
 		}
-		// Display the time of the action call 
-		lcltime = (long long)(timediff_usec(&etime, &stime));
-		if (lcltime < mintime) mintime = lcltime;
-		if (lcltime > maxtime) maxtime = lcltime;
-		avgtime += lcltime;
-		fprintf(stdout, "SNAP action processing for word with letter %c took %lld usec\n",
-			letter, lcltime);
 		
-		letter ++;
+		// prevent sending 'z' sequence which would ask the action to stop
+		if (letter == 'y') 
+			letter = 'a';
+		else 
+			letter ++;
+	}
+	// ask action to stop => last write
+	letter = 'z';
+	memset(str_ref, (letter - ('a' - 'A')), size); 
+	memset_volatile(vol_ibuff, letter, size);
+	while (!action_timed_out != 0 &&
+	       (memcmp_volatile(vol_obuff, str_ref, size) != 0) && 
+	       (memcmp_volatile(vol_obuff, str_timeout, size) != 0)) {
+	}
+	// Display the data sent and received by the application
+	if(verbose_flag && !action_timed_out) {
+		fprintf(stdout,"String sent to action is: %s\n", vol_ibuff);
+		fprintf(stdout,"String processed is     : %s\n", vol_obuff);
 	}
 
-	// Display the min / max / avg values of the latency 
-	fprintf(stdout, "SNAP action processing stats: MIN: %lld usec - MAX: %lld usec - AVG: %lld usec\n",
-		mintime, maxtime, (avgtime/MAX_TESTS));
+	// ----Collect the timestamp AFTER the call of the sequence to measure
+	gettimeofday(&etime, NULL);
+
+	// Display the time of the action call (use the loop index + 1 as iteration done)
+	lcltime = (long long)(timediff_usec(&etime, &stime));
+	fprintf(stdout, "SNAP action processing for %d iteration is %f usec\n",
+		i+1, (float)lcltime/(float)(i+1));
+
 	// Collect the timestamp BEFORE the last step of the action completion
 	gettimeofday(&stime, NULL);
 	// stop the action if not done and read all registers from the action
