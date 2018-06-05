@@ -32,12 +32,21 @@ choice
                 select CAPI10
                 select DISABLE_NVME
                 help
-                  AlphaData 8K5 (rev2 + newer) has ethernet and 8GB DDR4 SDRAM (2400). 
+                  AlphaData 8K5 (rev2 + newer) has ethernet and 8GB DDR4 SDRAM (2400).
                   Uses Xilinx FPGA XCKU115.
 
-	config S121B
-                bool "Semptian NSA121B Card with Ethernet, 8GB DDR4 SDRAM and Xilinx KU115 FPGA"
+	config S121B_BPIx16
+                bool "Semptian NSA121B (v16.1, BPIx16) Card with Ethernet, 8GB DDR4 SDRAM and Xilinx KU115 FPGA"
                 select CAPI10
+		select S121B
+                select DISABLE_NVME
+                help
+                  Semptian NSA121B has ethernet and 8GB DDR4 SDRAM. Uses Xilinx FPGA XCKU115.
+
+	config S121B_SPIx4
+                bool "Semptian NSA121B (v16.2, SPIx4) Card with Ethernet, 8GB DDR4 SDRAM and Xilinx KU115 FPGA"
+                select CAPI10
+		select S121B
                 select DISABLE_NVME
                 help
                   Semptian NSA121B has ethernet and 8GB DDR4 SDRAM. Uses Xilinx FPGA XCKU115.
@@ -62,9 +71,24 @@ config FPGACARD
         default "N250S"  if N250S
         default "N250SP" if N250SP
         default "ADKU3"  if ADKU3
-        default "S121B"  if S121B
+        default "S121B"  if S121B_BPIx16
+        default "S121B"  if S121B_SPIx4
         default "AD8K5"  if AD8K5
         default "RCXVUP" if RCXVUP
+
+#Some vendors may have some differences for one FPGACARD
+#i.e, Flash interface, DDR capacity etc.
+#You can define any string for CARD_VERSION.
+#Use $CARD_VERSION with $FPGACARD together when you need to
+#distinguish them.
+config CARD_VERSION
+        string
+	default "BPIx16" if S121B_BPIx16
+	default "SPIx4"  if S121B_SPIx4
+
+config S121B
+	bool
+	default n
 
 config CAPI10
         bool
@@ -77,10 +101,11 @@ config CAPI20
 config FPGACHIP
         string
         default "xcku060-ffva1156-2-e" if N250S || ADKU3
-        default "xcku115-flva1517-2-e" if S121B
+        default "xcku115-flva1517-2-e" if S121B_BPIx16 || S121B_SPIx4
         default "xcku15p-ffva1156-2-i" if N250SP
         default "xcku115-flva1517-2-e" if AD8K5
         default "xcvu9p-flgb2104-2l-e-es1" if RCXVUP
+
 
 config NUM_OF_ACTIONS
         int
@@ -134,7 +159,7 @@ choice
                - Read data from the server memory or from the card DDR
                - Write data to the server memory or to the card DDR
                - A temporary buffer is used in the FPGA (configurable size)
-               All combination can be done. 
+               All combination can be done.
                This example is written in C and compiled with HLS
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
@@ -164,7 +189,7 @@ choice
             help
                This example shows different ways to work with data:
                - Read a pattern and text from the server memory
-               - search the pattern within the text 
+               - search the pattern within the text
                     (2 methods used : text bufferized - stream flow)
                - send back the number of occurrences
                No optmization was done on this example
@@ -184,8 +209,8 @@ choice
 	    help
                This example often does not meet timing (> 200ps negative slack) in bitstream generation.
                Running on FPGA hardware has passed for many times but it is NOT guaranteed.
-               It is intended as a HLS coding example to show how to make two implementations for a single target. 
-               It also shows how to invoke the hardware action several times from C main() function. 
+               It is intended as a HLS coding example to show how to make two implementations for a single target.
+               It also shows how to invoke the hardware action several times from C main() function.
             select ENABLE_HLS_SUPPORT
             select FORCE_SDRAM_OR_BRAM
             select DISABLE_NVME
@@ -215,7 +240,7 @@ choice
             help
                This is the simplest example to start with:
                - Reading text from the server memory
-               - Processing changing case of the text 
+               - Processing changing case of the text
                - Writing back the text to the server memory
                This example is written in C and compiled with HLS
             select ENABLE_HLS_SUPPORT
@@ -267,7 +292,7 @@ config SDRAM_USED
 config ENABLE_BRAM
         bool
         prompt "Enable BRAM (replacing SDRAM for experimental use)"
-        depends on ! (DISABLE_SDRAM_AND_BRAM || ENABLE_PRFLOW) 
+        depends on ! (DISABLE_SDRAM_AND_BRAM || ENABLE_PRFLOW)
         help
           This is a development option. The AXI attached on-card SDRAM will be replaced by 512KB BRAM.
 
@@ -395,7 +420,7 @@ comment "================= Advanced Options: ================="
 
 config ENABLE_PRFLOW
         bool "Cloud build (enabling Partial Reconfiguration)"
-        help 
+        help
           Used for Cloud environment using specific PSL images
 
 config USE_PRFLOW
@@ -419,9 +444,9 @@ config ILA_DEBUG
 
 config ENABLE_FACTORY
         bool "Also create a factory image"
-        help 
+        help
           Used to generate a specific image to be located into the factory area
-          Default image is in the user area. 
+          Default image is in the user area.
           This specific factory area is used to recover from a bad user image
         depends on ! ENABLE_PRFLOW
 
