@@ -352,8 +352,11 @@ int main(int argc, char *argv[])
 		// Before starting a new write, check that action didn't timeout
 		// This access is done reading an action register with MMIO (optional)
 		// or looking if the last returned value is the '!' timeout sequence
-		if ((memcmp_volatile(vol_obuff, str_timeout, size) == 0) ||
+		// MMIO access has been removed for the benchmark to get the best number
+		/*if ((memcmp_volatile(vol_obuff, str_timeout, size) == 0) ||
 		    snap_action_is_idle(action, &rc) == 1) {
+		*/
+		if (memcmp_volatile(vol_obuff, str_timeout, size) == 0)  {
 			action_timed_out  = 1;
 			fprintf(stdout, "SNAP action timeout - stop sending data to action\n");
 			break;
