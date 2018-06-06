@@ -37,7 +37,7 @@ if [ $# -gt 1 ]; then
       '51b64ad40a3dc54ec855d7d7dfef0896')    export PSL_DCP_TYPE="ADKU3";; # rblack_PSLrev6_v174_20170122_vsec400
       '6de8dd18738e8dfd65172196de9965d6')    export PSL_DCP_TYPE="AD8K5";; # portal_20180326_r006
       'b42c543031c2878674f942e3727958d1')    export PSL_DCP_TYPE="S121B";; # wbstart_apr24, BPIx16
-      '6cf320f698fd3125ad27b189fd162142')    export PSL_DCP_TYPE="S121B";; # SPIx4 32bit flash address
+      'cbd3634f1b3c7ea7a5e7c7ed0590f9ba')    export PSL_DCP_TYPE="S121B";; # SPIx4 32bit flash address
       'd051aa72ce08b60fd587a74a5146bf88')    export PSL_DCP_TYPE="N250S OUTDATED";;
       '5bf24f90f52e6959e8e6082245a2ac3c')    export PSL_DCP_TYPE="N250S OUTDATED";;
       '3a2d162828aed3cb271d1151be9bfdde')    export PSL_DCP_TYPE="N250S OUTDATED";; # with reset fix 20171220
