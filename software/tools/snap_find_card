@@ -175,7 +175,11 @@ while getopts ":vA:C:Vh" opt; do
 		if [ $? == 1 ]; then
 			exit 1
 		fi
-		detect_card_name $card  "0x0632" "0x0607" "S121B"
+		detect_card_name $card  "0x0632" "0x0607" "S121B_v16.1_BPIx16"
+		if [ $? == 1 ]; then
+			exit 1
+		fi
+		detect_card_name $card  "0x0632" "0x0664" "S121B_v16.2_SPIx4"
 		if [ $? == 1 ]; then
 			exit 1
 		fi
@@ -226,11 +230,15 @@ case ${accel} in
 		detect_snap_cards "0x0632" "0x0605" "ADKU3"
 		RC=$?
 		;;
-	# NSA121B Card from Semptian
+	# NSA121B Card from Semptian BPIx16
 	"S121B")
-		detect_snap_cards "0x0632" "0x0607" "S121B"
+		detect_snap_cards "0x0632" "0x0607" "S121B_v16.1_BPIx16"
 		RC=$?
 		;;		
+	# NSA121B Card from Semptian SPIx4
+	"S121B")
+		detect_snap_cards "0x0632" "0x0664" "S121B_v16.2_SPIx4"
+		RC=$?
 	# 250s Card from Nallatech
 	"N250S")
 		detect_snap_cards "0x0632" "0x060a" "N250S"
@@ -256,7 +264,10 @@ case ${accel} in
 		detect_snap_cards "0x0632" "0x0605" "ADKU3"
 		RC=$((RC + $?))
 
-		detect_snap_cards "0x0632" "0x0607" "S121B"
+		detect_snap_cards "0x0632" "0x0607" "S121B_v16.1_BPIx16"
+		RC=$((RC + $?))
+
+		detect_snap_cards "0x0632" "0x0664" "S121B_v16.2_SPIx4"
 		RC=$((RC + $?))
 
 		detect_snap_cards "0x0632" "0x060a" "N250S"
