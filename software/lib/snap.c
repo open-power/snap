@@ -935,8 +935,7 @@ int snap_action_completed(struct snap_action *action, int *rc, int timeout)
  */
 
 int snap_action_sync_execute_job_set_regs(struct snap_action *action,
-				 struct snap_job *cjob,
-				 unsigned int *mmio_out)
+				 struct snap_job *cjob)
 {
 	int rc = 0;
 	unsigned int i;
@@ -944,7 +943,7 @@ int snap_action_sync_execute_job_set_regs(struct snap_action *action,
 	struct snap_queue_workitem job;
 	uint32_t action_addr;
 	uint32_t *job_data;
-	unsigned int mmio_in;
+	unsigned int mmio_in, mmio_out;
 
 	/* Size must be less than addr[6] */
 	if (cjob->wout_size > SNAP_JOBSIZE) {
@@ -969,19 +968,19 @@ int snap_action_sync_execute_job_set_regs(struct snap_action *action,
 	if (cjob->win_size <= (6 * 16)) {
 		memcpy(&job.user, (void *)(unsigned long)cjob->win_addr,
 		       MIN(cjob->win_size, sizeof(job.user)));
-		*mmio_out = cjob->win_size / sizeof(uint32_t);
+		mmio_out = cjob->win_size / sizeof(uint32_t);
 	} else {
 		job.user.ext.addr  = cjob->win_addr;
 		job.user.ext.size  = cjob->win_size;
 		job.user.ext.type  = SNAP_ADDRTYPE_HOST_DRAM;
 		job.user.ext.flags = (SNAP_ADDRFLAG_EXT |
 				      SNAP_ADDRFLAG_END);
-		*mmio_out = sizeof(job.user.ext) / sizeof(uint32_t);
+		mmio_out = sizeof(job.user.ext) / sizeof(uint32_t);
 	}
-	mmio_in = 16 / sizeof(uint32_t) + *mmio_out;
+	mmio_in = 16 / sizeof(uint32_t) + mmio_out;
 
 	snap_trace("    win_size: %d wout_size: %d mmio_in: %d mmio_out: %d\n",
-		cjob->win_size, cjob->wout_size, mmio_in, *mmio_out);
+		cjob->win_size, cjob->wout_size, mmio_in, mmio_out);
 	
 	job.short_action = card->sat;/* Set correct Value after attach */
 	job.seq = card->seq++; /* Set correct Value after attach */
@@ -1016,15 +1015,16 @@ __snap_action_sync_execute_job_set_regs_exit:
 
 int snap_action_sync_execute_job_check_completion(struct snap_action *action,
 				 struct snap_job *cjob,
-				 unsigned int mmio_out,
 				 unsigned int timeout_sec)
 {
 	int rc;
 	unsigned int i;
 	int completed;
 	struct snap_card *card = (struct snap_card *)action;
+	struct snap_queue_workitem job;
 	uint32_t action_addr;
 	uint32_t *job_data;
+	unsigned int mmio_out;
 
 	completed = snap_action_completed(action, &rc, timeout_sec);
 	/* Issue #360 */
@@ -1042,6 +1042,26 @@ int snap_action_sync_execute_job_check_completion(struct snap_action *action,
 			rc = SNAP_ETIMEDOUT;
 		}
 		goto __snap_action_sync_execute_job_exit;
+	}
+
+	/* job.short_action = 0x00; */	/* Set later */
+	job.flags = 0x01; /* FIXME Set Flag to Execute */
+	job.seq = 0x0000; /* Set later */
+	job.retc = 0x00000000;
+	job.priv_data = 0xdeadbeefc0febabeull;
+
+	/* Fill workqueue cacheline which we need to transfer to the action */
+	if (cjob->win_size <= (6 * 16)) {
+		memcpy(&job.user, (void *)(unsigned long)cjob->win_addr,
+		       MIN(cjob->win_size, sizeof(job.user)));
+		mmio_out = cjob->win_size / sizeof(uint32_t);
+	} else {
+		job.user.ext.addr  = cjob->win_addr;
+		job.user.ext.size  = cjob->win_size;
+		job.user.ext.type  = SNAP_ADDRTYPE_HOST_DRAM;
+		job.user.ext.flags = (SNAP_ADDRFLAG_EXT |
+				      SNAP_ADDRFLAG_END);
+		mmio_out = sizeof(job.user.ext) / sizeof(uint32_t);
 	}
 
 	/* Get RETC (0x184) back to the caller */
@@ -1090,10 +1110,9 @@ int snap_action_sync_execute_job(struct snap_action *action,
 				 unsigned int timeout_sec)
 {
 	int rc;
-	unsigned int mmio_out=0;
 
 	/* Set action registers through MMIO */
-	rc = snap_action_sync_execute_job_set_regs(action, cjob, &mmio_out);
+	rc = snap_action_sync_execute_job_set_regs(action, cjob);
 	if (rc != 0)
 		return rc;
 
@@ -1102,7 +1121,7 @@ int snap_action_sync_execute_job(struct snap_action *action,
 
 	/* Wait for finish */
 	rc = snap_action_sync_execute_job_check_completion(action, cjob, 
-				mmio_out, timeout_sec);
+				timeout_sec);
 	return rc;
 }
 

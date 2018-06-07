@@ -384,8 +384,7 @@ int snap_action_completed(struct snap_action *action, int *rc,
  * @return      SNAP_OK in case of success, else error.
  */
 int snap_action_sync_execute_job_set_regs(struct snap_action *action,
-                                 struct snap_job *cjob,
-                                 unsigned int *mmio_out);
+                                 struct snap_job *cjob);
 
 /**
  * Synchronous way to send a job away.  Last step : check completion
@@ -400,7 +399,6 @@ int snap_action_sync_execute_job_set_regs(struct snap_action *action,
  */
 int snap_action_sync_execute_job_check_completion(struct snap_action *action,
                                  struct snap_job *cjob,
-                                 unsigned int mmio_out,
                                  unsigned int timeout_sec);
 
 /**
