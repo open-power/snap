@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 International Business Machines
+ * Copyright 2018 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 
 #include <string.h>
 #include "ap_int.h"
-#include "action_uppercase.H"
+#include "action_latency_eval.H"
 
 //----------------------------------------------------------------------
 //--- MAIN PROGRAM -----------------------------------------------------

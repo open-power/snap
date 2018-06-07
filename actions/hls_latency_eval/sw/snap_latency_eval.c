@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 International Business Machines
+ * Copyright 2018 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -176,7 +176,6 @@ int main(int argc, char *argv[])
 	char str_ref[64];
 	char str_timeout[64];
 	//int count = 0;
-	unsigned int mmio_out = 0;
 	unsigned long long int lcltime = 0x0ull;
 
 	// collecting the command line arguments
@@ -317,7 +316,7 @@ int main(int argc, char *argv[])
 	gettimeofday(&stime, NULL);
 
 	// write the registers into the FPGA's action
-        rc = snap_action_sync_execute_job_set_regs(action, &cjob, &mmio_out);
+        rc = snap_action_sync_execute_job_set_regs(action, &cjob);
         if (rc != 0)
 		goto out_error2;
 
@@ -412,7 +411,7 @@ int main(int argc, char *argv[])
 	gettimeofday(&stime, NULL);
 	// stop the action if not done and read all registers from the action
         rc = snap_action_sync_execute_job_check_completion(action, &cjob,
-                                mmio_out, timeout);
+                                timeout);
 
 	// Collect the timestamp AFTER the last step of the action completion
 	gettimeofday(&etime, NULL);

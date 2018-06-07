@@ -1,8 +1,8 @@
-#ifndef __ACTION_UPPERCASE_H__
-#define __ACTION_UPPERCASE_H__
+#ifndef __ACTION_LATENCY_EVAL_H__
+#define __ACTION_LATENCY_EVAL_H__
 
 /*
- * Copyright 2017 International Business Machines
+ * Copyright 2018 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
 #include <action_changecase.h> /* latency_eval Job definition */
 
 //--------------------------------------------------------------------
-#define RELEASE_LEVEL		0x00000010
+#define RELEASE_LEVEL		0x00000020
 
 typedef char word_t[BPERDW];
 //---------------------------------------------------------------------
@@ -38,4 +38,4 @@ typedef struct {
 	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(latency_eval_job_t)];
 } action_reg;
 
-#endif  /* __ACTION_UPPERCASE_H__*/
+#endif  /* __ACTION_LATENCY_EVAL_H__*/

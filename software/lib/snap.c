@@ -928,6 +928,8 @@ int snap_action_completed(struct snap_action *action, int *rc, int timeout)
 
 /**
  * Synchronous way to send a job away.  First step : set registers
+ * This function writes through MMIO interface the registers
+ * to the action / in the FPGA internal memory
  *
  * @action	handle to streaming framework action/action
  * @cjob	streaming framework job
@@ -997,15 +999,17 @@ int snap_action_sync_execute_job_set_regs(struct snap_action *action,
 		i++, action_addr += sizeof(uint32_t)) {
 		rc = snap_mmio_write32(card, action_addr, job_data[i]);
 		if (rc != 0)
-			goto __snap_action_sync_execute_job_set_regs_exit;
+			goto __snap_action_sync_execute_job_exit;
 	}
 
-__snap_action_sync_execute_job_set_regs_exit:
+__snap_action_sync_execute_job_exit:
 	snap_action_stop(action);
 	return rc;
 }
 /**
  * Synchronous way to send a job away.  Last step : check completion
+ * This function check the completion of the action, manage the IRQ
+ * if needed, and read all action registers through MMIO interface
  *
  * @action	handle to streaming framework action/action
  * @cjob	streaming framework job
@@ -1099,6 +1103,10 @@ __snap_action_sync_execute_job_exit:
  * Synchronous way to send a job away. Blocks until job is done.
  * These 3 steps can be called separately from the application
  * BUT manage carefully the action timeout
+ *  * 1rst step: write Action registers into the FPGA
+ *  * 2nd  step: start the Action
+ *  *      step: processing - exchange data
+ *  * 3rd  step: check completion and manage IRQ if needed
  *
  * @action	handle to streaming framework action/action
  * @cjob	streaming framework job
