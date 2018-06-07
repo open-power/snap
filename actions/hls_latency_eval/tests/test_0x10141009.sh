@@ -79,7 +79,7 @@ function test_latency_eval {
     local size=$1
 
     echo -n "Doing snap_latency_eval "
-    cmd="snap_latency_eval -C${snap_card}"
+    cmd="snap_latency_eval -C${snap_card} -n 100000"
     eval ${cmd}
     if [ $? -ne 0 ]; then
 	echo "cmd: ${cmd}"
