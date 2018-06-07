@@ -20,7 +20,10 @@ set fpgacard      $::env(FPGACARD)
 
 set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 if { $fpgacard == "RCXVUP" } {
-   set_property BITSTREAM.CONFIG.EXTMASTERCCLK_EN DIV-1 [current_design]
+   # For Engineering samples (Can't use External MAster CLK, so use internal)
+   set_property BITSTREAM.CONFIG.EXTMASTERCCLK_EN {DISABLE} [current_design]
+   # following default should be ok for regular parts :
+   # set_property BITSTREAM.CONFIG.EXTMASTERCCLK_EN DIV-1 [current_design]
    set_property CONFIG_MODE SPIx8 [current_design]
    set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 8 [current_design]
    set_property BITSTREAM.CONFIG.SPI_32BIT_ADDR YES [current_design]
