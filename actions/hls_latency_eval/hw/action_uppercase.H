@@ -31,7 +31,7 @@ typedef char word_t[BPERDW];
 //---------------------------------------------------------------------
 // This is generic. Just adapt names for a new action
 // CONTROL is defined and handled by SNAP 
-// latency_eval_job_t is user defined in hls_helloworld/include/action_change_case.h
+// latency_eval_job_t is user defined in hls_latency_eval/include/action_change_case.h
 typedef struct {
 	CONTROL Control;	/*  16 bytes */
 	latency_eval_job_t Data;	/* up to 108 bytes */
