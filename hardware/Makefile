@@ -96,7 +96,6 @@ ifeq "$(BRAM_USED)" "TRUE"
 	export DDRI_USED=TRUE
 endif
 
-export CARD_VERSION ?= $(CARD_VERSION)
 export NVME_USED ?= FALSE
 
 export USE_PRFLOW ?= FALSE
