@@ -15,10 +15,9 @@
 # limitations under the License.
 #
 #-----------------------------------------------------------
-set fpgacard $::env(FPGACARD)
-set card_version $::env(CARD_VERSION)
 
-if { $fpgacard == "S121B" && $card_version == "SPIx4"} {
+set flash_interface $::env(FLASH_INTERFACE)
+if {$flash_interface == "SPIx4"} {
     set_property CONFIG_MODE SPIx4                          [current_design]
     set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 4            [current_design]
     set_property BITSTREAM.CONFIG.CONFIGRATE 110            [current_design]

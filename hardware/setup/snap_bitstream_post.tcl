@@ -16,14 +16,9 @@
 #
 #-----------------------------------------------------------
 
-set root_dir     $::env(SNAP_ROOT)/hardware
-set fpgacard     $::env(FPGACARD)
-set card_version $::env(CARD_VERSION)
+set root_dir        $::env(SNAP_ROOT)/hardware
+set flash_interface $::env(FLASH_INTERFACE)
+set flash_size      $::env(FLASH_SIZE)
 
-if { $fpgacard == "S121B" && $card_version == "SPIx4"} {
-# 256MB for S121B SPI device
-write_cfgmem -force -format bin -size 256 -interface SPIx4 -loadbit "up 0x0 $root_dir/viv_project/framework.runs/impl_1/psl_fpga.bit" $root_dir/viv_project/framework.runs/impl_1/psl_fpga
-} else {
-# Max. size is 64MB for N250S and ADKU3, 128MB for S121B and N250SP. Bin file size will match the device, so -size is not relevant here.
-write_cfgmem -force -format bin -size 128 -interface BPIx16 -loadbit "up 0x0 $root_dir/viv_project/framework.runs/impl_1/psl_fpga.bit" $root_dir/viv_project/framework.runs/impl_1/psl_fpga
-}
+
+write_cfgmem -force -format bin -size $flash_size -interface $flash_interface -loadbit "up 0x0 $root_dir/viv_project/framework.runs/impl_1/psl_fpga.bit" $root_dir/viv_project/framework.runs/impl_1/psl_fpga
