@@ -20,7 +20,7 @@ choice
                   Nallatech 250S card originally used for CAPI Flash using NVMe
                   storage. Uses Xilinx FPGA XCKU060.
 
-       config N250SP
+        config N250SP
                 bool "Experimental for CAPI2.0: Nallatech 250S+ with 4GB DDR4 SDRAM, NVMe and Xilinx KU15P FPGA"
                 select CAPI20
                 help
@@ -42,9 +42,18 @@ choice
                   AlphaData 8K5 (rev2 + newer) has ethernet and 8GB DDR4 SDRAM (2400). 
                   Uses Xilinx FPGA XCKU115.
 
-	config S121B
-                bool "Semptian NSA121B Card with Ethernet, 8GB DDR4 SDRAM and Xilinx KU115 FPGA"
+	config S121B_BPIx16
+                bool "Semptian NSA121B (v16.1, BPIx16) Card with Ethernet, 8GB DDR4 SDRAM and Xilinx KU115 FPGA"
                 select CAPI10
+		select S121B
+                select DISABLE_NVME
+                help
+                  Semptian NSA121B has ethernet and 8GB DDR4 SDRAM. Uses Xilinx FPGA XCKU115.
+
+	config S121B_SPIx4
+                bool "Semptian NSA121B (v16.2, SPIx4) Card with Ethernet, 8GB DDR4 SDRAM and Xilinx KU115 FPGA"
+                select CAPI10
+		select S121B
                 select DISABLE_NVME
                 help
                   Semptian NSA121B has ethernet and 8GB DDR4 SDRAM. Uses Xilinx FPGA XCKU115.
@@ -55,8 +64,23 @@ config FPGACARD
         default "N250S"  if N250S
         default "N250SP" if N250SP
         default "ADKU3"  if ADKU3
-        default "S121B"  if S121B
+        default "S121B"  if S121B_BPIx16
+        default "S121B"  if S121B_SPIx4
         default "AD8K5"  if AD8K5
+
+#Some vendors may have some differences for one FPGACARD
+#i.e, Flash interface, DDR capacity etc.
+#You can define any string for CARD_VERSION.
+#Use $CARD_VERSION with $FPGACARD together when you need to
+#distinguish them.
+config CARD_VERSION
+        string
+	default "BPIx16" if S121B_BPIx16
+	default "SPIx4"  if S121B_SPIx4
+
+config S121B
+	bool
+	default n
 
 config CAPI10
         bool
@@ -69,9 +93,10 @@ config CAPI20
 config FPGACHIP
         string
         default "xcku060-ffva1156-2-e" if N250S || ADKU3
-        default "xcku115-flva1517-2-e" if S121B
+        default "xcku115-flva1517-2-e" if S121B_BPIx16 || S121B_SPIx4
         default "xcku15p-ffva1156-2-i" if N250SP
         default "xcku115-flva1517-2-e" if AD8K5
+
 
 config NUM_OF_ACTIONS
         int

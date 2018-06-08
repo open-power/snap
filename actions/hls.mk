@@ -22,7 +22,7 @@
 CONFIG_FILE = $(SNAP_ROOT)/.snap_config
 ifneq ("$(wildcard $(CONFIG_FILE))","")
   FPGACHIP = $(shell grep FPGACHIP $(CONFIG_FILE) | cut -d = -f 2)
-  $(info FPGACHIP is set to $(FPGACHIP).)
+#  $(info FPGACHIP is set to $(FPGACHIP).)
 endif
 
 PART_NUMBER ?= $(FPGACHIP)
