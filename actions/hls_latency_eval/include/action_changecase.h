@@ -1,8 +1,8 @@
-#ifndef __ACTION_NVME_MEMCOPY_H__
-#define __ACTION_NVME_MEMCOPY_H__
+#ifndef __ACTION_CHANGECASE_H__
+#define __ACTION_CHANGECASE_H__
 
 /*
- * Copyright 2016, 2017 International Business Machines
+ * Copyright 2018 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,20 +23,22 @@
 extern "C" {
 #endif
 
-#define NVME_MEMCOPY_ACTION_TYPE 0x10141007
+/* This number is unique and is declared in ~snap/ActionTypes.md */
+#define LATENCY_EVAL_ACTION_TYPE 0x10141009
 
-typedef struct nvme_memcopy_job {
+/* Data structure used to exchange information between action and application */
+/* Size limit is 108 Bytes */
+typedef struct latency_eval_job {
 	struct snap_addr in;	/* input data */
 	struct snap_addr out;   /* offset table */
-    	uint64_t drive_id;
-	uint64_t maxbuffer_size;        // this defines the maximum size for a transfer
-	uint64_t sdram_buff_fwd_offset; // default to 0x00000000
-        uint64_t sdram_buff_rev_offset; // default to 0x80000000 (2GB is a half of SDRAM size)
+	uint64_t MAX_reads;     /* setting MAX number of reads */
+} latency_eval_job_t;
 
-} nvme_memcopy_job_t;
-
+void memset_volatile(volatile void *s, char c, size_t n);
+int memcmp_volatile(volatile void* s1, const void* s2,size_t n);
+void *memcpy_from_volatile(void *dest, volatile void *src, size_t n);
 #ifdef __cplusplus
 }
 #endif
 
-#endif	/* __ACTION_NVME_MEMCOPY_H__ */
+#endif	/* __ACTION_CHANGECASE_H__ */

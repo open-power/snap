@@ -15,7 +15,8 @@ IBM | 10.14.10.05 | 10.14.10.05 | HLS Intersection (By Hashing)
 IBM | 10.14.10.06 | 10.14.10.06 | HLS Intersection (By Sorting)
 IBM | 10.14.10.07 | 10.14.10.07 | HLS NVMe memcopy
 IBM | 10.14.10.08 | 10.14.10.08 | HLS Hello World
-IBM | 10.14.10.09 | 10.14.FF.FF | Reserved for IBM Actions
+IBM | 10.14.10.09 | 10.14.10.09 | HLS Latency Evaluation
+IBM | 10.14.10.0A | 10.14.FF.FF | Reserved for IBM Actions
 Reserved | FF.FF.00.00 | FF.FF.FF.FF | Reserved
 
 ### How to apply for a new Action Type
