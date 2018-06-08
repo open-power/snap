@@ -68,6 +68,8 @@ if { [catch "$command > $logfile" errMsg] } {
 } else {
      if { $fpgacard == "RCXVUP" } {
         write_cfgmem -force -format bin -size 128 -interface  SPIx8 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
+	 } elseif { $fpgacard == "FX609" } {
+        write_cfgmem -force -format bin -size 128 -interface  SPIx4 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
      } else {
         write_cfgmem -force -format bin -size 128 -interface  BPIx16 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
      }
@@ -95,6 +97,8 @@ if { $factory_image == "TRUE" } {
   } else {
      if { $fpgacard == "RCXVUP" } {
         write_cfgmem -force -format bin -size 128 -interface  SPIx8 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
+	 } else if { $fpgacard == "FX609" } {
+        write_cfgmem -force -format bin -size 128 -interface  SPIx4 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
      } else {
         write_cfgmem -force -format bin -size 128 -interface  BPIx16 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
      }
