@@ -278,13 +278,8 @@ if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($capi_bsp_dir !=
 puts "                        importing XDCs"
 
 # Board Support XDC
-if { ($fpga_card == "N250SP") && ($capi_bsp_dir != "not defined") } {
-  puts "                      importing N250SP Board support XDCs"
-  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
-#  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
-}
-if { ($fpga_card == "RCXVUP") && ($capi_bsp_dir != "not defined") } {
-  puts "                      importing RCXVUP Board support XDCs"
+if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($capi_bsp_dir != "not defined") } {
+  puts "                      importing specific Board support XDCs"
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
 #  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
 }
@@ -309,12 +304,7 @@ if { $fpga_card == "ADKU3" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/AD8K5/snap_ddr4_b0pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/AD8K5/snap_ddr4_b0pins.xdc]
   }
-} elseif { ($fpga_card == "RCXVUP") } {
-  if { $sdram_used == "TRUE" } {
-    add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
-    set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]
-  }
-} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
+} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")} {
   if { $sdram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]

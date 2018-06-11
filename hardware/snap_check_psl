@@ -23,9 +23,7 @@ if [ $# -gt 1 ]; then
   FPGACARD=$1
   PSL_DCP=$2
 
-  if [ "$FPGACARD" == "N250SP" ]; then
-    export PSL_DCP_TYPE=$FPGACARD
-  elif [ "$FPGACARD" == "RCXVUP" ]; then
+  if [ "$FPGACARD" == "N250SP" ] || [ "$FPGACARD" == "RCXVUP" ]; then
     export PSL_DCP_TYPE=$FPGACARD
   else
     if [ -n "$PSL_DCP" ]; then
