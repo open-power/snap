@@ -369,11 +369,15 @@ int snap_action_read32(struct snap_action *action, uint64_t offset,
  */
 int snap_action_start(struct snap_action *action);
 int snap_action_stop(struct snap_action *action);
+int snap_action_is_idle(struct snap_action *action, int *rc);
 int snap_action_completed(struct snap_action *action, int *rc,
 			  int timeout_sec);
 
 /**
- * Synchronous way to send a job away. Blocks until job is done.
+ * Synchronous way to send a job away.  First step : set registers
+ * This function writes through MMIO interface the registers
+ * to the action / in the FPGA internal memory
+ *
  * @action      handle to streaming framework queue
  * @cjob        streaming framework job
  *   @cjob->win_addr   input address of specific job
@@ -382,9 +386,48 @@ int snap_action_completed(struct snap_action *action, int *rc,
  *   @cjob->wout_addr  output size (maximum 112 bytes)
  * @return      SNAP_OK in case of success, else error.
  */
+int snap_action_sync_execute_job_set_regs(struct snap_action *action,
+                                 struct snap_job *cjob);
+
+/**
+ * Synchronous way to send a job away.  Last step : check completion
+ * This function check the completion of the action, manage the IRQ
+ * if needed, and read all action registers through MMIO interface
+ *
+ * @action      handle to streaming framework queue
+ * @cjob        streaming framework job
+ * @cjob->win_addr   input address of specific job
+ *   @cjob->win_size   input size (use extension ptr if larger than 112 bytes)
+ *   @cjob->wout_addr  output address of specific job
+ *   @cjob->wout_addr  output size (maximum 112 bytes)
+ * timeout_sec  timeout used if polling mode
+ * @return      SNAP_OK in case of success, else error.
+ */
+int snap_action_sync_execute_job_check_completion(struct snap_action *action,
+                                 struct snap_job *cjob,
+                                 unsigned int timeout_sec);
+
+/**
+ * Synchronous way to send a job away. Blocks until job is done.
+ *  * These 3 steps can be called separately from the application
+ *   * BUT manage carefully the action timeout
+ * 1rst step: write Action registers into the FPGA
+ * 2nd  step: start the Action
+ *      step: processing - exchange data
+ * 3rd  step: check completion and manage IRQ if needed
+ *
+ * @action      handle to streaming framework queue
+ * @cjob        streaming framework job
+ * @cjob->win_addr   input address of specific job
+ *   @cjob->win_size   input size (use extension ptr if larger than 112 bytes)
+ *   @cjob->wout_addr  output address of specific job
+ *   @cjob->wout_addr  output size (maximum 112 bytes)
+ * timeout_sec  timeout used if polling mode
+ * @return      SNAP_OK in case of success, else error.
+ */
 int snap_action_sync_execute_job(struct snap_action *action,
-			struct snap_job *cjob,
-			unsigned int timeout_sec);
+                                 struct snap_job *cjob,
+                                 unsigned int timeout_sec);
 
 #if 0 /* FIXME Discuss how this must be done correctly */
 /**

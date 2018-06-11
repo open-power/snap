@@ -881,6 +881,19 @@ int snap_action_stop(struct snap_action *action __unused)
 	return 0;
 }
 
+int snap_action_is_idle(struct snap_action *action, int *rc)
+{
+	int _rc = 0;
+	uint32_t action_data = 0;
+	struct snap_card *card = (struct snap_card *)action;
+
+	_rc = snap_mmio_read32(card, ACTION_CONTROL, &action_data);
+	if (rc)
+		*rc = _rc;
+
+	return (action_data & ACTION_CONTROL_IDLE) == ACTION_CONTROL_IDLE;
+}
+
 int snap_action_completed(struct snap_action *action, int *rc, int timeout)
 {
 	int _rc = 0;
@@ -914,21 +927,19 @@ int snap_action_completed(struct snap_action *action, int *rc, int timeout)
 }
 
 /**
- * Synchronous way to send a job away. Blocks until job is done.
- *
- * FIXME Example Code not working yet. Needs fixups and discussion.
+ * Synchronous way to send a job away.  First step : set registers
+ * This function writes through MMIO interface the registers
+ * to the action / in the FPGA internal memory
  *
  * @action	handle to streaming framework action/action
  * @cjob	streaming framework job
  * @return	0 on success.
  */
 
-int snap_action_sync_execute_job(struct snap_action *action,
-				 struct snap_job *cjob,
-				 unsigned int timeout_sec)
+int snap_action_sync_execute_job_set_regs(struct snap_action *action,
+				 struct snap_job *cjob)
 {
-	int rc;
-	int completed;
+	int rc = 0;
 	unsigned int i;
 	struct snap_card *card = (struct snap_card *)action;
 	struct snap_queue_workitem job;
@@ -972,7 +983,7 @@ int snap_action_sync_execute_job(struct snap_action *action,
 
 	snap_trace("    win_size: %d wout_size: %d mmio_in: %d mmio_out: %d\n",
 		cjob->win_size, cjob->wout_size, mmio_in, mmio_out);
-
+	
 	job.short_action = card->sat;/* Set correct Value after attach */
 	job.seq = card->seq++; /* Set correct Value after attach */
 
@@ -991,10 +1002,35 @@ int snap_action_sync_execute_job(struct snap_action *action,
 			goto __snap_action_sync_execute_job_exit;
 	}
 
-	/* Start Action and wait for finish */
-	snap_action_start(action);
-	completed = snap_action_completed(action, &rc, timeout_sec);
+__snap_action_sync_execute_job_exit:
+	snap_action_stop(action);
+	return rc;
+}
+/**
+ * Synchronous way to send a job away.  Last step : check completion
+ * This function check the completion of the action, manage the IRQ
+ * if needed, and read all action registers through MMIO interface
+ *
+ * @action	handle to streaming framework action/action
+ * @cjob	streaming framework job
+ * timeout_sec  timeout used if polling mode
+ * @return	0 on success.
+ */
 
+int snap_action_sync_execute_job_check_completion(struct snap_action *action,
+				 struct snap_job *cjob,
+				 unsigned int timeout_sec)
+{
+	int rc;
+	unsigned int i;
+	int completed;
+	struct snap_card *card = (struct snap_card *)action;
+	struct snap_queue_workitem job;
+	uint32_t action_addr;
+	uint32_t *job_data;
+	unsigned int mmio_out;
+
+	completed = snap_action_completed(action, &rc, timeout_sec);
 	/* Issue #360 */
 	if (rc != 0) {
 		snap_trace("%s: EIO rc=%d completed=%d\n", __func__,
@@ -1010,6 +1046,26 @@ int snap_action_sync_execute_job(struct snap_action *action,
 			rc = SNAP_ETIMEDOUT;
 		}
 		goto __snap_action_sync_execute_job_exit;
+	}
+
+	/* job.short_action = 0x00; */	/* Set later */
+	job.flags = 0x01; /* FIXME Set Flag to Execute */
+	job.seq = 0x0000; /* Set later */
+	job.retc = 0x00000000;
+	job.priv_data = 0xdeadbeefc0febabeull;
+
+	/* Fill workqueue cacheline which we need to transfer to the action */
+	if (cjob->win_size <= (6 * 16)) {
+		memcpy(&job.user, (void *)(unsigned long)cjob->win_addr,
+		       MIN(cjob->win_size, sizeof(job.user)));
+		mmio_out = cjob->win_size / sizeof(uint32_t);
+	} else {
+		job.user.ext.addr  = cjob->win_addr;
+		job.user.ext.size  = cjob->win_size;
+		job.user.ext.type  = SNAP_ADDRTYPE_HOST_DRAM;
+		job.user.ext.flags = (SNAP_ADDRFLAG_EXT |
+				      SNAP_ADDRFLAG_END);
+		mmio_out = sizeof(job.user.ext) / sizeof(uint32_t);
 	}
 
 	/* Get RETC (0x184) back to the caller */
@@ -1040,6 +1096,40 @@ int snap_action_sync_execute_job(struct snap_action *action,
 
 __snap_action_sync_execute_job_exit:
 	snap_action_stop(action);
+	return rc;
+}
+
+/**
+ * Synchronous way to send a job away. Blocks until job is done.
+ * These 3 steps can be called separately from the application
+ * BUT manage carefully the action timeout
+ *  * 1rst step: write Action registers into the FPGA
+ *  * 2nd  step: start the Action
+ *  *      step: processing - exchange data
+ *  * 3rd  step: check completion and manage IRQ if needed
+ *
+ * @action	handle to streaming framework action/action
+ * @cjob	streaming framework job
+ * @return	0 on success.
+ */
+
+int snap_action_sync_execute_job(struct snap_action *action,
+				 struct snap_job *cjob,
+				 unsigned int timeout_sec)
+{
+	int rc;
+
+	/* Set action registers through MMIO */
+	rc = snap_action_sync_execute_job_set_regs(action, cjob);
+	if (rc != 0)
+		return rc;
+
+	/* Start Action */
+	snap_action_start(action);
+
+	/* Wait for finish */
+	rc = snap_action_sync_execute_job_check_completion(action, cjob, 
+				timeout_sec);
 	return rc;
 }
 

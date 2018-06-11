@@ -188,6 +188,19 @@ choice
             select FORCE_SDRAM_OR_BRAM
             select FORCE_NVME
 
+        config HLS_LATENCY_EVAL
+            bool "HLS Latency Evaluation"
+            help
+               This example will help user understanding how to:
+               - from the application: Write a word to the host memory (w/ caches)
+               - from the action: Read a word - process it - Write it back to host memory
+               - from the application: Read a word from the host memory
+		and all that with the minimum latency between this data exchange
+               This example is written in C and compiled with HLS
+            select ENABLE_HLS_SUPPORT
+            select DISABLE_SDRAM_AND_BRAM
+            select DISABLE_NVME
+
         config HLS_HELLOWORLD
             bool "HLS HelloWorld"
             help

@@ -30,6 +30,7 @@ extern "C" {
 
 /* Standardized, non-zero return codes to be expected from FPGA actions */
 #define SNAP_RETC_SUCCESS		0x0102
+#define SNAP_RETC_TIMEOUT		0x0103
 #define SNAP_RETC_FAILURE		0x0104
 
 /* FIXME Constants are too long, I like to type less */
