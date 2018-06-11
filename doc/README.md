@@ -3,11 +3,11 @@
 # 1. Overview
 The SNAP documentation is aimed at providing users the best experience with CAPI/SNAP.
 
-Users can come to SNAP with different skills, as SNAP makes a bridge between software application and hardware implemented actions.
+Users can come to SNAP with different skills, as SNAP is a bridge between software application and hardware implemented actions.
 
 # Software or hardware skilled users ?
 
-Users coming from the software domain, will certainly be enclined to use HLS (High Level Synthesis) features to help them port their software code into FPGA, while hardware users will be more confortable to tune their action in FPGA native HDL languages and use SNAP to bridge with software world.
+Users coming from the software domain will certainly be enclined to use HLS (High Level Synthesis) features to help them port their software code into FPGA, while hardware users will be more confortable to tune their action in FPGA native HDL languages and use SNAP to bridge with software world.
 
 # Documentations Presentation
 
@@ -22,7 +22,6 @@ Thus HLS NVME attachments goodies will be located in [../actions/hls_nvme_memcop
 while HDL NVME attachments goodies will be located in [../actions/hdl_nvme_memcopy/doc/](../actions/hdl_nvme_memcopy/doc/)
 
 * For HLS users, optimization is a must, so users can rely on [How to Optimize an HLS Action guide](./AN_CAPI_SNAP-How_to_optimize_a_HLS_action.pdf) to understand the details of how their C code is "converted".  
-The usage of basic conversion directives (#pragma) and their understanding (just like preparing GPU code with converion tools), will allow significant improvment over raw conversion.
+The usage of basic conversion directives (#pragma) and their understanding, will allow significant improvment over raw conversion.
 
 * For hardware skilled user [HDL_example](../actions/hdl_nvme_example/) and [hdl_nvme_example](../actions/hdl_nvme_example/) concentrate many example of different memory copy usage examples.
-
