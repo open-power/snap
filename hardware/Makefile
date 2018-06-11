@@ -197,13 +197,13 @@ check_snap_settings:
 	@echo "                        =============================="
 
 check_nvme:
-	@if [ "$(SIMULATOR)" != "nosim" ] && [ "$(NVME_USED)" == "TRUE" ]; then \
+	@if [ "$(SIMULATOR)" != "nosim" ] && [ "$(NVME_USED)" == "TRUE" ] && [ "$(DENALI_USED)" == "TRUE" ]; then \
 		if [ "$(SIMULATOR)" != "irun" ] && [ "$(SIMULATOR)" != "xcelium" ]; then  \
-			echo "                        NVMe simulation is not supported for SIMULATOR $(SIMULATOR)"; \
+			echo "                        NVMe simulation with Denali model is not supported for SIMULATOR $(SIMULATOR)"; \
 			exit -1; \
 		fi; \
 		if [ !  -d "$(DENALI)" ]; then \
-			echo "                        Missing or invalid environment variable for NVMe simulation."; \
+			echo "                        Missing or invalid environment variable for NVMe simulation with Denali."; \
 			echo "                        Please check the setting of:"; \
 			echo "                        DENALI:   $(DENALI)"; \
 			exit -1; \
@@ -251,7 +251,7 @@ $(SNAP_PP_FILES_VHD):
 	@$(RM) $@_tmp
 
 $(SNAP_SIM_NVME)/endp_4_pipe32.v:
-	@if [ "$(SIMULATOR)" != "nosim" ] && [ "$(NVME_USED)" == "TRUE" ]; then \
+	@if [ "$(DENALI_USED)" == "TRUE" ]; then \
 	  echo -e "                        generating $(notdir $@)"; \
 	  $(DENALI)/bin/pureview -batch -generate all . -genoutput  $(SNAP_SIM_NVME)/endp_4_pipe32.v $(SNAP_SIM_NVME)/endp_4_pipe32.soma > $(LOGS_DIR)/pureview.log 2>&1; \
 	  if [ $$? -ne 0 ]; then \
@@ -371,7 +371,7 @@ endif
 allow_%:
 	@if [ "$(USE_PRFLOW)" != "TRUE" ]; then \
 		echo; echo "Error: Makefile target $* is only allowed for PR flow!"; exit -1; \
-	elif [ "$(CLOUD_USER_FLOW)" = "TRUE" ] && [ "$*" = "cloud_base" ]; then \
+	elif [ "$(CLOUD_USER_FLOW)" == "TRUE" ] && [ "$*" == "cloud_base" ]; then \
 		echo; echo "Error: Makefile target $* is not allowed for cloud user flow!"; exit -1; \
 	fi
 
