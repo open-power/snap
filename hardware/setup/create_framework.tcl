@@ -280,7 +280,7 @@ puts "                        importing XDCs"
 
 # Board Support XDC
 if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($capi_bsp_dir != "not defined") } {
-  puts "                      importing specific Board support XDCs"
+  puts "                        importing specific Board support XDCs"
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
 #  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
 }
