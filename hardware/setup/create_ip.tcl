@@ -42,7 +42,7 @@ set_property target_language VHDL [current_project]
 set_property target_simulator IES [current_project]
 
 #create DMA Input RAM
-if { ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP") } {
+if { ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP") || ($fpga_card == "FX609") } {
   set RAM_WIDTH 1040
   set RAM_DEPTH 32
   set MEMORY_TYPE True_Dual_Port_RAM
