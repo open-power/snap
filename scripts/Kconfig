@@ -20,13 +20,6 @@ choice
                   Nallatech 250S card originally used for CAPI Flash using NVMe
                   storage. Uses Xilinx FPGA XCKU060.
 
-       config N250SP
-                bool "Experimental for CAPI2.0: Nallatech 250S+ with 4GB DDR4 SDRAM, NVMe and Xilinx KU15P FPGA"
-                select CAPI20
-                help
-                  Nallatech 250S+ card originally used for CAPI Flash using NVMe
-                  storage. Uses Xilinx FPGA.
-
         config ADKU3
                 bool "AlphaData KU3 Card with Ethernet, 8GB DDR3 SDRAM and Xilinx KU60 FPGA"
                 select CAPI10
@@ -48,6 +41,20 @@ choice
                 select DISABLE_NVME
                 help
                   Semptian NSA121B has ethernet and 8GB DDR4 SDRAM. Uses Xilinx FPGA XCKU115.
+
+       config N250SP
+                bool "Experimental for CAPI2.0: Nallatech 250S+ with 4GB DDR4 SDRAM, NVMe and Xilinx KU15P FPGA"
+                select CAPI20
+                help
+                  Nallatech 250S+ card originally used for CAPI Flash using NVMe
+                  storage. Uses Xilinx FPGA.
+
+        config RCXVUP
+                bool "Experimental for CAPI2.0: ReflexCES XpressVUP Card with Ethernet, 8GB DDR4 SDRAM and Xilinx VU9P FPGA"
+                select CAPI20
+                select DISABLE_NVME
+                help
+                  ReflexCES XpressVUP Card with Ethernet, 8GB DDR4 SDRAM, 144Mb QDR2+ and Xilinx VU9P FPGA.
 endchoice
 
 config FPGACARD
@@ -57,6 +64,7 @@ config FPGACARD
         default "ADKU3"  if ADKU3
         default "S121B"  if S121B
         default "AD8K5"  if AD8K5
+        default "RCXVUP" if RCXVUP
 
 config CAPI10
         bool
@@ -72,6 +80,7 @@ config FPGACHIP
         default "xcku115-flva1517-2-e" if S121B
         default "xcku15p-ffva1156-2-i" if N250SP
         default "xcku115-flva1517-2-e" if AD8K5
+        default "xcvu9p-flgb2104-2l-e-es1" if RCXVUP
 
 config NUM_OF_ACTIONS
         int
@@ -246,8 +255,9 @@ config ENABLE_SDRAM
           This option enables the on-card SDRAM.
           SNAP supports 8GB DDR3 SDRAM on the AlphaData KU3 card,
 	                4GB DDR4 SDRAM on the Nallatech 250S card,
-		        8GB DDR4 SDRAM on the Semptian NSA121B card and
-			8GB DDR4 SDRAM (out of 16GB) on the AlphaData 8K5 card.
+		        8GB DDR4 SDRAM on the Semptian NSA121B card,
+			8GB DDR4 SDRAM (out of 16GB) on the AlphaData 8K5 card and
+			8GB DDR4 SDRAM on the ReflexCES XpressVUP card.
 
 config SDRAM_USED
         string
@@ -279,7 +289,7 @@ config DDR3_USED
 config ENABLE_DDR4
         bool
         default y
-        depends on (ENABLE_SDRAM && (N250S || S121B || N250SP || AD8K5))
+        depends on (ENABLE_SDRAM && (N250S || S121B || N250SP || AD8K5 || RCXVUP))
 
 config DDR4_USED
         string

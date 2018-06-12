@@ -135,7 +135,7 @@ if { $simulator != "nosim" } {
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr3_dimm.sv]
   }
   # DDR4 Sim Files
-  if { (($fpga_card == "N250S") || ($fpga_card == "N250SP")) && ($sdram_used == "TRUE") } {
+  if { (($fpga_card == "N250S") || ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($sdram_used == "TRUE") } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm.sv  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm.sv]
@@ -157,7 +157,7 @@ if { $simulator != "nosim" } {
 # Add IPs
 # SNAP CORE IPs
 puts "                        importing IPs"
-if { $fpga_card == "N250SP" } {
+if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) } {
   set DMA_IB_RAM 1040x32
   set DMA_OB_RAM 1152x32
 } else {
@@ -190,7 +190,7 @@ if { $fpga_card == "ADKU3" } {
     add_files -norecurse $ip_dir/ddr3sdram/ddr3sdram.xci >> $log_file
     export_ip_user_files -of_objects  [get_files "$ip_dir/ddr3sdram/ddr3sdram.xci"] -force >> $log_file
   }
-} elseif { ($fpga_card == "S121B") || ($fpga_card == "AD8K5") } {
+} elseif { ($fpga_card == "S121B") || ($fpga_card == "AD8K5") || ($fpga_card == "RCXVUP") } {
   if { $bram_used == "TRUE" } {
     add_files -norecurse $ip_dir/axi_clock_converter/axi_clock_converter.xci >> $log_file
     export_ip_user_files -of_objects  [get_files "$ip_dir/axi_clock_converter/axi_clock_converter.xci"] -force >> $log_file
@@ -261,7 +261,7 @@ if { $nvme_used == TRUE } {
 }
 
 # Add CAPI board support
-if { ($fpga_card == "N250SP") && ($capi_bsp_dir != "not defined") } {
+if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($capi_bsp_dir != "not defined") } {
   puts "                        importing CAPI BSP"
   set_property ip_repo_paths "[file normalize $capi_bsp_dir]" [current_project] >> $log_file
   update_ip_catalog >> $log_file
@@ -279,8 +279,8 @@ if { ($fpga_card == "N250SP") && ($capi_bsp_dir != "not defined") } {
 puts "                        importing XDCs"
 
 # Board Support XDC
-if { ($fpga_card == "N250SP") && ($capi_bsp_dir != "not defined") } {
-  puts "                        importing N250SP Board support XDCs"
+if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($capi_bsp_dir != "not defined") } {
+  puts "                        importing specific Board support XDCs"
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
 #  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
 }
@@ -305,7 +305,7 @@ if { $fpga_card == "ADKU3" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/AD8K5/snap_ddr4_b0pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/AD8K5/snap_ddr4_b0pins.xdc]
   }
-} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
+} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")} {
   if { $sdram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]

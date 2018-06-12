@@ -1,6 +1,6 @@
 # SNAP Documentation
 
-# 1. Overview
+# Overview
 The SNAP documentation is aimed at providing users with the best experience of CAPI/SNAP.
 
 Users can come to SNAP with different skills, as SNAP is a bridge between software applications and hardware implemented actions.

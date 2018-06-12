@@ -16,13 +16,25 @@
 #
 #-----------------------------------------------------------
 
-set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
-set_property BITSTREAM.CONFIG.EXTMASTERCCLK_EN {DIV-4} [current_design]
-set_property CONFIG_MODE BPI16 [current_design]
-set_property BITSTREAM.CONFIG.BPI_SYNC_MODE DISABLE [current_design]		;# default disable
-set_property BITSTREAM.CONFIG.BPI_1ST_READ_CYCLE 4 [current_design]
-set_property BITSTREAM.CONFIG.BPI_PAGE_SIZE 8 [current_design]
+set fpgacard      $::env(FPGACARD)
 
+set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
+if { $fpgacard == "RCXVUP" } {
+   # For Engineering samples (Can't use External MAster CLK, so use internal)
+   set_property BITSTREAM.CONFIG.EXTMASTERCCLK_EN {DISABLE} [current_design]
+   # following default should be ok for regular parts :
+   # set_property BITSTREAM.CONFIG.EXTMASTERCCLK_EN DIV-1 [current_design]
+   set_property CONFIG_MODE SPIx8 [current_design]
+   set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 8 [current_design]
+   set_property BITSTREAM.CONFIG.SPI_32BIT_ADDR YES [current_design]
+   set_property BITSTREAM.CONFIG.SPI_FALL_EDGE YES [current_design]
+} else {
+   set_property BITSTREAM.CONFIG.EXTMASTERCCLK_EN {DIV-4} [current_design]
+   set_property CONFIG_MODE BPI16 [current_design]
+   set_property BITSTREAM.CONFIG.BPI_SYNC_MODE DISABLE [current_design]		;# default disable
+   set_property BITSTREAM.CONFIG.BPI_1ST_READ_CYCLE 4 [current_design]
+   set_property BITSTREAM.CONFIG.BPI_PAGE_SIZE 8 [current_design]
+}
 set_property BITSTREAM.CONFIG.UNUSEDPIN Pullnone [current_design]		;# default pulldown, doesn't load at power-on!
 set_property BITSTREAM.CONFIG.OVERTEMPSHUTDOWN Enable [current_design]		;# default disable
 set_property CFGBVS GND [ current_design ]

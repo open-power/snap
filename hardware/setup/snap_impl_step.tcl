@@ -105,7 +105,7 @@ puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start place_design" $
 
 ## 
 ## prevent placing inside PSL
-if { $fpgacard != "N250SP" } {
+if { ($fpgacard != "N250SP") && ($fpgacard != "RCXVUP") } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
 }

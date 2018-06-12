@@ -114,6 +114,7 @@ extern "C" {
  *   15..9  RO: Reserved
  *       8  RO: NVMe enabled
  *    7..0  RO: Card type:
+ *              0x11 : RCXVUP
  *              0x10 : N250SP
  *              0x03 : AD8K5
  *              0x02 : S121B
@@ -122,6 +123,7 @@ extern "C" {
  */
 #define SNAP_CAP        0x30
 #define SNAP_NVME_ENA   0x100
+#define RCXVUP_CARD     0x011     /* CAPI 2.0 */
 #define N250SP_CARD     0x010     /* CAPI 2.0 */
 #define AD8K5_CARD      0x003
 #define S121B_CARD      0x002

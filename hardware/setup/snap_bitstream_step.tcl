@@ -25,6 +25,7 @@ set sdram_used    $::env(SDRAM_USED)
 set nvme_used     $::env(NVME_USED)
 set bram_used     $::env(BRAM_USED)
 set factory_image [string toupper $::env(FACTORY_IMAGE)]
+set fpgacard      $::env(FPGACARD)
 
 #Define widths of each column
 set widthCol1 24
@@ -65,7 +66,11 @@ if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
   exit 42
 } else {
-  write_cfgmem -force -format bin -size 128 -interface  BPIx16 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
+     if { $fpgacard == "RCXVUP" } {
+        write_cfgmem -force -format bin -size 128 -interface  SPIx8 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
+     } else {
+        write_cfgmem -force -format bin -size 128 -interface  BPIx16 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
+     }
 }
 
 # Also write the factory bitstream if it was selected
@@ -88,6 +93,10 @@ if { $factory_image == "TRUE" } {
     puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
     exit 42
   } else {
-    write_cfgmem -force -format bin -size 128 -interface  BPIx16 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
+     if { $fpgacard == "RCXVUP" } {
+        write_cfgmem -force -format bin -size 128 -interface  SPIx8 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
+     } else {
+        write_cfgmem -force -format bin -size 128 -interface  BPIx16 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
+     }
   }
 }

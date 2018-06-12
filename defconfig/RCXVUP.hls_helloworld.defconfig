@@ -1,0 +1,53 @@
+#
+# Automatically generated file; DO NOT EDIT.
+# Kernel Configuration
+#
+# N250S is not set
+# N250SP is not set
+# ADKU3 is not set
+# S121B is not set
+RCXVUP=y
+FPGACARD="RCXVUP"
+# CAPI10 is not set
+CAPI20=y
+FPGACHIP="xcvu9p-flgb2104-2l-e-es1"
+NUM_OF_ACTIONS=1
+# HLS_ACTION is not set
+# HDL_ACTION is not set
+# HDL_EXAMPLE is not set
+# HLS_MEMCOPY is not set
+# HLS_SPONGE is not set
+# HLS_HASHJOIN is not set
+# HLS_SEARCH is not set
+# HLS_BFS is not set
+# HLS_INTERSECT is not set
+HLS_HELLOWORLD=y
+ENABLE_HLS_SUPPORT=y
+HLS_SUPPORT="TRUE"
+DISABLE_SDRAM_AND_BRAM=y
+# FORCE_SDRAM_OR_BRAM is not set
+SDRAM_USED="FALSE"
+BRAM_USED="FALSE"
+DDR3_USED="FALSE"
+DDR4_USED="FALSE"
+DDRI_USED="FALSE"
+# DISABLE_NVME is not set
+# FORCE_NVME is not set
+# ENABLE_NVME is not set
+NVME_USED="FALSE"
+SIM_XSIM=y
+# SIM_IRUN is not set
+# NO_SIM is not set
+SIMULATOR="xsim"
+
+#
+# ================= Advanced Options: =================
+#
+# ENABLE_ILA is not set
+ILA_DEBUG="FALSE"
+# ENABLE_FACTORY is not set
+FACTORY_IMAGE="FALSE"
+# ENABLE_PRFLOW is not set
+USE_PRFLOW="FALSE"
+CLOUD_USER_FLOW="FALSE"
+CLOUD_BUILD_BITFILE="FALSE"

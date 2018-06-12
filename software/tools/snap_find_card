@@ -36,13 +36,13 @@ VERBOSE=0
 function usage() {
 	echo "Usage: $PROGRAM"
 	echo "    [-v] Prints extra information (to be put as first param)"
-	echo "    [-A] <accelerator> use either ADKU3, N250S, S121B, AD8K5, N250SP or ALL"
+	echo "    [-A] <accelerator> use either ADKU3, N250S, S121B, AD8K5, RCXVUP, N250SP or ALL"
 	echo "    [-C] <0..3> Print accelerator name for this Card"
 	echo "    [-V] provides version"
 	echo "  prints out a list of CAPI Cards found in this System."
 	echo
 	echo "  Supported CAPI Cards are:"
-	echo "     [N250S ADKU3 S121B AD8K5 N250SP]"
+	echo "     [N250S ADKU3 S121B AD8K5 RCXVUP N250SP RCXVUP]"
 	echo "     ------------------- Example -----------------------------------------"
 	echo "     $PROGRAM -A ALL"
 	echo "        Print a list (e.g. 0 1 2 3) of all CAPI cards in this System"
@@ -179,6 +179,10 @@ while getopts ":vA:C:Vh" opt; do
 		if [ $? == 1 ]; then
 			exit 1
 		fi
+		detect_card_name $card  "0x0632" "0x060c" "RCXVUP"
+		if [ $? == 1 ]; then
+			exit 1
+		fi
 		detect_card_name $card  "0x0632" "0x0608" "AD8K5"
 		if [ $? == 1 ]; then
 			exit 1
@@ -237,6 +241,11 @@ case ${accel} in
 		detect_snap_cards "0x0632" "0x0608" "AD8K5"
 		RC=$?
 		;;
+	# RCXVUP CAPI 2.0 card from ReflexCES
+	"RCXVUP")
+		detect_snap_cards "0x0632" "0x060c" "RCXVUP"
+		RC=$?
+		;;
 	# N250SP CAPI 2.0 card from Nallatech
 	"N250SP")
 		detect_snap_cards "0x0632" "0x04dd" "N250SP"
@@ -254,6 +263,9 @@ case ${accel} in
 		RC=$((RC + $?))
 
 		detect_snap_cards "0x0632" "0x0608" "AD8K5"
+		RC=$((RC + $?))
+
+		detect_snap_cards "0x0632" "0x060c" "RCXVUP"
 		RC=$((RC + $?))
 
 		detect_snap_cards "0x0632" "0x04dd" "N250SP"
