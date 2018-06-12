@@ -235,7 +235,7 @@ case ${accel} in
 	"S121B_SPIx4")
 		detect_snap_cards "0x0632" "0x0664" "S121B_v16.2_SPIx4"
 		RC=$?
-		;;detect_card_name
+		;;
 	# 250s Card from Nallatech
 	"N250S")
 		detect_snap_cards "0x0632" "0x060a" "N250S"
