@@ -230,7 +230,7 @@ case ${accel} in
 	"S121B_BPIx16")
 		detect_snap_cards "0x0632" "0x0607" "S121B_v16.1_BPIx16"
 		RC=$?
-		;;		
+		;;
 	# NSA121B Card from Semptian SPIx4
 	"S121B_SPIx4")
 		detect_snap_cards "0x0632" "0x0664" "S121B_v16.2_SPIx4"
