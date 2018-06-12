@@ -36,13 +36,13 @@ VERBOSE=0
 function usage() {
 	echo "Usage: $PROGRAM"
 	echo "    [-v] Prints extra information (to be put as first param)"
-	echo "    [-A] <accelerator> use either ADKU3, N250S, S121B, AD8K5, RCXVUP, N250SP or ALL"
+	echo "    [-A] <accelerator> use either ADKU3, N250S, S121B_BPIx16, S121B_SPIx4, AD8K5, RCXVUP, N250SP or ALL"
 	echo "    [-C] <0..3> Print accelerator name for this Card"
 	echo "    [-V] provides version"
 	echo "  prints out a list of CAPI Cards found in this System."
 	echo
 	echo "  Supported CAPI Cards are:"
-	echo "     [N250S ADKU3 S121B AD8K5 RCXVUP N250SP RCXVUP]"
+	echo "     [N250S ADKU3 S121B_BPIx16 S121B_SPIx4 AD8K5 N250SP RCXVUP]"
 	echo "     ------------------- Example -----------------------------------------"
 	echo "     $PROGRAM -A ALL"
 	echo "        Print a list (e.g. 0 1 2 3) of all CAPI cards in this System"
@@ -231,14 +231,15 @@ case ${accel} in
 		RC=$?
 		;;
 	# NSA121B Card from Semptian BPIx16
-	"S121B")
+	"S121B_BPIx16")
 		detect_snap_cards "0x0632" "0x0607" "S121B_v16.1_BPIx16"
 		RC=$?
-		;;		
+		;;
 	# NSA121B Card from Semptian SPIx4
-	"S121B")
+	"S121B_SPIx4")
 		detect_snap_cards "0x0632" "0x0664" "S121B_v16.2_SPIx4"
 		RC=$?
+		;;
 	# 250s Card from Nallatech
 	"N250S")
 		detect_snap_cards "0x0632" "0x060a" "N250S"
