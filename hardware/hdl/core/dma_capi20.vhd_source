@@ -113,7 +113,7 @@ ARCHITECTURE dma OF dma IS
                             ST_COM_XLAT_WR_P0
                            );
   TYPE DMA_FSM_T IS (ST_FSM_ERROR, ST_IDLE,
-                     ST_UPDATE_WRITE_BUF_READ_ADD,
+                     ST_START_DMA_WRITE_REQ, ST_STOP_DMA_WRITE_REQ,
                      ST_DMA_READ_REQ, ST_DMA_WRITE_REQ
                     );
   TYPE AH_C_FSM_T IS (ST_FSM_ERROR, ST_RSP_ERROR, ST_IDLE,
@@ -207,6 +207,8 @@ ARCHITECTURE dma OF dma IS
   SIGNAL dmm_e_q                     : DMM_E_T := (OTHERS => '0');
   SIGNAL ha_c_q                      : HA_C_T;
   SIGNAL ha_r_q                      : HA_R_T;
+  SIGNAL hd_c_q                      : HD_C_T;
+  SIGNAL hd_s_q                      : HD_S_T;
   SIGNAL intreq_active_q             : boolean;
   SIGNAL int_src_q                   : std_logic_vector(INT_BITS-1 DOWNTO 0);
   SIGNAL int_ctx_q                   : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
@@ -683,25 +685,26 @@ BEGIN
           --
           -- CLT: CACHE LINE TYPE TAG IS VALID
           --
+          -- Note: The alignment on the CAPI 2.0 DMA Data interface is
+          --       first byte first.
           IF (read_ctrl_q(clt_rtag_v).clt  = CL_NOT_USED) AND
              (rlen_q                      /= 0          ) THEN
             --
             -- update the clt in the read control register
             --
             -- bit "even 64 bytes of CL are valid indication"
-            IF raddr_q(6) = '0' THEN
-              read_ctrl_q(clt_rtag_v).clt(EVEN_64B_CL) <= '1';
-            ELSE
-              read_ctrl_q(clt_rtag_v).clt(EVEN_64B_CL) <= '0';
-            END IF;
+            read_ctrl_q(clt_rtag_v).clt(EVEN_64B_CL) <= '1';
 
             --
             -- bit "odd 64 bytes of CL are valid indication"
-            IF rlen_q     = 1 AND
-               raddr_q(6) = '0' THEN
+            IF raddr_q(6) = '1' THEN
               read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '0';
             ELSE
-              read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '1';
+              IF rlen_q  = 1 THEN
+                read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '0';
+              ELSE
+                read_ctrl_q(clt_rtag_v).clt(ODD_64B_CL) <= '1';
+              END IF;
             END IF;
 
             --
@@ -791,18 +794,18 @@ BEGIN
           --
           -- DMA: DMA TAG ACCEPT the REQUEST
           --
-          IF (hd_s_i.utag_valid       = '1'    ) AND
-             (hd_s_i.utag(9 DOWNTO 5) = "00000") THEN
-            read_ctrl_q(to_integer(unsigned(hd_s_i.utag(4 DOWNTO 0)))).dma <= REQ_DONE;
+          IF (hd_s_q.utag_valid       = '1'    ) AND
+             (hd_s_q.utag(9 DOWNTO 5) = "00000") THEN
+            read_ctrl_q(to_integer(unsigned(hd_s_q.utag(4 DOWNTO 0)))).dma <= REQ_DONE;
           END IF;
 
           --
           -- BUF: Buffer is valid
           --
-          IF (hd_c_i.valid            = '1'    ) AND
-             (hd_c_i.utag(9 DOWNTO 5) = "00000") THEN
-            read_ctrl_q(to_integer(unsigned(hd_c_i.utag(4 DOWNTO 0)))).dma <= EMPTY;
-            read_ctrl_q(to_integer(unsigned(hd_c_i.utag(4 DOWNTO 0)))).buf <= FULL;
+          IF (hd_c_q.valid            = '1'    ) AND
+             (hd_c_q.utag(9 DOWNTO 5) = "00000") THEN
+            read_ctrl_q(to_integer(unsigned(hd_c_q.utag(4 DOWNTO 0)))).dma <= EMPTY;
+            read_ctrl_q(to_integer(unsigned(hd_c_q.utag(4 DOWNTO 0)))).buf <= FULL;
           END IF;
 
           --
@@ -1256,25 +1259,26 @@ BEGIN
        --
        -- CLT: CACHE LINE TYPE TAG IS VALID
        --
+       -- Note: The alignment on the CAPI 2.0 DMA Data interface is
+       --       first byte first.
        IF (write_ctrl_q(clt_wtag_v).clt  = CL_NOT_USED) AND
           (wlen_q                       /= 0          ) THEN
          --
          -- update the clt in the write control register
          --
          -- bit "even 64 bytes of CL are valid indication"
-         IF waddr_q(6) = '0' THEN
-           write_ctrl_q(clt_wtag_v).clt(EVEN_64B_CL) <= '1';
-         ELSE
-           write_ctrl_q(clt_wtag_v).clt(EVEN_64B_CL) <= '0';
-         END IF;
+         write_ctrl_q(clt_wtag_v).clt(EVEN_64B_CL) <= '1';
 
          --
          -- bit "odd 64 bytes of CL are valid indication"
-         IF wlen_q     = 1 AND
-            waddr_q(6) = '0' THEN
+         IF waddr_q(6) = '1' THEN
            write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '0';
          ELSE
-           write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '1';
+           IF wlen_q = 1 THEN
+             write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '0';
+           ELSE
+             write_ctrl_q(clt_wtag_v).clt(ODD_64B_CL) <= '1';
+           END IF;
          END IF;
 
          --
@@ -1383,9 +1387,9 @@ BEGIN
        --
        -- BUF: DMA TAG is valid
        --
-       IF (hd_s_i.utag_valid       = '1'    ) AND
-          (hd_s_i.utag(9 DOWNTO 5) = "00100") THEN
-         write_ctrl_q(to_integer(unsigned(hd_s_i.utag(4 DOWNTO 0)))).dma <= REQ_DONE;
+       IF (hd_s_q.utag_valid       = '1'    ) AND
+          (hd_s_q.utag(9 DOWNTO 5) = "00100") THEN
+         write_ctrl_q(to_integer(unsigned(hd_s_q.utag(4 DOWNTO 0)))).dma <= REQ_DONE;
        END IF;
 
        --
@@ -1506,16 +1510,18 @@ BEGIN
         --
         -- defaults
         --
+        dma_rtag_q        <= dma_rtag_q;
         dma_rtag_v        := to_integer(unsigned(dma_rtag_q     (4 DOWNTO 0)));
         dma_rtag_next_v   := to_integer(unsigned(dma_rtag_next_q(4 DOWNTO 0)));
 
+        dma_wtag_q        <= dma_wtag_q;
         dma_wtag_v        := to_integer(unsigned(dma_wtag_q     (4 DOWNTO 0)));
         dma_wtag_next_v   := to_integer(unsigned(dma_wtag_next_q(4 DOWNTO 0)));
 
-        dh_d_q          <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
-                            '0', (OTHERS => '0'), (OTHERS => '0'));
+        dh_d_q            <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
+                              '0', (OTHERS => '0'), (OTHERS => '0'));
 
-        wram_raddr_q <= dma_wtag_q(4 DOWNTO 0) & '0';
+        wram_raddr_q      <= dma_wtag_q(4 DOWNTO 0) & '0';
 
         --
         -- F S M
@@ -1532,17 +1538,23 @@ BEGIN
             ELSIF  (write_ctrl_q(dma_wtag_v).dma  = XLAT_DONE ) AND
                    (rsp_wtag_q                   /= dma_wtag_q) AND
                    (dma_wreq_cnt_q                < 7         )THEN
-              dma_fsm_q    <= ST_UPDATE_WRITE_BUF_READ_ADD;
               wram_raddr_q <= wram_raddr_q + 2;
+              dma_fsm_q    <= ST_START_DMA_WRITE_REQ;
             END IF;
 
           --
-          -- STATE UPDATE_WRITE_BUF_READ_ADD
+          -- STATE START_DMA_WRITE_REQ
           --
-          WHEN ST_UPDATE_WRITE_BUF_READ_ADD =>
-              wram_raddr_q <= wram_raddr_q + 2;
-              dma_fsm_q    <= ST_DMA_WRITE_REQ;
+          WHEN ST_START_DMA_WRITE_REQ =>
+            wram_raddr_q <= wram_raddr_q + 2;
+            dma_fsm_q    <= ST_DMA_WRITE_REQ;
 
+          --
+          -- STATE STOP_DMA_WRITE_REQ
+          --
+          WHEN ST_STOP_DMA_WRITE_REQ =>
+            wram_raddr_q  <= dma_wtag_q(4 DOWNTO 0) & '0';
+            dma_fsm_q     <= ST_IDLE;
 
           --------------------------------------------------------------------
           -- COMMAND STATES
@@ -1580,7 +1592,7 @@ BEGIN
                (dma_wreq_cnt_q                     < 7              ) THEN
               dma_fsm_q <= ST_DMA_WRITE_REQ;
             ELSE
-              dma_fsm_q <= ST_IDLE;
+              dma_fsm_q <= ST_STOP_DMA_WRITE_REQ;
             END IF;
 
             --
@@ -1594,7 +1606,13 @@ BEGIN
             dh_d_q.req_utag <= "00100" & dma_wtag_q(4 DOWNTO 0);
             dh_d_q.req_itag <= write_ctrl_q(dma_wtag_v).itag;
             dh_d_q.req_type <= "001";
-            dh_d_q.size     <= std_logic_vector(to_unsigned(128, 10));
+
+            IF (write_ctrl_q(dma_wtag_v).clt(EVEN_64B_CL) = '0') OR
+               (write_ctrl_q(dma_wtag_v).clt(ODD_64B_CL ) = '0') THEN
+              dh_d_q.size     <= std_logic_vector(to_unsigned(64, 10));
+            ELSE
+              dh_d_q.size     <= std_logic_vector(to_unsigned(128, 10));
+            END IF;
 
           --
           -- STATE FSM ERROR
@@ -1640,8 +1658,8 @@ BEGIN
         --
         -- DMA Read Request Counter
         --
-        IF (hd_s_i.utag_valid       = '1') AND
-           (hd_s_i.utag(9 DOWNTO 5) = "00000") THEN
+        IF (hd_s_q.utag_valid       = '1') AND
+           (hd_s_q.utag(9 DOWNTO 5) = "00000") THEN
           IF dma_fsm_q /= ST_DMA_READ_REQ THEN
             dma_rreq_cnt_q <= dma_rreq_cnt_q - 1;
           END IF;
@@ -1654,8 +1672,8 @@ BEGIN
         --
         -- DMA Write Request Counter
         --
-        IF (hd_s_i.utag_valid       = '1') AND
-           (hd_s_i.utag(9 DOWNTO 5) = "00100") THEN
+        IF (hd_s_q.utag_valid       = '1') AND
+           (hd_s_q.utag(9 DOWNTO 5) = "00100") THEN
           IF dma_fsm_q /= ST_DMA_WRITE_REQ THEN
             dma_wreq_cnt_q <= dma_wreq_cnt_q - 1;
           END IF;
@@ -2442,6 +2460,8 @@ BEGIN
         --
         ha_c_q        <= ha_c_i;
         ha_r_q        <= ha_r_i;
+        hd_c_q        <= hd_c_i;
+        hd_s_q        <= hd_s_i;
 
         mmd_i_q       <= (OTHERS => '0'); --mmd_i_i;
         sd_c_q        <= sd_c_i;

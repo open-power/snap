@@ -184,12 +184,18 @@ Address: 0x0000028
 #### SNAP Capability Register (SCaR)
 ```
 Address: 0x0000030
-  63..32 RO: Reserved
+  63..40 RO: Reserved
+  39..36 RO: Minimum size for DMA transfers to/from Host
+             Value t means that minimum transfer size is 2^t B
+  35..32 RO: Data alignment for DMA transfers to/from Host
+             Value a means that transfers need to be 2^a B aligned
   31..16 RO: Size of attached on-card SDRAM in MB
   15..9  RO: Reserved
       8  RO: NVMe enabled
    7..0  RO: Card type:
+             0x11 : RCXVUP
              0x10 : N250SP
+             0x03 : AD8K5
              0x02 : S121B
              0x01 : N250S
              0x00 : ADKU3
@@ -499,12 +505,18 @@ Address: 0x0000028 + (s+n) * 0x0010000
 #### SNAP Capability Register (SCaR)
 ```
 Address: 0x0000030 + (s+n) * 0x0010000
-  63..32 RO: Reserved
+  63..40 RO: Reserved
+  39..36 RO: Minimum size for DMA transfers to/from Host
+             Value t means that minimum transfer size is 2^t B
+  35..32 RO: Data alignment for DMA transfers to/from Host
+             Value a means that transfers need to be 2^a B aligned
   31..16 RO: Size of attached on-card SDRAM in MB
   15..9  RO: Reserved
       8  RO: NVMe enabled
    7..0  RO: Card type:
+             0x11 : RCXVUP
              0x10 : N250SP
+             0x03 : AD8K5
              0x02 : S121B
              0x01 : N250S
              0x00 : ADKU3

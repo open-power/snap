@@ -151,16 +151,11 @@ ENTITY psl_accel IS
     c2_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     c2_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 #endif
-#ifdef CONFIG_ENABLE_DDRI
-    --
-    -- Clock inputs for SDRAM
-    refclk_sdram_p                      : IN    STD_LOGIC;
-    refclk_sdram_n                      : IN    STD_LOGIC;
-#endif
-
     -- Parity Enable output and 250MHz Clock input
     ah_paren                            : OUT   STD_LOGIC;
-    ha_pclock                           : IN    STD_LOGIC
+    ha_pclock                           : IN    STD_LOGIC;
+    pci_user_reset                      : IN    std_logic;  --PCI hip user_reset signal if needed
+    pci_clock_125MHz                    : IN    std_logic   --125MHz clock if needed
   );
 END psl_accel;
 
@@ -596,8 +591,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
   --
   SIGNAL action_reset                   : STD_LOGIC;
   SIGNAL action_reset_n_q               : STD_LOGIC;
-  SIGNAL action_reset_q                 : STD_LOGIC;
-  SIGNAL action_reset_qq                : STD_LOGIC;
+  SIGNAL pci_user_reset_q               : STD_LOGIC;
+  SIGNAL pci_user_reset_qq              : STD_LOGIC;
   SIGNAL xk_d                           : XK_D_T;
   SIGNAL kx_d                           : KX_D_T;
   SIGNAL sk_d                           : SK_D_T;
@@ -718,8 +713,6 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL sdram_axi_ctrl_rdata           : STD_LOGIC_VECTOR(31 DOWNTO 0);
   SIGNAL sdram_axi_ctrl_rresp           : STD_LOGIC_VECTOR(1 DOWNTO 0);
   SIGNAL sdram_interrupt                : STD_LOGIC;
-  SIGNAL refclk_sdram_ibuf              : STD_LOGIC;
-  SIGNAL refclk_sdram_bufg              : STD_LOGIC;
 #endif
 
 #ifdef CONFIG_ENABLE_DDR4
@@ -729,52 +722,35 @@ ARCHITECTURE psl_accel OF psl_accel IS
 #endif
 BEGIN
   --
-  -- Action Reset Logic
+  -- Reset Delay Logic
   --
-  action_reset_reg : PROCESS (ha_pclock)
+  reset_reg : PROCESS (ha_pclock)
   BEGIN
     IF (rising_edge(ha_pclock)) THEN
-      action_reset_q   <=     action_reset;
-      action_reset_qq  <=     action_reset_q;
-      action_reset_n_q <= NOT action_reset;
+      action_reset_n_q  <= NOT action_reset;
+      pci_user_reset_q  <= pci_user_reset;
+      pci_user_reset_qq <= pci_user_reset_q;      
     END IF;
-  END PROCESS action_reset_reg;
+  END PROCESS reset_reg;
 
 #ifdef CONFIG_ENABLE_DDRI
   --
   -- SDRAM Reset Logic
   --
-  sdram_reset : PROCESS (refclk_sdram_bufg)
+  sdram_reset_reg : PROCESS (pci_clock_125MHz)
   BEGIN  -- PROCESS
-    IF (rising_edge(refclk_sdram_bufg)) THEN
-      IF ((action_reset   = '1') OR
-          (action_reset_q = '1') or
-          (action_reset_qq= '1')) THEN
+    IF (rising_edge(pci_clock_125MHz)) THEN
+      IF ((pci_user_reset    = '1') OR
+          (pci_user_reset_q  = '1') or
+          (pci_user_reset_qq = '1')) THEN
         sdram_reset_m <= '1';
       ELSE
         sdram_reset_m <= '0';
       END IF;
 
-      sdram_reset_q   <=     sdram_reset_m;
-      sdram_reset_n_q <= NOT sdram_reset_m;
+      sdram_reset_q   <= sdram_reset_m;
     END IF;
-  END PROCESS sdram_reset;
-
-  --
-  -- SDRAM Ref Clock Logic
-  --
-  ibuf_refclk_sdram : IBUFGDS
-  port map(
-    I  => refclk_sdram_p,
-    IB => refclk_sdram_n,
-    O  => refclk_sdram_ibuf
-  );
-
-  bufg_sdrma : BUFG
-  port map(
-    I => refclk_sdram_ibuf,
-    O => refclk_sdram_bufg
-  );
+  END PROCESS sdram_reset_reg;
 #endif
 
 
@@ -1004,12 +980,12 @@ BEGIN
 #endif
 
 #if defined(CONFIG_ENABLE_DDRI) && !defined(CONFIG_ENABLE_BRAM)
-  sdram_axi_clk   <= sdram_ui_clk;
+  sdram_axi_clk   <=     sdram_ui_clk;
   sdram_axi_rst_n <= NOT sdram_ui_clk_sync_rst;
 #endif
 #ifdef CONFIG_ENABLE_BRAM
-  sdram_axi_clk   <= refclk_sdram_bufg;
-  sdram_axi_rst_n <= sdram_reset_n_q;
+  sdram_axi_clk   <=     pci_clock_125MHz;
+  sdram_axi_rst_n <= NOT sdram_reset_q;
 #endif
 
 
@@ -1205,7 +1181,7 @@ BEGIN
       c0_ddr4_ck_t               => c2_ddr4_ck_t,
       c0_ddr4_ui_clk             => sdram_ui_clk,
       c0_ddr4_ui_clk_sync_rst    => sdram_ui_clk_sync_rst,
-      c0_ddr4_aresetn            => sdram_reset_n_q,
+      c0_ddr4_aresetn            => sdram_axi_rst_n,
       c0_ddr4_s_axi_ctrl_awvalid => sdram_axi_ctrl_awvalid,
       c0_ddr4_s_axi_ctrl_awready => sdram_axi_ctrl_awready,
       c0_ddr4_s_axi_ctrl_awaddr  => sdram_axi_ctrl_awaddr,

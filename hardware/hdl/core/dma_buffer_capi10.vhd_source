@@ -15,8 +15,6 @@
 -- See the License for the specific language governing permissions AND
 -- limitations under the License.
 --
--- change log:
--- 12/20/2016 R. Rieke add flip bit for rad bit to circumvent page flip
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 
@@ -156,16 +154,15 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
 
   COMPONENT ram_520x64_2p
     PORT(
-      clka  : IN STD_LOGIC;
-      wea   : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-      addra : IN STD_LOGIC_VECTOR(5 DOWNTO 0);
-      dina  : IN STD_LOGIC_VECTOR(519 DOWNTO 0);
+      clka  : IN  STD_LOGIC;
+      wea   : IN  STD_LOGIC_VECTOR(0 DOWNTO 0);
+      addra : IN  STD_LOGIC_VECTOR(5 DOWNTO 0);
+      dina  : IN  STD_LOGIC_VECTOR(519 DOWNTO 0);
       douta : OUT STD_LOGIC_VECTOR(519 DOWNTO 0);
-      clkb  : IN STD_LOGIC;
-      enb   : IN  STD_LOGIC;
-      web   : IN  STD_LOGIC_VECTOR(   0 DOWNTO 0);
-      addrb : IN STD_LOGIC_VECTOR(5 DOWNTO 0);
-      dinb  : IN STD_LOGIC_VECTOR(519 DOWNTO 0);
+      clkb  : IN  STD_LOGIC;
+      web   : IN  STD_LOGIC_VECTOR(0 DOWNTO 0);
+      addrb : IN  STD_LOGIC_VECTOR(5 DOWNTO 0);
+      dinb  : IN  STD_LOGIC_VECTOR(519 DOWNTO 0);
       doutb : OUT STD_LOGIC_VECTOR(519 DOWNTO 0)
     );
   END COMPONENT ram_520x64_2p;
@@ -215,7 +212,6 @@ BEGIN
       wea(0)  => rram_wen,
       douta   => open,
       clkb    => ha_pclock,
-      enb     => '1',
       web(0)  => '0',
       addrb   => rram_raddr,
       dinb    => (OTHERS => '0'),
@@ -629,11 +625,9 @@ BEGIN
           rram_rdata_end_q    <= '0';
           rram_rdata_end_qq   <= '0';
           rram_rdata_end_qqq  <= '0';
-          flip_rbit_valid_q   <= '0';             -- only for FPGACARD=N250S
-          flip_rbit_valid_q   <= '1';             -- only for FPGACARD=ADKU3 -- only for FPGACARD=S121B
+          flip_rbit_valid_q   <= '1';             -- disabling flip bit circumvention for read path
           flip_rbit_q         <= '0';
-          flip_wbit_valid_q   <= '0';             -- only for FPGACARD=N250S
-          flip_wbit_valid_q   <= '1';             -- only for FPGACARD=ADKU3 -- only for FPGACARD=S121B
+          flip_wbit_valid_q   <= '1';             -- disabling flip bit circumvention for write path
           flip_wbit_q         <= '0';          
         END IF;
       END IF;

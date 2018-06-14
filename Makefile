@@ -1,5 +1,5 @@
 #
-# Copyright 2016, 2017 International Business Machines
+# Copyright 2016-2018 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ hardware_subdirs += $(SNAP_ROOT)/hardware
 action_subdirs += $(SNAP_ROOT)/actions
 
 snap_config = .snap_config
+snap_config_bak = .snap_config_test.bak
+snap_config_new = .snap_config_test.new
 snap_config_sh = .snap_config.sh
 snap_config_cflags = .snap_config.cflags
 snap_env_sh = snap_env.sh
@@ -32,7 +34,7 @@ snap_env_sh = snap_env.sh
 clean_subdirs += $(config_subdirs) $(software_subdirs) $(hardware_subdirs) $(action_subdirs)
 
 # Only build if the subdirectory is really existent
-.PHONY: help $(software_subdirs) software $(action_subdirs) apps actions $(hardware_subdirs) hardware test install uninstall snap_env hw_project model sim image cloud_base cloud_action cloud_merge snap_config config menuconfig xconfig gconfig oldconfig clean clean_config clean_env gitclean
+.PHONY: help $(software_subdirs) software $(action_subdirs) apps actions $(hardware_subdirs) hardware test install uninstall snap_env hw_project model sim image cloud_enable cloud_base cloud_action cloud_merge snap_config config menuconfig xconfig gconfig oldconfig clean clean_config clean_env gitclean
 
 help:
 	@echo "Main targets for the SNAP Framework make process:";
@@ -97,7 +99,7 @@ $(hardware_subdirs): $(snap_env_sh)
 hardware: $(hardware_subdirs)
 
 # Model build and config
-hw_project model sim image cloud_base cloud_action: $(snap_env_sh)
+hw_project model sim image cloud_enable cloud_base cloud_action: $(snap_env_sh)
 	@for dir in $(hardware_subdirs); do                \
 	    if [ -d $$dir ]; then                          \
 	        $(MAKE) -s -C $$dir $@ || exit 1;          \
@@ -124,12 +126,17 @@ endif
 # SNAP Config
 config menuconfig xconfig gconfig oldconfig:
 	@echo "$@: Setting up SNAP configuration"
+	@touch $(snap_config) && sed '/^#/ d' <$(snap_config) >$(snap_config_bak)
 	@for dir in $(config_subdirs); do          \
 	    if [ -d $$dir ]; then                  \
 	        $(MAKE) -s -C $$dir $@ || exit 1;  \
 	    fi                                     \
 	done
-	@$(MAKE) -C hardware clean
+	@sed '/^#/ d' <$(snap_config) >$(snap_config_new)
+	@if [ -n "`diff -q $(snap_config_bak) $(snap_config_new)`" ]; then \
+	    $(MAKE) -C hardware clean;                                     \
+	fi
+	@$(RM) $(snap_config_bak) $(snap_config_new)
 
 snap_config:
 	@$(MAKE) -s menuconfig || exit 1

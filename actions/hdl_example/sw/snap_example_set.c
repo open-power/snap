@@ -39,7 +39,7 @@
 #define	KILO_BYTE		(1024)
 #define	MEGA_BYTE		(1024*1024)
 
-#define DEFAULT_MEM	0xff
+#define DEFAULT_MEM             0xE5
 
 static const char *version = GIT_VERSION;
 static	int verbose_level = 0;
@@ -89,43 +89,69 @@ static void print_time(uint64_t elapsed)
  */
 static int check_buffer(uint8_t *hb,	/* Host Buffer */
 		int begin,		/* Offset in Buffer */
-		int size,
+		int size,               /* Size of modified bytes */
+		int h_size,             /* Size of complete buffer */
 		uint8_t pattern)	/* Patthern to check */
 {
 	int i;
-	int rc, bad;
+	int bad;
 	uint8_t data;
 
 	PRINTF2("\nCheck %d bytes in Buffer Start at: %d for Pattern: 0x%02x",
 		size, begin, pattern);
-	rc = bad = 0;
+	bad = 0;
+	/* Check bytes from 0 to begin. This Bytes must stay untouched */
+	PRINTF2("\nCheck from 0 to %d for %x", begin, DEFAULT_MEM);
 	for (i = 0; i < begin; i++) {
 		data = *hb;	/* Get data */
 		if (data != DEFAULT_MEM) {
-			PRINTF0("\nError1@: %d Expect: 0x%02x Read: 0x%02x",
+			PRINTF0("\nError1@: 0x%x Expect: 0x%02x Read: 0x%02x",
 				i,		/* Address */
 				DEFAULT_MEM,	/* What i expect */
 				data);		/* What i got */
 			bad++;
-			if (bad > 10) rc = 1;	/* Exit */
+			if (bad > 10)
+				break;          /* Exit */
 		}
-		if (rc) return 1;
 		hb++;
 	}
-	for (i = 0; i < size; i++) {
+	if (bad)
+		return bad;
+
+	/* Check bytes from begin to begin+size. This Bytes are modified */
+	PRINTF2("\nCheck from %d to %d for %x", begin , begin+size, pattern);
+	for (i = begin; i < begin+size; i++) {
 		data = *hb;	/* Get data */
 		if (data != pattern) {
-			PRINTF0("\nError@: %d Expect: 0x%02x Read: 0x%02x",
+			PRINTF0("\nError@: 0x%x Expect: 0x%02x Read: 0x%02x",
 				i,		/* Address */
 				pattern,	/* What i expect */
 				data);		/* What i got */
 			bad++;
-			if (bad > 9) rc = 1;	/* Exit */
+			if (bad > 10)
+				break;          /* Exit */
 		}
-		if (rc) return 2;
 		hb++;
 	}
-	return 0;
+	if (bad)
+		return bad;
+
+	/* Check begin+size to end. This Bytes must stay untouched */
+	PRINTF2("\nCheck from %d to %d for %x", begin+size, h_size, DEFAULT_MEM);
+	for (i = begin+size; i < h_size; i++) {
+		data = *hb;	/* Get data */
+		if (data != DEFAULT_MEM) {
+			PRINTF0("\nError@: 0x%x Expect: 0x%02x Read: 0x%02x",
+				i,		/* Address */
+				DEFAULT_MEM,	/* What i expect */
+				data);		/* What i got */
+			bad++;
+			if (bad > 10)
+				break;          /* Exit */
+		}
+		hb++;
+	}
+	return bad;
 }
 
 /* Action or Kernel Write and Read are 32 bit MMIO */
@@ -182,6 +208,8 @@ static void action_start(struct snap_card* h,
 		return;
 		break;
 	}
+	PRINTF2(" Start Address: %llx\n", (long long)src);
+	PRINTF2(" End   Address: %llx\n", (long long)dest);
 	PRINTF2(" Set: %lld Bytes with Pattern: 0x%02x ",
 		(long long)(dest-src), pattern);
 	action_write(h, ACTION_CONFIG,  action);
@@ -210,9 +238,9 @@ static void usage(const char *prog)
 		"    -C, --card <cardno>  use this card for operation\n"
 		"    -V, --version\n"
 		"    -q, --quiet          quiece output\n"
-		"    -t, --timeout        timeout in sec (default=1 sec)\n"
+		"    -t, --timeout        timeout in sec (default 1 sec)\n"
 		"    -i, --iter           Number of Iterations (default 1)\n"
-		"    -H, --host           Set Host Memory (defualt)\n"
+		"    -H, --host           Set Host Memory (default)\n"
 		"    -F, --fpga           Set FPGA Memory\n"
 		"    -s, --size           Size to fill (default %d)\n"
 		"    -b, --begin          Byte offset to begin set (default 0)\n"
@@ -242,6 +270,10 @@ int main(int argc, char *argv[])
 	uint64_t start, stop;
 	snap_action_flag_t attach_flags = 0;
 	unsigned long ram_in_mb = 0;
+	unsigned long min_size = 0;
+	char card_name[16];   /* Buffer for Card name */
+	unsigned long dma_align;
+	int missing_bytes;
 
 	while (1) {
                 int option_index = 0;
@@ -294,7 +326,7 @@ int main(int argc, char *argv[])
 		case 's':	/* size */
 			size = strtol(optarg, (char **)NULL, 0);
 			if ((errno == ERANGE && (size == LONG_MAX || size == LONG_MIN))
-                   || (errno != 0 && size == 0)) {
+                            || (errno != 0 && size == 0)) {
 				PRINTF0("Error errno %d\n", errno);
 				exit(1);
 			}
@@ -334,33 +366,74 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	/* Get SNAP card name */
+	snap_card_ioctl(dn, GET_CARD_NAME, (unsigned long)&card_name);
+	/* Get SNAP DMA alignment */
+	snap_card_ioctl(dn, GET_DMA_ALIGN, (unsigned long)&dma_align);
+	/* Get SNAP DMA minimum Size */
+	snap_card_ioctl(dn, GET_DMA_MIN_SIZE, (unsigned long)&min_size);
+
 	/* Check if SDRAM on Card */
-        snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&ram_in_mb);
+	snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&ram_in_mb);
 	if (0 == ram_in_mb) {
-		PRINTF0("No SNAP SDRAM in Card: %s\n", device);
+		PRINTF0("No SNAP SDRAM on %s SNAP Card: %d\n", card_name, card_no);
 		rc = ENODEV;      /* Exit BAD */
 		goto __exit1;
 	}
+	PRINTF1("SNAP on %s Card DMA Align: %d Size: %d\n", 
+		card_name, (int)dma_align, (int)min_size); 
 
 	if (ACTION_CONFIG_MEMSET_H == func) {
 		if (size > (32 * MEGA_BYTE)) {
 			PRINTF0("Size %ld must be less than %d\n", size, (32*MEGA_BYTE));
 			goto __exit1;
 		}
-		h_begin = (int)(begin & 0xF) + 16;
-		h_mem_size = (h_begin + size + 32);
+		/* Check begin */
+		if (begin & (int)(min_size -1)) {
+			PRINTF0("ERROR: Option -b %d must be a multiple of %d Bytes for %s Cards\n",
+				(int)begin, (int)min_size, card_name);
+			goto __exit1;
+		}
+		/* Check size */
+		if (size & (int)(min_size -1)) {
+			PRINTF0("ERROR: Option -s %d must be a multiple of %d Bytes for %s Cards.\n",
+				(int)size, (int)min_size, card_name);
+			goto __exit1;
+		}
+
+		/* Allocate Host buffer
+		+-----------+---...----+---....---+---......---+-----------+
+		| Align DMA |   Begin  | Size     | Rest Bytes | Align DMA |
+		|  Unused   |   Unused | Modified | to fill    |  Unused   |
+		|   Bytes   |   Bytes  | Bytes    | Min Size   |   Bytes   |
+		+-----------+---...----+---....---+---......---+-----------+
+		*/
+		/* Adjust begin, leave dma_align bytes free space at the begining */
+		h_begin = dma_align + begin;
+		/* Calculate the rest to fill to min_dma */
+		missing_bytes = min_size - (size+begin)%min_size;
+		/* Add size and reserve dma_align bytes at end */
+		h_mem_size = h_begin + size + missing_bytes;
+		/* Round Buffer up to full dma_align Bytes */
+		h_mem_size += dma_align;
 
 		/* Allocate Host Buffer */
 		if (posix_memalign((void **)&hb, 4096, h_mem_size) != 0) {
 			perror("FAILED: posix_memalign source");
 			goto __exit1;
 		}
-		PRINTF1("Allocate Host Buffer at %p Size: %d Bytes\n", hb, h_mem_size);
+		PRINTF1("Allocate Host Buffer at %p Size: %d Bytes. (DMA Offset set to: %d)\n",
+			hb, h_mem_size, h_begin);
 	}
 
-	PRINTF1("Fill %ld Bytes from %lld to %lld with Pattern: 0x%02x FPGA RAM: %d MB\n",
-		size, (long long)begin, (long long)begin+size-1,
-		pattern, (int)ram_in_mb);
+	if (ACTION_CONFIG_MEMSET_H == func)
+		PRINTF1("Fill %ld Bytes in Host from %lld to %lld with Pattern: 0x%02x\n",
+			size, (long long)begin, (long long)begin+size-1,
+			pattern);
+	else
+		PRINTF1("Fill %ld Bytes in FPGA from %lld to %lld with Pattern: 0x%02x FPGA RAM: %d MB\n",
+			size, (long long)begin, (long long)begin+size-1,
+			pattern, (int)ram_in_mb);
 
 	for (i = 0; i < iter; i++) {
 		struct snap_action *act;
@@ -387,9 +460,15 @@ int main(int argc, char *argv[])
 			start = (uint64_t)hb + h_begin;	/* Host Start Address */
 			stop = start + size - 1;	/* Host End Address */
 			action_start(dn, func | (pattern << 8), stop, start);
-			if (0 != action_wait_idle(dn, timeout))
+			rc = action_wait_idle(dn, timeout);
+			if (verbose_level > 2) {
+				PRINTF0("\n Host buffer@ %p Size: 0x%llx Set Begin/Size: 0x%llx / 0x%llx\n",
+					hb, (long long)h_mem_size, (long long)begin, (long long)size); 
+				__hexdump(stdout, hb, h_mem_size);
+			}
+			if (0 != rc)
 				goto __exit1;
-			if (0 != check_buffer(hb, h_begin, size, pattern))
+			if (0 != check_buffer(hb, h_begin, size, h_mem_size, pattern))
 				goto __exit1;
 		}
 		snap_detach_action(act);

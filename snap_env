@@ -25,13 +25,17 @@ PATH=$snapdir:$PATH
 snap_env_sh=$snapdir/snap_env.sh
 
 unset PSL_DCP
+unset CAPI_BSP
 unset ACTION_ROOT
 unset PSLSE_ROOT
+unset TIMING_LABLIMIT
 unset ILA_SETUP_FILE
 unset DCP_ROOT
 unset config_script
 unset snap_env_info
 unset STRING_MATCH_VERILOG
+
+TIMING_LABLIMIT_DEFAULT="-200"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -91,10 +95,37 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
 
+  ####### checking FPGA card setup
+  # Note: Card N250SP is currently in preparation phase
+  if [ "$FPGACARD" == "N250SP" ]; then
+    SETUP_INFO="$SETUP_INFO\n### INFO ### Support for the selected CAPI2.0 FPGA card N250SP is currently in preparation phase."
+    echo "=====Checking path to PSL for N250SP============"
+    echo "CAPI_BSP                is set to: \"$CAPI_BSP\""
+    RESP=`grep CAPI_BSP $snap_env_sh`
+    if [ -z "$RESP" ]; then
+      echo "#export CAPI_BSP=" >> $snap_env_sh
+    fi
+    if [ -z "$CAPI_BSP" ]; then
+      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable CAPI_BSP must point to the directory containing the CAPI board support IP."
+    fi
+  # Note: Card RCXVUP is currently in preparation phase
+  elif [ "$FPGACARD" == "RCXVUP" ]; then
+    SETUP_INFO="$SETUP_INFO\n### INFO ### Support for the selected CAPI2.0 FPGA card RCXVUP is currently in preparation phase."
+    echo "=====Checking path to PSL for RCXVUP============"
+    echo "CAPI_BSP                is set to: \"$CAPI_BSP\""
+    RESP=`grep CAPI_BSP $snap_env_sh`
+    if [ -z "$RESP" ]; then
+      echo "#export CAPI_BSP=" >> $snap_env_sh
+    fi
+    if [ -z "$CAPI_BSP" ]; then
+      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable CAPI_BSP must point to the directory containing the CAPI board support IP."
+    fi
   ####### checking path to PSL design checkpoint
   # Note: CLOUD_USER_FLOW is defined via snap_config
-  if [ "$CLOUD_USER_FLOW" == "TRUE" ]; then
-    SETUP_INFO="$SETUP_INFO\n### INFO ### Cloud user flow is skipping PSL_DCP check"
+  elif [ "$CLOUD_USER_FLOW" == "TRUE" ]; then
+    SETUP_INFO="$SETUP_INFO\n### INFO ### Cloud user flow is skipping PSL_DCP check."
+  elif [ "$IGNORE_CHECK_PSL" == "TRUE" ]; then
+    SETUP_INFO="$SETUP_INFO\n### INFO ### Skipping PSL_DCP check because environment variable IGNORE_CHECK_PSL is set to TRUE."
   else
     echo "=====Checking path to PSL design checkpoint============"
     echo "PSL_DCP                 is set to: \"$PSL_DCP\""
@@ -120,7 +151,18 @@ while [ -z "$SETUP_DONE" ]; do
 
   ####### checking path to PSLSE (only if simulation is enabled)
   # Note: SIMULATOR is defined via snap_config
-  if [ $SIMULATOR != "nosim" ]; then
+  if [ "$SIMULATOR" != "nosim" ]; then
+    echo "=====Simulation setup: Setting up PSLSE version=========="
+    if [ "$FPGACARD" == "N250SP" ]; then
+      PSLVER="9"
+    elif [ "$FPGACARD" == "RCXVUP" ]; then
+      PSLVER="9"
+    else
+      PSLVER="8"
+    fi
+    echo "Setting PSLVER                 to: \"$PSLVER\""
+    sed -i '/export[ ^]*PSLVER[ ^]*=/ d' $snap_env_sh
+    echo "export PSLVER=$PSLVER" >> $snap_env_sh
     echo "=====Simulation setup: Checking path to PSLSE=========="
     echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
     RESP=`grep PSLSE_ROOT $snap_env_sh`
@@ -133,7 +175,8 @@ while [ -z "$SETUP_DONE" ]; do
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set properly."
       SETUP_WARNING="$SETUP_WARNING\n    For simulation please clone PSL Simulation Environment"
       SETUP_WARNING="$SETUP_WARNING\n    from https://github.com/ibm-capi/pslse"
-      SETUP_WARNING="$SETUP_WARNING\n    and let \$PSLSE_ROOT point to it"
+      SETUP_WARNING="$SETUP_WARNING\n    and let \$PSLSE_ROOT point to it."
+      SETUP_WARNING="$SETUP_WARNING\n    Please set Simulator to 'nosim' if you do not intend to run simulation."
     fi
   fi
 
@@ -164,6 +207,8 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hls_intersect'
   elif [ -n "$HLS_NVME_MEMCOPY" ]; then
     AR='${SNAP_ROOT}/actions/hls_nvme_memcopy'
+  elif [ -n "$HLS_LATENCY_EVAL" ]; then
+    AR='${SNAP_ROOT}/actions/hls_latency_eval'
   elif [ -n "$HLS_HELLOWORLD" ]; then
     AR='${SNAP_ROOT}/actions/hls_helloworld'
   fi
@@ -177,7 +222,7 @@ while [ -z "$SETUP_DONE" ]; do
     echo "export ACTION_ROOT=$AR" >> $snap_env_sh
   fi
 
-  if [ -z "$AR" ]; then
+  if [ -z "$AR" ] && [ "$ignore_action_root" != "y" ]; then
     SETUP_EMPTY="$SETUP_EMPTY\n  ACTION_ROOT"
   else
     SNAP_ROOT=$snapdir
@@ -224,6 +269,17 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
 
+  ####### checking TIMNG LIMITS setup
+  if [ -z "$TIMING_LABLIMIT" ]; then
+    TIMING_LABLIMIT="$TIMING_LABLIMIT_DEFAULT"
+    sed -i '/export[ ^]*TIMING_LABLIMIT[ ^]*=/ d' $snap_env_sh
+    echo "export TIMING_LABLIMIT=\"$TIMING_LABLIMIT_DEFAULT\"" >> $snap_env_sh
+    SETUP_INFO="$SETUP_INFO\n### INFO ### Timing limit for FPGA image build got set to default value $TIMING_LABLIMIT_DEFAULT"
+  fi
+  echo "=====Timing limit for FPGA image build in ps============"
+  echo "TIMING_LABLIMIT         is set to: \"$TIMING_LABLIMIT\""
+
+
   ####### Cadence simulation setup:
   # Note: SIMULATOR is defined via snap_config
   if [ "$SIMULATOR" == "irun" ]; then
@@ -257,11 +313,11 @@ while [ -z "$SETUP_DONE" ]; do
     fi
   fi
 
-  # Note: NVME_USED is defined via snap_config
-  if [[ "$NVME_USED" == "TRUE" ]]; then
+  # Note: NVME_USED and DENALI_USED are defined via snap_config
+  if [ "$NVME_USED" == "TRUE" ] && [ "$DENALI_USED" == "TRUE" ]; then
     echo "=====Denali setup======================================"
     if [ -z "$DENALI" ]; then
-      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of NVME_USED=$NVME_USED but DENALI not set!"
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of NVME_USED=$NVME_USED and setting of DENALI_USED=$DENALI_USED but DENALI not set!"
     else
       echo "DENALI                  is set to: \"$DENALI\""
     fi

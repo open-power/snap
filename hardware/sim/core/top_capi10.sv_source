@@ -319,6 +319,12 @@ module top (
   always begin
      ha_pclock = !ha_pclock; #(4.0ns / 2.0);                // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
+  // 125MHz AFU clock
+  reg     pci_clock_125MHz;
+  initial pci_clock_125MHz <= 0;
+  always begin
+     pci_clock_125MHz = !pci_clock_125MHz; #(8.0ns / 2.0);  // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end
 
   //
   // System Reset Logic
@@ -732,7 +738,7 @@ module top (
   wire  [ 8:0] c0_ddr3_dqs_p;
   wire  [ 8:0] c0_ddr3_dqs_n;
 #endif
-#if defined(CONFIG_ENABLE_DDR4) && !defined(CONFIG_S121B)
+#if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_N250S)
   // DDR4 Signals
   wire          c0_ddr4_act_n;
   wire  [16:0]  c0_ddr4_adr;
@@ -750,21 +756,38 @@ module top (
   wire  [8:0]   c0_ddr4_dqs_t;
 #endif
 #if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_S121B)
-  // DDR4 Signals                 
-  wire          c2_ddr4_act_n;    
-  wire  [16:0]  c2_ddr4_adr;      
-  wire  [1:0]   c2_ddr4_ba;       
-  wire  [1:0]   c2_ddr4_bg;       
-  wire  [0:0]   c2_ddr4_cke;      
-  wire  [0:0]   c2_ddr4_odt;      
-  wire  [0:0]   c2_ddr4_cs_n;     
-  wire  [0:0]   c2_ddr4_ck_t;     
-  wire  [0:0]   c2_ddr4_ck_c;     
-  wire          c2_ddr4_reset_n;  
-  wire  [8:0]   c2_ddr4_dm_dbi_n; 
-  wire  [71:0]  c2_ddr4_dq;       
-  wire  [8:0]   c2_ddr4_dqs_c;    
-  wire  [8:0]   c2_ddr4_dqs_t;    
+  // DDR4 Signals
+  wire          c2_ddr4_act_n;
+  wire  [16:0]  c2_ddr4_adr;
+  wire  [1:0]   c2_ddr4_ba;
+  wire  [1:0]   c2_ddr4_bg;
+  wire  [0:0]   c2_ddr4_cke;
+  wire  [0:0]   c2_ddr4_odt;
+  wire  [0:0]   c2_ddr4_cs_n;
+  wire  [0:0]   c2_ddr4_ck_t;
+  wire  [0:0]   c2_ddr4_ck_c;
+  wire          c2_ddr4_reset_n;
+  wire  [8:0]   c2_ddr4_dm_dbi_n;
+  wire  [71:0]  c2_ddr4_dq;
+  wire  [8:0]   c2_ddr4_dqs_c;
+  wire  [8:0]   c2_ddr4_dqs_t;
+#endif
+#if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_AD8K5)
+  // DDR4 Signals
+  wire          c0_ddr4_act_n;
+  wire  [16:0]  c0_ddr4_adr;
+  wire  [1:0]   c0_ddr4_ba;
+  wire  [1:0]   c0_ddr4_bg;
+  wire  [0:0]   c0_ddr4_cke;
+  wire  [0:0]   c0_ddr4_odt;
+  wire  [0:0]   c0_ddr4_cs_n;
+  wire  [0:0]   c0_ddr4_ck_t;
+  wire  [0:0]   c0_ddr4_ck_c;
+  wire          c0_ddr4_reset_n;
+  wire  [8:0]   c0_ddr4_dm_dbi_n;
+  wire  [71:0]  c0_ddr4_dq;
+  wire  [8:0]   c0_ddr4_dqs_c;
+  wire  [8:0]   c0_ddr4_dqs_t;
 #endif
 #ifdef CONFIG_ENABLE_NVME
   // NVME Signals
@@ -778,47 +801,35 @@ module top (
   wire  [ 3:0] pcie_rc1_txp;
 #endif
 #ifdef CONFIG_ENABLE_DDRI
-  // SDRAM Reference Clock generation
-  reg       refclk_sdram_p;
-  initial   refclk_sdram_p <= 0;
-
   // SDRAM System Clock generation
   reg       sys_clk_p;
   initial   sys_clk_p <= 0;
 #endif
 #if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_ADKU3)
-  // 200MHz ADKU3 reference clock
-  always begin
-     refclk_sdram_p = !refclk_sdram_p; #(5ns / 2.0);         // a line can not start with "#", because SNAP is unsing the C preprocessor
-  end
-
   // 400MHz DDR3 system clock
   always begin
      sys_clk_p = !sys_clk_p; #(2.5ns / 2.0);                // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 #endif
 #if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_N250S)
-  // 266MHz N250S reference clock
-  always begin
-     refclk_sdram_p = !refclk_sdram_p; #(3.752ns / 2.0);    // a line can not start with "#", because SNAP is unsing the C preprocessor
-  end
-
   // 266MHz DDR4 system clock
   always begin
      sys_clk_p = !sys_clk_p; #(3.752ns / 2.0);              // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 #endif
 #if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_S121B)
-  // 100MHz S121B reference clock          
-  always begin                             
-     refclk_sdram_p = !refclk_sdram_p; #(10ns / 2.0);       // a line can not start with "#", because SNAP is unsing the C preprocessor
-  end                                      
-
-  // 100MHz S121B system clock  
-  always begin                  
-     sys_clk_p = !sys_clk_p; #(10ns / 2.0);                 // a line can not start with "#", because SNAP is unsing the C preprocessor    
-  end                           
+  // 100MHz S121B system clock
+  always begin
+     sys_clk_p = !sys_clk_p; #(10ns / 2.0);                 // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end
 #endif
+#if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_AD8K5)
+  // 300MHz AD8K5 system clock
+  always begin
+     sys_clk_p = !sys_clk_p; #(3.332ns / 2.0);              // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end
+#endif
+
 #ifdef CONFIG_ENABLE_NVME
   // NVME Reference Clock generation
   reg refclk_nvme_p;
@@ -894,10 +905,6 @@ module top (
     .ah_jyield(ah_jyield),
     .ah_tbreq(ah_tbreq),
     .ah_paren(ah_paren),
-#ifdef CONFIG_ENABLE_DDRI
-    .refclk_sdram_p         (refclk_sdram_p),
-    .refclk_sdram_n         (~refclk_sdram_p),
-#endif
 #ifdef CONFIG_ENABLE_DDR3
     // DDR3
     .c0_sys_clk_p           (sys_clk_p),
@@ -938,41 +945,63 @@ module top (
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t),
 #endif
 #if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_S121B)
-    // DDR4                                     
-    .c2_sys_clk_p           (sys_clk_p),        
-    .c2_sys_clk_n           (~sys_clk_p),       
-    .c2_ddr4_act_n          (c2_ddr4_act_n),    
-    .c2_ddr4_adr            (c2_ddr4_adr),      
-    .c2_ddr4_ba             (c2_ddr4_ba),       
-    .c2_ddr4_bg             (c2_ddr4_bg),       
-    .c2_ddr4_cke            (c2_ddr4_cke),      
-    .c2_ddr4_odt            (c2_ddr4_odt),      
-    .c2_ddr4_cs_n           (c2_ddr4_cs_n),     
-    .c2_ddr4_ck_t           (c2_ddr4_ck_t),     
-    .c2_ddr4_ck_c           (c2_ddr4_ck_c),     
-    .c2_ddr4_reset_n        (c2_ddr4_reset_n),  
-    .c2_ddr4_dm_dbi_n       (c2_ddr4_dm_dbi_n), 
-    .c2_ddr4_dq             (c2_ddr4_dq),       
-    .c2_ddr4_dqs_c          (c2_ddr4_dqs_c),    
-    .c2_ddr4_dqs_t          (c2_ddr4_dqs_t),    
-#endif 
+    // DDR4
+    .c2_sys_clk_p           (sys_clk_p),
+    .c2_sys_clk_n           (~sys_clk_p),
+    .c2_ddr4_act_n          (c2_ddr4_act_n),
+    .c2_ddr4_adr            (c2_ddr4_adr),
+    .c2_ddr4_ba             (c2_ddr4_ba),
+    .c2_ddr4_bg             (c2_ddr4_bg),
+    .c2_ddr4_cke            (c2_ddr4_cke),
+    .c2_ddr4_odt            (c2_ddr4_odt),
+    .c2_ddr4_cs_n           (c2_ddr4_cs_n),
+    .c2_ddr4_ck_t           (c2_ddr4_ck_t),
+    .c2_ddr4_ck_c           (c2_ddr4_ck_c),
+    .c2_ddr4_reset_n        (c2_ddr4_reset_n),
+    .c2_ddr4_dm_dbi_n       (c2_ddr4_dm_dbi_n),
+    .c2_ddr4_dq             (c2_ddr4_dq),
+    .c2_ddr4_dqs_c          (c2_ddr4_dqs_c),
+    .c2_ddr4_dqs_t          (c2_ddr4_dqs_t),
+#endif
+#if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_AD8K5)
+    // DDR4
+    .c0_sys_clk_p           (sys_clk_p),
+    .c0_sys_clk_n           (~sys_clk_p),
+    .c0_ddr4_act_n          (c0_ddr4_act_n),
+    .c0_ddr4_adr            (c0_ddr4_adr),
+    .c0_ddr4_ba             (c0_ddr4_ba),
+    .c0_ddr4_bg             (c0_ddr4_bg),
+    .c0_ddr4_cke            (c0_ddr4_cke),
+    .c0_ddr4_odt            (c0_ddr4_odt),
+    .c0_ddr4_cs_n           (c0_ddr4_cs_n),
+    .c0_ddr4_ck_t           (c0_ddr4_ck_t),
+    .c0_ddr4_ck_c           (c0_ddr4_ck_c),
+    .c0_ddr4_reset_n        (c0_ddr4_reset_n),
+    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n),
+    .c0_ddr4_dq             (c0_ddr4_dq),
+    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),
+    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t),
+#endif
+
 #ifdef CONFIG_ENABLE_NVME
     // NVME
     .nvme_reset_n           (sys_reset_n_q),
-    .refclk_nvme_ch0_p(refclk_nvme_p),
-    .refclk_nvme_ch0_n(~refclk_nvme_p),
-    .refclk_nvme_ch1_p(refclk_nvme_p),
-    .refclk_nvme_ch1_n(~refclk_nvme_p),
-    .pcie_rc0_rxn(pcie_rc0_rxn),
-    .pcie_rc0_rxp(pcie_rc0_rxp),
-    .pcie_rc0_txn(pcie_rc0_txn),
-    .pcie_rc0_txp(pcie_rc0_txp),
-    .pcie_rc1_rxn(pcie_rc1_rxn),
-    .pcie_rc1_rxp(pcie_rc1_rxp),
-    .pcie_rc1_txn(pcie_rc1_txn),
-    .pcie_rc1_txp(pcie_rc1_txp),
+    .refclk_nvme_ch0_p      (refclk_nvme_p),
+    .refclk_nvme_ch0_n      (~refclk_nvme_p),
+    .refclk_nvme_ch1_p      (refclk_nvme_p),
+    .refclk_nvme_ch1_n      (~refclk_nvme_p),
+    .pcie_rc0_rxn           (pcie_rc0_rxn),
+    .pcie_rc0_rxp           (pcie_rc0_rxp),
+    .pcie_rc0_txn           (pcie_rc0_txn),
+    .pcie_rc0_txp           (pcie_rc0_txp),
+    .pcie_rc1_rxn           (pcie_rc1_rxn),
+    .pcie_rc1_rxp           (pcie_rc1_rxp),
+    .pcie_rc1_txn           (pcie_rc1_txn),
+    .pcie_rc1_txp           (pcie_rc1_txp),
 #endif
-    .ha_pclock(ha_pclock)
+    .ha_pclock              (ha_pclock),
+    .pci_user_reset         (~sys_reset_n_q),
+    .pci_clock_125MHz       (pci_clock_125MHz)
   );
 
 #ifdef CONFIG_ENABLE_DDR3
@@ -1020,25 +1049,45 @@ module top (
     );
 #endif
 #if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_S121B)
-  ddr4_dimm_s121b ddr4_dimm_s121b (             
-    .sys_reset              (~sys_reset_n_q),   
-    .c0_ddr4_act_n          (c2_ddr4_act_n),    
-    .c0_ddr4_adr            (c2_ddr4_adr),      
-    .c0_ddr4_ba             (c2_ddr4_ba),       
-    .c0_ddr4_bg             (c2_ddr4_bg),       
-    .c0_ddr4_cke            (c2_ddr4_cke),      
-    .c0_ddr4_odt            (c2_ddr4_odt),      
-    .c0_ddr4_cs_n           (c2_ddr4_cs_n),     
-    .c0_ddr4_ck_t           (c2_ddr4_ck_t),     
-    .c0_ddr4_ck_c           (c2_ddr4_ck_c),     
-    .c0_ddr4_reset_n        (c2_ddr4_reset_n),  
-    .c0_ddr4_dm_dbi_n       (c2_ddr4_dm_dbi_n), 
-    .c0_ddr4_dq             (c2_ddr4_dq),       
-    .c0_ddr4_dqs_c          (c2_ddr4_dqs_c),    
-    .c0_ddr4_dqs_t          (c2_ddr4_dqs_t)     
-    );                                          
+  ddr4_dimm_s121b ddr4_dimm_s121b (
+    .sys_reset              (~sys_reset_n_q),
+    .c0_ddr4_act_n          (c2_ddr4_act_n),
+    .c0_ddr4_adr            (c2_ddr4_adr),
+    .c0_ddr4_ba             (c2_ddr4_ba),
+    .c0_ddr4_bg             (c2_ddr4_bg),
+    .c0_ddr4_cke            (c2_ddr4_cke),
+    .c0_ddr4_odt            (c2_ddr4_odt),
+    .c0_ddr4_cs_n           (c2_ddr4_cs_n),
+    .c0_ddr4_ck_t           (c2_ddr4_ck_t),
+    .c0_ddr4_ck_c           (c2_ddr4_ck_c),
+    .c0_ddr4_reset_n        (c2_ddr4_reset_n),
+    .c0_ddr4_dm_dbi_n       (c2_ddr4_dm_dbi_n),
+    .c0_ddr4_dq             (c2_ddr4_dq),
+    .c0_ddr4_dqs_c          (c2_ddr4_dqs_c),
+    .c0_ddr4_dqs_t          (c2_ddr4_dqs_t)
+    );
 #endif
-#ifdef CONFIG_ENABLE_NVME
+#if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_AD8K5)
+  ddr4_dimm_ad8k5 ddr4_dimm_ad8k5 (
+    .sys_reset              (~sys_reset_n_q),
+    .c0_ddr4_act_n          (c0_ddr4_act_n),
+    .c0_ddr4_adr            (c0_ddr4_adr),
+    .c0_ddr4_ba             (c0_ddr4_ba),
+    .c0_ddr4_bg             (c0_ddr4_bg),
+    .c0_ddr4_cke            (c0_ddr4_cke),
+    .c0_ddr4_odt            (c0_ddr4_odt),
+    .c0_ddr4_cs_n           (c0_ddr4_cs_n),
+    .c0_ddr4_ck_t           (c0_ddr4_ck_t),
+    .c0_ddr4_ck_c           (c0_ddr4_ck_c),
+    .c0_ddr4_reset_n        (c0_ddr4_reset_n),
+    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n),
+    .c0_ddr4_dq             (c0_ddr4_dq),
+    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),
+    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
+    );
+#endif
+
+#if defined (CONFIG_ENABLE_NVME) && defined(CONFIG_ENABLE_DENALI)
   ////////////////////////////////////////////////////////////
   // NVMe model                                             //
   ////////////////////////////////////////////////////////////

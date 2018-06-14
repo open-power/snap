@@ -1,6 +1,8 @@
 # Simulation
-SNAP supports *Xilinx xsim* and *Cadence irun* tools for simulation.
-The environment variable `SIMULATOR` (see make snap_config) selects the simulator and can be set to `xsim` or to `irun`.  
+SNAP supports *Xilinx xsim* and *Cadence irun or xcelium* tools for simulation.
+Other simulators like Mentor Modelsim or questa are supported by the respective Xilinx Vivado version and can be used as well, 
+but due to lack of licenses this support is not tested and is built into the SNAP framework as "experimental use" without warranty.
+The environment variable `SIMULATOR` (see make snap_config) selects the simulator.
 
 ## Building a model
 see [Image and model build](../#image-and-model-build) for further instructions
@@ -23,21 +25,28 @@ simulate                     -tclbatch cmd.tcl
 logfile                      --log simulate.log
 ```
 ## PSLSE setup
-The SNAP framework's simulation depends on the PSL simulation environment (PSLSE).
+During Simulation only the SNAP framework + action is part of the simulation model,
+and the PSL functionality is replaced by the PSL simulation environment (PSLSE), a behavioral simulator running on the X86 host.
 
 You may clone `PSLSE` from github [https://github.com/ibm-capi/pslse](https://github.com/ibm-capi/pslse).
+Starting with March 1st 2018, the 'master' branch in PSLSE supports both PSL functions for POWER8 or POWER9,
+but you have to specify which version you need with the environment variable PSLVER=8 or PSLVER=9.
 
-:warning: Currently (as of Dec 2017) the following PSLSE GIT branches are necessary:
-* v3.1    (an older but stable master version) for POWER8 cards (ADKU3, N250S, S121B)
-* capi2   (a separate side branch with more features) for POWER9 cards (N250S+)
-
-The plan is to merge both functionalities to master in 1Q2018
-
-In order to enable SNAP's build and simulation process to make use of `PSLSE` the variable `PSLSE_ROOT` (defined in `${SNAP_ROOT}/snap_env.sh`) needs to point to the directory containing the github pslse clone.
+The simulation runtime script 'run_sim' will
 ```
- export PSLSE_ROOT=                                  # path for the PSL simulation environment
- export PSL_DCP=                                     # path to the PSL checkpoint fitting your target card
+* start the hardware simulator and load the SNAP framework+action simulation model
+* start the PSLSE behavioral simulator and connect it to the hardware simulator
+* start any software application and connect it to PSLSE to run testcases against the hardware model
 ```
+
+In order to enable SNAP's build and simulation process to make use of `PSLSE`,
+the variable `PSLSE_ROOT` (defined in `${SNAP_ROOT}/snap_env.sh`) needs to point to the directory containing the github pslse clone.
+```
+ export PSLSE_ROOT=             # path for the PSL simulation environment
+ export PSLVER=                 # PSLSE functionality for POWER8 or POWER9
+ export PSL_DCP=                # path to the PSL checkpoint fitting your target card. For Simulation this is not needed and usually commented out
+```
+
 ## Cadence irun
 * model resides in              $SNAP_ROOT/hardware/sim/ies/ies
 * output generated in           $SNAP_ROOT/hardware/sim/ies/<yyyymmdd_hhmmss>
@@ -78,7 +87,7 @@ You may kick off simulation by calling `make sim` from the SNAP root directory.
 This will start the simulation and then open an xterm window from which the simulation can be controlled interactively.
 
 For the VHDL based example 'hdl_example' you may then execute the example application
-`snap_example` contained in [snap/actions/hdl_example/sw](../actions/hdl_example/sw). 
+`snap_example` contained in [snap/actions/hdl_example/sw](../actions/hdl_example/sw).
 Calling this application with option `-h` will present usage informations.
 
 If you want to run automated from a test list, you can call the simulation script `run_sim` with additional arguments instead.
@@ -92,20 +101,29 @@ If you want to run automated from a test list, you can call the simulation scrip
 
 When the app or list or xwindow finishes, this is the signal for PSLSE and the simulator to also end and close all logfiles.
 This means, that PSLSE&sim only runs, as long as the app/list/xterm is avail.
-If you start an app in the xterm and cntl-C it without exiting from the xterm, the simulation keeps running.  
+If you start an app in the xterm and cntl-C it without exiting from the xterm, the simulation keeps running.
 
 ## card and action settings
-Currently supported are Nallatech 250S, AlphaData KU3 and Semptian NSA121B, one action only
-Regression tests are in place for
+Currently supported are AlphaData KU3 and 8K5, Nallatech 250S and 250S+, Semptian NSA121B
+
+Regression tests are in place for the following cards:
 ```
-card      ADKU3/S121B    ADKU3/S121B   ADKU3/S121B  N250S        N250S        N250S             set with
-memory    DDR3/DDR4      BRAM          none         DDR4         BRAM         none              SDRAM_USED, BRAM_USED
-NVMe      no             no            no           yes          yes          yes               NVME_USED=TRUE
-action    hdl_example    hdl_example   hdl_example  hdl_example  hdl_example  hdl_example
-          hls_intersect  hls_intersect hls_bfs
-          hls_hashjoin                 hls_sponge
-          hls_memcopy
-          hls_search
+card         ADKU3      AD8K5      N250S      N250SP     S121B          # set with
+system       POWER8     POWER8     POWER8     POWER9     POWER8         #
+memory_avail DDR3/BRAM  DDR4/BRAM  DDR4/BRAM  DDR4/BRAM  DDR4/BRAM      # SDRAM_USED, BRAM_USED
+NVMe         no         no         yes        no         no             # NVME_USED=TRUE
+cloud access yes        no         partial    no         no             # not avail yet for NVMe
+```
+Depending on the used memory, the card and framework can be combined with the following actions (one action only):
+```
+memory_used  DDR               BRAM             none
+action       hdl_example       hdl_example      hdl_example
+             hdl_nvme_example  hdl_nvme_example
+             hls_nvme_memcopy
+             hls_intersect     hls_intersect    hls_bfs
+             hls_hashjoin                       hls_sponge
+             hls_memcopy                        hls_helloworld
+             hls_search
 ```
 ## run_sim arguments
 ```

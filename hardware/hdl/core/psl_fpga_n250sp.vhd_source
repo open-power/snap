@@ -31,11 +31,6 @@ USE unisim.vcomponents.all;
 
 ENTITY psl_fpga IS
   PORT(
-#ifdef CONFIG_ENABLE_DDRI
-    -- Clock inputs for SDRAM
-    refclk266_p               : IN    STD_LOGIC;
-    refclk266_n               : IN    STD_LOGIC;
-#endif
 #ifdef CONFIG_ENABLE_DDR4
     -- DDR4 SDRAM Interface
     -- Nallatech 250S card has one DDR4 SO-DIMMs
@@ -83,81 +78,65 @@ ENTITY psl_fpga IS
 
     -- CAPI PSL Interface
     --
-    sys_clk_p        : in std_logic ;
-    sys_clk_n        : in std_logic ;
-    sys_rst_n        : in std_logic ;
+    pci_pi_nperst0        : in    std_logic;     -- Active low reset from the PCIe reset pin of the device
+    pci_pi_refclk_p0      : in    std_logic;     -- 100MHz Refclk
+    pci_pi_refclk_n0      : in    std_logic;     -- 100MHz Refclk
 
-    pci_exp_txn :  out STD_LOGIC_VECTOR ( 7 downto 0 );
-    pci_exp_txp :  out STD_LOGIC_VECTOR ( 7 downto 0 );
-    pci_exp_rxn :  in STD_LOGIC_VECTOR ( 7 downto 0 );
-    pci_exp_rxp :  in STD_LOGIC_VECTOR ( 7 downto 0 );
-
-    --#define   crc_error_inout
-
--- Six? (Eight) Active High LEDs
-    GPIO_LED_0      : out std_logic;
-    GPIO_LED_1      : out std_logic;
-    GPIO_LED_2      : out std_logic;
-    GPIO_LED_3      : out std_logic;
-    GPIO_LED_4      : out std_logic;
-    GPIO_LED_5      : out std_logic;
-    GPIO_LED_6      : out std_logic;
-    GPIO_LED_7      : out std_logic;
-
-
-    PCIE_PERST_LS   : in std_logic;
---    EMCCLK          : in std_logic;
+-- Xilinx requires both pins of differential transceivers
+    pci0_i_rxp_in0        : in    std_logic;
+    pci0_i_rxn_in0        : in    std_logic;
+    pci0_i_rxp_in1        : in    std_logic;
+    pci0_i_rxn_in1        : in    std_logic;
+    pci0_i_rxp_in2        : in    std_logic;
+    pci0_i_rxn_in2        : in    std_logic;
+    pci0_i_rxp_in3        : in    std_logic;
+    pci0_i_rxn_in3        : in    std_logic;
+    pci0_i_rxp_in4        : in    std_logic;
+    pci0_i_rxn_in4        : in    std_logic;
+    pci0_i_rxp_in5        : in    std_logic;
+    pci0_i_rxn_in5        : in    std_logic;
+    pci0_i_rxp_in6        : in    std_logic;
+    pci0_i_rxn_in6        : in    std_logic;
+    pci0_i_rxp_in7        : in    std_logic;
+    pci0_i_rxn_in7        : in    std_logic;
+    pci0_o_txp_out0       : out   std_logic;
+    pci0_o_txn_out0       : out   std_logic;
+    pci0_o_txp_out1       : out   std_logic;
+    pci0_o_txn_out1       : out   std_logic;
+    pci0_o_txp_out2       : out   std_logic;
+    pci0_o_txn_out2       : out   std_logic;
+    pci0_o_txp_out3       : out   std_logic;
+    pci0_o_txn_out3       : out   std_logic;
+    pci0_o_txp_out4       : out   std_logic;
+    pci0_o_txn_out4       : out   std_logic;
+    pci0_o_txp_out5       : out   std_logic;
+    pci0_o_txn_out5       : out   std_logic;
+    pci0_o_txp_out6       : out   std_logic;
+    pci0_o_txn_out6       : out   std_logic;
+    pci0_o_txp_out7       : out   std_logic;
+    pci0_o_txn_out7       : out   std_logic;
 
 -- Flash Interface
-    BPI_FLASH_ADV   : out std_logic;
+    o_flash_oen           : out   std_logic;
+    o_flash_wen           : out   std_logic;
+    o_flash_rstn          : out   std_logic;
+    o_flash_a             : out   std_logic_vector(25 downto 0);
+--    o_flash_a_dup         : out   std_logic_vector(25 to 26);
+    o_flash_advn          : out   std_logic;
+    b_flash_dq            : inout std_logic_vector(15 downto 4);
 
-    BPI_FLASH_D4    : inout std_logic;
-    BPI_FLASH_D5    : inout std_logic;
-    BPI_FLASH_D7    : inout std_logic;
-    BPI_FLASH_D6    : inout std_logic;
-    BPI_FLASH_D9    : inout std_logic;
-    BPI_FLASH_D8    : inout std_logic;
-    BPI_FLASH_D10   : inout std_logic;
-    BPI_FLASH_D11   : inout std_logic;
-    BPI_FLASH_D12   : inout std_logic;
-    BPI_FLASH_D13   : inout std_logic;
-    BPI_FLASH_D14   : inout std_logic;
-    BPI_FLASH_D15   : inout std_logic;
+-- PTMON PMBUS
+    b_basei2c_scl         : inout std_logic;  -- clock
+    b_basei2c_sda         : inout std_logic;  -- data
+    b_smbus_scl           : inout std_logic;  -- clock
+    b_smbus_sda           : inout std_logic;  -- data
 
-    BPI_FLASH_A0    : out std_logic;
-    BPI_FLASH_A1    : out std_logic;
-    BPI_FLASH_A2    : out std_logic;
-    BPI_FLASH_A3    : out std_logic;
-    BPI_FLASH_A4    : out std_logic;
-    BPI_FLASH_A5    : out std_logic;
-    BPI_FLASH_A6    : out std_logic;
-    BPI_FLASH_A7    : out std_logic;
-    BPI_FLASH_A8    : out std_logic;
-    BPI_FLASH_A9    : out std_logic;
-    BPI_FLASH_A10   : out std_logic;
-    BPI_FLASH_A11   : out std_logic;
-    BPI_FLASH_A12   : out std_logic;
-    BPI_FLASH_A13   : out std_logic;
-    BPI_FLASH_A14   : out std_logic;
-    BPI_FLASH_A15   : out std_logic;
-    BPI_FLASH_A16   : out std_logic;
-    BPI_FLASH_A17   : out std_logic;
-    BPI_FLASH_A18   : out std_logic;
-    BPI_FLASH_A19   : out std_logic;
-    BPI_FLASH_A20   : out std_logic;
-    BPI_FLASH_A21   : out std_logic;
-    BPI_FLASH_A22   : out std_logic;
-    BPI_FLASH_A23   : out std_logic;
-    BPI_FLASH_A24   : out std_logic;
-    BPI_FLASH_A25   : out std_logic;
-
-    PCIE_WAKE_B_LS  : out std_logic;
-    BPI_FLASH_FWE_B : out std_logic;
-    BPI_FLASH_OE_B  : out std_logic;
-    BPI_WAIT        : in std_logic
+--LEDs
+    o_led_red             : out   std_logic_vector(1 downto 0);
+    o_led_green           : out   std_logic_vector(1 downto 0);
+    o_led_blue            : out   std_logic_vector(1 downto 0)
   );
 END psl_fpga;
-
 
 
 ARCHITECTURE psl_fpga OF psl_fpga IS
@@ -246,7 +225,7 @@ Component psl_accel
     hd0_cpl_utag                     : IN    STD_LOGIC_VECTOR(0 to 9)   ;
     hd0_cpl_type                     : IN    STD_LOGIC_VECTOR(0 to 2)   ;
     hd0_cpl_size                     : IN    STD_LOGIC_VECTOR(0 to 9)   ;
-    hd0_cpl_laddr                    : IN    STD_LOGIC_VECTOR(0 to 9)   ;
+    hd0_cpl_laddr                    : IN    STD_LOGIC_VECTOR(0 to 6)   ;
     hd0_cpl_byte_count               : IN    STD_LOGIC_VECTOR(0 to 9)   ;
     hd0_cpl_data                     : IN    STD_LOGIC_VECTOR(0 to 1023);
 
@@ -268,7 +247,7 @@ Component psl_accel
     hd1_cpl_utag                     : IN    STD_LOGIC_VECTOR(0 to 9)   ;
     hd1_cpl_type                     : IN    STD_LOGIC_VECTOR(0 to 2)   ;
     hd1_cpl_size                     : IN    STD_LOGIC_VECTOR(0 to 9)   ;
-    hd1_cpl_laddr                    : IN    STD_LOGIC_VECTOR(0 to 9)   ;
+    hd1_cpl_laddr                    : IN    STD_LOGIC_VECTOR(0 to 6)   ;
     hd1_cpl_byte_count               : IN    STD_LOGIC_VECTOR(0 to 9)   ;
     hd1_cpl_data                     : IN    STD_LOGIC_VECTOR(0 to 1023);
 #ifdef CONFIG_ENABLE_DDR4
@@ -292,12 +271,6 @@ Component psl_accel
     c0_ddr4_ck_t                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 -- TODO:    c0_ddr4_ten                         : OUT   STD_LOGIC;
 #endif
-#ifdef CONFIG_ENABLE_DDRI
-    --
-    -- Clock inputs for SDRAM
-    refclk_sdram_p                      : IN    STD_LOGIC;
-    refclk_sdram_n                      : IN    STD_LOGIC;
-#endif
 #ifdef CONFIG_ENABLE_NVME
     --
     -- NVME Interface
@@ -312,7 +285,8 @@ Component psl_accel
     refclk_nvme_ch1_n                   : IN    STD_LOGIC;
     --
     -- NVMe reset control
-    nvme_reset_ctl                      : OUT   STD_LOGIC_VECTOR(SNAP_NVME_RST_L  DOWNTO SNAP_NVME_RST_R);  -- keeping NVMe drives in reset by driving 0s
+    nvme_reset_ctl                      : OUT   STD_LOGIC;
+    nvme_perst_ctl                      : OUT   STD_LOGIC_VECTOR(SNAP_NVME_PERST_L  DOWNTO SNAP_NVME_PERST_R);  -- keeping NVMe drives in reset by driving 0s
     --
     -- NVME <-> PCIE Interface
     pcie_rc0_rxn                        : IN    STD_LOGIC_VECTOR(3 downto 0);
@@ -328,84 +302,73 @@ Component psl_accel
     -- Parity Enable output and 250MHz Clock input
     ah_tbreq                            : OUT   STD_LOGIC;                      -- Timebase command request
     ah_paren                            : OUT   STD_LOGIC;
-    ha_pclock                           : IN    STD_LOGIC
+    ha_pclock                           : IN    STD_LOGIC;
+    pci_user_reset                      : IN    std_logic;                      --PCI hip user_reset signal if required
+    pci_clock_125MHz                    : IN    std_logic                       --125MHz clock if required
+
   );
 End Component psl_accel;
 
-Component psl4snap
+Component capi_bsp_wrap
   PORT(
-    sys_clk_p        : in std_logic ;
-    sys_clk_n        : in std_logic ;
-    sys_rst_n        : in std_logic ;
+-- pci interface
+    pci_pi_nperst0        : in    std_logic;     -- Active low reset from the PCIe reset pin of the device
+    pci_pi_refclk_p0      : in    std_logic;     -- 100MHz Refclk
+    pci_pi_refclk_n0      : in    std_logic;     -- 100MHz Refclk
 
-    pci_exp_txn :  out STD_LOGIC_VECTOR ( 7 downto 0 );
-    pci_exp_txp :  out STD_LOGIC_VECTOR ( 7 downto 0 );
-    pci_exp_rxn :  in STD_LOGIC_VECTOR ( 7 downto 0 );
-    pci_exp_rxp :  in STD_LOGIC_VECTOR ( 7 downto 0 );
-
-    --#define   crc_error_inout
-
--- Six? (Eight) Active High LEDs
-    GPIO_LED_0      : out std_logic;
-    GPIO_LED_1      : out std_logic;
-    GPIO_LED_2      : out std_logic;
-    GPIO_LED_3      : out std_logic;
-    GPIO_LED_4      : out std_logic;
-    GPIO_LED_5      : out std_logic;
-    GPIO_LED_6      : out std_logic;
-    GPIO_LED_7      : out std_logic;
-
-
-    PCIE_PERST_LS   : in std_logic;
---    EMCCLK          : in std_logic;
+-- Xilinx requires both pins of differential transceivers
+    pci0_i_rxp_in0        : in    std_logic;
+    pci0_i_rxn_in0        : in    std_logic;
+    pci0_i_rxp_in1        : in    std_logic;
+    pci0_i_rxn_in1        : in    std_logic;
+    pci0_i_rxp_in2        : in    std_logic;
+    pci0_i_rxn_in2        : in    std_logic;
+    pci0_i_rxp_in3        : in    std_logic;
+    pci0_i_rxn_in3        : in    std_logic;
+    pci0_i_rxp_in4        : in    std_logic;
+    pci0_i_rxn_in4        : in    std_logic;
+    pci0_i_rxp_in5        : in    std_logic;
+    pci0_i_rxn_in5        : in    std_logic;
+    pci0_i_rxp_in6        : in    std_logic;
+    pci0_i_rxn_in6        : in    std_logic;
+    pci0_i_rxp_in7        : in    std_logic;
+    pci0_i_rxn_in7        : in    std_logic;
+    pci0_o_txp_out0       : out   std_logic;
+    pci0_o_txn_out0       : out   std_logic;
+    pci0_o_txp_out1       : out   std_logic;
+    pci0_o_txn_out1       : out   std_logic;
+    pci0_o_txp_out2       : out   std_logic;
+    pci0_o_txn_out2       : out   std_logic;
+    pci0_o_txp_out3       : out   std_logic;
+    pci0_o_txn_out3       : out   std_logic;
+    pci0_o_txp_out4       : out   std_logic;
+    pci0_o_txn_out4       : out   std_logic;
+    pci0_o_txp_out5       : out   std_logic;
+    pci0_o_txn_out5       : out   std_logic;
+    pci0_o_txp_out6       : out   std_logic;
+    pci0_o_txn_out6       : out   std_logic;
+    pci0_o_txp_out7       : out   std_logic;
+    pci0_o_txn_out7       : out   std_logic;
 
 -- Flash Interface
-    BPI_FLASH_ADV   : out std_logic;
+    o_flash_oen           : out   std_logic;
+    o_flash_wen           : out   std_logic;
+    o_flash_rstn          : out   std_logic;
+    o_flash_a             : out   std_logic_vector(25 downto 0);
+--    o_flash_a_dup         : out   std_logic_vector(25 to 26);
+    o_flash_advn          : out   std_logic;
+    b_flash_dq            : inout std_logic_vector(15 downto 4);
 
-    BPI_FLASH_D4    : inout std_logic;
-    BPI_FLASH_D5    : inout std_logic;
-    BPI_FLASH_D7    : inout std_logic;
-    BPI_FLASH_D6    : inout std_logic;
-    BPI_FLASH_D9    : inout std_logic;
-    BPI_FLASH_D8    : inout std_logic;
-    BPI_FLASH_D10   : inout std_logic;
-    BPI_FLASH_D11   : inout std_logic;
-    BPI_FLASH_D12   : inout std_logic;
-    BPI_FLASH_D13   : inout std_logic;
-    BPI_FLASH_D14   : inout std_logic;
-    BPI_FLASH_D15   : inout std_logic;
+-- PTMON PMBUS
+    b_basei2c_scl         : inout std_logic;  -- clock
+    b_basei2c_sda         : inout std_logic;  -- data
+    b_smbus_scl           : inout std_logic;  -- clock
+    b_smbus_sda           : inout std_logic;  -- data
 
-    BPI_FLASH_A0    : out std_logic;
-    BPI_FLASH_A1    : out std_logic;
-    BPI_FLASH_A2    : out std_logic;
-    BPI_FLASH_A3    : out std_logic;
-    BPI_FLASH_A4    : out std_logic;
-    BPI_FLASH_A5    : out std_logic;
-    BPI_FLASH_A6    : out std_logic;
-    BPI_FLASH_A7    : out std_logic;
-    BPI_FLASH_A8    : out std_logic;
-    BPI_FLASH_A9    : out std_logic;
-    BPI_FLASH_A10   : out std_logic;
-    BPI_FLASH_A11   : out std_logic;
-    BPI_FLASH_A12   : out std_logic;
-    BPI_FLASH_A13   : out std_logic;
-    BPI_FLASH_A14   : out std_logic;
-    BPI_FLASH_A15   : out std_logic;
-    BPI_FLASH_A16   : out std_logic;
-    BPI_FLASH_A17   : out std_logic;
-    BPI_FLASH_A18   : out std_logic;
-    BPI_FLASH_A19   : out std_logic;
-    BPI_FLASH_A20   : out std_logic;
-    BPI_FLASH_A21   : out std_logic;
-    BPI_FLASH_A22   : out std_logic;
-    BPI_FLASH_A23   : out std_logic;
-    BPI_FLASH_A24   : out std_logic;
-    BPI_FLASH_A25   : out std_logic;
-
-    PCIE_WAKE_B_LS  : out std_logic;
-    BPI_FLASH_FWE_B : out std_logic;
-    BPI_FLASH_OE_B  : out std_logic;
-    BPI_WAIT        : in std_logic;
+--LEDs
+    o_led_red             : out   std_logic_vector(1 downto 0);
+    o_led_green           : out   std_logic_vector(1 downto 0);
+    o_led_blue            : out   std_logic_vector(1 downto 0);
 
 -- AFU interface (psl_accel)
     -- Command interface
@@ -497,21 +460,25 @@ Component psl4snap
     d0h_ddata           : in  std_logic_vector(0 to 1023); -- New PSL/AFU interface
 --    d0h_dpar            : in  std_logic_vector(0 to 15)  ; -- New PSL/AFU interface
     -- DMA port 0 Sent interface
-    hd0_sent_utag_valid : in  std_logic                  ;
+    hd0_sent_utag_valid : out std_logic                  ;
     hd0_sent_utag       : out std_logic_vector(0 to 9)   ;
     hd0_sent_utag_sts   : out std_logic_vector(0 to 2)   ;
     -- DMA port 0 Completion interface
     hd0_cpl_valid       : out std_logic                  ;
     hd0_cpl_utag        : out std_logic_vector(0 to 9)   ;
     hd0_cpl_type        : out std_logic_vector(0 to 2)   ;
-    hd0_cpl_laddr       : out std_logic_vector(0 to 9)   ;
+    hd0_cpl_laddr       : out std_logic_vector(0 to 6)   ;
     hd0_cpl_byte_count  : out std_logic_vector(0 to 9)   ;
     hd0_cpl_size        : out std_logic_vector(0 to 9)   ;
-    hd0_cpl_data        : out std_logic_vector(0 to 1023)
---     hd0_cpl_dpar        : out std_logic_vector(0 to 15)
+    hd0_cpl_data        : out std_logic_vector(0 to 1023);
+--    hd0_cpl_dpar        : out std_logic_vector(0 to 15);
+
+    gold_factory        : in  std_logic;
+    pci_user_reset      : out std_logic;                   --PCI hip user_reset signal if required
+    pci_clock_125MHz    : out std_logic                    --125MHz clock if required
   );
 
-END Component psl4snap;
+END Component capi_bsp_wrap;
 
 SIGNAL a0h_brdata: std_logic_vector(0 TO 1023);  -- hline
 SIGNAL a0h_brlat: std_logic_vector(0 TO 3);  -- v4bit
@@ -589,24 +556,25 @@ SIGNAL hd0_sent_utag_sts   : std_logic_vector(0 to 2)   ;
 SIGNAL hd0_cpl_valid       : std_logic                  ;
 SIGNAL hd0_cpl_utag        : std_logic_vector(0 to 9)   ;
 SIGNAL hd0_cpl_type        : std_logic_vector(0 to 2)   ;
-SIGNAL hd0_cpl_laddr       : std_logic_vector(0 to 9)   ;
+SIGNAL hd0_cpl_laddr       : std_logic_vector(0 to 6)   ;
 SIGNAL hd0_cpl_byte_count  : std_logic_vector(0 to 9)   ;
 SIGNAL hd0_cpl_size        : std_logic_vector(0 to 9)   ;
 SIGNAL hd0_cpl_data        : std_logic_vector(0 to 1023);
 
-SIGNAL gold_factory: std_logic;
-SIGNAL pci_user_reset: std_logic;
--- SIGNAL pci_clock_125MHz: std_logic;
--- SIGNAL led_red: std_logic_vector(0 TO 1);
--- SIGNAL led_green: std_logic_vector(0 TO 1);
--- SIGNAL led_blue: std_logic_vector(0 TO 1);
+SIGNAL user_image_q        : std_logic := '1';  --set to 1 to indicate images meant for user location. set to 0 to indicate factory image. 
+ATTRIBUTE dont_touch       : string;
+ATTRIBUTE dont_touch of user_image_q: SIGNAL IS "true";
+SIGNAL gold_factory        : std_logic;
+SIGNAL pci_user_reset      : std_logic;
+SIGNAL pci_clock_125MHz    : std_logic;
+
 #ifdef CONFIG_ENABLE_NVME
 -- NVME Reset Logic
-SIGNAL nvme_reset_cnt_q : std_logic_vector(15 DOWNTO 0) := (OTHERS => '1');
-SIGNAL nvme_reset_n_q   : std_logic := '1';
-SIGNAL nvme_reset_ctl   : std_logic;
-SIGNAL nvme_perst_ctl   : std_logic_vector(3 DOWNTO 0);
-SIGNAL m2_perst_tmp_n   : std_logic_vector(3 DOWNTO 0);
+SIGNAL nvme_reset_cnt_q    : std_logic_vector(15 DOWNTO 0) := (OTHERS => '1');
+SIGNAL nvme_reset_n_q      : std_logic := '1';
+SIGNAL nvme_reset_ctl      : std_logic;
+SIGNAL nvme_perst_ctl      : std_logic_vector(3 DOWNTO 0);
+SIGNAL m2_perst_tmp_n      : std_logic_vector(3 DOWNTO 0);
 #endif
 
 BEGIN
@@ -653,11 +621,6 @@ BEGIN
 
   a0: psl_accel
     PORT MAP (
-#ifdef CONFIG_ENABLE_DDRI
-      -- Clock inputs for SDRAM
-      refclk_sdram_p                    => refclk266_p,
-      refclk_sdram_n                    => refclk266_n,
-#endif
 #ifdef CONFIG_ENABLE_DDR4
       -- DDR4 SDRAM Interface
       -- Nallatech 250S card has one DDR4 SO-DIMMs
@@ -692,8 +655,8 @@ BEGIN
       refclk_nvme_ch1_n                 => pcie_clk2_n,
       --
       -- NVMe reset control
-      nvme_reset_ctl(4)                 => nvme_reset_ctl,
-      nvme_reset_ctl(3 DOWNTO 0)        => nvme_perst_ctl,
+      nvme_reset_ctl                    => nvme_reset_ctl,
+      nvme_perst_ctl                    => nvme_perst_ctl,
       --
       -- NVME <-> PCIE Interface
       pcie_rc0_rxn(3 DOWNTO 0)          => pcie_rc0_rxn(3 DOWNTO 0),
@@ -782,6 +745,8 @@ BEGIN
       ah_tbreq                          => a0h_tbreq,
       ah_paren                          => a0h_paren,
       ha_pclock                         => ha0_pclock,
+      pci_user_reset                    => pci_user_reset,
+      pci_clock_125MHz                  => pci_clock_125MHz,
       -- DMA port 0 Req
       d0h_dvalid                        => d0h_dvalid,
       d0h_req_utag                      => d0h_req_utag,
@@ -817,7 +782,7 @@ BEGIN
       hd1_sent_utag_valid               => '0',
       hd1_sent_utag                     => (OTHERS => '0'), --efes1024(9 downto 0),
       hd1_sent_utag_sts                 => (OTHERS => '0'), --efes1024(2 downto 0),
-      -- DMA port 1 Completion              
+      -- DMA port 1 Completion
       hd1_cpl_valid                     => '0',
       hd1_cpl_utag                      => (others => '0'), --efes1024(9 downto 0),
       hd1_cpl_type                      => (others => '0'), --efes1024(2 downto 0),
@@ -827,87 +792,77 @@ BEGIN
       hd1_cpl_data                      => (others => '0')  --efes1024(1023 downto 0)
     );
 
-#ifdef CONFIG_ENABLE_FACTORY
-    gold_factory <= '0'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
-#else
-    gold_factory <= '1'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
-#endif
-    -- led controls
---    led_red <= "11";
---    led_green <= "11";
---    led_blue <= "11";
+    PROCESS (ha0_pclock)
+    BEGIN
+      IF(RISING_EDGE(ha0_pclock)) THEN
+        user_image_q <= user_image_q;
+      END IF;
+    END PROCESS;
 
-  psl: psl4snap
+    gold_factory <= user_image_q;
+
+  c0: capi_bsp_wrap
     PORT MAP (
-      sys_clk_p       => sys_clk_p,
-      sys_clk_n       => sys_clk_n,
-      sys_rst_n       => sys_rst_n,
+-- pci interface
+      pci_pi_nperst0      => pci_pi_nperst0,       -- Active low reset from the PCIe reset pin of the device
+      pci_pi_refclk_p0    => pci_pi_refclk_p0,     -- 100MHz Refclk
+      pci_pi_refclk_n0    => pci_pi_refclk_n0,     -- 100MHz Refclk
 
-      pci_exp_txn     => pci_exp_txn,
-      pci_exp_txp     => pci_exp_txp,
-      pci_exp_rxn     => pci_exp_rxn,
-      pci_exp_rxp     => pci_exp_rxp,
-
-      GPIO_LED_0      => GPIO_LED_0,
-      GPIO_LED_1      => GPIO_LED_1,
-      GPIO_LED_2      => GPIO_LED_2,
-      GPIO_LED_3      => GPIO_LED_3,
-      GPIO_LED_4      => GPIO_LED_4,
-      GPIO_LED_5      => GPIO_LED_5,
-      GPIO_LED_6      => GPIO_LED_6,
-      GPIO_LED_7      => GPIO_LED_7,
-
-      PCIE_PERST_LS   => PCIE_PERST_LS,
---      EMCCLK          => EMCCLK,
+-- Xilinx requires both pins of differential transceivers
+      pci0_i_rxp_in0      => pci0_i_rxp_in0,
+      pci0_i_rxn_in0      => pci0_i_rxn_in0,
+      pci0_i_rxp_in1      => pci0_i_rxp_in1,
+      pci0_i_rxn_in1      => pci0_i_rxn_in1,
+      pci0_i_rxp_in2      => pci0_i_rxp_in2,
+      pci0_i_rxn_in2      => pci0_i_rxn_in2,
+      pci0_i_rxp_in3      => pci0_i_rxp_in3,
+      pci0_i_rxn_in3      => pci0_i_rxn_in3,
+      pci0_i_rxp_in4      => pci0_i_rxp_in4,
+      pci0_i_rxn_in4      => pci0_i_rxn_in4,
+      pci0_i_rxp_in5      => pci0_i_rxp_in5,
+      pci0_i_rxn_in5      => pci0_i_rxn_in5,
+      pci0_i_rxp_in6      => pci0_i_rxp_in6,
+      pci0_i_rxn_in6      => pci0_i_rxn_in6,
+      pci0_i_rxp_in7      => pci0_i_rxp_in7,
+      pci0_i_rxn_in7      => pci0_i_rxn_in7,
+      pci0_o_txp_out0     => pci0_o_txp_out0,
+      pci0_o_txn_out0     => pci0_o_txn_out0,
+      pci0_o_txp_out1     => pci0_o_txp_out1,
+      pci0_o_txn_out1     => pci0_o_txn_out1,
+      pci0_o_txp_out2     => pci0_o_txp_out2,
+      pci0_o_txn_out2     => pci0_o_txn_out2,
+      pci0_o_txp_out3     => pci0_o_txp_out3,
+      pci0_o_txn_out3     => pci0_o_txn_out3,
+      pci0_o_txp_out4     => pci0_o_txp_out4,
+      pci0_o_txn_out4     => pci0_o_txn_out4,
+      pci0_o_txp_out5     => pci0_o_txp_out5,
+      pci0_o_txn_out5     => pci0_o_txn_out5,
+      pci0_o_txp_out6     => pci0_o_txp_out6,
+      pci0_o_txn_out6     => pci0_o_txn_out6,
+      pci0_o_txp_out7     => pci0_o_txp_out7,
+      pci0_o_txn_out7     => pci0_o_txn_out7,
 
 -- Flash Interface
-      BPI_FLASH_ADV   => BPI_FLASH_ADV,
+      o_flash_oen         => o_flash_oen,
+      o_flash_wen         => o_flash_wen,
+      o_flash_rstn        => o_flash_rstn,
+      o_flash_a           => o_flash_a,
+      o_flash_advn        => o_flash_advn,
+      b_flash_dq          => b_flash_dq,
 
-      BPI_FLASH_D4    => BPI_FLASH_D4,
-      BPI_FLASH_D5    => BPI_FLASH_D5,
-      BPI_FLASH_D7    => BPI_FLASH_D7,
-      BPI_FLASH_D6    => BPI_FLASH_D6,
-      BPI_FLASH_D9    => BPI_FLASH_D9,
-      BPI_FLASH_D8    => BPI_FLASH_D8,
-      BPI_FLASH_D10   => BPI_FLASH_D10,
-      BPI_FLASH_D11   => BPI_FLASH_D11,
-      BPI_FLASH_D12   => BPI_FLASH_D12,
-      BPI_FLASH_D13   => BPI_FLASH_D13,
-      BPI_FLASH_D14   => BPI_FLASH_D14,
-      BPI_FLASH_D15   => BPI_FLASH_D15,
+-- PTMON PMBUS
+      b_basei2c_scl       => b_basei2c_scl,
+      b_basei2c_sda       => b_basei2c_sda,
+      b_smbus_scl         => b_smbus_scl,
+      b_smbus_sda         => b_smbus_sda,
 
-      BPI_FLASH_A0    => BPI_FLASH_A0,
-      BPI_FLASH_A1    => BPI_FLASH_A1,
-      BPI_FLASH_A2    => BPI_FLASH_A2,
-      BPI_FLASH_A3    => BPI_FLASH_A3,
-      BPI_FLASH_A4    => BPI_FLASH_A4,
-      BPI_FLASH_A5    => BPI_FLASH_A5,
-      BPI_FLASH_A6    => BPI_FLASH_A6,
-      BPI_FLASH_A7    => BPI_FLASH_A7,
-      BPI_FLASH_A8    => BPI_FLASH_A8,
-      BPI_FLASH_A9    => BPI_FLASH_A9,
-      BPI_FLASH_A10   => BPI_FLASH_A10,
-      BPI_FLASH_A11   => BPI_FLASH_A11,
-      BPI_FLASH_A12   => BPI_FLASH_A12,
-      BPI_FLASH_A13   => BPI_FLASH_A13,
-      BPI_FLASH_A14   => BPI_FLASH_A14,
-      BPI_FLASH_A15   => BPI_FLASH_A15,
-      BPI_FLASH_A16   => BPI_FLASH_A16,
-      BPI_FLASH_A17   => BPI_FLASH_A17,
-      BPI_FLASH_A18   => BPI_FLASH_A18,
-      BPI_FLASH_A19   => BPI_FLASH_A19,
-      BPI_FLASH_A20   => BPI_FLASH_A20,
-      BPI_FLASH_A21   => BPI_FLASH_A21,
-      BPI_FLASH_A22   => BPI_FLASH_A22,
-      BPI_FLASH_A23   => BPI_FLASH_A23,
-      BPI_FLASH_A24   => BPI_FLASH_A24,
-      BPI_FLASH_A25   => BPI_FLASH_A25,
+--LEDs
+      o_led_red           => o_led_red,
+      o_led_green         => o_led_green,
+      o_led_blue          => o_led_blue,
 
-      PCIE_WAKE_B_LS  => PCIE_WAKE_B_LS,
-      BPI_FLASH_FWE_B => BPI_FLASH_FWE_B,
-      BPI_FLASH_OE_B  => BPI_FLASH_OE_B,
-      BPI_WAIT        => BPI_WAIT,
-
+-- AFU interface (psl_accel)
+      -- Command interface
       a0h_cvalid          => a0h_cvalid,
       a0h_ctag            => a0h_ctag,
       a0h_ctagpar         => a0h_ctagpar,
@@ -920,7 +875,7 @@ BEGIN
       a0h_csize           => a0h_csize,
       a0h_cpagesize       => a0h_cpagesize,
       ha0_croom           => ha0_croom,
-
+      -- Buffer interface
       ha0_brvalid         => ha0_brvalid,
       ha0_brtag           => ha0_brtag,
       ha0_brtagpar        => ha0_brtagpar,
@@ -934,7 +889,7 @@ BEGIN
       ha0_bwad            => ha0_bwad,
       ha0_bwdata          => ha0_bwdata,
       ha0_bwpar           => ha0_bwpar,
-
+      -- Response interface
       ha0_rvalid          => ha0_rvalid,
       ha0_rtag            => ha0_rtag,
       ha0_rtagpar         => ha0_rtagpar,
@@ -946,7 +901,7 @@ BEGIN
       ha0_rcachestate     => ha0_rcachestate,
       ha0_rcachepos       => ha0_rcachepos,
       ha0_rcredits        => ha0_rcredits,
-
+      -- MMIO interface
       ha0_mmval           => ha0_mmval,
       ha0_mmcfg           => ha0_mmcfg,
       ha0_mmrnw           => ha0_mmrnw,
@@ -958,7 +913,7 @@ BEGIN
       a0h_mmack           => a0h_mmack,
       a0h_mmdata          => a0h_mmdata,
       a0h_mmdatapar       => a0h_mmdatapar,
-
+      -- Control interface
       ha0_jval            => ha0_jval,
       ha0_jcom            => ha0_jcom,
       ha0_jcompar         => ha0_jcompar,
@@ -971,7 +926,7 @@ BEGIN
       a0h_tbreq           => a0h_tbreq,
       a0h_paren           => a0h_paren,
       ha0_pclock          => ha0_pclock,
-
+      -- DMA port 0 Interface
       d0h_dvalid          => d0h_dvalid,
       d0h_req_utag        => d0h_req_utag,
       d0h_req_itag        => d0h_req_itag,
@@ -989,7 +944,10 @@ BEGIN
       hd0_cpl_laddr       => hd0_cpl_laddr,
       hd0_cpl_byte_count  => hd0_cpl_byte_count,
       hd0_cpl_size        => hd0_cpl_size,
-      hd0_cpl_data        => hd0_cpl_data
+      hd0_cpl_data        => hd0_cpl_data,
+      gold_factory        => gold_factory,
+      pci_user_reset      => pci_user_reset,
+      pci_clock_125MHz    => pci_clock_125MHz
     );
 
 END psl_fpga;

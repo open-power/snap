@@ -290,6 +290,9 @@ ARCHITECTURE action_nvme_example OF action_nvme_example IS
   SIGNAL reg_0x3c                : STD_LOGIC_VECTOR(31 DOWNTO 0);
   SIGNAL reg_0x40                : STD_LOGIC_VECTOR(31 DOWNTO 0);
   SIGNAL reg_0x44                : STD_LOGIC_VECTOR(31 DOWNTO 0);
+  SIGNAL reg_0x48                : STD_LOGIC_VECTOR(31 DOWNTO 0);
+  SIGNAL reg_0x50                : STD_LOGIC_VECTOR(31 DOWNTO 0);
+  SIGNAL reg_0x54                : STD_LOGIC_VECTOR(31 DOWNTO 0);
   SIGNAL app_start               : STD_LOGIC;
   SIGNAL app_done                : STD_LOGIC;
   SIGNAL app_ready               : STD_LOGIC;
@@ -322,7 +325,7 @@ ARCHITECTURE action_nvme_example OF action_nvme_example IS
 
   SIGNAL reg_0x48_nvme_rd_error  : std_logic_vector(MAX_SLOT DOWNTO 0);
   SIGNAL reg_0x48_nvme_wr_error  : std_logic_vector(MAX_SLOT DOWNTO 0);
-  SIGNAL reg_0x4c_req_error      : STD_LOGIC_VECTOR(MAX_SLOT DOWNTO 0);  
+  SIGNAL reg_0x4c_req_error      : STD_LOGIC_VECTOR(MAX_SLOT DOWNTO 0);
   SIGNAL reg_0x4c_nvme_error     : STD_LOGIC_VECTOR(2 DOWNTO 0);
   SIGNAL reg_0x4c_completion     : STD_LOGIC_VECTOR(4 DOWNTO 0);
   SIGNAL reg_0x4c_rd_strobe      : STD_LOGIC;
@@ -502,16 +505,13 @@ BEGIN
     reg_0x40_o               => reg_0x40,
     -- number of bytes to copy
     reg_0x44_o               => reg_0x44,
-    reg_0x48_i(31 DOWNTO 16) => reg_0x48_nvme_rd_error,
-    reg_0x48_i(15 DOWNTO  0) => reg_0x48_nvme_wr_error,
+    reg_0x48_i               => reg_0x48,
     reg_0x4c_req_error_i     => reg_0x4c_req_error,
     reg_0x4c_nvme_error_i    => reg_0x4c_nvme_error,
     reg_0x4c_completion_i    => reg_0x4c_completion,
     reg_0x4c_rd_strobe_o     => reg_0x4c_rd_strobe,
-    reg_0x50_i(31 DOWNTO 16) => req_buffer.busy,
-    reg_0x50_i(15 DOWNTO  0) => req_buffer.rnw,
-    reg_0x54_i(31 DOWNTO 16) => reg_0x54_nvme_req,
-    reg_0x54_i(15 DOWNTO  0) => reg_0x54_nvme_rsp,
+    reg_0x50_i               => reg_0x50,
+    reg_0x54_i               => reg_0x54,
     int_enable_o             => int_enable,
     app_start_o              => app_start,
     app_done_i               => app_done,
@@ -538,6 +538,12 @@ BEGIN
     S_AXI_RVALID             => axi_ctrl_reg_rvalid,
     S_AXI_RREADY             => axi_ctrl_reg_rready
   );
+  reg_0x48(31 DOWNTO 16) <= reg_0x48_nvme_rd_error;
+  reg_0x48(15 DOWNTO  0) <= reg_0x48_nvme_wr_error;
+  reg_0x50(31 DOWNTO 16) <= req_buffer.busy;
+  reg_0x50(15 DOWNTO  0) <= req_buffer.rnw;
+  reg_0x54(31 DOWNTO 16) <= reg_0x54_nvme_req;
+  reg_0x54(15 DOWNTO  0) <= reg_0x54_nvme_rsp;
 
 
   -- READ and WRITE requests:
@@ -644,8 +650,8 @@ BEGIN
     ALIAS    dma_rd_tail  : REQ_BUFFER_RANGE_t IS dma_rd_req_fifo.tail;
     ALIAS    dma_rd_head  : REQ_BUFFER_RANGE_t IS dma_rd_req_fifo.head;
     ALIAS    nvme_wr_head : REQ_BUFFER_RANGE_t IS nvme_wr_req_fifo.head;
-    VARIABLE slot_id      : SLOT_RANGE_t; 
-    VARIABLE req_slot     : SLOT_TYPE_t; 
+    VARIABLE slot_id      : SLOT_RANGE_t;
+    VARIABLE req_slot     : SLOT_TYPE_t;
   BEGIN
     IF (rising_edge(action_clk)) THEN
       IF axi_host_mem_arready = '1'  AND host_mem_arvalid = '1' THEN
@@ -862,7 +868,7 @@ BEGIN
         WHEN IDLE =>
           IF dma_wr_tail /= dma_wr_head THEN
             -- determine host and card memory address on buffer postion
-            slot_id     := dma_wr_req_fifo.slot(MODFIFO(dma_wr_tail)); 
+            slot_id     := dma_wr_req_fifo.slot(MODFIFO(dma_wr_tail));
             dma_wr_slot := std_logic_vector(to_unsigned(slot_id,4));
             host_mem_awaddr                             <= req_buffer.dest_addr(slot_id);
             card_mem_araddr                             <= x"00" & "000" & dma_wr_slot & "0" & x"0000";

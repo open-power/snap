@@ -163,12 +163,6 @@ ENTITY psl_accel IS
     c0_ddr4_ck_t                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 -- TODO:    c0_ddr4_ten                         : OUT   STD_LOGIC;
 #endif
-#ifdef CONFIG_ENABLE_DDRI
-    --
-    -- Clock inputs for SDRAM
-    refclk_sdram_p                      : IN    STD_LOGIC;
-    refclk_sdram_n                      : IN    STD_LOGIC;
-#endif
 #ifdef CONFIG_ENABLE_NVME
     --
     -- NVME Interface
@@ -183,7 +177,8 @@ ENTITY psl_accel IS
     refclk_nvme_ch1_n                   : IN    STD_LOGIC;
     --
     -- NVMe reset control
-    nvme_reset_ctl                      : OUT   STD_LOGIC_VECTOR(SNAP_NVME_RST_L  DOWNTO SNAP_NVME_RST_R);  -- keeping NVMe drives in reset by driving 0s
+    nvme_reset_ctl                      : OUT   STD_LOGIC;
+    nvme_perst_ctl                      : OUT   STD_LOGIC_VECTOR(SNAP_NVME_PERST_L  DOWNTO SNAP_NVME_PERST_R);  -- keeping NVMe drives in reset by driving 0s
     --
     -- NVME <-> PCIE Interface
     pcie_rc0_rxn                        : IN    STD_LOGIC_VECTOR(3 downto 0);
@@ -198,7 +193,9 @@ ENTITY psl_accel IS
 
     -- Parity Enable output and 250MHz Clock input
     ah_paren                            : OUT   STD_LOGIC;
-    ha_pclock                           : IN    STD_LOGIC
+    ha_pclock                           : IN    STD_LOGIC;
+    pci_user_reset                      : IN    std_logic;  --PCI hip user_reset signal if needed
+    pci_clock_125MHz                    : IN    std_logic   --125MHz clock if needed
   );
 END psl_accel;
 
@@ -270,7 +267,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
       -- misc
       action_reset            : OUT STD_LOGIC;
 #ifdef CONFIG_ENABLE_NVME
-      nvme_reset_ctl          : OUT STD_LOGIC_VECTOR(SNAP_NVME_RST_L  DOWNTO SNAP_NVME_RST_R);  -- keeping NVMe drives in reset by driving 0s
+      nvme_reset_ctl          : OUT STD_LOGIC;
+      nvme_perst_ctl          : OUT STD_LOGIC_VECTOR(SNAP_NVME_PERST_L  DOWNTO SNAP_NVME_PERST_R);  -- keeping NVMe drives in reset by driving 0s
 #endif
       --
       -- Kernel AXI Master Interface
@@ -645,7 +643,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       S01_AXI_RREADY          : IN  STD_LOGIC;
       M00_AXI_ARESET_OUT_N    : OUT STD_LOGIC;
       M00_AXI_ACLK            : IN  STD_LOGIC;
-      M00_AXI_AWID            : OUT STD_LOGIC_VECTOR(C_DDR_AXI_ID_WIDTH   DOWNTO 0);
+      M00_AXI_AWID            : OUT STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH   DOWNTO 0);
       M00_AXI_AWADDR          : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
       M00_AXI_AWLEN           : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
       M00_AXI_AWSIZE          : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -661,11 +659,11 @@ ARCHITECTURE psl_accel OF psl_accel IS
       M00_AXI_WLAST           : OUT STD_LOGIC;
       M00_AXI_WVALID          : OUT STD_LOGIC;
       M00_AXI_WREADY          : IN  STD_LOGIC;
-      M00_AXI_BID             : IN  STD_LOGIC_VECTOR(C_DDR_AXI_ID_WIDTH DOWNTO 0);
+      M00_AXI_BID             : IN  STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH DOWNTO 0);
       M00_AXI_BRESP           : IN  STD_LOGIC_VECTOR(1 DOWNTO 0);
       M00_AXI_BVALID          : IN  STD_LOGIC;
       M00_AXI_BREADY          : OUT STD_LOGIC;
-      M00_AXI_ARID            : OUT STD_LOGIC_VECTOR(C_DDR_AXI_ID_WIDTH DOWNTO 0);
+      M00_AXI_ARID            : OUT STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH DOWNTO 0);
       M00_AXI_ARADDR          : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
       M00_AXI_ARLEN           : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
       M00_AXI_ARSIZE          : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -676,7 +674,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       M00_AXI_ARQOS           : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
       M00_AXI_ARVALID         : OUT STD_LOGIC;
       M00_AXI_ARREADY         : IN  STD_LOGIC;
-      M00_AXI_RID             : IN  STD_LOGIC_VECTOR(C_DDR_AXI_ID_WIDTH DOWNTO 0);
+      M00_AXI_RID             : IN  STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH DOWNTO 0);
       M00_AXI_RDATA           : IN  STD_LOGIC_VECTOR(511 DOWNTO 0);
       M00_AXI_RRESP           : IN  STD_LOGIC_VECTOR(1 DOWNTO 0);
       M00_AXI_RLAST           : IN  STD_LOGIC;
@@ -824,7 +822,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
     -- NVME <-> DDR4 Interface
     ddr_aresetn                         : OUT STD_LOGIC;
     ddr_aclk                            : OUT STD_LOGIC;
-    DDR_M_AXI_araddr                    : OUT STD_LOGIC_VECTOR ( 33 downto 0 );
+    DDR_M_AXI_araddr                    : OUT STD_LOGIC_VECTOR ( 31 downto 0 );
     DDR_M_AXI_arburst                   : OUT STD_LOGIC_VECTOR ( 1 downto 0 );
     DDR_M_AXI_arcache                   : OUT STD_LOGIC_VECTOR ( 3 downto 0 );
     DDR_M_AXI_arid                      : OUT STD_LOGIC_VECTOR ( 3 downto 0 );
@@ -836,7 +834,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
     DDR_M_AXI_arregion                  : OUT STD_LOGIC_VECTOR ( 3 downto 0 );
     DDR_M_AXI_arsize                    : OUT STD_LOGIC_VECTOR ( 2 downto 0 );
     DDR_M_AXI_arvalid                   : OUT STD_LOGIC_VECTOR ( 0 to 0 );
-    DDR_M_AXI_awaddr                    : OUT STD_LOGIC_VECTOR ( 33 downto 0 );
+    DDR_M_AXI_awaddr                    : OUT STD_LOGIC_VECTOR ( 31 downto 0 );
     DDR_M_AXI_awburst                   : OUT STD_LOGIC_VECTOR ( 1 downto 0 );
     DDR_M_AXI_awcache                   : OUT STD_LOGIC_VECTOR ( 3 downto 0 );
     DDR_M_AXI_awid                      : OUT STD_LOGIC_VECTOR ( 3 downto 0 );
@@ -955,8 +953,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
   --
   SIGNAL action_reset                   : STD_LOGIC;
   SIGNAL action_reset_n_q               : STD_LOGIC;
-  SIGNAL action_reset_q                 : STD_LOGIC;
-  SIGNAL action_reset_qq                : STD_LOGIC;
+  SIGNAL pci_user_reset_q               : STD_LOGIC;
+  SIGNAL pci_user_reset_qq              : STD_LOGIC;
   SIGNAL xk_d                           : XK_D_T;
   SIGNAL kx_d                           : KX_D_T;
   SIGNAL sk_d                           : SK_D_T;
@@ -969,7 +967,6 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL sdram_axi_clk                  : STD_LOGIC;
   SIGNAL sdram_axi_rst_n                : STD_LOGIC;
   SIGNAL sdram_reset_q                  : STD_LOGIC;
-  SIGNAL sdram_reset_n_q                : STD_LOGIC;
   SIGNAL sdram_reset_m                  : STD_LOGIC;
   --
   -- ACTION <-> CLOCK CONVERTER Interface
@@ -1077,8 +1074,6 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL sdram_axi_ctrl_rdata           : STD_LOGIC_VECTOR(31 DOWNTO 0);
   SIGNAL sdram_axi_ctrl_rresp           : STD_LOGIC_VECTOR(1 DOWNTO 0);
   SIGNAL sdram_interrupt                : STD_LOGIC;
-  SIGNAL refclk_sdram_ibuf              : STD_LOGIC;
-  SIGNAL refclk_sdram_bufg              : STD_LOGIC;
 #endif
 
 #ifdef CONFIG_ENABLE_DDR4
@@ -1093,7 +1088,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
   -- NVME <-> DDR4 Interface
   SIGNAL ddr_aresetn                    : STD_LOGIC;
   SIGNAL ddr_aclk                       : STD_LOGIC;
-  SIGNAL nvm_axi_card_mem0_araddr       : STD_LOGIC_VECTOR ( 33 downto 0 );
+  SIGNAL nvm_axi_card_mem0_araddr       : STD_LOGIC_VECTOR ( 31 downto 0 );
   SIGNAL nvm_axi_card_mem0_arburst      : STD_LOGIC_VECTOR ( 1 downto 0 );
   SIGNAL nvm_axi_card_mem0_arcache      : STD_LOGIC_VECTOR ( 3 downto 0 );
   SIGNAL nvm_axi_card_mem0_arid         : STD_LOGIC_VECTOR ( 3 downto 0 );
@@ -1105,7 +1100,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL nvm_axi_card_mem0_arregion     : STD_LOGIC_VECTOR ( 3 downto 0 );
   SIGNAL nvm_axi_card_mem0_arsize       : STD_LOGIC_VECTOR ( 2 downto 0 );
   SIGNAL nvm_axi_card_mem0_arvalid      : STD_LOGIC_VECTOR ( 0 to 0 );
-  SIGNAL nvm_axi_card_mem0_awaddr       : STD_LOGIC_VECTOR ( 33 downto 0 );
+  SIGNAL nvm_axi_card_mem0_awaddr       : STD_LOGIC_VECTOR ( 31 downto 0 );
   SIGNAL nvm_axi_card_mem0_awburst      : STD_LOGIC_VECTOR ( 1 downto 0 );
   SIGNAL nvm_axi_card_mem0_awcache      : STD_LOGIC_VECTOR ( 3 downto 0 );
   SIGNAL nvm_axi_card_mem0_awid         : STD_LOGIC_VECTOR ( 3 downto 0 );
@@ -1205,56 +1200,44 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL sys_clk_nvme_ch0_gt            : STD_LOGIC;
   SIGNAL sys_clk_nvme_ch1               : STD_LOGIC;
   SIGNAL sys_clk_nvme_ch1_gt            : STD_LOGIC;
+  -- TMP NVME
+  SIGNAL tmp_sdram_axi_arid             : STD_LOGIC_VECTOR (C_AXI_CARD_MEM0_ID_WIDTH downto 0);
+  SIGNAL tmp_sdram_axi_awid             : STD_LOGIC_VECTOR (C_AXI_CARD_MEM0_ID_WIDTH downto 0);
+  SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (C_AXI_CARD_MEM0_ID_WIDTH downto 0);
+  SIGNAL tmp_sdram_axi_rid              : STD_LOGIC_VECTOR (C_AXI_CARD_MEM0_ID_WIDTH downto 0);
 #endif
 
 BEGIN
   --
-  -- Action Reset Logic
+  -- Reset Delay Logic
   --
-  action_reset_reg : PROCESS (ha_pclock)
+  reset_reg : PROCESS (ha_pclock)
   BEGIN
     IF (rising_edge(ha_pclock)) THEN
-      action_reset_q   <=     action_reset;
-      action_reset_qq  <=     action_reset_q;
-      action_reset_n_q <= NOT action_reset;
+      action_reset_n_q   <= NOT action_reset;
+      pci_user_reset_q   <=     pci_user_reset;
+      pci_user_reset_qq  <=     pci_user_reset_q;      
     END IF;
-  END PROCESS action_reset_reg;
+  END PROCESS reset_reg;
 
 #ifdef CONFIG_ENABLE_DDRI
   --
   -- SDRAM Reset Logic
   --
-  sdram_reset : PROCESS (refclk_sdram_bufg)
+  sdram_reset_reg : PROCESS (pci_clock_125MHz)
   BEGIN  -- PROCESS
-    IF (rising_edge(refclk_sdram_bufg)) THEN
-      IF ((action_reset   = '1') OR
-          (action_reset_q = '1') or
-          (action_reset_qq= '1')) THEN
+    IF (rising_edge(pci_clock_125MHz)) THEN
+      IF ((pci_user_reset    = '1') OR
+          (pci_user_reset_q  = '1') or
+          (pci_user_reset_qq = '1')) THEN
         sdram_reset_m <= '1';
       ELSE
         sdram_reset_m <= '0';
       END IF;
 
       sdram_reset_q   <=     sdram_reset_m;
-      sdram_reset_n_q <= NOT sdram_reset_m;
     END IF;
-  END PROCESS sdram_reset;
-
-  --
-  -- SDRAM Ref Clock Logic
-  --
-  ibuf_refclk_sdram : IBUFGDS
-  port map(
-    I  => refclk_sdram_p,
-    IB => refclk_sdram_n,
-    O  => refclk_sdram_ibuf
-  );
-
-  bufg_sdrma : BUFG
-  port map(
-    I => refclk_sdram_ibuf,
-    O => refclk_sdram_bufg
-  );
+  END PROCESS sdram_reset_reg;
 #endif
 
   snap_core_i: snap_core
@@ -1333,6 +1316,7 @@ BEGIN
       action_reset   => action_reset,
 #ifdef CONFIG_ENABLE_NVME
       nvme_reset_ctl => nvme_reset_ctl,
+      nvme_perst_ctl => nvme_perst_ctl,
 #endif
       --
       -- Kernel AXI Master Interface
@@ -1538,12 +1522,12 @@ BEGIN
 #endif
 
 #if defined(CONFIG_ENABLE_DDRI) && !defined(CONFIG_ENABLE_BRAM)
-  sdram_axi_clk   <= sdram_ui_clk;
+  sdram_axi_clk   <=     sdram_ui_clk;
   sdram_axi_rst_n <= NOT sdram_ui_clk_sync_rst;
 #endif
 #ifdef CONFIG_ENABLE_BRAM
-  sdram_axi_clk   <= refclk_sdram_bufg;
-  sdram_axi_rst_n <= sdram_reset_n_q;
+  sdram_axi_clk   <=     pci_clock_125MHz;
+  sdram_axi_rst_n <= NOT sdram_reset_q;
 #endif
 
 
@@ -1647,6 +1631,11 @@ BEGIN
   nvm_axi_card_mem0_bid  (2 downto 0) <= "000";
   nvm_axi_card_mem0_rid  (2 downto 0) <= "000";
 
+  sdram_axi_arid    <= tmp_sdram_axi_arid(3 DOWNTO 0);
+  sdram_axi_awid    <= tmp_sdram_axi_awid(3 DOWNTO 0);                    
+  tmp_sdram_axi_bid <= '0' & sdram_axi_bid(3 DOWNTO 0);
+  tmp_sdram_axi_rid <= '0' & sdram_axi_rid(3 DOWNTO 0);
+  
   axi_interconnect_i : axi_interconnect
     PORT MAP (
       INTERCONNECT_ACLK       => ha_pclock,
@@ -1699,7 +1688,7 @@ BEGIN
       s00_axi_wvalid          => act_axi_card_mem0_wvalid,
       --
       -- FROM NVMe
-      s01_axi_araddr          => nvm_axi_card_mem0_araddr(31 downto 0),
+      s01_axi_araddr          => nvm_axi_card_mem0_araddr,
       s01_axi_arburst         => nvm_axi_card_mem0_arburst,
       s01_axi_arcache         => nvm_axi_card_mem0_arcache,
       s01_axi_arid            => nvm_axi_card_mem0_arid(3),
@@ -1710,7 +1699,7 @@ BEGIN
       s01_axi_arready         => nvm_axi_card_mem0_arready(0),
       s01_axi_arsize          => nvm_axi_card_mem0_arsize,
       s01_axi_arvalid         => nvm_axi_card_mem0_arvalid(0),
-      s01_axi_awaddr          => nvm_axi_card_mem0_awaddr(31 downto 0),
+      s01_axi_awaddr          => nvm_axi_card_mem0_awaddr,
       s01_axi_awburst         => nvm_axi_card_mem0_awburst,
       s01_axi_awcache         => nvm_axi_card_mem0_awcache,
       s01_axi_awid            => nvm_axi_card_mem0_awid(3),
@@ -1741,8 +1730,7 @@ BEGIN
       m00_axi_araddr          => sdram_axi_araddr,
       m00_axi_arburst         => sdram_axi_arburst,
       m00_axi_arcache         => sdram_axi_arcache,
-      m00_axi_arid(3 downto 0)=> sdram_axi_arid,
-      m00_axi_arid(4)         => open,
+      m00_axi_arid            => tmp_sdram_axi_arid,
       m00_axi_arlen           => sdram_axi_arlen,
       m00_axi_arlock          => open, -- sdram_axi_arlock,
       m00_axi_arprot          => sdram_axi_arprot,
@@ -1753,8 +1741,7 @@ BEGIN
       m00_axi_awaddr          => sdram_axi_awaddr,
       m00_axi_awburst         => sdram_axi_awburst,
       m00_axi_awcache         => sdram_axi_awcache,
-      m00_axi_awid(3 downto 0) => sdram_axi_awid,
-      m00_axi_awid(4)         => open,
+      m00_axi_awid            => tmp_sdram_axi_awid,
       m00_axi_awlen           => sdram_axi_awlen,
 --      m00_axi_awlock        => sdram_axi_awlock,
       m00_axi_awprot          => sdram_axi_awprot,
@@ -1762,14 +1749,12 @@ BEGIN
       m00_axi_awready         => sdram_axi_awready,
       m00_axi_awsize          => sdram_axi_awsize,
       m00_axi_awvalid         => sdram_axi_awvalid,
-      m00_axi_bid(3 downto 0) => sdram_axi_bid,
-      m00_axi_bid(4)          => '0',
+      m00_axi_bid             => tmp_sdram_axi_bid,
       m00_axi_bready          => sdram_axi_bready,
       m00_axi_bresp           => sdram_axi_bresp,
       m00_axi_bvalid          => sdram_axi_bvalid,
       m00_axi_rdata           => sdram_axi_rdata,
-      m00_axi_rid(3 downto 0)  => sdram_axi_rid,
-      m00_axi_rid(4)          => '0',
+      m00_axi_rid             => tmp_sdram_axi_rid,
       m00_axi_rlast           => sdram_axi_rlast,
       m00_axi_rready          => sdram_axi_rready,
       m00_axi_rresp           => sdram_axi_rresp,
@@ -1882,7 +1867,7 @@ BEGIN
       c0_ddr4_ck_t               => c0_ddr4_ck_t,
       c0_ddr4_ui_clk             => sdram_ui_clk,
       c0_ddr4_ui_clk_sync_rst    => sdram_ui_clk_sync_rst,
-      c0_ddr4_aresetn            => sdram_reset_n_q,
+      c0_ddr4_aresetn            =>  sdram_axi_rst_n,
       c0_ddr4_s_axi_ctrl_awvalid => sdram_axi_ctrl_awvalid,
       c0_ddr4_s_axi_ctrl_awready => sdram_axi_ctrl_awready,
       c0_ddr4_s_axi_ctrl_awaddr  => sdram_axi_ctrl_awaddr,
@@ -1949,7 +1934,7 @@ BEGIN
       -- NVME <-> DDR4 Interface
       ddr_aclk                         => ddr_aclk,
       ddr_aresetn                      => ddr_aresetn,
-      DDR_M_AXI_araddr(33 downto 0)    => nvm_axi_card_mem0_araddr(33 downto 0),
+      DDR_M_AXI_araddr(31 downto 0)    => nvm_axi_card_mem0_araddr(31 downto 0),
       DDR_M_AXI_arburst(1 downto 0)    => nvm_axi_card_mem0_arburst(1 downto 0),
       DDR_M_AXI_arcache(3 downto 0)    => nvm_axi_card_mem0_arcache(3 downto 0),
       DDR_M_AXI_arid(3 downto 0)       => nvm_axi_card_mem0_arid(3 downto 0),
@@ -1961,7 +1946,7 @@ BEGIN
       DDR_M_AXI_arregion(3 downto 0)   => nvm_axi_card_mem0_arregion(3 downto 0),
       DDR_M_AXI_arsize(2 downto 0)     => nvm_axi_card_mem0_arsize(2 downto 0),
       DDR_M_AXI_arvalid(0)             => nvm_axi_card_mem0_arvalid(0),
-      DDR_M_AXI_awaddr(33 downto 0)    => nvm_axi_card_mem0_awaddr(33 downto 0),
+      DDR_M_AXI_awaddr(31 downto 0)    => nvm_axi_card_mem0_awaddr(31 downto 0),
       DDR_M_AXI_awburst(1 downto 0)    => nvm_axi_card_mem0_awburst(1 downto 0),
       DDR_M_AXI_awcache(3 downto 0)    => nvm_axi_card_mem0_awcache(3 downto 0),
       DDR_M_AXI_awid(3 downto 0)       => nvm_axi_card_mem0_awid(3 downto 0),

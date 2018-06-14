@@ -31,11 +31,6 @@ USE unisim.vcomponents.all;
 
 ENTITY psl_fpga IS
   PORT(
-#ifdef CONFIG_ENABLE_DDRI
-    -- Clock inputs for SDRAM
-    refclk266_p               : IN    STD_LOGIC;
-    refclk266_n               : IN    STD_LOGIC;
-#endif
 #ifdef CONFIG_ENABLE_DDR4
     -- DDR4 SDRAM Interface
     -- Nallatech 250S card has one DDR4 SO-DIMMs
@@ -151,11 +146,6 @@ ARCHITECTURE psl_fpga OF psl_fpga IS
 
 Component psl_accel
   PORT(
-#ifdef CONFIG_ENABLE_DDRI
-    -- Clock inputs for SDRAM
-    refclk_sdram_p            : IN    STD_LOGIC;
-    refclk_sdram_n            : IN    STD_LOGIC;
-#endif
 #ifdef CONFIG_ENABLE_DDR4
     -- DDR4 SDRAM Interface
     -- Nallatech 250S card has one DDR4 SO-DIMMs
@@ -189,7 +179,8 @@ Component psl_accel
     refclk_nvme_ch1_n         : IN    STD_LOGIC;
     --
     -- NVMe reset control
-    nvme_reset_ctl            : OUT   STD_LOGIC_VECTOR(4 DOWNTO 0);             -- keeping NVMe drives in reset by driving 0's
+    nvme_reset_ctl            : OUT   STD_LOGIC;
+    nvme_perst_ctl            : OUT   STD_LOGIC_VECTOR(3 DOWNTO 0);             -- keeping NVMe drives in reset by driving 0's
     --
     -- NVME <-> PCIE Interface
     pcie_rc0_rxn              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
@@ -276,7 +267,10 @@ Component psl_accel
     --
     -- Misc Interface
     ah_paren: OUT std_logic;
-    ha_pclock: IN std_logic);
+    ha_pclock: IN std_logic;
+    pci_user_reset: in std_logic; --PCI hip user_reset signal if needed
+    pci_clock_125MHz: in std_logic --125MHz clock if needed
+    );
 End Component psl_accel;
 
 Component base_img
@@ -463,9 +457,13 @@ SIGNAL ha0_response: std_logic_vector(0 TO 7);  -- apresp
 SIGNAL ha0_rtag: std_logic_vector(0 TO 7);  -- acctag
 SIGNAL ha0_rtagpar: std_logic;  -- bool
 SIGNAL ha0_rvalid: std_logic;  -- bool
-SIGNAL gold_factory: std_logic;
-SIGNAL pci_user_reset: std_logic;
-SIGNAL pci_clock_125MHz: std_logic;
+
+SIGNAL user_image_q        : std_logic := '1';  --set to 1 to indicate images meant for user location. set to 0 to indicate factory image. 
+ATTRIBUTE dont_touch       : string;
+ATTRIBUTE dont_touch of user_image_q: SIGNAL IS "true";
+SIGNAL gold_factory        : std_logic;
+SIGNAL pci_user_reset      : std_logic;
+SIGNAL pci_clock_125MHz    : std_logic;
 SIGNAL led_red: std_logic_vector(0 TO 1);
 SIGNAL led_green: std_logic_vector(0 TO 1);
 SIGNAL led_blue: std_logic_vector(0 TO 1);
@@ -522,11 +520,6 @@ BEGIN
 
   a0: psl_accel
     PORT MAP (
-#ifdef CONFIG_ENABLE_DDRI
-      -- Clock inputs for SDRAM
-      refclk_sdram_p                    => refclk266_p,
-      refclk_sdram_n                    => refclk266_n,
-#endif
 #ifdef CONFIG_ENABLE_DDR4
       -- DDR4 SDRAM Interface
       -- Nallatech 250S card has one DDR4 SO-DIMMs
@@ -561,8 +554,8 @@ BEGIN
       refclk_nvme_ch1_n                 => pcie_clk2_n,
       --
       -- NVMe reset control
-      nvme_reset_ctl(4)                 => nvme_reset_ctl,
-      nvme_reset_ctl(3 DOWNTO 0)        => nvme_perst_ctl,
+      nvme_reset_ctl                    => nvme_reset_ctl,
+      nvme_perst_ctl(3 DOWNTO 0)        => nvme_perst_ctl,
       --
       -- NVME <-> PCIE Interface
       pcie_rc0_rxn(3 DOWNTO 0)          => pcie_rc0_rxn(3 DOWNTO 0),
@@ -646,14 +639,19 @@ BEGIN
       --
       -- Misc Interface
       ah_paren                          => a0h_paren,
-      ha_pclock                         => ha0_pclock
+      ha_pclock                         => ha0_pclock,
+      pci_user_reset                    => pci_user_reset,
+      pci_clock_125MHz                  => pci_clock_125MHz
     );
 
-#ifdef CONFIG_ENABLE_FACTORY
-    gold_factory <= '0'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
-#else
-    gold_factory <= '1'; --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
-#endif
+    PROCESS (ha0_pclock)
+    BEGIN
+      IF(RISING_EDGE(ha0_pclock)) THEN
+        user_image_q <= user_image_q;
+      END IF;
+    END PROCESS;
+
+    gold_factory <= user_image_q;
 
     -- led controls
     led_red <= "11";

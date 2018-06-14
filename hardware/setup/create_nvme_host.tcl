@@ -16,17 +16,19 @@
 #
 #-----------------------------------------------------------
 
-set root_dir   $::env(SNAP_HARDWARE_ROOT)
-set fpga_part  $::env(FPGACHIP)
-set log_dir    $::env(LOGS_DIR)
-set log_file   $log_dir/create_nvme_host.log
+set root_dir    $::env(SNAP_HARDWARE_ROOT)
+set denali_used $::env(DENALI_USED)
+set fpga_part   $::env(FPGACHIP)
+set log_dir     $::env(LOGS_DIR)
+set log_file    $log_dir/create_nvme_host.log
 
 set prj_name nvme
 set bd_name  nvme_top
 
-puts "\[CREATE_NVMe.........\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 # Create NVME project
 create_project   $prj_name $root_dir/ip/nvme -part $fpga_part -force >> $log_file
+set_property target_language VERILOG [current_project]
+#Create block design
 create_bd_design $bd_name  >> $log_file
 
 # Create NVME_HOST IP
@@ -200,6 +202,8 @@ CONFIG.NUM_MI {2} \
 CONFIG.NUM_SI {2} \
 CONFIG.S00_HAS_DATA_FIFO {2} \
 CONFIG.S01_HAS_DATA_FIFO {2} \
+CONFIG.M00_HAS_REGSLICE {1} \
+CONFIG.M01_HAS_REGSLICE {1} \
 CONFIG.STRATEGY {2} \
 ] $axi_interconnect_2 >> $log_file
 
@@ -244,9 +248,11 @@ CONFIG.plltype {QPLL1} \
 # Vivado2017.4 can not create an an example project if the design was not saved before
 save_bd_design >> $log_file
 
-#AXI_PCIE3 create axi_pcie3 example design
-puts "                        generating AXI PCIe Root Complex example design"
-open_example_project -in_process -verbose -force -dir $root_dir/ip/nvme [get_ips nvme_top_axi_pcie3_0_0] >> $log_file  
+if { $denali_used == TRUE } {
+  #AXI_PCIE3 create axi_pcie3 example design
+  puts "                        generating AXI PCIe Root Complex example design"
+  open_example_project -in_process -verbose -force -dir $root_dir/ip/nvme [get_ips nvme_top_axi_pcie3_0_0] >> $log_file  
+}
 
 current_project $prj_name
 open_bd_design [get_files */$bd_name.bd]
@@ -335,10 +341,15 @@ create_bd_addr_seg -range 0x00001000 -offset 0x00000000 [get_bd_addr_spaces ACT_
 exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs axi_pcie3_0/S_AXI_CTL/CTL0] >> $log_file
 exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs axi_pcie3_1/S_AXI_CTL/CTL0] >> $log_file
 
-#### Save block design and close the project
+# Save block design and close the project
 save_bd_design >> $log_file
 
-puts "\[CREATE_NVMe.........\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
+# Generate the Output products of the NVME block design. 
+# It is important that this are Verilog files and set the synth_checkpoint_mode to None (Global synthesis) before generating targets 
+puts "                        generating NVMe output products"
+set_property synth_checkpoint_mode None [get_files  $root_dir/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file 
+generate_target all                     [get_files  $root_dir/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] >> $log_file
  
+#Close the project
 close_project >> $log_file
 

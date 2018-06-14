@@ -103,7 +103,8 @@ static void *alloc_mem(int align, int size)
 	void *a;
 	int size2 = size + align;
 
-	VERBOSE2("%s Enter Align: %d Size: %d\n", __func__, align, size);
+	VERBOSE2("%s Enter Align: %d Size: %d (malloc Size: %d)\n",
+		__func__, align, size, size2);
 	if (posix_memalign((void **)&a, 4096, size2) != 0) {
 		perror("FAILED: posix_memalign()");
 		return NULL;
@@ -221,6 +222,22 @@ static void action_memcpy(struct snap_card* h,
 	return;
 }
 
+/* 
+ * Return 0 if buffer is equal, 
+ * Return index+1 if not equal
+ */
+static int memcmp2(uint8_t *src, uint8_t *dest, int len)
+{
+	int i;
+
+	for (i = 0; i < len; i++) {
+		if (*src != *dest)
+			return i+1;
+		src++; dest++;
+	}
+	return 0;
+}
+
 static int do_action(struct snap_card *h,
 			snap_action_flag_t flags,
 			int action,
@@ -239,12 +256,15 @@ static int do_action(struct snap_card *h,
 	if (NULL == act) {
 		VERBOSE0("Error: Can not attach Action: %x\n", ACTION_TYPE_EXAMPLE);
 		VERBOSE0("       Try to run snap_main tool\n");
-		return 1;
+		return 0x100;
 	}
 	action_memcpy(h, action, dest, src, memsize);
 	rc = action_wait_idle(h, timeout, &td);
 	print_time(td, memsize);
-	snap_detach_action(act);
+	if (0 != snap_detach_action(act)) {
+		VERBOSE0("Error: Can not detach Action: %x\n", ACTION_TYPE_EXAMPLE);
+		rc |= 0x100;
+	}
 	return rc;
 }
 
@@ -268,21 +288,6 @@ static int memcpy_test(struct snap_card* dnc,
 	unsigned long ddr_mem_size;
 
 	rc = 0;
-	/* align can be 64 .. 4096 */
-	if (align < 64) {
-		VERBOSE0("align: %d must be 64 or higher\n", align);
-		return 1;
-	}
-	if ((align & 0x3f) != 0) {
-		VERBOSE0("align: %d must be a multible of 64\n", align);
-		return 1;
-	}
-	if (align > DEFAULT_MEMCPY_BLOCK) {
-		VERBOSE0("align: %d is to much for me. Max: %d\n",
-			align, DEFAULT_MEMCPY_BLOCK);
-		return 1;
-	}
-
 	/* Number of 64 Bytes Blocks */
 	blocks = (blocks_4k * 64) + blocks_64;
 	/* Number of bytes */
@@ -335,7 +340,7 @@ static int memcpy_test(struct snap_card* dnc,
 		rc = do_action(dnc, attach_flags, action, timeout, dest, src, memsize);
 		if (0 == rc) {
 			VERBOSE1("  Compare: %p <-> %p\n", src, dest);
-			rc = memcmp(src, dest, memsize);
+			rc = memcmp2(src, dest, memsize);
 			if ((verbose_level > 1) || rc) {
 				VERBOSE0("---------- src Buffer: %p\n", src);
 				__hexdump(stdout, src, memsize);
@@ -343,7 +348,7 @@ static int memcpy_test(struct snap_card* dnc,
 				__hexdump(stdout, dest, memsize);
 			}
 			if (rc)
-				VERBOSE0("Error Memcmp failed rc: %d\n", rc);
+				VERBOSE0("Error Memcmp failed at 0x%x\n", rc-1);
 		}
 		free_mem(f_src);
 		free_mem(f_dest);
@@ -435,9 +440,9 @@ static int memcpy_test(struct snap_card* dnc,
 			rc = memcmp(src, dest, memsize);
 			if ((verbose_level > 1) || rc) {
 				VERBOSE0("---------- src Buffer: %p\n", src);
-				//__hexdump(stdout, src, memsize);
+				__hexdump(stdout, src, memsize);
 				VERBOSE0("---------- dest Buffer: %p\n", dest);
-				//__hexdump(stdout, dest, memsize);
+				__hexdump(stdout, dest, memsize);
 			}
 			if (rc)
 				VERBOSE0("Error Memcmp failed rc: %d\n", rc);
@@ -509,6 +514,9 @@ int main(int argc, char *argv[])
 	uint64_t td;
 	struct snap_action *act = NULL;
 	unsigned long ioctl_data;
+	unsigned long dma_align;
+	unsigned long dma_min_size;
+	char card_name[16];   /* Space for Card name */
 
 	while (1) {
                 int option_index = 0;
@@ -574,6 +582,11 @@ int main(int argc, char *argv[])
 			break;
 		case 'A':	/* align */
 			memcpy_align = strtol(optarg, (char **)NULL, 0);
+			if (memcpy_align > DEFAULT_MEMCPY_BLOCK) {
+				VERBOSE0("ERROR: Align (-A %d) is to high. Max: %d Bytes\n",
+					memcpy_align, DEFAULT_MEMCPY_BLOCK);
+				exit(1);
+			}
 			break;
 		case 'D':	/* dest */
 			card_ram_base = strtol(optarg, (char **)NULL, 0);
@@ -603,27 +616,42 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	VERBOSE2("Open Card: %d\n", card_no);
 	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
+	VERBOSE2("Open Card: %d device: %s\n", card_no, device);
 	dn = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM, SNAP_DEVICE_ID_SNAP);
 	if (NULL == dn) {
+		VERBOSE0("ERROR: Can not Open (%s)\n", device);
 		errno = ENODEV;
-		VERBOSE0("ERROR: snap_card_alloc_dev(%s)\n", device);
+		perror("ERROR");
 		return -1;
 	}
 
-	/* Read Card Capabilities */
-	snap_card_ioctl(dn, GET_CARD_TYPE, (unsigned long)&ioctl_data);
-	VERBOSE1("SNAP on ");
-	switch (ioctl_data) {
-		case  0: VERBOSE1("ADKU3"); break;
-		case  1: VERBOSE1("N250S"); break;
-		case 16: VERBOSE1("N250SP"); break;
-		default: VERBOSE1("Unknown"); break;
-	}
-	snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&ioctl_data);
-	VERBOSE1(" Card, %d MB of Card Ram avilable.\n", (int)ioctl_data);
+	/* Read Card Name */
+	snap_card_ioctl(dn, GET_CARD_NAME, (unsigned long)&card_name);
+	VERBOSE1("SNAP on %s", card_name);
 
+	snap_card_ioctl(dn, GET_SDRAM_SIZE, (unsigned long)&ioctl_data);
+	VERBOSE1(" Card, %d MB of Card Ram avilable. ", (int)ioctl_data);
+
+	snap_card_ioctl(dn, GET_DMA_ALIGN, (unsigned long)&dma_align);
+	VERBOSE1(" (Align: %d ", (int)dma_align);
+
+	snap_card_ioctl(dn, GET_DMA_MIN_SIZE, (unsigned long)&dma_min_size);
+	VERBOSE1(" Min DMA: %d Bytes)\n", (int)dma_min_size);
+
+	/* Check Align and DMA Min Size */
+	if (memcpy_align & (int)(dma_align-1)) {
+		VERBOSE0("ERROR: Option -A %d must be a multiple of %d Bytes for %s Cards.\n",
+			memcpy_align, (int)dma_align, card_name);
+		rc = 0x100;
+		goto __exit1;
+	}
+	if (num_64*64 & (int)(dma_min_size-1)) {
+		VERBOSE0("ERROR: Option -B %d must be a multiple of %d Bytes for %s Cards.\n",
+			num_64, (int)dma_min_size, card_name);
+		rc = 0x100;
+		goto __exit1;
+	}
 	snap_mmio_read64(dn, SNAP_S_CIR, &cir);
 	VERBOSE1("Start of Action: %d Card Handle: %p Context: %d\n", action, dn,
 		(int)(cir & 0x1ff));
@@ -635,18 +663,24 @@ int main(int argc, char *argv[])
 			act = snap_attach_action(dn, ACTION_TYPE_EXAMPLE,
 				  attach_flags, 5 * timeout + delay/1000);
 			if (NULL == act) {
-				VERBOSE0("Error: Can not attach.....\n");
+				VERBOSE0("Error: Can not attach Action: %x\n",
+					ACTION_TYPE_EXAMPLE);
+				rc = 0x100;
 				goto __exit1;
 			}
 
 			action_count(dn, delay);
 			rc = action_wait_idle(dn, timeout + delay/1000, &td);
 			print_time(td, 0);
-
-			snap_detach_action(act);
-			if (0 != rc) break;
+			/* Detach Action and exit if rc is set */
+			if (0 != snap_detach_action(act)) {
+				VERBOSE0("Error: Can not detach Action: %x\n",
+					ACTION_TYPE_EXAMPLE);
+				rc |= 0x100;
+			}
+			if (0 != rc)
+				goto __exit1;
 		}
-		rc = 0;
 		break;
 	case 2:
 	case 3:
@@ -657,6 +691,7 @@ int main(int argc, char *argv[])
 			rc = memcpy_test(dn, attach_flags, action, num_4k, num_64,
 				memcpy_align, card_ram_base,
 				timeout);
+			if (0 != rc) break;
 		}
 		break;
 	default:

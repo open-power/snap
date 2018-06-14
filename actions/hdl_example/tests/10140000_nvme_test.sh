@@ -88,30 +88,40 @@ while getopts "C:t:i:h" opt; do
 	esac
 done
 
-rev=$(cat /sys/class/cxl/card$snap_card/device/subsystem_device | xargs printf "0x%.4X")
-
-case $rev in
-"0x0605" )
-	echo "$rev -> Skip $PROGRAM on AlphaData KU3 Card"
-	exit 0
-	;;
-"0x060A" )
-	echo "$rev -> Testing Nallatech 250S Card"
-	;;
-*)
-	echo "Capi Card $snap_card does have subsystem_device: $rev"
-	echo "I Expect to have 0x605 or 0x60a, Check if -C $snap_card was"
-	echo " move to other CAPI id and use other -C option !"
+# Get Card Name
+echo -n "Detect Card[$snap_card] .... "
+CARD=`./software/tools/snap_maint -C $snap_card -m 4`
+if [ -z $CARD ]; then
+	echo "ERROR: Invalid Card."
 	exit 1
+fi
+
+case $CARD in
+"AD8K5" )
+	echo "-> AlphaData $CARD Card"
+	;;
+"S121B" )
+	echo "-> Semptian $CARD Card"
+	;;
+"ADKU3" )
+	echo "-> AlphaData $CARD Card"
+	;;
+"N250S" )
+	echo "-> Nallatech $CARD Card"
+	;;
+"N250SP" )
+	echo "-> Nallatech $CARD Card"
+	;;
 esac;
 
+# Get if NVME is enabled
 NVME=`./software/tools/snap_maint -C $snap_card -m 2`
 if [ -z $NVME ]; then
-	echo "Skip Test: No NVME configured for Card $snap_card"
+	echo "Skip Test: No NVME configured for $CARD[$snap_card]"
 	exit 0
 fi
 
-echo "Configure NVME for drive 0 and 1 for Card $snap_card"
+echo "Configure NVME for drive 0 and 1 for $CARD[$snap_card]"
 cmd="$CONF --card $snap_card -v"
 eval ${cmd}
 if [ $? -ne 0 ]; then

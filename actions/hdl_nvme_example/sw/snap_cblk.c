@@ -59,25 +59,41 @@ static chunk_id_t cid = (chunk_id_t)-1; /* global to close device via sig_INT */
 static void usage(const char *prog)
 {
 	printf("Usage: %s [-h] [-v,--verbose]\n"
-	       "  -C,--card <cardno> can be (0...3)\n"
+	       "  -C, --card <cardno> can be (0...3)\n"
 	       "  -V, --version             print version.\n"
 	       "  -X, --cpu <id>            only run on this CPU.\n"
 	       "  -f, --format              write entire device with pattern.\n"
 	       "  -w, --write               write entire device.\n"
 	       "  -r, --read                read entire device.\n"
 	       "  -x, --rw                  read write testcase.\n"
-	       "  -R, --random <seed>       random seek ordering"
-	       "  -s, --start_lba <start_lba> start offset\n"
+	       "  -R, --random <seed>       random seek ordering\n"
+	       "  -s, --start_lba <start_lba> start offset.\n"
 	       "  -n, --num_lba <num_lba>   number of lbas to read or write\n"
-	       "                            0x40000 for 1 GiB\n"
-	       "  -b, --lba_blocks <lba_blocks> number of lbas to read"
+	       "                            0x40000 for 1 GiB.\n"
+	       "                            The size of a logical block is 4KiB.\n"
+	       "  -b, --lba_blocks <lba_blocks> number of lbas to read\n"
 	       "                            or write in one operation.\n"
-	       "  -p, --pattern <pattern>   pattern for formatting/INC\n"
-	       "  -M, --use-mmap            create output file using mmap\n"
+	       "  -p, --pattern <pattern>   pattern for formatting or INC\n"
+	       "                            INC is filling the blocks with\n"
+	       "                            and increasing number.\n"
+	       "  -M, --use-mmap            create output file using mmap.\n"
 	       "  <file.bin>\n"
 	       "\n"
-	       "Example:\n"
-	       "  snap_cblk -C0 --read cblk_read.bin\n"
+	       "Known limitation:\n"
+	       "  We create an in-memory copy of the data. That restricts\n"
+	       "  the max possible -n <N> to whatever maximum possible memory\n"
+	       "  allocation size. The code will warn appropriately if you\n"
+	       "  exceed the maximum possible size.\n"
+	       "\n"
+	       "Examples:\n"
+	       "  Format the device with a pattern of 0xab:\n"
+	       "    snap_cblk -C0 --format -p 0xab -n 0x40000\n"
+	       "\n"
+	       "  Read back the data:\n"
+	       "    snap_cblk -C0 --read -n 0x40000 cblk_read.bin\n"
+	       "\n"
+	       "  Write file content into the NVMe device:\n"
+	       "    snap_cblk -C0 --write cblk_read.bin\n"
 	       "\n",
 	       prog);
 }
@@ -516,7 +532,7 @@ int main(int argc, char *argv[])
 	size_t lba_size = 4 * 1024;
 	size_t lba_blocks = 1;
 	unsigned int lba;
-	unsigned int num_lba = 0;
+	unsigned long num_lba = 0;
 	unsigned int start_lba = 0;
 	struct timeval etime, stime;
 	long long diff_usec = 0;
@@ -669,20 +685,25 @@ int main(int argc, char *argv[])
 		lun_size,
 		threads);
 
-	if (num_lba == 0)
-		num_lba = lun_size;
+	/*
+	 * NOTE: Using lun_size will fail, since we create an in memory
+	 *       copy of the device and the NVMe device is likely to be
+	 *       larger than the memory our process can allocate with
+	 *       posix_memalign().
+	 */
+	/* if (num_lba == 0)
+		num_lba = lun_size; */
 
 	switch (_op) {
 	case OP_READ: {
 		int fd = -1;
 
-		/* fprintf(stderr, "num_lba=%u lba_blocks=%zu lun_size=%zu\n",
-			num_lba, lba_blocks, lun_size); */
-
-		fprintf(stdout, "Reading %zu times %zu bytes: %zu KiB NVMe into %s\n",
-			num_lba/lba_blocks, lba_blocks * lba_size,
-			num_lba * lba_size / 1024,
-			fname);
+		if ((num_lba == 0) || (num_lba > lun_size)) {
+			fprintf(stderr, "warn: -n <num_lba> is %lu but "
+				"should be >= %zu and <= %zu\n",
+				num_lba, lba_blocks, lun_size);
+			goto err_out;
+		}
 
 		if (start_lba + num_lba > lun_size) {
 			fprintf(stderr, "err: device not large enough %zu lbas\n",
@@ -691,13 +712,13 @@ int main(int argc, char *argv[])
 		}
 
 		if (num_lba < lba_blocks) {
-			fprintf(stderr, "err: num_lba %u smaller than lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu smaller than lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
 
 		if (num_lba % lba_blocks) {
-			fprintf(stderr, "err: num_lba %u not multiple of lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu not multiple of lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
@@ -716,8 +737,13 @@ int main(int argc, char *argv[])
 					__func__, strerror(errno));
 				goto err_out;
 			}
-			memset(buf, 0xff, num_lba * lba_size);
+			memset(buf, 0x00, num_lba * lba_size);
 		}
+
+		fprintf(stdout, "About to read %zu times %zu bytes: %zu KiB NVMe into %s\n",
+			num_lba/lba_blocks, lba_blocks * lba_size,
+			num_lba * lba_size / 1024,
+			fname);
 
 		rqueue_init(&rq, buf, start_lba, lba_size, num_lba, lba_blocks);
 		gettimeofday(&stime, NULL);
@@ -761,11 +787,13 @@ int main(int argc, char *argv[])
 	}
 	case OP_RW: {
 		uint8_t *_buf;
-		
-		fprintf(stdout, "Reading/writing %zu times %zu bytes: %zu KiB NVMe into %s\n",
-			num_lba/lba_blocks, lba_blocks * lba_size,
-			num_lba * lba_size / 1024,
-			fname);
+
+		if ((num_lba == 0) || (num_lba > lun_size)) {
+			fprintf(stderr, "warn: -n <num_lba> is %lu but "
+				"should be >= %zu and <= %zu\n",
+				num_lba, lba_blocks, lun_size);
+			goto err_out;
+		}
 
 		if (start_lba + num_lba > lun_size) {
 			fprintf(stderr, "err: device not large enough %zu lbas\n",
@@ -774,23 +802,30 @@ int main(int argc, char *argv[])
 		}
 
 		if (num_lba < lba_blocks) {
-			fprintf(stderr, "err: num_lba %u smaller than lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu smaller than lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
 
 		if (num_lba % lba_blocks) {
-			fprintf(stderr, "err: num_lba %u not multiple of lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu not multiple of lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
+
 		rc = posix_memalign((void **)&buf, 64, num_lba * lba_size);
 		if (rc != 0) {
-			fprintf(stderr, "[%s] err: Cannot allocate enough memory! %s\n",
-				__func__, strerror(errno));
+			fprintf(stderr, "[%s] err: Cannot allocate "
+				"enough memory! %s\n", __func__,
+				strerror(errno));
 			goto err_out;
 		}
 		memset(buf, 0xff, num_lba * lba_size);
+
+		fprintf(stdout, "About to read/write %zu times %zu bytes: %zu KiB NVMe into %s\n",
+			num_lba/lba_blocks, lba_blocks * lba_size,
+			num_lba * lba_size / 1024,
+			fname);
 
 		/* Formatting part */
 		gettimeofday(&stime, NULL);
@@ -852,10 +887,13 @@ int main(int argc, char *argv[])
 	case OP_WRITE: {
 		ssize_t len;
 
-		fprintf(stdout, "Writing NVMe from %s\n", fname);
+		fprintf(stdout, "Reading data from %s\n", fname);
 		len = file_size(fname);
-		if (len <= 0)
+		if (len <= 0) {
+			fprintf(stderr, "err: Unexpected size of file %s %zu\n",
+				fname, len);
 			goto err_out;
+		}
 
 		if (len % lba_size) {
 			fprintf(stderr, "err: size is not a multiple of lba_size=%zu bytes\n",
@@ -864,6 +902,13 @@ int main(int argc, char *argv[])
 		}
 		num_lba = len / lba_size;
 
+		if ((num_lba == 0) || (num_lba > lun_size)) {
+			fprintf(stderr, "warn: -n <num_lba> is %lu but "
+				"should be >= %zu and <= %zu\n",
+				num_lba, lba_blocks, lun_size);
+			goto err_out;
+		}
+
 		if (start_lba + num_lba > lun_size) {
 			fprintf(stderr, "err: device not large enough %zu lbas\n",
 				lun_size);
@@ -871,20 +916,21 @@ int main(int argc, char *argv[])
 		}
 
 		if (num_lba < lba_blocks) {
-			fprintf(stderr, "err: num_lba %u smaller than lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu smaller than lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
 
 		if (num_lba % lba_blocks) {
-			fprintf(stderr, "err: num_lba %u not multiple of lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu not multiple of lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
 
 		rc = posix_memalign((void **)&buf, 64, num_lba * lba_size);
 		if (rc != 0) {
-			fprintf(stderr, "err: Cannot allocate enough memory!\n");
+			fprintf(stderr, "[%s] err: Cannot allocate enough "
+			"	memory!\n", __func__);
 			goto err_out;
 		}
 
@@ -915,25 +961,33 @@ int main(int argc, char *argv[])
 		break;
 	}
 	case OP_FORMAT: {
-		fprintf(stdout, "Formatting NVMe drive %zu KiB with pattern %02x ...\n",
-			(num_lba * lba_size) / 1024, pattern);
+
+		if ((num_lba == 0) || (num_lba > lun_size)) {
+			fprintf(stderr, "warn: -n <num_lba> is %lu but "
+				"should be >= %zu and <= %zu\n",
+				num_lba, lba_blocks, lun_size);
+			goto err_out;
+		}
 
 		if (num_lba < lba_blocks) {
-			fprintf(stderr, "err: num_lba %u smaller than lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu smaller than lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
 
 		if (num_lba % lba_blocks) {
-			fprintf(stderr, "err: num_lba %u not multiple of lba_blocks %zu\n",
+			fprintf(stderr, "err: num_lba %lu not multiple of lba_blocks %zu\n",
 				num_lba, lba_blocks);
 			goto err_out;
 		}
 
 		/* Allocate memory for entire device (simplicity first) */
 		rc = posix_memalign((void **)&buf, 64, num_lba * lba_size);
-		if (rc != 0)
+		if (rc != 0) {
+			fprintf(stderr, "err: Cannot allocate enough memory "
+				"to keep copy of the device!\n");
 			goto err_out;
+		}
 
 		if (incremental_pattern) {
 			uint64_t p;
@@ -945,6 +999,9 @@ int main(int argc, char *argv[])
 		if (verbose_flag == 2) {
 			__hexdump(stderr, buf, num_lba * lba_size);
 		}
+
+		fprintf(stdout, "About to format NVMe drive %zu KiB with pattern %02x ...\n",
+			(num_lba * lba_size) / 1024, pattern);
 
 		rqueue_init(&rq, buf, start_lba, lba_size, num_lba, lba_blocks);
 		gettimeofday(&stime, NULL);

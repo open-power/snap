@@ -288,12 +288,54 @@ static void usage(const char *prog)
 	       "  -p, --pattern <str>    Pattern to search for\n"
 	       "  -E, --expected <num>   Expected # of patterns to find\n"
 	       "  -t, --timeout <num>    timeout in sec (default 10 sec)\n"
-	       "  -X, --irq              Enable Interrupts, "
-	       "for verification\n"
+	       "  -N, --No irq           Disable Interrupts (polling)"
+               "\n"
+               "NOTES : \n"
+               " - p is the pattern to look for\n"
+               " - i is the file path where the pattern will be looked into\n"
+               " - s is used to use Step 2 and 4 : just moving data and process on CPU\n"
+               "     default is     Step 1 and 3 : moving data to DDR and process on FPGA\n"
+               " - m is the different search method user can use 0:Stream - 1:Naive (default) - 2:KMP\n"
+               " - The result will be the number of time the \"pattern\" is found in the text\n"
+               " (The feature to send back the position of the occurrences is not yet coded) \n"
+               "\n"
+               "Useful parameters :\n"
+               "-------------------\n"
+               "SNAP_TRACE=0x0    no debug trace  (default mode)\n"
+               "SNAP_TRACE=0xF    full debug trace\n"
+               "SNAP_CONFIG=FPGA  hardware execution   (default mode)\n"
+               "SNAP_CONFIG=CPU   software execution\n"
+               "\n"
+               "Example on a real card\n"
+               "----------------------\n"
+               "cd $SNAP_ROOT && export ACTION_ROOT=$SNAP_ROOT/actions/hls_search\n"
+               "source snap_path.sh\n"
+               "snap_maint -vv\n"
+               "\n"
+               "echo Available search methods are Naive method (m1) - KMP method (m2) - Streaming method (m0)\n"
+               "echo (Streaming method need to be specified in common header file BEFORE generating the flow)\n"
+               "echo \"Hardware\" search pattern looking for the word \"include\" in search.txt\n"
+               "snap_search -m1 -E88 -i ./search.txt -p include -C0\n"
+               "echo \"Software\" search pattern looking for the word \"include\" in search.txt\n"
+               "snap_search -m1 -E88 -s -i ./search.txt -p include -C0\n"
+               "\n"
+               "Example for a simulation\n"
+               "------------------------\n"
+               "snap_maint -vv\n"
+               "\n"
+	       "echo Create a file with a text to search in. For example:\n"
+	       "echo \"Hello SNAP world. This is my first CAPI SNAP experience. It's real fun!\" > /tmp/t1\n"
 	       "\n"
-	       "Example:\n"
-	       "  snap_search ...\n"
-	       "\n",
+               "echo \"Hardware\" search pattern looking for the word \"SNAP\" in t1 file -Naive method (m1)\n"
+               "snap_search -t5000 -m1 -E2 -i /tmp/t1 -p SNAP\n"
+               "echo \"Hardware\" search pattern looking for the word \"SNAP\" in t1 file - KMP method (m2)\n"
+               "snap_search -t5000 -m2 -E2 -i /tmp/t1 -p SNAP\n"
+               "echo \"Hardware\" search pattern looking for the word \"SNAP\" in t1 file - stream method (m0)\n"
+               "echo (Streaming method need to be specified in common header file BEFORE generating the flow)\n"
+               "snap_search -t5000 -m0 -E2 -i /tmp/t1 -p SNAP\n"
+               "echo \"Software\" search pattern looking for the word \"SNAP\" in t1 file - Naive method (m1)\n"
+               "snap_search -t5000 -m1 -E2 -s -i /tmp/t1 -p SNAP\n"
+               "\n",
 	       prog);
 }
 
@@ -325,7 +367,7 @@ int main(int argc, char *argv[])
 	struct timeval etime, stime;
 	long int expected_patterns = -1;
 	int exit_code = EXIT_SUCCESS;
-	snap_action_flag_t action_irq = 0;
+	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
         int sw = 0; //using software flow. Default is 0.
         unsigned int method = 1; //search method. Default is Naive(1).
         unsigned int step;
@@ -344,12 +386,12 @@ int main(int argc, char *argv[])
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
-			{ "irq",	 no_argument,	    NULL, 'X' },
+			{ "noirq",	 no_argument,	    NULL, 'N' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-				 "C:E:m:i:p:I:t:sVvhX",
+				 "C:E:m:i:p:I:t:sVvhN",
 				 long_options, &option_index);
 		if (ch == -1)	/* all params processed ? */
 			break;
@@ -390,14 +432,19 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
-		case 'X':	/* irq */
-			action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
+		case 'N':	/* irq */
+			action_irq = 0;
 			break;
 		default:
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
 		}
 	}
+
+        if (argc == 1) {               // to provide help when program is called without argument
+          usage(argv[0]);
+          exit(EXIT_FAILURE);
+        }
 
 	if (optind != argc) {
 		usage(argv[0]);
@@ -467,7 +514,6 @@ int main(int argc, char *argv[])
 
     	printf("...................................................\n");
   	printf("Start Step1 (Copy source data from Host to DDR) ...\n");
-   	printf("...................................................\n");
  	step = 1;
 
 	snap_prepare_search(&cjob, &sjob_in, &sjob_out,
@@ -487,7 +533,6 @@ int main(int argc, char *argv[])
     	{
                 printf("...................................................\n");
        		printf("Start Step2 (Copy source data from DDR to Host) ...\n");
-                printf("...................................................\n");
  	 	step = 2;
         	snap_prepare_search(&cjob, &sjob_in, &sjob_out,
 				    dbuff, dsize,
@@ -502,7 +547,6 @@ int main(int argc, char *argv[])
 
         	printf("...................................................\n");
         	printf("Start Step4 (Do Search by software) ...............\n");
-        	printf("...................................................\n");
  	 	step = 4;
 
         	sjob_out.nb_of_occurrences = run_sw_search(method, (char *)pbuff, psize,
@@ -534,7 +578,6 @@ int main(int argc, char *argv[])
                 default:
                         printf(" >>> Default: Naive method (%d) \n", method);
                 }
-                printf("...................................................\n");
 		step = 3;
 
         	run = 0;
@@ -567,7 +610,6 @@ int main(int argc, char *argv[])
            		printf("....................................................\n");
             		printf("Start Step5 (Copy pattern positions back to Host) ..\n");
             		printf("......no positions yet to transfer .............. ..\n");
-            		printf("....................................................\n");
 			step = 5;
 
             		snap_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
