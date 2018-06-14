@@ -165,14 +165,12 @@ ARCHITECTURE dma OF dma IS
   SIGNAL buf_rdata_end               : std_logic;
   SIGNAL buf_rrdreq                  : std_logic;
   SIGNAL buf_wrdreq_q                : boolean;
+  SIGNAL buf_wram_wready             : std_logic;
   SIGNAL buf_rtag_p_q                : std_logic;
   SIGNAL buf_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL buf_rtag_valid_q            : boolean;
   SIGNAL buf_wwen_q                  : boolean;
   SIGNAL buf_wactive_q               : boolean;
-  SIGNAL buf_walmost_full_q          : std_logic;
-  SIGNAL buf_walmost_full_qq         : std_logic;
-  SIGNAL buf_walmost_full_qqq        : std_logic;
   SIGNAL action_reset_req_q          : std_logic;
   SIGNAL sent_action_reset_req_q     : std_logic;
   SIGNAL action_reset_context_id_q   : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
@@ -838,6 +836,7 @@ BEGIN
           --
           FOR i IN 0 TO 31 LOOP
             read_ctrl_q(i).utt <= UTC_NOT_USED;
+            read_ctrl_q(i).uts <= (OTHERS => '0');
             read_ctrl_q(i).rsp <= ILLEGAL_RSP;
             read_ctrl_q(i).com <= INACTIVE;
             read_ctrl_q(i).buf <= (OTHERS => '0');
@@ -1241,9 +1240,6 @@ BEGIN
         --
         -- defaults
         --
-        buf_walmost_full_q    <= '0';
-        buf_walmost_full_qq   <= buf_walmost_full_q;
-        buf_walmost_full_qqq  <= buf_walmost_full_qq;
         utc_wtag_q            <= utc_wtag_q;
         utc_wtag_next_q       <= utc_wtag_next_q;
         utc_wtag_p_q          <= utc_wtag_p_q;
@@ -1406,7 +1402,7 @@ BEGIN
         buf_full_v  := TRUE;
          
         FOR i IN 0 TO 31 LOOP
-          IF write_ctrl_q(i).buf = "0000" THEN
+          IF write_ctrl_q(i).buf /= write_ctrl_q(i).uts THEN
             buf_full_v := FALSE;
           END IF;
         END LOOP;  -- i
@@ -1416,16 +1412,6 @@ BEGIN
           assert false report "DMA: Write Buffer overrun" severity error;
         END IF;
          
-        --
-        -- DMA ALMOST FULL INDICATION
-        --
-        IF (buf_wtag_q(5) /= utc_wtag_q(5)) THEN
-          IF (('0' & buf_wtag_q(4 DOWNTO 0) + 1) = ('0' & utc_wtag_q(4 DOWNTO 0))) THEN
-            buf_walmost_full_q <= '1';          
-          END IF;
-        END IF;
-
-
         --------------------------------------------------------------------
         -- Reset Logic
         --------------------------------------------------------------------
@@ -1441,12 +1427,10 @@ BEGIN
             write_ctrl_q(i).rsp <= ILLEGAL_RSP;
             write_ctrl_q(i).com <= INACTIVE;
             write_ctrl_q(i).buf <= (OTHERS => '0');
+            write_ctrl_q(i).uts <= (OTHERS => '0');
             write_ctrl_q(i).dma <= EMPTY;
          END LOOP;  -- i
 
-          buf_walmost_full_q    <= '0';
-          buf_walmost_full_qq   <= '0';
-          buf_walmost_full_qqq  <= '0';
           utc_wtag_q            <= (OTHERS => '0');
           utc_wtag_next_q       <= "000001";
           utc_wtag_p_q          <= '1';
@@ -1638,12 +1622,16 @@ BEGIN
         --
         IF (hd_s_q.utag_valid       = '1') AND
            (hd_s_q.utag(9 DOWNTO 5) = "00100") THEN
-          IF dma_fsm_q /= ST_DMA_WRITE_REQ THEN
-            dma_wreq_cnt_q <= dma_wreq_cnt_q - 0;
+          IF NOT ((dma_fsm_q      = ST_DMA_WRITE_REQ) AND 
+                  (buf_wdata_vld  = '1'             ) AND 
+                  (buf_wdata_type = "001"           )) THEN
+            dma_wreq_cnt_q <= dma_wreq_cnt_q - 1;
           END IF;
         ELSE
-          IF dma_fsm_q = ST_DMA_WRITE_REQ THEN
-            dma_wreq_cnt_q <= dma_wreq_cnt_q + 0;
+          IF (dma_fsm_q      = ST_DMA_WRITE_REQ) AND 
+             (buf_wdata_vld  = '1'             ) AND 
+             (buf_wdata_type = "001"           ) THEN
+            dma_wreq_cnt_q <= dma_wreq_cnt_q + 1;
           END IF;
         END IF;
 
@@ -1989,7 +1977,6 @@ BEGIN
       -- DMA WRITE IOs
       write_ctrl_i             => write_ctrl_q,
       sd_d_i                   => sd_d_i,
-      buf_walmost_full_i       => buf_walmost_full_qqq,
       buf_wrdreq_i             => buf_wrdreq_q,
       buf_wtag_o               => buf_wtag_q,
       buf_wwen_o               => buf_wwen_q,
@@ -1997,6 +1984,7 @@ BEGIN
       buf_wdata_vld_o          => buf_wdata_vld,
       buf_wdata_end_o          => buf_wdata_end,
       buf_wdata_type_o         => buf_wdata_type,
+      buf_wram_wready_o        => buf_wram_wready,
       --
       -- DMA READ IOs
       read_ctrl_i              => read_ctrl_q,
@@ -2392,7 +2380,7 @@ BEGIN
     ds_d_o.rd_last         <= rfifo_rdata(512) AND NOT rfifo_empty;
     ds_d_o.rd_data         <= rfifo_rdata(511 DOWNTO 0);
     ds_d_o.rd_id           <= raddr_id_q;       -- Multi Action support: should be part of read_ctrl_q;
-    ds_d_o.wr_data_ready   <= NOT buf_walmost_full_q;
+    ds_d_o.wr_data_ready   <= buf_wram_wready;
 
     ds_c_o.wr_req_ack  <= '1' WHEN wr_req_ack_q = TRUE ELSE '0';
     ds_c_o.rd_req_ack  <= '1' WHEN rd_req_ack_q = TRUE ELSE '0';
