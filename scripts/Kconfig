@@ -121,6 +121,9 @@ choice
         config HDL_STRINGMATCH
             bool "HDL STRING MATCH - regular expression acceleration"
 
+        config HDL_NVDLA
+            bool "HDL NVDLA - NVidia Deep Learning Accelerator"
+
         config HDL_EXAMPLE
             bool "HDL Example"
 
