@@ -41,6 +41,7 @@ switch $fpgacard {
           set fpgapartnum xcvu9p
         }
   S121B { set flashdevice mt28gu01gaax1e-bpi-x16
+        }
   AD8K5 { set flashdevice mt28gu01gaax1e-bpi-x16
 	  set fpgapartnum xcku115
           # CHECK User manual specifies rs_pins 25:24 
