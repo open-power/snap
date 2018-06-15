@@ -42,6 +42,11 @@ set_property CONFIG_VOLTAGE 1.8 [current_design]
 set_property BITSTREAM.CONFIG.PERSIST NO [current_design] 			;# default NO anyhow
 
 # xapp1246/xapp1296/ug908: These settings may not be needed for SNAP
-set_property BITSTREAM.CONFIG.CONFIGFALLBACK ENABLE [current_design]		;# default enable
-set_property BITSTREAM.CONFIG.TIMER_CFG 0XFFFFFFFF [current_design]		;# no watchdog
-
+# Disable FPGA fallback/watchdog for AD8K5
+# Larger bitstreams do not have enough time to configure FPGA on perst
+if { $fpgacard == "AD8K5" } {
+  set_property BITSTREAM.CONFIG.CONFIGFALLBACK DISABLE [current_design]
+} else {
+  set_property BITSTREAM.CONFIG.CONFIGFALLBACK ENABLE [current_design]		;# default enable
+  set_property BITSTREAM.CONFIG.TIMER_CFG 0XFFFFFFFF [current_design]		;# no watchdog
+}
