@@ -120,39 +120,22 @@ set_property used_in_simulation false [get_files $hdl_dir/core/psl_fpga.vhd]
 set_property top psl_fpga [current_fileset]
 
 # Action Files
-if { $use_prflow == "TRUE" } {
-  # Files for PR module
-  add_files -scan_for_includes $hdl_dir/core/psl_accel_types.vhd -of_objects [get_reconfig_modules user_action] >> $log_file
-  add_files -scan_for_includes $hdl_dir/core/action_types.vhd -of_objects [get_reconfig_modules user_action] >> $log_file
-  if { $hls_support == "TRUE" } {
-    add_files -scan_for_includes $hdl_dir/hls/ -of_objects [get_reconfig_modules user_action] >> $log_file
-  }
-  add_files -scan_for_includes $action_dir/ -of_objects [get_reconfig_modules user_action] >> $log_file
-  if { $simulator != "nosim" } {
-    if { $hls_support == "TRUE" } {
-      add_files -fileset sim_1 -norecurse -scan_for_includes $hdl_dir/hls/ >> $log_file
-    }
-    add_files -fileset sim_1 -norecurse -scan_for_includes $action_dir/ >> $log_file
-  }
-} else {
-  if { $hls_support == "TRUE" } {
-    add_files -scan_for_includes $hdl_dir/hls/ >> $log_file
-  }
+if { $hls_support == "TRUE" } {
+  add_files -scan_for_includes $hdl_dir/hls/ >> $log_file
+}
 
-  if { $user_defined_design == "TRUE" } {
-    # Too many user files may degrade the Vivado Performance. 
-    # Using brute-force "add_files" to search the entire design directory and analyze the
-    # hierarchy costs a long time. 
-    # Sourcing "design.tcl" provides a explicit way to import design files.
-    source $USER_DEFINED_TCLPATH/design.tcl >> $log_file
-  } else {
-    #original method
-    add_files -scan_for_includes $action_dir/ >> $log_file
-  }
+if { $user_defined_design == "TRUE" } {
+  # Too many user files may degrade the Vivado Performance. 
+  # Using brute-force "add_files" to search the entire design directory and analyze the
+  # hierarchy costs a long time. 
+  # Sourcing "design.tcl" provides a explicit way to import design files.
+  source $USER_DEFINED_TCLPATH/design.tcl >> $log_file
+} else {
+  #original method
+  add_files -scan_for_includes $action_dir/ >> $log_file
 }
 
 add_files -scan_for_includes $action_dir/ >> $log_file
-
 
 # Sim Files
 if { $simulator != "nosim" } {
