@@ -17,9 +17,9 @@
 #-----------------------------------------------------------
 
 set fpgacard      $::env(FPGACARD)
-
-set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
+# Card specific constraints
 if { $fpgacard == "RCXVUP" } {
+   set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
    # For Engineering samples (Can't use External MAster CLK, so use internal)
    set_property BITSTREAM.CONFIG.EXTMASTERCCLK_EN {DISABLE} [current_design]
    # following default should be ok for regular parts :
@@ -28,25 +28,36 @@ if { $fpgacard == "RCXVUP" } {
    set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 8 [current_design]
    set_property BITSTREAM.CONFIG.SPI_32BIT_ADDR YES [current_design]
    set_property BITSTREAM.CONFIG.SPI_FALL_EDGE YES [current_design]
+   set_property BITSTREAM.CONFIG.UNUSEDPIN Pullnone [current_design]		;# default pulldown, doesn't load at power-on!
+   set_property BITSTREAM.CONFIG.OVERTEMPSHUTDOWN Enable [current_design]		;# default disable
+   set_property CFGBVS GND [ current_design ]
+   set_property CONFIG_VOLTAGE 1.8 [current_design]
+} elseif { $fpgacard == "AD8K5" } {
+   # Use Alpha-Data constraint for AD8K5 (User manual 3.10.1.1)
+   set_property BITSTREAM.GENERAL.COMPRESS {TRUE} [current_design] 
+   set_property BITSTREAM.CONFIG.EXTMASTERCCLK_EN {DIV-1} [current_design]
+   set_property BITSTREAM.CONFIG.BPI_SYNC_MODE {TYPE1} [current_design]
+   set_property BITSTREAM.CONFIG.UNUSEDPIN {Pullnone} [current_design]
+   set_property BITSTREAM.CONFIG.OVERTEMPSHUTDOWN Enable [current_design]
+   set_property CONFIG_MODE {BPI16} [current_design]
+   set_property CFGBVS GND [current_design]
+   set_property CONFIG_VOLTAGE 1.8 [current_design]
 } else {
+   set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
    set_property BITSTREAM.CONFIG.EXTMASTERCCLK_EN {DIV-4} [current_design]
    set_property CONFIG_MODE BPI16 [current_design]
    set_property BITSTREAM.CONFIG.BPI_SYNC_MODE DISABLE [current_design]		;# default disable
    set_property BITSTREAM.CONFIG.BPI_1ST_READ_CYCLE 4 [current_design]
    set_property BITSTREAM.CONFIG.BPI_PAGE_SIZE 8 [current_design]
+   set_property BITSTREAM.CONFIG.UNUSEDPIN Pullnone [current_design]		;# default pulldown, doesn't load at power-on!
+   set_property BITSTREAM.CONFIG.OVERTEMPSHUTDOWN Enable [current_design]		;# default disable
+   set_property CFGBVS GND [ current_design ]
+   set_property CONFIG_VOLTAGE 1.8 [current_design]
 }
-set_property BITSTREAM.CONFIG.UNUSEDPIN Pullnone [current_design]		;# default pulldown, doesn't load at power-on!
-set_property BITSTREAM.CONFIG.OVERTEMPSHUTDOWN Enable [current_design]		;# default disable
-set_property CFGBVS GND [ current_design ]
-set_property CONFIG_VOLTAGE 1.8 [current_design]
+
+# Common constraints 
 set_property BITSTREAM.CONFIG.PERSIST NO [current_design] 			;# default NO anyhow
 
 # xapp1246/xapp1296/ug908: These settings may not be needed for SNAP
-# Disable FPGA fallback/watchdog for AD8K5
-# Larger bitstreams do not have enough time to configure FPGA on perst
-if { $fpgacard == "AD8K5" } {
-  set_property BITSTREAM.CONFIG.CONFIGFALLBACK DISABLE [current_design]
-} else {
-  set_property BITSTREAM.CONFIG.CONFIGFALLBACK ENABLE [current_design]		;# default enable
-  set_property BITSTREAM.CONFIG.TIMER_CFG 0XFFFFFFFF [current_design]		;# no watchdog
-}
+set_property BITSTREAM.CONFIG.CONFIGFALLBACK ENABLE [current_design]		;# default enable
+set_property BITSTREAM.CONFIG.TIMER_CFG 0XFFFFFFFF [current_design]		;# no watchdog
