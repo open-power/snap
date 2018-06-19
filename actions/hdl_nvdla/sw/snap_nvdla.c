@@ -518,6 +518,8 @@ int main(int argc, char *argv[])
 	unsigned long dma_min_size;
 	char card_name[16];   /* Space for Card name */
 
+        nvdla_capi_test(argc, argv);
+
 	while (1) {
                 int option_index = 0;
 		static struct option long_options[] = {
@@ -698,7 +700,6 @@ int main(int argc, char *argv[])
 		VERBOSE0("%d Invalid Action\n", action);
 		break;
 	}
-
 __exit1:
 	// Unmap AFU MMIO registers, if previously mapped
 	VERBOSE2("Free Card Handle: %p\n", dn);

@@ -38,8 +38,62 @@ $(error Please make sure that $$SNAP_ROOT is set up correctly.)
 endif
 endif
 
-projs += snap_nvdla snap_nvdla_ddr snap_nvdla_nvme snap_nvdla_set
-projs += snap_nvdla_qnvme
+include $(SNAP_ROOT)/snap_env.sh
+
+ifdef NVDLA_ROOT
+
+CXX     = $(CROSS)g++
+CPPFLAGS += -I./nvdla-sw/umd/include \
+	    -I./nvdla-sw/umd/tests/runtime \
+	    -I./nvdla-sw/umd/core/include \
+	    -DNVDLA_UTILS_ERROR_TAG="\"DLA_TEST\""
+
+all: config all_build 
+
+config:
+	./action_config.sh
+
+SUBDIRS = nvdla-sw/umd/core/runtime \
+	  nvdla-sw/umd/tests/runtime
+NVDLA_UMD_OUT = nvdla-sw/umd/out/runtime/
+
+projs += snap_nvdla
+
+nvdla_capi_test.o Runtime.o Emulator.o Check.o:
+	for dir in $(SUBDIRS); do \
+		$(MAKE) -C $$dir; \
+	done
+	cp -f $(NVDLA_UMD_OUT)/nvdla_runtime/*.o $(ACTION_ROOT)/sw/
+	cp -f $(NVDLA_UMD_OUT)/libnvdla_runtime/*.o $(ACTION_ROOT)/sw/
+	cp -f $(NVDLA_UMD_OUT)/libnvdla_runtime/$(ACTION_ROOT)/sw/nvdla-sw/umd/core/common/*.o $(ACTION_ROOT)/sw/
+	cp -f $(NVDLA_UMD_OUT)/libnvdla_runtime/$(ACTION_ROOT)/sw/nvdla-sw/umd/port/linux/*.o $(ACTION_ROOT)/sw/
+
+snap_nvdla_objs += nvdla_capi_test.o \
+		   Server.o \
+		   DlaImageUtils.o \
+		   DlaImage.o \
+		   TestUtils.o \
+		   RuntimeTest.o \
+		   Runtime.o \
+		   Emulator.o \
+		   Check.o \
+		   Loadable.o \
+		   ErrorLogging.o \
+		   EMUInterfaceA.o \
+		   EMUInterface.o \
+		   nvdla.o \
+		   nvdla_os.o
+
+snap_nvdla: $(snap_nvdla_objs)
+
+projs += snap_nvdla
+
+snap_nvdla: snap_nvdla.o $(snap_nvdla_objs) 
+	$(CXX) $(CPPFLAGS) $(LDFLAGS) $($(@)_LDFLAGS) $@.o $($(@)_objs) $($(@)_libs) $(LDLIBS) -lrt -ljpeg -o $@
+
+else
+$(info NVDLA_ROOT is not set, no sw will be built for hdl_nvdla.)
+endif
 
 # If you have the host code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/software.mk
