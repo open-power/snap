@@ -27,6 +27,10 @@ set bram_used     $::env(BRAM_USED)
 set factory_image [string toupper $::env(FACTORY_IMAGE)]
 set fpgacard      $::env(FPGACARD)
 
+set flash_interface $::env(FLASH_INTERFACE)
+set flash_size      $::env(FLASH_SIZE)
+
+
 #Define widths of each column
 set widthCol1 24
 set widthCol2 24
@@ -58,7 +62,7 @@ set logfile  $logs_dir/${step}.log
 set command  "write_bitstream -force -file $img_dir/$IMAGE_NAME"
 
 # source the common bitstream settings before creating a bit and bin file
-source $root_dir/setup/snap_bitstream_pre.tcl
+source $root_dir/setup/$fpgacard/snap_bitstream_pre.tcl
 
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 if { [catch "$command > $logfile" errMsg] } {
@@ -66,11 +70,7 @@ if { [catch "$command > $logfile" errMsg] } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
   exit 42
 } else {
-     if { $fpgacard == "RCXVUP" } {
-        write_cfgmem -force -format bin -size 128 -interface  SPIx8 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
-     } else {
-        write_cfgmem -force -format bin -size 128 -interface  BPIx16 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
-     }
+      write_cfgmem -force -format bin -size $flash_size -interface  $flash_interface -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
 }
 
 # Also write the factory bitstream if it was selected
@@ -93,10 +93,6 @@ if { $factory_image == "TRUE" } {
     puts [format "%-*s %-*s %-*s %-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "       please check $logfile" $widthCol4 "" ]
     exit 42
   } else {
-     if { $fpgacard == "RCXVUP" } {
-        write_cfgmem -force -format bin -size 128 -interface  SPIx8 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
-     } else {
-        write_cfgmem -force -format bin -size 128 -interface  BPIx16 -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
-     }
+      write_cfgmem -force -format bin -size $flash_size -interface $flash_interface -loadbit "up 0x0 $img_dir/$IMAGE_NAME.bit" $img_dir/$IMAGE_NAME >> $logfile
   }
 }
