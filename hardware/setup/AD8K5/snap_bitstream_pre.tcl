@@ -22,7 +22,6 @@ set_property CONFIG_MODE BPI16 [current_design]
 set_property BITSTREAM.CONFIG.BPI_SYNC_MODE DISABLE [current_design]		;# default disable
 set_property BITSTREAM.CONFIG.BPI_1ST_READ_CYCLE 4 [current_design]
 set_property BITSTREAM.CONFIG.BPI_PAGE_SIZE 8 [current_design]
-
 set_property BITSTREAM.CONFIG.UNUSEDPIN Pullnone [current_design]		;# default pulldown, doesn't load at power-on!
 set_property BITSTREAM.CONFIG.OVERTEMPSHUTDOWN Enable [current_design]		;# default disable
 set_property CFGBVS GND [ current_design ]
