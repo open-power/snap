@@ -24,7 +24,7 @@
 #include <snap_hls_if.h>
 
 /* Header file for SNAP Framework nvdla code */
-#define ACTION_TYPE_NVDLA     0x10140000	/* Action Type */
+#define ACTION_TYPE_NVDLA     0x00000002	/* Action Type */
 
 #define ACTION_CONFIG           0x30
 #define ACTION_CONFIG_COUNT     1       /* Count Mode */
@@ -44,5 +44,7 @@
 #define ACTION_DEST_LOW         0x3c	/* LBA for 0A, 1A, 0B and 1B */
 #define ACTION_DEST_HIGH        0x40
 #define ACTION_CNT              0x44    /* Count Register or # of 512 Byte Blocks for NVME */
+
+#include "nvdla_capi_test.h"
 
 #endif	/* __SNAP_FW_EXA__ */

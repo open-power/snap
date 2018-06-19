@@ -41,6 +41,9 @@ endif
 CPPFLAGS+= -g
 CXX=g++
 
+include $(SNAP_ROOT)/snap_env.sh
+
+ifdef STRING_MATCH_VERILOG
 all: config all_build
 
 config:
@@ -66,6 +69,10 @@ projs += string_match
 string_match: fregex.o regex_config.o string_match.o regex_ref.o re_match.o
 	$(CXX) $(LDFLAGS) $($(@)_LDFLAGS) $@.o $($(@)_objs) $($(@)_libs) $(LDLIBS) -o $@
 
+
+else
+$(info STRING_MATCH_VERILOG is not set, no sw will be built for HDL_STRINGMATCH.)
+endif
 
 # If you have the host code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/software.mk
