@@ -59,5 +59,8 @@ if { $fpgacard == "RCXVUP" } {
 set_property BITSTREAM.CONFIG.PERSIST NO [current_design] 			;# default NO anyhow
 
 # xapp1246/xapp1296/ug908: These settings may not be needed for SNAP
-set_property BITSTREAM.CONFIG.CONFIGFALLBACK ENABLE [current_design]		;# default enable
-set_property BITSTREAM.CONFIG.TIMER_CFG 0XFFFFFFFF [current_design]		;# no watchdog
+# Do not use with AD8K5. Larger bitstreams fail perst
+if { $fpgacard != "AD8K5" } {
+   set_property BITSTREAM.CONFIG.CONFIGFALLBACK ENABLE [current_design]		;# default enable
+   set_property BITSTREAM.CONFIG.TIMER_CFG 0XFFFFFFFF [current_design]		;# no watchdog
+}
