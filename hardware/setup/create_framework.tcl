@@ -31,6 +31,7 @@ set bram_used   $::env(BRAM_USED)
 set sdram_used  $::env(SDRAM_USED)
 set ila_debug   [string toupper $::env(ILA_DEBUG)]
 set simulator   $::env(SIMULATOR)
+set denali_used $::env(DENALI_USED)
 set log_dir     $::env(LOGS_DIR)
 set log_file    $log_dir/create_framework.log
 set vivadoVer     [version -short]
@@ -134,7 +135,7 @@ if { $simulator != "nosim" } {
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr3_dimm.sv]
   }
   # DDR4 Sim Files
-  if { (($fpga_card == "N250S") || ($fpga_card == "N250SP")) && ($sdram_used == "TRUE") } {
+  if { (($fpga_card == "N250S") || ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($sdram_used == "TRUE") } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm.sv  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm.sv]
@@ -151,14 +152,12 @@ if { $simulator != "nosim" } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_ad8k5.sv  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_ad8k5.sv]
   }
-  update_compile_order -fileset sources_1 >> $log_file
-  update_compile_order -fileset sim_1 >> $log_file
 }
 
 # Add IPs
 # SNAP CORE IPs
 puts "                        importing IPs"
-if { $fpga_card == "N250SP" } {
+if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) } {
   set DMA_IB_RAM 1040x32
   set DMA_OB_RAM 1152x32
 } else {
@@ -191,7 +190,7 @@ if { $fpga_card == "ADKU3" } {
     add_files -norecurse $ip_dir/ddr3sdram/ddr3sdram.xci >> $log_file
     export_ip_user_files -of_objects  [get_files "$ip_dir/ddr3sdram/ddr3sdram.xci"] -force >> $log_file
   }
-} elseif { ($fpga_card == "S121B") || ($fpga_card == "AD8K5") } {
+} elseif { ($fpga_card == "S121B") || ($fpga_card == "AD8K5") || ($fpga_card == "RCXVUP") } {
   if { $bram_used == "TRUE" } {
     add_files -norecurse $ip_dir/axi_clock_converter/axi_clock_converter.xci >> $log_file
     export_ip_user_files -of_objects  [get_files "$ip_dir/axi_clock_converter/axi_clock_converter.xci"] -force >> $log_file
@@ -235,32 +234,34 @@ foreach usr_ip [glob -nocomplain -dir $usr_ip_dir *] {
   export_ip_user_files -of_objects  [get_files "$usr_ip_xci"] -force >> $log_file
 }
 
-update_compile_order -fileset sources_1 >> $log_file
-
 # Add NVME
 if { $nvme_used == TRUE } {
   puts "                        adding NVMe block design"
   set_property  ip_repo_paths $hdl_dir/nvme/ [current_project]
   update_ip_catalog  >> $log_file
   add_files -norecurse                          $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd  >> $log_file
-  export_ip_user_files -of_objects  [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
-  update_compile_order -fileset sources_1
+  export_ip_user_files -of_objects  [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] -lib_map_path [list {{ies=$root_dir/viv_project/framework.cache/compile_simlib/ies}}] -force -quiet
 
-  if { $simulator != "nosim" } {
-    puts "                        adding Denali simulation files"
-    add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme/
+  if { $denali_used == TRUE } {
+    puts "                        adding NVMe Denali simulation files"
+    add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme
     add_files -fileset sim_1 -scan_for_includes $ip_dir/nvme/axi_pcie3_0_ex/imports/xil_sig2pipe.v
 
     set denali $::env(DENALI)
     add_files -fileset sim_1 -norecurse -scan_for_includes $denali/ddvapi/verilog/denaliPcie.v
     set_property include_dirs                              $denali/ddvapi/verilog [get_filesets sim_1]
+  } else {
+    puts "                        adding NVMe Verilog simulation files"
+    set_property used_in_simulation false [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd]
+    add_files -fileset sim_1 -norecurse $sim_dir/nvme_lite
+    add_files -fileset sim_1 -norecurse $hdl_dir/nvme/nvme_defines.sv
   }
 } else {
   remove_files $action_dir/action_axi_nvme.vhd -quiet
 }
 
 # Add CAPI board support
-if { ($fpga_card == "N250SP") && ($capi_bsp_dir != "not defined") } {
+if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($capi_bsp_dir != "not defined") } {
   puts "                        importing CAPI BSP"
   set_property ip_repo_paths "[file normalize $capi_bsp_dir]" [current_project] >> $log_file
   update_ip_catalog >> $log_file
@@ -278,8 +279,8 @@ if { ($fpga_card == "N250SP") && ($capi_bsp_dir != "not defined") } {
 puts "                        importing XDCs"
 
 # Board Support XDC
-if { ($fpga_card == "N250SP") && ($capi_bsp_dir != "not defined") } {
-  puts "                      importing N250SP Board support XDCs"
+if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($capi_bsp_dir != "not defined") } {
+  puts "                        importing specific Board support XDCs"
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
 #  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
 }
@@ -304,7 +305,7 @@ if { $fpga_card == "ADKU3" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/AD8K5/snap_ddr4_b0pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/AD8K5/snap_ddr4_b0pins.xdc]
   }
-} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
+} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")} {
   if { $sdram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]
@@ -318,6 +319,11 @@ if { $fpga_card == "ADKU3" } {
 if { $ila_debug == "TRUE" } {
   add_files -fileset constrs_1 -norecurse  $::env(ILA_SETUP_FILE)
 }
+
+#
+# update the compile order
+update_compile_order >> $log_file
+
 
 puts "\[CREATE_FRAMEWORK....\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 close_project >> $log_file

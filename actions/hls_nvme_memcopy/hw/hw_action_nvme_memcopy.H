@@ -33,12 +33,12 @@
 //The NVMe subsystem can handle up to 218 read or write requests per drive.
 
 // maximum transfer size to and from SDRAM (DDR on FPGA board is 8GB)
-#define CARD_DRAM_SIZE        (1 * 1024 *1024 * 1024) // allowing 2 times 1GB split in the 2 buffers for paths to and from SSD
+//#define CARD_DRAM_SIZE        (1 * 1024 *1024 * 1024) // allowing 2 times 1GB split in the 2 buffers for paths to and from SSD
 #define MAX_NB_OF_WORDS_READ    (MAX_NB_OF_BYTES_READ/BPERDW)
 
 // provides the offset of the buffers
-#define DRAM_ADDR_TO_SSD   0x00000000
-#define DRAM_ADDR_FROM_SSD 0x80000000
+//#define DRAM_ADDR_TO_SSD   0x00000000
+//#define DRAM_ADDR_FROM_SSD 0x80000000
 //---------------------------------------------------------------------
 typedef struct {
     CONTROL Control;    /*  16 bytes */

@@ -107,6 +107,18 @@ while [ -z "$SETUP_DONE" ]; do
     if [ -z "$CAPI_BSP" ]; then
       SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable CAPI_BSP must point to the directory containing the CAPI board support IP."
     fi
+  # Note: Card RCXVUP is currently in preparation phase
+  elif [ "$FPGACARD" == "RCXVUP" ]; then
+    SETUP_INFO="$SETUP_INFO\n### INFO ### Support for the selected CAPI2.0 FPGA card RCXVUP is currently in preparation phase."
+    echo "=====Checking path to PSL for RCXVUP============"
+    echo "CAPI_BSP                is set to: \"$CAPI_BSP\""
+    RESP=`grep CAPI_BSP $snap_env_sh`
+    if [ -z "$RESP" ]; then
+      echo "#export CAPI_BSP=" >> $snap_env_sh
+    fi
+    if [ -z "$CAPI_BSP" ]; then
+      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable CAPI_BSP must point to the directory containing the CAPI board support IP."
+    fi
   ####### checking path to PSL design checkpoint
   # Note: CLOUD_USER_FLOW is defined via snap_config
   elif [ "$CLOUD_USER_FLOW" == "TRUE" ]; then
@@ -141,6 +153,8 @@ while [ -z "$SETUP_DONE" ]; do
   if [ "$SIMULATOR" != "nosim" ]; then
     echo "=====Simulation setup: Setting up PSLSE version=========="
     if [ "$FPGACARD" == "N250SP" ]; then
+      PSLVER="9"
+    elif [ "$FPGACARD" == "RCXVUP" ]; then
       PSLVER="9"
     else
       PSLVER="8"
@@ -187,6 +201,8 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hls_intersect'
   elif [ -n "$HLS_NVME_MEMCOPY" ]; then
     AR='${SNAP_ROOT}/actions/hls_nvme_memcopy'
+  elif [ -n "$HLS_LATENCY_EVAL" ]; then
+    AR='${SNAP_ROOT}/actions/hls_latency_eval'
   elif [ -n "$HLS_HELLOWORLD" ]; then
     AR='${SNAP_ROOT}/actions/hls_helloworld'
   fi
@@ -291,11 +307,11 @@ while [ -z "$SETUP_DONE" ]; do
     fi
   fi
 
-  # Note: NVME_USED is defined via snap_config
-  if [[ "$NVME_USED" == "TRUE" ]]; then
+  # Note: NVME_USED and DENALI_USED are defined via snap_config
+  if [ "$NVME_USED" == "TRUE" ] && [ "$DENALI_USED" == "TRUE" ]; then
     echo "=====Denali setup======================================"
     if [ -z "$DENALI" ]; then
-      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of NVME_USED=$NVME_USED but DENALI not set!"
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of NVME_USED=$NVME_USED and setting of DENALI_USED=$DENALI_USED but DENALI not set!"
     else
       echo "DENALI                  is set to: \"$DENALI\""
     fi

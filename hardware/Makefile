@@ -80,6 +80,14 @@ ifeq "$(FPGACARD)" "N250SP"
 	       CAPI_VER=capi20
 endif
 
+ifeq "$(FPGACARD)" "RCXVUP"
+	export DDR3_USED=FALSE
+	export DDR4_USED=$(SDRAM_USED)
+	export DDRI_USED=$(SDRAM_USED)
+	       FPGA_CARD=rcxvup
+	       CAPI_VER=capi20
+endif
+
 export BRAM_USED ?= FALSE
 ifeq "$(BRAM_USED)" "TRUE"
 	export DDR3_USED=FALSE
@@ -164,7 +172,7 @@ check_snap_settings:
 	@echo "                        =============================="
 	@echo "                        hardware/Makefile called with:"
 	@echo "                        ACTION_ROOT     = $(ACTION_ROOT)"
-	@if [ "$(FPGACARD)" == "N250SP" ]; then \
+	@if [ "$(FPGACARD)" == "N250SP" ] || [ "$(FPGACARD)" == "RCXVUP" ]; then \
 		echo "                        CAPI_BSP        = $(CAPI_BSP)"; \
 	else \
 		echo "                        PSL_DCP         = $(PSL_DCP)"; \
@@ -189,13 +197,13 @@ check_snap_settings:
 	@echo "                        =============================="
 
 check_nvme:
-	@if [ "$(SIMULATOR)" != "nosim" ] && [ "$(NVME_USED)" == "TRUE" ]; then \
+	@if [ "$(SIMULATOR)" != "nosim" ] && [ "$(NVME_USED)" == "TRUE" ] && [ "$(DENALI_USED)" == "TRUE" ]; then \
 		if [ "$(SIMULATOR)" != "irun" ] && [ "$(SIMULATOR)" != "xcelium" ]; then  \
-			echo "                        NVMe simulation is not supported for SIMULATOR $(SIMULATOR)"; \
+			echo "                        NVMe simulation with Denali model is not supported for SIMULATOR $(SIMULATOR)"; \
 			exit -1; \
 		fi; \
 		if [ !  -d "$(DENALI)" ]; then \
-			echo "                        Missing or invalid environment variable for NVMe simulation."; \
+			echo "                        Missing or invalid environment variable for NVMe simulation with Denali."; \
 			echo "                        Please check the setting of:"; \
 			echo "                        DENALI:   $(DENALI)"; \
 			exit -1; \
@@ -243,7 +251,7 @@ $(SNAP_PP_FILES_VHD):
 	@$(RM) $@_tmp
 
 $(SNAP_SIM_NVME)/endp_4_pipe32.v:
-	@if [ "$(SIMULATOR)" != "nosim" ] && [ "$(NVME_USED)" == "TRUE" ]; then \
+	@if [ "$(DENALI_USED)" == "TRUE" ]; then \
 	  echo -e "                        generating $(notdir $@)"; \
 	  $(DENALI)/bin/pureview -batch -generate all . -genoutput  $(SNAP_SIM_NVME)/endp_4_pipe32.v $(SNAP_SIM_NVME)/endp_4_pipe32.soma > $(LOGS_DIR)/pureview.log 2>&1; \
 	  if [ $$? -ne 0 ]; then \
@@ -327,7 +335,7 @@ config: hw_project
 # checking card type for PSL design checkpoint
 check_psl:
 	if [ "$(IGNORE_CHECK_PSL)" != "TRUE" ] ; then \
-		if [ "$(FPGACARD)" == "N250SP" ]; then \
+		if [ "$(FPGACARD)" == "N250SP" ] || [ "$(FPGACARD)" == "RCXVUP" ]; then \
 			if [ -z "$(CAPI_BSP)" ]; then \
 				echo "### ERROR ###  Environment variable CAPI_BSP is undefined." \
 				echo "               It has to point to the directory containing the CAPI board support IP container."; \
@@ -363,7 +371,7 @@ endif
 allow_%:
 	@if [ "$(USE_PRFLOW)" != "TRUE" ]; then \
 		echo; echo "Error: Makefile target $* is only allowed for PR flow!"; exit -1; \
-	elif [ "$(CLOUD_USER_FLOW)" = "TRUE" ] && [ "$*" = "cloud_base" ]; then \
+	elif [ "$(CLOUD_USER_FLOW)" == "TRUE" ] && [ "$*" == "cloud_base" ]; then \
 		echo; echo "Error: Makefile target $* is not allowed for cloud user flow!"; exit -1; \
 	fi
 

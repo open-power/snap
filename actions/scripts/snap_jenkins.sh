@@ -215,6 +215,7 @@ function usage() {
 	echo "        <N250S>  : Select Nallatech 250S Card"
 	echo "        <N250SP> : Select Nallatech 250SP Card"
 	echo "        <S121B>  : Select Semptian NSA121B Card"
+	echo "        <RCXVUP> : Select ReflexCES XpressVUP Card"
 	echo "        <ALL>    : Select ALL Cards"
 	echo "    [-F <Image>  : Set Image file for Accelerator -A"
 	echo "                   -A ALL is not valid if -F is used"
@@ -223,11 +224,11 @@ function usage() {
 	echo "    [-h] Print this help"
 	echo "    Option -D must be set"
 	echo "    following combinations can happen"
-	echo "    1.) Option -A [N250S, N250SP, ADKU3, AD8K5 or S121B] and -F is set"
+	echo "    1.) Option -A [N250S, N250SP, ADKU3, AD8K5, S121B or RCXVUP] and -F is set"
 	echo "        for Card in all Accelerators (-A)"
 	echo "           Image will be flashed on Card"
 	echo "           Software Test will run on Card"
-	echo "    2.) Option -A [N250S, N250SP, ADKU3, AD8K5 or S121B]"
+	echo "    2.) Option -A [N250S, N250SP, ADKU3, AD8K5, S121B or RCXVUP]"
 	echo "        for Card in all given Accelerators (-A)"
 	echo "           Software Test will run on Card"
 	echo "    3.) Option -A ALL"
@@ -261,9 +262,10 @@ while getopts "D:A:F:C:h" opt; do
 		   [[ $accel != "ADKU3"  ]] &&
 		   [[ $accel != "AD8K5"  ]] &&
 		   [[ $accel != "S121B"  ]] &&
+		   [[ $accel != "RCXVUP" ]] &&
 		   [[ $accel != "ALL"    ]]; then
 			echo "Error:  Option -A $OPTARG is not valid !" >&2
-			echo "Expect: [N250S N250SP ADKU3 AD8K5 S121B or ALL]" >&2
+			echo "Expect: [N250S N250SP ADKU3 AD8K5 S121B RCXVUP or ALL]" >&2
 			exit 1
 		fi
 		;;

@@ -42,7 +42,7 @@ set_property target_language VHDL [current_project]
 set_property target_simulator IES [current_project]
 
 #create DMA Input RAM
-if { $fpga_card == "N250SP" } {
+if { ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP") } {
   set RAM_WIDTH 1040
   set RAM_DEPTH 32
   set MEMORY_TYPE True_Dual_Port_RAM
@@ -76,7 +76,7 @@ export_ip_user_files -of_objects             [get_files $ip_dir/ram_${RAM_WIDTH}
 export_simulation -of_objects [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create DMA Output RAM
-if { $fpga_card == "N250SP" } {
+if { ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP") } {
   set RAM_WIDTH 1152
   set RAM_DEPTH 32
   set MEMORY_TYPE True_Dual_Port_RAM
@@ -207,6 +207,7 @@ set create_ddr3         FALSE
 set create_ddr4         FALSE
 set create_ddr4_s121b   FALSE
 set create_ddr4_ad8k5   FALSE
+set create_ddr4_rcxvup  FALSE
 
 if { $fpga_card == "ADKU3" } {
   if { $bram_used == "TRUE" } {
@@ -231,6 +232,14 @@ if { $fpga_card == "ADKU3" } {
   } elseif { $sdram_used == "TRUE" } {
     set create_clock_conv  TRUE
     set create_ddr4_ad8k5    TRUE
+  }
+} elseif { $fpga_card == "RCXVUP" } {
+  if { $bram_used == "TRUE" } {
+    set create_clock_conv   TRUE
+    set create_bram        TRUE
+  } elseif { $sdram_used == "TRUE" } {
+    set create_clock_conv   TRUE
+    set create_ddr4_rcxvup  TRUE
   }
 } elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
   if { $bram_used == "TRUE" } {
@@ -372,6 +381,36 @@ if { $create_ddr4 == "TRUE" } {
                       CONFIG.C0.DDR4_AxiSelection {true}                                      \
                       CONFIG.C0.DDR4_CustomParts $root_dir/setup/N250S/MT40A512M16HA-083E.csv \
                       CONFIG.C0.DDR4_isCustom {true}                                          \
+                      CONFIG.Simulation_Mode {Unisim}                                         \
+                      CONFIG.C0.DDR4_DataMask {NO_DM_NO_DBI}                                  \
+                      CONFIG.C0.DDR4_Ecc {true}                                               \
+                      CONFIG.C0.DDR4_AxiDataWidth {512}                                       \
+                      CONFIG.C0.DDR4_AxiAddressWidth {32}                                     \
+                      CONFIG.C0.DDR4_AxiIDWidth {4}                                           \
+                      CONFIG.C0.BANK_GROUP_WIDTH {1}                                          \
+                     ] [get_ips ddr4sdram] >> $log_file
+  set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
+  generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
+  generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -no_script -force  >> $log_file
+  export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+
+  #DDR4 create ddr4sdramm example design
+  puts "                        generating ddr4sdram example design"
+  open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
+}
+#DDR4 create ddr4sdramm with ECC (RCXVUP)
+if { $create_ddr4_rcxvup == "TRUE" } {
+  puts "                        generating IP ddr4sdram"
+  create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
+  set_property -dict [list                                                                    \
+                      CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-075E}                          \
+                      CONFIG.C0.DDR4_TimePeriod {750}                                         \
+                      CONFIG.C0.DDR4_InputClockPeriod {3000}                                  \
+                      CONFIG.C0.DDR4_CasLatency {18}                                          \
+                      CONFIG.C0.DDR4_CasWriteLatency {14}                                     \
+                      CONFIG.C0.DDR4_DataWidth {72}                                           \
+                      CONFIG.C0.DDR4_AxiSelection {true}                                      \
                       CONFIG.Simulation_Mode {Unisim}                                         \
                       CONFIG.C0.DDR4_DataMask {NO_DM_NO_DBI}                                  \
                       CONFIG.C0.DDR4_Ecc {true}                                               \

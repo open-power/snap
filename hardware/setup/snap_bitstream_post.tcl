@@ -20,5 +20,4 @@ set root_dir        $::env(SNAP_ROOT)/hardware
 set flash_interface $::env(FLASH_INTERFACE)
 set flash_size      $::env(FLASH_SIZE)
 
-
 write_cfgmem -force -format bin -size $flash_size -interface $flash_interface -loadbit "up 0x0 $root_dir/viv_project/framework.runs/impl_1/psl_fpga.bit" $root_dir/viv_project/framework.runs/impl_1/psl_fpga
