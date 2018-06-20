@@ -438,21 +438,21 @@ if { $create_ddr4_rcxvup == "TRUE" } {
   puts "                        generating ddr4sdram example design"
   open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
 }
-#DDR4 create ddr4sdramm with ECC (FX609)
+#DDR4 create ddr4sdramm without ECC (FX609)
 if { $create_ddr4_fx609 == "TRUE" } {
   puts "                        generating IP ddr4sdram"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                    \
                       CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-075E}                          \
-                      CONFIG.C0.DDR4_TimePeriod {750}                                         \
-                      CONFIG.C0.DDR4_InputClockPeriod {3000}                                  \
-                      CONFIG.C0.DDR4_CasLatency {18}                                          \
-                      CONFIG.C0.DDR4_CasWriteLatency {14}                                     \
-                      CONFIG.C0.DDR4_DataWidth {72}                                           \
+                      CONFIG.C0.DDR4_TimePeriod {833}                                         \
+                      CONFIG.C0.DDR4_InputClockPeriod {4998}                                  \
+                      CONFIG.C0.DDR4_CasLatency {20}                                          \
+                      CONFIG.C0.DDR4_CasWriteLatency {16}                                     \
+                      CONFIG.C0.DDR4_DataWidth {64}                                           \
                       CONFIG.C0.DDR4_AxiSelection {true}                                      \
                       CONFIG.Simulation_Mode {Unisim}                                         \
-                      CONFIG.C0.DDR4_DataMask {NO_DM_NO_DBI}                                  \
-                      CONFIG.C0.DDR4_Ecc {true}                                               \
+                      CONFIG.C0.DDR4_DataMask {DM_DBI_RD}                                     \
+                      CONFIG.C0.DDR4_Ecc {false}                                              \
                       CONFIG.C0.DDR4_AxiDataWidth {512}                                       \
                       CONFIG.C0.DDR4_AxiAddressWidth {32}                                     \
                       CONFIG.C0.DDR4_AxiIDWidth {4}                                           \
