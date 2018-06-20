@@ -52,7 +52,7 @@ As of now, the following FPGA cards can be used with SNAP:
 Development is usually done on a Linux (x86) computer. The required tools and packages are listed below. Web access to github is recommended to follow the build instructions. A real FPGA card is not required for the plain hardware development.
 
 ### (a) Xilinx Vivado
-SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulation model and image build, SNAP requires the Xilinx Vivado 2017.4 tool suite.
+SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulation model and image build, the Xilinx Vivado 2018.1 tool suite is recommended.
 
 https://www.xilinx.com/products/design-tools/hardware-zone.html
 
