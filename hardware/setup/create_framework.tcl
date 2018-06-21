@@ -18,29 +18,25 @@
 ############################################################################
 ############################################################################
 
-set root_dir    $::env(SNAP_HARDWARE_ROOT)
-set ip_dir      $root_dir/ip
-set usr_ip_dir  $ip_dir/managed_ip_project/managed_ip_project.srcs/sources_1/ip
-set hdl_dir     $root_dir/hdl
-set sim_dir     $root_dir/sim
-set fpga_part   $::env(FPGACHIP)
-set fpga_card   $::env(FPGACARD)
-set action_dir  $::env(ACTION_ROOT)/hw
-set nvme_used   $::env(NVME_USED)
-set bram_used   $::env(BRAM_USED)
-set sdram_used  $::env(SDRAM_USED)
-set ila_debug   [string toupper $::env(ILA_DEBUG)]
-set simulator   $::env(SIMULATOR)
-set denali_used $::env(DENALI_USED)
-set log_dir     $::env(LOGS_DIR)
-set log_file    $log_dir/create_framework.log
-set vivadoVer     [version -short]
-
-if { [info exists ::env(CAPI_BSP)] == 1 } {
-  set capi_bsp_dir $::env(CAPI_BSP)
-} else {
-  set capi_bsp_dir "not defined"
-}
+set root_dir     $::env(SNAP_HARDWARE_ROOT)
+set ip_dir       $root_dir/ip
+set usr_ip_dir   $ip_dir/managed_ip_project/managed_ip_project.srcs/sources_1/ip
+set hdl_dir      $root_dir/hdl
+set sim_dir      $root_dir/sim
+set fpga_part    $::env(FPGACHIP)
+set fpga_card    $::env(FPGACARD)
+set capi_bsp_dir $root_dir/capi2-bsp/$fpga_card/build/ip
+set capi_ver     $::env(CAPI_VER)
+set action_dir   $::env(ACTION_ROOT)/hw
+set nvme_used    $::env(NVME_USED)
+set bram_used    $::env(BRAM_USED)
+set sdram_used   $::env(SDRAM_USED)
+set ila_debug    [string toupper $::env(ILA_DEBUG)]
+set simulator    $::env(SIMULATOR)
+set denali_used  $::env(DENALI_USED)
+set log_dir      $::env(LOGS_DIR)
+set log_file     $log_dir/create_framework.log
+set vivadoVer    [version -short]
 
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support [string toupper $::env(HLS_SUPPORT)]
@@ -261,7 +257,7 @@ if { $nvme_used == TRUE } {
 }
 
 # Add CAPI board support
-if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($capi_bsp_dir != "not defined") } {
+if { ($capi_ver == "capi20") && [file exists $capi_bsp_dir/capi_bsp_wrap.xcix] } {
   puts "                        importing CAPI BSP"
   set_property ip_repo_paths "[file normalize $capi_bsp_dir]" [current_project] >> $log_file
   update_ip_catalog >> $log_file
@@ -279,7 +275,7 @@ if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($capi_bsp_dir !=
 puts "                        importing XDCs"
 
 # Board Support XDC
-if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($capi_bsp_dir != "not defined") } {
+if { $capi_ver == "capi20" } {
   puts "                        importing specific Board support XDCs"
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
 #  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
