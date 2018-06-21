@@ -17,7 +17,7 @@
 ##
 ############################################################################
 ############################################################################
-
+set root_dir        $::env(SNAP_HARDWARE_ROOT)
 set logs_dir        $::env(LOGS_DIR)
 set rpt_dir         $::env(RPT_DIR)
 set dcp_dir         $::env(DCP_DIR)
@@ -90,6 +90,7 @@ if { ($vivadoVer >= "2017.4") && ($cloud_flow == "FALSE") } {
 
 }
 
+
 ##
 ## placing design
 if { $cloud_flow == "TRUE" } {
@@ -122,6 +123,9 @@ if { [catch "$command > $logfile" errMsg] } {
   write_checkpoint   -force $dcp_dir/${step}.dcp          >> $logfile
 }
 
+## Temp For FX609
+  read_xdc $root_dir/setup/$fpgacard/capi_bsp_io.xdc >> $logfile
+  read_xdc $root_dir/setup/$fpgacard/capi_bsp_timing.xdc >> $logfile
 
 ##
 ## physical optimizing design
