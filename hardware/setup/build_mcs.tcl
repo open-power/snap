@@ -20,10 +20,13 @@ switch $fpgacard {
 	   set factory_addr 0x0
 	   set user_addr 0x01000000
 	 }
+  FX609  { set flashsize 128
+	   set factory_addr 0x0
+	   set user_addr 0x04000000
+	 }
   S121B -
   AD8K5 -
   RCXVUP -
-  FX609 -
   N250SP { set flashsize 128
 	   set factory_addr 0x0
 	   set user_addr 0x02000000
@@ -40,7 +43,7 @@ set user_bit    [lindex $argv 1]
 set mcsfile     [lindex $argv 2]
 if { $fpgacard == "RCXVUP" } {
     write_cfgmem -format mcs -size $flashsize -interface SPIx8 -loadbit "up $factory_addr $factory_bit up $user_addr $user_bit" $mcsfile -force
-} else if { $fpgacard == "FX609" } {
+} elseif { $fpgacard == "FX609" } {
     write_cfgmem -format mcs -size $flashsize -interface SPIx4 -loadbit "up $factory_addr $factory_bit up $user_addr $user_bit" $mcsfile -force
 } else {
     write_cfgmem -format mcs -size $flashsize -interface BPIx16 -loadbit "up $factory_addr $factory_bit up $user_addr $user_bit" $mcsfile -force
