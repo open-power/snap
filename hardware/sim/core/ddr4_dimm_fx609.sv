@@ -37,7 +37,7 @@ module own_tran(in1, in1);
   inout in1;
 endmodule
 
-module ddr4_dimm
+module ddr4_dimm_fx609
 (
   input             sys_reset,
   input             c0_ddr4_act_n,
