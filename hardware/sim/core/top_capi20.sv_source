@@ -1085,11 +1085,17 @@ module top (
   // SDRAM System Clock generation
   reg       sys_clk_p;
   initial   sys_clk_p <= 0;
-
+#ifdef CONFIG_FX609
+  // 200.08MHz DDR4 system clock
+  always begin
+     sys_clk_p = !sys_clk_p; #(4.998ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end
+#else
   // 266MHz DDR4 system clock
   always begin
      sys_clk_p = !sys_clk_p; #(3.752ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
+#endif
 #endif
 #if CONFIG_ENABLE_NVME
   // NVME Reference Clock generation
