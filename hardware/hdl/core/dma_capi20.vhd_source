@@ -2318,18 +2318,21 @@ BEGIN
         action_reset_req_q        <= '0';
         sent_action_reset_req_q   <= sent_action_reset_req_q AND NOT cd_c_i.quiesce_release;
         action_reset_context_id_q <= action_reset_context_id_q;
+
         IF cd_c_i.quiesce_request = '1' THEN
           action_reset_context_id_q <= cd_c_i.quiesce_context_id;
         ELSIF mmd_c_i.quiesce_request = '1' THEN
           action_reset_context_id_q <= mmd_c_i.quiesce_context_id;
         END IF;
-        quiesce_q                 <= (quiesce_q AND NOT cd_c_i.quiesce_release) OR
-                                     cd_c_i.quiesce_request OR mmd_c_i.quiesce_request;
+        
+        quiesce_q <= (quiesce_q AND NOT cd_c_i.quiesce_release) OR
+                      cd_c_i.quiesce_request                    OR
+                      mmd_c_i.quiesce_request;
 
-        IF (quiesce_q               = '1'    ) AND
-           (sent_action_reset_req_q = '0'   ) AND
-           ((read_ctrl_fsm_q = ST_IDLE) OR (read_ctrl_fsm_q = ST_RSP_ERROR)) AND
-           ((write_ctrl_fsm_q = ST_IDLE) OR (write_ctrl_fsm_q = ST_RSP_ERROR)) THEN
+        IF (quiesce_q               = '1'                                                              ) AND
+           (sent_action_reset_req_q = '0'                                                              ) AND
+           (((read_ctrl_fsm_q  = ST_IDLE) AND (rfifo_empty = '1')) OR (read_ctrl_fsm_q  = ST_RSP_ERROR)) AND
+           ( (write_ctrl_fsm_q = ST_IDLE)                          OR (write_ctrl_fsm_q = ST_RSP_ERROR)) THEN
           action_reset_req_q      <= '1';
           sent_action_reset_req_q <= '1';
         END IF;

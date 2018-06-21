@@ -167,8 +167,9 @@ END ram_1024x128_2p;
 ARCHITECTURE ram_1024x128_2p OF ram_1024x128_2p IS
   TYPE ram_t IS ARRAY (128-1 DOWNTO 0) OF std_logic_vector(1024-1 DOWNTO 0);
 
-  SHARED VARIABLE ram_v    : ram_t;
-  SIGNAL          dout_int : std_logic_vector(1024-1 DOWNTO 0);
+  SIGNAL addrb0_q : std_logic;
+  SIGNAL ram      : ram_t;
+  SIGNAL dout_int : std_logic_vector(1024-1 DOWNTO 0);
 
 BEGIN
   --
@@ -178,7 +179,7 @@ BEGIN
   BEGIN 
     IF (rising_edge(clk)) THEN
       IF (wea = '1') THEN
-        ram_v(to_integer(unsigned(addra))) := dina;
+        ram(to_integer(unsigned(addra))) <= dina;
       END IF;
     END IF;
   END PROCESS port_a;
@@ -189,9 +190,10 @@ BEGIN
   port_b: PROCESS (clk)
   BEGIN
     IF (rising_edge(clk)) THEN
-      dout_int <= ram_v(to_integer(unsigned(addrb(7 DOWNTO 1))));
-
-      IF addrb(0) = '1' THEN
+      dout_int <= ram(to_integer(unsigned(addrb(7 DOWNTO 1))));
+      addrb0_q <= addrb(0);
+      
+      IF addrb0_q = '0' THEN
         doutb <= dout_int(1023 DOWNTO 512);
       ELSE
         doutb <= dout_int(511  DOWNTO   0);
@@ -231,8 +233,8 @@ END ram_512x256_2p;
 ARCHITECTURE ram_512x256_2p OF ram_512x256_2p IS
   TYPE ram_t IS ARRAY (256-1 DOWNTO 0) OF std_logic_vector(512-1 DOWNTO 0);
 
-  SHARED VARIABLE ram_v    : ram_t;
-  SIGNAL          dout_int : std_logic_vector(1024-1 DOWNTO 0);
+  SIGNAL ram      : ram_t;
+  SIGNAL dout_int : std_logic_vector(1024-1 DOWNTO 0);
 
 BEGIN
   --
@@ -242,7 +244,7 @@ BEGIN
   BEGIN 
     IF (rising_edge(clk)) THEN
       IF (wea = '1') THEN
-        ram_v(to_integer(unsigned(addra))) := dina;
+        ram(to_integer(unsigned(addra))) <= dina;
       END IF;
     END IF;
   END PROCESS port_a;
@@ -253,8 +255,8 @@ BEGIN
   port_b: PROCESS (clk)
   BEGIN
     IF (rising_edge(clk)) THEN
-      dout_int(1023 DOWNTO 512) <= ram_v((to_integer(unsigned(addrb & '0')) + 0));
-      dout_int( 511 DOWNTO   0) <= ram_v((to_integer(unsigned(addrb & '0')) + 1));
+      dout_int(1023 DOWNTO 512) <= ram((to_integer(unsigned(addrb & '0')) + 0));
+      dout_int( 511 DOWNTO   0) <= ram((to_integer(unsigned(addrb & '0')) + 1));
 
       -- output latch
       doutb <= dout_int;
