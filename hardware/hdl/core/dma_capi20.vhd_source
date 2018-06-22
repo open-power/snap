@@ -700,7 +700,8 @@ BEGIN
           -- update the utt in the read control register
           --
           IF raddr_q(8 DOWNTO 6) /= "000" THEN
-            IF (('0' & rlen_q(3 DOWNTO 0)) + ("00" & raddr_q(8 DOWNTO 6))) > "01000"  THEN
+            IF (or_reduce(rlen_q(8 DOWNTO 0))                              = '1'     ) OR 
+               ((('0' & rlen_q(3 DOWNTO 0)) + ("00" & raddr_q(8 DOWNTO 6))) > "01000") THEN
               rlen_q                      <= rlen_q - ("1000" - ('0' & raddr_q(8 DOWNTO 6)));
               read_ctrl_q(utc_rtag_v).uts <=  ("1000" - ('0' & raddr_q(8 DOWNTO 6)));
               read_ctrl_q(utc_rtag_v).utt <= UTC_FIRST;
@@ -1274,7 +1275,8 @@ BEGIN
           -- update the utt in the write control register
           --
           IF waddr_q(8 DOWNTO 6) /= "000" THEN
-            IF (('0' & wlen_q(3 DOWNTO 0)) + ("00" & waddr_q(8 DOWNTO 6))) > "01000"  THEN
+            IF (or_reduce(wlen_q(8 DOWNTO 0))                              = '1'     ) OR 
+               ((('0' & wlen_q(3 DOWNTO 0)) + ("00" & waddr_q(8 DOWNTO 6))) > "01000")  THEN
               wlen_q                      <= wlen_q - ("1000" - ('0' & waddr_q(8 DOWNTO 6)));
               write_ctrl_q(utc_wtag_v).uts <=  ("1000" - ('0' & waddr_q(8 DOWNTO 6)));
               write_ctrl_q(utc_wtag_v).utt <= UTC_FIRST;
