@@ -56,12 +56,25 @@ SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulat
 
 https://www.xilinx.com/products/design-tools/hardware-zone.html
 
-### (b) PSL (CAPI module on FPGA)
-Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For the latest PSL checkpoint download, visit IBM Portal for OpenPOWER at
+### (b) CAPI board support and PSL
+Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For the latest CAPI board support and PSL download, visit IBM Portal for OpenPOWER at
 
 https://www.ibm.com/systems/power/openpower
 
-From the menu, select "CAPI"->"Coherent Accelerator Processor Interface (CAPI)" or directly click the "CAPI" icon to go to the CAPI section, then download the required files under "**PSL Checkpoint Files for the CAPI SNAP Design Kit**" according to the selected FPGA card.
+From the menu, select "CAPI"->"Coherent Accelerator Processor Interface (CAPI)" or directly click the "CAPI" icon to go to the CAPI section.
+Then download the appropriate files depending on your target system being POWER8 (CAPI 1.0) or POWER9 (CAPI 2.0).
+
+#### Power8
+CAPI board support and PSL are integrated in a Vivado design checkpoint.
+Please go to the OpenPOWER portal and download the required files from the OpenPOWER portal under "**PSL Checkpoint Files for the POWER8 CAPI SNAP Design Kit**" according to the selected FPGA card.
+
+#### Power9
+CAPI board support and PSL got separated. For the CAPI 2.0 board support package
+the open source git repository https://github.com/open-power/capi2-bsp exists which is integrated into the SNAP framework
+as git submodule under [hardware/capi2-bsp](https://github.com/open-power/capi2-bsp).
+
+The PSL gets integrated into the CAPI board support package as IP core with encrypted sources.
+Please go to the OpenPOWER portal and download the required files under "**PSL IP Source Files for POWER9 CAPI**".
 
 ### (c) Build process
 Building the code and running the make environment requires the usual development tools `gcc, make, sed, awk`. If not installed already, the installer package `build-essential` will set up the most important tools.
@@ -71,6 +84,8 @@ Configuring the SNAP framework via `make snap_config` will call a standalone too
 https://github.com/guillon/kconfig
 
 The `ncurses` library must be installed to use the menu-driven user interface for kconfig.
+
+Please see [Image and model build](hardware/README.md#image-and-model-build) for more information on the build process.
 
 ### (d) Run Simulation
 For simulation, SNAP relies on the `xterm` program and on the PSL Simulation Environment (PSLSE) which is available on github
