@@ -68,6 +68,7 @@ export ACTION_ROOT=${SNAP_ROOT}/actions/hdl_example
 file `${SNAP_ROOT}/snap_env.sh` in order to set the correct path names.
 
 # Image and model build
+## Specifying the action
 Which action is getting integrated into the SNAP framework is specified in `${SNAP_ROOT}/snap_env.sh`
 via the path `ACTION_ROOT`.
 If that is not automatically set by calling `make snap_config`, you may simply modify the file
@@ -77,10 +78,25 @@ As part of the Vivado project configuration step, the make process will call the
 contained in the directory that `ACTION_ROOT` is pointing to (see section [Action wrapper](#action-wrapper)).
 Specific configurations/preparations for the action may be added via this make process step.
 
-If you call `make` without any targets (on an X86 machine), then the SNAP software build, a simulation model build
-as well as a card image build are kicked off.
+## CAPI board support and PSL for image build
+The pre-requisites for the implementation of the FPGA card specific infrastructure for CAPI including the PSL differs for CAPI 1.0 (POWER8) and CAPI 2.0 (POWER9).
 
-Just a simulation model (for the simulator defined in the `snap_config` step) may be created
+### POWER8
+The build process expects the environment variable `PSL_DCP` pointing to the PSL design checkpoint
+which can be obtained from the IBM Portal for OpenPOWER (see [PSL dependency](../README.md#b-capi-board-support-and-psl)).
+
+### POWER9
+For information on how the CAPI 2.0 board support infrastructure is integrated into the SNAP framework and how to obtain the required PSL9 IP core archive see [PSL dependency](../README.md#b-capi-board-support-and-psl).
+
+If the environment variable `PSL9_IP_CORE` is pointing to 
+The build process for the CAPI 2.0 board support requires an archived PSL9 IP core.
+If the environment variable `PSL9_IP_CORE` is defined the process is using that as pointer to that archive.
+Otherwise, the build process is assuming to find the archived PSL9 IP core in the subdirectory `psl` of `snap/hardware/capi2-bsp`.
+
+## The make process
+If you call `make` without any targets, then a help message will be printed explaining the different targets supported by the make process.
+
+A simulation model (for the simulator defined in the `snap_config` step) may be created
 via the target `model`:
 
 ```bash
@@ -95,8 +111,6 @@ make image
 ```
 
 ***Note:*** You must still build the software tools on the POWER target system.
-
-Please refer to [snap/Makefile](../Makefile) for more supported targets like clean, ...
 
 ## FPGA bitstream image update
 Please see [snap/hardware/doc/Bitstream_flashing.md](./doc/Bitstream_flashing.md) for instructions on how to update the FPGA bitstream image, build factory images and program cards from scratch.
