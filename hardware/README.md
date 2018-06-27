@@ -79,7 +79,7 @@ contained in the directory that `ACTION_ROOT` is pointing to (see section [Actio
 Specific configurations/preparations for the action may be added via this make process step.
 
 ## CAPI board support and PSL for image build
-The pre-requisites for the implementation of the FPGA card specific infrastructure for CAPI including the PSL differs for CAPI 1.0 (POWER8) and CAPI 2.0 (POWER9).
+The pre-requisites for the implementation of the FPGA card specific infrastructure for CAPI including the PSL differ for CAPI 1.0 (POWER8) and CAPI 2.0 (POWER9).
 
 ### POWER8
 The build process expects the environment variable `PSL_DCP` pointing to the PSL design checkpoint
@@ -88,7 +88,6 @@ which can be obtained from the IBM Portal for OpenPOWER (see [PSL dependency](..
 ### POWER9
 For information on how the CAPI 2.0 board support infrastructure is integrated into the SNAP framework and how to obtain the required PSL9 IP core archive see [PSL dependency](../README.md#b-capi-board-support-and-psl).
 
-If the environment variable `PSL9_IP_CORE` is pointing to 
 The build process for the CAPI 2.0 board support requires an archived PSL9 IP core.
 If the environment variable `PSL9_IP_CORE` is defined the process is using that as pointer to that archive.
 Otherwise, the build process is assuming to find the archived PSL9 IP core in the subdirectory `psl` of `snap/hardware/capi2-bsp`.
