@@ -97,6 +97,8 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL utc_byte_cnt_q                   : std_logic_vector(1 DOWNTO 0);
   SIGNAL rram_ren                         : std_logic;
   SIGNAL rram_rdata_vld                   : std_logic;
+  SIGNAL rram_wvld                        : std_logic_vector(1 DOWNTO 0);
+  SIGNAL rram_rvld                        : std_logic;
   SIGNAL rram_rdata_end                   : std_logic;
   SIGNAL buf_rtag_p_qq                    : std_logic;
   SIGNAL buf_rtag_p_qqq                   : std_logic;
@@ -175,10 +177,15 @@ BEGIN
       wea                    => rram_wen,
       addra                  => rram_waddr,
       dina                   => hd_c_q.data,
+      dinvlda                => rram_wvld,
       addrb                  => rram_raddr,
-      doutb                  => rram_rdata
+      doutb                  => rram_rdata,
+      doutvldb               => rram_rvld
     );
-
+    
+    rram_wvld(0) <= rram_wen;   
+    rram_wvld(1) <= '1' WHEN (rram_wen AND (or_reduce(hd_c_q.size(9 DOWNTO 7)))) = '1' ELSE '0';
+      
     ----------------------------------------------------------------------------
     -- RAM control none clock
     -- Note: Only a full CL will be transfered to job_manager or data_bridge.
@@ -434,7 +441,7 @@ BEGIN
         rram_raddr_q        <= rram_raddr_d;
         rram_rdata_vld_q    <= rram_rdata_vld_d;
         rram_rdata_vld_qq   <= rram_rdata_vld_q;
-        rram_rdata_vld_qqq  <= rram_rdata_vld_qq;
+        rram_rdata_vld_qqq  <= rram_rdata_vld_qq AND rram_rvld;
         rram_rdata_end_q    <= rram_rdata_end_d;
         rram_rdata_end_qq   <= rram_rdata_end_q;
         rram_rdata_end_qqq  <= rram_rdata_end_qq;

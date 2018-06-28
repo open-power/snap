@@ -158,18 +158,19 @@ ENTITY ram_1024x128_2p IS
     wea       : IN  std_logic;
     addra     : IN  std_logic_vector(     6 DOWNTO 0);
     dina      : IN  std_logic_vector(1024-1 DOWNTO 0);
-
-    addrb     : IN  std_logic_vector(    7 DOWNTO 0);
-    doutb     : OUT std_logic_vector(512-1 DOWNTO 0)
+    dinvlda   : IN  std_logic_vector(     1 DOWNTO 0);
+    addrb     : IN  std_logic_vector(     7 DOWNTO 0);
+    doutb     : OUT std_logic_vector( 512-1 DOWNTO 0);
+    doutvldb  : OUT std_logic
   );
 END ram_1024x128_2p;
 
 ARCHITECTURE ram_1024x128_2p OF ram_1024x128_2p IS
-  TYPE ram_t IS ARRAY (128-1 DOWNTO 0) OF std_logic_vector(1024-1 DOWNTO 0);
+  TYPE ram_t IS ARRAY (128-1 DOWNTO 0) OF std_logic_vector(1026-1 DOWNTO 0);
 
   SIGNAL addrb0_q : std_logic;
   SIGNAL ram      : ram_t;
-  SIGNAL dout_int : std_logic_vector(1024-1 DOWNTO 0);
+  SIGNAL dout_int : std_logic_vector(1026-1 DOWNTO 0);
 
 BEGIN
   --
@@ -179,7 +180,7 @@ BEGIN
   BEGIN 
     IF (rising_edge(clk)) THEN
       IF (wea = '1') THEN
-        ram(to_integer(unsigned(addra))) <= dina;
+        ram(to_integer(unsigned(addra))) <= dinvlda(0) & dina & dinvlda(1);
       END IF;
     END IF;
   END PROCESS port_a;
@@ -194,9 +195,11 @@ BEGIN
       addrb0_q <= addrb(0);
       
       IF addrb0_q = '0' THEN
-        doutb <= dout_int(1023 DOWNTO 512);
+        doutvldb <= dout_int(1025);
+        doutb    <= dout_int(1024 DOWNTO 513);
       ELSE
-        doutb <= dout_int(511  DOWNTO   0);
+        doutvldb <= dout_int(0);
+        doutb    <= dout_int(512  DOWNTO   1);
       END IF;
     END IF;
   END PROCESS port_b;
