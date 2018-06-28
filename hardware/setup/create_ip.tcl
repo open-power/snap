@@ -443,7 +443,7 @@ if { $create_ddr4_fx609 == "TRUE" } {
   puts "                        generating IP ddr4sdram"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                    \
-                      CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-075E}                          \
+                      CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-083E}                          \
                       CONFIG.C0.DDR4_TimePeriod {833}                                         \
                       CONFIG.C0.DDR4_InputClockPeriod {4998}                                  \
                       CONFIG.C0.DDR4_CasLatency {20}                                          \
