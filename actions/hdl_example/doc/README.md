@@ -10,8 +10,8 @@
 │       action_axi_master.vhd     AXI Master used to transfer data to/from host through PSL(CAPI) TL/DL (OpenCAPI)
 │       action_axi_nvme.vhd       NVME driver attached to AXI bus
 │       action_axi_slave.vhd      AXI slave (also called CTL register) used to configure control registers
-│       action_config.sh              
-│       action_example.vhd        this file is the result of the make process (once source files have been used)
+│       action_config.sh          Used to selectively connect hardware drivers
+│       action_example.vhd        This file is the result of the make process (once source files have been used)
 │       action_example.vhd_source Original file taking into account all possible hardware possibilites
 │       action_wrapper.vhd_source Wrapper to connect action(s) to PSL (CAPI) TL/DL (OpenCAPI)
 │       Makefile                  Makefile used to automatically and selectively prepare the .vhd hardware files
@@ -34,14 +34,15 @@
         README.md                 TBD
 ```
 ## Hardware Details
-Following block diagramms shows overview of blocks interconnections.
+Following block diagrams shows an overview of main blocks interconnections.
 
-On the first one we have the top view showing FPGA pins, connected to PCIe and to configuration flash memory and the 2 main blocks.
-- the PSL (providing PCIe interface and flash controller)
-- the action(s) wrapper
+On the following diagram we have the top view showing :
+- FPGA pins, connected to PCIe and to configuration flash memory
+- the PSL block (providing PCIe interface and flash controller)
+- the action(s) wrapper block
 ![Top block_diagram](./top_blocks.png "SNAP")
 
-The following diagramm details the interconnection of the PSL_ACCEL block used to interconnect PSL to :
+The following diagram details the interconnection of the PSL_ACCEL block used to interconnect PSL to :
 - the action(s) wrapper(s)
 - the SNAP cores
 
