@@ -42,7 +42,7 @@ set_property target_language VHDL [current_project]
 set_property target_simulator IES [current_project]
 
 #create DMA Input RAM
-if { ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP") || ($fpga_card == "FX609") } {
+if { ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP") || ($fpga_card == "FX609") || ($fpga_card == "S241") } {
   set RAM_WIDTH 1040
   set RAM_DEPTH 32
   set MEMORY_TYPE True_Dual_Port_RAM
@@ -76,7 +76,7 @@ export_ip_user_files -of_objects             [get_files $ip_dir/ram_${RAM_WIDTH}
 export_simulation -of_objects [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create DMA Output RAM
-if { ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP") || ($fpga_card == "FX609") } {
+if { ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP") || ($fpga_card == "FX609") || ($fpga_card == "S241") } {
   set RAM_WIDTH 1152
   set RAM_DEPTH 32
   set MEMORY_TYPE True_Dual_Port_RAM
@@ -209,6 +209,7 @@ set create_ddr4_s121b   FALSE
 set create_ddr4_ad8k5   FALSE
 set create_ddr4_rcxvup  FALSE
 set create_ddr4_fx609   FALSE
+set create_ddr4_s241    FALSE
 
 if { $fpga_card == "ADKU3" } {
   if { $bram_used == "TRUE" } {
@@ -249,6 +250,14 @@ if { $fpga_card == "ADKU3" } {
   } elseif { $sdram_used == "TRUE" } {
     set create_clock_conv   TRUE
     set create_ddr4_fx609   TRUE
+  }
+} elseif { $fpga_card == "S241" } {
+  if { $bram_used == "TRUE" } {
+    set create_clock_conv   TRUE
+    set create_bram        TRUE
+  } elseif { $sdram_used == "TRUE" } {
+    set create_clock_conv   TRUE
+    set create_ddr4_s241   TRUE
   }
 } elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
   if { $bram_used == "TRUE" } {
@@ -440,6 +449,36 @@ if { $create_ddr4_rcxvup == "TRUE" } {
 }
 #DDR4 create ddr4sdramm without ECC (FX609)
 if { $create_ddr4_fx609 == "TRUE" } {
+  puts "                        generating IP ddr4sdram"
+  create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
+  set_property -dict [list                                                                    \
+                      CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-083E}                          \
+                      CONFIG.C0.DDR4_TimePeriod {833}                                         \
+                      CONFIG.C0.DDR4_InputClockPeriod {4998}                                  \
+                      CONFIG.C0.DDR4_CasLatency {20}                                          \
+                      CONFIG.C0.DDR4_CasWriteLatency {16}                                     \
+                      CONFIG.C0.DDR4_DataWidth {64}                                           \
+                      CONFIG.C0.DDR4_AxiSelection {true}                                      \
+                      CONFIG.Simulation_Mode {Unisim}                                         \
+                      CONFIG.C0.DDR4_DataMask {DM_DBI_RD}                                     \
+                      CONFIG.C0.DDR4_Ecc {false}                                              \
+                      CONFIG.C0.DDR4_AxiDataWidth {512}                                       \
+                      CONFIG.C0.DDR4_AxiAddressWidth {32}                                     \
+                      CONFIG.C0.DDR4_AxiIDWidth {4}                                           \
+                      CONFIG.C0.BANK_GROUP_WIDTH {1}                                          \
+                     ] [get_ips ddr4sdram] >> $log_file
+  set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
+  generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
+  generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -no_script -force  >> $log_file
+  export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+
+  #DDR4 create ddr4sdramm example design
+  puts "                        generating ddr4sdram example design"
+  open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
+}
+#DDR4 create ddr4sdramm without ECC (S241)
+if { $create_ddr4_s241 == "TRUE" } {
   puts "                        generating IP ddr4sdram"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                    \

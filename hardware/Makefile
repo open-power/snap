@@ -96,6 +96,14 @@ ifeq "$(FPGACARD)" "FX609"
 	       CAPI_VER=capi20
 endif
 
+ifeq "$(FPGACARD)" "S241"
+	export DDR3_USED=FALSE
+	export DDR4_USED=$(SDRAM_USED)
+	export DDRI_USED=$(SDRAM_USED)
+	       FPGA_CARD=s241
+	       CAPI_VER=capi20
+endif
+
 export BRAM_USED ?= FALSE
 ifeq "$(BRAM_USED)" "TRUE"
 	export DDR3_USED=FALSE
@@ -180,7 +188,7 @@ check_snap_settings:
 	@echo "                        =============================="
 	@echo "                        hardware/Makefile called with:"
 	@echo "                        ACTION_ROOT     = $(ACTION_ROOT)"
-	@if [ "$(FPGACARD)" == "N250SP" ] || [ "$(FPGACARD)" == "RCXVUP" ] || [ "$(FPGACARD)" == "FX609" ]; then \
+	@if [ "$(FPGACARD)" == "N250SP" ] || [ "$(FPGACARD)" == "RCXVUP" ] || [ "$(FPGACARD)" == "FX609" ] || [ "$(FPGACARD)" == "S241" ]; then \
 		echo "                        CAPI_BSP        = $(CAPI_BSP)"; \
 	else \
 		echo "                        PSL_DCP         = $(PSL_DCP)"; \
@@ -343,7 +351,7 @@ config: hw_project
 # checking card type for PSL design checkpoint
 check_psl:
 	if [ "$(IGNORE_CHECK_PSL)" != "TRUE" ] ; then \
-		if [ "$(FPGACARD)" == "N250SP" ] || [ "$(FPGACARD)" == "RCXVUP" ] || [ "$(FPGACARD)" == "FX609" ]; then \
+		if [ "$(FPGACARD)" == "N250SP" ] || [ "$(FPGACARD)" == "RCXVUP" ] || [ "$(FPGACARD)" == "FX609" ] || [ "$(FPGACARD)" == "S241" ]; then \
 			if [ -z "$(CAPI_BSP)" ]; then \
 				echo "### ERROR ###  Environment variable CAPI_BSP is undefined." \
 				echo "               It has to point to the directory containing the CAPI board support IP container."; \

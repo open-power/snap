@@ -24,6 +24,10 @@ switch $fpgacard {
 	   set factory_addr 0x0
 	   set user_addr 0x04000000
 	 }
+  S241   { set flashsize 128
+	   set factory_addr 0x0
+	   set user_addr 0x04000000
+	 }
   S121B -
   AD8K5 -
   RCXVUP -
@@ -32,7 +36,7 @@ switch $fpgacard {
 	   set user_addr 0x02000000
  	 }
   default {
-    puts "Error: Environment FPGACARD must be set to N250S, ADKU3, AD8K5, S121B, N250SP, FX609 or RCXVUP"
+    puts "Error: Environment FPGACARD must be set to N250S, ADKU3, AD8K5, S121B, N250SP, FX609, S241 or RCXVUP"
     exit 91
   }
 }
@@ -43,7 +47,7 @@ set user_bit    [lindex $argv 1]
 set mcsfile     [lindex $argv 2]
 if { $fpgacard == "RCXVUP" } {
     write_cfgmem -format mcs -size $flashsize -interface SPIx8 -loadbit "up $factory_addr $factory_bit up $user_addr $user_bit" $mcsfile -force
-} elseif { $fpgacard == "FX609" } {
+} elseif { ($fpgacard == "FX609") || ($fpgacard == "S241") } {
     write_cfgmem -format mcs -size $flashsize -interface SPIx4 -loadbit "up $factory_addr $factory_bit up $user_addr $user_bit" $mcsfile -force
 } else {
     write_cfgmem -format mcs -size $flashsize -interface BPIx16 -loadbit "up $factory_addr $factory_bit up $user_addr $user_bit" $mcsfile -force

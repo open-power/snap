@@ -56,6 +56,13 @@ choice
                 help
                   ReflexCES XpressVUP Card with Ethernet, 8GB DDR4 SDRAM, 144Mb QDR2+ and Xilinx VU9P FPGA.
 
+        config S241
+                bool "Semptian NSA241 Card with Ethernet, 8GB DDR4 SDRAM, 144Mb QDR2+ and Xilinx VU9P FPGA"
+                select CAPI20
+                select DISABLE_NVME
+                help
+                  Semptian NSA241 Card with Ethernet, 8GB DDR4 SDRAM, 144Mb QDR2+ and Xilinx VU9P FPGA.
+
         config FX609
                 bool "Flyslice FX609 Card with Ethernet, 8GB DDR4 SDRAM, 144Mb QDR2+ and Xilinx VU9P FPGA"
                 select CAPI20
@@ -73,6 +80,7 @@ config FPGACARD
         default "AD8K5"  if AD8K5
         default "RCXVUP" if RCXVUP
         default "FX609"  if FX609
+        default "S241"   if S241
 
 config CAPI10
         bool
@@ -90,6 +98,7 @@ config FPGACHIP
         default "xcku115-flva1517-2-e" if AD8K5
         default "xcvu9p-flgb2104-2l-e-es1" if RCXVUP
         default "xcvu9p-fsgd2104-2l-e" if FX609
+        default "xcvu9p-fsgd2104-2l-e" if S241
 
 config NUM_OF_ACTIONS
         int
@@ -253,6 +262,7 @@ config ENABLE_SDRAM
 	                4GB DDR4 SDRAM on the Nallatech 250S card,
 		        8GB DDR4 SDRAM on the Semptian NSA121B card,
 			8GB DDR4 SDRAM (out of 16GB) on the AlphaData 8K5 card
+			8GB DDR4 SDRAM on the Semptian NSA241 card
 			8GB DDR4 SDRAM on the ReflexCES XpressVUP card and
 			8GB DDR4 SDRAM on the Flyslice FX609 card.
 
@@ -286,7 +296,7 @@ config DDR3_USED
 config ENABLE_DDR4
         bool
         default y
-        depends on (ENABLE_SDRAM && (N250S || S121B || N250SP || AD8K5 || RCXVUP || FX609))
+        depends on (ENABLE_SDRAM && (N250S || S121B || N250SP || AD8K5 || RCXVUP || FX609 || S241))
 
 config DDR4_USED
         string

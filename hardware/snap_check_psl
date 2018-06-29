@@ -29,6 +29,8 @@ if [ $# -gt 1 ]; then
     export PSL_DCP_TYPE=$FPGACARD
   elif [ "$FPGACARD" == "FX609" ]; then
     export PSL_DCP_TYPE=$FPGACARD
+  elif [ "$FPGACARD" == "S241" ]; then
+    export PSL_DCP_TYPE=$FPGACARD
   else
     if [ -n "$PSL_DCP" ]; then
       PSL_MD5=`md5sum $PSL_DCP | cut -d " " -f 1`

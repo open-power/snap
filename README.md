@@ -49,6 +49,7 @@ As of now, the following FPGA cards can be used with SNAP:
 * Semptian NSA121B http://www.semptian.com/proinfo/10.html
 * ReflexCES XpressVUP-LP9PT https://www.reflexces.com/products-solutions/other-cots-boards/xilinx/xpressvup
 * Flyslice FX609 http://www.flyslice.com/page431
+* Semptian NSA241 http://http://www.semptian.com/proinfo/126.html
 
 ## Development (Step1 & Step2)
 Development is usually done on a Linux (x86) computer. The required tools and packages are listed below. Web access to github is recommended to follow the build instructions. A real FPGA card is not required for the plain hardware development.
