@@ -1,10 +1,11 @@
 # HDL_example
 ```
+|
 │   Makefile                      General Makefile used to automatically prepare the final files
 │   README.md                     General documentation file for this example
 │
 ├───doc                           Detailed documentation directory
-│       README.md                    
+│       README.md                 This file !   
 │
 ├───hw                            Hardware directory containing all VHDL related item
 │       action_axi_master.vhd     AXI Master used to transfer data to/from host through PSL(CAPI) TL/DL (OpenCAPI)
