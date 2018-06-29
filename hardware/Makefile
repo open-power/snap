@@ -89,7 +89,7 @@ PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl "$(FPGACARD)" "$(PSL_D
 
 ifeq ($(PLATFORM),x86_64)
 
-.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config add_psl_dcp check_psl image cloud_enable cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
+.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config add_psl_dcp check_bsp image cloud_enable cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
 
 all: model image
 
@@ -249,7 +249,7 @@ action_hw: prepare_logs
 	fi
 	@echo -e "[CONFIG ACTION HW....] done  `date +"%T %a %b %d %Y"`";
 
-.create_ip_done: capi2-bsp/$(FPGACARD)/.create_ip_done
+.create_ip_done:
 	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -journal $(LOGS_DIR)/create_ip.jou
 	@touch .create_ip_done
 
@@ -298,7 +298,7 @@ capi2-bsp/$(FPGACARD)/.create_ip_done:
 	fi
 
 # checking card type for PSL design checkpoint
-check_psl: capi2-bsp/$(FPGACARD)/.create_ip_done
+check_bsp: capi2-bsp/$(FPGACARD)/.create_ip_done
 	@if [ "$(IGNORE_CHECK_PSL)" != "TRUE" ]; then \
 		if [ "$(CAPI_VER)" == "capi10" ] && [ "$(PSL_DCP_TYPE)" != "$(FPGACARD)" ]; then \
 			if [[ "$(PSL_DCP_TYPE)" == *"OUTDATED"* ]]; then \
@@ -322,7 +322,7 @@ check_psl: capi2-bsp/$(FPGACARD)/.create_ip_done
 		fi; \
 	fi
 
-image: check_psl
+image: check_bsp
 	$(MAKE) .hw_project_done
 	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
 ifeq ($(USE_PRFLOW),TRUE)
