@@ -33,8 +33,7 @@ set log_file     $log_dir/create_ip.log
 
 ## Create a new Vivado IP Project
 puts "\[CREATE_IPs..........\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
-exec rm -rf $ip_dir
-create_project managed_ip_project $ip_dir/managed_ip_project -part $fpga_part -ip >> $log_file
+create_project managed_ip_project $ip_dir/managed_ip_project -force -part $fpga_part -ip >> $log_file
 
 # Project IP Settings
 # General
