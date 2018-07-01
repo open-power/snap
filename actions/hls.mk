@@ -21,7 +21,7 @@
 #FPGACHIP    ?= xcku060-ffva1156-2-e
 CONFIG_FILE = $(SNAP_ROOT)/.snap_config
 ifneq ("$(wildcard $(CONFIG_FILE))","")
-  FPGACHIP = $(shell grep FPGACHIP $(CONFIG_FILE) | cut -d = -f 2)
+  FPGACHIP = $(shell grep FPGACHIP $(CONFIG_FILE) | cut -d = -f 2 | tr -d '"')
 #  $(info FPGACHIP is set to $(FPGACHIP).)
 endif
 
