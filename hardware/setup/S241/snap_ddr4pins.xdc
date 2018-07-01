@@ -1,7 +1,8 @@
 ## clocks ###########################################################################################
 
 create_clock -period 4.998 -name c0_ddr4_sys_clk_p [get_ports c0_ddr4_sys_clk_p]
-set_false_path -from [get_pins {*/pci_user_reset_q_reg/C}]
+set_false_path -from [get_pins {*/pci_user_reset_qq_reg/C}] -to [get_pins {*/sdram_reset_m_reg/D}]
+set_false_path -from [get_pins {*/pci_user_reset_q_reg/C}] -to [get_pins {*/sdram_reset_m_reg/D}]
 
 #========================================================================
 # DDR's IO constraints

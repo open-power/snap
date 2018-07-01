@@ -53,6 +53,9 @@ if { $impl_flow == "CLOUD_BASE" } {
   set opt_route_directive [get_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 }
 
+## Temp For FX609
+  read_xdc $root_dir/setup/$fpgacard/capi_bsp_io.xdc >> $logfile
+  read_xdc $root_dir/setup/$fpgacard/capi_bsp_timing.xdc >> $logfile
 
 
 ##
@@ -90,6 +93,9 @@ if { ($vivadoVer >= "2017.4") && ($cloud_flow == "FALSE") } {
 
 }
 
+### Temp For FX609
+#  read_xdc $root_dir/setup/$fpgacard/capi_bsp_io.xdc >> $logfile
+#  read_xdc $root_dir/setup/$fpgacard/capi_bsp_timing.xdc >> $logfile
 
 ##
 ## placing design
@@ -106,7 +112,7 @@ puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start place_design" $
 
 ## 
 ## prevent placing inside PSL
-if { ($fpgacard != "N250SP") && ($fpgacard != "RCXVUP") && ($fpgacard != "FX609") && ($fpgacard != "S241") } {
+if { ($fpgacard != "N250SP") && ($fpgacard != "RCXVUP") && ($fpgacard != "FX609") } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
 }
@@ -123,9 +129,9 @@ if { [catch "$command > $logfile" errMsg] } {
   write_checkpoint   -force $dcp_dir/${step}.dcp          >> $logfile
 }
 
-## Temp For FX609
-  read_xdc $root_dir/setup/$fpgacard/capi_bsp_io.xdc >> $logfile
-  read_xdc $root_dir/setup/$fpgacard/capi_bsp_timing.xdc >> $logfile
+### Temp For FX609
+#  read_xdc $root_dir/setup/$fpgacard/capi_bsp_io.xdc >> $logfile
+#  read_xdc $root_dir/setup/$fpgacard/capi_bsp_timing.xdc >> $logfile
 
 ##
 ## physical optimizing design
