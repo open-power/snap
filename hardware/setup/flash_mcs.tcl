@@ -78,7 +78,7 @@ switch $fpgacard {
           set rs_pins	{26:25}
         }
   default {
-    puts "Error: Environment FPGACARD must be set to N250S, ADKU3, AD8K5, S121B, RCXVUP, S241 or N250SP"
+    puts "Error: Environment FPGACARD must be set to N250S, ADKU3, AD8K5, S121B, RCXVUP, FX609, S241 or N250SP"
     exit 96
   }
 }

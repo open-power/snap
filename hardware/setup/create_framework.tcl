@@ -292,21 +292,6 @@ if { $capi_ver == "capi20" } {
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
 #  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
 }
-if { ($fpga_card == "RCXVUP") && ($capi_bsp_dir != "not defined") } {
-  puts "                      importing RCXVUP Board support XDCs"
-  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
-#  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
-}
-if { ($fpga_card == "FX609") && ($capi_bsp_dir != "not defined") } {
-  puts "                      importing FX609 Board support XDCs"
-  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
-#  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
-}
-if { ($fpga_card == "S241") && ($capi_bsp_dir != "not defined") } {
-  puts "                      importing FX609 Board support XDCs"
-  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
-#  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
-}
 
 # DDR XDCs
 if { $fpga_card == "ADKU3" } {

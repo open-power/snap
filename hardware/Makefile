@@ -40,46 +40,6 @@ snap_env_sh        = $(SNAP_ROOT)/snap_env.sh
 
 SIMULATOR ?= nosim
 
-<<<<<<< HEAD
-ifeq "$(FPGACARD)" "N250SP"
-	export DDR3_USED=FALSE
-	export DDR4_USED=$(SDRAM_USED)
-	export DDRI_USED=$(SDRAM_USED)
-	       FPGA_CARD=n250sp
-	       CAPI_VER=capi20
-endif
-
-ifeq "$(FPGACARD)" "RCXVUP"
-	export DDR3_USED=FALSE
-	export DDR4_USED=$(SDRAM_USED)
-	export DDRI_USED=$(SDRAM_USED)
-	       FPGA_CARD=rcxvup
-	       CAPI_VER=capi20
-endif
-
-ifeq "$(FPGACARD)" "FX609"
-	export DDR3_USED=FALSE
-	export DDR4_USED=$(SDRAM_USED)
-	export DDRI_USED=$(SDRAM_USED)
-	       FPGA_CARD=fx609
-	       CAPI_VER=capi20
-endif
-
-ifeq "$(FPGACARD)" "S241"
-	export DDR3_USED=FALSE
-	export DDR4_USED=$(SDRAM_USED)
-	export DDRI_USED=$(SDRAM_USED)
-	       FPGA_CARD=s241
-	       CAPI_VER=capi20
-endif
-
-export BRAM_USED ?= FALSE
-ifeq "$(BRAM_USED)" "TRUE"
-	export DDR3_USED=FALSE
-	export DDR4_USED=FALSE
-	export SDRAM_USED=FALSE
-	export DDRI_USED=TRUE
-=======
 FPGA_CARD := $(shell echo $(FPGACARD) | tr '[:upper:]' '[:lower:]')
 ifeq "$(CAPI20)" "y"
 	export CAPI_VER=capi20
@@ -87,7 +47,6 @@ ifeq "$(CAPI20)" "y"
 	export PSL9_IP_DIR=$(SNAP_HARDWARE_ROOT)/capi2-bsp/psl
 else
 	export CAPI_VER=capi10
->>>>>>> master
 endif
 
 export DCP_ROOT ?= $(SNAP_ROOT)/dcp
@@ -163,13 +122,9 @@ check_snap_settings:
 	@echo "                        =============================="
 	@echo "                        hardware/Makefile called with:"
 	@echo "                        ACTION_ROOT     = $(ACTION_ROOT)"
-<<<<<<< HEAD
 	@if [ "$(FPGACARD)" == "N250SP" ] || [ "$(FPGACARD)" == "RCXVUP" ] || [ "$(FPGACARD)" == "FX609" ] || [ "$(FPGACARD)" == "S241" ]; then \
 		echo "                        CAPI_BSP        = $(CAPI_BSP)"; \
 	else \
-=======
-	@if [ "$(CAPI_VER)" == "capi10" ]; then \
->>>>>>> master
 		echo "                        PSL_DCP         = $(PSL_DCP)"; \
 	elif [ "$(CAPI_VER)" == "capi20" ]; then \
 		echo "                        PSL9_IP         = $(PSL9_IP)"; \
@@ -345,21 +300,9 @@ capi2-bsp/$(FPGACARD)/.create_ip_done:
 	fi
 
 # checking card type for PSL design checkpoint
-<<<<<<< HEAD
-check_psl:
-	if [ "$(IGNORE_CHECK_PSL)" != "TRUE" ] ; then \
-		if [ "$(FPGACARD)" == "N250SP" ] || [ "$(FPGACARD)" == "RCXVUP" ] || [ "$(FPGACARD)" == "FX609" ] || [ "$(FPGACARD)" == "S241" ]; then \
-			if [ -z "$(CAPI_BSP)" ]; then \
-				echo "### ERROR ###  Environment variable CAPI_BSP is undefined." \
-				echo "               It has to point to the directory containing the CAPI board support IP container."; \
-				exit -1; \
-			fi; \
-		elif [ "$(PSL_DCP_TYPE)" != "$(FPGACARD)" ]; then \
-=======
 check_bsp: capi2-bsp/$(FPGACARD)/.create_ip_done
 	@if [ "$(IGNORE_CHECK_PSL)" != "TRUE" ]; then \
 		if [ "$(CAPI_VER)" == "capi10" ] && [ "$(PSL_DCP_TYPE)" != "$(FPGACARD)" ]; then \
->>>>>>> master
 			if [[ "$(PSL_DCP_TYPE)" == *"OUTDATED"* ]]; then \
 				echo "### ERROR ### PSL_DCP for $(FPGACARD) is pointing to an outdated design checkpoint."; exit -1; \
 			elif [ "$(PSL_DCP_TYPE)" == "" ]; then \
