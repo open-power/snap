@@ -1,7 +1,7 @@
 # SNAP Framework Bug Reporting
 
 For bugs, questions or requests for enhancements, please use Github issues: 
-https://github.com/open-power/donut/issues
+https://github.com/open-power/snap/issues
 
 All issues should have one of the labels
 * `bug`
