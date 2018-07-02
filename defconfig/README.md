@@ -7,8 +7,13 @@ Option 1 (default): use the Kconfig menu by typing: make snap_config
 Option 2: do not use the Kconfig menu but use a specific saved configuration file (automated test -jenkins)
  Build a .snap_config file using the Kconfig menu  (see option 1)
  Then move and rename the .snap_config file to CARD.action.defconfig into the snap/defconfig directory
+<<<<<<< HEAD
  All commands will then be: 
    make CARD.action.defconfig to set the .snap_config with the CARD.action.defconfig configuration
    menu will wait for an enter key or a choice
+=======
+ Following command can then be executed:
+   make CARD.action.defconfig to set the .snap_config with the CARD.action.defconfig configuration
+>>>>>>> master
  All commands make model/sim/image will then use this .snap_config file
    

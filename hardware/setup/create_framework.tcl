@@ -18,28 +18,25 @@
 ############################################################################
 ############################################################################
 
-set root_dir    $::env(SNAP_HARDWARE_ROOT)
-set ip_dir      $root_dir/ip
-set usr_ip_dir  $ip_dir/managed_ip_project/managed_ip_project.srcs/sources_1/ip
-set hdl_dir     $root_dir/hdl
-set sim_dir     $root_dir/sim
-set fpga_part   $::env(FPGACHIP)
-set fpga_card   $::env(FPGACARD)
-set action_dir  $::env(ACTION_ROOT)/hw
-set nvme_used   $::env(NVME_USED)
-set bram_used   $::env(BRAM_USED)
-set sdram_used  $::env(SDRAM_USED)
-set ila_debug   [string toupper $::env(ILA_DEBUG)]
-set simulator   $::env(SIMULATOR)
-set log_dir     $::env(LOGS_DIR)
-set log_file    $log_dir/create_framework.log
-set vivadoVer     [version -short]
-
-if { [info exists ::env(CAPI_BSP)] == 1 } {
-  set capi_bsp_dir $::env(CAPI_BSP)
-} else {
-  set capi_bsp_dir "not defined"
-}
+set root_dir     $::env(SNAP_HARDWARE_ROOT)
+set ip_dir       $root_dir/ip
+set usr_ip_dir   $ip_dir/managed_ip_project/managed_ip_project.srcs/sources_1/ip
+set hdl_dir      $root_dir/hdl
+set sim_dir      $root_dir/sim
+set fpga_part    $::env(FPGACHIP)
+set fpga_card    $::env(FPGACARD)
+set capi_bsp_dir $root_dir/capi2-bsp/$fpga_card/build/ip
+set capi_ver     $::env(CAPI_VER)
+set action_dir   $::env(ACTION_ROOT)/hw
+set nvme_used    $::env(NVME_USED)
+set bram_used    $::env(BRAM_USED)
+set sdram_used   $::env(SDRAM_USED)
+set ila_debug    [string toupper $::env(ILA_DEBUG)]
+set simulator    $::env(SIMULATOR)
+set denali_used  $::env(DENALI_USED)
+set log_dir      $::env(LOGS_DIR)
+set log_file     $log_dir/create_framework.log
+set vivadoVer    [version -short]
 
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support [string toupper $::env(HLS_SUPPORT)]
@@ -102,7 +99,7 @@ set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.IS_ENABLED true [get_runs impl_1]
 set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 # Bitstream
-set_property STEPS.WRITE_BITSTREAM.TCL.PRE  $root_dir/setup/snap_bitstream_pre.tcl  [get_runs impl_1]
+set_property STEPS.WRITE_BITSTREAM.TCL.PRE  $root_dir/setup/$fpga_card/snap_bitstream_pre.tcl  [get_runs impl_1]
 set_property STEPS.WRITE_BITSTREAM.TCL.POST $root_dir/setup/snap_bitstream_post.tcl [get_runs impl_1]
 
 # Add Files
@@ -163,8 +160,6 @@ if { $simulator != "nosim" } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_ad8k5.sv  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_ad8k5.sv]
   }
-  update_compile_order -fileset sources_1 >> $log_file
-  update_compile_order -fileset sim_1 >> $log_file
 }
 
 # Add IPs
@@ -247,32 +242,34 @@ foreach usr_ip [glob -nocomplain -dir $usr_ip_dir *] {
   export_ip_user_files -of_objects  [get_files "$usr_ip_xci"] -force >> $log_file
 }
 
-update_compile_order -fileset sources_1 >> $log_file
-
 # Add NVME
 if { $nvme_used == TRUE } {
   puts "                        adding NVMe block design"
   set_property  ip_repo_paths $hdl_dir/nvme/ [current_project]
   update_ip_catalog  >> $log_file
   add_files -norecurse                          $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd  >> $log_file
-  export_ip_user_files -of_objects  [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] -lib_map_path [list {modelsim=$root_dir/viv_project/framework.cache/compile_simlib/modelsim} {questa=$root_dir/viv_project/framework.cache/compile_simlib/questa} {ies=$root_dir/viv_project/framework.cache/compile_simlib/ies} {vcs=$root_dir/viv_project/framework.cache/compile_simlib/vcs} {riviera=$root_dir/viv_project/framework.cache/compile_simlib/riviera}] -force -quiet
-  update_compile_order -fileset sources_1
+  export_ip_user_files -of_objects  [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] -lib_map_path [list {{ies=$root_dir/viv_project/framework.cache/compile_simlib/ies}}] -force -quiet
 
-  if { $simulator != "nosim" } {
-    puts "                        adding Denali simulation files"
-    add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme/
+  if { $denali_used == TRUE } {
+    puts "                        adding NVMe Denali simulation files"
+    add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme
     add_files -fileset sim_1 -scan_for_includes $ip_dir/nvme/axi_pcie3_0_ex/imports/xil_sig2pipe.v
 
     set denali $::env(DENALI)
     add_files -fileset sim_1 -norecurse -scan_for_includes $denali/ddvapi/verilog/denaliPcie.v
     set_property include_dirs                              $denali/ddvapi/verilog [get_filesets sim_1]
+  } else {
+    puts "                        adding NVMe Verilog simulation files"
+    set_property used_in_simulation false [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd]
+    add_files -fileset sim_1 -norecurse $sim_dir/nvme_lite
+    add_files -fileset sim_1 -norecurse $hdl_dir/nvme/nvme_defines.sv
   }
 } else {
   remove_files $action_dir/action_axi_nvme.vhd -quiet
 }
 
 # Add CAPI board support
-if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP") || ($fpga_card == "FX609") || ($fpga_card == "S241")) && ($capi_bsp_dir != "not defined") } {
+if { ($capi_ver == "capi20") && [file exists $capi_bsp_dir/capi_bsp_wrap.xcix] } {
   puts "                        importing CAPI BSP"
   set_property ip_repo_paths "[file normalize $capi_bsp_dir]" [current_project] >> $log_file
   update_ip_catalog >> $log_file
@@ -290,8 +287,8 @@ if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP") || ($fpga_card == "FX
 puts "                        importing XDCs"
 
 # Board Support XDC
-if { ($fpga_card == "N250SP") && ($capi_bsp_dir != "not defined") } {
-  puts "                      importing N250SP Board support XDCs"
+if { $capi_ver == "capi20" } {
+  puts "                        importing specific Board support XDCs"
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
 #  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
 }
@@ -360,6 +357,11 @@ if { $fpga_card == "ADKU3" } {
 if { $ila_debug == "TRUE" } {
   add_files -fileset constrs_1 -norecurse  $::env(ILA_SETUP_FILE)
 }
+
+#
+# update the compile order
+update_compile_order >> $log_file
+
 
 puts "\[CREATE_FRAMEWORK....\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 close_project >> $log_file

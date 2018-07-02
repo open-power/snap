@@ -737,7 +737,7 @@ int main(int argc, char *argv[])
 					__func__, strerror(errno));
 				goto err_out;
 			}
-			memset(buf, 0xff, num_lba * lba_size);
+			memset(buf, 0x00, num_lba * lba_size);
 		}
 
 		fprintf(stdout, "About to read %zu times %zu bytes: %zu KiB NVMe into %s\n",

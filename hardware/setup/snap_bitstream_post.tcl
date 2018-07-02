@@ -1,6 +1,6 @@
 #-----------------------------------------------------------
 #
-# Copyright 2016, International Business Machines
+# Copyright 2016-2018, International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,15 +16,9 @@
 #
 #-----------------------------------------------------------
 
-set root_dir   $::env(SNAP_ROOT)/hardware
-set fpgacard   $::env(FPGACARD)
+set root_dir        $::env(SNAP_ROOT)/hardware
+set flash_interface $::env(FLASH_INTERFACE)
+set flash_size      $::env(FLASH_SIZE)
 
-if { $fpgacard == "RCXVUP" } {
-   write_cfgmem -force -format bin -size 128 -interface SPIx8 -loadbit "up 0x0 $root_dir/viv_project/framework.runs/impl_1/psl_fpga.bit" $root_dir/viv_project/framework.runs/impl_1/psl_fpga
-} else if { ($fpgacard == "FX609") || ($fpgacard == "S241") } {
-   write_cfgmem -force -format bin -size 128 -interface SPIx4 -loadbit "up 0x0 $root_dir/viv_project/framework.runs/impl_1/psl_fpga.bit" $root_dir/viv_project/framework.runs/impl_1/psl_fpga
-} else {
-   # Max. size is 64MB for N250S and ADKU3, 128MB for S121B and N250SP. Bin file size will match the device, so -size is not relevant here.
-   write_cfgmem -force -format bin -size 128 -interface BPIx16 -loadbit "up 0x0 $root_dir/viv_project/framework.runs/impl_1/psl_fpga.bit" $root_dir/viv_project/framework.runs/impl_1/psl_fpga
-}
 
+write_cfgmem -force -format bin -size $flash_size -interface $flash_interface -loadbit "up 0x0 $root_dir/viv_project/framework.runs/impl_1/psl_fpga.bit" $root_dir/viv_project/framework.runs/impl_1/psl_fpga

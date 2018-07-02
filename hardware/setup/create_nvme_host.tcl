@@ -16,10 +16,11 @@
 #
 #-----------------------------------------------------------
 
-set root_dir   $::env(SNAP_HARDWARE_ROOT)
-set fpga_part  $::env(FPGACHIP)
-set log_dir    $::env(LOGS_DIR)
-set log_file   $log_dir/create_nvme_host.log
+set root_dir    $::env(SNAP_HARDWARE_ROOT)
+set denali_used $::env(DENALI_USED)
+set fpga_part   $::env(FPGACHIP)
+set log_dir     $::env(LOGS_DIR)
+set log_file    $log_dir/create_nvme_host.log
 
 set prj_name nvme
 set bd_name  nvme_top
@@ -247,9 +248,11 @@ CONFIG.plltype {QPLL1} \
 # Vivado2017.4 can not create an an example project if the design was not saved before
 save_bd_design >> $log_file
 
-#AXI_PCIE3 create axi_pcie3 example design
-puts "                        generating AXI PCIe Root Complex example design"
-open_example_project -in_process -verbose -force -dir $root_dir/ip/nvme [get_ips nvme_top_axi_pcie3_0_0] >> $log_file  
+if { $denali_used == TRUE } {
+  #AXI_PCIE3 create axi_pcie3 example design
+  puts "                        generating AXI PCIe Root Complex example design"
+  open_example_project -in_process -verbose -force -dir $root_dir/ip/nvme [get_ips nvme_top_axi_pcie3_0_0] >> $log_file  
+}
 
 current_project $prj_name
 open_bd_design [get_files */$bd_name.bd]

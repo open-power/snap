@@ -3,11 +3,17 @@
 # Kernel Configuration
 #
 # N250S is not set
-# N250SP is not set
 # ADKU3 is not set
 AD8K5=y
-# S121B is not set
+# S121B_BPIx16 is not set
+# S121B_SPIx4 is not set
+# N250SP is not set
+# RCXVUP is not set
 FPGACARD="AD8K5"
+FLASH_INTERFACE="BPIx16"
+FLASH_SIZE="128"
+FLASH_USERADDR="0x02000000"
+# S121B is not set
 CAPI10=y
 # CAPI20 is not set
 FPGACHIP="xcku115-flva1517-2-e"
@@ -21,6 +27,7 @@ NUM_OF_ACTIONS=1
 # HLS_SEARCH is not set
 HLS_BFS=y
 # HLS_INTERSECT is not set
+# HLS_LATENCY_EVAL is not set
 # HLS_HELLOWORLD is not set
 ENABLE_HLS_SUPPORT=y
 HLS_SUPPORT="TRUE"
@@ -36,17 +43,21 @@ DISABLE_NVME=y
 NVME_USED="FALSE"
 SIM_XSIM=y
 # SIM_IRUN is not set
+# SIM_XCELIUM is not set
+# SIM_MODELSIM is not set
+# SIM_QUESTA is not set
 # NO_SIM is not set
 SIMULATOR="xsim"
+DENALI_USED="FALSE"
 
 #
 # ================= Advanced Options: =================
 #
+# ENABLE_PRFLOW is not set
+USE_PRFLOW="FALSE"
 # ENABLE_ILA is not set
 ILA_DEBUG="FALSE"
 # ENABLE_FACTORY is not set
 FACTORY_IMAGE="FALSE"
-# ENABLE_PRFLOW is not set
-USE_PRFLOW="FALSE"
 CLOUD_USER_FLOW="FALSE"
 CLOUD_BUILD_BITFILE="FALSE"
