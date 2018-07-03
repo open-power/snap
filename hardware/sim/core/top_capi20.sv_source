@@ -1361,7 +1361,7 @@ module top (
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
     );
 #endif
-
+#endif
 #if defined (CONFIG_ENABLE_NVME) && defined(CONFIG_ENABLE_DENALI)
   ////////////////////////////////////////////////////////////
   // NVMe model                                             //

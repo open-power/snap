@@ -122,9 +122,7 @@ check_snap_settings:
 	@echo "                        =============================="
 	@echo "                        hardware/Makefile called with:"
 	@echo "                        ACTION_ROOT     = $(ACTION_ROOT)"
-	@if [ "$(FPGACARD)" == "N250SP" ] || [ "$(FPGACARD)" == "RCXVUP" ] || [ "$(FPGACARD)" == "FX609" ] || [ "$(FPGACARD)" == "S241" ]; then \
-		echo "                        CAPI_BSP        = $(CAPI_BSP)"; \
-	else \
+	@if [ "$(CAPI_VER)" == "capi10" ]; then \
 		echo "                        PSL_DCP         = $(PSL_DCP)"; \
 	elif [ "$(CAPI_VER)" == "capi20" ]; then \
 		echo "                        PSL9_IP         = $(PSL9_IP)"; \
