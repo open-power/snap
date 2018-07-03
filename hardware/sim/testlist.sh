@@ -245,12 +245,15 @@
 #       if (( "$up" < "8" )); then printf '.'; else break; fi
 #     done; delta=$(( (16#$free2-16#$free1)/250 )); echo "SSD1 link_up=$up i=$i freerun_delta=$delta us"
 #     # init FPGA drives
-#     step "nvmeInit.py       -h"
-#     step "nvmeInit.py       -d0"
-      step "snap_nvme_init    -d0 -v"
-#     step "nvmeInit.py       -d1"
-      step "snap_nvme_init    -d1 -v"
-#     step "nvmeInit.py       -db"
+      env_denali=$(echo $ENABLE_DENALI);echo "env_denali=${env_denali} $ENABLE_DENALI"
+      if [[ "$ENABLE_DENALI" == "Y" ]];then  # init needed, if DENALI is used.
+#       step "nvmeInit.py       -h"
+#       step "nvmeInit.py       -d0"
+        step "snap_nvme_init    -d0 -v"
+#       step "nvmeInit.py       -d1"
+        step "snap_nvme_init    -d1 -v"
+#       step "nvmeInit.py       -db"
+      fi
 #     step "snap_example      -h"
 #     step "snap_example      -a6           -S2      -t100 -vv"
 #     # test with Python and check visually
