@@ -245,8 +245,8 @@
 #       if (( "$up" < "8" )); then printf '.'; else break; fi
 #     done; delta=$(( (16#$free2-16#$free1)/250 )); echo "SSD1 link_up=$up i=$i freerun_delta=$delta us"
 #     # init FPGA drives
-      env_denali=$(echo $ENABLE_DENALI);echo "env_denali=${env_denali} $ENABLE_DENALI"
       if [[ "$ENABLE_DENALI" == "Y" ]];then  # init needed, if DENALI is used.
+        echo "init for DENALI flash"
 #       step "nvmeInit.py       -h"
 #       step "nvmeInit.py       -d0"
         step "snap_nvme_init    -d0 -v"
@@ -287,7 +287,10 @@
         echo "generate data for $blk blocks, $p8 pages, $p4k bytes"
         dd if=/dev/urandom of=rnd.in count=${p8} bs=512 2>/dev/null  # random data any char, no echo due to unprintable char
         head -c $p4k </dev/zero|tr '\0' 'x' >asc.in;head asc.in;echo # same char mult times
-        step "snap_nvme_init -d0 -v"
+        if [[ "$ENABLE_DENALI" == "Y" ]];then  # init needed, if DENALI is used.
+          echo "init for DENALI flash"
+          step "snap_nvme_init -d0 -v"
+        fi
         step "snap_cblk $options -b${blk} --read ${p8}.out       -v"
         step "snap_cblk $options -b${blk} --write asc.in         -v"
         step "snap_cblk $options -b${blk} --format --pattern INC"
@@ -421,7 +424,10 @@
  #
     if [[ "$t0l" == "10141007" && "${env_action}" == "hls_nvme_memcopy"* && "$nvme" == "1" ]];then echo -e "$del\ntesting snap_nvme_memcopy"
       step "snap_nvme_memcopy -h"
-      step "snap_nvme_init  -v"
+      if [[ "$ENABLE_DENALI" == "Y" ]];then  # init needed, if DENALI is used.
+        echo "init for DENALI flash"
+        step "snap_nvme_init  -v"
+      fi
       for size in 512 2048 ;do to=$((size*50+10))
         dd if=/dev/urandom bs=${size} count=1 >${size}.in
         if [[ $((size%64)) == 0 ]];then    # size is aligned
