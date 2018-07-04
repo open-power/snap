@@ -78,8 +78,8 @@ contained in the directory that `ACTION_ROOT` is pointing to (see section [Actio
 Specific configurations/preparations for the action may be added via this make process step.
 
 ## CAPI board support and PSL for image build
-In order to benefit from the advantage of CAPI (low latency high bandwith access to host memory as well as memory coherency) a specific  implementation of the FPGA is required to use the PCIe link and CAPP (Coherent Accelerator Processor Proxy located in the Power Processors) properly. This is provided by the PSL (Processor Service Layer).
-The PSL slighly differs wether we have a Power8 with CAPI 1.0 or a Power9 with CAPI 2.0.
+In order to benefit from the advantage of CAPI (low latency high bandwith access to host memory as well as memory coherency) a specific  implementation of the FPGA is required to use the PCIe link and CAPP (Coherent Accelerator Processor Proxy which is located in the Power processors) properly. This is provided by the PSL (Processor Service Layer).
+The PSL differs whether we have a Power8 with CAPI 1.0 or a Power9 with CAPI 2.0.
 
 In any case, to get the latest CAPI board support and PSL download, visit **IBM Portal for OpenPOWER** at
 
@@ -98,8 +98,12 @@ CAPI BSP (Board support Package) and PSL got separated. For the CAPI 2.0 BSP, th
 The PSL is integrated into the CAPI BSP as an IP core with encrypted sources (provided as an archived file).
 Please go to the IBM Portal for OpenPOWER and download the required files under "**PSL IP Source Files for POWER9 CAPI**".
 
+Alternatively, the following link will provide direct access:
+
+https://www-355.ibm.com/systems/power/openpower/posting.xhtml?postingId=1BED44BCA884D845852582B70076A89A
+
 If the environment variable `PSL9_IP_CORE` is defined in `snap_env.sh` file, the build process uses it.
-Otherwise, the build process is assuming the archived PSL9 IP core is located in the subdirectory `psl` of `snap/hardware/capi2-bsp`.
+Otherwise, the build process is assuming the archived PSL9 IP core is located in `snap/hardware/capi2-bsp/psl` directory.
 
 ## The make process
 If you call `make` without any targets, then a help message will be printed explaining the different targets supported by the make process.
