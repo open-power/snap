@@ -43,11 +43,14 @@ Please also have a look at [actions](./actions) to see several examples which ma
 # 3. Dependencies
 ## FPGA Card selection
 As of now, the following FPGA cards can be used with SNAP:
-* Alpha-Data ADM-PCIE-KU3 http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
-* Alpha-Data ADM-PCIE-8K5 (rev2) http://www.alpha-data.com/dcp/products.php?product=adm-pcie-8k5
-* Nallatech 250S-2T with two on-card NVMe M.2 960GB drives http://www.nallatech.com/250s
-* Semptian NSA121B http://www.semptian.com/proinfo/10.html
-* ReflexCES XpressVUP LP9P https://www.reflexces.com/products-solutions/other-cots-boards/xilinx/xpressvup
+* for Power8 (CAPI1.0):
+  * Alpha-Data ADM-PCIE-KU3        http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
+  * Alpha-Data ADM-PCIE-8K5 (rev2) http://www.alpha-data.com/dcp/products.php?product=adm-pcie-8k5
+  * Nallatech 250S-2T with two on-card NVMe M.2 960GB drives http://www.nallatech.com/250s
+* for Power9 (CAPI2.0):
+  * Semptian NSA121B http://www.semptian.com/proinfo/10.html
+  * Nallatech 250SP  http://www.nallatech.com/250sp
+  * ReflexCES XpressVUP LP9P https://www.reflexces.com/products-solutions/other-cots-boards/xilinx/xpressvup
 
 ## Development (Step1 & Step2)
 Development is usually done on a Linux (x86) computer. The required tools and packages are listed below. Web access to github is recommended to follow the build instructions. A real FPGA card is not required for the plain hardware development.
@@ -58,24 +61,9 @@ SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulat
 https://www.xilinx.com/products/design-tools/hardware-zone.html
 
 ### (b) CAPI board support and PSL
-Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For the latest CAPI board support and PSL download, visit **IBM Portal for OpenPOWER** at
+Access to CAPI from the FPGA card requires the Power Service Layer (PSL) as well as a Board support Package (BSP) for CAPI2.0 cards.
+Detailed information are available in [hardware/README.md](hardware/README.md)
 
-https://www.ibm.com/systems/power/openpower
-
-From the menu, select "CAPI"->"Coherent Accelerator Processor Interface (CAPI)" or directly click the "CAPI" icon to go to the CAPI section.
-Then download the appropriate files depending on your target system being POWER8 (CAPI 1.0) or POWER9 (CAPI 2.0).
-
-#### Power8
-CAPI board support and PSL are integrated in a Vivado design checkpoint.
-Please go to the IBM Portal for OpenPOWER and download the required files under "**PSL Checkpoint Files for the POWER8 CAPI SNAP Design Kit**" according to the selected FPGA card. `PSL_DCP` variable in `snap_env.sh` file will reflect the path accordingly.
-
-#### Power9
-CAPI board support and PSL got separated. For the CAPI 2.0 board support package
-the open source git repository https://github.com/open-power/capi2-bsp exists which is integrated into the SNAP framework
-as git submodule under [hardware/capi2-bsp](https://github.com/open-power/capi2-bsp).
-
-The PSL gets integrated into the CAPI board support package as IP core with encrypted sources.
-Please go to the IBM Portal for OpenPOWER and download the required files under "**PSL IP Source Files for POWER9 CAPI**".
 
 ### (c) Build process
 Building the code and running the make environment requires the usual development tools `gcc, make, sed, awk`. If not installed already, the installer package `build-essential` will set up the most important tools.
