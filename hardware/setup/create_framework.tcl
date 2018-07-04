@@ -265,7 +265,7 @@ if { ($capi_ver == "capi20") && [file exists $capi_bsp_dir/capi_bsp_wrap.xcix] }
   add_files -norecurse                  $capi_bsp_dir/capi_bsp_wrap.xcix -force >> $log_file
   export_ip_user_files -of_objects      [get_files capi_bsp_wrap.xci] -force >> $log_file
   set_property used_in_simulation false [get_files capi_bsp_wrap.xci] >> $log_file
-} elseif { $psl_dcp != "FALSE" } {
+} elseif { ($capi_ver == "capi10") && ($psl_dcp != "FALSE") } {
   puts "                        importing PSL design checkpoint"
   read_checkpoint -cell b $psl_dcp -strict >> $log_file
 }
