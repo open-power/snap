@@ -245,15 +245,17 @@
 #       if (( "$up" < "8" )); then printf '.'; else break; fi
 #     done; delta=$(( (16#$free2-16#$free1)/250 )); echo "SSD1 link_up=$up i=$i freerun_delta=$delta us"
 #     # init FPGA drives
-      if [[ "$ENABLE_DENALI" == "Y" ]];then  # init needed, if DENALI is used.
-        echo "init for DENALI flash"
-#       step "nvmeInit.py       -h"
-#       step "nvmeInit.py       -d0"
-        step "snap_nvme_init    -d0 -v"
-#       step "nvmeInit.py       -d1"
-        step "snap_nvme_init    -d1 -v"
-#       step "nvmeInit.py       -db"
-      fi
+      case $ENABLE_DENALI in
+        y|Y) echo "ENABLE_DENALI=$ENABLE_DENALI init flash" # init needed, if DENALI is used.
+#            step "nvmeInit.py       -h"
+#            step "nvmeInit.py       -d0"
+             step "snap_nvme_init    -d0 -v"
+#            step "nvmeInit.py       -d1"
+             step "snap_nvme_init    -d1 -v"
+#            step "nvmeInit.py       -db"
+             ;;
+        *) echo "ENABLE_DENALI=$ENABLE_DENALI no flash init";;
+      esac
 #     step "snap_example      -h"
 #     step "snap_example      -a6           -S2      -t100 -vv"
 #     # test with Python and check visually
@@ -424,10 +426,12 @@
  #
     if [[ "$t0l" == "10141007" && "${env_action}" == "hls_nvme_memcopy"* && "$nvme" == "1" ]];then echo -e "$del\ntesting snap_nvme_memcopy"
       step "snap_nvme_memcopy -h"
-      if [[ "$ENABLE_DENALI" == "Y" ]];then  # init needed, if DENALI is used.
-        echo "init for DENALI flash"
-        step "snap_nvme_init  -v"
-      fi
+      case $ENABLE_DENALI in
+        y|Y) echo "ENABLE_DENALI=$ENABLE_DENALI init flash" # init needed, if DENALI is used.
+             step "snap_nvme_init  -v"
+             ;;
+        *) echo "ENABLE_DENALI=$ENABLE_DENALI no flash init";;
+      esac
       for size in 512 2048 ;do to=$((size*50+10))
         dd if=/dev/urandom bs=${size} count=1 >${size}.in
         if [[ $((size%64)) == 0 ]];then    # size is aligned
