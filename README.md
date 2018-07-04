@@ -58,7 +58,7 @@ SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulat
 https://www.xilinx.com/products/design-tools/hardware-zone.html
 
 ### (b) CAPI board support and PSL
-Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For the latest CAPI board support and PSL download, visit IBM Portal for OpenPOWER at
+Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For the latest CAPI board support and PSL download, visit **IBM Portal for OpenPOWER** at
 
 https://www.ibm.com/systems/power/openpower
 
