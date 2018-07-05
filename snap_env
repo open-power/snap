@@ -193,7 +193,7 @@ while [ -z "$SETUP_DONE" ]; do
     SETUP_INFO="$SETUP_INFO\n### INFO ### Kept ACTION_ROOT from previous configuration."
   else
     echo "Setting ACTION_ROOT            to: \"$AR\""
-    sed -i '#export[ ^]*ACTION_ROOT[ ^]*=# d' $snap_env_sh
+    sed -i '/export[ ^]*ACTION_ROOT[ ^]*=/ d' $snap_env_sh
     sed -i '1s#^#export ACTION_ROOT='$AR'\n#' $snap_env_sh
   fi
 
