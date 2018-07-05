@@ -25,4 +25,22 @@ echo "card=$FPGACARD version=$version branch=$branch PSLVER=$PSLVER"
 #  "RCXVUP") if [ $branch != "\* capi2" ];then echo "WARNING: PSLSE branch=$branch should be capi2";fi;;
 #  *)        if [ $version != "v3.1"    ];then echo "WARNING: PSLSE version=$version should be v3.1";fi;;
 #esac
+#### Checking if PSLSE was compiled with the same version than what the card requests
+if [ -e ".pslsecompiled" ]; then
+  RESP=`grep PSLVER_ .pslsecompiled`
+  if [ $RESP == "PSLVER_8" ] && [ $PSLVER == 9 ] ; then
+    echo "WARNING PSLSE compiled for P8 while P9 model asked => recompiling PSLSE"
+    make clean
+    echo "PSLVER_$PSLVER" > .pslsecompiled
+  fi
+  if [ $RESP == "PSLVER_9" ] && [ $PSLVER == 8 ]; then
+    echo "WARNING PSLSE compiled for P9 while P8 model asked => recompiling PSLSE"
+    make clean
+    echo "PSLVER_$PSLVER" > .pslsecompiled
+  fi
+else
+  echo "WARNING PSLSE compiled version unknown: creating .pslsecompiled file + recompiling"
+  make clean
+  echo "PSLVER_$PSLVER" >> .pslsecompiled
+fi
 cd -

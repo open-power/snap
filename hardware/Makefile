@@ -382,7 +382,7 @@ cloud_merge: allow_cloud_merge $(SNAP_BASE_DCP) $(SNAP_ACTION_DCP)
 pslse: prepare_logs
 	@echo -e "[COMPILE PSLSE ......] start `date +"%T %a %b %d %Y"`"
 	@$(SNAP_ROOT)/check_pslse.sh > $(LOGS_DIR)/compile_pslse.log 2>&1
-	@$(MAKE) -C $(PSLSE_ROOT) clean all >> $(LOGS_DIR)/compile_pslse.log 2>&1; \
+	@$(MAKE) -C $(PSLSE_ROOT) >> $(LOGS_DIR)/compile_pslse.log 2>&1; \
 	if [ $$? -ne 0 ]; then echo -e "                        Error: please look into $(LOGS_DIR)/compile_pslse.log"; exit -1; fi
 	@echo -e "[COMPILE PSLSE ......] done  `date +"%T %a %b %d %Y"`"
 
