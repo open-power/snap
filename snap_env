@@ -93,15 +93,16 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
   ####### checking default variables
-  RESP=`grep PSL_DCP $snap_env_sh`
-  if [ -z "$RESP" ]; then
-    echo "#For CAPI1.0 enabled cards" >> $snap_env_sh
-    echo "#export PSL_DCP= <path to b_route_design.dcp file>" >> $snap_env_sh
-  fi
-  RESP=`grep PSL9_IP_CORE $snap_env_sh`
-  if [ -z "$RESP" ]; then
-    echo "#For CAPI2.0 enabled cards" >> $snap_env_sh
-    echo "#export PSL9_IP_CORE= <path to ibm.com_CAPI_PSL9_WRAP2.00.zip file>" >> $snap_env_sh
+  if [ "$CAPI20" == "y" ]; then 
+    RESP=`grep PSL9_IP_CORE $snap_env_sh`
+    if [ -z "$RESP" ]; then
+      echo "export PSL9_IP_CORE= <for CAPI2.0 cards: path to ibm.com_CAPI_PSL9_WRAP2.00.zip file>" >> $snap_env_sh
+    fi
+  else
+    RESP=`grep PSL_DCP $snap_env_sh`
+    if [ -z "$RESP" ]; then
+      echo "export PSL_DCP= <for CAPI1.0 cards: path to b_route_design.dcp file>" >> $snap_env_sh
+    fi
   fi
 
   ####### checking PSL DCP setup
@@ -134,7 +135,7 @@ while [ -z "$SETUP_DONE" ]; do
   # Note: SIMULATOR is defined via snap_config
   if [ "$SIMULATOR" != "nosim" ]; then
     echo "=====Simulation setup: Setting up PSLSE version=========="
-    if [ "$FPGACARD" == "N250SP" ] || [ "$FPGACARD" == "RCXVUP" ]; then
+    if [ "$CAPI20" == "y" ]; then 
       PSLVER="9"
     else
       PSLVER="8"
