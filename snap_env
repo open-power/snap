@@ -135,7 +135,7 @@ while [ -z "$SETUP_DONE" ]; do
   # Note: SIMULATOR is defined via snap_config
   if [ "$SIMULATOR" != "nosim" ]; then
     echo "=====Simulation setup: Setting up PSLSE version=========="
-    if [ "$CAPI20" == "y" ]; then 
+    if [ "$CAPI20" == "y" ]; then
       PSLVER="9"
     else
       PSLVER="8"
