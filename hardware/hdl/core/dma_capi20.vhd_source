@@ -814,15 +814,17 @@ BEGIN
             hd_c_size_v := hd_c_size_q;
           END IF;
 
-          read_ctrl_q(hd_c_utag_v).buf <= read_ctrl_q(hd_c_utag_v).buf + ("00" & hd_c_size_v(7 DOWNTO 6));
+          read_ctrl_q(hd_c_utag_v).buf  <= read_ctrl_q(hd_c_utag_v).buf  + ("00" & hd_c_size_v(7 DOWNTO 6));
+          read_ctrl_q(hd_c_utag_v).bufa <= read_ctrl_q(hd_c_utag_v).bufa + "01";
         END IF;
 
         --
         -- BUF: BUFFER TAG is valid
         --
         IF buf_rtag_valid_q = TRUE THEN
-          read_ctrl_q(buf_rtag_v).buf <= (OTHERS => '0');
-          read_ctrl_q(buf_rtag_v).utt <= UTC_NOT_USED;
+          read_ctrl_q(buf_rtag_v).buf  <= "0000";
+          read_ctrl_q(buf_rtag_v).bufa <= "00";
+          read_ctrl_q(buf_rtag_v).utt  <= UTC_NOT_USED;
         END IF;
 
         --------------------------------------------------------------------
@@ -836,12 +838,13 @@ BEGIN
           -- initial values
           --
           FOR i IN 0 TO 31 LOOP
-            read_ctrl_q(i).utt <= UTC_NOT_USED;
-            read_ctrl_q(i).uts <= (OTHERS => '0');
-            read_ctrl_q(i).rsp <= ILLEGAL_RSP;
-            read_ctrl_q(i).com <= INACTIVE;
-            read_ctrl_q(i).buf <= (OTHERS => '0');
-            read_ctrl_q(i).dma <= EMPTY;
+            read_ctrl_q(i).utt  <= UTC_NOT_USED;
+            read_ctrl_q(i).uts  <= (OTHERS => '0');
+            read_ctrl_q(i).rsp  <= ILLEGAL_RSP;
+            read_ctrl_q(i).com  <= INACTIVE;
+            read_ctrl_q(i).buf  <= "0000";
+            read_ctrl_q(i).bufa <= "00";
+            read_ctrl_q(i).dma  <= EMPTY;
           END LOOP;  -- i
 
           utc_rtag_q         <= (OTHERS => '0');

@@ -84,46 +84,32 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
 
   --
   -- SIGNAL
-  SIGNAL buf_rtag                         : integer RANGE 0 TO 31;
+  SIGNAL buf_rtag_r0                      : integer RANGE 0 TO 31;
   SIGNAL buf_wtag                         : integer RANGE 0 TO 31;
   SIGNAL buf_wtag_next_q                  : integer RANGE 0 TO 31;
-  SIGNAL buf_rtag_q                       : std_logic_vector(  5 DOWNTO 0);
-  SIGNAL buf_rtag_qq                      : std_logic_vector(  5 DOWNTO 0);
-  SIGNAL buf_rtag_qqq                     : std_logic_vector(  5 DOWNTO 0);
-  SIGNAL buf_rtag_p_q                     : std_logic;
-  SIGNAL buf_rdata_vld                    : std_logic;
-  SIGNAL utc_laddr_q                      : std_logic_vector(1 DOWNTO 0);
-  SIGNAL rram_uts_cnt_q                   : std_logic_vector(3 DOWNTO 0);
-  SIGNAL utc_byte_cnt_q                   : std_logic_vector(1 DOWNTO 0);
-  SIGNAL rram_ren                         : std_logic;
-  SIGNAL rram_rdata_vld                   : std_logic;
+  SIGNAL buf_rtag_r1                      : std_logic_vector(  5 DOWNTO 0);
+  SIGNAL buf_rtag_r2                      : std_logic_vector(  5 DOWNTO 0);
+  SIGNAL buf_rtag_r3                      : std_logic_vector(  5 DOWNTO 0);
+  SIGNAL buf_rtag_p_r3                    : std_logic;
+  SIGNAL rram_uts_cnt_r3                  : std_logic_vector(3 DOWNTO 0);
+  SIGNAL rram_ren_r0                      : std_logic;
+  SIGNAL rram_ren_r1                      : std_logic;
+  SIGNAL rram_ren_r2                      : std_logic;
+  SIGNAL rram_rdata_vld_r3                : std_logic;
   SIGNAL rram_wvld                        : std_logic_vector(1 DOWNTO 0);
-  SIGNAL rram_rvld                        : std_logic;
-  SIGNAL rram_rdata_end                   : std_logic;
-  SIGNAL buf_rtag_p_qq                    : std_logic;
-  SIGNAL buf_rtag_p_qqq                   : std_logic;
-  SIGNAL buf_rtag_valid_q                 : boolean;
-  SIGNAL buf_rtag_valid_qq                : boolean;
-  SIGNAL buf_rtag_valid_qqq               : boolean;
+  SIGNAL rram_rvld_r2                     : std_logic;
+  SIGNAL rram_rdata_end_r3                : std_logic;
+  SIGNAL buf_rtag_valid_r3                : boolean;
   SIGNAL buf_wtag_q                       : std_logic_vector(  5 DOWNTO 0);
   SIGNAL buf_wtag_p_q                     : std_logic;
   SIGNAL buf_wwen_q                       : boolean;
   SIGNAL hd_c_q                           : HD_C_T;
   SIGNAL rlck_data_p_q                    : ARR_RLCK_DATA_P_T;
   SIGNAL rlck_data_q                      : ARR_RLCK_DATA_T;
-  SIGNAL rram_raddr                       : std_logic_vector(  7 DOWNTO 0);
-  SIGNAL rram_raddr_d, rram_raddr_q       : std_logic_vector(  8 DOWNTO 0);
-  SIGNAL rram_rdata                       : std_logic_vector(511 DOWNTO 0);
-  SIGNAL rram_rdata_vld_d                 : std_logic;
-  SIGNAL rram_rdata_vld_q                 : std_logic;
-  SIGNAL rram_rdata_vld_qq                : std_logic;
-  SIGNAL rram_rdata_vld_qqq               : std_logic;
-  SIGNAL rram_rdata_end_d                 : std_logic;
-  SIGNAL rram_rdata_end_q                 : std_logic;
-  SIGNAL rram_rdata_end_qq                : std_logic;
-  SIGNAL rram_rdata_end_qqq               : std_logic;
-  SIGNAL rram_rdata_p_q                   : std_logic_vector(   7 DOWNTO 0);
-  SIGNAL rram_rdata_q                     : std_logic_vector( 511 DOWNTO 0);
+  SIGNAL rram_raddr_r0                    : std_logic_vector(  8 DOWNTO 0);
+  SIGNAL rram_rdata_r2                    : std_logic_vector(511 DOWNTO 0);
+  SIGNAL rram_rdata_r3                    : std_logic_vector( 511 DOWNTO 0);
+  SIGNAL rram_rdata_p_r3                  : std_logic_vector(   7 DOWNTO 0);
   SIGNAL rram_waddr                       : std_logic_vector(   6 DOWNTO 0);
   SIGNAL rram_wen                         : std_logic;
   SIGNAL wram_ren                         : std_logic;
@@ -178,9 +164,9 @@ BEGIN
       addra                  => rram_waddr,
       dina                   => hd_c_q.data,
       dinvlda                => rram_wvld,
-      addrb                  => rram_raddr,
-      doutb                  => rram_rdata,
-      doutvldb               => rram_rvld
+      addrb                  => rram_raddr_r0(7 DOWNTO 0),
+      doutb                  => rram_rdata_r2,
+      doutvldb               => rram_rvld_r2
     );
     
     rram_wvld(0) <= rram_wen;   
@@ -191,68 +177,69 @@ BEGIN
     -- Note: Only a full CL will be transfered to job_manager or data_bridge.
     --       Throttling in between a CL transfer is not possible.
     ----------------------------------------------------------------------------
-    buf_rtag       <= to_integer(unsigned(rram_raddr_q(7 DOWNTO 3)));
+    buf_rtag_r0    <= to_integer(unsigned(rram_raddr_r0(7 DOWNTO 3)));
 
-    rram_ren       <= '1' WHEN (buf_rrdreq_i    = '1' AND (read_ctrl_i(buf_rtag).uts  = read_ctrl_i(buf_rtag).buf)
-                                                      AND (read_ctrl_i(buf_rtag).buf /= "0000"                   ))  ELSE '0';
-    rram_rdata_vld <= '1' WHEN ((('0' & rram_raddr_q(2 DOWNTO 0)    ) < read_ctrl_i(buf_rtag).uts)) ELSE '0';
-    rram_rdata_end <= '1' WHEN ((('0' & rram_raddr_q(2 DOWNTO 0) + 1) = read_ctrl_i(buf_rtag).uts) AND (read_ctrl_i(buf_rtag).utt = UTC_LAST)) ELSE '0';
-
-    rram_waddr <= hd_c_q.utag(4 DOWNTO 0) & read_ctrl_i(to_integer(unsigned(hd_c_q.utag(4 DOWNTO 0)))).buf(2 DOWNTO 1);
-    rram_raddr <= rram_raddr_q(7 DOWNTO 0);
-
-    rram_raddr_d     <=  rram_raddr_q + "00000001" WHEN (rram_ren = '1'                       ) ELSE rram_raddr_q;
-    rram_rdata_vld_d <=                        '1' WHEN (rram_ren = '1' AND rram_rdata_vld = '1') ELSE '0';
-    rram_rdata_end_d <=                        '1' WHEN (rram_ren = '1' AND rram_rdata_end = '1') ELSE '0';
-
-    rram_wen   <= hd_c_q.valid when (hd_c_q.utag(7 DOWNTO 5) = "000") else '0';
+    rram_ren_r0   <= '1' WHEN (buf_rrdreq_i    = '1' AND (read_ctrl_i(buf_rtag_r0).uts  = read_ctrl_i(buf_rtag_r0).buf)
+                                                     AND (read_ctrl_i(buf_rtag_r0).uts /= "0000"                      ))  ELSE '0';
+    rram_wen      <= hd_c_q.valid when (hd_c_q.utag(7 DOWNTO 5) = "000") else '0';
+    rram_waddr    <= hd_c_q.utag(4 DOWNTO 0) & read_ctrl_i(to_integer(unsigned(hd_c_q.utag(4 DOWNTO 0)))).bufa;
 
     ----------------------------------------------------------------------------
     -- RAM control clock
     ----------------------------------------------------------------------------
     rram_ctrl_clk : PROCESS (ha_pclock)
+      VARIABLE rram_uts_cnt_r2_v : std_logic_vector(3 DOWNTO 0);
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
         --
         -- defaults
         --
-        buf_rtag_q         <= rram_raddr_q(8 DOWNTO 3);
-        buf_rtag_qq        <= buf_rtag_q;
-        buf_rtag_qqq       <= buf_rtag_qq;
-        buf_rtag_p_q       <= parity_gen_even('0' & rram_raddr_q(8 DOWNTO 3));
-        buf_rtag_p_qq      <= buf_rtag_p_q;
-        buf_rtag_p_qqq     <= buf_rtag_p_qq;
-        buf_rtag_valid_q   <= FALSE;
-        buf_rtag_valid_qq  <= buf_rtag_valid_q;
-        buf_rtag_valid_qqq <= buf_rtag_valid_qq;
-        utc_byte_cnt_q     <= utc_byte_cnt_q;
-        rram_uts_cnt_q     <= rram_uts_cnt_q;
-        rram_rdata_q       <= rram_rdata(511 DOWNTO   0);
-        rram_rdata_p_q     <= (OTHERS => '0');
+        buf_rtag_r1        <= rram_raddr_r0(8 DOWNTO 3);
+        buf_rtag_r2        <= buf_rtag_r1;
+        buf_rtag_r3        <= buf_rtag_r2;
+        buf_rtag_p_r3      <= parity_gen_even(buf_rtag_r2);
+        buf_rtag_valid_r3  <= FALSE;
+        rram_uts_cnt_r3    <= rram_uts_cnt_r3;
+        rram_rdata_r3      <= rram_rdata_r2(511 DOWNTO   0);
+        rram_rdata_p_r3    <= (OTHERS => '0');
 
-        IF (rram_raddr_d(3) /= rram_raddr_q(3))  THEN
-          buf_rtag_valid_q <= TRUE;
-          rram_uts_cnt_q   <= "0000";
-        ELSE
-          IF rram_rdata_vld = '1' AND
-             rram_ren       = '1' THEN
-            rram_uts_cnt_q <= rram_uts_cnt_q +1;
-          END IF;
+        rram_rdata_vld_r3 <= '0'; 
+        rram_rdata_end_r3 <= '0'; 
+        rram_ren_r1      <= rram_ren_r0;
+        rram_ren_r2      <= rram_ren_r1;
+        rram_raddr_r0    <= rram_raddr_r0;
+
+        IF rram_ren_r0 = '1' THEN
+          rram_raddr_r0 <=  rram_raddr_r0 + "00000001";
         END IF;
 
-        IF hd_c_i.utag /= hd_c_q.utag THEN
-          utc_laddr_q <= "00";
-        ELSE
-          IF hd_c_q.valid = '1' THEN
-            utc_laddr_q <= utc_laddr_q + "01";                    
-          END IF;          
+        IF rram_ren_r2  = '1' AND
+           rram_rvld_r2 = '1' THEN
+
+          rram_uts_cnt_r2_v := rram_uts_cnt_r3 + 1;
+          rram_uts_cnt_r3   <= rram_uts_cnt_r2_v;
+          
+          IF (rram_uts_cnt_r2_v <= read_ctrl_i(to_integer(unsigned(buf_rtag_r2(4 DOWNTO 0)))).uts) THEN
+            rram_rdata_vld_r3 <= '1'; 
+          END IF;
+       
+          IF (rram_uts_cnt_r2_v  = read_ctrl_i(to_integer(unsigned(buf_rtag_r2(2 DOWNTO 0)))).uts) THEN
+            rram_rdata_end_r3  <= '1'; 
+          END IF;
+
+        END IF;
+        
+        IF (buf_rtag_r1(0) /= buf_rtag_r2(0))  THEN
+          buf_rtag_valid_r3 <= TRUE;
+          rram_uts_cnt_r3   <= "0000";
         END IF;
         
         --
         -- Reset Logic
         --
         IF afu_reset = '1' THEN
-          rram_uts_cnt_q <= "0000";
+          rram_raddr_r0   <= (OTHERS => '0');
+          rram_uts_cnt_r3 <= "0000";
         END IF;
       END IF;
     END PROCESS rram_ctrl_clk;
@@ -409,18 +396,18 @@ BEGIN
     --
     --
     --
-    buf_rtag_o        <= buf_rtag_qqq;
-    buf_rtag_p_o      <= buf_rtag_p_qqq;
-    buf_rtag_valid_o  <= buf_rtag_valid_qqq;
+    buf_rtag_o        <= buf_rtag_r3;
+    buf_rtag_p_o      <= buf_rtag_p_r3;
+    buf_rtag_valid_o  <= buf_rtag_valid_r3;
     buf_wtag_o        <= buf_wtag_q;
     buf_wtag_p_o      <= buf_wtag_p_q;
     buf_wwen_o        <= buf_wwen_q;
 
 
-    buf_rdata_o       <= rram_rdata_q;
-    buf_rdata_p_o     <= rram_rdata_p_q;
-    buf_rdata_vld_o   <= rram_rdata_vld_qqq;
-    buf_rdata_end_o   <= rram_rdata_end_qqq;  
+    buf_rdata_o       <= rram_rdata_r3;
+    buf_rdata_p_o     <= rram_rdata_p_r3;
+    buf_rdata_vld_o   <= rram_rdata_vld_r3;
+    buf_rdata_end_o   <= rram_rdata_end_r3;  
                        
     buf_wdata_o       <= wram_rdata_q(1023 DOWNTO 0);
     buf_wdata_vld_o   <= wram_rdata_vld_qq;
@@ -438,13 +425,6 @@ BEGIN
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
         hd_c_q              <= hd_c_i;
-        rram_raddr_q        <= rram_raddr_d;
-        rram_rdata_vld_q    <= rram_rdata_vld_d;
-        rram_rdata_vld_qq   <= rram_rdata_vld_q;
-        rram_rdata_vld_qqq  <= rram_rdata_vld_qq AND rram_rvld;
-        rram_rdata_end_q    <= rram_rdata_end_d;
-        rram_rdata_end_qq   <= rram_rdata_end_q;
-        rram_rdata_end_qqq  <= rram_rdata_end_qq;
         wram_rdata_vld_q    <= wram_rdata_vld_d;
         wram_rdata_vld_qq   <= wram_rdata_vld_q;
         wram_rdata_end_q    <= wram_rdata_end_d;
@@ -453,13 +433,6 @@ BEGIN
         wram_rdata_type_qq  <= wram_rdata_type_q;
 
         IF afu_reset = '1' THEN
-          rram_raddr_q        <= (OTHERS => '0');
-          rram_rdata_vld_q    <= '0';
-          rram_rdata_vld_qq   <= '0';
-          rram_rdata_vld_qqq  <= '0';
-          rram_rdata_end_q    <= '0';
-          rram_rdata_end_qq   <= '0';
-          rram_rdata_end_qqq  <= '0';
           wram_rdata_vld_q    <= '0';
           wram_rdata_vld_qq   <= '0';
           wram_rdata_end_q    <= '0';

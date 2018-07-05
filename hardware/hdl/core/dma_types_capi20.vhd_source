@@ -48,7 +48,6 @@ PACKAGE dma_types IS
   --
   -- TYPES
   TYPE COM_INDICATION_T  IS (ACTIVE, INACTIVE);
-  TYPE BUF_INDICATION_T  IS (EMPTY, FULL);
   TYPE DMA_INDICATION_T  IS (EMPTY, XLAT_DONE, REQ_DONE);
   TYPE UTAG_INDICATION_T  IS (UTC_NOT_USED, UTC_FIRST, UTC_COMPLETE, UTC_LAST);
 
@@ -58,6 +57,7 @@ PACKAGE dma_types IS
     com        : COM_INDICATION_T;               -- command indication
     rsp        : RSP_CODES_T;                    -- response indication
     buf        : std_logic_vector(3 DOWNTO 0);
+    bufa       : std_logic_vector(1 DOWNTO 0);
     dma        : DMA_INDICATION_T;               -- PSL DMA indication
     uts        : std_logic_vector(3 DOWNTO 0);   -- utag size
     utt        : UTAG_INDICATION_T;              -- utag type 
@@ -65,16 +65,5 @@ PACKAGE dma_types IS
     itag       : std_logic_vector( 8 DOWNTO 0);  -- PSL DMA itag
   END RECORD UTAG_CTL_T;
   TYPE ARR_UTAG_CTL_T IS ARRAY (0 TO 31) OF UTAG_CTL_T;
-
---  TYPE DMA_W_CTL_T IS RECORD
---    com        : COM_INDICATION_T;               -- command indication
---    rsp        : RSP_CODES_T;                    -- response indication
---    buf        :  std_logic_vector(3 DOWNTO 0);
---    dma        : DMA_INDICATION_T;               -- PSL DMA indication
---    utt        : UTAG_INDICATION_T;              -- utag type 
---    cla        : std_logic_vector(63 DOWNTO 6);  -- cache line address
---    itag       : std_logic_vector( 8 DOWNTO 0);  -- PSL DMA itag
---  END RECORD DMA_W_CTL_T;
---  TYPE ARR_DMA_W_CTL_T IS ARRAY (0 TO 31) OF DMA_W_CTL_T;
 
 END dma_types;
