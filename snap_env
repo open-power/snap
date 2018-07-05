@@ -142,7 +142,7 @@ while [ -z "$SETUP_DONE" ]; do
     fi
     echo "Setting PSLVER                 to: \"$PSLVER\""
     sed -i '/export[ ^]*PSLVER[ ^]*=/ d' $snap_env_sh
-    echo "export PSLVER=$PSLVER" >> $snap_env_sh
+    sed -i '1s/^/export PSLVER='$PSLVER'\n/' $snap_env_sh
     echo "=====Simulation setup: Checking path to PSLSE=========="
     echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
     RESP=`grep PSLSE_ROOT $snap_env_sh`
@@ -193,8 +193,8 @@ while [ -z "$SETUP_DONE" ]; do
     SETUP_INFO="$SETUP_INFO\n### INFO ### Kept ACTION_ROOT from previous configuration."
   else
     echo "Setting ACTION_ROOT            to: \"$AR\""
-    sed -i '/export[ ^]*ACTION_ROOT[ ^]*=/ d' $snap_env_sh
-    echo "export ACTION_ROOT=$AR" >> $snap_env_sh
+    sed -i '#export[ ^]*ACTION_ROOT[ ^]*=# d' $snap_env_sh
+    sed -i '1s#^#export ACTION_ROOT='$AR'\n#' $snap_env_sh
   fi
 
   if [ -z "$AR" ] && [ "$ignore_action_root" != "y" ]; then
@@ -248,7 +248,7 @@ while [ -z "$SETUP_DONE" ]; do
   if [ -z "$TIMING_LABLIMIT" ]; then
     TIMING_LABLIMIT="$TIMING_LABLIMIT_DEFAULT"
     sed -i '/export[ ^]*TIMING_LABLIMIT[ ^]*=/ d' $snap_env_sh
-    echo "export TIMING_LABLIMIT=\"$TIMING_LABLIMIT_DEFAULT\"" >> $snap_env_sh
+    sed -i '1s/^/export TIMING_LABLIMIT="'$TIMING_LABLIMIT_DEFAULT'"\n/' $snap_env_sh
     SETUP_INFO="$SETUP_INFO\n### INFO ### Timing limit for FPGA image build got set to default value $TIMING_LABLIMIT_DEFAULT"
   fi
   echo "=====Timing limit for FPGA image build in ps============"
