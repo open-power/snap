@@ -21,7 +21,7 @@ choice
                   storage. Uses Xilinx FPGA XCKU060.
 
         config ADKU3
-                bool "CAPI1.0:AlphaData KU3 with Ethernet, 8GB DDR3 SDRAM and Xilinx KU60 FPGA"
+                bool "CAPI1.0: AlphaData KU3 with Ethernet, 8GB DDR3 SDRAM and Xilinx KU60 FPGA"
                 select CAPI10
                 select DISABLE_NVME
                 help
