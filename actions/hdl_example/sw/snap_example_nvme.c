@@ -124,8 +124,8 @@ static int memcmp2(void *dest,	/* Data from RAM */
 	int rc;
 	uint64_t data;		/* Data Value */
 	uint64_t expect;	/* Compare Value */
-	uint64_t *a64s = dest;
-	uint64_t *a64d = src;   /* compare bufer */
+	uint64_t *a64d = dest;
+	uint64_t *a64s = src;   /* compare bufer */
 
 
 	VERBOSE1("\n      Compare Buffer Source: %p <-> Destination: %p", src, dest);
