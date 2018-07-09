@@ -487,7 +487,7 @@ module nvme_top (
         logic [63:0] axi_addr;
         logic [15:0] i, j;
         logic [127:0] axi_data[512/16]; /* size of one LBA */
-        int fd;
+        //int fd;
 
         activity_state = NVME_READING;
         if (action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] == 1) begin
@@ -504,18 +504,12 @@ module nvme_top (
         for (axi_addr = ddr_addr; axi_addr < ddr_addr + lba_num * 512; axi_addr += 16 * DDR_AWLEN) begin
             /* Read a block once buffer is empty */
             if (i == 0) begin
-                static string fname;
+                static logic [7:0] fname[128];
                 $sformat(fname, "SNAP_LBA_%h.bin", lba_addr);
-                fd = $fopen(fname, "r");
-                $fclose(fd);
                 $readmemh(fname, axi_data);
+		// FIXME Bug in xsim sformat, the fname version has problems, the fixed filename seems working OK.
+		//   $readmemh("SNAP_LBA_0000000000000000.bin", axi_data);
                 lba_addr += 1;
-            end
-            /* Just in case the read was not successful, use fake data to initialize the buffer */
-            if (!fd) begin
-                for (j = 0; j < DDR_AWLEN; j++) begin
-                    axi_data[i + j] = 128'haabbccdd_11223344_55667788_00000000 + axi_addr + 16 * j;
-                end
             end
 
             /* FIXME ... well well not really generic regarding DDR_AWLEN ... HOWTO FIX THAT? */
