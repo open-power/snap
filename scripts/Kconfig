@@ -134,7 +134,7 @@ config FPGACHIP
         default "xcku115-flva1517-2-e" if AD8K5
         default "xcvu9p-flgb2104-2l-e-es1" if RCXVUP
         default "xcvu9p-fsgd2104-2l-e" if FX609
-        default "xcvu9p-fsgd2104-2l-e" if S241
+        default "xcvu9p-flgb2104-2l-e" if S241
 
 config NUM_OF_ACTIONS
         int
