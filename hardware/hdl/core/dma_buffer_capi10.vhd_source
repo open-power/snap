@@ -171,7 +171,7 @@ BEGIN
     -- RAM: ram_520x64_2p
     ----------------------------------------------------------------------------
     --
-    dma_read_ram: ram_520x64_2p
+    dma_read_ram:  ENTITY work.ram_520x64_2p
     PORT MAP (
       --
       -- pervasive
