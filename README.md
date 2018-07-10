@@ -124,4 +124,4 @@ Even members with write access to this repository can't commit directly into the
 Pull requests to merge into the master branch must be reviewed before they will be merged.
 
 Try a commit without sign-off
-Commit with sign-off
+Commit with sign-off for squash-merge test
