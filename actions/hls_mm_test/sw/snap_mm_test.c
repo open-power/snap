@@ -189,13 +189,13 @@ int main(int argc, char *argv[])
 	//
 	// Q = W * X
 	
-	int32_t i, j;
+	uint32_t i, j;
 
 	int32_t *W_buff = NULL;
 	int32_t *X_buff = NULL;
 	int32_t *Q_buff = NULL;
 	int32_t *OP_buff = NULL;
-	uint8_t *ST_buff = NULL;
+	volatile uint32_t *ST_buff = NULL;
 
 	ssize_t W_size = DIM1 * DIM2 * sizeof(int32_t);
 	ssize_t X_size = DIM2 * DIM3 * sizeof(int32_t);
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
 
 	// Set init value
 	memset(OP_buff, 0, 128); //Not in use, all-0
-	memset(ST_buff, 0, 128);
+	memset_volatile(ST_buff, 0, 128);
 	
 	for (i = 0; i < DIM1; i ++)
 		for (j = 0; j < DIM2; j++)
@@ -378,6 +378,20 @@ int main(int argc, char *argv[])
         snap_action_start(action);
 	
 	
+	uint32_t last_lp;
+	for(i = 0; i < loop_num -1; i++)
+	{
+		last_lp = ST_buff[0];
+		while (1)
+		{
+			if (last_lp != ST_buff[0]) {
+				print_timestamp("Loop");
+				break;
+			}
+		}
+	}
+
+		
 	
 	// stop the action if not done and read all registers from the action
          rc = snap_action_sync_execute_job_check_completion(action, &cjob,
@@ -386,9 +400,8 @@ int main(int argc, char *argv[])
 	print_timestamp("Stop action");
 
 
-    	printf("Last, Status = ");
-    	for(i = 0; i < 128; i++)
-        	printf("%d ",ST_buff[i]);
+    	printf("End Status: ");
+	printf("lp = %d, status =%d\n", ST_buff[0], ST_buff[1]);
 	printf("loop_num out = %d\n", mjob_out.control_param >> 2 );
 	printf("cycle_cnt out = %d\n",mjob_out.cycle_cnt_out);
 
@@ -433,7 +446,7 @@ int main(int argc, char *argv[])
 	__free(X_buff);
 	__free(Q_buff);
 	__free(OP_buff);
-	__free(ST_buff);
+	__free((void*)ST_buff);
 	exit(exit_code);
 
  out_error2:
@@ -444,7 +457,7 @@ int main(int argc, char *argv[])
 	__free(X_buff);
 	__free(Q_buff);
 	__free(OP_buff);
-	__free(ST_buff);
+	__free((void*)ST_buff);
  out_error:
 	exit(EXIT_FAILURE);
 }
