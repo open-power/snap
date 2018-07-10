@@ -1468,8 +1468,10 @@ BEGIN
     dma_fsm : PROCESS (ha_pclock)
       VARIABLE dma_rtag_v       : integer RANGE 0 TO 31;
       VARIABLE dma_rtag_next_v  : integer RANGE 0 TO 31;
+      VARIABLE dma_rreq_cnt_p1_v: boolean;
       VARIABLE dma_wtag_v       : integer RANGE 0 TO 31;
       VARIABLE dma_wtag_next_v  : integer RANGE 0 TO 31;
+      VARIABLE dma_wreq_cnt_p1_v: boolean;
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
         --
@@ -1482,6 +1484,11 @@ BEGIN
         dma_wtag_q        <= dma_wtag_q;
         dma_wtag_v        := to_integer(unsigned(dma_wtag_q     (4 DOWNTO 0)));
         dma_wtag_next_v   := to_integer(unsigned(dma_wtag_next_q(4 DOWNTO 0)));
+
+        dma_rreq_cnt_q    <= dma_rreq_cnt_q;
+        dma_rreq_cnt_p1_v := FALSE;
+        dma_wreq_cnt_q    <= dma_wreq_cnt_q;
+        dma_wreq_cnt_p1_v := FALSE;
 
         dh_d_q            <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
                               '0', (OTHERS => '0'), (OTHERS => '0'));
@@ -1499,12 +1506,14 @@ BEGIN
             IF (read_ctrl_q(dma_rtag_v).dma  = XLAT_DONE ) AND
                 (rsp_rtag_q                 /= dma_rtag_q) AND
                (dma_rreq_cnt_q               < 7         )THEN
-              dma_fsm_q <= ST_DMA_READ_REQ;
+              dma_fsm_q         <= ST_DMA_READ_REQ;
+              dma_rreq_cnt_p1_v := TRUE;
             ELSIF  (write_ctrl_q(dma_wtag_v).dma  = XLAT_DONE ) AND
                    (rsp_wtag_q                   /= dma_wtag_q) AND
                    (dma_wreq_cnt_q                < 7         )THEN
-              dma_fsm_q    <= ST_DMA_WRITE_REQ;
-              buf_wrdreq_q <= TRUE;
+              dma_fsm_q         <= ST_DMA_WRITE_REQ;
+              buf_wrdreq_q      <= TRUE;
+              dma_rreq_cnt_p1_v := TRUE;
             END IF;
 
           --------------------------------------------------------------------
@@ -1517,9 +1526,11 @@ BEGIN
             IF (read_ctrl_q(dma_rtag_next_v).dma  = XLAT_DONE      ) AND
                 (rsp_rtag_q                      /= dma_rtag_next_q) AND
                (dma_rreq_cnt_q                   < 7               ) THEN
-              dma_fsm_q <= ST_DMA_READ_REQ;
+              dma_fsm_q         <= ST_DMA_READ_REQ;
+              dma_rreq_cnt_p1_v := TRUE;
             ELSE
-              dma_fsm_q <= ST_IDLE;
+              dma_fsm_q         <= ST_IDLE;
+              dma_rreq_cnt_p1_v := TRUE;
             END IF;
 
             --
@@ -1541,10 +1552,12 @@ BEGIN
             IF (write_ctrl_q(dma_wtag_next_v).dma  = XLAT_DONE ) AND
                (rsp_wtag_q                        /= dma_wtag_q) AND
                (dma_wreq_cnt_q                     < 7         ) THEN
-              buf_wrdreq_q <= TRUE;
-              dma_fsm_q    <= ST_DMA_WRITE_REQ;
+              dma_fsm_q         <= ST_DMA_WRITE_REQ;
+              buf_wrdreq_q      <= TRUE;
+              dma_rreq_cnt_p1_v := TRUE;
             ELSE
-              buf_wrdreq_q <= FALSE;
+              buf_wrdreq_q      <= FALSE;
+              dma_wreq_cnt_p1_v := TRUE;
 
               IF (buf_wdata_vld = '1') AND
                  (buf_wdata_end = '1') THEN 
@@ -1575,41 +1588,10 @@ BEGIN
         END CASE;
 
         --------------------------------------------------------------------
-        -- Reset Logic
+        -- DMA Request Counter
         --------------------------------------------------------------------
         --
-        --
-        --
-        IF afu_reset = '1' THEN
-          dma_fsm_q       <= ST_IDLE;
-          dma_rtag_q      <= (OTHERS => '0');
-          dma_rtag_next_q <= "000001";
-          dma_wtag_q      <= (OTHERS => '0');
-          dma_wtag_next_q <= "000001";
-        END IF;
-      END IF;
-    END PROCESS dma_fsm;
-
-
-  ------------------------------------------------------------------------------
-  ------------------------------------------------------------------------------
-  -- MISC Logic
-  ------------------------------------------------------------------------------
-  ------------------------------------------------------------------------------
-    --
-    --
-    --
-    psl_dma : PROCESS (ha_pclock)
-    BEGIN
-      IF (rising_edge(ha_pclock)) THEN
-        --
-        -- defaults
-        --
-        dma_rreq_cnt_q <= dma_rreq_cnt_q;
-        dma_wreq_cnt_q <= dma_wreq_cnt_q;
-
-        --
-        -- DMA Read Request Counter
+        -- read counter
         --
         IF (hd_s_q.utag_valid       = '1') AND
            (hd_s_q.utag(9 DOWNTO 5) = "00000") THEN
@@ -1623,7 +1605,7 @@ BEGIN
         END IF;
 
         --
-        -- DMA Write Request Counter
+        -- read counter
         --
         IF (hd_s_q.utag_valid       = '1') AND
            (hd_s_q.utag(9 DOWNTO 5) = "00100") THEN
@@ -1640,15 +1622,23 @@ BEGIN
           END IF;
         END IF;
 
-        --
+        --------------------------------------------------------------------
         -- Reset Logic
+        --------------------------------------------------------------------
+        --
+        --
         --
         IF afu_reset = '1' THEN
-          dma_rreq_cnt_q <= 0;
-          dma_wreq_cnt_q <= 0;
+          dma_fsm_q       <= ST_IDLE;
+          dma_rtag_q      <= (OTHERS => '0');
+          dma_rtag_next_q <= "000001";
+          dma_rreq_cnt_q  <= 0;
+          dma_wtag_q      <= (OTHERS => '0');
+          dma_wtag_next_q <= "000001";
+          dma_wreq_cnt_q  <= 0;
         END IF;
       END IF;
-    END PROCESS psl_dma;
+    END PROCESS dma_fsm;
 
 
 
