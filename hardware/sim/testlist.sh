@@ -255,12 +255,17 @@
 #       if (( "$up" < "8" )); then printf '.'; else break; fi
 #     done; delta=$(( (16#$free2-16#$free1)/250 )); echo "SSD1 link_up=$up i=$i freerun_delta=$delta us"
 #     # init FPGA drives
-#     step "nvmeInit.py       -h"
-#     step "nvmeInit.py       -d0"
-      step "snap_nvme_init    -d0 -v"
-#     step "nvmeInit.py       -d1"
-      step "snap_nvme_init    -d1 -v"
-#     step "nvmeInit.py       -db"
+      case $ENABLE_DENALI in
+        y|Y) echo "ENABLE_DENALI=$ENABLE_DENALI init flash" # init needed, if DENALI is used.
+#            step "nvmeInit.py       -h"
+#            step "nvmeInit.py       -d0"
+             step "snap_nvme_init    -d0 -v"
+#            step "nvmeInit.py       -d1"
+             step "snap_nvme_init    -d1 -v"
+#            step "nvmeInit.py       -db"
+             ;;
+        *) echo "ENABLE_DENALI=$ENABLE_DENALI no flash init";;
+      esac
 #     step "snap_example      -h"
 #     step "snap_example      -a6           -S2      -t100 -vv"
 #     # test with Python and check visually
@@ -276,25 +281,29 @@
 #     step "snap_example      -a4 -D0x10000 -S2      -t100 -vv"
 #     # test with C and check automatically
 #     step "snap_example_nvme -h"
-      step "snap_example_nvme -d1                    -t100 -vv"
-      step "snap_example_nvme -d1 -b4                -t100 -v "
-      step "snap_example_nvme -d1 -b${rnd20}         -t100 -v "
-      step "snap_example_nvme -d0                    -t100 -vv"
-      step "snap_example_nvme -d0 -b5                -t100 -v "
-      step "snap_example_nvme -d0 -b${rnd20}         -t100 -v "
+      step "snap_example_nvme -d1                    -t500 -vvvv"
+      step "snap_example_nvme -d1 -b4                -t500 -v "
+      step "snap_example_nvme -d1 -b${rnd20}         -t500 -v "
+      step "snap_example_nvme -d0                    -t500 -vv"
+      step "snap_example_nvme -d0 -b5                -t500 -v "
+      step "snap_example_nvme -d0 -b${rnd20}         -t500 -v "
     fi # nvme
  #
     if [[ "$t0l" == "10140001" || "${env_action}" == "hdl_nvme_example" ]];then echo -e "$del\ntesting hdl_nvme_example"
       step "snap_cblk -h"                                            # write max 2blk, read max 32blk a 512B
       options="-n"${rndeven20}" -t1"                                 # 512B blocks, one thread
-      export CBLK_BUSYTIMEOUT=1500 # used for threads waiting for free slot
-      export CBLK_REQTIMEOUT=1000 # should be smaller than busytimeout
+      export CBLK_BUSYTIMEOUT=3500 # used for threads waiting for free slot
+      export CBLK_REQTIMEOUT=3000 # should be smaller than busytimeout
 #     export SNAP_TRACE=0xFFF
       for blk in 1 2;do p8=$((blk*8)); p4k=$((blk*4096)); # no of 512B blocks and pagesize in 4kB blocks
         echo "generate data for $blk blocks, $p8 pages, $p4k bytes"
         dd if=/dev/urandom of=rnd.in count=${p8} bs=512 2>/dev/null  # random data any char, no echo due to unprintable char
         head -c $p4k </dev/zero|tr '\0' 'x' >asc.in;head asc.in;echo # same char mult times
-        step "snap_nvme_init -d0 -v"
+        if [[ "$ENABLE_DENALI" == "Y" ]];then  # init needed, if DENALI is used.
+          echo "init for DENALI flash"
+          step "snap_nvme_init -d0 -v"
+        fi
+        echo "CBLK_BUSYTIMEOUT=$CBLK_BUSYTIMEOUT CBLK_REQTIMEOUT=$CBLK_REQTIMEOUT"
         step "snap_cblk $options -b${blk} --read ${p8}.out       -v"
         step "snap_cblk $options -b${blk} --write asc.in         -v"
         step "snap_cblk $options -b${blk} --format --pattern INC"
@@ -428,7 +437,12 @@
  #
     if [[ "$t0l" == "10141007" && "${env_action}" == "hls_nvme_memcopy"* && "$nvme" == "1" ]];then echo -e "$del\ntesting snap_nvme_memcopy"
       step "snap_nvme_memcopy -h"
-      step "snap_nvme_init  -v"
+      case $ENABLE_DENALI in
+        y|Y) echo "ENABLE_DENALI=$ENABLE_DENALI init flash" # init needed, if DENALI is used.
+             step "snap_nvme_init  -v"
+             ;;
+        *) echo "ENABLE_DENALI=$ENABLE_DENALI no flash init";;
+      esac
       for size in 512 2048 ;do to=$((size*50+10))
         dd if=/dev/urandom bs=${size} count=1 >${size}.in
         if [[ $((size%64)) == 0 ]];then    # size is aligned
