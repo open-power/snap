@@ -15,7 +15,7 @@ FPGACARD="S241"
 # S121B is not set
 # CAPI10 is not set
 CAPI20=y
-FPGACHIP="xcvu9p-fsgd2104-2l-e"
+FPGACHIP="xcvu9p-flgb2104-2l-e"
 NUM_OF_ACTIONS=1
 # HLS_ACTION is not set
 # HDL_ACTION is not set
