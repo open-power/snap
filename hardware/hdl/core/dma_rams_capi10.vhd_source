@@ -31,24 +31,24 @@ USE ieee.std_logic_misc.all;
 USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
 
-ENTITY ram_512x64_2p IS
+ENTITY ram_520x64_2p IS
   PORT (
     clk       : IN  std_logic;
 
     wea       : IN  std_logic;
     addra     : IN  std_logic_vector(    5 DOWNTO 0);
-    dina      : IN  std_logic_vector(512-1 DOWNTO 0);
+    dina      : IN  std_logic_vector(520-1 DOWNTO 0);
 
     addrb     : IN  std_logic_vector(    5 DOWNTO 0);
-    doutb     : OUT std_logic_vector(512-1 DOWNTO 0)
+    doutb     : OUT std_logic_vector(520-1 DOWNTO 0)
   );
-END ram_512x64_2p;
+END ram_520x64_2p;
 
-ARCHITECTURE ram_512x64_2p OF ram_512x64_2p IS
-  TYPE ram_t IS ARRAY (64-1 DOWNTO 0) OF std_logic_vector(512-1 DOWNTO 0);
+ARCHITECTURE ram_520x64_2p OF ram_520x64_2p IS
+  TYPE ram_t IS ARRAY (64-1 DOWNTO 0) OF std_logic_vector(520-1 DOWNTO 0);
 
   SHARED VARIABLE ram_v    : ram_t;
-  SIGNAL          dout_int : std_logic_vector(512-1 DOWNTO 0);
+  SIGNAL          dout_int : std_logic_vector(520-1 DOWNTO 0);
 
 BEGIN
   --
