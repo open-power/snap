@@ -101,10 +101,6 @@ while [ -z "$SETUP_DONE" ]; do
     else
       echo "=====Checking path to PSL design checkpoint============"
       echo "PSL_DCP                 is set to: \"$PSL_DCP\""
-      RESP=`grep PSL_DCP $snap_env_sh`
-      if [ -z "$RESP" ]; then
-        echo "#export PSL_DCP=" >> $snap_env_sh
-      fi
       if [ -e "$PSL_DCP" ]; then
         # checking card type for PSL design checkpoint
         PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $FPGACARD $PSL_DCP`
@@ -126,9 +122,7 @@ while [ -z "$SETUP_DONE" ]; do
   # Note: SIMULATOR is defined via snap_config
   if [ "$SIMULATOR" != "nosim" ]; then
     echo "=====Simulation setup: Setting up PSLSE version=========="
-    if [ "$FPGACARD" == "N250SP" ]; then
-      PSLVER="9"
-    elif [ "$FPGACARD" == "RCXVUP" ]; then
+    if [ "$CAPI20" == "y" ]; then
       PSLVER="9"
     elif [ "$FPGACARD" == "FX609" ]; then
       PSLVER="9"
@@ -139,7 +133,7 @@ while [ -z "$SETUP_DONE" ]; do
     fi
     echo "Setting PSLVER                 to: \"$PSLVER\""
     sed -i '/export[ ^]*PSLVER[ ^]*=/ d' $snap_env_sh
-    echo "export PSLVER=$PSLVER" >> $snap_env_sh
+    sed -i '1s/^/export PSLVER='$PSLVER'\n/' $snap_env_sh
     echo "=====Simulation setup: Checking path to PSLSE=========="
     echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
     RESP=`grep PSLSE_ROOT $snap_env_sh`
@@ -191,7 +185,7 @@ while [ -z "$SETUP_DONE" ]; do
   else
     echo "Setting ACTION_ROOT            to: \"$AR\""
     sed -i '/export[ ^]*ACTION_ROOT[ ^]*=/ d' $snap_env_sh
-    echo "export ACTION_ROOT=$AR" >> $snap_env_sh
+    sed -i '1s#^#export ACTION_ROOT='$AR'\n#' $snap_env_sh
   fi
 
   if [ -z "$AR" ] && [ "$ignore_action_root" != "y" ]; then
@@ -245,7 +239,7 @@ while [ -z "$SETUP_DONE" ]; do
   if [ -z "$TIMING_LABLIMIT" ]; then
     TIMING_LABLIMIT="$TIMING_LABLIMIT_DEFAULT"
     sed -i '/export[ ^]*TIMING_LABLIMIT[ ^]*=/ d' $snap_env_sh
-    echo "export TIMING_LABLIMIT=\"$TIMING_LABLIMIT_DEFAULT\"" >> $snap_env_sh
+    sed -i '1s/^/export TIMING_LABLIMIT="'$TIMING_LABLIMIT_DEFAULT'"\n/' $snap_env_sh
     SETUP_INFO="$SETUP_INFO\n### INFO ### Timing limit for FPGA image build got set to default value $TIMING_LABLIMIT_DEFAULT"
   fi
   echo "=====Timing limit for FPGA image build in ps============"

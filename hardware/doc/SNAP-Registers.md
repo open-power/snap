@@ -266,7 +266,7 @@ Address: 0x0000100 + i * 0x0000008
   31..0  RW: Action type for action i (all zero if no Action i is implemented)
 
   POR value: 0x00000000_00000000
-             LIBDONUT needs to specify the values based on the result of an exploration phase
+             LIBSNAP needs to specify the values based on the result of an exploration phase
 ```
 
 ---
@@ -588,7 +588,7 @@ Address: 0x0000100 + (s+n) * 0x0010000 + i * 0x0000008
   31..0  RO: Action type for action i (all zero if no Action i is implemented)
 
   POR value: 0x00000000_00000000
-             LIBDONUT needs to specify the values based on the result of an exploration phase
+             LIBSNAP needs to specify the values based on the result of an exploration phase
 ```
 
 ---

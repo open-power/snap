@@ -56,6 +56,7 @@
 
 static int test_hexdigit(char ch)
 {
+#pragma HLS INLINE
     if (ch >= '0' && ch <= '9')
         return  ch - '0';
     if (ch >= 'A' && ch <= 'F')
