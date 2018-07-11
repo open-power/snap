@@ -25,11 +25,12 @@
   rndeven20=$(( (RANDOM%5)*2+10 ))
   rnd20=$(( (RANDOM%19)+2 ))
   rnd32=$(( (RANDOM%31)+2 ))
+  rnd100=$(( (RANDOM%99)+2 ))
   rnd1k=$(( (RANDOM%1023)+2 ))
   rnd1k4k=$(( (RANDOM%3072)+1024 ))
   rnd16k=$(( (RANDOM%16383)+2 ))
   rnd32k=$(( RANDOM ))
-  echo "random=$rnd4 $rnd5 $rnd10 $rndeven20 $rnd20 $rnd32 $rnd1k $rnd1k4k $rnd16k $rnd32k"
+  echo "random=$rnd4 $rnd5 $rnd10 $rndeven20 $rnd20 $rnd32 $rnd100 $rnd1k $rnd1k4k $rnd16k $rnd32k"
 # export SNAP_TRACE=0xFF
 # export SNAP_TRACE=0xF2 # for Sven
   stimfile=$(basename "$0");
@@ -170,14 +171,25 @@
         step "snap_example -I -a1 -s1 -e2 -i1 -t100 -vv"
         step "snap_example -I -a2 -S1 -B0 -A256 -t600"
       fi
-      for num4k in 0 1 $rnd20;do to=$((num4k*400+400))   # 4k blks should be possible by every card
+      step "snap_example -a2 -S0  -B1 -A64   -t500"
+      step "snap_example -a2 -S2  -B0 -A64   -t500"
+      step "snap_example -a2 -S32 -B0 -A64   -t500" # error in DMA, fixed
+      step "snap_example -a2 -S0  -B1 -A320  -t400" # error 22.06.2018, fixed
+      step "snap_example -a2 -S10 -B2 -A128  -t500" # error Jul04, fixed PSLSE Jul09
+      step "snap_example -a2 -S32 -B0 -A128  -t500"
+      step "snap_example -a2 -S32 -B0 -A4096 -t500"
+      step "snap_example -a2 -S32 -B1 -A64   -t500"
+      step "snap_example -a2 -S32 -B1 -A128  -t500"
+      step "snap_example -a2 -S32 -B1 -A4096 -t500"
+      step "snap_example -a2 -S64 -B0 -A64   -t500"
+      step "snap_example -a2 -S64 -B1 -A64   -t500"
+      for num4k in 0 1 $rnd20 $rnd100;do to=$((num4k*400+400))   # 4k blks should be possible by every card
       for i in 0 1 2 $rnd32;do num64=$(((i*xfer)/64))   # adopt to capability reg xfer size
       for j in 5 2 1;do align=$((j*dma))                # adopt to capability reg DMA alignment
-#     for num64 in 0 1 2 $rnd32;do
-#     for align in 4096 64;do  # posix memalign only allows power of 2
-        if [[ "$num4k" == "0" && "$num64" == "0"          ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
-        if [[ "$num4k" > "1"  && "$num64" < "2"           ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
-        if [[ "$num4k" > "1"  && "$align" > "64"          ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+        if [[ "$num4k" == "0" && "$num64" == "0"          ]];then echo "skip1 num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
+        if [[ "$num4k" > "1"  && "$num64" < "2"           ]];then echo "skip2 num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+#       if [[ "$num4k" > "1"  && "$align" > "64"          ]];then echo "skip3 num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+        if [[ "$num4k" < "2"  && "$num64" > "1"           ]];then echo "skip4 num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
         step "snap_example -a2 -S${num4k} -B${num64} -A${align} -t$to"
       done
       done
@@ -187,16 +199,14 @@
         if [[ $cardtype == "10" ]];then for i in {1..5};do echo "loop=$i";snap_example -a6 -S8 -B2 -A128 -t400 -v||break;done
         else                            for i in {1..5};do echo "loop=$i";snap_example -a6 -S8 -B2 -A64  -t400 -v||break;done
         fi
-        for num4k in 0 1 $rnd20;do to=$((num4k*400+400)) # 4k blks should be possible by every card
+        for num4k in 0 1 $rnd20 $rnd100;do to=$((num4k*400+400)) # 4k blks should be possible by every card
         for i in 0 1 2 $rnd32;do num64=$(((i*xfer)/64)) # adopt to capability reg xfer size
         for j in 5 2 1;do align=$((j*dma))              # adopt to capability reg DMA alignment
-#       for num4k in 0 1 $rnd20;do
-#       for num64 in 0 1 $rnd32;do                       # 1..64
-#       for align in 4096 128 64;do                      # must be mult of 64 for P8, mult of 128 for P9
           to=$((num4k*400+400))
-          if [[ "$num4k" == "0" && "$num64" == "0"        ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
-          if [[ "$num4k" > "1"  && "$num64" < "2"         ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
-          if [[ "$num4k" > "1"  && "$align" > "64"        ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+          if [[ "$num4k" == "0" && "$num64" == "0"        ]];then echo "skip1 num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
+          if [[ "$num4k" > "1"  && "$num64" < "2"         ]];then echo "skip2 num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+#         if [[ "$num4k" > "1"  && "$align" > "64"        ]];then echo "skip3 num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
+          if [[ "$num4k" < "2"  && "$num64" > "1"         ]];then echo "skip4 num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
           step "snap_example -a6 -S${num4k} -B${num64} -A${align} -t$to"
         done
         done
@@ -245,12 +255,17 @@
 #       if (( "$up" < "8" )); then printf '.'; else break; fi
 #     done; delta=$(( (16#$free2-16#$free1)/250 )); echo "SSD1 link_up=$up i=$i freerun_delta=$delta us"
 #     # init FPGA drives
-#     step "nvmeInit.py       -h"
-#     step "nvmeInit.py       -d0"
-      step "snap_nvme_init    -d0 -v"
-#     step "nvmeInit.py       -d1"
-      step "snap_nvme_init    -d1 -v"
-#     step "nvmeInit.py       -db"
+      case $ENABLE_DENALI in
+        y|Y) echo "ENABLE_DENALI=$ENABLE_DENALI init flash" # init needed, if DENALI is used.
+#            step "nvmeInit.py       -h"
+#            step "nvmeInit.py       -d0"
+             step "snap_nvme_init    -d0 -v"
+#            step "nvmeInit.py       -d1"
+             step "snap_nvme_init    -d1 -v"
+#            step "nvmeInit.py       -db"
+             ;;
+        *) echo "ENABLE_DENALI=$ENABLE_DENALI no flash init";;
+      esac
 #     step "snap_example      -h"
 #     step "snap_example      -a6           -S2      -t100 -vv"
 #     # test with Python and check visually
@@ -266,25 +281,29 @@
 #     step "snap_example      -a4 -D0x10000 -S2      -t100 -vv"
 #     # test with C and check automatically
 #     step "snap_example_nvme -h"
-      step "snap_example_nvme -d1                    -t100 -vv"
-      step "snap_example_nvme -d1 -b4                -t100 -v "
-      step "snap_example_nvme -d1 -b${rnd20}         -t100 -v "
-      step "snap_example_nvme -d0                    -t100 -vv"
-      step "snap_example_nvme -d0 -b5                -t100 -v "
-      step "snap_example_nvme -d0 -b${rnd20}         -t100 -v "
+      step "snap_example_nvme -d1                    -t500 -vvvv"
+      step "snap_example_nvme -d1 -b4                -t500 -v "
+      step "snap_example_nvme -d1 -b${rnd20}         -t500 -v "
+      step "snap_example_nvme -d0                    -t500 -vv"
+      step "snap_example_nvme -d0 -b5                -t500 -v "
+      step "snap_example_nvme -d0 -b${rnd20}         -t500 -v "
     fi # nvme
  #
     if [[ "$t0l" == "10140001" || "${env_action}" == "hdl_nvme_example" ]];then echo -e "$del\ntesting hdl_nvme_example"
       step "snap_cblk -h"                                            # write max 2blk, read max 32blk a 512B
       options="-n"${rndeven20}" -t1"                                 # 512B blocks, one thread
-      export CBLK_BUSYTIMEOUT=1500 # used for threads waiting for free slot
-      export CBLK_REQTIMEOUT=1000 # should be smaller than busytimeout
+      export CBLK_BUSYTIMEOUT=3500 # used for threads waiting for free slot
+      export CBLK_REQTIMEOUT=3000 # should be smaller than busytimeout
 #     export SNAP_TRACE=0xFFF
       for blk in 1 2;do p8=$((blk*8)); p4k=$((blk*4096)); # no of 512B blocks and pagesize in 4kB blocks
         echo "generate data for $blk blocks, $p8 pages, $p4k bytes"
         dd if=/dev/urandom of=rnd.in count=${p8} bs=512 2>/dev/null  # random data any char, no echo due to unprintable char
         head -c $p4k </dev/zero|tr '\0' 'x' >asc.in;head asc.in;echo # same char mult times
-        step "snap_nvme_init -d0 -v"
+        if [[ "$ENABLE_DENALI" == "Y" ]];then  # init needed, if DENALI is used.
+          echo "init for DENALI flash"
+          step "snap_nvme_init -d0 -v"
+        fi
+        echo "CBLK_BUSYTIMEOUT=$CBLK_BUSYTIMEOUT CBLK_REQTIMEOUT=$CBLK_REQTIMEOUT"
         step "snap_cblk $options -b${blk} --read ${p8}.out       -v"
         step "snap_cblk $options -b${blk} --write asc.in         -v"
         step "snap_cblk $options -b${blk} --format --pattern INC"
@@ -418,7 +437,12 @@
  #
     if [[ "$t0l" == "10141007" && "${env_action}" == "hls_nvme_memcopy"* && "$nvme" == "1" ]];then echo -e "$del\ntesting snap_nvme_memcopy"
       step "snap_nvme_memcopy -h"
-      step "snap_nvme_init  -v"
+      case $ENABLE_DENALI in
+        y|Y) echo "ENABLE_DENALI=$ENABLE_DENALI init flash" # init needed, if DENALI is used.
+             step "snap_nvme_init  -v"
+             ;;
+        *) echo "ENABLE_DENALI=$ENABLE_DENALI no flash init";;
+      esac
       for size in 512 2048 ;do to=$((size*50+10))
         dd if=/dev/urandom bs=${size} count=1 >${size}.in
         if [[ $((size%64)) == 0 ]];then    # size is aligned
