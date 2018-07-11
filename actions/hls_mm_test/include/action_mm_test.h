@@ -49,9 +49,11 @@ typedef struct mm_test_job {
 	uint64_t X_addr; 	//Input Matrix 2
 	uint64_t Q_addr; 	//Output Matrix
 	uint64_t OP_addr; 	//Operation Code 
-	uint64_t STATUS_addr;
-	uint64_t loop_num;
-	//uint64_t hw_cycle_counter; 	
+	uint64_t ST_addr;
+	uint32_t loop_num;
+	uint32_t control_param;
+	uint32_t cycle_cnt_in; 	
+	uint32_t cycle_cnt_out; 	
 } mm_test_job_t;
 
 void memset_volatile(volatile void *s, char c, size_t n);

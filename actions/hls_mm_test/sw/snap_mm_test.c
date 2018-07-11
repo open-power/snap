@@ -137,8 +137,10 @@ static void snap_prepare_mm_test(struct snap_job *cjob,
 				 uint64_t Q_addr,
 
 				 uint64_t OP_addr,
-				 uint64_t STATUS_addr,
-				 uint64_t loop_num)
+				 uint64_t ST_addr,
+				 uint32_t loop_num, 
+				 uint32_t control_param,
+				 uint64_t cycle_cnt_in)
 {
 //	fprintf(stderr, "  prepare mm_test job of %ld bytes size\n", sizeof(*mjob_in));
 
@@ -146,8 +148,10 @@ static void snap_prepare_mm_test(struct snap_job *cjob,
 	mjob_in->X_addr = X_addr;
 	mjob_in->Q_addr = Q_addr;
 	mjob_in->OP_addr = OP_addr;
-	mjob_in->STATUS_addr = STATUS_addr;
+	mjob_in->ST_addr = ST_addr;
 	mjob_in->loop_num = loop_num;
+	mjob_in->control_param = control_param;
+	mjob_in->cycle_cnt_in = cycle_cnt_in;
 
 	snap_job_set(cjob, mjob_in, sizeof(*mjob_in), mjob_out, sizeof(*mjob_out));
 }
@@ -185,22 +189,25 @@ int main(int argc, char *argv[])
 	//
 	// Q = W * X
 	
-	int32_t i, j;
+	uint32_t i, j;
 
 	int32_t *W_buff = NULL;
 	int32_t *X_buff = NULL;
 	int32_t *Q_buff = NULL;
+	int32_t *OP_buff = NULL;
+	volatile uint32_t *ST_buff = NULL;
 
 	ssize_t W_size = DIM1 * DIM2 * sizeof(int32_t);
 	ssize_t X_size = DIM2 * DIM3 * sizeof(int32_t);
 	ssize_t Q_size = DIM1 * DIM3 * sizeof(int32_t);
+	ssize_t OP_size = 128;  //Place holder, not in use.
+	ssize_t ST_size = 128;
 
-	volatile uint8_t status_array[128]; //Make a cacheline
-	uint64_t STATUS_addr = (unsigned long)&status_array;
 
-	int32_t OP_array[32];            //Place holder, not in use.
-	uint64_t loop_num = 1;
-	//uint64_t hw_cycle_counter = 0; //Not in use yet.
+	uint32_t loop_num = 10;
+	uint32_t control_param = 0;  	// bit1-0:    {2: wait several cycles; 1: do MM;   0: just copy buffer}
+					// bit31-2:   {loop_number in progress, which is output reg}
+	uint64_t cycle_cnt_in = 71000/4; //How many cycles: 71us / 4ns
 	//////////////////////////////////////////////////
 
 	
@@ -211,6 +218,8 @@ int main(int argc, char *argv[])
 			{ "card",	 required_argument, NULL, 'C' },
 			{ "timeout",	 required_argument, NULL, 't' },
 			{ "loop_num",    required_argument, NULL, 'L' },
+			{ "ctrl_parm",   required_argument, NULL, 'P' },
+			{ "cycle_cnt",   required_argument, NULL, 'T' },
 			{ "no-irq",	 no_argument,	    NULL, 'N' },
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
@@ -219,7 +228,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-                                 "C:t:L:NVvh",
+                                 "C:t:L:P:T:NVvh",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -233,6 +242,12 @@ int main(int argc, char *argv[])
                         break;		
                 case 'L':
                         loop_num = strtol(optarg, (char **)NULL, 0);
+                        break;		
+                case 'P':
+                        control_param = strtol(optarg, (char **)NULL, 0);
+                        break;		
+                case 'T':
+                        cycle_cnt_in = strtol(optarg, (char **)NULL, 0);
                         break;		
                 case 'N':
                         action_irq = 0;
@@ -271,13 +286,15 @@ int main(int argc, char *argv[])
 	W_buff = snap_malloc(W_size);
 	X_buff = snap_malloc(X_size);
 	Q_buff = snap_malloc(Q_size);
+	OP_buff = snap_malloc(OP_size);
+	ST_buff = snap_malloc(ST_size);
 
-	if (W_buff == NULL || X_buff == NULL || Q_buff == NULL)
+	if (W_buff == NULL || X_buff == NULL || Q_buff == NULL || OP_buff == NULL || ST_buff == NULL)
 		goto out_error;
 
 	// Set init value
-	memset_volatile(status_array, 0, 128);            //We only use 1 element
-	memset(OP_array, 0, 32*sizeof(int32_t)); //Not in use, all-0
+	memset(OP_buff, 0, 128); //Not in use, all-0
+	memset_volatile(ST_buff, 0, 128);
 	
 	for (i = 0; i < DIM1; i ++)
 		for (j = 0; j < DIM2; j++)
@@ -296,15 +313,21 @@ int main(int argc, char *argv[])
 	       "  W_addr:     %016llx (%dx%d)\n"
 	       "  X_addr:     %016llx (%dx%d)\n"
 	       "  Q_addr:     %016llx (%dx%d)\n"
-	       "  STATUS_addr:%016llx\n"
-	       "  loop_num:   %ld\n",
+	       "  OP_addr:    %016llx\n"
+	       "  ST_addr:    %016llx\n"
+	       "  loop_num:   %d\n"
+	       "  ctrl_parm:  %d\n"
+	       "  cycle_cnt:  %ld\n",
 	       (unsigned long long)W_buff, DIM1, DIM2,
 	       (unsigned long long)X_buff, DIM2, DIM3,
 	       (unsigned long long)Q_buff, DIM1, DIM3,
-	       (unsigned long long)status_array, 
-	       loop_num);
+	       (unsigned long long)OP_buff, 
+	       (unsigned long long)ST_buff, 
+	       loop_num, 
+	       control_param,
+	       cycle_cnt_in);
 
-	print_timestamp("Allocate and prepare arrays");
+	print_timestamp("Allocate and prepare buffers");
 
 	// Allocate the card that will be used
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
@@ -334,9 +357,11 @@ int main(int argc, char *argv[])
 				(unsigned long long) W_buff,
 				(unsigned long long) X_buff, 
 				(unsigned long long) Q_buff,
-				(unsigned long long) OP_array,
-				STATUS_addr,
-				loop_num);
+				(unsigned long long) OP_buff,
+				(unsigned long long) ST_buff,
+				loop_num, 
+				control_param, 
+				cycle_cnt_in);
 
 	// uncomment to dump the job structure
 	//__hexdump(stderr, &mjob_in, sizeof(mjob_in));
@@ -351,36 +376,36 @@ int main(int argc, char *argv[])
 
         // Start Action and wait for finish //
         snap_action_start(action);
-/*
-	while (status_array[0] != STATUS_INPUT_DONE ) {
-		printf("%d", status_array[0]);
-
-		sleep(1);
-	}
-
-	print_timestamp("Transfer input data");
 	
-	while (status_array[0] != STATUS_CALC_DONE ) {
-
-		printf("%d", status_array[0]);
-		sleep(1);
-	}
-
-	print_timestamp("Calculation");
 	
-	while (status_array[0] != STATUS_OUTPUT_DONE ) {
-
-		printf("%d", status_array[0]);
-		sleep(1);
+	uint32_t last_lp;
+	for(i = 0; i < loop_num -1; i++)
+	{
+		last_lp = ST_buff[0];
+		while (1)
+		{
+			if (last_lp != ST_buff[0]) {
+				print_timestamp("Loop");
+				break;
+			}
+		}
 	}
 
-	print_timestamp("Transfer output data");
-*/
+		
+	
 	// stop the action if not done and read all registers from the action
-        rc = snap_action_sync_execute_job_check_completion(action, &cjob,
+         rc = snap_action_sync_execute_job_check_completion(action, &cjob,
                                 timeout);
 
 	print_timestamp("Stop action");
+
+
+    	printf("End Status: ");
+	printf("lp = %d, status =%d\n", ST_buff[0], ST_buff[1]);
+	printf("loop_num out = %d\n", mjob_out.control_param >> 2 );
+	printf("cycle_cnt out = %d\n",mjob_out.cycle_cnt_out);
+
+
 	if (rc != 0) {
 		fprintf(stderr, "err: job execution %d: %s!\n", rc,
 			strerror(errno));
@@ -406,7 +431,7 @@ int main(int argc, char *argv[])
 
 	// Display the time of all 
 	gettimeofday(&etime, NULL);
-	fprintf(stdout, "SNAP mm_test overall took %lld usec\n",
+	fprintf(stdout, "\nSNAP mm_test overall took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
 	printf("sanity check\n");
@@ -420,6 +445,8 @@ int main(int argc, char *argv[])
 	__free(W_buff);
 	__free(X_buff);
 	__free(Q_buff);
+	__free(OP_buff);
+	__free((void*)ST_buff);
 	exit(exit_code);
 
  out_error2:
@@ -429,6 +456,8 @@ int main(int argc, char *argv[])
 	__free(W_buff);
 	__free(X_buff);
 	__free(Q_buff);
+	__free(OP_buff);
+	__free((void*)ST_buff);
  out_error:
 	exit(EXIT_FAILURE);
 }
