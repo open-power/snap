@@ -1108,7 +1108,8 @@ module top (
   always begin
      sys_clk_p = !sys_clk_p; #(4.998ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
-#elsifdef CONFIG_S241
+#else
+#ifdef CONFIG_S241
   // 400.16MHz DDR4 system clock
   always begin
      sys_clk_p = !sys_clk_p; #(2.499ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
@@ -1118,6 +1119,7 @@ module top (
   always begin
      sys_clk_p = !sys_clk_p; #(3.752ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
+#endif
 #endif
 #endif
 #if CONFIG_ENABLE_NVME
