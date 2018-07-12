@@ -70,6 +70,7 @@ static int process_action(snap_membus_t *din_gmem,
 	loop_num          = act_reg->Data.loop_num;
 	control_param_low = act_reg->Data.control_param & 0x3;
 	cycle_cnt_in      = act_reg->Data.cycle_cnt_in;
+	cycle_cnt_out     = 0;
 
 
 
@@ -83,14 +84,17 @@ static int process_action(snap_membus_t *din_gmem,
 	stat[0] = 0;
 
 	for(lp = 0; lp < loop_num; lp ++) {
+		// Write Status line
+		stat[0](31,0)  = lp;
+		stat[0](39,32) = 1;
+		memcpy((snap_membus_t *) (dout_gmem + S_idx), stat, 128);
 		
 		// Copy source data
 		memcpy(W_blockram, (snap_membus_t *) (din_gmem + W_idx), DIM1*DIM2*sizeof(uint32_t));
 		memcpy(X_blockram, (snap_membus_t *) (din_gmem + X_idx), DIM2*DIM3*sizeof(uint32_t));
 
-		// Write Status line
-		stat[0](31,0)  = lp;
-		stat[0](39,32) = 1;
+		// Write Status line: Copy Source Data done.
+		stat[0](39,32) = 2;
 		memcpy((snap_membus_t *) (dout_gmem + S_idx), stat, 128);
 
 
@@ -133,7 +137,6 @@ static int process_action(snap_membus_t *din_gmem,
 
 		if(control_param_low == 1) {
 		// Do the multiplication
-#pragma HLS UNROLL
 			for (i = 0; i < DIM1; i++) {
 				for (j = 0; j < DIM3; j++ ) {
 					temp = 0;
@@ -148,6 +151,11 @@ static int process_action(snap_membus_t *din_gmem,
 						Q_blockram[i * DIM3/BS + j/BS] = line;
 				}
 			}
+			
+			// Write Status line: Process Data done.
+			stat[0](39,32) = 3;
+			memcpy((snap_membus_t *) (dout_gmem + S_idx), stat, 128);
+			
 			// Write output data
 			memcpy((snap_membus_t *) (dout_gmem + Q_idx), Q_blockram, DIM1*DIM3*sizeof(uint32_t));
 		}
@@ -159,10 +167,12 @@ static int process_action(snap_membus_t *din_gmem,
 						
 				};
 			}
-			stat[0](39,32) = 2;
+			
+			// Write Status line: Process Data done.
+			stat[0](39,32) = 3;
 			memcpy((snap_membus_t *) (dout_gmem + S_idx), stat, 128);
 
-			// Just write output data (256KB)
+			// Just write no-meaning output data (256KB)
 			// Here assumes DIM1=DIM3
 			offset = (DIM1*DIM2*sizeof(uint32_t)) >> ADDR_RIGHT_SHIFT;
 			memcpy((snap_membus_t *) (dout_gmem + Q_idx),            W_blockram, DIM1*DIM2*sizeof(uint32_t));
@@ -171,15 +181,16 @@ static int process_action(snap_membus_t *din_gmem,
 			memcpy((snap_membus_t *) (dout_gmem + Q_idx + offset*3), X_blockram, DIM1*DIM2*sizeof(uint32_t));
 		}
 			
-
-		stat[0](39,32) = 3;
+		//Write Status line: Output Data done.
+		stat[0](39,32) = 4;
 		memcpy((snap_membus_t *) (dout_gmem + S_idx), stat, 128);
 
 
+		//Update MMIO register
 		act_reg->Data.control_param = (lp << 2 ) + control_param_low;      //How many loops have been handled.
 		act_reg->Data.cycle_cnt_out = cycle_cnt_out;
 
-	}
+	}//End loop
 	
 
 	act_reg->Control.Retc = SNAP_RETC_SUCCESS;
