@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
 	char device[128];
 	struct snap_job cjob;
 	struct mm_test_job mjob_in, mjob_out;
-	struct timeval etime, stime;
+//	struct timeval etime, stime;
 	unsigned long timeout = 60;
 	// default is interrupt mode enabled (vs polling)
 	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 	//
 	// Q = W * X
 	
-	uint32_t i, j;
+	uint32_t i, j, job;
 
 	int32_t *W_buff = NULL;
 	int32_t *X_buff = NULL;
@@ -285,58 +285,61 @@ int main(int argc, char *argv[])
 	
 	// Timer starts
 	gettimeofday(&curr_time, NULL);
-	gettimeofday(&stime, NULL);
+	//gettimeofday(&stime, NULL);
 
 	// Allocate memories
-	W_buff = snap_malloc(W_size);
-	X_buff = snap_malloc(X_size);
-	Q_buff = snap_malloc(Q_size);
-	OP_buff = snap_malloc(OP_size);
-	ST_buff = snap_malloc(ST_size);
+	W_buff = snap_malloc(W_size * job_num);
+	X_buff = snap_malloc(X_size * job_num);
+	Q_buff = snap_malloc(Q_size * job_num);
+	OP_buff = snap_malloc(OP_size * job_num);
+	ST_buff = snap_malloc(ST_size * job_num);
 
 	if (W_buff == NULL || X_buff == NULL || Q_buff == NULL || OP_buff == NULL || ST_buff == NULL)
 		goto out_error;
 
 	// Set init value
-	memset(OP_buff, 0, 128); //Not in use, all-0
+	memset(OP_buff, 0, 128 * job_num); //Not in use, all-0
 	memset_volatile(ST_buff, 0, 128);
 	
-	for (i = 0; i < DIM1; i ++)
-		for (j = 0; j < DIM2; j++)
-			W_buff[i * DIM2 + j] = rand()%64;
+	for (job = 0; job < job_num; job ++) {
+		for (i = 0; i < DIM1; i ++)
+			for (j = 0; j < DIM2; j++)
+				W_buff[i * DIM2 + j + job*DIM1*DIM2] = rand()%64;
 
-	//Caution! X_buff we fill its "transposition"
-	//For better memory usage
-	for (i = 0; i < DIM3; i++)
-		for (j = 0; j < DIM2; j++)
-			X_buff[i * DIM2 + j] = rand()%64;
-	memset(Q_buff, 0, Q_size);
+		//Caution! X_buff we fill its "transposition"
+		//For better memory usage
+		for (i = 0; i < DIM3; i++)
+			for (j = 0; j < DIM2; j++)
+				X_buff[i * DIM2 + j + job*DIM2*DIM3] = rand()%64;
+		memset(Q_buff, 0, Q_size * job_num);
+	}
 
 	char mode_str[128];
+	char loop_str[32];
 
 	if (control_param == 0) 
-		strcpy(mode_str, "Read input, Write output");
+		strcpy(mode_str, "Read input; and immediately Write output");
 	else if (control_param == 1)
-		strcpy(mode_str, "Read input, Calculate Matrix Multiply, Write output");
+		strcpy(mode_str, "Read input; Calculate Matrix Multiply; Write output");
 	else
-		sprintf(mode_str, "Read input, wait %ld cycles, Write output", cycle_cnt_in);
+		sprintf(mode_str, "Read input; Wait %ld cycles; Write output", cycle_cnt_in);
 
 	/* Display the parameters that will be used for the example */
 	printf("PARAMETERS:\n"
-	       "  W_addr:     %016llx (%dx%d)\n"
-	       "  X_addr:     %016llx (%dx%d)\n"
-	       "  Q_addr:     %016llx (%dx%d)\n"
-	       //"  OP_addr:    %016llx\n"
-	       "  ST_addr:    %016llx\n"
+	       "  W_addr:     0x%016llx (%dx%d) * %d\n"
+	       "  X_addr:     0x%016llx (%dx%d) * %d\n"
+	       "  Q_addr:     0x%016llx (%dx%d) * %d\n"
+	       //"  OP_addr:    0x%016llx\n * %d"
+	       "  ST_addr:    0x%016llx\n"
 	       "  job_num:    %d\n"
 	       "  loop_num:   %d\n"
 	       "  mode:       %s\n",
-	       (unsigned long long)W_buff, DIM1, DIM2,
-	       (unsigned long long)X_buff, DIM2, DIM3,
-	       (unsigned long long)Q_buff, DIM1, DIM3,
-	       //(unsigned long long)OP_buff, 
+	       (unsigned long long)W_buff, DIM1, DIM2, job_num,
+	       (unsigned long long)X_buff, DIM2, DIM3, job_num,
+	       (unsigned long long)Q_buff, DIM1, DIM3, job_num,
+	       //(unsigned long long)OP_buff, job_num
 	       (unsigned long long)ST_buff, 
-	       job_num, 
+	       job_num,
 	       loop_num,
 	       mode_str); 
 
@@ -354,6 +357,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Otherwise make sure you ran snap_find_card and snap_maint for your selected card.\n");
 		goto out_error;
 	}
+	print_timestamp("Open the card");
 
 	// Attach the action that will be used on the allocated card
 	action = snap_attach_action(card, MM_TEST_ACTION_TYPE, action_irq, 60);
@@ -363,24 +367,34 @@ int main(int argc, char *argv[])
 		goto out_error1;
 	}
 
-	print_timestamp("Open the card");
-
-	// Fill the stucture of data exchanged with the action
-	snap_prepare_mm_test(&cjob, &mjob_in, &mjob_out,
-				(unsigned long long) W_buff,
-				(unsigned long long) X_buff, 
-				(unsigned long long) Q_buff,
-				(unsigned long long) OP_buff,
-				(unsigned long long) ST_buff,
-				loop_num, 
-				control_param, 
-				cycle_cnt_in);
-
-	// uncomment to dump the job structure
-	//__hexdump(stderr, &mjob_in, sizeof(mjob_in));
+	print_timestamp("Attach action");
 
 
-	for (j = 0; j < job_num; j++) {
+	for (job = 0; job < job_num; job ++) {
+
+		printf("============= Job %d ==============\n", job);
+		// Fill the stucture of data exchanged with the action
+		snap_prepare_mm_test(&cjob, &mjob_in, &mjob_out,
+					(unsigned long long) (W_buff + job*DIM1*DIM2),
+					(unsigned long long) (X_buff + job*DIM2*DIM3), 
+					(unsigned long long) (Q_buff + job*DIM1*DIM3),
+					(unsigned long long) (OP_buff + job*32),
+					(unsigned long long) ST_buff,
+					loop_num, 
+					control_param, 
+					cycle_cnt_in);
+
+	       printf("  W_addr:     0x%016llx (%dx%d)\n"
+	              "  X_addr:     0x%016llx (%dx%d)\n"
+	              "  Q_addr:     0x%016llx (%dx%d)\n",
+		       (unsigned long long)(W_buff + job*DIM1*DIM2), DIM1, DIM2,
+		       (unsigned long long)(X_buff + job*DIM2*DIM3), DIM2, DIM3,
+		       (unsigned long long)(Q_buff + job*DIM1*DIM3), DIM1, DIM3);
+
+		// uncomment to dump the job structure
+		//__hexdump(stderr, &mjob_in, sizeof(mjob_in));
+		print_timestamp("SNAP prepare job_t structure");
+
 		// write the registers into the FPGA's action
 		rc = snap_action_sync_execute_job_set_regs(action, &cjob);
 		if (rc != 0)
@@ -392,7 +406,7 @@ int main(int argc, char *argv[])
 		// Start Action and wait for finish //
 		snap_action_start(action);
 		
-		print_timestamp("Use MMIO to start action");
+		print_timestamp("Use MMIO to kick off \"Action Start\"");
 		
 		uint32_t last_lp;
 		for(i = 0; i < loop_num -1; i++)
@@ -401,25 +415,39 @@ int main(int argc, char *argv[])
 			while (1)
 			{
 				if (last_lp != ST_buff[0]) {
-					print_timestamp("Loop");
+					sprintf(loop_str, "Loop %d", i);
+					print_timestamp(loop_str);
 					break;
 				}
 			}
 		}
 
+		//Last loop
+		while(1) 
+		{
+			if (ST_buff[1] == 4) 
+			{
+				sprintf(loop_str, "Loop %d (last)", i);
+				print_timestamp(loop_str);
+				break;
+			}
+		}
 			
 		
 		// stop the action if not done and read all registers from the action
-		 rc = snap_action_sync_execute_job_check_completion(action, &cjob,
-					timeout);
+		// rc = snap_action_sync_execute_job_check_completion(action, &cjob,
+		//			timeout);
 
-		print_timestamp("Stop action");
+		//Just check stop bit and don't read registers
+		snap_action_completed(action, &rc, timeout);
+
+		print_timestamp("Use MMIO to poll \"Action Stop\" bit");
 
 
-		printf("End Status: ");
-		printf("lp = %d, status =%d\n", ST_buff[0], ST_buff[1]);
-		printf("loop_num out = %d\n", mjob_out.control_param >> 2 );
-		printf("cycle_cnt out = %d\n",mjob_out.cycle_cnt_out);
+		//printf("End Status: ");
+		//printf("lp = %d, status =%d\n", ST_buff[0], ST_buff[1]);
+		//printf("loop_num out = %d\n", mjob_out.control_param >> 2 );
+		//printf("cycle_cnt out = %d\n",mjob_out.cycle_cnt_out);
 	}
 
 
@@ -429,41 +457,48 @@ int main(int argc, char *argv[])
 		goto out_error2;
 	}
 
-	// test return code
-	switch(cjob.retc) {
-	case SNAP_RETC_SUCCESS:
-		fprintf(stdout, "SUCCESS\n");
-		break;
-	case SNAP_RETC_TIMEOUT:
-		fprintf(stdout, "ACTION TIMEOUT\n");
-		break;
-	case SNAP_RETC_FAILURE:
-		fprintf(stdout, "FAILED\n");
-		fprintf(stderr, "err: Unexpected RETC=%x!\n", cjob.retc);
-		goto out_error2;
-		break;
-	default:
-		break;
-	}
+//	// test return code
+//	switch(cjob.retc) {
+//	case SNAP_RETC_SUCCESS:
+//		fprintf(stdout, "SUCCESS\n");
+//		break;
+//	case SNAP_RETC_TIMEOUT:
+//		fprintf(stdout, "ACTION TIMEOUT\n");
+//		break;
+//	case SNAP_RETC_FAILURE:
+//		fprintf(stdout, "FAILED\n");
+//		fprintf(stderr, "err: Unexpected RETC=%x!\n", cjob.retc);
+//		goto out_error2;
+//		break;
+//	default:
+//		break;
+//	}
 
-	// Display the time of all 
-	gettimeofday(&etime, NULL);
-	fprintf(stdout, "\nSNAP mm_test overall took %lld usec\n",
-		(long long)timediff_usec(&etime, &stime));
+//	// Display the time of all 
+//	gettimeofday(&etime, NULL);
+//	fprintf(stdout, "\nSNAP mm_test overall took %lld usec\n",
+//		(long long)timediff_usec(&etime, &stime));
+//
 
-	printf("sanity check\n");
-	for (i = 0 ; i < DIM1; i++) 
-		printf("%d", Q_buff[i*DIM3]);
-	printf("\n");
+//	printf("sanity check\n");
+//	for (i = 0 ; i < DIM1; i++) 
+//		printf("%d", Q_buff[i*DIM3]);
+//	printf("\n");
 	// Detach action + disallocate the card
+
+	printf("====================  All job finished ==================\n");
 	snap_detach_action(action);
+	print_timestamp("Detach action");
+	
 	snap_card_free(card);
+	print_timestamp("Close the card");
 
 	__free(W_buff);
 	__free(X_buff);
 	__free(Q_buff);
 	__free(OP_buff);
 	__free((void*)ST_buff);
+	print_timestamp("Free all buffers");
 	exit(exit_code);
 
  out_error2:
