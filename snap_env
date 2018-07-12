@@ -96,12 +96,12 @@ while [ -z "$SETUP_DONE" ]; do
   if [ "$CAPI20" == "y" ]; then 
     RESP=`grep PSL9_IP_CORE $snap_env_sh`
     if [ -z "$RESP" ]; then
-      echo "export PSL9_IP_CORE= <for CAPI2.0 cards: path to ibm.com_CAPI_PSL9_WRAP2.00.zip file>" >> $snap_env_sh
+      echo "#export PSL9_IP_CORE= <for CAPI2.0 cards: path to ibm.com_CAPI_PSL9_WRAP2.00.zip file>" >> $snap_env_sh
     fi
   else
     RESP=`grep PSL_DCP $snap_env_sh`
     if [ -z "$RESP" ]; then
-      echo "export PSL_DCP= <for CAPI1.0 cards: path to b_route_design.dcp file>" >> $snap_env_sh
+      echo "#export PSL_DCP= <for CAPI1.0 cards: path to b_route_design.dcp file>" >> $snap_env_sh
     fi
   fi
 
