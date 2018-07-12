@@ -205,6 +205,7 @@ int main(int argc, char *argv[])
 
 
 	uint32_t loop_num = 10;
+	uint32_t job_num = 5;
 	uint32_t control_param = 0;  	// bit1-0:    {2: wait several cycles; 1: do MM;   0: just copy buffer}
 					// bit31-2:   {loop_number in progress, which is output reg}
 	uint64_t cycle_cnt_in = 71000/4; //How many cycles: 71us / 4ns
@@ -218,6 +219,7 @@ int main(int argc, char *argv[])
 			{ "card",	 required_argument, NULL, 'C' },
 			{ "timeout",	 required_argument, NULL, 't' },
 			{ "loop_num",    required_argument, NULL, 'L' },
+			{ "job_num",     required_argument, NULL, 'J' },
 			{ "ctrl_parm",   required_argument, NULL, 'P' },
 			{ "cycle_cnt",   required_argument, NULL, 'T' },
 			{ "no-irq",	 no_argument,	    NULL, 'N' },
@@ -228,7 +230,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-                                 "C:t:L:P:T:NVvh",
+                                 "C:t:L:J:P:T:NVvh",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -242,6 +244,9 @@ int main(int argc, char *argv[])
                         break;		
                 case 'L':
                         loop_num = strtol(optarg, (char **)NULL, 0);
+                        break;		
+                case 'J':
+                        job_num = strtol(optarg, (char **)NULL, 0);
                         break;		
                 case 'P':
                         control_param = strtol(optarg, (char **)NULL, 0);
@@ -307,25 +312,33 @@ int main(int argc, char *argv[])
 			X_buff[i * DIM2 + j] = rand()%64;
 	memset(Q_buff, 0, Q_size);
 
+	char mode_str[128];
+
+	if (control_param == 0) 
+		strcpy(mode_str, "Read input, Write output");
+	else if (control_param == 1)
+		strcpy(mode_str, "Read input, Calculate Matrix Multiply, Write output");
+	else
+		sprintf(mode_str, "Read input, wait %ld cycles, Write output", cycle_cnt_in);
 
 	/* Display the parameters that will be used for the example */
 	printf("PARAMETERS:\n"
 	       "  W_addr:     %016llx (%dx%d)\n"
 	       "  X_addr:     %016llx (%dx%d)\n"
 	       "  Q_addr:     %016llx (%dx%d)\n"
-	       "  OP_addr:    %016llx\n"
+	       //"  OP_addr:    %016llx\n"
 	       "  ST_addr:    %016llx\n"
+	       "  job_num:    %d\n"
 	       "  loop_num:   %d\n"
-	       "  ctrl_parm:  %d\n"
-	       "  cycle_cnt:  %ld\n",
+	       "  mode:       %s\n",
 	       (unsigned long long)W_buff, DIM1, DIM2,
 	       (unsigned long long)X_buff, DIM2, DIM3,
 	       (unsigned long long)Q_buff, DIM1, DIM3,
-	       (unsigned long long)OP_buff, 
+	       //(unsigned long long)OP_buff, 
 	       (unsigned long long)ST_buff, 
-	       loop_num, 
-	       control_param,
-	       cycle_cnt_in);
+	       job_num, 
+	       loop_num,
+	       mode_str); 
 
 	print_timestamp("Allocate and prepare buffers");
 
@@ -367,43 +380,47 @@ int main(int argc, char *argv[])
 	//__hexdump(stderr, &mjob_in, sizeof(mjob_in));
 
 
-	// write the registers into the FPGA's action
-        rc = snap_action_sync_execute_job_set_regs(action, &cjob);
-        if (rc != 0)
-		goto out_error2;
+	for (j = 0; j < job_num; j++) {
+		// write the registers into the FPGA's action
+		rc = snap_action_sync_execute_job_set_regs(action, &cjob);
+		if (rc != 0)
+			goto out_error2;
 
-	print_timestamp("Use MMIO to transfer the parameters");
 
-        // Start Action and wait for finish //
-        snap_action_start(action);
-	
-	
-	uint32_t last_lp;
-	for(i = 0; i < loop_num -1; i++)
-	{
-		last_lp = ST_buff[0];
-		while (1)
+		print_timestamp("Use MMIO to transfer the parameters");
+
+		// Start Action and wait for finish //
+		snap_action_start(action);
+		
+		print_timestamp("Use MMIO to start action");
+		
+		uint32_t last_lp;
+		for(i = 0; i < loop_num -1; i++)
 		{
-			if (last_lp != ST_buff[0]) {
-				print_timestamp("Loop");
-				break;
+			last_lp = ST_buff[0];
+			while (1)
+			{
+				if (last_lp != ST_buff[0]) {
+					print_timestamp("Loop");
+					break;
+				}
 			}
 		}
-	}
 
+			
 		
-	
-	// stop the action if not done and read all registers from the action
-         rc = snap_action_sync_execute_job_check_completion(action, &cjob,
-                                timeout);
+		// stop the action if not done and read all registers from the action
+		 rc = snap_action_sync_execute_job_check_completion(action, &cjob,
+					timeout);
 
-	print_timestamp("Stop action");
+		print_timestamp("Stop action");
 
 
-    	printf("End Status: ");
-	printf("lp = %d, status =%d\n", ST_buff[0], ST_buff[1]);
-	printf("loop_num out = %d\n", mjob_out.control_param >> 2 );
-	printf("cycle_cnt out = %d\n",mjob_out.cycle_cnt_out);
+		printf("End Status: ");
+		printf("lp = %d, status =%d\n", ST_buff[0], ST_buff[1]);
+		printf("loop_num out = %d\n", mjob_out.control_param >> 2 );
+		printf("cycle_cnt out = %d\n",mjob_out.cycle_cnt_out);
+	}
 
 
 	if (rc != 0) {
