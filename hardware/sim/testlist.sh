@@ -281,12 +281,12 @@
 #     step "snap_example      -a4 -D0x10000 -S2      -t100 -vv"
 #     # test with C and check automatically
 #     step "snap_example_nvme -h"
-      step "snap_example_nvme -d1                    -t500 -vvvv"
-      step "snap_example_nvme -d1 -b4                -t500 -v "
-      step "snap_example_nvme -d1 -b${rnd20}         -t500 -v "
-      step "snap_example_nvme -d0                    -t500 -vv"
-      step "snap_example_nvme -d0 -b5                -t500 -v "
-      step "snap_example_nvme -d0 -b${rnd20}         -t500 -v "
+      step "snap_example_nvme -d1            -t500  -vvvv"
+      step "snap_example_nvme -d1 -b4        -t900  -v "
+      step "snap_example_nvme -d1 -b${rnd20} -t5000 -v "
+      step "snap_example_nvme -d0            -t500  -vv"
+      step "snap_example_nvme -d0 -b5        -t900  -v "
+      step "snap_example_nvme -d0 -b${rnd20} -t5000 -v "
     fi # nvme
  #
     if [[ "$t0l" == "10140001" || "${env_action}" == "hdl_nvme_example" ]];then echo -e "$del\ntesting hdl_nvme_example"
@@ -299,10 +299,12 @@
         echo "generate data for $blk blocks, $p8 pages, $p4k bytes"
         dd if=/dev/urandom of=rnd.in count=${p8} bs=512 2>/dev/null  # random data any char, no echo due to unprintable char
         head -c $p4k </dev/zero|tr '\0' 'x' >asc.in;head asc.in;echo # same char mult times
-        if [[ "$ENABLE_DENALI" == "Y" ]];then  # init needed, if DENALI is used.
-          echo "init for DENALI flash"
-          step "snap_nvme_init -d0 -v"
-        fi
+        case $ENABLE_DENALI in
+          y|Y) echo "ENABLE_DENALI=$ENABLE_DENALI init flash" # init needed, if DENALI is used.
+               step "snap_nvme_init -d0 -v"
+               ;;
+          *) echo "ENABLE_DENALI=$ENABLE_DENALI no flash init";;
+        esac
         echo "CBLK_BUSYTIMEOUT=$CBLK_BUSYTIMEOUT CBLK_REQTIMEOUT=$CBLK_REQTIMEOUT"
         step "snap_cblk $options -b${blk} --read ${p8}.out       -v"
         step "snap_cblk $options -b${blk} --write asc.in         -v"
