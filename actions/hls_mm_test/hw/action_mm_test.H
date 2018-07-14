@@ -25,7 +25,7 @@
 #include <action_mm_test.h> 
 
 //--------------------------------------------------------------------
-#define RELEASE_LEVEL		0x00000001
+#define RELEASE_LEVEL		0x00000003
 
 //---------------------------------------------------------------------
 // This is generic. Just adapt names for a new action

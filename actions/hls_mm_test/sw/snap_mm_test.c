@@ -38,7 +38,7 @@
 #include <action_mm_test.h>
 #include <snap_hls_if.h>
 
-int verbose_flag = 0;
+int verbose_flag = 1;
 
 static const char *version = GIT_VERSION;
 static struct timeval last_time, curr_time;
@@ -132,26 +132,12 @@ static void snap_prepare_mm_test(struct snap_job *cjob,
 				 struct mm_test_job *mjob_in,
 				 struct mm_test_job *mjob_out,
 				 // Software-Hardware Interface
-				 uint64_t W_addr, 
-				 uint64_t X_addr,
-				 uint64_t Q_addr,
-
-				 uint64_t OP_addr,
-				 uint64_t ST_addr,
-				 uint32_t loop_num, 
-				 uint32_t control_param,
-				 uint64_t cycle_cnt_in)
+				 uint64_t WED_addr,
+				 uint64_t ST_addr)
 {
 //	fprintf(stderr, "  prepare mm_test job of %ld bytes size\n", sizeof(*mjob_in));
-
-	mjob_in->W_addr = W_addr;
-	mjob_in->X_addr = X_addr;
-	mjob_in->Q_addr = Q_addr;
-	mjob_in->OP_addr = OP_addr;
-	mjob_in->ST_addr = ST_addr;
-	mjob_in->loop_num = loop_num;
-	mjob_in->control_param = control_param;
-	mjob_in->cycle_cnt_in = cycle_cnt_in;
+	mjob_in->WED_addr = WED_addr;
+	mjob_in->ST_addr  = ST_addr;
 
 	snap_job_set(cjob, mjob_in, sizeof(*mjob_in), mjob_out, sizeof(*mjob_out));
 }
@@ -195,19 +181,24 @@ int main(int argc, char *argv[])
 	int32_t *X_buff = NULL;
 	int32_t *Q_buff = NULL;
 	int32_t *OP_buff = NULL;
-	volatile uint32_t *ST_buff = NULL;
+	wed_t   *wed_ptr = NULL;
+	volatile status_t * status_ptr = NULL;
 
 	ssize_t W_size = DIM1 * DIM2 * sizeof(int32_t);
 	ssize_t X_size = DIM2 * DIM3 * sizeof(int32_t);
 	ssize_t Q_size = DIM1 * DIM3 * sizeof(int32_t);
 	ssize_t OP_size = 128;  //Place holder, not in use.
-	ssize_t ST_size = 128;
 
 
-	uint32_t loop_num = 10;
-	uint32_t job_num = 5;
-	uint32_t control_param = 0;  	// bit1-0:    {2: wait several cycles; 1: do MM;   0: just copy buffer}
-					// bit31-2:   {loop_number in progress, which is output reg}
+
+
+	uint32_t mode = 0;  	//working mode
+				//MD_0:    FPGA reads W/X, then write Q immediately
+				//MD_MM:   FPGA reads W/X, executes matrix multiply, writes Q
+				//MD_WAIT: FPGA reads W/X, wait "cycle_cnt_in" cycles, writes Q
+					
+	uint32_t job_num = 2;            //How many jobs (Use different W/X/Q buffers)
+	uint32_t loop_num = 2;          //How many loops inside a job (Reuse the same W/X/Q buffers)
 	uint64_t cycle_cnt_in = 71000/4; //How many cycles: 71us / 4ns
 	//////////////////////////////////////////////////
 
@@ -249,7 +240,7 @@ int main(int argc, char *argv[])
                         job_num = strtol(optarg, (char **)NULL, 0);
                         break;		
                 case 'P':
-                        control_param = strtol(optarg, (char **)NULL, 0);
+                        mode = strtol(optarg, (char **)NULL, 0);
                         break;		
                 case 'T':
                         cycle_cnt_in = strtol(optarg, (char **)NULL, 0);
@@ -285,21 +276,22 @@ int main(int argc, char *argv[])
 	
 	// Timer starts
 	gettimeofday(&curr_time, NULL);
-	//gettimeofday(&stime, NULL);
 
 	// Allocate memories
 	W_buff = snap_malloc(W_size * job_num);
 	X_buff = snap_malloc(X_size * job_num);
 	Q_buff = snap_malloc(Q_size * job_num);
 	OP_buff = snap_malloc(OP_size * job_num);
-	ST_buff = snap_malloc(ST_size * job_num);
+	wed_ptr = snap_malloc(sizeof(wed_t) * job_num);
+	status_ptr = snap_malloc(sizeof(status_t));
 
-	if (W_buff == NULL || X_buff == NULL || Q_buff == NULL || OP_buff == NULL || ST_buff == NULL)
+	if (W_buff == NULL || X_buff == NULL || Q_buff == NULL || OP_buff == NULL || wed_ptr == NULL || status_ptr == NULL)
 		goto out_error;
 
 	// Set init value
 	memset(OP_buff, 0, 128 * job_num); //Not in use, all-0
-	memset_volatile(ST_buff, 0, 128);
+	memset_volatile(wed_ptr, 0, 128 * job_num);
+	memset_volatile(status_ptr, 0, 128);
 	
 	for (job = 0; job < job_num; job ++) {
 		for (i = 0; i < DIM1; i ++)
@@ -317,31 +309,48 @@ int main(int argc, char *argv[])
 	char mode_str[128];
 	char loop_str[32];
 
-	if (control_param == 0) 
+	if (mode == MD_0) 
 		strcpy(mode_str, "Read input; and immediately Write output");
-	else if (control_param == 1)
+	else if (mode == MD_MM)
 		strcpy(mode_str, "Read input; Calculate Matrix Multiply; Write output");
-	else
+	else if (mode == MD_WAIT)
 		sprintf(mode_str, "Read input; Wait %ld cycles; Write output", cycle_cnt_in);
 
 	/* Display the parameters that will be used for the example */
 	printf("PARAMETERS:\n"
-	       "  W_addr:     0x%016llx (%dx%d) * %d\n"
-	       "  X_addr:     0x%016llx (%dx%d) * %d\n"
-	       "  Q_addr:     0x%016llx (%dx%d) * %d\n"
-	       //"  OP_addr:    0x%016llx\n * %d"
-	       "  ST_addr:    0x%016llx\n"
+	       "  W_addr:     0x%016lx (%dx%d) * %d\n"
+	       "  X_addr:     0x%016lx (%dx%d) * %d\n"
+	       "  Q_addr:     0x%016lx (%dx%d) * %d\n"
+	     //"  OP_addr:    0x%016lx\n * %d"
+	       "  WED_addr:   0x%016lx\n"
+	       "  ST_addr:    0x%016lx\n"
 	       "  job_num:    %d\n"
 	       "  loop_num:   %d\n"
 	       "  mode:       %s\n",
-	       (unsigned long long)W_buff, DIM1, DIM2, job_num,
-	       (unsigned long long)X_buff, DIM2, DIM3, job_num,
-	       (unsigned long long)Q_buff, DIM1, DIM3, job_num,
-	       //(unsigned long long)OP_buff, job_num
-	       (unsigned long long)ST_buff, 
+	       (uint64_t)W_buff, DIM1, DIM2, job_num,
+	       (uint64_t)X_buff, DIM2, DIM3, job_num,
+	       (uint64_t)Q_buff, DIM1, DIM3, job_num,
+	     //(uint64_t)OP_buff, job_num
+	       (uint64_t)wed_ptr, 
+	       (uint64_t)status_ptr, 
 	       job_num,
 	       loop_num,
 	       mode_str); 
+	
+	
+	//prepare WED list
+	for (job = 0; job < job_num; job++ ) {
+		(wed_ptr + job)->W_addr  = (unsigned long long) (W_buff + job*DIM1*DIM2);
+		(wed_ptr + job)->X_addr  = (unsigned long long) (X_buff + job*DIM2*DIM3);
+		(wed_ptr + job)->Q_addr  = (unsigned long long) (Q_buff + job*DIM1*DIM3);
+		(wed_ptr + job)->OP_addr = (unsigned long long) (OP_buff + job*32); 
+		(wed_ptr + job)->mode = mode;
+		(wed_ptr + job)->ctrl = (job == job_num -1)? WED_LAST: WED_RUN;
+
+		(wed_ptr + job)->loop_num = loop_num;
+		(wed_ptr + job)->cycle_cnt_in = cycle_cnt_in;
+	}
+
 
 	print_timestamp("Allocate and prepare buffers");
 
@@ -370,85 +379,81 @@ int main(int argc, char *argv[])
 	print_timestamp("Attach action");
 
 
-	for (job = 0; job < job_num; job ++) {
+	snap_prepare_mm_test(&cjob, &mjob_in, &mjob_out,
+				(unsigned long long) wed_ptr,
+				(unsigned long long) status_ptr);
 
-		printf("============= Job %d ==============\n", job);
-		// Fill the stucture of data exchanged with the action
-		snap_prepare_mm_test(&cjob, &mjob_in, &mjob_out,
-					(unsigned long long) (W_buff + job*DIM1*DIM2),
-					(unsigned long long) (X_buff + job*DIM2*DIM3), 
-					(unsigned long long) (Q_buff + job*DIM1*DIM3),
-					(unsigned long long) (OP_buff + job*32),
-					(unsigned long long) ST_buff,
-					loop_num, 
-					control_param, 
-					cycle_cnt_in);
-
-	       printf("  W_addr:     0x%016llx (%dx%d)\n"
-	              "  X_addr:     0x%016llx (%dx%d)\n"
-	              "  Q_addr:     0x%016llx (%dx%d)\n",
-		       (unsigned long long)(W_buff + job*DIM1*DIM2), DIM1, DIM2,
-		       (unsigned long long)(X_buff + job*DIM2*DIM3), DIM2, DIM3,
-		       (unsigned long long)(Q_buff + job*DIM1*DIM3), DIM1, DIM3);
-
-		// uncomment to dump the job structure
-		//__hexdump(stderr, &mjob_in, sizeof(mjob_in));
+	if(verbose_flag)
 		print_timestamp("SNAP prepare job_t structure");
 
-		// write the registers into the FPGA's action
-		rc = snap_action_sync_execute_job_set_regs(action, &cjob);
-		if (rc != 0)
-			goto out_error2;
+	//Write the registers into the FPGA's action
+	rc = snap_action_sync_execute_job_set_regs(action, &cjob);
+	if (rc != 0)
+		goto out_error2;
 
 
+	if(verbose_flag)
 		print_timestamp("Use MMIO to transfer the parameters");
 
-		// Start Action and wait for finish //
-		snap_action_start(action);
-		
+	// Start Action
+	snap_action_start(action);
+	
+	if(verbose_flag)
 		print_timestamp("Use MMIO to kick off \"Action Start\"");
-		
-		uint32_t last_lp;
-		for(i = 0; i < loop_num -1; i++)
+
+
+	for (job = 0; job < job_num; job ++) {
+
+		if(verbose_flag)
+			printf("============= Job %d ==============\n", job);
+		if(verbose_flag)
+			printf("  W_addr:     0x%016lx (%dx%d)\n"
+			      "  X_addr:     0x%016lx (%dx%d)\n"
+			      "  Q_addr:     0x%016lx (%dx%d)\n",
+			       (wed_ptr + job)->W_addr, DIM1, DIM2,
+			       (wed_ptr + job)->X_addr, DIM2, DIM3,
+			       (wed_ptr + job)->Q_addr, DIM1, DIM3);
+
+
+	
+		//Wait for DONE: 
+		for(i = 0; i < loop_num ; i++)
 		{
-			last_lp = ST_buff[0];
-			while (1)
+			while(1) 
 			{
-				if (last_lp != ST_buff[0]) {
-					sprintf(loop_str, "Loop %d", i);
-					print_timestamp(loop_str);
+				if (status_ptr->stage == ST_READ_SRC_DONE) 
+				{
+					break;
+				}
+			}
+
+			while(1) 
+			{
+				if (status_ptr->stage == ST_WRITE_DST_DONE) 
+				{
+					if(verbose_flag) {
+						sprintf(loop_str, "Loop %d", i);
+						print_timestamp(loop_str);
+					}
 					break;
 				}
 			}
 		}
 
-		//Last loop
-		while(1) 
-		{
-			if (ST_buff[1] == 4) 
-			{
-				sprintf(loop_str, "Loop %d (last)", i);
-				print_timestamp(loop_str);
-				break;
-			}
-		}
+
+	}
+
 			
 		
-		// stop the action if not done and read all registers from the action
-		// rc = snap_action_sync_execute_job_check_completion(action, &cjob,
-		//			timeout);
+	// stop the action if not done and read all registers from the action
+	// rc = snap_action_sync_execute_job_check_completion(action, &cjob,
+	//			timeout);
 
-		//Just check stop bit and don't read registers
-		snap_action_completed(action, &rc, timeout);
+	//Just check stop bit and don't read registers
+	snap_action_completed(action, &rc, timeout);
 
+	if(verbose_flag)
 		print_timestamp("Use MMIO to poll \"Action Stop\" bit");
-
-
-		//printf("End Status: ");
-		//printf("lp = %d, status =%d\n", ST_buff[0], ST_buff[1]);
-		//printf("loop_num out = %d\n", mjob_out.control_param >> 2 );
-		//printf("cycle_cnt out = %d\n",mjob_out.cycle_cnt_out);
-	}
 
 
 	if (rc != 0) {
@@ -474,18 +479,7 @@ int main(int argc, char *argv[])
 //		break;
 //	}
 
-//	// Display the time of all 
-//	gettimeofday(&etime, NULL);
-//	fprintf(stdout, "\nSNAP mm_test overall took %lld usec\n",
-//		(long long)timediff_usec(&etime, &stime));
-//
-
-//	printf("sanity check\n");
-//	for (i = 0 ; i < DIM1; i++) 
-//		printf("%d", Q_buff[i*DIM3]);
-//	printf("\n");
 	// Detach action + disallocate the card
-
 	printf("====================  All job finished ==================\n");
 	snap_detach_action(action);
 	print_timestamp("Detach action");
@@ -497,7 +491,6 @@ int main(int argc, char *argv[])
 	__free(X_buff);
 	__free(Q_buff);
 	__free(OP_buff);
-	__free((void*)ST_buff);
 	print_timestamp("Free all buffers");
 	exit(exit_code);
 
@@ -509,7 +502,6 @@ int main(int argc, char *argv[])
 	__free(X_buff);
 	__free(Q_buff);
 	__free(OP_buff);
-	__free((void*)ST_buff);
  out_error:
 	exit(EXIT_FAILURE);
 }

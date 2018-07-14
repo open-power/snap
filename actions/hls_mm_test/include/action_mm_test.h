@@ -29,6 +29,7 @@ extern "C" {
 /* Matrix Multiply: 
  *  W (DIM1, DIM2) * X (DIM2, DIM3) = Q (DIM1, DIM3)
  */
+
 //#define DIM1 64
 //#define DIM2 32
 //#define DIM3 64
@@ -37,24 +38,62 @@ extern "C" {
 #define DIM2 64
 #define DIM3 256
 
-#define STATUS_IDLE         0
-#define STATUS_INPUT_DONE   1
-#define STATUS_CALC_DONE    2
-#define STATUS_OUTPUT_DONE  3
+//stages
+#define ST_IDLE            0
+#define ST_READ_WED_DONE   1
+#define ST_LOOP_START      2
+#define ST_READ_SRC_DONE   3
+#define ST_CALC_DONE       4
+#define ST_WRITE_DST_DONE  5
+
+
+//modes
+#define MD_0    0
+#define MD_MM   1
+#define MD_WAIT 2
+
+#define WED_RUN  1
+#define WED_LAST 9
+
+
 
 /* Data structure used to exchange information between action and application */
 /* Size limit is 108 Bytes */
-typedef struct mm_test_job {
+/* This will be reflected in FPGA action_reg */
+	
+
+//Status in shared memory
+//It takes 128bytes. (1 cacheline)
+typedef struct __attribute__((__packed__)) status {
+	uint32_t stage;
+	uint32_t current_job;
+	uint32_t current_loop;
+	uint64_t cycle_cnt_out;
+	uint8_t paddings[108];
+}status_t;
+
+//Word element descriptor in shared memory
+//It takes 128bytes. (1 cacheline)
+typedef struct __attribute__((__packed__)) wed {
 	uint64_t W_addr; 	//Input Matrix 1
 	uint64_t X_addr; 	//Input Matrix 2
 	uint64_t Q_addr; 	//Output Matrix
 	uint64_t OP_addr; 	//Operation Code 
-	uint64_t ST_addr;
+
+	uint16_t mode;
+	uint16_t ctrl;
 	uint32_t loop_num;
-	uint32_t control_param;
-	uint32_t cycle_cnt_in; 	
-	uint32_t cycle_cnt_out; 	
+	uint64_t cycle_cnt_in; 	
+
+	uint8_t paddings[80];
+} wed_t ;
+
+typedef struct mm_test_job {
+	uint64_t WED_addr;
+	uint64_t ST_addr;
 } mm_test_job_t;
+
+	
 
 void memset_volatile(volatile void *s, char c, size_t n);
 int memcmp_volatile(volatile void* s1, const void* s2,size_t n);

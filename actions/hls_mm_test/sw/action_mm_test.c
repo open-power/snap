@@ -53,16 +53,16 @@ static int mmio_read32(struct snap_card *card,
 
 /* Main program of the software action */
 static int action_main(struct snap_sim_action *action,
-		       void *job, unsigned int job_len __unused)
+		       void *job __unused, unsigned int job_len __unused)
 {
+/*
+	struct mm_test_job *js = (struct mm_test_job *)job;
 	int32_t i, j, k;
 	int32_t temp;
-	struct mm_test_job *js = (struct mm_test_job *)job;
-
 	// get the parameters from the structure
-	int32_t *W_buff = (int32_t *)(unsigned long long) js->W_addr;
-	int32_t *X_buff = (int32_t *)(unsigned long long) js->X_addr;
-	int32_t *Q_buff = (int32_t *)(unsigned long long) js->Q_addr;
+	int32_t *W_buff = (int32_t *)(unsigned long long) js->WED_addr.W_addr;
+	int32_t *X_buff = (int32_t *)(unsigned long long) js->WED_addr.X_addr;
+	int32_t *Q_buff = (int32_t *)(unsigned long long) js->WED_addr.Q_addr;
 //	volatile uint8_t *status_array = (uint8_t *)(unsigned long long) js->STATUS_addr;
 	// Uncomment to dump the action params
 	//__hexdump(stderr, js, sizeof(*js));
@@ -106,7 +106,7 @@ static int action_main(struct snap_sim_action *action,
 //
 //	sleep(1);
 //	status_array[0] = STATUS_OUTPUT_DONE;
-
+*/
 	action->job.retc = SNAP_RETC_SUCCESS;
 	return 0;
 
