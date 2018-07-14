@@ -66,8 +66,8 @@ extern "C" {
 //It takes 128bytes. (1 cacheline)
 typedef struct __attribute__((__packed__)) status {
 	uint32_t stage;
-	uint32_t current_job;
 	uint32_t current_loop;
+	uint32_t current_job;
 	uint64_t cycle_cnt_out;
 	uint8_t paddings[108];
 }status_t;

@@ -38,7 +38,7 @@
 #include <action_mm_test.h>
 #include <snap_hls_if.h>
 
-int verbose_flag = 1;
+int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
 static struct timeval last_time, curr_time;
@@ -75,45 +75,25 @@ void memset_volatile(volatile void *s, char c, size_t n)
  */
 static void usage(const char *prog)
 {
-	printf("Usage: %s [-h] [-v, --verbose] [-V, --version]\n"
-	"  -C, --card <cardno>       can be (0...3)\n"
-	"  -t, --timeout             timeout in sec to wait for done.\n"
-	"  -T, --Action timeout      Number max of reads done by the action * 0xF.\n"
-	"  -N, --no-irq              disable Interrupts\n"
+	printf("Usage: %s [-h] [-V, --version]\n"
+	"  -C, --card <cardno>       Can be (0...3)\n"
+	"  -t, --timeout             Timeout in sec to wait for done.\n"
+	"  -v, --verbose             Print timers for how long each job takes\n"
+	"  -J, --job_num             Each job takes a new set of SRC/DST buffers\n"
+	"  -L, --loop_num            The loops inside a job reuse SRC/DST buffers\n"
+	"  -P, --ctrl_param          0: Do nothing; 1: Matrix Multiply 2: Wait cycles\n"
+	"  -T, --cycle_cnt_in        How many cycles (4ns) to wait when -P2\n"
+	"  -I, --irq                 Use Interrupts (not suggested)\n"
 	"\n"
-	"Useful parameters (to be placed before the command):\n"
-	"----------------------------------------------------\n"
-	"SNAP_TRACE=0x0   no debug trace  (default mode)\n"
-	"SNAP_TRACE=0xF   full debug trace\n"
-	"SNAP_CONFIG=FPGA hardware execution   (default mode)\n"
-	"SNAP_CONFIG=CPU  software execution\n"
-	"\n"
-	//TODO: To update later
-//	"Example on a real card:\n"
-//	"-----------------------\n"
-//        "cd /home/snap && export ACTION_ROOT=/home/snap/actions/hls_mm_test\n"
-//        "source snap_path.sh\n"
-//        "snap_maint -vv\n"
-//        "\n"
-//	"echo Run the application + hardware action on FPGA\n"
-//	"snap_mm_test -v\n"
-//	"\n"
-//	"echo Run the application + hardware action on FPGA with 1000 iterations\n"
-//	"snap_mm_test -n 1000\n"
-//	"\n"
-//	"echo Run the application + hardware action on FPGA with small timeout\n"
-//	"snap_mm_test -T 2\n"
-//	"\n"
-//        "Example for a simulation\n"
-//        "------------------------\n"
-//        "snap_maint -vv\n"
-//        "\n"
-//	"echo Run the application + hardware action on the FPGA emulated on CPU\n"
-//	"snap_mm_test -v\n"
-//	"\n"
-//	"echo Run the application + hardware action on FPGA with small timeout\n"
-//	"snap_mm_test -T 2\n"
-	"\n",
+	"Example on a real card:\n"
+	"----------------------------\n"
+        "cd /home/snap && export ACTION_ROOT=/home/snap/actions/hls_mm_test\n"
+        "source snap_path.sh\n"
+        "sudo snap_maint -vv\n"
+        "------only once for above---\n"
+	"sudo snap_mm_test -v\n"
+	"sudo snap_mm_test -J100 -L1\n"
+        "\n",
         prog);
 }
 
@@ -143,9 +123,9 @@ static void snap_prepare_mm_test(struct snap_job *cjob,
 }
 
 
-/* main program of the application for the hls_mm_test example        */
-/* This application will always be run on CPU and will call either       */
-/* a software action (CPU executed) or a hardware action (FPGA executed) */
+// main program of the application for the hls_mm_test example
+// This application will always be run on CPU and will call either
+// a software action (CPU executed) or a hardware action (FPGA executed)
 int main(int argc, char *argv[])
 {
 	// Init of all the default values used 
@@ -158,8 +138,8 @@ int main(int argc, char *argv[])
 	struct mm_test_job mjob_in, mjob_out;
 //	struct timeval etime, stime;
 	unsigned long timeout = 60;
-	// default is interrupt mode enabled (vs polling)
-	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
+	// default is interrupt mode disabled (take polling)
+	snap_action_flag_t action_irq = 0;
 	int exit_code = EXIT_SUCCESS;
 
 	//////////////////////////////////////////////////
@@ -197,8 +177,8 @@ int main(int argc, char *argv[])
 				//MD_MM:   FPGA reads W/X, executes matrix multiply, writes Q
 				//MD_WAIT: FPGA reads W/X, wait "cycle_cnt_in" cycles, writes Q
 					
-	uint32_t job_num = 2;            //How many jobs (Use different W/X/Q buffers)
-	uint32_t loop_num = 2;          //How many loops inside a job (Reuse the same W/X/Q buffers)
+	uint32_t job_num = 5;            //How many jobs (Use different W/X/Q buffers)
+	uint32_t loop_num = 10;          //How many loops inside a job (Reuse the same W/X/Q buffers)
 	uint64_t cycle_cnt_in = 71000/4; //How many cycles: 71us / 4ns
 	//////////////////////////////////////////////////
 
@@ -213,7 +193,7 @@ int main(int argc, char *argv[])
 			{ "job_num",     required_argument, NULL, 'J' },
 			{ "ctrl_parm",   required_argument, NULL, 'P' },
 			{ "cycle_cnt",   required_argument, NULL, 'T' },
-			{ "no-irq",	 no_argument,	    NULL, 'N' },
+			{ "irq",	 no_argument,	    NULL, 'I' },
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
 			{ "help",	 no_argument,	    NULL, 'h' },
@@ -221,7 +201,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-                                 "C:t:L:J:P:T:NVvh",
+                                 "C:t:L:J:P:T:IVvh",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -245,8 +225,8 @@ int main(int argc, char *argv[])
                 case 'T':
                         cycle_cnt_in = strtol(optarg, (char **)NULL, 0);
                         break;		
-                case 'N':
-                        action_irq = 0;
+                case 'I':
+                        action_irq = 1;
                         break;
 			/* service */
 		case 'V':
@@ -306,15 +286,14 @@ int main(int argc, char *argv[])
 		memset(Q_buff, 0, Q_size * job_num);
 	}
 
-	char mode_str[128];
-	char loop_str[32];
+	char temp_str[128];
 
 	if (mode == MD_0) 
-		strcpy(mode_str, "Read input; and immediately Write output");
+		strcpy(temp_str, "Read input; and immediately Write output");
 	else if (mode == MD_MM)
-		strcpy(mode_str, "Read input; Calculate Matrix Multiply; Write output");
+		strcpy(temp_str, "Read input; Calculate Matrix Multiply; Write output");
 	else if (mode == MD_WAIT)
-		sprintf(mode_str, "Read input; Wait %ld cycles; Write output", cycle_cnt_in);
+		sprintf(temp_str, "Read input; Wait %ld cycles; Write output", cycle_cnt_in);
 
 	/* Display the parameters that will be used for the example */
 	printf("PARAMETERS:\n"
@@ -335,7 +314,7 @@ int main(int argc, char *argv[])
 	       (uint64_t)status_ptr, 
 	       job_num,
 	       loop_num,
-	       mode_str); 
+	       temp_str); 
 	
 	
 	//prepare WED list
@@ -383,8 +362,7 @@ int main(int argc, char *argv[])
 				(unsigned long long) wed_ptr,
 				(unsigned long long) status_ptr);
 
-	if(verbose_flag)
-		print_timestamp("SNAP prepare job_t structure");
+	print_timestamp("SNAP prepare job_t structure");
 
 	//Write the registers into the FPGA's action
 	rc = snap_action_sync_execute_job_set_regs(action, &cjob);
@@ -392,17 +370,16 @@ int main(int argc, char *argv[])
 		goto out_error2;
 
 
-	if(verbose_flag)
-		print_timestamp("Use MMIO to transfer the parameters");
+	print_timestamp("Use MMIO to transfer the parameters");
 
 	// Start Action
 	snap_action_start(action);
 	
-	if(verbose_flag)
-		print_timestamp("Use MMIO to kick off \"Action Start\"");
+	print_timestamp("Use MMIO to kick off \"Action Start\"");
 
 
-	for (job = 0; job < job_num; job ++) {
+	uint32_t last_job;
+	for (job = 0; job < job_num -1; job ++) {
 
 		if(verbose_flag)
 			printf("============= Job %d ==============\n", job);
@@ -415,33 +392,41 @@ int main(int argc, char *argv[])
 			       (wed_ptr + job)->Q_addr, DIM1, DIM3);
 
 
-	
-		//Wait for DONE: 
-		for(i = 0; i < loop_num ; i++)
+		last_job = status_ptr->current_job;
+		while(1) 
 		{
-			while(1) 
+			if (status_ptr->current_job != last_job) 
 			{
-				if (status_ptr->stage == ST_READ_SRC_DONE) 
-				{
-					break;
+				if(verbose_flag) {
+					sprintf(temp_str, "Job %d", job);
+					print_timestamp(temp_str);
 				}
-			}
-
-			while(1) 
-			{
-				if (status_ptr->stage == ST_WRITE_DST_DONE) 
-				{
-					if(verbose_flag) {
-						sprintf(loop_str, "Loop %d", i);
-						print_timestamp(loop_str);
-					}
-					break;
-				}
+				break;
 			}
 		}
 
-
 	}
+
+	if(verbose_flag)
+		printf("============= Job %d ==============\n", job);
+	if(verbose_flag)
+		printf("  W_addr:     0x%016lx (%dx%d)\n"
+		      "  X_addr:     0x%016lx (%dx%d)\n"
+		      "  Q_addr:     0x%016lx (%dx%d)\n",
+		       (wed_ptr + job)->W_addr, DIM1, DIM2,
+		       (wed_ptr + job)->X_addr, DIM2, DIM3,
+		       (wed_ptr + job)->Q_addr, DIM1, DIM3);
+	//wait for last
+	//while(1) {
+	//	if (status_ptr->current_job == job_num - 1 
+	//	 && status_ptr->stage == ST_WRITE_DST_DONE
+	//	 && status_ptr->current_loop == loop_num - 1) {
+	//		sprintf(temp_str, "Job (last) %d", job);
+	//		print_timestamp(temp_str);
+	//		break;
+	//	}
+	//}
+
 
 			
 		
@@ -452,8 +437,7 @@ int main(int argc, char *argv[])
 	//Just check stop bit and don't read registers
 	snap_action_completed(action, &rc, timeout);
 
-	if(verbose_flag)
-		print_timestamp("Use MMIO to poll \"Action Stop\" bit");
+	print_timestamp("Use MMIO to poll \"Action Stop\" bit");
 
 
 	if (rc != 0) {
