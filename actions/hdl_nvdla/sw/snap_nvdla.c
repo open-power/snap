@@ -518,8 +518,6 @@ int main(int argc, char *argv[])
 	unsigned long dma_min_size;
 	char card_name[16];   /* Space for Card name */
 
-        nvdla_capi_test(argc, argv);
-
 	while (1) {
                 int option_index = 0;
 		static struct option long_options[] = {
@@ -605,6 +603,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
+        nvdla_capi_test(argc, argv, card_no);
+
 	if (end_delay > 16000) {
 		usage(argv[0]);
 		exit(1);
@@ -621,6 +621,7 @@ int main(int argc, char *argv[])
 	sprintf(device, "/dev/cxl/afu%d.0s", card_no);
 	VERBOSE2("Open Card: %d device: %s\n", card_no, device);
 	dn = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM, SNAP_DEVICE_ID_SNAP);
+
 	if (NULL == dn) {
 		VERBOSE0("ERROR: Can not Open (%s)\n", device);
 		errno = ENODEV;

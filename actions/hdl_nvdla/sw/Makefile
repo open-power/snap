@@ -53,14 +53,17 @@ all: config all_build
 config:
 	./action_config.sh
 
-SUBDIRS = nvdla-sw/umd/core/runtime \
+SUBDIRS_UMD = nvdla-sw/umd/core/runtime \
 	  nvdla-sw/umd/tests/runtime
+SUBDIRS_KMD = nvdla-sw/kmd/firmware \
+	  nvdla-sw/kmd/port/capi
 NVDLA_UMD_OUT = nvdla-sw/umd/out/runtime/
+NVDLA_KMD_OUT = nvdla-sw/umd/out/
 
 projs += snap_nvdla
 
 nvdla_capi_test.o Runtime.o Emulator.o Check.o:
-	for dir in $(SUBDIRS); do \
+	for dir in $(SUBDIRS_UMD); do \
 		$(MAKE) -C $$dir; \
 	done
 	cp -f $(NVDLA_UMD_OUT)/nvdla_runtime/*.o $(ACTION_ROOT)/sw/
@@ -68,7 +71,7 @@ nvdla_capi_test.o Runtime.o Emulator.o Check.o:
 	cp -f $(NVDLA_UMD_OUT)/libnvdla_runtime/$(ACTION_ROOT)/sw/nvdla-sw/umd/core/common/*.o $(ACTION_ROOT)/sw/
 	cp -f $(NVDLA_UMD_OUT)/libnvdla_runtime/$(ACTION_ROOT)/sw/nvdla-sw/umd/port/linux/*.o $(ACTION_ROOT)/sw/
 
-snap_nvdla_objs += nvdla_capi_test.o \
+snap_nvdla_umd_objs += nvdla_capi_test.o \
 		   Server.o \
 		   DlaImageUtils.o \
 		   DlaImage.o \
@@ -84,12 +87,35 @@ snap_nvdla_objs += nvdla_capi_test.o \
 		   nvdla.o \
 		   nvdla_os.o
 
-snap_nvdla: $(snap_nvdla_objs)
+nvdla_capi.o nvdla_core_callbacks.o:
+	for dir in $(SUBDIRS_KMD); do \
+		$(MAKE) -C $$dir; \
+	done
+	cp -f $(NVDLA_KMD_OUT)/kmd/libnvdla_kmd/*.o $(ACTION_ROOT)/sw/
+	cp -f $(NVDLA_KMD_OUT)/firmware/libnvdla_firmware/*.o $(ACTION_ROOT)/sw/
+
+snap_nvdla_kmd_objs += nvdla_capi.o \
+		   nvdla_core_callbacks.o \
+                   scheduler.o \
+                   engine.o \
+                   bdma.o \
+                   conv.o \
+                   sdp.o \
+                   cdp.o \
+                   pdp.o \
+                   rubik.o \
+                   cache.o \
+                   common.o \
+                   engine_data.o \
+                   engine_isr.o \
+                   engine_debug.o
+
+snap_nvdla: $(snap_nvdla_umd_objs) $(snap_nvdla_kmd_objs)
 
 projs += snap_nvdla
 
-snap_nvdla: snap_nvdla.o $(snap_nvdla_objs) 
-	$(CXX) $(CPPFLAGS) $(LDFLAGS) $($(@)_LDFLAGS) $@.o $($(@)_objs) $($(@)_libs) $(LDLIBS) -lrt -ljpeg -o $@
+snap_nvdla: snap_nvdla.o $(snap_nvdla_umd_objs) $(snap_nvdla_kmd_objs)
+	$(CXX) $(CPPFLAGS) $(LDFLAGS) $($(@)_LDFLAGS) $@.o $($(@)_objs) $($(@)_umd_objs) $($(@)_kmd_objs) $($(@)_libs) $(LDLIBS) -lrt -ljpeg -o $@
 
 else
 $(info NVDLA_ROOT is not set, no sw will be built for hdl_nvdla.)
