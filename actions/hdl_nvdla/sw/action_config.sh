@@ -34,3 +34,6 @@ fi
 if [ -d $NVDLA_ROOT/nvdla-sw/umd/out ]; then
   rm -r $NVDLA_ROOT/nvdla-sw/umd/out 
 fi
+if [ -d $NVDLA_ROOT/nvdla-sw/kmd/out ]; then
+  rm -r $NVDLA_ROOT/nvdla-sw/kmd/out 
+fi
