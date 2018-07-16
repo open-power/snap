@@ -35,5 +35,4 @@ if { $argc != 3 } {
 set factory_bit [lindex $argv 0]
 set user_bit    [lindex $argv 1]
 set mcsfile     [lindex $argv 2]
-
 write_cfgmem -format mcs -size $flash_size -interface $flash_interface -loadbit "up $factory_addr $factory_bit up $user_addr $user_bit" $mcsfile -force

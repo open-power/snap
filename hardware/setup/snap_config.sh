@@ -51,6 +51,12 @@ if [ "$FPGACARD" == "N250SP" ]; then
 elif [ "$FPGACARD" == "RCXVUP" ]; then
   DMA_XFER_SIZE="x\"6\""
   CARD_TYPE="x\"11\""
+elif [ "$FPGACARD" == "FX609" ]; then
+  DMA_XFER_SIZE="x\"6\""
+  CARD_TYPE="x\"12\""
+elif [ "$FPGACARD" == "S241"  ]; then
+  DMA_XFER_SIZE="x\"6\""
+  CARD_TYPE="x\"13\""
 fi
 if [ "${BRAM_USED^^}" == "TRUE" ]; then
   SDRAM_SIZE="x\"0001\""

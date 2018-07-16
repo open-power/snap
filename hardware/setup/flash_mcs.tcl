@@ -33,7 +33,7 @@ proc flash_help {} {
   puts "Note: vivado_lab can be used instead of vivado"
   puts "The JTAG hardware target number is optional if only one hardware target is connected"
   puts "  Omitting this option with multiple hardware targets will list all available targets"
-  puts "Set the environment FPGACARD to the card type: N250S, ADKU3, AD8K5, S121B, RCXVUP or N250SP"
+  puts "Set the environment FPGACARD to the card type: N250S, ADKU3, AD8K5, S121B, RCXVUP, FX609, S241 or N250SP"
   puts "  e.g. $ export FPGACARD=ADKU3"
 }
 
@@ -58,7 +58,11 @@ switch $fpgacard {
   RCXVUP { set flashdevice mt25qu01gbbb8e12-0sit
           set fpgapartnum xcvu9p
         }
-  S121B { set flashdevice mt28gu01gaax1e-bpi-x16
+  FX609 { set flashdevice mt25qu01gbbb8e12-0sit
+          set fpgapartnum xcvu9p
+        }
+  S241  { set flashdevice mt25qu01gbbb8e12-0sit
+          set fpgapartnum xcvu9p
         }
   AD8K5 { set flashdevice mt28gu01gaax1e-bpi-x16
 	  set fpgapartnum xcku115
@@ -74,7 +78,7 @@ switch $fpgacard {
           set rs_pins	{26:25}
         }
   default {
-    puts "Error: Environment FPGACARD must be set to N250S, ADKU3, AD8K5, S121B, RCXVUP or N250SP"
+    puts "Error: Environment FPGACARD must be set to N250S, ADKU3, AD8K5, S121B, RCXVUP, FX609, S241 or N250SP"
     exit 96
   }
 }
