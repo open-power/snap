@@ -193,6 +193,8 @@ Address: 0x0000030
   15..9  RO: Reserved
       8  RO: NVMe enabled
    7..0  RO: Card type:
+             0x13 : S241
+             0x12 : FX609
              0x11 : RCXVUP
              0x10 : N250SP
              0x03 : AD8K5

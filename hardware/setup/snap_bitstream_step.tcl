@@ -30,8 +30,6 @@ set fpgacard      $::env(FPGACARD)
 set flash_interface $::env(FLASH_INTERFACE)
 set flash_size      $::env(FLASH_SIZE)
 
-
-
 #Define widths of each column
 set widthCol1 24
 set widthCol2 24

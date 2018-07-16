@@ -137,6 +137,10 @@ while [ -z "$SETUP_DONE" ]; do
     echo "=====Simulation setup: Setting up PSLSE version=========="
     if [ "$CAPI20" == "y" ]; then
       PSLVER="9"
+    elif [ "$FPGACARD" == "FX609" ]; then
+      PSLVER="9"
+    elif [ "$FPGACARD" == "S241" ]; then
+      PSLVER="9"
     else
       PSLVER="8"
     fi
