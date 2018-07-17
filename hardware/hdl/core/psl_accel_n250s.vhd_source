@@ -822,7 +822,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
     -- NVME <-> DDR4 Interface
     ddr_aresetn                         : OUT STD_LOGIC;
     ddr_aclk                            : OUT STD_LOGIC;
-    DDR_M_AXI_araddr                    : OUT STD_LOGIC_VECTOR ( 31 downto 0 );
+    DDR_M_AXI_araddr                    : OUT STD_LOGIC_VECTOR ( 33 downto 0 );
     DDR_M_AXI_arburst                   : OUT STD_LOGIC_VECTOR ( 1 downto 0 );
     DDR_M_AXI_arcache                   : OUT STD_LOGIC_VECTOR ( 3 downto 0 );
     DDR_M_AXI_arid                      : OUT STD_LOGIC_VECTOR ( 3 downto 0 );
@@ -834,7 +834,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
     DDR_M_AXI_arregion                  : OUT STD_LOGIC_VECTOR ( 3 downto 0 );
     DDR_M_AXI_arsize                    : OUT STD_LOGIC_VECTOR ( 2 downto 0 );
     DDR_M_AXI_arvalid                   : OUT STD_LOGIC_VECTOR ( 0 to 0 );
-    DDR_M_AXI_awaddr                    : OUT STD_LOGIC_VECTOR ( 31 downto 0 );
+    DDR_M_AXI_awaddr                    : OUT STD_LOGIC_VECTOR ( 33 downto 0 );
     DDR_M_AXI_awburst                   : OUT STD_LOGIC_VECTOR ( 1 downto 0 );
     DDR_M_AXI_awcache                   : OUT STD_LOGIC_VECTOR ( 3 downto 0 );
     DDR_M_AXI_awid                      : OUT STD_LOGIC_VECTOR ( 3 downto 0 );
