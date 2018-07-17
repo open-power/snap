@@ -504,7 +504,9 @@ module nvme_top (
         for (axi_addr = ddr_addr; axi_addr < ddr_addr + lba_num * 512; axi_addr += 16 * DDR_AWLEN) begin
             /* Read a block once buffer is empty */
             if (i == 0) begin
-                static logic [7:0] fname[128];
+		static string fname; /* works for ncsim but not for xsim */
+                /* static logic [7:0] fname[128]; *//* works only for xsim */
+
                 $sformat(fname, "SNAP_LBA_%h.bin", lba_addr);
                 $readmemh(fname, axi_data);
 		// FIXME Bug in xsim sformat, the fname version has problems, the fixed filename seems working OK.
