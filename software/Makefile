@@ -61,10 +61,16 @@ endif
 
 # Only build if the subdirectory is really existent
 .PHONY: $(subdirs) install
-$(subdirs):
+$(subdirs): ..check_platform
 	@if [ -d $@ ]; then				\
 		$(MAKE) -C $@ C=0 || exit 1;		\
 	fi
+
+# If we find a SNAP binary which is not executable, automatically
+# clean up, such that we get a new build.
+..check_platform:
+	@${SNAP_ROOT}/check_platform.sh || \
+	(echo "info: Non executable snap_maint! Rebuild required." && $(MAKE) clean)
 
 # Install/uninstall
 install uninstall:
