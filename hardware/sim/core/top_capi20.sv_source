@@ -520,13 +520,13 @@ module top (
   // Clock generation
   // 250MHz AFU clock
   always begin
-     ha_pclock = !ha_pclock; #(4.0ns / 2.0);  // a line can not start with "#", because SNAP is unsing the C preprocessor
+     ha_pclock = !ha_pclock; #(4.0ns / 2.0);  // a line can not start with "#", because SNAP is using the C preprocessor
   end
   // 125MHz AFU clock
   reg     pci_clock_125MHz;
   initial pci_clock_125MHz <= 0;
   always begin
-     pci_clock_125MHz = !pci_clock_125MHz; #(8.0ns / 2.0);  // a line can not start with "#", because SNAP is unsing the C preprocessor
+     pci_clock_125MHz = !pci_clock_125MHz; #(8.0ns / 2.0);  // a line can not start with "#", because SNAP is using the C preprocessor
   end
 
   //
@@ -536,8 +536,8 @@ module top (
   //       Also use the reset to reset the DDR4 DIMM model
   reg sys_reset_n_q;
   initial begin
-     sys_reset_n_q <= 1;  #10ns;   // a line can not start with "#", because SNAP is unsing the C preprocessor
-     sys_reset_n_q <= 0;  #100ns;  // a line can not start with "#", because SNAP is unsing the C preprocessor
+     sys_reset_n_q <= 1;  #10ns;   // a line can not start with "#", because SNAP is using the C preprocessor
+     sys_reset_n_q <= 0;  #100ns;  // a line can not start with "#", because SNAP is using the C preprocessor
      sys_reset_n_q <= 1 ;
   end
   // Currently unused inputs
@@ -1106,18 +1106,18 @@ module top (
 #ifdef CONFIG_FX609
   // 200.08MHz DDR4 system clock
   always begin
-     sys_clk_p = !sys_clk_p; #(4.998ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
+     sys_clk_p = !sys_clk_p; #(4.998ns / 2.0); // a line can not start with "#", because SNAP is using the C preprocessor
   end
 #else
 #ifdef CONFIG_S241
   // 400.16MHz DDR4 system clock
   always begin
-     sys_clk_p = !sys_clk_p; #(2.499ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
+     sys_clk_p = !sys_clk_p; #(2.499ns / 2.0); // a line can not start with "#", because SNAP is using the C preprocessor
   end
 #else
   // 266MHz DDR4 system clock
   always begin
-     sys_clk_p = !sys_clk_p; #(3.752ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
+     sys_clk_p = !sys_clk_p; #(3.752ns / 2.0); // a line can not start with "#", because SNAP is using the C preprocessor
   end
 #endif
 #endif
@@ -1129,7 +1129,7 @@ module top (
 
   // 100MHz NVME reference clock
   always begin
-     refclk_nvme_p = !refclk_nvme_p; #(10.0ns / 2); // a line can not start with "#", because SNAP is unsing the C preprocessor
+     refclk_nvme_p = !refclk_nvme_p; #(10.0ns / 2); // a line can not start with "#", because SNAP is using the C preprocessor
   end
 #endif
   ////////////////////////////////////////////////////////////

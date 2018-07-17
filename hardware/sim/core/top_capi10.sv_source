@@ -317,13 +317,13 @@ module top (
   // Clock generation
   // 250MHz AFU clock
   always begin
-     ha_pclock = !ha_pclock; #(4.0ns / 2.0);                // a line can not start with "#", because SNAP is unsing the C preprocessor
+     ha_pclock = !ha_pclock; #(4.0ns / 2.0);                // a line can not start with "#", because SNAP is using the C preprocessor
   end
   // 125MHz AFU clock
   reg     pci_clock_125MHz;
   initial pci_clock_125MHz <= 0;
   always begin
-     pci_clock_125MHz = !pci_clock_125MHz; #(8.0ns / 2.0);  // a line can not start with "#", because SNAP is unsing the C preprocessor
+     pci_clock_125MHz = !pci_clock_125MHz; #(8.0ns / 2.0);  // a line can not start with "#", because SNAP is using the C preprocessor
   end
 
   //
@@ -808,25 +808,25 @@ module top (
 #if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_ADKU3)
   // 400MHz DDR3 system clock
   always begin
-     sys_clk_p = !sys_clk_p; #(2.5ns / 2.0);                // a line can not start with "#", because SNAP is unsing the C preprocessor
+     sys_clk_p = !sys_clk_p; #(2.5ns / 2.0);                // a line can not start with "#", because SNAP is using the C preprocessor
   end
 #endif
 #if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_N250S)
   // 266MHz DDR4 system clock
   always begin
-     sys_clk_p = !sys_clk_p; #(3.752ns / 2.0);              // a line can not start with "#", because SNAP is unsing the C preprocessor
+     sys_clk_p = !sys_clk_p; #(3.752ns / 2.0);              // a line can not start with "#", because SNAP is using the C preprocessor
   end
 #endif
 #if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_S121B)
   // 100MHz S121B system clock
   always begin
-     sys_clk_p = !sys_clk_p; #(10ns / 2.0);                 // a line can not start with "#", because SNAP is unsing the C preprocessor
+     sys_clk_p = !sys_clk_p; #(10ns / 2.0);                 // a line can not start with "#", because SNAP is using the C preprocessor
   end
 #endif
 #if defined(CONFIG_ENABLE_DDRI) && defined(CONFIG_AD8K5)
   // 300MHz AD8K5 system clock
   always begin
-     sys_clk_p = !sys_clk_p; #(3.332ns / 2.0);              // a line can not start with "#", because SNAP is unsing the C preprocessor
+     sys_clk_p = !sys_clk_p; #(3.332ns / 2.0);              // a line can not start with "#", because SNAP is using the C preprocessor
   end
 #endif
 
@@ -837,7 +837,7 @@ module top (
 
   // 100MHz NVME reference clock
   always begin
-     refclk_nvme_p = !refclk_nvme_p; #(10.0ns / 2);         // a line can not start with "#", because SNAP is unsing the C preprocessor
+     refclk_nvme_p = !refclk_nvme_p; #(10.0ns / 2);         // a line can not start with "#", because SNAP is using the C preprocessor
   end
 #endif
 
