@@ -133,7 +133,7 @@ if { $cloud_flow == "TRUE" } {
   set directive $phys_opt_directive
 }
 set logfile   $logs_dir/${step}.log
-set command   "phys_opt_design  -directive $directive -fanout_opt"
+set command   "phys_opt_design  -directive $directive"
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start phys_opt_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
 if { [catch "$command > $logfile" errMsg] } {
@@ -159,7 +159,7 @@ if { $cloud_flow == "TRUE" } {
   set directive $route_directive
 }
 set logfile   $logs_dir/${step}.log
-set command   "route_design -directive $directive"
+set command   "route_design -directive $directive -fanout_opt"
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start route_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
 if { [catch "$command > $logfile" errMsg] } {
