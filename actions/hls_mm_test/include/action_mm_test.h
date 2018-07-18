@@ -24,7 +24,7 @@ extern "C" {
 #endif
 
 /* This number is unique and is declared in ~snap/ActionTypes.md */
-#define MM_TEST_ACTION_TYPE 0x10141010
+#define MM_TEST_ACTION_TYPE 0x1014100A
 
 /* Matrix Multiply: 
  *  W (DIM1, DIM2) * X (DIM2, DIM3) = Q (DIM1, DIM3)
