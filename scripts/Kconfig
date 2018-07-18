@@ -88,6 +88,11 @@ config FLASH_SIZE
         default 128 if S121B_BPIx16 || N250SP || AD8K5 || ADKU3
         default 64  if N250S
 
+#FLASH_FACTORYADDR: For all cards, factory address is 0x0
+config FLASH_FACTORYADDR
+        string
+        default 0x00000000
+
 #FLASH_USERADDR: For BPIx16, it is two-bytes address;
 #                For SPI, it is byte address.
 config FLASH_USERADDR
