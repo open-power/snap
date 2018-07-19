@@ -13,6 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-database -open   capiWave -incsize 400M -incfiles 2
-#probe    -create -memories -all -depth 2
-probe    -create -all -depth 6       ;# depth3 is 6x smaller than depth7
+database -open   capiWave -incsize 20M -incfiles 2
+probe    -create -memories -all -depth 2
+probe    -create -all -depth 10       ;# depth3 is 6x smaller than depth7
