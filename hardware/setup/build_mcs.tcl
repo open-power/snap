@@ -23,7 +23,8 @@ if command -v vivado_lab > /dev/null ; then exec vivado_lab -nolog -nojournal -m
 set flash_interface $::env(FLASH_INTERFACE)
 set flash_size      $::env(FLASH_SIZE)
 set user_addr       $::env(FLASH_USERADDR)
-set factory_addr    0
+set factory_addr    $::env(FLASH_FACTORYADDR)
+
 
 if { $argc != 3 } {
   puts "Build an .mcs file for flashing a card from scratch"
