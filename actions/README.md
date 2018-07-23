@@ -34,7 +34,7 @@ To configure the include path for the common header files with the Xilinx Vivado
 | Action name             |Host|DDR|NVMe|Eth| Description
 |:------------------------|:--:|:-:|:--:|:-:|:--------------------------------------------------------------------------------
 | **hdl**\_example        | X  | X | X  |   | Show how to use MMIO register to allow software application to collect a hardware counter value and how copy data between Host, FPGA, card DDR and card NVMe(Flash) in **VHDL** (**Bandwidth measurement**).
-| **hdl**\_nvme_example   | X  | X | X  |   | 
+| **hdl**\_nvme_example   | X  | X | X  |   | Example to read and write 4k NVMe blocks. It provides a block layer library which is compatible to the IBM CapiFLASH block API and contains experiments for caching and prefetching.
 | hls_bfs                 | X  |   |    |   | Breadth first search (graph data): show how to access complex data structure.
 | hls_hashjoin            | X  |   |    |   | Hashjoin function: show how to access large database.
 | hls_helloworld          | X  |   |    |   | **Discovery example** changing a text in lower or upper cases.
