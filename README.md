@@ -62,7 +62,7 @@ https://www.xilinx.com/products/design-tools/hardware-zone.html
 
 ### (b) CAPI board support and PSL
 Access to CAPI from the FPGA card requires the Power Service Layer (PSL) as well as a Board support Package (BSP) for CAPI2.0 cards.
-Detailed information are available in [hardware/README.md](hardware/README.md)
+Detailed information is available in [hardware/README.md](hardware/README.md)
 
 
 ### (c) Build process
