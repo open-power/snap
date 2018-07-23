@@ -8,7 +8,7 @@ The framework hardware consists of a AXI-to-CAPI bridge unit, memory-mapped regi
 It interfaces with a user-written action (a.k.a. kernel) through an AXI-lite control interface, and gives coherent access to host memory through AXI. Optionally, it also provides access to the on-card DRAM via AXI.
 A NVMe host controller-AXI bridge complements the framework for storage or database applications as an independent unit.
 Software gets access to the action through the libsnap library, allowing applications to call a "function" instead of programming an accelerator.
-The framework supports multi-process applications as well as multiple instantiated hardware actions in parallel.
+The framework supports multi-process applications and can be extended to support multiple instantiated hardware actions in parallel. :exclamation: The current 1.x releases support a single action per FPGA.
 
 This project is an initiative of the OpenPOWER Foundation Accelerator Workgroup.
 Please see here for more details:
