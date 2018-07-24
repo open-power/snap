@@ -23,7 +23,7 @@ set fpga_part    $::env(FPGACHIP)
 set fpga_card    $::env(FPGACARD)
 set ip_dir       $root_dir/ip
 set usr_ip_dir   $ip_dir/managed_ip_project/managed_ip_project.srcs/sources_1/ip
-set action_vhdl  [exec find $::env(ACTION_ROOT) -name vhdl]
+set action_root  $::env(ACTION_ROOT)
 
 set sdram_used   $::env(SDRAM_USED)
 set bram_used    $::env(BRAM_USED)
@@ -462,8 +462,9 @@ if { $create_ddr4_ad8k5 == "TRUE" } {
 }
 
 # User IPs
+set action_vhdl  $action_root/hw/vhdl
 if { [file exists $action_vhdl] == 1 } {
-  set tcl_exists [exec find $action_vhdl -name *.tcl]
+  set tcl_exists [exec find $action_vhdl/ -name *.tcl]
   if { $tcl_exists != "" } {
     foreach tcl_file [glob -nocomplain -dir $action_vhdl *.tcl] {
       set tcl_file_name [exec basename $tcl_file]
