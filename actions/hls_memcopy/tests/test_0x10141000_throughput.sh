@@ -77,8 +77,12 @@ fi
 
 function test_memcopy {
 
+if [ ${size} = 536870912 ]; then
     echo "Creating a" ${size} "bytes file ...takes a minute or so ... "
+    dd if=/dev/urandom of=512MB_A.bin count=512 bs=1M 2> dd.log
+else
     dd if=/dev/urandom of=512MB_A.bin count=${size} bs=1 2> dd.log
+fi
 
     echo "Doing snap_memcopy benchmarking with" ${size} "bytes transfers ... "
 
