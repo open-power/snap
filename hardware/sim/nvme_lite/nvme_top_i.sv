@@ -17,6 +17,8 @@
 `include "snap_config.sv"
 `include "nvme_defines.sv"
 
+`define DDR_M_ADDRBWIDTH 34
+
 module nvme_top (
     /* Action AXI Bus: Here we should see the register reads/writes */
     input  wire ACT_NVME_ACLK,
@@ -58,7 +60,7 @@ module nvme_top (
     input  wire ACT_NVME_AXI_wvalid,
 
     /* SDRAM Access AXI Bus: Here we need to copy data to or from */
-    output wire [31:0]DDR_M_AXI_araddr,
+    output wire [`DDR_M_ADDRBWIDTH-1:0]DDR_M_AXI_araddr,
     output wire [1:0]DDR_M_AXI_arburst,
     output wire [3:0]DDR_M_AXI_arcache,
     output wire [3:0]DDR_M_AXI_arid,
@@ -70,7 +72,7 @@ module nvme_top (
     output wire [3:0]DDR_M_AXI_arregion,
     output wire [2:0]DDR_M_AXI_arsize,
     output wire [0:0]DDR_M_AXI_arvalid,
-    output wire [31:0]DDR_M_AXI_awaddr,
+    output wire [`DDR_M_ADDRBWIDTH-1:0]DDR_M_AXI_awaddr,
     output wire [1:0]DDR_M_AXI_awburst,
     output wire [3:0]DDR_M_AXI_awcache,
     output wire [3:0]DDR_M_AXI_awid,
@@ -164,7 +166,7 @@ module nvme_top (
     reg [7:0] DDR_awlen;
     reg [2:0] DDR_awsize;
     reg [1:0] DDR_awburst;
-    reg [33:0] DDR_awaddr;
+    reg [`DDR_M_ADDRBWIDTH-1:0] DDR_awaddr;
     reg [0:0] DDR_arvalid;
     reg [0:0] DDR_awvalid;
     reg [127:0] DDR_wdata;
@@ -173,7 +175,7 @@ module nvme_top (
     reg [3:0] DDR_awid;
     reg [7:0] DDR_arlen;
     reg [2:0] DDR_arsize;
-    reg [33:0] DDR_araddr;
+    reg [`DDR_M_ADDRBWIDTH-1:0] DDR_araddr;
     reg [0:0] DDR_rready;
     reg [0:0] DDR_arlock;
     reg [0:0] DDR_wlast;
@@ -209,7 +211,7 @@ module nvme_top (
     assign DDR_M_AXI_awlen = DDR_awlen;
     assign DDR_M_AXI_awsize = DDR_awsize;
     assign DDR_M_AXI_awburst = DDR_awburst;
-    assign DDR_M_AXI_awaddr = DDR_awaddr[31:0];
+    assign DDR_M_AXI_awaddr = DDR_awaddr[`DDR_M_ADDRBWIDTH-1:0];
     assign DDR_M_AXI_awvalid = DDR_awvalid;
     assign DDR_M_AXI_wdata = DDR_wdata;
     assign DDR_M_AXI_wstrb = DDR_wstrb;
@@ -218,7 +220,7 @@ module nvme_top (
     assign DDR_M_AXI_arvalid = DDR_arvalid;
     assign DDR_M_AXI_arlen = DDR_arlen;
     assign DDR_M_AXI_arsize = DDR_arsize;
-    assign DDR_M_AXI_araddr = DDR_araddr[31:0];
+    assign DDR_M_AXI_araddr = DDR_araddr[`DDR_M_ADDRBWIDTH-1:0];
     assign DDR_M_AXI_rready = DDR_rready;
     assign DDR_M_AXI_bready = DDR_bready;
     assign DDR_M_AXI_arburst = DDR_arburst;
@@ -602,7 +604,7 @@ module nvme_top (
     //   larger context. Try out yourself or throw away if it is not useful.
     task axi_ddr_test();
         int i;
-        logic [33:0] axi_addr;
+        logic [`DDR_M_ADDRBWIDTH-1:0] axi_addr;
         logic [127:0] axi_data[DDR_AWLEN];
         logic [127:0] cmp_data[DDR_AWLEN];
 
@@ -634,16 +636,16 @@ module nvme_top (
     endtask
 
     /* task or function, what is more appropriate? How to wait best for completion? */
-    logic [33:0] ddr_write_addr;    /* FIXME need one per slot */
+    logic [`DDR_M_ADDRBWIDTH-1:0] ddr_write_addr;    /* FIXME need one per slot */
     logic [7:0] ddr_widx; /* Index into ddr_write_data[] */
     logic [127:0] ddr_write_data[DDR_AWLEN]; /* FIXME need one per slot */
 
     /* task or function, what is more appropriate? How to wait best for completion? */
-    logic [33:0] ddr_read_addr;    /* FIXME need one per slot */
+    logic [`DDR_M_ADDRBWIDTH-1:0] ddr_read_addr;    /* FIXME need one per slot */
     logic [7:0] ddr_ridx; /* Index into ddr_read_data[] */
     logic [127:0] ddr_read_data[DDR_ARLEN]; /* FIXME need one per slot */
 
-    task axi_ddr_write(input logic [33:0] addr, input logic [127:0] data[DDR_AWLEN]);
+    task axi_ddr_write(input logic [`DDR_M_ADDRBWIDTH-1:0] addr, input logic [127:0] data[DDR_AWLEN]);
         while (ddr_write_state != DDR_WIDLE) begin
             #1;
         end
@@ -740,7 +742,7 @@ module nvme_top (
         end
      end
 
-     task axi_ddr_read(input logic [33:0] addr, output logic [127:0] data[DDR_ARLEN]);
+     task axi_ddr_read(input logic [`DDR_M_ADDRBWIDTH-1:0] addr, output logic [127:0] data[DDR_ARLEN]);
         while (ddr_read_state != DDR_RIDLE) begin
             #1;
         end
