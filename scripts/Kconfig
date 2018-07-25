@@ -6,87 +6,103 @@
 ###############################################################################
 
 choice
-        bool "Card Type"
-        default N250S
-        help
-          Card Type
-          There are multiple card the framework supports. Please select
-          one of them. Pay attention to CAPI level (eg CAPI10 or CAPI20)
+	bool "Card Type"
+	default N250S
+	help
+	  Card Type
+	  There are multiple card the framework supports. Please select
+	  one of them. Pay attention to CAPI level (eg CAPI10 or CAPI20)
 
-        config N250S
-                bool "CAPI1.0: Nallatech 250S with 4GB DDR4 SDRAM, NVMe and Xilinx KU60 FPGA"
-                select CAPI10
-                help
-                  Nallatech 250S card originally used for CAPI Flash using NVMe
-                  storage. Uses Xilinx FPGA XCKU060.
+	config N250S
+		bool "CAPI1.0: Nallatech 250S with 4GB DDR4 SDRAM, NVMe and Xilinx KU60 FPGA"
+		select CAPI10
+		help
+		  Nallatech 250S card originally used for CAPI Flash using NVMe
+		  storage. Uses Xilinx FPGA XCKU060.
 
-        config ADKU3
-                bool "CAPI1.0: AlphaData KU3 with Ethernet, 8GB DDR3 SDRAM and Xilinx KU60 FPGA"
-                select CAPI10
-                select DISABLE_NVME
-                help
-                  AlphaData KU3 has ethernet and 8GB DDR3 SDRAM. Uses Xilinx FPGA XCKU060.
+	config ADKU3
+		bool "CAPI1.0: AlphaData KU3 with Ethernet, 8GB DDR3 SDRAM and Xilinx KU60 FPGA"
+		select CAPI10
+		select DISABLE_NVME
+		help
+		  AlphaData KU3 has ethernet and 8GB DDR3 SDRAM. Uses Xilinx FPGA XCKU060.
 
-        config AD8K5
-                bool "CAPI1.0: AlphaData 8K5 with Ethernet, 8GB DDR4 SDRAM and Xilinx KU115 FPGA"
-                select CAPI10
-                select DISABLE_NVME
-                help
-                  AlphaData 8K5 (rev2 + newer) has ethernet and 8GB DDR4 SDRAM (2400).
-                  Uses Xilinx FPGA XCKU115.
+	config AD8K5
+		bool "CAPI1.0: AlphaData 8K5 with Ethernet, 8GB DDR4 SDRAM and Xilinx KU115 FPGA"
+		select CAPI10
+		select DISABLE_NVME
+		help
+		  AlphaData 8K5 (rev2 + newer) has ethernet and 8GB DDR4 SDRAM (2400).
+		  Uses Xilinx FPGA XCKU115.
 
-        config S121B_BPIx16
-                bool "CAPI1.0: Semptian NSA121B (v16.1, BPIx16) Card with Ethernet, 8GB DDR4 SDRAM and Xilinx KU115 FPGA"
-                select CAPI10
-                select S121B
-                select DISABLE_NVME
-                help
-                  Semptian NSA121B has ethernet and 8GB DDR4 SDRAM. Uses Xilinx FPGA XCKU115.
+	config S121B_BPIx16
+		bool "CAPI1.0: Semptian NSA121B (v16.1, BPIx16) Card with Ethernet, 8GB DDR4 SDRAM and Xilinx KU115 FPGA"
+		select CAPI10
+		select S121B
+		select DISABLE_NVME
+		help
+		  Semptian NSA121B has ethernet and 8GB DDR4 SDRAM. Uses Xilinx FPGA XCKU115.
 
-        config S121B_SPIx4
-                bool "CAPI1.0: Semptian NSA121B (v16.2, SPIx4) Card with Ethernet, 8GB DDR4 SDRAM and Xilinx KU115 FPGA"
-                select CAPI10
-                select S121B
-                select DISABLE_NVME
-                help
-                  Semptian NSA121B has ethernet and 8GB DDR4 SDRAM. Uses Xilinx FPGA XCKU115.
+	config S121B_SPIx4
+		bool "CAPI1.0: Semptian NSA121B (v16.2, SPIx4) Card with Ethernet, 8GB DDR4 SDRAM and Xilinx KU115 FPGA"
+		select CAPI10
+		select S121B
+		select DISABLE_NVME
+		help
+		  Semptian NSA121B has ethernet and 8GB DDR4 SDRAM. Uses Xilinx FPGA XCKU115.
 
        config N250SP
-                bool "CAPI2.0: Nallatech 250S+ with 4GB DDR4 SDRAM, NVMe and Xilinx KU15P FPGA"
-                select CAPI20
-                help
-                  Nallatech 250S+ card originally used for CAPI Flash using NVMe
-                  storage. Uses Xilinx FPGA.
+		bool "CAPI2.0: Nallatech 250S+ with 4GB DDR4 SDRAM, NVMe and Xilinx KU15P FPGA"
+		select CAPI20
+		help
+		  Nallatech 250S+ card originally used for CAPI Flash using NVMe
+		  storage. Uses Xilinx FPGA.
 
-        config RCXVUP
-                bool "CAPI2.0: ReflexCES XpressVUP Card with Ethernet, 8GB DDR4 SDRAM and Xilinx VU9P FPGA"
-                select CAPI20
-                select DISABLE_NVME
-                help
-                  ReflexCES XpressVUP Card with Ethernet, 8GB DDR4 SDRAM, 144Mb QDR2+ and Xilinx VU9P FPGA.
+	config RCXVUP
+		bool "CAPI2.0: ReflexCES XpressVUP Card with Ethernet, 8GB DDR4 SDRAM and Xilinx VU9P FPGA"
+		select CAPI20
+		select DISABLE_NVME
+		help
+		  ReflexCES XpressVUP Card with Ethernet, 8GB DDR4 SDRAM, 144Mb QDR2+ and Xilinx VU9P FPGA.
+
+	config S241
+		bool "CAPI2.0: Semptian NSA241 Card with Ethernet, 8GB DDR4 SDRAM and Xilinx VU9P FPGA"
+		select CAPI20
+		select DISABLE_NVME
+		help
+		  Semptian NSA241 Card with Ethernet, 8GB DDR4 SDRAM and Xilinx VU9P FPGA.
+
+	config FX609
+		bool "CAPI2.0: Flyslice FX609 Card with Ethernet, 8GB DDR4 SDRAM and Xilinx VU9P FPGA"
+		select CAPI20
+		select DISABLE_NVME
+		help
+		  Flyslice FX609 Card with Ethernet, 8GB DDR4 SDRAM and Xilinx VU9P FPGA.
 endchoice
 
 config FPGACARD
-        string
-        default "N250S"  if N250S
-        default "N250SP" if N250SP
-        default "ADKU3"  if ADKU3
-        default "S121B"  if S121B_BPIx16 || S121B_SPIx4
-        default "AD8K5"  if AD8K5
-        default "RCXVUP" if RCXVUP
+	string
+	default "N250S"  if N250S
+	default "N250SP" if N250SP
+	default "ADKU3"  if ADKU3
+	default "S121B"  if S121B_BPIx16 || S121B_SPIx4
+	default "AD8K5"  if AD8K5
+	default "RCXVUP" if RCXVUP
+	default "FX609"  if FX609
+	default "S241"   if S241
 
 config FLASH_INTERFACE
-        string
-        default "BPIx16" if S121B_BPIx16 || N250S || N250SP || ADKU3 || AD8K5
-        default "SPIx4"  if S121B_SPIx4
-        default "SPIx8"  if RCXVUP
+	string
+	default "BPIx16" if S121B_BPIx16 || N250S || N250SP || ADKU3 || AD8K5
+	default "SPIx4"  if S121B_SPIx4 || FX609 || S241
+	default "SPIx8"  if RCXVUP
 
 #FLASH_SIZE: in MB, will be used by build_mcs.tcl
 config FLASH_SIZE
-        string
-        default 256 if S121B_SPIx4  || RCXVUP
-        default 128 if S121B_BPIx16 || N250SP || AD8K5 || ADKU3
-        default 64  if N250S
+	string
+	default 256 if S121B_SPIx4  || RCXVUP || S241
+	default 128 if S121B_BPIx16 || N250SP || AD8K5 || ADKU3 || FX609
+	default 64  if N250S
 
 #FLASH_FACTORYADDR: For all cards, factory address is 0x0
 config FLASH_FACTORYADDR
@@ -96,399 +112,416 @@ config FLASH_FACTORYADDR
 #FLASH_USERADDR: For BPIx16, it is two-bytes address;
 #                For SPI, it is byte address.
 config FLASH_USERADDR
-        string
-        default 0x01000000 if N250S || ADKU3
-        default 0x02000000 if S121B_BPIx16 || AD8K5 || N250SP
-        default 0x08000000 if S121B_SPIx4 || RCXVUP
+	string
+	default 0x01000000 if N250S || ADKU3
+	default 0x02000000 if S121B_BPIx16 || AD8K5 || N250SP
+	default 0x04000000 if FX609
+	default 0x08000000 if S121B_SPIx4 || RCXVUP || S241
 
 
 config S121B
-        bool
-        default n
+	bool
+	default n
 
 config CAPI10
-        bool
-        default n
+	bool
+	default n
 
 config CAPI20
-        bool
-        default n
+	bool
+	default n
 
 config FPGACHIP
-        string
-        default "xcku060-ffva1156-2-e" if N250S || ADKU3
-        default "xcku115-flva1517-2-e" if S121B_BPIx16 || S121B_SPIx4
-        default "xcku15p-ffva1156-2-i" if N250SP
-        default "xcku115-flva1517-2-e" if AD8K5
-        default "xcvu9p-flgb2104-2l-e-es1" if RCXVUP
-
+	string
+	default "xcku060-ffva1156-2-e" if N250S || ADKU3
+	default "xcku115-flva1517-2-e" if S121B_BPIx16 || S121B_SPIx4
+	default "xcku15p-ffva1156-2-i" if N250SP
+	default "xcku115-flva1517-2-e" if AD8K5
+	default "xcvu9p-flgb2104-2l-e-es1" if RCXVUP
+	default "xcvu9p-fsgd2104-2l-e" if FX609
+	default "xcvu9p-flgb2104-2l-e" if S241
 
 config NUM_OF_ACTIONS
-        int
-        default 1
+	int
+	default 1
 # as long as only one action is supported we do not need to prompt the number of actions
 # prompt should be enabled as soon as multiple action support is implemented
 #        prompt "Number Of Actions"
-        range 1 1
-        help
-          SNAP currently supports one action.
+	range 1 1
+	help
+	  SNAP currently supports one action.
 
 choice
-        bool "Action Type"
-        help
-          Action Type
-          Select an Action type example:
-          - HDL for VHDL or Verilog coded examples
-          - HLS for C coded examples compiled with HLS
+	bool "Action Type"
+	help
+	  Action Type
+	  Select an Action type example:
+	  - HDL for VHDL or Verilog coded examples
+	  - HLS for C coded examples compiled with HLS
 
-        default HDL_EXAMPLE
+	default HDL_EXAMPLE
 
-        config HLS_ACTION
-            bool "HLS Action - manually set ACTION_ROOT in snap_env.sh!"
-            select ENABLE_HLS_SUPPORT
-            help
-                This option is a placeholder for an action written by the user in HLS.
-                Please remember to set the environment variable "ACTION_ROOT"
-                in snap_env.sh to the directory of the action source code.
+	config HLS_ACTION
+		bool "HLS Action - manually set ACTION_ROOT in snap_env.sh!"
+		select ENABLE_HLS_SUPPORT
+		help
+		  This option is a placeholder for an action written by the user in HLS.
+		  Please remember to set the environment variable "ACTION_ROOT"
+		  in snap_env.sh to the directory of the action source code.
 
-        config HDL_ACTION
-            bool "HDL Action - manually set ACTION_ROOT in snap_env.sh!"
-            help
-                This option is a placeholder for an action written by the user in a
-                hardware description language such as VHDL or Verilog.
-                Please remember to set the environment variable "ACTION_ROOT"
-                in snap_env.sh to the directory of the action source code.
+	config HDL_ACTION
+		bool "HDL Action - manually set ACTION_ROOT in snap_env.sh!"
+		help
+		  This option is a placeholder for an action written by the user in a
+		  hardware description language such as VHDL or Verilog.
+		  Please remember to set the environment variable "ACTION_ROOT"
+		  in snap_env.sh to the directory of the action source code.
 
-        config HDL_EXAMPLE
-            bool "HDL Example"
+	config HDL_EXAMPLE
+		bool "HDL Example"
 
-        config HDL_NVME_EXAMPLE
-            bool "HDL NVMe Example"
-            depends on N250S
-            select FORCE_SDRAM_OR_BRAM
-            select FORCE_NVME
+	config HDL_NVME_EXAMPLE
+		bool "HDL NVMe Example"
+		depends on N250S
+		select FORCE_SDRAM_OR_BRAM
+		select FORCE_NVME
 
-        config HLS_MEMCOPY
-            bool "HLS Memcopy"
-            help
-               This is a basic example to start accessing data:
-               - Read data from the server memory or from the card DDR
-               - Write data to the server memory or to the card DDR
-               - A temporary buffer is used in the FPGA (configurable size)
-               All combination can be done.
-               This example is written in C and compiled with HLS
-            select ENABLE_HLS_SUPPORT
-            select FORCE_SDRAM_OR_BRAM
-            select DISABLE_NVME
+	config HLS_MEMCOPY
+		bool "HLS Memcopy"
+		help
+		  This is a basic example to start accessing data:
+		  - Read data from the server memory or from the card DDR
+		  - Write data to the server memory or to the card DDR
+		  - A temporary buffer is used in the FPGA (configurable size)
+		  All combination can be done.
+		  This example is written in C and compiled with HLS
+		select ENABLE_HLS_SUPPORT
+		select FORCE_SDRAM_OR_BRAM
+		select DISABLE_NVME
 
-        config HLS_SPONGE
-            bool "HLS Sponge"
-            help
-               This is an example of a C code ported and optimized:
-               It is a benchmark to measure the SHA3 key generation performance
-               - Data are generated in the algorithm - No data move
-               - 3 functions : SPEED, SHA3, SHAKE (and SHA3_SHAKE)
-               - only the SPEED test was optimized
-               This example is written in C and compiled with HLS
-            select ENABLE_HLS_SUPPORT
-            select DISABLE_SDRAM_AND_BRAM
-            select DISABLE_NVME
+	config HLS_SPONGE
+		bool "HLS Sponge"
+		help
+		  This is an example of a C code ported and optimized:
+		  It is a benchmark to measure the SHA3 key generation performance
+		  - Data are generated in the algorithm - No data move
+		  - 3 functions : SPEED, SHA3, SHAKE (and SHA3_SHAKE)
+		  - only the SPEED test was optimized
+		  This example is written in C and compiled with HLS
+		select ENABLE_HLS_SUPPORT
+		select DISABLE_SDRAM_AND_BRAM
+		select DISABLE_NVME
 
-        config HLS_HASHJOIN
-            bool "HLS Hashjoin"
-            select ENABLE_HLS_SUPPORT
-            select DISABLE_SDRAM_AND_BRAM
-            select DISABLE_NVME
+	config HLS_HASHJOIN
+		bool "HLS Hashjoin"
+		select ENABLE_HLS_SUPPORT
+		select DISABLE_SDRAM_AND_BRAM
+		select DISABLE_NVME
 
-        config HLS_SEARCH
-            bool "HLS Search"
-            help
-               This example shows different ways to work with data:
-               - Read a pattern and text from the server memory
-               - search the pattern within the text
-                    (2 methods used : text bufferized - stream flow)
-               - send back the number of occurrences
-               No optmization was done on this example
-               This example is written in C and compiled with HLS
-            select ENABLE_HLS_SUPPORT
-            select FORCE_SDRAM_OR_BRAM
-            select DISABLE_NVME
+	config HLS_SEARCH
+		bool "HLS Search"
+		help
+		  This example shows different ways to work with data:
+		  - Read a pattern and text from the server memory
+		  - search the pattern within the text
+		     (2 methods used : text bufferized - stream flow)
+		  - send back the number of occurrences
+		  No optmization was done on this example
+		  This example is written in C and compiled with HLS
+		select ENABLE_HLS_SUPPORT
+		select FORCE_SDRAM_OR_BRAM
+		select DISABLE_NVME
 
-        config HLS_BFS
-            bool "HLS Breadth First Search"
-            select ENABLE_HLS_SUPPORT
-            select DISABLE_SDRAM_AND_BRAM
-            select DISABLE_NVME
+	config HLS_BFS
+		bool "HLS Breadth First Search"
+		select ENABLE_HLS_SUPPORT
+		select DISABLE_SDRAM_AND_BRAM
+		select DISABLE_NVME
 
-        config HLS_INTERSECT
-            bool "HLS Intersect - not timing clean, please see help"
-            help
-               This example often does not meet timing (> 200ps negative slack) in bitstream generation.
-               Running on FPGA hardware has passed for many times but it is NOT guaranteed.
-               It is intended as a HLS coding example to show how to make two implementations for a single target.
-               It also shows how to invoke the hardware action several times from C main() function.
-            select ENABLE_HLS_SUPPORT
-            select FORCE_SDRAM_OR_BRAM
-            select DISABLE_NVME
+	config HLS_INTERSECT
+		bool "HLS Intersect - not timing clean, please see help"
+		help
+		  This example often does not meet timing (> 200ps negative slack) in bitstream generation.
+		  Running on FPGA hardware has passed for many times but it is NOT guaranteed.
+		  It is intended as a HLS coding example to show how to make two implementations for a single target.
+		  It also shows how to invoke the hardware action several times from C main() function.
+		select ENABLE_HLS_SUPPORT
+		select FORCE_SDRAM_OR_BRAM
+		select DISABLE_NVME
 
-        config HLS_NVME_MEMCOPY
-            bool "HLS NVMe Memcopy"
-            depends on N250S
-            select ENABLE_HLS_SUPPORT
-            select FORCE_SDRAM_OR_BRAM
-            select FORCE_NVME
+	config HLS_NVME_MEMCOPY
+		bool "HLS NVMe Memcopy"
+		depends on N250S
+		select ENABLE_HLS_SUPPORT
+		select FORCE_SDRAM_OR_BRAM
+		select FORCE_NVME
 
-        config HLS_LATENCY_EVAL
-            bool "HLS Latency Evaluation"
-            help
-               This example will help user understanding how to:
-               - from the application: Write a word to the host memory (w/ caches)
-               - from the action: Read a word - process it - Write it back to host memory
-               - from the application: Read a word from the host memory
-                and all that with the minimum latency between this data exchange
-               This example is written in C and compiled with HLS
-            select ENABLE_HLS_SUPPORT
-            select DISABLE_SDRAM_AND_BRAM
-            select DISABLE_NVME
+	config HLS_LATENCY_EVAL
+		bool "HLS Latency Evaluation"
+		help
+		  This example will help user understanding how to:
+		  - from the application: Write a word to the host memory (w/ caches)
+		  - from the action: Read a word - process it - Write it back to host memory
+		  - from the application: Read a word from the host memory
+		  and all that with the minimum latency between this data exchange
+		  This example is written in C and compiled with HLS
+		select ENABLE_HLS_SUPPORT
+		select DISABLE_SDRAM_AND_BRAM
+		select DISABLE_NVME
+	
+	config HLS_MM_TEST
+		bool "HLS WED/STATUS Sharing and MatrixMultiply"
+		help
+		  This example will help user understanding how to:
+		  - FPGA and Host software share WED and STATUS in host memory
+		  - Software write WED (Work element descriptor) to ask FPGA to do something
+		  - FPGA updates STATUS to let software know its status
+		  - And a simple Matrix Multiplication
+		  This example is written in C and compiled with HLS
+		select ENABLE_HLS_SUPPORT
+		select DISABLE_SDRAM_AND_BRAM
+		select DISABLE_NVME
 
-        config HLS_HELLOWORLD
-            bool "HLS HelloWorld"
-            help
-               This is the simplest example to start with:
-               - Reading text from the server memory
-               - Processing changing case of the text
-               - Writing back the text to the server memory
-               This example is written in C and compiled with HLS
-            select ENABLE_HLS_SUPPORT
-            select DISABLE_SDRAM_AND_BRAM
-            select DISABLE_NVME
+	config HLS_HELLOWORLD
+		bool "HLS HelloWorld"
+		help
+		  This is the simplest example to start with:
+		  - Reading text from the server memory
+		  - Processing changing case of the text
+		  - Writing back the text to the server memory
+		  This example is written in C and compiled with HLS
+		select ENABLE_HLS_SUPPORT
+		select DISABLE_SDRAM_AND_BRAM
+		select DISABLE_NVME
 
 endchoice
 
 config ENABLE_HLS_SUPPORT
-        bool
-        default n
+	bool
+	default n
 
 config HLS_SUPPORT
-        string
-        default "TRUE"  if ENABLE_HLS_SUPPORT
-        default "FALSE" if ! ENABLE_HLS_SUPPORT
+	string
+	default "TRUE"  if ENABLE_HLS_SUPPORT
+	default "FALSE" if ! ENABLE_HLS_SUPPORT
 
 config DISABLE_SDRAM_AND_BRAM
-        bool
-        default n
+	bool
+	default n
 
 config FORCE_SDRAM_OR_BRAM
-        bool
-        default n
+	bool
+	default n
 
 config FORCE_SDRAM
-        bool
-        default y
-        depends on (FORCE_SDRAM_OR_BRAM && ! ENABLE_BRAM)
-        select ENABLE_SDRAM
+	bool
+	default y
+	depends on (FORCE_SDRAM_OR_BRAM && ! ENABLE_BRAM)
+	select ENABLE_SDRAM
 
 config ENABLE_SDRAM
-        bool
-        prompt "Enable SDRAM"
-        depends on ! (DISABLE_SDRAM_AND_BRAM || ENABLE_BRAM)
-        help
-          This option enables the on-card SDRAM.
-          SNAP supports 8GB DDR3 SDRAM on the AlphaData KU3 card,
-                        4GB DDR4 SDRAM on the Nallatech 250S card,
-                        8GB DDR4 SDRAM on the Semptian NSA121B card,
-                        8GB DDR4 SDRAM (out of 16GB) on the AlphaData 8K5 card and
-                        8GB DDR4 SDRAM on the ReflexCES XpressVUP card.
+	bool
+	prompt "Enable SDRAM"
+	depends on ! (DISABLE_SDRAM_AND_BRAM || ENABLE_BRAM)
+	help
+	  This option enables the on-card SDRAM.
+	  SNAP supports 8GB DDR3 SDRAM on the AlphaData KU3 card,
+	                4GB DDR4 SDRAM on the Nallatech 250S card,
+	                8GB DDR4 SDRAM on the Semptian NSA121B card,
+	                8GB DDR4 SDRAM (out of 16GB) on the AlphaData 8K5 card
+	                8GB DDR4 SDRAM on the Semptian NSA241 card
+	                8GB DDR4 SDRAM on the ReflexCES XpressVUP card and
+	                8GB DDR4 SDRAM on the Flyslice FX609 card.
 
 config SDRAM_USED
-        string
-        default "TRUE"  if ENABLE_SDRAM
-        default "FALSE" if ! ENABLE_SDRAM
+	string
+	default "TRUE"  if ENABLE_SDRAM
+	default "FALSE" if ! ENABLE_SDRAM
 
 config ENABLE_BRAM
-        bool
-        prompt "Enable BRAM (replacing SDRAM for experimental use)"
-        depends on ! (DISABLE_SDRAM_AND_BRAM || ENABLE_PRFLOW)
-        help
-          This is a development option. The AXI attached on-card SDRAM will be replaced by 512KB BRAM.
+	bool
+	prompt "Enable BRAM (replacing SDRAM for experimental use)"
+	depends on ! (DISABLE_SDRAM_AND_BRAM || ENABLE_PRFLOW)
+	help
+	  This is a development option. The AXI attached on-card SDRAM will be replaced by 512KB BRAM.
 
 config BRAM_USED
-        string
-        default "TRUE"  if ENABLE_BRAM
-        default "FALSE" if ! ENABLE_BRAM
+	string
+	default "TRUE"  if ENABLE_BRAM
+	default "FALSE" if ! ENABLE_BRAM
 
 config ENABLE_DDR3
-        bool
-        default y
-        depends on (ENABLE_SDRAM && ADKU3)
+	bool
+	default y
+	depends on (ENABLE_SDRAM && ADKU3)
 
 config DDR3_USED
-        string
-        default "TRUE"  if ENABLE_DDR3
-        default "FALSE" if ! ENABLE_DDR3
+	string
+	default "TRUE"  if ENABLE_DDR3
+	default "FALSE" if ! ENABLE_DDR3
 
 config ENABLE_DDR4
-        bool
-        default y
-        depends on (ENABLE_SDRAM && (N250S || S121B || N250SP || AD8K5 || RCXVUP))
+	bool
+	default y
+	depends on (ENABLE_SDRAM && (N250S || S121B || N250SP || AD8K5 || RCXVUP || FX609 || S241))
 
 config DDR4_USED
-        string
-        default "TRUE"  if ENABLE_DDR4
-        default "FALSE" if ! ENABLE_DDR4
+	string
+	default "TRUE"  if ENABLE_DDR4
+	default "FALSE" if ! ENABLE_DDR4
 
 config ENABLE_DDRI
-        bool
-        default y
-        depends on (ENABLE_SDRAM || ENABLE_BRAM)
+	bool
+	default y
+	depends on (ENABLE_SDRAM || ENABLE_BRAM)
 
 config DDRI_USED
-        string
-        default "TRUE"  if ENABLE_DDRI
-        default "FALSE" if ! ENABLE_DDRI
+	string
+	default "TRUE"  if ENABLE_DDRI
+	default "FALSE" if ! ENABLE_DDRI
 
 config DISABLE_NVME
-        bool
-        default n
+	bool
+	default n
 
 config FORCE_NVME
-        bool
-        default n
-        select ENABLE_NVME
+	bool
+	default n
+	select ENABLE_NVME
 
 config ENABLE_NVME
-        bool "Enable NVMe"
-        depends on ! DISABLE_NVME
-        select FORCE_SDRAM_OR_BRAM
-        help
-          This option controls the instantiation of an NVMe host controller
-          together with the AXI interfaces for MMIO control and action access.
+	bool "Enable NVMe"
+	depends on ! DISABLE_NVME
+	select FORCE_SDRAM_OR_BRAM
+	help
+	  This option controls the instantiation of an NVMe host controller
+	  together with the AXI interfaces for MMIO control and action access.
 
 config NVME_USED
-        string
-        default "TRUE"  if ENABLE_NVME
-        default "FALSE" if ! ENABLE_NVME
+	string
+	default "TRUE"  if ENABLE_NVME
+	default "FALSE" if ! ENABLE_NVME
 
 choice
-        bool "Simulator"
-        default SIM_XSIM
-        help
-          Supported simulators are Xilinx' xsim and Cadence's irun.
-          If NVMe support is enabled it is only possible to use irun
-          or to set the simulator to "nosim" to disable model build
-          and simulation.
+	bool "Simulator"
+	default SIM_XSIM
+	help
+	  Supported simulators are Xilinx' xsim and Cadence's irun.
+	  If NVMe support is enabled it is only possible to use irun
+	  or to set the simulator to "nosim" to disable model build
+	  and simulation.
 
-        config SIM_XSIM
-            bool "xsim"
-            help
-               Default Xilinx simulator
+	config SIM_XSIM
+		bool "xsim"
+		help
+		  Default Xilinx simulator
 
-        config SIM_IRUN
-            bool "irun"
-            help
-               Cadence irun simulator (requires a specific license)
-            depends on ! ENABLE_PRFLOW
+	config SIM_IRUN
+		bool "irun"
+		help
+		  Cadence irun simulator (requires a specific license)
+		  depends on ! ENABLE_PRFLOW
 
-        config SIM_XCELIUM
-            bool "xcelium"
-            help
-               Cadence xcelium simulator (requires a specific license)
-            depends on ! ENABLE_PRFLOW
+	config SIM_XCELIUM
+		bool "xcelium"
+		help
+		  Cadence xcelium simulator (requires a specific license)
+		  depends on ! ENABLE_PRFLOW
 
-        config SIM_MODELSIM
-            bool "modelsim"
-            help
-               Mentor Modelsim AE/SE/DE simulator (requires a specific license)
-            depends on ! (ENABLE_PRFLOW || ENABLE_NVME)
+	config SIM_MODELSIM
+		bool "modelsim"
+		help
+		  Mentor Modelsim AE/SE/DE simulator (requires a specific license)
+		  depends on ! (ENABLE_PRFLOW || ENABLE_NVME)
 
-        config SIM_QUESTA
-            bool "questa"
-            help
-               Mentor Questa simulator (requires a specific license)
-            depends on ! (ENABLE_PRFLOW || ENABLE_NVME)
+	config SIM_QUESTA
+		bool "questa"
+		help
+		  Mentor Questa simulator (requires a specific license)
+		  depends on ! (ENABLE_PRFLOW || ENABLE_NVME)
 
-        config NO_SIM
-            bool "nosim"
+	config NO_SIM
+		bool "nosim"
 
 endchoice
 
 config SIMULATOR
-        string
-        default "xsim"     if SIM_XSIM
-        default "irun"     if SIM_IRUN
-        default "xcelium"  if SIM_XCELIUM
-        default "modelsim" if SIM_MODELSIM
-        default "questa"   if SIM_QUESTA
-        default "nosim"    if NO_SIM
+	string
+	default "xsim"     if SIM_XSIM
+	default "irun"     if SIM_IRUN
+	default "xcelium"  if SIM_XCELIUM
+	default "modelsim" if SIM_MODELSIM
+	default "questa"   if SIM_QUESTA
+	default "nosim"    if NO_SIM
 
 config ENABLE_DENALI
-        bool "Use Denali for NVMe simulation"
-        depends on (ENABLE_NVME && (SIM_IRUN || SIM_XCELIUM))
-        help
-          In order to use the Denali NVMe behavioral the corresponding Cadence licenses are required.
+	bool "Use Denali for NVMe simulation"
+	depends on (ENABLE_NVME && (SIM_IRUN || SIM_XCELIUM))
+	help
+	  In order to use the Denali NVMe behavioral the corresponding Cadence licenses are required.
 
 config DENALI_USED
-        string
-        default "TRUE"  if ENABLE_DENALI
-        default "FALSE" if ! ENABLE_DENALI
+	string
+	default "TRUE"  if ENABLE_DENALI
+	default "FALSE" if ! ENABLE_DENALI
 
 comment "================= Advanced Options: ================="
 
 config ENABLE_PRFLOW
-        bool "Cloud build (enabling Partial Reconfiguration)"
-        help
-          Used for Cloud environment using specific PSL images
+	bool "Cloud build (enabling Partial Reconfiguration)"
+	help
+	  Used for Cloud environment using specific PSL images
 
 config USE_PRFLOW
-        string
-        default "TRUE" if ENABLE_PRFLOW
-        default "FALSE" if ! ENABLE_PRFLOW
+	string
+	default "TRUE" if ENABLE_PRFLOW
+	default "FALSE" if ! ENABLE_PRFLOW
 
 config ENABLE_ILA
-        bool "Enable ILA Debug (Definition of $ILA_SETUP_FILE required)"
-        depends on ! ENABLE_PRFLOW
-        help
-          Used for debugging the design by inserting probes into the FPGA
-          Enable the usage of Vivado's integrated logic analyzer.
-          Please make sure that $ILA_SETUP_FILE points to the .xdc file
-          defining the debug cores.
+	bool "Enable ILA Debug (Definition of $ILA_SETUP_FILE required)"
+	depends on ! ENABLE_PRFLOW
+	help
+	  Used for debugging the design by inserting probes into the FPGA
+	  Enable the usage of Vivado's integrated logic analyzer.
+	  Please make sure that $ILA_SETUP_FILE points to the .xdc file
+	  defining the debug cores.
 
 config ILA_DEBUG
-        string
-        default "TRUE"  if ENABLE_ILA
-        default "FALSE" if ! ENABLE_ILA
+	string
+	default "TRUE"  if ENABLE_ILA
+	default "FALSE" if ! ENABLE_ILA
 
 config ENABLE_FACTORY
-        bool "Also create a factory image"
-        help
-          Used to generate a specific image to be located into the factory area
-          Default image is in the user area.
-          This specific factory area is used to recover from a bad user image
-        depends on ! ENABLE_PRFLOW
+	bool "Also create a factory image"
+	help
+	  Used to generate a specific image to be located into the factory area
+	  Default image is in the user area.
+	  This specific factory area is used to recover from a bad user image
+	depends on ! ENABLE_PRFLOW
 
 config FACTORY_IMAGE
-        string
-        default "TRUE"  if ENABLE_FACTORY
-        default "FALSE" if ! ENABLE_FACTORY
+	string
+	default "TRUE"  if ENABLE_FACTORY
+	default "FALSE" if ! ENABLE_FACTORY
 
 config ENABLE_CLOUD_USER_FLOW
-        bool "Cloud user flow"
-        default y
-        depends on ENABLE_PRFLOW
+	bool "Cloud user flow"
+	default y
+	depends on ENABLE_PRFLOW
 
 config CLOUD_USER_FLOW
-        string
-        default "TRUE" if ENABLE_CLOUD_USER_FLOW
-        default "FALSE" if ! ENABLE_CLOUD_USER_FLOW
+	string
+	default "TRUE" if ENABLE_CLOUD_USER_FLOW
+	default "FALSE" if ! ENABLE_CLOUD_USER_FLOW
 
 config ENABLE_CLOUD_BUILD_BITFILE
-        bool "Build bitstream file"
-        help
-          Enables the generation of the image for the FPGA
-        default y
-        depends on ENABLE_PRFLOW
+	bool "Build bitstream file"
+	help
+	  Enables the generation of the image for the FPGA
+	default y
+	depends on ENABLE_PRFLOW
 
 config CLOUD_BUILD_BITFILE
-        string
-        default "TRUE" if ENABLE_CLOUD_BUILD_BITFILE
-        default "FALSE" if ! ENABLE_CLOUD_BUILD_BITFILE
+	string
+	default "TRUE" if ENABLE_CLOUD_BUILD_BITFILE
+	default "FALSE" if ! ENABLE_CLOUD_BUILD_BITFILE

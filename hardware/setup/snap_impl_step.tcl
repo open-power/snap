@@ -17,7 +17,7 @@
 ##
 ############################################################################
 ############################################################################
-
+set root_dir        $::env(SNAP_HARDWARE_ROOT)
 set logs_dir        $::env(LOGS_DIR)
 set rpt_dir         $::env(RPT_DIR)
 set dcp_dir         $::env(DCP_DIR)
@@ -52,8 +52,6 @@ if { $impl_flow == "CLOUD_BASE" } {
   set route_directive     [get_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
   set opt_route_directive [get_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 }
-
-
 
 ##
 ## optimizing design
@@ -103,9 +101,9 @@ set logfile   $logs_dir/${step}.log
 set command   "place_design -directive $directive"
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start place_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
-## 
+##
 ## prevent placing inside PSL
-if { ($fpgacard != "N250SP") && ($fpgacard != "RCXVUP") } {
+if { ($fpgacard != "N250SP") && ($fpgacard != "RCXVUP") && ($fpgacard != "FX609") && ($fpgacard != "S241") } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
 }
@@ -121,7 +119,6 @@ if { [catch "$command > $logfile" errMsg] } {
 } else {
   write_checkpoint   -force $dcp_dir/${step}.dcp          >> $logfile
 }
-
 
 ##
 ## physical optimizing design

@@ -47,6 +47,9 @@ As of now, the following FPGA cards can be used with SNAP:
 * Alpha-Data ADM-PCIE-8K5 (rev2) http://www.alpha-data.com/dcp/products.php?product=adm-pcie-8k5
 * Nallatech 250S-2T with two on-card NVMe M.2 960GB drives http://www.nallatech.com/250s
 * Semptian NSA121B http://www.semptian.com/proinfo/10.html
+* ReflexCES XpressVUP-LP9PT https://www.reflexces.com/products-solutions/other-cots-boards/xilinx/xpressvup
+* Flyslice FX609
+* Semptian NSA241 http://www.semptian.com/proinfo/126.html
 
 ## Development (Step1 & Step2)
 Development is usually done on a Linux (x86) computer. The required tools and packages are listed below. Web access to github is recommended to follow the build instructions. A real FPGA card is not required for the plain hardware development.
