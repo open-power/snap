@@ -183,11 +183,11 @@ prepare_project: check_snap_settings prepare_logs
 	@ln -f -s $(SNAP_HDL_CORE)/dma_types_$(CAPI_VER).vhd_source   $(SNAP_HDL_CORE)/dma_types.vhd;
 	@ln -f -s $(SNAP_HDL_CORE)/dma_buffer_$(CAPI_VER).vhd_source  $(SNAP_HDL_CORE)/dma_buffer.vhd;
 	@ln -f -s $(SNAP_HDL_CORE)/dma_rams_$(CAPI_VER).vhd_source    $(SNAP_HDL_CORE)/dma_rams.vhd;
-	$(MAKE) -C $(SNAP_ROOT)/hardware/sim/nvme_lite
 	@echo -e "[PREPARE PROJECT.....] done  `date +"%T %a %b %d %Y"`";
 
 snap_preprocess_start: prepare_project
 	@echo -e "[SNAP PREPROCESS.....] start `date +"%T %a %b %d %Y"`";
+	$(MAKE) -C $(SNAP_ROOT)/hardware/sim/nvme_lite
 
 $(SNAP_PP_FILES_VHD):
 	@if [ -e "$(snap_config_cflags)" ]; then \
