@@ -21,6 +21,7 @@
 set root_dir      $::env(SNAP_HARDWARE_ROOT)
 set logs_dir      $::env(LOGS_DIR)
 set img_dir       $::env(IMG_DIR)
+set action_root   $::env(ACTION_ROOT)
 set sdram_used    $::env(SDRAM_USED)
 set nvme_used     $::env(NVME_USED)
 set bram_used     $::env(BRAM_USED)
@@ -43,7 +44,15 @@ set ::env(WIDTHCOL4) $widthCol4
 ##
 ## generating bitstream name
 set IMAGE_NAME [exec cat $root_dir/.bitstream_name.txt]
+
+# append action name 
+set ACTION_NAME [lrange [file split $action_root] end end]
+append IMAGE_NAME [format {_%s} $ACTION_NAME]
+
+# append nvme
 append IMAGE_NAME [expr {$nvme_used == "TRUE" ? "_NVME" : ""}]
+
+# append ram_type and timing information
 if { $bram_used == "TRUE" } {
     set RAM_TYPE BRAM
 } elseif { $sdram_used == "TRUE" } {
@@ -52,7 +61,6 @@ if { $bram_used == "TRUE" } {
     set RAM_TYPE noSDRAM
 }
 append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $::env(TIMING_WNS)]
-
 
 ##
 ## writing bitstream
