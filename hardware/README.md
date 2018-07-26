@@ -21,7 +21,7 @@ make snap_config
 from the SNAP root directory. Making use of [a standalone application configuration tool based on kernel kconfig](https://github.com/guillon/kconfig) the features for a specific SNAP framework configuration can be selected.
 Among the features that get configured via `make snap_config` are
 * the card type
-* the action type
+* the action type (see also [Specifying the Action](#Specifying_the_action))
 * enablement of the on-card SDRAM
 * enablement of the Xilinx Integrated Logic Analyzer
 * the simulator
@@ -41,7 +41,7 @@ make clean_config
 It is recommended to call `make clean_config` each time you want to start over with a new configuration.
 
 ## snap_env
-A side effect of calling `make snap_config` is the modification (or creation if first time execution) of the file `${SNAP_ROOT}/snap_env.sh`.
+A side effect of calling `make snap_config` is the modification (or creation in case of first time execution) of the file `${SNAP_ROOT}/snap_env.sh`.
 The main purpose of this file is the definition of paths that are required during the SNAP build and simulation process. The file gets sourced during SNAP's `make` process.
 As a result of the execution of `make snap_config` a version of `${SNAP_ROOT}/snap_env.sh` containing at least three lines will exist:
 ```bash
@@ -68,17 +68,17 @@ export ACTION_ROOT=${SNAP_ROOT}/actions/hdl_example
 file `${SNAP_ROOT}/snap_env.sh` in order to set the correct path names.
 
 # Image and model build
-## Specifying the action
+## Specifying_the_action
 Which action is getting integrated into the SNAP framework is specified in `${SNAP_ROOT}/snap_env.sh`
 via the path `ACTION_ROOT`.
-When selecting "HDL_example" or "HLS_example" (for example when creating your own new action), `ACTION_ROOT` variable is not automatically set by calling `make snap_config` (), you may simply modify the file `${SNAP_ROOT}/snap_env.sh` manually to let `ACTION_ROOT` point to the directory containing the action.
+When selecting "HDL Action" or "HLS Action" (for example when creating your own new action in the menu), `ACTION_ROOT` variable is either set to an empty string or to the action that was selected in the previous run of `make snap_config`. You may simply modify the file `${SNAP_ROOT}/snap_env.sh` manually to let `ACTION_ROOT` point to the directory containing the action.
 
 As part of the Vivado project configuration step, the make process will call the target `hw` that is expected to exist in a `Makefile`
 contained in the directory that `ACTION_ROOT` is pointing to (see section [Action wrapper](#action-wrapper)).
 Specific configurations/preparations for the action may be added via this make process step.
 
 ## CAPI board support and PSL for image build
-In order to benefit from the advantage of CAPI (low latency high bandwith access to host memory as well as memory coherency) a specific  implementation of the FPGA is required to use the PCIe link and CAPP (Coherent Accelerator Processor Proxy which is located in the Power processors) properly. This is provided by the PSL (Processor Service Layer).
+In order to benefit from the advantage of CAPI (low latency high bandwith access to host memory as well as memory coherency) a specific  implementation of the FPGA is required to use the PCIe link and CAPP (**C**oherent **A**ccelerator **P**rocessor **P**roxy which is located in the Power processors) properly. This is provided by the PSL (Processor Service Layer).
 The PSL differs whether we have a Power8 with CAPI 1.0 or a Power9 with CAPI 2.0.
 
 In any case, to get the latest CAPI board support and PSL download, visit **IBM Portal for OpenPOWER** at
@@ -90,10 +90,11 @@ Then download the appropriate files depending on your target system being POWER8
 
 #### Power8
 CAPI board support and PSL are integrated in a Vivado DCP (Design CheckPoint).
-Please go to the IBM Portal for OpenPOWER and download the required files under "**PSL Checkpoint Files for the POWER8 CAPI SNAP Design Kit**" according to the selected FPGA card. Make sure the path defined by `PSL_DCP` is set accordingly in `snap_env.sh` file.
+Please go to the IBM Portal for OpenPOWER and download the required files under "**PSL Checkpoint Files for the POWER8 CAPI SNAP Design Kit**" according to the selected FPGA card. Make sure the path defined by `PSL_DCP` is set accordingly in the `snap_env.sh` file.
+(For example you can use `export PSL_DCP=/your_cards_dcp_directory/${FPGACARD}/current/b_route_design.dcp`)
 
 #### Power9
-CAPI BSP (Board support Package) and PSL got separated. For the CAPI 2.0 BSP, the open source git repository https://github.com/open-power/capi2-bsp is integrated into the SNAP framework as git submodule under [hardware/capi2-bsp](https://github.com/open-power/capi2-bsp).
+CAPI BSP (**B**oard **s**upport **P**ackage) and PSL got separated. For the CAPI 2.0 BSP, the open source git repository https://github.com/open-power/capi2-bsp is integrated into the SNAP framework as git submodule under [hardware/capi2-bsp](https://github.com/open-power/capi2-bsp).
 
 The PSL is integrated into the CAPI BSP as an IP core with encrypted sources (provided as an archived file).
 Please go to the IBM Portal for OpenPOWER and download the required files under "**PSL IP Source Files for POWER9 CAPI**".
@@ -103,7 +104,7 @@ Alternatively, the following link will provide direct access:
 https://www-355.ibm.com/systems/power/openpower/posting.xhtml?postingId=1BED44BCA884D845852582B70076A89A
 
 If the environment variable `PSL9_IP_CORE` is defined in `snap_env.sh` file, the build process uses it.
-Otherwise, the build process is assuming the archived PSL9 IP core is located in `snap/hardware/capi2-bsp/psl` directory.
+Otherwise, the build process is assuming the archived PSL9 IP core is located in the `snap/hardware/capi2-bsp/psl` directory.
 
 ## The make process
 If you call `make` without any targets, then a help message will be printed explaining the different targets supported by the make process.
