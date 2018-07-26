@@ -7,14 +7,15 @@
 ├───doc                           Detailed documentation directory
 │       README.md                 This file !   
 │
-├───hw                            Hardware directory containing all VHDL related item
+├───hw                            Hardware directory containing all VHDL related items
 │       action_axi_master.vhd     AXI Master used to transfer data to/from host through PSL(CAPI) TL/DL (OpenCAPI)
 │       action_axi_nvme.vhd       NVME driver attached to AXI bus
 │       action_axi_slave.vhd      AXI slave (also called CTL register) used to configure control registers
 │       action_config.sh          Used to selectively connect hardware drivers
 │       action_example.vhd        This file is the result of the make process (once source files have been used)
-│       action_example.vhd_source Original file taking into account all possible hardware possibilites
-│       action_wrapper.vhd_source Wrapper to connect action(s) to PSL (CAPI) TL/DL (OpenCAPI)
+│       action_example.vhd_source Source file for the generation of action_example.vhd taking into account all possible
+|                                 hardware possibilites
+│       action_wrapper.vhd_source Wrapper connecting the action with the SNAP framework
 │       Makefile                  Makefile used to automatically and selectively prepare the .vhd hardware files
 │
 ├───sw                            Software directory containing the application called from POWER host
@@ -35,7 +36,7 @@
         README.md                 TBD
 ```
 ## Hardware Details
-Following block diagrams shows an overview of main blocks interconnections.
+Following block diagrams show an overview of main blocks interconnections.
 
 On the following diagram we have the top view showing :
 - FPGA pins, connected to PCIe and to configuration flash memory
@@ -45,6 +46,6 @@ On the following diagram we have the top view showing :
 
 The following diagram details the interconnection of the PSL_ACCEL block used to interconnect PSL to :
 - the action(s) wrapper(s)
-- the SNAP cores
+- the SNAP_core block
 
 ![Main block_diagram](./main_blocks.png "SNAP")
