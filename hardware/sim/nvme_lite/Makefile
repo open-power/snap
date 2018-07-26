@@ -28,7 +28,6 @@ all: snap_config.sv
 #      a closing '.
 #
 snap_config.sv: $(SNAP_CONFIG)
-	@echo "+++++ Generating $@ ... searching XSIM in $(SNAP_CONFIG) +++++"
 	echo "/* SNAP_CONFIG */" > snap_config.sv
 	grep "SIM_XSIM=y" $(SNAP_CONFIG);			\
 	if [ $$? -eq 0 ]; then					\
@@ -36,5 +35,4 @@ snap_config.sv: $(SNAP_CONFIG)
 	fi
 
 clean:
-	@echo "+++++ Deleting snap_config.sv ... +++++"
 	$(RM) snap_config.sv
