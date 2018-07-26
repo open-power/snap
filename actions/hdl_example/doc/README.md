@@ -39,13 +39,13 @@
 Following block diagrams show an overview of main blocks interconnections.
 
 On the following diagram we have the top view showing :
-- FPGA pins, connected to PCIe and to configuration flash memory
+- FPGA pins, connected to PCIe and to configuration flash memory (this directly depends on card schematic and is included in the card PSL_DCP file, see [../../../hardware/README.md](../../../hardware/README.md#snap_env))
 - the PSL block (providing PCIe interface and flash controller)
-- the action(s) wrapper block
+- the action(s) wrapper block (note : only one action is supported in the current versions)
 ![Top block_diagram](./top_blocks.png "SNAP")
 
 The following diagram details the interconnection of the PSL_ACCEL block used to interconnect PSL to :
-- the action(s) wrapper(s)
+- the action(s) wrapper(s) (note : only one action is supported in the current versions)
 - the SNAP_core block
 
 ![Main block_diagram](./main_blocks.png "SNAP")
