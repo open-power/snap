@@ -1065,8 +1065,9 @@ BEGIN
             --
             -- new buffer available
             --
-            ELSIF (write_ctrl_q(com_wtag_v).buf = FULL      ) AND
-                  (com_wtag_q                  /= buf_wtag_q) THEN
+            ELSIF (write_ctrl_q(com_wtag_v).clt /= CL_NOT_USED)
+                  (write_ctrl_q(com_wtag_v).buf  = FULL       ) AND
+                  (com_wtag_q                   /= buf_wtag_q ) THEN
 
               write_fsm_req_q  <= COMMAND;
 
@@ -1170,10 +1171,11 @@ BEGIN
           -- STATE COMMAND: WRITE_NA
           --
           WHEN ST_COM_WRITE_NA =>
-            IF (ah_c_wgate_q                                    = OPENED    ) AND
-               (write_ctrl_q(com_wtag_next_v).clt(EVEN_64B_CL)  = '1'       ) AND
-               (write_ctrl_q(com_wtag_next_v).clt(ODD_64B_CL)   = '1'       ) AND
-               (com_wtag_next_q                                /= buf_wtag_q) THEN
+            IF (ah_c_wgate_q                                    = OPENED     ) AND
+               (write_ctrl_q(com_wtag_next_v).clt              /= CL_NOT_USED) AND 
+               (write_ctrl_q(com_wtag_next_v).clt(EVEN_64B_CL)  = '1'        ) AND
+               (write_ctrl_q(com_wtag_next_v).clt(ODD_64B_CL)   = '1'        ) AND
+               (com_wtag_next_q                                /= buf_wtag_q ) THEN
               write_ctrl_fsm_q <= ST_COM_WRITE_NA;
             ELSE
               write_ctrl_fsm_q <= ST_WAIT_4_CTRL_UPDTAE;
