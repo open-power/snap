@@ -1065,7 +1065,7 @@ BEGIN
             --
             -- new buffer available
             --
-            ELSIF (write_ctrl_q(com_wtag_v).clt /= CL_NOT_USED)
+            ELSIF (write_ctrl_q(com_wtag_v).clt /= CL_NOT_USED) AND
                   (write_ctrl_q(com_wtag_v).buf  = FULL       ) AND
                   (com_wtag_q                   /= buf_wtag_q ) THEN
 
