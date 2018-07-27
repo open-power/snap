@@ -8,7 +8,8 @@ The framework hardware consists of a AXI-to-CAPI bridge unit, memory-mapped regi
 It interfaces with a user-written action (a.k.a. kernel) through an AXI-lite control interface, and gives coherent access to host memory through AXI. Optionally, it also provides access to the on-card DRAM via AXI.
 A NVMe host controller-AXI bridge complements the framework for storage or database applications as an independent unit.
 Software gets access to the action through the libsnap library, allowing applications to call a "function" instead of programming an accelerator.
-The framework supports multi-process applications and can be extended to support multiple instantiated hardware actions in parallel. :exclamation: The current 1.x releases support a single action per FPGA.
+The framework supports multi-process applications and can be extended to support multiple instantiated hardware actions in parallel.  
+**Note:** The current 1.x releases support a single action per FPGA.
 
 This project is an initiative of the OpenPOWER Foundation Accelerator Workgroup.
 Please see here for more details:
@@ -31,26 +32,26 @@ Developing an FPGA accelerated application on SNAP can be done following the ste
 * **Step1**. Put the action code into a function in the main software code, and determine the function parameters required. Add the few libsnap API functions that required to set up CAPI to the main software. The best way is to start from an example (See in [actions](./actions)) and read the code within the "sw" directory. 
 
 * **Step2**. Write the "hardware action" in a supported programming language, such as Vivado HLS or Verilog/VHDL. For **HLS**, developers can write their algorithms in C/C++ syntax within an function wrapper "hls_action()". Developers who prefer **HDL(Verilog/VHDL)**, can use their adapted version of "action_wrapper.vhd" as top-level. It includes several AXI master interfaces and one AXI-lite slave interface. Refer to the "hw" directory in "hls_\*" or "hdl_\*" for action examples.  
-For **simulation** of the hardware action, the PSLSE (**P**ower **S**ervice **L**ayer **S**imulation **E**ngine) provides a software emulation of the whole path from the host software action call to the **P**ower **S**ervice **L**ayer (**PSL**). This allows for simulating the action without access to an FPGA card or POWER system. When the simulation is successful, you are ready to **generate the FPGA bitstream**. 
+For **simulation** of the hardware action, the PSLSE (**P**ower **S**ervice **L**ayer **S**imulation **E**ngine) provides a software emulation of the whole path from **libcxl** library to the **P**ower **S**ervice **L**ayer (see the blue boxes in the picture above). This allows for simulating the action without access to an FPGA card or a POWER system. When the simulation is successful, you are ready to **generate the FPGA bitstream**. 
 **Note** : there is no need to build a specific testbench to test your application in FPGA. This is a key advantage as your code is the testbench.
 Please read the [hardware/README.md](hardware/README.md) for more details. 
 
-* **Step3**. Program the bitstream to a real FPGA card plugged into a **Power or OpenPower** machine and run your calling software from it. This step is also called **Deployment**.
+* **Step3**. Program the bitstream to a real FPGA card plugged into a **POWER or OpenPOWER** machine and run your calling software from it. This step is also called **Deployment**.
 Please see [Bitstream_flashing.md](hardware/doc/Bitstream_flashing.md) for instructions on how to program the FPGA bitstream.
 
-For a step-by-step help, please refer to the SNAP Workbooks in [doc](./doc) directory. For example, make sure you read the [QuickStart Guide](./doc/UG_CAPI_SNAP-QuickStart_on_a_General_Environment.pdf) if you're a first time user. Some other user application notes are also there.
+For a step-by-step help, please refer to the SNAP Workbooks in the [doc](./doc) directory. For example, make sure you read the [QuickStart Guide](./doc/UG_CAPI_SNAP-QuickStart_on_a_General_Environment.pdf) if you're a first time user. Some other user application notes are also there.
 
 Please also have a look at [actions](./actions) to see several examples which may help you get started with coding. Each example has a detailed description in its own "doc" directory.
 
 # 3. Dependencies
 ## FPGA Card selection
 As of now, the following FPGA cards can be used with SNAP:
-* for Power8 (CAPI1.0):
+* for POWER8 (CAPI1.0):
   * Alpha-Data ADM-PCIE-KU3        http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
   * Alpha-Data ADM-PCIE-8K5 (rev2) http://www.alpha-data.com/dcp/products.php?product=adm-pcie-8k5
   * Nallatech 250S-2T with two on-card NVMe M.2 960GB drives http://www.nallatech.com/250s
   * Semptian NSA121B http://www.semptian.com/proinfo/10.html
-* for Power9 (CAPI2.0):
+* for POWER9 (CAPI2.0):
   * Nallatech 250SP  http://www.nallatech.com/250sp
   * Flyslice FX609
   * Semptian NSA241 http://www.semptian.com/proinfo/126.html
