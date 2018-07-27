@@ -526,6 +526,7 @@ module nvme_top (
             $display("  write: axi_addr=%h axi_data=%h%h%h%h", axi_addr,
                     axi_data[i], axi_data[i+1], axi_data[i+2], axi_data[i+3]);
             i = (i + DDR_AWLEN) % (512/16);
+	    //#1;
         end
 
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b10; /* Mark ACTION_TRACK_n debug */
@@ -570,9 +571,11 @@ module nvme_top (
             if (i == 0) begin
                 static string fname;
                 $sformat(fname, "SNAP_LBA_%h.bin", lba_addr);
+	        $display("Writing %s\n", fname);
                 $writememh(fname, axi_data);
                 lba_addr += 1;
             end
+  	    //#1;
         end
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][31:30] = 2'b01; /* Mark ACTION_TRACK_n debug */
         action_r_regs[`ACTION_R_TRACK_0 + cmd_action_id][0] = 1; /* Mark ACTION_TRACK_n ready */
