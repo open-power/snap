@@ -124,6 +124,16 @@ case $CARD in
 "N250SP" )
         echo "-> Nallatech $CARD Card"
         ;;
+"FX609" )
+	echo "-> Flyslice $CARD Card"
+	;;
+"S241" )
+	echo "-> Semptian $CARD Card"
+	;;
+"RCXVUP" )
+	echo "-> ReflexCES $CARD Card"
+	;;
+
 * )
 	echo "-> $CARD is invalid"
 	exit 1

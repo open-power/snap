@@ -1054,6 +1054,40 @@ module top (
   ////////////////////////////////////////////////////////////
   // Signal definition
 #ifdef CONFIG_ENABLE_DDR4
+#ifdef CONFIG_FX609
+  // DDR4 Signals
+  wire          c0_ddr4_act_n;
+  wire  [16:0]  c0_ddr4_adr;
+  wire  [1:0]   c0_ddr4_ba;
+  wire  [0:0]   c0_ddr4_bg;
+  wire  [0:0]   c0_ddr4_cke;
+  wire  [0:0]   c0_ddr4_odt;
+  wire  [0:0]   c0_ddr4_cs_n;
+  wire  [0:0]   c0_ddr4_ck_t;
+  wire  [0:0]   c0_ddr4_ck_c;
+  wire          c0_ddr4_reset_n;
+  wire  [7:0]   c0_ddr4_dm_dbi_n;
+  wire  [63:0]  c0_ddr4_dq;
+  wire  [7:0]   c0_ddr4_dqs_c;
+  wire  [7:0]   c0_ddr4_dqs_t;
+#else
+#ifdef CONFIG_S241
+  wire          c0_ddr4_act_n;
+  wire  [16:0]  c0_ddr4_adr;
+  wire  [1:0]   c0_ddr4_ba;
+  wire  [1:0]   c0_ddr4_bg;
+  wire  [0:0]   c0_ddr4_cke;
+  wire  [0:0]   c0_ddr4_odt;
+  wire  [0:0]   c0_ddr4_cs_n;
+  wire  [0:0]   c0_ddr4_ck_t;
+  wire  [0:0]   c0_ddr4_ck_c;
+  wire          c0_ddr4_reset_n;
+  wire  [8:0]   c0_ddr4_dm_dbi_n;
+  wire  [71:0]  c0_ddr4_dq;
+  wire  [8:0]   c0_ddr4_dqs_c;
+  wire  [8:0]   c0_ddr4_dqs_t;
+
+#else
   // DDR4 Signals
   wire          c0_ddr4_act_n;
   wire  [16:0]  c0_ddr4_adr;
@@ -1070,6 +1104,8 @@ module top (
   wire  [8:0]   c0_ddr4_dqs_c;
   wire  [8:0]   c0_ddr4_dqs_t;
 #endif
+#endif
+#endif
 #ifdef CONFIG_ENABLE_NVME
   // NVME Signals
   wire  [ 3:0] pcie_rc0_rxn;
@@ -1085,11 +1121,24 @@ module top (
   // SDRAM System Clock generation
   reg       sys_clk_p;
   initial   sys_clk_p <= 0;
-
+#ifdef CONFIG_FX609
+  // 200.08MHz DDR4 system clock
+  always begin
+     sys_clk_p = !sys_clk_p; #(4.998ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end
+#else
+#ifdef CONFIG_S241
+  // 400.16MHz DDR4 system clock
+  always begin
+     sys_clk_p = !sys_clk_p; #(2.499ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end
+#else
   // 266MHz DDR4 system clock
   always begin
      sys_clk_p = !sys_clk_p; #(3.752ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
+#endif
+#endif
 #endif
 #if CONFIG_ENABLE_NVME
   // NVME Reference Clock generation
@@ -1300,6 +1349,45 @@ module top (
  /////////////////////////////////////////////////////////////
   // DDR4 DIMM INSTANCE                                     //
   ////////////////////////////////////////////////////////////
+#ifdef CONFIG_FX609
+  ddr4_dimm_fx609 ddr4_dimm_fx609 (
+    .sys_reset              (~sys_reset_n_q),
+    .c0_ddr4_act_n          (c0_ddr4_act_n),
+    .c0_ddr4_adr            (c0_ddr4_adr),
+    .c0_ddr4_ba             (c0_ddr4_ba),
+    .c0_ddr4_bg             (c0_ddr4_bg),
+    .c0_ddr4_cke            (c0_ddr4_cke),
+    .c0_ddr4_odt            (c0_ddr4_odt),
+    .c0_ddr4_cs_n           (c0_ddr4_cs_n),
+    .c0_ddr4_ck_t           (c0_ddr4_ck_t),
+    .c0_ddr4_ck_c           (c0_ddr4_ck_c),
+    .c0_ddr4_reset_n        (c0_ddr4_reset_n),
+    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n),
+    .c0_ddr4_dq             (c0_ddr4_dq),
+    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),
+    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
+    );
+#else
+#ifdef CONFIG_S241  
+  ddr4_dimm_s121b ddr4_dimm_s121b (
+    .sys_reset              (~sys_reset_n_q),
+    .c0_ddr4_act_n          (c0_ddr4_act_n),
+    .c0_ddr4_adr            (c0_ddr4_adr),
+    .c0_ddr4_ba             (c0_ddr4_ba),
+    .c0_ddr4_bg             (c0_ddr4_bg),
+    .c0_ddr4_cke            (c0_ddr4_cke),
+    .c0_ddr4_odt            (c0_ddr4_odt),
+    .c0_ddr4_cs_n           (c0_ddr4_cs_n),
+    .c0_ddr4_ck_t           (c0_ddr4_ck_t),
+    .c0_ddr4_ck_c           (c0_ddr4_ck_c),
+    .c0_ddr4_reset_n        (c0_ddr4_reset_n),
+    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n),
+    .c0_ddr4_dq             (c0_ddr4_dq),
+    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),
+    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
+    );
+
+#else
   ddr4_dimm ddr4_dimm (
     .sys_reset              (~sys_reset_n_q),
     .c0_ddr4_act_n          (c0_ddr4_act_n),
@@ -1318,7 +1406,8 @@ module top (
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
     );
 #endif
-
+#endif
+#endif
 #if defined (CONFIG_ENABLE_NVME) && defined(CONFIG_ENABLE_DENALI)
   ////////////////////////////////////////////////////////////
   // NVMe model                                             //

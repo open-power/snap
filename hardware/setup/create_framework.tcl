@@ -137,6 +137,18 @@ if { $simulator != "nosim" } {
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm.sv]
   }
   # DDR4 Sim Files
+  if { ($fpga_card == "FX609") && ($sdram_used == "TRUE") } {
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_fx609.sv  >> $log_file
+    set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_fx609.sv]
+  }
+  # DDR4 Sim Files
+  if { ($fpga_card == "S241") && ($sdram_used == "TRUE") } {
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_s121b.sv  >> $log_file
+    set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_s121b.sv]
+  }
+  # DDR4 Sim Files
   if { ($fpga_card == "S121B") && ($sdram_used == "TRUE") } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_s121b.sv  >> $log_file
@@ -174,7 +186,7 @@ if { $fpga_card == "ADKU3" } {
     add_files -norecurse $ip_dir/ddr3sdram/ddr3sdram.xci >> $log_file
     export_ip_user_files -of_objects  [get_files "$ip_dir/ddr3sdram/ddr3sdram.xci"] -force >> $log_file
   }
-} elseif { ($fpga_card == "S121B") || ($fpga_card == "AD8K5") || ($fpga_card == "RCXVUP") } {
+} elseif { ($fpga_card == "S121B") || ($fpga_card == "AD8K5") || ($fpga_card == "RCXVUP") || ($fpga_card == "FX609") || ($fpga_card == "S241") } {
   if { $bram_used == "TRUE" } {
     add_files -norecurse $ip_dir/axi_clock_converter/axi_clock_converter.xci >> $log_file
     export_ip_user_files -of_objects  [get_files "$ip_dir/axi_clock_converter/axi_clock_converter.xci"] -force >> $log_file
@@ -265,8 +277,10 @@ puts "                        importing XDCs"
 # Board Support XDC
 if { $capi_ver == "capi20" } {
   puts "                        importing specific Board support XDCs"
-  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
-#  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
+  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc >> $log_file
+  foreach xdc_file [glob -nocomplain -dir $root_dir/capi2-bsp/$fpga_card/xdc * ] {
+    add_files -fileset constrs_1 -norecurse $xdc_file >> $log_file
+  }
 }
 
 # DDR XDCs
@@ -289,7 +303,22 @@ if { $fpga_card == "ADKU3" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/AD8K5/snap_ddr4_b0pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/AD8K5/snap_ddr4_b0pins.xdc]
   }
-} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")} {
+} elseif { ($fpga_card == "RCXVUP") } {
+  if { $sdram_used == "TRUE" } {
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]
+  }
+} elseif { ($fpga_card == "FX609") } {
+  if { $sdram_used == "TRUE" } {
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]
+  }
+} elseif { ($fpga_card == "S241") } {
+  if { $sdram_used == "TRUE" } {
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]
+  }
+} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
   if { $sdram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]

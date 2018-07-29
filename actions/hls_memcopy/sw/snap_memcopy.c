@@ -35,7 +35,7 @@ int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
 
-static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME", "UNUSED"};
+static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME", "FPGA_BRAM"};
 
 /*
  * @brief	prints valid command line options
@@ -411,8 +411,8 @@ int main(int argc, char *argv[])
 	diff_usec = timediff_usec(&etime, &stime);
 	mib_sec = (diff_usec == 0) ? 0.0 : (double)size / diff_usec;
 
-	fprintf(stdout, "memcopy of %lld bytes took %lld usec @ %.3f MiB/sec\n",
-		(long long)size, (long long)diff_usec, mib_sec);
+	fprintf(stdout, "memcopy of %lld bytes took %lld usec @ %.3f MiB/sec (from %s to %s)\n",
+		(long long)size, (long long)diff_usec, mib_sec, mem_tab[type_in%4], mem_tab[type_out%4]);
         fprintf(stdout, "This time represents the register transfer time + memcopy action time\n");       
 
 	snap_detach_action(action);
