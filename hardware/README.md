@@ -91,22 +91,22 @@ From the menu, select "CAPI"->"Coherent Accelerator Processor Interface (CAPI)" 
 Then download the appropriate files depending on your target system being POWER8 (CAPI 1.0) or POWER9 (CAPI 2.0).
 
 #### POWER8
-CAPI board support and PSL are integrated in a Vivado DCP (Design CheckPoint).
-Please go to the IBM Portal for OpenPOWER and download the required files under "**PSL Checkpoint Files for the POWER8 CAPI SNAP Design Kit**" according to the selected FPGA card. Make sure the path defined by `PSL_DCP` is set accordingly in the `snap_env.sh` file.
-(For example you can use `export PSL_DCP=/your_cards_dcp_directory/${FPGACARD}/current/b_route_design.dcp`)
+CAPI board support and PSL are provided combined in a Vivado DCP (**D**esign **C**heck**P**oint).
+Please go to the IBM Portal for OpenPOWER and download the required files under "**PSL Checkpoint Files for the POWER8 CAPI SNAP Design Kit**" according to the selected FPGA card.  
+For the image build process you need to make sure that in `snap_env.sh` the environment variable `PSL_DCP` is defined such that it is pointing to the downloaded Vivado DCP.
 
 #### POWER9
 CAPI BSP (**B**oard **S**upport **P**ackage) and PSL got separated. For the CAPI 2.0 BSP, the open source git repository https://github.com/open-power/capi2-bsp is integrated into the SNAP framework as git submodule under [hardware/capi2-bsp](https://github.com/open-power/capi2-bsp).
 
-The PSL is integrated into the CAPI BSP as an IP core with encrypted sources (provided as an archived file).
+The PSL is integrated into the CAPI BSP as an IP core with encrypted sources.
 Please go to the IBM Portal for OpenPOWER and download the required files under "**PSL IP Source Files for POWER9 CAPI**".
 
 Alternatively, the following link will provide direct access:
 
 https://www-355.ibm.com/systems/power/openpower/posting.xhtml?postingId=1BED44BCA884D845852582B70076A89A
 
-If the environment variable `PSL9_IP_CORE` is defined in the fiel `snap_env.sh`, the build process uses it as pointer to the archived PSL9 IP core.
-Otherwise, the build process is assuming the archived PSL9 IP core is located in the `snap/hardware/capi2-bsp/psl` directory.
+If the environment variable `PSL9_IP_CORE` is defined (e.g. via `snap_env.sh`), the build process uses it as a pointer to the archived PSL9 IP core.
+Otherwise, the build process is assuming the archived PSL9 IP core is located in the directory `snap/hardware/capi2-bsp/psl`.
 
 ## The make process
 If you call `make` without any targets, then a help message will be printed explaining the different targets supported by the make process.
