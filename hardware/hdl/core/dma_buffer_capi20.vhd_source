@@ -223,7 +223,7 @@ BEGIN
             rram_rdata_vld_r3 <= '1'; 
           END IF;
        
-          IF (rram_uts_cnt_r2_v  = read_ctrl_i(to_integer(unsigned(buf_rtag_r2(2 DOWNTO 0)))).uts) THEN
+          IF (rram_uts_cnt_r2_v  = read_ctrl_i(to_integer(unsigned(buf_rtag_r2(4 DOWNTO 0)))).uts) THEN
             rram_rdata_end_r3  <= '1'; 
           END IF;
 
