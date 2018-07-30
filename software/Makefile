@@ -27,16 +27,18 @@
 #
 
 PLATFORM ?= $(shell uname -i)
+export SNAP_ROOT=$(abspath ..)
+
+-include ../snap_env.sh
 
 ifeq ($(PLATFORM),x86_64)
 BUILD_SIMCODE=1
--include ../snap_env.sh
+endif
 
 ifndef PSLSE_ROOT
 # Environment variable PSLSE_ROOT defined by hardware setup scripts.
 # Use default path if PSLSE_ROOT is not defined.
 PSLSE_ROOT=$(abspath ../../pslse)
-endif
 endif
 
 distro = $(shell lsb_release -d | cut -f2)
@@ -46,11 +48,6 @@ all: $(subdirs)
 
 # Rules for the recursive build
 tools: lib
-
-PLATFORM ?= $(shell uname -i)
-ifeq ($(PLATFORM),x86_64)
-BUILD_SIMCODE=1
-endif
 
 ifdef BUILD_SIMCODE
 lib:  $(PSLSE_ROOT)/libcxl/libcxl.so
