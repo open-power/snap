@@ -2,13 +2,14 @@
 
 # 1. Overview
 The SNAP Framework enables programmers and computer engineers to quickly create FPGA-based acceleration actions that work on server host data, as well as data from storage, flash, Ethernet, or other connected resources.  SNAP, therefore, is an acronym for “**S**torage, **N**etwork, and **A**nalytics **P**rogramming”.
-The SNAP framework makes it easy to create accelerated actions utilizing the IBM Coherent Accelerator Processor Interface (CAPI).
+The SNAP framework makes it easy to create accelerated actions utilizing the IBM **C**oherent **A**ccelerator **P**rocessor **I**nterface (CAPI).
 ![snap_concept_diagram](/doc/snap_concept_diagram.png "SNAP")
 The framework hardware consists of a AXI-to-CAPI bridge unit, memory-mapped register I/O, host DMA, and a job management unit.
 It interfaces with a user-written action (a.k.a. kernel) through an AXI-lite control interface, and gives coherent access to host memory through AXI. Optionally, it also provides access to the on-card DRAM via AXI.
 A NVMe host controller-AXI bridge complements the framework for storage or database applications as an independent unit.
 Software gets access to the action through the libsnap library, allowing applications to call a "function" instead of programming an accelerator.
-The framework supports multi-process applications as well as multiple instantiated hardware actions in parallel.
+The framework supports multi-process applications and can be extended to support multiple instantiated hardware actions in parallel.  
+**Note:** The current 1.x releases support a single action per FPGA.
 
 This project is an initiative of the OpenPOWER Foundation Accelerator Workgroup.
 Please see here for more details:
@@ -21,7 +22,7 @@ Please see here for more details:
 * [Education Videos](https://developer.ibm.com/linuxonpower/capi/education/)
 
 ## Status
-Currently the SNAP Framework supports CAPI1.0. CAPI2.0 is being added. A similar OpenCAPI SNAP framework is going to be added in a new repository. Users working on SNAP today can easily transfer their work to CAPI2.0 or OpenCAPI as the interface for "**Software Program**" and "**Hardware Action**" (shown in the yellow areas of the above figure) will stay the same. 
+Currently the SNAP Framework supports CAPI1.0 on POWER8 based hosts and CAPI2.0 on POWER9 based hosts. A similar OpenCAPI SNAP framework is going to be added in a new repository. Users working on SNAP today can easily transfer their CAPI1.0 work to CAPI2.0 or OpenCAPI as the interface for "**Software Program**" and "**Hardware Action**" (shown in the yellow areas of the above figure) will stay the same. 
 
 # 2. Getting started
 Developing an FPGA accelerated application on SNAP can be done following the steps listed below, but this sequence is not mandatory.
@@ -31,25 +32,30 @@ Developing an FPGA accelerated application on SNAP can be done following the ste
 * **Step1**. Put the action code into a function in the main software code, and determine the function parameters required. Add the few libsnap API functions that required to set up CAPI to the main software. The best way is to start from an example (See in [actions](./actions)) and read the code within the "sw" directory. 
 
 * **Step2**. Write the "hardware action" in a supported programming language, such as Vivado HLS or Verilog/VHDL. For **HLS**, developers can write their algorithms in C/C++ syntax within an function wrapper "hls_action()". Developers who prefer **HDL(Verilog/VHDL)**, can use their adapted version of "action_wrapper.vhd" as top-level. It includes several AXI master interfaces and one AXI-lite slave interface. Refer to the "hw" directory in "hls_\*" or "hdl_\*" for action examples.  
-For **simulation** of the hardware action, the PSLSE (PSL simulation engine) provides a software emulation of the whole path from the host software action call to the PSL. This allows for simulating the action without access to an FPGA card or POWER system. When the simulation is successful, you are ready to **generate the FPGA bitstream**. Please read the [hardware/README.md](hardware/README.md) for more details. 
+For **simulation** of the hardware action, the PSLSE (**P**ower **S**ervice **L**ayer **S**imulation **E**ngine) provides a software emulation of the whole path from **libcxl** library to the **P**ower **S**ervice **L**ayer (see the blue boxes in the picture above). This allows for simulating the action without access to an FPGA card or a POWER system. When the simulation is successful, you are ready to **generate the FPGA bitstream**. 
+**Note** : there is no need to build a specific testbench to test your application in FPGA. This is a key advantage as your code is the testbench.
+Please read the [hardware/README.md](hardware/README.md) for more details. 
 
-* **Step3**. Program the bitstream to a real FPGA card plugged into a **Power or OpenPower** machine and run your calling software from it. This step is also called **Deployment**.
+* **Step3**. Program the bitstream to a real FPGA card plugged into a **POWER or OpenPOWER** machine and run your calling software from it. This step is also called **Deployment**.
 Please see [Bitstream_flashing.md](hardware/doc/Bitstream_flashing.md) for instructions on how to program the FPGA bitstream.
 
-For a step-by-step help, please refer to the SNAP Workbooks in [doc](./doc) directory. For example, the [QuickStart](./doc/UG_CAPI_SNAP-QuickStart_on_a_General_Environment.pdf). Some other user application notes are also there.
+For a step-by-step help, please refer to the SNAP Workbooks in the [doc](./doc) directory. For example, make sure you read the [QuickStart Guide](./doc/UG_CAPI_SNAP-QuickStart_on_a_General_Environment.pdf) if you're a first time user. Some other user application notes are also there.
 
 Please also have a look at [actions](./actions) to see several examples which may help you get started with coding. Each example has a detailed description in its own "doc" directory.
 
 # 3. Dependencies
 ## FPGA Card selection
 As of now, the following FPGA cards can be used with SNAP:
-* Alpha-Data ADM-PCIE-KU3 http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
-* Alpha-Data ADM-PCIE-8K5 (rev2) http://www.alpha-data.com/dcp/products.php?product=adm-pcie-8k5
-* Nallatech 250S-2T with two on-card NVMe M.2 960GB drives http://www.nallatech.com/250s
-* Semptian NSA121B http://www.semptian.com/proinfo/10.html
-* ReflexCES XpressVUP-LP9PT https://www.reflexces.com/products-solutions/other-cots-boards/xilinx/xpressvup
-* Flyslice FX609
-* Semptian NSA241 http://www.semptian.com/proinfo/126.html
+* for POWER8 (CAPI1.0):
+  * Alpha-Data ADM-PCIE-KU3        http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
+  * Alpha-Data ADM-PCIE-8K5 (rev2) http://www.alpha-data.com/dcp/products.php?product=adm-pcie-8k5
+  * Nallatech 250S-2T with two on-card NVMe M.2 960GB drives http://www.nallatech.com/250s
+  * Semptian NSA121B http://www.semptian.com/proinfo/10.html
+* for POWER9 (CAPI2.0):
+  * Nallatech 250SP  http://www.nallatech.com/250sp
+  * Flyslice FX609
+  * Semptian NSA241 http://www.semptian.com/proinfo/126.html
+  * ReflexCES XpressVUP LP9P https://www.reflexces.com/products-solutions/other-cots-boards/xilinx/xpressvup
 
 ## Development (Step1 & Step2)
 Development is usually done on a Linux (x86) computer. The required tools and packages are listed below. Web access to github is recommended to follow the build instructions. A real FPGA card is not required for the plain hardware development.
@@ -60,24 +66,9 @@ SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulat
 https://www.xilinx.com/products/design-tools/hardware-zone.html
 
 ### (b) CAPI board support and PSL
-Access to CAPI from the FPGA card requires the Power Service Layer (PSL). For the latest CAPI board support and PSL download, visit IBM Portal for OpenPOWER at
+Access to CAPI from the FPGA card requires the **P**ower **S**ervice **L**ayer (**PSL**) as well as a **B**oard **S**upport **P**ackage (**BSP**) for CAPI2.0 cards.
+Detailed information is available in [hardware/README.md](hardware/README.md)
 
-https://www.ibm.com/systems/power/openpower
-
-From the menu, select "CAPI"->"Coherent Accelerator Processor Interface (CAPI)" or directly click the "CAPI" icon to go to the CAPI section.
-Then download the appropriate files depending on your target system being POWER8 (CAPI 1.0) or POWER9 (CAPI 2.0).
-
-#### Power8
-CAPI board support and PSL are integrated in a Vivado design checkpoint.
-Please go to the OpenPOWER portal and download the required files from the OpenPOWER portal under "**PSL Checkpoint Files for the POWER8 CAPI SNAP Design Kit**" according to the selected FPGA card.
-
-#### Power9
-CAPI board support and PSL got separated. For the CAPI 2.0 board support package
-the open source git repository https://github.com/open-power/capi2-bsp exists which is integrated into the SNAP framework
-as git submodule under [hardware/capi2-bsp](https://github.com/open-power/capi2-bsp).
-
-The PSL gets integrated into the CAPI board support package as IP core with encrypted sources.
-Please go to the OpenPOWER portal and download the required files under "**PSL IP Source Files for POWER9 CAPI**".
 
 ### (c) Build process
 Building the code and running the make environment requires the usual development tools `gcc, make, sed, awk`. If not installed already, the installer package `build-essential` will set up the most important tools.
@@ -97,7 +88,7 @@ https://github.com/ibm-capi/pslse
 
 Please see [PSLSE Setup](hardware/sim/README.md#pslse-setup) for more information.
 
-Simulating the NVMe host controller including flash storage devices requires licenses for the Cadence Incisive Simulator (IES) and DENALI Verification IP (PCIe and NVMe). Building images is possible without this.
+Simulating the NVMe host controller including flash storage devices requires licenses for the Cadence Incisive Simulator (IES) and DENALI Verification IP (PCIe and NVMe). However, building images is possible without these licenses.
 For more information, see the [Simulation README](hardware/sim/README.md).
 
 ## Deployment (Step3)
