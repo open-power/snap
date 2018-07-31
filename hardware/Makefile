@@ -29,6 +29,7 @@ export SNAP_ROOT=$(abspath ..)
 export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 export MAKE_TARGET=$(MAKECMDGOALS)
+export SNAP_CFLAGS
 
 snap_config_cflags = $(SNAP_ROOT)/.snap_config.cflags
 snap_config_sh     = $(SNAP_ROOT)/.snap_config.sh
@@ -186,6 +187,7 @@ prepare_project: check_snap_settings prepare_logs
 
 snap_preprocess_start: prepare_project
 	@echo -e "[SNAP PREPROCESS.....] start `date +"%T %a %b %d %Y"`";
+	$(MAKE) -C $(SNAP_ROOT)/hardware/sim/nvme_lite
 
 $(SNAP_PP_FILES_VHD):
 	@if [ -e "$(snap_config_cflags)" ]; then \
@@ -481,4 +483,5 @@ clean:
 			echo -e "                        Error: [make "$@"] failed for action/application in $(ACTION_ROOT)"; exit -1; \
 		fi                                          \
 	fi
+	$(MAKE) -C $(SNAP_ROOT)/hardware/sim/nvme_lite $@
 	@echo -e "[CLEAN ENVIRONMENT...] done  `date +"%T %a %b %d %Y"`"
