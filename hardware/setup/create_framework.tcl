@@ -280,9 +280,6 @@ puts "                        importing XDCs"
 if { $capi_ver == "capi20" } {
   puts "                        importing specific Board support XDCs"
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc >> $log_file
-  foreach xdc_file [glob -nocomplain -dir $root_dir/capi2-bsp/$fpga_card/xdc * ] {
-    add_files -fileset constrs_1 -norecurse $xdc_file >> $log_file
-  }
 }
 
 # DDR XDCs
