@@ -29,6 +29,7 @@ export SNAP_ROOT=$(abspath ..)
 export SNAP_HARDWARE_ROOT=$(SNAP_ROOT)/hardware
 export LOGS_DIR=$(SNAP_HARDWARE_ROOT)/logs
 export MAKE_TARGET=$(MAKECMDGOALS)
+export SNAP_CFLAGS
 
 snap_config_cflags = $(SNAP_ROOT)/.snap_config.cflags
 snap_config_sh     = $(SNAP_ROOT)/.snap_config.sh
@@ -39,66 +40,16 @@ snap_env_sh        = $(SNAP_ROOT)/snap_env.sh
 -include $(snap_env_sh)
 
 SIMULATOR ?= nosim
-ifeq "$(FPGACARD)" "ADKU3"
-	export DDR3_USED=$(SDRAM_USED)
-	export DDR4_USED=FALSE
-	export DDRI_USED=$(SDRAM_USED)
-	export NVME_USED=FALSE
-	       FPGA_CARD=adku3
-	       CAPI_VER=capi10
-endif
-ifeq "$(FPGACARD)" "S121B"
-	export DDR3_USED=FALSE
-	export DDR4_USED=$(SDRAM_USED)
-	export DDRI_USED=$(SDRAM_USED)
-	export NVME_USED=FALSE
-	       FPGA_CARD=s121b
-	       CAPI_VER=capi10
-endif
-ifeq "$(FPGACARD)" "AD8K5"
-	export DDR3_USED=FALSE
-	export DDR4_USED=$(SDRAM_USED)
-	export DDRI_USED=$(SDRAM_USED)
-	export NVME_USED=FALSE
-	       FPGA_CARD=ad8k5
-	       CAPI_VER=capi10
+
+FPGA_CARD := $(shell echo $(FPGACARD) | tr '[:upper:]' '[:lower:]')
+ifeq "$(CAPI20)" "y"
+	export CAPI_VER=capi20
+	export PSL9_IP_ARCHIVE=ibm.com_CAPI_PSL9_WRAP_2.00.zip
+	export PSL9_IP_DIR=$(SNAP_HARDWARE_ROOT)/capi2-bsp/psl
+else
+	export CAPI_VER=capi10
 endif
 
-ifeq "$(FPGACARD)" "N250S"
-	export DDR3_USED=FALSE
-	export DDR4_USED=$(SDRAM_USED)
-	export DDRI_USED=$(SDRAM_USED)
-	       FPGA_CARD=n250s
-	       CAPI_VER=capi10
-endif
-
-ifeq "$(FPGACARD)" "N250SP"
-	export DDR3_USED=FALSE
-	export DDR4_USED=$(SDRAM_USED)
-	export DDRI_USED=$(SDRAM_USED)
-	       FPGA_CARD=n250sp
-	       CAPI_VER=capi20
-endif
-
-ifeq "$(FPGACARD)" "RCXVUP"
-	export DDR3_USED=FALSE
-	export DDR4_USED=$(SDRAM_USED)
-	export DDRI_USED=$(SDRAM_USED)
-	       FPGA_CARD=rcxvup
-	       CAPI_VER=capi20
-endif
-
-export BRAM_USED ?= FALSE
-ifeq "$(BRAM_USED)" "TRUE"
-	export DDR3_USED=FALSE
-	export DDR4_USED=FALSE
-	export SDRAM_USED=FALSE
-	export DDRI_USED=TRUE
-endif
-
-export NVME_USED ?= FALSE
-
-export USE_PRFLOW ?= FALSE
 export DCP_ROOT ?= $(SNAP_ROOT)/dcp
 
 export IGNORE_CHECK_PSL ?= $(USE_PRFLOW)
@@ -139,7 +90,7 @@ PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl "$(FPGACARD)" "$(PSL_D
 
 ifeq ($(PLATFORM),x86_64)
 
-.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config add_psl_dcp check_psl image cloud_enable cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim
+.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config add_psl_dcp check_bsp image cloud_enable cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim clean
 
 all: model image
 
@@ -172,10 +123,10 @@ check_snap_settings:
 	@echo "                        =============================="
 	@echo "                        hardware/Makefile called with:"
 	@echo "                        ACTION_ROOT     = $(ACTION_ROOT)"
-	@if [ "$(FPGACARD)" == "N250SP" ] || [ "$(FPGACARD)" == "RCXVUP" ]; then \
-		echo "                        CAPI_BSP        = $(CAPI_BSP)"; \
-	else \
+	@if [ "$(CAPI_VER)" == "capi10" ]; then \
 		echo "                        PSL_DCP         = $(PSL_DCP)"; \
+	elif [ "$(CAPI_VER)" == "capi20" ]; then \
+		echo "                        PSL9_IP         = $(PSL9_IP)"; \
 	fi
 	@echo "                        FPGACARD        = $(FPGACARD)"
 	@echo "                        FPGACHIP        = $(FPGACHIP)"
@@ -231,10 +182,12 @@ prepare_project: check_snap_settings prepare_logs
 	@ln -f -s $(SNAP_HDL_CORE)/dma_$(CAPI_VER).vhd_source         $(SNAP_HDL_CORE)/dma.vhd;
 	@ln -f -s $(SNAP_HDL_CORE)/dma_types_$(CAPI_VER).vhd_source   $(SNAP_HDL_CORE)/dma_types.vhd;
 	@ln -f -s $(SNAP_HDL_CORE)/dma_buffer_$(CAPI_VER).vhd_source  $(SNAP_HDL_CORE)/dma_buffer.vhd;
+	@ln -f -s $(SNAP_HDL_CORE)/dma_rams_$(CAPI_VER).vhd_source    $(SNAP_HDL_CORE)/dma_rams.vhd;
 	@echo -e "[PREPARE PROJECT.....] done  `date +"%T %a %b %d %Y"`";
 
 snap_preprocess_start: prepare_project
 	@echo -e "[SNAP PREPROCESS.....] start `date +"%T %a %b %d %Y"`";
+	$(MAKE) -C $(SNAP_ROOT)/hardware/sim/nvme_lite
 
 $(SNAP_PP_FILES_VHD):
 	@if [ -e "$(snap_config_cflags)" ]; then \
@@ -332,16 +285,25 @@ hw_project: hw_project_start action_hw
 # Adding target 'config' for backward compatibility
 config: hw_project
 
+# Adding CAPI2 board support if required
+capi2-bsp/$(FPGACARD)/.create_ip_done:
+	@if [ "$(CAPI_VER)" == "capi20" ]; then \
+		if [ ! -e $(SNAP_HARDWARE_ROOT)/capi2-bsp/Makefile ]; then \
+			cd $(SNAP_ROOT); \
+			git submodule update --init --recursive hardware/capi2-bsp; \
+		fi; \
+		if [ ! -e "$(PSL9_IP_DIR)/$(PSL9_IP_ARCHIVE)" ] && [ -e "$(PSL9_IP_CORE)" ]; then \
+			ln -s $(PSL9_IP_CORE) $(PSL9_IP_DIR)/$(PSL9_IP_ARCHIVE); \
+		fi; \
+		if [ -e "$(PSL9_IP_DIR)/$(PSL9_IP_ARCHIVE)" ]; then \
+			$(MAKE) -s -C $(SNAP_HARDWARE_ROOT)/capi2-bsp $(FPGACARD); \
+		fi \
+	fi
+
 # checking card type for PSL design checkpoint
-check_psl:
-	if [ "$(IGNORE_CHECK_PSL)" != "TRUE" ] ; then \
-		if [ "$(FPGACARD)" == "N250SP" ] || [ "$(FPGACARD)" == "RCXVUP" ]; then \
-			if [ -z "$(CAPI_BSP)" ]; then \
-				echo "### ERROR ###  Environment variable CAPI_BSP is undefined." \
-				echo "               It has to point to the directory containing the CAPI board support IP container."; \
-				exit -1; \
-			fi; \
-		elif [ "$(PSL_DCP_TYPE)" != "$(FPGACARD)" ]; then \
+check_bsp: capi2-bsp/$(FPGACARD)/.create_ip_done
+	@if [ "$(IGNORE_CHECK_PSL)" != "TRUE" ]; then \
+		if [ "$(CAPI_VER)" == "capi10" ] && [ "$(PSL_DCP_TYPE)" != "$(FPGACARD)" ]; then \
 			if [[ "$(PSL_DCP_TYPE)" == *"OUTDATED"* ]]; then \
 				echo "### ERROR ### PSL_DCP for $(FPGACARD) is pointing to an outdated design checkpoint."; exit -1; \
 			elif [ "$(PSL_DCP_TYPE)" == "" ]; then \
@@ -349,10 +311,21 @@ check_psl:
 			else  \
 				echo "### ERROR ### PSL_DCP is pointing to a checkpoint for a $(PSL_DCP_TYPE) card while FPGACARD is set to $(FPGACARD)."; exit -1; \
 			fi; \
+		elif [ "$(CAPI_VER)" == "capi20" ] && [ ! -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/build/ip/capi_bsp_wrap.xcix" ]; then \
+			echo "### ERROR ### CAPI board support IP for $(FPGACARD) is not prepared."; \
+			echo "              This is a requirement for image build."; \
+			if [ ! -e  "$(PSL9_IP_DIR)/$(PSL9_IP_ARCHIVE)" ] && [ ! -e "$(PSL9_IP_CORE)" ]; then \
+				echo "### ERROR ### For CAPI board support build, please make sure that"; \
+				echo "              $(PSL9_IP_ARCHIVE)"; \
+				echo "              is available at directory"; \
+				echo "              $(PSL9_IP_DIR)"; \
+				echo "              or that the environment variable PSL9_IP_CORE is pointing to that file."; \
+			fi; \
+			exit -1; \
 		fi; \
 	fi
 
-image: check_psl
+image: check_bsp
 	$(MAKE) .hw_project_done
 	@echo -e "[BUILD IMAGE.........] start `date +"%T %a %b %d %Y"`\n"
 ifeq ($(USE_PRFLOW),TRUE)
@@ -491,6 +464,7 @@ clean:
 	          $(SNAP_HDL_CORE)/dma.vhd               \
 	          $(SNAP_HDL_CORE)/dma_types.vhd         \
 	          $(SNAP_HDL_CORE)/dma_buffer.vhd        \
+	          $(SNAP_HDL_CORE)/dma_rams.vhd          \
 	          $(SNAP_MODELS)                         \
 	          *build
 	@echo -e "                        vivado project";
@@ -509,4 +483,5 @@ clean:
 			echo -e "                        Error: [make "$@"] failed for action/application in $(ACTION_ROOT)"; exit -1; \
 		fi                                          \
 	fi
+	$(MAKE) -C $(SNAP_ROOT)/hardware/sim/nvme_lite $@
 	@echo -e "[CLEAN ENVIRONMENT...] done  `date +"%T %a %b %d %Y"`"

@@ -109,11 +109,12 @@ static inline void __free(void *ptr)
 static inline long int timediff_sec(struct timeval *a, struct timeval *b)
 {
 	struct timeval res;
+	static int count = 0;
 
 	timersub(a, b , &res);
 
 	/* FIXME In simulation this warning is annoying ... */
-	if (res.tv_sec > 1000)
+	if ((res.tv_sec > 1000) && (count++ < 5))
 		fprintf(stderr, "err: Strange time diff "
 			"a.tv_sec=%ld a.tv_usec=%ld "
 			"b.tv_sec=%ld b.tv_usec=%ld "

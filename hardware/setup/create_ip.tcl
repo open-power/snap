@@ -23,7 +23,7 @@ set fpga_part    $::env(FPGACHIP)
 set fpga_card    $::env(FPGACARD)
 set ip_dir       $root_dir/ip
 set usr_ip_dir   $ip_dir/managed_ip_project/managed_ip_project.srcs/sources_1/ip
-set action_vhdl  [exec find $::env(ACTION_ROOT) -name vhdl]
+set action_root  $::env(ACTION_ROOT)
 
 set sdram_used   $::env(SDRAM_USED)
 set bram_used    $::env(BRAM_USED)
@@ -33,81 +33,12 @@ set log_file     $log_dir/create_ip.log
 
 ## Create a new Vivado IP Project
 puts "\[CREATE_IPs..........\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
-exec rm -rf $ip_dir
-create_project managed_ip_project $ip_dir/managed_ip_project -part $fpga_part -ip >> $log_file
+create_project managed_ip_project $ip_dir/managed_ip_project -force -part $fpga_part -ip >> $log_file
 
 # Project IP Settings
 # General
 set_property target_language VHDL [current_project]
 set_property target_simulator IES [current_project]
-
-#create DMA Input RAM
-if { ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP") } {
-  set RAM_WIDTH 1040
-  set RAM_DEPTH 32
-  set MEMORY_TYPE True_Dual_Port_RAM
-} else {
-  set RAM_WIDTH 520
-  set RAM_DEPTH 64
-  set MEMORY_TYPE Simple_Dual_Port_RAM
-}
-puts "                        generating IP ram_${RAM_WIDTH}x${RAM_DEPTH}_2p"
-
-create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.* -module_name ram_${RAM_WIDTH}x${RAM_DEPTH}_2p -dir $ip_dir  >> $log_file
-set_property -dict [list                                                         \
-                    CONFIG.Memory_Type {True_Dual_Port_RAM}                      \
-                    CONFIG.Assume_Synchronous_Clk {true}                         \
-                    CONFIG.Write_Width_A "${RAM_WIDTH}"                          \
-                    CONFIG.Write_Width_B {520}                                   \
-                    CONFIG.Write_Depth_A "${RAM_DEPTH}"                          \
-                    CONFIG.Enable_A {Always_Enabled}                             \
-                    CONFIG.Enable_B {Always_Enabled}                             \
-                    CONFIG.Register_PortA_Output_of_Memory_Primitives {false}    \
-                    CONFIG.Read_Width_A "${RAM_WIDTH}"                           \
-                    CONFIG.Read_Width_B {520}                                    \
-                    CONFIG.Port_B_Clock {100}                                    \
-                    CONFIG.Port_B_Write_Rate {50}                                \
-                    CONFIG.Port_B_Enable_Rate {100}                              \
-                   ] [get_ips ram_${RAM_WIDTH}x${RAM_DEPTH}_2p]
-set_property generate_synth_checkpoint false [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci]
-generate_target {instantiation_template}     [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci]  >> $log_file
-generate_target all                          [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci]  >> $log_file
-export_ip_user_files -of_objects             [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci] -no_script -force >> $log_file
-export_simulation -of_objects [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
-
-#create DMA Output RAM
-if { ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP") } {
-  set RAM_WIDTH 1152
-  set RAM_DEPTH 32
-  set MEMORY_TYPE True_Dual_Port_RAM
-} else {
-  set RAM_WIDTH 576
-  set RAM_DEPTH 64
-  set MEMORY_TYPE Simple_Dual_Port_RAM
-}
-puts "                        generating IP ram_${RAM_WIDTH}x${RAM_DEPTH}_2p"
-create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.* -module_name ram_${RAM_WIDTH}x${RAM_DEPTH}_2p -dir $ip_dir >> $log_file
-set_property -dict [list                                                         \
-                    CONFIG.Memory_Type {True_Dual_Port_RAM}                      \
-                    CONFIG.Assume_Synchronous_Clk {true}                         \
-                    CONFIG.Write_Width_A {576}                                   \
-                    CONFIG.Write_Width_B {576}                                   \
-                    CONFIG.Write_Depth_A {64}                                    \
-                    CONFIG.Operating_Mode_A {NO_CHANGE}                          \
-                    CONFIG.Enable_A {Always_Enabled}                             \
-                    CONFIG.Enable_B {Use_ENB_Pin}                                \
-                    CONFIG.Register_PortA_Output_of_Memory_Primitives {false}    \
-                    CONFIG.Read_Width_A "${RAM_WIDTH}"                           \
-                    CONFIG.Read_Width_B "${RAM_WIDTH}"                           \
-                    CONFIG.Port_B_Clock {100}                                    \
-                    CONFIG.Port_B_Write_Rate {50}                                \
-                    CONFIG.Port_B_Enable_Rate {100}                              \
-                   ] [get_ips ram_${RAM_WIDTH}x${RAM_DEPTH}_2p]
-set_property generate_synth_checkpoint false [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci]
-generate_target {instantiation_template}     [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci] >> $log_file
-generate_target all                          [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci] >> $log_file
-export_ip_user_files -of_objects             [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci] -no_script -force >> $log_file
-export_simulation -of_objects [get_files $ip_dir/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p/ram_${RAM_WIDTH}x${RAM_DEPTH}_2p.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
 #create fifo_513x512
 puts "                        generating IP fifo_513x512"
@@ -208,6 +139,8 @@ set create_ddr4         FALSE
 set create_ddr4_s121b   FALSE
 set create_ddr4_ad8k5   FALSE
 set create_ddr4_rcxvup  FALSE
+set create_ddr4_fx609   FALSE
+set create_ddr4_s241    FALSE
 
 if { $fpga_card == "ADKU3" } {
   if { $bram_used == "TRUE" } {
@@ -241,6 +174,22 @@ if { $fpga_card == "ADKU3" } {
     set create_clock_conv   TRUE
     set create_ddr4_rcxvup  TRUE
   }
+} elseif { $fpga_card == "FX609" } {
+  if { $bram_used == "TRUE" } {
+    set create_clock_conv   TRUE
+    set create_bram        TRUE
+  } elseif { $sdram_used == "TRUE" } {
+    set create_clock_conv   TRUE
+    set create_ddr4_fx609   TRUE
+  }
+} elseif { $fpga_card == "S241" } {
+  if { $bram_used == "TRUE" } {
+    set create_clock_conv   TRUE
+    set create_bram        TRUE
+  } elseif { $sdram_used == "TRUE" } {
+    set create_clock_conv   TRUE
+    set create_ddr4_s241   TRUE
+  }
 } elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
   if { $bram_used == "TRUE" } {
     if { $nvme_used == "TRUE" } {
@@ -264,7 +213,7 @@ if { $create_clock_conv == "TRUE" } {
   puts "                        generating IP axi_clock_converter"
   create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir  >> $log_file
 
-  if { ($sdram_used == "TRUE") && ( $fpga_card == "ADKU3" || $fpga_card == "S121B" || $fpga_card == "AD8K5" ) } {
+  if { ($sdram_used == "TRUE") && ( $fpga_card == "ADKU3" || $fpga_card == "S121B" || $fpga_card == "AD8K5" || $fpga_card == "S241") } {
     set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]
   } else {
     set_property -dict [list CONFIG.ADDR_WIDTH {32} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]
@@ -429,6 +378,66 @@ if { $create_ddr4_rcxvup == "TRUE" } {
   puts "                        generating ddr4sdram example design"
   open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
 }
+#DDR4 create ddr4sdramm without ECC (FX609)
+if { $create_ddr4_fx609 == "TRUE" } {
+  puts "                        generating IP ddr4sdram"
+  create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
+  set_property -dict [list                                                                    \
+                      CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-083E}                          \
+                      CONFIG.C0.DDR4_TimePeriod {833}                                         \
+                      CONFIG.C0.DDR4_InputClockPeriod {4998}                                  \
+                      CONFIG.C0.DDR4_CasLatency {20}                                          \
+                      CONFIG.C0.DDR4_CasWriteLatency {16}                                     \
+                      CONFIG.C0.DDR4_DataWidth {64}                                           \
+                      CONFIG.C0.DDR4_AxiSelection {true}                                      \
+                      CONFIG.Simulation_Mode {Unisim}                                         \
+                      CONFIG.C0.DDR4_DataMask {DM_DBI_RD}                                     \
+                      CONFIG.C0.DDR4_Ecc {false}                                              \
+                      CONFIG.C0.DDR4_AxiDataWidth {512}                                       \
+                      CONFIG.C0.DDR4_AxiAddressWidth {32}                                     \
+                      CONFIG.C0.DDR4_AxiIDWidth {4}                                           \
+                      CONFIG.C0.BANK_GROUP_WIDTH {1}                                          \
+                     ] [get_ips ddr4sdram] >> $log_file
+  set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
+  generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
+  generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -no_script -force  >> $log_file
+  export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+
+  #DDR4 create ddr4sdramm example design
+  puts "                        generating ddr4sdram example design"
+  open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
+}
+#DDR4 create ddr4sdramm with ECC (S241)
+if { $create_ddr4_s241 == "TRUE" } {
+  puts "                        generating IP ddr4sdram"
+  create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
+  set_property -dict [list                                                                    \
+                      CONFIG.C0.DDR4_MemoryPart {MT40A1G8WE-075E}                             \
+                      CONFIG.C0.DDR4_TimePeriod {833}                                         \
+                      CONFIG.C0.DDR4_InputClockPeriod {2499}                                  \
+                      CONFIG.C0.DDR4_CasLatency {18}                                          \
+                      CONFIG.C0.DDR4_CasWriteLatency {12}                                     \
+                      CONFIG.C0.DDR4_DataWidth {72}                                           \
+                      CONFIG.C0.DDR4_AxiSelection {true}                                      \
+                      CONFIG.Simulation_Mode {BFM}                                            \
+                      CONFIG.C0.DDR4_DataMask {NO_DM_NO_DBI}                                  \
+                      CONFIG.C0.DDR4_Ecc {true}                                               \
+                      CONFIG.C0.DDR4_AxiDataWidth {512}                                       \
+                      CONFIG.C0.DDR4_AxiAddressWidth {33}                                     \
+                      CONFIG.C0.DDR4_AxiIDWidth {4}                                           \
+                      CONFIG.C0.BANK_GROUP_WIDTH {2}                                          \
+                     ] [get_ips ddr4sdram] >> $log_file
+  set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
+  generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
+  generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -no_script -force  >> $log_file
+  export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+
+  #DDR4 create ddr4sdramm example design
+  puts "                        generating ddr4sdram example design"
+  open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
+}
 #DDR4 create ddr4sdramm with ECC (S121B)
 if { $create_ddr4_s121b == "TRUE" } {
   puts "	                generating IP ddr4sdram"
@@ -490,8 +499,11 @@ if { $create_ddr4_ad8k5 == "TRUE" } {
 }
 
 # User IPs
+set action_vhdl  $action_root/hw/vhdl
+
 if { [file exists $action_vhdl] == 1 } {
-  set tcl_exists [exec find $action_vhdl -name *.tcl]
+  set tcl_exists [exec find $action_vhdl/ -name *.tcl]
+
   if { $tcl_exists != "" } {
     foreach tcl_file [glob -nocomplain -dir $action_vhdl *.tcl] {
       set tcl_file_name [exec basename $tcl_file]
@@ -499,6 +511,7 @@ if { [file exists $action_vhdl] == 1 } {
       source $tcl_file >> $log_file
     }
   }
+
   foreach usr_ip [glob -nocomplain -dir $usr_ip_dir *] {
     set usr_ip_name [exec basename $usr_ip]
     puts "                        generating user IP $usr_ip_name"

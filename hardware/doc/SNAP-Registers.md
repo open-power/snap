@@ -193,6 +193,8 @@ Address: 0x0000030
   15..9  RO: Reserved
       8  RO: NVMe enabled
    7..0  RO: Card type:
+             0x13 : S241
+             0x12 : FX609
              0x11 : RCXVUP
              0x10 : N250SP
              0x03 : AD8K5
@@ -264,7 +266,7 @@ Address: 0x0000100 + i * 0x0000008
   31..0  RW: Action type for action i (all zero if no Action i is implemented)
 
   POR value: 0x00000000_00000000
-             LIBDONUT needs to specify the values based on the result of an exploration phase
+             LIBSNAP needs to specify the values based on the result of an exploration phase
 ```
 
 ---
@@ -586,7 +588,7 @@ Address: 0x0000100 + (s+n) * 0x0010000 + i * 0x0000008
   31..0  RO: Action type for action i (all zero if no Action i is implemented)
 
   POR value: 0x00000000_00000000
-             LIBDONUT needs to specify the values based on the result of an exploration phase
+             LIBSNAP needs to specify the values based on the result of an exploration phase
 ```
 
 ---

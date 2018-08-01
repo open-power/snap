@@ -25,7 +25,6 @@ PATH=$snapdir:$PATH
 snap_env_sh=$snapdir/snap_env.sh
 
 unset PSL_DCP
-unset CAPI_BSP
 unset ACTION_ROOT
 unset PSLSE_ROOT
 unset TIMING_LABLIMIT
@@ -94,57 +93,41 @@ while [ -z "$SETUP_DONE" ]; do
     echo "Vivado version          is set to: `vivado -version|head -n1`"
   fi
 
-
-  ####### checking FPGA card setup
-  # Note: Card N250SP is currently in preparation phase
-  if [ "$FPGACARD" == "N250SP" ]; then
-    SETUP_INFO="$SETUP_INFO\n### INFO ### Support for the selected CAPI2.0 FPGA card N250SP is currently in preparation phase."
-    echo "=====Checking path to PSL for N250SP============"
-    echo "CAPI_BSP                is set to: \"$CAPI_BSP\""
-    RESP=`grep CAPI_BSP $snap_env_sh`
+  ####### checking default variables
+  if [ "$CAPI20" == "y" ]; then 
+    RESP=`grep PSL9_IP_CORE $snap_env_sh`
     if [ -z "$RESP" ]; then
-      echo "#export CAPI_BSP=" >> $snap_env_sh
+      echo "#export PSL9_IP_CORE= <for CAPI2.0 cards: path to ibm.com_CAPI_PSL9_WRAP2.00.zip file>" >> $snap_env_sh
     fi
-    if [ -z "$CAPI_BSP" ]; then
-      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable CAPI_BSP must point to the directory containing the CAPI board support IP."
-    fi
-  # Note: Card RCXVUP is currently in preparation phase
-  elif [ "$FPGACARD" == "RCXVUP" ]; then
-    SETUP_INFO="$SETUP_INFO\n### INFO ### Support for the selected CAPI2.0 FPGA card RCXVUP is currently in preparation phase."
-    echo "=====Checking path to PSL for RCXVUP============"
-    echo "CAPI_BSP                is set to: \"$CAPI_BSP\""
-    RESP=`grep CAPI_BSP $snap_env_sh`
-    if [ -z "$RESP" ]; then
-      echo "#export CAPI_BSP=" >> $snap_env_sh
-    fi
-    if [ -z "$CAPI_BSP" ]; then
-      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable CAPI_BSP must point to the directory containing the CAPI board support IP."
-    fi
-  ####### checking path to PSL design checkpoint
-  # Note: CLOUD_USER_FLOW is defined via snap_config
-  elif [ "$CLOUD_USER_FLOW" == "TRUE" ]; then
-    SETUP_INFO="$SETUP_INFO\n### INFO ### Cloud user flow is skipping PSL_DCP check."
-  elif [ "$IGNORE_CHECK_PSL" == "TRUE" ]; then
-    SETUP_INFO="$SETUP_INFO\n### INFO ### Skipping PSL_DCP check because environment variable IGNORE_CHECK_PSL is set to TRUE."
   else
-    echo "=====Checking path to PSL design checkpoint============"
-    echo "PSL_DCP                 is set to: \"$PSL_DCP\""
     RESP=`grep PSL_DCP $snap_env_sh`
     if [ -z "$RESP" ]; then
-      echo "#export PSL_DCP=" >> $snap_env_sh
+      echo "#export PSL_DCP= <for CAPI1.0 cards: path to b_route_design.dcp file>" >> $snap_env_sh
     fi
-    if [ -e "$PSL_DCP" ]; then
-      # checking card type for PSL design checkpoint
-      PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $FPGACARD $PSL_DCP`
-      if [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
-        if [[ "$PSL_DCP_TYPE" == *"OUTDATED"* ]]; then
-          SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP for $FPGACARD is pointing to an outdated design checkpoint, image build will not be allowed."
-        else
-          SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD, image build will not be allowed."
-        fi
-      fi
+  fi
+
+  ####### checking PSL DCP setup
+  if [ "$CAPI20" != "y" ]; then  # CAPI 2.0 setup does not depend on PSL DCP
+    if [ "$CLOUD_USER_FLOW" == "TRUE" ]; then
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Cloud user flow is skipping PSL_DCP check."
+    elif [ "$IGNORE_CHECK_PSL" == "TRUE" ]; then
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Skipping PSL_DCP check because environment variable IGNORE_CHECK_PSL is set to TRUE."
     else
-      SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
+      echo "=====Checking path to PSL design checkpoint============"
+      echo "PSL_DCP                 is set to: \"$PSL_DCP\""
+      if [ -e "$PSL_DCP" ]; then
+        # checking card type for PSL design checkpoint
+        PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $FPGACARD $PSL_DCP`
+        if [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
+          if [[ "$PSL_DCP_TYPE" == *"OUTDATED"* ]]; then
+            SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP for $FPGACARD is pointing to an outdated design checkpoint, image build will not be allowed."
+          else
+            SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD, image build will not be allowed."
+          fi
+        fi
+      else
+        SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
+      fi
     fi
   fi
 
@@ -153,16 +136,14 @@ while [ -z "$SETUP_DONE" ]; do
   # Note: SIMULATOR is defined via snap_config
   if [ "$SIMULATOR" != "nosim" ]; then
     echo "=====Simulation setup: Setting up PSLSE version=========="
-    if [ "$FPGACARD" == "N250SP" ]; then
-      PSLVER="9"
-    elif [ "$FPGACARD" == "RCXVUP" ]; then
+    if [ "$CAPI20" == "y" ]; then
       PSLVER="9"
     else
       PSLVER="8"
     fi
     echo "Setting PSLVER                 to: \"$PSLVER\""
     sed -i '/export[ ^]*PSLVER[ ^]*=/ d' $snap_env_sh
-    echo "export PSLVER=$PSLVER" >> $snap_env_sh
+    sed -i '1s/^/export PSLVER='$PSLVER'\n/' $snap_env_sh
     echo "=====Simulation setup: Checking path to PSLSE=========="
     echo "PSLSE_ROOT              is set to: \"$PSLSE_ROOT\""
     RESP=`grep PSLSE_ROOT $snap_env_sh`
@@ -209,6 +190,8 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hls_nvme_memcopy'
   elif [ -n "$HLS_LATENCY_EVAL" ]; then
     AR='${SNAP_ROOT}/actions/hls_latency_eval'
+  elif [ -n "$HLS_MM_TEST" ]; then
+    AR='${SNAP_ROOT}/actions/hls_mm_test'
   elif [ -n "$HLS_HELLOWORLD" ]; then
     AR='${SNAP_ROOT}/actions/hls_helloworld'
   fi
@@ -219,7 +202,7 @@ while [ -z "$SETUP_DONE" ]; do
   else
     echo "Setting ACTION_ROOT            to: \"$AR\""
     sed -i '/export[ ^]*ACTION_ROOT[ ^]*=/ d' $snap_env_sh
-    echo "export ACTION_ROOT=$AR" >> $snap_env_sh
+    sed -i '1s#^#export ACTION_ROOT='$AR'\n#' $snap_env_sh
   fi
 
   if [ -z "$AR" ] && [ "$ignore_action_root" != "y" ]; then
@@ -273,7 +256,7 @@ while [ -z "$SETUP_DONE" ]; do
   if [ -z "$TIMING_LABLIMIT" ]; then
     TIMING_LABLIMIT="$TIMING_LABLIMIT_DEFAULT"
     sed -i '/export[ ^]*TIMING_LABLIMIT[ ^]*=/ d' $snap_env_sh
-    echo "export TIMING_LABLIMIT=\"$TIMING_LABLIMIT_DEFAULT\"" >> $snap_env_sh
+    sed -i '1s/^/export TIMING_LABLIMIT="'$TIMING_LABLIMIT_DEFAULT'"\n/' $snap_env_sh
     SETUP_INFO="$SETUP_INFO\n### INFO ### Timing limit for FPGA image build got set to default value $TIMING_LABLIMIT_DEFAULT"
   fi
   echo "=====Timing limit for FPGA image build in ps============"

@@ -18,29 +18,25 @@
 ############################################################################
 ############################################################################
 
-set root_dir    $::env(SNAP_HARDWARE_ROOT)
-set ip_dir      $root_dir/ip
-set usr_ip_dir  $ip_dir/managed_ip_project/managed_ip_project.srcs/sources_1/ip
-set hdl_dir     $root_dir/hdl
-set sim_dir     $root_dir/sim
-set fpga_part   $::env(FPGACHIP)
-set fpga_card   $::env(FPGACARD)
-set action_dir  $::env(ACTION_ROOT)/hw
-set nvme_used   $::env(NVME_USED)
-set bram_used   $::env(BRAM_USED)
-set sdram_used  $::env(SDRAM_USED)
-set ila_debug   [string toupper $::env(ILA_DEBUG)]
-set simulator   $::env(SIMULATOR)
-set denali_used $::env(DENALI_USED)
-set log_dir     $::env(LOGS_DIR)
-set log_file    $log_dir/create_framework.log
-set vivadoVer     [version -short]
-
-if { [info exists ::env(CAPI_BSP)] == 1 } {
-  set capi_bsp_dir $::env(CAPI_BSP)
-} else {
-  set capi_bsp_dir "not defined"
-}
+set root_dir     $::env(SNAP_HARDWARE_ROOT)
+set ip_dir       $root_dir/ip
+set usr_ip_dir   $ip_dir/managed_ip_project/managed_ip_project.srcs/sources_1/ip
+set hdl_dir      $root_dir/hdl
+set sim_dir      $root_dir/sim
+set fpga_part    $::env(FPGACHIP)
+set fpga_card    $::env(FPGACARD)
+set capi_bsp_dir $root_dir/capi2-bsp/$fpga_card/build/ip
+set capi_ver     $::env(CAPI_VER)
+set action_dir   $::env(ACTION_ROOT)/hw
+set nvme_used    $::env(NVME_USED)
+set bram_used    $::env(BRAM_USED)
+set sdram_used   $::env(SDRAM_USED)
+set ila_debug    [string toupper $::env(ILA_DEBUG)]
+set simulator    $::env(SIMULATOR)
+set denali_used  $::env(DENALI_USED)
+set log_dir      $::env(LOGS_DIR)
+set log_file     $log_dir/create_framework.log
+set vivadoVer    [version -short]
 
 ### If the design is a HDL (RTL) design and has many other user defined tcl files,
 # Please set "USER_DEFINED_DESIGN=TRUE" and provide USER_DEFINED_TCLPATH
@@ -112,7 +108,7 @@ set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.IS_ENABLED true [get_runs impl_1]
 set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 # Bitstream
-set_property STEPS.WRITE_BITSTREAM.TCL.PRE  $root_dir/setup/snap_bitstream_pre.tcl  [get_runs impl_1]
+set_property STEPS.WRITE_BITSTREAM.TCL.PRE  $root_dir/setup/$fpga_card/snap_bitstream_pre.tcl  [get_runs impl_1]
 set_property STEPS.WRITE_BITSTREAM.TCL.POST $root_dir/setup/snap_bitstream_post.tcl [get_runs impl_1]
 
 # Add Files
@@ -177,6 +173,18 @@ if { $simulator != "nosim" } {
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm.sv]
   }
   # DDR4 Sim Files
+  if { ($fpga_card == "FX609") && ($sdram_used == "TRUE") } {
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_fx609.sv  >> $log_file
+    set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_fx609.sv]
+  }
+  # DDR4 Sim Files
+  if { ($fpga_card == "S241") && ($sdram_used == "TRUE") } {
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_s121b.sv  >> $log_file
+    set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_s121b.sv]
+  }
+  # DDR4 Sim Files
   if { ($fpga_card == "S121B") && ($sdram_used == "TRUE") } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_s121b.sv  >> $log_file
@@ -193,18 +201,6 @@ if { $simulator != "nosim" } {
 # Add IPs
 # SNAP CORE IPs
 puts "                        importing IPs"
-if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) } {
-  set DMA_IB_RAM 1040x32
-  set DMA_OB_RAM 1152x32
-} else {
-  set DMA_IB_RAM 520x64
-  set DMA_OB_RAM 576x64
-}
-
-add_files -norecurse $ip_dir/ram_${DMA_IB_RAM}_2p/ram_${DMA_IB_RAM}_2p.xci >> $log_file
-export_ip_user_files -of_objects  [get_files "$ip_dir/ram_${DMA_IB_RAM}_2p/ram_${DMA_IB_RAM}_2p.xci"] -force >> $log_file
-add_files -norecurse $ip_dir/ram_${DMA_OB_RAM}_2p/ram_${DMA_OB_RAM}_2p.xci >> $log_file
-export_ip_user_files -of_objects  [get_files "$ip_dir/ram_${DMA_OB_RAM}_2p/ram_${DMA_OB_RAM}_2p.xci"] -force >> $log_file
 add_files -norecurse  $ip_dir/fifo_4x512/fifo_4x512.xci >> $log_file
 export_ip_user_files -of_objects  [get_files  "$ip_dir/fifo_4x512/fifo_4x512.xci"] -force >> $log_file
 add_files -norecurse  $ip_dir/fifo_8x512/fifo_8x512.xci >> $log_file
@@ -226,7 +222,7 @@ if { $fpga_card == "ADKU3" } {
     add_files -norecurse $ip_dir/ddr3sdram/ddr3sdram.xci >> $log_file
     export_ip_user_files -of_objects  [get_files "$ip_dir/ddr3sdram/ddr3sdram.xci"] -force >> $log_file
   }
-} elseif { ($fpga_card == "S121B") || ($fpga_card == "AD8K5") || ($fpga_card == "RCXVUP") } {
+} elseif { ($fpga_card == "S121B") || ($fpga_card == "AD8K5") || ($fpga_card == "RCXVUP") || ($fpga_card == "FX609") || ($fpga_card == "S241") } {
   if { $bram_used == "TRUE" } {
     add_files -norecurse $ip_dir/axi_clock_converter/axi_clock_converter.xci >> $log_file
     export_ip_user_files -of_objects  [get_files "$ip_dir/axi_clock_converter/axi_clock_converter.xci"] -force >> $log_file
@@ -291,13 +287,15 @@ if { $nvme_used == TRUE } {
     set_property used_in_simulation false [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd]
     add_files -fileset sim_1 -norecurse $sim_dir/nvme_lite
     add_files -fileset sim_1 -norecurse $hdl_dir/nvme/nvme_defines.sv
+    set_property file_type {Verilog Header} [get_files $sim_dir/nvme_lite/snap_config.sv]
+    set_property file_type {Verilog Header} [get_files $hdl_dir/nvme/nvme_defines.sv]
   }
 } else {
   remove_files $action_dir/action_axi_nvme.vhd -quiet
 }
 
 # Add CAPI board support
-if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($capi_bsp_dir != "not defined") } {
+if { ($capi_ver == "capi20") && [file exists $capi_bsp_dir/capi_bsp_wrap.xcix] } {
   puts "                        importing CAPI BSP"
   set_property ip_repo_paths "[file normalize $capi_bsp_dir]" [current_project] >> $log_file
   update_ip_catalog >> $log_file
@@ -305,7 +303,7 @@ if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($capi_bsp_dir !=
   add_files -norecurse                  $capi_bsp_dir/capi_bsp_wrap.xcix -force >> $log_file
   export_ip_user_files -of_objects      [get_files capi_bsp_wrap.xci] -force >> $log_file
   set_property used_in_simulation false [get_files capi_bsp_wrap.xci] >> $log_file
-} elseif { $psl_dcp != "FALSE" } {
+} elseif { ($capi_ver == "capi10") && ($psl_dcp != "FALSE") } {
   puts "                        importing PSL design checkpoint"
   read_checkpoint -cell b $psl_dcp -strict >> $log_file
 }
@@ -315,10 +313,12 @@ if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($capi_bsp_dir !=
 puts "                        importing XDCs"
 
 # Board Support XDC
-if { (($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($capi_bsp_dir != "not defined") } {
+if { $capi_ver == "capi20" } {
   puts "                        importing specific Board support XDCs"
-  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc
-#  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/capi_bsp_pblock.xdc
+  add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc >> $log_file
+  foreach xdc_file [glob -nocomplain -dir $root_dir/capi2-bsp/$fpga_card/xdc * ] {
+    add_files -fileset constrs_1 -norecurse $xdc_file >> $log_file
+  }
 }
 
 # DDR XDCs
@@ -341,7 +341,22 @@ if { $fpga_card == "ADKU3" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/AD8K5/snap_ddr4_b0pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/AD8K5/snap_ddr4_b0pins.xdc]
   }
-} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")} {
+} elseif { ($fpga_card == "RCXVUP") } {
+  if { $sdram_used == "TRUE" } {
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]
+  }
+} elseif { ($fpga_card == "FX609") } {
+  if { $sdram_used == "TRUE" } {
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]
+  }
+} elseif { ($fpga_card == "S241") } {
+  if { $sdram_used == "TRUE" } {
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]
+  }
+} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
   if { $sdram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]

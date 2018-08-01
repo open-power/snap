@@ -21,10 +21,18 @@ verbose=0
 snap_card=0
 duration="NORMAL"
 
+slist_SHORT="512 1024"
+slist_NORMAL="512 2048 4096"
+slist_LONG="512 1024 2048 4096 1048576"
+
+slist=${slist_NORMAL}
+
 # Get path of this script
 THIS_DIR=$(dirname $(readlink -f "$BASH_SOURCE"))
 ACTION_ROOT=$(dirname ${THIS_DIR})
 SNAP_ROOT=$(dirname $(dirname ${ACTION_ROOT}))
+
+source ${SNAP_ROOT}/.snap_config
 
 echo "ACTION_ROOT=$ACTION_ROOT"
 echo "please make sure ACTION_ROOT is pointed to actions/hls_nvme_memcopy"
@@ -50,6 +58,17 @@ while getopts ":C:t:d:h" opt; do
 	;;
 	d)
 	duration=$OPTARG;
+	case ${duration} in
+	    "SHORT")
+	    slist=${slist_SHORT}
+	    ;;
+	    "NORMAL")
+	    slist=${slist_NORMAL}
+	    ;;
+	    "LARGE")
+	    slist=${slist_LONG}
+	    ;;
+	esac
 	;;
 	h)
 	usage;
@@ -78,9 +97,15 @@ fi
 #### MEMCOPY ##########################################################
 rm -f snap_nvme_memcopy.log
 snap_maint -C${snap_card} -v
-snap_nvme_init -C${snap_card} -v
+
+if [[ -z ${SIM_XSIM} && ${SIM_XSIM} != "y" ]]; then
+    snap_nvme_init -C${snap_card} -v
+else
+    echo "Skipping snap_nvme_init since it is not supported for XSIM"
+fi
+
 #snap_nvme_memcopy -h
-for size in 512 2048 1048576; do to=$((size*50+10))
+for size in ${slist}; do to=$((size*50+10))
      echo "Start testing $size......................................."
      dd if=/dev/urandom bs=${size} count=1 > ${size}.in
      echo -n "Doing snap_nvme_memcopy (aligned)... "
