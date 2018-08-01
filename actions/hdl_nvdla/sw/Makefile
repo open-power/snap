@@ -58,7 +58,7 @@ SUBDIRS_UMD = nvdla-sw/umd/core/runtime \
 SUBDIRS_KMD = nvdla-sw/kmd/firmware \
 	  nvdla-sw/kmd/port/capi
 NVDLA_UMD_OUT = nvdla-sw/umd/out/runtime/
-NVDLA_KMD_OUT = nvdla-sw/umd/out/
+NVDLA_KMD_OUT = nvdla-sw/kmd/out/
 
 projs += snap_nvdla
 
