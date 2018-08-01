@@ -28,6 +28,7 @@ set fpga_card    $::env(FPGACARD)
 set capi_bsp_dir $root_dir/capi2-bsp/$fpga_card/build/ip
 set capi_ver     $::env(CAPI_VER)
 set action_dir   $::env(ACTION_ROOT)/hw
+set action_tcl   [exec find $action_dir -name tcl -type d]
 set nvme_used    $::env(NVME_USED)
 set bram_used    $::env(BRAM_USED)
 set sdram_used   $::env(SDRAM_USED)
@@ -113,6 +114,18 @@ set_property top psl_fpga [current_fileset]
 # Action Files
 if { $hls_support == "TRUE" } {
   add_files -scan_for_includes $hdl_dir/hls/ >> $log_file
+}
+
+# Action Specific tcl
+if { [file exists $action_tcl] == 1 } {
+  set tcl_exists [exec find $action_tcl -name *.tcl]
+  if { $tcl_exists != "" } {
+    foreach tcl_file [glob -nocomplain -dir $action_tcl *.tcl] {
+      set tcl_file_name [exec basename $tcl_file]
+      puts "                        sourcing $tcl_file_name"
+      source $tcl_file >> $log_file
+    }
+  }
 }
 
 add_files -scan_for_includes $action_dir/ >> $log_file
