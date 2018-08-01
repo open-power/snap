@@ -81,7 +81,7 @@ if { [catch "$command > $logfile" errMsg] } {
 
 ##
 ## Vivado 2017.4 has problems to place the SNAP core logic, if they can place inside the PSL
-if { ($vivadoVer >= "2017.4") && ($cloud_flow == "FALSE") } {
+if { ($vivadoVer < "2018.1") && ($cloud_flow == "FALSE") } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "reload opt_design DCP" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   close_project                         >> $logfile
   open_checkpoint $dcp_dir/${step}.dcp  >> $logfile
