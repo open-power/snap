@@ -38,7 +38,8 @@ END {
   t=1
   error=0
 
-  printf "---------------------- Process %s logs -------------------------------\n", iter
+  printf "---------------------- Process %s logs ----------------------------\n", iter
+  printf "                       (time in usec)\n", iter
   while (t <= 10) {
 	i=1
 	min = usec_table[t][1];
