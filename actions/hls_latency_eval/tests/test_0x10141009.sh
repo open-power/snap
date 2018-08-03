@@ -19,6 +19,8 @@
 verbose=0
 snap_card=0
 duration="NORMAL"
+number=100000
+no_interrupt=0
 
 # Get path of this script
 THIS_DIR=$(dirname $(readlink -f "$BASH_SOURCE"))
@@ -34,11 +36,13 @@ function usage() {
     echo "  test_<action_type>.sh"
     echo "    [-C <card>] card to be used for the test"
     echo "    [-t <trace_level>]"
-    echo "    [-duration SHORT/NORMAL/LONG] run tests"
+#    echo "    [-duration SHORT/NORMAL/LONG] run tests"
+    echo "    [-n <number>] number of transfers. Default 100000"
+    echo "    [-N] not using interrupt"
     echo
 }
 
-while getopts ":C:t:d:h" opt; do
+while getopts ":C:t:d:n:Nh" opt; do
     case $opt in
 	C)
 	snap_card=$OPTARG;
@@ -48,6 +52,12 @@ while getopts ":C:t:d:h" opt; do
 	;;
 	d)
 	duration=$OPTARG;
+	;;
+	n)
+	number=$OPTARG;
+	;;
+	N)
+	no_interrupt=1;
 	;;
 	h)
 	usage;
@@ -79,7 +89,11 @@ function test_latency_eval {
     local size=$1
 
     echo -n "Doing snap_latency_eval "
-    cmd="snap_latency_eval -C${snap_card} -n 100000"
+    if [ $no_interrupt = 1 ]; then
+        cmd="snap_latency_eval -C${snap_card} -n $number -N"
+    else
+        cmd="snap_latency_eval -C${snap_card} -n $number"
+    fi
     eval ${cmd}
     if [ $? -ne 0 ]; then
 	echo "cmd: ${cmd}"
