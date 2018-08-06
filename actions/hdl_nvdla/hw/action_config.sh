@@ -19,20 +19,42 @@
 ############################################################################
 ############################################################################
 
-if [ "$DDRI_USED" == "TRUE" ]; then
-  DDRI_FILTER="\-\- only for DDRI_USED!=TRUE"
-else
-  DDRI_FILTER="\-\- only for DDRI_USED=TRUE"
+. $SNAP_ROOT/snap_env.sh
+
+if [ -L ./nvdla ]; then
+    unlink ./nvdla
 fi
 
-if [ "$NVME_USED" == "TRUE" ]; then
-  NVME_FILTER="\-\- only for NVME_USED!=TRUE"
-else
-  NVME_FILTER="\-\- only for NVME_USED=TRUE"
+if [ -L ./include ]; then
+    unlink ./include
 fi
 
-for vhdsource in *.vhd_source; do
-    vhdfile=`echo $vhdsource | sed 's/vhd_source$/vhd/'`
-    echo -e "\t                        generating $vhdfile"
-    grep -v "$DDRI_FILTER" $vhdsource | grep -v "$NVME_FILTER" > $vhdfile
-done
+if [ -L ./rams ]; then
+    unlink ./rams
+fi
+
+if [ -L ./vlibs ]; then
+    unlink ./vlibs
+fi
+
+if [ -L ./fifos ]; then
+    unlink ./fifos
+fi
+
+if [ -L ./defs ]; then
+    unlink ./defs
+fi
+
+if [ -z $NVDLA_ROOT ]; then
+  echo "WARNING!!! Please set NVDLA_ROOT to the path of nvdla"
+elif [ ! -d $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod ]; then
+  echo "WARNING!!! Please go to nvdla-capi repository and execute './tools/bin/tmake -build vmod' to generate the verilog models"
+else
+  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/nvdla nvdla
+  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/include include 
+  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/rams rams 
+  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/vlibs vlibs
+  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/fifos fifos
+  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/spec/defs defs 
+fi
+
