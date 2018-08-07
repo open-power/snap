@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef __HDL_EXAMPLE__
-#define __HDL_EXAMPLE__
+#ifndef __HDL_HELLOWORLD__
+#define __HDL_HELLOWORLD__
 
 /*
  * This makes it obvious that we are influenced by HLS details ...
@@ -38,4 +38,4 @@
 #define ACTION_PATT_TOTAL_NUM_H        0x6C
 
 
-#endif	/* __HDL_EXAMPLE__ */
+#endif	/* __HDL_HELLOWORLD__ */
