@@ -29,10 +29,6 @@ if [ -L ./include ]; then
     unlink ./include
 fi
 
-if [ -L ./rams ]; then
-    unlink ./rams
-fi
-
 if [ -L ./vlibs ]; then
     unlink ./vlibs
 fi
@@ -45,6 +41,14 @@ if [ -L ./defs ]; then
     unlink ./defs
 fi
 
+if [ -L ../ip ]; then
+    unlink ../ip
+fi
+
+if [ -L ./ram_wrapper ]; then
+    unlink ./ram_wrapper
+fi
+
 if [ -z $NVDLA_ROOT ]; then
   echo "WARNING!!! Please set NVDLA_ROOT to the path of nvdla"
 elif [ ! -d $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod ]; then
@@ -52,9 +56,11 @@ elif [ ! -d $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod ]; then
 else
   ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/nvdla nvdla
   ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/include include 
-  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/rams rams 
+  #ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/rams rams 
   ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/vlibs vlibs
   ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/fifos fifos
+  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/ram_wrapper ram_wrapper
+  ln -s $NVDLA_ROOT/nvdla-capi/vmod/fpga_ip ../ip
   ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/spec/defs defs 
 fi
 

@@ -16,3 +16,13 @@ foreach fifo_file [glob -nocomplain -dir $action_dir/fifos *.v] {
     }
 }
 
+set action_ipdir $::env(ACTION_ROOT)/ip
+
+#User IPs
+foreach usr_ip [glob -nocomplain -dir $action_ipdir *] {
+  foreach usr_ip_xci [exec find $usr_ip -name *.xci] {
+    puts "                        importing user IP $usr_ip_xci (in nvdla)"
+    add_files -norecurse $usr_ip_xci >> $log_file
+    export_ip_user_files -of_objects  [get_files "$usr_ip_xci"] -force >> $log_file
+  }
+}
