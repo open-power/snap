@@ -27,6 +27,21 @@
  * ----------------------------------------------------------------------------
  */
 
+// FIXME Consider using those defines in the code instead of using hardcoded
+//       numbers which are hard to decypher.
+
+// Action Write Registers
+#define ACTION_W_DPTR_LOW   0
+#define ACTION_W_DPTR_HIGH  1
+#define ACTION_W_LBA_LOW    2
+#define ACTION_W_LBA_HIGH   3
+#define ACTION_W_LBA_NUM    4
+#define ACTION_W_COMMAND    5
+
+// Action Read Registers
+#define ACTION_R_STATUS   0
+#define ACTION_R_TRACK_0  1
+
 // WRITE DATA TO MEMORY
 short write_burst_to_mem(snap_membus_t *dout_gmem,
                  snap_membus_t *d_ddrmem,
@@ -136,22 +151,31 @@ short write_burst_to_ssd(snapu32_t *d_nvme,
     rc = 1;
 
     // Poll the status register until the operation is finished
-    while(1)
-    {
-        if((status = ((volatile int*)d_nvme)[1]))
-        {
-            if(status & 0x10)
-                rc = 1;
-            else
-                rc = 0;
-            break;
-        }
+    // See https://github.com/open-power/snap/blob/master/hardware/doc/NVMe_Host_Tech_Desc.pdf
+    // FIXME the registers accessed here could get names instead 
+    //       of using the indexes into an array ...
+    // FIXME I think we use here ACTION_R_TRACK_0 for status.
+    //       Bit 0 a 1 would mean completed, and bit 1 not 0 indicates an error.
+    //       Other bits are reserved and must be ignored.
+    while (1) {
+	    status = ((volatile int*)d_nvme)[1];
+	    if (status & 0x00000003) {
+		    if (status & 0x2)
+			    rc = 1;
+		    else
+			    rc = 0;
+		    break;
+	    }
     }
 
     return rc;
 }
 
 // READ DATA FROM SSD
+// FIXME Why don't we define snapu32_t *d_nvme as volatile snapu32_t *d_nvme,
+//       such that we can ommit all the castings? And why using int * when
+//       we could have used the 32 bit type which is nicer readable and less
+//       ambigous?
 short read_burst_from_ssd(snapu32_t *d_nvme,
                   snapu64_t ddr_addr,
                   snapu64_t ssd_lb_addr,
@@ -178,16 +202,21 @@ short read_burst_from_ssd(snapu32_t *d_nvme,
     ((volatile int*)d_nvme)[5] = (drive_id == 0)? 0x10: 0x30;
 
     // Poll the status register until the operation is finished
-    while(1)
-    {
-        if((status = ((volatile int*)d_nvme)[1]))
-        {
-            if(status & 0x10)
-                rc = 1;
-            else
-                rc = 0;
-            break;
-        }
+    // See https://github.com/open-power/snap/blob/master/hardware/doc/NVMe_Host_Tech_Desc.pdf
+    // FIXME the registers accessed here could get names instead 
+    //       of using the indexes into an array ...
+    // FIXME I think we use here ACTION_R_TRACK_0 for status.
+    //       Bit 0 a 1 would mean completed, and bit 1 not 0 indicates an error.
+    //       Other bits are reserved and must be ignored.
+    while (1) {
+	    status = ((volatile int*)d_nvme)[1];
+	    if (status & 0x00000003) {
+		    if (status & 0x2)
+			    rc = 1;
+		    else
+			    rc = 0;
+		    break;
+	    }
     }
 
     return rc;
