@@ -108,31 +108,37 @@ else
     echo "Skipping snap_nvme_init since it is not supported for XSIM"
 fi
 
-echo "COPY Data from host to SSD: Manually check if all blocks are properly written ..."
 
-for size in ${slist}; do to=$((size*50+10))
-    rm -f *.out *.bin
-    echo "Start testing $size......................................."
-    dd if=/dev/urandom bs=${size} count=1 > ${size}.in
-    echo "Doing snap_nvme_memcopy (aligned)... "
-    cmd="snap_nvme_memcopy -C${snap_card} -A HOST_DRAM -D NVME_SSD  -i ${size}.in -d 0x55550000 -v -t$to"
+function sim_try_block_store()
+{
+    echo "COPY Data from host to SSD: Manually check if all blocks are properly written ..."
+    
+    for size in ${slist}; do to=$((size*50+10))
+	rm -f *.out *.bin
+	echo "Start testing $size......................................."
+	dd if=/dev/urandom bs=${size} count=1 > ${size}.in
+	echo "Doing snap_nvme_memcopy (aligned)... "
+	cmd="snap_nvme_memcopy -C${snap_card} -A HOST_DRAM -D NVME_SSD  -i ${size}.in -d 0x55550000 -v -t$to"
         # >> snap_nvme_memcopy.log 2>&1" 
-    echo "EXEC: ${cmd} ..."
-    echo "$cmd" >> snap_nvme_memcopy.log; eval ${cmd}
-    echo "OK"
-
-    echo "Checking correct number of blocks ... "
-    let expected_blocks=$size/512
-    actual_blocks=`ls -l SNAP_LBA*.bin | wc -l`
-    echo "  EXPECTED ${expected_blocks} blocks, ACTUAL ${actual_blocks} blocks "
-
-    if [[ ${expected_blocks} != ${actual_blocks} ]]; then
-	echo "ERROR: Not all blocks stored!"
-	exit 1
-    else
+	echo "EXEC: ${cmd} ..."
+	echo "$cmd" >> snap_nvme_memcopy.log; eval ${cmd}
 	echo "OK"
-    fi
-done
+
+	echo "Checking correct number of blocks ... "
+	let expected_blocks=$size/512
+	actual_blocks=`ls -l SNAP_LBA*.bin | wc -l`
+	echo "  EXPECTED ${expected_blocks} blocks, ACTUAL ${actual_blocks} blocks "
+
+	if [[ ${expected_blocks} != ${actual_blocks} ]]; then
+	    echo "ERROR: Not all blocks stored!"
+	    exit 1
+	else
+	    echo "OK"
+	fi
+    done
+}
+# FIXME Enable for simulation if there should be problems
+# sim_try_block_store
 
 #snap_nvme_memcopy -h
 for size in ${slist}; do to=$((size*50+10))
