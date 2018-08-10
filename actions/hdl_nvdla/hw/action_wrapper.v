@@ -161,7 +161,6 @@ module action_wrapper #(
     assign nvdla_pwrbus_ram_mb_pd        = 32'b0;
 
 
-
     NV_nvdla_wrapper nvdla_0 (
       .dla_core_clk                   (dla_core_clk)                  // |< i
       ,.global_clk_ovr_on             (global_clk_ovr_on)             // |< i
@@ -219,6 +218,11 @@ module action_wrapper #(
       ,.nvdla_pwrbus_ram_p_pd         (nvdla_pwrbus_ram_p_pd)         // |< i
       ,.nvdla_pwrbus_ram_o_pd         (nvdla_pwrbus_ram_o_pd)         // |< i
       ,.nvdla_pwrbus_ram_a_pd         (nvdla_pwrbus_ram_a_pd)         // |< i
+
+      ,.i_snap_app_ready              (1'b1)                          //|> i 
+      ,.i_snap_action_type            (32'h00000006)                  //|> i
+      ,.i_snap_action_version         (32'h00000006)                  //|> i
+      ,.o_snap_context                ()                              //|> o
       );
        
 endmodule

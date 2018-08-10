@@ -39,15 +39,6 @@ set log_dir      $::env(LOGS_DIR)
 set log_file     $log_dir/create_framework.log
 set vivadoVer    [version -short]
 
-### If the design is a HDL (RTL) design and has many other user defined tcl files,
-# Please set "USER_DEFINED_DESIGN=TRUE" and provide USER_DEFINED_TCLPATH
-# create_framework.tcl will source "design.tcl" and "post.tcl" under this PATH.
-set user_defined_design $::env(USER_DEFINED_DESIGN)
-if { $user_defined_design == "TRUE"} {
-  puts "                        INFO: User Defined Design"
-  set USER_DEFINED_TCLPATH $::env(USER_DEFINED_TCLPATH)
-}
-
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support [string toupper $::env(HLS_SUPPORT)]
 } elseif { [string first "/HLS" [string toupper $action_dir]] != -1 } {
@@ -356,14 +347,6 @@ if { $ila_debug == "TRUE" } {
   add_files -fileset constrs_1 -norecurse  $::env(ILA_SETUP_FILE)
 }
 
-# This is optional. 
-# If User provides *post* tcl file in USER_DEFINED_TCLPATH, 
-if { $user_defined_design == "TRUE" } {
-  foreach tcl_file [glob -nocomplain -dir $USER_DEFINED_TCLPATH *post*.tcl] {
-    puts "                        sourcing user tcl: $tcl_file"
-    source $tcl_file >> $log_file
-  }
-}
 #
 # update the compile order
 update_compile_order >> $log_file

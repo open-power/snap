@@ -54,13 +54,12 @@ if [ -z $NVDLA_ROOT ]; then
 elif [ ! -d $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod ]; then
   echo "WARNING!!! Please go to nvdla-capi repository and execute './tools/bin/tmake -build vmod' to generate the verilog models"
 else
-  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/nvdla nvdla
-  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/include include 
-  #ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/rams rams 
-  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/vlibs vlibs
-  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/fifos fifos
-  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/ram_wrapper ram_wrapper
-  ln -s $NVDLA_ROOT/nvdla-capi/vmod/fpga_ip ../ip
-  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/spec/defs defs 
+  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/nvdla               nvdla
+  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/include             include
+  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/vlibs               vlibs
+  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/fifos               fifos
+  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/fpga_ip/ram_wrapper ram_wrapper
+  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/fpga_ip             ../ip
+  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/spec/defs                defs
 fi
 
