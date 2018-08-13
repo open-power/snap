@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 	struct snap_job cjob;
 	struct mm_test_job mjob_in, mjob_out;
 //	struct timeval etime, stime;
-	unsigned long timeout = 60;
+	unsigned long timeout = 30;
 	// default is interrupt mode disabled (take polling)
 	snap_action_flag_t action_irq = 0;
 	int exit_code = EXIT_SUCCESS;
@@ -177,8 +177,8 @@ int main(int argc, char *argv[])
 				//MD_MM:   FPGA reads W/X, executes matrix multiply, writes Q
 				//MD_WAIT: FPGA reads W/X, wait "cycle_cnt_in" cycles, writes Q
 					
-	uint32_t job_num = 5;            //How many jobs (Use different W/X/Q buffers)
-	uint32_t loop_num = 10;          //How many loops inside a job (Reuse the same W/X/Q buffers)
+	uint32_t job_num = 10;            //How many jobs (Use different W/X/Q buffers)
+	uint32_t loop_num = 1;            //How many loops inside a job (Reuse the same W/X/Q buffers)
 	uint64_t cycle_cnt_in = 71000/4; //How many cycles: 71us / 4ns
 	//////////////////////////////////////////////////
 
@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
 			printf("%s\n", version);
 			exit(EXIT_SUCCESS);
 		case 'v':
-			verbose_flag = 1;
+			verbose_flag ++;
 			break;
 		case 'h':
 			usage(argv[0]);
@@ -249,9 +249,9 @@ int main(int argc, char *argv[])
 		usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
-	if (argc == 1) {       // to provide help when program is called without argument
-          fprintf(stdout,"\n Type snap_mm_test -h to get more options\n\n");
-        }
+	//if (argc == 1) {       // to provide help when program is called without argument
+        //	fprintf(stdout,"\n Type snap_mm_test -h to get more options\n\n");
+        //}
 
 	
 	// Timer starts
@@ -296,7 +296,8 @@ int main(int argc, char *argv[])
 		sprintf(temp_str, "Read input; Wait %ld cycles; Write output", cycle_cnt_in);
 
 	/* Display the parameters that will be used for the example */
-	printf("PARAMETERS:\n"
+	if (verbose_flag)
+		printf("PARAMETERS:\n"
 	       "  W_addr:     0x%016lx (%dx%d) * %d\n"
 	       "  X_addr:     0x%016lx (%dx%d) * %d\n"
 	       "  Q_addr:     0x%016lx (%dx%d) * %d\n"
@@ -378,58 +379,20 @@ int main(int argc, char *argv[])
 	print_timestamp("Use MMIO to kick off \"Action Start\"");
 
 
-	uint32_t last_job;
-	for (job = 0; job < job_num -1; job ++) {
+//	uint32_t last_job;
+//	for (job = 0; job < job_num -1; job ++) {
+//
+//		last_job = status_ptr->current_job;
+//		while(1) 
+//		{
+//			if (status_ptr->current_job != last_job) 
+//			{
+//				break;
+//			}
+//		}
+//
+//	}
 
-		if(verbose_flag)
-			printf("============= Job %d ==============\n", job);
-		if(verbose_flag)
-			printf("  W_addr:     0x%016lx (%dx%d)\n"
-			      "  X_addr:     0x%016lx (%dx%d)\n"
-			      "  Q_addr:     0x%016lx (%dx%d)\n",
-			       (wed_ptr + job)->W_addr, DIM1, DIM2,
-			       (wed_ptr + job)->X_addr, DIM2, DIM3,
-			       (wed_ptr + job)->Q_addr, DIM1, DIM3);
-
-
-		last_job = status_ptr->current_job;
-		while(1) 
-		{
-			if (status_ptr->current_job != last_job) 
-			{
-				if(verbose_flag) {
-					sprintf(temp_str, "Job %d", job);
-					print_timestamp(temp_str);
-				}
-				break;
-			}
-		}
-
-	}
-
-	if(verbose_flag)
-		printf("============= Job %d ==============\n", job);
-	if(verbose_flag)
-		printf("  W_addr:     0x%016lx (%dx%d)\n"
-		      "  X_addr:     0x%016lx (%dx%d)\n"
-		      "  Q_addr:     0x%016lx (%dx%d)\n",
-		       (wed_ptr + job)->W_addr, DIM1, DIM2,
-		       (wed_ptr + job)->X_addr, DIM2, DIM3,
-		       (wed_ptr + job)->Q_addr, DIM1, DIM3);
-	//wait for last
-	//while(1) {
-	//	if (status_ptr->current_job == job_num - 1 
-	//	 && status_ptr->stage == ST_WRITE_DST_DONE
-	//	 && status_ptr->current_loop == loop_num - 1) {
-	//		sprintf(temp_str, "Job (last) %d", job);
-	//		print_timestamp(temp_str);
-	//		break;
-	//	}
-	//}
-
-
-			
-		
 	// stop the action if not done and read all registers from the action
 	// rc = snap_action_sync_execute_job_check_completion(action, &cjob,
 	//			timeout);

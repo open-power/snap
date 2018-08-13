@@ -18,7 +18,7 @@
 
 verbose=0
 snap_card=0
-duration="SHORT"
+duration="NORMAL"
 
 # Get path of this script
 THIS_DIR=$(dirname $(readlink -f "$BASH_SOURCE"))
@@ -34,7 +34,7 @@ function usage() {
     echo "  test_<action_type>.sh"
     echo "    [-C <card>] card to be used for the test"
     echo "    [-t <trace_level>]"
-    echo "    [-d SHORT/NORMAL/LONG] 512B / 512KB or 512MB transfer tests"
+    echo "    [-d TINY/SHORT/NORMAL/LONG] 512B / 512KB /32MB / 512MB transfer tests"
     echo
 }
 
@@ -79,16 +79,19 @@ function test_memcopy {
 
 if [ ${size} = 536870912 ]; then
     echo "Creating a" ${size} "bytes file ...takes a minute or so ... "
-    dd if=/dev/urandom of=512MB_A.bin count=512 bs=1M 2> dd.log
+    dd if=/dev/urandom of=data.bin count=512 bs=1M 2> dd.log
+elif [ ${size} = 33445532 ]; then
+    echo "Creating a" ${size} "bytes file ...takes a minute or so ... "
+    dd if=/dev/urandom of=data.bin count=32 bs=1M 2> dd.log
 else
-    dd if=/dev/urandom of=512MB_A.bin count=${size} bs=1 2> dd.log
+    dd if=/dev/urandom of=data.bin count=${size} bs=1 2> dd.log
 fi
 
     echo "Doing snap_memcopy benchmarking with" ${size} "bytes transfers ... "
 
     echo -n "Read from Host Memory to FPGA ... "
     cmd="snap_memcopy -C${snap_card} 	\
-		-i 512MB_A.bin	>>	\
+		-i data.bin -N	>>	\
 		snap_memcopy.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then
@@ -101,8 +104,8 @@ fi
 
     echo -n "Write from FPGA to Host Memory ... "
     cmd="snap_memcopy -C${snap_card} 	\
-		-o 512MB_A.out		\
-		-s ${size} 	>>	\
+		-o data.out		\
+		-s ${size}  -N	>>	\
 		snap_memcopy.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then
@@ -116,7 +119,7 @@ fi
     echo -n "Read from Card DDR Memory to FPGA ... "
     cmd="snap_memcopy -C${snap_card} 	\
 		-A CARD_DRAM -a 0x0	\
-		-s ${size} 	>>	\
+		-s ${size} -N	>>	\
 		snap_memcopy.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then
@@ -130,7 +133,7 @@ fi
     echo -n "Write from FPGA to Card DDR Memory ... "
     cmd="snap_memcopy -C${snap_card} 	\
 		-D CARD_DRAM -d 0x0	\
-		-s ${size} 	>>	\
+		-s ${size} -N	>>	\
 		snap_memcopy.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then
@@ -145,12 +148,16 @@ fi
 rm -f snap_memcopy.log
 touch snap_memcopy.log
 
-if [ "$duration" = "SHORT" ]; then
+if [ "$duration" = "TINY" ]; then
 	size=512
 	test_memcopy ${size}
 fi
-if [ "$duration" = "NORMAL" ]; then
+if [ "$duration" = "SHORT" ]; then
 	size=524288
+	test_memcopy ${size}
+fi
+if [ "$duration" = "NORMAL" ]; then
+	size=33445532
 	test_memcopy ${size}
 fi
 if [ "$duration" = "LONG" ]; then
