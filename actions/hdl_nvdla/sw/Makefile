@@ -110,11 +110,13 @@ snap_nvdla_kmd_objs += nvdla_capi.o \
                    engine_isr.o \
                    engine_debug.o
 
-snap_nvdla: $(snap_nvdla_umd_objs) $(snap_nvdla_kmd_objs)
+#snap_nvdla: $(snap_nvdla_umd_objs) $(snap_nvdla_kmd_objs)
+
+snap_nvdla : $(snap_nvdla_umd_objs) $(snap_nvdla_kmd_objs)
 
 projs += snap_nvdla
 
-snap_nvdla: snap_nvdla.o $(snap_nvdla_umd_objs) $(snap_nvdla_kmd_objs)
+snap_nvdla: snap_nvdla.o $(snap_nvdla_objs)
 	$(CXX) $(CPPFLAGS) $(LDFLAGS) $($(@)_LDFLAGS) $@.o $($(@)_objs) $($(@)_umd_objs) $($(@)_kmd_objs) $($(@)_libs) $(LDLIBS) -lrt -ljpeg -o $@
 
 else
