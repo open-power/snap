@@ -10,7 +10,7 @@ foreach fifo_file [glob -nocomplain -dir $action_dir/fifos *.v] {
     foreach tmp_file [get_files $fifo_file_name] {
         set dir_name [exec dirname $tmp_file]
         if {$dir_name != "$action_dir/fifos"} {
-            puts "                        NOT from fifo directory: $fifo_file_name "
+            puts "                        NOT from fifo directory: $fifo_file_name " >> $log_file
             remove_files $tmp_file
         }
     }
@@ -20,9 +20,11 @@ set action_ipdir $::env(ACTION_ROOT)/ip
 
 #User IPs
 foreach usr_ip [glob -nocomplain -dir $action_ipdir *] {
-  foreach usr_ip_xci [exec find $usr_ip -name *.xci] {
-    puts "                        importing user IP $usr_ip_xci (in nvdla)"
-    add_files -norecurse $usr_ip_xci >> $log_file
-    export_ip_user_files -of_objects  [get_files "$usr_ip_xci"] -force >> $log_file
-  }
+    foreach usr_ip_xci [exec find $usr_ip -name *.xci] {
+        set ip_name [file rootname [file tail $usr_ip_xci]]
+        puts "                        importing user IP $ip_name (in nvdla)"
+        add_files -norecurse $usr_ip_xci >> $log_file
+        generate_target all [get_files $usr_ip_xci] >> $log_file
+        export_ip_user_files -of_objects  [get_files "$usr_ip_xci"] -force >> $log_file
+    }
 }
