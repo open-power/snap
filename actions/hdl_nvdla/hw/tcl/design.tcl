@@ -24,7 +24,9 @@ foreach usr_ip [glob -nocomplain -dir $action_ipdir *] {
         set ip_name [file rootname [file tail $usr_ip_xci]]
         puts "                        importing user IP $ip_name (in nvdla)"
         add_files -norecurse $usr_ip_xci >> $log_file
-        generate_target all [get_files $usr_ip_xci] >> $log_file
-        export_ip_user_files -of_objects  [get_files "$usr_ip_xci"] -force >> $log_file
+        set_property generate_synth_checkpoint false [ get_files $usr_ip_xci] >> $log_file
+        generate_target {instantiation_template}     [ get_files $usr_ip_xci] >> $log_file
+        generate_target all                          [ get_files $usr_ip_xci] >> $log_file
+        export_ip_user_files -of_objects             [ get_files $usr_ip_xci] -no_script -sync -force -quiet >> $log_file
     }
 }
