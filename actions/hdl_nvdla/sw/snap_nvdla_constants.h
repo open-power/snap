@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 International Business Machines
+ * Copyright 2018 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef __SNAP_FW_EXA__
-#define __SNAP_FW_EXA__
+#ifndef __SNAP_CONSTANTS__
+#define __SNAP_CONSTANTS__
 
-/*
- * This makes it obvious that we are influenced by HLS details ...
- * The ACTION control bits are defined in the following file.
- */
-#include <snap_hls_if.h>
+/* Header file for SNAP Framework nvdla code */
+#define ACTION_TYPE_NVDLA     0x00000006	/* Action Type */
 
-#include "snap_nvdla_constants.h"
+#define ACTION_BAR           0x400 /* Base address register. */
 
-#include "nvdla_capi_test.h"
-
-#endif	/* __SNAP_FW_EXA__ */
+#endif	/* __SNAP_CONSTANTS__ */
