@@ -27,4 +27,6 @@
 
 #include "nvdla_capi_test.h"
 
+#include "nvdla_ioctl.h"
+
 #endif	/* __SNAP_FW_EXA__ */

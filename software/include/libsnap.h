@@ -370,6 +370,8 @@ int snap_action_read32(struct snap_action *action, uint64_t offset,
 int snap_action_start(struct snap_action *action);
 int snap_action_stop(struct snap_action *action);
 int snap_action_is_idle(struct snap_action *action, int *rc);
+int snap_action_wait_interrupt(struct snap_action *action, int *rc,
+			  int timeout_sec);
 int snap_action_completed(struct snap_action *action, int *rc,
 			  int timeout_sec);
 

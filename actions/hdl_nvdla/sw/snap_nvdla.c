@@ -348,15 +348,16 @@ int main (int argc, char* argv[])
 
     VERBOSE1 ("Turn on the NVDLA register region\n");
     // Enable the NVDLA register region
-    action_write(dn, ACTION_BAR, 0x00000010);
+    action_write(dn, ACTION_CONFIG, 0x00000100);
 
     VERBOSE1 ("Start to run NVDLA\n");
+    nvdla_probe(dn);
     nvdla_capi_test(loadable, input, image, normalize, rawdump);
     VERBOSE1 ("Stop to run NVDLA\n");
 
     VERBOSE1 ("Turn off the NVDLA register region\n");
     // Disable the NVDLA register region
-    action_write(dn, ACTION_BAR, 0x00000000);
+    action_write(dn, ACTION_CONFIG, 0x00000000);
 
     // Unmap AFU MMIO registers, if previously mapped
     VERBOSE2 ("Free Card Handle: %p\n", dn);

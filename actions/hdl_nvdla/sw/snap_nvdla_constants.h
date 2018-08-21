@@ -20,6 +20,6 @@
 /* Header file for SNAP Framework nvdla code */
 #define ACTION_TYPE_NVDLA     0x00000006	/* Action Type */
 
-#define ACTION_BAR           0x400 /* Base address register. */
+#define ACTION_CONFIG           0x400 /* CONFIG register. */
 
 #endif	/* __SNAP_CONSTANTS__ */

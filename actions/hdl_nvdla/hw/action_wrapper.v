@@ -144,6 +144,11 @@ module action_wrapper #(
     wire [31:0]        nvdla_pwrbus_ram_mb_pd;
     wire [31:0]        nvdla_pwrbus_ram_o_pd;
     wire [31:0]        nvdla_pwrbus_ram_p_pd;
+    wire [7:0]         m_axi_host_mem_arid_wire;
+    wire [7:0]         m_axi_host_mem_awid_wire;
+
+    assign             m_axi_host_mem_arid = m_axi_host_mem_arid_wire[0];
+    assign             m_axi_host_mem_awid = m_axi_host_mem_awid_wire[0];
 
     // Make wuser stick to 0
     assign m_axi_host_mem_wuser          = 0;
@@ -159,7 +164,28 @@ module action_wrapper #(
     assign nvdla_pwrbus_ram_a_pd         = 32'b0;
     assign nvdla_pwrbus_ram_ma_pd        = 32'b0;
     assign nvdla_pwrbus_ram_mb_pd        = 32'b0;
+    assign m_axi_host_mem_awaddr[63:32]  = 32'b0;
+    assign m_axi_host_mem_araddr[63:32]  = 32'b0;
 
+    assign m_axi_host_mem_arburst        = 2'b0;
+    assign m_axi_host_mem_awburst        = 2'b0;
+    assign m_axi_host_mem_arcache        = 4'b0;
+    assign m_axi_host_mem_awcache        = 4'b0;
+    assign m_axi_host_mem_arlock         = 2'b0;
+    assign m_axi_host_mem_arprot         = 3'b0;
+    assign m_axi_host_mem_arqos          = 4'b0;
+    assign m_axi_host_mem_awlock         = 2'b0;
+    assign m_axi_host_mem_awprot         = 3'b0;
+    assign m_axi_host_mem_awqos          = 4'b0;
+
+    assign m_axi_host_mem_arsize         = 3'b011;
+    assign m_axi_host_mem_awsize         = 3'b011;
+
+    assign m_axi_host_mem_aruser         = 8'b0;
+    assign m_axi_host_mem_awuser         = 8'b0;
+
+    assign m_axi_host_mem_arlen[7:4]     = 4'b0;
+    assign m_axi_host_mem_awlen[7:4]     = 4'b0;
 
     NV_nvdla_wrapper nvdla_0 (
       .dla_core_clk                   (dla_core_clk)                  // |< i
@@ -189,9 +215,9 @@ module action_wrapper #(
                                                                       // ------------------
       ,.nvdla_core2dbb_aw_awvalid     (m_axi_host_mem_awvalid)        // |> o
       ,.nvdla_core2dbb_aw_awready     (m_axi_host_mem_awready)        // |< i
-      ,.nvdla_core2dbb_aw_awid        (m_axi_host_mem_awid)           // |> o
-      ,.nvdla_core2dbb_aw_awlen       (m_axi_host_mem_awlen)          // |> o
-      ,.nvdla_core2dbb_aw_awaddr      (m_axi_host_mem_awaddr)         // |> o
+      ,.nvdla_core2dbb_aw_awid        (m_axi_host_mem_awid_wire)      // |> o
+      ,.nvdla_core2dbb_aw_awlen       (m_axi_host_mem_awlen[3:0])     // |> o
+      ,.nvdla_core2dbb_aw_awaddr      (m_axi_host_mem_awaddr[31:0])   // |> o
       ,.nvdla_core2dbb_w_wvalid       (m_axi_host_mem_wvalid)         // |> o
       ,.nvdla_core2dbb_w_wready       (m_axi_host_mem_wready)         // |< i
       ,.nvdla_core2dbb_w_wdata        (m_axi_host_mem_wdata)          // |> o
@@ -199,19 +225,20 @@ module action_wrapper #(
       ,.nvdla_core2dbb_w_wlast        (m_axi_host_mem_wlast)          // |> o
       ,.nvdla_core2dbb_b_bvalid       (m_axi_host_mem_bvalid)         // |< i
       ,.nvdla_core2dbb_b_bready       (m_axi_host_mem_bready)         // |> o
-      ,.nvdla_core2dbb_b_bid          (m_axi_host_mem_bid)            // |< i
+      ,.nvdla_core2dbb_b_bid          ({7'b0, m_axi_host_mem_bid})    // |< i
       ,.nvdla_core2dbb_ar_arvalid     (m_axi_host_mem_arvalid)        // |> o
       ,.nvdla_core2dbb_ar_arready     (m_axi_host_mem_arready)        // |< i
-      ,.nvdla_core2dbb_ar_arid        (m_axi_host_mem_arid)           // |> o
-      ,.nvdla_core2dbb_ar_arlen       (m_axi_host_mem_arlen)          // |> o
-      ,.nvdla_core2dbb_ar_araddr      (m_axi_host_mem_araddr)         // |> o
+      ,.nvdla_core2dbb_ar_arid        (m_axi_host_mem_arid_wire)      // |> o
+      ,.nvdla_core2dbb_ar_arlen       (m_axi_host_mem_arlen[3:0])     // |> o
+      ,.nvdla_core2dbb_ar_araddr      (m_axi_host_mem_araddr[31:0])   // |> o
       ,.nvdla_core2dbb_r_rvalid       (m_axi_host_mem_rvalid)         // |< i
       ,.nvdla_core2dbb_r_rready       (m_axi_host_mem_rready)         // |> o
-      ,.nvdla_core2dbb_r_rid          (m_axi_host_mem_rid)            // |< i
+      ,.nvdla_core2dbb_r_rid          ({7'b0, m_axi_host_mem_rid})    // |< i
       ,.nvdla_core2dbb_r_rlast        (m_axi_host_mem_rlast)          // |< i
       ,.nvdla_core2dbb_r_rdata        (m_axi_host_mem_rdata)          // |< i
                                                                       // Interrput
       ,.ctrl_path_intr_o              (interrput)                     // |> o
+      ,.o_snap_context                (interrupt_ctx)                 // |> o
       ,.nvdla_pwrbus_ram_c_pd         (nvdla_pwrbus_ram_c_pd)         // |< i
       ,.nvdla_pwrbus_ram_ma_pd        (nvdla_pwrbus_ram_ma_pd)        // |< i *
       ,.nvdla_pwrbus_ram_mb_pd        (nvdla_pwrbus_ram_mb_pd)        // |< i *
@@ -219,10 +246,8 @@ module action_wrapper #(
       ,.nvdla_pwrbus_ram_o_pd         (nvdla_pwrbus_ram_o_pd)         // |< i
       ,.nvdla_pwrbus_ram_a_pd         (nvdla_pwrbus_ram_a_pd)         // |< i
 
-      ,.i_snap_app_ready              (1'b1)                          //|> i 
-      ,.i_snap_action_type            (32'h00000006)                  //|> i
-      ,.i_snap_action_version         (32'h00000000)                  //|> i
-      ,.o_snap_context                ()                              //|> o
+      ,.i_snap_action_type            (32'h00000006)                  // |> i
+      ,.i_snap_action_version         (32'h00000000)                  // |> i
       );
        
 endmodule
