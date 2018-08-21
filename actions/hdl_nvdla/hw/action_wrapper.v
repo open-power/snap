@@ -219,7 +219,7 @@ module action_wrapper #(
       ,.nvdla_pwrbus_ram_o_pd         (nvdla_pwrbus_ram_o_pd)         // |< i
       ,.nvdla_pwrbus_ram_a_pd         (nvdla_pwrbus_ram_a_pd)         // |< i
 
-      ,.i_snap_app_ready              (1'b1)                          //|> i 
+      //,.i_snap_app_ready              (1'b1)                          //|> i 
       ,.i_snap_action_type            (32'h00000006)                  //|> i
       ,.i_snap_action_version         (32'h00000000)                  //|> i
       ,.o_snap_context                ()                              //|> o
