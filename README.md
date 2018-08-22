@@ -53,7 +53,7 @@ As of now, the following FPGA cards can be used with SNAP:
   * Semptian NSA121B http://www.semptian.com/proinfo/10.html
 * for POWER9 (CAPI2.0):
   * Nallatech 250SP  http://www.nallatech.com/250sp
-  * Flyslice FX609
+  * Flyslice FX609 http://www.flyslice.com/page434?product_id=27
   * Semptian NSA241 http://www.semptian.com/proinfo/126.html
   * ReflexCES XpressVUP LP9P https://www.reflexces.com/products-solutions/other-cots-boards/xilinx/xpressvup
 
