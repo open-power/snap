@@ -130,7 +130,7 @@ module action_wrapper #(
     output [(C_M_AXI_HOST_MEM_DATA_WIDTH/8)-1 : 0 ] m_axi_host_mem_wstrb      ,
     output [C_M_AXI_HOST_MEM_WUSER_WIDTH-1 : 0 ] m_axi_host_mem_wuser      ,
     output m_axi_host_mem_wvalid
-);
+    );
     wire               dla_core_clk;
     wire               dla_csb_clk;
     wire               dla_reset_rstn;
@@ -144,11 +144,54 @@ module action_wrapper #(
     wire [31:0]        nvdla_pwrbus_ram_mb_pd;
     wire [31:0]        nvdla_pwrbus_ram_o_pd;
     wire [31:0]        nvdla_pwrbus_ram_p_pd;
-    wire [7:0]         m_axi_host_mem_arid_wire;
-    wire [7:0]         m_axi_host_mem_awid_wire;
 
-    assign             m_axi_host_mem_arid = m_axi_host_mem_arid_wire[0];
-    assign             m_axi_host_mem_awid = m_axi_host_mem_awid_wire[0];
+    /**************** Write Address Channel Signals ****************/
+    wire [64-1:0]                   dbb_s_axi_awaddr;
+    wire [3-1:0]                    dbb_s_axi_awprot;
+    wire                            dbb_s_axi_awvalid;
+    wire                            dbb_s_axi_awready;
+    wire [3-1:0]                    dbb_s_axi_awsize;
+    wire [2-1:0]                    dbb_s_axi_awburst;
+    wire [4-1:0]                    dbb_s_axi_awcache;
+    wire [8-1:0]                    dbb_s_axi_awlen;
+    wire [1-1:0]                    dbb_s_axi_awlock;
+    wire [4-1:0]                    dbb_s_axi_awqos;
+    wire [4-1:0]                    dbb_s_axi_awregion;
+    wire [8-1:0]                    dbb_s_axi_awid;
+    /**************** Write Data Channel Signals ****************/
+    wire [64-1:0]                   dbb_s_axi_wdata;
+    wire [64/8-1:0]                 dbb_s_axi_wstrb;
+    wire                            dbb_s_axi_wvalid;
+    wire                            dbb_s_axi_wready;
+    wire                            dbb_s_axi_wlast;
+    /**************** Write Response Channel Signals ****************/
+    wire [2-1:0]                    dbb_s_axi_bresp;
+    wire                            dbb_s_axi_bvalid;
+    wire                            dbb_s_axi_bready;
+    wire [8-1:0]                    dbb_s_axi_bid;
+    /**************** Read Address Channel Signals ****************/
+    wire [64-1:0]                   dbb_s_axi_araddr;
+    wire [3-1:0]                    dbb_s_axi_arprot;
+    wire                            dbb_s_axi_arvalid;
+    wire                            dbb_s_axi_arready;
+    wire [3-1:0]                    dbb_s_axi_arsize;
+    wire [2-1:0]                    dbb_s_axi_arburst;
+    wire [4-1:0]                    dbb_s_axi_arcache;
+    wire [1-1:0]                    dbb_s_axi_arlock;
+    wire [8-1:0]                    dbb_s_axi_arlen;
+    wire [4-1:0]                    dbb_s_axi_arqos;
+    wire [4-1:0]                    dbb_s_axi_arregion;
+    wire [8-1:0]                    dbb_s_axi_arid;
+    /**************** Read Data Channel Signals ****************/
+    wire [64-1:0]                   dbb_s_axi_rdata;
+    wire [2-1:0]                    dbb_s_axi_rresp;
+    wire                            dbb_s_axi_rvalid;
+    wire                            dbb_s_axi_rready;
+    wire                            dbb_s_axi_rlast;
+    wire [8-1:0]                    dbb_s_axi_rid;
+
+    assign m_axi_host_mem_arid = 1'b0;
+    assign m_axi_host_mem_awid = 1'b0;
 
     // Make wuser stick to 0
     assign m_axi_host_mem_wuser          = 0;
@@ -164,90 +207,193 @@ module action_wrapper #(
     assign nvdla_pwrbus_ram_a_pd         = 32'b0;
     assign nvdla_pwrbus_ram_ma_pd        = 32'b0;
     assign nvdla_pwrbus_ram_mb_pd        = 32'b0;
-    assign m_axi_host_mem_awaddr[63:32]  = 32'b0;
-    assign m_axi_host_mem_araddr[63:32]  = 32'b0;
 
-    assign m_axi_host_mem_arburst        = 2'b0;
-    assign m_axi_host_mem_awburst        = 2'b0;
-    assign m_axi_host_mem_arcache        = 4'b0;
-    assign m_axi_host_mem_awcache        = 4'b0;
-    assign m_axi_host_mem_arlock         = 2'b0;
-    assign m_axi_host_mem_arprot         = 3'b0;
-    assign m_axi_host_mem_arqos          = 4'b0;
-    assign m_axi_host_mem_awlock         = 2'b0;
-    assign m_axi_host_mem_awprot         = 3'b0;
-    assign m_axi_host_mem_awqos          = 4'b0;
+    // Always assume incremental burst
+    assign dbb_s_axi_arburst        = 2'b01;
+    assign dbb_s_axi_awburst        = 2'b01;
 
-    assign m_axi_host_mem_arsize         = 3'b011;
-    assign m_axi_host_mem_awsize         = 3'b011;
+    assign dbb_s_axi_arcache        = 4'b0010;
+    assign dbb_s_axi_awcache        = 4'b0010;
+    assign dbb_s_axi_arlock         = 2'b00;
+    assign dbb_s_axi_arprot         = 3'b000;
+    assign dbb_s_axi_arqos          = 4'b0000;
+    assign dbb_s_axi_awlock         = 2'b00;
+    assign dbb_s_axi_awprot         = 3'b000;
+    assign dbb_s_axi_awqos          = 4'b0000;
+
+    // Burst size always match with data bus width
+    assign dbb_s_axi_arsize         = 3'b011;
+    assign dbb_s_axi_awsize         = 3'b011;
 
     assign m_axi_host_mem_aruser         = 8'b0;
     assign m_axi_host_mem_awuser         = 8'b0;
 
-    assign m_axi_host_mem_arlen[7:4]     = 4'b0;
-    assign m_axi_host_mem_awlen[7:4]     = 4'b0;
+    assign dbb_s_axi_arlen[7:4]     = 4'b0;
+    assign dbb_s_axi_awlen[7:4]     = 4'b0;
+    assign dbb_s_axi_araddr[63:32]  =32'b0;
+    assign dbb_s_axi_awaddr[63:32]  =32'b0;
 
     NV_nvdla_wrapper nvdla_0 (
-      .dla_core_clk                   (dla_core_clk)                  // |< i
-      ,.global_clk_ovr_on             (global_clk_ovr_on)             // |< i
-      ,.tmc2slcg_disable_clock_gating (tmc2slcg_disable_clock_gating) // |< i
-      ,.direct_reset_                 (direct_reset_)                 // |< i
-      ,.test_mode                     (test_mode)                     // |< i
-                                                                      // AXI-lite Interface
-      ,.s_axi_aclk                    (dla_csb_clk)                   // |< i
-      ,.s_axi_aresetn                 (dla_reset_rstn)                // |< i
-      ,.s_axi_awaddr                  (s_axi_ctrl_reg_araddr)         // |< i
-      ,.s_axi_awvalid                 (s_axi_ctrl_reg_awvalid)        // |< i
-      ,.s_axi_awready                 (s_axi_ctrl_reg_awready)        // |> o
-      ,.s_axi_wdata                   (s_axi_ctrl_reg_wdata)          // |< i
-      ,.s_axi_wvalid                  (s_axi_ctrl_reg_wvalid)         // |< i
-      ,.s_axi_wready                  (s_axi_ctrl_reg_wready)         // |> o
-      ,.s_axi_bresp                   (s_axi_ctrl_reg_bresp)          // |> o
-      ,.s_axi_bvalid                  (s_axi_ctrl_reg_bvalid)         // |> o
-      ,.s_axi_bready                  (s_axi_ctrl_reg_bready)         // |< i
-      ,.s_axi_araddr                  (s_axi_ctrl_reg_araddr)         // |< i
-      ,.s_axi_arvalid                 (s_axi_ctrl_reg_arvalid)        // |< i
-      ,.s_axi_arready                 (s_axi_ctrl_reg_arready)        // |> o
-      ,.s_axi_rdata                   (s_axi_ctrl_reg_rdata)          // |> o
-      ,.s_axi_rresp                   (s_axi_ctrl_reg_rresp)          // |> o
-      ,.s_axi_rvalid                  (s_axi_ctrl_reg_rvalid)         // |> o
-      ,.s_axi_rready                  (s_axi_ctrl_reg_rready)         // |< i
-                                                                      // ------------------
-      ,.nvdla_core2dbb_aw_awvalid     (m_axi_host_mem_awvalid)        // |> o
-      ,.nvdla_core2dbb_aw_awready     (m_axi_host_mem_awready)        // |< i
-      ,.nvdla_core2dbb_aw_awid        (m_axi_host_mem_awid_wire)      // |> o
-      ,.nvdla_core2dbb_aw_awlen       (m_axi_host_mem_awlen[3:0])     // |> o
-      ,.nvdla_core2dbb_aw_awaddr      (m_axi_host_mem_awaddr[31:0])   // |> o
-      ,.nvdla_core2dbb_w_wvalid       (m_axi_host_mem_wvalid)         // |> o
-      ,.nvdla_core2dbb_w_wready       (m_axi_host_mem_wready)         // |< i
-      ,.nvdla_core2dbb_w_wdata        (m_axi_host_mem_wdata)          // |> o
-      ,.nvdla_core2dbb_w_wstrb        (m_axi_host_mem_wstrb)          // |> o
-      ,.nvdla_core2dbb_w_wlast        (m_axi_host_mem_wlast)          // |> o
-      ,.nvdla_core2dbb_b_bvalid       (m_axi_host_mem_bvalid)         // |< i
-      ,.nvdla_core2dbb_b_bready       (m_axi_host_mem_bready)         // |> o
-      ,.nvdla_core2dbb_b_bid          ({7'b0, m_axi_host_mem_bid})    // |< i
-      ,.nvdla_core2dbb_ar_arvalid     (m_axi_host_mem_arvalid)        // |> o
-      ,.nvdla_core2dbb_ar_arready     (m_axi_host_mem_arready)        // |< i
-      ,.nvdla_core2dbb_ar_arid        (m_axi_host_mem_arid_wire)      // |> o
-      ,.nvdla_core2dbb_ar_arlen       (m_axi_host_mem_arlen[3:0])     // |> o
-      ,.nvdla_core2dbb_ar_araddr      (m_axi_host_mem_araddr[31:0])   // |> o
-      ,.nvdla_core2dbb_r_rvalid       (m_axi_host_mem_rvalid)         // |< i
-      ,.nvdla_core2dbb_r_rready       (m_axi_host_mem_rready)         // |> o
-      ,.nvdla_core2dbb_r_rid          ({7'b0, m_axi_host_mem_rid})    // |< i
-      ,.nvdla_core2dbb_r_rlast        (m_axi_host_mem_rlast)          // |< i
-      ,.nvdla_core2dbb_r_rdata        (m_axi_host_mem_rdata)          // |< i
-                                                                      // Interrput
-      ,.ctrl_path_intr_o              (interrput)                     // |> o
-      ,.o_snap_context                (interrupt_ctx)                 // |> o
-      ,.nvdla_pwrbus_ram_c_pd         (nvdla_pwrbus_ram_c_pd)         // |< i
-      ,.nvdla_pwrbus_ram_ma_pd        (nvdla_pwrbus_ram_ma_pd)        // |< i *
-      ,.nvdla_pwrbus_ram_mb_pd        (nvdla_pwrbus_ram_mb_pd)        // |< i *
-      ,.nvdla_pwrbus_ram_p_pd         (nvdla_pwrbus_ram_p_pd)         // |< i
-      ,.nvdla_pwrbus_ram_o_pd         (nvdla_pwrbus_ram_o_pd)         // |< i
-      ,.nvdla_pwrbus_ram_a_pd         (nvdla_pwrbus_ram_a_pd)         // |< i
+        .dla_core_clk                   (dla_core_clk)                  // |< i
+        ,.global_clk_ovr_on             (global_clk_ovr_on)             // |< i
+        ,.tmc2slcg_disable_clock_gating (tmc2slcg_disable_clock_gating) // |< i
+        ,.direct_reset_                 (direct_reset_)                 // |< i
+        ,.test_mode                     (test_mode)                     // |< i
+        // AXI-lite Interface
+        ,.s_axi_aclk                    (dla_csb_clk)                   // |< i
+        ,.s_axi_aresetn                 (dla_reset_rstn)                // |< i
+        ,.s_axi_awaddr                  (s_axi_ctrl_reg_araddr)         // |< i
+        ,.s_axi_awvalid                 (s_axi_ctrl_reg_awvalid)        // |< i
+        ,.s_axi_awready                 (s_axi_ctrl_reg_awready)        // |> o
+        ,.s_axi_wdata                   (s_axi_ctrl_reg_wdata)          // |< i
+        ,.s_axi_wvalid                  (s_axi_ctrl_reg_wvalid)         // |< i
+        ,.s_axi_wready                  (s_axi_ctrl_reg_wready)         // |> o
+        ,.s_axi_bresp                   (s_axi_ctrl_reg_bresp)          // |> o
+        ,.s_axi_bvalid                  (s_axi_ctrl_reg_bvalid)         // |> o
+        ,.s_axi_bready                  (s_axi_ctrl_reg_bready)         // |< i
+        ,.s_axi_araddr                  (s_axi_ctrl_reg_araddr)         // |< i
+        ,.s_axi_arvalid                 (s_axi_ctrl_reg_arvalid)        // |< i
+        ,.s_axi_arready                 (s_axi_ctrl_reg_arready)        // |> o
+        ,.s_axi_rdata                   (s_axi_ctrl_reg_rdata)          // |> o
+        ,.s_axi_rresp                   (s_axi_ctrl_reg_rresp)          // |> o
+        ,.s_axi_rvalid                  (s_axi_ctrl_reg_rvalid)         // |> o
+        ,.s_axi_rready                  (s_axi_ctrl_reg_rready)         // |< i
+        // ------------------
+        ,.nvdla_core2dbb_aw_awvalid     (dbb_s_axi_awvalid)        // |> o
+        ,.nvdla_core2dbb_aw_awready     (dbb_s_axi_awready)        // |< i
+        ,.nvdla_core2dbb_aw_awid        (dbb_s_axi_awid)           // |> o
+        ,.nvdla_core2dbb_aw_awlen       (dbb_s_axi_awlen[3:0])     // |> o
+        ,.nvdla_core2dbb_aw_awaddr      (dbb_s_axi_awaddr[31:0])   // |> o
+        ,.nvdla_core2dbb_w_wvalid       (dbb_s_axi_wvalid)         // |> o
+        ,.nvdla_core2dbb_w_wready       (dbb_s_axi_wready)         // |< i
+        ,.nvdla_core2dbb_w_wdata        (dbb_s_axi_wdata)          // |> o
+        ,.nvdla_core2dbb_w_wstrb        (dbb_s_axi_wstrb)          // |> o
+        ,.nvdla_core2dbb_w_wlast        (dbb_s_axi_wlast)          // |> o
+        ,.nvdla_core2dbb_b_bvalid       (dbb_s_axi_bvalid)         // |< i
+        ,.nvdla_core2dbb_b_bready       (dbb_s_axi_bready)         // |> o
+        ,.nvdla_core2dbb_b_bid          (dbb_s_axi_bid)            // |< i
+        ,.nvdla_core2dbb_ar_arvalid     (dbb_s_axi_arvalid)        // |> o
+        ,.nvdla_core2dbb_ar_arready     (dbb_s_axi_arready)        // |< i
+        ,.nvdla_core2dbb_ar_arid        (dbb_s_axi_arid)           // |> o
+        ,.nvdla_core2dbb_ar_arlen       (dbb_s_axi_arlen[3:0])     // |> o
+        ,.nvdla_core2dbb_ar_araddr      (dbb_s_axi_araddr[31:0])   // |> o
+        ,.nvdla_core2dbb_r_rvalid       (dbb_s_axi_rvalid)         // |< i
+        ,.nvdla_core2dbb_r_rready       (dbb_s_axi_rready)         // |> o
+        ,.nvdla_core2dbb_r_rid          (dbb_s_axi_rid)            // |< i
+        ,.nvdla_core2dbb_r_rlast        (dbb_s_axi_rlast)          // |< i
+        ,.nvdla_core2dbb_r_rdata        (dbb_s_axi_rdata)          // |< i
+        // Interrput
+        ,.ctrl_path_intr_o              (interrput)                     // |> o
+        ,.o_snap_context                (interrupt_ctx)                 // |> o
+        ,.nvdla_pwrbus_ram_c_pd         (nvdla_pwrbus_ram_c_pd)         // |< i
+        ,.nvdla_pwrbus_ram_ma_pd        (nvdla_pwrbus_ram_ma_pd)        // |< i *
+        ,.nvdla_pwrbus_ram_mb_pd        (nvdla_pwrbus_ram_mb_pd)        // |< i *
+        ,.nvdla_pwrbus_ram_p_pd         (nvdla_pwrbus_ram_p_pd)         // |< i
+        ,.nvdla_pwrbus_ram_o_pd         (nvdla_pwrbus_ram_o_pd)         // |< i
+        ,.nvdla_pwrbus_ram_a_pd         (nvdla_pwrbus_ram_a_pd)         // |< i
 
-      ,.i_snap_action_type            (32'h00000006)                  // |> i
-      ,.i_snap_action_version         (32'h00000000)                  // |> i
-      );
-       
+        ,.i_snap_action_type            (32'h00000006)                  // |> i
+        ,.i_snap_action_version         (32'h00000000)                  // |> i
+        );
+
+    dbb_axi_dbus_converter 
+    dbus_converter
+    (
+        //**********************************************
+        // DUT MASTER INTERFACE
+        //**********************************************
+        /**************** Write Address Channel Signals ****************/
+        .m_axi_awaddr   ( m_axi_host_mem_awaddr),
+        .m_axi_awprot   ( m_axi_host_mem_awprot),
+        .m_axi_awvalid  ( m_axi_host_mem_awvalid),
+        .m_axi_awready  ( m_axi_host_mem_awready),
+        .m_axi_awsize   ( m_axi_host_mem_awsize),
+        .m_axi_awburst  ( m_axi_host_mem_awburst),
+        .m_axi_awcache  ( m_axi_host_mem_awcache),
+        .m_axi_awlen    ( m_axi_host_mem_awlen),
+        .m_axi_awlock   ( m_axi_host_mem_awlock),
+        .m_axi_awqos    ( m_axi_host_mem_awqos),
+        .m_axi_awregion ( m_axi_host_mem_awregion),
+        /**************** Write Data Channel Signals ****************/
+        .m_axi_wdata    ( m_axi_host_mem_wdata),
+        .m_axi_wstrb    ( m_axi_host_mem_wstrb),
+        .m_axi_wvalid   ( m_axi_host_mem_wvalid),
+        .m_axi_wready   ( m_axi_host_mem_wready),
+        .m_axi_wlast    ( m_axi_host_mem_wlast),
+        /**************** Write Response Channel Signals ****************/
+        .m_axi_bresp    ( m_axi_host_mem_bresp),
+        .m_axi_bvalid   ( m_axi_host_mem_bvalid),
+        .m_axi_bready   ( m_axi_host_mem_bready),
+        /**************** Read Address Channel Signals ****************/
+        .m_axi_araddr   ( m_axi_host_mem_araddr),
+        .m_axi_arprot   ( m_axi_host_mem_arprot),
+        .m_axi_arvalid  ( m_axi_host_mem_arvalid),
+        .m_axi_arready  ( m_axi_host_mem_arready),
+        .m_axi_arsize   ( m_axi_host_mem_arsize),
+        .m_axi_arburst  ( m_axi_host_mem_arburst),
+        .m_axi_arcache  ( m_axi_host_mem_arcache),
+        .m_axi_arlock   ( m_axi_host_mem_arlock),
+        .m_axi_arlen    ( m_axi_host_mem_arlen),
+        .m_axi_arqos    ( m_axi_host_mem_arqos),
+        .m_axi_arregion ( m_axi_host_mem_arregion),
+        /**************** Read Data Channel Signals ****************/
+        .m_axi_rdata    ( m_axi_host_mem_rdata),
+        .m_axi_rresp    ( m_axi_host_mem_rresp),
+        .m_axi_rvalid   ( m_axi_host_mem_rvalid),
+        .m_axi_rready   ( m_axi_host_mem_rready),
+        .m_axi_rlast    ( m_axi_host_mem_rlast),
+        /**************** System Signals ****************/
+
+        //**********************************************
+        // DUT SLAVE INTERFACE
+        //**********************************************
+        /**************** Write Address Channel Signals ****************/
+        .s_axi_awaddr   ( dbb_s_axi_awaddr),
+        .s_axi_awprot   ( dbb_s_axi_awprot),
+        .s_axi_awvalid  ( dbb_s_axi_awvalid),
+        .s_axi_awready  ( dbb_s_axi_awready),
+        .s_axi_awsize   ( dbb_s_axi_awsize),
+        .s_axi_awburst  ( dbb_s_axi_awburst),
+        .s_axi_awcache  ( dbb_s_axi_awcache),
+        .s_axi_awlen    ( dbb_s_axi_awlen),
+        .s_axi_awlock   ( dbb_s_axi_awlock),
+        .s_axi_awqos    ( dbb_s_axi_awqos),
+        .s_axi_awregion ( dbb_s_axi_awregion),
+        .s_axi_awid     ( dbb_s_axi_awid),
+        /**************** Write Data Channel Signals ****************/
+        .s_axi_wdata    ( dbb_s_axi_wdata),
+        .s_axi_wstrb    ( dbb_s_axi_wstrb),
+        .s_axi_wvalid   ( dbb_s_axi_wvalid),
+        .s_axi_wready   ( dbb_s_axi_wready),
+        .s_axi_wlast    ( dbb_s_axi_wlast),
+        /**************** Write Response Channel Signals ****************/
+        .s_axi_bresp    ( dbb_s_axi_bresp),
+        .s_axi_bvalid   ( dbb_s_axi_bvalid),
+        .s_axi_bready   ( dbb_s_axi_bready),
+        .s_axi_bid      ( dbb_s_axi_bid),
+        /**************** Read Address Channel Signals ****************/
+        .s_axi_araddr   ( dbb_s_axi_araddr),
+        .s_axi_arprot   ( dbb_s_axi_arprot),
+        .s_axi_arvalid  ( dbb_s_axi_arvalid),
+        .s_axi_arready  ( dbb_s_axi_arready),
+        .s_axi_arsize   ( dbb_s_axi_arsize),
+        .s_axi_arburst  ( dbb_s_axi_arburst),
+        .s_axi_arcache  ( dbb_s_axi_arcache),
+        .s_axi_arlock   ( dbb_s_axi_arlock),
+        .s_axi_arlen    ( dbb_s_axi_arlen),
+        .s_axi_arqos    ( dbb_s_axi_arqos),
+        .s_axi_arregion ( dbb_s_axi_arregion),
+        .s_axi_arid     ( dbb_s_axi_arid),
+        /**************** Read Data Channel Signals ****************/
+        .s_axi_rdata    ( dbb_s_axi_rdata),
+        .s_axi_rresp    ( dbb_s_axi_rresp),
+        .s_axi_rvalid   ( dbb_s_axi_rvalid),
+        .s_axi_rready   ( dbb_s_axi_rready),
+        .s_axi_rlast    ( dbb_s_axi_rlast),
+        .s_axi_rid      ( dbb_s_axi_rid),
+        /**************** System Signals ****************/
+        .s_axi_aclk     ( dla_core_clk),
+        .s_axi_aresetn  ( dla_reset_rstn)
+        );
+
 endmodule
