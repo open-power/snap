@@ -66,10 +66,12 @@ nvdla_capi_test.o Runtime.o Emulator.o Check.o:
 	for dir in $(SUBDIRS_UMD); do \
 		$(MAKE) -C $$dir; \
 	done
-	cp -f $(NVDLA_UMD_OUT)/nvdla_runtime/*.o $(ACTION_ROOT)/sw/
-	cp -f $(NVDLA_UMD_OUT)/libnvdla_runtime/*.o $(ACTION_ROOT)/sw/
-	cp -f $(NVDLA_UMD_OUT)/libnvdla_runtime/$(ACTION_ROOT)/sw/nvdla-sw/umd/core/common/*.o $(ACTION_ROOT)/sw/
-	cp -f $(NVDLA_UMD_OUT)/libnvdla_runtime/$(ACTION_ROOT)/sw/nvdla-sw/umd/port/linux/*.o $(ACTION_ROOT)/sw/
+	find $(NVDLA_UMD_OUT)/nvdla_runtime/ -name '*.o' -exec cp {} $(ACTION_ROOT)/sw/  \;
+	find $(NVDLA_UMD_OUT)/libnvdla_runtime/ -name '*.o' -exec cp {} $(ACTION_ROOT)/sw/  \;
+	#cp -f $(NVDLA_UMD_OUT)/nvdla_runtime/*.o $(ACTION_ROOT)/sw/
+	#cp -f $(NVDLA_UMD_OUT)/libnvdla_runtime/*.o $(ACTION_ROOT)/sw/
+	#cp -f $(NVDLA_UMD_OUT)/libnvdla_runtime/$(ACTION_ROOT)/sw/nvdla-sw/umd/core/common/*.o $(ACTION_ROOT)/sw/
+	#cp -f $(NVDLA_UMD_OUT)/libnvdla_runtime/$(ACTION_ROOT)/sw/nvdla-sw/umd/port/linux/*.o $(ACTION_ROOT)/sw/
 
 snap_nvdla_umd_objs += nvdla_capi_test.o \
                        Server.o \
@@ -91,8 +93,10 @@ nvdla_capi.o nvdla_core_callbacks.o:
 	for dir in $(SUBDIRS_KMD); do \
 		$(MAKE) -C $$dir; \
 	done
-	cp -f $(NVDLA_KMD_OUT)/kmd/libnvdla_kmd/*.o $(ACTION_ROOT)/sw/
-	cp -f $(NVDLA_KMD_OUT)/firmware/libnvdla_firmware/*.o $(ACTION_ROOT)/sw/
+	find $(NVDLA_KMD_OUT)/kmd/libnvdla_kmd/ -name '*.o' -exec cp {} $(ACTION_ROOT)/sw/  \;
+	find $(NVDLA_KMD_OUT)/firmware/libnvdla_firmware/ -name '*.o' -exec cp {} $(ACTION_ROOT)/sw/  \;
+	#cp -f $(NVDLA_KMD_OUT)/kmd/libnvdla_kmd/*.o $(ACTION_ROOT)/sw/
+	#cp -f $(NVDLA_KMD_OUT)/firmware/libnvdla_firmware/*.o $(ACTION_ROOT)/sw/
 
 snap_nvdla_kmd_objs += nvdla_capi.o \
                        nvdla_core_callbacks.o \
