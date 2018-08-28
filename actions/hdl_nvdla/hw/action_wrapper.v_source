@@ -190,8 +190,10 @@ module action_wrapper #(
     wire                            dbb_s_axi_rlast;
     wire [8-1:0]                    dbb_s_axi_rid;
 
-    assign m_axi_host_mem_arid = 1'b0;
-    assign m_axi_host_mem_awid = 1'b0;
+    //assign m_axi_host_mem_arid = 1'b0;
+    //assign m_axi_host_mem_awid = 1'b0;
+    assign m_axi_host_mem_arid = dbb_s_axi_arid[0];
+    assign m_axi_host_mem_awid = dbb_s_axi_awid[0];
 
     // Make wuser stick to 0
     assign m_axi_host_mem_wuser          = 0;
