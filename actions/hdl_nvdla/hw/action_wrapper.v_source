@@ -235,6 +235,8 @@ module action_wrapper #(
     assign dbb_s_axi_araddr[63:32]  =32'b0;
     assign dbb_s_axi_awaddr[63:32]  =32'b0;
 
+    assign interrupt_src = 0;
+
     NV_nvdla_wrapper nvdla_0 (
         .dla_core_clk                   (dla_core_clk)                  // |< i
         ,.global_clk_ovr_on             (global_clk_ovr_on)             // |< i
@@ -284,8 +286,8 @@ module action_wrapper #(
         ,.nvdla_core2dbb_r_rid          (dbb_s_axi_rid)            // |< i
         ,.nvdla_core2dbb_r_rlast        (dbb_s_axi_rlast)          // |< i
         ,.nvdla_core2dbb_r_rdata        (dbb_s_axi_rdata)          // |< i
-        // Interrput
-        ,.ctrl_path_intr_o              (interrput)                     // |> o
+        // Interrupt
+        ,.ctrl_path_intr_o              (interrupt)                     // |> o
         ,.o_snap_context                (interrupt_ctx)                 // |> o
         ,.nvdla_pwrbus_ram_c_pd         (nvdla_pwrbus_ram_c_pd)         // |< i
         ,.nvdla_pwrbus_ram_ma_pd        (nvdla_pwrbus_ram_ma_pd)        // |< i *
