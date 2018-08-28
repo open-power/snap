@@ -21,6 +21,9 @@
 
 . $SNAP_ROOT/snap_env.sh
 
+# NVDLA specific variables
+NVDLA_CONFIG=nv_small
+
 if [ -L ./nvdla ]; then
     unlink ./nvdla
 fi
@@ -41,25 +44,42 @@ if [ -L ./defs ]; then
     unlink ./defs
 fi
 
-if [ -L ../ip ]; then
-    unlink ../ip
+if [ -L ../fpga_ip ]; then
+    unlink ../fpga_ip
 fi
 
 if [ -L ./ram_wrapper ]; then
     unlink ./ram_wrapper
 fi
 
-if [ -z $NVDLA_ROOT ]; then
-  echo "WARNING!!! Please set NVDLA_ROOT to the path of nvdla"
-elif [ ! -d $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod ]; then
-  echo "WARNING!!! Please go to nvdla-capi repository and execute './tools/bin/tmake -build vmod' to generate the verilog models"
+if [ ! -d ../nvdla-capi ]; then
+    echo "WARNING!!! Please use 'git submodule init' to initialize nvdla hardware IP."
+    exit -1
+elif [ ! -d ../nvdla-capi/outdir/$NVDLA_CONFIG ]; then
+    cd ../nvdla-capi/; make USE_NV_ENV=1 NV_PROJ=$NVDLA_CONFIG
+    ./tools/bin/tmake -clean -build vmod
+    if [ $? -ne 0 ]; then
+        echo "ERROR while making NVDLA-CAPI hardware."
+        exit -1
+    fi
+    cd ../hw
 else
-  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/nvdla               nvdla
-  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/include             include
-  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/vlibs               vlibs
-  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/fifos               fifos
-  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/fpga_ip/ram_wrapper ram_wrapper
-  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/vmod/fpga_ip             ../ip
-  ln -s $NVDLA_ROOT/nvdla-capi/outdir/nv_small/spec/defs                defs
+    echo "NVDLA hardware is ready for use."
 fi
 
+ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/nvdla               nvdla
+ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/include             include
+ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/vlibs               vlibs
+ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/fifos               fifos
+ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/fpga_ip/ram_wrapper ram_wrapper
+ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/fpga_ip             ../fpga_ip
+ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/spec/defs                defs
+
+for vsource in *.v_source; do
+    vfile=`echo $vsource | sed 's/v_source$/v/'`
+    touch $vfile
+    cat $vsource > $vfile
+    echo -e "\t                        generating $vfile"
+    width=`sed -n -e 's/\`define NVDLA_PRIMARY_MEMIF_WIDTH //p' defs/project.vh`
+    sed -i "s/#NVDLA_DBB_DATA_WIDTH/$width/g" $vfile
+done

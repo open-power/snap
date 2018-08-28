@@ -149,7 +149,7 @@ module action_wrapper #(
     // DBB AXI INTERFACE
     //**********************************************
     /**************** Write Address Channel Signals ****************/
-    wire [64-1:0]                   dbb_s_axi_awaddr;
+    wire [#NVDLA_DBB_DATA_WIDTH-1:0]                   dbb_s_axi_awaddr;
     wire [3-1:0]                    dbb_s_axi_awprot;
     wire                            dbb_s_axi_awvalid;
     wire                            dbb_s_axi_awready;
@@ -162,8 +162,8 @@ module action_wrapper #(
     wire [4-1:0]                    dbb_s_axi_awregion;
     wire [8-1:0]                    dbb_s_axi_awid;
     /**************** Write Data Channel Signals ****************/
-    wire [64-1:0]                   dbb_s_axi_wdata;
-    wire [64/8-1:0]                 dbb_s_axi_wstrb;
+    wire [#NVDLA_DBB_DATA_WIDTH-1:0]                   dbb_s_axi_wdata;
+    wire [#NVDLA_DBB_DATA_WIDTH/8-1:0]                 dbb_s_axi_wstrb;
     wire                            dbb_s_axi_wvalid;
     wire                            dbb_s_axi_wready;
     wire                            dbb_s_axi_wlast;
@@ -173,7 +173,7 @@ module action_wrapper #(
     wire                            dbb_s_axi_bready;
     wire [8-1:0]                    dbb_s_axi_bid;
     /**************** Read Address Channel Signals ****************/
-    wire [64-1:0]                   dbb_s_axi_araddr;
+    wire [#NVDLA_DBB_DATA_WIDTH-1:0]                   dbb_s_axi_araddr;
     wire [3-1:0]                    dbb_s_axi_arprot;
     wire                            dbb_s_axi_arvalid;
     wire                            dbb_s_axi_arready;
@@ -186,7 +186,7 @@ module action_wrapper #(
     wire [4-1:0]                    dbb_s_axi_arregion;
     wire [8-1:0]                    dbb_s_axi_arid;
     /**************** Read Data Channel Signals ****************/
-    wire [64-1:0]                   dbb_s_axi_rdata;
+    wire [#NVDLA_DBB_DATA_WIDTH-1:0]                   dbb_s_axi_rdata;
     wire [2-1:0]                    dbb_s_axi_rresp;
     wire                            dbb_s_axi_rvalid;
     wire                            dbb_s_axi_rready;

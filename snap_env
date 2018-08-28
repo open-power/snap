@@ -169,9 +169,6 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hdl_example'
   elif [ -n "$HDL_NVDLA" ]; then
     AR='${SNAP_ROOT}/actions/hdl_nvdla'
-    if [ -z "$NVDLA_ROOT" ]; then
-        SETUP_EMPTY="$SETUP_EMPTY\n NVDLA_ROOT"
-    fi
   elif [ -n "$HDL_STRINGMATCH" ]; then
     AR='${SNAP_ROOT}/actions/hdl_stringmatch'
     if [ -z "$STRING_MATCH_VERILOG" ]; then
