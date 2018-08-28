@@ -20,7 +20,7 @@
 
 `timescale 1ns/1ps
 
-`include "project.vh"
+//`include "project.vh"
 
 module action_wrapper #(
     // Parameters of Axi Slave Bus Interface AXI_CTRL_REG
