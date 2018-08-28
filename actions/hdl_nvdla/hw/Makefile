@@ -26,6 +26,7 @@ config:
 
 clean:
 	@$(RM) $(vhd_files)
+	-@$(RM) -rf ../nvdla-capi/outdir
 
 vhdl:
 
