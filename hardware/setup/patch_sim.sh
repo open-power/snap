@@ -47,6 +47,7 @@ if [ "$NAME" == "top.sh" ]; then
               if [ -f ${SNAP_HARDWARE_ROOT}/sim/xcelium/run.f ]; then
 #               perl -i.ori -pe 's/(.*\/verilog\/top.v)/ -sv $1/mg' ${SNAP_HARDWARE_ROOT}/sim/xcelium/run.f; # compile top.v with system verilog, not needed anymore, since we work now with top.sv
                 perl -i.ori -pe 'BEGIN{undef $/;} s/(^-makelib.*\n.*glbl.v.*\n.*endlib)//mg' ${SNAP_HARDWARE_ROOT}/sim/xcelium/run.f; # remove glbl.v from compile list
+                perl -i.ori -pe 'BEGIN{undef $/;} s/(^-endlib.*\n^-makelib xcelium_lib\/.* \\\n)//mg' ${SNAP_HARDWARE_ROOT}/sim/xcelium/run.f; # merge everything to one lib
               fi
               ;;
     "questa"|"modelsim")
