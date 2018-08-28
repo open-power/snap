@@ -145,6 +145,9 @@ module action_wrapper #(
     wire [31:0]        nvdla_pwrbus_ram_o_pd;
     wire [31:0]        nvdla_pwrbus_ram_p_pd;
 
+    //**********************************************
+    // DBB AXI INTERFACE
+    //**********************************************
     /**************** Write Address Channel Signals ****************/
     wire [64-1:0]                   dbb_s_axi_awaddr;
     wire [3-1:0]                    dbb_s_axi_awprot;
@@ -190,6 +193,51 @@ module action_wrapper #(
     wire                            dbb_s_axi_rlast;
     wire [8-1:0]                    dbb_s_axi_rid;
 
+    //**********************************************
+    // SRAM AXI INTERFACE
+    //**********************************************
+    /********* Write Address Channel Signals of SRAM***********/
+    wire                            cvsram_s_axi_awvalid;
+    wire                            cvsram_s_axi_awready;
+    wire [8-1:0]                    cvsram_s_axi_awid;
+    wire [8-1:0]                    cvsram_s_axi_awlen;
+    wire [64-1:0]                   cvsram_s_axi_awaddr;
+    wire [3-1:0]                    cvsram_s_axi_awsize;
+    wire [2-1:0]                    cvsram_s_axi_awburst;
+    wire                            cvsram_s_axi_awlock;
+    wire [4-1:0]                    cvsram_s_axi_awcache;
+    wire [3-1:0]                    cvsram_s_axi_awprot;
+    /*********** Write Data Channel Signals of SRAM************/
+    wire                            cvsram_s_axi_wvalid;
+    wire                            cvsram_s_axi_wready;
+    wire [256-1:0]                  cvsram_s_axi_wdata;
+    wire [256/8-1:0]                cvsram_s_axi_wstrb;
+    wire                            cvsram_s_axi_wlast;
+    /********* Write Response Channel Signals of SRAM**********/
+    wire                            cvsram_s_axi_bvalid;
+    wire                            cvsram_s_axi_bready;
+    wire [8-1:0]                    cvsram_s_axi_bid;
+    wire [2-1:0]                    cvsram_s_axi_bresp;
+    /********** Read Address Channel Signals of SRAM***********/
+    wire                            cvsram_s_axi_arvalid;
+    wire                            cvsram_s_axi_arready;
+    wire [8-1:0]                    cvsram_s_axi_arid;
+    wire [8-1:0]                    cvsram_s_axi_arlen;
+    wire [64-1:0]                   cvsram_s_axi_araddr;
+    wire [3-1:0]                    cvsram_s_axi_arsize;
+    wire [2-1:0]                    cvsram_s_axi_arburst;
+    wire                            cvsram_s_axi_arlock;
+    wire [4-1:0]                    cvsram_s_axi_arcache;
+    wire [3-1:0]                    cvsram_s_axi_arprot;
+    /********** Read Address Channel Signals of SRAM***********/
+    wire                            cvsram_s_axi_rvalid;
+    wire                            cvsram_s_axi_rready;
+    wire [8-1:0]                    cvsram_s_axi_rid;
+    wire                            cvsram_s_axi_rlast;
+    wire [256-1:0]                  cvsram_s_axi_rdata;
+    wire [2-1:0]                    cvsram_s_axi_rresp;
+
+
     assign m_axi_host_mem_arid = 1'b0;
     assign m_axi_host_mem_awid = 1'b0;
 
@@ -208,6 +256,12 @@ module action_wrapper #(
     assign nvdla_pwrbus_ram_ma_pd        = 32'b0;
     assign nvdla_pwrbus_ram_mb_pd        = 32'b0;
 
+    assign m_axi_host_mem_aruser         = 8'b0;
+    assign m_axi_host_mem_awuser         = 8'b0;
+
+    //**********************************************
+    // DBB AXI INTERFACE
+    //**********************************************
     // Always assume incremental burst
     assign dbb_s_axi_arburst        = 2'b01;
     assign dbb_s_axi_awburst        = 2'b01;
@@ -225,13 +279,33 @@ module action_wrapper #(
     assign dbb_s_axi_arsize         = 3'b011;
     assign dbb_s_axi_awsize         = 3'b011;
 
-    assign m_axi_host_mem_aruser         = 8'b0;
-    assign m_axi_host_mem_awuser         = 8'b0;
-
     assign dbb_s_axi_arlen[7:4]     = 4'b0;
     assign dbb_s_axi_awlen[7:4]     = 4'b0;
-    assign dbb_s_axi_araddr[63:32]  =32'b0;
-    assign dbb_s_axi_awaddr[63:32]  =32'b0;
+    assign dbb_s_axi_araddr[63:32]  = 32'b0;
+    assign dbb_s_axi_awaddr[63:32]  = 32'b0;
+
+    //**********************************************
+    // SRAM AXI INTERFACE
+    //**********************************************
+    // Always assume incremental burst
+    assign cvsram_s_axi_arburst        = 2'b01;
+    assign cvsram_s_axi_awburst        = 2'b01;
+
+    assign cvsram_s_axi_arcache        = 4'b0010;
+    assign cvsram_s_axi_awcache        = 4'b0010;
+    assign cvsram_s_axi_arlock         = 1'b0;
+    assign cvsram_s_axi_arprot         = 3'b000;
+    assign cvsram_s_axi_awlock         = 1'b0;
+    assign cvsram_s_axi_awprot         = 3'b000;
+
+    // Burst size always match with data bus width
+    assign cvsram_s_axi_arsize         = 3'b101;
+    assign cvsram_s_axi_awsize         = 3'b101;
+
+    assign cvsram_s_axi_arlen[7:4]     = 4'b0;
+    assign cvsram_s_axi_awlen[7:4]     = 4'b0;
+    assign cvsram_s_axi_araddr[63:18]  = 46'b0;
+    assign cvsram_s_axi_awaddr[63:18]  = 46'b0;
 
     NV_nvdla_wrapper nvdla_0 (
         .dla_core_clk                   (dla_core_clk)                  // |< i
@@ -282,6 +356,30 @@ module action_wrapper #(
         ,.nvdla_core2dbb_r_rid          (dbb_s_axi_rid)            // |< i
         ,.nvdla_core2dbb_r_rlast        (dbb_s_axi_rlast)          // |< i
         ,.nvdla_core2dbb_r_rdata        (dbb_s_axi_rdata)          // |< i
+        // --------------------
+        ,.nvdla_core2cvsram_aw_awvalid  (cvsram_s_axi_awvalid)     //|> o
+        ,.nvdla_core2cvsram_aw_awready  (cvsram_s_axi_awready)     //|< i
+        ,.nvdla_core2cvsram_aw_awid     (cvsram_s_axi_awid   )     //|> o
+        ,.nvdla_core2cvsram_aw_awlen    (cvsram_s_axi_awlen  )     //|> o
+        ,.nvdla_core2cvsram_aw_awaddr   (cvsram_s_axi_awaddr )     //|> o
+        ,.nvdla_core2cvsram_w_wvalid    (cvsram_s_axi_wvalid )     //|> o
+        ,.nvdla_core2cvsram_w_wready    (cvsram_s_axi_wready )     //|< i
+        ,.nvdla_core2cvsram_w_wdata     (cvsram_s_axi_wdata  )     //|> o
+        ,.nvdla_core2cvsram_w_wstrb     (cvsram_s_axi_wstrb  )     //|> o
+        ,.nvdla_core2cvsram_w_wlast     (cvsram_s_axi_wlast  )     //|> o
+        ,.nvdla_core2cvsram_b_bvalid    (cvsram_s_axi_bvalid )     //|< i
+        ,.nvdla_core2cvsram_b_bready    (cvsram_s_axi_bready )     //|> o
+        ,.nvdla_core2cvsram_b_bid       (cvsram_s_axi_bid    )     //|< i
+        ,.nvdla_core2cvsram_ar_arvalid  (cvsram_s_axi_arvalid)     //|> o
+        ,.nvdla_core2cvsram_ar_arready  (cvsram_s_axi_arready)     //|< i
+        ,.nvdla_core2cvsram_ar_arid     (cvsram_s_axi_arid   )     //|> o
+        ,.nvdla_core2cvsram_ar_arlen    (cvsram_s_axi_arlen  )     //|> o
+        ,.nvdla_core2cvsram_ar_araddr   (cvsram_s_axi_araddr )     //|> o
+        ,.nvdla_core2cvsram_r_rvalid    (cvsram_s_axi_rvalid )     //|< i
+        ,.nvdla_core2cvsram_r_rready    (cvsram_s_axi_rready )     //|> o
+        ,.nvdla_core2cvsram_r_rid       (cvsram_s_axi_rid    )     //|< i
+        ,.nvdla_core2cvsram_r_rlast     (cvsram_s_axi_rlast  )     //|< i
+        ,.nvdla_core2cvsram_r_rdata     (cvsram_s_axi_rdata  )     //|< i
         // Interrput
         ,.ctrl_path_intr_o              (interrput)                     // |> o
         ,.o_snap_context                (interrupt_ctx)                 // |> o
@@ -396,4 +494,43 @@ module action_wrapper #(
         .s_axi_aresetn  ( dla_reset_rstn)
         );
 
+    axi_bram_ctrl_0 axi_bram_0 (
+        .s_axi_aclk     (dla_csb_clk),                     // input wire s_axi_aclk
+        .s_axi_aresetn  (dla_reset_rstn),                  // input wire s_axi_aresetn
+        .s_axi_awid     (cvsram_s_axi_awid),               // input wire [7 : 0] s_axi_awid
+        .s_axi_awaddr   (cvsram_s_axi_awaddr),             // input wire [17 : 0] s_axi_awaddr
+        .s_axi_awlen    (cvsram_s_axi_awlen),              // input wire [7 : 0] s_axi_awlen
+        .s_axi_awsize   (cvsram_s_axi_awsize),             // input wire [2 : 0] s_axi_awsize
+        .s_axi_awburst  (cvsram_s_axi_awburst),            // input wire [1 : 0] s_axi_awburst
+        .s_axi_awlock   (cvsram_s_axi_awlock),             // input wire s_axi_awlock
+        .s_axi_awcache  (cvsram_s_axi_awcache),            // input wire [3 : 0] s_axi_awcache
+        .s_axi_awprot   (cvsram_s_axi_awprot),             // input wire [2 : 0] s_axi_awprot
+        .s_axi_awvalid  (cvsram_s_axi_awvalid),            // input wire s_axi_awvalid
+        .s_axi_awready  (cvsram_s_axi_awready),            // output wire s_axi_awready
+        .s_axi_wdata    (cvsram_s_axi_wdata),              // input wire [255 : 0] s_axi_wdata
+        .s_axi_wstrb    (cvsram_s_axi_wstrb),              // input wire [31 : 0] s_axi_wstrb
+        .s_axi_wlast    (cvsram_s_axi_wlast),              // input wire s_axi_wlast
+        .s_axi_wvalid   (cvsram_s_axi_wvalid),             // input wire s_axi_wvalid
+        .s_axi_wready   (cvsram_s_axi_wready),             // output wire s_axi_wready
+        .s_axi_bid      (cvsram_s_axi_bid),                // output wire [7 : 0] s_axi_bid
+        .s_axi_bresp    (cvsram_s_axi_bresp),              // output wire [1 : 0] s_axi_bresp
+        .s_axi_bvalid   (cvsram_s_axi_bvalid),             // output wire s_axi_bvalid
+        .s_axi_bready   (cvsram_s_axi_bready),             // input wire s_axi_bready
+        .s_axi_arid     (cvsram_s_axi_arid),               // input wire [7 : 0] s_axi_arid
+        .s_axi_araddr   (cvsram_s_axi_araddr),             // input wire [17 : 0] s_axi_araddr
+        .s_axi_arlen    (cvsram_s_axi_arlen),              // input wire [7 : 0] s_axi_arlen
+        .s_axi_arsize   (cvsram_s_axi_arsize),             // input wire [2 : 0] s_axi_arsize
+        .s_axi_arburst  (cvsram_s_axi_arburst),            // input wire [1 : 0] s_axi_arburst
+        .s_axi_arlock   (cvsram_s_axi_arlock),             // input wire s_axi_arlock
+        .s_axi_arcache  (cvsram_s_axi_arcache),            // input wire [3 : 0] s_axi_arcache
+        .s_axi_arprot   (cvsram_s_axi_arprot),             // input wire [2 : 0] s_axi_arprot
+        .s_axi_arvalid  (cvsram_s_axi_arvalid),            // input wire s_axi_arvalid
+        .s_axi_arready  (cvsram_s_axi_arready),            // output wire s_axi_arready
+        .s_axi_rid      (cvsram_s_axi_rid),                // output wire [7 : 0] s_axi_rid
+        .s_axi_rdata    (cvsram_s_axi_rdata),              // output wire [255 : 0] s_axi_rdata
+        .s_axi_rresp    (cvsram_s_axi_rresp),              // output wire [1 : 0] s_axi_rresp
+        .s_axi_rlast    (cvsram_s_axi_rlast),              // output wire s_axi_rlast
+        .s_axi_rvalid   (cvsram_s_axi_rvalid),             // output wire s_axi_rvalid
+        .s_axi_rready   (cvsram_s_axi_rready)              // input wire s_axi_rready
+);
 endmodule
