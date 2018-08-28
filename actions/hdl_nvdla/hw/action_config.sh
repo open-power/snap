@@ -75,3 +75,11 @@ ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/fpga_ip/ram_wrapper ram_
 ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/fpga_ip             ../fpga_ip
 ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/spec/defs                defs
 
+for vsource in *.v_source; do
+    vfile=`echo $vsource | sed 's/v_source$/v/'`
+    touch $vfile
+    cat $vsource > $vfile
+    echo -e "\t                        generating $vfile"
+    width=`sed -n -e 's/\`define NVDLA_PRIMARY_MEMIF_WIDTH //p' defs/project.vh`
+    sed -i "s/#NVDLA_DBB_DATA_WIDTH/$width/g" $vfile
+done
