@@ -149,7 +149,7 @@ module action_wrapper #(
     // DBB AXI INTERFACE
     //**********************************************
     /**************** Write Address Channel Signals ****************/
-    wire [#NVDLA_DBB_DATA_WIDTH-1:0]                   dbb_s_axi_awaddr;
+    wire [#NVDLA_DBB_ADDR_WIDTH-1:0]                   dbb_s_axi_awaddr;
     wire [3-1:0]                    dbb_s_axi_awprot;
     wire                            dbb_s_axi_awvalid;
     wire                            dbb_s_axi_awready;
@@ -173,7 +173,7 @@ module action_wrapper #(
     wire                            dbb_s_axi_bready;
     wire [8-1:0]                    dbb_s_axi_bid;
     /**************** Read Address Channel Signals ****************/
-    wire [#NVDLA_DBB_DATA_WIDTH-1:0]                   dbb_s_axi_araddr;
+    wire [#NVDLA_DBB_ADDR_WIDTH-1:0]                   dbb_s_axi_araddr;
     wire [3-1:0]                    dbb_s_axi_arprot;
     wire                            dbb_s_axi_arvalid;
     wire                            dbb_s_axi_arready;
@@ -201,7 +201,7 @@ module action_wrapper #(
     wire                            cvsram_s_axi_awready;
     wire [8-1:0]                    cvsram_s_axi_awid;
     wire [8-1:0]                    cvsram_s_axi_awlen;
-    wire [64-1:0]                   cvsram_s_axi_awaddr;
+    wire [#NVDLA_SRAM_ADDR_WIDTH-1:0]                   cvsram_s_axi_awaddr;
     wire [3-1:0]                    cvsram_s_axi_awsize;
     wire [2-1:0]                    cvsram_s_axi_awburst;
     wire                            cvsram_s_axi_awlock;
@@ -210,8 +210,8 @@ module action_wrapper #(
     /*********** Write Data Channel Signals of SRAM************/
     wire                            cvsram_s_axi_wvalid;
     wire                            cvsram_s_axi_wready;
-    wire [256-1:0]                  cvsram_s_axi_wdata;
-    wire [256/8-1:0]                cvsram_s_axi_wstrb;
+    wire [#NVDLA_SRAM_DATA_WIDTH-1:0]                  cvsram_s_axi_wdata;
+    wire [#NVDLA_SRAM_DATA_WIDTH/8-1:0]                cvsram_s_axi_wstrb;
     wire                            cvsram_s_axi_wlast;
     /********* Write Response Channel Signals of SRAM**********/
     wire                            cvsram_s_axi_bvalid;
@@ -223,7 +223,7 @@ module action_wrapper #(
     wire                            cvsram_s_axi_arready;
     wire [8-1:0]                    cvsram_s_axi_arid;
     wire [8-1:0]                    cvsram_s_axi_arlen;
-    wire [64-1:0]                   cvsram_s_axi_araddr;
+    wire [#NVDLA_SRAM_ADDR_WIDTH-1:0]                   cvsram_s_axi_araddr;
     wire [3-1:0]                    cvsram_s_axi_arsize;
     wire [2-1:0]                    cvsram_s_axi_arburst;
     wire                            cvsram_s_axi_arlock;
@@ -234,7 +234,7 @@ module action_wrapper #(
     wire                            cvsram_s_axi_rready;
     wire [8-1:0]                    cvsram_s_axi_rid;
     wire                            cvsram_s_axi_rlast;
-    wire [256-1:0]                  cvsram_s_axi_rdata;
+    wire [#NVDLA_SRAM_DATA_WIDTH-1:0]                  cvsram_s_axi_rdata;
     wire [2-1:0]                    cvsram_s_axi_rresp;
 
 
@@ -276,13 +276,13 @@ module action_wrapper #(
     assign dbb_s_axi_awqos          = 4'b0000;
 
     // Burst size always match with data bus width
-    assign dbb_s_axi_arsize         = 3'b011;
-    assign dbb_s_axi_awsize         = 3'b011;
+    assign dbb_s_axi_arsize         = 3'b011;       // 3'b101 if addr_width = 64, 3'b011 if addr_width = 32;
+    assign dbb_s_axi_awsize         = 3'b011;       // 3'b101 if addr_width = 64, 3'b011 if addr_width = 32;
 
     assign dbb_s_axi_arlen[7:4]     = 4'b0;
     assign dbb_s_axi_awlen[7:4]     = 4'b0;
-    assign dbb_s_axi_araddr[63:32]  = 32'b0;
-    assign dbb_s_axi_awaddr[63:32]  = 32'b0;
+    assign dbb_s_axi_araddr[63:#NVDLA_DBB_ADDR_WIDTH-1]  = 'd0;     // if NVDLA_DBB_ADDR_WIDTH >= 64 ?
+    assign dbb_s_axi_awaddr[63:#NVDLA_DBB_ADDR_WIDTH-1]  = 'd0;     // if NVDLA_DBB_ADDR_WIDTH >= 64 ?
 
     //**********************************************
     // SRAM AXI INTERFACE
@@ -299,13 +299,11 @@ module action_wrapper #(
     assign cvsram_s_axi_awprot         = 3'b000;
 
     // Burst size always match with data bus width
-    assign cvsram_s_axi_arsize         = 3'b101;
-    assign cvsram_s_axi_awsize         = 3'b101;
+    assign cvsram_s_axi_arsize         = 3'b101;    // 3'b101 if addr_width = 64, 3'b011 if addr_width = 32;
+    assign cvsram_s_axi_awsize         = 3'b101;    // 3'b101 if addr_width = 64, 3'b011 if addr_width = 32;
 
     assign cvsram_s_axi_arlen[7:4]     = 4'b0;
     assign cvsram_s_axi_awlen[7:4]     = 4'b0;
-    assign cvsram_s_axi_araddr[63:18]  = 46'b0;
-    assign cvsram_s_axi_awaddr[63:18]  = 46'b0;
 
     NV_nvdla_wrapper nvdla_0 (
         .dla_core_clk                   (dla_core_clk)                  // |< i
@@ -337,7 +335,7 @@ module action_wrapper #(
         ,.nvdla_core2dbb_aw_awready     (dbb_s_axi_awready)        // |< i
         ,.nvdla_core2dbb_aw_awid        (dbb_s_axi_awid)           // |> o
         ,.nvdla_core2dbb_aw_awlen       (dbb_s_axi_awlen[3:0])     // |> o
-        ,.nvdla_core2dbb_aw_awaddr      (dbb_s_axi_awaddr[31:0])   // |> o
+        ,.nvdla_core2dbb_aw_awaddr      (dbb_s_axi_awaddr)         // |> o
         ,.nvdla_core2dbb_w_wvalid       (dbb_s_axi_wvalid)         // |> o
         ,.nvdla_core2dbb_w_wready       (dbb_s_axi_wready)         // |< i
         ,.nvdla_core2dbb_w_wdata        (dbb_s_axi_wdata)          // |> o
@@ -350,7 +348,7 @@ module action_wrapper #(
         ,.nvdla_core2dbb_ar_arready     (dbb_s_axi_arready)        // |< i
         ,.nvdla_core2dbb_ar_arid        (dbb_s_axi_arid)           // |> o
         ,.nvdla_core2dbb_ar_arlen       (dbb_s_axi_arlen[3:0])     // |> o
-        ,.nvdla_core2dbb_ar_araddr      (dbb_s_axi_araddr[31:0])   // |> o
+        ,.nvdla_core2dbb_ar_araddr      (dbb_s_axi_araddr)         // |> o
         ,.nvdla_core2dbb_r_rvalid       (dbb_s_axi_rvalid)         // |< i
         ,.nvdla_core2dbb_r_rready       (dbb_s_axi_rready)         // |> o
         ,.nvdla_core2dbb_r_rid          (dbb_s_axi_rid)            // |< i
