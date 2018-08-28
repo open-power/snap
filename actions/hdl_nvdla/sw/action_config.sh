@@ -19,21 +19,14 @@
 ############################################################################
 ############################################################################
 
-. $SNAP_ROOT/snap_env.sh
-
-if [ -L ./nvdla-sw ]; then
-    unlink ./nvdla-sw
+if [ ! -d ./nvdla-sw ]; then
+  echo "WARNING!!! Please use 'git submodule init' to initialize nvdla-sw"
+  exit -1
 fi
 
-if [ -z $NVDLA_ROOT ]; then
-  echo "WARNING!!! Please set NVDLA_ROOT to the path of nvdla"
-else
-  ln -s $NVDLA_ROOT/nvdla-sw ./nvdla-sw
+if [ -d ./nvdla-sw/umd/out ]; then
+  rm -r ./nvdla-sw/umd/out 
 fi
-
-if [ -d $NVDLA_ROOT/nvdla-sw/umd/out ]; then
-  rm -r $NVDLA_ROOT/nvdla-sw/umd/out 
-fi
-if [ -d $NVDLA_ROOT/nvdla-sw/kmd/out ]; then
-  rm -r $NVDLA_ROOT/nvdla-sw/kmd/out 
+if [ -d ./nvdla-sw/kmd/out ]; then
+  rm -r ./nvdla-sw/kmd/out 
 fi

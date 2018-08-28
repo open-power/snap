@@ -20,7 +20,7 @@ foreach fifo_file [glob -nocomplain -dir $action_dir/fifos *.v] {
     }
 }
 
-set action_ipdir $::env(ACTION_ROOT)/ip
+set action_ipdir $::env(ACTION_ROOT)/fpga_ip
 
 #User IPs
 foreach usr_ip [glob -nocomplain -dir $action_ipdir *] {

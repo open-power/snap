@@ -235,6 +235,7 @@ patch_NVMe:
 
 action_hw: prepare_logs
 	@echo -e "[CONFIG ACTION HW....] start `date +"%T %a %b %d %Y"`";
+	@echo -e "                       ACTION configuration in progress, please look into $(LOGS_DIR)/action_make.log for details";
 	@if [ ! -d "$(ACTION_ROOT)" ]; then \
 		echo "                        Error: Path to ACTION_ROOT is not defined properly"; exit -1; \
 	fi

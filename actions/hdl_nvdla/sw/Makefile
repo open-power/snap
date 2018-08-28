@@ -39,8 +39,9 @@ endif
 endif
 
 include $(SNAP_ROOT)/snap_env.sh
-
-ifdef NVDLA_ROOT
+export TOOLCHAIN_PREFIX=x86_64-redhat-linux-
+export TOP_UMD=${ACTION_ROOT}/sw/nvdla-sw/umd
+export TOP_KMD=${ACTION_ROOT}/sw/nvdla-sw/kmd
 
 CXX     = $(CROSS)g++
 CPPFLAGS += -I$(TOP_UMD)/include \
@@ -68,10 +69,6 @@ nvdla_capi_test.o Runtime.o Emulator.o Check.o:
 	done
 	find $(NVDLA_UMD_OUT)/nvdla_runtime/ -name '*.o' -exec cp {} $(ACTION_ROOT)/sw/  \;
 	find $(NVDLA_UMD_OUT)/libnvdla_runtime/ -name '*.o' -exec cp {} $(ACTION_ROOT)/sw/  \;
-	#cp -f $(NVDLA_UMD_OUT)/nvdla_runtime/*.o $(ACTION_ROOT)/sw/
-	#cp -f $(NVDLA_UMD_OUT)/libnvdla_runtime/*.o $(ACTION_ROOT)/sw/
-	#cp -f $(NVDLA_UMD_OUT)/libnvdla_runtime/$(ACTION_ROOT)/sw/nvdla-sw/umd/core/common/*.o $(ACTION_ROOT)/sw/
-	#cp -f $(NVDLA_UMD_OUT)/libnvdla_runtime/$(ACTION_ROOT)/sw/nvdla-sw/umd/port/linux/*.o $(ACTION_ROOT)/sw/
 
 snap_nvdla_umd_objs += nvdla_capi_test.o \
                        Server.o \
@@ -95,8 +92,6 @@ nvdla_capi.o nvdla_core_callbacks.o:
 	done
 	find $(NVDLA_KMD_OUT)/kmd/libnvdla_kmd/ -name '*.o' -exec cp {} $(ACTION_ROOT)/sw/  \;
 	find $(NVDLA_KMD_OUT)/firmware/libnvdla_firmware/ -name '*.o' -exec cp {} $(ACTION_ROOT)/sw/  \;
-	#cp -f $(NVDLA_KMD_OUT)/kmd/libnvdla_kmd/*.o $(ACTION_ROOT)/sw/
-	#cp -f $(NVDLA_KMD_OUT)/firmware/libnvdla_firmware/*.o $(ACTION_ROOT)/sw/
 
 snap_nvdla_kmd_objs += nvdla_capi.o \
                        nvdla_core_callbacks.o \
@@ -120,10 +115,6 @@ projs += snap_nvdla
 
 snap_nvdla: snap_nvdla.o $(snap_nvdla_umd_objs) $(snap_nvdla_kmd_objs)
 	$(CXX) $(CPPFLAGS) $(LDFLAGS) $($(@)_LDFLAGS) $@.o $($(@)_objs) $($(@)_umd_objs) $($(@)_kmd_objs) $($(@)_libs) $(LDLIBS) -lrt -ljpeg -o $@
-
-else
-$(info NVDLA_ROOT is not set, no sw will be built for hdl_nvdla.)
-endif
 
 # If you have the host code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/software.mk
