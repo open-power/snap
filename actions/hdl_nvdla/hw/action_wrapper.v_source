@@ -190,6 +190,35 @@ module action_wrapper #(
     wire                            dbb_s_axi_rlast;
     wire [8-1:0]                    dbb_s_axi_rid;
 
+    wire [C_M_AXI_HOST_MEM_DATA_WIDTH-1 : 0 ] m_axi_host_mem_wdata_wire;
+    reg [C_M_AXI_HOST_MEM_DATA_WIDTH-1 : 0 ] m_axi_host_mem_wdata_reg;
+
+    wire [C_M_AXI_HOST_MEM_DATA_WIDTH-1 : 0 ] m_axi_host_mem_wdata_mask;
+
+    assign m_axi_host_mem_wdata_mask = 
+            m_axi_host_mem_wstrb == 64'h00000000_000000FF ? 512'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_FFFFFFFF_FFFFFFFF :
+            m_axi_host_mem_wstrb == 64'h00000000_0000FF00 ? 512'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_FFFFFFFF_FFFFFFFF_00000000_00000000 :
+            m_axi_host_mem_wstrb == 64'h00000000_00FF0000 ? 512'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_FFFFFFFF_FFFFFFFF_00000000_00000000_00000000_00000000 :
+            m_axi_host_mem_wstrb == 64'h00000000_FF000000 ? 512'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_FFFFFFFF_FFFFFFFF_00000000_00000000_00000000_00000000_00000000_00000000 :
+            m_axi_host_mem_wstrb == 64'h000000FF_00000000 ? 512'h00000000_00000000_00000000_00000000_00000000_00000000_FFFFFFFF_FFFFFFFF_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000 :
+            m_axi_host_mem_wstrb == 64'h0000FF00_00000000 ? 512'h00000000_00000000_00000000_00000000_FFFFFFFF_FFFFFFFF_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000 :
+            m_axi_host_mem_wstrb == 64'h00FF0000_00000000 ? 512'h00000000_00000000_FFFFFFFF_FFFFFFFF_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000 :
+            m_axi_host_mem_wstrb == 64'hFF000000_00000000 ? 512'hFFFFFFFF_FFFFFFFF_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000 :
+                                                            512'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
+
+    assign m_axi_host_mem_wdata = 
+        m_axi_host_mem_wvalid ?
+            (m_axi_host_mem_wdata_reg & ~m_axi_host_mem_wdata_mask) | (m_axi_host_mem_wdata_wire & m_axi_host_mem_wdata_mask)
+        : m_axi_host_mem_wdata_reg; 
+
+    always @(posedge ap_clk or negedge ap_rst_n) begin
+        if (!ap_rst_n) begin
+            m_axi_host_mem_wdata_reg <= {C_M_AXI_HOST_MEM_DATA_WIDTH{1'b0}};
+        end else begin
+            m_axi_host_mem_wdata_reg <= m_axi_host_mem_wdata;
+        end
+    end
+
     //assign m_axi_host_mem_arid = 1'b0;
     //assign m_axi_host_mem_awid = 1'b0;
     assign m_axi_host_mem_arid = dbb_s_axi_arid[0];
@@ -319,7 +348,7 @@ module action_wrapper #(
         .m_axi_awqos    ( m_axi_host_mem_awqos),
         .m_axi_awregion ( m_axi_host_mem_awregion),
         /**************** Write Data Channel Signals ****************/
-        .m_axi_wdata    ( m_axi_host_mem_wdata),
+        .m_axi_wdata    ( m_axi_host_mem_wdata_wire),
         .m_axi_wstrb    ( m_axi_host_mem_wstrb),
         .m_axi_wvalid   ( m_axi_host_mem_wvalid),
         .m_axi_wready   ( m_axi_host_mem_wready),
