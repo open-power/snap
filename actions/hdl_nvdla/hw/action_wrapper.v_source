@@ -149,7 +149,7 @@ module action_wrapper #(
     // DBB AXI INTERFACE
     //**********************************************
     /**************** Write Address Channel Signals ****************/
-    wire [#NVDLA_DBB_ADDR_WIDTH-1:0]                   dbb_s_axi_awaddr;
+    wire [64-1:0]                   dbb_s_axi_awaddr;
     wire [3-1:0]                    dbb_s_axi_awprot;
     wire                            dbb_s_axi_awvalid;
     wire                            dbb_s_axi_awready;
@@ -276,13 +276,16 @@ module action_wrapper #(
     assign dbb_s_axi_awqos          = 4'b0000;
 
     // Burst size always match with data bus width
-    assign dbb_s_axi_arsize         = 3'b011;       // 3'b101 if addr_width = 64, 3'b011 if addr_width = 32;
-    assign dbb_s_axi_awsize         = 3'b011;       // 3'b101 if addr_width = 64, 3'b011 if addr_width = 32;
+    assign dbb_s_axi_arsize         = 3'd#NVDLA_PRIMARY_MEMIF_WIDTH_LOG2;
+    assign dbb_s_axi_awsize         = 3'd#NVDLA_PRIMARY_MEMIF_WIDTH_LOG2;
 
     assign dbb_s_axi_arlen[7:4]     = 4'b0;
     assign dbb_s_axi_awlen[7:4]     = 4'b0;
-    assign dbb_s_axi_araddr[63:#NVDLA_DBB_ADDR_WIDTH-1]  = 'd0;     // if NVDLA_DBB_ADDR_WIDTH >= 64 ?
-    assign dbb_s_axi_awaddr[63:#NVDLA_DBB_ADDR_WIDTH-1]  = 'd0;     // if NVDLA_DBB_ADDR_WIDTH >= 64 ?
+
+    #ifdef NVDLA_DBB_ADDR_WIDTH < 64
+    assign dbb_s_axi_araddr[63:32]  = 32'b0;
+    assign dbb_s_axi_awaddr[63:32]  = 32'b0;
+    #endif
 
     //**********************************************
     // SRAM AXI INTERFACE
@@ -299,8 +302,8 @@ module action_wrapper #(
     assign cvsram_s_axi_awprot         = 3'b000;
 
     // Burst size always match with data bus width
-    assign cvsram_s_axi_arsize         = 3'b101;    // 3'b101 if addr_width = 64, 3'b011 if addr_width = 32;
-    assign cvsram_s_axi_awsize         = 3'b101;    // 3'b101 if addr_width = 64, 3'b011 if addr_width = 32;
+    assign cvsram_s_axi_arsize         = 3'd#NVDLA_SECONDARY_MEMIF_WIDTH_LOG2;
+    assign cvsram_s_axi_awsize         = 3'd#NVDLA_SECONDARY_MEMIF_WIDTH_LOG2;
 
     assign cvsram_s_axi_arlen[7:4]     = 4'b0;
     assign cvsram_s_axi_awlen[7:4]     = 4'b0;

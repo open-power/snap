@@ -80,6 +80,16 @@ for vsource in *.v_source; do
     touch $vfile
     cat $vsource > $vfile
     echo -e "\t                        generating $vfile"
-    width=`sed -n -e 's/\`define NVDLA_PRIMARY_MEMIF_WIDTH //p' defs/project.vh`
-    sed -i "s/#NVDLA_DBB_DATA_WIDTH/$width/g" $vfile
+    dbb_data_width=`sed -n -e 's/\`define NVDLA_PRIMARY_MEMIF_WIDTH //p' defs/project.vh`
+    dbb_addr_width=`sed -n -e 's/\`define NVDLA_MEM_ADDRESS_WIDTH //p' defs/project.vh`
+    sram_data_width==`sed -n -e 's/\`define NVDLA_SECONDARY_MEMIF_WIDTH //p' defs/project.vh`
+    sram_addr_width==`sed -n -e 's/\`define NVDLA_MEM_ADDRESS_WIDTH //p' defs/project.vh`
+    dbb_data_width_log2==`sed -n -e 's/\`define NVDLA_PRIMARY_MEMIF_WIDTH_LOG2 //p' defs/project.vh`
+    sram_data_width_log2==`sed -n -e 's/\`define NVDLA_SECONDARY_MEMIF_WIDTH_LOG2 //p' defs/project.vh`
+    sed -i "s/#NVDLA_DBB_DATA_WIDTH/$dbb_data_width/g" $vfile
+    sed -i "s/#NVDLA_DBB_ADDR_WIDTH/$dbb_addr_width/g" $vfile
+    sed -i "s/#NVDLA_SRAM_DATA_WIDTH/$sram_data_width/g" $vfile
+    sed -i "s/#NVDLA_SRAM_ADDR_WIDTH/$sram_addr_width/g" $vfile
+    sed -i "s/#NVDLA_PRIMARY_MEMIF_WIDTH_LOG2/$dbb_data_width_log2/g" $vfile
+    sed -i "s/#NVDLA_SECONDARY_MEMIF_WIDTH_LOG2/$sram_data_width_log2/g" $vfile
 done
