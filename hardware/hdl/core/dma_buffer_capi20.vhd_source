@@ -117,7 +117,6 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL wram_raddr_q                     : std_logic_vector(     7 DOWNTO 0);
   SIGNAL wram_waddr                       : std_logic_vector(     7 DOWNTO 0);
   SIGNAL wram_rdata                       : std_logic_vector(1024-1 DOWNTO 0);
-  SIGNAL wram_rdata_q                     : std_logic_vector(1024-1 DOWNTO 0);
   SIGNAL wram_waddr_d, wram_waddr_q       : std_logic_vector(     8 DOWNTO 0);
   SIGNAL wram_waddr_next                  : std_logic_vector(     8 DOWNTO 0);
   SIGNAL wram_wdata                       : std_logic_vector(512-1 DOWNTO 0);
@@ -127,13 +126,10 @@ ARCHITECTURE dma_buffer OF dma_buffer IS
   SIGNAL wram_wready_qqq                  : std_logic;
   SIGNAL wram_rdata_vld_d                 : std_logic;
   SIGNAL wram_rdata_vld_q                 : std_logic;
-  SIGNAL wram_rdata_vld_qq                : std_logic;
   SIGNAL wram_rdata_end_d                 : std_logic;
   SIGNAL wram_rdata_end_q                 : std_logic;
-  SIGNAL wram_rdata_end_qq                : std_logic;
   SIGNAL wram_rdata_type_d                : std_logic_vector(2 DOWNTO 0);
   SIGNAL wram_rdata_type_q                : std_logic_vector(2 DOWNTO 0);
-  SIGNAL wram_rdata_type_qq               : std_logic_vector(2 DOWNTO 0);
   SIGNAL utag_size                        : std_logic_vector(2 DOWNTO 0);
 
 BEGIN
@@ -223,7 +219,8 @@ BEGIN
             rram_rdata_vld_r3 <= '1'; 
           END IF;
        
-          IF (rram_uts_cnt_r2_v  = read_ctrl_i(to_integer(unsigned(buf_rtag_r2(2 DOWNTO 0)))).uts) THEN
+          IF (rram_uts_cnt_r2_v  = read_ctrl_i(to_integer(unsigned(buf_rtag_r2(4 DOWNTO 0)))).uts) AND
+             (UTC_LAST           = read_ctrl_i(to_integer(unsigned(buf_rtag_r2(4 DOWNTO 0)))).utt)  THEN
             rram_rdata_end_r3  <= '1'; 
           END IF;
 
@@ -302,7 +299,7 @@ BEGIN
     -- read data indication
     utag_size <=  (write_ctrl_i(to_integer(unsigned(wram_raddr_q(6 DOWNTO 2)))).uts(3 DOWNTO 1)) + ("00" + write_ctrl_i(to_integer(unsigned(wram_raddr_q(6 DOWNTO 2)))).uts(0));
     
-    wram_ren          <= '1' WHEN ( buf_wrdreq_i OR (wram_raddr_q(1 DOWNTO 0) /= "00")) ELSE '0';
+    wram_ren          <= '1' WHEN buf_wrdreq_i ELSE '0';
     wram_raddr        <= wram_raddr_q(6 DOWNTO 0);
     wram_rdata_vld_d  <= '1'   WHEN ((wram_ren = '1') AND ('0' & wram_raddr_q(1 DOWNTO 0)    ) < utag_size) ELSE '0';
     wram_rdata_end_d  <= '1'   WHEN ((wram_ren = '1') AND ('0' & wram_raddr_q(1 DOWNTO 0) + 1) = utag_size) ELSE '0';
@@ -343,8 +340,6 @@ BEGIN
         END IF;
         --
         --
-        wram_rdata_q   <= wram_rdata;
-
         IF (write_ctrl_i(buf_wtag_next_q).buf = "0000") THEN
           wram_wready_q <= '1';
         END IF;
@@ -409,10 +404,10 @@ BEGIN
     buf_rdata_vld_o   <= rram_rdata_vld_r3;
     buf_rdata_end_o   <= rram_rdata_end_r3;  
                        
-    buf_wdata_o       <= wram_rdata_q(1023 DOWNTO 0);
-    buf_wdata_vld_o   <= wram_rdata_vld_qq;
-    buf_wdata_end_o   <= wram_rdata_end_qq;
-    buf_wdata_type_o  <= wram_rdata_type_qq;
+    buf_wdata_o       <= wram_rdata(1023 DOWNTO 0);
+    buf_wdata_vld_o   <= wram_rdata_vld_q;
+    buf_wdata_end_o   <= wram_rdata_end_q;
+    buf_wdata_type_o  <= wram_rdata_type_q;
     buf_wram_wready_o <= wram_wready_q;
 
   ------------------------------------------------------------------------------
@@ -426,19 +421,13 @@ BEGIN
       IF (rising_edge(ha_pclock)) THEN
         hd_c_q              <= hd_c_i;
         wram_rdata_vld_q    <= wram_rdata_vld_d;
-        wram_rdata_vld_qq   <= wram_rdata_vld_q;
         wram_rdata_end_q    <= wram_rdata_end_d;
-        wram_rdata_end_qq   <= wram_rdata_end_q;
         wram_rdata_type_q   <= wram_rdata_type_d;
-        wram_rdata_type_qq  <= wram_rdata_type_q;
 
         IF afu_reset = '1' THEN
           wram_rdata_vld_q    <= '0';
-          wram_rdata_vld_qq   <= '0';
           wram_rdata_end_q    <= '0';
-          wram_rdata_end_qq   <= '0';
           wram_rdata_type_q   <= "000";
-          wram_rdata_type_qq  <= "000";
         END IF;
       END IF;
     END PROCESS registers;
