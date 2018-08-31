@@ -25,12 +25,13 @@
   rndeven20=$(( (RANDOM%5)*2+10 ))
   rnd20=$(( (RANDOM%19)+2 ))
   rnd32=$(( (RANDOM%31)+2 ))
-  rnd100=$(( (RANDOM%99)+2 ))
-  rnd1k=$(( (RANDOM%1023)+2 ))
+  rnd50=$(( (RANDOM%20)+30 ))
+  rnd100=$(( (RANDOM%70)+30 ))
+  rnd1k=$(( (RANDOM%923)+102 ))
   rnd1k4k=$(( (RANDOM%3072)+1024 ))
   rnd16k=$(( (RANDOM%16383)+2 ))
   rnd32k=$(( RANDOM ))
-  echo "random=$rnd4 $rnd5 $rnd10 $rndeven20 $rnd20 $rnd32 $rnd100 $rnd1k $rnd1k4k $rnd16k $rnd32k"
+  echo "random=$rnd4 $rnd5 $rnd10 $rndeven20 $rnd20 $rnd32 $rnd50 $rnd100 $rnd1k $rnd1k4k $rnd16k $rnd32k"
 # export SNAP_TRACE=0xFF
 # export SNAP_TRACE=0xF2 # for Sven
   stimfile=$(basename "$0");
@@ -188,7 +189,7 @@
       step "snap_example -a2 -S32 -B1 -A4096 -t8000"
       step "snap_example -a2 -S64 -B0 -A64   -t16000"
       step "snap_example -a2 -S64 -B1 -A64   -t16000"
-      for num4k in 0 1 $rnd20 $rnd100;do to=$((num4k*400+400))   # 4k blks should be possible by every card
+      for num4k in 0 1 $rnd20 $rnd50;do to=$((num4k*400+400))   # 4k blks should be possible by every card
       for i in 0 1 2 $rnd32;do num64=$(((i*xfer)/64))   # adopt to capability reg xfer size
       for j in 5 2 1;do align=$((j*dma))                # adopt to capability reg DMA alignment
         if [[ "$num4k" == "0" && "$num64" == "0"          ]];then echo "skip1 num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
@@ -204,7 +205,7 @@
         if [[ $cardtype == "10" ]];then for i in {1..5};do echo "loop=$i";snap_example -a6 -S8 -B2 -A128 -t400 -v||break;done
         else                            for i in {1..5};do echo "loop=$i";snap_example -a6 -S8 -B2 -A64  -t400 -v||break;done
         fi
-        for num4k in 0 1 $rnd20 $rnd100;do to=$((num4k*400+400)) # 4k blks should be possible by every card
+        for num4k in 0 1 $rnd20 $rnd50;do to=$((num4k*400+400)) # 4k blks should be possible by every card
         for i in 0 1 2 $rnd32;do num64=$(((i*xfer)/64)) # adopt to capability reg xfer size
         for j in 5 2 1;do align=$((j*dma))              # adopt to capability reg DMA alignment
           to=$((num4k*400+400))
@@ -218,11 +219,11 @@
         done
         #### check DDR3 memory in AlphaData KU3, stay under 512k for BRAM
         step "snap_example_ddr -h"
-        for iter in 1 $rnd4;do                           # number of blocks
-        for i in 1 $rnd32;do bsize=$((xfer>64?xfer*i:64*i))  # adopt to capability reg xfer size, hdl_example action only works n*64B xfers, even if SNAP can do less
-        for j in 1 $rnd5;do strt=$((j*dma))             # adopt to capability reg DMA alignment
-#         if [[ "iter" > "1" && ("$bsize" == "64" || "$strt" == "1024") ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
-          end=$((strt+iter*bsize)); to=$((iter*iter*bsize/4+300))      # rough timeout dependent on filesize
+        for iter in 1 $rnd4;do                              # number of blocks
+        for i in 1 $rnd32;do bsize=$((xfer>64?xfer*i:64*i)) # adopt to capability reg xfer size, hdl_example action only works n*64B xfers, even if SNAP can do less
+        for j in 1 $rnd5;do strt=$((j*dma))                 # adopt to capability reg DMA alignment
+          if [[ "iter" > "1" && ("$i" > "1" || "$j" > "1") ]];then echo "skip i=$iter b=$bsize s=$strt";continue;fi  # runs too long on xsim
+          end=$((strt+iter*bsize)); to=$((iter*iter*bsize/4+900))      # rough timeout dependent on filesize
           step "snap_example_ddr -i${iter} -b${bsize} -s${strt} -e${end} -t$to"
         done
         done
