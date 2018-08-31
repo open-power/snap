@@ -173,7 +173,7 @@ module action_wrapper #(
     wire                            dbb_s_axi_bready;
     wire [8-1:0]                    dbb_s_axi_bid;
     /**************** Read Address Channel Signals ****************/
-    wire [#NVDLA_DBB_ADDR_WIDTH-1:0]                   dbb_s_axi_araddr;
+    wire [64-1:0]                   dbb_s_axi_araddr;
     wire [3-1:0]                    dbb_s_axi_arprot;
     wire                            dbb_s_axi_arvalid;
     wire                            dbb_s_axi_arready;
@@ -193,6 +193,8 @@ module action_wrapper #(
     wire                            dbb_s_axi_rlast;
     wire [8-1:0]                    dbb_s_axi_rid;
 
+
+    #ifdef SRAM
     //**********************************************
     // SRAM AXI INTERFACE
     //**********************************************
@@ -236,6 +238,7 @@ module action_wrapper #(
     wire                            cvsram_s_axi_rlast;
     wire [#NVDLA_SRAM_DATA_WIDTH-1:0]                  cvsram_s_axi_rdata;
     wire [2-1:0]                    cvsram_s_axi_rresp;
+    #endif
 
 
     assign m_axi_host_mem_arid = 1'b0;
@@ -287,6 +290,8 @@ module action_wrapper #(
     assign dbb_s_axi_awaddr[63:32]  = 32'b0;
     #endif
 
+
+    #ifdef SRAM
     //**********************************************
     // SRAM AXI INTERFACE
     //**********************************************
@@ -307,6 +312,7 @@ module action_wrapper #(
 
     assign cvsram_s_axi_arlen[7:4]     = 4'b0;
     assign cvsram_s_axi_awlen[7:4]     = 4'b0;
+    #endif
 
     NV_nvdla_wrapper nvdla_0 (
         .dla_core_clk                   (dla_core_clk)                  // |< i
@@ -357,6 +363,7 @@ module action_wrapper #(
         ,.nvdla_core2dbb_r_rid          (dbb_s_axi_rid)            // |< i
         ,.nvdla_core2dbb_r_rlast        (dbb_s_axi_rlast)          // |< i
         ,.nvdla_core2dbb_r_rdata        (dbb_s_axi_rdata)          // |< i
+        #ifdef SRAM
         // --------------------
         ,.nvdla_core2cvsram_aw_awvalid  (cvsram_s_axi_awvalid)     //|> o
         ,.nvdla_core2cvsram_aw_awready  (cvsram_s_axi_awready)     //|< i
@@ -381,6 +388,7 @@ module action_wrapper #(
         ,.nvdla_core2cvsram_r_rid       (cvsram_s_axi_rid    )     //|< i
         ,.nvdla_core2cvsram_r_rlast     (cvsram_s_axi_rlast  )     //|< i
         ,.nvdla_core2cvsram_r_rdata     (cvsram_s_axi_rdata  )     //|< i
+        #endif
         // Interrput
         ,.ctrl_path_intr_o              (interrput)                     // |> o
         ,.o_snap_context                (interrupt_ctx)                 // |> o
@@ -495,6 +503,7 @@ module action_wrapper #(
         .s_axi_aresetn  ( dla_reset_rstn)
         );
 
+    #ifdef SRAM
     axi_bram_ctrl_0 axi_bram_0 (
         .s_axi_aclk     (dla_csb_clk),                     // input wire s_axi_aclk
         .s_axi_aresetn  (dla_reset_rstn),                  // input wire s_axi_aresetn
@@ -534,4 +543,5 @@ module action_wrapper #(
         .s_axi_rvalid   (cvsram_s_axi_rvalid),             // output wire s_axi_rvalid
         .s_axi_rready   (cvsram_s_axi_rready)              // input wire s_axi_rready
 );
+    #endif
 endmodule
