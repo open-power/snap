@@ -32,6 +32,7 @@ unset ILA_SETUP_FILE
 unset DCP_ROOT
 unset config_script
 unset snap_env_info
+unset STRING_MATCH_VERILOG
 
 TIMING_LABLIMIT_DEFAULT="-200"
 
@@ -166,6 +167,13 @@ while [ -z "$SETUP_DONE" ]; do
   unset AR
   if [ -n "$HDL_EXAMPLE" ]; then
     AR='${SNAP_ROOT}/actions/hdl_example'
+  elif [ -n "$HDL_NVDLA" ]; then
+    AR='${SNAP_ROOT}/actions/hdl_nvdla'
+  elif [ -n "$HDL_STRINGMATCH" ]; then
+    AR='${SNAP_ROOT}/actions/hdl_stringmatch'
+    if [ -z "$STRING_MATCH_VERILOG" ]; then
+        SETUP_EMPTY="$SETUP_EMPTY\n STRING_MATCH_VERILOG"
+    fi
   elif [ -n "$HDL_NVME_EXAMPLE" ]; then
     AR='${SNAP_ROOT}/actions/hdl_nvme_example'
   elif [ -n "$HLS_MEMCOPY" ]; then

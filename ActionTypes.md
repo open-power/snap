@@ -2,7 +2,8 @@
 Vendor | Range Start | Range End | Description
 :--- | :--- | :--- | :---
 Reserved | 00.00.00.00 | 00.00.00.00 | Reserved
-free | 00.00.00.01 | 00.00.FF.FF | Free for experimental use
+free | 00.00.00.01 | 00.00.00.0F | IBM China System Lab Actions
+free | 00.00.00.10 | 00.00.FF.FF | Free for experimental use
 IBM | 10.14.00.00 | 10.14.00.00 | SNAP framework example
 IBM | 10.14.00.01 | 10.14.00.01 | HDL NVMe example
 IBM | 10.14.00.02 | 10.14.0F.FF | Reserved for IBM Actions

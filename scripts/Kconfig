@@ -180,6 +180,12 @@ choice
 	config HDL_EXAMPLE
 		bool "HDL Example"
 
+        config HDL_STRINGMATCH
+            bool "HDL STRING MATCH - regular expression acceleration"
+
+        config HDL_NVDLA
+            bool "HDL NVDLA - NVidia Deep Learning Accelerator"
+
 	config HDL_NVME_EXAMPLE
 		bool "HDL NVMe Example"
 		depends on N250S
@@ -293,7 +299,6 @@ choice
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
-
 endchoice
 
 config ENABLE_HLS_SUPPORT

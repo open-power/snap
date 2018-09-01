@@ -1,3 +1,11 @@
 [submodule "hardware/capi2-bsp"]
 	path = hardware/capi2-bsp
 	url = https://github.com/open-power/capi2-bsp
+[submodule "actions/hdl_nvdla/sw/nvdla-sw"]
+	path = actions/hdl_nvdla/sw/nvdla-sw
+	url = https://github.com/shgoupf/nvdla-sw
+	branch = capi
+[submodule "actions/hdl_nvdla/nvdla-capi"]
+	path = actions/hdl_nvdla/nvdla-capi
+	url = git@github.ibm.com:shgoupf/nvdla-capi
+	branch = xrun

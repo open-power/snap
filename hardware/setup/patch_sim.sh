@@ -37,7 +37,7 @@ if [ "$NAME" == "top.sh" ]; then
               fi
               ;;
     "xcelium")
-              sed -i "s/93 -relax/93 -elaborate -relax/gI"         $1/$2 # run irun up to elaboration, skip execution
+              sed -i "s/93 -relax/93 -sv -elaborate -smartorder -relax +libext+.vlib+.v+.sv+.svh -timescale 1ns\/1ns/gI"         $1/$2 # run irun up to elaboration, skip execution
               sed -i "s/-top xil_defaultlib.top/-top work.top/gI"  $1/$2 # build top in work library
               if [[ "$NVME_USED" == "TRUE" && -n "$DENALI" ]]; then :
                 echo "                     patch $irun include denali files for NVMe"
@@ -47,6 +47,7 @@ if [ "$NAME" == "top.sh" ]; then
               if [ -f ${SNAP_HARDWARE_ROOT}/sim/xcelium/run.f ]; then
 #               perl -i.ori -pe 's/(.*\/verilog\/top.v)/ -sv $1/mg' ${SNAP_HARDWARE_ROOT}/sim/xcelium/run.f; # compile top.v with system verilog, not needed anymore, since we work now with top.sv
                 perl -i.ori -pe 'BEGIN{undef $/;} s/(^-makelib.*\n.*glbl.v.*\n.*endlib)//mg' ${SNAP_HARDWARE_ROOT}/sim/xcelium/run.f; # remove glbl.v from compile list
+                perl -i.ori -pe 'BEGIN{undef $/;} s/(^-endlib.*\n^-makelib xcelium_lib\/.* \\\n)//mg' ${SNAP_HARDWARE_ROOT}/sim/xcelium/run.f; # merge everything to one lib
               fi
               ;;
     "questa"|"modelsim")

@@ -1,0 +1,72 @@
+
+#
+# Mnemonic Maps
+#
+mmap new -reuse -name {Boolean as Logic} -radix %b -contents {{%c=FALSE -edgepriority 1 -shape low}
+{%c=TRUE -edgepriority 1 -shape high}}
+mmap new -reuse -name {Example Map} -radix %x -contents {{%b=11???? -bgcolor orange -label REG:%x -linecolor yellow -shape bus}
+{%x=1F -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=2C -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=* -label %x -linecolor gray -shape bus}}
+
+array unset createdGroup
+array set createdGroup {}
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_lite_slave.REG_stat_init_address[63:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.m_axi_awaddr[63:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.m_axi_awlen[7:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.m_axi_awready}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.m_axi_awvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.m_axi_bvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.m_axi_wready}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.m_axi_wlast}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.m_axi_wvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.m_axi_wdata[511:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.m_axi_bready}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.m_axi_arlen[7:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.m_axi_awlen[7:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.fifo_wrbuf_olast}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.maxi_wrbuf.olast}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.maxi_wrbuf.rdrq}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.maxi_wrbuf.flush[0:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.maxi_wrbuf.o_cnt[4:0]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w.action_string_match_0.msnap_action_shim.maxi_master_to_snap.maxi_wrbuf.i_cnt[4:0]}]}
+	} ]]
+
+waveform xview limits 12731.266327ns 16206.963639ns
