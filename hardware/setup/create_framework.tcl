@@ -116,6 +116,8 @@ if { $hls_support == "TRUE" } {
   add_files -scan_for_includes $hdl_dir/hls/ >> $log_file
 }
 
+add_files -scan_for_includes $action_dir/ >> $log_file
+
 # Action Specific tcl
 if { [file exists $action_tcl] == 1 } {
   set tcl_exists [exec find $action_tcl -name *.tcl]
@@ -127,8 +129,6 @@ if { [file exists $action_tcl] == 1 } {
     }
   }
 }
-
-add_files -scan_for_includes $action_dir/ >> $log_file
 
 # Action Specific tcl
 if { [file exists $action_tcl] == 1 } {
