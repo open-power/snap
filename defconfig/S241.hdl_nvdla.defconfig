@@ -35,6 +35,9 @@ HDL_NVDLA=y
 # HLS_LATENCY_EVAL is not set
 # HLS_MM_TEST is not set
 # HLS_HELLOWORLD is not set
+NV_SMALL=y
+# NV_LARGE is not set
+NVDLA_CONFIG="nv_small"
 # ENABLE_HLS_SUPPORT is not set
 HLS_SUPPORT="FALSE"
 # DISABLE_SDRAM_AND_BRAM is not set
