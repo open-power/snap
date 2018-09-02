@@ -3,8 +3,10 @@ add_files -scan_for_includes $action_dir/vlibs/RANDFUNC.vlib -verbose
 add_files -scan_for_includes $action_dir/vlibs/nv_assert_no_x.vlib -verbose
 set_property file_type {Verilog} [get_files *.vlib]
 set_property is_global_include true [get_files -of_objects [get_filesets sources_1] $action_dir/include/NV_NVDLA_global_include.vh]
+set_property is_global_include true [get_files -of_objects [get_filesets sources_1] $action_dir/include/NV_NVDLA_global_include_syn.vh]
 set_property is_global_include true [get_files -of_objects [get_filesets sources_1] $action_dir/defs/project.vh]
 set_property file_type {Verilog} [get_files -of_objects [get_filesets sources_1] $action_dir/include/NV_NVDLA_global_include.vh]
+set_property file_type {Verilog} [get_files -of_objects [get_filesets sources_1] $action_dir/include/NV_NVDLA_global_include_syn.vh]
 set_property file_type {Verilog} [get_files -of_objects [get_filesets sources_1] $action_dir/defs/project.vh]
 
 # Use fifo in fifo directory

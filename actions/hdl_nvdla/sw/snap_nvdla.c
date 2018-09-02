@@ -221,7 +221,7 @@ int main (int argc, char* argv[])
     char* image   = NULL;
     char* input   = NULL;
     int normalize = 0;
-    int rawdump = 1;
+    int rawdump = 0;
 
     while (1) {
         int option_index = 0;

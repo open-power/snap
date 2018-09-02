@@ -20,7 +20,7 @@
 
 `timescale 1ns/1ps
 
-`include "project.vh"
+//`include "project.vh"
 
 module action_wrapper #(
     // Parameters of Axi Slave Bus Interface AXI_CTRL_REG
@@ -149,100 +149,138 @@ module action_wrapper #(
     // DBB AXI INTERFACE
     //**********************************************
     /**************** Write Address Channel Signals ****************/
-    wire [64-1:0]                   dbb_s_axi_awaddr;
-    wire [3-1:0]                    dbb_s_axi_awprot;
-    wire                            dbb_s_axi_awvalid;
-    wire                            dbb_s_axi_awready;
-    wire [3-1:0]                    dbb_s_axi_awsize;
-    wire [2-1:0]                    dbb_s_axi_awburst;
-    wire [4-1:0]                    dbb_s_axi_awcache;
-    wire [8-1:0]                    dbb_s_axi_awlen;
-    wire [1-1:0]                    dbb_s_axi_awlock;
-    wire [4-1:0]                    dbb_s_axi_awqos;
-    wire [4-1:0]                    dbb_s_axi_awregion;
-    wire [8-1:0]                    dbb_s_axi_awid;
+    wire [64-1:0]                      dbb_s_axi_awaddr;
+    wire [3-1:0]                       dbb_s_axi_awprot;
+    wire                               dbb_s_axi_awvalid;
+    wire                               dbb_s_axi_awready;
+    wire [3-1:0]                       dbb_s_axi_awsize;
+    wire [2-1:0]                       dbb_s_axi_awburst;
+    wire [4-1:0]                       dbb_s_axi_awcache;
+    wire [8-1:0]                       dbb_s_axi_awlen;
+    wire [1-1:0]                       dbb_s_axi_awlock;
+    wire [4-1:0]                       dbb_s_axi_awqos;
+    wire [4-1:0]                       dbb_s_axi_awregion;
+    wire [8-1:0]                       dbb_s_axi_awid;
     /**************** Write Data Channel Signals ****************/
-    wire [#NVDLA_DBB_DATA_WIDTH-1:0]                   dbb_s_axi_wdata;
-    wire [#NVDLA_DBB_DATA_WIDTH/8-1:0]                 dbb_s_axi_wstrb;
-    wire                            dbb_s_axi_wvalid;
-    wire                            dbb_s_axi_wready;
-    wire                            dbb_s_axi_wlast;
+    wire [#NVDLA_DBB_DATA_WIDTH-1:0]   dbb_s_axi_wdata;
+    wire [#NVDLA_DBB_DATA_WIDTH/8-1:0] dbb_s_axi_wstrb;
+    wire                               dbb_s_axi_wvalid;
+    wire                               dbb_s_axi_wready;
+    wire                               dbb_s_axi_wlast;
     /**************** Write Response Channel Signals ****************/
-    wire [2-1:0]                    dbb_s_axi_bresp;
-    wire                            dbb_s_axi_bvalid;
-    wire                            dbb_s_axi_bready;
-    wire [8-1:0]                    dbb_s_axi_bid;
+    wire [2-1:0]                       dbb_s_axi_bresp;
+    wire                               dbb_s_axi_bvalid;
+    wire                               dbb_s_axi_bready;
+    wire [8-1:0]                       dbb_s_axi_bid;
     /**************** Read Address Channel Signals ****************/
-    wire [64-1:0]                   dbb_s_axi_araddr;
-    wire [3-1:0]                    dbb_s_axi_arprot;
-    wire                            dbb_s_axi_arvalid;
-    wire                            dbb_s_axi_arready;
-    wire [3-1:0]                    dbb_s_axi_arsize;
-    wire [2-1:0]                    dbb_s_axi_arburst;
-    wire [4-1:0]                    dbb_s_axi_arcache;
-    wire [1-1:0]                    dbb_s_axi_arlock;
-    wire [8-1:0]                    dbb_s_axi_arlen;
-    wire [4-1:0]                    dbb_s_axi_arqos;
-    wire [4-1:0]                    dbb_s_axi_arregion;
-    wire [8-1:0]                    dbb_s_axi_arid;
+    wire [64-1:0]                      dbb_s_axi_araddr;
+    wire [3-1:0]                       dbb_s_axi_arprot;
+    wire                               dbb_s_axi_arvalid;
+    wire                               dbb_s_axi_arready;
+    wire [3-1:0]                       dbb_s_axi_arsize;
+    wire [2-1:0]                       dbb_s_axi_arburst;
+    wire [4-1:0]                       dbb_s_axi_arcache;
+    wire [1-1:0]                       dbb_s_axi_arlock;
+    wire [8-1:0]                       dbb_s_axi_arlen;
+    wire [4-1:0]                       dbb_s_axi_arqos;
+    wire [4-1:0]                       dbb_s_axi_arregion;
+    wire [8-1:0]                       dbb_s_axi_arid;
     /**************** Read Data Channel Signals ****************/
-    wire [#NVDLA_DBB_DATA_WIDTH-1:0]                   dbb_s_axi_rdata;
-    wire [2-1:0]                    dbb_s_axi_rresp;
-    wire                            dbb_s_axi_rvalid;
-    wire                            dbb_s_axi_rready;
-    wire                            dbb_s_axi_rlast;
-    wire [8-1:0]                    dbb_s_axi_rid;
-
+    wire [#NVDLA_DBB_DATA_WIDTH-1:0]   dbb_s_axi_rdata;
+    wire [2-1:0]                       dbb_s_axi_rresp;
+    wire                               dbb_s_axi_rvalid;
+    wire                               dbb_s_axi_rready;
+    wire                               dbb_s_axi_rlast;
+    wire [8-1:0]                       dbb_s_axi_rid;
 
     #ifdef SRAM
     //**********************************************
     // SRAM AXI INTERFACE
     //**********************************************
     /********* Write Address Channel Signals of SRAM***********/
-    wire                            cvsram_s_axi_awvalid;
-    wire                            cvsram_s_axi_awready;
-    wire [8-1:0]                    cvsram_s_axi_awid;
-    wire [8-1:0]                    cvsram_s_axi_awlen;
-    wire [#NVDLA_SRAM_ADDR_WIDTH-1:0]                   cvsram_s_axi_awaddr;
-    wire [3-1:0]                    cvsram_s_axi_awsize;
-    wire [2-1:0]                    cvsram_s_axi_awburst;
-    wire                            cvsram_s_axi_awlock;
-    wire [4-1:0]                    cvsram_s_axi_awcache;
-    wire [3-1:0]                    cvsram_s_axi_awprot;
+    wire                               cvsram_s_axi_awvalid;
+    wire                               cvsram_s_axi_awready;
+    wire [8-1:0]                       cvsram_s_axi_awid;
+    wire [8-1:0]                       cvsram_s_axi_awlen;
+    wire [#NVDLA_SRAM_ADDR_WIDTH-1:0]  cvsram_s_axi_awaddr;
+    wire [3-1:0]                       cvsram_s_axi_awsize;
+    wire [2-1:0]                       cvsram_s_axi_awburst;
+    wire                               cvsram_s_axi_awlock;
+    wire [4-1:0]                       cvsram_s_axi_awcache;
+    wire [3-1:0]                       cvsram_s_axi_awprot;
     /*********** Write Data Channel Signals of SRAM************/
-    wire                            cvsram_s_axi_wvalid;
-    wire                            cvsram_s_axi_wready;
-    wire [#NVDLA_SRAM_DATA_WIDTH-1:0]                  cvsram_s_axi_wdata;
-    wire [#NVDLA_SRAM_DATA_WIDTH/8-1:0]                cvsram_s_axi_wstrb;
-    wire                            cvsram_s_axi_wlast;
+    wire                               cvsram_s_axi_wvalid;
+    wire                               cvsram_s_axi_wready;
+    wire [#NVDLA_SRAM_DATA_WIDTH-1:0]  cvsram_s_axi_wdata;
+    wire [#NVDLA_SRAM_DATA_WIDTH/8-1:0]cvsram_s_axi_wstrb;
+    wire                               cvsram_s_axi_wlast;
     /********* Write Response Channel Signals of SRAM**********/
-    wire                            cvsram_s_axi_bvalid;
-    wire                            cvsram_s_axi_bready;
-    wire [8-1:0]                    cvsram_s_axi_bid;
-    wire [2-1:0]                    cvsram_s_axi_bresp;
+    wire                               cvsram_s_axi_bvalid;
+    wire                               cvsram_s_axi_bready;
+    wire [8-1:0]                       cvsram_s_axi_bid;
+    wire [2-1:0]                       cvsram_s_axi_bresp;
     /********** Read Address Channel Signals of SRAM***********/
-    wire                            cvsram_s_axi_arvalid;
-    wire                            cvsram_s_axi_arready;
-    wire [8-1:0]                    cvsram_s_axi_arid;
-    wire [8-1:0]                    cvsram_s_axi_arlen;
-    wire [#NVDLA_SRAM_ADDR_WIDTH-1:0]                   cvsram_s_axi_araddr;
-    wire [3-1:0]                    cvsram_s_axi_arsize;
-    wire [2-1:0]                    cvsram_s_axi_arburst;
-    wire                            cvsram_s_axi_arlock;
-    wire [4-1:0]                    cvsram_s_axi_arcache;
-    wire [3-1:0]                    cvsram_s_axi_arprot;
+    wire                               cvsram_s_axi_arvalid;
+    wire                               cvsram_s_axi_arready;
+    wire [8-1:0]                       cvsram_s_axi_arid;
+    wire [8-1:0]                       cvsram_s_axi_arlen;
+    wire [#NVDLA_SRAM_ADDR_WIDTH-1:0]  cvsram_s_axi_araddr;
+    wire [3-1:0]                       cvsram_s_axi_arsize;
+    wire [2-1:0]                       cvsram_s_axi_arburst;
+    wire                               cvsram_s_axi_arlock;
+    wire [4-1:0]                       cvsram_s_axi_arcache;
+    wire [3-1:0]                       cvsram_s_axi_arprot;
     /********** Read Address Channel Signals of SRAM***********/
-    wire                            cvsram_s_axi_rvalid;
-    wire                            cvsram_s_axi_rready;
-    wire [8-1:0]                    cvsram_s_axi_rid;
-    wire                            cvsram_s_axi_rlast;
-    wire [#NVDLA_SRAM_DATA_WIDTH-1:0]                  cvsram_s_axi_rdata;
-    wire [2-1:0]                    cvsram_s_axi_rresp;
+    wire                               cvsram_s_axi_rvalid;
+    wire                               cvsram_s_axi_rready;
+    wire [8-1:0]                       cvsram_s_axi_rid;
+    wire                               cvsram_s_axi_rlast;
+    wire [#NVDLA_SRAM_DATA_WIDTH-1:0]  cvsram_s_axi_rdata;
+    wire [2-1:0]                       cvsram_s_axi_rresp;
     #endif
 
 
-    assign m_axi_host_mem_arid = 1'b0;
-    assign m_axi_host_mem_awid = 1'b0;
+    // Workaround the AXI databus issue in SNAP2.0
+    wire [C_M_AXI_HOST_MEM_DATA_WIDTH-1 : 0 ] m_axi_host_mem_wdata_wire;
+    reg [C_M_AXI_HOST_MEM_DATA_WIDTH-1 : 0 ] m_axi_host_mem_wdata_reg;
+
+    wire [C_M_AXI_HOST_MEM_DATA_WIDTH-1 : 0 ] m_axi_host_mem_wdata_mask;
+
+    #ifdef NVDLA_DBB_DATA_WIDTH == 64
+    assign m_axi_host_mem_wdata_mask = 
+            m_axi_host_mem_wstrb == 64'h00000000_000000FF ? 512'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_FFFFFFFF_FFFFFFFF :
+            m_axi_host_mem_wstrb == 64'h00000000_0000FF00 ? 512'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_FFFFFFFF_FFFFFFFF_00000000_00000000 :
+            m_axi_host_mem_wstrb == 64'h00000000_00FF0000 ? 512'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_FFFFFFFF_FFFFFFFF_00000000_00000000_00000000_00000000 :
+            m_axi_host_mem_wstrb == 64'h00000000_FF000000 ? 512'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_FFFFFFFF_FFFFFFFF_00000000_00000000_00000000_00000000_00000000_00000000 :
+            m_axi_host_mem_wstrb == 64'h000000FF_00000000 ? 512'h00000000_00000000_00000000_00000000_00000000_00000000_FFFFFFFF_FFFFFFFF_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000 :
+            m_axi_host_mem_wstrb == 64'h0000FF00_00000000 ? 512'h00000000_00000000_00000000_00000000_FFFFFFFF_FFFFFFFF_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000 :
+            m_axi_host_mem_wstrb == 64'h00FF0000_00000000 ? 512'h00000000_00000000_FFFFFFFF_FFFFFFFF_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000 :
+            m_axi_host_mem_wstrb == 64'hFF000000_00000000 ? 512'hFFFFFFFF_FFFFFFFF_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000 :
+                                                            512'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
+    #endif
+
+    #ifdef NVDLA_DBB_DATA_WIDTH == 256
+    assign m_axi_host_mem_wdata_mask = 
+            m_axi_host_mem_wstrb == 64'h00000000_FFFFFFFF ? 512'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_FFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF :
+            m_axi_host_mem_wstrb == 64'hFFFFFFFF_00000000 ? 512'hFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000 :
+                                                            512'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
+    #endif
+
+    assign m_axi_host_mem_wdata = 
+        m_axi_host_mem_wvalid ?
+            (m_axi_host_mem_wdata_reg & ~m_axi_host_mem_wdata_mask) | (m_axi_host_mem_wdata_wire & m_axi_host_mem_wdata_mask)
+        : m_axi_host_mem_wdata_reg; 
+
+    always @(posedge ap_clk or negedge ap_rst_n) begin
+        if (!ap_rst_n) begin
+            m_axi_host_mem_wdata_reg <= {C_M_AXI_HOST_MEM_DATA_WIDTH{1'b0}};
+        end else begin
+            m_axi_host_mem_wdata_reg <= m_axi_host_mem_wdata;
+        end
+    end
+
+    assign m_axi_host_mem_arid = dbb_s_axi_arid[0];
+    assign m_axi_host_mem_awid = dbb_s_axi_awid[0];
 
     // Make wuser stick to 0
     assign m_axi_host_mem_wuser          = 0;
@@ -313,6 +351,8 @@ module action_wrapper #(
     assign cvsram_s_axi_arlen[7:4]     = 4'b0;
     assign cvsram_s_axi_awlen[7:4]     = 4'b0;
     #endif
+
+    assign interrupt_src = 0;
 
     NV_nvdla_wrapper nvdla_0 (
         .dla_core_clk                   (dla_core_clk)                  // |< i
@@ -389,8 +429,8 @@ module action_wrapper #(
         ,.nvdla_core2cvsram_r_rlast     (cvsram_s_axi_rlast  )     //|< i
         ,.nvdla_core2cvsram_r_rdata     (cvsram_s_axi_rdata  )     //|< i
         #endif
-        // Interrput
-        ,.ctrl_path_intr_o              (interrput)                     // |> o
+        // Interrupt
+        ,.ctrl_path_intr_o              (interrupt)                     // |> o
         ,.o_snap_context                (interrupt_ctx)                 // |> o
         ,.nvdla_pwrbus_ram_c_pd         (nvdla_pwrbus_ram_c_pd)         // |< i
         ,.nvdla_pwrbus_ram_ma_pd        (nvdla_pwrbus_ram_ma_pd)        // |< i *
@@ -422,7 +462,7 @@ module action_wrapper #(
         .m_axi_awqos    ( m_axi_host_mem_awqos),
         .m_axi_awregion ( m_axi_host_mem_awregion),
         /**************** Write Data Channel Signals ****************/
-        .m_axi_wdata    ( m_axi_host_mem_wdata),
+        .m_axi_wdata    ( m_axi_host_mem_wdata_wire),
         .m_axi_wstrb    ( m_axi_host_mem_wstrb),
         .m_axi_wvalid   ( m_axi_host_mem_wvalid),
         .m_axi_wready   ( m_axi_host_mem_wready),
@@ -542,6 +582,6 @@ module action_wrapper #(
         .s_axi_rlast    (cvsram_s_axi_rlast),              // output wire s_axi_rlast
         .s_axi_rvalid   (cvsram_s_axi_rvalid),             // output wire s_axi_rvalid
         .s_axi_rready   (cvsram_s_axi_rready)              // input wire s_axi_rready
-);
+    );
     #endif
 endmodule
