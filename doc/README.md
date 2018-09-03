@@ -26,3 +26,28 @@ The usage of basic conversion directives (#pragma) and their understanding will 
 
 * For hardware skilled user [HDL_example](../actions/hdl_example/) and [hdl_nvme_example](../actions/hdl_nvme_example/) show several different memory copy usage examples.
 
+
+### P8 CAPI1.0 SNAP FPGA Boards Supported Requires Ubuntu 16.04.1 LTS or later :
+
+| Manufacturer|Card Type|Code Name|FPGA|DRAM|Other|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
+|:------------|:-------:|:-------:|:--:|:--:|:---:|:------:|:-------------|:---:|:----------:|:-----------
+|  Alphadata  |ADM-PCIE-KU3|ADKU3|KU060|16GB DDR3(2ch)|-|2x 40GbE/4x10GbE|PCIe Gen3 x8|LowProf|X|X|
+|  Nallatech  |250S	    |N250S|KU060|4GB DDR4(1ch)|2TB NVME|PCIe Gen3 x8|LowProf|X|X|
+|  Semptian	  |NSA-121B	|S121B|KU115|16GB DDR4(2ch)|2x10GbE|PCIe Gen3 x8|LowProf|X|X|
+
+### P9 CAPI2.0 SNAP FPGA Boards Supported Requires Ubuntu 18.04.1 or later :
+
+| Manufacturer|Card Type|Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
+|:------------|:-------:|:-------:|:--:|:--:|:--:|:-:|:------:|:-------------|:---:|:----------:|:-----------
+|  Alphadata	|ADM-PCIE-9V3|AD9V3|VU3P|16GB/32GB DDR4 (2ch)|-|-|2x (100GbE/4x25GbE)|PCIe Gen4 x8|LowProf|X|Oct-18
+|  Nallatech	|250S+|N250SP|KU15P|4GB DDR4  (1ch)|3.8TB/6.4TB/25TB|-|-|PCIe Gen4 x8|LowProf|X|Sep-18
+|  ReflexCES	|XpressVUP-LP9PT|RCXVUP|VU9P|8GB DDR4 (2ch)|-|144Mb/575Mb|2x (100GbE/4x25GbE)|PCIe Gen3 x 16|LowProf|X|X
+|  Flyslice	|FX609QL|FX609|VU9P|16GB DDR4 (4ch)|-|-|2x (100GbE/4x25GbE)|PCIe Gen3 x 16|LowProf|X|X
+|  Semptian	|NSA-241|S241|VU9P|32GB DDR4 (4ch)|-|-|?|PCIe Gen3 x 16|FullHeight|TBD|TBD
+
+### P9 OPENCAPI3.0 SNAP FPGA Boards Supported Requires Ubuntu 18.04.1 or later :
+
+| Manufacturer|Card Type|Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
+|:------------|:-------:|:-------:|:--:|:--:|:--:|:-:|:------:|:-------------|:---:|:----------:|:-----------
+|  Alphadata	|ADM-PCIE-9V3|AD9V3|VU3P|16GB/32GB DDR4 (2ch)|-|-|2x25GbE|1 OpenCAPILink (8x25Gb)|LowProf|Dec-18|Dec-18
+|  Mellanox  |Innova-2 Flex	    |TBD|KU15P|4GB/8GB DDR4|-|2x25GbE|	1 OpenCAPILink (8x25Gb)	|LowProf|Dec-18|Dec-18
