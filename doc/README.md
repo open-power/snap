@@ -26,8 +26,11 @@ The usage of basic conversion directives (#pragma) and their understanding will 
 
 * For hardware skilled user [HDL_example](../actions/hdl_example/) and [hdl_nvme_example](../actions/hdl_nvme_example/) show several different memory copy usage examples.
 
+* Supported Boards :
 
-### P8 CAPI1.0 SNAP FPGA Boards Supported Requires Ubuntu 16.04.1 LTS or later :
+
+### P8 CAPI1.0 SNAP FPGA Supported Boards 
+_Requires Ubuntu 16.04.1 LTS or later_ :
 
 | Manufacturer|Card Type|Code Name|FPGA|DRAM             |NVME|QDR|Ethernet        |CAPI Interface|Board|CAPI support|SNAP support
 |:------------|:-------:|:-------:|:--:|:---------------:|:--:|:-:|:---------------|:---:|:----------:|:-----------:|:-
@@ -36,7 +39,8 @@ The usage of basic conversion directives (#pragma) and their understanding will 
 |  Nallatech  |250S	       |N250S|KU060|4GB DDR4(1ch)    |2TB |-  |-               |PCIe Gen3 x8|LowProf|X|X|
 |  Semptian	  |NSA-121B	   |S121B|KU115|16GB DDR4(2ch)   |-|-|2x10GbE|PCIe Gen3 x8|LowProf|X|X|
 
-### P9 CAPI2.0 SNAP FPGA Boards Supported Requires Ubuntu 18.04.1 or later :
+### P9 CAPI2.0 SNAP FPGA Supported Boards
+_Requires Ubuntu 18.04.1 or later_ :
 
 | Manufacturer|Card Type|Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
 |:------------|:-------:|:-------:|:--:|:--:|:--:|:-:|:------:|:-------------|:---:|:----------:|:-----------
@@ -46,9 +50,10 @@ The usage of basic conversion directives (#pragma) and their understanding will 
 |  Flyslice	|FX609QL|FX609|VU9P*|16GB DDR4 (4ch)|-|-|-|PCIe Gen3 x 16|LowProf|X|X
 |  Semptian	|NSA-241|S241|VU9P*|32GB DDR4 (4ch)|-|-|?|PCIe Gen3 x 16|FullHeight|TBD|TBD
 
-* : requires an auxiliary power supply connector (100W)
+\* : requires an auxiliary power supply connector (100W)
 
-### P9 OPENCAPI3.0 SNAP FPGA Boards Supported Requires Ubuntu 18.04.1 or later :
+### P9 OPENCAPI3.0 SNAP FPGA Supported Boards
+_Requires Ubuntu 18.04.1 or later_ :
 
 | Manufacturer|Card Type|Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
 |:------------|:-------:|:-------:|:--:|:--:|:--:|:-:|:------:|:-------------|:---:|:----------:|:-----------
