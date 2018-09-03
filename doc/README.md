@@ -52,5 +52,5 @@ The usage of basic conversion directives (#pragma) and their understanding will 
 
 | Manufacturer|Card Type|Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
 |:------------|:-------:|:-------:|:--:|:--:|:--:|:-:|:------:|:-------------|:---:|:----------:|:-----------
-|  Alphadata	|ADM-PCIE-9V3|AD9V3|VU3P|16GB/32GB DDR4 (2ch)|-|-|2x25GbE|1 OpenCAPILink (8x25Gb)|LowProf|Dec-18|Dec-18
+|  Alphadata	|ADM-PCIE-9V3|AD9V3|VU3P|16GB/32GB DDR4 (2ch)|-|-|2x (100GbE/4x25GbE|1 OpenCAPILink (8x25Gb)|LowProf|Dec-18|Dec-18
 |  Mellanox  |Innova-2 Flex	    |TBD|KU15P|4GB/8GB DDR4|-|-|2x25GbE|	1 OpenCAPILink (8x25Gb)	|LowProf|Dec-18|Dec-18
