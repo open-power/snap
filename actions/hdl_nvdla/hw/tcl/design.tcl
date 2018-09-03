@@ -36,4 +36,8 @@ foreach usr_ip [glob -nocomplain -dir $action_ipdir *] {
         export_ip_user_files -of_objects             [ get_files $usr_ip_xci] -no_script -sync -force -quiet >> $log_file
     }
 }
+puts "                        importing set_max_fanout XDCs"
+add_files -fileset constrs_1 -norecurse $action_dir/tcl/set_max_fanout.xdc >> $log_file
+set_property used_in_synthesis true [get_files $action_dir/tcl/set_max_fanout.xdc]
+set_property used_in_implementation true [get_files $action_dir/tcl/set_max_fanout.xdc]
 
