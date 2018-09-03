@@ -59,7 +59,7 @@ As of now, the following FPGA cards can be used with SNAP _(see [cards ressource
 
 ## Development (Step1 & Step2)
 Development is usually done on a Linux (x86) computer. 
-See examples of [supported development configuration](./doc#p8-development-environments-).
+See examples of [supported development configurations](./doc#p8-development-environments-).
 The required tools and packages are listed below. Web access to github is recommended to follow the build instructions. A real FPGA card is not required for the plain hardware development.
 
 ### (a) Xilinx Vivado
@@ -95,7 +95,7 @@ For more information, see the [Simulation README](hardware/sim/README.md).
 
 ## Deployment (Step3)
 Deployment is on a Power or OpenPower server with an FPGA card plugged.
-See examples of [supported deployment configuration](./doc#p8-deployment-environment-ibm-server-examples-supporting-capi-snap-).
+See examples of [supported deployment configurations](./doc#p8-deployment-environment-ibm-server-examples-supporting-capi-snap-).
 
 This code uses libcxl to access the CAPI hardware. Install it with the package manager of your Linux distribution, e.g. 
 `sudo apt-get install libcxl-dev` for Ubuntu.  
