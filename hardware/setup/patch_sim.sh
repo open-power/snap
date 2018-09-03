@@ -37,7 +37,7 @@ if [ "$NAME" == "top.sh" ]; then
               fi
               ;;
     "xcelium")
-              sed -i "s/93 -relax/93 -sv -elaborate -smartorder -relax +libext+.vlib+.v+.sv+.svh +define+NVTOOLS_SYNC2D_GENERIC_CELL +define+PRAND_OFF +define+UVM_FIX_REV -timescale 1ns\/1ns/gI"         $1/$2 # run irun up to elaboration, skip execution
+              sed -i "s/93 -relax/93 -sv -elaborate -smartorder -relax +libext+.vlib+.v+.sv+.svh -timescale 1ns\/1ns/gI"         $1/$2 # run irun up to elaboration, skip execution
               sed -i "s/-top xil_defaultlib.top/-top work.top/gI"  $1/$2 # build top in work library
               if [[ "$NVME_USED" == "TRUE" && -n "$DENALI" ]]; then :
                 echo "                     patch $irun include denali files for NVMe"

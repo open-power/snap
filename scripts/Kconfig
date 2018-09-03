@@ -301,6 +301,30 @@ choice
 		select DISABLE_NVME
 endchoice
 
+choice
+	bool "NVDLA configuration"
+	default NV_SMALL
+	help
+            Select different NVDLA configurations
+        depends on HDL_NVDLA
+
+	config NV_SMALL
+		bool "nv_small -- NVDLA with 64 MACs"
+		help
+		  NVDLA with 64 MACs
+
+	config NV_LARGE
+		bool "nv_large -- NVDLA with 2048 MACs"
+		help
+		  NVDLA with 2048 MACs
+endchoice
+
+config NVDLA_CONFIG 
+        depends on HDL_NVDLA
+	string
+	default "nv_small"     if NV_SMALL
+	default "nv_large"     if NV_LARGE
+
 config ENABLE_HLS_SUPPORT
 	bool
 	default n

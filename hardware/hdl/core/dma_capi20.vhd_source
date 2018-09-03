@@ -114,7 +114,9 @@ ARCHITECTURE dma OF dma IS
                             ST_COM_XLAT_WR_P0
                            );
   TYPE DMA_FSM_T IS (ST_FSM_ERROR, ST_IDLE,
-                     ST_DMA_READ_REQ, ST_DMA_WRITE_REQ
+                     ST_DMA_READ_REQ,
+                     ST_DMA_WRITE_REQ_CYCLE1, ST_DMA_WRITE_REQ_CYCLE2,
+                     ST_DMA_WRITE_REQ_CYCLE3, ST_DMA_WRITE_REQ_CYCLE4 
                     );
   TYPE AH_C_FSM_T IS (ST_FSM_ERROR, ST_RSP_ERROR, ST_IDLE,
                       ST_COM_RESTART, ST_COM_INT_REQ, ST_WAIT_4_RSP,
@@ -184,6 +186,7 @@ ARCHITECTURE dma OF dma IS
   SIGNAL dma_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL dma_wtag_next_q             : std_logic_vector(  5 DOWNTO  0);
   SIGNAL dma_wtag_q                  : std_logic_vector(  5 DOWNTO  0);
+  SIGNAL dma_wtag_d1_q               : std_logic_vector(  5 DOWNTO  0);
   SIGNAL utc_rtag_p_q                : std_logic;
   SIGNAL utc_rtag_q                  : std_logic_vector(  5 DOWNTO  0);
   SIGNAL utc_wtag_next_q             : std_logic_vector(  5 DOWNTO  0);
@@ -1470,10 +1473,9 @@ BEGIN
     dma_fsm : PROCESS (ha_pclock)
       VARIABLE dma_rtag_v       : integer RANGE 0 TO 31;
       VARIABLE dma_rtag_next_v  : integer RANGE 0 TO 31;
-      VARIABLE dma_rreq_cnt_p1_v: boolean;
       VARIABLE dma_wtag_v       : integer RANGE 0 TO 31;
+      VARIABLE dma_wtag_d1_v    : integer RANGE 0 TO 31;
       VARIABLE dma_wtag_next_v  : integer RANGE 0 TO 31;
-      VARIABLE dma_wreq_cnt_p1_v: boolean;
     BEGIN
       IF (rising_edge(ha_pclock)) THEN
         --
@@ -1487,15 +1489,34 @@ BEGIN
         dma_wtag_v        := to_integer(unsigned(dma_wtag_q     (4 DOWNTO 0)));
         dma_wtag_next_v   := to_integer(unsigned(dma_wtag_next_q(4 DOWNTO 0)));
 
-        dma_rreq_cnt_q    <= dma_rreq_cnt_q;
-        dma_rreq_cnt_p1_v := FALSE;
-        dma_wreq_cnt_q    <= dma_wreq_cnt_q;
-        dma_wreq_cnt_p1_v := FALSE;
+        dma_wtag_d1_q     <= dma_wtag_q;
+        dma_wtag_d1_v     := to_integer(unsigned(dma_wtag_d1_q  (4 DOWNTO 0)));
 
-        dh_d_q            <= ('0', (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'), (OTHERS => '0'),
-                              '0', (OTHERS => '0'), (OTHERS => '0'));
+        dma_rreq_cnt_q    <= dma_rreq_cnt_q;
+        dma_wreq_cnt_q    <= dma_wreq_cnt_q;
 
         buf_wrdreq_q <= FALSE;
+
+        --
+        -- DMA READ / WRITE MUX
+        --
+        IF dma_fsm_q = ST_DMA_READ_REQ THEN
+          dh_d_q.valid     <= '1';
+          dh_d_q.req_utag  <= "00000" & dma_rtag_q(4 DOWNTO 0);
+          dh_d_q.req_itag  <= read_ctrl_q(dma_rtag_v).itag;
+          dh_d_q.req_type  <= "000";
+          dh_d_q.atomic_op <= (OTHERS => '0');
+          dh_d_q.atomic_le <= '0';
+          dh_d_q.size      <= read_ctrl_q(dma_rtag_v).uts & "000000";
+        ELSE
+          dh_d_q.valid     <= buf_wdata_vld;
+          dh_d_q.req_utag  <= "00100" & dma_wtag_d1_q(4 DOWNTO 0);
+          dh_d_q.req_itag  <= write_ctrl_q(dma_wtag_d1_v).itag;
+          dh_d_q.req_type  <= buf_wdata_type;
+          dh_d_q.atomic_op <= (OTHERS => '0');
+          dh_d_q.atomic_le <= '0';
+          dh_d_q.size      <= write_ctrl_q(dma_wtag_d1_v).buf & "000000";  
+        END IF;
 
         --
         -- F S M
@@ -1508,14 +1529,12 @@ BEGIN
             IF (read_ctrl_q(dma_rtag_v).dma  = XLAT_DONE ) AND
                 (rsp_rtag_q                 /= dma_rtag_q) AND
                (dma_rreq_cnt_q               < 7         )THEN
-              dma_fsm_q         <= ST_DMA_READ_REQ;
-              dma_rreq_cnt_p1_v := TRUE;
+              dma_fsm_q     <= ST_DMA_READ_REQ;
             ELSIF  (write_ctrl_q(dma_wtag_v).dma  = XLAT_DONE ) AND
                    (rsp_wtag_q                   /= dma_wtag_q) AND
                    (dma_wreq_cnt_q                < 7         )THEN
-              dma_fsm_q         <= ST_DMA_WRITE_REQ;
-              buf_wrdreq_q      <= TRUE;
-              dma_rreq_cnt_p1_v := TRUE;
+              dma_fsm_q    <= ST_DMA_WRITE_REQ_CYCLE1;
+              buf_wrdreq_q <= TRUE;
             END IF;
 
           --------------------------------------------------------------------
@@ -1528,11 +1547,9 @@ BEGIN
             IF (read_ctrl_q(dma_rtag_next_v).dma  = XLAT_DONE      ) AND
                 (rsp_rtag_q                      /= dma_rtag_next_q) AND
                (dma_rreq_cnt_q                   < 7               ) THEN
-              dma_fsm_q         <= ST_DMA_READ_REQ;
-              dma_rreq_cnt_p1_v := TRUE;
+              dma_fsm_q <= ST_DMA_READ_REQ;
             ELSE
-              dma_fsm_q         <= ST_IDLE;
-              dma_rreq_cnt_p1_v := TRUE;
+              dma_fsm_q <= ST_IDLE;
             END IF;
 
             --
@@ -1541,46 +1558,37 @@ BEGIN
             dma_rtag_q      <= dma_rtag_q      + 1;
             dma_rtag_next_q <= dma_rtag_next_q + 1;
 
-            dh_d_q.valid    <= '1';
-            dh_d_q.req_utag <= "00000" & dma_rtag_q(4 DOWNTO 0);
-            dh_d_q.req_itag <= read_ctrl_q(dma_rtag_v).itag;
-            dh_d_q.req_type <= "000";
-            dh_d_q.size     <= read_ctrl_q(dma_rtag_v).uts & "000000";
 
           --
           -- STATE COMMAND: DMA WRITE REQUEST
           --
-          WHEN ST_DMA_WRITE_REQ =>
+          WHEN ST_DMA_WRITE_REQ_CYCLE1 =>
+            dma_fsm_q    <= ST_DMA_WRITE_REQ_CYCLE2;
+            buf_wrdreq_q <= TRUE;
+              
+          WHEN ST_DMA_WRITE_REQ_CYCLE2 =>
+            dma_fsm_q    <= ST_DMA_WRITE_REQ_CYCLE3;
+            buf_wrdreq_q <= TRUE;
+            
+          WHEN ST_DMA_WRITE_REQ_CYCLE3 =>
+            dma_fsm_q       <= ST_DMA_WRITE_REQ_CYCLE4;
+            buf_wrdreq_q    <= TRUE;
+
+          WHEN ST_DMA_WRITE_REQ_CYCLE4 =>
             IF (write_ctrl_q(dma_wtag_next_v).dma  = XLAT_DONE ) AND
                (rsp_wtag_q                        /= dma_wtag_q) AND
                (dma_wreq_cnt_q                     < 7         ) THEN
-              dma_fsm_q         <= ST_DMA_WRITE_REQ;
-              buf_wrdreq_q      <= TRUE;
-              dma_rreq_cnt_p1_v := TRUE;
+              dma_fsm_q    <= ST_DMA_WRITE_REQ_CYCLE1;
+              buf_wrdreq_q <= TRUE;
             ELSE
-              buf_wrdreq_q      <= FALSE;
-              dma_wreq_cnt_p1_v := TRUE;
-
-              IF (buf_wdata_vld = '1') AND
-                 (buf_wdata_end = '1') THEN 
-                dma_fsm_q <= ST_IDLE;
-              END IF;
+              buf_wrdreq_q <= FALSE;
+              dma_fsm_q <= ST_IDLE;
             END IF;
 
-            --
-            -- send out the DMA request
-            --
-            dh_d_q.valid    <= buf_wdata_vld;
-            dh_d_q.req_utag <= "00100" & dma_wtag_q(4 DOWNTO 0);
-            dh_d_q.req_itag <= write_ctrl_q(dma_wtag_v).itag;
-            dh_d_q.req_type <= buf_wdata_type;
-            dh_d_q.size     <= write_ctrl_q(dma_wtag_v).buf & "000000";
+            dma_wtag_q      <= dma_wtag_q      + 1;
+            dma_wtag_next_q <= dma_wtag_next_q + 1;
 
-            IF (buf_wdata_vld = '1') AND
-               (buf_wdata_end = '1') THEN 
-              dma_wtag_q      <= dma_wtag_q      + 1;
-              dma_wtag_next_q <= dma_wtag_next_q + 1;
-            END IF;
+
 
           --
           -- STATE FSM ERROR
@@ -1611,15 +1619,11 @@ BEGIN
         --
         IF (hd_s_q.utag_valid       = '1') AND
            (hd_s_q.utag(9 DOWNTO 5) = "00100") THEN
-          IF NOT ((dma_fsm_q      = ST_DMA_WRITE_REQ) AND 
-                  (buf_wdata_vld  = '1'             ) AND 
-                  (buf_wdata_type = "001"           )) THEN
+          IF NOT (dma_fsm_q = ST_DMA_WRITE_REQ_CYCLE1) THEN
             dma_wreq_cnt_q <= dma_wreq_cnt_q - 1;
           END IF;
         ELSE
-          IF (dma_fsm_q      = ST_DMA_WRITE_REQ) AND 
-             (buf_wdata_vld  = '1'             ) AND 
-             (buf_wdata_type = "001"           ) THEN
+          IF (dma_fsm_q  = ST_DMA_WRITE_REQ_CYCLE1) THEN
             dma_wreq_cnt_q <= dma_wreq_cnt_q + 1;
           END IF;
         END IF;
@@ -2368,8 +2372,8 @@ BEGIN
     dh_d_o.req_utag  <= dh_d_q.req_utag;
     dh_d_o.req_itag  <= dh_d_q.req_itag;
     dh_d_o.req_type  <= dh_d_q.req_type;
-    dh_d_o.atomic_op <= (OTHERS => '0');
-    dh_d_o.atomic_le <=  '0';
+    dh_d_o.atomic_op <= dh_d_q.atomic_op;
+    dh_d_o.atomic_le <= dh_d_q.atomic_le;
     dh_d_o.size      <= dh_d_q.size;
     dh_d_o.data      <= buf_wdata;
 

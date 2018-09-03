@@ -117,6 +117,7 @@
         "00000108") a0="hls_blowfish";;
         "10141007") a0="hls_nvme_memcopy";;
         "10141008") a0="hls_helloworld";;
+        "00000006") a0="hdl_nvdla";;
         *) echo "unknown action0 type=$t0l, exiting";exit 1;;
       esac; echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="snap_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
@@ -140,6 +141,7 @@
         "00000108") a1="hls_blowfish";;
         "10141007") a1="hls_nvme_memcopy";;
         "10141008") a1="hls_helloworld";;
+        "00000000") a1="hdl_nvdla";;
         *) echo "unknown action1 type=$t1l, exiting";exit 1;;
       esac; echo "action0 type1s=$t1s type1l=$t1l $a1"
       t="snap_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
@@ -487,6 +489,10 @@
         if diff in.in decr.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
       done
     fi # blowfish
+    if [[ "$t0l" == "00000006" || "${env_action}" == "hdl_nvdla" ]];then echo -e "$del\ntesting hdl_nvdla"
+      step "$ACTION_ROOT/tests/test_0x00000006.sh"                                            # running the test list
+    fi # hdl_nvdla
+
  #
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"  # end of loop
   done; l=""; ts3=$(date +%s); totaltime=`expr $ts3 - $ts0`; echo "loops=$loops tests=$n total_time=$totaltime" # end of test
