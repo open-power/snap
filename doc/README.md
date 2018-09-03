@@ -66,26 +66,31 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 
 * Supported Development Environments :
 
-### P8 Development Environments :
+### Development Environments :
 
-| Development Server(x86)| Minimum| Recommended|Helpful commands
-|:-----------------------|:------:|:----------:|:--------------
-| Linux Level            |Ubuntu 16.04.x LTS|Ubuntu 16.04.1 LTS| lsb_release -a
-| Linux Level            |RedHat 6.4 Centos Linux 7 SUSE 11.4|
+| Development Server(x86)| Ubuntu        | RedHat | CentOS | Suse  | Helpful commands
+|:-----------------------|:-------------:|:------:|:------:|:-----:|:----------------
+|                        |16.04.1 minimum| 6.4    | Linux 7| 11.4  | lsb_release -a
+|**Tool**                |**Minimum**|**Recommended**|**Helpful commands**|
 | gcc                    |4.4.7|latest |gcc -v
 | Vivado                 |2017.4|2018.1|vivado -version
 | Vivado HLS             |2017.4|2018.1|vivado_hls -version
-| Cadence ncsim (optional for nvme simulation with models)|15.10-s019|15.10-s019|ncsim -version
+| Cadence ncsim (optional for nvme simulation with models)|15.10-s019(Vivado 2017.4)|15.20-s018(Vivado 2018.1)|ncsim -version
 
-### P9 Development Environments :
+### Deployment Environments :
 
-| Development Server(x86)| Minimum| Recommended|Helpful commands
-|:-----------------------|:------:|:----------:|:--------------
-| Linux Level            |Ubuntu 18.04.x LTS|Ubuntu 18.04.x LTS| lsb_release -a
-| gcc                    |4.4.7|latest |gcc -v
-| Vivado                 |2017.4|2018.1|vivado -version
-| Vivado HLS             |2017.4|2018.1|vivado_hls -version
-| Cadence ncsim (optional for nvme simulation with models)|15.20-s018|15.20-s018|ncsim -version
+| Deployment Server(Power)| Ubuntu        | RedHat | CentOS | Suse  | Helpful commands
+|:------------------------|:-------------:|:------:|:------:|:-----:|:----------------
+| Power8 (CAPI1.0)        | 16.04 minimum | RHEL7.3|    -   |   -   | lsb_release -a
+| Power9 (CAPI2.0)        | 18.04 minimum | ??     |    -   |   -   | lsb_release -a
+| Power9 (OpenCAPI3.0)    | 18.04 minimum | ??     |    -   |   -   | lsb_release -a
+
+|**Tool**                 |**Minimum**|**Recommended**|**Helpful commands**|
+| gcc                     |4.4.7|latest |gcc -v
+|P8 Server Firmware : skiboot|5.1.13(=to FW840.20)|latest|update_flash -d
+|P9 Server Firmware : skiboot|????(=to ????)|latest|update_flash -d
+
+
 
 ### P8 Deployment environment (IBM server examples supporting CAPI SNAP) :
 
@@ -94,7 +99,6 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 | 8247-21L       |Power S822L|2x CAPI adapters per socket => 2 CAPI (C7-C6)
 | 8247-22L       |Power S812L|2x CAPI adapters per socket => 4 CAPI (C7, C6, C5, C3)
 | 8247-42L       |Power S824L|2x CAPI adapters + 2GPUs (C3-C6)=> 4 CAPI (C3,C5,C6,C7)
-| **MTM**|**Cloud Technical**|**CAPI Capacity (per PCIe slots priority)**
 | 8348-21C       |Power Systems S812LC|2x CAPI adapters per socket => 2 CAPI (C3- C4)
 | 8335-GCA       |Power Systems S822LC|4 of the 5 PCIe slots are CAPI capable => 4 CAPI(C4-C1-C5-C2)
 
@@ -105,4 +109,4 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 | 8335-GTH(air cooled)       |Power AC922|1 (Slot 2)    |2 (Slot 3, Slot 4)
 | 8335-GTX(water cooled)     |Power AC922|0             |2
 | 9006-22P - 2 proc          |Power LC922|1(WIO Slot4)	|2 (UIO Slot1 - WIO Slot3)
-
+| .....                      |.....      | |
