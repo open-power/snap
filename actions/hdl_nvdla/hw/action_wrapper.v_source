@@ -314,7 +314,7 @@ module action_wrapper #(
         // AXI-lite Interface
         ,.s_axi_aclk                    (dla_csb_clk)                   // |< i
         ,.s_axi_aresetn                 (dla_reset_rstn)                // |< i
-        ,.s_axi_awaddr                  (s_axi_ctrl_reg_araddr)         // |< i
+        ,.s_axi_awaddr                  (s_axi_ctrl_reg_awaddr)         // |< i
         ,.s_axi_awvalid                 (s_axi_ctrl_reg_awvalid)        // |< i
         ,.s_axi_awready                 (s_axi_ctrl_reg_awready)        // |> o
         ,.s_axi_wdata                   (s_axi_ctrl_reg_wdata)          // |< i
