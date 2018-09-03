@@ -45,7 +45,7 @@ Please also have a look at [actions](./actions) to see several examples which ma
 
 # 3. Dependencies
 ## FPGA Card selection
-As of now, the following FPGA cards can be used with SNAP:
+As of now, the following FPGA cards can be used with SNAP _(see [cards ressources details](./doc/README.md#p8-capi10-snap-fpga-supported-boards))_ :
 * for POWER8 (CAPI1.0):
   * Alpha-Data ADM-PCIE-KU3        http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
   * Alpha-Data ADM-PCIE-8K5 (rev2) http://www.alpha-data.com/dcp/products.php?product=adm-pcie-8k5
