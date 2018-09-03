@@ -59,3 +59,48 @@ _Requires Ubuntu 18.04.1 or later_ :
 |:------------|:-------:|:-------:|:--:|:--:|:--:|:-:|:------:|:-------------|:---:|:----------:|:-----------
 |  Alphadata	|ADM-PCIE-9V3|AD9V3|VU3P|16GB/32GB DDR4 (2ch)|-|-|2x (100GbE/4x25GbE|1 OpenCAPILink (8x25Gb)|LowProf|Dec-18|Dec-18
 |  Mellanox  |Innova-2 Flex	    |TBD|KU15P|4GB/8GB DDR4|-|-|2x25GbE|	1 OpenCAPILink (8x25Gb)	|LowProf|Dec-18|Dec-18
+
+
+
+* Supported Development Environments :
+
+### P8 Development Environments :
+
+| Development Server(x86)| Minimum| Recommanded|Helpful commands
+|:-----------------------|:------:|:----------:|:--------------
+| Linux Level            |Ubuntu 16.04.x LTS|Ubuntu 16.04.1 LTS| lsb_release -a
+| Linux Level            |RedHat 6.4 Centos Linux 7 SUSE 11.4|
+| gcc                    |4.4.7|latest |gcc -v
+| Vivado                 |2017.4|2018.1|vivado -version
+| Vivado HLS             |2017.4|2018.1|vivado_hls -version
+| Cadence ncsim (optional for nvme simulation with models)|15.10-s019|15.10-s019|ncsim -version
+
+### P9 Development Environments :
+
+| Development Server(x86)| Minimum| Recommanded|Helpful commands
+|:-----------------------|:------:|:----------:|:--------------
+| Linux Level            |Ubuntu 18.04.x LTS|Ubuntu 18.04.x LTS| lsb_release -a
+| gcc                    |4.4.7|latest |gcc -v
+| Vivado                 |2017.4|2018.1|vivado -version
+| Vivado HLS             |2017.4|2018.1|vivado_hls -version
+| Cadence ncsim (optional for nvme simulation with models)|15.20-s018|15.20-s018|ncsim -version
+
+### P8 Deployment environment (IBM server examples supporting CAPI SNAP) :
+
+| MTM| PowerLinux| CAPI Capacity (per PCIe slots priority)
+|:--:|:-----------|:--------------------------------------
+| 8247-21L       |Power S822L|2x CAPI adapters per socket => 2 CAPI (C7-C6)
+| 8247-22L       |Power S812L|2x CAPI adapters per socket => 4 CAPI (C7, C6, C5, C3)
+| 8247-42L       |Power S824L|2x CAPI adapters + 2GPUs (C3-C6)=> 4 CAPI (C3,C5,C6,C7)
+| **MTM**|**Cloud Technical**|**CAPI Capacity (per PCIe slots priority)**
+| 8348-21C       |Power Systems S812LC|2x CAPI adapters per socket => 2 CAPI (C3- C4)
+| 8335-GCA       |Power Systems S822LC|4 of the 5 PCIe slots are CAPI capable => 4 CAPI(C4-C1-C5-C2)
+
+### P9 Deployment environment (IBM server examples supporting CAPI SNAP) :
+
+| MTM| PowerLinux| PCIeGen4x8 for CAPI| PCIeGen4x16 for CAPI
+|:--:|:-----------|:------------------|:--------------------
+| 8335-GTH(air cooled)       |Power AC922|1 (Slot 2)    |2 (Slot 3, Slot 4)
+| 8335-GTX(water cooled)     |Power AC922|0             |2
+| 9006-22P - 2 proc          |Power LC922|1(WIO Slot4)	|2 (UIO Slot1 - WIO Slot3)
+
