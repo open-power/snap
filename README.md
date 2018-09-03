@@ -58,7 +58,9 @@ As of now, the following FPGA cards can be used with SNAP _(see [cards ressource
   * ReflexCES XpressVUP LP9P https://www.reflexces.com/products-solutions/other-cots-boards/xilinx/xpressvup
 
 ## Development (Step1 & Step2)
-Development is usually done on a Linux (x86) computer. The required tools and packages are listed below. Web access to github is recommended to follow the build instructions. A real FPGA card is not required for the plain hardware development.
+Development is usually done on a Linux (x86) computer. 
+See examples of [supported development configuration](./doc#p8-development-environments-).
+The required tools and packages are listed below. Web access to github is recommended to follow the build instructions. A real FPGA card is not required for the plain hardware development.
 
 ### (a) Xilinx Vivado
 SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulation model and image build, the Xilinx Vivado 2018.1 tool suite is recommended.
@@ -92,7 +94,8 @@ Simulating the NVMe host controller including flash storage devices requires lic
 For more information, see the [Simulation README](hardware/sim/README.md).
 
 ## Deployment (Step3)
-Deployment is on a Power or OpenPower server with an FPGA card plugged. 
+Deployment is on a Power or OpenPower server with an FPGA card plugged.
+See examples of [supported deployment configuration](./doc#p8-deployment-environment-ibm-server-examples-supporting-capi-snap-).
 
 This code uses libcxl to access the CAPI hardware. Install it with the package manager of your Linux distribution, e.g. 
 `sudo apt-get install libcxl-dev` for Ubuntu.  
