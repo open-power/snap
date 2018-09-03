@@ -66,7 +66,7 @@ _Requires Ubuntu 18.04.1 or later_ :
 
 ### P8 Development Environments :
 
-| Development Server(x86)| Minimum| Recommanded|Helpful commands
+| Development Server(x86)| Minimum| Recommended|Helpful commands
 |:-----------------------|:------:|:----------:|:--------------
 | Linux Level            |Ubuntu 16.04.x LTS|Ubuntu 16.04.1 LTS| lsb_release -a
 | Linux Level            |RedHat 6.4 Centos Linux 7 SUSE 11.4|
@@ -77,7 +77,7 @@ _Requires Ubuntu 18.04.1 or later_ :
 
 ### P9 Development Environments :
 
-| Development Server(x86)| Minimum| Recommanded|Helpful commands
+| Development Server(x86)| Minimum| Recommended|Helpful commands
 |:-----------------------|:------:|:----------:|:--------------
 | Linux Level            |Ubuntu 18.04.x LTS|Ubuntu 18.04.x LTS| lsb_release -a
 | gcc                    |4.4.7|latest |gcc -v
