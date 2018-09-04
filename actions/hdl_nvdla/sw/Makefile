@@ -39,7 +39,15 @@ endif
 endif
 
 include $(SNAP_ROOT)/snap_env.sh
+
+uname_p := $(shell uname -p)
+
+ifeq ($(uname_p),ppc64le)
+export TOOLCHAIN_PREFIX=ppc64le-redhat-linux-
+else
 export TOOLCHAIN_PREFIX=x86_64-redhat-linux-
+endif
+
 export TOP_UMD=${ACTION_ROOT}/sw/nvdla-sw/umd
 export TOP_KMD=${ACTION_ROOT}/sw/nvdla-sw/kmd
 

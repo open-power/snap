@@ -900,13 +900,13 @@ int snap_action_is_idle(struct snap_action *action, int *rc)
 int snap_action_wait_interrupt(struct snap_action *action, int *rc, int timeout)
 {
 	int _rc = 0;
-	//uint32_t action_data = 0;
+	uint32_t action_data = 0;
 	struct snap_card *card = (struct snap_card *)action;
  	hw_wait_irq(card, timeout, SNAP_ACTION_IRQ_NUM);
-	//snap_mmio_write32(card, ACTION_IRQ_STATUS, ACTION_IRQ_STATUS_DONE);
-	//snap_mmio_write32(card, ACTION_IRQ_APP, 0);
-	//snap_mmio_write32(card, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_OFF);
-	//_rc = snap_mmio_read32(card, ACTION_CONTROL, &action_data);
+	snap_mmio_write32(card, ACTION_IRQ_STATUS, ACTION_IRQ_STATUS_DONE);
+	snap_mmio_write32(card, ACTION_IRQ_APP, 0);
+	snap_mmio_write32(card, ACTION_IRQ_CONTROL, ACTION_IRQ_CONTROL_OFF);
+	_rc = snap_mmio_read32(card, ACTION_CONTROL, &action_data);
  	if (rc)
 		*rc = _rc;
         return _rc;

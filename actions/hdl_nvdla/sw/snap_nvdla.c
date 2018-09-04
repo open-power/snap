@@ -207,6 +207,8 @@ int main (int argc, char* argv[])
     int cmd;
     int rc = 1;
     uint64_t cir;
+    uint32_t irq_control;
+    uint32_t action_control;
     int timeout = ACTION_WAIT_TIME;
     snap_action_flag_t attach_flags = 0;
     unsigned long ioctl_data;
@@ -326,6 +328,19 @@ int main (int argc, char* argv[])
         return -1;
     }
 
+    VERBOSE2 ("Free Card Handle: %p\n", dn);
+    snap_card_free (dn);
+
+    VERBOSE2 ("Open Card: %d device: %s\n", card_no, device);
+    dn = snap_card_alloc_dev (device, SNAP_VENDOR_ID_ANY, SNAP_DEVICE_ID_ANY);
+
+    if (NULL == dn) {
+        VERBOSE0 ("ERROR: Can not Open (%s)\n", device);
+        errno = ENODEV;
+        perror ("ERROR");
+        return -1;
+    }
+
     // Disable the NVDLA register region
     rc = action_write(dn, ACTION_CONFIG, 0x00000000);
 
@@ -418,6 +433,12 @@ int main (int argc, char* argv[])
         perror ("ERROR");
         return -1;
     }
+    
+    VERBOSE0 ("NVDLA loadable:  %s\n", loadable);
+    VERBOSE0 ("NVDLA input:     %s\n", input);
+    VERBOSE0 ("NVDLA image:     %s\n", image);
+    VERBOSE0 ("NVDLA normalize: %d\n", normalize);
+    VERBOSE0 ("NVDLA rawdump:   %d\n", rawdump);
 
     rc = nvdla_capi_test(loadable, input, image, normalize, rawdump);
     VERBOSE1 ("Stop to run NVDLA\n");
@@ -439,6 +460,19 @@ int main (int argc, char* argv[])
         perror ("ERROR");
         return -1;
     } 
+
+
+    rc = snap_mmio_read32 (dn, ACTION_IRQ_CONTROL, &irq_control);
+    VERBOSE1 ("irq_control: %#x\n", irq_control);
+    rc |= snap_mmio_read32 (dn, ACTION_CONTROL, &action_control);
+    VERBOSE1 ("action_control: %#x\n", action_control);
+
+    if (rc) {
+        VERBOSE0 ("ERROR: snap_mmio_read64 ERROR\n");
+        errno = ENODEV;
+        perror ("ERROR");
+        return -1;
+    }
 
     // Unmap AFU MMIO registers, if previously mapped
     VERBOSE2 ("Free Card Handle: %p\n", dn);
