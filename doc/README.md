@@ -71,7 +71,9 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 | Development Server(x86)| Ubuntu        | RedHat | CentOS | Suse  | Helpful commands
 |:-----------------------|:-------------:|:------:|:------:|:-----:|:----------------
 |                        |16.04.1 minimum| 6.4    | Linux 7| 11.4  | lsb_release -a
-|**Tool**                |**Minimum**|**Recommended**|**Helpful commands**|
+
+|**Tool**                |**Minimum**  |**Recommended**|**Helpful commands**|
+|:-----------------------|:-----------:|:-------------:|:--------------------
 | gcc                    |4.4.7|latest |gcc -v
 | Vivado                 |2017.4|2018.1|vivado -version
 | Vivado HLS             |2017.4|2018.1|vivado_hls -version
