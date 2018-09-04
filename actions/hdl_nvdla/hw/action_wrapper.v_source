@@ -279,8 +279,10 @@ module action_wrapper #(
         end
     end
 
-    assign m_axi_host_mem_arid = dbb_s_axi_arid[0];
-    assign m_axi_host_mem_awid = dbb_s_axi_awid[0];
+    assign m_axi_host_mem_arid      = dbb_s_axi_arid[0];
+    assign m_axi_host_mem_awid      = dbb_s_axi_awid[0];
+    assign m_axi_host_mem_arlock[1] = 1'b0;
+    assign m_axi_host_mem_awlock[1] = 1'b0;
 
     // Make wuser stick to 0
     assign m_axi_host_mem_wuser          = 0;
@@ -289,7 +291,8 @@ module action_wrapper #(
     assign dla_reset_rstn                = ap_rst_n;
     assign test_mode                     = 1'b0;
     assign global_clk_ovr_on             = 1'b0;
-    assign tmc2slcg_disable_clock_gating = 1'b0;
+    assign tmc2slcg_disable_clock_gating = 1'b1;
+    assign direct_reset_                 = 1'b0;
     assign nvdla_pwrbus_ram_c_pd         = 32'b0;
     assign nvdla_pwrbus_ram_p_pd         = 32'b0;
     assign nvdla_pwrbus_ram_o_pd         = 32'b0;
@@ -309,12 +312,14 @@ module action_wrapper #(
 
     assign dbb_s_axi_arcache        = 4'b0010;
     assign dbb_s_axi_awcache        = 4'b0010;
-    assign dbb_s_axi_arlock         = 2'b00;
+    assign dbb_s_axi_arlock         = 1'b0;
     assign dbb_s_axi_arprot         = 3'b000;
     assign dbb_s_axi_arqos          = 4'b0000;
-    assign dbb_s_axi_awlock         = 2'b00;
+    assign dbb_s_axi_awlock         = 1'b0;
     assign dbb_s_axi_awprot         = 3'b000;
     assign dbb_s_axi_awqos          = 4'b0000;
+    assign dbb_s_axi_arregion       = 4'b0000;
+    assign dbb_s_axi_awregion       = 4'b0000;
 
     // Burst size always match with data bus width
     assign dbb_s_axi_arsize         = 3'd#NVDLA_PRIMARY_MEMIF_WIDTH_LOG2;
@@ -458,7 +463,7 @@ module action_wrapper #(
         .m_axi_awburst  ( m_axi_host_mem_awburst),
         .m_axi_awcache  ( m_axi_host_mem_awcache),
         .m_axi_awlen    ( m_axi_host_mem_awlen),
-        .m_axi_awlock   ( m_axi_host_mem_awlock),
+        .m_axi_awlock   ( m_axi_host_mem_awlock[0]),
         .m_axi_awqos    ( m_axi_host_mem_awqos),
         .m_axi_awregion ( m_axi_host_mem_awregion),
         /**************** Write Data Channel Signals ****************/
@@ -479,7 +484,7 @@ module action_wrapper #(
         .m_axi_arsize   ( m_axi_host_mem_arsize),
         .m_axi_arburst  ( m_axi_host_mem_arburst),
         .m_axi_arcache  ( m_axi_host_mem_arcache),
-        .m_axi_arlock   ( m_axi_host_mem_arlock),
+        .m_axi_arlock   ( m_axi_host_mem_arlock[0]),
         .m_axi_arlen    ( m_axi_host_mem_arlen),
         .m_axi_arqos    ( m_axi_host_mem_arqos),
         .m_axi_arregion ( m_axi_host_mem_arregion),

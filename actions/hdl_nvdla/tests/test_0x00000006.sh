@@ -6,16 +6,18 @@ if [ ! -d $SW_REGRESSION ]; then
     exit -1
 fi
 
-ln -s $SW_REGRESSION sw_regression
+if [ ! -L sw_regression ]; then
+    ln -s $SW_REGRESSION sw_regression
+fi
 
 TEST_ROOT=$SW_REGRESSION/flatbufs/kmd
-if [ ! -d $TEST_ROOT]; then
+if [ ! -d $TEST_ROOT ]; then
     echo "Cannot find directory $TEST_ROOT!"
     exit -1
 fi
 
 GOLDEN_ROOT=$SW_REGRESSION/golden
-if [ ! -d $GOLDEN_ROOT]; then
+if [ ! -d $GOLDEN_ROOT ]; then
     echo "Cannot find directory $GOLDEN_ROOT!"
     exit -1
 fi
@@ -26,6 +28,8 @@ declare -a flatbuf_tests=("$TEST_ROOT/CDP/CDP_L0_0_small_fbuf" \
                           "$TEST_ROOT/SDP/SDP_X1_L0_0_small_fbuf" \
                           "$TEST_ROOT/PDP/PDP_L0_0_small_fbuf" \
                           "$TEST_ROOT/CONV/CONV_D_L0_0_small_fbuf")
+
+#declare -a flatbuf_tests=("$TEST_ROOT/CDP/CDP_L0_0_small_fbuf")
 
 declare -a golden_md5s=("$GOLDEN_ROOT/CDP_L0_0_small_4531af/dla/lead.md5" \
                        "$GOLDEN_ROOT/SDP_X1_L0_0_small_c9894d/dla/lead.md5" \
