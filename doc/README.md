@@ -82,13 +82,14 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 | Deployment Server(Power)| Ubuntu        | RedHat | CentOS | Suse  | Helpful commands
 |:------------------------|:-------------:|:------:|:------:|:-----:|:----------------
 | Power8 (CAPI1.0)        | 16.04 minimum | RHEL7.3|    -   |   -   | lsb_release -a
-| Power9 (CAPI2.0)        | 18.04 minimum | ??     |    -   |   -   | lsb_release -a
-| Power9 (OpenCAPI3.0)    | 18.04 minimum | ??     |    -   |   -   | lsb_release -a
+| Power9 (CAPI2.0)        | 18.04 minimum | Pegas ?|    -   |   -   | lsb_release -a
+| Power9 (OpenCAPI3.0)    | 18.04 minimum | Pegas ?|    -   |   -   | lsb_release -a
 
-|**Tool**                 |**Minimum**|**Recommended**|**Helpful commands**|
+|**Tool**                 |**Minimum**|**Recommended**|**Helpful commands**
+|:------------------------|:---------:|:-------------:|:-------------------
 | gcc                     |4.4.7|latest |gcc -v
-|P8 Server Firmware : skiboot|5.1.13(=to FW840.20)|latest|update_flash -d
-|P9 Server Firmware : skiboot|????(=to ????)|latest|update_flash -d
+|P8 Server Firmware : skiboot/FW|5.1.13(=to FW840.20)|latest|update_flash -d
+|P9 Server Firmware : skiboot/FW|????(=to ????)      |latest|update_flash -d
 
 
 
