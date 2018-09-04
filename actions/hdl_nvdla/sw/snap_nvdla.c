@@ -209,6 +209,7 @@ int main (int argc, char* argv[])
     uint64_t cir;
     uint32_t irq_control;
     uint32_t action_control;
+    uint32_t config;
     int timeout = ACTION_WAIT_TIME;
     snap_action_flag_t attach_flags = 0;
     unsigned long ioctl_data;
@@ -413,6 +414,25 @@ int main (int argc, char* argv[])
         return -1;
     }
 
+    // Disable the NVDLA register region
+    rc = action_write(dn, ACTION_CONFIG, 0x00000000);
+    VERBOSE0 ("Asserting soft reset\n");
+    // Assert soft reset
+    rc |= action_write(dn, ACTION_CONFIG, 0x00000200);
+    rc |= snap_mmio_read32 (dn, ACTION_CONFIG, &config);
+    VERBOSE0 ("Config register: %#x\n", config);
+    // Clear soft reset
+    rc |= action_write(dn, ACTION_CONFIG, 0x00000000);
+    rc |= snap_mmio_read32 (dn, ACTION_CONFIG, &config);
+    VERBOSE0 ("Config register: %#x\n", config);
+
+    if (rc) {
+        VERBOSE0 ("ERROR: action_write/read ERROR\n");
+        errno = ENODEV;
+        perror ("ERROR");
+        return -1;
+    } 
+
     VERBOSE1 ("Turn on the NVDLA register region\n");
     // Enable the NVDLA register region
     rc = action_write(dn, ACTION_CONFIG, 0x00000100);
@@ -452,7 +472,7 @@ int main (int argc, char* argv[])
 
     VERBOSE1 ("Turn off the NVDLA register region\n");
     // Disable the NVDLA register region
-    rc = action_write(dn, ACTION_CONFIG, 0x00000000);
+    rc = action_write(dn, ACTION_CONFIG, 0x00000400);
 
     if (rc) {
         VERBOSE0 ("ERROR: action_write ERROR\n");
@@ -460,7 +480,6 @@ int main (int argc, char* argv[])
         perror ("ERROR");
         return -1;
     } 
-
 
     rc = snap_mmio_read32 (dn, ACTION_IRQ_CONTROL, &irq_control);
     VERBOSE1 ("irq_control: %#x\n", irq_control);
@@ -473,6 +492,16 @@ int main (int argc, char* argv[])
         perror ("ERROR");
         return -1;
     }
+
+    rc = snap_mmio_read32 (dn, ACTION_CONFIG, &config);
+    VERBOSE0 ("Config register: %#x\n", config);
+
+    if (rc) {
+        VERBOSE0 ("ERROR: action_read ERROR\n");
+        errno = ENODEV;
+        perror ("ERROR");
+        return -1;
+    } 
 
     // Unmap AFU MMIO registers, if previously mapped
     VERBOSE2 ("Free Card Handle: %p\n", dn);
