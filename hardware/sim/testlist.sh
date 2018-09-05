@@ -222,7 +222,7 @@
         for iter in 1 $rnd4;do                              # number of blocks
         for i in 1 $rnd32;do bsize=$((xfer>64?xfer*i:64*i)) # adopt to capability reg xfer size, hdl_example action only works n*64B xfers, even if SNAP can do less
         for j in 1 $rnd5;do strt=$((j*dma))                 # adopt to capability reg DMA alignment
-          if [[ "$SIMULATOR" == "irun" && ("iter" > "1" || "$i" > "1" || "$j" > "1") ]];then echo "skip simulator=$SIMULATOR i=$iter b=$bsize s=$strt";continue;fi  # runs too long on xsim
+          if [[ "$SIMULATOR" == "xsim" && ("iter" > "1" || "$i" > "1" || "$j" > "1") ]];then echo "skip simulator=$SIMULATOR i=$iter b=$bsize s=$strt";continue;fi  # runs too long on xsim
           end=$((strt+iter*bsize)); to=$((iter*iter*bsize/4+900))      # rough timeout dependent on filesize
           step "snap_example_ddr -i${iter} -b${bsize} -s${strt} -e${end} -t$to"
         done
