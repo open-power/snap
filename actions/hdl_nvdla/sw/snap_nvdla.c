@@ -329,19 +329,6 @@ int main (int argc, char* argv[])
         return -1;
     }
 
-    VERBOSE2 ("Free Card Handle: %p\n", dn);
-    snap_card_free (dn);
-
-    VERBOSE2 ("Open Card: %d device: %s\n", card_no, device);
-    dn = snap_card_alloc_dev (device, SNAP_VENDOR_ID_ANY, SNAP_DEVICE_ID_ANY);
-
-    if (NULL == dn) {
-        VERBOSE0 ("ERROR: Can not Open (%s)\n", device);
-        errno = ENODEV;
-        perror ("ERROR");
-        return -1;
-    }
-
     // Disable the NVDLA register region
     rc = action_write(dn, ACTION_CONFIG, 0x00000000);
 
