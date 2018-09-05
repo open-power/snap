@@ -50,11 +50,13 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 |  ReflexCES	|XpressVUP-LP9PT|RCXVUP|VU9P*|8GB DDR4 (2ch)|-|_144Mb/575Mb_|_2x(100GbE/4x25GbE)_|PCIe Gen3 x 16|LowProf|X|X
 |  Flyslice	|FX609QL|FX609|VU9P*|16GB DDR4 (4ch)|-|-|-|PCIe Gen3 x 16|LowProf|X|X
 |  Semptian	|NSA-241|S241|VU9P*|32GB DDR4 (4ch)|-|-|?|PCIe Gen3 x 16|FullHeight|TBD|TBD
-|  _Alphadata	|ADM-PCIE-9V3|AD9V3|VU3P|16GB/32GB DDR4 (2ch)|-|-|_2x(100GbE/4x25GbE)_|PCIe Gen4 x8|LowProf|X|-
+|  _Alphadata_	|_ADM-PCIE-9V3_|_AD9V3_|_VU3P_|_16GB/32GB DDR4 (2ch)_|-|-|_2x(100GbE/4x25GbE)_|_PCIe Gen4 x8_|_LowProf_|_X_|-
 
 Notes :
-*\* : requires an auxiliary power supply connector (100W)
-*Resource in _italic_ minimum manual tests have been performed, not yet completely SNAP suported
+
+* \* : requires an auxiliary power supply connector (100W)
+
+* Resource in _italic_ : minimum manual tests have been performed, not yet completely SNAP supported
 
 ### P9 OpenCAPI3.0 SNAP FPGA Supported Boards
 _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
@@ -85,9 +87,9 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 
 | Deployment Server(Power)| Ubuntu        | RedHat   | CentOS   | Suse  | Helpful commands
 |:------------------------|:-------------:|:--------:|:--------:|:-----:|:----------------
-| Power8 (CAPI1.0)        | 16.04 minimum | RHEL7.3  |     -    |   -   | lsb_release -a
-| Power9 (CAPI2.0)        | 18.04 minimum | Pegas 1.1|     -    |   -   | lsb_release -a
-| Power9 (OpenCAPI3.0)    | 18.04 minimum | Pegas 1.2| _to come_|_SLES15 SP1 & SLES12 SP5_ | lsb_release -a
+| Power8 (CAPI1.0)        | 16.04 min | RHEL7.3 min  |     -    |   -   | lsb_release -a
+| Power9 (CAPI2.0)        | 18.04 min | Pegas 1.1 min|     -    |   -   | lsb_release -a
+| Power9 (OpenCAPI3.0)    | 18.04 min | Pegas 1.2 min| _to come_|_SLES15 SP1 & SLES12 SP5_ | lsb_release -a
 
 (Resources in _italic_ are tentative)
 
@@ -116,3 +118,5 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 | 8335-GTX(water cooled)     |Power AC922|0             |2
 | 9006-22P - 2 proc          |Power LC922|1(WIO Slot4)	|2 (UIO Slot1 - WIO Slot3)
 | .....                      |.....      | |
+
+Disclaimer : as it is not possible to cross tests all configurations with all possible cards on all possible servers, information provided in this page are recommandations only and subject to change without notice.
