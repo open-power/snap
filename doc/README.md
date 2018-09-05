@@ -81,17 +81,18 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 
 ### Deployment Environments :
 
-| Deployment Server(Power)| Ubuntu        | RedHat | CentOS | Suse  | Helpful commands
-|:------------------------|:-------------:|:------:|:------:|:-----:|:----------------
-| Power8 (CAPI1.0)        | 16.04 minimum | RHEL7.3|    -   |   -   | lsb_release -a
-| Power9 (CAPI2.0)        | 18.04 minimum | Pegas ?|    -   |   -   | lsb_release -a
-| Power9 (OpenCAPI3.0)    | 18.04 minimum | Pegas ?|    -   |   -   | lsb_release -a
+| Deployment Server(Power)| Ubuntu        | RedHat   | CentOS | Suse  | Helpful commands
+|:------------------------|:-------------:|:--------:|:------:|:-----:|:----------------
+| Power8 (CAPI1.0)        | 16.04 minimum | RHEL7.3  |    -   |   -   | lsb_release -a
+| Power9 (CAPI2.0)        | 18.04 minimum | Pegas 1.1|    -   |   -   | lsb_release -a
+| Power9 (OpenCAPI3.0)    | 18.04 minimum | Pegas 1.2|    -   |_SLES15 SP1 & SLES SP5_ | lsb_release -a
+(Resources in _italic_ are tentative)
 
 |**Tool**                 |**Minimum**|**Recommended**|**Helpful commands**
 |:------------------------|:---------:|:-------------:|:-------------------
 | gcc                     |4.4.7|latest |gcc -v
-|P8 Server Firmware : skiboot/FW|5.1.13(=to FW840.20)|latest|update_flash -d
-|P9 Server Firmware : skiboot/FW|????(=to ????)      |latest|update_flash -d
+|P8 Server Firmware : skiboot/FW|5.1.13/FW840.20/OP820   |latest|update_flash -d
+|P9 Server Firmware : skiboot/FW|5.11/FW910 6.0/OP920)   |latest|update_flash -d
 
 
 
