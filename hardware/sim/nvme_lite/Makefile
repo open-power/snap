@@ -27,9 +27,9 @@ all: snap_config.sv
 #      had trouble with simple 's where the processing stopped demanding
 #      a closing '.
 #
-snap_config.sv: $(SNAP_CONFIG)
+snap_config.sv:
 	echo "/* SNAP_CONFIG */" > snap_config.sv
-	grep "SIM_XSIM=y" $(SNAP_CONFIG);			\
+	grep "SIM_XSIM=y" $(SNAP_CONFIG) >/dev/null;		\
 	if [ $$? -eq 0 ]; then					\
 		echo "\`define SIM_XSIM 1" >> snap_config.sv ;	\
 	fi
