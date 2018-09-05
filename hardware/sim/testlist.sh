@@ -32,11 +32,11 @@
   rnd16k=$(( (RANDOM%16383)+2 ))
   rnd32k=$(( RANDOM ))
   echo "random=$rnd4 $rnd5 $rnd10 $rndeven20 $rnd20 $rnd32 $rnd50 $rnd100 $rnd1k $rnd1k4k $rnd16k $rnd32k"
-# export SNAP_TRACE=0xFF
+# export SNAP_TRACE=0xFF # full application trace
 # export SNAP_TRACE=0xF2 # for Sven
   stimfile=$(basename "$0");
   logfile="${stimfile%.*}.log";
-  echo "executing $stimfile, logging $logfile maxloop=$loops";
+  echo "executing $stimfile on $SIMULATOR, logging $logfile maxloop=$loops";
   ts0=$(date +%s)                                       # begin of test
   function step {
 #   echo "execute step function arg1=$1 arg2=$2 argn=$* argn=$@"
@@ -177,18 +177,18 @@
         step "snap_example -I -a2 -S1 -B0 -A256 -t600"
       fi
       step "snap_example -a2 -S0  -B1 -A64   -t500"
-      step "snap_example -a2 -S0  -B2 -A64   -t500"  # should show 2 completion records
+      step "snap_example -a2 -S0  -B2 -A64   -t500"   # should show 2 completion records
       step "snap_example -a2 -S2  -B0 -A64   -t500"
-      step "snap_example -a2 -S32 -B0 -A64   -t8000" # error in DMA, fixed
-      step "snap_example -a2 -S0  -B1 -A320  -t400"  # error 22.06.2018, fixed
+      step "snap_example -a2 -S32 -B0 -A64   -t8000"  # error in DMA, fixed
+      step "snap_example -a2 -S0  -B1 -A320  -t400"   # error 22.06.2018, fixed
       step "snap_example -a2 -S10 -B2 -A128  -t5000"  # error Jul04, fixed PSLSE Jul09
       step "snap_example -a2 -S32 -B0 -A128  -t8000"
       step "snap_example -a2 -S32 -B0 -A4096 -t8000"
       step "snap_example -a2 -S32 -B1 -A64   -t8000"
       step "snap_example -a2 -S32 -B1 -A128  -t8000"
       step "snap_example -a2 -S32 -B1 -A4096 -t8000"
-      step "snap_example -a2 -S64 -B0 -A64   -t16000"
-      step "snap_example -a2 -S64 -B1 -A64   -t16000"
+#     step "snap_example -a2 -S64 -B0 -A64   -t16000" # too long for xsim
+#     step "snap_example -a2 -S64 -B1 -A64   -t16000" # too long for xsim
       for num4k in 0 1 $rnd20 $rnd50;do to=$((num4k*400+400))   # 4k blks should be possible by every card
       for i in 0 1 2 $rnd32;do num64=$(((i*xfer)/64))   # adopt to capability reg xfer size
       for j in 5 2 1;do align=$((j*dma))                # adopt to capability reg DMA alignment
@@ -222,7 +222,7 @@
         for iter in 1 $rnd4;do                              # number of blocks
         for i in 1 $rnd32;do bsize=$((xfer>64?xfer*i:64*i)) # adopt to capability reg xfer size, hdl_example action only works n*64B xfers, even if SNAP can do less
         for j in 1 $rnd5;do strt=$((j*dma))                 # adopt to capability reg DMA alignment
-          if [[ "iter" > "1" && ("$i" > "1" || "$j" > "1") ]];then echo "skip i=$iter b=$bsize s=$strt";continue;fi  # runs too long on xsim
+          if [[ "$SIMULATOR" == "irun" && ("iter" > "1" || "$i" > "1" || "$j" > "1") ]];then echo "skip simulator=$SIMULATOR i=$iter b=$bsize s=$strt";continue;fi  # runs too long on xsim
           end=$((strt+iter*bsize)); to=$((iter*iter*bsize/4+900))      # rough timeout dependent on filesize
           step "snap_example_ddr -i${iter} -b${bsize} -s${strt} -e${end} -t$to"
         done
