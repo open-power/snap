@@ -34,8 +34,8 @@ _(All information provided by FPGA board vendors are subject to change at any ti
 ### P8 CAPI1.0 SNAP FPGA Supported Boards 
 _Requires Ubuntu 16.04.1 LTS or later_ / (Resources in _italic_ are not enabled yet)
 
-| Manufacturer|Card Type|Code Name|FPGA|DRAM             |NVME|QDR|Ethernet        |CAPI Interface|Board|CAPI support|SNAP support
-|:------------|:-------:|:-------:|:--:|:---------------:|:--:|:-:|:---------------|:---:|:----------:|:-----------:|:-
+| Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM             |NVME|QDR|Ethernet        |CAPI Interface|Board|CAPI support|SNAP support
+|:------------|:-------:|:------------:|:--:|:---------------:|:--:|:-:|:---------------|:---:|:----------:|:-----------:|:-
 |  Alphadata  |ADM-PCIE-KU3|ADKU3|KU060|16GB DDR3(2ch)   |-|-     |_2x(40GbE/4x10GbE)_|PCIe Gen3 x8|LowProf|X|X|
 |  Alphadata  |ADM-PCIE-8K5|AD8K5|KU115|16/32GB DDR4(2ch)|-|-     |_2x(10GbE/16GbE FC)_ |PCIe Gen3 x8|LowProf|X|X|
 |  Nallatech  |250S	       |N250S|KU060|4GB DDR4(1ch)    |2TB (1ch+_1ch_)|-  |-               |PCIe Gen3 x8|LowProf|X|X|
@@ -44,23 +44,25 @@ _Requires Ubuntu 16.04.1 LTS or later_ / (Resources in _italic_ are not enabled 
 ### P9 CAPI2.0 SNAP FPGA Supported Boards
 _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 
-| Manufacturer|Card Type|Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
-|:------------|:-------:|:-------:|:--:|:--:|:--:|:-:|:------:|:-------------|:---:|:----------:|:-----------
-|  Alphadata	|ADM-PCIE-9V3|AD9V3|VU3P|16GB/32GB DDR4 (2ch)|-|-|_2x(100GbE/4x25GbE)_|PCIe Gen4 x8|LowProf|X|Oct-18
+| Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
+|:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:-------------|:---:|:----------:|:-----------
 |  Nallatech	|250S+|N250SP|KU15P|4GB DDR4  (1ch)|_3.8TB/6.4TB/25TB (4ch)_|-|-|PCIe Gen4 x8|LowProf|X|Sep-18
 |  ReflexCES	|XpressVUP-LP9PT|RCXVUP|VU9P*|8GB DDR4 (2ch)|-|_144Mb/575Mb_|_2x(100GbE/4x25GbE)_|PCIe Gen3 x 16|LowProf|X|X
 |  Flyslice	|FX609QL|FX609|VU9P*|16GB DDR4 (4ch)|-|-|-|PCIe Gen3 x 16|LowProf|X|X
 |  Semptian	|NSA-241|S241|VU9P*|32GB DDR4 (4ch)|-|-|?|PCIe Gen3 x 16|FullHeight|TBD|TBD
+|  _Alphadata	|ADM-PCIE-9V3|AD9V3|VU3P|16GB/32GB DDR4 (2ch)|-|-|_2x(100GbE/4x25GbE)_|PCIe Gen4 x8|LowProf|X|-
 
-\* : requires an auxiliary power supply connector (100W)
+Notes :
+*\* : requires an auxiliary power supply connector (100W)
+*Resource in _italic_ minimum manual tests have been performed, not yet completely SNAP suported
 
 ### P9 OpenCAPI3.0 SNAP FPGA Supported Boards
 _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 
-| Manufacturer|Card Type|Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
-|:------------|:-------:|:-------:|:--:|:--:|:--:|:-:|:------:|:-------------|:---:|:----------:|:-----------
-|  Alphadata	|ADM-PCIE-9V3|AD9V3|VU3P|16GB/32GB DDR4 (2ch)|-|-|2x (100GbE/4x25GbE)|1 OpenCAPI Link (8x25Gb)|LowProf|Dec-18|Dec-18
-|  Mellanox  |Innova-2 Flex	    |TBD|KU15P|4GB/8GB DDR4|-|-|2x25GbE|	1 OpenCAPI Link (8x25Gb)	|LowProf|Dec-18|Dec-18
+| Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
+|:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:-------------|:---:|:----------:|:-----------
+|  Alphadata	|ADM-PCIE-9V3|AD9V3      |VU3P|16GB/32GB DDR4 (2ch)|-|-|2x (100GbE/4x25GbE)|1 OpenCAPI Link (8x25Gb)|LowProf|Dec-18|Dec-18
+|  _Mellanox  |Innova-2 Flex	    |TBD   |KU15P|4GB/8GB DDR4|-|-|2x25GbE|	1 OpenCAPI Link (8x25Gb)	|LowProf|-|-_
 
 
 
@@ -81,22 +83,22 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 
 ### Deployment Environments :
 
-| Deployment Server(Power)| Ubuntu        | RedHat   | CentOS | Suse  | Helpful commands
-|:------------------------|:-------------:|:--------:|:------:|:-----:|:----------------
-| Power8 (CAPI1.0)        | 16.04 minimum | RHEL7.3  |    -   |   -   | lsb_release -a
-| Power9 (CAPI2.0)        | 18.04 minimum | Pegas 1.1|    -   |   -   | lsb_release -a
-| Power9 (OpenCAPI3.0)    | 18.04 minimum | Pegas 1.2|    -   |_SLES15 SP1 & SLES SP5_ | lsb_release -a
+| Deployment Server(Power)| Ubuntu        | RedHat   | CentOS   | Suse  | Helpful commands
+|:------------------------|:-------------:|:--------:|:--------:|:-----:|:----------------
+| Power8 (CAPI1.0)        | 16.04 minimum | RHEL7.3  |     -    |   -   | lsb_release -a
+| Power9 (CAPI2.0)        | 18.04 minimum | Pegas 1.1|     -    |   -   | lsb_release -a
+| Power9 (OpenCAPI3.0)    | 18.04 minimum | Pegas 1.2| _to come_|_SLES15 SP1 & SLES12 SP5_ | lsb_release -a
+
 (Resources in _italic_ are tentative)
 
 |**Tool**                 |**Minimum**|**Recommended**|**Helpful commands**
 |:------------------------|:---------:|:-------------:|:-------------------
 | gcc                     |4.4.7|latest |gcc -v
 |P8 Server Firmware : skiboot/FW|5.1.13/FW840.20/OP820   |latest|update_flash -d
-|P9 Server Firmware : skiboot/FW|5.11/FW910 6.0/OP920)   |latest|update_flash -d
+|P9 Server Firmware : skiboot/FW|5.11/FW910 & 6.0/OP920)   |latest|update_flash -d
 
 
-
-### P8 Deployment environment (IBM server examples supporting CAPI SNAP) :
+### P8 Deployment environment (Bare Metal IBM server examples supporting CAPI SNAP) :
 
 | MTM| PowerLinux| CAPI Capacity (per PCIe slots priority)
 |:--:|:-----------|:--------------------------------------
@@ -106,7 +108,7 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 | 8348-21C       |Power Systems S812LC|2x CAPI adapters per socket => 2 CAPI (C3- C4)
 | 8335-GCA       |Power Systems S822LC|4 of the 5 PCIe slots are CAPI capable => 4 CAPI(C4-C1-C5-C2)
 
-### P9 Deployment environment (IBM server examples supporting CAPI SNAP) :
+### P9 Deployment environment (Bare Metal IBM server examples supporting CAPI SNAP) :
 
 | MTM| PowerLinux| PCIeGen4x8 for CAPI| PCIeGen4x16 for CAPI
 |:--:|:-----------|:------------------|:--------------------
