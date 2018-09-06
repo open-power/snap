@@ -149,7 +149,7 @@ module action_wrapper #(
     // DBB AXI INTERFACE
     //**********************************************
     /**************** Write Address Channel Signals ****************/
-    wire [64-1:0]                      dbb_s_axi_awaddr;
+    wire [#NVDLA_DBB_ADDR_WIDTH-1:0]                      dbb_s_axi_awaddr;
     wire [3-1:0]                       dbb_s_axi_awprot;
     wire                               dbb_s_axi_awvalid;
     wire                               dbb_s_axi_awready;
@@ -173,7 +173,7 @@ module action_wrapper #(
     wire                               dbb_s_axi_bready;
     wire [8-1:0]                       dbb_s_axi_bid;
     /**************** Read Address Channel Signals ****************/
-    wire [64-1:0]                      dbb_s_axi_araddr;
+    wire [#NVDLA_DBB_ADDR_WIDTH-1:0]                      dbb_s_axi_araddr;
     wire [3-1:0]                       dbb_s_axi_arprot;
     wire                               dbb_s_axi_arvalid;
     wire                               dbb_s_axi_arready;
@@ -329,8 +329,8 @@ module action_wrapper #(
     assign dbb_s_axi_awlen[7:4]     = 4'b0;
 
     #ifdef NVDLA_DBB_ADDR_WIDTH < 64
-    assign dbb_s_axi_araddr[63:32]  = 32'b0;
-    assign dbb_s_axi_awaddr[63:32]  = 32'b0;
+    assign m_axi_host_mem_araddr[63:#NVDLA_DBB_ADDR_WIDTH]  = 32'b0;
+    assign m_axi_host_mem_awaddr[63:#NVDLA_DBB_ADDR_WIDTH]  = 32'b0;
     #endif
 
 
@@ -455,7 +455,7 @@ module action_wrapper #(
         // DUT MASTER INTERFACE
         //**********************************************
         /**************** Write Address Channel Signals ****************/
-        .m_axi_awaddr   ( m_axi_host_mem_awaddr),
+        .m_axi_awaddr   ( m_axi_host_mem_awaddr[#NVDLA_DBB_ADDR_WIDTH-1:0]),
         .m_axi_awprot   ( m_axi_host_mem_awprot),
         .m_axi_awvalid  ( m_axi_host_mem_awvalid),
         .m_axi_awready  ( m_axi_host_mem_awready),
@@ -477,7 +477,7 @@ module action_wrapper #(
         .m_axi_bvalid   ( m_axi_host_mem_bvalid),
         .m_axi_bready   ( m_axi_host_mem_bready),
         /**************** Read Address Channel Signals ****************/
-        .m_axi_araddr   ( m_axi_host_mem_araddr),
+        .m_axi_araddr   ( m_axi_host_mem_araddr[#NVDLA_DBB_ADDR_WIDTH-1:0]),
         .m_axi_arprot   ( m_axi_host_mem_arprot),
         .m_axi_arvalid  ( m_axi_host_mem_arvalid),
         .m_axi_arready  ( m_axi_host_mem_arready),
