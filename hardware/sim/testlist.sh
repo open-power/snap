@@ -187,8 +187,10 @@
       step "snap_example -a2 -S32 -B1 -A64   -t8000"
       step "snap_example -a2 -S32 -B1 -A128  -t8000"
       step "snap_example -a2 -S32 -B1 -A4096 -t8000"
-#     step "snap_example -a2 -S64 -B0 -A64   -t16000" # too long for xsim
-#     step "snap_example -a2 -S64 -B1 -A64   -t16000" # too long for xsim
+      if [[ "$SIMULATOR" != "xsim" ]];then            # too long for xsim
+        step "snap_example -a2 -S64 -B0 -A64   -t16000"
+        step "snap_example -a2 -S64 -B1 -A64   -t16000"
+      fi
       for num4k in 0 1 $rnd20 $rnd50;do to=$((num4k*400+400))   # 4k blks should be possible by every card
       for i in 0 1 2 $rnd32;do num64=$(((i*xfer)/64))   # adopt to capability reg xfer size
       for j in 5 2 1;do align=$((j*dma))                # adopt to capability reg DMA alignment
