@@ -499,13 +499,13 @@ if { $create_ddr4_ad8k5 == "TRUE" } {
 }
 
 # User IPs
-set action_vhdl  $action_root/hw/vhdl
+set hls_action_src  $action_root/hw/hls_syn_vhdl
 
-if { [file exists $action_vhdl] == 1 } {
-  set tcl_exists [exec find $action_vhdl/ -name *.tcl]
+if { [file exists $hls_action_src] == 1 } {
+  set tcl_exists [exec find $hls_action_src/ -name *.tcl]
 
   if { $tcl_exists != "" } {
-    foreach tcl_file [glob -nocomplain -dir $action_vhdl *.tcl] {
+    foreach tcl_file [glob -nocomplain -dir $hls_action_src *.tcl] {
       set tcl_file_name [exec basename $tcl_file]
       puts "                        sourcing $tcl_file_name"
       source $tcl_file >> $log_file
