@@ -51,7 +51,7 @@ if { [info exists ::env(HLS_SUPPORT)] == 1 } {
 
 # HLS generates VHDL and Verilog files, SNAP is using the VHDL files
 if { $hls_support == "TRUE" } {
-  set action_dir $::env(ACTION_ROOT)/hw/vhdl
+  set action_dir $::env(ACTION_ROOT)/hw/hls_syn_vhdl
 }
 
 if { [info exists ::env(PSL_DCP)] == 1 } {

@@ -476,7 +476,6 @@ clean:
 	@echo -e "                        log files";
 	@$(RM) -r logs
 	@echo -e "                        action / application";
-	@$(RM) $(ACTION_ROOT)/hw/vhdl
 	@if [ -e "$(ACTION_ROOT)/Makefile" ]; then	    \
 		$(MAKE) -C $(ACTION_ROOT) $@ > /dev/null;   \
 		if [ $$? -ne 0 ]; then                      \
