@@ -22,7 +22,7 @@
 all: config
 
 config:
-	$(info Call source action_config.sh (also create action IPs))
+	$(info Call action_config.sh (creating action IPs))
 	./action_config.sh
 
 clean:
