@@ -420,7 +420,7 @@ $(SNAP_SIMULATORS): check_nvme .hw_project_done app
 	@cd $(SIM_DIR) && vivado -quiet -mode batch -source $(SETUP_DIR)/export_$@.tcl -notrace -log $(LOGS_DIR)/compile_$@.log -journal $(LOGS_DIR)/compile_$@.jou
 	@$(SETUP_DIR)/patch_sim.sh $(SIM_DIR)/$(subst irun,ies,$@) top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1
 	@cd $(SIM_DIR)/$(subst irun,ies,$@) && ln -sf $(PSLSE_ROOT)/afu_driver/src/libdpi.so;
-	@echo -e "                        build a $@ model";
+	@echo -e "                        build $@ model";
 	@cd $(SIM_DIR)/$(subst irun,ies,$@); \
 		./top.sh >> $(LOGS_DIR)/compile_$@.log 2>&1; \
 		if [ $$? -ne 0 ]; then \

@@ -14,7 +14,7 @@
  # See the License for the specific language governing permissions and
  # limitations under the License.
  #
-  del="\n#######################################"       #  delimiter
+  del="\n#######################################"       # delimiter
   set -e                                                # exit on error
   n=0                                                   # count amount of tests executed (exception for subsecond calls)
   max_rc=0                                              # track the maximum RC to return at the end
@@ -25,17 +25,18 @@
   rndeven20=$(( (RANDOM%5)*2+10 ))
   rnd20=$(( (RANDOM%19)+2 ))
   rnd32=$(( (RANDOM%31)+2 ))
-  rnd100=$(( (RANDOM%99)+2 ))
-  rnd1k=$(( (RANDOM%1023)+2 ))
+  rnd50=$(( (RANDOM%20)+30 ))
+  rnd100=$(( (RANDOM%70)+30 ))
+  rnd1k=$(( (RANDOM%923)+102 ))
   rnd1k4k=$(( (RANDOM%3072)+1024 ))
   rnd16k=$(( (RANDOM%16383)+2 ))
   rnd32k=$(( RANDOM ))
-  echo "random=$rnd4 $rnd5 $rnd10 $rndeven20 $rnd20 $rnd32 $rnd100 $rnd1k $rnd1k4k $rnd16k $rnd32k"
-# export SNAP_TRACE=0xFF
+  echo "random=$rnd4 $rnd5 $rnd10 $rndeven20 $rnd20 $rnd32 $rnd50 $rnd100 $rnd1k $rnd1k4k $rnd16k $rnd32k"
+# export SNAP_TRACE=0xFF # full application trace
 # export SNAP_TRACE=0xF2 # for Sven
   stimfile=$(basename "$0");
   logfile="${stimfile%.*}.log";
-  echo "executing $stimfile, logging $logfile maxloop=$loops";
+  echo "executing $stimfile on $SIMULATOR, logging $logfile maxloop=$loops";
   ts0=$(date +%s)                                       # begin of test
   function step {
 #   echo "execute step function arg1=$1 arg2=$2 argn=$* argn=$@"
@@ -117,6 +118,8 @@
         "00000108") a0="hls_blowfish";;
         "10141007") a0="hls_nvme_memcopy";;
         "10141008") a0="hls_helloworld";;
+        "10141009") a0="hls_latency_eval";;
+        "1014100a") a0="hls_mm_test";;
         *) echo "unknown action0 type=$t0l, exiting";exit 1;;
       esac; echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="snap_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
@@ -140,6 +143,8 @@
         "00000108") a1="hls_blowfish";;
         "10141007") a1="hls_nvme_memcopy";;
         "10141008") a1="hls_helloworld";;
+        "10141009") a1="hls_latency_eval";;
+        "1014100a") a1="hls_mm_test";;
         *) echo "unknown action1 type=$t1l, exiting";exit 1;;
       esac; echo "action0 type1s=$t1s type1l=$t1l $a1"
       t="snap_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
@@ -172,18 +177,21 @@
         step "snap_example -I -a2 -S1 -B0 -A256 -t600"
       fi
       step "snap_example -a2 -S0  -B1 -A64   -t500"
+      step "snap_example -a2 -S0  -B2 -A64   -t500"   # should show 2 completion records
       step "snap_example -a2 -S2  -B0 -A64   -t500"
-      step "snap_example -a2 -S32 -B0 -A64   -t500" # error in DMA, fixed
-      step "snap_example -a2 -S0  -B1 -A320  -t400" # error 22.06.2018, fixed
-      step "snap_example -a2 -S10 -B2 -A128  -t500" # error Jul04, fixed PSLSE Jul09
-      step "snap_example -a2 -S32 -B0 -A128  -t500"
-      step "snap_example -a2 -S32 -B0 -A4096 -t500"
-      step "snap_example -a2 -S32 -B1 -A64   -t500"
-      step "snap_example -a2 -S32 -B1 -A128  -t500"
-      step "snap_example -a2 -S32 -B1 -A4096 -t500"
-      step "snap_example -a2 -S64 -B0 -A64   -t500"
-      step "snap_example -a2 -S64 -B1 -A64   -t500"
-      for num4k in 0 1 $rnd20 $rnd100;do to=$((num4k*400+400))   # 4k blks should be possible by every card
+      step "snap_example -a2 -S32 -B0 -A64   -t8000"  # error in DMA, fixed
+      step "snap_example -a2 -S0  -B1 -A320  -t400"   # error 22.06.2018, fixed
+      step "snap_example -a2 -S10 -B2 -A128  -t5000"  # error Jul04, fixed PSLSE Jul09
+      step "snap_example -a2 -S32 -B0 -A128  -t8000"
+      step "snap_example -a2 -S32 -B0 -A4096 -t8000"
+      step "snap_example -a2 -S32 -B1 -A64   -t8000"
+      step "snap_example -a2 -S32 -B1 -A128  -t8000"
+      step "snap_example -a2 -S32 -B1 -A4096 -t8000"
+      if [[ "$SIMULATOR" != "xsim" ]];then            # too long for xsim
+        step "snap_example -a2 -S64 -B0 -A64   -t16000"
+        step "snap_example -a2 -S64 -B1 -A64   -t16000"
+      fi
+      for num4k in 0 1 $rnd20 $rnd50;do to=$((num4k*400+400))   # 4k blks should be possible by every card
       for i in 0 1 2 $rnd32;do num64=$(((i*xfer)/64))   # adopt to capability reg xfer size
       for j in 5 2 1;do align=$((j*dma))                # adopt to capability reg DMA alignment
         if [[ "$num4k" == "0" && "$num64" == "0"          ]];then echo "skip1 num4k=$num4k num64=$num64 align=$align";continue;fi  # both args=0 is not allowed
@@ -199,7 +207,7 @@
         if [[ $cardtype == "10" ]];then for i in {1..5};do echo "loop=$i";snap_example -a6 -S8 -B2 -A128 -t400 -v||break;done
         else                            for i in {1..5};do echo "loop=$i";snap_example -a6 -S8 -B2 -A64  -t400 -v||break;done
         fi
-        for num4k in 0 1 $rnd20 $rnd100;do to=$((num4k*400+400)) # 4k blks should be possible by every card
+        for num4k in 0 1 $rnd20 $rnd50;do to=$((num4k*400+400)) # 4k blks should be possible by every card
         for i in 0 1 2 $rnd32;do num64=$(((i*xfer)/64)) # adopt to capability reg xfer size
         for j in 5 2 1;do align=$((j*dma))              # adopt to capability reg DMA alignment
           to=$((num4k*400+400))
@@ -213,17 +221,20 @@
         done
         #### check DDR3 memory in AlphaData KU3, stay under 512k for BRAM
         step "snap_example_ddr -h"
-        for iter in 1 $rnd4;do                           # number of blocks
-        for i in 1 $rnd32;do bsize=$((xfer>64?xfer*i:64*i))  # adopt to capability reg xfer size, hdl_example action only works n*64B xfers, even if SNAP can do less
-        for j in 1 $rnd5;do strt=$((j*dma))             # adopt to capability reg DMA alignment
-#         if [[ "iter" > "1" && ("$bsize" == "64" || "$strt" == "1024") ]];then echo "skip num4k=$num4k num64=$num64 align=$align";continue;fi  # keep number of tests reasonable
-          end=$((strt+iter*bsize)); to=$((iter*iter*bsize/4+300))      # rough timeout dependent on filesize
+        for iter in 1 $rnd4;do                              # number of blocks
+        for i in 1 $rnd32;do bsize=$((xfer>64?xfer*i:64*i)) # adopt to capability reg xfer size, hdl_example action only works n*64B xfers, even if SNAP can do less
+        for j in 1 $rnd5;do strt=$((j*dma))                 # adopt to capability reg DMA alignment
+          if [[ "$SIMULATOR" == "xsim" && ("$iter" != "1" || "$i" != "1" || "$j" != "1") ]];then echo "skip simulator=$SIMULATOR iter=$iter b=$bsize s=$strt";continue;fi  # runs too long on xsim
+          end=$((strt+iter*bsize)); to=$((iter*iter*bsize/4+900))      # rough timeout dependent on filesize
           step "snap_example_ddr -i${iter} -b${bsize} -s${strt} -e${end} -t$to"
         done
         done
         done
         #### use memset in host or in fpga memory, stay under 512k for BRAM
         step "snap_example_set -h"
+        step "snap_example_set -H -i5 -b0   -s64  -p6 -t50"
+        step "snap_example_set -H -i5 -b64  -s128 -p7 -t50"
+        step "snap_example_set -H -i5 -b128 -s256 -p8 -t50"
 #       for beg in 0 11 63;do                            # start adr
 #       for bsize in 7 128 4096 4097;do                  # block size to copy, rough timeout dependent on filesize
         for j in 5 2 1;do beg=$((j*dma))                # adopt to capability reg DMA alignment
@@ -233,7 +244,7 @@
           step "snap_example_set -F -b${beg} -s${bsize} -p${bsize} -t$to"
         done
         done
-      fi
+      fi # DRAM
     fi # NVMe
     fi # hdl_example
  #
@@ -295,7 +306,7 @@
       export CBLK_BUSYTIMEOUT=3500 # used for threads waiting for free slot
       export CBLK_REQTIMEOUT=3000 # should be smaller than busytimeout
 #     export SNAP_TRACE=0xFFF
-      for blk in 1 2;do p8=$((blk*8)); p4k=$((blk*4096)); # no of 512B blocks and pagesize in 4kB blocks
+      for blk in 1 2;do p8=$((blk*8)); p4k=$((blk*4096));            # no of 512B blocks and pagesize in 4kB blocks
         echo "generate data for $blk blocks, $p8 pages, $p4k bytes"
         dd if=/dev/urandom of=rnd.in count=${p8} bs=512 2>/dev/null  # random data any char, no echo due to unprintable char
         head -c $p4k </dev/zero|tr '\0' 'x' >asc.in;head asc.in;echo # same char mult times
@@ -387,15 +398,15 @@
  #
     if [[ "$t0l" == "10141003" || "${env_action}" == "hls_search"* ]];then echo -e "$del\ntesting snap_search"
       step "snap_search -h"
-      for size in 1 2 30 257 1024 $rnd1k4k;do to=$((size*160+600))
+      for size in 1 2 30 257 1024 $rnd1k4k;do to=$((size*160+900))
         char=$(cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w 1|head -n 1)                               # one random ASCII  char to search for
         head -c $size </dev/zero|tr '\0' 'A' >${size}.uni                                             # same char mult times
         cat /dev/urandom|tr -dc 'a-zA-Z0-9'|fold -w ${size}|head -n 1 >${size}.rnd;head ${size}.rnd   # random data alphanumeric, includes EOF
         count=$(fgrep -o $char ${size}.rnd|wc -l)                                                     # expected occurence of char in random file
-        step "snap_search -m2 -p${char} -i${size}.rnd -E${count} -t$to -v"
+#       step "snap_search -m2 -p${char} -i${size}.rnd -E${count} -t$to -v"
         step "snap_search -m2 -pA       -i${size}.uni -E${size}  -t$to -v"
         step "snap_search -m1 -p${char} -i${size}.rnd -E${count} -t$to -v"
-        step "snap_search -m1 -pA       -i${size}.uni -E${size}  -t$to -v"
+#       step "snap_search -m1 -pA       -i${size}.uni -E${size}  -t$to -v"
 ## disabled, until mode=m0 works
 #       step "snap_search -m0 -p${char} -i${size}.rnd -E${count} -t$to -v"
 #       step "snap_search -m0 -pA       -i${size}.uni -E${size}  -t$to -v"
@@ -415,10 +426,10 @@
       step "snap_intersect -h"
       step "snap_intersect    -m1 -v -t2000"
       step "snap_intersect -I -m1 -v -t2000"
-      for i in 1 2 $rnd10;do
-        num64=$(((i*xfer)/64)); max=$((2*num64)); rm -f table1.txt table2.txt
+      for i in 1 2 $rnd10;do num64=$(($i*$xfer/64))   # adopt to capability reg xfer size
+        max=$((2*$num64)); rm -f table1.txt table2.txt
         gen_rc=0; $ACTION_ROOT/tests/gen_input_table.pl $num64 0 $max $num64 0 $max >snap_intersect_h.log||gen_rc=$?
-        echo "gen_table num64=$num64 max=$max RC=$gen_rc";wc -c table*.txt; cat table*.txt
+        echo "i=$i num64=$num64 max=$max gen_input_table RC=${gen_rc}"; wc -c table*.txt; cat table*.txt
         step "snap_intersect -m1    -i table1.txt -j table2.txt -v -t2000"
         step "snap_intersect -m1 -s -i table1.txt -j table2.txt -v -t2000"
       done
@@ -428,10 +439,10 @@
       step "snap_intersect -h"
       step "snap_intersect    -m2 -v -t2000"
       step "snap_intersect -I -m2 -v -t2000"
-      for i in 1 2 $rnd10;do
-        num64=$(((i*xfer)/64)); max=$((2*num64)); rm -f table1.txt table2.txt
-        gen_rc=0;$ACTION_ROOT/tests/gen_input_table.pl $num64 0 $max $num64 0 $max >snap_intersect_s.log||gen_rc=$?
-        echo "gen_table num64=$num64 max=$max RC=$gen_rc";wc -c table*.txt; cat table*.txt
+      for i in 1 2 $rnd10;do num64=$(($i*$xfer/64))   # adopt to capability reg xfer size
+        max=$((2*$num64)); rm -f table1.txt table2.txt
+        gen_rc=0; $ACTION_ROOT/tests/gen_input_table.pl $num64 0 $max $num64 0 $max >snap_intersect_s.log||gen_rc=$?
+        echo "i=$i num64=$num64 max=$max gen_input_table RC=${gen_rc}"; wc -c table*.txt; cat table*.txt
         step "snap_intersect -m2    -i table1.txt -j table2.txt -v -t2000"
         step "snap_intersect -m2 -s -i table1.txt -j table2.txt -v -t2000"
       done
@@ -487,6 +498,22 @@
         if diff in.in decr.out>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
       done
     fi # blowfish
+ #
+    if [[ "$t0l" == "10141009" || "${env_action}" == "hls_latency_eval" ]];then echo -e "$del\ntesting latency_eval"
+      step "snap_latency_eval -h"
+      step "snap_latency_eval -n1"
+      step "snap_latency_eval -n10"
+      step "snap_latency_eval -n100"
+    fi # latency_eval
+ #
+    if [[ "$t0l" == "1014100a" || "${env_action}" == "hls_mm_test" ]];then echo -e "$del\ntesting mm_test"
+      step "snap_mm_test -h"
+      step "snap_mm_test -J1  -L1"
+      step "snap_mm_test -J10 -L1"
+      step "snap_mm_test -J1  -L10"
+      step "snap_mm_test -J1  -L50"
+      step "snap_mm_test -J1  -L100"
+    fi # mm_test
  #
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"  # end of loop
   done; l=""; ts3=$(date +%s); totaltime=`expr $ts3 - $ts0`; echo "loops=$loops tests=$n total_time=$totaltime" # end of test
