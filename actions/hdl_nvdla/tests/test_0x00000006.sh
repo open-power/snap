@@ -1,14 +1,20 @@
 #!/bin/bash
 
+CARD_NO=0
+if [ ! -z $1 ]; then
+    CARD_NO=$1
+fi
+
 SW_REGRESSION=$ACTION_ROOT/sw/nvdla-sw/regression
 if [ ! -d $SW_REGRESSION ]; then
     echo "Cannot find directory $SW_REGRESSION!"
     exit -1
 fi
 
-if [ ! -L sw_regression ]; then
-    ln -s $SW_REGRESSION sw_regression
+if [ -L sw_regression ]; then
+    unlink sw_regression
 fi
+ln -s $SW_REGRESSION sw_regression
 
 TEST_ROOT=$SW_REGRESSION/flatbufs/kmd
 if [ ! -d $TEST_ROOT ]; then
@@ -22,19 +28,23 @@ if [ ! -d $GOLDEN_ROOT ]; then
     exit -1
 fi
 
-snap_maint -vv
+$ACTION_ROOT/../../software/tools/snap_maint -C $CARD_NO -vv
 
-declare -a flatbuf_tests=("$TEST_ROOT/CDP/CDP_L0_0_small_fbuf" \
+declare -a flatbuf_tests=(
+                          "$TEST_ROOT/CDP/CDP_L0_0_small_fbuf" \
                           "$TEST_ROOT/SDP/SDP_X1_L0_0_small_fbuf" \
                           "$TEST_ROOT/PDP/PDP_L0_0_small_fbuf" \
-                          "$TEST_ROOT/CONV/CONV_D_L0_0_small_fbuf")
+                          "$TEST_ROOT/CONV/CONV_D_L0_0_small_fbuf"
+                          )
 
 #declare -a flatbuf_tests=("$TEST_ROOT/CDP/CDP_L0_0_small_fbuf")
 
-declare -a golden_md5s=("$GOLDEN_ROOT/CDP_L0_0_small_4531af/dla/lead.md5" \
+declare -a golden_md5s=(
+                       "$GOLDEN_ROOT/CDP_L0_0_small_4531af/dla/lead.md5" \
                        "$GOLDEN_ROOT/SDP_X1_L0_0_small_c9894d/dla/lead.md5" \
                        "$GOLDEN_ROOT/PDP_L0_0_small_fbdf76/dla/lead.md5" \
-                       "$GOLDEN_ROOT/CONV_D_L0_0_small_3c77f6/dla/lead.md5")
+                       "$GOLDEN_ROOT/CONV_D_L0_0_small_3c77f6/dla/lead.md5"
+                       )
 
 for i in "${!flatbuf_tests[@]}"
 do
@@ -43,7 +53,7 @@ do
        echo "Cannot find ${flatbuf_tests[i]} "
        exit -1
    fi
-   cmd="unbuffer snap_nvdla --loadable ${flatbuf_tests[i]} -vv | tee snap_${i}.log"
+   cmd="unbuffer $ACTION_ROOT/sw/snap_nvdla -C ${CARD_NO} --loadable ${flatbuf_tests[i]} -vv | tee snap_${i}.log"
    eval $cmd
    if [ $? -eq 0 ]; then
        echo "FINISHED RUNNING TEST ${i}"

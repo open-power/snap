@@ -458,7 +458,7 @@ int main (int argc, char* argv[])
     }
 
     VERBOSE1 ("Turn off the NVDLA register region\n");
-    // Disable the NVDLA register region
+    // Disable the NVDLA register region and indicate action done
     rc = action_write(dn, ACTION_CONFIG, 0x00000400);
 
     if (rc) {
@@ -479,16 +479,6 @@ int main (int argc, char* argv[])
         perror ("ERROR");
         return -1;
     }
-
-    rc = snap_mmio_read32 (dn, ACTION_CONFIG, &config);
-    VERBOSE0 ("Config register: %#x\n", config);
-
-    if (rc) {
-        VERBOSE0 ("ERROR: action_read ERROR\n");
-        errno = ENODEV;
-        perror ("ERROR");
-        return -1;
-    } 
 
     // Unmap AFU MMIO registers, if previously mapped
     VERBOSE2 ("Free Card Handle: %p\n", dn);
