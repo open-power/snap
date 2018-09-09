@@ -16,7 +16,7 @@ foreach fifo_file [glob -nocomplain -dir $action_dir/fifos *.v] {
     foreach tmp_file [get_files $fifo_file_name] {
         set dir_name [exec dirname $tmp_file]
         if {$dir_name != "$action_dir/fifos"} {
-            puts "                        NOT from fifo directory: $fifo_file_name " >> $log_file
+            puts "                        NOT from fifo directory: $tmp_file"
             remove_files $tmp_file
         }
     }
