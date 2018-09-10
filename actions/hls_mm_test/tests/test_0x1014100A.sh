@@ -21,6 +21,7 @@ snap_card=0
 duration="NORMAL"
 job_num=10
 loop_num=1
+interrupt=0
 
 # Get path of this script
 THIS_DIR=$(dirname $(readlink -f "$BASH_SOURCE"))
@@ -35,10 +36,11 @@ function usage() {
     echo "    [-duration SHORT/NORMAL/LONG] run tests"
     echo "    [-J job_num]  job_num in one test"
     echo "    [-L loop_num] loop_num in one job"
+    echo "    [-I] enable interrupt"
     echo
 }
 
-while getopts ":C:t:d:J:L:h" opt; do
+while getopts ":C:t:d:J:L:Ih" opt; do
     case $opt in
 	C)
 	snap_card=$OPTARG;
@@ -54,6 +56,9 @@ while getopts ":C:t:d:J:L:h" opt; do
 	;;
 	L)
 	loop_num=$OPTARG;
+	;;
+	I)
+	interrupt=1;
 	;;
 	h)
 	usage;
@@ -76,6 +81,7 @@ snap_poke --help > /dev/null || exit 1;
 
 if [ -z "$SNAP_CONFIG" ]; then
 	echo "CARD VERSION"
+	snap_maint -C ${snap_card} -v || exit 1;
 	snap_peek -C ${snap_card} 0x0 || exit 1;
 	snap_peek -C ${snap_card} 0x8 || exit 1;
 	echo
@@ -95,8 +101,13 @@ fi
 echo "Run $tests tests. (job_num = $job_num, loop_num = $loop_num)"
 for i in $(seq 1 ${tests}) ; do
     echo -n "Run $i  ... "
-    cmd="snap_mm_test -C${snap_card} -J$job_num -L$loop_num  \
+    if [ $interrupt = 1 ]; then
+        cmd="snap_mm_test -C${snap_card} -J$job_num -L$loop_num  -I\
 			>> snap_mm_test.log 2>&1"
+    else
+        cmd="snap_mm_test -C${snap_card} -J$job_num -L$loop_num  \
+			>> snap_mm_test.log 2>&1"
+    fi
     echo "$cmd" >> snap_mm_test.log
     eval ${cmd}
 
