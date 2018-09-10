@@ -291,7 +291,7 @@ puts "                        importing XDCs"
 
 # Board Support XDC
 if { $capi_ver == "capi20" } {
-  puts "                        importing specific Board support XDCs"
+  puts "                        importing specific board support XDCs"
   add_files -fileset constrs_1 -norecurse $root_dir/setup/$fpga_card/snap_$fpga_card.xdc >> $log_file
 }
 
