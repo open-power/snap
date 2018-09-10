@@ -27,6 +27,8 @@ endif
 
 PART_NUMBER ?= $(FPGACHIP)
 
+HLS_CFLAGS ?= ""
+
 # The wrapper name must match a function in the HLS sources which is
 # taken as entry point for the HDL generation.
 WRAPPER ?= hls_action
@@ -58,7 +60,8 @@ run_hls_script.tcl: $(SNAP_ROOT)/actions/scripts/create_run_hls_script.sh
 		-w $(WRAPPER)			\
 		-p $(PART_NUMBER)		\
 		-f "$(srcs)" 			\
-		-s $(SNAP_ROOT) > $@
+		-s $(SNAP_ROOT) 		\
+		-x $(HLS_CFLAGS) > $@
 
 $(SOLUTION_NAME): $(objs)
 	$(CXX) -o $@ $^
