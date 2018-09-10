@@ -490,6 +490,7 @@
       done
     fi # blowfish
     if [[ "$t0l" == "00000006" || "${env_action}" == "hdl_nvdla" ]];then echo -e "$del\ntesting hdl_nvdla"
+      echo "NVDLA_CONFIG: ${NVDLA_CONFIG}"
       step "$ACTION_ROOT/tests/test_0x00000006.sh"                                            # running the test list
     fi # hdl_nvdla
 

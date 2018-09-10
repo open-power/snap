@@ -123,6 +123,9 @@ check_snap_settings:
 	@echo "                        =============================="
 	@echo "                        hardware/Makefile called with:"
 	@echo "                        ACTION_ROOT     = $(ACTION_ROOT)"
+	@if [ "$(HDL_NVDLA)" == "y" ]; then \
+		echo "                        NVDLA_CONFIG    = $(NVDLA_CONFIG)"; \
+	fi
 	@if [ "$(CAPI_VER)" == "capi10" ]; then \
 		echo "                        PSL_DCP         = $(PSL_DCP)"; \
 	elif [ "$(CAPI_VER)" == "capi20" ]; then \
