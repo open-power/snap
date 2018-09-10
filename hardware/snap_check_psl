@@ -35,7 +35,8 @@ if [ $# -gt 1 ]; then
     case $PSL_MD5 in
       '714ee9a2f542064ea9733639d540f562')    export PSL_DCP_TYPE="N250S";; # Version 007 built with vivado 2017.4
       '51b64ad40a3dc54ec855d7d7dfef0896')    export PSL_DCP_TYPE="ADKU3";; # rblack_PSLrev6_v174_20170122_vsec400
-      '6de8dd18738e8dfd65172196de9965d6')    export PSL_DCP_TYPE="AD8K5";; # portal_20180326_r006
+#      '6de8dd18738e8dfd65172196de9965d6')    export PSL_DCP_TYPE="AD8K5";; # portal_20180326_r006
+      '1fdbf733736bba4b948ec692abf16596')    export PSL_DCP_TYPE="AD8K5";; # portal_20180907_r007
       'b42c543031c2878674f942e3727958d1')    export PSL_DCP_TYPE="S121B";; # wbstart_apr24, BPIx16
       'cbd3634f1b3c7ea7a5e7c7ed0590f9ba')    export PSL_DCP_TYPE="S121B";; # SPIx4 32bit flash address
       'd051aa72ce08b60fd587a74a5146bf88')    export PSL_DCP_TYPE="N250S OUTDATED";;
@@ -55,3 +56,4 @@ if [ $# -gt 1 ]; then
 else
   echo "Missing parameters for "`basename $0`
 fi
+
