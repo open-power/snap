@@ -56,7 +56,7 @@ Notes :
 
 * \* : requires an auxiliary power supply connector (100W)
 
-* Resource in _italic_ : minimum manual tests have been performed, not yet completely SNAP supported
+* _ADM-PCIE-9V3_ : minimum manual tests have been performed, not yet completely SNAP supported
 
 ### P9 OpenCAPI3.0 SNAP FPGA Supported Boards
 _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
@@ -64,8 +64,7 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 | Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
 |:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:-------------|:---:|:----------:|:-----------
 |  Alphadata	|ADM-PCIE-9V3|AD9V3      |VU3P|16GB/32GB DDR4 (2ch)|-|-|2x (100GbE/4x25GbE)|1 OpenCAPI Link (8x25Gb)|LowProf|Dec-18|Dec-18
-|  _Mellanox  |Innova-2 Flex	    |TBD   |KU15P|4GB/8GB DDR4|-|-|2x25GbE|	1 OpenCAPI Link (8x25Gb)	|LowProf|-|-_
-
+|  _Mellanox_  |_Innova-2 Flex_	    |_TBD_   |_KU15P_|_4GB/8GB DDR4_|_-_|_-_|_2x25GbE_|	_1 OpenCAPI Link (8x25Gb)_	|_LowProf_|_-_|_-_
 
 
 * Supported Development Environments :
@@ -96,7 +95,7 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 |**Tool**                 |**Minimum**|**Recommended**|**Helpful commands**
 |:------------------------|:---------:|:-------------:|:-------------------
 | gcc                     |4.4.7|latest |gcc -v
-|P8 Server Firmware : skiboot/FW|5.1.13/FW840.20/OP820   |latest|update_flash -d
+|P8 Server Firmware : skiboot/FW|5.1.13/FW840.20/OP820     |latest|update_flash -d
 |P9 Server Firmware : skiboot/FW|5.11/FW910 & 6.0/OP920)   |latest|update_flash -d
 
 
