@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+-include $(SNAP_ROOT)/snap_env.sh
+
 ifndef PSLSE_ROOT
 # FIXME If we find a better way to do the following, let us know:
 #   Environment variable PSLSE_ROOT defined by hardware setup scripts.
