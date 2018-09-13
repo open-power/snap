@@ -53,8 +53,12 @@ if [ -L ../fpga_ip ]; then
     unlink ../fpga_ip
 fi
 
-if [ -L ./ram_wrapper ]; then
-    unlink ./ram_wrapper
+#if [ -L ./ram_wrapper ]; then
+#    unlink ./ram_wrapper
+#fi
+
+if [ -L ./ram_fpga ]; then
+    unlink ./ram_fpga
 fi
 
 if [ ! -d ../nvdla-capi ]; then
@@ -80,7 +84,8 @@ ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/nvdla               nvdl
 ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/include             include
 ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/vlibs               vlibs
 ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/fifos               fifos
-ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/fpga_ip/ram_wrapper ram_wrapper
+#ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/fpga_ip/ram_wrapper ram_wrapper
+ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/rams/fpga/model     ram_fpga
 ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/vmod/fpga_ip             ../fpga_ip
 ln -s $ACTION_ROOT/nvdla-capi/outdir/$NVDLA_CONFIG/spec/defs                defs
 

@@ -61,7 +61,7 @@ elif [ "$DLA_CONFIG" == "nv_large" ]; then
                               "$TEST_ROOT/SDP/SDP_X1_L0_0_large_fbuf" \
                               "$TEST_ROOT/PDP/PDP_L0_0_large_fbuf" \
                               "$TEST_ROOT/CONV/CONV_D_L0_0_large_fbuf" \
-                              #"$TEST_ROOT/NN/NN_L0_1_large_fbuf"
+                              "$TEST_ROOT/NN/NN_L0_1_large_fbuf"
                               )
     
     #declare -a flatbuf_tests=("$TEST_ROOT/CDP/CDP_L0_0_large_fbuf")
@@ -71,7 +71,7 @@ elif [ "$DLA_CONFIG" == "nv_large" ]; then
                            "$GOLDEN_ROOT/SDP_X1_L0_0_large_4486c3/dla/lead.md5" \
                            "$GOLDEN_ROOT/PDP_L0_0_large_a57d22/dla/lead.md5" \
                            "$GOLDEN_ROOT/CONV_D_L0_0_large_f394b6/dla/lead.md5" \
-                           #"$GOLDEN_ROOT/NN_L0_1_large_b059a8/dla/lead.md5"
+                           "$GOLDEN_ROOT/NN_L0_1_large_b059a8/dla/lead.md5"
                            )
 else
     echo "Unsupported NVDLA_CONFIG: $DLA_CONFIG"

@@ -39,6 +39,9 @@ endif
 endif
 
 include $(SNAP_ROOT)/snap_env.sh
+include $(SNAP_ROOT)/.snap_config.sh
+
+$(info NOTICE!! NVDLA_CONFIG set to $(NVDLA_CONFIG))
 
 uname_p := $(shell uname -p)
 
@@ -96,7 +99,7 @@ snap_nvdla_umd_objs += nvdla_capi_test.o \
 
 nvdla_capi.o nvdla_core_callbacks.o:
 	for dir in $(SUBDIRS_KMD); do \
-		$(MAKE) -C $$dir; \
+		$(MAKE) -C $$dir NVDLA_CONFIG=$(NVDLA_CONFIG); \
 	done
 	find $(NVDLA_KMD_OUT)/kmd/libnvdla_kmd/ -name '*.o' -exec cp {} $(ACTION_ROOT)/sw/  \;
 	find $(NVDLA_KMD_OUT)/firmware/libnvdla_firmware/ -name '*.o' -exec cp {} $(ACTION_ROOT)/sw/  \;
