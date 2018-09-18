@@ -36,10 +36,10 @@ static void mbus_to_double(snap_membus_t *data_read, double *table_double_in)
 		double   value_d;
 	};
 
-	for(int i = 0; i < MAX_NB_OF_WORDS_READ; i++)
-	   for(int j = 0; j < MAX_NB_OF_DOUBLES_PERDW; j++)
+	loop_m2d1: for(int i = 0; i < MAX_NB_OF_WORDS_READ; i++)
+#pragma HLS PIPELINE
+	   loop_m2d2: for(int j = 0; j < MAX_NB_OF_DOUBLES_PERDW; j++)
 	   {
-#pragma HLS UNROLL
 		value_u = (uint64_t)data_read[i]((8*sizeof(double)*(j+1))-1, (8*sizeof(double)*j));
 		table_double_in[i*MAX_NB_OF_DOUBLES_PERDW + j] = value_d;
 	   }
@@ -53,10 +53,10 @@ static void  double_to_mbus(double *table_double_out, snap_membus_t *data_to_be_
 		double   value_d;
 		uint64_t value_u;
 	};
-	for(int i = 0; i < MAX_NB_OF_WORDS_READ; i++)
-	   for(int j = 0; j < MAX_NB_OF_DOUBLES_PERDW; j++)
+	loop_d2m1: for(int i = 0; i < MAX_NB_OF_WORDS_READ; i++)
+#pragma HLS PIPELINE
+	   loop_d2m2: for(int j = 0; j < MAX_NB_OF_DOUBLES_PERDW; j++)
 	   {
-#pragma HLS UNROLL
 		value_d = table_double_out[i*MAX_NB_OF_DOUBLES_PERDW + j];
 		data_to_be_written[i]((8*sizeof(double)*(j+1))-1, (8*sizeof(double)*j)) = (uint64_t)value_u;
 	   }
@@ -96,9 +96,9 @@ static int process_action(snap_membus_t *din_gmem,
 	mbus_to_double(buffer_in, data_in);
 
 	// PROCESSING THE DATA
-	for (int i = 0; i < nb_of_doubles/3; i++)
+	loop_proc: for (int i = 0; i < nb_of_doubles/3; i++)
 	{
-#pragma HLS UNROLL factor=5
+#pragma HLS PIPELINE
 		data_out[i] = data_in[3*i] * data_in[(3*i)+1] * data_in[(3*i)+2];
 	}
 
