@@ -20,5 +20,3 @@
 set_max_delay -datapath_only -from [get_ports *b_flash*] 5.000
 set_max_delay -datapath_only -from [get_cells -hierarchical -filter {NAME=~ *f/dff_flash_* && IS_SEQUENTIAL == 1}] -to [get_ports *b_flash*] 5.000
 set_max_delay -datapath_only -from [get_cells -hierarchical -filter {NAME=~ *f/dff_flash_* && IS_SEQUENTIAL == 1}] -to [get_ports *o_flash*] 5.000
-
-resize_pblock  b_nestedpsl -add SLICE_X129Y105:SLICE_X129Y119
