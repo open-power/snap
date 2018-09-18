@@ -26,6 +26,7 @@ set timing_lablimit $::env(TIMING_LABLIMIT)
 set fpgacard        $::env(FPGACARD)
 set ila_debug       $::env(ILA_DEBUG)
 set vivadoVer       [version -short]
+set capi_ver        $::env(CAPI_VER)
 
 #Define widths of each column
 set widthCol1 $::env(WIDTHCOL1)
