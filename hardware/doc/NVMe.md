@@ -1,5 +1,5 @@
 # NVMe Usage
-When SNAP is built for the Nallatech 250S card with NVMe support enabled, the SNAP framework provides an easy to use interface to initiate data transfers between the NVMe drives and the onboard SDRAM. Before the NVMe sub-system can be used, it needs to be initialized. The **"snap_nvme_init"** utility program in the software/tools directory can be used to perform the initalization. 
+When SNAP is built for the Nallatech 250S card with NVMe support enabled, the SNAP framework provides an easy to use interface to initiate data transfers between the NVMe drives and the onboard SDRAM. Before the NVMe sub-system can be used, it needs to be initialized (but not when using "nvme lite" simulation models). The **"snap_nvme_init"** utility program in the software/tools directory can be used to perform the initalization. 
 Once initalization is done,  SNAP actions must use the NVMe action interface (AXI MM write burst) to initiate transfers. The following registers must be programmed to do so.
 
 
