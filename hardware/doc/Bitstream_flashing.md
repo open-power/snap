@@ -56,10 +56,11 @@ The output bitstream file names will have `_FACTORY` appended.
 # Initial programming of a blank or bricked card
 
 There are two ways to program a card from scratch.  
-Connect the Platform Cable with the card as described in the card's reference manual. 
+Connect the Platform Cable with the card as described in the card's reference manual.
+Here are somes examples of card connection situations :
 * The Alpha-Data KU3 has an on-board connector to plug the Xilinx Platform Cable USB II ribbon.
 * The Alpha-Data 8k5 has an embedded Xilinx compatible programmer, so only a micro USB cable is required. 
-* The Nallatech 250S requires an additional Development & Debug Breakout Board to interface with the Xilinx Platform Cable USB II.
+* The Nallatech 250S and N250SP require an additional Development & Debug Breakout Board to interface with the Xilinx Platform Cable USB II.
 
 ## 1. Programming the flash device with a .mcs file 
 
