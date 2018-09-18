@@ -98,7 +98,12 @@ if { $cloud_flow == "TRUE" } {
   set directive $place_directive
 }
 set logfile   $logs_dir/${step}.log
-set command   "place_design -directive $directive"
+
+if { ($capi_ver == "capi10") && ($vivadoVer > "2018.1")} {
+  set command   "place_design -directive $directive -no_fanout_opt"
+} else {
+  set command   "place_design -directive $directive"
+}
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start place_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
 ##
