@@ -1,5 +1,29 @@
 #!/bin/bash
 
+if [ -z $SNAP_ROOT ]; then
+    SNAP_ROOT=../../../
+    echo "WARNING! SNAP_ROOT not specified, seting to $SNAP_ROOT"
+fi
+
+if [ ! -f $SNAP_ROOT/.snap_config.sh ]; then
+    echo "WARNING! $SNAP_ROOT/.snap_config.sh not exist. Please run 'make snap_config' at $SNAP_ROOT"
+    exit 1
+else
+    . $SNAP_ROOT/.snap_config.sh
+fi
+
+if [ ! -f $SNAP_ROOT/snap_env ]; then
+    echo "WARNING! $SNAP_ROOT/snap_env.sh not exist. Please run 'make snap_config' at $SNAP_ROOT"
+    exit 1
+else
+    . $SNAP_ROOT/snap_env.sh
+fi
+
+if [ -z $ACTION_ROOT ]; then
+    ACTION_ROOT=../
+    echo "WARNING! ACTION_ROOT not specified, seting to $ACTION_ROOT"
+fi
+
 if [ ! -z $NVDLA_CONFIG ]; then
     echo "DLA_CONFIG set to $NVDLA_CONFIG"
     DLA_CONFIG=$NVDLA_CONFIG
@@ -61,17 +85,17 @@ elif [ "$DLA_CONFIG" == "nv_large" ]; then
                               "$TEST_ROOT/SDP/SDP_X1_L0_0_large_fbuf" \
                               "$TEST_ROOT/PDP/PDP_L0_0_large_fbuf" \
                               "$TEST_ROOT/CONV/CONV_D_L0_0_large_fbuf" \
-                              "$TEST_ROOT/NN/NN_L0_1_large_fbuf"
+                              #"$TEST_ROOT/NN/NN_L0_1_large_fbuf" \
+                              "$TEST_ROOT/NN/NN_L0_1_large_random_fbuf"
                               )
-    
-    #declare -a flatbuf_tests=("$TEST_ROOT/CDP/CDP_L0_0_large_fbuf")
     
     declare -a golden_md5s=(
                            "$GOLDEN_ROOT/CDP_L0_0_large_fe3167/dla/lead.md5" \
                            "$GOLDEN_ROOT/SDP_X1_L0_0_large_4486c3/dla/lead.md5" \
                            "$GOLDEN_ROOT/PDP_L0_0_large_a57d22/dla/lead.md5" \
                            "$GOLDEN_ROOT/CONV_D_L0_0_large_f394b6/dla/lead.md5" \
-                           "$GOLDEN_ROOT/NN_L0_1_large_b059a8/dla/lead.md5"
+                           #"$GOLDEN_ROOT/NN_L0_1_large_b059a8/dla/lead.md5" \
+                           "$GOLDEN_ROOT/NN_L0_1_large_random_2e0fa0/dla/lead.md5"
                            )
 else
     echo "Unsupported NVDLA_CONFIG: $DLA_CONFIG"
@@ -85,28 +109,30 @@ do
        echo "Cannot find ${flatbuf_tests[i]} "
        exit -1
    fi
-   cmd="unbuffer $ACTION_ROOT/sw/snap_nvdla -C ${CARD_NO} --loadable ${flatbuf_tests[i]} -vv | tee snap_${i}.log"
+   test=${flatbuf_tests[i]}
+   testname=`basename $test`
+   cmd="unbuffer $ACTION_ROOT/sw/snap_nvdla -C ${CARD_NO} --loadable ${flatbuf_tests[i]} -vv | tee snap_${testname}.log"
    eval $cmd
    if [ $? -eq 0 ]; then
-       echo "FINISHED RUNNING TEST ${i}"
+       echo "FINISHED RUNNING TEST ${testname}" | tee -a snap_${testname}.log
    else
-       echo "ERROR RUNNING TEST ${i}"
+       echo "ERROR RUNNING TEST ${testname}" | tee -a snap_${testname}.log
        exit -1
    fi
 
    test_md5=`md5sum output.dimg | awk '{ print $1 }'`
    
    if [ ! -f ${golden_md5s[i]} ]; then
-       echo "Cannot find ${golden_md5s[i]} "
+       echo "Cannot find ${golden_md5s[i]} " | tee -a snap_${testname}.log
        exit -1
    fi
 
    golden_md5=`cat ${golden_md5s[i]} | awk '{ print $1 }'`
 
    if [ "$test_md5" == "$golden_md5" ]; then
-       echo "TEST $i PASSED"
+       echo "TEST $testname PASSED" | tee -a snap_${testname}.log
    else
-       echo "TEST $i MD5 MISCOMPARE"
+       echo "TEST $testname MD5 MISCOMPARE" | tee -a snap_${testname}.log
        exit -1
    fi
 done
