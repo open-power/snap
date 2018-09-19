@@ -106,7 +106,9 @@ static int process_action(snap_membus_t *din_gmem,
 	// CONVERT the doubles to a format that can be sent to host memory
 	 double_to_mbus(data_out, buffer_out);
 
-	// WRITE 1 third of the initial number of data
+	// WRITE all the data
+	// HLS bug: memcpy can be used only when writing more than 64B. 
+	// Circumvention in Issue #652 of snap githib
 	memcpy(dout_gmem + o_idx, &buffer_out, MAX_NB_OF_DOUBLES_READ*sizeof(double));
 
 	act_reg->Control.Retc = SNAP_RETC_SUCCESS;
