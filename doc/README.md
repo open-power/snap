@@ -26,3 +26,96 @@ The usage of basic conversion directives (#pragma) and their understanding will 
 
 * For hardware skilled user [HDL_example](../actions/hdl_example/) and [hdl_nvme_example](../actions/hdl_nvme_example/) show several different memory copy usage examples.
 
+* Supported Boards :
+
+_(All information provided by FPGA board vendors are subject to change at any time.)_
+
+
+### P8 CAPI1.0 SNAP FPGA Supported Boards 
+_Requires Ubuntu 16.04.1 LTS or later_ / (Resources in _italic_ are not enabled yet)
+
+| Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM             |NVME|QDR|Ethernet        |CAPI Interface|Board|CAPI support|SNAP support
+|:------------|:-------:|:------------:|:--:|:---------------:|:--:|:-:|:---------------|:---:|:----------:|:-----------:|:-
+|  Alphadata  |ADM-PCIE-KU3|ADKU3|KU060|16GB DDR3(2ch)   |-|-     |_2x(40GbE/4x10GbE)_|PCIe Gen3 x8|LowProf|X|X|
+|  Alphadata  |ADM-PCIE-8K5|AD8K5|KU115|16/32GB DDR4(2ch)|-|-     |_2x(10GbE/16GbE FC)_ |PCIe Gen3 x8|LowProf|X|X|
+|  Nallatech  |250S	       |N250S|KU060|4GB DDR4(1ch)    |2TB (1ch+_1ch_)|-  |-               |PCIe Gen3 x8|LowProf|X|X|
+|  Semptian	  |NSA-121B	   |S121B|KU115|16GB DDR4(2ch)   |-|-|_2x(10GbE)_|PCIe Gen3 x8|LowProf|X|X|
+
+### P9 CAPI2.0 SNAP FPGA Supported Boards
+_Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
+
+| Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
+|:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:-------------|:---:|:----------:|:-----------
+|  Nallatech	|250S+|N250SP|KU15P|4GB DDR4  (1ch)|_3.8TB/6.4TB/25TB (4ch)_|-|-|PCIe Gen4 x8|LowProf|X|Sep-18
+|  ReflexCES	|XpressVUP-LP9PT|RCXVUP|VU9P*|8GB DDR4 (2ch)|-|_144Mb/575Mb_|_2x(100GbE/4x25GbE)_|PCIe Gen3 x 16|LowProf|X|X
+|  Flyslice	|FX609QL|FX609|VU9P*|16GB DDR4 (4ch)|-|-|-|PCIe Gen3 x 16|LowProf|X|X
+|  Semptian	|NSA-241|S241|VU9P*|32GB DDR4 (4ch)|-|-|?|PCIe Gen3 x 16|FullHeight|TBD|TBD
+|  _Alphadata_	|_ADM-PCIE-9V3_|_AD9V3_|_VU3P_|_16GB/32GB DDR4 (2ch)_|-|-|_2x(100GbE/4x25GbE)_|_PCIe Gen4 x8_|_LowProf_|_X_|-
+
+Notes :
+
+* \* : requires an auxiliary power supply connector (100W)
+
+* _ADM-PCIE-9V3_ : minimum manual tests have been performed, not yet completely SNAP supported
+
+### P9 OpenCAPI3.0 SNAP FPGA Supported Boards
+_Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
+
+| Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
+|:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:-------------|:---:|:----------:|:-----------
+|  Alphadata	|ADM-PCIE-9V3|AD9V3      |VU3P|16GB/32GB DDR4 (2ch)|-|-|2x (100GbE/4x25GbE)|1 OpenCAPI Link (8x25Gb)|LowProf|Dec-18|Dec-18
+|  _Mellanox_  |_Innova-2 Flex_	    |_TBD_   |_KU15P_|_4GB/8GB DDR4_|_-_|_-_|_2x25GbE_|	_1 OpenCAPI Link (8x25Gb)_	|_LowProf_|_-_|_-_
+
+
+* Supported Development Environments :
+
+### Development Environments :
+
+| Development Server(x86)| Ubuntu        | RedHat | CentOS | Suse  | Helpful commands
+|:-----------------------|:-------------:|:------:|:------:|:-----:|:----------------
+|                        |16.04.1 minimum| 6.4    | Linux 7| 11.4  | lsb_release -a
+
+|**Tool**                |**Minimum**  |**Recommended**|**Helpful commands**|
+|:-----------------------|:-----------:|:-------------:|:--------------------
+| gcc                    |4.4.7|latest |gcc -v
+| Vivado                 |2017.4|2018.1|vivado -version
+| Vivado HLS             |2017.4|2018.1|vivado_hls -version
+| Cadence ncsim (optional for nvme simulation with models)|15.10-s019(Vivado 2017.4)|15.20-s018(Vivado 2018.1)|ncsim -version
+
+### Deployment Environments :
+
+| Deployment Server(Power)| Ubuntu        | RedHat   | CentOS   | Suse  | Helpful commands
+|:------------------------|:-------------:|:--------:|:--------:|:-----:|:----------------
+| Power8 (CAPI1.0)        | 16.04 min | RHEL7.3 min  |     -    |   -   | lsb_release -a
+| Power9 (CAPI2.0)        | 18.04 min | Pegas 1.1 min|     -    |   -   | lsb_release -a
+| Power9 (OpenCAPI3.0)    | 18.04 min | Pegas 1.2 min| _to come_|_SLES15 SP1 & SLES12 SP5_ | lsb_release -a
+
+(Resources in _italic_ are tentative)
+
+|**Tool**                 |**Minimum**|**Recommended**|**Helpful commands**
+|:------------------------|:---------:|:-------------:|:-------------------
+| gcc                     |4.4.7|latest |gcc -v
+|P8 Server Firmware : skiboot/FW|5.1.13/FW840.20/OP820     |latest|update_flash -d
+|P9 Server Firmware : skiboot/FW|5.11/FW910 & 6.0/OP920)   |latest|update_flash -d
+
+
+### P8 Deployment environment (Bare Metal IBM server examples supporting CAPI SNAP) :
+
+| MTM| PowerLinux| CAPI Capacity (per PCIe slots priority)
+|:--:|:-----------|:--------------------------------------
+| 8247-21L       |Power S822L|2x CAPI adapters per socket => 2 CAPI (C7-C6)
+| 8247-22L       |Power S812L|2x CAPI adapters per socket => 4 CAPI (C7, C6, C5, C3)
+| 8247-42L       |Power S824L|2x CAPI adapters + 2GPUs (C3-C6)=> 4 CAPI (C3,C5,C6,C7)
+| 8348-21C       |Power Systems S812LC|2x CAPI adapters per socket => 2 CAPI (C3- C4)
+| 8335-GCA       |Power Systems S822LC|4 of the 5 PCIe slots are CAPI capable => 4 CAPI(C4-C1-C5-C2)
+
+### P9 Deployment environment (Bare Metal IBM server examples supporting CAPI SNAP) :
+
+| MTM| PowerLinux| PCIeGen4x8 for CAPI| PCIeGen4x16 for CAPI
+|:--:|:-----------|:------------------|:--------------------
+| 8335-GTH(air cooled)       |Power AC922|1 (Slot 2)    |2 (Slot 3, Slot 4)
+| 8335-GTX(water cooled)     |Power AC922|0             |2
+| 9006-22P - 2 proc          |Power LC922|1(WIO Slot4)	|2 (UIO Slot1 - WIO Slot3)
+| .....                      |.....      | |
+
+Disclaimer : as it is not possible to cross tests all configurations with all possible cards on all possible servers, information provided in this page are recommandations only and subject to change without notice.
