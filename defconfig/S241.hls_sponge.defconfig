@@ -25,14 +25,14 @@ NUM_OF_ACTIONS=1
 # HDL_ACTION is not set
 # HDL_EXAMPLE is not set
 # HLS_MEMCOPY is not set
-# HLS_SPONGE is not set
+HLS_SPONGE=y
 # HLS_HASHJOIN is not set
 # HLS_SEARCH is not set
 # HLS_BFS is not set
 # HLS_INTERSECT is not set
 # HLS_LATENCY_EVAL is not set
 # HLS_MM_TEST is not set
-HLS_HELLOWORLD=y
+# HLS_HELLOWORLD is not set
 ENABLE_HLS_SUPPORT=y
 HLS_SUPPORT="TRUE"
 DISABLE_SDRAM_AND_BRAM=y
