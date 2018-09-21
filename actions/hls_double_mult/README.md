@@ -1,7 +1,7 @@
 # HLS_DOUBLE_MULT EXAMPLE
 
 * Provides a simple base allowing to discover how to deal with double type variables
-* C code is multiplying 3 double numbers read from host memory and writing result in host mmemory
+* C code is multiplying 3 double numbers read from host memory and writing result in host memory
   * code can be executed on the CPU (software action)
   * code can be simulated (software and hardware action)
   * code can then run in hardware when the FPGA is programmed (software and hardware action)
