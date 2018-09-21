@@ -4,22 +4,22 @@
 #
 # N250S is not set
 # ADKU3 is not set
-AD8K5=y
+# AD8K5 is not set
 # S121B_BPIx16 is not set
 # S121B_SPIx4 is not set
 # N250SP is not set
 # RCXVUP is not set
 # S241 is not set
-# FX609 is not set
-FPGACARD="AD8K5"
-FLASH_INTERFACE="BPIx16"
+FX609=y
+FPGACARD="FX609"
+FLASH_INTERFACE="SPIx4"
 FLASH_SIZE="128"
 FLASH_FACTORYADDR="0x00000000"
-FLASH_USERADDR="0x02000000"
+FLASH_USERADDR="0x04000000"
 # S121B is not set
-CAPI10=y
-# CAPI20 is not set
-FPGACHIP="xcku115-flva1517-2-e"
+# CAPI10 is not set
+CAPI20=y
+FPGACHIP="xcvu9p-fsgd2104-2l-e"
 NUM_OF_ACTIONS=1
 # HLS_ACTION is not set
 # HDL_ACTION is not set
