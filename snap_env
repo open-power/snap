@@ -190,6 +190,8 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hls_mm_test'
   elif [ -n "$HLS_HELLOWORLD" ]; then
     AR='${SNAP_ROOT}/actions/hls_helloworld'
+  elif [ -n "$HLS_DECIMAL_MULT" ]; then
+    AR='${SNAP_ROOT}/actions/hls_decimal_mult'
   fi
   if [ -z "$AR" ] && [ -n "$ACTION_ROOT" ]; then
     AR=$ACTION_ROOT
