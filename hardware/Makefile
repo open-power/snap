@@ -90,7 +90,7 @@ PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl "$(FPGACARD)" "$(PSL_D
 
 ifeq ($(PLATFORM),x86_64)
 
-.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_project hw_project_start hw_project .hw_project_done config add_psl_dcp check_bsp image cloud_enable cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim clean
+.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_hls_ip create_project hw_project_start hw_project .hw_project_done config add_psl_dcp check_bsp image cloud_enable cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim clean
 
 all: model image
 
@@ -252,23 +252,27 @@ action_hw: prepare_logs
 	fi
 	@echo -e "[CONFIG ACTION HW....] done  `date +"%T %a %b %d %Y"`";
 
-.create_ip_done:
-	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_ip.tcl        -notrace -log $(LOGS_DIR)/create_ip.log         -journal $(LOGS_DIR)/create_ip.jou
-	@touch .create_ip_done
+.create_snap_ip_done:
+	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_snap_ip.tcl -notrace -log $(LOGS_DIR)/create_snap_ip.log -journal $(LOGS_DIR)/create_snap_ip.jou
+	@touch .create_snap_ip_done
 
 .create_nvme_done:
 	@echo -e "[CREATE NVME.........] start `date +"%T %a %b %d %Y"`";
-	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log  -journal $(LOGS_DIR)/create_nvme_host.jou
+	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_nvme_host.tcl -notrace -log $(LOGS_DIR)/create_nvme_host.log -journal $(LOGS_DIR)/create_nvme_host.jou
 	@$(MAKE) -s patch_NVMe
 	@echo -e "[CREATE NVME.........] done  `date +"%T %a %b %d %Y"`";
 	@touch .create_nvme_done
 
+create_hls_ip:
+	@cd $(BUILD_DIR) &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_hls_ip.tcl -notrace -log $(LOGS_DIR)/create_hls_ip.log -journal $(LOGS_DIR)/create_hls_ip.jou
+
 create_project: snap_preprocess
 	@echo -e "[CREATE PROJECT......] start `date +"%T %a %b %d %Y"`";
 	@echo -e "                        using `vivado -version |grep Vivado`"
-	@$(MAKE) -s .create_ip_done
+	@$(MAKE) -s .create_snap_ip_done
+	@$(MAKE) -s create_hls_ip
 	@if [ "$(NVME_USED)" == "TRUE" ]; then $(MAKE) -s .create_nvme_done; fi
-	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log  -journal $(LOGS_DIR)/create_framework.jou
+	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log -journal $(LOGS_DIR)/create_framework.jou
 	@echo -e "[CREATE PROJECT......] done  `date +"%T %a %b %d %Y"`"
 
 hw_project_start:
@@ -454,7 +458,7 @@ endif
 .PHONY: clean
 clean:
 	@echo -e "[CLEAN ENVIRONMENT...] start `date +"%T %a %b %d %Y"`"
-	@$(RM)    .hw_project_done .create_ip_done .create_nvme_done
+	@$(RM)    .hw_project_done .create_snap_ip_done .create_nvme_done
 	@$(RM) -r $(SNAP_PP_FILES_VHD)                   \
 	          $(SNAP_SIM_CORE)/top.sv_source         \
 	          $(SNAP_SIM_NVME)/endp_4_pipe32.v       \

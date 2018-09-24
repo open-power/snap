@@ -20,7 +20,7 @@
 
 set root_dir     $::env(SNAP_HARDWARE_ROOT)
 set ip_dir       $root_dir/ip
-set usr_ip_dir   $ip_dir/managed_ip_project/managed_ip_project.srcs/sources_1/ip
+set hls_ip_dir   $ip_dir/hls_ip_project/hls_ip_project.srcs/sources_1/ip
 set hdl_dir      $root_dir/hdl
 set sim_dir      $root_dir/sim
 set fpga_part    $::env(FPGACHIP)
@@ -178,69 +178,18 @@ if { $simulator != "nosim" } {
 # Add IPs
 # SNAP CORE IPs
 puts "                        importing IPs"
-add_files -norecurse  $ip_dir/fifo_4x512/fifo_4x512.xci >> $log_file
-export_ip_user_files -of_objects  [get_files  "$ip_dir/fifo_4x512/fifo_4x512.xci"] -no_script -sync -force >> $log_file
-add_files -norecurse  $ip_dir/fifo_8x512/fifo_8x512.xci >> $log_file
-export_ip_user_files -of_objects  [get_files  "$ip_dir/fifo_8x512/fifo_8x512.xci"] -no_script -sync -force >> $log_file
-add_files -norecurse  $ip_dir/fifo_10x512/fifo_10x512.xci >> $log_file
-export_ip_user_files -of_objects  [get_files  "$ip_dir/fifo_10x512/fifo_10x512.xci"] -no_script -sync -force >> $log_file
-add_files -norecurse  $ip_dir/fifo_513x512/fifo_513x512.xci >> $log_file
-export_ip_user_files -of_objects  [get_files  "$ip_dir/fifo_513x512/fifo_513x512.xci"] -no_script -sync -force >> $log_file
-# DDR3 / BRAM IPs
-if { $fpga_card == "ADKU3" } {
-  if { $bram_used == "TRUE" } {
-    add_files -norecurse $ip_dir/axi_clock_converter/axi_clock_converter.xci >> $log_file
-    export_ip_user_files -of_objects  [get_files "$ip_dir/axi_clock_converter/axi_clock_converter.xci"] -no_script -sync -force >> $log_file
-    add_files -norecurse $ip_dir/block_RAM/block_RAM.xci >> $log_file
-    export_ip_user_files -of_objects  [get_files "$ip_dir/block_RAM/block_RAM.xci"] -no_script -sync -force >> $log_file
-  } elseif { $sdram_used == "TRUE" } {
-    add_files -norecurse $ip_dir/axi_clock_converter/axi_clock_converter.xci >> $log_file
-    export_ip_user_files -of_objects  [get_files "$ip_dir/axi_clock_converter/axi_clock_converter.xci"] -no_script -sync -force >> $log_file
-    add_files -norecurse $ip_dir/ddr3sdram/ddr3sdram.xci >> $log_file
-    export_ip_user_files -of_objects  [get_files "$ip_dir/ddr3sdram/ddr3sdram.xci"] -no_script -sync -force >> $log_file
-  }
-} elseif { ($fpga_card == "S121B") || ($fpga_card == "AD8K5") || ($fpga_card == "RCXVUP") || ($fpga_card == "FX609") || ($fpga_card == "S241") } {
-  if { $bram_used == "TRUE" } {
-    add_files -norecurse $ip_dir/axi_clock_converter/axi_clock_converter.xci >> $log_file
-    export_ip_user_files -of_objects  [get_files "$ip_dir/axi_clock_converter/axi_clock_converter.xci"] -no_script -sync -force >> $log_file
-    add_files -norecurse $ip_dir/block_RAM/block_RAM.xci >> $log_file
-    export_ip_user_files -of_objects  [get_files "$ip_dir/block_RAM/block_RAM.xci"] -no_script -sync -force >> $log_file
-  } elseif { $sdram_used == "TRUE" } {
-    add_files -norecurse $ip_dir/axi_clock_converter/axi_clock_converter.xci >> $log_file
-    export_ip_user_files -of_objects  [get_files "$ip_dir/axi_clock_converter/axi_clock_converter.xci"] -no_script -sync -force >> $log_file
-    add_files -norecurse $ip_dir/ddr4sdram/ddr4sdram.xci >> $log_file
-    export_ip_user_files -of_objects  [get_files "$ip_dir/ddr4sdram/ddr4sdram.xci"] -no_script -sync -force >> $log_file
-  }
-} elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
-  if { $bram_used == "TRUE" } {
-    if { $nvme_used == "TRUE" } {
-      add_files -norecurse $ip_dir/axi_interconnect/axi_interconnect.xci >> $log_file
-      export_ip_user_files -of_objects  [get_files "$ip_dir/axi_interconnect/axi_interconnect.xci"] -no_script -sync -force >> $log_file
-    } else {
-      add_files -norecurse $ip_dir/axi_clock_converter/axi_clock_converter.xci >> $log_file
-      export_ip_user_files -of_objects  [get_files "$ip_dir/axi_clock_converter/axi_clock_converter.xci"] -no_script -sync -force >> $log_file
-    }
-    add_files -norecurse $ip_dir/block_RAM/block_RAM.xci >> $log_file
-    export_ip_user_files -of_objects  [get_files "$ip_dir/block_RAM/block_RAM.xci"] -no_script -sync -force >> $log_file
-  } elseif { $sdram_used == "TRUE" } {
-    if { $nvme_used == "TRUE" } {
-      add_files -norecurse $ip_dir/axi_interconnect/axi_interconnect.xci >> $log_file
-      export_ip_user_files -of_objects  [get_files "$ip_dir/axi_interconnect/axi_interconnect.xci"] -no_script -sync -force >> $log_file
-    } else {
-      add_files -norecurse $ip_dir/axi_clock_converter/axi_clock_converter.xci >> $log_file
-      export_ip_user_files -of_objects  [get_files "$ip_dir/axi_clock_converter/axi_clock_converter.xci"] -no_script -sync -force >> $log_file
-    }
-    add_files -norecurse $ip_dir/ddr4sdram/ddr4sdram.xci >> $log_file
-    export_ip_user_files -of_objects  [get_files "$ip_dir/ddr4sdram/ddr4sdram.xci"] -no_script -sync -force >> $log_file
-  }
+foreach ip_xci [glob -nocomplain -dir $ip_dir */*.xci] {
+  set ip_name [exec basename $ip_xci .xci]
+  puts "	                adding IP $ip_name"
+  add_files -norecurse $ip_xci  -force >> $log_file
+  export_ip_user_files -of_objects  [get_files "$ip_xci"] -force >> $log_file
 }
-# User IPs
-foreach usr_ip [glob -nocomplain -dir $usr_ip_dir *] {
-  set usr_ip_name [exec basename $usr_ip]
-  puts "                        importing user IP $usr_ip_name"
-  set usr_ip_xci [glob -dir $usr_ip *.xci]
-  add_files -norecurse $usr_ip_xci >> $log_file
-  export_ip_user_files -of_objects  [get_files "$usr_ip_xci"] -no_script -sync -force >> $log_file
+# HLS IPs
+foreach hls_xci [glob -nocomplain -dir $hls_ip_dir */*.xci] {
+  set ip_name [exec basename $hls_xci .xci]
+  puts "                        adding HLS IP $ip_name"
+  add_files -norecurse $hls_xci -force >> $log_file
+  export_ip_user_files -of_objects  [get_files "$hls_xci"] -no_script -sync -force >> $log_file
 }
 
 # Add NVME
