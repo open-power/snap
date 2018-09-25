@@ -37,7 +37,7 @@ endif
 endif
 
 # This is solution specific. Check if we can replace this by generics too.
-SOLUTION_NAME ?= decimalmult
+SOLUTION_NAME ?= decimal_mult
 SOLUTION_DIR ?= hlsDecimalMult
 srcs += action_decimal_mult.cpp 
 
