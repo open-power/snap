@@ -13,19 +13,11 @@ As an example it is important to understand that 4.5 is represented in host memo
     * as a double as 0x4012_0000_0000_0000
     * as a float  as 0x4090_0000. 
 
-__Files used__:
- * **sw:** contains
-   * the ***application*** (snap_decimal_mult.c) which will call the software action or the hardware action depending on the flag used (SNAP_CONFIG=FPGA or SNAP_CONFIG=CPU)
-   * the ***software action*** (action_decimal_mult.c) which will be executed on the CPU only
- * **hw:** contains the ***hardware action*** (action_decimal_mult.cpp) which will be executed on the FPGA 
- * **include:** contains the ***common header*** file (common_decimal.h) used by both the application and the software/hardware action => main structure + defines
- * **tests:** contains automatic tests
- 
  __Usage:__
  * `./snap_decimal_mult -n12 -v` Application calls the hardware action and multiply 12 values 3 by 3. Dumps of data displayed
  * `SNAP_CONFIG=CPU ./snap_decimal_mult` Application calls the software action
  * `SNAP_TRACE=0xF  ./snap_decimal_mult` to display all MMIO exchanged between application and action
- * `././tests/test_0x1014100B.sh` to execute autmatic testing
+ * `././tests/test_0x1014100B.sh` to execute automatic testing
  
  __Parameters:__
 *  arguments in command line:
@@ -36,4 +28,24 @@ __Files used__:
    * `#define MAX_NB_OF_DECIMAL_READ  16` defines the maximum number of decimals to read
    * `typedef float  mat_elmt_t;` definse the type used: float or double
 
+__Files used__:
+|
+â~T~B   Makefile                      General Makefile used to automatically prepare the final files
+â~T~B   README.md                     Documentation file for this example
+â~T~B
+â~T~\â~T~@â~T~@â~T~@sw                            Software directory containing application called from POWER host and software action
+â~T~B       snap_decimal_mult.c       ***application*** which calls the software or the hardware action depending on the flag used (SNAP_CONFIG=FPGA or SNAP_CONFIG=CPU)
+â~T~B       action_decimal_mult.c     ***software action*** which will be executed on the CPU only
+â~T~B       Makefile                  Makefile to compile the software files
+â~T~B
+â~T~Tâ~T~@â~T~@â~T~@include                       Common directory to sw and hw
+        common_decimal.h          ***Common header*** file used by the application and the software/hardware action. It contains the main structure and the defines parameters
+â~T~B
+â~T~\â~T~@â~T~@â~T~@hw                            Hardware directory containing the hardware action
+â~T~B       action_decimal_mult.cpp   ***hardware action*** which will be executed on FPGA and is called by the application 
+â~T~B       action_decimal_mult.H     header file containing hardware action parameters
+â~T~B       Makefile                  Makefile to compile the hardware action using Vivado HLS synthesizer
+â~T~B
+â~T~Tâ~T~@â~T~@â~T~@tests                         Test directory containing all automated tests
+        test_0x1014100B.sh        Basic test shell running snap_decimal_mult application
  
