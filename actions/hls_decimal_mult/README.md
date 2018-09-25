@@ -27,25 +27,26 @@ As an example it is important to understand that 4.5 is represented in host memo
 * parameters in include/common_decimal.h:
    * `#define MAX_NB_OF_DECIMAL_READ  16` defines the maximum number of decimals to read
    * `typedef float  mat_elmt_t;` definse the type used: float or double
-
+   
 __Files used__:
+```
 |
-â~T~B   Makefile                      General Makefile used to automatically prepare the final files
-â~T~B   README.md                     Documentation file for this example
-â~T~B
-â~T~\â~T~@â~T~@â~T~@sw                            Software directory containing application called from POWER host and software action
-â~T~B       snap_decimal_mult.c       ***application*** which calls the software or the hardware action depending on the flag used (SNAP_CONFIG=FPGA or SNAP_CONFIG=CPU)
-â~T~B       action_decimal_mult.c     ***software action*** which will be executed on the CPU only
-â~T~B       Makefile                  Makefile to compile the software files
-â~T~B
-â~T~Tâ~T~@â~T~@â~T~@include                       Common directory to sw and hw
-        common_decimal.h          ***Common header*** file used by the application and the software/hardware action. It contains the main structure and the defines parameters
-â~T~B
-â~T~\â~T~@â~T~@â~T~@hw                            Hardware directory containing the hardware action
-â~T~B       action_decimal_mult.cpp   ***hardware action*** which will be executed on FPGA and is called by the application 
-â~T~B       action_decimal_mult.H     header file containing hardware action parameters
-â~T~B       Makefile                  Makefile to compile the hardware action using Vivado HLS synthesizer
-â~T~B
-â~T~Tâ~T~@â~T~@â~T~@tests                         Test directory containing all automated tests
+|       Makefile                  General Makefile used to automatically prepare the final files
+|       README.md                 Documentation file for this example
+â””â”€â”€â”€sw                            Software directory containing application called from POWER host and software action
+|       snap_decimal_mult.c       APPLICATION which calls the software or the hardware action depending on the flag used 
+|                                 (use SNAP_CONFIG=CPU to call software action and SNAP_CONFIG=FPGA or nothing to call hardware action)
+|       action_decimal_mult.c     SOFTWARE ACTION which will be executed on the CPU only
+|       Makefile                  Makefile to compile the software files
+|
+â””â”€â”€â”€include                       Common directory to sw and hw
+|       common_decimal.h          COMMON HEADER file used by the application and the software/hardware action. It contains the main structure and the defines parameters
+|
+â””â”€â”€â”€hw                            Hardware directory containing the hardware action
+|       action_decimal_mult.cpp   HARDWARE ACTION which will be executed on FPGA and is called by the application 
+|       action_decimal_mult.H     header file containing hardware action parameters
+|       Makefile                  Makefile to compile the hardware action using Vivado HLS synthesizer
+|
+â””â”€â”€â”€tests                         Test directory containing all automated tests
         test_0x1014100B.sh        Basic test shell running snap_decimal_mult application
- 
+ ```
