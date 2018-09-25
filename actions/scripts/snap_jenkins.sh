@@ -96,6 +96,9 @@ function test_all_actions() # $1 = card, $2 = accel
 		*"10141008") # HLS Hello World
 			cmd="./actions/hls_helloworld/tests/test_0x10141008.sh"
 		;;
+		*"1014100A") # HLS Decimal multiplication
+			cmd="./actions/hls_decimal_mult/tests/test_0x1014100B.sh"
+		;;
 		*)
 			echo "Error: Action: $action is not valid !"
 			run_test=0
