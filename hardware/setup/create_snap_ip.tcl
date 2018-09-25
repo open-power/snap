@@ -22,18 +22,16 @@ set root_dir     $::env(SNAP_HARDWARE_ROOT)
 set fpga_part    $::env(FPGACHIP)
 set fpga_card    $::env(FPGACARD)
 set ip_dir       $root_dir/ip
-set usr_ip_dir   $ip_dir/managed_ip_project/managed_ip_project.srcs/sources_1/ip
-set action_root  $::env(ACTION_ROOT)
 
 set sdram_used   $::env(SDRAM_USED)
 set bram_used    $::env(BRAM_USED)
 set nvme_used    $::env(NVME_USED)
 set log_dir      $::env(LOGS_DIR)
-set log_file     $log_dir/create_ip.log
+set log_file     $log_dir/create_snap_ip.log
 
 ## Create a new Vivado IP Project
-puts "\[CREATE_IPs..........\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
-create_project managed_ip_project $ip_dir/managed_ip_project -force -part $fpga_part -ip >> $log_file
+puts "\[CREATE SNAP IPs.....\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
+create_project snap_ip_project $ip_dir/snap_ip_project -force -part $fpga_part -ip >> $log_file
 
 # Project IP Settings
 # General
@@ -498,30 +496,5 @@ if { $create_ddr4_ad8k5 == "TRUE" } {
   open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
 }
 
-# User IPs
-set hls_action_src  $action_root/hw/hls_syn_vhdl
-
-if { [file exists $hls_action_src] == 1 } {
-  set tcl_exists [exec find $hls_action_src/ -name *.tcl]
-
-  if { $tcl_exists != "" } {
-    foreach tcl_file [glob -nocomplain -dir $hls_action_src *.tcl] {
-      set tcl_file_name [exec basename $tcl_file]
-      puts "                        sourcing $tcl_file_name"
-      source $tcl_file >> $log_file
-    }
-  }
-
-  foreach usr_ip [glob -nocomplain -dir $usr_ip_dir *] {
-    set usr_ip_name [exec basename $usr_ip]
-    puts "                        generating user IP $usr_ip_name"
-    set usr_ip_xci [glob -dir $usr_ip *.xci]
-    #generate_target {instantiation_template} [get_files $z] >> $log_file
-    generate_target all              [get_files $usr_ip_xci] >> $log_file
-    export_ip_user_files -of_objects [get_files $usr_ip_xci] -no_script -force  >> $log_file
-    export_simulation -of_objects    [get_files $usr_ip_xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
-  }
-}
-
-puts "\[CREATE_IPs..........\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
+puts "\[CREATE SNAP IPs.....\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 close_project >> $log_file
