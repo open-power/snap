@@ -33,16 +33,18 @@ __Files used__:
 |
 |       Makefile                  General Makefile used to automatically prepare the final files
 |       README.md                 Documentation file for this example
-└───sw                            Software directory containing application called from POWER host and software action
+|
+├───sw                            Software directory containing application called from POWER host and software action
 |       snap_decimal_mult.c       APPLICATION which calls the software or the hardware action depending on the flag used 
 |                                 (use SNAP_CONFIG=CPU to call software action and SNAP_CONFIG=FPGA or nothing to call hardware action)
 |       action_decimal_mult.c     SOFTWARE ACTION which will be executed on the CPU only
 |       Makefile                  Makefile to compile the software files
 |
-└───include                       Common directory to sw and hw
-|       common_decimal.h          COMMON HEADER file used by the application and the software/hardware action. It contains the main structure and the defines parameters
+├───include                       Common directory to sw and hw
+|       common_decimal.h          COMMON HEADER file used by the application and the software/hardware action. 
+|                                 (It contains the main structure and the defines parameters)
 |
-└───hw                            Hardware directory containing the hardware action
+├───hw                            Hardware directory containing the hardware action
 |       action_decimal_mult.cpp   HARDWARE ACTION which will be executed on FPGA and is called by the application 
 |       action_decimal_mult.H     header file containing hardware action parameters
 |       Makefile                  Makefile to compile the hardware action using Vivado HLS synthesizer
