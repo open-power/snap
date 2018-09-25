@@ -58,13 +58,13 @@ static void usage(const char *prog)
 	       "  -N, --no-irq              disable Interrupts\n"
 	       "\n"
 	       "Example:\n"
-	       "  snap_decimalmult. ...\n"
+	       "  snap_decimal_mult. ...\n"
 	       "\n",
 	       prog, MAX_NB_OF_DECIMAL_READ);
 }
 
-static void snap_prepare_decimalmult(struct snap_job *cjob,
-				 struct decimalmult_job *mjob,
+static void snap_prepare_decimal_mult(struct snap_job *cjob,
+				 struct decimal_mult_job *mjob,
 				 void *addr_in,
 				 uint32_t size_in,
 				 uint8_t type_in,
@@ -72,7 +72,7 @@ static void snap_prepare_decimalmult(struct snap_job *cjob,
 				 uint32_t size_out,
 				 uint8_t type_out)
 {
-	fprintf(stderr, "  prepare decimalmult job of %ld bytes size\n", sizeof(*mjob));
+	fprintf(stderr, "  prepare decimal_mult job of %ld bytes size\n", sizeof(*mjob));
 
 	assert(sizeof(*mjob) <= SNAP_JOBSIZE);
 	memset(mjob, 0, sizeof(*mjob));
@@ -94,8 +94,9 @@ int main(int argc, char *argv[])
 	struct snap_action *action = NULL;
 	char device[128];
 	struct snap_job cjob;
-	struct decimalmult_job mjob;
+	struct decimal_mult_job mjob;
 	unsigned long timeout = 600;
+	int write_results = 0;
 	struct timeval etime, stime;
 	ssize_t max_number_of_inputs = MAX_NB_OF_DECIMAL_READ; // Value defined in sync with the hardware
 	ssize_t inputs_to_process = 12;    // Allow user to process only part of the inputs
@@ -104,6 +105,8 @@ int main(int argc, char *argv[])
 	uint8_t type_out = SNAP_ADDRTYPE_HOST_DRAM;
 	uint64_t addr_out = 0x0ull;
 	int exit_code = EXIT_SUCCESS;
+	FILE *fp_ref, *fp_action;
+	
 	// default is completion of the action by IRQ
 	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 
@@ -121,12 +124,13 @@ int main(int argc, char *argv[])
 			{ "no-irq",	 no_argument,	    NULL, 'N' },
 			{ "version",	 no_argument,	    NULL, 'V' },
 			{ "verbose",	 no_argument,	    NULL, 'v' },
+			{ "write-results", no_argument,	    NULL, 'w' },
 			{ "help",	 no_argument,	    NULL, 'h' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-				 "C:n:t:VNvh",
+				 "C:n:t:VNvwh",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -159,6 +163,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'N':
 			action_irq = 0;
+			break;
+		case 'w':
+			write_results = 1;
 			break;
 		default:
 			usage(argv[0]);
@@ -234,7 +241,7 @@ int main(int argc, char *argv[])
 	}
  
 	// Fil thes structure that will be exchnaged between this application and the action
-	snap_prepare_decimalmult(&cjob, &mjob,
+	snap_prepare_decimal_mult(&cjob, &mjob,
 			     (void *)addr_in,  inputs_to_process, type_in,
 			     (void *)addr_out, inputs_to_process/3, type_out);
 
@@ -245,7 +252,7 @@ int main(int argc, char *argv[])
 	rc = snap_action_sync_execute_job(action, &cjob, timeout);
 	gettimeofday(&etime, NULL);
 
-	fprintf(stdout, "Action processing decimalmult took %lld usec\n",
+	fprintf(stdout, "Action processing decimal_mult took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
 	// Test the return code of the action
@@ -282,6 +289,17 @@ int main(int argc, char *argv[])
 		__hexdump(stderr, data_in,  (max_number_of_inputs * sizeof(mat_elmt_t)));
 		fprintf(stdout, "DUMP of output data:\n");	
 		__hexdump(stderr, data_out, (max_number_of_inputs/3 * sizeof(mat_elmt_t)));
+	}
+	// if option has been selected write results to files for log and comparisons
+	if (write_results) {
+		fp_ref = fopen("dec_mult_ref.bin", "w");
+		fp_action = fopen("dec_mult_action.bin", "w");
+        	for ( int i = 0; i < inputs_to_process/3; i++ ) {
+			fprintf(fp_ref, "%lf \n", *(ref_result + i));
+			fprintf(fp_action, "%lf \n", *(data_out + i));
+		}
+		fclose(fp_ref);
+		fclose(fp_action);
 	}
 
 	snap_detach_action(action);

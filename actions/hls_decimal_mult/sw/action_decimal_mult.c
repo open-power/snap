@@ -54,7 +54,7 @@ static int mmio_read32(struct snap_card *card,
 static int action_main(struct snap_sim_action *action,
 		       void *job, unsigned int job_len)
 {
-	struct decimalmult_job *js = (struct decimalmult_job *)job;
+	struct decimal_mult_job *js = (struct decimal_mult_job *)job;
 	mat_elmt_t *src, *dst;
 	size_t size;
 	size_t i;

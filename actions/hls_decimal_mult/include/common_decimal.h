@@ -25,10 +25,10 @@ extern "C" {
 
 #define DECIMALMULT_ACTION_TYPE 0x1014100B
 
-typedef struct decimalmult_job {
+typedef struct decimal_mult_job {
 	struct snap_addr in;	/* input data */
 	struct snap_addr out;   /* offset table */
-} decimalmult_job_t;
+} decimal_mult_job_t;
 
 #define MAX_NB_OF_DECIMAL_READ  16
 typedef float  mat_elmt_t; 	// change to float or double depending on your needs
