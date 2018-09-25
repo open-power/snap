@@ -179,6 +179,9 @@ choice
 
 	config HDL_EXAMPLE
 		bool "HDL Example"
+	
+	config HDL_HELLOWORLD
+		bool "HDL helloworld (Minimum example written in Verilog)"
 
 	config HDL_NVME_EXAMPLE
 		bool "HDL NVMe Example"
