@@ -17,7 +17,7 @@ As an example it is important to understand that 4.5 is represented in host memo
  * `./snap_decimal_mult -n12 -v` Application calls the hardware action and multiply 12 values 3 by 3. Dumps of data displayed
  * `SNAP_CONFIG=CPU ./snap_decimal_mult` Application calls the software action
  * `SNAP_TRACE=0xF  ./snap_decimal_mult` to display all MMIO exchanged between application and action
- * `././tests/test_0x1014100B.sh` to execute automatic testing
+ * `./../tests/test_0x1014100B.sh` to execute automatic testing
  
  __Parameters:__
 *  arguments in command line:
