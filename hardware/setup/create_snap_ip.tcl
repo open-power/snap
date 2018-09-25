@@ -30,7 +30,7 @@ set log_dir      $::env(LOGS_DIR)
 set log_file     $log_dir/create_snap_ip.log
 
 ## Create a new Vivado IP Project
-puts "\[CREATE_SNAP_IPs.....\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
+puts "\[CREATE SNAP IPs.....\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 create_project snap_ip_project $ip_dir/snap_ip_project -force -part $fpga_part -ip >> $log_file
 
 # Project IP Settings
@@ -496,5 +496,5 @@ if { $create_ddr4_ad8k5 == "TRUE" } {
   open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
 }
 
-puts "\[CREATE_SNAP_IPs.....\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
+puts "\[CREATE SNAP IPs.....\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 close_project >> $log_file

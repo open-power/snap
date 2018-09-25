@@ -22,15 +22,15 @@ set root_dir     $::env(SNAP_HARDWARE_ROOT)
 set fpga_part    $::env(FPGACHIP)
 set fpga_card    $::env(FPGACARD)
 set ip_dir       $root_dir/ip
-set usr_ip_dir   $ip_dir/user_ip_project/user_ip_project.srcs/sources_1/ip
+set hls_ip_dir   $ip_dir/hls_ip_project/hls_ip_project.srcs/sources_1/ip
 set action_root  $::env(ACTION_ROOT)
 
 set log_dir      $::env(LOGS_DIR)
-set log_file     $log_dir/create_user_ip.log
+set log_file     $log_dir/create_hls_ip.log
 
 ## Create a new Vivado IP Project
-puts "\[CREATE_USER_IPs.....\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
-create_project user_ip_project $ip_dir/user_ip_project -force -part $fpga_part -ip >> $log_file
+puts "\[CREATE HLS IPs......\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
+create_project hls_ip_project $ip_dir/hls_ip_project -force -part $fpga_part -ip >> $log_file
 
 # Project IP Settings
 # General
@@ -38,7 +38,7 @@ set_property target_language VHDL [current_project]
 set_property target_simulator IES [current_project]
 
 
-# User IPs
+# HLS IPs
 set hls_action_src  $action_root/hw/hls_syn_vhdl
 
 if { [file exists $hls_action_src] == 1 } {
@@ -52,16 +52,16 @@ if { [file exists $hls_action_src] == 1 } {
     }
   }
 
-  foreach usr_ip [glob -nocomplain -dir $usr_ip_dir *] {
-    set usr_ip_name [exec basename $usr_ip]
-    puts "                        generating user IP $usr_ip_name"
-    set usr_ip_xci [glob -dir $usr_ip *.xci]
+  foreach hls_ip [glob -nocomplain -dir $hls_ip_dir *] {
+    set hls_ip_name [exec basename $hls_ip]
+    puts "                        generating HLS IP $hls_ip_name"
+    set hls_ip_xci [glob -dir $hls_ip *.xci]
     #generate_target {instantiation_template} [get_files $z] >> $log_file
-    generate_target all              [get_files $usr_ip_xci] >> $log_file
-    export_ip_user_files -of_objects [get_files $usr_ip_xci] -no_script -force  >> $log_file
-    export_simulation -of_objects    [get_files $usr_ip_xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+    generate_target all              [get_files $hls_ip_xci] >> $log_file
+    export_ip_user_files -of_objects [get_files $hls_ip_xci] -no_script -force  >> $log_file
+    export_simulation -of_objects    [get_files $hls_ip_xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
   }
 }
 
-puts "\[CREATE_USER_IPs.....\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
+puts "\[CREATE HLS IPs......\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 close_project >> $log_file

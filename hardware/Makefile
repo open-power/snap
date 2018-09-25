@@ -90,7 +90,7 @@ PSL_DCP_TYPE=$(shell $(SNAP_HARDWARE_ROOT)/snap_check_psl "$(FPGACARD)" "$(PSL_D
 
 ifeq ($(PLATFORM),x86_64)
 
-.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_user_ip create_project hw_project_start hw_project .hw_project_done config add_psl_dcp check_bsp image cloud_enable cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim clean
+.PHONY: all snap_config check_snap_settings check_simulator check_nvme prepare_project snap_preprocess_start snap_preprocess_execute snap_preprocess patch_version patch_NVMe action_hw create_hls_ip create_project hw_project_start hw_project .hw_project_done config add_psl_dcp check_bsp image cloud_enable cloud_base cloud_action cloud_merge pslse software app model xsim irun nosim sim clean
 
 all: model image
 
@@ -263,14 +263,14 @@ action_hw: prepare_logs
 	@echo -e "[CREATE NVME.........] done  `date +"%T %a %b %d %Y"`";
 	@touch .create_nvme_done
 
-create_user_ip:
-	@cd $(BUILD_DIR) &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_user_ip.tcl -notrace -log $(LOGS_DIR)/create_user_ip.log -journal $(LOGS_DIR)/create_user_ip.jou
+create_hls_ip:
+	@cd $(BUILD_DIR) &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_hls_ip.tcl -notrace -log $(LOGS_DIR)/create_hls_ip.log -journal $(LOGS_DIR)/create_hls_ip.jou
 
 create_project: snap_preprocess
 	@echo -e "[CREATE PROJECT......] start `date +"%T %a %b %d %Y"`";
 	@echo -e "                        using `vivado -version |grep Vivado`"
 	@$(MAKE) -s .create_snap_ip_done
-	@$(MAKE) -s create_user_ip
+	@$(MAKE) -s create_hls_ip
 	@if [ "$(NVME_USED)" == "TRUE" ]; then $(MAKE) -s .create_nvme_done; fi
 	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log -journal $(LOGS_DIR)/create_framework.jou
 	@echo -e "[CREATE PROJECT......] done  `date +"%T %a %b %d %Y"`"
