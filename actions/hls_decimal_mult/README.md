@@ -1,6 +1,6 @@
 # HLS_DECIMAL_MULT EXAMPLE
 
-* Provides a simple base allowing to discover how to exchange single precision floating points (float) or double precision floating points (double) between the application on server and the action in the FPGA.
+* Provides a simple base allowing to discover how to exchange ***single precision floating points (float) or double precision floating points (double)*** between the application on server and the action in the FPGA.
 * C code is multiplying 3 decimal numbers read from host memory and writing result in host memory
   * code can be executed on the CPU (application + software action)
   * code can be simulated (application + software and hardware action)
