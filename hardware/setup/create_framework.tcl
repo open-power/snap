@@ -18,26 +18,28 @@
 ############################################################################
 ############################################################################
 
-set root_dir     $::env(SNAP_HARDWARE_ROOT)
-set ip_dir       $root_dir/ip
-set hls_ip_dir   $ip_dir/hls_ip_project/hls_ip_project.srcs/sources_1/ip
-set hdl_dir      $root_dir/hdl
-set sim_dir      $root_dir/sim
-set fpga_part    $::env(FPGACHIP)
-set fpga_card    $::env(FPGACARD)
-set capi_bsp_dir $root_dir/capi2-bsp/$fpga_card/build/ip
-set capi_ver     $::env(CAPI_VER)
-set action_dir   $::env(ACTION_ROOT)/hw
-set action_tcl   [exec find $action_dir -name tcl -type d]
-set nvme_used    $::env(NVME_USED)
-set bram_used    $::env(BRAM_USED)
-set sdram_used   $::env(SDRAM_USED)
-set ila_debug    [string toupper $::env(ILA_DEBUG)]
-set simulator    $::env(SIMULATOR)
-set denali_used  $::env(DENALI_USED)
-set log_dir      $::env(LOGS_DIR)
-set log_file     $log_dir/create_framework.log
-set vivadoVer    [version -short]
+set root_dir       $::env(SNAP_HARDWARE_ROOT)
+set ip_dir         $root_dir/ip
+set hls_ip_dir     $ip_dir/hls_ip_project/hls_ip_project.srcs/sources_1/ip
+set hdl_dir        $root_dir/hdl
+set sim_dir        $root_dir/sim
+set fpga_part      $::env(FPGACHIP)
+set fpga_card      $::env(FPGACARD)
+set capi_bsp_dir   $root_dir/capi2-bsp/$fpga_card/build/ip
+set capi_ver       $::env(CAPI_VER)
+set action_dir     $::env(ACTION_ROOT)
+set action_hw_dir  $action_dir/hw
+set action_ip_dir  $action_dir/ip/action_ip_prj/action_ip_prj.srcs/sources_1/ip
+set action_tcl     [exec find $action_hw_dir -name tcl -type d]
+set nvme_used      $::env(NVME_USED)
+set bram_used      $::env(BRAM_USED)
+set sdram_used     $::env(SDRAM_USED)
+set ila_debug      [string toupper $::env(ILA_DEBUG)]
+set simulator      $::env(SIMULATOR)
+set denali_used    $::env(DENALI_USED)
+set log_dir        $::env(LOGS_DIR)
+set log_file       $log_dir/create_framework.log
+set vivadoVer      [version -short]
 
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support [string toupper $::env(HLS_SUPPORT)]
@@ -51,7 +53,7 @@ if { [info exists ::env(HLS_SUPPORT)] == 1 } {
 
 # HLS generates VHDL and Verilog files, SNAP is using the VHDL files
 if { $hls_support == "TRUE" } {
-  set action_dir $::env(ACTION_ROOT)/hw/hls_syn_vhdl
+  set action_hw_dir $::env(ACTION_ROOT)/hw/hls_syn_vhdl
 }
 
 if { [info exists ::env(PSL_DCP)] == 1 } {
@@ -123,12 +125,12 @@ if { [file exists $action_tcl] == 1 } {
     foreach tcl_file [glob -nocomplain -dir $action_tcl *.tcl] {
       set tcl_file_name [exec basename $tcl_file]
       puts "                        sourcing $tcl_file_name"
-      source $tcl_file >> $log_file
+      source $tcl_file
     }
   }
 }
 
-add_files -scan_for_includes $action_dir/ >> $log_file
+add_files -scan_for_includes $action_hw_dir/ >> $log_file
 
 
 # Sim Files
@@ -175,21 +177,28 @@ if { $simulator != "nosim" } {
   }
 }
 
-# Add IPs
-# SNAP CORE IPs
-puts "                        importing IPs"
+# Add IP
+# SNAP CORE IP
+puts "                        importing IP"
 foreach ip_xci [glob -nocomplain -dir $ip_dir */*.xci] {
   set ip_name [exec basename $ip_xci .xci]
-  puts "	                adding IP $ip_name"
+  puts "	                adding SNAP IP $ip_name"
   add_files -norecurse $ip_xci  -force >> $log_file
   export_ip_user_files -of_objects  [get_files "$ip_xci"] -force >> $log_file
 }
-# HLS IPs
-foreach hls_xci [glob -nocomplain -dir $hls_ip_dir */*.xci] {
-  set ip_name [exec basename $hls_xci .xci]
-  puts "                        adding HLS IP $ip_name"
-  add_files -norecurse $hls_xci -force >> $log_file
-  export_ip_user_files -of_objects  [get_files "$hls_xci"] -no_script -sync -force >> $log_file
+# HLS Action IP
+foreach ip_xci [glob -nocomplain -dir $hls_ip_dir */*.xci] {
+  set ip_name [exec basename $ip_xci .xci]
+  puts "                        adding HLS Action IP $ip_name"
+  add_files -norecurse $ip_xci -force >> $log_file
+  export_ip_user_files -of_objects  [get_files "$ip_xci"] -no_script -sync -force >> $log_file
+}
+# HDL Action IP
+foreach ip_xci [glob -nocomplain -dir $action_ip_dir */*.xci] {
+  set ip_name [exec basename $ip_xci .xci]
+  puts "                        adding HDL Action IP $ip_name"
+  add_files -norecurse $ip_xci -force >> $log_file
+  export_ip_user_files -of_objects  [get_files "$ip_xci"] -no_script -sync -force >> $log_file
 }
 
 # Add NVME
@@ -217,7 +226,7 @@ if { $nvme_used == TRUE } {
     set_property file_type {Verilog Header} [get_files $hdl_dir/nvme/nvme_defines.sv]
   }
 } else {
-  remove_files $action_dir/action_axi_nvme.vhd -quiet
+  remove_files $action_hw_dir/action_axi_nvme.vhd -quiet
 }
 
 # Add CAPI board support
