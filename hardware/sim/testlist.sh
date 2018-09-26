@@ -340,6 +340,11 @@
       done
     fi # hdl_nvme_example
  #
+    if [[ "$t0l" == "10141001" || "${env_action}" == "hdl_helloworld"* ]];then echo -e "$del\ntesting snap_helloworld"
+      step "hdl_helloworld -h"
+      step "hdl_helloworld"
+    fi # hdl_helloworld
+#
     if [[ "$t0l" == "10141000" || "${env_action}" == "hls_memcopy"* ]];then echo -e "$del\ntesting snap_memcopy"
       step "snap_memcopy -h"
 #     for size in 1 64 80 85 128 240 $rnd1k $rnd1k4k;do to=$((size*50+10))   # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
@@ -399,6 +404,7 @@
         step "snap_hashjoin -Q$varq -t$to -vvv"
       done
     fi # hls_hashjoin
+
  #
     if [[ "$t0l" == "10141003" || "${env_action}" == "hls_search"* ]];then echo -e "$del\ntesting snap_search"
       step "snap_search -h"
