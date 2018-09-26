@@ -121,7 +121,7 @@
         "10141008") a0="hls_helloworld";;
         "10141009") a0="hls_latency_eval";;
         "1014100a") a0="hls_mm_test";;
-        "1014000b") a0="hls_decimal_mult";;
+        "1014100b") a0="hls_decimal_mult";;
         *) echo "unknown action0 type=$t0l, exiting";exit 1;;
       esac; echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="snap_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
