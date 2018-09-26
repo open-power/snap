@@ -521,9 +521,7 @@
  #
     if [[ "$t0l" == "1014100b" || "${env_action}" == "hls_decimal_mult" ]];then echo -e "$del\ntesting decimal_mult"
       step "snap_decimal_mult -n 16 -w"
-      step "debug AC"
       step "cat dec_mult_ref.bin"
-      step "debug AC"
       step "dec_mult_action.bin"
       if diff dec_mult_ref.bin dec_mult_action.bin>/dev/null;then echo -e "RC=$rc file_diff ok$del";rm ${size}.*;else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
     fi # decimal_mult_test
