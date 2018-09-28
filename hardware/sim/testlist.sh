@@ -108,6 +108,7 @@
                       step "snap_example_set -F -b0x0 -s0x100 -p0x5 -t150"
                     fi;;
         "10140001") a0="hdl_nvme_example";;
+        "10140002") a0="hdl_helloworld";;
         "10141000") a0="hls_memcopy";;
         "10141001") a0="hls_sponge";;
         "10141002") a0="hls_hashjoin";;
@@ -120,6 +121,7 @@
         "10141008") a0="hls_helloworld";;
         "10141009") a0="hls_latency_eval";;
         "1014100a") a0="hls_mm_test";;
+        "1014100b") a0="hls_decimal_mult";;
         *) echo "unknown action0 type=$t0l, exiting";exit 1;;
       esac; echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="snap_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
@@ -133,6 +135,7 @@
       t1s=${r:7:1};t1l=${r:8:8};
       case $t1l in
         "10140000") a1="hdl_example";;
+        "10140002") a1="hdl_helloworld";;
         "10141000") a1="hls_memcopy";;
         "10141001") a1="hls_sponge";;
         "10141002") a1="hls_hashjoin";;
@@ -145,6 +148,7 @@
         "10141008") a1="hls_helloworld";;
         "10141009") a1="hls_latency_eval";;
         "1014100a") a1="hls_mm_test";;
+        "1014100b") a1="hls_decimal_mult";;
         *) echo "unknown action1 type=$t1l, exiting";exit 1;;
       esac; echo "action0 type1s=$t1s type1l=$t1l $a1"
       t="snap_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
@@ -336,6 +340,11 @@
       done
     fi # hdl_nvme_example
  #
+    if [[ "$t0l" == "10141001" || "${env_action}" == "hdl_helloworld"* ]];then echo -e "$del\ntesting snap_helloworld"
+      step "hdl_helloworld -h"
+      step "hdl_helloworld"
+    fi # hdl_helloworld
+#
     if [[ "$t0l" == "10141000" || "${env_action}" == "hls_memcopy"* ]];then echo -e "$del\ntesting snap_memcopy"
       step "snap_memcopy -h"
 #     for size in 1 64 80 85 128 240 $rnd1k $rnd1k4k;do to=$((size*50+10))   # 64B aligned       01/20/2017: error 128B issues 120, CR968181, wait for Vivado 2017.1
@@ -395,6 +404,7 @@
         step "snap_hashjoin -Q$varq -t$to -vvv"
       done
     fi # hls_hashjoin
+
  #
     if [[ "$t0l" == "10141003" || "${env_action}" == "hls_search"* ]];then echo -e "$del\ntesting snap_search"
       step "snap_search -h"
@@ -515,5 +525,14 @@
       step "snap_mm_test -J1  -L100"
     fi # mm_test
  #
+    if [[ "$t0l" == "1014100b" || "${env_action}" == "hls_decimal_mult" ]];then echo -e "$del\ntesting decimal_mult"
+      step "snap_decimal_mult -n 16 -w"
+      step "cat dec_mult_ref.bin"
+      step "cat dec_mult_action.bin"
+      if diff dec_mult_ref.bin dec_mult_action.bin>/dev/null;then echo -e "RC=$rc file_diff ok$del";else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
+    fi # decimal_mult_test
+
+ #
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"  # end of loop
   done; l=""; ts3=$(date +%s); totaltime=`expr $ts3 - $ts0`; echo "loops=$loops tests=$n total_time=$totaltime" # end of test
+
