@@ -161,14 +161,6 @@ choice
 
 	default HDL_EXAMPLE
 
-	config HLS_ACTION
-		bool "HLS Action - manually set ACTION_ROOT in snap_env.sh!"
-		select ENABLE_HLS_SUPPORT
-		help
-		  This option is a placeholder for an action written by the user in HLS.
-		  Please remember to set the environment variable "ACTION_ROOT"
-		  in snap_env.sh to the directory of the action source code.
-
 	config HDL_ACTION
 		bool "HDL Action - manually set ACTION_ROOT in snap_env.sh!"
 		help
@@ -189,6 +181,26 @@ choice
 		select FORCE_SDRAM_OR_BRAM
 		select FORCE_NVME
 
+	config HLS_ACTION
+		bool "HLS Action - manually set ACTION_ROOT in snap_env.sh!"
+		select ENABLE_HLS_SUPPORT
+		help
+		  This option is a placeholder for an action written by the user in HLS.
+		  Please remember to set the environment variable "ACTION_ROOT"
+		  in snap_env.sh to the directory of the action source code.
+
+	config HLS_HELLOWORLD
+		bool "HLS HelloWorld"
+		help
+		  This is the simplest example to start with:
+		  - Reading text from the server memory
+		  - Processing changing case of the text
+		  - Writing back the text to the server memory
+		  This example is written in C and compiled with HLS
+		select ENABLE_HLS_SUPPORT
+		select DISABLE_SDRAM_AND_BRAM
+		select DISABLE_NVME
+
 	config HLS_MEMCOPY
 		bool "HLS Memcopy"
 		help
@@ -201,6 +213,13 @@ choice
 		select ENABLE_HLS_SUPPORT
 		select FORCE_SDRAM_OR_BRAM
 		select DISABLE_NVME
+
+	config HLS_NVME_MEMCOPY
+		bool "HLS NVMe Memcopy"
+		depends on N250S
+		select ENABLE_HLS_SUPPORT
+		select FORCE_SDRAM_OR_BRAM
+		select FORCE_NVME
 
 	config HLS_SPONGE
 		bool "HLS Sponge"
@@ -252,13 +271,6 @@ choice
 		select FORCE_SDRAM_OR_BRAM
 		select DISABLE_NVME
 
-	config HLS_NVME_MEMCOPY
-		bool "HLS NVMe Memcopy"
-		depends on N250S
-		select ENABLE_HLS_SUPPORT
-		select FORCE_SDRAM_OR_BRAM
-		select FORCE_NVME
-
 	config HLS_LATENCY_EVAL
 		bool "HLS Latency Evaluation"
 		help
@@ -285,13 +297,15 @@ choice
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
 
-	config HLS_HELLOWORLD
-		bool "HLS HelloWorld"
+	config HLS_DECIMAL_MULT
+		bool "HLS Decimal Multiplication"
 		help
-		  This is the simplest example to start with:
-		  - Reading text from the server memory
-		  - Processing changing case of the text
-		  - Writing back the text to the server memory
+		  This example will help user understanding how to handle decimal numbers::
+		  - Read a value from the server memory
+		  - Convert this value to a double or a float type
+		  - Process an operation with decimal numbers such as a multiplication
+		  - Convert the result back to the format expected by the server
+		  - Write back the result to the server memory
 		  This example is written in C and compiled with HLS
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM

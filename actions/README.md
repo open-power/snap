@@ -35,12 +35,13 @@ To configure the include path for the common header files with the Xilinx Vivado
 |:------------------------|:--:|:-:|:--:|:-:|:--------------------------------------------------------------------------------
 | **hdl**\_example        | X  | X | X  |   | Shows how to use MMIO registers: Software application uses one of them to collect a hardware counter value. Also shows how to copy data between Host, FPGA, card DDR and card NVMe(Flash) in **VHDL** (**Bandwidth measurement**).
 | **hdl**\_nvme_example   | X  | X | X  |   | Example to read and write 4k NVMe blocks. It provides a block layer library which is compatible to the IBM CapiFLASH block API and contains experiments for caching and prefetching.
-| hls_bfs                 | X  |   |    |   | Breadth first search (graph data): shows how to access a complex data structure.
-| hls_hashjoin            | X  |   |    |   | Hashjoin function: shows how to implement a database operation.
 | hls_helloworld          | X  |   |    |   | **Discovery example** changing all characters of a string into lower or upper cases.
-| hls_latencyeval         | X  |   |    |   | Shows how to code the application and the action to get the lowest latency (**Latency measurement**)
 | hls_memcopy             | X  | X |    |   | Shows how to copy data between Host, FPGA and card DDR (**Bandwidth measurement**).
 | hls_nvme_memcopy        | X  | X | X  |   | Shows how to copy data between Host, FPGA, card DDR and card NVMe(Flash) (**Bandwidth measurement**).
+| hls_bfs                 | X  |   |    |   | Breadth first search (graph data): shows how to access a complex data structure.
+| hls_hashjoin            | X  |   |    |   | Hashjoin function: shows how to implement a database operation.
+| hls_latencyeval         | X  |   |    |   | Shows how to code the application and the action to get the lowest latency (**Latency measurement**)
 | hls_search              | X  | X |    |   | Shows how to code an action providing multiple operations: memcopy + different searches such as Naive, KMP and streaming mode (_code not optimized_)
 | hls_sponge              | X  |   |    |   | Shows how an FPGA can compete against a multi-threaded CPU on a compute intensive code (SHA3)  (**Compute-only benchmark**)
+| hls_decimal_mult        | X  |   |    |   | Shows how to manage decimal values exchanged between the application on the server and the action in the FPGA
 
