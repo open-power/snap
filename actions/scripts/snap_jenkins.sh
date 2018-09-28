@@ -69,6 +69,9 @@ function test_all_actions() # $1 = card, $2 = accel
 		*"10140001") # HDL NVMe example
 			cmd="./actions/hdl_nvme_example/tests/test_0x10140001.sh"
 		;;
+		*"10140002") # HDL HelloWorld example
+			cmd="./actions/hdl_helloworld/tests/test_0x10140002.sh"
+		;;
 		*"10141000") # HLS Memcopy
 			cmd="./actions/hls_memcopy/tests/test_0x10141000.sh"
 		;;
@@ -95,6 +98,9 @@ function test_all_actions() # $1 = card, $2 = accel
 		;;
 		*"10141008") # HLS Hello World
 			cmd="./actions/hls_helloworld/tests/test_0x10141008.sh"
+		;;
+		*"1014100B") # HLS Decimal multiplication
+			cmd="./actions/hls_decimal_mult/tests/test_0x1014100B.sh"
 		;;
 		*)
 			echo "Error: Action: $action is not valid !"

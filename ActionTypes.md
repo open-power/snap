@@ -18,7 +18,8 @@ IBM | 10.14.10.07 | 10.14.10.07 | HLS NVMe memcopy
 IBM | 10.14.10.08 | 10.14.10.08 | HLS Hello World
 IBM | 10.14.10.09 | 10.14.10.09 | HLS Latency Evaluation
 IBM | 10.14.10.0A | 10.14.10.0A | HLS WED/STATUS Sharing and MatrixMultiply
-IBM | 10.14.10.0B | 10.14.FF.FF | Reserved for IBM Actions
+IBM | 10.14.10.0B | 10.14.10.0B | HLS Decimal multiplication
+IBM | 10.14.10.0C | 10.14.FF.FF | Reserved for IBM Actions
 MLE | 22.DB.00.01 | 22.DB.00.01 | HDL 10G Ethernet TCP/UDP/IP Accelerator Demo
 MLE | 22.DB.00.02 | 22.DB.00.02 | HDL 25G Ethernet TCP/UDP/IP Accelerator Demo
 Reserved | FF.FF.00.00 | FF.FF.FF.FF | Reserved
