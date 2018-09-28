@@ -15,6 +15,7 @@ set src_dir 	$aip_dir/action_ip_prj/action_ip_prj.srcs/sources_1/ip
 puts "\[CREATE_ACTION_IPs..........\] start [clock format [clock seconds] -format {%T %a %b %d/ %Y}]"
 puts "                        FPGACHIP = $fpga_part"
 puts "                        ACTION_ROOT = $action_root"
+puts "                        Creating IP in $src_dir"
 create_project action_ip_prj $aip_dir/action_ip_prj -force -part $fpga_part -ip >> $log_file
 
 # Project IP Settings
