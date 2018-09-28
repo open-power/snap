@@ -52,3 +52,4 @@ __Files used__:
 └───tests                         Test directory containing all automated tests
         test_0x1014100B.sh        Basic test shell running snap_decimal_mult application
  ```
+
