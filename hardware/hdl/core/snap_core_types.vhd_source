@@ -824,6 +824,7 @@ PACKAGE snap_core_types IS
       atomic_le                   : std_logic                ;
       size                        : std_logic_vector(9 DOWNTO 0)   ;
       data                        : std_logic_vector(1023 DOWNTO 0);
+      offset_32B                  : std_logic                  ;
     END RECORD DH_D_T;
 #endif
 
@@ -1118,11 +1119,13 @@ PACKAGE snap_core_types IS
       wr_req            : std_logic;                                           -- wvalid
       wr_addr           : std_logic_vector(63 DOWNTO 0);                       -- waddr
       wr_len            : std_logic_vector( 7 DOWNTO 0);                       -- wlen
+      wr_size           : std_logic_vector( 2 DOWNTO 0);                       -- wsize
       wr_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
       wr_ctx            : std_logic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
       rd_req            : std_logic;                                           -- rvalid
       rd_addr           : std_logic_vector(63 DOWNTO 0);                       -- raddr
       rd_len            : std_logic_vector( 7 DOWNTO 0);                       -- rlen
+      rd_size           : std_logic_vector( 2 DOWNTO 0);                       -- rsize
       rd_id             : std_logic_vector(C_S_AXI_ID_WIDTH - 1 DOWNTO 0);     -- action ID
       rd_ctx            : std_logic_vector(CONTEXT_BITS - 1 DOWNTO 0);         -- context ID
       int_req           : std_logic;                                           -- interrupt valid

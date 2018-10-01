@@ -56,12 +56,13 @@ PACKAGE dma_types IS
   TYPE UTAG_CTL_T IS RECORD
     com        : COM_INDICATION_T;               -- command indication
     rsp        : RSP_CODES_T;                    -- response indication
-    buf        : std_logic_vector(3 DOWNTO 0);
+    buf        : std_logic_vector(4 DOWNTO 0);
     bufa       : std_logic_vector(1 DOWNTO 0);
     dma        : DMA_INDICATION_T;               -- PSL DMA indication
-    uts        : std_logic_vector(3 DOWNTO 0);   -- utag size
+    uts        : std_logic_vector(4 DOWNTO 0);   -- utag size
     utt        : UTAG_INDICATION_T;              -- utag type 
-    uta        : std_logic_vector(63 DOWNTO 6);  -- utag address
+    uta        : std_logic_vector(63 DOWNTO 5);  -- utag address
+    --uta        : std_logic_vector(63 DOWNTO 6);  -- utag address
     itag       : std_logic_vector( 8 DOWNTO 0);  -- PSL DMA itag
   END RECORD UTAG_CTL_T;
   TYPE ARR_UTAG_CTL_T IS ARRAY (0 TO 31) OF UTAG_CTL_T;

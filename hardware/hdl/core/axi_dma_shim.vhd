@@ -169,6 +169,7 @@ axi_wr: process(ha_pclock)
             axi_awready_q     <= '0';
             sd_c_o.wr_addr    <= ks_d_i.S_AXI_AWADDR;
             sd_c_o.wr_len     <= ks_d_i.S_AXI_AWLEN;
+            sd_c_o.wr_size    <= ks_d_i.S_AXI_AWSIZE;
             sd_c_o.wr_id      <= ks_d_i.S_AXI_AWID;
             sd_c_o.wr_ctx     <= ks_d_i.S_AXI_AWUSER;
             sd_c_o.wr_req     <= '1';
@@ -231,6 +232,7 @@ axi_rd:   process(ha_pclock)
             axi_arready_q     <= '0';
             sd_c_o.rd_addr    <= ks_d_i.S_AXI_ARADDR;
             sd_c_o.rd_len     <= ks_d_i.S_AXI_ARLEN;
+            sd_c_o.rd_size    <= ks_d_i.S_AXI_ARSIZE;
             sd_c_o.rd_id      <= ks_d_i.S_AXI_ARID;
             sd_c_o.rd_ctx     <= ks_d_i.S_AXI_ARUSER;
             sd_c_o.rd_req     <= '1';
