@@ -99,7 +99,7 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 |P9 Server Firmware : skiboot/FW|5.11/FW910 & 6.0/OP920)   |latest|update_flash -d
 
 
-### P8 Deployment environment (Bare Metal IBM server examples supporting CAPI SNAP) :
+### P8 CAPI(1.0) Deployment environment (Bare Metal IBM server examples supporting CAPI SNAP) :
 
 | MTM| PowerLinux| CAPI Capacity (per PCIe slots priority)
 |:--:|:-----------|:--------------------------------------
@@ -109,13 +109,25 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 | 8348-21C       |Power Systems S812LC|2x CAPI adapters per socket => 2 CAPI (C3- C4)
 | 8335-GCA       |Power Systems S822LC|4 of the 5 PCIe slots are CAPI capable => 4 CAPI(C4-C1-C5-C2)
 
-### P9 Deployment environment (Bare Metal IBM server examples supporting CAPI SNAP) :
+### P9 CAPI(2.0) Deployment environment (Bare Metal IBM server examples supporting CAPI SNAP) :
 
 | MTM| PowerLinux| PCIeGen4x8 for CAPI| PCIeGen4x16 for CAPI
 |:--:|:-----------|:------------------|:--------------------
-| 8335-GTH(air cooled)       |Power AC922|1 (Slot 2)    |2 (Slot 3, Slot 4)
-| 8335-GTX(water cooled)     |Power AC922|0             |2
-| 9006-22P - 2 proc          |Power LC922|1(WIO Slot4)	|2 (UIO Slot1 - WIO Slot3)
-| .....                      |.....      | |
+| 8335-GTH(air cooled)       |Power AC922| 1 (Slot 2 P1-C4)      | 2 (Slot 3 P1-C3, Slot 4 P1-C2)
+| 8335-GTX(water cooled)     |Power AC922| 1 (Slot 2 P1-C4)      | 2 (Slot 3 P1-C3, Slot 4 P1-C2)
+| 9006-12P - 1 proc/1U       |Power LC921| 1 (UIO Slot1)Internal | 0
+| 9006-12P - 2 proc/1U       |Power LC921| 1 (UIO Slot1)Internal | 2 (WIO Slot1 - WIO Slot2)
+| 9006-22P - 1 proc/2U       |Power LC922| 0                     | 1 (UIO Slot1)
+| 9006-22P - 2 proc/2U       |Power LC922| 1 (WIO Slot4)	       | 2 (UIO Slot1 - WIO Slot3)
+| ........                   |.....      |                       |
+
+### P9 OpenCAPI(3.0) Deployment environment (Bare Metal IBM server examples supporting CAPI SNAP) :
+
+| MTM| PowerLinux| 
+|:--:|:-----------
+| 8335-GTH(air cooled)       |Power AC922
+| 8335-GTX(water cooled)     |Power AC922
+
+Note : Need mezzanine card (to provide OpenCAPI connector to be plugged in a GPU socket) + specific firmware patch
 
 Disclaimer : as it is not possible to cross tests all configurations with all possible cards on all possible servers, information provided in this page are recommandations only and subject to change without notice.
