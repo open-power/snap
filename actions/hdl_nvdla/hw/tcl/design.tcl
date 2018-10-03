@@ -9,6 +9,12 @@ set_property file_type {Verilog} [get_files -of_objects [get_filesets sources_1]
 set_property file_type {Verilog} [get_files -of_objects [get_filesets sources_1] $action_dir/include/NV_NVDLA_global_include_syn.vh]
 set_property file_type {Verilog} [get_files -of_objects [get_filesets sources_1] $action_dir/defs/project.vh]
 
+set_property used_in_synthesis true [get_files -of_objects [get_filesets sources_1] $action_dir/include/NV_NVDLA_global_include.vh]
+set_property used_in_synthesis true [get_files -of_objects [get_filesets sources_1] $action_dir/include/NV_NVDLA_global_include_syn.vh]
+
+set_property used_in_simulation true [get_files -of_objects [get_filesets sources_1] $action_dir/include/NV_NVDLA_global_include.vh]
+set_property used_in_simulation false [get_files -of_objects [get_filesets sources_1] $action_dir/include/NV_NVDLA_global_include_syn.vh]
+
 # Use fifo in fifo directory
 foreach fifo_file [glob -nocomplain -dir $action_dir/fifos *.v] {
     set fifo_file_name [exec basename $fifo_file]
