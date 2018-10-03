@@ -97,6 +97,7 @@ ARCHITECTURE dma OF dma IS
   CONSTANT VALUE_128  : std_logic_vector(63 DOWNTO 7) := x"0000_0000_0000_00" & '1';
   CONSTANT VALUE_128_P: std_logic                     := '0';
   CONSTANT VALUE_512  : std_logic_vector(63 DOWNTO 9) := x"0000_0000_0000_0" & "001";
+  CONSTANT X_256      : std_logic_vector(255 DOWNTO 0):= (OTHERS => '0');
 
   --
   -- TYPE
@@ -130,7 +131,8 @@ ARCHITECTURE dma OF dma IS
     com         : CMD_CODES_T;                         -- Command code
     compar      : std_logic;                           -- Command code parity
     abt         : std_logic_vector(2 DOWNTO 0);        -- Command ABT
-    ea          : std_logic_vector(63 DOWNTO 6);       -- Command address
+    ea          : std_logic_vector(63 DOWNTO 5);       -- Command address
+    --ea          : std_logic_vector(63 DOWNTO 6);       -- Command address
     eapar       : std_logic;                           -- Command address parity
   END RECORD AH_RWC_T;
 
@@ -218,8 +220,9 @@ ARCHITECTURE dma OF dma IS
   SIGNAL mmd_a_q                     : MMD_A_T;
   SIGNAL mmd_i_q                     : MMD_I_T;
   SIGNAL raddr_id_q                  : std_logic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
-  SIGNAL raddr_q                     : std_logic_vector( 63 DOWNTO  6);
+  SIGNAL raddr_q                     : std_logic_vector( 63 DOWNTO  5);
   SIGNAL rlen_q                      : std_logic_vector(  8 DOWNTO  0);
+  SIGNAL rsize_q                     : std_logic_vector(  2 DOWNTO  0);
   SIGNAL read_ctrl_fsm_q             : READ_CTRL_FSM_T;
   SIGNAL read_ctrl_q                 : ARR_UTAG_CTL_T;
   SIGNAL read_ctrl_q_err_q           : std_logic_vector( 31 DOWNTO  0);
@@ -258,8 +261,9 @@ ARCHITECTURE dma OF dma IS
   SIGNAL rd_ctx_q                    : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
   SIGNAL wr_ctx_q                    : std_logic_vector(CONTEXT_BITS-1 DOWNTO 0);
   SIGNAL waddr_id_q                  : std_logic_vector(C_S_AXI_ID_WIDTH-1 DOWNTO 0);
-  SIGNAL waddr_q                     : std_logic_vector( 63 DOWNTO  6);
+  SIGNAL waddr_q                     : std_logic_vector( 63 DOWNTO  5);
   SIGNAL wlen_q                      : std_logic_vector(  8 DOWNTO  0);
+  SIGNAL wsize_q                     : std_logic_vector(  2 DOWNTO  0);
   SIGNAL wr_id_valid_q               : std_logic;
   SIGNAL write_ctrl_fsm_q            : WRITE_CTRL_FSM_T;
   SIGNAL write_ctrl_q                : ARR_UTAG_CTL_T;
@@ -525,8 +529,10 @@ BEGIN
             ah_rc_q.compar     <= parity_gen_odd(ENCODE_CMD_CODES(XLAT_RD_P0));
             ah_rc_q.abt        <= "010";
 
-            ah_rc_q.ea          <= read_ctrl_q(com_rtag_v).uta(63 DOWNTO 6);
-            ah_rc_q.eapar       <= parity_gen_odd(read_ctrl_q(com_rtag_v).uta(63 DOWNTO 6));
+            ah_rc_q.ea          <= read_ctrl_q(com_rtag_v).uta(63 DOWNTO 5);
+            ah_rc_q.eapar       <= parity_gen_odd(read_ctrl_q(com_rtag_v).uta(63 DOWNTO 5));
+            --ah_rc_q.ea          <= read_ctrl_q(com_rtag_v).uta(63 DOWNTO 6);
+            --ah_rc_q.eapar       <= parity_gen_odd(read_ctrl_q(com_rtag_v).uta(63 DOWNTO 6));
 
           --------------------------------------------------------------------
           -- ERROR STATES
@@ -680,6 +686,7 @@ BEGIN
         raddr_q            <= raddr_q;
         raddr_id_q         <= raddr_id_q;
         rlen_q             <= rlen_q;
+        rsize_q            <= rsize_q;
         read_ctrl_q        <= read_ctrl_q;
         rd_req_ack_q       <= FALSE;
         rd_ctx_q           <= rd_ctx_q;
@@ -706,24 +713,34 @@ BEGIN
             IF (or_reduce(rlen_q(8 DOWNTO 4))                              = '1'     ) OR 
                ((('0' & rlen_q(3 DOWNTO 0)) + ("00" & raddr_q(8 DOWNTO 6))) > "01000") THEN
               rlen_q                      <= rlen_q - ("1000" - ('0' & raddr_q(8 DOWNTO 6)));
-              read_ctrl_q(utc_rtag_v).uts <=  ("1000" - ('0' & raddr_q(8 DOWNTO 6)));
+              read_ctrl_q(utc_rtag_v).uts <=  ("1000" - ('0' & raddr_q(8 DOWNTO 6))) & '0';
               read_ctrl_q(utc_rtag_v).utt <= UTC_FIRST;
             ELSE
               rlen_q                      <= (OTHERS => '0');
-              read_ctrl_q(utc_rtag_v).uts <=  '0' & rlen_q(2 DOWNTO 0);
+              -- When read size is 32B (101), let the uts carry the size information
+              --IF (rsize_q = "101") THEN
+              --  read_ctrl_q(utc_rtag_v).uts <=  '0' & rlen_q(2 DOWNTO 0) & '1';
+              --ELSE
+                read_ctrl_q(utc_rtag_v).uts <=  '0' & rlen_q(2 DOWNTO 0) & '0';
+              --END IF;
               read_ctrl_q(utc_rtag_v).utt <= UTC_LAST;
             END IF;
           ELSE
             IF rlen_q > 8 THEN
-              read_ctrl_q(utc_rtag_v).uts <= "1000";
+              read_ctrl_q(utc_rtag_v).uts <= "1000" & '0';
               read_ctrl_q(utc_rtag_v).utt <= UTC_COMPLETE;
               rlen_q <= rlen_q - 8;
             ELSIF rlen_q = 8 THEN
-              read_ctrl_q(utc_rtag_v).uts <= "1000";
+              read_ctrl_q(utc_rtag_v).uts <= "1000" & '0';
               read_ctrl_q(utc_rtag_v).utt <= UTC_LAST;
               rlen_q <= rlen_q - 8;
             ELSE
-              read_ctrl_q(utc_rtag_v).uts <=  '0' & rlen_q(2 DOWNTO 0);
+              ---- When read size is 32B (101), let the uts carry the size information
+              --IF (rsize_q = "101") THEN
+              --  read_ctrl_q(utc_rtag_v).uts <=  '0' & rlen_q(2 DOWNTO 0) & '1';
+              --ELSE
+                read_ctrl_q(utc_rtag_v).uts <=  '0' & rlen_q(2 DOWNTO 0) & '0';
+              --END IF;
               read_ctrl_q(utc_rtag_v).utt <= UTC_LAST;
               rlen_q <= (OTHERS => '0');
             END IF;
@@ -731,12 +748,13 @@ BEGIN
 
           --
           -- CL Read Address
-          read_ctrl_q(utc_rtag_v).uta   <= raddr_q(63 DOWNTO 6);
+          read_ctrl_q(utc_rtag_v).uta   <= raddr_q(63 DOWNTO 6) & '0'; -- TODO: Always read in 64B
+          --read_ctrl_q(utc_rtag_v).uta   <= raddr_q(63 DOWNTO 6); -- TODO: Always read in 64B
 
           --
           -- calculate the next read address
           raddr_q(63 DOWNTO 9) <= raddr_q(63 DOWNTO 9)  + VALUE_512;
-          raddr_q( 8 DOWNTO 6) <= (OTHERS => '0');
+          raddr_q( 8 DOWNTO 5) <= (OTHERS => '0');
 
           --
           -- calculate the next utc rtag
@@ -753,10 +771,11 @@ BEGIN
            (rlen_q        = 0  ) THEN
           --
           -- save the read address, id and length for later use
-          raddr_q    <=  sd_c_q.rd_addr(63 DOWNTO 6);
+          raddr_q    <=  sd_c_q.rd_addr(63 DOWNTO 5);
           raddr_id_q <=  sd_c_q.rd_id;
           rd_ctx_q   <=  sd_c_q.rd_ctx;
           rlen_q     <= ('0' & sd_c_q.rd_len) + 1;
+          rsize_q    <= sd_c_q.rd_size;
 
           --
           -- send back a AXI read acknowledge
@@ -817,7 +836,7 @@ BEGIN
             hd_c_size_v := hd_c_size_q;
           END IF;
 
-          read_ctrl_q(hd_c_utag_v).buf  <= read_ctrl_q(hd_c_utag_v).buf  + ("00" & hd_c_size_v(7 DOWNTO 6));
+          read_ctrl_q(hd_c_utag_v).buf  <= (read_ctrl_q(hd_c_utag_v).buf(4 DOWNTO 1)  + ("00" & hd_c_size_v(7 DOWNTO 6)))  & '0';
           read_ctrl_q(hd_c_utag_v).bufa <= read_ctrl_q(hd_c_utag_v).bufa + "01";
         END IF;
 
@@ -825,7 +844,7 @@ BEGIN
         -- BUF: BUFFER TAG is valid
         --
         IF buf_rtag_valid_q = TRUE THEN
-          read_ctrl_q(buf_rtag_v).buf  <= "0000";
+          read_ctrl_q(buf_rtag_v).buf  <= "0000" & '0';
           read_ctrl_q(buf_rtag_v).bufa <= "00";
           read_ctrl_q(buf_rtag_v).utt  <= UTC_NOT_USED;
         END IF;
@@ -845,7 +864,7 @@ BEGIN
             read_ctrl_q(i).uts  <= (OTHERS => '0');
             read_ctrl_q(i).rsp  <= ILLEGAL_RSP;
             read_ctrl_q(i).com  <= INACTIVE;
-            read_ctrl_q(i).buf  <= "0000";
+            read_ctrl_q(i).buf  <= "0000" & '0';
             read_ctrl_q(i).bufa <= "00";
             read_ctrl_q(i).dma  <= EMPTY;
           END LOOP;  -- i
@@ -857,6 +876,7 @@ BEGIN
           rsp_rtag_qq        <= 0;
 
           rlen_q             <= (OTHERS => '0');
+          rsize_q            <= (OTHERS => '0');
         END IF;
       END IF;
     END PROCESS read_ctrl_reg;
@@ -1043,7 +1063,7 @@ BEGIN
             -- new buffer available
             --
             ELSIF (write_ctrl_q(com_wtag_v).utt /= UTC_NOT_USED                ) AND 
-                  (write_ctrl_q(com_wtag_v).buf  = write_ctrl_q(com_wtag_v).uts) AND
+                  (write_ctrl_q(com_wtag_v).buf(4 DOWNTO 1)  = write_ctrl_q(com_wtag_v).uts(4 DOWNTO 1)) AND
                   (com_wtag_q                   /= buf_wtag_q                  ) THEN
 
               write_fsm_req_q  <= COMMAND;
@@ -1105,8 +1125,10 @@ BEGIN
             ah_wc_q.compar    <= parity_gen_odd(ENCODE_CMD_CODES(XLAT_WR_P0));
             ah_wc_q.abt       <= "010";
 
-            ah_wc_q.ea        <= write_ctrl_q(com_wtag_v).uta;
-            ah_wc_q.eapar     <= parity_gen_odd(write_ctrl_q(com_wtag_v).uta(63 DOWNTO 6));
+            ah_wc_q.ea        <= write_ctrl_q(com_wtag_v).uta(63 DOWNTO 5);
+            ah_wc_q.eapar     <= parity_gen_odd(write_ctrl_q(com_wtag_v).uta(63 DOWNTO 5));
+            --ah_wc_q.ea        <= write_ctrl_q(com_wtag_v).uta(63 DOWNTO 6);
+            --ah_wc_q.eapar     <= parity_gen_odd(write_ctrl_q(com_wtag_v).uta(63 DOWNTO 6));
 
           --------------------------------------------------------------------
           -- ERROR STATES
@@ -1261,6 +1283,7 @@ BEGIN
         wr_id_valid_q         <= '0';
         write_ctrl_q          <= write_ctrl_q;
         wlen_q                <= wlen_q;
+        wsize_q               <= wsize_q;
         wr_req_ack_q          <= FALSE;
         wr_ctx_q              <= wr_ctx_q;
          
@@ -1286,24 +1309,34 @@ BEGIN
             IF (or_reduce(wlen_q(8 DOWNTO 4))                              = '1'     ) OR 
                ((('0' & wlen_q(3 DOWNTO 0)) + ("00" & waddr_q(8 DOWNTO 6))) > "01000")  THEN
               wlen_q                      <= wlen_q - ("1000" - ('0' & waddr_q(8 DOWNTO 6)));
-              write_ctrl_q(utc_wtag_v).uts <=  ("1000" - ('0' & waddr_q(8 DOWNTO 6)));
+              write_ctrl_q(utc_wtag_v).uts <=  ("1000" - ('0' & waddr_q(8 DOWNTO 6))) & '0';
               write_ctrl_q(utc_wtag_v).utt <= UTC_FIRST;
             ELSE
               wlen_q                      <= (OTHERS => '0');
-              write_ctrl_q(utc_wtag_v).uts <=  '0' & wlen_q(2 DOWNTO 0);
+              -- When write size is 32B (101), let the uts carry the size information
+              IF (wsize_q = "101") THEN
+                write_ctrl_q(utc_wtag_v).uts <=  '0' & wlen_q(2 DOWNTO 0) & '1';
+              ELSE
+                write_ctrl_q(utc_wtag_v).uts <=  '0' & wlen_q(2 DOWNTO 0) & '0';
+              END IF;
               write_ctrl_q(utc_wtag_v).utt <= UTC_LAST;
             END IF;
           ELSE
             IF wlen_q > 8 THEN
-              write_ctrl_q(utc_wtag_v).uts <= "1000";
+              write_ctrl_q(utc_wtag_v).uts <= "1000" & '0';
               write_ctrl_q(utc_wtag_v).utt <= UTC_COMPLETE;
               wlen_q <= wlen_q - 8;
             ELSIF wlen_q = 8 THEN
-              write_ctrl_q(utc_wtag_v).uts <= "1000";
+              write_ctrl_q(utc_wtag_v).uts <= "1000" & '0';
               write_ctrl_q(utc_wtag_v).utt <= UTC_LAST;
               wlen_q <= wlen_q - 8;
             ELSE
-              write_ctrl_q(utc_wtag_v).uts <=  '0' & wlen_q(2 DOWNTO 0);
+              -- When write size is 32B (101), let the uts carry the size information
+              IF (wsize_q = "101") THEN
+                write_ctrl_q(utc_wtag_v).uts <=  '0' & wlen_q(2 DOWNTO 0) & '1';
+              ELSE
+                write_ctrl_q(utc_wtag_v).uts <=  '0' & wlen_q(2 DOWNTO 0) & '0';
+              END IF;
               write_ctrl_q(utc_wtag_v).utt <= UTC_LAST;
               wlen_q <= (OTHERS => '0');
             END IF;
@@ -1311,12 +1344,13 @@ BEGIN
          
           --
           -- CL Write Address
-          write_ctrl_q(utc_wtag_v).uta   <= waddr_q(63 DOWNTO 6);
+          write_ctrl_q(utc_wtag_v).uta   <= waddr_q(63 DOWNTO 5);
+          --write_ctrl_q(utc_wtag_v).uta   <= waddr_q(63 DOWNTO 6);
          
           --
           -- calculate the next write address
           waddr_q(63 DOWNTO 9) <= waddr_q(63 DOWNTO 9)  + VALUE_512;
-          waddr_q( 8 DOWNTO 6) <= (OTHERS => '0');
+          waddr_q( 8 DOWNTO 5) <= (OTHERS => '0');
          
           -- calculate the next utc wtag
           utc_wtag_q      <= utc_wtag_q      + 1;
@@ -1333,10 +1367,11 @@ BEGIN
          
           --
           -- save the write address for later use
-          waddr_q    <= sd_c_q.wr_addr(63 DOWNTO 6);
+          waddr_q    <= sd_c_q.wr_addr(63 DOWNTO 5);
           waddr_id_q <= sd_c_q.wr_id;
           wr_ctx_q   <= sd_c_q.wr_ctx;
           wlen_q     <= ('0' & sd_c_q.wr_len) + 1;
+          wsize_q    <= sd_c_q.wr_size;
          
          
            --
@@ -1348,7 +1383,7 @@ BEGIN
         -- BUF: BUFFER TAG is valid
         --
         IF (buf_wwen_q = TRUE) THEN
-          write_ctrl_q(buf_wtag_v).buf <=  write_ctrl_q(buf_wtag_v).buf + 1;
+          write_ctrl_q(buf_wtag_v).buf <=  (write_ctrl_q(buf_wtag_v).buf(4 DOWNTO 1) + 1) & '0';
         END IF;
          
         --
@@ -1412,7 +1447,7 @@ BEGIN
         buf_full_v  := TRUE;
          
         FOR i IN 0 TO 31 LOOP
-          IF write_ctrl_q(i).buf /= write_ctrl_q(i).uts THEN
+          IF write_ctrl_q(i).buf(4 DOWNTO 1) /= write_ctrl_q(i).uts(4 DOWNTO 1) THEN
             buf_full_v := FALSE;
           END IF;
         END LOOP;  -- i
@@ -1449,6 +1484,7 @@ BEGIN
           rsp_wtag_qq           <= 0;
 
           wlen_q                <= (OTHERS => '0');
+          wsize_q               <= (OTHERS => '0');
         END IF;
       END IF;
     END PROCESS write_ctrl_reg;
@@ -1507,7 +1543,8 @@ BEGIN
           dh_d_q.req_type  <= "000";
           dh_d_q.atomic_op <= (OTHERS => '0');
           dh_d_q.atomic_le <= '0';
-          dh_d_q.size      <= read_ctrl_q(dma_rtag_v).uts & "000000";
+          dh_d_q.size      <= read_ctrl_q(dma_rtag_v).uts & "00000";
+          dh_d_q.offset_32B<= '0'; -- read always in 64B
         ELSE
           dh_d_q.valid     <= buf_wdata_vld;
           dh_d_q.req_utag  <= "00100" & dma_wtag_d1_q(4 DOWNTO 0);
@@ -1515,7 +1552,13 @@ BEGIN
           dh_d_q.req_type  <= buf_wdata_type;
           dh_d_q.atomic_op <= (OTHERS => '0');
           dh_d_q.atomic_le <= '0';
-          dh_d_q.size      <= write_ctrl_q(dma_wtag_d1_v).buf & "000000";  
+          IF write_ctrl_q(dma_wtag_d1_v).uts(0) = '1' THEN  -- the last bit is only used to carry the 32B size indicator
+            dh_d_q.size      <= write_ctrl_q(dma_wtag_d1_v).buf(4 DOWNTO 2) & "01" & "00000";
+            dh_d_q.offset_32B<= write_ctrl_q(dma_wtag_d1_v).uta(5); -- write in 32B
+          ELSE
+            dh_d_q.size      <= write_ctrl_q(dma_wtag_d1_v).buf & "00000";  
+            dh_d_q.offset_32B<= '0';
+          END IF;
         END IF;
 
         --
@@ -1787,7 +1830,8 @@ BEGIN
             ah_c_q.com                         <= ah_rc_q.com;
             ah_c_q.compar                      <= ah_rc_q.compar XOR mmd_i_q.inject_ah_c_compar_error;
             ah_c_q.abt                         <= ah_rc_q.abt;
-            ah_c_q.ea                          <= ah_rc_q.ea & "000000";
+            ah_c_q.ea                          <= ah_rc_q.ea & "00000";
+            --ah_c_q.ea                          <= ah_rc_q.ea & "000000";
             ah_c_q.eapar                       <= ah_rc_q.eapar XOR mmd_i_q.inject_ah_c_eapar_error;
             ah_c_q.ch(CONTEXT_BITS-1 DOWNTO 0) <= rd_ctx_q;
 
@@ -1820,7 +1864,8 @@ BEGIN
             ah_c_q.com                         <= ah_wc_q.com;
             ah_c_q.compar                      <= ah_wc_q.compar XOR mmd_i_q.inject_ah_c_compar_error;
             ah_c_q.abt                         <= ah_wc_q.abt;
-            ah_c_q.ea                          <= ah_wc_q.ea & "000000";
+            ah_c_q.ea                          <= ah_wc_q.ea & "00000";
+            --ah_c_q.ea                          <= ah_wc_q.ea & "000000";
             ah_c_q.eapar                       <= ah_wc_q.eapar XOR mmd_i_q.inject_ah_c_eapar_error;
             ah_c_q.ch(CONTEXT_BITS-1 DOWNTO 0) <= wr_ctx_q;
 
@@ -2375,7 +2420,8 @@ BEGIN
     dh_d_o.atomic_op <= dh_d_q.atomic_op;
     dh_d_o.atomic_le <= dh_d_q.atomic_le;
     dh_d_o.size      <= dh_d_q.size;
-    dh_d_o.data      <= buf_wdata;
+    --dh_d_o.data      <= buf_wdata;
+    dh_d_o.data      <= buf_wdata WHEN dh_d_q.offset_32B = '0' ELSE (buf_wdata(767 DOWNTO 0) & X_256);
 
     --
     -- AXI SLAVE CONNECTION

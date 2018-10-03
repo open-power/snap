@@ -176,7 +176,7 @@ BEGIN
     buf_rtag_r0    <= to_integer(unsigned(rram_raddr_r0(7 DOWNTO 3)));
 
     rram_ren_r0   <= '1' WHEN (buf_rrdreq_i    = '1' AND (read_ctrl_i(buf_rtag_r0).uts  = read_ctrl_i(buf_rtag_r0).buf)
-                                                     AND (read_ctrl_i(buf_rtag_r0).uts /= "0000"                      ))  ELSE '0';
+                                                     AND (read_ctrl_i(buf_rtag_r0).uts /= ("0000" & '0')                      ))  ELSE '0';
     rram_wen      <= hd_c_q.valid when (hd_c_q.utag(7 DOWNTO 5) = "000") else '0';
     rram_waddr    <= hd_c_q.utag(4 DOWNTO 0) & read_ctrl_i(to_integer(unsigned(hd_c_q.utag(4 DOWNTO 0)))).bufa;
 
@@ -215,11 +215,11 @@ BEGIN
           rram_uts_cnt_r2_v := rram_uts_cnt_r3 + 1;
           rram_uts_cnt_r3   <= rram_uts_cnt_r2_v;
           
-          IF (rram_uts_cnt_r2_v <= read_ctrl_i(to_integer(unsigned(buf_rtag_r2(4 DOWNTO 0)))).uts) THEN
+          IF (rram_uts_cnt_r2_v <= read_ctrl_i(to_integer(unsigned(buf_rtag_r2(4 DOWNTO 0)))).uts(4 DOWNTO 1)) THEN
             rram_rdata_vld_r3 <= '1'; 
           END IF;
        
-          IF (rram_uts_cnt_r2_v  = read_ctrl_i(to_integer(unsigned(buf_rtag_r2(4 DOWNTO 0)))).uts) AND
+          IF (rram_uts_cnt_r2_v  = read_ctrl_i(to_integer(unsigned(buf_rtag_r2(4 DOWNTO 0)))).uts(4 DOWNTO 1)) AND
              (UTC_LAST           = read_ctrl_i(to_integer(unsigned(buf_rtag_r2(4 DOWNTO 0)))).utt)  THEN
             rram_rdata_end_r3  <= '1'; 
           END IF;
@@ -287,7 +287,7 @@ BEGIN
     wram_wen         <= or_reduce(sd_d_i.wr_strobe) AND wram_wready_qqq;
 
     wram_waddr_d     <=   wram_waddr_next  when wram_wen = '1' else wram_waddr_q;
-    wram_waddr_next  <= ( wram_waddr_q + "00000001"                   ) WHEN ((wram_waddr_q(2 DOWNTO 0)+1) < write_ctrl_i(buf_wtag).uts) ELSE
+    wram_waddr_next  <= ( wram_waddr_q + "00000001"                   ) WHEN ((wram_waddr_q(2 DOWNTO 0)+1) < write_ctrl_i(buf_wtag).uts(4 DOWNTO 1)) ELSE
                         ((wram_waddr_q(8 DOWNTO 3) + "000001") & "000");
 
     wram_waddr       <= wram_waddr_q(7 DOWNTO 0);
@@ -297,7 +297,7 @@ BEGIN
     wram_wdata(511 DOWNTO   1) <= sd_d_i.wr_data(511 DOWNTO 1);
 
     -- read data indication
-    utag_size <=  (write_ctrl_i(to_integer(unsigned(wram_raddr_q(6 DOWNTO 2)))).uts(3 DOWNTO 1)) + ("00" + write_ctrl_i(to_integer(unsigned(wram_raddr_q(6 DOWNTO 2)))).uts(0));
+    utag_size <=  (write_ctrl_i(to_integer(unsigned(wram_raddr_q(6 DOWNTO 2)))).uts(4 DOWNTO 2)) + ("00" + write_ctrl_i(to_integer(unsigned(wram_raddr_q(6 DOWNTO 2)))).uts(1));
     
     wram_ren          <= '1' WHEN buf_wrdreq_i ELSE '0';
     wram_raddr        <= wram_raddr_q(6 DOWNTO 0);
@@ -340,7 +340,7 @@ BEGIN
         END IF;
         --
         --
-        IF (write_ctrl_i(buf_wtag_next_q).buf = "0000") THEN
+        IF (write_ctrl_i(buf_wtag_next_q).buf = ("0000" & '0')) THEN
           wram_wready_q <= '1';
         END IF;
 
