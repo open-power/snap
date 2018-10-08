@@ -152,7 +152,7 @@ The generated waveform can be viewed with
 Two set of useful signals have been added to help debugging an action
 ```
  iruntrace                           # for Cadence irun
-  then push 6th icons "load signals from a file" and select: debug_action_gmem_ddr4.svwf
+  then push 6th icon "Load signals from a file" and open debug_action_gmem_ddr4.svwf
  xsimtrace                           # for Xilinx xsim - it will open automatically debug_action_gmem_ddr4.wcfg file
 ```
 ## controlling PSLSE randomness
