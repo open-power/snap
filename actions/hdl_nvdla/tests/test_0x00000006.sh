@@ -3,9 +3,14 @@
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 CARD_NO=0
 TESTCASE=-1
-#if [ ! -z $1 ]; then
-#    CARD_NO=$1
-#fi
+function show_help {
+    echo "Run tests for NVDLA."
+    echo "    test_0x00000006.sh -c <card no.> -t <Testcase ID>"
+    echo "    * Testcase ID is from 0 to 5 for nv_large"
+    echo "    * Testcase ID is from 0 to 3 for nv_small"
+    echo "    * If no testcase ID is given, all available tests will be ran"
+}
+
 while getopts "h?c:t:" opt; do
     case "$opt" in
         h|\?)
@@ -24,6 +29,7 @@ shift $((OPTIND-1))
 echo "CARD_NO=$CARD_NO TESTCASE=$TESTCASE"
 
 [ "${1:-}" = "--" ] && shift
+
 if [ -z $SNAP_ROOT ]; then
     SNAP_ROOT=../../../
     echo "WARNING! SNAP_ROOT not specified, seting to $SNAP_ROOT"
