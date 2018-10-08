@@ -30,3 +30,43 @@ To debug libsnap functionality or associated actions, there are currently some e
                        snap_maint setup tool which needs to be called before using the card.
                                              It sets up the SNAP action assignment hardware.
                        snap_peek/poke debug tools to read/write SNAP MMIO registers.
+
+### API description
+
+| Simple API name         | Description                                  | Declaration location (in snap/software)
+|:------------------------|:---------------------------------------------|:----------------------------------
+| **snap_addr_set**       | helper function to setup snap_addr structire | include/snap_types.h
+| **snap_job_set**        | helper function to setup the job request     | include/libsnap.h
+|:------------------------|:---------------------------------------------|:----------------------------------
+| **snap_mmio_write32**   | MMIO 32b write access functions for card     | lib/snap.c 
+| **snap_mmio_read32**    MMIO 32b read access functions for card      | lib/snap.c 
+| snap_mmio_write64       | MMIO 64b write access functions for card     | lib/snap.c 
+| snap_mmio_read64        | MMIO 64b read access functions for card      | lib/snap.c 
+| snap_action_write32     | MMIO 32b write access functions for actions  | lib/snap.c 
+| snap_action_read32      | MMIO 32b read access functions for actions   | lib/snap.c 
+|:------------------------|:---------------------------------------------|:----------------------------------
+| **snap_card_alloc_dev** | opens the device given by the path           | lib/snap.c
+| **snap_card_free**      | free the device given by the path            | lib/snap.c
+| **snap_attach_action**  | attach the action given by the path          | lib/snap.c
+| **snap_detach_action**  | detach the action given by the path          | lib/snap.c
+|:------------------------|:---------------------------------------------|:----------------------------------
+| snap_action_start       | starts the action                            | lib/snap.c
+| snap_action_stop        | stops the action                             | lib/snap.c
+| snap_action_is_idle     | test if the action is idle                   | lib/snap.c
+| snap_action_completed   | test if the action is completed - **blocks until job is done** | lib/snap.c
+|:------------------------|:---------------------------------------------|:----------------------------------
+| snap_queue_alloc        | allocates a queue                            | lib/snap.c
+| snap_queue_free         | deallocate a queue                           | lib/snap.c
+
+| 3 ways calling a job in Serial mode (lib/snap.c)    | Description                                 
+|:----------------------------------------------------|:-----------------------------------------------------------
+| snap_sync_execute_job                               | snap_attach_action + snap_action_sync_execute_job + snap_detach_action
+| **snap_action_sync_execute_job**                    | snap_action_sync_execute_job_set_regs + snap_action_start + snap_action_sync_execute_job_check_completion
+| snap_queue_sync_execute_job                         | snap_sync_execute_job
+
+| 3 steps to call a job in Parallel mode (lib/snap.c) | Description                                 
+|:----------------------------------------------------|:---------------------------------------------
+| snap_action_sync_execute_job_set_regs               | Write all MMIO actions registers
+| snap_action_start                                   | Start the FPGA action
+| snap_action_sync_execute_job_check_completion       | snap_action_completed + Read all MMIO actions registers
+
