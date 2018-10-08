@@ -66,4 +66,3 @@ _**All definitions of APIs are in snap/software/lib/snap.c and snap/software/inc
 | snap_action_sync_execute_job_set_regs               | Write all MMIO actions registers
 | snap_action_start                                   | Start the FPGA action
 | snap_action_sync_execute_job_check_completion       | _snap_action_completed_ + Read all MMIO actions registers
-
