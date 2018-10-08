@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="xsim/latest/top.wdb" id="1">
+         <top_modules>
+            <top_module name="action_types" />
+            <top_module name="arch_package" />
+            <top_module name="dma_types" />
+            <top_module name="glbl" />
+            <top_module name="proj_package" />
+            <top_module name="psl_accel_types" />
+            <top_module name="snap_core_types" />
+            <top_module name="top" />
+            <top_module name="vcomponents" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0fs"></ZoomStartTime>
+      <ZoomEndTime time="16369034308fs"></ZoomEndTime>
+      <Cursor1Time time="14110000000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="250"></NameColumnWidth>
+      <ValueColumnWidth column_width="146"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="41" />
+   <wvobject fp_name="divider11" type="divider">
+      <obj_property name="label">HOST MEMORY INTERFACE</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/ah_cea">
+      <obj_property name="ElementShortName">ah_cea[0:63]</obj_property>
+      <obj_property name="ObjectShortName">ah_cea[0:63]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/ah_brdata">
+      <obj_property name="ElementShortName">ah_brdata[0:511]</obj_property>
+      <obj_property name="ObjectShortName">ah_brdata[0:511]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/ha_bwad">
+      <obj_property name="ElementShortName">ha_bwad[0:5]</obj_property>
+      <obj_property name="ObjectShortName">ha_bwad[0:5]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/top/ha_mmrnw">
+      <obj_property name="ElementShortName">ha_mmrnw</obj_property>
+      <obj_property name="ObjectShortName">ha_mmrnw</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/ha_bwdata">
+      <obj_property name="ElementShortName">ha_bwdata[0:511]</obj_property>
+      <obj_property name="ObjectShortName">ha_bwdata[0:511]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/ha_mmad">
+      <obj_property name="ElementShortName">ha_mmad[0:23]</obj_property>
+      <obj_property name="ObjectShortName">ha_mmad[0:23]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/ha_mmdata">
+      <obj_property name="ElementShortName">ha_mmdata[0:63]</obj_property>
+      <obj_property name="ObjectShortName">ha_mmdata[0:63]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/ah_mmdata">
+      <obj_property name="ElementShortName">ah_mmdata[0:63]</obj_property>
+      <obj_property name="ObjectShortName">ah_mmdata[0:63]</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider12" type="divider">
+      <obj_property name="label">ACTION SIGNALS</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/top/a0/action_w/hls_action_0/ap_start">
+      <obj_property name="ElementShortName">ap_start</obj_property>
+      <obj_property name="ObjectShortName">ap_start</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider14" type="divider">
+      <obj_property name="label">GMEM READ INTERFACE</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/top/a0/action_w/m_axi_host_mem_arvalid">
+      <obj_property name="ElementShortName">m_axi_host_mem_arvalid</obj_property>
+      <obj_property name="ObjectShortName">m_axi_host_mem_arvalid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/a0/action_w/m_axi_host_mem_araddr">
+      <obj_property name="ElementShortName">m_axi_host_mem_araddr[63:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axi_host_mem_araddr[63:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/a0/action_w/m_axi_host_mem_arlen">
+      <obj_property name="ElementShortName">m_axi_host_mem_arlen[7:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axi_host_mem_arlen[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/top/a0/action_w/m_axi_host_mem_rvalid">
+      <obj_property name="ElementShortName">m_axi_host_mem_rvalid</obj_property>
+      <obj_property name="ObjectShortName">m_axi_host_mem_rvalid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/a0/action_w/m_axi_host_mem_rdata">
+      <obj_property name="ElementShortName">m_axi_host_mem_rdata[511:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axi_host_mem_rdata[511:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/top/a0/action_w/m_axi_host_mem_rlast">
+      <obj_property name="ElementShortName">m_axi_host_mem_rlast</obj_property>
+      <obj_property name="ObjectShortName">m_axi_host_mem_rlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider21" type="divider">
+      <obj_property name="label">GMEM WRITE INTERFACE</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/top/a0/action_w/m_axi_host_mem_awvalid">
+      <obj_property name="ElementShortName">m_axi_host_mem_awvalid</obj_property>
+      <obj_property name="ObjectShortName">m_axi_host_mem_awvalid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/a0/action_w/m_axi_host_mem_awaddr">
+      <obj_property name="ElementShortName">m_axi_host_mem_awaddr[63:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axi_host_mem_awaddr[63:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/a0/action_w/m_axi_host_mem_awlen">
+      <obj_property name="ElementShortName">m_axi_host_mem_awlen[7:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axi_host_mem_awlen[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/top/a0/action_w/m_axi_host_mem_wvalid">
+      <obj_property name="ElementShortName">m_axi_host_mem_wvalid</obj_property>
+      <obj_property name="ObjectShortName">m_axi_host_mem_wvalid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/a0/action_w/m_axi_host_mem_wdata">
+      <obj_property name="ElementShortName">m_axi_host_mem_wdata[511:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axi_host_mem_wdata[511:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/top/a0/action_w/m_axi_host_mem_wlast">
+      <obj_property name="ElementShortName">m_axi_host_mem_wlast</obj_property>
+      <obj_property name="ObjectShortName">m_axi_host_mem_wlast</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/a0/action_w/m_axi_host_mem_wstrb">
+      <obj_property name="ElementShortName">m_axi_host_mem_wstrb[63:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axi_host_mem_wstrb[63:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider29" type="divider">
+      <obj_property name="label">DDR4 READ INTERFACE</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/top/a0/action_w/m_axi_card_mem0_arvalid">
+      <obj_property name="ElementShortName">m_axi_card_mem0_arvalid</obj_property>
+      <obj_property name="ObjectShortName">m_axi_card_mem0_arvalid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/a0/action_w/m_axi_card_mem0_araddr">
+      <obj_property name="ElementShortName">m_axi_card_mem0_araddr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axi_card_mem0_araddr[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/a0/action_w/m_axi_card_mem0_arlen">
+      <obj_property name="ElementShortName">m_axi_card_mem0_arlen[7:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axi_card_mem0_arlen[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/top/a0/action_w/m_axi_card_mem0_rvalid">
+      <obj_property name="ElementShortName">m_axi_card_mem0_rvalid</obj_property>
+      <obj_property name="ObjectShortName">m_axi_card_mem0_rvalid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/a0/action_w/m_axi_card_mem0_rdata">
+      <obj_property name="ElementShortName">m_axi_card_mem0_rdata[511:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axi_card_mem0_rdata[511:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/top/a0/action_w/m_axi_card_mem0_rlast">
+      <obj_property name="ElementShortName">m_axi_card_mem0_rlast</obj_property>
+      <obj_property name="ObjectShortName">m_axi_card_mem0_rlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider36" type="divider">
+      <obj_property name="label">DDR4 WRITE INTERFACE</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/top/a0/action_w/m_axi_card_mem0_awvalid">
+      <obj_property name="ElementShortName">m_axi_card_mem0_awvalid</obj_property>
+      <obj_property name="ObjectShortName">m_axi_card_mem0_awvalid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/a0/action_w/m_axi_card_mem0_awaddr">
+      <obj_property name="ElementShortName">m_axi_card_mem0_awaddr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axi_card_mem0_awaddr[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/a0/action_w/m_axi_card_mem0_awlen">
+      <obj_property name="ElementShortName">m_axi_card_mem0_awlen[7:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axi_card_mem0_awlen[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/top/a0/action_w/m_axi_card_mem0_wvalid">
+      <obj_property name="ElementShortName">m_axi_card_mem0_wvalid</obj_property>
+      <obj_property name="ObjectShortName">m_axi_card_mem0_wvalid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/a0/action_w/m_axi_card_mem0_wdata">
+      <obj_property name="ElementShortName">m_axi_card_mem0_wdata[511:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axi_card_mem0_wdata[511:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/top/a0/action_w/m_axi_card_mem0_wlast">
+      <obj_property name="ElementShortName">m_axi_card_mem0_wlast</obj_property>
+      <obj_property name="ObjectShortName">m_axi_card_mem0_wlast</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/a0/action_w/m_axi_card_mem0_wstrb">
+      <obj_property name="ElementShortName">m_axi_card_mem0_wstrb[63:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axi_card_mem0_wstrb[63:0]</obj_property>
+   </wvobject>
+</wave_config>

@@ -1,0 +1,136 @@
+
+#
+# Mnemonic Maps
+#
+mmap new -reuse -name {Boolean as Logic} -radix %b -contents {{%c=FALSE -edgepriority 1 -shape low}
+{%c=TRUE -edgepriority 1 -shape high}}
+mmap new -reuse -name {Example Map} -radix %x -contents {{%b=11???? -bgcolor orange -label REG:%x -linecolor yellow -shape bus}
+{%x=1F -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=2C -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=* -label %x -linecolor gray -shape bus}}
+
+array unset createdGroup
+array set createdGroup {}
+set id [waveform add -label {HOST MEMORY INTERFACE} -comment {}]
+waveform format $id -namecolor #99ff00
+set id [waveform add -signals [subst  {
+	{[format {top.ah_cea[0:63]}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ah_brdata}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_bwad}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_mmrnw}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_bwdata}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_mmad}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_mmdata}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ah_mmdata}]}
+	} ]]
+set id [waveform add -cdivider divider]
+set id [waveform add -label {ACTION SIGNALS} -comment {}]
+waveform format $id -namecolor #99ff00
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:hls_action_0:ap_start}]}
+	} ]]
+set id [waveform add -cdivider divider]
+set id [waveform add -label {GMEM READ INTERFACE} -comment {}]
+waveform format $id -namecolor #ffff00 -bgcolor #000000
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_arvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_araddr}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_arlen}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_rvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_rdata}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_rlast}]}
+	} ]]
+set id [waveform add -label {GMEM WRITE INTERFACE} -comment {}]
+waveform format $id -namecolor #99ff00
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_awvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_awaddr}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_awlen}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_wvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_wdata}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_wlast}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_host_mem_wstrb}]}
+	} ]]
+set id [waveform add -cdivider divider]
+set id [waveform add -label {DDR4 READ INTERFACE} -comment {}]
+waveform format $id -namecolor #99ff00
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_arvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_araddr}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_arlen}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_rvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_rdata}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_rlast}]}
+	} ]]
+set id [waveform add -label {DDR4 WRITE INTERFACE} -comment {}]
+waveform format $id -namecolor #99ff00
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_awvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_awaddr}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_awlen}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_wvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_wdata}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_wlast}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_wstrb}]}
+	} ]]
+set id [waveform add -cdivider divider]
+
+waveform xview limits 0 14006ns
