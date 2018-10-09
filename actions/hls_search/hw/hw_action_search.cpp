@@ -31,22 +31,9 @@ static snapu32_t read_bulk(snap_membus_t *src_mem,
 
 	xfer_size = MIN(byte_to_transfer, (snapu32_t) MAX_NB_OF_BYTES_READ);
 
-	// Patch to the issue#652 - memcopy doesn't handle small packets 
-        int xfer_size_in_words;
-        if(xfer_size %BPERDW == 0)
-        	xfer_size_in_words = xfer_size/BPERDW;
-        else
-		xfer_size_in_words = (xfer_size/BPERDW) + 1;
-
-	//memcpy(buffer, 
-	//       (snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
-	//       xfer_size);
-       
-	// Do not insert anything more in this loop to not break the burst
-	rb_loop: for (int k=0; k< xfer_size_in_words; k++)
-	#pragma HLS PIPELINE
-		buffer[k] = (src_mem + (byte_address >> ADDR_RIGHT_SHIFT))[k];
-	// End of patch
+	memcpy(buffer, 
+	       (snap_membus_t *) (src_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
+	       xfer_size);
 
 	return xfer_size;
 }
@@ -60,21 +47,14 @@ static snapu32_t write_bulk(snap_membus_t *tgt_mem,
 
 	xfer_size = MIN(byte_to_transfer, (snapu32_t) MAX_NB_OF_BYTES_READ);
 
-	// Patch to the issue#652 - memcopy doesn't handle small packets 
+	// Patch to the issue#652 - memcopy doesn't handle write of small packets 
         int xfer_size_in_words;
-        if(xfer_size %BPERDW == 0)
-        	xfer_size_in_words = xfer_size/BPERDW;
+        if(xfer_size < BPERDW)
+		(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT))[0] = buffer[0];
         else
-        	xfer_size_in_words = (xfer_size/BPERDW) + 1;
-
-	//memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
-	//       buffer, xfer_size);
-
-	// Do not insert anything more in this loop to not break the burst
-	wb_loop: for (int k=0; k<xfer_size_in_words; k++)
-	#pragma HLS PIPELINE
-		(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT))[k] = buffer[k];
 	// End of patch
+		memcpy((snap_membus_t *)(tgt_mem + (byte_address >> ADDR_RIGHT_SHIFT)), 
+	       		buffer, xfer_size);
 
 	return xfer_size;
 }
@@ -137,62 +117,17 @@ static short read_burst_of_data_from_mem(snap_membus_t *din_gmem,
 {
 	short rc = -1;
 
-
-	// Prepare patch to the issue#652 - memcopy doesn't handle small packets 
-        int size_in_words;
-        if(size_in_bytes_to_transfer %BPERDW == 0)
-        	size_in_words = size_in_bytes_to_transfer/BPERDW;
-        else
-        	size_in_words = (size_in_bytes_to_transfer/BPERDW) + 1;
-	// end of patch
-
 	switch (memory_type) {
 	case SNAP_ADDRTYPE_HOST_DRAM:
+        	memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
+		       size_in_bytes_to_transfer);
 		
-		// Patch to the issue#652 - memcopy doesn't handle small packets 
-        	//memcpy(buffer, (snap_membus_t  *) (din_gmem + input_address),
-		//       size_in_bytes_to_transfer);
-		
-		// Do not insert anything more in this loop to not break the burst
-		rb_din_loop: for (int k=0; k<size_in_words; k++)
-		#pragma HLS PIPELINE
-			 buffer[k] = (din_gmem + input_address)[k];
-		// End of patch
-
        		rc =  0;
 		break;
 	case SNAP_ADDRTYPE_CARD_DRAM:
+        	memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address), 
+		       size_in_bytes_to_transfer);
 
-		// Patch to the issue#652 - memcopy doesn't handle small packets 
-        	//memcpy(buffer, (snap_membus_t  *) (d_ddrmem + input_address), 
-		//       size_in_bytes_to_transfer);
-
-		// Do not insert anything more in this loop to not break the burst
-		rb_ddr_loop: for (int k=0; k<size_in_words; k++)
-		#pragma HLS PIPELINE
-                    buffer[k] = (d_ddrmem + input_address)[k];
-       		rc =  0;
-		break;
-	}
-	return rc;
-}
-
-static short read_single_word_of_data_from_mem(snap_membus_t *din_gmem, 
-					       snap_membus_t *d_ddrmem,
-					       snapu16_t memory_type,
-					       snapu64_t input_address,
-					       snap_membus_t *buffer)
-{
-	short rc = -1;
-	
-	switch (memory_type) {
-	case  SNAP_ADDRTYPE_HOST_DRAM:
-        	buffer[0] = (din_gmem + input_address)[0];
-       		rc = 0;
-		break;
-	case  SNAP_ADDRTYPE_CARD_DRAM:
-        	buffer[0] = (d_ddrmem + input_address)[0];
-       		rc = 0;
 		break;
 	}
 	return rc;
@@ -329,9 +264,9 @@ static void strm_search(snap_membus_t *din_gmem,
 //#pragma HLS PIPELINE -- DON'T SET THIS PIPELINE HERE OR NO DATA WILL BE READ!
 	  if(i < (InputSize/sizeof(snap_membus_t))+1)
 	  {
-         read_single_word_of_data_from_mem(din_gmem, d_ddrmem, InputType,
+         read_burst_of_data_from_mem(din_gmem, d_ddrmem, InputType,
                   (InputAddress >> ADDR_RIGHT_SHIFT) + rd_address_text_offset,
-                  TextBuffer);
+                  TextBuffer, BPERDW);
 
           tmp = TextBuffer[0];
           wr_strm_in:for (unsigned int k = 0; k < sizeof(snap_membus_t); k++)
@@ -410,10 +345,10 @@ static snapu32_t process_action_strm(snap_membus_t *din_gmem,
 
 
   PatternSize = Action_Register->Data.src_pattern.size;
-  read_single_word_of_data_from_mem(din_gmem, d_ddrmem,
+  read_burst_of_data_from_mem(din_gmem, d_ddrmem,
           Action_Register->Data.src_pattern.type,
           Action_Register->Data.src_pattern.addr >> ADDR_RIGHT_SHIFT,
-          PatternBuffer);
+          PatternBuffer, BPERDW);
 
 
   mbus_to_word(PatternBuffer[0], Pattern); // convert buffer to char
@@ -599,10 +534,10 @@ static snapu32_t process_action(snap_membus_t *din_gmem,
   PatternSize = Action_Register->Data.src_pattern.size;
   if (PatternSize > PATTERN_SIZE) rc = 1;
 
-  read_single_word_of_data_from_mem(din_gmem, d_ddrmem, 
+  read_burst_of_data_from_mem(din_gmem, d_ddrmem, 
           Action_Register->Data.src_pattern.type,
           Action_Register->Data.src_pattern.addr >> ADDR_RIGHT_SHIFT,
-          PatternBuffer);
+          PatternBuffer, BPERDW);
   // FIXME Find a way to remove this cast which is a waste of time
   mbus_to_word(PatternBuffer[0], Pattern); // convert buffer to char
 
