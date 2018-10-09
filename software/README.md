@@ -34,35 +34,70 @@ To debug libsnap functionality or associated actions, there are currently some e
 ### API description
 _**All definitions of APIs are in snap/software/lib/snap.c and snap/software/include/lib_snap.h**_
 
-| Simple API name         | Description                                  | Declaration location
+| Helper functions        | Description                                  | Declaration location
 |:------------------------|:---------------------------------------------|:----------------------------------
-| **snap_addr_set**       | helper function to setup snap_addr structire | include/snap_types.h
-| **snap_job_set**        | helper function to setup the job request     | include/libsnap.h
-| **snap_mmio_write32**   | MMIO 32b write access functions for card     | lib/snap.c 
-| **snap_mmio_read32**    | MMIO 32b read access functions for card      | lib/snap.c 
-| _snap_mmio_write64_       | MMIO 64b write access functions for card     | lib/snap.c 
-| _snap_mmio_read64_        | MMIO 64b read access functions for card      | lib/snap.c 
-| _snap_action_write32_     | MMIO 32b write access functions for actions  | lib/snap.c 
-| _snap_action_read32_      | MMIO 32b read access functions for actions   | lib/snap.c 
-| **snap_card_alloc_dev** | opens the device given by the path           | lib/snap.c
-| **snap_card_free**      | free the device given by the path            | lib/snap.c
-| **snap_attach_action**  | attach the action given by the path          | lib/snap.c
-| **snap_detach_action**  | detach the action given by the path          | lib/snap.c
-| snap_action_start       | starts the action                            | lib/snap.c
-| snap_action_stop        | stops the action                             | lib/snap.c
-| snap_action_is_idle     | test if the action is idle                   | lib/snap.c
-| snap_action_completed   | test if the action is completed - **blocks until job is done** | lib/snap.c
-| snap_queue_alloc        | allocates a queue                            | lib/snap.c
-| snap_queue_free         | deallocate a queue                           | lib/snap.c
+| **snap_addr_set**       | helps to setup snap_addr structure           | include/snap_types.h
+| **snap_job_set**        | helps to setup the job request               | include/libsnap.h
 
-| 3 APIs calling a job in Serial mode (lib/snap.c)    | Following APIs are called
-|:----------------------------------------------------|:-----------------------------------------------------------
-| snap_sync_execute_job                               | snap_attach_action + snap_action_sync_execute_job + snap_detach_action
-| **snap_action_sync_execute_job**                    | snap_action_sync_execute_job_set_regs + snap_action_start + snap_action_sync_execute_job_check_completion
-| snap_queue_sync_execute_job                         | snap_sync_execute_job _(cf hls_search example)_
+| Useful API name                                | Description
+|:-----------------------------------------------|:---------------------------------------------
+| snap_mmio_write32                              | MMIO 32b write access functions for card
+| snap_mmio_read32                               | MMIO 32b read access functions for card
+| snap_card_alloc_dev                            | opens the device given by the path
+| snap_card_free                                 | free the specified device
+| snap_attach_action                             | attach the specified action
+| snap_detach_action                             | detach the specified action
+| snap_action_start                              | starts the action
+| snap_action_is_idle                            | test if the action is idle 
+| snap_action_completed                          | wait for completion of the action (timeout or IRQ) - **blocks until job is done**
+| snap_queue_alloc                               | allocates a queue
+| snap_queue_free                                | deallocate a queue
+| snap_action_sync_execute_job_set_regs          | Writes all MMIO actions registers to card
+| snap_sync_execute_job                          | calls the following APIs: snap_attach_action + snap_action_sync_execute_job + snap_detach_action
+| snap_action_sync_execute_job                   | calls the following APIs: snap_action_sync_execute_job_set_regs + snap_action_start + snap_action_sync_execute_job_check_completion
+| snap_queue_sync_execute_job                    | calls the following API:  snap_sync_execute_job
+| snap_action_sync_execute_job_check_completion  | calls the following API: _snap_action_completed_ + Read all MMIO actions registers
 
-| 3 steps to call a job in Parallel mode (lib/snap.c) | Description  _(cf hls_latency_eval example)_
-|:----------------------------------------------------|:---------------------------------------------
-| snap_action_sync_execute_job_set_regs               | Write all MMIO actions registers
-| snap_action_start                                   | Start the FPGA action
-| snap_action_sync_execute_job_check_completion       | _snap_action_completed_ + Read all MMIO actions registers
+### Different SNAP mode and associated API call sequence
+
+Most examples provided in snap/actions are built using the following mode
+
+| SNAP fixed action assignment (Serial mode)         | Description
+|:---------------------------------------------------|:-----------------------------------------------------------
+| snap_card_alloc_dev                                | opens the device given by the path
+| snap_attach_action                                 | attach process to the specified action 
+| snap_action_sync_execute_job                       | **execute job and _WAIT_ for completion:** Write all MMIO registers to card + Start action + wait for completion (timeout or IRQ) + Read all MMIO registers
+|                                                    | _**Action is blocked for other users. MMIO is possible once assignment is done**_
+| snap_detach_action                                 | detach the specified action 
+| snap_card_free                                     | free the device
+
+Example hls_latency_eval was built using following mode to show how to deal with parallel processing
+
+| SNAP fixed action assignment (Parallel mode)       | Description
+|:---------------------------------------------------|:-----------------------------------------------------------
+| snap_card_alloc_dev                                | opens the device given by the path
+| snap_attach_action                                 | attach process to the specified action 
+| snap_action_sync_execute_job_set_regs              | Writes all MMIO actions registers to card
+| snap_action_start                                  | **execute job:** Starts the FPGA action
+|                                                    | ** Application is free from doing other tasks in parallel with FPGA card**
+| snap_action_sync_execute_job_check_completion      | wait for completion of the action (timeout or IRQ) + Read all MMIO registers
+| snap_detach_action                                 | detach the specified action 
+| snap_card_free                                     | free the device
+
+Other modes
+
+| SNAP collaborative action         | Following APIs are called
+|:----------------------------------|:-----------------------------------------------------------
+| snap_card_alloc_dev               | opens the device given by the path
+| snap_sync_execute_job             | **attach action + execute job** _(Write all MMIO registers to card + Start action + wait for completion (timeout or IRQ)) + Read all MMIO registers_** + release action:**
+| snap_card_free                    | free the device
+
+| SNAP job-queue mode (future)      | Following APIs are called
+|:----------------------------------|:-----------------------------------------------------------
+| snap_card_alloc_dev               | opens the device given by the path
+| snap_queue_alloc                  | allocate a queue
+| snap_queue_sync_execute_job       | **execute:** Write all MMIO registers to card + Start action + wait for completion (timeout or IRQ)
+|                                   | _**The Job-Manager owns the action. The action is shared between multiple queues of the same action-type**_
+| snap_queue_free                   | release thequeue
+| snap_card_free                    | release the card
+
