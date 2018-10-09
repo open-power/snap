@@ -149,6 +149,11 @@ The generated waveform can be viewed with
 
  xsim top.wdb -gui                   # for Xilinx waveforms
 ```
+Two set of useful signals have been added to help debugging an action
+```
+ iruntrace                           # for Cadence irun - it will open automatically debug_action_gmem_ddr4.svwf file
+ xsimtrace                           # for Xilinx xsim - it will open automatically debug_action_gmem_ddr4.wcfg file
+```
 ## controlling PSLSE randomness
 By default the PSLSE environment reorders and delays commands/responses in order to get more variations.
 ```
