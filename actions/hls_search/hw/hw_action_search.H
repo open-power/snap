@@ -27,7 +27,7 @@
 
 #define RELEASE_LEVEL           0x00000022
 
-#define CARD_DRAM_SIZE (1 * 1024 *1024 * 1024)
+#define CARD_DRAM_SIZE (1 * 1024 *1024 * 1024)  //Maximum size in bytes (depends on the card used)
 #define MAX_NB_OF_BYTES_READ  (4 * 1024)
 #define MAX_NB_OF_WORDS_READ MAX_NB_OF_BYTES_READ/BPERDW
 
