@@ -15,6 +15,8 @@ set_property used_in_synthesis true [get_files -of_objects [get_filesets sources
 set_property used_in_synthesis true [get_files -of_objects [get_filesets sources_1] $action_dir/include/NV_NVDLA_global_include_syn.vh]
 set_property used_in_synthesis false [get_files -of_objects [get_filesets sources_1] $action_dir/include/NV_NVDLA_global_include_sim.vh]
 
+set_property used_in_implementation false [get_files -of_objects [get_filesets sources_1] $action_dir/include/NV_NVDLA_global_include_sim.vh]
+
 set_property used_in_simulation true [get_files -of_objects [get_filesets sources_1] $action_dir/include/NV_NVDLA_global_include.vh]
 set_property used_in_simulation false [get_files -of_objects [get_filesets sources_1] $action_dir/include/NV_NVDLA_global_include_syn.vh]
 set_property used_in_simulation true [get_files -of_objects [get_filesets sources_1] $action_dir/include/NV_NVDLA_global_include_sim.vh]
