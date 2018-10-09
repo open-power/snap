@@ -87,7 +87,7 @@ Other modes
 | SNAP collaborative action         | Description
 |:----------------------------------|:-----------------------------------------------------------
 | snap_card_alloc_dev               | Opens the device given by the path
-| snap_sync_execute_job             | **Attach action + execute job** _(Write all MMIO registers to card + Start action + wait for completion (timeout or IRQ)) + Read all MMIO registers_** + release action:**
+| snap_sync_execute_job             | **Attach action + execute job** _(Write all MMIO registers to card + Start action + wait for completion (timeout or IRQ)) + Read all MMIO registers_ **+ release action:**
 | snap_card_free                    | Free the device
 |                                   |
 | **SNAP job-queue mode (future)**  | **Description**
