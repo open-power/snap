@@ -32,7 +32,7 @@ To debug libsnap functionality or associated actions, there are currently some e
                        snap_peek/poke debug tools to read/write SNAP MMIO registers.
 
 ### API description
-_**All definitions of APIs are in snap/software/lib/snap.c and snap/software/include/lib_snap.h**_
+_All definitions of APIs are in snap/software/lib/snap.c and snap/software/include/lib_snap.h_
 
 | Helper functions        | Description                                  | Declaration location
 |:------------------------|:---------------------------------------------|:----------------------------------
