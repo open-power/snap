@@ -234,12 +234,12 @@ patch_NVMe:
 	fi
 
 action_hw: prepare_logs
-	@echo -e "[COMPILE ACTION HW...] start `date +"%T %a %b %d %Y"`";
+	@echo -e "[CONFIG ACTION HW....] start `date +"%T %a %b %d %Y"`";
 	@if [ ! -d "$(ACTION_ROOT)" ]; then \
 		echo "                        Error: Path to ACTION_ROOT is not defined properly"; exit -1; \
 	fi
 	@echo "Calling make -C $(ACTION_ROOT) hw" > $(LOGS_DIR)/action_make.log
-	@$(MAKE) -C $(ACTION_ROOT) hw >> $(LOGS_DIR)/action_make.log;
+	@$(MAKE) -C $(ACTION_ROOT) hw 
 	@if [ $$? -ne 0 ]; then \
 		echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
 	fi
@@ -250,7 +250,7 @@ action_hw: prepare_logs
 			echo -e "                        Error: please look into $(LOGS_DIR)/action_make.log"; exit -1; \
 		fi; \
 	fi
-	@echo -e "[COMPILE ACTION HW...] done  `date +"%T %a %b %d %Y"`";
+	@echo -e "[CONFIG ACTION HW....] done  `date +"%T %a %b %d %Y"`";
 
 .create_snap_ip_done:
 	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_snap_ip.tcl -notrace -log $(LOGS_DIR)/create_snap_ip.log -journal $(LOGS_DIR)/create_snap_ip.jou
