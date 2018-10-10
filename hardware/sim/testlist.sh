@@ -340,7 +340,7 @@
       done
     fi # hdl_nvme_example
  #
-    if [[ "$t0l" == "10141001" || "${env_action}" == "hdl_helloworld"* ]];then echo -e "$del\ntesting snap_helloworld"
+    if [[ "$t0l" == "10140002" || "${env_action}" == "hdl_helloworld"* ]];then echo -e "$del\ntesting hdl_helloworld"
       step "hdl_helloworld -h"
       step "hdl_helloworld"
     fi # hdl_helloworld
