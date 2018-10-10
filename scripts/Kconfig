@@ -176,9 +176,7 @@ choice
 		bool "HDL HelloWorld (Minimum example written in Verilog)"
                 help
                    This is the simplest example to start with:
-                   - Reading text from the server memory
-                   - Processing changing case of the text
-                   - Writing back the text to the server memory
+                    SNAP String Match (Regular Expression Match) Tool
                 select DISABLE_SDRAM_AND_BRAM
                 select DISABLE_NVME
 

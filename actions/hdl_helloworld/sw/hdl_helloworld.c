@@ -310,8 +310,7 @@ static struct snap_action* get_action (struct snap_card* handle,
 
 static void usage (const char* prog)
 {
-	VERBOSE0 ("SNAP String Match (Regular Expression Match) Tool.\n",
-			  prog);
+	VERBOSE0 ("SNAP String Match (Regular Expression Match) Tool.\n");
 	VERBOSE0 ("Usage: %s\n"
 			  "	-h, --help		prints usage information\n"
 			  "	-v, --verbose		verbose mode\n"
