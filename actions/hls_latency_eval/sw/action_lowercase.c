@@ -56,37 +56,18 @@ static int action_main(struct snap_sim_action *action,
 		       void *job, unsigned int job_len)
 {
 	struct latency_eval_job *js = (struct latency_eval_job *)job;
-	char *src, *dst;
-	size_t len;
-	size_t i;
 
 	/* No error checking ... */
 	act_trace("%s(%p, %p, %d) type_in=%d type_out=%d jobsize %ld bytes\n",
 		  __func__, action, job, job_len, js->in.type, js->out.type,
 		  sizeof(*js));
 
-	// Uncomment to dump the action params
-	//__hexdump(stderr, js, sizeof(*js));
-
-	// get the parameters from the structure
-	len = js->in.size;
-	dst = (char *)(unsigned long)js->out.addr;
-	src = (char *)(unsigned long)js->in.addr;
-
-	act_trace("   copy %p to %p %ld bytes\n", src, dst, len);
-
-	// software action processing : Convert all char to lower case
-        for ( i = 0; i < len; i++ ) {
-            if (src[i] >= 'A' && src[i] <= 'Z')
-                dst[i] = src[i] + ('a' - 'A');
-            else
-                dst[i] = src[i];
-        }
 
 	fprintf(stdout, ">>> Software ACTION cannot work since not in an indepedent thread <<\n");
+	fprintf(stdout, ">>> Exit the program with a Ctrl-C <<\n");
 	// update the return code to the SNAP job manager
-	action->job.retc = SNAP_RETC_SUCCESS;
-	return 0;
+	action->job.retc = SNAP_RETC_FAILURE;
+	return 1;
 
 }
 

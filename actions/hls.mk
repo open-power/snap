@@ -46,7 +46,7 @@ CXXFLAGS = -Wall -W -Wextra -Werror -O2 -DNO_SYNTH -Wno-unknown-pragmas -I../inc
 all: $(syn_dir) check
 
 $(syn_dir): $(srcs) run_hls_script.tcl
-	vivado_hls -f run_hls_script.tcl
+	vivado_hls -f run_hls_script.tcl >> $(SNAP_ROOT)/hardware/logs/action_make.log
 	$(RM) -rf $@/systemc $@/verilog
 
 # Create symlinks for simpler access
@@ -77,11 +77,11 @@ $(SOLUTION_NAME): $(objs)
 # Check for register duplication (0x184/Action_Output_o).
 #
 check: $(syn_dir)
-	@echo -n "Checking for critical warnings during HLS synthesis ... "
+	@echo -n "   Checking for critical warnings during HLS synthesis .... "
 	@grep -A8 critical $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ; \
 		test $$? = 1
 	@echo "OK"
-	@echo -n "Checking for reserved MMIO area during HLS synthesis ... "
+	@echo -n "   Checking for reserved MMIO area during HLS synthesis ... "
 	@grep -A8 0x17c $(syn_dir)/vhdl/$(WRAPPER)_ctrl_reg_s_axi.vhd | grep reserved > \
 		/dev/null; test $$? = 0
 	@echo "OK"
@@ -89,4 +89,4 @@ check: $(syn_dir)
 clean:
 	@$(RM) -r $(SOLUTION_DIR)* run_hls_script.tcl *~ *.log \
 		$(objs) $(SOLUTION_NAME)
-	@for link in $(symlinks); do $(RM) hls_syn_$(link); done
+	@for link in $(symlinks); do $(RM) hls_syn_$$link; done

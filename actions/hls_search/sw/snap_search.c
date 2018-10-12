@@ -313,7 +313,7 @@ static void usage(const char *prog)
                "snap_maint -vv\n"
                "\n"
                "echo Available search methods are Naive method (m1) - KMP method (m2) - Streaming method (m0)\n"
-               "echo (Streaming method need to be specified in common header file BEFORE generating the flow)\n"
+               "echo -- Streaming method need to be specified in common header file BEFORE generating the flow --\n"
                "echo \"Hardware\" search pattern looking for the word \"include\" in search.txt\n"
                "snap_search -m1 -E88 -i ./search.txt -p include -C0\n"
                "echo \"Software\" search pattern looking for the word \"include\" in search.txt\n"
@@ -324,16 +324,16 @@ static void usage(const char *prog)
                "snap_maint -vv\n"
                "\n"
 	       "echo Create a file with a text to search in. For example:\n"
-	       "echo \"Hello SNAP world. This is my first CAPI SNAP experience. It's real fun!\" > /tmp/t1\n"
+	       "echo \"Hello SNAP world. This is my first CAPI SNAP experience. It's real fun.\" > /tmp/t1\n"
 	       "\n"
-               "echo \"Hardware\" search pattern looking for the word \"SNAP\" in t1 file -Naive method (m1)\n"
+               "echo \"Hardware\" search pattern looking for the word \"SNAP\" in t1 file -Naive method -m1\n"
                "snap_search -t5000 -m1 -E2 -i /tmp/t1 -p SNAP\n"
-               "echo \"Hardware\" search pattern looking for the word \"SNAP\" in t1 file - KMP method (m2)\n"
+               "echo \"Hardware\" search pattern looking for the word \"SNAP\" in t1 file - KMP method -m2\n"
                "snap_search -t5000 -m2 -E2 -i /tmp/t1 -p SNAP\n"
-               "echo \"Hardware\" search pattern looking for the word \"SNAP\" in t1 file - stream method (m0)\n"
-               "echo (Streaming method need to be specified in common header file BEFORE generating the flow)\n"
+               "echo \"Hardware\" search pattern looking for the word \"SNAP\" in t1 file - stream method -m0\n"
+               "echo -- Streaming method need to be specified in common header file BEFORE generating the flow --\n"
                "snap_search -t5000 -m0 -E2 -i /tmp/t1 -p SNAP\n"
-               "echo \"Software\" search pattern looking for the word \"SNAP\" in t1 file - Naive method (m1)\n"
+               "echo \"Software\" search pattern looking for the word \"SNAP\" in t1 file - Naive method -m1\n"
                "snap_search -t5000 -m1 -E2 -s -i /tmp/t1 -p SNAP\n"
                "\n",
 	       prog);
@@ -540,7 +540,7 @@ int main(int argc, char *argv[])
 				    pbuff, psize,
 				    method, step);
 
-        	printf("dsize = %d - psize = %d \n", (int)dsize, (int)psize);
+        	printf("Data size = %d - Pattern size = %d \n", (int)dsize, (int)psize);
        		rc |= run_one_step(queue, &cjob, timeout, step);
        		if (rc != 0)
            		goto out_error3;
@@ -571,10 +571,11 @@ int main(int argc, char *argv[])
                 case(0):
 #ifdef STREAMING_METHOD
                         printf(" >>> Streaming method (%d) \n", method);
+                        break;
 #else
                         printf(" >>> Streaming method (%d) NOT IMPLEMENTED \n", method);
+			method = 1;
 #endif
-                        break;
                 default:
                         printf(" >>> Default: Naive method (%d) \n", method);
                 }
@@ -587,7 +588,7 @@ int main(int argc, char *argv[])
 					    offs, items,
 					    pbuff, psize,
 					    method, step);
-        		printf("dsize = %d - psize = %d \n", (int)dsize, (int)psize);
+        		printf("Data size = %d - Pattern size = %d \n", (int)dsize, (int)psize);
 
             		rc |= run_one_step(queue, &cjob, timeout, step);
             		if (rc != 0) {
@@ -614,7 +615,7 @@ int main(int argc, char *argv[])
 
             		snap_prepare_search(&cjob, &sjob_in, &sjob_out, dbuff, dsize,
                     		offs, items, pbuff, psize, method, step);
-        		printf("dsize = %d - psize = %d \n", (int)dsize, (int)psize);
+        		printf("Data size = %d - Pattern size = %d \n", (int)dsize, (int)psize);
             		snap_print_search_results(&cjob, run);
 			*/
 

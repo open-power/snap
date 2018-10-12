@@ -24,9 +24,6 @@
 extern "C" {
 #endif
 
-#define SEARCH_ACTION_TYPE	0x10141003
-#define RELEASE_LEVEL		0x00000021
-
 /* DDR address map */
 #define DDR_TEXT_START       (1024 * 1024)
 #define DDR_OFFS_START (512 * 1024 * 1024)

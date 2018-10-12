@@ -70,10 +70,10 @@ static inline void snap_addr_set(struct snap_addr *da,
 }
 
 /*
- * Maximum size of an SNAP HLS job without addr extension, this size is required
+ * Maximum size of a SNAP job without addr extension, this size is required
  * such that the output MMIO registers will end up at the correct address offset.
  */
-#define SNAP_JOBSIZE (16 * 6) /* 108 */
+#define SNAP_JOBSIZE 108 /* 108 bytes is the maximum size allowed to stay aligned */
 
 #ifdef __cplusplus
 }
