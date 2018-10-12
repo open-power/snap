@@ -310,18 +310,15 @@ static struct snap_action* get_action (struct snap_card* handle,
 
 static void usage (const char* prog)
 {
-	VERBOSE0 ("SNAP String Match (Regular Expression Match) Tool.\n"
-			  "	Use Option -p and -q for pattern and packet\n"
-			  "	e.g. %s -p <packet file> -q <pattern file> [-vv] [-I]\n",
-			  prog);
+	VERBOSE0 ("SNAP String Match (Regular Expression Match) Tool.\n");
 	VERBOSE0 ("Usage: %s\n"
-			  "	-h, --help		   print usage information\n"
+			  "	-h, --help		prints usage information\n"
 			  "	-v, --verbose		verbose mode\n"
-			  "	-C, --card <cardno>  use this card for operation\n"
+			  "	-C, --card <cardno>     card to be used for operation\n"
 			  "	-V, --version\n"
-			  "	-q, --quiet		  quiece output\n"
+//			  "	-q, --quiet		quiece output\n"
 			  "	-t, --timeout		Timeout after N sec (default 1 sec)\n"
-			  "	-I, --irq			Enable Action Done Interrupt (default No Interrupts)\n"
+			  "	-I, --irq		Enable Action Done Interrupt (default No Interrupts)\n"
 			  , prog);
 }
 
@@ -345,11 +342,11 @@ int main (int argc, char* argv[])
 		int option_index = 0;
 		static struct option long_options[] = {
 			{ "card",	 required_argument, NULL, 'C' },
-			{ "verbose",  no_argument,	   NULL, 'v' },
-			{ "help",	 no_argument,	   NULL, 'h' },
-			{ "version",  no_argument,	   NULL, 'V' },
-			{ "quiet",	no_argument,	   NULL, 'q' },
-			{ "timeout",  required_argument, NULL, 't' },
+			{ "verbose",     no_argument,	    NULL, 'v' },
+			{ "help",	 no_argument,	    NULL, 'h' },
+			{ "version",     no_argument,	    NULL, 'V' },
+			{ "quiet",       no_argument,	    NULL, 'q' },
+			{ "timeout",     required_argument, NULL, 't' },
 			{ "irq",	  no_argument,	   NULL, 'I' },
 			{ 0,		  no_argument,	   NULL, 0   },
 		};
@@ -389,7 +386,8 @@ int main (int argc, char* argv[])
 			usage (argv[0]);
 			exit (EXIT_FAILURE);
 		}
-	}
+		
+	}  // while(1)
 
 	VERBOSE2 ("Open Card: %d\n", card_no);
 	sprintf (device, "/dev/cxl/afu%d.0s", card_no);
@@ -469,4 +467,4 @@ __exit1:
 
 	VERBOSE1 ("End of Test rc: %d\n", rc);
 	return rc;
-}
+} // main end
