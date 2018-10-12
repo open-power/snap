@@ -187,7 +187,7 @@ while getopts ":vA:C:Vh" opt; do
 		if [ $? == 1 ]; then
 			exit 1
 		fi
-		detect_card_name $card  "0x0632" "0x060c" "RCXVUP"
+		detect_card_name $card  "0x0632" "0x060d" "N250SP"
 		if [ $? == 1 ]; then
 			exit 1
 		fi
@@ -267,6 +267,11 @@ case ${accel} in
 		detect_snap_cards "0x0632" "0x060c" "RCXVUP"
 		RC=$?
 		;;
+	# N250SP CAPI 2.0 card from Nallatech (SNAP mode)
+	"N250SP")
+		detect_snap_cards "0x0632" "0x060d" "N250SP"
+		RC=$?
+		;;
 	# S241 CAPI 2.0 card from Flyslice
 	"S241")
 		detect_snap_cards "0x0632" "0x0660" "S241"
@@ -277,7 +282,7 @@ case ${accel} in
 		detect_snap_cards "0x0632" "0x0661" "FX609"
 		RC=$?
 		;;
-	# N250SP CAPI 2.0 card from Nallatech
+	# N250SP CAPI 2.0 card from Nallatech (FlashGT+ mode)
 	"N250SP")
 		detect_snap_cards "0x0632" "0x04dd" "N250SP"
 		RC=$?
@@ -300,6 +305,9 @@ case ${accel} in
 		RC=$((RC + $?))
 
 		detect_snap_cards "0x0632" "0x060c" "RCXVUP"
+		RC=$((RC + $?))
+
+		detect_snap_cards "0x0632" "0x060d" "N250SP"
 		RC=$((RC + $?))
 
 		detect_snap_cards "0x0632" "0x0661" "FX609"
