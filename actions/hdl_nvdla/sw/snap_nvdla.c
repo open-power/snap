@@ -209,7 +209,7 @@ int main (int argc, char* argv[])
     uint64_t cir;
     uint32_t irq_control;
     uint32_t action_control;
-    uint32_t config;
+    //uint32_t config;
     int timeout = ACTION_WAIT_TIME;
     snap_action_flag_t attach_flags = 0;
     unsigned long ioctl_data;
@@ -225,6 +225,16 @@ int main (int argc, char* argv[])
     char* input   = NULL;
     int normalize = 0;
     int rawdump = 0;
+    float mean[4] = {0.0, 0.0, 0.0, 0.0};
+    char *mean_token;
+    int i = 0;
+
+    //char loadable1[] = "../sw/nvdla-sw/regression/flatbufs/kmd/CDP/CDP_L0_0_large_fbuf";
+    //char loadable2[] = "../sw/nvdla-sw/regression/flatbufs/kmd/SDP/SDP_X1_L0_0_large_fbuf";
+    //char loadable3[] = "../sw/nvdla-sw/regression/flatbufs/kmd/PDP/PDP_L0_0_large_fbuf";
+    //char loadable4[] = "../sw/nvdla-sw/regression/flatbufs/kmd/CONV/CONV_D_L0_0_large_fbuf";
+    //char loadable5[] = "../sw/nvdla-sw/regression/flatbufs/kmd/NN/NN_L0_1_large_fbuf";
+    //char loadable6[] = "../sw/nvdla-sw/regression/flatbufs/kmd/NN/NN_L0_1_large_random_fbuf";
 
     while (1) {
         int option_index = 0;
@@ -237,13 +247,14 @@ int main (int argc, char* argv[])
             { "loadable", required_argument, NULL, 'l' },
             { "image",    required_argument, NULL, 'm' },
             { "input",    required_argument, NULL, 'i' },
-            { "rawdump",  no_argument, NULL, 'r' },
+            { "rawdump",  no_argument,       NULL, 'r' },
             { "normalize",required_argument, NULL, 'n' },
+            { "mean",     required_argument, NULL, 'M' },
             { "timeout",  required_argument, NULL, 't' },
             { "irq",      no_argument,       NULL, 'I' },
             { 0,          no_argument,       NULL, 0   },
         };
-        cmd = getopt_long (argc, argv, "C:l:m:i:r:n:t:IqvVh",
+        cmd = getopt_long (argc, argv, "C:l:m:i:r:n:M:t:IqvVh",
                            long_options, &option_index);
 
         if (cmd == -1) { /* all params processed ? */
@@ -285,6 +296,21 @@ int main (int argc, char* argv[])
 
         case 'r':
             rawdump = 1;
+            break;
+
+        case 'M':
+            mean_token = strtok(optarg, ",\n");
+            while( mean_token != NULL ) {
+                if (i > 3) {
+                    VERBOSE0 ("ERROR: Number of mean values should not be greater than 4 \n");
+                    usage (argv[0]);
+                    exit (EXIT_FAILURE);
+                }
+                mean[i] = atof(mean_token);
+                mean_token = strtok(NULL, ",\n");
+                i++;
+            }
+
             break;
 
         case 't':
@@ -404,14 +430,14 @@ int main (int argc, char* argv[])
     // Disable the NVDLA register region
     rc = action_write(dn, ACTION_CONFIG, 0x00000000);
     VERBOSE0 ("Asserting soft reset\n");
-    // Assert soft reset
-    rc |= action_write(dn, ACTION_CONFIG, 0x00000200);
-    rc |= snap_mmio_read32 (dn, ACTION_CONFIG, &config);
-    VERBOSE0 ("Config register: %#x\n", config);
-    // Clear soft reset
-    rc |= action_write(dn, ACTION_CONFIG, 0x00000000);
-    rc |= snap_mmio_read32 (dn, ACTION_CONFIG, &config);
-    VERBOSE0 ("Config register: %#x\n", config);
+    //// Assert soft reset
+    //rc |= action_write(dn, ACTION_CONFIG, 0x00000200);
+    //rc |= snap_mmio_read32 (dn, ACTION_CONFIG, &config);
+    //VERBOSE0 ("Config register: %#x\n", config);
+    //// Clear soft reset
+    //rc |= action_write(dn, ACTION_CONFIG, 0x00000000);
+    //rc |= snap_mmio_read32 (dn, ACTION_CONFIG, &config);
+    //VERBOSE0 ("Config register: %#x\n", config);
 
     if (rc) {
         VERBOSE0 ("ERROR: action_write/read ERROR\n");
@@ -447,7 +473,11 @@ int main (int argc, char* argv[])
     VERBOSE0 ("NVDLA normalize: %d\n", normalize);
     VERBOSE0 ("NVDLA rawdump:   %d\n", rawdump);
 
-    rc = nvdla_capi_test(loadable, input, image, normalize, rawdump);
+    for (i = 0; i < 4; i++) {
+        VERBOSE0 ("NVDLA mean[%d]:   %f\n", i, mean[i]);
+    }
+
+    rc = nvdla_capi_test(loadable, input, image, normalize, rawdump, mean);
     VERBOSE1 ("Stop to run NVDLA\n");
 
     if (rc) {
