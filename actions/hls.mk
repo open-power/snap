@@ -84,6 +84,6 @@ check: $(syn_dir)
 	@echo "OK"
 
 clean:
-	@$(RM) -r $(SOLUTION_DIR)* run_hls_script.tcl *~ *.log hls_syn_vhdl \
+	@$(RM) -r $(SOLUTION_DIR)* run_hls_script.tcl *~ *.log \
 		$(objs) $(SOLUTION_NAME)
-	@for link in $(symlinks); do $(RM) hls_syn_$(link); done
+	@for link in $(symlinks); do $(RM) hls_syn_$$link; done
