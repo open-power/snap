@@ -35,7 +35,7 @@ _(All information provided by FPGA board vendors are subject to change at any ti
 _Requires Ubuntu 16.04.1 LTS or later_ / (Resources in _italic_ are not enabled yet)
 
 | Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM             |NVME|QDR|Ethernet        |CAPI Interface|Board|CAPI support|SNAP support
-|:------------|:-------:|:------------:|:--:|:---------------:|:--:|:-:|:---------------|:---:|:----------:|:-----------:|:-
+|:------------|:-------:|:------------:|:--:|:---------------:|:--:|:-:|:---------------|:---:|:----------:|:-----------:|:----------:
 |  Alphadata  |ADM-PCIE-KU3|ADKU3|KU060|16GB DDR3(2ch)   |-|-     |_2x(40GbE/4x10GbE)_|PCIe Gen3 x8|LowProf|X|X|
 |  Alphadata  |ADM-PCIE-8K5|AD8K5|KU115|16/32GB DDR4(2ch)|-|-     |_2x(10GbE/16GbE FC)_ |PCIe Gen3 x8|LowProf|X|X|
 |  Nallatech  |250S	       |N250S|KU060|4GB DDR4(1ch)    |2TB (1ch+_1ch_)|-  |-               |PCIe Gen3 x8|LowProf|X|X|
@@ -45,9 +45,9 @@ _Requires Ubuntu 16.04.1 LTS or later_ / (Resources in _italic_ are not enabled 
 _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 
 | Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
-|:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:-------------|:---:|:----------:|:-----------
+|:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:------------:|:---:|:----------:|:----------:
 |  Nallatech	|250S+|N250SP|KU15P|4GB DDR4  (1ch)|_3.8TB/6.4TB/25TB (4ch)_|-|-|PCIe Gen4 x8|LowProf|X|Sep-18
-|  ReflexCES	|XpressVUP-LP9PT|RCXVUP|VU9P*|8GB DDR4 (2ch)|-|_144Mb/575Mb_|_2x(100GbE/4x25GbE)_|PCIe Gen3 x 16|LowProf|X|X
+|  ReflexCES	|XpressVUP-LP9PT|RCXVUP|VU9P*|8GB DDR4 (1ch-_1ch_)|-|_144Mb/575Mb_|_2x(100GbE/4x25GbE)_|PCIe Gen3 x 16|LowProf|X|X
 |  Flyslice	|FX609QL|FX609|VU9P*|16GB DDR4 (4ch)|-|-|-|PCIe Gen3 x 16|LowProf|X|X
 |  Semptian	|NSA-241|S241|VU9P*|32GB DDR4 (4ch)|-|-|?|PCIe Gen3 x 16|FullHeight|TBD|TBD
 |  _Alphadata_	|_ADM-PCIE-9V3_|_AD9V3_|_VU3P_|_16GB/32GB DDR4 (2ch)_|-|-|_2x(100GbE/4x25GbE)_|_PCIe Gen4 x8_|_LowProf_|_X_|-
@@ -62,7 +62,7 @@ Notes :
 _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 
 | Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
-|:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:-------------|:---:|:----------:|:-----------
+|:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:------------:|:---:|:----------:|:-----------:
 |  Alphadata	|ADM-PCIE-9V3|AD9V3      |VU3P|16GB/32GB DDR4 (2ch)|-|-|2x (100GbE/4x25GbE)|1 OpenCAPI Link (8x25Gb)|LowProf|Dec-18|Dec-18
 |  _Mellanox_  |_Innova-2 Flex_	    |_TBD_   |_KU15P_|_4GB/8GB DDR4_|_-_|_-_|_2x25GbE_|	_1 OpenCAPI Link (8x25Gb)_	|_LowProf_|_-_|_-_
 
@@ -86,11 +86,12 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 
 | Deployment Server(Power)| Ubuntu        | RedHat   | CentOS   | Suse  | Helpful commands
 |:------------------------|:-------------:|:--------:|:--------:|:-----:|:----------------
-| Power8 (CAPI1.0)        | 16.04 min | RHEL7.3 min  |     -    |   -   | lsb_release -a
-| Power9 (CAPI2.0)        | 18.04 min | Pegas 1.1 min|     -    |   -   | lsb_release -a
-| Power9 (OpenCAPI3.0)    | 18.04 min | Pegas 1.2 min| _to come_|_SLES15 SP1 & SLES12 SP5_ | lsb_release -a
-
-(Resources in _italic_ are tentative)
+| Power8 (CAPI1.0)        | 16.04.1 min   | RHEL7.3 min    |     -    |   -   | lsb_release -a _OR_ cat /etc/os-release
+| Power9 (CAPI2.0)        | 18.04.1 min   | RHEL7.5-ALT min|     -    |   -   | lsb_release -a _OR_ cat /etc/os-release
+| Power9 (OpenCAPI3.0)    | 18.04.1 min   | RHEL7.6-ALT min| _to come_|_SLES15 SP1 & SLES12 SP5_ | lsb_release -a _OR_ cat /etc/os-release
+Notes :
+- Resources in _italic_ are tentative
+- RHEL x.x non -ALT are **NOT** supporting CAPI for P9
 
 |**Tool**                       |**Minimum**               |**Recommended**|**Helpful commands**
 |:------------------------------|:------------------------:|:-------------:|:-------------------
