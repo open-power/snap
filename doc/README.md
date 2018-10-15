@@ -86,11 +86,12 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 
 | Deployment Server(Power)| Ubuntu        | RedHat   | CentOS   | Suse  | Helpful commands
 |:------------------------|:-------------:|:--------:|:--------:|:-----:|:----------------
-| Power8 (CAPI1.0)        | 16.04.1 min | RHEL7.3 min  |     -    |   -   | lsb_release -a
-| Power9 (CAPI2.0)        | 18.04.1 min | Pegas 1.1 min|     -    |   -   | lsb_release -a
-| Power9 (OpenCAPI3.0)    | 18.04.1 min | Pegas 1.2 min| _to come_|_SLES15 SP1 & SLES12 SP5_ | lsb_release -a
-
-(Resources in _italic_ are tentative)
+| Power8 (CAPI1.0)        | 16.04.1 min   | RHEL7.3 min    |     -    |   -   | lsb_release -a _OR_ cat /etc/os-release
+| Power9 (CAPI2.0)        | 18.04.1 min   | RHEL7.5-ALT min|     -    |   -   | lsb_release -a _OR_ cat /etc/os-release
+| Power9 (OpenCAPI3.0)    | 18.04.1 min   | RHEL7.6-ALT min| _to come_|_SLES15 SP1 & SLES12 SP5_ | lsb_release -a _OR_ cat /etc/os-release
+Notes :
+- Resources in _italic_ are tentative
+- RHEL x.x non -ALT are **NOT** supporting CAPI for P9
 
 |**Tool**                       |**Minimum**               |**Recommended**|**Helpful commands**
 |:------------------------------|:------------------------:|:-------------:|:-------------------
