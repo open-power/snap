@@ -89,6 +89,7 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 | Power8 (CAPI1.0)        | 16.04.1 min   | RHEL7.3 min    |     -    |   -   | lsb_release -a _OR_ cat /etc/os-release
 | Power9 (CAPI2.0)        | 18.04.1 min   | RHEL7.5-ALT min|     -    |   -   | lsb_release -a _OR_ cat /etc/os-release
 | Power9 (OpenCAPI3.0)    | 18.04.1 min   | RHEL7.6-ALT min| _to come_|_SLES15 SP1 & SLES12 SP5_ | lsb_release -a _OR_ cat /etc/os-release
+
 Notes :
 - Resources in _italic_ are tentative
 - RHEL x.x non -ALT are **NOT** supporting CAPI for P9
@@ -97,7 +98,7 @@ Notes :
 |:------------------------------|:------------------------:|:-------------:|:-------------------
 | gcc                           |4.4.7                     |latest         |gcc -v
 |P8 Server Firmware : skiboot/FW|5.1.13/FW840.20/OP820     |latest         |update_flash -d
-|P9 Server Firmware : skiboot/FW|5.11/FW910 & 6.0/OP920)   |latest         |update_flash -d
+|P9 Server Firmware : skiboot/FW|5.11/FW910 & 6.0/OP920    |latest         |update_flash -d
 
 
 ### P8 CAPI(1.0) Deployment environment (Bare Metal IBM server examples supporting CAPI SNAP) :
