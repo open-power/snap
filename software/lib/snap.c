@@ -926,6 +926,11 @@ int snap_action_completed(struct snap_action *action, int *rc, int timeout)
 	if (rc)
 		*rc = _rc;
 
+	// Test the rc in calling function to see normal or timeout termination
+ 	/*
+	if ((action_data & ACTION_CONTROL_IDLE) != ACTION_CONTROL_IDLE) 
+		fprintf(stderr, "--- Timeout expired ---\n");
+	*/
 	return (action_data & ACTION_CONTROL_IDLE) == ACTION_CONTROL_IDLE;
 }
 
