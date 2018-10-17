@@ -317,6 +317,11 @@ choice
 		bool "nv_large -- NVDLA with 2048 MACs"
 		help
 		  NVDLA with 2048 MACs
+
+	config NV_FULL
+		bool "nv_full -- NVDLA with 2048 MACs and all feature"
+		help
+		  NVDLA with 2048 MACs and all feature
 endchoice
 
 config NVDLA_CONFIG 
@@ -324,6 +329,7 @@ config NVDLA_CONFIG
 	string
 	default "nv_small"     if NV_SMALL
 	default "nv_large"     if NV_LARGE
+	default "nv_full"      if NV_FULL
 
 config ENABLE_HLS_SUPPORT
 	bool
