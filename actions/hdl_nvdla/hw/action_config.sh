@@ -123,9 +123,21 @@ for vsource in *.v_source; do
         sed -i '/#ifdef NVDLA_DBB_DATA_WIDTH == 64/d' $vfile
     fi
 
-    if [ $dbb_data_width -eq 256 ]; then
+    if [ $dbb_data_width -eq 512 ]; then
+        sed -i '/#ifdef NVDLA_DBB_DATA_WIDTH == 512/d' $vfile
+        sed -i '/#ifdef NVDLA_DBB_DATA_WIDTH == 64/,/#endif/d' $vfile
+        sed -i '/#ifdef NVDLA_DBB_DATA_WIDTH == 256/,/#endif/d' $vfile
+        sed -i '/#ifdef NVDLA_DBB_DATA_WIDTH < 512/,/#endif/d' $vfile
+    elif [ $dbb_data_width -eq 256 ]; then
+        sed -i '/#ifdef NVDLA_DBB_DATA_WIDTH == 512/,/#endif/d' $vfile
         sed -i '/#ifdef NVDLA_DBB_DATA_WIDTH == 64/,/#endif/d' $vfile
         sed -i '/#ifdef NVDLA_DBB_DATA_WIDTH == 256/d' $vfile
+        sed -i '/#ifdef NVDLA_DBB_DATA_WIDTH < 512/d' $vfile
+    else
+        sed -i '/#ifdef NVDLA_DBB_DATA_WIDTH == 512/,/#endif/d' $vfile
+        sed -i '/#ifdef NVDLA_DBB_DATA_WIDTH == 256/,/#endif/d' $vfile
+        sed -i '/#ifdef NVDLA_DBB_DATA_WIDTH == 64/d' $vfile
+        sed -i '/#ifdef NVDLA_DBB_DATA_WIDTH < 512/d' $vfile
     fi
 
     if [ $sram_data_width ]; then

@@ -120,6 +120,29 @@ elif [ "$DLA_CONFIG" == "nv_large" ]; then
         "$GOLDEN_ROOT/NN_L0_1_large_b059a8/dla/lead.md5" \
         "$GOLDEN_ROOT/NN_L0_1_large_random_2e0fa0/dla/lead.md5"
     )
+elif [ "$DLA_CONFIG" == "nv_full" ]; then
+
+    declare -a flatbuf_tests=(
+        "$TEST_ROOT/BDMA/BDMA_L0_0_fbuf" \
+        "$TEST_ROOT/CDP/CDP_L0_0_fbuf" \
+        "$TEST_ROOT/SDP/SDP_X1_L0_0_fbuf" \
+        "$TEST_ROOT/PDP/PDP_L0_0_fbuf" \
+        "$TEST_ROOT/RBK/RBK_L0_0_fbuf" \
+        "$TEST_ROOT/CONV/CONV_D_L0_0_fbuf" \
+        "$TEST_ROOT/NN/NN_L0_0_fbuf" \
+        "$TEST_ROOT/NN/NN_L0_1_fbuf"
+    )
+
+    declare -a golden_md5s=(
+        "$GOLDEN_ROOT/BDMA_L0_0_76a9a4/dla/lead.md5" \
+        "$GOLDEN_ROOT/CDP_L0_0_66cb25/dla/lead.md5" \
+        "$GOLDEN_ROOT/SDP_X1_L0_0_b9bf63/dla/lead.md5" \
+        "$GOLDEN_ROOT/PDP_L0_0_e21636/dla/lead.md5" \
+        "$GOLDEN_ROOT/RBK_L0_0_6dbb5a/dla/lead.md5" \
+        "$GOLDEN_ROOT/CONV_D_L0_0_6d2d02/dla/lead.md5" \
+        "$GOLDEN_ROOT/NN_L0_0_9521de/dla/lead.md5" \
+        "$GOLDEN_ROOT/NN_L0_1_9521df/dla/lead.md5"
+    )
 else
     echo "Unsupported NVDLA_CONFIG: $DLA_CONFIG"
     exit -1
