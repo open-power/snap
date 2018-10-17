@@ -305,12 +305,21 @@ choice
 	config HLS_DECIMAL_MULT
 		bool "HLS Decimal Multiplication"
 		help
-		  This example will help user understanding how to handle decimal numbers::
+		  This example will help user understanding how to handle decimal numbers:
 		  - Read a value from the server memory
 		  - Convert this value to a double or a float type
 		  - Process an operation with decimal numbers such as a multiplication
 		  - Convert the result back to the format expected by the server
 		  - Write back the result to the server memory
+		  This example is written in C and compiled with HLS
+		select ENABLE_HLS_SUPPORT
+		select DISABLE_SDRAM_AND_BRAM
+		select DISABLE_NVME
+
+	config HLS_SCATTER_GATHER
+		bool "HLS Scatter Gather"
+		help
+		  This example will help user understanding how to optimize code for scatter gather memory access:
 		  This example is written in C and compiled with HLS
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
