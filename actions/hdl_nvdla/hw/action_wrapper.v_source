@@ -247,6 +247,22 @@ module action_wrapper #(
     wire [C_M_AXI_HOST_MEM_DATA_WIDTH-1 : 0 ] m_axi_host_mem_wdata_mask;
     #endif
 
+    #ifdef NVDLA_DBB_DATA_WIDTH == 512
+    wire rid_fifo_ren;
+    wire rid_fifo_wen;
+    wire wid_fifo_ren;
+    wire wid_fifo_wen;
+
+    wire rid_fifo_full;
+    wire rid_fifo_empty;
+    wire rid_wr_rst_busy;
+    wire rid_rd_rst_busy;
+    wire wid_fifo_full;
+    wire wid_fifo_empty;
+    wire wid_wr_rst_busy;
+    wire wid_rd_rst_busy;
+    #endif 
+
     #ifdef NVDLA_DBB_DATA_WIDTH == 64
     assign m_axi_host_mem_wdata_mask = 
             m_axi_host_mem_wstrb == 64'h00000000_000000FF ? 512'h00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000_FFFFFFFF_FFFFFFFF :
@@ -364,7 +380,7 @@ module action_wrapper #(
     assign m_axi_host_mem_arlock[0] = dbb_s_axi_arlock;
     assign m_axi_host_mem_arprot = m_axi_host_mem_arprot;
     assign m_axi_host_mem_arqos = dbb_s_axi_arqos;
-    assign dbb_s_axi_arready = m_axi_host_mem_arready; 
+    assign dbb_s_axi_arready = m_axi_host_mem_arready && (!rid_fifo_full); 
     assign m_axi_host_mem_arregion = dbb_s_axi_arregion;
     assign m_axi_host_mem_arsize = dbb_s_axi_arsize;
     assign m_axi_host_mem_arvalid = dbb_s_axi_arvalid;
@@ -384,7 +400,7 @@ module action_wrapper #(
     assign m_axi_host_mem_awlock[0] = dbb_s_axi_awlock;
     assign m_axi_host_mem_awprot = dbb_s_axi_awprot;
     assign m_axi_host_mem_awqos = dbb_s_axi_awqos;
-    assign dbb_s_axi_awready = m_axi_host_mem_awready;
+    assign dbb_s_axi_awready = m_axi_host_mem_awready && (!wid_fifo_full);
     assign m_axi_host_mem_awregion = dbb_s_axi_awregion;
     assign m_axi_host_mem_awsize = dbb_s_axi_awsize;
     assign m_axi_host_mem_awvalid = dbb_s_axi_awvalid;
@@ -517,21 +533,6 @@ module action_wrapper #(
         );
 
     #ifdef NVDLA_DBB_DATA_WIDTH == 512
-    wire rid_fifo_ren;
-    wire rid_fifo_wen;
-    wire wid_fifo_ren;
-    wire wid_fifo_wen;
-
-    wire rid_fifo_full;
-    wire rid_fifo_empty;
-    wire rid_wr_rst_busy;
-    wire rid_rd_rst_busy;
-    wire wid_fifo_full;
-    wire wid_fifo_empty;
-    wire wid_wr_rst_busy;
-    wire wid_rd_rst_busy;
-    
-
     assign rid_fifo_wen = dbb_s_axi_arvalid && dbb_s_axi_arready;
     assign rid_fifo_ren = dbb_s_axi_rvalid && dbb_s_axi_rready;
     assign wid_fifo_wen = dbb_s_axi_awvalid && dbb_s_axi_awready;
