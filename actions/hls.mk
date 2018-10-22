@@ -46,6 +46,9 @@ CXXFLAGS = -Wall -W -Wextra -Werror -O2 -DNO_SYNTH -Wno-unknown-pragmas -I../inc
 all: $(syn_dir) check
 
 $(syn_dir): $(srcs) run_hls_script.tcl
+	@if [ ! -d "$(SNAP_ROOT)/hardware/logs" ]; then \
+		mkdir -p $(SNAP_ROOT)/hardware/logs; \
+	fi
 	vivado_hls -f run_hls_script.tcl >> $(SNAP_ROOT)/hardware/logs/action_make.log
 	$(RM) -rf $@/systemc $@/verilog
 
