@@ -319,7 +319,11 @@ choice
 	config HLS_SCATTER_GATHER
 		bool "HLS Scatter Gather"
 		help
-		  This example will help user understanding how to optimize code for scatter gather memory access:
+		  This example will help user understanding how to optimize code for 
+		   scatter gather memory access. It will show how Software and Hardware 
+		   share WED (Work Element Descriptor) and STATUS in host memory.
+		  This can be used as a benchmark to see how CAPI help reduce the 
+		   data moving latency when the data are scattered everywhere in RAM.
 		  This example is written in C and compiled with HLS
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
