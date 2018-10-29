@@ -81,7 +81,7 @@ $(SOLUTION_NAME): $(objs)
 #
 check: $(syn_dir)
 	@echo -n "   Checking for critical warnings during HLS synthesis .... "
-	@grep -A8 critical $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ; \
+	@grep -A8 CRITICAL $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ; \
 		test $$? = 1
 	@echo "OK"
 	@echo -n "   Checking for reserved MMIO area during HLS synthesis ... "
