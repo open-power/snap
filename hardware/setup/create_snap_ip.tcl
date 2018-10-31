@@ -139,7 +139,7 @@ set create_ddr4_ad8k5   FALSE
 set create_ddr4_rcxvup  FALSE
 set create_ddr4_fx609   FALSE
 set create_ddr4_s241    FALSE
-set create_ddr4_ad9v3v2 FALSE
+set create_ddr4_ad9v3   FALSE
 
 if { $fpga_card == "ADKU3" } {
   if { $bram_used == "TRUE" } {
