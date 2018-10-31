@@ -36,13 +36,13 @@ VERBOSE=0
 function usage() {
 	echo "Usage: $PROGRAM"
 	echo "    [-v] Prints extra information (to be put as first param)"
-	echo "    [-A] <accelerator> use either ADKU3, N250S, S121B_BPIx16, S121B_SPIx4, AD8K5, RCXVUP, FX609, S241, N250SP or ALL"
+	echo "    [-A] <accelerator> use either ADKU3, N250S, S121B_BPIx16, S121B_SPIx4, AD8K5, RCXVUP, FX609, S241, N250SP, AD9V3 or ALL"
 	echo "    [-C] <0..3> Print accelerator name for this Card"
 	echo "    [-V] provides version"
 	echo "  prints out a list of CAPI Cards found in this System."
 	echo
 	echo "  Supported CAPI Cards are:"
-	echo "     [N250S ADKU3 S121B_BPIx16 S121B_SPIx4 AD8K5 RCXVUP N250SP S241 FX609]"
+	echo "     [N250S ADKU3 S121B_BPIx16 S121B_SPIx4 AD8K5 RCXVUP N250SP S241 FX609 AD9V3]"
 	echo "     ------------------- Example -----------------------------------------"
 	echo "     $PROGRAM -A ALL"
 	echo "        Print a list (e.g. 0 1 2 3) of all CAPI cards in this System"
@@ -207,6 +207,10 @@ while getopts ":vA:C:Vh" opt; do
 		if [ $? == 1 ]; then
 			exit 1
 		fi
+		detect_card_name $card  "0x0632" "0x060f" "AD9V3"
+		if [ $? == 1 ]; then
+			exit 1
+		fi
 		detect_card_name $card  "0x0602" "" "GZIP"
 		if [ $? == 1 ]; then
 			exit 1
@@ -287,6 +291,11 @@ case ${accel} in
 		detect_snap_cards "0x0632" "0x04dd" "N250SP"
 		RC=$?
 		;;
+	# AD9V3 CAPI 2.0 card from Alphadata
+	"AD9V3")
+		detect_snap_cards "0x0632" "0x060f" "AD9V3"
+		RC=$?
+		;;
 	"ALL")
 		# detect all cards and add Number of Cards
 		detect_snap_cards "0x0632" "0x0605" "ADKU3"
@@ -319,6 +328,8 @@ case ${accel} in
 		detect_snap_cards "0x0632" "0x04dd" "N250SP"
 		RC=$((RC + $?))
 
+		detect_snap_cards "0x0632" "0x060f" "AD9V3"
+		RC=$((RC + $?))
  		;;
 	*)
 		usage
