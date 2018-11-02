@@ -24,18 +24,12 @@ USE ieee.std_logic_misc.all;
 USE ieee.std_logic_unsigned.all;
 USE ieee.numeric_std.all;
 
-#ifdef CONFIG_ENABLE_NVME
-LIBRARY unisim;
-USE unisim.vcomponents.all;
-#endif
-
 ENTITY psl_fpga IS
   PORT(
 #ifdef CONFIG_ENABLE_DDR4
     -- DDR4 SDRAM Interface
-    -- Nallatech 250S card has one DDR4 SO-DIMMs
-    c0_sys_clk_p              : IN    STD_LOGIC;
-    c0_sys_clk_n              : IN    STD_LOGIC;
+    c0_ddr4_sys_clk_p         : IN    STD_LOGIC;
+    c0_ddr4_sys_clk_n         : IN    STD_LOGIC;
     c0_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);
     c0_ddr4_ba                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
     c0_ddr4_cke               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
@@ -50,30 +44,6 @@ ENTITY psl_fpga IS
     c0_ddr4_act_n             : OUT   STD_LOGIC;
     c0_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     c0_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-#endif
-#ifdef CONFIG_ENABLE_NVME
-    -- NVME Interface
-    -- Clock inputs for NVMe
-    pcie_clk1_p               : IN    STD_LOGIC;
-    pcie_clk1_n               : IN    STD_LOGIC;
-    pcie_clk2_p               : IN    STD_LOGIC;
-    pcie_clk2_n               : IN    STD_LOGIC;
-    --
-    -- NVME <-> PCIE Interface
-    pcie_rc0_rxn              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    pcie_rc0_rxp              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    pcie_rc0_txn              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    pcie_rc0_txp              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    pcie_rc1_rxn              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    pcie_rc1_rxp              : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    pcie_rc1_txn              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    pcie_rc1_txp              : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    --
-    -- Outputs to NVMe drive
-    m2_perst_n                : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    m2_susclk                 : OUT   STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    m2_clkreq_n               : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
-    m2_pewake_n               : IN    STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
 #endif
 
     -- CAPI PSL Interface
@@ -117,24 +87,21 @@ ENTITY psl_fpga IS
     pci0_o_txn_out7       : out   std_logic;
 
 -- Flash Interface
-    o_flash_oen           : out   std_logic;
-    o_flash_wen           : out   std_logic;
-    o_flash_rstn          : out   std_logic;
-    o_flash_a             : out   std_logic_vector(25 downto 0);
---    o_flash_a_dup         : out   std_logic_vector(25 to 26);
-    o_flash_advn          : out   std_logic;
-    b_flash_dq            : inout std_logic_vector(15 downto 4);
+    spi_miso_secondary    : in    std_logic;
+    spi_mosi_secondary    : out   std_logic;
+    spi_cen_secondary     : out   std_logic
 
 -- PTMON PMBUS
-    b_basei2c_scl         : inout std_logic;  -- clock
-    b_basei2c_sda         : inout std_logic;  -- data
-    b_smbus_scl           : inout std_logic;  -- clock
-    b_smbus_sda           : inout std_logic;  -- data
+--    b_basei2c_scl         : inout std_logic;  -- clock
+--    b_basei2c_sda         : inout std_logic;  -- data
+--    b_smbus_scl           : inout std_logic;  -- clock
+--    b_smbus_sda           : inout std_logic;  -- data
 
 --LEDs
-    o_led_red             : out   std_logic_vector(1 downto 0);
-    o_led_green           : out   std_logic_vector(1 downto 0);
-    o_led_blue            : out   std_logic_vector(1 downto 0)
+-- Remove LEDS for RCXVUP
+--    o_led_red             : out   std_logic_vector(1 downto 0);
+--    o_led_green           : out   std_logic_vector(1 downto 0);
+--    o_led_blue            : out   std_logic_vector(1 downto 0)
   );
 END psl_fpga;
 
@@ -271,33 +238,6 @@ Component psl_accel
     c0_ddr4_ck_t                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 -- TODO:    c0_ddr4_ten                         : OUT   STD_LOGIC;
 #endif
-#ifdef CONFIG_ENABLE_NVME
-    --
-    -- NVME Interface
-    --
-    -- Reset Input
-    nvme_reset_n                        : IN    STD_LOGIC;
-    --
-    -- Clock inputs for NVMe
-    refclk_nvme_ch0_p                   : IN    STD_LOGIC;
-    refclk_nvme_ch0_n                   : IN    STD_LOGIC;
-    refclk_nvme_ch1_p                   : IN    STD_LOGIC;
-    refclk_nvme_ch1_n                   : IN    STD_LOGIC;
-    --
-    -- NVMe reset control
-    nvme_reset_ctl                      : OUT   STD_LOGIC;
-    nvme_perst_ctl                      : OUT   STD_LOGIC_VECTOR(SNAP_NVME_PERST_L  DOWNTO SNAP_NVME_PERST_R);  -- keeping NVMe drives in reset by driving 0s
-    --
-    -- NVME <-> PCIE Interface
-    pcie_rc0_rxn                        : IN    STD_LOGIC_VECTOR(3 downto 0);
-    pcie_rc0_rxp                        : IN    STD_LOGIC_VECTOR(3 downto 0);
-    pcie_rc0_txn                        : OUT   STD_LOGIC_VECTOR(3 downto 0);
-    pcie_rc0_txp                        : OUT   STD_LOGIC_VECTOR(3 downto 0);
-    pcie_rc1_rxn                        : IN    STD_LOGIC_VECTOR(3 downto 0);
-    pcie_rc1_rxp                        : IN    STD_LOGIC_VECTOR(3 downto 0);
-    pcie_rc1_txn                        : OUT   STD_LOGIC_VECTOR(3 downto 0);
-    pcie_rc1_txp                        : OUT   STD_LOGIC_VECTOR(3 downto 0);
-#endif
 
     -- Parity Enable output and 250MHz Clock input
     ah_tbreq                            : OUT   STD_LOGIC;                      -- Timebase command request
@@ -350,25 +290,22 @@ Component capi_bsp_wrap
     pci0_o_txp_out7       : out   std_logic;
     pci0_o_txn_out7       : out   std_logic;
 
+
 -- Flash Interface
-    o_flash_oen           : out   std_logic;
-    o_flash_wen           : out   std_logic;
-    o_flash_rstn          : out   std_logic;
-    o_flash_a             : out   std_logic_vector(25 downto 0);
---    o_flash_a_dup         : out   std_logic_vector(25 to 26);
-    o_flash_advn          : out   std_logic;
-    b_flash_dq            : inout std_logic_vector(15 downto 4);
+    spi_miso_secondary    : in    std_logic;
+    spi_mosi_secondary    : out   std_logic;
+    spi_cen_secondary     : out   std_logic;
 
 -- PTMON PMBUS
-    b_basei2c_scl         : inout std_logic;  -- clock
-    b_basei2c_sda         : inout std_logic;  -- data
-    b_smbus_scl           : inout std_logic;  -- clock
-    b_smbus_sda           : inout std_logic;  -- data
+--    b_basei2c_scl         : inout std_logic;  -- clock
+--    b_basei2c_sda         : inout std_logic;  -- data
+--    b_smbus_scl           : inout std_logic;  -- clock
+--    b_smbus_sda           : inout std_logic;  -- data
 
 --LEDs
-    o_led_red             : out   std_logic_vector(1 downto 0);
-    o_led_green           : out   std_logic_vector(1 downto 0);
-    o_led_blue            : out   std_logic_vector(1 downto 0);
+--    o_led_red             : out   std_logic_vector(1 downto 0);
+--    o_led_green           : out   std_logic_vector(1 downto 0);
+--    o_led_blue            : out   std_logic_vector(1 downto 0);
 
 -- AFU interface (psl_accel)
     -- Command interface
@@ -561,71 +498,21 @@ SIGNAL hd0_cpl_byte_count  : std_logic_vector(0 to 9)   ;
 SIGNAL hd0_cpl_size        : std_logic_vector(0 to 9)   ;
 SIGNAL hd0_cpl_data        : std_logic_vector(0 to 1023);
 
-SIGNAL user_image_q        : std_logic := '1';  --set to 1 to indicate images meant for user location. set to 0 to indicate factory image. 
+SIGNAL user_image_q        : std_logic := '1';  --set to 1 to indicate images meant for user location. set to 0 to indicate factory image.
 ATTRIBUTE dont_touch       : string;
 ATTRIBUTE dont_touch of user_image_q: SIGNAL IS "true";
 SIGNAL gold_factory        : std_logic;
 SIGNAL pci_user_reset      : std_logic;
 SIGNAL pci_clock_125MHz    : std_logic;
 
-#ifdef CONFIG_ENABLE_NVME
--- NVME Reset Logic
-SIGNAL nvme_reset_cnt_q    : std_logic_vector(15 DOWNTO 0) := (OTHERS => '1');
-SIGNAL nvme_reset_n_q      : std_logic := '1';
-SIGNAL nvme_reset_ctl      : std_logic;
-SIGNAL nvme_perst_ctl      : std_logic_vector(3 DOWNTO 0);
-SIGNAL m2_perst_tmp_n      : std_logic_vector(3 DOWNTO 0);
-#endif
-
 BEGIN
-#ifdef CONFIG_ENABLE_NVME
-  -- NVMe Reset Logic
-  --
-  -- Note: generate a 32768x4ns=131us reset pulse for NVMe
-  --
-  nvme_reset : PROCESS (ha0_pclock)
-  BEGIN
-    IF (rising_edge(ha0_pclock)) THEN
-      IF (pci_user_reset  = '1') THEN
-        nvme_reset_cnt_q <= (OTHERS => '0');
-      ELSIF (nvme_reset_cnt_q(15 downto 14) /= "11") THEN
-        nvme_reset_cnt_q <= nvme_reset_cnt_q + '1';
-      END IF;
-      --
-      -- Drive reset to PCIe cores for NVMe
-      if  nvme_reset_cnt_q(15 downto 14) = "11" then
-        nvme_reset_n_q <= NOT nvme_reset_ctl;
-      else
-        nvme_reset_n_q <= '0';
-      end if;
-      --
-      -- Drive resets to NVMe drives at M2 pins
-      m2_perst_tmp_n <= (nvme_reset_cnt_q(15) & nvme_reset_cnt_q(15) &
-                         nvme_reset_cnt_q(15) & nvme_reset_cnt_q(15))
-                        AND NOT nvme_perst_ctl;
-    END IF;
-  END PROCESS nvme_reset;
-
-
-
-  o0: OBUF PORT MAP (I => m2_perst_tmp_n(0), O => m2_perst_n(0));
-  o1: OBUF PORT MAP (I => m2_perst_tmp_n(1), O => m2_perst_n(1));
-  o2: OBUF PORT MAP (I => m2_perst_tmp_n(2), O => m2_perst_n(2));
-  o3: OBUF PORT MAP (I => m2_perst_tmp_n(3), O => m2_perst_n(3));
-
-
-  --
-  -- Clock ties for NVMe drives at M2 pins
-  m2_susclk  <= (OTHERS => '0');
-#endif
 
   a0: psl_accel
     PORT MAP (
 #ifdef CONFIG_ENABLE_DDR4
       -- DDR4 SDRAM Interface
-      -- Nallatech 250S card has one DDR4 SO-DIMMs
-      c0_sys_clk_p                      => c0_sys_clk_p,
-      c0_sys_clk_n                      => c0_sys_clk_n,
+      c0_sys_clk_p                      => c0_ddr4_sys_clk_p,
+      c0_sys_clk_n                      => c0_ddr4_sys_clk_n,
       c0_ddr4_adr                       => c0_ddr4_adr,
       c0_ddr4_ba                        => c0_ddr4_ba,
       c0_ddr4_cke                       => c0_ddr4_cke,
@@ -642,32 +529,6 @@ BEGIN
       c0_ddr4_ck_t                      => c0_ddr4_ck_t,
 #endif
 
-#ifdef CONFIG_ENABLE_NVME
-      -- NVME Interface
-      --
-      -- Reset Input
-      nvme_reset_n                      => nvme_reset_n_q,
-      --
-      -- Clock Inputs for NVMe
-      refclk_nvme_ch0_p                 => pcie_clk1_p,
-      refclk_nvme_ch0_n                 => pcie_clk1_n,
-      refclk_nvme_ch1_p                 => pcie_clk2_p,
-      refclk_nvme_ch1_n                 => pcie_clk2_n,
-      --
-      -- NVMe reset control
-      nvme_reset_ctl                    => nvme_reset_ctl,
-      nvme_perst_ctl                    => nvme_perst_ctl,
-      --
-      -- NVME <-> PCIE Interface
-      pcie_rc0_rxn(3 DOWNTO 0)          => pcie_rc0_rxn(3 DOWNTO 0),
-      pcie_rc0_rxp(3 DOWNTO 0)          => pcie_rc0_rxp(3 DOWNTO 0),
-      pcie_rc0_txn(3 DOWNTO 0)          => pcie_rc0_txn(3 DOWNTO 0),
-      pcie_rc0_txp(3 DOWNTO 0)          => pcie_rc0_txp(3 DOWNTO 0),
-      pcie_rc1_rxn(3 DOWNTO 0)          => pcie_rc1_rxn(3 DOWNTO 0),
-      pcie_rc1_rxp(3 DOWNTO 0)          => pcie_rc1_rxp(3 DOWNTO 0),
-      pcie_rc1_txn(3 DOWNTO 0)          => pcie_rc1_txn(3 DOWNTO 0),
-      pcie_rc1_txp(3 DOWNTO 0)          => pcie_rc1_txp(3 DOWNTO 0),
-#endif
       -- CAPI PSL Interface
       --
       -- Accelerator Command Interface
@@ -842,24 +703,21 @@ BEGIN
       pci0_o_txp_out7     => pci0_o_txp_out7,
       pci0_o_txn_out7     => pci0_o_txn_out7,
 
--- Flash Interface
-      o_flash_oen         => o_flash_oen,
-      o_flash_wen         => o_flash_wen,
-      o_flash_rstn        => o_flash_rstn,
-      o_flash_a           => o_flash_a,
-      o_flash_advn        => o_flash_advn,
-      b_flash_dq          => b_flash_dq,
+-- SPI Flash Interface
+      spi_miso_secondary  => spi_miso_secondary,
+      spi_mosi_secondary  => spi_mosi_secondary,
+      spi_cen_secondary   => spi_cen_secondary,
 
 -- PTMON PMBUS
-      b_basei2c_scl       => b_basei2c_scl,
-      b_basei2c_sda       => b_basei2c_sda,
-      b_smbus_scl         => b_smbus_scl,
-      b_smbus_sda         => b_smbus_sda,
+--      b_basei2c_scl       => b_basei2c_scl,
+--      b_basei2c_sda       => b_basei2c_sda,
+--      b_smbus_scl         => b_smbus_scl,
+--      b_smbus_sda         => b_smbus_sda,
 
 --LEDs
-      o_led_red           => o_led_red,
-      o_led_green         => o_led_green,
-      o_led_blue          => o_led_blue,
+--      o_led_red           => o_led_red,
+--      o_led_green         => o_led_green,
+--      o_led_blue          => o_led_blue,
 
 -- AFU interface (psl_accel)
       -- Command interface
