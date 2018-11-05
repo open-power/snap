@@ -80,8 +80,8 @@ $(SOLUTION_NAME): $(objs)
 # Check for register duplication (0x184/Action_Output_o).
 #
 check: $(syn_dir)
-	@echo -n "   Checking for critical warnings during HLS synthesis .... "
-	@grep -A8 CRITICAL $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ; \
+	@echo -n "   Checking for all critical warnings during HLS synthesis .... "
+	@grep -A8 -i CRITICAL $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ; \
 		test $$? = 1
 	@echo "OK"
 	@echo -n "   Checking for reserved MMIO area during HLS synthesis ... "
