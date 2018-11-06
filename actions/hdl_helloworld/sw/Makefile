@@ -39,7 +39,7 @@ endif
 endif
 
 CPPFLAGS+= -g
-CXX=g++
+CXX=gcc
 
 all: all_build
 
