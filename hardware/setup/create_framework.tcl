@@ -204,7 +204,7 @@ foreach ip_xci [glob -nocomplain -dir $action_ip_dir */*.xci] {
 # Add NVME
 if { $nvme_used == TRUE } {
   puts "                        adding NVMe block design"
-  set_property  ip_repo_paths $hdl_dir/nvme/ [current_project]
+  set_property  ip_repo_paths [concat [get_property ip_repo_paths [current_project]] $hdl_dir/nvme/] [current_project]
   update_ip_catalog  >> $log_file
   add_files -norecurse                          $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd  >> $log_file
   export_ip_user_files -of_objects  [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] -lib_map_path [list {{ies=$root_dir/viv_project/framework.cache/compile_simlib/ies}}] -no_script -sync -force -quiet

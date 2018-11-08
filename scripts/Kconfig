@@ -206,6 +206,19 @@ choice
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
 
+
+	config BD_HELLOWORLD
+		bool "BD HelloWorld"
+		help
+		  This is the simplest example to start with:
+		  - Reading text from the server memory
+		  - Processing changing case of the text
+		  - Writing back the text to the server memory
+		  This example is written in C and compiled with HLS
+		depends on N250S
+		select FORCE_SDRAM_OR_BRAM
+		select FORCE_NVME
+
 	config HLS_MEMCOPY
 		bool "HLS Memcopy"
 		help
@@ -288,7 +301,7 @@ choice
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
-	
+
 	config HLS_MM_TEST
 		bool "HLS WED/STATUS Sharing and MatrixMultiply"
 		help
