@@ -513,7 +513,7 @@ config USE_PRFLOW
 config ENABLE_ACTION_CLK_DERATE
 	bool "Derate by 10% the Action clock"
 	default n
-	depends on N250SP
+	depends on CAPI20
 	help
 	  By derating the action clock, the routing in the FPGA may be easier.
 	  Default clock is 250MHz (4ns).
