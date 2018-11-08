@@ -317,13 +317,15 @@ choice
 		select DISABLE_NVME
 
 	config HLS_SCATTER_GATHER
-		bool "HLS Scatter Gather"
+		bool "HLS Scatter Gather (CAPI2.0 only)"
 		help
 		  This example will help user understanding how to optimize code for scatter gather memory access:
+		  It requires to use a derated (slower) Action clock to close the timing so requires CAPI2.0.
 		  This example is written in C and compiled with HLS
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
+		select ENABLE_ACTION_CLK_DERATE
 
 endchoice
 
@@ -507,6 +509,21 @@ config USE_PRFLOW
 	string
 	default "TRUE" if ENABLE_PRFLOW
 	default "FALSE" if ! ENABLE_PRFLOW
+
+config ENABLE_ACTION_CLK_DERATE
+	bool "Derate by 10% the Action clock"
+	default n
+	depends on N250SP
+	help
+	  By derating the action clock, the routing in the FPGA may be easier.
+	  Default clock is 250MHz (4ns).
+	  This option will set the clock to 225MHz (5ns) for the routing phase but keep
+	  the default clock (4ns) for HLS to better work.
+
+config FPGA_ACTION_CLK
+	string
+	default "225MHZ"  if ENABLE_ACTION_CLK_DERATE
+	default "250MHZ" if ! ENABLE_ACTION_CLK_DERATE
 
 config ENABLE_ILA
 	bool "Enable ILA Debug (Definition of $ILA_SETUP_FILE required)"
