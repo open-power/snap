@@ -175,6 +175,12 @@ if { $simulator != "nosim" } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_ad8k5.sv  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_ad8k5.sv]
   }
+  # DDR4 Sim Files
+  if { ($fpga_card == "AD9V3") && ($sdram_used == "TRUE") } {
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_ad9v3.sv  >> $log_file
+    set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_ad9v3.sv]
+  }
 }
 
 # Add IP
@@ -292,6 +298,13 @@ if { $fpga_card == "ADKU3" } {
   if { $sdram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]
+  }
+} elseif {$fpga_card == "AD9V3" } {
+  if { $sdram_used == "TRUE" } {
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/AD9V3/snap_ddr4_b0pblock.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/AD9V3/snap_ddr4_b0pblock.xdc]
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/AD9V3/snap_ddr4_b0pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/AD9V3/snap_ddr4_b0pins.xdc]
   }
   if { $nvme_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_refclk100.xdc
