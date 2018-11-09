@@ -64,7 +64,7 @@ run_hls_script.tcl: $(SNAP_ROOT)/actions/scripts/create_run_hls_script.sh
 		-p $(PART_NUMBER)		\
 		-f "$(srcs)" 			\
 		-s $(SNAP_ROOT) 		\
-		-x $(HLS_CFLAGS) > $@
+		-x "$(HLS_CFLAGS)" > $@
 
 $(SOLUTION_NAME): $(objs)
 	$(CXX) -o $@ $^
