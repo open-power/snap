@@ -14,8 +14,8 @@
 # limitations under the License.
 #
 
-#vhd_srcs=$(wildcard *.vhd_source)
-#vhd_files=$(vhd_srcs:.vhd_source=.vhd)
+vhd_srcs=$(wildcard *.vhd_source)
+vhd_files=$(vhd_srcs:.vhd_source=.vhd)
 
 ACTION_ROOT ?= $(PWD)/..
 

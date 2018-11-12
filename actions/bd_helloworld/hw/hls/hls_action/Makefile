@@ -37,11 +37,11 @@ endif
 endif
 
 # This is solution specific. Check if we can replace this by generics too.
-SOLUTION_NAME ?= nvme_memcopy
-SOLUTION_DIR ?= hlsNvmeMemcopy
-srcs += hls_nvme_memcopy.cpp
+SOLUTION_NAME ?= helloworld
+SOLUTION_DIR ?= hlsUpperCase
+srcs += action_uppercase.cpp 
 
-# If you have the action code outside of the default snap directory structure,
+# If you have the action code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/hls.mk
 include $(SNAP_ROOT)/actions/hls.mk
 

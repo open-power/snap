@@ -210,14 +210,8 @@ choice
 	config BD_HELLOWORLD
 		bool "BD HelloWorld"
 		help
-		  This is the simplest example to start with:
-		  - Reading text from the server memory
-		  - Processing changing case of the text
-		  - Writing back the text to the server memory
-		  This example is written in C and compiled with HLS
-		depends on N250S
-		select FORCE_SDRAM_OR_BRAM
-		select FORCE_NVME
+		  This is an example demonstrating the use of a Vivado 
+		  block design as the top-level action component.
 
 	config HLS_MEMCOPY
 		bool "HLS Memcopy"

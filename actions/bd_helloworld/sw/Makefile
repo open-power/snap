@@ -38,12 +38,12 @@ endif
 
 # This is solution specific. Check if we can replace this by generics too.
 
-snap_nvme_memcopy: sw_action_nvme_memcopy.o
-snap_nvme_memcopy_objs = sw_action_nvme_memcopy.o
+snap_helloworld: action_lowercase.o
+snap_helloworld_objs = action_lowercase.o
 
-projs += snap_nvme_memcopy
+projs += snap_helloworld
 
-# If you have the host code outside of the default snap directory structure,
+# If you have the host code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/software.mk
 include $(SNAP_ROOT)/actions/software.mk
 

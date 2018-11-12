@@ -1,8 +1,8 @@
-#ifndef __ACTION_NVME_MEMCOPY_H__
-#define __ACTION_NVME_MEMCOPY_H__
+#ifndef __ACTION_CHANGECASE_H__
+#define __ACTION_CHANGECASE_H__
 
 /*
- * Copyright 2016, 2017 International Business Machines
+ * Copyright 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,20 +23,18 @@
 extern "C" {
 #endif
 
-#define NVME_MEMCOPY_ACTION_TYPE 0x10141007
+/* This number is unique and is declared in ~snap/ActionTypes.md */
+#define HELLOWORLD_ACTION_TYPE 0x10141008
 
-typedef struct nvme_memcopy_job {
+/* Data structure used to exchange information between action and application */
+/* Size limit is 108 Bytes */
+typedef struct helloworld_job {
 	struct snap_addr in;	/* input data */
 	struct snap_addr out;   /* offset table */
-    	uint64_t drive_id;
-	uint64_t maxbuffer_size;        // this defines the maximum size for a transfer
-	uint64_t sdram_buff_fwd_offset; // default to 0x00000000
-        uint64_t sdram_buff_rev_offset; // default to 0x80000000 (2GB is a half of SDRAM size)
-
-} nvme_memcopy_job_t;
+} helloworld_job_t;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif	/* __ACTION_NVME_MEMCOPY_H__ */
+#endif	/* __ACTION_CHANGECASE_H__ */
