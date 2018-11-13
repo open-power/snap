@@ -35,7 +35,6 @@ uint64_t idx_ram[NUM_MAX];
 
 static void read_scattered_mem(snap_membus_t *din_gmem, uint64_t * idx_ram, uint32_t num, uint32_t size_scatter)
 {
-
 #pragma HLS ARRAY_PARTITION variable=blockram block factor=16
 	uint32_t i, k;
 loop_rs_1: for (i = 0; i < num; i++) {
@@ -69,11 +68,8 @@ static int process_action(snap_membus_t *din_gmem,
 
 	uint32_t offset;
 
-
 	stat[1] = 0;
 	stat[0] = 0;
-
-
 
 	// Read WED
 	memcpy(wed, (snap_membus_t *) (din_gmem + WED_idx), 128);
@@ -92,25 +88,30 @@ static int process_action(snap_membus_t *din_gmem,
 	//mode: bit 0: 0:SW gathers, 1: FPGA gathers
 	//      bit 1: 1: Copy data back for checking
 	//      bit 2: 1: Update Status Cacheline
+	stat[0](31,0) = ST_READ_WED_DONE;
 	if((mode & 0x4) == 4 ) {	
-		stat[0](31,0) = ST_READ_WED_DONE;
 		memcpy((snap_membus_t *) (dout_gmem + ST_idx), stat, 128);
 	}
 		
 	// Read Memory
 	if((mode & 0x1) == 0) {
+		// SW gathers: move data from host to FPGA BRAM
 		memcpy(blockram, (snap_membus_t *) (din_gmem + G_idx), G_size);
 	} else {
+		// FPGA gathers: 
 		//Read AS (address list) first
 		memcpy(as_ram, (snap_membus_t *) (din_gmem + AS_idx), num*8);
 
+		//read scattered blocks address from AS word
 		for (i = 0; i < num; i++ ) {
+		#pragma HLS PIPELINE
 			j = i%8;
 			idx_ram[i] =  as_ram[i/(BPERDW/8)](64*j + 63, 64*j) >> ADDR_RIGHT_SHIFT;
 		}
-
+		// Read all scattered blocks
 		read_scattered_mem(din_gmem, idx_ram, num, size_scatter);
 	}
+	stat[0](31,0) = ST_READ_DATA_DONE;
 
 
 	if((mode & 0x2) == 2) {
