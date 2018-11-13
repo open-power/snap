@@ -26,15 +26,15 @@
 # NOTE: Does NOT include twin-die signals: CKE1, CS#1, ODT1. If targeting a twin-die
 #       configuration, also include ddr4sdram_locs_b1_twin_die.xdc in your project.
 #
+create_clock -period 3.333 -name c1_ddr4_sys_clk_p [get_ports c1_ddr4_sys_clk_p]
+set_property PACKAGE_PIN AN25 [get_ports {c1_ddr4_sys_clk_p}]        ; # IO_L11P_T1U_N8_GC_94
+set_property PACKAGE_PIN AN26 [get_ports {c1_ddr4_sys_clk_n}]        ; # IO_L11N_T1U_N9_GC_94
 
-set_property PACKAGE_PIN AN25 [get_ports {c1_sys_clk_p}]        ; # IO_L11P_T1U_N8_GC_94
-set_property PACKAGE_PIN AN26 [get_ports {c1_sys_clk_n}]        ; # IO_L11N_T1U_N9_GC_94
+set_property IOSTANDARD LVDS [get_ports {c1_ddr4_sys_clk_p}]
+set_property IOSTANDARD LVDS [get_ports {c1_ddr4_sys_clk_n}]
 
-set_property IOSTANDARD LVDS [get_ports {c1_sys_clk_p}]
-set_property IOSTANDARD LVDS [get_ports {c1_sys_clk_n}]
-
-set_property DIFF_TERM_ADV TERM_100 [get_ports {c1_sys_clk_p}]
-set_property DIFF_TERM_ADV TERM_100 [get_ports {c1_sys_clk_n}]
+set_property DIFF_TERM_ADV TERM_100 [get_ports {c1_ddr4_sys_clk_p}]
+set_property DIFF_TERM_ADV TERM_100 [get_ports {c1_ddr4_sys_clk_n}]
 
 
 set_property PACKAGE_PIN AG9  [get_ports {c1_ddr4_dqs_t[0]}]    ; # IO_L4P_T0U_N6_DBC_AD7P_68
