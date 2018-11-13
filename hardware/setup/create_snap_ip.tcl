@@ -332,7 +332,7 @@ if { $create_ddr3 == "TRUE" } {
 
 #DDR4 create ddr4sdramm with ECC (N250S or N250SP)
 if { $create_ddr4 == "TRUE" } {
-  puts "                        generating IP ddr4sdram"
+  puts "                        generating IP ddr4sdram for $fpga_card"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                    \
                       CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-083E}                          \
@@ -364,7 +364,7 @@ if { $create_ddr4 == "TRUE" } {
 }
 #DDR4 create ddr4sdramm with ECC (RCXVUP)
 if { $create_ddr4_rcxvup == "TRUE" } {
-  puts "                        generating IP ddr4sdram"
+  puts "                        generating IP ddr4sdram for $fpga_card"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                    \
                       CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-075E}                          \
@@ -394,7 +394,7 @@ if { $create_ddr4_rcxvup == "TRUE" } {
 }
 #DDR4 create ddr4sdramm without ECC (FX609)
 if { $create_ddr4_fx609 == "TRUE" } {
-  puts "                        generating IP ddr4sdram"
+  puts "                        generating IP ddr4sdram for $fpga_card"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                    \
                       CONFIG.C0.DDR4_MemoryPart {MT40A512M16HA-083E}                          \
@@ -424,7 +424,7 @@ if { $create_ddr4_fx609 == "TRUE" } {
 }
 #DDR4 create ddr4sdramm with ECC (S241)
 if { $create_ddr4_s241 == "TRUE" } {
-  puts "                        generating IP ddr4sdram"
+  puts "                        generating IP ddr4sdram for $fpga_card"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                    \
                       CONFIG.C0.DDR4_MemoryPart {MT40A1G8WE-075E}                             \
@@ -454,7 +454,7 @@ if { $create_ddr4_s241 == "TRUE" } {
 }
 #DDR4 create ddr4sdramm with ECC (S121B)
 if { $create_ddr4_s121b == "TRUE" } {
-  puts "	                generating IP ddr4sdram"
+  puts "	                generating IP ddr4sdram for $fpga_card"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                   \
                       CONFIG.C0.DDR4_MemoryPart {MT40A1G8PM-075E}                            \
@@ -484,7 +484,7 @@ if { $create_ddr4_s121b == "TRUE" } {
 }
 #DDR4 create ddr4sdramm with ECC (AD8K5)
 if { $create_ddr4_ad8k5 == "TRUE" } {
-  puts "	                generating IP ddr4sdram"
+  puts "	                generating IP ddr4sdram for $fpga_card"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                     \
                       CONFIG.C0.DDR4_InputClockPeriod {3332}                                   \
@@ -499,7 +499,7 @@ if { $create_ddr4_ad8k5 == "TRUE" } {
                       CONFIG.C0.DDR4_Ecc {true} 	  				       \
                       CONFIG.C0.DDR4_AxiDataWidth {512} 				       \
                       CONFIG.C0.DDR4_AxiAddressWidth {33} 				       \
-                      CONFIG.C0.DDR4_AxiIDWidth {4} 
+                      CONFIG.C0.DDR4_AxiIDWidth {4}                                            \
                      ] [get_ips ddr4sdram] >> $log_file
   set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]                    >> $log_file
   generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]                    >> $log_file
@@ -513,7 +513,7 @@ if { $create_ddr4_ad8k5 == "TRUE" } {
 }
 #DDR4 create ddr4sdramm with ECC (AD9V3)
 if { $create_ddr4_ad9v3 == "TRUE" } {
-  puts "	                generating IP ddr4sdram"
+  puts "	                generating IP ddr4sdram for $fpga_card"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                    \
                       CONFIG.C0.DDR4_TimePeriod {833}                                         \
@@ -538,7 +538,7 @@ if { $create_ddr4_ad9v3 == "TRUE" } {
   generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]                    >> $log_file
   export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -no_script -force  >> $log_file
   export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
-  puts "	                AC : EXPORTED SIMS"
+
   #DDR4 create ddr4sdramm example design
   puts "	                generating ddr4sdram example design"
   open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
