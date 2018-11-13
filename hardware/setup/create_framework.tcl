@@ -305,6 +305,13 @@ if { $fpga_card == "ADKU3" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]
   }
+} elseif {$fpga_card == "AD9V3" } {
+  if { $sdram_used == "TRUE" } {
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/AD9V3/snap_ddr4_b0pblock.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/AD9V3/snap_ddr4_b0pblock.xdc]
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/AD9V3/snap_ddr4_b0pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/AD9V3/snap_ddr4_b0pins.xdc]
+  }
   if { $nvme_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_refclk100.xdc
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_nvme.xdc

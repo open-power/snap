@@ -1386,6 +1386,25 @@ module top (
     .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
     );
+#else
+#ifdef CONFIG_AD9V3  
+  ddr4_dimm_ad9v3 ddr4_dimm_ad9v3 (
+    .sys_reset              (~sys_reset_n_q),
+    .c0_ddr4_act_n          (c0_ddr4_act_n),
+    .c0_ddr4_adr            (c0_ddr4_adr),
+    .c0_ddr4_ba             (c0_ddr4_ba),
+    .c0_ddr4_bg             (c0_ddr4_bg),
+    .c0_ddr4_cke            (c0_ddr4_cke),
+    .c0_ddr4_odt            (c0_ddr4_odt),
+    .c0_ddr4_cs_n           (c0_ddr4_cs_n),
+    .c0_ddr4_ck_t           (c0_ddr4_ck_t),
+    .c0_ddr4_ck_c           (c0_ddr4_ck_c),
+    .c0_ddr4_reset_n        (c0_ddr4_reset_n),
+    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n),
+    .c0_ddr4_dq             (c0_ddr4_dq),
+    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),
+    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
+    );
 
 #else
   ddr4_dimm ddr4_dimm (
@@ -1405,6 +1424,7 @@ module top (
     .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
     );
+#endif
 #endif
 #endif
 #endif

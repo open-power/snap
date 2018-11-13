@@ -511,11 +511,9 @@ if { $create_ddr4_ad8k5 == "TRUE" } {
   puts "	                generating ddr4sdram example design"
   open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
 }
-
 #DDR4 create ddr4sdramm with ECC (AD9V3)
-#same params than AD8K5
 if { $create_ddr4_ad9v3 == "TRUE" } {
-  puts "                        generating IP ddr4sdram for AD9V3"
+  puts "	                generating IP ddr4sdram"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                    \
                       CONFIG.C0.DDR4_TimePeriod {833}                                         \
@@ -540,11 +538,10 @@ if { $create_ddr4_ad9v3 == "TRUE" } {
   generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]                    >> $log_file
   export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -no_script -force  >> $log_file
   export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
-
+  puts "	                AC : EXPORTED SIMS"
   #DDR4 create ddr4sdramm example design
   puts "	                generating ddr4sdram example design"
   open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
 }
-
 puts "\[CREATE SNAP IPs.....\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 close_project >> $log_file
