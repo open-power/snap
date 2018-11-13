@@ -27,7 +27,7 @@
 #       configuration, also include ddr4sdram_locs_b0_twin_die.xdc in your project.
 #
 #add create_clock - 300MHz per default
-create_clock -period 3.333 -name c0_ddr4_sys_clk_p [get_ports c0_ddr4_sys_clk_p]
+create_clock -period 3.332 -name c0_ddr4_sys_clk_p [get_ports c0_ddr4_sys_clk_p]
 set_property PACKAGE_PIN G31 [get_ports {c0_ddr4_sys_clk_p}]        ; # IO_L13P_T2L_N0_GC_QBC_44
 set_property PACKAGE_PIN G32 [get_ports {c0_ddr4_sys_clk_n}]        ; # IO_L13N_T2L_N1_GC_QBC_44
 
