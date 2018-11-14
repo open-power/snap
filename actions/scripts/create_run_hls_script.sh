@@ -33,7 +33,7 @@ wrapper=hls_action
 #   xcku115-flva1517-2-e
 part_number=$FPGACHIP
 files="kernel.cpp"
-clk_period=4
+clock_period=4
 
 # Print usage message helper function
 function usage() {
@@ -118,7 +118,7 @@ foreach file [ list ${files} ] {
 open_solution "${name}"
 set_part ${part_number}
 
-create_clock -period ${clk_period} -name default
+create_clock -period ${clock_period} -name default
 config_interface -m_axi_addr64=true
 #config_rtl -reset all -reset_level low
 

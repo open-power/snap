@@ -127,6 +127,7 @@ check_snap_settings:
 		echo "                        PSL_DCP         = $(PSL_DCP)"; \
 	elif [ "$(CAPI_VER)" == "capi20" ]; then \
 		echo "                        PSL9_IP         = $(PSL9_IP)"; \
+		echo "                        FPGA ACTION CLK = $(FPGA_ACTION_CLK)"; \
 	fi
 	@echo "                        FPGACARD        = $(FPGACARD)"
 	@echo "                        FPGACHIP        = $(FPGACHIP)"
