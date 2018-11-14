@@ -132,6 +132,15 @@ static void usage(const char *prog)
         "echo FPGA gathers directly in server RAM 1024 blocks of 2kB non-contiguous into his memory\n"
         "snap_scatter_gather -m1 -n1024 -s2048 -K2 -t200\n"
         "\n",
+        "----------------------------\n"
+        "Example for simulation:\n"
+        "----------------------------\n"
+        "echo FPGA fetches 256 scatter-gather blocks of 256B directly in RAM - data checking afterwards\n"
+        "snap_scatter_gather -n256 -s256 -m3\n"
+        "\n",
+        "echo CPU collect 256 scatter-gather blocks of 256B then FPGA pulls the data - data checking afterwards\n"
+        "snap_scatter_gather -n256 -s256 -m2\n"
+        "\n",
         prog);
 }
 
