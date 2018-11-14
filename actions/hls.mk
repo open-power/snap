@@ -87,10 +87,17 @@ $(SOLUTION_NAME): $(objs)
 #      to strange problems later on. So let us work on fixing the design
 #      if they occur. Rather than challenging our luck.
 #
+# Check that last HLS compilation of the action was done with the same clock period. Exit if occurs.
+# Check for CRITICAL warnings and exit if those occur. Add more if needed.
 # Check for critical warnings and exit if those occur. Add more if needed.
 # Check for reserved HLS MMIO reg at offset 0x17c.
 #
 check: $(syn_dir)
+	@if [ $(HLS_ACTION_CLOCK) != $(shell grep "Setting up clock" $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log |cut -d " " -f 12|cut -d "n" -f 1) ]; then \
+		echo " ERROR: Action was last compiled with a different HLS clock."; \
+		echo " Please force the recompilation with a 'make clean' command";     \
+		echo " ---------------------------------------------------------- "; exit -1; \
+	fi
 	@echo -n "   Checking for critical warnings during HLS synthesis .... "
 	@grep -A8 CRITICAL $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ;  \
 		test $$? = 1 
@@ -99,16 +106,15 @@ check: $(syn_dir)
 		echo -n "   Checking for critical timings during HLS synthesis  .... ";    \
         	grep -A8 critical $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ;     \
 		if [ $$? -eq 0 ]; then \
-		  echo "   --------------------------------------------------------------------------- ";    \
-                  echo -e "TIMING ERROR: Please correct your action code before going further"!; exit -1; \
+                  echo "TIMING ERROR: Please correct your action code before going further"!; \
+		  echo "------------------------------------------------------------------ "; exit -1; \
           	fi; \
 	  	echo "OK";                                                                    \
 	else \
 		echo "   --------------------------------------------------------------------------- ";    \
 		echo "   By defining a HLS_CLOCK in snap_env.sh, automatic critical timing checking is disabled"; \
-		echo "   FYI action was last compiled with following HLS clock:"; \
+		echo "   FYI action was compiled with following HLS clock:"; \
         	grep "Setting up clock" $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log;     \
-		echo "   You may need to do a make clean to regenerate the HLS synthesis if value was modified"; \
 		echo "   --------------------------------------------------------------------------- ";    \
 		echo "   please CHECK the below list (if any) for HLS synthesis critical timing .... ";    \
 		echo "   --------------------------------------------------------------------------- ";    \
@@ -117,12 +123,12 @@ check: $(syn_dir)
 		if [ $$? -ne 0 ]; then \
 	  	  echo "OK";                                                                    \
 		fi; \
-		sleep 2; \
 	fi
 	@echo -n "   Checking for reserved MMIO area during HLS synthesis ... "
 	@grep -A8 0x17c $(syn_dir)/vhdl/$(WRAPPER)_ctrl_reg_s_axi.vhd | grep reserved > \
 		/dev/null; test $$? = 0;
 	@echo "OK"
+	@sleep 2; 
 
 clean:
 	@$(RM) -r $(SOLUTION_DIR)* run_hls_script.tcl *~ *.log \
