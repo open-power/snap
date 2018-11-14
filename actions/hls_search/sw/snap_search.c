@@ -574,8 +574,10 @@ int main(int argc, char *argv[])
                         break;
 #else
                         printf(" >>> Streaming method (%d) NOT IMPLEMENTED \n", method);
+			// Force to naive method
 			method = 1;
-			break;
+                        printf(" >>> Default: Naive method (%d) \n", method);
+                        break;
 #endif
                 default:
                         printf(" >>> Default: Naive method (%d) \n", method);
