@@ -117,7 +117,7 @@ for arg in ${args[*]} ; do
 		echo -n "Run $i: "
 	fi
 #eval "echo 3 > /proc/sys/vm/drop_caches" 
-	cmd="snap_scatter_gather -C${snap_card} -n$num -s$scatter_size $arg \
+	cmd="snap_scatter_gather -C${snap_card} -n$num -s$scatter_size -t250 $arg \
 			>> snap_scatter_gather.log 2>&1"
 	if [ $verbose -eq 1 ]; then
 		echo -n "$cmd ..."
