@@ -53,38 +53,13 @@ ENTITY psl_fpga IS
     pci_pi_refclk_n0      : in    std_logic;     -- 100MHz Refclk
 
 -- Xilinx requires both pins of differential transceivers
-    pci0_i_rxp_in0        : in    std_logic;
-    pci0_i_rxn_in0        : in    std_logic;
-    pci0_i_rxp_in1        : in    std_logic;
-    pci0_i_rxn_in1        : in    std_logic;
-    pci0_i_rxp_in2        : in    std_logic;
-    pci0_i_rxn_in2        : in    std_logic;
-    pci0_i_rxp_in3        : in    std_logic;
-    pci0_i_rxn_in3        : in    std_logic;
-    pci0_i_rxp_in4        : in    std_logic;
-    pci0_i_rxn_in4        : in    std_logic;
-    pci0_i_rxp_in5        : in    std_logic;
-    pci0_i_rxn_in5        : in    std_logic;
-    pci0_i_rxp_in6        : in    std_logic;
-    pci0_i_rxn_in6        : in    std_logic;
-    pci0_i_rxp_in7        : in    std_logic;
-    pci0_i_rxn_in7        : in    std_logic;
-    pci0_o_txp_out0       : out   std_logic;
-    pci0_o_txn_out0       : out   std_logic;
-    pci0_o_txp_out1       : out   std_logic;
-    pci0_o_txn_out1       : out   std_logic;
-    pci0_o_txp_out2       : out   std_logic;
-    pci0_o_txn_out2       : out   std_logic;
-    pci0_o_txp_out3       : out   std_logic;
-    pci0_o_txn_out3       : out   std_logic;
-    pci0_o_txp_out4       : out   std_logic;
-    pci0_o_txn_out4       : out   std_logic;
-    pci0_o_txp_out5       : out   std_logic;
-    pci0_o_txn_out5       : out   std_logic;
-    pci0_o_txp_out6       : out   std_logic;
-    pci0_o_txn_out6       : out   std_logic;
-    pci0_o_txp_out7       : out   std_logic;
-    pci0_o_txn_out7       : out   std_logic;
+    pcie_rxp              : in  std_logic_vector(15 downto 0)   ;
+    pcie_rxn              : in  std_logic_vector(15 downto 0)   ;
+    pcie_txp              : out std_logic_vector(15 downto 0)   ;
+    pcie_txn              : out std_logic_vector(15 downto 0)   ;
+
+    --pci0_i_rxp_in0        : in    std_logic;
+    --pci0_o_txp_out0       : out   std_logic;
 
 -- Flash Interface
     spi_miso_secondary    : in    std_logic;
@@ -257,38 +232,12 @@ Component capi_bsp_wrap
     pci_pi_refclk_n0      : in    std_logic;     -- 100MHz Refclk
 
 -- Xilinx requires both pins of differential transceivers
-    pci0_i_rxp_in0        : in    std_logic;
-    pci0_i_rxn_in0        : in    std_logic;
-    pci0_i_rxp_in1        : in    std_logic;
-    pci0_i_rxn_in1        : in    std_logic;
-    pci0_i_rxp_in2        : in    std_logic;
-    pci0_i_rxn_in2        : in    std_logic;
-    pci0_i_rxp_in3        : in    std_logic;
-    pci0_i_rxn_in3        : in    std_logic;
-    pci0_i_rxp_in4        : in    std_logic;
-    pci0_i_rxn_in4        : in    std_logic;
-    pci0_i_rxp_in5        : in    std_logic;
-    pci0_i_rxn_in5        : in    std_logic;
-    pci0_i_rxp_in6        : in    std_logic;
-    pci0_i_rxn_in6        : in    std_logic;
-    pci0_i_rxp_in7        : in    std_logic;
-    pci0_i_rxn_in7        : in    std_logic;
-    pci0_o_txp_out0       : out   std_logic;
-    pci0_o_txn_out0       : out   std_logic;
-    pci0_o_txp_out1       : out   std_logic;
-    pci0_o_txn_out1       : out   std_logic;
-    pci0_o_txp_out2       : out   std_logic;
-    pci0_o_txn_out2       : out   std_logic;
-    pci0_o_txp_out3       : out   std_logic;
-    pci0_o_txn_out3       : out   std_logic;
-    pci0_o_txp_out4       : out   std_logic;
-    pci0_o_txn_out4       : out   std_logic;
-    pci0_o_txp_out5       : out   std_logic;
-    pci0_o_txn_out5       : out   std_logic;
-    pci0_o_txp_out6       : out   std_logic;
-    pci0_o_txn_out6       : out   std_logic;
-    pci0_o_txp_out7       : out   std_logic;
-    pci0_o_txn_out7       : out   std_logic;
+    pcie_rxp              : in  std_logic_vector(15 downto 0)   ;
+    pcie_rxn              : in  std_logic_vector(15 downto 0)   ;
+    pcie_txp              : out std_logic_vector(15 downto 0)   ;
+    pcie_txn              : out std_logic_vector(15 downto 0)   ;
+    --pci0_i_rxp_in0        : in    std_logic;
+    --pci0_o_txp_out0       : out   std_logic;
 
 
 -- Flash Interface
@@ -670,38 +619,10 @@ BEGIN
       pci_pi_refclk_n0    => pci_pi_refclk_n0,     -- 100MHz Refclk
 
 -- Xilinx requires both pins of differential transceivers
-      pci0_i_rxp_in0      => pci0_i_rxp_in0,
-      pci0_i_rxn_in0      => pci0_i_rxn_in0,
-      pci0_i_rxp_in1      => pci0_i_rxp_in1,
-      pci0_i_rxn_in1      => pci0_i_rxn_in1,
-      pci0_i_rxp_in2      => pci0_i_rxp_in2,
-      pci0_i_rxn_in2      => pci0_i_rxn_in2,
-      pci0_i_rxp_in3      => pci0_i_rxp_in3,
-      pci0_i_rxn_in3      => pci0_i_rxn_in3,
-      pci0_i_rxp_in4      => pci0_i_rxp_in4,
-      pci0_i_rxn_in4      => pci0_i_rxn_in4,
-      pci0_i_rxp_in5      => pci0_i_rxp_in5,
-      pci0_i_rxn_in5      => pci0_i_rxn_in5,
-      pci0_i_rxp_in6      => pci0_i_rxp_in6,
-      pci0_i_rxn_in6      => pci0_i_rxn_in6,
-      pci0_i_rxp_in7      => pci0_i_rxp_in7,
-      pci0_i_rxn_in7      => pci0_i_rxn_in7,
-      pci0_o_txp_out0     => pci0_o_txp_out0,
-      pci0_o_txn_out0     => pci0_o_txn_out0,
-      pci0_o_txp_out1     => pci0_o_txp_out1,
-      pci0_o_txn_out1     => pci0_o_txn_out1,
-      pci0_o_txp_out2     => pci0_o_txp_out2,
-      pci0_o_txn_out2     => pci0_o_txn_out2,
-      pci0_o_txp_out3     => pci0_o_txp_out3,
-      pci0_o_txn_out3     => pci0_o_txn_out3,
-      pci0_o_txp_out4     => pci0_o_txp_out4,
-      pci0_o_txn_out4     => pci0_o_txn_out4,
-      pci0_o_txp_out5     => pci0_o_txp_out5,
-      pci0_o_txn_out5     => pci0_o_txn_out5,
-      pci0_o_txp_out6     => pci0_o_txp_out6,
-      pci0_o_txn_out6     => pci0_o_txn_out6,
-      pci0_o_txp_out7     => pci0_o_txp_out7,
-      pci0_o_txn_out7     => pci0_o_txn_out7,
+      pcie_rxp            => pcie_rxp , -- Input
+      pcie_rxn            => pcie_rxn , -- Input
+      pcie_txp            => pcie_txp , -- Output
+      pcie_txn            => pcie_txn , -- Output
 
 -- SPI Flash Interface
       spi_miso_secondary  => spi_miso_secondary,
