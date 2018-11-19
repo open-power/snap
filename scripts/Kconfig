@@ -196,7 +196,7 @@ choice
 		  in snap_env.sh to the directory of the action source code.
 
 	config HLS_HELLOWORLD
-		bool "HLS HelloWorld (Minimum example written in Verilog)"
+		bool "HLS HelloWorld (Minimum example written in C)"
 		help
 		  This is the simplest example to start with:
 		  - Reading text from the server memory
