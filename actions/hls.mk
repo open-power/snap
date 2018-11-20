@@ -31,7 +31,7 @@ PART_NUMBER ?= $(FPGACHIP)
 snap_env_sh = $(SNAP_ROOT)/snap_env.sh
 HLS_ACTION_CLOCK_DEFAULT = 4
 ifneq ("$(wildcard $(snap_env_sh))","")
-  HLS_ACTION_CLOCK = $(shell grep HLS_CLOCK_PERIOD $(snap_env_sh) |cut -d = -f 2 | tr -d '"')
+  HLS_ACTION_CLOCK = $(shell grep HLS_CLOCK_PERIOD_CONSTRAINT $(snap_env_sh) | cut -d = -f 2 | tr -d 'ns"')
   ifeq "$(HLS_ACTION_CLOCK)" ""
     HLS_ACTION_CLOCK = $(HLS_ACTION_CLOCK_DEFAULT)
   endif
@@ -112,7 +112,7 @@ check: $(syn_dir)
 	  	echo "OK";                                                                    \
 	else \
 		echo "   --------------------------------------------------------------------------- ";    \
-		echo "   By defining a HLS_CLOCK in snap_env.sh, automatic critical timing checking is disabled"; \
+		echo "   By defining HLS_CLOCK_PERIOD_CONSTRAINT in snap_env.sh, automatic critical timing checking is disabled"; \
 		echo "   FYI action was compiled with following HLS clock:"; \
         	grep "Setting up clock" $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log;     \
 		echo "   --------------------------------------------------------------------------- ";    \
