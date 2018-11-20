@@ -27,6 +27,17 @@ endif
 
 PART_NUMBER ?= $(FPGACHIP)
 
+#Reading HLS_CLOCK_PERIOD which can be set in snap_env.sh
+snap_env_sh = $(SNAP_ROOT)/snap_env.sh
+HLS_ACTION_CLOCK_DEFAULT = 4
+ifneq ("$(wildcard $(snap_env_sh))","")
+  HLS_ACTION_CLOCK = $(shell grep HLS_CLOCK_PERIOD_CONSTRAINT $(snap_env_sh) | cut -d = -f 2 | tr -d 'ns"')
+  ifeq "$(HLS_ACTION_CLOCK)" ""
+    HLS_ACTION_CLOCK = $(HLS_ACTION_CLOCK_DEFAULT)
+  endif
+endif
+
+
 HLS_CFLAGS ?= ""
 
 # The wrapper name must match a function in the HLS sources which is
@@ -62,6 +73,7 @@ run_hls_script.tcl: $(SNAP_ROOT)/actions/scripts/create_run_hls_script.sh
 		-d $(SOLUTION_DIR) 		\
 		-w $(WRAPPER)			\
 		-p $(PART_NUMBER)		\
+		-c $(HLS_ACTION_CLOCK)		\
 		-f "$(srcs)" 			\
 		-s $(SNAP_ROOT) 		\
 		-x $(HLS_CFLAGS) > $@
@@ -75,19 +87,48 @@ $(SOLUTION_NAME): $(objs)
 #      to strange problems later on. So let us work on fixing the design
 #      if they occur. Rather than challenging our luck.
 #
+# Check that last HLS compilation of the action was done with the same clock period. Exit if occurs.
+# Check for CRITICAL warnings and exit if those occur. Add more if needed.
 # Check for critical warnings and exit if those occur. Add more if needed.
 # Check for reserved HLS MMIO reg at offset 0x17c.
-# Check for register duplication (0x184/Action_Output_o).
 #
 check: $(syn_dir)
-	@echo -n "   Checking for all critical warnings during HLS synthesis .... "
-	@grep -A8 -i CRITICAL $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ; \
-		test $$? = 1
+	@if [ $(HLS_ACTION_CLOCK) != $(shell grep "Setting up clock" $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log |cut -d " " -f 12|cut -d "n" -f 1) ]; then \
+		echo " ERROR: Action was last compiled with a different HLS clock."; \
+		echo " Please force the recompilation with a 'make clean' command";     \
+		echo " ---------------------------------------------------------- "; exit -1; \
+	fi
+	@echo -n "   Checking for critical warnings during HLS synthesis .... "
+	@grep -A8 CRITICAL $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ;  \
+		test $$? = 1 
 	@echo "OK"
+	@if [ $(HLS_ACTION_CLOCK) == $(HLS_ACTION_CLOCK_DEFAULT) ]; then                \
+		echo -n "   Checking for critical timings during HLS synthesis  .... ";    \
+        	grep -A8 critical $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ;     \
+		if [ $$? -eq 0 ]; then \
+                  echo "TIMING ERROR: Please correct your action code before going further"!; \
+		  echo "------------------------------------------------------------------ "; exit -1; \
+          	fi; \
+	  	echo "OK";                                                                    \
+	else \
+		echo "   --------------------------------------------------------------------------- ";    \
+		echo "   By defining HLS_CLOCK_PERIOD_CONSTRAINT in snap_env.sh, automatic critical timing checking is disabled"; \
+		echo "   FYI action was compiled with following HLS clock:"; \
+        	grep "Setting up clock" $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log;     \
+		echo "   --------------------------------------------------------------------------- ";    \
+		echo "   please CHECK the below list (if any) for HLS synthesis critical timing .... ";    \
+		echo "   --------------------------------------------------------------------------- ";    \
+        	grep -A8 critical $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log;     \
+		echo "   --------------------------------------------------------------------------- ";    \
+		if [ $$? -ne 0 ]; then \
+	  	  echo "OK";                                                                    \
+		fi; \
+	fi
 	@echo -n "   Checking for reserved MMIO area during HLS synthesis ... "
 	@grep -A8 0x17c $(syn_dir)/vhdl/$(WRAPPER)_ctrl_reg_s_axi.vhd | grep reserved > \
-		/dev/null; test $$? = 0
+		/dev/null; test $$? = 0;
 	@echo "OK"
+	@sleep 2; 
 
 clean:
 	@$(RM) -r $(SOLUTION_DIR)* run_hls_script.tcl *~ *.log \

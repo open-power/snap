@@ -59,14 +59,14 @@ function usage() {
 # Flash Update will reset the Capi Card and the card will disappear for
 # some time.
 function wait_no_flash() {
-	for i in `seq 1 5`; do
+	for i in `seq 1 50`; do
 		if [ ! -d /var/cxl/capi-flash-script.lock ]; then
 			break;
 		fi
 		sleep 5
-		echo "capi-flash-script is locked in /var/cxl. Waiting for unlock (25s)"
+		echo "capi-flash-script is locked in /var/cxl. Waiting for unlock (250s)"
 	done
-	if [ $i -ge 5 ]; then
+	if [ $i -ge 50 ]; then
 		echo "ERROR: Timeout. Flash is pending ......."
 		exit 0
 	fi
