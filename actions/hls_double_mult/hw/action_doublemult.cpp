@@ -66,13 +66,6 @@
 static void mbus_to_pa(snap_membus_t *data_read, action_datatype_t*table_double_in)
 {
 
-//	loop_m2d1: for(int i = 0; i < MAX_NB_OF_WORDS_READ; i++)
-//#pragma HLS PIPELINE
-//	   loop_m2d2: for(int j = 0; j < MAX_NB_OF_DOUBLES_PERDW; j++)
-//	   {
-//		//value_u = (uint64_t)data_read[i]((8*sizeof(action_datatype_t)*(j+1))-1, (8*sizeof(action_datatype_t)*j));
-//		table_double_in[i*MAX_NB_OF_DOUBLES_PERDW + j] = (data_read[i]((ap_sizeof_multiplier_cs*sizeof(action_datatype_t)*(j+1))-1, (ap_sizeof_multiplier_cs*sizeof(action_datatype_t)*j)));//value_d;
-//	   }
 	table_double_in[0] = data_read[0](15,0);
 	table_double_in[1] = data_read[0](31,16);
 	table_double_in[2] = data_read[0](47,32);
@@ -84,13 +77,6 @@ static void mbus_to_pa(snap_membus_t *data_read, action_datatype_t*table_double_
 static void  ap_to_mbus(action_datatype_t *table_double_out, snap_membus_t *data_to_be_written)
 {
 
-//	loop_d2m1: for(int i = 0; i < MAX_NB_OF_WORDS_READ; i++)//8
-//#pragma HLS PIPELINE
-//	   loop_d2m2: for(int j = 0; j < MAX_NB_OF_DOUBLES_PERDW; j++)//4
-//	   {
-//		//value_d = table_double_out[i*MAX_NB_OF_DOUBLES_PERDW + j];
-//		data_to_be_written[i]((ap_sizeof_multiplier_cs*sizeof(action_datatype_t)*(j+1))-1, (ap_sizeof_multiplier_cs*sizeof(action_datatype_t)*j)) = table_double_out[i*MAX_NB_OF_DOUBLES_PERDW + j];//(uint64_t)value_u;
-//	   }
 	data_to_be_written[0](15,0) = table_double_out[0];
 	data_to_be_written[0](31,16) = table_double_out[1];
 	data_to_be_written[0](47,32) = table_double_out[2];
@@ -132,19 +118,12 @@ static int process_action(snap_membus_t *din_gmem,
 	// CONVERT MAX_NB_OF_DOUBLES_READ*8 Bytes of data read into a table of 16 doubles
 	//mbus_to_double(buffer_in, data_in);
 	mbus_to_pa(buffer_in, data_in);
-	// PROCESSING THE DATA
-	//loop_proc: for (int i = 0; i < nb_of_doubles/3; i++)
 	{
-//#pragma HLS PIPELINE
-		//data_out[i] = /*(action_datatype_t)1.0f * */ data_in[i];// * data_in[(3*i)+1];// * data_in[(3*i)+2];
-
-		data_out[0] = (action_datatype_t)1.2f +  data_in[0];
-		data_out[1] = (action_datatype_t)1.1f *  data_in[1];
-		data_out[2] = (action_datatype_t)2.2f *  data_in[2];
-		data_out[3] = (action_datatype_t)3.3f *  data_in[3];
-		data_out[4] = (action_datatype_t)4.4f *  data_in[4];
-//#pragma HLS PIPELINE
-//		data_out[i] =  data_out[i] * data_in[(3*i)+1];
+	  data_out[0] = (action_datatype_t)1.2f +  data_in[0];
+	  data_out[1] = (action_datatype_t)1.1f *  data_in[1];
+	  data_out[2] = (action_datatype_t)2.2f *  data_in[2];
+	  data_out[3] = (action_datatype_t)3.3f *  data_in[3];
+	  data_out[4] = (action_datatype_t)4.4f *  data_in[4];
 	}
 
 

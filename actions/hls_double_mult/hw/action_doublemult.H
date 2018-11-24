@@ -38,6 +38,5 @@ typedef struct {
 	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(doublemult_job_t)];
 } action_reg;
 
-//typedef ap_fixed<18,3> DM_DATATYPE;
 
 #endif  /* __ACTION_DOUBLEMULT_H__*/
