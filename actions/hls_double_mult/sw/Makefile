@@ -42,7 +42,7 @@ snap_doublemult: action_doublemult.o
 snap_doublemult_objs = action_doublemult.o
 
 projs += snap_doublemult
-CFLAGS += "-I/afs/awd/projects/cte/tools/xilinx/2018.2/Vivado/2018.2/include/"
+CFLAGS += "-I$(XILINX_VIVADO)/include"
 # If you have the host code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/software.mk
 include $(SNAP_ROOT)/actions/software.mk
