@@ -27,7 +27,7 @@
 
 # Finding $SNAP_ROOT
 ifndef SNAP_ROOT
-# check if we are in sw folder of an action (three directories below snap root)
+# check if we are in hw folder of an action (three directories below snap root)
 ifneq ("$(wildcard ../../../ActionTypes.md)","")
 SNAP_ROOT=$(abspath ../../../)
 else
@@ -37,12 +37,10 @@ endif
 endif
 
 # This is solution specific. Check if we can replace this by generics too.
+SOLUTION_NAME ?= doublemult
+SOLUTION_DIR ?= hlsDoubleMult
+srcs += action_doublemult.cpp 
 
-snap_doublemult: action_doublemult.o
-snap_doublemult_objs = action_doublemult.o
-
-projs += snap_doublemult
-CFLAGS += "-I/afs/awd/projects/cte/tools/xilinx/2018.2/Vivado/2018.2/include/"
-# If you have the host code outside of the default snap directory structure, 
-# change to /path/to/snap/actions/software.mk
-include $(SNAP_ROOT)/actions/software.mk
+# If you have the action code outside of the default snap directory structure, 
+# change to /path/to/snap/actions/hls.mk
+include $(SNAP_ROOT)/actions/hls.mk

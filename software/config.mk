@@ -45,6 +45,7 @@ MAKEFLAGS	+= --silent
 MAKE		+= -s
 endif
 
+ifeq ($(strip $(SCISNAP)),)
 CC		= $(CROSS)gcc
 AS		= $(CROSS)as
 LD		= $(CROSS)ld
@@ -55,6 +56,14 @@ OBJDUMP		= $(CROSS)objdump
 STRIP		= $(CROSS)strip
 NM		= $(CROSS)nm
 HELP2MAN	= help2man
+else
+PATH_TO_Gpp6    = $(COMPILER_BIN_PATH)
+ifeq ($(strip $(CROSS)),)
+CC		= $(PATH_TO_Gpp6)g++-6
+else
+$(error "${CROSS}: No support yet for cross-compile on the SCISNAP branch")   # ERROR:
+endif
+endif
 
 ifeq ($(V),0)
 Q		:= @
@@ -62,6 +71,7 @@ MAKEFLAGS	+= --silent
 MAKE		+= -s
 endif
 
+ifeq ($(strip $(SCISNAP)),)
 ifeq ($(V),1)
 MAKEFLAGS	+= --silent
 MAKE		+= -s
@@ -73,7 +83,15 @@ OBJCOPY		= printf "\t[OBJCOPY]\t%s\n" `basename "$@"`; $(CROSS)objcopy
 else
 CLEAN		= echo -n
 endif
-
+else
+ifeq ($(V),1)
+MAKEFLAGS	+= --silent
+MAKE		+= -s
+CC		= printf "\t[CC]\t%s\n" `basename "$@"`; $(PATH_TO_Gpp6)g++-6
+else
+CLEAN		= echo -n
+endif
+endif
 #
 # If we can use git to get a version, we use that. If not, we have
 # no repository and set a static version number.
@@ -91,8 +109,12 @@ ifeq (${HAS_GIT},y)
 	VERSION:=$(GIT_BRANCH)
 endif
 
+ifeq ($(strip $(SCISNAP)),)
 CFLAGS ?= -W -Wall -Werror -Wwrite-strings -Wextra -O2 -g \
 	-Wmissing-prototypes # -Wstrict-prototypes -Warray-bounds
+else
+CFLAGS ?= -W -Wall -Werror -Wwrite-strings -Wextra -O2 -g
+endif
 
 CFLAGS += -DGIT_VERSION=\"$(VERSION)\" \
 	-I. -I../include -D_GNU_SOURCE=1

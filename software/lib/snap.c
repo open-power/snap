@@ -114,11 +114,12 @@ struct snap_card {
 	struct snap_sim_action *action; /* software simulation mode */
 	size_t errinfo_size;            /* Size of errinfo */
 	void *errinfo;                  /* Err info Buffer */
-	struct cxl_event event;         /* Buffer to keep event from IRQ */
 	unsigned int attach_timeout_sec;
 	unsigned int queue_length;      /* unused */
 	uint64_t cap_reg;               /* Capability Register */
 	const char *name;               /* Card name */
+	struct cxl_event event;         /* Buffer to keep event from IRQ */
+
 };
 
 /* Translate Card ID to Name */
@@ -128,15 +129,15 @@ struct card_2_name {
 };
 /* Limit Card names to max of 15 Bytes */
 struct card_2_name snap_card_2_name_tab[] = {
-	{.card_id = ADKU3_CARD,  .card_name = "ADKU3"},
-	{.card_id = N250S_CARD,  .card_name = "N250S"},
-	{.card_id = S121B_CARD,  .card_name = "S121B"},
-	{.card_id = AD8K5_CARD,  .card_name = "AD8K5"},
-	{.card_id = N250SP_CARD, .card_name = "N250SP"},
-	{.card_id = RCXVUP_CARD, .card_name = "RCXVUP"},
-	{.card_id = FX609_CARD,  .card_name = "FX609"},
-	{.card_id = S241_CARD,   .card_name = "S241"},
-	{.card_id = -1,          .card_name = "INVALID"}
+	{ADKU3_CARD,  "ADKU3"},
+	{N250S_CARD,  "N250S"},
+	{S121B_CARD,  "S121B"},
+	{AD8K5_CARD,  "AD8K5"},
+	{N250SP_CARD, "N250SP"},
+	{RCXVUP_CARD, "RCXVUP"},
+	{FX609_CARD,  "FX609"},
+	{S241_CARD,   "S241"},
+	{ -1,          "INVALID"}
 };
 
 /* Search snap_card_2_name_tab to for card name */
@@ -179,7 +180,9 @@ static void *hw_snap_card_alloc_dev(const char *path,
 	int rc;
 	long id = 0;
 
-	dn = calloc(1, sizeof(*dn));
+	dn = (struct snap_card *)calloc(1, sizeof(*dn));
+	//dn = malloc(sizeof(snap_card));
+	//memset(dn, 0,sizeof(snap_card));    
 	if (NULL == dn)
 		goto __snap_alloc_err;
 
@@ -699,15 +702,15 @@ static int hw_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long
 
 /* Hardware version of the lowlevel functions */
 static struct snap_funcs hardware_funcs = {
-	.card_alloc_dev = hw_snap_card_alloc_dev,
-	.attach_action = hw_attach_action,       /* attach Action */
-	.detach_action = hw_detach_action,       /* detach Action */
-	.mmio_write32 = hw_snap_mmio_write32,
-	.mmio_read32 = hw_snap_mmio_read32,
-	.mmio_write64 = hw_snap_mmio_write64,
-	.mmio_read64 = hw_snap_mmio_read64,
-	.card_free = hw_snap_card_free,
-	.card_ioctl = hw_card_ioctl,
+	 hw_snap_card_alloc_dev,
+	hw_attach_action,       /* attach Action */
+	hw_detach_action,       /* detach Action */
+	hw_snap_mmio_write32,
+	 hw_snap_mmio_read32,
+	 hw_snap_mmio_write64,
+	 hw_snap_mmio_read64,
+	 hw_snap_card_free,
+	 hw_card_ioctl,
 };
 
 /* We access the hardware via this function pointer struct */
@@ -717,7 +720,7 @@ struct snap_card *snap_card_alloc_dev(const char *path,
 				      uint16_t vendor_id,
 				      uint16_t device_id)
 {
-	return df->card_alloc_dev(path, vendor_id, device_id);
+  return (struct snap_card*)df->card_alloc_dev(path, vendor_id, device_id);
 }
 
 struct snap_action *snap_attach_action(struct snap_card *card,
@@ -926,7 +929,6 @@ int snap_action_completed(struct snap_action *action, int *rc, int timeout)
 	if (rc)
 		*rc = _rc;
 
-	// Test the rc in calling function for normal or timeout (rc=0) termination
 	return (action_data & ACTION_CONTROL_IDLE) == ACTION_CONTROL_IDLE;
 }
 
@@ -1222,7 +1224,7 @@ static void *sw_card_alloc_dev(const char *path __unused,
 {
 	struct snap_card *dn;
 
-	dn = calloc(1, sizeof(*dn));
+	dn = (struct snap_card*)calloc(1, sizeof(*dn));
 	if (NULL == dn)
 		goto __snap_alloc_err;
 
@@ -1418,15 +1420,15 @@ static int sw_card_ioctl(struct snap_card *card, unsigned int cmd, unsigned long
 
 /* Software version of the lowlevel functions */
 static struct snap_funcs software_funcs = {
-	.card_alloc_dev = sw_card_alloc_dev,
-	.attach_action = sw_attach_action, /* attach Action */
-	.detach_action = sw_detach_action, /* detach Action */
-	.mmio_write32 = sw_mmio_write32,
-	.mmio_read32 = sw_mmio_read32,
-	.mmio_write64 = sw_mmio_write64,
-	.mmio_read64 = sw_mmio_read64,
-	.card_free = sw_card_free,
-	.card_ioctl = sw_card_ioctl,
+	sw_card_alloc_dev,
+	sw_attach_action, /* attach Action */
+	sw_detach_action, /* detach Action */
+	sw_mmio_write32,
+	sw_mmio_read32,
+	sw_mmio_write64,
+	sw_mmio_read64,
+	sw_card_free,
+	sw_card_ioctl,
 };
 
 /**********************************************************************

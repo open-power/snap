@@ -157,7 +157,6 @@ struct snap_sim_action {
 	enum snap_action_state state;
 	void *priv_data;
 
-	struct snap_queue_workitem job;
 	snap_action_main_t main;
 
 	int (* mmio_write32)(struct snap_card *card,
@@ -170,6 +169,7 @@ struct snap_sim_action {
 			     uint64_t offset, uint64_t *data);
 
 	struct snap_sim_action *next;
+	struct snap_queue_workitem job;
 };
 
 int snap_action_register(struct snap_sim_action *action);

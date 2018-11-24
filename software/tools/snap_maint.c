@@ -112,8 +112,8 @@ static void snap_close(struct mdev_ctx *mctx)
 	if (NULL == mctx->handle)
 		rc =  -1;
 	else {
-		snap_card_free(mctx->handle);
-		mctx->handle = NULL;
+	  snap_card_free((struct snap_card*)mctx->handle);
+	  mctx->handle = NULL;
 	}
 	VERBOSE3("[%s] Exit %d\n", __func__, rc);
 	return;
@@ -126,7 +126,11 @@ static uint64_t snap_read64(void *handle, int ctx, uint32_t addr)
 
 	if (ctx)
 		addr += SNAP_S_BASE + (ctx * SNAP_S_SIZE);
-	rc = snap_mmio_read64(handle, (uint64_t)addr, &reg);
+	//void *handle_ptr = handle;
+	struct snap_card *snap_card_ptr;
+	snap_card_ptr = (struct snap_card*)handle;
+	rc = snap_mmio_read64(snap_card_ptr, (uint64_t)addr, &reg);
+	handle = (void*)snap_card_ptr;
 	if (0 != rc)
 		VERBOSE0("[%s] Error Reading MMIO %x\n", __func__, addr);
 	return reg;
@@ -138,7 +142,10 @@ static int snap_write64(void *handle, int ctx, uint32_t addr, uint64_t data)
 
 	if (ctx)
 		addr += SNAP_S_BASE + (ctx * SNAP_S_SIZE);
-	rc = snap_mmio_write64(handle, (uint64_t)addr, data);
+	struct snap_card *snap_card_ptr;
+	snap_card_ptr = (struct snap_card*)handle;
+	rc = snap_mmio_write64(snap_card_ptr, (uint64_t)addr, data);
+	handle = (void*)snap_card_ptr;
 	return rc;
 }
 
@@ -147,7 +154,10 @@ static uint32_t snap_read32(void *handle, uint32_t addr)
 	uint32_t reg;
 	int rc;
 
-	rc = snap_mmio_read32(handle, (uint64_t)addr, &reg);
+	struct snap_card *snap_card_ptr;
+	snap_card_ptr = (struct snap_card*)handle;
+	rc = snap_mmio_read32(snap_card_ptr, (uint64_t)addr, &reg);
+	handle = (void*)snap_card_ptr;
 	if (0 != rc)
 		VERBOSE3("[%s] Error Reading MMIO %x\n", __func__, addr);
 	return reg;
@@ -157,7 +167,10 @@ static void snap_write32(void *handle, uint32_t addr, uint32_t data)
 {
 	int rc;
 
-	rc = snap_mmio_write32(handle, (uint64_t)addr, data);
+	struct snap_card *snap_card_ptr;
+	snap_card_ptr = (struct snap_card*)handle;
+	rc = snap_mmio_write32(snap_card_ptr, (uint64_t)addr, data);
+	handle = (void*)snap_card_ptr;
 	if (0 != rc)
 		VERBOSE3("[%s] Error writting MMIO %x\n", __func__, addr);
 	return;
@@ -171,31 +184,33 @@ static void snap_version(void *handle)
 
 	VERBOSE2("[%s] Enter\n", __func__);
 
+	struct snap_card *snap_card_ptr;
+	snap_card_ptr = (struct snap_card*)handle;
 	/* Read Card Capabilities */
-	snap_card_ioctl(handle, GET_CARD_TYPE, (unsigned long)&ioctl_data);
+	snap_card_ioctl(snap_card_ptr, GET_CARD_TYPE, (unsigned long)&ioctl_data);
 	VERBOSE1("SNAP Card Id: %d ", (int)ioctl_data);
 
 	/* Get Card name */
 	char buffer[16];
-	snap_card_ioctl(handle, GET_CARD_NAME, (unsigned long)&buffer);
+	snap_card_ioctl(snap_card_ptr, GET_CARD_NAME, (unsigned long)&buffer);
 	VERBOSE1("Name: %s. ", buffer);
 
 	VERBOSE1("NVME ");
-	snap_card_ioctl(handle, GET_NVME_ENABLED, (unsigned long)&ioctl_data);
+	snap_card_ioctl(snap_card_ptr, GET_NVME_ENABLED, (unsigned long)&ioctl_data);
 	if (1 == ioctl_data)
 		VERBOSE1("enabled");
 	else    VERBOSE1("disabled");
 
-	snap_card_ioctl(handle, GET_SDRAM_SIZE, (unsigned long)&ioctl_data);
+	snap_card_ioctl(snap_card_ptr, GET_SDRAM_SIZE, (unsigned long)&ioctl_data);
 	VERBOSE1(", %d MB DRAM available. ", (int)ioctl_data);
 
-	snap_card_ioctl(handle, GET_DMA_ALIGN, (unsigned long)&ioctl_data);
+	snap_card_ioctl(snap_card_ptr, GET_DMA_ALIGN, (unsigned long)&ioctl_data);
 	VERBOSE1("(Align: %d ", (int)ioctl_data);
 
-	snap_card_ioctl(handle, GET_DMA_MIN_SIZE, (unsigned long)&ioctl_data);
+	snap_card_ioctl(snap_card_ptr, GET_DMA_MIN_SIZE, (unsigned long)&ioctl_data);
 	VERBOSE1("Min_DMA: %d)\n", (int)ioctl_data);
 
-	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_IVR);
+	reg = snap_read64(snap_card_ptr, SNAP_M_CTX, SNAP_M_IVR);
 	VERBOSE1("SNAP FPGA Release: v%d.%d.%d Distance: %d GIT: 0x%8.8x\n",
 		(int)(reg >> 56),
 		(int)(reg >> 48ll) & 0xff,
@@ -203,21 +218,22 @@ static void snap_version(void *handle)
 		(int)(reg >> 32ull) & 0xff,
 		(uint32_t)reg);
 
-	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_BDR);
+	reg = snap_read64(snap_card_ptr, SNAP_M_CTX, SNAP_M_BDR);
 	VERBOSE1("SNAP FPGA Build (Y/M/D): %04x/%02x/%02x Time (H:M): %02x:%02x\n",
 		(int)(reg >> 32ll) & 0xffff,
 		(int)(reg >> 24ll) & 0xff,
 		(int)(reg >> 16) & 0xff,
 		(int)(reg >> 8) & 0xff,
 		(int)(reg) & 0xff);
-	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_CIR);
+	reg = snap_read64(snap_card_ptr, SNAP_M_CTX, SNAP_M_CIR);
 	VERBOSE1("SNAP FPGA CIR Master: %d My ID: %d\n",
 		(int)(reg >> 63ll), (int)(reg & 0x1ff));
-	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_FRT);
+	reg = snap_read64(snap_card_ptr, SNAP_M_CTX, SNAP_M_FRT);
 	up = (int)(reg / (1000 * 1000 *250));
 	VERBOSE1("SNAP FPGA Up Time: %d sec\n", up);
 
 	VERBOSE2("[%s] Exit\n", __func__);
+	handle = (void*)snap_card_ptr;
 	return;
 }
 
@@ -386,30 +402,33 @@ _snap_m_init_exit:
 static void snap_show_cap(void *handle, int mode)
 {
 	unsigned long val;
-
+	struct snap_card *snap_card_ptr;
+	snap_card_ptr = (struct snap_card*)handle;
 	if (MODE_SHOW_NVME == (MODE_SHOW_NVME & mode)) {
-		snap_card_ioctl(handle, GET_NVME_ENABLED, (unsigned long)&val);
+		snap_card_ioctl(snap_card_ptr, GET_NVME_ENABLED, (unsigned long)&val);
 		if (1 == val)
 			VERBOSE0("NVME ");
 	}
 	if (MODE_SHOW_SDRAM == (MODE_SHOW_SDRAM & mode)) {
-		snap_card_ioctl(handle, GET_SDRAM_SIZE, (unsigned long)&val);
+		snap_card_ioctl(snap_card_ptr, GET_SDRAM_SIZE, (unsigned long)&val);
 		if (0 != val)
 			VERBOSE0("%d ", (int)val);
 	}
 	if (MODE_SHOW_CARD == (MODE_SHOW_CARD & mode)) {
 		char buffer[16];
-		snap_card_ioctl(handle, GET_CARD_NAME, (unsigned long)&buffer);
+		snap_card_ioctl(snap_card_ptr, GET_CARD_NAME, (unsigned long)&buffer);
 		VERBOSE0("%s ", buffer);
 	}
 	if (MODE_SHOW_DMA_ALIGN == (MODE_SHOW_DMA_ALIGN & mode)) {
-		snap_card_ioctl(handle, GET_DMA_ALIGN, (unsigned long)&val);
+		snap_card_ioctl(snap_card_ptr, GET_DMA_ALIGN, (unsigned long)&val);
 		VERBOSE0("%d ", (int)val);
 	}
 	if (MODE_SHOW_DMA_MIN == (MODE_SHOW_DMA_MIN & mode)) {
-		snap_card_ioctl(handle, GET_DMA_MIN_SIZE, (unsigned long)&val);
+		snap_card_ioctl(snap_card_ptr, GET_DMA_MIN_SIZE, (unsigned long)&val);
 		VERBOSE0("%d ", (int)val);
 	}
+	handle = (void*)snap_card_ptr;
+
 }
 
 static int snap_do_master(struct mdev_ctx *mctx)
@@ -428,7 +447,9 @@ static void sig_handler(int sig)
 	struct mdev_ctx *mctx = &master_ctx;
 
 	VERBOSE0("Sig Handler Signal: %d SID: %d\n", sig, mctx->my_sid);
-	snap_close(mctx->handle);
+	struct mdev_ctx *mctx_ptr;
+	mctx_ptr = (struct mdev_ctx *)mctx->handle;
+	snap_close(mctx_ptr);
 	fflush(fd_out);
 	fclose(fd_out);
 
