@@ -112,8 +112,11 @@ static void *snap_open(int card)
 static void snap_close(void *handle)
 {
 	VERBOSE3("[%s] Enter\n", __func__);
+	struct snap_card *snap_card_ptr;
+	snap_card_ptr = (struct snap_card*)handle;
 	if (handle)
-		snap_card_free(handle);
+		snap_card_free(snap_card_ptr);
+	handle = (void*)snap_card_ptr;
 	VERBOSE3("[%s] Exit\n", __func__);
 	return;
 }
@@ -126,7 +129,10 @@ static uint32_t MMIO_read(void *handle, uint32_t addr)
 	uint32_t reg;
 	int rc;
 
-	rc = snap_mmio_read32(handle, (uint64_t)addr, &reg);
+	struct snap_card *snap_card_ptr;
+	snap_card_ptr = (struct snap_card*)handle;
+	rc = snap_mmio_read32(snap_card_ptr, (uint64_t)addr, &reg);
+	handle = (void*)snap_card_ptr;
 	if (0 != rc)
 		VERBOSE0("[%s] Error Addr %x\n", __func__, addr);
 	return reg;
@@ -136,7 +142,10 @@ static void MMIO_write(void *handle, uint32_t addr, uint32_t data)
 {
 	int rc;
 
-	rc = snap_mmio_write32(handle, (uint64_t)addr, data);
+	struct snap_card *snap_card_ptr;
+	snap_card_ptr = (struct snap_card*)handle;
+	rc = snap_mmio_write32(snap_card_ptr, (uint64_t)addr, data);
+	handle = (void*)snap_card_ptr;
 	if (0 != rc)
 		VERBOSE0("[%s] Error Addr: %x\n", __func__, addr);
 	return;
@@ -711,7 +720,11 @@ int main(int argc, char *argv[])
 		drive_mask = new_drive_mask;
 
 	/* Check if i do have NVME on this card */
-	snap_card_ioctl(handle, GET_NVME_ENABLED, (unsigned long)&have_nvme);
+	struct snap_card *snap_card_ptr;
+	snap_card_ptr = (struct snap_card*)handle;
+	snap_card_ioctl(snap_card_ptr, GET_NVME_ENABLED, (unsigned long)&have_nvme);
+	handle = (void*)snap_card_ptr;
+
 	if (0 == have_nvme) {
 		VERBOSE0("Error SNAP NVME is not enabled on CAPI Card %d!\n", card);
 		rc = ENODEV;

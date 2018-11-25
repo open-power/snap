@@ -26,7 +26,11 @@ endif
 
 include $(SNAP_ROOT)/software/config.mk
 
+ifeq ($(strip $(SCISNAP)),)
 CFLAGS += -std=c99
+else
+CFLAGS += -std=gnu++0x
+endif
 LDLIBS += -lsnap -lcxl -lpthread
 LDFLAGS += -Wl,-rpath,$(SNAP_ROOT)/software/lib
 

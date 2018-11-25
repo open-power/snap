@@ -114,7 +114,7 @@ extern int verbose_flag;
 
 /* FIXME Fake this for old RHEL verions e.g. RHEL5.6 */
 #ifndef CLOCK_MONOTONIC_RAW
-#define   clock_gettime(clk_id, tp) ({ int val = 0; val; })
+  //#define   clock_gettime(clk_id, tp) ({ int val = 0; val; })
 #endif
 
 /**
