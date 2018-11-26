@@ -127,6 +127,7 @@ check_snap_settings:
 		echo "                        PSL_DCP         = $(PSL_DCP)"; \
 	elif [ "$(CAPI_VER)" == "capi20" ]; then \
 		echo "                        PSL9_IP         = $(PSL9_IP)"; \
+		echo "                        FPGA ACTION CLK = $(FPGA_ACTION_CLK)"; \
 	fi
 	@echo "                        FPGACARD        = $(FPGACARD)"
 	@echo "                        FPGACHIP        = $(FPGACHIP)"
@@ -315,17 +316,31 @@ check_bsp: capi2-bsp/$(FPGACARD)/.create_ip_done
 			else  \
 				echo "### ERROR ### PSL_DCP is pointing to a checkpoint for a $(PSL_DCP_TYPE) card while FPGACARD is set to $(FPGACARD)."; exit -1; \
 			fi; \
-		elif [ "$(CAPI_VER)" == "capi20" ] && [ ! -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/build/ip/capi_bsp_wrap.xcix" ]; then \
-			echo "### ERROR ### CAPI board support IP for $(FPGACARD) is not prepared."; \
-			echo "              This is a requirement for image build."; \
-			if [ ! -e  "$(PSL9_IP_DIR)/$(PSL9_IP_ARCHIVE)" ] && [ ! -e "$(PSL9_IP_CORE)" ]; then \
-				echo "### ERROR ### For CAPI board support build, please make sure that"; \
-				echo "              $(PSL9_IP_ARCHIVE)"; \
-				echo "              is available at directory"; \
-				echo "              $(PSL9_IP_DIR)"; \
-				echo "              or that the environment variable PSL9_IP_CORE is pointing to that file."; \
-			fi; \
-			exit -1; \
+		elif [ "$(CAPI_VER)" == "capi20" ]; then \
+		    if [ ! -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/build/ip/capi_bsp_wrap.xcix" ]; then \
+		        echo "### ERROR ### CAPI board support IP for $(FPGACARD) is not prepared."; \
+		        echo "              This is a requirement for image build."; \
+		        if [ ! -e  "$(PSL9_IP_DIR)/$(PSL9_IP_ARCHIVE)" ] && [ ! -e "$(PSL9_IP_CORE)" ]; then \
+			    echo "### ERROR ### For CAPI board support build, please make sure that"; \
+			    echo "              $(PSL9_IP_ARCHIVE)"; \
+			    echo "              is available at directory"; \
+			    echo "              $(PSL9_IP_DIR)"; \
+			    echo "              or that the environment variable PSL9_IP_CORE is pointing to that file."; \
+		        fi; \
+		        exit -1; \
+		    elif [ -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/.action_clk_225MHZ" ] \
+                          && [ $(FPGA_ACTION_CLK) == "250MHZ" ]; then                    \
+			echo "PSL for $(FPGACARD) card needs to be recreated for 250MHZ Action clock (Last compilation done with 225MHZ)";         \
+			$(MAKE) -s -C $(SNAP_HARDWARE_ROOT)/capi2-bsp clean $(FPGACARD); \
+		    elif [ -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/.action_clk_250MHZ" ] \
+                          && [ $(FPGA_ACTION_CLK) == "225MHZ" ]; then                    \
+			echo "PSL for $(FPGACARD) card needs to be recreated for 225MHZ Action clock (Last compilation done with 250MHZ)";         \
+			$(MAKE) -s -C $(SNAP_HARDWARE_ROOT)/capi2-bsp clean $(FPGACARD); \
+		    elif [ ! -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/.action_clk_225MHZ" ] \
+		      && [ ! -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/.action_clk_250MHZ" ]; then  \
+			echo "PSL for $(FPGACARD) card needs to be recreated (No logs states how it was compiled earlier)";         \
+			$(MAKE) -s -C $(SNAP_HARDWARE_ROOT)/capi2-bsp clean $(FPGACARD); \
+		    fi; \
 		fi; \
 	fi
 

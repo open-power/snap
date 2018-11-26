@@ -54,6 +54,7 @@ choice
        config N250SP
 		bool "CAPI2.0: Nallatech 250S+ with 4GB DDR4 SDRAM, NVMe and Xilinx KU15P FPGA"
 		select CAPI20
+		select DISABLE_NVME
 		help
 		  Nallatech 250S+ card originally used for CAPI Flash using NVMe
 		  storage. Uses Xilinx FPGA.
@@ -180,9 +181,6 @@ choice
 		  Please remember to set the environment variable "ACTION_ROOT"
 		  in snap_env.sh to the directory of the action source code.
 
-        config HDL_EXAMPLE
-                bool "HDL Example"
-
 	config HDL_HELLOWORLD
 		bool "HDL HelloWorld (Minimum example written in Verilog)"
                 help
@@ -190,6 +188,9 @@ choice
                     SNAP String Match (Regular Expression Match) Tool
                 select DISABLE_SDRAM_AND_BRAM
                 select DISABLE_NVME
+
+        config HDL_EXAMPLE
+                bool "HDL Example"
 
 	config HDL_NVME_EXAMPLE
 		bool "HDL NVMe Example"
@@ -206,7 +207,7 @@ choice
 		  in snap_env.sh to the directory of the action source code.
 
 	config HLS_HELLOWORLD
-		bool "HLS HelloWorld"
+		bool "HLS HelloWorld (Minimum example written in C)"
 		help
 		  This is the simplest example to start with:
 		  - Reading text from the server memory
@@ -316,7 +317,7 @@ choice
 	config HLS_DECIMAL_MULT
 		bool "HLS Decimal Multiplication"
 		help
-		  This example will help user understanding how to handle decimal numbers::
+		  This example will help user understanding how to handle decimal numbers:
 		  - Read a value from the server memory
 		  - Convert this value to a double or a float type
 		  - Process an operation with decimal numbers such as a multiplication
@@ -326,6 +327,20 @@ choice
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
+
+	config HLS_SCATTER_GATHER
+		bool "HLS Scatter Gather (CAPI2.0 only)"
+		help
+		  This example will help user understanding how to optimize code for 
+		   scatter gather memory access. It will show how Software and Hardware 
+		   share WED (Work Element Descriptor) and STATUS in host memory.
+		  This can be used as a benchmark to see how CAPI help reduce the 
+		   data moving latency when the data are scattered everywhere in RAM.
+		  This example is written in C and compiled with HLS
+		select ENABLE_HLS_SUPPORT
+		select DISABLE_SDRAM_AND_BRAM
+		select DISABLE_NVME
+		select ENABLE_ACTION_CLK_DERATE
 
 endchoice
 
@@ -510,6 +525,21 @@ config USE_PRFLOW
 	string
 	default "TRUE" if ENABLE_PRFLOW
 	default "FALSE" if ! ENABLE_PRFLOW
+
+config ENABLE_ACTION_CLK_DERATE
+	bool "Derate by 10% the Action clock"
+	default n
+	depends on CAPI20
+	help
+	  By derating the action clock, the routing in the FPGA may be easier.
+	  Default clock is 250MHz (4ns).
+	  This option will set the clock to 225MHz (5ns) for the routing phase but keep
+	  the default clock (4ns) for HLS to better work.
+
+config FPGA_ACTION_CLK
+	string
+	default "225MHZ"  if ENABLE_ACTION_CLK_DERATE
+	default "250MHZ" if ! ENABLE_ACTION_CLK_DERATE
 
 config ENABLE_ILA
 	bool "Enable ILA Debug (Definition of $ILA_SETUP_FILE required)"
