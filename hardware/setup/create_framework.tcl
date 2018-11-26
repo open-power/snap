@@ -207,23 +207,23 @@ if { $nvme_used == TRUE } {
   set_property  ip_repo_paths $hdl_dir/nvme/ [current_project]
   update_ip_catalog  >> $log_file
   add_files -norecurse                          $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd  >> $log_file
-  export_ip_user_files -of_objects  [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] -lib_map_path [list {{ies=$root_dir/viv_project/framework.cache/compile_simlib/ies}}] -no_script -sync -force -quiet
+  export_ip_user_files -of_objects  [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd] -lib_map_path [list {{ies=$root_dir/viv_project/framework.cache/compile_simlib/ies}}] -no_script -sync -force -quiet   >> $log_file
 
   if { $denali_used == TRUE } {
     puts "                        adding NVMe Denali simulation files"
     add_files -fileset sim_1 -scan_for_includes $sim_dir/nvme
-    add_files -fileset sim_1 -scan_for_includes $ip_dir/nvme/axi_pcie3_0_ex/imports/xil_sig2pipe.v
+    add_files -fileset sim_1 -scan_for_includes $ip_dir/nvme/xdma_0_ex/imports/xil_sig2pipe.v
 
     set denali $::env(DENALI)
     add_files -fileset sim_1 -norecurse -scan_for_includes $denali/ddvapi/verilog/denaliPcie.v
     set_property include_dirs                              $denali/ddvapi/verilog [get_filesets sim_1]
   } else {
     puts "                        adding NVMe Verilog simulation files"
-    set_property used_in_simulation false [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd]
-    add_files -fileset sim_1 -norecurse $sim_dir/nvme_lite
-    add_files -fileset sim_1 -norecurse $hdl_dir/nvme/nvme_defines.sv
-    set_property file_type {Verilog Header} [get_files $sim_dir/nvme_lite/snap_config.sv]
-    set_property file_type {Verilog Header} [get_files $hdl_dir/nvme/nvme_defines.sv]
+    set_property used_in_simulation false [get_files  $ip_dir/nvme/nvme.srcs/sources_1/bd/nvme_top/nvme_top.bd]   >> $log_file
+    add_files -fileset sim_1 -norecurse $sim_dir/nvme_lite   >> $log_file
+    add_files -fileset sim_1 -norecurse $hdl_dir/nvme/nvme_defines.sv   >> $log_file
+    set_property file_type {Verilog Header} [get_files $sim_dir/nvme_lite/snap_config.sv]   >> $log_file
+    set_property file_type {Verilog Header} [get_files $hdl_dir/nvme/nvme_defines.sv]   >> $log_file
   }
 } else {
   remove_files $action_hw_dir/action_axi_nvme.vhd -quiet

@@ -69,7 +69,9 @@ module nvme_host_wrap
   output wire                            pcie_m_axi_rready,
 
   // NVMe Host to PCIE Slave AXI MM IF
-  input  wire [`PCIE_S_ID_BITS-1:0]     pcie_s_axi_awid,
+  //input  wire [`PCIE_S_ID_BITS-1:0]     pcie_s_axi_awid,
+  input  wire [`PCIE_S_ID_BITS:0]     pcie_s_axi_awid,
+  //input  wire [4:0]                     pcie_s_axi_awid,
   input  wire [`PCIE_S_ADDR_BITS-1:0]   pcie_s_axi_awaddr,
   input  wire [7:0]                     pcie_s_axi_awlen,
   input  wire [2:0]                     pcie_s_axi_awsize,
@@ -83,12 +85,16 @@ module nvme_host_wrap
   input  wire                           pcie_s_axi_wvalid,
   output wire                            pcie_s_axi_wready,
 
-  output wire   [`PCIE_S_ID_BITS-1:0]    pcie_s_axi_bid,
+  //output wire   [`PCIE_S_ID_BITS-1:0]    pcie_s_axi_bid,
+  output wire   [`PCIE_S_ID_BITS:0]    pcie_s_axi_bid,
+  //output wire   [4:0]                    pcie_s_axi_bid,
   output wire   [1:0]                    pcie_s_axi_bresp,
   output wire                            pcie_s_axi_bvalid,
   input  wire                           pcie_s_axi_bready,
 
-  input  wire [`PCIE_S_ID_BITS-1:0]     pcie_s_axi_arid,
+  //input  wire [`PCIE_S_ID_BITS-1:0]     pcie_s_axi_arid,
+  input  wire [`PCIE_S_ID_BITS:0]     pcie_s_axi_arid,
+  //input  wire [4:0]                     pcie_s_axi_arid,
   input  wire [`PCIE_S_ADDR_BITS-1:0]   pcie_s_axi_araddr,
   input  wire [7:0]                     pcie_s_axi_arlen,
   input  wire [2:0]                     pcie_s_axi_arsize,
@@ -96,7 +102,9 @@ module nvme_host_wrap
   input  wire                           pcie_s_axi_arvalid,
   output wire                            pcie_s_axi_arready,
 
-  output wire   [`PCIE_S_ID_BITS-1:0]    pcie_s_axi_rid,
+  //output wire   [`PCIE_S_ID_BITS-1:0]    pcie_s_axi_rid,
+  output wire   [`PCIE_S_ID_BITS:0]    pcie_s_axi_rid,
+  //output wire   [4:0]                    pcie_s_axi_rid,
   output wire   [127:0]                  pcie_s_axi_rdata,
   output wire   [1:0]                    pcie_s_axi_rresp,
   output wire                            pcie_s_axi_rlast,
@@ -104,6 +112,9 @@ module nvme_host_wrap
   input  wire                           pcie_s_axi_rready
 
 );
+
+assign pcie_s_axi_rid[`PCIE_S_ID_BITS] = 0;
+assign pcie_s_axi_bid[`PCIE_S_ID_BITS] = 0;
 
 nvme_host nvme_host_i (
   .axi_aclk           (axi_aclk),
@@ -155,7 +166,7 @@ nvme_host nvme_host_i (
   .pcie_m_axi_rvalid  (pcie_m_axi_rvalid  ),
   .pcie_m_axi_rready  (pcie_m_axi_rready  ),
 
-  .pcie_s_axi_awid    (pcie_s_axi_awid    ),
+  .pcie_s_axi_awid    (pcie_s_axi_awid[`PCIE_S_ID_BITS-1:0]),
   .pcie_s_axi_awaddr  (pcie_s_axi_awaddr  ),
   .pcie_s_axi_awlen   (pcie_s_axi_awlen   ),
   .pcie_s_axi_awsize  (pcie_s_axi_awsize  ),
@@ -169,12 +180,12 @@ nvme_host nvme_host_i (
   .pcie_s_axi_wvalid  (pcie_s_axi_wvalid  ),
   .pcie_s_axi_wready  (pcie_s_axi_wready  ),
 
-  .pcie_s_axi_bid     (pcie_s_axi_bid     ),
+  .pcie_s_axi_bid     (pcie_s_axi_bid[`PCIE_S_ID_BITS-1:0]),
   .pcie_s_axi_bresp   (pcie_s_axi_bresp   ),
   .pcie_s_axi_bvalid  (pcie_s_axi_bvalid  ),
   .pcie_s_axi_bready  (pcie_s_axi_bready  ),
 
-  .pcie_s_axi_arid    (pcie_s_axi_arid    ),
+  .pcie_s_axi_arid    (pcie_s_axi_arid[`PCIE_S_ID_BITS-1:0]),
   .pcie_s_axi_araddr  (pcie_s_axi_araddr  ),
   .pcie_s_axi_arlen   (pcie_s_axi_arlen   ),
   .pcie_s_axi_arsize  (pcie_s_axi_arsize  ),
@@ -182,7 +193,7 @@ nvme_host nvme_host_i (
   .pcie_s_axi_arvalid (pcie_s_axi_arvalid ),
   .pcie_s_axi_arready (pcie_s_axi_arready ),
 
-  .pcie_s_axi_rid     (pcie_s_axi_rid     ),
+  .pcie_s_axi_rid     (pcie_s_axi_rid[`PCIE_S_ID_BITS-1:0]),
   .pcie_s_axi_rdata   (pcie_s_axi_rdata   ),
   .pcie_s_axi_rresp   (pcie_s_axi_rresp   ),
   .pcie_s_axi_rlast   (pcie_s_axi_rlast   ),

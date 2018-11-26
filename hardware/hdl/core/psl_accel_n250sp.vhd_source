@@ -703,7 +703,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       S01_AXI_RREADY          : IN  STD_LOGIC;
       M00_AXI_ARESET_OUT_N    : OUT STD_LOGIC;
       M00_AXI_ACLK            : IN  STD_LOGIC;
-      M00_AXI_AWID            : OUT STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH   DOWNTO 0);
+      M00_AXI_AWID            : OUT STD_LOGIC_VECTOR(C_AXI_CARD_MEM0_ID_WIDTH DOWNTO 0);
       M00_AXI_AWADDR          : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
       M00_AXI_AWLEN           : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
       M00_AXI_AWSIZE          : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -885,7 +885,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
     DDR_M_AXI_araddr                    : OUT STD_LOGIC_VECTOR ( 33 downto 0 );
     DDR_M_AXI_arburst                   : OUT STD_LOGIC_VECTOR ( 1 downto 0 );
     DDR_M_AXI_arcache                   : OUT STD_LOGIC_VECTOR ( 3 downto 0 );
-    DDR_M_AXI_arid                      : OUT STD_LOGIC_VECTOR ( 3 downto 0 );
+    DDR_M_AXI_arid                      : OUT STD_LOGIC_VECTOR ( 4 downto 0 );
     DDR_M_AXI_arlen                     : OUT STD_LOGIC_VECTOR ( 7 downto 0 );
     DDR_M_AXI_arlock                    : OUT STD_LOGIC_VECTOR ( 0 to 0 );
     DDR_M_AXI_arprot                    : OUT STD_LOGIC_VECTOR ( 2 downto 0 );
@@ -897,7 +897,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
     DDR_M_AXI_awaddr                    : OUT STD_LOGIC_VECTOR ( 33 downto 0 );
     DDR_M_AXI_awburst                   : OUT STD_LOGIC_VECTOR ( 1 downto 0 );
     DDR_M_AXI_awcache                   : OUT STD_LOGIC_VECTOR ( 3 downto 0 );
-    DDR_M_AXI_awid                      : OUT STD_LOGIC_VECTOR ( 3 downto 0 );
+    DDR_M_AXI_awid                      : OUT STD_LOGIC_VECTOR ( 4 downto 0 );
     DDR_M_AXI_awlen                     : OUT STD_LOGIC_VECTOR ( 7 downto 0 );
     DDR_M_AXI_awlock                    : OUT STD_LOGIC_VECTOR ( 0 to 0 );
     DDR_M_AXI_awprot                    : OUT STD_LOGIC_VECTOR ( 2 downto 0 );
@@ -906,22 +906,22 @@ ARCHITECTURE psl_accel OF psl_accel IS
     DDR_M_AXI_awregion                  : OUT STD_LOGIC_VECTOR ( 3 downto 0 );
     DDR_M_AXI_awsize                    : OUT STD_LOGIC_VECTOR ( 2 downto 0 );
     DDR_M_AXI_awvalid                   : OUT STD_LOGIC_vector (0 to 0);
-    DDR_M_AXI_bid                       : IN  STD_LOGIC_VECTOR ( 3 downto 0 );
+    DDR_M_AXI_bid                       : IN  STD_LOGIC_VECTOR ( 4 downto 0 );
     DDR_M_AXI_bready                    : OUT STD_LOGIC_VECTOR ( 0 to 0 );
     DDR_M_AXI_bresp                     : IN  STD_LOGIC_VECTOR ( 1 downto 0 );
     DDR_M_AXI_bvalid                    : IN  STD_LOGIC_VECTOR ( 0 to 0 );
     DDR_M_AXI_rdata                     : IN  STD_LOGIC_VECTOR ( 127 downto 0 );
-    DDR_M_AXI_rid                       : IN  STD_LOGIC_VECTOR ( 3 downto 0 );
+    DDR_M_AXI_rid                       : IN  STD_LOGIC_VECTOR ( 4 downto 0 );
     DDR_M_AXI_rlast                     : IN  STD_LOGIC_VECTOR ( 0 to 0 );
     DDR_M_AXI_rready                    : OUT STD_LOGIC_VECTOR ( 0 to 0 );
     DDR_M_AXI_rresp                     : IN  STD_LOGIC_VECTOR ( 1 downto 0 );
-    DDR_M_AXI_ruser                     : IN  STD_LOGIC_VECTOR ( 15 downto 0 );
+    --DDR_M_AXI_ruser                     : IN  STD_LOGIC_VECTOR ( 15 downto 0 );
     DDR_M_AXI_rvalid                    : IN  STD_LOGIC_VECTOR ( 0 to 0 );
     DDR_M_AXI_wdata                     : OUT STD_LOGIC_VECTOR ( 127 downto 0 );
     DDR_M_AXI_wlast                     : OUT STD_LOGIC_VECTOR ( 0 to 0 );
     DDR_M_AXI_wready                    : IN  STD_LOGIC_VECTOR ( 0 to 0 );
     DDR_M_AXI_wstrb                     : OUT STD_LOGIC_VECTOR ( 15 downto 0 );
-    DDR_M_AXI_wuser                     : OUT STD_LOGIC_VECTOR ( 15 downto 0 );
+    --DDR_M_AXI_wuser                     : OUT STD_LOGIC_VECTOR ( 15 downto 0 );
     DDR_M_AXI_wvalid                    : OUT STD_LOGIC_VECTOR ( 0 to 0 );
     --
     -- NVME <-> ACTION Interface
@@ -1152,7 +1152,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL nvm_axi_card_mem0_araddr       : STD_LOGIC_VECTOR ( 33 downto 0 );
   SIGNAL nvm_axi_card_mem0_arburst      : STD_LOGIC_VECTOR ( 1 downto 0 );
   SIGNAL nvm_axi_card_mem0_arcache      : STD_LOGIC_VECTOR ( 3 downto 0 );
-  SIGNAL nvm_axi_card_mem0_arid         : STD_LOGIC_VECTOR ( 3 downto 0 );
+  SIGNAL nvm_axi_card_mem0_arid         : STD_LOGIC_VECTOR ( 4 downto 0 );
   SIGNAL nvm_axi_card_mem0_arlen        : STD_LOGIC_VECTOR ( 7 downto 0 );
   SIGNAL nvm_axi_card_mem0_arlock       : STD_LOGIC_VECTOR ( 0 to 0 );
   SIGNAL nvm_axi_card_mem0_arprot       : STD_LOGIC_VECTOR ( 2 downto 0 );
@@ -1164,7 +1164,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL nvm_axi_card_mem0_awaddr       : STD_LOGIC_VECTOR ( 33 downto 0 );
   SIGNAL nvm_axi_card_mem0_awburst      : STD_LOGIC_VECTOR ( 1 downto 0 );
   SIGNAL nvm_axi_card_mem0_awcache      : STD_LOGIC_VECTOR ( 3 downto 0 );
-  SIGNAL nvm_axi_card_mem0_awid         : STD_LOGIC_VECTOR ( 3 downto 0 );
+  SIGNAL nvm_axi_card_mem0_awid         : STD_LOGIC_VECTOR ( 4 downto 0 );
   SIGNAL nvm_axi_card_mem0_awlen        : STD_LOGIC_VECTOR ( 7 downto 0 );
   SIGNAL nvm_axi_card_mem0_awlock       : STD_LOGIC_VECTOR ( 0 to 0 );
   SIGNAL nvm_axi_card_mem0_awprot       : STD_LOGIC_VECTOR ( 2 downto 0 );
@@ -1182,13 +1182,13 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL nvm_axi_card_mem0_rlast        : STD_LOGIC_VECTOR ( 0 to 0 );
   SIGNAL nvm_axi_card_mem0_rready       : STD_LOGIC_VECTOR ( 0 to 0 );
   SIGNAL nvm_axi_card_mem0_rresp        : STD_LOGIC_VECTOR ( 1 downto 0 );
-  SIGNAL nvm_axi_card_mem0_ruser        : STD_LOGIC_VECTOR ( 15 downto 0 );
-  SIGNAL nvm_axi_card_mem0_rvalid       : STD_LOGIC_VECTOR ( 0 to 0 );
+  --SIGNAL nvm_axi_card_mem0_ruser        : STD_LOGIC_VECTOR ( 15 downto 0 ) := (others => '0');
+  SIGNAL nvm_axi_card_mem0_rvalid       : STD_LOGIC_VECTOR ( 0 to 0 ) := (others => '0');
   SIGNAL nvm_axi_card_mem0_wdata        : STD_LOGIC_VECTOR ( 127 downto 0 );
   SIGNAL nvm_axi_card_mem0_wlast        : STD_LOGIC_VECTOR ( 0 to 0 );
   SIGNAL nvm_axi_card_mem0_wready       : STD_LOGIC_VECTOR ( 0 to 0 );
   SIGNAL nvm_axi_card_mem0_wstrb        : STD_LOGIC_VECTOR ( 15 downto 0 );
-  SIGNAL nvm_axi_card_mem0_wuser        : STD_LOGIC_VECTOR ( 15 downto 0 );
+  --SIGNAL nvm_axi_card_mem0_wuser        : STD_LOGIC_VECTOR ( 15 downto 0 );
   SIGNAL nvm_axi_card_mem0_wvalid       : STD_LOGIC_VECTOR ( 0 to 0 );
   --
   -- NVME <-> ACTION
@@ -1709,16 +1709,20 @@ BEGIN
 
 
 #ifdef CONFIG_ENABLE_NVME
-  act_axi_card_mem0_bid  (3 downto 1) <= "000";
-  act_axi_card_mem0_rid  (3 downto 1) <= "000";
+  act_axi_card_mem0_bid  (3 downto 1) <= (others => '0');
+  act_axi_card_mem0_rid  (3 downto 1) <= (others => '0');
 
-  nvm_axi_card_mem0_bid  (2 downto 0) <= "000";
-  nvm_axi_card_mem0_rid  (2 downto 0) <= "000";
+  nvm_axi_card_mem0_bid  (2 downto 0) <= (others => '0');
+  nvm_axi_card_mem0_rid  (2 downto 0) <= (others => '0');
 
+  -- adapt signals between axi_interconnect (tmp_ connected to m00)  and DDR4SDRAM
+  -- SIGNAL tmp_sdram_axi_arid             : STD_LOGIC_VECTOR (C_AXI_CARD_MEM0_ID_WIDTH downto 0);
+  -- SIGNAL sdram_axi_arid                 : STD_LOGIC_VECTOR (C_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );
   sdram_axi_arid    <= tmp_sdram_axi_arid(3 DOWNTO 0);
   sdram_axi_awid    <= tmp_sdram_axi_awid(3 DOWNTO 0);                    
   tmp_sdram_axi_bid <= '0' & sdram_axi_bid(3 DOWNTO 0);
   tmp_sdram_axi_rid <= '0' & sdram_axi_rid(3 DOWNTO 0);
+
   axi_interconnect_i : axi_interconnect
     PORT MAP (
       INTERCONNECT_ACLK       => ha_pclock,
@@ -2020,7 +2024,7 @@ BEGIN
       DDR_M_AXI_araddr(33 downto 0)    => nvm_axi_card_mem0_araddr(33 downto 0),
       DDR_M_AXI_arburst(1 downto 0)    => nvm_axi_card_mem0_arburst(1 downto 0),
       DDR_M_AXI_arcache(3 downto 0)    => nvm_axi_card_mem0_arcache(3 downto 0),
-      DDR_M_AXI_arid(3 downto 0)       => nvm_axi_card_mem0_arid(3 downto 0),
+      DDR_M_AXI_arid(4 downto 0)       => nvm_axi_card_mem0_arid(4 downto 0),
       DDR_M_AXI_arlen(7 downto 0)      => nvm_axi_card_mem0_arlen(7 downto 0),
       DDR_M_AXI_arlock(0)              => nvm_axi_card_mem0_arlock(0),
       DDR_M_AXI_arprot(2 downto 0)     => nvm_axi_card_mem0_arprot(2 downto 0),
@@ -2032,7 +2036,7 @@ BEGIN
       DDR_M_AXI_awaddr(33 downto 0)    => nvm_axi_card_mem0_awaddr(33 downto 0),
       DDR_M_AXI_awburst(1 downto 0)    => nvm_axi_card_mem0_awburst(1 downto 0),
       DDR_M_AXI_awcache(3 downto 0)    => nvm_axi_card_mem0_awcache(3 downto 0),
-      DDR_M_AXI_awid(3 downto 0)       => nvm_axi_card_mem0_awid(3 downto 0),
+      DDR_M_AXI_awid(4 downto 0)       => nvm_axi_card_mem0_awid(4 downto 0),
       DDR_M_AXI_awlen(7 downto 0)      => nvm_axi_card_mem0_awlen(7 downto 0),
       DDR_M_AXI_awlock(0)              => nvm_axi_card_mem0_awlock(0),
       DDR_M_AXI_awprot(2 downto 0)     => nvm_axi_card_mem0_awprot(2 downto 0),
@@ -2041,22 +2045,24 @@ BEGIN
       DDR_M_AXI_awregion(3 downto 0)   => nvm_axi_card_mem0_awregion(3 downto 0),
       DDR_M_AXI_awsize(2 downto 0)     => nvm_axi_card_mem0_awsize(2 downto 0),
       DDR_M_AXI_awvalid(0)             => nvm_axi_card_mem0_awvalid(0),
-      DDR_M_AXI_bid                    => nvm_axi_card_mem0_bid(3 downto 0),
+      --DDR_M_AXI_bid(3 downto 0)        => nvm_axi_card_mem0_bid(3 downto 0),
+      DDR_M_AXI_bid(4 downto 0)        => '0' & nvm_axi_card_mem0_bid(3 downto 0),
       DDR_M_AXI_bready(0)              => nvm_axi_card_mem0_bready(0),
       DDR_M_AXI_bresp(1 downto 0)      => nvm_axi_card_mem0_bresp(1 downto 0),
       DDR_M_AXI_bvalid(0)              => nvm_axi_card_mem0_bvalid(0),
       DDR_M_AXI_rdata(127 downto 0)    => nvm_axi_card_mem0_rdata(127 downto 0),
-      DDR_M_AXI_rid(3 downto 0)        => nvm_axi_card_mem0_rid(3 downto 0),
+      --DDR_M_AXI_rid(3 downto 0)        => nvm_axi_card_mem0_rid(3 downto 0),
+      DDR_M_AXI_rid(4 downto 0)        => '0' & nvm_axi_card_mem0_rid(3 downto 0),
       DDR_M_AXI_rlast(0)               => nvm_axi_card_mem0_rlast(0),
       DDR_M_AXI_rready(0)              => nvm_axi_card_mem0_rready(0),
       DDR_M_AXI_rresp(1 downto 0)      => nvm_axi_card_mem0_rresp(1 downto 0),
-      DDR_M_AXI_ruser(15 downto 0)     => nvm_axi_card_mem0_ruser(15 downto 0),
+      --DDR_M_AXI_ruser(15 downto 0)     => nvm_axi_card_mem0_ruser(15 downto 0),
       DDR_M_AXI_rvalid(0)              => nvm_axi_card_mem0_rvalid(0),
       DDR_M_AXI_wdata(127 downto 0)    => nvm_axi_card_mem0_wdata(127 downto 0),
       DDR_M_AXI_wlast(0)               => nvm_axi_card_mem0_wlast(0),
       DDR_M_AXI_wready(0)              => nvm_axi_card_mem0_wready(0),
       DDR_M_AXI_wstrb(15 downto 0)     => nvm_axi_card_mem0_wstrb(15 downto 0),
-      DDR_M_AXI_wuser(15 downto 0)     => nvm_axi_card_mem0_wuser(15 downto 0),
+      --DDR_M_AXI_wuser(15 downto 0)     => nvm_axi_card_mem0_wuser(15 downto 0),
       DDR_M_AXI_wvalid(0)              => nvm_axi_card_mem0_wvalid(0),
       --
       -- NVME <-> action Interface

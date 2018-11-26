@@ -220,30 +220,51 @@ set_property -dict [list  \
 CONFIG.C_BUF_TYPE {IBUFDSGTE} \
 ] $util_buf_gte_1 >> $log_file
 
-# Create instance: axi_pcie3_0, and set properties
+# Create instance: axi_pcie3usp_0, and set properties
 puts "                        generating AXI PCIe Root Complex"
-set axi_pcie3_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie3:3.0 axi_pcie3_0 >> $log_file ]
-set_property -dict [ list \
-CONFIG.pcie_blk_locn {X0Y1} \
-CONFIG.select_quad {GTH_Quad_227} \
+set axi_pcie3usp_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xdma:4.1 axi_pcie3usp_0 >> $log_file ]
+set_property -dict [list \
+CONFIG.functional_mode {AXI_Bridge} \
+CONFIG.mode_selection {Advanced} \
+CONFIG.device_port_type {Root_Port_of_PCI_Express_Root_Complex} \
+CONFIG.pcie_blk_locn {X1Y0} \
+CONFIG.pl_link_cap_max_link_width {X4} \
+CONFIG.pl_link_cap_max_link_speed {8.0_GT/s} \
 CONFIG.axi_addr_width {34} \
 CONFIG.axi_data_width {128_bit} \
 CONFIG.axisten_freq {250} \
-CONFIG.dedicate_perst {false} \
-CONFIG.device_port_type {Root_Port_of_PCI_Express_Root_Complex} \
-CONFIG.pf0_bar0_64bit {true} \
-CONFIG.pf0_bar0_scale {Gigabytes} \
-CONFIG.pf0_bar0_size {8} \
-CONFIG.pf0_interrupt_pin {NONE} \
+CONFIG.pf0_device_id {8134} \
+CONFIG.pf0_base_class_menu {Bridge_device} \
+CONFIG.pf0_class_code_base {06} \
+CONFIG.pf0_sub_class_interface_menu {CardBus_bridge} \
+CONFIG.pf0_class_code_sub {07} \
+CONFIG.pf0_class_code_interface {00} \
+CONFIG.pf0_class_code {060700} \
 CONFIG.pf0_msi_enabled {false} \
-CONFIG.pf0_msix_cap_pba_bir {BAR_1:0} \
-CONFIG.pf0_msix_cap_table_bir {BAR_1:0} \
-CONFIG.pipe_sim {true} \
-CONFIG.pl_link_cap_max_link_speed {8.0_GT/s} \
-CONFIG.pl_link_cap_max_link_width {X4} \
-CONFIG.coreclk_freq {500} \
+CONFIG.xdma_axilite_slave {true} \
+CONFIG.en_gt_selection {true} \
+CONFIG.select_quad {GTH_Quad_227} \
+CONFIG.INS_LOSS_NYQ {5} \
 CONFIG.plltype {QPLL1} \
-] $axi_pcie3_0 >> $log_file
+CONFIG.pf0_msix_cap_table_bir {BAR_1:0} \
+CONFIG.pf0_msix_cap_pba_bir {BAR_1:0} \
+CONFIG.ins_loss_profile {Backplane} \
+CONFIG.pipe_sim {true} \
+CONFIG.type1_membase_memlimit_enable {Enabled} \
+CONFIG.type1_prefetchable_membase_memlimit {64bit_Enabled} \
+CONFIG.BASEADDR {0x00000000} \
+CONFIG.HIGHADDR {0x001FFFFF} \
+CONFIG.pf0_bar0_size {8} \
+CONFIG.pf0_bar0_scale {Gigabytes} \
+CONFIG.pf0_bar0_64bit {true} \
+CONFIG.bar_indicator {BAR_1:0} \
+CONFIG.pf0_bar0_type_mqdma {Memory} \
+CONFIG.pf0_sriov_bar0_type {Memory} \
+CONFIG.PF0_DEVICE_ID_mqdma {8134} \
+CONFIG.pf0_base_class_menu_mqdma {Bridge_device} \
+CONFIG.pf0_class_code_base_mqdma {06} \
+CONFIG.pf0_class_code_mqdma {068000} \
+] $axi_pcie3usp_0 >> $log_file
 
 # Vivado2017.4 can not create an an example project if the design was not saved before
 save_bd_design >> $log_file
@@ -251,35 +272,58 @@ save_bd_design >> $log_file
 if { $denali_used == TRUE } {
   #AXI_PCIE3 create axi_pcie3 example design
   puts "                        generating AXI PCIe Root Complex example design"
-  open_example_project -in_process -verbose -force -dir $root_dir/ip/nvme [get_ips nvme_top_axi_pcie3_0_0] >> $log_file
+  open_example_project -in_process -verbose -force -dir $root_dir/ip/nvme [get_ips nvme_top_axi_pcie3usp_0_0] >> $log_file
 }
 
 current_project $prj_name
 open_bd_design [get_files */$bd_name.bd]
 
-# Create instance: axi_pcie3_1, and set properties
-set axi_pcie3_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie3:3.0 axi_pcie3_1 >> $log_file ]
+# Create instance: axi_pcie3usp_1, and set properties
+set axi_pcie3usp_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xdma:4.1 axi_pcie3usp_1 >> $log_file ]
 set_property -dict [ list \
-CONFIG.pcie_blk_locn {X0Y2} \
-CONFIG.select_quad {GTH_Quad_228} \
+CONFIG.functional_mode {AXI_Bridge} \
+CONFIG.mode_selection {Advanced} \
+CONFIG.device_port_type {Root_Port_of_PCI_Express_Root_Complex} \
+CONFIG.pcie_blk_locn {X1Y1} \
+CONFIG.pl_link_cap_max_link_width {X4} \
+CONFIG.pl_link_cap_max_link_speed {8.0_GT/s} \
 CONFIG.axi_addr_width {34} \
 CONFIG.axi_data_width {128_bit} \
 CONFIG.axisten_freq {250} \
-CONFIG.dedicate_perst {false} \
-CONFIG.device_port_type {Root_Port_of_PCI_Express_Root_Complex} \
-CONFIG.pf0_bar0_64bit {true} \
-CONFIG.pf0_bar0_scale {Gigabytes} \
-CONFIG.pf0_bar0_size {8} \
-CONFIG.pf0_interrupt_pin {NONE} \
-CONFIG.pf0_msi_enabled {false} \
-CONFIG.pf0_msix_cap_pba_bir {BAR_1:0} \
-CONFIG.pf0_msix_cap_table_bir {BAR_1:0} \
 CONFIG.pipe_sim {true} \
-CONFIG.pl_link_cap_max_link_speed {8.0_GT/s} \
-CONFIG.pl_link_cap_max_link_width {X4} \
-CONFIG.coreclk_freq {500} \
+CONFIG.pf0_device_id {8134} \
+CONFIG.pf0_base_class_menu {Bridge_device} \
+CONFIG.pf0_class_code_base {06} \
+CONFIG.pf0_sub_class_interface_menu {CardBus_bridge} \
+CONFIG.pf0_class_code_sub {07} \
+CONFIG.pf0_class_code_interface {00} \
+CONFIG.pf0_class_code {060700} \
+CONFIG.pf0_msi_enabled {false} \
+CONFIG.xdma_axilite_slave {true} \
+CONFIG.en_gt_selection {true} \
+CONFIG.select_quad {GTH_Quad_228} \
+CONFIG.INS_LOSS_NYQ {5} \
 CONFIG.plltype {QPLL1} \
-] $axi_pcie3_1 >> $log_file
+CONFIG.pf0_msix_cap_table_bir {BAR_1:0} \
+CONFIG.pf0_msix_cap_pba_bir {BAR_1:0} \
+CONFIG.ins_loss_profile {Backplane} \
+CONFIG.pipe_sim {true} \
+CONFIG.type1_membase_memlimit_enable {Enabled} \
+CONFIG.type1_prefetchable_membase_memlimit {64bit_Enabled} \
+CONFIG.BASEADDR {0x00000000} \
+CONFIG.HIGHADDR {0x001FFFFF} \
+CONFIG.pf0_bar0_size {8} \
+CONFIG.pf0_bar0_scale {Gigabytes} \
+CONFIG.pf0_bar0_64bit {true} \
+CONFIG.bar_indicator {BAR_1:0} \
+CONFIG.dma_reset_source_sel {Phy_Ready} \
+CONFIG.pf0_bar0_type_mqdma {Memory} \
+CONFIG.pf0_sriov_bar0_type {Memory} \
+CONFIG.PF0_DEVICE_ID_mqdma {8134} \
+CONFIG.pf0_base_class_menu_mqdma {Bridge_device} \
+CONFIG.pf0_class_code_base_mqdma {06} \
+CONFIG.pf0_class_code_mqdma {068000} \
+] $axi_pcie3usp_1 >> $log_file
 
 # Create instance: nvme_host_wrap_0, and set properties
 puts "                        generating NVMe Host"
@@ -289,17 +333,17 @@ create_bd_cell   -type ip -vlnv IP:user:nvme_host_wrap:1.0 nvme_host_wrap_0 >> $
 puts "                        connecting all blocks and ports"
 connect_bd_intf_net -intf_net S00_AXI_I0 [get_bd_intf_ports NVME_S_AXI] [get_bd_intf_pins axi_interconnect_0/S00_AXI]                                  >> $log_file
 connect_bd_intf_net -intf_net S01_AXI_I0 [get_bd_intf_ports ACT_NVME_AXI] [get_bd_intf_pins axi_interconnect_0/S01_AXI]				       >> $log_file
-connect_bd_intf_net -intf_net S00_AXI_I2 [get_bd_intf_pins axi_interconnect_2/S00_AXI] [get_bd_intf_pins axi_pcie3_0/M_AXI]			       >> $log_file
-connect_bd_intf_net -intf_net S01_AXI_I2 [get_bd_intf_pins axi_interconnect_2/S01_AXI] [get_bd_intf_pins axi_pcie3_1/M_AXI]			       >> $log_file
+connect_bd_intf_net -intf_net S00_AXI_I2 [get_bd_intf_pins axi_interconnect_2/S00_AXI] [get_bd_intf_pins axi_pcie3usp_0/M_AXI_B]			       >> $log_file
+connect_bd_intf_net -intf_net S01_AXI_I2 [get_bd_intf_pins axi_interconnect_2/S01_AXI] [get_bd_intf_pins axi_pcie3usp_1/M_AXI_B]			       >> $log_file
 connect_bd_intf_net -intf_net axi_interconnect_0_M00_AXI [get_bd_intf_pins axi_interconnect_0/M00_AXI] [get_bd_intf_pins nvme_host_wrap_0/host_s_axi]  >> $log_file
-connect_bd_intf_net -intf_net axi_interconnect_0_M01_AXI [get_bd_intf_pins axi_interconnect_0/M01_AXI] [get_bd_intf_pins axi_pcie3_0/S_AXI_CTL]	       >> $log_file
-connect_bd_intf_net -intf_net axi_interconnect_0_M02_AXI [get_bd_intf_pins axi_interconnect_0/M02_AXI] [get_bd_intf_pins axi_pcie3_1/S_AXI_CTL]	       >> $log_file
-connect_bd_intf_net -intf_net axi_interconnect_1_M00_AXI [get_bd_intf_pins axi_interconnect_1/M00_AXI] [get_bd_intf_pins axi_pcie3_0/S_AXI]	       >> $log_file
-connect_bd_intf_net -intf_net axi_interconnect_1_M01_AXI [get_bd_intf_pins axi_interconnect_1/M01_AXI] [get_bd_intf_pins axi_pcie3_1/S_AXI]	       >> $log_file
+connect_bd_intf_net -intf_net axi_interconnect_0_M01_AXI [get_bd_intf_pins axi_interconnect_0/M01_AXI] [get_bd_intf_pins axi_pcie3usp_0/S_AXI_LITE]	       >> $log_file
+connect_bd_intf_net -intf_net axi_interconnect_0_M02_AXI [get_bd_intf_pins axi_interconnect_0/M02_AXI] [get_bd_intf_pins axi_pcie3usp_1/S_AXI_LITE]	       >> $log_file
+connect_bd_intf_net -intf_net axi_interconnect_1_M00_AXI [get_bd_intf_pins axi_interconnect_1/M00_AXI] [get_bd_intf_pins axi_pcie3usp_0/S_AXI_B]	       >> $log_file
+connect_bd_intf_net -intf_net axi_interconnect_1_M01_AXI [get_bd_intf_pins axi_interconnect_1/M01_AXI] [get_bd_intf_pins axi_pcie3usp_1/S_AXI_B]	       >> $log_file
 connect_bd_intf_net -intf_net axi_interconnect_2_M00_AXI [get_bd_intf_pins axi_interconnect_2/M00_AXI] [get_bd_intf_pins nvme_host_wrap_0/pcie_s_axi]  >> $log_file
 connect_bd_intf_net -intf_net axi_interconnect_2_M01_AXI [get_bd_intf_ports DDR_M_AXI] [get_bd_intf_pins axi_interconnect_2/M01_AXI]		       >> $log_file
-connect_bd_intf_net -intf_net axi_pcie3_0_pcie_7x_mgt [get_bd_intf_ports pcie_rc0] [get_bd_intf_pins axi_pcie3_0/pcie_7x_mgt]			       >> $log_file
-connect_bd_intf_net -intf_net axi_pcie3_1_pcie_7x_mgt [get_bd_intf_ports pcie_rc1] [get_bd_intf_pins axi_pcie3_1/pcie_7x_mgt]			       >> $log_file
+connect_bd_intf_net -intf_net axi_pcie3usp_0_pcie_mgt [get_bd_intf_ports pcie_rc0] [get_bd_intf_pins axi_pcie3usp_0/pcie_mgt]			       >> $log_file
+connect_bd_intf_net -intf_net axi_pcie3usp_1_pcie_mgt [get_bd_intf_ports pcie_rc1] [get_bd_intf_pins axi_pcie3usp_1/pcie_mgt]			       >> $log_file
 connect_bd_intf_net -intf_net nvme_host_wrap_0_pcie_m_axi [get_bd_intf_pins axi_interconnect_1/S00_AXI] [get_bd_intf_pins nvme_host_wrap_0/pcie_m_axi] >> $log_file
 
 
@@ -308,38 +352,38 @@ connect_bd_net -net NVME_S_ACLK_1 [get_bd_ports NVME_S_ACLK] [get_bd_pins axi_in
 connect_bd_net -net ACT_NVME_ACLK_1 [get_bd_ports ACT_NVME_ACLK] [get_bd_pins axi_interconnect_0/S01_ACLK] >> $log_file
 connect_bd_net -net NVME_S_ARESETN_1 [get_bd_ports NVME_S_ARESETN] [get_bd_pins axi_interconnect_0/ARESETN] [get_bd_pins axi_interconnect_0/S00_ARESETN] [get_bd_pins axi_interconnect_0/M00_ARESETN] [get_bd_pins nvme_host_wrap_0/axi_aresetn] [get_bd_pins axi_interconnect_1/ARESETN] [get_bd_pins axi_interconnect_1/S00_ARESETN] [get_bd_pins axi_interconnect_2/ARESETN] [get_bd_pins axi_interconnect_2/M00_ARESETN] [get_bd_pins axi_interconnect_2/M01_ARESETN] [get_bd_ports ddr_aresetn] >> $log_file
 connect_bd_net -net ACT_NVME_ARESETN_1 [get_bd_ports ACT_NVME_ARESETN] [get_bd_pins axi_interconnect_0/S01_ARESETN] >> $log_file
-connect_bd_net -net axi_pcie3_0_axi_aclk        [get_bd_pins axi_pcie3_0/axi_aclk]        [get_bd_pins axi_interconnect_0/M01_ACLK]    [get_bd_pins axi_interconnect_1/M00_ACLK] [get_bd_pins axi_interconnect_2/S00_ACLK] >> $log_file
-connect_bd_net -net axi_pcie3_0_axi_aresetn     [get_bd_pins axi_pcie3_0/axi_aresetn]     [get_bd_pins axi_interconnect_1/M00_ARESETN] [get_bd_pins axi_interconnect_2/S00_ARESETN] >> $log_file
-connect_bd_net -net axi_pcie3_0_axi_ctl_aresetn [get_bd_pins axi_pcie3_0/axi_ctl_aresetn] [get_bd_pins axi_interconnect_0/M01_ARESETN] >> $log_file
-connect_bd_net -net axi_pcie3_1_axi_aclk        [get_bd_pins axi_pcie3_1/axi_aclk]        [get_bd_pins axi_interconnect_0/M02_ACLK]    [get_bd_pins axi_interconnect_1/M01_ACLK] [get_bd_pins axi_interconnect_2/S01_ACLK] >> $log_file
-connect_bd_net -net axi_pcie3_1_axi_aresetn     [get_bd_pins axi_pcie3_1/axi_aresetn]     [get_bd_pins axi_interconnect_1/M01_ARESETN] [get_bd_pins axi_interconnect_2/S01_ARESETN] >> $log_file
-connect_bd_net -net axi_pcie3_1_axi_ctl_aresetn [get_bd_pins axi_pcie3_1/axi_ctl_aresetn] [get_bd_pins axi_interconnect_0/M02_ARESETN] >> $log_file
-connect_bd_net -net nvme_reset_n                [get_bd_ports nvme_reset_n] [get_bd_pins axi_pcie3_0/sys_rst_n] [get_bd_pins axi_pcie3_1/sys_rst_n] >> $log_file
+connect_bd_net -net axi_pcie3usp_0_axi_aclk        [get_bd_pins axi_pcie3usp_0/axi_aclk]        [get_bd_pins axi_interconnect_0/M01_ACLK]    [get_bd_pins axi_interconnect_1/M00_ACLK] [get_bd_pins axi_interconnect_2/S00_ACLK] >> $log_file
+connect_bd_net -net axi_pcie3usp_0_axi_aresetn     [get_bd_pins axi_pcie3usp_0/axi_aresetn]     [get_bd_pins axi_interconnect_1/M00_ARESETN] [get_bd_pins axi_interconnect_2/S00_ARESETN] >> $log_file
+connect_bd_net -net axi_pcie3usp_0_axi_ctl_aresetn [get_bd_pins axi_pcie3usp_0/axi_ctl_aresetn] [get_bd_pins axi_interconnect_0/M01_ARESETN] >> $log_file
+connect_bd_net -net axi_pcie3usp_1_axi_aclk        [get_bd_pins axi_pcie3usp_1/axi_aclk]        [get_bd_pins axi_interconnect_0/M02_ACLK]    [get_bd_pins axi_interconnect_1/M01_ACLK] [get_bd_pins axi_interconnect_2/S01_ACLK] >> $log_file
+connect_bd_net -net axi_pcie3usp_1_axi_aresetn     [get_bd_pins axi_pcie3usp_1/axi_aresetn]     [get_bd_pins axi_interconnect_1/M01_ARESETN] [get_bd_pins axi_interconnect_2/S01_ARESETN] >> $log_file
+connect_bd_net -net axi_pcie3usp_1_axi_ctl_aresetn [get_bd_pins axi_pcie3usp_1/axi_ctl_aresetn] [get_bd_pins axi_interconnect_0/M02_ARESETN] >> $log_file
+connect_bd_net -net nvme_reset_n                [get_bd_ports nvme_reset_n] [get_bd_pins axi_pcie3usp_0/sys_rst_n] [get_bd_pins axi_pcie3usp_1/sys_rst_n] >> $log_file
 
 connect_bd_net [get_bd_ports refclk_nvme_ch0_p] [get_bd_pins util_buf_gte_0/IBUF_DS_P]           >> $log_file
 connect_bd_net [get_bd_ports refclk_nvme_ch0_n] [get_bd_pins util_buf_gte_0/IBUF_DS_N]		 >> $log_file
-connect_bd_net [get_bd_pins  util_buf_gte_0/IBUF_DS_ODIV2] [get_bd_pins axi_pcie3_0/refclk]	 >> $log_file
-connect_bd_net [get_bd_pins  util_buf_gte_0/IBUF_OUT]      [get_bd_pins axi_pcie3_0/sys_clk_gt]	 >> $log_file
+connect_bd_net [get_bd_pins  util_buf_gte_0/IBUF_DS_ODIV2] [get_bd_pins axi_pcie3usp_0/sys_clk]	 >> $log_file
+connect_bd_net [get_bd_pins  util_buf_gte_0/IBUF_OUT]      [get_bd_pins axi_pcie3usp_0/sys_clk_gt]	 >> $log_file
 connect_bd_net [get_bd_ports refclk_nvme_ch1_p] [get_bd_pins util_buf_gte_1/IBUF_DS_P] 		 >> $log_file
 connect_bd_net [get_bd_ports refclk_nvme_ch1_n] [get_bd_pins util_buf_gte_1/IBUF_DS_N]		 >> $log_file
-connect_bd_net [get_bd_pins  util_buf_gte_1/IBUF_DS_ODIV2] [get_bd_pins axi_pcie3_1/refclk]	 >> $log_file
-connect_bd_net [get_bd_pins  util_buf_gte_1/IBUF_OUT]      [get_bd_pins axi_pcie3_1/sys_clk_gt]	 >> $log_file
+connect_bd_net [get_bd_pins  util_buf_gte_1/IBUF_DS_ODIV2] [get_bd_pins axi_pcie3usp_1/sys_clk]	 >> $log_file
+connect_bd_net [get_bd_pins  util_buf_gte_1/IBUF_OUT]      [get_bd_pins axi_pcie3usp_1/sys_clk_gt]	 >> $log_file
 
 
 # Create address segments
-create_bd_addr_seg -range 0x000100000000 -offset 0x000200000000 [get_bd_addr_spaces axi_pcie3_0/M_AXI] [get_bd_addr_segs DDR_M_AXI/Reg] SEG_DDR_M_AXI_Reg                     >> $log_file
-create_bd_addr_seg -range 0x80000000 -offset 0x00000000 [get_bd_addr_spaces axi_pcie3_0/M_AXI] [get_bd_addr_segs nvme_host_wrap_0/pcie_s_axi/reg0] SEG_nvme_host_wrap_0_reg0  >> $log_file
-create_bd_addr_seg -range 0x000100000000 -offset 0x000200000000 [get_bd_addr_spaces axi_pcie3_1/M_AXI] [get_bd_addr_segs DDR_M_AXI/Reg] SEG_DDR_M_AXI_Reg		      >> $log_file
-create_bd_addr_seg -range 0x80000000 -offset 0x00000000 [get_bd_addr_spaces axi_pcie3_1/M_AXI] [get_bd_addr_segs nvme_host_wrap_0/pcie_s_axi/reg0] SEG_nvme_host_wrap_0_reg0  >> $log_file
-create_bd_addr_seg -range 0x00002000 -offset 0x00000000 [get_bd_addr_spaces nvme_host_wrap_0/pcie_m_axi] [get_bd_addr_segs axi_pcie3_0/S_AXI/BAR0] SEG_axi_pcie3_0_BAR0	      >> $log_file
-create_bd_addr_seg -range 0x00002000 -offset 0x00002000 [get_bd_addr_spaces nvme_host_wrap_0/pcie_m_axi] [get_bd_addr_segs axi_pcie3_1/S_AXI/BAR0] SEG_axi_pcie3_1_BAR0	      >> $log_file
-create_bd_addr_seg -range 0x10000000 -offset 0x10000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs axi_pcie3_0/S_AXI_CTL/CTL0] SEG_axi_pcie3_0_CTL0		      >> $log_file
-create_bd_addr_seg -range 0x10000000 -offset 0x20000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs axi_pcie3_1/S_AXI_CTL/CTL0] SEG_axi_pcie3_1_CTL0		      >> $log_file
+create_bd_addr_seg -range 0x000100000000 -offset 0x000200000000 [get_bd_addr_spaces axi_pcie3usp_0/M_AXI_B] [get_bd_addr_segs DDR_M_AXI/Reg] SEG_DDR_M_AXI_Reg                     >> $log_file
+create_bd_addr_seg -range 0x80000000 -offset 0x00000000 [get_bd_addr_spaces axi_pcie3usp_0/M_AXI_B] [get_bd_addr_segs nvme_host_wrap_0/pcie_s_axi/reg0] SEG_nvme_host_wrap_0_reg0  >> $log_file
+create_bd_addr_seg -range 0x000100000000 -offset 0x000200000000 [get_bd_addr_spaces axi_pcie3usp_1/M_AXI_B] [get_bd_addr_segs DDR_M_AXI/Reg] SEG_DDR_M_AXI_Reg		      >> $log_file
+create_bd_addr_seg -range 0x80000000 -offset 0x00000000 [get_bd_addr_spaces axi_pcie3usp_1/M_AXI_B] [get_bd_addr_segs nvme_host_wrap_0/pcie_s_axi/reg0] SEG_nvme_host_wrap_0_reg0  >> $log_file
+create_bd_addr_seg -range 0x00002000 -offset 0x00000000 [get_bd_addr_spaces nvme_host_wrap_0/pcie_m_axi] [get_bd_addr_segs axi_pcie3usp_0/S_AXI_B/BAR0] SEG_axi_pcie3usp_0_BAR0	      >> $log_file
+create_bd_addr_seg -range 0x00002000 -offset 0x00002000 [get_bd_addr_spaces nvme_host_wrap_0/pcie_m_axi] [get_bd_addr_segs axi_pcie3usp_1/S_AXI_B/BAR0] SEG_axi_pcie3usp_1_BAR0	      >> $log_file
+create_bd_addr_seg -range 0x10000000 -offset 0x10000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs axi_pcie3usp_0/s_axi_lite/CTL0] SEG_axi_pcie3usp_0_CTL0		      >> $log_file
+create_bd_addr_seg -range 0x10000000 -offset 0x20000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs axi_pcie3usp_1/s_axi_lite/CTL0] SEG_axi_pcie3usp_1_CTL0		      >> $log_file
 create_bd_addr_seg -range 0x00001000 -offset 0x00000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs nvme_host_wrap_0/host_s_axi/reg0] SEG_nvme_host_wrap_0_reg0	      >> $log_file
 create_bd_addr_seg -range 0x00001000 -offset 0x00000000 [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs nvme_host_wrap_0/host_s_axi/reg0] SEG_nvme_host_wrap_0_reg0	      >> $log_file
 # No direct access from action to PCIe root complexes
-exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs axi_pcie3_0/S_AXI_CTL/CTL0] >> $log_file
-exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs axi_pcie3_1/S_AXI_CTL/CTL0] >> $log_file
+exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs axi_pcie3usp_0/s_axi_lite/CTL0] >> $log_file
+exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs axi_pcie3usp_1/s_axi_lite/CTL0] >> $log_file
 
 # Save block design and close the project
 save_bd_design >> $log_file

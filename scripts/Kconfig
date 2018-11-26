@@ -182,7 +182,7 @@ choice
 
 	config HDL_NVME_EXAMPLE
 		bool "HDL NVMe Example"
-		depends on N250S
+	        depends on (N250S || N250SP)
 		select FORCE_SDRAM_OR_BRAM
 		select FORCE_NVME
 
@@ -221,7 +221,7 @@ choice
 
 	config HLS_NVME_MEMCOPY
 		bool "HLS NVMe Memcopy"
-		depends on N250S
+	        depends on (N250S || N250SP)
 		select ENABLE_HLS_SUPPORT
 		select FORCE_SDRAM_OR_BRAM
 		select FORCE_NVME

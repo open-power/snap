@@ -20,10 +20,10 @@
 ############################################################################
 set -e
 
-cp ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3_0_0/ip_2/sim/nvme_top_axi_pcie3_0_0_pcie3_ip.v ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3_0_0/ip_2/sim/nvme_top_axi_pcie3_0_0_pcie3_ip.patch
-grep -v "sigs(pipe_rx" ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3_0_0/ip_2/sim/nvme_top_axi_pcie3_0_0_pcie3_ip.patch > ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3_0_0/ip_2/sim/nvme_top_axi_pcie3_0_0_pcie3_ip.v
-rm ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3_0_0/ip_2/sim/nvme_top_axi_pcie3_0_0_pcie3_ip.patch
+cp ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3usp_0_0/ip_2/sim/xdma_v4_1_0_blk_mem_64_noreg_be.v ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3usp_0_0/ip_2/sim/xdma_v4_1_0_blk_mem_64_noreg_be.patch
+grep -v "sigs(pipe_rx" ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3usp_0_0/ip_2/sim/xdma_v4_1_0_blk_mem_64_noreg_be.patch > ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3usp_0_0/ip_2/sim/xdma_v4_1_0_blk_mem_64_noreg_be.v
+rm ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3usp_0_0/ip_2/sim/xdma_v4_1_0_blk_mem_64_noreg_be.patch
 
-cp ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3_1_0/ip_2/sim/nvme_top_axi_pcie3_1_0_pcie3_ip.v ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3_1_0/ip_2/sim/nvme_top_axi_pcie3_1_0_pcie3_ip.patch
-grep -v "sigs(pipe_rx" ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3_1_0/ip_2/sim/nvme_top_axi_pcie3_1_0_pcie3_ip.patch > ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3_1_0/ip_2/sim/nvme_top_axi_pcie3_1_0_pcie3_ip.v
-rm ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3_1_0/ip_2/sim/nvme_top_axi_pcie3_1_0_pcie3_ip.patch
+cp ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3usp_1_0/ip_2/sim/xdma_v4_1_0_blk_mem_64_noreg_be.v ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3usp_1_0/ip_2/sim/xdma_v4_1_0_blk_mem_64_noreg_be.patch
+grep -v "sigs(pipe_rx" ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3usp_1_0/ip_2/sim/xdma_v4_1_0_blk_mem_64_noreg_be.patch > ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3usp_1_0/ip_2/sim/xdma_v4_1_0_blk_mem_64_noreg_be.v
+rm ${SNAP_HARDWARE_ROOT}/ip/nvme/nvme.srcs/sources_1/bd/nvme_top/ip/nvme_top_axi_pcie3usp_1_0/ip_2/sim/xdma_v4_1_0_blk_mem_64_noreg_be.patch
