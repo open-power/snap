@@ -219,11 +219,12 @@ function usage() {
 	echo "    [-A <ADKU3>  : Select AlphaData KU3 Card"
 	echo "        <AD8K5>  : Select AlphaData 8K5 Card"
 	echo "        <N250S>  : Select Nallatech 250S Card"
-	echo "        <N250SP> : Select Nallatech 250SP Card"
 	echo "        <S121B>  : Select Semptian NSA121B Card"
+	echo "        <N250SP> : Select Nallatech 250SP Card"
 	echo "        <RCXVUP> : Select ReflexCES XpressVUP Card"
 	echo "        <FX609>  : Select Flyslice 609 Card"
 	echo "        <S241>   : Select Semptian NSA241 Card"
+	echo "        <AD9V3>  : Select AlphaData AD9V3 Card"
 	echo "        <ALL>    : Select ALL Cards"
 	echo "    [-F <Image>  : Set Image file for Accelerator -A"
 	echo "                   -A ALL is not valid if -F is used"
@@ -232,11 +233,11 @@ function usage() {
 	echo "    [-h] Print this help"
 	echo "    Option -D must be set"
 	echo "    following combinations can happen"
-	echo "    1.) Option -A [N250S, N250SP, ADKU3, AD8K5, S121B, FX609, S241 or RCXVUP] and -F is set"
+	echo "    1.) Option -A [N250S, N250SP, ADKU3, AD8K5, S121B, FX609, S241, AD9V3 or RCXVUP] and -F is set"
 	echo "        for Card in all Accelerators (-A)"
 	echo "           Image will be flashed on Card"
 	echo "           Software Test will run on Card"
-	echo "    2.) Option -A [N250S, N250SP, ADKU3, AD8K5, S121B, FX609, S241 or RCXVUP]"
+	echo "    2.) Option -A [N250S, N250SP, ADKU3, AD8K5, S121B, FX609, S241, AD9V3 or RCXVUP]"
 	echo "        for Card in all given Accelerators (-A)"
 	echo "           Software Test will run on Card"
 	echo "    3.) Option -A ALL"
@@ -273,9 +274,10 @@ while getopts "D:A:F:C:h" opt; do
 		   [[ $accel != "RCXVUP" ]] &&
 		   [[ $accel != "FX609"  ]] &&
 		   [[ $accel != "S241"   ]] &&
+		   [[ $accel != "AD9V3"  ]] &&
 		   [[ $accel != "ALL"    ]]; then
 			echo "Error:  Option -A $OPTARG is not valid !" >&2
-			echo "Expect: [N250S N250SP ADKU3 AD8K5 S121B FX609 S241 RCXVUP or ALL]" >&2
+			echo "Expect: [N250S N250SP ADKU3 AD8K5 S121B FX609 S241 RCXVUP AD9V3 or ALL]" >&2
 			exit 1
 		fi
 		;;
@@ -430,7 +432,7 @@ for card in $MY_CARDS ; do
 		continue
 	fi
 	# snap_find_card also detects GZIP cards, i will skip this cards
-	if [[ $accel != "N250S" ]]  && [[ $accel != "N250SP" ]] && [[ $accel != "ADKU3" ]] && [[ $accel != "S121B" ]]; then
+	if [[ $accel != "N250S" ]]  && [[ $accel != "N250SP" ]] && [[ $accel != "ADKU3" ]] && [[ $accel != "S121B" ]] && [[ $accel != "AD9V3" ]] && [[ $accel != "S241" ]] && [[ $accel != "FX609" ]] && [[ $accel != "RCXVUP" ]]; then
 		echo "Invalid Accelerator $accel for Card $card, skip"
 		continue
 	fi
