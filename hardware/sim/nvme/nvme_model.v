@@ -118,8 +118,8 @@ module nvme_model (
    wire [3:0] cfg_width_1;
 
 
-   `define DUTP0 a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst
-   `define DUTP2 a0.nvme_top_i.axi_pcie3_1.inst.pcie3_ip_i.inst
+   `define DUTP0 a0.nvme_top_i.axi_pcie3usp_0.inst.pcie4_ip_i.inst
+   `define DUTP2 a0.nvme_top_i.axi_pcie3usp_1.inst.pcie4_ip_i.inst
 
 
    `define DUTe a0.nvme_top_i
@@ -128,10 +128,10 @@ module nvme_model (
 
 //   `define DUTP1 afu
    `define DUTP1 a0              // ?????
-   defparam a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst.EXT_PIPE_SIM = "TRUE";
-   defparam a0.nvme_top_i.axi_pcie3_0.inst.pcie3_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
-   defparam a0.nvme_top_i.axi_pcie3_1.inst.pcie3_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
-   defparam a0.nvme_top_i.axi_pcie3_1.inst.pcie3_ip_i.inst.EXT_PIPE_SIM = "TRUE";
+   defparam a0.nvme_top_i.axi_pcie3usp_0.inst.pcie4_ip_i.inst.EXT_PIPE_SIM = "TRUE";
+   //defparam a0.nvme_top_i.axi_pcie3usp_0.inst.pcie4_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
+   //defparam a0.nvme_top_i.axi_pcie3usp_1.inst.pcie4_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
+   defparam a0.nvme_top_i.axi_pcie3usp_1.inst.pcie4_ip_i.inst.EXT_PIPE_SIM = "TRUE";
 
 
    assign `DUTP0.common_commands_in = pipe_common_commands_in_rp_0;
@@ -175,11 +175,11 @@ module nvme_model (
    assign  pipe_tx_6_rp_1                = `DUTP2.pipe_tx_6_sigs;
    assign  pipe_tx_7_rp_1                = `DUTP2.pipe_tx_7_sigs;
 
-   assign cfg_speed_0 = a0.nvme_top_i.axi_pcie3_0.inst.cfg_current_speed[2:0];
-   assign cfg_width_0 = a0.nvme_top_i.axi_pcie3_0.inst.cfg_negotiated_width[3:0];
+   assign cfg_speed_0 = a0.nvme_top_i.axi_pcie3usp_0.inst.cfg_current_speed[2:0];
+   assign cfg_width_0 = a0.nvme_top_i.axi_pcie3usp_0.inst.cfg_negotiated_width[3:0];
 
-   assign cfg_speed_1 = a0.nvme_top_i.axi_pcie3_1.inst.cfg_current_speed[2:0];
-   assign cfg_width_1 = a0.nvme_top_i.axi_pcie3_1.inst.cfg_negotiated_width[3:0];
+   assign cfg_speed_1 = a0.nvme_top_i.axi_pcie3usp_1.inst.cfg_current_speed[2:0];
+   assign cfg_width_1 = a0.nvme_top_i.axi_pcie3usp_1.inst.cfg_negotiated_width[3:0];
 
 
 `include "denaliPcieTypes.v"
@@ -287,8 +287,8 @@ denaliPcie den();
 
  	$display("I've reached here before waitDLactive\n");
 //	waitPLactive(ep_cfg_id0);
- 	$display("Waiting on links of SSDs to be active\n");    @(posedge ( a0.nvme_top_i.axi_pcie3_0.user_link_up && a0.nvme_top_i.axi_pcie3_1.user_link_up));
-// 	$display("Waiting on link of SSD1 to be active\n"); 	@(posedge ( a0.nvme_top_i.axi_pcie3_1.user_link_up));
+ 	$display("Waiting on links of SSDs to be active\n");    @(posedge ( a0.nvme_top_i.axi_pcie3usp_0.user_lnk_up && a0.nvme_top_i.axi_pcie3usp_1.user_lnk_up));
+// 	$display("Waiting on link of SSD1 to be active\n"); 	@(posedge ( a0.nvme_top_i.axi_pcie3usp_1.user_lnk_up));
  	$display("Link Training done");
  	$display("Link speed for SSD0 - Trained to G3[%x] - G2[%x] - G1[%x] ",cfg_speed_0[2],cfg_speed_0[1], cfg_speed_0[0]);
  	$display("Link Width for SSD0 - Trained to x%x", cfg_width_0);
@@ -299,7 +299,7 @@ denaliPcie den();
 
 
 //	$display("Waiting on link of SSD1 to be active\n");
-  //      @(posedge afu.axi_pcie3_1.user_link_up);
+  //      @(posedge afu.axi_pcie3usp_1.user_lnk_up);
     //    $display("Link Training done");
         $display("Link speed for SSD1 - Trained to G3[%x] - G2[%x] - G1[%x] ",cfg_speed_1[2],cfg_speed_1[1], cfg_speed_1[0]);
         $display("Link Width for SSD1 - Trained to x%x", cfg_width_1);
