@@ -129,8 +129,8 @@ module nvme_model (
 //   `define DUTP1 afu
    `define DUTP1 a0              // ?????
    defparam a0.nvme_top_i.axi_pcie3usp_0.inst.pcie4_ip_i.inst.EXT_PIPE_SIM = "TRUE";
-   //defparam a0.nvme_top_i.axi_pcie3usp_0.inst.pcie4_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
-   //defparam a0.nvme_top_i.axi_pcie3usp_1.inst.pcie4_ip_i.inst.PL_DISABLE_GEN3_DC_BALANCE = "TRUE";
+   defparam a0.nvme_top_i.axi_pcie3usp_0.inst.pcie4_ip_i.inst.PL_DISABLE_DC_BALANCE = "TRUE";
+   defparam a0.nvme_top_i.axi_pcie3usp_1.inst.pcie4_ip_i.inst.PL_DISABLE_DC_BALANCE = "TRUE";
    defparam a0.nvme_top_i.axi_pcie3usp_1.inst.pcie4_ip_i.inst.EXT_PIPE_SIM = "TRUE";
 
 
@@ -175,11 +175,11 @@ module nvme_model (
    assign  pipe_tx_6_rp_1                = `DUTP2.pipe_tx_6_sigs;
    assign  pipe_tx_7_rp_1                = `DUTP2.pipe_tx_7_sigs;
 
-   assign cfg_speed_0 = a0.nvme_top_i.axi_pcie3usp_0.inst.cfg_current_speed[2:0];
-   assign cfg_width_0 = a0.nvme_top_i.axi_pcie3usp_0.inst.cfg_negotiated_width[3:0];
+   assign cfg_speed_0 = a0.nvme_top_i.axi_pcie3usp_0.inst.cfg_current_speed_o[2:0];
+   assign cfg_width_0 = a0.nvme_top_i.axi_pcie3usp_0.inst.cfg_negotiated_width_o[3:0];
 
-   assign cfg_speed_1 = a0.nvme_top_i.axi_pcie3usp_1.inst.cfg_current_speed[2:0];
-   assign cfg_width_1 = a0.nvme_top_i.axi_pcie3usp_1.inst.cfg_negotiated_width[3:0];
+   assign cfg_speed_1 = a0.nvme_top_i.axi_pcie3usp_1.inst.cfg_current_speed_o[2:0];
+   assign cfg_width_1 = a0.nvme_top_i.axi_pcie3usp_1.inst.cfg_negotiated_width_o[3:0];
 
 
 `include "denaliPcieTypes.v"
