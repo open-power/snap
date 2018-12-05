@@ -48,8 +48,8 @@ DDRI_USED="FALSE"
 DISABLE_NVME=y
 # FORCE_NVME is not set
 NVME_USED="FALSE"
-# SIM_XSIM is not set
-SIM_IRUN=y
+SIM_XSIM=y
+# SIM_IRUN is not set
 # SIM_XCELIUM is not set
 # SIM_MODELSIM is not set
 # SIM_QUESTA is not set
