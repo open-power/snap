@@ -1140,7 +1140,7 @@ module top (
 #endif
 #endif
 #endif
-#if CONFIG_ENABLE_NVME
+#ifdef CONFIG_ENABLE_NVME
   // NVME Reference Clock generation
   reg refclk_nvme_p;
   initial refclk_nvme_p <= 0;
