@@ -102,7 +102,7 @@ function test_all_actions() # $1 = card, $2 = accel
 		*"10141008") # HLS Hello World
 			cmd="./actions/hls_helloworld/tests/test_0x10141008.sh"
 		;;
-		*"1014100B") # HLS Decimal multiplication
+		*"1014100b") # HLS Decimal multiplication
 			cmd="./actions/hls_decimal_mult/tests/test_0x1014100B.sh"
 		;;
 		*)
@@ -123,6 +123,8 @@ function test_all_actions() # $1 = card, $2 = accel
 				echo "       Missing File: $cmd"
 				RC=99
 			fi
+		else
+			RC=98
 		fi
 	done
 	return $RC
