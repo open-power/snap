@@ -164,7 +164,7 @@ function test_hard()
 	while [ 1 ]; do
 		wait_flag=0
 		if [[ $accel != "AD9V3" ]] && [[ $accel != "RCXVUP" ]]; then
-		     echo "executing : sud ./capi-flash-script.sh -f -C $card -f $IMAGE"
+		     echo "executing : sudo ./capi-flash-script.sh -f -C $card -f $IMAGE"
 		     sudo ./capi-flash-script.sh -f -C $card -f $IMAGE
 		else 
                      echo "executing : sudo ./capi-flash-script.sh -f -C $card $IMAGE $IMAGE2"
