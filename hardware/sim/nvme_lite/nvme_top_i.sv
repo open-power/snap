@@ -63,7 +63,6 @@ module nvme_top (
     output wire [`DDR_M_ADDRBWIDTH-1:0]DDR_M_AXI_araddr,
     output wire [1:0]DDR_M_AXI_arburst,
     output wire [3:0]DDR_M_AXI_arcache,
-    --output wire [3:0]DDR_M_AXI_arid,
     output wire [4:0]DDR_M_AXI_arid,
     output wire [7:0]DDR_M_AXI_arlen,
     output wire [0:0]DDR_M_AXI_arlock,
@@ -76,7 +75,6 @@ module nvme_top (
     output wire [`DDR_M_ADDRBWIDTH-1:0]DDR_M_AXI_awaddr,
     output wire [1:0]DDR_M_AXI_awburst,
     output wire [3:0]DDR_M_AXI_awcache,
-    --output wire [3:0]DDR_M_AXI_awid,
     output wire [4:0]DDR_M_AXI_awid,
     output wire [7:0]DDR_M_AXI_awlen,
     output wire [0:0]DDR_M_AXI_awlock,
@@ -86,24 +84,20 @@ module nvme_top (
     output wire [3:0]DDR_M_AXI_awregion,
     output wire [2:0]DDR_M_AXI_awsize,
     output wire [0:0]DDR_M_AXI_awvalid,
-    --input  wire [3:0]DDR_M_AXI_bid,
     input  wire [4:0]DDR_M_AXI_bid,
     output wire [0:0]DDR_M_AXI_bready,
     input  wire [1:0]DDR_M_AXI_bresp,
     input  wire [0:0]DDR_M_AXI_bvalid,
     input  wire [127:0]DDR_M_AXI_rdata,
-    --input  wire [3:0]DDR_M_AXI_rid,
     input  wire [4:0]DDR_M_AXI_rid,
     input  wire [0:0]DDR_M_AXI_rlast,
     output wire [0:0]DDR_M_AXI_rready,
     input  wire [1:0]DDR_M_AXI_rresp,
-    --input  wire [15:0]DDR_M_AXI_ruser,
     input  wire [0:0]DDR_M_AXI_rvalid,
     output wire [127:0]DDR_M_AXI_wdata,
     output wire [0:0]DDR_M_AXI_wlast,
     input  wire [0:0]DDR_M_AXI_wready,
     output wire [15:0]DDR_M_AXI_wstrb,
-    --output wire [15:0]DDR_M_AXI_wuser,
     output wire [0:0]DDR_M_AXI_wvalid,
 
     /* Yet another AXI Bus */
@@ -166,7 +160,7 @@ module nvme_top (
     /* DDR AXI Bus control signals */
     reg DDR_aclk;
     reg DDR_aresetn;
-    --reg [3:0] DDR_arid;
+    //reg [3:0] DDR_arid;
     reg [4:0] DDR_arid;
     reg [7:0] DDR_awlen;
     reg [2:0] DDR_awsize;
@@ -177,7 +171,7 @@ module nvme_top (
     reg [127:0] DDR_wdata;
     reg [15:0] DDR_wstrb;
     reg [0:0] DDR_wvalid;
-    --reg [3:0] DDR_awid;
+    //reg [3:0] DDR_awid;
     reg [4:0] DDR_awid;
     reg [7:0] DDR_arlen;
     reg [2:0] DDR_arsize;
@@ -194,7 +188,7 @@ module nvme_top (
     reg [3:0] DDR_arqos;
     reg [3:0] DDR_awcache;
     reg [3:0] DDR_arcache;
-    --reg [15:0] DDR_wuser;
+    //reg [15:0] DDR_wuser;
     reg [3:0] DDR_awregion;
     reg [3:0] DDR_arregion;
 
@@ -238,7 +232,7 @@ module nvme_top (
     assign DDR_M_AXI_arqos = DDR_arqos;
     assign DDR_M_AXI_awcache = DDR_awcache;
     assign DDR_M_AXI_arcache = DDR_arcache;
-    --assign DDR_M_AXI_wuser = DDR_wuser;
+    //assign DDR_M_AXI_wuser = DDR_wuser;
     assign DDR_M_AXI_awregion = DDR_awregion;
     assign DDR_M_AXI_arregion = DDR_arregion;
 
@@ -683,7 +677,7 @@ module nvme_top (
         DDR_awprot <= 0;
         DDR_awqos <= 0;
         DDR_awcache <= 0;
-        --DDR_wuser <= 0;
+        //DDR_wuser <= 0;
         DDR_awregion <= 0;
         ddr_widx <= 0;
         ddr_write_state <= DDR_WIDLE;
