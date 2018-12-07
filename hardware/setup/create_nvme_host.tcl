@@ -244,11 +244,9 @@ CONFIG.pf0_msi_enabled {false} \
 CONFIG.xdma_axilite_slave {true} \
 CONFIG.en_gt_selection {true} \
 CONFIG.select_quad {GTH_Quad_227} \
-CONFIG.INS_LOSS_NYQ {5} \
 CONFIG.plltype {QPLL1} \
 CONFIG.pf0_msix_cap_table_bir {BAR_1:0} \
 CONFIG.pf0_msix_cap_pba_bir {BAR_1:0} \
-CONFIG.ins_loss_profile {Backplane} \
 CONFIG.pipe_sim {true} \
 CONFIG.type1_membase_memlimit_enable {Enabled} \
 CONFIG.type1_prefetchable_membase_memlimit {64bit_Enabled} \
@@ -302,11 +300,9 @@ CONFIG.pf0_msi_enabled {false} \
 CONFIG.xdma_axilite_slave {true} \
 CONFIG.en_gt_selection {true} \
 CONFIG.select_quad {GTH_Quad_228} \
-CONFIG.INS_LOSS_NYQ {5} \
 CONFIG.plltype {QPLL1} \
 CONFIG.pf0_msix_cap_table_bir {BAR_1:0} \
 CONFIG.pf0_msix_cap_pba_bir {BAR_1:0} \
-CONFIG.ins_loss_profile {Backplane} \
 CONFIG.pipe_sim {true} \
 CONFIG.type1_membase_memlimit_enable {Enabled} \
 CONFIG.type1_prefetchable_membase_memlimit {64bit_Enabled} \
@@ -377,13 +373,13 @@ create_bd_addr_seg -range 0x000100000000 -offset 0x000200000000 [get_bd_addr_spa
 create_bd_addr_seg -range 0x80000000 -offset 0x00000000 [get_bd_addr_spaces axi_pcie3usp_1/M_AXI_B] [get_bd_addr_segs nvme_host_wrap_0/pcie_s_axi/reg0] SEG_nvme_host_wrap_0_reg0  >> $log_file
 create_bd_addr_seg -range 0x00002000 -offset 0x00000000 [get_bd_addr_spaces nvme_host_wrap_0/pcie_m_axi] [get_bd_addr_segs axi_pcie3usp_0/S_AXI_B/BAR0] SEG_axi_pcie3usp_0_BAR0	      >> $log_file
 create_bd_addr_seg -range 0x00002000 -offset 0x00002000 [get_bd_addr_spaces nvme_host_wrap_0/pcie_m_axi] [get_bd_addr_segs axi_pcie3usp_1/S_AXI_B/BAR0] SEG_axi_pcie3usp_1_BAR0	      >> $log_file
-create_bd_addr_seg -range 0x10000000 -offset 0x10000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs axi_pcie3usp_0/s_axi_lite/CTL0] SEG_axi_pcie3usp_0_CTL0		      >> $log_file
-create_bd_addr_seg -range 0x10000000 -offset 0x20000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs axi_pcie3usp_1/s_axi_lite/CTL0] SEG_axi_pcie3usp_1_CTL0		      >> $log_file
+create_bd_addr_seg -range 0x10000000 -offset 0x10000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs axi_pcie3usp_0/S_AXI_LITE/CTL0] SEG_axi_pcie3usp_0_CTL0		      >> $log_file
+create_bd_addr_seg -range 0x10000000 -offset 0x20000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs axi_pcie3usp_1/S_AXI_LITE/CTL0] SEG_axi_pcie3usp_1_CTL0		      >> $log_file
 create_bd_addr_seg -range 0x00001000 -offset 0x00000000 [get_bd_addr_spaces NVME_S_AXI] [get_bd_addr_segs nvme_host_wrap_0/host_s_axi/reg0] SEG_nvme_host_wrap_0_reg0	      >> $log_file
 create_bd_addr_seg -range 0x00001000 -offset 0x00000000 [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs nvme_host_wrap_0/host_s_axi/reg0] SEG_nvme_host_wrap_0_reg0	      >> $log_file
 # No direct access from action to PCIe root complexes
-exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs axi_pcie3usp_0/s_axi_lite/CTL0] >> $log_file
-exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs axi_pcie3usp_1/s_axi_lite/CTL0] >> $log_file
+exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs axi_pcie3usp_0/S_AXI_LITE/CTL0] >> $log_file
+exclude_bd_addr_seg -target_address_space [get_bd_addr_spaces ACT_NVME_AXI] [get_bd_addr_segs axi_pcie3usp_1/S_AXI_LITE/CTL0] >> $log_file
 
 # Save block design and close the project
 save_bd_design >> $log_file

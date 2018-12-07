@@ -38,6 +38,30 @@ elif [ "$FPGACARD" == "S121B" ]; then
   if [ "${SDRAM_USED^^}" == "TRUE" ]; then
     SDRAM_SIZE="x\"2000\""
   fi
+elif [ "$FPGACARD" == "N250SP" ]; then
+  CARD_TYPE="x\"10\""
+  DMA_XFER_SIZE="x\"6\""
+  if [ "${SDRAM_USED^^}" == "TRUE" ]; then
+    SDRAM_SIZE="x\"2000\""
+  fi
+elif [ "$FPGACARD" == "RCXVUP" ]; then
+  CARD_TYPE="x\"11\""
+  DMA_XFER_SIZE="x\"6\""
+  if [ "${SDRAM_USED^^}" == "TRUE" ]; then
+    SDRAM_SIZE="x\"2000\""
+  fi
+elif [ "$FPGACARD" == "FX609" ]; then
+  CARD_TYPE="x\"12\""
+  DMA_XFER_SIZE="x\"6\""
+  if [ "${SDRAM_USED^^}" == "TRUE" ]; then
+    SDRAM_SIZE="x\"2000\""
+  fi
+elif [ "$FPGACARD" == "S241"  ]; then
+  CARD_TYPE="x\"13\""
+  DMA_XFER_SIZE="x\"6\""
+  if [ "${SDRAM_USED^^}" == "TRUE" ]; then
+    SDRAM_SIZE="x\"2000\""
+  fi
 else
   CARD_TYPE="x\"03\""
   if [ "${SDRAM_USED^^}" == "TRUE" ]; then
@@ -45,19 +69,6 @@ else
   fi
 fi
 
-if [ "$FPGACARD" == "N250SP" ]; then
-  DMA_XFER_SIZE="x\"6\""
-  CARD_TYPE="x\"10\""
-elif [ "$FPGACARD" == "RCXVUP" ]; then
-  DMA_XFER_SIZE="x\"6\""
-  CARD_TYPE="x\"11\""
-elif [ "$FPGACARD" == "FX609" ]; then
-  DMA_XFER_SIZE="x\"6\""
-  CARD_TYPE="x\"12\""
-elif [ "$FPGACARD" == "S241"  ]; then
-  DMA_XFER_SIZE="x\"6\""
-  CARD_TYPE="x\"13\""
-fi
 if [ "${BRAM_USED^^}" == "TRUE" ]; then
   SDRAM_SIZE="x\"0001\""
 fi
