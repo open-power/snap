@@ -56,6 +56,7 @@ As of now, the following FPGA cards can be used with SNAP _(see [cards ressource
   * Flyslice FX609 http://www.flyslice.com/page434?product_id=27
   * Semptian NSA241 http://www.semptian.com/proinfo/126.html
   * ReflexCES XpressVUP LP9P https://www.reflexces.com/products-solutions/other-cots-boards/xilinx/xpressvup
+  * Alpha-Data ADM-PCIE-9V3 https://www.alpha-data.com/dcp/products.php?product=adm-pcie-9v3
 
 ## Development (Step1 & Step2)
 Development is usually done on a Linux (x86) computer. 
