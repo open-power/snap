@@ -50,7 +50,7 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 |  ReflexCES	|XpressVUP-LP9PT|RCXVUP|VU9P*|8GB DDR4 (1ch-_1ch_)|-|_144Mb/575Mb_|_2x(100GbE/4x25GbE)_|PCIe Gen3 x 16|LowProf|X|X
 |  Flyslice	|FX609QL|FX609|VU9P*|16GB DDR4 (4ch)|-|-|-|PCIe Gen3 x 16|LowProf|X|X
 |  Semptian	|NSA-241|S241|VU9P*|32GB DDR4 (4ch)|-|-|?|PCIe Gen3 x 16|FullHeight|TBD|TBD
-|  _Alphadata_	|_ADM-PCIE-9V3_|_AD9V3_|_VU3P_|_16GB/32GB DDR4 (2ch)_|-|-|_2x(100GbE/4x25GbE)_|_PCIe Gen4 x8_|_LowProf_|_X_|-
+|  Alphadata	|ADM-PCIE-9V3|AD9V3|VU3P|16GB/32GB DDR4 (2ch)|-|-|2x(100GbE/4x25GbE)|PCIe Gen4 x8|LowProf|X|-
 
 Notes :
 
