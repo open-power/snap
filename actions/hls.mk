@@ -31,8 +31,15 @@ PART_NUMBER ?= $(FPGACHIP)
 snap_env_sh = $(SNAP_ROOT)/snap_env.sh
 HLS_ACTION_CLOCK_DEFAULT = 4
 ifneq ("$(wildcard $(snap_env_sh))","")
-  HLS_ACTION_CLOCK = $(shell grep HLS_CLOCK_PERIOD_CONSTRAINT $(snap_env_sh) | cut -d = -f 2 | tr -d 'ns"')
-  ifeq "$(HLS_ACTION_CLOCK)" ""
+  HLS_ACTION_CLOCK_COMMENTED = $(shell grep HLS_CLOCK_PERIOD_CONSTRAINT $(snap_env_sh) | grep "\#")
+  ifeq "$(HLS_ACTION_CLOCK_COMMENTED)" ""
+    #if line not commented, then get the value
+    HLS_ACTION_CLOCK = $(shell grep HLS_CLOCK_PERIOD_CONSTRAINT $(snap_env_sh) | cut -d = -f 2 | tr -d 'ns"')
+    ifeq "$(HLS_ACTION_CLOCK)" ""
+      HLS_ACTION_CLOCK = $(HLS_ACTION_CLOCK_DEFAULT)
+    endif
+    $(info HLS CLOCK PERIOD is set to: $(HLS_ACTION_CLOCK) ns)
+  else
     HLS_ACTION_CLOCK = $(HLS_ACTION_CLOCK_DEFAULT)
   endif
 endif
@@ -94,8 +101,9 @@ $(SOLUTION_NAME): $(objs)
 #
 check: $(syn_dir)
 	@if [ $(HLS_ACTION_CLOCK) != $(shell grep "Setting up clock" $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log |cut -d " " -f 12|cut -d "n" -f 1) ]; then \
+		echo " ---------------------------------------------------------- "; \
 		echo " ERROR: Action was last compiled with a different HLS clock."; \
-		echo " Please force the recompilation with a 'make clean' command";     \
+		echo " Please force the recompilation with a 'make clean' command";  \
 		echo " ---------------------------------------------------------- "; exit -1; \
 	fi
 	@echo -n "   Checking for critical warnings during HLS synthesis .... "
@@ -106,6 +114,7 @@ check: $(syn_dir)
 		echo -n "   Checking for critical timings during HLS synthesis  .... ";    \
         	grep -A8 critical $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ;     \
 		if [ $$? -eq 0 ]; then \
+		  echo "------------------------------------------------------------------ "; \
                   echo "TIMING ERROR: Please correct your action code before going further"!; \
 		  echo "------------------------------------------------------------------ "; exit -1; \
           	fi; \
@@ -133,4 +142,4 @@ check: $(syn_dir)
 clean:
 	@$(RM) -r $(SOLUTION_DIR)* run_hls_script.tcl *~ *.log \
 		$(objs) $(SOLUTION_NAME)
-	@for link in $(symlinks); do $(RM) hls_syn_$$link; done
+@for link in $(symlinks); do $(RM) hls_syn_$$link; done
