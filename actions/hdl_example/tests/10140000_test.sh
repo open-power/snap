@@ -256,6 +256,9 @@ case $CARD in
 "RCXVUP" )
 	echo "-> ReflexCES $CARD Card"
 	;;
+"AD9V3" )
+	echo "-> AlphaData $CARD Card"
+	;;	
 * )
 	echo "-> $CARD is Invalid"
 	exit 1

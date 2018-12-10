@@ -7,26 +7,29 @@
 # AD8K5 is not set
 # S121B_BPIx16 is not set
 # S121B_SPIx4 is not set
-N250SP=y
+# N250SP is not set
 # RCXVUP is not set
 # S241 is not set
 # FX609 is not set
-FPGACARD="N250SP"
-FLASH_INTERFACE="BPIx16"
-FLASH_SIZE="128"
+AD9V3=y
+FPGACARD="AD9V3"
+FLASH_INTERFACE="SPIx8"
+FLASH_SIZE="64"
 FLASH_FACTORYADDR="0x00000000"
 FLASH_USERADDR="0x02000000"
 # S121B is not set
 # CAPI10 is not set
 CAPI20=y
-FPGACHIP="xcku15p-ffva1156-2-i"
+FPGACHIP="xcvu3p-ffvc1517-2-i"
 NUM_OF_ACTIONS=1
 # HDL_ACTION is not set
 # HDL_EXAMPLE is not set
 # HDL_HELLOWORLD is not set
+# HDL_NVME_EXAMPLE is not set
 # HLS_ACTION is not set
-# HLS_HELLOWORLD is not set
-# HLS_MEMCOPY is not set
+# HLS_HELLOWORLD=is not set
+HLS_MEMCOPY=y
+# HLS_NVME_MEMCOPY is not set
 # HLS_SPONGE is not set
 # HLS_HASHJOIN is not set
 # HLS_SEARCH is not set
@@ -35,7 +38,6 @@ NUM_OF_ACTIONS=1
 # HLS_LATENCY_EVAL is not set
 # HLS_MM_TEST is not set
 # HLS_DECIMAL_MULT is not set
-HLS_SCATTER_GATHER=y
 ENABLE_HLS_SUPPORT=y
 HLS_SUPPORT="TRUE"
 DISABLE_SDRAM_AND_BRAM=y
@@ -54,7 +56,7 @@ SIM_XSIM=y
 # SIM_MODELSIM is not set
 # SIM_QUESTA is not set
 # NO_SIM is not set
-SIMULATOR="irun"
+SIMULATOR="xsim"
 DENALI_USED="FALSE"
 
 #
@@ -62,8 +64,6 @@ DENALI_USED="FALSE"
 #
 # ENABLE_PRFLOW is not set
 USE_PRFLOW="FALSE"
-ENABLE_ACTION_CLK_DERATE=y
-FPGA_ACTION_CLK="225MHZ"
 # ENABLE_ILA is not set
 ILA_DEBUG="FALSE"
 # ENABLE_FACTORY is not set

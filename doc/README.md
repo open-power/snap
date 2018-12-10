@@ -46,24 +46,22 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 
 | Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
 |:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:------------:|:---:|:----------:|:----------:
-|  Nallatech	|250S+|N250SP|KU15P|4GB DDR4  (1ch)|_3.8TB/6.4TB/25TB (4ch)_|-|-|PCIe Gen4 x8|LowProf|X|Sep-18
-|  ReflexCES	|XpressVUP-LP9PT|RCXVUP|VU9P*|8GB DDR4 (1ch-_1ch_)|-|_144Mb/575Mb_|_2x(100GbE/4x25GbE)_|PCIe Gen3 x 16|LowProf|X|X
-|  Flyslice	|FX609QL|FX609|VU9P*|16GB DDR4 (4ch)|-|-|-|PCIe Gen3 x 16|LowProf|X|X
-|  Semptian	|NSA-241|S241|VU9P*|32GB DDR4 (4ch)|-|-|?|PCIe Gen3 x 16|FullHeight|TBD|TBD
-|  _Alphadata_	|_ADM-PCIE-9V3_|_AD9V3_|_VU3P_|_16GB/32GB DDR4 (2ch)_|-|-|_2x(100GbE/4x25GbE)_|_PCIe Gen4 x8_|_LowProf_|_X_|-
+|  Nallatech	|250S+|N250SP|KU15P|4GB DDR4 (1ch)|_3.8TB/6.4TB/25TB (4ch)_|-|-|PCIe Gen4 x8|LowProf|X|Sep-18
+|  ReflexCES	|XpressVUP-LP9PT|RCXVUP|VU9P*|8GB _/16GB_ DDR4 (1ch-_1ch_)|-|_144Mb/575Mb_|_2x(100GbE/4x25GbE)_|PCIe Gen3 x 16|LowProf|X|X
+|  Flyslice	  |FX609QL|FX609|VU9P*|8GB _/16GB_ DDR4 (1ch-_3ch_)|-|-|-|PCIe Gen3 x 16|LowProf|X|X
+|  Semptian 	|NSA-241|S241|VU9P*|8GB _/32GB_ DDR4 (1ch-_3ch_)|-|-|?|PCIe Gen3 x 16|FullHeight|TBD|TBD
+|  Alphadata	|ADM-PCIE-9V3|AD9V3|VU3P|8GB _/16GB_ DDR4 (1ch-_1ch_)|-|-|2x(100GbE/4x25GbE)|PCIe Gen4 x8|LowProf|X|X
 
 Notes :
 
 * \* : requires an auxiliary power supply connector (100W)
-
-* _ADM-PCIE-9V3_ : minimum manual tests have been performed, not yet completely SNAP supported
 
 ### P9 OpenCAPI3.0 SNAP FPGA Supported Boards
 _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 
 | Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
 |:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:------------:|:---:|:----------:|:-----------:
-|  Alphadata	|ADM-PCIE-9V3|AD9V3      |VU3P|16GB/32GB DDR4 (2ch)|-|-|2x (100GbE/4x25GbE)|1 OpenCAPI Link (8x25Gb)|LowProf|Dec-18|Dec-18
+|  Alphadata  | ADM-PCIE-9V3 |AD9V3 | VU3P | 8GB/32GB DDR4 (2ch) |-|-|_2x(100GbE/4x25GbE)_|1 OpenCAPI Link (8x25Gb)|LowProf|Dec-18|1Q-19
 |  _Mellanox_  |_Innova-2 Flex_	    |_TBD_   |_KU15P_|_4GB/8GB DDR4_|_-_|_-_|_2x25GbE_|	_1 OpenCAPI Link (8x25Gb)_	|_LowProf_|_-_|_-_
 
 

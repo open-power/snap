@@ -1086,7 +1086,22 @@ module top (
   wire  [71:0]  c0_ddr4_dq;
   wire  [8:0]   c0_ddr4_dqs_c;
   wire  [8:0]   c0_ddr4_dqs_t;
-
+#else
+#ifdef CONFIG_AD9V3
+  wire          c0_ddr4_act_n;
+  wire  [16:0]  c0_ddr4_adr;
+  wire  [1:0]   c0_ddr4_ba;
+  wire  [1:0]   c0_ddr4_bg;
+  wire  [0:0]   c0_ddr4_cke;
+  wire  [0:0]   c0_ddr4_odt;
+  wire  [0:0]   c0_ddr4_cs_n;
+  wire  [0:0]   c0_ddr4_ck_t;
+  wire  [0:0]   c0_ddr4_ck_c;
+  wire          c0_ddr4_reset_n;
+  wire  [8:0]   c0_ddr4_dm_dbi_n;
+  wire  [71:0]  c0_ddr4_dq;
+  wire  [8:0]   c0_ddr4_dqs_c;
+  wire  [8:0]   c0_ddr4_dqs_t;
 #else
   // DDR4 Signals
   wire          c0_ddr4_act_n;
@@ -1103,6 +1118,7 @@ module top (
   wire  [71:0]  c0_ddr4_dq;
   wire  [8:0]   c0_ddr4_dqs_c;
   wire  [8:0]   c0_ddr4_dqs_t;
+#endif
 #endif
 #endif
 #endif
@@ -1127,16 +1143,23 @@ module top (
      sys_clk_p = !sys_clk_p; #(4.998ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 #else
-#ifdef CONFIG_S241
+#ifdef CONFIG_S241 
   // 400.16MHz DDR4 system clock
   always begin
      sys_clk_p = !sys_clk_p; #(2.499ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end
+#else
+#ifdef CONFIG_AD9V3 
+  // 300.MHz DDR4 system clock
+  always begin
+     sys_clk_p = !sys_clk_p; #(3.332ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 #else
   // 266MHz DDR4 system clock
   always begin
      sys_clk_p = !sys_clk_p; #(3.752ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
+#endif
 #endif
 #endif
 #endif
@@ -1325,7 +1348,7 @@ module top (
 
 #ifdef CONFIG_ENABLE_DDR3
   ////////////////////////////////////////////////////////////
-  // DDR3 DIMM INSTANCE                                     //
+  // DDR3 DIMM INSTANCE: ADKU3                              //
   ////////////////////////////////////////////////////////////
   ddr3_dimm ddr3_dimm (
     .c0_ddr3_ck_p(c0_ddr3_ck_p),
@@ -1346,9 +1369,11 @@ module top (
     );
 #endif
 #ifdef CONFIG_ENABLE_DDR4
- /////////////////////////////////////////////////////////////
-  // DDR4 DIMM INSTANCE                                     //
-  ////////////////////////////////////////////////////////////
+ ///////////////////////////////////////////////////////////////////
+  // DDR4 DIMM INSTANCE                                           //
+  // 8Gb x 8: CAPI1.0: AD8K5 - S121B  -- CAPI2.0: AD9V3 - S241    //
+  // 8Gb x16: CAPI1.0: N250S  -- CAPI2.0: N250SP - FX609 - RCXVUP //
+  //////////////////////////////////////////////////////////////////
 #ifdef CONFIG_FX609
   ddr4_dimm_fx609 ddr4_dimm_fx609 (
     .sys_reset              (~sys_reset_n_q),
@@ -1368,7 +1393,7 @@ module top (
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
     );
 #else
-#ifdef CONFIG_S241  
+#ifdef CONFIG_S241
   ddr4_dimm_s121b ddr4_dimm_s121b (
     .sys_reset              (~sys_reset_n_q),
     .c0_ddr4_act_n          (c0_ddr4_act_n),
@@ -1386,7 +1411,25 @@ module top (
     .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
     );
-
+#else
+#ifdef CONFIG_AD9V3
+  ddr4_dimm_s121b ddr4_dimm_s121b (
+    .sys_reset              (~sys_reset_n_q),
+    .c0_ddr4_act_n          (c0_ddr4_act_n),
+    .c0_ddr4_adr            (c0_ddr4_adr),
+    .c0_ddr4_ba             (c0_ddr4_ba),
+    .c0_ddr4_bg             (c0_ddr4_bg),
+    .c0_ddr4_cke            (c0_ddr4_cke),
+    .c0_ddr4_odt            (c0_ddr4_odt),
+    .c0_ddr4_cs_n           (c0_ddr4_cs_n),
+    .c0_ddr4_ck_t           (c0_ddr4_ck_t),
+    .c0_ddr4_ck_c           (c0_ddr4_ck_c),
+    .c0_ddr4_reset_n        (c0_ddr4_reset_n),
+    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n),
+    .c0_ddr4_dq             (c0_ddr4_dq),
+    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),
+    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
+    );
 #else
   ddr4_dimm ddr4_dimm (
     .sys_reset              (~sys_reset_n_q),
@@ -1405,6 +1448,7 @@ module top (
     .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
     );
+#endif
 #endif
 #endif
 #endif

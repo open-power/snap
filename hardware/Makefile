@@ -330,15 +330,15 @@ check_bsp: capi2-bsp/$(FPGACARD)/.create_ip_done
 		        exit -1; \
 		    elif [ -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/.action_clk_225MHZ" ] \
                           && [ $(FPGA_ACTION_CLK) == "250MHZ" ]; then                    \
-			echo "PSL for $(FPGACARD) card needs to be recreated for 250MHZ Action clock (Last compilation done with 225MHZ)";         \
+			echo "PSL for $(FPGACARD) card is being recreated for 250MHZ Action clock (Last compilation done with 225MHZ)";         \
 			$(MAKE) -s -C $(SNAP_HARDWARE_ROOT)/capi2-bsp clean $(FPGACARD); \
 		    elif [ -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/.action_clk_250MHZ" ] \
                           && [ $(FPGA_ACTION_CLK) == "225MHZ" ]; then                    \
-			echo "PSL for $(FPGACARD) card needs to be recreated for 225MHZ Action clock (Last compilation done with 250MHZ)";         \
+			echo "PSL for $(FPGACARD) card is being recreated for 225MHZ Action clock (Last compilation done with 250MHZ)";         \
 			$(MAKE) -s -C $(SNAP_HARDWARE_ROOT)/capi2-bsp clean $(FPGACARD); \
 		    elif [ ! -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/.action_clk_225MHZ" ] \
 		      && [ ! -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/.action_clk_250MHZ" ]; then  \
-			echo "PSL for $(FPGACARD) card needs to be recreated (No logs states how it was compiled earlier)";         \
+			echo "PSL for $(FPGACARD) card is being (re)created (No logs states with which FPGA clock BSP was compiled earlier)";         \
 			$(MAKE) -s -C $(SNAP_HARDWARE_ROOT)/capi2-bsp clean $(FPGACARD); \
 		    fi; \
 		fi; \
