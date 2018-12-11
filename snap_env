@@ -96,12 +96,34 @@ while [ -z "$SETUP_DONE" ]; do
   if [ "$CAPI20" == "y" ]; then 
     RESP=`grep PSL9_IP_CORE $snap_env_sh`
     if [ -z "$RESP" ]; then
-      echo "#export PSL9_IP_CORE= <for CAPI2.0 cards: path to ibm.com_CAPI_PSL9_WRAP2.00.zip file>" >> $snap_env_sh
+      echo "#export PSL9_IP_CORE= <for CAPI2.0 cards: path to ibm.com_CAPI_PSL9_WRAP_2.00.zip file>" >> $snap_env_sh
+    fi
+    if [ -z "$PSL9_IP_CORE" ]; then
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Path to PSL9_IP_CORE not set."
+      SETUP_INFO="$SETUP_INFO\n    It is not needed for simulation but only for building an image/FPGA."
+      SETUP_INFO="$SETUP_INFO\n    All information how and where to get this zip file can be found" 
+      SETUP_INFO="$SETUP_INFO\n    from https://github.com/open-power/snap/tree/master/hardware/README.md#power9"
+    elif [ ! -e "$PSL9_IP_CORE" ]; then
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSL9_IP_CORE not set properly."
+      SETUP_WARNING="$SETUP_WARNING\n    It is not needed for simulation but only for building an image/FPGA."
+      SETUP_WARNING="$SETUP_WARNING\n    All information how and where to get this zip file can be found" 
+      SETUP_WARNING="$SETUP_WARNING\n    from https://github.com/open-power/snap/tree/master/hardware/README.md#power9"
     fi
   else
     RESP=`grep PSL_DCP $snap_env_sh`
     if [ -z "$RESP" ]; then
       echo "#export PSL_DCP= <for CAPI1.0 cards: path to b_route_design.dcp file>" >> $snap_env_sh
+    fi
+    if [ -z "$PSL_DCP" ]; then
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Path to PSL_DCP not set."
+      SETUP_INFO="$SETUP_INFO\n    It is not needed for simulation but only for building an image/FPGA."
+      SETUP_INFO="$SETUP_INFO\n    All information how and where to get this dcp file can be found" 
+      SETUP_INFO="$SETUP_INFO\n    from https://github.com/open-power/snap/tree/master/hardware/README.md#power8"
+    elif [ ! -e "$PSL_DCP" ]; then
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSL_DCP not set properly."
+      SETUP_WARNING="$SETUP_WARNING\n    It is not needed for simulation but only for building an image/FPGA."
+      SETUP_WARNING="$SETUP_WARNING\n    All information how and where to get this dcp file can be found" 
+      SETUP_WARNING="$SETUP_WARNING\n    from https://github.com/open-power/snap/tree/master/hardware/README.md#power8"
     fi
   fi
 
@@ -151,6 +173,11 @@ while [ -z "$SETUP_DONE" ]; do
     fi
     if [ -z "$PSLSE_ROOT" ]; then
       SETUP_EMPTY="$SETUP_EMPTY\n  PSLSE_ROOT"
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set."
+      SETUP_WARNING="$SETUP_WARNING\n    For simulation please clone PSL Simulation Environment"
+      SETUP_WARNING="$SETUP_WARNING\n    from https://github.com/ibm-capi/pslse"
+      SETUP_WARNING="$SETUP_WARNING\n    and let \$PSLSE_ROOT point to it."
+      SETUP_WARNING="$SETUP_WARNING\n    Please set Simulator to 'nosim' if you do not intend to run simulation."
     elif [ ! -d "$PSLSE_ROOT" ]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set properly."
       SETUP_WARNING="$SETUP_WARNING\n    For simulation please clone PSL Simulation Environment"
