@@ -201,7 +201,7 @@ static void snap_version(void *handle)
 		(int)(reg >> 48ll) & 0xff,
 		(int)(reg >> 40ll) & 0xff,
 		(int)(reg >> 32ull) & 0xff,
-		(uint32_t)(reg >> 4) & 0xfffffff;
+		(uint32_t)(reg >> 4) & 0xfffffff);
 
 	reg = snap_read64(handle, SNAP_M_CTX, SNAP_M_BDR);
 	VERBOSE1("SNAP FPGA Build (Y/M/D): %04x/%02x/%02x Time (H:M): %02x:%02x\n",
