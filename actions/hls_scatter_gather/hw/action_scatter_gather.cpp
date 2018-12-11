@@ -24,13 +24,14 @@
 #include "action_scatter_gather.H"
 
 #define BS (BPERDW/sizeof(uint32_t))
-#define NUM_MAX 16384
+
+#define NUM_MAX 1024
+#define SIZE_SCATTER 2048
 //USE MAX
-// NUM <= 4096
-// NUM * SIZE_SCATTER <= 2M
-snap_membus_t   blockram[1024*2048/BPERDW]; // Limiting size of scattered gather blocks to 2MiB
+// NUM_MAX * SIZE_SCATTER <= 2M => 1024 transactions of 2KB each
+snap_membus_t   blockram[NUM_MAX*SIZE_SCATTER/BPERDW]; // Limiting size of scattered gather blocks to 2MiB
 snap_membus_t   as_ram[NUM_MAX*8/BPERDW];
-uint64_t idx_ram[NUM_MAX];
+uint64_t idx_ram[NUM_MAX]; // number of index
 
 
 static void read_scattered_mem(snap_membus_t *din_gmem, uint64_t * idx_ram, uint32_t num, uint32_t size_scatter)
@@ -50,7 +51,7 @@ static int process_action(snap_membus_t *din_gmem,
 		snap_membus_t *dout_gmem,
 		action_reg *act_reg)
 {
-
+// use distributed logic to store these following arrays instead of BRAM
 	uint64_t G_idx, AS_idx, WED_idx, ST_idx, R_idx;
 	uint32_t G_size, AS_size;
 	uint64_t temp_idx;
