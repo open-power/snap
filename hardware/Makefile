@@ -313,21 +313,22 @@ check_bsp: capi2-bsp/$(FPGACARD)/.create_ip_done
 				echo "### ERROR ### PSL_DCP for $(FPGACARD) is pointing to an outdated design checkpoint."; exit -1; \
 			elif [ "$(PSL_DCP_TYPE)" == "" ]; then \
 				echo "### ERROR ###  PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."; \
-				echo "               Please refer to https://github.com/open-power/snap/tree/master/hardware/README.md#power8"; exit -1; \
+				echo "       Please refer to https://github.com/open-power/snap/tree/master/hardware/README.md#power8"; exit -1; \
 			else  \
 				echo "### ERROR ### PSL_DCP is pointing to a checkpoint for a $(PSL_DCP_TYPE) card while FPGACARD is set to $(FPGACARD)."; exit -1; \
 			fi; \
 		elif [ "$(CAPI_VER)" == "capi20" ]; then \
 		    if [ ! -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/build/ip/capi_bsp_wrap.xcix" ]; then \
 		        echo "### ERROR ### CAPI board support IP for $(FPGACARD) is not prepared."; \
-		        echo "              This is a requirement for image build."; \
+		        echo "       This is a requirement for image build."; \
 		        if [ ! -e  "$(PSL9_IP_DIR)/$(PSL9_IP_ARCHIVE)" ] && [ ! -e "$(PSL9_IP_CORE)" ]; then \
-		            echo "### ERROR ### Path to $(PSL9_IP_ARCHIVE) file cannot be found."; \
-		            echo "              Please set or check PSL9_IP_CORE in setenv.sh file."; \
-		            echo "              or make sure zip file is in $(PSL9_IP_DIR)"; \
-		            echo "              This zip file is mandatory for building an image/FPGA."; \
-		            echo "              All information how and where to get this zip file can be found"; \
-		            echo "              from https://github.com/open-power/snap/tree/master/hardware/README.md#power9"; \
+		            echo "       Path to $(PSL9_IP_ARCHIVE) file cannot be found."; \
+		            echo "       Please set or check PSL9_IP_CORE variable in snap_env.sh"; \
+		            echo "       points to the right path or make sure this zip file is in"; \
+		            echo "         $(PSL9_IP_DIR)"; \
+		            echo "       This zip file is mandatory for building an image/FPGA with CAPI2.0."; \
+		            echo "       All information where to get this zip file can be found"; \
+		            echo "       from https://github.com/open-power/snap/tree/master/hardware/README.md#power9"; \
 		        fi; \
 		        exit -1; \
 		    elif [ -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/.action_clk_225MHZ" ] \
