@@ -248,6 +248,26 @@ while [ -z "$SETUP_DONE" ]; do
     fi
   fi
 
+  ####### settings for HLS_CLK_CONSTRAINT
+  # Note: HLS_CLK_CONSTRAINT is defined via snap_config
+  if [ "$HLS_CLK_CONSTRAINT" == "TRUE" ]; then
+    RESP=`grep HLS_CLOCK_PERIOD_CONSTRAINT $snap_env_sh`
+    if [ -z "$RESP" ]; then
+      echo "export HLS_CLOCK_PERIOD_CONSTRAINT=\"4ns\"" >> $snap_env_sh
+      SETUP_INFO="$SETUP_INFO\n### INFO ### HLS_CLOCK_PERIOD_CONSTRAINT has been added to snap_env.sh file"
+      SETUP_INFO="$SETUP_INFO\n      Please set it up with the value you want (default is 4ns)"
+    else
+      sed -i 's/#export HLS_CLOCK_PERIOD_CONSTRAINT/export HLS_CLOCK_PERIOD_CONSTRAINT/g' $snap_env_sh
+      SETUP_INFO="$SETUP_INFO\n### INFO ### HLS_CLOCK_PERIOD_CONSTRAINT is uncommented in snap_env.sh file"
+      SETUP_INFO="$SETUP_INFO\n      Please set it up with the value you want (default is 4ns)"
+    fi
+  else
+    RESP=`grep '#export HLS_CLOCK_PERIOD_CONSTRAINT' $snap_env_sh`
+    if [ -z "$RESP" ]; then
+      sed -i 's/export HLS_CLOCK_PERIOD_CONSTRAINT/#export HLS_CLOCK_PERIOD_CONSTRAINT/g' $snap_env_sh
+      SETUP_INFO="$SETUP_INFO\n### INFO ### HLS_CLOCK_PERIOD_CONSTRAINT has been commented in snap_env.sh file"
+    fi
+  fi
 
   ####### settings for ILA Debug
   # Note: ILA_DEBUG is defined via snap_config

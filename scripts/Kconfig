@@ -528,7 +528,7 @@ config USE_PRFLOW
 	default "FALSE" if ! ENABLE_PRFLOW
 
 config ENABLE_ACTION_CLK_DERATE
-	bool "Derate by 10% the Action clock"
+	bool "Derate by 10% the Action clock used for synthesizing the FPGA"
 	default n
 	depends on CAPI20
 	help
@@ -541,6 +541,25 @@ config FPGA_ACTION_CLK
 	string
 	default "225MHZ"  if ENABLE_ACTION_CLK_DERATE
 	default "250MHZ" if ! ENABLE_ACTION_CLK_DERATE
+
+config ENABLE_USER_HLS_ACTION_CLK
+	bool "Constraint HLS tool with a specific HLS clock"
+	default n
+	depends on CAPI20
+	help
+	  Default clock is 250MHz (4ns).
+	  By changing the value of the HLS action clock, user can
+	  overconstraint the HLS synthesis and get different synthesis results.
+	  This option enables or disables in the file snap_env.sh the use of 
+          the variable HLS_CLOCK_PERIOD_CONSTRAINT="4ns"
+	  This modification will not change the frequency used to synthesize the
+          whole FPGA, but will disable the automatic timing violation testing done
+          after the HLS synthesis.
+
+config HLS_CLK_CONSTRAINT
+	string
+	default "TRUE"  if ENABLE_USER_HLS_ACTION_CLK
+	default "FALSE" if ! ENABLE_USER_HLS_ACTION_CLK
 
 config ENABLE_ILA
 	bool "Enable ILA Debug (Definition of $ILA_SETUP_FILE required)"
