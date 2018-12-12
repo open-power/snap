@@ -180,13 +180,13 @@ while [ -z "$SETUP_DONE" ]; do
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set."
       SETUP_WARNING="$SETUP_WARNING\n    For simulation please clone PSL Simulation Environment"
       SETUP_WARNING="$SETUP_WARNING\n    from https://github.com/ibm-capi/pslse"
-      SETUP_WARNING="$SETUP_WARNING\n    and let \$PSLSE_ROOT point to it."
+      SETUP_WARNING="$SETUP_WARNING\n    and let PSLSE_ROOT variable in $(basename $snap_env_sh) point to it."
       SETUP_WARNING="$SETUP_WARNING\n    Please set Simulator to 'nosim' if you do not intend to run simulation."
     elif [ ! -d "$PSLSE_ROOT" ]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set properly."
       SETUP_WARNING="$SETUP_WARNING\n    For simulation please clone PSL Simulation Environment"
       SETUP_WARNING="$SETUP_WARNING\n    from https://github.com/ibm-capi/pslse"
-      SETUP_WARNING="$SETUP_WARNING\n    and let \$PSLSE_ROOT point to it."
+      SETUP_WARNING="$SETUP_WARNING\n    and let PSLSE_ROOT variable in $(basename $snap_env_sh) point to it."
       SETUP_WARNING="$SETUP_WARNING\n    Please set Simulator to 'nosim' if you do not intend to run simulation."
     fi
   fi
@@ -289,6 +289,7 @@ while [ -z "$SETUP_DONE" ]; do
     sed -i '/export[ ^]*TIMING_LABLIMIT[ ^]*=/ d' $snap_env_sh
     sed -i '1s/^/export TIMING_LABLIMIT="'$TIMING_LABLIMIT_DEFAULT'"\n/' $snap_env_sh
     SETUP_INFO="$SETUP_INFO\n### INFO ### Timing limit for FPGA image build got set to default value $TIMING_LABLIMIT_DEFAULT"
+    SETUP_INFO="$SETUP_INFO\n      This value can be changed in file $(basename $snap_env_sh) file"
   fi
   echo "=====Timing limit for FPGA image build in ps============"
   echo "TIMING_LABLIMIT         is set to: \"$TIMING_LABLIMIT\""
