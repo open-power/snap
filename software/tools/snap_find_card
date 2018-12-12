@@ -69,7 +69,9 @@ function wait_no_flash() {
 		fi
 	done
 	if [ $i -ge 50 ]; then
-		echo "ERROR: Timeout. Flash is pending ......."
+		if [ $VERBOSE -eq 1 ] ; then
+		  echo "ERROR: Timeout. Flash is pending ......."
+		fi
 		exit 0
 	fi
 }
