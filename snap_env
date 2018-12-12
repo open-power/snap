@@ -117,12 +117,12 @@ while [ -z "$SETUP_DONE" ]; do
     if [ -z "$PSL_DCP" ]; then
       SETUP_INFO="$SETUP_INFO\n### INFO ### Path to PSL_DCP not set."
       SETUP_INFO="$SETUP_INFO\n    It is not needed for simulation but only for building an image/FPGA."
-      SETUP_INFO="$SETUP_INFO\n    All information how and where to get this dcp file can be found" 
+      SETUP_INFO="$SETUP_INFO\n    All information where to get this b_route_design.dcp file can be found" 
       SETUP_INFO="$SETUP_INFO\n    from https://github.com/open-power/snap/tree/master/hardware/README.md#power8"
     elif [ ! -e "$PSL_DCP" ]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSL_DCP not set properly."
       SETUP_WARNING="$SETUP_WARNING\n    It is not needed for simulation but only for building an image/FPGA."
-      SETUP_WARNING="$SETUP_WARNING\n    All information how and where to get this dcp file can be found" 
+      SETUP_WARNING="$SETUP_WARNING\n    All information where to get this b_route_design.dcp file can be found"
       SETUP_WARNING="$SETUP_WARNING\n    from https://github.com/open-power/snap/tree/master/hardware/README.md#power8"
     fi
   fi
@@ -141,13 +141,21 @@ while [ -z "$SETUP_DONE" ]; do
         PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $FPGACARD $PSL_DCP`
         if [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
           if [[ "$PSL_DCP_TYPE" == *"OUTDATED"* ]]; then
-            SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP for $FPGACARD is pointing to an outdated design checkpoint, image build will not be allowed."
+            SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP for $FPGACARD is pointing to an outdated dcp file"
+            SETUP_INFO="$SETUP_INFO\n    Building the image/FPGA will not be allowed."
+            SETUP_INFO="$SETUP_INFO\n    All information where to get this b_route_design.dcp file can be found" 
+            SETUP_INFO="$SETUP_INFO\n    from https://github.com/open-power/snap/tree/master/hardware/README.md#power8"
           else
-            SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD, image build will not be allowed."
+            SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP is pointing to a wrong checkpoint dcp file"
+            SETUP_INFO="$SETUP_INFO\n    dcp file is for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD"
+            SETUP_INFO="$SETUP_INFO\n    Building the image/FPGA will not be allowed."
           fi
         fi
       else
-        SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
+        SETUP_INFO="$SETUP_INFO\n### INFO ### Path to PSL_DCP is not set in snap_env.sh file."
+        SETUP_INFO="$SETUP_INFO\n    It is not needed for simulation but only for building an image/FPGA."
+        SETUP_INFO="$SETUP_INFO\n    All information where to get this b_route_design.dcp file can be found" 
+        SETUP_INFO="$SETUP_INFO\n    from https://github.com/open-power/snap/tree/master/hardware/README.md#power8"
       fi
     fi
   fi
@@ -354,7 +362,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ -n "$SETUP_EMPTY" ]; then
     let "RC = 2 - $RC"
-    echo -e "\nThe following environment variables need to get defined:$SETUP_EMPTY"
+    echo -e "\nThe following environment variables need to get defined before going further:$SETUP_EMPTY"
     echo -e "Please edit $(basename $snap_env_sh) and add the correct values"
   fi
   echo

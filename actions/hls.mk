@@ -38,7 +38,7 @@ ifneq ("$(wildcard $(snap_env_sh))","")
     ifeq "$(HLS_ACTION_CLOCK)" ""
       HLS_ACTION_CLOCK = $(HLS_ACTION_CLOCK_DEFAULT)
     endif
-    $(info HLS CLOCK PERIOD is set to: $(HLS_ACTION_CLOCK) ns)
+#    $(info HLS CLOCK PERIOD is set to: $(HLS_ACTION_CLOCK) ns)
   else
     HLS_ACTION_CLOCK = $(HLS_ACTION_CLOCK_DEFAULT)
   endif
