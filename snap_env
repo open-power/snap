@@ -263,7 +263,7 @@ while [ -z "$SETUP_DONE" ]; do
     fi
   else
     RESP=`grep '#export HLS_CLOCK_PERIOD_CONSTRAINT' $snap_env_sh`
-    if [ -z "$RESP" ]; then
+    if [ -z "$RESP" ] && [ "$CAPI20" == "y" ]; then 
       sed -i 's/export HLS_CLOCK_PERIOD_CONSTRAINT/#export HLS_CLOCK_PERIOD_CONSTRAINT/g' $snap_env_sh
       SETUP_INFO="$SETUP_INFO\n### INFO ### HLS_CLOCK_PERIOD_CONSTRAINT has been commented in snap_env.sh file"
     fi
