@@ -549,7 +549,7 @@ config ENABLE_USER_HLS_ACTION_CLK
 	help
 	  Default clock is 250MHz (4ns).
 	  By changing the value of the HLS action clock, user can
-	  overconstraint the HLS synthesis and get different synthesis results.
+	  overconstrain the HLS synthesis and get different synthesis results.
 	  This option enables or disables in the file snap_env.sh the use of 
           the variable HLS_CLOCK_PERIOD_CONSTRAINT="4ns"
 	  This modification will not change the frequency used to synthesize the
