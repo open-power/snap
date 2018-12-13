@@ -101,13 +101,13 @@ while [ -z "$SETUP_DONE" ]; do
     if [ -z "$PSL9_IP_CORE" ]; then
       SETUP_INFO="$SETUP_INFO\n### INFO ### Path to PSL9_IP_CORE not set in $(basename $snap_env_sh) file."
       SETUP_INFO="$SETUP_INFO\n    It is not needed for simulation but only for building an image/FPGA."
-      SETUP_INFO="$SETUP_INFO\n    All information how and where to get this zip file can be found" 
-      SETUP_INFO="$SETUP_INFO\n    from https://github.com/open-power/snap/tree/master/hardware/README.md#power9"
+      SETUP_INFO="$SETUP_INFO\n    All information how and where to get this zip file can be found at :"
+      SETUP_INFO="$SETUP_INFO\n    https://github.com/open-power/snap/tree/master/hardware/README.md#power9"
     elif [ ! -e "$PSL9_IP_CORE" ]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSL9_IP_CORE not set properly in $(basename $snap_env_sh) file."
       SETUP_WARNING="$SETUP_WARNING\n    It is not needed for simulation but only for building an image/FPGA."
-      SETUP_WARNING="$SETUP_WARNING\n    All information how and where to get this zip file can be found" 
-      SETUP_WARNING="$SETUP_WARNING\n    from https://github.com/open-power/snap/tree/master/hardware/README.md#power9"
+      SETUP_WARNING="$SETUP_WARNING\n    All information how and where to get this zip file can be found at :" 
+      SETUP_WARNING="$SETUP_WARNING\n    https://github.com/open-power/snap/tree/master/hardware/README.md#power9"
     fi
   else
     RESP=`grep PSL_DCP $snap_env_sh`
@@ -117,13 +117,13 @@ while [ -z "$SETUP_DONE" ]; do
     if [ -z "$PSL_DCP" ]; then
       SETUP_INFO="$SETUP_INFO\n### INFO ### Path to PSL_DCP not set."
       SETUP_INFO="$SETUP_INFO\n    It is not needed for simulation but only for building an image/FPGA."
-      SETUP_INFO="$SETUP_INFO\n    All information where to get this b_route_design.dcp file can be found" 
-      SETUP_INFO="$SETUP_INFO\n    from https://github.com/open-power/snap/tree/master/hardware/README.md#power8"
+      SETUP_INFO="$SETUP_INFO\n    All information where to get this b_route_design.dcp file can be found at :" 
+      SETUP_INFO="$SETUP_INFO\n    https://github.com/open-power/snap/tree/master/hardware/README.md#power8"
     elif [ ! -e "$PSL_DCP" ]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSL_DCP not set properly in $(basename $snap_env_sh) file."
       SETUP_WARNING="$SETUP_WARNING\n    It is not needed for simulation but only for building an image/FPGA."
-      SETUP_WARNING="$SETUP_WARNING\n    All information where to get this b_route_design.dcp file can be found"
-      SETUP_WARNING="$SETUP_WARNING\n    from https://github.com/open-power/snap/tree/master/hardware/README.md#power8"
+      SETUP_WARNING="$SETUP_WARNING\n    All information where to get this b_route_design.dcp file can be found at :"
+      SETUP_WARNING="$SETUP_WARNING\n    https://github.com/open-power/snap/tree/master/hardware/README.md#power8"
     fi
   fi
 
