@@ -33,21 +33,25 @@ function test_10140000
 	$mytest/tests/10140000_test.sh -C $card
 	RC=$?
 	if [ $RC -ne 0 ]; then
+		echo "10140000_test.sh failed"
 		return $RC
 	fi
 	$mytest/tests/10140000_ddr_test.sh -C $card
 	RC=$?
 	if [ $RC -ne 0 ]; then
+                echo "10140000_ddr_test.sh failed"
 		return $RC
 	fi
 	$mytest/tests/10140000_set_test.sh -C $card
 	RC=$?
 	if [ $RC -ne 0 ]; then
+                echo "10140000_set_test.sh failed"
 		return $RC
 	fi
 	$mytest/tests/10140000_nvme_test.sh -C $card
 	RC=$?
 	if [ $RC -ne 0 ]; then
+                echo "10140000_nvme_test.sh failed"
 		return $RC
 	fi
 	return 0
@@ -68,6 +72,7 @@ function test_all_actions() # $1 = card, $2 = accel
 			test_10140000 $card $accel
 			RC=$?
 			run_test=0
+			echo "test_10140000 routine returned RC=$RC "
 		;;
 		*"10140001") # HDL NVMe example
 			cmd="./actions/hdl_nvme_example/tests/test_0x10140001.sh"
@@ -123,10 +128,9 @@ function test_all_actions() # $1 = card, $2 = accel
 				echo "       Missing File: $cmd"
 				RC=99
 			fi
-		else
-			RC=98
 		fi
 	done
+	echo "$0 return code is : RC=$RC"
 	return $RC
 }
 
@@ -207,6 +211,7 @@ function test_hard()
 	./software/tools/snap_peek -C $card 0x0 -d2
 	RC=$?
 	if [ $RC -ne 0 ]; then
+		echo "moving $IMAGE to $IMAGE.fault_peek"
 		mv $IMAGE $IMAGE.fault_peek
 		return $RC
 	fi
@@ -214,14 +219,17 @@ function test_hard()
 	./software/tools/snap_maint -C $card -v
 	RC=$?
 	if [ $RC -ne 0 ]; then
+		echo "moving $IMAGE to $IMAGE.fault_config"
 		mv $IMAGE $IMAGE.fault_config
 		return $RC
 	fi
 	test_all_actions $card $accel
 	RC=$?
 	if [ $RC -eq 0 ]; then
+		echo "moving $IMAGE to $IMAGE.good"
 		mv $IMAGE $IMAGE.good
 	else
+		echo "moving $IMAGE to $IMAGE.fault_test"
 		mv $IMAGE $IMAGE.fault_test
 	fi
 	return $RC
@@ -244,20 +252,21 @@ function usage() {
 	echo "    [-f <Image>  : Set SPI secondary Image file for Accelerator -A"
 	echo "                   -A ALL is not valid if -F is used"
 	echo "    [-C <0,1,2,3]: Select Card 0,1,2 or 3"
-	echo "        Selct the Card# for test. The..."
+	echo "        Select the Card# for test."
 	echo "    [-h] Print this help"
 	echo "    Option -D must be set"
 	echo "    following combinations can happen"
-	echo "    1.) Option -A [N250S, N250SP, ADKU3, AD8K5, S121B, FX609, S241, AD9V3 or RCXVUP] and -F is set"
+	echo "    1.) Option -A [N250S, N250SP, ADKU3, AD8K5, S121B, FX609, S241], AD9V3 or RCXVUP] and -F is set"
+	echo "    		[AD9V3 or RCXVUP]  and -F as well as -f are set (Their 2 SPI flashes require 2 bin files)"
 	echo "        for Card in all Accelerators (-A)"
-	echo "           Image will be flashed on Card"
-	echo "           Software Test will run on Card"
+	echo "           => Image will be flashed on Card (using capi-flash-script and reset routines)"
+	echo "           => and Software Test will then run on Card"
 	echo "    2.) Option -A [N250S, N250SP, ADKU3, AD8K5, S121B, FX609, S241, AD9V3 or RCXVUP]"
 	echo "        for Card in all given Accelerators (-A)"
-	echo "           Software Test will run on Card"
+	echo "           => Software Test will run on Card (using current FPGA content)"
 	echo "    3.) Option -A ALL"
 	echo "        for each Card and for all Accelerators"
-	echo "           Software Test will run on Accelerator and Card"
+	echo "           => Software Test will run on Accelerator and Card"
 }
 
 #
@@ -279,6 +288,12 @@ CARD="-1"   # Select all Cards in System
 echo "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< SNAP JENKINS TEST >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 echo "snap_jenkins.sh version : $VERSION"
 echo "`date` Test Starts On `hostname`"
+echo "Arg#='$#'"
+for i in "$@"
+do
+ echo "param'=$i"
+done
+echo ""
 
 while getopts "D:A:F:f:C:h" opt; do
 	case $opt in
@@ -378,6 +393,9 @@ if [[ $accel != "ALL" ]]; then
 				# -C Option was set.
 				# Make sure i did get the correct values for -A and -C
 				accel_to_use=`./software/tools/snap_find_card -C $CARD`
+                                echo "accel_to_use=$accel_to_use"
+                                echo "accel       =$accel"
+                                echo "CARD        =$CARD"
 				if [ "$accel_to_use" == "$accel" ]; then
                                         if [[ $accel != "AD9V3" ]] && [[ $accel != "RCXVUP" ]]; then
 						test_hard $accel $CARD $BINFILE
@@ -391,6 +409,7 @@ if [[ $accel != "ALL" ]]; then
 				else
 					echo "Error: CAPI Card: $CARD is not Accel Type: $accel"
 					echo "       CAPI Card: $CARD Accel Type is : $accel_to_use"
+                                        echo ""
 					exit 1
 				fi
 			fi
