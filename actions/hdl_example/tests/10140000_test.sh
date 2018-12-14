@@ -260,7 +260,7 @@ case $CARD in
 	echo "-> AlphaData $CARD Card"
 	;;	
 * )
-	echo "-> $CARD is Invalid"
+	echo "-> $CARD is Invalid (msg from $0)"
 	exit 1
 	;;
 esac;
@@ -302,5 +302,5 @@ for ((iter=1;iter <= iteration;iter++))
 		echo "No SDRAM, skipping this test"
 	fi
 }
-echo "---------->>>> Exit Good <<<<<<--------------"
+echo "---------->>>> Exit from $0 is Good <<<<<<--------------"
 exit 0
