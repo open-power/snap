@@ -73,12 +73,13 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 |:-----------------------|:-------------:|:------:|:------:|:-----:|:----------------
 |                        |16.04.1 minimum| 6.4    | Linux 7| 11.4  | lsb_release -a
 
-|**Tool**                |**Minimum**  |**Recommended**|**Helpful commands**|
-|:-----------------------|:-----------:|:-------------:|:--------------------
-| gcc                    |4.4.7|latest |gcc -v
-| Vivado                 |2017.4|2018.1|vivado -version
-| Vivado HLS             |2017.4|2018.1|vivado_hls -version
-| Cadence ncsim (optional for nvme simulation with models)|15.10-s019(Vivado 2017.4)|15.20-s018(Vivado 2018.1)|ncsim -version
+|**Tool**                  |**Minimum**  |**Recommended**|**Helpful commands**|
+|:-------------------------|:-----------:|:-------------:|:--------------------
+| gcc                      |4.4.7|latest |gcc -v
+| Vivado HL Design Edition |2018.1|2018.2 (for CAPI2.0)|vivado -version
+| Vivado HLS               |2018.1|2018.2 (for CAPI2.0)|vivado_hls -version
+| Cadence ncsim (required only for NVME simulation with Denali models)|15.20.046(Vivado 2018.1)|15.20.046(Vivado 2018.2)|ncsim -version
+_Vivado 2018.1 is compatible with CAPI1.0 and CAPI2.0 while Vivado 2018.2 doesn't work on CAPI1.0_
 
 ### Deployment Environments :
 
