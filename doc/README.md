@@ -79,6 +79,7 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 | Vivado HL Design Edition |2018.1       |2018.2 (for CAPI2.0)|vivado -version
 | Vivado HLS               |2018.1       |2018.2 (for CAPI2.0)|vivado_hls -version
 | Cadence irun (required only for NVME simulation with Denali models)|15.20.046(Vivado 2018.1)|15.20.046(Vivado 2018.2)|irun -version
+
 _Vivado 2018.1 is compatible with CAPI1.0 and CAPI2.0 while Vivado 2018.2 doesn't work on CAPI1.0_
 
 ### Deployment Environments :
