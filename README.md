@@ -69,7 +69,7 @@ This Design Suite includes C synthesizer (Vivado HLS), simulator (xsim) and the 
 
 ### (b) Download CAPI1.0 PSL or CAPI2.0 BSP: the "connection box" between the POWER server and the FPGA.
 Access to CAPI from the FPGA card requires the **P**ower **S**ervice **L**ayer (**PSL**) for CAPI1.0 cards or the **B**oard **S**upport **P**ackage (**BSP**) for CAPI2.0 cards. After accepting the terms of conditions, user will need to download a file to build the FPGA code.
-Detailed information is available in [hardware/README.md](hardware/README.md)
+Detailed information is available in [hardware/README.md](hardware/README.md#capi-board-support-and-psl-for-image-build)
 
 ### (c) Install the basics for the Build process
 After having cloned [snap](https://github.com/open-power/snap.git), building the code and running the make environment requires the usual development tools `gcc, make, sed, awk`. If not installed already, the installer package `build-essential` will set up the most important tools.
