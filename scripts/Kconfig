@@ -218,6 +218,13 @@ choice
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
 
+
+	config BD_HELLOWORLD
+		bool "BD HelloWorld"
+		help
+		  This is an example demonstrating the use of a Vivado 
+		  block design as the top-level action component.
+
 	config HLS_MEMCOPY
 		bool "HLS Memcopy"
 		help
@@ -300,7 +307,7 @@ choice
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
-	
+
 	config HLS_MM_TEST
 		bool "HLS WED/STATUS Sharing and MatrixMultiply"
 		help

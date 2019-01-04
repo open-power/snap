@@ -93,7 +93,7 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
   ####### checking default variables
-  if [ "$CAPI20" == "y" ]; then 
+  if [ "$CAPI20" == "y" ]; then
     RESP=`grep PSL9_IP_CORE $snap_env_sh`
     if [ -z "$RESP" ]; then
       echo "#export PSL9_IP_CORE= <for CAPI2.0 cards: path to ibm.com_CAPI_PSL9_WRAP_2.00.zip file>" >> $snap_env_sh
@@ -221,6 +221,8 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hls_mm_test'
   elif [ -n "$HLS_HELLOWORLD" ]; then
     AR='${SNAP_ROOT}/actions/hls_helloworld'
+  elif [ -n "$BD_HELLOWORLD" ]; then
+    AR='${SNAP_ROOT}/actions/bd_helloworld'
   elif [ -n "$HLS_DECIMAL_MULT" ]; then
     AR='${SNAP_ROOT}/actions/hls_decimal_mult'
   elif [ -n "$HLS_SCATTER_GATHER" ]; then
