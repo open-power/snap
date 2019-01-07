@@ -29,7 +29,7 @@ Developing an FPGA accelerated application on SNAP can be done following the ste
 
 * **Preparation**: Decide the software function to be moved to FPGA. This function, usually computation intensive, is named as "action" in the following description. 
 
-* **Step1**. Put the action code into a function in the main software code, and determine the function parameters required. Add the few libsnap API functions that required to set up CAPI to the main software. The best way is to start from an example (See in [actions](./actions)) and read the code within the "sw" directory. 
+* **Step1**. Put the action code into a separate function in the main software code, and determine the function parameters required. Add the few libsnap API functions that required to set up CAPI to the main software. The best way is to start from an example (See in [actions](./actions)) and read the code within the "sw" directory. 
 
 * **Step2**. Write the "hardware action" in a supported programming language, such as Vivado HLS or Verilog/VHDL. For **HLS**, developers can write their algorithms in C/C++ syntax within an function wrapper "hls_action()". Developers who prefer **HDL(Verilog/VHDL)**, can use their adapted version of "action_wrapper.vhd" as top-level. It includes several AXI master interfaces and one AXI-lite slave interface. Refer to the "hw" directory in "hls_\*" or "hdl_\*" for action examples.  
 For **simulation** of the hardware action, the PSLSE (**P**ower **S**ervice **L**ayer **S**imulation **E**ngine) provides a software emulation of the whole path from **libcxl** library to the **P**ower **S**ervice **L**ayer (see the blue boxes in the picture above). This allows for simulating the action without access to an FPGA card or a POWER system. When the simulation is successful, you are ready to **generate the FPGA bitstream**. 
@@ -59,20 +59,20 @@ As of now, the following FPGA cards can be used with SNAP _(see [cards ressource
   * Alpha-Data ADM-PCIE-9V3 https://www.alpha-data.com/dcp/products.php?product=adm-pcie-9v3
 
 ## 3.2 Development (Step1 & Step2)
-Development is usually done on a **Linux (x86) computer**. 
+Development is usually done on a **Linux (x86) computer** since as of now, Xilinx Vivado Design Suite is supported only on this platform. 
 See examples of [supported development configurations](./doc#p8-development-environments-).
 The required tools and packages are listed below. Web access to github is recommended to follow the build instructions. A real FPGA card is not required for the plain hardware development.
 
 ### (a) Install Xilinx Vivado Design Suite: the tool to build and program the FPGA.
-SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulation model and FPGA/image build, the [Xilinx Vivado HL Design Edition 2018.1 tool suite](https://www.xilinx.com/products/design-tools/vivado.html) is recommended. Different **licenses** are available. Some licenses are limiting the components that can be used; check the FPGA your target. (CAPI1.0 cards uses UltraScale family components and CAPI2.0 cards uses UltraScale+ family components).
-This Design Suite includes C synthesizer (Vivado HLS), simulator (xsim) and the synthesizer and FPGA/Image build tools (Vivado).
+SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulation model and FPGA/image build, the [Xilinx Vivado HL Design Edition 2018.1 tool suite](https://www.xilinx.com/products/design-tools/vivado.html) is recommended. Different **licenses** are available. Some licenses are limiting the components that can be used; check the FPGA you target. (CAPI1.0 cards uses UltraScale family components and CAPI2.0 cards uses UltraScale+ family components).
+This Design Suite includes a C synthesizer (Vivado HLS), a simulator (xsim), a synthesizer and FPGA/Image build tools (Vivado).
 
 ### (b) Download CAPI1.0 PSL or CAPI2.0 BSP: the "connection box" between the POWER server and the FPGA.
 Access to CAPI from the FPGA card requires the **P**ower **S**ervice **L**ayer (**PSL**) for CAPI1.0 cards or the **B**oard **S**upport **P**ackage (**BSP**) for CAPI2.0 cards. After accepting the terms of conditions, user will need to download a file to build the FPGA code.
 Detailed information is available in [hardware/README.md](hardware/README.md#capi-board-support-and-psl-for-image-build)
 
 ### (c) Install the basics for the Build process
-After having cloned snap (https://github.com/open-power/snap.git), building the code and running the make environment requires the usual development tools `gcc, make, sed, awk`. If not installed already, the installer package `build-essential` will set up the most important tools.
+First clone snap (https://github.com/open-power/snap.git). Then use the usual development tools: `gcc, make, sed, awk` to build the code and to run the make environment. If not installed already, the installer package `build-essential` will set up the most important tools.
 
 Configuring the SNAP framework via `make snap_config` will call a standalone tool that is based on the Linux kernel kconfig tool. This tool gets automatically cloned from https://github.com/guillon/kconfig
 
@@ -92,7 +92,7 @@ For more information, see the [Simulation README](hardware/sim/README.md).
 
 ## 3.3 Deployment (Step3)
 Deployment is on a **Power** or **OpenPower server** with an **FPGA card** plugged.
-See examples of [supported deployment configurations](./doc#p8-deployment-environment-ibm-server-examples-supporting-capi-snap-).
+See examples of [supported deployment configurations](doc/README.md#deployment-environments-).
 
 ### (a) Install CAPI accelerator library
 This code uses **libcxl** to access the CAPI hardware. Install it with the package manager of your Linux distribution, e.g. 
@@ -100,7 +100,7 @@ This code uses **libcxl** to access the CAPI hardware. Install it with the packa
 For more information, please see https://github.com/ibm-capi/libcxl
 
 ### (b) Install CAPI programmation tool
-SNAP uses the generic program `capi-flash-script` to upload FPGA code/bitstreams into the CAPI FPGA cards. This can be downloaded from https://github.com/ibm-capi/capi-utils. This tool can be used **ONLY** if a CAPI image has already been put once in the FPGA. If not, please follow guidances [here](https://github.com/open-power/snap/blob/master/hardware/doc/Bitstream_flashing.md#initial-programming-of-a-blank-or-bricked-card) or ask help from [CAPI support](https://developer.ibm.com/answers/smartspace/capi-snap/index.html).
+SNAP uses the generic program `capi-flash-script` to upload FPGA code/bitstreams into the CAPI FPGA cards. This can be downloaded from https://github.com/ibm-capi/capi-utils. This tool can be used **ONLY** if a CAPI image has already been put once in the FPGA. If not, please follow guidances [here](hardware/doc/Bitstream_flashing.md#initial-programming-of-a-blank-or-bricked-card) or ask help from [CAPI support](https://developer.ibm.com/answers/smartspace/capi-snap/index.html).
 
 # 4. Contributing
 This is an open-source project. We greatly appreciate your contributions and collaboration. 
