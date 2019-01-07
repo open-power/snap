@@ -55,12 +55,13 @@ The output bitstream file names will have `_FACTORY` appended.
 
 # Initial programming of a blank or bricked card
 
-There are two ways to program a card from scratch.  
-Connect the Platform Cable with the card as described in the card's reference manual.
+There are two ways to program a card from scratch. Both will require a x86 laptop/server (with either Linux or Windows) to connect the [Xilinx Platform programmer](https://www.xilinx.com/products/boards-and-kits/hw-usb-ii-g.html) between a USB port of this x86 and the FPGA board. Xilinx Vivado Suite will need to be installed (install only the "programmer" - no license required).
+
+Connect the Xilinx Platform Cable with the card as described in the card's reference manual.
 Here are somes examples of card connection situations :
 * The Alpha-Data KU3 has an on-board connector to plug the Xilinx Platform Cable USB II ribbon.
 * The Alpha-Data 8k5 has an embedded Xilinx compatible programmer, so only a micro USB cable is required. 
-* The Nallatech 250S and N250SP require an additional Development & Debug Breakout Board to interface with the Xilinx Platform Cable USB II.
+* The Nallatech 250S and N250SP require an **additional Development & Debug Breakout Board** to interface with the Xilinx Platform Cable USB II.
 
 ## 1. Programming the flash device with a .mcs file 
 
@@ -87,6 +88,7 @@ Here are somes examples of card connection situations :
   ```
 * Program the flash using [hardware/setup/flash_mcs.tcl](../setup/flash_mcs.tcl)  
   Programming the flash will take several minutes, please be patient.
+  _Depending on your release, use `vivado_lab` or `vivado` command_
   ### Example:
   ```bash
   vivado_lab -nolog -nojournal -mode batch -source setup/flash_mcs.tcl -tclargs "build/Images/${FPGACARD}_flash.mcs"
