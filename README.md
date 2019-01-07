@@ -101,8 +101,8 @@ This code uses **libcxl** to access the CAPI hardware. Install it with the packa
 `sudo apt-get install libcxl-dev` for Ubuntu.  
 For more information, please see https://github.com/ibm-capi/libcxl
 
-### (b) Install CAPI programmer tool
-SNAP uses the generic tools (_capi-flash-script_) to upload FPGA code/bitstreams into the CAPI FPGA cards from https://github.com/ibm-capi/capi-utils. This tool can be used ONLY if a CAPI image has been already put once in the FPGA. If not, please follow guidances [here](https://github.com/open-power/snap/blob/master/hardware/doc/Bitstream_flashing.md#initial-programming-of-a-blank-or-bricked-card) or ask help from [CAPI support](https://developer.ibm.com/answers/smartspace/capi-snap/index.html).
+### (b) Install CAPI programmation tool
+SNAP uses the generic program `capi-flash-script` to upload FPGA code/bitstreams into the CAPI FPGA cards. This can be downloaded from https://github.com/ibm-capi/capi-utils. This tool can be used **ONLY** if a CAPI image has already been put once in the FPGA. If not, please follow guidances [here](https://github.com/open-power/snap/blob/master/hardware/doc/Bitstream_flashing.md#initial-programming-of-a-blank-or-bricked-card) or ask help from [CAPI support](https://developer.ibm.com/answers/smartspace/capi-snap/index.html).
 
 # 4. Contributing
 This is an open-source project. We greatly appreciate your contributions and collaboration. 
