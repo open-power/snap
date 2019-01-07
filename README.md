@@ -72,11 +72,9 @@ Access to CAPI from the FPGA card requires the **P**ower **S**ervice **L**ayer (
 Detailed information is available in [hardware/README.md](hardware/README.md#capi-board-support-and-psl-for-image-build)
 
 ### (c) Install the basics for the Build process
-After having cloned [snap](https://github.com/open-power/snap.git), building the code and running the make environment requires the usual development tools `gcc, make, sed, awk`. If not installed already, the installer package `build-essential` will set up the most important tools.
+After having cloned snap (https://github.com/open-power/snap.git), building the code and running the make environment requires the usual development tools `gcc, make, sed, awk`. If not installed already, the installer package `build-essential` will set up the most important tools.
 
-Configuring the SNAP framework via `make snap_config` will call a standalone tool that is based on the Linux kernel kconfig tool. This tool gets automatically cloned from
-
-https://github.com/guillon/kconfig
+Configuring the SNAP framework via `make snap_config` will call a standalone tool that is based on the Linux kernel kconfig tool. This tool gets automatically cloned from https://github.com/guillon/kconfig
 
 The `ncurses` library must be installed to use the menu-driven user interface for kconfig.
 
