@@ -24,7 +24,7 @@ Please see here for more details:
 ## Status
 Currently the SNAP Framework supports CAPI1.0 on POWER8 based hosts and CAPI2.0 on POWER9 based hosts. A similar OpenCAPI SNAP framework is going to be added in a new repository. Users working on SNAP today can easily transfer their CAPI1.0 work to CAPI2.0 or OpenCAPI as the interface for "**Software Program**" and "**Hardware Action**" (shown in the yellow areas of the above figure) will stay the same. 
 
-# 2. Getting started
+# 2. A 3 steps process
 Developing an FPGA accelerated application on SNAP can be done following the steps listed below, but this sequence is not mandatory.
 
 * **Preparation**: Decide the software function to be moved to FPGA. This function, usually computation intensive, is named as "action" in the following description. 
@@ -44,7 +44,7 @@ For a step-by-step help, please refer to the SNAP Workbooks in the [doc](./doc) 
 Please also have a look at [actions](./actions) to see several examples which may help you get started with coding. Each example has a detailed description in its own "doc" directory.
 
 # 3. Dependencies
-## FPGA Card selection
+## 3.1 FPGA Card selection
 As of now, the following FPGA cards can be used with SNAP _(see [cards ressources details](./doc/README.md#p8-capi10-snap-fpga-supported-boards))_ :
 * for POWER8 (CAPI1.0):
   * Alpha-Data ADM-PCIE-KU3        http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
@@ -58,7 +58,7 @@ As of now, the following FPGA cards can be used with SNAP _(see [cards ressource
   * ReflexCES XpressVUP LP9P https://www.reflexces.com/products-solutions/other-cots-boards/xilinx/xpressvup
   * Alpha-Data ADM-PCIE-9V3 https://www.alpha-data.com/dcp/products.php?product=adm-pcie-9v3
 
-## Development (Step1 & Step2)
+## 3.2 Development (Step1 & Step2)
 Development is usually done on a **Linux (x86) computer**. 
 See examples of [supported development configurations](./doc#p8-development-environments-).
 The required tools and packages are listed below. Web access to github is recommended to follow the build instructions. A real FPGA card is not required for the plain hardware development.
@@ -92,14 +92,16 @@ Please see [PSLSE Setup](hardware/sim/README.md#pslse-setup) for more informatio
 Simulating the NVMe host controller including flash storage devices requires licenses for the Cadence Incisive Simulator (IES) and DENALI Verification IP (PCIe and NVMe). However, building images is possible without these licenses.
 For more information, see the [Simulation README](hardware/sim/README.md).
 
-## Deployment (Step3)
+## 3.3 Deployment (Step3)
 Deployment is on a **Power** or **OpenPower server** with an **FPGA card** plugged.
 See examples of [supported deployment configurations](./doc#p8-deployment-environment-ibm-server-examples-supporting-capi-snap-).
 
+### (a) Install CAPI accelerator library
 This code uses **libcxl** to access the CAPI hardware. Install it with the package manager of your Linux distribution, e.g. 
 `sudo apt-get install libcxl-dev` for Ubuntu.  
 For more information, please see https://github.com/ibm-capi/libcxl
 
+### (b) Install CAPI programmer tool
 SNAP uses the generic tools (_capi-flash-script_) to upload FPGA code/bitstreams into the CAPI FPGA cards from https://github.com/ibm-capi/capi-utils. This tool can be used ONLY if a CAPI image has been already put once in the FPGA. If not, please follow guidances [here](https://github.com/open-power/snap/blob/master/hardware/doc/Bitstream_flashing.md#initial-programming-of-a-blank-or-bricked-card) or ask help from [CAPI support](https://developer.ibm.com/answers/smartspace/capi-snap/index.html).
 
 # 4. Contributing
