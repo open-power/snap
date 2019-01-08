@@ -83,7 +83,7 @@ run_hls_script.tcl: $(SNAP_ROOT)/actions/scripts/create_run_hls_script.sh
 		-c $(HLS_ACTION_CLOCK)		\
 		-f "$(srcs)" 			\
 		-s $(SNAP_ROOT) 		\
-		-x $(HLS_CFLAGS) > $@
+		-x "$(HLS_CFLAGS)" > $@
 
 $(SOLUTION_NAME): $(objs)
 	$(CXX) -o $@ $^
