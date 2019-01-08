@@ -107,6 +107,6 @@ if [ "$duration" = "NORMAL" ]; then
   test_decimal_mult 
   fi
 
-rm -f *.bin *.bin *.out
+rm -f *.bin *.bin *.out snap_decimal_mult.log
 echo "Test OK"
 exit 0

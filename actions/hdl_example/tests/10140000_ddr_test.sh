@@ -122,8 +122,11 @@ case $CARD in
 "RCXVUP" )
 	echo "-> ReflexCES $CARD Card"
 	;;
+"AD9V3" )
+        echo "-> AlphaData $CARD Card"
+        ;;
 * )
-	echo "-> $CARD is Inavlid"
+	echo "-> $CARD is invalid (msg from $0)"
 	exit 1
 	;;
 esac;
@@ -193,5 +196,5 @@ for ((iter=1;iter <= iteration;iter++))
 		test_ddr "${snap_card}" "${start}" "${end}" "${BLOCKSIZE}"
 	fi
 }
-echo "---------->>>> Exit Good <<<<<<--------------"
+echo "---------->>>> Exit from $0 is Good <<<<<<--------------"
 exit 0

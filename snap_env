@@ -96,12 +96,34 @@ while [ -z "$SETUP_DONE" ]; do
   if [ "$CAPI20" == "y" ]; then 
     RESP=`grep PSL9_IP_CORE $snap_env_sh`
     if [ -z "$RESP" ]; then
-      echo "#export PSL9_IP_CORE= <for CAPI2.0 cards: path to ibm.com_CAPI_PSL9_WRAP2.00.zip file>" >> $snap_env_sh
+      echo "#export PSL9_IP_CORE= <for CAPI2.0 cards: path to ibm.com_CAPI_PSL9_WRAP_2.00.zip file>" >> $snap_env_sh
+    fi
+    if [ -z "$PSL9_IP_CORE" ]; then
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Path to PSL9_IP_CORE not set in $(basename $snap_env_sh) file."
+      SETUP_INFO="$SETUP_INFO\n    It is not needed for simulation but only for building an image/FPGA."
+      SETUP_INFO="$SETUP_INFO\n    All information how and where to get this zip file can be found at :"
+      SETUP_INFO="$SETUP_INFO\n    https://github.com/open-power/snap/tree/master/hardware/README.md#power9"
+    elif [ ! -e "$PSL9_IP_CORE" ]; then
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSL9_IP_CORE not set properly in $(basename $snap_env_sh) file."
+      SETUP_WARNING="$SETUP_WARNING\n    It is not needed for simulation but only for building an image/FPGA."
+      SETUP_WARNING="$SETUP_WARNING\n    All information how and where to get this zip file can be found at :" 
+      SETUP_WARNING="$SETUP_WARNING\n    https://github.com/open-power/snap/tree/master/hardware/README.md#power9"
     fi
   else
     RESP=`grep PSL_DCP $snap_env_sh`
     if [ -z "$RESP" ]; then
       echo "#export PSL_DCP= <for CAPI1.0 cards: path to b_route_design.dcp file>" >> $snap_env_sh
+    fi
+    if [ -z "$PSL_DCP" ]; then
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Path to PSL_DCP not set."
+      SETUP_INFO="$SETUP_INFO\n    It is not needed for simulation but only for building an image/FPGA."
+      SETUP_INFO="$SETUP_INFO\n    All information where to get this b_route_design.dcp file can be found at :" 
+      SETUP_INFO="$SETUP_INFO\n    https://github.com/open-power/snap/tree/master/hardware/README.md#power8"
+    elif [ ! -e "$PSL_DCP" ]; then
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSL_DCP not set properly in $(basename $snap_env_sh) file."
+      SETUP_WARNING="$SETUP_WARNING\n    It is not needed for simulation but only for building an image/FPGA."
+      SETUP_WARNING="$SETUP_WARNING\n    All information where to get this b_route_design.dcp file can be found at :"
+      SETUP_WARNING="$SETUP_WARNING\n    https://github.com/open-power/snap/tree/master/hardware/README.md#power8"
     fi
   fi
 
@@ -119,13 +141,17 @@ while [ -z "$SETUP_DONE" ]; do
         PSL_DCP_TYPE=`$snapdir/hardware/snap_check_psl $FPGACARD $PSL_DCP`
         if [ "$PSL_DCP_TYPE" != "$FPGACARD" ]; then
           if [[ "$PSL_DCP_TYPE" == *"OUTDATED"* ]]; then
-            SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP for $FPGACARD is pointing to an outdated design checkpoint, image build will not be allowed."
+            SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP for $FPGACARD is pointing to an outdated dcp file in $(basename $snap_env_sh) file."
+            SETUP_INFO="$SETUP_INFO\n    Building the image/FPGA will not be allowed."
+            SETUP_INFO="$SETUP_INFO\n    All information where to get this b_route_design.dcp file can be found" 
+            SETUP_INFO="$SETUP_INFO\n    from https://github.com/open-power/snap/tree/master/hardware/README.md#power8"
           else
-            SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP is pointing to a checkpoint for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD, image build will not be allowed."
+            SETUP_INFO="$SETUP_INFO\n### INFO ### PSL_DCP is pointing to a wrong checkpoint dcp file"
+            SETUP_INFO="$SETUP_INFO\n    dcp file is for a $PSL_DCP_TYPE card while FPGACARD is set to $FPGACARD"
+            SETUP_INFO="$SETUP_INFO\n    Building the image/FPGA will not be allowed."
+            SETUP_INFO="$SETUP_INFO\n    Check or set the path to PSL_DCP in $(basename $snap_env_sh) accordingly."
           fi
         fi
-      else
-        SETUP_INFO="$SETUP_INFO\n### INFO ### For image build the environment variable PSL_DCP must point to the CAPI PSL Checkpoint file (b_route_design.dcp)."
       fi
     fi
   fi
@@ -151,11 +177,16 @@ while [ -z "$SETUP_DONE" ]; do
     fi
     if [ -z "$PSLSE_ROOT" ]; then
       SETUP_EMPTY="$SETUP_EMPTY\n  PSLSE_ROOT"
+      SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set."
+      SETUP_WARNING="$SETUP_WARNING\n    For simulation please clone PSL Simulation Environment"
+      SETUP_WARNING="$SETUP_WARNING\n    from https://github.com/ibm-capi/pslse"
+      SETUP_WARNING="$SETUP_WARNING\n    and let PSLSE_ROOT variable in $(basename $snap_env_sh) point to it."
+      SETUP_WARNING="$SETUP_WARNING\n    Please set Simulator to 'nosim' if you do not intend to run simulation."
     elif [ ! -d "$PSLSE_ROOT" ]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSLSE not set properly."
       SETUP_WARNING="$SETUP_WARNING\n    For simulation please clone PSL Simulation Environment"
       SETUP_WARNING="$SETUP_WARNING\n    from https://github.com/ibm-capi/pslse"
-      SETUP_WARNING="$SETUP_WARNING\n    and let \$PSLSE_ROOT point to it."
+      SETUP_WARNING="$SETUP_WARNING\n    and let PSLSE_ROOT variable in $(basename $snap_env_sh) point to it."
       SETUP_WARNING="$SETUP_WARNING\n    Please set Simulator to 'nosim' if you do not intend to run simulation."
     fi
   fi
@@ -192,6 +223,8 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hls_helloworld'
   elif [ -n "$HLS_DECIMAL_MULT" ]; then
     AR='${SNAP_ROOT}/actions/hls_decimal_mult'
+  elif [ -n "$HLS_SCATTER_GATHER" ]; then
+    AR='${SNAP_ROOT}/actions/hls_scatter_gather'
   fi
   if [ -z "$AR" ] && [ -n "$ACTION_ROOT" ]; then
     AR=$ACTION_ROOT
@@ -215,6 +248,26 @@ while [ -z "$SETUP_DONE" ]; do
     fi
   fi
 
+  ####### settings for HLS_CLK_CONSTRAINT
+  # Note: HLS_CLK_CONSTRAINT is defined via snap_config
+  if [ "$HLS_CLK_CONSTRAINT" == "TRUE" ]; then
+    RESP=`grep HLS_CLOCK_PERIOD_CONSTRAINT $snap_env_sh`
+    if [ -z "$RESP" ]; then
+      echo "export HLS_CLOCK_PERIOD_CONSTRAINT=\"4ns\"" >> $snap_env_sh
+      SETUP_INFO="$SETUP_INFO\n### INFO ### HLS_CLOCK_PERIOD_CONSTRAINT has been added to snap_env.sh file"
+      SETUP_INFO="$SETUP_INFO\n      Please set it up with the value you want (default is 4ns)"
+    else
+      sed -i 's/#export HLS_CLOCK_PERIOD_CONSTRAINT/export HLS_CLOCK_PERIOD_CONSTRAINT/g' $snap_env_sh
+      SETUP_INFO="$SETUP_INFO\n### INFO ### HLS_CLOCK_PERIOD_CONSTRAINT is uncommented in snap_env.sh file"
+      SETUP_INFO="$SETUP_INFO\n      Please set it up with the value you want (default is 4ns)"
+    fi
+  else
+    RESP=`grep '#export HLS_CLOCK_PERIOD_CONSTRAINT' $snap_env_sh`
+    if [ -z "$RESP" ] && [ "$CAPI20" == "y" ]; then 
+      sed -i 's/export HLS_CLOCK_PERIOD_CONSTRAINT/#export HLS_CLOCK_PERIOD_CONSTRAINT/g' $snap_env_sh
+      SETUP_INFO="$SETUP_INFO\n### INFO ### HLS_CLOCK_PERIOD_CONSTRAINT has been commented in snap_env.sh file"
+    fi
+  fi
 
   ####### settings for ILA Debug
   # Note: ILA_DEBUG is defined via snap_config
@@ -256,6 +309,7 @@ while [ -z "$SETUP_DONE" ]; do
     sed -i '/export[ ^]*TIMING_LABLIMIT[ ^]*=/ d' $snap_env_sh
     sed -i '1s/^/export TIMING_LABLIMIT="'$TIMING_LABLIMIT_DEFAULT'"\n/' $snap_env_sh
     SETUP_INFO="$SETUP_INFO\n### INFO ### Timing limit for FPGA image build got set to default value $TIMING_LABLIMIT_DEFAULT"
+    SETUP_INFO="$SETUP_INFO\n      This value can be changed in file $(basename $snap_env_sh) file"
   fi
   echo "=====Timing limit for FPGA image build in ps============"
   echo "TIMING_LABLIMIT         is set to: \"$TIMING_LABLIMIT\""
@@ -315,7 +369,7 @@ while [ -z "$SETUP_DONE" ]; do
   if [ -n "$SETUP_WARNING" ]; then
     RC=1
     echo -e "$SETUP_WARNING"
-    echo -e "\nPlease add the required environment settings to the file $(basename $snap_env_sh)"
+    echo -e "\nPlease add or correct the required environment settings to the file $(basename $snap_env_sh)"
     echo -e "All of the variables above have to be filled with the correct values."
   fi
 
@@ -325,7 +379,7 @@ while [ -z "$SETUP_DONE" ]; do
 
   if [ -n "$SETUP_EMPTY" ]; then
     let "RC = 2 - $RC"
-    echo -e "\nThe following environment variables need to get defined:$SETUP_EMPTY"
+    echo -e "\nThe following environment variables need to get defined before going further:$SETUP_EMPTY"
     echo -e "Please edit $(basename $snap_env_sh) and add the correct values"
   fi
   echo

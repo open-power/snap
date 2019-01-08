@@ -78,6 +78,14 @@ choice
 		select DISABLE_NVME
 		help
 		  Flyslice FX609 Card with Ethernet, 8GB DDR4 SDRAM and Xilinx VU9P FPGA.
+
+        config AD9V3
+                bool "CAPI2.0: AlphaData AD9V3 with 2x100GbE, 8GB DDR4 SDRAM and Xilinx VU3P-2 FPGA"
+                select CAPI20
+                select DISABLE_NVME
+                help
+                  AlphaData AD9V3 with 2x100GbE, 8GB DDR4 SDRAM and Xilinx VU3P-2 FPGA in CAPI2.0 mode
+
 endchoice
 
 config FPGACARD
@@ -90,19 +98,20 @@ config FPGACARD
 	default "RCXVUP" if RCXVUP
 	default "FX609"  if FX609
 	default "S241"   if S241
+        default "AD9V3"  if AD9V3
 
 config FLASH_INTERFACE
 	string
 	default "BPIx16" if S121B_BPIx16 || N250S || N250SP || ADKU3 || AD8K5
 	default "SPIx4"  if S121B_SPIx4 || FX609 || S241
-	default "SPIx8"  if RCXVUP
+	default "SPIx8"  if RCXVUP || AD9V3
 
 #FLASH_SIZE: in MB, will be used by build_mcs.tcl
 config FLASH_SIZE
 	string
 	default 256 if S121B_SPIx4  || RCXVUP || S241
 	default 128 if S121B_BPIx16 || N250SP || AD8K5 || ADKU3 || FX609
-	default 64  if N250S
+	default 64  if N250S || AD9V3
 
 #FLASH_FACTORYADDR: For all cards, factory address is 0x0
 config FLASH_FACTORYADDR
@@ -114,7 +123,7 @@ config FLASH_FACTORYADDR
 config FLASH_USERADDR
 	string
 	default 0x01000000 if N250S || ADKU3
-	default 0x02000000 if S121B_BPIx16 || AD8K5 || N250SP
+	default 0x02000000 if S121B_BPIx16 || AD8K5 || N250SP || AD9V3
 	default 0x04000000 if FX609
 	default 0x08000000 if S121B_SPIx4 || RCXVUP || S241
 
@@ -140,6 +149,8 @@ config FPGACHIP
 	default "xcvu9p-flgb2104-2l-e-es1" if RCXVUP
 	default "xcvu9p-fsgd2104-2l-e" if FX609
 	default "xcvu9p-flgb2104-2l-e" if S241
+	default "xcvu3p-ffvc1517-2-i"  if AD9V3
+
 
 config NUM_OF_ACTIONS
 	int
@@ -169,9 +180,6 @@ choice
 		  Please remember to set the environment variable "ACTION_ROOT"
 		  in snap_env.sh to the directory of the action source code.
 
-        config HDL_EXAMPLE
-                bool "HDL Example"
-
 	config HDL_HELLOWORLD
 		bool "HDL HelloWorld (Minimum example written in Verilog)"
                 help
@@ -179,6 +187,9 @@ choice
                     SNAP String Match (Regular Expression Match) Tool
                 select DISABLE_SDRAM_AND_BRAM
                 select DISABLE_NVME
+
+        config HDL_EXAMPLE
+                bool "HDL Example"
 
 	config HDL_NVME_EXAMPLE
 		bool "HDL NVMe Example"
@@ -195,7 +206,7 @@ choice
 		  in snap_env.sh to the directory of the action source code.
 
 	config HLS_HELLOWORLD
-		bool "HLS HelloWorld"
+		bool "HLS HelloWorld (Minimum example written in C)"
 		help
 		  This is the simplest example to start with:
 		  - Reading text from the server memory
@@ -305,7 +316,7 @@ choice
 	config HLS_DECIMAL_MULT
 		bool "HLS Decimal Multiplication"
 		help
-		  This example will help user understanding how to handle decimal numbers::
+		  This example will help user understanding how to handle decimal numbers:
 		  - Read a value from the server memory
 		  - Convert this value to a double or a float type
 		  - Process an operation with decimal numbers such as a multiplication
@@ -315,6 +326,20 @@ choice
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
+
+	config HLS_SCATTER_GATHER
+		bool "HLS Scatter Gather (CAPI2.0 only)"
+		help
+		  This example will help user understanding how to optimize code for 
+		   scatter gather memory access. It will show how Software and Hardware 
+		   share WED (Work Element Descriptor) and STATUS in host memory.
+		  This can be used as a benchmark to see how CAPI help reduce the 
+		   data moving latency when the data are scattered everywhere in RAM.
+		  This example is written in C and compiled with HLS
+		select ENABLE_HLS_SUPPORT
+		select DISABLE_SDRAM_AND_BRAM
+		select DISABLE_NVME
+		select ENABLE_ACTION_CLK_DERATE
 
 endchoice
 
@@ -349,11 +374,13 @@ config ENABLE_SDRAM
 	  This option enables the on-card SDRAM.
 	  SNAP supports 8GB DDR3 SDRAM on the AlphaData KU3 card,
 	                4GB DDR4 SDRAM on the Nallatech 250S card,
+			4GB DDR4 SDRAM on the Nallatech 250S+ card,
 	                8GB DDR4 SDRAM on the Semptian NSA121B card,
-	                8GB DDR4 SDRAM (out of 16GB) on the AlphaData 8K5 card
+	                8GB DDR4 SDRAM on the AlphaData 8K5 card
 	                8GB DDR4 SDRAM on the Semptian NSA241 card
 	                8GB DDR4 SDRAM on the ReflexCES XpressVUP card and
 	                8GB DDR4 SDRAM on the Flyslice FX609 card.
+	                8GB DDR4 SDRAM on the AlphaData AD9V3 card.
 
 config SDRAM_USED
 	string
@@ -385,7 +412,7 @@ config DDR3_USED
 config ENABLE_DDR4
 	bool
 	default y
-	depends on (ENABLE_SDRAM && (N250S || S121B || N250SP || AD8K5 || RCXVUP || FX609 || S241))
+	depends on (ENABLE_SDRAM && (N250S || S121B || N250SP || AD8K5 || RCXVUP || FX609 || S241 || AD9V3))
 
 config DDR4_USED
 	string
@@ -498,6 +525,40 @@ config USE_PRFLOW
 	string
 	default "TRUE" if ENABLE_PRFLOW
 	default "FALSE" if ! ENABLE_PRFLOW
+
+config ENABLE_ACTION_CLK_DERATE
+	bool "Derate by 10% the Action clock used for synthesizing the FPGA"
+	default n
+	depends on CAPI20
+	help
+	  By derating the action clock, the routing in the FPGA may be easier.
+	  Default clock is 250MHz (4ns).
+	  This option will set the clock to 225MHz (5ns) for the routing phase but keep
+	  the default clock (4ns) for HLS to better work.
+
+config FPGA_ACTION_CLK
+	string
+	default "225MHZ"  if ENABLE_ACTION_CLK_DERATE
+	default "250MHZ" if ! ENABLE_ACTION_CLK_DERATE
+
+config ENABLE_USER_HLS_ACTION_CLK
+	bool "Constraint HLS tool with a specific HLS clock"
+	default n
+	depends on CAPI20
+	help
+	  Default clock is 250MHz (4ns).
+	  By changing the value of the HLS action clock, user can
+	  overconstrain the HLS synthesis and get different synthesis results.
+	  This option enables or disables in the file snap_env.sh the use of 
+          the variable HLS_CLOCK_PERIOD_CONSTRAINT="4ns"
+	  This modification will not change the frequency used to synthesize the
+          whole FPGA, but will disable the automatic timing violation testing done
+          after the HLS synthesis.
+
+config HLS_CLK_CONSTRAINT
+	string
+	default "TRUE"  if ENABLE_USER_HLS_ACTION_CLK
+	default "FALSE" if ! ENABLE_USER_HLS_ACTION_CLK
 
 config ENABLE_ILA
 	bool "Enable ILA Debug (Definition of $ILA_SETUP_FILE required)"

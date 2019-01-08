@@ -133,9 +133,12 @@ case $CARD in
 "RCXVUP" )
 	echo "-> ReflexCES $CARD Card"
 	;;
+"AD9V3" )
+        echo "-> AlphaData $CARD Card"
+        ;;
 
 * )
-	echo "-> $CARD is invalid"
+	echo "-> $CARD is not valid (msg from $0)"
 	exit 1
 	;;
 esac;
@@ -156,5 +159,5 @@ for ((iter=1;iter <= iteration;iter++))
 	echo -n "   IRQ Testing ($iter of $iteration) on: $CARD[$snap_card] "
 	test_memset $snap_card $MIN_ALIGN $MIN_BLOCK IRQ
 }
-echo "---------->>>> Exit Good <<<<<<--------------"
+echo "---------->>>> Exit from $0 is Good <<<<<<--------------"
 exit 0

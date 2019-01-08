@@ -404,7 +404,7 @@ int main(int argc, char *argv[])
 
 	// Display the time of the action call (use the loop index + 1 as iteration done)
 	lcltime = (long long)(timediff_usec(&etime, &stime));
-	fprintf(stdout, "SNAP action processing for %d iteration is %f usec\n",
+	fprintf(stdout, "SNAP action average processing time for %d iteration is %f usec\n",
 		i+1, (float)lcltime/(float)(i+1));
 
 	// Collect the timestamp BEFORE the last step of the action completion

@@ -122,6 +122,7 @@
         "10141009") a0="hls_latency_eval";;
         "1014100a") a0="hls_mm_test";;
         "1014100b") a0="hls_decimal_mult";;
+        "1014100c") a0="hls_scatter_gather";;
         *) echo "unknown action0 type=$t0l, exiting";exit 1;;
       esac; echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="snap_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
@@ -149,6 +150,7 @@
         "10141009") a1="hls_latency_eval";;
         "1014100a") a1="hls_mm_test";;
         "1014100b") a1="hls_decimal_mult";;
+        "1014100c") a1="hls_scatter_gather";;
         *) echo "unknown action1 type=$t1l, exiting";exit 1;;
       esac; echo "action0 type1s=$t1s type1l=$t1l $a1"
       t="snap_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
@@ -532,6 +534,11 @@
       if diff dec_mult_ref.bin dec_mult_action.bin>/dev/null;then echo -e "RC=$rc file_diff ok$del";else echo -e "$t RC=$rc file_diff is wrong$del";exit 1;fi
     fi # decimal_mult_test
 
+    if [[ "$t0l" == "1014100c" || "${env_action}" == "hls_scatter_gather" ]];then echo -e "$del\ntesting scatter_gather"
+      step "snap_scatter_gather -h"
+      step "snap_scatter_gather -n256 -s256 -m2"
+      step "snap_scatter_gather -n256 -s256 -m3"
+    fi # hls_scatter_gather
  #
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"  # end of loop
   done; l=""; ts3=$(date +%s); totaltime=`expr $ts3 - $ts0`; echo "loops=$loops tests=$n total_time=$totaltime" # end of test
