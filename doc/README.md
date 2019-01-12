@@ -36,10 +36,10 @@ _Requires Ubuntu 16.04.1 LTS or later_ / (Resources in _italic_ are not enabled 
 
 | Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM             |NVME|QDR|Ethernet        |CAPI Interface|Board|CAPI support|SNAP support
 |:------------|:-------:|:------------:|:--:|:---------------:|:--:|:-:|:---------------|:---:|:----------:|:-----------:|:----------:
-|  Alphadata  |ADM-PCIE-KU3|ADKU3|KU060|16GB DDR3(2ch)   |-|-     |_2x(40GbE/4x10GbE)_|PCIe Gen3 x8|LowProf|X|X|
-|  Alphadata  |ADM-PCIE-8K5|AD8K5|KU115|16/32GB DDR4(2ch)|-|-     |_2x(10GbE/16GbE FC)_ |PCIe Gen3 x8|LowProf|X|X|
+|  Alphadata  |ADM-PCIE-KU3|ADKU3|KU060|8/_16_GB DDR3(1ch-_1ch_)   |-|-     |_2x(40GbE/4x10GbE)_|PCIe Gen3 x8|LowProf|X|X|
+|  Alphadata  |ADM-PCIE-8K5|AD8K5|KU115|8/_16_GB DDR4(1ch-_1ch_)|-|-     |_2x(10GbE/16GbE FC)_ |PCIe Gen3 x8|LowProf|X|X|
 |  Nallatech  |250S	       |N250S|KU060|4GB DDR4(1ch)    |2TB (1ch+_1ch_)|-  |-               |PCIe Gen3 x8|LowProf|X|X|
-|  Semptian	  |NSA-121B	   |S121B|KU115|16GB DDR4(2ch)   |-|-|_2x(10GbE)_|PCIe Gen3 x8|LowProf|X|X|
+|  Semptian	  |NSA-121B	   |S121B|KU115|8/_16_GB DDR4(1ch-_1ch_)   |-|-|_2x(10GbE)_|PCIe Gen3 x8|LowProf|X|X|
 
 ### P9 CAPI2.0 SNAP FPGA Supported Boards
 _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
