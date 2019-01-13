@@ -90,6 +90,12 @@ while [ -z "$SETUP_DONE" ]; do
   else
     echo "Path to vivado          is set to: `which vivado`"
     echo "Vivado version          is set to: `vivado -version|head -n1`"
+    RESP=`vivado -version|head -n1 |cut -d' ' -f2`
+    echo ">>> Vivado $RESP"
+    if [ $RESP == "v2018.2" ]; then
+      SETUP_INFO="$SETUP_INFO\n### WARNING ### Building an image with Vivado 2018.2 for CAPI1.0 cards will drive to errors."
+      SETUP_INFO="$SETUP_INFO\n###    It is highly recommended to use Vivado 2018.1 with CAPI1.0 cards."
+    fi
   fi
 
   ####### checking default variables
