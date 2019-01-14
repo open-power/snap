@@ -91,8 +91,7 @@ while [ -z "$SETUP_DONE" ]; do
     echo "Path to vivado          is set to: `which vivado`"
     echo "Vivado version          is set to: `vivado -version|head -n1`"
     RESP=`vivado -version|head -n1 |cut -d' ' -f2`
-    echo ">>> Vivado $RESP"
-    if [ $RESP == "v2018.2" ]; then
+    if [ "$CAPI10" == "y" ] && [ $RESP == "v2018.2" ]; then
       SETUP_INFO="$SETUP_INFO\n### WARNING ### Building an image with Vivado 2018.2 for CAPI1.0 cards will drive to errors."
       SETUP_INFO="$SETUP_INFO\n###    It is highly recommended to use Vivado 2018.1 with CAPI1.0 cards."
     fi
@@ -268,10 +267,10 @@ while [ -z "$SETUP_DONE" ]; do
       SETUP_INFO="$SETUP_INFO\n      Please set it up with the value you want (default is 4ns)"
     fi
   else
-    RESP=`grep '#export HLS_CLOCK_PERIOD_CONSTRAINT' $snap_env_sh`
-    if [ -z "$RESP" ] && [ "$CAPI20" == "y" ]; then 
+    RESP=`grep "#export HLS_CLOCK_PERIOD_CONSTRAINT" $snap_env_sh`
+    if [ -z "$RESP" ] && [ "$CAPI20" == "y" ]; then
       sed -i 's/export HLS_CLOCK_PERIOD_CONSTRAINT/#export HLS_CLOCK_PERIOD_CONSTRAINT/g' $snap_env_sh
-      SETUP_INFO="$SETUP_INFO\n### INFO ### HLS_CLOCK_PERIOD_CONSTRAINT has been commented in snap_env.sh file"
+      SETUP_INFO="$SETUP_INFO\n### INFO ### HLS_CLOCK_PERIOD_CONSTRAINT has been commented in snap_env.sh file, if set"
     fi
   fi
 
