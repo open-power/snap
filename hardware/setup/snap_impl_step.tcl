@@ -76,7 +76,7 @@ if { [catch "$command > $logfile" errMsg] } {
   exit 42
 } else {
   write_checkpoint   -force $dcp_dir/${step}.dcp          >> $logfile
-  report_utilization -file  ${rpt_dir}_${step}_utilization.rpt -quiet
+  report_utilization -file  ${rpt_dir}/${step}_utilization.rpt -quiet
 }
 
 ##
