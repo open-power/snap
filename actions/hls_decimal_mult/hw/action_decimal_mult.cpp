@@ -77,6 +77,10 @@ static int process_action(snap_membus_t *din_gmem,
 	snap_membus_t buffer_in[MAX_NB_OF_WORDS_READ], buffer_out[MAX_NB_OF_WORDS_READ];
 	// mat_elmt_t is defined on header file as float or double type
 	mat_elmt_t data_in[MAX_NB_OF_DECIMAL_READ], data_out[MAX_NB_OF_DECIMAL_READ];
+	#pragma HLS RESOURCE variable=buffer_in core=XPM_MEMORY uram
+	#pragma HLS RESOURCE variable=buffer_out core=XPM_MEMORY uram
+	#pragma HLS RESOURCE variable=data_in core=XPM_MEMORY uram
+	#pragma HLS RESOURCE variable=data_out core=XPM_MEMORY uram
 
 
 	/* COLLECT PARAMS from the structure filled and sent by the application */

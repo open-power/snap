@@ -30,7 +30,7 @@ typedef struct decimal_mult_job {
 	struct snap_addr out;   /* offset table */
 } decimal_mult_job_t;
 
-#define MAX_NB_OF_DECIMAL_READ  16
+#define MAX_NB_OF_DECIMAL_READ  128
 typedef float  mat_elmt_t; 	// change to float or double depending on your needs
 
 #ifdef __cplusplus
