@@ -55,13 +55,19 @@ The output bitstream file names will have `_FACTORY` appended.
 
 # Initial programming of a blank or bricked card
 
-There are two ways to program a card from scratch. Both will require a x86 laptop/server (with either Linux or Windows) to connect the [Xilinx Platform programmer](https://www.xilinx.com/products/boards-and-kits/hw-usb-ii-g.html) between a USB port of this x86 and the FPGA board. Xilinx Vivado Suite will need to be installed (install only the "programmer" - no license required).
+There are two ways to program a card from scratch. Both will require a x86 laptop/server with either Linux or Windows to connect the [Xilinx Platform programmer](https://www.xilinx.com/products/boards-and-kits/hw-usb-ii-g.html) between a USB port of this x86 and the FPGA board. Xilinx Vivado Suite will need to be installed.
+
+Installation of the "Vivado Lab" is sufficient as no license is required.
+
+Check at [Xilinx Vivado download page](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools.html).
+
+Note : X86 environment is required as Xilinx doesn't provide code or POWER platforms yet.
 
 Connect the Xilinx Platform Cable with the card as described in the card's reference manual.
 Here are somes examples of card connection situations :
-* The Alpha-Data KU3 has an on-board connector to plug the Xilinx Platform Cable USB II ribbon.
-* The Alpha-Data 8k5 has an embedded Xilinx compatible programmer, so only a micro USB cable is required. 
-* The Nallatech 250S and N250SP require an **additional Development & Debug Breakout Board** to interface with the Xilinx Platform Cable USB II.
+* The Alpha-Data ADKU3 and AD9V3 have an on-board connector to plug the Xilinx Platform Cable USB II ribbon.
+* The Alpha-Data AD8k5 has an embedded Xilinx compatible programmer, so only a micro USB cable is required. 
+* The Nallatech N250S and N250SP require an **additional Development & Debug Breakout Board** to interface with the Xilinx Platform Cable USB II.
 
 ## 1. Programming the flash device with a .mcs file 
 
@@ -69,16 +75,21 @@ Here are somes examples of card connection situations :
 * Use [hardware/setup/build_mcs.tcl](../setup/build_mcs.tcl) to compile the MCS file from the bit files
   ### Example:
   ```bash
-  echo "ENABLE_FACTORY=y" >> .snap_config
+  # -----------------------
+  # This section of the script automatically builds USER as well as FACTORY binary files.
+  # The selection of "Also create a factory image" in the SNAP configuration menu performs the same.
+  echo "ENABLE_FACTORY=y" >> .snap_config  
   make -s oldconfig
   make image
+  # -----------------------
   
+  # -----------------------
   # Compile the MCS file from FACTORY and USER bitstreams
   factory_bitstream=`ls -t ./hardware/build/Images/fw_*[0-9]_FACTORY.bit | head -n1`
   echo "Factory bitstream=$factory_bitstream"
   user_bitstream=`ls -t ./hardware/build/Images/fw_*[0-9].bit | head -n1`
   echo "User bitstream=$user_bitstream"
-  source .snap_config.sh
+  source .snap_config.sh  # This will mainly set the flash parameters according to the selected board 
   ./hardware/setup/build_mcs.tcl $factory_bitstream $user_bitstream ${factory_bitstream%.bit}.mcs
   
   # Optional: restore the default setting that doesn't build the factory image
@@ -86,12 +97,17 @@ Here are somes examples of card connection situations :
   # echo "ENABLE_FACTORY=n" >> .snap_config
   # make -s oldconfig
   ```
-* Program the flash using [hardware/setup/flash_mcs.tcl](../setup/flash_mcs.tcl)  
+* Program the flash using vivado tool to execute the [hardware/setup/flash_mcs.tcl](../setup/flash_mcs.tcl) script
   Programming the flash will take several minutes, please be patient.
   _Depending on your release, use `vivado_lab` or `vivado` command_
   ### Example:
   ```bash
-  vivado_lab -nolog -nojournal -mode batch -source setup/flash_mcs.tcl -tclargs "build/Images/${FPGACARD}_flash.mcs"
+  # with Linux :
+  export FPGACARD=ADKU3
+  # For windows :
+  # set FPGACARD=ADKU3
+  vivado -nolog -nojournal -mode batch -source setup/flash_mcs.tcl -tclargs "build/Images/${FPGACARD}_flash.mcs"
+  #vivado_lab -nolog -nojournal -mode batch -source setup/flash_mcs.tcl -tclargs "build/Images/${FPGACARD}_flash.mcs"
   ```
 ## 2. Programming a bitstream .bit file at power-on time
 In vivado_lab, use the Hardware Manager to open the JTAG connection and set the name of the bitstream file.  
