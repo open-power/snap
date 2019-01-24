@@ -104,6 +104,14 @@ Here are somes examples of card connection situations :
   ```bash
   # with Linux :
   export FPGACARD=ADKU3
+  #export FPGACARD=N250S
+  #export FPGACARD=AD8K5
+  #export FPGACARD=S121B
+  #export FPGACARD=FX609
+  #export FPGACARD=S241
+  #export FPGACARD=RCXVUP
+  #export FPGACARD=N250SP
+  #export FPGACARD=AD9V3
   # For windows :
   # set FPGACARD=ADKU3
   vivado -nolog -nojournal -mode batch -source setup/flash_mcs.tcl -tclargs "build/Images/${FPGACARD}_flash.mcs"
