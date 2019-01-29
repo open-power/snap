@@ -227,7 +227,7 @@ set_property -dict [list \
 CONFIG.functional_mode {AXI_Bridge} \
 CONFIG.mode_selection {Advanced} \
 CONFIG.device_port_type {Root_Port_of_PCI_Express_Root_Complex} \
-CONFIG.pcie_blk_locn {X1Y0} \
+CONFIG.pcie_blk_locn {X1Y1} \
 CONFIG.pl_link_cap_max_link_width {X4} \
 CONFIG.pl_link_cap_max_link_speed {8.0_GT/s} \
 CONFIG.axi_addr_width {34} \
@@ -282,7 +282,7 @@ set_property -dict [ list \
 CONFIG.functional_mode {AXI_Bridge} \
 CONFIG.mode_selection {Advanced} \
 CONFIG.device_port_type {Root_Port_of_PCI_Express_Root_Complex} \
-CONFIG.pcie_blk_locn {X1Y1} \
+CONFIG.pcie_blk_locn {X1Y2} \
 CONFIG.pl_link_cap_max_link_width {X4} \
 CONFIG.pl_link_cap_max_link_speed {8.0_GT/s} \
 CONFIG.axi_addr_width {34} \
