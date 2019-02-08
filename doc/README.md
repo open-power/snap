@@ -46,15 +46,16 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 
 | Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
 |:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:------------:|:---:|:----------:|:----------:
-|  Nallatech	|250S+|N250SP|KU15P|4GB DDR4 (1ch)|_3.8TB/6.4TB/25TB (4ch)_|-|-|PCIe Gen4 x8|LowProf|X|Sep-18
+|  Nallatech	|250S+|N250SP|KU15P|4GB DDR4 (1ch)|_3.8TB/6.4TB/25TB (4ch)_|-|-|PCIe Gen4 x8|LowProf\**|X|Sep-18
 |  ReflexCES	|XpressVUP-LP9PT|RCXVUP|VU9P*|8GB _/16GB_ DDR4 (1ch-_1ch_)|-|_144Mb/575Mb_|_2x(100GbE/4x25GbE)_|PCIe Gen3 x 16|LowProf|X|X
-|  Flyslice	  |FX609QL|FX609|VU9P*|8GB _/16GB_ DDR4 (1ch-_3ch_)|-|-|-|PCIe Gen3 x 16|LowProf|X|X
+|  Flyslice	  |FX609QL|FX609|VU9P*|8GB _/16GB_ DDR4 (1ch-_3ch_)|-|-|-|PCIe Gen3 x 16|LowProf\**|X|X
 |  Semptian 	|NSA-241|S241|VU9P*|8GB _/32GB_ DDR4 (1ch-_3ch_)|-|-|?|PCIe Gen3 x 16|FullHeight|TBD|TBD
 |  Alphadata	|ADM-PCIE-9V3|AD9V3|VU3P|8GB _/16GB_ DDR4 (1ch-_1ch_)|-|-|2x(100GbE/4x25GbE)|PCIe Gen4 x8|LowProf|X|X
 
 Notes :
 
 * \* : requires an auxiliary power supply connector (100W)
+* \** : requires 2 mechanical slots
 
 ### P9 OpenCAPI3.0 SNAP FPGA Supported Boards
 _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
