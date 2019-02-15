@@ -67,6 +67,7 @@ $(syn_dir): $(srcs) run_hls_script.tcl
 	@if [ ! -d "$(SNAP_ROOT)/hardware/logs" ]; then \
 		mkdir -p $(SNAP_ROOT)/hardware/logs; \
 	fi
+	@echo "Compiling with Vivado HLS `vivado_hls -version|head -n1|cut -d " " -f 11`"
 	vivado_hls -f run_hls_script.tcl >> $(SNAP_ROOT)/hardware/logs/action_make.log
 	$(RM) -rf $@/systemc $@/verilog
 
