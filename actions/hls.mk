@@ -101,7 +101,7 @@ $(SOLUTION_NAME): $(objs)
 # Check for reserved HLS MMIO reg at offset 0x17c.
 #
 check: $(syn_dir)
-	@if [ $(HLS_ACTION_CLOCK) != $(shell grep "Setting up clock" $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log |cut -d " " -f 12|cut -d "n" -f 1) ]; then \
+	@if [ X$(HLS_ACTION_CLOCK) != X$(shell grep "Setting up clock" $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log |cut -d " " -f 12|cut -d "n" -f 1) ]; then \
 		echo " ---------------------------------------------------------- "; \
 		echo " ERROR: Action was last compiled with a different HLS clock."; \
 		echo " Please force the recompilation with a 'make clean' command";  \
