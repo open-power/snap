@@ -101,19 +101,19 @@ $(SOLUTION_NAME): $(objs)
 # Check for reserved HLS MMIO reg at offset 0x17c.
 #
 check: $(syn_dir)
-	@if [ $(HLS_ACTION_CLOCK) != $(shell grep "Setting up clock" $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log |cut -d " " -f 12|cut -d "n" -f 1) ]; then \
+	@if [ X$(HLS_ACTION_CLOCK) != X$(shell grep "Setting up clock" $(SNAP_ROOT)/hardware/logs/action_make.log |cut -d " " -f 12|cut -d "n" -f 1) ]; then \
 		echo " ---------------------------------------------------------- "; \
 		echo " ERROR: Action was last compiled with a different HLS clock."; \
 		echo " Please force the recompilation with a 'make clean' command";  \
 		echo " ---------------------------------------------------------- "; exit -1; \
 	fi
 	@echo -n "   Checking for critical warnings during HLS synthesis .... "
-	@grep -A8 CRITICAL $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ;  \
+	@grep -A8 CRITICAL $(SNAP_ROOT)/hardware/logs/action_make.log ;  \
 		test $$? = 1 
 	@echo "OK"
 	@if [ $(HLS_ACTION_CLOCK) == $(HLS_ACTION_CLOCK_DEFAULT) ]; then                \
 		echo -n "   Checking for critical timings during HLS synthesis  .... ";    \
-        	grep -A8 critical $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log ;     \
+        	grep -A8 critical $(SNAP_ROOT)/hardware/logs/action_make.log ;     \
 		if [ $$? -eq 0 ]; then \
 		  echo "------------------------------------------------------------------ "; \
                   echo "TIMING ERROR: Please correct your action code before going further"!; \
@@ -124,11 +124,11 @@ check: $(syn_dir)
 		echo "   --------------------------------------------------------------------------- ";    \
 		echo "   By defining HLS_CLOCK_PERIOD_CONSTRAINT in snap_env.sh, automatic critical timing checking is disabled"; \
 		echo "   FYI action was compiled with following HLS clock:"; \
-        	grep "Setting up clock" $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log;     \
+		grep "Setting up clock" $(SNAP_ROOT)/hardware/logs/action_make.log ; \
 		echo "   --------------------------------------------------------------------------- ";    \
 		echo "   please CHECK the below list (if any) for HLS synthesis critical timing .... ";    \
 		echo "   --------------------------------------------------------------------------- ";    \
-        	grep -A8 critical $(SOLUTION_DIR)*/$(SOLUTION_NAME)/$(SOLUTION_NAME).log;     \
+        	grep -A8 critical $(SNAP_ROOT)/hardware/logs/action_make.log ;     \
 		echo "   --------------------------------------------------------------------------- ";    \
 		if [ $$? -ne 0 ]; then \
 	  	  echo "OK";                                                                    \
