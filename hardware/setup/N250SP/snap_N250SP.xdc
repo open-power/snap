@@ -26,6 +26,7 @@ set_false_path -from [get_ports *pci_pi_nperst0]
 set_max_delay -datapath_only -from [get_clocks -of_objects [get_nets c0/U0/pcihip0_psl_clk]] -to [get_clocks -of_objects [get_nets c0/U0/psl_clk]]         4.000
 set_max_delay -datapath_only -from [get_clocks -of_objects [get_nets c0/U0/psl_clk]]         -to [get_clocks -of_objects [get_nets c0/U0/pcihip0_psl_clk]] 4.000
 
-set_max_delay -datapath_only -from [get_ports *b_flash*] 5.000
-set_max_delay -datapath_only -from [get_cells -hierarchical -filter {NAME=~ c0/U0/capi_bis/f/dff_flash_* && IS_SEQUENTIAL == 1}] -to [get_ports *b_flash*] 5.000
-set_max_delay -datapath_only -from [get_cells -hierarchical -filter {NAME=~ c0/U0/capi_bis/f/dff_flash_* && IS_SEQUENTIAL == 1}] -to [get_ports *o_flash*] 5.000
+#following setting is in hardware/setup/snap_impl.xd
+#set_max_delay -datapath_only -from [get_ports *b_flash*] 5.000
+#set_max_delay -datapath_only -from [get_cells -hierarchical -filter {NAME=~ c0/U0/capi_bis/f/dff_flash_* && IS_SEQUENTIAL == 1}] -to [get_ports *b_flash*] 5.000
+#set_max_delay -datapath_only -from [get_cells -hierarchical -filter {NAME=~ c0/U0/capi_bis/f/dff_flash_* && IS_SEQUENTIAL == 1}] -to [get_ports *o_flash*] 5.000
