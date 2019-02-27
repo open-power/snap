@@ -69,7 +69,9 @@ set logfile  $logs_dir/${step}.log
 set command  "write_bitstream -force -file $img_dir/$IMAGE_NAME"
 
 # source the common bitstream settings before creating a bit and bin file
-source $root_dir/setup/$fpgacard/snap_bitstream_pre.tcl
+if { ($fpgacard == "ADKU3") || ($fpgacard == "AD8K5") || ($fpgacard == "N250S") || ($fpgacard == "S121B") } {
+    source $root_dir/setup/$fpgacard/snap_bitstream_pre.tcl
+}
 
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "generating bitstreams" $widthCol3 "type: user image" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 if { [catch "$command > $logfile" errMsg] } {
