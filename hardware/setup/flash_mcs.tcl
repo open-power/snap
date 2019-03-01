@@ -51,17 +51,22 @@ switch $fpgacard {
   ADKU3 { set flashdevice mt28gu01gaax1e-bpi-x16
           set fpgapartnum xcku060
         }
+  #S121B (v16.1)
   S121B { set flashdevice mt28gu01gaax1e-bpi-x16
           set fpgapartnum xcku115
-          set rs_pins	{26:25}
+        #  set rs_pins	{26:25}  #no RS pins used
         }
+  #S121B (v16.2)
+  #S121B { set flashdevice mt25qu02g-spi-x1x2x4
+  #        set fpgapartnum xcku115
+  #      }
   RCXVUP { set flashdevice mt25qu01gbbb8e12-0sit
           set fpgapartnum xcvu9p
         }
   FX609 { set flashdevice mt25qu01gbbb8e12-0sit
           set fpgapartnum xcvu9p
         }
-  S241  { set flashdevice mt25qu01gbbb8e12-0sit
+  S241  { set flashdevice mt25qu02gcbb8e12-0sit
           set fpgapartnum xcvu9p
         }
   AD8K5 { set flashdevice mt28gu01gaax1e-bpi-x16
