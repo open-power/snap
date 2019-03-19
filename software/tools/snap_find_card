@@ -215,6 +215,11 @@ while getopts ":vA:C:Vh" opt; do
 		detect_card_name $card  "0x0632" "0x060f" "AD9V3"
 		if [ $? == 1 ]; then
 			exit 1
+
+		fi
+		detect_card_name $card  "0x0632" "0x0665" "U200"
+		if [ $? == 1 ]; then
+			exit 1
 		fi
 		detect_card_name $card  "0x0602" "" "GZIP"
 		if [ $? == 1 ]; then
