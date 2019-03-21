@@ -59,9 +59,6 @@ open_project $root_dir/viv_project/framework.xpr >> $logfile
 
 # for test!
 #set_param synth.elaboration.rodinMoreOptions {set rt::doParallel false}
-if { $fpgacard == "U200" } {
-set_property board_part xilinx.com:au200:part0:1.0 [current_project]
-}
 ##
 ## run synthese
 source $root_dir/setup/snap_synth_step.tcl

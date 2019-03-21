@@ -25,6 +25,7 @@ set hdl_dir        $root_dir/hdl
 set sim_dir        $root_dir/sim
 set fpga_part      $::env(FPGACHIP)
 set fpga_card      $::env(FPGACARD)
+set fpga_board     $::env(FPGABOARD)
 set capi_bsp_dir   $root_dir/capi2-bsp/$fpga_card/build/ip
 set capi_ver       $::env(CAPI_VER)
 set action_dir     $::env(ACTION_ROOT)
@@ -65,6 +66,10 @@ if { [info exists ::env(PSL_DCP)] == 1 } {
 # Create a new Vivado Project
 puts "\[CREATE_FRAMEWORK....\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 create_project framework $root_dir/viv_project -part $fpga_part -force >> $log_file
+
+if { $fpga_board ne "" } {
+  set_property board_part $fpga_board [current_project]
+}
 
 # Project Settings
 # General
