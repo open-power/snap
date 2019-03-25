@@ -164,7 +164,7 @@ config FPGACHIP
 
 config FPGABOARD
 	string
-	default xilinx.com:au200:part0:1.0 if U200 
+	default "xilinx.com:au200:part0:1.0" if U200 
 
 config NUM_OF_ACTIONS
 	int
@@ -395,7 +395,7 @@ config ENABLE_SDRAM
 	                8GB DDR4 SDRAM on the ReflexCES XpressVUP card and
 	                8GB DDR4 SDRAM on the Flyslice FX609 card.
 	                8GB DDR4 SDRAM on the AlphaData AD9V3 card.
-	                8GB DDR4 SDRAM on the Xilinx U200 card.
+	                16GB DDR4 SDRAM on the Xilinx U200 card.
 
 config SDRAM_USED
 	string
@@ -427,7 +427,7 @@ config DDR3_USED
 config ENABLE_DDR4
 	bool
 	default y
-	depends on (ENABLE_SDRAM && (N250S || S121B || N250SP || AD8K5 || RCXVUP || FX609 || S241 || AD9V3))
+	depends on (ENABLE_SDRAM && (N250S || S121B || N250SP || AD8K5 || RCXVUP || FX609 || S241 || AD9V3 || U200))
 
 config DDR4_USED
 	string
