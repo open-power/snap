@@ -77,7 +77,7 @@ switch $fpgacard {
           set fpgapartnum xcku15p
           set rs_pins	{26:25}
         }
-  AD9V3 { set flashdevice mt25qu256aba8e12-1sit
+  AD9V3 { set flashdevice mt25qu256-spi-x1_x2_x4_x8
           set fpgapartnum xcvu3p
         } 
   default {
