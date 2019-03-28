@@ -318,7 +318,8 @@ check_bsp: capi2-bsp/$(FPGACARD)/.create_ip_done
 				echo "### ERROR ### PSL_DCP is pointing to a checkpoint for a $(PSL_DCP_TYPE) card while FPGACARD is set to $(FPGACARD)."; exit -1; \
 			fi; \
 		elif [ "$(CAPI_VER)" == "capi20" ]; then \
-		    if [ ! -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/build/ip/capi_bsp_wrap.xcix" ]; then \
+		    if [ ! -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/build/ip/capi_bsp_wrap.xcix" ] && \
+		       [ ! -e "$(SNAP_HARDWARE_ROOT)/capi2-bsp/$(FPGACARD)/build/ip/capi_bsp_wrap/capi_bsp_wrap.xci" ]; then \
 		        echo "### ERROR ### CAPI board support IP for $(FPGACARD) is not prepared."; \
 		        echo "       This is a requirement for image build."; \
 		        if [ ! -e  "$(PSL9_IP_DIR)/$(PSL9_IP_ARCHIVE)" ] && [ ! -e "$(PSL9_IP_CORE)" ]; then \
