@@ -54,6 +54,11 @@ help:
 	@echo "The hardware related targets 'model', 'image', 'hardware', 'hw_project' and 'sim'";
 	@echo "do only exist on an x86 platform";
 	@echo;
+	@echo "Few tools to help debug";
+	@echo "-----------------------";
+	@echo "* ./snap_trace         Display traces to debug action code";
+	@echo "* ./snap_debug_timing  Display timing failing paths when image generation fails";
+	@echo;
 
 ifeq ($(PLATFORM),x86_64)
 all: $(software_subdirs) $(action_subdirs) $(hardware_subdirs)
