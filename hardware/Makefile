@@ -277,6 +277,9 @@ create_project: snap_preprocess
 	@echo -e "[CREATE PROJECT......] done  `date +"%T %a %b %d %Y"`"
 
 hw_project_start:
+	@echo -e "======================================================="
+	@echo -e "== Precompiling the Action logic                     =="
+	@echo -e "======================================================="
 	@echo -e "[HW PROJECT..........] start `date +"%T %a %b %d %Y"`"
 
 hw_project: hw_project_start action_hw

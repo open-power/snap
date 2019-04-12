@@ -17,18 +17,16 @@ set id [waveform add -signals [subst  {
 	{[format {top.ah_cea[0:63]}]}
 	} ]]
 set id [waveform add -signals [subst  {
-	{[format {top.a0:ha_bwdata}]}
-	} ]]
-waveform format $id -radix %a
-set id [waveform add -signals [subst  {
 	{[format {top.a0:ah_brdata}]}
 	} ]]
-waveform format $id -radix %a
 set id [waveform add -signals [subst  {
 	{[format {top.a0:ha_bwad}]}
 	} ]]
 set id [waveform add -signals [subst  {
 	{[format {top.a0:ha_mmrnw}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:ha_bwdata}]}
 	} ]]
 set id [waveform add -signals [subst  {
 	{[format {top.a0:ha_mmad}]}
@@ -92,8 +90,47 @@ set id [waveform add -signals [subst  {
 set id [waveform add -cdivider divider]
 set id [waveform add -label {DDR4 READ INTERFACE} -comment {}]
 waveform format $id -namecolor #99ff00
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_arvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_araddr}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_arlen}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_rvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_rdata}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_rlast}]}
+	} ]]
 set id [waveform add -label {DDR4 WRITE INTERFACE} -comment {}]
 waveform format $id -namecolor #99ff00
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_awvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_awaddr}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_awlen}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_wvalid}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_wdata}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_wlast}]}
+	} ]]
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:m_axi_card_mem0_wstrb}]}
+	} ]]
 set id [waveform add -cdivider divider]
 
 waveform xview limits 0 14006ns

@@ -13,20 +13,19 @@ array unset createdGroup
 array set createdGroup {}
 set id [waveform add -label {HOST MEMORY INTERFACE} -comment {}]
 waveform format $id -namecolor #99ff00
+set id [waveform add -label DATA -comment {}]
+waveform format $id -namecolor #00ff99
 set id [waveform add -signals [subst  {
 	{[format {top.ah_cea[0:63]}]}
 	} ]]
 set id [waveform add -signals [subst  {
-	{[format {top.hd0_cpl_laddr_top[0:9]}]}
-	} ]]
-set id [waveform add -signals [subst  {
 	{[format {top.hd0_cpl_data_top[0:1023]}]}
 	} ]]
-waveform format $id -radix %a
 set id [waveform add -signals [subst  {
 	{[format {top.d0h_ddata_top[0:1023]}]}
 	} ]]
-waveform format $id -radix %a
+set id [waveform add -label MMIO -comment {}]
+waveform format $id -namecolor #00ff99
 set id [waveform add -signals [subst  {
 	{[format {top.a0:ha_mmrnw}]}
 	} ]]
@@ -42,6 +41,9 @@ set id [waveform add -signals [subst  {
 set id [waveform add -cdivider divider]
 set id [waveform add -label {ACTION SIGNALS} -comment {}]
 waveform format $id -namecolor #99ff00
+set id [waveform add -signals [subst  {
+	{[format {top.a0:action_w:hls_action_0:ap_start}]}
+	} ]]
 set id [waveform add -cdivider divider]
 set id [waveform add -label {GMEM READ INTERFACE} -comment {}]
 waveform format $id -namecolor #ffff00 -bgcolor #000000
@@ -93,4 +95,4 @@ set id [waveform add -label {DDR4 WRITE INTERFACE} -comment {}]
 waveform format $id -namecolor #99ff00
 set id [waveform add -cdivider divider]
 
-waveform xview limits 0 11574ns
+waveform xview limits 0 10326ns
