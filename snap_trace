@@ -25,18 +25,27 @@ PATH=$snapdir:$PATH
 snap_config=$snapdir/\.snap_config
 
 simulator=`grep SIMULATOR $snap_config|cut -d = -f 2 |tr -d '"'`
+capi20=`grep CAPI20 .snap_config|cut -d = -f 2`
 
 cd hardware/sim
 if [ $simulator == "xsim" ]; then
   if [ -d "xsim" ]; then
-    ./xsimtrace
+    if [ "$capi20" == "y" ]; then
+	xsim -gui xsim/latest/top.wdb -view debug2_action_gmem_ddr4.wcfg
+    else
+	xsim -gui xsim/latest/top.wdb -view debug_action_gmem_ddr4.wcfg
+    fi
   else
     echo "Please launch a simulation (make sim) prior to see traces"
   fi
 fi
 if [ $simulator == "irun" ]; then
   if [ -d "ies" ]; then
-    ./iruntrace
+    if [ "$capi20" == "y" ]; then
+	simvision -wave -input ./debug2_action_gmem_ddr4.svwf ./ies/latest/capiWave.shm
+    else
+	simvision -wave -input ./debug_action_gmem_ddr4.svwf ./ies/latest/capiWave.shm
+    fi
   else
     echo "Please launch a simulation (make sim) prior to see traces"
   fi
