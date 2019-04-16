@@ -17,14 +17,14 @@
    </db_ref_list>
    <zoom_setting>
       <ZoomStartTime time="0fs"></ZoomStartTime>
-      <ZoomEndTime time="9786000001fs"></ZoomEndTime>
+      <ZoomEndTime time="13512464375fs"></ZoomEndTime>
       <Cursor1Time time="14110000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="250"></NameColumnWidth>
-      <ValueColumnWidth column_width="142"></ValueColumnWidth>
+      <ValueColumnWidth column_width="130"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="30" />
+   <WVObjectSize size="29" />
    <wvobject fp_name="divider11" type="divider">
       <obj_property name="label">HOST MEMORY INTERFACE</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -33,21 +33,23 @@
       <obj_property name="ElementShortName">ah_cea[0:63]</obj_property>
       <obj_property name="ObjectShortName">ah_cea[0:63]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/top/ah_brdata">
-      <obj_property name="ElementShortName">ah_brdata[0:1023]</obj_property>
-      <obj_property name="ObjectShortName">ah_brdata[0:1023]</obj_property>
+   <wvobject type="array" fp_name="/top/hd0_cpl_laddr_top">
+      <obj_property name="ElementShortName">hd0_cpl_laddr_top[0:9]</obj_property>
+      <obj_property name="ObjectShortName">hd0_cpl_laddr_top[0:9]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/top/ha_bwad">
-      <obj_property name="ElementShortName">ha_bwad[0:5]</obj_property>
-      <obj_property name="ObjectShortName">ha_bwad[0:5]</obj_property>
+   <wvobject type="array" fp_name="/top/hd0_cpl_data_top">
+      <obj_property name="ElementShortName">hd0_cpl_data_top[0:1023]</obj_property>
+      <obj_property name="ObjectShortName">hd0_cpl_data_top[0:1023]</obj_property>
+      <obj_property name="Radix">ASCIIRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/top/d0h_ddata_top">
+      <obj_property name="ElementShortName">d0h_ddata_top[0:1023]</obj_property>
+      <obj_property name="ObjectShortName">d0h_ddata_top[0:1023]</obj_property>
+      <obj_property name="Radix">ASCIIRADIX</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/top/ha_mmrnw">
       <obj_property name="ElementShortName">ha_mmrnw</obj_property>
       <obj_property name="ObjectShortName">ha_mmrnw</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/top/ha_bwdata">
-      <obj_property name="ElementShortName">ha_bwdata[0:1023]</obj_property>
-      <obj_property name="ObjectShortName">ha_bwdata[0:1023]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/top/ha_mmad">
       <obj_property name="ElementShortName">ha_mmad[0:23]</obj_property>
@@ -138,14 +140,6 @@
    <wvobject fp_name="divider36" type="divider">
       <obj_property name="label">DDR4 WRITE INTERFACE</obj_property>
       <obj_property name="DisplayName">label</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/top/a0/action_w/action_0/axi_io0/rst_n">
-      <obj_property name="ElementShortName">rst_n</obj_property>
-      <obj_property name="ObjectShortName">rst_n</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/top/a0/action_w/action_0/action_rst_n">
-      <obj_property name="ElementShortName">action_rst_n</obj_property>
-      <obj_property name="ObjectShortName">action_rst_n</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/top/a0/action_w/ap_rst_n">
       <obj_property name="ElementShortName">ap_rst_n</obj_property>
