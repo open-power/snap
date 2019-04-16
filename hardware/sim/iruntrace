@@ -1,1 +1,0 @@
-simvision -wave -input ./debug_action_gmem_ddr4.svwf ./ies/latest/capiWave.shm

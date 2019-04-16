@@ -67,8 +67,9 @@ $(syn_dir): $(srcs) run_hls_script.tcl
 	@if [ ! -d "$(SNAP_ROOT)/hardware/logs" ]; then \
 		mkdir -p $(SNAP_ROOT)/hardware/logs; \
 	fi
-	@echo "Compiling with Vivado HLS `vivado_hls -version|head -n1|cut -d " " -f 11`"
-	vivado_hls -f run_hls_script.tcl >> $(SNAP_ROOT)/hardware/logs/action_make.log
+	@echo "Compiling action with Vivado HLS `vivado_hls -version|head -n1|cut -d " " -f 11`"
+	@echo "Clock period used for HLS is $(HLS_ACTION_CLOCK) ns"
+	vivado_hls -f run_hls_script.tcl > $(SNAP_ROOT)/hardware/logs/action_make.log
 	$(RM) -rf $@/systemc $@/verilog
 
 # Create symlinks for simpler access
@@ -101,19 +102,19 @@ $(SOLUTION_NAME): $(objs)
 # Check for reserved HLS MMIO reg at offset 0x17c.
 #
 check: $(syn_dir)
-	@if [ X$(HLS_ACTION_CLOCK) != X$(shell grep "Setting up clock" $(SNAP_ROOT)/hardware/logs/action_make.log |cut -d " " -f 12|cut -d "n" -f 1) ]; then \
+	@if [ X$(HLS_ACTION_CLOCK) != X$(shell grep "Setting up clock" vivado_hls.log |cut -d " " -f 12|cut -d "n" -f 1) ]; then \
 		echo " ---------------------------------------------------------- "; \
 		echo " ERROR: Action was last compiled with a different HLS clock."; \
 		echo " Please force the recompilation with a 'make clean' command";  \
 		echo " ---------------------------------------------------------- "; exit -1; \
 	fi
 	@echo -n "   Checking for critical warnings during HLS synthesis .... "
-	@grep -A8 CRITICAL $(SNAP_ROOT)/hardware/logs/action_make.log ;  \
+	@grep -A8 CRITICAL vivado_hls.log;  \
 		test $$? = 1 
 	@echo "OK"
 	@if [ $(HLS_ACTION_CLOCK) == $(HLS_ACTION_CLOCK_DEFAULT) ]; then                \
 		echo -n "   Checking for critical timings during HLS synthesis  .... ";    \
-        	grep -A8 critical $(SNAP_ROOT)/hardware/logs/action_make.log ;     \
+        	grep -A8 critical vivado_hls.log;     \
 		if [ $$? -eq 0 ]; then \
 		  echo "------------------------------------------------------------------ "; \
                   echo "TIMING ERROR: Please correct your action code before going further"!; \
@@ -124,20 +125,29 @@ check: $(syn_dir)
 		echo "   --------------------------------------------------------------------------- ";    \
 		echo "   By defining HLS_CLOCK_PERIOD_CONSTRAINT in snap_env.sh, automatic critical timing checking is disabled"; \
 		echo "   FYI action was compiled with following HLS clock:"; \
-		grep "Setting up clock" $(SNAP_ROOT)/hardware/logs/action_make.log ; \
+		grep "Setting up clock" vivado_hls.log ; \
 		echo "   --------------------------------------------------------------------------- ";    \
 		echo "   please CHECK the below list (if any) for HLS synthesis critical timing .... ";    \
 		echo "   --------------------------------------------------------------------------- ";    \
-        	grep -A8 critical $(SNAP_ROOT)/hardware/logs/action_make.log ;     \
+        	grep -A8 critical vivado_hls.log ;     \
 		echo "   --------------------------------------------------------------------------- ";    \
 		if [ $$? -ne 0 ]; then \
 	  	  echo "OK";                                                                    \
 		fi; \
 	fi
 	@echo -n "   Checking for reserved MMIO area during HLS synthesis ... "
-	@grep -A8 0x17c $(syn_dir)/vhdl/$(WRAPPER)_ctrl_reg_s_axi.vhd | grep reserved > \
-		/dev/null; test $$? = 0;
-	@echo "OK"
+	@if [ "$(shell grep "0x17c" "$(syn_dir)/vhdl/$(WRAPPER)_ctrl_reg_s_axi.vhd" | cut -d : -f 2)" != " reserved" ]; then \
+		echo " Error "; \
+		echo "   --------------------------------------------------------------------------- ";    \
+		echo "   -- The error comes from the way you defined your common action structure -- ";    \
+		echo "   --  option 1: You defined a structure greater than 108 Bytes             -- ";    \
+		echo "   --  option 2: 64 bits compiler need 64 bits aligned structures           -- ";    \
+		echo "   --  In both cases please modify the actions/hls_xxx/include/xxx.h file   -- ";    \
+		echo "   --------------------------------------------------------------------------- ";    \
+		exit -1; \
+	else \
+		echo "OK"; \
+	fi
 	@sleep 2; 
 
 clean:
