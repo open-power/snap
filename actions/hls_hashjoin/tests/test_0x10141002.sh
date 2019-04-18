@@ -79,7 +79,7 @@ rm -f snap_hashjoin.log
 touch snap_hashjoin.log
 for t2_entries in `seq 1 128` 512 666 888 999 1024 2048 2049 5015 7007 8088 123123 ; do
     echo -n "  ${t2_entries} entries for T2 ... "
-    cmd="snap_hashjoin -C${snap_card} -T ${t2_entries} -v \
+    cmd="snap_hashjoin -C${snap_card} -T ${t2_entries} -v -N \
 			>> snap_hashjoin.log 2>&1"
     echo "$cmd" >> snap_hashjoin.log
     eval ${cmd}
