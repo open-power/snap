@@ -78,7 +78,7 @@ fi
 function test_memcopy {
     local size=$1
 
-    dd if=/dev/urandom of=${size}_A.bin count=1 bs=${size} 2> ~/dd.log
+    dd if=/dev/urandom of=${size}_A.bin count=1 bs=${size} 2> dd.log
 
     echo -n "Doing snap_memcopy (aligned) ${size} bytes ... "
     cmd="snap_memcopy -C${snap_card} -X -N \
