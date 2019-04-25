@@ -25,6 +25,7 @@ set fpgacard      $::env(FPGACARD)
 set ila_debug     [string toupper $::env(ILA_DEBUG)]
 set vivadoVer     [version -short]
 
+
 #Checkpoint directory
 set dcp_dir $root_dir/build/Checkpoints
 set ::env(DCP_DIR) $dcp_dir
@@ -58,8 +59,6 @@ open_project $root_dir/viv_project/framework.xpr >> $logfile
 
 # for test!
 #set_param synth.elaboration.rodinMoreOptions {set rt::doParallel false}
-
-
 ##
 ## run synthese
 source $root_dir/setup/snap_synth_step.tcl
