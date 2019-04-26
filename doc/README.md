@@ -99,8 +99,8 @@ Notes :
 |:------------------------------|:------------------------:|:-------------:|:-------------------
 | gcc                           |4.4.7                     |latest         |gcc -v
 |P8 Server Firmware : skiboot/FW|5.1.13/FW840.20/OP820     |latest         |update_flash -d
-|P9 Server Firmware : skiboot/FW|CAPI2.0: 5.11/FW910 & 6.0/OP920    |latest         |update_flash -d
-|P9 Server Firmware : skiboot/FW|OpenCAPI3.0: OP930 ETA:05/19   |latest         |update_flash -d
+|P9 Server Firmware : skiboot/FW (CAPI2.0)|5.11/FW910 & 6.0/OP920    |latest         |update_flash -d
+|P9 Server Firmware : skiboot/FW (OpenCAPI3.0)|OP930 ETA:05/19   |latest         |update_flash -d
 
 
 ### P8 CAPI(1.0) Deployment environment (Bare Metal IBM server examples supporting CAPI SNAP) :
