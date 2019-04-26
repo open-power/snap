@@ -32,7 +32,7 @@ _(All information provided by FPGA board vendors are subject to change at any ti
 
 
 ### P8 CAPI1.0 SNAP FPGA Supported Boards 
-_Requires Ubuntu 16.04.1 LTS or later_ / (Resources in _italic_ are not enabled yet)
+_Check OS release in deployment servers table_ / (Resources in _italic_ are not enabled yet)
 
 | Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM             |NVME|QDR|Ethernet        |CAPI Interface|Board|CAPI support|SNAP support
 |:------------|:-------:|:------------:|:--:|:---------------:|:--:|:-:|:---------------|:---:|:----------:|:-----------:|:----------:
@@ -42,14 +42,14 @@ _Requires Ubuntu 16.04.1 LTS or later_ / (Resources in _italic_ are not enabled 
 |  Semptian	  |NSA-121B	   |S121B|KU115|8/_16_GB DDR4(1ch-_1ch_)   |-|-|_2x(10GbE)_|PCIe Gen3 x8|LowProf|X|X|
 
 ### P9 CAPI2.0 SNAP FPGA Supported Boards
-_Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
+_Check OS release in deployment servers table_ / (Resources in _italic_ are not enabled yet)
 
 | Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
 |:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:------------:|:---:|:----------:|:----------:
 |  Nallatech	|250S+|N250SP|KU15P|4GB DDR4 (1ch)|_3.8TB/6.4TB/25TB (4ch)_|-|-|PCIe Gen4 x8|LowProf\**|X|Sep-18
 |  ReflexCES	|XpressVUP-LP9PT|RCXVUP|VU9P*|8GB _/16GB_ DDR4 (1ch-_1ch_)|-|_144Mb/575Mb_|_2x(100GbE/4x25GbE)_|PCIe Gen3 x 16|LowProf|X|X
 |  Flyslice	  |FX609QL|FX609|VU9P*|8GB _/16GB_ DDR4 (1ch-_3ch_)|-|-|-|PCIe Gen3 x 16|LowProf\**|X|X
-|  Semptian 	|NSA-241|S241|VU9P*|8GB _/32GB_ DDR4 (1ch-_3ch_)|-|-|?|PCIe Gen3 x 16|FullHeight|TBD|TBD
+|  Semptian 	|NSA-241|S241|VU9P*|8GB _/32GB_ DDR4 (1ch-_3ch_)|-|-|2x(25GbE)|PCIe Gen3 x 16|FullHeight|X|X
 |  Alphadata	|ADM-PCIE-9V3|AD9V3|VU3P|8GB _/16GB_ DDR4 (1ch-_1ch_)|-|-|2x(100GbE/4x25GbE)|PCIe Gen4 x8 or Gen3 x16|LowProf|X|X
 
 Notes :
@@ -58,11 +58,11 @@ Notes :
 * \** : requires 2 mechanical slots
 
 ### P9 OpenCAPI3.0 SNAP FPGA Supported Boards
-_Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
+_Check OS release in deployment servers table_ / (Resources in _italic_ are not enabled yet)
 
 | Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
 |:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:------------:|:---:|:----------:|:-----------:
-|  Alphadata  | ADM-PCIE-9V3 |AD9V3 | VU3P | 8GB/32GB DDR4 (2ch) |-|-|_2x(100GbE/4x25GbE)_|1 OpenCAPI Link (8x25Gb)|LowProf|Dec-18|1Q-19
+|  Alphadata  | ADM-PCIE-9V3 |AD9V3 | VU3P | 8GB/32GB DDR4 (2ch) |-|-|_2x(100GbE/4x25GbE)_|1 OpenCAPI Link (8x25Gb)|LowProf|Dec-18|2Q-19
 |  _Mellanox_  |_Innova-2 Flex_	    |_TBD_   |_KU15P_|_4GB/8GB DDR4_|_-_|_-_|_2x25GbE_|	_1 OpenCAPI Link (8x25Gb)_	|_LowProf_|_-_|_-_
 
 
@@ -81,7 +81,7 @@ _Requires Ubuntu 18.04.1 or later_ / (Resources in _italic_ are not enabled yet)
 | Vivado HLS               |2018.1       |2018.2 (for CAPI2.0)|vivado_hls -version
 | Cadence irun (required only for NVME simulation with Denali models)|15.20.046(Vivado 2018.1)|15.20.046(Vivado 2018.2)|irun -version
 
-_Vivado 2018.1 is compatible with CAPI1.0 and CAPI2.0 while Vivado 2018.2 doesn't work on CAPI1.0_
+_Vivado 2018.1 is compatible with CAPI1.0 and CAPI2.0 while Vivado 2018.2 doesn't work on CAPI1.0 cards_
 
 ### Deployment Environments :
 
@@ -121,7 +121,7 @@ Notes :
 | 9006-12P - 1 proc/1U       |Power LC921| 1 (UIO Slot1)Internal | 0
 | 9006-12P - 2 proc/1U       |Power LC921| 1 (UIO Slot1)Internal | 2 (WIO Slot1 - WIO Slot2)
 | 9006-22P - 1 proc/2U       |Power LC922| 0                     | 1 (UIO Slot1)
-| 9006-22P - 2 proc/2U       |Power LC922| 1 (WIO Slot4)	       | 2 (UIO Slot1 - WIO Slot3)
+| 9006-22P - 2 proc/2U       |Power LC922| 1 (WIO Slot4)         | 2 (UIO Slot1 - WIO Slot3)
 | ........                   |.....      |                       |
 
 ### P9 OpenCAPI(3.0) Deployment environment (Bare Metal IBM server examples supporting CAPI SNAP) :

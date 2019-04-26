@@ -67,8 +67,8 @@ $(syn_dir): $(srcs) run_hls_script.tcl
 	@if [ ! -d "$(SNAP_ROOT)/hardware/logs" ]; then \
 		mkdir -p $(SNAP_ROOT)/hardware/logs; \
 	fi
-	@echo "Compiling action with Vivado HLS `vivado_hls -version|head -n1|cut -d " " -f 11`"
-	@echo "Clock period used for HLS is $(HLS_ACTION_CLOCK) ns"
+	@echo "   Compiling action with Vivado HLS `vivado_hls -version|head -n1|cut -d " " -f 11`"
+	@echo "   Clock period used for HLS is $(HLS_ACTION_CLOCK) ns"
 	vivado_hls -f run_hls_script.tcl > $(SNAP_ROOT)/hardware/logs/action_make.log
 	$(RM) -rf $@/systemc $@/verilog
 
