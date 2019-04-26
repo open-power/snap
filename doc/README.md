@@ -129,8 +129,7 @@ Notes :
 | MTM| PowerLinux| 
 |:--:|:-----------
 | 8335-GTH(air cooled)       |Power AC922
-| 8335-GTX(water cooled)     |Power AC922
 
-Note : Need mezzanine card (to provide OpenCAPI connector to be plugged in a GPU socket) + specific firmware patch
+Note : Need mezzanine card (to provide OpenCAPI connector to be plugged in a GPU socket) + specific firmware patch. Please note that GPUs and OpenCAPI are exclusive on a CPU.
 
 Disclaimer : as it is not possible to cross tests all configurations with all possible cards on all possible servers, information provided in this page are recommandations only and subject to change without notice.
