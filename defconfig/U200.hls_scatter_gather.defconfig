@@ -1,0 +1,77 @@
+#
+# Automatically generated file; DO NOT EDIT.
+# Kernel Configuration
+#
+# N250S is not set
+# ADKU3 is not set
+# AD8K5 is not set
+# S121B_BPIx16 is not set
+# S121B_SPIx4 is not set
+# N250SP is not set
+# RCXVUP is not set
+# S241 is not set
+U200=y
+# FX609 is not set
+# AD9V3 is not set
+FPGACARD="U200"
+FLASH_INTERFACE="SPIx4"
+FLASH_SIZE="128"
+FLASH_FACTORYADDR="0x00000000"
+FLASH_USERADDR="0x01002000"
+# S121B is not set
+# CAPI10 is not set
+CAPI20=y
+FPGACHIP="xcu200-fsgd2104-2-e"
+FPGABOARD="xilinx.com:au200:part0:1.0"
+NUM_OF_ACTIONS=1
+# HDL_ACTION is not set
+# HDL_HELLOWORLD is not set
+# HDL_EXAMPLE is not set
+# HLS_ACTION is not set
+# HLS_HELLOWORLD is not set
+# HLS_MEMCOPY is not set
+# HLS_SPONGE is not set
+# HLS_HASHJOIN is not set
+# HLS_SEARCH is not set
+# HLS_BFS is not set
+# HLS_INTERSECT is not set
+# HLS_LATENCY_EVAL is not set
+# HLS_MM_TEST is not set
+# HLS_DECIMAL_MULT is not set
+HLS_SCATTER_GATHER=y
+ENABLE_HLS_SUPPORT=y
+HLS_SUPPORT="TRUE"
+DISABLE_SDRAM_AND_BRAM=y
+# FORCE_SDRAM_OR_BRAM is not set
+SDRAM_USED="FALSE"
+BRAM_USED="FALSE"
+DDR3_USED="FALSE"
+DDR4_USED="FALSE"
+DDRI_USED="FALSE"
+DISABLE_NVME=y
+# FORCE_NVME is not set
+NVME_USED="FALSE"
+SIM_XSIM=y
+# SIM_IRUN is not set
+# SIM_XCELIUM is not set
+# SIM_MODELSIM is not set
+# SIM_QUESTA is not set
+# NO_SIM is not set
+SIMULATOR="xsim"
+DENALI_USED="FALSE"
+
+#
+# ================= Advanced Options: =================
+#
+# ENABLE_PRFLOW is not set
+USE_PRFLOW="FALSE"
+ENABLE_ACTION_CLK_DERATE=y
+FPGA_ACTION_CLK="225MHZ"
+# ENABLE_USER_HLS_ACTION_CLK is not set
+HLS_CLK_CONSTRAINT="FALSE"
+# ENABLE_ILA is not set
+ILA_DEBUG="FALSE"
+# ENABLE_FACTORY is not set
+FACTORY_IMAGE="FALSE"
+CLOUD_USER_FLOW="FALSE"
+CLOUD_BUILD_BITFILE="FALSE"
