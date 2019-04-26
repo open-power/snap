@@ -46,7 +46,7 @@ _Check OS release in deployment servers table_ / (Resources in _italic_ are not 
 
 | Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM|NVME|QDR|Ethernet|CAPI Interface|Board|CAPI support|SNAP support
 |:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:------------:|:---:|:----------:|:----------:
-|  Nallatech	|250S+|N250SP|KU15P|4GB DDR4 (1ch)|_3.8TB/6.4TB/25TB (4ch)_|-|-|PCIe Gen4 x8|LowProf\**|X|Sep-18
+|  Nallatech	|250S+|N250SP|KU15P|4GB DDR4 (1ch)|_3.8TB/6.4TB/25TB (4ch)_|-|-|PCIe Gen4 x8|LowProf\**|X|X
 |  ReflexCES	|XpressVUP-LP9PT|RCXVUP|VU9P*|8GB _/16GB_ DDR4 (1ch-_1ch_)|-|_144Mb/575Mb_|_2x(100GbE/4x25GbE)_|PCIe Gen3 x 16|LowProf|X|X
 |  Flyslice	  |FX609QL|FX609|VU9P*|8GB _/16GB_ DDR4 (1ch-_3ch_)|-|-|-|PCIe Gen3 x 16|LowProf\**|X|X
 |  Semptian 	|NSA-241|S241|VU9P*|8GB _/32GB_ DDR4 (1ch-_3ch_)|-|-|2x(25GbE)|PCIe Gen3 x 16|FullHeight|X|X
@@ -99,7 +99,8 @@ Notes :
 |:------------------------------|:------------------------:|:-------------:|:-------------------
 | gcc                           |4.4.7                     |latest         |gcc -v
 |P8 Server Firmware : skiboot/FW|5.1.13/FW840.20/OP820     |latest         |update_flash -d
-|P9 Server Firmware : skiboot/FW|5.11/FW910 & 6.0/OP920    |latest         |update_flash -d
+|P9 Server Firmware : skiboot/FW|CAPI2.0: 5.11/FW910 & 6.0/OP920    |latest         |update_flash -d
+|P9 Server Firmware : skiboot/FW|OpenCAPI3.0: OP930 ETA:05/19   |latest         |update_flash -d
 
 
 ### P8 CAPI(1.0) Deployment environment (Bare Metal IBM server examples supporting CAPI SNAP) :
