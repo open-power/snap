@@ -10,7 +10,9 @@
 # N250SP is not set
 RCXVUP=y
 # S241 is not set
+# U200 is not set
 # FX609 is not set
+# AD9V3 is not set
 FPGACARD="RCXVUP"
 FLASH_INTERFACE="SPIx8"
 FLASH_SIZE="256"
@@ -22,8 +24,8 @@ CAPI20=y
 FPGACHIP="xcvu9p-flgb2104-2l-e-es1"
 NUM_OF_ACTIONS=1
 # HDL_ACTION is not set
-# HDL_EXAMPLE is not set
 # HDL_HELLOWORLD is not set
+# HDL_EXAMPLE is not set
 # HLS_ACTION is not set
 # HLS_HELLOWORLD is not set
 # HLS_MEMCOPY is not set
@@ -48,13 +50,13 @@ DDRI_USED="FALSE"
 DISABLE_NVME=y
 # FORCE_NVME is not set
 NVME_USED="FALSE"
-# SIM_XSIM is not set
-SIM_IRUN=y
+SIM_XSIM=y
+# SIM_IRUN is not set
 # SIM_XCELIUM is not set
 # SIM_MODELSIM is not set
 # SIM_QUESTA is not set
 # NO_SIM is not set
-SIMULATOR="irun"
+SIMULATOR="xsim"
 DENALI_USED="FALSE"
 
 #
@@ -64,6 +66,8 @@ DENALI_USED="FALSE"
 USE_PRFLOW="FALSE"
 ENABLE_ACTION_CLK_DERATE=y
 FPGA_ACTION_CLK="225MHZ"
+# ENABLE_USER_HLS_ACTION_CLK is not set
+HLS_CLK_CONSTRAINT="FALSE"
 # ENABLE_ILA is not set
 ILA_DEBUG="FALSE"
 # ENABLE_FACTORY is not set
