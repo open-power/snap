@@ -126,6 +126,7 @@ extern "C" {
  */
 #define SNAP_CAP        0x30
 #define SNAP_NVME_ENA   0x100
+#define U200_CARD       0x015     /* CAPI 2.0 */
 #define AD9V3_CARD      0x014     /* CAPI 2.0 */
 #define S241_CARD       0x013     /* CAPI 2.0 */
 #define FX609_CARD      0x012     /* CAPI 2.0 */
