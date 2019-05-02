@@ -26,7 +26,7 @@
 #define BS (BPERDW/sizeof(uint32_t))
 
 #define NUM_MAX 1024
-#define SIZE_SCATTER 2048
+#define SIZE_SCATTER 1024 //Initial example was 2048 but it doesn't fit in small FPGA
 //USE MAX
 // NUM_MAX * SIZE_SCATTER <= 2M => 1024 transactions of 2KB each
 snap_membus_t   blockram[NUM_MAX*SIZE_SCATTER/BPERDW]; // Limiting size of scattered gather blocks to 2MiB
