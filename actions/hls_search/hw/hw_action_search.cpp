@@ -225,7 +225,7 @@ static void strm_search(snap_membus_t *din_gmem,
   snapu64_t   rd_address_text_offset;
   snapu64_t   wr_address_text_offset;
 
-  snap_membus_t  TextBuffer[1];   // 4KB =>64 words of 64B
+  snap_membus_t  TextBuffer[1];   // 64B =>1 word of 64B
   char  Text[BPERDW];
 
   snapu32_t nb_of_occurrences = 0;
