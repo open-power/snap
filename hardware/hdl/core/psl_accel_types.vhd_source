@@ -77,8 +77,12 @@ PACKAGE psl_accel_types IS
     CONSTANT C_DDR_AXI_DATA_WIDTH    : integer  := 512;
 #if defined(CONFIG_ENABLE_BRAM) || defined(CONFIG_N250S) || defined(CONFIG_N250SP) || defined(CONFIG_RCXVUP) || defined(CONFIG_FX609) 
     CONSTANT C_DDR_AXI_ADDR_WIDTH    : integer  := 32;
+#else 
+#if defined (CONFIG_U200)
+    CONSTANT C_DDR_AXI_ADDR_WIDTH    : integer  := 34;
 #else
     CONSTANT C_DDR_AXI_ADDR_WIDTH    : integer  := 33;
+#endif
 #endif
     CONSTANT C_DDR_AXI_AWUSER_WIDTH  : integer  := 1;
     CONSTANT C_DDR_AXI_ARUSER_WIDTH  : integer  := 1;
