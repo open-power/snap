@@ -38,8 +38,8 @@ endif
 
 # This is solution specific. Check if we can replace this by generics too.
 SOLUTION_NAME ?= cuda_snap
-SOLUTION_DIR ?= hlsCudaSnap
-srcs += action_cuda_snap.cpp 
+SOLUTION_DIR ?= hlsCreateVector
+srcs += action_create_vector.cpp
 
 # If you have the action code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/hls.mk

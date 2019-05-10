@@ -35,7 +35,7 @@
 
 #include <snap_tools.h>
 #include <libsnap.h>
-#include <action_cuda_snap.h>
+#include <action_create_vector.h>
 #include <snap_hls_if.h>
 
 int verbose_flag = 0;

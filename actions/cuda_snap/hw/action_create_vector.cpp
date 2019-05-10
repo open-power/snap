@@ -15,16 +15,15 @@
  */
 
 /*
- * SNAP HLS_HELLOWORLD EXAMPLE
+ * SNAP CUDA_SNAP EXAMPLE
  *
- * Tasks for the user:
- *   1. Explore HLS pragmas to get better timing behavior.
- *   2. Try to measure the time needed to do data transfers (advanced)
+ * Simple application that illustrates how to exchange data between an FPGA
+ * action and a GPU kernel in one main process
  */
 
 #include <string.h>
 #include "ap_int.h"
-#include "action_cuda_snap.H"
+#include "action_create_vector.H"
 
 //----------------------------------------------------------------------
 //--- MAIN PROGRAM -----------------------------------------------------

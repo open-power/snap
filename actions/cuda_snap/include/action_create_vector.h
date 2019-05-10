@@ -1,5 +1,5 @@
-#ifndef __ACTION_CHANGECASE_H__
-#define __ACTION_CHANGECASE_H__
+#ifndef __ACTION_NEW_VECTOR_H__
+#define __ACTION_NEW_VECTOR_H__
 
 /*
  * Copyright 2017 International Business Machines
@@ -37,4 +37,4 @@ typedef struct cuda_snap_job {
 }
 #endif
 
-#endif	/* __ACTION_CHANGECASE_H__ */
+#endif	/* __ACTION_NEW_VECTOR_H__ */

@@ -15,7 +15,7 @@
  */
 
 /*
- * Example to use the FPGA to find patterns in a byte-stream.
+ * Example to use the FPGA to generate a vetor of size vectorSize
  */
 
 #include <stdio.h>
@@ -33,7 +33,7 @@
 
 #include <snap_internal.h>
 #include <snap_tools.h>
-#include <action_cuda_snap.h>
+#include <action_create_vector.h>
 
 static int mmio_write32(struct snap_card *card,
 			uint64_t offs, uint32_t data)
