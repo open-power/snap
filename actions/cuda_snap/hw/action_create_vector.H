@@ -28,7 +28,7 @@
 // 22: simplify the data casting style
 #define RELEASE_LEVEL		0x00000022
 
-typedef char word_t[BPERDW];
+typedef uint32_t word_t[BPERDW/4];
 //---------------------------------------------------------------------
 // This is generic. Just adapt names for a new action
 // CONTROL is defined and handled by SNAP 

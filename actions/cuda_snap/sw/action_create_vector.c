@@ -56,8 +56,8 @@ static int action_main(struct snap_sim_action *action,
 		       void *job, unsigned int job_len)
 {
 	struct cuda_snap_job *js = (struct cuda_snap_job *)job;
-	char *dst;
-	uint32_t len;
+	uint32_t *dst;
+	uint64_t len;
 	size_t i;
 
 	/* No error checking ... */
@@ -68,11 +68,11 @@ static int action_main(struct snap_sim_action *action,
 
 	// get the parameters from the structure
 	len = js->vectorSize;
-	dst = (char *)(unsigned long)js->out.addr;
+	dst = (uint32_t *)(unsigned long)js->out.addr;
 
-	// software action processing : Convert all char to lower case
+	// software action processing : Create a vector of size vectorSize
         for ( i = 0; i < len; i++ ) {
-                dst[i] = (char)i;
+                dst[i] = (uint32_t)i;
         }
 
 	// update the return code to the SNAP job manager

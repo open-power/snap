@@ -87,8 +87,8 @@ int main(int argc, char *argv[])
 	const char *space = "CARD_RAM";
 	//ssize_t size = 1024 * 1024;
     uint64_t vectorSize = 0;
-	uint8_t *ibuff = NULL, *obuff = NULL;
-	uint8_t type_out = SNAP_ADDRTYPE_HOST_DRAM;
+	uint32_t  *obuff = NULL;
+	uint32_t type_out = SNAP_ADDRTYPE_HOST_DRAM;
 	uint64_t addr_out = 0x0ull;
 	int verify = 0;
 	int exit_code = EXIT_SUCCESS;
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 
 	/* if output file is defined, use that as output */
 	if (output != NULL) {
-		size_t set_size = vectorSize;
+		size_t set_size = vectorSize*sizeof(uint32_t);
 
 		/* Allocate in host memory the place to put the text processed */
 		obuff = snap_malloc(set_size); //64Bytes aligned malloc
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 	action = snap_attach_action(card, CUDA_SNAP_ACTION_TYPE, action_irq, 60);
 
 	// Fill the stucture of data exchanged with the action
-	snap_prepare_cuda_snap(&cjob, &mjob,vectorSize,(void *)addr_out, vectorSize, type_out);
+	snap_prepare_cuda_snap(&cjob, &mjob,vectorSize,(void *)addr_out, vectorSize*sizeof(uint32_t), type_out);
 
 	// Call the action will:
 	snap_action_sync_execute_job(action, &cjob, timeout);
@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
 		fprintf(stdout, "writing output data %p %d bytes to %s\n",
 			obuff, (int)vectorSize, output);
 
-		__file_write(output, obuff, vectorSize);
+		__file_write(output, (uint8_t *)obuff, vectorSize*sizeof(uint32_t));
 	}
 
 	// Detach action + disallocate the card
@@ -206,7 +206,6 @@ int main(int argc, char *argv[])
 	snap_card_free(card);
 
 	__free(obuff);
-	__free(ibuff);
 	exit(exit_code);
 
 }

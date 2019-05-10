@@ -31,7 +31,7 @@
 static int process_action(snap_membus_t *dout_gmem,
 	      action_reg *act_reg)
 {
-    uint64_t size, char_to_transfer;
+    uint64_t size, uint32_to_transfer;
     uint64_t o_idx;
 
     /* byte address received need to be aligned with port width */
@@ -44,19 +44,19 @@ static int process_action(snap_membus_t *dout_gmem,
 	word_t vector_block; // 64 char
 
 	/* Limit the number of bytes to process to a 16 (4B) word */
-	char_to_transfer = MIN(size, BPERDW);
+	uint32_to_transfer = MIN(size, BPERDW/4);
 
 	/* Convert lower cases to upper cases byte per byte */
     vector_creation:
 	for (int i = 0; i < sizeof(vector_block); i++ ) {
 //#pragma HLS UNROLL
-		vector_block[i] = (char)i ;
+		vector_block[i] = (uint32_t)i ;
 	}
 
 	/* Write out one word_t */
-	memcpy(dout_gmem + o_idx, (char*) vector_block, BPERDW);
+	memcpy(dout_gmem + o_idx, (uint32_t*) vector_block, (BPERDW/4)*sizeof(uint32_t));
 
-	size -= char_to_transfer;
+	size -= uint32_to_transfer;
 	o_idx++;
     }
 
