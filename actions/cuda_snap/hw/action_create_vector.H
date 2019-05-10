@@ -1,5 +1,5 @@
-#ifndef __ACTION_UPPERCASE_H__
-#define __ACTION_UPPERCASE_H__
+#ifndef __ACTION_CREATE_VECTOR_H__
+#define __ACTION_CREATE_VECTOR_H__
 
 /*
  * Copyright 2017 International Business Machines
@@ -22,7 +22,7 @@
 #include <ap_int.h>
 
 #include "hls_snap.H"
-#include <action_cuda_snap.h> /* HelloWorld Job definition */
+#include <action_create_vector.h> /* Create Vector Job definition */
 
 //--------------------------------------------------------------------
 // 22: simplify the data casting style
@@ -32,11 +32,11 @@ typedef char word_t[BPERDW];
 //---------------------------------------------------------------------
 // This is generic. Just adapt names for a new action
 // CONTROL is defined and handled by SNAP 
-// helloworld_job_t is user defined in hls_helloworld/include/action_change_case.h
+// cuda_snap_job_t is user defined in cuda_snap/include/action_create_vector.h
 typedef struct {
 	CONTROL Control;	/*  16 bytes */
 	cuda_snap_job_t Data;	/* up to 108 bytes */
 	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(cuda_snap_job_t)];
 } action_reg;
 
-#endif  /* __ACTION_UPPERCASE_H__*/
+#endif  /* __ACTION_CREATE_VECTOR_H__*/
