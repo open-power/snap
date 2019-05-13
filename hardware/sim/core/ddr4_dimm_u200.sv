@@ -19,7 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 `timescale 1ps/1ps
-`define DDR4_2G_X4 
+`define DDR4_8G_X4 
 `define DDR4_833_Timing
 //`define MODEL_DEBUG_MEMORY
 //`define MODEL_DEBUG_CMDS
@@ -103,7 +103,7 @@ module ddr4_dimm_u200
         ddr4_model  #
         (
           .CONFIGURED_DQ_BITS (4),
-          .CONFIGURED_DENSITY (_2G)
+          .CONFIGURED_DENSITY (_8G)
          )  ddr4_model(
            .model_enable (model_enable),
 	     .iDDR4 (iDDR4[i])
