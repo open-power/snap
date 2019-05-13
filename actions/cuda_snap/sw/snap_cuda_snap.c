@@ -53,7 +53,7 @@ static void snap_prepare_cuda_snap(struct snap_job *cjob,
 				 uint32_t size_out,
 				 uint8_t type_out)
 {
-	fprintf(stderr, "  prepare helloworld job of %ld bytes size\n", sizeof(*mjob));
+	fprintf(stderr, "  prepare cuda_snap job of %ld bytes size\n", sizeof(*mjob));
 
 	assert(sizeof(*mjob) <= SNAP_JOBSIZE);
 	memset(mjob, 0, sizeof(*mjob));
@@ -173,10 +173,10 @@ int main(int argc, char *argv[])
 	       "  output:      %s\n"
 	       "  type_out:    %x %s\n"
 	       "  addr_out:    %016llx\n"
-	       "  size_in/out: %08lx\n",
+	       "  size_out:    %lu\n",
 	       input  ? input  : "unknown", output ? output : "unknown",
 	       type_out, mem_tab[type_out], (long long)addr_out,
-	       vectorSize);
+	       vectorSize*sizeof(uint32_t));
 
 
 	// Allocate the card that will be used
@@ -195,8 +195,11 @@ int main(int argc, char *argv[])
 
 	/* If the output buffer is in host DRAM we can write it to a file */
 	if (output != NULL) {
-		fprintf(stdout, "writing output data %p %d bytes to %s\n",
-			obuff, (int)vectorSize, output);
+		fprintf(stdout, "writing output data %p %lu bytes to %s\n",
+			obuff, vectorSize*sizeof(uint32_t), output);
+        for (uint32_t i = 0; i<vectorSize; i++){
+            fprintf(stdout, "%d \n",obuff[i]);
+        }
 
 		__file_write(output, (uint8_t *)obuff, vectorSize*sizeof(uint32_t));
 	}

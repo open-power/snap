@@ -28,7 +28,10 @@
 // 22: simplify the data casting style
 #define RELEASE_LEVEL		0x00000022
 
-typedef uint32_t word_t[BPERDW/4];
+typedef uint32_t mat_elmt_t;
+#define BURST_LENGTH 64
+#define DATA_PER_W	(BPERDW/sizeof(mat_elmt_t)) // =8 if double =16 if float
+typedef mat_elmt_t word_t[DATA_PER_W];
 //---------------------------------------------------------------------
 // This is generic. Just adapt names for a new action
 // CONTROL is defined and handled by SNAP 

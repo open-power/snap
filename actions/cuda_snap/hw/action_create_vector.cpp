@@ -25,39 +25,66 @@
 #include "ap_int.h"
 #include "action_create_vector.H"
 
+
+// convert any type to mbus data
+static void anytype_to_mbus(mat_elmt_t *table_decimal_out, snap_membus_t *data_to_be_written)
+{
+	union {
+		mat_elmt_t   value_d;
+		uint64_t     value_u;
+	};
+	loop_d2m1: for(int i = 0; i < BURST_LENGTH; i++) {
+#pragma HLS PIPELINE
+  	   loop_d2m2: for(int j = 0; j < DATA_PER_W; j++)
+	   {
+		value_d = table_decimal_out[i*DATA_PER_W + j];
+		data_to_be_written[i]((8*sizeof(mat_elmt_t)*(j+1))-1, (8*sizeof(mat_elmt_t)*j)) = (uint64_t)value_u;
+	   }
+	}
+}
 //----------------------------------------------------------------------
 //--- MAIN PROGRAM -----------------------------------------------------
 //----------------------------------------------------------------------
 static int process_action(snap_membus_t *dout_gmem,
 	      action_reg *act_reg)
 {
-    uint64_t size, uint32_to_transfer;
+    uint64_t size;
+    uint32_t uint32_to_transfer, burst_length,uint32_in_last_word, vector_value_i;
     uint64_t o_idx;
+    snap_membus_t vector_blocks_512b[BURST_LENGTH];
 
     /* byte address received need to be aligned with port width */
     o_idx = act_reg->Data.out.addr >> ADDR_RIGHT_SHIFT;
     size = act_reg->Data.vectorSize;
+    vector_value_i = 0;
 
     main_loop:
     while (size > 0) {
 //#pragma HLS PIPELINE
-	word_t vector_block; // 64 char
+        mat_elmt_t  vector_block[DATA_PER_W*BURST_LENGTH]; // (16x 32bits) * 64
 
-	/* Limit the number of bytes to process to a 16 (4B) word */
-	uint32_to_transfer = MIN(size, BPERDW/4);
+        /* Set the number of burst to write */
+        burst_length = MIN(BURST_LENGTH, (size/DATA_PER_W)+1);
+        uint32_in_last_word = (size/DATA_PER_W < BURST_LENGTH) ? size% DATA_PER_W : DATA_PER_W;
+        uint32_to_transfer = (burst_length-1) * DATA_PER_W + uint32_in_last_word;
 
-	/* Convert lower cases to upper cases byte per byte */
-    vector_creation:
-	for (int i = 0; i < sizeof(vector_block); i++ ) {
-//#pragma HLS UNROLL
-		vector_block[i] = (uint32_t)i ;
-	}
+        /* Generate vector values */
+        vector_creation:
+        for (int k=0; k < burst_length; k++) {
+            for (int i = 0; i < DATA_PER_W; i++ ) {
+        //#pragma HLS UNROLL
+                vector_block[k * DATA_PER_W + i] = (mat_elmt_t) vector_value_i;
+                vector_value_i++;
+            }
+        }
 
-	/* Write out one word_t */
-	memcpy(dout_gmem + o_idx, (uint32_t*) vector_block, (BPERDW/4)*sizeof(uint32_t));
+        anytype_to_mbus(vector_block, vector_blocks_512b);
 
-	size -= uint32_to_transfer;
-	o_idx++;
+        /* Write out N word_t (N = size of a burst) */
+        memcpy(dout_gmem + o_idx, &vector_blocks_512b, burst_length*DATA_PER_W*sizeof(uint32_t));
+
+        size -= uint32_to_transfer;
+        o_idx += burst_length;
     }
 
     act_reg->Control.Retc = SNAP_RETC_SUCCESS;
@@ -108,8 +135,9 @@ void hls_action(snap_membus_t *dout_gmem,
 
 int main(void)
 {
-#define MEMORY_LINES 1
+#define MEMORY_LINES BURST_LENGTH
     int rc = 0;
+    int vectorSize=128;
     unsigned int i;
     static snap_membus_t  dout_gmem[MEMORY_LINES];
 
@@ -133,10 +161,10 @@ int main(void)
     // set flags != 0 to have action processed
     act_reg.Control.flags = 0x1; /* just not 0x0 */
 
-    act_reg.Data.vectorSize = 16; //In 2B words
+    act_reg.Data.vectorSize = vectorSize; //In 2B words
 
     act_reg.Data.out.addr = 0;
-    act_reg.Data.out.size = 16; //In 2B words
+    act_reg.Data.out.size = vectorSize; //In 2B words
     act_reg.Data.out.type = SNAP_ADDRTYPE_HOST_DRAM;
 
     printf("Action call \n");
@@ -146,8 +174,9 @@ int main(void)
 	return 1;
     }
 
-    printf("Output is : %s\n", (uint32_t *)((unsigned long)dout_gmem + 0));
-
+    //for (int i = 0; i< vectorSize; i++){
+    	//printf("%d\n", dout_gmem[i]);
+    //}
     printf(">> ACTION TYPE = %08lx - RELEASE_LEVEL = %08lx <<\n",
 		    (unsigned int)Action_Config.action_type,
 		    (unsigned int)Action_Config.release_level);
