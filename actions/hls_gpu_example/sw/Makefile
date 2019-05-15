@@ -41,7 +41,7 @@ endif
 snap_cuda_snap: action_create_vector.o
 snap_cuda_snap_objs = action_create_vector.o
 
-projs += snap_cuda_snap
+projs += snap_gpu_example
 
 # If you have the host code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/software.mk
