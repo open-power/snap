@@ -15,7 +15,7 @@
  */
 
 /*
- * SNAP CUDA_SNAP EXAMPLE
+ * SNAP GPU_EXAMPLE EXAMPLE
  *
  * Simple application that illustrates how to exchange data between an FPGA
  * action and a GPU kernel in one main process
@@ -115,13 +115,12 @@ void hls_action(snap_membus_t *dout_gmem,
     // Used for the discovery phase of the cards */
     switch (act_reg->Control.flags) {
     case 0:
-	Action_Config->action_type = CUDA_SNAP_ACTION_TYPE; //TO BE ADAPTED
+	Action_Config->action_type = GPU_EXAMPLE_ACTION_TYPE; //TO BE ADAPTED
 	Action_Config->release_level = RELEASE_LEVEL;
 	act_reg->Control.Retc = 0xe00f;
 	return;
 	break;
     default:
-	    /* process_action(din_gmem, dout_gmem, d_ddrmem, act_reg); */
 	    process_action(dout_gmem, act_reg);
 	break;
     }

@@ -55,7 +55,7 @@ static int mmio_read32(struct snap_card *card,
 static int action_main(struct snap_sim_action *action,
 		       void *job, unsigned int job_len)
 {
-	struct cuda_snap_job *js = (struct cuda_snap_job *)job;
+	struct gpu_example_job *js = (struct gpu_example_job *)job;
 	uint32_t *dst;
 	uint64_t len;
 	size_t i;
@@ -86,7 +86,7 @@ static int action_main(struct snap_sim_action *action,
 static struct snap_sim_action action = {
 	.vendor_id = SNAP_VENDOR_ID_ANY,
 	.device_id = SNAP_DEVICE_ID_ANY,
-	.action_type = CUDA_SNAP_ACTION_TYPE, // Adapt with your ACTION NAME
+	.action_type = GPU_EXAMPLE_ACTION_TYPE, // Adapt with your ACTION NAME
 
 	.job = { .retc = SNAP_RETC_FAILURE, },
 	.state = ACTION_IDLE,

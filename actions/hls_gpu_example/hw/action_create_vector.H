@@ -35,11 +35,11 @@ typedef mat_elmt_t word_t[DATA_PER_W];
 //---------------------------------------------------------------------
 // This is generic. Just adapt names for a new action
 // CONTROL is defined and handled by SNAP 
-// cuda_snap_job_t is user defined in cuda_snap/include/action_create_vector.h
+// gpu_example_job_t is user defined in gpu_example/include/action_create_vector.h
 typedef struct {
 	CONTROL Control;	/*  16 bytes */
-	cuda_snap_job_t Data;	/* up to 108 bytes */
-	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(cuda_snap_job_t)];
+	gpu_example_job_t Data;	/* up to 108 bytes */
+	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(gpu_example_job_t)];
 } action_reg;
 
 #endif  /* __ACTION_CREATE_VECTOR_H__*/

@@ -49,14 +49,14 @@ static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME" };
 
 // Function that fills the MMIO registers / data structure 
 // these are all data exchanged between the application and the action
-static void snap_prepare_cuda_snap(struct snap_job *cjob,
-				 struct cuda_snap_job *mjob,
+static void snap_prepare_gpu_example(struct snap_job *cjob,
+				 struct gpu_example_job *mjob,
 	             int size,
 				 void *addr_out,
 				 uint32_t size_out,
 				 uint8_t type_out)
 {
-	fprintf(stderr, "  prepare cuda_snap job of %ld bytes size\n", sizeof(*mjob));
+	fprintf(stderr, "  prepare gpu_example job of %ld bytes size\n", sizeof(*mjob));
 
 	assert(sizeof(*mjob) <= SNAP_JOBSIZE);
 	memset(mjob, 0, sizeof(*mjob));
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 	struct snap_action *action = NULL;
 	char device[128];
 	struct snap_job cjob;
-	struct cuda_snap_job mjob;
+	struct gpu_example_job mjob;
 	const char *input = NULL;
 	const char *output = NULL;
 	unsigned long timeout = 600;
@@ -185,10 +185,10 @@ int main(int argc, char *argv[])
 				   SNAP_DEVICE_ID_SNAP);
 
 	// Attach the action that will be used on the allocated card
-	action = snap_attach_action(card, CUDA_SNAP_ACTION_TYPE, action_irq, 60);
+	action = snap_attach_action(card, GPU_EXAMPLE_ACTION_TYPE, action_irq, 60);
 
 	// Fill the stucture of data exchanged with the action
-	snap_prepare_cuda_snap(&cjob, &mjob,vectorSize,(void *)addr_out, vectorSize*sizeof(uint32_t), type_out);
+	snap_prepare_gpu_example(&cjob, &mjob,vectorSize,(void *)addr_out, vectorSize*sizeof(uint32_t), type_out);
 
 	// Call the action will:
 	snap_action_sync_execute_job(action, &cjob, timeout);

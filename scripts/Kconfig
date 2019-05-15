@@ -49,9 +49,9 @@ choice
 		select S121B
 		select DISABLE_NVME
 		help
-		  Semptian NSA121B has ethernet and 8GB DDR4 SDRAM. Uses Xilinx FPGA XCKU115.
+            Semptian NSA121B has ethernet and 8GB DDR4 SDRAM. Uses Xilinx FPGA XCKU115.
 
-       config N250SP
+    config N250SP
 		bool "CAPI2.0: Nallatech 250S+ with 4GB DDR4 SDRAM, NVMe and Xilinx KU15P FPGA"
 		select CAPI20
 		select DISABLE_NVME
@@ -354,6 +354,20 @@ choice
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
 		select ENABLE_ACTION_CLK_DERATE
+	
+    config HLS_GPU_EXAMPLE
+		bool "HLS GPU Example (Showing how to use SNAP with a GPU)"
+        help
+            This is a simple example of FPGA to GPU memory exchange:
+            - HOST calls an FPGA action to generate a vector of size N
+            - FPGA writes the generated vector to the HOST memory
+            - Data is copied to the GPU 
+            - Data is processed on the GPU (addition of the vector with itself)
+            - Data is written back to HOST memory and writen into a file
+            This example is written in C and compiled with HLS
+        select ENABLE_HLS_SUPPORT
+        select DISABLE_SDRAM_AND_BRAM
+        select DISABLE_NVME
 
 endchoice
 

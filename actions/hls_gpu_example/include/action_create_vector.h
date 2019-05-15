@@ -24,14 +24,14 @@ extern "C" {
 #endif
 
 /* This number is unique and is declared in ~snap/ActionTypes.md */
-#define CUDA_SNAP_ACTION_TYPE 0x00000001
+#define GPU_EXAMPLE_ACTION_TYPE 0x1014100E
 
 /* Data structure used to exchange information between action and application */
 /* Size limit is 108 Bytes */
-typedef struct cuda_snap_job {
+typedef struct gpu_example_job {
 	uint64_t vectorSize;	/* input data */
 	struct snap_addr out;   /* offset table */
-} cuda_snap_job_t;
+} gpu_example_job_t;
 
 #ifdef __cplusplus
 }

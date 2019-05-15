@@ -37,7 +37,7 @@ endif
 endif
 
 # This is solution specific. Check if we can replace this by generics too.
-SOLUTION_NAME ?= cuda_snap
+SOLUTION_NAME ?= gpu_example
 SOLUTION_DIR ?= hlsCreateVector
 srcs += action_create_vector.cpp
 
