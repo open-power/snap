@@ -27,7 +27,7 @@ endif
 include $(SNAP_ROOT)/software/config.mk
 
 CFLAGS += -std=c99
-LDLIBS += -lsnap -lcxl -lpthread
+LDLIBS += -lsnap -lcxl -lpthread -lcudart
 LDFLAGS += -Wl,-rpath,$(SNAP_ROOT)/software/lib
 
 LIBS += $(SNAP_ROOT)/software/lib/libsnap.so
@@ -70,11 +70,15 @@ endif
 %: %.sh
 
 ### Generic rule to build a tool
-%: %.o
-	$(CC) $(LDFLAGS) $($(@)_LDFLAGS) $@.o $($(@)_objs) $($(@)_libs) $(LDLIBS) -o $@
+%: %.o %_objs_cuda
+	$(CC) $(LDFLAGS) $($(@)_LDFLAGS) $@.o $($(@)_objs) $($(@)_objs_cuda) $($(@)_libs) $(LDLIBS) -o $@
 
 %.o: %.c
 	$(CC) -c $(CPPFLAGS) $($(@:.o=)_CPPFLAGS) $(CFLAGS) $< -o $@
+
+kernel.cu.o : ../gpu/kernel.cu
+	@echo "GPU enable so we compile cuda files"
+	nvcc --compiler-bindir=/usr/bin/gcc-4 -I ../include -c $< -o $@
 
 install: all
 	@mkdir -p $(DESTDIR)/bin
