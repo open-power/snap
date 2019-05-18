@@ -492,8 +492,8 @@ if { $create_ddr4_u200 == "TRUE" } {
    CONFIG.C0.DDR4_TimePeriod {833} \
    CONFIG.C0.DDR4_isCustom {false} \
    CONFIG.C0.ODT_WIDTH {1} \
-   CONFIG.C0_CLOCK_BOARD_INTERFACE {default_300mhz_clk0} \
-   CONFIG.C0_DDR4_BOARD_INTERFACE {ddr4_sdram_c0} \
+   CONFIG.C0_CLOCK_BOARD_INTERFACE {default_300mhz_clk1} \
+   CONFIG.C0_DDR4_BOARD_INTERFACE {ddr4_sdram_c1} \
                      ] [get_ips ddr4sdram] >> $log_file
   set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
   generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
