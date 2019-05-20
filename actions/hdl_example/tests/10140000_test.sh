@@ -259,6 +259,9 @@ case $CARD in
 "AD9V3" )
 	echo "-> AlphaData $CARD Card"
 	;;	
+"U200" )
+	echo "-> Xilinx $CARD Card"
+	;;	
 * )
 	echo "-> $CARD is Invalid (msg from $0)"
 	exit 1
