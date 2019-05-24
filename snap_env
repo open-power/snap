@@ -233,6 +233,8 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hls_scatter_gather'
   elif [ -n "$HLS_GPU_EXAMPLE" ]; then
     AR='${SNAP_ROOT}/actions/hls_gpu_example'
+  elif [ -n "$HLS_GPU_LATENCY_EVAL" ]; then
+    AR='${SNAP_ROOT}/actions/hls_gpu_latency_eval'
   fi
   if [ -z "$AR" ] && [ -n "$ACTION_ROOT" ]; then
     AR=$ACTION_ROOT

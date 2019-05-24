@@ -27,7 +27,7 @@ endif
 include $(SNAP_ROOT)/software/config.mk
 
 CFLAGS += -std=c99
-LDLIBS += -lsnap -lcxl -lpthread -lcudart
+LDLIBS += -lsnap -lcxl -lpthread
 LDFLAGS += -Wl,-rpath,$(SNAP_ROOT)/software/lib
 
 LIBS += $(SNAP_ROOT)/software/lib/libsnap.so
