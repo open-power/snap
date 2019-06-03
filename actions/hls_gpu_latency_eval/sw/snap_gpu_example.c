@@ -35,6 +35,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <assert.h>
+#include <inttypes.h>
 
 #include <snap_tools.h>
 #include <libsnap.h>
@@ -78,11 +79,11 @@ static void snap_prepare_gpu_example(struct snap_job *cjob,
 		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_DST |
 		      SNAP_ADDRFLAG_END);
 
-    snap_addr_set(&mjob->read_flag, addr_read_flag, sizeof(uint8_t), type,
+    snap_addr_set(&mjob->read_flag, addr_read_flag, 64, type,
 		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC |
 		      SNAP_ADDRFLAG_END);
 
-    snap_addr_set(&mjob->write_flag, addr_write_flag, sizeof(uint8_t), type,
+    snap_addr_set(&mjob->write_flag, addr_write_flag, 64, type,
 		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC |
 		      SNAP_ADDRFLAG_END);
 	
@@ -97,6 +98,7 @@ int main(int argc, char *argv[])
 	// Init of all the default values used 
 	int ch = 0;
     int rc =0;
+    int card_no = 0;
 	struct snap_card *card = NULL;
 	struct snap_action *action = NULL;
 	char device[128];
@@ -105,8 +107,8 @@ int main(int argc, char *argv[])
 	const char *num_iteration = NULL;
 	const char *size = NULL;
     int vector_size = 0, max_iteration = 0;
-	volatile uint32_t  *obuff = NULL, *ibuff = NULL;
-    volatile uint8_t *read_flag = NULL, *write_flag=NULL;
+	uint32_t volatile *obuff = NULL, *ibuff = NULL;
+    uint8_t volatile *read_flag = NULL, *write_flag=NULL;
 	uint32_t type = SNAP_ADDRTYPE_HOST_DRAM;
 	uint64_t addr_read = 0x0ull;
 	uint64_t addr_write = 0x0ull;
@@ -144,7 +146,6 @@ int main(int argc, char *argv[])
 
     if (size != NULL) {
         vector_size = atoi(size);
-        printf("ok");
     }
 
     if (num_iteration != NULL) {
@@ -160,13 +161,18 @@ int main(int argc, char *argv[])
 
     ibuff = snap_malloc(set_size); //64Bytes aligned malloc
     obuff = snap_malloc(set_size); //64Bytes aligned malloc
-    write_flag = malloc(1);
-    read_flag = malloc(1);
+    write_flag = snap_malloc(64);
+    read_flag = snap_malloc(64);
     
     memset_volatile(ibuff, 0x0, set_size);
     memset_volatile(obuff, 0x0, set_size);
-    *write_flag = 0x1;
-    *read_flag = 0x0;
+    memset_volatile(write_flag, 0x0, 64);
+    memset_volatile(read_flag, 0x0, 64);
+    write_flag[0] = 0x1;
+    read_flag[0] = 0x0;
+
+    printf("%" PRIu8 "\n",write_flag[0]);
+    printf("%" PRIu8 "\n",read_flag[0]);
     //memset_volatile(write_flag,0x1,1);
     //memset_volatile(read_flag,0x0,1);
 
@@ -192,7 +198,7 @@ int main(int argc, char *argv[])
 	/***************************************************
  	 *              FPGA related 
  	 ***************************************************/
-
+    snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM, SNAP_DEVICE_ID_SNAP);
 	action = snap_attach_action(card, GPU_LATENCY_EVAL_ACTION_TYPE, action_irq, 60);
 	snap_prepare_gpu_example(&cjob, &mjob,vector_size,max_iteration,type,
@@ -209,10 +215,13 @@ int main(int argc, char *argv[])
 
     for(int i=0; i<max_iteration;i++){
         //FPGA is writting
-        while(*write_flag != 0x0){}
+        while(write_flag[0] != 0x0){
+            //printf("FPGA writting [%d,%d,%d, ... , %d]",ibuff[0],ibuff[1],ibuff[2],ibuff[vector_size-1]);
+        }
 
         //FPGA finished writting
-        *read_flag = 0x0;
+        //We block reading by setting read_flag to 0
+        read_flag[0] = 0x0;
 
         for (int k=0; k<vector_size; k++){
             obuff[k]=ibuff[k]+ibuff[k];
@@ -223,10 +232,10 @@ int main(int argc, char *argv[])
         printf("Writting [%d,%d,%d, ... , %d]",obuff[0],obuff[1],obuff[2],obuff[vector_size-1]);
         
         //FPGA can write
-        *write_flag = 0x1;
+        write_flag[0] = 0x1;
 
         //FPGA can read
-        *read_flag = 0x1;
+        read_flag[0] = 0x1;
     }
 	
     switch(cjob.retc) {
