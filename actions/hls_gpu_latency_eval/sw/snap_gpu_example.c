@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
     memset_volatile(obuff, 0x0, set_size);
     memset_volatile(write_flag, 0x0, 64);
     memset_volatile(read_flag, 0x0, 64);
-    write_flag[0] = 0x1;
+    write_flag[0] = 0x0;
     read_flag[0] = 0x0;
 
     printf("%" PRIu8 "\n",write_flag[0]);
@@ -213,29 +213,37 @@ int main(int argc, char *argv[])
     // Call the action will:
 	snap_action_start(action);
 
-    for(int i=0; i<max_iteration;i++){
-        //FPGA is writting
-        while(write_flag[0] != 0x0){
-            //printf("FPGA writting [%d,%d,%d, ... , %d]",ibuff[0],ibuff[1],ibuff[2],ibuff[vector_size-1]);
-        }
+    //Initialize vector
+    for (int k=0; k<vector_size; k++){
+        obuff[k] = k;
+    }
 
-        //FPGA finished writting
-        //We block reading by setting read_flag to 0
-        read_flag[0] = 0x0;
+    printf("*********** Initialization *************\n");
+    printf("Writting [%d,%d,%d, ... , %d]\n",obuff[0],obuff[1],obuff[2],obuff[vector_size-1]);
+    
+    // FPGA can read vector and write buffer
+    read_flag[0] = 1;
+    write_flag[0] = 1;
+
+    for(int i=0; i<max_iteration;i++){
+        
+        while(write_flag[0] == 1 || read_flag[0] == 1){} // FPGA is writting or reading -> flags go to 0
 
         for (int k=0; k<vector_size; k++){
             obuff[k]=ibuff[k]+ibuff[k];
         }
         
-        printf("*********** Interation %d/%d *************", i, max_iteration);
-        printf("Received [%d,%d,%d, ... , %d]",ibuff[0],ibuff[1],ibuff[2],ibuff[vector_size-1]);
-        printf("Writting [%d,%d,%d, ... , %d]",obuff[0],obuff[1],obuff[2],obuff[vector_size-1]);
+        printf("*********** Interation %d/%d *************\n", i+1, max_iteration);
+        printf("Received [%d,%d,%d, ... , %d]\n",ibuff[0],ibuff[1],ibuff[2],ibuff[vector_size-1]);
+        printf("Writting [%d,%d,%d, ... , %d]\n",obuff[0],obuff[1],obuff[2],obuff[vector_size-1]);
         
-        //FPGA can write
-        write_flag[0] = 0x1;
-
         //FPGA can read
-        read_flag[0] = 0x1;
+        read_flag[0] = 1;
+
+        //FPGA can write
+        write_flag[0] = 1;
+
+
     }
 	
     switch(cjob.retc) {

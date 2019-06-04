@@ -60,222 +60,188 @@ static void mbus_to_anytype(snap_membus_t *data_to_be_written, mat_elmt_t *table
 	}
 }
 
-static void wait(int cycle, bool *finish){
-    int cntr = 0;
-    for (int i=0; i<cycle; i++){
-        cntr++;
-        if (cntr >= cycle-10){
-            *finish = true;
-        } else {
-            *finish = false;
+void read_data(snap_membus_t *din_gmem, uint64_t input, mat_elmt_t *buffer, uint64_t size){
+    
+    uint32_t uint32_to_transfer_read, burst_length_read,uint32_in_last_word_read, index;
+    uint64_t i_idx,size_read;
+    snap_membus_t vector_blocks_512b_read[BURST_LENGTH]; // 512bits * 64  
+    mat_elmt_t vector_block_read[DATA_PER_W*BURST_LENGTH]; // (16x 32bits) * 64
+    mat_elmt_t value;
+
+    i_idx = input;
+    size_read = size;
+    index = 0;
+    vector_reading_loop:
+    while (size_read > 0) {
+        /* Set the number of burst to read */
+        burst_length_read = MIN(BURST_LENGTH, (size_read/DATA_PER_W)+1);
+        uint32_in_last_word_read = (size_read/DATA_PER_W < BURST_LENGTH) ? size_read% DATA_PER_W : DATA_PER_W;
+        uint32_to_transfer_read = (burst_length_read-1) * DATA_PER_W + uint32_in_last_word_read;
+        
+        /* Read N word_t (N = size of a burst) */
+        memcpy(&vector_blocks_512b_read, din_gmem + i_idx, burst_length_read*DATA_PER_W*sizeof(uint32_t));
+        mbus_to_anytype(vector_blocks_512b_read,vector_block_read);
+
+
+        /* Writting the values to dout_gmem*/
+        read_vector_filling:
+        for (int k=0; k < burst_length_read; k++) {
+            for (int i = 0; i < DATA_PER_W; i++ ) {
+                buffer[index] = vector_block_read[k * DATA_PER_W + i];
+                index++;
+            }
         }
+
+        size_read -= uint32_to_transfer_read;
+        i_idx += burst_length_read;
     }
+
+    //if(size_read == 0){
+    //    *done = true;
+    //}
 }
 
+void write_data(snap_membus_t *dout_gmem, uint64_t output, mat_elmt_t *buffer,  uint64_t size){
+
+    uint64_t size_write=0x0, o_idx;
+    uint32_t uint32_to_transfer_write, burst_length_write,uint32_in_last_word_write, index;
+    snap_membus_t vector_blocks_512b_write[BURST_LENGTH]; // 512bits * 64  
+    mat_elmt_t vector_block_write[DATA_PER_W*BURST_LENGTH]; // (16x 32bits) * 64
+
+    o_idx = output;
+    size_write = size;
+    index=0;
+    
+    vector_writing_loop:
+    while (size_write > 0) {
+
+        /* Set the number of burst to write */
+        burst_length_write = MIN(BURST_LENGTH, (size/DATA_PER_W)+1);
+        uint32_in_last_word_write = (size_write/DATA_PER_W < BURST_LENGTH) ? size_write% DATA_PER_W : DATA_PER_W;
+        uint32_to_transfer_write = (burst_length_write-1) * DATA_PER_W + uint32_in_last_word_write;
+
+        /* Writting the values to dout_gmem*/
+        write_vector_filling:
+        for (int k=0; k < burst_length_write; k++) {
+            for (int i = 0; i < DATA_PER_W; i++ ) {
+                vector_block_write[k * DATA_PER_W + i] = buffer[index];
+                index++;
+            }
+        }
+
+        anytype_to_mbus(vector_block_write, vector_blocks_512b_write);
+
+        /* Write out N word_t (N = size of a burst) */
+        memcpy(dout_gmem + o_idx, &vector_blocks_512b_write, burst_length_write*DATA_PER_W*sizeof(uint32_t));
+
+        size_write -= uint32_to_transfer_write;
+        o_idx += burst_length_write;
+    }
+
+   // if (size_write == 0){
+   //     *done = true;
+   // }
+}
+
+void read_flag_mem(snap_membus_t *din_gmem, uint64_t flag_addr, bool *flag){
+    snap_membus_t flag_512b;
+    memcpy(&flag_512b, din_gmem + flag_addr, BPERDW);
+    *flag = (bool)flag_512b(0,0);
+}
+
+void write_flag_mem(snap_membus_t *dout_gmem, uint64_t flag_addr, bool flag){
+    snap_membus_t flag_512b;
+    flag_512b(0,0) = flag;
+    memcpy(dout_gmem + flag_addr,&flag_512b, BPERDW);
+}
 //----------------------------------------------------------------------
 //--- MAIN PROGRAM -----------------------------------------------------
 //----------------------------------------------------------------------
 static int process_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
 	      action_reg *act_reg)
 {
-    uint64_t size, size_read, size_write, addr_read_flag, addr_write_flag, max_iteration;
-    volatile uint8_t read_flag=0x0, write_flag=0x0;
-    snap_membus_t read_flag_512b, write_flag_512b;
-    uint32_t uint32_to_transfer_write, burst_length_write,uint32_in_last_word_write, vector_value_i;
-    uint32_t uint32_to_transfer_read, burst_length_read,uint32_in_last_word_read;
+    uint64_t size, addr_read_flag, addr_write_flag, max_iteration, iteration_i;
+    bool read_flag=false, write_flag=false;
+    bool read_done= false, write_done= false;
+    bool get_write_flag=false, get_read_flag=false;
     uint64_t o_idx, i_idx;
-    int iteration_read_i=0, iteration_write_i=0, iteration_i=0;
-    bool read_done= false, write_done= false, finish_wait_write=false, finish_wait_read=false;
-    mat_elmt_t value;
-    /* Data storage */
-    // for writes
-    snap_membus_t vector_blocks_512b_write[BURST_LENGTH]; // 512bits * 64  
-    mat_elmt_t vector_block_write[DATA_PER_W*BURST_LENGTH]; // (16x 32bits) * 64
-    // for reads
-    snap_membus_t vector_blocks_512b_read[BURST_LENGTH]; // 512bits * 64  
-    mat_elmt_t vector_block_read[DATA_PER_W*BURST_LENGTH]; // (16x 32bits) * 64
+    
     //shared buffer
     mat_elmt_t bufferA[MAX_SIZE] = {}; // 32bits * size
     mat_elmt_t bufferB[MAX_SIZE] = {}; // 32bits * size
-    //buffer_flags
-    uint8_t buffer_flag[2]={0x1,0x0};
     
     // Data initialization
     i_idx = act_reg->Data.read.addr >> ADDR_RIGHT_SHIFT;
     o_idx = act_reg->Data.write.addr >> ADDR_RIGHT_SHIFT;
     size = act_reg->Data.vector_size;
-    size_read = act_reg->Data.vector_size;
-    size_write = act_reg->Data.vector_size;
     addr_read_flag = act_reg->Data.read_flag.addr >> ADDR_RIGHT_SHIFT;
     addr_write_flag = act_reg->Data.write_flag.addr >> ADDR_RIGHT_SHIFT;
     max_iteration = act_reg->Data.max_iteration;
-    vector_value_i = 0;
+    iteration_i = 0;
 
     main_loop:
-    while (!(read_done && write_done)){
-
-        // Main iteration counter
-        if(iteration_read_i == iteration_write_i){
-            iteration_i = iteration_read_i;
-        }
-
-        //----------------------------------------------------------------------
-        //------------------       WRITER      ---------------------------------
-        //----------------------------------------------------------------------
-
-         
-        write_loop:
-        while(iteration_write_i<max_iteration){
-            
-            //wait statement in order to read only every 100 cycles
-            wait(100,&finish_wait_write);
-            if(finish_wait_write == true){
-                memcpy(&write_flag_512b, din_gmem + addr_write_flag, BPERDW);
-                write_flag = (uint8_t)write_flag_512b(8*sizeof(uint8_t),0);
-            }
-
-            if (size_write <= 0){
-                size_write = act_reg->Data.vector_size;
-                o_idx = act_reg->Data.write.addr >> ADDR_RIGHT_SHIFT;
-                
-                //FPGA not writting anymore so write_flag set to 0 to inform
-                //memory that data is written
-                write_flag = 0x0;
-                write_flag_512b = 0;
-                memcpy(dout_gmem + addr_write_flag, &write_flag_512b, BPERDW);
-                
-                //Buffer data not needed anymore so buffer flag set to 0 (reader
-                //can write new data in the buffer)
-                buffer_flag[iteration_i%2] = 0x0;
-                
-                // Increment write iteration compteur
-                iteration_write_i++;
-            }
-            
-            // If memory is ready to be written and buffer is ready to be read
-            // this loop write buffer data to memory
-            if ((write_flag == 0x1) && (buffer_flag[iteration_i%2] == 0x1)){
-                vector_writing_loop:
-                while (size_write > 0) {
-
-                    /* Set the number of burst to write */
-                    burst_length_write = MIN(BURST_LENGTH, (size/DATA_PER_W)+1);
-                    uint32_in_last_word_write = (size_write/DATA_PER_W < BURST_LENGTH) ? size_write% DATA_PER_W : DATA_PER_W;
-                    uint32_to_transfer_write = (burst_length_write-1) * DATA_PER_W + uint32_in_last_word_write;
-
-                    /* Writting the values to dout_gmem*/
-                    write_vector_filling:
-                    for (int k=0; k < burst_length_write; k++) {
-                        for (int i = 0; i < DATA_PER_W; i++ ) {
-                            // if initialisation we write counter values (0 to size-1)
-                            // else we write data stored in vector buffer
-                            if (iteration_write_i == 0){
-                                value = (mat_elmt_t)vector_value_i;
-                                vector_value_i++;
-                            } else {
-                                switch (iteration_i%2){
-                                    case 0 :
-                                        value = bufferA[i];
-                                    case 1 :
-                                        value = bufferB[i];
-                                }
-                            }
-                            vector_block_write[k * DATA_PER_W + i] = value;
-                        }
-                    }
-
-                    anytype_to_mbus(vector_block_write, vector_blocks_512b_write);
-
-                    /* Write out N word_t (N = size of a burst) */
-                    memcpy(dout_gmem + o_idx, &vector_blocks_512b_write, burst_length_write*DATA_PER_W*sizeof(uint32_t));
-
-                    size_write -= uint32_to_transfer_write;
-                    o_idx += burst_length_write;
-                }
-
-            }
-
-            // Chek if all writes have been done
-            if (iteration_write_i == max_iteration-1){
-                write_done = true;
-            }
-
-        }
-
-        //----------------------------------------------------------------------
-        //------------------       READER      ---------------------------------
-        //----------------------------------------------------------------------
-       
+    while (iteration_i<max_iteration){
         
-        read_loop:
-        while (iteration_read_i<max_iteration){
-                
-            wait(100,&finish_wait_read);
-            if(finish_wait_read){
-                memcpy(&read_flag_512b, din_gmem + addr_read_flag, BPERDW);
-                read_flag = (uint8_t)read_flag_512b(8*sizeof(uint8_t),0);
-            }
-
-            if (size_read <= 0){
-                size_read = act_reg->Data.vector_size;
-                i_idx = act_reg->Data.read.addr >> ADDR_RIGHT_SHIFT;
-                
-                //FPGA not reading anymore so read_flag set to 0 to inform
-                //memory that data is read
-                read_flag = 0x0;
-                read_flag_512b = 0;
-                memcpy(dout_gmem + addr_read_flag, &read_flag_512b, BPERDW);
-                
-                //Set buffer flag ready to be read by the writter
-                buffer_flag[(iteration_i+1)%2] = 0x1;
-
-                // Increment read iteration compteur
-                iteration_read_i++;
-            }
-
-            if ((read_flag == 0x1) && (buffer_flag[(iteration_i+1)%2] == 0x0)){
-            
-                vector_reading_loop:
-                while (size_read > 0) {
-                    /* Set the number of burst to read */
-                    burst_length_read = MIN(BURST_LENGTH, (size_read/DATA_PER_W)+1);
-                    uint32_in_last_word_read = (size_read/DATA_PER_W < BURST_LENGTH) ? size_read% DATA_PER_W : DATA_PER_W;
-                    uint32_to_transfer_read = (burst_length_read-1) * DATA_PER_W + uint32_in_last_word_read;
-                    
-                    /* Read N word_t (N = size of a burst) */
-                    memcpy(&vector_blocks_512b_read, din_gmem + i_idx, burst_length_read*DATA_PER_W*sizeof(uint32_t));
-                    mbus_to_anytype(vector_blocks_512b_read,vector_block_read);
-
-
-                    /* Writting the values to dout_gmem*/
-                    read_vector_filling:
-                    for (int k=0; k < burst_length_read; k++) {
-                        for (int i = 0; i < DATA_PER_W; i++ ) {
-                            switch ((iteration_i+1)%2){
-                                case 0 :
-                                    bufferA[i] = vector_block_read[k * DATA_PER_W + i];
-                                case 1 :
-                                    bufferB[i] = vector_block_read[k * DATA_PER_W + i];
-                            }
-                        }
-                    }
-
-                    size_read -= uint32_to_transfer_read;
-                    i_idx += burst_length_read;
-                }
-
-            }
-            
-            // Check if all reads have been done
-            if (iteration_read_i == max_iteration-1){
-                read_done = true;
-            }
-
-
+        if (write_done && read_done){
+            iteration_i++;
+            write_done = false;
+            read_done = false;
         }
+
+        //----------------------------------------------------------------------
+        //------------------       READING BLOCK     ---------------------------
+        //----------------------------------------------------------------------
+        
+        // Data reading or flag checking
+        if(read_flag){
+            switch (iteration_i%2){
+                case 0:
+                    read_data(din_gmem, i_idx, bufferA, size);
+                    read_done = true;
+                    break;
+                case 1:
+                    read_data(din_gmem, i_idx, bufferB, size);
+                    read_done = true;
+                    break;
+            }
+        } else {
+            read_flag_mem(din_gmem, addr_read_flag, &read_flag);
+        }
+        
+        //----------------------------------------------------------------------
+        //------------------       WRITTING BLOCK     --------------------------
+        //----------------------------------------------------------------------
+
+        // Data writting or flag checking
+        if(write_flag){
+            switch (iteration_i%2){
+                case 0:
+                    write_data(dout_gmem, o_idx, bufferB, size);
+                    write_done = true;
+                    break;
+                case 1:
+                    write_data(dout_gmem, o_idx, bufferA, size);
+                    write_done = true;
+                    break;
+            }
+        } else {
+            read_flag_mem(din_gmem, addr_write_flag, &write_flag);
+        }
+
+        // Writting flag on memory and changing internal values of those flags
+        if (write_done){
+            write_flag_mem(dout_gmem, addr_write_flag,false);
+            write_flag = false;
+        }
+
+        if (read_done){
+            write_flag_mem(dout_gmem, addr_read_flag,false);
+            read_flag = false;
+        }
+         
     }
 
-    if (read_done && write_done){
+    if (iteration_i == max_iteration-1){
         act_reg->Control.Retc = SNAP_RETC_SUCCESS;
     }
 
