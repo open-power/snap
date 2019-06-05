@@ -114,7 +114,9 @@ int main(int argc, char *argv[])
 	uint64_t addr_write = 0x0ull;
 	uint64_t addr_write_flag = 0x0ull;
 	uint64_t addr_read_flag= 0x0ull;
-	int exit_code = EXIT_SUCCESS;
+    struct timeval etime, stime, begin_time, end_time;
+    unsigned long long int lcltime = 0x0ull;
+    int exit_code = EXIT_SUCCESS;
 	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 
 	// collecting the command line arguments
@@ -205,14 +207,26 @@ int main(int argc, char *argv[])
             (void *)addr_read, (void *)addr_write, 
             (void *)addr_read_flag,(void *)addr_write_flag);
 
+
+    /////////////////////////////////////////////////////////////////////////
+    //                      LAUNCHING THE ACTION
+    ////////////////////////////////////////////////////////////////////////
+	gettimeofday(&stime, NULL);
+
     rc =snap_action_sync_execute_job_set_regs(action, &cjob);
 	if (rc != 0){
         printf("error while setting registers");
     }
+    /* Start Action and wait for finish */
+    snap_action_start(action);
 
-    // Call the action will:
-	snap_action_start(action);
+	//--- Collect the timestamp AFTER the call of the action
+	gettimeofday(&etime, NULL);
 
+    /////////////////////////////////////////////////////////////////////////
+    //                      START PROCESSING
+    ////////////////////////////////////////////////////////////////////////
+    
     //Initialize vector
     for (int k=0; k<vector_size; k++){
         obuff[k] = k;
@@ -225,6 +239,8 @@ int main(int argc, char *argv[])
     read_flag[0] = 1;
     write_flag[0] = 1;
 
+    gettimeofday(&begin_time, NULL);
+    
     for(int i=0; i<max_iteration;i++){
         
         while(write_flag[0] == 1 || read_flag[0] == 1){} // FPGA is writting or reading -> flags go to 0
@@ -246,6 +262,8 @@ int main(int argc, char *argv[])
 
     }
 	
+    gettimeofday(&end_time, NULL);
+    
     switch(cjob.retc) {
         case SNAP_RETC_SUCCESS:
             fprintf(stdout, "SUCCESS\n");
@@ -261,7 +279,16 @@ int main(int argc, char *argv[])
             break;
     }
 
-	// Detach action + disallocate the card
+	// Display the time of the action call
+	fprintf(stdout, "SNAP registers set + action start took %lld usec\n",
+		(long long)timediff_usec(&etime, &stime));
+
+	// Display the time of the action excecution
+    lcltime = (long long)(timediff_usec(&begin_time, &end_time));
+    fprintf(stdout, "SNAP action average processing time for %u iteration is %f usec\n",
+                max_iteration, (float)lcltime/(float)(max_iteration));
+    
+    // Detach action + disallocate the card
 	snap_detach_action(action);
 	snap_card_free(card);
 
