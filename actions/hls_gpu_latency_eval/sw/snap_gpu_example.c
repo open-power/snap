@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
     }
 
     printf("*********** Initialization *************\n");
-    printf("Writting [%d,%d,%d, ... , %d]\n",obuff[0],obuff[1],obuff[2],obuff[vector_size-1]);
+    printf("Writting [%u,%u,%u, ... , %u]\n",obuff[0],obuff[1],obuff[2],obuff[vector_size-1]);
     
     // FPGA can read vector and write buffer
     read_flag[0] = 1;
@@ -233,9 +233,9 @@ int main(int argc, char *argv[])
             obuff[k]=ibuff[k]+ibuff[k];
         }
         
-        printf("*********** Interation %d/%d *************\n", i+1, max_iteration);
-        printf("Received [%d,%d,%d, ... , %d]\n",ibuff[0],ibuff[1],ibuff[2],ibuff[vector_size-1]);
-        printf("Writting [%d,%d,%d, ... , %d]\n",obuff[0],obuff[1],obuff[2],obuff[vector_size-1]);
+        printf("*********** Interation %u/%u *************\n", i+1, max_iteration);
+        printf("Received [%u,%u,%u, ... , %u]\n",ibuff[0],ibuff[1],ibuff[2],ibuff[vector_size-1]);
+        printf("Writting [%u,%u,%u, ... , %u]\n",obuff[0],obuff[1],obuff[2],obuff[vector_size-1]);
         
         //FPGA can read
         read_flag[0] = 1;
