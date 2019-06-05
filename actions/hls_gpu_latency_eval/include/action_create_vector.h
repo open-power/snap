@@ -25,7 +25,7 @@ extern "C" {
 
 /* This number is unique and is declared in ~snap/ActionTypes.md */
 #define GPU_LATENCY_EVAL_ACTION_TYPE 0x1014100F
-#define MAX_SIZE 1024*4
+#define MAX_SIZE (1024/16)*4
 /* Data structure used to exchange information between action and application */
 /* Size limit is 108 Bytes */
 typedef struct gpu_example_job {

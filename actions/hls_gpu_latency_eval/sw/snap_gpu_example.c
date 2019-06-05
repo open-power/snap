@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
 		(long long)timediff_usec(&etime, &stime));
 
 	// Display the time of the action excecution
-    lcltime = (long long)(timediff_usec(&begin_time, &end_time));
+    lcltime = (long long)(timediff_usec(&end_time, &begin_time));
     fprintf(stdout, "SNAP action average processing time for %u iteration is %f usec\n",
                 max_iteration, (float)lcltime/(float)(max_iteration));
     

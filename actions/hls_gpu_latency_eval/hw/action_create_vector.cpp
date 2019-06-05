@@ -60,14 +60,10 @@ static void mbus_to_anytype(snap_membus_t *data_to_be_written, mat_elmt_t *table
 	}
 }
 
-void read_data(snap_membus_t *din_gmem, uint64_t input, mat_elmt_t *buffer, uint64_t size){
+void read_data(snap_membus_t *din_gmem, uint64_t input, snap_membus_t *buffer, uint64_t size){
     
     uint32_t uint32_to_transfer_read, burst_length_read,uint32_in_last_word_read, index;
     uint64_t i_idx,size_read;
-    snap_membus_t vector_blocks_512b_read[BURST_LENGTH]; // 512bits * 64  
-    mat_elmt_t vector_block_read[DATA_PER_W*BURST_LENGTH]; // (16x 32bits) * 64
-    mat_elmt_t value;
-
     i_idx = input;
     size_read = size;
     index = 0;
@@ -79,20 +75,9 @@ void read_data(snap_membus_t *din_gmem, uint64_t input, mat_elmt_t *buffer, uint
         uint32_to_transfer_read = (burst_length_read-1) * DATA_PER_W + uint32_in_last_word_read;
         
         /* Read N word_t (N = size of a burst) */
-        memcpy(&vector_blocks_512b_read, din_gmem + i_idx, burst_length_read*DATA_PER_W*sizeof(uint32_t));
-        mbus_to_anytype(vector_blocks_512b_read,vector_block_read);
-
-
-        /* Writting the values to dout_gmem*/
-        read_vector_filling:
-        for (int k=0; k < burst_length_read; k++) {
-            for (int i = 0; i < DATA_PER_W; i++ ) {
-#pragma HLS UNROLL
-                buffer[index] = vector_block_read[k * DATA_PER_W + i];
-                index++;
-            }
-        }
-
+        memcpy(buffer + index, din_gmem + i_idx, burst_length_read*DATA_PER_W*sizeof(uint32_t));
+        
+        index+= uint32_to_transfer_read;
         size_read -= uint32_to_transfer_read;
         i_idx += burst_length_read;
     }
@@ -102,12 +87,10 @@ void read_data(snap_membus_t *din_gmem, uint64_t input, mat_elmt_t *buffer, uint
     //}
 }
 
-void write_data(snap_membus_t *dout_gmem, uint64_t output, mat_elmt_t *buffer,  uint64_t size){
+void write_data(snap_membus_t *dout_gmem, uint64_t output, snap_membus_t *buffer,  uint64_t size){
 
     uint64_t size_write=0x0, o_idx;
     uint32_t uint32_to_transfer_write, burst_length_write,uint32_in_last_word_write, index;
-    snap_membus_t vector_blocks_512b_write[BURST_LENGTH]; // 512bits * 64  
-    mat_elmt_t vector_block_write[DATA_PER_W*BURST_LENGTH]; // (16x 32bits) * 64
 
     o_idx = output;
     size_write = size;
@@ -121,21 +104,10 @@ void write_data(snap_membus_t *dout_gmem, uint64_t output, mat_elmt_t *buffer,  
         uint32_in_last_word_write = (size_write/DATA_PER_W < BURST_LENGTH) ? size_write% DATA_PER_W : DATA_PER_W;
         uint32_to_transfer_write = (burst_length_write-1) * DATA_PER_W + uint32_in_last_word_write;
 
-        /* Writting the values to dout_gmem*/
-        write_vector_filling:
-        for (int k=0; k < burst_length_write; k++) {
-        	for (int i = 0; i < DATA_PER_W; i++ ) {
-#pragma HLS UNROLL
-                vector_block_write[k * DATA_PER_W + i] = buffer[index];
-                index++;
-            }
-        }
-
-        anytype_to_mbus(vector_block_write, vector_blocks_512b_write);
-
         /* Write out N word_t (N = size of a burst) */
-        memcpy(dout_gmem + o_idx, &vector_blocks_512b_write, burst_length_write*DATA_PER_W*sizeof(uint32_t));
+        memcpy(dout_gmem + o_idx, buffer + index, burst_length_write*DATA_PER_W*sizeof(uint32_t));
 
+        index+= uint32_to_transfer_write;
         size_write -= uint32_to_transfer_write;
         o_idx += burst_length_write;
     }
@@ -169,9 +141,9 @@ static int process_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
     uint64_t o_idx, i_idx;
     
     //shared buffer
-    mat_elmt_t bufferA[MAX_SIZE] = {}; // 32bits * size
-    mat_elmt_t bufferB[MAX_SIZE] = {}; // 32bits * size
-    
+    snap_membus_t bufferA[MAX_SIZE] = {}; // 32bits * size
+    snap_membus_t bufferB[MAX_SIZE] = {}; // 32bits * size
+
     // Data initialization
     i_idx = act_reg->Data.read.addr >> ADDR_RIGHT_SHIFT;
     o_idx = act_reg->Data.write.addr >> ADDR_RIGHT_SHIFT;
@@ -180,6 +152,14 @@ static int process_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
     addr_write_flag = act_reg->Data.write_flag.addr >> ADDR_RIGHT_SHIFT;
     max_iteration = act_reg->Data.max_iteration;
     iteration_i = 0;
+
+    init_loop:
+    for (int i=0;i<MAX_SIZE;i++){
+#pragma HLS UNROLL
+        bufferA[i] = 1;
+        bufferB[i] = 1;
+    }
+
 
     main_loop:
     while (iteration_i<max_iteration){
@@ -190,44 +170,59 @@ static int process_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
             read_done = false;
         }
 
-        //----------------------------------------------------------------------
-        //------------------       READING BLOCK     ---------------------------
-        //----------------------------------------------------------------------
-        
-        // Data reading or flag checking
-        if(read_flag){
-            switch (iteration_i%2){
-                case 0:
-                    read_data(din_gmem, i_idx, bufferA, size);
-                    read_done = true;
-                    break;
-                case 1:
-                    read_data(din_gmem, i_idx, bufferB, size);
-                    read_done = true;
-                    break;
+        switch (iteration_i%2){
+        case 0:
+    
+            //----------------------------------------------------------------------
+            //------------------       READING BLOCK     ---------------------------
+            //----------------------------------------------------------------------
+            
+            // Data reading or flag checking
+            if(read_flag){
+                read_data(din_gmem, i_idx, bufferA, size);
+                read_done = true;
+            } else {
+                read_flag_mem(din_gmem, addr_read_flag, &read_flag);
             }
-        } else {
-            read_flag_mem(din_gmem, addr_read_flag, &read_flag);
-        }
-        
-        //----------------------------------------------------------------------
-        //------------------       WRITTING BLOCK     --------------------------
-        //----------------------------------------------------------------------
+            
+            //----------------------------------------------------------------------
+            //------------------       WRITTING BLOCK     --------------------------
+            //----------------------------------------------------------------------
 
-        // Data writting or flag checking
-        if(write_flag){
-            switch (iteration_i%2){
-                case 0:
-                    write_data(dout_gmem, o_idx, bufferB, size);
-                    write_done = true;
-                    break;
-                case 1:
-                    write_data(dout_gmem, o_idx, bufferA, size);
-                    write_done = true;
-                    break;
+            // Data writting or flag checking
+            if(write_flag){
+                write_data(dout_gmem, o_idx, bufferB, size);
+                write_done = true;
+            } else {
+                read_flag_mem(din_gmem, addr_write_flag, &write_flag);
             }
-        } else {
-            read_flag_mem(din_gmem, addr_write_flag, &write_flag);
+            break;
+        case 1:
+
+            //----------------------------------------------------------------------
+            //------------------       READING BLOCK     ---------------------------
+            //----------------------------------------------------------------------
+            
+            // Data reading or flag checking
+            if(read_flag){
+                read_data(din_gmem, i_idx, bufferB, size);
+                read_done = true;
+            } else {
+                read_flag_mem(din_gmem, addr_read_flag, &read_flag);
+            }
+            
+            //----------------------------------------------------------------------
+            //------------------       WRITTING BLOCK     --------------------------
+            //----------------------------------------------------------------------
+
+            // Data writting or flag checking
+            if(write_flag){
+                write_data(dout_gmem, o_idx, bufferA, size);
+                write_done = true;
+            } else {
+                read_flag_mem(din_gmem, addr_write_flag, &write_flag);
+            }
+            break;
         }
 
         // Writting flag on memory and changing internal values of those flags
