@@ -87,6 +87,7 @@ void read_data(snap_membus_t *din_gmem, uint64_t input, mat_elmt_t *buffer, uint
         read_vector_filling:
         for (int k=0; k < burst_length_read; k++) {
             for (int i = 0; i < DATA_PER_W; i++ ) {
+#pragma HLS UNROLL
                 buffer[index] = vector_block_read[k * DATA_PER_W + i];
                 index++;
             }
@@ -123,7 +124,8 @@ void write_data(snap_membus_t *dout_gmem, uint64_t output, mat_elmt_t *buffer,  
         /* Writting the values to dout_gmem*/
         write_vector_filling:
         for (int k=0; k < burst_length_write; k++) {
-            for (int i = 0; i < DATA_PER_W; i++ ) {
+        	for (int i = 0; i < DATA_PER_W; i++ ) {
+#pragma HLS UNROLL
                 vector_block_write[k * DATA_PER_W + i] = buffer[index];
                 index++;
             }
@@ -255,11 +257,11 @@ void hls_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
 {
     // Host Memory AXI Interface - CANNOT BE REMOVED - NO CHANGE BELOW
 #pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512 \
-  max_read_burst_length=16  max_write_burst_length=16
+  max_read_burst_length=64  max_write_burst_length=64
 #pragma HLS INTERFACE s_axilite port=din_gmem bundle=ctrl_reg offset=0x030
 
 #pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512 \
-  max_read_burst_length=16  max_write_burst_length=16
+  max_read_burst_length=64  max_write_burst_length=64
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg offset=0x040
 
     // Host Memory AXI Lite Master Interface - NO CHANGE BELOW
