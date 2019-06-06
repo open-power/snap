@@ -61,7 +61,7 @@ static void mbus_to_anytype(snap_membus_t *data_to_be_written, mat_elmt_t *table
 }
 
 void read_data(snap_membus_t *din_gmem, uint64_t input, snap_membus_t *buffer, uint64_t size){
-    
+#pragma HLS INLINE
     uint32_t uint32_to_transfer_read, burst_length_read,uint32_in_last_word_read, index;
     uint64_t i_idx,size_read;
     i_idx = input;
@@ -88,7 +88,7 @@ void read_data(snap_membus_t *din_gmem, uint64_t input, snap_membus_t *buffer, u
 }
 
 void write_data(snap_membus_t *dout_gmem, uint64_t output, snap_membus_t *buffer,  uint64_t size){
-
+#pragma HLS INLINE
     uint64_t size_write=0x0, o_idx;
     uint32_t uint32_to_transfer_write, burst_length_write,uint32_in_last_word_write, index;
 
@@ -141,8 +141,8 @@ static int process_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
     uint64_t o_idx, i_idx;
     
     //shared buffer
-    snap_membus_t bufferA[MAX_SIZE] = {}; // 32bits * size
-    snap_membus_t bufferB[MAX_SIZE] = {}; // 32bits * size
+    snap_membus_t bufferA[MAX_SIZE] = {0}; // 32bits * size
+    snap_membus_t bufferB[MAX_SIZE] = {0}; // 32bits * size
 
     // Data initialization
     i_idx = act_reg->Data.read.addr >> ADDR_RIGHT_SHIFT;
@@ -153,14 +153,6 @@ static int process_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
     max_iteration = act_reg->Data.max_iteration;
     iteration_i = 0;
 
-    init_loop:
-    for (int i=0;i<MAX_SIZE;i++){
-#pragma HLS UNROLL
-        bufferA[i] = 1;
-        bufferB[i] = 1;
-    }
-
-
     main_loop:
     while (iteration_i<max_iteration){
         
@@ -170,60 +162,29 @@ static int process_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
             read_done = false;
         }
 
-        switch (iteration_i%2){
-        case 0:
-    
-            //----------------------------------------------------------------------
-            //------------------       READING BLOCK     ---------------------------
-            //----------------------------------------------------------------------
-            
-            // Data reading or flag checking
-            if(read_flag){
+        /////////////////////////////////////////////////////////////////
+        //                  DATA PROCESS BLOCK
+        ////////////////////////////////////////////////////////////////
+        if (read_flag && write_flag){ 
+            switch (iteration_i%2){
+            case 0:
                 read_data(din_gmem, i_idx, bufferA, size);
-                read_done = true;
-            } else {
-                read_flag_mem(din_gmem, addr_read_flag, &read_flag);
-            }
-            
-            //----------------------------------------------------------------------
-            //------------------       WRITTING BLOCK     --------------------------
-            //----------------------------------------------------------------------
-
-            // Data writting or flag checking
-            if(write_flag){
                 write_data(dout_gmem, o_idx, bufferB, size);
-                write_done = true;
-            } else {
-                read_flag_mem(din_gmem, addr_write_flag, &write_flag);
-            }
-            break;
-        case 1:
-
-            //----------------------------------------------------------------------
-            //------------------       READING BLOCK     ---------------------------
-            //----------------------------------------------------------------------
-            
-            // Data reading or flag checking
-            if(read_flag){
-                read_data(din_gmem, i_idx, bufferB, size);
                 read_done = true;
-            } else {
-                read_flag_mem(din_gmem, addr_read_flag, &read_flag);
-            }
-            
-            //----------------------------------------------------------------------
-            //------------------       WRITTING BLOCK     --------------------------
-            //----------------------------------------------------------------------
-
-            // Data writting or flag checking
-            if(write_flag){
-                write_data(dout_gmem, o_idx, bufferA, size);
                 write_done = true;
-            } else {
-                read_flag_mem(din_gmem, addr_write_flag, &write_flag);
+                break;
+            case 1:
+                read_data(din_gmem, i_idx, bufferB, size);
+                write_data(dout_gmem, o_idx, bufferA, size);
+                read_done = true;
+                write_done = true;
+                break;
             }
-            break;
         }
+
+        ////////////////////////////////////////////////////////////////
+        //                     FLAG PROCESS BLOCK
+        ///////////////////////////////////////////////////////////////
 
         // Writting flag on memory and changing internal values of those flags
         if (write_done){
@@ -236,6 +197,13 @@ static int process_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
             read_flag = false;
         }
          
+        if (!read_flag){
+            read_flag_mem(din_gmem, addr_read_flag, &read_flag);
+        }
+        
+        if (!write_flag){
+            read_flag_mem(din_gmem, addr_write_flag, &write_flag);
+        }
     }
 
     if (iteration_i == max_iteration-1){
