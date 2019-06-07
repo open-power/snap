@@ -372,7 +372,7 @@
           screen -S $STY -X screen
 
           screen_pid=$(echo $STY | awk '{print strtonum($1)}')
-          shell_pid=$(ps --ppid $screen_pid -ho pid | tail -n1)
+          shell_pid=$(ps --ppid $screen_pid -ho pid | tail -n1 | awk '{$1=$1};1')
 
           # Wait for the shell to exit (not a direct child process)
           tail --pid=$shell_pid -f /dev/null &
