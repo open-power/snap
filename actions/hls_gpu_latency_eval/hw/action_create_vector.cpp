@@ -115,10 +115,11 @@ void write_data(snap_membus_t *dout_gmem, uint64_t output, snap_membus_t *buffer
    // }
 }
 
-void read_flag_mem(snap_membus_t *din_gmem, uint64_t flag_addr, bool *flag){
+void read_flag_mem(snap_membus_t *din_gmem, uint64_t flag_addr, bool *flag, uint64_t *addr){
     snap_membus_t flag_512b;
     memcpy(&flag_512b, din_gmem + flag_addr, BPERDW);
     *flag = (bool)flag_512b(0,0);
+    *addr = (uint64_t)flag_512b((64-1)+8,8) >> ADDR_RIGHT_SHIFT; // 64bit adress is stored after flag byte
 }
 
 void write_flag_mem(snap_membus_t *dout_gmem, uint64_t flag_addr, bool flag){
@@ -139,8 +140,8 @@ static int process_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
     uint64_t o_idx, i_idx;
     
     //shared buffer
-    snap_membus_t bufferA[MAX_SIZE] = {0}; // 64 bytes * MAX_SIZE #4MB for test
-    snap_membus_t bufferB[MAX_SIZE] = {0}; // 64 bytes * MAX_SIZE #4MB for test
+    snap_membus_t bufferA[MAX_SIZE] = {1}; // 64 bytes * MAX_SIZE #4MB for test
+    snap_membus_t bufferB[MAX_SIZE] = {1}; // 64 bytes * MAX_SIZE #4MB for test
 
     // Data initialization
     i_idx = act_reg->Data.read.addr >> ADDR_RIGHT_SHIFT;
@@ -196,11 +197,11 @@ static int process_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
         }
          
         if (!read_flag){
-            read_flag_mem(din_gmem, addr_read_flag, &read_flag);
+            read_flag_mem(din_gmem, addr_read_flag, &read_flag, &i_idx);
         }
         
         if (!write_flag){
-            read_flag_mem(din_gmem, addr_write_flag, &write_flag);
+            read_flag_mem(din_gmem, addr_write_flag, &write_flag, &o_idx);
         }
     }
 

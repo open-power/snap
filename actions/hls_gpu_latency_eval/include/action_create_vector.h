@@ -25,7 +25,7 @@ extern "C" {
 
 /* This number is unique and is declared in ~snap/ActionTypes.md */
 #define GPU_LATENCY_EVAL_ACTION_TYPE 0x1014100F
-#define N_MAX 1024*1024
+#define N_MAX 1024*128
 #define BYTES_MAX N_MAX*4  // 4MB buffer
 #define MAX_SIZE BYTES_MAX/64
 /* Data structure used to exchange information between action and application */

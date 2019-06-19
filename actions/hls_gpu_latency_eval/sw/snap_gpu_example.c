@@ -90,6 +90,14 @@ static void snap_prepare_gpu_example(struct snap_job *cjob,
     snap_job_set(cjob, mjob, sizeof(*mjob), NULL, 0);
 }
 
+static void update_flag(uint8_t volatile **flag, uint8_t flag_value, uint64_t addr){
+    (*flag)[0] = (uint8_t)flag_value;
+    for (int i = 0; i < (int)sizeof(uint64_t); i++){
+        (*flag)[i+1] = (addr >> 8*i) & 0xFF;
+    }
+
+}
+
 /* main program of the application for the hls_helloworld example        */
 /* This application will always be run on CPU and will call either       */
 /* a software action (CPU executed) or a hardware action (FPGA executed) */
@@ -236,8 +244,8 @@ int main(int argc, char *argv[])
     printf("Writting [%u,%u,%u, ... , %u]\n",obuff[0],obuff[1],obuff[2],obuff[vector_size-1]);
     
     // FPGA can read vector and write buffer
-    read_flag[0] = 1;
-    write_flag[0] = 1;
+    update_flag(&read_flag, 1, addr_read);
+    update_flag(&write_flag, 1, addr_write);
 
     gettimeofday(&begin_time, NULL);
     
@@ -254,14 +262,12 @@ int main(int argc, char *argv[])
         printf("Writting [%u,%u,%u, ... , %u]\n",obuff[0],obuff[1],obuff[2],obuff[vector_size-1]);
         
         //FPGA can read
-        read_flag[0] = 1;
+        update_flag(&read_flag, 1, addr_read);
 
         //FPGA can write
-        write_flag[0] = 1;
-
-
+        update_flag(&write_flag, 1, addr_write);
     }
-	
+
     gettimeofday(&end_time, NULL);
     
     switch(cjob.retc) {
