@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 International Business Machines
+ * Copyright 2019 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,75 +15,40 @@
  */
 
 /*
- * SNAP GPU_LATENCY_EVAL EXAMPLE
+ * SNAP PARALLEL_MEMCPY EXAMPLE
  *
- * Simple application that illustrates how to exchange data between an FPGA
- * action and a GPU kernel in one main process
+ * Simple application that illustrates how to read(write) data at the same
+ * time from(to) HOST memory. Action will perform reads(writes) max_iteration
+ * times and will swap reading(writting) buffer between each iterations.
  */
 
 #include <string.h>
 #include "ap_int.h"
-#include "action_create_vector.H"
-
-
-// convert any type to mbus data
-static void anytype_to_mbus(mat_elmt_t *table_decimal_out, snap_membus_t *data_to_be_written)
-{
-	union {
-		mat_elmt_t   value_d;
-		uint64_t     value_u;
-	};
-	loop1_d2m1: for(int i = 0; i < BURST_LENGTH; i++) {
-#pragma HLS PIPELINE
-  	   loop1_d2m2: for(int j = 0; j < DATA_PER_W; j++)
-	   {
-		value_d = table_decimal_out[i*DATA_PER_W + j];
-		data_to_be_written[i]((8*sizeof(mat_elmt_t)*(j+1))-1, (8*sizeof(mat_elmt_t)*j)) = (uint64_t)value_u;
-	   }
-	}
-}
-
-// convert  mbus data to any type
-static void mbus_to_anytype(snap_membus_t *data_to_be_written, mat_elmt_t *table_decimal_out)
-{
-	union {
-		mat_elmt_t   value_d;
-		uint64_t     value_u;
-	};
-	loop2_d2m1: for(int i = 0; i < BURST_LENGTH; i++) {
-#pragma HLS PIPELINE
-  	   loop2_d2m2: for(int j = 0; j < DATA_PER_W; j++)
-	   {
-		value_u = data_to_be_written[i]((8*sizeof(mat_elmt_t)*(j+1))-1, (8*sizeof(mat_elmt_t)*j));
-        table_decimal_out[i*DATA_PER_W + j] = (mat_elmt_t)value_d;
-	   }
-	}
-}
+#include "action_parallel_read_write.H"
 
 void read_data(snap_membus_t *din_gmem, uint64_t input, snap_membus_t *buffer, uint64_t size){
     uint32_t uint32_to_transfer_read, burst_length_read,uint32_in_last_word_read, index;
     uint64_t i_idx,size_read;
+
     i_idx = input;
     size_read = size;
     index = 0;
+
     vector_reading_loop:
     while (size_read > 0) {
-        /* Set the number of burst to read */
+
+ 	/* Set the number of burst to read */
         burst_length_read = MIN(BURST_LENGTH, (size_read/DATA_PER_W)+1);
         uint32_in_last_word_read = (size_read/DATA_PER_W < BURST_LENGTH) ? size_read% DATA_PER_W : DATA_PER_W;
         uint32_to_transfer_read = (burst_length_read-1) * DATA_PER_W + uint32_in_last_word_read;
         
         /* Read N word_t (N = size of a burst) */
-        memcpy(buffer + index, din_gmem + i_idx, burst_length_read*DATA_PER_W*sizeof(uint32_t));
+        memcpy(buffer + index, din_gmem + i_idx, uint32_to_transfer_read*sizeof(uint32_t));
         
         index+= uint32_to_transfer_read;
         size_read -= uint32_to_transfer_read;
         i_idx += burst_length_read;
     }
-
-    //if(size_read == 0){
-    //    *done = true;
-    //}
 }
 
 void write_data(snap_membus_t *dout_gmem, uint64_t output, snap_membus_t *buffer,  uint64_t size){
@@ -103,16 +68,12 @@ void write_data(snap_membus_t *dout_gmem, uint64_t output, snap_membus_t *buffer
         uint32_to_transfer_write = (burst_length_write-1) * DATA_PER_W + uint32_in_last_word_write;
 
         /* Write out N word_t (N = size of a burst) */
-        memcpy(dout_gmem + o_idx, buffer + index, burst_length_write*DATA_PER_W*sizeof(uint32_t));
+        memcpy(dout_gmem + o_idx, buffer + index, uint32_to_transfer_write*sizeof(uint32_t));
 
         index+= uint32_to_transfer_write;
         size_write -= uint32_to_transfer_write;
         o_idx += burst_length_write;
     }
-
-   // if (size_write == 0){
-   //     *done = true;
-   // }
 }
 
 void read_flag_mem(snap_membus_t *din_gmem, uint64_t flag_addr, bool *flag, uint64_t *addr){
@@ -127,6 +88,8 @@ void write_flag_mem(snap_membus_t *dout_gmem, uint64_t flag_addr, bool flag){
     flag_512b(0,0) = flag;
     memcpy(dout_gmem + flag_addr,&flag_512b, BPERDW);
 }
+
+
 //----------------------------------------------------------------------
 //--- MAIN PROGRAM -----------------------------------------------------
 //----------------------------------------------------------------------
@@ -239,7 +202,7 @@ void hls_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
     // Used for the discovery phase of the cards */
     switch (act_reg->Control.flags) {
     case 0:
-	Action_Config->action_type = GPU_LATENCY_EVAL_ACTION_TYPE; //TO BE ADAPTED
+	Action_Config->action_type = PARALLEL_MEMCPY_ACTION_TYPE; //TO BE ADAPTED
 	Action_Config->release_level = RELEASE_LEVEL;
 	act_reg->Control.Retc = 0xe00f;
 	return;

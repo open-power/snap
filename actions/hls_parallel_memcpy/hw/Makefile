@@ -37,9 +37,9 @@ endif
 endif
 
 # This is solution specific. Check if we can replace this by generics too.
-SOLUTION_NAME ?= gpu_example
-SOLUTION_DIR ?= hlsCreateVector
-srcs += action_create_vector.cpp
+SOLUTION_NAME ?= parallel_memcpy
+SOLUTION_DIR ?= hlsParallelReadWrite
+srcs += action_parallel_read_write.cpp
 
 # If you have the action code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/hls.mk

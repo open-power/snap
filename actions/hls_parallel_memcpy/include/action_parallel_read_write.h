@@ -1,8 +1,8 @@
-#ifndef __ACTION_NEW_VECTOR_H__
-#define __ACTION_NEW_VECTOR_H__
+#ifndef __ACTION_PARALLEL_MEMCPY_H__
+#define __ACTION_PARALLEL_MEMCPY_H__
 
 /*
- * Copyright 2017 International Business Machines
+ * Copyright 2019 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,25 +24,24 @@ extern "C" {
 #endif
 
 /* This number is unique and is declared in ~snap/ActionTypes.md */
-#define GPU_LATENCY_EVAL_ACTION_TYPE 0x1014100F
+#define PARALLEL_MEMCPY_ACTION_TYPE 0x1014100F
 #define N_MAX 1024*128
 #define BYTES_MAX N_MAX*4  // 4MB buffer
 #define MAX_SIZE BYTES_MAX/64
+	
 /* Data structure used to exchange information between action and application */
 /* Size limit is 108 Bytes */
-typedef struct gpu_example_job {
+typedef struct parallel_memcpy_job {
 	uint64_t vector_size;	/* input data */
-    uint64_t max_iteration;
+	uint64_t max_iteration;
 	struct snap_addr write;
-    struct snap_addr read;
-    struct snap_addr read_flag;
-    struct snap_addr write_flag;
-} gpu_example_job_t;
-
-void memset_volatile(volatile void *s, char c, size_t n);
+	struct snap_addr read;
+	struct snap_addr read_flag;
+	struct snap_addr write_flag;
+} parallel_memcpy_job_t;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif	/* __ACTION_NEW_VECTOR_H__ */
+#endif	/* __ACTION_PARALLEL_MEMCPY_H__ */
