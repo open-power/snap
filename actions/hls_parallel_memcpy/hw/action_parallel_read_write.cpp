@@ -27,8 +27,8 @@
 #include "action_parallel_read_write.H"
 
 void read_data(snap_membus_t *din_gmem, uint64_t input, snap_membus_t *buffer, uint64_t size){
-    uint32_t uint32_to_transfer_read, burst_length_read,uint32_in_last_word_read, index;
-    uint64_t i_idx,size_read;
+    uint32_t uint32_to_transfer_read=0, burst_length_read=0,uint32_in_last_word_read=0, index=0;
+    uint64_t i_idx=0,size_read=0;
 
     i_idx = input;
     size_read = size;
@@ -52,8 +52,8 @@ void read_data(snap_membus_t *din_gmem, uint64_t input, snap_membus_t *buffer, u
 }
 
 void write_data(snap_membus_t *dout_gmem, uint64_t output, snap_membus_t *buffer,  uint64_t size){
-    uint64_t size_write=0x0, o_idx;
-    uint32_t uint32_to_transfer_write, burst_length_write,uint32_in_last_word_write, index;
+    uint32_t uint32_to_transfer_write=0, burst_length_write=0,uint32_in_last_word_write=0, index=0;
+    uint64_t size_write=0, o_idx=0;
 
     o_idx = output;
     size_write = size;
@@ -63,7 +63,7 @@ void write_data(snap_membus_t *dout_gmem, uint64_t output, snap_membus_t *buffer
     while (size_write > 0) {
 
         /* Set the number of burst to write */
-        burst_length_write = MIN(BURST_LENGTH, (size/DATA_PER_W)+1);
+        burst_length_write = MIN(BURST_LENGTH, (size_write/DATA_PER_W)+1);
         uint32_in_last_word_write = (size_write/DATA_PER_W < BURST_LENGTH) ? size_write% DATA_PER_W : DATA_PER_W;
         uint32_to_transfer_write = (burst_length_write-1) * DATA_PER_W + uint32_in_last_word_write;
 
@@ -79,8 +79,8 @@ void write_data(snap_membus_t *dout_gmem, uint64_t output, snap_membus_t *buffer
 void read_flag_mem(snap_membus_t *din_gmem, uint64_t flag_addr, bool *flag, uint64_t *addr){
     snap_membus_t flag_512b;
     memcpy(&flag_512b, din_gmem + flag_addr, BPERDW);
-    *flag = (bool)flag_512b(0,0);
     *addr = (uint64_t)flag_512b((64-1)+8,8) >> ADDR_RIGHT_SHIFT; // 64bit adress is stored after flag byte
+    *flag = (bool)flag_512b(0,0);
 }
 
 void write_flag_mem(snap_membus_t *dout_gmem, uint64_t flag_addr, bool flag){
