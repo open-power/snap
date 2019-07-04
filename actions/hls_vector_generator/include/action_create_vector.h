@@ -1,8 +1,8 @@
-#ifndef __ACTION_NEW_VECTOR_H__
-#define __ACTION_NEW_VECTOR_H__
+#ifndef __ACTION_CREATE_VECTOR_H__
+#define __ACTION_CREATE_VECTOR_H__
 
 /*
- * Copyright 2017 International Business Machines
+ * Copyright 2019 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,17 +24,17 @@ extern "C" {
 #endif
 
 /* This number is unique and is declared in ~snap/ActionTypes.md */
-#define GPU_EXAMPLE_ACTION_TYPE 0x1014100E
+#define VECTOR_GENERATOR_ACTION_TYPE 0x1014100E
 
 /* Data structure used to exchange information between action and application */
 /* Size limit is 108 Bytes */
-typedef struct gpu_example_job {
-	uint64_t vectorSize;	/* input data */
-	struct snap_addr out;   /* offset table */
-} gpu_example_job_t;
+typedef struct vector_generator_job {
+	uint64_t vector_size;	/* size of the vector to be generated */
+	struct snap_addr out;   /* out address to write generated vector */
+} vector_generator_job_t;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif	/* __ACTION_NEW_VECTOR_H__ */
+#endif	/* __ACTION_CREATE_VECTOR_H__ */

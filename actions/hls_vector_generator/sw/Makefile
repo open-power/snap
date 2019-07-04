@@ -38,10 +38,10 @@ endif
 
 # This is solution specific. Check if we can replace this by generics too.
 
-snap_gpu_example: kernel.cu.o action_create_vector.o
+snap_gpu_example: action_create_vector.o
 snap_gpu_example_objs = action_create_vector.o
 
-projs += snap_gpu_example
+projs += snap_vector_generator
 
 # If you have the host code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/software.mk

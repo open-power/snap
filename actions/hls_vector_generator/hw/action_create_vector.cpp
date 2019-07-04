@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 International Business Machines
+ * Copyright 2019 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,11 @@
  */
 
 /*
- * SNAP GPU_EXAMPLE EXAMPLE
+ * SNAP VECTOR_GENERATOR EXAMPLE
  *
- * Simple application that illustrates how to exchange data between an FPGA
- * action and a GPU kernel in one main process
+ * Simple action that generates a vector of size vector_size
+ * and writes the generated vector in out address.
+ * generated vector is a uint32_t array : [0,1,2, ..., vector_size-1]
  */
 
 #include <string.h>
@@ -42,6 +43,7 @@ static void anytype_to_mbus(mat_elmt_t *table_decimal_out, snap_membus_t *data_t
 	   }
 	}
 }
+
 //----------------------------------------------------------------------
 //--- MAIN PROGRAM -----------------------------------------------------
 //----------------------------------------------------------------------
@@ -55,7 +57,7 @@ static int process_action(snap_membus_t *dout_gmem,
 
     /* byte address received need to be aligned with port width */
     o_idx = act_reg->Data.out.addr >> ADDR_RIGHT_SHIFT;
-    size = act_reg->Data.vectorSize;
+    size = act_reg->Data.vector_size;
     vector_value_i = 0;
 
     main_loop:
@@ -115,7 +117,7 @@ void hls_action(snap_membus_t *dout_gmem,
     // Used for the discovery phase of the cards */
     switch (act_reg->Control.flags) {
     case 0:
-	Action_Config->action_type = GPU_EXAMPLE_ACTION_TYPE; //TO BE ADAPTED
+	Action_Config->action_type = VECTOR_GENERATOR_ACTION_TYPE; //TO BE ADAPTED
 	Action_Config->release_level = RELEASE_LEVEL;
 	act_reg->Control.Retc = 0xe00f;
 	return;
@@ -136,7 +138,7 @@ int main(void)
 {
 #define MEMORY_LINES BURST_LENGTH
     int rc = 0;
-    int vectorSize=128;
+    int vector_size=128;
     unsigned int i;
     static snap_membus_t  dout_gmem[MEMORY_LINES];
 
@@ -160,10 +162,10 @@ int main(void)
     // set flags != 0 to have action processed
     act_reg.Control.flags = 0x1; /* just not 0x0 */
 
-    act_reg.Data.vectorSize = vectorSize; //In 2B words
+    act_reg.Data.vector_size = vector_size; //In 4B words
 
     act_reg.Data.out.addr = 0;
-    act_reg.Data.out.size = vectorSize; //In 2B words
+    act_reg.Data.out.size = vector_size; //In 4B words
     act_reg.Data.out.type = SNAP_ADDRTYPE_HOST_DRAM;
 
     printf("Action call \n");
@@ -173,9 +175,10 @@ int main(void)
 	return 1;
     }
 
-    //for (int i = 0; i< vectorSize; i++){
+    //for (int i = 0; i< vector_size; i++){
     	//printf("%d\n", dout_gmem[i]);
     //}
+
     printf(">> ACTION TYPE = %08lx - RELEASE_LEVEL = %08lx <<\n",
 		    (unsigned int)Action_Config.action_type,
 		    (unsigned int)Action_Config.release_level);

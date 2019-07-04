@@ -37,8 +37,8 @@ endif
 endif
 
 # This is solution specific. Check if we can replace this by generics too.
-SOLUTION_NAME ?= gpu_example
-SOLUTION_DIR ?= hlsCreateVector
+SOLUTION_NAME ?= vector_generator
+SOLUTION_DIR ?= hlsVectorGenerator
 srcs += action_create_vector.cpp
 
 # If you have the action code outside of the default snap directory structure, 

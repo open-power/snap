@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 International Business Machines
+ * Copyright 2019 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 /*
- * Example to use the FPGA to generate a vetor of size vectorSize
+ * Example to use the FPGA to generate a vector of size vector_size
  */
 
 #include <stdio.h>
@@ -55,7 +55,7 @@ static int mmio_read32(struct snap_card *card,
 static int action_main(struct snap_sim_action *action,
 		       void *job, unsigned int job_len)
 {
-	struct gpu_example_job *js = (struct gpu_example_job *)job;
+	struct vector_generator_job *js = (struct vector_generator_job *)job;
 	uint32_t *dst;
 	uint64_t len;
 	size_t i;
@@ -67,10 +67,10 @@ static int action_main(struct snap_sim_action *action,
 
 
 	// get the parameters from the structure
-	len = js->vectorSize;
+	len = js->vector_size;
 	dst = (uint32_t *)(unsigned long)js->out.addr;
 
-	// software action processing : Create a vector of size vectorSize
+	// software action processing : Create a vector of size vector_size
         for ( i = 0; i < len; i++ ) {
                 dst[i] = (uint32_t)i;
         }
@@ -86,7 +86,7 @@ static int action_main(struct snap_sim_action *action,
 static struct snap_sim_action action = {
 	.vendor_id = SNAP_VENDOR_ID_ANY,
 	.device_id = SNAP_DEVICE_ID_ANY,
-	.action_type = GPU_EXAMPLE_ACTION_TYPE, // Adapt with your ACTION NAME
+	.action_type = VECTOR_GENERATOR_ACTION_TYPE, // Adapt with your ACTION NAME
 
 	.job = { .retc = SNAP_RETC_FAILURE, },
 	.state = ACTION_IDLE,
