@@ -41,10 +41,8 @@
 #include <action_create_vector.h>
 #include <snap_hls_if.h>
 
-#include <kernel.h>
-
 int verbose_flag = 0;
-
+static const char *version = GIT_VERSION;
 
 static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME" };
 
@@ -106,14 +104,11 @@ int main(int argc, char *argv[])
 	struct snap_job cjob;
 	struct vector_generator_job mjob;
 	const char *input = NULL;
-	const char *output = NULL;
 	unsigned long timeout = 600;
-	const char *space = "CARD_RAM";
 	uint64_t vector_size = 0;
-	uint32_t  *obuff = NULL, *result = NULL;
+	uint32_t  *buffer = NULL;
 	uint32_t type_out = SNAP_ADDRTYPE_HOST_DRAM;
 	uint64_t addr_out = 0x0ull;
-	int verify = 0;
 	int exit_code = EXIT_SUCCESS;
 	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 
@@ -123,7 +118,6 @@ int main(int argc, char *argv[])
 		static struct option long_options[] = {
 			{ "card",	 required_argument, NULL, 'C' },
 			{ "timeout",	 required_argument, NULL, 't' },
-			{ "action-timeout", required_argument, NULL, 'T' },
 			{ "version", no_argument, NULL, 'V' },
 			{ "vector_size",	 required_argument, NULL, 's' },
 			{ "verbose",	 required_argument, NULL, 'v' },
@@ -132,7 +126,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-				"c:t:T:i:o:vVh",
+				"C:t:s:vVh",
 				long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -144,9 +138,6 @@ int main(int argc, char *argv[])
 			case 't':
 				timeout = strtol(optarg, (char **)NULL, 0);
 				break;		
-			case 'T':
-				MAX_reads = 0xF * strtol(optarg, (char **)NULL, 0);
-				break; 
 			case 's':
 				input = optarg;
 				break;

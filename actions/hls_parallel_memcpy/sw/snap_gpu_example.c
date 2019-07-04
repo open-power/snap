@@ -42,7 +42,6 @@
 #include <action_create_vector.h>
 #include <snap_hls_if.h>
 
-#include <kernel.h>
 
 int verbose_flag = 0;
 

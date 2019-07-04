@@ -38,8 +38,8 @@ endif
 
 # This is solution specific. Check if we can replace this by generics too.
 
-snap_gpu_example: action_create_vector.o
-snap_gpu_example_objs = action_create_vector.o
+snap_vector_generator: action_create_vector.o
+snap_vector_generator_objs = action_create_vector.o
 
 projs += snap_vector_generator
 
