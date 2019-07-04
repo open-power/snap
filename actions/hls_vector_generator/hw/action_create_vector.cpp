@@ -83,7 +83,7 @@ static int process_action(snap_membus_t *dout_gmem,
         anytype_to_mbus(vector_block, vector_blocks_512b);
 
         /* Write out N word_t (N = size of a burst) */
-        memcpy(dout_gmem + o_idx, &vector_blocks_512b, burst_length*DATA_PER_W*sizeof(uint32_t));
+        memcpy(dout_gmem + o_idx, &vector_blocks_512b, uint32_to_transfer*sizeof(uint32_t));
 
         size -= uint32_to_transfer;
         o_idx += burst_length;
