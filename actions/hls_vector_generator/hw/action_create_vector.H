@@ -25,8 +25,8 @@
 #include <action_create_vector.h> /* Create Vector Job definition */
 
 //--------------------------------------------------------------------
-// 22: simplify the data casting style
-#define RELEASE_LEVEL		0x00000022
+// simplify the data casting style
+#define RELEASE_LEVEL		0x00000001
 
 typedef uint32_t mat_elmt_t;
 #define BURST_LENGTH 64
