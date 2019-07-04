@@ -70,15 +70,11 @@ endif
 %: %.sh
 
 ### Generic rule to build a tool
-%: %.o %_objs_cuda
-	$(CC) $(LDFLAGS) $($(@)_LDFLAGS) $@.o $($(@)_objs) $($(@)_objs_cuda) $($(@)_libs) $(LDLIBS) -o $@
+%: %.o
+	$(CC) $(LDFLAGS) $($(@)_LDFLAGS) $@.o $($(@)_objs) $($(@)_libs) $(LDLIBS) -o $@
 
 %.o: %.c
 	$(CC) -c $(CPPFLAGS) $($(@:.o=)_CPPFLAGS) $(CFLAGS) $< -o $@
-
-kernel.cu.o : ../gpu/kernel.cu
-	@echo "GPU enable so we compile cuda files"
-	nvcc --compiler-bindir=/usr/bin/gcc-4 -I ../include -c $< -o $@
 
 install: all
 	@mkdir -p $(DESTDIR)/bin

@@ -40,7 +40,6 @@ endif
 
 snap_gpu_example: kernel.cu.o action_create_vector.o
 snap_gpu_example_objs = action_create_vector.o
-snap_gpu_example_objs_cuda = kernel.cu.o
 
 projs += snap_gpu_example
 
