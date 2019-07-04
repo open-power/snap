@@ -355,24 +355,19 @@ choice
 		select DISABLE_NVME
 		select ENABLE_ACTION_CLK_DERATE
 	
-    config HLS_GPU_EXAMPLE
-		bool "HLS GPU Example (Showing how to use SNAP with a GPU)"
+    config HLS_VECTOR_GENERATOR
+		bool "HLS Vector Generator example"
         help
-            This is a simple example of FPGA to GPU memory exchange:
+            This is a simple example that generates a vector from FPGA:
             - HOST calls an FPGA action to generate a vector of size N
-            - FPGA writes the generated vector to the HOST memory
-            - Data is copied to the GPU 
-            - Data is processed on the GPU (addition of the vector with itself)
-            - Data is written back to HOST memory and writen into a file
             This example is written in C and compiled with HLS
         select ENABLE_HLS_SUPPORT
         select DISABLE_SDRAM_AND_BRAM
         select DISABLE_NVME
 
-    config HLS_GPU_LATENCY_EVAL
-		bool "HLS GPU Latency Evaluation"
+    config HLS_PARALLEL_MEMCPY
+		bool "HLS Parallel Memcpy example"
         help
-            This is a simple example measuring latency with direct FPGA/GPU exchanges
             This example is written in C and compiled with HLS
         select ENABLE_HLS_SUPPORT
         select DISABLE_SDRAM_AND_BRAM
