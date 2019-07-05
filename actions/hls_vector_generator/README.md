@@ -1,4 +1,4 @@
- HLS_VECTOR_GENERATOR EXAMPLE
+# HLS_VECTOR_GENERATOR EXAMPLE
 
 * Provides an example to show how generate a vector in FPGA and to write it in HOST memory using optimized memcpy. 
 * To maximixe memcpy performance, data is written in 4KB chunks (MAX_BURST size) to maximize bandwidth.
