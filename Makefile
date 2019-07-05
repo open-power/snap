@@ -45,6 +45,7 @@ help:
 	@echo "* hardware       Build simulation model and FPGA bitstream (combines targets 'model' and 'image')";
 	@echo "* hw_project     Create Vivado project";
 	@echo "* sim            Start a simulation";
+	@echo "* sim_tmux       Start a simulation in tmux";
 	@echo "* software       Build software libraries and tools for SNAP";
 	@echo "* apps           Build the applications for all actions";
 	@echo "* clean          Remove all files generated in make process";
@@ -104,7 +105,7 @@ $(hardware_subdirs): $(snap_env_sh)
 hardware: $(hardware_subdirs)
 
 # Model build and config
-hw_project model sim image cloud_enable cloud_base cloud_action: $(snap_env_sh)
+hw_project model sim image cloud_enable cloud_base cloud_action sim_tmux: $(snap_env_sh)
 	@for dir in $(hardware_subdirs); do                \
 	    if [ -d $$dir ]; then                          \
 	        $(MAKE) -s -C $$dir $@ || exit 1;          \
