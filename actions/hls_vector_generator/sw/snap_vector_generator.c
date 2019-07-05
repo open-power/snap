@@ -74,18 +74,24 @@ static void snap_prepare_vector_generator(struct snap_job *cjob,
 static void usage(const char *prog)
 {
 	printf("\nUsage: %s [-h] [-v, --verbose] [-V, --version]\n"
-	"  -s, --vector_size <N>     size of the vector to be generated\n"
-	"  -C, --card <cardno>       can be (0...3)\n"
-	"  -t, --timeout             timeout in sec to wait for done.\n"
-	"  -T, --Action timeout      Number max of reads done by the action * 0xF.\n"
-	"\n"
-        "Example usage\n"
-        "------------------------\n"
-        "snap_maint -vv\n"
-        "\n"
-	"snap_vector_generator -s 1024\n"
-	"\n",
-        prog);
+			"  -s, --vector_size <N>     size of the vector to be generated\n"
+			"  -C, --card <cardno>       can be (0...3)\n"
+			"  -t, --timeout             timeout in sec to wait for done.\n"
+			"\n"
+			"Useful parameters (to be placed before the command):\n"
+			"----------------------------------------------------\n"
+			"SNAP_TRACE=0x0   no debug trace  (default mode)\n"
+			"SNAP_TRACE=0xF   full debug trace\n"
+			"SNAP_CONFIG=FPGA hardware execution   (default mode)\n"
+			"SNAP_CONFIG=CPU  software execution\n"
+			"\n"
+			"Example usage\n"
+			"------------------------\n"
+			"snap_maint -vv\n"
+			"\n"
+			"snap_vector_generator -s 1024\n"
+			"\n",
+			prog);
 }
 
 
@@ -96,7 +102,7 @@ static void usage(const char *prog)
 int main(int argc, char *argv[])
 {
 	// Init of all the default values used 
-	int ch = 0;
+	int ch = 0, rc = 0;
 	int card_no = 0;
 	struct snap_card *card = NULL;
 	struct snap_action *action = NULL;
@@ -109,6 +115,8 @@ int main(int argc, char *argv[])
 	uint32_t  *buffer = NULL;
 	uint32_t type_out = SNAP_ADDRTYPE_HOST_DRAM;
 	uint64_t addr_out = 0x0ull;
+	struct timeval begin_time, end_time;
+	unsigned long long int lcltime = 0x0ull;
 	int exit_code = EXIT_SUCCESS;
 	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 
@@ -157,8 +165,19 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (argc == 1) {       // to provide help when program is called without argument
+		usage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
 	if (input != NULL) {
 		vector_size = atoi(input);
+		if (vector_size <= 0){
+			printf("vector_size should be superior to 0 0\n");
+		}
+	} else {
+		printf("vector_size should be set\n");
+		exit(EXIT_FAILURE);
 	}
 
 	size_t size = vector_size*sizeof(uint32_t);
@@ -189,15 +208,37 @@ int main(int argc, char *argv[])
 	// Allocate the card that will be used
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM, SNAP_DEVICE_ID_SNAP);
+	if (card == NULL) {
+		fprintf(stderr, "err: failed to open card %u: %s\n",
+				card_no, strerror(errno));
+		fprintf(stderr, "Default mode is FPGA mode.\n");
+		fprintf(stderr, "Did you want to run CPU mode ? => add SNAP_CONFIG=CPU before your command.\n");
+		fprintf(stderr, "Otherwise make sure you ran snap_find_card and snap_maint for your selected card.\n");
+		goto out_error;
+	}
 
 	// Attach the action that will be used on the allocated card
 	action = snap_attach_action(card, VECTOR_GENERATOR_ACTION_TYPE, action_irq, 60);
+	if (action == NULL) {
+		fprintf(stderr, "err: failed to attach action %u: %s\n",
+				card_no, strerror(errno));
+		goto out_error1;
+	}
 
 	// Fill the stucture of data exchanged with the action
 	snap_prepare_vector_generator(&cjob, &mjob,vector_size,(void *)addr_out, vector_size*sizeof(uint32_t), type_out);
 
-	// Call the action will:
-	snap_action_sync_execute_job(action, &cjob, timeout);
+	gettimeofday(&begin_time, NULL);
+
+	// Call the action
+	rc = snap_action_sync_execute_job(action, &cjob, timeout);
+	if (rc != 0) {
+		fprintf(stderr, "err: job execution %d: %s!\n", rc,
+				strerror(errno));
+		goto out_error2;
+	}
+
+	gettimeofday(&end_time, NULL);
 
 	// Detach action + disallocate the card
 	snap_detach_action(action);
@@ -206,9 +247,25 @@ int main(int argc, char *argv[])
 	/******************************************************/
 
 	//Printing out the result
-	printf("Generated vector : [%d,%d,%d, ... , %d]\n",buffer[0],buffer[1],buffer[2],buffer[vector_size-1]);
+	if (vector_size > 4){
+		printf("Generated vector : [%d,%d,%d, ... , %d]\n",buffer[0],buffer[1],buffer[2],buffer[vector_size-1]);
+	} else {
+		printf("Generated vector of size %d.",(int)vector_size);
+	}
+
+	// Display the time of the action excecution
+	lcltime = (long long)(timediff_usec(&end_time, &begin_time));
+	fprintf(stdout, "SNAP action processing time for generating a vector of size %d is %f usec\n",
+			(int)vector_size, (float)lcltime);
 
 	__free(buffer);
 	exit(exit_code);
 
+out_error2:
+	snap_detach_action(action);
+out_error1:
+	snap_card_free(card);
+out_error:
+	__free(buffer);
+	exit(EXIT_FAILURE);
 }
