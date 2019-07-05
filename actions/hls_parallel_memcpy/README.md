@@ -6,6 +6,13 @@
 buffers are swapped in order to observe ping pong exchanges between the HOST and the FPGA for behavior checking
 * Bandwidth measurements can be done using this example (but internal memory copy performed on FPGA is included in the measurements)
 
+**Warning:** Due to FPGA internal memory limitations, vector_size cannot be higher than 131072 (which corresponds to 1MB buffers).
+
+## Architecture overview
+
+Buffers are arrays of uin32_t and their sizes are defined at runtime with `vector_size` parameter. Read/write process can be repeted multiple time and this value can be set at runtime using `max_iteration` parameter.
+
+![Alt text](doc/action-parallel-memcpy-architecture.png)
 
 ## Bandwidth measurements
 
