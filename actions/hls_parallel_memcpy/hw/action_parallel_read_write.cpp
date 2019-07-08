@@ -106,6 +106,12 @@ static int process_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
     snap_membus_t bufferA[MAX_SIZE] = {1}; // 64 bytes * MAX_SIZE #4MB for test
     snap_membus_t bufferB[MAX_SIZE] = {1}; // 64 bytes * MAX_SIZE #4MB for test
 
+    for (int i = 1; i<MAX_SIZE; i++){
+#pragma HLS_UNROLL
+	bufferA[i] = 0;
+	bufferB[i] = 0;
+    }
+
     // Data initialization
     i_idx = act_reg->Data.read.addr >> ADDR_RIGHT_SHIFT;
     o_idx = act_reg->Data.write.addr >> ADDR_RIGHT_SHIFT;
