@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
         }
 
         if (verbose){
-            printf("Writting : [%d,%d, ... ,%d]\n",bufferA[0],bufferA[1],bufferA[vector_size-1]); 
+            printf("Writing : [%d,%d, ... ,%d]\n",bufferA[0],bufferA[1],bufferA[vector_size-1]); 
             printf("Received : [%d,%d, ... ,%d]\n",bufferB[0],bufferB[1],bufferB[vector_size-1]); 
         }
 

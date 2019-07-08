@@ -54,6 +54,7 @@ static int process_action(snap_membus_t *dout_gmem,
     uint32_t uint32_to_transfer, burst_length,uint32_in_last_word, vector_value_i;
     uint64_t o_idx;
     snap_membus_t vector_blocks_512b[BURST_LENGTH];
+    mat_elmt_t  vector_block[DATA_PER_W*BURST_LENGTH]; // (16x 32bits) * 64
 
     /* byte address received need to be aligned with port width */
     o_idx = act_reg->Data.out.addr >> ADDR_RIGHT_SHIFT;
@@ -62,8 +63,6 @@ static int process_action(snap_membus_t *dout_gmem,
 
     main_loop:
     while (size > 0) {
-//#pragma HLS PIPELINE
-        mat_elmt_t  vector_block[DATA_PER_W*BURST_LENGTH]; // (16x 32bits) * 64
 
         /* Set the number of burst to write */
         burst_length = MIN(BURST_LENGTH, (size/DATA_PER_W)+1);
@@ -74,7 +73,7 @@ static int process_action(snap_membus_t *dout_gmem,
         vector_creation:
         for (int k=0; k < burst_length; k++) {
             for (int i = 0; i < DATA_PER_W; i++ ) {
-        //#pragma HLS UNROLL
+        #pragma HLS UNROLL
                 vector_block[k * DATA_PER_W + i] = (mat_elmt_t) vector_value_i;
                 vector_value_i++;
             }
