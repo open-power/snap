@@ -77,6 +77,7 @@ static void usage(const char *prog)
 			"  -s, --vector_size <N>     size of the vector to be generated\n"
 			"  -C, --card <cardno>       can be (0...3)\n"
 			"  -t, --timeout             timeout in sec to wait for done.\n"
+			"  -o, --output_log <file>   for testing purpose. Result is saved in <file>. \n"
 			"\n"
 			"Useful parameters (to be placed before the command):\n"
 			"----------------------------------------------------\n"
@@ -109,7 +110,7 @@ int main(int argc, char *argv[])
 	char device[128];
 	struct snap_job cjob;
 	struct vector_generator_job mjob;
-	const char *input = NULL;
+	const char *input = NULL, *output = NULL;
 	unsigned long timeout = 600;
 	uint64_t vector_size = 0;
 	uint32_t  *buffer = NULL;
@@ -126,7 +127,8 @@ int main(int argc, char *argv[])
 		static struct option long_options[] = {
 			{ "card",	 required_argument, NULL, 'C' },
 			{ "timeout",	 required_argument, NULL, 't' },
-			{ "version", no_argument, NULL, 'V' },
+			{ "output_log",	 required_argument, NULL, 'o' },
+			{ "version", 	 no_argument, NULL, 'V' },
 			{ "vector_size",	 required_argument, NULL, 's' },
 			{ "verbose",	 required_argument, NULL, 'v' },
 			{ "help",	 required_argument, NULL, 'h' },
@@ -134,7 +136,7 @@ int main(int argc, char *argv[])
 		};
 
 		ch = getopt_long(argc, argv,
-				"C:t:s:vVh",
+				"C:t:o:s:vVh",
 				long_options, &option_index);
 		if (ch == -1)
 			break;
@@ -146,6 +148,9 @@ int main(int argc, char *argv[])
 			case 't':
 				timeout = strtol(optarg, (char **)NULL, 0);
 				break;		
+			case 'o':
+				output = optarg;
+				break;
 			case 's':
 				input = optarg;
 				break;
@@ -246,11 +251,25 @@ int main(int argc, char *argv[])
 
 	/******************************************************/
 
-	//Printing out the result
-	if (vector_size > 4){
-		printf("Generated vector : [%d,%d,%d, ... , %d]\n",buffer[0],buffer[1],buffer[2],buffer[vector_size-1]);
-	} else {
-		printf("Generated vector of size %d.",(int)vector_size);
+	if (verbose_flag){
+		//Printing out the result
+		if (vector_size > 4){
+			printf("Generated vector : [%d,%d,%d, ... , %d]\n",buffer[0],buffer[1],buffer[2],buffer[vector_size-1]);
+		} else {
+			printf("Generated vector of size %d.",(int)vector_size);
+		}
+	}
+
+	//Option for testing purpose	
+	if (output != NULL){
+		printf("Writting output data\n");
+		FILE *f = fopen(output, "w");
+		for (int i= 0; i< (int)vector_size-1; i++){
+			fprintf(f,"%d,", buffer[i]);
+		}
+		fprintf(f,"%d\n", buffer[vector_size-1]);
+		fclose(f);
+
 	}
 
 	// Display the time of the action excecution
