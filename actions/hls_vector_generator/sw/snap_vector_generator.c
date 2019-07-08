@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 	if (input != NULL) {
 		vector_size = atoi(input);
 		if (vector_size <= 0){
-			printf("vector_size should be superior to 0 0\n");
+			printf("vector_size should be superior to 0\n");
 		}
 	} else {
 		printf("vector_size should be set\n");

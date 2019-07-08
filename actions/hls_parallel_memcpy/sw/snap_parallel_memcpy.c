@@ -184,8 +184,8 @@ int main(int argc, char *argv[])
 
     if (in_size != NULL) {
         vector_size = atoi(in_size);
-        if (vector_size>MAX_SIZE){
-            printf("Vector size should smaller than %d \n",MAX_SIZE);
+        if (vector_size>N_MAX){
+            printf("Vector size should smaller than %d \n",N_MAX);
             exit(EXIT_FAILURE);
         }
     } else {
