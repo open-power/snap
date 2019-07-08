@@ -88,8 +88,10 @@ static void update_flag(uint8_t **flag, uint8_t flag_value, uint64_t addr){
 static void usage(const char *prog)
 {
     printf("\n Usage: %s [-h] [-v, --verbose]\n"
+			"  -C, --card <cardno>       can be (0...3)\n"
             "  -s, --vector_size <N>        size of the uint32_t buffer array.\n"
             "  -n, --num_iteration <N>      number of iterations in a run.\n"
+            "  -o, --output_log <file>      for testing purpose. Results are saved in <file>\n"
             "\n"
             "WARNING ! This code only works with vector_size < 131072 \n"
             "because of FPGA in-memory limitations on this version of the image).\n"
@@ -122,7 +124,7 @@ int main(int argc, char *argv[])
     struct snap_job cjob;
     struct parallel_memcpy_job mjob;
     const char *num_iteration = NULL;
-    const char *in_size = NULL;
+    const char *in_size = NULL, *output = NULL;
     uint32_t *bufferA;
     uint32_t *bufferB;
     uint64_t addr_read = 0x0ull;
@@ -143,25 +145,32 @@ int main(int argc, char *argv[])
     while (1) {
         int option_index = 0;
         static struct option long_options[] = {
+			{ "card",	 required_argument, NULL, 'C' },
             { "vector_size",     required_argument, NULL, 's' },
             { "num_iteration",   required_argument, NULL, 'n' },
+            { "output_log",      required_argument, NULL, 'o' },
             { "verbose",     no_argument, NULL, 'v' },
             { "help", no_argument, NULL, 'h' },
             { 0, no_argument, NULL, 0 },};      
 
         ch = getopt_long(argc, argv,
-                "s:n:vh",
+                "C:s:n:o:vh",
                 long_options, &option_index);
         if (ch == -1)
             break;
 
         switch (ch) {
-
+			case 'C':
+				card_no = strtol(optarg, (char **)NULL, 0);
+				break;
             case 's':
                 in_size = optarg;
                 break;
             case 'n':
                 num_iteration = optarg;
+                break;
+            case 'o':
+                output = optarg;
                 break;
             case 'v':
                 verbose = true;
@@ -188,6 +197,11 @@ int main(int argc, char *argv[])
             printf("Vector size should smaller than %d \n",N_MAX);
             exit(EXIT_FAILURE);
         }
+        if (vector_size<16){
+            printf("Vector size should be superior to 16 (related to memcpy issue with size < 512b (issue #652)\n");
+            exit(EXIT_FAILURE);
+        }
+
     } else {
         printf("vector_size should be set\n");
         exit(EXIT_FAILURE);
@@ -286,9 +300,6 @@ int main(int argc, char *argv[])
     //--- Collect the timestamp AFTER the call of the action
     gettimeofday(&etime, NULL);
 
-    // FPGA can read vector and write buffer
-    update_flag(&read_flag, 1, addr_read);
-    update_flag(&write_flag, 1, addr_write);
 
     gettimeofday(&begin_time, NULL);
 
@@ -299,6 +310,9 @@ int main(int argc, char *argv[])
 
 
     for (int iteration = 0; iteration < max_iteration; iteration++){
+	    // FPGA can read vector and write buffer
+	    update_flag(&read_flag, 1, addr_read);
+	    update_flag(&write_flag, 1, addr_write);
 
         //FPGA is writing data in buffer
         while((read_flag[0] == 1) || (write_flag[0] == 1)){ 
@@ -306,21 +320,20 @@ int main(int argc, char *argv[])
         }
 
         for (int i = 0; i<vector_size; i++){
-            bufferB[i] = 2*bufferA[i];
+            bufferB[i] = 10+bufferA[i];
         }
 
         if (verbose){
             printf("Writing : [%d,%d, ... ,%d]\n",bufferA[0],bufferA[1],bufferA[vector_size-1]); 
             printf("Received : [%d,%d, ... ,%d]\n",bufferB[0],bufferB[1],bufferB[vector_size-1]); 
         }
-
-
+	
         addr_read = (unsigned long)bufferB;
         addr_write = (unsigned long)bufferA;
 
         // FPGA can write new data	
-        update_flag(&read_flag, 1, addr_read);
-        update_flag(&write_flag, 1, addr_write);
+        //update_flag(&read_flag, 1, addr_read);
+        //update_flag(&write_flag, 1, addr_write);
 
     }
 
@@ -341,6 +354,26 @@ int main(int argc, char *argv[])
         default:
             break;
     }
+
+
+	if (output != NULL){
+		printf("Writting output data\n");
+		FILE *f = fopen(output, "w");
+
+		// Write bufferA result
+		for (int i= 0; i< (int)vector_size-1; i++){
+			fprintf(f,"%d,", bufferA[i]);
+		}
+		fprintf(f,"%d\n", bufferA[vector_size-1]);
+		
+		// Write bufferB result
+		for (int i= 0; i< (int)vector_size-1; i++){
+			fprintf(f,"%d,", bufferB[i]);
+		}
+		fprintf(f,"%d\n", bufferB[vector_size-1]);
+		fclose(f);
+
+	}
 
     // Display the time of the action call
     fprintf(stdout, "SNAP registers set + action start took %lld usec\n",
