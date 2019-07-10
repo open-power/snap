@@ -16,10 +16,10 @@ Buffers are arrays of uin32_t and their sizes are defined at runtime with `vecto
 
 ## Bandwidth measurements
 
-|Action version| Vector size (uint32_t)| Num Iterations | Total data transfer (bytes)* | Average iteration time (us) | Throughput |
+|Action version| Vector size (uint32_t)| Num Iterations | Total data transfer (bytes)\* | Average iteration time (us) | Throughput |
 | ------------ | --------------------- | -------------- | --------------------------- | --------------------------- | ---------- |
-|  0001        | 1024                  | 10000          |  4096 x 2                   |           4.8               |  1.6 GB/s  |
-|  0001        | 131072                | 10000          |  524288 x 2                 |           277               |  3.5 GB/s  |
+|  0001 (RH7.6)   | 1024     | 10000          |  4096 x 2                   |           4.2               |  1.9 GB/s  |
+|  0001 (RH7.6)   | 131072   | 10000          |  524288 x 2                 |           213               |  4.8 GB/s  |
 
 \* size in bytes = vector size * sizeof(uint32_t) and x2 is because we consider bidirectional data transferts.
 
