@@ -276,8 +276,8 @@ for ((iter=1;iter <= iteration;iter++))
        		echo "failed"
        		exit 1
 	fi
-	echo "Testing Action 1 from 200 msec to 1 sec in 200 msec steps with Interrupts"
-	cmd="${FUNC} -a 1 -C${snap_card} -e 1000 -t 2 -I"
+	echo "REMOVING : Testing Action 1 from 200 msec to 1 sec in 200 msec steps with Interrupts"
+#	cmd="${FUNC} -a 1 -C${snap_card} -e 1000 -t 2"
 	eval ${cmd}
 	if [ $? -ne 0 ]; then
 		echo "cmd: ${cmd}"

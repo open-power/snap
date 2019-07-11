@@ -81,7 +81,7 @@ function test_memcopy {
     dd if=/dev/urandom of=${size}_A.bin count=1 bs=${size} 2> dd.log
 
     echo -n "Doing snap_memcopy (aligned) ${size} bytes ... "
-    cmd="snap_memcopy -C${snap_card} -X	\
+    cmd="snap_memcopy -C${snap_card} -X -N \
 		-i ${size}_A.bin	\
 		-o ${size}_A.out >>	\
 		snap_memcopy.log 2>&1"
@@ -139,7 +139,7 @@ function test_memcopy_to_ddr {
     dd if=/dev/urandom of=${size}_A.bin count=1 bs=${size} 2> dd.log
 
     echo -n "Doing snap_memcopy (aligned) ${size} bytes ... "
-    cmd="snap_memcopy -C${snap_card} -X	\
+    cmd="snap_memcopy -C${snap_card} -X -N \
 		-i ${size}_A.bin	\
                 -d 0x0 -D CARD_DRAM >>  \
 		snap_memcopy_to_ddr.log 2>&1"
@@ -237,7 +237,7 @@ python3 -c 'print("A" * (1 * 1024 * 1024), end="")' > $test_data
 size=`ls -l $test_data | cut -d' ' -f5`
 
 echo -n "Doing snap_memcopy (CARD_DRAM) ${size} bytes to card ... "
-cmd="snap_memcopy -C${snap_card}		\
+cmd="snap_memcopy -C${snap_card} -N		\
 		-i $test_data -D CARD_DRAM -d 0x00000000 >	\
 		snap_memcopy_card.log 2>&1"
 eval ${cmd}
@@ -250,7 +250,7 @@ fi
 echo "ok"
 
 echo -n "Doing snap_memcopy (CARD_DRAM) ${size} bytes from card... "
-cmd="snap_memcopy -C${snap_card}	\
+cmd="snap_memcopy -C${snap_card} -N	\
 		-A CARD_DRAM -a 0x00000000 -s ${size}	\
 		-o snap_search.out >>		\
 		snap_memcopy_card.log 2>&1"
