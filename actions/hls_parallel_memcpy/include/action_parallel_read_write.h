@@ -26,7 +26,7 @@ extern "C" {
 /* This number is unique and is declared in ~snap/ActionTypes.md */
 #define PARALLEL_MEMCPY_ACTION_TYPE 0x1014100F
 #define N_MAX 1024*128
-#define BYTES_MAX N_MAX*4  // 4MB buffer
+#define BYTES_MAX N_MAX*4  // 1MB buffer
 #define MAX_SIZE BYTES_MAX/64
 	
 /* Data structure used to exchange information between action and application */
@@ -39,6 +39,8 @@ typedef struct parallel_memcpy_job {
 	struct snap_addr read_flag;
 	struct snap_addr write_flag;
 } parallel_memcpy_job_t;
+
+void memset_volatile(volatile void *s, char c, size_t n);
 
 #ifdef __cplusplus
 }

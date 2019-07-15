@@ -78,13 +78,24 @@ static void snap_prepare_parallel_memcpy(struct snap_job *cjob,
     snap_job_set(cjob, mjob, sizeof(*mjob), NULL, 0);
 }
 
-static void update_flag(uint8_t **flag, uint8_t flag_value, uint64_t addr){
+static void update_flag(uint8_t volatile **flag, uint8_t flag_value, uint64_t addr){
     for (int i = 0; i < (int)sizeof(uint64_t); i++){
         (*flag)[i+1] = (addr >> 8*i) & 0xFF;
     }
     (*flag)[0] = (uint8_t)flag_value;
 
 }
+
+void memset_volatile(volatile void *s, char c, size_t n)
+{
+    volatile char *p = s;
+    while (n-- > 0) {
+        *p++ = c;
+    }
+}
+
+
+
 static void usage(const char *prog)
 {
     printf("\n Usage: %s [-h] [-v, --verbose]\n"
@@ -125,13 +136,13 @@ int main(int argc, char *argv[])
     struct parallel_memcpy_job mjob;
     const char *num_iteration = NULL;
     const char *in_size = NULL, *output = NULL;
-    uint32_t *bufferA;
-    uint32_t *bufferB;
+    uint32_t volatile *bufferA;
+    uint32_t volatile *bufferB;
     uint64_t addr_read = 0x0ull;
     uint64_t addr_write = 0x0ull;
     uint64_t addr_read_flag = 0x0ull;
     uint64_t addr_write_flag = 0x0ull;
-    uint8_t *write_flag = NULL, *read_flag = NULL;
+    uint8_t volatile *write_flag = NULL, *read_flag = NULL;
     struct timeval etime, stime, begin_time, end_time;
     unsigned long long int lcltime = 0x0ull;
     uint32_t type = SNAP_ADDRTYPE_HOST_DRAM;
@@ -223,18 +234,18 @@ int main(int argc, char *argv[])
 
     bufferA = snap_malloc(size);
     bufferB = snap_malloc(size);
-    memset(bufferA, 0x0, size);
-    memset(bufferB, 0x0, size);	
+    memset_volatile(bufferA, 0x0, size);
+    memset_volatile(bufferB, 0x0, size);	
 
     for (int i = 0; i < vector_size; i++){
         bufferB[i] = i;
     }
 
 
-    write_flag = snap_malloc(64);
-    read_flag = snap_malloc(64);
-    memset(write_flag, 0x0, 64);
-    memset(read_flag, 0x0, 64);	
+    write_flag = memalign(128,128);
+    read_flag = memalign(128,128);
+    memset_volatile(write_flag, 0x0, 64);
+    memset_volatile(read_flag, 0x0, 64);	
 
     addr_read = (unsigned long)bufferB;
     addr_write = (unsigned long)bufferA;
@@ -310,14 +321,13 @@ int main(int argc, char *argv[])
 
 
     for (int iteration = 0; iteration < max_iteration; iteration++){
-	    // FPGA can read vector and write buffer
-	    update_flag(&read_flag, 1, addr_read);
-	    update_flag(&write_flag, 1, addr_write);
+	
+		// FPGA can read vector and write buffer
+		update_flag(&read_flag, 1, addr_read);
+		update_flag(&write_flag, 1, addr_write);
 
         //FPGA is writing data in buffer
-        while((read_flag[0] == 1) || (write_flag[0] == 1)){ 
-            sleep(0.000004);
-        }
+        while((read_flag[0] == 1) || (write_flag[0] == 1));
 
         for (int i = 0; i<vector_size; i++){
             bufferB[i] = 10+bufferA[i];
@@ -330,10 +340,6 @@ int main(int argc, char *argv[])
 	
         addr_read = (unsigned long)bufferB;
         addr_write = (unsigned long)bufferA;
-
-        // FPGA can write new data	
-        //update_flag(&read_flag, 1, addr_read);
-        //update_flag(&write_flag, 1, addr_write);
 
     }
 
@@ -357,7 +363,7 @@ int main(int argc, char *argv[])
 
 
 	if (output != NULL){
-		printf("Writting output data\n");
+		printf("Writing output data\n");
 		FILE *f = fopen(output, "w");
 
 		// Write bufferA result
@@ -388,19 +394,19 @@ int main(int argc, char *argv[])
     snap_detach_action(action);
     snap_card_free(card);
 
-    __free(bufferA);
-    __free(bufferB);
-    __free(read_flag);
-    __free(write_flag);
+    __free((void*)bufferA);
+    __free((void*)bufferB);
+    __free((void*)read_flag);
+    __free((void*)write_flag);
     exit(exit_code);
 
 out_error1:
     snap_card_free(card);
 out_error:
-    __free(bufferA);
-    __free(bufferB);
-    __free(read_flag);
-    __free(write_flag);
+    __free((void*)bufferA);
+    __free((void*)bufferB);
+    __free((void*)read_flag);
+    __free((void*)write_flag);
     exit(EXIT_FAILURE);
 
 }
