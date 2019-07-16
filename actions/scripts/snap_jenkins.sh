@@ -110,6 +110,12 @@ function test_all_actions() # $1 = card, $2 = accel
 		*"1014100b") # HLS Decimal multiplication
 			cmd="./actions/hls_decimal_mult/tests/test_0x1014100B.sh"
 		;;
+		*"1014100e") # HLS Vector generator
+			cmd="./actions/hls_vector_generator/tests/test_0x1014100E.sh"
+		;;
+		*"1014100f") # HLS Parallel memcpy
+			cmd="./actions/hls_parallel_memcpy/tests/test_0x1014100F.sh"
+		;;
 		*)
 			echo "Error: Action: $action is not valid !"
 			run_test=0
