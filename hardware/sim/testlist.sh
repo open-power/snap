@@ -123,6 +123,8 @@
         "1014100a") a0="hls_mm_test";;
         "1014100b") a0="hls_decimal_mult";;
         "1014100c") a0="hls_scatter_gather";;
+        "1014100e") a0="hls_vector_generator";;
+        "1014100f") a0="hls_parallel_memcpy";;
         *) echo "unknown action0 type=$t0l, exiting";exit 1;;
       esac; echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="snap_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
@@ -151,6 +153,8 @@
         "1014100a") a1="hls_mm_test";;
         "1014100b") a1="hls_decimal_mult";;
         "1014100c") a1="hls_scatter_gather";;
+        "1014100e") a0="hls_vector_generator";;
+        "1014100f") a0="hls_parallel_memcpy";;
         *) echo "unknown action1 type=$t1l, exiting";exit 1;;
       esac; echo "action0 type1s=$t1s type1l=$t1l $a1"
       t="snap_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
@@ -539,6 +543,16 @@
       step "snap_scatter_gather -n256 -s256 -m2"
       step "snap_scatter_gather -n256 -s256 -m3"
     fi # hls_scatter_gather
+ #
+    if [[ "$t0l" == "1014100e" || "${env_action}" == "hls_vector_generator" ]];then echo -e "$del\ntesting vector_generator"
+      step "snap_vector_generator -h"
+      step "snap_vector_generator -s 1024 -v"
+    fi # hls_vector_generator
+ #
+    if [[ "$t0l" == "1014100f" || "${env_action}" == "hls_parallel_memcpy" ]];then echo -e "$del\ntesting parallel_memcpy"
+      step "snap_parallel_memcpy -h"
+      step "snap_parallel_memcpy -s 1024 -n 10 -v"
+    fi # hls_parallel_memcpy
  #
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"  # end of loop
   done; l=""; ts3=$(date +%s); totaltime=`expr $ts3 - $ts0`; echo "loops=$loops tests=$n total_time=$totaltime" # end of test
