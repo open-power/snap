@@ -338,9 +338,6 @@ int main(int argc, char *argv[])
             printf("Received : [%d,%d, ... ,%d]\n",bufferB[0],bufferB[1],bufferB[vector_size-1]); 
         }
 	
-        addr_read = (unsigned long)bufferB;
-        addr_write = (unsigned long)bufferA;
-
     }
 
 
