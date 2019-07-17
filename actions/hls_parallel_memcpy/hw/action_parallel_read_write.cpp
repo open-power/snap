@@ -76,6 +76,14 @@ void write_data(snap_membus_t *dout_gmem, uint64_t output, snap_membus_t *buffer
     }
 }
 
+void init_buffer(snap_membus_t *buffer){
+    init_loop:
+    for (int i = 1; i<MAX_SIZE; i++){
+#pragma HLS UNROLL factor=2048
+	    buffer[i] = 0;
+    }
+}
+
 void read_flag_mem(snap_membus_t *din_gmem, uint64_t flag_addr, bool *flag, uint64_t *addr){
     snap_membus_t flag_512b;
     memcpy(&flag_512b, din_gmem + flag_addr, BPERDW);
@@ -88,7 +96,6 @@ void write_flag_mem(snap_membus_t *dout_gmem, uint64_t flag_addr, bool flag){
     flag_512b(0,0) = flag;
     memcpy(dout_gmem + flag_addr,&flag_512b, BPERDW);
 }
-
 
 //----------------------------------------------------------------------
 //--- MAIN PROGRAM -----------------------------------------------------
@@ -105,12 +112,9 @@ static int process_action(snap_membus_t *din_gmem, snap_membus_t *dout_gmem,
     //shared buffer
     snap_membus_t bufferA[MAX_SIZE] = {1}; // 64 bytes * MAX_SIZE #4MB for test
     snap_membus_t bufferB[MAX_SIZE] = {1}; // 64 bytes * MAX_SIZE #4MB for test
-
-    for (int i = 1; i<MAX_SIZE; i++){
-#pragma HLS_UNROLL
-	bufferA[i] = 0;
-	bufferB[i] = 0;
-    }
+    
+    init_buffer(bufferA);
+    init_buffer(bufferB);
 
     // Data initialization
     i_idx = act_reg->Data.read.addr >> ADDR_RIGHT_SHIFT;
