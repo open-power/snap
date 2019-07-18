@@ -372,6 +372,15 @@ choice
         select ENABLE_HLS_SUPPORT
         select DISABLE_SDRAM_AND_BRAM
         select DISABLE_NVME
+
+    config HLS_ETHERNET_EXAMPLE
+		bool "HLS Ethernet example"
+        help
+            This example is written in C and compiled with HLS
+        select ENABLE_HLS_SUPPORT
+        select ENABLE_ETHERNET
+        select DISABLE_SDRAM_AND_BRAM
+        select DISABLE_NVME
 endchoice
 
 config ENABLE_HLS_SUPPORT
@@ -482,6 +491,19 @@ config NVME_USED
 	string
 	default "TRUE"  if ENABLE_NVME
 	default "FALSE" if ! ENABLE_NVME
+
+config ENABLE_ETHERNET
+	bool "Enable Ethernet support"
+    default N
+	depends on AD9V3
+	help
+	  This option controls the instantiation of an Ethernet IP 
+	  together with the AXI interfaces for MMIO control and action access.
+
+config ETHERNET_USED
+	string
+	default "TRUE"  if ENABLE_ETHERNET
+	default "FALSE" if ! ENABLE_ETHERNET
 
 choice
 	bool "Simulator"

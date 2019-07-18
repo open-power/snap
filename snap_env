@@ -235,6 +235,8 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hls_vector_generator'
   elif [ -n "$HLS_PARALLEL_MEMCPY" ]; then
     AR='${SNAP_ROOT}/actions/hls_parallel_memcpy'
+  elif [ -n "$HLS_ETHERNET_EXAMPLE" ]; then
+    AR='${SNAP_ROOT}/actions/hls_ethernet_example'
   fi
   if [ -z "$AR" ] && [ -n "$ACTION_ROOT" ]; then
     AR=$ACTION_ROOT
@@ -368,6 +370,11 @@ while [ -z "$SETUP_DONE" ]; do
     fi
   fi
 
+  # Note: ETHERNET_USED is defined via snap_config
+  if [ "$ETHERNET_USED" == "TRUE" ]; then
+    echo "=====Ethernet setup===================================="
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of NVME_USED=$NVME_USED"
+  fi
 
   ####### Print warning messages and create $snap_env_sh
   echo -e "======================================================="
