@@ -54,7 +54,7 @@
  runsim_args=$@
  while [[ $# > 0 ]]; do         # consume multiple args per loop with shift
 #  echo "arg1=$1 arg2=$2"
-   case $1 in				
+   case $1 in
      xsim|irun|questa|modelsim|xcelium)   SIM_OVER="$1";;
      -xsim)             SIM_OVER="xsim";;
      -irun)             SIM_OVER="irun";;
@@ -66,25 +66,25 @@
      -list)		TST_NAME='LIST';LISTNAME="$2";shift
      			if [[ ! -f ${SNAP_ROOT}/hardware/sim/${LISTNAME} ]];then echo "testlist ${SNAP_ROOT}/hardware/sim/${LISTNAME} not found, leaving"; exit 11; fi;;
      -x|xterm|XTERM)	TST_NAME='XTERM';;
-     -quiet)		VERBOSE="";;	
-     -verbose)		VERBOSE="-vvv";;	
-     -v1|-v)		VERBOSE="-v";;		
-     -v2|-vv)		VERBOSE="-vv";;	
-     -v3|-vvv)		VERBOSE="-vvv";;	
-     -v4|-vvvv)		VERBOSE="-vvvv";;	
-     -v5|-vvvvv)	VERBOSE="-vvvvv";;	
+     -quiet)		VERBOSE="";;
+     -verbose)		VERBOSE="-vvv";;
+     -v1|-v)		VERBOSE="-v";;
+     -v2|-vv)		VERBOSE="-vv";;
+     -v3|-vvv)		VERBOSE="-vvv";;
+     -v4|-vvvv)		VERBOSE="-vvvv";;
+     -v5|-vvvvv)	VERBOSE="-vvvvv";;
      -v6|-vvvvvv)	VERBOSE="-vvvvvv";;	# can lead to files >1GB
-     -clean)		CLEAN=1;;	
-     -keep)		CLEAN=0;;	
-     -local)		LOCAL=1;;	
+     -clean)		CLEAN=1;;
+     -keep)		CLEAN=0;;
+     -local)		LOCAL=1;;
      -explore)		EXPLORE=1;;
-     -inject)		TCL_INJECT=1;;	
-     -seed)		TCL_SEED="$2";shift;;	
+     -inject)		TCL_INJECT=1;;
+     -seed)		TCL_SEED="$2";shift;;
      -rndmask)		RNDMASK=1;;
-     -tn)		TSTNUM="$2";shift;;	
-     -par)		PAR="$2";shift;;	
-     -t)		TST_TITLE="$2";shift;;	
-     -p)		PARM_FILE="$2";shift;;	
+     -tn)		TSTNUM="$2";shift;;
+     -par)		PAR="$2";shift;;
+     -t)		TST_TITLE="$2";shift;;
+     -p)		PARM_FILE="$2";shift;;
      -arg)		TST_ARG="${TST_ARG} $2";shift;;
      -aet)		AET=1;;
      -noaet)		AET=0;;
@@ -255,7 +255,7 @@
    fi
    if [ "$LOCAL" == "1" ];then
      `sed -i "s/-incfiles/;#-incfiles/g" ncaet.tcl`				# no AET size limit locally
-   else                                                   	
+   else
      `sed -i "s/;#-incfiles/-incfiles/g" ncaet.tcl`				# limit AET size for AFS
    fi
    if [ "$TCL_SEED" != "0" ];then
@@ -364,7 +364,19 @@
      prc[$i]=0
      if [ "$PAR" == "1" ];then STIMLOG="stim.log";else STIMLOG="stim${i}.log";fi
      if [ "$TST_NAME" == "XTERM" ];then
-       xterm -title "testcase window, use >script ${STIMLOG}< to log input" & 	# tee+RC doesnt work here, use script instead
+        if [ -z "$TMUX" ];then
+          xterm -title "testcase window, use >script ${STIMLOG}< to log input" & 	# tee+RC doesnt work here, use script instead
+        else
+          # Running inside a tmux session
+          tmux new-window -c $SIMBASE/$SIMDIR/$SIMOUT
+          tmux send-keys ". $SNAP_ROOT/snap_path.sh" Enter
+
+          shell_pid=$(tmux list-panes -F '#{pane_pid}')
+
+          # Wait for the shell to exit (not a direct child process)
+          echo "tail --pid=$shell_pid -f /dev/null &"
+          tail --pid=$shell_pid -f /dev/null &
+        fi
      elif [ "$TST_NAME" == "LIST" ];then
        filename="${LISTNAME%.*}"; parfilename="${LISTNAME%.*}${i}";echo "listname=${LISTNAME}"|tee -a stim.log
         if [ -f "${parfilename}.sh" ];then
@@ -411,7 +423,7 @@
          pid[$i]="0";ts1=$(date +%s); 				# dont wait for this pid anymore, start new timer
        fi
      done
-     if [[ "$num" == "0" ]];then echo "execution finished"|tee -a stim.log; break; fi	
+     if [[ "$num" == "0" ]];then echo "execution finished"|tee -a stim.log; break; fi
      if [[ "${array[@]}" == *"$SIM_PID"* ]];then missing="0";
      else missing="1";echo "$SIMULATOR not running anymore"|tee -a stim.log;
      fi
@@ -435,7 +447,7 @@
      fi
      if [[ "$num" -lt 3 ]];then					# no app process, leave the loop
        echo "execution finished,remaining pid=${pid[@]}"|tee -a stim.log; break;
-     fi	
+     fi
      sleep 5;
    done
    if [ "$PAR" -ne "1" ] ;then					# generate Runtime timestamp, in case you dont have one
@@ -480,7 +492,7 @@
    if [ "$AET" == "1" ];then $PSLSE_ROOT/debug/debug >debug.lst;fi # assume you need debug info
  else PSLSEVERS="N/A"
  fi
- if [ "$PAR" -ne "1" ] ;then	
+ if [ "$PAR" -ne "1" ] ;then
    EXECUTED=`grep --text 'executed\.' stim1.log|tail -n1|awk '{print $1}'`
    FAILED=`grep   --text 'executed\.' stim1.log|tail -n1|awk '{print $4}'`
  else
@@ -490,16 +502,16 @@
  RUNTIME=`grep --text 'Runtime:'   stim.log|tail -n1|awk '{print $3}'`
  SIMTIME=`grep --text 'Simulation complete via' sim.log|sed 's/\(.* at time\)\(.*\)\(\+.*\)/\2/'|sed 's/ //g'`
  SPEED=`cat /proc/cpuinfo|grep -i mhz|tail -n 1|sed 's/\./ /g'|awk '{print $4}'`
- CPUS=`cat /proc/cpuinfo|grep processor|wc -l`			
+ CPUS=`cat /proc/cpuinfo|grep processor|wc -l`
  LOAD=`uptime|awk '{print $12}'|sed 's/,/ /g'`	# remove eventual commas
  if [ "$LOCAL" == "1" ];then
    PERCUSED=`df -k 2>/dev/null|grep '\/data'|tail -n1|awk '{print $5}'`
  else
    afs_exist=`df -k 2>/dev/null|grep AFS|wc -l`; if [ "$afs_exist" == "1" ];then
-     PERCUSED=`fs lq |tail -n1|awk '{print $4}'`	
+     PERCUSED=`fs lq |tail -n1|awk '{print $4}'`
    else PERCUSED="N/A";fi
  fi
- USED=`du -sk . |awk '{print $1}'`				
+ USED=`du -sk . |awk '{print $1}'`
  echo "**** RC=$TCRC parallel=$PAR executed=$EXECUTED failed=$FAILED runtime=$RUNTIME simtime=$SIMTIME cpus=$CPUS speed=$SPEED load=$LOAD local=$LOCAL used_kB=$USED percused=$PERCUSED"
 #echo "**** Versions: HW=$HWVERS SW=$SWVERS PSLSE=$PSLSEVERS"
  echo "**** Versions: SNAP=$SNAPVERS PSLSE=$PSLSEVERS"

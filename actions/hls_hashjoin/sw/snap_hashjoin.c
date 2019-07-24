@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
 			usage(argv[0]);
 			exit(EXIT_SUCCESS);
 			break;
-		case 'I':
+		case 'N':
 			action_irq = 0;
 			break;
 		default:

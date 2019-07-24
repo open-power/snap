@@ -468,6 +468,9 @@ sim: check_simulator
 	@if [ "$(SIMULATOR)" != "nosim" ]; then cd sim; ./run_sim; fi
 	@echo -e "[SIMULATION........] done  `date +"%T %a %b %d %Y"`"
 
+sim_tmux:
+	@tmux new-session "$(MAKE) -s sim"
+
 else #noteq ($(PLATFORM),x86_64)
 .PHONY: wrong_platform all model sim image
 

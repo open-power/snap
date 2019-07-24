@@ -72,7 +72,7 @@ Access to CAPI from the FPGA card requires the **P**ower **S**ervice **L**ayer (
 Detailed information is available in [hardware/README.md](hardware/README.md#capi-board-support-and-psl-for-image-build)
 
 ### (c) Install the basics for the Build process
-First clone snap (https://github.com/open-power/snap.git). Then use the usual development tools: `gcc, make, sed, awk` to build the code and to run the make environment. If not installed already, the installer package `build-essential` will set up the most important tools.
+First clone snap (git clone https://github.com/open-power/snap.git). Then use the usual development tools: `gcc, make, sed, awk` to build the code and to run the make environment. If not installed already, the installer package `build-essential` will set up the most important tools.
 
 Configuring the SNAP framework via `make snap_config` will call a standalone tool that is based on the Linux kernel kconfig tool. This tool gets automatically cloned from https://github.com/guillon/kconfig
 
@@ -96,7 +96,7 @@ See examples of [supported deployment configurations](doc/README.md#deployment-e
 
 ### (a) Install CAPI accelerator library
 This code uses **libcxl** to access the CAPI hardware. Install it with the package manager of your Linux distribution, e.g. 
-`sudo apt-get install libcxl-dev` for Ubuntu.  
+`sudo apt-get install libcxl-dev` for Ubuntu, or `sudo yum install libcxl-devel` for RHEL.  
 For more information, please see https://github.com/ibm-capi/libcxl
 
 ### (b) Install CAPI programmation tool

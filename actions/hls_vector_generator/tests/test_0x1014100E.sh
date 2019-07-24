@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright 2017 International Business Machines
+# Copyright 2019 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,10 +25,14 @@ THIS_DIR=$(dirname $(readlink -f "$BASH_SOURCE"))
 ACTION_ROOT=$(dirname ${THIS_DIR})
 SNAP_ROOT=$(dirname $(dirname ${ACTION_ROOT}))
 
+echo "Starting :    $0"
+echo "SNAP_ROOT :   ${SNAP_ROOT}"
+echo "ACTION_ROOT : ${ACTION_ROOT}"
+
 function usage() {
     echo "Usage:"
     echo "  test_<action_type>.sh"
-    echo "    [-C <card>]        card to be used for the test"
+    echo "    [-C <card>] card to be used for the test"
     echo "    [-t <trace_level>]"
     echo "    [-duration SHORT/NORMAL/LONG] run tests"
     echo
@@ -56,43 +60,58 @@ while getopts ":C:t:d:h" opt; do
 done
 
 export PATH=$PATH:${SNAP_ROOT}/software/tools:${ACTION_ROOT}/sw
-echo "Path is set to: $PATH"
-
-snap_peek --help > /dev/null || exit 1;
-snap_poke --help > /dev/null || exit 1;
 
 #### VERSION ##########################################################
 
 # [ -z "$STATE" ] && echo "Need to set STATE" && exit 1;
 
 if [ -z "$SNAP_CONFIG" ]; then
-	echo "CARD VERSION"
+	echo "Get CARD VERSION"
+	snap_maint -C ${snap_card} -v || exit 1;
 	snap_peek -C ${snap_card} 0x0 || exit 1;
 	snap_peek -C ${snap_card} 0x8 || exit 1;
 	echo
 fi
 
-#### HASHJOIN #########################################################
+#### VECTOR_GENERATOR ##########################################################
 
-echo "Doing snap_hashjoin ... "
-rm -f snap_hashjoin.log
-touch snap_hashjoin.log
-for t2_entries in `seq 1 128` 512 666 888 999 1024 2048 2049 5015 7007 8088 123123 ; do
-    echo -n "  ${t2_entries} entries for T2 ... "
-    cmd="snap_hashjoin -C${snap_card} -T ${t2_entries} -v -N \
-			>> snap_hashjoin.log 2>&1"
-    echo "$cmd" >> snap_hashjoin.log
+function test_vector_generator {
+    local size=$1
+    
+    echo "Doing reference file "
+    cmd="seq -s , 0 1199 | cat > output_ref"
+    eval ${cmd}
+
+    echo "Doing snap_vector_generator "
+    cmd="snap_vector_generator -C${snap_card} -s 1200 -o output >> snap_vector_generator.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then
-	cat snap_hashjoin.log
-	echo
+	cat snap_vector_generator.log
+	rm -f output_ref
 	echo "cmd: ${cmd}"
 	echo "failed"
 	exit 1
     fi
     echo "ok"
-done
 
-rm -f *.bin *.bin *.out
+    echo -n "Check results ... "
+    diff output output_ref 2>&1 > /dev/null
+    if [ $? -ne 0 ]; then
+	echo "failed"
+	echo "  Output and expected files are different!"
+	exit 1
+    fi
+    echo "ok"
+
+}
+
+rm -f snap_vector_generator.log
+touch snap_vector_generator.log
+
+if [ "$duration" = "NORMAL" ]; then
+  test_vector_generator
+  fi
+
+rm -f *.bin *.bin *.out output output_ref
 echo "Test OK"
 exit 0
