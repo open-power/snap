@@ -91,9 +91,15 @@ while [ -z "$SETUP_DONE" ]; do
     echo "Path to vivado          is set to: `which vivado`"
     echo "Vivado version          is set to: `vivado -version|head -n1`"
     RESP=`vivado -version|head -n1 |cut -d' ' -f2`
-    if [ "$CAPI10" == "y" ] && [ $RESP == "v2018.2" ]; then
+    if [ "$CAPI10" == "y" ] && ([ $RESP == "v2018.2" ] || [ $RESP == "v2018.3" ]); then
       SETUP_INFO="$SETUP_INFO\n### WARNING ### Building an image with Vivado 2018.2 or 2018.3 for CAPI1.0 cards will drive to errors."
       SETUP_INFO="$SETUP_INFO\n###    It is highly recommended to use Vivado 2018.1 with CAPI1.0 cards."
+    fi
+    if [ "$FPGACARD" == "U200" ] && [ $RESP != "v2018.3.1" ]; then
+      SETUP_INFO="$SETUP_INFO\n### WARNING ### Building a U200 image requires Vivado 2018.3 or later."
+    fi
+    if [ "$FPGACARD" == "U200" ]; then
+      SETUP_INFO="$SETUP_INFO\n### WARNING ### The porting of this card U200 is still in development."
     fi
     echo "Vivado HLS version      is set to:        `vivado_hls -version|head -n1|cut -d " " -f 11`"
   fi
