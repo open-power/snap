@@ -78,7 +78,8 @@ static int process_action(snap_membus_t *din_gmem,
 void hls_action(snap_membus_t *din_gmem,
 	snap_membus_t *dout_gmem,
 	/* snap_membus_t *d_ddrmem, // CAN BE COMMENTED IF UNUSED */
-	action_reg *act_reg,
+	AXI_VAL din_eth0[IS_SIZE], AXI_VAL dout_eth0[OS_SIZE],
+    action_reg *act_reg,
 	action_RO_config_reg *Action_Config)
 {
     // Host Memory AXI Interface - CANNOT BE REMOVED - NO CHANGE BELOW
@@ -89,6 +90,10 @@ void hls_action(snap_membus_t *din_gmem,
 #pragma HLS INTERFACE m_axi port=dout_gmem bundle=host_mem offset=slave depth=512 \
   max_read_burst_length=64  max_write_burst_length=64
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg offset=0x040
+
+#pragma HLS INTERFACE axis  port=din_eth0
+#pragma HLS INTERFACE axis  port=dout_eth0
+
 
 /*  // DDR memory Interface - CAN BE COMMENTED IF UNUSED
  * #pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512 \
