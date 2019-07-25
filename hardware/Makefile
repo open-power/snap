@@ -136,6 +136,7 @@ check_snap_settings:
 	@echo "                        BRAM_USED       = $(BRAM_USED)"
 	@echo "                        SDRAM_USED      = $(SDRAM_USED)"
 	@echo "                        NVME_USED       = $(NVME_USED)"
+	@echo "                        ETHERNET_USED   = $(ETHERNET_USED)"
 	@echo "                        ILA_DEBUG       = $(ILA_DEBUG)"
 	@if [ `echo "$(ILA_DEBUG)" | tr a-z A-Z` == "TRUE" ]; then \
 		echo "                        ILA_SETUP_FILE  = $(ILA_SETUP_FILE)"; \
@@ -253,6 +254,29 @@ action_hw: prepare_logs
 	fi
 	@echo -e "[CONFIG ACTION HW....] done  `date +"%T %a %b %d %Y"`";
 
+.create_ethernet_done: prepare_logs .create_ethernet_dependencies
+	@echo -e "[CREATE ETHERNET IP..] start `date +"%T %a %b %d %Y"`";
+	echo "Calling make -C $(SNAP_HARDWARE_ROOT)/hdl/ethernet/ip_repo/assembled_ips" >> $(LOGS_DIR)/ethernet_ip_make.log; \
+	$(MAKE) -kC $(SNAP_HARDWARE_ROOT)/hdl/ethernet/ip_repo/assembled_ips; \
+	if [ $$? -ne 0 ]; then \
+		echo -e "						Error: please look into $(LOGS_DIR)/ethernet_ip_make.log"; exit -1; \
+	fi; 
+	@echo -e "			generating FULL Ethernet IP";
+	@rm -rf $(SNAP_HARDWARE_ROOT)/ip/ethernet_ip
+	echo "Calling create_ethernet_ip TCL script" >> $(LOGS_DIR)/ethernet_ip_make.log; 
+	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_ethernet_ip.tcl -notrace -log $(LOGS_DIR)/ethernet_ip_make.log -journal $(LOGS_DIR)/ethernet_ip_make.jou >> $(LOGS_DIR)/ethernet_ip_make.log; 
+	@touch .create_ethernet_done
+
+.create_ethernet_dependencies: prepare_logs
+	@echo -e "[CREATE ETHERNET IPs.] start `date +"%T %a %b %d %Y"`";
+	echo "Calling make -C $(SNAP_HARDWARE_ROOT)/hdl/ethernet/ip_repo/hls_ips" >> $(LOGS_DIR)/ethernet_ip_make.log; \
+	$(MAKE) -kC $(SNAP_HARDWARE_ROOT)/hdl/ethernet/ip_repo/hls_ips; \
+	if [ $$? -ne 0 ]; then \
+		echo -e "						Error: please look into $(LOGS_DIR)/ethernet_ip_make.log"; exit -1; \
+	fi; 
+	@echo -e "[CREATE ETHERNET IPs.] done  `date +"%T %a %b %d %Y"`";
+	@touch .create_ethernet_dependencies
+
 .create_snap_ip_done:
 	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_snap_ip.tcl -notrace -log $(LOGS_DIR)/create_snap_ip.log -journal $(LOGS_DIR)/create_snap_ip.jou
 	@touch .create_snap_ip_done
@@ -273,6 +297,7 @@ create_project: snap_preprocess
 	@$(MAKE) -s .create_snap_ip_done
 	@$(MAKE) -s create_hls_ip
 	@if [ "$(NVME_USED)" == "TRUE" ]; then $(MAKE) -s .create_nvme_done; fi
+	@if [ "$(ETHERNET_USED)" == "TRUE" ]; then $(MAKE) -s .create_ethernet_done; fi
 	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_framework.tcl -notrace -log $(LOGS_DIR)/create_framework.log -journal $(LOGS_DIR)/create_framework.jou
 	@echo -e "[CREATE PROJECT......] done  `date +"%T %a %b %d %Y"`"
 
@@ -483,7 +508,7 @@ endif
 .PHONY: clean
 clean:
 	@echo -e "[CLEAN ENVIRONMENT...] start `date +"%T %a %b %d %Y"`"
-	@$(RM)    .hw_project_done .create_snap_ip_done .create_nvme_done
+	@$(RM)    .hw_project_done .create_snap_ip_done .create_nvme_done .create_ethernet_done
 	@$(RM) -r $(SNAP_PP_FILES_VHD)                   \
 	          $(SNAP_SIM_CORE)/top.sv_source         \
 	          $(SNAP_SIM_NVME)/endp_4_pipe32.v       \

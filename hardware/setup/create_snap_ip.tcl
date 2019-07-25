@@ -26,6 +26,7 @@ set ip_dir       $root_dir/ip
 set sdram_used   $::env(SDRAM_USED)
 set bram_used    $::env(BRAM_USED)
 set nvme_used    $::env(NVME_USED)
+set eth_used     $::env(ETHERNET_USED)
 set log_dir      $::env(LOGS_DIR)
 set log_file     $log_dir/create_snap_ip.log
 
@@ -148,6 +149,7 @@ set create_ddr4_fx609   FALSE
 set create_ddr4_s241    FALSE
 set create_ddr4_u200    FALSE
 set create_ddr4_ad9v3   FALSE
+set create_ethernet_ip  FALSE
 
 if { $fpga_card == "ADKU3" } {
   if { $bram_used == "TRUE" } {
@@ -228,6 +230,9 @@ if { $fpga_card == "ADKU3" } {
   } elseif { $sdram_used == "TRUE" } {
     set create_clock_conv   TRUE
     set create_ddr4_ad9v3   TRUE
+  }
+  if { $eth_used == "TRUE" } {
+      set create_ethernet_ip  TRUE
   }
 }
 
@@ -582,5 +587,6 @@ if { $create_ddr4_ad9v3 == "TRUE" } {
   puts "	                generating ddr4sdram example design"
   open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
 }
+
 puts "\[CREATE SNAP IPs.....\] done  [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 close_project >> $log_file

@@ -31,6 +31,7 @@ set action_dir     $::env(ACTION_ROOT)
 set action_hw_dir  $action_dir/hw
 set action_ip_dir  $action_dir/ip/action_ip_prj/action_ip_prj.srcs/sources_1/ip
 set action_tcl     [exec find $action_hw_dir -name tcl -type d]
+set eth_used       $::env(ETHERNET_USED)
 set nvme_used      $::env(NVME_USED)
 set bram_used      $::env(BRAM_USED)
 set sdram_used     $::env(SDRAM_USED)
@@ -217,6 +218,16 @@ foreach ip_xci [glob -nocomplain -dir $action_ip_dir */*.xci] {
   export_ip_user_files -of_objects  [get_files "$ip_xci"] -no_script -sync -force >> $log_file
 }
 
+# Add Ethernet IP
+if { $eth_used == TRUE } {
+  puts "                        adding Ethernet block design"
+  set_property  ip_repo_paths [concat [get_property ip_repo_paths [current_project]] $action_dir/ip/ip_repo/] [current_project] 
+  update_ip_catalog  >> $log_file
+  add_files -norecurse  $ip_dir/ethernet_ip/ethernet_ip.srcs/sources_1/bd/ethernet_ip/ethernet_ip.bd  >> $log_file
+  export_ip_user_files -of_objects  [get_files  $ip_dir/ethernet_ip/ethernet_ip.srcs/sources_1/bd/ethernet_ip/ethernet_ip.bd] -no_script -sync -force -quiet
+
+}
+
 # Add NVME
 if { $nvme_used == TRUE } {
   puts "                        adding NVMe block design"
@@ -301,6 +312,9 @@ if { $fpga_card == "ADKU3" } {
   if { $sdram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/AD9V3/snap_ddr4_b0pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/AD9V3/snap_ddr4_b0pins.xdc]
+  } elseif { $eth_used == "TRUE" } {
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/AD9V3/snap_eth0_pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/AD9V3/snap_eth0_pins.xdc]
   }
 } elseif { ($fpga_card == "RCXVUP") } {
   if { $sdram_used == "TRUE" } {

@@ -227,7 +227,28 @@ ENTITY psl_accel IS
     pcie_rc1_txn                        : OUT   STD_LOGIC_VECTOR(3 downto 0);
     pcie_rc1_txp                        : OUT   STD_LOGIC_VECTOR(3 downto 0);
 #endif
-
+#ifdef CONFIG_ENABLE_ETHERNET
+    init_clk_n                          : IN STD_LOGIC;
+    init_clk_p                          : IN STD_LOGIC;
+    gt_ref_clk_n                        : IN STD_LOGIC; 
+    gt_ref_clk_p                        : IN STD_LOGIC;
+    gt_rx_gt_port_0_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_0_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_1_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_1_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_2_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_2_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_3_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_3_p                   : IN STD_LOGIC;
+    gt_tx_gt_port_0_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_0_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_1_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_1_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_2_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_2_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_3_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_3_p                   : OUT STD_LOGIC;
+#endif
     -- Parity Enable output and 250MHz Clock input
     ah_tbreq                            : OUT std_logic ;                       -- Timebase command request
     ah_paren                            : OUT   STD_LOGIC;
@@ -454,6 +475,27 @@ ARCHITECTURE psl_accel OF psl_accel IS
       m_axi_nvme_wstrb        : OUT STD_LOGIC_VECTOR ( (C_AXI_NVME_DATA_WIDTH/8)-1 DOWNTO 0 );
       m_axi_nvme_wuser        : OUT STD_LOGIC_VECTOR ( C_AXI_NVME_WUSER_WIDTH-1 DOWNTO 0 );
       m_axi_nvme_wvalid       : OUT STD_LOGIC;
+#endif
+
+#ifdef CONFIG_ENABLE_ETHERNET
+    din_eth0_TDATA : IN STD_LOGIC_VECTOR (511 downto 0);
+    din_eth0_TVALID : IN STD_LOGIC;
+    din_eth0_TREADY : OUT STD_LOGIC;
+    din_eth0_TKEEP : IN STD_LOGIC_VECTOR (63 downto 0);
+    din_eth0_TSTRB : IN STD_LOGIC_VECTOR (63 downto 0);
+    din_eth0_TUSER : IN STD_LOGIC_VECTOR (3 downto 0);
+    din_eth0_TLAST : IN STD_LOGIC_VECTOR (0 downto 0);
+    din_eth0_TID : IN STD_LOGIC_VECTOR (4 downto 0);
+    din_eth0_TDEST : IN STD_LOGIC_VECTOR (4 downto 0);
+    dout_eth0_TDATA : IN STD_LOGIC_VECTOR (511 downto 0);
+    dout_eth0_TVALID : IN STD_LOGIC;
+    dout_eth0_TREADY : OUT STD_LOGIC;
+    dout_eth0_TKEEP : IN STD_LOGIC_VECTOR (63 downto 0);
+    dout_eth0_TSTRB : IN STD_LOGIC_VECTOR (63 downto 0);
+    dout_eth0_TUSER : IN STD_LOGIC_VECTOR (3 downto 0);
+    dout_eth0_TLAST : IN STD_LOGIC_VECTOR (0 downto 0);
+    dout_eth0_TID : IN STD_LOGIC_VECTOR (4 downto 0);
+    dout_eth0_TDEST : IN STD_LOGIC_VECTOR (4 downto 0);
 #endif
       --
       -- AXI Control Register Interface
@@ -742,6 +784,54 @@ ARCHITECTURE psl_accel OF psl_accel IS
       M00_AXI_RREADY          : OUT STD_LOGIC
     );
   END COMPONENT;
+ 
+#endif
+
+#ifdef CONFIG_ENABLE_ETHERNET
+  --
+  -- ETHERNET IP
+  --
+    COMPONENT ethernet_ip
+    PORT(
+        arp_status              : OUT STD_LOGIC_VECTOR(1 DOWNTO 0); 
+        gt_ref_clk_n            : IN STD_LOGIC; 
+        gt_ref_clk_p            : IN STD_LOGIC;
+        gt_rx_gt_port_0_n       : IN STD_LOGIC;
+        gt_rx_gt_port_0_p       : IN STD_LOGIC;
+        gt_rx_gt_port_1_n       : IN STD_LOGIC;
+        gt_rx_gt_port_1_p       : IN STD_LOGIC;
+        gt_rx_gt_port_2_n       : IN STD_LOGIC;
+        gt_rx_gt_port_2_p       : IN STD_LOGIC;
+        gt_rx_gt_port_3_n       : IN STD_LOGIC;
+        gt_rx_gt_port_3_p       : IN STD_LOGIC;
+        gt_tx_gt_port_0_n       : OUT STD_LOGIC;
+        gt_tx_gt_port_0_p       : OUT STD_LOGIC;
+        gt_tx_gt_port_1_n       : OUT STD_LOGIC;
+        gt_tx_gt_port_1_p       : OUT STD_LOGIC;
+        gt_tx_gt_port_2_n       : OUT STD_LOGIC;
+        gt_tx_gt_port_2_p       : OUT STD_LOGIC;
+        gt_tx_gt_port_3_n       : OUT STD_LOGIC;
+        gt_tx_gt_port_3_p       : OUT STD_LOGIC;
+        init_clk_n              : IN STD_LOGIC;
+        init_clk_p              : IN STD_LOGIC;
+        meta_rx_local_port      : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+        meta_rx_remote_ip       : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+        meta_rx_remote_port     : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+        meta_tx_local_port      : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+        meta_tx_remote_ip       : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+        meta_tx_remote_port     : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+        payload_from_user_tdata : IN STD_LOGIC_VECTOR(511 DOWNTO 0);
+        payload_from_user_tkeep : IN STD_LOGIC_VECTOR(63 DOWNTO 0);
+        payload_from_user_tlast : IN STD_LOGIC;
+        payload_from_user_tready: OUT STD_LOGIC;
+        payload_from_user_tvalid: IN STD_LOGIC;
+        payload_to_user_tdata   : OUT STD_LOGIC_VECTOR(511 DOWNTO 0);
+        payload_to_user_tkeep   : OUT STD_LOGIC_VECTOR(63 DOWNTO 0);
+        payload_to_user_tlast   : OUT STD_LOGIC;
+        payload_to_user_tvalid  : OUT STD_LOGIC;
+        rst                     : IN STD_LOGIC
+    );
+    END COMPONENT;
 #endif
 
 #ifdef CONFIG_ENABLE_BRAM
@@ -1268,6 +1358,25 @@ ARCHITECTURE psl_accel OF psl_accel IS
   SIGNAL tmp_sdram_axi_rid              : STD_LOGIC_VECTOR (C_AXI_CARD_MEM0_ID_WIDTH downto 0);
 #endif
 
+#ifdef CONFIG_ENABLE_ETHERNET
+    SIGNAL act_meta_rx_local_port      : STD_LOGIC_VECTOR(15 DOWNTO 0);
+    SIGNAL act_meta_rx_remote_ip       : STD_LOGIC_VECTOR(31 DOWNTO 0);
+    SIGNAL act_meta_rx_remote_port     : STD_LOGIC_VECTOR(15 DOWNTO 0);
+    SIGNAL act_meta_tx_local_port      : STD_LOGIC_VECTOR(15 DOWNTO 0);
+    SIGNAL act_meta_tx_remote_ip       : STD_LOGIC_VECTOR(31 DOWNTO 0);
+    SIGNAL act_meta_tx_remote_port     : STD_LOGIC_VECTOR(15 DOWNTO 0);
+    SIGNAL act_payload_from_user_tdata : STD_LOGIC_VECTOR(511 DOWNTO 0);
+    SIGNAL act_payload_from_user_tkeep : STD_LOGIC_VECTOR(63 DOWNTO 0);
+    SIGNAL act_payload_from_user_tlast : STD_LOGIC_VECTOR(0 DOWNTO 0);
+    SIGNAL act_payload_from_user_tready: STD_LOGIC;
+    SIGNAL act_payload_from_user_tvalid: STD_LOGIC;
+    SIGNAL act_payload_to_user_tdata   : STD_LOGIC_VECTOR(511 DOWNTO 0);
+    SIGNAL act_payload_to_user_tkeep   : STD_LOGIC_VECTOR(63 DOWNTO 0);
+    SIGNAL act_payload_to_user_tlast   : STD_LOGIC_VECTOR(0 DOWNTO 0);
+    SIGNAL act_payload_to_user_tvalid  : STD_LOGIC;
+    SIGNAL eth_rst                     : STD_LOGIC;
+#endif
+
 BEGIN
   --
   -- Reset Delay Logic
@@ -1276,8 +1385,9 @@ BEGIN
   BEGIN
     IF (rising_edge(ha_pclock)) THEN
       action_reset_n_q   <= NOT action_reset;
+      eth_rst            <= pci_user_reset;
       pci_user_reset_q   <= pci_user_reset;
-      pci_user_reset_qq  <= pci_user_reset_q;      
+      pci_user_reset_qq  <= pci_user_reset_q;     
     END IF;
   END PROCESS reset_reg;
 
@@ -1522,6 +1632,27 @@ BEGIN
       m_axi_nvme_wstrb                => act_nvme_axi_wstrb,
       m_axi_nvme_wuser                => open,
       m_axi_nvme_wvalid               => act_nvme_axi_wvalid,
+#endif
+
+#ifdef CONFIG_ENABLE_ETHERNET
+    din_eth0_TDATA                    => act_payload_to_user_tdata,
+    din_eth0_TVALID                   => act_payload_to_user_tvalid,
+    din_eth0_TREADY                   => open,
+    din_eth0_TKEEP                    => act_payload_to_user_tkeep,
+    din_eth0_TSTRB                    => (others => '0'),
+    din_eth0_TUSER                    => (others => '0'),
+    din_eth0_TLAST                    => act_payload_to_user_tlast,
+    din_eth0_TID                      => (others => '0'),
+    din_eth0_TDEST                    => (others => '0'),
+    dout_eth0_TDATA                   => act_payload_from_user_tdata,
+    dout_eth0_TVALID                  => act_payload_from_user_tvalid,
+    dout_eth0_TREADY                  => act_payload_from_user_tready,
+    dout_eth0_TKEEP                   => act_payload_from_user_tkeep,
+    dout_eth0_TSTRB                   => (others => '0'),
+    dout_eth0_TUSER                   => (others => '0'),
+    dout_eth0_TLAST                   => act_payload_from_user_tlast,
+    dout_eth0_TID                     => (others => '0'),
+    dout_eth0_TDEST                   => (others => '0'),
 #endif
       --
       -- AXI Control Register Interface
@@ -2135,6 +2266,51 @@ BEGIN
       pcie_rc1_rxp(3 downto 0)         => pcie_rc1_rxp(3 downto 0),
       pcie_rc1_txn(3 downto 0)         => pcie_rc1_txn(3 downto 0),
       pcie_rc1_txp(3 downto 0)         => pcie_rc1_txp(3 downto 0)
+    );
+#endif
+#ifdef CONFIG_ENABLE_ETHERNET
+  --
+  -- ETHERNET IP
+  --
+    ethernet_ip_i: ethernet_ip
+    port map(
+        arp_status                    => open,
+        gt_ref_clk_n                  => gt_ref_clk_n,
+        gt_ref_clk_p                  => gt_ref_clk_p,
+        gt_rx_gt_port_0_n             => gt_rx_gt_port_0_n,
+        gt_rx_gt_port_0_p             => gt_rx_gt_port_0_p,
+        gt_rx_gt_port_1_n             => gt_rx_gt_port_1_n,
+        gt_rx_gt_port_1_p             => gt_rx_gt_port_1_p,
+        gt_rx_gt_port_2_n             => gt_rx_gt_port_2_n,
+        gt_rx_gt_port_2_p             => gt_rx_gt_port_2_p,
+        gt_rx_gt_port_3_n             => gt_rx_gt_port_3_n,
+        gt_rx_gt_port_3_p             => gt_rx_gt_port_3_p,
+        gt_tx_gt_port_0_n             => gt_tx_gt_port_0_n,
+        gt_tx_gt_port_0_p             => gt_tx_gt_port_0_p,
+        gt_tx_gt_port_1_n             => gt_tx_gt_port_1_n,
+        gt_tx_gt_port_1_p             => gt_tx_gt_port_1_p,
+        gt_tx_gt_port_2_n             => gt_tx_gt_port_2_n,
+        gt_tx_gt_port_2_p             => gt_tx_gt_port_2_p,
+        gt_tx_gt_port_3_n             => gt_tx_gt_port_3_n,
+        gt_tx_gt_port_3_p             => gt_tx_gt_port_3_p,
+        init_clk_n                    => init_clk_n,
+        init_clk_p                    => init_clk_p,      
+        meta_rx_local_port            => act_meta_rx_local_port,
+        meta_rx_remote_ip             => act_meta_rx_remote_ip,
+        meta_rx_remote_port           => act_meta_rx_remote_port,
+        meta_tx_local_port            => act_meta_tx_local_port,
+        meta_tx_remote_ip             => act_meta_tx_remote_ip,
+        meta_tx_remote_port           => act_meta_tx_remote_port,
+        payload_from_user_tdata       => act_payload_from_user_tdata,
+        payload_from_user_tkeep       => act_payload_from_user_tkeep,
+        payload_from_user_tlast       => act_payload_from_user_tlast(0),
+        payload_from_user_tready      => act_payload_from_user_tready,
+        payload_from_user_tvalid      => act_payload_from_user_tvalid,
+        payload_to_user_tdata         => act_payload_to_user_tdata,
+        payload_to_user_tkeep         => act_payload_to_user_tkeep,
+        payload_to_user_tlast         => act_payload_to_user_tlast(0),
+        payload_to_user_tvalid        => act_payload_to_user_tvalid,
+        rst                           => eth_rst
     );
 #endif
 END psl_accel;
