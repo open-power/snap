@@ -221,7 +221,7 @@ foreach ip_xci [glob -nocomplain -dir $action_ip_dir */*.xci] {
 # Add Ethernet IP
 if { $eth_used == TRUE } {
   puts "                        adding Ethernet block design"
-  set_property  ip_repo_paths [concat [get_property ip_repo_paths [current_project]] $action_dir/ip/ip_repo/] [current_project] 
+  set_property  ip_repo_paths [concat [get_property ip_repo_paths [current_project]] $ip_dir $root_dir/hdl/ethernet/ip_repo/assembled_ips/interfaces] [current_project] 
   update_ip_catalog  >> $log_file
   add_files -norecurse  $ip_dir/ethernet_ip/ethernet_ip.srcs/sources_1/bd/ethernet_ip/ethernet_ip.bd  >> $log_file
   export_ip_user_files -of_objects  [get_files  $ip_dir/ethernet_ip/ethernet_ip.srcs/sources_1/bd/ethernet_ip/ethernet_ip.bd] -no_script -sync -force -quiet
