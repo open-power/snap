@@ -228,8 +228,8 @@ ENTITY psl_accel IS
     pcie_rc1_txp                        : OUT   STD_LOGIC_VECTOR(3 downto 0);
 #endif
 #ifdef CONFIG_ENABLE_ETHERNET
-    init_clk_n                          : IN STD_LOGIC;
-    init_clk_p                          : IN STD_LOGIC;
+    init_clk_n                          : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+    init_clk_p                          : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
     gt_ref_clk_n                        : IN STD_LOGIC; 
     gt_ref_clk_p                        : IN STD_LOGIC;
     gt_rx_gt_port_0_n                   : IN STD_LOGIC;
@@ -812,8 +812,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
         gt_tx_gt_port_2_p       : OUT STD_LOGIC;
         gt_tx_gt_port_3_n       : OUT STD_LOGIC;
         gt_tx_gt_port_3_p       : OUT STD_LOGIC;
-        init_clk_n              : IN STD_LOGIC;
-        init_clk_p              : IN STD_LOGIC;
+        init_clk_n              : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+        init_clk_p              : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
         meta_rx_local_port      : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
         meta_rx_remote_ip       : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
         meta_rx_remote_port     : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);

@@ -45,6 +45,28 @@ ENTITY psl_fpga IS
     c0_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     c0_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 #endif
+#ifdef CONFIG_ENABLE_ETHERNET
+    init_clk_n                          : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+    init_clk_p                          : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+    gt_ref_clk_n                        : IN STD_LOGIC; 
+    gt_ref_clk_p                        : IN STD_LOGIC;
+    gt_rx_gt_port_0_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_0_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_1_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_1_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_2_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_2_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_3_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_3_p                   : IN STD_LOGIC;
+    gt_tx_gt_port_0_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_0_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_1_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_1_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_2_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_2_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_3_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_3_p                   : OUT STD_LOGIC;
+#endif
 
     -- CAPI PSL Interface
     --
@@ -212,6 +234,28 @@ Component psl_accel
     c0_ddr4_ck_c                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     c0_ddr4_ck_t                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 -- TODO:    c0_ddr4_ten                         : OUT   STD_LOGIC;
+#endif
+#ifdef CONFIG_ENABLE_ETHERNET
+    init_clk_n                          : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+    init_clk_p                          : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+    gt_ref_clk_n                        : IN STD_LOGIC; 
+    gt_ref_clk_p                        : IN STD_LOGIC;
+    gt_rx_gt_port_0_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_0_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_1_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_1_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_2_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_2_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_3_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_3_p                   : IN STD_LOGIC;
+    gt_tx_gt_port_0_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_0_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_1_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_1_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_2_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_2_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_3_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_3_p                   : OUT STD_LOGIC;
 #endif
 
     -- Parity Enable output and 250MHz Clock input
@@ -476,6 +520,28 @@ BEGIN
       c0_ddr4_act_n                     => c0_ddr4_act_n,
       c0_ddr4_ck_c                      => c0_ddr4_ck_c,
       c0_ddr4_ck_t                      => c0_ddr4_ck_t,
+#endif
+#ifdef CONFIG_ENABLE_ETHERNET
+    init_clk_n                          => init_clk_n,   
+    init_clk_p                          => init_clk_p,
+    gt_ref_clk_n                        => gt_ref_clk_n,
+    gt_ref_clk_p                        => gt_ref_clk_p,
+    gt_rx_gt_port_0_n                   => gt_rx_gt_port_0_n,
+    gt_rx_gt_port_0_p                   => gt_rx_gt_port_0_p,
+    gt_rx_gt_port_1_n                   => gt_rx_gt_port_1_n,
+    gt_rx_gt_port_1_p                   => gt_rx_gt_port_1_p,
+    gt_rx_gt_port_2_n                   => gt_rx_gt_port_2_n,
+    gt_rx_gt_port_2_p                   => gt_rx_gt_port_2_p,
+    gt_rx_gt_port_3_n                   => gt_rx_gt_port_3_n,
+    gt_rx_gt_port_3_p                   => gt_rx_gt_port_3_p,
+    gt_tx_gt_port_0_n                   => gt_tx_gt_port_0_n,
+    gt_tx_gt_port_0_p                   => gt_tx_gt_port_0_p,
+    gt_tx_gt_port_1_n                   => gt_tx_gt_port_1_n,
+    gt_tx_gt_port_1_p                   => gt_tx_gt_port_1_p,
+    gt_tx_gt_port_2_n                   => gt_tx_gt_port_2_n,
+    gt_tx_gt_port_2_p                   => gt_tx_gt_port_2_p,
+    gt_tx_gt_port_3_n                   => gt_tx_gt_port_3_n,
+    gt_tx_gt_port_3_p                   => gt_tx_gt_port_3_p,
 #endif
 
       -- CAPI PSL Interface

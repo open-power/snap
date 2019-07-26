@@ -21,7 +21,7 @@
 
 create_clock -period 5.000 [get_ports init_clk_p]
 set_property PACKAGE_PIN N33 [get_ports init_clk_p]
-set_property PACKAGE_PIN M34 [get_ports init_clk_n]
+set_property PACKAGE_PIN N34 [get_ports init_clk_n]
 set_property IOSTANDARD LVDS [get_ports init_clk_p]
 set_property IOSTANDARD LVDS [get_ports init_clk_n]
 
