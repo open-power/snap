@@ -23,7 +23,7 @@ if [ $# -gt 1 ]; then
   FPGACARD=$1
   PSL_DCP=$2
 
-  if [ "$FPGACARD" == "N250SP" ] || [ "$FPGACARD" == "RCXVUP" ] ||  [ "$FPGACARD" == "FX609" ] || [ "$FPGACARD" == "S241" ] || [ "$FPGACARD" == "AD9V3" ]; then
+  if [ "$FPGACARD" == "N250SP" ] || [ "$FPGACARD" == "RCXVUP" ] ||  [ "$FPGACARD" == "FX609" ] || [ "$FPGACARD" == "S241" ] || [ "$FPGACARD" == "AD9V3" ] || [ "$FPGACARD" == "U200" ]; then
     export PSL_DCP_TYPE=$FPGACARD
   else
     if [ -n "$PSL_DCP" ]; then

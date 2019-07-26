@@ -32,7 +32,9 @@ set log_file     $log_dir/create_snap_ip.log
 ## Create a new Vivado IP Project
 puts "\[CREATE SNAP IPs.....\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 create_project snap_ip_project $ip_dir/snap_ip_project -force -part $fpga_part -ip >> $log_file
-
+if { $fpga_card eq "U200" } {
+  set_property board_part xilinx.com:au200:part0:1.0 [current_project]
+}
 # Project IP Settings
 # General
 set_property target_language VHDL [current_project]
@@ -237,7 +239,11 @@ if { $create_clock_conv == "TRUE" } {
   create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir  >> $log_file
 
   if { ($sdram_used == "TRUE") && ( $fpga_card == "ADKU3" || $fpga_card == "S121B" || $fpga_card == "AD8K5" || $fpga_card == "S241"|| $fpga_card == "U200"|| $fpga_card == "AD9V3") } {
-    set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]
+	if { $fpga_card == "U200" } {
+	    set_property -dict [list CONFIG.ADDR_WIDTH {34} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]
+	} else {
+    	    set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]
+	}
   } else {
     set_property -dict [list CONFIG.ADDR_WIDTH {32} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]
   }
@@ -466,20 +472,28 @@ if { $create_ddr4_u200 == "TRUE" } {
   puts "                        generating IP ddr4sdram for $fpga_card"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                    \
-                      CONFIG.C0.DDR4_MemoryPart {MT40A1G8WE-075E}                             \
-                      CONFIG.C0.DDR4_TimePeriod {833}                                         \
-                      CONFIG.C0.DDR4_InputClockPeriod {2499}                                  \
-                      CONFIG.C0.DDR4_CasLatency {18}                                          \
-                      CONFIG.C0.DDR4_CasWriteLatency {12}                                     \
-                      CONFIG.C0.DDR4_DataWidth {72}                                           \
-                      CONFIG.C0.DDR4_AxiSelection {true}                                      \
-                      CONFIG.Simulation_Mode {BFM}                                            \
-                      CONFIG.C0.DDR4_DataMask {NO_DM_NO_DBI}                                  \
-                      CONFIG.C0.DDR4_Ecc {true}                                               \
-                      CONFIG.C0.DDR4_AxiDataWidth {512}                                       \
-                      CONFIG.C0.DDR4_AxiAddressWidth {33}                                     \
-                      CONFIG.C0.DDR4_AxiIDWidth {4}                                           \
-                      CONFIG.C0.BANK_GROUP_WIDTH {2}                                          \
+   CONFIG.C0.BANK_GROUP_WIDTH {2} \
+   CONFIG.C0.CKE_WIDTH {1} \
+   CONFIG.C0.CS_WIDTH {1} \
+   CONFIG.C0.ControllerType {DDR4_SDRAM} \
+   CONFIG.C0.DDR4_AxiAddressWidth {34} \
+   CONFIG.C0.DDR4_AxiDataWidth {512} \
+   CONFIG.C0.DDR4_AxiSelection {true} \
+   CONFIG.C0.DDR4_CLKOUT0_DIVIDE {5} \
+   CONFIG.C0.DDR4_CasLatency {17} \
+   CONFIG.C0.DDR4_CasWriteLatency {12} \
+   CONFIG.C0.DDR4_CustomParts {no_file_loaded} \
+   CONFIG.C0.DDR4_DataMask {NONE} \
+   CONFIG.C0.DDR4_DataWidth {72} \
+   CONFIG.C0.DDR4_Ecc {true} \
+   CONFIG.C0.DDR4_InputClockPeriod {3332} \
+   CONFIG.C0.DDR4_MemoryPart {MTA18ASF2G72PZ-2G3} \
+   CONFIG.C0.DDR4_MemoryType {RDIMMs} \
+   CONFIG.C0.DDR4_TimePeriod {833} \
+   CONFIG.C0.DDR4_isCustom {false} \
+   CONFIG.C0.ODT_WIDTH {1} \
+   CONFIG.C0_CLOCK_BOARD_INTERFACE {default_300mhz_clk1} \
+   CONFIG.C0_DDR4_BOARD_INTERFACE {ddr4_sdram_c1} \
                      ] [get_ips ddr4sdram] >> $log_file
   set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
   generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file

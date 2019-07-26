@@ -34,10 +34,11 @@ ENTITY psl_fpga IS
     c0_ddr4_ba                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
     c0_ddr4_cke               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     c0_ddr4_cs_n              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_dm_dbi_n          : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+    c0_ddr4_parity            : OUT   STD_LOGIC;
+    --c0_ddr4_dm_dbi_n          : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
     c0_ddr4_dq                : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
-    c0_ddr4_dqs_c             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c0_ddr4_dqs_t             : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+    c0_ddr4_dqs_c             : INOUT STD_LOGIC_VECTOR(17 DOWNTO 0);
+    c0_ddr4_dqs_t             : INOUT STD_LOGIC_VECTOR(17 DOWNTO 0);
     c0_ddr4_odt               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     c0_ddr4_bg                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
     c0_ddr4_reset_n           : OUT   STD_LOGIC;
@@ -200,10 +201,11 @@ Component psl_accel
     c0_ddr4_ba                          : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
     c0_ddr4_cke                         : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     c0_ddr4_cs_n                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_dm_dbi_n                    : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+    c0_ddr4_parity 			: OUT   STD_LOGIC;
+    --c0_ddr4_dm_dbi_n                    : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
     c0_ddr4_dq                          : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
-    c0_ddr4_dqs_c                       : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c0_ddr4_dqs_t                       : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+    c0_ddr4_dqs_c                       : INOUT STD_LOGIC_VECTOR(17 DOWNTO 0);
+    c0_ddr4_dqs_t                       : INOUT STD_LOGIC_VECTOR(17 DOWNTO 0);
     c0_ddr4_odt                         : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     c0_ddr4_bg                          : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
     c0_ddr4_reset_n                     : OUT   STD_LOGIC;
@@ -464,7 +466,8 @@ BEGIN
       c0_ddr4_ba                        => c0_ddr4_ba,
       c0_ddr4_cke                       => c0_ddr4_cke,
       c0_ddr4_cs_n                      => c0_ddr4_cs_n,
-      c0_ddr4_dm_dbi_n                  => c0_ddr4_dm_dbi_n,
+      c0_ddr4_parity  		 	=> c0_ddr4_parity,
+      --c0_ddr4_dm_dbi_n                  => c0_ddr4_dm_dbi_n,
       c0_ddr4_dq                        => c0_ddr4_dq,
       c0_ddr4_dqs_c                     => c0_ddr4_dqs_c,
       c0_ddr4_dqs_t                     => c0_ddr4_dqs_t,
