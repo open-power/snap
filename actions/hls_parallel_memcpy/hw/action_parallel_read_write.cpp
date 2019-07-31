@@ -79,7 +79,6 @@ void write_data(snap_membus_t *dout_gmem, uint64_t output, snap_membus_t *buffer
 void init_buffer(snap_membus_t *buffer){
     init_loop:
     for (int i = 1; i<MAX_SIZE; i++){
-#pragma HLS UNROLL factor=1024
 	    buffer[i] = 0;
     }
 }
