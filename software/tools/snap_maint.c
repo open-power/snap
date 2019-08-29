@@ -99,9 +99,11 @@ static void *snap_open(struct mdev_ctx *mctx)
 	VERBOSE3("[%s] Enter: %s\n", __func__, device);
 	handle = snap_card_alloc_dev(device, 0xffff, 0xffff);
 	VERBOSE3("[%s] Exit %p\n", __func__, handle);
-	if (NULL == handle)
+	if (NULL == handle) {
 		VERBOSE0("Error: Can not open CAPI-SNAP Device: %s\n",
 			device);
+		VERBOSE0("  Root rights are needed to access this directory\n");
+	}
 	return handle;
 }
 
@@ -159,7 +161,7 @@ static void snap_write32(void *handle, uint32_t addr, uint32_t data)
 
 	rc = snap_mmio_write32(handle, (uint64_t)addr, data);
 	if (0 != rc)
-		VERBOSE3("[%s] Error writting MMIO %x\n", __func__, addr);
+		VERBOSE3("[%s] Error writing MMIO %x\n", __func__, addr);
 	return;
 }
 
