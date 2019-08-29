@@ -1,16 +1,16 @@
 # HLS_PARALLEL_MEMCPY EXAMPLE
 
-* Provides an example to show how read(write) data in parallel from(to) HOST memory using memcpy.
-* To maximixe memcpy performance, data is written in 4KB chunks (MAX_BURST size) to maximize bandwidth.
-* Data is stored in two internal buffers : one for reading and one for writting. Bewteen each operation,
+* Provides an example to show how to read(write) data in parallel from(to) HOST memory using memcpy.
+* To maximize memcpy performance, data is written in 4KB chunks (MAX_BURST size) to maximize the bandwidth.
+* Data is stored in two internal buffers : one for reading and one for writing. Between each operation,
 buffers are swapped in order to observe ping pong exchanges between the HOST and the FPGA for behavior checking
 * Bandwidth measurements can be done using this example (but internal memory copy performed on FPGA is included in the measurements)
 
-**Warning:** Due to FPGA internal memory limitations, vector_size cannot be higher than 131072 (which corresponds to 1MB buffers).
+**Warning:** Due to FPGA internal memory limitations of the FPGA XCVU3P of the AD9V3 card we used, vector_size cannot be higher than 131072 (which corresponds to 1MB buffers).
 
 ## Architecture overview
 
-Buffers are arrays of uin32_t and their sizes are defined at runtime with `vector_size` parameter. Read/write process can be repeted multiple time and this value can be set at runtime using `max_iteration` parameter.
+Buffers are arrays of uint32_t and their sizes are defined at runtime with `vector_size` parameter. Read/write process can be repeated multiple time and this value can be set at runtime using `max_iteration` parameter.
 
 ![Alt text](doc/action-parallel-memcpy-architecture.png)
 
