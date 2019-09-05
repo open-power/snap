@@ -114,6 +114,8 @@ extern "C" {
  *   15..9  RO: Reserved
  *       8  RO: NVMe enabled
  *    7..0  RO: Card type:
+ *              0x16 : AD9H3
+ *              0x15 : U200
  *              0x14 : AD9V3
  *              0x13 : S241
  *              0x12 : FX609
@@ -126,6 +128,7 @@ extern "C" {
  */
 #define SNAP_CAP        0x30
 #define SNAP_NVME_ENA   0x100
+#define AD9H3_CARD      0x016     /* CAPI 2.0 */
 #define U200_CARD       0x015     /* CAPI 2.0 */
 #define AD9V3_CARD      0x014     /* CAPI 2.0 */
 #define S241_CARD       0x013     /* CAPI 2.0 */

@@ -1,7 +1,7 @@
 ############################################################################
 ############################################################################
 ##
-## Copyright 2016-2018 International Business Machines
+## Copyright 2016-2019 International Business Machines
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -138,6 +138,7 @@ export_simulation -of_objects [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] -dir
 # SDRAM_USED=TRUE   8GB Semptian  S241    DDR4 RAM MT40A1G8WE-075E (8Bb, x8)
 # SDRAM_USED=TRUE   8GB AlphaData 9V3     DDR4 RAM CUSTOM_DBI_K4A8G085WB-RC (8Gb, x8)
 # SDRAM_USED=TRUE   8GB ReflexCES VUP     DDR4 RAM MT40A512M16HA-075E (8Gb, x16)
+# NOTE AD9H3 has no DDR attached, uses HBM instead
 set create_clock_conv   FALSE
 set create_interconnect FALSE
 set create_bram         FALSE
