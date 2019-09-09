@@ -45,7 +45,7 @@ Please also have a look at [actions](./actions) to see several examples which ma
 
 # 3. Dependencies
 ## 3.1 FPGA Card selection
-As of now, the following FPGA cards can be used with SNAP _(see [cards ressources details](./doc/README.md#p8-capi10-snap-fpga-supported-boards))_ :
+As of now, the following FPGA cards can be used with SNAP if they contain CAPI logic _(see [cards ressources details](./doc/README.md#p8-capi10-snap-fpga-supported-boards) and [instructions to program FPGA card to be CAPI enabled](https://github.com/open-power/snap/blob/master/hardware/doc/Bitstream_flashing.md#initial-programming-of-a-blank-or-bricked-card))_:
 * for POWER8 (CAPI1.0):
   * Alpha-Data ADM-PCIE-KU3        http://www.alpha-data.com/dcp/products.php?product=adm-pcie-ku3
   * Alpha-Data ADM-PCIE-8K5 (rev2) http://www.alpha-data.com/dcp/products.php?product=adm-pcie-8k5
@@ -57,9 +57,6 @@ As of now, the following FPGA cards can be used with SNAP _(see [cards ressource
   * Semptian NSA241 http://www.semptian.com/proinfo/126.html
   * ReflexCES XpressVUP LP9P https://www.reflexces.com/products-solutions/other-cots-boards/xilinx/xpressvup
   * Alpha-Data ADM-PCIE-9V3 https://www.alpha-data.com/dcp/products.php?product=adm-pcie-9v3
-
-All FPGA cards need to be programmed almisty  See [instructions] to program any FPGA card to be recognized as a **CAPI card**.
-As of now, the following FPGA cards can be used with SNAP if they contain CAPI logic (see [cards ressources details and instructions to program FPGA card](https://github.com/open-power/snap/blob/master/hardware/doc/Bitstream_flashing.md#initial-programming-of-a-blank-or-bricked-card).
 
 ## 3.2 Development (Step1 & Step2)
 Development is usually done on a **Linux (x86) computer** since as of now, Xilinx Vivado Design Suite is supported only on this platform. 
