@@ -10,8 +10,10 @@ source $root_dir/setup/util.tcl
 create_project $project_name $ip_dir/$project_name -part $fpga_part
 
 create_bd_design $project_name
-set_property ip_repo_paths [list "${ip_dir}" "${project_dir}/hdl/ethernet/ip_repo/assembled_ips/interfaces"] [current_project]
-update_ip_catalog -rebuild
+set_property  ip_repo_paths [concat [get_property ip_repo_paths [current_project]] $ip_dir] [current_project]
+update_ip_catalog -rebuild -scan_changes 
+set_property  ip_repo_paths [concat [get_property ip_repo_paths [current_project]] $root_dir/hdl/ethernet/ip_repo] [current_project]
+update_ip_catalog -rebuild -scan_changes
 
 #make 100g ethernet core hireachy
 create_bd_cell -type hier eth_100g
@@ -34,7 +36,7 @@ set_property -dict [list CONFIG.CONST_WIDTH {10} CONFIG.CONST_VAL {0}] [get_bd_c
 addip lbus_axis_converter eth_100g/lbus_axis_converter_0
 
 make_bd_intf_pins_external  [get_bd_intf_pins eth_100g/cmac_usplus_0/gt_ref_clk]
-make_bd_intf_pins_external  [get_bd_intf_pins eth_100g/cmac_usplus_0/gt_serial_port]
+#make_bd_intf_pins_external  [get_bd_intf_pins eth_100g/cmac_usplus_0/gt_serial_port]
 make_bd_intf_pins_external  [get_bd_intf_pins eth_100g/util_ds_buf_0/CLK_IN_D]
 
 connect_bd_intf_net [get_bd_intf_pins eth_100g/lbus_axis_converter_0/lbus_tx] [get_bd_intf_pins eth_100g/cmac_usplus_0/lbus_tx]

@@ -63,7 +63,7 @@ if { $cloud_flow == "TRUE" } {
   set directive [get_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE [get_runs impl_1]]
 }
 set logfile   $logs_dir/${step}.log
-set command   "opt_design -directive $directive"
+set command   "opt_design -directive $directive -debug_log"
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start opt_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
 if { [catch "$command > $logfile" errMsg] } {

@@ -453,7 +453,8 @@ ARCHITECTURE psl_accel OF psl_accel IS
       m_axi_nvme_awprot       : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
       m_axi_nvme_awqos        : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
       m_axi_nvme_awready      : IN  STD_LOGIC;
-      m_axi_nvme_awregion     : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+      m_axi_nvme_awregion     : OUT STD_L    for (int i = 0; i < OS_SIZE; i++)
+        dout_eth0[i] = din_eth0[i];OGIC_VECTOR ( 3 DOWNTO 0 );
       m_axi_nvme_awsize       : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
       m_axi_nvme_awuser       : OUT STD_LOGIC_VECTOR ( C_AXI_NVME_AWUSER_WIDTH-1 DOWNTO 0 );
       m_axi_nvme_awvalid      : OUT STD_LOGIC;
@@ -487,15 +488,15 @@ ARCHITECTURE psl_accel OF psl_accel IS
     din_eth0_TLAST : IN STD_LOGIC_VECTOR (0 downto 0);
     din_eth0_TID : IN STD_LOGIC_VECTOR (4 downto 0);
     din_eth0_TDEST : IN STD_LOGIC_VECTOR (4 downto 0);
-    dout_eth0_TDATA : IN STD_LOGIC_VECTOR (511 downto 0);
-    dout_eth0_TVALID : IN STD_LOGIC;
-    dout_eth0_TREADY : OUT STD_LOGIC;
-    dout_eth0_TKEEP : IN STD_LOGIC_VECTOR (63 downto 0);
-    dout_eth0_TSTRB : IN STD_LOGIC_VECTOR (63 downto 0);
-    dout_eth0_TUSER : IN STD_LOGIC_VECTOR (3 downto 0);
-    dout_eth0_TLAST : IN STD_LOGIC_VECTOR (0 downto 0);
-    dout_eth0_TID : IN STD_LOGIC_VECTOR (4 downto 0);
-    dout_eth0_TDEST : IN STD_LOGIC_VECTOR (4 downto 0);
+    dout_eth0_TDATA : OUT STD_LOGIC_VECTOR (511 downto 0);
+    dout_eth0_TVALID : OUT STD_LOGIC;
+    dout_eth0_TREADY : IN STD_LOGIC;
+    dout_eth0_TKEEP : OUT STD_LOGIC_VECTOR (63 downto 0);
+    dout_eth0_TSTRB : OUT STD_LOGIC_VECTOR (63 downto 0);
+    dout_eth0_TUSER : OUT STD_LOGIC_VECTOR (3 downto 0);
+    dout_eth0_TLAST : OUT STD_LOGIC_VECTOR (0 downto 0);
+    dout_eth0_TID : OUT STD_LOGIC_VECTOR (4 downto 0);
+    dout_eth0_TDEST : OUT STD_LOGIC_VECTOR (4 downto 0);
 #endif
       --
       -- AXI Control Register Interface
@@ -1648,11 +1649,11 @@ BEGIN
     dout_eth0_TVALID                  => act_payload_from_user_tvalid,
     dout_eth0_TREADY                  => act_payload_from_user_tready,
     dout_eth0_TKEEP                   => act_payload_from_user_tkeep,
-    dout_eth0_TSTRB                   => (others => '0'),
-    dout_eth0_TUSER                   => (others => '0'),
+    dout_eth0_TSTRB                   => open,
+    dout_eth0_TUSER                   => open,
     dout_eth0_TLAST                   => act_payload_from_user_tlast,
-    dout_eth0_TID                     => (others => '0'),
-    dout_eth0_TDEST                   => (others => '0'),
+    dout_eth0_TID                     => open,
+    dout_eth0_TDEST                   => open,
 #endif
       --
       -- AXI Control Register Interface

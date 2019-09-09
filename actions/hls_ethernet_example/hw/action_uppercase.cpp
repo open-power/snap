@@ -32,6 +32,7 @@
 static int process_action(snap_membus_t *din_gmem,
 	      snap_membus_t *dout_gmem,
 	      /* snap_membus_t *d_ddrmem, *//* not needed */
+	      AXI_VAL din_eth0[IS_SIZE], AXI_VAL dout_eth0[OS_SIZE],
 	      action_reg *act_reg)
 {
     uint32_t size, bytes_to_transfer;
@@ -41,6 +42,9 @@ static int process_action(snap_membus_t *din_gmem,
     i_idx = act_reg->Data.in.addr >> ADDR_RIGHT_SHIFT;
     o_idx = act_reg->Data.out.addr >> ADDR_RIGHT_SHIFT;
     size = act_reg->Data.in.size;
+
+    for (int i = 0; i < OS_SIZE; i++)
+        dout_eth0[i] = din_eth0[i];
 
     main_loop:
     while (size > 0) {
@@ -120,7 +124,7 @@ void hls_action(snap_membus_t *din_gmem,
 	break;
     default:
 	    /* process_action(din_gmem, dout_gmem, d_ddrmem, act_reg); */
-	    process_action(din_gmem, dout_gmem, act_reg);
+	    process_action(din_gmem, dout_gmem, din_eth0, dout_eth0, act_reg);
 	break;
     }
 }

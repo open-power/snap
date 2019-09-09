@@ -1173,6 +1173,29 @@ module top (
      refclk_nvme_p = !refclk_nvme_p; #(10.0ns / 2); // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 #endif
+#ifdef CONFIG_ENABLE_ETHERNET
+  wire  eth_rc0_rxtxp;
+  wire  eth_rc0_rxtxn;
+  wire  eth_rc1_rxtxp;
+  wire  eth_rc1_rxtxn;
+  wire  eth_rc2_rxtxp;
+  wire  eth_rc2_rxtxn;
+  wire  eth_rc3_rxtxp;
+  wire  eth_rc3_rxtxn;
+#endif
+#ifdef CONFIG_ENABLE_ETHERNET
+  // ETHERNET Reference Clock generation
+  reg initclk_eth_p;
+  reg refclk_eth_p;
+  initial initclk_eth_p <= 0;
+  initial refclk_eth_p <= 0;
+
+  // 100MHz Ethernet reference clock
+  always begin
+     initclk_eth_p = !initclk_eth_p; #(10.0ns / 2); // a line can not start with "#", because SNAP is unsing the C preprocessor
+     refclk_eth_p = !refclk_eth_p; #(10.0ns / 2); // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end
+#endif
   ////////////////////////////////////////////////////////////
   // AFU instance                                           //
   ////////////////////////////////////////////////////////////
@@ -1296,6 +1319,28 @@ module top (
     .pcie_rc1_rxp(pcie_rc1_rxp),
     .pcie_rc1_txn(pcie_rc1_txn),
     .pcie_rc1_txp(pcie_rc1_txp),
+#endif
+#ifdef CONFIG_ENABLE_ETHERNET
+    .init_clk_n(initclk_eth_p),
+    .init_clk_p(~initclk_eth_p),
+    .gt_ref_clk_n(refclk_eth_p),
+    .gt_ref_clk_p(~refclk_eth_p),
+    .gt_rx_gt_port_0_n(eth_rc0_rxtxn),
+    .gt_rx_gt_port_0_p(eth_rc0_rxtxp),
+    .gt_rx_gt_port_1_n(eth_rc1_rxtxn),
+    .gt_rx_gt_port_1_p(eth_rc1_rxtxp),
+    .gt_rx_gt_port_2_n(eth_rc2_rxtxn),
+    .gt_rx_gt_port_2_p(eth_rc2_rxtxp),
+    .gt_rx_gt_port_3_n(eth_rc3_rxtxn),
+    .gt_rx_gt_port_3_p(eth_rc3_rxtxp),
+    .gt_tx_gt_port_0_n(eth_rc0_rxtxn),
+    .gt_tx_gt_port_0_p(eth_rc0_rxtxp),
+    .gt_tx_gt_port_1_n(eth_rc1_rxtxn),
+    .gt_tx_gt_port_1_p(eth_rc1_rxtxp),
+    .gt_tx_gt_port_2_n(eth_rc2_rxtxn),
+    .gt_tx_gt_port_2_p(eth_rc2_rxtxp),
+    .gt_tx_gt_port_3_n(eth_rc3_rxtxn),
+    .gt_tx_gt_port_3_p(eth_rc3_rxtxp),
 #endif
     .ha_pclock(ha_pclock),
     .pci_user_reset(~sys_reset_n_q),

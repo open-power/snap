@@ -22,8 +22,8 @@
 create_clock -period 5.000 [get_ports init_clk_p]
 set_property PACKAGE_PIN N33 [get_ports init_clk_p]
 set_property PACKAGE_PIN N34 [get_ports init_clk_n]
-set_property IOSTANDARD LVDS [get_ports init_clk_p]
-set_property IOSTANDARD LVDS [get_ports init_clk_n]
+#set_property IOSTANDARD LVDS [get_ports init_clk_p]
+#set_property IOSTANDARD LVDS [get_ports init_clk_n]
 
 set_property PACKAGE_PIN G39  [get_ports {gt_rx_gt_port_0_n}]    ; #QSFP0_RX0_N
 set_property PACKAGE_PIN G38  [get_ports {gt_rx_gt_port_0_p}]    ; #QSFP0_RX0_P
@@ -42,8 +42,12 @@ set_property PACKAGE_PIN C34  [get_ports {gt_tx_gt_port_2_n}]    ; #QSFP0_TX2_N
 set_property PACKAGE_PIN C33  [get_ports {gt_tx_gt_port_2_p}]    ; #QSFP0_TX2_P
 set_property PACKAGE_PIN A34  [get_ports {gt_tx_gt_port_3_n}]    ; #QSFP0_TX3_N
 set_property PACKAGE_PIN A33  [get_ports {gt_tx_gt_port_3_p}]    ; #QSFP0_TX3_P
-set_property PACKAGE_PIN R6   [get_ports {gt_ref_clk_n}]         ; #REFCLK100_PIN_N
-set_property PACKAGE_PIN R7   [get_ports {gt_ref_clk_p}]         ; #REFCLK100_PIN_P
+
+# Using QSFP28 pin instead of EMCCLK pin
+#set_property PACKAGE_PIN R6   [get_ports {gt_ref_clk_n}]         ; #REFCLK100_PIN_N
+#set_property PACKAGE_PIN R7   [get_ports {gt_ref_clk_p}]         ; #REFCLK100_PIN_P
+set_property PACKAGE_PIN L33 [get_ports gt_ref_clk_p]
+set_property PACKAGE_PIN L34 [get_ports gt_ref_clk_n]
 
 #set_property PACKAGE_PIN F33  [get_ports {}]    ; #QSFP1_MODPRS_L
 #set_property PACKAGE_PIN R39  [get_ports {}]    ; #QSFP1_RX0_N
