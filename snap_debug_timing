@@ -1,9 +1,9 @@
 #!/bin/bash
-if [ -f ./hardware/build/Reports/timing_summary.rpt ]; then \
-	FILE="hardware/build/Reports/timing_summary.rpt"
+FILE="./hardware/build/Reports/timing_summary.rpt"
+if [ -f $FILE ]; then \
 	TEXT="Timing constraints are not met"
  	MAX_VIOLATION=`grep -B3 "$TEXT" "$FILE" | awk '{print $1}' | head -n 1`
-	LINE=`grep -A1 -m2 -n VIOL "$FILE"|grep  -e "$MAX_VIOLATION" | cut -d ':' -f 1`
+	LINE=`grep -A1 -n VIOL "$FILE"|grep -m1 -e "$MAX_VIOLATION" | cut -d ':' -f 1`
 	echo "-------------------------------------------------------------------"
 	echo "-------------- DISPLAY the 10 worst timing violations -------------"
 	echo "-------------------------------------------------------------------"
