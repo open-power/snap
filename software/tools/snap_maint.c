@@ -103,6 +103,7 @@ static void *snap_open(struct mdev_ctx *mctx)
 		VERBOSE0("Error: Can not open CAPI-SNAP Device: %s\n",
 			device);
 		VERBOSE0("  Root rights are needed to access this directory\n");
+		VERBOSE0("  Type: sudo chmod -R ugo+rw /dev/cxl\n");
 	}
 	return handle;
 }
