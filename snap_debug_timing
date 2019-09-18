@@ -5,7 +5,7 @@ if [ -f ./hardware/build/Reports/timing_summary.rpt ]; then \
  	MAX_VIOLATION=`grep -B3 "$TEXT" "$FILE" | awk '{print $1}' | head -n 1`
 	LINE=`grep -A1 -m2 -n VIOL "$FILE"|grep  -e "$MAX_VIOLATION" | cut -d ':' -f 1`
 	echo "-------------------------------------------------------------------"
-	echo "-------------- DISPLAY the 10 first timing violations -------------"
+	echo "-------------- DISPLAY the 10 worst timing violations -------------"
 	echo "-------------------------------------------------------------------"
 	#grep -A1 -m10 VIOL hardware/build/Reports/timing_summary.rpt
 	tail -n +"$LINE" "$FILE" | grep -A1 -m10 VIOL
