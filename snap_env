@@ -215,6 +215,8 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hdl_nvme_example'
   elif [ -n "$HLS_MEMCOPY" ]; then
     AR='${SNAP_ROOT}/actions/hls_memcopy'
+  elif [ -n "$HLS_FRAME2GPU" ]; then
+    AR='${SNAP_ROOT}/actions/hls_frames2gpu'
   elif [ -n "$HLS_SPONGE" ]; then
     AR='${SNAP_ROOT}/actions/hls_sponge'
   elif [ -n "$HLS_HASHJOIN" ]; then
