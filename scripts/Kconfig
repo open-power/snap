@@ -244,6 +244,16 @@ choice
 		select FORCE_SDRAM_OR_BRAM
 		select DISABLE_NVME
 
+       config HLS_FRAME2GPU
+                bool "HLS Frame2GPU"
+                help
+                  This is a basic example to send frame to unified memory
+			for GPU processing
+                select ENABLE_HLS_SUPPORT
+                select FORCE_SDRAM_OR_BRAM
+                select DISABLE_NVME
+
+
 	config HLS_NVME_MEMCOPY
 		bool "HLS NVMe Memcopy"
 		depends on N250S

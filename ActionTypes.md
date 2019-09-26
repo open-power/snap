@@ -23,7 +23,8 @@ IBM | 10.14.10.0C | 10.14.10.0C | HLS Scatter-Gather
 IBM | 10.14.10.0D | 10.14.10.0D | HLS Image filter
 IBM | 10.14.10.0E | 10.14.10.0E | HLS Vector Generator
 IBM | 10.14.10.0F | 10.14.10.0F | HLS Parallel Memcpy
-IBM | 10.14.10.10 | 10.14.FF.FF | Reserved for IBM Actions
+IBM | 10.14.10.10 | 10.14.10.10 | HLS Frames to GPU
+IBM | 10.14.10.11 | 10.14.FF.FF | Reserved for IBM Actions
 MLE | 22.DB.00.01 | 22.DB.00.01 | HDL 10G Ethernet TCP/UDP/IP Accelerator Demo
 MLE | 22.DB.00.02 | 22.DB.00.02 | HDL 25G Ethernet TCP/UDP/IP Accelerator Demo
 HPI | FB.06.00.01 | FB.06.00.01 | Metal FS
