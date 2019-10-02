@@ -115,22 +115,7 @@ if { [catch "$command > $logfile" errMsg] } {
   if { ![catch {current_instance}] } {
     write_checkpoint -force $dcp_dir/${step}_error.dcp    >> $logfile
   }
-  ###exit 42
-  #James Ooi patch
-  open_checkpoint $dcp_dir/opt_design.dcp
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "REOPEN design - opt_design.dcp" $widthCol4 "" ]
-
-  set command   "route_design -unroute"
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "UNROUTE complete" $widthCol4 "" ]
-  set command   "place_design -unplace"
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "UNPLACE complete" $widthCol4 "" ]
-  set command   "place_design -directive $directive"
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "Place design again complete" $widthCol4 "" ]
-  #set command   "route_design"
-  #puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "Routing again complete" $widthCol4 "" ]
-  write_checkpoint   -force $dcp_dir/${step}.dcp          >> $logfile
-  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "WRITE checkpoint - placed and routed design" $widthCol4 "" ]
-  #end of James Ooi patch
+  exit 42
 } else {
   write_checkpoint   -force $dcp_dir/${step}.dcp          >> $logfile
 }
