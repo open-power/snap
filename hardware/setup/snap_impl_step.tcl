@@ -102,7 +102,7 @@ set command   "place_design -directive $directive"
 puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start place_design" $widthCol3 "with directive: $directive" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
 
 ##
-## prevent placing inside PSL
+## prevent placing inside PSL for CAPI1.0 cards
 if { ($fpgacard != "N250SP") && ($fpgacard != "RCXVUP") && ($fpgacard != "FX609") && ($fpgacard != "S241") && ($fpgacard != "U200") && ($fpgacard != "AD9V3") } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
@@ -115,7 +115,22 @@ if { [catch "$command > $logfile" errMsg] } {
   if { ![catch {current_instance}] } {
     write_checkpoint -force $dcp_dir/${step}_error.dcp    >> $logfile
   }
-  exit 42
+  ###exit 42
+  #James Ooi patch
+  open_checkpoint $dcp_dir/opt_design.dcp
+  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "REOPEN design - opt_design.dcp" $widthCol4 "" ]
+
+  set command   "route_design -unroute"
+  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "UNROUTE complete" $widthCol4 "" ]
+  set command   "place_design -unplace"
+  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "UNPLACE complete" $widthCol4 "" ]
+  set command   "place_design -directive $directive"
+  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "Place design again complete" $widthCol4 "" ]
+  #set command   "route_design"
+  #puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "Routing again complete" $widthCol4 "" ]
+  write_checkpoint   -force $dcp_dir/${step}.dcp          >> $logfile
+  puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "WRITE checkpoint - placed and routed design" $widthCol4 "" ]
+  #end of James Ooi patch
 } else {
   write_checkpoint   -force $dcp_dir/${step}.dcp          >> $logfile
 }
@@ -217,11 +232,12 @@ if { [expr $TIMING_WNS >= 0 ] } {
     set ::env(REMOVE_TMP_FILES) TRUE
 } elseif { [expr $TIMING_WNS < $timing_lablimit ] && ( $ila_debug != "TRUE" ) } {
     puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "ERROR: TIMING FAILED" $widthCol4 "" ]
-    puts "-------------------------------------------------------------------------------------------"
-    puts "-- The building of the image code has failed for timing reasons.                         --"
-    puts "-- The logic was not placed and routed correctly with the constraints provided.          --"
-    puts "-- Run ./snap_debug_timing to help you finding the paths containing the timing violation --"
-    puts "-------------------------------------------------------------------------------------------"
+    puts "---------------------------------------------------------------------------------------------"
+    puts "-- The building of the image code has failed for timing reasons.                           --"
+    puts "-- The logic was not placed and routed correctly with the constraints provided.            --"
+    puts "--  Maximum WNS authorized is set in snap_env.sh by TIMING_LABLIMIT (negative value in ps) --"
+    puts "-- Run ./snap_debug_timing to help you finding the paths containing the timing violation   --"
+    puts "---------------------------------------------------------------------------------------------"
     set ::env(REMOVE_TMP_FILES) FALSE
     exit 42
 } else {
