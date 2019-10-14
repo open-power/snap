@@ -148,10 +148,16 @@ snap_config:
 	@$(MAKE) -s menuconfig || exit 1
 	@$(MAKE) -s snap_env snap_env_parm=config
 	@echo "SNAP config done"
+	@echo "-----------"
+	@echo "  Suggested next step: to run a simulation,      execute: make sim"
+	@echo "                    or to build the FPGA binary, execute: make image"
 
 $(snap_config_sh):
 	@$(MAKE) -s menuconfig || exit 1
 	@echo "SNAP config done"
+	@echo "-----------"
+	@echo "  Suggested next step: to run a simulation,      execute: make sim"
+	@echo "                    or to build the FPGA binary, execute: make image"
 
 # Prepare SNAP Environment
 $(snap_env_sh) snap_env: $(snap_config_sh)
