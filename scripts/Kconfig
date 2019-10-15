@@ -94,6 +94,14 @@ choice
                 help
                   AlphaData AD9V3 with 2x100GbE, 8GB DDR4 SDRAM and Xilinx VU3P-2 FPGA in CAPI2.0 mode
 
+        config AD9H3
+                bool "CAPI2.0: AlphaData AD9H3 with 8x10G/25G or 2x100GbE, 8GB HBM and Xilinx VU33P FPGA"
+                select CAPI20
+                select DISABLE_NVME
+                select DISABLE_SDRAM_AND_BRAM
+		help
+                  AlphaData AD9H3 with 8x10G/25G or 2x100GbE, 8GB HBM and Xilinx VU33P FPGA in CAPI2.0 mode
+
 endchoice
 
 config FPGACARD
@@ -108,19 +116,20 @@ config FPGACARD
 	default "S241"   if S241
 	default "U200"   if U200
         default "AD9V3"  if AD9V3
+        default "AD9H3"  if AD9H3
 
 config FLASH_INTERFACE
 	string
 	default "BPIx16" if S121B_BPIx16 || N250S || N250SP || ADKU3 || AD8K5
 	default "SPIx4"  if S121B_SPIx4 || FX609 || S241 || U200
-	default "SPIx8"  if RCXVUP || AD9V3
+	default "SPIx8"  if RCXVUP || AD9V3 || AD9H3
 
 #FLASH_SIZE: in MB, will be used by build_mcs.tcl
 config FLASH_SIZE
 	string
 	default 256 if S121B_SPIx4  || RCXVUP || S241
 	default 128 if S121B_BPIx16 || N250SP || AD8K5 || ADKU3 || FX609 || U200
-	default 64  if N250S || AD9V3
+	default 64  if N250S || AD9V3 || AD9H3
 
 #FLASH_FACTORYADDR: For all cards, factory address is 0x0
 config FLASH_FACTORYADDR
@@ -132,7 +141,7 @@ config FLASH_FACTORYADDR
 config FLASH_USERADDR
 	string
 	default 0x01000000 if N250S || ADKU3
-	default 0x02000000 if S121B_BPIx16 || AD8K5 || N250SP || AD9V3
+	default 0x02000000 if S121B_BPIx16 || AD8K5 || N250SP || AD9V3 || AD9H3
 	default 0x04000000 if FX609
 	default 0x08000000 if S121B_SPIx4 || RCXVUP || S241
 	default 0x01002000 if U200
@@ -161,7 +170,7 @@ config FPGACHIP
 	default "xcvu9p-flgb2104-2l-e" if S241
 	default "xcvu3p-ffvc1517-2-i"  if AD9V3
 	default "xcu200-fsgd2104-2-e"  if U200
-
+        default "xcvu33p-fsvh2104-2-e" if AD9H3
 config FPGABOARD
 	string
 	default "xilinx.com:au200:part0:1.0" if U200 
