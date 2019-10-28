@@ -32,6 +32,7 @@ set action_hw_dir  $action_dir/hw
 set action_ip_dir  $action_dir/ip/action_ip_prj/action_ip_prj.srcs/sources_1/ip
 set action_tcl     [exec find $action_hw_dir -name tcl -type d]
 set nvme_used      $::env(NVME_USED)
+set hbm_used       $::env(HBM_USED)
 set bram_used      $::env(BRAM_USED)
 set sdram_used     $::env(SDRAM_USED)
 set ila_debug      [string toupper $::env(ILA_DEBUG)]
@@ -40,6 +41,7 @@ set denali_used    $::env(DENALI_USED)
 set log_dir        $::env(LOGS_DIR)
 set log_file       $log_dir/create_framework.log
 set vivadoVer      [version -short]
+
 
 if { [info exists ::env(HLS_SUPPORT)] == 1 } {
   set hls_support [string toupper $::env(HLS_SUPPORT)]
@@ -109,8 +111,8 @@ set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.IS_ENABLED true [get_runs impl_1]
 set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 # Bitstream
-set_property STEPS.WRITE_BITSTREAM.TCL.PRE  $root_dir/setup/$fpga_card/snap_bitstream_pre.tcl  [get_runs impl_1]
-set_property STEPS.WRITE_BITSTREAM.TCL.POST $root_dir/setup/snap_bitstream_post.tcl [get_runs impl_1]
+set_property STEPS.WRITE_BITSTREAM.TCL.PRE  $root_dir/setup/$fpga_card/snap_bitstream_pre.tcl  [get_runs impl_1] >> $log_file
+set_property STEPS.WRITE_BITSTREAM.TCL.POST $root_dir/setup/snap_bitstream_post.tcl [get_runs impl_1] >> $log_file
 
 # Add Files
 puts "                        importing design files"
@@ -219,6 +221,36 @@ foreach ip_xci [glob -nocomplain -dir $action_ip_dir */*.xci] {
   puts "                        adding HDL Action IP $ip_name"
   add_files -norecurse $ip_xci -force >> $log_file
   export_ip_user_files -of_objects  [get_files "$ip_xci"] -no_script -sync -force >> $log_file
+}
+
+# Add HBM
+if { $hbm_used == TRUE } {
+  puts "                        adding HBM block design"
+#  Following line modified to support metalfs:
+#  set_property  ip_repo_paths $hdl_dir/hbm/ [current_project]
+  set_property  ip_repo_paths [concat [get_property ip_repo_paths [current_project]] $hdl_dir/hbm/] [current_project] 
+  update_ip_catalog  >> $log_file
+  add_files -norecurse                          $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd  >> $log_file
+  export_ip_user_files -of_objects  [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd] -lib_map_path [list {{ies=$root_dir/viv_project/framework.cache/compile_simlib/ies}}] -no_script -sync -force -quiet
+
+#  if { $denali_used == TRUE } {
+#    puts "                        adding NVMe Denali simulation files"
+#    add_files -fileset sim_1 -scan_for_includes $sim_dir/hbm
+#    add_files -fileset sim_1 -scan_for_includes $ip_dir/hbm/axi_pcie3_0_ex/imports/xil_sig2pipe.v
+#
+#    set denali $::env(DENALI)
+#    add_files -fileset sim_1 -norecurse -scan_for_includes $denali/ddvapi/verilog/denaliPcie.v
+#    set_property include_dirs                              $denali/ddvapi/verilog [get_filesets sim_1]
+#  } else {
+#    puts "                        adding HBM Verilog simulation files"
+#    set_property used_in_simulation false [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd]
+#    add_files -fileset sim_1 -norecurse $sim_dir/hbm_lite
+#    add_files -fileset sim_1 -norecurse $hdl_dir/hbm/hbm_defines.sv
+#    set_property file_type {Verilog Header} [get_files $sim_dir/hbm_lite/snap_config.sv]
+#    set_property file_type {Verilog Header} [get_files $hdl_dir/hbm/hbm_defines.sv]
+#  }
+} else {
+  remove_files $action_hw_dir/action_axi_hbm.vhd -quiet
 }
 
 # Add NVME
